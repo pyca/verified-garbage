@@ -106,7 +106,6 @@ x86_64 vg_chacha20_poly1305_seal_gather_ssse3
 x86_64 vg_chacha20_poly1305_seal_ifma
 x86_64 vg_chacha20_poly1305_seal_ssse3
 x86_64 vg_cmac_aes_absorb
-x86_64 vg_cmac_aes_absorb_aesni
 x86_64 vg_cmac_aes_finish
 x86_64 vg_cmac_aes_init
 x86_64 vg_hmac_sha384_finalize_avx2
