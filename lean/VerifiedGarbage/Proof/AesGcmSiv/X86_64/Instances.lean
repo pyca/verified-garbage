@@ -9,7 +9,10 @@ public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.StitchAvx
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Stitch
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.RingTheory.AdjoinRoot
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 import VerifiedGarbage.Proof.Framework.EntryBranch
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -562,6 +565,100 @@ theorem avx2Open_spSafe (v : GcmImpl) : (avx2OpenCode v).all (fun i => !X86_64.i
   · simp only [bySize, Code.iteCold, Code.all, X86_64.withStackArgScratch_spSafe (wideOpen_spSafe v),
       X86_64.withStackArgScratch_spSafe (openCode_spSafe v), Bool.and_true]
     rfl
+
+end
+
+/-! ## Without secret residue
+
+Over an implementation of AES that needs working space (`Ctr32Impl.free` is
+`none`), the frame of 3.8 KB is mostly the working space of the functions
+called, wiped whole on return (`X86_64.Scrub.withScrubAll`); the
+postconditions read the memory on return only within the data and the tag
+(`sealOut`, `openOut`). Over the others, as before. -/
+
+section
+open VG.X86_64.Scrub
+
+theorem bytesAt_of {m₁ m₂ : Mem} {p : Addr} {L : Nat} (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a)
+    {n : Nat} (hn : n ≤ L) : Spec.Aes.bytesAt m₂ p n = Spec.Aes.bytesAt m₁ p n := by
+  simp only [Spec.Aes.bytesAt]
+  exact List.map_congr_left fun i hi => (h _ (Region.contains_ofNat p (by have := List.mem_range.mp hi; omega))).symm
+
+theorem sealOut (stack : Nat) :
+    PostOut (Spec.GcmSiv.sealContract X86_64.abi stack) (Spec.GcmSiv.sealSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [sch, rd, np, ap, al, dp, dl, tp], _ =>
+      simp only [Spec.GcmSiv.sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+        ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.sealPost 64) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+        ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.sealPost 64) _ m m₂ r
+      dsimp only [Curry.apply, Spec.GcmSiv.sealPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hl hk
+      rw [h key hl hk, bytesAt_of hb.2.2.2.1 (by simp), bytesAt_of hb.2.2.2.2 (by simp)]
+
+theorem openOut (stack : Nat) :
+    PostOut (Spec.GcmSiv.openContract X86_64.abi stack) (Spec.GcmSiv.openSig.retBits 64) :=
+  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [sch, rd, np, ap, al, dp, dl, tp], _ =>
+      simp only [Spec.GcmSiv.openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size, Nat.mul_one] at hb
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+        ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.openPost 64) _ m m₁ r at h
+      change Curry.apply [ArgWord.addr, ArgWord.int 64, ArgWord.addr, ArgWord.addr, ArgWord.int 64,
+        ArgWord.addr, ArgWord.int 64, ArgWord.addr] (Spec.GcmSiv.openPost 64) _ m m₂ r
+      dsimp only [Curry.apply, Spec.GcmSiv.openPost, ArgWord.ofRaw, IntTy.bits] at h ⊢
+      intro key hl hk
+      rw [bytesAt_of hb.2.2.2.1 (by simp)]
+      exact h key hl hk
+
+/-- `r` wiped whole on return over an implementation of AES that needs
+working space. -/
+def scrubSlow {api : Api} (v : GcmImpl) (r : Registration api X86_64.target)
+    (hpost : PostOut r.contract (api.sig.retBits ((X86_64.abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) :
+    Registration api X86_64.target :=
+  match v.ctr.free with
+  | some _ => r
+  | none => withScrubAll r hpost
+
+/-- `vg_aes_gcm_siv_seal` over `v`. -/
+def sealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :=
+  scrubSlow v {
+    suffix := v.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (sealCode v)
+    stack := 3856
+    verified := Proof.AesGcmSiv.seal_keyed (sealCode_framed v)
+    spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v) } (sealOut _)
+
+/-- `vg_aes_gcm_siv_open` over `v`. -/
+def openReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target :=
+  scrubSlow v {
+    suffix := v.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (openCode v)
+    stack := 3856
+    verified := Proof.AesGcmSiv.open_keyed (openCode_framed v)
+    spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v) } (openOut _)
+
+/-- `vg_aes_gcm_siv_seal` over `v` with the AVX2 copies. -/
+def wideSealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :=
+  scrubSlow v {
+    suffix := v.suffix ++ "_avx2"
+    code := avx2SealCode v
+    stack := 3856
+    verified := Proof.AesGcmSiv.seal_keyed (avx2Seal_verified v)
+    spSafe := avx2Seal_spSafe v } (sealOut _)
+
+/-- `vg_aes_gcm_siv_open` over `v` with the AVX2 copies. -/
+def wideOpenReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target :=
+  scrubSlow v {
+    suffix := v.suffix ++ "_avx2"
+    code := avx2OpenCode v
+    stack := 3856
+    verified := Proof.AesGcmSiv.open_keyed (avx2Open_verified v)
+    spSafe := avx2Open_spSafe v } (openOut _)
 
 end
 
