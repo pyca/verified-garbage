@@ -295,7 +295,11 @@ def St.step (R : Rules) (rs : List Rg) (σ : St) : Instr → Option St
   | .vmovdquTbl d m name ws =>
     if m.base = .r8 ∧ m.index = none ∧ name = tblName ∧ 0 ≤ m.disp ∧ m.disp.toNat % 8 = 0 ∧
         m.disp.toNat / 8 + 4 ≤ ws.length ∧ m.disp.toNat < 2 ^ 32 then
-      some (σ.set d (Y.ofFn fun e => tblW ws (m.disp.toNat / 8 + e / 4) (e % 4)))
+      -- The four quadwords, found once: each of the sixteen words would
+      -- otherwise walk the table to its quadword (`tbl4_eq`).
+      match ws.drop (m.disp.toNat / 8) with
+      | a :: b :: c :: e :: _ => some (σ.set d (Y.ofFn fun i => tblW [a, b, c, e] (i / 4) (i % 4)))
+      | _ => none
     else none
   | .vmovdquLoad .l256 d m =>
     (find rs m).map fun (k, j) => σ.set d ((σ.mem.getD k []).getD (j / 16) [])
