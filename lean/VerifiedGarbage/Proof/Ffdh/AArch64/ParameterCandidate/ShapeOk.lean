@@ -198,11 +198,6 @@ def shapeFlag (g w c : Nat) : BitVec 64 :=
 
 theorem mask_eq_zero (b : Bool) : mask b = 0 ↔ b = false := by cases b <;> decide
 
-theorem anyPre_mono {c m n : Nat} (h : m ≤ n) (hm : anyPre c m = true) : anyPre c n = true := by
-  unfold anyPre at hm ⊢
-  obtain ⟨i, hi, hp⟩ := List.any_eq_true.mp hm
-  exact List.any_eq_true.mpr ⟨i, List.mem_range.mpr (Nat.lt_of_lt_of_le (List.mem_range.mp hi) h), hp⟩
-
 /-- Above the table's largest prime, the sieve of `4 (trialN (mW bits))`
 entries is `primeShape` and RSA's trial division for `bits`. -/
 theorem sieved_sieve {bits c : Nat} (hb1 : 512 ≤ bits) (hb2 : bits ≤ 8192) (hc : 8161 < c) (ho : c % 2 = 1) :

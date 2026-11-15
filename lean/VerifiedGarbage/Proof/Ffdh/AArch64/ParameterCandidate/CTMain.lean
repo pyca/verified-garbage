@@ -35,9 +35,10 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.Slots
 # An FFDH parameter candidate on AArch64: constant time of `main`
 
 `main`'s stages (`MS`, after each piece), each piece from the stage before
-it (`CTPieces.lean`, `CTTest.lean`), the branch on the shape's flag, which
-the public data fixes, and the tests (`tests_ct`), whose branches the
-results of Miller–Rabin fix.
+it (`CTPieces.lean`, `CTTest.lean`), the branches on the shape's flag
+(after the congruence, after `p`'s sieve and after `q`'s), which the public
+data fixes, and the tests (`tests_ct`), whose branches the results of
+Miller–Rabin fix.
 -/
 
 @[expose] public section
@@ -386,10 +387,12 @@ theorem tests_ct (M : Mont) (R : Kernel) : RelCT isa (Two TQd) (tests M.mm R.run
 
 theorem main_eq (M : Mont) (R : Kernel) : main M.mm R.run = seqs ((phase false ++ shapeP) ++ (residue ++
     ([.block [ldh .x5 fBad], .ite (.zero .x .x5)
-      (seqs ([tableWrite] ++ (sieve ++ (halveQ ++ (sieve ++ ([.block [ldh .x5 fBad],
-        .ite (.zero .x .x5) (tests M.mm R.run) (finUsed 2)] : List (Prog isa)))))))
+      (seqs ([tableWrite] ++ (sieve ++ ([.block [ldh .x5 fBad], .ite (.zero .x .x5)
+        (seqs (halveQ ++ (sieve ++ ([.block [ldh .x5 fBad],
+          .ite (.zero .x .x5) (tests M.mm R.run) (finUsed 2)] : List (Prog isa)))))
+        (finUsed 2)] : List (Prog isa)))))
       (finUsed 2)] : List (Prog isa)))) := by
-  simp only [main, List.append_assoc]
+  simp only [main, mainQ, List.append_assoc]
 
 theorem ms_ws {p : PP} {n : Nat} {s : State} (h : MS p n s) : WQ p.ws s := h.st.ws
 
@@ -416,6 +419,22 @@ theorem flagR_ok {p : PP} {s : State} (h : C2 p s) : WP isa (.block [ldh .x5 fBa
   refine WP.mono (WP.keep [.x5] (Q := fun t => t.gpr .x5 = rOf p ∧ t.mem = s.mem)
     (by brun [hw.x0, hdr_enc (show fBad < 32 by decide), hw.scr.ld (d := 8 * fBad) (by simp only [fBad]; omega_arith),
       h.2]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h5, hm⟩, k⟩ => ⟨⟨?_, by rw [hm]; exact h.2⟩, h5⟩
+  exact h.1.frm (rs := []) (hw.congr' (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide))
+    (by rw [hm]; exact Frm.refl _ _ _) (by simp) (by simp) k (by simp) (by simp)
+
+/-- After the load of the flag of `p`'s sieve. -/
+def C4R (p : PP) (s : State) : Prop :=
+  C4 p s ∧ s.gpr .x5 = rOf p ||| mask (anyPre (cOf p) (4 * trialN (mW p.bits)))
+
+theorem flagP_ok {p : PP} {s : State} (h : C4 p s) : WP isa (.block [ldh .x5 fBad]) s (C4R p) := by
+  have hw := h.1.st.ws
+  have hn := hw.scr.nowrap
+  have h256 := hw.h256
+  refine WP.mono (WP.keep [.x5] (Q := fun t =>
+      t.gpr .x5 = rOf p ||| mask (anyPre (cOf p) (4 * trialN (mW p.bits))) ∧ t.mem = s.mem)
+    (by brun [hw.x0, hdr_enc (show fBad < 32 by decide), hw.scr.ld (d := 8 * fBad) (by simp only [fBad]; omega_arith),
+      h.2.2]) (by decide) (by decide) (by decide +kernel)) fun t ⟨⟨h5, hm⟩, k⟩ =>
+        ⟨⟨?_, by rw [hm]; exact h.2.1, by rw [hm]; exact h.2.2⟩, h5⟩
   exact h.1.frm (rs := []) (hw.congr' (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide))
     (by rw [hm]; exact Frm.refl _ _ _) (by simp) (by simp) k (by simp) (by simp)
 
@@ -448,14 +467,25 @@ theorem main_ct (M : Mont) (R : Kernel) : RelCT isa (Two M0) (main M.mm R.run) f
   refine ct_app' (a := [tableWrite]) (by simp) (by simp [sieve]) (Ψ := C3)
     (two_post (by rw [seqs_one]; exact two_map PP.ws (fun _ _ h => ms_ws h.1) tableWrite_ct)
       fun p s h => by rw [seqs_one]; exact stC_ok h) ?_
-  refine ct_app' (by simp [sieve]) (by simp [halveQ]) (Ψ := C4)
-    (two_post (two_map PP.ws (fun _ _ h => ⟨ms_ws h.1.1, pTab h.1.1.st.dims, h.2⟩) sieve_ct)
+  refine ct_app' (by simp [sieve]) (by simp) (Ψ := C4)
+    (two_post (two_map (fun p : PP => (p.ws, cOf p))
+      (fun _ _ h => ⟨ms_ws h.1.1, pTab h.1.1.st.dims, h.2, h.1.1.an⟩) sieve_ct)
       fun p s h => stD_ok h) ?_
+  -- Its flag: a `p` with a small factor is rejected before `q`.
+  refine RelCT.seq (two_piece (Ψ := C4R) [.x0] (ws fun _ _ h => h.1.st.ws) (by taint_decide)
+    fun p s h => flagP_ok h) (two_ite (fun _ _ _ h₁ h₂ => by rw [eval_zero, eval_zero, h₁.2, h₂.2]) ?_ ?_)
+  rotate_left
+  · rw [finUsed_split]
+    exact two_map (Φ' := UpF) (fun p : PP => (⟨p.B, p.Z, mW p.bits, p.op, p.up, p.L, 0⟩ : FQ))
+      (fun p s h => ⟨h.1.1.1.st.ws, h.1.1.1.st.args.usedP⟩)
+      (finStoreF_ct (fun _ _ h => h) 2 (.inr rfl) (by taint_decide) (by taint_decide))
+  refine two_map id (fun _ _ h => h.1.1) ?_
   -- `q` and its sieve.
   refine ct_app' (by simp [halveQ]) (by simp [sieve]) (Ψ := C5)
     (two_post (two_map PP.ws (fun _ _ h => ms_ws h.1) halveQ_ct) fun p s h => stE_ok h) ?_
   refine ct_app' (by simp [sieve]) (by simp) (Ψ := C6)
-    (two_post (two_map PP.ws (fun _ _ h => ⟨ms_ws h.1, pTab h.1.st.dims, h.2.1⟩) sieve_ct)
+    (two_post (two_map (fun p : PP => (p.ws, cOf p / 2))
+      (fun _ _ h => ⟨ms_ws h.1, pTab h.1.st.dims, h.2.1, h.1.an⟩) sieve_ct)
       fun p s h => stF_ok h) ?_
   -- The flag.
   simp only [seqs]

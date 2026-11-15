@@ -24,7 +24,9 @@ import VerifiedGarbage.Proof.Rsa.AArch64.Div
 
 `tests_ok`: one witness of `p`, all of `q`'s, then `p`'s others
 (`Proof.Ffdh.ParameterCandidate.sievedTests`); `main_ok`: `p`, its shape's checks, and the tests, as
-`Spec.Ffdh.sievedParameterCandidate` (`PEnd`).
+`Spec.Ffdh.sievedParameterCandidate` (`PEnd`): the candidate ends at the first
+of the shape's checks that fails (the congruence, `p`'s sieve, then `q`'s),
+each a part of the shape's flag (`shapeFlag`), which is then not zero.
 -/
 
 @[expose] public section
@@ -304,8 +306,59 @@ theorem main_ok (M : Mont) (R : Kernel) {p : PP} {s : State} (h : PH p s)
   have hr₄ : word t₄.mem p.B (8 * fBad) = resFlag p.g (BitVec.ofNat 64 (c % resMod p.g)) := by
     rw [f₄.word_eq dT (by omega_arith)]; exact hr₃
   -- The sieve of `p`.
-  refine wp_seqs_append (by simp [sieve]) (by simp [halveQ]) ?_
-  refine WP.mono (sieve_ok st₄ hT tab₄ hn₄ hr₄) fun t₅ ⟨st₅, hb₅, f₅, k₅⟩ => ?_
+  refine wp_seqs_append (by simp [sieve]) (by simp) ?_
+  refine WP.mono (sieve_ok st₄ hT tab₄ hn₄ hr₄) fun t₅₀ ⟨st₅₀, hb₅₀, f₅₀, k₅₀⟩ => ?_
+  -- Its flag: a `p` with a small factor is rejected before `q`.
+  have hs₅₀ := st₅₀.ws.scr
+  refine WP.seq (WP.mono (WP.keep [.x5] (Q := fun t =>
+      t.gpr .x5 = resFlag p.g (BitVec.ofNat 64 (c % resMod p.g)) ||| mask (anyPre c (4 * trialN (mW p.bits))) ∧
+        t.mem = t₅₀.mem) (by
+    brun [st₅₀.ws.x0, hdr_enc (show fBad < 32 by decide), hs₅₀.ld (d := 8 * fBad) (by omega_arith), hb₅₀])
+    (by decide) (by decide) (by decide +kernel)) fun t₅ ⟨⟨h5p, hm₅⟩, k₅'⟩ => ?_)
+  have st₅ : PSt p (mW p.bits) t₅ := st₅₀.step (rs := []) (st₅₀.ws.congr' (rs := [])
+    (by rw [hm₅]; exact Frm.refl _ _ _) (by simp) k₅' (by decide)) (by rw [hm₅]; exact Frm.refl _ _ _)
+    (by simp) (by simp) k₅'
+  have hb₅ : word t₅.mem p.B (8 * fBad) =
+      resFlag p.g (BitVec.ofNat 64 (c % resMod p.g)) ||| mask (anyPre c (4 * trialN (mW p.bits))) := by
+    rw [hm₅]; exact hb₅₀
+  have f₅ : Frm p.B [(8 * fBad, 8)] t₄.mem t₅.mem := by rw [hm₅]; exact f₅₀
+  have k₅ : Keep mmRegs t₄ t₅ := (k₅₀.trans k₅').mono (by decide)
+  refine WP.ite (resFlag p.g (BitVec.ofNat 64 (c % resMod p.g)) ||| mask (anyPre c (4 * trialN (mW p.bits))) == 0)
+    (by rw [eval_zero, h5p]) (fun hbp => ?_) (fun hbp => ?_)
+  rotate_left
+  · -- A `p` with a small factor.
+    have hz : resFlag p.g (BitVec.ofNat 64 (c % resMod p.g)) ||| mask (anyPre c (4 * trialN (mW p.bits))) ≠ 0 := by
+      simpa using hbp
+    have hz' : shapeFlag p.g (mW p.bits) c ≠ 0 := fun h0 => hz (by
+      simp only [shapeFlag, VG.Proof.Rsa.AArch64.or_eq_zero] at h0
+      exact (VG.Proof.Rsa.AArch64.or_eq_zero _ _).mpr h0.1.1)
+    have hshape : (Spec.Ffdh.generationShape p.bits p.g c && Spec.Ffdh.primeShape c &&
+        Spec.Ffdh.primeShape ((c - 1) / 2) && !Spec.RsaKeyGen.obviouslyComposite p.bits c &&
+        !Spec.RsaKeyGen.obviouslyComposite p.bits ((c - 1) / 2)) = false :=
+      Bool.eq_false_iff.mpr fun h' => hz' (hsh.mpr h')
+    rw [hshape]
+    simp only [Bool.not_false, ↓reduceIte]
+    have i₅ : InScr p.B p.Z s.mem t₅.mem := by
+      refine i₁.trans ((InScr.of_frm f₂ ?_).trans ((InScr.of_frm f₃ ?_).trans ((InScr.of_frm f₄ ?_).trans
+        (InScr.of_frm f₅ ?_))))
+      all_goals
+        intro r hr
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl <;> omega_arith
+    have hU₅ : word t₅.mem p.B (8 * kUsed) = BitVec.ofNat 64 p.L := by
+      rw [e f₅ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by decide)),
+        e f₄ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [kUsed, sFn]; omega_arith)),
+        e f₃ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by decide)),
+        e f₂ (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inl (by simp only [kUsed, sFn]; omega_arith))]
+      exact hU₁
+    have k₁₅ : Keep mmRegs s t₅ := ((((ht.keep.trans k₂).trans k₃).trans k₄).trans k₅).mono (by decide)
+    refine WP.mono (finUsed_end (s := s) st₅.ws.scr st₅.ws.x0 (by omega_arith) (by decide) hU₅
+      st₅.args.usedP st₅.ou i₅ k₁₅) fun t ht => ?_
+    show KEnd s t p.op p.up p.L 2 (p.r.length - (p.r.drop ((p.bits + 7) / 8)).length) none
+    rw [List.length_drop, show p.r.length - (p.r.length - (p.bits + 7) / 8) = p.L by simp only [PP.L] at hL ⊢; omega_arith]
+    exact ht
+  unfold mainQ
+  simp only [List.append_assoc]
   have hn₅ : wv t₅.mem p.B (slot (mW p.bits) aN) (mW p.bits) = c := by
     rw [f₅.wv_eq (fun r hr => by rw [List.mem_singleton.mp hr]; exact .inr (by omega_arith)) (by omega_arith)]; exact hn₄
   have tab₅ := tab₄.frm f₅ (fun r hr => by rw [List.mem_singleton.mp hr]; omega_arith) (by omega_arith)
