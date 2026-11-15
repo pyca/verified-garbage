@@ -266,41 +266,6 @@ theorem rd_off (m : Mem) (p : Addr) {w : Nat} (v : BitVec w) {d e : Nat} (hd : d
     (m.writeW (off p e) v).readW (off p d) 64 = m.readW (off p d) 64 :=
   Mem.readW_writeW_sep (sep_off p hd he (by omega_arith) hk h) (by decide)
 
-theorem mxMem_read (m : Mem) (p : Addr) (x : BitVec 32) {d : Nat} (hd : d + 8 ≤ 120) :
-    (mxMem m p x).readW (off p d) 64 = m.readW (off p d) 64 := by
-  simp only [mxMem]
-  rw [rd_off _ _ _ (by omega_arith) (by omega_arith) (by decide) (by omega_arith),
-    rd_off _ _ _ (by omega_arith) (by omega_arith) (by decide) (by omega_arith),
-    rd_off _ _ _ (by omega_arith) (by omega_arith) (by decide) (by omega_arith)]
-
-theorem mxMem_frame (m : Mem) (p : Addr) (x : BitVec 32) : Frame [wR p] m (mxMem m p x) :=
-  (((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (wR_contains p (d := 120) (n := 4) (by omega_arith)
-    (by omega_arith))).writeW (List.mem_singleton_self _) _ (wR_contains p (d := 120) (n := 4) (by omega_arith)
-    (by omega_arith))).writeW (List.mem_singleton_self _) _ (wR_contains p (d := 124) (n := 4) (by omega_arith)
-    (by omega_arith))
-
-theorem mxMem_mx (m : Mem) (p : Addr) (x : BitVec 32) :
-    (mxMem m p x).readW (off p 120) 32 = x &&& 0xffff := by
-  simp only [mxMem]
-  rw [Mem.readW_writeW_sep (sep_off p (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)) (by decide),
-    Mem.readW_writeW_self32]
-
-theorem mx_hi (x : BitVec 32) : (x &&& 0xffff).extractLsb' 16 16 = 0 := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.extractLsb'_toNat, BitVec.toNat_and]
-  rw [show (0xffff : BitVec 32).toNat = 2 ^ 16 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
-    Nat.shiftRight_eq_div_pow, show (0 : BitVec 16).toNat = 0 from rfl]
-  have := x.isLt
-  omega_arith
-
-theorem mx_bits (x : BitVec 32) : (x &&& 0xffff).extractLsb' 6 10 = x.extractLsb' 6 10 := by
-  apply BitVec.eq_of_toNat_eq
-  simp only [BitVec.extractLsb'_toNat, BitVec.toNat_and]
-  rw [show (0xffff : BitVec 32).toNat = 2 ^ 16 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod,
-    Nat.shiftRight_eq_div_pow, Nat.shiftRight_eq_div_pow]
-  have := x.isLt
-  omega_arith
-
 theorem rcx_val (x : BitVec 64) (h : 4 ≤ x.toNat) : (x >>> 2) - 1 = BitVec.ofNat 64 (x.toNat / 4 - 1) := by
   apply BitVec.eq_of_toNat_eq
   have := x.isLt
@@ -329,73 +294,69 @@ structure LInv (s₀ : State) (j : Nat) (s : State) : Prop where
   keep : ∀ r ∈ calleeSaved, s.gpr r = s₀.gpr r
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  mem : s.mem = mxMem s₀.mem (st s₀) s₀.mxcsr
+  mem : s.mem = s₀.mem
+  mxcsr : s.mxcsr = s₀.mxcsr
   acc : H2 s₀ < 4 → LaneInv (Rn s₀) (Poly1305.absorbAll (Rn s₀) (A0 s₀) (blks s₀ (4 * j))) s
 
 theorem pro_ok {s₀ : State} (hp : APre s₀) (hbig : 32 ≤ nb s₀) {s : State} (hg : s.gpr = s₀.gpr)
     (hm : s.mem = s₀.mem) (hk : VKeep s₀ s) :
-    WP isa (.block (consts ++ mxcsrIn ++ powers ++ loadHw ++ loadH ++
+    WP isa (.block (consts ++ powers ++ loadHw ++ loadH ++
       ([.mov .rcx (.reg .rdx), .shift .shr .rcx 2, .alu .sub .rcx (.imm 1)] : List Instr))) s
       (LInv s₀ 0) := by
   rw [powers_split]
   refine WP.block_append (WP.mono (consts_ok s) fun s₁ ⟨r8₁, r9₁, g₁, m₁, k₁⟩ => ?_)
   have rdi₁ : s₁.gpr .rdi = st s₀ := by rw [g₁ _ (by decide) (by decide), hg]
   have wr₁ : s₁.wr = s₀.wr := by rw [k₁.wr, hk.wr]
-  refine WP.block_append (WP.mono (mxcsrIn_ok s₁ (hp.inW wr₁ rdi₁ (by omega_arith)) (hp.inW wr₁ rdi₁ (by omega_arith))
-    (hp.inRW wr₁ rdi₁ (by omega_arith)) (hp.inRW wr₁ rdi₁ (by omega_arith)))
-    fun s₂ ⟨g₂, m₂, _, x₂, y₂, rd₂, wr₂⟩ => ?_)
-  have rdi₂ : s₂.gpr .rdi = st s₀ := by rw [g₂ _ (by decide), rdi₁]
-  have wr₂' : s₂.wr = s₀.wr := by rw [wr₂, wr₁]
-  have mm₂ : s₂.mem = mxMem s₀.mem (st s₀) s₀.mxcsr := by rw [m₂, m₁, hm, rdi₁, k₁.mxcsr, hk.mxcsr]
-  refine WP.block_append (WP.mono (loadRg_ok s₂ (hp.inRW wr₂' rdi₂ (by omega_arith)) (hp.inRW wr₂' rdi₂ (by omega_arith)))
+  have mm₁ : s₁.mem = s₀.mem := by rw [m₁, hm]
+  refine WP.block_append (WP.mono (loadRg_ok s₁ (hp.inRW wr₁ rdi₁ (by omega_arith)) (hp.inRW wr₁ rdi₁ (by omega_arith)))
     fun s₃ ⟨r10₃, r11₃, g₃, m₃, k₃⟩ => ?_)
-  have r8₃ : s₃.gpr .r8 = 0x3ffffff := by rw [g₃ _ (by decide) (by decide) (by decide), g₂ _ (by decide), r8₁]
+  have r8₃ : s₃.gpr .r8 = 0x3ffffff := by rw [g₃ _ (by decide) (by decide) (by decide), r8₁]
   refine WP.block_append (WP.mono (powersV_ok r8₃) fun s₄ ⟨v₄, Y₄⟩ => ?_)
-  obtain ⟨vg₄, vm₄, vrd₄, vwr₄, -⟩ := vec_keep v₄
-  have rdi₄ : s₄.gpr .rdi = st s₀ := by rw [vg₄, g₃ _ (by decide) (by decide) (by decide), rdi₂]
-  have wr₄ : s₄.wr = s₀.wr := by rw [vwr₄, k₃.wr, wr₂']
+  obtain ⟨vg₄, vm₄, vrd₄, vwr₄, vx₄⟩ := vec_keep v₄
+  have rdi₄ : s₄.gpr .rdi = st s₀ := by rw [vg₄, g₃ _ (by decide) (by decide) (by decide), rdi₁]
+  have wr₄ : s₄.wr = s₀.wr := by rw [vwr₄, k₃.wr, wr₁]
   refine WP.block_append (WP.mono (loadHw_ok s₄ (hp.inRW wr₄ rdi₄ (by omega_arith)) (hp.inRW wr₄ rdi₄ (by omega_arith))
     (hp.inRW wr₄ rdi₄ (by omega_arith))) fun s₅ ⟨a₅, b₅, c₅, g₅, m₅, k₅⟩ => ?_)
-  have mm₄ : s₄.mem = mxMem s₀.mem (st s₀) s₀.mxcsr := by rw [vm₄, m₃, mm₂]
+  have mm₄ : s₄.mem = s₀.mem := by rw [vm₄, m₃, mm₁]
   have ax₅ : (s₅.gpr .rax).toNat = H2 s₀ := by
-    rw [c₅, rdi₄, mm₄, mxMem_read _ _ _ (by omega_arith)]
+    rw [c₅, rdi₄, mm₄]
   refine WP.block_append (WP.mono (guard (R := fun s' => vec s₅ s' = s') (A := H2 s₀ < 4)
     (WP.mono (run_ok (fun h => by cases h) ldS_eq) fun _ h => h.eq)
     fun hA => loadH_ok (by rw [ax₅]; exact hA)) fun s₆ ⟨v₆, L₆⟩ => ?_)
-  obtain ⟨vg₆, vm₆, vrd₆, vwr₆, -⟩ := vec_keep v₆
+  obtain ⟨vg₆, vm₆, vrd₆, vwr₆, vx₆⟩ := vec_keep v₆
   refine WP.mono (rcx_ok s₆) fun s₇ ⟨c₇, g₇, m₇, k₇⟩ => ?_
   have gk : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 →
       s₇.gpr r = s₀.gpr r := by
     intro r a c e f g h
-    rw [g₇ r c, vg₆, g₅ r a g h, vg₄, g₃ r a g h, g₂ r a, g₁ r e f, hg]
+    rw [g₇ r c, vg₆, g₅ r a g h, vg₄, g₃ r a g h, g₁ r e f, hg]
   have hq₇ : ∀ r k, qw s₇ r k = qw s₆ r k := fun r k => k₇.qw_eq r k
   have hb' := hbig
   simp only [nb] at hb'
-  refine ⟨by simp only [nb]; omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_, fun hA => ?_⟩
+  refine ⟨by simp only [nb]; omega_arith, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_, ?_, fun hA => ?_⟩
   · exact gk _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
   · rw [gk _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]
     simp [blkAddr]
   · rw [c₇, vg₆, g₅ _ (by decide) (by decide) (by decide), vg₄, g₃ _ (by decide) (by decide) (by decide),
-      g₂ _ (by decide), g₁ _ (by decide) (by decide), hg, rcx_val _ (by omega_arith), nb, Nat.sub_zero]
+      g₁ _ (by decide) (by decide), hg, rcx_val _ (by omega_arith), nb, Nat.sub_zero]
   · exact gk _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
   · rw [g₇ _ (by decide), vg₆, g₅ _ (by decide) (by decide) (by decide), vg₄,
-      g₃ _ (by decide) (by decide) (by decide), g₂ _ (by decide), r8₁]
+      g₃ _ (by decide) (by decide) (by decide), r8₁]
   · rw [g₇ _ (by decide), vg₆, g₅ _ (by decide) (by decide) (by decide), vg₄,
-      g₃ _ (by decide) (by decide) (by decide), g₂ _ (by decide), r9₁]
+      g₃ _ (by decide) (by decide) (by decide), r9₁]
   · obtain ⟨a, c, -, -, e, f, g, h⟩ := cs_ne hr
     exact gk r a c e f g h
-  · rw [k₇.rd, vrd₆, k₅.rd, vrd₄, k₃.rd, rd₂, k₁.rd, hk.rd]
+  · rw [k₇.rd, vrd₆, k₅.rd, vrd₄, k₃.rd, k₁.rd, hk.rd]
   · rw [k₇.wr, vwr₆, k₅.wr, wr₄]
   · rw [m₇, vm₆, m₅, mm₄]
+  · rw [k₇.mxcsr, vx₆, k₅.mxcsr, vx₄, k₃.mxcsr, k₁.mxcsr, hk.mxcsr]
   · -- The accumulator in lane 0, `Y` from `powers`.
     have L := L₆ hA
     have rN₃ : rN s₃ = Rn s₀ := by
       simp only [rN, Rn, R0, R1]
-      rw [r10₃, r11₃, rdi₂, mm₂, mxMem_read _ _ _ (by omega_arith), mxMem_read _ _ _ (by omega_arith)]
+      rw [r10₃, r11₃, rdi₁, mm₁]
     have hN₅ : hN s₅ = A0 s₀ := by
       simp only [hN, A0]
-      rw [a₅, b₅, c₅, rdi₄, mm₄, mxMem_read _ _ _ (by omega_arith), mxMem_read _ _ _ (by omega_arith),
-        mxMem_read _ _ _ (by omega_arith), leNum_acc]
+      rw [a₅, b₅, c₅, rdi₄, mm₄, leNum_acc]
     have Y₆ : YInv s₆ (Rn s₀) := by
       rw [← rN₃]
       exact (Y₄.of_y fun i hi k hk => k₅.qw_eq _ _).of_y L.y
@@ -419,12 +380,6 @@ theorem ctx_of {s₀ : State} (hp : APre s₀) {s : State} (hrd : s.rd = s₀.rd
   rw [hsi, blkAddr, Offset.add_add]
   exact Offset.contains_base _ (by rcases hi with rfl | rfl <;> omega_arith) (by rcases hi with rfl | rfl <;> omega_arith)
 
-/-- The group of blocks at `rsi`, from the memory the prologue leaves. -/
-theorem grp_bytes {s₀ : State} (hp : APre s₀) {j : Nat} (hj : 4 * j + 4 ≤ nb s₀) :
-    bytesAt (mxMem s₀.mem (st s₀) s₀.mxcsr) (blkAddr s₀ (4 * j)) 64 = bytesAt s₀.mem (blkAddr s₀ (4 * j)) 64 :=
-  bytesAt_frame (mxMem_frame _ _ _) (by
-    simpa using (hp.st_bl.symm.sub_left (grp_sub hj)).sub_right (sub_sR _ (by omega_arith))) (by omega_arith)
-
 theorem absorb_grp (s₀ : State) (R X : Nat) (j : Nat) :
     Poly1305.absorbAll R (Poly1305.absorbAll R X (blks s₀ (4 * j))) (bytesAt s₀.mem (blkAddr s₀ (4 * j)) 64) =
       Poly1305.absorbAll R X (blks s₀ (4 * (j + 1))) := by
@@ -446,11 +401,11 @@ theorem group_body_ok {s₀ : State} (hp : APre s₀) {j : Nat} (hj : j + 1 < nb
     fun hA => group_ok h.r8 h.r9 hc (h.acc hA)) fun s₁ ⟨v₁, G₁⟩ => ?_)
   · exact WP.block_append (WP.mono (run_ok (fun _ => hc) addS_eq) fun s₁ h₁ =>
       WP.mono (run_ok (fun h => by cases h) mulS_eq) fun s₂ h₂ => vec_trans h₁.eq h₂.eq)
-  obtain ⟨vg₁, vm₁, vrd₁, vwr₁, -⟩ := vec_keep v₁
+  obtain ⟨vg₁, vm₁, vrd₁, vwr₁, vx₁⟩ := vec_keep v₁
   refine WP.mono (adv_ok s₁) fun s₂ ⟨si₂, cx₂, zf₂, g₂, m₂, k₂⟩ => ?_
   have gk : ∀ r, r ≠ .rsi → r ≠ .rcx → s₂.gpr r = s.gpr r := fun r a b => by rw [g₂ r a b, vg₁]
   have hcx : s₁.gpr .rcx = BitVec.ofNat 64 (nb s₀ / 4 - 1 - j) := by rw [vg₁, h.rcx]
-  refine ⟨⟨hj, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_, fun hA => ?_⟩, ?_⟩
+  refine ⟨⟨hj, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_, ?_, fun hA => ?_⟩, ?_⟩
   · rw [gk _ (by decide) (by decide), h.rdi]
   · rw [si₂, vg₁, h.rsi, add64]
   · rw [cx₂, hcx, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_arith),
@@ -463,8 +418,9 @@ theorem group_body_ok {s₀ : State} (hp : APre s₀) {j : Nat} (hj : j + 1 < nb
   · rw [k₂.rd, vrd₁, h.rd]
   · rw [k₂.wr, vwr₁, h.wr]
   · rw [m₂, vm₁, h.mem]
+  · rw [k₂.mxcsr, vx₁, h.mxcsr]
   · have G := (G₁ hA).2
-    rw [h.mem, h.rsi, grp_bytes hp (by omega_arith), absorb_grp] at G
+    rw [h.mem, h.rsi, absorb_grp] at G
     exact LaneInv.of_qw (fun r k => k₂.qw_eq r k) G
   · rw [zf₂, hcx, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
       Offset.ofNat_sub_ofNat_beq (by omega_arith) (by omega_arith)]
@@ -485,16 +441,16 @@ theorem loop_ok {s₀ : State} (hp : APre s₀) (hG : 1 < nb s₀ / 4) {s : Stat
 
 /-! ## The epilogue -/
 
-theorem epi_eq : consts2 ++ last ++ sumLanes ++ fullCarry ++ reduce ++ mxcsrOut ++
+theorem epi_eq : consts2 ++ last ++ sumLanes ++ fullCarry ++ reduce ++
     Impl.Poly1305.X86_64.Avx2.storeH ++
     ([.vop .vzeroupper, .alu .add .rsi (.imm 64), .alu .and .rdx (.imm 3)] : List Instr) =
-    consts2 ++ (last ++ (sumLanes ++ ((fullCarry ++ reduce) ++ (mxcsrOut ++
+    consts2 ++ (last ++ (sumLanes ++ ((fullCarry ++ reduce) ++
       (Impl.Poly1305.X86_64.Avx2.storeH ++
-        ([.vop .vzeroupper, .alu .add .rsi (.imm 64), .alu .and .rdx (.imm 3)] : List Instr)))))) := by
+        ([.vop .vzeroupper, .alu .add .rsi (.imm 64), .alu .and .rdx (.imm 3)] : List Instr))))) := by
   simp only [List.append_assoc]
 
 theorem epi_ok {s₀ : State} (hp : APre s₀) {s : State} (h : LInv s₀ (nb s₀ / 4 - 1) s) :
-    WP isa (.block (consts2 ++ last ++ sumLanes ++ fullCarry ++ reduce ++ mxcsrOut ++
+    WP isa (.block (consts2 ++ last ++ sumLanes ++ fullCarry ++ reduce ++
       Impl.Poly1305.X86_64.Avx2.storeH ++
       ([.vop .vzeroupper, .alu .add .rsi (.imm 64), .alu .and .rdx (.imm 3)] : List Instr))) s
       (TailPre s₀ (4 * (nb s₀ / 4))) := by
@@ -532,25 +488,18 @@ theorem epi_ok {s₀ : State} (hp : APre s₀) {s : State} (h : LInv s₀ (nb s�
     rw [vg₄, vg₃, vg₂, gk₁ r a b]
   have rdi₄ : s₄.gpr .rdi = st s₀ := by rw [g₄ _ (by decide) (by decide), h.rdi]
   have wr₄ : s₄.wr = s₀.wr := by rw [vwr₄, vwr₃, vwr₂, k₁.wr, h.wr]
-  have mm₄ : s₄.mem = mxMem s₀.mem (st s₀) s₀.mxcsr := by rw [vm₄, vm₃, vm₂, m₁, h.mem]
-  -- MXCSR restored.
-  refine WP.block_append (WP.mono (mxcsrOut_ok s₄ (hp.inRW wr₄ rdi₄ (by omega_arith))
-    (by rw [mm₄, rdi₄, mxMem_mx]; exact mx_hi _)) fun s₅ ⟨g₅, m₅, mx₅, x₅, y₅, rd₅, wr₅⟩ => ?_)
-  have rdi₅ : s₅.gpr .rdi = st s₀ := by rw [g₅, rdi₄]
-  have wr₅' : s₅.wr = s₀.wr := by rw [wr₅, wr₄]
+  have mm₄ : s₄.mem = s₀.mem := by rw [vm₄, vm₃, vm₂, m₁, h.mem]
   -- The accumulator stored.
-  refine WP.block_append (WP.mono (storeH_ok fun d hd => hp.inW wr₅' rdi₅ (by omega_arith)) fun s₆ sp₆ => ?_)
+  refine WP.block_append (WP.mono (storeH_ok fun d hd => hp.inW wr₄ rdi₄ (by omega_arith)) fun s₆ sp₆ => ?_)
   refine WP.mono (fin3_ok s₆) fun s₇ ⟨si₇, dx₇, g₇, m₇, mx₇, rd₇, wr₇⟩ => ?_
   have g₆ : ∀ r, r ≠ .rax → r ≠ .r10 → s₆.gpr r = s.gpr r := fun r a b => by
-    rw [sp₆.gpr, g₅, g₄ r a b]
-  have hmx : s₇.mxcsr = s₀.mxcsr &&& 0xffff := by
-    rw [mx₇, sp₆.mxcsr, mx₅, mm₄, rdi₄, mxMem_mx]
+    rw [sp₆.gpr, g₄ r a b]
+  have hmx : s₇.mxcsr = s₀.mxcsr := by
+    rw [mx₇, sp₆.mxcsr, vx₄, vx₃, vx₂, k₁.mxcsr, h.mxcsr]
   have hframe : Frame [hR (st s₀), wR (st s₀)] s₀.mem s₇.mem := by
-    rw [m₇]
-    refine ((mxMem_frame s₀.mem (st s₀) s₀.mxcsr).mono (by simp)).trans ?_
-    rw [← mm₄, ← m₅]
-    exact sp₆.frame.mono (by rw [rdi₅]; simp)
-  refine ⟨by omega_arith, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, hframe, by rw [hmx, mx_bits], fun key msg hr => ?_⟩
+    rw [m₇, ← mm₄]
+    exact sp₆.frame.mono (by rw [rdi₄]; simp)
+  refine ⟨by omega_arith, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, hframe, by rw [hmx], fun key msg hr => ?_⟩
   · rw [g₇ _ (by decide) (by decide), g₆ _ (by decide) (by decide), h.rdi]
   · rw [si₇, g₆ _ (by decide) (by decide), h.rsi, add64, Nat.sub_add_cancel h1]
   · rw [dx₇, g₆ _ (by decide) (by decide), h.rdx]
@@ -560,8 +509,8 @@ theorem epi_ok {s₀ : State} (hp : APre s₀) {s : State} (h : LInv s₀ (nb s�
     omega_arith
   · obtain ⟨a, -, c, d, -, -, g, -⟩ := cs_ne hr
     rw [g₇ r d c, g₆ r a g, h.keep r hr]
-  · rw [rd₇, sp₆.rd, rd₅, vrd₄, vrd₃, vrd₂, k₁.rd, h.rd]
-  · rw [wr₇, sp₆.wr, wr₅']
+  · rw [rd₇, sp₆.rd, vrd₄, vrd₃, vrd₂, k₁.rd, h.rd]
+  · rw [wr₇, sp₆.wr, wr₄]
   · -- The accumulator represents the blocks absorbed.
     have hA := H2_lt hr
     obtain ⟨hlen, hkey, hacc⟩ := hr
@@ -571,14 +520,14 @@ theorem epi_ok {s₀ : State} (hp : APre s₀) {s : State} (h : LInv s₀ (nb s�
     have L := (L₂ hA).2.2
     have S := (S₃ hA).h
     obtain ⟨-, F, Fb⟩ := F₄ hA
-    rw [gk₁ _ (by decide) (by decide), h.rsi, m₁, h.mem, grp_bytes hp (by omega_arith), absorb_grp, Nat.sub_add_cancel h1] at L
-    have e₅ : h0 s₅ = hv s₄ 0 := by
-      funext i; simp only [h0, hv, qw_of x₅ y₅]
-    obtain ⟨W, -, -⟩ := Limbs26.words_val (o := h0 s₅) (by rw [e₅]; exact Fb)
+    rw [gk₁ _ (by decide) (by decide), h.rsi, m₁, h.mem, absorb_grp, Nat.sub_add_cancel h1] at L
+    have e₅ : h0 s₄ = hv s₄ 0 := by
+      funext i; simp only [h0, hv]
+    obtain ⟨W, -, -⟩ := Limbs26.words_val (o := h0 s₄) (by rw [e₅]; exact Fb)
     refine ⟨?_, ?_, ?_⟩
     · rw [List.length_append, Poly1305.length_bytesAt]; omega_arith
     · rw [← off_24, key_frame hframe, hkey']
-    · rw [leNum_acc, m₇, ← rdi₅, sp₆.w0, sp₆.w1, sp₆.w2, W, e₅, F, ← hkey', clamp_key,
+    · rw [leNum_acc, m₇, ← rdi₄, sp₆.w0, sp₆.w1, sp₆.w2, W, e₅, F, ← hkey', clamp_key,
         Poly1305.accumulate_append hlen]
       change _ = Poly1305.absorbAll (Rn s₀) (accumulate (Rn s₀) msg) _
       rw [hA0, (S.trans L : _ ≡ _ [MOD P]),

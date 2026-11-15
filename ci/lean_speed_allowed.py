@@ -172,7 +172,7 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/Poly1305/PPC64LE/Setup.lean": 6,
     "VerifiedGarbage/Proof/Poly1305/PPC64LE/Steps.lean": 9,
     "VerifiedGarbage/Proof/Poly1305/X86/Blocks.lean": 3,
-    "VerifiedGarbage/Proof/Poly1305/X86_64/Avx2/Gpr.lean": 6,
+    "VerifiedGarbage/Proof/Poly1305/X86_64/Avx2/Gpr.lean": 5,
     "VerifiedGarbage/Proof/Poly1305/X86_64/Avx2/Powers.lean": 6,
     "VerifiedGarbage/Proof/Poly1305/X86_64/Avx512/Gpr.lean": 3,
     "VerifiedGarbage/Proof/Poly1305/X86_64/Blocks.lean": 2,
