@@ -3,8 +3,6 @@ module
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Halve
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Base
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.TrialTable
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtGPow
 import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ParameterCandidate.Phase
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Base
