@@ -34,7 +34,6 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.SigEval
 import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ConstsSat
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.SigEval
 meta import VerifiedGarbage.Proof.Framework.Sig
 public meta import Lean.Elab.Tactic.ElabTerm
@@ -984,7 +983,7 @@ uses at most `k ≥ 1` units of stack (a goal `adLe k _ = true`): the kernel
 evaluates its parts that do not call `v`. A sponge function's lemma is tried
 only on that function (`code_head`), and the code is put in weak head normal
 form once for its five shapes. -/
-tactic_template "sponge_depth " v:ident : tactic =>
+macro "sponge_depth " v:ident : tactic =>
   `(tactic| repeat' (first
     | (closed_in $v; decide +kernel)
     | (code_head Impl.Sha3.AArch64.Stream.absorbWith
@@ -1098,14 +1097,14 @@ end
 
 /-- The precondition of a contract under `abi`, built with `Sig.contract`, of
 a concrete state (`sig_pre`). -/
-tactic_template "wipe_pre " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
+macro "wipe_pre " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic|
   (sig_pre [$ls,*]
    and_intros
    all_goals first | rfl | decide | exact Region.disjoint_of_sep (by decide)))
 
 /-- A state satisfying the precondition of a contract under `abi`, built with
 `Sig.contract`. -/
-tactic_template "wipe_sat " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" " using " w:term : tactic => `(tactic|
+macro "wipe_sat " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" " using " w:term : tactic => `(tactic|
   (refine ⟨$w, ?_⟩
    wipe_pre [$ls,*]))
 
@@ -1117,7 +1116,7 @@ theorem disjoint_of_seps {t : Region} {l : List Region} (h : l.all (fun q => Reg
 /-- What `abi.withConsts constants` says of the tables, in a state whose
 writable regions are `wr` and whose memory holds the tables by `h`, for 160
 bytes of stack below `0x100000`. -/
-tactic_template "wipe_consts " wr:term " held " h:term : tactic => `(tactic|
+macro "wipe_consts " wr:term " held " h:term : tactic => `(tactic|
   (refine ⟨?_, $h, ?_, ?_⟩
    · rfl
    · intro r hr

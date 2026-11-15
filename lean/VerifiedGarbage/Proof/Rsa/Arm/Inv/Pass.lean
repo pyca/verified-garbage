@@ -14,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Reduce
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-public import VerifiedGarbage.Proof.Framework.TacticTemplate
 
 -- separate module: the passes' proofs are most of the inverse's, and `InvLoop.lean` rebuilds without them
 
@@ -2103,7 +2102,7 @@ theorem top_sign (m : Mem) (B : BitVec 32) (W j k : Nat) :
 /-! ## The `f, g` pass -/
 
 /-- Reads of the scratch through stores to it, at literal offsets. -/
-tactic_template "scr_simp " h:term : tactic => `(tactic| simp only [SG.wr, SG.wrC, scr, coefOff, corrOff, carryOff,
+macro "scr_simp " h:term : tactic => `(tactic| simp only [SG.wr, SG.wrC, scr, coefOff, corrOff, carryOff,
   Nat.reduceMul, Nat.reduceAdd, Nat.reduceMod, Nat.reduceLeDiff, ne_eq, Nat.reduceEqDiff, not_false_eq_true,
   SG.scr_ne $h, Mem.readW_writeW_self32])
 
