@@ -2607,6 +2607,222 @@ theorem stepKD_spec (τ : T) (i : Instr) :
   case mul r => exact other (by rw [stepKD, stepKDFn, stepK, mulStepKD_eq])
   all_goals exact other rfl
 
+/-! ### Steps that give the bases they were given
+
+Most instructions write a register that holds no known address, and the
+bases after them are the bases before them. `stepKDFn` gives a taint whose
+bases are a term that filters the old ones (`killK`), and the kernel, which
+evaluates a taint's fields when they are read, then filters them again at
+every instruction: a list it builds cell by cell out of the list the
+instruction before built. `stepKeepFn` decides first whether the bases change
+(`noBase`), and gives the taint the bases it was given when they do not: the
+same term, so that the kernel evaluates `noBase b d` once for the bases `b`
+and the register `d`, and finds it again for as long as the bases stay. -/
+
+section
+open VG.KList (all filter)
+
+/-- No base in `b` is of the register `d`. -/
+def noBase (b : List (Reg × Nat × Nat)) (d : Reg) : Bool := all b fun p => !regEq p.1 d
+
+/-- `noBase`, of the register a source operand is. -/
+def noBaseSrc (b : List (Reg × Nat × Nat)) : Src → Bool
+  | .reg r => noBase b r
+  | _ => true
+
+/-- The taint `k` gives of the bases after an instruction: `b`, those before
+it, if `same`, and `slow` otherwise. -/
+def keepBases (same : Bool) (b slow : List (Reg × Nat × Nat)) (k : List (Reg × Nat × Nat) → T) : Option T :=
+  bif same then some (k b) else some (k slow)
+
+def aluStepKeep (τ : T) (op : AluOp) (d : Reg) (src : Src) (wide : Bool) : Option T :=
+  bif srcOkK τ src then
+    match τ with
+    | ⟨rg, f, l, b, sl, _, x⟩ =>
+      let p := pub τ d && srcPub τ src && (!usesCarry op || f)
+      keepBases (noBase b d) b (aluBasesK τ op d src wide) fun b' =>
+        ⟨bif writes op then setK τ d p else rg, p, l, b', sl, .empty, x⟩
+  else none
+
+/-- `stepKDFn`, giving the bases it was given when the instruction does not
+change them (`stepKeepFn_eq`). -/
+def stepKeepFn : Instr → Step
+  | .mov d src => ⟨fun τ =>
+    bif srcOkK τ src then
+      match τ with
+      | ⟨_, f, l, b, sl, _, x⟩ =>
+        keepBases (noBase b d && noBaseSrc b src) b (movBasesK τ d src) fun b' =>
+          ⟨setK τ d (srcPub τ src || loadPubK τ 8 src), f, l, b', sl, .empty, x⟩
+    else none⟩
+  | .mov32 d src => ⟨fun τ =>
+    bif srcOkK τ src then
+      match τ with
+      | ⟨_, f, l, b, sl, _, x⟩ =>
+        keepBases (noBase b d) b (killK τ d) fun b' =>
+          ⟨setK τ d (srcPub τ src || loadPubK τ 4 src || loPub τ src), f, l, b', sl, .empty, x⟩
+    else none⟩
+  | .alu op d src => ⟨fun τ => aluStepKeep τ op d src true⟩
+  | .alu32 op d src => ⟨fun τ => aluStepKeep τ op d src false⟩
+  | .shift32 _ d _ | .shift _ d _ | .btr d _ => ⟨fun τ =>
+    match τ with
+    | ⟨rg, f, l, b, sl, _, x⟩ =>
+      keepBases (noBase b d) b (killK τ d) fun b' => ⟨rg, f && pub τ d, l, b', sl, .empty, x⟩⟩
+  | .shiftx _ d r c => ⟨fun τ =>
+    match τ with
+    | ⟨_, f, l, b, sl, _, x⟩ =>
+      keepBases (noBase b d) b (killK τ d) fun b' => ⟨setK τ d (pub τ r && pub τ c), f, l, b', sl, .empty, x⟩⟩
+  | .rorx32 d r _ | .rorx d r _ => ⟨fun τ =>
+    match τ with
+    | ⟨_, f, l, b, sl, _, x⟩ =>
+      keepBases (noBase b d) b (killK τ d) fun b' => ⟨setK τ d (pub τ r), f, l, b', sl, .empty, x⟩⟩
+  | .andn32 d a c | .andn d a c => ⟨fun τ =>
+    match τ with
+    | ⟨_, _, l, b, sl, _, x⟩ =>
+      let p := pub τ a && pub τ c
+      keepBases (noBase b d) b (killK τ d) fun b' => ⟨setK τ d p, p, l, b', sl, .empty, x⟩⟩
+  | .imul d r => ⟨fun τ =>
+    match τ with
+    | ⟨_, _, l, b, sl, _, x⟩ =>
+      let p := pub τ d && pub τ r
+      keepBases (noBase b d) b (killK τ d) fun b' => ⟨setK τ d p, p, l, b', sl, .empty, x⟩⟩
+  | .movImm64 d _ => ⟨fun τ => match τ with
+    | ⟨_, f, l, b, sl, _, x⟩ =>
+      keepBases (noBase b d) b (killK τ d) fun b' => ⟨setK τ d true, f, l, b', sl, .empty, x⟩⟩
+  | .movzx8 d m | .movzx16 d m => ⟨fun τ =>
+    match τ with
+    | ⟨_, f, l, b, sl, _, x⟩ =>
+      bif memPub τ m then
+        keepBases (noBase b d) b (killK τ d) fun b' => ⟨setK τ d false, f, l, b', sl, .empty, x⟩
+      else none⟩
+  | .mulx hi lo src => ⟨fun τ =>
+    bif srcOkK τ src then
+      match τ with
+      | ⟨rg, f, l, b, sl, _, x⟩ =>
+        let p := pub τ .rdx && srcPub τ src
+        keepBases (noBase b hi && noBase b lo) b (filter (fun p => !regEq p.1 lo) (killK τ hi)) fun b' =>
+          ⟨bif p then (rg.insert lo).insert hi else (rg.erase lo).erase hi, f, l, b', sl, .empty, x⟩
+    else none⟩
+  | .adcx d src | .adox d src => ⟨fun τ =>
+    bif srcOkK τ src then
+      match τ with
+      | ⟨_, f, l, b, sl, _, x⟩ =>
+        let p := pub τ d && srcPub τ src && f
+        keepBases (noBase b d) b (killK τ d) fun b' => ⟨setK τ d p, p, l, b', sl, .empty, x⟩
+    else none⟩
+  | .cmov _ d src => ⟨fun τ =>
+    bif srcOkK τ src then
+      match τ with
+      | ⟨_, f, l, b, sl, _, x⟩ =>
+        let p := pub τ d && (srcPub τ src || loadPubK τ 8 src) && f
+        keepBases (noBase b d) b (killK τ d) fun b' => ⟨setK τ d p, f, l, b', sl, .empty, x⟩
+    else none⟩
+  | .mul r => ⟨fun τ =>
+    match τ with
+    | ⟨rg, _, l, b, sl, _, x⟩ =>
+      let p := pub τ .rax && pub τ r
+      keepBases (noBase b .rax && noBase b .rdx) b (filter (fun q => !regEq q.1 .rdx) (killK τ .rax)) fun b' =>
+        ⟨bif p then (rg.insert .rax).insert .rdx else (rg.erase .rax).erase .rdx, p, l, b', sl, .empty, x⟩⟩
+  | i => stepKDFn i
+
+theorem keepBases_eq {same : Bool} {b slow : List (Reg × Nat × Nat)} (k : List (Reg × Nat × Nat) → T)
+    (h : same = true → slow = b) : keepBases same b slow k = some (k slow) := by
+  cases same
+  · rfl
+  · rw [h rfl]; rfl
+
+theorem filter_noBase {b : List (Reg × Nat × Nat)} {d : Reg} (h : noBase b d = true) :
+    filter (fun p => !regEq p.1 d) b = b := by
+  rw [noBase, KList.all_eq, List.all_eq_true] at h
+  rw [KList.filter_eq]
+  exact List.filter_eq_self.mpr h
+
+theorem select_noBase {b : List (Reg × Nat × Nat)} {d : Reg} (q : Reg × Nat × Nat → Bool)
+    (h : noBase b d = true) : filter (fun p => regEq p.1 d && q p) b = [] := by
+  rw [noBase, KList.all_eq, List.all_eq_true] at h
+  rw [KList.filter_eq, List.filter_eq_nil_iff]
+  intro a ha
+  have := h a ha
+  cases hr : regEq a.1 d
+  · simp
+  · rw [hr] at this; cases this
+
+theorem killK_noBase {τ : T} {d : Reg} (h : noBase τ.bases d = true) : killK τ d = τ.bases :=
+  filter_noBase h
+
+theorem movBasesK_noBase {τ : T} {d : Reg} {src : Src}
+    (h : (noBase τ.bases d && noBaseSrc τ.bases src) = true) : movBasesK τ d src = τ.bases := by
+  rw [Bool.and_eq_true] at h
+  cases src with
+  | reg r =>
+    have h2 := select_noBase (fun _ => true) (show noBase τ.bases r = true from h.2)
+    simp only [Bool.and_true] at h2
+    simp only [movBasesK, killK_noBase h.1, h2, KList.map_eq, KList.append_eq, List.map_nil, List.append_nil]
+  | _ => exact killK_noBase h.1
+
+theorem aluBasesK_noBase {τ : T} {op : AluOp} {d : Reg} {src : Src} {wide : Bool}
+    (h : noBase τ.bases d = true) : aluBasesK τ op d src wide = τ.bases := by
+  have h2 := select_noBase (fun _ => true) h
+  simp only [Bool.and_true] at h2
+  have h3 : ∀ v : Nat, filter (fun p => regEq p.1 d && Nat.ble v p.2.2) τ.bases = [] := fun v =>
+    select_noBase (fun p => Nat.ble v p.2.2) h
+  cases op <;> cases src <;> simp only [aluBasesK, killK_noBase h] <;>
+    (cases wide && !_ <;> simp only [Bool.cond_true, Bool.cond_false, h2, h3, KList.map_eq, KList.append_eq,
+      List.map_nil, List.append_nil])
+
+theorem stepKeepFn_eq (i : Instr) (τ : T) : (stepKeepFn i).run τ = (stepKDFn i).run τ := by
+  obtain ⟨rg, f, l, b, sl, lo, x⟩ := τ
+  have hk : ∀ {d : Reg}, noBase b d = true → killK ⟨rg, f, l, b, sl, lo, x⟩ d = b := fun h =>
+    killK_noBase (τ := ⟨rg, f, l, b, sl, lo, x⟩) h
+  have hm : ∀ {d : Reg} {src : Src}, (noBase b d && noBaseSrc b src) = true →
+      movBasesK ⟨rg, f, l, b, sl, lo, x⟩ d src = b := fun h =>
+    movBasesK_noBase (τ := ⟨rg, f, l, b, sl, lo, x⟩) h
+  have ha : ∀ {op : AluOp} {d : Reg} {src : Src} {wide : Bool}, noBase b d = true →
+      aluBasesK ⟨rg, f, l, b, sl, lo, x⟩ op d src wide = b := fun h =>
+    aluBasesK_noBase (τ := ⟨rg, f, l, b, sl, lo, x⟩) h
+  cases i <;> try rfl
+  case mov d src =>
+    simp only [stepKeepFn, stepKDFn]
+    cases srcOkK _ src <;> simp only [Bool.cond_true, Bool.cond_false]
+    exact keepBases_eq _ hm
+  case alu op d src | alu32 op d src =>
+    simp only [stepKeepFn, stepKDFn, aluStepKeep, aluStepK]
+    cases srcOkK _ src <;> simp only [Bool.cond_true, Bool.cond_false]
+    exact keepBases_eq _ ha
+  case mulx hi lo' src =>
+    simp only [stepKeepFn, stepKDFn, mulxStepK]
+    cases srcOkK _ src <;> simp only [Bool.cond_true, Bool.cond_false]
+    refine keepBases_eq _ fun h => ?_
+    rw [Bool.and_eq_true] at h
+    rw [hk h.1]; exact filter_noBase h.2
+  case mul r =>
+    simp only [stepKeepFn, stepKDFn, mulStepKD]
+    refine keepBases_eq _ fun h => ?_
+    rw [Bool.and_eq_true] at h
+    rw [hk h.1]; exact filter_noBase h.2
+  case movzx8 d m | movzx16 d m =>
+    simp only [stepKeepFn, stepKDFn]
+    cases memPub _ m <;> simp only [Bool.cond_true, Bool.cond_false]
+    exact keepBases_eq _ hk
+  case mov32 d src | adcx d src | adox d src | cmov _ d src =>
+    simp only [stepKeepFn, stepKDFn, adxStepK, cmovStepK]
+    cases srcOkK _ src <;> simp only [Bool.cond_true, Bool.cond_false]
+    exact keepBases_eq _ hk
+  all_goals (simp only [stepKeepFn, stepKDFn]; exact keepBases_eq _ hk)
+
+theorem stepKeepFn_eq' (i : Instr) : stepKeepFn i = stepKDFn i := by
+  have h := funext (stepKeepFn_eq i)
+  cases h₁ : stepKeepFn i; cases h₂ : stepKDFn i
+  rw [h₁, h₂] at h
+  exact congrArg Step.mk h
+
+/-- `stepKD`, giving the bases it was given when the instruction does not change them. -/
+def stepKeep (τ : T) (i : Instr) : Option T := (stepKeepFn i).run τ
+
+theorem stepKeep_eq : stepKeep = stepKD := by
+  funext τ i; exact stepKeepFn_eq i τ
+
+end
+
 end Taint
 
 /-- Taint tracking for x86-64. -/

@@ -456,8 +456,9 @@ analysis and its results are the same) written for the kernel:
   Most instructions (`isPlain`) need none of what the analysis adds to the
   base analysis: their step is the base step (`fastFn`), with the bounds of
   the register they write dropped. Stores without an index register only
-  need the pointers in slots (`fastStore`), and look for the slot of a
-  public value with `mem3R`; loads (`mov r, [m]`) need `post` only when a
+  need the pointers in slots (`fastStore`), look for the slot of a
+  public value with `mem3R`, and give the taint they were given when they
+  leave the slots as they are (`storeR`); loads (`mov r, [m]`) need `post` only when a
   slot holds a pointer (`fastLoad`), and `argPost` only when the argument
   area has public or pointer bytes; constants, `mul` and `mulx` only change
   bounds (`fastU`). `stepFn1 i`, which the kernel evaluates, is `stepFn i`
@@ -511,6 +512,21 @@ def natsEqC (a b : List Nat) : Bool := a == b
     (fun b => List.casesOn (motive := fun _ => Bool) b true fun _ _ => false)
     (fun x _ ih b => List.casesOn (motive := fun _ => Bool) b false fun y b' => Nat.beq x y && ih b') a b
 
+/-- `k rg`, with the set `rg` evaluated: what `k` is given is a numeral. -/
+def forceRegs {α : Type} (rg : RegSet Reg) (k : RegSet Reg → α) : α :=
+  Nat.casesOn (motive := fun _ => α) rg.bits (k ⟨0⟩) (fun n => k ⟨Nat.succ n⟩)
+
+/-- `k t`, with the registers and the flags of `t` evaluated. -/
+def forceT {α : Type} (t : Taint.T) (k : Taint.T → α) : α :=
+  match t with
+  | ⟨rg, f, l, b, sl, lo, x⟩ =>
+    forceRegs rg fun rg =>
+      Bool.casesOn (motive := fun _ => α) f (k ⟨rg, false, l, b, sl, lo, x⟩) (k ⟨rg, true, l, b, sl, lo, x⟩)
+
+/-- `k l`, with the list `l` evaluated to its first cell. -/
+def forceList {α β : Type} (l : List β) (k : List β → α) : α :=
+  List.casesOn (motive := fun _ => α) l (k []) (fun a as => k (a :: as))
+
 /-- `step` of an instruction `isPlain` says is, whose base step is `b` and
 which writes the register `d`. -/
 def fastFn (b : Taint.Step) (d : Option Reg) : RStep := ⟨fun τ =>
@@ -520,7 +536,8 @@ def fastFn (b : Taint.Step) (d : Option Reg) : RStep := ⟨fun τ =>
       match b.run t with
       | some t' =>
         bif natsEq t'.lens t.lens then
-          some ⟨true, t', nfr, depth, room, sec, ras, ubDrop d ub, none, mb, fw, an, sa, sp⟩
+          forceT t' fun t' => forceList (ubDrop d ub) fun ub' =>
+            some ⟨true, t', nfr, depth, room, sec, ras, ub', none, mb, fw, an, sa, sp⟩
         else none
       | none => none
     else none⟩
@@ -547,22 +564,35 @@ public value scans every slot for it, and a frame has hundreds). -/
   List.rec (motive := fun _ => Bool) false (fun b _ ih =>
     Bool.rec ih (Bool.rec ih (Bool.rec ih true (Nat.beq w b.2.2)) (Nat.beq i b.1)) (Nat.beq d b.2.1)) l
 
-/-- `Taint.storeSlotsKD`, with `mem3R`. -/
-def storeSlotsR (τ : Taint.T) (m : MemOp) (w : Nat) (p : Bool) : List (Nat × Nat × Nat) :=
-  match Taint.addrOfK τ m with
-  | some (i, d) =>
-    bif Nat.ble (d + w) (τ.lens.getD i 0) then
-      bif p then (bif mem3R i d w τ.slots then τ.slots else (i, d, w) :: τ.slots)
-      else VG.Taint.filterKeep (fun sl => !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
-        Nat.ble (sl.2.1 + sl.2.2) d) τ.slots
-    else bif p then τ.slots else []
-  | none => bif p then τ.slots else []
+/-- The slots a secret store of `[d, d + w)` of region `i` leaves public. -/
+def slotKept (i d w : Nat) (sl : Nat × Nat × Nat) : Bool :=
+  !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 || Nat.ble (sl.2.1 + sl.2.2) d
 
-/-- The base step of a store of `w` bytes of `r` at `m` (`Taint.stepKDFn`'s),
-with `storeSlotsR`. -/
+/-- The base step of a store of `w` bytes of `r` at `m` (`Taint.stepKDFn`'s,
+`storeR_eq`), with `mem3R`, and deciding what becomes of the slots before it
+builds the taint. A store that leaves the slots as they are (of a secret over
+bytes that already are, of a public value into a slot that is there) gives
+the taint it was given. `Taint.storeStepKD` gives a new taint whose slots are
+a term that evaluates to the old ones' term, and the kernel, which evaluates
+a taint's fields when they are read, remembers the value of the term it was
+asked for but not of those it passed through: every later read of the slots
+through a taint it has not read them through (each step makes one) unfolds
+that term and every such term below it again, back to the last store that
+changed the slots. -/
 def storeR (m : MemOp) (w : Nat) (r : Reg) : Taint.Step := ⟨fun τ =>
   match τ with
-  | ⟨rg, f, l, b, _, lo, x⟩ => bif memPub τ m then some ⟨rg, f, l, b, storeSlotsR τ m w (pub τ r), lo, x⟩ else none⟩
+  | ⟨rg, f, l, b, sl, lo, x⟩ =>
+    bif memPub τ m then
+      match Taint.addrOfK τ m with
+      | some (i, d) =>
+        bif Nat.ble (d + w) (l.getD i 0) then
+          bif pub τ r then (bif mem3R i d w sl then some τ else some ⟨rg, f, l, b, (i, d, w) :: sl, lo, x⟩)
+          else
+            bif KList.all sl (slotKept i d w) then some τ
+            else some ⟨rg, f, l, b, KList.filter (slotKept i d w) sl, lo, x⟩
+        else bif pub τ r then some τ else some ⟨rg, f, l, b, [], lo, x⟩
+      | none => bif pub τ r then some τ else some ⟨rg, f, l, b, [], lo, x⟩
+    else none⟩
 
 /-- `step` of a store without an index register, whose base step is `b`. -/
 def fastStore (b : Taint.Step) (m : MemOp) (w : Nat) (src : Option Reg) : RStep := ⟨fun τ =>
@@ -572,7 +602,8 @@ def fastStore (b : Taint.Step) (m : MemOp) (w : Nat) (src : Option Reg) : RStep 
       match b.run t with
       | some t' =>
         bif natsEq t'.lens t.lens then
-          some ⟨true, t', nfr, depth, room, sec, ras, ub, none, mbStore τ m w src, fw, an, sa, sp⟩
+          forceList (mbStore τ m w src) fun mb' =>
+            some ⟨true, t', nfr, depth, room, sec, ras, ub, none, mb', fw, an, sa, sp⟩
         else none
       | none => none
     else none⟩
@@ -585,7 +616,9 @@ def fastU (b : Taint.Step) (u : List (Reg × Nat) → List (Reg × Nat)) : RStep
     bif ok then
       match b.run t with
       | some t' =>
-        bif natsEq t'.lens t.lens then some ⟨true, t', nfr, depth, room, sec, ras, u ub, none, mb, fw, an, sa, sp⟩
+        bif natsEq t'.lens t.lens then
+          forceT t' fun t' => forceList (u ub) fun ub' =>
+            some ⟨true, t', nfr, depth, room, sec, ras, ub', none, mb, fw, an, sa, sp⟩
         else none
       | none => none
     else none⟩
@@ -609,8 +642,9 @@ def fastLoad (b : Taint.Step) (d : Reg) (i : Instr) : RStep := ⟨fun τ =>
       | some t' =>
         bif natsEq t'.lens t.lens then
           let t₁ := match mb with | [] => t' | _ => post τ i t'
-          some ⟨true, (match sa, sp with | [], [] => t₁ | _, _ => argPost τ i t₁), nfr, depth, room, sec,
-            ras, ubDrop (some d) ub, none, mb, fw, an, sa, sp⟩
+          forceT (match sa, sp with | [], [] => t₁ | _, _ => argPost τ i t₁) fun t₂ =>
+            forceList (ubDrop (some d) ub) fun ub' =>
+              some ⟨true, t₂, nfr, depth, room, sec, ras, ub', none, mb, fw, an, sa, sp⟩
         else none
       | none => none
     else none⟩
@@ -652,15 +686,15 @@ def stepFn1 (i : Instr) : RStep :=
   | .store32 m r => bif m.index.isNone then fastStore (storeR m 4 r) m 4 none else ⟨(step · i)⟩
   | .store8 m r => bif m.index.isNone then fastStore (storeR m 1 r) m 1 none else ⟨(step · i)⟩
   | .store16 m r => bif m.index.isNone then fastStore (storeR m 2 r) m 2 none else ⟨(step · i)⟩
-  | .mov d (.mem _) => bif isSp d then ⟨fun _ => none⟩ else fastLoad (Taint.stepKDFn i) d i
+  | .mov d (.mem _) => bif isSp d then ⟨fun _ => none⟩ else fastLoad (Taint.stepKeepFn i) d i
   | .mov d (.imm v) =>
     bif isSp d then ⟨fun _ => none⟩ else
-      fastU (Taint.stepKDFn i) fun ub => bif v.msb then ubDrop (some d) ub else (d, v.toNat) :: ubDrop (some d) ub
+      fastU (Taint.stepKeepFn i) fun ub => bif v.msb then ubDrop (some d) ub else (d, v.toNat) :: ubDrop (some d) ub
   | .mov32 d (.imm v) =>
-    bif isSp d then ⟨fun _ => none⟩ else fastU (Taint.stepKDFn i) fun ub => (d, v.toNat) :: ubDrop (some d) ub
-  | .mul _ => fastU (Taint.stepKDFn i) (ubDrop2 .rax .rdx)
+    bif isSp d then ⟨fun _ => none⟩ else fastU (Taint.stepKeepFn i) fun ub => (d, v.toNat) :: ubDrop (some d) ub
+  | .mul _ => fastU (Taint.stepKeepFn i) (ubDrop2 .rax .rdx)
   | .mulx hi lo _ =>
-    bif isSpR hi || isSpR lo then ⟨fun _ => none⟩ else fastU (Taint.stepKDFn i) (ubDrop2 hi lo)
+    bif isSpR hi || isSpR lo then ⟨fun _ => none⟩ else fastU (Taint.stepKeepFn i) (ubDrop2 hi lo)
   -- Not plain, and without a step of their own.
   | .movdquStore .. | .vmovdquStore .. | .vmovdqu32Store .. | .evStore .. | .e5ExtractStore .. | .stmxcsr _
   | .kStore .. | .kStore8 .. | .alu .and _ (.imm _) | .alu32 .and _ (.imm _) | .alu .cmp _ (.reg _)
@@ -669,17 +703,17 @@ def stepFn1 (i : Instr) : RStep :=
   -- Plain or not by their operands.
   | .mov32 d (.mem m) =>
     bif isSp d then ⟨fun _ => none⟩ else
-      bif !(regEq m.base .rsp && m.index.isNone) then fastFn (Taint.stepKDFn i) (some d) else ⟨(step · i)⟩
+      bif !(regEq m.base .rsp && m.index.isNone) then fastFn (Taint.stepKeepFn i) (some d) else ⟨(step · i)⟩
   | .alu .xor d (.reg d') | .alu32 .xor d (.reg d') =>
-    bif isSp d then ⟨fun _ => none⟩ else bif d != d' then fastFn (Taint.stepKDFn i) (some d) else ⟨(step · i)⟩
+    bif isSp d then ⟨fun _ => none⟩ else bif d != d' then fastFn (Taint.stepKeepFn i) (some d) else ⟨(step · i)⟩
   -- Plain, writing the register `d`.
   | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
   | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _
   | .vpmovmskb _ d _ | .vpcmpltuw d .. | .movqR d _ | .imul d _ | .imul3 d .. | .shld d .. | .btr d _
-  | .aluTbl _ d .. => bif isSp d then ⟨fun _ => none⟩ else fastFn (Taint.stepKDFn i) (some d)
+  | .aluTbl _ d .. => bif isSp d then ⟨fun _ => none⟩ else fastFn (Taint.stepKeepFn i) (some d)
   -- Plain, writing no general-purpose register.
-  | _ => fastFn (Taint.stepKDFn i) none
+  | _ => fastFn (Taint.stepKeepFn i) none
 
 /-- `step`, for the kernel (`stepF_eq`). -/
 def stepF (τ : FT) (i : Instr) : Option FT := (stepFn1 i).run τ
