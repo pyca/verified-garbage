@@ -142,25 +142,7 @@ tactic_template "ecp_xd " v:ident p:ident P:ident hK:ident : tactic =>
     | (code_whnf; with_reducible apply xdLe_seq) | (code_whnf; with_reducible apply xdLe_ite)
     | (code_whnf; with_reducible apply xdLe_call)))
 
-/-- `s16_xd` (`Top16Ctl.lean`) in the order of `s4_xd`: closed code by evaluation first, then
-code that is a `seq`, `ite` or `call` as it stands, then the callees' lemmas, by `apply`. -/
-tactic_template "s16_xda " v:ident c:ident S:ident hK:ident : tactic =>
-  `(tactic| repeat' (first
-    | (closed16_in $v $c; decide +kernel)
-    | with_reducible exact xdLe_block _
-    | with_reducible apply xdLe_seq | with_reducible apply xdLe_ite | with_reducible apply xdLe_call
-    | with_reducible apply xdLe_callee ($hK).kg | with_reducible apply xdLe_callee ($hK).enc
-    | with_reducible apply xdLe_callee ($hK).dec | with_reducible apply xdLe_s16 $S (by decide)
-    | (code_whnf; closed16_in $v $c; decide +kernel)
-    | with_reducible apply xdLe_prfs $v _ _ _ _ (by decide) | with_reducible apply xdLe_callee ($v).arith.cbd16
-    | (code_whnf; with_reducible apply xdLe_seq) | (code_whnf; with_reducible apply xdLe_ite)
-    | (code_whnf; with_reducible apply xdLe_call)))
 
-/-- `ek16_xd` (`EkSel16.lean`), on `s16_xda`. -/
-tactic_template "ek16_xda " v:ident c:ident b:ident S:ident B:ident hK:ident : tactic =>
-  `(tactic| repeat' (first
-    | with_reducible apply xdLe_batch $B | (closed_in $b; s16_xda $v $c $S $hK; done)
-    | (code_whnf; with_reducible apply xdLe_seq) | (code_whnf; with_reducible apply xdLe_ite) | rfl))
 
 /-! Each choice of code, for a property `P` of each code it chooses among. -/
 
@@ -225,35 +207,35 @@ theorem encapsHPSel_of (v : Sample4Impl) {P : Prog isa → Prop}
 
 theorem keyGen_xd (v : Sample4Impl) : (keyGen v.callee).x86_64Depth ≤ 32 :=
   xdLe_spec (keyGenHSel_of (P := fun c => xdLe 32 c = true) v (fun b p B P => by kgh_xd v b p B P kgRows768)
-    (keyGenSel_of (P := fun c => xdLe 32 c = true) v (fun _ c S => by s16_xda v c S kpke768) (by s4_xd v)))
+    (keyGenSel_of (P := fun c => xdLe 32 c = true) v (fun _ c S => by s16_xd v c S kpke768) (by s4_xd v)))
 
 theorem encapsH_xd (v : Sample4Impl) : (encapsH v.callee).x86_64Depth ≤ 32 :=
   xdLe_spec (encapsHPSel_of (P := fun c => xdLe 32 c = true) v (fun p P => by ecp_xd v p P kpke768)
-    (encapsHSel_of (P := fun c => xdLe 32 c = true) v (fun _ c S => by s16_xda v c S kpke768) (by s4_xd v)))
+    (encapsHSel_of (P := fun c => xdLe 32 c = true) v (fun _ c S => by s16_xd v c S kpke768) (by s4_xd v)))
 
 theorem encaps_xd (v : Sample4Impl) : (encaps v.callee).x86_64Depth ≤ 32 :=
   xdLe_spec (encapsSel_of (P := fun c => xdLe 32 c = true) v
-    (fun _ c b S B => by ek16_xda v c b S B kpke768) (by s4_xd v))
+    (fun _ c b S B => by ek16_xd v c b S B kpke768) (by s4_xd v))
 
 theorem decaps_xd (v : Sample4Impl) : (decaps v.callee).x86_64Depth ≤ 32 :=
   xdLe_spec (decapsSel_of (P := fun c => xdLe 32 c = true) v
-    (fun _ c b S B => by ek16_xda v c b S B kpke768) (by s4_xd v))
+    (fun _ c b S B => by ek16_xd v c b S B kpke768) (by s4_xd v))
 
 theorem keyGen1024_xd (v : Sample4Impl) : (keyGen1024 v.callee).x86_64Depth ≤ 32 :=
   xdLe_spec (keyGenSel_of (P := fun c => xdLe 32 c = true) v
-    (fun _ c S => by s16_xda v c S kpke1024) (by s4_xd v))
+    (fun _ c S => by s16_xd v c S kpke1024) (by s4_xd v))
 
 theorem encapsH1024_xd (v : Sample4Impl) : (encapsH1024 v.callee).x86_64Depth ≤ 32 :=
   xdLe_spec (encapsHSel_of (P := fun c => xdLe 32 c = true) v
-    (fun _ c S => by s16_xda v c S kpke1024) (by s4_xd v))
+    (fun _ c S => by s16_xd v c S kpke1024) (by s4_xd v))
 
 theorem encaps1024_xd (v : Sample4Impl) : (encaps1024 v.callee).x86_64Depth ≤ 32 :=
   xdLe_spec (encapsSel_of (P := fun c => xdLe 32 c = true) v
-    (fun _ c b S B => by ek16_xda v c b S B kpke1024) (by s4_xd v))
+    (fun _ c b S B => by ek16_xd v c b S B kpke1024) (by s4_xd v))
 
 theorem decaps1024_xd (v : Sample4Impl) : (decaps1024 v.callee).x86_64Depth ≤ 32 :=
   xdLe_spec (decapsSel_of (P := fun c => xdLe 32 c = true) v
-    (fun _ c b S B => by ek16_xda v c b S B kpke1024) (by s4_xd v))
+    (fun _ c b S B => by ek16_xd v c b S B kpke1024) (by s4_xd v))
 
 /-! ## What the contracts read of the memory -/
 

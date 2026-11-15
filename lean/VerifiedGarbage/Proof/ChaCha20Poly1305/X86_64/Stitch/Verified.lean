@@ -63,10 +63,6 @@ number, loaded from memory, public by correctness (`TailMidG`). `bulk_rel` is st
 
 @[expose] public section
 
-/-- `r ∈ [r₁, …]` for an element written as the list has it. -/
-local macro "mem_here" : tactic =>
-  `(tactic| with_reducible (repeat (first | exact List.mem_cons_self | apply List.mem_cons_of_mem)))
-
 namespace VG.Proof.ChaCha20Poly1305.X86_64.Stitch
 
 open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.Stitch
@@ -556,11 +552,11 @@ theorem covers_shift {c dp : Addr} {L : Nat} (h : 448 ≤ L) :
   refine Covers.of_sub fun r hr => ?_
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · exact ⟨Proof.ChaCha20.X86_64.Avx2.stR (stA c), by mem_here, 0, by simp, by simp⟩
-  · exact ⟨⟨dp, L⟩, by mem_here, 448, rfl, by show 448 + (L - 448) ≤ L; omega_arith⟩
-  · exact ⟨Proof.ChaCha20.X86_64.Avx2.bufR (bfA c), by mem_here, 0, by simp, by simp⟩
-  · exact ⟨psR c, by mem_here, 0, by simp, by simp⟩
-  · exact ⟨kR (bfA c), by mem_here, 0, by simp, by simp⟩
+  · exact ⟨Proof.ChaCha20.X86_64.Avx2.stR (stA c), by simp, 0, by simp, by simp⟩
+  · exact ⟨⟨dp, L⟩, by simp, 448, rfl, by show 448 + (L - 448) ≤ L; omega_arith⟩
+  · exact ⟨Proof.ChaCha20.X86_64.Avx2.bufR (bfA c), by simp, 0, by simp, by simp⟩
+  · exact ⟨psR c, by simp, 0, by simp, by simp⟩
+  · exact ⟨kR (bfA c), by simp, 0, by simp, by simp⟩
 
 section
 variable {c dp : Addr} {L : Nat} (hl : Lay c dp L) (sp : Addr) (vl : Bool)
@@ -1904,10 +1900,7 @@ theorem sealS_xdepth (v : Proof.ChaCha20.X86_64.XorImpl) :
   simp only [Impl.ChaCha20.X86_64.Callee.inPlace, sealStitched, prologue, prologueA, prologueB, zeroKs, macPad, macPadLengths, Code.iteCold, wholeBlocks,
     padRest, padCopy, padTail, cryptS, wipeL_xdepth, preS, cryptPre, xorKs, Bool.cond_false, absorbLengths, finalizeTag, finalizeWith, Code.x86_64Depth, xorBuf_xdepth,
     foldM_xdepth, init_xdepth, finalize_xdepth, bigS_xdepth, bulkP_xdepth, tailP_xdepth, Nat.max_le] at hc ha ⊢
-  simp only [Nat.zero_max, Nat.max_zero, Nat.max_self] at hc ha
-  simp only [Nat.zero_le, Nat.zero_add, true_and, and_true, Nat.reduceLeDiff]
-  exact ⟨hx, ⟨hb, Nat.le_trans ha (Nat.add_le_add_right hb 8)⟩, hx, hb,
-    Nat.le_trans hc (Nat.add_le_add_right hb 8), hb⟩
+  omega_arith
 
 theorem sealS_framed (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
     Verified X86_64.target
@@ -2471,10 +2464,10 @@ theorem chunkO_okA (vl : Bool) {c sa dp : Addr} {L : Nat} (hl : LayO c sa dp L) 
   · refine h.fr.trans (FA.sub fun r hr => ?_)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact ⟨bufR (bfA c), by mem_here, slotsR_sub _⟩
-    · exact ⟨⟨dp, L⟩, by mem_here, by rw [← eb]; exact win hw⟩
-    · exact ⟨stR (stA c), by mem_here, fun _ h => h⟩
-    · exact ⟨⟨slot (bfA c), 8⟩, by mem_here, fun _ h => h⟩
+    · exact ⟨bufR (bfA c), by simp, slotsR_sub _⟩
+    · exact ⟨⟨dp, L⟩, by simp, by rw [← eb]; exact win hw⟩
+    · exact ⟨stR (stA c), by simp, fun _ h => h⟩
+    · exact ⟨⟨slot (bfA c), 8⟩, by simp, fun _ h => h⟩
 
 /-- A chunk of `open`: the invariant from `t` to `t + 1`. -/
 theorem chunkO_ok (vl : Bool) {c sa dp : Addr} {L : Nat} (hl : LayO c sa dp L) {R0 R1 : BitVec 64} (hk : Key R0 R1)
@@ -3399,15 +3392,15 @@ theorem wholeO_midO (vl : Bool) {s₀ : State} (hp : APre e s₀) (hs : SrcIO s�
   · rw [ha.mem] at f₃'
     refine ((args_frame s₀ s.mem).sub fun r hr => ?_).trans (f₃'.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨sub s₀ 64 512, by mem_here, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+      exact ⟨sub s₀ 64 512, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       have e : sub s₀ 64 512 = ⟨cx s₀ + BitVec.ofNat 64 64, 512⟩ := by rw [sub, off_eq]
       rcases hr with rfl | rfl | rfl | rfl | rfl
-      · exact ⟨sub s₀ 64 512, by mem_here, by rw [e]; exact Offset.sub _ (by decide) (by decide)⟩
-      · exact ⟨dR s₀, by mem_here, fun _ h => h⟩
-      · exact ⟨sub s₀ 64 512, by mem_here, by rw [e]; exact Offset.sub _ (by decide) (by decide)⟩
-      · exact ⟨sub s₀ 64 512, by mem_here, by rw [e]; exact Offset.sub _ (by decide) (by decide)⟩
-      · exact ⟨sub s₀ 736 512, by mem_here, by
+      · exact ⟨sub s₀ 64 512, by simp, by rw [e]; exact Offset.sub _ (by decide) (by decide)⟩
+      · exact ⟨dR s₀, by simp, fun _ h => h⟩
+      · exact ⟨sub s₀ 64 512, by simp, by rw [e]; exact Offset.sub _ (by decide) (by decide)⟩
+      · exact ⟨sub s₀ 64 512, by simp, by rw [e]; exact Offset.sub _ (by decide) (by decide)⟩
+      · exact ⟨sub s₀ 736 512, by simp, by
           rw [show kR (bfA (cx s₀)) = sub s₀ 736 512 by simp only [kR, kA, bfA, sub, off_eq, Offset.add_add]]
           exact fun _ h => h⟩
   · rw [off_eq, ← hb]; exact repr
@@ -3472,15 +3465,15 @@ theorem bulk_midO (vl : Bool) {s₀ : State} (hp : APre e s₀) (hs : SrcIO s₀
   · rw [ha.mem] at f₃'
     refine ((args_frame s₀ s.mem).sub fun r hr => ?_).trans (f₃'.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨sub s₀ 64 512, by mem_here, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+      exact ⟨sub s₀ 64 512, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       have e : sub s₀ 64 512 = ⟨cx s₀ + BitVec.ofNat 64 64, 512⟩ := by rw [sub, off_eq]
       rcases hr with rfl | rfl | rfl | rfl | rfl
-      · exact ⟨sub s₀ 64 512, by mem_here, by rw [e]; exact Offset.sub _ (by decide) (by decide)⟩
-      · exact ⟨dR s₀, by mem_here, fun _ h => h⟩
-      · exact ⟨sub s₀ 64 512, by mem_here, by rw [e]; exact Offset.sub _ (by decide) (by decide)⟩
-      · exact ⟨sub s₀ 64 512, by mem_here, by rw [e]; exact Offset.sub _ (by decide) (by decide)⟩
-      · exact ⟨sub s₀ 736 512, by mem_here, by
+      · exact ⟨sub s₀ 64 512, by simp, by rw [e]; exact Offset.sub _ (by decide) (by decide)⟩
+      · exact ⟨dR s₀, by simp, fun _ h => h⟩
+      · exact ⟨sub s₀ 64 512, by simp, by rw [e]; exact Offset.sub _ (by decide) (by decide)⟩
+      · exact ⟨sub s₀ 64 512, by simp, by rw [e]; exact Offset.sub _ (by decide) (by decide)⟩
+      · exact ⟨sub s₀ 736 512, by simp, by
           rw [show kR (bfA (cx s₀)) = sub s₀ 736 512 by simp only [kR, kA, bfA, sub, off_eq, Offset.add_add]]
           exact fun _ h => h⟩
   · rw [off_eq, ← hb]; exact repr
@@ -3579,10 +3572,10 @@ theorem restCall_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APr
   · refine f'.sub fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact ⟨sub s₀ 64 384, by mem_here, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
-    · exact ⟨dR s₀, by mem_here, hsub⟩
-    · exact ⟨sub s₀ 64 384, by mem_here, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-    · exact ⟨stkR s₀, by mem_here, fun _ h => h⟩
+    · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
+    · exact ⟨dR s₀, by simp, hsub⟩
+    · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+    · exact ⟨stkR s₀, by simp, fun _ h => h⟩
   · by_cases hkE : k < E
     · rw [ite_eq_left hkE]
       refine f' _ fun r hr hc => ?_
@@ -3708,7 +3701,7 @@ theorem xorTail_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre
   · rw [m₃, ← m₁]
     exact X.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨dR s₀, by mem_here, dsub⟩
+      exact ⟨dR s₀, by simp, dsub⟩
   · by_cases hkE : k < E
     · rw [ite_eq_left hkE, m₃, ← m₁]
       refine X.frame _ fun r hr hc => ?_
@@ -4011,7 +4004,7 @@ theorem bigO_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e 
       rcases hr with rfl | rfl | rfl
       · exact sub_work s₀ (by lit_omega) (by lit_omega)
       · exact sub_work s₀ (by lit_omega) (by lit_omega)
-      · exact ⟨dR s₀, by mem_here, fun _ h => h⟩) (fun r hr => by
+      · exact ⟨dR s₀, by simp, fun _ h => h⟩) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
@@ -4066,19 +4059,19 @@ theorem bigO_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e 
   · refine ((hm.frame.sub fun r hr => ?_).trans (f₄.sub fun r hr => ?_)).trans (f₅.sub fun r hr => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact ⟨sub s₀ 64 528, by mem_here, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
-      · exact ⟨sub s₀ 672 1024, by mem_here, sub_sub s₀ (by decide) (by decide) (by decide)⟩
-      · exact ⟨dR s₀, by mem_here, fun _ h => h⟩
+      · exact ⟨sub s₀ 64 528, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
+      · exact ⟨sub s₀ 672 1024, by simp, sub_sub s₀ (by decide) (by decide) (by decide)⟩
+      · exact ⟨dR s₀, by simp, fun _ h => h⟩
     · simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨sub s₀ 64 528, by mem_here, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-      · exact ⟨stkR s₀, by mem_here, fun _ h => h⟩
+      · exact ⟨sub s₀ 64 528, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+      · exact ⟨stkR s₀, by simp, fun _ h => h⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
-      · exact ⟨sub s₀ 64 528, by mem_here, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
-      · exact ⟨sub s₀ 672 1024, by mem_here, fun _ h => h⟩
-      · exact ⟨dR s₀, by mem_here, fun _ h => h⟩
-      · exact ⟨stkR s₀, by mem_here, fun _ h => h⟩
+      · exact ⟨sub s₀ 64 528, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
+      · exact ⟨sub s₀ 672 1024, by simp, fun _ h => h⟩
+      · exact ⟨dR s₀, by simp, fun _ h => h⟩
+      · exact ⟨stkR s₀, by simp, fun _ h => h⟩
   · rw [encrypt_eq, VG.Proof.Poly1305.length_bytesAt]
     apply VG.Proof.ChaCha20.bytesAt_xor_to (VG.Proof.ChaCha20.length_keystream _ _)
     intro k hk
@@ -4121,13 +4114,13 @@ theorem smallO_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
   · refine (f₄.sub fun r hr => ?_).trans (c₅.frame.sub fun r hr => ?_)
     · simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨sub s₀ 64 528, by mem_here, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-      · exact ⟨stkR s₀, by mem_here, fun _ h => h⟩
+      · exact ⟨sub s₀ 64 528, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+      · exact ⟨stkR s₀, by simp, fun _ h => h⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact ⟨sub s₀ 64 528, by mem_here, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
-      · exact ⟨dR s₀, by mem_here, fun _ h => h⟩
-      · exact ⟨stkR s₀, by mem_here, fun _ h => h⟩
+      · exact ⟨sub s₀ 64 528, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
+      · exact ⟨dR s₀, by simp, fun _ h => h⟩
+      · exact ⟨stkR s₀, by simp, fun _ h => h⟩
 
 theorem wipeL_mx (v : Proof.ChaCha20.X86_64.XorImpl) :
     (wipeL v.callee.fold 192).allInstrs (fun i => !loadsMxcsr i) = true := by
@@ -4178,7 +4171,7 @@ theorem cryptO_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hf448 : v.callee.fold = 4
       rcases hr with rfl | rfl | rfl | rfl
       · exact sub_work s₀ (by lit_omega) (by lit_omega)
       · exact sub_work s₀ (by lit_omega) (by lit_omega)
-      · exact ⟨dR s₀, by mem_here, fun _ h => h⟩
+      · exact ⟨dR s₀, by simp, fun _ h => h⟩
       · exact stk_work s₀) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -4210,11 +4203,11 @@ theorem cryptO_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hf448 : v.callee.fold = 4
   · refine (fc.sub fun r hr => ?_).trans (f₅₆.sub fun r hr => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
-      · exact ⟨_, by mem_here, fun _ h => h⟩
-      · exact ⟨sub s₀ 672 1024, by mem_here, fun _ h => h⟩
-      · exact ⟨dR s₀, by mem_here, fun _ h => h⟩
-      · exact ⟨stkR s₀, by mem_here, fun _ h => h⟩
-    · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by mem_here, fun _ h => h⟩
+      · exact ⟨_, by simp, fun _ h => h⟩
+      · exact ⟨sub s₀ 672 1024, by simp, fun _ h => h⟩
+      · exact ⟨dR s₀, by simp, fun _ h => h⟩
+      · exact ⟨stkR s₀, by simp, fun _ h => h⟩
+    · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
   · rw [hbd, m₃, c₂.data, m₁]
   · rw [← m₁]
     refine Repr.frame f₅₆ (fun r hr => ?_) (by rw [m₃]; exact c₂.repr)
@@ -4291,9 +4284,9 @@ theorem openStitchedBody_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .
     by rw [mx₇, mx₆, mx₃, mx₂, mx₁, mx₀]⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨workR s₀, by mem_here, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-    · exact ⟨workR s₀, by mem_here, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-    · exact ⟨stkR s₀, by mem_here, fun _ h => h⟩
+    · exact ⟨workR s₀, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+    · exact ⟨workR s₀, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+    · exact ⟨stkR s₀, by simp, fun _ h => h⟩
   · rw [T₇]
     simp only [macData, List.nil_append, List.append_assoc, VG.Proof.Poly1305.length_bytesAt]
 
@@ -4789,7 +4782,7 @@ theorem macO_done (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : APre e 
       rcases hr with rfl | rfl | rfl
       · exact sub_work s₀ (by lit_omega) (by lit_omega)
       · exact sub_work s₀ (by lit_omega) (by lit_omega)
-      · exact ⟨dR s₀, by mem_here, fun _ h => h⟩) (fun r hr => by
+      · exact ⟨dR s₀, by simp, fun _ h => h⟩) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)
