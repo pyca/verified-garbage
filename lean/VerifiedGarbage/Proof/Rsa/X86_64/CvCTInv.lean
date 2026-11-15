@@ -91,7 +91,7 @@ theorem invQ_ct [InvLaw] {hc : VG.Taint.Hint VG.X86_64.Taint.T}
           (by simp only [Impl.Bignum.X86_64.Public.sMask, sFn]; omega_arith)).trans hm⟩
 
 /-- `guarded a b`, from and to `GA`. -/
-theorem guarded_ct {a b : Prog isa} (ha : RelCT isa (Two GA) a (Two GA)) (hb : RelCT isa (Two GA) b (Two GA)) :
+theorem cvGuarded_ct {a b : Prog isa} (ha : RelCT isa (Two GA) a (Two GA)) (hb : RelCT isa (Two GA) b (Two GA)) :
     RelCT isa (Two GA) (guarded a b) (Two GA) := by
   unfold guarded
   refine RelCT.seq wordHead_ct (RelCT.seq wordTail_ct ?_)
@@ -183,11 +183,11 @@ theorem qTail_ct : RelCT isa (Two GA) (seqs qTail) (Two GA) := by
 theorem invPart_ct [InvLaw] : RelCT isa (Two GA) (seqs invPart) (Two GA) := by
   unfold invPart gcdPart
   simp only [List.append_assoc, List.cons_append, List.nil_append]
-  exact ct_cons (by simp) (guarded_ct (invQS_ct (by taint_decide)) (invQ_ct (by taint_decide)))
+  exact ct_cons (by simp) (cvGuarded_ct (invQS_ct (by taint_decide)) (invQ_ct (by taint_decide)))
     (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
       (ct_cons (by simp) (setOneA_ct (by decide) (by taint_decide))
         (ct_app (by simp [eqA]) (by simp) (eqA_ct (by decide) (by decide) (by taint_decide))
-          (ct_cons (by simp) andZero_ct (ct_one (guarded_ct qTail_ct skip_ct))))))
+          (ct_cons (by simp) andZero_ct (ct_one (cvGuarded_ct qTail_ct skip_ct))))))
 
 /-- `main` leaks the same in two runs with the same public data. -/
 theorem cvMain_ct [InvLaw] : RelCT isa (Two GM) main fun _ _ => True := by
