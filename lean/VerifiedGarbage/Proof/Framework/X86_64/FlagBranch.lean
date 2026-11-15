@@ -266,6 +266,38 @@ theorem pre_of_rel {C : Mem → Addr → Prop} {leakA leakB : Option (Curry
   rw [hvs] at a7 ⊢
   exact (R (s.gpr .rdi)).apply vs s.mem a7 hc
 
+/-- The count at `rdi + 1024` of a first argument that is an array of
+`N ≥ 129` words is readable. -/
+theorem flag_inRegions (hN : 129 ≤ N) {pre : Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → Prop)}
+    {leak : Option (Curry ((firstArraySigB name w .u64 N rest ret).words 64) (Mem → List Nat))} {s : State}
+    (hs : ((firstArraySigB name w .u64 N rest ret).contract abi pre post wa stack leak).pre s) :
+    InRegions (s.rd ++ s.wr) (s.gpr .rdi + 1024) 8 := by
+  have hne : List.map (fun x => ArgWord.bits abi.ptrBits x)
+      ((firstArraySigB name w .u64 N rest ret).words abi.ptrBits) ≠ [] := by
+    simp [Sig.words, Param.words]
+  dsimp only [Sig.contract] at hs
+  split at hs
+  · exact hs.elim
+  rename_i vals hv
+  obtain ⟨vs, hvs⟩ := abi_args_rdi hv hne s
+  obtain ⟨-, hrd, hwr, -⟩ := hs
+  have hmem : (⟨s.gpr .rdi, N * Elem.size .u64⟩ : Region) ∈ s.rd ++ s.wr := by
+    cases w
+    · refine List.mem_append_left _ ?_
+      change _ ∈ abi.rd s
+      rw [hrd, hvs]
+      simp [Sig.bufs]
+    · refine List.mem_append_right _ ?_
+      change _ ∈ abi.wr s
+      rw [hwr, hvs]
+      simp [Sig.bufs]
+  refine ⟨_, hmem, ?_⟩
+  simp only [Region.Contains]
+  rw [BitVec.add_comm, BitVec.add_sub_cancel]
+  have h1 : (1024 : BitVec 64).toNat = 1024 := rfl
+  simp only [Elem.size]
+  omega
+
 /-- `Verified.of_onFlag` for a first argument that is an array of `N ≥ 129` words: the preconditions as relations between curried functions of the
 other arguments, given the first; and `leak`, `leak₁`'s (none: nothing)
 after `flagLeak`, the class of the count, for a threshold `t` of 16 or 48. -/
@@ -290,30 +322,7 @@ theorem Verified.of_onFlagCtxL {t : Nat} (htv : t = 16 ∨ t = 48) (L : Mem → 
   have hne : List.map (fun x => ArgWord.bits abi.ptrBits x)
       ((firstArraySigB name w .u64 N rest ret).words abi.ptrBits) ≠ [] := by
     simp [Sig.words, Param.words]
-  refine Verified.of_onFlag htv h₁ h₂ ?_ ?_ ?_ ?_ hsat
-  · intro s hs
-    dsimp only [Sig.contract] at hs
-    split at hs
-    · exact hs.elim
-    rename_i vals hv
-    obtain ⟨vs, hvs⟩ := abi_args_rdi hv hne s
-    obtain ⟨-, hrd, hwr, -⟩ := hs
-    have hmem : (⟨s.gpr .rdi, N * Elem.size .u64⟩ : Region) ∈ s.rd ++ s.wr := by
-      cases w
-      · refine List.mem_append_left _ ?_
-        change _ ∈ abi.rd s
-        rw [hrd, hvs]
-        simp [Sig.bufs]
-      · refine List.mem_append_right _ ?_
-        change _ ∈ abi.wr s
-        rw [hwr, hvs]
-        simp [Sig.bufs]
-    refine ⟨_, hmem, ?_⟩
-    simp only [Region.Contains]
-    rw [BitVec.add_comm, BitVec.add_sub_cancel]
-    have h1 : (1024 : BitVec 64).toNat = 1024 := rfl
-    simp only [Elem.size]
-    omega
+  refine Verified.of_onFlag htv h₁ h₂ (fun _ hs => flag_inRegions hN hs) ?_ ?_ ?_ hsat
   · exact fun s hs hf => pre_of_rel (C := fun m ctx => t ≤ (m.readW (ctx + 1024) 64).toNat) hp₁ hs hf
   · exact fun s hs hf => pre_of_rel (C := fun m ctx => ¬ t ≤ (m.readW (ctx + 1024) 64).toNat) hp₂ hs hf
   · intro s s' _ _ hq

@@ -8,9 +8,10 @@ import VerifiedGarbage.Proof.Framework.Contract
 # ML-DSA on x86 (32-bit): code that writes `esp` only by frames and calls
 
 `NoSp` of code built from pieces, for any code of the primitives it calls:
-sequences (`NoSp.seq`, `NoSp.seqR`) and calls with their arguments
-(`NoSp.callP`, `NoSp.callPR`). Code that calls no primitive is checked by
-evaluation (`NoSp.of_all`).
+sequences (`NoSp.seq`, `NoSp.seqR`), calls with their arguments
+(`NoSp.callP`, `NoSp.callPR`) and a function's frame (`NoSp.leaf`). Code that
+calls no primitive is checked by evaluation (`NoSp.of_all`). A function's
+registration takes `Artifact.spSafe` from it (`NoSp.spSafe`).
 -/
 
 @[expose] public section
@@ -24,6 +25,27 @@ theorem NoSp.seq {a b : Prog isa} (ha : NoSp a) (hb : NoSp b) : NoSp (.seq a b) 
   simp only [VG.instrs, List.mem_append] at hi
   rcases hi with h | h
   exacts [ha i h, hb i h]
+
+/-- `Artifact.spSafe` of code that never writes `esp`: what the proofs show of
+the code by composition, its registration takes without evaluating the code. -/
+theorem NoSp.spSafe {c : Prog isa} (h : NoSp c) : c.all (fun i => !isa.writesSp i) = true := by
+  refine Code.all_of_allInstrs ?_
+  rw [Code.allInstrs_eq, List.all_eq_true]
+  intro i hi
+  have hd : Taint.dst i ≠ some .esp := Taint.dst_ne_of_clobbers (h i hi)
+  have he : i.dst = Taint.dst i := by cases i <;> rfl
+  show (!(i.dst == some Reg.esp)) = true
+  rw [he, Bool.not_eq_true', beq_eq_false_iff_ne]
+  exact hd
+
+/-- A function's frame around its body (`leaf`). -/
+theorem NoSp.leaf {b : Prog isa} (hb : NoSp b) : NoSp (Impl.MlKem.X86.leaf b) := fun i hi => by
+  simp only [Impl.MlKem.X86.leaf, Impl.MlKem.X86.restore, VG.instrs, List.mem_cons, List.mem_append,
+    List.not_mem_nil, or_false] at hi
+  rcases hi with (rfl | hi | rfl | rfl | rfl) | rfl
+  · rfl
+  · exact hb i hi
+  all_goals rfl
 
 theorem NoSp.seqR {f : Nat → Prog isa} (h : ∀ k, NoSp (f k)) : ∀ a n, NoSp (seqR f a n)
   | _, 0 => fun i hi => by simp [Impl.MlDsa.X86.KeyGen.seqR, VG.instrs] at hi

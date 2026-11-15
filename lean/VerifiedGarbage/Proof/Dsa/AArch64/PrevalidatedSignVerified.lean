@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Dsa.AArch64.SigningABIPre
 import VerifiedGarbage.Proof.Dsa.AArch64.SigningABIPost
 import VerifiedGarbage.Proof.Dsa.AArch64.SigningAgreement
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # An AArch64 DSA signing attempt for a validated private key against its contract
 
@@ -50,8 +51,10 @@ def prevalidatedSignSatState : State where
 
 theorem prevalidatedSignSatisfiable :
     ∃ s, (signContractWith Spec.Dsa.validatePrivateKeyBytes abi).pre s := by
-  have hb : Spec.Rsa.bytesAt prevalidatedSignSatState.mem 0x2000 424 = VG.Proof.Dsa.validPrivateKeyWitness := by
-    decide +kernel
+  have hb : Spec.Rsa.bytesAt prevalidatedSignSatState.mem 0x2000 424 = VG.Proof.Dsa.validPrivateKeyWitness :=
+    VG.Proof.Dsa.bytesAt_of_list (lo := 0x2000) (by decide +kernel) (by decide) fun a h1 h2 => by
+      have h : 0x2000 ≤ a.toNat ∧ a.toNat < 0x21a8 := ⟨h1, h2⟩
+      simp only [prevalidatedSignSatState, h, and_self, ↓reduceIte]
   have ho : ∃ s, (Spec.Dsa.signContract abi).pre s ∧ s = prevalidatedSignSatState := by
     sig_implies_sat [Spec.Dsa.signContract, Spec.Dsa.signSig, abi, argRegs, dsaSignStackArgs]
       [prevalidatedSignSatState, signingSatState, stackArg, stackArgAddr, Mem.readW, Mem.read]

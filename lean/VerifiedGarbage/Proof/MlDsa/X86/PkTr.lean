@@ -5,6 +5,7 @@ public import VerifiedGarbage.Spec.MlDsa.PkTr
 public import VerifiedGarbage.Proof.MlKem.X86.TopHash
 public import VerifiedGarbage.Proof.MlKem.X86.TopKeep
 import VerifiedGarbage.Proof.MlKem.X86.TopLocal
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Seeds
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.KernelRfl
@@ -73,6 +74,9 @@ theorem body_piece {p : Params} (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa8
   rw [Done, out, Proof.MlDsa.X86.KeyGen.sponge_H, h.roBytes hp' hro (by rfl)]
 
 theorem body_nosp (p : Params) : NoSp (body p) := NoSp.of_all (by kernel_rfl)
+
+/-- `vg_mldsa{44,65,87}_pk_tr` never write `esp`. -/
+theorem pkTr_nosp (p : Params) : NoSp (pkTr p) := KeyGen.NoSp.leaf (body_nosp p)
 
 /-! ## The contract -/
 

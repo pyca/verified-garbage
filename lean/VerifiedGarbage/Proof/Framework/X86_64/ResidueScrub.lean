@@ -831,6 +831,28 @@ def withScrub {api : Api} (r : Registration api target)
         (by obtain ⟨_, hc⟩ := a.ok; exact resOk_reg r a.ks hfit hpub hc) hw (levelFor_ne _)
     else r else r else r else r else r else r else r else r
 
+/-- `withScrub`, for code whose two runs leave the same bytes in its stack
+but the granules `ks` (`hres`), proven of the code rather than by the
+residue analysis (as `X86_64.Scrub.resOk_of_leaves` gives it from what the
+code leaves run by run): `r` followed by the clearing of those granules,
+returning without secret residue (`scrubRegM`), if `scrub`'s side
+conditions hold; otherwise `r` itself, which then has no proof. -/
+def withScrubRes {api : Api} (r : Registration api target)
+    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
+    (ks : List Nat) (hres : ResOk r.code r.contract r.stack ks (chunks r.stack)) : Registration api target :=
+  let v := levelFor r.code
+  if hd : r.code.x86_64Depth ≤ r.stack then
+  if hst : r.stack + 8 < 2 ^ 64 then
+  if h8 : r.stack % 8 = 0 then
+  if hlv : r.code.allOnce (fun i => decide (i.vecLevelR ≤ v.level)) = true then
+  if hmx : (mxClassOnce r.code).isSome = true then
+  if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
+      api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
+  if hw : r.written = [] then
+    scrubRegM r v ks hd hst h8 ((Code.allOnce_eq _ r.code).symm.trans hlv) (mxClassOnce_eq r.code ▸ hmx) hrb hpost
+      hres hw (levelFor_ne _)
+  else r else r else r else r else r else r else r
+
 end VG.X86_64.RScrub
 
 /-- `keep_for% sig stack code`: `RScrub.keepFor sig stack code`, computed in

@@ -180,13 +180,25 @@ open VG VG.X86
 open VG.Impl.MlDsa.X86.Sign
 open VG.Spec.MlDsa
 
+/-- The body of `vg_mldsa44_sign_core` never writes `esp`: the one evaluation
+of its code, which its callers take (`NoSp.leaf`, `SignEntry.signEntry_nosp`). -/
+theorem body44_nosp : NoSp (body prims mlDsa44) := NoSp.of_all (by lit_decide)
+
 theorem signCore44_verified : Verified X86.target (sign prims mlDsa44) (signCoreContract mlDsa44 X86.abi 96) :=
-  verified prims_ok (.inl rfl) (NoSp.of_all (by lit_decide))
+  verified prims_ok (.inl rfl) body44_nosp
+
+/-- The body of `vg_mldsa65_sign_core` never writes `esp`: the one evaluation
+of its code, which its callers take (`NoSp.leaf`, `SignEntry.signEntry_nosp`). -/
+theorem body65_nosp : NoSp (body prims mlDsa65) := NoSp.of_all (by lit_decide)
 
 theorem signCore65_verified : Verified X86.target (sign prims mlDsa65) (signCoreContract mlDsa65 X86.abi 96) :=
-  verified prims_ok (.inr (.inl rfl)) (NoSp.of_all (by lit_decide))
+  verified prims_ok (.inr (.inl rfl)) body65_nosp
+
+/-- The body of `vg_mldsa87_sign_core` never writes `esp`: the one evaluation
+of its code, which its callers take (`NoSp.leaf`, `SignEntry.signEntry_nosp`). -/
+theorem body87_nosp : NoSp (body prims mlDsa87) := NoSp.of_all (by lit_decide)
 
 theorem signCore87_verified : Verified X86.target (sign prims mlDsa87) (signCoreContract mlDsa87 X86.abi 96) :=
-  verified prims_ok (.inr (.inr rfl)) (NoSp.of_all (by lit_decide))
+  verified prims_ok (.inr (.inr rfl)) body87_nosp
 
 end VG.Proof.MlDsa.X86.Sign

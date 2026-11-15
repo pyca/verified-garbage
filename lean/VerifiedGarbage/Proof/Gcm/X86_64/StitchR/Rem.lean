@@ -149,18 +149,20 @@ theorem keyEnd_ok (s : State) :
     Option.some.injEq, exists_eq_left']
   refine ⟨by bv_omega, fun q h => by simp only [h, ↓reduceIte], fun _ _ => rfl, trivial, trivial, trivial⟩
 
-/-- The keystream of the `r` blocks after the last group, to `scratch + 256`. -/
-theorem ksSel_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {r : Nat} (hr1 : 1 ≤ r) (hr15 : r ≤ 15) {c : Nat} {s : State}
+/-- The keystream of the `r` blocks after the last group, to `scratch + 256`;
+of eight blocks, only 128 bytes written, if `r ≤ 8`. -/
+theorem ksSel_okF {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {r : Nat} (hr1 : 1 ≤ r) (hr15 : r ≤ 15) {c : Nat} {s : State}
     (h10 : s.gpr .r10 = BitVec.ofNat 64 (16 * r))
     (hctr : ∀ l < 2, s.lane .xmm14 l = Nat.repeat inc32 (c + l) (cb s₀))
     (hmsk : ∀ l < 2, s.lane .xmm0 l = revMask) (hinc : ∀ l < 2, s.lane .xmm15 l = VG.Proof.Aes.X86_64.Vaes.two)
     (hK : Keys (nr s₀) (sch s₀) s) (hrsi : s.gpr .rsi = s₀.gpr .rsi) (hrdi : s.gpr .rdi = kp s₀)
     (h11 : s.gpr .r11 = pp s₀) (hwr : s.wr = s₀.wr) :
     WP isa ksSel s fun s' =>
-      (∀ i < r, blockAt s'.mem (pp s₀ + BitVec.ofNat 64 (256 + 16 * i)) = ciph s₀ (Nat.repeat inc32 (c + i) (cb s₀))) ∧
+      ((∀ i < r, blockAt s'.mem (pp s₀ + BitVec.ofNat 64 (256 + 16 * i)) = ciph s₀ (Nat.repeat inc32 (c + i) (cb s₀))) ∧
       (∀ q, q ≠ .r10 → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       (∀ x, x ≠ .xmm13 → x ≠ .xmm14 → x ∉ aregs → ∀ l < 2, s'.lane x l = s.lane x l) ∧
-      Frame [⟨pp s₀ + BitVec.ofNat 64 256, 256⟩] s.mem s'.mem := by
+      Frame [⟨pp s₀ + BitVec.ofNat 64 256, 256⟩] s.mem s'.mem) ∧
+      (r ≤ 8 → Frame [⟨pp s₀ + BitVec.ofNat 64 256, 128⟩] s.mem s'.mem) := by
   have c129 : BitVec.signExtend 64 (129 : BitVec 32) = BitVec.ofNat 64 129 := by decide
   have t16 : (s.gpr .r10).toNat = 16 * r := by rw [h10, toNat_ofNat_lt (by omega_arith)]
   rw [show ksSel = .seq (.block [.alu .cmp .r10 (.imm 129)])
@@ -214,8 +216,9 @@ theorem ksSel_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {r : Nat} (hr1 : 
   · have hr8 : r ≤ 8 := by simp at h; omega_arith
     refine WP.seq (WP.mono pre fun s₂ ⟨a, g, l, m, rd, wr⟩ => ?_)
     refine WP.mono (b8 s₂ a g l m rd wr) fun s' ⟨b, _, g', rd', wr', l', f'⟩ =>
-      ⟨fun i hi => b i (by omega_arith), fun q h => by rw [g', g q h], by rw [rd', rd], by rw [wr', wr],
-        fun x h13 h14 ha l'' hl => by rw [l' x h13 h14 ha l'' hl, l x l'' hl], by rw [← m]; exact sub128 _ _ f'⟩
+      ⟨⟨fun i hi => b i (by omega_arith), fun q h => by rw [g', g q h], by rw [rd', rd], by rw [wr', wr],
+        fun x h13 h14 ha l'' hl => by rw [l' x h13 h14 ha l'' hl, l x l'' hl], by rw [← m]; exact sub128 _ _ f'⟩,
+        fun _ => by rw [← m]; exact f'⟩
   · refine WP.seq (WP.mono pre fun s₂ ⟨a, g, l, m, rd, wr⟩ => ?_)
     refine WP.seq (WP.mono (b8 s₂ a g l m rd wr) fun s₃ ⟨b₃, c₃, g₃, rd₃, wr₃, l₃, f₃⟩ => ?_)
     have f₃' : Frame [⟨pp s₀ + BitVec.ofNat 64 256, 256⟩] s.mem s₃.mem := by rw [← m]; exact sub128 _ _ f₃
@@ -225,8 +228,9 @@ theorem ksSel_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {r : Nat} (hr1 : 
       (kb (fun q h => by rw [g₃, g q h]) f₃' (by rw [rd₃, rd]) (by rw [wr₃, wr]))
       (by rw [g₃, g _ (by decide)]; exact hrsi) (by rw [g₃]; exact a) (by rw [g₃, g _ (by decide)]; exact h11)
       (by rw [wr₃, wr]; exact hwr)) fun s' ⟨b, _, g', rd', wr', l', f'⟩ => ?_
-    refine ⟨fun i hi => ?_, fun q h => by rw [g', g₃, g q h], by rw [rd', rd₃, rd], by rw [wr', wr₃, wr],
-      fun x h13 h14 ha l'' hl => by rw [l' x h13 h14 ha l'' hl, l₃ x h13 h14 ha l'' hl, l x l'' hl], ?_⟩
+    refine ⟨⟨fun i hi => ?_, fun q h => by rw [g', g₃, g q h], by rw [rd', rd₃, rd], by rw [wr', wr₃, wr],
+      fun x h13 h14 ha l'' hl => by rw [l' x h13 h14 ha l'' hl, l₃ x h13 h14 ha l'' hl, l x l'' hl], ?_⟩,
+      fun h8 => absurd h8 (by simp at h; omega_arith)⟩
     · by_cases h8 : i < 8
       · rw [blockAt_frame f' fun r' hr' => by
           simp only [List.mem_singleton] at hr'; subst hr'
@@ -237,6 +241,20 @@ theorem ksSel_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {r : Nat} (hr1 : 
     · exact f₃'.trans (f'.sub fun r' hr' => by
         simp only [List.mem_singleton] at hr'; subst hr'
         exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by omega_arith) (by omega_arith)⟩)
+
+/-- The keystream of the `r` blocks after the last group, to `scratch + 256`. -/
+theorem ksSel_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {r : Nat} (hr1 : 1 ≤ r) (hr15 : r ≤ 15) {c : Nat} {s : State}
+    (h10 : s.gpr .r10 = BitVec.ofNat 64 (16 * r))
+    (hctr : ∀ l < 2, s.lane .xmm14 l = Nat.repeat inc32 (c + l) (cb s₀))
+    (hmsk : ∀ l < 2, s.lane .xmm0 l = revMask) (hinc : ∀ l < 2, s.lane .xmm15 l = VG.Proof.Aes.X86_64.Vaes.two)
+    (hK : Keys (nr s₀) (sch s₀) s) (hrsi : s.gpr .rsi = s₀.gpr .rsi) (hrdi : s.gpr .rdi = kp s₀)
+    (h11 : s.gpr .r11 = pp s₀) (hwr : s.wr = s₀.wr) :
+    WP isa ksSel s fun s' =>
+      (∀ i < r, blockAt s'.mem (pp s₀ + BitVec.ofNat 64 (256 + 16 * i)) = ciph s₀ (Nat.repeat inc32 (c + i) (cb s₀))) ∧
+      (∀ q, q ≠ .r10 → s'.gpr q = s.gpr q) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (∀ x, x ≠ .xmm13 → x ≠ .xmm14 → x ∉ aregs → ∀ l < 2, s'.lane x l = s.lane x l) ∧
+      Frame [⟨pp s₀ + BitVec.ofNat 64 256, 256⟩] s.mem s'.mem :=
+  WP.mono (ksSel_okF hp hr1 hr15 h10 hctr hmsk hinc hK hrsi hrdi h11 hwr) fun _ h => h.1
 
 /-- Before the loop: `r11` lowered by 512, `r10 = 0`, and the products cleared. -/
 theorem preV_ok (s : State) :

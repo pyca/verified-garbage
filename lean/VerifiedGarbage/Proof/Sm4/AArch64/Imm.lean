@@ -107,4 +107,20 @@ theorem imm_ok (s : State) (d : Reg) (v : BitVec 64) :
   · simp only [imm, runBlock_cons, e₀, runStep_some]; exact e'
   · rw [o' r hr]; exact RegUpd.gpr_write_of_ne _ _ _ hr
 
+/-- Byte `j` of a doubleword summed from eight bytes, whatever the bytes: a table of such
+doublewords is then read with no S-box evaluated (`tableWord_byte`). -/
+theorem pack8_byte (b : Nat → BitVec 8) {j : Nat} (hj : j < 8) :
+    (BitVec.ofNat 64 (0 + (b 0).toNat * 2 ^ (8 * 0) + (b 1).toNat * 2 ^ (8 * 1) + (b 2).toNat * 2 ^ (8 * 2) +
+      (b 3).toNat * 2 ^ (8 * 3) + (b 4).toNat * 2 ^ (8 * 4) + (b 5).toNat * 2 ^ (8 * 5) +
+      (b 6).toNat * 2 ^ (8 * 6) + (b 7).toNat * 2 ^ (8 * 7))).extractLsb' (8 * j) 8 = b j := by
+  have h0 := (b 0).isLt; have h1 := (b 1).isLt; have h2 := (b 2).isLt; have h3 := (b 3).isLt
+  have h4 := (b 4).isLt; have h5 := (b 5).isLt; have h6 := (b 6).isLt; have h7 := (b 7).isLt
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.extractLsb'_toNat, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+  obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl :
+      j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 := by omega_using [hj]
+  all_goals
+    simp only [Nat.reduceMul, Nat.reducePow]
+    omega_using [h0, h1, h2, h3, h4, h5, h6, h7]
+
 end VG.Proof.Sm4.AArch64

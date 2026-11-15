@@ -101,6 +101,22 @@ theorem QG.data {s₀ : State} (hp : SPre s₀) {lo : Nat → Nat} {a : Addr} {X
     (hf : Frame [⟨bAddr s₀ c, 128⟩] t.mem t'.mem) : QG s₀ lo a X P yl ord base fin j t' :=
   QG.keepM hp.toM hc hg ha (fun _ => hsep) h hgpr hrd hwr hlane hf
 
+/-- What a batch writes, an output pair of eight blocks, is in the output. -/
+theorem frame_w {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {c : Nat} (hc : c + 8 ≤ nb s₀) {m m' : Mem}
+    (h : Frame [⟨wAddr ix s₀ c, 128⟩] m m') : Frame [wR ix s₀] m m' :=
+  h.sub fun r hr => ⟨wR ix s₀, List.mem_singleton_self _, by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact fun a ha => VG.Proof.Aes.X86_64.AesNi.run_in hp.wrap_w hc (n := 8) ha⟩
+
+/-- Two postconditions of the same code from the same state: its run is
+deterministic. -/
+theorem wp_and {c : Prog isa} {s : State} {Q R : State → Prop} (h₁ : WP isa c s Q) (h₂ : WP isa c s R) :
+    WP isa c s fun s' => Q s' ∧ R s' := by
+  obtain ⟨t₁, s₁, e₁, q₁⟩ := h₁
+  obtain ⟨t₂, s₂, e₂, q₂⟩ := h₂
+  obtain ⟨_, rfl⟩ := Exec.det e₁ e₂
+  exact ⟨t₁, s₁, e₁, q₁, q₂⟩
+
 /-! ## The encryption loop -/
 
 structure EInv (s₀ : State) (P : Nat → Nat → Block) (e : Nat) (s : State) : Prop where
@@ -141,9 +157,11 @@ theorem EInvM.toEInv {s₀ : State} {P : Nat → Nat → Block} {e : Nat} {s : S
   ⟨h.a.toAInv, h.one, h.rdx, h.r9, h.rax, fun r h1 h2 h4 h5 => h.gpr r h1 h2 (fun h' => absurd h' (by decide)) h4 h5,
     h.pw, h.m1, h.y, h.y1⟩
 
-theorem bodyM_ok {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → Nat → Block} (hf : FinOk ordE (hk s₀) P) {e : Nat}
+/-- `bodyM_ok`, and what the body writes: the output. -/
+theorem bodyM_okF {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → Nat → Block} (hf : FinOk ordE (hk s₀) P) {e : Nat}
     (he : 16 * (e + 1) ≤ nb s₀) {s : State} (hI : EInvM ix s₀ P e s) :
-    WP isa (body ix) s fun s' => EInvM ix s₀ P (e + 1) s' ∧ s'.cf = some (decide (nb s₀ - 16 * e < 32)) := by
+    WP isa (body ix) s fun s' => (EInvM ix s₀ P (e + 1) s' ∧ s'.cf = some (decide (nb s₀ - 16 * e < 32))) ∧
+      Frame [wR ix s₀] s.mem s'.mem := by
   have hw := hp.wrap_w
   have h1e := hI.one
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
@@ -240,12 +258,15 @@ theorem bodyM_ok {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → Nat
     rw [hg₃, hg₂, f₁.gpr, hI.r9, show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl,
       ofNat_sub_ofNat (by omega_arith) (by omega_arith)]
     congr 1; omega_arith
-  refine ⟨⟨hA', by omega_arith, ?_, by rw [fr9, hr9], by rw [gk _ (by decide) (by decide)]; exact hI.rax,
+  have fr : Frame [wR ix s₀] s.mem s'.mem := by
+    rw [fm, ← f₁.mem]
+    exact (frame_w hp (by omega_arith) hm₂).trans (frame_w hp (by omega_arith) hm₃)
+  refine ⟨⟨⟨hA', by omega_arith, ?_, by rw [fr9, hr9], by rw [gk _ (by decide) (by decide)]; exact hI.rax,
     fun hi => by rw [gk _ (by decide) (by decide)]; exact hI.r8 hi,
     fun r h1 h2 h3 h4 h5 => by rw [gk r h2 h4]; exact hI.gpr r h1 h2 h3 h4 h5,
     fun k hk l hl => by rw [keepP k hk l hl]; exact hI.pw k hk l hl,
     fun l hl => by rw [lk _ (by decide) (by decide) (by decide) (by decide) l hl]; exact hI.m1 l hl, ?_,
-    by rw [fl]; exact h2.2⟩, ?_⟩
+    by rw [fl]; exact h2.2⟩, ?_⟩, fr⟩
   · rw [frdx, hg₃, hg₂, f₁.gpr, BitVec.toNat_add, show (256 : BitVec 64).toNat = 256 from rfl,
       Nat.mod_eq_of_lt (by show a.toNat + 256 < 2 ^ 64; omega_arith)]
     show a.toNat + 256 = _
@@ -253,6 +274,20 @@ theorem bodyM_ok {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → Nat
   · rw [fl, h2.1, hf X yl hI.y1,
       show e + 1 - 1 = (e - 1) + 1 by omega_arith, ghash_append16, ← hI.y]
   · rw [fcf, hr9, toNat_ofNat_lt (by omega_arith), show e + 1 - 1 = e by omega_arith]
+
+theorem bodyM_ok {ix : Bool} {s₀ : State} (hp : LPre ix s₀) {P : Nat → Nat → Block} (hf : FinOk ordE (hk s₀) P) {e : Nat}
+    (he : 16 * (e + 1) ≤ nb s₀) {s : State} (hI : EInvM ix s₀ P e s) :
+    WP isa (body ix) s fun s' => EInvM ix s₀ P (e + 1) s' ∧ s'.cf = some (decide (nb s₀ - 16 * e < 32)) :=
+  WP.mono (bodyM_okF hp hf he hI) fun _ h => h.1
+
+/-- `body_ok`, and what the body writes: the data. -/
+theorem body_okF {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk ordE (hk s₀) P) {e : Nat}
+    (he : 16 * (e + 1) ≤ nb s₀) {s : State} (hI : EInv s₀ P e s) :
+    WP isa body s fun s' => (EInv s₀ P (e + 1) s' ∧ s'.cf = some (decide (nb s₀ - 16 * e < 32))) ∧
+      Frame [dR s₀] s.mem s'.mem :=
+  WP.mono (bodyM_okF hp.toM hf he hI.toM) fun _ ⟨⟨h, hc⟩, f⟩ =>
+    ⟨⟨h.toEInv, hc⟩, f.sub fun r hr => ⟨dR s₀, List.mem_singleton_self _, by
+      simp only [List.mem_singleton] at hr; subst hr; exact fun _ h => h⟩⟩
 
 theorem body_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Nat → Block} (hf : FinOk ordE (hk s₀) P) {e : Nat}
     (he : 16 * (e + 1) ≤ nb s₀) {s : State} (hI : EInv s₀ P e s) :

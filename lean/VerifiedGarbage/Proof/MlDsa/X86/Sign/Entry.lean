@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86.Sign.Params
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Call
 public import VerifiedGarbage.Impl.MlDsa.X86.Sign.Entry
 public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
 import VerifiedGarbage.Proof.MlKem.X86.TopLocal
 import VerifiedGarbage.Proof.Framework.Contract
@@ -398,16 +399,29 @@ theorem entry_sat (h3 : VG.Proof.MlDsa.X86.Sign.Ok3 p) : ∃ s, (signContract p 
   · refine ⟨satState satMem [⟨0, 4896⟩, ⟨0x2000, 64⟩, ⟨0x3000, 32⟩] [⟨0x8000, 4627⟩, ⟨0x10000, 144384⟩, ⟨0x5004, 20⟩], ?_⟩
     sig_sat_check [signContract, signSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
 
+/-- The body of `vg_mldsa*_sign` and `vg_mldsa*_sign_prepared` never writes
+`esp`, if what it runs before the core, and the core, do not. -/
+theorem entryBody_nosp (p : Params) {pre : Prog isa} {n : String} {f : Prog isa} (hpre : NoSp pre) (hsp : NoSp f) :
+    NoSp (entryBody p pre n f) :=
+  NoSp.seq (NoSp.of_all (by kernel_rfl)) (NoSp.seq hpre (NoSp.callPR hsp))
+
+/-- `vg_mldsa*_sign` never writes `esp`, if its core does not. -/
+theorem signEntry_nosp (p : Params) {n : String} {f : Prog isa} (hsp : NoSp f) : NoSp (signEntry p n f) :=
+  NoSp.leaf (entryBody_nosp p (NoSp.of_all (by kernel_rfl)) hsp)
+
+/-- `vg_mldsa*_sign_prepared` never writes `esp`, if its core does not. -/
+theorem signPrepared_nosp (p : Params) {n : String} {f : Prog isa} (hsp : NoSp f) : NoSp (signPrepared p n f) :=
+  NoSp.leaf (entryBody_nosp p (NoSp.of_all (by kernel_rfl)) hsp)
+
 /-- `vg_mldsa{44,65,87}_sign`, calling a core verified against `signCoreContract`,
 is verified against `signContract`. -/
 theorem entry_verified {n : String} {f : Prog isa} (h3 : VG.Proof.MlDsa.X86.Sign.Ok3 p)
     (hv : Verified X86.target f (signCoreContract p X86.abi 96))
     (hsp : NoSp f) (hst : stackUse f ≤ 96) {ht : Taint.Hint VG.X86.Taint.T}
-    (tt : (VG.X86.taint.check (τr [.esp, .esi]) (.block (setArgs 4 VG.Impl.MlDsa.X86.KeyGen.argRegs (coreArgs p))) ht).isSome = true)
-    (hsp' : NoSp (entryBody p (.block (st32 oKEYS 0)) n f)) :
+    (tt : (VG.X86.taint.check (τr [.esp, .esi]) (.block (setArgs 4 VG.Impl.MlDsa.X86.KeyGen.argRegs (coreArgs p))) ht).isSome = true) :
     Verified X86.target (signEntry p n f) (signContract p X86.abi 136) := by
   have ps := VG.Proof.MlDsa.X86.Sign.PS.of h3
-  refine Piece.verified (((entry_leaf hv hsp hst ps tt hsp').pre_mono (fun _ h => ePre_of h)
+  refine Piece.verified (((entry_leaf hv hsp hst ps tt (entryBody_nosp p (NoSp.of_all (by kernel_rfl)) hsp)).pre_mono (fun _ h => ePre_of h)
     fun _ _ _ _ h => ePub_of h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) (entry_sat h3)
   obtain ⟨habi, -, -, s, hd, hm, hax⟩ := hq
   refine ⟨habi, ?_⟩
@@ -556,11 +570,10 @@ theorem prepared_verified {n : String} {f : Prog isa} (h3 : VG.Proof.MlDsa.X86.S
     (t₂ : (VG.X86.taint.check (τr [.edi, .ebp, .ecx]) (.loop (.block [.mov .eax (.mem (at_ .edi 0)),
       .store (at_ .ebp 0) .eax, .alu .add .edi (.imm 4), .alu .add .ebp (.imm 4), .alu .sub .ecx (.imm 1)]) .ne)
       h₂).isSome = true)
-    (hsp' : NoSp (entryBody p (copyKeys p) n f))
     (hsat : ∃ s, (Proof.MlDsa.preparedSignContract p X86.abi 136).pre s) :
     Verified X86.target (signPrepared p n f) (Proof.MlDsa.preparedSignContract p X86.abi 136) := by
   have ps := VG.Proof.MlDsa.X86.Sign.PS.of h3
-  refine Piece.verified (((prep_leaf hv hsp hst ps tt t₁ t₂ hsp').pre_mono (fun _ h => pPre_of h)
+  refine Piece.verified (((prep_leaf hv hsp hst ps tt t₁ t₂ (entryBody_nosp p (NoSp.of_all (by kernel_rfl)) hsp)).pre_mono (fun _ h => pPre_of h)
     fun _ _ _ _ h => pPub_of h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) hsat
   obtain ⟨habi, -, -, s, hd, hm, hax⟩ := hq
   refine ⟨habi, ?_⟩

@@ -27,19 +27,52 @@ namespace VG.Proof.MlKem.AArch64.NttR
 open VG VG.AArch64 VG.Proof.MlKem
 open VG.Proof.MlKem.AArch64.Ntt16 (hw4)
 
+/-- Four halfwords as a doubleword: their sum, as `Readonly.words` packs them, is the
+doubleword `hw4` appends them into. -/
+theorem pack16 {a b c d : Nat} (ha : a < 2 ^ 16) (hb : b < 2 ^ 16) (hc : c < 2 ^ 16) (hd : d < 2 ^ 16) :
+    BitVec.ofNat 64 (0 + a * 2 ^ (16 * 0) + b * 2 ^ (16 * 1) + c * 2 ^ (16 * 2) + d * 2 ^ (16 * 3)) =
+      BitVec.ofNat 16 d ++ BitVec.ofNat 16 c ++ BitVec.ofNat 16 b ++ BitVec.ofNat 16 a := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_append, BitVec.toNat_ofNat, Nat.mod_eq_of_lt ha, Nat.mod_eq_of_lt hb,
+    Nat.mod_eq_of_lt hc, Nat.mod_eq_of_lt hd]
+  rw [← Nat.shiftLeft_add_eq_or_of_lt hc, ← Nat.shiftLeft_add_eq_or_of_lt hb,
+    ← Nat.shiftLeft_add_eq_or_of_lt ha]
+  simp only [Nat.shiftLeft_eq, Nat.reduceMul, Nat.reducePow]
+  omega_using [ha, hb, hc, hd]
+
+/-- Word `i` of a table of halfwords, for any table: with the table a variable, the kernel
+evaluates nothing. For a literal it would walk the list again for each of the `4 i` halfwords
+before those it reads. -/
+theorem words16_getD {H : List Nat} (hH : ∀ x ∈ H, x < 2 ^ 16) {i : Nat} (hi : i < H.length / 4) :
+    (Impl.MlKem.AArch64.Ntt16.Readonly.words 16 H).getD i 0 = hw4 H i := by
+  have lt : ∀ k, H.getD k 0 < 2 ^ 16 := fun k => by
+    rw [List.getD_eq_getElem?_getD]
+    rcases Nat.lt_or_ge k H.length with h | h
+    · rw [List.getElem?_eq_getElem h]; exact hH _ (List.getElem_mem h)
+    · rw [List.getElem?_eq_none h]; decide
+  have e : (64 / 16 : Nat) = 4 := rfl
+  have r4 : List.range 4 = [0, 1, 2, 3] := rfl
+  unfold Impl.MlKem.AArch64.Ntt16.Readonly.words hw4
+  rw [List.getD_eq_getElem?_getD, List.getElem?_map, e, List.getElem?_range hi, r4]
+  rw [Option.map_some, Option.getD_some, List.foldl_cons, List.foldl_cons, List.foldl_cons, List.foldl_cons,
+    List.foldl_nil, Nat.mul_comm i 4]
+  exact pack16 (lt _) (lt _) (lt _) (lt _)
+
 theorem tabWords_length : Impl.MlKem.AArch64.Ntt16.Fast.tabWords.length = 116 := by
   rw [Impl.MlKem.AArch64.Ntt16.Fast.tabWords, Impl.MlKem.AArch64.Ntt16.Fast.tab.lit_eq]; decide +kernel
 
 theorem tabWords_get : ∀ i < 116,
-    Impl.MlKem.AArch64.Ntt16.Fast.tabWords.getD i 0 = hw4 Impl.MlKem.AArch64.Ntt16.Fast.tab i := by
-  rw [Impl.MlKem.AArch64.Ntt16.Fast.tabWords, Impl.MlKem.AArch64.Ntt16.Fast.tab.lit_eq]; decide +kernel
+    Impl.MlKem.AArch64.Ntt16.Fast.tabWords.getD i 0 = hw4 Impl.MlKem.AArch64.Ntt16.Fast.tab i := fun i hi =>
+  words16_getD (by rw [Impl.MlKem.AArch64.Ntt16.Fast.tab.lit_eq]; decide +kernel)
+    (Nat.lt_of_lt_of_eq hi (by rw [Impl.MlKem.AArch64.Ntt16.Fast.tab.lit_eq]; decide +kernel))
 
 theorem tabWordsI_length : Impl.MlKem.AArch64.Ntt16.FastInv.tabWords.length = 116 := by
   rw [Impl.MlKem.AArch64.Ntt16.FastInv.tabWords, Impl.MlKem.AArch64.Ntt16.FastInv.tab.lit_eq]; decide +kernel
 
 theorem tabWordsI_get : ∀ i < 116,
-    Impl.MlKem.AArch64.Ntt16.FastInv.tabWords.getD i 0 = hw4 Impl.MlKem.AArch64.Ntt16.FastInv.tab i := by
-  rw [Impl.MlKem.AArch64.Ntt16.FastInv.tabWords, Impl.MlKem.AArch64.Ntt16.FastInv.tab.lit_eq]; decide +kernel
+    Impl.MlKem.AArch64.Ntt16.FastInv.tabWords.getD i 0 = hw4 Impl.MlKem.AArch64.Ntt16.FastInv.tab i := fun i hi =>
+  words16_getD (by rw [Impl.MlKem.AArch64.Ntt16.FastInv.tab.lit_eq]; decide +kernel)
+    (Nat.lt_of_lt_of_eq hi (by rw [Impl.MlKem.AArch64.Ntt16.FastInv.tab.lit_eq]; decide +kernel))
 
 /-- The region of the table at `sym`. -/
 abbrev sRegion (sym : String) (s : State) : Region := ⟨s.syms sym, 928⟩

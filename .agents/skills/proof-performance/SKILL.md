@@ -89,6 +89,14 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   in `NativeTCB` (the same script checks both).
 * **Properties of every instruction:** prove `(instrs c).all p` with
   `rw [← Code.allInstrs_eq]; decide +kernel`, not `decide +kernel` directly.
+  Evaluate each function's own code once: what holds of the functions it
+  calls holds of it by composition (`NoSp.seq`, `NoSp.callP`, `NoSp.leaf`,
+  `Proof/MlDsa/X86/KeyGen/NoSp.lean`), and its registration takes `spSafe`
+  from that (`spSafe := NoSp.spSafe …`), not from the default, which
+  evaluates the code with all it calls. A check of a wrapper by evaluation
+  builds and walks the whole function under it again, in every wrapper and
+  again in the registration: ML-DSA's on x86 cost 38 s so, in one
+  registration file and the proofs of its entry points.
 * **Code the kernel evaluates:** code built by functions (unrolled
   compression functions, and the functions calling them) is rebuilt by the
   kernel in every check that evaluates it (constant time, `spSafe`, …), in
@@ -273,6 +281,11 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   29.5 s as functions and 2 s as a list (`KFile`, `symRun_regs`,
   `Proof/Sha3/AArch64/Scalar/Reflect.lean`): keep the function, which the
   proofs about the checker read easily, and prove it equal to the list's.
+  A fold that filters a list at every step has the same shape: the kernel
+  evaluates lazily, so after 15,000 instructions the list is a filter of a
+  filter of the first, and each element is forced through all of them.
+  Rebuild the list at each step (`forceL`, `checkK`, `keepsK_eq` in
+  `Proof/Bignum/AArch64/KeepLanes.lean`: half the time).
 * **Tables of constants:** the kernel evaluates a table's whole length
   (seconds for a comb's tables) when it compares `8 * words.length` with
   another form of it, such as a `Region`'s `len` projection. Never unfold
