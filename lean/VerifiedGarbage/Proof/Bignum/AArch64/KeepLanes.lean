@@ -287,6 +287,52 @@ theorem Exec.keepsLanes {T : List Reg} {c : Prog isa} {s s' : State} {t : List L
   intro r hr
   exact hh (r, .g r) (by simpa using List.all_eq_true.mp hk r hr)
 
+/-! ## The same check, as the kernel evaluates it
+
+`check` folds `step` over a block, and the kernel evaluates lazily: after 15,000 instructions
+the facts are a filter of a filter of … of the first list, and it forces each fact through
+every one of them. `checkK` rebuilds the list of facts after each instruction, so that the next
+filter reads a list; `keepsK` is `keeps` with it (`keepsK_eq`), and takes half the time. -/
+
+/-- `k l`, with the spine of `l` evaluated first. -/
+def forceL {α β : Type} : List α → (List α → β) → β
+  | [], k => k []
+  | a :: l, k => forceL l fun l' => k (a :: l')
+
+theorem forceL_eq {α β : Type} (l : List α) (k : List α → β) : forceL l k = k l := by
+  induction l generalizing k with
+  | nil => rfl
+  | cons a l ih => exact ih _
+
+def foldK (A : Facts) : List Instr → Facts
+  | [] => A
+  | i :: is => forceL (step A i) fun B => foldK B is
+
+theorem foldK_eq (A : Facts) (is : List Instr) : foldK A is = is.foldl step A := by
+  induction is generalizing A with
+  | nil => rfl
+  | cons i is ih => rw [foldK, forceL_eq, ih, List.foldl_cons]
+
+def checkK : Facts → Prog isa → Option Facts
+  | A, .block is => some (foldK A is)
+  | A, .seq a b => (checkK A a).bind (checkK · b)
+  | A, .ite _ t e => (checkK A t).bind fun B => (checkK A e).map fun C => B.filter (· ∈ C)
+  | A, .loop body _ => loopInv (fun I => checkK I body) (A.length + 1) A
+  | _, _ => none
+
+theorem checkK_eq (A : Facts) (c : Prog isa) : checkK A c = check A c := by
+  induction c generalizing A <;> simp only [checkK, check, foldK_eq, *]
+
+/-- `keeps`, evaluated with `checkK`. -/
+def keepsK (T : List Reg) (c : Prog isa) : Bool :=
+  match checkK (T.map fun r => (r, .g r)) c with
+  | some B => T.all fun r => B.contains (r, .g r)
+  | none => false
+
+theorem keepsK_eq (T : List Reg) (c : Prog isa) : keepsK T c = keeps T c := by
+  unfold keepsK keeps
+  rw [checkK_eq]
+
 end KeepLanes
 
 open VG VG.AArch64 KeepLanes
@@ -294,15 +340,15 @@ open VG.Proof.MlKem.AArch64 (Keep)
 
 
 /-- `WP.keep` for code that also writes the registers `T`, but restores them
-(`KeepLanes.keeps`): it keeps all but `rs`. -/
+(`KeepLanes.keepsK`, which is `keeps`): it keeps all but `rs`. -/
 theorem WP.keepLanes {c : Prog isa} {s : State} {Q : State → Prop} (rs T : List Reg) (h : WP isa c s Q)
-    (hc : writesOnly (rs ++ T) c = true) (hT : keeps T c = true) (hn : c.noCalls = true := by first | rfl | decide)
+    (hc : writesOnly (rs ++ T) c = true) (hT : keepsK T c = true) (hn : c.noCalls = true := by first | rfl | decide)
     (hv : c.allInstrs keepsV = true := by decide +kernel) :
     WP isa c s fun s' => Q s' ∧ Keep rs s s' := by
   obtain ⟨t, s', he, hq, kk⟩ := WP.keep (rs ++ T) h hc hn hv
   refine ⟨t, s', he, hq, ⟨fun r hr => ?_, kk.rd, kk.wr, kk.sp, kk.vcs⟩⟩
   by_cases hrT : r ∈ T
-  · exact Exec.keepsLanes he hT r hrT
+  · exact Exec.keepsLanes he (keepsK_eq T c ▸ hT) r hrT
   · exact kk.gpr r (by simp [hr, hrT])
 
 end VG.Proof.Bignum.AArch64

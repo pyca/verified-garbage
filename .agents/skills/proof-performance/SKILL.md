@@ -267,6 +267,11 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   29.5 s as functions and 2 s as a list (`KFile`, `symRun_regs`,
   `Proof/Sha3/AArch64/Scalar/Reflect.lean`): keep the function, which the
   proofs about the checker read easily, and prove it equal to the list's.
+  A fold that filters a list at every step has the same shape: the kernel
+  evaluates lazily, so after 15,000 instructions the list is a filter of a
+  filter of the first, and each element is forced through all of them.
+  Rebuild the list at each step (`forceL`, `checkK`, `keepsK_eq` in
+  `Proof/Bignum/AArch64/KeepLanes.lean`: half the time).
 * **Tables of constants:** the kernel evaluates a table's whole length
   (seconds for a comb's tables) when it compares `8 * words.length` with
   another form of it, such as a `Region`'s `len` projection. Never unfold
