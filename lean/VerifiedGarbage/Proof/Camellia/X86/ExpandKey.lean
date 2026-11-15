@@ -1425,7 +1425,7 @@ theorem sigmas_eq : (sigmas.zipIdx.flatMap fun (x, e) => sigmaOne e x) =
   simp only [sigmaTable, List.flatMap_map, List.flatMap_assoc, sigmaOne]
 
 theorem sigmaTable_nodup : (sigmaTable.map (·.1)).Nodup ∧ ∀ x ∈ sigmaTable, x.1 < slots := by
-  constructor <;> decide
+  constructor <;> decide +kernel
 
 theorem mem_sigmaTable {e k : Nat} (he : e < 6) (hk : k < 16) :
     (keySlot + 16 * e + k, keyPlane32 (sigE e) (k / 8) (k % 8)) ∈ sigmaTable := by

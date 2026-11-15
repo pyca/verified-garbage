@@ -125,9 +125,9 @@ theorem verify_ok (hc : CfgOk c) (hC : Law c.C) (hcomb : c.comb = none)
   refine points_ok hc hM hA
     (Q₁ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ 3) s₂ U >>> j) (G c.C)))
     (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ 3) s₂ V >>> j) P))
-    (step_rep' hC hc.onG ha hb hG h0)
+    (step_rep' (L := c.ladderCfg) (base := ptr s₀ 3) (s := s₂) hC hc.onG ha hb hG h0)
     (by rw [shiftRight_eq_zero hu, mul_zero_pt]; exact rep_infinity' hC)
-    (step_rep' hC hPc ha hb hQ h0)
+    (step_rep' (L := Impl.Ecdh.X86.Cfg.ladderQ c) (base := ptr s₀ 3) (s := s₂) hC hPc ha hb hQ h0)
     (by rw [shiftRight_eq_zero hv, mul_zero_pt]; exact rep_infinity' hC) H.points
     fun s₃ hP => ?_
   refine WP.mono (vtail_ok hc hP H.pPow H.final) fun s' ⟨saved, esp, frame, xo, hxo, hx, ret⟩ =>

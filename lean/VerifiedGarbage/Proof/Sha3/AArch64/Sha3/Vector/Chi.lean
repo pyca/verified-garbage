@@ -55,37 +55,38 @@ theorem theta_d (σ : Low) (A : Spec.Sha3.State) (h : ALanes σ A) (x : Nat) (hx
     runLow theta σ (dreg x) = D A x := by
   have ha : ∀ i (hi : i < 25), σ (vreg i) = A[i]! := fun i hi => (h i hi).trans
     (VG.Proof.Sha3.getElem!_eq A hi).symm
+  -- the lanes, once: not in each of the five cases
+  have h0 := ha 0 (by decide)
+  have h1 := ha 1 (by decide)
+  have h2 := ha 2 (by decide)
+  have h3 := ha 3 (by decide)
+  have h4 := ha 4 (by decide)
+  have h5 := ha 5 (by decide)
+  have h6 := ha 6 (by decide)
+  have h7 := ha 7 (by decide)
+  have h8 := ha 8 (by decide)
+  have h9 := ha 9 (by decide)
+  have h10 := ha 10 (by decide)
+  have h11 := ha 11 (by decide)
+  have h12 := ha 12 (by decide)
+  have h13 := ha 13 (by decide)
+  have h14 := ha 14 (by decide)
+  have h15 := ha 15 (by decide)
+  have h16 := ha 16 (by decide)
+  have h17 := ha 17 (by decide)
+  have h18 := ha 18 (by decide)
+  have h19 := ha 19 (by decide)
+  have h20 := ha 20 (by decide)
+  have h21 := ha 21 (by decide)
+  have h22 := ha 22 (by decide)
+  have h23 := ha 23 (by decide)
+  have h24 := ha 24 (by decide)
+  simp only [vreg, List.getD_cons_succ, List.getD_cons_zero] at h0 h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 h13 h14 h15 h16 h17 h18 h19 h20 h21 h22 h23 h24
   obtain rfl | rfl | rfl | rfl | rfl : x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 ∨ x = 4 := by omega_using [hx]
   all_goals
     simp only [runLow, theta, List.foldl_cons, List.foldl_nil, opLow, put, dreg,
-      List.getD_cons_succ, List.getD_cons_zero, reduceCtorEq, ite_true, ite_false]
+      List.getD_cons_succ, List.getD_cons_zero, reduceCtorEq, ↓reduceIte]
   all_goals
-    have h0 := ha 0 (by decide)
-    have h1 := ha 1 (by decide)
-    have h2 := ha 2 (by decide)
-    have h3 := ha 3 (by decide)
-    have h4 := ha 4 (by decide)
-    have h5 := ha 5 (by decide)
-    have h6 := ha 6 (by decide)
-    have h7 := ha 7 (by decide)
-    have h8 := ha 8 (by decide)
-    have h9 := ha 9 (by decide)
-    have h10 := ha 10 (by decide)
-    have h11 := ha 11 (by decide)
-    have h12 := ha 12 (by decide)
-    have h13 := ha 13 (by decide)
-    have h14 := ha 14 (by decide)
-    have h15 := ha 15 (by decide)
-    have h16 := ha 16 (by decide)
-    have h17 := ha 17 (by decide)
-    have h18 := ha 18 (by decide)
-    have h19 := ha 19 (by decide)
-    have h20 := ha 20 (by decide)
-    have h21 := ha 21 (by decide)
-    have h22 := ha 22 (by decide)
-    have h23 := ha 23 (by decide)
-    have h24 := ha 24 (by decide)
-    simp only [vreg, List.getD_cons_succ, List.getD_cons_zero] at h0 h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 h13 h14 h15 h16 h17 h18 h19 h20 h21 h22 h23 h24
     simp only [h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11,h12,h13,h14,h15,h16,h17,h18,h19,h20,h21,h22,h23,h24,
       D, C, VG.Proof.Sha3.rotateLeft_eq _ (by decide : 0 < 1) (by decide : 1 < 64),
       Nat.reduceAdd, Nat.reduceMod]
@@ -147,13 +148,14 @@ theorem rho_lanes (σ : Low) (A : Spec.Sha3.State) (hA : ALanes σ A) (hD : DLan
   have d3 := hD 3 (by decide)
   have d4 := hD 4 (by decide)
   simp only [dreg, List.getD_cons_succ, List.getD_cons_zero] at d0 d1 d2 d3 d4
-  -- One `simp` for all the lanes, which simplifies `runLow rhoPi σ` once.
+  -- One `simp` for all the lanes, which simplifies `runLow rhoPi σ` once; each read takes its
+  -- branch of a `put` before `simp` visits the other (`↓reduceIte`).
   refine forall_lt_25 ?_
   simp only [runLow, rhoPi, List.foldl_cons, List.foldl_nil, opLow, put, breg,
-      List.getD_cons_succ, List.getD_cons_zero, reduceCtorEq, ite_true, ite_false,
+      List.getD_cons_succ, List.getD_cons_zero, reduceCtorEq, ↓reduceIte,
       a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24, d0,d1,d2,d3,d4,
       B, piSrc, rhoOff, rotl, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd, Nat.reduceMul,
-      Nat.reduceSub, List.getD_cons_succ, List.getD_cons_zero, reduceCtorEq, ite_true, ite_false, and_self]
+      Nat.reduceSub, List.getD_cons_succ, List.getD_cons_zero, reduceCtorEq, and_self]
 
 end VG.Proof.Sha3.AArch64.Sha3.Vector
 
@@ -204,10 +206,10 @@ theorem chi_lanes (σ : Low) (A : Spec.Sha3.State) (hB : BLanes σ A) :
   have b23 := hB 23 (by decide)
   have b24 := hB 24 (by decide)
   simp only [breg, List.getD_cons_succ, List.getD_cons_zero, Nat.reduceMod, Nat.reduceDiv] at b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 b11 b12 b13 b14 b15 b16 b17 b18 b19 b20 b21 b22 b23 b24
-  -- One `simp` for all the lanes, which simplifies `runLow chi σ` once.
+  -- One `simp` for all the lanes, which simplifies `runLow chi σ` once (`↓reduceIte` as in `rho_lanes`).
   refine forall_lt_25 ?_
   simp only [and_self, runLow, chi, List.foldl_cons, List.foldl_nil, opLow, put, vreg,
-      List.getD_cons_succ, List.getD_cons_zero, reduceCtorEq, ite_true, ite_false,
+      List.getD_cons_succ, List.getD_cons_zero, reduceCtorEq, ↓reduceIte,
       b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16, b17, b18, b19, b20, b21, b22, b23, b24, chiWord, Nat.reduceMod, Nat.reduceDiv, Nat.reduceAdd]
 
 theorem chiWord_out (A : Spec.Sha3.State) (rc : BitVec 64) (i : Nat) (hi : i < 25) :

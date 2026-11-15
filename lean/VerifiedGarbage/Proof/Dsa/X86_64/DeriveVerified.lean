@@ -188,7 +188,7 @@ theorem derivePublicRelated {s₁ s₂ : State} (h₁ : DeriveABI s₁) (h₂ : 
       funext f
       cases f <;> simp only [deriveFieldValues, hdi, hdx, h8, h9, hq, hbase, hac]
     exact ExecutionLayout.ext' a1 hp hq (congrArg Spec.Dsa.decodeBE hpb') (congrArg Spec.Dsa.decodeBE hqb')
-      rfl rfl hf
+      (show (0 : BitVec 64) = 0 from rfl) (show (0 : BitVec 64) = 0 from rfl) hf
   exact ⟨h₂.call, ⟨h₁.call, ⟨hlayout, hpb, hsp⟩, rfl⟩, ⟨h₂.call, ⟨rfl, rfl, rfl⟩, rfl⟩⟩
 
 theorem deriveConstantTime (M : Mont) (Sq : MontS) :

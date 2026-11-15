@@ -181,8 +181,10 @@ theorem mid_ok (hc : CfgOk c) {s₀ : State} {base : Addr} {s : State}
   have a : ∀ {i}, i < 45 → i ∉ midW → i ≠ FLAG → sv c base s₁₀ i = sv c base s i := fun {i} hi hl hf => by
     simp only [midW, List.mem_cons, List.not_mem_nil, or_false, not_or] at hl
     obtain ⟨h1, h2, d1, d2, d3, d4, d5, d6, d7, d8, d9, h4, h5, h6, h7', h8, h9⟩ := hl
-    have ht : i < DX ∨ T2 < i := by
-      simp only [DX, DY, DZ, TX, TY, TZ, T0, T1, T2] at d1 d2 d3 d4 d5 d6 d7 d8 d9 ⊢; omega_using [hi, hf, h1, h2, d1, d2, d3, d4, d5, d6, d7, d8, d9, h4, h5, h6, h7', h8, h9]
+    -- one `decide` over the slots: `omega` splits a case for every slot `i` is not
+    have ht : i < DX ∨ T2 < i :=
+      (by decide : ∀ i < 45, i ≠ DX ∧ i ≠ DY ∧ i ≠ DZ ∧ i ≠ TX ∧ i ≠ TY ∧ i ≠ TZ ∧ i ≠ T0 ∧ i ≠ T1 ∧ i ≠ T2 →
+        i < DX ∨ T2 < i) i hi ⟨d1, d2, d3, d4, d5, d6, d7, d8, d9⟩
     rw [v₁₀ hi h9, v₉ hi h8, v₈ hi h7', v₇ hi h6, v₆ hi h5, v₅ hi h4, e₄ hi h2 ht, v₃ hi h1,
       v₂ hi hf]
   -- The values.

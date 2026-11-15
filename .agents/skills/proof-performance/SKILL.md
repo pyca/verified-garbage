@@ -242,7 +242,13 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   * *Reads through writes after the fact.* With `RegUpd.gpr_write` and
     `ite_true, ite_false` as ordinary rewrites, `simp` simplifies the value
     of every write a read passes: `↓RegUpd.gpr_write` and `↓reduceIte`
-    rewrite the read first and never visit the discarded branch.
+    rewrite the read first and never visit the discarded branch. A shared
+    run tactic without `↓reduceIte` pays this in every block: `ffrun`'s time
+    doubled with each instruction that has an operand to evaluate (3.6 s for
+    ten), and its 125 modules took 141 s; with it, 98 s. A run tactic that
+    unfolds the writes themselves (`State.write`) re-simplifies every
+    earlier register function at each instruction: keep them folded and
+    read through them (`crunw`, `MlKem1024/RISCV64/`).
   * *Interpreted arithmetic.* Mathlib's `nlinarith` multiplies every pair of
     facts, in the interpreter: 5 to 11 s for `2 * x ≤ x * 2 ^ 63`. State the
     products as facts and use `omega_using` (which takes `2 ^ k` for an

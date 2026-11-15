@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlKem.Compress
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Framework.RISCV64.Run
+import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
+import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Contract
@@ -33,6 +35,8 @@ meta import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Proof.MlKem.Compress
 meta import VerifiedGarbage.Proof.MlKem.Arith
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Run
+meta import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.Contract
@@ -94,6 +98,23 @@ theorem fld_cmp4 {d : Nat} (hd : d ∈ Proof.MlKem1024.compressWidths) {M : BitV
 
 /-! ## The loop bodies -/
 
+/-- `crun` (`Framework/RISCV64/Run.lean`) for a long block: the writes of registers stay folded, and a
+read goes through them (`RegUpd.gpr_write`), rather than each becoming a function that `simp`
+simplifies again at every instruction after it. -/
+tactic_template "crunw" "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+      apply WP.of_runBlock
+      set_option linter.unusedSimpArgs false in
+      simp only [runBlock_cons, runStep_some, runBlock_nil,
+        exec, ↓RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write,
+        addr, State.load, State.store, Width.bytes, imm12,
+        BitVec.setWidth_eq, BitVec.add_zero, BitVec.ofNat_eq_ofNat,
+        Mem.read, BitVec.zero_width_append, BitVec.cast_eq, Option.bind_some, Option.map_some,
+        Option.some.injEq, exists_eq_left', ite_true, ite_false, reduceCtorEq, ne_eq,
+        not_false_eq_true, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, Nat.reduceAdd, Nat.reducePow,
+        Nat.reduceEqDiff, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceDiv, Nat.mod_one, implies_true,
+        true_implies, ↓reduceIte, and_self, true_and, and_true, Int.reduceLE, Int.reduceLT,
+        Int.reduceNeg, BitVec.ofInt_neg, BitVec.ofInt_ofNat, ← BitVec.sub_eq_add_neg, $ls,*]))
+
 section
 variable {s : State} {x y c M : BitVec 64}
 
@@ -136,7 +157,7 @@ theorem body5_ok (h3 : s.gpr .a0 = x) (h5 : s.gpr .a2 = y) (h11 : s.gpr .t1 = c)
   have o3 := ob 3 (by decide)
   have o4 := ob 4 (by decide)
   simp only [Nat.reduceMul, BitVec.add_zero] at i0 i1 i2 i3 i4 i5 i6 i7 o0 j0 j1 j2 j3 j4 j5 j6 j7
-  crun [ce5Body, ce5Coeff, ce5Store, compressAt, Keep, V5, A, fld, cmpV4, h3, h5, h11, h9, h10,
+  crunw [ce5Body, ce5Coeff, ce5Store, compressAt, Keep, V5, A, fld, cmpV4, h3, h5, h11, h9, h10,
     i0, i1, i2, i3, i4, i5, i6, i7, j0, j1, j2, j3, j4, j5, j6, j7, o0, o1, o2, o3, o4, preserved, List.forall_mem_cons,
     List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   simp [Mem.writeW, Mem.readW, Mem.read]
@@ -197,7 +218,7 @@ theorem body11_ok (h3 : s.gpr .a0 = x) (h5 : s.gpr .a2 = y) (h11 : s.gpr .t1 = c
   have o9 := ob 9 (by decide)
   have o10 := ob 10 (by decide)
   simp only [Nat.reduceMul, BitVec.add_zero] at i0 i1 i2 i3 i4 i5 i6 i7 o0 j0 j1 j2 j3 j4 j5 j6 j7
-  crun [ce11Body, ce11Coeff, ce11CoeffHi, ce5Store, ce11Store, compressAt, Keep, V11a, V11b, A, fld, cmpV4,
+  crunw [ce11Body, ce11Coeff, ce11CoeffHi, ce5Store, ce11Store, compressAt, Keep, V11a, V11b, A, fld, cmpV4,
     h3, h5, h11, h9, h10, i0, i1, i2, i3, i4, i5, i6, i7, j0, j1, j2, j3, j4, j5, j6, j7, o0, o1, o2, o3, o4, o5, o6, o7, o8, o9, o10,
     preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
   simp [Mem.writeW, Mem.readW, Mem.read]
