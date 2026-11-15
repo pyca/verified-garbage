@@ -40,7 +40,7 @@ def compress : Proof.Sha1.X86_64.Compress where
   ok := ok
   okS := ok
   mxcsr := by change Impl.Sha1.X86_64.AvxBmi.compress.allInstrs _ = true; lit_decide
-  spSafe := Code.all_of_allInstrs (by change Impl.Sha1.X86_64.AvxBmi.compress.allInstrs _ = true; lit_decide)
+  spSafe := Code.all_of_spTest (by change Impl.Sha1.X86_64.AvxBmi.compress.allInstrs _ = true; lit_decide)
   noStack := by change Impl.Sha1.X86_64.AvxBmi.compress.x86_64Depth = 0; lit_decide
   suffix := "_avx_bmi"
   features := ["avx", "bmi1", "bmi2"]

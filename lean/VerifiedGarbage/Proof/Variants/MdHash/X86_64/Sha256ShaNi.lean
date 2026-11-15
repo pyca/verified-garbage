@@ -86,7 +86,7 @@ def compress : Proof.Sha256.X86_64.Compress where
   okS := Proof.Sha256.X86_64.Stream.calleeS Proof.Sha256.X86_64.Stream.shani_ok
     Proof.Sha256.X86_64.Stream.shani_verified0
   mxcsr := by decide +kernel
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_shani"
   features := ["sha", "ssse3"]
 

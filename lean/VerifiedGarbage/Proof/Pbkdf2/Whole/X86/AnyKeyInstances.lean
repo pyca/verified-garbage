@@ -98,7 +98,7 @@ theorem md5_initF :
     md5_anyFrameSat
 
 theorem md5_initSp : (initCode Spec.Hmac.md5I Md.X86.md5M.hmacInit md5F).all (fun i => !isa.writesSp i) = true :=
-  initCode_spSafe (Code.all_of_allInstrs (by lit_decide)) (by decide +kernel) md5_anySp
+  initCode_spSafe (Code.all_of_spTest (by lit_decide)) (by decide +kernel) md5_anySp
 
 /-! ## sha384 -/
 
@@ -152,7 +152,7 @@ theorem sha384_initF :
     sha384_anyFrameSat
 
 theorem sha384_initSp : (initCode Spec.Hmac.sha384I Md.X86.sha384M.hmacInit sha384F).all (fun i => !isa.writesSp i) = true :=
-  initCode_spSafe (Code.all_of_allInstrs (by lit_decide)) (by decide +kernel) sha384_anySp
+  initCode_spSafe (Code.all_of_spTest (by lit_decide)) (by decide +kernel) sha384_anySp
 
 /-! ## sha512 -/
 
@@ -206,7 +206,7 @@ theorem sha512_initF :
     sha512_anyFrameSat
 
 theorem sha512_initSp : (initCode Spec.Hmac.sha512I Md.X86.sha512M'.hmacInit sha512F).all (fun i => !isa.writesSp i) = true :=
-  initCode_spSafe (Code.all_of_allInstrs (by lit_decide)) (by decide +kernel) sha512_anySp
+  initCode_spSafe (Code.all_of_spTest (by lit_decide)) (by decide +kernel) sha512_anySp
 
 /-! ## sha512_224 -/
 
@@ -260,7 +260,7 @@ theorem sha512_224_initF :
     sha512_224_anyFrameSat
 
 theorem sha512_224_initSp : (initCode Spec.Hmac.sha512_224I Md.X86.sha512_224M.hmacInit sha512_224F).all (fun i => !isa.writesSp i) = true :=
-  initCode_spSafe (Code.all_of_allInstrs (by lit_decide)) (by decide +kernel) sha512_224_anySp
+  initCode_spSafe (Code.all_of_spTest (by lit_decide)) (by decide +kernel) sha512_224_anySp
 
 /-! ## sha512_256 -/
 
@@ -314,6 +314,6 @@ theorem sha512_256_initF :
     sha512_256_anyFrameSat
 
 theorem sha512_256_initSp : (initCode Spec.Hmac.sha512_256I Md.X86.sha512_256M.hmacInit sha512_256F).all (fun i => !isa.writesSp i) = true :=
-  initCode_spSafe (Code.all_of_allInstrs (by lit_decide)) (by decide +kernel) sha512_256_anySp
+  initCode_spSafe (Code.all_of_spTest (by lit_decide)) (by decide +kernel) sha512_256_anySp
 
 end VG.Proof.Pbkdf2.Whole.X86.Any

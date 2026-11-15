@@ -81,7 +81,7 @@ theorem ctr_stack' :
 theorem ctr_nosp : NoSp ctrFn.code := NoSp.of_all (by unfold ctrFn; lit_decide)
 
 theorem ctr_spSafe : ctrFn.code.all (fun i => !isa.writesSp i) = true :=
-  Code.all_of_allInstrs (by unfold ctrFn; lit_decide)
+  Code.all_of_spTest (by unfold ctrFn; lit_decide)
 
 /-- What a call of `vg_sm4_ctr32` needs: the key schedule at `K`, the
 counter block at `C` and `n` blocks at `D`, and 1536 bytes of stack for the
@@ -290,7 +290,7 @@ theorem key_stack' :
 theorem key_nosp : NoSp keyFn.code := NoSp.of_all (by unfold keyFn; lit_decide)
 
 theorem key_spSafe : keyFn.code.all (fun i => !isa.writesSp i) = true :=
-  Code.all_of_allInstrs (by unfold keyFn; lit_decide)
+  Code.all_of_spTest (by unfold keyFn; lit_decide)
 
 /-- What a call of `vg_sm4_expand_key` needs: the 16-byte key at `K` and the
 key schedule at `C`, and 1460 bytes of stack for the arguments, the return

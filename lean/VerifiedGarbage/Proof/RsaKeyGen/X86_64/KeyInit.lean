@@ -549,7 +549,7 @@ theorem init_correct (s : State) (h : initPre s) :
     fun i hi => ⟨_, by rw [hrd]; exact List.mem_append_left _ (List.mem_singleton_self _),
       Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩
   obtain ⟨tr, t, he, hp, k⟩ := init_ok scr hreads
-  have safe : SpSafe init := SpSafe.of_all (Code.all_of_allInstrs (by decide +kernel))
+  have safe : SpSafe init := SpSafe.of_all (Code.all_of_spTest (by decide +kernel))
   have hd : init.x86_64Depth = 0 := rfl
   have hf := Exec.stackFrame safe he (by rw [hd]; decide)
   rw [hwr, hd] at hf

@@ -50,7 +50,7 @@ private theorem zeroize_noSp : NoSp Impl.Zeroize.X86.zeroize := NoSp.of_all (by 
 private theorem zeroize_stack : stackUse Impl.Zeroize.X86.zeroize ≤ 0 := by lit_decide
 
 private theorem zeroize_spSafe : Impl.Zeroize.X86.zeroize.all (fun i => !isa.writesSp i) = true :=
-  Code.all_of_allInstrs (by lit_decide)
+  Code.all_of_spTest (by lit_decide)
 
 /-- The CBC code around `b` writes `esp` only in its frames, if `b`'s code does. -/
 theorem encrypt_noSp (b : Impl.Aes.X86.Blocks) (h : NoSp b.code) : NoSp (Impl.AesCbc.X86.encryptZ b) :=

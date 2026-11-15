@@ -59,7 +59,7 @@ theorem update : Verified X86_64.target
   X86_64.Verified.stackScratch (sig := Spec.Sm3.updateSig) (nm := "scratch") (e := .u64) (n := 20)
     (stack := 8) (bytes := 168)
     (by rw [← Proof.Sm3.updateScratchContract_eq]; exact updateScratch) (by decide) (by decide)
-    (by decide) (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)
+    (by decide) (Code.all_of_spTest (by lit_decide)) (by lit_decide)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 theorem finalize : Verified X86_64.target
@@ -68,7 +68,7 @@ theorem finalize : Verified X86_64.target
   X86_64.Verified.stackScratch (sig := Spec.Sm3.finalizeSig) (nm := "scratch") (e := .u64) (n := 20)
     (stack := 8) (bytes := 168)
     (by rw [← Proof.Sm3.finalizeScratchContract_eq]; exact finalizeScratch) (by decide) (by decide)
-    (by decide) (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)
+    (by decide) (Code.all_of_spTest (by lit_decide)) (by lit_decide)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sm3.X86_64.Shared

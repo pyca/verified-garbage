@@ -100,7 +100,7 @@ def variant : Proof.Blake2.X86_64.BackendS where
   code := Impl.Blake2.X86_64.Avx.compress
   callee := Proof.Blake2.X86_64.Avx.callee
   verified := Proof.Blake2.X86_64.Avx.compress_verified
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   updateCT := Proof.Blake2.X86_64.Avx.update_ct
   finalizeCT := Proof.Blake2.X86_64.Avx.finalize_ct
   updateMxcsr := by
@@ -110,10 +110,10 @@ def variant : Proof.Blake2.X86_64.BackendS where
     change (Impl.Blake2.X86_64.Stream.finalize Spec.Blake2.s Proof.Blake2.X86_64.Avx.avx).allInstrs _ =
       true
     lit_decide
-  updateSpSafe := Code.all_of_allInstrs (by
+  updateSpSafe := Code.all_of_spTest (by
     change (Impl.Blake2.X86_64.Stream.update Spec.Blake2.s Proof.Blake2.X86_64.Avx.avx).allInstrs _ = true
     lit_decide)
-  finalizeSpSafe := Code.all_of_allInstrs (by
+  finalizeSpSafe := Code.all_of_spTest (by
     change (Impl.Blake2.X86_64.Stream.finalize Spec.Blake2.s Proof.Blake2.X86_64.Avx.avx).allInstrs _ =
       true
     lit_decide)

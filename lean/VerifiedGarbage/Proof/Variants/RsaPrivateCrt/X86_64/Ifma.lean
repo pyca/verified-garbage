@@ -281,7 +281,7 @@ def variant : CrtImpl where
   okP := crtP_call_ok (by lit_decide) (Ifma.codeP_correct (.inl rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))
   ctP := crtP_call_ct (by lit_decide) (Ifma.codeP_correct (.inl rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) (Ifma.codeP_constantTime Mont.fnAdx (.inl rfl) (by decide +kernel) (by decide +kernel))
   nospP := noSp_of (by lit_decide)
-  spSafeP := Code.all_of_allInstrs (by lit_decide)
+  spSafeP := Code.all_of_spTest (by lit_decide)
   suffix := "_ifma"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
 
@@ -296,7 +296,7 @@ def variant512 : CrtImpl where
   okP := crtP_call_ok (by lit_decide) (Ifma.codeP_correct (.inr rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))
   ctP := crtP_call_ct (by lit_decide) (Ifma.codeP_correct (.inr rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) (Ifma.codeP_constantTime Mont.fnAdx (.inr rfl) (by decide +kernel) (by decide +kernel))
   nospP := noSp_of (by lit_decide)
-  spSafeP := Code.all_of_allInstrs (by lit_decide)
+  spSafeP := Code.all_of_spTest (by lit_decide)
   suffix := "_ifma512"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
   extra := ["avx512fp16"]

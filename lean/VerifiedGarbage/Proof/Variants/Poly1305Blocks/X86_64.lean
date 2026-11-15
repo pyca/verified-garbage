@@ -46,7 +46,7 @@ def avx2 : BlocksImpl where
   ok := Avx2.blocksAvx2_ok
   ct := Avx2.blocksAvx2_ct
   nosp := avx2_nosp
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_avx2"
   features := Impl.Poly1305.X86_64.Blocks.features .avx2
   update := some avx2Update
@@ -101,7 +101,7 @@ def avx512 : BlocksImpl where
   ok := Avx512.blocksAvx512_ok
   ct := Avx512.blocksAvx512_ct
   nosp := avx512_nosp
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_avx512"
   features := Impl.Poly1305.X86_64.Blocks.features .avx512
   update := some avx512Update
@@ -156,7 +156,7 @@ def ifma : BlocksImpl where
   ok := Ifma.blocksIfma_ok
   ct := Ifma.blocksIfma_ct
   nosp := ifma_nosp
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_ifma"
   features := Impl.Poly1305.X86_64.Blocks.features .ifma
   update := some ifmaUpdate

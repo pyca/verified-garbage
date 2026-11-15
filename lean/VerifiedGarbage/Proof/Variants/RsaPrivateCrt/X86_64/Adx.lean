@@ -272,7 +272,7 @@ def variant : CrtImpl where
     (crtCodeP_constantTime Mont.fnAdx (CrtExpL.w5S Mont.fnAdx MontS.fnLazyAdx)
       (CrtExpL.w5S_ct Mont.fnAdx MontS.fnLazyAdx))
   nospP := noSp_of (by decide +kernel)
-  spSafeP := Code.all_of_allInstrs (by decide +kernel)
+  spSafeP := Code.all_of_spTest (by decide +kernel)
   suffix := "_adx"
   features := ["avx", "avx2", "bmi2", "adx"]
 

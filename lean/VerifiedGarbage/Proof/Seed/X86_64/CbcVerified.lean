@@ -111,7 +111,7 @@ theorem cbcDecryptChained_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Seed.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 192) (post := Proof.Seed.cbcDecChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 1544) cbcDecryptChained_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Seed.cbcDecChainedPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -163,7 +163,7 @@ theorem cbcEncryptChained_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Seed.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 192) (post := Proof.Seed.cbcEncChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 1544) cbcEncryptChained_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Seed.cbcEncChainedPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

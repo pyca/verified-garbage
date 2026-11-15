@@ -270,7 +270,7 @@ def variant : CrtImpl where
     (crtCodeP_correct Mont.fnBase (CrtExpL.w4S Mont.fnBase MontS.fnLazy) (by decide +kernel))
     (crtCodeP_constantTime Mont.fnBase (CrtExpL.w4S Mont.fnBase MontS.fnLazy) (CrtExpL.w4S_ct Mont.fnBase MontS.fnLazy))
   nospP := noSp_of (by decide +kernel)
-  spSafeP := Code.all_of_allInstrs (by decide +kernel)
+  spSafeP := Code.all_of_spTest (by decide +kernel)
   suffix := ""
   features := []
 

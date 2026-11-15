@@ -60,14 +60,14 @@ abbrev keyK : Contract isa := Spec.Sm4.expandKeyContract X86_64.abi 3144
 
 theorem ctr_spSafe : SpSafe ctrFn.code := by
   have hcore : (Impl.Sm4.X86_64.ctr32).all (fun i => !isa.writesSp i) = true :=
-    Code.all_of_allInstrs (by lit_decide)
+    Code.all_of_spTest (by lit_decide)
   apply SpSafe.of_all
   refine withStackScratch_spSafe (r := .r8) (by decide) ?_
   simp only [Code.all, hcore, wipe_spSafe, Bool.and_self]
 
 theorem key_spSafe : SpSafe keyFn.code := by
   have hcore : (Impl.Sm4.X86_64.expandKey).all (fun i => !isa.writesSp i) = true :=
-    Code.all_of_allInstrs (by lit_decide)
+    Code.all_of_spTest (by lit_decide)
   apply SpSafe.of_all
   refine withStackScratch_spSafe (r := .rdx) (by decide) ?_
   simp only [Code.all, hcore, wipe_spSafe, Bool.and_self]
