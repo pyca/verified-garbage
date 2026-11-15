@@ -12,6 +12,7 @@ import VerifiedGarbage.Proof.Bignum.RISCV64.MontFinish64
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
+import VerifiedGarbage.Proof.MillerRabin.RISCV64.Core
 
 /-!
 # FFDH's context on RISC-V: its rows
@@ -33,6 +34,7 @@ open VG.Proof.Bignum.RISCV64
 open VG.Proof.Bignum.RISCV64.Win (WCtx A mask selectAt_ok sub1_sign arr_eq arr1 slot_lt arrO arr_out)
 open VG.Proof.Bignum (slot slot_sep Arrays)
 open VG.Impl.Bignum.RISCV64.PublicChecked (base)
+open VG.Proof.MillerRabin.RISCV64 (wp_seq_assoc wp_block_prefix_seq)
 
 /-- The context's words. -/
 abbrev ctxWords (w : Nat) : Nat := 3 + 34 * w
@@ -139,27 +141,10 @@ theorem loadRow_ok {s : State} {B C : Addr} {Z w N j a : Nat} (h : WCtx s B Z w 
 
 /-! ## The selection -/
 
+/-- `Win.mask`'s subtraction form (main's `MillerRabin.RISCV64.mask_sub` is
+about its own `mask`). -/
 theorem mask_sub (b : Bool) : BitVec.ofNat 64 0 - BitVec.ofNat 64 (if b then 1 else 0) = mask b := by
   cases b <;> decide
-
-theorem wp_seq_assoc {a b c : Prog isa} {s : State} {Q : State → Prop}
-    (h : WP isa (.seq a b) s fun t => WP isa c t Q) : WP isa (.seq a (.seq b c)) s Q := by
-  obtain ⟨_, _, he, _, _, he', hq⟩ := h
-  cases he with
-  | seq e1 e2 => exact ⟨_, _, .seq e1 (.seq e2 he'), hq⟩
-
-theorem wp_seq_inv {a b : Prog isa} {s : State} {Q : State → Prop} (h : WP isa (.seq a b) s Q) :
-    WP isa a s fun t => WP isa b t Q := by
-  obtain ⟨_, _, he, hq⟩ := h
-  cases he with
-  | seq e1 e2 => exact ⟨_, _, e1, _, _, e2, hq⟩
-
-theorem wp_block_prefix_seq {l₁ l₂ : List Instr} {c : Prog isa} {s : State} {Q : State → Prop}
-    (h : WP isa (.block l₁) s fun t => WP isa (.seq (.block l₂) c) t Q) :
-    WP isa (.seq (.block (l₁ ++ l₂)) c) s Q := by
-  refine WP.seq ?_
-  rw [WP.block_append_iff]
-  exact WP.mono h fun _ h' => wp_seq_inv h'
 
 theorem isEntry_ok {s : State} {e d : Nat} (h3 : s.gpr .a3 = BitVec.ofNat 64 e)
     (h1 : s.gpr .a1 = BitVec.ofNat 64 d) (he : e < 32) (hd : d < 32) :
