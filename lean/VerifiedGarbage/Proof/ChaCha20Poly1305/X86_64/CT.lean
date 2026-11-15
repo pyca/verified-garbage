@@ -1675,6 +1675,10 @@ theorem zeroLen_of {w n i : Nat} (h₁ : n ≤ 2 ^ w * i) (h₂ : 2 ^ w * i < n 
   · rw [Nat.mul_comm]; omega_arith
   · rw [Nat.succ_mul, Nat.mul_comm]; omega_arith
 
+theorem zeroLen_mono (w : Nat) {a b : Nat} (h : a ≤ b) : zeroLen w a ≤ zeroLen w b := by
+  unfold zeroLen
+  exact Nat.mul_le_mul_left _ (Nat.div_le_div_right (by omega_using [h]))
+
 theorem le_zeroLen (w n : Nat) : n ≤ zeroLen w n := by
   have hc : 0 < 2 ^ w := Nat.two_pow_pos w
   unfold zeroLen
@@ -2190,18 +2194,21 @@ and uses: `64 + m` rounded up to its loops' words (`zeroLen`). -/
 abbrev ksLen (v : Proof.ChaCha20.X86_64.XorImpl) (s₀ : State) : Nat :=
   zeroLen v.callee.wide (64 + mOf v.callee.fold v.callee.pass (L s₀))
 
-/-- The prologue, and what it writes: `ctx` below 672, its first `ksLen`
-bytes after them, and the stack its calls use. -/
-theorem prologueF_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e s₀) :
-    WP isa (prologue v.callee) (entryT s₀ t₁₂) fun s => PostPT v.callee.fold v.callee.pass s₀ t₁₂ s ∧
-      Frame [sub s₀ 0 672, sub s₀ 672 (ksLen v s₀), stkR s₀] s₀.mem s.mem ∧ ksLen v s₀ ≤ 1024 := by
-  refine WP.seq (WP.mono (prologueAF_ok v.fold_le (pass_of v) (wide_of v) hp) fun s₁ ⟨h₁, f₁, z₁⟩ =>
+/-- The prologue for `pass`, and what it writes: `ctx` below 672, its first
+`zeroLen wide (64 + m)` bytes after them, and the stack its calls use. -/
+theorem prologuePF_ok (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} (hpass : PassOk v.callee.fold pass)
+    {s₀ : State} (hp : APre e s₀) :
+    WP isa (prologue { v.callee with pass := pass }) (entryT s₀ t₁₂) fun s =>
+      PostPT v.callee.fold pass s₀ t₁₂ s ∧
+      Frame [sub s₀ 0 672, sub s₀ 672 (zeroLen v.callee.wide (64 + mOf v.callee.fold pass (L s₀))), stkR s₀]
+        s₀.mem s.mem ∧ zeroLen v.callee.wide (64 + mOf v.callee.fold pass (L s₀)) ≤ 1024 := by
+  refine WP.seq (WP.mono (prologueAF_ok v.fold_le hpass (wide_of v) hp) fun s₁ ⟨h₁, f₁, z₁⟩ =>
     WP.seq (WP.mono (foldCallF_ok v hp h₁) fun s₂ ⟨h₂, f₂⟩ =>
       WP.mono (prologueBF_ok v.fold_le hp h₂) fun s₃ ⟨h₃, f₃⟩ => ⟨h₃, ?_, z₁⟩))
-  have hm := mOf_le v.callee.fold v.callee.pass (L s₀)
+  have hm := mOf_le v.callee.fold pass (L s₀)
   have hfl := v.fold_le
-  have hz : 64 + mOf v.callee.fold v.callee.pass (L s₀) ≤ ksLen v s₀ := le_zeroLen _ _
-  have z₁' : ksLen v s₀ ≤ 1024 := z₁
+  have hz : 64 + mOf v.callee.fold pass (L s₀) ≤ zeroLen v.callee.wide (64 + mOf v.callee.fold pass (L s₀)) :=
+    le_zeroLen _ _
   refine (f₁.sub fun r hr => ?_).trans ((f₂.sub fun r hr => ?_).trans (f₃.sub fun r hr => ?_))
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -2210,13 +2217,21 @@ theorem prologueF_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : AP
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨sub s₀ 0 672, by simp, sub_sub s₀ (Nat.zero_le _) (by lit_omega) (by lit_omega)⟩
-    · exact ⟨sub s₀ 672 (ksLen v s₀), by simp, sub_sub s₀ (Nat.le_refl _) (by omega_using [hz]) (by omega_using [z₁'])⟩
+    · exact ⟨sub s₀ 672 (zeroLen v.callee.wide (64 + mOf v.callee.fold pass (L s₀))), by simp,
+        sub_sub s₀ (Nat.le_refl _) (by omega_using [hz]) (by omega_using [z₁])⟩
     · exact ⟨sub s₀ 0 672, by simp, sub_sub s₀ (Nat.zero_le _) (by lit_omega) (by lit_omega)⟩
     · exact ⟨stkR s₀, by simp, fun _ h => h⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨sub s₀ 0 672, by simp, sub_sub s₀ (Nat.zero_le _) (by lit_omega) (by lit_omega)⟩
     · exact ⟨stkR s₀, by simp, fun _ h => h⟩
+
+/-- The prologue, and what it writes: `ctx` below 672, its first `ksLen`
+bytes after them, and the stack its calls use. -/
+theorem prologueF_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e s₀) :
+    WP isa (prologue v.callee) (entryT s₀ t₁₂) fun s => PostPT v.callee.fold v.callee.pass s₀ t₁₂ s ∧
+      Frame [sub s₀ 0 672, sub s₀ 672 (ksLen v s₀), stkR s₀] s₀.mem s.mem ∧ ksLen v s₀ ≤ 1024 :=
+  prologuePF_ok v (pass_of v) hp
 
 theorem prologue_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre e s₀) :
     WP isa (prologue v.callee) (entryT s₀ t₁₂) (PostPT v.callee.fold v.callee.pass s₀ t₁₂) :=
@@ -4827,6 +4842,36 @@ def KsLeftAt (v : Proof.ChaCha20.X86_64.XorImpl) (C : Addr) (Lx : Nat) (m₀ m :
   ∀ k < 1024, m (off C (672 + k)) =
     if k < zeroLen v.callee.wide (64 + mOf v.callee.fold v.callee.pass Lx) then 0 else m₀ (off C (672 + k))
 
+/-- The bytes of the keystream area the instance `v` leaves zero, for `Lx`
+bytes of data: those `cryptS` and `cryptO` zero for the stitched code
+(`v.poly = .avx2`), else those `crypt` zeroes. -/
+def ksZ (v : Proof.ChaCha20.X86_64.XorImpl) (Lx : Nat) : Nat :=
+  match v.poly with
+  | .avx2 => zeroLen v.callee.wide (64 + wOf v.callee.fold 512 Lx)
+  | _ => zeroLen v.callee.wide (64 + mOf v.callee.fold v.callee.pass Lx)
+
+theorem ksZ_avx2 {v : Proof.ChaCha20.X86_64.XorImpl} (hv : v.poly = .avx2) (Lx : Nat) :
+    ksZ v Lx = zeroLen v.callee.wide (64 + wOf v.callee.fold 512 Lx) := by
+  simp only [ksZ, hv]
+
+theorem ksZ_of {v : Proof.ChaCha20.X86_64.XorImpl} (hv : ¬ v.poly = .avx2) (Lx : Nat) :
+    ksZ v Lx = zeroLen v.callee.wide (64 + mOf v.callee.fold v.callee.pass Lx) := by
+  unfold ksZ
+  split
+  · next h => exact absurd h hv
+  · rfl
+
+/-- What the instance `v` leaves in the keystream area of a context at `C`,
+for `Lx` bytes of data: zero in its first `ksZ v Lx` bytes, and elsewhere
+what was there (in `m₀`). -/
+def KsLeftZ (v : Proof.ChaCha20.X86_64.XorImpl) (C : Addr) (Lx : Nat) (m₀ m : Mem) : Prop :=
+  ∀ k < 1024, m (off C (672 + k)) = if k < ksZ v Lx then 0 else m₀ (off C (672 + k))
+
+theorem KsLeftAt.z {v : Proof.ChaCha20.X86_64.XorImpl} (hv : ¬ v.poly = .avx2) {C : Addr} {Lx : Nat} {m₀ m : Mem}
+    (h : KsLeftAt v C Lx m₀ m) : KsLeftZ v C Lx m₀ m := by
+  intro k hk
+  rw [h k hk, ksZ_of hv]
+
 /-- What the code leaves in the keystream area, `ctx[672, 1696)`: zeros in
 the `ksLen` bytes it used, and elsewhere what was there. -/
 abbrev KsLeft (v : Proof.ChaCha20.X86_64.XorImpl) (s₀ : State) (m : Mem) : Prop :=
@@ -4838,6 +4883,14 @@ theorem KsLeftAt.frame {v : Proof.ChaCha20.X86_64.XorImpl} {C : Addr} {Lx : Nat}
     (hf : Frame rs m m') (hd : ∀ k < 1024, ∀ r ∈ rs, ¬ r.Contains (off C (672 + k)) 1)
     (hf₀ : Frame rs' m₀' m₀) (hd₀ : ∀ k < 1024, ∀ r ∈ rs', ¬ r.Contains (off C (672 + k)) 1) :
     KsLeftAt v C Lx m₀' m' := by
+  intro k hk
+  rw [hf _ (hd k hk), h k hk, hf₀ _ (hd₀ k hk)]
+
+theorem KsLeftZ.frame {v : Proof.ChaCha20.X86_64.XorImpl} {C : Addr} {Lx : Nat} {m₀ m m₀' m' : Mem}
+    (h : KsLeftZ v C Lx m₀ m) {rs rs' : List Region}
+    (hf : Frame rs m m') (hd : ∀ k < 1024, ∀ r ∈ rs, ¬ r.Contains (off C (672 + k)) 1)
+    (hf₀ : Frame rs' m₀' m₀) (hd₀ : ∀ k < 1024, ∀ r ∈ rs', ¬ r.Contains (off C (672 + k)) 1) :
+    KsLeftZ v C Lx m₀' m' := by
   intro k hk
   rw [hf _ (hd k hk), h k hk, hf₀ _ (hd₀ k hk)]
 

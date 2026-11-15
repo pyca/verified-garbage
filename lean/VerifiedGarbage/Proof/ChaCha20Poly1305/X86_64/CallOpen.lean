@@ -124,20 +124,40 @@ theorem inner_avx2 (v : XorImpl) (hv : v.poly = .avx2) :
 theorem inner_shared (v : XorImpl) (hv : ¬v.poly = .avx2) : inner v = openShared v.callee v.poly := by
   simp only [inner, openInner, hv, ↓reduceIte]
 
-/-- `sharedK`, with what the code leaves in the keystream area (`KsLeft`) in
+/-- `sharedK`, with what the code leaves in the keystream area (`KsLeftZ`) in
 its postcondition. -/
 def sharedKL (v : XorImpl) : Contract isa where
   pre := SPreO
-  post s s' := openSPost s s' ∧ KsLeft v s s'.mem
+  post s s' := openSPost s s' ∧ KsLeftZ v (cx s) (L s) s.mem s'.mem
   pub := sharedPub
 
-/-- The shared code, for an implementation without the stitched AVX2 code,
-leaves the keystream area as `KsLeft` says (`shared_correctK`). -/
-theorem inner_okL (v : XorImpl) (hv : ¬v.poly = .avx2) (s : State) (hs : (sharedKL v).pre s) :
+/-- The shared code leaves the keystream area as `KsLeftZ` says
+(`shared_correctK`, `Stitch.stitchedShared_correctK`). -/
+theorem inner_okL (v : XorImpl) (s : State) (hs : (sharedKL v).pre s) :
     ∃ t s', Exec isa (inner v) s t s' ∧ abiPreserved s s' ∧ (sharedKL v).post s s' := by
-  rw [inner_shared v hv]
-  obtain ⟨t, s', e, ⟨a, p⟩, k⟩ := shared_correctK v hs
-  exact ⟨t, s', e, a, p, k⟩
+  by_cases hv : v.poly = .avx2
+  · have hw : WP isa (.seq (.block (Stitch.padIns .rax 41)) (Stitch.openStitchedShared v.callee v.poly)) s
+        fun s' => abiPreserved s s' ∧ (sharedKL v).post s s' := by
+      refine WP.seq (WP.mono (pad_ok s) fun u e => ?_)
+      subst e
+      obtain ⟨t, s', ex, ⟨ab, hq⟩, k⟩ := Stitch.stitchedShared_correctK v hv (spre_setRax hs 0)
+      have em : (s.setReg .rax 0).mem = s.mem := RegUpd.mem_setReg _ _ _
+      have ec : cx (s.setReg .rax 0) = cx s := by
+        simp only [cx, X86_64.stackArg, X86_64.stackArgAddr, RegUpd.gpr_setReg_of_ne _ _ (show Reg.rsp ≠ .rax by decide), em]
+      have eL : L (s.setReg .rax 0) = L s := by
+        simp only [L, RegUpd.gpr_setReg_of_ne _ _ (show Reg.r9 ≠ .rax by decide)]
+      rw [ec, eL, em] at k
+      refine ⟨t, s', ex, ⟨fun r hr => ?_, ?_, ab.2.2⟩, hq, k⟩
+      · have hne : r ≠ .rax := by rintro rfl; simp [calleeSaved] at hr
+        rw [ab.1 r hr, RegUpd.gpr_setReg_of_ne _ _ hne]
+      · have := ab.2.1
+        rwa [RegUpd.gpr_setReg_of_ne _ _ (by decide)] at this
+    rw [inner_avx2 v hv]
+    rw [hv] at hw
+    exact hw
+  · rw [inner_shared v hv]
+    obtain ⟨t, s', e, ⟨a, p⟩, k⟩ := shared_correctK v hs
+    exact ⟨t, s', e, a, p, KsLeftAt.z hv k⟩
 
 open VG.Impl.ChaCha20Poly1305.X86_64.Stitch VG.Proof.ChaCha20Poly1305.X86_64.Stitch in
 /-- The callee never writes the stack pointer. The callees' code is
@@ -632,17 +652,17 @@ theorem callOpen_ok (v : XorImpl) {h : State} (hs : CPre h) :
     rw [popped_mem, ← m₂, e]
     exact hp
 
-/-- `callOpen_ok`, for an implementation without the stitched AVX2 code, and
-what the call leaves in the keystream area of `work` (`hW`). -/
-theorem callOpen_okK (v : XorImpl) (hv : ¬v.poly = .avx2) {h : State} (hs : CPre h) :
-    WP isa (callOpen v.callee v.poly) h fun z => COut h z ∧ KsLeftAt v (hW h) (hL h) h.mem z.mem := by
+/-- `callOpen_ok`, and what the call leaves in the keystream area of `work`
+(`hW`). -/
+theorem callOpen_okK (v : XorImpl) {h : State} (hs : CPre h) :
+    WP isa (callOpen v.callee v.poly) h fun z => COut h z ∧ KsLeftZ v (hW h) (hL h) h.mem z.mem := by
   have hn : 8 * frameRegs.length ≤ (h.gpr .rsp).toNat := by have := hs.sp_lo; simp; omega_using [this]
   have hu := hs.entry
   have hB' := hs.hB_lt
   have hd := inner_xdepth v
   rw [callOpen_eq]
   refine WP.frame (by decide) (by decide) (by decide) hn ?_
-  refine WP.callF (k := sharedKL v) (inner_okL v hv) (SpSafe.of_all (inner_spSafe v)) (by omega_using [hd]) (hu.spre hs)
+  refine WP.callF (k := sharedKL v) (inner_okL v) (SpSafe.of_all (inner_spSafe v)) (by omega_using [hd]) (hu.spre hs)
     (Covers.append_left (hu.rd_cov hs) (hu.wr_cov hs).right) (hu.wr_cov hs)
     fun s' rd' wr' cs' f' ⟨s₂, m₂, g₂, ⟨post₂, ks₂⟩⟩ mx' => ?_
   have prsp : (pushed frameRegs h).gpr .rsp = hB h + BitVec.ofNat 64 32 := by
@@ -684,7 +704,7 @@ theorem callOpen_okK (v : XorImpl) (hv : ¬v.poly = .avx2) {h : State} (hs : CPr
     have eL : L ((eS h).withRegions (rdB (eS h) ++ [srcR (eS h)]) (wrB (eS h))) = hL h := by
       show ((eS h).gpr .r9).toNat = _; rw [hu.gpr _ (by decide)]
     have k₂ := ks₂
-    simp only [KsLeft, ec, eL, State.withRegions_mem] at k₂
+    simp only [ec, eL, State.withRegions_mem] at k₂
     rw [popped_mem, ← m₂]
     refine k₂.frame (rs := []) (Frame.refl _ _) (fun _ _ _ hr => by simp at hr) hu.mem fun k hk r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr

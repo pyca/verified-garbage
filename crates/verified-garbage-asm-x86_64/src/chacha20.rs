@@ -508,6 +508,18 @@ pub(crate) mod vg_chacha20_poly1305_open_body_ifma;
 pub(crate) mod vg_chacha20_poly1305_open_body_ssse3;
 
 #[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_seal_avx2_core.rs"]
+pub(crate) mod vg_chacha20_poly1305_seal_avx2_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_seal_avx512_core.rs"]
+pub(crate) mod vg_chacha20_poly1305_seal_avx512_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_seal_avx512vl_core.rs"]
+pub(crate) mod vg_chacha20_poly1305_seal_avx512vl_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_chacha20_poly1305_seal_body.rs"]
 pub(crate) mod vg_chacha20_poly1305_seal_body;
 
@@ -534,6 +546,10 @@ pub(crate) mod vg_chacha20_poly1305_seal_body_ssse3;
 #[rustfmt::skip]
 #[path = "internal/vg_chacha20_poly1305_seal_core.rs"]
 pub(crate) mod vg_chacha20_poly1305_seal_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_chacha20_poly1305_seal_ifma_core.rs"]
+pub(crate) mod vg_chacha20_poly1305_seal_ifma_core;
 
 #[rustfmt::skip]
 #[path = "internal/vg_chacha20_poly1305_seal_split_avx512.rs"]
