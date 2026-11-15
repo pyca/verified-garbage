@@ -22341,14 +22341,14 @@ vg_aes_gcm_seal_prepared_aesni_pclmul:
 	.p2align 6
 
 vg_aes_gcm_open_prepared_aesni_pclmul:
-	lea rsp, [rsp-2608]
-	mov rax, QWORD PTR [rsp+2616]
-	mov QWORD PTR [rsp+8], rax
+	lea rsp, [rsp-2616]
 	mov rax, QWORD PTR [rsp+2624]
-	mov QWORD PTR [rsp+16], rax
+	mov QWORD PTR [rsp+8], rax
 	mov rax, QWORD PTR [rsp+2632]
-	mov QWORD PTR [rsp+24], rax
+	mov QWORD PTR [rsp+16], rax
 	mov rax, QWORD PTR [rsp+2640]
+	mov QWORD PTR [rsp+24], rax
+	mov rax, QWORD PTR [rsp+2648]
 	mov QWORD PTR [rsp+32], rax
 	mov rax, rsp
 	add rax, 48
@@ -22805,7 +22805,7 @@ vg_aes_gcm_open_prepared_aesni_pclmul:
 	mov r13, QWORD PTR [r15+152]
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
-	lea rsp, [rsp+2608]
+	lea rsp, [rsp+2616]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -22824,22 +22824,24 @@ vg_aes_gcm_open_prepared_aesni_pclmul:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-8]
-	lea rsp, [rsp-2624]
-	movdqu XMMWORD PTR [rsp+336], xmm0
-	movdqu XMMWORD PTR [rsp+320], xmm0
-	movdqu XMMWORD PTR [rsp+304], xmm0
-	movdqu XMMWORD PTR [rsp+288], xmm0
-	movdqu XMMWORD PTR [rsp+192], xmm0
-	movdqu XMMWORD PTR [rsp+176], xmm0
-	movdqu XMMWORD PTR [rsp+160], xmm0
-	movdqu XMMWORD PTR [rsp+144], xmm0
-	movdqu XMMWORD PTR [rsp+128], xmm0
-	movdqu XMMWORD PTR [rsp+112], xmm0
-	movdqu XMMWORD PTR [rsp+96], xmm0
-	movdqu XMMWORD PTR [rsp+80], xmm0
-	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
-	lea rsp, [rsp+2624]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-2344]
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-280]
+	movdqu XMMWORD PTR [rsp+184], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+280]
+	lea rsp, [rsp+8]
+	lea rsp, [rsp+2344]
 	lea rsp, [rsp+8]
 	mov eax, eax
 	xor ecx, ecx
