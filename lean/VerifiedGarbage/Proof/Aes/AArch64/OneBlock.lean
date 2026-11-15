@@ -27,7 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 `OneBlock.core` is FIPS 197's cipher on the state in `v0` (`core_ok`):
 ShiftRows by `tbl` is `aesShiftRows` (`tbl_shiftRows`), `select` on the
 S-box in the table registers is `aesMapBytes aesSbox` (`subShift_run`), and
-`mix` is `aesMixColumns` (`mix_bytes`: the columns are the 32-bit lanes, and
+`mix` is `aesMixColumns` (`mixV_eq`: the columns are the 32-bit lanes, and
 their rotations by one and two bytes are `ushr` with `sli` and `rev32`),
 which `Proof/Aes/Vector.lean` relates to the specification's rounds.
 
@@ -578,5 +578,11 @@ theorem encryptBlocksN_ct : ConstantTime isa (Proof.Aes.blocksAArch64 Spec.Aes.c
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+theorem encryptBlocksN_verified :
+    Verified AArch64.target encryptBlocksN (Proof.Aes.encryptBlocksRoundsContract AArch64.abi) :=
+  Verified.of_correct encryptBlocksN_correct encryptBlocksN_ct (by
+    sig_implies [Proof.Aes.encryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
+      AArch64.abi, AArch64.argRegs] [blocksSat] using blocksSat)
 
 end VG.Proof.Aes.AArch64.OneBlock

@@ -23,12 +23,14 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # AES on whole blocks on AArch64: the whole functions
 
-`vg_aes_encrypt_blocks` and `vg_aes_decrypt_blocks` are `blocks` around
-`encrypt4` and `decrypt4`, and are proven at once, for any transformation of
-four blocks with `CryptOk`: the prologue moves the arguments where
-`vg_aes_ctr32` has them, saves the callee-saved registers and bitslices the
-round keys as `vg_aes_ctr32`'s does (`Ctr32.lean`, `Group.lean`); the
-groups (`Ecb.lean`) do the rest; the epilogue restores the registers.
+`vg_aes_decrypt_blocks` and the bitsliced code of `vg_aes_encrypt_blocks`
+(which encrypts one block by table lookups: `OneBlock.lean`) are `blocks`
+around `decrypt4` and `encrypt4`, and are proven at once, for any
+transformation of four blocks with `CryptOk` (`correct_blocks`): the
+prologue moves the arguments where `vg_aes_ctr32` has them, saves the
+callee-saved registers and bitslices the round keys as `vg_aes_ctr32`'s
+does (`Ctr32.lean`, `Group.lean`); the groups (`Ecb.lean`) do the rest; the
+epilogue restores the registers.
 -/
 
 @[expose] public section
@@ -252,24 +254,10 @@ theorem blocks_correct {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
   · exact h₁ 9 (by omega_arith)
   · exact h₃ _ (by simp)
 
-theorem encryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre s) :
-    ∃ t s', Exec isa encryptBlocks s t s' ∧ abiPreserved s s' ∧
-      (Proof.Aes.blocksAArch64 Spec.Aes.cipher).post s s' :=
-  blocks_correct encrypt4_cryptOk (by lit_decide) (by lit_decide) (by lit_decide) s hs
-
 theorem decryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre s) :
     ∃ t s', Exec isa decryptBlocks s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).post s s' :=
   blocks_correct decrypt4_cryptOk (by lit_decide) (by lit_decide) (by lit_decide) s hs
-
-theorem encryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre
-    (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pub encryptBlocks := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-    ?_ (by taint_decide)
-  intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, hsp⟩
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem decryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre
     (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pub decryptBlocks := by
@@ -289,12 +277,6 @@ def blocksSat : State where
   mem _ := 0
   rd := [⟨0x1000, 240⟩]
   wr := [⟨0x3000, 16⟩, ⟨0x4000, 2048⟩]
-
-theorem encryptBlocks_verified :
-    Verified AArch64.target encryptBlocks (Proof.Aes.encryptBlocksRoundsContract AArch64.abi) :=
-  Verified.of_correct encryptBlocks_correct encryptBlocks_ct (by
-    sig_implies [Proof.Aes.encryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
-      AArch64.abi, AArch64.argRegs] [blocksSat] using blocksSat)
 
 theorem decryptBlocks_verified :
     Verified AArch64.target decryptBlocks (Proof.Aes.decryptBlocksRoundsContract AArch64.abi) :=
