@@ -48,7 +48,7 @@ namespace VG.Artifacts.Rsa.Arm
 open VG.Proof.Rsa.Arm
 
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.RsaInverse.Arm.variants.flatMap fun v => [
+  (VG.Proof.Variants.RsaInverse.Arm.variants.flatMap fun (v : Proof.Variants.RsaInverse.Arm.Variant) => [
     Spec.Rsa.crtValuesApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.Rsa.Arm.CrtValues.codeFor v.um

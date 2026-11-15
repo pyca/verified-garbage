@@ -37,7 +37,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.HmacMd5.X86_64
 
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.MdHash.X86_64.md5Inits.map fun v =>
+  (VG.Proof.Variants.MdHash.X86_64.md5Inits.map fun (v : Proof.Pbkdf2.Md.X86_64.InitImpl Spec.Hmac.md5I) =>
     Spec.Hmac.md5I.initAnyKeyApi.artifact X86_64.target {
       suffix := v.suffix
       extra := v.extra

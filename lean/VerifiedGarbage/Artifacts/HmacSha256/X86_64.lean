@@ -37,7 +37,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.HmacSha256.X86_64
 
 def artifacts : List Artifact :=
-  (VG.Proof.Variants.MdHash.X86_64.sha256Inits.map fun v =>
+  (VG.Proof.Variants.MdHash.X86_64.sha256Inits.map fun (v : Proof.Pbkdf2.Md.X86_64.InitImpl Spec.Hmac.sha256I) =>
     Spec.Hmac.sha256I.initAnyKeyApi.artifact X86_64.target {
       suffix := v.suffix
       extra := v.extra

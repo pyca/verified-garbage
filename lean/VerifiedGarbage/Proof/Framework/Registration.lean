@@ -32,6 +32,11 @@ The tactics `TCB/Registration.lean` declares for the default proofs of a
   calling convention of the `Sig.contract` it unfolds to (as `of_sig`
   unfolds it), whose head is unfolded until it is an application of
   `Abi.withConsts`; and none if there is no such application.
+* `stack_of` gives `stack`, the stack that the contract `verified` proves
+  is for (the goal `StackOf contract`): the `stack` of the `Sig.contract` it
+  unfolds to (as `of_sig` unfolds it), as that contract states it, so that
+  `ofApi` and `ofSig` compare a number with itself; and 0 if it does not
+  unfold to one, which `ofSig` then reports.
 * `sp_safe` proves `spSafe`, `code.all (fun i => !T.isa.writesSp i) = true`:
   on the ISAs whose `writesSp` is always `false` (ARMv7, AArch64, PPC64LE) by
   `Code.all_of_forall`, which evaluates nothing, and on the others (x86,
@@ -116,6 +121,32 @@ elab_rules : tactic
         throwError "consts_of: {cs} is not a list of tables of constants"
       g.assign cs
     | none => evalTactic (← `(tactic| exact []))
+
+elab_rules : tactic
+  | `(tactic| stack_of) => do
+    let g ← getMainGoal
+    let ty := (← instantiateMVars (← g.getType)).cleanupAnnotations
+    unless ty.isAppOfArity ``StackOf 2 do
+      throwError "stack_of: the goal is not `StackOf contract`: {ty}"
+    let c := ty.appArg!
+    if c.hasMVar then
+      throwError "stack_of: the contract is not known; give `contract`: {c}"
+    let s ← saveState
+    let n? ← try
+        let c' ← toSigContract c
+        -- `Sig.contract A sig pre post writeArgs stack leak`, implicit `M` first.
+        pure (if c'.getAppNumArgs ≥ 7 then some (c'.getArg! 6) else none)
+      catch _ =>
+        s.restore
+        pure none
+    match n? with
+    | some n =>
+      if n.hasMVar then
+        throwError "stack_of: the contract's stack is not known; give `stack`: {n}"
+      unless ← isDefEq (← inferType n) (← g.getType) do
+        throwError "stack_of: {n} is not a number of bytes"
+      g.assign n
+    | none => evalTactic (← `(tactic| exact (0 : Nat)))
 
 /-- A free variable of `e` whose type is an enumeration (`Bool`, an
 `inductive` of constructors without fields). -/

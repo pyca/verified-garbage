@@ -116,7 +116,7 @@ def initReg (c : Ctr32Impl) : Registration Spec.Gcm.initApi X86_64.target :=
     withScrub {
       suffix := c.suffix
       code := gcmInitCodeF c.callee
-      stack := 192
+      contract := Spec.Gcm.initContract abi 192
       verified := initCodeF_eq c ▸ initF_framed (gcmOfF c) KeyImpl.aesniFree fc
       spSafe := initCodeF_eq c ▸ VG.X86_64.withStackScratch_spSafe_of (init_spSafe (gcmOfF c)) }
       (initOut _) [] (pubOk_nil _) c.gcmInitRes
