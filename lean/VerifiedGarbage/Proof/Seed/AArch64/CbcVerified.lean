@@ -28,16 +28,16 @@ meta import VerifiedGarbage.Proof.Framework.RegSet
 `cbcEncryptChained_wp`, `cbcDecryptChained_wp`: the modes' CBC that updates
 the chaining value (`Proof.Modes.AArch64.cbcEncryptChained_wp` and
 `cbcDecryptChained_wp`) over SEED's core for each direction: decryption over
-`dirCoreSpec .decrypt`, encryption over the feedback modes' core
-(`fbCoreSpec`), with the IV's address in `x25`, which the core keeps in
-`v31` (`keeps_x25`). `cbcEncryptChained_verified`,
+`dirCoreSpec .decrypt`, encryption over the feedback modes' one-block core
+(`fbCoreSpec`), with the IV's address in `x25`, which that core does not
+write (`keeps_x25`). `cbcEncryptChained_verified`,
 `cbcDecryptChained_verified`: each is correct and constant time, by the
 taint analysis with public values in vector registers (`VectorTaint`), as
 for OFB and CFB (`fbPre`, `fbTaint_agree`): the pointers, `n` and the stack
 pointer are public, and so is everything the code computes from them, which
-it keeps in registers (the data's address and the blocks left in `v29` and
-`v30` across the batch, which uses no vector instruction); the IV is
-secret. `cbcEncryptChained_framed` and `cbcDecryptChained_framed` run them
+it keeps in registers (in decryption, the data's address and the blocks
+left in `v29` and `v30` across the batch, which uses no vector
+instruction); the IV is secret. `cbcEncryptChained_framed` and `cbcDecryptChained_framed` run them
 with their working space on the stack, zeroed on return: 1456 bytes, the
 182 words of the scratch buffer.
 -/

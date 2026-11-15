@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Modes.AArch64.FbLoop
 public import VerifiedGarbage.Impl.Seed.AArch64.Modes
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Seed.AArch64.Lit
+import VerifiedGarbage.Proof.Seed.AArch64.ModesLit
 public import VerifiedGarbage.Proof.Seed.SboxLit
 import VerifiedGarbage.Proof.Modes.AArch64.Steps
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -16,8 +17,10 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 
 The core's `crypt` calls the ECB code, which overwrites the return address
 (`x30`): `crypt` keeps it in `v28`, which no instruction of the callee
-writes, and moves it back (`crypt_keeps_x30`). `keeps_x30` proves that a
-mode's code keeps `x30`, `crypt` being the only code with a call.
+writes, and moves it back (`crypt_keeps_x30`). The one-block core calls
+nothing and does not write `x30` (`serialCrypt_keeps_x30`). `keeps_x30`
+proves that a mode's code keeps `x30`, `crypt` being the only code with a
+call.
 -/
 
 @[expose] public section
@@ -65,6 +68,10 @@ theorem crypt_keeps_x30 (d : Direction) : KeepsReg .x30 (dirCore d).crypt := by
     cases hR with
     | seq hC hB => exact crypt_keeps_x30_aux d hA hC hB
 
+/-- The one-block core does not write `x30`. -/
+theorem serialCrypt_keeps_x30 : KeepsReg .x30 serialCore.crypt :=
+  Modes.AArch64.keepsReg_of_regSafe (by lit_decide)
+
 /-- `WP.gprs` for `x30`, from `KeepsReg` rather than the absence of calls. -/
 theorem WP.gprs' {c : Prog isa} {s : State} {Q : State → Prop} (hk : KeepsReg .x30 c) (h : WP isa c s Q) :
     WP isa c s fun s' => Q s' ∧ ∀ r ∈ [Reg.x30], s'.gpr r = s.gpr r := by
@@ -76,6 +83,7 @@ theorem WP.gprs' {c : Prog isa} {s : State} {Q : State → Prop} (hk : KeepsReg 
 blocks that do not write `x30`. -/
 tactic_template "keeps_x30" : tactic => `(tactic| repeat (first
   | with_reducible exact crypt_keeps_x30 _
+  | with_reducible exact serialCrypt_keeps_x30
   | apply KeepsReg.seq
   | apply KeepsReg.ite
   | apply KeepsReg.loop

@@ -34,16 +34,16 @@ meta import VerifiedGarbage.Proof.Framework.RegSet
 # SEED-OFB and SEED-CFB128 on AArch64 meet their contracts
 
 `ofb_wp`, `cfbEncrypt_wp`: the modes' OFB and CFB encryption
-(`Proof.Modes.AArch64.fb_wp`) over SEED encryption's core (`dirCoreSpec .encrypt`),
-with the IV's address in `x25`, which the core keeps in `v31` around its
-code (`BlockSpec.viaV`, `keepsReg_viaV`), and the specification's results
+(`Proof.Modes.AArch64.fb_wp`) over SEED encryption's one-block core
+(`serialCoreSpec`), with the IV's address in `x25`, which the core does not
+write (`keeps_x25`), and the specification's results
 (`Proof.Modes.ofb_of`, …). `ofb_verified`, …: each is correct and constant
 time, by the taint analysis with public values in vector registers
 (`VectorTaint`): the pointers, `n` and the stack pointer are public, and so
-is everything the code computes from them, which it keeps in registers (the
-IV's address in `v31`, the data's address and the blocks left in `v29`
-and `v30`, across the batch, which uses no vector instruction);
-the IV is secret. `ofb_framed`, …
+is everything the code computes from them, which it keeps in registers (in
+CFB decryption, the data's address and the blocks left in `v29` and `v30`
+across the batch, which uses no vector instruction); the tables and
+constants of the one-block core are public, and the IV is secret. `ofb_framed`, …
 run them with their working space on the stack, zeroed on return: 1456
 bytes, the 182 words of the scratch buffer.
 `cfbDecrypt_wp` uses the generic batched CFB decryption over `dirCoreSpec
@@ -100,9 +100,8 @@ def cfbDecAArch64 : Contract isa where
     Spec.Aes.bytesAt s'.mem (s.gpr .x1) 16 = Spec.Cbc.next (ivOf s) (blocksOf s s.mem)
   pub := fbPub
 
-/-- SEED encryption's core, with `x25` kept in `v31`. -/
-def fbCoreSpec : Modes.AArch64.BlockSpec fbCore :=
-  (dirCoreSpec .encrypt).viaV .v31 (by decide) (by decide) (by decide) fun _ h => h
+/-- SEED encryption's one-block core. -/
+def fbCoreSpec : Modes.AArch64.BlockSpec fbCore := serialCoreSpec
 
 attribute [local irreducible] Spec.Seed.cipher in
 /-- The core's cipher is the contract's, without unfolding it. -/
@@ -114,7 +113,7 @@ theorem encCipher_eq : (dirCoreSpec .encrypt).cipher = Spec.Seed.cipher := rfl
 
 /-- The core keeps `x25`, where the modes keep the IV's address. -/
 theorem keeps_x25 : Modes.AArch64.KeepsReg .x25 fbCore.prepare ∧ Modes.AArch64.KeepsReg .x25 fbCore.crypt :=
-  Modes.AArch64.keepsReg_viaV (by decide +kernel) (by lit_decide)
+  ⟨Modes.AArch64.keepsReg_of_regSafe (by decide +kernel), Modes.AArch64.keepsReg_of_regSafe (by lit_decide)⟩
 
 /-- What the modes' OFB and CFB give, for a mode `mo`: the data and the IV
 as `fbOut` and `fbIn`, keeping the callee-saved registers. -/

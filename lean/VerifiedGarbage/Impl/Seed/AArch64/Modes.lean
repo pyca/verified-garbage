@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Seed.AArch64.Ecb
+public import VerifiedGarbage.Impl.Seed.AArch64.Serial
 public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
 public import VerifiedGarbage.Impl.Modes.AArch64.CfbDec
 
@@ -14,8 +15,10 @@ modes' generic CBC that updates the chaining value, OFB and CFB
 (`batch`), with the working space in the scratch buffer, which the artifact
 allocates on the stack. CBC decryption deciphers sixteen blocks at a time;
 CFB decryption gathers the preceding ciphertexts and enciphers sixteen
-independent blocks at a time. The dependent modes encipher one block per
-batch, of which the other fifteen lanes are unused.
+independent blocks at a time. The modes whose blocks each need the one
+before (CBC encryption, OFB and CFB encryption) encipher one block at a
+time by table lookups in vector registers (`serialCore`, `Serial.lean`),
+which a batch does in the time of about seven.
 
 The core's slots: the batch's 122 (its working area, at `sb` = `x5` as the
 batch needs), the buffer's sixteen blocks, and a copy of the 128-byte
@@ -25,8 +28,10 @@ no vector register: `crypt` keeps the data's address and the blocks left
 (`x23`, `x24`) in `v29` and `v30` (`dup`, back by `umov`), which the taint
 analysis keeps public across the batch, points `x1`, `x2` and `x0` at the
 buffer, its sixteen blocks and the copy's first round key, and runs the
-batch. CBC encryption and the feedback modes keep the IV's address in
-`x25`, which `fbCore` keeps in `v31` (`Core.viaV`).
+batch. `serialCore` has the same slots (its block is the buffer's first, and
+the batch's working area is unused), so that the functions' frames are the
+same size; it writes none of `x23`, `x24` and `x25`, where CBC encryption
+and the feedback modes keep the IV's address.
 -/
 
 @[expose] public section
@@ -83,9 +88,26 @@ def dirCore (d : Direction) : Impl.Modes.AArch64.Core where
 /-- The registers of the arguments. -/
 def modeRegs : Impl.Modes.AArch64.CtrRegs := ⟨.x1, .x2, .x3, .x4⟩
 
-/-- SEED encryption's core for CBC encryption and the feedback modes: `x25` kept in `v31`
-around its code. -/
-abbrev fbCore : Impl.Modes.AArch64.Core := (dirCore .encrypt).viaV .x25 .v31
+/-- The buffer's first block enciphered under the schedule's copy
+(`Serial.crypt`). -/
+def serialCrypt : Prog isa := .block (Serial.crypt (8 * bufSlot) (8 * schedSlot))
+
+/-- SEED encryption's core for the modes whose blocks each need the one
+before: one block, the buffer's first, by table lookups in vector
+registers. -/
+def serialCore : Impl.Modes.AArch64.Core where
+  prepare := (dirCore .encrypt).prepare
+  crypt := serialCrypt
+  slots := schedSlot + 16
+  total := schedSlot + 28
+  buf := bufSlot
+  lgG := 0
+  keyRegs := [.x0]
+  dataReg := .x23
+  leftReg := .x24
+
+/-- SEED encryption's core for CBC encryption and the feedback modes. -/
+abbrev fbCore : Impl.Modes.AArch64.Core := serialCore
 
 /-- `vg_seed_cbc_encrypt_chained`. -/
 def cbcEncryptChained : Prog isa := fbCore.cbcEncryptChained modeRegs .x25
