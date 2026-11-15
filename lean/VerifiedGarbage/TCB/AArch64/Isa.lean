@@ -110,8 +110,8 @@ Modelling choices:
   `State.syms name`, where `name` is its name, which `adrSym` (`adrp` and
   `add`, resolved by the linker) puts in a register. No instruction changes
   `syms`: a static's address is fixed for the run of the program.
-* A table of constants an instruction carries (`ldrqTbl`, its name and its
-  words) is the `static` of that name the emitter writes from it
+* A table of constants an instruction carries (`ldrqTbl` and `ldrTbl`, its
+  name and its words) is the `static` of that name the emitter writes from it
   (`TCB/Rust.lean`), as x86-64's `aluTbl` and `vmovdquTbl` are
   (`TCB/X86_64/Isa.lean`): for the whole run of the program it is mapped
   readable at `State.syms name` and holds exactly those words, 8 bytes each,
@@ -124,7 +124,7 @@ Modelling choices:
   write through can reach. So the model reads the words from the
   instruction rather than from `State.mem`, whose writes never reach it,
   and no contract states any of this. Unlike x86-64's forms, whose operand
-  the printer writes with the symbol, the printed `ldr q` reads wherever its
+  the printer writes with the symbol, the printed `ldr` reads wherever its
   base register points, so the model faults unless that register holds
   `State.syms name`: an instruction that executes reads the static.
 * The stack pointer is always 16-byte aligned (AAPCS64 §6.4.5.1, "SP mod 16
@@ -602,6 +602,11 @@ inductive Instr
   static from this instruction (`TCB/Rust.lean`), as for x86-64's
   `vmovdquTbl`. -/
   | ldrqTbl (t : VReg) (n : Reg) (off : Nat) (name : String) (words : List (BitVec 64))
+  /-- `ldr xt, [n, #off]` / `ldr wt, [n, #off]` (as `ldr`: LDR (immediate),
+  unsigned offset), whose base register holds the address of the `static`
+  `name`, whose words are `words`: the emitter writes that static from this
+  instruction (`TCB/Rust.lean`), as for `ldrqTbl`. -/
+  | ldrTbl (sz : Size) (t n : Reg) (off : Nat) (name : String) (words : List (BitVec 64))
   /-- `umov wd, vn.s[i]` / `umov xd, vn.d[i]` (UMOV) -/
   | umov (sz : Size) (d : Reg) (n : VReg) (i : Nat)
   /-- `mrs xt, DIT` (MRS of the system register DIT): PSTATE.DIT, in bit 24
@@ -1315,6 +1320,22 @@ def exec : Instr → State → Option State
     if s.gpr n = s.syms name ∧ off % 16 = 0 ∧ off < 65536 ∧ off / 8 + 2 ≤ ws.length then
       some (s.setV t (ws.getD (off / 8 + 1) 0 ++ ws.getD (off / 8) 0))
     else none
+  -- `ldrTbl`: as `ldr sz t n off`, its source the 8 (`.x`) or 4 (`.w`) bytes
+  -- at `n + off`, little-endian: when `n` holds the static's address and
+  -- `off` is an offset `ldr` encodes (a multiple of the access size, less
+  -- than 4096 times it: the scaled 12-bit immediate of LDR (immediate),
+  -- unsigned offset, DDI 0487 C6.2, as `addr` has it) in a word of the
+  -- table, the bytes `off % 8` and on of word `off / 8` of the static
+  -- `name`: all of it (`.x`), or its low (`off % 8 = 0`) or high
+  -- (`off % 8 = 4`) half, zero-extended into the 64-bit register, as LDR's
+  -- 32-bit form does (`X[t, regsize] = ZeroExtend(data, regsize)`, which
+  -- `write` is). Otherwise it faults. The static is the immutable object of
+  -- these words the emitter writes (see the module docs), so the bytes
+  -- there are always these.
+  | .ldrTbl sz t n off name ws, s =>
+    if s.gpr n = s.syms name ∧ off % sz.bytes = 0 ∧ off < 4096 * sz.bytes ∧ off / 8 < ws.length then
+      some (s.write sz t ((ws.getD (off / 8) 0).extractLsb' (8 * (off % 8)) sz.bits))
+    else none
   | .umov sz d n i, s =>
     if i * sz.bits < 128 then some (s.write sz d ((s.v n).extractLsb' (sz.bits * i) sz.bits))
     else none
@@ -1353,6 +1374,7 @@ def addrs : Instr → State → List Addr
   -- The offset in the table: the static's address does not depend on the
   -- data (see the module docs).
   | .ldrqTbl _ _ off .., _ => [BitVec.ofNat 64 off]
+  | .ldrTbl _ _ _ off .., _ => [BitVec.ofNat 64 off]
   | .ldrSp _ off, s | .strSp _ off, s => [s.sp + BitVec.ofNat 64 off]
   | .push _, s => [s.sp - 16]
   | .pop _, s => [s.sp]
