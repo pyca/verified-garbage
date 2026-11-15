@@ -47,6 +47,12 @@ theorem hb32_of {I : RpIn} {m₀ : Mem} {w : Nat} {c : Bool} {s : State} (h : G 
 
 /-! ## A product by rows, modulo its width -/
 
+/-- Half of the wide width `2 v + 2`. -/
+theorem shr1_wide {v : Nat} (hv : v ≤ 200) : BitVec.ofNat 64 (2 * v + 2) >>> 1 = BitVec.ofNat 64 (v + 1) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
+  omega_using [hv]
+
 theorem pow_add' {a b c : Nat} (h : a + b = c) : 2 ^ a * 2 ^ b = 2 ^ c := by rw [← Nat.pow_add, h]
 
 /-- The sum of rows `0, …, i - 1`: row `j` is word `j` of `A` times the low `W - j` words of `Bv`, at
@@ -278,8 +284,7 @@ theorem aProd_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (v
     brun [h5₉, h12₉]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    simp only [Wk, vk] at *
-    omega_using [hk2]) (by decide) (by decide) (by decide +kernel)) fun t₁₀ ⟨⟨h11, h13, h7, m₁₀⟩, k₁₀⟩ => ?_
+    omega_using [show Wk I.k = 2 * vk I.k + 2 from rfl, hvl]) (by decide) (by decide) (by decide +kernel)) fun t₁₀ ⟨⟨h11, h13, h7, m₁₀⟩, k₁₀⟩ => ?_
   have g₁₀ : G I m₀ (Wk I.k) c t₁₀ := g₆.same (by rw [m₁₀, m₉, m₈, m₇]) (((k₇.trans k₈).trans k₉).trans k₁₀) (by decide)
   have hn := g₁₀.ws.scr.nowrap
   have zA := g₁₀.ws.sl (j := wA) (by decide)
@@ -541,7 +546,7 @@ theorem dqStep_ok {s₀ : State} {B : Addr} {Z eU eR eM eT wm c M z U : Nat} (hs
   have e8 : eU + 8 * (c - j) - 8 = eU + 8 * i := by omega_using [hj, hi']
   simp only [seqs]
   refine WP.seq (WP.mono (WP.keep [.x10] (Q := fun t₁ => t₁.gpr .x10 = word t.mem B (eU + 8 * i) ∧ t₁.mem = t.mem)
-    (by brun [hI.x8, e8, hst.ld (show eU + 8 * i + 8 ≤ Z by omega_using [hU8, hH, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, hn, hi', hi, e8])]) (by decide) (by decide) (by decide +kernel))
+    (by brun [hI.x8, e8, hst.ld (show eU + 8 * i + 8 ≤ Z by omega_using [hU8, hH, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8])]) (by decide) (by decide) (by decide +kernel))
     fun t₁ ⟨⟨h10, hm₁⟩, k₁⟩ => ?_)
   have hu : word t.mem B (eU + 8 * i) = word s₀.mem B (eU + 8 * i) := hI.low i (by omega_using [hj, hi'])
   have hs₁ := hst.congr k₁.wr
@@ -564,7 +569,7 @@ theorem dqStep_ok {s₀ : State} {B : Addr} {Z eU eR eM eT wm c M z U : Nat} (hs
   have t₂8 : t₂.gpr .x8 = off B (eU + 8 * i) := by rw [k₂.gpr .x8 (by decide), k₁.gpr .x8 (by decide), hI.x8, e8]
   have t₂0 : t₂.gpr .x0 = B := (k₀₂.gpr .x0 (by decide)).trans h0
   have hcnt₂ : word t₂.mem B (8 * sCnt) = BitVec.ofNat 64 (c - j) := by
-    rw [o₂.word (by omega_using [hw, hw', hR8, hH, hHR, hHM, hHT, hRZ, hMZ, sUR, sUM, sRM, sRT, sMT]) (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hj, hn, hi', hi, e8]), hI.cnt]
+    rw [o₂.word (by omega_using [hw, hw', hR8, hH, hHR, hHM, hHT, hRZ, hMZ, sMT]) (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8]), hI.cnt]
   have hsc : sCnt < 32 := by decide
   refine WP.mono (WP.keep [.x8, .x13] (Q := fun t' =>
       t'.mem = (t₂.mem.writeW (off B (eU + 8 * i)) (t₂.gpr .x1)).writeW (off B (8 * sCnt))
@@ -572,12 +577,12 @@ theorem dqStep_ok {s₀ : State} {B : Addr} {Z eU eR eM eT wm c M z U : Nat} (hs
       t'.gpr .x8 = off B (eU + 8 * i) - BitVec.ofNat 64 8 ∧ t'.gpr .x13 = BitVec.ofNat 64 (c - j) - BitVec.ofNat 64 1)
     (by
       have hsw : word (t₂.mem.writeW (off B (eU + 8 * i)) (t₂.gpr .x1)) B (8 * sCnt) = BitVec.ofNat 64 (c - j) := by
-        rw [(writeW_outside t₂.mem B (t₂.gpr .x1) (d := eU + 8 * i) (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hj, hn, hi', hi, e8, hsc])).word (by omega_using [hU8, hH, hHR, hHM, hHT, hUZ, sUR, sUM, sUT, hi', hi, e8, hsc]) (by omega_using [hsc]), hcnt₂]
-      brun [t₂8, t₂0, hdr_enc hsc, hs₂.st (show eU + 8 * i + 8 ≤ Z by omega_using [hU8, hH, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, hn, hi', hi, e8]), hs₂.ld (show 8 * sCnt + 8 ≤ Z by omega_using [hH, hUZ]),
+        rw [(writeW_outside t₂.mem B (t₂.gpr .x1) (d := eU + 8 * i) (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8, hsc])).word (by omega_using [hU8, hH, hHR, hHM, hHT, hUZ, hi', hi, e8, hsc]) (by omega_using [hsc]), hcnt₂]
+      brun [t₂8, t₂0, hdr_enc hsc, hs₂.st (show eU + 8 * i + 8 ≤ Z by omega_using [hU8, hH, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8]), hs₂.ld (show 8 * sCnt + 8 ≤ Z by omega_using [hH, hUZ]),
         hs₂.st (show 8 * sCnt + 8 ≤ Z by omega_using [hH, hUZ]), hsw])
     (by decide) (by decide) (by decide +kernel)) fun t' ⟨⟨hm', h8', h13'⟩, k'⟩ => ?_
   have oW : Outside B (eU + 8 * i) 8 t₂.mem (t₂.mem.writeW (off B (eU + 8 * i)) (t₂.gpr .x1)) :=
-    writeW_outside _ B _ (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hj, hn, hi', hi, e8, hsc])
+    writeW_outside _ B _ (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8, hsc])
   have oC : Outside B (8 * sCnt) 8 (t₂.mem.writeW (off B (eU + 8 * i)) (t₂.gpr .x1)) t'.mem := by
     rw [hm']; exact writeW_outside _ B _ (by omega_using [hsc])
   -- What the stores keep.
@@ -603,24 +608,24 @@ theorem dqStep_ok {s₀ : State} {B : Addr} {Z eU eR eM eT wm c M z U : Nat} (hs
   · rw [hm', word_writeW_self, ofNat_sub_ofNat (a := c - j) (b := 1) (by omega_using [hj]) (by omega_using [hc]),
       show c - j - 1 = c - (j + 1) by omega_using []]
   · -- The remainder.
-    rw [kp _ _ (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hj, hn, hi', hi, e8, hsc, hci]) (by omega_using [hw, hw', hU8, hR8, hH, hHR, hUZ, hRZ, hMZ, sUR, sUM, sUT, sRM, sRT, sMT, hi', hi, e8, hci]) (by omega_using [hw, hw', hR8, hH, hHR, hHM, hHT, hRZ, hMZ, sUR, sUM, sRM, sRT, sMT, hsc]), hrv, show c - (j + 1) = i by omega_using [hi']]
+    rw [kp _ _ (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8, hsc, hci]) (by omega_using [hw, hw', hU8, hR8, hH, hHR, hUZ, hRZ, hMZ, sUR, hi', hi, e8, hci]) (by omega_using [hw, hw', hR8, hH, hHR, hHM, hHT, hRZ, hMZ, hsc]), hrv, show c - (j + 1) = i by omega_using [hi']]
   · -- The quotient's digits.
-    rw [show c - (j + 1) = i by omega_using [hi'], wv_cons, kp (eU + 8 * i + 8) j (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hj, hn, hi', hi, e8, hsc, hci]) (by omega_using []) (by omega_using [hU8, hH, hHR, hHM, hHT, hUZ, sUR, sUM, sUT, hj, hi', hi, e8, hsc, hci]),
-      o₂.wv (by omega_using [hw, hw', hU8, hR8, hH, hHR, hUZ, hRZ, hMZ, sUR, sUM, sUT, sRM, sRT, sMT, hj, hi', hi, e8, hci]) (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hj, hn, hi', hi, e8, hsc, hci]), show eU + 8 * i + 8 = eU + 8 * (c - j) by omega_using [hj, hi'], hI.q, hm',
-      (writeW_outside _ B _ (d := 8 * sCnt) (by omega_using [hsc])).word (by omega_using [hU8, hH, hHR, hHM, hHT, hUZ, sUR, sUM, sUT, hi', hi, e8, hsc, hci]) (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hj, hn, hi', hi, e8, hsc, hci]), word_writeW_self, d₂, hci]
+    rw [show c - (j + 1) = i by omega_using [hi'], wv_cons, kp (eU + 8 * i + 8) j (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8, hsc, hci]) (by omega_using []) (by omega_using [hU8, hH, hHR, hHM, hHT, hUZ, hi', hi, e8, hsc, hci]),
+      o₂.wv (by omega_using [hw, hw', hU8, hR8, hH, hHR, hUZ, hRZ, hMZ, sUR, hi', hi, e8, hci]) (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8, hsc, hci]), show eU + 8 * i + 8 = eU + 8 * (c - j) by omega_using [hj, hi'], hI.q, hm',
+      (writeW_outside _ B _ (d := 8 * sCnt) (by omega_using [hsc])).word (by omega_using [hU8, hH, hHR, hHM, hHT, hUZ, hi', hi, e8, hsc, hci]) (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8, hsc, hci]), word_writeW_self, d₂, hci]
     have hdl := LongDivision.digit_lt (Nat.mod_lt (U / 2 ^ (64 * (i + 1))) hM0)
       (Nat.mod_lt (U / 2 ^ (64 * i)) (Nat.two_pow_pos 64))
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hdl]
     conv_rhs => rw [hsplit, LongDivision.div_step]
     ring
   · intro i' hi'
-    rw [kt _ (by omega_arith) (by omega_using [hw, hw', hU8, hR8, hH, hHR, hUZ, hRZ, hMZ, sUR, sUM, sUT, sRM, sRT, sMT, e8, hi']) (by omega_arith) (by omega_using [hH])]
+    rw [kt _ (by omega_using [hUZ, hn, hi']) (by omega_using [hw, hw', hU8, hR8, hH, hHR, hUZ, hRZ, hMZ, sUR, e8, hi']) (by omega_using [hi', hci]) (by omega_using [hH])]
     exact hI.low i' (by omega_using [hi'])
-  · rw [kp _ _ (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hj, hn, hi', hi, e8, hsc, hci]) (by omega_using [hw, hw', hU8, hH, hHM, hUZ, hRZ, hMZ, sUR, sUM, sUT, sRM, sRT, sMT, hi', hi, e8, hci]) (by omega_using [hw, hw', hH, hHR, hHM, hHT, hRZ, hMZ, sUR, sUM, sRM, sRT, sMT, hsc]), o₂.wv (by omega_using [sRM]) (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hj, hn, hi', hi, e8, hsc, hci])]; exact hI.m
-  · rw [kt _ (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hj, hn, hi', hi, e8, hsc, hci]) (by omega_using [hw, hw', hR8, hHR, hHT, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT]) (by omega_using [hU8, hH, hHT, hUZ, hTZ, sUR, sUM, sUT, sRT, sMT, hi', hi, e8, hci]) (by omega_using [hHT])]; exact hI.p
-  · rw [kt _ (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hj, hn, hi', hi, e8, hsc, hci]) (by omega_using [hw, hw', hR8, hHR, hHT, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT]) (by omega_using [hU8, hH, hHT, hUZ, hTZ, sUR, sUM, sUT, sRT, sMT, hi', hi, e8, hci]) (by omega_using [hHT])]; exact hI.d
-  · rw [kt _ (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hj, hn, hi', hi, e8, hsc, hci]) (by omega_using [hw, hw', hR8, hHR, hHT, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT]) (by omega_using [hU8, hH, hHT, hUZ, hTZ, sUR, sUM, sUT, sRT, sMT, hi', hi, e8, hci]) (by omega_using [hHT])]; exact hI.v
-  · rw [kt _ (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hj, hn, hi', hi, e8, hsc, hci]) (by omega_using [hw, hw', hR8, hHR, hHT, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT]) (by omega_using [hU8, hH, hHT, hUZ, hTZ, sUR, sUM, sUT, sRT, sMT, hi', hi, e8, hci]) (by omega_using [hHT])]; exact hI.dl
+  · rw [kp _ _ (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8, hsc, hci]) (by omega_using [hw, hw', hU8, hH, hHM, hUZ, hRZ, hMZ, sUM, hi', hi, e8, hci]) (by omega_using [hw, hw', hH, hHR, hHM, hHT, hRZ, hMZ, hsc]), o₂.wv (by omega_using [sRM]) (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8, hsc, hci])]; exact hI.m
+  · rw [kt _ (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8, hsc, hci]) (by omega_using [hw, hw', hR8, hHR, hHT, hRZ, hMZ, hTZ, sRT]) (by omega_using [hU8, hH, hHT, hUZ, hTZ, sUT, hi', hi, e8, hci]) (by omega_using [hHT])]; exact hI.p
+  · rw [kt _ (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8, hsc, hci]) (by omega_using [hw, hw', hR8, hHR, hHT, hRZ, hMZ, hTZ, sRT]) (by omega_using [hU8, hH, hHT, hUZ, hTZ, sUT, hi', hi, e8, hci]) (by omega_using [hHT])]; exact hI.d
+  · rw [kt _ (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8, hsc, hci]) (by omega_using [hw, hw', hR8, hHR, hHT, hRZ, hMZ, hTZ, sRT]) (by omega_using [hU8, hH, hHT, hUZ, hTZ, sUT, hi', hi, e8, hci]) (by omega_using [hHT])]; exact hI.v
+  · rw [kt _ (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8, hsc, hci]) (by omega_using [hw, hw', hR8, hHR, hHT, hRZ, hMZ, hTZ, sRT]) (by omega_using [hU8, hH, hHT, hUZ, hTZ, sUT, hi', hi, e8, hci]) (by omega_using [hHT])]; exact hI.dl
   · refine hI.frm.trans ?_
     have f₁ : Frm B [(eU, 8 * c), (eR, 8 * (wm + 1)), (8 * sCnt, 8)] t.mem t₂.mem := Frm.of_outside o₂ (by simp)
     exact (f₁.trans (Frm.of_outside (oW.mono (o' := eU) (n' := 8 * c) (by omega_using []) (by omega_using [hj, hi'])) (by simp))).trans
@@ -670,22 +675,22 @@ theorem dqHead_ok {s : State} {B : Addr} {Z eU eR eM eT L wm : Nat} (hs : Scr s 
   have hc1 : 1 ≤ c := by omega_using [hc]
   have hsc : sCnt < 32 := by decide
   have hcv : BitVec.ofNat 64 L - BitVec.ofNat 64 wm + BitVec.ofNat 64 1 = BitVec.ofNat 64 c := by
-    rw [ofNat_sub_ofNat (by omega_using [hw, hL, hL', hUZ, hRZ, hMZ, sUR, sUM, sUT, sRM, sRT, sMT, hc]) (by omega_using [hL']), BitVec.ofNat_add_ofNat, ← hc]
+    rw [ofNat_sub_ofNat (by omega_using [hw, hL, hL', hUZ, hRZ, hMZ, hc]) (by omega_using [hL']), BitVec.ofNat_add_ofNat, ← hc]
   have h8c : BitVec.ofNat 64 c <<< 3 = BitVec.ofNat 64 (8 * c) := by
-    rw [shl_ofNat (show c * 2 ^ 3 < 2 ^ 64 by omega_using [hw, hL, hL', hUZ, hRZ, hMZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hc1, hcv]), Nat.mul_comm]
+    rw [shl_ofNat (show c * 2 ^ 3 < 2 ^ 64 by omega_using [hw, hL, hL', hUZ, hRZ, hMZ, sUM, hc, hc1, hcv]), Nat.mul_comm]
   simp only [seqs]
   refine WP.seq (WP.mono (WP.keep [.x3, .x8, .x12, .x14, .x16, .x17] (Q := fun t =>
       t.mem = s.mem.writeW (off B (8 * sCnt)) (BitVec.ofNat 64 c) ∧ t.gpr .x8 = off B (eU + 8 * c - 8) ∧
       t.gpr .x16 = off B (eU + 8 * c) ∧ t.gpr .x17 = off B eR ∧ t.gpr .x12 = BitVec.ofNat 64 (wm - 1))
     (by
       brun [h13, h12, h8, h11, h0, hcv, h8c, hdr_enc hsc, hs.st (show 8 * sCnt + 8 ≤ Z by omega_using [hH, hUZ]), off_add]
-      exact ⟨off_sub B (by omega_using [_hU8]), ofNat_sub_ofNat (by omega_using [hw]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hcv])⟩) (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨⟨hm₁, h8₁, h16₁, h17₁, h12₁⟩, k₁⟩ => ?_)
+      exact ⟨off_sub B (by omega_using [_hU8]), ofNat_sub_ofNat (by omega_using [hw]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hcv])⟩) (by decide) (by decide) (by decide +kernel)) fun t₁ ⟨⟨hm₁, h8₁, h16₁, h17₁, h12₁⟩, k₁⟩ => ?_)
   have oC : Outside B (8 * sCnt) 8 s.mem t₁.mem := by rw [hm₁]; exact writeW_outside _ _ _ (by omega_using [hsc])
   have hs₁ := hs.congr k₁.wr
   -- `[R] :=` the top `w_m - 1` words of `U`.
-  refine WP.seq (WP.mono (copyWords_ok h16₁ h17₁ h12₁ (by omega_using [hw]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hsc, hcv])
-    (fun i hi => hs₁.ld (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hsc, hcv, hi])) (fun i hi => hs₁.st (by omega_using [hRZ, hi]))
-    (fun i hi b hb => by rw [ofs_off B (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hsc, hcv, hi, hb])]; omega_using [hw, hL, _hU8, hH, hHR, hUZ, hRZ, hMZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hc1, hcv, hi, hb])) fun t₂ ⟨v₂, _, o₂, _, _, k₂⟩ => ?_)
+  refine WP.seq (WP.mono (copyWords_ok h16₁ h17₁ h12₁ (by omega_using [hw]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hsc, hcv])
+    (fun i hi => hs₁.ld (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hsc, hcv, hi])) (fun i hi => hs₁.st (by omega_using [hRZ, hi]))
+    (fun i hi b hb => by rw [ofs_off B (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hsc, hcv, hi, hb])]; omega_using [hw, hL, _hU8, hH, hHR, hUZ, hRZ, hMZ, sUR, hc, hc1, hcv, hi, hb])) fun t₂ ⟨v₂, _, o₂, _, _, k₂⟩ => ?_)
   have hs₂ := hs₁.congr k₂.wr
   refine WP.seq (WP.mono (WP.keep [.x12] (Q := fun t => t.gpr .x12 = BitVec.ofNat 64 wm ∧ t.mem = t₂.mem)
     (by brun [(k₂.gpr .x12 (by decide)).trans h12₁]; rw [BitVec.ofNat_add_ofNat]; congr 1; omega_using [hw])
@@ -694,9 +699,9 @@ theorem dqHead_ok {s : State} {B : Addr} {Z eU eR eM eT L wm : Nat} (hs : Scr s 
   have hs₃ := hs.congr k₀₃.wr
   -- The divisor's normalization and the reciprocal.
   have hM₃ : wv t₃.mem B eM wm = M := by
-    rw [m₃, o₂.wv (by omega_using [hw, hL, hHR, hHM, hRZ, hMZ, sUR, sUM, sRM, sRT, sMT, hc, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hsc, hcv]), oC.wv (by omega_using [hw, hL, hH, hHR, hHM, hHT, hRZ, hMZ, sUR, sUM, sRM, sRT, sMT, hc, hsc, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hsc, hcv]), hMv]
+    rw [m₃, o₂.wv (by omega_using [hw, hL, hHR, hHM, hRZ, hMZ, sRM, hc, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hsc, hcv]), oC.wv (by omega_using [hw, hL, hH, hHR, hHM, hHT, hRZ, hMZ, hc, hsc, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hsc, hcv]), hMv]
   refine WP.seq (WP.mono (normN_ok hs₃ ((k₀₃.gpr .x9 (by decide)).trans h9) h12₃ ((k₀₃.gpr .x6 (by decide)).trans h6)
-    (by omega_using [hw]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hcv]) hMZ hTZ (by rw [hM₃]; exact htop)) fun t₄ ⟨⟨z, hz, hP₄, hD₄, hd₄, hDl₄⟩, o₄, k₄⟩ => ?_)
+    (by omega_using [hw]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hcv]) hMZ hTZ (by rw [hM₃]; exact htop)) fun t₄ ⟨⟨z, hz, hP₄, hD₄, hd₄, hDl₄⟩, o₄, k₄⟩ => ?_)
   rw [hM₃] at hD₄ hd₄ hDl₄
   have hs₄ := hs₃.congr k₄.wr
   refine WP.mono (recipN_ok hs₄ ((k₄.gpr .x6 (by decide)).trans ((k₀₃.gpr .x6 (by decide)).trans h6))
@@ -714,38 +719,38 @@ theorem dqHead_ok {s : State} {B : Addr} {Z eU eR eM eT L wm : Nat} (hs : Scr s 
       (d + 8 ≤ eR ∨ eR + 8 * (wm - 1) ≤ d) → (d + 8 ≤ eT ∨ eT + 32 ≤ d) →
       word s₀.mem B d = word s.mem B d := fun d hd h1 h2 h3 => by
     rw [o₅.word (by omega_using [h3]) hd, o₄.word (by omega_using [h3]) hd, m₃, o₂.word h2 hd, oC.word h1 hd]
-  have hU₀ : wv s₀.mem B eU L = U := by rw [kS _ _ (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hsc, hcv]) (by omega_using [hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, sUR, sUM, sUT, hc, hsc, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hUZ, hRZ, hMZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hcv]) (by omega_using [hL, hL', _hU8, hH, hHT, hUZ, hTZ, sUR, sUM, sUT, sRT, sMT, hc, hcv]), hUv]
+  have hU₀ : wv s₀.mem B eU L = U := by rw [kS _ _ (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hsc, hcv]) (by omega_using [hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hc, hsc, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hUZ, hRZ, hMZ, sUR, hc, hcv]) (by omega_using [hL, hL', _hU8, hH, hHT, hUZ, hTZ, sUT, hc, hcv]), hUv]
   have hUw : ∀ i < c, (word s₀.mem B (eU + 8 * i)).toNat = U / 2 ^ (64 * i) % 2 ^ 64 := fun i hi => by
-    rw [← hU₀, wv_word_at _ _ _ (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hcv, hi])]
+    rw [← hU₀, wv_word_at _ _ _ (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hcv, hi])]
   have hUtop : U / 2 ^ (64 * c) < 2 ^ (64 * (wm - 1)) := by
-    rw [← hUv, wv_shr_words _ _ _ (show c ≤ L by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hcv]), show L - c = wm - 1 by omega_using [hw, hL, hL', hUZ, hRZ, hMZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hc1, hcv]]; exact wv_lt _ _ _ _
+    rw [← hUv, wv_shr_words _ _ _ (show c ≤ L by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hcv]), show L - c = wm - 1 by omega_using [hw, hL, hL', hUZ, hRZ, hMZ, hc, hc1, hcv]]; exact wv_lt _ _ _ _
   have hUM : U / 2 ^ (64 * c) < M := Nat.lt_of_lt_of_le hUtop htop
   have hr₀ : wv s₀.mem B eR (wm + 1) = U / 2 ^ (64 * c) % M := by
-    rw [wv, kSw _ (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hsc, hcv]) (by omega_using [hw, hL, hH, hHR, hHM, hHT, hRZ, hMZ, sUR, sUM, sRM, sRT, sMT, hc, hsc, hcv]) (by omega_using []) (by omega_using [hw, hL, hHR, hHT, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hcv]), hR1, show (0 : BitVec 64).toNat = 0 from rfl,
+    rw [wv, kSw _ (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hsc, hcv]) (by omega_using [hw, hL, hH, hHR, hHM, hHT, hRZ, hMZ, hc, hsc, hcv]) (by omega_using []) (by omega_using [hw, hL, hHR, hHT, hRZ, hMZ, hTZ, sRT, hc, hcv]), hR1, show (0 : BitVec 64).toNat = 0 from rfl,
       Nat.mul_zero, Nat.add_zero]
     rw [Nat.mod_eq_of_lt hUM, show wm = wm - 1 + 1 by omega_using [hw], wv,
-      kSw _ (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hsc, hcv]) (by omega_using [hw, hL, hH, hHR, hHM, hHT, hRZ, hMZ, sUR, sUM, sRM, sRT, sMT, hc, hsc, hcv]) (by omega_using []) (by omega_using [hw, hL, hHR, hHT, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hcv]), hR0, show (0 : BitVec 64).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero,
-      o₅.wv (by omega_using [hw, hL, hHR, hHT, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hsc, hcv]), o₄.wv (by omega_using [hw, hL, hHR, hHT, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hsc, hcv]), m₃, v₂, oC.wv (by omega_using [hw, hL, _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hc1, hsc, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hsc, hcv]), ← hUv,
-      wv_shr_words _ _ _ (show c ≤ L by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hcv]), show L - c = wm - 1 by omega_using [hw, hL, hL', hUZ, hRZ, hMZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hc1, hcv]]
+      kSw _ (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hsc, hcv]) (by omega_using [hw, hL, hH, hHR, hHM, hHT, hRZ, hMZ, hc, hsc, hcv]) (by omega_using []) (by omega_using [hw, hL, hHR, hHT, hRZ, hMZ, hTZ, sRT, hc, hcv]), hR0, show (0 : BitVec 64).toNat = 0 from rfl, Nat.mul_zero, Nat.add_zero,
+      o₅.wv (by omega_using [hw, hL, hHR, hHT, hRZ, hMZ, hTZ, sRT, hc, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hsc, hcv]), o₄.wv (by omega_using [hw, hL, hHR, hHT, hRZ, hMZ, hTZ, sRT, hc, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hsc, hcv]), m₃, v₂, oC.wv (by omega_using [hw, hL, _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hc, hc1, hsc, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hsc, hcv]), ← hUv,
+      wv_shr_words _ _ _ (show c ≤ L by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hcv]), show L - c = wm - 1 by omega_using [hw, hL, hL', hUZ, hRZ, hMZ, hc, hc1, hcv]]
   have h₀ : DQInv s₀ B Z eU eR eM eT wm c M z U 0 s₀ := by
     refine ⟨hs₀, Keep.refl _ _, ?_, ?_, ?_, by rw [Nat.sub_zero]; exact hr₀, ?_, fun i _ => rfl, ?_, ?_, ?_, hv₀, ?_,
       Frm.refl _ _ _⟩
     · rw [k₅.gpr .x8 (by decide), k₄.gpr .x8 (by decide), k₃.gpr .x8 (by decide), k₂.gpr .x8 (by decide), h8₁,
         Nat.sub_zero]
     · rw [k₅.gpr .x12 (by decide), k₄.gpr .x12 (by decide), h12₃]
-    · rw [o₅.word (by omega_using [hHT]) (by omega_using [hsc]), o₄.word (by omega_using [hHT]) (by omega_using [hsc]), m₃, o₂.word (by omega_using [hw, hL, hH, hHR, hHM, hHT, hRZ, hMZ, sUR, sUM, sRM, sRT, sMT, hc, hsc, hcv]) (by omega_using [hsc]), hm₁,
+    · rw [o₅.word (by omega_using [hHT]) (by omega_using [hsc]), o₄.word (by omega_using [hHT]) (by omega_using [hsc]), m₃, o₂.word (by omega_using [hw, hL, hH, hHR, hHM, hHT, hRZ, hMZ, hc, hsc, hcv]) (by omega_using [hsc]), hm₁,
         word_writeW_self, Nat.sub_zero]
     · rw [Nat.sub_zero, Nat.div_eq_of_lt hUM]; rfl
-    · rw [o₅.wv (by omega_using [hw, hL, hHM, hHT, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hsc, hcv]), o₄.wv (by omega_using [hw, hL, hHM, hHT, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hsc, hcv]), hM₃]
-    · rw [o₅.word (by omega_using []) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hsc, hcv])]; exact hP₄
-    · rw [o₅.word (by omega_using []) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hsc, hcv])]; exact hD₄
-    · rw [o₅.word (by omega_using []) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hsc, hcv])]; exact hDl₄
+    · rw [o₅.wv (by omega_using [hw, hL, hHM, hHT, hRZ, hMZ, hTZ, sMT, hc, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hsc, hcv]), o₄.wv (by omega_using [hw, hL, hHM, hHT, hRZ, hMZ, hTZ, sMT, hc, hcv]) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hsc, hcv]), hM₃]
+    · rw [o₅.word (by omega_using []) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hsc, hcv])]; exact hP₄
+    · rw [o₅.word (by omega_using []) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hsc, hcv])]; exact hD₄
+    · rw [o₅.word (by omega_using []) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hsc, hcv])]; exact hDl₄
   have f₀ : Frm B [(eU, 8 * c), (eR, 8 * (wm + 1)), (eT, 32), (8 * sCnt, 8)] s.mem s₀.mem :=
     (((((Frm.of_outside oC (by simp)).trans (by rw [m₃]; exact Frm.of_outside (o₂.mono (o' := eR)
       (n' := 8 * (wm + 1)) (by omega_using []) (by omega_using [])) (by simp))).trans
       (Frm.of_outside (o₄.mono (o' := eT) (n' := 32) (by omega_using []) (by omega_using [])) (by simp))).trans
       (Frm.of_outside (o₅.mono (o' := eT) (n' := 32) (by omega_using []) (by omega_using [])) (by simp))))
-  exact ⟨z, hz, hd₄, hUw, h₀, k₀₅.mono (by decide), kS _ _ (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hc1, hsc, hcv]) (by omega_using [hw, hL, _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hc1, hsc, hcv]) (by omega_using [hw, hL, _hU8, hH, hHR, hUZ, hRZ, hMZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hc1, hcv]) (by omega_using [hw, hL, _hU8, hH, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hc1, hcv]), f₀⟩
+  exact ⟨z, hz, hd₄, hUw, h₀, k₀₅.mono (by decide), kS _ _ (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hsc, hcv]) (by omega_using [hw, hL, _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hc, hc1, hsc, hcv]) (by omega_using [hw, hL, _hU8, hH, hHR, hUZ, hRZ, hMZ, sUR, hc, hc1, hcv]) (by omega_using [hw, hL, _hU8, hH, hHT, hUZ, hRZ, hMZ, hTZ, sUT, hc, hc1, hcv]), f₀⟩
 
 /-- `divQN`: `⌊U / M⌋` in place of `U`'s low `c = L - w_m + 1` words and `U mod M` into `[R]`, for `U` the `L`
 words at `x8`, `M` the `w_m ≥ 4` words at `x9` (its top word not zero), `[R]` at `x11` (word `w_m - 1` zero) and
@@ -781,8 +786,8 @@ theorem divQN_ok {s : State} {B : Addr} {Z eU eR eM eT L wm : Nat} (hs : Scr s B
   refine WP.mono (VG.Proof.MlKem.AArch64.count_loop (n := c) (by omega_using [hc]) (DQInv s₀ B Z eU eR eM eT wm c M z U)
     (fun j hj t hI => dqStep_ok hs₀ ((k₀₅.gpr .x0 (by decide)).trans h0) ((k₀₅.gpr .x11 (by decide)).trans h11)
       ((k₀₅.gpr .x9 (by decide)).trans h9) ((k₀₅.gpr .x6 (by decide)).trans h6) ((k₀₅.gpr .x7 (by decide)).trans h7)
-      hw (by omega_using [hw, hL, hL', hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hj]) (by omega_using [hw, hL, hL', hUZ, hRZ, hMZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hj]) hU8 (by omega_using [hHR]) hH hHR hHM hHT (by omega_using [hw, hL, hL', hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hj]) hRZ hMZ hTZ (by omega_using [hw, hL, hU8, hH, hHR, hUZ, hRZ, hMZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hj]) (by omega_using [hw, hL, hU8, hH, hHM, hUZ, hRZ, hMZ, sUR, sUM, sUT, sRM, sRT, sMT, hc, hj])
-      (by omega_using [hw, hL, hL', hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, hj]) sRM sRT sMT hz hd₄ hM0 hUw hj hI) h₀) fun t hI => ?_
+      hw (by omega_using [hw, hL, hL', hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc]) (by omega_using [hw, hL, hL', hUZ, hRZ, hMZ, hc]) hU8 (by omega_using [hHR]) hH hHR hHM hHT (by omega_using [hw, hL, hL', hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc]) hRZ hMZ hTZ (by omega_using [hw, hL, hU8, hH, hHR, hUZ, hRZ, hMZ, sUR, hc]) (by omega_using [hw, hL, hU8, hH, hHM, hUZ, hRZ, hMZ, sUM, hc])
+      (by omega_using [hw, hL, hL', hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUT, hn, hc]) sRM sRT sMT hz hd₄ hM0 hUw hj hI) h₀) fun t hI => ?_
   have e0 : c - c = 0 := Nat.sub_self c
   have hr := hI.r
   have hq := hI.q
@@ -791,7 +796,8 @@ theorem divQN_ok {s : State} {B : Addr} {Z eU eR eM eT L wm : Nat} (hs : Scr s B
   refine ⟨by rw [hr, ← hUv, ← hMv], by rw [hq, ← hUv, ← hMv], ?_, ?_, hI.x12, (k₀₅.trans hI.keep).mono (by decide)⟩
   · rw [hI.frm.wv_eq (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl <;> dsimp only <;> omega_arith) (by omega_using [hw, hL, hL', hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, sUR, sUM, sUT, sRM, sRT, sMT, hn, hc, e0]), kS₀]
+        rcases hr with rfl | rfl | rfl <;> dsimp only <;>
+          [omega_using []; omega_using [hw, hL, sUR, hc]; omega_using [hH]]) (by omega_using [hw, hL, hL', hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, e0]), kS₀]
   · exact f₀.trans (hI.frm.mono (by simp))
 
 /-- `clearN`: the `n ≥ 1` words at `x16` (`x14 = n`) cleared. -/
@@ -982,8 +988,7 @@ theorem divA1_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (v
     brun [h5₈, h12₈]
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    simp only [Wk, vk] at *
-    omega_using [hk2]) (by decide) (by decide) (by decide +kernel)) fun s₈ ⟨⟨h11, h13, h12, h7, m₉⟩, k₉⟩ => ?_
+    omega_using [hW, hv9, hv2]) (by decide) (by decide) (by decide +kernel)) fun s₈ ⟨⟨h11, h13, h12, h7, m₉⟩, k₉⟩ => ?_
   have k₁₉ := (((((((k₁'.trans k₂').trans k₃').trans k₄').trans k₅').trans k₆').trans k₇').trans k₈').trans k₉
   have g₈ : G I m₀ (Wk I.k) c s₈ := g₄'.same (by rw [m₉, m₈, m₇, m₆, m₅]) ((((k₅'.trans k₆').trans k₇').trans k₈').trans k₉)
     (by decide)
@@ -1070,10 +1075,7 @@ theorem divA_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (vk
   have h12₁₁ : s₁₁.gpr .x12 = BitVec.ofNat 64 (Wk I.k) := (k₁₁.gpr .x12 (by decide)).trans h12₁₀
   refine WP.mono (WP.keep [.x3, .x7, .x14, .x16] (Q := fun t => t.gpr .x16 = off I.B (slot (Wk I.k) wA + 8 * (vk I.k + 4)) ∧
       t.gpr .x14 = BitVec.ofNat 64 (vk I.k - 2) ∧ t.gpr .x7 = 0 ∧ t.mem = s₁₁.mem) (by
-    have e1 : BitVec.ofNat 64 (Wk I.k) >>> 1 = BitVec.ofNat 64 (vk I.k + 1) := by
-      apply BitVec.eq_of_toNat_eq
-      simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-      simp only [Wk, vk] at *; omega_using [hk2]
+    have e1 : BitVec.ofNat 64 (Wk I.k) >>> 1 = BitVec.ofNat 64 (vk I.k + 1) := shr1_wide hv2
     have e2 : (BitVec.ofNat 64 (vk I.k + 1) + BitVec.ofNat 64 3) <<< 3 = BitVec.ofNat 64 (8 * (vk I.k + 4)) := by
       rw [BitVec.ofNat_add_ofNat, shl_ofNat (show (vk I.k + 1 + 3) * 2 ^ 3 < 2 ^ 64 by omega_using [hv2])]; congr 1; omega_using []
     brun [h16₁₁, h12₁₁, e1, e2, off_add, ofNat_sub_ofNat (show 3 ≤ vk I.k + 1 by omega_using [hv9]) (by omega_using [hv2])]
@@ -1528,7 +1530,11 @@ theorem rbB_out {B : Addr} {v : Nat} {m m' : Mem} {a n : Nat} (o : Outside B a n
     have q10 : slot v 12 = slot v 10 + 16 * (v + 2) := by unfold slot; omega_using []
     have q18 : slot v 20 = slot v 18 + 16 * (v + 2) := by unfold slot; omega_using []
     simp only [rbB, List.mem_cons, List.not_mem_nil, or_false, exists_eq_or_imp, exists_eq_left]
-    omega_using [h, q2, q10, q18]
+    rcases h with h | h | h | h
+    · exact .inl (by omega_using [h])
+    · exact .inr (.inl (by omega_using [h, q2]))
+    · exact .inr (.inr (.inl (by omega_using [h, q10])))
+    · exact .inr (.inr (.inr (by omega_using [h, q18])))
 
 theorem rbB_frm {B : Addr} {v : Nat} {m m' : Mem} {rs : List (Nat × Nat)} (f : Frm B rs m m')
     (h : ∀ r ∈ rs, (r.1 + r.2 ≤ 256) ∨ (slot v 2 ≤ r.1 ∧ r.1 + r.2 ≤ slot v 6) ∨
@@ -1539,7 +1545,11 @@ theorem rbB_frm {B : Addr} {v : Nat} {m m' : Mem} {rs : List (Nat × Nat)} (f : 
     have q10 : slot v 12 = slot v 10 + 16 * (v + 2) := by unfold slot; omega_using []
     have q18 : slot v 20 = slot v 18 + 16 * (v + 2) := by unfold slot; omega_using []
     simp only [rbB, List.mem_cons, List.not_mem_nil, or_false, exists_eq_or_imp, exists_eq_left]
-    omega_using [this, q2, q10, q18]
+    rcases this with h | h | h | h
+    · exact .inl (by omega_using [h])
+    · exact .inr (.inl (by omega_using [h, q2]))
+    · exact .inr (.inr (.inl (by omega_using [h, q10])))
+    · exact .inr (.inr (.inr (by omega_using [h, q18])))
 
 theorem hdrW_rb (r : Nat × Nat) (hr : r ∈ hdrW) : r.1 + r.2 ≤ 256 := by
   simp only [hdrW, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -1768,10 +1778,7 @@ theorem divB1_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (W
     rw [k₇'.gpr .x5 (by decide), k₆'.gpr .x5 (by decide), k₅'.gpr .x5 (by decide), k₄'.gpr .x5 (by decide), h5₃]
   have e13 : BitVec.ofNat 64 (Wk I.k) - BitVec.ofNat 64 2 = BitVec.ofNat 64 (2 * vk I.k) := by
     rw [ofNat_sub_ofNat (by omega_using [hW]) (by omega_using [hW, hv2])]; congr 1
-  have eL : BitVec.ofNat 64 (Wk I.k) >>> 1 = BitVec.ofNat 64 (vk I.k + 1) := by
-    apply BitVec.eq_of_toNat_eq
-    simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
-    simp only [Wk, vk] at *; omega_using [hk2]
+  have eL : BitVec.ofNat 64 (Wk I.k) >>> 1 = BitVec.ofNat 64 (vk I.k + 1) := shr1_wide hv2
   have eS : BitVec.ofNat 64 (vk I.k + 1) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (vk I.k) := by
     rw [ofNat_sub_ofNat (by omega_using []) (by omega_using [hv2])]; rfl
   refine WP.mono (WP.keep [.x7, .x11, .x12, .x13] (Q := fun t => t.gpr .x11 = off I.B (slot (vk I.k) nRem) ∧

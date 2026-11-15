@@ -17,6 +17,12 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Spec.Ecdsa.Verify.P521
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.VerifyLit
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Field.Verified
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Field.Verified
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Order.Verified
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Order.Verified
 
 /-!
 # ECDSA verification over P-521 on RISC-V: `Verified`
@@ -33,14 +39,18 @@ namespace VG.Proof.Ecdsa.RISCV64.P521
 open VG VG.RISCV64 VG.Impl.Ecdsa.RISCV64.P521
 
 theorem verify_ct : ConstantTime isa verifyRV.pre verifyRV.pub verifyP521 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
     (fun _ _ _ _ ⟨hsp, h0, h1, h2, h3⟩ => ⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       · exact h0
       · exact h1
       · exact h2
-      · exact h3⟩) (by taint_decide)
+      · exact h3⟩)
+    (by taint_decide_sum [VG.Proof.Weierstrass.RISCV64.P521Field.mulASum,
+      VG.Proof.Weierstrass.RISCV64.P521Field.addASum, VG.Proof.Weierstrass.RISCV64.P521Field.subASum,
+      VG.Proof.Weierstrass.RISCV64.P521Order.mulASum, VG.Proof.Weierstrass.RISCV64.P521Order.addASum,
+      VG.Proof.Weierstrass.RISCV64.P521Order.subASum])
 
 /-- A state satisfying the precondition. -/
 def verifySat : State where
