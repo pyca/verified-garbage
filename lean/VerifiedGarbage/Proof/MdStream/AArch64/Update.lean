@@ -238,7 +238,7 @@ theorem Pending.compress_ok (hd : Dims P) {name : String} {code : Prog isa} (hf 
       by rw [cs _ (by decide) (by decide)]; exact h.x21,
       by rw [cs _ (by decide) (by decide)]; exact h.x22,
       h.frame.trans (hf'.sub ?_), fun p hp' => ?_⟩, ?_, fun iv m hm => h.repr iv m hm _ hstate⟩,
-      fun r hr => cs r (untouched_preserved r hr).1 (untouched_preserved r hr).2⟩
+      fun r hr => cs r (untouched_callee r hr).1 (untouched_callee r hr).2⟩
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -747,13 +747,13 @@ theorem fill_ok (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {c : Nat} {s : St
 theorem choose_untouched (P : Params) : ∀ r ∈ untouched, ∀ i ∈ instrs (.ite (.zero .x .x23)
       (.seq (.block [.lsr .x .x9 .x22 (lg P)]) (.ite (.zero .x .x9) (fill P) (.block (direct P))))
       (fill P) : Prog isa), clobbers i r = false :=
-  untouched_of_all (by
+  untouched_ofAll (by
     have h := storeWord_untouched P
     simp only [instrs, fill, copy, direct, copyWordBody, copyBody, List.all_append, h, Bool.and_true]
     rfl)
 
 theorem updateStart_untouched (P : Params) : ∀ r ∈ untouched, ∀ i ∈ updateStart P, clobbers i r = false :=
-  untouched_of_all rfl
+  untouched_ofAll rfl
 
 /-- One iteration: the compression function, which may write `untouched`,
 keeps them, and nothing else writes them. -/
@@ -768,7 +768,7 @@ theorem body_ok (hd : Dims P) {name : String} {code : Prog isa} (hf : CalleeOk H
   refine WP.seq (wp_movz fun s₁ u₁ => WP.block_nil ?_)
   have hI₁ : Inv H s₀ c s₁ := hI.of_gpr (fun r hr => u₁.other r (ne r hr).1) u₁.mem u₁.rd u₁.wr u₁.sp
   have h10₁ : s₁.gpr .x10 = 0 := by rw [u₁.gpr]; rfl
-  have hu₁ : ∀ r ∈ untouched, s₁.gpr r = s.gpr r := fun r hr => u₁.other r (untouched_ne r hr).2.2.1
+  have hu₁ : ∀ r ∈ untouched, s₁.gpr r = s.gpr r := fun r hr => u₁.other r (untouched_notOurs r hr).2.2.1
   refine WP.seq (WP.mono (WP.gprs (Q := fun s' => (∃ c' k, c < c' ∧ Pending H s₀ c' k s') ∨ Done H s₀ s') ?_
     (choose_untouched P)) fun s' ⟨h, hu₂⟩ => ?_)
   · refine WP.ite (decide (rr P s₀ c = 0))

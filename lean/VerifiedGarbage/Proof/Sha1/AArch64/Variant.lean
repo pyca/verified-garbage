@@ -45,10 +45,6 @@ structure Compress where
     (updK (P := Stream.params) md).pub (update Stream.params name code)
   finalizeCT : ConstantTime isa (finK (P := Stream.params) md).pre
     (finK (P := Stream.params) md).pub (finalize Stream.params name code)
-  updateKeeps : ((instrs (updateMain Stream.params name code)).all fun i =>
-    untouched.all fun r => !clobbers i r) = true
-  finalizeKeeps : ((instrs (finalizeMain Stream.params name code)).all fun i =>
-    untouched.all fun r => !clobbers i r) = true
   updateDepth : (updateMain Stream.params name code).aarch64Depth = 0
   finalizeDepth : (finalizeMain Stream.params name code).aarch64Depth = 0
   /-- The one-shot digest. -/
@@ -117,14 +113,14 @@ def finalize : Prog isa := Impl.MdStream.AArch64.finalize Stream.params v.name v
 theorem callee : CalleeOk (P := Stream.params) md v.code := ⟨v.verified.1, v.noFrames, v.keepsV⟩
 
 theorem update_verified : Verified AArch64.target v.update Proof.Sha1.updateAArch64 := by
-  have h := MdStream.AArch64.Update.verified Stream.dims v.callee v.updateCT v.updateKeeps
+  have h := MdStream.AArch64.Update.verified Stream.dims v.callee v.updateCT
     (by rw [v.updateDepth]; decide)
   exact h.of_implies ⟨fun _ h => h, fun _ _ _ h m hr hc => h Spec.Sha1.H0 m hr hc,
     fun _ _ _ _ h => h, h.2.2⟩
 
 theorem finalize_verified : Verified AArch64.target v.finalize Proof.Sha1.finalizeAArch64 := by
   have h := MdStream.AArch64.Finalize.verified Stream.dims Stream.shape v.callee v.finalizeCT
-    v.finalizeKeeps (by rw [v.finalizeDepth]; decide)
+    (by rw [v.finalizeDepth]; decide)
   exact h.of_implies ⟨fun _ h => h, fun _ _ _ h m hr hc => h Spec.Sha1.H0 m hr trivial hc,
     fun _ _ _ _ h => h, h.2.2⟩
 
