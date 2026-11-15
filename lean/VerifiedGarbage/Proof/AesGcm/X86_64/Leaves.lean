@@ -22,6 +22,7 @@ public import VerifiedGarbage.Proof.Gcm.X86_64.StitchR.Ok
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 public import VerifiedGarbage.Proof.AesGcm.X86_64.SealLeaves
+public import VerifiedGarbage.Proof.AesGcm.X86_64.OpenLeaves
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 
 /-!
@@ -953,6 +954,325 @@ PCLMULQDQ, which returns without secret residue, and `sealWPlain` for the
 others. -/
 def sealWReg (v : GcmVariant) : Registration Spec.Gcm.sealPreparedApi X86_64.target :=
   if v.impl.suffix = aesNiPclmulV.impl.suffix then sealWAesniPclmul else sealWPlain v
+
+/-! ## `vg_aes_gcm_open_prepared_aesni_pclmul` -/
+
+/-- `BlkLeavesD` from what the decryption leaves in `scratch` (`Blocks.Scr`). -/
+theorem blkLeavesD_of {M : Gcm.X86_64.Stitch.CtxMode} {B : BlkFn M} (q : Nat → Nat) (Z : Nat → Addr → Nat → Bool)
+    (h : ∀ s, (Proof.AesGcm.decryptBlocksX86_64M M).pre s → WP isa B.dec.code s fun s' =>
+      Blocks.Scr s (q (Blocks.n s)) (Z (Blocks.n s) (Blocks.S s)) s'.mem) :
+    BlkLeavesD B := by
+  refine ⟨leavesL q Z, fun s t s' hpre he x hx => ?_⟩
+  obtain ⟨_, s'', he', hS⟩ := h s hpre
+  obtain ⟨_, rfl⟩ := Exec.det he he'
+  obtain ⟨d, hd, rfl⟩ : ∃ d, d < 2112 ∧ x = stackArg s 0 + BitVec.ofNat 64 d :=
+    ⟨(x - stackArg s 0).toNat, hx, by
+      rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]⟩
+  simp only [leavesL, Mem.sub_ofNat_toNat _ (show d < 2 ^ 64 by omega)]
+  by_cases h48 : d < 48
+  · simp only [h48, ↓reduceIte, Option.getD_some]
+    rw [← kept_words hS.kept (d / 8) (by omega), ← Blocks.byte_readW64 _ _ (by omega),
+      Offset.add_add_eq _ (by omega : 8 * (d / 8) + d % 8 = d)]
+  · simp only [h48, ↓reduceIte]
+    rw [hS.rest d (by omega) hd]
+    cases Z (Blocks.n s) (Blocks.S s) d <;> rfl
+
+/-- Its `vg_aes_gcm_decrypt_blocks_aesni_pclmul` leaves in `scratch` the
+arguments kept, and nothing else written. -/
+theorem blkBD_aesniPclmul_leaves : BlkLeavesD aesNiPclmulV.impl.blkB :=
+  blkLeavesD_of (fun _ => 0) (fun _ _ _ => false) fun s hpre => by
+    change WP isa (Impl.AesGcm.X86_64.Blocks.decrypt
+      ⟨aesNiPclmulV.impl.ctr.callee.name, aesNiPclmulV.impl.ctr.callee.code⟩ aesNiPclmulV.impl.gh.fn none) s _
+    exact Blocks.decryptN_leaves (Blocks.BP.ofM hpre) _ (aesNiPclmulV.impl.ctr.free.get rfl) _
+      (aesNiPclmulV.impl.gh.free.get rfl)
+
+theorem openCode_aesniPclmul :
+    aesNiPclmulV.impl.openCode aesNiPclmulV.impl.callees = Impl.AesGcm.X86_64.«open» aesNiPclmulV.impl.callees := by
+  have hs : aesNiPclmulV.impl.short = false := rfl
+  unfold GcmImpl.openCode
+  simp only [hs, Bool.false_eq_true, ↓reduceIte]
+
+/-- The code of `vg_aes_gcm_open_prepared_aesni_pclmul` (inside
+`withStackArgScratch 2608 4`): what it leaves in its stack arguments and in
+`work` (`[rsp + 40]`), byte by byte (`openV`). -/
+theorem open_aesniPclmul_leaves :
+    ∃ Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
+        Option (BitVec 8),
+      ∀ s t s', (Proof.AesGcm.openX86_64M Gcm.X86_64.Stitch.CtxMode.base).pre s →
+        Exec isa (aesNiPclmulV.impl.openCode aesNiPclmulV.impl.callees) s t s' →
+        ∀ x, openQ (s.gpr .rsp + BitVec.ofNat 64 8) (stackArg s 4) x →
+          s'.mem x = (openV Lb (fun _ => none) s.gpr (fun i => stackArg s i) (s.gpr .rsp + BitVec.ofNat 64 8)
+            (stackArg s 4) x).getD (s.mem x) := by
+  rw [openCode_aesniPclmul]
+  exact open_leavesQ _ aesNiPclmulV.impl.blkB blkBD_aesniPclmul_leaves (aesNiPclmulV.impl.gh.free.get rfl)
+    (aesNiPclmulV.impl.ctr.free.get rfl)
+
+/-- The stack arguments of `vg_aes_gcm_open`'s code in the frame of
+`withStackArgScratch 2608 4` from `s`: those of `s`, then `work`. -/
+def openArgs (s : State) (i : Nat) : BitVec 64 :=
+  if i < 4 then stackArg s i else s.gpr .rsp - BitVec.ofNat 64 2608 + BitVec.ofNat 64 48
+
+/-- Where `vg_aes_gcm_open`'s code in the frame of `withStackArgScratch 2608 4`
+from `s` has its stack arguments, and `work`. -/
+abbrev openA (s : State) : Addr := s.gpr .rsp - BitVec.ofNat 64 2608 + BitVec.ofNat 64 8
+abbrev openW (s : State) : Addr := s.gpr .rsp - BitVec.ofNat 64 2608 + BitVec.ofNat 64 48
+
+/-- The bytes of the copies of the stack arguments (`openArgs`), at `openA`. -/
+def openHdr (s : State) (x : Addr) : Option (BitVec 8) :=
+  some ((openArgs s ((x - openA s).toNat / 8)).extractLsb' (8 * ((x - openA s).toNat % 8)) 8)
+
+/-- What `vg_aes_gcm_open_prepared`'s code leaves in its frame and in `work`,
+of its entry `s`. -/
+def openVs (Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
+    Option (BitVec 8)) (s : State) (x : Addr) : Option (BitVec 8) :=
+  openV Lb (openHdr s) s.gpr (openArgs s) (openA s) (openW s) x
+
+theorem openWord_congr {g g' : Reg → BitVec 64} {a a' : Nat → BitVec 64}
+    (hg : ∀ r, r ≠ .rax → r ≠ .rsp → g r = g' r) (ha : ∀ i < 5, a i = a' i) (j : Nat) :
+    openWord g a j = openWord g' a' j := by
+  unfold openWord
+  rw [hg .rbp (by decide) (by decide), hg .r12 (by decide) (by decide), hg .r13 (by decide) (by decide),
+    hg .r14 (by decide) (by decide), hg .r15 (by decide) (by decide), hg .rsi (by decide) (by decide),
+    hg .r9 (by decide) (by decide), ha 0 (by decide), ha 1 (by decide), ha 3 (by decide)]
+
+theorem openV_congr (Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
+      Option (BitVec 8)) {hdr hdr' : Addr → Option (BitVec 8)} {g g' : Reg → BitVec 64} {a a' : Nat → BitVec 64}
+    {A W x : Addr} (hh : (⟨A, 40⟩ : Region).Contains x 1 → hdr x = hdr' x)
+    (hg : ∀ r, r ≠ .rax → r ≠ .rsp → g r = g' r) (ha : ∀ i < 5, a i = a' i) :
+    openV Lb hdr g a A W x = openV Lb hdr' g' a' A W x := by
+  unfold openV
+  by_cases h : (⟨A, 40⟩ : Region).Contains x 1
+  · simp only [h, ↓reduceIte]; exact hh h
+  · simp only [h, ↓reduceIte, funext (openWord_congr hg ha), openL_congr Lb hg ha]
+
+/-- What `openV` says of the state `narrowS` runs `vg_aes_gcm_open`'s code
+from, in the frame of `withStackArgScratch 2608 4` from `s`, `openVs` says of
+`s`. -/
+theorem narrowS_openV {sig : Sig} {e : Elem} {n : Nat}
+    {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
+    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
+    (h4 : nStack sig = 4) (hk : 6 ≤ (sig.words abi.ptrBits).length) (hb : 16 + 8 * nStack sig + n * e.size ≤ 2608)
+    {s : State} (hs : (sig.contract abi pre post wa (24 + 2608) leak).pre s)
+    (Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8))
+    {x : Addr} (hx : openQ (openA s) (openW s) x) :
+    openQ ((narrowS sig e n 2608 s).gpr .rsp + BitVec.ofNat 64 8) (stackArg (narrowS sig e n 2608 s) 4) x ∧
+      (openV Lb (fun _ => none) (narrowS sig e n 2608 s).gpr (fun i => stackArg (narrowS sig e n 2608 s) i)
+          ((narrowS sig e n 2608 s).gpr .rsp + BitVec.ofNat 64 8) (stackArg (narrowS sig e n 2608 s) 4) x).getD
+          ((narrowS sig e n 2608 s).mem x) =
+        (openVs Lb s x).getD (s.mem x) := by
+  obtain ⟨hg, ha, hl, hf⟩ := narrowS_args hk hb (by decide) hs
+  obtain ⟨hrsp, -⟩ := narrowS_facts (nm := "") hk hb (by decide) hs
+  rw [h4] at ha hl hf
+  have hW : stackArg (narrowS sig e n 2608 s) 4 = openW s := hl
+  have hA : (narrowS sig e n 2608 s).gpr .rsp + BitVec.ofNat 64 8 = openA s := by rw [hrsp]
+  have hargs : ∀ i < 5, stackArg (narrowS sig e n 2608 s) i = openArgs s i := fun i hi => by
+    by_cases h : i < 4
+    · simp only [openArgs, h, ↓reduceIte]; exact ha i h
+    · have : i = 4 := by omega_using [h, hi]
+      subst this
+      simp only [openArgs, Nat.lt_irrefl, ↓reduceIte]; exact hW
+  refine ⟨by rw [hW, hA]; exact hx, ?_⟩
+  rw [hW, hA]
+  unfold openVs
+  by_cases hh : (⟨openA s, 40⟩ : Region).Contains x 1
+  · -- A copy of a stack argument.
+    simp only [openV, hh, ↓reduceIte, Option.getD_none, openHdr, Option.getD_some]
+    have hlt : (x - openA s).toNat < 40 := by simp only [Region.Contains] at hh; omega_using [hh]
+    generalize hd : (x - openA s).toNat = d at hlt ⊢
+    have ex : x = openA s + BitVec.ofNat 64 (8 * (d / 8)) + BitVec.ofNat 64 (d % 8) := by
+      rw [Offset.add_add_eq _ (show 8 * (d / 8) + d % 8 = d by omega_arith), ← hd, BitVec.ofNat_toNat,
+        BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+    have hrd : (narrowS sig e n 2608 s).mem.readW (openA s + BitVec.ofNat 64 (8 * (d / 8))) 64 =
+        stackArg (narrowS sig e n 2608 s) (d / 8) := by
+      unfold stackArg stackArgAddr
+      rw [← hA, Offset.add_add_eq _ (show 8 + 8 * (d / 8) = 8 * (d / 8 + 1) by omega_arith)]
+    rw [ex, Blocks.byte_readW64 (narrowS sig e n 2608 s).mem (openA s + BitVec.ofNat 64 (8 * (d / 8)))
+      (j := d % 8) (by omega_arith), hrd, hargs (d / 8) (by omega_arith)]
+  · rw [openV_congr Lb (hdr' := openHdr s) (g' := s.gpr) (a' := openArgs s) (fun h => absurd h hh) hg hargs]
+    refine congrArg _ (hf x fun r hr => ?_)
+    simp only [List.mem_singleton] at hr
+    subst hr
+    exact fun hc => hh (by rw [show (8 * (4 + 1) : Nat) = 40 from rfl] at hc; exact hc)
+
+/-- The code of `vg_aes_gcm_open` of the variant `v` for the key context of
+`vg_aes_gcm_init`, in the frame of `withStackArgScratch 2608 4`, from a state
+meeting `vg_aes_gcm_open_prepared`'s precondition and `C`: what `openVs`
+says the code leaves where `openQ` says. -/
+theorem open_branchOf (v : GcmVariant) (hc : v.impl.openCode v.impl.callees = Impl.AesGcm.X86_64.«open» v.impl.callees)
+    {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8)}
+    (hL : ∀ s t s', (Proof.AesGcm.openX86_64M Gcm.X86_64.Stitch.CtxMode.base).pre s →
+      Exec isa (v.impl.openCode v.impl.callees) s t s' →
+      ∀ x, openQ (s.gpr .rsp + BitVec.ofNat 64 8) (stackArg s 4) x →
+        s'.mem x = (openV Lb (fun _ => none) s.gpr (fun i => stackArg s i) (s.gpr .rsp + BitVec.ofNat 64 8)
+          (stackArg s 4) x).getD (s.mem x))
+    {C : Mem → Addr → Prop} :
+    ∀ s t u, (Spec.Gcm.openPreparedContract X86_64.abi 2632).pre s → C s.mem (s.gpr .rdi) →
+      Exec isa (withStackArgScratch 2608 4 (v.impl.openCode v.impl.callees)) s t u →
+      ∀ x, openQ (openA s) (openW s) x → u.mem x = (openVs Lb s x).getD (s.mem x) := by
+  rw [hc] at hL
+  intro s t u hs hf he x hx
+  rw [hc] at he
+  unfold Spec.Gcm.openPreparedContract at hs
+  have h₁ := pre_of_rel (N := 129) (C := C) (leakB := some (Spec.Gcm.openLeak 64))
+    (pre := Spec.Gcm.openPreparedPre 64) (pre' := Spec.Gcm.openPre 64) (fun _ _ _ _ _ _ _ _ _ _ _ h _ => h.1) hs hf
+  have h₂ := pre_narrowFirstArray (n := 32) (n' := 129) (by decide) (pre := Spec.Gcm.openPre 64)
+    (fun _ _ _ _ _ _ _ _ _ _ _ h => h) h₁
+  obtain ⟨t₁, u₁, he₁, hm⟩ := exec_narrow (open_framed v.impl) h₂
+    (fun _ _ => InRegions.of_prefix (narrowHead_append_prefix _ _ _)) (Covers.refl _) he
+  obtain ⟨hx', hv⟩ := narrowS_openV (sig := Spec.Gcm.openSig) (e := .u64) (n := 320) (by decide)
+    (by decide) (by decide) h₂ Lb hx
+  rw [hm, framed_leavesQ (sig := Spec.Gcm.openSig) (nm := "work") (e := .u64) (n := 320)
+    (bytes := 2608) (stack := 24) (pre := Spec.Gcm.openPre X86_64.abi.ptrBits)
+    (post := Proof.AesGcm.openRoundsPost X86_64.abi.ptrBits) (wa := true)
+    (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits))
+    (open_verified v.impl) (fun s h => ⟨openCode_implies.pre s h, trivial⟩) hL
+    (by decide) (by decide) (by decide) (open_spSafe _) (open_xdepth _)
+    (openPre_local _) h₂ he₁ x hx']
+  exact hv
+
+/-- The granules `vg_aes_gcm_open_prepared` wipes, of its 2632 bytes of stack
+in chunks of 8 (at the top) and 2624, whose 16-byte granules are then
+aligned: the 24 bytes below its frame and the slot above them, and in
+`work` the state (`J₀`, `Y`, the counter, the keystream), the tag of the
+ciphertext, the result and the tag length, and the computed and received
+tags padded. Fourteen 16-byte stores. -/
+def openKs : List Nat := [0, 16, 80, 96, 112, 128, 144, 160, 176, 192, 288, 304, 320, 336]
+
+/-- A byte of the 2632 below `R` that `wipe openKs` does not zero is where
+`openQ` says. -/
+theorem openWindow {R x : Addr} (hx : (⟨R - BitVec.ofNat 64 2632, 2632⟩ : Region).Contains x 1)
+    (hw : ¬ WCov openKs [8, 2624] R x) :
+    openQ (R - BitVec.ofNat 64 2608 + BitVec.ofNat 64 8) (R - BitVec.ofNat 64 2608 + BitVec.ofNat 64 48) x := by
+  simp only [WCov, List.sum_cons, List.sum_nil, Nat.add_zero, show 8 + 2624 = 2632 from rfl] at hw
+  have hlt : (x - (R - BitVec.ofNat 64 2632)).toNat < 2632 := by simp only [Region.Contains] at hx; omega_using [hx]
+  generalize hi : (x - (R - BitVec.ofNat 64 2632)).toNat = i at hlt hw
+  have hc : ¬ cov openKs [8, 2624] i = true := fun h => hw ⟨hx, h⟩
+  have hi' : ¬ i < 32 ∧ ¬ (80 ≤ i ∧ i < 208) ∧ ¬ (288 ≤ i ∧ i < 352) := by
+    refine ⟨fun h => hc ?_, fun h => hc ?_, fun h => hc ?_⟩ <;>
+      simp only [cov, covC, List.sum_cons, List.sum_nil, show i < 2624 by omega_arith, ↓reduceIte, Nat.add_zero,
+        show 2624 % 16 = 0 from rfl, Nat.not_lt_zero, Nat.sub_zero, Nat.zero_add, Bool.and_eq_true,
+        decide_eq_true_eq, true_and]
+    · rcases (by omega_arith : i / 16 = 0 ∨ i / 16 = 1) with e | e <;> rw [e] <;> decide
+    · rcases (by omega_arith : i / 16 = 5 ∨ i / 16 = 6 ∨ i / 16 = 7 ∨ i / 16 = 8 ∨ i / 16 = 9 ∨ i / 16 = 10 ∨
+        i / 16 = 11 ∨ i / 16 = 12) with e | e | e | e | e | e | e | e <;> rw [e] <;> decide
+    · rcases (by omega_arith : i / 16 = 18 ∨ i / 16 = 19 ∨ i / 16 = 20 ∨ i / 16 = 21) with e | e | e | e <;>
+        rw [e] <;> decide
+  have eA : R - BitVec.ofNat 64 2608 + BitVec.ofNat 64 8 = R - BitVec.ofNat 64 2632 + BitVec.ofNat 64 32 := by
+    rw [Offset.sub_ofNat_eq R (show 2608 ≤ 2632 by decide), Offset.add_add]
+  have eW : R - BitVec.ofNat 64 2608 + BitVec.ofNat 64 48 = R - BitVec.ofNat 64 2632 + BitVec.ofNat 64 72 := by
+    rw [Offset.sub_ofNat_eq R (show 2608 ≤ 2632 by decide), Offset.add_add]
+  rw [eA, eW]
+  have mk : ∀ {d k : Nat}, d ≤ i → i < d + k → d + k ≤ 2632 →
+      (⟨R - BitVec.ofNat 64 2632 + BitVec.ofNat 64 d, k⟩ : Region).Contains x 1 := fun {d k} h₁ h₂ h₃ => by
+    have := (Offset.lt_iff x (R - BitVec.ofNat 64 2632) (d := d) (n := k) (by omega_arith)).2
+      ⟨by omega_arith, by omega_arith⟩
+    simp only [Region.Contains]; omega_using [this]
+  unfold openQ
+  rw [Offset.add_add, Offset.add_add]
+  by_cases h₁ : i < 72
+  · exact .inl (mk (by omega_arith) (by omega_arith) (by decide))
+  by_cases h₂ : i < 80
+  · exact .inr (.inl (by simpa using mk (d := 72) (k := 8) (by omega_arith) (by omega_arith) (by decide)))
+  by_cases h₃ : i < 288
+  · exact .inr (.inr (.inl (mk (by omega_arith) (by omega_arith) (by decide))))
+  · exact .inr (.inr (.inr (mk (by omega_arith) (by omega_arith) (by decide))))
+
+/-- Two runs of `vg_aes_gcm_open_prepared` with the same public data, from
+states that agree outside the buffers, agree on the stack arguments of
+`vg_aes_gcm_open`'s code in the frame of `withStackArgScratch 2608 4`. -/
+theorem openArgs_pub {stack : Nat} {s₁ s₂ : State} (hp : (Spec.Gcm.openPreparedContract X86_64.abi stack).pub s₁ s₂)
+    (ho : Outside 0 s₁ s₂) : openArgs s₁ = openArgs s₂ := by
+  unfold Spec.Gcm.openPreparedContract at hp
+  obtain ⟨-, hpubs, -⟩ := (pubL_args (sig := Spec.Gcm.openPreparedSig) (by decide)).mp hp
+  have harg (j : Nat) (hj : (Spec.Gcm.openPreparedSig.params.flatMap (·.2.pubs)).getD (6 + j) false = true)
+      (hj4 : j < 4) : stackArg s₁ j = stackArg s₂ j := by
+    have := hpubs (6 + j) hj
+    have e : ∀ s : State, (allArgs Spec.Gcm.openPreparedSig s).getD (6 + j) 0 = stackArg s j := by
+      intro s
+      rcases (by omega_using [hj4] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> rfl
+    rw [e, e] at this
+    have hw : ((Spec.Gcm.openPreparedSig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD (6 + j) 64 = 64 := by
+      rcases (by omega_using [hj4] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;> rfl
+    rw [hw, BitVec.setWidth_eq, BitVec.setWidth_eq] at this
+    exact this
+  funext i
+  simp only [openArgs]
+  by_cases hi : i < 4
+  · simp only [hi, ↓reduceIte]
+    exact harg i (by rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) with rfl | rfl | rfl | rfl <;> rfl) hi
+  · simp only [hi, ↓reduceIte, ho.2.2.1 .rsp (by decide)]
+
+open VG.X86_64.Scrub in
+/-- Two runs of the code of `vg_aes_gcm_open_prepared` of a variant whose
+loops read only the key context, where its `vg_aes_gcm_open` leaves what
+`openV` says (`hL`), with the same public data leave the same bytes in its
+stack but the granules `openKs`. -/
+theorem openW_resOk (v : GcmVariant)
+    (hc : v.impl.openCode v.impl.callees = Impl.AesGcm.X86_64.«open» v.impl.callees)
+    (hL : ∃ Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
+        Option (BitVec 8),
+      ∀ s t s', (Proof.AesGcm.openX86_64M Gcm.X86_64.Stitch.CtxMode.base).pre s →
+        Exec isa (v.impl.openCode v.impl.callees) s t s' →
+        ∀ x, openQ (s.gpr .rsp + BitVec.ofNat 64 8) (stackArg s 4) x →
+          s'.mem x = (openV Lb (fun _ => none) s.gpr (fun i => stackArg s i) (s.gpr .rsp + BitVec.ofNat 64 8)
+            (stackArg s 4) x).getD (s.mem x)) :
+    ResOk (withStackArgScratch 2608 4 (v.impl.openCode v.impl.callees))
+      (Spec.Gcm.openPreparedContract X86_64.abi 2632) 2632 openKs [8, 2624] := by
+  obtain ⟨Lb, hL⟩ := hL
+  unfold Spec.Gcm.openPreparedContract
+  refine resOk_of_leaves (V := openVs Lb) ScrubAbi.plain ?_ ?_
+  · intro s t u hs he x hx hw
+    exact open_branchOf v hc hL (C := fun _ _ => True) s t u hs trivial he x (openWindow hx hw)
+  · intro s₁ s₂ _ _ hp ho _
+    have ha := openArgs_pub hp ho
+    have hsp : s₁.gpr .rsp = s₂.gpr .rsp := ho.2.2.1 .rsp (by decide)
+    have hA : openA s₁ = openA s₂ := by simp only [openA, hsp]
+    have hW : openW s₁ = openW s₂ := by simp only [openW, hsp]
+    funext x
+    unfold openVs
+    rw [ha, hA, hW]
+    exact openV_congr Lb (fun _ => by simp only [openHdr, ha, hA]) (fun r hr _ => ho.2.2.1 r hr)
+      (fun _ _ => rfl)
+
+/-- `vg_aes_gcm_open_prepared`'s postcondition reads the memory on return
+only within the buffers: the data. -/
+theorem openPreparedOut (stack : Nat) :
+    PostOut (Spec.Gcm.openPreparedContract X86_64.abi stack) (Spec.Gcm.openPreparedSig.retBits 64) :=
+  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, rounds, nonce, nl, aad, al, data, len, tag, tl], _ =>
+      simp only [Spec.Gcm.openPreparedSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      intro key hk
+      show (match Spec.Gcm.openResult (Spec.Gcm.aes key) (Spec.Gcm.aes key 0) tl.toNat
+          (Spec.Aes.bytesAt m nonce nl.toNat) (Spec.Aes.bytesAt m data len.toNat)
+          (Spec.Aes.bytesAt m aad al.toNat) (Spec.Aes.bytesAt m tag tl.toNat) with
+        | some pt => r = 1 ∧ Spec.Aes.bytesAt m₂ data len.toNat = pt
+        | none => r = 0 ∧ Spec.Aes.bytesAt m₂ data len.toNat = Spec.Aes.bytesAt m data len.toNat)
+      rw [Scrub.bytesAt_of0 hb.2.2.2.1 (by omega_arith)]
+      exact h key hk
+
+/-- `vg_aes_gcm_open_prepared` of a variant whose loops read only the key
+context. -/
+def openWPlain (v : GcmVariant) : Registration Spec.Gcm.openPreparedApi X86_64.target where
+  suffix := v.impl.suffix
+  code := withStackArgScratch 2608 4 (v.impl.openCode v.impl.callees)
+  stack := 2632
+  verified := VG.Proof.AesGcm.Flag.open_keyed (Flag.open_of_base (openSel_framed v.impl Short.shortFacts))
+  spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v.impl v.impl.blkB)
+
+/-- `vg_aes_gcm_open_prepared_aesni_pclmul`, followed by the clearing of the
+granules `openKs` (fourteen aligned 16-byte stores): it returns without secret
+residue (`openW_resOk`). -/
+def openWAesniPclmul : Registration Spec.Gcm.openPreparedApi X86_64.target :=
+  RScrub.withScrubResC (openWPlain aesNiPclmulV) (openPreparedOut _) openKs [8, 2624]
+    (openW_resOk aesNiPclmulV openCode_aesniPclmul open_aesniPclmul_leaves)
+
+/-- `vg_aes_gcm_open_prepared` of a variant whose loops read only the key
+context: `openWAesniPclmul` for the variant on AES-NI and PCLMULQDQ, which
+returns without secret residue, and `openWPlain` for the others. -/
+def openWReg (v : GcmVariant) : Registration Spec.Gcm.openPreparedApi X86_64.target :=
+  if v.impl.suffix = aesNiPclmulV.impl.suffix then openWAesniPclmul else openWPlain v
 
 end
 
