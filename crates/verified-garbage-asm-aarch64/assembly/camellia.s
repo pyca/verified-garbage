@@ -211,15 +211,26 @@ vg_camellia_expand_key:
 	dup v5.16b, w15
 	movz w15, #192, lsl #0
 	dup v6.16b, w15
-	movz x15, #65280, lsl #0
-	movk x15, #255, lsl #32
-	dup v7.2d, x15
+	movz x0, #255, lsl #0
+	movk x0, #65535, lsl #16
+	movk x0, #65280, lsl #32
+	movk x0, #65535, lsl #48
+	movz x3, #65024, lsl #0
+	movk x3, #254, lsl #32
+	movz x4, #256, lsl #0
+	movk x4, #1, lsl #32
+	movz x9, #65535, lsl #0
+	movk x9, #255, lsl #32
+	movk x9, #65280, lsl #48
 	movz x13, #0, lsl #0
-	movk x13, #65280, lsl #16
-	movk x13, #255, lsl #48
+	movk x13, #65024, lsl #16
+	movk x13, #254, lsl #48
 	movz x14, #0, lsl #0
-	movk x14, #255, lsl #16
-	movk x14, #65280, lsl #32
+	movk x14, #256, lsl #16
+	movk x14, #1, lsl #48
+	movz x15, #0, lsl #0
+	movk x15, #127, lsl #16
+	movk x15, #32512, lsl #32
 	ldr x6, [x5, #3024]
 	rev x6, x6
 	ldr x7, [x5, #3032]
@@ -235,10 +246,12 @@ vg_camellia_expand_key:
 	movk x8, #26239, lsl #32
 	movk x8, #41118, lsl #48
 	eor x10, x6, x8
+	and x11, x10, x0
+	and x12, x3, x10, ror #63
+	and x16, x4, x10, ror #7
+	orr x11, x11, x12
+	orr x10, x11, x16
 	dup v0.2d, x10
-	shl v1.16b, v0.16b, #1
-	sri v1.16b, v0.16b, #7
-	bit v0.16b, v1.16b, v7.16b
 	eor v1.16b, v0.16b, v4.16b
 	eor v2.16b, v0.16b, v5.16b
 	eor v3.16b, v0.16b, v6.16b
@@ -249,15 +262,16 @@ vg_camellia_expand_key:
 	orr v2.16b, v2.16b, v3.16b
 	orr v0.16b, v0.16b, v1.16b
 	orr v0.16b, v0.16b, v2.16b
-	dup v3.2d, x13
-	shl v1.16b, v0.16b, #1
-	sri v1.16b, v0.16b, #7
-	bit v0.16b, v1.16b, v3.16b
-	dup v3.2d, x14
-	shl v1.16b, v0.16b, #7
-	sri v1.16b, v0.16b, #1
-	bit v0.16b, v1.16b, v3.16b
 	umov x10, v0.d[0]
+	and x11, x10, x9
+	and x12, x13, x10, ror #63
+	and x16, x14, x10, ror #7
+	and x17, x15, x10, ror #1
+	and x10, x4, x10, ror #8
+	orr x17, x17, x10, ror #49
+	orr x11, x11, x12
+	orr x11, x11, x16
+	orr x10, x11, x17
 	lsr x11, x10, #32
 	add w12, w10, #0
 	eor w16, w11, w11, ror #8
@@ -276,10 +290,12 @@ vg_camellia_expand_key:
 	movk x8, #59480, lsl #32
 	movk x8, #46714, lsl #48
 	eor x10, x7, x8
+	and x11, x10, x0
+	and x12, x3, x10, ror #63
+	and x16, x4, x10, ror #7
+	orr x11, x11, x12
+	orr x10, x11, x16
 	dup v0.2d, x10
-	shl v1.16b, v0.16b, #1
-	sri v1.16b, v0.16b, #7
-	bit v0.16b, v1.16b, v7.16b
 	eor v1.16b, v0.16b, v4.16b
 	eor v2.16b, v0.16b, v5.16b
 	eor v3.16b, v0.16b, v6.16b
@@ -290,15 +306,16 @@ vg_camellia_expand_key:
 	orr v2.16b, v2.16b, v3.16b
 	orr v0.16b, v0.16b, v1.16b
 	orr v0.16b, v0.16b, v2.16b
-	dup v3.2d, x13
-	shl v1.16b, v0.16b, #1
-	sri v1.16b, v0.16b, #7
-	bit v0.16b, v1.16b, v3.16b
-	dup v3.2d, x14
-	shl v1.16b, v0.16b, #7
-	sri v1.16b, v0.16b, #1
-	bit v0.16b, v1.16b, v3.16b
 	umov x10, v0.d[0]
+	and x11, x10, x9
+	and x12, x13, x10, ror #63
+	and x16, x14, x10, ror #7
+	and x17, x15, x10, ror #1
+	and x10, x4, x10, ror #8
+	orr x17, x17, x10, ror #49
+	orr x11, x11, x12
+	orr x11, x11, x16
+	orr x10, x11, x17
 	lsr x11, x10, #32
 	add w12, w10, #0
 	eor w16, w11, w11, ror #8
@@ -323,10 +340,12 @@ vg_camellia_expand_key:
 	movk x8, #14127, lsl #32
 	movk x8, #50927, lsl #48
 	eor x10, x6, x8
+	and x11, x10, x0
+	and x12, x3, x10, ror #63
+	and x16, x4, x10, ror #7
+	orr x11, x11, x12
+	orr x10, x11, x16
 	dup v0.2d, x10
-	shl v1.16b, v0.16b, #1
-	sri v1.16b, v0.16b, #7
-	bit v0.16b, v1.16b, v7.16b
 	eor v1.16b, v0.16b, v4.16b
 	eor v2.16b, v0.16b, v5.16b
 	eor v3.16b, v0.16b, v6.16b
@@ -337,15 +356,16 @@ vg_camellia_expand_key:
 	orr v2.16b, v2.16b, v3.16b
 	orr v0.16b, v0.16b, v1.16b
 	orr v0.16b, v0.16b, v2.16b
-	dup v3.2d, x13
-	shl v1.16b, v0.16b, #1
-	sri v1.16b, v0.16b, #7
-	bit v0.16b, v1.16b, v3.16b
-	dup v3.2d, x14
-	shl v1.16b, v0.16b, #7
-	sri v1.16b, v0.16b, #1
-	bit v0.16b, v1.16b, v3.16b
 	umov x10, v0.d[0]
+	and x11, x10, x9
+	and x12, x13, x10, ror #63
+	and x16, x14, x10, ror #7
+	and x17, x15, x10, ror #1
+	and x10, x4, x10, ror #8
+	orr x17, x17, x10, ror #49
+	orr x11, x11, x12
+	orr x11, x11, x16
+	orr x10, x11, x17
 	lsr x11, x10, #32
 	add w12, w10, #0
 	eor w16, w11, w11, ror #8
@@ -364,10 +384,12 @@ vg_camellia_expand_key:
 	movk x8, #21413, lsl #32
 	movk x8, #21759, lsl #48
 	eor x10, x7, x8
+	and x11, x10, x0
+	and x12, x3, x10, ror #63
+	and x16, x4, x10, ror #7
+	orr x11, x11, x12
+	orr x10, x11, x16
 	dup v0.2d, x10
-	shl v1.16b, v0.16b, #1
-	sri v1.16b, v0.16b, #7
-	bit v0.16b, v1.16b, v7.16b
 	eor v1.16b, v0.16b, v4.16b
 	eor v2.16b, v0.16b, v5.16b
 	eor v3.16b, v0.16b, v6.16b
@@ -378,15 +400,16 @@ vg_camellia_expand_key:
 	orr v2.16b, v2.16b, v3.16b
 	orr v0.16b, v0.16b, v1.16b
 	orr v0.16b, v0.16b, v2.16b
-	dup v3.2d, x13
-	shl v1.16b, v0.16b, #1
-	sri v1.16b, v0.16b, #7
-	bit v0.16b, v1.16b, v3.16b
-	dup v3.2d, x14
-	shl v1.16b, v0.16b, #7
-	sri v1.16b, v0.16b, #1
-	bit v0.16b, v1.16b, v3.16b
 	umov x10, v0.d[0]
+	and x11, x10, x9
+	and x12, x13, x10, ror #63
+	and x16, x14, x10, ror #7
+	and x17, x15, x10, ror #1
+	and x10, x4, x10, ror #8
+	orr x17, x17, x10, ror #49
+	orr x11, x11, x12
+	orr x11, x11, x16
+	orr x10, x11, x17
 	lsr x11, x10, #32
 	add w12, w10, #0
 	eor w16, w11, w11, ror #8
@@ -416,10 +439,12 @@ vg_camellia_expand_key:
 	movk x8, #10234, lsl #32
 	movk x8, #4325, lsl #48
 	eor x10, x6, x8
+	and x11, x10, x0
+	and x12, x3, x10, ror #63
+	and x16, x4, x10, ror #7
+	orr x11, x11, x12
+	orr x10, x11, x16
 	dup v0.2d, x10
-	shl v1.16b, v0.16b, #1
-	sri v1.16b, v0.16b, #7
-	bit v0.16b, v1.16b, v7.16b
 	eor v1.16b, v0.16b, v4.16b
 	eor v2.16b, v0.16b, v5.16b
 	eor v3.16b, v0.16b, v6.16b
@@ -430,15 +455,16 @@ vg_camellia_expand_key:
 	orr v2.16b, v2.16b, v3.16b
 	orr v0.16b, v0.16b, v1.16b
 	orr v0.16b, v0.16b, v2.16b
-	dup v3.2d, x13
-	shl v1.16b, v0.16b, #1
-	sri v1.16b, v0.16b, #7
-	bit v0.16b, v1.16b, v3.16b
-	dup v3.2d, x14
-	shl v1.16b, v0.16b, #7
-	sri v1.16b, v0.16b, #1
-	bit v0.16b, v1.16b, v3.16b
 	umov x10, v0.d[0]
+	and x11, x10, x9
+	and x12, x13, x10, ror #63
+	and x16, x14, x10, ror #7
+	and x17, x15, x10, ror #1
+	and x10, x4, x10, ror #8
+	orr x17, x17, x10, ror #49
+	orr x11, x11, x12
+	orr x11, x11, x16
+	orr x10, x11, x17
 	lsr x11, x10, #32
 	add w12, w10, #0
 	eor w16, w11, w11, ror #8
@@ -457,10 +483,12 @@ vg_camellia_expand_key:
 	movk x8, #35010, lsl #32
 	movk x8, #45142, lsl #48
 	eor x10, x7, x8
+	and x11, x10, x0
+	and x12, x3, x10, ror #63
+	and x16, x4, x10, ror #7
+	orr x11, x11, x12
+	orr x10, x11, x16
 	dup v0.2d, x10
-	shl v1.16b, v0.16b, #1
-	sri v1.16b, v0.16b, #7
-	bit v0.16b, v1.16b, v7.16b
 	eor v1.16b, v0.16b, v4.16b
 	eor v2.16b, v0.16b, v5.16b
 	eor v3.16b, v0.16b, v6.16b
@@ -471,15 +499,16 @@ vg_camellia_expand_key:
 	orr v2.16b, v2.16b, v3.16b
 	orr v0.16b, v0.16b, v1.16b
 	orr v0.16b, v0.16b, v2.16b
-	dup v3.2d, x13
-	shl v1.16b, v0.16b, #1
-	sri v1.16b, v0.16b, #7
-	bit v0.16b, v1.16b, v3.16b
-	dup v3.2d, x14
-	shl v1.16b, v0.16b, #7
-	sri v1.16b, v0.16b, #1
-	bit v0.16b, v1.16b, v3.16b
 	umov x10, v0.d[0]
+	and x11, x10, x9
+	and x12, x13, x10, ror #63
+	and x16, x14, x10, ror #7
+	and x17, x15, x10, ror #1
+	and x10, x4, x10, ror #8
+	orr x17, x17, x10, ror #49
+	orr x11, x11, x12
+	orr x11, x11, x16
+	orr x10, x11, x17
 	lsr x11, x10, #32
 	add w12, w10, #0
 	eor w16, w11, w11, ror #8

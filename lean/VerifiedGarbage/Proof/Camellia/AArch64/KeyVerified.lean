@@ -468,12 +468,9 @@ theorem imm_v (d : Reg) (x : BitVec 64) : (imm d x).all (fun i => vdstOf i == no
 
 /-- The constants, the masks and the table, in a state with the same vector
 registers and masks. -/
-theorem tab_of {s t : State} (hv : t.v = s.v) (h13 : t.gpr .x13 = s.gpr .x13)
-    (h14 : t.gpr .x14 = s.gpr .x14) (hc : Constants s) (hm : Masks s) (ht : Table s) :
-    Constants t ∧ Masks t ∧ Table t :=
-  ⟨by simpa only [Constants, hv] using hc,
-    ⟨by rw [hv]; exact hm.1, by rw [h13]; exact hm.2.1, by rw [h14]; exact hm.2.2⟩,
-    by simpa only [Table, hv] using ht⟩
+theorem tab_of {s t : State} (hv : t.v = s.v) (hg : ∀ r ∈ Serial.maskRegs, t.gpr r = s.gpr r)
+    (hc : Constants s) (hm : Masks s) (ht : Table s) : Constants t ∧ Masks t ∧ Table t :=
+  ⟨by simpa only [Constants, hv] using hc, hm.of_regs hg, by simpa only [Table, hv] using ht⟩
 
 /-- `b ^= F(a, x)`. -/
 theorem fConst_run {s : State} {a b : Reg} (x : BitVec 64)
@@ -494,21 +491,22 @@ theorem fConst_run {s : State} {a b : Reg} (x : BitVec 64)
   have uvec' : u.v = s.v := uvec.trans pvec
   have ug' : ∀ r, r ≠ .x8 → r ≠ .x10 → u.gpr r = s.gpr r := fun r h8 h10 => (ug r h10).trans (pg r h8)
   have uv' : u.gpr .x10 = s.gpr a ^^^ x := by rw [uv, pg a ha8, pv]
-  obtain ⟨uc, umat, ut⟩ := tab_of uvec' (ug' _ (by decide) (by decide)) (ug' _ (by decide) (by decide)) hc hm ht
+  obtain ⟨uc, umat, ut⟩ := tab_of uvec' (fun r hr => ug' r (by revert r; decide) (by revert r; decide)) hc hm ht
   obtain ⟨v, ve, vv, vg, vm, vrd, vwr, -, vvec⟩ := Serial.substitute_run u uc umat ut
   obtain ⟨w, we, wv, wg, wm, wrd, wwr, -, wvec⟩ := Serial.linear_run v
   let t := w.write .x b (w.read .x b ^^^ w.read .x .x10)
   have wb : w.read .x b = s.gpr b := by
-    simp only [State.read, Size.bits, BitVec.setWidth_eq, wg _ hbl, vg _ hb10, ug' _ hb8 hb10]
+    simp only [State.read, Size.bits, BitVec.setWidth_eq, wg _ hbl, vg _ hbl, ug' _ hb8 hb10]
   have val : w.read .x .x10 = Spec.Camellia.f (s.gpr a) x := by
     simp only [State.read, Size.bits, BitVec.setWidth_eq, wv, vv, uv']
     exact (VG.Proof.Camellia.Serial.f_eq _ _).symm
   have other : ∀ r, r ≠ b → r ∉ [.x8, .x10, .x11, .x12, .x16, .x17] → t.gpr r = s.gpr r := by
     intro r hr hn
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
-    rw [RegUpd.gpr_write_of_ne _ _ _ hr, wg _ (by
+    have h5 : r ∉ [.x10, .x11, .x12, .x16, .x17] := by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
-      exact hn.2), vg _ hn.2.1, ug' _ hn.1 hn.2.1]
+      exact hn.2
+    rw [RegUpd.gpr_write_of_ne _ _ _ hr, wg _ h5, vg _ h5, ug' _ hn.1 hn.2.1]
   have tv : ∀ q, q ∉ [.v0, .v1, .v2, .v3] → t.v q = s.v q := by
     intro q hq
     rw [show t.v q = w.v q from rfl, wvec, vvec _ hq, uvec']
@@ -527,11 +525,7 @@ theorem fConst_run {s : State} {a b : Reg} (x : BitVec 64)
     rfl
   · simp only [t, RegUpd.gpr_write_self, Size.bits, BitVec.setWidth_eq, wb, val]
   · exact ⟨(tv _ (by decide)).trans hc.1, (tv _ (by decide)).trans hc.2.1, (tv _ (by decide)).trans hc.2.2⟩
-  · refine ⟨(tv _ (by decide)).trans hm.1, ?_, ?_⟩
-    · rw [other _ (by rcases hb with rfl | rfl <;> decide) (by decide)]
-      exact hm.2.1
-    · rw [other _ (by rcases hb with rfl | rfl <;> decide) (by decide)]
-      exact hm.2.2
+  · exact hm.of_regs fun r hr => other r (by rcases hb with rfl | rfl <;> (revert r; decide)) (by revert r; decide)
 
 /-- Two rounds with the constants `x` and `y`. -/
 theorem pairConst_run (s : State) (x y : BitVec 64) (hc : Constants s) (hm : Masks s) (ht : Table s) :
@@ -649,13 +643,13 @@ theorem ka_run {s : State} {KL KR : BitVec 64 × BitVec 64}
     have e6 : b.gpr .x6 = KL.1 := by rw [bg _ (by decide), av]; exact rev_of_wordOf hkl.1
     have e7 : b.gpr .x7 = KL.2 := by rw [bv, am, ha5]; exact rev_of_wordOf hkl.2
     simp only [halves, e6, e7]
-  obtain ⟨cb, cmk, ctb⟩ := tab_of (bvec.trans avec) ((bg _ (by decide)).trans (ag _ (by decide)))
-    ((bg _ (by decide)).trans (ag _ (by decide))) hc hm ht
+  obtain ⟨cb, cmk, ctb⟩ := tab_of (bvec.trans avec)
+    (fun r hr => (bg r (by revert r; decide)).trans (ag r (by revert r; decide))) hc hm ht
   -- `KL ^ KR`, and the first pair.
   obtain ⟨c, ce, ch, cg, cm, crd, cwr, cvec⟩ := xorValue_run (s := b) (k := krSlot)
     (by rw [hb5, hbw]; exact hscr) (by omega_arith)
-  obtain ⟨cc, cmk', ct⟩ := tab_of cvec (cg _ (by decide) (by decide) (by decide))
-    (cg _ (by decide) (by decide) (by decide)) cb cmk ctb
+  obtain ⟨cc, cmk', ct⟩ := tab_of cvec
+    (fun r hr => cg r (by revert r; decide) (by revert r; decide) (by revert r; decide)) cb cmk ctb
   obtain ⟨d, de, dh, dc, dmk, dt, dg, dm, drd, dwr⟩ :=
     pairConst_run c Spec.Camellia.sigma1 Spec.Camellia.sigma2 cc cmk' ct
   have hd5 : d.gpr sb = s.gpr sb := by
@@ -668,8 +662,8 @@ theorem ka_run {s : State} {KL KR : BitVec 64 × BitVec 64}
   -- `^ KL`, and the second pair.
   obtain ⟨e, ee, eh, eg, em, erd, ewr, evec⟩ := xorValue_run (s := d) (k := klSlot)
     (by rw [hd5, hdw]; exact hscr) (by omega_arith)
-  obtain ⟨ec, emk, et⟩ := tab_of evec (eg _ (by decide) (by decide) (by decide))
-    (eg _ (by decide) (by decide) (by decide)) dc dmk dt
+  obtain ⟨ec, emk, et⟩ := tab_of evec
+    (fun r hr => eg r (by revert r; decide) (by revert r; decide) (by revert r; decide)) dc dmk dt
   obtain ⟨f, fe, fh, fc, fmk, ft, fg, fm, frd, fwr⟩ :=
     pairConst_run e Spec.Camellia.sigma3 Spec.Camellia.sigma4 ec emk et
   have hf5 : f.gpr sb = s.gpr sb := by
@@ -683,7 +677,7 @@ theorem ka_run {s : State} {KL KR : BitVec 64 × BitVec 64}
   -- `KA` to its slots.
   obtain ⟨g, ge, gw, gk, gg, gf, grd, gwr, gvec⟩ := storeValue_run (s := f) (k := kaSlot)
     (by rw [hf5, hfw]; exact hscr) (by omega_arith)
-  obtain ⟨gc, gmk, gt⟩ := tab_of gvec (gg _ (by decide)) (gg _ (by decide)) fc fmk ft
+  obtain ⟨gc, gmk, gt⟩ := tab_of gvec (fun r hr => gg r (by revert r; decide)) fc fmk ft
   refine ⟨g, ?_, ?_, by rw [← hfh]; exact gw, gc, gmk, gt,
     fun j hj h0 h1 => by rw [gk j hj h0 h1, hfs], fun r hr => ?_, ?_,
     by rw [grd, frd, erd, drd, crd, brd, ard], by rw [gwr, hfw]⟩
@@ -709,8 +703,8 @@ theorem kb_run {s : State} {D KR : BitVec 64 × BitVec 64}
   have nw : ∀ {r : Reg}, r ∉ written → r ≠ .x6 ∧ r ≠ .x7 ∧ r ≠ .x8 := fun {r} h =>
     ⟨fun e => h (e ▸ by decide), fun e => h (e ▸ by decide), fun e => h (e ▸ by decide)⟩
   obtain ⟨c, ce, ch, cg, cm, crd, cwr, cvec⟩ := xorValue_run (s := s) (k := krSlot) hscr (by omega_arith)
-  obtain ⟨cc, cmk, ct⟩ := tab_of cvec (cg _ (by decide) (by decide) (by decide))
-    (cg _ (by decide) (by decide) (by decide)) hc hm ht
+  obtain ⟨cc, cmk, ct⟩ := tab_of cvec
+    (fun r hr => cg r (by revert r; decide) (by revert r; decide) (by revert r; decide)) hc hm ht
   obtain ⟨d, de, dh, dc, dmk, dt, dg, dm, drd, dwr⟩ :=
     pairConst_run c Spec.Camellia.sigma5 Spec.Camellia.sigma6 cc cmk ct
   have hd5 : d.gpr sb = s.gpr sb := by rw [dg _ (by decide), cg _ (by decide) (by decide) (by decide)]
@@ -840,17 +834,16 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyAArch64.pre s₀) :
   refine WP.of_runBlock ⟨s₅, e₅, ?_⟩
   obtain ⟨s₆, e₆, mk₆, g₆, m₆, rd₆, wr₆, -, v₆⟩ := Serial.maskConstants_run s₅
   refine WP.of_runBlock ⟨s₆, e₆, ?_⟩
-  have c₆ : Constants s₆ :=
-    ⟨(v₆ _ (by decide)).trans c₅.1, (v₆ _ (by decide)).trans c₅.2.1, (v₆ _ (by decide)).trans c₅.2.2⟩
+  have c₆ : Constants s₆ := by simpa only [Constants, v₆] using c₅
   have t₆ : Table s₆ := fun j hj => by
-    rw [VG.AArch64.Tbl.tbyte_congr' (fun i hi => by
+    rw [v₆, VG.AArch64.Tbl.tbyte_congr' (fun i hi => by
       have hn := VG.AArch64.Tbl.treg_ne8 i hi
-      exact (v₆ _ hn.2.2.2.2.2.2.2).trans (v₅ _ hn.2.2.2.2.1 hn.2.2.2.2.2.1 hn.2.2.2.2.2.2.1)) j hj]
+      exact v₅ _ hn.2.2.2.2.1 hn.2.2.2.2.2.1 hn.2.2.2.2.2.2.1) j hj]
     exact tb₄ j hj
-  have g₆' : ∀ r, r ∉ [t0, .x6, .x7, .x13, .x14, .x15] → s₆.gpr r = s₂.gpr r := fun r hr => by
+  have g₆' : ∀ r, r ∉ [t0, .x6, .x7] → r ∉ Serial.maskRegs → s₆.gpr r = s₂.gpr r := fun r hr hm => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    rw [g₆ r hr.2.2.2.1 hr.2.2.2.2.1 hr.2.2.2.2.2, g₅ r hr.2.2.2.2.2, g₄ r hr.2.1 hr.2.2.1, g₃ r hr.1]
-  have hb₆ : s₆.gpr sb = s₀.gpr .x3 := by rw [g₆' _ (by decide), hb₂]
+    rw [g₆ r hm, g₅ r (fun h => hm (by rw [h]; decide)), g₄ r hr.2.1 hr.2.2, g₃ r hr.1]
+  have hb₆ : s₆.gpr sb = s₀.gpr .x3 := by rw [g₆' _ (by decide) (by decide), hb₂]
   have m₆' : s₆.mem = s₂.mem := by rw [m₆, m₅, m₄, m₃]
   have wr₆' : s₆.wr = s₀.wr := by rw [wr₆, wr₅, wr₄, wr₃, wr₂']
   have hs₆ : ∀ k, slotW s₆ k = slotW s₂ k := slotW_eq_of m₆' (by rw [hb₆, hb₂])
@@ -860,9 +853,9 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyAArch64.pre s₀) :
   have hb₇ : s₇.gpr sb = s₀.gpr .x3 := by rw [g₇ _ (by decide), hb₆]
   have wr₇' : s₇.wr = s₀.wr := by rw [wr₇, wr₆']
   have hscr₇ : (⟨s₇.gpr sb, 8 * slots⟩ : Region) ∈ s₇.wr := by rw [hb₇, wr₇']; exact hwB
-  have x2₇ : s₇.gpr .x2 = s₀.gpr .x2 := by rw [g₇ _ (by decide), g₆' _ (by decide), x2₂]
+  have x2₇ : s₇.gpr .x2 = s₀.gpr .x2 := by rw [g₇ _ (by decide), g₆' _ (by decide) (by decide), x2₂]
   have hz₇ : (s₇.gpr t0 == 0) = decide ((s₀.gpr .x1).toNat = 16) := by
-    rw [g₇ _ (by decide), g₆ _ (by decide) (by decide) (by decide), g₅ _ (by decide),
+    rw [g₇ _ (by decide), g₆ _ (by decide), g₅ _ (by decide),
       g₄ _ (by decide) (by decide), z₃, x3₂]
     conv => lhs; rw [show s₀.gpr .x1 = BitVec.ofNat 64 (s₀.gpr .x1).toNat by
       rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]]

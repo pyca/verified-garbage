@@ -28,8 +28,9 @@ public import VerifiedGarbage.Impl.Camellia.KeyOrder
   byte-swapped, in the order of `Spec.Camellia.scheduleWords`.
 
 Only `x0` (the key), `x2`, `x3` (the key's length), `x5`, the rounds' masks
-(`x13`–`x15`) and the branches' tests hold public values; no address and no
-branch depends on anything else.
+(`Serial.maskConstants`, which take `x0` and `x3` once the key is loaded) and
+the branches' tests hold public values; no address and no branch depends on
+anything else.
 -/
 
 @[expose] public section
