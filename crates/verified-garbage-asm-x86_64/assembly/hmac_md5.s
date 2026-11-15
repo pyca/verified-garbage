@@ -467,7 +467,6 @@ vg_hmac_md5_finalize:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-152]
-	movdqu XMMWORD PTR [rsp+136], xmm0
 	movdqu XMMWORD PTR [rsp+120], xmm0
 	lea rsp, [rsp+152]
 	xor eax, eax

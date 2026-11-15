@@ -552,13 +552,10 @@ vg_blake2s_finalize:
 	movdqu XMMWORD PTR [rsp+240], xmm0
 	movdqu XMMWORD PTR [rsp+224], xmm0
 	movdqu XMMWORD PTR [rsp+208], xmm0
-	movdqu XMMWORD PTR [rsp+192], xmm0
-	movdqu XMMWORD PTR [rsp+80], xmm0
 	movdqu XMMWORD PTR [rsp+64], xmm0
 	movdqu XMMWORD PTR [rsp+48], xmm0
 	movdqu XMMWORD PTR [rsp+32], xmm0
 	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+592]
 	xor eax, eax
 	xor ecx, ecx

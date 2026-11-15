@@ -2760,9 +2760,8 @@ vg_hmac_sha512_finalize_shani:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-264]
-	vmovdqu YMMWORD PTR [rsp+168], ymm0
-	vmovdqu YMMWORD PTR [rsp+136], ymm0
-	movdqu XMMWORD PTR [rsp+120], xmm0
+	vmovdqu YMMWORD PTR [rsp+152], ymm0
+	vmovdqu YMMWORD PTR [rsp+120], ymm0
 	lea rsp, [rsp+264]
 	xor eax, eax
 	xor ecx, ecx
@@ -2986,7 +2985,6 @@ vg_hmac_sha512_finalize:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-456]
-	movdqu XMMWORD PTR [rsp+376], xmm0
 	movdqu XMMWORD PTR [rsp+360], xmm0
 	movdqu XMMWORD PTR [rsp+344], xmm0
 	movdqu XMMWORD PTR [rsp+328], xmm0
@@ -2999,7 +2997,6 @@ vg_hmac_sha512_finalize:
 	movdqu XMMWORD PTR [rsp+56], xmm0
 	movdqu XMMWORD PTR [rsp+40], xmm0
 	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+456]
 	xor eax, eax
 	xor ecx, ecx
