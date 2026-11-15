@@ -36,7 +36,7 @@ variable {np : Nat} {hpn : 8 ≤ np ∧ np ≤ 24}
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.AesGcm.X86_64 VG.Impl.AesGcm.X86_64.Short VG.WriteBytes
 open VG.Impl.AesGcm.X86_64.FastOpen (incJ tagP)
 open VG.Proof.AesGcm.X86_64
-open VG.Proof.AesGcm.X86_64.Short (ShortFacts KsOk IsH1 IsH2 finTextArgs_ok finLens_ok finGh1_ok finGh2_ok finTest_ok
+open VG.Proof.AesGcm.X86_64.Short (ShortFacts KsOk KsOkW IsH1 IsH2 finTextArgs_ok finLens_ok finGh1_ok finGh2_ok finTest_ok
   tagK_ok finKs_ksOk writeW_zero128 ghash_snoc bytesAt_toBytes' add_ofNat_ofNat)
 open VG.Proof.Gcm.X86_64 (revMask)
 open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
@@ -275,14 +275,14 @@ theorem TagOkPF.toP {M : Gcm.X86_64.Stitch.CtxMode} {P : Addr → Addr → Nat �
 
 /-- The regions `tagP` writes: the keystream at `W + 1024`, `J₀`'s last
 word, the tag at `W + 112`, and `G` at `W + 512`. -/
-abbrev tagPFrame (W : Addr) : List Region :=
-  [⟨W + BitVec.ofNat 64 1024, 64⟩, ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] ++
+abbrev tagPFrame (kw : Nat) (W : Addr) : List Region :=
+  [⟨W + BitVec.ofNat 64 1024, kw⟩, ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] ++
     [⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 512, 32⟩]
 
 /-- `tagP ks` with a prepared key context: what `oneTag 112` does, and `K[1]`
 the keystream of the counter block. -/
-theorem tagP_okPF (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) :
-    TagOkPF (CtxMode.preparedN np hpn) KOk tagPFrame (tagP ks) := by
+theorem tagP_okPF (hF : ShortFacts) {kw : Nat} (hkw : kw ≤ 64) {ks : Prog isa} (hks : KsOkW kw ks) :
+    TagOkPF (CtxMode.preparedN np hpn) KOk (tagPFrame kw) (tagP ks) := by
   intro Ctx W SP L R D n N al H x s hx he hH hR hdat hlen hn16 htl hN hal hd hDW X
   -- `H'` and `H'²`.
   have hX : VG.Proof.Gcm.X86_64.Stitch.PowersN np s.mem Ctx := X.1
@@ -337,7 +337,7 @@ theorem tagP_okPF (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> exact gJ _ (by decide)) rdJ wrJ
   have e28 : W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12 = W + BitVec.ofNat 64 28 := add_ofNat_ofNat W 16 12
-  have FK : Frame [⟨W + BitVec.ofNat 64 1024, 64⟩, ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] u.mem s₄.mem :=
+  have FK : Frame [⟨W + BitVec.ofNat 64 1024, kw⟩, ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] u.mem s₄.mem :=
     (fK.sub fun q hq => ⟨q, by simp only [List.mem_singleton] at hq; simp [hq], fun _ h => h⟩).trans
       (fJ.sub fun q hq => ⟨q, by simp only [List.mem_singleton] at hq; simp [hq], fun _ h => h⟩)
   have rK : ∀ d, 32 ≤ d → d + 8 ≤ 512 →
@@ -347,7 +347,7 @@ theorem tagP_okPF (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) :
       exact FK.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun q hq => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
         rcases hq with rfl | rfl
-        · exact Offset.disjoint W (.inl (by omega_arith)) (by omega_arith) (by decide)
+        · exact Offset.disjoint W (.inl (by omega_arith)) (by omega_arith) (by omega_using [hkw])
         · rw [e28]; exact Offset.disjoint W (.inr (by omega_arith)) (by omega_arith) (by decide))
         (by decide)
   -- The test again.
@@ -360,16 +360,16 @@ theorem tagP_okPF (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) :
     rw [x₅, xJ, x₃ q a b c d, U.xmm q b, x₂]
   -- The regions of the state and of `W` that the code writes.
   have dS : ∀ {a k : Nat}, a + k ≤ 80 → a + k ≤ 12 ∨ 16 ≤ a →
-      ∀ q ∈ [(⟨W + BitVec.ofNat 64 1024, 64⟩ : Region), ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] ++
+      ∀ q ∈ [(⟨W + BitVec.ofNat 64 1024, kw⟩ : Region), ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] ++
         [⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 512, 32⟩],
       (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 a, k⟩ : Region).Disjoint q := fun ha h q hq => by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl | rfl | rfl
-    · exact L.st_w ha (.inr ⟨by decide, by decide⟩)
+    · exact L.st_w ha (.inr ⟨by decide, by omega_using [hkw]⟩)
     · exact L.st_st (by omega_arith) ha (by decide)
     · exact L.st_w ha (.inr ⟨by decide, by decide⟩)
     · exact L.st_w ha (.inr ⟨by decide, by decide⟩)
-  have F₅ : Frame ([⟨W + BitVec.ofNat 64 1024, 64⟩, ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] ++
+  have F₅ : Frame ([⟨W + BitVec.ofNat 64 1024, kw⟩, ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] ++
       [⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 512, 32⟩]) s.mem s₅.mem := by
     rw [m₅]
     refine (FU.sub fun q hq => ?_).trans (FK.sub fun q hq => ?_)
@@ -382,7 +382,7 @@ theorem tagP_okPF (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) :
     refine blockAt_frame FK fun q hq => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
     rcases hq with rfl | rfl
-    · exact Offset.disjoint W (.inl (by omega_arith)) (by omega_arith) (by decide)
+    · exact Offset.disjoint W (.inl (by omega_arith)) (by omega_arith) (by omega_using [hkw])
     · rw [e28]; exact Offset.disjoint W (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
   have hCtx : ciphOf u.mem Ctx R = ciphOf s.mem Ctx R := by
     simp only [ciphOf]
@@ -419,11 +419,11 @@ theorem tagP_okPF (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) :
             toBytes (ghashFrom H (ghash H (blocks (x ++ bytesAt s.mem D n ++
                 zeros (padLen (x ++ bytesAt s.mem D n).length))))
               [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16))))) ∧
-        KOk Ctx W R t) ∧ Frame (tagPFrame W) s.mem t.mem := by
+        KOk Ctx W R t) ∧ Frame (tagPFrame kw W) s.mem t.mem := by
     intro t et rdt wrt ft tt
     have rd' : t.rd = s.rd := by rw [rdt, rd₅, rdJ, rd₃, U.rd, rd₂, o₁.rd]
     have wr' : t.wr = s.wr := by rw [wrt, wr₅, wrJ, wr₃, U.wr, wr₂, o₁.wr]
-    have FT : Frame ([⟨W + BitVec.ofNat 64 1024, 64⟩, ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] ++
+    have FT : Frame ([⟨W + BitVec.ofNat 64 1024, kw⟩, ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] ++
         [⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 512, 32⟩]) s.mem t.mem :=
       F₅.trans (ft.sub fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq; exact ⟨_, by simp, fun _ h => h⟩)
@@ -450,7 +450,7 @@ theorem tagP_okPF (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) :
         ciph_frame FT (fun q hq => by
           simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
           rcases hq with rfl | rfl | rfl | rfl
-          · exact L.cw'.sub_right (Lay.wSub (by decide))
+          · exact L.cw'.sub_right (Lay.wSub (by omega_using [hkw]))
           · exact L.cs.sub_right (Lay.stSub (by decide))
           · exact L.cw'.sub_right (Lay.wSub (by decide))
           · exact L.cw'.sub_right (Lay.wSub (by decide))) hR.2
@@ -459,7 +459,7 @@ theorem tagP_okPF (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) :
     · refine FT.sub fun q hq => ?_
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl
-      · exact ⟨⟨W + BitVec.ofNat 64 240, 2320⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
+      · exact ⟨⟨W + BitVec.ofNat 64 240, 2320⟩, by simp, Offset.sub _ (by decide) (by omega_using [hkw])⟩
       · exact ⟨⟨W + BitVec.ofNat 64 16, 112⟩, by simp, Offset.sub_base _ (by decide)⟩
       · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
       · exact ⟨⟨W + BitVec.ofNat 64 240, 2320⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
@@ -471,7 +471,7 @@ theorem tagP_okPF (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) :
       rw [blockAt_frame ft e, m₅, j₄,
         blockAt_frame fK (fun q hq => by
           simp only [List.mem_singleton] at hq; subst hq
-          simpa using L.st_w (a := 0) (n := 16) (d := 1024) (k := 64) (by decide) (.inr ⟨by decide, by decide⟩)),
+          simpa using L.st_w (a := 0) (n := 16) (d := 1024) (k := kw) (by decide) (.inr ⟨by decide, by omega_using [hkw]⟩)),
         blockAt_frame FU (fun q hq => by
           simp only [List.mem_singleton] at hq; subst hq
           simpa using L.st_w (a := 0) (n := 16) (d := 512) (k := 32) (by decide) (.inr ⟨by decide, by decide⟩))]
@@ -502,7 +502,7 @@ theorem tagP_okPF (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) :
 /-- `tagP ks` with a prepared key context: what `oneTag 112` does, and `K[1]`
 the keystream of the counter block. -/
 theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (CtxMode.preparedN np hpn) KOk (tagP ks) :=
-  TagOkPF.toP (tagP_okPF hF hks)
+  TagOkPF.toP (tagP_okPF hF (Nat.le_refl 64) hks)
 
 /-- `tagP ks` with a prepared key context: what `oneTag 112` does. -/
 theorem tagP_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOk (CtxMode.preparedN np hpn) (tagP ks) :=

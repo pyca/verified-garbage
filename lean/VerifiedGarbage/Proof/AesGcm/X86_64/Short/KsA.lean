@@ -87,7 +87,8 @@ theorem finCtrsA_ok {Ctx St W SP : Addr} {nr : Nat} (s : State) (he : Env Ctx St
     fun r a b c => by rw [g₂ r a b c, g₁], by rw [m₂, m₁], by rw [rd₂, rd₁], by rw [wr₂, wr₁],
     fun r a b => by rw [x₂, k₁ r a b]⟩
 
-theorem finKsA_ksOk : KsOk finKsA := by
+/-- `finKsA`, writing only `K[0]` and `K[1]`. -/
+theorem finKsA_ksOkW : KsOkW 32 finKsA := by
   intro Ctx W SP nr s he hR hnr
   obtain ⟨s₁, run₁, x5, x7, di₁, si₁, r10₁, g₁, m₁, rd₁, wr₁, k₁⟩ := finCtrsA_ok s he hR
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
@@ -123,14 +124,16 @@ theorem finKsA_ksOk : KsOk finKsA := by
   · simp only [State.setMem_mem]
     rw [f₂.mem, m₁]
     refine ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ ?_).writeW (List.mem_singleton_self _) _ ?_
-    · exact Offset.contains W (e := 1024) (k := 64) (d := 1024 + 0) (n := 16) (by decide) (by decide) (by decide)
-    · exact Offset.contains W (e := 1024) (k := 64) (d := 1024 + 16) (n := 16) (by decide) (by decide) (by decide)
+    · exact Offset.contains W (e := 1024) (k := 32) (d := 1024 + 0) (n := 16) (by decide) (by decide) (by decide)
+    · exact Offset.contains W (e := 1024) (k := 32) (d := 1024 + 16) (n := 16) (by decide) (by decide) (by decide)
   · intro r a b c; simp only [State.setMem_gpr]; rw [f₂.gpr, g₁ r a b c]
   · simp only [State.setMem_rd]; rw [f₂.rd, rd₁]
   · simp only [State.setMem_wr]; rw [f₂.wr, wr₁]
   · intro r a b c d
     simp only [State.setMem_xmm]
     rw [f₂.xmm r (by simp [a, b, c]), k₁ r a b]
+
+theorem finKsA_ksOk : KsOk finKsA := KsOkW.mono (by decide) finKsA_ksOkW
 
 theorem finKsA_rel : KsRel finKsA := fun {Ctx W SP D R r} _ => by
   have wCtrs : ∀ s, FinI Ctx W SP D R r s → WP isa (.block finCtrsA) s fun t =>

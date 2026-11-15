@@ -585,9 +585,9 @@ theorem openRun_leaves (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn 
 
 /-- A region `W + d`, `k` bytes, from byte 272 on that the path for TLS
 records (`FastOpen.run`) leaves as `open` does: apart from `G` (`W + 512`, 32
-bytes) and the keystream `K` (`W + 1024`, 64 bytes), which only that path
+bytes) and the keystream `K` (`W + 1024`, 32 bytes), which only that path
 writes. -/
-def RunOk (d k : Nat) : Prop := 272 ≤ d ∧ d + k ≤ 2560 ∧ (d + k ≤ 512 ∨ (544 ≤ d ∧ d + k ≤ 1024) ∨ 1088 ≤ d)
+def RunOk (d k : Nat) : Prop := 272 ≤ d ∧ d + k ≤ 2560 ∧ (d + k ≤ 512 ∨ (544 ≤ d ∧ d + k ≤ 1024) ∨ 1056 ≤ d)
 
 /-- What the path for TLS records leaves, from `s₂` (after the entry) to
 `s'`: what `OpenRunL` says, but in `W` from byte 272 on only where `RunOk`
@@ -612,7 +612,7 @@ theorem OpenRunL.toF {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 �
     OpenRunLF Lb Ctx W SP D R n s₂ s' :=
   ⟨fun hk x hx => h.rg x (hk.sub x hx), h.frame, h.kept, h.tlen, h.dat, h.len⟩
 
-open Short (ShortFacts KsOk) in
+open Short (ShortFacts KsOkW) in
 /-- After the entry, the path for TLS records (`FastOpen.run`), with an
 implementation of `vg_aes_ctr32` that writes none of its working space and
 a `vg_aes_gcm_decrypt_blocks` that leaves `Lb` in its `scratch`: what it
@@ -622,7 +622,7 @@ theorem fastRun_leaves (hF : ShortFacts) (v : GcmImpl) {np : Nat} {hpn : 8 ≤ n
     (B : BlkFn (Gcm.X86_64.Stitch.CtxMode.preparedN np hpn))
     {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8)}
     (hL : BlkLeft Lb B.dec.code (Gcm.X86_64.Stitch.CtxMode.preparedN np hpn)) (cf : Proof.Aes.X86_64.Ctr32Free v.ctr.callee)
-    {ks : Prog isa} (hks : KsOk ks)
+    {ks : Prog isa} (hks : KsOkW 32 ks)
     {s₀ s₂ : State} {Ctx W SP Np A D T : Addr} {al n t : Nat} (C : OneCtx s₀ 5 Ctx W SP Np A D 12 al n)
     (X : CtxExt (Gcm.X86_64.Stitch.CtxMode.preparedN np hpn) Ctx (W + BitVec.ofNat 64 16) W SP D n s₀) (E : OneEntry s₀ Ctx W SP A D n s₂)
     (hNp : s₀.gpr .rdx = Np) (hnl : (s₀.gpr .rcx).toNat = 12) (hal : (s₀.gpr .r9).toNat = al) (h16 : al ≤ 16)
@@ -651,8 +651,8 @@ theorem fastRun_leaves (hF : ShortFacts) (v : GcmImpl) {np : Nat} {hpn : 8 ≤ n
     fun hf hs => hf.readW (r := ⟨SP + BitVec.ofNat 64 24, 8⟩) (Region.contains_self _ _) (fun r hr => oA r (hs r hr))
       (by decide)
   -- The regions the tag writes.
-  have dTP : ∀ {d k : Nat}, 128 ≤ d → d + k ≤ 2560 → (d + k ≤ 512 ∨ (544 ≤ d ∧ d + k ≤ 1024) ∨ 1088 ≤ d) →
-      ∀ r ∈ FastOpen.tagPFrame W, (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
+  have dTP : ∀ {d k : Nat}, 128 ≤ d → d + k ≤ 2560 → (d + k ≤ 512 ∨ (544 ≤ d ∧ d + k ≤ 1024) ∨ 1056 ≤ d) →
+      ∀ r ∈ FastOpen.tagPFrame 32 W, (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
     intro d k h₁ h₂ h₃ r hr
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -698,7 +698,7 @@ theorem fastRun_leaves (hF : ShortFacts) (v : GcmImpl) {np : Nat} {hpn : 8 ≤ n
     · exact X₃.cw.sub_right (Lay.wSub (by decide))
     · exact X₃.ct.symm
   -- The tag.
-  refine WP.seq (WP.mono (FastOpen.tagP_okPF hF hks L (N := n) (rfl : ([] : List Byte).length % 16 = 0) P.env rfl hR₄
+  refine WP.seq (WP.mono (FastOpen.tagP_okPF hF (by decide) hks L (N := n) (rfl : ([] : List Byte).length % 16 = 0) P.env rfl hR₄
     P.dat hlen₄ (by omega_arith) P.tlen (by omega_arith) h184 hdw.ok hdw.ok.w X₄.ctxOk)
     fun s₅ ⟨⟨⟨he₅, _, rd₅, wr₅, _⟩, hK₅⟩, fT⟩ => ?_)
   have kT : ∀ d, 128 ≤ d → d + 8 ≤ 512 →
@@ -1452,7 +1452,7 @@ theorem openFinM_leaves_wp (hF : ShortFacts) (v : GcmImpl) {np : Nat} {hpn : 8 �
       exact WP.mono (wp_both (openOkW_ok v B (FastOpen.tagP_okP hF Short.finKsA_ksOk) FastOpen.pStable_kOk
           FastOpen.crOk_tailK C' X rfl hTa hTar hTr oT oA htl₃ hok
           (Fast.aad_mid hF C' X E₃ rfl h12 rfl (by omega_arith)))
-        (fastRun_leaves hF v B hL cf Short.finKsA_ksOk C' X E₃ rfl h12 rfl (by omega_arith) hTa hTar hTr oT oA htl₃
+        (fastRun_leaves hF v B hL cf Short.finKsA_ksOkW C' X E₃ rfl h12 rfl (by omega_arith) hTa hTar hTr oT oA htl₃
           hok))
         fun s₅ ⟨⟨he₅, hsv₅, hret₅, _⟩, R⟩ => ⟨⟨he₅, hsv₅, hret₅⟩, R.of_mem K.mem⟩
     refine ⟨fun {d k} hk x hx => ?_, fun x hx => ?_, fun x hx => ?_, fun j hj w hw => ?_, fun d hj hn => ?_⟩
@@ -1510,7 +1510,7 @@ def openQF (A W x : Addr) : Prop :=
   (⟨A, 48⟩ : Region).Contains x 1 ∨ (⟨W, 16⟩ : Region).Contains x 1 ∨
     (⟨W + BitVec.ofNat 64 128, 88⟩ : Region).Contains x 1 ∨ (⟨W + BitVec.ofNat 64 224, 16⟩ : Region).Contains x 1 ∨
     (⟨W + BitVec.ofNat 64 272, 240⟩ : Region).Contains x 1 ∨ (⟨W + BitVec.ofNat 64 544, 480⟩ : Region).Contains x 1 ∨
-    (⟨W + BitVec.ofNat 64 1088, 1472⟩ : Region).Contains x 1
+    (⟨W + BitVec.ofNat 64 1056, 1504⟩ : Region).Contains x 1
 
 theorem openQF_openQ {A W x : Addr} (h : openQF A W x) : openQ A W x := by
   unfold openQF at h
@@ -1522,7 +1522,7 @@ theorem openQF_openQ {A W x : Addr} (h : openQF A W x) : openQ A W x := by
   · exact .inr (.inr (.inr (.inr (.inl h))))
   · exact .inr (.inr (.inr (.inr (.inr (RunOk.sub (d := 272) (k := 240) ⟨by decide, by decide, .inl (by decide)⟩ x h)))))
   · exact .inr (.inr (.inr (.inr (.inr (RunOk.sub (d := 544) (k := 480) ⟨by decide, by decide, .inr (.inl ⟨by decide, by decide⟩)⟩ x h)))))
-  · exact .inr (.inr (.inr (.inr (.inr (RunOk.sub (d := 1088) (k := 1472) ⟨by decide, by decide, .inr (.inr (by decide))⟩ x h)))))
+  · exact .inr (.inr (.inr (.inr (.inr (RunOk.sub (d := 1056) (k := 1504) ⟨by decide, by decide, .inr (.inr (by decide))⟩ x h)))))
 
 /-- `OpenLF`, byte by byte (`openV`), for a return address and stack
 arguments apart from `work`. -/
