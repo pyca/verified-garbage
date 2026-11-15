@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Ecdsa.X86_64.LitAdx
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointVerified
 public import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointIfmaVerified
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.JointIfmaLit
 import VerifiedGarbage.Proof.Ecdsa.Verify.X86_64.LitAdx
 import Mathlib.Data.Finset.Card
@@ -134,7 +135,7 @@ namespace VG.Artifacts.EcdsaP256.X86_64
 open VG.Proof.P256.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+  Spec.Ecdsa.P256.verifyHashApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := "_ifma"
     code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
       Impl.Ecdsa.Verify.X86_64.jointVerifyP256Ifma

@@ -969,43 +969,22 @@ theorem vwindowO_ok {K : JacWinCfg} {size : Nat} (hV : EVLay K size) (hp : UnitM
   have hsz := hV.sz
   have hJ := hL.J
   have hP0 := hF.ne_infinity hC
-  rw [vwindowO, region, regionAt]
+  rw [vwindowO]
   simp only [Code.inline]
   rw [vloopO_inline]
   refine WP.seq (WP.mono (jbuildO_ok hL hp hC hM3 hO hP hP0 (by omega_arith) hs hM hF.toJacWinPt)
     fun s₁ ⟨F₁, T₁⟩ => ?_)
   have hs₁ := F₁.scr
   have hF₁ := fixedO_unch hL hF F₁.unch hnw (fun x hx => hL.ro_w hx) hL.bits_w
-  -- MXCSR
-  apply WP.seq
-  refine WP.seq (WP.mono (mxSave_ok hs₁ (by simp only [MX]; omega_using [hsz])) fun s₂ ⟨⟨m₂, r₂⟩, k₂⟩ => ?_)
-  have hs₂ : Scr s₂ base size := ⟨(k₂.1 .rdi (by decide)).trans hs₁.rdi, k₂.2.2 ▸ hs₁.wr, hnw⟩
-  have U₂ : Unch base [(5472, 8)] s₁.mem s₂.mem := by
-    rw [m₂]; exact unch_write32 (d := MX) _ base _ (by decide) (by decide) (by decide)
-  obtain ⟨M₂, F₂, T₂⟩ := pre_unch hV F₁.mod hF₁ T₁ hnw (Nat.le_refl _) U₂
-  refine WP.seq (WP.seq (WP.mono (mxSet_ok hs₂ (by simp only [MX]; omega_using [hsz])) fun s₃ ⟨m₃, k₃⟩ => ?_))
-  have hs₃ : Scr s₃ base size := ⟨(k₃.1 .rdi (by decide)).trans hs₂.rdi, k₃.2.2 ▸ hs₂.wr, hnw⟩
-  have U₃ : Unch base [(5472, 8)] s₂.mem s₃.mem := by
-    rw [m₃]; exact unch_write32 (d := MX + 4) _ base _ (by decide) (by decide) (by decide)
-  obtain ⟨M₃, F₃, T₃⟩ := pre_unch hV M₂ F₂ T₂ hnw (Nat.le_refl _) U₃
   -- the loop
-  refine WP.seq (WP.mono (vloopO_ok hV hC hM3 hO hP hP0 hn2 hn64 hnb h12a h12b hkJ hs₃ M₃ F₃ T₃) fun s₄ o₄ => ?_)
-  rw [WP.block_cons_iff]
-  refine ⟨s₄, rfl, WP.block_nil ?_⟩
-  have hv : s₄.gpr .r12 = (s₁.mxcsr &&& 0xFFFF).setWidth 64 :=
-    (o₄.keep .r12 (by decide)).trans ((k₃.1 .r12 (by decide)).trans r₂)
-  refine WP.mono (mxRestore_ok o₄.scr (by simp only [MX]; omega_using [hsz]) hv) fun s₅ ⟨m₅, g₅, rd₅, wr₅⟩ => ?_
-  have U₅ : Unch base [(5472, 8)] s₄.mem s₅.mem := by
-    rw [m₅]; exact unch_write32 (d := MX) _ base _ (by decide) (by decide) (by decide)
-  have e₅ := o₄.mem.vec hV wr₅ (lo := 5472) (n := 8) (by decide) (by decide) U₅
-  have hs₅ : Scr s₅ base size := ⟨by rw [g₅]; exact o₄.scr.rdi, e₅.wr, hnw⟩
+  refine WP.seq (WP.mono (vloopO_ok hV hC hM3 hO hP hP0 hn2 hn64 hnb h12a h12b hkJ hs₁ F₁.mod hF₁ T₁)
+    fun s₅ o₄ => ?_)
+  have U₅ : Unch base [(5472, 8)] s₅.mem s₅.mem := Unch.refl _ _ _
+  have e₅ := o₄.mem.vec hV rfl (lo := 5472) (n := 8) (by decide) (by decide) U₅
+  have hs₅ : Scr s₅ base size := ⟨o₄.scr.rdi, e₅.wr, hnw⟩
   obtain ⟨xn, un, z, Q, r, hQ, hQe, hA, rdi, rmem, c3⟩ := o₄.out
   have same₅ : ∀ i, i < 5 → ∀ l, l < 4 → Mont.word s₅.mem base (SL + EO + 32 * i + 8 * l) =
-      Mont.word r.mem base (SL + EO + 32 * i + 8 * l) := fun i hi l hl => by
-    rw [rmem]
-    exact U₅.word (fun w hw => by
-      rw [List.mem_singleton] at hw; subst hw
-      exact Or.inr (by simp only [SL, EO]; omega_using [])) (by simp only [SL, EO]; omega_using [hi, hl])
+      Mont.word r.mem base (SL + EO + 32 * i + 8 * l) := fun _ _ _ _ => by rw [rmem]
   -- the accumulator's rows into `R`
   have mR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ jwOther K := by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -1077,7 +1056,7 @@ theorem vwindowO_ok {K : JacWinCfg} {size : Nat} (hV : EVLay K size) (hp : UnitM
     show toM Cv.p (2 ^ (64 * K.M.n)) _ = _
     rw [wz, hn4]; exact toM_car 2 c3.z
   have rbx₈ : s₈.gpr .rbx = BitVec.ofNat 64 0 := by
-    rw [k₈.gpr .rbx (by decide), k₇.gpr .rbx (by decide), k₆.gpr .rbx (by decide), g₅]; exact o₄.rbx
+    rw [k₈.gpr .rbx (by decide), k₇.gpr .rbx (by decide), k₆.gpr .rbx (by decide)]; exact o₄.rbx
   have I₈ : JInvO K Cv base size P s₈ k 0 s₈ := by
     refine ⟨⟨Q, hQ, hQe, JFrame.refl hs₈ F₈.mod, T₈, fun x hx => ?_, ?_⟩, rbx₈⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -1088,17 +1067,16 @@ theorem vwindowO_ok {K : JacWinCfg} {size : Nat} (hV : EVLay K size) (hp : UnitM
     · rw [ex, ey, ez]; exact hA
   refine WP.mono (jfinO_ok hL hp hC hpn hone_lt hone hF₈ I₈) fun s' ⟨K₉, U₉, M₉, L₉, R₉⟩ => ?_
   refine ⟨⟨fun x hx => ?_, ?_, ?_⟩, ?_, M₉, L₉, R₉⟩
-  · rw [K₉.gpr x hx, F₈.keep.gpr x hx, g₅]
+  · rw [K₉.gpr x hx, F₈.keep.gpr x hx]
     rw [hn4] at hx
     rcases notPow4 x hx with rfl | rfl | rfl
-    · rw [o₄.keep .rsi (by decide), k₃.1 .rsi (by decide), k₂.1 .rsi (by decide)]
+    · rw [o₄.keep .rsi (by decide)]
       exact F₁.keep.gpr .rsi (by rw [hn4]; exact hx)
     · rw [o₄.scr.rdi, hs.rdi]
-    · rw [o₄.keep .rsp (by decide), k₃.1 .rsp (by decide), k₂.1 .rsp (by decide)]
+    · rw [o₄.keep .rsp (by decide)]
       exact F₁.keep.gpr .rsp (by rw [hn4]; exact hx)
-  · rw [K₉.rd, F₈.keep.rd, rd₅, o₄.rd, k₃.2.1, k₂.2.1, F₁.keep.rd]
-  · rw [K₉.wr, F₈.keep.wr, wr₅, o₄.wr, k₃.2.2, k₂.2.2, F₁.keep.wr]
-  · exact eU_trans (unch_jw F₁.unch) (eU_trans (unch_vec K U₂ (by decide)) (eU_trans (unch_vec K U₃ (by decide))
-      (eU_trans o₄.unch (eU_trans (unch_vec K U₅ (by decide)) (eU_trans (unch_jw F₈.unch) (unch_jw U₉))))))
+  · rw [K₉.rd, F₈.keep.rd, o₄.rd, F₁.keep.rd]
+  · rw [K₉.wr, F₈.keep.wr, o₄.wr, F₁.keep.wr]
+  · exact eU_trans (unch_jw F₁.unch) (eU_trans o₄.unch (eU_trans (unch_jw F₈.unch) (unch_jw U₉)))
 
 end VG.Proof.P256.X86_64.Ifma

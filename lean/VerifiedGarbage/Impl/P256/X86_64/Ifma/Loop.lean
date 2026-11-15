@@ -22,8 +22,10 @@ accumulator's or its negative, `Z` becomes zero and stays zero, and then
 `Joint.window` is run instead, from the start.
 
 `vpmadd52luq` and `vpmadd52huq` have MXCSR-configuration-dependent timing
-on some processors, so the loop runs between Intel's prologue and epilogue
-(`region`; see "MCDT" in `TCB/X86_64/Isa.lean`).
+on some processors (see "MCDT" in `TCB/X86_64/Isa.lean`): the code sets no
+MXCSR of its own, as the dispatcher of every function that runs it runs
+`vg_mcdt_enter` first, which leaves MXCSR `0x1FBF` for the whole call
+("Dispatchers" in `TCB/Rust.lean`).
 -/
 
 @[expose] public section
@@ -35,12 +37,6 @@ open VG.Impl.Rsa.X86_64.CrtIfma (vreg at_)
 
 /-- The vectors' slots, in the working space. -/
 def SL : Nat := 5056
-
-/-- MXCSR, saved, and `0x1FBF` (`region`). -/
-def MX : Nat := 5472
-
-/-- `MX` for the joint multiplication. -/
-def MXV : Nat := 5864
 
 /-- The blocks' constants, in the working space. -/
 def KB : Nat := 6432
@@ -154,17 +150,6 @@ def vloop (c : Joint.Cfg) : Prog isa :=
   .seq (.loop (vstep c) .ne) <|
   .seq (.block [.alu .test .r11 (.reg .r11)]) (.ite .e (.block []) (.block (outPieces.flatten ++ storeOut)))
 
-/-- `c` with MXCSR `0x1FBF`, through `[rdi + mx]`: MXCSR saved in `r12`, and loaded back after `c`,
-which must not write `r12` (as ML-KEM's `withMxcsr`). -/
-def regionAt (mx : Nat) (c : Prog isa) : Prog isa :=
-  .seq (.block [.stmxcsr (sc mx), .mov32 .r12 (.mem (sc mx)), .alu32 .and .r12 (.imm 0xFFFF)])
-    (.seq (.seq (.block [.mov32 .rax (.imm 0x1FBF), .store32 (sc (mx + 4)) .rax, .ldmxcsr (sc (mx + 4)), .lfence])
-        (.seq c (.block [.lfence])))
-      (.block [.store32 (sc mx) .r12, .ldmxcsr (sc mx)]))
-
-/-- `regionAt MX`. -/
-def region (c : Prog isa) : Prog isa := regionAt MX c
-
 /-- The number in lane `l` of five slots at `sl`, below `2 p`, reduced modulo `p` into the words at `dst`. -/
 def packLaneAt (sl : Nat) (M : Mod) (l dst : Nat) : List Instr :=
   let L (i : Nat) : MemOp := sc (sl + 32 * i + 8 * l)
@@ -185,7 +170,7 @@ def packR (c : Joint.Cfg) : Prog isa :=
 
 /-- The digits' loop in vectors, from `R = O`: `R` is the sum, or its `Z` is zero. -/
 def vmain (c : Joint.Cfg) : Prog isa :=
-  .seq (regionAt MXV (.seq (vloop c) (.block [.mov .rbx (.reg .r11), .vop .vzeroupper]))) (packR c)
+  .seq (.seq (vloop c) (.block [.mov .rbx (.reg .r11), .vop .vzeroupper])) (packR c)
 
 /-- The joint multiplication with the loop in vectors, from the generator's table and `Q`'s
 coordinates, and `Joint.window` where that leaves `Z` zero. -/
