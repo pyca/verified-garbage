@@ -11,6 +11,8 @@ public import VerifiedGarbage.Spec.Ecdsa.P521
 import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Lit
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Lit
 public import VerifiedGarbage.Impl.Ecdsa.P521.Arm
 public import VerifiedGarbage.Proof.Ecdsa.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -27,6 +29,8 @@ meta import VerifiedGarbage.Proof.Ecdsa.Contract
 meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontModuli
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.P521.Arm
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -147,26 +151,30 @@ theorem argByte_eq (s : State) (k : Nat) :
     VG.Arm.Taint.argByte s k = stackArgAddr s 0 + BitVec.ofNat 64 k := by
   simp [VG.Arm.Taint.argByte, stackArgAddr]
 
-/-! The constant-time analyses of the calls of the functions modulo `p` and `n`, from their
-arguments, each done once for every check of code that calls them (`taint_decide_sum`: signing,
-ECDH, the public key and its compression). They keep what is public of `r10` (which the callers
-keep `lr` in) and of the loops' counter `r11`: the functions write neither. The analysis is
-`taintS`'s, which has summaries (`Proof/Framework/Arm/TaintMono.lean`). -/
-taint_summary mulPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3]) (.call (Mont.mulName false p521.SP) (Mont.mulFnWith false p521.SP.k p521.SP.m))
+/-! The functions modulo `p` as literals, for their summaries (the kernel would otherwise build
+their instructions once for the analysis and once for the frame). -/
+materialize_code mulModP := Mont.mulFnWith false p521.SP.k p521.SP.m
+materialize_code addModP := Mont.addFn p521.SP.k p521.SP.m
+materialize_code subModP := Mont.subFn p521.SP.k p521.SP.m
+
+/-! The constant-time analyses of the calls of the functions modulo `p`, from their arguments,
+each done once for every check of code that calls them (`taint_decide_sum`: signing, ECDH, the
+public key and its compression). They keep what is public of `r10` (which the callers keep `lr`
+in) and of the loops' counter `r11`: the functions write neither. The analysis is `taintS`'s,
+which has summaries (`Proof/Framework/Arm/TaintMono.lean`). -/
+taint_summary mulPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
+  (.call (Mont.mulName false p521.SP) (Mont.mulFnWith false p521.SP.k p521.SP.m))
   keeping (Taint.ofRegs [.r10, .r11])
-taint_summary addPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3]) (.call (p521.SP.fn "add") (Mont.addFn p521.SP.k p521.SP.m))
+taint_summary addPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
+  (.call (p521.SP.fn "add") (Mont.addFn p521.SP.k p521.SP.m))
   keeping (Taint.ofRegs [.r10, .r11])
-taint_summary subPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3]) (.call (p521.SP.fn "sub") (Mont.subFn p521.SP.k p521.SP.m))
-  keeping (Taint.ofRegs [.r10, .r11])
-taint_summary mulNSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3]) (.call (Mont.mulName false p521.SN) (Mont.mulFnWith false p521.SN.k p521.SN.m))
-  keeping (Taint.ofRegs [.r10, .r11])
-taint_summary addNSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3]) (.call (p521.SN.fn "add") (Mont.addFn p521.SN.k p521.SN.m))
+taint_summary subPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
+  (.call (p521.SP.fn "sub") (Mont.subFn p521.SP.k p521.SP.m))
   keeping (Taint.ofRegs [.r10, .r11])
 
 /-! The constant-time analysis of the call of `vg_p521_mul` from its argument and `r10`, done
-once for every check of code that calls it (signing, ECDH and the public key); it writes every
-register, so its frame is empty (stated, so that the callers need not import the analysis'
-instance publicly for the default one). -/
+once for every check of code that calls it (signing, ECDH and the public key). It writes every
+register: its frame is empty. -/
 taint_summary mulSum : taintS (Taint.ofRegs [.r0, .r10])
   (.call (s!"vg_{Impl.Weierstrass.Mul.p521.curve}_mul" ++ if p521.umaal then "_umaal" else "") mulP521)
   keeping (Taint.ofRegs []) using mulPSum addPSum subPSum
@@ -177,7 +185,7 @@ def τ₁ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2, .r3], flags := f
 
 theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signP521 := by
   refine VG.Taint.constantTime_of_exists (A := taintS) τ₁ ?_
-    (by taint_decide_sum [mulPSum, mulNSum, addNSum, mulSum])
+    (by taint_decide_sum [mulPSum, mulSum])
   intro s t hs ht ⟨hsp, h0, h1, h2, h3, ha⟩
   refine VG.Arm.Taint.leS_sound (σ := τ₀) ⟨RegSet.subset_refl _, id, .inr ⟨rfl, rfl⟩,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, .inl rfl,
