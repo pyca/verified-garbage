@@ -100,9 +100,9 @@ fn errors() {
     assert_eq!(buffer, [0x5a; 16]);
 }
 
-/// Messages of many of decryption's groups of blocks (256 on x86-64), from
-/// the last CAVP vector's plaintext repeated: decryption undoes encryption,
-/// whole and in pieces of sizes around the groups'.
+/// Messages of many of decryption's groups of blocks (256 on x86-64, 128 on
+/// AArch64), from the last CAVP vector's plaintext repeated: decryption undoes
+/// encryption, whole and in pieces of sizes around the groups'.
 #[test]
 fn long_messages() {
     let text = crate::vectors::text("vectors/nist-cavp-tdes-mmt/TCBCMMT3.rsp");
@@ -119,7 +119,7 @@ fn long_messages() {
         .unwrap()
         .encrypt(&mut ciphertext)
         .unwrap();
-    for piece in [1000, 1, 255, 256, 257, 511, 512, 513] {
+    for piece in [1000, 1, 127, 128, 129, 255, 256, 257, 511, 512, 513] {
         let mut buffer = ciphertext.clone();
         let mut decryptor = TripleDesCbcDecryptor::new(&key, &iv).unwrap();
         for chunk in buffer.chunks_mut(8 * piece) {
