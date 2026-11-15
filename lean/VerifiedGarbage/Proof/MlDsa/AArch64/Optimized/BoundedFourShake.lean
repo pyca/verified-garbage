@@ -167,7 +167,7 @@ namespace VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 
-def squeezeAllRegs : List Reg := [.x0,.x1,.x16,.x17,.x6,.x7,.x22,.x23,.x24,.x25,.x26,.x27,.x28]
+def squeezeAllRegs : List Reg := squeezeRegs++[.x22,.x23]
 
 structure SqueezePost (s t : State) (b : Addr) (off : Nat) (A : Nat→Spec.Sha3.State) : Prop where
  keep : RegKeep squeezeAllRegs s t

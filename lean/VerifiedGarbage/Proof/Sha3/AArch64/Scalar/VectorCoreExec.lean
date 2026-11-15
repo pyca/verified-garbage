@@ -8,7 +8,6 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lower
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
-import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Attr.Core
 public import Aesop.BuiltinRules
 import Mathlib.Tactic.ToDual
@@ -58,7 +57,8 @@ structure VectorFileRel (f : File) (s : VG.AArch64.State) : Prop where
 
 private theorem slotV_eq {j k : Nat} (hj : j < 2) (hk : k < 2) :
     slotV j = slotV k ↔ j = k := by
-  interval_cases j <;> interval_cases k <;> decide
+  have h : ∀ j < 2, ∀ k < 2, (slotV j = slotV k ↔ j = k) := by decide
+  exact h j hj k hk
 
 private theorem slotV_ne (k : Nat) (v : VReg) (h24 : v ≠ .v24) (h25 : v ≠ .v25) :
     v ≠ slotV k := by
@@ -83,7 +83,7 @@ theorem vector_step_ok (op : ScalarOp) (hg : Good op) (f : File) (s : VG.AArch64
       by_cases he : j = k
       · subst j
         simp only [ite_true, vdword_ofVDwords_0, hr.regs]
-      · simp only [ite_eq_right he, ite_eq_right ((slotV_eq hj hk).not.mpr he), hr.slots j hj]
+      · simp only [ite_eq_right he, ite_eq_right ((not_congr (slotV_eq hj hk)).mpr he), hr.slots j hj]
     · intro v h24 h25 _ _
       exact RegUpd.v_setV_of_ne s _ (slotV_ne k v h24 h25)
   | reload d k =>

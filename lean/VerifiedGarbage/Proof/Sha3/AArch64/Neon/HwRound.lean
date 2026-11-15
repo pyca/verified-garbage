@@ -6,9 +6,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Simd64
 import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Contract
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Theta
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Constant
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
 import VerifiedGarbage.Proof.Framework.Lit
 
 /-! ### `Sha3.AArch64.Neon.HwLanes`, which only this module used -/
@@ -135,6 +134,9 @@ theorem iota2_ok {s : State} {A B : Spec.Sha3.State} (hp : CPairs s A B) (rc : B
       rw [vreg_inj i (by omega_using [hi]) 0 (by decide)]; exact h0),h1.get (vreg i)
       ((show ∀ i < 25,vreg i ≠ .v26 by decide) i hi)]
     exact hp i hi
+
+theorem vchg_core {s s' : State} {rs : List VReg} (h : VChg rs s s') : CoreKeep s s' :=
+  ⟨fun r _ => congrFun h.gpr r,h.mem,h.rd,h.wr,h.sp⟩
 
 theorem round2_ok {s : State} {A B : Spec.Sha3.State} (hp : Pairs s A B) {r : Nat} (hr : r < 24) :
     WP isa (.block (round r)) s fun t => CoreKeep s t ∧ Pairs t (Spec.Sha3.rnd A r) (Spec.Sha3.rnd B r) := by

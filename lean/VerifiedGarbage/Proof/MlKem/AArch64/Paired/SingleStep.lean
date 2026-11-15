@@ -85,7 +85,7 @@ theorem singleStep_ok {s : State} {p a : Addr} {A B : Spec.Sha3.State}
       Rate21 t.mem a (Spec.Sha3.keccakF A) ∧
       Frame [pairR p,rateR21 a,X2.callR (p+1536)] s.mem t.mem ∧
       t.gpr .x20=a+168 ∧ t.gpr .x22=s.gpr .x22-1 := by
-  refine WP.seq (WP.mono (X2.call_ok true (by decide) (by decide) hp
+  refine WP.seq (WP.mono (X2.call_ok (by decide) (by decide) hp
     (by rw [hp]; rfl) hpw pair hcov) fun u ⟨ku,fu,pu⟩ => ?_)
   rw [WP.block_append_iff]
   refine WP.mono (singleWords_ok ((ku.gpr .x19 (by decide)).trans hp)

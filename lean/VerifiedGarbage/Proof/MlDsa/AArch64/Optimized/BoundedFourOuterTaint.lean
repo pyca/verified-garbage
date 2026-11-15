@@ -4,10 +4,16 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitializ
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskFour
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 import VerifiedGarbage.TCB.Axioms
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitialized
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourMaskFour
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejFold
 meta import VerifiedGarbage.TCB.Axioms
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 @[expose] public section
 
@@ -20,7 +26,7 @@ theorem samplerSetup_taint : ∃h,
   ⟨_,by taint_decide⟩
 
 theorem squeezeTwo_taint (sha3 : Bool) {off : Nat} (ho : off=0∨off=272) : ∃h,
-    (taint.check (Taint.ofRegs [.x19]) (squeezeTwo sha3 off) h).isSome=true := by
+    (VectorTaint.taint.check (VectorTaint.ofRegs [.x19]) (squeezeTwo sha3 off) h).isSome=true := by
   rcases ho with rfl|rfl <;> cases sha3 <;> exact ⟨_,by taint_decide⟩
 
 theorem flags_taint : ∃h,

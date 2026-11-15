@@ -36,7 +36,7 @@ theorem squeezePair_ok {s : State} {p a b w : Addr} {rp ra rb : Reg} {A B : Spec
       Rate128 t.mem a (Spec.Sha3.keccakF A) ∧ Rate128 t.mem b (Spec.Sha3.keccakF B) ∧
       Frame [pairR p,rateR a,rateR b,X2.callR w] s.mem t.mem ∧
       (∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) := by
-  refine WP.seq (WP.mono (X2.call_ok true (by decide) hp1 hp hw hpw hpair hcov) fun t ⟨hk,hf,hpt⟩ => ?_)
+  refine WP.seq (WP.mono (X2.call_ok (by decide) hp1 hp hw hpw hpair hcov) fun t ⟨hk,hf,hpt⟩ => ?_)
   have hkt : RegKeep X2.clobbered s t := ⟨hk.gpr,hk.rd,hk.wr,hk.sp⟩
   refine WP.mono (X2.squeeze_ok (n := 16) (by decide) ((hkt.gpr _ hpc).trans hp)
     ((hkt.gpr _ hac).trans ha) ((hkt.gpr _ hbc).trans hb) hp6 hp7 ha6 ha7 hb6 hb7 hpt hd hpa hpb

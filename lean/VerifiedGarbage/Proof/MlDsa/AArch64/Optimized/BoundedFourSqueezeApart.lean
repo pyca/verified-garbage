@@ -56,14 +56,14 @@ open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 
 /-- The registers a pair's block changes. -/
-def blockRegs : List Reg := [.x0,.x1,.x16,.x17,.x6,.x7]
+def blockRegs : List Reg := X2.volatile
 
 theorem pair_ok (sha3 : Bool) {s : State} {p a b w : Addr} {rp ra rb : Reg} {A B : Spec.Sha3.State}
     (hp : s.gpr rp = p) (ha : s.gpr ra = a) (hb : s.gpr rb = b)
     (hw : s.gpr .x19 + BitVec.ofNat 64 Impl.MlDsa.AArch64.Optimized.BoundedFour.oX2 = w)
     (hp1 : rp ≠ .x1) (hp6 : rp ≠ .x6) (hp7 : rp ≠ .x7)
     (ha6 : ra ≠ .x6) (ha7 : ra ≠ .x7) (hb6 : rb ≠ .x6) (hb7 : rb ≠ .x7)
-    (hpc : rp ∉ X2.clobbered) (hac : ra ∉ X2.clobbered) (hbc : rb ∉ X2.clobbered)
+    (hpc : rp ∉ X2.volatile) (hac : ra ∉ X2.volatile) (hbc : rb ∉ X2.volatile)
     (hpair : PairAt s.mem p A B)
     (hin : ∀ i < 25, InRegions (s.rd++s.wr) (wordAddr p i) 16)
     (hwa : ∀ i < 17, InRegions s.wr (outAddr a i) 8)
@@ -76,12 +76,12 @@ theorem pair_ok (sha3 : Bool) {s : State} {p a b w : Addr} {rp ra rb : Reg} {A B
       Rate136 t.mem a (Spec.Sha3.keccakF A) ∧ Rate136 t.mem b (Spec.Sha3.keccakF B) ∧
       Frame [pairR p,rateR a,rateR b,X2.callR w] s.mem t.mem := by
   unfold Impl.MlDsa.AArch64.Optimized.BoundedFour.pair
-  refine WP.seq (WP.mono (X2.call_ok sha3 (by decide) hp1 hp hw hpw hpair hcov) fun t ⟨hk,hf,hpt⟩ => ?_)
-  have hkt : RegKeep X2.clobbered s t := ⟨hk.gpr,hk.rd,hk.wr,hk.sp⟩
+  refine WP.seq (WP.mono (X2.callAny_ok sha3 (by decide) (by decide) hp1 (by decide) (by decide)
+    hp hw hpw hpair hcov) fun t ⟨hkt,hf,hpt⟩ => ?_)
   refine WP.mono (X2.squeeze_ok (n := 17) (by decide) ((hkt.gpr _ hpc).trans hp)
     ((hkt.gpr _ hac).trans ha) ((hkt.gpr _ hbc).trans hb) hp6 hp7 ha6 ha7 hb6 hb7 hpt hd hpa hpb
-    (fun i hi => by rw [hk.rd,hk.wr]; exact hin i hi)
-    (fun i hi => by rw [hk.wr]; exact hwa i hi) (fun i hi => by rw [hk.wr]; exact hwb i hi))
+    (fun i hi => by rw [hkt.rd,hkt.wr]; exact hin i hi)
+    (fun i hi => by rw [hkt.wr]; exact hwa i hi) (fun i hi => by rw [hkt.wr]; exact hwb i hi))
     fun u ⟨hu,hfu,hau,hbu⟩ => ?_
   have hku : RegKeep [.x6,.x7] t u := ⟨fun r hr => by
     simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr; exact hu.gpr r hr.1 hr.2,
@@ -317,7 +317,7 @@ namespace VG.Proof.MlDsa.AArch64.Optimized.BoundedFour
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 
-def squeezeRegs : List Reg := [.x0,.x1,.x16,.x17,.x6,.x7,.x24,.x25,.x26,.x27,.x28]
+def squeezeRegs : List Reg := blockRegs++[.x24,.x25,.x26,.x27,.x28]
 
 structure SqueezeStepPost (s t : State) (p q a b c d w : Addr)
     (A B C D : Spec.Sha3.State) : Prop where

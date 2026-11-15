@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Squeeze
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Keep
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem64
 import VerifiedGarbage.Proof.Framework.Range
@@ -20,10 +21,14 @@ import VerifiedGarbage.TCB.Axioms
 Untrusted: everything here is checked by Lean. `call_ok`: a call (`X2.call`)
 on the states at `p`, with the function's working space at `q` and the
 return address kept in the 8 bytes after it (`callR`), permutes both states,
-changes memory only in the states and `callR`, and keeps every register but
-`x0`, `x1`, `x16` and `x17` (`x30` is reloaded), from the function's own
-proof (`X2.correct`, by `WP.callV`). `squeeze_ok`: the
-squeeze from memory that follows it in a caller (`X2.squeeze`).
+changes memory only in the states and `callR` (`call_returns`, from the
+function's own proof, `X2.correct`, by `WP.callV`), and with
+`vg_keccak_f1600_x2_sha3` keeps every register but `x0`, `x1`, `x16` and
+`x17` (`x30` is reloaded). `callAny_ok`: a call of either
+function keeps the callee-saved registers (`vg_keccak_f1600_x2` writes
+`x0`–`x17`, and the caller reloads `x30` through the callee-saved base of its
+working space). `squeeze_ok`: the squeeze from memory that follows it in a
+caller (`X2.squeeze`).
 -/
 
 @[expose] public section
@@ -50,24 +55,45 @@ structure CallKeep (s t : State) : Prop where
 /-- The caller's part of a call: the function's working space and the return address. -/
 def callR (q : Addr) : Region := ⟨q, 136⟩
 
-theorem code_writes (sha3 : Bool) : ∀ r, r ≠ .x16 → ∀ i ∈ instrs (code sha3), clobbers i r = false := by
-  have h : ∀ sha3, ((instrs (code sha3)).all fun i => (dsts i).all (· == .x16)) = true := by
-    intro sha3; cases sha3 <;> (rw [← Code.allInstrs_eq]; lit_decide)
+theorem code_writes : ∀ r, r ≠ .x16 → ∀ i ∈ instrs (code true), clobbers i r = false := by
+  have h : ((instrs (code true)).all fun i => (dsts i).all (· == .x16)) = true := by
+    rw [← Code.allInstrs_eq]; lit_decide
   intro r hr i hi
-  exact clobbers_eq_false_of_all (List.all_eq_true.mp (h sha3) i hi) (by simpa using hr)
+  exact clobbers_eq_false_of_all (List.all_eq_true.mp h i hi) (by simpa using hr)
 
 theorem code_noFrames (sha3 : Bool) : (code sha3).noFrames = true := by
   cases sha3 <;> lit_decide
 
-/-- **A call** on the states at `p` (from `rp`), with the working space at `q` (`rb + off`). -/
-theorem call_ok (sha3 : Bool) {s : State} {rp rb : Reg} {off : Nat} {p q : Addr}
+/-- The state the function returns to, before the caller reloads `x30`, from
+the state `s` before the call (`X2.call`) on the states at `p` with the
+working space at `q`. -/
+structure Returned (sha3 : Bool) (s t : State) (p q : Addr) (A B : Spec.Sha3.State) : Prop where
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  sp : t.sp = s.sp
+  frame : Frame [pairR p, callR q] s.mem t.mem
+  pair : PairAt t.mem p (keccakF A) (keccakF B)
+  /-- The return address, where the caller kept it. -/
+  link : t.mem.readW (q + BitVec.ofNat 64 128) 64 = s.gpr .x30
+  slot : InRegions (t.rd ++ t.wr) (q + BitVec.ofNat 64 128) 8
+  /-- The callee-saved registers. -/
+  saved : ∀ r ∈ preserved, r ≠ .x30 → t.gpr r = s.gpr r
+  /-- The registers the function's code does not write. -/
+  kept : ∀ r, r ≠ .x0 → r ≠ .x1 → r ∉ linkRegs →
+    (∀ i ∈ instrs (code sha3), clobbers i r = false) → t.gpr r = s.gpr r
+  x1 : (∀ i ∈ instrs (code sha3), clobbers i .x1 = false) → t.gpr .x1 = q
+  vcs : ∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
+
+/-- A call (`X2.call`) up to the function's return, from its own proof
+(`X2.correct`, by `WP.callV`): what is left is the reload of `x30`. -/
+theorem call_returns (sha3 : Bool) {s : State} {rp rb : Reg} {off : Nat} {p q : Addr}
     {A B : Spec.Sha3.State} (hoff : off < 8190) (hrp : rp ≠ .x1)
     (hp : s.gpr rp = p) (hq : s.gpr rb + BitVec.ofNat 64 off = q)
     (hpq : (pairR p).Disjoint (callR q)) (hpair : PairAt s.mem p A B)
-    (hcov : Covers [pairR p, callR q] s.wr) :
-    WP isa (Impl.Sha3.AArch64.Neon.X2.call sha3 rp rb off) s fun t =>
-      CallKeep s t ∧ Frame [pairR p, callR q] s.mem t.mem ∧
-        PairAt t.mem p (keccakF A) (keccakF B) := by
+    (hcov : Covers [pairR p, callR q] s.wr) {Q : State → Prop}
+    (hQ : ∀ t, Returned sha3 s t p q A B → WP isa (.block [if sha3 then .ldr .x .x30 .x1 128
+      else .ldr .x .x30 rb (off + 128)]) t Q) :
+    WP isa (Impl.Sha3.AArch64.Neon.X2.call sha3 rp rb off) s Q := by
   have hsub : Covers [pairR p, scrR q] [pairR p, callR q] := Covers.of_sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -111,10 +137,7 @@ theorem call_ok (sha3 : Bool) {s : State} {rp rb : Reg} {off : Nat} {p q : Addr}
         State.callEntry_gpr s₄ (show Reg.x1 ∉ linkRegs by decide), h0, h1'] using hpq'⟩
     (by rw [hw]; exact Covers.right (hsub.trans hcov)) (by rw [hw]; exact hsub.trans hcov) ?_
     (code_noFrames sha3))
-  intro t hr hwr hsp hf _ hk hv hpost
-  have hkt : ∀ r, r ≠ .x16 → r ∉ linkRegs → t.gpr r = s₄.gpr r := fun r h16 hl =>
-    hk r hl (code_writes sha3 r h16)
-  have ht1 : t.gpr .x1 = q := (hkt .x1 (by decide) (by decide)).trans h1'
+  intro t hr hwr hsp hf hsv hk hv hpost
   have hf₄ : Frame [callR q] s.mem s₄.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hslotR
   have hpair₄ : PairAt s₄.mem p A B := fun i hi => by
@@ -126,30 +149,79 @@ theorem call_ok (sha3 : Bool) {s : State} {rp rb : Reg} {off : Nat} {p q : Addr}
   have hval : t.mem.readW (q + BitVec.ofNat 64 128) 64 = s.gpr .x30 := by
     rw [hf.readW (r := ⟨q + BitVec.ofNat 64 128, 8⟩) (Region.contains_self _ _) hslot_sep (by decide),
       hm, Mem.readW_writeW_self64]
-  refine VG.Proof.Sha3.AArch64.wp_ldr ⟨by decide, by decide⟩ (by rw [ht1])
-    (by rw [hr, hwr, hw, o₄.rd, m₃.rd, o₂.rd, o₁.rd]
-        obtain ⟨R, hR, hc⟩ := hslot
-        exact ⟨R, List.mem_append_right _ hR, hc⟩)
-    fun u hu => WP.block_nil ⟨⟨fun r hr' => ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
-  · simp only [clobbered, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
-    by_cases h30 : r = .x30
-    · subst r; rw [hu.gpr, hval]
-    · rw [hu.other r h30, hkt r hr'.2.2.1 (by simp [linkRegs, h30, hr'.2.2.1, hr'.2.2.2]),
-        hlr r hr'.1 hr'.2.1]
-  · rw [hu.rd, hr, o₄.rd, m₃.rd, o₂.rd, o₁.rd]
-  · rw [hu.wr, hwr, hw]
-  · rw [hu.sp, hsp, o₄.sp, m₃.sp, o₂.sp, o₁.sp]
-  · intro r hr
-    rw [hu.vec, hv r hr, o₄.vcs r hr, m₃.vec, o₂.vcs r hr, o₁.vcs r hr]
-  · rw [hu.mem]
-    refine (hf₄.mono (fun r hr => by simp at hr; simp [hr])).trans (hf.sub fun r hr => ?_)
+  refine hQ t ⟨by rw [hr, o₄.rd, m₃.rd, o₂.rd, o₁.rd], hwr.trans hw,
+    by rw [hsp, o₄.sp, m₃.sp, o₂.sp, o₁.sp], ?_, ?_, hval,
+    by rw [hr, hwr, hw, o₄.rd, m₃.rd, o₂.rd, o₁.rd]
+       obtain ⟨R, hR, hc⟩ := hslot
+       exact ⟨R, List.mem_append_right _ hR, hc⟩,
+    fun r hr' h30 => (hsv r hr' h30).trans (hlr r (by revert hr'; cases r <;> decide)
+      (by revert hr'; cases r <;> decide)),
+    fun r h0 h1 hl hc => (hk r hl hc).trans (hlr r h0 h1),
+    fun hc => (hk .x1 (by decide) hc).trans h1',
+    fun r hr' => by rw [hv r hr', o₄.vcs r hr', m₃.vec, o₂.vcs r hr', o₁.vcs r hr']⟩
+  · refine (hf₄.mono (fun r hr => by simp at hr; simp [hr])).trans (hf.sub fun r hr => ?_)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨pairR p, by simp, fun _ h => h⟩
     · exact ⟨callR q, by simp, hscr⟩
-  · rw [hu.mem]
-    have := pairAt_stateX2 t.mem p
+  · have := pairAt_stateX2 t.mem p
     rwa [hpost.1, hpost.2] at this
+
+/-- **A call** of `vg_keccak_f1600_x2_sha3` on the states at `p` (from `rp`),
+with the working space at `q` (`rb + off`). -/
+theorem call_ok {s : State} {rp rb : Reg} {off : Nat} {p q : Addr}
+    {A B : Spec.Sha3.State} (hoff : off < 8190) (hrp : rp ≠ .x1)
+    (hp : s.gpr rp = p) (hq : s.gpr rb + BitVec.ofNat 64 off = q)
+    (hpq : (pairR p).Disjoint (callR q)) (hpair : PairAt s.mem p A B)
+    (hcov : Covers [pairR p, callR q] s.wr) :
+    WP isa (Impl.Sha3.AArch64.Neon.X2.call true rp rb off) s fun t =>
+      CallKeep s t ∧ Frame [pairR p, callR q] s.mem t.mem ∧
+        PairAt t.mem p (keccakF A) (keccakF B) := by
+  refine call_returns true hoff hrp hp hq hpq hpair hcov fun t ht => ?_
+  simp only [↓reduceIte]
+  refine VG.Proof.Sha3.AArch64.wp_ldr ⟨by decide, by decide⟩
+    (by rw [ht.x1 (code_writes .x1 (by decide))]) ht.slot
+    fun u hu => WP.block_nil ⟨⟨fun r hr' => ?_, by rw [hu.rd, ht.rd], by rw [hu.wr, ht.wr],
+      by rw [hu.sp, ht.sp], fun r hr => by rw [hu.vec]; exact ht.vcs r hr⟩,
+      by rw [hu.mem]; exact ht.frame, by rw [hu.mem]; exact ht.pair⟩
+  simp only [clobbered, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
+  by_cases h30 : r = .x30
+  · subst r; rw [hu.gpr, ht.link]
+  · rw [hu.other r h30, ht.kept r hr'.1 hr'.2.1 (by simp [linkRegs, h30, hr'.2.2.1, hr'.2.2.2])
+      (code_writes r hr'.2.2.1)]
+
+/-- The registers a call of either function may change: all but the
+callee-saved. -/
+def volatile : List Reg := [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x10, .x11, .x12,
+  .x13, .x14, .x15, .x16, .x17]
+
+/-- **A call of either function**, with the working space at `q`
+(`rb + off`, `rb` callee-saved): it keeps the callee-saved registers. -/
+theorem callAny_ok (sha3 : Bool) {s : State} {rp rb : Reg} {off : Nat} {p q : Addr}
+    {A B : Spec.Sha3.State} (hoff : off < 8190) (h8 : off % 8 = 0) (hrp : rp ≠ .x1)
+    (hrb : rb ∉ volatile) (hrb30 : rb ≠ .x30)
+    (hp : s.gpr rp = p) (hq : s.gpr rb + BitVec.ofNat 64 off = q)
+    (hpq : (pairR p).Disjoint (callR q)) (hpair : PairAt s.mem p A B)
+    (hcov : Covers [pairR p, callR q] s.wr) :
+    WP isa (Impl.Sha3.AArch64.Neon.X2.call sha3 rp rb off) s fun t =>
+      RegKeep volatile s t ∧ Frame [pairR p, callR q] s.mem t.mem ∧
+        PairAt t.mem p (keccakF A) (keccakF B) := by
+  have hsaved : ∀ r, r ∉ volatile → r ∈ preserved := fun r hr => by
+    revert hr; cases r <;> decide
+  cases sha3
+  · refine call_returns false hoff hrp hp hq hpq hpair hcov fun t ht => ?_
+    simp only [Bool.false_eq_true, ↓reduceIte]
+    refine VG.Proof.Sha3.AArch64.wp_ldr (a := q + BitVec.ofNat 64 128)
+      ⟨by omega_using [h8], by omega_using [hoff]⟩ ?_ ht.slot
+      fun u hu => WP.block_nil ⟨⟨fun r hr' => ?_, by rw [hu.rd, ht.rd], by rw [hu.wr, ht.wr],
+        by rw [hu.sp, ht.sp]⟩, by rw [hu.mem]; exact ht.frame, by rw [hu.mem]; exact ht.pair⟩
+    · rw [ht.saved rb (hsaved rb hrb) hrb30, ← hq, BitVec.add_assoc, ← BitVec.ofNat_add]
+    · by_cases h30 : r = .x30
+      · subst r; rw [hu.gpr, ht.link]
+      · rw [hu.other r h30, ht.saved r (hsaved r hr') h30]
+  · have hsub : ∀ r ∈ clobbered, r ∈ volatile := by decide
+    exact (call_ok hoff hrp hp hq hpq hpair hcov).mono fun t ⟨hk, hf, hpt⟩ =>
+      ⟨⟨fun r hr => hk.gpr r (fun hc => hr (hsub r hc)), hk.rd, hk.wr, hk.sp⟩, hf, hpt⟩
 
 /-! ## The squeeze -/
 
