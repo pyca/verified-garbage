@@ -10332,6 +10332,39 @@ vg_aes_gcm_seal_prepared_vaes_vpclmul:
 	mov r15, QWORD PTR [r15+168]
 	lea rsp, [rsp+2600]
 21:
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-2624]
+	vmovdqu YMMWORD PTR [rsp+128], ymm0
+	vmovdqu YMMWORD PTR [rsp+96], ymm0
+	vmovdqu YMMWORD PTR [rsp+64], ymm0
+	vmovdqu YMMWORD PTR [rsp+32], ymm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+2624]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 20:
 	lea rsp, [rsp-2600]
@@ -15362,7 +15395,7 @@ vg_aes_gcm_seal_gather_prepared_vaes_vpclmul:
 	push rax
 	push r10
 	push r11
-	call {vg_aes_gcm_seal_prepared_vaes_vpclmul}
+	call {vg_aes_gcm_seal_prepared_vaes_vpclmul_core}
 	pop rax
 	pop rax
 	pop rax
@@ -15455,7 +15488,7 @@ vg_aes_gcm_seal_gather_prepared_vaes_vpclmul:
 	push rax
 	push r10
 	push r11
-	call {vg_aes_gcm_seal_prepared_vaes_vpclmul}
+	call {vg_aes_gcm_seal_prepared_vaes_vpclmul_core}
 	pop rax
 	pop rax
 	pop rax
