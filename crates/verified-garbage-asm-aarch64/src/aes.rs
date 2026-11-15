@@ -168,12 +168,20 @@ pub(crate) mod vg_aes_ctr32;
 pub(crate) mod vg_aes_ctr32_aes;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_neon.rs"]
+pub(crate) mod vg_aes_ctr32_neon;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_ctr32_to.rs"]
 pub(crate) mod vg_aes_ctr32_to;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_ctr32_to_aes.rs"]
 pub(crate) mod vg_aes_ctr32_to_aes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_to_neon.rs"]
+pub(crate) mod vg_aes_ctr32_to_neon;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_decrypt_blocks.rs"]

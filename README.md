@@ -339,7 +339,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, NEON</td>
 
 <td>✅</td>
 
@@ -745,7 +745,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, NEON</td>
 
 <td>✅</td>
 
@@ -1431,7 +1431,7 @@ yours to keep:
 
 <td>✅ AES-NI</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, NEON</td>
 
 <td>✅</td>
 
@@ -1451,7 +1451,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX2</td>
 
-<td>✅ AES, PMULL, SHA extensions</td>
+<td>✅ AES, PMULL, SHA extensions, NEON</td>
 
 <td>✅</td>
 
@@ -1471,7 +1471,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, PCLMULQDQ, VPCLMULQDQ, AVX-512F, AVX-512BW, AVX2</td>
 
-<td>✅ AES, PMULL, SHA extensions</td>
+<td>✅ AES, PMULL, SHA extensions, NEON</td>
 
 <td>✅</td>
 
@@ -1511,7 +1511,7 @@ yours to keep:
 
 <td>✅ AES-NI, VAES, AVX2</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, NEON</td>
 
 <td>✅</td>
 

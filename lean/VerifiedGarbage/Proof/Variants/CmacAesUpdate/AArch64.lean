@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.AArch64.Variant
+public import VerifiedGarbage.Proof.Variants.AesCtr32.AArch64.Neon
 
 /-! # The implementations of `CmacAesUpdate` on AArch64 -/
 
@@ -10,11 +11,13 @@ namespace VG.Proof.Variants.CmacAesUpdate.AArch64
 
 def aese : Proof.CmacAes.AArch64.UpdateImpl := .aese
 
+def neon : Proof.CmacAes.AArch64.UpdateImpl := .ctr32 Proof.Variants.AesCtr32.AArch64.neon
+
 def scalar : Proof.CmacAes.AArch64.UpdateImpl := .ctr32 .scalar
 
 /-- Every implementation, best first: each function generic over them is
 emitted with each (the registration files that import this), and its
 dispatcher tries them in this order. -/
-def variants := [aese, scalar]
+def variants := [aese, neon, scalar]
 
 end VG.Proof.Variants.CmacAesUpdate.AArch64
