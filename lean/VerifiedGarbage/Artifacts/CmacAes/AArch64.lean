@@ -29,7 +29,6 @@ def artifactsFor (v : Proof.CmacAes.AArch64.UpdateImpl) : List Artifact := [
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2304 .x5
       (Impl.CmacAes.Stream.AArch64.absorb v.callee)
-    stack := 2304
     verified := Proof.CmacAes.Stream.AArch64.absorb_framed v }]
 def artifacts : List Artifact :=
   VG.Proof.Variants.CmacAesUpdate.AArch64.variants.flatMap fun v => artifactsFor v
@@ -47,13 +46,11 @@ def artifacts : List Artifact :=
       suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch 2304 .x3
         (Impl.CmacAes.Stream.AArch64.init v.expand v.callee v.suffix)
-      stack := 2304
       verified := Proof.CmacAes.Stream.AArch64.init_framed v },
     Spec.Cmac.aesFinishApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch 2304 .x4
         (Impl.CmacAes.Stream.AArch64.finish v.callee v.suffix)
-      stack := 2304
       verified := Proof.CmacAes.Stream.AArch64.finish_framed v }])
 
 end VG.Artifacts.CmacAes.AArch64

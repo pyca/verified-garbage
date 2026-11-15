@@ -23,7 +23,6 @@ def artifacts : List Artifact :=
     Spec.Ofb.aesFinalApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Impl.AesOfb.AArch64.cryptFinal v.enc v.suffix)
-      stack := 64
       verified := Proof.AesOfb.final_keyed (cryptFinal_framed v) }]
 
 end VG.Artifacts.AesOfb.AArch64

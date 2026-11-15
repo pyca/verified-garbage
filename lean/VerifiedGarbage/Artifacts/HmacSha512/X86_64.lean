@@ -42,7 +42,6 @@ def artifacts : List Artifact :=
       suffix := v.suffix
       extra := v.extra
       code := v.code
-      stack := v.stack
       verified := v.verified
       spSafe := v.spSafe
       residue := v.residue }) ++

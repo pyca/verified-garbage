@@ -16,11 +16,9 @@ namespace VG.Artifacts.RsaPkcs1Enc.RISCV64
 def artifacts : List Artifact := [
   Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact RISCV64.target {
     code := Impl.RsaPkcs1Enc.RISCV64.Decrypt.codeP
-    stack := Proof.RsaPkcs1Enc.RISCV64.Dec.stackBytes
     verified := Proof.RsaPkcs1Enc.RISCV64.Dec.codeP_verified },
   Spec.RsaPkcs1Enc.encryptRandomApi.artifact RISCV64.target {
     code := Impl.RsaPkcs1Enc.RISCV64.Random.code
-    stack := 4304
     verified := Proof.RsaPkcs1Enc.RISCV64.Rnd.code_verified }]
 
 end VG.Artifacts.RsaPkcs1Enc.RISCV64

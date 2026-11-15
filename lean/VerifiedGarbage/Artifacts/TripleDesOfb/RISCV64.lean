@@ -16,11 +16,9 @@ namespace VG.Artifacts.TripleDesOfb.RISCV64
 def artifacts : List Artifact := [
   Spec.TripleDes.ofbApi.artifact RISCV64.target {
     code := Impl.TripleDes.RISCV64.ofb
-    stack := 944
     verified := Proof.TripleDes.RISCV64.Modes.ofb_verified },
   Spec.TripleDes.ofbFinalApi.artifact RISCV64.target {
     code := Impl.TripleDes.RISCV64.ofbFinal
-    stack := 944
     verified := Proof.TripleDes.RISCV64.Modes.ofbFinal_verified }]
 
 end VG.Artifacts.TripleDesOfb.RISCV64

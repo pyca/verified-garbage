@@ -86,7 +86,6 @@ def artifacts (h : Proof.Sha256.X86_64.Compress) (c : Proof.Rsa.X86_64.CrtImpl) 
       extra := c.extra
       code := Impl.RsaPkcs1Enc.X86_64.Decrypt.codeP (HH h) (VG.Proof.RsaPkcs1Enc.X86_64.Dec.privNameP c)
         (VG.Proof.RsaPkcs1Enc.X86_64.Dec.privCodeP c)
-      stack := decStack
       verified := VG.Proof.RsaPkcs1Enc.X86_64.Dec.decryptPrecomputed_verified h c
       spSafe := VG.Proof.RsaPkcs1Enc.X86_64.Dec.decP_spSafe h c }
         (VG.Proof.RsaPkcs1Enc.X86_64.Dec.decryptPrecomputed_postOut decStack))]
@@ -104,7 +103,6 @@ def artifacts : List Artifact :=
     Spec.RsaPkcs1Enc.encryptRandomApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
       suffix := v.suffix
       code := Impl.RsaPkcs1Enc.X86_64.Random.code (Rnd.encName v) (Rnd.encCode v)
-      stack := Rnd.rndStack
       verified := Rnd.code_verified v
       spSafe := Rnd.code_spSafe v } (VG.Proof.Rsa.X86_64.Scrub.pkcs1EncryptRandomOut _))])
 

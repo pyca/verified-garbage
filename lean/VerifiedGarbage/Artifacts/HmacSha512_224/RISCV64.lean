@@ -14,11 +14,9 @@ namespace VG.Artifacts.HmacSha512_224.RISCV64
 def artifacts : List Artifact := [
   Spec.Hmac.sha512_224I.initAnyKeyApi.artifact RISCV64.target {
     code := Proof.Hmac.Stream.RISCV64.Sha512_224.hash.init
-    stack := Proof.Hmac.Stream.RISCV64.Sha512_224.hash.ibytes + Proof.Hmac.Stream.RISCV64.Sha512_224.hash.F
     verified := Proof.Hmac.Stream.RISCV64.Sha512_224.init },
   Spec.Hmac.sha512_224I.finalizeApi.artifact RISCV64.target {
     code := Proof.Hmac.Stream.RISCV64.Sha512_224.hash.finalize
-    stack := Proof.Hmac.Stream.RISCV64.Sha512_224.hash.fbytes + Proof.Hmac.Stream.RISCV64.Sha512_224.hash.F
     verified := Proof.Hmac.Stream.RISCV64.Sha512_224.finalize }]
 
 end VG.Artifacts.HmacSha512_224.RISCV64

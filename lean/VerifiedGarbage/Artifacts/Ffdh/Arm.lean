@@ -41,12 +41,10 @@ open VG
 def artifactsFor (v : Proof.Bignum.Arm.MontBackend) : List Artifact :=
   [Spec.Ffdh.generationPrecomputeApi.artifact VG.Arm.target {
     suffix := v.suffix
-    stack := 176
     code := Proof.Ffdh.Arm.combPrecomputeCalledCode v
     verified := Proof.Ffdh.Arm.combPrecomputeCalled_verified v },
   Spec.Ffdh.cachedKeySearchApi.artifact VG.Arm.target {
     suffix := v.suffix
-    stack := Proof.Ffdh.Arm.KeySearch.stackUse .cached
     code := Proof.Ffdh.Arm.KeySearch.calledCode
       (Proof.Ffdh.Arm.CachedKeyGenerate.backend v)
     verified := Proof.Ffdh.Arm.KeySearch.verified (Proof.Ffdh.Arm.CachedKeyGenerate.backend v) }]
@@ -63,7 +61,6 @@ open VG
 def artifactsFor (b : Proof.Bignum.Arm.MontBackend) : List Artifact :=
   [Spec.Ffdh.derivePublicApi.artifact VG.Arm.target {
     suffix := b.suffix
-    stack := 176
     code := Proof.Ffdh.Arm.SharedDerive.calledCode b
     verified := Proof.Ffdh.Arm.SharedDerive.called_verified b }]
 
@@ -79,12 +76,10 @@ open VG
 def artifacts (v : Proof.Ffdh.Arm.Backend) : List Artifact :=
   [Spec.Ffdh.checkDomainApi.artifact VG.Arm.target {
     suffix := v.suffix
-    stack := 128
     code := v.checkDomain
     verified := v.checkDomain_verified },
   Spec.Ffdh.checkPrivateApi.artifact VG.Arm.target {
     suffix := v.suffix
-    stack := 128
     code := v.checkPrivate
     verified := v.checkPrivate_verified }]
 
@@ -97,7 +92,6 @@ open VG
 def artifacts (b : Proof.Bignum.Arm.MontBackend) : List Artifact :=
   [Spec.Ffdh.checkPublicApi.artifact VG.Arm.target {
     suffix := b.suffix
-    stack := 176
     code := Proof.Ffdh.Arm.SharedCheckPublic.calledCode b
     verified := Proof.Ffdh.Arm.SharedCheckPublic.called_verified b }]
 
@@ -118,7 +112,6 @@ open VG
 def artifactsFor (b : Proof.Bignum.Arm.MontBackend) : List Artifact :=
   [Spec.Ffdh.exchangeApi.artifact VG.Arm.target {
     suffix := b.suffix
-    stack := 176
     code := Proof.Ffdh.Arm.SharedExchange.calledCode b
     verified := Proof.Ffdh.Arm.SharedExchange.called_verified b }]
 
@@ -155,7 +148,6 @@ def artifacts : List Artifact :=
     let b := Proof.Ffdh.Arm.parameterBackend v
     [Spec.Ffdh.sievedParameterSearchApi.artifact VG.Arm.target {
       suffix := b.suffix
-      stack := 232
       code := Impl.Ffdh.Arm.ParameterSearch.code (.call b.candidateName b.candidate)
       verified := Proof.Ffdh.Arm.ParameterSearch.verified b }])
 

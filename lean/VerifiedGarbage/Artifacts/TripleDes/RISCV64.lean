@@ -19,11 +19,9 @@ def artifacts : List Artifact := [
     verified := Proof.TripleDes.RISCV64.Key.verified },
   Spec.TripleDes.ecbEncryptApi.artifact RISCV64.target {
     code := Impl.TripleDes.RISCV64.Bitslice.encrypt
-    stack := 1056
     verified := Proof.TripleDes.RISCV64.Bitsliced.encrypt_verified },
   Spec.TripleDes.ecbDecryptApi.artifact RISCV64.target {
     code := Impl.TripleDes.RISCV64.Bitslice.decrypt
-    stack := 1056
     verified := Proof.TripleDes.RISCV64.Bitsliced.decrypt_verified }]
 
 end VG.Artifacts.TripleDes.RISCV64

@@ -16,11 +16,9 @@ namespace VG.Artifacts.CamelliaOfb.X86
 def artifacts : List Artifact := [
   Spec.Camellia.ofbApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.ofb
-    stack := 2772
     verified := Proof.Camellia.X86.Fb.ofb_framed },
   Spec.Camellia.ofbFinalApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 2756 5 682 Impl.Camellia.X86.ofbFinal
-    stack := 2772
     verified := Proof.Camellia.X86.FbFinal.ofbFinal_framed }]
 
 end VG.Artifacts.CamelliaOfb.X86

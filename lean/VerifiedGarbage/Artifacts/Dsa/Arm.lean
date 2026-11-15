@@ -25,8 +25,7 @@ open VG Proof.Dsa.Arm.Gen
 def artifacts : List Artifact := [
   Spec.Dsa.randomSignPrevalidatedApi.artifact Arm.target {
     code := Impl.Dsa.Arm.RandomSign.code "vg_dsa_sign_prevalidated" Impl.Dsa.Arm.PrevalidatedSign.sign
-    verified := Proof.Dsa.Arm.randomSigningPrevalidated_verified
-    stack := 144 },
+    verified := Proof.Dsa.Arm.randomSigningPrevalidated_verified },
   Spec.Dsa.validatePrivateKeyApi.artifact Arm.target {
     code := Impl.Dsa.Arm.PrevalidatedSign.validate
     verified := Proof.Dsa.Arm.validating_private_verified },
@@ -36,8 +35,7 @@ def artifacts : List Artifact := [
   Spec.Dsa.generateKeyApi.artifact Arm.target {
     code := Impl.Dsa.Arm.GenerateKey.code "vg_dsa_check_parameters" "vg_dsa_derive_key_checked"
       Impl.Dsa.Arm.Generate.checkParameters Impl.Dsa.Arm.Generate.deriveChecked
-    verified := Proof.Dsa.Arm.Key.generating_verified
-    stack := 144 },
+    verified := Proof.Dsa.Arm.Key.generating_verified },
   Spec.Dsa.validatePublicKeyApi.artifact Arm.target {
     code := Impl.Dsa.Arm.Prevalidated.validate
     verified := Proof.Dsa.Arm.validate_verified },
@@ -51,7 +49,6 @@ def artifacts : List Artifact := [
     Spec.Dsa.parameterSearchApi.artifact Arm.target {
       suffix := v.suffix
       code := Impl.Dsa.Arm.Generation.code (geo1 v) (geo2 v) (geo3 v)
-      stack := 304
       verified := search_params v }])
 
 end VG.Artifacts.Dsa.Arm

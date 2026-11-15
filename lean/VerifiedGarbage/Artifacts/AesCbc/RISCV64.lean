@@ -16,11 +16,9 @@ open VG.Proof.AesCbc.RISCV64
 def artifacts : List Artifact := [
   Spec.Cbc.aesEncryptApi.artifact RISCV64.target {
     code := Wiped.encrypt
-    stack := 32
     verified := Wiped.encrypt_verified },
   Spec.Cbc.aesDecryptApi.artifact RISCV64.target {
     code := Wiped.decrypt
-    stack := 32
     verified := Wiped.decrypt_verified }]
 
 end VG.Artifacts.AesCbc.RISCV64

@@ -55,7 +55,6 @@ def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     suffix := v.callee.suffix
     vendor := v.vendor
     code := Impl.Ed448.AArch64.PublicKey.publicKeyWith v.callee
-    stack := 352
     verified := Proof.Ed448.AArch64.PublicKey.publicKey_verified v Proof.Ed448.AArch64.scalarBase_baseOk }]
 
 def artifacts : List Artifact :=
@@ -71,7 +70,6 @@ def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     suffix := v.callee.suffix
     vendor := v.vendor
     code := Impl.Ed448.AArch64.SignCached.signCachedWith v.callee
-    stack := 352
     verified := Proof.Ed448.AArch64.SignCached.signCached_verified v Proof.Ed448.AArch64.scalarBase_baseOk }]
 
 def artifacts : List Artifact :=
@@ -87,7 +85,6 @@ def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     suffix := v.callee.suffix
     vendor := v.vendor
     code := Impl.Ed448.AArch64.Verify.verifyWith v.callee
-    stack := 352
     verified := Proof.Ed448.AArch64.Verify.verify_verified v
       (Proof.Ed448.AArch64.Sparse.verified_eqOk Proof.Ed448.recover_ok) }]
 

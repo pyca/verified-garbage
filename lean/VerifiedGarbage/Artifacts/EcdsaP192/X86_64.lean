@@ -80,7 +80,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.EcdsaP192.X86_64.Rfc6979
 
 open VG.Proof.P192.X86_64 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT stackT OK p192 p192T_verified signCode_sp)
+open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT OK p192 p192T_verified signCode_sp)
 open VG.Proof.HmacTable.X86_64 (tables names)
 
 def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
@@ -89,7 +89,6 @@ def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
       suffix := ""
       tables := [("hmac", tables vs)]
       code := signCodeT (p192 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.p192.tries vs
-      stack := stackT
       verified := p192T_verified hasLaw.law hasLaw.inv vs hv
       spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.p192.combConsts _ _))]
   else []

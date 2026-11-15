@@ -143,7 +143,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 namespace VG.Artifacts.EcdsaP256.AArch64.Rfc6979
 
 open VG.Proof.P256.AArch64 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.AArch64 (signCodeT stackT OK p256 p256T_verified)
+open VG.Proof.Ecdsa.Rfc6979.AArch64 (signCodeT OK p256 p256T_verified)
 open VG.Proof.HmacTable.AArch64 (tables names)
 
 def artifactsFor (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
@@ -152,7 +152,6 @@ def artifactsFor (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
       suffix := ""
       tables := [("hmac", tables vs)]
       code := signCodeT (p256 hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law)) Spec.Ecdsa.Rfc6979.Curves.p256.tries vs
-      stack := stackT
       verified := p256T_verified hasLaw.law hasLaw.inv (Proof.P256.combOk7 hasLaw.law) vs hv }]
   else []
 
@@ -169,7 +168,6 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.P256.verifyHashApi.artifact AArch64.target {
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P256.inst.curve.len false
       Impl.Ecdsa.Verify.AArch64.P256Allocated.verify
-    stack := 80
     verified := Proof.Ecdsa.Verify.AArch64.allocatedVerifyHash_verified hasLaw.law hasLaw.prime hasLaw.inv hasLaw.invToM (Proof.P256.gtabOk9 hasLaw.law) }] ++
   Rfc6979.artifacts
 

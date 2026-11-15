@@ -28,7 +28,6 @@ def artifacts : List Artifact :=
     Spec.ChaCha20.applyApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.ChaCha20.X86.Stream.apply v.callee
-      stack := 32
       verified := Proof.ChaCha20.X86.Stream.apply_verified v
       spSafe := Proof.ChaCha20.X86.Stream.apply_spSafe v }])
 

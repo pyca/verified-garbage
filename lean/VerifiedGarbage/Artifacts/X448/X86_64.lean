@@ -22,7 +22,6 @@ def artifacts : List Artifact :=
     Spec.X448.exchangeApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
       suffix := v.suffix
       code := Impl.Xdh.X86_64.exchange ("vg_x448" ++ v.suffix) (Proof.X448.X86_64.code v) 56
-      stack := 24
       verified := Proof.X448.X86_64.Exchange.exchange_variant v }
       (Proof.X448.X86_64.exchangeOut _)),
     Spec.X448.x448BaseApi.artifact X86_64.target (Proof.X448.X86_64.baseReg v)]

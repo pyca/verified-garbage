@@ -50,19 +50,17 @@ public import VerifiedGarbage.Proof.Ecdsa.Rfc6979.Arm.P192
 namespace VG.Artifacts.EcdsaP192.Arm
 
 open VG.Proof.P192.Arm (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.Arm (signCodeT stackT p192 p192T_verified)
+open VG.Proof.Ecdsa.Rfc6979.Arm (signCodeT p192 p192T_verified)
 open VG.Proof.HmacTable.Arm (tables vars)
 
 def artifacts : List Artifact := [
   Spec.Ecdsa.P192.verifyHashApi.artifact Arm.target {
     code := Impl.Ecdsa.Arm.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false
       Impl.Ecdsa.Verify.Arm.verifyP192
-    stack := 96
     verified := Proof.Ecdsa.Verify.Arm.P192.verifyHash_verified hasLaw.law },
   Spec.Ecdsa.Rfc6979.Curves.p192SignApi.artifact Arm.target {
     tables := [("hmac", tables vars)]
     code := signCodeT (p192 hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p192.tries vars
-    stack := stackT
     verified := p192T_verified hasLaw.law }]
 
 end VG.Artifacts.EcdsaP192.Arm

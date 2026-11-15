@@ -14,7 +14,6 @@ namespace VG.Artifacts.X448.PPC64LE
 def artifacts : List Artifact := [
   Spec.X448.exchangeApi.artifact PPC64LE.target {
     code := Impl.Xdh.PPC64LE.exchange "vg_x448" Impl.X448.PPC64LE.x448 56
-    stack := 48
     verified := Proof.X448.PPC64LE.Exchange.exchange_verified },
   Spec.X448.x448BaseApi.artifact PPC64LE.target {
     code := Impl.X448.PPC64LE.x448Base

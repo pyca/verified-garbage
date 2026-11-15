@@ -40,15 +40,12 @@ namespace VG.Artifacts.TripleDes.X86
 def artifacts : List Artifact := [
   Spec.TripleDes.expandKeyApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 532 3 128 Impl.TripleDes.X86.Key.expandKey
-    stack := 532
     verified := Proof.TripleDes.X86.expandKey_framed },
   Spec.TripleDes.ecbEncryptApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1044 3 256 Impl.TripleDes.X86.Ecb.encrypt
-    stack := 1060
     verified := Proof.TripleDes.X86.ecb_framed .encrypt },
   Spec.TripleDes.ecbDecryptApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 1044 3 256 Impl.TripleDes.X86.Ecb.decrypt
-    stack := 1060
     verified := Proof.TripleDes.X86.ecb_framed .decrypt }]
 
 end VG.Artifacts.TripleDes.X86

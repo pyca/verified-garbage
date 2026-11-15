@@ -31,14 +31,13 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 namespace VG.Artifacts.RsaPkcs1Enc.AArch64.Sha256RsaPrivateCrt
 
 open VG.Proof.RsaPkcs1Enc.AArch64 (privPOf decP_sat')
-open VG.Proof.RsaPkcs1Enc.AArch64.Dec (HH decStackP decP_verified)
+open VG.Proof.RsaPkcs1Enc.AArch64.Dec (HH decP_verified)
 
 def artifacts (h : Proof.Sha256.AArch64.Compress) (c : Proof.Rsa.AArch64.CrtImpl) : List Artifact :=
   [
     Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact AArch64.target {
       suffix := qualifiedName "" [("sha256", h.suffix), ("crt", c.suffix)]
       code := Impl.RsaPkcs1Enc.AArch64.Decrypt.codeP (HH h) (privPOf c).name (privPOf c).code
-      stack := decStackP (privPOf c)
       verified := decP_verified h (privPOf c) (decP_sat' c) }]
 
 end VG.Artifacts.RsaPkcs1Enc.AArch64.Sha256RsaPrivateCrt
@@ -48,7 +47,7 @@ namespace VG.Artifacts.RsaPkcs1Enc.AArch64
 open VG.Proof.Rsa.AArch64 (PublicImpl)
 open VG.Proof.RsaPkcs1Sig.AArch64 (pdOf)
 open VG.Proof.RsaPkcs1Enc.AArch64.Enc
-open VG.Proof.RsaPkcs1Enc.AArch64 (Rnd.encName Rnd.encCode Rnd.rndStack Rnd.code_verified Rnd.sat)
+open VG.Proof.RsaPkcs1Enc.AArch64 (Rnd.encName Rnd.encCode Rnd.code_verified Rnd.sat)
 
 def artifacts : List Artifact :=
   (VG.Proof.Variants.Sha256Compress.AArch64.variants.flatMap fun v => VG.Proof.Variants.RsaPrivateCrt.AArch64.variants.flatMap fun v2 => Sha256RsaPrivateCrt.artifacts v v2) ++
@@ -56,7 +55,6 @@ def artifacts : List Artifact :=
     Spec.RsaPkcs1Enc.encryptRandomApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.RsaPkcs1Enc.AArch64.Random.code (Rnd.encName (pdOf v)) (Rnd.encCode (pdOf v))
-      stack := Rnd.rndStack (pdOf v).stack
       verified := Rnd.code_verified (pdOf v) Pc.sat Rnd.sat }])
 
 end VG.Artifacts.RsaPkcs1Enc.AArch64

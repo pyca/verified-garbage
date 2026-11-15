@@ -21,6 +21,5 @@ open VG.Arm
 def artifacts : List Artifact := [
   Spec.Ct.eqApi.artifact target {
     code := Impl.Ct.Arm.eq
-    verified := Proof.Ct.Arm.verified
-    stack := 4 }]
+    verified := Proof.Ct.Arm.verified }]
 end VG.Artifacts.Ct.Arm

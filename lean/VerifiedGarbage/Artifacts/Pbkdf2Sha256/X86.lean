@@ -29,7 +29,6 @@ def artifacts : List Artifact :=
     Spec.Hmac.sha256I.pbkdf2Api.artifact X86.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86.withStackScratch (Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha256I) 7 v.F.pbkdf2
-      stack := 76 + Proof.Pbkdf2.Whole.X86.pbkFrame Spec.Hmac.sha256I
       verified := Proof.Pbkdf2.Whole.X86.pbkFramed (Proof.Pbkdf2.Whole.X86.sha256_verified v)
         Proof.Pbkdf2.Whole.X86.sha256_pbkFrameSat
         (Proof.Pbkdf2.Whole.X86.noEsp_of_all v.pbkdf2Sp) (Proof.Pbkdf2.Whole.X86.sha256_stack v)

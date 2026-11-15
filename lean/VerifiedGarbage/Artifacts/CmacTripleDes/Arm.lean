@@ -16,15 +16,12 @@ open VG.Proof.CmacTripleDes.Arm
 def artifacts : List Artifact := [
   Spec.Cmac.tdesStreamInitApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withRegScratch 640 .r3 Impl.CmacTripleDes.Stream.Arm.streamInit
-    stack := 640
     verified := Proof.CmacTripleDes.Stream.Arm.init_framed },
   Spec.Cmac.tdesAbsorbApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 704 2 Impl.CmacTripleDes.Stream.Arm.absorb
-    stack := 708
     verified := Proof.CmacTripleDes.Stream.Arm.absorb_framed },
   Spec.Cmac.tdesFinishApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 656 1 Impl.CmacTripleDes.Stream.Arm.finish
-    stack := 660
     verified := Proof.CmacTripleDes.Stream.Arm.finish_framed }]
 
 end VG.Artifacts.CmacTripleDes.Arm

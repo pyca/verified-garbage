@@ -83,21 +83,18 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
   Spec.MlDsa.keyGen44Api.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := v.code.sfx
     code := keyGen (primsWith v.code) Spec.MlDsa.mlDsa44
-    stack := 32
     verified := Proof.MlDsa.X86_64.KeyGen.keyGen_verifiedWith v (.inl rfl)
     spSafe := Proof.MlDsa.X86_64.KeyGen.keyGen_spSafe v (.inl rfl) }
     (VG.Proof.MlDsa.X86_64.Scrub.keyGenOut Spec.MlDsa.mlDsa44 _)),
   Spec.MlDsa.keyGen65Api.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := v.code.sfx
     code := keyGen (primsWith v.code) Spec.MlDsa.mlDsa65
-    stack := 32
     verified := Proof.MlDsa.X86_64.KeyGen.keyGen_verifiedWith v (.inr (.inl rfl))
     spSafe := Proof.MlDsa.X86_64.KeyGen.keyGen_spSafe v (.inr (.inl rfl)) }
     (VG.Proof.MlDsa.X86_64.Scrub.keyGenOut Spec.MlDsa.mlDsa65 _)),
   Spec.MlDsa.keyGen87Api.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := v.code.sfx
     code := keyGen (primsWith v.code) Spec.MlDsa.mlDsa87
-    stack := 32
     verified := Proof.MlDsa.X86_64.KeyGen.keyGen_verifiedWith v (.inr (.inr rfl))
     spSafe := Proof.MlDsa.X86_64.KeyGen.keyGen_spSafe v (.inr (.inr rfl)) }
     (VG.Proof.MlDsa.X86_64.Scrub.keyGenOut Spec.MlDsa.mlDsa87 _))]
@@ -147,7 +144,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Sign.entry (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa44) 0
-    stack := 40
     verified := Proof.MlDsa.X86_64.Message.signEntry_verified v (List.mem_cons_self ..) _
     spSafe := Proof.MlDsa.X86_64.Message.signEntry_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inl rfl)) 0 }
     (VG.Proof.MlDsa.X86_64.Scrub.signOut Spec.MlDsa.mlDsa44 _)),
@@ -155,7 +151,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Sign.entry (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa65) 0
-    stack := 40
     verified := Proof.MlDsa.X86_64.Message.signEntry_verified v (List.mem_cons_of_mem _ (List.mem_cons_self ..)) _
     spSafe := Proof.MlDsa.X86_64.Message.signEntry_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inl rfl))) 0 }
     (VG.Proof.MlDsa.X86_64.Scrub.signOut Spec.MlDsa.mlDsa65 _)),
@@ -163,7 +158,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Sign.entry (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa87) 0
-    stack := 40
     verified := Proof.MlDsa.X86_64.Message.signEntry_verified v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) _
     spSafe := Proof.MlDsa.X86_64.Message.signEntry_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inr rfl))) 0 }
     (VG.Proof.MlDsa.X86_64.Scrub.signOut Spec.MlDsa.mlDsa87 _)),
@@ -171,7 +165,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Sign.entry (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa44) 1
-    stack := 40
     verified := Proof.MlDsa.X86_64.Message.signPreparedEntry_verified v (List.mem_cons_self ..) _
     spSafe := Proof.MlDsa.X86_64.Message.signEntry_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inl rfl)) 1 }
     (VG.Proof.MlDsa.X86_64.Scrub.preparedSignOut Spec.MlDsa.mlDsa44 _)),
@@ -179,7 +172,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Sign.entry (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa65) 1
-    stack := 40
     verified := Proof.MlDsa.X86_64.Message.signPreparedEntry_verified v (List.mem_cons_of_mem _ (List.mem_cons_self ..)) _
     spSafe := Proof.MlDsa.X86_64.Message.signEntry_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inl rfl))) 1 }
     (VG.Proof.MlDsa.X86_64.Scrub.preparedSignOut Spec.MlDsa.mlDsa65 _)),
@@ -187,7 +179,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Sign.entry (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa87) 1
-    stack := 40
     verified := Proof.MlDsa.X86_64.Message.signPreparedEntry_verified v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) _
     spSafe := Proof.MlDsa.X86_64.Message.signEntry_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inr rfl))) 1 }
     (VG.Proof.MlDsa.X86_64.Scrub.preparedSignOut Spec.MlDsa.mlDsa87 _))]
@@ -211,7 +202,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Message.signMessage (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44 0
-    stack := 112
     verified := signMessage_verified (signFn v (List.mem_cons_self ..)) (List.mem_cons_self ..)
     spSafe := signMessage_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inl rfl)) 0 }
     (VG.Proof.MlDsa.X86_64.Scrub.signMessageOut Spec.MlDsa.mlDsa44 _)),
@@ -219,7 +209,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Message.signMessage (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65 0
-    stack := 112
     verified := signMessage_verified (signFn v (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
       (List.mem_cons_of_mem _ (List.mem_cons_self ..))
     spSafe := signMessage_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inl rfl))) 0 }
@@ -228,7 +217,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Message.signMessage (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87 0
-    stack := 112
     verified := signMessage_verified (signFn v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
       (List.mem_cons_self ..)))) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
     spSafe := signMessage_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inr rfl))) 0 }
@@ -237,7 +225,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Message.signMessage (Proof.MlDsa.signWithCacheName "mldsa44" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44 1
-    stack := 112
     verified := signMessagePrepared_verified (signFn v (List.mem_cons_self ..)) (List.mem_cons_self ..)
       (signPrepared_sat (Proof.MlDsa.X86_64.Verify.prims_okWith v) (List.mem_cons_self ..))
     spSafe := signMessage_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inl rfl)) 1 }
@@ -246,7 +233,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Message.signMessage (Proof.MlDsa.signWithCacheName "mldsa65" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65 1
-    stack := 112
     verified := signMessagePrepared_verified (signFn v (List.mem_cons_of_mem _ (List.mem_cons_self ..))) (List.mem_cons_of_mem _ (List.mem_cons_self ..))
       (signPrepared_sat (Proof.MlDsa.X86_64.Verify.prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
     spSafe := signMessage_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inl rfl))) 1 }
@@ -255,7 +241,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Message.signMessage (Proof.MlDsa.signWithCacheName "mldsa87" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Sign.sign (primsWith v.code) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87 1
-    stack := 112
     verified := signMessagePrepared_verified (signFn v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
       (signPrepared_sat (Proof.MlDsa.X86_64.Verify.prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))))
     spSafe := signMessage_spSafe (Proof.MlDsa.X86_64.Sign.sign_spSafe v (.inr (.inr rfl))) 1 }
@@ -278,7 +263,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Verify.entry (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa44) 0
-    stack := 40
     verified := Proof.MlDsa.X86_64.Message.verifyEntry_verified v (List.mem_cons_self ..) _
     spSafe := Proof.MlDsa.X86_64.Message.verifyEntry_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_self ..)) 0 }
     (VG.Proof.MlDsa.X86_64.Scrub.verifyOut Spec.MlDsa.mlDsa44 _)),
@@ -286,7 +270,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Verify.entry (Proof.MlDsa.verifyWithCacheName "mldsa65" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa65) 0
-    stack := 40
     verified := Proof.MlDsa.X86_64.Message.verifyEntry_verified v (List.mem_cons_of_mem _ (List.mem_cons_self ..)) _
     spSafe := Proof.MlDsa.X86_64.Message.verifyEntry_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_self ..))) 0 }
     (VG.Proof.MlDsa.X86_64.Scrub.verifyOut Spec.MlDsa.mlDsa65 _)),
@@ -294,7 +277,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Verify.entry (Proof.MlDsa.verifyWithCacheName "mldsa87" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa87) 0
-    stack := 40
     verified := Proof.MlDsa.X86_64.Message.verifyEntry_verified v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) _
     spSafe := Proof.MlDsa.X86_64.Message.verifyEntry_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) 0 }
     (VG.Proof.MlDsa.X86_64.Scrub.verifyOut Spec.MlDsa.mlDsa87 _)),
@@ -302,7 +284,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Verify.entry (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa44) 1
-    stack := 40
     verified := Proof.MlDsa.X86_64.Message.verifyPreparedEntry_verified v (List.mem_cons_self ..) _
     spSafe := Proof.MlDsa.X86_64.Message.verifyEntry_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_self ..)) 1 }
     (VG.Proof.MlDsa.X86_64.Scrub.preparedVerifyOut Spec.MlDsa.mlDsa44 _)),
@@ -310,7 +291,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Verify.entry (Proof.MlDsa.verifyWithCacheName "mldsa65" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa65) 1
-    stack := 40
     verified := Proof.MlDsa.X86_64.Message.verifyPreparedEntry_verified v (List.mem_cons_of_mem _ (List.mem_cons_self ..)) _
     spSafe := Proof.MlDsa.X86_64.Message.verifyEntry_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_self ..))) 1 }
     (VG.Proof.MlDsa.X86_64.Scrub.preparedVerifyOut Spec.MlDsa.mlDsa65 _)),
@@ -318,7 +298,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Verify.entry (Proof.MlDsa.verifyWithCacheName "mldsa87" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa87) 1
-    stack := 40
     verified := Proof.MlDsa.X86_64.Message.verifyPreparedEntry_verified v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))) _
     spSafe := Proof.MlDsa.X86_64.Message.verifyEntry_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) 1 }
     (VG.Proof.MlDsa.X86_64.Scrub.preparedVerifyOut Spec.MlDsa.mlDsa87 _))]
@@ -342,7 +321,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Message.verifyMessageCached (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44 0
-    stack := 112
     verified := verifyMessage_verified (verifyFn v (List.mem_cons_self ..)) (List.mem_cons_self ..)
     spSafe := verifyMessage_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_self ..)) 0 }
     (VG.Proof.MlDsa.X86_64.Scrub.verifyMessageCachedOut Spec.MlDsa.mlDsa44 _)),
@@ -350,7 +328,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Message.verifyMessageCached (Proof.MlDsa.verifyWithCacheName "mldsa65" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65 0
-    stack := 112
     verified := verifyMessage_verified (verifyFn v (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
       (List.mem_cons_of_mem _ (List.mem_cons_self ..))
     spSafe := verifyMessage_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_self ..))) 0 }
@@ -359,7 +336,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Message.verifyMessageCached (Proof.MlDsa.verifyWithCacheName "mldsa87" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87 0
-    stack := 112
     verified := verifyMessage_verified (verifyFn v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
       (List.mem_cons_self ..)))) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
     spSafe := verifyMessage_spSafe (verify_spSafe (prims_okWith v)
@@ -369,7 +345,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Message.verifyMessageCached (Proof.MlDsa.verifyWithCacheName "mldsa44" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa44) Spec.MlDsa.mlDsa44 1
-    stack := 112
     verified := verifyMessagePrepared_verified (verifyFn v (List.mem_cons_self ..)) (List.mem_cons_self ..)
       (verifyPrepared_sat (prims_okWith v) (List.mem_cons_self ..))
     spSafe := verifyMessage_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_self ..)) 1 }
@@ -378,7 +353,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Message.verifyMessageCached (Proof.MlDsa.verifyWithCacheName "mldsa65" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa65) Spec.MlDsa.mlDsa65 1
-    stack := 112
     verified := verifyMessagePrepared_verified (verifyFn v (List.mem_cons_of_mem _ (List.mem_cons_self ..))) (List.mem_cons_of_mem _ (List.mem_cons_self ..))
       (verifyPrepared_sat (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
     spSafe := verifyMessage_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_self ..))) 1 }
@@ -387,7 +361,6 @@ def artifactsFor (v : ArithImpl) : List Artifact := [
     suffix := v.code.sfx
     code := Impl.MlDsa.X86_64.Message.verifyMessageCached (Proof.MlDsa.verifyWithCacheName "mldsa87" ++ v.code.sfx)
       (Impl.MlDsa.X86_64.Verify.verify (primsWith v.code) Spec.MlDsa.mlDsa87) Spec.MlDsa.mlDsa87 1
-    stack := 112
     verified := verifyMessagePrepared_verified (verifyFn v (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))
       (verifyPrepared_sat (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..))))
     spSafe := verifyMessage_spSafe (verify_spSafe (prims_okWith v) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))) 1 }
@@ -405,17 +378,14 @@ def artifacts : List Artifact :=
   [
     Spec.MlDsa.pkTr44Api.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
       code := Impl.MlDsa.X86_64.PkTr.pkTr Spec.MlDsa.mlDsa44
-      stack := 32
       verified := Proof.MlDsa.X86_64.PkTr.pkTr44_verified }
     (VG.Proof.MlDsa.X86_64.Scrub.pkTrOut Spec.MlDsa.mlDsa44 _)),
     Spec.MlDsa.pkTr65Api.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
       code := Impl.MlDsa.X86_64.PkTr.pkTr Spec.MlDsa.mlDsa65
-      stack := 32
       verified := Proof.MlDsa.X86_64.PkTr.pkTr65_verified }
     (VG.Proof.MlDsa.X86_64.Scrub.pkTrOut Spec.MlDsa.mlDsa65 _)),
     Spec.MlDsa.pkTr87Api.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
       code := Impl.MlDsa.X86_64.PkTr.pkTr Spec.MlDsa.mlDsa87
-      stack := 32
       verified := Proof.MlDsa.X86_64.PkTr.pkTr87_verified }
     (VG.Proof.MlDsa.X86_64.Scrub.pkTrOut Spec.MlDsa.mlDsa87 _))] ++
   PreparedKey.artifacts ++

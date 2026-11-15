@@ -102,7 +102,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.Scrub
 
 namespace VG.Artifacts.RsaOaep.X86_64.RsaPrivateCrtAllMdHash
 
-open VG.Proof.RsaOaep.X86_64 (decStack decPrecomputed_ok decP_spSafe OK)
+open VG.Proof.RsaOaep.X86_64 (decPrecomputed_ok decP_spSafe OK)
 open VG.Proof.RsaPkcs1Enc.X86_64 (privNameP privCodeP)
 open VG.Proof.MdHashTable.X86_64 (tables)
 open VG.Proof.HashTable.X86_64 (fnsOf)
@@ -114,7 +114,6 @@ def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.M
       extra := c.extra
       tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Impl.RsaOaep.X86_64.decryptP (fnsOf vs) (privNameP c) (privCodeP c)
-      stack := decStack
       verified := decPrecomputed_ok vs h c
       spSafe := decP_spSafe vs c } (VG.Proof.RsaOaep.X86_64.decPrecomputed_postOut _))]
   else []
@@ -124,7 +123,7 @@ end VG.Artifacts.RsaOaep.X86_64.RsaPrivateCrtAllMdHash
 -- RSAES-OAEP encryption with a precomputed public key on x86-64, with both hash functions as tables
 namespace VG.Artifacts.RsaOaep.X86_64.RsaPublicPrecomputedAllMdHash
 
-open VG.Proof.RsaOaep.X86_64 (encStack enc_ok OK)
+open VG.Proof.RsaOaep.X86_64 (enc_ok OK)
 open VG.Proof.MdHashTable.X86_64 (tables)
 open VG.Proof.HashTable.X86_64 (fnsOf)
 
@@ -134,7 +133,6 @@ def artifacts (c : Proof.Rsa.X86_64.PublicImpl) (vs : List Proof.Pbkdf2.Md.X86_6
       suffix := qualifiedName "" [("rsa", c.suffix)]
       tables := [("hash", tables vs), ("mgf1", tables vs)]
       code := Impl.RsaOaep.X86_64.Precomputed.encrypt (fnsOf vs) c.name c.code
-      stack := encStack
       verified := enc_ok vs h c
       spSafe := Proof.RsaOaep.X86_64.Pc.code_spSafe vs c } (VG.Proof.Rsa.X86_64.Scrub.oaepEncryptOut _ _))]
   else []

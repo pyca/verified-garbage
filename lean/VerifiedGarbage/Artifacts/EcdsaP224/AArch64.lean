@@ -55,7 +55,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 namespace VG.Artifacts.EcdsaP224.AArch64.Rfc6979
 
 open VG.Proof.P224.AArch64 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.AArch64 (signCodeT stackT OK p224 p224T_verified)
+open VG.Proof.Ecdsa.Rfc6979.AArch64 (signCodeT OK p224 p224T_verified)
 open VG.Proof.HmacTable.AArch64 (tables names)
 
 def artifactsFor (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
@@ -64,7 +64,6 @@ def artifactsFor (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
       suffix := ""
       tables := [("hmac", tables vs)]
       code := signCodeT (p224 hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law)) Spec.Ecdsa.Rfc6979.Curves.p224.tries vs
-      stack := stackT
       verified := p224T_verified hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) vs hv }]
   else []
 
@@ -81,7 +80,6 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.P224.verifyHashApi.artifact AArch64.target {
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false
       Impl.Ecdsa.Verify.AArch64.verifyP224
-    stack := 80
     verified := Proof.Ecdsa.Verify.AArch64.P224.verifyHash_verified hasLaw.law hasLaw.inv (Proof.P224.combOk7 hasLaw.law) }] ++
   Rfc6979.artifacts
 

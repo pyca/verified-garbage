@@ -27,7 +27,6 @@ def artifacts : List Artifact :=
   (VG.Proof.Variants.MillerRabin.RISCV64.variants.flatMap fun (v : Proof.MillerRabin.RISCV64.RoundImpl) => [
     Spec.RsaKeyGen.keySearchApi.artifact RISCV64.target {
       suffix := v.suffix
-      stack := 656
       code := Proof.RsaKeyGen.RISCV64.Generate.genCode v
       verified := Proof.RsaKeyGen.RISCV64.Generate.gen_verified v }])
 

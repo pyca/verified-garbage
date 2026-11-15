@@ -20,12 +20,10 @@ def artifacts : List Artifact :=
       tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Impl.RsaPss.RISCV64.verifyPrecomputed (fnsOf vars)
         (fns3 vars)
-      stack := 336
       verified := verify_ok h },
     Spec.RsaPss.signPrecomputedMdTableApi.artifact RISCV64.target {
       tables := [("hash", tables vars), ("mgf1", tables vars)]
       code := Impl.RsaPss.RISCV64.Sign.signP (fnsOf vars) (fns3 vars)
-      stack := 3488
       verified := signP_ok h }]
   else []
 

@@ -32,7 +32,6 @@ def artifactsFor (v : Proof.Sha512.AArch64.Compress) : List Artifact :=
     code := Impl.Ed25519.AArch64.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ v.suffix)
       (Proof.Ed25519.AArch64.KeyPair.dgCode v) "vg_ed25519_public_key_expanded"
       Impl.Ed25519.AArch64.PublicKey.codeExpanded
-    stack := 944
     verified := Proof.Ed25519.AArch64.KeyPair.verified v }]
 
 def artifacts : List Artifact :=
@@ -48,7 +47,6 @@ def artifactsFor (v : Proof.Sha512.AArch64.Compress) : List Artifact :=
   Spec.Ed25519.signExpandedApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.Ed25519.AArch64.SignCached.codeExpanded v.code v.suffix
-    stack := 352
     verified := Proof.Ed25519.AArch64.SignCached.signExpanded_verified v }]
 
 def artifacts : List Artifact :=
@@ -64,7 +62,6 @@ def artifactsFor (v : Proof.Sha512.AArch64.Compress) : List Artifact :=
     Spec.Ed25519.verifyApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.Ed25519.AArch64.VerifyMessage.code v.code v.suffix
-      stack := 352
       verified := Proof.Ed25519.AArch64.VerifyMessage.verifyMessage_verified v }]
 
 def artifacts : List Artifact :=

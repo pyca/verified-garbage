@@ -20,12 +20,10 @@ def artifacts : List Artifact :=
     Spec.RsaPss.verifyPrecomputedMdTableApi.artifact PPC64LE.target {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaPss.PPC64LE.verifyPrecomputed (fnsOf mvars) (fns3 mvars)
-      stack := 304
       verified := verify_ok' h },
     Spec.RsaPss.signPrecomputedMdTableApi.artifact PPC64LE.target {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaPss.PPC64LE.Sign.signP (fnsOf mvars) (fns3 mvars)
-      stack := 3792
       verified := signP_ok' h }]
   else []
 

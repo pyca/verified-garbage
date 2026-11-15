@@ -19,11 +19,9 @@ open VG.Proof.AesGcmSiv.PPC64LE
 def artifacts : List Artifact := [
   Spec.GcmSiv.sealApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 Impl.AesGcmSiv.PPC64LE.«seal»
-    stack := 3936
     verified := Proof.AesGcmSiv.seal_keyed (seal_framed Proof.GcmSiv.Polyval.tagInput_eq_tagInputG) },
   Spec.GcmSiv.openApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchArgs 3936 0 Impl.AesGcmSiv.PPC64LE.«open»
-    stack := 3936
     verified := Proof.AesGcmSiv.open_keyed (open_framed Proof.GcmSiv.Polyval.tagInput_eq_tagInputG) }]
 
 end VG.Artifacts.AesGcmSiv.PPC64LE

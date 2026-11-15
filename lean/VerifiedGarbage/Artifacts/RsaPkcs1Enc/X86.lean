@@ -22,7 +22,6 @@ open VG.Proof.RsaPkcs1Sig.X86.Ver (baseline)
 def direct : List Artifact := [
   Spec.RsaPkcs1Enc.encryptRandomApi.artifact VG.X86.target {
     code := Impl.RsaPkcs1Enc.X86.Random.code Proof.RsaPkcs1Enc.X86.Rnd.encName (Proof.RsaPkcs1Enc.X86.Rnd.enc baseline)
-    stack := Proof.RsaPkcs1Enc.X86.Rnd.stackBytes
     verified := Proof.RsaPkcs1Enc.X86.Rnd.code_verified Proof.RsaPkcs1Enc.X86.Rnd.encName baseline
     spSafe := Proof.RsaPkcs1Enc.X86.Rnd.code_sp Proof.RsaPkcs1Enc.X86.Rnd.encName baseline }]
 
@@ -38,7 +37,6 @@ def artifacts (v : Backend) (c : CrtImpl) : List Artifact := [
   Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact X86.target {
     suffix := qualifiedName "" [("sha256", v.stream.suffix), ("crt", c.suffix)]
     code := Proof.RsaPkcs1Enc.X86.Dec.decryptCodeP v c Proof.Rsa.X86.PrivChecked.crtPBaseline
-    stack := Proof.RsaPkcs1Enc.X86.Dec.stackBytes
     verified := Proof.RsaPkcs1Enc.X86.Dec.decryptPrecomputed_verified v c
     spSafe := Proof.RsaPkcs1Enc.X86.Dec.codeP_sp v c Proof.Rsa.X86.PrivChecked.crtPBaseline }]
 

@@ -17,19 +17,15 @@ namespace VG.Artifacts.IdeaCfb.PPC64LE
 def artifacts : List Artifact := [
   Spec.Idea.cfbEncryptApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r7 8 Impl.Idea.PPC64LE.cfbEncrypt
-    stack := 96
     verified := Proof.Idea.PPC64LE.cfbEnc_framed Proof.Idea.PPC64LE.Modes.cfbEncrypt_verified },
   Spec.Idea.cfbDecryptApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r7 8 Impl.Idea.PPC64LE.cfbDecrypt
-    stack := 96
     verified := Proof.Idea.PPC64LE.cfbDec_framed Proof.Idea.PPC64LE.Modes.cfbDecrypt_verified },
   Spec.Idea.cfbEncryptFinalApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r7 8 Impl.Idea.PPC64LE.cfbEncryptFinal
-    stack := 96
     verified := Proof.Idea.PPC64LE.FbFinal.cfbEncryptFinal_framed },
   Spec.Idea.cfbDecryptFinalApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 96 .r7 8 Impl.Idea.PPC64LE.cfbDecryptFinal
-    stack := 96
     verified := Proof.Idea.PPC64LE.FbFinal.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.IdeaCfb.PPC64LE

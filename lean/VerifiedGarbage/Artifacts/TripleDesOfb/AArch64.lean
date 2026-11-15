@@ -16,11 +16,9 @@ namespace VG.Artifacts.TripleDesOfb.AArch64
 def artifacts : List Artifact := [
   Spec.TripleDes.ofbApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 560 .x4 70 Impl.TripleDes.AArch64.ofb
-    stack := 560
     verified := Proof.TripleDes.AArch64.ofb_framed },
   Spec.TripleDes.ofbFinalApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 560 .x4 70 Impl.TripleDes.AArch64.ofbFinal
-    stack := 560
     verified := Proof.TripleDes.AArch64.ofbFinal_framed }]
 
 end VG.Artifacts.TripleDesOfb.AArch64

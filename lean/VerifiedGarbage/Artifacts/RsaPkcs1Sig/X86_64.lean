@@ -77,20 +77,17 @@ def artifacts : List Artifact :=
       suffix := v.suffix
       extra := v.extra
       code := Impl.RsaPkcs1Sig.X86_64.Sign.codeP (Sgn.privNameP v) (Sgn.privCodeP v)
-      stack := sigStack
       verified := Sgn.signPrecomputed_verified v
       spSafe := Sgn.codeP_spSafe v } (Sgn.signPrecomputed_postOut sigStack))]) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap fun (v : PublicImpl) => [
     Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.X86_64.Precomputed.code v.name v.code
-      stack := verStack
       verified := PcCT.code_verified v
       spSafe := PcCT.code_spSafe v } (VG.Proof.Rsa.X86_64.Scrub.pkcs1VerifyOut _)),
     Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.X86_64.RecoverPrecomputed.code v.name v.code
-      stack := verStack
       verified := RecPcCT.code_verified v
       spSafe := RecPcCT.code_spSafe v } (VG.Proof.Rsa.X86_64.Scrub.pkcs1RecoverOut _))])
 

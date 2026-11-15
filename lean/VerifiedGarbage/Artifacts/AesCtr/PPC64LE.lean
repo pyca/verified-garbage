@@ -17,7 +17,6 @@ def artifacts : List Artifact := [
     verified := Proof.AesCtr.keyed Proof.AesCtr.PPC64LE.crypt_verified },
   Spec.Ctr.aesFinalApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 112 .r9 10 Impl.AesCtr.PPC64LE.cryptFinal
-    stack := 112
     verified := Proof.AesCtr.final_keyed Proof.AesCtr.PPC64LE.Final.cryptFinal_framed }]
 
 end VG.Artifacts.AesCtr.PPC64LE

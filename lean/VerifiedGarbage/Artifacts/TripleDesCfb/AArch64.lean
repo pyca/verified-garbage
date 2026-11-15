@@ -16,19 +16,15 @@ namespace VG.Artifacts.TripleDesCfb.AArch64
 def artifacts : List Artifact := [
   Spec.TripleDes.cfbEncryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 560 .x4 70 Impl.TripleDes.AArch64.cfbEncrypt
-    stack := 560
     verified := Proof.TripleDes.AArch64.cfbEncrypt_framed },
   Spec.TripleDes.cfbDecryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1120 .x4 140 Impl.TripleDes.AArch64.cfbDecrypt
-    stack := 1120
     verified := Proof.TripleDes.AArch64.cfbDecrypt_framed },
   Spec.TripleDes.cfbEncryptFinalApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 560 .x4 70 Impl.TripleDes.AArch64.cfbEncryptFinal
-    stack := 560
     verified := Proof.TripleDes.AArch64.cfbEncryptFinal_framed },
   Spec.TripleDes.cfbDecryptFinalApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 560 .x4 70 Impl.TripleDes.AArch64.cfbDecryptFinal
-    stack := 560
     verified := Proof.TripleDes.AArch64.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.TripleDesCfb.AArch64

@@ -38,7 +38,6 @@ def verifyWith (c : Proof.Sha512.X86_64.Compress) (fld : Impl.Ed25519.X86_64.Ari
   Spec.Ed25519.verifyApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := c.suffix ++ fs
     code := Impl.Ed25519.X86_64.VerifyMessage.code fld win fs c.callee c.suffix
-    stack := 184
     verified := Proof.Ed25519.X86_64.VerifyMessage.verified hq c
     spSafe := Proof.Ed25519.X86_64.VerifyMessage.spSafe hq c }
     (Proof.Ed25519.X86_64.Scrub.verifyOut Impl.Ed25519.X86_64.baseOddConsts 184))
@@ -51,7 +50,6 @@ def signExpandedWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
   Spec.Ed25519.signExpandedApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := c.suffix ++ fs
     code := Impl.Ed25519.X86_64.SignCached.codeExpanded bs fs c.callee c.suffix
-    stack := 264
     verified := Proof.Ed25519.X86_64.SignCached.verifiedE c
     spSafe := Proof.Ed25519.X86_64.SignCached.spSafeE c }
     (Proof.Ed25519.X86_64.Scrub.signExpandedOut Impl.Ed25519.X86_64.combConsts 264))
@@ -67,7 +65,6 @@ def keyPairWith (c : Proof.Sha512.X86_64.Compress) (bs : Prog X86_64.isa)
     code := Impl.Ed25519.X86_64.KeyPair.keyPair (Spec.Sha512.digest512Api.name ++ c.suffix ++ "_core")
       (Proof.Ed25519.X86_64.KeyPair.dgCode c) ("vg_ed25519_public_key_expanded" ++ fs)
       (Impl.Ed25519.X86_64.publicKeyExpanded bs fs)
-    stack := 1632
     verified := Proof.Ed25519.X86_64.KeyPair.verified c bs fs
     spSafe := Proof.Ed25519.X86_64.KeyPair.spSafe c bs fs }
     (Proof.Ed25519.X86_64.Scrub.keyPairOut Impl.Ed25519.X86_64.combConsts 1632))

@@ -13,11 +13,9 @@ namespace VG.Artifacts.TripleDesCfb8.AArch64
 def artifacts : List Artifact := [
   Spec.TripleDes.cfb8EncryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 560 .x4 70 Impl.TripleDes.AArch64.cfb8Encrypt
-    stack := 560
     verified := Proof.TripleDes.AArch64.cfb8Encrypt_framed },
   Spec.TripleDes.cfb8DecryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 560 .x4 70 Impl.TripleDes.AArch64.cfb8Decrypt
-    stack := 560
     verified := Proof.TripleDes.AArch64.cfb8Decrypt_framed }]
 
 end VG.Artifacts.TripleDesCfb8.AArch64

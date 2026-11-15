@@ -96,7 +96,6 @@ def artifacts : List Artifact := [
   Spec.Ecdh.P256.exchangeApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
       suffix := "_ifma"
       code := Impl.Ecdh.X86_64.exchangeP256Ifma
-      stack := 16
       verified := Proof.Ecdh.X86_64.ecdh_verified_ifma hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed }
     (Proof.EcKey.X86_64.Scrub.exchangeOut _ _)),
   Spec.Ecdh.P256.exchangeApi.artifact X86_64.target

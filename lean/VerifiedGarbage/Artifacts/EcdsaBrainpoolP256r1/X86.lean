@@ -76,7 +76,7 @@ public import VerifiedGarbage.Proof.Variants.Sha256.X86
 namespace VG.Artifacts.EcdsaBrainpoolP256r1.X86.Rfc6979
 
 open VG.Proof.BrainpoolP256r1.X86 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.X86 (signCodeT stackT OK brainpoolp256r1 brainpoolp256r1T_verified signCode_sp)
+open VG.Proof.Ecdsa.Rfc6979.X86 (signCodeT OK brainpoolp256r1 brainpoolp256r1T_verified signCode_sp)
 open VG.Proof.HmacTable.X86 (tables names vars)
 
 def artifactsFor (vs1 : List Proof.Sha1.X86.Variants.Backend)
@@ -85,7 +85,6 @@ def artifactsFor (vs1 : List Proof.Sha1.X86.Variants.Backend)
     Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1SignApi.artifact X86.target {
       tables := [("hmac", tables (vars vs1 vs256))]
       code := signCodeT (brainpoolp256r1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries (vars vs1 vs256)
-      stack := stackT
       verified := brainpoolp256r1T_verified hasLaw.law hasLaw.inv (vars vs1 vs256) hv
       spSafe := signCode_sp _ _ _ }]
   else []
@@ -103,7 +102,6 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP256r1.verifyHashApi.artifact X86.target {
     code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false
       Impl.Ecdsa.Verify.X86.verifyBrainpoolP256r1
-    stack := 136
     verified := Proof.Ecdsa.Verify.X86.BrainpoolP256r1.verifyHash_verified hasLaw.law hasLaw.inv }] ++
   Rfc6979.artifacts
 

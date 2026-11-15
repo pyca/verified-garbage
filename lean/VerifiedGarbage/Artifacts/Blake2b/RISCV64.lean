@@ -20,11 +20,9 @@ def artifacts : List Artifact := [
     verified := Proof.Blake2.RISCV64.Stream.initB_verified },
   Spec.Blake2.updateBApi.artifact RISCV64.target {
     code := Impl.Blake2.RISCV64.Stream.update Spec.Blake2.b
-    stack := 576
     verified := Proof.Blake2.RISCV64.Stream.updateB_verified },
   Spec.Blake2.finalizeBApi.artifact RISCV64.target {
     code := Impl.Blake2.RISCV64.Stream.finalize Spec.Blake2.b
-    stack := 576
     verified := Proof.Blake2.RISCV64.Stream.finalizeB_verified }]
 
 end VG.Artifacts.Blake2b.RISCV64

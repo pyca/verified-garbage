@@ -15,11 +15,9 @@ namespace VG.Artifacts.TripleDesOfb.Arm
 def artifacts : List Artifact := [
   Spec.TripleDes.ofbApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofb
-    stack := 1088
     verified := Proof.TripleDes.Arm.ofb_framed },
   Spec.TripleDes.ofbFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.TripleDes.Arm.ofbFinal
-    stack := 1088
     verified := Proof.TripleDes.Arm.ofbFinal_framed }]
 
 end VG.Artifacts.TripleDesOfb.Arm

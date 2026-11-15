@@ -20,12 +20,10 @@ def artifacts : List Artifact :=
     Spec.RsaOaep.decryptPrecomputedMdTablesApi.artifact PPC64LE.target {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaOaep.PPC64LE.Dec.decryptP (fns3 mvars)
-      stack := 3792
       verified := decP_ok mvars h },
     Spec.RsaOaep.encryptMdTablesApi.artifact PPC64LE.target {
       tables := [("hash", tables mvars), ("mgf1", tables mvars)]
       code := Impl.RsaOaep.PPC64LE.encrypt (fns3 mvars)
-      stack := 304
       verified := enc_ok mvars h }]
   else []
 

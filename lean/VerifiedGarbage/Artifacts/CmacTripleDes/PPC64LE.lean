@@ -15,15 +15,12 @@ namespace VG.Artifacts.CmacTripleDes.PPC64LE
 def artifacts : List Artifact := [
   Spec.Cmac.tdesStreamInitApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 672 .r6 Impl.CmacTripleDes.Stream.PPC64LE.streamInit
-    stack := 672
     verified := Proof.CmacTripleDes.Stream.PPC64LE.init_framed },
   Spec.Cmac.tdesAbsorbApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 720 .r7 Impl.CmacTripleDes.Stream.PPC64LE.absorb
-    stack := 720
     verified := Proof.CmacTripleDes.Stream.PPC64LE.absorb_framed },
   Spec.Cmac.tdesFinishApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 672 .r6 Impl.CmacTripleDes.Stream.PPC64LE.finish
-    stack := 672
     verified := Proof.CmacTripleDes.Stream.PPC64LE.finish_framed }]
 
 end VG.Artifacts.CmacTripleDes.PPC64LE
