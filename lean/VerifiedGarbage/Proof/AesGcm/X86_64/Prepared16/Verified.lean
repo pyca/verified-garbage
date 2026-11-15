@@ -31,12 +31,10 @@ theorem preparedPowers16Repr_of_zero {m : Mem} {p : Addr} (h : ∀ i < 128 * 8, 
     Spec.Gcm.PreparedPowers16Repr m p :=
   Proof.AesGcm.preparedPowers16Repr_congr (m₁ := fun _ => 0) h (preparedPowers16Repr_zero p)
 
-theorem sealPrepared16Code_verified {c : Prog isa}
-    (hc : ∀ s, (Proof.AesGcm.sealX86_64M CtxMode.prepared16).pre s →
-      ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.sealX86_64.post s s')
-    (hct : ConstantTime isa (Proof.AesGcm.sealX86_64M CtxMode.prepared16).pre Proof.AesGcm.sealX86_64.pub c) :
-    Verified X86_64.target c (Proof.AesGcm.sealPrepared16ScratchContract X86_64.abi 24) :=
-  Verified.of_correct hc hct
+/-- `sealX86_64M` for sixteen prepared powers, from the scratch contract. -/
+theorem sealPrepared16_implies :
+    (Proof.AesGcm.sealX86_64M CtxMode.prepared16).Implies
+      (Proof.AesGcm.sealPrepared16ScratchContract X86_64.abi 24) :=
     { pre := by
         sig_implies_pre [Proof.AesGcm.sealPrepared16ScratchContract, Proof.AesGcm.sealPreparedScratchSig, Proof.AesGcm.sealPrecomputedScratchSig,
           Proof.Gcm.sealPrepared16Pre, Proof.AesGcm.sealRoundsPost, Proof.AesGcm.sealX86_64M, Proof.AesGcm.sealX86_64,
@@ -70,6 +68,13 @@ theorem sealPrepared16Code_verified {c : Prog isa}
              split
              · next h => exfalso; bv_omega
              · rfl)⟩ }
+
+theorem sealPrepared16Code_verified {c : Prog isa}
+    (hc : ∀ s, (Proof.AesGcm.sealX86_64M CtxMode.prepared16).pre s →
+      ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.sealX86_64.post s s')
+    (hct : ConstantTime isa (Proof.AesGcm.sealX86_64M CtxMode.prepared16).pre Proof.AesGcm.sealX86_64.pub c) :
+    Verified X86_64.target c (Proof.AesGcm.sealPrepared16ScratchContract X86_64.abi 24) :=
+  Verified.of_correct hc hct sealPrepared16_implies
 
 theorem sealPrepared16_verified (v : GcmImpl) (B : BlkFn CtxMode.prepared16) :
     Verified X86_64.target («seal» (v.withBlk B)) (Proof.AesGcm.sealPrepared16ScratchContract X86_64.abi 24) :=

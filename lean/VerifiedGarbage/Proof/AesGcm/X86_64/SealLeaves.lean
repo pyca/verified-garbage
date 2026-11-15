@@ -903,21 +903,45 @@ theorem sealM_leaves_wp (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn
   exact seal_final C rfl rfl rfl rfl rfl rfl E fE SL f₅ d_tw
 
 
+/-- `sealWord` reads no register but those it names, and no stack argument
+but the first two. -/
+theorem sealWord_congr {g g' : Reg → BitVec 64} {a a' : Nat → BitVec 64}
+    (hg : ∀ r, r ≠ .rax → r ≠ .rsp → g r = g' r) (ha : ∀ i < 4, a i = a' i) (j : Nat) :
+    sealWord g a j = sealWord g' a' j := by
+  unfold sealWord
+  rw [hg .r9 (by decide) (by decide), hg .rbx (by decide) (by decide), hg .rbp (by decide) (by decide),
+    hg .r12 (by decide) (by decide), hg .r13 (by decide) (by decide), hg .r14 (by decide) (by decide),
+    hg .r15 (by decide) (by decide), hg .rsi (by decide) (by decide), hg .rcx (by decide) (by decide),
+    hg .r8 (by decide) (by decide), ha 0 (by decide), ha 1 (by decide)]
+
+/-- `sealL` reads neither `rax` nor `rsp`, and no stack argument after the
+fourth. -/
+theorem sealL_congr (Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
+      Option (BitVec 8)) {g g' : Reg → BitVec 64} {a a' : Nat → BitVec 64}
+    (hg : ∀ r, r ≠ .rax → r ≠ .rsp → g r = g' r) (ha : ∀ i < 4, a i = a' i) :
+    sealL Lb g a = sealL Lb g' a' := by
+  funext x
+  unfold sealL
+  rw [funext (sealWord_congr hg ha), hg .rdi (by decide) (by decide), hg .rsi (by decide) (by decide),
+    ha 0 (by decide), ha 1 (by decide), ha 3 (by decide)]
+
 /-- `vg_aes_gcm_seal`, for a key context of kind `M`, with implementations of
 `vg_ghash` and `vg_aes_ctr32` that never touch their working space and a
 `vg_aes_gcm_encrypt_blocks` that leaves a function of its arguments in its
 `scratch` (`BlkLeaves`): what it leaves in `work` (the fourth stack
 argument) from byte 96 on is a function of its argument registers and its
-stack arguments, byte by byte either a value (`some b`) or what was there
-(`none`). -/
+stack arguments (`sealL`, which reads neither `rax` nor `rsp`, nor a stack
+argument after `work`: `sealL_congr`), byte by byte either a value
+(`some b`) or what was there (`none`). -/
 theorem seal_leaves (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) (hB : BlkLeaves B)
     (gf : GhashFree v.gh.fn.code) (cf : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
-    ∃ L : (Reg → BitVec 64) → (Nat → BitVec 64) → Addr → Option (BitVec 8),
+    ∃ Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
+        Option (BitVec 8),
       ∀ s t s', (Proof.AesGcm.sealX86_64M M).pre s → Exec isa («seal» (v.withBlk B)) s t s' →
         ∀ x, (⟨stackArg s 3 + BitVec.ofNat 64 96, 2464⟩ : Region).Contains x 1 →
-          s'.mem x = (L s.gpr (fun i => stackArg s i) x).getD (s.mem x) := by
+          s'.mem x = (sealL Lb s.gpr (fun i => stackArg s i) x).getD (s.mem x) := by
   obtain ⟨Lb, hL⟩ := hB
-  refine ⟨sealL Lb, fun s t s' hp he => ?_⟩
+  refine ⟨Lb, fun s t s' hp he => ?_⟩
   obtain ⟨_, s'', he', h⟩ := sealM_leaves_wp v B hL gf cf hp
   obtain ⟨_, rfl⟩ := Exec.det he he'
   exact h

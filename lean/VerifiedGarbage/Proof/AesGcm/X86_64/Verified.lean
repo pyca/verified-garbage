@@ -814,18 +814,22 @@ def sealSat : State where
   rd := [⟨0x1000, 256⟩, ⟨0x2000, 0⟩, ⟨0x2100, 0⟩, ⟨0x8008, 32⟩]
   wr := [⟨0, 0⟩, ⟨0x3000, 16⟩, ⟨0, 2560⟩]
 
+/-- `sealX86_64`, from the scratch contract. -/
+theorem sealCode_implies :
+    Proof.AesGcm.sealX86_64.Implies (Proof.AesGcm.sealScratchContract X86_64.abi 24) := by
+    sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre, Proof.AesGcm.sealRoundsPost,
+      Proof.AesGcm.sealX86_64, Proof.AesGcm.sealPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
+      Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
+      List.getD, List.range, List.range.loop, VG.X86_64.below,
+      X86_64.argRegs] [sealSat] using sealSat
+
 /-- `vg_aes_gcm_seal`'s contract, for any code that does what it says. -/
 theorem sealCode_verified {c : Prog isa}
     (hc : ∀ s, Proof.AesGcm.sealX86_64.pre s →
       ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.sealX86_64.post s s')
     (hct : ConstantTime isa Proof.AesGcm.sealX86_64.pre Proof.AesGcm.sealX86_64.pub c) :
     Verified X86_64.target c (Proof.AesGcm.sealScratchContract X86_64.abi 24) :=
-  Verified.of_correct hc hct (by
-    sig_implies [Proof.AesGcm.sealScratchContract, Proof.AesGcm.sealScratchSig, Spec.Gcm.sealPre, Proof.AesGcm.sealRoundsPost,
-      Proof.AesGcm.sealX86_64, Proof.AesGcm.sealPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
-      Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
-      List.getD, List.range, List.range.loop, VG.X86_64.below,
-      X86_64.argRegs] [sealSat] using sealSat)
+  Verified.of_correct hc hct sealCode_implies
 
 theorem seal_verified (v : GcmImpl) :
     Verified X86_64.target («seal» v.callees) (Proof.AesGcm.sealScratchContract X86_64.abi 24) :=
