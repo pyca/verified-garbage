@@ -2025,7 +2025,7 @@ theorem dv_congr_wd {k : Nat} {m m' : Mem} {O O' : Addr} (h : ∀ j < 2 * k, wd 
   have e : ∀ {n}, n ≤ k → colsV (fun i => dw m' O' (8 * i)) n = colsV (fun i => dw m O (8 * i)) n := by
     intro n hn
     induction n with
-    | zero => rfl
+    | zero => simp only [colsV]
     | succ n ih =>
       simp only [colsV]
       rw [ih (by omega_arith), dw_split, dw_split, show 8 * n = 4 * (2 * n) by omega_arith,

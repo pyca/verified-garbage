@@ -6,11 +6,8 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.P192Field.Lit
 meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.Gen4
 meta import VerifiedGarbage.Impl.Ecdsa.P192.RISCV64
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P192Field.Lit
-public meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
-public import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
-public meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
-meta import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 
 /-!
 # Arithmetic modulo P-192's `p` and `n` on RISC-V: verified
@@ -64,28 +61,5 @@ theorem addA_rv_n (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (addR
 theorem subA_rv_n (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (subRV p192n4)).pre s) :
     ∃ t s', Exec isa Impl.Ecdsa.RISCV64.p192SubNA s t s' ∧ abiPreserved s s' ∧ (subRV p192n4).post s s' :=
   Gen4.subA_rv rfl ok_n s hs
-
-/-! The constant-time analyses of the calls of the functions of P-192's `p` from their arguments,
-each done once for every check of code that calls it (`taint_decide_sum`), which keep what is public
-of `s0`–`s6`: the functions write none of them. -/
-taint_summary mulASum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
-  (.call (Impl.Ecdsa.RISCV64.p192p4.fn "mul") Impl.Ecdsa.RISCV64.p192MulPA)
-  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6])
-taint_summary addASum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
-  (.call (Impl.Ecdsa.RISCV64.p192p4.fn "add") Impl.Ecdsa.RISCV64.p192AddPA)
-  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6])
-taint_summary subASum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
-  (.call (Impl.Ecdsa.RISCV64.p192p4.fn "sub") Impl.Ecdsa.RISCV64.p192SubPA)
-  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6])
-
-/-! The constant-time analyses of the calls of the functions of P-192's `n` from their arguments,
-each done once for every check of code that calls it (`taint_decide_sum`), which keep what is public
-of `s0`–`s6`: the functions write none of them. -/
-taint_summary mulASum_n : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
-  (.call (Impl.Ecdsa.RISCV64.p192n4.fn "mul") Impl.Ecdsa.RISCV64.p192MulNA)
-  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6])
-taint_summary addASum_n : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
-  (.call (Impl.Ecdsa.RISCV64.p192n4.fn "add") Impl.Ecdsa.RISCV64.p192AddNA)
-  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6])
 
 end VG.Proof.Weierstrass.RISCV64.P192Field

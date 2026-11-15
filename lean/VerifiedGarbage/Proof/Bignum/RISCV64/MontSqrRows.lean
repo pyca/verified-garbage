@@ -350,6 +350,10 @@ theorem macRun_ok {B : Addr} {Z dT dY K : Nat} {s : State} (hs : Scr s B Z)
         wordsVal t.mem B dT K + 2 ^ (64 * K) * (t.gpr .s1).toNat =
           wordsVal s.mem B dT K + (s.gpr .s0).toNat * wordsVal s.mem B dY K + (s.gpr .s1).toNat) ∧
       Keep macRunRegs s t := by
+  -- The alignments, as a fact `omega_arith` does not collect: a remainder among its facts makes
+  -- every call several times slower, and few goals here need one.
+  have hAl : (dT % 8 = 0 ∧ dY % 8 = 0) = True := eq_true ⟨hT8, hY8⟩
+  clear hT8 hY8
   have hnw := hs.nowrap
   have hKd := Nat.mod_add_div K 8
   generalize hN₁ : K % 8 = N₁ at hKd
@@ -360,16 +364,16 @@ theorem macRun_ok {B : Addr} {Z dT dY K : Nat} {s : State} (hs : Scr s B Z)
         s₁.gpr .a7 = word s.mem B dY ∧ s₁.mem = s.mem) ∧ Keep [.t5, .t6, .a7] s s₁ := by
     refine WP.keep _ ?_ (by rfl) (by rfl)
     brun [h5, h0, sqr_rem8 K (by omega_arith), sqr_quot8 K (by omega_arith), hN₁, hN₂, BitVec.add_zero,
-      hs.ld (show dY + 8 ≤ Z by omega_arith), hs.al8 (show dY + 8 ≤ Z by omega_arith) hY8]
+      hs.ld (show dY + 8 ≤ Z by omega_arith), hs.al8 (show dY + 8 ≤ Z by omega_arith) (of_eq_true hAl).2]
   refine WP.seq (WP.mono hpre fun s₁ ⟨⟨i6, i5, i7, im⟩, k₁⟩ => ?_)
   have g₁ : ∀ r ∈ [Reg.t4, .a0, .s0, .s1], s₁.gpr r = s.gpr r := fun r hr => k₁.gpr (by revert r hr; decide)
   refine WP.seq (WP.mono (macLoop?_ok (cr := .t5) (by decide) (U := 8) (N := N₂) (by decide) (hs.congr k₁.2.2)
-    hT8 hY8 (by rw [g₁ .t4 (by decide), h4]) (by rw [g₁ .a0 (by decide), h0]) (by rw [i7, im]) i5 (by omega_arith)
+    (of_eq_true hAl).1 (of_eq_true hAl).2 (by rw [g₁ .t4 (by decide), h4]) (by rw [g₁ .a0 (by decide), h0]) (by rw [i7, im]) i5 (by omega_arith)
     (by omega_arith) (by omega_arith) (by omega_arith)) fun s₂ ⟨j4, j0, jout, jeq, j7, k₂⟩ => ?_)
   have g₂ : s₂.gpr .t6 = s₁.gpr .t6 := k₂.gpr (by decide)
   have g₂' : s₂.gpr .s0 = s₁.gpr .s0 := k₂.gpr (by decide)
   refine WP.mono (macLoop?_ok (cr := .t6) (by decide) (U := 1) (N := N₁) (by decide) (hs.congr (k₁.trans k₂).2.2)
-    (dT := dT + 8 * (8 * N₂)) (dY := dY + 8 * (8 * N₂)) (by omega_arith) (by omega_arith) j4 j0
+    (dT := dT + 8 * (8 * N₂)) (dY := dY + 8 * (8 * N₂)) (by (have := of_eq_true hAl; omega_arith)) (by (have := of_eq_true hAl; omega_arith)) j4 j0
     (by rw [j7, jout.word (by omega_arith) (by omega_arith)]) (by rw [g₂, i6]) (by omega_arith) (by omega_arith)
     (by omega_arith) (by omega_arith))
     fun t ⟨n4, n0, nout, neq, _, k₃⟩ => ⟨⟨?_, ?_, ?_, ?_⟩, ((k₁.trans k₂).trans k₃).mono (by decide)⟩
@@ -524,6 +528,10 @@ theorem cross_ok {s₀ : State} {B : Addr} {Z dA dT w : Nat} (hs : Scr s₀ B Z)
       (wordsVal s.mem B dT (2 * w + 2) = crossPart s₀.mem B dA w (w - 1) ∧
         Outside B dT (8 * (2 * w + 2)) s₀.mem s.mem) ∧ Keep crossRegs s₀ s := by
   have hnw := hs.nowrap
+  -- The alignments, as a fact `omega_arith` does not collect: only four goals below need them, and
+  -- a remainder among its facts makes every other one several times slower.
+  have al : (dA % 8 = 0 ∧ dT % 8 = 0) = True := eq_true ⟨hA8, hT8⟩
+  clear hA8 hT8
   unfold cross
   have hpre : WP isa (.block [.addi .t3 .a3 0, .addi .a1 .t0 (-1), .addi .t2 .a5 8]) s₀ fun s₁ =>
       (s₁.gpr .t3 = off B dA ∧ s₁.gpr .a1 = BitVec.ofNat 64 (w - 1) ∧ s₁.gpr .t2 = off B (dT + 8 * (2 * 0 + 1)) ∧
@@ -560,13 +568,14 @@ theorem cross_ok {s₀ : State} {B : Addr} {Z dA dT w : Nat} (hs : Scr s₀ B Z)
         s₂.mem = s.mem) ∧ Keep [.s0, .s1, .a0, .t4, .t5] s s₂ := by
     refine WP.keep _ ?_ (by rfl) (by rfl)
     brun [fin64_exec_li_zero, j3, j2, hc, BitVec.add_zero, hsJ.ld (show dA + 8 * i + 8 ≤ Z by omega_arith),
-      hsJ.al8 (show dA + 8 * i + 8 ≤ Z by omega_arith) (by omega_arith),
+      hsJ.al8 (show dA + 8 * i + 8 ≤ Z by omega_arith) (by have := (of_eq_true al).1; omega_arith),
       show dA + 8 * i + 8 = dA + 8 * (i + 1) by omega_arith]
   refine WP.seq (WP.mono hrp fun s₂ ⟨⟨l0, l1, la, l4, l5, lm⟩, k₂⟩ => ?_)
   -- The row.
   have hK : w - 1 - i < 2 ^ 32 := by omega_arith
   refine WP.seq (WP.mono (macRun_ok (dT := dT + 8 * (2 * i + 1)) (dY := dA + 8 * (i + 1)) (K := w - 1 - i)
-    (hsJ.congr k₂.2.2) (by omega_arith) (by omega_arith) l4 la l5 hK (by omega_arith) (by omega_arith)
+    (hsJ.congr k₂.2.2) (by have := (of_eq_true al).2; omega_arith) (by have := (of_eq_true al).1; omega_arith)
+    l4 la l5 hK (by omega_arith) (by omega_arith)
     (by omega_arith)) fun s₃ ⟨⟨n4, _, nout, neq⟩, k₃⟩ => ?_)
   -- Its carry, and the pointers.
   have g₃ : ∀ r ∈ [Reg.t3, .t2, .a1], s₃.gpr r = s.gpr r := fun r hr => by
@@ -580,7 +589,7 @@ theorem cross_ok {s₀ : State} {B : Addr} {Z dA dT w : Nat} (hs : Scr s₀ B Z)
           (s.gpr .a1 - BitVec.ofNat 64 1) := by
     brun [n4, g₃ .t3 (by decide), g₃ .t2 (by decide), g₃ .a1 (by decide), j3, j2,
       hsK.st (show dT + 8 * (i + w) + 8 ≤ Z by omega_arith),
-      hsK.al8 (show dT + 8 * (i + w) + 8 ≤ Z by omega_arith) (by omega_arith)]
+      hsK.al8 (show dT + 8 * (i + w) + 8 ≤ Z by omega_arith) (by have := (of_eq_true al).2; omega_arith)]
   refine WP.mono hst fun t e => ?_
   subst e
   have hm : ∀ x, ({ s₃ with mem := s₃.mem.writeW (off B (dT + 8 * (i + w))) (s₃.gpr .s1) } : State).mem x =
