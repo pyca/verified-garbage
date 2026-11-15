@@ -33,7 +33,9 @@ which `Proof/Aes/Vector.lean` relates to the specification's rounds.
 
 `vg_aes_encrypt_blocks` (`encryptBlocksN`) runs it for one block and the
 bitsliced code otherwise (`encryptBlocksN_correct`), against the contract of
-the bitsliced code, `blocksAArch64`.
+the bitsliced code, `blocksAArch64`; so does `vg_aes_ctr32` (`ctr32N`,
+`ctr32N_correct`, against `ctr32AArch64`), on the counter block, whose
+`inc₃₂` it writes back (`ctrOneLoad_ok`).
 -/
 
 @[expose] public section
@@ -43,7 +45,8 @@ namespace VG.Proof.Aes.AArch64.OneBlock
 open VG VG.AArch64 VG.AArch64.RegUpd VG.AArch64.Tbl VG.Impl.Tbl.AArch64
 open VG.Impl.Aes.AArch64 VG.Impl.Aes.AArch64.OneBlock
 open VG.Proof.Aes.Vector (st KeyIs rnds rnds_zero rnds_succ cipher_eq eor_st aesmc_st keyIs_readW
-  vbyte_mapBytes vbyte_shiftRows vbyte_mixColumns ext_vbyte st_ext getD_st getD_shiftRows getD_subBytes)
+  vbyte_mapBytes vbyte_shiftRows vbyte_mixColumns ext_vbyte st_ext getD_st getD_shiftRows getD_subBytes
+  getD_ofFn vbyte_readW)
 open VG.Spec.Aes (roundKey cipher addRoundKey bytesAt subBytes shiftRows mixColumns)
 
 /-! ## ShiftRows -/
@@ -584,5 +587,170 @@ theorem encryptBlocksN_verified :
   Verified.of_correct encryptBlocksN_correct encryptBlocksN_ct (by
     sig_implies [Proof.Aes.encryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
       AArch64.abi, AArch64.argRegs] [blocksSat] using blocksSat)
+
+/-! ## `vg_aes_ctr32` -/
+
+/-- The counter block, as an AES state. -/
+theorem st_ctr (m : Mem) (p : Addr) :
+    st (m.readW (p + BitVec.ofNat 64 0) 128) = ctrState (Spec.Gcm.blockAt m p) 0 := by
+  apply st_ext; intro j hj
+  rw [getD_st _ hj, ctrState, getD_ofFn hj, vbyte_readW _ _ hj, BitVec.add_zero]
+  exact (toBytes_blockAt m p hj).symm
+
+/-- `ctrOneLoad`: the counter block in `v0`, and its last four bytes, as a
+big-endian integer, plus one, written back. -/
+theorem ctrOneLoad_ok (s : State) (hc : (⟨s.gpr .x2, 16⟩ : Region) ∈ s.wr) :
+    WP isa (.block ctrOneLoad) s fun a =>
+      a.v .v0 = s.mem.readW (s.gpr .x2 + BitVec.ofNat 64 0) 128 ∧
+      a.mem = s.mem.writeW (s.gpr .x2 + BitVec.ofNat 64 12)
+        (rev32 (rev32 (s.mem.readW (s.gpr .x2 + BitVec.ofNat 64 12) 32) + BitVec.ofNat 32 1)) ∧
+      (∀ r, r ≠ .x6 → a.gpr r = s.gpr r) ∧ a.rd = s.rd ∧ a.wr = s.wr ∧ a.sp = s.sp := by
+  have hc' := List.mem_append_right s.rd hc
+  rw [ctrOneLoad, WP.block_cons_iff]
+  refine ⟨_, Aese.exec_ldrq (off := 0) (by decide)
+    (in_off (off := 0) (n := 16) hc' (by omega_arith) (by omega_arith)), ?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨_, exec_ldr_w (off := 12) (by decide)
+    (in_off (off := 12) (n := 4) hc' (by omega_arith) (by omega_arith)), ?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨_, exec_rev32, ?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨_, Aese.exec_addImm_w (imm := 1) (by decide), ?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨_, exec_rev32, ?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨_, exec_str_w (off := 12) (by decide)
+    (in_off (off := 12) (n := 4) hc (by omega_arith) (by omega_arith)), WP.block_nil ?_⟩
+  refine ⟨rfl, ?_, fun r hr => ?_, rfl, rfl, rfl⟩
+  · simp [State.setV, State.write, State.read, sw_32]
+  · simp [State.setV, State.write, hr]
+
+/-- One block of the counter mode: the counter block encrypted, XORed into
+the block of the data, and the counter block incremented. -/
+theorem ctr32One_ok {s : State} (hp : Proof.Aes.ctr32AArch64.pre s) (h4 : (s.gpr .x4).toNat = 1) :
+    WP isa ctr32One s fun s' =>
+      (∀ r, r ≠ .x0 → r ≠ .x1 → r ≠ .x6 → r ≠ .x7 → s'.gpr r = s.gpr r) ∧
+      Proof.Aes.ctr32AArch64.post s s' := by
+  obtain ⟨hrd, hwr, dSC, -, -, dCD, -, -, -, hR⟩ := hp
+  rw [h4] at hwr dCD
+  have hC : (⟨s.gpr .x2, 16⟩ : Region) ∈ s.wr := by rw [hwr]; simp
+  have hD : (⟨s.gpr .x3, 16 * 1⟩ : Region) ∈ s.wr := by rw [hwr]; simp
+  have hS : (⟨s.gpr .x0, 240⟩ : Region) ∈ s.rd := by rw [hrd]; simp
+  unfold ctr32One
+  refine WP.seq (WP.mono (ctrOneLoad_ok s hC) fun a ⟨av, am, ag, ard, awr, asp⟩ => ?_)
+  -- Only the counter block is written.
+  have fa : Frame [⟨s.gpr .x2, 16⟩] s.mem a.mem := by
+    rw [am]
+    exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _
+      (c_off (s.gpr .x2) (off := 12) (by omega_arith) (by omega_arith))
+  have hw : bytesAt a.mem (s.gpr .x0) (16 * ((s.gpr .x1).toNat + 1)) =
+      bytesAt s.mem (s.gpr .x0) (16 * ((s.gpr .x1).toNat + 1)) := by
+    simp only [bytesAt]
+    exact List.map_congr_left fun i hi => fa.bytes (R := ⟨s.gpr .x0, 240⟩)
+      (by simp only [List.mem_singleton, forall_eq]; exact dSC) (show (240 : Nat) ≤ 2 ^ 64 by decide)
+      (show i < 240 by have := List.mem_range.mp hi; omega_using [this, hR])
+  have fD : ∀ i < 16 * 1, a.mem (s.gpr .x3 + BitVec.ofNat 64 i) = s.mem (s.gpr .x3 + BitVec.ofNat 64 i) :=
+    fun i hi => fa.bytes (R := ⟨s.gpr .x3, 16 * 1⟩)
+      (by simp only [List.mem_singleton, forall_eq]; exact dCD.symm) (show (16 * 1 : Nat) ≤ 2 ^ 64 by decide) hi
+  -- The cipher.
+  have a1 : a.gpr .x1 = BitVec.ofNat 64 (s.gpr .x1).toNat := by
+    rw [ag _ (by decide), BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  refine WP.seq (WP.mono (core_ok (s := a) (K := s.gpr .x0) (R := (s.gpr .x1).toNat)
+    (by rw [ard]; exact hS) (ag _ (by decide)) a1 hR) fun b ⟨bst, bg, bm, brd, bwr, bsp⟩ => ?_)
+  have b3 : b.gpr .x3 = s.gpr .x3 :=
+    (bg _ (by decide) (by decide) (by decide) (by decide)).trans (ag _ (by decide))
+  have bwD : (⟨s.gpr .x3, 16 * 1⟩ : Region) ∈ b.wr := by rw [bwr, awr]; exact hD
+  have hin : (⟨s.gpr .x3, 16 * 1⟩ : Region).Contains (b.gpr .x3 + BitVec.ofNat 64 0) 16 := by
+    rw [b3]; exact Offset.contains_base (s.gpr .x3) (d := 0) (by decide) (by decide)
+  -- The data.
+  rw [WP.block_cons_iff]
+  refine ⟨_, Aese.exec_ldrq (off := 0) (by decide) ⟨_, List.mem_append_right _ bwD, hin⟩, ?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨_, rfl, ?_⟩
+  rw [WP.block_cons_iff]
+  refine ⟨_, Aese.exec_strq (off := 0) (by decide) ⟨_, bwD, hin⟩, WP.block_nil ?_⟩
+  refine ⟨fun r h0 h1 h6 h7 => (bg r h0 h1 h6 h7).trans (ag r h6), ?_⟩
+  show Spec.Gcm.blocksAt (b.mem.write (b.gpr .x3 + BitVec.ofNat 64 0) 16
+        (b.v .v0 ^^^ b.mem.readW (b.gpr .x3 + BitVec.ofNat 64 0) 128)) (s.gpr .x3) (s.gpr .x4).toNat = _ ∧
+      Spec.Gcm.blockAt (b.mem.write (b.gpr .x3 + BitVec.ofNat 64 0) 16
+        (b.v .v0 ^^^ b.mem.readW (b.gpr .x3 + BitVec.ofNat 64 0) 128)) (s.gpr .x2) = _
+  rw [h4, b3, bm]
+  have hst := dataInvM_store1 (m₀ := s.mem) (m := a.mem) (D := s.gpr .x3) (O := s.gpr .x3) (n := 1) (k := 0)
+    (ks := keyStream (s.gpr .x1).toNat (bytesAt s.mem (s.gpr .x0) (16 * ((s.gpr .x1).toNat + 1)))
+      (Spec.Gcm.blockAt s.mem (s.gpr .x2)))
+    (v := b.v .v0 ^^^ a.mem.readW (s.gpr .x3 + BitVec.ofNat 64 0) 128) (by decide) (by decide)
+    (fun i hi => by rw [ite_eq_right (by omega_arith)]; exact fD i hi)
+    (fun t ht => by
+      rw [Nat.mul_zero, Nat.zero_add, keyStream, Nat.div_eq_of_lt ht, Nat.mod_eq_of_lt ht, vbyte_xor,
+        vbyte_readW _ _ ht, BitVec.add_zero, fD t (by omega_using [ht]), ← getD_st _ ht, bst, hw, av,
+        st_ctr])
+  rw [Nat.mul_zero] at hst
+  obtain ⟨hd, hf⟩ := hst
+  refine ⟨ctr32_of_dataInvM hd, ctr_after (n := 1) fun k hk => ?_⟩
+  rw [show (BitVec.ofNat 64 1).setWidth 32 = BitVec.ofNat 32 1 by decide]
+  refine (hf.bytes (R := ⟨s.gpr .x2, 16⟩) (by simp only [List.mem_singleton, forall_eq]; exact dCD)
+    (show (16 : Nat) ≤ 2 ^ 64 by decide) hk).trans ?_
+  show a.mem (s.gpr .x2 + BitVec.ofNat 64 k) = _
+  rw [am, writeW_apply, off_toNat (s.gpr .x2) (by omega_using [hk]) (by decide)]
+  by_cases h : k < 12
+  · rw [ite_eq_right (show ¬ 12 ≤ k by omega_using [h]),
+      ite_eq_right (show ¬ 2 ^ 64 + k - 12 < 32 / 8 by omega_using [h]), ite_eq_left h]
+  · rw [ite_eq_left (show 12 ≤ k by omega_using [h]),
+      ite_eq_left (show k - 12 < 32 / 8 by omega_using [h, hk]), ite_eq_right h, BitVec.setWidth_eq]
+
+/-- `ctr32N`: one block by the tables, any other number of blocks
+bitsliced. -/
+theorem ctr32N_wp {s₀ : State} (hp : Proof.Aes.ctr32AArch64.pre s₀) :
+    WP isa ctr32N s₀ fun s' =>
+      (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ Proof.Aes.ctr32AArch64.post s₀ s' := by
+  unfold ctr32N
+  let s₁ := s₀.write .x .x6 (s₀.read .x .x4 - BitVec.ofNat 64 1)
+  refine WP.seq ?_
+  rw [WP.block_cons_iff]
+  refine ⟨s₁, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
+  have hp₁ : Proof.Aes.ctr32AArch64.pre s₁ := hp
+  have g₁ : ∀ r, r ≠ .x6 → s₁.gpr r = s₀.gpr r := fun r hr => by simp [s₁, State.write, hr]
+  refine WP.ite (s₀.gpr .x4 - BitVec.ofNat 64 1 == 0)
+    (by simp [AArch64.eval, State.read, s₁, State.write]) (fun hb => ?_) (fun _ => ?_)
+  · have x4 : s₀.gpr .x4 = BitVec.ofNat 64 1 := by
+      have h := BitVec.sub_add_cancel (s₀.gpr .x4) (BitVec.ofNat 64 1)
+      rw [eq_of_beq hb] at h
+      exact h.symm.trans (by decide)
+    have h4 : (s₁.gpr .x4).toNat = 1 := by
+      show (s₀.gpr .x4).toNat = 1
+      rw [x4]; rfl
+    refine WP.mono (ctr32One_ok hp₁ h4) fun s' ⟨hg, hpost⟩ => ⟨fun i hi => ?_, hpost⟩
+    have hn := sreg_ne i hi
+    rw [hg _ hn.1 hn.2.1 hn.2.2.1 hn.2.2.2]
+    exact g₁ _ hn.2.2.1
+  · exact WP.mono (correct (cpre_of hp₁)) fun s' ⟨hsv, _, hpost⟩ =>
+      ⟨fun i hi => (hsv i hi).trans (g₁ _ (sreg_ne i hi).2.2.1), hpost⟩
+
+theorem ctr32N_correct (s : State) (hs : Proof.Aes.ctr32AArch64.pre s) :
+    ∃ t s', Exec isa ctr32N s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32AArch64.post s s' := by
+  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ :=
+    WP.gprs (rs := [.x30]) (ctr32N_wp hs) (by lit_decide) (by lit_decide)
+  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
+  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact h₁ 0 (by omega_arith)
+  · exact h₁ 1 (by omega_arith)
+  · exact h₁ 2 (by omega_arith)
+  · exact h₁ 3 (by omega_arith)
+  · exact h₁ 4 (by omega_arith)
+  · exact h₁ 5 (by omega_arith)
+  · exact h₁ 6 (by omega_arith)
+  · exact h₁ 7 (by omega_arith)
+  · exact h₁ 8 (by omega_arith)
+  · exact h₁ 9 (by omega_arith)
+  · exact h₃ _ (by simp)
+
+theorem ctr32N_ct : ConstantTime isa Proof.Aes.ctr32AArch64.pre Proof.Aes.ctr32AArch64.pub ctr32N := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
+    ?_ (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, h6, hsp⟩
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 end VG.Proof.Aes.AArch64.OneBlock

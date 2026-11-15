@@ -27,7 +27,7 @@ structure Ctr32 where
   name : String
   code : Prog isa
 
-def Ctr32.scalar : Ctr32 := ⟨"vg_aes_ctr32", ctr32⟩
+def Ctr32.scalar : Ctr32 := ⟨"vg_aes_ctr32", ctr32N⟩
 def Ctr32.aese : Ctr32 := ⟨"vg_aes_ctr32_aes", Aese.ctr32⟩
 
 /-- Their out-of-place forms, internal functions (`ctr32Gen true`), which

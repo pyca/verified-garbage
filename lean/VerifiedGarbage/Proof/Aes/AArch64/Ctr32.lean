@@ -766,27 +766,6 @@ theorem correct {to : Bool} {s₀ : State} (hp : CPre to s₀) :
         exact dCS.sub_right (Region.sub_prefix (by omega_arith))
     · simp
 
-theorem ctr32_correct (s : State) (hs : Proof.Aes.ctr32AArch64.pre s) :
-    ∃ t s', Exec isa Impl.Aes.AArch64.ctr32 s t s' ∧ abiPreserved s s' ∧
-      Proof.Aes.ctr32AArch64.post s s' := by
-  obtain ⟨t, s', he, ⟨h₁, -, h₂⟩, h₃⟩ :=
-    WP.gprs (rs := [.x30]) (show WP isa Impl.Aes.AArch64.ctr32 s _ from correct (cpre_of hs))
-      (by lit_decide) (by lit_decide)
-  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
-  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  · exact h₁ 0 (by omega_arith)
-  · exact h₁ 1 (by omega_arith)
-  · exact h₁ 2 (by omega_arith)
-  · exact h₁ 3 (by omega_arith)
-  · exact h₁ 4 (by omega_arith)
-  · exact h₁ 5 (by omega_arith)
-  · exact h₁ 6 (by omega_arith)
-  · exact h₁ 7 (by omega_arith)
-  · exact h₁ 8 (by omega_arith)
-  · exact h₁ 9 (by omega_arith)
-  · exact h₃ _ (by simp)
-
 theorem ctr32To_correct (s : State) (hs : Proof.Aes.ctr32ToAArch64.pre s) :
     ∃ t s', Exec isa Impl.Aes.AArch64.ctr32To s t s' ∧ abiPreserved s s' ∧
       Proof.Aes.ctr32ToAArch64.post s s' := by
@@ -806,15 +785,6 @@ theorem ctr32To_correct (s : State) (hs : Proof.Aes.ctr32ToAArch64.pre s) :
   · exact h₁ 8 (by omega_arith)
   · exact h₁ 9 (by omega_arith)
   · exact h₃ rfl
-
-theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32AArch64.pre Proof.Aes.ctr32AArch64.pub
-    Impl.Aes.AArch64.ctr32 := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
-    ?_ (by taint_decide)
-  intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, h6, hsp⟩
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 theorem ctr32To_ct : ConstantTime isa Proof.Aes.ctr32ToAArch64.pre Proof.Aes.ctr32ToAArch64.pub
     Impl.Aes.AArch64.ctr32To := by
