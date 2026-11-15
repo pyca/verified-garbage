@@ -41,7 +41,8 @@ comparison: they run once, with HEAD's binary, with `--openssl` or when BASE
 does not exist; and only without `VG_CPU_FEATURES`, which does not change
 their code either, unless `--openssl-with-features` asks for them under it
 too (`OPENSSL_ia32cap` in the environment then masks their own x86 CPU
-features: OpenSSL and aws-lc both read it). aws-lc-rs has no benchmark where
+features, and `OPENSSL_armcap` replaces their AArch64 ones: OpenSSL and
+aws-lc both read them). aws-lc-rs has no benchmark where
 it lacks the primitive.
 
 `VG_CPU_FEATURES` in the environment (see src/cpu.rs) restricts the CPU
@@ -683,6 +684,7 @@ def main():
         keep_fastest(runs)
     references = {}
     ia32cap = os.environ.get("OPENSSL_ia32cap", "")
+    armcap = os.environ.get("OPENSSL_armcap", "")
     if with_references:
         for library, name in REFERENCES.items():
             print(name, file=sys.stderr)
@@ -700,6 +702,7 @@ def main():
         f"{runs} on this runner; a slowdown of more than {args.threshold:.0%} fails."
         + (" OpenSSL (through rust-openssl) and aws-lc-rs ran once, for reference"
            + (f", with OPENSSL_ia32cap={ia32cap}" if ia32cap
+              else f", with OPENSSL_armcap={armcap}" if armcap
               else ", with all of this CPU's features" if cpu_features else "") + "." if with_references
            else " OpenSSL and aws-lc-rs ran only in the configuration without VG_CPU_FEATURES." if cpu_features
            else " OpenSSL and aws-lc-rs did not run (they do with `--openssl`, the workflow's `openssl` input)."),
