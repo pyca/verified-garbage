@@ -25,8 +25,8 @@ of the table loaded once, as a `ymm` register, its two lanes copied to the
 other half, and kept under the mask of each half's magnitude (`r8` for `A`,
 `r10` for `B`); the digits' signs are in the slots `SGA` and `SGB`.
 
-Everything runs between Intel's MXCSR prologue and epilogue (`withMx`), and
-every address is the scratch or the static plus a public offset.
+It sets no MXCSR of its own (as `Ifma.lean`'s code), and every address is
+the scratch or the static plus a public offset.
 -/
 
 @[expose] public section
@@ -38,7 +38,7 @@ open VG.Impl.X25519.X86_64 (sc)
 open VG.Impl.X25519.X86_64.Ifma (y ld st v perm zero mov blend lanes carry mul4 KM K19 KB0 KB1 OPL)
 open VG.Impl.Ed25519.X86_64 (combSym combEntryBytes combTblAt combEqMask combSelSetup combSignMask
   combIndex combChunk combSign fieldCode FieldOp constPointOps combG offset)
-open VG.Impl.Ed25519.X86_64.Ifma (esplit vnegBody vadd vdbl5 vload vstore withMx)
+open VG.Impl.Ed25519.X86_64.Ifma (esplit vnegBody vadd vdbl5 vload vstore)
 
 /-! ## The layout of the scratch beyond the `ymm` code's -/
 
@@ -190,10 +190,10 @@ def ztail2 : List Instr :=
   ((List.range 5).map fun j => ld j (ZACC + 64 * j)) ++ vadd
 
 /-- `[s]B` into slots 0–3, for the scalar bits expanded into bytes 768 onward: `[G]B` into
-both halves of the lanes, the constants, the 26 steps, and `32 A + B`, with MXCSR `0x1FBF`. -/
+both halves of the lanes, the constants, the 26 steps, and `32 A + B`. -/
 def combMultiply (fld : Arith) : Prog isa :=
   .seq (.block (fieldCode fld zConstOps ++ VG.Impl.X25519.X86_64.Ifma.consts ++ vload ++ zconsts))
-    (withMx (.seq (.block [.mov32 .rbx (.imm 0)]) (.seq (.loop combStep .ne)
-      (.seq (.block ztail1) (.seq vdbl5 (.block (ztail2 ++ vstore)))))))
+    (.seq (.block [.mov32 .rbx (.imm 0)]) (.seq (.loop combStep .ne)
+      (.seq (.block ztail1) (.seq vdbl5 (.block (ztail2 ++ vstore))))))
 
 end VG.Impl.Ed25519.X86_64.Zmm

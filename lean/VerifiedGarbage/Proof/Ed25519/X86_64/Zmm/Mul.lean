@@ -975,7 +975,7 @@ namespace VG.Proof.Ed25519.X86_64.Zmm
 
 open VG VG.X86_64 VG.Impl.Ed25519.X86_64 VG.Impl.Ed25519.X86_64.Zmm VG.Proof.Ed25519.X86_64.Ifma
   VG.Proof.Ed25519.X86_64 VG.Proof.Ed25519 Edwards
-open VG.Impl.Ed25519.X86_64.Ifma (EMX withMx vload)
+open VG.Impl.Ed25519.X86_64.Ifma (vload)
 open VG.Proof.X25519.X86_64.Ifma (lanes fe5 fe5_congr consts_wp cregs mq)
 open VG.Proof.X25519.X86_64 (Outside F off ofs clob)
 open VG.Proof.Poly1305.X86_64.Avx2 (xr qw)
@@ -990,21 +990,6 @@ theorem outside_readW {m m' : Mem} {b : Addr} {o n : Nat} (h : Outside b o n m m
   Mem.readW_congr fun i hi => by
     rw [Offset.add_ofNat_add_ofNat]
     exact h _ (by simp only [ofs]; rw [off_ofNat _ (by omega_arith)]; omega_arith)
-
-/-- The halves see no change at `EMX`, which is in the window. -/
-theorem hmem_mx {b : Addr} {m m' : Mem} (h : Outside b EMX 8 m m') {h' : Nat}
-    (hh : h' < 2) : hmem b h' m' = hmem b h' m := by
-  funext a
-  simp only [hmem]
-  split
-  · rename_i hw
-    simp only [InWin] at hw
-    exact h _ (by
-      simp only [ofs]; rw [off_ofNat _ (by unfold zoff ZB; have := (a - b).isLt; omega_arith)]
-      unfold zoff ZB EMX; omega_arith)
-  · rename_i hw
-    simp only [InWin] at hw
-    exact h _ (by simp only [ofs]; unfold EMX; omega_arith)
 
 theorem ZFrame.outside {s₀ s : State} {b : Addr} (h : ZFrame s₀ b s) : Outside b 1152 5424 s₀.mem s.mem :=
   fun a ha => h.mem a (by unfold ZChg InZ DigOff SGA SGB combSignMask ZMASK ZB; omega_arith)
@@ -1108,40 +1093,22 @@ theorem zcomb_ok {s : State} {base T : Addr} (hs : Scratch s base) {S : Nat}
     (ht : CombTbl s T) (hfar : TblFar base T) :
     WP isa (Zmm.combMultiply fld) s fun t =>
       Rep (point (env t.mem base) 0 1 2 3) (S • baseAff) ∧ PowersKeep base 56 7368 s t := by
-  rw [Zmm.combMultiply, withMx]
+  rw [Zmm.combMultiply]
   refine WP.seq (WP.mono_syms (zprep_ok (fld := fld) hs)
-    fun s₁ ⟨hs₁, g₁, rd₁, wr₁, m₁, k₁, z₁, hk₁, sm₁, p₁, k2₁, f12, f13, f14, f15, b₁⟩ sy₁ => ?_)
-  refine WP.seq (WP.mono_syms (save_wp hs₁) fun s₂ ⟨g₂, r11₂, k₂⟩ sy₂ => ?_)
-  have hs₂ : Scratch s₂ base := ⟨by rw [g₂ _ (by decide)]; exact hs₁.rdi, by rw [k₂.wr]; exact hs₁.wr, hs.nowrap⟩
-  refine WP.seq (WP.seq (WP.mono_syms (load_wp hs₂) fun s₃ ⟨g₃, k₃⟩ sy₃ => ?_))
-  have hs₃ : Scratch s₃ base := ⟨by rw [g₃ _ (by decide)]; exact hs₂.rdi, by rw [k₃.wr]; exact hs₂.wr, hs.nowrap⟩
-  have o₃ : Outside base EMX 8 s₁.mem s₃.mem := k₂.mem.trans k₃.mem
-  have zl₃ : ∀ r i, i < 4 → s₃.zlane r i = s₁.zlane r i := fun r i _ => by
-    rw [zlane_of k₃.xmm k₃.ymm k₃.zmm, zlane_of k₂.xmm k₂.ymm k₂.zmm]
-  have keep₃ : PowersKeep base 56 7368 s s₃ :=
-    (⟨fun r _ _ hr => g₁ r hr, rd₁, wr₁, m₁⟩ : PowersKeep base 56 7368 s s₁).trans
-      ⟨fun r _ _ hr => by rw [g₃ r (fun e => hr (e ▸ by decide)), g₂ r (fun e => hr (e ▸ by decide))],
-        by rw [k₃.rd, k₂.rd], by rw [k₃.wr, k₂.wr], (TableFrame.table o₃).mono (by decide) (by decide)⟩
-  have hmr : ∀ sel ∈ blendSels, ZMASK ≤ maskRow sel ∧ maskRow sel + 64 ≤ 6016 := by decide
+    fun s₃ ⟨hs₃, g₁, rd₁, wr₁, m₁, k₁, z₁, hk₁, sm₁, p₁, k2₁, f12, f13, f14, f15, b₁⟩ sy₁ => ?_)
+  have keep₃ : PowersKeep base 56 7368 s s₃ := ⟨fun r _ _ hr => g₁ r hr, rd₁, wr₁, m₁⟩
   have hp : ZLoopPre s₃ base T S :=
     { scratch := hs₃
-      zok := ⟨hs₃.rdi, hs₃.wr, hs.nowrap, fun sel hsel i hi => by
-        have := hmr sel hsel
-        rw [outside_readW o₃ (Or.inr (by unfold ZMASK EMX at *; omega_arith)) (by omega_arith)]
-        exact z₁.masks sel hsel i hi⟩
-      hconsts := fun h hh => by
-        show EConsts (hmem base h s₃.mem) base
-        rw [hmem_mx o₃ hh]; exact hk₁ h hh
-      consts := (k₁.outsideMx k₂.mem).outsideMx k₃.mem
-      k2 := fun h hh => by
-        rw [Outside_F o₃ (by unfold ZK2; omega_arith) (Or.inr (by unfold ZK2 EMX; omega_arith))]; exact k2₁ h hh
-      bits := fun q hq => by
-        rw [o₃ _ (Or.inl (by rw [bits_far hq]; simp only [EMX]; omega_arith)), b₁ q hq]; exact hb q hq
-      tbl := ht.keep hfar keep₃ (by rw [sy₃, sy₂, sy₁])
+      zok := z₁
+      hconsts := hk₁
+      consts := k₁
+      k2 := k2₁
+      bits := fun q hq => by rw [b₁ q hq]; exact hb q hq
+      tbl := ht.keep hfar keep₃ (by rw [sy₁])
       far := hfar }
-  refine WP.seq (WP.seq (WP.mono_syms (zscal rfl (mov32_wp s₃ .rbx 0))
-    fun s₄ ⟨⟨r₄, g₄, m₄, rd₄, wr₄, _⟩, zl₄⟩ sy₄ => ?_))
-  have zl : ∀ r i, i < 4 → s₄.zlane r i = s₁.zlane r i := fun r i hi => by rw [zl₄, zl₃ r i hi]
+  refine WP.seq (WP.mono_syms (zscal rfl (mov32_wp s₃ .rbx 0))
+    fun s₄ ⟨⟨r₄, g₄, m₄, rd₄, wr₄, _⟩, zl₄⟩ sy₄ => ?_)
+  have zl : ∀ r i, i < 4 → s₄.zlane r i = s₃.zlane r i := fun r i _ => by rw [zl₄]
   have i₄ : ZInv s₃ base 0 (zvA S 0) (zvB S 0) s₄ := by
     have g0 : Rep combG ((zvA S 0) • baseAff) := by
       rw [show zvA S 0 = (VG.Proof.Ed25519.X86_64.combGVal : ℤ) by simp [zvA, VG.Proof.Ed25519.X86_64.oddSumZ],
@@ -1159,34 +1126,20 @@ theorem zcomb_ok {s : State} {base T : Addr} (hs : Scratch s base) {S : Nat}
       exact g0
   have fin : ∀ w, ZInv s₃ base 26 (zvA S 26) (zvB S 26) w →
       WP isa (.seq (.block ztail1) (.seq Impl.Ed25519.X86_64.Ifma.vdbl5
-        (.block (ztail2 ++ Impl.Ed25519.X86_64.Ifma.vstore)))) w fun y =>
-      WP isa (.block [.lfence]) y fun z =>
-        WP isa (.block [.store32 (VG.Impl.X25519.X86_64.sc EMX) .r11, .ldmxcsr (VG.Impl.X25519.X86_64.sc EMX)]) z
-          fun t => Rep (point (env t.mem base) 0 1 2 3) (S • baseAff) ∧ PowersKeep base 56 7368 s t := by
+        (.block (ztail2 ++ Impl.Ed25519.X86_64.Ifma.vstore)))) w fun t =>
+          Rep (point (env t.mem base) 0 1 2 3) (S • baseAff) ∧ PowersKeep base 56 7368 s t := by
     intro w hw
     have hsw : Scratch w base := hw.frame.scratch hp hw.rdi
     have ow := hw.frame.outside
-    have fw : ∀ (i : Slot), 12 ≤ i.val → i.val < 16 → F w.mem base (offset i) = F s₁.mem base (offset i) :=
+    have fw : ∀ (i : Slot), 12 ≤ i.val → i.val < 16 → F w.mem base (offset i) = F s₃.mem base (offset i) :=
       fun i h1 h2 => by
-        rw [Outside_F ow (by simp only [offset]; omega_arith) (Or.inl (by simp only [offset]; omega_arith)),
-          Outside_F o₃ (by simp only [offset]; omega_arith) (Or.inl (by simp only [offset, EMX]; omega_arith))]
+        rw [Outside_F ow (by simp only [offset]; omega_arith) (Or.inl (by simp only [offset]; omega_arith))]
     refine WP.mono (ztail_ok hsw (hw.frame.consts hp) (hw.small 0 (by decide)) (hw.small 1 (by decide))
       hw.valA hw.valB (by rw [fw 12 (by decide) (by decide)]; exact f12)
       (by rw [fw 13 (by decide) (by decide)]; exact f13) (by rw [fw 14 (by decide) (by decide)]; exact f14)
       (by rw [fw 15 (by decide) (by decide)]; exact f15)) fun y ⟨yg, yrd, ywr, yo, yp⟩ => ?_
-    refine WP.mono (lfence_wp y) fun z₀ e₀ => ?_
-    subst e₀
-    have hs₀ : Scratch z₀ base := ⟨by rw [yg _ (by decide)]; exact hw.rdi, by rw [ywr]; exact hsw.wr, hs.nowrap⟩
-    have r11 : z₀.gpr .r11 = s₂.gpr .r11 := by rw [yg _ (by decide), hw.frame.r11, g₃ _ (by decide)]
-    refine WP.mono (restore_wp hs₀ (by rw [r11, r11₂]; exact and_ffff _)) fun t ⟨g₈, k₈⟩ => ?_
-    have pt : point (env t.mem base) 0 1 2 3 = point (env z₀.mem base) 0 1 2 3 := by
-      simp only [point, env, VG.Impl.Ed25519.X86_64.offset]
-      rw [Outside_F k₈.mem (by decide) (Or.inl (by decide)), Outside_F k₈.mem (by decide) (Or.inl (by decide)),
-        Outside_F k₈.mem (by decide) (Or.inl (by decide)), Outside_F k₈.mem (by decide) (Or.inl (by decide))]
-    refine ⟨?_, keep₃.trans (hw.frame.keep.trans ⟨fun r _ h2 _ => by rw [g₈, yg r h2], by rw [k₈.rd, yrd],
-      by rw [k₈.wr, ywr], ((TableFrame.table yo).mono (by decide) (by decide)).trans
-        ((TableFrame.table k₈.mem).mono (by decide) (by decide))⟩)⟩
-    rw [pt]
+    refine ⟨?_, keep₃.trans (hw.frame.keep.trans ⟨fun r _ h2 _ => by rw [yg r h2], by rw [yrd],
+      by rw [ywr], (TableFrame.table yo).mono (by decide) (by decide)⟩)⟩
     rw [← natCast_zsmul, smul_smul, ← add_smul, zv_sum hS, natCast_zsmul] at yp
     exact yp
   refine WP.seq ?_
