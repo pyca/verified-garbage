@@ -1629,6 +1629,8 @@ vg_dsa_probable_prime_1024:
 	orr x5, x5, x6
 	orr x1, x1, x5
 	sub x10, x10, #1
+	eor x3, x1, x8
+	and x10, x10, x3
 	cbnz x10, 24b
 	cbz x1, 29f
 	movz x3, #3, lsl #0
