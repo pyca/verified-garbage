@@ -126,7 +126,7 @@ theorem search_verified_of (c : Cand) :
   Verified.of_correct (search_correct c) (search_constantTime c) search_implies
 
 theorem candidate_noFrames (v : RoundImpl) : (code v.mont.mm v.kernel.run).noFrames = true := by
-  simp only [code, main, mainQ, tests, testQ, testRest, test, firstCheck, restChecks, phase, shapeP, residue, sieve, halveQ,
+  simp only [code, main, mainQ, mainP, tests, testQ, testRest, test, firstCheck, restChecks, phase, shapeP, residue, sieve, halveQ,
     montPrep, millerRabin, draw, round, pResult, qResult, Impl.Rsa.AArch64.Keys.loadA, Impl.RsaKeyGen.AArch64.Candidate.trialEntry,
     Impl.RsaKeyGen.AArch64.Candidate.halfPass, Impl.RsaKeyGen.AArch64.Candidate.subA,
     Impl.RsaKeyGen.AArch64.Candidate.expSetup, Impl.Rsa.AArch64.r2Steps, Impl.Rsa.AArch64.r2StepsOld, Impl.Rsa.AArch64.sqs,
