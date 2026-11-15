@@ -164,10 +164,12 @@ taint_summary addNSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3]) (.call (p521.
   keeping (Taint.ofRegs [.r10, .r11])
 
 /-! The constant-time analysis of the call of `vg_p521_mul` from its argument and `r10`, done
-once for every check of code that calls it (signing, ECDH and the public key). -/
+once for every check of code that calls it (signing, ECDH and the public key); it writes every
+register, so its frame is empty (stated, so that the callers need not import the analysis'
+instance publicly for the default one). -/
 taint_summary mulSum : taintS (Taint.ofRegs [.r0, .r10])
   (.call (s!"vg_{Impl.Weierstrass.Mul.p521.curve}_mul" ++ if p521.umaal then "_umaal" else "") mulP521)
-  using mulPSum addPSum subPSum
+  keeping (Taint.ofRegs []) using mulPSum addPSum subPSum
 
 /-- `τ₀` without the regions, which the code's timing does not need: no address or branch is
 read back from memory, so the analysis with summaries starts from less (`leS_sound`). -/
