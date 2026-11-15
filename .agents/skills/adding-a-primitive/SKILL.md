@@ -79,8 +79,9 @@ instructions in an ISA model) go in their own PR before either.
    and a proof that adds or changes a table changes no registration file. `of_sig` proves `ofSig`, and
    `sp_safe` proves `spSafe`: by `Code.all_of_forall` on ARMv7, AArch64 and
    PPC64LE,
-   which evaluates nothing, and by `Code.all_of_allInstrs (by lit_decide)`
-   on x86 and x86-64 (see "Code the kernel evaluates" in the
+   which evaluates nothing, and by `Code.all_of_spTest (by lit_decide)`
+   on x86 and x86-64, which tests each instruction with the ISA's `keepsSp`
+   (see "Code the kernel evaluates" and "Matching on an instruction" in the
    `proof-performance` skill), falling back
    to `decide +kernel` where `lit_decide` exceeds the recursion limit, and
    for code that depends on a `Bool` or an enumeration (`adx`, a field

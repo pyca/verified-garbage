@@ -105,7 +105,14 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   were most of the 0.8 ms a plain instruction took in the residue analysis.
   Give what several matches computed by one, with the patterns of all of
   them, and prove it equal to the function it replaces by cases
-  (`RTaint.stepFn1`, `stepFn1_eq`, `Proof/Framework/X86_64/`).
+  (`RTaint.stepFn1`, `stepFn1_eq`, `Proof/Framework/X86_64/`). So `spSafe`
+  on x86 and x86-64 is checked with the ISA's `keepsSp`
+  (`Proof/Framework/<ISA>/Taint.lean`), one match that compares the
+  constructor's index, and `Code.all_of_spTest` (`SpTest`,
+  `Proof/Framework/SpTest.lean`) gives the statement about `writesSp` from
+  it: write `Code.all_of_spTest (by lit_decide)`, as `sp_safe` does, not
+  `Code.all_of_allInstrs (by lit_decide)`, which tests `!isa.writesSp i`
+  and takes twice as long for each instruction.
 * **Code the kernel evaluates:** code built by functions (unrolled
   compression functions, and the functions calling them) is rebuilt by the
   kernel in every check that evaluates it (constant time, `spSafe`, …), in
@@ -113,7 +120,7 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   (`Proof/Framework/Lit.lean`), in a `Lit.lean` next to its proofs, defines
   `foo.lit` and checks `foo.lit_eq` once; then `taint_decide` and
   `lit_decide` (not `decide +kernel`) evaluate the literal, and the
-  registration file's `spSafe := Code.all_of_allInstrs (by lit_decide)`.
+  registration file's `spSafe := Code.all_of_spTest (by lit_decide)`.
   Functions that build code or tables (a register allocator, spec
   tables) get literals too: `materialize_table f n` (for `f : Nat → α`;
   `Nat`-valued tables are packed into one number, read by a shift),
