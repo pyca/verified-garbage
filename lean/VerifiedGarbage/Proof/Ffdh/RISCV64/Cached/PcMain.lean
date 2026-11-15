@@ -150,6 +150,7 @@ theorem bound_ok {s : State} {D : Addr} {k L : Nat} (h2 : s.gpr .a2 = D) (h3 : s
           (VG.Proof.Ffdh.lead (VG.Proof.Ffdh.KeyScalar.bnd k (Spec.Rsa.bytesAt s.mem D L))) 0).toNat := by
     rw [hbits, Proof.Ffdh.getD_of]
   rw [hbits']
+  clear hbits
   generalize hbd : VG.Proof.Ffdh.KeyScalar.bnd k (Spec.Rsa.bytesAt s.mem D L) = bd at hlead hne hld ⊢
   unfold bound
   refine WP.seq (WP.mono (bp_ok' h2 h3 h4 (by omega_arith) hk') fun s₁ ⟨⟨a3, m1⟩, k1⟩ => ?_)

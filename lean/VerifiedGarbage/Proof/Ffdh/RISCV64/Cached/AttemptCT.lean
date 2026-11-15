@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.Cached.AttemptCorrect
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.Cached.Front
+public import VerifiedGarbage.Proof.Ffdh.CachedGenerateKeyContract
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.Cached.AttemptImplies
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.Derive.CT
@@ -513,7 +514,7 @@ theorem cg_ct : ConstantTime isa cgContract.pre cgContract.pub Generate.code :=
     ⟨cgOf s, ⟨hs, rfl⟩, ⟨ht, (cgOf_eq hs ht hp).symm⟩, hp.1⟩) fun _ _ h => h)
 
 /-- `vg_ffdh_generate_key_cached`. -/
-theorem cg_verified : Verified target Generate.code (Spec.Ffdh.cachedGenerateKeyContract abi) :=
+theorem cg_verified : Verified target Generate.code (Proof.Ffdh.cachedGenerateKeyContract abi) :=
   Verified.of_correct cg_correct cg_ct cg_implies
 
 end VG.Proof.Ffdh.RISCV64.Cached

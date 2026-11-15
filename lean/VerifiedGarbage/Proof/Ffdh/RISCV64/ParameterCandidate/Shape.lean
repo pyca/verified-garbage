@@ -7,7 +7,7 @@ import VerifiedGarbage.Proof.MillerRabin.RISCV64.Search.Sieve
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.PreCore
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordCut
-import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.WordHalf
+import VerifiedGarbage.Proof.RsaKeyGen.Halve
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Sieve
 import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.RsaKeyGen.Bits
@@ -340,7 +340,7 @@ theorem halveQ_ok {p : PP} {s : State} {w x : Nat} (hs : St p s) (h7 : s.gpr .a7
     brun [t3, t7, h6, BitVec.add_zero, add_ofNat_zero, lT, sT, aT, rT, lB, sB, aB, l0, a0, rB, r0]
   have hv : wv u.mem p.B 256 w = x / 2 := by
     rw [← hx]
-    refine Proof.Ffdh.ParameterCandidate.wv_half (by omega_arith) (fun j hj => ?_) ?_
+    refine Proof.RsaKeyGen.wv_half (by omega_arith) (fun j hj => ?_) ?_
     · rw [um, word, rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith),
         rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
       exact tlo j (by omega_arith)

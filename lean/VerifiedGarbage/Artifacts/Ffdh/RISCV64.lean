@@ -8,10 +8,11 @@ public import VerifiedGarbage.Proof.Ffdh.RISCV64.Verified
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.Derive.Verified
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.CheckPrivate.Verified
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.Cached.PcCT
-public import VerifiedGarbage.Proof.Ffdh.RISCV64.Cached.AttemptCT
 public import VerifiedGarbage.Proof.Ffdh.RISCV64.Cached.SearchProof.Verified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.RISCV64.Print
+public import VerifiedGarbage.Proof.Ffdh.RISCV64.Generation.Search.Verified
+public import VerifiedGarbage.Proof.Variants.MillerRabin.RISCV64
 
 /-! # Finite-field Diffie–Hellman on RISC-V -/
 
@@ -19,7 +20,7 @@ public import VerifiedGarbage.TCB.RISCV64.Print
 
 namespace VG.Artifacts.Ffdh.RISCV64
 
-def artifacts : List Artifact := [
+def direct : List Artifact := [
   Spec.Ffdh.parameterInitApi.artifact RISCV64.target {
     code := Impl.Ffdh.RISCV64.Generation.init
     verified := Proof.Ffdh.RISCV64.Generation.init_verified },
@@ -44,12 +45,18 @@ def artifacts : List Artifact := [
   Spec.Ffdh.generationPrecomputeApi.artifact RISCV64.target {
     code := Impl.Ffdh.RISCV64.Cached.Precompute.code
     verified := Proof.Ffdh.RISCV64.Cached.pc_verified },
-  Spec.Ffdh.cachedGenerateKeyApi.artifact RISCV64.target {
-    code := Impl.Ffdh.RISCV64.Cached.Generate.code
-    verified := Proof.Ffdh.RISCV64.Cached.cg_verified },
   Spec.Ffdh.cachedKeySearchApi.artifact RISCV64.target {
     stack := 64
     code := Proof.Ffdh.RISCV64.Cached.SearchProof.keyCode
     verified := Proof.Ffdh.RISCV64.Cached.SearchProof.search_verified }]
+
+def artifacts : List Artifact :=
+  direct ++
+  (VG.Proof.Variants.MillerRabin.RISCV64.variants.flatMap fun (v : Proof.MillerRabin.RISCV64.RoundImpl) => [
+    Spec.Ffdh.sievedParameterSearchApi.artifact RISCV64.target {
+      suffix := v.suffix
+      stack := 128
+      code := Proof.Ffdh.RISCV64.Generation.searchCode v
+      verified := Proof.Ffdh.RISCV64.Generation.search_verified v }])
 
 end VG.Artifacts.Ffdh.RISCV64

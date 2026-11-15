@@ -185,7 +185,7 @@ theorem key_verified_of (a : Attempt) :
 
 /-- `vg_ffdh_generate_key_cached`, which has no frames. -/
 def cachedAttempt : Attempt where
-  name := Spec.Ffdh.cachedGenerateKeyApi.name
+  name := "vg_ffdh_generate_key_cached"
   code := Impl.Ffdh.RISCV64.Cached.Generate.code
   stack := by decide
   correct := Cached.cg_correct
