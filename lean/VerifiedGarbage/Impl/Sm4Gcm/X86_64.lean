@@ -46,16 +46,17 @@ open VG.Impl.AesGcm.X86_64 (Fn Callees at_ imm ptr save restore splitWhole xorLo
   absorb absorbPad lens j0 recv cmp tagOut tagLenOk partWith firstFlush streamLoad oneAad
   stO tO uO alenO tlenO dataO lenO auxO tlO aadO tagPO)
 
-/-- `vg_sm4_ctr32`, as registered (`Artifacts/Sm4Gcm/X86_64.lean`): its
-working space in a frame of its own. -/
+/-- `vg_sm4_ctr32`: its working space in a frame of its own, which it leaves
+as it is; the SM4-GCM functions, its only callers, clear their whole stack
+on return, that frame with it, once for all their calls. -/
 def ctrFn : Fn :=
-  ⟨"vg_sm4_ctr32", Impl.StackScratch.X86_64.withStackScratchWiped 3208 .r8 400 Impl.Sm4.X86_64.ctr32⟩
+  ⟨"vg_sm4_ctr32", Impl.StackScratch.X86_64.withStackScratch 3208 .r8 Impl.Sm4.X86_64.ctr32⟩
 
-/-- `vg_sm4_expand_key`'s code, as registered (`Artifacts/Sm4/X86_64.lean`)
-before the clearing of what it leaves (`Proof.Sm4.X86_64.Scrub.expandKeyReg`):
-called as an internal function of its own, `vg_sm4_expand_key_core`. -/
+/-- `vg_sm4_expand_key`'s code (`Artifacts/Sm4/X86_64.lean`), in a frame of
+its own that it leaves as it is, as `ctrFn`: called as an internal function
+of its own, `vg_sm4_expand_key_core`. -/
 def keyFn : Fn :=
-  ⟨"vg_sm4_expand_key_core", Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rdx 392 Impl.Sm4.X86_64.expandKey⟩
+  ⟨"vg_sm4_expand_key_core", Impl.StackScratch.X86_64.withStackScratch 3144 .rdx Impl.Sm4.X86_64.expandKey⟩
 
 variable (c : Callees)
 

@@ -81,4 +81,15 @@ theorem expandKey_framed :
     (Proof.Sm4.expandKeyPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
+/-- `expandKey_framed`'s frame, left as it is: SM4-GCM's `init`, which calls
+it, clears it. -/
+theorem expandKey_framedU :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 3144 .rdx expandKey)
+      (Spec.Sm4.expandKeyContract X86_64.abi 3144) :=
+  X86_64.Verified.stackScratch (sig := Spec.Sm4.expandKeySig) (nm := "scratch") (e := .u64)
+    (n := 392) (post := Proof.Sm4.expandKeyPost X86_64.abi.ptrBits) (wa := false) (stack := 0)
+    (bytes := 3144) expandKey_verified (by decide) (by decide) (by decide)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)
+    (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
 end VG.Proof.Sm4.X86_64
