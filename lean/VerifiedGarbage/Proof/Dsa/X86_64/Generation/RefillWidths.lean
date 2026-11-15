@@ -331,7 +331,7 @@ theorem search_pub {S : Nat} {s s' : State} (h : (Spec.Dsa.parameterSearchContra
   have hst : stackArg s 1 = stackArg s' 1 := h₇
   refine ⟨hsp, hst, ?_⟩
   rw [wordsAt_four, wordsAt_four] at hl
-  have hw := (List.append_inj hl rfl).1
+  have hw := (List.append_inj hl (Eq.refl 4)).1
   simp only [List.cons.injEq] at hw
   exact BitVec.eq_of_toNat_eq hw.2.1
 

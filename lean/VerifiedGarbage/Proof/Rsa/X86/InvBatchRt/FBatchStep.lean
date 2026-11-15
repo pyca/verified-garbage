@@ -387,8 +387,9 @@ theorem batchGen_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he 
     intro w hw
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
     simp only [batchWrites, List.mem_cons, List.not_mem_nil, or_false, exists_eq_or_imp, exists_eq_left, hb4, hb11]
-    rw [efs, eds] at *
-    rcases hw with (((((rfl | rfl) | (rfl | rfl)) | (rfl | rfl)) | rfl) | (rfl | rfl)) | (rfl | rfl) <;> omega
+    rw [efs, eds] at hw
+    rcases hw with (((((rfl | rfl) | (rfl | rfl)) | (rfl | rfl)) | rfl) | (rfl | rfl)) | (rfl | rfl) <;>
+      omega_using [e16, eMu, eP, eMd, ke, hn2]
   · rw [VG.Proof.Mont.w32, hT 100 (by omega_using [eMu])]; exact O₁.w32 (.inr (by omega_using [e16])) (by omega_using [])
   · rw [hT win (by omega_using [e16, eMu])]; exact M₁.d
   · rw [VG.Proof.Mont.w32, hT (win + 28) (by omega_using [e16, eMu]), ← Fiv]; exact O₁.w32 (.inr (by omega_using [])) (by omega_using [e16])

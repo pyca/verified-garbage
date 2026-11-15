@@ -387,9 +387,15 @@ theorem words_ok {s w : State} (A : ABI s) (hw : w.wr = s.wr) (hr : w.rd = s.rd)
     WP isa (.block words) w fun t =>
       (t.gpr .eax = st ∧ t.gpr .ebx = s.gpr .ebx ∧ Slots s K T V t.mem) ∧ Keep [.eax, .ecx, .edx, .ebx] w t := by
   have b32 := (arg s 1).isLt
+  have hX : arg s 1 >>> 7 = BitVec.ofNat 32 ((arg s 1).toNat / 128) := by
+    apply BitVec.eq_of_toNat_eq
+    rw [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow,
+      Nat.mod_eq_of_lt (by omega_using [b32])]
+  have hN : (BitVec.ofNat 32 ((arg s 1).toNat / 128 * 8)).toNat = (arg s 1).toNat / 128 * 8 := by
+    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [b32])
+  have h8 : ∀ n : Nat, n + n + (n + n) + (n + n + (n + n)) = n * 8 := fun n => by omega_using []
   refine WP.keep _ ?_ (by rfl)
   simp only [words, sb, param_eq, Nat.reduceMul, Nat.reduceAdd]
-  cases K <;> cases T <;>
   xrun [State.ea, at_, sp, ea0, ea1, hr, hw, hb, A.argRd (i := 0) (by decide), A.argRd (i := 1) (by decide),
     A.argKeep fr (i := 0) (by decide), A.argKeep fr (i := 1) (by decide),
     A.eaS rfl (d := 0) (by decide), A.eaS rfl (d := 4) (by decide), A.eaS rfl (d := 8) (by decide),
@@ -407,16 +413,18 @@ theorem words_ok {s w : State} (A : ABI s) (hw : w.wr = s.wr) (hr : w.rd = s.rd)
     A.inRW (u := s) rfl (d := 0) (by decide), A.inRW (u := s) rfl (d := 32) (by decide),
     A.inRW (u := s) rfl (d := 36) (by decide), A.inRW (u := s) rfl (d := 40) (by decide),
     A.inRW (u := s) rfl (d := 44) (by decide), execMul, A.argW (i := 0) (by decide) (d := 8) (by decide), A.argW (i := 0) (by decide) (d := 4) (by decide), A.argW (i := 0) (by decide) (d := 12) (by decide), A.argW (i := 0) (by decide) (d := 20) (by decide), A.argW (i := 0) (by decide) (d := 28) (by decide), A.argW (i := 0) (by decide) (d := 48) (by decide), A.argW (i := 0) (by decide) (d := 16) (by decide), A.argW (i := 0) (by decide) (d := 24) (by decide), A.argW (i := 0) (by decide) (d := 36) (by decide), A.argW (i := 0) (by decide) (d := 52) (by decide), A.argW (i := 0) (by decide) (d := 40) (by decide), A.argW (i := 0) (by decide) (d := 32) (by decide), A.argW (i := 0) (by decide) (d := 44) (by decide)]
-  all_goals refine ⟨?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_⟩
   rotate_left 2
   all_goals try constructor
-  all_goals simp (disch := decide) only [rdS, rdN, hV, hT, hK, hst, hsv, mk_true, mk_false, and_ones,
-    BitVec.and_zero, ↓reduceIte, Bool.false_eq_true]
-  all_goals first
+  all_goals simp (disch := decide) only [↓rdS, ↓rdN, hV, hT, hK, hst, hsv]
+  all_goals
+    cases K <;> cases T <;>
+    simp only [mk_true, mk_false, and_ones, BitVec.and_zero, ↓reduceIte, Bool.false_eq_true, hX,
+      BitVec.ofNat_add_ofNat, h8, hN, show (40 : BitVec 32).toNat = 40 from rfl,
+      show (32769 : BitVec 32).toNat = 32769 from rfl] <;>
+    first
     | rfl
-    | (apply BitVec.eq_of_toNat_eq
-       try simp only [BitVec.toNat_add, BitVec.toNat_ofNat, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
-         show (40 : BitVec 32).toNat = 40 from rfl, show (32769 : BitVec 32).toNat = 32769 from rfl]
+    | (refine congrArg (BitVec.ofNat 32) ?_
        omega_using [])
 
 /-! ## The whole initialization -/

@@ -89,9 +89,21 @@ theorem ofBytes_wordBytes (w : BitVec 64) : ofBytes 64 (wordBytes w) = w := by
   apply BitVec.eq_of_toNat_eq
   simp only [ofBytes, wordBytes, List.range_succ, List.range_zero, List.nil_append, List.map_append,
     List.map_cons, List.map_nil, List.foldl_append, List.foldl_cons, List.foldl_nil,
-    BitVec.toNat_ofNat, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-  have := w.isLt
-  omega_using []
+    BitVec.toNat_ofNat, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
+    Nat.reduceMul, Nat.reduceSub, Nat.reducePow, Nat.mul_zero, Nat.zero_add]
+  have h := w.isLt
+  generalize w.toNat = x at h ⊢
+  -- one byte at a time: a single `omega` over the eight quotients takes seconds
+  have e7 : x / 72057594037927936 % 256 = x / 72057594037927936 := by omega
+  have e6 : 256 * (x / 72057594037927936) + x / 281474976710656 % 256 = x / 281474976710656 := by omega
+  have e5 : 256 * (x / 281474976710656) + x / 1099511627776 % 256 = x / 1099511627776 := by omega
+  have e4 : 256 * (x / 1099511627776) + x / 4294967296 % 256 = x / 4294967296 := by omega
+  have e3 : 256 * (x / 4294967296) + x / 16777216 % 256 = x / 16777216 := by omega
+  have e2 : 256 * (x / 16777216) + x / 65536 % 256 = x / 65536 := by omega
+  have e1 : 256 * (x / 65536) + x / 256 % 256 = x / 256 := by omega
+  have e0 : 256 * (x / 256) + x / 1 % 256 = x := by omega
+  rw [e7, e6, e5, e4, e3, e2, e1, e0]
+  exact Nat.mod_eq_of_lt h
 
 theorem rounds_of_keySchedule {m : Mem} {p : Addr} {R : Nat} {key : List Byte}
     (h : KeySchedule m p R key) : R = 18 ∨ R = 24 := by
