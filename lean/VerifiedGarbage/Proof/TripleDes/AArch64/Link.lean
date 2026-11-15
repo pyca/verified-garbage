@@ -126,8 +126,6 @@ theorem ofb_keeps_x30 : KeepsReg .x30 ofb := by keeps_x30
 
 theorem cfbEncrypt_keeps_x30 : KeepsReg .x30 cfbEncrypt := by keeps_x30
 
-theorem cfbDecrypt_keeps_x30 : KeepsReg .x30 cfbDecrypt := by keeps_x30
-
 theorem cfb8Encrypt_keeps_x30 : KeepsReg .x30 cfb8Encrypt := by keeps_x30
 
 theorem cfb8Decrypt_keeps_x30 : KeepsReg .x30 cfb8Decrypt := by keeps_x30

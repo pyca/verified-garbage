@@ -14,6 +14,10 @@ import VerifiedGarbage.Proof.TripleDes.AArch64.ModeCore
 import VerifiedGarbage.Proof.TripleDes.AArch64.BlockSum
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.TripleDes.AArch64.SboxTable
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+import VerifiedGarbage.Proof.Modes.AArch64.CfbDec.Whole
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
+meta import VerifiedGarbage.Proof.Modes.AArch64.CfbDec.Whole
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.Link
 meta import VerifiedGarbage.Proof.Modes.AArch64.Cfb8
 meta import VerifiedGarbage.Proof.TripleDes.FbScratch
@@ -57,6 +61,11 @@ pointer are public, and so is everything the code computes from them, which
 it keeps in registers; the IV is secret. `ofb_framed`, … run them with their
 working space on the stack, zeroed on return: 1008 bytes, the 125 words of
 the scratch buffer rounded up to the stack's alignment.
+
+`cfbDecrypt_wp`: the modes' batched CFB decryption
+(`Proof.Modes.AArch64.CfbDec.batched_wp`) over the batched core for
+encryption (`batchCoreSpec .encrypt`), with that core's precondition
+(`batchPre`) and working space: 1120 bytes, its 140 words.
 -/
 
 @[expose] public section
@@ -119,7 +128,7 @@ def cfbEncAArch64 : Contract isa where
   pub := fbPub
 
 def cfbDecAArch64 : Contract isa where
-  pre := fbPre blkLen
+  pre := batchPre blkLen
   post s s' := blocksOf s s'.mem = Spec.Cfb.decrypt (ciphOf s) (ivOf s) (blocksOf s s.mem) ∧
     Spec.TripleDes.bytesAt s'.mem (s.gpr .x1) 8 = Spec.Cbc.next (ivOf s) (blocksOf s s.mem)
   pub := fbPub
@@ -211,14 +220,31 @@ theorem cfbEncrypt_wp {s₀ : State} (hp : cfbEncAArch64.pre s₀) :
 
 theorem cfbDecrypt_wp {s₀ : State} (hp : cfbDecAArch64.pre s₀) :
     WP isa cfbDecrypt s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
-      s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cfbDecAArch64.post s₀ s' :=
-  WP.mono (fb_wp' .cfbDec hp) fun s' ⟨hg, hd, hv⟩ => by
-    obtain ⟨h1, h2⟩ := Modes.cfbDec_of 8 (ciphOf s₀) s₀.mem (s₀.gpr .x2) (ivOf s₀) (s₀.gpr .x3).toNat
-    refine ⟨hg, ?_, ?_⟩
-    · change Spec.TripleDes.cbcBlocksAt _ _ _ = Spec.Cfb.decrypt _ _ (Spec.TripleDes.cbcBlocksAt _ _ _)
-      rw [cbcBlocksAt_eq, cbcBlocksAt_eq, hd, h1]
-    · change _ = Spec.Cbc.next _ (Spec.TripleDes.cbcBlocksAt _ _ _)
-      rw [hv, h2, cbcBlocksAt_eq]
+      s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cfbDecAArch64.post s₀ s' := by
+  obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB⟩ := hp
+  have hwS : (⟨s₀.gpr .x4, 8 * 140⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  refine WP.mono (Proof.Modes.AArch64.CfbDec.batched_wp (batchCoreSpec .encrypt) (r := fbRegs)
+    ⟨by decide, by decide, by decide⟩ (by decide)
+    (B := s₀.gpr .x4) (P := s₀.gpr .x1) (D := s₀.gpr .x2) (n := (s₀.gpr .x3).toNat)
+    (k := Spec.TripleDes.scheduleAt s₀.mem (s₀.gpr .x0)) rfl rfl rfl rfl ⟨hwS, fitB⟩
+    (by rw [hwr]; simp) (by rw [hwr]; simp [Nat.mul_comm]) dVS dDS dVD fitD
+    ⟨s₀.gpr .x0, rfl, rfl, ⟨by rw [hrd]; simp, fitK, fun w hw => by
+      rw [hwr] at hw
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl | rfl
+      · exact dKV
+      · exact dKD
+      · exact dKS⟩, fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact dKS
+      · exact dKV⟩) fun s' ⟨hcs, hdata, hiv, _, _, _⟩ => ⟨hcs, ?_⟩
+  rw [batchCore_bw, Nat.mul_one] at hdata hiv
+  refine ⟨?_, ?_⟩
+  · change Spec.TripleDes.cbcBlocksAt _ _ _ = Spec.Cfb.decrypt _ _ (Spec.TripleDes.cbcBlocksAt _ _ _)
+    rw [cbcBlocksAt_eq, cbcBlocksAt_eq]; exact hdata
+  · change _ = Spec.Cbc.next _ (Spec.TripleDes.cbcBlocksAt _ _ _)
+    rw [cbcBlocksAt_eq]; exact hiv
 
 theorem ivOf_ne (s : State) : ivOf s ≠ [] := by simp [ivOf, Spec.TripleDes.bytesAt]
 
@@ -311,16 +337,16 @@ theorem cfbEncrypt_verified :
       Proof.TripleDes.cfbEncPost, cfbEncAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs] [fbSat] using fbSat)
 
 theorem cfbDecrypt_verified :
-    Verified AArch64.target cfbDecrypt (Proof.TripleDes.fbScratchContract AArch64.abi 125 Proof.TripleDes.cfbDecPost) :=
+    Verified AArch64.target cfbDecrypt (Proof.TripleDes.fbScratchContract AArch64.abi 140 Proof.TripleDes.cfbDecPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfbDecrypt_keeps_x30 (cfbDecrypt_wp hs)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbDecrypt_wp hs) (by lit_decide)
+        (by lit_decide)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
-        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-      (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
-        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])) (by
+    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) batchTaint_agree
+      (by taint_decide)) (by
     sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
-      Proof.TripleDes.cfbDecPost, cfbDecAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs] [fbSat] using fbSat)
+      Proof.TripleDes.cfbDecPost, cfbDecAArch64, batchPre, fbPub, AArch64.abi, AArch64.argRegs] [batchSat]
+      using batchSat)
 
 theorem cfb8Encrypt_verified :
     Verified AArch64.target cfb8Encrypt
@@ -358,7 +384,7 @@ theorem cfbEncFrameSat_pre : ∃ s, (Spec.TripleDes.cfbEncryptContract AArch64.a
   implies_sat [Spec.TripleDes.cfbEncryptContract, Spec.TripleDes.cfbSig, Spec.TripleDes.ofbSig, AArch64.abi,
     AArch64.argRegs] [fbFrameSat] using fbFrameSat
 
-theorem cfbDecFrameSat_pre : ∃ s, (Spec.TripleDes.cfbDecryptContract AArch64.abi 1008).pre s := by
+theorem cfbDecFrameSat_pre : ∃ s, (Spec.TripleDes.cfbDecryptContract AArch64.abi 1120).pre s := by
   implies_sat [Spec.TripleDes.cfbDecryptContract, Spec.TripleDes.cfbSig, Spec.TripleDes.ofbSig, AArch64.abi,
     AArch64.argRegs] [fbFrameSat] using fbFrameSat
 
@@ -390,11 +416,11 @@ theorem cfbEncrypt_framed :
 
 /-- CFB64 decryption with its working space on the stack. -/
 theorem cfbDecrypt_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 cfbDecrypt)
-      (Spec.TripleDes.cfbDecryptContract AArch64.abi 1008) :=
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 1120 .x4 140 cfbDecrypt)
+      (Spec.TripleDes.cfbDecryptContract AArch64.abi 1120) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.TripleDes.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 125) (post := Proof.TripleDes.cfbDecPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1008) cfbDecrypt_verified
+    (n := 140) (post := Proof.TripleDes.cfbDecPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 1120) cfbDecrypt_verified
     (by decide) (by decide) (by decide) (Proof.TripleDes.cfbDecPostOut_local _) cfbDecFrameSat_pre
 
 /-- CFB8 encryption with its working space on the stack. -/

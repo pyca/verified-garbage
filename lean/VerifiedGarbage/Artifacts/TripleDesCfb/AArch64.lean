@@ -19,8 +19,8 @@ def artifacts : List Artifact := [
     stack := 1008
     verified := Proof.TripleDes.AArch64.cfbEncrypt_framed },
   Spec.TripleDes.cfbDecryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 Impl.TripleDes.AArch64.cfbDecrypt
-    stack := 1008
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1120 .x4 140 Impl.TripleDes.AArch64.cfbDecrypt
+    stack := 1120
     verified := Proof.TripleDes.AArch64.cfbDecrypt_framed },
   Spec.TripleDes.cfbEncryptFinalApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 Impl.TripleDes.AArch64.cfbEncryptFinal

@@ -1,10 +1,12 @@
 module
 
 public import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Fb
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
+meta import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.SboxLit
 meta import VerifiedGarbage.Impl.TripleDes.AArch64.Fb
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.Taint
