@@ -48,6 +48,7 @@ theorem candidateFromFrame_ok {s : State} {B F : Addr} {Z w pLen qLen : Nat}
     (sx : Src s B Z (off (W 5) shaped) xb) (sq : Src s B Z (off (W 5) q) qb)
     (hx : xb.length = pLen) (hq : qb.length = qLen) (hqposlen : 1 ≤ qLen)
     (hqpos : 0 < Spec.Rsa.os2ip qb) (hqfit : 2 * Spec.Rsa.os2ip qb < 2 ^ (64 * w))
+    (hwide : reduceWords ≤ w) (hnarrow : qLen ≤ 32)
     (hpw : ∀ i < pLen, InRegions s.wr (off (off (W 5) p) i) 1)
     (hew : ∀ i < pLen, InRegions s.wr (off (off (W 5) exponent) i) 1)
     (hpo : ∀ i < pLen, Z ≤ ofs B (off (off (W 5) p) i))
@@ -72,7 +73,7 @@ theorem candidateFromFrame_ok {s : State} {B F : Addr} {Z w pLen qLen : Nat}
   have sxu := sx.congrK (InScr.of_frm frame bound) hk
   have squ := sq.congrK (InScr.of_frm frame bound) hk
   refine WP.mono (candidateBuild_ok hu hxp (by rw [hx]; exact hxl) hqp (by rw [hq]; exact hqlen)
-    hpp hep hm sxu squ (hx.trans hpLen) (by omega) (by omega) hqpos hqfit
+    hpp hep hm sxu squ (hx.trans hpLen) (by omega) (by omega) hqpos hqfit hwide (hq ▸ hnarrow)
     (fun i hi => by rw [hk.wr]; exact hpw i (hpLen ▸ hi))
     (fun i hi => by rw [hk.wr]; exact hew i (hpLen ▸ hi))
     (fun i hi => hpo i (hpLen ▸ hi)) (fun i hi => heo i (hpLen ▸ hi))
@@ -111,6 +112,7 @@ theorem reduceFromFrame_ok {s : State} {B F S : Addr} {Z w pLen qLen : Nat}
     (sx : Src s B Z (VG.Proof.Bignum.off (W 5) shaped) xb) (sq : Src s B Z (VG.Proof.Bignum.off (W 5) q) qb)
     (hx : xb.length = pLen) (hq : qb.length = qLen) (hqposlen : 1 ≤ qLen)
     (hqpos : 0 < Spec.Rsa.os2ip qb) (hqfit : 2 * Spec.Rsa.os2ip qb < 2 ^ (64 * w))
+    (hwide : Impl.Dsa.AArch64.Generation.reduceWords ≤ w) (hnarrow : qLen ≤ 32)
     (hpw : ∀ i < pLen, InRegions s.wr (VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) p) i) 1)
     (hew : ∀ i < pLen, InRegions s.wr (VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) exponent) i) 1)
     (hpo : ∀ i < pLen, Z ≤ ofs B (VG.Proof.Bignum.off (VG.Proof.Bignum.off (W 5) p) i))
@@ -140,7 +142,7 @@ theorem reduceFromFrame_ok {s : State} {B F S : Addr} {Z w pLen qLen : Nat}
     (fun k hk => by rw [kv.rd, kv.wr, ku.rd, ku.wr]; exact L.ld (d := 8 * k) (n := 8) (by unfold VG.Impl.RsaOaep.AArch64.frameBytes; omega_using [hk]))
     (fun k hk => (frame_word_of_workspace fv hb (hframe k hk)).trans (by rw [hm]; exact R.fr k hk))
     hsep (sxu.congrK (InScr.of_frm fv hb) kv) (squ.congrK (InScr.of_frm fv hb) kv)
-    hx hq hqposlen hqpos hqfit
+    hx hq hqposlen hqpos hqfit hwide hnarrow
     (fun i hi => by rw [kv.wr, ku.wr]; exact hpw i hi)
     (fun i hi => by rw [kv.wr, ku.wr]; exact hew i hi) hpo heo hpe)
     fun t ⟨tp, te, ht, hp, ft, kt⟩ => ?_
@@ -208,6 +210,8 @@ theorem pConstruct_ok {G : Impl.Pbkdf2.Md.AArch64.Hash} (hG : Calls.StreamOK G.s
   refine WP.mono (reduceFromFrame_ok Lu Ru (hs.scratch.congr wru) p.base p.workspaceRoom
     hl.2.2.2.1 (by rcases p.width with h | h | h <;> rw [h] <;> decide) hl.2.2.1 hql p.frameHeaders p.frameOutside sx sq hxb p.qLength
     (by rcases p.hash.width with hh | hh <;> omega_using [hh]) p.qPositive p.qFits
+    (by rcases p.width with hh | hh | hh <;> rw [hh] <;> decide)
+    (by rcases p.hash.width with hh | hh <;> omega_using [hh])
     (fun i hi => by rw [wru]; exact hs.pWrite i hi)
     (fun i hi => by rw [wru]; exact hs.exponentWrite i hi)
     p.pOutside p.exponentOutside p.pExponent) fun t ⟨tp, te, ht, hp, ft, kt⟩ => ?_

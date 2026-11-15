@@ -127,6 +127,7 @@ theorem candidateBuild_ok {s : State} {B xp qp pp ep : Addr} {Z w : Nat} {xb qb 
     (sx : Src s B Z xp xb) (sq : Src s B Z qp qb) (hwidth : xb.length = 8 * w)
     (hqposlen : 1 ≤ qb.length) (hqf : qb.length ≤ 8 * w)
     (hqpos : 0 < Spec.Rsa.os2ip qb) (hqfit : 2 * Spec.Rsa.os2ip qb < 2 ^ (64 * w))
+    (hwide : Impl.Dsa.AArch64.Generation.reduceWords ≤ w) (hnarrow : qb.length ≤ 32)
     (hpw : ∀ i < 8 * w, InRegions s.wr (off pp i) 1)
     (hew : ∀ i < 8 * w, InRegions s.wr (off ep i) 1)
     (hpo : ∀ i < 8 * w, Z ≤ ofs B (off pp i))
@@ -140,7 +141,7 @@ theorem candidateBuild_ok {s : State} {B xp qp pp ep : Addr} {Z w : Nat} {xb qb 
       Frame [⟨B, Z⟩, ⟨pp, 8 * w⟩, ⟨ep, 8 * w⟩] s.mem t.mem ∧ Keep mmRegs s t := by
   unfold Impl.Dsa.AArch64.Generation.candidateBuild
   refine WP.seq (WP.mono (candidateArithmetic_ok h hxp hxl hqp hql sx sq
-    (by rw [hwidth]; have := h.w1; omega_using [this]) (by omega_using [hwidth]) hqposlen hqf hqpos hqfit)
+    (by rw [hwidth]; have := h.w1; omega_using [this]) (by omega_using [hwidth]) hqposlen hqf hqpos hqfit hwide hnarrow)
     fun u ⟨hu, up, ue, fu, ku⟩ => ?_)
   have uh : ∀ d, d + 8 ≤ 256 → word u.mem B d = word s.mem B d := by
     intro d hd

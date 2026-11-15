@@ -3,6 +3,7 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.Reduce
 public import VerifiedGarbage.Proof.Rsa.AArch64.KeyWs
 
 import VerifiedGarbage.Proof.Rsa.AArch64.Div
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.NarrowDivision
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
 import VerifiedGarbage.Proof.Rsa.AArch64.KeyLoops
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -44,9 +45,11 @@ theorem copyArray_ws {s : State} {B : Addr} {Z w o a : Nat} (h : VG.Proof.Rsa.AA
   exact h.congr' (Frm.of_outside out (List.mem_singleton_self _))
     (by intro r hr; rcases List.mem_singleton.mp hr with rfl; exact KMut.ofSlot _ _ _) hk (by decide)
 
-theorem divideArray_ws {s : State} {B : Addr} {Z w : Nat} (h : VG.Proof.Rsa.AArch64.Ws s B Z w) :
-    WP isa (divmod 0 1 2 3) s fun t => VG.Proof.Rsa.AArch64.Ws t B Z w := by
-  refine WP.mono (divmod_ok h (by decide) (by decide) (by decide) (by decide)
+theorem divideArray_ws {s : State} {B : Addr} {Z w : Nat} (h : VG.Proof.Rsa.AArch64.Ws s B Z w)
+    (hwide : Impl.Dsa.AArch64.Generation.reduceWords ≤ w) :
+    WP isa (Impl.Dsa.AArch64.Generation.divNarrow Impl.Dsa.AArch64.Generation.reduceWords 0 1 2 3) s
+      fun t => VG.Proof.Rsa.AArch64.Ws t B Z w := by
+  refine WP.mono (divNarrow_ok h hwide (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)) fun t ⟨_, hf, hk, _⟩ => ?_
   exact h.congr' hf (by
     intro r hr

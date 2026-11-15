@@ -29,7 +29,12 @@ open VG.Impl.Rsa.AArch64 VG.Impl.Rsa.AArch64.Keys VG.Impl.RsaKeyGen.AArch64.Cand
 open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.Rsa.AArch64 VG.Proof.RsaKeyGen.AArch64
 open VG.Impl.Dsa.AArch64.Generation
 
-abbrev ArithmeticPublic := VG.Proof.Bignum.AArch64.Ws
+/-- The working space and its word count, at least the narrow division's. -/
+structure ArithmeticPublic where
+  B : Addr
+  Z : Nat
+  w : Nat
+  wide : reduceWords ≤ w
 
 def ArithmeticGood (p : ArithmeticPublic) (s : State) : Prop := VG.Proof.Rsa.AArch64.Ws s p.B p.Z p.w
 
@@ -51,18 +56,16 @@ theorem zeroReduction_ct : RelCT isa (Two ArithmeticGood) (zeroA 1) (fun _ _ => 
   change RelCT isa (Two ArithmeticGood) (.seq (.block (ws ++ (base 1 .x8 ++ [movi .x7 0]))) zeroAcc) _
   exact ws_ct0 (fun p : ArithmeticPublic => p.B) (fun p : ArithmeticPublic => p.Z) (fun p : ArithmeticPublic => p.w) (fun _ _ h => h) (by taint_decide)
 
-theorem divideReduction_ct : RelCT isa (Two ArithmeticGood) (divmod 0 1 2 3) (Two ArithmeticGood) := by
-  have he : divmod 0 1 2 3 = .seq (zeroA 1) (.seq (.block [.lsl .x .x6 .x12 6])
-      (.loop (divStep 0 1 2 3) (.nonzero .x .x6))) := rfl
-  rw [he]
+theorem divideReduction_ct :
+    RelCT isa (Two ArithmeticGood) (divNarrow reduceWords 0 1 2 3) (Two ArithmeticGood) := by
+  unfold divNarrow
   refine pin_seq [.x0, .x12, .x11] (fun p : ArithmeticPublic => wsVal p.B p.w)
     zeroReduction_ct ?_ (by taint_decide) ?_
   · intro p s h
     exact WP.mono (zeroA_ok h (by decide : 1 < 16)) fun _ ⟨_, _, h12, h11, _, hk⟩ =>
       wsVal_of ((hk.gpr .x0 (by decide)).trans h.x0) h12 h11
   · intro p s h
-    rw [← he]
-    exact divideArray_ws h
+    exact divideArray_ws h p.wide
 
 theorem subtractReduction_ct : RelCT isa (Two ArithmeticGood) (seqs (subA 5 4 1)) (Two ArithmeticGood) := by
   rw [subA_eq']
