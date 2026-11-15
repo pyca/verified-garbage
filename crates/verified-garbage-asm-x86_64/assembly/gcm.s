@@ -11224,20 +11224,20 @@ vg_aes_gcm_open_prepared_vaes_vpclmul:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-8]
-	mov QWORD PTR [rsp], r11
+	nop4	# was: mov QWORD PTR [rsp], r11
 	lea rsp, [rsp-2344]
-	vmovdqu YMMWORD PTR [rsp+808], ymm0
-	vmovdqu YMMWORD PTR [rsp+296], ymm0
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	mov QWORD PTR [rsp], r11
+	nop9	# was: vmovdqu YMMWORD PTR [rsp+808], ymm0
+	nop9	# was: vmovdqu YMMWORD PTR [rsp+296], ymm0
+	nop6	# was: vmovdqu YMMWORD PTR [rsp+24], ymm0
+	nop4	# was: mov QWORD PTR [rsp], r11
 	lea rsp, [rsp-8]
 	lea rsp, [rsp-280]
-	vmovdqu YMMWORD PTR [rsp+168], ymm0
-	vmovdqu YMMWORD PTR [rsp+136], ymm0
-	vmovdqu YMMWORD PTR [rsp+104], ymm0
-	movdqu XMMWORD PTR [rsp+88], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
-	mov QWORD PTR [rsp], r11
+	nop9	# was: vmovdqu YMMWORD PTR [rsp+168], ymm0
+	nop9	# was: vmovdqu YMMWORD PTR [rsp+136], ymm0
+	nop6	# was: vmovdqu YMMWORD PTR [rsp+104], ymm0
+	nop6	# was: movdqu XMMWORD PTR [rsp+88], xmm0
+	nop6	# was: movdqu XMMWORD PTR [rsp+8], xmm0
+	nop4	# was: mov QWORD PTR [rsp], r11
 	lea rsp, [rsp+280]
 	lea rsp, [rsp+8]
 	lea rsp, [rsp+2344]
