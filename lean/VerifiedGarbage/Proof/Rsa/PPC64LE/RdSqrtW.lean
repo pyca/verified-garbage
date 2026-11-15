@@ -2071,8 +2071,6 @@ theorem clzStages_ok {z0 : Nat} : ∀ (k : Nat) (s : State) (a : Nat), k < 6 →
         fun t ⟨⟨a', t1, t2, t3, t4, t5, t6⟩, tm, tk⟩ =>
           ⟨⟨a', t1, t2, by omega_using [hb1, t3], by rw [Nat.pow_succ] at hb2 ⊢; omega_using [hb2, t4], t5, t6⟩, by rw [tm, um],
             (uk.trans tk).mono (by decide)⟩
-termination_by k => k
-decreasing_by rename_i h _; rw [h]; exact Nat.lt_succ_self _
 
 end Clz
 
