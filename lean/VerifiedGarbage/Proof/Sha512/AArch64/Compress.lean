@@ -726,6 +726,10 @@ structure Common (s₀ : State) (i : Nat) (s : State) : Prop where
 structure LInv (s₀ : State) (i : Nat) (s : State) : Prop extends Common s₀ i s where
   x1 : s.gpr .x1 = blkAddr s₀ i
   x2 : s.gpr .x2 = BitVec.ofNat 64 (nb s₀ - i)
+
+/-- This code's loop invariant: `KT` also holds the address of the table of
+constants. -/
+structure KInv (s₀ : State) (i : Nat) (s : State) : Prop extends LInv s₀ i s where
   kt : s.gpr KT = s.syms kTab
 
 theorem preserved_sub : ∀ r ∈ preserved, r ∈ pubRegs := by decide
@@ -863,10 +867,10 @@ theorem blk_word {s₀ : State} (i t : Nat) (ht : t < 16) :
 theorem win_sub (p : Addr) : Region.Sub (winRegion p) ⟨p, 640⟩ := Region.sub_prefix (by bdd_omega)
 
 theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s : State}
-    (hL : LInv s₀ i s) :
+    (hL : KInv s₀ i s) :
     WP isa body s fun s' =>
       (eval (.nonzero .x .x2) s' = some false ∧ Common s₀ (nb s₀) s') ∨
-      (eval (.nonzero .x .x2) s' = some true ∧ i + 1 < nb s₀ ∧ LInv s₀ (i + 1) s') := by
+      (eval (.nonzero .x .x2) s' = some true ∧ i + 1 < nb s₀ ∧ KInv s₀ (i + 1) s') := by
   refine WP.seq (VG.AArch64.WP.mono_syms (load_ok hp hL.x0 hL.rd hL.wr)
     fun s₁ ⟨hv₁, hpub₁, hrd₁, hwr₁, hm₁⟩ hsy₁ => ?_)
   have hwin : ∀ r' ∈ [winRegion (scr s₀)], (blR s₀).Disjoint r' := by
@@ -946,7 +950,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
   · have hpos : 0 < nb s₀ := by
       simp only [beq_eq_false_iff_ne, ne_eq] at h
       exact Nat.pos_of_ne_zero fun h' => h (BitVec.eq_of_toNat_eq (by simpa using h'))
-    let Inv : Nat → State → Prop := fun m s => ∃ i, m = nb s₀ - i ∧ i < nb s₀ ∧ LInv s₀ i s
+    let Inv : Nat → State → Prop := fun m s => ∃ i, m = nb s₀ - i ∧ i < nb s₀ ∧ KInv s₀ i s
     have hstep : ∀ m s, Inv m s → WP isa body s (fun s' =>
         (eval (.nonzero .x .x2) s' = some false ∧ Common s₀ (nb s₀) s') ∨
         (eval (.nonzero .x .x2) s' = some true ∧ ∃ m' < m, Inv m' s')) := by
@@ -961,7 +965,7 @@ theorem correct {s₀ : State} (hp : Pre s₀) :
     refine ⟨_, exec_adrSym, WP.block_nil ?_⟩
     have hg : ∀ r, r ≠ KT → (s₀.write .x KT (s₀.syms kTab)).gpr r = s₀.gpr r := fun r hr =>
       RegUpd.gpr_write_of_ne s₀ .x _ hr
-    have hL₀ : LInv s₀ 0 (s₀.write .x KT (s₀.syms kTab)) :=
+    have hL₀ : KInv s₀ 0 (s₀.write .x KT (s₀.syms kTab)) :=
       { x0 := hg _ (by decide)
         x3 := hg _ (by decide)
         kept := fun r hr => hg r (by rintro rfl; revert hr; decide)

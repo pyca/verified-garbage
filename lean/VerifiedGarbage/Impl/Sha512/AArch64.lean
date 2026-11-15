@@ -71,6 +71,12 @@ def kTab : String := "VG_SHA512_K"
 /-- The offset of `W[i mod 16]` in the scratch buffer. -/
 def slot (i : Nat) : Nat := 8 * (i % 16)
 
+/-- `mov d, #v` for a 64-bit constant: a `movz` and three `movk`s (the
+streaming code's, `Stream.lean`). -/
+def movImm64 (d : Reg) (v : BitVec 64) : List Instr :=
+  [.movz .x d (v.extractLsb' 0 16) 0, .movk .x d (v.extractLsb' 16 16) 1,
+   .movk .x d (v.extractLsb' 32 16) 2, .movk .x d (v.extractLsb' 48 16) 3]
+
 /-- Leave `Wₜ` in `wreg t` and in its slot. For `t ≥ 16`, `wreg t` holds
 `Wₜ₋₂`; the sum is `((Wₜ₋₁₆ + σ₁(Wₜ₋₂)) + σ₀(Wₜ₋₁₅)) + Wₜ₋₇`. -/
 def schedule (t : Nat) : List Instr :=
