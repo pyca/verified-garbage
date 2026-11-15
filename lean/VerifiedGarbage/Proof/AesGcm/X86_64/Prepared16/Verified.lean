@@ -80,12 +80,10 @@ theorem sealPrepared16_verified (v : GcmImpl) (B : BlkFn CtxMode.prepared16) :
     Verified X86_64.target («seal» (v.withBlk B)) (Proof.AesGcm.sealPrepared16ScratchContract X86_64.abi 24) :=
   sealPrepared16Code_verified (sealM_correct v B) (sealM_ct v B)
 
-theorem openPrepared16Code_verified {c : Prog isa}
-    (hc : ∀ s, (Proof.AesGcm.openX86_64M CtxMode.prepared16).pre s →
-      ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s')
-    (hct : ConstantTime isa (Proof.AesGcm.openX86_64M CtxMode.prepared16).pre Proof.AesGcm.openX86_64.pub c) :
-    Verified X86_64.target c (Proof.AesGcm.openPrepared16ScratchContract X86_64.abi 24) :=
-  Verified.of_correct hc hct
+/-- `openX86_64M` for sixteen prepared powers, from the scratch contract. -/
+theorem openPrepared16_implies :
+    (Proof.AesGcm.openX86_64M CtxMode.prepared16).Implies
+      (Proof.AesGcm.openPrepared16ScratchContract X86_64.abi 24) :=
     { pre := by sig_implies_pre [Proof.AesGcm.openPrepared16ScratchContract, Proof.AesGcm.openPreparedScratchSig, Proof.AesGcm.openPrecomputedScratchSig,
           Proof.Gcm.openPrepared16Pre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64M,
           Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay,
@@ -131,6 +129,13 @@ theorem openPrepared16Code_verified {c : Prog isa}
           | decide
           | exact Region.disjoint_of_sep (by decide)
           | exact preparedPowers16Repr_of_zero fun _ _ => rfl⟩ }
+
+theorem openPrepared16Code_verified {c : Prog isa}
+    (hc : ∀ s, (Proof.AesGcm.openX86_64M CtxMode.prepared16).pre s →
+      ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s')
+    (hct : ConstantTime isa (Proof.AesGcm.openX86_64M CtxMode.prepared16).pre Proof.AesGcm.openX86_64.pub c) :
+    Verified X86_64.target c (Proof.AesGcm.openPrepared16ScratchContract X86_64.abi 24) :=
+  Verified.of_correct hc hct openPrepared16_implies
 
 theorem streamEncryptPrepared16_verified (v : GcmImpl) (B : BlkFn CtxMode.prepared16) :
     Verified X86_64.target (streamEncrypt (v.withBlk B))
@@ -252,6 +257,32 @@ theorem openPrepared16Code_framed {c : Prog isa}
     (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2608) hv
     (by decide) (by decide) (by decide) hsp hxd
     (Proof.AesGcm.openPrepared16Pre_local _) (Proof.AesGcm.openPrecomputedPost_local _) openFrameSatPrepared16_pre
+    (hleak := Proof.AesGcm.openPrecomputedLeak_local _)
+
+theorem openFrameSatPrepared16A_pre : ∃ s, (Proof.AesGcm.openPrepared16RoundsContract X86_64.abi 2640).pre s := by
+  refine ⟨openFrameSatP, ?_⟩
+  sig_pre [Proof.AesGcm.openPrepared16RoundsContract, Proof.Gcm.openPrecomputedSig, Proof.Gcm.openPrecomputedSig, Proof.Gcm.openPrepared16Pre,
+    Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, X86_64.abi, X86_64.argRegs, openFrameSatP, openFrameSat, openSat]
+  sig_and_intros
+  all_goals first
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact preparedPowers16Repr_of_zero fun _ _ => rfl
+
+/-- `openPrepared16Code_framed`, in a frame of 2616 bytes, whose `work` is
+16-byte aligned. -/
+theorem openPrepared16Code_framedA {c : Prog isa}
+    (hv : Verified X86_64.target c (Proof.AesGcm.openPrepared16ScratchContract X86_64.abi 24))
+    (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) (hxd : c.x86_64Depth ≤ 24) :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 2616 4 c)
+      (Proof.AesGcm.openPrepared16RoundsContract X86_64.abi 2640) :=
+  X86_64.Verified.stackArgScratch (sig := Proof.Gcm.openPrecomputedSig) (nm := "work") (e := .u64)
+    (n := 320) (pre := Proof.Gcm.openPrepared16Pre X86_64.abi.ptrBits)
+    (post := Proof.AesGcm.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 24)
+    (leak := some (Spec.Gcm.openLeak X86_64.abi.ptrBits)) (bytes := 2616) hv
+    (by decide) (by decide) (by decide) hsp hxd
+    (Proof.AesGcm.openPrepared16Pre_local _) (Proof.AesGcm.openPrecomputedPost_local _) openFrameSatPrepared16A_pre
     (hleak := Proof.AesGcm.openPrecomputedLeak_local _)
 
 theorem streamEncryptFrameSatPrepared16_pre : ∃ s, (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pre s := by

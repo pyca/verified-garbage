@@ -1330,6 +1330,25 @@ theorem openSelPrepared16_framed (hF : Short.ShortFacts) (hs : v.short = false) 
     (FastOpen.openFinW_ct (FastOpen.openSel_rel hF v B Short.finKsA_ksOk Short.finKsA_rel
       (Short.longRel_openLong v B)))) (Short.openFinP_spSafe v B) (Short.openFinP_xdepth v B)
 
+/-- `vg_aes_gcm_open_prepared16`'s code, for implementations without the
+short path, against its contract inside the frame. -/
+theorem openSelPrepared16_verified (hF : Short.ShortFacts) (hs : v.short = false) :
+    Verified X86_64.target (v.openCodeP (v.withBlk B)) (Proof.AesGcm.openPrepared16ScratchContract X86_64.abi 24) := by
+  unfold GcmImpl.openCodeP; simp only [hs, Bool.false_eq_true, ↓reduceIte]
+  exact openPrepared16Code_verified (Short.openFinP_correct v B hF)
+    (FastOpen.openFinW_ct (FastOpen.openSel_rel hF v B Short.finKsA_ksOk Short.finKsA_rel
+      (Short.longRel_openLong v B)))
+
+/-- `openSelPrepared16_framed`, in a frame of 2616 bytes, whose `work` is
+16-byte aligned. -/
+theorem openSelPrepared16_framedA (hF : Short.ShortFacts) (hs : v.short = false) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratch 2616 4 (v.openCodeP (v.withBlk B)))
+      (Proof.AesGcm.openPrepared16RoundsContract X86_64.abi 2640) := by
+  have h := openSelPrepared16_verified v B hF hs
+  unfold GcmImpl.openCodeP at h ⊢; simp only [hs, Bool.false_eq_true, ↓reduceIte] at h ⊢
+  exact openPrepared16Code_framedA h (Short.openFinP_spSafe v B) (Short.openFinP_xdepth v B)
+
 end VG.Proof.AesGcm.X86_64
 
 end
@@ -2863,10 +2882,23 @@ theorem openCodeF16_mx (v : GcmVariant) :
   simp only [openCodeF16, Impl.Gcm.X86_64.Flag.onFlag, Code.iteCold, Code.allInstrs, h₁, h₂, Bool.and_true]
   rfl
 
-/-- The registered `vg_aes_gcm_open_prepared` of a variant whose loops read
-16 powers, for `open_to` to call on a context whose count is at least 16. -/
+/-- Whether `vg_aes_gcm_open_prepared` of a variant whose loops read 16
+powers is followed by the clearing of its stack (`openF16Reg`): that of the
+variant on VAES and VPCLMULQDQ on 256-bit registers, as for `seal`
+(`GcmVariant.sealF16Scrubbed`). -/
+def GcmVariant.openF16Scrubbed (v : GcmVariant) : Bool :=
+  v.stitch.any fun p => match p.name with
+    | .vaes => true
+    | _ => false
+
+/-- The `vg_aes_gcm_open_prepared` of a variant whose loops read 16 powers,
+for `open_to` to call on a context whose count is at least 16; where that
+function is followed by the clearing of its stack
+(`GcmVariant.openF16Scrubbed`), as an internal function of its own,
+`vg_aes_gcm_open_prepared<suffix>_core`, with the code as it was. -/
 def openFnF16 (v : GcmVariant) (r : R16 v) : OpenTo.OpenFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
-  .ofFlagged ⟨Spec.Gcm.openPreparedApi.name ++ v.impl.suffix, openCodeF16 v⟩ (openCodeF16_verified v r)
+  .ofFlagged ⟨Spec.Gcm.openPreparedApi.name ++ v.impl.suffix ++ (if v.openF16Scrubbed then "_core" else ""),
+      openCodeF16 v⟩ (openCodeF16_verified v r)
     (openCodeF16_spAll v) (openCodeF16_xdepth v) (openCodeF16_mx v)
 
 /-- `vg_aes_gcm_open_to_prepared`'s code on a context whose count is at least

@@ -336,6 +336,10 @@ pub(crate) mod vg_aes_gcm_encrypt_blocks_vaes_vpclmul;
 pub(crate) mod vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_open_prepared_vaes_vpclmul_core.rs"]
+pub(crate) mod vg_aes_gcm_open_prepared_vaes_vpclmul_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_open_split.rs"]
 pub(crate) mod vg_aes_gcm_open_split;
 

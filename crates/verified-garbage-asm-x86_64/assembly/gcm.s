@@ -10740,14 +10740,14 @@ vg_aes_gcm_open_prepared_vaes_vpclmul:
 	mov rax, QWORD PTR [rdi+1024]
 	cmp rax, 16
 	jae 20f
-	lea rsp, [rsp-2608]
-	mov rax, QWORD PTR [rsp+2616]
-	mov QWORD PTR [rsp+8], rax
+	lea rsp, [rsp-2616]
 	mov rax, QWORD PTR [rsp+2624]
-	mov QWORD PTR [rsp+16], rax
+	mov QWORD PTR [rsp+8], rax
 	mov rax, QWORD PTR [rsp+2632]
-	mov QWORD PTR [rsp+24], rax
+	mov QWORD PTR [rsp+16], rax
 	mov rax, QWORD PTR [rsp+2640]
+	mov QWORD PTR [rsp+24], rax
+	mov rax, QWORD PTR [rsp+2648]
 	mov QWORD PTR [rsp+32], rax
 	mov rax, rsp
 	add rax, 48
@@ -11204,18 +11204,64 @@ vg_aes_gcm_open_prepared_vaes_vpclmul:
 	mov r13, QWORD PTR [r15+152]
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
-	lea rsp, [rsp+2608]
+	lea rsp, [rsp+2616]
 21:
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-2344]
+	vmovdqu YMMWORD PTR [rsp+840], ymm0
+	vmovdqu YMMWORD PTR [rsp+808], ymm0
+	vmovdqu YMMWORD PTR [rsp+296], ymm0
+	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-280]
+	vmovdqu YMMWORD PTR [rsp+168], ymm0
+	vmovdqu YMMWORD PTR [rsp+136], ymm0
+	vmovdqu YMMWORD PTR [rsp+104], ymm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+280]
+	lea rsp, [rsp+8]
+	lea rsp, [rsp+2344]
+	lea rsp, [rsp+8]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 20:
-	lea rsp, [rsp-2608]
-	mov rax, QWORD PTR [rsp+2616]
-	mov QWORD PTR [rsp+8], rax
+	lea rsp, [rsp-2616]
 	mov rax, QWORD PTR [rsp+2624]
-	mov QWORD PTR [rsp+16], rax
+	mov QWORD PTR [rsp+8], rax
 	mov rax, QWORD PTR [rsp+2632]
-	mov QWORD PTR [rsp+24], rax
+	mov QWORD PTR [rsp+16], rax
 	mov rax, QWORD PTR [rsp+2640]
+	mov QWORD PTR [rsp+24], rax
+	mov rax, QWORD PTR [rsp+2648]
 	mov QWORD PTR [rsp+32], rax
 	mov rax, rsp
 	add rax, 48
@@ -12207,7 +12253,7 @@ vg_aes_gcm_open_prepared_vaes_vpclmul:
 	mov r13, QWORD PTR [r15+152]
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
-	lea rsp, [rsp+2608]
+	lea rsp, [rsp+2616]
 	jmp 21b
 	.p2align 6
 
@@ -12400,7 +12446,7 @@ vg_aes_gcm_open_to_prepared_vaes_vpclmul:
 	mov QWORD PTR [rsp+16], rax
 	mov rax, QWORD PTR [rsp+136]
 	mov QWORD PTR [rsp+24], rax
-	call {vg_aes_gcm_open_prepared_vaes_vpclmul}
+	call {vg_aes_gcm_open_prepared_vaes_vpclmul_core}
 	test eax, eax
 	je 225f
 	jmp 226f
