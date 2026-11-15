@@ -567,13 +567,13 @@ def finSat : State where
   of := none
   mem _ := 0
   rd := [⟨0x1000, 256⟩]
-  wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩, ⟨0x6000, 2560⟩]
+  wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩, ⟨0x6000, 768⟩]
 
 theorem streamFinish_verified (v : GcmImpl) :
     Verified X86_64.target (streamFinish v.callees)
-      (Proof.Sm4Gcm.streamFinishScratchContract X86_64.abi stkN) :=
+      (Proof.Sm4Gcm.streamFinishScratchContract96 X86_64.abi stkN) :=
   Verified.of_correct (streamFinish_correct v) (streamFinish_ct v) (by
-    sig_implies [Proof.Sm4Gcm.streamFinishScratchContract, Proof.Sm4Gcm.streamFinishScratchSig,
+    sig_implies [Proof.Sm4Gcm.streamFinishScratchContract96, Proof.Sm4Gcm.streamFinishScratchSig96,
       Spec.Sm4.Gcm.streamFinishPost, Proof.Sm4Gcm.streamFinishX86_64, Proof.Sm4Gcm.finPre,
       X86_64.abi, Proof.Sm4Gcm.arg, Proof.Sm4Gcm.args, Proof.Sm4Gcm.stk, Proof.Sm4Gcm.spOk, Proof.Sm4Gcm.ret,
       stkN, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
@@ -589,13 +589,13 @@ def verSat : State where
   of := none
   mem _ := 0
   rd := [⟨0x1000, 256⟩, ⟨0x5000, 0⟩, ⟨0x8008, 8⟩]
-  wr := [⟨0x3000, 80⟩, ⟨0, 2560⟩]
+  wr := [⟨0x3000, 80⟩, ⟨0, 768⟩]
 
 theorem streamVerify_verified (v : GcmImpl) :
     Verified X86_64.target (streamVerify v.callees)
-      (Proof.Sm4Gcm.streamVerifyScratchContract X86_64.abi stkN) :=
+      (Proof.Sm4Gcm.streamVerifyScratchContract96 X86_64.abi stkN) :=
   Verified.of_correct (streamVerify_correct v) (streamVerify_ct v) (by
-    sig_implies [Proof.Sm4Gcm.streamVerifyScratchContract, Proof.Sm4Gcm.streamVerifyScratchSig,
+    sig_implies [Proof.Sm4Gcm.streamVerifyScratchContract96, Proof.Sm4Gcm.streamVerifyScratchSig96,
       Spec.Sm4.Gcm.streamVerifyPost, Proof.Sm4Gcm.streamVerifyX86_64, Proof.Sm4Gcm.verifyPre,
       X86_64.abi, Proof.Sm4Gcm.arg, Proof.Sm4Gcm.args, Proof.Sm4Gcm.stk, Proof.Sm4Gcm.spOk, Proof.Sm4Gcm.ret,
       stkN, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
@@ -766,34 +766,34 @@ theorem streamDecrypt_framed :
 the working space. -/
 def finFrameSat : State := { finSat with wr := [⟨0x3000, 80⟩, ⟨0x5000, 16⟩] }
 
-theorem finFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamFinishContract X86_64.abi 5792).pre s := by
+theorem finFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamFinishContract X86_64.abi 4000).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamFinishContract, Spec.Sm4.Gcm.streamFinishSig,
     Spec.Sm4.Gcm.streamFinishPost, X86_64.abi, X86_64.argRegs] [finFrameSat, finSat] using finFrameSat
 
 theorem streamFinish_framed :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackScratch 2568 .r9 (streamFinish v.callees))
-      (Spec.Sm4.Gcm.streamFinishContract X86_64.abi 5792) :=
+      (Impl.StackScratch.X86_64.withStackScratch 776 .r9 (streamFinish v.callees))
+      (Spec.Sm4.Gcm.streamFinishContract X86_64.abi 4000) :=
   X86_64.Verified.stackScratch (sig := Spec.Sm4.Gcm.streamFinishSig) (nm := "work") (e := .u64)
-    (n := 320) (post := Spec.Sm4.Gcm.streamFinishPost X86_64.abi.ptrBits) (wa := true)
-    (stack := stkN) (bytes := 2568) (streamFinish_verified v) (by decide) (by decide) (by decide)
+    (n := 96) (post := Spec.Sm4.Gcm.streamFinishPost X86_64.abi.ptrBits) (wa := true)
+    (stack := stkN) (bytes := 776) (streamFinish_verified v) (by decide) (by decide) (by decide)
     (streamFinish_spSafe v) (streamFinish_xdepth v) finFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_verify`'s precondition, without
 the working space. -/
 def verFrameSat : State := { verSat with rd := [⟨0x1000, 256⟩, ⟨0x5000, 0⟩], wr := [⟨0x3000, 80⟩] }
 
-theorem verFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamVerifyContract X86_64.abi 5800).pre s := by
+theorem verFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.streamVerifyContract X86_64.abi 4008).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamVerifyContract, Spec.Sm4.Gcm.streamVerifySig,
     Spec.Sm4.Gcm.streamVerifyPost, X86_64.abi, X86_64.argRegs] [verFrameSat, verSat] using verFrameSat
 
 theorem streamVerify_framed :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (streamVerify v.callees))
-      (Spec.Sm4.Gcm.streamVerifyContract X86_64.abi 5800) :=
+      (Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamVerify v.callees))
+      (Spec.Sm4.Gcm.streamVerifyContract X86_64.abi 4008) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Sm4.Gcm.streamVerifySig) (nm := "work") (e := .u64)
-    (n := 320) (post := Spec.Sm4.Gcm.streamVerifyPost X86_64.abi.ptrBits) (wa := true)
-    (stack := stkN) (bytes := 2576) (streamVerify_verified v) (by decide) (by decide) (by decide)
+    (n := 96) (post := Spec.Sm4.Gcm.streamVerifyPost X86_64.abi.ptrBits) (wa := true)
+    (stack := stkN) (bytes := 784) (streamVerify_verified v) (by decide) (by decide) (by decide)
     (streamVerify_spSafe v) (streamVerify_xdepth v) (Proof.Sm4Gcm.pre_local _ _)
     (Proof.Sm4Gcm.streamVerifyPost_local _) verFrameSat_pre
 
@@ -1000,8 +1000,8 @@ def streamDecryptReg : Registration Spec.Sm4.Gcm.streamDecryptApi X86_64.target 
 def streamFinishReg : Registration Spec.Sm4.Gcm.streamFinishApi X86_64.target :=
   withScrubAll {
     suffix := v.gh.suffix
-    code := Impl.StackScratch.X86_64.withStackScratch 2568 .r9 (streamFinish v.callees)
-    stack := 5792
+    code := Impl.StackScratch.X86_64.withStackScratch 776 .r9 (streamFinish v.callees)
+    stack := 4000
     verified := streamFinish_framed v
     spSafe := X86_64.withStackScratch_spSafe_of (streamFinish_spSafe v) } (streamFinishOut _)
 
@@ -1009,8 +1009,8 @@ def streamFinishReg : Registration Spec.Sm4.Gcm.streamFinishApi X86_64.target :=
 def streamVerifyReg : Registration Spec.Sm4.Gcm.streamVerifyApi X86_64.target :=
   withScrubAll {
     suffix := v.gh.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (streamVerify v.callees)
-    stack := 5800
+    code := Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamVerify v.callees)
+    stack := 4008
     verified := streamVerify_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (streamVerify_spSafe v) } (streamVerifyOut _)
 

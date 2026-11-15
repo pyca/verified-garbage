@@ -170,10 +170,6 @@ theorem data_tFrame {s : State} {D : Addr} {n : Nat} (hd : DataW4 Ctx St W SP s 
 
 end
 
-/-- `vg_ghash`'s 256 bytes of working space at `W + 512` fit in the 768 bytes
-of `W` the streaming functions have. -/
-instance GhFits.inst768 (v : GcmImpl) : AesGcm.X86_64.GhFits v 768 256 := AesGcm.X86_64.GhFits.base v (by decide)
-
 section
 variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP 768)
 include L

@@ -388,7 +388,7 @@ pub unsafe fn vg_sm4_gcm_stream_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` and `tag` must not overlap each other or `ctx` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 5792 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 4000 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *mut [u8; 16]) {
@@ -445,7 +445,7 @@ pub unsafe fn vg_sm4_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>,
 /// * `tag` must be valid for reads of `tag_len` bytes.
 /// * The contents of `state` on return are unspecified.
 /// * `state` must not overlap `ctx` or `tag` (distinct Rust objects never do).
-/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 5800 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `ctx`, `state` and `tag` may overlap the return address on the stack or the 4008 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], state: *mut [u64; 10], aad_len: u64, text_len: u64, tag: *const u8, tag_len: usize) -> u32 {

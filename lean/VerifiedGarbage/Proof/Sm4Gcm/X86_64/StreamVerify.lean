@@ -51,25 +51,25 @@ abbrev tagOf (m : Mem) (Ctx St : Addr) (aL tL : BitVec 64) (x : List Byte) : Lis
     [ofBytes (lensBlock aL.toNat tL.toNat)] ^^^ ciphOf m Ctx (blockAt m St))
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP)
+variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP 768)
 include L
 
 /-- A received tag of an allowed length `t`, at `Tp` (in `rsi`), checked. -/
-theorem verifyCheck_ok {t : Nat} {s : State} (he : Env Ctx St W SP s)
+theorem verifyCheck_ok {t : Nat} {s : State} (he : Env Ctx St W SP s 768)
     {aL tL : BitVec 64} (hA : s.mem.readW (W + BitVec.ofNat 64 184) 64 = aL)
     (hT : s.mem.readW (W + BitVec.ofNat 64 192) 64 = tL)
     (htl : s.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t)
     (hbx : s.gpr .rbx = BitVec.ofNat 64 t) (h1 : 1 ≤ t) (h16 : t ≤ 16) {Tp : Addr} (hsi : s.gpr .rsi = Tp)
-    (hTr : Covers [⟨Tp, t⟩] (s.rd ++ s.wr)) (dTW : (⟨Tp, t⟩ : Region).Disjoint ⟨W, 2560⟩) {x : List Byte}
+    (hTr : Covers [⟨Tp, t⟩] (s.rd ++ s.wr)) (dTW : (⟨Tp, t⟩ : Region).Disjoint ⟨W, 768⟩) {x : List Byte}
     (hx : x.length % 16 = (if tL = 0 then aL.toNat else tL.toNat) % 16) :
     WP isa (.seq recv (.seq (finTag v.callees 0) (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))]) (cmp 0)))) s
-      fun s' => Env Ctx St W SP s' ∧ Frame (verFrame St W SP) s.mem s'.mem ∧
+      fun s' => Env Ctx St W SP s' 768 ∧ Frame (verFrame St W SP) s.mem s'.mem ∧
         (Absorbed s.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) x →
           s'.gpr .rax = (if (tagOf s.mem Ctx St aL tL x).take t = bytesAt s.mem Tp t then 1 else 0)) := by
   have La := L.lay
   refine WP.seq (WP.mono (recv_ok he hbx h1 h16 hsi hTr (dTW.sub_right (Lay.wSub (by decide))))
     fun s₁ ⟨he₁, hrc, f₁, _⟩ => ?_)
-  have dW : ∀ d k, (d + k ≤ 256 ∨ 272 ≤ d) → d + k ≤ 2560 → ∀ r ∈ [(⟨W + BitVec.ofNat 64 256, 16⟩ : Region)],
+  have dW : ∀ d k, (d + k ≤ 256 ∨ 272 ≤ d) → d + k ≤ 768 → ∀ r ∈ [(⟨W + BitVec.ofNat 64 256, 16⟩ : Region)],
       (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
     intro d k h h' r hr; simp only [List.mem_singleton] at hr; subst hr
     exact La.w_w (by omega_using [h]) h' (by decide)
@@ -94,7 +94,7 @@ theorem verifyCheck_ok {t : Nat} {s : State} (he : Env Ctx St W SP s)
   have rd₂ : ∀ d, 112 ≤ d → d + 8 ≤ 512 →
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => f₂.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (dT d 8 h₁ h₂) (by decide)
-  have r₂ := he₂.perm.wR (show 224 + 8 ≤ 2560 by decide)
+  have r₂ := he₂.perm.wR (show 224 + 8 ≤ 768 by decide)
   obtain ⟨s₃, run₃, hbx₃, hg₃, hm₃, hrd₃, hwr₃⟩ : ∃ s₃, runBlock isa [.mov .rbx (.mem (at_ .r15 tlO))] s₂ = some s₃ ∧
       s₃.gpr .rbx = BitVec.ofNat 64 t ∧ (∀ r, r ≠ .rbx → s₃.gpr r = s₂.gpr r) ∧ s₃.mem = s₂.mem ∧
       s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr := by
@@ -103,7 +103,7 @@ theorem verifyCheck_ok {t : Nat} {s : State} (he : Env Ctx St W SP s)
     · intro r a; simp [gpr_setReg, a]
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
-  have he₃ : Env Ctx St W SP s₃ := he₂.keep (fun r hr => by
+  have he₃ : Env Ctx St W SP s₃ 768 := he₂.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₃ _ (by decide)) hrd₃ hwr₃
   have hrc₃ : bytesAt s₃.mem (W + BitVec.ofNat 64 256) 16 = bytesAt s.mem Tp t ++ zeros (16 - t) := by
@@ -145,7 +145,7 @@ end
 /-- After the entry of `verify`: `FinEntry`, the tag length at `W + 224` and
 in `rbx`, and the address of `tag` in `rsi`. -/
 structure VerEntry (s₀ : State) (Ctx St W SP : Addr) (s : State) : Prop where
-  env : Env Ctx St W SP s
+  env : Env Ctx St W SP s 768
   alen : s.mem.readW (W + BitVec.ofNat 64 184) 64 = s₀.gpr .rdx
   tlen : s.mem.readW (W + BitVec.ofNat 64 192) 64 = s₀.gpr .rcx
   tl : s.mem.readW (W + BitVec.ofNat 64 224) 64 = s₀.gpr .r9
@@ -157,9 +157,9 @@ structure VerEntry (s₀ : State) (Ctx St W SP : Addr) (s : State) : Prop where
   wr : s.wr = s₀.wr
 
 /-- The entry of `verify`, with `W` at `[rsp + 8]`. -/
-theorem verifyEntry_ok {s : State} {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP) (hCtx : s.gpr .rdi = Ctx)
+theorem verifyEntry_ok {s : State} {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP 768) (hCtx : s.gpr .rdi = Ctx)
     (hSt : s.gpr .rsi = St) (hSP : s.gpr .rsp = SP) (hW : s.mem.readW (SP + BitVec.ofNat 64 8) 64 = W)
-    (ha : InRegions (s.rd ++ s.wr) (SP + BitVec.ofNat 64 8) 8) (hperm : Perm Ctx St W s) :
+    (ha : InRegions (s.rd ++ s.wr) (SP + BitVec.ofNat 64 8) 8) (hperm : Perm Ctx St W s 768) :
     WP isa (.block (([.mov .rax (.mem (at_ .rsp 8))] : List Instr) ++ finEntry .rax ++
       ([.mov .rbx (.reg .r9), .store (at_ .r15 tlO) .rbx, .mov .rsi (.reg .r8)] : List Instr))) s
       (VerEntry s Ctx St W SP) := by
@@ -173,7 +173,7 @@ theorem verifyEntry_ok {s : State} {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP) (
       (by rw [hg₀ _ (by decide), hSP]) hax₀ (hperm.of_eq hrd₀ hwr₀) hm₀ hrd₀ hwr₀ fun p hp => by
         simp only [VG.Impl.AesGcm.X86_64.saved, List.mem_cons, List.not_mem_nil, or_false] at hp
         rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> exact hg₀ _ (by decide)) fun s₁ he => ?_⟩))
-  have w₁ := he.env.perm.wW (show 224 + 8 ≤ 2560 by decide)
+  have w₁ := he.env.perm.wW (show 224 + 8 ≤ 768 by decide)
   obtain ⟨s₂, run₂, hbx₂, hsi₂, hg₂, hm₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa [.mov .rbx (.reg .r9),
       .store (at_ .r15 tlO) .rbx, .mov .rsi (.reg .r8)] s₁ = some s₂ ∧ s₂.gpr .rbx = s.gpr .r9 ∧
       s₂.gpr .rsi = s.gpr .r8 ∧ (∀ r, r ≠ .rbx → r ≠ .rsi → s₂.gpr r = s₁.gpr r) ∧
@@ -187,7 +187,7 @@ theorem verifyEntry_ok {s : State} {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP) (
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   have f₂ : Frame [⟨W + BitVec.ofNat 64 224, 8⟩] s₁.mem s₂.mem := by
     rw [hm₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have rd₂ : ∀ d, (d + 8 ≤ 224 ∨ 232 ≤ d) → d + 8 ≤ 2560 →
+  have rd₂ : ∀ d, (d + 8 ≤ 224 ∨ 232 ≤ d) → d + 8 ≤ 768 →
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h h' =>
     f₂.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.lay.w_w (by omega_using [h]) h' (by decide)) (by decide)
@@ -207,13 +207,13 @@ theorem verifyEntry_ok {s : State} {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP) (
 
 /-- What the precondition of `verify` gives. -/
 theorem ver_lay {s : State} (hp : Proof.Sm4Gcm.verifyPre s) :
-    Lay4 (s.gpr .rdi) (s.gpr .rsi) (stackArg s 0) (s.gpr .rsp) ∧
-      Perm (s.gpr .rdi) (s.gpr .rsi) (stackArg s 0) s ∧
+    Lay4 (s.gpr .rdi) (s.gpr .rsi) (stackArg s 0) (s.gpr .rsp) 768 ∧
+      Perm (s.gpr .rdi) (s.gpr .rsi) (stackArg s 0) s 768 ∧
       InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 8) 8 ∧
       Covers [⟨s.gpr .r8, (s.gpr .r9).toNat⟩] (s.rd ++ s.wr) ∧
-      (⟨s.gpr .r8, (s.gpr .r9).toNat⟩ : Region).Disjoint ⟨stackArg s 0, 2560⟩ ∧
-      (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rsi, 80⟩ ∧ (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 0, 2560⟩ ∧
-      (⟨s.gpr .rsi, 80⟩ : Region).Disjoint ⟨stackArg s 0, 2560⟩ := by
+      (⟨s.gpr .r8, (s.gpr .r9).toNat⟩ : Region).Disjoint ⟨stackArg s 0, 768⟩ ∧
+      (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨s.gpr .rsi, 80⟩ ∧ (⟨s.gpr .rsp, 8⟩ : Region).Disjoint ⟨stackArg s 0, 768⟩ ∧
+      (⟨s.gpr .rsi, 80⟩ : Region).Disjoint ⟨stackArg s 0, 768⟩ := by
   simp only [Proof.Sm4Gcm.verifyPre, Proof.Sm4Gcm.stk, Proof.Sm4Gcm.ret, Proof.Sm4Gcm.args,
     Proof.Sm4Gcm.arg, Proof.Sm4Gcm.spOk] at hp
   obtain ⟨hrd, hwr, d_cs, d_cw, d_sw, -, d_tw, -, -, r_s, r_w, k_c, k_s, -, k_w, wc, ws, -, ww, hsp, -⟩ := hp
@@ -249,11 +249,11 @@ theorem streamVerify_run (v : GcmImpl) {s : State} (hp : Proof.Sm4Gcm.streamVeri
   refine WP.seq (WP.mono (verifyEntry_ok L hCtx hSt hSP hW ha hperm) fun s₂ he => ?_)
   generalize htl : s.gpr .r9 = tl at *
   refine WP.seq (WP.mono (tagLenOk_ok s₂ (t := tl.toNat) (by rw [he.rbx, htl]; simp) tl.isLt) fun s₃ ⟨hz₃, k₃⟩ => ?_)
-  have he₃ : Env Ctx St W SP s₃ := he.env.keep (fun r hr => by
+  have he₃ : Env Ctx St W SP s₃ 768 := he.env.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact k₃.gpr _ (by decide)) k₃.rd k₃.wr
   have F₃ : Frame [savedR W, slotsR W, ⟨W + BitVec.ofNat 64 224, 8⟩] s.mem s₃.mem := by rw [k₃.mem]; exact he.frame
-  have dF : ∀ p k, (⟨p, k⟩ : Region).Disjoint ⟨W, 2560⟩ → ∀ r ∈ [savedR W, slotsR W, ⟨W + BitVec.ofNat 64 224, 8⟩],
+  have dF : ∀ p k, (⟨p, k⟩ : Region).Disjoint ⟨W, 768⟩ → ∀ r ∈ [savedR W, slotsR W, ⟨W + BitVec.ofNat 64 224, 8⟩],
       (⟨p, k⟩ : Region).Disjoint r := by
     intro p k h r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -267,7 +267,7 @@ theorem streamVerify_run (v : GcmImpl) {s : State} (hp : Proof.Sm4Gcm.streamVeri
   have hA₃ : s₃.mem.readW (W + BitVec.ofNat 64 184) 64 = s.gpr .rdx := by rw [k₃.mem]; exact he.alen
   have hT₃ : s₃.mem.readW (W + BitVec.ofNat 64 192) 64 = s.gpr .rcx := by rw [k₃.mem]; exact he.tlen
   have hTr₃ : Covers [⟨Tp, t⟩] (s₃.rd ++ s₃.wr) := by rw [k₃.rd, k₃.wr, he.rd, he.wr]; exact hTr
-  refine WP.seq (WP.mono (Q := fun (s₄ : State) => Env Ctx St W SP s₄ ∧ Frame (verFrame St W SP) s₃.mem s₄.mem ∧
+  refine WP.seq (WP.mono (Q := fun (s₄ : State) => Env Ctx St W SP s₄ 768 ∧ Frame (verFrame St W SP) s₃.mem s₄.mem ∧
       (Absorbed s₃.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32)
           (blockAt s₃.mem (Ctx + BitVec.ofNat 64 240)) x →
         let T := tagOf s₃.mem Ctx St (s.gpr .rdx) (s.gpr .rcx) x

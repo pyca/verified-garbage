@@ -22,18 +22,18 @@ open VG VG.X86_64
 open VG.Proof.AesGcm.X86_64 (Lay savedR)
 
 section
-variable {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP)
+variable {Ctx St W SP : Addr} {N : Nat} (L : Lay4 Ctx St W SP N)
 include L
 
 theorem saved_tagFrame {o : Nat} (ho : o = 0 ∨ o = 112) : ∀ r ∈ tagFrame St W SP o, (savedR W).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl
-  · simpa using (L.lay.st_w (a := 0) (n := 32) (by decide) (.inr ⟨by decide, by decide⟩)).symm
-  · exact L.lay.w_w (.inr (by decide)) (by decide) (by decide)
-  · exact L.lay.w_w (.inr (by omega_using [ho])) (by decide) (by omega_using [ho])
-  · exact L.lay.w_w (.inl (by decide)) (by decide) (by decide)
-  · exact (L.kw.sub_right (Lay.wSub (by decide))).symm
+  · simpa using (L.lay.st_w (a := 0) (n := 32) (by omega_using [L.big]) (.inr ⟨by decide, by omega_using [L.big]⟩)).symm
+  · exact L.lay.w_w (.inr (by omega_using [L.big])) (by omega_using [L.big]) (by omega_using [L.big])
+  · exact L.lay.w_w (.inr (by omega_using [ho, L.big])) (by omega_using [L.big]) (by omega_using [ho, L.big])
+  · exact L.lay.w_w (.inl (by omega_using [L.big])) (by omega_using [L.big]) (by omega_using [L.big])
+  · exact (L.kw.sub_right (Lay.wSub (by omega_using [L.big]))).symm
 
 end
 
@@ -50,9 +50,9 @@ theorem Lay4.of {Ctx St W SP : Addr} {N : Nat} (cw : Ctx.toNat + 256 ≤ 2 ^ 64)
     (ww : W.toNat + N ≤ 2 ^ 64) (cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨St, 80⟩)
     (cW : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, N⟩) (sW : (⟨St, 80⟩ : Region).Disjoint ⟨W, N⟩)
     (sp : stkN ≤ SP.toNat) (kc : (below SP stkN).Disjoint ⟨Ctx, 256⟩) (ks : (below SP stkN).Disjoint ⟨St, 80⟩)
-    (kw : (below SP stkN).Disjoint ⟨W, N⟩) (hN : 176 ≤ N := by decide) (hN' : N < 2 ^ 64 := by decide) :
+    (kw : (below SP stkN).Disjoint ⟨W, N⟩) (hN : 768 ≤ N := by decide) (hN' : N < 2 ^ 64 := by decide) :
     Lay4 Ctx St W SP N :=
   ⟨VG.Proof.AesGcm.X86_64.Lay.of cw sw ww cs cW sW (kc.sub_left (below8_stk SP)) (ks.sub_left (below8_stk SP))
-    (kw.sub_left (below8_stk SP)) hN hN', sp, kc, ks, kw⟩
+    (kw.sub_left (below8_stk SP)) (by omega_using [hN]) hN', sp, kc, ks, kw, hN⟩
 
 end VG.Proof.Sm4Gcm.X86_64

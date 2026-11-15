@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Crypt
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Callee
 public import VerifiedGarbage.Proof.Gcm.Ctr
@@ -37,6 +39,8 @@ structure Lay4 (Ctx St W SP : Addr) (N : Nat := 2560) : Prop where
   kc : (below SP stkN).Disjoint ⟨Ctx, 256⟩
   ks : (below SP stkN).Disjoint ⟨St, 80⟩
   kw : (below SP stkN).Disjoint ⟨W, N⟩
+  /-- `W` holds the 768 bytes the pieces use (`vg_ghash`'s 256 at 512 the last). -/
+  big : 768 ≤ N
 
 /-- A buffer of `n` bytes at `D` that the code may read and write
 (`DataW`), apart from the stack the calls use too. -/
@@ -125,5 +129,10 @@ theorem ciph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
       (by show 128 ≤ 2 ^ 64; omega_using []) hi]
 
 end
+
+
+/-- `vg_ghash`'s 256 bytes of working space at `W + 512` fit in the 768 bytes
+of `W` the streaming functions have. -/
+instance GhFits.inst768 (v : AesGcm.X86_64.GcmImpl) : AesGcm.X86_64.GhFits v 768 256 := AesGcm.X86_64.GhFits.base v (by decide)
 
 end VG.Proof.Sm4Gcm.X86_64
