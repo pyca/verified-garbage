@@ -2053,7 +2053,8 @@ theorem saveHi_eq : saveHi = insOf hiKs := rfl
 /-- The lanes `hiKs` leaves alone. -/
 theorem hiKs_other (v : VReg) (l : Nat) (hl : l < 2) (hv : v ∉ [VReg.v20, .v21, .v22, .v23, .v24]) :
     (v, l) ∉ hiKs.map (fun k => (k.2.1, k.2.2)) := by
-  rcases (show l = 0 ∨ l = 1 by omega_using [hl]) with rfl | rfl <;> cases v <;> simp_all [hiKs]
+  revert hv
+  rcases (show l = 0 ∨ l = 1 by omega_using [hl]) with rfl | rfl <;> cases v <;> decide
 theorem restoreHi_eq : restoreHi = umovOf hiKs := rfl
 
 /-- `hiKs`' lanes are below 2 and none of the batch's own. -/
@@ -4247,8 +4248,8 @@ theorem tailZ_ok {s : State} {B : Addr} {Z w n : Nat} (hs : Scr s B Z) (h0 : s.g
       kt.sp.trans (k₃.sp.trans k12.sp), fun r hr => (kt.vcs r hr).trans ((k₃.vcs r hr).trans (k12.vcs r hr))⟩
     by_cases e : r = .x12
     · subst e; rw [h12t, h12]
-    · rw [kt.gpr r (by simpa using e), k₃.gpr r (by cases r <;> simp_all), k₂.gpr r (by cases r <;> simp_all),
-        k₁.gpr r (by cases r <;> simp_all)]
+    · rw [kt.gpr r (by simpa using e), k₃.gpr r (by revert hr e; cases r <;> decide),
+        k₂.gpr r (by revert hr e; cases r <;> decide), k₁.gpr r (by revert hr e; cases r <;> decide)]
 
 /-- The first `n` words of `w`. -/
 theorem wv_low_mod (m : Mem) (B : Addr) {d n w : Nat} (h : n ≤ w) :

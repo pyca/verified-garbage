@@ -495,24 +495,33 @@ theorem body2_ok {s : State} {R T Z : BitVec 128}
     fun v n4 n5 n6 n7 n8 n9 n10 n11 => ?_, hv.rd, hv.wr, hv.sp, hv.lr⟩⟩
   · rw [vword_lo _ _ hp]
     split
-    · rw [h6 p hp]
-      simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
-        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2, vword_pw,
-        ↓ite_eq_left]
-    · rw [h7 (p - 2) (by omega_using [hp])]
-      simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
-        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2, vword_pw,
-        ↓ite_eq_left, Nat.sub_add_cancel]
+    · rename_i lt
+      rw [h6 p hp]
+      simp only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
+        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo _ _ hp, vword_hi2 _ _ hp,
+        vword_pw _ hp, lt]
+    · rename_i ge
+      have h4 : p - 2 < 4 := by omega_using [hp]
+      have lt : p - 2 < 2 := by omega_using [hp]
+      have e : p - 2 + 2 = p := by omega_using [ge]
+      rw [h7 (p - 2) h4]
+      simp only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
+        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo _ _ h4, vword_hi2 _ _ h4,
+        vword_pw _ h4, lt, e]
   · rw [vword_hi2 _ _ hp]
     split
-    · rw [h6 (p + 2) (by omega_arith)]
-      simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
-        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2, vword_pw,
-        ↓ite_eq_right, Nat.add_sub_cancel]
-    · rw [h7 p hp]
-      simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
-        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2, vword_pw,
-        ↓ite_eq_right]
+    · rename_i lt
+      have h4 : p + 2 < 4 := by omega_using [lt]
+      have ge : ¬ p + 2 < 2 := by omega_arith
+      rw [h6 (p + 2) h4]
+      simp only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
+        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo _ _ h4, vword_hi2 _ _ h4,
+        vword_pw _ h4, ge, Nat.add_sub_cancel]
+    · rename_i ge
+      rw [h7 p hp]
+      simp only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
+        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo _ _ hp, vword_hi2 _ _ hp,
+        vword_pw _ hp, ge]
   · show (s₂.mem.write _ 16 _).write _ 16 _ = _
     simp only [m₂, gpr_writeV, vpr_writeV, g₂, e2, e3, h2, h3, reduceCtorEq, ite_false, ite_true]
   · simp only [RegUpd.gpr_write, gpr_writeV, g₂, ite_true, ite_false, reduceCtorEq]
@@ -655,24 +664,32 @@ theorem ibody2_ok {s : State} {R T Z : BitVec 128}
     fun v n4 n5 n6 n7 n8 n9 n10 n11 => ?_, hv.rd, hv.wr, hv.sp, hv.lr⟩⟩
   · rw [vword_lo _ _ hp]
     split
-    · rw [h6 p hp]
-      simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
-        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2,
-        ↓ite_eq_left]
-    · rw [h7 (p - 2) (by omega_using [hp])]
-      simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
-        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2, vword_pw,
-        ↓ite_eq_left, Nat.sub_add_cancel]
+    · rename_i lt
+      rw [h6 p hp]
+      simp only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
+        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo _ _ hp, vword_hi2 _ _ hp, lt]
+    · rename_i ge
+      have h4 : p - 2 < 4 := by omega_using [hp]
+      have lt : p - 2 < 2 := by omega_using [hp]
+      have e : p - 2 + 2 = p := by omega_using [ge]
+      rw [h7 (p - 2) h4]
+      simp only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
+        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo _ _ h4, vword_hi2 _ _ h4,
+        vword_pw _ h4, lt, e]
   · rw [vword_hi2 _ _ hp]
     split
-    · rw [h6 (p + 2) (by omega_arith)]
-      simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
-        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2,
-        ↓ite_eq_right, Nat.add_sub_cancel]
-    · rw [h7 p hp]
-      simp (disch := omega) only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
-        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo, vword_hi2, vword_pw,
-        ↓ite_eq_right]
+    · rename_i lt
+      have h4 : p + 2 < 4 := by omega_using [lt]
+      have ge : ¬ p + 2 < 2 := by omega_arith
+      rw [h6 (p + 2) h4]
+      simp only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
+        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo _ _ h4, vword_hi2 _ _ h4, ge,
+        Nat.add_sub_cancel]
+    · rename_i ge
+      rw [h7 p hp]
+      simp only [vpr_writeV, vpr_write, mem_writeV, gpr_writeV, RegUpd.mem_write,
+        RegUpd.gpr_write, eR, eT, reduceCtorEq, ite_true, ite_false, vword_lo _ _ hp, vword_hi2 _ _ hp,
+        vword_pw _ hp, ge]
   · show (s₂.mem.write _ 16 _).write _ 16 _ = _
     simp only [m₂, gpr_writeV, vpr_writeV, g₂, e2, e3, h2, h3, reduceCtorEq, ite_false, ite_true]
   · simp only [RegUpd.gpr_write, gpr_writeV, g₂, ite_true, ite_false, reduceCtorEq]

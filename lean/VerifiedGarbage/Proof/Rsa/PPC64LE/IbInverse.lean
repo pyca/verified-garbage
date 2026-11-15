@@ -619,13 +619,13 @@ theorem updateAB_tail [Divstep.TcSLaw] {s y : State} {B : Addr} {Z w N n c p iv 
   have := h.ws.wle
   have hnw := h.ws.nowrap
   obtain ⟨bu, bq⟩ := Divstep.msteps_bnd I.d I.f I.g 59
-  have ha2 : |I.a| ≤ 2 * p := abs_le.mpr ⟨by omega, by omega⟩
-  have hb2 : |I.b| ≤ 2 * p := abs_le.mpr ⟨by omega, by omega⟩
+  have ha2 : |I.a| ≤ 2 * p := abs_le.mpr ⟨by omega_arith, by omega_arith⟩
+  have hb2 : |I.b| ≤ 2 * p := abs_le.mpr ⟨by omega_arith, by omega_arith⟩
   have ht₁ := Divstep.TcSLaw.comb_le2 (by norm_num) (by exact_mod_cast hp) bu ha2 hb2
   have ht₂ := Divstep.TcSLaw.comb_le2 (by norm_num) (by exact_mod_cast hp) bq ha2 hb2
-  have nA : aA < N := by unfold aA; omega
-  have nB : aB < N := by unfold aB; omega
-  have nM : aMz < N := by unfold aMz; omega
+  have nA : aA < N := by unfold aA; omega_arith
+  have nB : aB < N := by unfold aB; omega_arith
+  have nM : aMz < N := by unfold aMz; omega_arith
   have fA := h.ws.arr_fit nA
   have fB := h.ws.arr_fit nB
   have fM := h.ws.arr_fit nM
@@ -639,23 +639,23 @@ theorem updateAB_tail [Divstep.TcSLaw] {s y : State} {B : Addr} {Z w N n c p iv 
   have tv := toInt_mat u2
   have tq := toInt_mat q1
   have tr := toInt_mat q2
-  have sepA : arr w aA + 8 * (k + 1) + 8 ≤ arr w aB ∨ arr w aB + 8 * k ≤ arr w aA + 8 * (k + 1) := .inl (by omega)
-  have sepB : arr w aB + 8 * (k + 1) + 8 ≤ arr w aA ∨ arr w aA + 8 * k ≤ arr w aB + 8 * (k + 1) := .inr (by omega)
-  have fitA : arr w aA + 8 * (k + 1) + 8 ≤ 2 ^ 64 := by omega
-  have fitB : arr w aB + 8 * (k + 1) + 8 ≤ 2 ^ 64 := by omega
-  have ixA : arr w aA + 8 * k + 8 = arr w aA + 8 * (k + 1) := by omega
-  have ixB : arr w aB + 8 * k + 8 = arr w aB + 8 * (k + 1) := by omega
+  have sepA : arr w aA + 8 * (k + 1) + 8 ≤ arr w aB ∨ arr w aB + 8 * k ≤ arr w aA + 8 * (k + 1) := .inl (by omega_arith)
+  have sepB : arr w aB + 8 * (k + 1) + 8 ≤ arr w aA ∨ arr w aA + 8 * k ≤ arr w aB + 8 * (k + 1) := .inr (by omega_arith)
+  have fitA : arr w aA + 8 * (k + 1) + 8 ≤ 2 ^ 64 := by omega_arith
+  have fitB : arr w aB + 8 * (k + 1) + 8 ≤ 2 ^ 64 := by omega_arith
+  have ixA : arr w aA + 8 * k + 8 = arr w aA + 8 * (k + 1) := by omega_arith
+  have ixB : arr w aB + 8 * k + 8 = arr w aB + 8 * (k + 1) := by omega_arith
   rw [WP.seq_iff]
   -- Words `1 … ν - 1`.
-  refine WP.mono (abLoop?_ok (n := k) hy.ws.scr y5 y6 y7 y8 (by omega) (by omega) (by omega) (by omega)
-    (.inl (by omega)) (.inr (by omega)) (.inr (by omega)) y18 y19 y20 y21
-    (by rw [y14, tu]; omega) (by rw [y14, tu]; omega) (by rw [y15, tv]; omega) (by rw [y15, tv]; omega)
-    (by rw [y16, tq]; omega) (by rw [y16, tq]; omega) (by rw [y17, tr]; omega) (by rw [y17, tr]; omega)
+  refine WP.mono (abLoop?_ok (n := k) hy.ws.scr y5 y6 y7 y8 (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)
+    (.inl (by omega_arith)) (.inr (by omega_arith)) (.inr (by omega_arith)) y18 y19 y20 y21
+    (by rw [y14, tu]; omega_arith) (by rw [y14, tu]; omega_arith) (by rw [y15, tv]; omega_arith) (by rw [y15, tv]; omega_arith)
+    (by rw [y16, tq]; omega_arith) (by rw [y16, tq]; omega_arith) (by rw [y17, tr]; omega_arith) (by rw [y17, tr]; omega_arith)
     i1 i2) fun z ⟨za, zb, z5, z6, z7, zout, kz⟩ => ?_
   have hz := hy.of_keep' kz
   have gz : ∀ r, r ∉ abRegs → z.gpr r = y.gpr r := fun r hr => kz.gpr _ hr
   -- Word `ν`.
-  refine WP.mono (abLast_ok hz.ws.scr z5 z6 (by omega) (by omega)
+  refine WP.mono (abLast_ok hz.ws.scr z5 z6 (by omega_arith) (by omega_arith)
     (by rw [gz .r18 (by decide), gz .r14 (by decide)]; exact y18)
     (by rw [gz .r19 (by decide), gz .r15 (by decide)]; exact y19)
     (by rw [gz .r20 (by decide), gz .r16 (by decide)]; exact y20)
@@ -665,16 +665,16 @@ theorem updateAB_tail [Divstep.TcSLaw] {s y : State} {B : Addr} {Z w N n c p iv 
     Outs.cover zout fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨(arr w aA, S w), by simp [KeyWorkspace.ranges], by simp, by simp; omega⟩
-      · exact ⟨(arr w aB, S w), by simp [KeyWorkspace.ranges], by simp, by simp; omega⟩
+      · exact ⟨(arr w aA, S w), by simp [KeyWorkspace.ranges], by simp, by simp; omega_arith⟩
+      · exact ⟨(arr w aB, S w), by simp [KeyWorkspace.ranges], by simp, by simp; omega_arith⟩
   have K1 : KeyWorkspace.Keep B w [aA, aB] [] z.mem t1.mem := by
     rw [m1]
-    exact (((KeyWorkspace.Keep.of_arr (o := aA) (d := 8 * k) (writeW_outside _ B _ (by omega)) (by omega)
+    exact (((KeyWorkspace.Keep.of_arr (o := aA) (d := 8 * k) (writeW_outside _ B _ (by omega_arith)) (by omega_arith)
       (by simp)).trans
-      (KeyWorkspace.Keep.of_arr (o := aA) (d := 8 * k + 8) (writeW_outside _ B _ (by omega)) (by omega)
+      (KeyWorkspace.Keep.of_arr (o := aA) (d := 8 * k + 8) (writeW_outside _ B _ (by omega_arith)) (by omega_arith)
         (by simp))).trans
-      (KeyWorkspace.Keep.of_arr (o := aB) (d := 8 * k) (writeW_outside _ B _ (by omega)) (by omega) (by simp))).trans
-      (KeyWorkspace.Keep.of_arr (o := aB) (d := 8 * k + 8) (writeW_outside _ B _ (by omega)) (by omega) (by simp))
+      (KeyWorkspace.Keep.of_arr (o := aB) (d := 8 * k) (writeW_outside _ B _ (by omega_arith)) (by omega_arith) (by simp))).trans
+      (KeyWorkspace.Keep.of_arr (o := aB) (d := 8 * k + 8) (writeW_outside _ B _ (by omega_arith)) (by omega_arith) (by simp))
   have kk : Keep bRegs s t1 := ((ksy.trans kz).trans k1).mono (by decide)
   -- The values.
   have rdA : word z.mem B (arr w aA + 8 * k + 8) = word y.mem B (arr w aA + 8 * (k + 1)) := by
@@ -695,10 +695,10 @@ theorem updateAB_tail [Divstep.TcSLaw] {s y : State} {B : Addr} {Z w N n c p iv 
     hkν ▸ hB
   refine ⟨h.of_keep' kk, by rw [← emy]; exact Kz.trans K1, ?_, ?_, kk⟩
   all_goals rw [m1, gz .r14 (by decide), gz .r15 (by decide), gz .r16 (by decide), gz .r17 (by decide), hkν]
-  · rw [wv_apart2 _ _ _ _ (by omega) (by omega) (by omega), wv_top2 _ _ _ _ _ _ (by omega)]
+  · rw [wv_apart2 _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), wv_top2 _ _ _ _ _ _ (by omega_arith)]
     exact ab_mred (by rw [y14, tu]) (by rw [y15, tv]) u1 u2 za (wordsVal_lt _ _ _ _) DA DB hA' hB'
       ka eP' hp hpA' hm ht₁
-  · rw [wv_top2 _ _ _ _ _ _ (by omega), wv_apart2 _ _ _ _ (by omega) (by omega) (by omega)]
+  · rw [wv_top2 _ _ _ _ _ _ (by omega_arith), wv_apart2 _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
     exact ab_mred (by rw [y16, tq]) (by rw [y17, tr]) q1 q2 zb (wordsVal_lt _ _ _ _) DA DB hA' hB'
       kb eP' hp hpA' hm ht₂
 

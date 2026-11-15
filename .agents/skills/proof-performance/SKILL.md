@@ -209,6 +209,44 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   conjunct in one step, and `rename_i` names them, in the conjunction's
   order: 0.3 s. The last conjunct keeps the name `h`; a conjunct that is
   itself a conjunction gets a name, and its own `obtain` or `sig_split`.
+* **One tactic call that takes seconds:** most of a slow elaboration is
+  often one call, and the build's profile names it (`lean-profiling`; a step
+  of a theorem with a doc comment is recorded under the declaration before
+  it). The causes found so far:
+  * *Cases that each repeat the work.* `cases x <;> simp_all`, `interval_cases
+    i <;> simp …`, or a block run again after `cases K <;> cases T`: `revert`
+    what the cases need and close them by `decide`, prove the fact once for a
+    general index, or run the block (and evaluate the precondition) once
+    before the split and split only the goals that mention the value
+    (`reduce_scan`, 512 `simp`s, over 20 s to 1 s; `qBase_ok`, `simp_all` in
+    1024 cases, 13.9 s to 1.4 s).
+  * *A discharger per side condition.* `simp (disch := omega)` runs `omega`
+    in the whole context for every condition of every rewrite. Closed
+    conditions take `(disch := decide)`; others, their facts proved once and
+    given to a plain `simp only`, or `(disch := omega_using [h₁, h₂])`
+    (`prepWord0_ok`, 1165 `omega`s).
+  * *`omega` on what is not linear.* A fact holding `BitVec.toNat 0`, a nest
+    of `2 ^ 64 * (…)` or of `% 2 ^ 32` sums costs each `omega_arith` seconds:
+    rewrite the fact first, or prove the nonlinear pieces once as named facts
+    and give only those (`omega_using`). Plain `omega` in a context of a
+    hundred facts is several times `omega_arith`.
+  * *An alternative that fails slowly.* In `first | A | B` and in
+    `repeat' apply And.intro` followed by `all_goals first | …`, a failing
+    `exact`, `refine … (lemma _ (by decide))`, `trivial` or `rfl` may unify
+    for seconds before it fails. Put the one that works first, make the
+    other fail fast (`with_reducible exact h`, `exact rfl`), or expand the
+    facts once and close every conjunct with one `simp only`.
+  * *An implicit argument left to unification.* `rw [wa_shift h]`, where `h`
+    determines a structure only through one of its fields, took 11.6 s to
+    find it: give it, even in part (`(τ' := ⟨_, _, _, _, τ.room - 8, _, …⟩)`).
+  * *Reads through writes after the fact.* With `RegUpd.gpr_write` and
+    `ite_true, ite_false` as ordinary rewrites, `simp` simplifies the value
+    of every write a read passes: `↓RegUpd.gpr_write` and `↓reduceIte`
+    rewrite the read first and never visit the discarded branch.
+  * *Interpreted arithmetic.* Mathlib's `nlinarith` multiplies every pair of
+    facts, in the interpreter: 5 to 11 s for `2 * x ≤ x * 2 ^ 63`. State the
+    products as facts and use `omega_using` (which takes `2 ^ k` for an
+    atom), or `linarith` where the products are hypotheses already.
 * **Numeral exponents:** `2 ^ 64` elaborates in time quadratic in the number
   of numeral exponents in a statement; `Proof/Framework/PowLit.lean`'s macro
   elaborates it as `2 ^ (64 : Nat)` (the same term). A module with numeral
