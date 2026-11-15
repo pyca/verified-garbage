@@ -140,6 +140,11 @@ def xrun (k : Nat) (i : Instr) : Option (BitVec 64) := (exec i (s k)).map (·.gp
 #guard vrun 0 (.umullH false .v0 .v0 .v3) == some 0x08cb2caa1c980db20e77acac01eef4d4#128
 #guard vrun 0 (.pmull false .v0 .v1 .v2) == some 0x1741493c224e681a0d98ad159b352e7c#128
 #guard vrun 0 (.pmull true .v0 .v1 .v2) == some 0x0be6e7a8b9d9791a2b96e51a9bd89254#128
+#guard vrun 0 (.pmull8 false .v0 .v1 .v2) == some 0x1706553c20c207e60580099062701a7c#128
+#guard vrun 0 (.pmull8 true .v0 .v1 .v2) == some 0x0bf8191d52033ba445723b883ccc2a54#128
+#guard vrun 0 (.pmull8 false .v0 .v0 .v1) == some 0x61ec7c7c4b280665489031d00dc83bb3#128
+#guard vrun 0 (.pmull8 true .v0 .v1 .v0) == some 0x376b42e22f8518264a664e6012a8076c#128
+#guard vrun 0 (.pmull8 true .v0 .v0 .v0) == some 0x10154554111110055414401010140045#128
 #guard vrun 0 (.aese .v0 .v1) == some 0xcc5087fd6ed31c8ac0d7671b4f9c93b5#128
 #guard vrun 0 (.aesd .v0 .v1) == some 0xcbb8a37b74b7945f3df3bb8668c4887f#128
 #guard vrun 0 (.aesmc .v0 .v1) == some 0x35ea400a1afb2e1eb614224c1f261286#128
@@ -296,6 +301,11 @@ def xrun (k : Nat) (i : Instr) : Option (BitVec 64) := (exec i (s k)).map (·.gp
 #guard vrun 1 (.umullH false .v0 .v0 .v3) == some 0x0000000014377de014b2c2420b2cf79a#128
 #guard vrun 1 (.pmull false .v0 .v1 .v2) == some 0x7c193c7b7397c25d5a1bf2afa5a486b0#128
 #guard vrun 1 (.pmull true .v0 .v1 .v2) == some 0x103e08f3c079d0fc76eefe90abc383a2#128
+#guard vrun 1 (.pmull8 false .v0 .v1 .v2) == some 0x7c1a7f2e1720066e1af02aaa33b14eb0#128
+#guard vrun 1 (.pmull8 true .v0 .v1 .v2) == some 0x100808fc2a8e038807e93d100e2637a2#128
+#guard vrun 1 (.pmull8 false .v0 .v0 .v1) == some 0x23a7605c46d701b21a401a9939822dfc#128
+#guard vrun 1 (.pmull8 true .v0 .v1 .v0) == some 0x38c71f3c5f420140128e35335c1807ca#128
+#guard vrun 1 (.pmull8 true .v0 .v0 .v0) == some 0x11115444514501405514510151400114#128
 #guard vrun 1 (.aese .v0 .v1) == some 0x2e29c163f63459ff864b8296194f6f62#128
 #guard vrun 1 (.aesd .v0 .v1) == some 0x935de352e6eea5133327c9d94a742f0e#128
 #guard vrun 1 (.aesmc .v0 .v1) == some 0x6dec2e845d7b12e01f2f44c72959e15f#128
@@ -509,6 +519,11 @@ def bytesAt (o : Nat) : BitVec 128 :=
 #guard Instr.asm (.vop (.umlalH true .v0 .v0 .v0)) == ["umlal2 v0.4s, v0.8h, v0.8h"]
 #guard Instr.asm (.vop (.pmull false .v0 .v1 .v2)) == ["pmull v0.1q, v1.1d, v2.1d"]
 #guard Instr.asm (.vop (.pmull true .v0 .v1 .v2)) == ["pmull2 v0.1q, v1.2d, v2.2d"]
+#guard Instr.asm (.vop (.pmull8 false .v0 .v1 .v2)) == ["pmull v0.8h, v1.8b, v2.8b"]
+#guard Instr.asm (.vop (.pmull8 true .v0 .v1 .v2)) == ["pmull2 v0.8h, v1.16b, v2.16b"]
+#guard Instr.asm (.vop (.pmull8 false .v0 .v0 .v1)) == ["pmull v0.8h, v0.8b, v1.8b"]
+#guard Instr.asm (.vop (.pmull8 true .v0 .v1 .v0)) == ["pmull2 v0.8h, v1.16b, v0.16b"]
+#guard Instr.asm (.vop (.pmull8 true .v0 .v0 .v0)) == ["pmull2 v0.8h, v0.16b, v0.16b"]
 #guard Instr.asm (.vop (.aese .v0 .v1)) == ["aese v0.16b, v1.16b"]
 #guard Instr.asm (.vop (.aesd .v0 .v1)) == ["aesd v0.16b, v1.16b"]
 #guard Instr.asm (.vop (.aesmc .v0 .v1)) == ["aesmc v0.16b, v1.16b"]
@@ -625,11 +640,25 @@ machine code. -/
 #guard Instr.encode (.vop (.sm3tt .tt1a .v0 .v1 .v2 4)) == none
 #guard Instr.encode (.vop (.sm3tt .tt2b .v0 .v1 .v2 4)) == none
 
+/-! ## PMULL and PMULL2 with 8-bit source elements: the machine code
+
+The words `aarch64-linux-gnu-as` (GNU Binutils 2.42), with no `-march` (the
+baseline), assembles the printed text to. -/
+
+#guard Instr.encode (.vop (.pmull8 false .v0 .v1 .v2)) == some [0x0E22E020]
+#guard Instr.encode (.vop (.pmull8 true .v0 .v1 .v2)) == some [0x4E22E020]
+#guard Instr.encode (.vop (.pmull8 false .v7 .v30 .v18)) == some [0x0E32E3C7]
+#guard Instr.encode (.vop (.pmull8 true .v31 .v9 .v0)) == some [0x4E20E13F]
+#guard Instr.asm (.vop (.pmull8 false .v7 .v30 .v18)) == ["pmull v7.8h, v30.8b, v18.8b"]
+#guard Instr.asm (.vop (.pmull8 true .v31 .v9 .v0)) == ["pmull2 v31.8h, v9.16b, v0.16b"]
+
 /-! ## CPU features -/
 
 #guard isa.requires (.vop (.aese .v0 .v1)) == ["aes"]
 #guard isa.requires (.vop (.aesimc .v0 .v1)) == ["aes"]
 #guard isa.requires (.vop (.pmull true .v0 .v1 .v2)) == ["aes"]
+#guard isa.requires (.vop (.pmull8 false .v0 .v1 .v2)) == []
+#guard isa.requires (.vop (.pmull8 true .v0 .v1 .v2)) == []
 #guard isa.requires (.vop (.sha1 .m .v0 .v1 .v2)) == ["sha2"]
 #guard isa.requires (.vop (.sha1h .v0 .v1)) == ["sha2"]
 #guard isa.requires (.vop (.sha256su1 .v0 .v1 .v2)) == ["sha2"]

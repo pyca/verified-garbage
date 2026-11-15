@@ -175,7 +175,8 @@ Modelling choices:
   (DDI 0487, "About PSTATE.DIT"; the description of SVE2's XAR says "This
   instruction is a data-independent-time instruction as described in About
   PSTATE.DIT", and so do those of SM4E, SM4EKEY and the seven SM3
-  instructions in the A64 ISA XML 2025-12). CMHI, CMHS, ADDV and UADDLV are in the list of
+  instructions in the A64 ISA XML 2025-12, and that of PMULL and PMULL2, for
+  every element size, in the A64 ISA XML 2026-03). CMHI, CMHS, ADDV and UADDLV are in the list of
   data-independent-time instructions of DDI 0487 M.b C5.2.4, "DIT, Data
   Independent Timing" (also DDI 0601 2026-09): "Advanced SIMD three same: ADD,
   ADDP, AND, …, CMEQ, CMGE, CMGT, CMHI, CMHS, …" and "Advanced SIMD across
@@ -394,6 +395,9 @@ inductive VOp
   | mulHE (op : VMulHOp) (d n m : VReg) (i : Nat)
   /-- `pmull vd.1q, vn.1d, vm.1d`, or `pmull2 vd.1q, vn.2d, vm.2d` if `hi` -/
   | pmull (hi : Bool) (d n m : VReg)
+  /-- `pmull vd.8h, vn.8b, vm.8b`, or `pmull2 vd.8h, vn.16b, vm.16b` if `hi`
+  (PMULL, PMULL2 with 8-bit source elements, `size = 00`) -/
+  | pmull8 (hi : Bool) (d n m : VReg)
   /-- `aese vd.16b, vn.16b` -/
   | aese (d n : VReg)
   /-- `aesd vd.16b, vn.16b` -/
@@ -963,6 +967,12 @@ def Sha1Op.f : Sha1Op → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32
 * "UMIN" (`.4s`): `Elem[result, e] = Min(UInt(element1), UInt(element2))`;
 * "PMULL", "PMULL2" (`.1q`): `Elem[result, 0, 128] =
   PolynomialMult(Elem[operand1, part, 64], Elem[operand2, part, 64])`;
+* "PMULL", "PMULL2" (`.8h`, `size = 00`: `esize = 8 << UInt(size)`,
+  `datasize = 64`, `part = UInt(Q)`, `elements = 8`): `operand1 = Vpart[n,
+  part, 64]; operand2 = Vpart[m, part, 64]; for e = 0 to 7: Elem[result, e,
+  16] = PolynomialMult(Elem[operand1, e, 8], Elem[operand2, e, 8])`
+  (`polyMul8`), `V[d, 128] = result`: byte `e` of the lower (`pmull`) or
+  upper (`pmull2`) half of each source;
 * "AESE": `AESSubBytes(AESShiftRows(operand1 EOR operand2))`; "AESD":
   `AESInvSubBytes(AESInvShiftRows(operand1 EOR operand2))`, with `operand1
   = V[d]`, `operand2 = V[n]`; "AESMC": `AESMixColumns(V[n])`; "AESIMC":
@@ -1090,6 +1100,9 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
   | .pmull hi d n m =>
     let p := if hi then 1 else 0
     some (d, polyMul (vdword (s.v n) p) (vdword (s.v m) p))
+  | .pmull8 hi d n m =>
+    let p := if hi then 8 else 0
+    some (d, ofVHalves fun e => polyMul8 (vbyte (s.v n) (p + e)) (vbyte (s.v m) (p + e)))
   | .aese d n => some (d, aesMapBytes aesSbox (aesShiftRows (s.v d ^^^ s.v n)))
   | .aesd d n => some (d, aesMapBytes aesInvSbox (aesInvShiftRows (s.v d ^^^ s.v n)))
   | .aesmc d n => some (d, aesMixColumns (s.v n))
@@ -1519,7 +1532,13 @@ requires), named as
 Rust's target features. DDI 0487 A2 ("Armv8-A architecture extensions") and
 the "Is FEAT_…" condition in each instruction's decode (C7.2): FEAT_AES for
 AESE, AESD, AESMC, AESIMC and FEAT_PMULL for PMULL/PMULL2 with 64-bit
-sources, which Rust's `aes` feature covers together; FEAT_SHA1 for SHA1C,
+sources, which Rust's `aes` feature covers together (PMULL/PMULL2 with 8-bit
+sources, `pmull8`, need AdvSIMD alone, the baseline: A64 ISA XML 2026-03,
+"PMULL, PMULL2", decodes `if size == '01' || size == '10' then
+EndOfDecode(Decode_UNDEF); end; if size == '11' &&
+!IsFeatureImplemented(FEAT_PMULL) then EndOfDecode(Decode_UNDEF); end;`, and
+says "The PMULL and PMULL2 variants that operate on 64-bit source elements
+are defined only when FEAT_PMULL is implemented"); FEAT_SHA1 for SHA1C,
 SHA1P, SHA1M, SHA1H, SHA1SU0, SHA1SU1 and FEAT_SHA256 for SHA256H,
 SHA256H2, SHA256SU0, SHA256SU1 (Rust's `sha2`); FEAT_SHA512 for SHA512H,
 SHA512H2, SHA512SU0, SHA512SU1 and FEAT_SHA3 for EOR3, BCAX, RAX1, XAR

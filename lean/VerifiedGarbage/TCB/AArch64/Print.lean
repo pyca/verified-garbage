@@ -151,6 +151,8 @@ def VOp.asm : VOp → String
   | .mulHE op d n m i => s!"{op.name} {d.arr "8h"}, {n.arr "8h"}, v{m.index}.h[{i}]"
   | .pmull false d n m => s!"pmull {d.arr "1q"}, {n.arr "1d"}, {m.arr "1d"}"
   | .pmull true d n m => s!"pmull2 {d.arr "1q"}, {n.arr "2d"}, {m.arr "2d"}"
+  | .pmull8 false d n m => s!"pmull {d.arr "8h"}, {n.arr "8b"}, {m.arr "8b"}"
+  | .pmull8 true d n m => s!"pmull2 {d.arr "8h"}, {n.arr "16b"}, {m.arr "16b"}"
   | .aese d n => s!"aese {d.b}, {n.b}"
   | .aesd d n => s!"aesd {d.b}, {n.b}"
   | .aesmc d n => s!"aesmc {d.b}, {n.b}"

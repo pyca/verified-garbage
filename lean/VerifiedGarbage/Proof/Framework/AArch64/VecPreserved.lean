@@ -22,7 +22,7 @@ def VOp.dst : VOp → VReg
   | .dupE _ d .. | .insE _ d .. | .cmeq _ d .. | .bsel _ d .. | .tblN _ _ d .. => d
   | .umull _ d .. | .umlal _ d .. | .mul d .. | .mla d .. | .mls d .. => d
   | .umullH _ d .. | .umlalH _ d .. => d
-  | .sqdmulh d .. | .umin d .. | .mulH _ d .. | .mulHE _ d .. | .pmull _ d .. => d
+  | .sqdmulh d .. | .umin d .. | .mulH _ d .. | .mulHE _ d .. | .pmull _ d .. | .pmull8 _ d .. => d
   | .aese d .. | .aesd d .. | .aesmc d .. | .aesimc d .. => d
   | .sha1 _ d .. | .sha1h d .. | .sha1su0 d .. | .sha1su1 d .. => d
   | .sha256h d .. | .sha256h2 d .. | .sha256su0 d .. | .sha256su1 d .. => d

@@ -45,6 +45,12 @@ def ofVWords (w0 w1 w2 w3 : BitVec 32) : BitVec 128 := w3 ++ w2 ++ w1 ++ w0
 /-- The vector whose doublewords are `d0` (bits 63:0) and `d1` (bits 127:64). -/
 def ofVDwords (d0 d1 : BitVec 64) : BitVec 128 := d1 ++ d0
 
+/-- `PolynomialMult(op1, op2)` for 8-bit operands: `result = Zeros(16);
+extended_op2 = ZeroExtend(op2, 16); for i = 0 to 7: if op1<i> == '1' then
+result = result EOR LSL(extended_op2, i)` (as `polyMul`, for 64-bit ones). -/
+def polyMul8 (a b : BitVec 8) : BitVec 16 :=
+  (List.range 8).foldl (fun acc i => if a.getLsbD i then acc ^^^ (b.setWidth 16 <<< i) else acc) 0
+
 /-! ## SHA (DDI 0487, J1, "shared/functions/crypto") -/
 
 /-- `SHAchoose(x, y, z) = ((y EOR z) AND x) EOR z`. -/

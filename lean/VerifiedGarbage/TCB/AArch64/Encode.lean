@@ -207,6 +207,9 @@ def VOp.encode : VOp → Option Nat
     else none
   -- "PMULL, PMULL2", `size = 11` (`.1q` from `.1d`/`.2d`).
   | .pmull hi d n m => some (v3 (if hi then 0x4EE0E000 else 0x0EE0E000) d n m)
+  -- "PMULL, PMULL2", `size = 00` (`.8h` from `.8b`/`.16b`): `0 Q 0 01110 size
+  -- 1 Rm 1110 00 Rn Rd`.
+  | .pmull8 hi d n m => some (v3 (if hi then 0x4E20E000 else 0x0E20E000) d n m)
   -- "AESE", "AESD", "AESMC", "AESIMC".
   | .aese d n => some (v2 0x4E284800 d n)
   | .aesd d n => some (v2 0x4E285800 d n)
