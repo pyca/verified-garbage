@@ -18,7 +18,9 @@ plan and the shards' outputs, which last a day):
   assignments, candidate scores, model settings and planner fingerprint;
 * each Lean job: the build it restored (a failed or older restore rebuilds
   everything it imports) and, for each step, every module it built and how
-  long that took, with native compilation/linking facets recorded separately;
+  long that took, with native compilation/linking facets recorded separately,
+  and how long the emitter's check of the generated Rust took, a step of the
+  assembly's composite action that the API does not report on its own;
 * Rust timed test observations and per-feature-line CPU/wall times from logs;
 * missing logs/plan artifacts explicitly, and the collector's own fallback
   assembly from its local log when CI_METRICS_ASSEMBLY_LOG is set.
@@ -155,6 +157,28 @@ def plan_of(log):
     }
 
 
+# The emitter's check, a step of the lean-assemble composite action: the
+# runner logs each such step's start, with its id, and its end, with how
+# long it took.
+EMIT_CHECK = "Check the generated Rust is up to date"
+EMIT_START = re.compile(r"##\[start-action display=" + re.escape(EMIT_CHECK) + r";id=([^\]\s;]+)\]")
+ACTION_END = re.compile(r"##\[end-action id=([^\]\s;]+);outcome=\w+;conclusion=(\w+);duration_ms=(\d+)\]")
+
+
+def emit_check_s(log):
+    """How long the emitter's check of the generated Rust took in the job
+    whose log is `log`, in seconds; None if it did not run there, was
+    skipped or did not finish (its end is not in the log)."""
+    starts = list(EMIT_START.finditer(log))
+    if not starts:
+        return None
+    start = starts[-1]
+    for end in ACTION_END.finditer(log, start.end()):
+        if end.group(1) == start.group(1):
+            return None if end.group(2) == "skipped" else int(end.group(3)) / 1000
+    return None
+
+
 def phases(j):
     """Wall times, not summed module CPU work; absent phases stay unknown."""
     names = {"prepare_s": "Run ./.github/actions/lean-prepare",
@@ -283,7 +307,8 @@ def collect(run, jobs, logs, planning=None):
         lean_jobs.append({
             "name": j["name"],
             "job_id": j["id"],
-            "phases": phases(j),
+            # The emitter's check is part of the assembly's time.
+            "phases": {**phases(j), "emit_check_s": emit_check_s(log)},
             "restored": restored,
             # Whether it restored the plan's build (or the sources' own).
             "restored_planned": (restored in expected) if expected else None,
@@ -382,14 +407,16 @@ def summary(m):
     for lj in sorted(lean["jobs"], key=order):
         p = lj.get("phases")
         if p:
-            phase_rows.append(f"| {lj['name']} | " + " | ".join(fmt(p[k]) for k in
-                              ("queued_s", "prepare_s", "proof_s", "unpack_s", "assemble_s")) + " |")
+            # Older metrics have no `emit_check_s`.
+            phase_rows.append(f"| {lj['name']} | " + " | ".join(fmt(p.get(k)) for k in
+                              ("queued_s", "prepare_s", "proof_s", "unpack_s", "assemble_s",
+                               "emit_check_s")) + " |")
     if phase_rows:
         out += ["", "### Lean wall time by phase", "",
-                "| Job | Queued | Prepare | Shard proofs | Unpack remainder | Assemble |",
-                "|---|---|---|---|---|---|", *phase_rows,
+                "| Job | Queued | Prepare | Shard proofs | Unpack remainder | Assemble | Emitter check |",
+                "|---|---|---|---|---|---|---|", *phase_rows,
                 "", "Phase wall times include native work; module/facet durations are recorded separately "
-                "and overlap when builds run in parallel."]
+                "and overlap when builds run in parallel. The emitter check is part of the assembly."]
     if lean.get("fallback_assembly"):
         a = lean["fallback_assembly"]
         out += ["", f"Fallback assembly in all-green: {len(a['built'])} modules and "

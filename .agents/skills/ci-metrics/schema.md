@@ -41,7 +41,12 @@ lacks is absent, not empty.
 ## Lean jobs
 
 `phases` holds named phase wall times, null when a phase was absent or
-skipped (not zero). `restored` is the cache key the job restored, and
+skipped (not zero). `emit_check_s` is the emitter's check of the generated
+Rust (`lake env lean --run Emit.lean --check`), a step of the assembly's
+composite action and so part of `assemble_s`: the API reports only the
+action as a whole, and this comes from the runner's `end-action` line for
+that step in the job's log. Metrics collected before it was recorded have
+no such key. `restored` is the cache key the job restored, and
 `restored_planned` whether it is the plan's build or the sources' own.
 
 `built` holds, per step, each Lean module the job built and its time.
