@@ -26,13 +26,15 @@ nor the shared Miller–Rabin round changes.
    (`umulh`: the model has no division); RSA's trial division by its
    table's first 512 entries (1024 above 1024 bits), the odd primes of
    `Spec.RsaKeyGen.obviouslyComposite`, four entries (a word of the table)
-   at a time, stopping after the first word with a divisor; then
-   `q = (p − 1) / 2` in place, its oddness and its trial division, as
-   `p`'s. Their flags are or'ed in `fBad`, which is looked at after the
-   congruence, after `p`'s trial division and after `q`'s; the result is 2
-   as soon as it is set (`Spec.Ffdh.sievedParameterCandidate`: most
-   candidates have a small factor, and end at one of the table's first
-   words).
+   at a time, stopping after the first word with a divisor: first by the
+   table's first `firstWords` words alone; then, with `q = (p − 1) / 2` in
+   place, `q`'s oddness, and its trial division; and last, with `p` loaded
+   again, `p`'s whole trial division: a `q` with a small factor is rejected
+   before `p`'s whole division (as PPC64LE's candidate does), and an even
+   `q` before its own. Their flags are or'ed in `fBad`, which is
+   looked at after each of these five checks; the result is 2 as soon as
+   it is set (`Spec.Ffdh.sievedParameterCandidate`: most candidates have a
+   small factor, and end at one of the table's first words).
 3. The witnesses of `Spec.Ffdh.screenedParameterWitnesses`: one for `p`,
    then `primeChecks` for `q`, then the other `primeChecks − 1` for `p`,
    each test with its modulus's word count `w = ⌈mb / 64⌉` (`mb` its bit
@@ -158,13 +160,22 @@ def tableWrite : Prog isa := .block (ws ++ base aTab .x9 ++ tabWrite)
 of a divisor (`x1`; `x8` is all ones), which ends the loop. -/
 def sieveStop : Prog isa := .block [.logic .eor .x .x3 .x1 .x8, .logic .and .x .x10 .x10 .x3]
 
+/-- The words of the table `p` is divided by before `q`'s trial division:
+most of `p`'s small factors, at a fraction of the whole division's cost. -/
+def firstWords : Nat := 4
+
+/-- The sieve's count of the table's words, into `x10`: `firstWords`, or
+(the whole division) 256 for `w > 16`, else 128. -/
+def sieveCount (first : Bool) : List Instr :=
+  if first then [movi .x10 firstWords]
+  else [movi .x3 128, movi .x4 256, movi .x5 17, .subs .x .x6 .x12 .x5, .csel .x .x10 .x4 .x3]
+
 /-- The sieve: RSA's trial division by the first `4 N` entries of its table
-(`N = 256` words of four for `w > 16`, else 128, counted in `x10`), up to
-the first word with an entry dividing `aN`; the mask of one dividing `aN`
-or'ed into `fBad`. -/
-def sieve : List (Prog isa) := [
-  .block (ws ++ base aTab .x9 ++ [movi .x3 128, movi .x4 256, movi .x5 17, .subs .x .x6 .x12 .x5,
-    .csel .x .x10 .x4 .x3, movi .x1 0, movi .x7 0, .subImm .x .x8 .x7 1]),
+(`N` words of four, `sieveCount first`, counted in `x10`), up to the first
+word with an entry dividing `aN`; the mask of one dividing `aN` or'ed into
+`fBad`. -/
+def sieve (first : Bool) : List (Prog isa) := [
+  .block (ws ++ base aTab .x9 ++ sieveCount first ++ [movi .x1 0, movi .x7 0, .subImm .x .x8 .x7 1]),
   .loop (seqs (([.block [ld .x17 .x9, next .x9]] : List (Prog isa)) ++ trialEntry 0 ++ trialEntry 1 ++
     trialEntry 2 ++ trialEntry 3 ++ ([.block [.subImm .x .x10 .x10 1]] : List (Prog isa)) ++
     ([sieveStop] : List (Prog isa)))) (.nonzero .x .x10),
@@ -260,17 +271,25 @@ def tests (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa))
   seqs (test false [firstCheck] mul roundCode ++ [.block [ldh .x3 kStat, .subImm .x .x3 .x3 1],
     .ite (.zero .x .x3) (testQ mul roundCode) qResult])
 
-/-- Once `p` passed its sieve: `q`, its oddness and its sieve, and the
+/-- Once `q` passed its sieve: `p` again in `aN`, its whole sieve, and the
 tests. -/
+def mainP (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : Prog isa :=
+  seqs (shapeP ++ sieve false ++ [.block [ldh .x5 fBad], .ite (.zero .x .x5) (tests mul roundCode) (finUsed 2)])
+
+/-- Once `p` passed the table's first words: `q`, rejected at once if it is
+even; then its sieve, rejected before `p`'s whole one (`mainP`). -/
 def mainQ (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : Prog isa :=
-  seqs (halveQ ++ sieve ++ [.block [ldh .x5 fBad], .ite (.zero .x .x5) (tests mul roundCode) (finUsed 2)])
+  seqs (halveQ ++ [.block [ldh .x5 fBad], .ite (.zero .x .x5)
+    (seqs (sieve false ++ [.block [ldh .x5 fBad], .ite (.zero .x .x5) (mainP mul roundCode) (finUsed 2)]))
+    (finUsed 2)])
 
 /-- Once `rand` holds the candidate's octets: `p`, its congruence, rejected
-before any other check (most candidates fail it); then the sieve of `p`,
-rejected before `q`'s; then `q`'s, and the tests. -/
+before any other check (most candidates fail it); then the sieve of `p` by
+the table's first words, rejected before `q` (`mainQ`), whose checks come
+before `p`'s whole sieve. -/
 def main (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : Prog isa :=
   seqs (phase false ++ shapeP ++ residue ++ [.block [ldh .x5 fBad], .ite (.zero .x .x5)
-    (seqs ([tableWrite] ++ sieve ++
+    (seqs ([tableWrite] ++ sieve true ++
       [.block [ldh .x5 fBad], .ite (.zero .x .x5) (mainQ mul roundCode) (finUsed 2)]))
     (finUsed 2)])
 

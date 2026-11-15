@@ -66,30 +66,34 @@ def SV (a : WsP × Nat) (s : State) : Prop :=
     wv s.mem a.1.B (slot a.1.w aN) a.1.w = a.2
 
 /-- Before word `k` of the table. -/
-def SI (a : WsP × Nat) (k : Nat) (s : State) : Prop :=
+def SI (first : Bool) (a : WsP × Nat) (k : Nat) (s : State) : Prop :=
   Ws s a.1.B a.1.Z a.1.w ∧ slot a.1.w aTab + 2048 ≤ a.1.Z ∧ s.gpr .x9 = off a.1.B (slot a.1.w aTab + 8 * k) ∧
-    s.gpr .x10 = BitVec.ofNat 64 (trialN a.1.w - k) ∧ s.gpr .x7 = 0 ∧ s.gpr .x8 = mask true ∧
+    s.gpr .x10 = BitVec.ofNat 64 (sieveWords first a.1.w - k) ∧ s.gpr .x7 = 0 ∧ s.gpr .x8 = mask true ∧
     TabOk s.mem a.1.B a.1.w ∧ wv s.mem a.1.B (slot a.1.w aN) a.1.w = a.2 ∧ s.gpr .x1 = mask (anyPre a.2 (4 * k))
 
 /-- After the loop. -/
 def SIE (a : WsP × Nat) (s : State) : Prop := Ws s a.1.B a.1.Z a.1.w
 
 /-- The words the sieve reads. -/
-abbrev sieveN (a : WsP × Nat) : Nat := stopN a.2 (trialN a.1.w)
+abbrev sieveN (first : Bool) (a : WsP × Nat) : Nat := stopN a.2 (sieveWords first a.1.w)
 
-theorem trialN_le (w : Nat) : trialN w ≤ 256 ∧ 1 ≤ trialN w := by unfold trialN; split <;> omega_using []
+theorem trialN_le (first : Bool) (w : Nat) : sieveWords first w ≤ 256 ∧ 1 ≤ sieveWords first w :=
+  ⟨(sieveWords_le first w).2, (sieveWords_le first w).1⟩
 
-theorem sieveIter_ok {a : WsP × Nat} {k : Nat} {s : State} (hk : k < stopN a.2 (trialN a.1.w)) (h : SI a k s) :
+theorem sieveIter_ok {first : Bool} {a : WsP × Nat} {k : Nat} {s : State}
+    (hk : k < stopN a.2 (sieveWords first a.1.w)) (h : SI first a k s) :
     WP isa (seqs (([.block [ld .x17 .x9, next .x9]] : List (Prog isa)) ++ trialEntry 0 ++ trialEntry 1 ++
       trialEntry 2 ++ trialEntry 3 ++ ([.block [.subImm .x .x10 .x10 1]] : List (Prog isa)) ++
       ([sieveStop] : List (Prog isa)))) s fun t =>
-      isa.eval (.nonzero .x .x10) t = some (decide (k + 1 < stopN a.2 (trialN a.1.w))) ∧
-        (k + 1 < stopN a.2 (trialN a.1.w) → SI a (k + 1) t) ∧ (k + 1 = stopN a.2 (trialN a.1.w) → SIE a t) := by
+      isa.eval (.nonzero .x .x10) t = some (decide (k + 1 < stopN a.2 (sieveWords first a.1.w))) ∧
+        (k + 1 < stopN a.2 (sieveWords first a.1.w) → SI first a (k + 1) t) ∧
+        (k + 1 = stopN a.2 (sieveWords first a.1.w) → SIE a t) := by
   obtain ⟨hw, hT, h9, h10, h7, h8, htab, hc, h1⟩ := h
-  have hN := trialN_le a.1.w
-  have hle : stopN a.2 (trialN a.1.w) ≤ trialN a.1.w := stopN_le _ _
+  have hN := trialN_le first a.1.w
+  have hle : stopN a.2 (sieveWords first a.1.w) ≤ sieveWords first a.1.w := stopN_le _ _
   obtain ⟨nxt, nxf⟩ := stopN_next hk
-  have e10 : BitVec.ofNat 64 (trialN a.1.w - k) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (trialN a.1.w - (k + 1)) := by
+  have e10 : BitVec.ofNat 64 (sieveWords first a.1.w - k) - BitVec.ofNat 64 1 =
+      BitVec.ofNat 64 (sieveWords first a.1.w - (k + 1)) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat]
     omega_using [hk, hle, hN.1]
@@ -107,7 +111,8 @@ theorem sieveIter_ok {a : WsP × Nat} {k : Nat} {s : State} (hk : k < stopN a.2 
       exact congrArg some (decide_eq_decide.mpr (by omega_using [hi]))
   · rw [h10', ite_eq_right (by rw [stopN_before _ _ (k + 1) hlt]; exact Bool.false_ne_true), h10, e10]
 
-theorem sieveBody_ct : RelCT isa (Two fun (a : (WsP × Nat) × Nat) s => a.2 < sieveN a.1 ∧ SI a.1 a.2 s)
+theorem sieveBody_ct (first : Bool) :
+    RelCT isa (Two fun (a : (WsP × Nat) × Nat) s => a.2 < sieveN first a.1 ∧ SI first a.1 a.2 s)
     (seqs (([.block [ld .x17 .x9, next .x9]] : List (Prog isa)) ++ trialEntry 0 ++ trialEntry 1 ++
       trialEntry 2 ++ trialEntry 3 ++ ([.block [.subImm .x .x10 .x10 1]] : List (Prog isa)) ++
       ([sieveStop] : List (Prog isa)))) fun _ _ => True := by
@@ -118,9 +123,9 @@ theorem sieveBody_ct : RelCT isa (Two fun (a : (WsP × Nat) × Nat) s => a.2 < s
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.2.2.1, h₂.2.2.2.1]) (by taint_decide))
     (fun p s h => ?_)) ?_)
   · obtain ⟨hk, hw, hT, h9, -, h7, h8, htab, -, -⟩ := h
-    have hN := trialN_le p.1.1.w
-    have hle : stopN p.1.2 (trialN p.1.1.w) ≤ trialN p.1.1.w := stopN_le _ _
-    replace hk : p.2 < stopN p.1.2 (trialN p.1.1.w) := hk
+    have hN := trialN_le first p.1.1.w
+    have hle : stopN p.1.2 (sieveWords first p.1.1.w) ≤ sieveWords first p.1.1.w := stopN_le _ _
+    replace hk : p.2 < stopN p.1.2 (sieveWords first p.1.1.w) := hk
     exact WP.mono (tlLoad_ok hT (by omega_using [hk, hN, hle]) htab ⟨hw, h7, h8, rfl, Keep.refl _ _⟩ h9) fun t ⟨⟨h17, _, hm⟩, k⟩ =>
       ⟨hw.congr' (rs := []) (fun x _ => by rw [hm]) (by simp) k (by decide), by omega_using [hk, hN, hle], h17,
         (k.gpr .x7 (by decide)).trans h7, (k.gpr .x8 (by decide)).trans h8⟩
@@ -131,22 +136,32 @@ theorem sieveBody_ct : RelCT isa (Two fun (a : (WsP × Nat) × Nat) s => a.2 < s
   refine RelCT.seqs_append (ne 3) (by simp) (RelCT.seq (trialEntry_ct (by decide) (by taint_decide) (by taint_decide)) ?_)
   exact two_taint [] (pins_nil₀ _) (by taint_decide)
 
-/-- The sieve leaks the same in runs with the same working space and the
-same number in `aN`, which fixes the word it stops at. -/
-theorem sieve_ct : RelCT isa (Two SV) (seqs sieve) fun _ _ => True := by
+/-- `sieve_ct`, from its first block's. -/
+theorem sieve_ct' (first : Bool) (hinit : RelCT isa (Two SV)
+    (.block (ws ++ base aTab .x9 ++ sieveCount first ++ [movi .x1 0, movi .x7 0, .subImm .x .x8 .x7 1]))
+      fun _ _ => True) : RelCT isa (Two SV) (seqs (sieve first)) fun _ _ => True := by
   rw [sieve_eq]
   simp only [seqs]
-  refine RelCT.seq (two_post (ws_block_ct0 (fun a : WsP × Nat => a.1.B) (fun a : WsP × Nat => a.1.Z)
-    (fun a : WsP × Nat => a.1.w) (fun _ _ h => h.1) (by taint_decide)) (Ψ := fun a s => 0 < sieveN a ∧ SI a 0 s)
+  refine RelCT.seq (two_post hinit (Ψ := fun a s => 0 < sieveN first a ∧ SI first a 0 s)
       fun a s ⟨hw, hT, htab, hc⟩ => ?_)
-    (RelCT.seq (two_loop (Φ := SI) (Ψ := SIE) sieveN sieveBody_ct fun _ _ _ hk h => sieveIter_ok hk h)
+    (RelCT.seq (two_loop (Φ := SI first) (Ψ := SIE) (sieveN first) (sieveBody_ct first)
+        fun _ _ _ hk h => sieveIter_ok hk h)
       (two_taint [.x0] (pins_ws' (fun a : WsP × Nat => a.1.B) (fun a : WsP × Nat => a.1.Z)
         (fun a : WsP × Nat => a.1.w) fun _ _ h => h) (by taint_decide)))
-  refine WP.mono (sieveInit_ok hw) fun t ⟨⟨h9, h10, h1, h7, h8, hm⟩, k⟩ =>
-    ⟨stopN_pos _ (trialN_le a.1.w).2, ?_⟩
+  refine WP.mono (sieveInit_ok first hw) fun t ⟨⟨h9, h10, h1, h7, h8, hm⟩, k⟩ =>
+    ⟨stopN_pos _ (trialN_le first a.1.w).2, ?_⟩
   exact ⟨hw.congr' (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide), hT, h9,
     by rw [h10, Nat.sub_zero], h7, h8, fun i hi => by rw [hm]; exact htab i hi, by rw [hm]; exact hc,
     by rw [h1, Nat.mul_zero, anyPre_zero]; rfl⟩
+
+/-- The sieve leaks the same in runs with the same working space and the
+same number in `aN`, which fixes the word it stops at. -/
+theorem sieve_ct (first : Bool) : RelCT isa (Two SV) (seqs (sieve first)) fun _ _ => True := by
+  cases first
+  · exact sieve_ct' false (ws_block_ct0 (fun a : WsP × Nat => a.1.B) (fun a : WsP × Nat => a.1.Z)
+      (fun a : WsP × Nat => a.1.w) (fun _ _ h => h.1) (by taint_decide))
+  · exact sieve_ct' true (ws_block_ct0 (fun a : WsP × Nat => a.1.B) (fun a : WsP × Nat => a.1.Z)
+      (fun a : WsP × Nat => a.1.w) (fun _ _ h => h.1) (by taint_decide))
 
 /-! ## `q` -/
 

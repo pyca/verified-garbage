@@ -133,22 +133,47 @@ theorem tableWrite_ok {s : State} {p : PP} {w : Nat} (h : PSt p w s) (hT : slot 
     (by decide)) hf (fun r hr => by rw [List.mem_singleton.mp hr]; exact PMut.ofSlot _ _ _)
     (fun r hr => by rw [List.mem_singleton.mp hr]; exact hT) k13, htab, hf, k13.mono (by decide)⟩
 
-/-- The table's words the sieve divides by: 256 for `w > 16`, else 128. -/
+/-- The table's words the whole sieve divides by: 256 for `w > 16`, else
+128. -/
 def trialN (w : Nat) : Nat := if 17 ≤ w then 256 else 128
 
+/-- The table's words `sieve first` divides by. -/
+def sieveWords (first : Bool) (w : Nat) : Nat := if first then firstWords else trialN w
+
+theorem sieveWords_false (w : Nat) : sieveWords false w = trialN w := rfl
+
+theorem sieveWords_le (first : Bool) (w : Nat) : 1 ≤ sieveWords first w ∧ sieveWords first w ≤ 256 := by
+  cases first
+  · show 1 ≤ trialN w ∧ trialN w ≤ 256
+    unfold trialN; split <;> omega_arith
+  · exact (by decide : 1 ≤ firstWords ∧ firstWords ≤ 256)
+
+/-- The first words are among the whole sieve's. -/
+theorem sieveWords_trialN (first : Bool) (w : Nat) : sieveWords first w ≤ trialN w := by
+  cases first
+  · exact Nat.le_refl _
+  · show firstWords ≤ trialN w
+    unfold trialN firstWords; split <;> omega_arith
+
 /-- The sieve's start: the table's base into `x9`, the counts. -/
-theorem sieveInit_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) :
-    WP isa (.block (ws ++ base aTab .x9 ++ [movi .x3 128, movi .x4 256, movi .x5 17, .subs .x .x6 .x12 .x5,
-      .csel .x .x10 .x4 .x3, movi .x1 0, movi .x7 0, .subImm .x .x8 .x7 1])) s
-      fun t => (t.gpr .x9 = off B (slot w aTab + 8 * 0) ∧ t.gpr .x10 = BitVec.ofNat 64 (trialN w) ∧ t.gpr .x1 = 0 ∧
-        t.gpr .x7 = 0 ∧ t.gpr .x8 = mask true ∧ t.mem = s.mem) ∧ Keep mmRegs s t := by
-  rw [WP.block_append_iff, WP.block_append_iff]
+theorem sieveInit_ok (first : Bool) {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) :
+    WP isa (.block (ws ++ base aTab .x9 ++ sieveCount first ++ [movi .x1 0, movi .x7 0, .subImm .x .x8 .x7 1])) s
+      fun t => (t.gpr .x9 = off B (slot w aTab + 8 * 0) ∧ t.gpr .x10 = BitVec.ofNat 64 (sieveWords first w) ∧
+        t.gpr .x1 = 0 ∧ t.gpr .x7 = 0 ∧ t.gpr .x8 = mask true ∧ t.mem = s.mem) ∧ Keep mmRegs s t := by
+  rw [List.append_assoc, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono h.ws_ok fun s₁ ⟨⟨h12, h11, m₁, _⟩, k₁⟩ => ?_
   refine WP.mono (base_ok aTab .x9 ((k₁.gpr .x0 (by decide)).trans h.x0) h11) fun s₂ ⟨⟨h9, m₂, _⟩, k₂⟩ => ?_
-  refine WP.mono (trialInit_ok s₂ ((k₂.gpr .x12 (by decide)).trans h12) h.w2)
-    fun t ⟨⟨a, b, c, d, e⟩, k₃⟩ => ?_
-  exact ⟨⟨by rw [k₃.gpr .x9 (by decide), h9, Nat.mul_zero, Nat.add_zero], a, b, c, d, by rw [e, m₂, m₁]⟩,
-    ((k₁.trans k₂).trans k₃).mono (by decide)⟩
+  cases first
+  · refine WP.mono (trialInit_ok s₂ ((k₂.gpr .x12 (by decide)).trans h12) h.w2)
+      fun t ⟨⟨a, b, c, d, e⟩, k₃⟩ => ?_
+    exact ⟨⟨by rw [k₃.gpr .x9 (by decide), h9, Nat.mul_zero, Nat.add_zero], a, b, c, d, by rw [e, m₂, m₁]⟩,
+      ((k₁.trans k₂).trans k₃).mono (by decide)⟩
+  · show WP isa (.block ([movi .x10 firstWords, movi .x1 0, movi .x7 0, .subImm .x .x8 .x7 1] : List Instr)) s₂ _
+    refine WP.mono (WP.keep [.x10, .x1, .x7, .x8] (Q := fun t => t.gpr .x10 = BitVec.ofNat 64 firstWords ∧
+        t.gpr .x1 = 0 ∧ t.gpr .x7 = 0 ∧ t.gpr .x8 = mask true ∧ t.mem = s₂.mem) (by brun) (by decide) (by decide)
+      (by decide +kernel)) fun t ⟨⟨a, b, c, d, e⟩, k₃⟩ => ?_
+    exact ⟨⟨by rw [k₃.gpr .x9 (by decide), h9, Nat.mul_zero, Nat.add_zero], a, b, c, d, by rw [e, m₂, m₁]⟩,
+      ((k₁.trans k₂).trans k₃).mono (by decide)⟩
 
 /-- After a word: the words left zeroed under the mask of a divisor. -/
 theorem sieveStop_ok (s : State) {b : Bool} {v : BitVec 64} (h1 : s.gpr .x1 = mask b)
@@ -186,21 +211,20 @@ theorem sieveWord_ok {s₀ : State} {B : Addr} {Z w T c k : Nat} (hc : wv s₀.m
     (hI₁.keep.trans k').mono (by decide)⟩, (k'.gpr .x9 (by decide)).trans h9₁,
     (k'.gpr .x1 (by decide)).trans h1₁, h10⟩
 
-theorem sieve_eq : sieve = ([
-    .block (ws ++ base aTab .x9 ++ [movi .x3 128, movi .x4 256, movi .x5 17, .subs .x .x6 .x12 .x5,
-      .csel .x .x10 .x4 .x3, movi .x1 0, movi .x7 0, .subImm .x .x8 .x7 1]),
+theorem sieve_eq (first : Bool) : sieve first = ([
+    .block (ws ++ base aTab .x9 ++ sieveCount first ++ [movi .x1 0, movi .x7 0, .subImm .x .x8 .x7 1]),
     .loop (seqs (([.block [ld .x17 .x9, next .x9]] : List (Prog isa)) ++ trialEntry 0 ++ trialEntry 1 ++
       trialEntry 2 ++ trialEntry 3 ++ ([.block [.subImm .x .x10 .x10 1]] : List (Prog isa)) ++
       ([sieveStop] : List (Prog isa)))) (.nonzero .x .x10),
     .block [ldh .x5 fBad, .logic .orr .x .x5 .x5 .x1, sth .x5 fBad]] : List (Prog isa)) := rfl
 
-/-- `sieve`: the mask of an entry of the table's first `4 (trialN w)`
-dividing `aN` or'ed into `fBad`. -/
-theorem sieve_ok {s : State} {p : PP} {w c : Nat} {v : BitVec 64} (h : PSt p w s)
+/-- `sieve`: the mask of an entry of the table's first `4 (sieveWords
+first w)` dividing `aN` or'ed into `fBad`. -/
+theorem sieve_ok (first : Bool) {s : State} {p : PP} {w c : Nat} {v : BitVec 64} (h : PSt p w s)
     (hT : slot w aTab + 2048 ≤ p.Z) (htab : TabOk s.mem p.B w) (hc : wv s.mem p.B (slot w aN) w = c)
     (hv : word s.mem p.B (8 * fBad) = v) :
-    WP isa (seqs sieve) s fun t =>
-      PSt p w t ∧ word t.mem p.B (8 * fBad) = v ||| mask (anyPre c (4 * trialN w)) ∧
+    WP isa (seqs (sieve first)) s fun t =>
+      PSt p w t ∧ word t.mem p.B (8 * fBad) = v ||| mask (anyPre c (4 * sieveWords first w)) ∧
         Frm p.B [(8 * fBad, 8)] s.mem t.mem ∧ Keep mmRegs s t := by
   have hws := h.ws
   have hs := hws.scr
@@ -208,25 +232,27 @@ theorem sieve_ok {s : State} {p : PP} {w c : Nat} {v : BitVec 64} (h : PSt p w s
   have h256 := hws.h256
   rw [sieve_eq]
   simp only [seqs]
-  refine WP.seq (WP.mono (sieveInit_ok hws) fun s₁ ⟨⟨h9₁, h10₁, h1₁, h7₁, h8₁, hm₁⟩, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (sieveInit_ok first hws) fun s₁ ⟨⟨h9₁, h10₁, h1₁, h7₁, h8₁, hm₁⟩, k₁⟩ => ?_)
   have hws₁ : Ws s₁ p.B p.Z w := hws.congr' (rs := []) (by rw [hm₁]; exact Frm.refl _ _ _) (by simp) k₁ (by decide)
   have htab₁ : ∀ i < 256, word s₁.mem p.B (slot w aTab + 8 * i) = BitVec.ofNat 64 (tabWord i) := fun i hi => by
     rw [hm₁]; exact htab i hi
   have hc₁ : wv s₁.mem p.B (slot w aN) w = c := by rw [hm₁]; exact hc
-  have hN : trialN w ≤ 256 ∧ 1 ≤ trialN w := by unfold trialN; split <;> omega_arith
-  have hSle := stopN_le c (trialN w)
-  refine WP.seq (WP.mono (count_loop (cr := .x10) (stopN_pos c (show 0 < trialN w by omega_arith))
+  have hN : sieveWords first w ≤ 256 ∧ 1 ≤ sieveWords first w :=
+    ⟨(sieveWords_le first w).2, (sieveWords_le first w).1⟩
+  generalize sieveWords first w = N at hN h10₁ ⊢
+  have hSle := stopN_le c N
+  refine WP.seq (WP.mono (count_loop (cr := .x10) (stopN_pos c (show 0 < N by omega_arith))
     (fun k t => TLInv s₁ p.B p.Z w t ∧ t.gpr .x9 = off p.B (slot w aTab + 8 * k) ∧
       t.gpr .x1 = mask (anyPre c (4 * k)) ∧
-      (anyPre c (4 * k) = false → t.gpr .x10 = BitVec.ofNat 64 (trialN w - k)))
+      (anyPre c (4 * k) = false → t.gpr .x10 = BitVec.ofNat 64 (N - k)))
     (fun k hk t ⟨hI, h9, hf, h10⟩ => ?_)
     ⟨⟨hws₁, h7₁, h8₁, rfl, Keep.refl _ _⟩, h9₁, by rw [h1₁, Nat.mul_zero, anyPre_zero]; rfl,
       fun _ => by rw [h10₁, Nat.sub_zero]⟩)
     fun s₄ ⟨hI₄, _, h1₄, _⟩ => ?_)
   · -- A word: the sieve goes on without a divisor, while words are left.
-    have h10k := h10 (stopN_before c (trialN w) k hk)
+    have h10k := h10 (stopN_before c (N) k hk)
     obtain ⟨nxt, nxf⟩ := stopN_next hk
-    have e10 : BitVec.ofNat 64 (trialN w - k) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (trialN w - (k + 1)) := by
+    have e10 : BitVec.ofNat 64 (N - k) - BitVec.ofNat 64 1 = BitVec.ofNat 64 (N - (k + 1)) := by
       apply BitVec.eq_of_toNat_eq
       rw [BitVec.toNat_sub, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
       omega_using [hk, hSle, hN.1]
@@ -243,7 +269,7 @@ theorem sieve_ok {s : State} {p : PP} {w c : Nat} {v : BitVec 64} (h : PSt p w s
   have hm₄ : s₄.mem = s.mem := hI₄.mem.trans hm₁
   have hv₄ : s₄.mem.readW (off p.B (8 * fBad)) 64 = v := by rw [hm₄]; exact hv
   refine WP.mono (WP.keep [.x5] (Q := fun t => t.mem = s₄.mem.writeW (off p.B (8 * fBad))
-      (v ||| mask (anyPre c (4 * trialN w))))
+      (v ||| mask (anyPre c (4 * N))))
     (by
       brun [hI₄.ws.x0, hdr_enc (show fBad < 32 by decide), hI₄.ws.scr.ld (d := 8 * fBad) (by simp only [fBad]; omega_arith),
         hI₄.ws.scr.st (d := 8 * fBad) (by simp only [fBad]; omega_arith), hv₄, h1₄])
