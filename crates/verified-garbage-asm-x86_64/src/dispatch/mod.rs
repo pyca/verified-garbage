@@ -291,6 +291,9 @@ pub mod idea_cfb;
 pub mod idea_ofb;
 
 #[rustfmt::skip]
+pub mod mcdt;
+
+#[rustfmt::skip]
 pub mod md5;
 
 #[rustfmt::skip]

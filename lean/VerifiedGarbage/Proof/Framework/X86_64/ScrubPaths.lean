@@ -106,6 +106,7 @@ def adds (fs : List F) : Instr → List F
   | .mov32 r (.imm _) => [.reg r]
   | .mov32 r (.mem m) => if plain m && fs.contains (slotOf m) then [.reg r] else []
   | .alu32 .and r (.imm _) => if fs.contains (.reg r) then [.reg r] else []
+  | .alu32 .or r (.imm _) => if fs.contains (.reg r) then [.reg r] else []
   | .store32 m r => if plain m && fs.contains (.reg r) then [slotOf m] else []
   | _ => []
 

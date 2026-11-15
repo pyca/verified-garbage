@@ -128,6 +128,28 @@ class Flags(unittest.TestCase):
             self.assertEqual(errors == [], ok)
 
 
+class Enter(unittest.TestCase):
+    CODE = ["push rax", "stmxcsr DWORD PTR [rsp]", "mov eax, DWORD PTR [rsp]", "or eax, 63",
+            "mov DWORD PTR [rsp], eax", "ldmxcsr DWORD PTR [rsp]", "lfence", "pop rcx", "ret"]
+
+    def test_accepted(self):
+        self.assertEqual(check_mcdt.check_enter("e", self.CODE, list(range(len(self.CODE)))), [])
+
+    def test_affected_or_call_rejected(self):
+        for bad in ("pmuludq xmm0, xmm1", "call {vg_f}"):
+            code = self.CODE[:-1] + [bad, "ret"]
+            self.assertEqual(check_mcdt.check_enter("e", code, list(range(len(code)))), [
+                f"e:{len(code) - 2}: `{bad}` is in vg_mcdt_enter, which may neither run an "
+                "instruction MCDT affects nor call"])
+
+    def test_only_vg_mcdt_enter(self):
+        # The same code under another name is not Intel's prologue.
+        code = self.CODE
+        errors, _ = check_mcdt.check_function("f", code, list(range(len(code))), {})
+        self.assertEqual(errors, ["f:5: `ldmxcsr DWORD PTR [rsp]` is not Intel's MCDT prologue: "
+                                  "not preceded by `mov r32, 8127` and a store of it to its operand"])
+
+
 class ColdBranch(unittest.TestCase):
     PROLOGUE = [
         "stmxcsr DWORD PTR [rsp]",

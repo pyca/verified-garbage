@@ -29,6 +29,10 @@ Intel's sequence, exactly:
   caller's is proven: MXCSR's control bits are callee-saved in the
   contracts.)
 
+One function loads MXCSR otherwise: `vg_mcdt_enter`, of the module `mcdt`
+of x86-64, which sets its status flags (`lean/VerifiedGarbage/Spec/Mcdt.lean`).
+It may neither run an instruction on Intel's list nor call.
+
 A region is only entered through its prologue: no jump from outside it may
 land inside it, and it may not contain a `call` or `ret`. So a cold branch
 (`Code.iteCold`) may not start inside a region either: its code lies after
@@ -60,6 +64,10 @@ AFFECTED = {
 FN = re.compile(r"^(vg_\w+):$")
 LABEL = re.compile(r"^(\d+):$")
 MXCSR_VALUE = {"8127", "0x1FBF", "0x1fbf"}
+# `vg_mcdt_enter` (`lean/VerifiedGarbage/Impl/Mcdt/X86_64.lean`), the one
+# function that loads MXCSR other than in Intel's prologue and epilogue: of
+# the module `mcdt` of the target `x86_64`.
+ENTER = ("x86_64", "mcdt.s", "vg_mcdt_enter")
 
 
 def functions(text):
@@ -268,6 +276,16 @@ def check_function(name, instrs, lines, labels):
     return errors, len(regions)
 
 
+def check_enter(name, instrs, lines):
+    """The errors of `vg_mcdt_enter`, which sets MXCSR's status flags (what
+    it leaves in MXCSR is proven: `VG.Proof.Mcdt.X86_64.enter_mxcsr`): it may
+    load MXCSR as it does, as no prologue does, but runs no instruction
+    that MCDT affects, and calls nothing."""
+    return [f"{name}:{lines[k]}: `{x}` is in vg_mcdt_enter, which may neither run an instruction "
+            "MCDT affects nor call"
+            for k, x in enumerate(instrs) if mnemonic(x) in AFFECTED or mnemonic(x) == "call"]
+
+
 def main():
     errors = []
     regions = 0
@@ -288,6 +306,9 @@ def main():
             where = assembly.relative_to(ROOT)
             errors += [f"{where}:{n}: neither a function, an instruction nor a label" for n in unread]
             for name, instrs, lines, labels in fns:
+                if (target_name, assembly.name, name) == ENTER:
+                    errors += check_enter(f"{where} ({name})", instrs, lines)
+                    continue
                 errs, n = check_function(f"{where} ({name})", instrs, lines, labels)
                 errors += errs
                 regions += n

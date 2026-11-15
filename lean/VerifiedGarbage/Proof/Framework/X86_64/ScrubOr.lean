@@ -50,7 +50,7 @@ def withScrubOrAll {api : Api} (r : Registration api target)
 `Mx.mx` follows what two runs of some code along the same path agree on,
 besides MXCSR: the low 32 bits of some registers, and the 4 bytes at some
 displacements from some registers (`Mx.F`). `stmxcsr` stores MXCSR, a `mov`
-of an immediate, a load of such bytes and an `and` with an immediate keep a
+of an immediate, a load of such bytes and an `and` or `or` with an immediate keep a
 register agreed on, and a store of one stores such bytes; every `ldmxcsr`
 loads bytes agreed on (Intel's MCDT prologue its `0x1FBF`, and the epilogue
 what the prologue saved, in a register or in memory), so MXCSR agrees all
@@ -212,6 +212,18 @@ theorem adds_hold {fs : List F} {i : Instr} {f : F} (hf : f ∈ adds fs i) {s₁
       simp only [Hold, State.setReg32, State.setReg, ↓reduceIte, sw32, this]
     · cases hf
   · -- and r imm
+    rename_i r k
+    split at hf
+    · rename_i hc
+      simp only [List.contains_iff_mem] at hc
+      simp only [List.mem_singleton] at hf; subst hf
+      simp only [reduceExec, execAlu32, readSrc32, Option.bind_some, Option.some.injEq] at e₁ e₂
+      subst e₁ e₂
+      have := hi.2 _ hc
+      simp only [Hold] at this
+      simp only [Hold, State.setReg32, State.setReg, arithFlags, State.setFlags, ↓reduceIte, sw32, this]
+    · cases hf
+  · -- or r imm
     rename_i r k
     split at hf
     · rename_i hc
