@@ -23,7 +23,9 @@ Intel's sequence, exactly:
 * the region: the code after that `lfence`, up to the next instruction that
   reads or writes MXCSR, which must be the epilogue's `ldmxcsr`;
 * the epilogue: `lfence`, then straight-line `mov`s, then `ldmxcsr` of the
-  slot the prologue's `stmxcsr` saved to. (That the value it loads is the
+  slot the prologue's `stmxcsr` saved to.
+  The value it loads keeps the status flags it was saved with, or has them
+  set (`flags_kept`): code after it may rely on flags set before it. (That the value it loads is the
   caller's is proven: MXCSR's control bits are callee-saved in the
   contracts.)
 
@@ -142,6 +144,47 @@ def prologue(instrs, i, labels):
     return None, "not preceded by stmxcsr in the same straight-line code"
 
 
+def flags_kept(instrs, i, fence, end, saved):
+    """Whether the epilogue ending at `instrs[end]` restores a value of MXCSR
+    with the status flags it was saved with, or with them set: never one with
+    them cleared, so that code after it may rely on flags that code before it
+    set (Intel's mitigation is MXCSR `0x1FBF`, the default control bits with
+    every flag set). It follows the saved value, in the prologue (from its
+    `stmxcsr` to its `ldmxcsr` at `i`) and the epilogue's movs: loaded from
+    the slot into a register, `and` with an immediate that keeps bits 5:0 or
+    `or` with one that sets them, and stored back."""
+    j = i - 1
+    while mnemonic(instrs[j]) != "stmxcsr":
+        j -= 1
+    regs, slot = {}, "saved"
+
+    def imm(x):
+        try:
+            return int(x, 0)
+        except ValueError:
+            return None
+
+    def step(x):
+        nonlocal slot
+        op, ops = mnemonic(x), operands(x)
+        if op == "mov" and len(ops) == 2 and ops[1] == saved:
+            regs[ops[0]] = slot
+        elif op == "mov" and len(ops) == 2 and ops[0] == saved:
+            slot = regs.get(ops[1], "unknown")
+        elif op in ("and", "or") and len(ops) == 2 and ops[0] in regs and imm(ops[1]) is not None:
+            kept = imm(ops[1]) & 63 == 63
+            if op == "and" and not kept:
+                regs[ops[0]] = "cleared"
+            elif op == "or" and kept:
+                regs[ops[0]] = "set"
+        elif ops:
+            regs.pop(ops[0], None)
+
+    for x in instrs[j + 1:i] + instrs[fence + 1:end]:
+        step(x)
+    return slot in ("saved", "set")
+
+
 def check_function(name, instrs, lines, labels):
     errors = []
 
@@ -181,6 +224,11 @@ def check_function(name, instrs, lines, labels):
                 errors.append(
                     f"{at(end)}: `{instrs[end]}` is not Intel's MCDT epilogue: "
                     f"lfence, then straight-line movs, then ldmxcsr of {saved}"
+                )
+            elif not flags_kept(instrs, i, fence, end, saved):
+                errors.append(
+                    f"{at(end)}: `{instrs[end]}` may restore MXCSR with its status flags "
+                    "cleared, which code after it may rely on"
                 )
             regions.append((first, fence))
             i = end + 1

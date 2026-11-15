@@ -13,8 +13,11 @@ where its Rust caller cannot clear it (`X86_64.NoResidue`):
   them) or `vpxor x, x, x` (`v = .avx`, which also zeroes bits 511:128 of
   `zmm0`–`zmm15`); with `v = .evex`, for code that may write `zmm16`–`zmm31`
   or MXCSR, those registers too (`vpxorq z, z, z`), and MXCSR's status
-  flags and reserved bits (`mxFix`), which leaves in it its control bits
-  alone, those the code keeps (`abiPreserved`);
+  flags and reserved bits (`mxFix`), which leaves in it its control bits,
+  those the code keeps (`abiPreserved`), with every status flag set, so
+  that the flags code before it set stay set for the code after it (with
+  the default control bits, that is `0x1FBF`, Intel's mitigation of MCDT:
+  see "MCDT" in `TCB/X86_64/Isa.lean`);
 * the stack below the stack pointer, within its `cs.sum` bytes (the stack
   `c`'s frames and calls use), in nested frames of the sizes `cs` (each
   less than a page, as `alloc` requires): the granules (16 bytes of `xmm0`,
@@ -66,17 +69,19 @@ def clearHigh : VecLevel → List Instr
   | .evex => hregs.map zeroH
   | _ => []
 
-/-- At the level `evex`: MXCSR with its status flags (bits 5:0) and its
-reserved bits (31:16, as the code that restores it clears them: see "MXCSR"
-in `TCB/X86_64/Isa.lean`) cleared, through 8 bytes of a frame of 16 below
+/-- At the level `evex`: MXCSR with its status flags (bits 5:0) set, which
+nothing else clears, and its reserved bits (31:16,
+as the code that restores it clears them: see "MXCSR" in
+`TCB/X86_64/Isa.lean`) cleared, through 8 bytes of a frame of 16 below
 the stack pointer; `r11` is left zero, as the wipe expects it. The only way
 the generated code writes MXCSR is Intel's sequence around the instructions
 MCDT affects (`ci/check_mcdt.py`), so this is that sequence, around none:
-`stmxcsr` saves MXCSR, whose saved value is masked; the prologue loads
+`stmxcsr` saves MXCSR, whose saved value is masked and has its flags set
+(`and`, `or`); the prologue loads
 `0x1FBF`; and the epilogue loads the saved value. -/
 def mxFix : VecLevel → Prog isa
   | .evex => .frame (.alloc 16) (.block [.stmxcsr { base := .rsp }, .mov32 .r11 (.mem { base := .rsp }),
-      .alu32 .and .r11 (.imm 0xFFC0), .store32 { base := .rsp } .r11,
+      .alu32 .and .r11 (.imm 0xFFC0), .alu32 .or .r11 (.imm 0x3F), .store32 { base := .rsp } .r11,
       .mov32 .r11 (.imm 0x1FBF), .store32 { base := .rsp, disp := 4 } .r11,
       .ldmxcsr { base := .rsp, disp := 4 }, .lfence, .lfence, .ldmxcsr { base := .rsp },
       .alu32 .xor .r11 (.reg .r11)]) (.free 16)

@@ -95,6 +95,39 @@ class Assembly(unittest.TestCase):
         self.assertEqual((status, errors), (0, []))
 
 
+class Flags(unittest.TestCase):
+    """An epilogue may not restore MXCSR with its status flags cleared."""
+
+    def regions(self, save):
+        instrs = (["stmxcsr DWORD PTR [rsp]", "mov r11d, DWORD PTR [rsp]"] + save +
+                  ["mov r11d, 8127", "mov DWORD PTR [rsp+4], r11d", "ldmxcsr DWORD PTR [rsp+4]",
+                   "lfence", "lfence", "ldmxcsr DWORD PTR [rsp]", "ret"])
+        return check_mcdt.check_function("f", instrs, list(range(len(instrs))), {})[0]
+
+    def test_scrub_tail(self):
+        # `mxFix`: the saved value masked (reserved bits and flags cleared), then the flags set.
+        self.assertEqual(self.regions(["and r11d, 65472", "or r11d, 63", "mov DWORD PTR [rsp], r11d"]), [])
+        self.assertEqual(self.regions(["and r11d, 65472", "mov DWORD PTR [rsp], r11d"]), [
+            "f:9: `ldmxcsr DWORD PTR [rsp]` may restore MXCSR with its status flags cleared, which "
+            "code after it may rely on"])
+
+    def test_saved_value_kept(self):
+        # The reserved bits cleared, the flags kept; or the slot as `stmxcsr` left it.
+        self.assertEqual(self.regions(["and r11d, 65535", "mov DWORD PTR [rsp], r11d"]), [])
+        self.assertEqual(self.regions([]), [])
+
+    def test_restored_from_a_register(self):
+        # ML-KEM's `withMxcsr`: the masked value kept in `r11`, stored back in the epilogue.
+        instrs = ["stmxcsr DWORD PTR [rdi+768]", "mov r11d, DWORD PTR [rdi+768]", "and r11d, {}",
+                  "mov eax, 8127", "mov DWORD PTR [rdi+772], eax", "ldmxcsr DWORD PTR [rdi+772]",
+                  "lfence", "pmuludq xmm0, xmm1", "lfence", "mov DWORD PTR [rdi+768], r11d",
+                  "ldmxcsr DWORD PTR [rdi+768]", "ret"]
+        for mask, ok in ((65535, True), (65472, False)):
+            code = [x.format(mask) for x in instrs]
+            errors = check_mcdt.check_function("f", code, list(range(len(code))), {})[0]
+            self.assertEqual(errors == [], ok)
+
+
 class ColdBranch(unittest.TestCase):
     PROLOGUE = [
         "stmxcsr DWORD PTR [rsp]",
