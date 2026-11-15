@@ -57,7 +57,7 @@ structure PInv (s₀ : State) (ys : List (List Byte)) (y14 y15 : BitVec 64) (i :
   sp : s.sp = s₀.sp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  frame : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩] (savedMem s₀) s.mem
+  frame : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀] (savedMem s₀) s.mem
   len : ys.length = N s₀
   data : Spec.Cbc.blocksAt s.mem (Dp s₀) (N s₀) = xored (iv0 s₀) ys i
   iv : bytesAt s.mem (Iv s₀) 16 = Spec.Xts.next (iv0 s₀) i
@@ -371,7 +371,7 @@ theorem call_wp (enc : Bool) {f : Nat → List Byte → Spec.Aes.State → Spec.
   obtain ⟨x19', x20', x21', x24', other'⟩ := h.keep fun r hr h30 _ _ => c.saved r hr h30
   refine ⟨x19', x20', x21', by rw [c.saved .x22 (by simp [preserved]) (by decide), h.x22],
     by rw [c.saved .x23 (by simp [preserved]) (by decide), h.x23], x24', rfl, rfl, other',
-    by rw [c.sp, h.sp], by rw [c.rd, h.rd], by rw [c.wr, h.wr], h.frame.trans fCall, by simp [h.len], ?_, ?_, ?_⟩
+    by rw [c.sp, h.sp], by rw [c.rd, h.rd], by rw [c.wr, h.wr], h.frame.trans (UPre.frameG fCall), by simp [h.len], ?_, ?_, ?_⟩
   · rw [blocksAt_of_out c.out (fun p => hf _ _ _ p), h.data, xored_zero, xored_zero, sched]
   · rw [bytesAt_frame c.frame dIv (by decide), h.iv]
   · rw [bytesAt_frame c.frame dSv (by decide), h.sv]

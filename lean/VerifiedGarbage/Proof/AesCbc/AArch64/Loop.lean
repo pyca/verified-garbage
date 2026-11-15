@@ -10,8 +10,9 @@ import VerifiedGarbage.Proof.Framework.Contract
 The invariant after `k` blocks (`LInv`): the registers hold the arguments
 (`x22` the next block, `x23` the blocks left), the other callee-saved
 registers and the stack pointer are unchanged, only the chaining value, the
-data and the first 2064 bytes of the scratch buffer have changed since the
-registers were saved, the first `k` blocks are the mode's (`Mode.out`) of
+data and the scratch buffer but the saved registers (its first 2064 bytes
+and the 48 at 2120, `gR`, which a group of four blocks keeps three of them
+in) have changed since the registers were saved, the first `k` blocks are the mode's (`Mode.out`) of
 the first `k` blocks on entry and the rest are unchanged, and the chaining
 value is the mode's after them (`Mode.chain`). CBC is `cbcMode`; other
 modes' functions with the same arguments reuse the loop.
@@ -41,6 +42,9 @@ abbrev schR : Region := ⟨W s₀, 240⟩
 abbrev ivR : Region := ⟨Iv s₀, 16⟩
 abbrev dataR : Region := ⟨Dp s₀, 16 * N s₀⟩
 abbrev scrR : Region := ⟨S s₀, 2176⟩
+
+/-- The three blocks a group of four keeps after the saved registers. -/
+abbrev gR : Region := ⟨S s₀ + BitVec.ofNat 64 2120, 48⟩
 
 /-- The blocks on entry. -/
 abbrev blks : List (List Byte) := Spec.Cbc.blocksAt s₀.mem (Dp s₀) (N s₀)
@@ -96,7 +100,7 @@ structure LInv (M : Mode) (s₀ : State) (k : Nat) (s : State) : Prop where
   sp : s.sp = s₀.sp
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
-  frame : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩] (savedMem s₀) s.mem
+  frame : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀] (savedMem s₀) s.mem
   data : Spec.Cbc.blocksAt s.mem (Dp s₀) (N s₀) = outK M s₀ k ++ (blks s₀).drop k
   iv : bytesAt s.mem (Iv s₀) 16 = chainK M s₀ k
 
@@ -139,18 +143,33 @@ theorem UPre.sched_bytes {m : Mem} (hf : Frame (Big s₀) s₀.mem m) :
   · exact hp.sch_scr.sub_left (Region.sub_prefix hR)
 
 omit hp in
-theorem UPre.big_of {m : Mem} (hf : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩] (savedMem s₀) m) :
+/-- A frame of the regions the invariant allows is one of those the function
+writes. -/
+theorem UPre.bigStep {m m' : Mem} (hf : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀] m m') :
+    Frame (Big s₀) m m' :=
+  hf.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl
+    · exact ⟨ivR s₀, by simp, fun _ h => h⟩
+    · exact ⟨dataR s₀, by simp, fun _ h => h⟩
+    · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩
+    · exact ⟨scrR s₀, by simp, UPre.scr_sub (by decide)⟩
+
+omit hp in
+/-- A frame that keeps the slots of a group (`gR`) is one of the regions the
+invariant allows. -/
+theorem UPre.frameG {m m' : Mem} (hf : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩] m m') :
+    Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀] m m' :=
+  hf.sub fun r hr => ⟨r, List.mem_append_left [gR s₀] hr, fun _ h => h⟩
+
+omit hp in
+theorem UPre.big_of {m : Mem} (hf : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀] (savedMem s₀) m) :
     Frame (Big s₀) s₀.mem m := by
   have f₀ : Frame (Big s₀) s₀.mem (savedMem s₀) :=
     (savedMem_frame s₀).sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨scrR s₀, by simp, UPre.scr_sub (by decide)⟩
-  exact f₀.trans (hf.sub fun r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl
-    · exact ⟨ivR s₀, by simp, fun _ h => h⟩
-    · exact ⟨dataR s₀, by simp, fun _ h => h⟩
-    · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩)
+  exact f₀.trans (UPre.bigStep hf)
 
 /-- The blocks after a step that changed only block `k`, the chaining
 value and the first 2064 bytes of the scratch buffer. -/
@@ -308,16 +327,17 @@ theorem ends_mid_wp {M : Mode} {mid : Prog isa} {s₀ : State} {s₁ : State}
     exact hm (by omega_using [hn])
 
 theorem slots_disj {s₀ : State} (hp : UPre s₀) :
-    ∀ r ∈ [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩], (⟨S s₀ + BitVec.ofNat 64 2064, 56⟩ : Region).Disjoint r := by
+    ∀ r ∈ [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀], (⟨S s₀ + BitVec.ofNat 64 2064, 56⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl
+  rcases hr with rfl | rfl | rfl | rfl
   · exact hp.iv_scr.symm.sub_left (UPre.scr_sub (by decide))
   · exact hp.data_scr.symm.sub_left (UPre.scr_sub (by decide))
   · exact Offset.disjoint_base _ (by decide) (by have := hp.scr_wrap; omega_using [])
+  · exact Offset.disjoint _ (by decide) (by decide) (by decide)
 
 theorem slot_read {s₀ : State} (hp : UPre s₀) {m : Mem}
-    (hf : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩] (savedMem s₀) m) {d : Nat} (h₁ : 2064 ≤ d)
+    (hf : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀] (savedMem s₀) m) {d : Nat} (h₁ : 2064 ≤ d)
     (h₂ : d + 8 ≤ 2120) :
     m.readW (S s₀ + BitVec.ofNat 64 d) 64 = (savedMem s₀).readW (S s₀ + BitVec.ofNat 64 d) 64 :=
   hf.readW (r := ⟨S s₀ + BitVec.ofNat 64 2064, 56⟩) (slot_contains _ h₁ h₂) (slots_disj hp) (by decide)

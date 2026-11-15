@@ -69,7 +69,7 @@ include hp
 /-- What the call leaves, after `k` blocks. -/
 structure Mid (s₀ : State) (k : Nat) (s : State) : Prop where
   regs : Regs s₀ k s
-  frame : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩] (savedMem s₀) s.mem
+  frame : Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀] (savedMem s₀) s.mem
   slot : s.mem.readW (S s₀ + BitVec.ofNat 64 2048) 64 = BitVec.ofNat 64 (mOf s₀ k)
   data : Spec.Cbc.blocksAt s.mem (Dp s₀) (N s₀) =
     outK AesCtr.ctrMode s₀ (k + mOf s₀ k) ++ (blks s₀).drop (k + mOf s₀ k)
@@ -164,7 +164,7 @@ theorem mid_wp (v : Ctr32Impl) {k : Nat} (hk : k < N s₀) {s s₁ : State} (h :
   have seg := AesCtr.ctr32_crypt (k := m) (by rw [ivIn, ← hmd]; exact lo32_mOf s₀ k) c.out
   rw [sched, ivIn, segIn] at seg
   refine ⟨Regs.of h g (by rw [c.sp, a.sp]) (by rw [c.rd, a.rd]) (by rw [c.wr, a.wr]),
-    h.frame.trans fAll, by rw [hmd]; exact slot, ?_, ?_, ?_⟩
+    h.frame.trans (UPre.frameG fAll), by rw [hmd]; exact slot, ?_, ?_, ?_⟩
   · -- The data: the first `k` blocks and those after the call's as they were, and the call's.
     have hlc : (Spec.Ctr.crypt (Spec.Cbc.aesWith (R s₀) (wK s₀)) (iv0 s₀) ((blks s₀).take k)).length = k := by
       rw [AesCtr.length_crypt, List.length_take, hlen, Nat.min_eq_left (by omega_arith)]

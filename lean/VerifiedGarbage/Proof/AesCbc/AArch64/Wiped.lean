@@ -81,7 +81,8 @@ theorem encrypt_depth (v : BlocksImpl) : (Caller.encrypt v).aarch64Depth = 0 := 
       Code.aarch64Depth, AesEcb.AArch64.depth_of_noFrames v.encNoFrames, Nat.max_self]
 
 theorem decrypt_depth (v : BlocksImpl) : (Impl.AesCbc.AArch64.decrypt v.dec).aarch64Depth = 0 := by
-  simp only [Impl.AesCbc.AArch64.decrypt, Impl.AesCbc.AArch64.whole, Impl.AesCbc.AArch64.decBody,
+  simp only [Impl.AesCbc.AArch64.decrypt, Impl.AesCbc.AArch64.batched, Impl.AesCbc.AArch64.groups,
+    Impl.AesCbc.AArch64.decGroup, Impl.AesCbc.AArch64.decBody,
     Code.aarch64Depth, AesEcb.AArch64.depth_of_noFrames v.decNoFrames, Nat.max_self]
 
 theorem encrypt_scrubbed (v : BlocksImpl) :
