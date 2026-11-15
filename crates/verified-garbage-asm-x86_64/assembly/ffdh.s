@@ -6342,13 +6342,6 @@ vg_ffdh_check_public_mr_adx_exp_ifma:
 	jne 274b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+14664]
-	stmxcsr DWORD PTR [rbx+14656]
-	mov r14d, DWORD PTR [rbx+14656]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+14660], eax
-	ldmxcsr DWORD PTR [rbx+14660]
-	lfence
 	mov r13d, 2592
 275:
 	cmp r13, 3872
@@ -11139,9 +11132,6 @@ vg_ffdh_check_public_mr_adx_exp_ifma:
 	add r13, 1
 	cmp r13, 1025
 	jne 281b
-	lfence
-	mov DWORD PTR [rbx+14656], r14d
-	ldmxcsr DWORD PTR [rbx+14656]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 672
@@ -12522,13 +12512,6 @@ vg_ffdh_check_public_mr_adx_exp_ifma:
 	jne 2105b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+11016]
-	stmxcsr DWORD PTR [rbx+11008]
-	mov r14d, DWORD PTR [rbx+11008]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+11012], eax
-	ldmxcsr DWORD PTR [rbx+11012]
-	lfence
 	mov r13d, 1952
 2106:
 	cmp r13, 2912
@@ -15549,9 +15532,6 @@ vg_ffdh_check_public_mr_adx_exp_ifma:
 	add r13, 1
 	cmp r13, 769
 	jne 2112b
-	lfence
-	mov DWORD PTR [rbx+11008], r14d
-	ldmxcsr DWORD PTR [rbx+11008]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 512
@@ -16588,13 +16568,6 @@ vg_ffdh_check_public_mr_adx_exp_ifma:
 	jne 2136b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+7368]
-	stmxcsr DWORD PTR [rbx+7360]
-	mov r14d, DWORD PTR [rbx+7360]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+7364], eax
-	ldmxcsr DWORD PTR [rbx+7364]
-	lfence
 	mov r13d, 1312
 2137:
 	cmp r13, 1952
@@ -21707,9 +21680,6 @@ vg_ffdh_check_public_mr_adx_exp_ifma:
 	add r13, 1
 	cmp r13, 513
 	jne 2142b
-	lfence
-	mov DWORD PTR [rbx+7360], r14d
-	ldmxcsr DWORD PTR [rbx+7360]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 352
@@ -23860,13 +23830,6 @@ vg_ffdh_exchange_mr_adx_exp_ifma:
 	jne 262b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+14664]
-	stmxcsr DWORD PTR [rbx+14656]
-	mov r14d, DWORD PTR [rbx+14656]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+14660], eax
-	ldmxcsr DWORD PTR [rbx+14660]
-	lfence
 	mov r13d, 2592
 263:
 	cmp r13, 3872
@@ -28657,9 +28620,6 @@ vg_ffdh_exchange_mr_adx_exp_ifma:
 	add r13, 1
 	cmp r13, 1025
 	jne 269b
-	lfence
-	mov DWORD PTR [rbx+14656], r14d
-	ldmxcsr DWORD PTR [rbx+14656]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 672
@@ -30040,13 +30000,6 @@ vg_ffdh_exchange_mr_adx_exp_ifma:
 	jne 293b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+11016]
-	stmxcsr DWORD PTR [rbx+11008]
-	mov r14d, DWORD PTR [rbx+11008]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+11012], eax
-	ldmxcsr DWORD PTR [rbx+11012]
-	lfence
 	mov r13d, 1952
 294:
 	cmp r13, 2912
@@ -33067,9 +33020,6 @@ vg_ffdh_exchange_mr_adx_exp_ifma:
 	add r13, 1
 	cmp r13, 769
 	jne 2100b
-	lfence
-	mov DWORD PTR [rbx+11008], r14d
-	ldmxcsr DWORD PTR [rbx+11008]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 512
@@ -34106,13 +34056,6 @@ vg_ffdh_exchange_mr_adx_exp_ifma:
 	jne 2124b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+7368]
-	stmxcsr DWORD PTR [rbx+7360]
-	mov r14d, DWORD PTR [rbx+7360]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+7364], eax
-	ldmxcsr DWORD PTR [rbx+7364]
-	lfence
 	mov r13d, 1312
 2125:
 	cmp r13, 1952
@@ -39225,9 +39168,6 @@ vg_ffdh_exchange_mr_adx_exp_ifma:
 	add r13, 1
 	cmp r13, 513
 	jne 2130b
-	lfence
-	mov DWORD PTR [rbx+7360], r14d
-	ldmxcsr DWORD PTR [rbx+7360]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 352
@@ -41573,13 +41513,6 @@ vg_ffdh_check_private_mr_adx_exp_ifma:
 	jne 278b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+14664]
-	stmxcsr DWORD PTR [rbx+14656]
-	mov r14d, DWORD PTR [rbx+14656]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+14660], eax
-	ldmxcsr DWORD PTR [rbx+14660]
-	lfence
 	mov r13d, 2592
 279:
 	cmp r13, 3872
@@ -46370,9 +46303,6 @@ vg_ffdh_check_private_mr_adx_exp_ifma:
 	add r13, 1
 	cmp r13, 1025
 	jne 285b
-	lfence
-	mov DWORD PTR [rbx+14656], r14d
-	ldmxcsr DWORD PTR [rbx+14656]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 672
@@ -47753,13 +47683,6 @@ vg_ffdh_check_private_mr_adx_exp_ifma:
 	jne 2109b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+11016]
-	stmxcsr DWORD PTR [rbx+11008]
-	mov r14d, DWORD PTR [rbx+11008]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+11012], eax
-	ldmxcsr DWORD PTR [rbx+11012]
-	lfence
 	mov r13d, 1952
 2110:
 	cmp r13, 2912
@@ -50780,9 +50703,6 @@ vg_ffdh_check_private_mr_adx_exp_ifma:
 	add r13, 1
 	cmp r13, 769
 	jne 2116b
-	lfence
-	mov DWORD PTR [rbx+11008], r14d
-	ldmxcsr DWORD PTR [rbx+11008]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 512
@@ -51819,13 +51739,6 @@ vg_ffdh_check_private_mr_adx_exp_ifma:
 	jne 2140b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+7368]
-	stmxcsr DWORD PTR [rbx+7360]
-	mov r14d, DWORD PTR [rbx+7360]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+7364], eax
-	ldmxcsr DWORD PTR [rbx+7364]
-	lfence
 	mov r13d, 1312
 2141:
 	cmp r13, 1952
@@ -56938,9 +56851,6 @@ vg_ffdh_check_private_mr_adx_exp_ifma:
 	add r13, 1
 	cmp r13, 513
 	jne 2146b
-	lfence
-	mov DWORD PTR [rbx+7360], r14d
-	ldmxcsr DWORD PTR [rbx+7360]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 352
@@ -59324,13 +59234,6 @@ vg_ffdh_derive_public_mr_adx_exp_ifma:
 	jne 279b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+14664]
-	stmxcsr DWORD PTR [rbx+14656]
-	mov r14d, DWORD PTR [rbx+14656]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+14660], eax
-	ldmxcsr DWORD PTR [rbx+14660]
-	lfence
 	mov r13d, 2592
 280:
 	cmp r13, 3872
@@ -64121,9 +64024,6 @@ vg_ffdh_derive_public_mr_adx_exp_ifma:
 	add r13, 1
 	cmp r13, 1025
 	jne 286b
-	lfence
-	mov DWORD PTR [rbx+14656], r14d
-	ldmxcsr DWORD PTR [rbx+14656]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 672
@@ -65504,13 +65404,6 @@ vg_ffdh_derive_public_mr_adx_exp_ifma:
 	jne 2110b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+11016]
-	stmxcsr DWORD PTR [rbx+11008]
-	mov r14d, DWORD PTR [rbx+11008]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+11012], eax
-	ldmxcsr DWORD PTR [rbx+11012]
-	lfence
 	mov r13d, 1952
 2111:
 	cmp r13, 2912
@@ -68531,9 +68424,6 @@ vg_ffdh_derive_public_mr_adx_exp_ifma:
 	add r13, 1
 	cmp r13, 769
 	jne 2117b
-	lfence
-	mov DWORD PTR [rbx+11008], r14d
-	ldmxcsr DWORD PTR [rbx+11008]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 512
@@ -69570,13 +69460,6 @@ vg_ffdh_derive_public_mr_adx_exp_ifma:
 	jne 2141b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+7368]
-	stmxcsr DWORD PTR [rbx+7360]
-	mov r14d, DWORD PTR [rbx+7360]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+7364], eax
-	ldmxcsr DWORD PTR [rbx+7364]
-	lfence
 	mov r13d, 1312
 2142:
 	cmp r13, 1952
@@ -74689,9 +74572,6 @@ vg_ffdh_derive_public_mr_adx_exp_ifma:
 	add r13, 1
 	cmp r13, 513
 	jne 2147b
-	lfence
-	mov DWORD PTR [rbx+7360], r14d
-	ldmxcsr DWORD PTR [rbx+7360]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 352
@@ -77942,13 +77822,6 @@ vg_ffdh_check_domain_mr_adx_exp_ifma:
 	jne 2195b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+14664]
-	stmxcsr DWORD PTR [rbx+14656]
-	mov r14d, DWORD PTR [rbx+14656]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+14660], eax
-	ldmxcsr DWORD PTR [rbx+14660]
-	lfence
 	mov r13d, 2592
 2196:
 	cmp r13, 3872
@@ -82739,9 +82612,6 @@ vg_ffdh_check_domain_mr_adx_exp_ifma:
 	add r13, 1
 	cmp r13, 1025
 	jne 2202b
-	lfence
-	mov DWORD PTR [rbx+14656], r14d
-	ldmxcsr DWORD PTR [rbx+14656]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 672
@@ -84122,13 +83992,6 @@ vg_ffdh_check_domain_mr_adx_exp_ifma:
 	jne 2226b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+11016]
-	stmxcsr DWORD PTR [rbx+11008]
-	mov r14d, DWORD PTR [rbx+11008]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+11012], eax
-	ldmxcsr DWORD PTR [rbx+11012]
-	lfence
 	mov r13d, 1952
 2227:
 	cmp r13, 2912
@@ -87149,9 +87012,6 @@ vg_ffdh_check_domain_mr_adx_exp_ifma:
 	add r13, 1
 	cmp r13, 769
 	jne 2233b
-	lfence
-	mov DWORD PTR [rbx+11008], r14d
-	ldmxcsr DWORD PTR [rbx+11008]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 512
@@ -88188,13 +88048,6 @@ vg_ffdh_check_domain_mr_adx_exp_ifma:
 	jne 2257b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+7368]
-	stmxcsr DWORD PTR [rbx+7360]
-	mov r14d, DWORD PTR [rbx+7360]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+7364], eax
-	ldmxcsr DWORD PTR [rbx+7364]
-	lfence
 	mov r13d, 1312
 2258:
 	cmp r13, 1952
@@ -93307,9 +93160,6 @@ vg_ffdh_check_domain_mr_adx_exp_ifma:
 	add r13, 1
 	cmp r13, 513
 	jne 2263b
-	lfence
-	mov DWORD PTR [rbx+7360], r14d
-	ldmxcsr DWORD PTR [rbx+7360]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 352
@@ -98178,13 +98028,6 @@ vg_ffdh_check_public_exp_ifma:
 	jne 2234b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+14664]
-	stmxcsr DWORD PTR [rbx+14656]
-	mov r14d, DWORD PTR [rbx+14656]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+14660], eax
-	ldmxcsr DWORD PTR [rbx+14660]
-	lfence
 	mov r13d, 2592
 2235:
 	cmp r13, 3872
@@ -102975,9 +102818,6 @@ vg_ffdh_check_public_exp_ifma:
 	add r13, 1
 	cmp r13, 1025
 	jne 2241b
-	lfence
-	mov DWORD PTR [rbx+14656], r14d
-	ldmxcsr DWORD PTR [rbx+14656]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 672
@@ -104358,13 +104198,6 @@ vg_ffdh_check_public_exp_ifma:
 	jne 2265b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+11016]
-	stmxcsr DWORD PTR [rbx+11008]
-	mov r14d, DWORD PTR [rbx+11008]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+11012], eax
-	ldmxcsr DWORD PTR [rbx+11012]
-	lfence
 	mov r13d, 1952
 2266:
 	cmp r13, 2912
@@ -107385,9 +107218,6 @@ vg_ffdh_check_public_exp_ifma:
 	add r13, 1
 	cmp r13, 769
 	jne 2272b
-	lfence
-	mov DWORD PTR [rbx+11008], r14d
-	ldmxcsr DWORD PTR [rbx+11008]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 512
@@ -108424,13 +108254,6 @@ vg_ffdh_check_public_exp_ifma:
 	jne 2296b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+7368]
-	stmxcsr DWORD PTR [rbx+7360]
-	mov r14d, DWORD PTR [rbx+7360]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+7364], eax
-	ldmxcsr DWORD PTR [rbx+7364]
-	lfence
 	mov r13d, 1312
 2297:
 	cmp r13, 1952
@@ -113543,9 +113366,6 @@ vg_ffdh_check_public_exp_ifma:
 	add r13, 1
 	cmp r13, 513
 	jne 2302b
-	lfence
-	mov DWORD PTR [rbx+7360], r14d
-	ldmxcsr DWORD PTR [rbx+7360]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 352
@@ -118556,13 +118376,6 @@ vg_ffdh_exchange_exp_ifma:
 	jne 2222b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+14664]
-	stmxcsr DWORD PTR [rbx+14656]
-	mov r14d, DWORD PTR [rbx+14656]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+14660], eax
-	ldmxcsr DWORD PTR [rbx+14660]
-	lfence
 	mov r13d, 2592
 2223:
 	cmp r13, 3872
@@ -123353,9 +123166,6 @@ vg_ffdh_exchange_exp_ifma:
 	add r13, 1
 	cmp r13, 1025
 	jne 2229b
-	lfence
-	mov DWORD PTR [rbx+14656], r14d
-	ldmxcsr DWORD PTR [rbx+14656]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 672
@@ -124736,13 +124546,6 @@ vg_ffdh_exchange_exp_ifma:
 	jne 2253b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+11016]
-	stmxcsr DWORD PTR [rbx+11008]
-	mov r14d, DWORD PTR [rbx+11008]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+11012], eax
-	ldmxcsr DWORD PTR [rbx+11012]
-	lfence
 	mov r13d, 1952
 2254:
 	cmp r13, 2912
@@ -127763,9 +127566,6 @@ vg_ffdh_exchange_exp_ifma:
 	add r13, 1
 	cmp r13, 769
 	jne 2260b
-	lfence
-	mov DWORD PTR [rbx+11008], r14d
-	ldmxcsr DWORD PTR [rbx+11008]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 512
@@ -128802,13 +128602,6 @@ vg_ffdh_exchange_exp_ifma:
 	jne 2284b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+7368]
-	stmxcsr DWORD PTR [rbx+7360]
-	mov r14d, DWORD PTR [rbx+7360]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+7364], eax
-	ldmxcsr DWORD PTR [rbx+7364]
-	lfence
 	mov r13d, 1312
 2285:
 	cmp r13, 1952
@@ -133921,9 +133714,6 @@ vg_ffdh_exchange_exp_ifma:
 	add r13, 1
 	cmp r13, 513
 	jne 2290b
-	lfence
-	mov DWORD PTR [rbx+7360], r14d
-	ldmxcsr DWORD PTR [rbx+7360]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 352
@@ -139129,13 +138919,6 @@ vg_ffdh_check_private_exp_ifma:
 	jne 2238b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+14664]
-	stmxcsr DWORD PTR [rbx+14656]
-	mov r14d, DWORD PTR [rbx+14656]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+14660], eax
-	ldmxcsr DWORD PTR [rbx+14660]
-	lfence
 	mov r13d, 2592
 2239:
 	cmp r13, 3872
@@ -143926,9 +143709,6 @@ vg_ffdh_check_private_exp_ifma:
 	add r13, 1
 	cmp r13, 1025
 	jne 2245b
-	lfence
-	mov DWORD PTR [rbx+14656], r14d
-	ldmxcsr DWORD PTR [rbx+14656]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 672
@@ -145309,13 +145089,6 @@ vg_ffdh_check_private_exp_ifma:
 	jne 2269b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+11016]
-	stmxcsr DWORD PTR [rbx+11008]
-	mov r14d, DWORD PTR [rbx+11008]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+11012], eax
-	ldmxcsr DWORD PTR [rbx+11012]
-	lfence
 	mov r13d, 1952
 2270:
 	cmp r13, 2912
@@ -148336,9 +148109,6 @@ vg_ffdh_check_private_exp_ifma:
 	add r13, 1
 	cmp r13, 769
 	jne 2276b
-	lfence
-	mov DWORD PTR [rbx+11008], r14d
-	ldmxcsr DWORD PTR [rbx+11008]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 512
@@ -149375,13 +149145,6 @@ vg_ffdh_check_private_exp_ifma:
 	jne 2300b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+7368]
-	stmxcsr DWORD PTR [rbx+7360]
-	mov r14d, DWORD PTR [rbx+7360]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+7364], eax
-	ldmxcsr DWORD PTR [rbx+7364]
-	lfence
 	mov r13d, 1312
 2301:
 	cmp r13, 1952
@@ -154494,9 +154257,6 @@ vg_ffdh_check_private_exp_ifma:
 	add r13, 1
 	cmp r13, 513
 	jne 2306b
-	lfence
-	mov DWORD PTR [rbx+7360], r14d
-	ldmxcsr DWORD PTR [rbx+7360]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 352
@@ -159740,13 +159500,6 @@ vg_ffdh_derive_public_exp_ifma:
 	jne 2239b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+14664]
-	stmxcsr DWORD PTR [rbx+14656]
-	mov r14d, DWORD PTR [rbx+14656]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+14660], eax
-	ldmxcsr DWORD PTR [rbx+14660]
-	lfence
 	mov r13d, 2592
 2240:
 	cmp r13, 3872
@@ -164537,9 +164290,6 @@ vg_ffdh_derive_public_exp_ifma:
 	add r13, 1
 	cmp r13, 1025
 	jne 2246b
-	lfence
-	mov DWORD PTR [rbx+14656], r14d
-	ldmxcsr DWORD PTR [rbx+14656]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 672
@@ -165920,13 +165670,6 @@ vg_ffdh_derive_public_exp_ifma:
 	jne 2270b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+11016]
-	stmxcsr DWORD PTR [rbx+11008]
-	mov r14d, DWORD PTR [rbx+11008]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+11012], eax
-	ldmxcsr DWORD PTR [rbx+11012]
-	lfence
 	mov r13d, 1952
 2271:
 	cmp r13, 2912
@@ -168947,9 +168690,6 @@ vg_ffdh_derive_public_exp_ifma:
 	add r13, 1
 	cmp r13, 769
 	jne 2277b
-	lfence
-	mov DWORD PTR [rbx+11008], r14d
-	ldmxcsr DWORD PTR [rbx+11008]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 512
@@ -169986,13 +169726,6 @@ vg_ffdh_derive_public_exp_ifma:
 	jne 2301b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+7368]
-	stmxcsr DWORD PTR [rbx+7360]
-	mov r14d, DWORD PTR [rbx+7360]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+7364], eax
-	ldmxcsr DWORD PTR [rbx+7364]
-	lfence
 	mov r13d, 1312
 2302:
 	cmp r13, 1952
@@ -175105,9 +174838,6 @@ vg_ffdh_derive_public_exp_ifma:
 	add r13, 1
 	cmp r13, 513
 	jne 2307b
-	lfence
-	mov DWORD PTR [rbx+7360], r14d
-	ldmxcsr DWORD PTR [rbx+7360]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 352
@@ -181738,13 +181468,6 @@ vg_ffdh_check_domain_exp_ifma:
 	jne 2387b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+14664]
-	stmxcsr DWORD PTR [rbx+14656]
-	mov r14d, DWORD PTR [rbx+14656]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+14660], eax
-	ldmxcsr DWORD PTR [rbx+14660]
-	lfence
 	mov r13d, 2592
 2388:
 	cmp r13, 3872
@@ -186535,9 +186258,6 @@ vg_ffdh_check_domain_exp_ifma:
 	add r13, 1
 	cmp r13, 1025
 	jne 2394b
-	lfence
-	mov DWORD PTR [rbx+14656], r14d
-	ldmxcsr DWORD PTR [rbx+14656]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 672
@@ -187918,13 +187638,6 @@ vg_ffdh_check_domain_exp_ifma:
 	jne 2418b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+11016]
-	stmxcsr DWORD PTR [rbx+11008]
-	mov r14d, DWORD PTR [rbx+11008]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+11012], eax
-	ldmxcsr DWORD PTR [rbx+11012]
-	lfence
 	mov r13d, 1952
 2419:
 	cmp r13, 2912
@@ -190945,9 +190658,6 @@ vg_ffdh_check_domain_exp_ifma:
 	add r13, 1
 	cmp r13, 769
 	jne 2425b
-	lfence
-	mov DWORD PTR [rbx+11008], r14d
-	ldmxcsr DWORD PTR [rbx+11008]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 512
@@ -191984,13 +191694,6 @@ vg_ffdh_check_domain_exp_ifma:
 	jne 2449b
 	mov rbx, QWORD PTR [rdi+232]
 	mov rbp, QWORD PTR [rbx+7368]
-	stmxcsr DWORD PTR [rbx+7360]
-	mov r14d, DWORD PTR [rbx+7360]
-	and r14d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+7364], eax
-	ldmxcsr DWORD PTR [rbx+7364]
-	lfence
 	mov r13d, 1312
 2450:
 	cmp r13, 1952
@@ -197103,9 +196806,6 @@ vg_ffdh_check_domain_exp_ifma:
 	add r13, 1
 	cmp r13, 513
 	jne 2455b
-	lfence
-	mov DWORD PTR [rbx+7360], r14d
-	ldmxcsr DWORD PTR [rbx+7360]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 352
