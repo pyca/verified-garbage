@@ -264,7 +264,10 @@ theorem narrowS_args {sig : Sig} {e : Elem} {n bytes stack : Nat}
         s.mem (narrowS sig e n bytes s).mem := by
   obtain ⟨-, hg, -, -, hf⟩ := narrowS_facts (nm := "") hk hb hb1 hs
   obtain ⟨-, -, -, -, -, -, ha, hl⟩ := argsState_run hs hk hb hb1
-  exact ⟨hg, ha, hl, hf⟩
+  have e (j : Nat) : stackArg (narrowS sig e n bytes s) j =
+      stackArg (setArgsState bytes (nStack sig) (allocState bytes s)) j := by
+    simp only [stackArg, stackArgAddr, narrowS, State.withRegions_mem, State.withRegions_gpr]
+  exact ⟨hg, fun j hj => (e j).trans (ha j hj), (e _).trans hl, hf⟩
 
 /-- The stack arguments of `vg_aes_gcm_seal`'s code in the frame of
 `withStackArgScratch 2600 3` from `s`: those of `s`, then `work`. -/

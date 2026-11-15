@@ -30,6 +30,34 @@ namespace VG.Proof.Rsa.X86_64.Scrub
 
 open VG.X86_64 VG.X86_64.Scrub VG.Proof.Ffdh.X86_64.Scrub
 
+/-- `postOut_of_local`, given the number of the signature's words: the patterns of `hl` are then
+matched against that numeral, not against the signature's evaluated length once for each. -/
+theorem postOut_of_local_len {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
+    {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
+    {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
+    (n : Nat) (hn : (sig.words A.ptrBits).length = n)
+    (hl : ∀ vs m m₁ m₂ r, vs.length = n →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words A.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words A.ptrBits) post vs m m₂ r) :
+    PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) :=
+  postOut_of_local hA fun vs m m₁ m₂ r hv => hl vs m m₁ m₂ r (hv.trans hn)
+
+/-- `postOut_of_local_pre`, given the number of the signature's words. -/
+theorem postOut_of_local_pre_len {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
+    {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
+    {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
+    (n : Nat) (hn : (sig.words A.ptrBits).length = n)
+    (hl : ∀ vs m m₁ m₂ r, vs.length = n →
+      Curry.apply (sig.words A.ptrBits) pre vs m →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words A.ptrBits) post vs m m₁ r →
+        Curry.apply (sig.words A.ptrBits) post vs m m₂ r) :
+    PostOut (sig.contract A pre post wa stack leak) (sig.retBits A.ptrBits) :=
+  postOut_of_local_pre hA fun vs m m₁ m₂ r hv => hl vs m m₁ m₂ r (hv.trans hn)
+
 theorem toNat_sw0 (x : BitVec 64) : (x.setWidth abi.ptrBits).toNat = x.toNat := by
   rw [BitVec.toNat_setWidth, ScrubAbi.plain.ptrBits]
   exact Nat.mod_eq_of_lt x.isLt
@@ -144,7 +172,7 @@ theorem oaepEncryptOut (ts : List FnTable) (stack : Nat) :
     PostOut (Spec.RsaOaep.encryptMdTablesContract
         (abi.withTables Spec.RsaOaep.encryptMdTablesSig [("hash", ts), ("mgf1", ts)]) stack)
       (Spec.RsaOaep.encryptMdTablesSig.retBits 64) :=
-  postOut_of_local_pre (leak := some _) (ScrubAbi.plain.tables _ _) fun
+  postOut_of_local_pre_len (leak := some _) (ScrubAbi.plain.tables _ _) 18 rfl fun
     | [out, outLen, _, nLen, _, _, _, _, _, _, _, _, _, _, _, _, _, _], m, m₁, m₂, r, _, hp, hb, h => by
       simp only [Spec.RsaOaep.encryptMdTablesSig, Sig.bufs, List.mem_cons, forall_eq_or_imp, Elem.size] at hb
       change @Curry.apply (Mem → Prop) [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _] _ _ m at hp
@@ -211,7 +239,7 @@ theorem pssVerifyOut (tsH tsG : List FnTable) (stack : Nat) :
     PostOut (Spec.RsaPss.verifyPrecomputedMdTableContract
         (abi.withTables Spec.RsaPss.verifyPrecomputedMdTableSig [("hash", tsH), ("mgf1", tsG)]) stack)
       (Spec.RsaPss.verifyPrecomputedMdTableSig.retBits 64) :=
-  postOut_of_local (leak := some _) (ScrubAbi.plain.tables _ _) fun
+  postOut_of_local_len (leak := some _) (ScrubAbi.plain.tables _ _) 16 rfl fun
     | [_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _], _, _, _, _, _, _, h => h
 
 end VG.Proof.Rsa.X86_64.Scrub

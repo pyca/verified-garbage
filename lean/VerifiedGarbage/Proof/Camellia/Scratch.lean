@@ -152,7 +152,12 @@ theorem subkeysOfWords_scheduleWords {sk : Subkeys} {R : Nat} (hR : R = 18 ∨ R
       obtain ⟨_, ke, rfl⟩ := List.exists_cons_of_length_eq_add_one hke
       replace hke := Nat.succ.inj hke
     obtain rfl := List.eq_nil_of_length_eq_zero hke
-    constructor <;> simp [subkeysOfWords, scheduleWords, scheduleLength, List.range_succ]
+    simp only [subkeysOfWords, scheduleWords, scheduleLength, List.getD_cons_zero, List.getD_cons_succ,
+      List.length_cons, List.length_nil, Nat.zero_add, Nat.reduceAdd, Nat.reduceLT, Nat.reduceDiv,
+      List.range_succ, List.range_zero, List.nil_append, List.cons_append, List.flatMap_cons,
+      Nat.mul_zero, List.drop_zero, List.take_succ_cons, List.take_zero, ↓reduceIte, Nat.mul_one,
+      List.drop_succ_cons, Nat.reduceMul, List.take_nil, List.append_nil, List.flatMap_nil,
+      List.map_cons, Nat.add_zero, List.map_nil, Nat.add_one_sub_one, and_self]
   · iterate 24
       obtain ⟨_, k, rfl⟩ := List.exists_cons_of_length_eq_add_one hk
       replace hk := Nat.succ.inj hk
@@ -161,7 +166,12 @@ theorem subkeysOfWords_scheduleWords {sk : Subkeys} {R : Nat} (hR : R = 18 ∨ R
       obtain ⟨_, ke, rfl⟩ := List.exists_cons_of_length_eq_add_one hke
       replace hke := Nat.succ.inj hke
     obtain rfl := List.eq_nil_of_length_eq_zero hke
-    constructor <;> simp [subkeysOfWords, scheduleWords, scheduleLength, List.range_succ]
+    simp only [subkeysOfWords, scheduleWords, scheduleLength, List.getD_cons_zero, List.getD_cons_succ,
+      List.length_cons, List.length_nil, Nat.zero_add, Nat.reduceAdd, Nat.reduceLT, Nat.reduceDiv,
+      List.range_succ, List.range_zero, List.nil_append, List.cons_append, List.flatMap_cons,
+      Nat.mul_zero, List.drop_zero, List.take_succ_cons, List.take_zero, ↓reduceIte, Nat.mul_one,
+      List.drop_succ_cons, Nat.reduceMul, List.take_nil, List.append_nil, List.flatMap_nil,
+      List.map_cons, Nat.add_zero, List.map_nil, Nat.add_one_sub_one, and_self]
 
 theorem expandKey_lengths (key : List Byte) :
     (expandKey key).kw.length = 4 ∧ (expandKey key).k.length = rounds key.length ∧

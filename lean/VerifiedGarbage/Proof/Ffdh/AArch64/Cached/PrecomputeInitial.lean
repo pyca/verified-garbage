@@ -207,6 +207,6 @@ theorem precomputeInitial_ok (M : Mont) {s : State} {p : Parameters} {dom : Addr
     (BuildFrame.of_entry (by decide : 1<32) frameT)
  exact ⟨basisT,spaceD.after restT,(workspace_header basisD.good sameT (by decide : sCtx<32)).trans ctxD,
   (workspace_header basisD.good sameT (by decide : sRows<32)).trans rowsD,tableT,frames,
-  ((((restA.trans restB).trans restC).trans restD).trans restT).mono (by simp [mmRegs])⟩
+  ((((restA.trans restB).trans restC).trans restD).trans restT).mono (by decide)⟩
 
 end VG.Proof.Ffdh.AArch64.Cached
