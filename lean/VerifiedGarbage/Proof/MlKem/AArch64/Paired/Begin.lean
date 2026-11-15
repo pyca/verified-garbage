@@ -26,12 +26,13 @@ import VerifiedGarbage.Proof.Framework.Block
 /-! # Initialize and parse the first three paired matrix blocks -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 
-def beginCode (sb ss a b k oa ob : Nat) (w16 : Bool := false) : Prog isa :=
+def beginCode (sha3 : Bool) (sb ss a b k oa ob : Nat) (w16 : Bool := false) : Prog isa :=
  .seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b k))
-  (.seq Impl.MlKem.AArch64.Paired.squeeze
+  (.seq (Impl.MlKem.AArch64.Paired.squeeze sha3)
    (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)))
 
 def beginRegs : List Reg := startRegs++[.x9,.x16]++
@@ -52,9 +53,9 @@ theorem begin_ok {w16 : Bool} {s : State} {p seed outA outB table : Addr} {sb ss
     (hin : ∀j<4,InRegions (s.rd++s.wr) (seed+BitVec.ofNat 64 (8*j)) 8)
     (hsep : (Region.mk seed 32).Disjoint ⟨p,2048⟩)
     (ctx : Context p outA outB table s) (ht : s.syms "VG_MLKEM_REJ_SHUFFLE"=table) :
-    WP isa (beginCode sb ss a b k oa ob w16) s
+    WP isa (beginCode sha3 sb ss a b k oa ob w16) s
       (BeginPostW w16 (seedState s.mem seed a k) (seedState s.mem seed b k) p outA outB table s) := by
-  have combined := WP.mono_syms (start_ok (a := a) (b := b) (k := k) hss hsb h8 hp hseed hin ctx.scratch hsep)
+  have combined := WP.mono_syms (start_ok (sha3 := sha3) (a := a) (b := b) (k := k) hss hsb h8 hp hseed hin ctx.scratch hsep)
     (R := fun u => WP isa (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)) u
       (BeginPostW w16 (seedState s.mem seed a k) (seedState s.mem seed b k) p outA outB table s))
     (fun u ⟨ku,fu,svu,u19,_,pu,buA,buB⟩ sy => by

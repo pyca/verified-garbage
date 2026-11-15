@@ -18,6 +18,7 @@ sampled. -/
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.KeyGen
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KG VG.Proof.MlKem.AArch64
 open VG.Impl.MlKem.AArch64.Kem16 (rowsBy hashedBy kgRows kgPair)
@@ -83,7 +84,7 @@ theorem rows_ok {s₀ : State} (hp : Pre P s₀) (hr : Noise.Room P) {n h : Nat}
 /-- Pair `p` of the matrix and the rows of `t̂` it completes. -/
 theorem pairRows_ok {s₀ : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr : Noise.Room P) {p : Nat}
     (hp' : p < P.k * P.k / 2) {s : State} (Hs : IL P s₀ (2 * p) (rowsBy P p) (hashedBy P p) s) :
-    WPs (kgPair P p :: kgRows P (rowsBy P p) (rowsBy P (p + 1))) s
+    WPs (kgPair sha3 P p :: kgRows P (rowsBy P p) (rowsBy P (p + 1))) s
       (IL P s₀ (2 * (p + 1)) (rowsBy P (p + 1)) (hashedBy P (p + 1))) := by
   have hw := hp.wf
   have hf := hw.facts
@@ -92,7 +93,7 @@ theorem pairRows_ok {s₀ : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr :
   have hle := rowsBy_le P (p + 1)
   have h2 := hashed_le P (p + 1)
   have hrk := rowsBy_le P p
-  refine WPs.cons (WP.mono (pair_step hp hk hr (p := p) (r := rowsBy P p) (h := hashedBy P p)
+  refine WPs.cons (WP.mono (pair_step (sha3 := sha3) hp hk hr (p := p) (r := rowsBy P p) (h := hashedBy P p)
     (m := hashedBy P (p + 1) - hashedBy P p) (by omega_using [hp'])
     (by simp only [hashedBy]; omega_using []) (fun k hk' => ?_) ?_ Hs) fun t ht => ?_)
   · have := Nat.mul_le_mul_left 384 hrk
@@ -124,7 +125,7 @@ theorem rowsBy_two (hk3 : 3 ≤ P.k) : rowsBy P 1 = 0 ∧ hashedBy P 2 = 0 := by
 /-- **The matrix after its first two pairs, and the rows of `t̂`.** -/
 theorem matrixRows_ok {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr : Noise.Room P)
     (hk3 : 3 ≤ P.k) (H : IL P s₀ 4 0 0 s) :
-    WPs (Impl.MlKem.AArch64.Kem16P.kgMatrixRows P) s
+    WPs (Impl.MlKem.AArch64.Kem16P.kgMatrixRows sha3 P) s
       (IL P s₀ (P.k * P.k) P.k (hashedBy P (P.k * P.k / 2))) := by
   have hw := hp.wf
   have hf := hw.facts
@@ -137,7 +138,7 @@ theorem matrixRows_ok {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (
     Impl.MlKem.AArch64.Kem16P.single
   refine WPs.append (WPs.append (WPs.mono first fun t ht => WPs.mono (wps_flatMap_range (n := P.k * P.k / 2 - 2)
     (I := fun q s => IL P s₀ (2 * (q + 2)) (rowsBy P (q + 2)) (hashedBy P (q + 2)) s)
-    (f := fun q => kgPair P (q + 2) :: kgRows P (rowsBy P (q + 2)) (rowsBy P (q + 3)))
+    (f := fun q => kgPair sha3 P (q + 2) :: kgRows P (rowsBy P (q + 2)) (rowsBy P (q + 3)))
     (fun q hq s Hs => pairRows_ok hp hk hr (p := q + 2) (by omega_using [hq]) Hs)
     (show IL P s₀ 4 (rowsBy P 2) (hashedBy P 2) t by rw [h2]; exact ht)) fun u hu => ?_))
   have e2 : P.k * P.k / 2 - 2 + 2 = P.k * P.k / 2 := by omega_using [hkk]
@@ -147,7 +148,7 @@ theorem matrixRows_ok {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (
   · rw [show decide (P.k * P.k % 2 = 1) = true from decide_eq_true ho, ite_eq_left rfl]
     have e : 2 * (P.k * P.k / 2) = P.k * P.k - 1 := by omega_using [ho]
     rw [e] at hu
-    refine WPs.cons (WP.mono (last_step hp hr ho hu) fun v hv => ?_)
+    refine WPs.cons (WP.mono (last_step (sha3 := sha3) hp hr ho hu) fun v hv => ?_)
     have r := rows_ok hp hr (n := P.k * P.k) (P.k - rowsBy P (P.k * P.k / 2)) (rowsBy P (P.k * P.k / 2))
       (by omega_using [hle]) (by rw [Nat.add_sub_cancel' hle]) hv
     rwa [Nat.add_sub_cancel' hle] at r

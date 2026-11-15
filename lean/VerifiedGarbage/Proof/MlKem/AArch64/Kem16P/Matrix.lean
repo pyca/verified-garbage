@@ -21,6 +21,7 @@ invariant, the writes since `G` (`bWP`), and the first `c` PRF outputs
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem16P
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KEM VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Kem
@@ -210,7 +211,7 @@ theorem _root_.VG.Proof.MlKem.AArch64.Hybrid.MT3.callEntry {s₀ s : State} (h :
 theorem paired_stepP_link {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) {mA : Mem} {ρ : List Byte}
     {i N₀ m : Nat} (he : 2 * i + 1 < P.k * P.k) (hN : N₀ + 3 ≤ 12) (hm : m ≤ 3)
     (h : PInvW true P L s₀ mA ρ (2 * i) N₀ s) (tb : MT3 P L s₀ s) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.pairP SB SS AH RB (TP P) P (2 * i) N₀ m) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Kem16P.pairP sha3 SB SS AH RB (TP P) P (2 * i) N₀ m) s fun t =>
       PInvW true P L s₀ mA ρ (2 * i + 2) (N₀ + m) t ∧ MT3 P L s₀ t ∧ t.gpr .x30 = s.gpr .x30 := by
   have hw := hp.wf
   have hbo : Impl.MlKem.AArch64.Kem16P.bufOff (TP P) (N₀ + 2) < 65536 := by
@@ -224,7 +225,7 @@ theorem paired_stepP_link {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L 
   have hk2 : P.k ≤ 256 := by omega_using [hf.2.1]
   have pin := pair_input (L := L) hp he h.b.kb tb.t
   have hin := prf_input hp hk he hN h.b.kb tb
-  refine WP.mono_syms (pairPCode_ok P RB (TP P) (a := 2 * i) (m := m) (by omega_arith) hbo (by decide) (by decide) (by decide)
+  refine WP.mono_syms (pairPCode_ok (sha3 := sha3) P RB (TP P) (a := 2 * i) (m := m) (by omega_arith) hbo (by decide) (by decide) (by decide)
     hoa hob pin hin rfl (by decide) (by decide) rfl (Hybrid.x24_bit h.b)) fun t ht sy => ?_
   have post := ht.outcome hk1 hk2
   have seed {j : Nat} : Paired.seedBytes s.mem (sA L s₀ SB) j P.k = matSeed ρ (j / P.k) (j % P.k) := by
@@ -259,17 +260,17 @@ theorem paired_stepP_link {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L 
 theorem paired_stepP {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) {mA : Mem} {ρ : List Byte}
     {i N₀ m : Nat} (he : 2 * i + 1 < P.k * P.k) (hN : N₀ + 3 ≤ 12) (hm : m ≤ 3)
     (h : PInvW true P L s₀ mA ρ (2 * i) N₀ s) (tb : MT3 P L s₀ s) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.pairP SB SS AH RB (TP P) P (2 * i) N₀ m) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Kem16P.pairP sha3 SB SS AH RB (TP P) P (2 * i) N₀ m) s fun t =>
       PInvW true P L s₀ mA ρ (2 * i + 2) (N₀ + m) t ∧ MT3 P L s₀ t :=
-  WP.mono (paired_stepP_link hp hk he hN hm h tb) fun _ ht => ⟨ht.1, ht.2.1⟩
+  WP.mono (paired_stepP_link (sha3 := sha3) hp hk he hN hm h tb) fun _ ht => ⟨ht.1, ht.2.1⟩
 
 /-- **A pair computing PRF outputs** `N₀`, …, `N₀ + m - 1`. -/
 theorem paired_stepP_call {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) {mA : Mem} {ρ : List Byte}
     {i N₀ m : Nat} (he : 2 * i + 1 < P.k * P.k) (hN : N₀ + 3 ≤ 12) (hm : m ≤ 3)
     (h : PInvW true P L s₀ mA ρ (2 * i) N₀ s) (tb : MT3 P L s₀ s) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.pairPCall SB SS AH RB (TP P) P (2 * i) N₀ m) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Kem16P.pairPCall sha3 SB SS AH RB (TP P) P (2 * i) N₀ m) s fun t =>
       PInvW true P L s₀ mA ρ (2 * i + 2) (N₀ + m) t ∧ MT3 P L s₀ t := by
-  obtain ⟨tr, t, he, hi, ht, h30⟩ := paired_stepP_link hp hk he hN hm h.callEntry tb.callEntry
+  obtain ⟨tr, t, he, hi, ht, h30⟩ := paired_stepP_link (sha3 := sha3) hp hk he hN hm h.callEntry tb.callEntry
   have hr : isa.ret s.callEntry t = some t := by
     simp only [isa, ret, h30, ite_true]
   exact ⟨_, t, Exec.call (call_callEntry s) he hr, hi, ht⟩
@@ -290,9 +291,9 @@ theorem buf_bW {s₀ : State} (hp : Pre P L s₀) {N : Nat} (hN : N < 12) :
 theorem paired_stepQ {s₀ s : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte} {e c : Nat}
     (he : e + 1 < P.k * P.k) (hc : c ≤ 12)
     (h : PInvW true P L s₀ mA ρ e c s) (tb : MT3 P L s₀ s) :
-    WP isa (Impl.MlKem.AArch64.Paired.pair P false e true) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Paired.pair sha3 P false e true) s fun t =>
       PInvW true P L s₀ mA ρ (e + 2) c t ∧ MT3 P L s₀ t := by
-  refine WP.mono_syms (paired_step hp he h.b tb.t) fun t ⟨hb, mt⟩ sy => ?_
+  refine WP.mono_syms (paired_step (sha3 := sha3) hp he h.b tb.t) fun t ⟨hb, mt⟩ sy => ?_
   exact ⟨⟨Hybrid.binv_rebase hb, h.fr.trans (hb.fr.mono fun r hr => List.mem_append_left _ (Hybrid.bW_sub r hr)),
     fun N hN => (h.prf N hN).frame hb.fr (buf_bW hp (by omega_arith))⟩, mt, by rw [sy]; exact tb.stk⟩
 
@@ -300,9 +301,9 @@ theorem paired_stepQ {s₀ s : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List 
 theorem singleton_stepQ {s₀ s : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte} {e c : Nat}
     (he : e < P.k * P.k) (hc : c ≤ 12)
     (h : PInvW true P L s₀ mA ρ e c s) (tb : MT3 P L s₀ s) :
-    WP isa (Paired.lastCode SB SS e P.k (AH + 1024 * e) true) s fun t =>
+    WP isa (Paired.lastCode sha3 SB SS e P.k (AH + 1024 * e) true) s fun t =>
       PInvW true P L s₀ mA ρ (e + 1) c t ∧ MT3 P L s₀ t := by
-  refine WP.mono_syms (singleton_step hp he h.b tb.t) fun t ⟨hb, mt⟩ sy => ?_
+  refine WP.mono_syms (singleton_step (sha3 := sha3) hp he h.b tb.t) fun t ⟨hb, mt⟩ sy => ?_
   exact ⟨⟨Hybrid.binv_rebase hb, h.fr.trans (hb.fr.mono fun r hr => List.mem_append_left _ (Hybrid.bW_sub r hr)),
     fun N hN => (h.prf N hN).frame hb.fr (buf_bW hp (by omega_arith))⟩, mt, by rw [sy]; exact tb.stk⟩
 
@@ -374,7 +375,7 @@ theorem BInvW.singletonP {w16 : Bool} {s₀ s t : State} (hp : Pre P L s₀) {mA
 theorem singleton_stepP {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s₀) {mA : Mem} {ρ : List Byte}
     {N₀ : Nat} (hN : N₀ + 3 ≤ 12)
     (h : PInvW true P L s₀ mA ρ (P.k * P.k - 1) N₀ s) (tb : MT3 P L s₀ s) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.lastP P N₀) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Kem16P.lastP sha3 P N₀) s fun t =>
       PInvW true P L s₀ mA ρ (P.k * P.k - 1 + 1) (N₀ + 3) t ∧ MT3 P L s₀ t := by
   have hw := hp.wf
   have hbo : Impl.MlKem.AArch64.Kem16P.bufOff (TP P) N₀ < 65536 := by
@@ -397,7 +398,7 @@ theorem singleton_stepP {s₀ s : State} (hp : Pre P L s₀) (hk : Stk128 P L s�
       by rw [bR]; exact sdisj hp (o₂ := AH + 1024 * (P.k * P.k - 1)) (l₂ := 1024) (by lom) (by lom) (by lom),
       by rw [bR]; exact tb.t.apart.sub_right (scratch_sub hp (by lom))⟩
   rw [lastP_eq]
-  refine WP.mono_syms (lastCodeP_ok P (a := P.k * P.k - 1) (by omega_arith) hbo (by decide) (by decide) (by decide) hoff
+  refine WP.mono_syms (lastCodeP_ok (sha3 := sha3) P (a := P.k * P.k - 1) (by omega_arith) hbo (by decide) (by decide) (by decide) hoff
     hk1 (by omega_arith) (e28 h.b.kb SS) (e28 h.b.kb SB) (e28 h.b.kb _) (fun j hj => ?_)
     (sdisj hp (by lom) (by lom) (by decide)) (sdisj hp (o₂ := AH + 1024 * (P.k * P.k - 1)) (l₂ := 1024)
       (by lom) (by lom) (by lom))
@@ -479,7 +480,7 @@ theorem matrixP_ok {M : Hybrid.Msg} {s₀ s : State} (hp : Pre P L s₀) (hk : S
         (Impl.MlKem.AArch64.Hybrid.hashPairs M.S) u → MT3 P L s₀ u → u.syms = s.syms →
       WP isa between u fun v => Gp v.mem ∧
         PInvW true P L s₀ v.mem ρ (2 * Impl.MlKem.AArch64.Hybrid.hashPairs M.S) 0 v ∧ MT3 P L s₀ v) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.matrixP P M.S between) s fun t => ∃ mG, Gp mG ∧
+    WP isa (Impl.MlKem.AArch64.Kem16P.matrixP sha3 P M.S between) s fun t => ∃ mG, Gp mG ∧
       PInvW true P L s₀ mG ρ (P.k * P.k) (finalCount P (Impl.MlKem.AArch64.Hybrid.hashPairs M.S)) t ∧
       MT3 P L s₀ t := by
   have hw := hp.wf
@@ -503,7 +504,7 @@ theorem matrixP_ok {M : Hybrid.Msg} {s₀ s : State} (hp : Pre P L s₀) (hk : S
       rw [← hH] at hi
       simp only [Impl.MlKem.AArch64.Hybrid.hashPairs, Impl.MlKem.AArch64.Hybrid.blocks] at hi
       omega_arith
-    refine WP.mono_syms (Hybrid.paired_step3 hp hk hM (by omega_arith) hb' ht.1 ht.2.1) fun u hu su => ?_
+    refine WP.mono_syms (Hybrid.paired_step3 (sha3 := sha3) hp hk hM (by omega_arith) hb' ht.1 ht.2.1) fun u hu su => ?_
     rw [show 2 * (i + 1) = 2 * i + 2 by omega_arith]
     exact ⟨hu.1, hu.2, su.trans ht.2.2⟩
   -- `G`.
@@ -518,7 +519,7 @@ theorem matrixP_ok {M : Hybrid.Msg} {s₀ s : State} (hp : Pre P L s₀) (hk : S
     · rw [ite_eq_left hc]
       have hc' : Impl.MlKem.AArch64.Kem16P.placed P H ≤ 3 * j := by
         simp only [Impl.MlKem.AArch64.Kem16P.pairCount] at hc; omega_arith
-      refine WP.mono (paired_stepQ hp he (by omega_arith) ht.1 ht.2) fun v hv => ?_
+      refine WP.mono (paired_stepQ (sha3 := sha3) hp he (by omega_arith) ht.1 ht.2) fun v hv => ?_
       rw [show 2 * (j + 1 + H) = 2 * (j + H) + 2 by omega_arith,
         show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * (j + 1)) =
           min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j) by omega_arith]
@@ -528,7 +529,7 @@ theorem matrixP_ok {M : Hybrid.Msg} {s₀ s : State} (hp : Pre P L s₀) (hk : S
         simp only [Impl.MlKem.AArch64.Kem16P.pairCount] at hc; omega_arith
       have h0 := ht.1
       rw [show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j) = 3 * (j + H - H) by omega_arith] at h0
-      refine WP.mono (paired_stepP_call hp hk he (by omega_arith) (by simp only [Impl.MlKem.AArch64.Kem16P.pairCount]; omega_arith)
+      refine WP.mono (paired_stepP_call (sha3 := sha3) hp hk he (by omega_arith) (by simp only [Impl.MlKem.AArch64.Kem16P.pairCount]; omega_arith)
         h0 ht.2) fun v hv => ?_
       rw [show 2 * (j + 1 + H) = 2 * (j + H) + 2 by omega_arith,
         show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * (j + 1)) =
@@ -549,11 +550,11 @@ theorem matrixP_ok {M : Hybrid.Msg} {s₀ s : State} (hp : Pre P L s₀) (hk : S
       have h0 := ht.1
       rw [show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * (Impl.MlKem.AArch64.Kem16P.pairs P - H)) =
         3 * (Impl.MlKem.AArch64.Kem16P.pairs P - H) by omega_arith] at h0
-      refine WP.mono (singleton_stepP hp hk (by omega_arith) h0 ht.2) fun v hv => ⟨u.mem, gu, ?_, hv.2⟩
+      refine WP.mono (singleton_stepP (sha3 := sha3) hp hk (by omega_arith) h0 ht.2) fun v hv => ⟨u.mem, gu, ?_, hv.2⟩
       rw [Nat.sub_add_cancel hn] at hv
       simpa only [finalCount, hodd, hl, and_self, ite_true] using hv.1
     · rw [ite_eq_right hl, Paired.lastSample_eq]
-      refine WP.mono (singleton_stepQ hp (by omega_arith : P.k * P.k - 1 < P.k * P.k) (by omega_arith) ht.1 ht.2)
+      refine WP.mono (singleton_stepQ (sha3 := sha3) hp (by omega_arith : P.k * P.k - 1 < P.k * P.k) (by omega_arith) ht.1 ht.2)
         fun v hv => ⟨u.mem, gu, ?_, hv.2⟩
       rw [Nat.sub_add_cancel hn] at hv
       simpa only [finalCount, hodd, hl, and_false, ite_false, Bool.false_eq_true] using hv.1

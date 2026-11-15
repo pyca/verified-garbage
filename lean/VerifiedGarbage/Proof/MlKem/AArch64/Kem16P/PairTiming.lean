@@ -47,6 +47,7 @@ As `Hybrid.pairMCode_relCT`, with the main squeezes of `Kem16P.stepP`
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem16P
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon (PairAt pairR)
@@ -66,17 +67,17 @@ theorem pstep_relCT (sd bt : Nat) {init₁ init₂ s₁ s₂ : State} {p st R B�
     (e28₁ : init₁.gpr .x28 = st) (e28₂ : init₂.gpr .x28 = st) (sp : init₁.sp = init₂.sp)
     (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
     (h₁ : SInvP init₁ p st R B₀ A₁ B₁ N₀ m k s₁) (h₂ : SInvP init₂ p st R B₀ A₂ B₂ N₀ m k s₂) :
-    RelCT isa (Eq2 s₁ s₂) (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m k) TT := by
+    RelCT isa (Eq2 s₁ s₂) (Impl.MlKem.AArch64.Kem16P.stepP sha3 sd bt N₀ m k) TT := by
   unfold Impl.MlKem.AArch64.Kem16P.stepP
   split
-  · exact slotPrf_relCT sd bt (N := N₀ + k) (by omega_using [hk, hN])
+  · exact slotPrf_relCT (sha3 := sha3) sd bt (N := N₀ + k) (by omega_using [hk, hN])
       (by simp only [Impl.MlKem.AArch64.Kem16P.bufOff] at h4 ⊢; omega_using [h4])
       h₁.ptr h₁.pa h₁.pb (by rw [h₁.keep.get .x28]; exact e28₁)
       h₂.ptr h₂.pa h₂.pb (by rw [h₂.keep.get .x28]; exact e28₂)
       (by rw [h₁.keep.sp, h₂.keep.sp, sp]) hR hsd hsd' h₁.pair h₂.pair
       ((hl₁.frame h₁.keep.rd h₁.keep.wr h₁.keep.sp).slotLay hk)
       ((hl₂.frame h₂.keep.rd h₂.keep.wr h₂.keep.sp).slotLay hk)
-  · exact plainStep_relCT (by rw [h₁.keep.sp, h₂.keep.sp, sp]) (by rw [h₁.ptr, h₂.ptr])
+  · exact plainStep_relCT (sha3 := sha3) (by rw [h₁.keep.sp, h₂.keep.sp, sp]) (by rw [h₁.ptr, h₂.ptr])
       (by rw [h₁.pa, h₂.pa]) (by rw [h₁.pb, h₂.pb])
 
 theorem sinvP_zero {s : State} {p st R B₀ : Addr} {A B : Spec.Sha3.State} {N₀ m : Nat}
@@ -97,20 +98,20 @@ theorem squeezeP_relCT (sd bt : Nat) {s₁ s₂ : State} {p st R B₀ : Addr}
     (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
     (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N₀) = B₀)
     (h₁ : SInvP s₁ p st R B₀ A₁ B₁ N₀ m 0 s₁) (h₂ : SInvP s₂ p st R B₀ A₂ B₂ N₀ m 0 s₂) :
-    RelCT isa (Eq2 s₁ s₂) (.seq (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 0)
-      (.seq (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 1) (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 2))) TT := by
-  refine rel_seq (pstep_relCT sd bt (k := 0) (by decide) hN h4 hl₁ hl₂ e28₁ e28₂ sp hR hsd hsd' h₁ h₂)
-    (pstep_ok sd bt (k := 0) (by decide) hN hbo hl₁ e28₁ hR hsd hsd' hB h₁)
-    (pstep_ok sd bt (k := 0) (by decide) hN hbo hl₂ e28₂ hR hsd hsd' hB h₂) fun t₁ t₂ ht₁ ht₂ => ?_
-  refine rel_seq (pstep_relCT sd bt (k := 1) (by decide) hN h4 hl₁ hl₂ e28₁ e28₂ sp hR hsd hsd' ht₁ ht₂)
-    (pstep_ok sd bt (k := 1) (by decide) hN hbo hl₁ e28₁ hR hsd hsd' hB ht₁)
-    (pstep_ok sd bt (k := 1) (by decide) hN hbo hl₂ e28₂ hR hsd hsd' hB ht₂) fun u₁ u₂ hu₁ hu₂ => ?_
-  exact pstep_relCT sd bt (k := 2) (by decide) hN h4 hl₁ hl₂ e28₁ e28₂ sp hR hsd hsd' hu₁ hu₂
+    RelCT isa (Eq2 s₁ s₂) (.seq (Impl.MlKem.AArch64.Kem16P.stepP sha3 sd bt N₀ m 0)
+      (.seq (Impl.MlKem.AArch64.Kem16P.stepP sha3 sd bt N₀ m 1) (Impl.MlKem.AArch64.Kem16P.stepP sha3 sd bt N₀ m 2))) TT := by
+  refine rel_seq (pstep_relCT (sha3 := sha3) sd bt (k := 0) (by decide) hN h4 hl₁ hl₂ e28₁ e28₂ sp hR hsd hsd' h₁ h₂)
+    (pstep_ok (sha3 := sha3) sd bt (k := 0) (by decide) hN hbo hl₁ e28₁ hR hsd hsd' hB h₁)
+    (pstep_ok (sha3 := sha3) sd bt (k := 0) (by decide) hN hbo hl₂ e28₂ hR hsd hsd' hB h₂) fun t₁ t₂ ht₁ ht₂ => ?_
+  refine rel_seq (pstep_relCT (sha3 := sha3) sd bt (k := 1) (by decide) hN h4 hl₁ hl₂ e28₁ e28₂ sp hR hsd hsd' ht₁ ht₂)
+    (pstep_ok (sha3 := sha3) sd bt (k := 1) (by decide) hN hbo hl₁ e28₁ hR hsd hsd' hB ht₁)
+    (pstep_ok (sha3 := sha3) sd bt (k := 1) (by decide) hN hbo hl₂ e28₂ hR hsd hsd' hB ht₂) fun u₁ u₂ hu₁ hu₂ => ?_
+  exact pstep_relCT (sha3 := sha3) sd bt (k := 2) (by decide) hN h4 hl₁ hl₂ e28₁ e28₂ sp hR hsd hsd' hu₁ hu₂
 
-def prepareP (L : KemLay) (sd bt sb ss a b N₀ m : Nat) : Prog isa :=
+def prepareP (sha3 : Bool) (L : KemLay) (sd bt sb ss a b N₀ m : Nat) : Prog isa :=
   .seq (.seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b L.k))
-    (.seq (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 0)
-      (.seq (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 1) (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 2))))
+    (.seq (Impl.MlKem.AArch64.Kem16P.stepP sha3 sd bt N₀ m 0)
+      (.seq (Impl.MlKem.AArch64.Kem16P.stepP sha3 sd bt N₀ m 1) (Impl.MlKem.AArch64.Kem16P.stepP sha3 sd bt N₀ m 2))))
     (.block Impl.MlKem.AArch64.Rej8.rejConsts)
 
 theorem prepareP_ok {w16 : Bool} (L : KemLay) (sd bt : Nat) {s : State} {p seed outA outB table st R B₀ : Addr}
@@ -120,9 +121,9 @@ theorem prepareP_ok {w16 : Bool} (L : KemLay) (sd bt : Nat) {s : State} {p seed 
     (h : BeginInput sb ss oa ob p seed outA outB table s) (hh : PrfInput p outA outB table st R B₀ s)
     (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
     (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N₀) = B₀) :
-    WP isa (prepareP L sd bt sb ss a b N₀ m) s
+    WP isa (prepareP sha3 L sd bt sb ss a b N₀ m) s
       (Prepared3 w16 (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) oa ob p table s) := by
-  refine WP.seq (WP.mono_syms (startP_ok (a := a) (b := b) (m := m) L sd bt hN hbo hss hsb h8b h.ptr h.seedPtr
+  refine WP.seq (WP.mono_syms (startP_ok (sha3 := sha3) (a := a) (b := b) (m := m) L sd bt hN hbo hss hsb h8b h.ptr h.seedPtr
     h.readable h.separate hh.lay hh.h28 hR hsd hsd' hB) fun u ⟨ku, fu, _, u19, _, buA, buB, _⟩ sy => ?_)
   have cu : Context p outA outB table u := Context.frameP h.context ku.rd ku.wr fu hh.tS hh.tF hh.tB
   refine WP.mono_syms (Rej8.constants_ok u (by
@@ -175,7 +176,7 @@ theorem prepareP_relCT (L : KemLay) (sd bt : Nat) {σ₁ σ₂ : State} {p seed 
     (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
     (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N₀) = B₀)
     (sp : σ₁.sp = σ₂.sp) :
-    RelCT isa (Eq2 σ₁ σ₂) (prepareP L sd bt sb ss a b N₀ m) TT := by
+    RelCT isa (Eq2 σ₁ σ₂) (prepareP sha3 L sd bt sb ss a b N₀ m) TT := by
   have b28 : σ₁.gpr .x28 = σ₂.gpr .x28 := by rw [hh₁.h28, hh₂.h28]
   have initCT : RelCT isa (Eq2 σ₁ σ₂) (.block (Impl.MlKem.AArch64.Paired.init sb ss a b L.k)) TT := by
     intro t v tr ur t' v' hh et ev
@@ -196,11 +197,11 @@ theorem prepareP_relCT (L : KemLay) (sd bt : Nat) {σ₁ σ₂ : State} {p seed 
       (h₂.separate.sub_right (Region.sub_prefix (by decide : 400 ≤ 2048)))
       (Offset.disjoint_base p (by decide) (by decide)))
     fun u₁ u₂ ⟨ku₁, _, _, h19₁, h20₁, h21₁, _, pair₁⟩ ⟨ku₂, _, _, h19₂, h20₂, h21₂, _, pair₂⟩ => ?_)
-    (startP_ok (a := a) (b := b) (m := m) L sd bt hN hbo hss hsb h8b h₁.ptr h₁.seedPtr h₁.readable h₁.separate
+    (startP_ok (sha3 := sha3) (a := a) (b := b) (m := m) L sd bt hN hbo hss hsb h8b h₁.ptr h₁.seedPtr h₁.readable h₁.separate
       hh₁.lay hh₁.h28 hR hsd hsd' hB)
-    (startP_ok (a := a) (b := b) (m := m) L sd bt hN hbo hss hsb h8b h₂.ptr h₂.seedPtr h₂.readable h₂.separate
+    (startP_ok (sha3 := sha3) (a := a) (b := b) (m := m) L sd bt hN hbo hss hsb h8b h₂.ptr h₂.seedPtr h₂.readable h₂.separate
       hh₂.lay hh₂.h28 hR hsd hsd' hB) fun w₁ w₂ hw₁ hw₂ => ?_
-  · exact squeezeP_relCT sd bt hN hbo h4 (hh₁.lay.frame ku₁.rd ku₁.wr ku₁.sp) (hh₂.lay.frame ku₂.rd ku₂.wr ku₂.sp)
+  · exact squeezeP_relCT (sha3 := sha3) sd bt hN hbo h4 (hh₁.lay.frame ku₁.rd ku₁.wr ku₁.sp) (hh₂.lay.frame ku₂.rd ku₂.wr ku₂.sp)
       (by rw [ku₁.get .x28]; exact hh₁.h28) (by rw [ku₂.get .x28]; exact hh₂.h28)
       (by rw [ku₁.sp, ku₂.sp, sp]) hR hsd hsd' hB
       (sinvP_zero h19₁ h20₁ h21₁ pair₁) (sinvP_zero h19₂ h20₂ h21₂ pair₂)
@@ -224,21 +225,21 @@ theorem beginP_relCT {w16 : Bool} (L : KemLay) (sd bt : Nat) {σ₁ σ₂ : Stat
     (sp : σ₁.sp = σ₂.sp)
     (seedA : seedState σ₁.mem seed a L.k = seedState σ₂.mem seed a L.k)
     (seedB : seedState σ₁.mem seed b L.k = seedState σ₂.mem seed b L.k) :
-    RelCT isa (fun t v => t = σ₁ ∧ v = σ₂) (beginPCode L sd bt sb ss a b N₀ m oa ob w16)
+    RelCT isa (fun t v => t = σ₁ ∧ v = σ₂) (beginPCode sha3 L sd bt sb ss a b N₀ m oa ob w16)
       (fun t v => BeginPPostW w16 (seedState σ₁.mem seed a L.k) (seedState σ₁.mem seed b L.k) p outA outB
           table st R B₀ N₀ m σ₁ t ∧
         BeginPPostW w16 (seedState σ₂.mem seed a L.k) (seedState σ₂.mem seed b L.k) p outA outB
           table st R B₀ N₀ m σ₂ v) := by
   let R' := fun t v : State => Prepared3 w16 (seedState σ₁.mem seed a L.k) (seedState σ₁.mem seed b L.k) oa ob p table σ₁ t ∧
     Prepared3 w16 (seedState σ₂.mem seed a L.k) (seedState σ₂.mem seed b L.k) oa ob p table σ₂ v
-  have start : RelCT isa (fun t v => t = σ₁ ∧ v = σ₂) (prepareP L sd bt sb ss a b N₀ m) R' := by
+  have start : RelCT isa (fun t v => t = σ₁ ∧ v = σ₂) (prepareP sha3 L sd bt sb ss a b N₀ m) R' := by
     intro t v tr ur t' v' h et ev
     rcases h with ⟨ht, hv⟩; subst t; subst v
-    exact ⟨(prepareP_relCT L sd bt hN hbo h4 hss hsb h8b h₁ hh₁ h₂ hh₂ hR hsd hsd' hB sp _ _ _ _ _ _ ⟨rfl, rfl⟩ et ev).1,
-      exec_post (prepareP_ok L sd bt hN hbo hss hsb h8b h₁ hh₁ hR hsd hsd' hB) et,
-      exec_post (prepareP_ok L sd bt hN hbo hss hsb h8b h₂ hh₂ hR hsd hsd' hB) ev⟩
+    exact ⟨(prepareP_relCT (sha3 := sha3) L sd bt hN hbo h4 hss hsb h8b h₁ hh₁ h₂ hh₂ hR hsd hsd' hB sp _ _ _ _ _ _ ⟨rfl, rfl⟩ et ev).1,
+      exec_post (prepareP_ok (sha3 := sha3) L sd bt hN hbo hss hsb h8b h₁ hh₁ hR hsd hsd' hB) et,
+      exec_post (prepareP_ok (sha3 := sha3) L sd bt hN hbo hss hsb h8b h₂ hh₂ hR hsd hsd' hB) ev⟩
   have grouped : RelCT isa (fun t v => t = σ₁ ∧ v = σ₂)
-      (.seq (prepareP L sd bt sb ss a b N₀ m) (initialCode oa ob w16)) (fun _ _ => True) := by
+      (.seq (prepareP sha3 L sd bt sb ss a b N₀ m) (initialCode oa ob w16)) (fun _ _ => True) := by
     refine RelCT.seq start ?_
     intro t v tr ur t' v' h et ev
     exact initial_relCT hoa hob h.1.ready (by rw [seedA, seedB]; exact h.2.ready)
@@ -246,14 +247,14 @@ theorem beginP_relCT {w16 : Bool} (L : KemLay) (sd bt : Nat) {σ₁ σ₂ : Stat
       (h.1.pointer.trans h.2.pointer.symm)
       (by rw [h.1.keep.get .x28 (by decide), h.2.keep.get .x28 (by decide), hh₁.h28, hh₂.h28])
       (h.1.tablePtr.trans h.2.tablePtr.symm) t v tr ur t' v' ⟨rfl, rfl⟩ et ev
-  have trace : RelCT isa (fun t v => t = σ₁ ∧ v = σ₂) (beginPCode L sd bt sb ss a b N₀ m oa ob w16)
+  have trace : RelCT isa (fun t v => t = σ₁ ∧ v = σ₂) (beginPCode sha3 L sd bt sb ss a b N₀ m oa ob w16)
       (fun _ _ => True) :=
     RelCT.assoc (RelCT.assoc grouped)
   intro t v tr ur t' v' h et ev
   rcases h with ⟨ht, hv⟩; subst t; subst v
   exact ⟨(trace σ₁ σ₂ tr ur t' v' ⟨rfl, rfl⟩ et ev).1,
-    exec_post (beginP_ok L sd bt hN hbo hss hsb h8b hoa hob h₁ hh₁ hR hsd hsd' hB) et,
-    exec_post (beginP_ok L sd bt hN hbo hss hsb h8b hoa hob h₂ hh₂ hR hsd hsd' hB) ev⟩
+    exec_post (beginP_ok (sha3 := sha3) L sd bt hN hbo hss hsb h8b hoa hob h₁ hh₁ hR hsd hsd' hB) et,
+    exec_post (beginP_ok (sha3 := sha3) L sd bt hN hbo hss hsb h8b hoa hob h₂ hh₂ hR hsd hsd' hB) ev⟩
 
 /-- **A pair computing PRF outputs** leaks only public pointers and the public seed. -/
 theorem pairPCode_relCT {w16 : Bool} (L : KemLay) (sd bt : Nat) {σ₁ σ₂ : State} {p seed outA outB table st R B₀ : Addr}
@@ -269,30 +270,30 @@ theorem pairPCode_relCT {w16 : Bool} (L : KemLay) (sd bt : Nat) {σ₁ σ₂ : S
     (seedA : seedState σ₁.mem seed a L.k = seedState σ₂.mem seed a L.k)
     (seedB : seedState σ₁.mem seed (a+1) L.k = seedState σ₂.mem seed (a+1) L.k) :
     RelCT isa (fun t v => t = σ₁ ∧ v = σ₂)
-      (.seq (beginPCode L sd bt sb ss a (a+1) N₀ m oa ob w16) (finishCode w16)) (fun _ _ => True) := by
+      (.seq (beginPCode sha3 L sd bt sb ss a (a+1) N₀ m oa ob w16) (finishCode sha3 w16)) (fun _ _ => True) := by
   let R' := fun t v : State =>
     BeginPPostW w16 (seedState σ₁.mem seed a L.k) (seedState σ₁.mem seed (a+1) L.k) p outA outB table st R B₀
       N₀ m σ₁ t ∧
     BeginPPostW w16 (seedState σ₂.mem seed a L.k) (seedState σ₂.mem seed (a+1) L.k) p outA outB table st R B₀
       N₀ m σ₂ v ∧
     t.syms = σ₁.syms ∧ v.syms = σ₂.syms
-  have start : RelCT isa (fun t v => t = σ₁ ∧ v = σ₂) (beginPCode L sd bt sb ss a (a+1) N₀ m oa ob w16) R' := by
+  have start : RelCT isa (fun t v => t = σ₁ ∧ v = σ₂) (beginPCode sha3 L sd bt sb ss a (a+1) N₀ m oa ob w16) R' := by
     intro t v tr ur t' v' h et ev
     rcases h with ⟨ht, hv⟩; subst t; subst v
-    have hh := beginP_relCT L sd bt hN hbo h4 hss hsb h8b hoa hob h₁ hh₁ h₂ hh₂ hR hsd hsd' hB sp seedA seedB
+    have hh := beginP_relCT (sha3 := sha3) L sd bt hN hbo h4 hss hsb h8b hoa hob h₁ hh₁ h₂ hh₂ hR hsd hsd' hB sp seedA seedB
       σ₁ σ₂ tr ur t' v' ⟨rfl, rfl⟩ et ev
     exact ⟨hh.1, hh.2.1, hh.2.2, Exec.syms et, Exec.syms ev⟩
   refine RelCT.seq start ?_
   intro t v tr ur t' v' h et ev
-  exact finish_relCT h.1.progress (by rw [seedA, seedB]; exact h.2.1.progress)
+  exact finish_relCT (sha3 := sha3) h.1.progress (by rw [seedA, seedB]; exact h.2.1.progress)
     (by rw [h.2.2.1]; exact h₁.symbol) (by rw [h.2.2.2]; exact h₂.symbol)
     h.1.flag (by rw [seedA, seedB]; exact h.2.1.flag)
     (h.1.keep.sp.trans (sp.trans h.2.1.keep.sp.symm)) t v tr ur t' v' ⟨rfl, rfl⟩ et ev
 
 theorem pairP_exec {sb ss off sd bt : Nat} {L : KemLay} {a N₀ m : Nat} {s t : State} {tr : List Leak}
-    (h : Exec isa (Impl.MlKem.AArch64.Kem16P.pairP sb ss off sd bt L a N₀ m) s tr t) :
-    Exec isa (.seq (beginPCode L sd bt sb ss a (a+1) N₀ m (off+1024*a) (off+1024*(a+1)) true)
-      (finishCode true)) s tr t := by
+    (h : Exec isa (Impl.MlKem.AArch64.Kem16P.pairP sha3 sb ss off sd bt L a N₀ m) s tr t) :
+    Exec isa (.seq (beginPCode sha3 L sd bt sb ss a (a+1) N₀ m (off+1024*a) (off+1024*(a+1)) true)
+      (finishCode sha3 true)) s tr t := by
   simp only [Impl.MlKem.AArch64.Kem16P.pairP, seqs] at h
   obtain ⟨_,_,_,rfl,ei,h⟩ := seq_parts h
   obtain ⟨_,_,_,rfl,es,h⟩ := seq_parts h

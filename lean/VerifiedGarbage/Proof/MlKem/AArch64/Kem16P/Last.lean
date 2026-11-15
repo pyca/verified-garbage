@@ -27,6 +27,7 @@ postcondition (`PrfBufs`).
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem16P
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Proof.MlKem VG.Spec.MlKem VG.Proof.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon (PairAt pairR wordAddr outAddr)
@@ -74,7 +75,7 @@ theorem stepB_ok {initial s : State} {p R B₀ : Addr} {A : Spec.Sha3.State} {N�
     (hNk : N = N₀ + k) (hk : k < 3) (hN : N₀ + 2 < 256) (hl : LayB p R B₀ initial)
     (hR : initial.gpr .x28 + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
     (h : BInv initial p R B₀ A N₀ k s) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.stepB Impl.MlKem.AArch64.KEM.RB N) s (BInv initial p R B₀ A N₀ (k + 1)) := by
+    WP isa (Impl.MlKem.AArch64.Kem16P.stepB sha3 Impl.MlKem.AArch64.KEM.RB N) s (BInv initial p R B₀ A N₀ (k + 1)) := by
   subst hNk
   have hls := hl.frame h.keep.rd h.keep.wr
   obtain ⟨B, pair⟩ := h.pair
@@ -92,7 +93,7 @@ theorem stepB_ok {initial s : State} {p R B₀ : Addr} {A : Spec.Sha3.State} {N�
   have u20 : u.gpr .x20 = blockAt (p + 400) k := (ku.get .x20).trans h.pa
   have u21 : u.gpr .x21 = bufAt B₀ k := (ku.get .x21).trans h.pb
   have uwr : u.wr = s.wr := ku.wr
-  have hc := Paired.squeezeBlock_ok (rp := .x19) (ra := .x20) (rb := .x21) u19 u20 u21
+  have hc := Paired.squeezeBlock_ok (sha3 := sha3) (rp := .x19) (ra := .x20) (rb := .x21) u19 u20 u21
     (by rw [u19])
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) pu
@@ -141,7 +142,7 @@ theorem stepB_ok {initial s : State} {p R B₀ : Addr} {A : Spec.Sha3.State} {N�
     · exact (hl.dPR.sub_left (sub (o := 1536) (n := 136) (by decide))).symm
     · exact hl.dRF
   refine ⟨(h.keep.trans ((ku.trans hw).trans ot.keep)).mono
-      (by simp [stepRegs, Hybrid.clobbered, Paired.blockRegs]),
+      (by simp [stepRegs, Hybrid.clobbered, Paired.blockRegs, VG.Proof.Sha3.AArch64.Neon.X2.volatile]),
     ⟨keccakF (Noise.seedState s.mem R (N₀ + k)), ?_⟩, ?_, ?_, ?_, h.frame.trans fst, ?_, fun j hj => ?_⟩
   · rw [hm]; simpa only [iterF_succ] using pw
   · rw [ot.get .x19 (by decide), kw.gpr .x19 (by decide), u19]
@@ -200,8 +201,8 @@ theorem startB_ok (L : Impl.MlKem.AArch64.KemLay) {s : State} {p seed R B₀ : A
     (hB : s.gpr .x28 + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) = B₀) :
     WP isa (.seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a a L.k ++
         Impl.MlKem.AArch64.ptrTo .x21 .x28 (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀)))
-      (.seq (Impl.MlKem.AArch64.Kem16P.stepB Impl.MlKem.AArch64.KEM.RB N₀) (.seq (Impl.MlKem.AArch64.Kem16P.stepB Impl.MlKem.AArch64.KEM.RB (N₀ + 1))
-        (Impl.MlKem.AArch64.Kem16P.stepB Impl.MlKem.AArch64.KEM.RB (N₀ + 2))))) s fun t =>
+      (.seq (Impl.MlKem.AArch64.Kem16P.stepB sha3 Impl.MlKem.AArch64.KEM.RB N₀) (.seq (Impl.MlKem.AArch64.Kem16P.stepB sha3 Impl.MlKem.AArch64.KEM.RB (N₀ + 1))
+        (Impl.MlKem.AArch64.Kem16P.stepB sha3 Impl.MlKem.AArch64.KEM.RB (N₀ + 2))))) s fun t =>
       Keep startBRegs s t ∧ Frame [⟨p, 2048⟩, bufR B₀] s.mem t.mem ∧ Noise.Saved p s t.mem ∧
       t.gpr .x19 = p ∧ Blocks t.mem (p + 400) 3 (Paired.seedState s.mem seed a L.k) ∧
       PrfBufs t.mem B₀ s.mem R N₀ 3 := by
@@ -226,9 +227,9 @@ theorem startB_ok (L : Impl.MlKem.AArch64.KemLay) {s : State} {p seed R B₀ : A
       fun j hj => absurd hj (Nat.not_lt_zero _), fun j hj => absurd hj (Nat.not_lt_zero _)⟩
   have hlv : LayB p R B₀ v := hl.frame kv.rd kv.wr
   have hRv : v.gpr .x28 + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R := by rw [v28]; exact hR
-  refine WP.seq (WP.mono (stepB_ok (k := 0) rfl (by decide) hN hlv hRv h0) fun t ht => ?_)
-  refine WP.seq (WP.mono (stepB_ok (k := 1) rfl (by decide) hN hlv hRv ht) fun t' ht' => ?_)
-  refine WP.mono (stepB_ok (k := 2) rfl (by decide) hN hlv hRv ht') fun w hw => ?_
+  refine WP.seq (WP.mono (stepB_ok (sha3 := sha3) (k := 0) rfl (by decide) hN hlv hRv h0) fun t ht => ?_)
+  refine WP.seq (WP.mono (stepB_ok (sha3 := sha3) (k := 1) rfl (by decide) hN hlv hRv ht) fun t' ht' => ?_)
+  refine WP.mono (stepB_ok (sha3 := sha3) (k := 2) rfl (by decide) hN hlv hRv ht') fun w hw => ?_
   have fi : Frame [Noise.savedR p, pairR p] s.mem v.mem := by rw [mv]; exact fu
   have dS : ∀ r ∈ lastWrites p B₀, (Noise.savedR p).Disjoint r := by
     intro r hr; simp only [lastWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -285,10 +286,10 @@ theorem ctx_frameP {s t : State} {p out table B₀ : Addr} (h : SingleContext p 
     · exact htb)
 
 /-- The singleton's start, constants and rejection (`Paired.lastStartCode`). -/
-def lastStartP (sb ss a k off bo N₀ : Nat) (w16 : Bool) : Prog isa :=
+def lastStartP (sha3 : Bool) (sb ss a k off bo N₀ : Nat) (w16 : Bool) : Prog isa :=
   .seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a a k ++ Impl.MlKem.AArch64.ptrTo .x21 .x28 bo))
-   (.seq (.seq (Impl.MlKem.AArch64.Kem16P.stepB Impl.MlKem.AArch64.KEM.RB N₀) (.seq (Impl.MlKem.AArch64.Kem16P.stepB Impl.MlKem.AArch64.KEM.RB (N₀ + 1))
-      (Impl.MlKem.AArch64.Kem16P.stepB Impl.MlKem.AArch64.KEM.RB (N₀ + 2))))
+   (.seq (.seq (Impl.MlKem.AArch64.Kem16P.stepB sha3 Impl.MlKem.AArch64.KEM.RB N₀) (.seq (Impl.MlKem.AArch64.Kem16P.stepB sha3 Impl.MlKem.AArch64.KEM.RB (N₀ + 1))
+      (Impl.MlKem.AArch64.Kem16P.stepB sha3 Impl.MlKem.AArch64.KEM.RB (N₀ + 2))))
     (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (Impl.MlKem.AArch64.Paired.reject 400 off .x22 w16)))
 
 structure LastStartPostP (w16 : Bool) (B : Nat → Byte) (p out table R B₀ : Addr) (N₀ : Nat)
@@ -315,9 +316,9 @@ theorem lastStartP_ok (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s : State}
     (hl : LayB p R B₀ s) (ap : BufApart p seed out table R B₀)
     (hR : s.gpr .x28 + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
     (hB : s.gpr .x28 + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) = B₀) :
-    WP isa (lastStartP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16) s
+    WP isa (lastStartP sha3 sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16) s
       (LastStartPostP w16 (xofByte (seedBytes s.mem seed a L.k)) p out table R B₀ N₀ s) := by
-  have combined := WP.mono_syms (startB_ok L (a := a) hN hbo hss hsb h8 hp hseed hin hsep hl hR hB)
+  have combined := WP.mono_syms (startB_ok (sha3 := sha3) L (a := a) hN hbo hss hsb h8 hp hseed hin hsep hl hR hB)
     (R := fun u => WP isa (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts)
       (Impl.MlKem.AArch64.Paired.reject 400 off .x22 w16)) u
       (LastStartPostP w16 (xofByte (seedBytes s.mem seed a L.k)) p out table R B₀ N₀ s))
@@ -365,7 +366,7 @@ theorem lastStartP_ok (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s : State}
         exact ctx.apart.sub_left (Offset.sub_base p (by decide)))
       refine ⟨((ku.trans kv).trans h.keep).mono (by
           simp [Paired.lastStartRegs, startBRegs, Paired.initRegs, stepRegs, Hybrid.clobbered,
-            Paired.startRegs, Paired.squeezeRegs, Paired.blockRegs]),
+            Paired.startRegs, Paired.squeezeRegs, Paired.blockRegs, VG.Proof.Sha3.AArch64.Neon.X2.volatile]),
         (fuP.trans fvBig).trans ftBig, svt,
         ctx_frameP ctv ap.table h.keep.rd h.keep.wr ftBig, ?_, h.flagValue, (h.keep.get .x19).trans v19,
         pv.frame (Nat.le_refl 3) ft (by simp only [List.mem_singleton, forall_eq]; exact ap.out)⟩
@@ -373,19 +374,19 @@ theorem lastStartP_ok (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s : State}
   exact WP.seq (WP.mono (WP.seq_iff.mp combined) fun u hu => WP.seq hu)
 
 /-- `Kem16P.lastP`, as `Paired.lastCode`. -/
-def lastCodeP (sb ss a k off bo N₀ : Nat) (w16 : Bool) : Prog isa :=
+def lastCodeP (sha3 : Bool) (sb ss a k off bo N₀ : Nat) (w16 : Bool) : Prog isa :=
   .seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a a k ++ Impl.MlKem.AArch64.ptrTo .x21 .x28 bo))
-   (.seq (.seq (Impl.MlKem.AArch64.Kem16P.stepB Impl.MlKem.AArch64.KEM.RB N₀) (.seq (Impl.MlKem.AArch64.Kem16P.stepB Impl.MlKem.AArch64.KEM.RB (N₀ + 1))
-      (Impl.MlKem.AArch64.Kem16P.stepB Impl.MlKem.AArch64.KEM.RB (N₀ + 2))))
+   (.seq (.seq (Impl.MlKem.AArch64.Kem16P.stepB sha3 Impl.MlKem.AArch64.KEM.RB N₀) (.seq (Impl.MlKem.AArch64.Kem16P.stepB sha3 Impl.MlKem.AArch64.KEM.RB (N₀ + 1))
+      (Impl.MlKem.AArch64.Kem16P.stepB sha3 Impl.MlKem.AArch64.KEM.RB (N₀ + 2))))
     (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts)
      (.seq (Impl.MlKem.AArch64.Paired.reject 400 off .x22 w16)
-      (.seq (.ite (.zero .x .x22) (Paired.fullSampleCode sb ss off a k w16) (.block []))
+      (.seq (.ite (.zero .x .x22) (Paired.fullSampleCode sha3 sb ss off a k w16) (.block []))
        (.block (Impl.MlKem.AArch64.Paired.saved.zipIdx.reverse.map fun (r, i) =>
          .ldr .x r .x19 (1800 + 8 * i)))))))
 
 theorem lastP_eq (L : Impl.MlKem.AArch64.KemLay) (N₀ : Nat) :
-    Impl.MlKem.AArch64.Kem16P.lastP L N₀ =
-      lastCodeP Impl.MlKem.AArch64.KEM.SB Impl.MlKem.AArch64.KEM.SS (L.k * L.k - 1) L.k
+    Impl.MlKem.AArch64.Kem16P.lastP sha3 L N₀ =
+      lastCodeP sha3 Impl.MlKem.AArch64.KEM.SB Impl.MlKem.AArch64.KEM.SS (L.k * L.k - 1) L.k
         (Impl.MlKem.AArch64.KEM.AH + 1024 * (L.k * L.k - 1)) (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀)
         N₀ true := by
   simp only [Impl.MlKem.AArch64.Kem16P.lastP, Paired.fullSample_eq,
@@ -429,16 +430,16 @@ theorem lastCodeP_ok (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s : State}
     (hl : LayB p R B₀ s) (ap : BufApart p seed out table R B₀)
     (hR : s.gpr .x28 + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
     (hB : s.gpr .x28 + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) = B₀) :
-    WP isa (lastCodeP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16) s
+    WP isa (lastCodeP sha3 sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16) s
       (LastPostP w16 (seedBytes s.mem seed a L.k) p out R B₀ N₀ s) := by
   have dF : ∀ r ∈ fullWrites p out, (bufR B₀).Disjoint r := by
     intro r hr; simp only [fullWrites, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ap.lay.symm
     · exact ap.out
-  have combined := WP.mono_syms (lastStartP_ok L (w16 := w16) (a := a) hN hbo (by omega_arith) hsb h8 hoff
+  have combined := WP.mono_syms (lastStartP_ok (sha3 := sha3) L (w16 := w16) (a := a) hN hbo (by omega_arith) hsb h8 hoff
       hk hk256 hp hseed hout hin hsep ctx ht hl ap hR hB)
-    (R := fun u => WP isa (.seq (.ite (.zero .x .x22) (Paired.fullSampleCode sb ss off a L.k w16) (.block []))
+    (R := fun u => WP isa (.seq (.ite (.zero .x .x22) (Paired.fullSampleCode sha3 sb ss off a L.k w16) (.block []))
       (.block (Impl.MlKem.AArch64.Paired.saved.zipIdx.reverse.map fun (r, i) => .ldr .x r .x19 (1800 + 8 * i)))) u
       (LastPostP w16 (seedBytes s.mem seed a L.k) p out R B₀ N₀ s))
     (fun u hu sy => by
@@ -452,10 +453,10 @@ theorem lastCodeP_ok (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s : State}
           · exact hsep
           · exact hseedOut
           · exact ap.seed) (by decide : 32 ≤ 2 ^ 64)]
-      have branch : WP isa (.ite (.zero .x .x22) (Paired.fullSampleCode sb ss off a L.k w16) (.block [])) u
+      have branch : WP isa (.ite (.zero .x .x22) (Paired.fullSampleCode sha3 sb ss off a L.k w16) (.block [])) u
           (LastReadyP w16 (seedBytes s.mem seed a L.k) p out R B₀ N₀ s) := by
         refine WP.ite (u.gpr .x22 == 0) (eval_zero _ _) (fun _ => ?_) (fun hz => ?_)
-        · refine WP.mono (Paired.fullSampleCode_ok hss hsb h8 hoff hk hk256 hu.ptr
+        · refine WP.mono (Paired.fullSampleCode_ok (sha3 := sha3) hss hsb h8 hoff hk hk256 hu.ptr
             (by rw [hu.keep.get .x28]; exact hp) (by rw [hu.keep.get .x28]; exact hseed)
             (by rw [hu.keep.get .x28]; exact hout)
             (by rw [hu.keep.rd, hu.keep.wr]; exact hin) hu.context.scratch hu.context.output

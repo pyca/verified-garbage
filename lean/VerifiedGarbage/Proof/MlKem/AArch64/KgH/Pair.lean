@@ -24,6 +24,7 @@ invariant `IL`. `last_step`: the final entry of an odd matrix. -/
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.KeyGen
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KG VG.Proof.MlKem.AArch64
 open VG.Spec.MlKem
@@ -191,7 +192,7 @@ theorem pairH_wr {s₀ s : State} (hp : Pre P s₀) (hk : KB P s₀ s) {e : Nat}
 theorem pair_step {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr : Noise.Room P) {p r h m : Nat}
     (he : 2*p+1 < P.k*P.k) (hm : m ≤ 3) (hb : ∀ k < m, 136*(h+k) < P.ekLen) (hhr : 136*(h+m) ≤ 384*r)
     (H : IL P s₀ (2*p) r h s) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.pairM SB SS AH P (Impl.MlKem.AArch64.Kem16.kgSrc P) (2*p) h m true) s
+    WP isa (Impl.MlKem.AArch64.Hybrid.pairM sha3 SB SS AH P (Impl.MlKem.AArch64.Kem16.kgSrc P) (2*p) h m true) s
       (IL P s₀ (2*p+2) r (h+m)) := by
   have hw := hp.wf
   have kb := H.b.kb
@@ -205,7 +206,7 @@ theorem pair_step {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr :
   have pin := pair_input hp he kb mt
   have hin := hash_inputK hp hk he kb H.tstk mt
   rw [Hybrid.pairM_iff]
-  refine WP.mono_syms (Hybrid.pairMCode_ok P (Impl.MlKem.AArch64.Kem16.kgSrc P) (a := 2*p) (j := h) (m := m)
+  refine WP.mono_syms (Hybrid.pairMCode_ok (sha3 := sha3) P (Impl.MlKem.AArch64.Kem16.kgSrc P) (a := 2*p) (j := h) (m := m)
     (srcOkK hw) (by decide) (by decide) (by decide) hoa hob pin hin (fun k hk _ => hb k hk) H.hash rfl
     (by rw [H.b.acc]; split; exacts [Or.inr rfl, Or.inl rfl])) fun t ht sy => ?_
   have post := ht.outcome (p := kA s₀ 3+BitVec.ofNat 64 SS) hk1 hk2
@@ -238,14 +239,14 @@ theorem pair_step {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr :
 /-- The last entry of the matrix, with what it writes. -/
 theorem matrix_singletonF {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e<P.k*P.k)
     (h : BInvW true P s₀ e s) (tb : MatrixTable P s₀ s) :
-    WP isa (Paired.lastCode SB SS e P.k (AH+1024*e) true) s fun t =>
+    WP isa (Paired.lastCode sha3 SB SS e P.k (AH+1024*e) true) s fun t =>
       BInvW true P s₀ (e+1) t ∧ Frame (lastWrites s₀ e) s.mem t.mem ∧ Keep Paired.pairRegs s t ∧
         t.syms = s.syms := by
   have hw := hp.wf
   have f0 : SS+2048≤kL P 3 := by kl
   have f1 : AH+1024*e+1024≤kL P 3 := matrixEntry_fit hw he
   have ctx := singleton_context hp he h.kb tb
-  refine WP.mono_syms (Paired.lastCode_ok (sb:=SB) (ss:=SS) (a:=e) (k:=P.k) (off:=AH+1024*e)
+  refine WP.mono_syms (Paired.lastCode_ok (sha3 := sha3) (sb:=SB) (ss:=SS) (a:=e) (k:=P.k) (off:=AH+1024*e)
     (p:=kA s₀ 3+BitVec.ofNat 64 SS) (seed:=kA s₀ 3+BitVec.ofNat 64 SB)
     (out:=kA s₀ 3+BitVec.ofNat 64 (AH+1024*e))
     (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
@@ -271,7 +272,7 @@ theorem matrix_singletonF {s₀ s : State} (hp : Pre P s₀) {e : Nat} (he : e<P
 /-- **The final entry** of an odd matrix, between the rows of `t̂`. -/
 theorem last_step {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) {r h : Nat}
     (hodd : P.k * P.k % 2 = 1) (H : IL P s₀ (P.k * P.k - 1) r h s) :
-    WP isa (Paired.lastSample P true true) s (IL P s₀ (P.k * P.k) r h) := by
+    WP isa (Paired.lastSample sha3 P true true) s (IL P s₀ (P.k * P.k) r h) := by
   have hw := hp.wf
   have kb := H.b.kb
   have hk1 : 0 < P.k * P.k := by omega_arith
@@ -280,7 +281,7 @@ theorem last_step {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) {r h : 
   have hrk := H.rk
   rw [Paired.lastSample_eq]
   simp only [ite_true]
-  refine WP.mono (matrix_singletonF hp he H.b (matrixTable_of hp kb H.tables))
+  refine WP.mono (matrix_singletonF (sha3 := sha3) hp he H.b (matrixTable_of hp kb H.tables))
     fun t ⟨bt, fr, kt, sy⟩ => ?_
   rw [Nat.sub_add_cancel hk1] at bt
   have kbt := bt.kb

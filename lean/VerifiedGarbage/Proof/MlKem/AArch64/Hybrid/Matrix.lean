@@ -24,6 +24,7 @@ stack pointer (`Stk128`).
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Hybrid
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KEM VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Kem
@@ -196,7 +197,7 @@ theorem paired_step3 {w16 : Bool} {M : Msg} {s₀ s : State} (hp : Pre P L s₀)
     (hM : MsgOk P L M s₀) {mA : Mem} {ρ E : List Byte}
     {i : Nat} (he : 2*i+1<P.k*P.k) (hb : 136 * (3 * i + 2) < M.S.len)
     (h : HInvW w16 P L M s₀ mA ρ E (2*i) i s) (tb : MT3 P L s₀ s) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.pair3 P M.S (2*i) i w16) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Hybrid.pair3 sha3 P M.S (2*i) i w16) s fun t =>
       HInvW w16 P L M s₀ mA ρ E (2*i+2) (i+1) t ∧ MT3 P L s₀ t := by
   have hw := hp.wf
   rw [Impl.MlKem.AArch64.Hybrid.pair3, pairM_iff]
@@ -208,7 +209,7 @@ theorem paired_step3 {w16 : Bool} {M : Msg} {s₀ s : State} (hp : Pre P L s₀)
   have hk2 : P.k ≤ 256 := by omega_using [hf.2.1]
   have pin := pair_input (L := L) hp he h.b.kb tb.t
   have hin := hash_input hp hk hM he h.b.kb tb
-  refine WP.mono_syms (pairMCode_ok P M.S (a := 2*i) (j := 3*i) (m := 3) hM.src (by decide) (by decide)
+  refine WP.mono_syms (pairMCode_ok (sha3 := sha3) P M.S (a := 2*i) (j := 3*i) (m := 3) hM.src (by decide) (by decide)
     (by decide) hoa hob pin hin (fun k hk _ => by omega_using [hb, hk]) h.hash h.ek
     (x24_bit h.b)) fun t ht sy => ?_
   have post := ht.outcome (p := sA L s₀ SS) hk1 hk2

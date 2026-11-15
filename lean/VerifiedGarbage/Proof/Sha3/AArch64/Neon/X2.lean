@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Permute
+public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Load
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Save
@@ -31,6 +32,7 @@ meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.BoundaryCommon
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Load
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Permute
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Wrap
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Load
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Save
@@ -209,6 +211,13 @@ theorem stateX2At_eq {m : Mem} {p : Addr} {k : Nat} {A : Spec.Sha3.State}
     stateX2At m p k = A :=
   Vector.ext fun i hi => (stateX2At_lane m p k hi).trans (h i hi)
 
+/-- A state of the two at `p`, after writes elsewhere. -/
+theorem stateX2At_frame {m m' : Mem} {p : Addr} {rs : List Region} (hf : Frame rs m m')
+    (hd : ∀ r ∈ rs, (pairR p).Disjoint r) {k : Nat} (hk : k < 2) :
+    stateX2At m' p k = stateX2At m p k :=
+  stateX2At_eq fun i hi => (hf.readW (lane_contains p hi hk) hd (by decide)).trans
+    (stateX2At_lane m p k hi).symm
+
 /-- The lanes of state `k` of the two at `p` (`x30`), to their registers. -/
 theorem loadLanes_ok {k : Nat} (hk : k < 2) (s₀ : State) {p : Addr} (hb : s₀.gpr .x30 = p)
     (hin : ∀ i < 25, InRegions (s₀.rd ++ s₀.wr) (p + BitVec.ofNat 64 (16 * i + 8 * k)) 8) :
@@ -285,16 +294,14 @@ theorem storeLanes_ok {k : Nat} (hk : k < 2) (s₀ : State) {p : Addr} (A : Spec
           (by omega_using [hi, hk])) (by decide)]
         exact ho j hj
 
-/-- `vg_keccak_f1600_x2`, from the states at `p` (`x0`): it writes only them. -/
-theorem scalar_ok {s : State} {p : Addr} (hp : s.gpr .x0 = p)
-    (hwp : ∀ i < 25, ∀ k < 2, InRegions s.wr (p + BitVec.ofNat 64 (16 * i + 8 * k)) 8) :
-    WP isa scalar s fun t => abiPreserved s t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Frame [pairR p] s.mem t.mem ∧ stateX2At t.mem p 0 = keccakF (stateX2At s.mem p 0) ∧
-      stateX2At t.mem p 1 = keccakF (stateX2At s.mem p 1) := by
-  have hall : ∀ {a : Addr} {n : Nat}, InRegions s.wr a n → InRegions (s.rd ++ s.wr) a n :=
-    fun ⟨r,hr,hc⟩ => ⟨r,List.mem_append.mpr (.inr hr),hc⟩
-  unfold scalar
-  rw [WP.seq_iff,WP.block_append_iff,WP.block_append_iff]
+/-- The scalar functions' first block: the registers saved, and the lanes of
+state 0 of the two at `p` (`x0`) in their registers. -/
+theorem scalarFirst_ok {s : State} {p : Addr} (hp : s.gpr .x0 = p)
+    (hin : ∀ i < 25, InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 (16 * i + 8 * 0)) 8) :
+    WP isa (.block (Impl.Sha3.AArch64.Scalar.Boundary.save ++
+      ([.addImm .x .x30 .x0 0] : List Instr) ++ loadLanes 0)) s fun t =>
+      Boundary.CoreState s (stateX2At s.mem p 0) t ∧ t.mem = s.mem := by
+  rw [WP.block_append_iff,WP.block_append_iff]
   refine (Scalar.Boundary.save_ok s).mono fun s₁ ⟨k₁,g₁,m₁,sv₁,pt₁,v₁⟩ => ?_
   refine WP.cons (exec_addImm_x (by decide)) (WP.block_nil ?_)
   refine (loadLanes_ok (k := 0) (by decide) _ (p := p) ?_ ?_).mono fun s₂ ⟨k₂,m₂,v₂,l₂⟩ => ?_
@@ -304,45 +311,64 @@ theorem scalar_ok {s : State} {p : Addr} (hp : s.gpr .x0 = p)
   · intro i hi
     change InRegions (s₁.rd ++ s₁.wr) _ _
     rw [k₁.rd,k₁.wr]
-    exact hall (hwp i hi 0 (by decide))
-  have m₂' : s₂.mem = s.mem := m₂.trans m₁
+    exact hin i hi
   have v₂' : s₂.v = s₁.v := v₂
-  have c₂ : Boundary.CoreState s (stateX2At s.mem p 0) s₂ :=
-    ⟨⟨k₂.rd.trans k₁.rd,k₂.wr.trans k₁.wr,k₂.sp.trans k₁.sp⟩,
+  exact ⟨⟨⟨k₂.rd.trans k₁.rd,k₂.wr.trans k₁.wr,k₂.sp.trans k₁.sp⟩,
       by simpa only [Scalar.Boundary.Ptrs,v₂'] using pt₁,
       fun i hi => by rw [v₂']; exact sv₁ i hi,fun r hr => by rw [v₂']; exact v₁ r hr,
-      by rw [← m₁]; exact l₂⟩
-  refine WP.seq (WP.mono (Scalar.Lazy.core_state_keep s _ s₂ c₂) fun s₃ ⟨c₃,r₃⟩ => ?_)
-  have m₃ : s₃.mem = s.mem := r₃.mem.trans m₂'
-  rw [WP.seq_iff,WP.block_append_iff]
-  refine (storeLanes_ok (k := 0) (by decide) s₃ (p := p) _ c₃.lanes (c₃.ptrs.1.trans hp)
-    (fun i hi => by rw [c₃.keep.wr]; exact hwp i hi 0 (by decide))).mono
-    fun s₄ ⟨k₄,v₄,x₄,f₄,a₄,b₄⟩ => ?_
-  have b₄' : stateX2At s₄.mem p 1 = stateX2At s.mem p 1 := by rw [← m₃]; exact b₄
+      by rw [← m₁]; exact l₂⟩,m₂.trans m₁⟩
+
+/-- Between two runs of the rounds: the lanes to state 0 of the two at `p`,
+and state 1's to the registers. -/
+theorem scalarNext_ok {s u : State} {p : Addr} {A : Spec.Sha3.State} (hp : s.gpr .x0 = p)
+    (hc : Boundary.CoreState s A u)
+    (hw : ∀ i < 25, InRegions s.wr (p + BitVec.ofNat 64 (16 * i + 8 * 0)) 8)
+    (hr : ∀ i < 25, InRegions (s.rd ++ s.wr) (p + BitVec.ofNat 64 (16 * i + 8 * 1)) 8) :
+    WP isa (.block (storeLanes 0 ++ loadLanes 1)) u fun t =>
+      Boundary.CoreState s (stateX2At u.mem p 1) t ∧ Frame [pairR p] u.mem t.mem ∧
+        stateX2At t.mem p 0 = A := by
+  rw [WP.block_append_iff]
+  refine (storeLanes_ok (k := 0) (by decide) u (p := p) _ hc.lanes (hc.ptrs.1.trans hp)
+    (fun i hi => by rw [hc.keep.wr]; exact hw i hi)).mono fun s₄ ⟨k₄,v₄,x₄,f₄,a₄,b₄⟩ => ?_
   refine (loadLanes_ok (k := 1) (by decide) s₄ x₄ (fun i hi => by
-    rw [k₄.rd,k₄.wr,c₃.keep.rd,c₃.keep.wr]; exact hall (hwp i hi 1 (by decide)))).mono
-    fun s₅ ⟨k₅,m₅,v₅,l₅⟩ => ?_
-  have c₅ : Boundary.CoreState s (stateX2At s.mem p 1) s₅ :=
-    ⟨⟨k₅.rd.trans (k₄.rd.trans c₃.keep.rd),k₅.wr.trans (k₄.wr.trans c₃.keep.wr),
-        k₅.sp.trans (k₄.sp.trans c₃.keep.sp)⟩,
-      by simpa only [Scalar.Boundary.Ptrs,v₅,v₄] using c₃.ptrs,
-      fun i hi => by rw [v₅,v₄]; exact c₃.saved i hi,fun r hr => by rw [v₅,v₄]; exact c₃.vec r hr,
-      by rw [← b₄']; exact l₅⟩
+    rw [k₄.rd,k₄.wr,hc.keep.rd,hc.keep.wr]; exact hr i hi)).mono fun s₅ ⟨k₅,m₅,v₅,l₅⟩ => ?_
+  have b₄' : stateX2At s₄.mem p 1 = stateX2At u.mem p 1 := b₄
+  exact ⟨⟨⟨k₅.rd.trans (k₄.rd.trans hc.keep.rd),k₅.wr.trans (k₄.wr.trans hc.keep.wr),
+        k₅.sp.trans (k₄.sp.trans hc.keep.sp)⟩,
+      by simpa only [Scalar.Boundary.Ptrs,v₅,v₄] using hc.ptrs,
+      fun i hi => by rw [v₅,v₄]; exact hc.saved i hi,fun r hr => by rw [v₅,v₄]; exact hc.vec r hr,
+      by rw [← b₄']; exact l₅⟩,by rw [m₅]; exact f₄,by rw [m₅]; exact a₄⟩
+
+/-- `vg_keccak_f1600_x2`, from the states at `p` (`x0`): it writes only them. -/
+theorem scalar_ok {s : State} {p : Addr} (hp : s.gpr .x0 = p)
+    (hwp : ∀ i < 25, ∀ k < 2, InRegions s.wr (p + BitVec.ofNat 64 (16 * i + 8 * k)) 8) :
+    WP isa scalar s fun t => abiPreserved s t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Frame [pairR p] s.mem t.mem ∧ stateX2At t.mem p 0 = keccakF (stateX2At s.mem p 0) ∧
+      stateX2At t.mem p 1 = keccakF (stateX2At s.mem p 1) := by
+  have hall : ∀ {a : Addr} {n : Nat}, InRegions s.wr a n → InRegions (s.rd ++ s.wr) a n :=
+    fun ⟨r,hr,hc⟩ => ⟨r,List.mem_append.mpr (.inr hr),hc⟩
+  unfold scalar
+  rw [WP.seq_iff]
+  refine (scalarFirst_ok hp fun i hi => hall (hwp i hi 0 (by decide))).mono fun s₂ ⟨c₂,m₂⟩ => ?_
+  refine WP.seq (WP.mono (Scalar.Lazy.core_state_keep s _ s₂ c₂) fun s₃ ⟨c₃,r₃⟩ => ?_)
+  have m₃ : s₃.mem = s.mem := r₃.mem.trans m₂
+  rw [WP.seq_iff]
+  refine (scalarNext_ok hp c₃ (fun i hi => hwp i hi 0 (by decide))
+    fun i hi => hall (hwp i hi 1 (by decide))).mono fun s₅ ⟨c₅,f₅,a₅⟩ => ?_
+  rw [m₃] at c₅ f₅
   refine WP.seq (WP.mono (Scalar.Lazy.core_state_keep s _ s₅ c₅) fun s₆ ⟨c₆,r₆⟩ => ?_)
-  have m₆ : s₆.mem = s₄.mem := r₆.mem.trans m₅
   rw [WP.block_append_iff]
   refine (storeLanes_ok (k := 1) (by decide) s₆ (p := p) _ c₆.lanes (c₆.ptrs.1.trans hp)
     (fun i hi => by rw [c₆.keep.wr]; exact hwp i hi 1 (by decide))).mono
     fun s₇ ⟨k₇,v₇,_,f₇,a₇,b₇⟩ => ?_
-  have b₇' : stateX2At s₇.mem p 0 = keccakF (stateX2At s.mem p 0) := by rw [← a₄,← m₆]; exact b₇
+  have b₇' : stateX2At s₇.mem p 0 = keccakF (stateX2At s.mem p 0) := by rw [← a₅,← r₆.mem]; exact b₇
   refine (Scalar.Boundary.restore_ok s s₇ (fun i hi => by rw [v₇]; exact c₆.saved i hi)).mono
     fun t ⟨k₈,m₈,v₈,g₈⟩ => ⟨⟨g₈,k₈.sp.trans (k₇.sp.trans c₆.keep.sp),fun r hr => by
       rw [v₈,v₇,c₆.vec r hr]⟩,k₈.rd.trans (k₇.rd.trans c₆.keep.rd),
       k₈.wr.trans (k₇.wr.trans c₆.keep.wr),?_,by rw [m₈]; exact b₇',by rw [m₈]; exact a₇⟩
   rw [m₈]
-  rw [m₃] at f₄
-  rw [m₆] at f₇
-  exact f₄.trans f₇
+  rw [r₆.mem] at f₇
+  exact f₅.trans f₇
 
 /-! ## The contract -/
 

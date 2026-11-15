@@ -29,6 +29,7 @@ section
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Proof.MlKem VG.Spec.MlKem VG.Proof.Sha3.AArch64.Neon
 
 def stepRegs : List Reg := nextRegs++bothRegs
@@ -51,13 +52,13 @@ theorem extraStep_ok {w16 : Bool} {s : State} {p a b c : Addr} {A B : Spec.Sha3.
  (pair : PairAt s.mem p A B) (hl : L.length≤256) (hm : M.length≤256)
  (ca : Rej8.Scalar.CoeffsW w16 s.mem a L) (cb : Rej8.Scalar.CoeffsW w16 s.mem b M)
  (sa : checkpointW w16 (p+1680) a L s.mem) (sb : checkpointW w16 (p+1696) b M s.mem) :
- WP isa (Impl.MlKem.AArch64.Paired.extraStep w16) s
+ WP isa (Impl.MlKem.AArch64.Paired.extraStep sha3 w16) s
  (StepPostW w16 A B (sampleAfter L (Proof.Sha3.byteOf (Spec.Sha3.keccakF A)) 56)
  (sampleAfter M (Proof.Sha3.byteOf (Spec.Sha3.keccakF B)) 56) p a b c s) := by
- have grouped : WP isa (.seq nextBlock (Impl.MlKem.AArch64.Paired.extraBoth w16)) s
+ have grouped : WP isa (.seq (nextBlock sha3) (Impl.MlKem.AArch64.Paired.extraBoth w16)) s
      (StepPostW w16 A B (sampleAfter L (Proof.Sha3.byteOf (Spec.Sha3.keccakF A)) 56)
        (sampleAfter M (Proof.Sha3.byteOf (Spec.Sha3.keccakF B)) 56) p a b c s) := by
-  refine WP.seq (WP.mono_syms (nextBlock_ok hp ctx.scratch pair) fun u h hsym => ?_)
+  refine WP.seq (WP.mono_syms (nextBlock_ok (sha3 := sha3) hp ctx.scratch pair) fun u h hsym => ?_)
   rcases h with ⟨ku,fu,precise,up,pu,ra,rb,cs,ut⟩
   have fu' : Frame (stepWrites p a b) s.mem u.mem := fu.mono (by simp [stepWrites])
   have cu := ctx.frame ku.rd ku.wr fu'
@@ -132,12 +133,13 @@ end
 /-! # Complete the paired matrix sampler within the shared five-block bound -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem VG.Proof.Sha3
 
 theorem advance_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : State} {n : Nat}
     (h : ProgressW w16 A B n p a b c s) (hs : s.syms "VG_MLKEM_REJ_SHUFFLE"=c) :
-    WP isa (Impl.MlKem.AArch64.Paired.extraStep w16) s (AdvancedW w16 A B (n+1) p a b c s) := by
-  have run := extraStep_ok h.context h.ptr hs h.pair (accepted_length A n) (accepted_length B n)
+    WP isa (Impl.MlKem.AArch64.Paired.extraStep sha3 w16) s (AdvancedW w16 A B (n+1) p a b c s) := by
+  have run := extraStep_ok (sha3 := sha3) h.context h.ptr hs h.pair (accepted_length A n) (accepted_length B n)
     h.left h.right h.saveLeft h.saveRight
   have ea : sampleAfter (accepted A n) (byteOf (Spec.Sha3.keccakF (iterF n A))) 56=accepted A (n+1) :=
     accepted_next A n
@@ -150,7 +152,7 @@ theorem advance_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : St
 
 theorem extraPair_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : State}
     (h : ProgressW w16 A B 3 p a b c s) (hs : s.syms "VG_MLKEM_REJ_SHUFFLE"=c) :
-    WP isa (Impl.MlKem.AArch64.Paired.extraPair w16) s (ResumePostW w16 A B p a b s) :=
-  resume_ok (fun _ ht hs=>advance_ok ht hs) h hs
+    WP isa (Impl.MlKem.AArch64.Paired.extraPair sha3 w16) s (ResumePostW w16 A B p a b s) :=
+  resume_ok (sha3 := sha3) (fun _ ht hs=>advance_ok (sha3 := sha3) ht hs) h hs
 
 end VG.Proof.MlKem.AArch64.Paired

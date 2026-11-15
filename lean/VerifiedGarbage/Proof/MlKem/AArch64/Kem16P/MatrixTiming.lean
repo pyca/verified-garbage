@@ -22,6 +22,7 @@ run's invariant after `G` (`PRel`), the pairs computing PRF outputs
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem16P
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KEM VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Kem
@@ -65,7 +66,7 @@ theorem apart_of {s₀ s : State} (hp : Pre P L s₀) {N₀ : Nat} (hN : N₀ + 
 theorem prfPair_relCT_inline {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
     (hk : Stk128 P L σ) (hk' : Stk128 P L τ) (sm : Same L M σ τ) {ρ : List Byte} {i N₀ m : Nat}
     (he : 2 * i + 1 < P.k * P.k) (hN : N₀ + 3 ≤ 12) (hm : m ≤ 3) :
-    RelCT isa (PRel P L σ τ ρ (2 * i) N₀) (Impl.MlKem.AArch64.Kem16P.pairP SB SS AH RB (TP P) P (2 * i) N₀ m)
+    RelCT isa (PRel P L σ τ ρ (2 * i) N₀) (Impl.MlKem.AArch64.Kem16P.pairP sha3 SB SS AH RB (TP P) P (2 * i) N₀ m)
       (PRel P L σ τ ρ (2 * i + 2) (N₀ + m)) := by
   intro s u tr ur t v h et eu
   obtain ⟨⟨mσ, h₁⟩, ⟨mτ, h₂⟩, t₁, t₂, sh⟩ := h
@@ -92,11 +93,11 @@ theorem prfPair_relCT_inline {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) 
     rw [Paired.seedState_eq _ _ (by lom) (by lom), Paired.seedState_eq _ _ (by lom) (by lom)]
     unfold Paired.seedBytes
     rw [h₁.b.rho, ba SB, h₂.b.rho]
-  have ct := pairPCode_relCT (w16 := true) P RB (TP P) (a := 2 * i) (m := m) (by omega_arith) hbo h4 (by decide) (by decide)
+  have ct := pairPCode_relCT (sha3 := sha3) (w16 := true) P RB (TP P) (a := 2 * i) (m := m) (by omega_arith) hbo h4 (by decide) (by decide)
     (by decide) hoa hob ps hs pu hu rfl (by decide) (by decide) rfl (by rw [h₁.b.kb.sp, h₂.b.kb.sp, sm.sp]) (seeds _) (seeds _)
-  have ht := exec_post (paired_stepP hp hk he hN hm h₁ t₁) et
-  have hv := exec_post (paired_stepP hq hk' he hN hm h₂ t₂) eu
-  exact ⟨(ct _ _ _ _ _ _ ⟨rfl, rfl⟩ (pairP_exec et) (pairP_exec eu)).1, ⟨_, ht.1⟩, ⟨_, hv.1⟩, ht.2, hv.2,
+  have ht := exec_post (paired_stepP (sha3 := sha3) hp hk he hN hm h₁ t₁) et
+  have hv := exec_post (paired_stepP (sha3 := sha3) hq hk' he hN hm h₂ t₂) eu
+  exact ⟨(ct _ _ _ _ _ _ ⟨rfl, rfl⟩ (pairP_exec (sha3 := sha3) et) (pairP_exec (sha3 := sha3) eu)).1, ⟨_, ht.1⟩, ⟨_, hv.1⟩, ht.2, hv.2,
     by rw [Exec.syms et, Exec.syms eu]; exact sh⟩
 
 /-- A direct call adds no address leakage on AArch64 and returns its body's final state. -/
@@ -113,18 +114,18 @@ theorem call_exec {name : String} {body : Prog isa} {s t : State} {tr : List Lea
 theorem prfPair_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
     (hk : Stk128 P L σ) (hk' : Stk128 P L τ) (sm : Same L M σ τ) {ρ : List Byte} {i N₀ m : Nat}
     (he : 2 * i + 1 < P.k * P.k) (hN : N₀ + 3 ≤ 12) (hm : m ≤ 3) :
-    RelCT isa (PRel P L σ τ ρ (2 * i) N₀) (Impl.MlKem.AArch64.Kem16P.pairPCall SB SS AH RB (TP P) P (2 * i) N₀ m)
+    RelCT isa (PRel P L σ τ ρ (2 * i) N₀) (Impl.MlKem.AArch64.Kem16P.pairPCall sha3 SB SS AH RB (TP P) P (2 * i) N₀ m)
       (PRel P L σ τ ρ (2 * i + 2) (N₀ + m)) := by
   intro s u tr ur t v h et eu
   obtain ⟨⟨mσ, hs⟩, ⟨mτ, hu⟩, ts, tu, sym⟩ := h
-  exact prfPair_relCT_inline hp hq hk hk' sm he hN hm _ _ _ _ _ _
+  exact prfPair_relCT_inline (sha3 := sha3) hp hq hk hk' sm he hN hm _ _ _ _ _ _
     ⟨⟨mσ, hs.callEntry⟩, ⟨mτ, hu.callEntry⟩, ts.callEntry, tu.callEntry, sym⟩
     (call_exec et) (call_exec eu)
 
 /-- A pair computing no PRF output after `G`. -/
 theorem plainPairP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
     (sm : Same L M σ τ) {ρ : List Byte} {e c : Nat} (he : e + 1 < P.k * P.k) (hc : c ≤ 12) :
-    RelCT isa (PRel P L σ τ ρ e c) (Impl.MlKem.AArch64.Paired.pair P false e true) (PRel P L σ τ ρ (e + 2) c) := by
+    RelCT isa (PRel P L σ τ ρ e c) (Impl.MlKem.AArch64.Paired.pair sha3 P false e true) (PRel P L σ τ ρ (e + 2) c) := by
   intro s u tr ur t v h et eu
   obtain ⟨⟨mσ, h₁⟩, ⟨mτ, h₂⟩, t₁, t₂, sh⟩ := h
   have hw := hp.wf
@@ -138,18 +139,18 @@ theorem plainPairP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq 
     rw [Paired.seedState_eq _ _ (by lom) (by lom), Paired.seedState_eq _ _ (by lom) (by lom)]
     unfold Paired.seedBytes
     rw [h₁.b.rho, ba SB, h₂.b.rho]
-  have ct := Paired.pair_relCT (w16 := true) (L := P) (kg := false) (a := e) (by decide) (by decide) (by decide)
+  have ct := Paired.pair_relCT (sha3 := sha3) (w16 := true) (L := P) (kg := false) (a := e) (by decide) (by decide) (by decide)
     (by change AH + 1024 * e < 65536; lom) (by change AH + 1024 * (e + 1) < 65536; lom) ps pu
     (by rw [h₁.b.kb.sp, h₂.b.kb.sp, sm.sp]) (by rw [h₁.b.kb.x28, h₂.b.kb.x28, sm.base]) (seeds e) (seeds (e + 1))
-  have ht := exec_post (paired_stepQ hp he hc h₁ t₁) et
-  have hv := exec_post (paired_stepQ hq he hc h₂ t₂) eu
+  have ht := exec_post (paired_stepQ (sha3 := sha3) hp he hc h₁ t₁) et
+  have hv := exec_post (paired_stepQ (sha3 := sha3) hq he hc h₂ t₂) eu
   exact ⟨(ct _ _ _ _ _ _ ⟨rfl, rfl⟩ et eu).1, ⟨_, ht.1⟩, ⟨_, hv.1⟩, ht.2, hv.2,
     by rw [Exec.syms et, Exec.syms eu]; exact sh⟩
 
 /-- The singleton computing no PRF output after `G`. -/
 theorem lastQ_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
     (sm : Same L M σ τ) {ρ : List Byte} {e c : Nat} (he : e < P.k * P.k) (hc : c ≤ 12) :
-    RelCT isa (PRel P L σ τ ρ e c) (Paired.lastCode SB SS e P.k (AH + 1024 * e) true)
+    RelCT isa (PRel P L σ τ ρ e c) (Paired.lastCode sha3 SB SS e P.k (AH + 1024 * e) true)
       (PRel P L σ τ ρ (e + 1) c) := by
   intro s u tr ur t v h et eu
   obtain ⟨⟨mσ, h₁⟩, ⟨mτ, h₂⟩, t₁, t₂, sh⟩ := h
@@ -162,11 +163,11 @@ theorem lastQ_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pre
   have seed : Paired.seedBytes s.mem (sA L σ SB) e P.k = Paired.seedBytes u.mem (sA L σ SB) e P.k := by
     unfold Paired.seedBytes
     rw [h₁.b.rho, ba SB, h₂.b.rho]
-  have ct := Paired.lastCode_relCT (w16 := true) (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
+  have ct := Paired.lastCode_relCT (sha3 := sha3) (w16 := true) (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
     ps pu (sdisj hp (by lom) (by lom) (by lom))
     (by rw [h₁.b.kb.sp, h₂.b.kb.sp, sm.sp]) (by rw [h₁.b.kb.x28, h₂.b.kb.x28, sm.base]) seed
-  have ht := exec_post (singleton_stepQ hp he hc h₁ t₁) et
-  have hv := exec_post (singleton_stepQ hq he hc h₂ t₂) eu
+  have ht := exec_post (singleton_stepQ (sha3 := sha3) hp he hc h₁ t₁) et
+  have hv := exec_post (singleton_stepQ (sha3 := sha3) hq he hc h₂ t₂) eu
   exact ⟨(ct _ _ _ _ _ _ ⟨rfl, rfl⟩ et eu).1, ⟨_, ht.1⟩, ⟨_, hv.1⟩, ht.2, hv.2,
     by rw [Exec.syms et, Exec.syms eu]; exact sh⟩
 
@@ -174,12 +175,12 @@ theorem lastQ_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pre
 theorem lastPP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pre P L τ)
     (hk : Stk128 P L σ) (hk' : Stk128 P L τ) (sm : Same L M σ τ) {ρ : List Byte} {N₀ : Nat}
     (hN : N₀ + 3 ≤ 12) :
-    RelCT isa (PRel P L σ τ ρ (P.k * P.k - 1) N₀) (Impl.MlKem.AArch64.Kem16P.lastP P N₀)
+    RelCT isa (PRel P L σ τ ρ (P.k * P.k - 1) N₀) (Impl.MlKem.AArch64.Kem16P.lastP sha3 P N₀)
       (PRel P L σ τ ρ (P.k * P.k - 1 + 1) (N₀ + 3)) := by
   intro s u tr ur t v h et eu
   obtain ⟨⟨mσ, h₁⟩, ⟨mτ, h₂⟩, t₁, t₂, sh⟩ := h
-  have ht := exec_post (singleton_stepP hp hk hN h₁ t₁) et
-  have hv := exec_post (singleton_stepP hq hk' hN h₂ t₂) eu
+  have ht := exec_post (singleton_stepP (sha3 := sha3) hp hk hN h₁ t₁) et
+  have hv := exec_post (singleton_stepP (sha3 := sha3) hq hk' hN h₂ t₂) eu
   have hw := hp.wf
   have hf := hw.facts
   have hkk : P.k * P.k ≤ 16 := hf.2.2.1
@@ -203,7 +204,7 @@ theorem lastPP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : Pr
       Paired.seedBytes u.mem (sA L σ SB) (P.k * P.k - 1) P.k := by
     unfold Paired.seedBytes
     rw [h₁.b.rho, ba SB, h₂.b.rho]
-  have ct := lastCodeP_relCT P (w16 := true) (a := P.k * P.k - 1) (by omega_arith) hbo h4 (by decide) (by decide)
+  have ct := lastCodeP_relCT (sha3 := sha3) P (w16 := true) (a := P.k * P.k - 1) (by omega_arith) hbo h4 (by decide) (by decide)
     (by decide) hoff hk1 (by omega_arith) ps pu (sdisj hp (o₂ := AH + 1024 * (P.k * P.k - 1)) (l₂ := 1024)
       (by lom) (by lom) (by lom))
     ls lu (apart_of hp hN t₁) (e28 h₁.b.kb RB) (e28 h₁.b.kb _)
@@ -232,7 +233,7 @@ theorem matrixP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : P
         (Impl.MlKem.AArch64.Hybrid.hashPairs M.S) s u ∧ s.syms = s₀.syms ∧ u.syms = u₀.syms) between
       (PRel P L σ τ ρ (2 * Impl.MlKem.AArch64.Hybrid.hashPairs M.S) 0)) :
     RelCT isa (fun s u => HRel true P L M σ τ m n ρ Eσ Eτ 0 0 s u ∧ s.syms = s₀.syms ∧ u.syms = u₀.syms)
-      (Impl.MlKem.AArch64.Kem16P.matrixP P M.S between)
+      (Impl.MlKem.AArch64.Kem16P.matrixP sha3 P M.S between)
       (PRel P L σ τ ρ (P.k * P.k) (finalCount P (Impl.MlKem.AArch64.Hybrid.hashPairs M.S))) := by
   have hw := hp.wf
   have hk1 : 0 < P.k := hw.facts.1
@@ -254,17 +255,17 @@ theorem matrixP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : P
       (min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * (Impl.MlKem.AArch64.Kem16P.pairs P - H))))
     (RelCTs.append (R := PRel P L σ τ ρ (2 * H) 0) (RelCTs.append ?_ ⟨_, hb, fun _ _ h => h⟩) ?_) ?_
   -- The pairs hashing the message.
-  · have r := RelCTs.range (n := H) (f := fun i => Impl.MlKem.AArch64.Hybrid.pair3 P M.S (2 * i) i true)
+  · have r := RelCTs.range (n := H) (f := fun i => Impl.MlKem.AArch64.Hybrid.pair3 sha3 P M.S (2 * i) i true)
       (I := fun i s u => HRel true P L M σ τ m n ρ Eσ Eτ (2 * i) i s u ∧ s.syms = s₀.syms ∧ u.syms = u₀.syms)
       fun i hi => by
         rw [show 2 * (i + 1) = 2 * i + 2 by omega_arith]
-        exact relCT_syms (hashPair_relCT hp hq hk hk' hM hM' sm (by omega_arith) (hlen i hi) habs)
+        exact relCT_syms (hashPair_relCT (sha3 := sha3) hp hq hk hk' hM hM' sm (by omega_arith) (hlen i hi) habs)
     simpa only [Nat.mul_zero] using r
   -- The pairs computing PRF outputs.
   · have r := RelCTs.range (n := Impl.MlKem.AArch64.Kem16P.pairs P - H)
       (I := fun j => PRel P L σ τ ρ (2 * (j + H)) (min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j)))
-      (f := (fun i => if Impl.MlKem.AArch64.Kem16P.pairCount P H i = 0 then Paired.pair P false (2 * i) true
-        else Impl.MlKem.AArch64.Kem16P.pairPCall SB SS AH RB (TP P) P (2 * i) (3 * (i - H)) (Impl.MlKem.AArch64.Kem16P.pairCount P H i)) ∘
+      (f := (fun i => if Impl.MlKem.AArch64.Kem16P.pairCount P H i = 0 then Paired.pair sha3 P false (2 * i) true
+        else Impl.MlKem.AArch64.Kem16P.pairPCall sha3 SB SS AH RB (TP P) P (2 * i) (3 * (i - H)) (Impl.MlKem.AArch64.Kem16P.pairCount P H i)) ∘
           (· + H))
       fun j hj => by
         have he : 2 * (j + H) + 1 < P.k * P.k := by omega_arith
@@ -276,7 +277,7 @@ theorem matrixP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : P
             simp only [Impl.MlKem.AArch64.Kem16P.pairCount] at hc; omega_arith
           rw [show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * (j + 1)) =
             min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * j) by omega_arith]
-          exact plainPairP_relCT hp hq sm he (by omega_arith)
+          exact plainPairP_relCT (sha3 := sha3) hp hq sm he (by omega_arith)
         · rw [ite_eq_right hc]
           have hc' : 3 * j < Impl.MlKem.AArch64.Kem16P.placed P H := by
             simp only [Impl.MlKem.AArch64.Kem16P.pairCount] at hc; omega_arith
@@ -284,7 +285,7 @@ theorem matrixP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : P
             show min (Impl.MlKem.AArch64.Kem16P.placed P H) (3 * (j + 1)) =
               3 * (j + H - H) + Impl.MlKem.AArch64.Kem16P.pairCount P H (j + H) by
               simp only [Impl.MlKem.AArch64.Kem16P.pairCount]; omega_arith]
-          exact prfPair_relCT hp hq hk hk' sm he (by omega_arith)
+          exact prfPair_relCT (sha3 := sha3) hp hq hk hk' sm he (by omega_arith)
             (by simp only [Impl.MlKem.AArch64.Kem16P.pairCount]; omega_arith)
     simpa only [Nat.zero_add, Nat.mul_zero, Nat.min_zero] using r
   -- The singleton.
@@ -297,11 +298,11 @@ theorem matrixP_relCT {M : Hybrid.Msg} {σ τ : State} (hp : Pre P L σ) (hq : P
       by_cases hl : Impl.MlKem.AArch64.Kem16P.placed P H ≥ 3 * (Impl.MlKem.AArch64.Kem16P.pairs P - H) + 3
       · rw [ite_eq_left hl, show min (Impl.MlKem.AArch64.Kem16P.placed P H)
           (3 * (Impl.MlKem.AArch64.Kem16P.pairs P - H)) = 3 * (Impl.MlKem.AArch64.Kem16P.pairs P - H) by omega_arith]
-        refine ⟨_, lastPP_relCT hp hq hk hk' sm (by omega_arith), fun s u h => ?_⟩
+        refine ⟨_, lastPP_relCT (sha3 := sha3) hp hq hk hk' sm (by omega_arith), fun s u h => ?_⟩
         rw [Nat.sub_add_cancel hn] at h
         simpa only [finalCount, hodd, hl, and_self, ite_true] using h
       · rw [ite_eq_right hl, Paired.lastSample_eq]
-        refine ⟨_, lastQ_relCT hp hq sm (by omega_arith : P.k * P.k - 1 < P.k * P.k) (by omega_arith), fun s u h => ?_⟩
+        refine ⟨_, lastQ_relCT (sha3 := sha3) hp hq sm (by omega_arith : P.k * P.k - 1 < P.k * P.k) (by omega_arith), fun s u h => ?_⟩
         rw [Nat.sub_add_cancel hn] at h
         simpa only [finalCount, hodd, hl, and_false, ite_false, Bool.false_eq_true] using h
     · rw [ite_eq_right hodd]

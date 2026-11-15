@@ -18,6 +18,7 @@ specification (as `Paired.PairPostW.outcome`).
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Hybrid
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Hybrid.X3 (stR)
@@ -29,8 +30,8 @@ open VG.Proof.MlKem
 
 theorem pairM_iff (sb ss off : Nat) (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (a j m : Nat) (w16 : Bool)
     (s : State) (Q : State → Prop) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.pairM sb ss off L S a j m w16) s Q ↔
-    WP isa (.seq (beginMCode L S sb ss a (a+1) j m (off+1024*a) (off+1024*(a+1)) w16) (finishCode w16)) s Q := by
+    WP isa (Impl.MlKem.AArch64.Hybrid.pairM sha3 sb ss off L S a j m w16) s Q ↔
+    WP isa (.seq (beginMCode sha3 L S sb ss a (a+1) j m (off+1024*a) (off+1024*(a+1)) w16) (finishCode sha3 w16)) s Q := by
   simp only [Impl.MlKem.AArch64.Hybrid.pairM, beginMCode, Paired.initialCode, finishCode, seqs]
   simp only [WP.seq_iff (M := isa)]
 
@@ -55,15 +56,15 @@ theorem pairMCode_ok {w16 : Bool} (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HS
     (hb : ∀ k < m, k < 3 → 136 * (j + k) < S.len)
     (hash : stateAt s.mem st = hstate E j (dB S)) (hE : bytesAt s.mem e S.len = E)
     (h24 : s.gpr .x24 = 0 ∨ s.gpr .x24 = 1) :
-    WP isa (.seq (beginMCode L S sb ss a (a+1) j m oa ob w16) (finishCode w16)) s
+    WP isa (.seq (beginMCode sha3 L S sb ss a (a+1) j m oa ob w16) (finishCode sha3 w16)) s
       (PairMPostW w16 S (seedState s.mem seed a L.k) (seedState s.mem seed (a+1) L.k) p outA outB e st E j m s) := by
-  refine WP.seq (WP.mono_syms (beginM_ok L S hS hss hsb h8b hoa hob h hh hb hash hE)
+  refine WP.seq (WP.mono_syms (beginM_ok (sha3 := sha3) L S hS hss hsb h8b hoa hob h hh hb hash hE)
     fun u hu sy => ?_)
   let initial : State := { s with mem := u.mem }
   have hk : Keep pairWorkingRegs initial u :=
     let k := hu.keep.mono (rs' := pairWorkingRegs) (by decide)
     ⟨k.gpr, k.rd, k.wr, k.sp, k.vcs⟩
-  refine WP.mono (finish_ok (initial := initial) hk (Frame.refl _ _) hu.saved hu.progress
+  refine WP.mono (finish_ok (sha3 := sha3) (initial := initial) hk (Frame.refl _ _) hu.saved hu.progress
     (by rw [sy]; exact h.symbol) hu.flag (hu.keep.get .x24) h24) fun t ht => ?_
   have fut : Frame (stepWrites p outA outB) u.mem t.mem := ht.frame
   have hSt : ∀ r ∈ stepWrites p outA outB, (stR st).Disjoint r := by

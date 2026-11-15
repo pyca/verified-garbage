@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Semantics
 /-! # Successful initial rejection bypasses both continuation blocks -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
 theorem full_coeffs {w16 : Bool} {m : Mem} {p : Addr} {L : List Zq}
@@ -34,13 +35,13 @@ theorem fast_finish {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : S
 
 theorem finish_branch {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : State}
     (step : ∀{t : State}{n : Nat}, n=3 ∨ n=4 → ProgressW w16 A B n p a b c t →
-      t.syms "VG_MLKEM_REJ_SHUFFLE"=c → WP isa (Impl.MlKem.AArch64.Paired.extraStep w16) t (AdvancedW w16 A B (n+1) p a b c t))
+      t.syms "VG_MLKEM_REJ_SHUFFLE"=c → WP isa (Impl.MlKem.AArch64.Paired.extraStep sha3 w16) t (AdvancedW w16 A B (n+1) p a b c t))
     (h : ProgressW w16 A B 3 p a b c s) (sy : s.syms "VG_MLKEM_REJ_SHUFFLE"=c)
     (hf : (s.gpr .x6).toNat=if (accepted A 3).length=256 ∧ (accepted B 3).length=256 then 1 else 0)
     (hs : s.gpr .x24=0 ∨ s.gpr .x24=1) :
-    WP isa (.ite (.zero .x .x6) (Impl.MlKem.AArch64.Paired.extraPair w16) (.block [])) s
+    WP isa (.ite (.zero .x .x6) (Impl.MlKem.AArch64.Paired.extraPair sha3 w16) (.block [])) s
       (ResumePostW w16 A B p a b s) := by
-  refine WP.ite (s.gpr .x6 == 0) (eval_zero _ _) (fun _=>resume_ok step h sy) (fun hz=>?_)
+  refine WP.ite (s.gpr .x6 == 0) (eval_zero _ _) (fun _=>resume_ok (sha3 := sha3) step h sy) (fun hz=>?_)
   have full : (accepted A 3).length=256 ∧ (accepted B 3).length=256 := by
     by_contra hh
     have he : s.gpr .x6=0 := BitVec.eq_of_toNat_eq (by rw [hf,ite_eq_right hh]; rfl)

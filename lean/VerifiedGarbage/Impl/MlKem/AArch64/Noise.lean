@@ -30,8 +30,8 @@ def noiseInit (_L : KemLay) (kg : Bool) (n : Nat) : List Instr :=
  ptrTo .x2 .x28 ss ++ (Paired.saved.zipIdx.map fun (r,i) => .str .x r .x2 (1800+8*i)) ++
  [mov .x19 .x2] ++ initCore sb n ++
  [.addImm .x .x20 .x19 400,.addImm .x .x21 .x19 528]
-def squeezePair : Prog isa :=
- .seq (VG.Impl.Sha3.AArch64.Neon.X2.call true .x19 .x19 1536)
+def squeezePair (sha3 : Bool) : Prog isa :=
+ .seq (VG.Impl.Sha3.AArch64.Neon.X2.call sha3 .x19 .x19 1536)
   (.block (VG.Impl.Sha3.AArch64.Neon.X2.squeeze 16 .x19 .x20 .x21))
 
 end VG.Impl.MlKem.AArch64.Noise

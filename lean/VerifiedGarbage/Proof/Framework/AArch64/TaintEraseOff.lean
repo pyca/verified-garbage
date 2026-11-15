@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Taint
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 import VerifiedGarbage.Proof.Framework.Mem
 
 /-!
@@ -13,7 +14,8 @@ immediates of `add` and `sub`, and the amounts of shifts and rotations
 (`Instr.eraseOff`). The field operations of a curve on different slots of a
 working space differ only in their offsets: without them they are the same
 code (proven once for any slots), and the kernel, which caches the analysis
-of the same code from the same taint, analyses each once.
+of the same code from the same taint, analyses each once. The same holds of
+the vector-aware analysis (`VectorTaint`).
 -/
 
 @[expose] public section
@@ -80,6 +82,50 @@ theorem check_eraseOff (τ : taint.T) (c : Prog isa) (h : VG.Taint.Hint taint.T)
   | frame p b q ih => cases h <;> first | rfl | simp only [Code.eraseOff, VG.Taint.check, ih]
 
 end Taint
+
+namespace VectorTaint
+
+/-- The vector-aware analysis reads no more of an instruction's immediates
+than `Taint.step` does. -/
+theorem step_eraseOff (τ : T) (i : Instr) : step τ i.eraseOff = step τ i := by
+  cases i <;> rfl
+
+theorem checkBlock_eraseOff (τ : taint.T) (is : List isa.Instr) :
+    taint.checkBlock τ (is.map Instr.eraseOff) = taint.checkBlock τ is := by
+  induction is generalizing τ with
+  | nil => rfl
+  | cons i is ih =>
+    show (step τ i.eraseOff).bind _ = (step τ i).bind _
+    exact congr (congrArg Option.bind (step_eraseOff τ i)) (funext ih)
+
+theorem checkChunks_eraseOff {chunkSize : Nat} (τ : taint.T) (is : List isa.Instr) (ms : List taint.T) :
+    taint.checkChunks chunkSize τ (is.map Instr.eraseOff) ms = taint.checkChunks chunkSize τ is ms := by
+  induction ms generalizing τ is with
+  | nil => exact checkBlock_eraseOff τ is
+  | cons m ms ih =>
+    simp only [VG.Taint.checkChunks, KList.take_eq, KList.drop_eq, ← List.map_take, ← List.map_drop, ih]
+    exact congrArg (Option.bind · _) (checkBlock_eraseOff τ _)
+
+theorem check_eraseOff (τ : taint.T) (c : Prog isa) (h : VG.Taint.Hint taint.T) :
+    taint.check τ (Code.eraseOff c) h = taint.check τ c h := by
+  induction c generalizing τ h with
+  | icall => cases h <;> rfl
+  | block is => cases h <;> first | rfl | exact checkChunks_eraseOff τ is _
+  | seq a b iha ihb =>
+    cases h <;> first | rfl | simp only [Code.eraseOff, VG.Taint.check, iha, ihb]
+  | ite c t e iht ihe =>
+    cases h <;> first | rfl | simp only [Code.eraseOff, VG.Taint.check, iht, ihe]
+  | loop b c ih => cases h <;> first | rfl | simp only [Code.eraseOff, VG.Taint.check, ih]
+  | call n b ih => cases h <;> first | rfl | simp only [Code.eraseOff, VG.Taint.check, ih]
+  | frame p b q ih => cases h <;> first | rfl | simp only [Code.eraseOff, VG.Taint.check, ih]
+
+/-- The vector-aware analysis of `c` from that of `c'`, which is `c` without its immediates. -/
+theorem isSome_check_of_eraseOff {c c' : Prog isa} (he : Code.eraseOff c = c')
+    {τ : taint.T} {hc : VG.Taint.Hint taint.T} (h : (taint.check τ c' hc).isSome = true) :
+    (taint.check τ c hc).isSome = true := by
+  rw [← check_eraseOff, he]; exact h
+
+end VectorTaint
 
 /-- The analysis of `c` from that of `c'`, which is `c` without its immediates. -/
 theorem Taint.isSome_check_of_eraseOff {c c' : Prog isa} (he : Code.eraseOff c = c')

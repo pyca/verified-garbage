@@ -24,6 +24,7 @@ specification. The PRF outputs stay in their buffers (`PrfBufs`).
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem16P
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon (PairAt pairR)
@@ -36,15 +37,15 @@ open VG.Spec.Sha3 (stateAt bytesAt)
 open VG.Spec.MlKem
 open VG.Proof.MlKem
 
-def beginPCode (L : KemLay) (sd bt sb ss a b N₀ m oa ob : Nat) (w16 : Bool := false) : Prog isa :=
+def beginPCode (sha3 : Bool) (L : KemLay) (sd bt sb ss a b N₀ m oa ob : Nat) (w16 : Bool := false) : Prog isa :=
   .seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b L.k))
-    (.seq (.seq (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 0)
-      (.seq (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 1) (Impl.MlKem.AArch64.Kem16P.stepP sd bt N₀ m 2)))
+    (.seq (.seq (Impl.MlKem.AArch64.Kem16P.stepP sha3 sd bt N₀ m 0)
+      (.seq (Impl.MlKem.AArch64.Kem16P.stepP sha3 sd bt N₀ m 1) (Impl.MlKem.AArch64.Kem16P.stepP sha3 sd bt N₀ m 2)))
       (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)))
 
 theorem pairP_iff (sb ss off sd bt : Nat) (L : KemLay) (a N₀ m : Nat) (s : State) (Q : State → Prop) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.pairP sb ss off sd bt L a N₀ m) s Q ↔
-    WP isa (.seq (beginPCode L sd bt sb ss a (a+1) N₀ m (off+1024*a) (off+1024*(a+1)) true) (finishCode true)) s Q := by
+    WP isa (Impl.MlKem.AArch64.Kem16P.pairP sha3 sb ss off sd bt L a N₀ m) s Q ↔
+    WP isa (.seq (beginPCode sha3 L sd bt sb ss a (a+1) N₀ m (off+1024*a) (off+1024*(a+1)) true) (finishCode sha3 true)) s Q := by
   simp only [Impl.MlKem.AArch64.Kem16P.pairP, beginPCode, initialCode, finishCode, seqs]
   simp only [WP.seq_iff (M := isa)]
 
@@ -96,10 +97,10 @@ theorem beginP_ok {w16 : Bool} (L : KemLay) (sd bt : Nat) {s : State}
     (h : Paired.BeginInput sb ss oa ob p seed outA outB table s) (hh : PrfInput p outA outB table st R B₀ s)
     (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
     (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N₀) = B₀) :
-    WP isa (beginPCode L sd bt sb ss a b N₀ m oa ob w16) s
+    WP isa (beginPCode sha3 L sd bt sb ss a b N₀ m oa ob w16) s
       (BeginPPostW w16 (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) p outA outB table st R B₀ N₀ m s) := by
   have ctx := h.context
-  have combined := WP.mono_syms (startP_ok (a := a) (b := b) (m := m) L sd bt hN hbo hss hsb h8b h.ptr h.seedPtr
+  have combined := WP.mono_syms (startP_ok (sha3 := sha3) (a := a) (b := b) (m := m) L sd bt hN hbo hss hsb h8b h.ptr h.seedPtr
     h.readable h.separate hh.lay hh.h28 hR hsd hsd' hB)
     (R := fun u => WP isa (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (initialCode oa ob w16)) u
       (BeginPPostW w16 (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) p outA outB table st R B₀ N₀ m s))
@@ -212,14 +213,14 @@ theorem pairPCode_ok {w16 : Bool} (L : KemLay) (sd bt : Nat) {s : State}
     (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
     (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N₀) = B₀)
     (h24 : s.gpr .x24 = 0 ∨ s.gpr .x24 = 1) :
-    WP isa (.seq (beginPCode L sd bt sb ss a (a+1) N₀ m oa ob w16) (finishCode w16)) s
+    WP isa (.seq (beginPCode sha3 L sd bt sb ss a (a+1) N₀ m oa ob w16) (finishCode sha3 w16)) s
       (PairPPostW w16 (seedState s.mem seed a L.k) (seedState s.mem seed (a+1) L.k) p outA outB st R B₀ N₀ m s) := by
-  refine WP.seq (WP.mono_syms (beginP_ok L sd bt hN hbo hss hsb h8b hoa hob h hh hR hsd hsd' hB) fun u hu sy => ?_)
+  refine WP.seq (WP.mono_syms (beginP_ok (sha3 := sha3) L sd bt hN hbo hss hsb h8b hoa hob h hh hR hsd hsd' hB) fun u hu sy => ?_)
   let initial : State := { s with mem := u.mem }
   have hk : Keep pairWorkingRegs initial u :=
     let k := hu.keep.mono (rs' := pairWorkingRegs) (by decide)
     ⟨k.gpr, k.rd, k.wr, k.sp, k.vcs⟩
-  refine WP.mono (finish_ok (initial := initial) hk (Frame.refl _ _) hu.saved hu.progress
+  refine WP.mono (finish_ok (sha3 := sha3) (initial := initial) hk (Frame.refl _ _) hu.saved hu.progress
     (by rw [sy]; exact h.symbol) hu.flag (hu.keep.get .x24) h24) fun t ht => ?_
   have fut : Frame (stepWrites p outA outB) u.mem t.mem := ht.frame
   refine ⟨⟨ht.keep.gpr, ht.keep.rd, ht.keep.wr, ht.keep.sp, ht.keep.vcs⟩,

@@ -22,7 +22,7 @@ message there with `vg_mlkem_add`. Decapsulation's decryption (`Optimized.decryp
 16-bit too.
 The pieces of key generation (`Kem16P.keyGen`): each row of `t̂` (`kgRow`)
 as soon as the matrix has sampled it, the pairs absorbing `ek` into the third
-state of the matrix's `vg_keccak_f1600_x3_sha3` calls as the rows encode it
+state of the matrix's `vg_keccak_f1600_x3` calls as the rows encode it
 (`kgPair`), and the single-state permutations for the blocks of the last
 rows (`kgTail`).
 -/
@@ -83,8 +83,8 @@ def hashedBy (L : KemLay) : Nat → Nat
   | p + 1 => hashedBy L p + min 3 (384 * rowsBy L p / 136 - hashedBy L p)
 
 /-- Pair `p` of the matrix, absorbing the blocks of `ek` it can. -/
-def kgPair (L : KemLay) (p : Nat) : Prog isa :=
-  Hybrid.pairM KG.SB KG.SS KG.AH L (kgSrc L) (2 * p) (hashedBy L p)
+def kgPair (sha3 : Bool) (L : KemLay) (p : Nat) : Prog isa :=
+  Hybrid.pairM sha3 KG.SB KG.SS KG.AH L (kgSrc L) (2 * p) (hashedBy L p)
     (hashedBy L (p + 1) - hashedBy L p) true
 
 /-- Rows `a` to `b - 1` of `t̂`. -/

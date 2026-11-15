@@ -40,6 +40,7 @@ decided on each, and their contract (`Kem16/DecapsFinal.lean`).
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem16P
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Kem
@@ -73,36 +74,40 @@ theorem deRestP1024_taint (c : Impl.Sha3.AArch64.Callee)
   taint_decide_generic c := hole using hS
 
 theorem matrixPJ768_depth :
-    (Impl.MlKem.AArch64.Kem16P.matrixP lay768 (Impl.MlKem.AArch64.Kem16.jSrc lay768)
+    (Impl.MlKem.AArch64.Kem16P.matrixP sha3 lay768 (Impl.MlKem.AArch64.Kem16.jSrc lay768)
       (.block Impl.MlKem.AArch64.Kem16.tailJ)).aarch64Depth ≤ 8 := by
-  decide +kernel
+  cases sha3
+  · decide +kernel
+  · decide +kernel
 
 theorem matrixPJ1024_depth :
-    (Impl.MlKem.AArch64.Kem16P.matrixP Impl.MlKem1024.AArch64.lay1024
+    (Impl.MlKem.AArch64.Kem16P.matrixP sha3 Impl.MlKem1024.AArch64.lay1024
       (Impl.MlKem.AArch64.Kem16.jSrc Impl.MlKem1024.AArch64.lay1024)
       (.block Impl.MlKem.AArch64.Kem16.tailJ)).aarch64Depth ≤ 8 := by
-  decide +kernel
+  cases sha3
+  · decide +kernel
+  · decide +kernel
 
 /-! ## ML-KEM-768 -/
 
 theorem decapsP768_ct (v : Proof.Sha3.AArch64.Permutation) :
     ConstantTime isa (entryContractS (decapsAArch64S lay768)).pre (entryContractS (decapsAArch64S lay768)).pub
-      (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) lay768) :=
-  decapsP_ct (fixedHash v.callee) (prfW v.callee) VG.Proof.MlKem.AArch64.KeyGen.wf768 (deG768_correct v)
+      (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) lay768) :=
+  decapsP_ct (sha3 := sha3) (fixedHash v.callee) (prfW v.callee) VG.Proof.MlKem.AArch64.KeyGen.wf768 (deG768_correct v)
     VG.Proof.MlKem.AArch64.Encaps.calls768 (by decide) srcOkJ768 hashOkJ768 (deStart768_depth v) habsJ768
     (startJ768_taint v.callee (symSums v)) tailJ_taint (deRestP768_taint v.callee (symSums v))
 
 theorem decapsP768_verified (v : Proof.Sha3.AArch64.Permutation) : Verified AArch64.target
-    (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) lay768) decapsH768Contract := by
+    (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) lay768) decapsH768Contract := by
   refine Verified.of_correct (T := AArch64.target) (k := entryContractS (decapsAArch64S lay768)) ?_
-    (decapsP768_ct v) ?_
+    (decapsP768_ct (sha3 := sha3) v) ?_
   · intro s h
     have ss := preSD h.1
     have ts := entryS_tables h
-    exact using_correctDP (fixedHash v.callee) (prfW_valid v) (deG768_correct v)
+    exact using_correctDP (sha3 := sha3) (fixedHash v.callee) (prfW_valid v) (deG768_correct v)
       (kem_unstrip (Decaps.pre_of VG.Proof.MlKem.AArch64.KeyGen.wf768 ss.1)) ⟨ss.2.sp, ss.2.args⟩
       srcOkJ768 hashOkJ768 (by decide) Noise.room768 VG.Proof.MlKem.AArch64.Encaps.calls768 ts.1 ts.2
-      (by decide) (by decide) (deStart768_depth v) matrixPJ768_depth
+      (by decide) (by decide) (deStart768_depth v) (matrixPJ768_depth (sha3 := sha3))
   · exact ⟨fun _ h => decapsH768_entry h, fun _ _ h hp => decapsH768_post h hp,
       fun _ _ hs ht hp => decapsH768_pub hs ht hp, decapsH768_sat⟩
 
@@ -111,23 +116,23 @@ theorem decapsP768_verified (v : Proof.Sha3.AArch64.Permutation) : Verified AArc
 theorem decapsP1024_ct (v : Proof.Sha3.AArch64.Permutation) :
     ConstantTime isa (entryContractS (decapsAArch64S Impl.MlKem1024.AArch64.lay1024)).pre
       (entryContractS (decapsAArch64S Impl.MlKem1024.AArch64.lay1024)).pub
-      (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024) :=
-  decapsP_ct (fixedHash v.callee) (prfW v.callee) VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 (deG1024_correct v)
+      (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024) :=
+  decapsP_ct (sha3 := sha3) (fixedHash v.callee) (prfW v.callee) VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 (deG1024_correct v)
     VG.Proof.MlKem1024.AArch64.Encaps.calls1024 (by decide) srcOkJ1024 hashOkJ1024 (deStart1024_depth v) habsJ1024
     (startJ1024_taint v.callee (symSums v)) tailJ_taint (deRestP1024_taint v.callee (symSums v))
 
 theorem decapsP1024_verified (v : Proof.Sha3.AArch64.Permutation) : Verified AArch64.target
-    (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024)
+    (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024)
     decapsH1024Contract := by
   refine Verified.of_correct (T := AArch64.target)
-    (k := entryContractS (decapsAArch64S Impl.MlKem1024.AArch64.lay1024)) ?_ (decapsP1024_ct v) ?_
+    (k := entryContractS (decapsAArch64S Impl.MlKem1024.AArch64.lay1024)) ?_ (decapsP1024_ct (sha3 := sha3) v) ?_
   · intro s h
     have ss := preSD h.1
     have ts := entryS_tables h
-    exact using_correctDP (fixedHash v.callee) (prfW_valid v) (deG1024_correct v)
+    exact using_correctDP (sha3 := sha3) (fixedHash v.callee) (prfW_valid v) (deG1024_correct v)
       (kem_unstrip (Decaps.pre_of VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 ss.1)) ⟨ss.2.sp, ss.2.args⟩
       srcOkJ1024 hashOkJ1024 (by decide) Noise.room1024 VG.Proof.MlKem1024.AArch64.Encaps.calls1024 ts.1 ts.2
-      (by decide) (by decide) (deStart1024_depth v) matrixPJ1024_depth
+      (by decide) (by decide) (deStart1024_depth v) (matrixPJ1024_depth (sha3 := sha3))
   · exact ⟨fun _ h => decapsH1024_entry h, fun _ _ h hp => decapsH1024_post h hp,
       fun _ _ hs ht hp => decapsH1024_pub hs ht hp, decapsH1024_sat⟩
 

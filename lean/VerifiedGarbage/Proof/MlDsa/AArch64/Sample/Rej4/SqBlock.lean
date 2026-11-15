@@ -85,7 +85,7 @@ theorem pairBlock_ok (sha3 : Bool) {σ s : State} (hp : Pre σ) (he : Env σ s) 
       rcases hr with rfl | rfl
       · exact ⟨400*p,rfl,by dsimp only [pairR,scrR]; omega_using [hpn]⟩
       · exact ⟨oX2,rfl,by dsimp only [X2.callR,scrR,oX2]; omega_using []⟩))
-    fun t ⟨hkt,hf,hpt⟩ => ?_)
+    fun t ⟨hkt,_,hf,hpt⟩ => ?_)
   have het : Env σ t := he.lowStep hf (fun r hr => block_regions_low hpn hn r (by
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       simp only [blockW,List.mem_cons,List.not_mem_nil,or_false]

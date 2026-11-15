@@ -25,6 +25,7 @@ the comparison and the selection (`fused_c_P_ok`). -/
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem16P
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KEM VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Kem
@@ -183,9 +184,9 @@ theorem using_correctDP (hash : FixedHash.HashFn) (valid : PrfValidW P (deL P) p
       Impl.MlKem.AArch64.Kem16P.placed P
         (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc P)))
     (depthA : (Impl.MlKem.AArch64.FixedHashDecaps.deStartUsing hash P).aarch64Depth≤1)
-    (depthM : (Impl.MlKem.AArch64.Kem16P.matrixP P (Impl.MlKem.AArch64.Kem16.jSrc P)
+    (depthM : (Impl.MlKem.AArch64.Kem16P.matrixP sha3 P (Impl.MlKem.AArch64.Kem16.jSrc P)
       (.block Impl.MlKem.AArch64.Kem16.tailJ)).aarch64Depth ≤ 8) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.decaps hash prf P) s₀ fun t =>
+    WP isa (Impl.MlKem.AArch64.Kem16P.decaps sha3 hash prf P) s₀ fun t =>
       abiPreserved s₀ t ∧ (decapsAArch64 P).post s₀ t := by
   have hw := hp.wf
   have scratch0 : Covers [⟨kA s₀ (deL P).sc,P.scl⟩] s₀.wr := by
@@ -203,7 +204,7 @@ theorem using_correctDP (hash : FixedHash.HashFn) (valid : PrfValidW P (deL P) p
   have h0 : HInvW true P (deL P) (jM P) s₀ sJ.mem (rhoD P s₀) (jE P s₀) 0 0 sJ :=
     ⟨BInvW.zero hJ.a.kb hJ.a.x24 hJ.a.rho, Frame.refl _ _, by rw [Hybrid.hstate_zero]; exact hJ.zero, hJ.msg⟩
   -- The matrix, with `J(z ‖ c)` to `JB` after the pairs absorbing `z ‖ c`.
-  refine WP.seq (WP.mono_syms (WP.tables128 (matrixP_ok (M := jM P) hp hk (jM_ok hp hk hs) ho h0 mt
+  refine WP.seq (WP.mono_syms (WP.tables128 (matrixP_ok (sha3 := sha3) (M := jM P) hp hk (jM_ok hp hk hs) ho h0 mt
     fun u hu mu _ => tailJP_ok hp hk ho hJ.a.kp hJ.a.r hJ.a.m hu mu) tj tsJ depthM)
     fun uB ⟨⟨mG, gG, hB, _⟩, tb⟩ _ => ?_)
   -- The re-encryption from the buffers, the comparison and the selection.

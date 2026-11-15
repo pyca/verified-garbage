@@ -196,7 +196,8 @@ def volatile : List Reg := [.x0, .x1, .x2, .x3, .x4, .x5, .x6, .x7, .x8, .x9, .x
   .x13, .x14, .x15, .x16, .x17]
 
 /-- **A call of either function**, with the working space at `q`
-(`rb + off`, `rb` callee-saved): it keeps the callee-saved registers. -/
+(`rb + off`, `rb` callee-saved): it keeps the callee-saved registers, and
+the low halves of `v8`–`v15`. -/
 theorem callAny_ok (sha3 : Bool) {s : State} {rp rb : Reg} {off : Nat} {p q : Addr}
     {A B : Spec.Sha3.State} (hoff : off < 8190) (h8 : off % 8 = 0) (hrp : rp ≠ .x1)
     (hrb : rb ∉ volatile) (hrb30 : rb ≠ .x30)
@@ -204,8 +205,9 @@ theorem callAny_ok (sha3 : Bool) {s : State} {rp rb : Reg} {off : Nat} {p q : Ad
     (hpq : (pairR p).Disjoint (callR q)) (hpair : PairAt s.mem p A B)
     (hcov : Covers [pairR p, callR q] s.wr) :
     WP isa (Impl.Sha3.AArch64.Neon.X2.call sha3 rp rb off) s fun t =>
-      RegKeep volatile s t ∧ Frame [pairR p, callR q] s.mem t.mem ∧
-        PairAt t.mem p (keccakF A) (keccakF B) := by
+      RegKeep volatile s t ∧
+        (∀ r ∈ preservedV, (t.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64) ∧
+        Frame [pairR p, callR q] s.mem t.mem ∧ PairAt t.mem p (keccakF A) (keccakF B) := by
   have hsaved : ∀ r, r ∉ volatile → r ∈ preserved := fun r hr => by
     revert hr; cases r <;> decide
   cases sha3
@@ -214,14 +216,15 @@ theorem callAny_ok (sha3 : Bool) {s : State} {rp rb : Reg} {off : Nat} {p q : Ad
     refine VG.Proof.Sha3.AArch64.wp_ldr (a := q + BitVec.ofNat 64 128)
       ⟨by omega_using [h8], by omega_using [hoff]⟩ ?_ ht.slot
       fun u hu => WP.block_nil ⟨⟨fun r hr' => ?_, by rw [hu.rd, ht.rd], by rw [hu.wr, ht.wr],
-        by rw [hu.sp, ht.sp]⟩, by rw [hu.mem]; exact ht.frame, by rw [hu.mem]; exact ht.pair⟩
+        by rw [hu.sp, ht.sp]⟩, fun r hr => by rw [hu.vec]; exact ht.vcs r hr,
+        by rw [hu.mem]; exact ht.frame, by rw [hu.mem]; exact ht.pair⟩
     · rw [ht.saved rb (hsaved rb hrb) hrb30, ← hq, BitVec.add_assoc, ← BitVec.ofNat_add]
     · by_cases h30 : r = .x30
       · subst r; rw [hu.gpr, ht.link]
       · rw [hu.other r h30, ht.saved r (hsaved r hr') h30]
   · have hsub : ∀ r ∈ clobbered, r ∈ volatile := by decide
     exact (call_ok hoff hrp hp hq hpq hpair hcov).mono fun t ⟨hk, hf, hpt⟩ =>
-      ⟨⟨fun r hr => hk.gpr r (fun hc => hr (hsub r hc)), hk.rd, hk.wr, hk.sp⟩, hf, hpt⟩
+      ⟨⟨fun r hr => hk.gpr r (fun hc => hr (hsub r hc)), hk.rd, hk.wr, hk.sp⟩, hk.vcs, hf, hpt⟩
 
 /-! ## The squeeze -/
 

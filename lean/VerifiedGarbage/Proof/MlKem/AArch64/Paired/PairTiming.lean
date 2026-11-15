@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 /-! # Paired matrix sampling has public-seed-dependent leakage only -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 
 theorem pairCode_relCT {w16 : Bool} {s u : State} {p seed outA outB table : Addr} {sb ss a b k oa ob : Nat}
@@ -16,18 +17,18 @@ theorem pairCode_relCT {w16 : Bool} {s u : State} {p seed outA outB table : Addr
     (sp : s.sp=u.sp) (base : s.gpr .x28=u.gpr .x28)
     (seedA : seedState s.mem seed a k=seedState u.mem seed a k)
     (seedB : seedState s.mem seed b k=seedState u.mem seed b k) :
-    RelCT isa (fun t v=>t=s ∧ v=u) (.seq (beginCode sb ss a b k oa ob w16) (finishCode w16)) (fun _ _=>True) := by
+    RelCT isa (fun t v=>t=s ∧ v=u) (.seq (beginCode sha3 sb ss a b k oa ob w16) (finishCode sha3 w16)) (fun _ _=>True) := by
   let R := fun t v : State=>BeginPostW w16 (seedState s.mem seed a k) (seedState s.mem seed b k) p outA outB table s t ∧
     BeginPostW w16 (seedState u.mem seed a k) (seedState u.mem seed b k) p outA outB table u v ∧
     t.syms=s.syms ∧ v.syms=u.syms
-  have start : RelCT isa (fun t v=>t=s ∧ v=u) (beginCode sb ss a b k oa ob w16) R := by
+  have start : RelCT isa (fun t v=>t=s ∧ v=u) (beginCode sha3 sb ss a b k oa ob w16) R := by
     intro t v tr ur t' v' h et ev
     rcases h with ⟨ht,hv⟩; subst t; subst v
-    have hh := begin_relCT hss hsb h8 hoa hob ps pu sp base seedA seedB s u tr ur t' v' ⟨rfl,rfl⟩ et ev
+    have hh := begin_relCT (sha3 := sha3) hss hsb h8 hoa hob ps pu sp base seedA seedB s u tr ur t' v' ⟨rfl,rfl⟩ et ev
     exact ⟨hh.1,hh.2.1,hh.2.2,Exec.syms et,Exec.syms ev⟩
   refine RelCT.seq start ?_
   intro t v tr ur t' v' h et ev
-  exact finish_relCT h.1.progress (by rw [seedA,seedB]; exact h.2.1.progress)
+  exact finish_relCT (sha3 := sha3) h.1.progress (by rw [seedA,seedB]; exact h.2.1.progress)
     (by rw [h.2.2.1]; exact ps.symbol) (by rw [h.2.2.2]; exact pu.symbol)
     h.1.flag (by rw [seedA,seedB]; exact h.2.1.flag)
     (h.1.keep.sp.trans (sp.trans h.2.1.keep.sp.symm)) t v tr ur t' v' ⟨rfl,rfl⟩ et ev
@@ -48,10 +49,10 @@ theorem seq_parts {a b : Prog isa} {s t : State} {tr : List Leak}
   | seq ha hb => exact ⟨_,_,_,rfl,ha,hb⟩
 
 theorem pair_exec {w16 : Bool} {L : KemLay} {kg : Bool} {a : Nat} {s t : State} {tr : List Leak}
-    (h : Exec isa (Impl.MlKem.AArch64.Paired.pair L kg a w16) s tr t) :
-    Exec isa (.seq (beginCode (if kg then KG.SB else KEM.SB) (if kg then KG.SS else KEM.SS)
+    (h : Exec isa (Impl.MlKem.AArch64.Paired.pair sha3 L kg a w16) s tr t) :
+    Exec isa (.seq (beginCode sha3 (if kg then KG.SB else KEM.SB) (if kg then KG.SS else KEM.SS)
       a (a+1) L.k ((if kg then KG.AH else KEM.AH)+1024*a)
-      ((if kg then KG.AH else KEM.AH)+1024*(a+1)) w16) (finishCode w16)) s tr t := by
+      ((if kg then KG.AH else KEM.AH)+1024*(a+1)) w16) (finishCode sha3 w16)) s tr t := by
   simp only [Impl.MlKem.AArch64.Paired.pair,seqs] at h
   obtain ⟨_,_,_,rfl,ei,h⟩ := seq_parts h
   obtain ⟨_,_,_,rfl,es,h⟩ := seq_parts h
@@ -75,9 +76,9 @@ theorem pair_relCT {w16 : Bool} {s u : State} {L : KemLay} {kg : Bool} {a : Nat}
     (sp : s.sp=u.sp) (base : s.gpr .x28=u.gpr .x28)
     (seedA : seedState s.mem seed a L.k=seedState u.mem seed a L.k)
     (seedB : seedState s.mem seed (a+1) L.k=seedState u.mem seed (a+1) L.k) :
-    RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.pair L kg a w16) (fun _ _=>True) := by
+    RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.pair sha3 L kg a w16) (fun _ _=>True) := by
   intro t v tr ur t' v' h et ev
-  exact pairCode_relCT hss hsb h8 hoa hob ps pu sp base seedA seedB t v tr ur t' v' h
-    (pair_exec et) (pair_exec ev)
+  exact pairCode_relCT (sha3 := sha3) hss hsb h8 hoa hob ps pu sp base seedA seedB t v tr ur t' v' h
+    (pair_exec (sha3 := sha3) et) (pair_exec (sha3 := sha3) ev)
 
 end VG.Proof.MlKem.AArch64.Paired

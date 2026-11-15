@@ -31,6 +31,7 @@ without them (`Code.eraseOff`).
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem16P
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon (PairAt pairR)
@@ -90,7 +91,7 @@ theorem slotPrf_relCT (sd bt : Nat) {N : Nat} (hN : N < 256)
     (sp : σ₁.sp = σ₂.sp) (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
     {A₁ B₁ A₂ B₂ : Spec.Sha3.State} (pair₁ : PairAt σ₁.mem p A₁ B₁) (pair₂ : PairAt σ₂.mem p A₂ B₂)
     (hl₁ : SlotLay p a b st R Bf σ₁) (hl₂ : SlotLay p a b st R Bf σ₂) :
-    RelCT isa (Eq2 σ₁ σ₂) (Impl.MlKem.AArch64.Kem16P.slotPrf sd bt N) TT := by
+    RelCT isa (Eq2 σ₁ σ₂) (Impl.MlKem.AArch64.Kem16P.slotPrf sha3 sd bt N) TT := by
   unfold Impl.MlKem.AArch64.Kem16P.slotPrf
   refine rel_seq (rel_taint [.x28] sp (by
       intro r hr; rw [List.mem_singleton.mp hr, h28₁, h28₂])
@@ -115,10 +116,10 @@ theorem slotPrf_relCT (sd bt : Nat) {N : Nat} (hN : N < 256)
   have u19₂ : u₂.gpr .x19 = p := by rw [ku₂.get .x19, h19₂]
   have u28₁ : u₁.gpr .x28 = st := by rw [ku₁.get .x28, h28₁]
   have u28₂ : u₂.gpr .x28 = st := by rw [ku₂.get .x28, h28₂]
-  refine rel_seq (x3call_relCT c₁ c₂ u19₁ u19₂ u28₁ u28₂ (by rw [ku₁.sp, ku₂.sp, sp]))
-    (Hybrid.x3call_ok (S := stateAt u₁.mem st) u19₁ c₁.hq u28₁ pu₁ rfl c₁.d01 c₁.d02 c₁.d12 c₁.sp c₁.f0
+  refine rel_seq (x3call_relCT (sha3 := sha3) c₁ c₂ u19₁ u19₂ u28₁ u28₂ (by rw [ku₁.sp, ku₂.sp, sp]))
+    (Hybrid.x3call_ok (sha3 := sha3) (S := stateAt u₁.mem st) u19₁ c₁.hq u28₁ pu₁ rfl c₁.d01 c₁.d02 c₁.d12 c₁.sp c₁.f0
       c₁.f1 c₁.f2 c₁.cov)
-    (Hybrid.x3call_ok (S := stateAt u₂.mem st) u19₂ c₂.hq u28₂ pu₂ rfl c₂.d01 c₂.d02 c₂.d12 c₂.sp c₂.f0
+    (Hybrid.x3call_ok (sha3 := sha3) (S := stateAt u₂.mem st) u19₂ c₂.hq u28₂ pu₂ rfl c₂.d01 c₂.d02 c₂.d12 c₂.sp c₂.f0
       c₂.f1 c₂.f2 c₂.cov)
     fun v₁ v₂ ⟨kv₁, _⟩ ⟨kv₂, _⟩ => ?_
   have k₁ := ku₁.trans kv₁

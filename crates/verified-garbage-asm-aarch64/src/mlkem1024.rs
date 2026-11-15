@@ -284,7 +284,7 @@ bl {vg_zeroize}
 /// * `seed` must be random bytes from an approved RBG (FIPS 203 §3.3), or a seed so generated before.
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `ek`, `dk` and `scratch` must not overlap each other or `seed` (distinct Rust objects never do).
-/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `seed`, `ek`, `dk` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_keygen(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
@@ -314,7 +314,7 @@ bl {vg_zeroize}
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
@@ -346,7 +346,7 @@ bl {vg_zeroize}
 /// * `m` must be fresh random bytes from an approved RBG (FIPS 203 §3.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key`, `ct` and `scratch` must not overlap each other, `ek`, `h` or `m` (distinct Rust objects never do).
-/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `ek`, `h`, `m`, `key`, `ct` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps_h(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
@@ -374,7 +374,7 @@ bl {vg_zeroize}
 /// * `dk` must have been written by `vg_mlkem1024_keygen` (so that it passes the checks of FIPS 203 §7.3).
 /// * `scratch` is working space: on return each of its bytes is unchanged or zero.
 /// * `key` and `scratch` must not overlap each other, `dk` or `ct` (distinct Rust objects never do).
-/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 48 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `dk`, `ct`, `key` and `scratch` may overlap the 160 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_decaps(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
@@ -410,6 +410,10 @@ cbnz x11, 20b
 .p2align 6",
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_keccak_f1600_x3.rs"]
+pub(crate) mod vg_keccak_f1600_x3;
 
 #[rustfmt::skip]
 #[path = "internal/vg_keccak_f1600_x3_sha3.rs"]
@@ -476,12 +480,24 @@ pub(crate) mod vg_mlkem1024_keygen_body_x2_sha3_keccak_sha3;
 pub(crate) mod vg_mlkem1024_pair_prf_840_1176_4248_944_25752_10_3_3;
 
 #[rustfmt::skip]
+#[path = "internal/vg_mlkem1024_pair_prf_840_1176_4248_944_25752_10_3_3_scalar.rs"]
+pub(crate) mod vg_mlkem1024_pair_prf_840_1176_4248_944_25752_10_3_3_scalar;
+
+#[rustfmt::skip]
 #[path = "internal/vg_mlkem1024_pair_prf_840_1176_4248_944_25752_12_6_3.rs"]
 pub(crate) mod vg_mlkem1024_pair_prf_840_1176_4248_944_25752_12_6_3;
 
 #[rustfmt::skip]
+#[path = "internal/vg_mlkem1024_pair_prf_840_1176_4248_944_25752_12_6_3_scalar.rs"]
+pub(crate) mod vg_mlkem1024_pair_prf_840_1176_4248_944_25752_12_6_3_scalar;
+
+#[rustfmt::skip]
 #[path = "internal/vg_mlkem1024_pair_prf_840_1176_4248_944_25752_8_0_3.rs"]
 pub(crate) mod vg_mlkem1024_pair_prf_840_1176_4248_944_25752_8_0_3;
+
+#[rustfmt::skip]
+#[path = "internal/vg_mlkem1024_pair_prf_840_1176_4248_944_25752_8_0_3_scalar.rs"]
+pub(crate) mod vg_mlkem1024_pair_prf_840_1176_4248_944_25752_8_0_3_scalar;
 
 #[rustfmt::skip]
 #[path = "internal/vg_mlkem16_cbd2.rs"]
@@ -500,40 +516,12 @@ pub(crate) mod vg_mlkem16_ntt;
 pub(crate) mod vg_mlkem_add;
 
 #[rustfmt::skip]
-#[path = "internal/vg_mlkem_cbd2.rs"]
-pub(crate) mod vg_mlkem_cbd2;
-
-#[rustfmt::skip]
 #[path = "internal/vg_mlkem_compress_encode.rs"]
 pub(crate) mod vg_mlkem_compress_encode;
 
 #[rustfmt::skip]
-#[path = "internal/vg_mlkem_decode12.rs"]
-pub(crate) mod vg_mlkem_decode12;
-
-#[rustfmt::skip]
 #[path = "internal/vg_mlkem_decode_decompress.rs"]
 pub(crate) mod vg_mlkem_decode_decompress;
-
-#[rustfmt::skip]
-#[path = "internal/vg_mlkem_encode12.rs"]
-pub(crate) mod vg_mlkem_encode12;
-
-#[rustfmt::skip]
-#[path = "internal/vg_mlkem_inv_ntt.rs"]
-pub(crate) mod vg_mlkem_inv_ntt;
-
-#[rustfmt::skip]
-#[path = "internal/vg_mlkem_multiply_ntts.rs"]
-pub(crate) mod vg_mlkem_multiply_ntts;
-
-#[rustfmt::skip]
-#[path = "internal/vg_mlkem_ntt.rs"]
-pub(crate) mod vg_mlkem_ntt;
-
-#[rustfmt::skip]
-#[path = "internal/vg_mlkem_sample_ntt.rs"]
-pub(crate) mod vg_mlkem_sample_ntt;
 
 #[rustfmt::skip]
 #[path = "internal/vg_mlkem_sub.rs"]

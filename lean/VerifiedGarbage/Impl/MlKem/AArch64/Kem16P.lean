@@ -8,7 +8,7 @@ The 16-bit encapsulation and `Kem16.decaps`, with the outputs of `PRF₂` (the n
 of the encryption) computed in Keccak states the matrix leaves idle, rather than
 in permutations of their own after it:
 
-* the third state of the `vg_keccak_f1600_x3_sha3` calls of the pairs after
+* the third state of the `vg_keccak_f1600_x3` calls of the pairs after
   those hashing `ek` (`z ‖ c`): each main squeeze computes `PRF₂(r, N)` from a
   fresh third state (`slotPrf`), and copies its first 128 bytes to buffer `N`;
 * the second state of the singleton (`lastP`), which `Paired.lastSample`
@@ -82,30 +82,31 @@ def prfOut (bt N : Nat) : List Instr :=
     (List.range 16).flatMap fun k => [.ldr .x .x9 .x28 (KEM.ST + 8 * k), .str .x .x9 .x2 (8 * k)]
 
 /-- A main squeeze computing `PRF₂(r, N)` in the third state. -/
-def slotPrf (sd bt N : Nat) : Prog isa :=
-  .seq (.block (prfBlock sd N)) (.seq Hybrid.x3call (.block (Hybrid.squeezeTail ++ prfOut bt N)))
+def slotPrf (sha3 : Bool) (sd bt N : Nat) : Prog isa :=
+  .seq (.block (prfBlock sd N)) (.seq (Hybrid.x3call sha3) (.block (Hybrid.squeezeTail ++ prfOut bt N)))
 
 /-- Main squeeze `k` of a pair whose first `m` squeezes compute `PRF₂(r, N₀)`, …. -/
-def stepP (sd bt N₀ m k : Nat) : Prog isa :=
-  if k < m then slotPrf sd bt (N₀ + k) else Hybrid.plainStep
+def stepP (sha3 : Bool) (sd bt N₀ m k : Nat) : Prog isa :=
+  if k < m then slotPrf sha3 sd bt (N₀ + k) else Hybrid.plainStep sha3
 
 /-- A pair (`Paired.pair`, its seed at `sb`, its working space at `ss` and its
 entries at `off`) whose first `m` main squeezes compute `PRF₂(r, N₀)`, …. -/
-def pairP (sb ss off sd bt : Nat) (L : KemLay) (a N₀ m : Nat) : Prog isa :=
+def pairP (sha3 : Bool) (sb ss off sd bt : Nat) (L : KemLay) (a N₀ m : Nat) : Prog isa :=
   seqs [.block (Paired.init sb ss a (a+1) L.k),
-    .seq (stepP sd bt N₀ m 0) (.seq (stepP sd bt N₀ m 1) (stepP sd bt N₀ m 2)),
+    .seq (stepP sha3 sd bt N₀ m 0) (.seq (stepP sha3 sd bt N₀ m 1) (stepP sha3 sd bt N₀ m 2)),
     .block Rej8.rejConsts,
     Paired.rejectBoth (off+1024*a) (off+1024*(a+1)) true,
-    .ite (.zero .x .x6) (Paired.extraPair true) (.block []),
+    .ite (.zero .x .x6) (Paired.extraPair sha3 true) (.block []),
     .block ((Paired.saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i)))]
 
 /-- Share a PRF pair across the hash variants and the encapsulation and
 decapsulation entry points. `pairP` already saves and restores its link
 register, so this call needs no additional frame. Its name includes every
 parameter that determines its code (only `k` of `L` is used by `pairP`). -/
-def pairPCall (sb ss off sd bt : Nat) (L : KemLay) (a N₀ m : Nat) : Prog isa :=
-  .call s!"vg_mlkem{256 * L.k}_pair_prf_{sb}_{ss}_{off}_{sd}_{bt}_{a}_{N₀}_{m}"
-    (pairP sb ss off sd bt L a N₀ m)
+def pairPCall (sha3 : Bool) (sb ss off sd bt : Nat) (L : KemLay) (a N₀ m : Nat) : Prog isa :=
+  .call (s!"vg_mlkem{256 * L.k}_pair_prf_{sb}_{ss}_{off}_{sd}_{bt}_{a}_{N₀}_{m}" ++
+      if sha3 then "" else "_scalar")
+    (pairP sha3 sb ss off sd bt L a N₀ m)
 
 /-! ## PRFs in the singleton's second state -/
 
@@ -114,17 +115,17 @@ def reinitB (sd N : Nat) : List Instr := prfWords sd .x19 (fun w => 8 + 16 * w) 
 
 /-- A main squeeze of the singleton, whose second state computes `PRF₂(r, N)`
 into the buffer at `x21`. -/
-def stepB (sd N : Nat) : Prog isa := .seq (.block (reinitB sd N)) Hybrid.plainStep
+def stepB (sha3 : Bool) (sd N : Nat) : Prog isa := .seq (.block (reinitB sd N)) (Hybrid.plainStep sha3)
 
 /-- The singleton (`Paired.lastSample`), its second state computing
 `PRF₂(r, N₀)`, `PRF₂(r, N₀ + 1)` and `PRF₂(r, N₀ + 2)` into buffers `N₀`, …. -/
-def lastP (L : KemLay) (N₀ : Nat) : Prog isa :=
+def lastP (sha3 : Bool) (L : KemLay) (N₀ : Nat) : Prog isa :=
   let a := L.k*L.k-1
   seqs [.block (Paired.init SB SS a a L.k ++ ptrTo .x21 .x28 (bufOff (TP L) N₀)),
-    .seq (stepB RB N₀) (.seq (stepB RB (N₀ + 1)) (stepB RB (N₀ + 2))),
+    .seq (stepB sha3 RB N₀) (.seq (stepB sha3 RB (N₀ + 1)) (stepB sha3 RB (N₀ + 2))),
     .block Rej8.rejConsts,
     Paired.reject 400 (AH+1024*a) .x22 true,
-    .ite (.zero .x .x22) (Paired.fullSample L false (L.k*L.k-1) true) (.block []),
+    .ite (.zero .x .x22) (Paired.fullSample sha3 L false (L.k*L.k-1) true) (.block []),
     .block (Paired.saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i))]
 
 /-! ## The matrix -/
@@ -135,14 +136,14 @@ def pairCount (L : KemLay) (hp i : Nat) : Nat := min 3 (placed L hp - 3 * (i - h
 /-- The matrix: the first `hp` pairs hash the message `S` (`Hybrid.pair3`),
 then `between` (which computes `r`), then pairs and the singleton compute the
 first `placed` PRF outputs. -/
-def matrixP (L : KemLay) (S : Hybrid.HSrc) (between : Prog isa) : Prog isa :=
+def matrixP (sha3 : Bool) (L : KemLay) (S : Hybrid.HSrc) (between : Prog isa) : Prog isa :=
   let hp := Hybrid.hashPairs S
-  seqs (((List.range (pairs L)).filter (· < hp)).map (fun i => Hybrid.pair3 L S (2*i) i true) ++
+  seqs (((List.range (pairs L)).filter (· < hp)).map (fun i => Hybrid.pair3 sha3 L S (2*i) i true) ++
     [between] ++
     ((List.range (pairs L)).filter (hp ≤ ·)).map (fun i =>
-      if pairCount L hp i = 0 then Paired.pair L false (2*i) true else pairPCall SB SS AH RB (TP L) L (2*i) (3*(i-hp)) (pairCount L hp i)) ++
+      if pairCount L hp i = 0 then Paired.pair sha3 L false (2*i) true else pairPCall sha3 SB SS AH RB (TP L) L (2*i) (3*(i-hp)) (pairCount L hp i)) ++
     (if single L then
-      [if placed L hp ≥ 3 * (pairs L - hp) + 3 then lastP L (3 * (pairs L - hp)) else Paired.lastSample L false true]
+      [if placed L hp ≥ 3 * (pairs L - hp) + 3 then lastP sha3 L (3 * (pairs L - hp)) else Paired.lastSample sha3 L false true]
       else []))
 
 /-! ## The noise and the encryption -/
@@ -181,15 +182,15 @@ abbrev gAt (hash : FixedHashCallers.HashFn) : Prog isa := Hybrid.tailH hash
 
 /-- The encapsulation: the pairs hashing `ek`, `G`, the pairs and singleton
 computing PRF outputs, then the noise, `u`, `v` and the epilogue. -/
-def encaps (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
-  .seq (Hybrid.startH L) (.seq (matrixP L (Hybrid.ekSrc L) (gAt hash))
+def encaps (sha3 : Bool) (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
+  .seq (Hybrid.startH L) (.seq (matrixP sha3 L (Hybrid.ekSrc L) (gAt hash))
     (.seq (encryptRestP prf L (placed L (Hybrid.hashPairs (Hybrid.ekSrc L))) .x25 0 .x28 MB .x27 0)
       (.block L.kemEpilogue)))
 
 /-- `vg_mlkem<n>_encaps_h`: `encaps` after `hArgs`, which ignores `h` (`H(ek)` is hashed in the pairs
 that sample the matrix). -/
-def encapsH (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
-  .seq (.block hArgs) (encaps hash prf L)
+def encapsH (sha3 : Bool) (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
+  .seq (.block hArgs) (encaps sha3 hash prf L)
 
 /-- Decapsulation after the matrix: re-encryption from the first `n` PRF
 outputs in their buffers, and the selection (`Kem16.deRest`). -/
@@ -199,9 +200,9 @@ def deRestP (prf : Nat → Nat → Prog isa) (L : KemLay) (n : Nat) : Prog isa :
 /-- The decapsulation: `m'`, `G` and `z ‖ c` to `scratch`, the pairs hashing
 `z ‖ c`, `J(z ‖ c)` to `JB` (`Kem16.tailJ`), the pairs and singleton computing
 PRF outputs, then the re-encryption and the selection. -/
-def decaps (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
+def decaps (sha3 : Bool) (hash : FixedHashCallers.HashFn) (prf : Nat → Nat → Prog isa) (L : KemLay) : Prog isa :=
   .seq (FixedHashDecaps.deStartUsing hash L) (.seq (.block (startJ L))
-    (.seq (matrixP L (jSrc L) (.block tailJ)) (deRestP prf L (placed L (Hybrid.hashPairs (jSrc L))))))
+    (.seq (matrixP sha3 L (jSrc L) (.block tailJ)) (deRestP prf L (placed L (Hybrid.hashPairs (jSrc L))))))
 
 /-! ## Key generation -/
 
@@ -216,32 +217,32 @@ def kgOut (L : KemLay) (N : Nat) : Prog isa :=
 /-- Pair `p` of key generation's matrix (`Kem16.kgPair`, which absorbs no block of
 `ek` for `p < 2`), its main squeezes computing `PRF₂(σ, 3p)`, `PRF₂(σ, 3p + 1)`
 and `PRF₂(σ, 3p + 2)` instead. -/
-def kgPairP (L : KemLay) (p : Nat) : Prog isa :=
-  pairP KG.SB KG.SS KG.AH KG.SG (KG.TP L) L (2 * p) (3 * p) 3
+def kgPairP (sha3 : Bool) (L : KemLay) (p : Nat) : Prog isa :=
+  pairP sha3 KG.SB KG.SS KG.AH KG.SG (KG.TP L) L (2 * p) (3 * p) 3
 
 /-- The noise from the six PRF outputs of the first two pairs, then paired
 `PRF₂` for the rest (`e[2]` and `e[3]` of ML-KEM-1024), `ŝ` into `dk`, and the
 all-zero third state (`Kem16.kgPre`). -/
-def kgPre (L : KemLay) : Prog isa :=
+def kgPre (sha3 : Bool) (L : KemLay) : Prog isa :=
   seqs (((List.range 6).map (kgOut L)) ++
-    ((List.range (L.k - 3)).map fun i => Noise.noisePairWith nttAtWithW L true (6 + 2 * i)) ++
+    ((List.range (L.k - 3)).map fun i => Noise.noisePairWith sha3 nttAtWithW L true (6 + 2 * i)) ++
     ((List.range L.k).map fun j => enc12WAt (KG.sOff L j) .x27 (384 * j)) ++
     [.block (zeroState .x28 KG.ST)])
 
 /-- The matrix after its first two pairs, each row of `t̂` as soon as its
 entries are sampled (`Kem16.kgMatrixRows`). -/
-def kgMatrixRows (L : KemLay) : List (Prog isa) :=
+def kgMatrixRows (sha3 : Bool) (L : KemLay) : List (Prog isa) :=
   kgRows L 0 (rowsBy L 2) ++
     ((List.range (pairs L - 2)).flatMap fun q =>
-      kgPair L (q + 2) :: kgRows L (rowsBy L (q + 2)) (rowsBy L (q + 3))) ++
-    (if single L then Paired.lastSample L true true :: kgRows L (rowsBy L (pairs L)) L.k else [])
+      kgPair sha3 L (q + 2) :: kgRows L (rowsBy L (q + 2)) (rowsBy L (q + 3))) ++
+    (if single L then Paired.lastSample sha3 L true true :: kgRows L (rowsBy L (pairs L)) L.k else [])
 
 /-- The key generation: `G`, the first two pairs of the matrix computing the
 first six PRF outputs, the noise, `ŝ` into `dk` and the all-zero third state
 (`kgPre`), the rest of the matrix with the rows of `t̂` (`kgMatrixRows`), and
 the rest of `H(ek)` (`Kem16.kgTail`). -/
-def keyGen (hash : FixedHashCallers.HashFn) (c : Impl.Sha3.AArch64.Callee) (L : KemLay) : Prog isa :=
-  seqs [FixedHashCallers.kgAUsing hash L, kgPairP L 0, kgPairP L 1, kgPre L, seqs (kgMatrixRows L),
+def keyGen (sha3 : Bool) (hash : FixedHashCallers.HashFn) (c : Impl.Sha3.AArch64.Callee) (L : KemLay) : Prog isa :=
+  seqs [FixedHashCallers.kgAUsing hash L, kgPairP sha3 L 0, kgPairP sha3 L 1, kgPre sha3 L, seqs (kgMatrixRows sha3 L),
     kgTail c L]
 
 end VG.Impl.MlKem.AArch64.Kem16P

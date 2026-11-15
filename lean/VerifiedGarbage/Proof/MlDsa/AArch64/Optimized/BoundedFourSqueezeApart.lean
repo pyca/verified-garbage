@@ -77,7 +77,7 @@ theorem pair_ok (sha3 : Bool) {s : State} {p a b w : Addr} {rp ra rb : Reg} {A B
       Frame [pairR p,rateR a,rateR b,X2.callR w] s.mem t.mem := by
   unfold Impl.MlDsa.AArch64.Optimized.BoundedFour.pair
   refine WP.seq (WP.mono (X2.callAny_ok sha3 (by decide) (by decide) hp1 (by decide) (by decide)
-    hp hw hpw hpair hcov) fun t ⟨hkt,hf,hpt⟩ => ?_)
+    hp hw hpw hpair hcov) fun t ⟨hkt,_,hf,hpt⟩ => ?_)
   refine WP.mono (X2.squeeze_ok (n := 17) (by decide) ((hkt.gpr _ hpc).trans hp)
     ((hkt.gpr _ hac).trans ha) ((hkt.gpr _ hbc).trans hb) hp6 hp7 ha6 ha7 hb6 hb7 hpt hd hpa hpb
     (fun i hi => by rw [hkt.rd,hkt.wr]; exact hin i hi)

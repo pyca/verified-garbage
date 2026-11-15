@@ -20,6 +20,7 @@ section
 /-! # Finalize both bounded matrix samples, retaining zero-filled failure outputs -/
 section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
 theorem zeroBoth_ok {w16 : Bool} {s : State} {p a b c : Addr} {L M : List Zq}
@@ -64,6 +65,7 @@ end
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem VG.Proof.Sha3
 open VG.Proof.Sha3.AArch64.Neon
 
@@ -160,9 +162,9 @@ theorem retry_cond {x y : BitVec 64} {n : Nat} (hx : x.toNat ≤ 1) (hy : y=BitV
 /-- An iteration of `Paired.retry`: a block, then `x7` says whether to take another. -/
 theorem retryStep_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s v : State} {n : Nat}
     (step : ∀{t : State}{n : Nat}, n=3 ∨ n=4 → ProgressW w16 A B n p a b c t →
-      t.syms "VG_MLKEM_REJ_SHUFFLE"=c → WP isa (Impl.MlKem.AArch64.Paired.extraStep w16) t (AdvancedW w16 A B (n+1) p a b c t))
+      t.syms "VG_MLKEM_REJ_SHUFFLE"=c → WP isa (Impl.MlKem.AArch64.Paired.extraStep sha3 w16) t (AdvancedW w16 A B (n+1) p a b c t))
     (h : RetryInv w16 A B p a b c s n v) :
-    WP isa (.seq (Impl.MlKem.AArch64.Paired.extraStep w16)
+    WP isa (.seq (Impl.MlKem.AArch64.Paired.extraStep sha3 w16)
       (.block [.sub .x .x7 .x6 .x30,.lsr .x .x7 .x7 63,.movz .x .x30 0 0])) v fun u =>
       isa.eval (.nonzero .x .x7) u=some (retryAgain A B n) ∧
       (retryAgain A B n=false → BoundedW w16 A B p a b c s u) ∧
@@ -210,12 +212,12 @@ theorem retryInit_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : 
 /-- The fourth block, and the fifth when a stream still lacks candidates after it. -/
 theorem bounded_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : State}
     (step : ∀{t : State}{n : Nat}, n=3 ∨ n=4 → ProgressW w16 A B n p a b c t →
-      t.syms "VG_MLKEM_REJ_SHUFFLE"=c → WP isa (Impl.MlKem.AArch64.Paired.extraStep w16) t (AdvancedW w16 A B (n+1) p a b c t))
+      t.syms "VG_MLKEM_REJ_SHUFFLE"=c → WP isa (Impl.MlKem.AArch64.Paired.extraStep sha3 w16) t (AdvancedW w16 A B (n+1) p a b c t))
     (h : ProgressW w16 A B 3 p a b c s) (hs : s.syms "VG_MLKEM_REJ_SHUFFLE"=c) :
-    WP isa (Impl.MlKem.AArch64.Paired.retry w16) s (BoundedW w16 A B p a b c s) := by
+    WP isa (Impl.MlKem.AArch64.Paired.retry sha3 w16) s (BoundedW w16 A B p a b c s) := by
   refine WP.seq (WP.mono (retryInit_ok h hs) fun v inv => ?_)
   refine WP.loop (M := isa) (fun n u => RetryInv w16 A B p a b c s n u) (fun n u hu => ?_) 1 v inv
-  refine WP.mono (retryStep_ok step hu) fun u' ⟨ev,hb,hi⟩ => ?_
+  refine WP.mono (retryStep_ok (sha3 := sha3) step hu) fun u' ⟨ev,hb,hi⟩ => ?_
   cases hr : retryAgain A B n
   · exact .inl ⟨by rw [ev,hr],hb hr⟩
   · have hn : n=1 := by simp only [retryAgain,decide_eq_true_eq] at hr; exact hr.1
@@ -232,11 +234,11 @@ structure ResumePostW (w16 : Bool) (A B : Spec.Sha3.State) (p a b : Addr) (s u :
 
 theorem resume_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s : State}
     (step : ∀{t : State}{n : Nat}, n=3 ∨ n=4 → ProgressW w16 A B n p a b c t →
-      t.syms "VG_MLKEM_REJ_SHUFFLE"=c → WP isa (Impl.MlKem.AArch64.Paired.extraStep w16) t (AdvancedW w16 A B (n+1) p a b c t))
+      t.syms "VG_MLKEM_REJ_SHUFFLE"=c → WP isa (Impl.MlKem.AArch64.Paired.extraStep sha3 w16) t (AdvancedW w16 A B (n+1) p a b c t))
     (h : ProgressW w16 A B 3 p a b c s) (hs : s.syms "VG_MLKEM_REJ_SHUFFLE"=c) :
-    WP isa (Impl.MlKem.AArch64.Paired.extraPair w16) s (ResumePostW w16 A B p a b s) := by
-  change WP isa (.seq (Impl.MlKem.AArch64.Paired.retry w16) (.seq (.block _) _)) s _
-  refine WP.seq (WP.mono (bounded_ok step h hs) fun t ht => ?_)
+    WP isa (Impl.MlKem.AArch64.Paired.extraPair sha3 w16) s (ResumePostW w16 A B p a b s) := by
+  change WP isa (.seq (Impl.MlKem.AArch64.Paired.retry sha3 w16) (.seq (.block _) _)) s _
+  refine WP.seq (WP.mono (bounded_ok (sha3 := sha3) step h hs) fun t ht => ?_)
   have hand : WP isa (.block [.logic .and .x .x24 .x24 .x6]) t fun v=>
       Only [.x24] t v ∧ v.gpr .x24=t.gpr .x24 &&& t.gpr .x6 :=
     wp_and fun v kv ev=>wp_nil ⟨kv,ev⟩

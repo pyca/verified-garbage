@@ -20,6 +20,7 @@ state. `startM_ok`: with the pair's initialization before them (as
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Hybrid
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon (PairAt pairR wordAddr outAddr)
@@ -140,7 +141,7 @@ theorem sstep_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {initial s : State} {p e s
     (hl : SqLay S p e st initial) (h28 : initial.gpr .x28 = st)
     (h25 : initial.gpr S.r + BitVec.ofNat 64 S.base = e)
     (h : SInvM S initial p e st E A B j m k s) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.stepM S j m k) s (SInvM S initial p e st E A B j m (k + 1)) := by
+    WP isa (Impl.MlKem.AArch64.Hybrid.stepM sha3 S j m k) s (SInvM S initial p e st E A B j m (k + 1)) := by
   have hls : SqLay S p e st s := hl.frame h.keep.rd h.keep.wr h.keep.sp
   have sub : ∀ {o n : Nat}, o + n ≤ 2048 → Region.Sub ⟨p + BitVec.ofNat 64 o, n⟩ ⟨p, 2048⟩ :=
     fun h => Offset.sub_base p h
@@ -201,14 +202,14 @@ theorem sstep_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {initial s : State} {p e s
   unfold Impl.MlKem.AArch64.Hybrid.stepM
   split
   · rename_i hkm
-    refine WP.mono (step3_ok S hS h.ptr h.pa h.pb
+    refine WP.mono (step3_ok (sha3 := sha3) S hS h.ptr h.pa h.pb
       (by rw [hS.keep h.keep (by decide) (by decide)]; exact h25)
       (by rw [h.keep.get .x28]; exact h28) (hb hkm) h.ek
       (by rw [h.hash, Nat.min_eq_left (Nat.le_of_lt hkm)]) h.pair (hls.stepLay hk))
       fun t ⟨kt, ft, pt, at', bt, st', t20, t21⟩ => next kt ft pt at' bt ?_ t20 t21
     rw [st', Nat.min_eq_left (show k + 1 ≤ m by omega_arith), Nat.add_assoc]
   · rename_i hkm
-    refine WP.mono (plainStep_ok S h.ptr h.pa h.pb h.pair (hls.stepLay hk))
+    refine WP.mono (plainStep_ok (sha3 := sha3) S h.ptr h.pa h.pb h.pair (hls.stepLay hk))
       fun t ⟨kt, ft, pt, at', bt, st', t20, t21⟩ => next kt ft pt at' bt ?_ t20 t21
     rw [st', h.hash, Nat.min_eq_right (show m ≤ k by omega_arith), Nat.min_eq_right (show m ≤ k + 1 by omega_arith)]
 
@@ -220,18 +221,18 @@ theorem squeezeM_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p e st : A
     (h21 : s.gpr .x21 = p + 904) (h25 : s.gpr S.r + BitVec.ofNat 64 S.base = e) (h28 : s.gpr .x28 = st)
     (pair : PairAt s.mem p A B) (hash : stateAt s.mem st = hstate E j (dB S))
     (hE : bytesAt s.mem e S.len = E) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.squeezeM S j m) s (SInvM S s p e st E A B j m 3) := by
+    WP isa (Impl.MlKem.AArch64.Hybrid.squeezeM sha3 S j m) s (SInvM S s p e st E A B j m 3) := by
   have h0 : SInvM S s p e st E A B j m 0 s :=
     ⟨Keep.refl _ _, pair, h19, by rw [h20]; exact (BitVec.add_zero _).symm,
       by rw [h21]; exact (BitVec.add_zero _).symm, Frame.refl _ _,
       fun j hj => absurd hj (Nat.not_lt_zero _), fun j hj => absurd hj (Nat.not_lt_zero _),
       by rw [hash, Nat.zero_min, Nat.add_zero], hE⟩
   unfold Impl.MlKem.AArch64.Hybrid.squeezeM
-  refine WP.seq (WP.mono (sstep_ok S (k := 0) (by decide) hS (fun h => hb 0 h (by decide)) hl h28 h25 h0)
+  refine WP.seq (WP.mono (sstep_ok (sha3 := sha3) S (k := 0) (by decide) hS (fun h => hb 0 h (by decide)) hl h28 h25 h0)
     fun t ht => ?_)
-  refine WP.seq (WP.mono (sstep_ok S (k := 1) (by decide) hS (fun h => hb 1 h (by decide)) hl h28 h25 ht)
+  refine WP.seq (WP.mono (sstep_ok (sha3 := sha3) S (k := 1) (by decide) hS (fun h => hb 1 h (by decide)) hl h28 h25 ht)
     fun u hu => ?_)
-  exact sstep_ok S (k := 2) (by decide) hS (fun h => hb 2 h (by decide)) hl h28 h25 hu
+  exact sstep_ok (sha3 := sha3) S (k := 2) (by decide) hS (fun h => hb 2 h (by decide)) hl h28 h25 hu
 
 def startRegs3 : List Reg := Paired.initRegs ++ stepRegs
 
@@ -245,7 +246,7 @@ theorem startM_ok (L : Impl.MlKem.AArch64.KemLay) (S : Impl.MlKem.AArch64.Hybrid
     (hl : SqLay S p e st s) (h25 : s.gpr S.r + BitVec.ofNat 64 S.base = e) (h28 : s.gpr .x28 = st)
     (hb : ∀ k < m, k < 3 → 136 * (j + k) < S.len)
     (hash : stateAt s.mem st = hstate E j (dB S)) (hE : bytesAt s.mem e S.len = E) :
-    WP isa (.seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b L.k)) (Impl.MlKem.AArch64.Hybrid.squeezeM S j m)) s
+    WP isa (.seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b L.k)) (Impl.MlKem.AArch64.Hybrid.squeezeM sha3 S j m)) s
       fun t =>
       Keep startRegs3 s t ∧ Frame (startWrites p st s.sp) s.mem t.mem ∧ Noise.Saved p s t.mem ∧
       t.gpr .x19 = p ∧
@@ -273,7 +274,7 @@ theorem startM_ok (L : Impl.MlKem.AArch64.KemLay) (S : Impl.MlKem.AArch64.Hybrid
   have heu : bytesAt u.mem e S.len = E := by
     rw [VG.Proof.MlKem.bytesAt_frame fi (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact hl.dEP) (by have := hS.lim; omega_arith), hE]
-  refine WP.mono (squeezeM_ok S hS hb (hl.frame ku.rd ku.wr ku.sp) h19 h20 h21
+  refine WP.mono (squeezeM_ok (sha3 := sha3) S hS hb (hl.frame ku.rd ku.wr ku.sp) h19 h20 h21
     (by rw [hS.keep ku (by decide) (by decide)]; exact h25) (by rw [ku.get .x28]; exact h28) pair hsu heu) fun t ht => ?_
   refine ⟨ku.trans ht.keep, ?_, ?_, ht.ptr, ht.pair, ht.oa, ht.ob, ht.hash, ht.ek⟩
   · have ft := ht.frame

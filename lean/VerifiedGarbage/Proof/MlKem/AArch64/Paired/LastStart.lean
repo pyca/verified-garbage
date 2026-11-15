@@ -27,6 +27,7 @@ import VerifiedGarbage.Proof.Framework.Block
 /-! # The initial three-block singleton sample -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Proof.MlKem VG.Spec.MlKem
 
 structure SingleContext (p out table : Addr) (s : State) : Prop where
@@ -46,9 +47,9 @@ theorem SingleContext.frame {s t : State} {p out table : Addr} (h : SingleContex
     intro r hr; simp only [fullWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
     rcases hr with rfl | rfl; exact h.tableScratch; exact h.tableOut)
 
-def lastStartCode (sb ss a k off : Nat) (w16 : Bool := false) : Prog isa :=
+def lastStartCode (sha3 : Bool) (sb ss a k off : Nat) (w16 : Bool := false) : Prog isa :=
  .seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a a k))
-  (.seq Impl.MlKem.AArch64.Paired.squeeze
+  (.seq (Impl.MlKem.AArch64.Paired.squeeze sha3)
    (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts) (Impl.MlKem.AArch64.Paired.reject 400 off .x22 w16)))
 
 def lastStartRegs : List Reg := startRegs++[.x9,.x16]++
@@ -71,9 +72,9 @@ theorem lastStart_ok {w16 : Bool} {s : State} {p seed out table : Addr} {sb ss a
     (hin : ∀j<4,InRegions (s.rd++s.wr) (seed+BitVec.ofNat 64 (8*j)) 8)
     (hsep : (Region.mk seed 32).Disjoint ⟨p,2048⟩)
     (ctx : SingleContext p out table s) (ht : s.syms "VG_MLKEM_REJ_SHUFFLE"=table) :
-    WP isa (lastStartCode sb ss a k off w16) s
+    WP isa (lastStartCode sha3 sb ss a k off w16) s
       (LastStartPostW w16 (xofByte (seedBytes s.mem seed a k)) p out table s) := by
-  have combined := WP.mono_syms (start_ok (a := a) (b := a) (k := k) hss hsb h8 hp hseed hin ctx.scratch hsep)
+  have combined := WP.mono_syms (start_ok (sha3 := sha3) (a := a) (b := a) (k := k) hss hsb h8 hp hseed hin ctx.scratch hsep)
     (R := fun u => WP isa (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts)
       (Impl.MlKem.AArch64.Paired.reject 400 off .x22 w16)) u
       (LastStartPostW w16 (xofByte (seedBytes s.mem seed a k)) p out table s))

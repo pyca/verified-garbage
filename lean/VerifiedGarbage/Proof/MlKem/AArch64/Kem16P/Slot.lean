@@ -21,6 +21,7 @@ takes to `PRF₂`'s output). -/
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem16P
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon (PairAt pairR outAddr)
@@ -113,7 +114,7 @@ theorem slotPrf_ok (sd bt : Nat) {N : Nat} (hN : N < 256)
     (hR : st + BitVec.ofNat 64 sd = R) (hsd : sd % 8 = 0) (hsd' : sd + 32 ≤ 32768)
     (hB : st + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff bt N) = Bf)
     (pair : PairAt s.mem p A B) (hl : SlotLay p a b st R Bf s) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.slotPrf sd bt N) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Kem16P.slotPrf sha3 sd bt N) s fun t =>
       Keep stepRegs s t ∧
       Frame (step3Writes p a b st s.sp ++ [rateR Bf]) s.mem t.mem ∧
       PairAt t.mem p (keccakF A) (keccakF B) ∧
@@ -128,7 +129,7 @@ theorem slotPrf_ok (sd bt : Nat) {N : Nat} (hN : N < 256)
   have pu : PairAt u.mem p A B :=
     VG.Proof.Sha3.AArch64.Hybrid.X3.pairAt_frame pair fu (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact hl.dPS)
-  refine WP.seq (WP.mono (Hybrid.x3call_ok (q := p + 1536) (S := Noise.seedState s.mem R N)
+  refine WP.seq (WP.mono (Hybrid.x3call_ok (sha3 := sha3) (q := p + 1536) (S := Noise.seedState s.mem R N)
     (by rw [ku.get .x19, h19]) rfl (by rw [ku.get .x28, h28]) pu su hl.dPS hl.dPC hl.dSC
     (by rw [ku.sp]; exact hl.sp) (by rw [ku.sp]; exact hl.fP) (by rw [ku.sp]; exact hl.fS)
     (by rw [ku.sp]; exact hl.fC) (by rw [ku.wr]; exact hl.cov)) fun v ⟨kv, fv, pv, sv⟩ => ?_)

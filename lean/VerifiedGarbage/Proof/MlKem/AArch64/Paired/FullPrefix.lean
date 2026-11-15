@@ -12,10 +12,17 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Paired.Output
 meta import VerifiedGarbage.Proof.Framework.AArch64.Syms
 meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-! # Complete singleton stream and vector parser entry for relational timing -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Proof.MlKem
 
 structure LastInput (sb ss off : Nat) (p seed out table : Addr) (s : State) : Prop where
@@ -27,9 +34,9 @@ structure LastInput (sb ss off : Nat) (p seed out table : Addr) (s : State) : Pr
  context : SingleContext p out table s
  symbol : s.syms "VG_MLKEM_REJ_SHUFFLE"=table
 
-def fullPrefix (sb ss off a k : Nat) : Prog isa :=
+def fullPrefix (sha3 : Bool) (sb ss off a k : Nat) : Prog isa :=
  .seq (.seq (.block (Impl.MlKem.AArch64.Paired.fullInit sb ss a k))
-   (.loop singleBody (.nonzero .x .x22))) (.block (fullPrep off))
+   (.loop (singleBody sha3) (.nonzero .x .x22))) (.block (fullPrep off))
 def fullPrefixRegs : List Reg := fullStartRegs++prepRegs
 
 structure FullPrefixPostW (w16 : Bool) (B : Nat→Byte) (p out : Addr) (s t : State) : Prop where
@@ -43,8 +50,8 @@ theorem fullPrefix_ok {w16 : Bool} {s initial : State} {p seed out table : Addr}
     (hk : 0<k) (hk256 : k≤256)
     (h : LastInput sb ss off p seed out table s) (hp : s.gpr .x19=p)
     (sv : Noise.Saved p initial s.mem) :
-    WP isa (fullPrefix sb ss off a k) s (FullPrefixPostW w16 (xofByte (seedBytes s.mem seed a k)) p out s) := by
-  refine WP.seq (WP.mono_syms (fullStart_ok (a:=a) (k:=k) hss hsb h8 hp h.ptr h.seedPtr h.readable h.context.scratch h.separate sv)
+    WP isa (fullPrefix sha3 sb ss off a k) s (FullPrefixPostW w16 (xofByte (seedBytes s.mem seed a k)) p out s) := by
+  refine WP.seq (WP.mono_syms (fullStart_ok (sha3 := sha3) (a:=a) (k:=k) hss hsb h8 hp h.ptr h.seedPtr h.readable h.context.scratch h.separate sv)
     fun u ⟨ku,fu,_,_,u19,_,_,bu⟩ sy => ?_)
   have cu := h.context.frame ku.rd ku.wr (fu.mono (by simp [fullWrites]))
   refine WP.mono (fullPrep_ok (w16 := w16) hoff u19 (by rw [ku.get .x28]; exact h.outPtr)
@@ -54,17 +61,28 @@ theorem fullPrefix_ok {w16 : Bool} {s initial : State} {p seed out table : Addr}
   exact ⟨ku.trans kt,et,(kt.get .x19).trans u19,by rw [tablePtr,sy]⟩
 
 theorem fullPrefix_ct {sb ss off a k : Nat} (hss : ss<4096) : ConstantTime isa (fun _=>True)
-    (VG.AArch64.Taint.Agree (Taint.ofRegs [.x19,.x28])) (fullPrefix sb ss off a k) := by
-  by_cases ho : off<4096
-  · apply ct_eraseOff_eq [.x19,.x28]
-      (d := Code.eraseOff (fullPrefix 0 0 0 0 1))
-      (by simp only [fullPrefix,fullInit_eq hss,fullInit_eq (by decide : 0<4096),fullPrep,fullEntry,
-        Impl.MlKem.AArch64.ptrTo,ite_eq_left hss,ite_eq_left ho]; rfl)
-    taint_decide
-  · apply ct_eraseOff_eq [.x19,.x28]
-      (d := Code.eraseOff (fullPrefix 0 0 4096 0 1))
-      (by simp only [fullPrefix,fullInit_eq hss,fullInit_eq (by decide : 0<4096),fullPrep,fullEntry,
-        Impl.MlKem.AArch64.ptrTo,ite_eq_left hss,ite_eq_right ho]; rfl)
-    taint_decide
-
+    (VG.AArch64.Taint.Agree (Taint.ofRegs [.x19,.x28])) (fullPrefix sha3 sb ss off a k) := by
+  cases sha3
+  · by_cases ho : off<4096
+    · apply vct_eraseOff_eq [.x19,.x28]
+        (d := Code.eraseOff (fullPrefix false 0 0 0 0 1))
+        (by simp only [fullPrefix,fullInit_eq hss,fullInit_eq (by decide : 0<4096),fullPrep,fullEntry,
+          Impl.MlKem.AArch64.ptrTo,ite_eq_left hss,ite_eq_left ho]; rfl)
+      taint_decide
+    · apply vct_eraseOff_eq [.x19,.x28]
+        (d := Code.eraseOff (fullPrefix false 0 0 4096 0 1))
+        (by simp only [fullPrefix,fullInit_eq hss,fullInit_eq (by decide : 0<4096),fullPrep,fullEntry,
+          Impl.MlKem.AArch64.ptrTo,ite_eq_left hss,ite_eq_right ho]; rfl)
+      taint_decide
+  · by_cases ho : off<4096
+    · apply ct_eraseOff_eq [.x19,.x28]
+        (d := Code.eraseOff (fullPrefix true 0 0 0 0 1))
+        (by simp only [fullPrefix,fullInit_eq hss,fullInit_eq (by decide : 0<4096),fullPrep,fullEntry,
+          Impl.MlKem.AArch64.ptrTo,ite_eq_left hss,ite_eq_left ho]; rfl)
+      taint_decide
+    · apply ct_eraseOff_eq [.x19,.x28]
+        (d := Code.eraseOff (fullPrefix true 0 0 4096 0 1))
+        (by simp only [fullPrefix,fullInit_eq hss,fullInit_eq (by decide : 0<4096),fullPrep,fullEntry,
+          Impl.MlKem.AArch64.ptrTo,ite_eq_left hss,ite_eq_right ho]; rfl)
+      taint_decide
 end VG.Proof.MlKem.AArch64.Paired

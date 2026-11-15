@@ -15,12 +15,13 @@ section
 /-! # One matrix-squeeze iteration and its public counter -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 
 def squeezeRegs : List Reg := blockRegs++[.x20,.x21,.x22]
-def squeezeBody : Prog isa :=
- .seq (Impl.Sha3.AArch64.Neon.X2.call true .x19 .x19 1536)
+def squeezeBody (sha3 : Bool) : Prog isa :=
+ .seq (Impl.Sha3.AArch64.Neon.X2.call sha3 .x19 .x19 1536)
   (.block (Impl.Sha3.AArch64.Neon.X2.squeeze 21 .x19 .x20 .x21 ++
    [.addImm .x .x20 .x20 168,.addImm .x .x21 .x21 168,.subImm .x .x22 .x22 1]))
 
@@ -34,12 +35,12 @@ theorem squeezeStep_ok {s : State} {p a b : Addr} {A B : Spec.Sha3.State}
     (hpa : (pairR p).Disjoint (rateR21 a)) (hpb : (pairR p).Disjoint (rateR21 b))
     (hpw : (pairR p).Disjoint (X2.callR (p+1536)))
     (hcov : Covers [pairR p,X2.callR (p+1536)] s.wr) :
-    WP isa squeezeBody s fun t =>
+    WP isa (squeezeBody sha3) s fun t =>
       Keep squeezeRegs s t ∧ PairAt t.mem p (Spec.Sha3.keccakF A) (Spec.Sha3.keccakF B) ∧
       Rate21 t.mem a (Spec.Sha3.keccakF A) ∧ Rate21 t.mem b (Spec.Sha3.keccakF B) ∧
       Frame [pairR p,rateR21 a,rateR21 b,X2.callR (p+1536)] s.mem t.mem ∧
       t.gpr .x20=a+168 ∧ t.gpr .x21=b+168 ∧ t.gpr .x22=s.gpr .x22-1 := by
-  have hc := squeezeBlock_ok hp ha hb (by rw [hp]; rfl)
+  have hc := squeezeBlock_ok (sha3 := sha3) hp ha hb (by rw [hp]; rfl)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) pair hin hwa hwb hd hpa hpb hpw hcov
   apply WP.seq
@@ -67,6 +68,7 @@ end
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 open VG.Proof.Sha3 (iterF iterF_succ)
@@ -126,10 +128,10 @@ theorem squeeze_ok {s : State} {p a b : Addr} {A B : Spec.Sha3.State}
     (hwb' : (X2.callR (p+1536)).Disjoint (streamR b))
     (hpw : (pairR p).Disjoint (X2.callR (p+1536)))
     (hcov : Covers [pairR p,X2.callR (p+1536)] s.wr) :
-    WP isa Impl.MlKem.AArch64.Paired.squeeze s (SInv s p a b A B 3) := by
+    WP isa (Impl.MlKem.AArch64.Paired.squeeze sha3) s (SInv s p a b A B 3) := by
   apply count_loop (by decide : 0<3) (SInv s p a b A B)
   · intro k hk t h
-    refine WP.mono (squeezeStep_ok h.ptr h.pa h.pb h.pair
+    refine WP.mono (squeezeStep_ok (sha3 := sha3) h.ptr h.pa h.pb h.pair
       (fun i hi => by rw [h.keep.rd,h.keep.wr]; exact hin i hi)
       (fun i hi => by rw [h.keep.wr]; exact hwa k hk i hi)
       (fun i hi => by rw [h.keep.wr]; exact hwb k hk i hi)

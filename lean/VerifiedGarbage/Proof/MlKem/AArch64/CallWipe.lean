@@ -57,6 +57,7 @@ contract implies `afterH` of `encaps`'s internal contract (`impliesH`).
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.EncapsH
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 
@@ -295,9 +296,9 @@ theorem impliesP768 : (afterH shiftH (entryContractS (encapsAArch64S lay768))).I
 
 theorem encapsHP768_verified (v : Proof.Sha3.AArch64.Permutation) :
     Verified AArch64.target
-      (Impl.MlKem.AArch64.Kem16P.encapsH (FixedHash.fixedHash v.callee) (FixedHash.prfW v.callee) lay768)
+      (Impl.MlKem.AArch64.Kem16P.encapsH sha3 (FixedHash.fixedHash v.callee) (FixedHash.prfW v.callee) lay768)
       (Proof.MlKem.Scrubbed.encapsHBodyContract (AArch64.abi.withConsts constants) 128) :=
-  Verified.of_correct (correctH (Kem16P.encapsP768_correct v)) (ctH (Kem16P.encapsP768_ct v)) impliesP768
+  Verified.of_correct (correctH (Kem16P.encapsP768_correct (sha3 := sha3) v)) (ctH (Kem16P.encapsP768_ct (sha3 := sha3) v)) impliesP768
 
 
 /-! ## ML-KEM-1024, one Keccak state at a time -/
@@ -411,9 +412,9 @@ theorem impliesP1024 : (afterH shiftH (entryContractS (encapsAArch64S Impl.MlKem
 
 theorem encapsHP1024_verified (v : Proof.Sha3.AArch64.Permutation) :
     Verified AArch64.target
-      (Impl.MlKem.AArch64.Kem16P.encapsH (FixedHash.fixedHash v.callee) (FixedHash.prfW v.callee) Impl.MlKem1024.AArch64.lay1024)
+      (Impl.MlKem.AArch64.Kem16P.encapsH sha3 (FixedHash.fixedHash v.callee) (FixedHash.prfW v.callee) Impl.MlKem1024.AArch64.lay1024)
       (Proof.MlKem.Scrubbed.encapsH1024BodyContract (AArch64.abi.withConsts constants) 128) :=
-  Verified.of_correct (correctH (Kem16P.encapsP1024_correct v)) (ctH (Kem16P.encapsP1024_ct v)) impliesP1024
+  Verified.of_correct (correctH (Kem16P.encapsP1024_correct (sha3 := sha3) v)) (ctH (Kem16P.encapsP1024_ct (sha3 := sha3) v)) impliesP1024
 
 end VG.Proof.MlKem.AArch64.EncapsH
 
@@ -440,6 +441,7 @@ the instances over the sponge functions, under `abi`, and
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Wipe
+variable {sha3 : Bool}
 
 open VG VG.AArch64
 open VG.Proof.MlKem.AArch64.FixedHash (fixedHash prfW hole)
@@ -1044,52 +1046,84 @@ frames. -/
 
 
 theorem keyGenP768_depth :
-    16 * (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768).aarch64Depth ≤ 128 :=
-  depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
-    (e := Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash hole) hole Impl.MlKem.AArch64.lay768)
-    (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
+    16 * (Impl.MlKem.AArch64.Kem16P.keyGen sha3 (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768).aarch64Depth ≤ 128 := by
+  cases sha3
+  · exact depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
+        (e := Impl.MlKem.AArch64.Kem16P.keyGen false (fixedHash hole) hole Impl.MlKem.AArch64.lay768)
+        (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
+  · exact depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
+        (e := Impl.MlKem.AArch64.Kem16P.keyGen true (fixedHash hole) hole Impl.MlKem.AArch64.lay768)
+        (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
 
 theorem encapsP768_depth :
-    16 * (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768).aarch64Depth ≤ 128 :=
-  depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
-    (e := Impl.MlKem.AArch64.Kem16P.encaps (fixedHash hole) (prfW hole) Impl.MlKem.AArch64.lay768)
-    (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
+    16 * (Impl.MlKem.AArch64.Kem16P.encaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768).aarch64Depth ≤ 128 := by
+  cases sha3
+  · exact depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
+        (e := Impl.MlKem.AArch64.Kem16P.encaps false (fixedHash hole) (prfW hole) Impl.MlKem.AArch64.lay768)
+        (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
+  · exact depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
+        (e := Impl.MlKem.AArch64.Kem16P.encaps true (fixedHash hole) (prfW hole) Impl.MlKem.AArch64.lay768)
+        (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
 
 theorem encapsHP768_depth :
-    16 * (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768).aarch64Depth ≤ 128 :=
-  depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
-    (e := Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash hole) (prfW hole) Impl.MlKem.AArch64.lay768)
-    (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
+    16 * (Impl.MlKem.AArch64.Kem16P.encapsH sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768).aarch64Depth ≤ 128 := by
+  cases sha3
+  · exact depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
+        (e := Impl.MlKem.AArch64.Kem16P.encapsH false (fixedHash hole) (prfW hole) Impl.MlKem.AArch64.lay768)
+        (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
+  · exact depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
+        (e := Impl.MlKem.AArch64.Kem16P.encapsH true (fixedHash hole) (prfW hole) Impl.MlKem.AArch64.lay768)
+        (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
 
 theorem decapsP768_depth :
-    16 * (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768).aarch64Depth ≤ 128 :=
-  depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
-    (e := Impl.MlKem.AArch64.Kem16P.decaps (fixedHash hole) (prfW hole) Impl.MlKem.AArch64.lay768)
-    (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
+    16 * (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768).aarch64Depth ≤ 128 := by
+  cases sha3
+  · exact depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
+        (e := Impl.MlKem.AArch64.Kem16P.decaps false (fixedHash hole) (prfW hole) Impl.MlKem.AArch64.lay768)
+        (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
+  · exact depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
+        (e := Impl.MlKem.AArch64.Kem16P.decaps true (fixedHash hole) (prfW hole) Impl.MlKem.AArch64.lay768)
+        (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
 
 theorem keyGenP1024_depth :
-    16 * (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024).aarch64Depth ≤ 128 :=
-  depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
-    (e := Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash hole) hole Impl.MlKem1024.AArch64.lay1024)
-    (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
+    16 * (Impl.MlKem.AArch64.Kem16P.keyGen sha3 (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024).aarch64Depth ≤ 128 := by
+  cases sha3
+  · exact depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
+        (e := Impl.MlKem.AArch64.Kem16P.keyGen false (fixedHash hole) hole Impl.MlKem1024.AArch64.lay1024)
+        (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
+  · exact depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
+        (e := Impl.MlKem.AArch64.Kem16P.keyGen true (fixedHash hole) hole Impl.MlKem1024.AArch64.lay1024)
+        (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
 
 theorem encapsP1024_depth :
-    16 * (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024).aarch64Depth ≤ 128 :=
-  depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
-    (e := Impl.MlKem.AArch64.Kem16P.encaps (fixedHash hole) (prfW hole) Impl.MlKem1024.AArch64.lay1024)
-    (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
+    16 * (Impl.MlKem.AArch64.Kem16P.encaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024).aarch64Depth ≤ 128 := by
+  cases sha3
+  · exact depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
+        (e := Impl.MlKem.AArch64.Kem16P.encaps false (fixedHash hole) (prfW hole) Impl.MlKem1024.AArch64.lay1024)
+        (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
+  · exact depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
+        (e := Impl.MlKem.AArch64.Kem16P.encaps true (fixedHash hole) (prfW hole) Impl.MlKem1024.AArch64.lay1024)
+        (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
 
 theorem encapsHP1024_depth :
-    16 * (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024).aarch64Depth ≤ 128 :=
-  depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
-    (e := Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash hole) (prfW hole) Impl.MlKem1024.AArch64.lay1024)
-    (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
+    16 * (Impl.MlKem.AArch64.Kem16P.encapsH sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024).aarch64Depth ≤ 128 := by
+  cases sha3
+  · exact depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
+        (e := Impl.MlKem.AArch64.Kem16P.encapsH false (fixedHash hole) (prfW hole) Impl.MlKem1024.AArch64.lay1024)
+        (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
+  · exact depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
+        (e := Impl.MlKem.AArch64.Kem16P.encapsH true (fixedHash hole) (prfW hole) Impl.MlKem1024.AArch64.lay1024)
+        (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
 
 theorem decapsP1024_depth :
-    16 * (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024).aarch64Depth ≤ 128 :=
-  depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
-    (e := Impl.MlKem.AArch64.Kem16P.decaps (fixedHash hole) (prfW hole) Impl.MlKem1024.AArch64.lay1024)
-    (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
+    16 * (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024).aarch64Depth ≤ 128 := by
+  cases sha3
+  · exact depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
+        (e := Impl.MlKem.AArch64.Kem16P.decaps false (fixedHash hole) (prfW hole) Impl.MlKem1024.AArch64.lay1024)
+        (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
+  · exact depth128 (Code.aarch64Depth_le_of_fillHoles (n := v.callee.name)
+        (e := Impl.MlKem.AArch64.Kem16P.decaps true (fixedHash hole) (prfW hole) Impl.MlKem1024.AArch64.lay1024)
+        (by kernel_rfl) (Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames) (by decide +kernel))
 
 end
 
@@ -1374,84 +1408,84 @@ theorem decapsS1024_verified :
 /-! The paired instances, named `sfx`, with 160 bytes of stack. -/
 
 theorem keyGenP768_scrubbed (sfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.keyGen sfx (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768))
+    Verified target (Impl.MlKem.AArch64.Wipe.keyGen sfx (Impl.MlKem.AArch64.Kem16P.keyGen sha3 (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768))
       (Scrubbed.keyGenContract (abi.withConsts Optimized.constants) 160) :=
-  keyGen_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.KeyGen.keyGenP768_verified v) (keyGenP768_depth v) keyGenP768_sat
+  keyGen_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.KeyGen.keyGenP768_verified (sha3 := sha3) v) (keyGenP768_depth (sha3 := sha3) v) keyGenP768_sat
 
 theorem keyGenP768_verified (sfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.keyGen sfx (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768))
+    Verified target (Impl.MlKem.AArch64.Wipe.keyGen sfx (Impl.MlKem.AArch64.Kem16P.keyGen sha3 (fixedHash v.callee) v.callee Impl.MlKem.AArch64.lay768))
       (Spec.MlKem.keyGenContract (abi.withConsts Optimized.constants) 160) :=
-  keyGenP768_scrubbed v sfx
+  keyGenP768_scrubbed (sha3 := sha3) v sfx
 
 theorem encapsHP768_scrubbed (sfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.encapsH sfx (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
+    Verified target (Impl.MlKem.AArch64.Wipe.encapsH sfx (Impl.MlKem.AArch64.Kem16P.encapsH sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
       (Scrubbed.encapsHContract (abi.withConsts Optimized.constants) 160) :=
-  encapsH_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.EncapsH.encapsHP768_verified v) (encapsHP768_depth v) encapsHP768_sat
+  encapsH_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.EncapsH.encapsHP768_verified (sha3 := sha3) v) (encapsHP768_depth (sha3 := sha3) v) encapsHP768_sat
 
 theorem encapsHP768_verified (sfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.encapsH sfx (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
+    Verified target (Impl.MlKem.AArch64.Wipe.encapsH sfx (Impl.MlKem.AArch64.Kem16P.encapsH sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
       (Spec.MlKem.encapsHContract (abi.withConsts Optimized.constants) 160) :=
-  encapsHP768_scrubbed v sfx
+  encapsHP768_scrubbed (sha3 := sha3) v sfx
 
 theorem encapsP768_scrubbed (sfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.encaps sfx (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
+    Verified target (Impl.MlKem.AArch64.Wipe.encaps sfx (Impl.MlKem.AArch64.Kem16P.encaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
       (Scrubbed.encapsContract (abi.withConsts Optimized.constants) 160) :=
-  encaps_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.Kem16P.encapsP768_verified v) (encapsP768_depth v) encapsP768_sat
+  encaps_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.Kem16P.encapsP768_verified (sha3 := sha3) v) (encapsP768_depth (sha3 := sha3) v) encapsP768_sat
 
 theorem encapsP768_verified (sfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.encaps sfx (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
+    Verified target (Impl.MlKem.AArch64.Wipe.encaps sfx (Impl.MlKem.AArch64.Kem16P.encaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
       (Spec.MlKem.encapsContract (abi.withConsts Optimized.constants) 160) :=
-  encapsP768_scrubbed v sfx
+  encapsP768_scrubbed (sha3 := sha3) v sfx
 
 theorem decapsP768_scrubbed (sfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.decaps sfx (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
+    Verified target (Impl.MlKem.AArch64.Wipe.decaps sfx (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
       (Scrubbed.decapsContract (abi.withConsts Optimized.constants) 160) :=
-  decaps_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.Kem16P.decapsP768_verified v) (decapsP768_depth v) decapsP768_sat
+  decaps_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.Kem16P.decapsP768_verified (sha3 := sha3) v) (decapsP768_depth (sha3 := sha3) v) decapsP768_sat
 
 theorem decapsP768_verified (sfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.decaps sfx (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
+    Verified target (Impl.MlKem.AArch64.Wipe.decaps sfx (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem.AArch64.lay768))
       (Spec.MlKem.decapsContract (abi.withConsts Optimized.constants) 160) :=
-  decapsP768_scrubbed v sfx
+  decapsP768_scrubbed (sha3 := sha3) v sfx
 
 theorem keyGenP1024_scrubbed (sfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 sfx (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024))
+    Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 sfx (Impl.MlKem.AArch64.Kem16P.keyGen sha3 (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024))
       (Scrubbed.keyGen1024Contract (abi.withConsts Optimized.constants) 160) :=
-  keyGen1024_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.KeyGen.keyGenP1024_verified v) (keyGenP1024_depth v) keyGenP1024_sat
+  keyGen1024_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.KeyGen.keyGenP1024_verified (sha3 := sha3) v) (keyGenP1024_depth (sha3 := sha3) v) keyGenP1024_sat
 
 theorem keyGenP1024_verified (sfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 sfx (Impl.MlKem.AArch64.Kem16P.keyGen (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024))
+    Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 sfx (Impl.MlKem.AArch64.Kem16P.keyGen sha3 (fixedHash v.callee) v.callee Impl.MlKem1024.AArch64.lay1024))
       (Spec.MlKem1024.keyGenContract (abi.withConsts Optimized.constants) 160) :=
-  keyGenP1024_scrubbed v sfx
+  keyGenP1024_scrubbed (sha3 := sha3) v sfx
 
 theorem encapsHP1024_scrubbed (sfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 sfx (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
+    Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 sfx (Impl.MlKem.AArch64.Kem16P.encapsH sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
       (Scrubbed.encapsH1024Contract (abi.withConsts Optimized.constants) 160) :=
-  encapsH1024_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.EncapsH.encapsHP1024_verified v) (encapsHP1024_depth v) encapsHP1024_sat
+  encapsH1024_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.EncapsH.encapsHP1024_verified (sha3 := sha3) v) (encapsHP1024_depth (sha3 := sha3) v) encapsHP1024_sat
 
 theorem encapsHP1024_verified (sfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 sfx (Impl.MlKem.AArch64.Kem16P.encapsH (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
+    Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 sfx (Impl.MlKem.AArch64.Kem16P.encapsH sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
       (Spec.MlKem1024.encapsHContract (abi.withConsts Optimized.constants) 160) :=
-  encapsHP1024_scrubbed v sfx
+  encapsHP1024_scrubbed (sha3 := sha3) v sfx
 
 theorem encapsP1024_scrubbed (sfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 sfx (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
+    Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 sfx (Impl.MlKem.AArch64.Kem16P.encaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
       (Scrubbed.encaps1024Contract (abi.withConsts Optimized.constants) 160) :=
-  encaps1024_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.Kem16P.encapsP1024_verified v) (encapsP1024_depth v) encapsP1024_sat
+  encaps1024_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.Kem16P.encapsP1024_verified (sha3 := sha3) v) (encapsP1024_depth (sha3 := sha3) v) encapsP1024_sat
 
 theorem encapsP1024_verified (sfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 sfx (Impl.MlKem.AArch64.Kem16P.encaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
+    Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 sfx (Impl.MlKem.AArch64.Kem16P.encaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
       (Spec.MlKem1024.encapsContract (abi.withConsts Optimized.constants) 160) :=
-  encapsP1024_scrubbed v sfx
+  encapsP1024_scrubbed (sha3 := sha3) v sfx
 
 theorem decapsP1024_scrubbed (sfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 sfx (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
+    Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 sfx (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
       (Scrubbed.decaps1024Contract (abi.withConsts Optimized.constants) 160) :=
-  decaps1024_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.Kem16P.decapsP1024_verified v) (decapsP1024_depth v) decapsP1024_sat
+  decaps1024_wipe callWipeOk_consts sfx (Proof.MlKem.AArch64.Kem16P.decapsP1024_verified (sha3 := sha3) v) (decapsP1024_depth (sha3 := sha3) v) decapsP1024_sat
 
 theorem decapsP1024_verified (sfx : String) :
-    Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 sfx (Impl.MlKem.AArch64.Kem16P.decaps (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
+    Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 sfx (Impl.MlKem.AArch64.Kem16P.decaps sha3 (fixedHash v.callee) (prfW v.callee) Impl.MlKem1024.AArch64.lay1024))
       (Spec.MlKem1024.decapsContract (abi.withConsts Optimized.constants) 160) :=
-  decapsP1024_scrubbed v sfx
+  decapsP1024_scrubbed (sha3 := sha3) v sfx
 
 end
 

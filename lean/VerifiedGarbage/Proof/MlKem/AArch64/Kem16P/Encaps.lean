@@ -30,6 +30,7 @@ buffers, `u` and `v` (`encrypt_restP`). -/
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem16P
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KEM VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Kem
@@ -134,9 +135,9 @@ theorem using_correctP (hash : FixedHash.HashFn) (valid : PrfValidW P (enL P) pr
     (hfin : finalCount P (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Hybrid.ekSrc P)) =
       Impl.MlKem.AArch64.Kem16P.placed P
         (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Hybrid.ekSrc P)))
-    (depthM : (Impl.MlKem.AArch64.Kem16P.matrixP P (Impl.MlKem.AArch64.Hybrid.ekSrc P)
+    (depthM : (Impl.MlKem.AArch64.Kem16P.matrixP sha3 P (Impl.MlKem.AArch64.Hybrid.ekSrc P)
       (Impl.MlKem.AArch64.Kem16P.gAt hash)).aarch64Depth ≤ 8) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.encaps hash prf P) s₀ fun t =>
+    WP isa (Impl.MlKem.AArch64.Kem16P.encaps sha3 hash prf P) s₀ fun t =>
       abiPreserved s₀ t ∧ (encapsAArch64 P).post s₀ t := by
   have hw := hp.wf
   refine WP.seq (WP.mono_syms (WP.tablesDepth (startH_ok hp) tables
@@ -147,7 +148,7 @@ theorem using_correctP (hash : FixedHash.HashFn) (valid : PrfValidW P (enL P) pr
     ⟨BInvW.zero hA.kb hA.x24 hA.rho, Frame.refl _ _, by rw [Hybrid.hstate_zero]; exact hA.zero,
       by rw [ekM_base]; exact hA.kb.ro 0 (show 0 < 2 by decide)⟩
   -- The matrix, with `G` after the pairs hashing `ek`.
-  refine WP.seq (WP.mono_syms (WP.tables128 (matrixP_ok (M := ekM P) hp hk (ekM_ok hp hk hs) ho h0 mt
+  refine WP.seq (WP.mono_syms (WP.tables128 (matrixP_ok (sha3 := sha3) (M := ekM P) hp hk (ekM_ok hp hk hs) ho h0 mt
     fun u hu mu su => gStep_ok hash hG hp hk ho tables hA.m hu mu (su.trans syA))
     ta tsA depthM) fun uB ⟨⟨mG, gG, hB, _⟩, tb⟩ _ => ?_)
   -- The noise, `u`, `v` and the epilogue.
