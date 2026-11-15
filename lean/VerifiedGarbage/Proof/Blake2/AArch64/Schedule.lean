@@ -47,6 +47,10 @@ theorem state_eq {s t : State} (hg : s.gpr = t.gpr) (hs : s.sp = t.sp)
   cases hvf; cases hv; cases hm; cases hr; cases hw; cases hu; cases hsy; cases hd
   rfl
 
+theorem unknowns_write (s : State) (z : Size) (r : Reg) (v : BitVec z.bits) :
+    (s.write z r v).unknowns = s.unknowns := rfl
+theorem syms_write (s : State) (z : Size) (r : Reg) (v : BitVec z.bits) : (s.write z r v).syms = s.syms := rfl
+
 theorem ext_trunc (z : Size) (v : BitVec z.bits) : (v.setWidth 64).setWidth z.bits = v := by
   cases z
   · rw [BitVec.setWidth_setWidth_of_le _ (by decide), BitVec.setWidth_eq]
@@ -65,13 +69,16 @@ theorem run_eq {z : Size} (P : Spec.Blake2.Params z.bits) (r : Nat) (diagonal : 
     ↓reduceIte]
   all_goals simp only [sz_bits, ws_bits, runBlock_cons, runStep_some, runBlock_nil, exec_add,
     exec_logic, rotate h1, rotate h2, rotate h3, rotate h4, load, isa, State.read,
-    RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
-    reduceCtorEq, ite_true, ite_false, hm, ext_trunc]
+    ↓RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write,
+    reduceCtorEq, ↓reduceIte, hm, ext_trunc]
   all_goals
     apply congrArg some
-    apply state_eq <;> try rfl
-    funext q
-    cases q <;> simp only [RegUpd.gpr_write, reduceCtorEq, ite_true, ite_false]
+    apply state_eq
+    · funext q
+      cases q <;> simp only [↓RegUpd.gpr_write, reduceCtorEq, ↓reduceIte]
+    all_goals simp only [↓RegUpd.sp_write, ↓RegUpd.c_write, ↓RegUpd.nf_write, ↓RegUpd.zf_write, ↓RegUpd.vf_write,
+      ↓RegUpd.v_write, ↓RegUpd.mem_write, ↓RegUpd.rd_write, ↓RegUpd.wr_write, ↓unknowns_write, ↓syms_write,
+      ↓RegUpd.dit_write]
 
 theorem referencePass_false {w} (P : Spec.Blake2.Params w) (r : Nat) :
     referencePass P r false =
