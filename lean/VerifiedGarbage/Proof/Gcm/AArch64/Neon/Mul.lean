@@ -208,4 +208,111 @@ theorem cl_polyMul (a b : BitVec 64) : cl0 a b ^^^ (cl1 a b <<< 8) = polyMul a b
     by8_shl24, Nat.reduceAdd, Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceSub, and_true, and_self, ↓reduceIte, gp_zero, zero_mul, mul_zero, add_zero, zero_add]
   ring
 
+/-! ## The reduction
+
+The 256 bits of a product, `hi : mid : lo` with `hi` holding the low powers,
+are four doublewords `I₃ : I₂ : I₁ : I₀`. `x¹²⁸ = 1 + x + x² + x⁷` folds
+`I₀` into `I₂` and `I₁`, then `I₁` into `I₃` and `I₂`: the part of
+`(1 + x + x² + x⁷) · I` that stays in its doubleword is `I ⊕ I ≫ 1 ⊕ I ≫ 2
+⊕ I ≫ 7`, and what leaves it for the next is `I ≪ 63 ⊕ I ≪ 62 ⊕ I ≪ 57`. -/
+
+/-- A shift of a doubleword down by `k` bits multiplies by `xᵏ`, but for
+the bits that leave it. -/
+theorem gp_split (v : BitVec 64) {k : Nat} (hk : k < 64) :
+    X ^ k * gp v = gp (v >>> k) + X ^ 64 * gp (v <<< (64 - k)) := by
+  ext d
+  rw [coeff_add, coeff_X_pow_mul', coeff_X_pow_mul', coeff_gp, coeff_gp, coeff_gp,
+    BitVec.getMsbD_ushiftRight, BitVec.getMsbD_shiftLeft]
+  rcases (by omega_using [hk] : d < k ∨ (k ≤ d ∧ d < 64) ∨ 64 ≤ d) with h | h | h
+  · simp [show ¬ k ≤ d by omega_using [h], h, show ¬ 64 ≤ d by omega_using [h, hk], bit]
+  · simp [h.1, h.2, show ¬ d < k by omega_using [h], show ¬ 64 ≤ d by omega_using [h]]
+  · simp [show k ≤ d by omega_using [h, hk], show ¬ d < 64 by omega_using [h], h, bit,
+      show d - 64 + (64 - k) = d - k by omega_using [h, hk]]
+
+theorem ψ_split (v : BitVec 64) {k : Nat} (hk : k < 64) :
+    x ^ k * ψ v = ψ (v >>> k) + x ^ 64 * ψ (v <<< (64 - k)) := by
+  have h := congrArg (AdjoinRoot.mk g) (gp_split v hk)
+  simp only [map_add, map_mul, map_pow, AdjoinRoot.mk_X] at h
+  exact h
+
+/-- Each doubleword shifted up by `k` bits. -/
+def sl (k : Nat) (v : BitVec 128) : BitVec 128 := ofVDwords (vdword v 0 <<< k) (vdword v 1 <<< k)
+
+/-- Each doubleword shifted down by `k` bits. -/
+def sr (k : Nat) (v : BitVec 128) : BitVec 128 := ofVDwords (vdword v 0 >>> k) (vdword v 1 >>> k)
+
+/-- What leaves a doubleword leaves the next one too. -/
+theorem carry_shl (q : BitVec 64) {s : Nat} (hs : 7 ≤ s) :
+    (q <<< 63 ^^^ q <<< 62 ^^^ q <<< 57) <<< s = 0#64 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp [show i - s < 63 by omega_using [hi, hs], show i - s < 62 by omega_using [hi, hs],
+    show i - s < 57 by omega_using [hi, hs]]
+
+/-- The fold of `lo` into `hi`, with its halves swapped. -/
+def fold (lo hi : BitVec 128) : BitVec 128 :=
+  let c := sl 63 lo ^^^ sl 62 lo ^^^ sl 57 lo
+  let lo := lo ^^^ ext8 0#128 c
+  let hi := hi ^^^ ext8 c 0#128
+  let hi := hi ^^^ lo ^^^ sr 1 lo ^^^ sr 2 lo ^^^ sr 7 lo
+  ext8 hi hi
+
+theorem ψ_zero : ψ 0#64 = 0 := by simp only [ψ, gp_zero', map_zero]
+
+theorem vdword_zero (e : Nat) : vdword 0#128 e = 0#64 := by
+  simp only [VG.Proof.Gcm.Clmul.vdword, BitVec.extractLsb'_zero]
+
+theorem ρ_fold (lo hi : BitVec 128) : ρ (fold lo hi) = φ hi + x ^ 128 * φ lo := by
+  simp only [fold]
+  rw [ρ_ext8_self, φ_v, φ_v hi, φ_v lo]
+  simp only [vdword_xor, vdword_ext8_0, vdword_ext8_1, vdword_zero, sl, sr, ofVDwords, vdword_append_0,
+    vdword_append_1, BitVec.xor_zero]
+  generalize vdword lo 0 = a0
+  generalize vdword lo 1 = a1
+  generalize vdword hi 0 = h0
+  generalize vdword hi 1 = h1
+  have hw : ∀ s, 7 ≤ s → (a1 ^^^ (a0 <<< 63 ^^^ a0 <<< 62 ^^^ a0 <<< 57)) <<< s = a1 <<< s := fun s hs => by
+    rw [BitVec.shiftLeft_xor_distrib, carry_shl a0 hs, BitVec.xor_zero]
+  have w1 := ψ_split (a1 ^^^ (a0 <<< 63 ^^^ a0 <<< 62 ^^^ a0 <<< 57)) (k := 1) (by decide)
+  have w2 := ψ_split (a1 ^^^ (a0 <<< 63 ^^^ a0 <<< 62 ^^^ a0 <<< 57)) (k := 2) (by decide)
+  have w7 := ψ_split (a1 ^^^ (a0 <<< 63 ^^^ a0 <<< 62 ^^^ a0 <<< 57)) (k := 7) (by decide)
+  rw [hw _ (by decide)] at w1 w2 w7
+  have b1 := ψ_split a0 (k := 1) (by decide)
+  have b2 := ψ_split a0 (k := 2) (by decide)
+  have b7 := ψ_split a0 (k := 7) (by decide)
+  have hW : ψ (a1 ^^^ (a0 <<< 63 ^^^ a0 <<< 62 ^^^ a0 <<< 57)) =
+      ψ a1 + ψ (a0 <<< 63) + ψ (a0 <<< 62) + ψ (a0 <<< 57) := by
+    simp only [ψ_xor]; ring
+  simp only [ψ_xor]
+  simp only [Nat.reduceSub] at w1 w2 w7 b1 b2 b7
+  linear_combination (-1 : Q) * w1 + (-1 : Q) * w2 + (-1 : Q) * w7 + (-x ^ 64) * b1 + (-x ^ 64) * b2 +
+    (-x ^ 64) * b7 + (x + x ^ 2 + x ^ 7) * hW +
+    (-(ψ a1 + ψ (a0 <<< 63) + ψ (a0 <<< 62) + ψ (a0 <<< 57) + x ^ 64 * ψ a0)) * x128
+
+/-- The block, with its halves swapped, of a product. -/
+def reduceN (p : Prod) : BitVec 128 := fold (p.lo ^^^ ext8 0#128 p.mid) (p.hi ^^^ ext8 p.mid 0#128)
+
+theorem ρ_reduceN (p : Prod) : ρ (reduceN p) = p.val := by
+  rw [reduceN, ρ_fold, φ_xor, φ_xor, φ_ext8, φ_ext8, Prod.val, φ_v p.mid, vdword_zero, vdword_zero, ψ_zero]
+  ring
+
+/-- The product of the block `a` as loaded and the key whose halves swapped
+are `s`, reduced: its three products of doublewords are those of the halves
+and of their sums. -/
+def mulN (a s : BitVec 128) : BitVec 128 :=
+  reduceN ⟨polyMul (vdword a 1) (vdword s 1),
+    polyMul (vdword a 0 ^^^ vdword a 1) (vdword s 0 ^^^ vdword s 1) ^^^ polyMul (vdword a 0) (vdword s 0) ^^^
+      polyMul (vdword a 1) (vdword s 1),
+    polyMul (vdword a 0) (vdword s 0)⟩
+
+theorem ρ_inj {a b : BitVec 128} (h : ρ a = ρ b) : a = b := by
+  rw [← φ_ext8_self, ← φ_ext8_self] at h
+  have e := congrArg (fun w => ext8 w w) (φ_inj h)
+  simpa only [ext8_ext8] using e
+
+theorem mulN_eq (a t : BitVec 128) : mulN a (ext8 t t) = mulV a t := by
+  apply ρ_inj
+  rw [ρ_mulV, mulN, ρ_reduceN, Prod.val, φ_xor, φ_xor, φ_polyMul, φ_polyMul, φ_polyMul, ψ_xor, ψ_xor,
+    vdword_ext8_0, vdword_ext8_1, ρ, φ_v t]
+  linear_combination (x ^ 65 * (ψ (vdword a 0) * ψ (vdword t 1) + ψ (vdword a 1) * ψ (vdword t 0))) * two_Q
+
 end VG.Proof.Gcm.AArch64.Neon
