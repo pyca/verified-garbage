@@ -11,69 +11,188 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_body_ssse3() {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQSItEJBBMi1wkCEiJGEiJaAhMiWgQTIlwGEyJeCBMiWAoSYnHTYncSInTSInNTYnGTYnNSLhleHBhbmQgM0mJR0BIuDItYnl0ZSBrSYlHSEiLB0mJR1BIi0cISYlHWEiLRxBJiUdgSItHGEmJR2iLBkjB4CBJiUdwSItGBEmJR3hIuGV4cGFuZCAzSYmHYAIAAEi4Mi1ieXRlIGtJiYdoAgAASIsHSYmHcAIAAEiLRwhJiYd4AgAASItHEEmJh4ACAABIi0cYSYmHiAIAAIsGSMHgIEmJh5ACAABIi0YESYmHmAIAALoAAAAASYP9AQ=="
+        r#"lea rsp, [rsp-760]
+mov rax, QWORD PTR [rsp+768]
+mov QWORD PTR [rsp+8], rax
+mov rax, rsp
+add rax, 24
+mov QWORD PTR [rsp+16], rax
+mov rax, QWORD PTR [rsp+16]
+mov r11, QWORD PTR [rsp+8]
+mov QWORD PTR [rax], rbx
+mov QWORD PTR [rax+8], rbp
+mov QWORD PTR [rax+16], r13
+mov QWORD PTR [rax+24], r14
+mov QWORD PTR [rax+32], r15
+mov QWORD PTR [rax+40], r12
+mov r15, rax
+mov r12, r11
+mov rbx, rdx
+mov rbp, rcx
+mov r14, r8
+mov r13, r9
+movabs rax, 3684054920433006693
+mov QWORD PTR [r15+64], rax
+movabs rax, 7719281312240119090
+mov QWORD PTR [r15+72], rax
+mov rax, QWORD PTR [rdi]
+mov QWORD PTR [r15+80], rax
+mov rax, QWORD PTR [rdi+8]
+mov QWORD PTR [r15+88], rax
+mov rax, QWORD PTR [rdi+16]
+mov QWORD PTR [r15+96], rax
+mov rax, QWORD PTR [rdi+24]
+mov QWORD PTR [r15+104], rax
+mov eax, DWORD PTR [rsi]
+shl rax, 32
+mov QWORD PTR [r15+112], rax
+mov rax, QWORD PTR [rsi+4]
+mov QWORD PTR [r15+120], rax
+movabs rax, 3684054920433006693
+mov QWORD PTR [r15+608], rax
+movabs rax, 7719281312240119090
+mov QWORD PTR [r15+616], rax
+mov rax, QWORD PTR [rdi]
+mov QWORD PTR [r15+624], rax
+mov rax, QWORD PTR [rdi+8]
+mov QWORD PTR [r15+632], rax
+mov rax, QWORD PTR [rdi+16]
+mov QWORD PTR [r15+640], rax
+mov rax, QWORD PTR [rdi+24]
+mov QWORD PTR [r15+648], rax
+mov eax, DWORD PTR [rsi]
+shl rax, 32
+mov QWORD PTR [r15+656], rax
+mov rax, QWORD PTR [rsi+4]
+mov QWORD PTR [r15+664], rax
+mov edx, 0
+cmp r13, 1
 jb 20f
 jmp 21f
 20:
-.base64 "TInq"
+mov rdx, r13
 21:
-.base64 "SIPCQGYP78C5AAAAAA=="
+add rdx, 64
+pxor xmm0, xmm0
+mov ecx, 0
 22:
-.base64 "80EPf4QPoAIAAEiDwRBIOdE="
+movdqu XMMWORD PTR [r15+rcx*1+672], xmm0
+add rcx, 16
+cmp rcx, rdx
 jb 22b
-.base64 "TIn/SIHHYAIAAEyJ/kiBxqACAABMiflIgcGAAAAASYnw"
+mov rdi, r15
+add rdi, 608
+mov rsi, r15
+add rsi, 672
+mov rcx, r15
+add rcx, 128
+mov r8, rsi
 call {vg_chacha20_xor_ssse3}
-.base64 "SYn3SYHvgAAAAEyJ/0iBx8ABAABMif5IgcagAgAA"
+mov r15, rsi
+sub r15, 128
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 672
 call {vg_poly1305_init_core}
-.base64 "SYn/SYHvwAEAAEyJ/0iBx8ABAABIid5IiepIweoE"
+mov r15, rdi
+sub r15, 448
+mov rdi, r15
+add rdi, 448
+mov rsi, rbx
+mov rdx, rbp
+shr rdx, 4
 je 23f
 call {vg_poly1305_blocks}
-.base64 "SYn/SYHvwAEAAA=="
+mov r15, rdi
+sub r15, 448
 jmp 24f
 23:
 24:
-.base64 "SInqSIPiDw=="
+mov rdx, rbp
+and rdx, 15
 je 25f
-.base64 "SInuSCnWSAHeuAAAAABJiYdAAgAASYmHSAIAALkAAAAA"
+mov rsi, rbp
+sub rsi, rdx
+add rsi, rbx
+mov eax, 0
+mov QWORD PTR [r15+576], rax
+mov QWORD PTR [r15+584], rax
+mov ecx, 0
 27:
-.base64 "D7YEDkGIhA9AAgAASIPBAUg50Q=="
+movzx eax, BYTE PTR [rsi+rcx*1]
+mov BYTE PTR [r15+rcx*1+576], al
+add rcx, 1
+cmp rcx, rdx
 jne 27b
-.base64 "TIn/SIHHwAEAAEyJ/kiBxkACAAC6AQAAAA=="
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov edx, 1
 call {vg_poly1305_blocks}
-.base64 "SYn/SYHvwAEAAA=="
+mov r15, rdi
+sub r15, 448
 jmp 26f
 25:
 26:
-.base64 "SYmvUAIAAE2Jr1gCAABJg/0B"
+mov QWORD PTR [r15+592], rbp
+mov QWORD PTR [r15+600], r13
+cmp r13, 1
 jb 28f
-.base64 "ugAAAABJg/0B"
+mov edx, 0
+cmp r13, 1
 jb 210f
 jmp 211f
 210:
-.base64 "TInq"
+mov rdx, r13
 211:
-.base64 "SIXS"
+test rdx, rdx
 je 212f
-.base64 "TIn+SIHG4AIAALkAAAAASInQSMHoBA=="
+mov rsi, r15
+add rsi, 736
+mov ecx, 0
+mov rax, rdx
+shr rax, 4
 je 214f
 216:
-.base64 "80EPbwQO8w9vDA5mD+/B80EPfwQOSIPBEEiD6AE="
+movdqu xmm0, XMMWORD PTR [r14+rcx*1]
+movdqu xmm1, XMMWORD PTR [rsi+rcx*1]
+pxor xmm0, xmm1
+movdqu XMMWORD PTR [r14+rcx*1], xmm0
+add rcx, 16
+sub rax, 1
 jne 216b
 jmp 215f
 214:
 215:
-.base64 "TIn3SAHPSAHOSCnKuQAAAABIidBIwegD"
+mov rdi, r14
+add rdi, rcx
+add rsi, rcx
+sub rdx, rcx
+mov ecx, 0
+mov rax, rdx
+shr rax, 3
 je 217f
 219:
-.base64 "TIsED0wzBA5MiQQPSIPBCEiD6AE="
+mov r8, QWORD PTR [rdi+rcx*1]
+xor r8, QWORD PTR [rsi+rcx*1]
+mov QWORD PTR [rdi+rcx*1], r8
+add rcx, 8
+sub rax, 1
 jne 219b
 jmp 218f
 217:
 218:
-.base64 "SDnR"
+cmp rcx, rdx
 je 220f
 222:
-.base64 "D7YED0QPtgQOTDHAiAQPSIPBAUg50Q=="
+movzx eax, BYTE PTR [rdi+rcx*1]
+movzx r8d, BYTE PTR [rsi+rcx*1]
+xor rax, r8
+mov BYTE PTR [rdi+rcx*1], al
+add rcx, 1
+cmp rcx, rdx
 jne 222b
 jmp 221f
 220:
@@ -81,76 +200,160 @@ jmp 221f
 jmp 213f
 212:
 213:
-.base64 "ugAAAABJg/0B"
+mov edx, 0
+cmp r13, 1
 jb 223f
 jmp 224f
 223:
-.base64 "TInq"
+mov rdx, r13
 224:
-.base64 "SInQSMHoBkiDwAFBiUdwTIn2SAHWTInoSCnQSInCTIn/SIPHQEyJ+UiBwYAAAABJifA="
+mov rax, rdx
+shr rax, 6
+add rax, 1
+mov DWORD PTR [r15+112], eax
+mov rsi, r14
+add rsi, rdx
+mov rax, r13
+sub rax, rdx
+mov rdx, rax
+mov rdi, r15
+add rdi, 64
+mov rcx, r15
+add rcx, 128
+mov r8, rsi
 call {vg_chacha20_xor_ssse3}
 jmp 29f
 28:
-.base64 "TIn+SIHG4AIAAEyJ6rkAAAAASInQSMHoBA=="
+mov rsi, r15
+add rsi, 736
+mov rdx, r13
+mov ecx, 0
+mov rax, rdx
+shr rax, 4
 je 225f
 227:
-.base64 "80EPbwQO8w9vDA5mD+/B80EPfwQOSIPBEEiD6AE="
+movdqu xmm0, XMMWORD PTR [r14+rcx*1]
+movdqu xmm1, XMMWORD PTR [rsi+rcx*1]
+pxor xmm0, xmm1
+movdqu XMMWORD PTR [r14+rcx*1], xmm0
+add rcx, 16
+sub rax, 1
 jne 227b
 jmp 226f
 225:
 226:
-.base64 "TIn3SAHPSAHOSCnKuQAAAABIidBIwegD"
+mov rdi, r14
+add rdi, rcx
+add rsi, rcx
+sub rdx, rcx
+mov ecx, 0
+mov rax, rdx
+shr rax, 3
 je 228f
 230:
-.base64 "TIsED0wzBA5MiQQPSIPBCEiD6AE="
+mov r8, QWORD PTR [rdi+rcx*1]
+xor r8, QWORD PTR [rsi+rcx*1]
+mov QWORD PTR [rdi+rcx*1], r8
+add rcx, 8
+sub rax, 1
 jne 230b
 jmp 229f
 228:
 229:
-.base64 "SDnR"
+cmp rcx, rdx
 je 231f
 233:
-.base64 "D7YED0QPtgQOTDHAiAQPSIPBAUg50Q=="
+movzx eax, BYTE PTR [rdi+rcx*1]
+movzx r8d, BYTE PTR [rsi+rcx*1]
+xor rax, r8
+mov BYTE PTR [rdi+rcx*1], al
+add rcx, 1
+cmp rcx, rdx
 jne 233b
 jmp 232f
 231:
 232:
-.base64 "TIn+SIHGgAAAAA=="
+mov rsi, r15
+add rsi, 128
 29:
-.base64 "SYn3SYHvgAAAALoAAAAASYP9AQ=="
+mov r15, rsi
+sub r15, 128
+mov edx, 0
+cmp r13, 1
 jb 234f
 jmp 235f
 234:
-.base64 "TInq"
+mov rdx, r13
 235:
-.base64 "SIPCQGYP78C5AAAAAA=="
+add rdx, 64
+pxor xmm0, xmm0
+mov ecx, 0
 236:
-.base64 "80EPf4QPoAIAAEiDwRBIOdE="
+movdqu XMMWORD PTR [r15+rcx*1+672], xmm0
+add rcx, 16
+cmp rcx, rdx
 jb 236b
-.base64 "TIn/SIHHwAEAAEyJ9kyJ6kjB6gQ="
+mov rdi, r15
+add rdi, 448
+mov rsi, r14
+mov rdx, r13
+shr rdx, 4
 je 237f
 call {vg_poly1305_blocks}
-.base64 "SYn/SYHvwAEAAA=="
+mov r15, rdi
+sub r15, 448
 jmp 238f
 237:
 238:
-.base64 "TInqSIPiDw=="
+mov rdx, r13
+and rdx, 15
 jne 239f
-.base64 "TIn/SIHHwAEAAEyJ/kiBxlACAAC6AQAAAA=="
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 592
+mov edx, 1
 call {vg_poly1305_blocks}
-.base64 "SYn/SYHvwAEAAA=="
+mov r15, rdi
+sub r15, 448
 240:
-.base64 "TIn/SIHHwAEAAL4AAAAATIni"
+mov rdi, r15
+add rdi, 448
+mov esi, 0
+mov rdx, r12
 call {vg_poly1305_finalize_scratch}
-.base64 "SYn/SYHvwAEAAEmLH0mLbwhNi28QTYt3GE2LZyhNi38gZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAww=="
+mov r15, rdi
+sub r15, 448
+mov rbx, QWORD PTR [r15]
+mov rbp, QWORD PTR [r15+8]
+mov r13, QWORD PTR [r15+16]
+mov r14, QWORD PTR [r15+24]
+mov r12, QWORD PTR [r15+40]
+mov r15, QWORD PTR [r15+32]
+lea rsp, [rsp+760]
+ret
 239:
-.base64 "TInuSCnWTAH2uAAAAABJiYdAAgAASYmHSAIAALkAAAAA"
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+mov eax, 0
+mov QWORD PTR [r15+576], rax
+mov QWORD PTR [r15+584], rax
+mov ecx, 0
 241:
-.base64 "D7YEDkGIhA9AAgAASIPBAUg50Q=="
+movzx eax, BYTE PTR [rsi+rcx*1]
+mov BYTE PTR [r15+rcx*1+576], al
+add rcx, 1
+cmp rcx, rdx
 jne 241b
-.base64 "TIn/SIHHwAEAAEyJ/kiBxkACAAC6AgAAAA=="
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov edx, 2
 call {vg_poly1305_blocks}
-.base64 "SYn/SYHvwAEAAA=="
+mov r15, rdi
+sub r15, 448
 jmp 240b
 .p2align 6"#,
         vg_chacha20_xor_ssse3 = sym crate::chacha20::vg_chacha20_xor_ssse3::vg_chacha20_xor_ssse3,

@@ -23,9 +23,21 @@ pub const VG_CHACHA20_POLY1305_SEAL_IFMA_FEATURES: verified_garbage_cpu::Feature
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI1kJPhIi0QkEEiJBCQ="
+        r#"lea rsp, [rsp-8]
+mov rax, QWORD PTR [rsp+16]
+mov QWORD PTR [rsp], rax
 call {vg_chacha20_poly1305_seal_body_ifma}
-.base64 "SI1kJAjD"
+lea rsp, [rsp+8]
+xor eax, eax
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_chacha20_poly1305_seal_body_ifma = sym super::chacha20::vg_chacha20_poly1305_seal_body_ifma::vg_chacha20_poly1305_seal_body_ifma,
     )
@@ -51,17 +63,129 @@ pub const VG_CHACHA20_POLY1305_OPEN_IFMA_FEATURES: verified_garbage_cpu::Feature
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "TInISC3BAQAASD2/AAAA"
+        r#"mov rax, r9
+sub rax, 449
+cmp rax, 191
 jb 20f
-.base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
+lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
+mov QWORD PTR [rsp+8], rax
+mov rax, rsp
+add rax, 24
+mov QWORD PTR [rsp+16], rax
+mov r11, r8
+mov rax, QWORD PTR [rsp+16]
+mov r10, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body_ifma}
-.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAA"
+pop r10
+pop r10
+pop r10
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu YMMWORD PTR [rsp+24], ymm0
+vmovdqu YMMWORD PTR [rsp+56], ymm0
+vmovdqu YMMWORD PTR [rsp+88], ymm0
+vmovdqu YMMWORD PTR [rsp+120], ymm0
+vmovdqu YMMWORD PTR [rsp+152], ymm0
+vmovdqu YMMWORD PTR [rsp+184], ymm0
+vmovdqu YMMWORD PTR [rsp+216], ymm0
+vmovdqu YMMWORD PTR [rsp+248], ymm0
+vmovdqu YMMWORD PTR [rsp+280], ymm0
+vmovdqu YMMWORD PTR [rsp+312], ymm0
+vmovdqu YMMWORD PTR [rsp+344], ymm0
+vmovdqu YMMWORD PTR [rsp+376], ymm0
+vmovdqu YMMWORD PTR [rsp+408], ymm0
+vmovdqu YMMWORD PTR [rsp+440], ymm0
+vmovdqu YMMWORD PTR [rsp+472], ymm0
+vmovdqu YMMWORD PTR [rsp+504], ymm0
+vmovdqu YMMWORD PTR [rsp+536], ymm0
+vmovdqu YMMWORD PTR [rsp+568], ymm0
+vmovdqu YMMWORD PTR [rsp+600], ymm0
+vmovdqu YMMWORD PTR [rsp+632], ymm0
+vmovdqu YMMWORD PTR [rsp+664], ymm0
+lea rsp, [rsp+1728]
 21:
-.base64 "ww=="
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 20:
-.base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
+lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
+mov QWORD PTR [rsp+8], rax
+mov rax, rsp
+add rax, 24
+mov QWORD PTR [rsp+16], rax
+mov r11, r8
+mov rax, QWORD PTR [rsp+16]
+mov r10, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body_avx512vl}
-.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAA"
+pop r10
+pop r10
+pop r10
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu YMMWORD PTR [rsp+24], ymm0
+vmovdqu YMMWORD PTR [rsp+56], ymm0
+vmovdqu YMMWORD PTR [rsp+88], ymm0
+vmovdqu YMMWORD PTR [rsp+120], ymm0
+vmovdqu YMMWORD PTR [rsp+152], ymm0
+vmovdqu YMMWORD PTR [rsp+184], ymm0
+vmovdqu YMMWORD PTR [rsp+216], ymm0
+vmovdqu YMMWORD PTR [rsp+248], ymm0
+vmovdqu YMMWORD PTR [rsp+280], ymm0
+vmovdqu YMMWORD PTR [rsp+312], ymm0
+vmovdqu YMMWORD PTR [rsp+344], ymm0
+vmovdqu YMMWORD PTR [rsp+376], ymm0
+vmovdqu YMMWORD PTR [rsp+408], ymm0
+vmovdqu YMMWORD PTR [rsp+440], ymm0
+vmovdqu YMMWORD PTR [rsp+472], ymm0
+vmovdqu YMMWORD PTR [rsp+504], ymm0
+vmovdqu YMMWORD PTR [rsp+536], ymm0
+vmovdqu YMMWORD PTR [rsp+568], ymm0
+vmovdqu YMMWORD PTR [rsp+600], ymm0
+vmovdqu YMMWORD PTR [rsp+632], ymm0
+vmovdqu YMMWORD PTR [rsp+664], ymm0
+lea rsp, [rsp+1728]
 jmp 21b
 .p2align 6"#,
         vg_chacha20_poly1305_open_body_ifma = sym super::chacha20::vg_chacha20_poly1305_open_body_ifma::vg_chacha20_poly1305_open_body_ifma,
@@ -92,17 +216,139 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_IFMA_FEATURES: verified_garbage_cpu::Feat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "TInISC3BAQAASD2/AAAA"
+        r#"mov rax, r9
+sub rax, 449
+cmp rax, 191
 jb 20f
-.base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
+lea rsp, [rsp-1744]
+mov rax, QWORD PTR [rsp+1752]
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+1760]
+mov QWORD PTR [rsp+16], rax
+mov rax, QWORD PTR [rsp+1768]
+mov QWORD PTR [rsp+24], rax
+mov rax, rsp
+add rax, 40
+mov QWORD PTR [rsp+32], rax
+mov rax, QWORD PTR [rsp+32]
+mov r10, QWORD PTR [rsp+24]
+mov r11, r8
+mov r8, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body_ifma}
-.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAA"
+pop r10
+pop r10
+pop r10
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu YMMWORD PTR [rsp+40], ymm0
+vmovdqu YMMWORD PTR [rsp+72], ymm0
+vmovdqu YMMWORD PTR [rsp+104], ymm0
+vmovdqu YMMWORD PTR [rsp+136], ymm0
+vmovdqu YMMWORD PTR [rsp+168], ymm0
+vmovdqu YMMWORD PTR [rsp+200], ymm0
+vmovdqu YMMWORD PTR [rsp+232], ymm0
+vmovdqu YMMWORD PTR [rsp+264], ymm0
+vmovdqu YMMWORD PTR [rsp+296], ymm0
+vmovdqu YMMWORD PTR [rsp+328], ymm0
+vmovdqu YMMWORD PTR [rsp+360], ymm0
+vmovdqu YMMWORD PTR [rsp+392], ymm0
+vmovdqu YMMWORD PTR [rsp+424], ymm0
+vmovdqu YMMWORD PTR [rsp+456], ymm0
+vmovdqu YMMWORD PTR [rsp+488], ymm0
+vmovdqu YMMWORD PTR [rsp+520], ymm0
+vmovdqu YMMWORD PTR [rsp+552], ymm0
+vmovdqu YMMWORD PTR [rsp+584], ymm0
+vmovdqu YMMWORD PTR [rsp+616], ymm0
+vmovdqu YMMWORD PTR [rsp+648], ymm0
+vmovdqu YMMWORD PTR [rsp+680], ymm0
+lea rsp, [rsp+1744]
 21:
-.base64 "ww=="
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 20:
-.base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
+lea rsp, [rsp-1744]
+mov rax, QWORD PTR [rsp+1752]
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+1760]
+mov QWORD PTR [rsp+16], rax
+mov rax, QWORD PTR [rsp+1768]
+mov QWORD PTR [rsp+24], rax
+mov rax, rsp
+add rax, 40
+mov QWORD PTR [rsp+32], rax
+mov rax, QWORD PTR [rsp+32]
+mov r10, QWORD PTR [rsp+24]
+mov r11, r8
+mov r8, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body_avx512vl}
-.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAA"
+pop r10
+pop r10
+pop r10
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu YMMWORD PTR [rsp+40], ymm0
+vmovdqu YMMWORD PTR [rsp+72], ymm0
+vmovdqu YMMWORD PTR [rsp+104], ymm0
+vmovdqu YMMWORD PTR [rsp+136], ymm0
+vmovdqu YMMWORD PTR [rsp+168], ymm0
+vmovdqu YMMWORD PTR [rsp+200], ymm0
+vmovdqu YMMWORD PTR [rsp+232], ymm0
+vmovdqu YMMWORD PTR [rsp+264], ymm0
+vmovdqu YMMWORD PTR [rsp+296], ymm0
+vmovdqu YMMWORD PTR [rsp+328], ymm0
+vmovdqu YMMWORD PTR [rsp+360], ymm0
+vmovdqu YMMWORD PTR [rsp+392], ymm0
+vmovdqu YMMWORD PTR [rsp+424], ymm0
+vmovdqu YMMWORD PTR [rsp+456], ymm0
+vmovdqu YMMWORD PTR [rsp+488], ymm0
+vmovdqu YMMWORD PTR [rsp+520], ymm0
+vmovdqu YMMWORD PTR [rsp+552], ymm0
+vmovdqu YMMWORD PTR [rsp+584], ymm0
+vmovdqu YMMWORD PTR [rsp+616], ymm0
+vmovdqu YMMWORD PTR [rsp+648], ymm0
+vmovdqu YMMWORD PTR [rsp+680], ymm0
+lea rsp, [rsp+1744]
 jmp 21b
 .p2align 6"#,
         vg_chacha20_poly1305_open_body_ifma = sym super::chacha20::vg_chacha20_poly1305_open_body_ifma::vg_chacha20_poly1305_open_body_ifma,
@@ -133,59 +379,109 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES: verified_garbage_cpu::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_ifma(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SItEJBBIPcEDAAA="
+        r#"mov rax, QWORD PTR [rsp+16]
+cmp rax, 961
 jb 20f
-.base64 "V1ZSUUFQQVFNicNIi3wkOEmD+QA="
+push rdi
+push rsi
+push rdx
+push rcx
+push r8
+push r9
+mov r11, r8
+mov rdi, QWORD PTR [rsp+56]
+cmp r9, 0
 je 22f
-.base64 "SYszSYtLCEmDwxBIAc9Jg+kB"
+mov rsi, QWORD PTR [r11]
+mov rcx, QWORD PTR [r11+8]
+add r11, 16
+add rdi, rcx
+sub r9, 1
 jmp 23f
 22:
 23:
-.base64 "SYP5AA=="
+cmp r9, 0
 je 24f
 26:
-.base64 "SYszSYtLCEmDwxBIgfmAAAAA"
+mov rsi, QWORD PTR [r11]
+mov rcx, QWORD PTR [r11+8]
+add r11, 16
+cmp rcx, 128
 jb 27f
-.base64 "YvF+SG8GYvF+SH8HQboAAAAASSn6SYPiP0mJyEmB6IAAAABNOdA="
+vmovdqu32 zmm0, ZMMWORD PTR [rsi]
+vmovdqu32 ZMMWORD PTR [rdi], zmm0
+mov r10d, 0
+sub r10, rdi
+and r10, 63
+mov r8, rcx
+sub r8, 128
+cmp r8, r10
 jb 29f
 211:
-.base64 "YrF+SG8EFmKxfkhvTBYBYrF+SH8EF2Kxfkh/TBcBSYHCgAAAAE050A=="
+vmovdqu32 zmm0, ZMMWORD PTR [rsi+r10*1]
+vmovdqu32 zmm1, ZMMWORD PTR [rsi+r10*1+64]
+vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm0
+vmovdqu32 ZMMWORD PTR [rdi+r10*1+64], zmm1
+add r10, 128
+cmp r8, r10
 jae 211b
 jmp 210f
 29:
 210:
-.base64 "YvF+SG9EDv5i8X5Ib0wO/2Lxfkh/RA/+YvF+SH9MD/8="
+vmovdqu32 zmm0, ZMMWORD PTR [rsi+rcx*1-128]
+vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1-64]
+vmovdqu32 ZMMWORD PTR [rdi+rcx*1-128], zmm0
+vmovdqu32 ZMMWORD PTR [rdi+rcx*1-64], zmm1
 jmp 28f
 27:
-.base64 "SIP5QA=="
+cmp rcx, 64
 jb 212f
-.base64 "YvF+SG8GYvF+SG9MDv9i8X5Ifwdi8X5If0wP/w=="
+vmovdqu32 zmm0, ZMMWORD PTR [rsi]
+vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1-64]
+vmovdqu32 ZMMWORD PTR [rdi], zmm0
+vmovdqu32 ZMMWORD PTR [rdi+rcx*1-64], zmm1
 jmp 213f
 212:
-.base64 "SIP5IA=="
+cmp rcx, 32
 jb 214f
-.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+vmovdqu ymm0, YMMWORD PTR [rsi]
+vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
+vmovdqu YMMWORD PTR [rdi], ymm0
+vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
 jmp 215f
 214:
-.base64 "SIP5EA=="
+cmp rcx, 16
 jb 216f
-.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+vmovdqu xmm0, XMMWORD PTR [rsi]
+vmovdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
+vmovdqu XMMWORD PTR [rdi], xmm0
+vmovdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
 jmp 217f
 216:
-.base64 "SIP5CA=="
+cmp rcx, 8
 jb 218f
-.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+mov rax, QWORD PTR [rsi]
+mov r8, QWORD PTR [rsi+rcx*1-8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+rcx*1-8], r8
 jmp 219f
 218:
-.base64 "SIP5BA=="
+cmp rcx, 4
 jb 220f
-.base64 "iwZEi0QO/IkHRIlED/w="
+mov eax, DWORD PTR [rsi]
+mov r8d, DWORD PTR [rsi+rcx*1-4]
+mov DWORD PTR [rdi], eax
+mov DWORD PTR [rdi+rcx*1-4], r8d
 jmp 221f
 220:
-.base64 "QboAAAAASTnK"
+mov r10d, 0
+cmp r10, rcx
 je 222f
 224:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
 jne 224b
 jmp 223f
 222:
@@ -196,67 +492,134 @@ jmp 223f
 215:
 213:
 28:
-.base64 "xfh3SAHPSYPpAQ=="
+vzeroupper
+add rdi, rcx
+sub r9, 1
 jne 26b
 jmp 25f
 24:
 25:
-.base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkCEyLDCRIi0QkSEyLVCRATItcJDhJg/kA"
+mov rdi, QWORD PTR [rsp+40]
+mov rsi, QWORD PTR [rsp+32]
+mov rdx, QWORD PTR [rsp+24]
+mov rcx, QWORD PTR [rsp+16]
+mov r8, QWORD PTR [rsp+8]
+mov r9, QWORD PTR [rsp]
+mov rax, QWORD PTR [rsp+72]
+mov r10, QWORD PTR [rsp+64]
+mov r11, QWORD PTR [rsp+56]
+cmp r9, 0
 je 225f
-.base64 "TYtICE2LAA=="
+mov r9, QWORD PTR [r8+8]
+mov r8, QWORD PTR [r8]
 jmp 226f
 225:
 226:
-.base64 "UEFSQVM="
+push rax
+push r10
+push r11
 call {vg_chacha20_poly1305_seal_split_ifma}
-.base64 "WFhYWFhYWFhY"
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
 jmp 21f
 20:
-.base64 "V1ZSUUFQQVFNicNIi3wkOEmD+QA="
+push rdi
+push rsi
+push rdx
+push rcx
+push r8
+push r9
+mov r11, r8
+mov rdi, QWORD PTR [rsp+56]
+cmp r9, 0
 je 227f
 229:
-.base64 "SYszSYtLCEmDwxBIgfmAAAAA"
+mov rsi, QWORD PTR [r11]
+mov rcx, QWORD PTR [r11+8]
+add r11, 16
+cmp rcx, 128
 jb 230f
-.base64 "YvF+SG8GYvF+SH8HQboAAAAASSn6SYPiP0mJyEmB6IAAAABNOdA="
+vmovdqu32 zmm0, ZMMWORD PTR [rsi]
+vmovdqu32 ZMMWORD PTR [rdi], zmm0
+mov r10d, 0
+sub r10, rdi
+and r10, 63
+mov r8, rcx
+sub r8, 128
+cmp r8, r10
 jb 232f
 234:
-.base64 "YrF+SG8EFmKxfkhvTBYBYrF+SH8EF2Kxfkh/TBcBSYHCgAAAAE050A=="
+vmovdqu32 zmm0, ZMMWORD PTR [rsi+r10*1]
+vmovdqu32 zmm1, ZMMWORD PTR [rsi+r10*1+64]
+vmovdqu32 ZMMWORD PTR [rdi+r10*1], zmm0
+vmovdqu32 ZMMWORD PTR [rdi+r10*1+64], zmm1
+add r10, 128
+cmp r8, r10
 jae 234b
 jmp 233f
 232:
 233:
-.base64 "YvF+SG9EDv5i8X5Ib0wO/2Lxfkh/RA/+YvF+SH9MD/8="
+vmovdqu32 zmm0, ZMMWORD PTR [rsi+rcx*1-128]
+vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1-64]
+vmovdqu32 ZMMWORD PTR [rdi+rcx*1-128], zmm0
+vmovdqu32 ZMMWORD PTR [rdi+rcx*1-64], zmm1
 jmp 231f
 230:
-.base64 "SIP5QA=="
+cmp rcx, 64
 jb 235f
-.base64 "YvF+SG8GYvF+SG9MDv9i8X5Ifwdi8X5If0wP/w=="
+vmovdqu32 zmm0, ZMMWORD PTR [rsi]
+vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1-64]
+vmovdqu32 ZMMWORD PTR [rdi], zmm0
+vmovdqu32 ZMMWORD PTR [rdi+rcx*1-64], zmm1
 jmp 236f
 235:
-.base64 "SIP5IA=="
+cmp rcx, 32
 jb 237f
-.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+vmovdqu ymm0, YMMWORD PTR [rsi]
+vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
+vmovdqu YMMWORD PTR [rdi], ymm0
+vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
 jmp 238f
 237:
-.base64 "SIP5EA=="
+cmp rcx, 16
 jb 239f
-.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+vmovdqu xmm0, XMMWORD PTR [rsi]
+vmovdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
+vmovdqu XMMWORD PTR [rdi], xmm0
+vmovdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
 jmp 240f
 239:
-.base64 "SIP5CA=="
+cmp rcx, 8
 jb 241f
-.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+mov rax, QWORD PTR [rsi]
+mov r8, QWORD PTR [rsi+rcx*1-8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+rcx*1-8], r8
 jmp 242f
 241:
-.base64 "SIP5BA=="
+cmp rcx, 4
 jb 243f
-.base64 "iwZEi0QO/IkHRIlED/w="
+mov eax, DWORD PTR [rsi]
+mov r8d, DWORD PTR [rsi+rcx*1-4]
+mov DWORD PTR [rdi], eax
+mov DWORD PTR [rdi+rcx*1-4], r8d
 jmp 244f
 243:
-.base64 "QboAAAAASTnK"
+mov r10d, 0
+cmp r10, rcx
 je 245f
 247:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
 jne 247b
 jmp 246f
 245:
@@ -267,16 +630,40 @@ jmp 246f
 238:
 236:
 231:
-.base64 "xfh3SAHPSYPpAQ=="
+vzeroupper
+add rdi, rcx
+sub r9, 1
 jne 229b
 jmp 228f
 227:
 228:
-.base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
+mov rdi, QWORD PTR [rsp+40]
+mov rsi, QWORD PTR [rsp+32]
+mov rdx, QWORD PTR [rsp+24]
+mov rcx, QWORD PTR [rsp+16]
+mov r8, QWORD PTR [rsp+56]
+mov r9, QWORD PTR [rsp+64]
+mov rax, QWORD PTR [rsp+72]
+push rax
 call {vg_chacha20_poly1305_seal_ifma}
-.base64 "WFhYWFhYWA=="
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
 21:
-.base64 "ww=="
+xor eax, eax
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_chacha20_poly1305_seal_split_ifma = sym super::chacha20::vg_chacha20_poly1305_seal_split_ifma::vg_chacha20_poly1305_seal_split_ifma,
         vg_chacha20_poly1305_seal_ifma = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_ifma,
@@ -303,79 +690,209 @@ pub const VG_CHACHA20_POLY1305_SEAL_AVX512VL_FEATURES: verified_garbage_cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "uAAAAABMichNicpJgerBAwAASYP6QEnHwgAAAABJD0LCSD0AAwAA"
+        r#"mov eax, 0
+mov rax, r9
+mov r10, r9
+sub r10, 961
+cmp r10, 64
+mov r10, 0
+cmovb rax, r10
+cmp rax, 768
 jb 20f
-.base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQSItEJBBMi1wkCEiJGEiJaAhMiWgQTIlwGEyJeCBMiWAoSYnHTYncSInTSInNTYnGTYnNSLhleHBhbmQgM0mJR0BIuDItYnl0ZSBrSYlHSEiLB0mJR1BIi0cISYlHWEiLRxBJiUdgSItHGEmJR2iLBkjB4CBJiUdwSItGBEmJR3hIuGV4cGFuZCAzSYmHYAIAAEi4Mi1ieXRlIGtJiYdoAgAASIsHSYmHcAIAAEiLRwhJiYd4AgAASItHEEmJh4ACAABIi0cYSYmHiAIAAIsGSMHgIEmJh5ACAABIi0YESYmHmAIAALoAAAAASYH9wQMAAA=="
+lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
+mov QWORD PTR [rsp+8], rax
+mov rax, rsp
+add rax, 24
+mov QWORD PTR [rsp+16], rax
+mov rax, QWORD PTR [rsp+16]
+mov r11, QWORD PTR [rsp+8]
+mov QWORD PTR [rax], rbx
+mov QWORD PTR [rax+8], rbp
+mov QWORD PTR [rax+16], r13
+mov QWORD PTR [rax+24], r14
+mov QWORD PTR [rax+32], r15
+mov QWORD PTR [rax+40], r12
+mov r15, rax
+mov r12, r11
+mov rbx, rdx
+mov rbp, rcx
+mov r14, r8
+mov r13, r9
+movabs rax, 3684054920433006693
+mov QWORD PTR [r15+64], rax
+movabs rax, 7719281312240119090
+mov QWORD PTR [r15+72], rax
+mov rax, QWORD PTR [rdi]
+mov QWORD PTR [r15+80], rax
+mov rax, QWORD PTR [rdi+8]
+mov QWORD PTR [r15+88], rax
+mov rax, QWORD PTR [rdi+16]
+mov QWORD PTR [r15+96], rax
+mov rax, QWORD PTR [rdi+24]
+mov QWORD PTR [r15+104], rax
+mov eax, DWORD PTR [rsi]
+shl rax, 32
+mov QWORD PTR [r15+112], rax
+mov rax, QWORD PTR [rsi+4]
+mov QWORD PTR [r15+120], rax
+movabs rax, 3684054920433006693
+mov QWORD PTR [r15+608], rax
+movabs rax, 7719281312240119090
+mov QWORD PTR [r15+616], rax
+mov rax, QWORD PTR [rdi]
+mov QWORD PTR [r15+624], rax
+mov rax, QWORD PTR [rdi+8]
+mov QWORD PTR [r15+632], rax
+mov rax, QWORD PTR [rdi+16]
+mov QWORD PTR [r15+640], rax
+mov rax, QWORD PTR [rdi+24]
+mov QWORD PTR [r15+648], rax
+mov eax, DWORD PTR [rsi]
+shl rax, 32
+mov QWORD PTR [r15+656], rax
+mov rax, QWORD PTR [rsi+4]
+mov QWORD PTR [r15+664], rax
+mov edx, 0
+cmp r13, 961
 jb 22f
-.base64 "TInqSIHi/wMAAEiDwj9Ig+LASIH6wQMAAA=="
+mov rdx, r13
+and rdx, 1023
+add rdx, 63
+and rdx, -64
+cmp rdx, 961
 jb 24f
-.base64 "ugAAAAA="
+mov edx, 0
 jmp 25f
 24:
 25:
 jmp 23f
 22:
-.base64 "TInq"
+mov rdx, r13
 23:
-.base64 "SIPCQGLxfUjvwLkAAAAA"
+add rdx, 64
+vpxord zmm0, zmm0, zmm0
+mov ecx, 0
 26:
-.base64 "YtF+SH+ED6ACAABIg8FASDnR"
+vmovdqu32 ZMMWORD PTR [r15+rcx*1+672], zmm0
+add rcx, 64
+cmp rcx, rdx
 jb 26b
-.base64 "xfh3TIn/SIHHYAIAAEyJ/kiBxqACAABMiflIgcGAAAAASYnw"
+vzeroupper
+mov rdi, r15
+add rdi, 608
+mov rsi, r15
+add rsi, 672
+mov rcx, r15
+add rcx, 128
+mov r8, rsi
 call {vg_chacha20_xor_avx512vl}
-.base64 "SYn3SYHvgAAAAEyJ/0iBx8ABAABMif5IgcagAgAA"
+mov r15, rsi
+sub r15, 128
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 672
 call {vg_poly1305_init_core}
-.base64 "SYn/SYHvwAEAAEyJ/0iBx8ABAABIid5IiepIweoE"
+mov r15, rdi
+sub r15, 448
+mov rdi, r15
+add rdi, 448
+mov rsi, rbx
+mov rdx, rbp
+shr rdx, 4
 je 27f
 call {vg_poly1305_blocks_avx512}
-.base64 "SYn/SYHvwAEAAA=="
+mov r15, rdi
+sub r15, 448
 jmp 28f
 27:
 28:
-.base64 "SInqSIPiDw=="
+mov rdx, rbp
+and rdx, 15
 jne 29f
 je 211f
-.base64 "SLgAAAAAAAAAAEi4AAAAAAAAAABIuAAAAAAAAAAASLgAAAAAAAAAAEi4AAAAAAAAAABIuAAAAAAAAAAASLgAAAAAAAAAAEi4AAAAAAAAAABIg8ABSIPAAQ=="
+movabs rax, 0
+movabs rax, 0
+movabs rax, 0
+movabs rax, 0
+movabs rax, 0
+movabs rax, 0
+movabs rax, 0
+movabs rax, 0
+add rax, 1
+add rax, 1
 jmp 212f
 211:
 212:
 210:
-.base64 "SYmvUAIAAE2Jr1gCAABJgf3BAwAA"
+mov QWORD PTR [r15+592], rbp
+mov QWORD PTR [r15+600], r13
+cmp r13, 961
 jb 221f
-.base64 "ugAAAABJgf3BAwAA"
+mov edx, 0
+cmp r13, 961
 jb 223f
-.base64 "TInqSIHi/wMAAEiDwj9Ig+LASIH6wQMAAA=="
+mov rdx, r13
+and rdx, 1023
+add rdx, 63
+and rdx, -64
+cmp rdx, 961
 jb 225f
-.base64 "ugAAAAA="
+mov edx, 0
 jmp 226f
 225:
 226:
 jmp 224f
 223:
-.base64 "TInq"
+mov rdx, r13
 224:
-.base64 "SIXS"
+test rdx, rdx
 je 227f
-.base64 "TIn+SIHG4AIAALkAAAAASInQSMHoBg=="
+mov rsi, r15
+add rsi, 736
+mov ecx, 0
+mov rax, rdx
+shr rax, 6
 je 229f
 231:
-.base64 "YtF+SG8EDmLxfkhvDA5i8X1I78Fi0X5IfwQOSIPBQEiD6AE="
+vmovdqu32 zmm0, ZMMWORD PTR [r14+rcx*1]
+vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1]
+vpxord zmm0, zmm0, zmm1
+vmovdqu32 ZMMWORD PTR [r14+rcx*1], zmm0
+add rcx, 64
+sub rax, 1
 jne 231b
 jmp 230f
 229:
 230:
-.base64 "TIn3SAHPSAHOSCnKuQAAAABIidBIwegD"
+mov rdi, r14
+add rdi, rcx
+add rsi, rcx
+sub rdx, rcx
+mov ecx, 0
+mov rax, rdx
+shr rax, 3
 je 232f
 234:
-.base64 "TIsED0wzBA5MiQQPSIPBCEiD6AE="
+mov r8, QWORD PTR [rdi+rcx*1]
+xor r8, QWORD PTR [rsi+rcx*1]
+mov QWORD PTR [rdi+rcx*1], r8
+add rcx, 8
+sub rax, 1
 jne 234b
 jmp 233f
 232:
 233:
-.base64 "SDnR"
+cmp rcx, rdx
 je 235f
 237:
-.base64 "D7YED0QPtgQOTDHAiAQPSIPBAUg50Q=="
+movzx eax, BYTE PTR [rdi+rcx*1]
+movzx r8d, BYTE PTR [rsi+rcx*1]
+xor rax, r8
+mov BYTE PTR [rdi+rcx*1], al
+add rcx, 1
+cmp rcx, rdx
 jne 237b
 jmp 236f
 235:
@@ -383,94 +900,233 @@ jmp 236f
 jmp 228f
 227:
 228:
-.base64 "ugAAAABJgf3BAwAA"
+mov edx, 0
+cmp r13, 961
 jb 238f
-.base64 "TInqSIHi/wMAAEiDwj9Ig+LASIH6wQMAAA=="
+mov rdx, r13
+and rdx, 1023
+add rdx, 63
+and rdx, -64
+cmp rdx, 961
 jb 240f
-.base64 "ugAAAAA="
+mov edx, 0
 jmp 241f
 240:
 241:
 jmp 239f
 238:
-.base64 "TInq"
+mov rdx, r13
 239:
-.base64 "SInQSMHoBkiDwAFBiUdwTIn2SAHWTInoSCnQSInCTIn/SIPHQEyJ+UiBwYAAAABJifA="
+mov rax, rdx
+shr rax, 6
+add rax, 1
+mov DWORD PTR [r15+112], eax
+mov rsi, r14
+add rsi, rdx
+mov rax, r13
+sub rax, rdx
+mov rdx, rax
+mov rdi, r15
+add rdi, 64
+mov rcx, r15
+add rcx, 128
+mov r8, rsi
 call {vg_chacha20_xor_avx512vl}
 jmp 222f
 221:
-.base64 "TIn+SIHG4AIAAEyJ6rkAAAAASInQSMHoBg=="
+mov rsi, r15
+add rsi, 736
+mov rdx, r13
+mov ecx, 0
+mov rax, rdx
+shr rax, 6
 je 242f
 244:
-.base64 "YtF+SG8EDmLxfkhvDA5i8X1I78Fi0X5IfwQOSIPBQEiD6AE="
+vmovdqu32 zmm0, ZMMWORD PTR [r14+rcx*1]
+vmovdqu32 zmm1, ZMMWORD PTR [rsi+rcx*1]
+vpxord zmm0, zmm0, zmm1
+vmovdqu32 ZMMWORD PTR [r14+rcx*1], zmm0
+add rcx, 64
+sub rax, 1
 jne 244b
 jmp 243f
 242:
 243:
-.base64 "TIn3SAHPSAHOSCnKuQAAAABIidBIwegD"
+mov rdi, r14
+add rdi, rcx
+add rsi, rcx
+sub rdx, rcx
+mov ecx, 0
+mov rax, rdx
+shr rax, 3
 je 245f
 247:
-.base64 "TIsED0wzBA5MiQQPSIPBCEiD6AE="
+mov r8, QWORD PTR [rdi+rcx*1]
+xor r8, QWORD PTR [rsi+rcx*1]
+mov QWORD PTR [rdi+rcx*1], r8
+add rcx, 8
+sub rax, 1
 jne 247b
 jmp 246f
 245:
 246:
-.base64 "SDnR"
+cmp rcx, rdx
 je 248f
 250:
-.base64 "D7YED0QPtgQOTDHAiAQPSIPBAUg50Q=="
+movzx eax, BYTE PTR [rdi+rcx*1]
+movzx r8d, BYTE PTR [rsi+rcx*1]
+xor rax, r8
+mov BYTE PTR [rdi+rcx*1], al
+add rcx, 1
+cmp rcx, rdx
 jne 250b
 jmp 249f
 248:
 249:
-.base64 "TIn+SIHGgAAAAA=="
+mov rsi, r15
+add rsi, 128
 222:
-.base64 "SYn3SYHvgAAAALoAAAAASYH9wQMAAA=="
+mov r15, rsi
+sub r15, 128
+mov edx, 0
+cmp r13, 961
 jb 251f
-.base64 "TInqSIHi/wMAAEiDwj9Ig+LASIH6wQMAAA=="
+mov rdx, r13
+and rdx, 1023
+add rdx, 63
+and rdx, -64
+cmp rdx, 961
 jb 253f
-.base64 "ugAAAAA="
+mov edx, 0
 jmp 254f
 253:
 254:
 jmp 252f
 251:
-.base64 "TInq"
+mov rdx, r13
 252:
-.base64 "SIPCQGLxfUjvwLkAAAAA"
+add rdx, 64
+vpxord zmm0, zmm0, zmm0
+mov ecx, 0
 255:
-.base64 "YtF+SH+ED6ACAABIg8FASDnR"
+vmovdqu32 ZMMWORD PTR [r15+rcx*1+672], zmm0
+add rcx, 64
+cmp rcx, rdx
 jb 255b
-.base64 "xfh3TIn/SIHHwAEAAEyJ9kyJ6kjB6gQ="
+vzeroupper
+mov rdi, r15
+add rdi, 448
+mov rsi, r14
+mov rdx, r13
+shr rdx, 4
 je 256f
 call {vg_poly1305_blocks_avx512}
-.base64 "SYn/SYHvwAEAAA=="
+mov r15, rdi
+sub r15, 448
 jmp 257f
 256:
 257:
-.base64 "TInqSIPiDw=="
+mov rdx, r13
+and rdx, 15
 jne 258f
-.base64 "TIn/SIHHwAEAAEyJ/kiBxlACAAC6AQAAAA=="
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 592
+mov edx, 1
 call {vg_poly1305_blocks_avx512}
-.base64 "SYn/SYHvwAEAAA=="
+mov r15, rdi
+sub r15, 448
 259:
-.base64 "TIn/SIHHwAEAAL4AAAAATIni"
+mov rdi, r15
+add rdi, 448
+mov esi, 0
+mov rdx, r12
 call {vg_poly1305_finalize_scratch}
-.base64 "SYn/SYHvwAEAAEmLH0mLbwhNi28QTYt3GE2LZyhNi38gZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAA"
+mov r15, rdi
+sub r15, 448
+mov rbx, QWORD PTR [r15]
+mov rbp, QWORD PTR [r15+8]
+mov r13, QWORD PTR [r15+16]
+mov r14, QWORD PTR [r15+24]
+mov r12, QWORD PTR [r15+40]
+mov r15, QWORD PTR [r15+32]
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu YMMWORD PTR [rsp+24], ymm0
+vmovdqu YMMWORD PTR [rsp+56], ymm0
+vmovdqu YMMWORD PTR [rsp+88], ymm0
+vmovdqu YMMWORD PTR [rsp+120], ymm0
+vmovdqu YMMWORD PTR [rsp+152], ymm0
+vmovdqu YMMWORD PTR [rsp+184], ymm0
+vmovdqu YMMWORD PTR [rsp+216], ymm0
+vmovdqu YMMWORD PTR [rsp+248], ymm0
+vmovdqu YMMWORD PTR [rsp+280], ymm0
+vmovdqu YMMWORD PTR [rsp+312], ymm0
+vmovdqu YMMWORD PTR [rsp+344], ymm0
+vmovdqu YMMWORD PTR [rsp+376], ymm0
+vmovdqu YMMWORD PTR [rsp+408], ymm0
+vmovdqu YMMWORD PTR [rsp+440], ymm0
+vmovdqu YMMWORD PTR [rsp+472], ymm0
+vmovdqu YMMWORD PTR [rsp+504], ymm0
+vmovdqu YMMWORD PTR [rsp+536], ymm0
+vmovdqu YMMWORD PTR [rsp+568], ymm0
+vmovdqu YMMWORD PTR [rsp+600], ymm0
+vmovdqu YMMWORD PTR [rsp+632], ymm0
+vmovdqu YMMWORD PTR [rsp+664], ymm0
+lea rsp, [rsp+1728]
 21:
-.base64 "ww=="
+xor eax, eax
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 29:
 jne 213f
-.base64 "SLgAAAAAAAAAAEi4AAAAAAAAAABIuAAAAAAAAAAASLgAAAAAAAAAAEi4AAAAAAAAAAC4AAAAAEiDwAE="
+movabs rax, 0
+movabs rax, 0
+movabs rax, 0
+movabs rax, 0
+movabs rax, 0
+mov eax, 0
+add rax, 1
 jmp 214f
 213:
 214:
-.base64 "SInuSCnWSAHeRTHJSIP6CA=="
+mov rsi, rbp
+sub rsi, rdx
+add rsi, rbx
+xor r9d, r9d
+cmp rdx, 8
 jb 215f
-.base64 "SIsGSIPGCEiD6gg="
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
 je 217f
 219:
-.base64 "ScHhCA+2TBb/SQnJSIPqAQ=="
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
 jne 219b
 jmp 218f
 217:
@@ -478,21 +1134,41 @@ jmp 218f
 jmp 216f
 215:
 220:
-.base64 "ScHhCA+2TBb/SQnJSIPqAQ=="
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
 jne 220b
-.base64 "TInIRTHJ"
+mov rax, r9
+xor r9d, r9d
 216:
-.base64 "TIn/SIHHwAEAAEyJ/kiBxkACAABIiQZMiU4IugEAAAA="
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 1
 call {vg_poly1305_blocks_avx512}
-.base64 "SYn/SYHvwAEAAA=="
+mov r15, rdi
+sub r15, 448
 jmp 210b
 258:
-.base64 "TInuSCnWTAH2RTHJSIP6CA=="
+mov rsi, r13
+sub rsi, rdx
+add rsi, r14
+xor r9d, r9d
+cmp rdx, 8
 jb 260f
-.base64 "SIsGSIPGCEiD6gg="
+mov rax, QWORD PTR [rsi]
+add rsi, 8
+sub rdx, 8
 je 262f
 264:
-.base64 "ScHhCA+2TBb/SQnJSIPqAQ=="
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
 jne 264b
 jmp 263f
 262:
@@ -500,18 +1176,31 @@ jmp 263f
 jmp 261f
 260:
 265:
-.base64 "ScHhCA+2TBb/SQnJSIPqAQ=="
+shl r9, 8
+movzx ecx, BYTE PTR [rsi+rdx*1-1]
+or r9, rcx
+sub rdx, 1
 jne 265b
-.base64 "TInIRTHJ"
+mov rax, r9
+xor r9d, r9d
 261:
-.base64 "TIn/SIHHwAEAAEyJ/kiBxkACAABIiQZMiU4IugIAAAA="
+mov rdi, r15
+add rdi, 448
+mov rsi, r15
+add rsi, 576
+mov QWORD PTR [rsi], rax
+mov QWORD PTR [rsi+8], r9
+mov edx, 2
 call {vg_poly1305_blocks_avx512}
-.base64 "SYn/SYHvwAEAAA=="
+mov r15, rdi
+sub r15, 448
 jmp 259b
 20:
-.base64 "SI1kJPhIi0QkEEiJBCQ="
+lea rsp, [rsp-8]
+mov rax, QWORD PTR [rsp+16]
+mov QWORD PTR [rsp], rax
 call {vg_chacha20_poly1305_seal_body_avx512vl}
-.base64 "SI1kJAg="
+lea rsp, [rsp+8]
 jmp 21b
 .p2align 6"#,
         vg_chacha20_xor_avx512vl = sym super::chacha20::vg_chacha20_xor_avx512vl::vg_chacha20_xor_avx512vl,
@@ -542,17 +1231,134 @@ pub const VG_CHACHA20_POLY1305_OPEN_AVX512VL_FEATURES: verified_garbage_cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "uAAAAABMichNicpJgerBAwAASYP6QEnHwgAAAABJD0LCSD0AAwAA"
+        r#"mov eax, 0
+mov rax, r9
+mov r10, r9
+sub r10, 961
+cmp r10, 64
+mov r10, 0
+cmovb rax, r10
+cmp rax, 768
 jb 20f
-.base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
+lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
+mov QWORD PTR [rsp+8], rax
+mov rax, rsp
+add rax, 24
+mov QWORD PTR [rsp+16], rax
+mov r11, r8
+mov rax, QWORD PTR [rsp+16]
+mov r10, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body_avx512vl_large}
-.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAA"
+pop r10
+pop r10
+pop r10
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu YMMWORD PTR [rsp+24], ymm0
+vmovdqu YMMWORD PTR [rsp+56], ymm0
+vmovdqu YMMWORD PTR [rsp+88], ymm0
+vmovdqu YMMWORD PTR [rsp+120], ymm0
+vmovdqu YMMWORD PTR [rsp+152], ymm0
+vmovdqu YMMWORD PTR [rsp+184], ymm0
+vmovdqu YMMWORD PTR [rsp+216], ymm0
+vmovdqu YMMWORD PTR [rsp+248], ymm0
+vmovdqu YMMWORD PTR [rsp+280], ymm0
+vmovdqu YMMWORD PTR [rsp+312], ymm0
+vmovdqu YMMWORD PTR [rsp+344], ymm0
+vmovdqu YMMWORD PTR [rsp+376], ymm0
+vmovdqu YMMWORD PTR [rsp+408], ymm0
+vmovdqu YMMWORD PTR [rsp+440], ymm0
+vmovdqu YMMWORD PTR [rsp+472], ymm0
+vmovdqu YMMWORD PTR [rsp+504], ymm0
+vmovdqu YMMWORD PTR [rsp+536], ymm0
+vmovdqu YMMWORD PTR [rsp+568], ymm0
+vmovdqu YMMWORD PTR [rsp+600], ymm0
+vmovdqu YMMWORD PTR [rsp+632], ymm0
+vmovdqu YMMWORD PTR [rsp+664], ymm0
+lea rsp, [rsp+1728]
 21:
-.base64 "ww=="
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 20:
-.base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
+lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
+mov QWORD PTR [rsp+8], rax
+mov rax, rsp
+add rax, 24
+mov QWORD PTR [rsp+16], rax
+mov r11, r8
+mov rax, QWORD PTR [rsp+16]
+mov r10, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body_avx512vl}
-.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAA"
+pop r10
+pop r10
+pop r10
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu YMMWORD PTR [rsp+24], ymm0
+vmovdqu YMMWORD PTR [rsp+56], ymm0
+vmovdqu YMMWORD PTR [rsp+88], ymm0
+vmovdqu YMMWORD PTR [rsp+120], ymm0
+vmovdqu YMMWORD PTR [rsp+152], ymm0
+vmovdqu YMMWORD PTR [rsp+184], ymm0
+vmovdqu YMMWORD PTR [rsp+216], ymm0
+vmovdqu YMMWORD PTR [rsp+248], ymm0
+vmovdqu YMMWORD PTR [rsp+280], ymm0
+vmovdqu YMMWORD PTR [rsp+312], ymm0
+vmovdqu YMMWORD PTR [rsp+344], ymm0
+vmovdqu YMMWORD PTR [rsp+376], ymm0
+vmovdqu YMMWORD PTR [rsp+408], ymm0
+vmovdqu YMMWORD PTR [rsp+440], ymm0
+vmovdqu YMMWORD PTR [rsp+472], ymm0
+vmovdqu YMMWORD PTR [rsp+504], ymm0
+vmovdqu YMMWORD PTR [rsp+536], ymm0
+vmovdqu YMMWORD PTR [rsp+568], ymm0
+vmovdqu YMMWORD PTR [rsp+600], ymm0
+vmovdqu YMMWORD PTR [rsp+632], ymm0
+vmovdqu YMMWORD PTR [rsp+664], ymm0
+lea rsp, [rsp+1728]
 jmp 21b
 .p2align 6"#,
         vg_chacha20_poly1305_open_body_avx512vl_large = sym super::chacha20::vg_chacha20_poly1305_open_body_avx512vl_large::vg_chacha20_poly1305_open_body_avx512vl_large,
@@ -583,17 +1389,144 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_AVX512VL_FEATURES: verified_garbage_cpu::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "uAAAAABMichNicpJgerBAwAASYP6QEnHwgAAAABJD0LCSD0AAwAA"
+        r#"mov eax, 0
+mov rax, r9
+mov r10, r9
+sub r10, 961
+cmp r10, 64
+mov r10, 0
+cmovb rax, r10
+cmp rax, 768
 jb 20f
-.base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
+lea rsp, [rsp-1744]
+mov rax, QWORD PTR [rsp+1752]
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+1760]
+mov QWORD PTR [rsp+16], rax
+mov rax, QWORD PTR [rsp+1768]
+mov QWORD PTR [rsp+24], rax
+mov rax, rsp
+add rax, 40
+mov QWORD PTR [rsp+32], rax
+mov rax, QWORD PTR [rsp+32]
+mov r10, QWORD PTR [rsp+24]
+mov r11, r8
+mov r8, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body_avx512vl_large}
-.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAA"
+pop r10
+pop r10
+pop r10
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu YMMWORD PTR [rsp+40], ymm0
+vmovdqu YMMWORD PTR [rsp+72], ymm0
+vmovdqu YMMWORD PTR [rsp+104], ymm0
+vmovdqu YMMWORD PTR [rsp+136], ymm0
+vmovdqu YMMWORD PTR [rsp+168], ymm0
+vmovdqu YMMWORD PTR [rsp+200], ymm0
+vmovdqu YMMWORD PTR [rsp+232], ymm0
+vmovdqu YMMWORD PTR [rsp+264], ymm0
+vmovdqu YMMWORD PTR [rsp+296], ymm0
+vmovdqu YMMWORD PTR [rsp+328], ymm0
+vmovdqu YMMWORD PTR [rsp+360], ymm0
+vmovdqu YMMWORD PTR [rsp+392], ymm0
+vmovdqu YMMWORD PTR [rsp+424], ymm0
+vmovdqu YMMWORD PTR [rsp+456], ymm0
+vmovdqu YMMWORD PTR [rsp+488], ymm0
+vmovdqu YMMWORD PTR [rsp+520], ymm0
+vmovdqu YMMWORD PTR [rsp+552], ymm0
+vmovdqu YMMWORD PTR [rsp+584], ymm0
+vmovdqu YMMWORD PTR [rsp+616], ymm0
+vmovdqu YMMWORD PTR [rsp+648], ymm0
+vmovdqu YMMWORD PTR [rsp+680], ymm0
+lea rsp, [rsp+1744]
 21:
-.base64 "ww=="
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 20:
-.base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
+lea rsp, [rsp-1744]
+mov rax, QWORD PTR [rsp+1752]
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+1760]
+mov QWORD PTR [rsp+16], rax
+mov rax, QWORD PTR [rsp+1768]
+mov QWORD PTR [rsp+24], rax
+mov rax, rsp
+add rax, 40
+mov QWORD PTR [rsp+32], rax
+mov rax, QWORD PTR [rsp+32]
+mov r10, QWORD PTR [rsp+24]
+mov r11, r8
+mov r8, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body_avx512vl}
-.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAA"
+pop r10
+pop r10
+pop r10
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu YMMWORD PTR [rsp+40], ymm0
+vmovdqu YMMWORD PTR [rsp+72], ymm0
+vmovdqu YMMWORD PTR [rsp+104], ymm0
+vmovdqu YMMWORD PTR [rsp+136], ymm0
+vmovdqu YMMWORD PTR [rsp+168], ymm0
+vmovdqu YMMWORD PTR [rsp+200], ymm0
+vmovdqu YMMWORD PTR [rsp+232], ymm0
+vmovdqu YMMWORD PTR [rsp+264], ymm0
+vmovdqu YMMWORD PTR [rsp+296], ymm0
+vmovdqu YMMWORD PTR [rsp+328], ymm0
+vmovdqu YMMWORD PTR [rsp+360], ymm0
+vmovdqu YMMWORD PTR [rsp+392], ymm0
+vmovdqu YMMWORD PTR [rsp+424], ymm0
+vmovdqu YMMWORD PTR [rsp+456], ymm0
+vmovdqu YMMWORD PTR [rsp+488], ymm0
+vmovdqu YMMWORD PTR [rsp+520], ymm0
+vmovdqu YMMWORD PTR [rsp+552], ymm0
+vmovdqu YMMWORD PTR [rsp+584], ymm0
+vmovdqu YMMWORD PTR [rsp+616], ymm0
+vmovdqu YMMWORD PTR [rsp+648], ymm0
+vmovdqu YMMWORD PTR [rsp+680], ymm0
+lea rsp, [rsp+1744]
 jmp 21b
 .p2align 6"#,
         vg_chacha20_poly1305_open_body_avx512vl_large = sym super::chacha20::vg_chacha20_poly1305_open_body_avx512vl_large::vg_chacha20_poly1305_open_body_avx512vl_large,
@@ -624,54 +1557,101 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES: verified_garbage_c
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_avx512vl(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SItEJBBIPQEEAAA="
+        r#"mov rax, QWORD PTR [rsp+16]
+cmp rax, 1025
 jb 20f
-.base64 "V1ZSUUFQQVFNicNIi3wkOEmD+QA="
+push rdi
+push rsi
+push rdx
+push rcx
+push r8
+push r9
+mov r11, r8
+mov rdi, QWORD PTR [rsp+56]
+cmp r9, 0
 je 22f
-.base64 "SYszSYtLCEmDwxBIAc9Jg+kB"
+mov rsi, QWORD PTR [r11]
+mov rcx, QWORD PTR [r11+8]
+add r11, 16
+add rdi, rcx
+sub r9, 1
 jmp 23f
 22:
 23:
-.base64 "SYP5AA=="
+cmp r9, 0
 je 24f
 26:
-.base64 "SYszSYtLCEmDwxBIg/lA"
+mov rsi, QWORD PTR [r11]
+mov rcx, QWORD PTR [r11+8]
+add r11, 16
+cmp rcx, 64
 jb 27f
-.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+vmovdqu ymm0, YMMWORD PTR [rsi]
+vmovdqu YMMWORD PTR [rdi], ymm0
+mov r10d, 0
+sub r10, rdi
+and r10, 31
+mov r8, rcx
+sub r8, 64
+cmp r8, r10
 jb 29f
 211:
-.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+vmovdqu ymm0, YMMWORD PTR [rsi+r10*1]
+vmovdqu ymm1, YMMWORD PTR [rsi+r10*1+32]
+vmovdqu YMMWORD PTR [rdi+r10*1], ymm0
+vmovdqu YMMWORD PTR [rdi+r10*1+32], ymm1
+add r10, 64
+cmp r8, r10
 jae 211b
 jmp 210f
 29:
 210:
-.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+vmovdqu ymm0, YMMWORD PTR [rsi+rcx*1-64]
+vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
+vmovdqu YMMWORD PTR [rdi+rcx*1-64], ymm0
+vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
 jmp 28f
 27:
-.base64 "SIP5IA=="
+cmp rcx, 32
 jb 212f
-.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+vmovdqu ymm0, YMMWORD PTR [rsi]
+vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
+vmovdqu YMMWORD PTR [rdi], ymm0
+vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
 jmp 213f
 212:
-.base64 "SIP5EA=="
+cmp rcx, 16
 jb 214f
-.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+vmovdqu xmm0, XMMWORD PTR [rsi]
+vmovdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
+vmovdqu XMMWORD PTR [rdi], xmm0
+vmovdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
 jmp 215f
 214:
-.base64 "SIP5CA=="
+cmp rcx, 8
 jb 216f
-.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+mov rax, QWORD PTR [rsi]
+mov r8, QWORD PTR [rsi+rcx*1-8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+rcx*1-8], r8
 jmp 217f
 216:
-.base64 "SIP5BA=="
+cmp rcx, 4
 jb 218f
-.base64 "iwZEi0QO/IkHRIlED/w="
+mov eax, DWORD PTR [rsi]
+mov r8d, DWORD PTR [rsi+rcx*1-4]
+mov DWORD PTR [rdi], eax
+mov DWORD PTR [rdi+rcx*1-4], r8d
 jmp 219f
 218:
-.base64 "QboAAAAASTnK"
+mov r10d, 0
+cmp r10, rcx
 je 220f
 222:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
 jne 222b
 jmp 221f
 220:
@@ -681,62 +1661,126 @@ jmp 221f
 215:
 213:
 28:
-.base64 "xfh3SAHPSYPpAQ=="
+vzeroupper
+add rdi, rcx
+sub r9, 1
 jne 26b
 jmp 25f
 24:
 25:
-.base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkCEyLDCRIi0QkSEyLVCRATItcJDhJg/kA"
+mov rdi, QWORD PTR [rsp+40]
+mov rsi, QWORD PTR [rsp+32]
+mov rdx, QWORD PTR [rsp+24]
+mov rcx, QWORD PTR [rsp+16]
+mov r8, QWORD PTR [rsp+8]
+mov r9, QWORD PTR [rsp]
+mov rax, QWORD PTR [rsp+72]
+mov r10, QWORD PTR [rsp+64]
+mov r11, QWORD PTR [rsp+56]
+cmp r9, 0
 je 223f
-.base64 "TYtICE2LAA=="
+mov r9, QWORD PTR [r8+8]
+mov r8, QWORD PTR [r8]
 jmp 224f
 223:
 224:
-.base64 "UEFSQVM="
+push rax
+push r10
+push r11
 call {vg_chacha20_poly1305_seal_split_avx512vl}
-.base64 "WFhYWFhYWFhY"
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
 jmp 21f
 20:
-.base64 "V1ZSUUFQQVFNicNIi3wkOEmD+QA="
+push rdi
+push rsi
+push rdx
+push rcx
+push r8
+push r9
+mov r11, r8
+mov rdi, QWORD PTR [rsp+56]
+cmp r9, 0
 je 225f
 227:
-.base64 "SYszSYtLCEmDwxBIg/lA"
+mov rsi, QWORD PTR [r11]
+mov rcx, QWORD PTR [r11+8]
+add r11, 16
+cmp rcx, 64
 jb 228f
-.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+vmovdqu ymm0, YMMWORD PTR [rsi]
+vmovdqu YMMWORD PTR [rdi], ymm0
+mov r10d, 0
+sub r10, rdi
+and r10, 31
+mov r8, rcx
+sub r8, 64
+cmp r8, r10
 jb 230f
 232:
-.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+vmovdqu ymm0, YMMWORD PTR [rsi+r10*1]
+vmovdqu ymm1, YMMWORD PTR [rsi+r10*1+32]
+vmovdqu YMMWORD PTR [rdi+r10*1], ymm0
+vmovdqu YMMWORD PTR [rdi+r10*1+32], ymm1
+add r10, 64
+cmp r8, r10
 jae 232b
 jmp 231f
 230:
 231:
-.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+vmovdqu ymm0, YMMWORD PTR [rsi+rcx*1-64]
+vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
+vmovdqu YMMWORD PTR [rdi+rcx*1-64], ymm0
+vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
 jmp 229f
 228:
-.base64 "SIP5IA=="
+cmp rcx, 32
 jb 233f
-.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+vmovdqu ymm0, YMMWORD PTR [rsi]
+vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
+vmovdqu YMMWORD PTR [rdi], ymm0
+vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
 jmp 234f
 233:
-.base64 "SIP5EA=="
+cmp rcx, 16
 jb 235f
-.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+vmovdqu xmm0, XMMWORD PTR [rsi]
+vmovdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
+vmovdqu XMMWORD PTR [rdi], xmm0
+vmovdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
 jmp 236f
 235:
-.base64 "SIP5CA=="
+cmp rcx, 8
 jb 237f
-.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+mov rax, QWORD PTR [rsi]
+mov r8, QWORD PTR [rsi+rcx*1-8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+rcx*1-8], r8
 jmp 238f
 237:
-.base64 "SIP5BA=="
+cmp rcx, 4
 jb 239f
-.base64 "iwZEi0QO/IkHRIlED/w="
+mov eax, DWORD PTR [rsi]
+mov r8d, DWORD PTR [rsi+rcx*1-4]
+mov DWORD PTR [rdi], eax
+mov DWORD PTR [rdi+rcx*1-4], r8d
 jmp 240f
 239:
-.base64 "QboAAAAASTnK"
+mov r10d, 0
+cmp r10, rcx
 je 241f
 243:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
 jne 243b
 jmp 242f
 241:
@@ -746,16 +1790,40 @@ jmp 242f
 236:
 234:
 229:
-.base64 "xfh3SAHPSYPpAQ=="
+vzeroupper
+add rdi, rcx
+sub r9, 1
 jne 227b
 jmp 226f
 225:
 226:
-.base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
+mov rdi, QWORD PTR [rsp+40]
+mov rsi, QWORD PTR [rsp+32]
+mov rdx, QWORD PTR [rsp+24]
+mov rcx, QWORD PTR [rsp+16]
+mov r8, QWORD PTR [rsp+56]
+mov r9, QWORD PTR [rsp+64]
+mov rax, QWORD PTR [rsp+72]
+push rax
 call {vg_chacha20_poly1305_seal_avx512vl}
-.base64 "WFhYWFhYWA=="
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
 21:
-.base64 "ww=="
+xor eax, eax
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_chacha20_poly1305_seal_split_avx512vl = sym super::chacha20::vg_chacha20_poly1305_seal_split_avx512vl::vg_chacha20_poly1305_seal_split_avx512vl,
         vg_chacha20_poly1305_seal_avx512vl = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_avx512vl,
@@ -782,17 +1850,37 @@ pub const VG_CHACHA20_POLY1305_SEAL_AVX512_FEATURES: verified_garbage_cpu::Featu
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "uAAAAABMichNicpJgerBAwAASYP6QEnHwgAAAABJD0LCSD2AAgAA"
+        r#"mov eax, 0
+mov rax, r9
+mov r10, r9
+sub r10, 961
+cmp r10, 64
+mov r10, 0
+cmovb rax, r10
+cmp rax, 640
 jb 20f
-.base64 "SI1kJPhIi0QkEEiJBCQ="
+lea rsp, [rsp-8]
+mov rax, QWORD PTR [rsp+16]
+mov QWORD PTR [rsp], rax
 call {vg_chacha20_poly1305_seal_body_avx512}
-.base64 "SI1kJAg="
+lea rsp, [rsp+8]
 21:
-.base64 "ww=="
+xor eax, eax
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 20:
-.base64 "SI1kJPhIi0QkEEiJBCQ="
+lea rsp, [rsp-8]
+mov rax, QWORD PTR [rsp+16]
+mov QWORD PTR [rsp], rax
 call {vg_chacha20_poly1305_seal_body_avx2}
-.base64 "SI1kJAg="
+lea rsp, [rsp+8]
 jmp 21b
 .p2align 6"#,
         vg_chacha20_poly1305_seal_body_avx512 = sym super::chacha20::vg_chacha20_poly1305_seal_body_avx512::vg_chacha20_poly1305_seal_body_avx512,
@@ -820,17 +1908,134 @@ pub const VG_CHACHA20_POLY1305_OPEN_AVX512_FEATURES: verified_garbage_cpu::Featu
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "uAAAAABMichNicpJgerBAwAASYP6QEnHwgAAAABJD0LCSD2AAgAA"
+        r#"mov eax, 0
+mov rax, r9
+mov r10, r9
+sub r10, 961
+cmp r10, 64
+mov r10, 0
+cmovb rax, r10
+cmp rax, 640
 jb 20f
-.base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
+lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
+mov QWORD PTR [rsp+8], rax
+mov rax, rsp
+add rax, 24
+mov QWORD PTR [rsp+16], rax
+mov r11, r8
+mov rax, QWORD PTR [rsp+16]
+mov r10, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body_avx512}
-.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAA"
+pop r10
+pop r10
+pop r10
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu YMMWORD PTR [rsp+24], ymm0
+vmovdqu YMMWORD PTR [rsp+56], ymm0
+vmovdqu YMMWORD PTR [rsp+88], ymm0
+vmovdqu YMMWORD PTR [rsp+120], ymm0
+vmovdqu YMMWORD PTR [rsp+152], ymm0
+vmovdqu YMMWORD PTR [rsp+184], ymm0
+vmovdqu YMMWORD PTR [rsp+216], ymm0
+vmovdqu YMMWORD PTR [rsp+248], ymm0
+vmovdqu YMMWORD PTR [rsp+280], ymm0
+vmovdqu YMMWORD PTR [rsp+312], ymm0
+vmovdqu YMMWORD PTR [rsp+344], ymm0
+vmovdqu YMMWORD PTR [rsp+376], ymm0
+vmovdqu YMMWORD PTR [rsp+408], ymm0
+vmovdqu YMMWORD PTR [rsp+440], ymm0
+vmovdqu YMMWORD PTR [rsp+472], ymm0
+vmovdqu YMMWORD PTR [rsp+504], ymm0
+vmovdqu YMMWORD PTR [rsp+536], ymm0
+vmovdqu YMMWORD PTR [rsp+568], ymm0
+vmovdqu YMMWORD PTR [rsp+600], ymm0
+vmovdqu YMMWORD PTR [rsp+632], ymm0
+vmovdqu YMMWORD PTR [rsp+664], ymm0
+lea rsp, [rsp+1728]
 21:
-.base64 "ww=="
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 20:
-.base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
+lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
+mov QWORD PTR [rsp+8], rax
+mov rax, rsp
+add rax, 24
+mov QWORD PTR [rsp+16], rax
+mov r11, r8
+mov rax, QWORD PTR [rsp+16]
+mov r10, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body_avx2}
-.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAA"
+pop r10
+pop r10
+pop r10
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu YMMWORD PTR [rsp+24], ymm0
+vmovdqu YMMWORD PTR [rsp+56], ymm0
+vmovdqu YMMWORD PTR [rsp+88], ymm0
+vmovdqu YMMWORD PTR [rsp+120], ymm0
+vmovdqu YMMWORD PTR [rsp+152], ymm0
+vmovdqu YMMWORD PTR [rsp+184], ymm0
+vmovdqu YMMWORD PTR [rsp+216], ymm0
+vmovdqu YMMWORD PTR [rsp+248], ymm0
+vmovdqu YMMWORD PTR [rsp+280], ymm0
+vmovdqu YMMWORD PTR [rsp+312], ymm0
+vmovdqu YMMWORD PTR [rsp+344], ymm0
+vmovdqu YMMWORD PTR [rsp+376], ymm0
+vmovdqu YMMWORD PTR [rsp+408], ymm0
+vmovdqu YMMWORD PTR [rsp+440], ymm0
+vmovdqu YMMWORD PTR [rsp+472], ymm0
+vmovdqu YMMWORD PTR [rsp+504], ymm0
+vmovdqu YMMWORD PTR [rsp+536], ymm0
+vmovdqu YMMWORD PTR [rsp+568], ymm0
+vmovdqu YMMWORD PTR [rsp+600], ymm0
+vmovdqu YMMWORD PTR [rsp+632], ymm0
+vmovdqu YMMWORD PTR [rsp+664], ymm0
+lea rsp, [rsp+1728]
 jmp 21b
 .p2align 6"#,
         vg_chacha20_poly1305_open_body_avx512 = sym super::chacha20::vg_chacha20_poly1305_open_body_avx512::vg_chacha20_poly1305_open_body_avx512,
@@ -861,17 +2066,144 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_AVX512_FEATURES: verified_garbage_cpu::Fe
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "uAAAAABMichNicpJgerBAwAASYP6QEnHwgAAAABJD0LCSD2AAgAA"
+        r#"mov eax, 0
+mov rax, r9
+mov r10, r9
+sub r10, 961
+cmp r10, 64
+mov r10, 0
+cmovb rax, r10
+cmp rax, 640
 jb 20f
-.base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
+lea rsp, [rsp-1744]
+mov rax, QWORD PTR [rsp+1752]
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+1760]
+mov QWORD PTR [rsp+16], rax
+mov rax, QWORD PTR [rsp+1768]
+mov QWORD PTR [rsp+24], rax
+mov rax, rsp
+add rax, 40
+mov QWORD PTR [rsp+32], rax
+mov rax, QWORD PTR [rsp+32]
+mov r10, QWORD PTR [rsp+24]
+mov r11, r8
+mov r8, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body_avx512}
-.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAA"
+pop r10
+pop r10
+pop r10
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu YMMWORD PTR [rsp+40], ymm0
+vmovdqu YMMWORD PTR [rsp+72], ymm0
+vmovdqu YMMWORD PTR [rsp+104], ymm0
+vmovdqu YMMWORD PTR [rsp+136], ymm0
+vmovdqu YMMWORD PTR [rsp+168], ymm0
+vmovdqu YMMWORD PTR [rsp+200], ymm0
+vmovdqu YMMWORD PTR [rsp+232], ymm0
+vmovdqu YMMWORD PTR [rsp+264], ymm0
+vmovdqu YMMWORD PTR [rsp+296], ymm0
+vmovdqu YMMWORD PTR [rsp+328], ymm0
+vmovdqu YMMWORD PTR [rsp+360], ymm0
+vmovdqu YMMWORD PTR [rsp+392], ymm0
+vmovdqu YMMWORD PTR [rsp+424], ymm0
+vmovdqu YMMWORD PTR [rsp+456], ymm0
+vmovdqu YMMWORD PTR [rsp+488], ymm0
+vmovdqu YMMWORD PTR [rsp+520], ymm0
+vmovdqu YMMWORD PTR [rsp+552], ymm0
+vmovdqu YMMWORD PTR [rsp+584], ymm0
+vmovdqu YMMWORD PTR [rsp+616], ymm0
+vmovdqu YMMWORD PTR [rsp+648], ymm0
+vmovdqu YMMWORD PTR [rsp+680], ymm0
+lea rsp, [rsp+1744]
 21:
-.base64 "ww=="
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 20:
-.base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
+lea rsp, [rsp-1744]
+mov rax, QWORD PTR [rsp+1752]
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+1760]
+mov QWORD PTR [rsp+16], rax
+mov rax, QWORD PTR [rsp+1768]
+mov QWORD PTR [rsp+24], rax
+mov rax, rsp
+add rax, 40
+mov QWORD PTR [rsp+32], rax
+mov rax, QWORD PTR [rsp+32]
+mov r10, QWORD PTR [rsp+24]
+mov r11, r8
+mov r8, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body_avx2}
-.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAA"
+pop r10
+pop r10
+pop r10
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu YMMWORD PTR [rsp+40], ymm0
+vmovdqu YMMWORD PTR [rsp+72], ymm0
+vmovdqu YMMWORD PTR [rsp+104], ymm0
+vmovdqu YMMWORD PTR [rsp+136], ymm0
+vmovdqu YMMWORD PTR [rsp+168], ymm0
+vmovdqu YMMWORD PTR [rsp+200], ymm0
+vmovdqu YMMWORD PTR [rsp+232], ymm0
+vmovdqu YMMWORD PTR [rsp+264], ymm0
+vmovdqu YMMWORD PTR [rsp+296], ymm0
+vmovdqu YMMWORD PTR [rsp+328], ymm0
+vmovdqu YMMWORD PTR [rsp+360], ymm0
+vmovdqu YMMWORD PTR [rsp+392], ymm0
+vmovdqu YMMWORD PTR [rsp+424], ymm0
+vmovdqu YMMWORD PTR [rsp+456], ymm0
+vmovdqu YMMWORD PTR [rsp+488], ymm0
+vmovdqu YMMWORD PTR [rsp+520], ymm0
+vmovdqu YMMWORD PTR [rsp+552], ymm0
+vmovdqu YMMWORD PTR [rsp+584], ymm0
+vmovdqu YMMWORD PTR [rsp+616], ymm0
+vmovdqu YMMWORD PTR [rsp+648], ymm0
+vmovdqu YMMWORD PTR [rsp+680], ymm0
+lea rsp, [rsp+1744]
 jmp 21b
 .p2align 6"#,
         vg_chacha20_poly1305_open_body_avx512 = sym super::chacha20::vg_chacha20_poly1305_open_body_avx512::vg_chacha20_poly1305_open_body_avx512,
@@ -902,54 +2234,101 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES: verified_garbage_cpu
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_avx512(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SItEJBBIPQEEAAA="
+        r#"mov rax, QWORD PTR [rsp+16]
+cmp rax, 1025
 jb 20f
-.base64 "V1ZSUUFQQVFNicNIi3wkOEmD+QA="
+push rdi
+push rsi
+push rdx
+push rcx
+push r8
+push r9
+mov r11, r8
+mov rdi, QWORD PTR [rsp+56]
+cmp r9, 0
 je 22f
-.base64 "SYszSYtLCEmDwxBIAc9Jg+kB"
+mov rsi, QWORD PTR [r11]
+mov rcx, QWORD PTR [r11+8]
+add r11, 16
+add rdi, rcx
+sub r9, 1
 jmp 23f
 22:
 23:
-.base64 "SYP5AA=="
+cmp r9, 0
 je 24f
 26:
-.base64 "SYszSYtLCEmDwxBIg/lA"
+mov rsi, QWORD PTR [r11]
+mov rcx, QWORD PTR [r11+8]
+add r11, 16
+cmp rcx, 64
 jb 27f
-.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+vmovdqu ymm0, YMMWORD PTR [rsi]
+vmovdqu YMMWORD PTR [rdi], ymm0
+mov r10d, 0
+sub r10, rdi
+and r10, 31
+mov r8, rcx
+sub r8, 64
+cmp r8, r10
 jb 29f
 211:
-.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+vmovdqu ymm0, YMMWORD PTR [rsi+r10*1]
+vmovdqu ymm1, YMMWORD PTR [rsi+r10*1+32]
+vmovdqu YMMWORD PTR [rdi+r10*1], ymm0
+vmovdqu YMMWORD PTR [rdi+r10*1+32], ymm1
+add r10, 64
+cmp r8, r10
 jae 211b
 jmp 210f
 29:
 210:
-.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+vmovdqu ymm0, YMMWORD PTR [rsi+rcx*1-64]
+vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
+vmovdqu YMMWORD PTR [rdi+rcx*1-64], ymm0
+vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
 jmp 28f
 27:
-.base64 "SIP5IA=="
+cmp rcx, 32
 jb 212f
-.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+vmovdqu ymm0, YMMWORD PTR [rsi]
+vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
+vmovdqu YMMWORD PTR [rdi], ymm0
+vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
 jmp 213f
 212:
-.base64 "SIP5EA=="
+cmp rcx, 16
 jb 214f
-.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+vmovdqu xmm0, XMMWORD PTR [rsi]
+vmovdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
+vmovdqu XMMWORD PTR [rdi], xmm0
+vmovdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
 jmp 215f
 214:
-.base64 "SIP5CA=="
+cmp rcx, 8
 jb 216f
-.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+mov rax, QWORD PTR [rsi]
+mov r8, QWORD PTR [rsi+rcx*1-8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+rcx*1-8], r8
 jmp 217f
 216:
-.base64 "SIP5BA=="
+cmp rcx, 4
 jb 218f
-.base64 "iwZEi0QO/IkHRIlED/w="
+mov eax, DWORD PTR [rsi]
+mov r8d, DWORD PTR [rsi+rcx*1-4]
+mov DWORD PTR [rdi], eax
+mov DWORD PTR [rdi+rcx*1-4], r8d
 jmp 219f
 218:
-.base64 "QboAAAAASTnK"
+mov r10d, 0
+cmp r10, rcx
 je 220f
 222:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
 jne 222b
 jmp 221f
 220:
@@ -959,62 +2338,126 @@ jmp 221f
 215:
 213:
 28:
-.base64 "xfh3SAHPSYPpAQ=="
+vzeroupper
+add rdi, rcx
+sub r9, 1
 jne 26b
 jmp 25f
 24:
 25:
-.base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkCEyLDCRIi0QkSEyLVCRATItcJDhJg/kA"
+mov rdi, QWORD PTR [rsp+40]
+mov rsi, QWORD PTR [rsp+32]
+mov rdx, QWORD PTR [rsp+24]
+mov rcx, QWORD PTR [rsp+16]
+mov r8, QWORD PTR [rsp+8]
+mov r9, QWORD PTR [rsp]
+mov rax, QWORD PTR [rsp+72]
+mov r10, QWORD PTR [rsp+64]
+mov r11, QWORD PTR [rsp+56]
+cmp r9, 0
 je 223f
-.base64 "TYtICE2LAA=="
+mov r9, QWORD PTR [r8+8]
+mov r8, QWORD PTR [r8]
 jmp 224f
 223:
 224:
-.base64 "UEFSQVM="
+push rax
+push r10
+push r11
 call {vg_chacha20_poly1305_seal_split_avx512}
-.base64 "WFhYWFhYWFhY"
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
 jmp 21f
 20:
-.base64 "V1ZSUUFQQVFNicNIi3wkOEmD+QA="
+push rdi
+push rsi
+push rdx
+push rcx
+push r8
+push r9
+mov r11, r8
+mov rdi, QWORD PTR [rsp+56]
+cmp r9, 0
 je 225f
 227:
-.base64 "SYszSYtLCEmDwxBIg/lA"
+mov rsi, QWORD PTR [r11]
+mov rcx, QWORD PTR [r11+8]
+add r11, 16
+cmp rcx, 64
 jb 228f
-.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+vmovdqu ymm0, YMMWORD PTR [rsi]
+vmovdqu YMMWORD PTR [rdi], ymm0
+mov r10d, 0
+sub r10, rdi
+and r10, 31
+mov r8, rcx
+sub r8, 64
+cmp r8, r10
 jb 230f
 232:
-.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+vmovdqu ymm0, YMMWORD PTR [rsi+r10*1]
+vmovdqu ymm1, YMMWORD PTR [rsi+r10*1+32]
+vmovdqu YMMWORD PTR [rdi+r10*1], ymm0
+vmovdqu YMMWORD PTR [rdi+r10*1+32], ymm1
+add r10, 64
+cmp r8, r10
 jae 232b
 jmp 231f
 230:
 231:
-.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+vmovdqu ymm0, YMMWORD PTR [rsi+rcx*1-64]
+vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
+vmovdqu YMMWORD PTR [rdi+rcx*1-64], ymm0
+vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
 jmp 229f
 228:
-.base64 "SIP5IA=="
+cmp rcx, 32
 jb 233f
-.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+vmovdqu ymm0, YMMWORD PTR [rsi]
+vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
+vmovdqu YMMWORD PTR [rdi], ymm0
+vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
 jmp 234f
 233:
-.base64 "SIP5EA=="
+cmp rcx, 16
 jb 235f
-.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+vmovdqu xmm0, XMMWORD PTR [rsi]
+vmovdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
+vmovdqu XMMWORD PTR [rdi], xmm0
+vmovdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
 jmp 236f
 235:
-.base64 "SIP5CA=="
+cmp rcx, 8
 jb 237f
-.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+mov rax, QWORD PTR [rsi]
+mov r8, QWORD PTR [rsi+rcx*1-8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+rcx*1-8], r8
 jmp 238f
 237:
-.base64 "SIP5BA=="
+cmp rcx, 4
 jb 239f
-.base64 "iwZEi0QO/IkHRIlED/w="
+mov eax, DWORD PTR [rsi]
+mov r8d, DWORD PTR [rsi+rcx*1-4]
+mov DWORD PTR [rdi], eax
+mov DWORD PTR [rdi+rcx*1-4], r8d
 jmp 240f
 239:
-.base64 "QboAAAAASTnK"
+mov r10d, 0
+cmp r10, rcx
 je 241f
 243:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
 jne 243b
 jmp 242f
 241:
@@ -1024,16 +2467,40 @@ jmp 242f
 236:
 234:
 229:
-.base64 "xfh3SAHPSYPpAQ=="
+vzeroupper
+add rdi, rcx
+sub r9, 1
 jne 227b
 jmp 226f
 225:
 226:
-.base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
+mov rdi, QWORD PTR [rsp+40]
+mov rsi, QWORD PTR [rsp+32]
+mov rdx, QWORD PTR [rsp+24]
+mov rcx, QWORD PTR [rsp+16]
+mov r8, QWORD PTR [rsp+56]
+mov r9, QWORD PTR [rsp+64]
+mov rax, QWORD PTR [rsp+72]
+push rax
 call {vg_chacha20_poly1305_seal_avx512}
-.base64 "WFhYWFhYWA=="
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
 21:
-.base64 "ww=="
+xor eax, eax
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_chacha20_poly1305_seal_split_avx512 = sym super::chacha20::vg_chacha20_poly1305_seal_split_avx512::vg_chacha20_poly1305_seal_split_avx512,
         vg_chacha20_poly1305_seal_avx512 = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_avx512,
@@ -1060,9 +2527,21 @@ pub const VG_CHACHA20_POLY1305_SEAL_AVX2_FEATURES: verified_garbage_cpu::Feature
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI1kJPhIi0QkEEiJBCQ="
+        r#"lea rsp, [rsp-8]
+mov rax, QWORD PTR [rsp+16]
+mov QWORD PTR [rsp], rax
 call {vg_chacha20_poly1305_seal_body_avx2}
-.base64 "SI1kJAjD"
+lea rsp, [rsp+8]
+xor eax, eax
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_chacha20_poly1305_seal_body_avx2 = sym super::chacha20::vg_chacha20_poly1305_seal_body_avx2::vg_chacha20_poly1305_seal_body_avx2,
     )
@@ -1088,9 +2567,69 @@ pub const VG_CHACHA20_POLY1305_OPEN_AVX2_FEATURES: verified_garbage_cpu::Feature
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
+        r#"lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
+mov QWORD PTR [rsp+8], rax
+mov rax, rsp
+add rax, 24
+mov QWORD PTR [rsp+16], rax
+mov r11, r8
+mov rax, QWORD PTR [rsp+16]
+mov r10, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body_avx2}
-.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAww=="
+pop r10
+pop r10
+pop r10
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu YMMWORD PTR [rsp+24], ymm0
+vmovdqu YMMWORD PTR [rsp+56], ymm0
+vmovdqu YMMWORD PTR [rsp+88], ymm0
+vmovdqu YMMWORD PTR [rsp+120], ymm0
+vmovdqu YMMWORD PTR [rsp+152], ymm0
+vmovdqu YMMWORD PTR [rsp+184], ymm0
+vmovdqu YMMWORD PTR [rsp+216], ymm0
+vmovdqu YMMWORD PTR [rsp+248], ymm0
+vmovdqu YMMWORD PTR [rsp+280], ymm0
+vmovdqu YMMWORD PTR [rsp+312], ymm0
+vmovdqu YMMWORD PTR [rsp+344], ymm0
+vmovdqu YMMWORD PTR [rsp+376], ymm0
+vmovdqu YMMWORD PTR [rsp+408], ymm0
+vmovdqu YMMWORD PTR [rsp+440], ymm0
+vmovdqu YMMWORD PTR [rsp+472], ymm0
+vmovdqu YMMWORD PTR [rsp+504], ymm0
+vmovdqu YMMWORD PTR [rsp+536], ymm0
+vmovdqu YMMWORD PTR [rsp+568], ymm0
+vmovdqu YMMWORD PTR [rsp+600], ymm0
+vmovdqu YMMWORD PTR [rsp+632], ymm0
+vmovdqu YMMWORD PTR [rsp+664], ymm0
+lea rsp, [rsp+1728]
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_chacha20_poly1305_open_body_avx2 = sym super::chacha20::vg_chacha20_poly1305_open_body_avx2::vg_chacha20_poly1305_open_body_avx2,
     )
@@ -1119,9 +2658,74 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_AVX2_FEATURES: verified_garbage_cpu::Feat
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
+        r#"lea rsp, [rsp-1744]
+mov rax, QWORD PTR [rsp+1752]
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+1760]
+mov QWORD PTR [rsp+16], rax
+mov rax, QWORD PTR [rsp+1768]
+mov QWORD PTR [rsp+24], rax
+mov rax, rsp
+add rax, 40
+mov QWORD PTR [rsp+32], rax
+mov rax, QWORD PTR [rsp+32]
+mov r10, QWORD PTR [rsp+24]
+mov r11, r8
+mov r8, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body_avx2}
-.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAAww=="
+pop r10
+pop r10
+pop r10
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu YMMWORD PTR [rsp+40], ymm0
+vmovdqu YMMWORD PTR [rsp+72], ymm0
+vmovdqu YMMWORD PTR [rsp+104], ymm0
+vmovdqu YMMWORD PTR [rsp+136], ymm0
+vmovdqu YMMWORD PTR [rsp+168], ymm0
+vmovdqu YMMWORD PTR [rsp+200], ymm0
+vmovdqu YMMWORD PTR [rsp+232], ymm0
+vmovdqu YMMWORD PTR [rsp+264], ymm0
+vmovdqu YMMWORD PTR [rsp+296], ymm0
+vmovdqu YMMWORD PTR [rsp+328], ymm0
+vmovdqu YMMWORD PTR [rsp+360], ymm0
+vmovdqu YMMWORD PTR [rsp+392], ymm0
+vmovdqu YMMWORD PTR [rsp+424], ymm0
+vmovdqu YMMWORD PTR [rsp+456], ymm0
+vmovdqu YMMWORD PTR [rsp+488], ymm0
+vmovdqu YMMWORD PTR [rsp+520], ymm0
+vmovdqu YMMWORD PTR [rsp+552], ymm0
+vmovdqu YMMWORD PTR [rsp+584], ymm0
+vmovdqu YMMWORD PTR [rsp+616], ymm0
+vmovdqu YMMWORD PTR [rsp+648], ymm0
+vmovdqu YMMWORD PTR [rsp+680], ymm0
+lea rsp, [rsp+1744]
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_chacha20_poly1305_open_body_avx2 = sym super::chacha20::vg_chacha20_poly1305_open_body_avx2::vg_chacha20_poly1305_open_body_avx2,
     )
@@ -1150,46 +2754,88 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX2_FEATURES: verified_garbage_cpu::
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_avx2(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "V1ZSUUFQQVFNicNIi3wkOEmD+QA="
+        r#"push rdi
+push rsi
+push rdx
+push rcx
+push r8
+push r9
+mov r11, r8
+mov rdi, QWORD PTR [rsp+56]
+cmp r9, 0
 je 20f
 22:
-.base64 "SYszSYtLCEmDwxBIg/lA"
+mov rsi, QWORD PTR [r11]
+mov rcx, QWORD PTR [r11+8]
+add r11, 16
+cmp rcx, 64
 jb 23f
-.base64 "xf5vBsX+fwdBugAAAABJKfpJg+IfSYnISYPoQE050A=="
+vmovdqu ymm0, YMMWORD PTR [rsi]
+vmovdqu YMMWORD PTR [rdi], ymm0
+mov r10d, 0
+sub r10, rdi
+and r10, 31
+mov r8, rcx
+sub r8, 64
+cmp r8, r10
 jb 25f
 27:
-.base64 "xKF+bwQWxKF+b0wWIMShfn8EF8Shfn9MFyBJg8JATTnQ"
+vmovdqu ymm0, YMMWORD PTR [rsi+r10*1]
+vmovdqu ymm1, YMMWORD PTR [rsi+r10*1+32]
+vmovdqu YMMWORD PTR [rdi+r10*1], ymm0
+vmovdqu YMMWORD PTR [rdi+r10*1+32], ymm1
+add r10, 64
+cmp r8, r10
 jae 27b
 jmp 26f
 25:
 26:
-.base64 "xf5vRA7Axf5vTA7gxf5/RA/Axf5/TA/g"
+vmovdqu ymm0, YMMWORD PTR [rsi+rcx*1-64]
+vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
+vmovdqu YMMWORD PTR [rdi+rcx*1-64], ymm0
+vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
 jmp 24f
 23:
-.base64 "SIP5IA=="
+cmp rcx, 32
 jb 28f
-.base64 "xf5vBsX+b0wO4MX+fwfF/n9MD+A="
+vmovdqu ymm0, YMMWORD PTR [rsi]
+vmovdqu ymm1, YMMWORD PTR [rsi+rcx*1-32]
+vmovdqu YMMWORD PTR [rdi], ymm0
+vmovdqu YMMWORD PTR [rdi+rcx*1-32], ymm1
 jmp 29f
 28:
-.base64 "SIP5EA=="
+cmp rcx, 16
 jb 210f
-.base64 "xfpvBsX6b0wO8MX6fwfF+n9MD/A="
+vmovdqu xmm0, XMMWORD PTR [rsi]
+vmovdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
+vmovdqu XMMWORD PTR [rdi], xmm0
+vmovdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
 jmp 211f
 210:
-.base64 "SIP5CA=="
+cmp rcx, 8
 jb 212f
-.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+mov rax, QWORD PTR [rsi]
+mov r8, QWORD PTR [rsi+rcx*1-8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+rcx*1-8], r8
 jmp 213f
 212:
-.base64 "SIP5BA=="
+cmp rcx, 4
 jb 214f
-.base64 "iwZEi0QO/IkHRIlED/w="
+mov eax, DWORD PTR [rsi]
+mov r8d, DWORD PTR [rsi+rcx*1-4]
+mov DWORD PTR [rdi], eax
+mov DWORD PTR [rdi+rcx*1-4], r8d
 jmp 215f
 214:
-.base64 "QboAAAAASTnK"
+mov r10d, 0
+cmp r10, rcx
 je 216f
 218:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
 jne 218b
 jmp 217f
 216:
@@ -1199,14 +2845,39 @@ jmp 217f
 211:
 29:
 24:
-.base64 "xfh3SAHPSYPpAQ=="
+vzeroupper
+add rdi, rcx
+sub r9, 1
 jne 22b
 jmp 21f
 20:
 21:
-.base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
+mov rdi, QWORD PTR [rsp+40]
+mov rsi, QWORD PTR [rsp+32]
+mov rdx, QWORD PTR [rsp+24]
+mov rcx, QWORD PTR [rsp+16]
+mov r8, QWORD PTR [rsp+56]
+mov r9, QWORD PTR [rsp+64]
+mov rax, QWORD PTR [rsp+72]
+push rax
 call {vg_chacha20_poly1305_seal_avx2}
-.base64 "WFhYWFhYWMM="
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+xor eax, eax
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_chacha20_poly1305_seal_avx2 = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_avx2,
     )
@@ -1232,9 +2903,90 @@ pub const VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES: verified_garbage_cpu::Featur
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI1kJPhIi0QkEEiJBCQ="
+        r#"lea rsp, [rsp-8]
+mov rax, QWORD PTR [rsp+16]
+mov QWORD PTR [rsp], rax
 call {vg_chacha20_poly1305_seal_body_ssse3}
-.base64 "SI1kJAjD"
+lea rsp, [rsp+8]
+pxor xmm0, xmm0
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+pxor xmm3, xmm3
+pxor xmm4, xmm4
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+pxor xmm7, xmm7
+pxor xmm8, xmm8
+pxor xmm9, xmm9
+pxor xmm10, xmm10
+pxor xmm11, xmm11
+pxor xmm12, xmm12
+pxor xmm13, xmm13
+pxor xmm14, xmm14
+pxor xmm15, xmm15
+xor r11d, r11d
+lea rsp, [rsp-792]
+movdqu XMMWORD PTR [rsp+0], xmm0
+movdqu XMMWORD PTR [rsp+16], xmm0
+movdqu XMMWORD PTR [rsp+32], xmm0
+movdqu XMMWORD PTR [rsp+48], xmm0
+movdqu XMMWORD PTR [rsp+64], xmm0
+movdqu XMMWORD PTR [rsp+80], xmm0
+movdqu XMMWORD PTR [rsp+96], xmm0
+movdqu XMMWORD PTR [rsp+112], xmm0
+movdqu XMMWORD PTR [rsp+128], xmm0
+movdqu XMMWORD PTR [rsp+144], xmm0
+movdqu XMMWORD PTR [rsp+160], xmm0
+movdqu XMMWORD PTR [rsp+176], xmm0
+movdqu XMMWORD PTR [rsp+192], xmm0
+movdqu XMMWORD PTR [rsp+208], xmm0
+movdqu XMMWORD PTR [rsp+224], xmm0
+movdqu XMMWORD PTR [rsp+240], xmm0
+movdqu XMMWORD PTR [rsp+256], xmm0
+movdqu XMMWORD PTR [rsp+272], xmm0
+movdqu XMMWORD PTR [rsp+288], xmm0
+movdqu XMMWORD PTR [rsp+304], xmm0
+movdqu XMMWORD PTR [rsp+320], xmm0
+movdqu XMMWORD PTR [rsp+336], xmm0
+movdqu XMMWORD PTR [rsp+352], xmm0
+movdqu XMMWORD PTR [rsp+368], xmm0
+movdqu XMMWORD PTR [rsp+384], xmm0
+movdqu XMMWORD PTR [rsp+400], xmm0
+movdqu XMMWORD PTR [rsp+416], xmm0
+movdqu XMMWORD PTR [rsp+432], xmm0
+movdqu XMMWORD PTR [rsp+448], xmm0
+movdqu XMMWORD PTR [rsp+464], xmm0
+movdqu XMMWORD PTR [rsp+480], xmm0
+movdqu XMMWORD PTR [rsp+496], xmm0
+movdqu XMMWORD PTR [rsp+512], xmm0
+movdqu XMMWORD PTR [rsp+528], xmm0
+movdqu XMMWORD PTR [rsp+544], xmm0
+movdqu XMMWORD PTR [rsp+560], xmm0
+movdqu XMMWORD PTR [rsp+576], xmm0
+movdqu XMMWORD PTR [rsp+592], xmm0
+movdqu XMMWORD PTR [rsp+608], xmm0
+movdqu XMMWORD PTR [rsp+624], xmm0
+movdqu XMMWORD PTR [rsp+640], xmm0
+movdqu XMMWORD PTR [rsp+656], xmm0
+movdqu XMMWORD PTR [rsp+672], xmm0
+movdqu XMMWORD PTR [rsp+688], xmm0
+movdqu XMMWORD PTR [rsp+704], xmm0
+movdqu XMMWORD PTR [rsp+720], xmm0
+movdqu XMMWORD PTR [rsp+736], xmm0
+movdqu XMMWORD PTR [rsp+752], xmm0
+movdqu XMMWORD PTR [rsp+768], xmm0
+mov QWORD PTR [rsp+784], r11
+lea rsp, [rsp+792]
+xor eax, eax
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_chacha20_poly1305_seal_body_ssse3 = sym super::chacha20::vg_chacha20_poly1305_seal_body_ssse3::vg_chacha20_poly1305_seal_body_ssse3,
     )
@@ -1260,9 +3012,102 @@ pub const VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES: verified_garbage_cpu::Featur
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
+        r#"lea rsp, [rsp-760]
+mov rax, QWORD PTR [rsp+768]
+mov QWORD PTR [rsp+8], rax
+mov rax, rsp
+add rax, 24
+mov QWORD PTR [rsp+16], rax
+mov r11, r8
+mov rax, QWORD PTR [rsp+16]
+mov r10, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body_ssse3}
-.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAww=="
+pop r10
+pop r10
+pop r10
+lea rsp, [rsp+760]
+pxor xmm0, xmm0
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+pxor xmm3, xmm3
+pxor xmm4, xmm4
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+pxor xmm7, xmm7
+pxor xmm8, xmm8
+pxor xmm9, xmm9
+pxor xmm10, xmm10
+pxor xmm11, xmm11
+pxor xmm12, xmm12
+pxor xmm13, xmm13
+pxor xmm14, xmm14
+pxor xmm15, xmm15
+xor r11d, r11d
+lea rsp, [rsp-808]
+movdqu XMMWORD PTR [rsp+0], xmm0
+movdqu XMMWORD PTR [rsp+16], xmm0
+movdqu XMMWORD PTR [rsp+32], xmm0
+movdqu XMMWORD PTR [rsp+48], xmm0
+movdqu XMMWORD PTR [rsp+64], xmm0
+movdqu XMMWORD PTR [rsp+80], xmm0
+movdqu XMMWORD PTR [rsp+96], xmm0
+movdqu XMMWORD PTR [rsp+112], xmm0
+movdqu XMMWORD PTR [rsp+128], xmm0
+movdqu XMMWORD PTR [rsp+144], xmm0
+movdqu XMMWORD PTR [rsp+160], xmm0
+movdqu XMMWORD PTR [rsp+176], xmm0
+movdqu XMMWORD PTR [rsp+192], xmm0
+movdqu XMMWORD PTR [rsp+208], xmm0
+movdqu XMMWORD PTR [rsp+224], xmm0
+movdqu XMMWORD PTR [rsp+240], xmm0
+movdqu XMMWORD PTR [rsp+256], xmm0
+movdqu XMMWORD PTR [rsp+272], xmm0
+movdqu XMMWORD PTR [rsp+288], xmm0
+movdqu XMMWORD PTR [rsp+304], xmm0
+movdqu XMMWORD PTR [rsp+320], xmm0
+movdqu XMMWORD PTR [rsp+336], xmm0
+movdqu XMMWORD PTR [rsp+352], xmm0
+movdqu XMMWORD PTR [rsp+368], xmm0
+movdqu XMMWORD PTR [rsp+384], xmm0
+movdqu XMMWORD PTR [rsp+400], xmm0
+movdqu XMMWORD PTR [rsp+416], xmm0
+movdqu XMMWORD PTR [rsp+432], xmm0
+movdqu XMMWORD PTR [rsp+448], xmm0
+movdqu XMMWORD PTR [rsp+464], xmm0
+movdqu XMMWORD PTR [rsp+480], xmm0
+movdqu XMMWORD PTR [rsp+496], xmm0
+movdqu XMMWORD PTR [rsp+512], xmm0
+movdqu XMMWORD PTR [rsp+528], xmm0
+movdqu XMMWORD PTR [rsp+544], xmm0
+movdqu XMMWORD PTR [rsp+560], xmm0
+movdqu XMMWORD PTR [rsp+576], xmm0
+movdqu XMMWORD PTR [rsp+592], xmm0
+movdqu XMMWORD PTR [rsp+608], xmm0
+movdqu XMMWORD PTR [rsp+624], xmm0
+movdqu XMMWORD PTR [rsp+640], xmm0
+movdqu XMMWORD PTR [rsp+656], xmm0
+movdqu XMMWORD PTR [rsp+672], xmm0
+movdqu XMMWORD PTR [rsp+688], xmm0
+movdqu XMMWORD PTR [rsp+704], xmm0
+movdqu XMMWORD PTR [rsp+720], xmm0
+movdqu XMMWORD PTR [rsp+736], xmm0
+movdqu XMMWORD PTR [rsp+752], xmm0
+movdqu XMMWORD PTR [rsp+768], xmm0
+movdqu XMMWORD PTR [rsp+784], xmm0
+mov QWORD PTR [rsp+800], r11
+lea rsp, [rsp+808]
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_chacha20_poly1305_open_body_ssse3 = sym super::chacha20::vg_chacha20_poly1305_open_body_ssse3::vg_chacha20_poly1305_open_body_ssse3,
     )
@@ -1291,9 +3136,108 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES: verified_garbage_cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
+        r#"lea rsp, [rsp-776]
+mov rax, QWORD PTR [rsp+784]
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+792]
+mov QWORD PTR [rsp+16], rax
+mov rax, QWORD PTR [rsp+800]
+mov QWORD PTR [rsp+24], rax
+mov rax, rsp
+add rax, 40
+mov QWORD PTR [rsp+32], rax
+mov rax, QWORD PTR [rsp+32]
+mov r10, QWORD PTR [rsp+24]
+mov r11, r8
+mov r8, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body_ssse3}
-.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAAww=="
+pop r10
+pop r10
+pop r10
+lea rsp, [rsp+776]
+pxor xmm0, xmm0
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+pxor xmm3, xmm3
+pxor xmm4, xmm4
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+pxor xmm7, xmm7
+pxor xmm8, xmm8
+pxor xmm9, xmm9
+pxor xmm10, xmm10
+pxor xmm11, xmm11
+pxor xmm12, xmm12
+pxor xmm13, xmm13
+pxor xmm14, xmm14
+pxor xmm15, xmm15
+xor r11d, r11d
+lea rsp, [rsp-824]
+movdqu XMMWORD PTR [rsp+0], xmm0
+movdqu XMMWORD PTR [rsp+16], xmm0
+movdqu XMMWORD PTR [rsp+32], xmm0
+movdqu XMMWORD PTR [rsp+48], xmm0
+movdqu XMMWORD PTR [rsp+64], xmm0
+movdqu XMMWORD PTR [rsp+80], xmm0
+movdqu XMMWORD PTR [rsp+96], xmm0
+movdqu XMMWORD PTR [rsp+112], xmm0
+movdqu XMMWORD PTR [rsp+128], xmm0
+movdqu XMMWORD PTR [rsp+144], xmm0
+movdqu XMMWORD PTR [rsp+160], xmm0
+movdqu XMMWORD PTR [rsp+176], xmm0
+movdqu XMMWORD PTR [rsp+192], xmm0
+movdqu XMMWORD PTR [rsp+208], xmm0
+movdqu XMMWORD PTR [rsp+224], xmm0
+movdqu XMMWORD PTR [rsp+240], xmm0
+movdqu XMMWORD PTR [rsp+256], xmm0
+movdqu XMMWORD PTR [rsp+272], xmm0
+movdqu XMMWORD PTR [rsp+288], xmm0
+movdqu XMMWORD PTR [rsp+304], xmm0
+movdqu XMMWORD PTR [rsp+320], xmm0
+movdqu XMMWORD PTR [rsp+336], xmm0
+movdqu XMMWORD PTR [rsp+352], xmm0
+movdqu XMMWORD PTR [rsp+368], xmm0
+movdqu XMMWORD PTR [rsp+384], xmm0
+movdqu XMMWORD PTR [rsp+400], xmm0
+movdqu XMMWORD PTR [rsp+416], xmm0
+movdqu XMMWORD PTR [rsp+432], xmm0
+movdqu XMMWORD PTR [rsp+448], xmm0
+movdqu XMMWORD PTR [rsp+464], xmm0
+movdqu XMMWORD PTR [rsp+480], xmm0
+movdqu XMMWORD PTR [rsp+496], xmm0
+movdqu XMMWORD PTR [rsp+512], xmm0
+movdqu XMMWORD PTR [rsp+528], xmm0
+movdqu XMMWORD PTR [rsp+544], xmm0
+movdqu XMMWORD PTR [rsp+560], xmm0
+movdqu XMMWORD PTR [rsp+576], xmm0
+movdqu XMMWORD PTR [rsp+592], xmm0
+movdqu XMMWORD PTR [rsp+608], xmm0
+movdqu XMMWORD PTR [rsp+624], xmm0
+movdqu XMMWORD PTR [rsp+640], xmm0
+movdqu XMMWORD PTR [rsp+656], xmm0
+movdqu XMMWORD PTR [rsp+672], xmm0
+movdqu XMMWORD PTR [rsp+688], xmm0
+movdqu XMMWORD PTR [rsp+704], xmm0
+movdqu XMMWORD PTR [rsp+720], xmm0
+movdqu XMMWORD PTR [rsp+736], xmm0
+movdqu XMMWORD PTR [rsp+752], xmm0
+movdqu XMMWORD PTR [rsp+768], xmm0
+movdqu XMMWORD PTR [rsp+784], xmm0
+movdqu XMMWORD PTR [rsp+800], xmm0
+mov QWORD PTR [rsp+816], r11
+lea rsp, [rsp+824]
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_chacha20_poly1305_open_body_ssse3 = sym super::chacha20::vg_chacha20_poly1305_open_body_ssse3::vg_chacha20_poly1305_open_body_ssse3,
     )
@@ -1322,41 +3266,80 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES: verified_garbage_cpu:
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "V1ZSUUFQQVFNicNIi3wkOEmD+QA="
+        r#"push rdi
+push rsi
+push rdx
+push rcx
+push r8
+push r9
+mov r11, r8
+mov rdi, QWORD PTR [rsp+56]
+cmp r9, 0
 je 20f
 22:
-.base64 "SYszSYtLCEmDwxBIg/kg"
+mov rsi, QWORD PTR [r11]
+mov rcx, QWORD PTR [r11+8]
+add r11, 16
+cmp rcx, 32
 jb 23f
-.base64 "8w9vBvMPfwdBugAAAABJKfpJg+IPSYnISYPoIE050A=="
+movdqu xmm0, XMMWORD PTR [rsi]
+movdqu XMMWORD PTR [rdi], xmm0
+mov r10d, 0
+sub r10, rdi
+and r10, 15
+mov r8, rcx
+sub r8, 32
+cmp r8, r10
 jb 25f
 27:
-.base64 "80IPbwQW80IPb0wWEPNCD38EF/NCD39MFxBJg8IgTTnQ"
+movdqu xmm0, XMMWORD PTR [rsi+r10*1]
+movdqu xmm1, XMMWORD PTR [rsi+r10*1+16]
+movdqu XMMWORD PTR [rdi+r10*1], xmm0
+movdqu XMMWORD PTR [rdi+r10*1+16], xmm1
+add r10, 32
+cmp r8, r10
 jae 27b
 jmp 26f
 25:
 26:
-.base64 "8w9vRA7g8w9vTA7w8w9/RA/g8w9/TA/w"
+movdqu xmm0, XMMWORD PTR [rsi+rcx*1-32]
+movdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
+movdqu XMMWORD PTR [rdi+rcx*1-32], xmm0
+movdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
 jmp 24f
 23:
-.base64 "SIP5EA=="
+cmp rcx, 16
 jb 28f
-.base64 "8w9vBvMPb0wO8PMPfwfzD39MD/A="
+movdqu xmm0, XMMWORD PTR [rsi]
+movdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
+movdqu XMMWORD PTR [rdi], xmm0
+movdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
 jmp 29f
 28:
-.base64 "SIP5CA=="
+cmp rcx, 8
 jb 210f
-.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+mov rax, QWORD PTR [rsi]
+mov r8, QWORD PTR [rsi+rcx*1-8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+rcx*1-8], r8
 jmp 211f
 210:
-.base64 "SIP5BA=="
+cmp rcx, 4
 jb 212f
-.base64 "iwZEi0QO/IkHRIlED/w="
+mov eax, DWORD PTR [rsi]
+mov r8d, DWORD PTR [rsi+rcx*1-4]
+mov DWORD PTR [rdi], eax
+mov DWORD PTR [rdi+rcx*1-4], r8d
 jmp 213f
 212:
-.base64 "QboAAAAASTnK"
+mov r10d, 0
+cmp r10, rcx
 je 214f
 216:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
 jne 216b
 jmp 215f
 214:
@@ -1365,14 +3348,38 @@ jmp 215f
 211:
 29:
 24:
-.base64 "SAHPSYPpAQ=="
+add rdi, rcx
+sub r9, 1
 jne 22b
 jmp 21f
 20:
 21:
-.base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
+mov rdi, QWORD PTR [rsp+40]
+mov rsi, QWORD PTR [rsp+32]
+mov rdx, QWORD PTR [rsp+24]
+mov rcx, QWORD PTR [rsp+16]
+mov r8, QWORD PTR [rsp+56]
+mov r9, QWORD PTR [rsp+64]
+mov rax, QWORD PTR [rsp+72]
+push rax
 call {vg_chacha20_poly1305_seal_ssse3}
-.base64 "WFhYWFhYWMM="
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+xor eax, eax
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_chacha20_poly1305_seal_ssse3 = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_ssse3,
     )
@@ -1394,9 +3401,90 @@ call {vg_chacha20_poly1305_seal_ssse3}
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI1kJPhIi0QkEEiJBCQ="
+        r#"lea rsp, [rsp-8]
+mov rax, QWORD PTR [rsp+16]
+mov QWORD PTR [rsp], rax
 call {vg_chacha20_poly1305_seal_body}
-.base64 "SI1kJAjD"
+lea rsp, [rsp+8]
+pxor xmm0, xmm0
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+pxor xmm3, xmm3
+pxor xmm4, xmm4
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+pxor xmm7, xmm7
+pxor xmm8, xmm8
+pxor xmm9, xmm9
+pxor xmm10, xmm10
+pxor xmm11, xmm11
+pxor xmm12, xmm12
+pxor xmm13, xmm13
+pxor xmm14, xmm14
+pxor xmm15, xmm15
+xor r11d, r11d
+lea rsp, [rsp-792]
+movdqu XMMWORD PTR [rsp+0], xmm0
+movdqu XMMWORD PTR [rsp+16], xmm0
+movdqu XMMWORD PTR [rsp+32], xmm0
+movdqu XMMWORD PTR [rsp+48], xmm0
+movdqu XMMWORD PTR [rsp+64], xmm0
+movdqu XMMWORD PTR [rsp+80], xmm0
+movdqu XMMWORD PTR [rsp+96], xmm0
+movdqu XMMWORD PTR [rsp+112], xmm0
+movdqu XMMWORD PTR [rsp+128], xmm0
+movdqu XMMWORD PTR [rsp+144], xmm0
+movdqu XMMWORD PTR [rsp+160], xmm0
+movdqu XMMWORD PTR [rsp+176], xmm0
+movdqu XMMWORD PTR [rsp+192], xmm0
+movdqu XMMWORD PTR [rsp+208], xmm0
+movdqu XMMWORD PTR [rsp+224], xmm0
+movdqu XMMWORD PTR [rsp+240], xmm0
+movdqu XMMWORD PTR [rsp+256], xmm0
+movdqu XMMWORD PTR [rsp+272], xmm0
+movdqu XMMWORD PTR [rsp+288], xmm0
+movdqu XMMWORD PTR [rsp+304], xmm0
+movdqu XMMWORD PTR [rsp+320], xmm0
+movdqu XMMWORD PTR [rsp+336], xmm0
+movdqu XMMWORD PTR [rsp+352], xmm0
+movdqu XMMWORD PTR [rsp+368], xmm0
+movdqu XMMWORD PTR [rsp+384], xmm0
+movdqu XMMWORD PTR [rsp+400], xmm0
+movdqu XMMWORD PTR [rsp+416], xmm0
+movdqu XMMWORD PTR [rsp+432], xmm0
+movdqu XMMWORD PTR [rsp+448], xmm0
+movdqu XMMWORD PTR [rsp+464], xmm0
+movdqu XMMWORD PTR [rsp+480], xmm0
+movdqu XMMWORD PTR [rsp+496], xmm0
+movdqu XMMWORD PTR [rsp+512], xmm0
+movdqu XMMWORD PTR [rsp+528], xmm0
+movdqu XMMWORD PTR [rsp+544], xmm0
+movdqu XMMWORD PTR [rsp+560], xmm0
+movdqu XMMWORD PTR [rsp+576], xmm0
+movdqu XMMWORD PTR [rsp+592], xmm0
+movdqu XMMWORD PTR [rsp+608], xmm0
+movdqu XMMWORD PTR [rsp+624], xmm0
+movdqu XMMWORD PTR [rsp+640], xmm0
+movdqu XMMWORD PTR [rsp+656], xmm0
+movdqu XMMWORD PTR [rsp+672], xmm0
+movdqu XMMWORD PTR [rsp+688], xmm0
+movdqu XMMWORD PTR [rsp+704], xmm0
+movdqu XMMWORD PTR [rsp+720], xmm0
+movdqu XMMWORD PTR [rsp+736], xmm0
+movdqu XMMWORD PTR [rsp+752], xmm0
+movdqu XMMWORD PTR [rsp+768], xmm0
+mov QWORD PTR [rsp+784], r11
+lea rsp, [rsp+792]
+xor eax, eax
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_chacha20_poly1305_seal_body = sym super::chacha20::vg_chacha20_poly1305_seal_body::vg_chacha20_poly1305_seal_body,
     )
@@ -1418,9 +3506,102 @@ call {vg_chacha20_poly1305_seal_body}
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
+        r#"lea rsp, [rsp-760]
+mov rax, QWORD PTR [rsp+768]
+mov QWORD PTR [rsp+8], rax
+mov rax, rsp
+add rax, 24
+mov QWORD PTR [rsp+16], rax
+mov r11, r8
+mov rax, QWORD PTR [rsp+16]
+mov r10, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body}
-.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAww=="
+pop r10
+pop r10
+pop r10
+lea rsp, [rsp+760]
+pxor xmm0, xmm0
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+pxor xmm3, xmm3
+pxor xmm4, xmm4
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+pxor xmm7, xmm7
+pxor xmm8, xmm8
+pxor xmm9, xmm9
+pxor xmm10, xmm10
+pxor xmm11, xmm11
+pxor xmm12, xmm12
+pxor xmm13, xmm13
+pxor xmm14, xmm14
+pxor xmm15, xmm15
+xor r11d, r11d
+lea rsp, [rsp-808]
+movdqu XMMWORD PTR [rsp+0], xmm0
+movdqu XMMWORD PTR [rsp+16], xmm0
+movdqu XMMWORD PTR [rsp+32], xmm0
+movdqu XMMWORD PTR [rsp+48], xmm0
+movdqu XMMWORD PTR [rsp+64], xmm0
+movdqu XMMWORD PTR [rsp+80], xmm0
+movdqu XMMWORD PTR [rsp+96], xmm0
+movdqu XMMWORD PTR [rsp+112], xmm0
+movdqu XMMWORD PTR [rsp+128], xmm0
+movdqu XMMWORD PTR [rsp+144], xmm0
+movdqu XMMWORD PTR [rsp+160], xmm0
+movdqu XMMWORD PTR [rsp+176], xmm0
+movdqu XMMWORD PTR [rsp+192], xmm0
+movdqu XMMWORD PTR [rsp+208], xmm0
+movdqu XMMWORD PTR [rsp+224], xmm0
+movdqu XMMWORD PTR [rsp+240], xmm0
+movdqu XMMWORD PTR [rsp+256], xmm0
+movdqu XMMWORD PTR [rsp+272], xmm0
+movdqu XMMWORD PTR [rsp+288], xmm0
+movdqu XMMWORD PTR [rsp+304], xmm0
+movdqu XMMWORD PTR [rsp+320], xmm0
+movdqu XMMWORD PTR [rsp+336], xmm0
+movdqu XMMWORD PTR [rsp+352], xmm0
+movdqu XMMWORD PTR [rsp+368], xmm0
+movdqu XMMWORD PTR [rsp+384], xmm0
+movdqu XMMWORD PTR [rsp+400], xmm0
+movdqu XMMWORD PTR [rsp+416], xmm0
+movdqu XMMWORD PTR [rsp+432], xmm0
+movdqu XMMWORD PTR [rsp+448], xmm0
+movdqu XMMWORD PTR [rsp+464], xmm0
+movdqu XMMWORD PTR [rsp+480], xmm0
+movdqu XMMWORD PTR [rsp+496], xmm0
+movdqu XMMWORD PTR [rsp+512], xmm0
+movdqu XMMWORD PTR [rsp+528], xmm0
+movdqu XMMWORD PTR [rsp+544], xmm0
+movdqu XMMWORD PTR [rsp+560], xmm0
+movdqu XMMWORD PTR [rsp+576], xmm0
+movdqu XMMWORD PTR [rsp+592], xmm0
+movdqu XMMWORD PTR [rsp+608], xmm0
+movdqu XMMWORD PTR [rsp+624], xmm0
+movdqu XMMWORD PTR [rsp+640], xmm0
+movdqu XMMWORD PTR [rsp+656], xmm0
+movdqu XMMWORD PTR [rsp+672], xmm0
+movdqu XMMWORD PTR [rsp+688], xmm0
+movdqu XMMWORD PTR [rsp+704], xmm0
+movdqu XMMWORD PTR [rsp+720], xmm0
+movdqu XMMWORD PTR [rsp+736], xmm0
+movdqu XMMWORD PTR [rsp+752], xmm0
+movdqu XMMWORD PTR [rsp+768], xmm0
+movdqu XMMWORD PTR [rsp+784], xmm0
+mov QWORD PTR [rsp+800], r11
+lea rsp, [rsp+808]
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_chacha20_poly1305_open_body = sym super::chacha20::vg_chacha20_poly1305_open_body::vg_chacha20_poly1305_open_body,
     )
@@ -1445,9 +3626,108 @@ call {vg_chacha20_poly1305_open_body}
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
+        r#"lea rsp, [rsp-776]
+mov rax, QWORD PTR [rsp+784]
+mov QWORD PTR [rsp+8], rax
+mov rax, QWORD PTR [rsp+792]
+mov QWORD PTR [rsp+16], rax
+mov rax, QWORD PTR [rsp+800]
+mov QWORD PTR [rsp+24], rax
+mov rax, rsp
+add rax, 40
+mov QWORD PTR [rsp+32], rax
+mov rax, QWORD PTR [rsp+32]
+mov r10, QWORD PTR [rsp+24]
+mov r11, r8
+mov r8, QWORD PTR [rsp+8]
+push r11
+push rax
+push r10
 call {vg_chacha20_poly1305_open_body}
-.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAAww=="
+pop r10
+pop r10
+pop r10
+lea rsp, [rsp+776]
+pxor xmm0, xmm0
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+pxor xmm3, xmm3
+pxor xmm4, xmm4
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+pxor xmm7, xmm7
+pxor xmm8, xmm8
+pxor xmm9, xmm9
+pxor xmm10, xmm10
+pxor xmm11, xmm11
+pxor xmm12, xmm12
+pxor xmm13, xmm13
+pxor xmm14, xmm14
+pxor xmm15, xmm15
+xor r11d, r11d
+lea rsp, [rsp-824]
+movdqu XMMWORD PTR [rsp+0], xmm0
+movdqu XMMWORD PTR [rsp+16], xmm0
+movdqu XMMWORD PTR [rsp+32], xmm0
+movdqu XMMWORD PTR [rsp+48], xmm0
+movdqu XMMWORD PTR [rsp+64], xmm0
+movdqu XMMWORD PTR [rsp+80], xmm0
+movdqu XMMWORD PTR [rsp+96], xmm0
+movdqu XMMWORD PTR [rsp+112], xmm0
+movdqu XMMWORD PTR [rsp+128], xmm0
+movdqu XMMWORD PTR [rsp+144], xmm0
+movdqu XMMWORD PTR [rsp+160], xmm0
+movdqu XMMWORD PTR [rsp+176], xmm0
+movdqu XMMWORD PTR [rsp+192], xmm0
+movdqu XMMWORD PTR [rsp+208], xmm0
+movdqu XMMWORD PTR [rsp+224], xmm0
+movdqu XMMWORD PTR [rsp+240], xmm0
+movdqu XMMWORD PTR [rsp+256], xmm0
+movdqu XMMWORD PTR [rsp+272], xmm0
+movdqu XMMWORD PTR [rsp+288], xmm0
+movdqu XMMWORD PTR [rsp+304], xmm0
+movdqu XMMWORD PTR [rsp+320], xmm0
+movdqu XMMWORD PTR [rsp+336], xmm0
+movdqu XMMWORD PTR [rsp+352], xmm0
+movdqu XMMWORD PTR [rsp+368], xmm0
+movdqu XMMWORD PTR [rsp+384], xmm0
+movdqu XMMWORD PTR [rsp+400], xmm0
+movdqu XMMWORD PTR [rsp+416], xmm0
+movdqu XMMWORD PTR [rsp+432], xmm0
+movdqu XMMWORD PTR [rsp+448], xmm0
+movdqu XMMWORD PTR [rsp+464], xmm0
+movdqu XMMWORD PTR [rsp+480], xmm0
+movdqu XMMWORD PTR [rsp+496], xmm0
+movdqu XMMWORD PTR [rsp+512], xmm0
+movdqu XMMWORD PTR [rsp+528], xmm0
+movdqu XMMWORD PTR [rsp+544], xmm0
+movdqu XMMWORD PTR [rsp+560], xmm0
+movdqu XMMWORD PTR [rsp+576], xmm0
+movdqu XMMWORD PTR [rsp+592], xmm0
+movdqu XMMWORD PTR [rsp+608], xmm0
+movdqu XMMWORD PTR [rsp+624], xmm0
+movdqu XMMWORD PTR [rsp+640], xmm0
+movdqu XMMWORD PTR [rsp+656], xmm0
+movdqu XMMWORD PTR [rsp+672], xmm0
+movdqu XMMWORD PTR [rsp+688], xmm0
+movdqu XMMWORD PTR [rsp+704], xmm0
+movdqu XMMWORD PTR [rsp+720], xmm0
+movdqu XMMWORD PTR [rsp+736], xmm0
+movdqu XMMWORD PTR [rsp+752], xmm0
+movdqu XMMWORD PTR [rsp+768], xmm0
+movdqu XMMWORD PTR [rsp+784], xmm0
+movdqu XMMWORD PTR [rsp+800], xmm0
+mov QWORD PTR [rsp+816], r11
+lea rsp, [rsp+824]
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_chacha20_poly1305_open_body = sym super::chacha20::vg_chacha20_poly1305_open_body::vg_chacha20_poly1305_open_body,
     )
@@ -1472,41 +3752,80 @@ call {vg_chacha20_poly1305_open_body}
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_gather(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "V1ZSUUFQQVFNicNIi3wkOEmD+QA="
+        r#"push rdi
+push rsi
+push rdx
+push rcx
+push r8
+push r9
+mov r11, r8
+mov rdi, QWORD PTR [rsp+56]
+cmp r9, 0
 je 20f
 22:
-.base64 "SYszSYtLCEmDwxBIg/kg"
+mov rsi, QWORD PTR [r11]
+mov rcx, QWORD PTR [r11+8]
+add r11, 16
+cmp rcx, 32
 jb 23f
-.base64 "8w9vBvMPfwdBugAAAABJKfpJg+IPSYnISYPoIE050A=="
+movdqu xmm0, XMMWORD PTR [rsi]
+movdqu XMMWORD PTR [rdi], xmm0
+mov r10d, 0
+sub r10, rdi
+and r10, 15
+mov r8, rcx
+sub r8, 32
+cmp r8, r10
 jb 25f
 27:
-.base64 "80IPbwQW80IPb0wWEPNCD38EF/NCD39MFxBJg8IgTTnQ"
+movdqu xmm0, XMMWORD PTR [rsi+r10*1]
+movdqu xmm1, XMMWORD PTR [rsi+r10*1+16]
+movdqu XMMWORD PTR [rdi+r10*1], xmm0
+movdqu XMMWORD PTR [rdi+r10*1+16], xmm1
+add r10, 32
+cmp r8, r10
 jae 27b
 jmp 26f
 25:
 26:
-.base64 "8w9vRA7g8w9vTA7w8w9/RA/g8w9/TA/w"
+movdqu xmm0, XMMWORD PTR [rsi+rcx*1-32]
+movdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
+movdqu XMMWORD PTR [rdi+rcx*1-32], xmm0
+movdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
 jmp 24f
 23:
-.base64 "SIP5EA=="
+cmp rcx, 16
 jb 28f
-.base64 "8w9vBvMPb0wO8PMPfwfzD39MD/A="
+movdqu xmm0, XMMWORD PTR [rsi]
+movdqu xmm1, XMMWORD PTR [rsi+rcx*1-16]
+movdqu XMMWORD PTR [rdi], xmm0
+movdqu XMMWORD PTR [rdi+rcx*1-16], xmm1
 jmp 29f
 28:
-.base64 "SIP5CA=="
+cmp rcx, 8
 jb 210f
-.base64 "SIsGTItEDvhIiQdMiUQP+A=="
+mov rax, QWORD PTR [rsi]
+mov r8, QWORD PTR [rsi+rcx*1-8]
+mov QWORD PTR [rdi], rax
+mov QWORD PTR [rdi+rcx*1-8], r8
 jmp 211f
 210:
-.base64 "SIP5BA=="
+cmp rcx, 4
 jb 212f
-.base64 "iwZEi0QO/IkHRIlED/w="
+mov eax, DWORD PTR [rsi]
+mov r8d, DWORD PTR [rsi+rcx*1-4]
+mov DWORD PTR [rdi], eax
+mov DWORD PTR [rdi+rcx*1-4], r8d
 jmp 213f
 212:
-.base64 "QboAAAAASTnK"
+mov r10d, 0
+cmp r10, rcx
 je 214f
 216:
-.base64 "Qg+2BBZCiAQXSYPCAUk5yg=="
+movzx eax, BYTE PTR [rsi+r10*1]
+mov BYTE PTR [rdi+r10*1], al
+add r10, 1
+cmp r10, rcx
 jne 216b
 jmp 215f
 214:
@@ -1515,14 +3834,38 @@ jmp 215f
 211:
 29:
 24:
-.base64 "SAHPSYPpAQ=="
+add rdi, rcx
+sub r9, 1
 jne 22b
 jmp 21f
 20:
 21:
-.base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
+mov rdi, QWORD PTR [rsp+40]
+mov rsi, QWORD PTR [rsp+32]
+mov rdx, QWORD PTR [rsp+24]
+mov rcx, QWORD PTR [rsp+16]
+mov r8, QWORD PTR [rsp+56]
+mov r9, QWORD PTR [rsp+64]
+mov rax, QWORD PTR [rsp+72]
+push rax
 call {vg_chacha20_poly1305_seal}
-.base64 "WFhYWFhYWMM="
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+pop rax
+xor eax, eax
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_chacha20_poly1305_seal = sym super::chacha20poly1305::vg_chacha20_poly1305_seal,
     )
