@@ -98,7 +98,7 @@ theorem exec_vec {i : Instr} {r : VReg} {s s' : State}
   | stp t1 t2 n off => obtain ⟨_, rfl⟩ := exec_stp_eq h; rfl
   | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
   | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
-  | umov _ _ _ _ =>
+  | umov _ _ _ _ | ldrTbl _ _ _ _ _ _ =>
     obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h; rfl
   | _ => obtain rfl := Option.some.inj h; rfl
 
