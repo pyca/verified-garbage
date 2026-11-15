@@ -23,6 +23,10 @@ meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.CombVerified
 meta import VerifiedGarbage.Spec.Ecdsa.Verify.P384
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.VerifyLit
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.Sign
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.Sign
 
 /-!
 # ECDSA verification over P-384 on RISC-V: `Verified`
@@ -41,14 +45,18 @@ namespace VG.Proof.Ecdsa.RISCV64.P384
 open VG VG.RISCV64 VG.Impl.Ecdsa.RISCV64.Verify
 
 theorem verify_ct : ConstantTime isa verifyRVC.pre verifyRVC.pub Impl.Ecdsa.RISCV64.VerifyComb.verifyP384 :=
-  VG.Taint.constantTime (A := taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  VG.Taint.constantTime_of_exists (A := taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.ofRegs [.a0, .a1, .a2, .a3])
     (fun _ _ _ _ ⟨⟨hsp, h0, h1, h2, h3⟩, hsy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       · exact h0
       · exact h1
       · exact h2
-      · exact h3⟩, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
+      · exact h3⟩, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
+    (by taint_decide_sum [VG.Proof.Ecdsa.RISCV64.P384.Comb.mulGSum,
+      VG.Proof.Ecdsa.RISCV64.P384.Comb.pMulSymSum, VG.Proof.Ecdsa.RISCV64.P384.Comb.pAddSymSum,
+      VG.Proof.Ecdsa.RISCV64.P384.Comb.pSubSymSum, VG.Proof.Ecdsa.RISCV64.P384.nMulSymSum,
+      VG.Proof.Ecdsa.RISCV64.P384.nAddSymSum, VG.Proof.Ecdsa.RISCV64.P384.nSubSymSum])
 
 /-- A state satisfying the precondition without the table. -/
 def verifySat : State where

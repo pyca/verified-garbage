@@ -15,6 +15,10 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Spec.Ecdsa.P384
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.SignLit
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.CombVerified
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.CombVerified
 
 /-!
 # ECDSA signatures over P-384 on RISC-V: constant time
@@ -36,7 +40,7 @@ namespace VG.Proof.Ecdsa.RISCV64.P384
 open VG VG.RISCV64 VG.Impl.Ecdsa.RISCV64.Sign
 
 theorem sign_ct : ConstantTime isa signRVC.pre signRVC.pub signP384 :=
-  VG.Taint.constantTime (A := taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4])
+  VG.Taint.constantTime_of_exists (A := taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4])
     (fun _ _ _ _ ⟨⟨hsp, h0, h1, h2, h3, h4⟩, hsy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -44,6 +48,8 @@ theorem sign_ct : ConstantTime isa signRVC.pre signRVC.pub signP384 :=
       · exact h1
       · exact h2
       · exact h3
-      · exact h4⟩, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
+      · exact h4⟩, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
+    (by taint_decide_sum [VG.Proof.Ecdsa.RISCV64.P384.Comb.mulGSum, VG.Proof.Ecdsa.RISCV64.P384.Comb.pMulSymSum,
+      VG.Proof.Ecdsa.RISCV64.P384.nMulSymSum, VG.Proof.Ecdsa.RISCV64.P384.nAddSymSum])
 
 end VG.Proof.Ecdsa.RISCV64.P384

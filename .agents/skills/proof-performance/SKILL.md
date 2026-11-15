@@ -142,7 +142,12 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   would analyse the callee: a hash's compression function, which `update`,
   `finalize`, HMAC and PBKDF2 all call, not a function with one or two
   callers. The callee's own constant time is the summary's
-  (`Taint.exists_check_of_sumOk`). Within one
+  (`Taint.exists_check_of_sumOk`). For a function its callers call
+  (`.call name body`), summarize the call, named as they name it, not the
+  body, which the hints would compare with the code at every call; a callee
+  of a few hundred instructions does not pay, since what is left is a cost
+  per call site (the four-word curves' field functions on RISC-V, measured
+  and left). Within one
   `taint_decide`, the kernel already analyses identical code from the same
   taint once, so splitting one check into summaries makes it slower. Give a
   summary the smallest taint its callers need (public slots that are never
