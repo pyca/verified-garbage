@@ -31,6 +31,10 @@ public import VerifiedGarbage.Proof.RsaOaep.X86.MgfSlots
 import VerifiedGarbage.Proof.RsaOaep.X86.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 
+/-- `pomega` (`CtBase.lean`), with `omega_arith` for its `omega`: the frame's offsets as facts, and of
+the context only the arithmetic facts connected to the goal. -/
+local macro "pomega_arith" : tactic => `(tactic| (have _ : VG.Impl.RsaPss.X86.oCW = 0 := rfl; have _ : VG.Impl.RsaPss.X86.oSt = 512 := rfl; have _ : VG.Impl.RsaPss.X86.oSel = 768 := rfl; have _ : VG.Impl.RsaPss.X86.oDig = 832 := rfl; have _ : VG.Impl.RsaPss.X86.oLen = 896 := rfl; have _ : VG.Impl.RsaPss.X86.oEm = 1024 := rfl; have _ : VG.Impl.RsaPss.X86.oY = 2048 := rfl; have _ : VG.Impl.RsaPss.X86.oRsa = 8192 := rfl; have _ : VG.Impl.RsaPss.X86.frameBytes = 144 := rfl; omega_arith))
+
 /-! ### `RsaPss.X86.SgEnc2`, which only this module used -/
 
 section
@@ -755,19 +759,19 @@ theorem salt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   · by_cases h0 : P.sl = 0
     · exact VP.empty fun σ s ⟨⟨_, _, _, _, z⟩, e⟩ => by
         simp only [eval, z, decide_eq_true h0] at e; exact absurd e (by decide)
-    refine (copy_vp (hg.wbuf (o := oY + 8 + h.D) (n := P.sl) (by pomega) (by omega_using [h0]))
-      (salt_buf h ⟨σ₀, hi₀⟩) (by rw [hg.scrA (by pomega)]; exact (hg.ro ok (by pomega) (R := P.SALT)
+    refine (copy_vp (hg.wbuf (o := oY + 8 + h.D) (n := P.sl) (by pomega_arith) (by omega_using [h0]))
+      (salt_buf h ⟨σ₀, hi₀⟩) (by rw [hg.scrA (by pomega_arith)]; exact (hg.ro ok (by pomega_arith) (R := P.SALT)
         (by simp)).symm) (by omega_using [h0]) (f := fun σ i => (saltB P σ).getD i 0)
       (Inv := fun σ m => Kp h P σ m ∧ (∀ i < 8 + h.D, m (sa P.scr (oY + i)) =
         (Spec.RsaPss.zeros 8 ++ digB h P σ).getD i 0) ∧ YZ P.scr (8 + h.D + P.sl) m) fun σ m m' ⟨hk, h1, h2⟩ hf => ?_).mono
       (fun σ s ⟨⟨⟨⟨hc, hk⟩, hy⟩, bx, si, cx, _⟩, _⟩ => ⟨hc, ⟨hk, fun i hi => hy i (by omega_using [hD, hi]), fun i hi => ?_⟩, bx, si,
         cx, fun i hi => salt_at h hc hi⟩) fun σ s ⟨hc, ⟨hk, h1, h2⟩, hs⟩ => ⟨⟨hc, hk⟩, fun i hi => ?_⟩
-    · rw [hg.scrA (by pomega)] at hf
+    · rw [hg.scrA (by pomega_arith)] at hf
       refine ⟨hk.keep h hf fun r hr => by
-          simp only [List.mem_singleton] at hr; subst hr; exact away3_scr hg (by pomega),
-        sbytes_keep hf (fun r hr => ?_) (by pomega) h1, sbytes_keep hf (fun r hr => ?_) (by pomega) h2⟩
-      · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by pomega) (by pomega) (by pomega)
-      · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by pomega) (by pomega) (by pomega)
+          simp only [List.mem_singleton] at hr; subst hr; exact away3_scr hg (by pomega_arith),
+        sbytes_keep hf (fun r hr => ?_) (by pomega_arith) h1, sbytes_keep hf (fun r hr => ?_) (by pomega_arith) h2⟩
+      · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by pomega_arith) (by pomega_arith) (by pomega_arith)
+      · simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by pomega_arith) (by pomega_arith) (by pomega_arith)
     · rw [show oY + (8 + h.D + P.sl) + i = oY + (8 + h.D + P.sl + i) by omega_using [], hy _ (by omega_using [hi]),
         getD_ge (by simp only [List.length_append, RsaPss.zeros_length, digB, RsaPkcs1Sig.bytesAt_len]; omega_using [])]
     · have hl : (Spec.RsaPss.zeros 8 ++ digB h P σ).length = 8 + h.D := by
@@ -777,7 +781,7 @@ theorem salt_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
       · rw [ite_eq_left e1]; exact h1 i e1
       rw [ite_eq_right e1]
       by_cases e2 : i < 8 + h.D + P.sl
-      · rw [← hs (i - (8 + h.D)) (by omega_using [h0, e2]), hg.byteAt_scr (by pomega),
+      · rw [← hs (i - (8 + h.D)) (by omega_using [h0, e2]), hg.byteAt_scr (by pomega_arith),
           show oY + 8 + h.D + (i - (8 + h.D)) = oY + i by omega_using [e1]]
       · rw [getD_ge (l := saltB P σ) (by rw [RsaPkcs1Sig.bytesAt_len]; omega_using [e2]),
           show oY + i = oY + (8 + h.D + P.sl) + (i - (8 + h.D + P.sl)) by omega_using [e2]]
@@ -828,7 +832,7 @@ theorem lenSet_vp (P : EP) :
   have fr : Frame [slotR (P.lay h.D) sL, slotR (P.lay h.D) sNb] s.mem t7.mem := by
     rw [m7]
     exact (slot_frame _ _ _ _).mono (by simp) |>.trans ((slot_frame _ _ _ _).mono (by simp))
-  refine ⟨c7, ⟨hk.keep h fr fun r hr => ?_, ?_, ?_⟩, sbytes_keep fr (fun r hr => ?_) (by pomega) hy⟩
+  refine ⟨c7, ⟨hk.keep h fr fun r hr => ?_, ?_, ?_⟩, sbytes_keep fr (fun r hr => ?_) (by pomega_arith) hy⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact away3_slot (by decide) (by decide)
   · rw [m7, Lay.readW_fr_other (d := sL) (e := sNb) _ _ _ (by decide) (by decide) (by decide),
@@ -836,8 +840,8 @@ theorem lenSet_vp (P : EP) :
   · rw [m7, Mem.readW_writeW_self32]
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact (hg.slot ok (by pomega) (by rw [hg.F]; decide)).symm
-    · exact (hg.slot ok (by pomega) (by rw [hg.F]; decide)).symm
+    · exact (hg.slot ok (by pomega_arith) (by rw [hg.F]; decide)).symm
+    · exact (hg.slot ok (by pomega_arith) (by rw [hg.F]; decide)).symm
 
 /-- `ctHashT`'s writes miss the parameters' slots. -/
 theorem away3_ctWT {L : Lay} {scr : BitVec 32} (hg : Geo L scr) {T : Nat} (hT : T ≤ 2048) :
@@ -945,10 +949,10 @@ theorem Ke.keep {P : EP} {σ : State} {m m' : Mem} {o n : Nat} (hg : Geo (P.lay 
   have := h.D_le
   have := h.N_le
   exact ⟨hk.1.keep h hf fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact away3_scr hg (by pomega),
+      simp only [List.mem_singleton] at hr; subst hr; exact away3_scr hg (by pomega_arith),
     sbytes_keep hf (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by pomega) (by pomega) (by pomega))
-      (by pomega) hk.2⟩
+      simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by pomega_arith) (by pomega_arith) (by pomega_arith))
+      (by pomega_arith) hk.2⟩
 
 /-- `EM` cleared. -/
 theorem clr_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
@@ -961,9 +965,9 @@ theorem clr_vp (P : EP) (hP : ∃ σ, In h.D P σ) :
   refine VP.seq (G := fun σ s => Ctx (P.lay h.D) P.scr σ s ∧ Ke h P σ s.mem ∧
       s.gpr .esi = P.scr + BitVec.ofNat 32 oEm ∧ s.gpr .ecx = BitVec.ofNat 32 P.K ∧ s.gpr .eax = 0)
     (VP.taint [.esp, .ebp] clrEm_taint (sp_bp fun _ _ h => h.1.1) fun σ s ⟨⟨hc, hk⟩, hd⟩ => ?_)
-    ((zero_vp (hg.wbuf (o := oEm) (n := P.K) (by pomega) (by omega_using [hK0])) (by omega_using [hK0]) (Inv := Ke h P)
-      fun σ m m' hk hf => hk.keep h hg (by rwa [hg.scrA (by pomega)] at hf) (Nat.le_refl _) (by pomega)).mono
-      (fun _ _ h => h) fun σ s ⟨hc, hk, hz⟩ => ⟨hc, hk, fun i hi => by rw [← hg.byteAt_scr (by pomega)]; exact hz i hi⟩)
+    ((zero_vp (hg.wbuf (o := oEm) (n := P.K) (by pomega_arith) (by omega_using [hK0])) (by omega_using [hK0]) (Inv := Ke h P)
+      fun σ m m' hk hf => hk.keep h hg (by rwa [hg.scrA (by pomega_arith)] at hf) (Nat.le_refl _) (by pomega_arith)).mono
+      (fun _ _ h => h) fun σ s ⟨hc, hk, hz⟩ => ⟨hc, hk, fun i hi => by rw [← hg.byteAt_scr (by pomega_arith)]; exact hz i hi⟩)
   simp only [clrEm, atS, ld, mi, addi, List.cons_append, List.nil_append]
   refine wp_mov fun t1 u1 => wp_addi fun t2 u2 => ?_
   refine ((hc.upd u1 (by decide) (by decide)).upd u2 (by decide) (by decide)).wp_arg hg
@@ -1431,26 +1435,26 @@ theorem mask_vp (P : EP) (hP : ∃ σ, In h.D P σ) (g : OHash) {fG : Fns}
     intro r hr
     simp only [Proof.RsaOaep.X86.mgfW, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact ⟨away3_scr hg (by pomega), fun i hi => Geo.sep (scr := P.scr) (o := oEm + i) (n := 1) (by pomega)
-        (by pomega) (by pomega) _ (Region.contains_self _ _)⟩
-    · exact ⟨away3_scr hg (by pomega), fun i hi => Geo.sep (scr := P.scr) (o := oEm + i) (n := 1) (by pomega)
-        (by pomega) (by pomega) _ (Region.contains_self _ _)⟩
-    · exact ⟨away3_scr hg (by pomega), fun i hi => Geo.sep (scr := P.scr) (o := oEm + i) (n := 1) (by pomega)
-        (by pomega) (by pomega) _ (Region.contains_self _ _)⟩
-    · exact ⟨away3_scr hg (by pomega), fun i hi => Geo.sep (scr := P.scr) (o := oEm + i) (n := 1) (by pomega)
-        (by pomega) (by pomega) _ (Region.contains_self _ _)⟩
+    · exact ⟨away3_scr hg (by pomega_arith), fun i hi => Geo.sep (scr := P.scr) (o := oEm + i) (n := 1) (by pomega_arith)
+        (by pomega_arith) (by pomega_arith) _ (Region.contains_self _ _)⟩
+    · exact ⟨away3_scr hg (by pomega_arith), fun i hi => Geo.sep (scr := P.scr) (o := oEm + i) (n := 1) (by pomega_arith)
+        (by pomega_arith) (by pomega_arith) _ (Region.contains_self _ _)⟩
+    · exact ⟨away3_scr hg (by pomega_arith), fun i hi => Geo.sep (scr := P.scr) (o := oEm + i) (n := 1) (by pomega_arith)
+        (by pomega_arith) (by pomega_arith) _ (Region.contains_self _ _)⟩
+    · exact ⟨away3_scr hg (by pomega_arith), fun i hi => Geo.sep (scr := P.scr) (o := oEm + i) (n := 1) (by pomega_arith)
+        (by pomega_arith) (by pomega_arith) _ (Region.contains_self _ _)⟩
     · exact ⟨⟨Lay.fr_low (by decide) hC, Lay.fr_low (by decide) hC, Lay.fr_low (by decide) hC⟩,
-        fun i hi => hg.low ok (o := oEm + i) (n := 1) (by pomega) _ (Region.contains_self _ _)⟩
-    · exact ⟨away3_scr hg (by pomega), fun i hi => Geo.sep (scr := P.scr) (o := oEm + i) (n := 1) (by pomega)
-        (by pomega) (by pomega) _ (Region.contains_self _ _)⟩
+        fun i hi => hg.low ok (o := oEm + i) (n := 1) (by pomega_arith) _ (Region.contains_self _ _)⟩
+    · exact ⟨away3_scr hg (by pomega_arith), fun i hi => Geo.sep (scr := P.scr) (o := oEm + i) (n := 1) (by pomega_arith)
+        (by pomega_arith) (by pomega_arith) _ (Region.contains_self _ _)⟩
     all_goals exact ⟨away3_slot (by decide) (.inr (by decide)), fun i hi => (hg.slot ok (o := oEm + i) (n := 1)
-      (by pomega) (by rw [hg.F]; decide)).symm _ (Region.contains_self _ _)⟩
+      (by pomega_arith) (by rw [hg.F]; decide)).symm _ (Region.contains_self _ _)⟩
   have hX : ∀ σ m m', Ko h P σ m → Frame (Proof.RsaOaep.X86.mgfW g (P.lay h.D) P.scr (oEm + lo P) (dbN h P)) m m' → Ko h P σ m' :=
     fun σ m m' ⟨hk, h0, hbc⟩ hf' => ⟨hk.keep h hf' fun r hr => (away r hr).1, fun i hi => by
       rw [← h0 i hi]; exact hf' _ fun r hr => (away r hr).2 i (.inl hi),
       by rw [← hbc]; exact hf' _ fun r hr => (away r hr).2 _ (.inr rfl)⟩
   have mp := mpOf g hg (so := oEm + lo P + dbN h P) (sl := h.D) (dOff := oEm + lo P) (dl := dbN h P) hD0
-    (by omega_using [hdb]) (by omega_using []) (by omega_using []) (by pomega) (by pomega) (.inr (Nat.le_refl _)) (seed := Hs h P)
+    (by omega_using [hdb]) (by omega_using []) (by omega_using []) (by pomega_arith) (by pomega_arith) (.inr (Nat.le_refl _)) (seed := Hs h P)
     (fun σ => Hs_length h P σ) hX (sg_arg h (j := 23) (by decide)) hi₀.tbl Proof.RsaOaep.X86.tabArg23_taint
     (fun σ m hk => hT σ hk.1.1.tabT) fne
   exact VP.seq (VP.syms (margs_vp h P ⟨σ₀, hi₀⟩)) ((Proof.RsaOaep.X86.mgf_vp g mp (dstv := dbv h P)).mono (fun _ _ h => h)

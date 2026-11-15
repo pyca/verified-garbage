@@ -997,7 +997,7 @@ theorem sdb_ct : RelCT isa (Two fun a t => At T (SJ6 T.H) a t ∧ isa.eval .b t 
     simp only [upd, Nat.reduceEqDiff, ite_false, ite_true, sw, sdb]
     congr 1; omega_arith
   simp only [upd]; rw [ifn h23, ifn h24]
-  exact hw k (by simp only [KSM, KS6, List.mem_cons, List.not_mem_nil, or_false] at hk ⊢; omega_arith)
+  exact hw k ((by decide : ∀ k ∈ KSM, k ≠ 23 → k ≠ 24 → k ∈ KS6) k hk h23 h24)
 
 /-- After `mHash`: `rcx` is `Y`. -/
 def SC2 (H : Hash) (s t : State) : Prop := SE H KSM (fun _ _ _ => True) s t ∧ t.gpr .rcx = off (stackArg s 0) oY
@@ -1082,7 +1082,7 @@ theorem signLen_ct (hc : SignChecks T.H.P T.H.D) :
       by_cases h28 : k = 28
       · subst h28; simp [upd, sw, snb]
       simp only [upd]; rw [ifn h28, ifn h27]
-      exact hw k (by simp only [KSL, KSM, List.mem_cons, List.not_mem_nil, or_false] at hk ⊢; omega_arith)) trivial sy,
+      exact hw k ((by decide : ∀ k ∈ KSL, k ≠ 27 → k ≠ 28 → k ∈ KSM) k hk h27 h28)) trivial sy,
       k'.2.1.trans hrd, frame_keep hp v.wr v.L.rsp hM f, hok⟩
 
 /-- A public word of the entry state `a`. -/
@@ -1774,7 +1774,7 @@ theorem anyReg_ct : RelCT isa (Two (VAt T (CJ1 T.H))) anyReg (Two (VAt T (CJ2 T.
     by_cases h35 : k = 35
     · subst h35; simp [upd, vw]
     simp only [upd]; rw [ifn h35]
-    exact hw k (by simp only [K5, KP, List.mem_cons, List.not_mem_nil, or_false] at hk ⊢; omega_using [h35, hk])
+    exact hw k ((by decide : ∀ k ∈ K5, k ≠ 35 → k ∈ KP) k hk h35)
 
 theorem fit_ct (hc : HashChecks T.H.P T.H.D 1) (hH : HashOK T.H) :
     RelCT isa (Two (VAt T (CJ2 T.H))) (.block (fitH T.H)) (Two (VAt T (CJ3 T.H))) := by
