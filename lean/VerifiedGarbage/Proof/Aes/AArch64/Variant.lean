@@ -76,8 +76,8 @@ def scalar : Ctr32Impl where
   keepsV := by lit_decide
   to := .scalarTo
   toNoFrames := by lit_decide
-  toOk := ctr32To_correct
-  toCt := ctr32To_ct
+  toOk := OneBlock.ctr32ToN_correct
+  toCt := OneBlock.ctr32ToN_ct
   toKeepsV := by lit_decide
   suffix := ""
   features := []

@@ -36,7 +36,9 @@ licence): four blocks at a time, bitsliced in eight 64-bit registers
 `vg_aes_ctr32` is `ctr32N`: one block (`n = 1`, as the functions that
 encrypt a block alone give it) is encrypted by table lookups
 (`OneBlock.lean`), with no round key bitsliced and nothing written to
-`scratch`; any other `n` runs the bitsliced code.
+`scratch`; no block (`n = 0`, as AES-GCM gives it for a text with no whole
+block, or with no bytes after them) returns at once; any other `n` runs the
+bitsliced code. `vg_aes_ctr32_to` is `ctr32ToN`, the same out of place.
 -/
 
 @[expose] public section
@@ -178,9 +180,23 @@ def ctr32One : Prog isa :=
   .seq (.block ctrOneLoad)
     (.seq OneBlock.core (.block [.ldrq .v1 .x3 0, .vop (.logic .eor .v0 .v0 .v1), .strq .v0 .x3 0]))
 
-/-- `vg_aes_ctr32`: one block by table lookups, any other number of blocks
-bitsliced. -/
+/-- One block out of place: `ctr32One` with the block at `x3` only read,
+and the result stored at the destination, kept in `x8` (the tables are
+loaded through `x6` and `x7`). -/
+def ctr32OneTo : Prog isa :=
+  .seq (.block ([movR .x8 .x6] ++ ctrOneLoad))
+    (.seq OneBlock.core (.block [.ldrq .v1 .x3 0, .vop (.logic .eor .v0 .v0 .v1), .strq .v0 .x8 0]))
+
+/-- `vg_aes_ctr32`: nothing for no block (some callers have none, and the
+bitsliced code would bitslice the round keys first), one block by table
+lookups, any other number of blocks bitsliced. -/
 def ctr32N : Prog isa :=
-  .seq (.block [.subImm .x .x6 .x4 1]) (.ite (.zero .x .x6) ctr32One ctr32)
+  .ite (.zero .x .x4) (.block [])
+    (.seq (.block [.subImm .x .x6 .x4 1]) (.ite (.zero .x .x6) ctr32One ctr32))
+
+/-- `vg_aes_ctr32_to`: as `ctr32N`, out of place. -/
+def ctr32ToN : Prog isa :=
+  .ite (.zero .x .x4) (.block [])
+    (.seq (.block [.subImm .x .x7 .x4 1]) (.ite (.zero .x .x7) ctr32OneTo ctr32To))
 
 end VG.Impl.Aes.AArch64

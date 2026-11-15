@@ -5,8 +5,9 @@
 // gives.
 
 vg_aes_ctr32:
+	cbz x4, 20f
 	sub x6, x4, #1
-	cbz x6, 20f
+	cbz x6, 22f
 	str x19, [x5, #384]
 	str x20, [x5, #392]
 	str x21, [x5, #400]
@@ -31,7 +32,7 @@ vg_aes_ctr32:
 	lsl x6, x1, #4
 	add x0, x0, x6
 	add x1, x5, #1920
-22:
+24:
 	ldr x6, [x0, #0]
 	ldr x10, [x0, #8]
 	add x7, x6, #0
@@ -263,10 +264,10 @@ vg_aes_ctr32:
 	sub x0, x0, #16
 	sub x1, x1, #64
 	sub x2, x2, #1
-	cbnz x2, 22b
+	cbnz x2, 24b
 	add x0, x1, #64
-	cbz x4, 23f
-25:
+	cbz x4, 25f
+27:
 	ldr x6, [x5, #472]
 	ldr w21, [x5, #488]
 	add w21, w21, #0
@@ -527,7 +528,7 @@ vg_aes_ctr32:
 	eor x12, x12, x21
 	ldr x21, [x1, #56]
 	eor x13, x13, x21
-26:
+28:
 	add x1, x1, #64
 	movz x28, #0, lsl #0
 	sub x28, x28, #1
@@ -872,7 +873,7 @@ vg_aes_ctr32:
 	eor x13, x13, x21
 	sub x21, x1, x5
 	sub x21, x21, #1856
-	cbnz x21, 26b
+	cbnz x21, 28b
 	add x1, x1, #64
 	movz x28, #0, lsl #0
 	sub x28, x28, #1
@@ -1375,7 +1376,7 @@ vg_aes_ctr32:
 	ror x21, x21, #48
 	eor x13, x13, x21
 	lsr x21, x4, #2
-	cbnz x21, 27f
+	cbnz x21, 29f
 	ldr x21, [x3, #0]
 	ldr x24, [x3, #8]
 	eor x21, x21, x6
@@ -1383,9 +1384,9 @@ vg_aes_ctr32:
 	str x21, [x3, #0]
 	str x24, [x3, #8]
 	sub x21, x4, #1
-	cbnz x21, 29f
-	b 210f
-29:
+	cbnz x21, 211f
+	b 212f
+211:
 	ldr x21, [x3, #16]
 	ldr x24, [x3, #24]
 	eor x21, x21, x7
@@ -1393,20 +1394,20 @@ vg_aes_ctr32:
 	str x21, [x3, #16]
 	str x24, [x3, #24]
 	sub x21, x4, #2
-	cbnz x21, 211f
-	b 212f
-211:
+	cbnz x21, 213f
+	b 214f
+213:
 	ldr x21, [x3, #32]
 	ldr x24, [x3, #40]
 	eor x21, x21, x8
 	eor x24, x24, x12
 	str x21, [x3, #32]
 	str x24, [x3, #40]
+214:
 212:
-210:
 	movz x4, #0, lsl #0
-	b 28f
-27:
+	b 210f
+29:
 	ldr x21, [x3, #0]
 	ldr x24, [x3, #8]
 	eor x21, x21, x6
@@ -1433,11 +1434,11 @@ vg_aes_ctr32:
 	str x24, [x3, #56]
 	add x3, x3, #64
 	sub x4, x4, #4
-28:
-	cbnz x4, 25b
-	b 24f
-23:
-24:
+210:
+	cbnz x4, 27b
+	b 26f
+25:
+26:
 	ldr x19, [x5, #384]
 	ldr x20, [x5, #392]
 	ldr x21, [x5, #400]
@@ -1448,8 +1449,8 @@ vg_aes_ctr32:
 	ldr x26, [x5, #440]
 	ldr x27, [x5, #448]
 	ldr x28, [x5, #456]
-	b 21f
-20:
+	b 23f
+22:
 	ldr q0, [x2, #0]
 	ldr w6, [x2, #12]
 	rev w6, w6
@@ -1635,7 +1636,7 @@ vg_aes_ctr32:
 	ldr q1, [x0, #0]
 	eor v0.16b, v0.16b, v1.16b
 	sub x1, x1, #1
-213:
+215:
 	tbl v0.16b, {v0.16b}, v4.16b
 	eor v1.16b, v0.16b, v6.16b
 	eor v2.16b, v0.16b, v5.16b
@@ -1661,7 +1662,7 @@ vg_aes_ctr32:
 	ldr q1, [x0, #0]
 	eor v0.16b, v0.16b, v1.16b
 	sub x1, x1, #1
-	cbnz x1, 213b
+	cbnz x1, 215b
 	tbl v0.16b, {v0.16b}, v4.16b
 	eor v1.16b, v0.16b, v6.16b
 	eor v2.16b, v0.16b, v5.16b
@@ -1678,6 +1679,9 @@ vg_aes_ctr32:
 	ldr q1, [x3, #0]
 	eor v0.16b, v0.16b, v1.16b
 	str q0, [x3, #0]
+23:
+	b 21f
+20:
 21:
 	ret
 	.p2align 6
