@@ -1943,7 +1943,8 @@ vg_seed_cfb128_encrypt:
 vg_seed_cfb128_decrypt:
 	sub sp, sp, #1456
 	add x4, sp, #0
-	lsr x13, x3, #3
+	add x13, x3, #2
+	lsr x13, x13, #3
 	cbz x13, 20f
 	add x5, x4, #0
 	str x19, [x5, #1360]

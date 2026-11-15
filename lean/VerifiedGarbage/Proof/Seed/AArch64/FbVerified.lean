@@ -48,7 +48,7 @@ across the batch, which uses no vector instruction); the tables and
 constants of the one-block core are public, and the IV is secret. `ofb_framed`, …
 run them with their working space on the stack, zeroed on return: 1456
 bytes, the 182 words of the scratch buffer.
-`cfbDecrypt_wp`: fewer than eight blocks over the one-block core
+`cfbDecrypt_wp`: fewer than six blocks over the one-block core
 (`cfbDecryptSerial_wp`), as CFB encryption; otherwise the generic batched
 CFB decryption over `dirCoreSpec .encrypt` (`cfbDecryptBatch_wp`),
 gathering independent ciphertext inputs before plaintext stores.
@@ -155,7 +155,7 @@ theorem cfbEncrypt_wp {s₀ : State} (hp : cfbEncAArch64.pre s₀) :
     obtain ⟨h1, h2⟩ := Modes.cfbEnc_of 16 (ciphOf s₀) s₀.mem (s₀.gpr .x2) (ivOf s₀) (s₀.gpr .x3).toNat
     exact ⟨hg, hd.trans h1, hv.trans h2⟩
 
-/-- Fewer than eight blocks: CFB decryption over the one-block core. -/
+/-- Fewer than six blocks: CFB decryption over the one-block core. -/
 theorem cfbDecryptSerial_wp {s₀ : State} (hp : cfbDecAArch64.pre s₀) :
     WP isa (fbCore.fb .cfbDec modeRegs .x25) s₀ fun s' =>
       (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
@@ -164,7 +164,7 @@ theorem cfbDecryptSerial_wp {s₀ : State} (hp : cfbDecAArch64.pre s₀) :
     obtain ⟨h1, h2⟩ := Modes.cfbDec_of 16 (ciphOf s₀) s₀.mem (s₀.gpr .x2) (ivOf s₀) (s₀.gpr .x3).toNat
     exact ⟨hg, hd.trans h1, hv.trans h2⟩
 
-/-- Eight blocks or more: the generic batched CFB decryption over the
+/-- Six blocks or more: the generic batched CFB decryption over the
 batch's core. -/
 theorem cfbDecryptBatch_wp {s₀ : State} (hp : cfbDecAArch64.pre s₀) :
     WP isa ((dirCore .encrypt).cfbDecryptBatched modeRegs) s₀ fun s' =>
@@ -189,7 +189,16 @@ theorem cfbDecryptBatch_wp {s₀ : State} (hp : cfbDecAArch64.pre s₀) :
 theorem cfbDecrypt_wp {s₀ : State} (hp : cfbDecAArch64.pre s₀) :
     WP isa cfbDecrypt s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cfbDecAArch64.post s₀ s' := by
-  obtain ⟨s₁, e₁, _, g₁, m₁, rd₁, wr₁⟩ := Modes.AArch64.lsr_ok s₀ .x13 .x3 (sh := 3) (by decide)
+  obtain ⟨sₐ, eₐ, _, gₐ, mₐ, rdₐ, wrₐ⟩ := Modes.AArch64.addImm_ok s₀ .x13 .x3 (v := 2) (by decide)
+  obtain ⟨s₁, e', _, g', m', rd', wr'⟩ := Modes.AArch64.lsr_ok sₐ .x13 .x13 (sh := 3) (by decide)
+  have e₁ : runBlock isa [.addImm .x .x13 .x3 2, .lsr .x .x13 .x13 3] s₀ = some s₁ := by
+    rw [show ([.addImm .x .x13 .x3 2, .lsr .x .x13 .x13 3] : List Instr) =
+      [.addImm .x .x13 .x3 2] ++ [.lsr .x .x13 .x13 3] from rfl, Modes.AArch64.runBlock_app, eₐ,
+      Option.bind_some, e']
+  have g₁ : ∀ r, r ≠ .x13 → s₁.gpr r = s₀.gpr r := fun r hr => (g' r hr).trans (gₐ r hr)
+  have m₁ : s₁.mem = s₀.mem := m'.trans mₐ
+  have rd₁ : s₁.rd = s₀.rd := rd'.trans rdₐ
+  have wr₁ : s₁.wr = s₀.wr := wr'.trans wrₐ
   have hp₁ : cfbDecAArch64.pre s₁ := by
     simpa only [cfbDecAArch64, fbPre, blkLen, m₁, rd₁, wr₁, g₁ .x0 (by decide), g₁ .x1 (by decide),
       g₁ .x2 (by decide), g₁ .x3 (by decide), g₁ .x4 (by decide)] using hp

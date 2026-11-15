@@ -283,7 +283,7 @@ b 21f
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_seed_cfb128_decrypt(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
     core::arch::naked_asm!(
-        r".inst 0xd116c3ff,0x910003e4,0xd343fc6d
+        r".inst 0xd116c3ff,0x910003e4,0x9100086d,0xd343fdad
 cbz x13, 20f
 .inst 0x91000085,0xf902a8b3,0xf902acb4,0xf902b0b5,0xf902b4b6,0xf902b8b7,0xf902bcb8,0xf902c0b9
 .inst 0xf902c4ba,0xf902c8bb,0xf902ccbc,0xf9400026,0xf902d0a6,0xf9400426,0xf902d4a6
