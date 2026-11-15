@@ -31,6 +31,10 @@ The prologue saves the callee-saved registers (checked by evaluation in the
 naming domain, as is the epilogue restoring them), copies the counter block
 to its slots and writes back the final counter; the key loop and the
 group loop (`Group.lean`) do the rest.
+
+This is the bitsliced code, `ctr32Gen` (`correct`): the internal
+`vg_aes_ctr32_to`, and `vg_aes_ctr32` but for one block, which it encrypts
+by table lookups (`OneBlock.lean`).
 -/
 
 @[expose] public section
