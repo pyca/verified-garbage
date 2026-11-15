@@ -27,6 +27,11 @@ callee-saved (preserved across calls), while the status bits are
 caller-saved (not preserved)" (System V AMD64 psABI §3.4.1, "Special
 Registers").
 
+The mode (`Abi.mode`) is MXCSR, as a number: `vg_mcdt_enter`'s contract
+makes it public (`Spec/Mcdt.lean`), so that the function may skip loading
+MXCSR when it already holds `0x1FBF`; every other contract leaves it out of
+what two runs agree on (`Abi.withMode false`).
+
 Not modelled: the direction flag (no modelled instruction changes it; it is
 clear on entry and exit), the x87 control word (never modified), and the
 red zone: a contract that grants write access below `rsp` must keep it within
@@ -100,6 +105,9 @@ def abi : Abi isa where
   wr s := s.wr
   ret s := s.gpr .rax
   sym := some fun s name => s.syms name
+  -- MXCSR, which a contract makes public only under `Abi.withMode true`:
+  -- `vg_mcdt_enter`'s alone (`Spec/Mcdt.lean`).
+  mode s := s.mxcsr.toNat
 
 /-- Reducible, as an `abbrev` would be, but not inlined: an `abbrev` is compiled into
 every module that names it, which then builds a target of its own, so the emitter
