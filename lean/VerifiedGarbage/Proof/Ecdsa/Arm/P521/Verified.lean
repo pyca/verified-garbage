@@ -148,20 +148,20 @@ theorem argByte_eq (s : State) (k : Nat) :
   simp [VG.Arm.Taint.argByte, stackArgAddr]
 
 /-! The constant-time analyses of the calls of the functions modulo `p` and `n`, from their
-arguments, `r10` (which the callers keep `lr` in) and the loops' counter `r11`, each done once
-for every check of code that calls them (`taint_decide_sum`: signing, ECDH, the public key and
-its compression). The functions write neither `r10` nor `r11`, so they are still public after
-the call; the analysis is `taintS`'s, which has summaries (`Proof/Framework/Arm/TaintMono.lean`). -/
-taint_summary mulPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3, .r10, .r11])
-  (.call (Mont.mulName false p521.SP) (Mont.mulFnWith false p521.SP.k p521.SP.m))
-taint_summary addPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3, .r10, .r11])
-  (.call (p521.SP.fn "add") (Mont.addFn p521.SP.k p521.SP.m))
-taint_summary subPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3, .r10, .r11])
-  (.call (p521.SP.fn "sub") (Mont.subFn p521.SP.k p521.SP.m))
-taint_summary mulNSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3, .r10, .r11])
-  (.call (Mont.mulName false p521.SN) (Mont.mulFnWith false p521.SN.k p521.SN.m))
-taint_summary addNSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3, .r10, .r11])
-  (.call (p521.SN.fn "add") (Mont.addFn p521.SN.k p521.SN.m))
+arguments, each done once for every check of code that calls them (`taint_decide_sum`: signing,
+ECDH, the public key and its compression). They keep what is public of `r10` (which the callers
+keep `lr` in) and of the loops' counter `r11`: the functions write neither. The analysis is
+`taintS`'s, which has summaries (`Proof/Framework/Arm/TaintMono.lean`). -/
+taint_summary mulPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3]) (.call (Mont.mulName false p521.SP) (Mont.mulFnWith false p521.SP.k p521.SP.m))
+  keeping (Taint.ofRegs [.r10, .r11])
+taint_summary addPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3]) (.call (p521.SP.fn "add") (Mont.addFn p521.SP.k p521.SP.m))
+  keeping (Taint.ofRegs [.r10, .r11])
+taint_summary subPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3]) (.call (p521.SP.fn "sub") (Mont.subFn p521.SP.k p521.SP.m))
+  keeping (Taint.ofRegs [.r10, .r11])
+taint_summary mulNSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3]) (.call (Mont.mulName false p521.SN) (Mont.mulFnWith false p521.SN.k p521.SN.m))
+  keeping (Taint.ofRegs [.r10, .r11])
+taint_summary addNSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3]) (.call (p521.SN.fn "add") (Mont.addFn p521.SN.k p521.SN.m))
+  keeping (Taint.ofRegs [.r10, .r11])
 
 /-! The constant-time analysis of the call of `vg_p521_mul` from its argument and `r10`, done
 once for every check of code that calls it (signing, ECDH and the public key). -/
