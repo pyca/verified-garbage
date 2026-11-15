@@ -114,11 +114,7 @@ def artifactsR (v : GcmVariant) : List Artifact := [
 key context. -/
 def artifactsW (v : GcmVariant) : List Artifact := [
   Spec.Gcm.sealPreparedApi.artifact X86_64.target (sealWReg v),
-  Spec.Gcm.openPreparedApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2608 4 (v.impl.openCode v.impl.callees)
-    verified := VG.Proof.AesGcm.Flag.open_keyed (Flag.open_of_base (openSel_framed v.impl Short.shortFacts))
-    spSafe := X86_64.withStackArgScratch_spSafe (openCode_spSafe v.impl v.impl.blkB) },
+  Spec.Gcm.openPreparedApi.artifact X86_64.target (openWReg v),
   Spec.Gcm.openToPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := openToCode v

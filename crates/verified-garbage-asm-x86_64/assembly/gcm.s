@@ -22806,6 +22806,50 @@ vg_aes_gcm_open_prepared_aesni_pclmul:
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
 	lea rsp, [rsp+2608]
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-8]
+	lea rsp, [rsp-2624]
+	movdqu XMMWORD PTR [rsp+336], xmm0
+	movdqu XMMWORD PTR [rsp+320], xmm0
+	movdqu XMMWORD PTR [rsp+304], xmm0
+	movdqu XMMWORD PTR [rsp+288], xmm0
+	movdqu XMMWORD PTR [rsp+192], xmm0
+	movdqu XMMWORD PTR [rsp+176], xmm0
+	movdqu XMMWORD PTR [rsp+160], xmm0
+	movdqu XMMWORD PTR [rsp+144], xmm0
+	movdqu XMMWORD PTR [rsp+128], xmm0
+	movdqu XMMWORD PTR [rsp+112], xmm0
+	movdqu XMMWORD PTR [rsp+96], xmm0
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+2624]
+	lea rsp, [rsp+8]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 

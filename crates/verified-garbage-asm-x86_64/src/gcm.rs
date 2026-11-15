@@ -7959,6 +7959,8 @@ pub const VG_AES_GCM_OPEN_PREPARED_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::
 
 /// `vg_aes_gcm_open` with a 1032-byte context from `vg_aes_gcm_prepare`. Computes the same result, using the AES key schedule and hash subkey in its first 256 bytes, and may read the prepared powers its count says are present. The powers remain secret; how many are present may affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openPreparedContract`.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `ctx` must be valid for reads of 1032 bytes.
@@ -8116,7 +8118,7 @@ jmp 25f
 24:
 .base64 "uAAAAAA="
 25:
-.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAADD"
+.base64 "SYufgAAAAEmLr4gAAABNi6eQAAAATYuvmAAAAE2Lt6AAAABNi7+oAAAASI2kJDAKAABmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjWQk+EiNpCTA9f//8w9/hCRQAQAA8w9/hCRAAQAA8w9/hCQwAQAA8w9/hCQgAQAA8w9/hCTAAAAA8w9/hCSwAAAA8w9/hCSgAAAA8w9/hCSQAAAA8w9/hCSAAAAA8w9/RCRw8w9/RCRg8w9/RCRQ8w9/RCQQ8w9/BCRIjaQkQAoAAEiNZCQIicAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         vg_aes_gcm_decrypt_blocks_aesni_pclmul = sym super::aes::vg_aes_gcm_decrypt_blocks_aesni_pclmul::vg_aes_gcm_decrypt_blocks_aesni_pclmul,
