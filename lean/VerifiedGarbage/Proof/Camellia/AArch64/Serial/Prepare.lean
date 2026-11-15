@@ -24,8 +24,12 @@ open VG VG.AArch64 VG.AArch64.RegUpd
 open VG.Impl.Camellia.AArch64.Serial
 
 theorem tableWord_byte : ∀ h < 32, ∀ j < 8,
-    (tableWord h).extractLsb' (8*j) 8 = Spec.Camellia.sbox1Table.getD (8*h+j) 0 := by
-  decide +kernel
+    (tableWord h).extractLsb' (8*j) 8 = Spec.Camellia.sbox1Table.getD (8*h+j) 0 := fun h _ j hj => by
+  have r8 : List.range 8 = [0, 1, 2, 3, 4, 5, 6, 7] := rfl
+  unfold tableWord
+  rw [r8, List.foldl_cons, List.foldl_cons, List.foldl_cons, List.foldl_cons, List.foldl_cons, List.foldl_cons,
+    List.foldl_cons, List.foldl_cons, List.foldl_nil]
+  exact VG.Proof.Sm4.AArch64.pack8_byte (fun j => Spec.Camellia.sbox1Table.getD (8 * h + j) 0) hj
 
 theorem table_run {s : State} {B : Addr}
     (hb : s.gpr .x5 = B)

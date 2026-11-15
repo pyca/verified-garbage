@@ -205,8 +205,10 @@ def prevalidatedSatState : State where
     validatedSatKey[a.toNat - 0x2000]?.getD 0 else (verifyingSatState).mem a
 
 theorem prevalidatedSatisfiable : ∃ s, (Spec.Dsa.verifyPrevalidatedContract abi).pre s := by
-  have hb : Spec.Rsa.bytesAt (prevalidatedSatState).mem 0x2000 404 = validatedSatKey := by
-    decide +kernel
+  have hb : Spec.Rsa.bytesAt (prevalidatedSatState).mem 0x2000 404 = validatedSatKey :=
+    VG.Proof.Dsa.bytesAt_of_list (lo := 0x2000) (by decide +kernel) (by decide) fun a h1 h2 => by
+      have h : 0x2000 ≤ a.toNat ∧ a.toNat < 0x2194 := ⟨h1, h2⟩
+      simp only [prevalidatedSatState, h, and_self, ↓reduceIte]
   have hv : Spec.Dsa.validatePublicKeyBytes 128 20
       (Spec.Rsa.bytesAt (prevalidatedSatState).mem 0x2000 404) = true := by
     rw [hb]; exact validatedSatKey_valid
