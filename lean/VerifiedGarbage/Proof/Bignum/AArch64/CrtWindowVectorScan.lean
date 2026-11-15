@@ -21,7 +21,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
-/-! The 32-entry scan consumes every row and leaves the selected 64-byte block. -/
+/-! The scan of a table's entries (16 or 32) consumes every row and leaves the selected 64-byte block. -/
 
 @[expose] public section
 namespace VG.Proof.Bignum.AArch64.WindowVector
@@ -47,15 +47,15 @@ theorem decVector_ok (s : State) :
   brun
   exact RegUpd.v_write _ _ _ _
 
-theorem scanStep_ok {s t : State} {base : Addr} {stride v j : Nat}
-    (hj : j < 32) (hv : v < 32) (hs : s.gpr .x6 = BitVec.ofNat 64 stride)
+theorem scanStep_ok {s t : State} {base : Addr} {stride v j n : Nat} (hn : n ≤ 32)
+    (hj : j < n) (hv : v < 32) (hs : s.gpr .x6 = BitVec.ofNat 64 stride)
     (hI : ScanInv s base stride v j t)
-    (hld : ∀ j < 32, ∀ i < 4,
+    (hld : ∀ j < n, ∀ i < 4,
       InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (stride * j + 16 * i)) 16) :
     WP isa (.block (inner ++ ([.subImm .x .x14 .x14 1] : List Instr))) t fun u =>
       ScanInv s base stride v (j + 1) u ∧ u.gpr .x14 = t.gpr .x14 - BitVec.ofNat 64 1 := by
   rw [WP.block_append_iff]
-  refine WP.mono (inner_ok hj hv hI.index hI.digit hI.one (fun i hi => by
+  refine WP.mono (inner_ok (Nat.lt_of_lt_of_le hj hn) hv hI.index hI.digit hI.one (fun i hi => by
     rw [hI.keep.rd, hI.keep.wr, hI.ptr, BitVec.add_assoc, ← BitVec.ofNat_add]
     exact hld j hj i hi)) fun a ⟨⟨ha, hp, hm, h23, h22, h24⟩, ka⟩ => ?_
   refine WP.mono (decVector_ok a) fun u ⟨⟨hu, hum, huv⟩, ku⟩ => ?_
@@ -74,16 +74,16 @@ theorem scanStep_ok {s t : State} {base : Addr} {stride v j : Nat}
     · have heq : v < j + 1 ↔ v < j := by omega_using [he]
       simp only [he, ite_false, heq]
 
-/-- Exact 32-row scan. Its final value does not depend on the prior contents
+/-- Exact scan of `n` rows. Its final value does not depend on the prior contents
 of the accumulator registers, which the caller clears before entering. -/
-theorem scan_ok {s : State} {base : Addr} {stride v : Nat}
+theorem scan_ok {s : State} {base : Addr} {stride v n : Nat} (hn : n ≤ 32) (hn0 : 0 < n)
     (hv : v < 32) (hs : s.gpr .x6 = BitVec.ofNat 64 stride)
-    (hc : s.gpr .x14 = BitVec.ofNat 64 32) (h0 : ScanInv s base stride v 0 s)
-    (hld : ∀ j < 32, ∀ i < 4,
+    (hc : s.gpr .x14 = BitVec.ofNat 64 n) (h0 : ScanInv s base stride v 0 s)
+    (hld : ∀ j < n, ∀ i < 4,
       InRegions (s.rd ++ s.wr) (base + BitVec.ofNat 64 (stride * j + 16 * i)) 16) :
-    WP isa (countLoop .x14 inner) s (ScanInv s base stride v 32) := by
+    WP isa (countLoop .x14 inner) s (ScanInv s base stride v n) := by
   unfold countLoop
-  exact wp_countdown (by decide) (by decide) (fun j => ScanInv s base stride v j)
-    (fun j hj t hI _ => scanStep_ok hj hv hs hI hld) h0 hc
+  exact wp_countdown (by omega_using [hn]) hn0 (fun j => ScanInv s base stride v j)
+    (fun j hj t hI _ => scanStep_ok hn hj hv hs hI hld) h0 hc
 
 end VG.Proof.Bignum.AArch64.WindowVector

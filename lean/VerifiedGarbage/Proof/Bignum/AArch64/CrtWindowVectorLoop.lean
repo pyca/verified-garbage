@@ -20,49 +20,48 @@ namespace VG.Proof.Bignum.AArch64.WindowVector
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
 open VG.Impl.Rsa.AArch64.Crt
 open VG.Proof.MlKem.AArch64 (Keep)
-open VG.Proof.Bignum.AArch64.WindowFive (TableCtx)
 open VG.Impl.Rsa.AArch64.WindowSelectVector (accs inner)
 
-def tile : Prog isa := .seq (.block (blockHead ++ accs.map fun r => .vop (.movi0 r)))
+def tile (n : Nat) : Prog isa := .seq (.block (blockHead n ++ accs.map fun r => .vop (.movi0 r)))
   (.seq (countLoop .x14 inner) (.block (stores 4)))
 
-theorem tableTile_ld {s : State} {P : Addr} {w b j i : Nat} {mi : BitVec 64} {X Xc : Nat}
-    (hc : TableCtx s P w mi X Xc) (hb : 8 * b + 8 ≤ w) (hj : j < 32) (hi : i < 4) :
+theorem tableTile_ld {s : State} {P : Addr} {w b j i n : Nat} {mi : BitVec 64} {X Xc : Nat}
+    (hc : CExpCtx s P w mi X Xc n) (hb : 8 * b + 8 ≤ w) (hj : j < n) (hi : i < 4) :
     InRegions (s.rd ++ s.wr)
       (off P (slot w 8 + 64 * b + 8 * (w + 2) * j + 16 * i)) 16 := by
   have he : slot w 8 + 8 * (w + 2) * j = slot w (8 + j) := by
     simp only [slot, Nat.add_mul, Nat.mul_comm j, Nat.add_assoc]
-  have hE := VG.Proof.Bignum.CrtWindowFive.ent32_le w hj
+  have hE := ent_le w hj
   obtain ⟨r, hr, hR⟩ := hc.scrT.region
     (d := slot w 8 + 64 * b + 8 * (w + 2) * j + 16 * i) (n := 16)
     (by omega_using [hb, hi, he, hE]) (by decide)
   exact ⟨r, List.mem_append_right _ hr, hR⟩
 
-theorem tableTile_st {s : State} {P : Addr} {w b i : Nat} {mi : BitVec 64} {X Xc : Nat}
-    (hc : TableCtx s P w mi X Xc) (hb : 8 * b + 8 ≤ w) (hi : i < 4) :
+theorem tableTile_st {s : State} {P : Addr} {w b i n : Nat} {mi : BitVec 64} {X Xc : Nat}
+    (hc : CExpCtx s P w mi X Xc n) (hb : 8 * b + 8 ≤ w) (hi : i < 4) :
     InRegions s.wr (off P (slot w Crt.aT + 64 * b + 16 * i)) 16 := by
   have hT := slot_le (w := w) (show Crt.aT < 8 by decide)
   exact hc.good.scr.region (by omega_using [hb, hi, hT]) (by decide)
 
-theorem tile_ok {s : State} {P : Addr} {w b v : Nat} {mi : BitVec 64} {X Xc : Nat}
-    (hc : TableCtx s P w mi X Xc) (hv : v < 32)
+theorem tile_ok {s : State} {P : Addr} {w b v n : Nat} {mi : BitVec 64} {X Xc : Nat}
+    (hN : n = 16 ∨ n = 32) (hc : CExpCtx s P w mi X Xc n) (hv : v < n)
     (ht : word s.mem P (8 * Crt.sTab) = off P (slot w 8))
     (hp : s.gpr .x17 = off P (slot w Crt.aT + 64 * b))
     (hs : s.gpr .x6 = BitVec.ofNat 64 (8 * (w + 2)))
     (h22 : s.v .v22 = dup2 (BitVec.ofNat 64 v)) (h24 : s.v .v24 = dup2 1)
     (hd : slot w Crt.aT + 64 * b + 64 ≤ 2 ^ 64)
-    (hld : ∀ j < 32, ∀ i < 4, InRegions (s.rd ++ s.wr)
+    (hld : ∀ j < n, ∀ i < 4, InRegions (s.rd ++ s.wr)
       (off P (slot w 8 + 64 * b + 8 * (w + 2) * j + 16 * i)) 16)
     (hw : ∀ i < 4, InRegions s.wr (off P (slot w Crt.aT + 64 * b + 16 * i)) 16) :
-    WP isa tile s fun t =>
+    WP isa (tile n) s fun t =>
       Keep [.x16,.x3,.x14] s t ∧ Outside P (slot w Crt.aT + 64 * b) 64 s.mem t.mem ∧
       t.v .v22 = dup2 (BitVec.ofNat 64 v) ∧ t.v .v24 = dup2 1 ∧
       ∀ j < 64, t.mem (off P (slot w Crt.aT + 64 * b + j)) =
         s.mem (off P (slot w 8 + 64 * b + 8 * (w + 2) * v + j)) := by
   unfold tile
   apply WP.seq
-  refine WP.mono (startScan_ok hc ht hp h22 h24) fun u ⟨hu,h0,hm,ku⟩ => ?_
-  refine WP.mono (scan_store_ok hv
+  refine WP.mono (startScan_ok hN hc ht hp h22 h24) fun u ⟨hu,h0,hm,ku⟩ => ?_
+  refine WP.mono (scan_store_ok (by rcases hN with rfl | rfl <;> decide) hv
     (by rw [ku.gpr .x6 (by decide)]; exact hs) hu h0
     (by rw [ku.gpr .x17 (by decide)]; exact hp) hd
     (fun j hj i hi => by rw [ku.rd,ku.wr]; exact hld j hj i hi)
@@ -91,11 +90,10 @@ namespace VG.Proof.Bignum.AArch64.WindowVector
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
 open VG.Impl.Rsa.AArch64.Crt
 open VG.Proof.MlKem.AArch64 (Keep)
-open VG.Proof.Bignum.AArch64.WindowFive (TableCtx)
 
-structure LoopInv (s : State) (P : Addr) (w : Nat) (mi : BitVec 64) (X Xc v j : Nat)
+structure LoopInv (n : Nat) (s : State) (P : Addr) (w : Nat) (mi : BitVec 64) (X Xc v j : Nat)
     (t : State) : Prop where
-  ctx : TableCtx t P w mi X Xc
+  ctx : CExpCtx t P w mi X Xc n
   tab : word t.mem P (8 * Crt.sTab) = off P (slot w 8)
   stride : t.gpr .x6 = BitVec.ofNat 64 (8 * (w + 2))
   ptr : t.gpr .x17 = off P (slot w Crt.aT + 64 * j)
@@ -106,31 +104,31 @@ structure LoopInv (s : State) (P : Addr) (w : Nat) (mi : BitVec 64) (X Xc v j : 
     s.mem (off P (slot w 8 + 8 * (w + 2) * v + k))
   keep : Keep mmRegs s t
 
-def tileStep : Prog isa := .seq tile
+def tileStep (n : Nat) : Prog isa := .seq (tile n)
   (.block [.addImm .x .x17 .x17 64, .subImm .x .x13 .x13 1])
 
-def rawStep : Prog isa :=
-  .seq (.block (blockHead ++ VG.Impl.Rsa.AArch64.WindowSelectVector.accs.map fun r => .vop (.movi0 r)))
+def rawStep (n : Nat) : Prog isa :=
+  .seq (.block (blockHead n ++ VG.Impl.Rsa.AArch64.WindowSelectVector.accs.map fun r => .vop (.movi0 r)))
     (.seq (countLoop .x14 VG.Impl.Rsa.AArch64.WindowSelectVector.inner)
       (.block (stores 4 ++ [.addImm .x .x17 .x17 64, .subImm .x .x13 .x13 1])))
 
-theorem rawStep_wp (s : State) (Q : State → Prop) :
-    WP isa rawStep s Q ↔ WP isa tileStep s Q := by
+theorem rawStep_wp (n : Nat) (s : State) (Q : State → Prop) :
+    WP isa (rawStep n) s Q ↔ WP isa (tileStep n) s Q := by
   unfold rawStep tileStep tile
   simp only [WP.seq_iff (M := isa), WP.block_append_iff (M := isa)]
 
-theorem loopStep_ok {s t : State} {P : Addr} {w v j : Nat} {mi : BitVec 64} {X Xc : Nat}
-    (hv : v < 32) (hj : 8 * j + 8 ≤ w) (hI : LoopInv s P w mi X Xc v j t) :
-    WP isa tileStep t fun u => LoopInv s P w mi X Xc v (j + 1) u ∧
+theorem loopStep_ok {s t : State} {P : Addr} {w v j n : Nat} {mi : BitVec 64} {X Xc : Nat}
+    (hN : n = 16 ∨ n = 32) (hv : v < n) (hj : 8 * j + 8 ≤ w) (hI : LoopInv n s P w mi X Xc v j t) :
+    WP isa (tileStep n) t fun u => LoopInv n s P w mi X Xc v (j + 1) u ∧
       u.gpr .x13 = t.gpr .x13 - BitVec.ofNat 64 1 := by
   have hn := hI.ctx.scrT.nowrap
   have hT := slot_le (w := w) (show Crt.aT < 8 by decide)
-  have hE := VG.Proof.Bignum.CrtWindowFive.ent32_le w hv
+  have hE := ent_le w hv
   have he : slot w 8 + 8 * (w + 2) * v = slot w (8 + v) := by
     simp only [slot, Nat.add_mul, Nat.mul_comm v, Nat.add_assoc]
   unfold tileStep
   apply WP.seq
-  refine WP.mono (tile_ok hI.ctx hv hI.tab hI.ptr hI.stride hI.digit hI.one (by omega_using [hj, hn, hT])
+  refine WP.mono (tile_ok hN hI.ctx hv hI.tab hI.ptr hI.stride hI.digit hI.one (by omega_using [hj, hn, hT])
     (fun r hr i hi => tableTile_ld hI.ctx hj hr hi)
     (fun i hi => tableTile_st hI.ctx hj hi)) fun a ⟨ka,ho,h22,h24,hb⟩ => ?_
   have hcopy : ∀ k < 64, a.mem (off P (slot w Crt.aT + 64 * j + k)) =
@@ -167,12 +165,12 @@ theorem loopStep_ok {s t : State} {P : Addr} {w v j : Nat} {mi : BitVec 64} {X X
   · simpa only [hm, Nat.mul_add, Nat.mul_one] using copied.2
   · rw [hc, ka.gpr .x13 (by decide)]
 
-theorem blocks_ok {s : State} {P : Addr} {w v : Nat} {mi : BitVec 64} {X Xc : Nat}
-    (hw : 8 ≤ w) (hw' : w < 2 ^ 30) (hv : v < 32)
-    (h0 : LoopInv s P w mi X Xc v 0 s)
+theorem blocks_ok {s : State} {P : Addr} {w v n : Nat} {mi : BitVec 64} {X Xc : Nat}
+    (hN : n = 16 ∨ n = 32) (hw : 8 ≤ w) (hw' : w < 2 ^ 30) (hv : v < n)
+    (h0 : LoopInv n s P w mi X Xc v 0 s)
     (hc : s.gpr .x13 = BitVec.ofNat 64 (w / 8)) :
-    WP isa (.loop rawStep (.nonzero .x .x13)) s (LoopInv s P w mi X Xc v (w / 8)) := by
-  apply wp_countdown (by omega_using [hw']) (by omega_using [hw]) (fun j => LoopInv s P w mi X Xc v j)
-    (fun j hj t hI _ => (rawStep_wp _ _).mpr (loopStep_ok hv (by omega_using [hj]) hI)) h0 hc
+    WP isa (.loop (rawStep n) (.nonzero .x .x13)) s (LoopInv n s P w mi X Xc v (w / 8)) := by
+  apply wp_countdown (by omega_using [hw']) (by omega_using [hw]) (fun j => LoopInv n s P w mi X Xc v j)
+    (fun j hj t hI _ => (rawStep_wp _ _ _).mpr (loopStep_ok hN hv (by omega_using [hj]) hI)) h0 hc
 
 end VG.Proof.Bignum.AArch64.WindowVector

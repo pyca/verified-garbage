@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtTab
 import VerifiedGarbage.Proof.Dsa.Joint
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtBuild
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorGuard
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -105,10 +106,6 @@ theorem joint_mont_ok (M : Mont) {t : State} {P : Addr} {w n xc g y a b c d : Na
   exact ⟨hc.of_win f hk.wr (hk.gpr .x0 (by decide)), hl, joint_mul hR hA hv hm,
     fun k hh => hf.hslot hh, f, hk⟩
 
-theorem window_eq (mul : Nat → Nat → Nat → Prog isa) : Joint.window mul =
-    [mul aY aY aY, mul aY aY aY, .block Joint.windowIndex] ++
-    (Crt.tabSelect ++ [mul aY aY Crt.aT, .block [ldh .x3 Crt.sBit, .subImm .x .x3 .x3 1, sth .x3 Crt.sBit]]) := rfl
-
 /-- A pair of two-bit digits advances both exponents with shared squarings;
 the window count drops, into `x3`. -/
 theorem jointWindow_ok (M : Mont) {t : State} {P : Addr} {w n xc g y a b V count : Nat}
@@ -128,9 +125,7 @@ theorem jointWindow_ok (M : Mont) {t : State} {P : Addr} {w n xc g y a b V count
       t'.gpr .x3 = BitVec.ofNat 64 (count - 1) ∧ Frm P (crtWinRanges w) t.mem t'.mem ∧ Keep mmRegs t t' := by
   have hn := hc.scrT.nowrap
   have hY0 := slot_le (w := w) (show aY < 8 by decide)
-  rw [window_eq]
-  refine wp_seqs_append (by simp) (by simp [tabSelect_eq]) ?_
-  simp only [seqs]
+  simp only [Joint.window, Joint.select, seqs]
   refine WP.seq (WP.mono (joint_mont_ok M hc hw hw' hR (Or.inl rfl) hY hYv hYv)
     fun t₁ ⟨hc₁, hY₁, hYv₁, hh₁, f₁, k₁⟩ => ?_)
   refine WP.seq (WP.mono (joint_mont_ok M hc₁ hw hw' hR (Or.inl rfl) hY₁ hYv₁ hYv₁)
@@ -139,8 +134,8 @@ theorem jointWindow_ok (M : Mont) {t : State} {P : Addr} {w n xc g y a b V count
     fun k hk => (hh₄ k hk).trans (hh₁ k hk)
   have f04 := f₁.trans f₄
   have k04 : Keep mmRegs t t₄ := (k₁.trans k₄).mono (by decide)
-  refine WP.mono (joint_mid_ok (V := V) hc₄ (by rw [hh04 _ (by decide)]; exact hV)
-    (by omega_arith)) fun t₅ ⟨hm₅, k₅⟩ => ?_
+  refine WP.seq (WP.mono (joint_mid_ok (V := V) hc₄ (by rw [hh04 _ (by decide)]; exact hV)
+    (by omega_arith)) fun t₅ ⟨hm₅, k₅⟩ => ?_)
   have o1 := writeW_outside t₄.mem P (d := 8 * Crt.sV) (BitVec.ofNat 64 (4 * V)) (by decide)
   have o2 := writeW_outside (t₄.mem.writeW (off P (8 * Crt.sV)) (BitVec.ofNat 64 (4 * V))) P (d := 8 * Crt.sNib)
     (BitVec.ofNat 64 ((4 * (V / 16384 % 4) + V / 64 % 4))) (by decide)
@@ -159,9 +154,10 @@ theorem jointWindow_ok (M : Mont) {t : State} {P : Addr} {w n xc g y a b V count
   have idx := VG.Proof.Dsa.joint_index (Nat.mod_lt (V / 16384) (by decide)) (Nat.mod_lt (V / 64) (by decide))
   have hv16 := idx.1
   -- `T := T_v`.
-  refine wp_seqs_append (by simp [tabSelect_eq]) (by simp) ?_
-  refine WP.mono (tabSel_ok hc₅ hw hw' hv16 (by rw [hh₅ _ (by decide) (by decide) (by decide)]; exact htab.tab)
-    (by rw [hm₅, word_writeW_self])) fun t₆ ⟨hc₆, hT₆, f₆, k₆⟩ => ?_
+  refine WP.seq (WP.mono (WindowVector.select_ok (Or.inl rfl)
+    (fun hu tab nib => tabSel_ok hu hw hw' hv16 tab nib) hc₅ hw' hv16
+    (by rw [hh₅ _ (by decide) (by decide) (by decide)]; exact htab.tab)
+    (by rw [hm₅, word_writeW_self])) fun t₆ ⟨hc₆, hT₆, f₆, k₆⟩ => ?_)
   have f₆' : Frm P (crtWinRanges w) t₅.mem t₆.mem := f₆.mono (selRanges_sub w)
   have hY₆ : wv t₆.mem P (slot w aY) w = wv t₅.mem P (slot w aY) w :=
     f₆.wv_eq (fun r hr => by
@@ -179,7 +175,6 @@ theorem jointWindow_ok (M : Mont) {t : State} {P : Addr} {w n xc g y a b V count
       · simp only; omega_arith
       · simp only [Crt.sEnt, sFn] at h1 ⊢; omega_arith
       · simp only [Crt.sJ, sFn] at h2 ⊢; omega_arith) (by omega_arith)
-  simp only [seqs]
   -- `Y := Y T`.
   refine WP.seq (WP.mono (joint_mont_ok M (g := g) (y := y) (a := 4 * a) (b := 4 * b)
     (c := V / 16384 % 4) (d := V / 64 % 4) hc₆ hw hw' hR (Or.inr rfl)
