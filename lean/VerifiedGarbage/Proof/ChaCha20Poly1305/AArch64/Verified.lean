@@ -2394,7 +2394,7 @@ private theorem contract_post_mk {M : ISA} (pre : M.State → Prop) (post : M.St
     (pub : M.State → M.State → Prop) : (Contract.mk pre post pub).post = post := rfl
 
 /-- `openInAArch64`'s postcondition, which reads only the memory and the registers, gives `openW`'s. -/
-theorem openW_post_of {t t' u u' : State} (h : openInAArch64.post t t') (hm : t.mem = u.mem)
+private theorem openW_post_of {t t' u u' : State} (h : openInAArch64.post t t') (hm : t.mem = u.mem)
     (hg : t.gpr = u.gpr) (hm' : t'.mem = u'.mem) (hg' : t'.gpr = u'.gpr) : openW.post u u' := by
   rw [openW, contract_post_mk, openInAArch64, contract_post_mk]
   rw [openInAArch64, contract_post_mk, hm, hg, hm', hg'] at h
@@ -2520,7 +2520,7 @@ theorem toWr_covers {s : State} (h : preToW s) : Covers (toWr s) s.wr := by
 
 /-- `openToN`'s postcondition, which reads only `openToRes`, the memory and the registers, gives
 `openToW`'s. -/
-theorem openToW_post_of {t t' u u' : State} (h : openToN.post t t') (hr : openToRes t = openToRes u)
+private theorem openToW_post_of {t t' u u' : State} (h : openToN.post t t') (hr : openToRes t = openToRes u)
     (hg : t.gpr = u.gpr) (hm' : t'.mem = u'.mem) (hg' : t'.gpr = u'.gpr) : openToW.post u u' := by
   rw [openToW, contract_post_mk, openToN, contract_post_mk]
   rw [openToN, contract_post_mk, hr, hg, hm', hg'] at h
