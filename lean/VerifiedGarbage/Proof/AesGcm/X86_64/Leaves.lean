@@ -346,6 +346,42 @@ theorem sealP16_branch :
     (Proof.AesGcm.sealPrepared16Pre_local _) h₂ he₁ x hx']
   exact hv
 
+/-- The code of `vg_aes_gcm_seal` of the variant `v` for the key context of
+`vg_aes_gcm_init`, in the frame of `withStackArgScratch 2600 3`, from a state
+meeting `vg_aes_gcm_seal_prepared`'s precondition and `C` (which takes it to
+`vg_aes_gcm_seal`'s): what `sealL` says the code leaves in `work` from byte
+96 on, it says of the entry. -/
+theorem seal_branchOf (v : GcmVariant) (hc : v.impl.sealCode v.impl.callees = Impl.AesGcm.X86_64.«seal» v.impl.callees)
+    {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8)}
+    (hL : ∀ s t s', (Proof.AesGcm.sealX86_64M Gcm.X86_64.Stitch.CtxMode.base).pre s →
+      Exec isa (v.impl.sealCode v.impl.callees) s t s' →
+      ∀ x, (⟨stackArg s 3 + BitVec.ofNat 64 96, 2464⟩ : Region).Contains x 1 →
+        s'.mem x = (sealL Lb s.gpr (fun i => stackArg s i) x).getD (s.mem x))
+    {C : Mem → Addr → Prop} :
+    ∀ s t u, (Spec.Gcm.sealPreparedContract X86_64.abi 2624).pre s → C s.mem (s.gpr .rdi) →
+      Exec isa (withStackArgScratch 2600 3 (v.impl.sealCode v.impl.callees)) s t u →
+      ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2600 + BitVec.ofNat 64 40 + BitVec.ofNat 64 96, 2464⟩ : Region).Contains x 1 →
+        u.mem x = (sealL Lb s.gpr (sealArgs s) x).getD (s.mem x) := by
+  rw [hc] at hL
+  intro s t u hs hf he x hx
+  rw [hc] at he
+  unfold Spec.Gcm.sealPreparedContract at hs
+  have h₁ := pre_of_rel (N := 129) (C := C) (leakB := none)
+    (pre := Spec.Gcm.sealPreparedPre 64) (pre' := Spec.Gcm.sealPre 64) (fun _ _ _ _ _ _ _ _ _ _ h _ => h.1) hs hf
+  have h₂ := pre_narrowFirstArray (n := 32) (n' := 129) (by decide) (pre := Spec.Gcm.sealPre 64)
+    (fun _ _ _ _ _ _ _ _ _ _ h => h) h₁
+  obtain ⟨t₁, u₁, he₁, hm⟩ := exec_narrow (seal_framed v.impl) h₂
+    (fun _ _ => InRegions.of_prefix (narrowHead_append_prefix _ _ _)) (Covers.refl _) he
+  obtain ⟨hx', hv⟩ := narrowS_sealL (sig := Spec.Gcm.sealSig) (e := .u64) (n := 320) (by decide)
+    (by decide) (by decide) h₂ Lb hx
+  rw [hm, framed_leaves (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64) (n := 320)
+    (bytes := 2600) (stack := 24) (pre := Spec.Gcm.sealPre X86_64.abi.ptrBits)
+    (post := Proof.AesGcm.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (leak := none)
+    (seal_verified v.impl) (fun s h => ⟨sealCode_implies.pre s h, trivial⟩) hL
+    (by decide) (by decide) (by decide) (seal_spSafe _) (seal_xdepth _)
+    (sealPre_local _) h₂ he₁ x hx']
+  exact hv
+
 open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
 /-- `vg_aes_gcm_seal_prepared_vaes_vpclmul` on a key context without 16
 prepared powers: its code in its frame leaves in `work` from byte 96 on
@@ -363,25 +399,7 @@ theorem seal_branch :
     unfold GcmImpl.sealCode
     simp only [hs, hf, Bool.false_eq_true, ↓reduceIte]
   obtain ⟨Lb, hL⟩ := seal_vaes_leaves
-  rw [hc] at hL
-  refine ⟨Lb, fun s t u hs hf he x hx => ?_⟩
-  rw [hc] at he
-  unfold Spec.Gcm.sealPreparedContract at hs
-  have h₁ := pre_of_rel (N := 129) (C := fun m ctx => ¬ 16 ≤ (m.readW (ctx + 1024) 64).toNat) (leakB := none)
-    (pre := Spec.Gcm.sealPreparedPre 64) (pre' := Spec.Gcm.sealPre 64) (fun _ _ _ _ _ _ _ _ _ _ h _ => h.1) hs hf
-  have h₂ := pre_narrowFirstArray (n := 32) (n' := 129) (by decide) (pre := Spec.Gcm.sealPre 64)
-    (fun _ _ _ _ _ _ _ _ _ _ h => h) h₁
-  obtain ⟨t₁, u₁, he₁, hm⟩ := exec_narrow (seal_framed variant.impl) h₂
-    (fun _ _ => InRegions.of_prefix (narrowHead_append_prefix _ _ _)) (Covers.refl _) he
-  obtain ⟨hx', hv⟩ := narrowS_sealL (sig := Spec.Gcm.sealSig) (e := .u64) (n := 320) (by decide)
-    (by decide) (by decide) h₂ Lb hx
-  rw [hm, framed_leaves (sig := Spec.Gcm.sealSig) (nm := "work") (e := .u64) (n := 320)
-    (bytes := 2600) (stack := 24) (pre := Spec.Gcm.sealPre X86_64.abi.ptrBits)
-    (post := Proof.AesGcm.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (leak := none)
-    (seal_verified variant.impl) (fun s h => ⟨sealCode_implies.pre s h, trivial⟩) hL
-    (by decide) (by decide) (by decide) (seal_spSafe _) (seal_xdepth _)
-    (sealPre_local _) h₂ he₁ x hx']
-  exact hv
+  exact ⟨Lb, seal_branchOf variant hc hL (C := fun m ctx => ¬ 16 ≤ (m.readW (ctx + 1024) 64).toNat)⟩
 
 /-! ## `vg_aes_gcm_seal_prepared_vaes_vpclmul` without secret residue -/
 
@@ -459,6 +477,31 @@ theorem sealArgs_same {s u : State} (h : Same s u) : sealArgs u = sealArgs s := 
   funext i
   simp only [sealArgs, h.stackArg_eq, h.gpr .rsp (by decide)]
 
+/-- Two runs of `vg_aes_gcm_seal_prepared` with the same public data, from
+states that agree outside the buffers, agree on the stack arguments of
+`vg_aes_gcm_seal`'s code in the frame of `withStackArgScratch 2600 3`. -/
+theorem sealArgs_pub {stack : Nat} {s₁ s₂ : State} (hp : (Spec.Gcm.sealPreparedContract X86_64.abi stack).pub s₁ s₂)
+    (ho : Outside 0 s₁ s₂) : sealArgs s₁ = sealArgs s₂ := by
+  unfold Spec.Gcm.sealPreparedContract at hp
+  obtain ⟨-, hpubs, -⟩ := (pubL_args (sig := Spec.Gcm.sealPreparedSig) (by decide)).mp hp
+  have harg (j : Nat) (hj : (Spec.Gcm.sealPreparedSig.params.flatMap (·.2.pubs)).getD (6 + j) false = true)
+      (hj3 : j < 3) : stackArg s₁ j = stackArg s₂ j := by
+    have := hpubs (6 + j) hj
+    have e : ∀ s : State, (allArgs Spec.Gcm.sealPreparedSig s).getD (6 + j) 0 = stackArg s j := by
+      intro s
+      rcases (by omega_using [hj3] : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl <;> rfl
+    rw [e, e] at this
+    have hw : ((Spec.Gcm.sealPreparedSig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD (6 + j) 64 = 64 := by
+      rcases (by omega_using [hj3] : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl <;> rfl
+    rw [hw, BitVec.setWidth_eq, BitVec.setWidth_eq] at this
+    exact this
+  funext i
+  simp only [sealArgs]
+  by_cases hi : i < 3
+  · simp only [hi, ↓reduceIte]
+    exact harg i (by rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;> rfl) hi
+  · simp only [hi, ↓reduceIte, ho.2.2.1 .rsp (by decide)]
+
 open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
 open VG.X86_64.Scrub in
 /-- Two runs of `vg_aes_gcm_seal_prepared_vaes_vpclmul`'s code with the same
@@ -489,30 +532,13 @@ theorem sealF16_resOk :
     · rw [h₂ s₀ t₀ u hs₀ (hf ▸ hb) he₀ x hW, hg.2, hS.mem]
       simp only [hb, ↓reduceIte]
   · intro s₁ s₂ _ _ hp ho _
-    obtain ⟨⟨-, hl⟩, hpubs, -⟩ := (pubL_args (sig := Spec.Gcm.sealPreparedSig) (by decide)).mp hp
+    obtain ⟨⟨-, hl⟩, -, -⟩ := (pubL_args (sig := Spec.Gcm.sealPreparedSig) (by decide)).mp hp
     have hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r := ho.2.2.1
     have hflag : 16 ≤ flagCount s₁ ↔ 16 ≤ flagCount s₂ := by
       have hl' : flagLeak s₁.mem (s₁.gpr .rdi) = flagLeak s₂.mem (s₂.gpr .rdi) :=
         List.head_eq_of_cons_eq hl
       exact flagLeak_iff (Or.inl rfl) hl'
-    have harg (j : Nat) (hj : (Spec.Gcm.sealPreparedSig.params.flatMap (·.2.pubs)).getD (6 + j) false = true)
-        (hj3 : j < 3) : stackArg s₁ j = stackArg s₂ j := by
-      have := hpubs (6 + j) hj
-      have e : ∀ s : State, (allArgs Spec.Gcm.sealPreparedSig s).getD (6 + j) 0 = stackArg s j := by
-        intro s
-        rcases (by omega_using [hj3] : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl <;> rfl
-      rw [e, e] at this
-      have hw : ((Spec.Gcm.sealPreparedSig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD (6 + j) 64 = 64 := by
-        rcases (by omega_using [hj3] : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl <;> rfl
-      rw [hw, BitVec.setWidth_eq, BitVec.setWidth_eq] at this
-      exact this
-    have ha : sealArgs s₁ = sealArgs s₂ := by
-      funext i
-      simp only [sealArgs]
-      by_cases hi : i < 3
-      · simp only [hi, ↓reduceIte]
-        exact harg i (by rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2) with rfl | rfl | rfl <;> rfl) hi
-      · simp only [hi, ↓reduceIte, hg .rsp (by decide)]
+    have ha := sealArgs_pub hp ho
     funext x
     dsimp only
     rw [ha, sealL_congr Lb₁ (g' := s₂.gpr) (fun r hr _ => hg r hr) (fun _ _ => rfl),
@@ -566,6 +592,92 @@ it was, `vg_aes_gcm_seal_prepared_vaes_vpclmul_core`: `sealFnF16`), and
 `sealF16Plain` for the others. -/
 def sealF16Reg (v : GcmVariant) (r : R16 v) : Registration Spec.Gcm.sealPreparedApi X86_64.target :=
   if v.impl.suffix = variant.impl.suffix then sealF16Vaes else sealF16Plain v r
+
+/-! ## `vg_aes_gcm_seal_prepared_aesni_pclmul` -/
+
+/-- The variant on AES-NI and PCLMULQDQ, without interleaved loops
+(`VG.Proof.Variants.AesGcm.X86_64.aesNiPclmul`). -/
+def aesNiPclmulV : GcmVariant := ⟨.aesni, .aesni, .pclmul, none⟩
+
+/-- Its `vg_aes_gcm_encrypt_blocks_aesni_pclmul` leaves in `scratch` the
+arguments kept, and nothing else written: it has no loops of its own, and
+its calls need no working space. -/
+theorem blkB_aesniPclmul_leaves : BlkLeaves aesNiPclmulV.impl.blkB :=
+  blkLeaves_of (fun _ => 0) (fun _ _ _ => false) fun s hpre => by
+    change WP isa (Impl.AesGcm.X86_64.Blocks.encrypt
+      ⟨aesNiPclmulV.impl.ctr.callee.name, aesNiPclmulV.impl.ctr.callee.code⟩ aesNiPclmulV.impl.gh.fn none) s _
+    exact Blocks.encryptN_leaves (Blocks.BP.ofM hpre) _ (aesNiPclmulV.impl.ctr.free.get rfl) _
+      (aesNiPclmulV.impl.gh.free.get rfl)
+
+theorem sealCode_aesniPclmul :
+    aesNiPclmulV.impl.sealCode aesNiPclmulV.impl.callees = Impl.AesGcm.X86_64.«seal» aesNiPclmulV.impl.callees := by
+  have hs : aesNiPclmulV.impl.short = false := rfl
+  have hf : aesNiPclmulV.impl.fin = false := rfl
+  unfold GcmImpl.sealCode
+  simp only [hs, hf, Bool.false_eq_true, ↓reduceIte]
+
+/-- The code of `vg_aes_gcm_seal_prepared_aesni_pclmul` (inside
+`withStackArgScratch 2600 3`): what it leaves in `work` (`[rsp + 32]`) from
+byte 96 on is a function of its argument registers and stack arguments
+(`sealL`). -/
+theorem seal_aesniPclmul_leaves :
+    ∃ Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
+        Option (BitVec 8),
+      ∀ s t s', (Proof.AesGcm.sealX86_64M Gcm.X86_64.Stitch.CtxMode.base).pre s →
+        Exec isa (aesNiPclmulV.impl.sealCode aesNiPclmulV.impl.callees) s t s' →
+        ∀ x, (⟨stackArg s 3 + BitVec.ofNat 64 96, 2464⟩ : Region).Contains x 1 →
+          s'.mem x = (sealL Lb s.gpr (fun i => stackArg s i) x).getD (s.mem x) := by
+  rw [sealCode_aesniPclmul]
+  exact seal_leaves _ aesNiPclmulV.impl.blkB blkB_aesniPclmul_leaves (aesNiPclmulV.impl.gh.free.get rfl)
+    (aesNiPclmulV.impl.ctr.free.get rfl)
+
+open VG.X86_64.Scrub in
+/-- Two runs of the code of `vg_aes_gcm_seal_prepared` of a variant whose
+loops read only the key context, where its `vg_aes_gcm_seal` leaves in
+`work` from byte 96 on what `sealL` says (`hL`), with the same public data
+leave the same bytes in its stack but the granules `sealKs`. -/
+theorem sealW_resOk (v : GcmVariant)
+    (hc : v.impl.sealCode v.impl.callees = Impl.AesGcm.X86_64.«seal» v.impl.callees)
+    (hL : ∃ Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
+        Option (BitVec 8),
+      ∀ s t s', (Proof.AesGcm.sealX86_64M Gcm.X86_64.Stitch.CtxMode.base).pre s →
+        Exec isa (v.impl.sealCode v.impl.callees) s t s' →
+        ∀ x, (⟨stackArg s 3 + BitVec.ofNat 64 96, 2464⟩ : Region).Contains x 1 →
+          s'.mem x = (sealL Lb s.gpr (fun i => stackArg s i) x).getD (s.mem x)) :
+    ResOk (withStackArgScratch 2600 3 (v.impl.sealCode v.impl.callees))
+      (Spec.Gcm.sealPreparedContract X86_64.abi 2624) 2624 sealKs (chunks 2624) := by
+  obtain ⟨Lb, hL⟩ := hL
+  unfold Spec.Gcm.sealPreparedContract
+  refine resOk_of_leaves (V := fun s x => sealL Lb s.gpr (sealArgs s) x) ScrubAbi.plain ?_ ?_
+  · intro s t u hs he x hx hw
+    exact seal_branchOf v hc hL (C := fun _ _ => True) s t u hs trivial he x (sealWindow hx hw)
+  · intro s₁ s₂ _ _ hp ho _
+    funext x
+    dsimp only
+    rw [sealArgs_pub hp ho, sealL_congr Lb (g' := s₂.gpr) (fun r hr _ => ho.2.2.1 r hr) (fun _ _ => rfl)]
+
+/-- `vg_aes_gcm_seal_prepared` of a variant whose loops read only the key
+context. -/
+def sealWPlain (v : GcmVariant) : Registration Spec.Gcm.sealPreparedApi X86_64.target where
+  suffix := v.impl.suffix
+  code := withStackArgScratch 2600 3 (v.impl.sealCode v.impl.callees)
+  stack := 2624
+  verified := VG.Proof.AesGcm.Flag.seal_keyed (Flag.seal_of_base (sealSel_framed v.impl Short.shortFacts))
+  spSafe := X86_64.withStackArgScratch_spSafe (sealCode_spSafe v.impl v.impl.blkB)
+
+/-- `vg_aes_gcm_seal_prepared_aesni_pclmul`, followed by the clearing of the
+160 bytes at the bottom of its stack (`sealKs`): it returns without secret
+residue (`sealW_resOk`). -/
+def sealWAesniPclmul : Registration Spec.Gcm.sealPreparedApi X86_64.target :=
+  RScrub.withScrubRes (sealWPlain aesNiPclmulV) (sealPreparedOut _) sealKs
+    (sealW_resOk aesNiPclmulV sealCode_aesniPclmul seal_aesniPclmul_leaves)
+
+/-- `vg_aes_gcm_seal_prepared` of a variant whose loops read only the key
+context: `sealWAesniPclmul` for the function of the variant on AES-NI and
+PCLMULQDQ, which returns without secret residue, and `sealWPlain` for the
+others. -/
+def sealWReg (v : GcmVariant) : Registration Spec.Gcm.sealPreparedApi X86_64.target :=
+  if v.impl.suffix = aesNiPclmulV.impl.suffix then sealWAesniPclmul else sealWPlain v
 
 end
 

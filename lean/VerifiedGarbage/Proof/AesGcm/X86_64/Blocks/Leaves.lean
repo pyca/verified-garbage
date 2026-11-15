@@ -272,6 +272,17 @@ theorem tailL_ok (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : GhashImpl) 
   have hlt : q < n s := by simp at e; omega_using [e]
   exact WP.mono (callsF hp ctr cf gh gf M₁ hlt) fun st' hf => hS.frame hf (sR_calls hp M₁.q_le)
 
+/-! ## Without interleaved loops -/
+
+/-- `vg_aes_gcm_encrypt_blocks` without interleaved loops, with calls that
+need no working space: `scratch` holds the arguments kept, and nothing else
+written. -/
+theorem encryptN_leaves (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : GhashImpl) (gf : GhashFree gh.fn.code) :
+    WP isa (encrypt ⟨ctr.callee.name, ctr.callee.code⟩ gh.fn none) s fun s' =>
+      Scr s 0 (fun _ => false) s'.mem :=
+  WP.seq (WP.mono (entry_ok hp) fun _ ⟨_, hg, hk, hf, hrd, hwr⟩ =>
+    WP.seq (WP.block_nil (tailL_ok hp ctr cf gh gf (mid_entry hp hg hk hf hrd hwr) (Scr.entry hk hf))))
+
 /-! ## Loops that take the first `16 ⌊n / 16⌋` blocks -/
 
 /-- `stitchPart` of loops that also leave `Gcm.X86_64.Stitch.PieceL ℓ zf`, from the state after
