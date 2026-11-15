@@ -334,7 +334,7 @@ theorem vecI_ok (hl : LayOk l) {t : State} {B : Addr} {Z w op oq a wp : Nat} {mi
       (GoodS l t'.mem (off B a) (two P Q) l.oY 1 ∧
         (K → val52 l t'.mem (off B a) (l.D * 1 + l.oY) % Q = C ^ Spec.Rsa.os2ip ebq * 1 % Q)) ∧
       Outside (off B a) 0 (2 * l.D + 8) t.mem t'.mem ∧ t'.gpr .rdi = t.gpr .rdi ∧
-      t'.rd = t.rd ∧ t'.wr = t.wr ∧ t'.mxcsr = t.mxcsr &&& 0xFFFF ∧ Keep mmRegs t t' := by
+      t'.rd = t.rd ∧ t'.wr = t.wr ∧ t'.mxcsr = t.mxcsr ∧ Keep mmRegs t t' := by
   have hn := hs.nowrap
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds
@@ -531,7 +531,7 @@ theorem ifma_ok (hl : LayOk l) {s : State} {B : Addr} {Z w op oq a wp : Nat} {mi
       wv t.mem (off B op) (slot l.W Public.aY) l.W < P ∧
       (K → wv t.mem (off B op) (slot l.W Public.aY) l.W % P = C ^ Spec.Rsa.os2ip ebp * 2 ^ (64 * wp) % P) ∧
       Frm B ([(op + 8 * sIfma, 8), (oq + 8 * sIfma, 8)] ++ ifmaR l op oq a) s.mem t.mem ∧ t.gpr .rdi = B ∧
-      Keep mmRegs s t ∧ t.mxcsr = s.mxcsr &&& 0xFFFF := by
+      Keep mmRegs s t ∧ t.mxcsr = s.mxcsr := by
   have hT : wsTab l.W = 256 * (l.W + 2) := by unfold wsTab tabBytes; omega_using []
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   obtain ⟨hDb1, hDb2⟩ := hl.D_bounds

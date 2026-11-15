@@ -127,7 +127,9 @@ def oMs : Nat := l.oFin + l.NB
 def oF2 : Nat := l.oFin + 2 * l.NB
 /-- `q`'s region from `p`'s. -/
 def D : Nat := l.oFin + l.NB + l.zx
-/-- The caller's MXCSR (its bits 15:0) and `0x1FBF`, after the regions. -/
+/-- The 8 bytes after the regions, which once held the caller's MXCSR and
+`0x1FBF` (the code no longer loads MXCSR: `withVzu`), and which the
+layouts built on this one keep. -/
 def oMx : Nat := l.nl * l.D
 /-- The doublings of `R_X mod X` that make `2^(104 S - 64 W) mod X`; with
 `ammCoreZ`, those after which a multiplication by `2^(52 L - 1)` leaves
@@ -686,14 +688,11 @@ def expLoop (start : List Instr := [.mov32 .r13 (.imm (BitVec.ofNat 32 l.k0))]) 
   convTab l ++ [.block start,
     .loop (seqs (window l ++ [.block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm (BitVec.ofNat 32 (l.ND + 1)))]])) .ne]
 
-/-- Intel's MXCSR prologue and epilogue around `c` (see "MCDT" in
-`TCB/X86_64/Isa.lean`), the slots at `oMx`. -/
-def withMxcsr (c : Prog isa) : Prog isa :=
-  .seq (.block [.stmxcsr (at_ .rbx l.oMx), .mov32 .r11 (.mem (at_ .rbx l.oMx)), .alu32 .and .r11 (.imm 0xFFFF),
-      .store32 (at_ .rbx l.oMx) .r11])
-    (.seq (.seq (.block [.mov32 .rax (.imm 0x1FBF), .store32 (at_ .rbx (l.oMx + 4)) .rax,
-        .ldmxcsr (at_ .rbx (l.oMx + 4)), .lfence]) (.seq c (.block [.lfence])))
-      (.block [.ldmxcsr (at_ .rbx l.oMx), .vop .vzeroupper]))
+/-- `c`, then `vzeroupper`. The vector code sets no MXCSR of its own: the
+dispatcher of every function that runs it runs `vg_mcdt_enter` first, which
+leaves MXCSR `0x1FBF` for the whole call, as MCDT asks of its multiplies
+(see "MCDT" in `TCB/X86_64/Isa.lean`). -/
+def withVzu (c : Prog isa) : Prog isa := .seq c (.block [.vop .vzeroupper])
 
 /-! ### Around the exponentiations with `ammCoreZ`
 
@@ -735,8 +734,8 @@ def zPost : Prog isa := ammP l l.oY l.oY l.oF2
 /-- The vector code: the exponentiations (`Y` and `X` into Montgomery form
 with the table), the results multiplied by `oFin`. -/
 def vec : Prog isa :=
-  if l.z then withMxcsr l (.seq (seqs (zPre l)) (.seq (seqs (expLoop l)) (zPost l)))
-  else withMxcsr l (seqs (expLoop l))
+  if l.z then withVzu (.seq (seqs (zPre l)) (.seq (seqs (expLoop l)) (zPost l)))
+  else withVzu (seqs (expLoop l))
 
 /-- In a prime's workspace: the result into `aY`, reduced below `X`. -/
 def result (p : Nat) : List (Prog isa) :=

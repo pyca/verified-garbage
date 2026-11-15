@@ -3756,14 +3756,6 @@ vg_rsa_private_crt_precomputed_ifma512:
 	sub rcx, 1
 	jne 2219b
 	mov rbx, QWORD PTR [rdi+232]
-	stmxcsr DWORD PTR [rbx+25856]
-	mov r11d, DWORD PTR [rbx+25856]
-	and r11d, 65535
-	mov DWORD PTR [rbx+25856], r11d
-	mov eax, 8127
-	mov DWORD PTR [rbx+25860], eax
-	ldmxcsr DWORD PTR [rbx+25860]
-	lfence
 	mov r13d, 1312
 2220:
 	cmp r13, 1952
@@ -6966,8 +6958,6 @@ vg_rsa_private_crt_precomputed_ifma512:
 	add r13, 1
 	cmp r13, 417
 	jne 2226b
-	lfence
-	ldmxcsr DWORD PTR [rbx+25856]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 13280
@@ -8674,14 +8664,6 @@ vg_rsa_private_crt_precomputed_ifma512:
 	sub rcx, 1
 	jne 2270b
 	mov rbx, QWORD PTR [rdi+232]
-	stmxcsr DWORD PTR [rbx+20672]
-	mov r11d, DWORD PTR [rbx+20672]
-	and r11d, 65535
-	mov DWORD PTR [rbx+20672], r11d
-	mov eax, 8127
-	mov DWORD PTR [rbx+20676], eax
-	ldmxcsr DWORD PTR [rbx+20676]
-	lfence
 	mov r13d, 1056
 2271:
 	cmp r13, 1568
@@ -12020,8 +12002,6 @@ vg_rsa_private_crt_precomputed_ifma512:
 	add r13, 1
 	cmp r13, 313
 	jne 2277b
-	lfence
-	ldmxcsr DWORD PTR [rbx+20672]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 10624
@@ -13279,14 +13259,6 @@ vg_rsa_private_crt_precomputed_ifma512:
 	sub rcx, 1
 	jne 2319b
 	mov rbx, QWORD PTR [rdi+232]
-	stmxcsr DWORD PTR [rbx+9600]
-	mov r11d, DWORD PTR [rbx+9600]
-	and r11d, 65535
-	mov DWORD PTR [rbx+9600], r11d
-	mov eax, 8127
-	mov DWORD PTR [rbx+9604], eax
-	ldmxcsr DWORD PTR [rbx+9604]
-	lfence
 	mov eax, 0
 	mov QWORD PTR [rbx+608], rax
 	mov QWORD PTR [rbx+640], rax
@@ -19514,8 +19486,6 @@ vg_rsa_private_crt_precomputed_ifma512:
 	and rcx, r12
 	mov QWORD PTR [r11+4984], rcx
 	shr rsi, 52
-	lfence
-	ldmxcsr DWORD PTR [rbx+9600]
 	vzeroupper
 	mov r11, QWORD PTR [rdi+232]
 	add r11, 5024

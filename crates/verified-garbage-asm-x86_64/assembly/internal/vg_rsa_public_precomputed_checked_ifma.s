@@ -19341,14 +19341,6 @@ vg_rsa_public_precomputed_checked_ifma:
 	mov QWORD PTR [r11+600], rax
 	mov eax, 0
 	mov QWORD PTR [r11+632], rax
-	stmxcsr DWORD PTR [rbx+2864]
-	mov r11d, DWORD PTR [rbx+2864]
-	and r11d, 65535
-	mov DWORD PTR [rbx+2864], r11d
-	mov eax, 8127
-	mov DWORD PTR [rbx+2868], eax
-	ldmxcsr DWORD PTR [rbx+2868]
-	lfence
 	mov r13d, 0
 2461:
 	cmp r13, 1
@@ -22340,8 +22332,6 @@ vg_rsa_public_precomputed_checked_ifma:
 	add r13, 1
 	cmp r13, 20
 	jne 2461b
-	lfence
-	ldmxcsr DWORD PTR [rbx+2864]
 	vzeroupper
 	mov r11, rbx
 	add r11, 1584
@@ -24006,14 +23996,6 @@ vg_rsa_public_precomputed_checked_ifma:
 	shr rax, 60
 	and rax, r12
 	mov QWORD PTR [r11+472], rax
-	stmxcsr DWORD PTR [rbx+2160]
-	mov r11d, DWORD PTR [rbx+2160]
-	and r11d, 65535
-	mov DWORD PTR [rbx+2160], r11d
-	mov eax, 8127
-	mov DWORD PTR [rbx+2164], eax
-	ldmxcsr DWORD PTR [rbx+2164]
-	lfence
 	mov r13d, 0
 2471:
 	cmp r13, 1
@@ -25973,8 +25955,6 @@ vg_rsa_public_precomputed_checked_ifma:
 	add r13, 1
 	cmp r13, 20
 	jne 2471b
-	lfence
-	ldmxcsr DWORD PTR [rbx+2160]
 	vzeroupper
 	mov r11, rbx
 	add r11, 1200
@@ -27157,14 +27137,6 @@ vg_rsa_public_precomputed_checked_ifma:
 	shr rax, 44
 	and rax, r12
 	mov QWORD PTR [r11+312], rax
-	stmxcsr DWORD PTR [rbx+1456]
-	mov r11d, DWORD PTR [rbx+1456]
-	and r11d, 65535
-	mov DWORD PTR [rbx+1456], r11d
-	mov eax, 8127
-	mov DWORD PTR [rbx+1460], eax
-	ldmxcsr DWORD PTR [rbx+1460]
-	lfence
 	mov r13d, 0
 2481:
 	cmp r13, 1
@@ -30021,8 +29993,6 @@ vg_rsa_public_precomputed_checked_ifma:
 	add r13, 1
 	cmp r13, 20
 	jne 2481b
-	lfence
-	ldmxcsr DWORD PTR [rbx+1456]
 	vzeroupper
 	mov r11, rbx
 	add r11, 816

@@ -40,6 +40,8 @@ variable (l : Lay)
 
 def oA : Nat := 24 * (l.W + 2)
 def oB : Nat := oA l + l.NB
+/-- 8 bytes after `B`, which once held the caller's MXCSR and `0x1FBF`: the
+code no longer loads MXCSR (`CrtIfma.withVzu`). -/
 def oMx : Nat := oB l + l.NB
 
 /-- `2^kb`, by which `amm(R², R²)` becomes `R'² mod m` (`R = 2^(64 W)`,
@@ -70,15 +72,6 @@ def pow2 : List Instr :=
     ([.movImm64 .rax (BitVec.ofNat 64 (2 ^ (kb l % 52))), .store (at_ .r11 (oB l + l.off (kb l / 52))) .rax] :
       List Instr)
 
-/-- Intel's MXCSR prologue and epilogue around `c` (see "MCDT" in
-`TCB/X86_64/Isa.lean`), the slots at `oMx`. -/
-def withMx (c : Prog isa) : Prog isa :=
-  .seq (.block [.stmxcsr (at_ .rbx (oMx l)), .mov32 .r11 (.mem (at_ .rbx (oMx l))), .alu32 .and .r11 (.imm 0xFFFF),
-      .store32 (at_ .rbx (oMx l)) .r11])
-    (.seq (.seq (.block [.mov32 .rax (.imm 0x1FBF), .store32 (at_ .rbx (oMx l + 4)) .rax,
-        .ldmxcsr (at_ .rbx (oMx l + 4)), .lfence]) (.seq c (.block [.lfence])))
-      (.block [.ldmxcsr (at_ .rbx (oMx l)), .vop .vzeroupper]))
-
 /-- `ammCore`'s operands: `[o] := [a] [b]`, the offsets from `rbx`. -/
 def setOps (o a b : Nat) : List Instr :=
   [.mov .r8 (.reg .rbx), .alu .add .r8 (.imm (BitVec.ofNat 32 a)), .mov .r9 (.reg .rbx),
@@ -96,7 +89,7 @@ def sel : Prog isa :=
 /-- The vector code: the twenty multiplications of `sel`, by one `ammMul`
 in a loop (`r13` counting them): `A = x^65537`, almost reduced. -/
 def vec : Prog isa :=
-  withMx l (.seq (.block [.mov32 .r13 (.imm 0)])
+  withVzu (.seq (.block [.mov32 .r13 (.imm 0)])
     (.loop (seqs [sel l, ammMul l, .block [.alu .add .r13 (.imm 1), .alu .cmp .r13 (.imm 20)]]) .ne))
 
 /-- `A` into words at the accumulator, reduced below `m` into the result. -/

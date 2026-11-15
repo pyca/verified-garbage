@@ -577,7 +577,7 @@ theorem loop_ok (hl : PubOk l) {t₀ : State} {B H X : Addr} {M k R0 : Nat} (e :
   · exact .inr ⟨by simp [h20], 20 - (c + 1), by omega_arith, c + 1, by omega_arith, rfl, hI'⟩
 
 /-- The vector code: `A := x^65537`, almost reduced, from `A ≡ R²` (`R0`),
-within Intel's MXCSR prologue and epilogue (the slots at `oMx`). -/
+then `vzeroupper`, with no MXCSR of its own (`CrtIfma.withVzu`). -/
 theorem vec_ok (hl : PubOk l) {s : State} {B H X : Addr} {M k : Nat} (e : Env l s B H X M k)
     (hB : s.gpr .rbx = B) (hdi : s.gpr .rdi = H) (h12 : s.gpr .r12 = mask52)
     (hA : ∀ j < l.L, limb l s.mem B (oA l) j < 2 ^ 52) (hA2 : val52 l s.mem B (oA l) < 2 * M) :
@@ -588,75 +588,44 @@ theorem vec_ok (hl : PubOk l) {s : State} {B H X : Addr} {M k : Nat} (e : Env l 
           val52 l s'.mem B (oA l) % M = wv s.mem X 0 l.W ^ 2 ^ 16 * wv s.mem X 0 l.W % M)) ∧
       Outside B (oA l) (2 * l.NB + 8) s.mem s'.mem ∧
       VG.Proof.MlKem.X86_64.Keep [.rax, .rcx, .rdx, .rsi, .rbp, .r8, .r9, .r10, .r11, .r12, .r13] s s' ∧
-      s'.mxcsr = s.mxcsr &&& 0xFFFF := by
+      s'.mxcsr = s.mxcsr := by
   obtain ⟨a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12⟩ := hl.area
-  have hs := e.scr
-  have hn := hs.nowrap
-  unfold VG.Impl.Rsa.X86_64.PubIfma.vec withMx
-  refine WP.seq (WP.mono (mxSave_ok (d := oMx l) hB hs (by omega_arith)) fun s₁ ⟨m₁, k₁, x₁⟩ => ?_)
-  have hB₁ : s₁.gpr .rbx = B := by rw [k₁.gpr (by decide)]; exact hB
-  refine WP.seq (WP.seq (WP.mono (mxSet_ok (d := oMx l) hB₁ (hs.congr k₁.2.2) (by omega_arith)) fun s₂ ⟨m₂, k₂, x₂⟩ => ?_))
-  have O₁ : Outside B (oMx l) 4 s.mem s₁.mem := by
-    rw [m₁]
-    exact (AmmSym.writeW32_outside _ B _ (by omega_arith)).trans (AmmSym.writeW32_outside _ B _ (by omega_arith))
-  have O₂ : Outside B (oMx l + 4) 4 s₁.mem s₂.mem := by
-    rw [m₂]; exact AmmSym.writeW32_outside _ B _ (by omega_arith)
-  have O : Outside B (oA l) (2 * l.NB + 8) s.mem s₂.mem :=
-    (O₁.mono (by omega_arith) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))
+  unfold VG.Impl.Rsa.X86_64.PubIfma.vec withVzu
   -- `r13 := 0`
   refine WP.seq (WP.seq ?_)
   rw [WP.block_cons_iff]
-  refine ⟨s₂.setReg32 .r13 (BitVec.ofNat 32 0), rfl, WP.block_nil ?_⟩
-  generalize ht : s₂.setReg32 .r13 (BitVec.ofNat 32 0) = t₀
-  have g₀ : ∀ r, r ≠ .r13 → t₀.gpr r = s₂.gpr r := fun r hr => by
+  refine ⟨s.setReg32 .r13 (BitVec.ofNat 32 0), rfl, WP.block_nil ?_⟩
+  generalize ht : s.setReg32 .r13 (BitVec.ofNat 32 0) = t₀
+  have g₀ : ∀ r, r ≠ .r13 → t₀.gpr r = s.gpr r := fun r hr => by
     rw [← ht, State.setReg32, RegUpd.gpr_setReg_of_ne _ _ hr]
   have r13₀ : t₀.gpr .r13 = BitVec.ofNat 64 0 := by rw [← ht, State.setReg32, RegUpd.gpr_setReg_self]; rfl
-  have mt : t₀.mem = s₂.mem := by rw [← ht]; rfl
-  have rdt : t₀.rd = s.rd := by rw [← ht, ← k₁.2.1, ← k₂.2.1]; rfl
-  have wrt : t₀.wr = s.wr := by rw [← ht, ← k₁.2.2, ← k₂.2.2]; rfl
-  have xt : t₀.mxcsr = 0x1FBF := by rw [← ht, ← x₂]; rfl
-  have Ot : Outside B (oA l) (2 * l.NB + 8) s.mem t₀.mem := by rw [mt]; exact O
-  have gs : ∀ r, r ≠ .rax → r ≠ .r11 → r ≠ .r13 → t₀.gpr r = s.gpr r := fun r h1 h2 h3 => by
-    rw [g₀ r h3, k₂.gpr (by simp [h1]), k₁.gpr (by simp [h2])]
-  have Om : Outside B (oMx l) 8 s.mem t₀.mem := by
-    rw [mt]; exact (O₁.mono (by omega_arith) (by omega_arith)).trans (O₂.mono (by omega_arith) (by omega_arith))
-  have hAw : ∀ j < l.L, word t₀.mem B (oA l + l.off j) = word s.mem B (oA l + l.off j) := fun j hj => by
-    have := off_ltN hl.amm hj; exact Om.word (by omega_arith) (by omega_arith)
-  have hval : val52 l t₀.mem B (oA l) = val52 l s.mem B (oA l) := lval_congr fun j hj => by
-    simp only [limb]; rw [hAw j hj]
-  have hxv : wv t₀.mem X 0 l.W = wv s.mem X 0 l.W :=
-    VG.Proof.Bignum.wv_congr fun i hi => by rw [Nat.zero_add]; exact e.sepX _ _ Ot i hi
+  have mt : t₀.mem = s.mem := by rw [← ht]; rfl
+  have rdt : t₀.rd = s.rd := by rw [← ht]; rfl
+  have wrt : t₀.wr = s.wr := by rw [← ht]; rfl
+  have xt : t₀.mxcsr = s.mxcsr := by rw [← ht]; rfl
+  have Ot : Outside B (oA l) (2 * l.NB + 8) s.mem t₀.mem := by rw [mt]; exact Outside.refl _ _ _ _
+  have hval : val52 l t₀.mem B (oA l) = val52 l s.mem B (oA l) := by rw [mt]
+  have hxv : wv t₀.mem X 0 l.W = wv s.mem X 0 l.W := by rw [mt]
   have e₀ : Env l t₀ B H X M k :=
-    ⟨hs.congr wrt, e.md.of_outside hl Ot (by omega_arith), e.odd, e.big, e.hX, e.hx,
+    ⟨e.scr.congr wrt, e.md.of_outside hl Ot (by omega_arith), e.odd, e.big, e.hX, e.hx,
       fun i hi => by rw [rdt, wrt]; exact e.hrd i hi, e.sepX⟩
   have I₀ : Inv l t₀ B H X M (val52 l s.mem B (oA l)) 0 t₀ :=
-    ⟨by rw [gs _ (by decide) (by decide) (by decide)]; exact hB,
-      by rw [gs _ (by decide) (by decide) (by decide)]; exact hdi,
-      by rw [gs _ (by decide) (by decide) (by decide)]; exact h12, r13₀,
+    ⟨by rw [g₀ _ (by decide)]; exact hB, by rw [g₀ _ (by decide)]; exact hdi,
+      by rw [g₀ _ (by decide)]; exact h12, r13₀,
       VG.Proof.MlKem.X86_64.Keep.refl _ _, rfl, Outside.refl _ _ _ _,
-      fun j hj => by simp only [limb]; rw [hAw j hj]; exact hA j hj, fun h => absurd h (by decide),
+      fun j hj => by rw [mt]; exact hA j hj, fun h => absurd h (by decide),
       fun _ => ⟨by rw [hval]; exact hA2, by show _ % M = _ % M; rw [hval]⟩⟩
   refine WP.mono (loop_ok hl e₀ 0 t₀ (by decide) I₀) fun s₃ I₃ => ?_
   rw [WP.block_cons_iff]
-  refine ⟨s₃, rfl, WP.block_nil ?_⟩
-  have hB₃ : s₃.gpr .rbx = B := I₃.rbx
-  have O₃ : Outside B (oA l) (2 * l.NB + 8) s.mem s₃.mem := Ot.trans (I₃.frame.mono (Nat.le_refl _) (by omega_arith))
-  have hv : s₃.mem.readW (off B (oMx l)) 32 = s.mxcsr &&& 0xFFFF := by
-    rw [VG.Proof.Bignum.Outside.readW32 (I₃.frame.trans (Outside.refl _ _ _ _)) (.inr (by omega_arith)) (by omega_arith), mt,
-      VG.Proof.Bignum.Outside.readW32 O₂ (.inl (by omega_arith)) (by omega_arith), m₁, Mem.readW_writeW_self32]
-  refine WP.mono (mxRestore_ok (d := oMx l) hB₃ (hs.congr (by rw [I₃.keep.2.2, wrt])) (by omega_arith) hv)
-    fun s₄ ⟨m₄, g₄, rd₄, wr₄, x₄⟩ => ⟨fun j hj => by rw [m₄]; exact I₃.a j hj, fun hP => ?_,
-      by rw [m₄]; exact O₃, ⟨fun r hr => ?_, by rw [rd₄, I₃.keep.2.1, rdt], by rw [wr₄, I₃.keep.2.2, wrt]⟩, x₄⟩
+  refine ⟨_, rfl, WP.block_nil ⟨I₃.a, fun hP => ?_, Ot.trans (I₃.frame.mono (Nat.le_refl _) (by omega_arith)),
+    ⟨fun r hr => ?_, I₃.keep.2.1.trans rdt, I₃.keep.2.2.trans wrt⟩, I₃.mx.trans xt⟩⟩
   · rw [← hxv] at hP
     obtain ⟨lt, va⟩ := I₃.v hP
-    rw [m₄, ← hxv]
+    rw [← hxv]
     refine ⟨lt, fun hq => ?_⟩
     have := va hq
     rw [ite_eq_left rfl] at this
     exact this
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    rw [g₄, I₃.keep.gpr (by simp [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1,
-      hr.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2.2.1, hr.2.2.2.2.2.2.2.2.2.2]),
-      gs r hr.1 hr.2.2.2.2.2.2.2.2.1 hr.2.2.2.2.2.2.2.2.2.2]
+  · exact (I₃.keep.gpr hr).trans (g₀ r (fun h => hr (h ▸ by simp)))
 
 end VG.Proof.Bignum.X86_64.Ifma.Pub

@@ -488,7 +488,7 @@ theorem exp65537_ok (hl : PubOk l) {a : State} {P : Addr} {Z N X R : Nat} {minv 
   refine ⟨⟨hs.congr (kk.trans kd).2.2, rdid, ⟨by rw [lod _ (hHdr _ (by decide))]; exact hg.hdr.hw,
       by rw [lod _ (hHdr _ (by decide))]; exact hg.hdr.hminv,
       fun j hj => by rw [lod _ (hHdr _ (by unfold sArr; omega_arith))]; exact hg.hdr.harr j hj⟩⟩, fun hX hq => ?_, ?_,
-    (kk.trans kd).mono (by decide), by rw [mxd, x₂, VG.Proof.Bignum.X86_64.mx_ffff, x₁]⟩
+    (kk.trans kd).mono (by decide), by rw [mxd, x₂, x₁]⟩
   · obtain ⟨lt, cg⟩ := vv₂ (by rw [hxv]; exact hX)
     rw [vd lt, cg (by rw [hAv]; exact hq), hxv]
     have he' : ex = 2 ^ 16 + 1 := hex.trans (by decide)

@@ -103,7 +103,7 @@ theorem ifmaPartP_ok {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (hl2 :
         (WP.mono (ifmaAny_ok h2 hl2 h hv hr rfl hs hA) fun t ⟨hd, mxa⟩ =>
           WP.mono (branchBP_ok hl M h hv hd rfl hw hp hq
             (hpP.congr hd.iscr (hd.keep.gpr (by decide)) hd.keep.2.1 hd.keep.2.2) hpost) fun t' ⟨hd', mxb⟩ =>
-            ⟨hd', by rw [mxb, mxa, mx_ffff, mx₁, mx₀]⟩))
+            ⟨hd', by rw [mxb, mxa, mx₁, mx₀]⟩))
 
 /-- `mainBack_ok` with `preP` and `postP`. -/
 theorem mainBackP_ok {l2 : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (h2 : Lay2 l2) (M : Mont) {s t₀ : State} {B : Addr} {Z k : Nat}
