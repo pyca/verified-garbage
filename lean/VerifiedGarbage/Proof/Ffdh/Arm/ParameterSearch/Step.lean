@@ -68,12 +68,15 @@ theorem rejectHead_ok {p : SearchParams} {used remaining count : Nat} {s : State
     VG.Impl.Ffdh.Arm.ParameterSearch.stf lowWord at *
   unfold writeLow rejectFields
   simp only [List.foldl_cons, List.foldl_nil]
-  ffrun [control.addr (by decide : 14 < 16), control.addr (by decide : 4 < 16),
-    control.addr (by decide : 9 < 16), control.addr (by decide : 10 < 16),
-    control.read (by decide : 14 < 16), control.read (by decide : 4 < 16),
-    control.read (by decide : 9 < 16), control.read (by decide : 10 < 16),
-    control.write (by decide : 4 < 16), control.write (by decide : 9 < 16),
-    control.write (by decide : 10 < 16), consumed, usedValue, sourceValue, lengthValue, sum, source, length]
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, logic_exec, str_exec, ldr_exec, Op2.eval, RegUpd.gpr_setReg,
+    RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, gpr_putMem, mem_putMem, wr_putMem, Option.map_some,
+    Option.some.injEq, exists_eq_left', ite_true, ite_false, reduceCtorEq, Nat.reduceLT, Nat.reduceMul,
+    control.addr (by decide : 14 < 16), control.addr (by decide : 4 < 16), control.addr (by decide : 9 < 16),
+    control.addr (by decide : 10 < 16), control.read (by decide : 14 < 16), control.read (by decide : 4 < 16),
+    control.read (by decide : 9 < 16), control.read (by decide : 10 < 16), control.write (by decide : 4 < 16),
+    control.write (by decide : 9 < 16), control.write (by decide : 10 < 16), consumed, usedValue, sourceValue,
+    lengthValue, sum, source, length]
 
 end VG.Proof.Ffdh.Arm.ParameterSearch
 

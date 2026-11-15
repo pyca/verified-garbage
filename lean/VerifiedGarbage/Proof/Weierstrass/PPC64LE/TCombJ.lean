@@ -1021,8 +1021,10 @@ theorem bout_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {sta
       wordsVal s₃.mem base x K.L.M.n = wordsVal s.mem base x K.L.M.n := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rw [o₃.wordsVal (by rcases hx with rfl | rfl | rfl <;> omega_arith) (by rcases hx with rfl | rfl | rfl <;> omega_arith),
-      o₂.wordsVal (by rcases hx with rfl | rfl | rfl <;> omega_arith) (by rcases hx with rfl | rfl | rfl <;> omega_arith), m₁]
+    have top : x + 8 * K.L.M.n ≤ oAt K.L.M.n := by rcases hx with rfl | rfl | rfl <;> assumption
+    rw [o₃.wordsVal (by rcases hx with rfl | rfl | rfl <;> [exact rxy; exact ryz.symm; exact zy])
+        (by omega_using [this, top]),
+      o₂.wordsVal (.inl (by omega_using [top, hqx, hqy])) (by omega_using [this, top]), m₁]
   have yv : wordsVal s₃.mem base K.L.R.y K.L.M.n = if wordsVal s.mem base K.L.R.z K.L.M.n = 0 then K.one
       else wordsVal s.mem base K.L.R.y K.L.M.n := by
     rw [y₃, o₂.wordsVal (by omega_using [hk3, hk6, this, hqx, hqy, hqa, rx, ry, rz, zlo, nlo, ryl, rxy, rxz, ryz, nx, ny, nz, nzr, zx, zy, zz]) (by omega_using [hk3, hk6, this, hqx, hqa, rx, ry, rz, zlo, nlo, ryl, rxy, rxz, ryz, nx, ny, nz, nzr, zx, zy, zz]), y₂, m₁]
@@ -1046,7 +1048,10 @@ theorem bout_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {sta
     · exact lty
   have ne : K.L.R.x ≠ K.L.R.y ∧ K.L.R.x ≠ K.L.R.z ∧ K.L.R.y ≠ K.L.R.z ∧ K.neg ≠ K.L.R.x ∧
       K.neg ≠ K.L.R.y ∧ K.neg ≠ K.L.R.z ∧ K.zero ≠ K.L.R.x ∧ K.zero ≠ K.L.R.y ∧ K.zero ≠ K.L.R.z ∧
-      K.zero ≠ K.neg := by omega_using [hk3, hk6, this, hqx, hqa, rx, ry, rz, zlo, nlo, rxl, ryl, rzl, rxy, rxz, ryz, nx, ny, nz, nzr, zx, zy, zz]
+      K.zero ≠ K.neg :=
+    ⟨by omega_using [hk3, rxy], by omega_using [hk3, rxz], by omega_using [hk3, ryz], by omega_using [hk3, nx],
+      by omega_using [hk3, ny], by omega_using [hk3, nz], by omega_using [hk3, zx], by omega_using [hk3, zy],
+      by omega_using [hk3, zz], by omega_using [hk3, nzr]⟩
   obtain ⟨n₁, n₂, n₃, n₄, n₅, n₆, n₇, n₈, n₉, n₁₀⟩ := ne
   have reads : readsOk (fromJ { K.L.S with t0 := K.neg } K.L.R ⟨K.zero, K.zero, K.zero⟩ K.L.R) V = true := by
     simp [readsOk, fromJ, FOp.ins, FOp.out, V]

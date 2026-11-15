@@ -25,16 +25,21 @@ def finishAddOps : List PointOp :=
 theorem finishAdd_reads : fieldReads finishAddOps [1072,1144,1216,1504,1576,1648,568]=true := by decide
 
 theorem finishAdd_slots : ∀op∈finishAddOps,∀x∈op.out::op.ins,buildSlot x := by
-  simp [finishAddOps,finishPointOp,rcb3,finishAddSlotMap,finishAddP,finishAddQ,finishAddOut,PointOp.out,PointOp.ins,buildSlot]
+  -- a closed check, by evaluation
+  show ∀op∈finishAddOps,∀x∈op.out::op.ins,x%72=64 ∧ x+72≤3304
+  decide
 
 theorem finishAdd_coeffs : ∀op∈finishAddOps,fieldCoeffs op := by
-  simp [finishAddOps,finishPointOp,rcb3,finishAddSlotMap,finishAddP,finishAddQ,finishAddOut,fieldCoeffs]
+  -- no operation of `finishPointOp` has coefficients
+  intro op hop
+  obtain ⟨f,-,rfl⟩ := List.mem_map.mp hop
+  cases f <;> exact trivial
 
 theorem finishAdd_value {F : Type _} [Lean.Grind.CommRing F] (E : Nat → F) :
     (pointRun finishAddOps E 1288,pointRun finishAddOps E 1360,pointRun finishAddOps E 1432)=
       rcbAdd3 (E 568) (E 1072) (E 1144) (E 1216) (E 1504) (E 1576) (E 1648) := by
   simp only [pointRun,finishAddOps,finishPointOp,rcb3,finishAddSlotMap,finishAddP,finishAddQ,finishAddOut,
-    List.map_cons,List.map_nil,List.foldl,PointOp.run,Function.update_apply,ite_true]
+    List.map_cons,List.map_nil,List.foldl,PointOp.run,↓Function.update_apply,↓reduceIte,Nat.reduceEqDiff]
   rfl
 
 end VG.Proof.Weierstrass.AArch64.P521Native

@@ -2340,10 +2340,11 @@ theorem nPre_ok {I : RpIn} {m₀ : Mem} {w : Nat} {c : Bool} {s : State} (h : G 
     rw [← hf, (hiIdx_spec s₁.mem I.B _ _).2.2.2, hX1]
   obtain ⟨hhi, -, -, -⟩ := hiIdx_spec s₁.mem I.B (slot (Wk I.k) wX4) (Wk I.k)
   rw [hf] at hhi
-  show WP isa (.block ([.clz .x .x3 .x6, .sub .x .x4 .x12 .x5, .subImm .x .x4 .x4 1, .lsl .x .x4 .x4 6,
-    .add .x .x4 .x4 .x3, .lsr .x .x4 .x4 1, .lsl .x .x4 .x4 1, .logic .and .x .x4 .x4 .x9] ++ ([sth .x4 sT1] ++
-    ([.lsr .x .x3 .x4 1] ++ ([sth .x3 sC] ++ ([.subImm .x .x13 .x7 1, .logic .eor .x .x13 .x13 .x9] ++
-    [sth .x13 sZ])))))) s₂ _
+  show WP isa (.block (([.clz .x .x3 .x6, .sub .x .x4 .x12 .x5, .subImm .x .x4 .x4 1, .lsl .x .x4 .x4 6,
+    .add .x .x4 .x4 .x3, .lsr .x .x4 .x4 1, .lsl .x .x4 .x4 1, .logic .and .x .x4 .x4 .x9] : List Instr) ++
+    (([sth .x4 sT1] : List Instr) ++ (([.lsr .x .x3 .x4 1] : List Instr) ++ (([sth .x3 sC] : List Instr) ++
+    (([.subImm .x .x13 .x7 1, .logic .eor .x .x13 .x13 .x9] : List Instr) ++
+    ([sth .x13 sZ] : List Instr))))))) s₂ _
   rw [WP.block_append_iff]
   refine WP.mono (nShift_ok (W := Wk I.k) (by rw [k₂.get .x12]; exact x12) a5 a6 a9 (by omega_using [hW, hhi]) (by omega_using [hW, hv]))
     fun s₃ ⟨⟨b4, m₃⟩, k₃⟩ => ?_

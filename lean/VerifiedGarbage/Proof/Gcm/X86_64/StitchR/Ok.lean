@@ -144,8 +144,9 @@ theorem lastGRTo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) {P : Nat �
       rw [f₃.lane _ (by decide) l hl, f₂.lane _ (by decide) l hl]; exact hI.m1 l hl))
     fun s₄ ⟨_, y4, y41, f₄⟩ => ?_
   rw [p₃ 0 (by decide), p₃ 1 (by decide)] at y4
-  have F : YFrame ([.xmm8, .xmm9, .xmm10] ++ ([.xmm12, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11] ++
-      [.xmm8, .xmm9, .xmm10, .xmm11, .xmm7, .xmm11, .xmm2])) s s₄ := f₂.comp (f₃.comp f₄)
+  have F : YFrame (([.xmm8, .xmm9, .xmm10] : List XReg) ++
+      (([.xmm12, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11] : List XReg) ++
+      ([.xmm8, .xmm9, .xmm10, .xmm11, .xmm7, .xmm11, .xmm2] : List XReg))) s s₄ := f₂.comp (f₃.comp f₄)
   have hA₄ : AInvTo s₀ (16 * e) s₄ := hI.a.yframe F (by decide) (by decide) (by decide)
   refine WP.mono (addRdxR8_ok s₄) fun s₅ ⟨d₅, r8₅, g₅, l₅, m₅, rd₅, wr₅⟩ => ?_
   have gk : ∀ q, q ≠ .rdx → q ≠ .r8 → s₅.gpr q = s.gpr q := fun q h1 h2 => by rw [g₅ q h1 h2, F.gpr]

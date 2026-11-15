@@ -72,7 +72,7 @@ theorem r2Top_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat]
     have := B.isLt
     unfold slot hdrBytes at hZ ⊢
-    omega_using [hw]
+    omega_using [hw, hw', hZ, hnw, this]
   have hs₂ := hs.congr k12.2.2
   have al1 := al 1
   refine WP.mono (WP.keep [.s0, .t3] (Q := fun t =>

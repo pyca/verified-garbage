@@ -158,7 +158,7 @@ theorem below_sub {sp : Addr} {a b : Nat} (hab : a ≤ b) (hb : b < 2 ^ 64) :
   intro x hx
   simp only [Region.Contains] at hx ⊢
   have e : x - (sp - BitVec.ofNat 64 b) = (x - (sp - BitVec.ofNat 64 a)) + BitVec.ofNat 64 (b - a) := by
-    rw [ofNat_split hab]; bv_omega
+    rw [ofNat_split hab]; grind
   rw [e, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := b - a) (by omega_using [hb]),
     Nat.mod_eq_of_lt (by omega_using [hb, hx])]
   omega_using [hab, hx]
@@ -169,7 +169,7 @@ theorem below_frame (sp : Addr) (n : Nat) (hn : n + 48 < 2 ^ 64) :
   intro x hx
   simp only [Region.Contains] at hx ⊢
   rw [show x - (sp - BitVec.ofNat 64 (n + 48)) = (x - (sp - 48 + 32)) + BitVec.ofNat 64 (n + 32) by
-    rw [BitVec.ofNat_add, BitVec.ofNat_add]; bv_omega, BitVec.toNat_add, BitVec.toNat_ofNat,
+    rw [BitVec.ofNat_add, BitVec.ofNat_add]; grind, BitVec.toNat_add, BitVec.toNat_ofNat,
     Nat.mod_eq_of_lt (a := n + 32) (by omega_using [hn]), Nat.mod_eq_of_lt (by omega_using [hn, hx])]
   omega_using [hx]
 

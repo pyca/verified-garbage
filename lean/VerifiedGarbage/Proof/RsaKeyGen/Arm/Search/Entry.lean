@@ -136,7 +136,9 @@ theorem entry_ok {p : SearchPublic} {o : State} (h : SearchInput p o) :
       t.gpr .r8 = 0 ∧ t.gpr .r9 = BitVec.ofNat 32 p.remaining ∧ t.gpr .r11 = 4 ∧
       t.mem = (pushed pushRegs o).mem) ?_ (by rfl) (by rfl)) fun t ⟨⟨h4, h5, h6, h7, h8, h9, h11, hm⟩, k⟩ => ?_
   · unfold entry arg pushBytes
-    ffrun [pushed_gpr, pushed_sp, pushed_rd, pushed_wr, a68, r68, v68, a0, r0, v0, show 4 * pushRegs.length = 40 from rfl]
+    -- reads through the writes before their branches: as post-rewrites `simp` visits each discarded branch
+    ffrun [↓RegUpd.gpr_setReg, ↓reduceIte, pushed_gpr, pushed_sp, pushed_rd, pushed_wr, a68, r68, v68, a0, r0, v0,
+      show 4 * pushRegs.length = 40 from rfl]
   · have hlen : (o.gpr .r1) = BitVec.ofNat 32 p.len := by
       rw [← h.2]; change o.gpr .r1 = BitVec.ofNat 32 (o.gpr .r1).toNat; rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
     refine ⟨⟨h, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, Nat.zero_le _, Nat.le_refl _, h8, h9, h11⟩
