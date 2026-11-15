@@ -176,8 +176,8 @@ theorem stk_arg (s₀ : State) : (stkR s₀).Disjoint (argR s₀) := by
 
 /-- `tagLoad`: the received tag's address into `r12`, from its stack slot,
 which the body never writes. -/
-theorem tagLoad_ok {s₀ : State} (hp : APre false s₀) {t : Addr} {s : State} (h : TailIn s₀ t s) :
-    WP isa (.block tagLoad) s (TailIn s₀ (tp s₀)) := by
+theorem tagLoadM_ok {s₀ : State} (hp : APre false s₀) {t : Addr} {s : State} (h : TailIn s₀ t s) :
+    WP isa (.block tagLoad) s fun s' => TailIn s₀ (tp s₀) s' ∧ s'.mem = s.mem := by
   have ea : off (s₀.gpr .rsp) 8 = stackArgAddr s₀ 0 := by rw [off_eq, stackArgAddr]
   have hc : (argR s₀).Contains (stackArgAddr s₀ 0) (64 / 8) := by
     have := Offset.contains_base (stackArgAddr s₀ 0) (d := 0) (n := 8) (k := 16) (by decide) (by decide)
@@ -198,10 +198,14 @@ theorem tagLoad_ok {s₀ : State} (hp : APre false s₀) {t : Addr} {s : State} 
     ite_true, Option.map_some, hv, Option.some.injEq, exists_eq_left']
   have g : ∀ r, r ≠ .r12 → (s.setReg .r12 (tp s₀)).gpr r = s.gpr r := fun r hr =>
     RegUpd.gpr_setReg_of_ne _ _ hr
-  exact ⟨⟨by rw [g _ (by decide), h.inv.r15], by rw [g _ (by decide), h.inv.r14],
+  exact ⟨⟨⟨by rw [g _ (by decide), h.inv.r15], by rw [g _ (by decide), h.inv.r14],
       by rw [g _ (by decide), h.inv.r13], RegUpd.gpr_setReg_self _ _ _, by rw [g _ (by decide), h.inv.rsp],
       h.inv.rd, h.inv.wr, h.inv.saved, h.inv.frame⟩,
-    by rw [g _ (by decide), h.rcx], by rw [g _ (by decide), h.rdi], h.tag, h.pt, h.mx⟩
+    by rw [g _ (by decide), h.rcx], by rw [g _ (by decide), h.rdi], h.tag, h.pt, h.mx⟩, RegUpd.mem_setReg _ _ _⟩
+
+theorem tagLoad_ok {s₀ : State} (hp : APre false s₀) {t : Addr} {s : State} (h : TailIn s₀ t s) :
+    WP isa (.block tagLoad) s (TailIn s₀ (tp s₀)) :=
+  WP.mono (tagLoadM_ok hp h) fun _ h => h.1
 
 /-- The tags compared, and `ZF` whether they differ: `eax` is 1 if the tag
 is right. -/
@@ -235,10 +239,10 @@ def openSPost (s₀ s' : State) : Prop :=
 def openSLeak (s₀ : State) : List Nat :=
   [if (Spec.ChaCha20Poly1305.decrypt (K s₀) (N s₀) (A s₀) (C s₀) (T0 s₀)).isSome then 1 else 0]
 
-theorem tailT_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : TailIn s₀ (tp s₀) s) :
+theorem tailTF_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : TailIn s₀ (tp s₀) s) :
     WP isa (.seq (.block (compare ++ ([.alu32 .cmp .rax (.imm 0)] : List Instr)))
       (.seq (.ite .e zeroData (.block [])) (.block restore))) s fun s' =>
-      abiPreserved s₀ s' ∧ openSPost s₀ s' := by
+      (abiPreserved s₀ s' ∧ openSPost s₀ s') ∧ Frame [dR s₀] s.mem s'.mem := by
   have ret : ∀ {m : Mem}, Frame [dR s₀] s.mem m →
       m.readW (s₀.gpr .rsp) 64 = s₀.mem.readW (s₀.gpr .rsp) 64 := fun hf => by
     have c : (retR s₀).Contains (s₀.gpr .rsp) (64 / 8) := Region.contains_self _ _
@@ -249,8 +253,8 @@ theorem tailT_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : TailIn s
   · simp only [hc, ↓reduceIte] at rax₂
     refine WP.ite false (by show s₂.zf = some false; rw [z₂, rax₂]; rfl) (by simp) fun _ => WP.block_nil ?_
     refine WP.mono_mx (by decide) (restore_ok hp rdi₂ i₂.saved i₂.rsp i₂.rd i₂.wr)
-      fun s₃ ⟨cs₃, rax₃, m₃⟩ mx₃ => ⟨⟨cs₃, by rw [m₃, m₂]; exact ret (Frame.refl _ _),
-        by rw [mx₃, mx₂, h.mx]⟩, ?_⟩
+      fun s₃ ⟨cs₃, rax₃, m₃⟩ mx₃ => ⟨⟨⟨cs₃, by rw [m₃, m₂]; exact ret (Frame.refl _ _),
+        by rw [mx₃, mx₂, h.mx]⟩, ?_⟩, by rw [m₃, m₂]; exact Frame.refl _ _⟩
     unfold openSPost
     split
     next pt hpt =>
@@ -261,16 +265,28 @@ theorem tailT_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : TailIn s
     refine WP.ite true (by show s₂.zf = some true; rw [z₂, rax₂]; rfl) (fun _ => ?_) (by simp)
     refine WP.mono (zeroData_ok hp i₂ (low8 rax₂)) fun s₃ ⟨k₃, z₃⟩ => ?_
     refine WP.mono_mx (by decide) (restore_ok hp (by rw [k₃.rdi, rdi₂]) k₃.inv.saved k₃.inv.rsp k₃.inv.rd
-      k₃.inv.wr) fun s₄ ⟨cs₄, rax₄, m₄⟩ mx₄ => ⟨⟨cs₄, by rw [m₄]; exact ret (by rw [← m₂]; exact k₃.frame),
-        by rw [mx₄, k₃.mx, mx₂, h.mx]⟩, ?_⟩
+      k₃.inv.wr) fun s₄ ⟨cs₄, rax₄, m₄⟩ mx₄ => ⟨⟨⟨cs₄, by rw [m₄]; exact ret (by rw [← m₂]; exact k₃.frame),
+        by rw [mx₄, k₃.mx, mx₂, h.mx]⟩, ?_⟩, by rw [m₄, ← m₂]; exact k₃.frame⟩
     unfold openSPost
     split
     next pt hpt => exact absurd (decrypt_eq_some hpt).1 hc
     next hn => exact ⟨by rw [rax₄, k₃.rax, rax₂], by rw [m₄, z₃]⟩
 
+theorem tailT_ok {s₀ : State} (hp : APre false s₀) {s : State} (h : TailIn s₀ (tp s₀) s) :
+    WP isa (.seq (.block (compare ++ ([.alu32 .cmp .rax (.imm 0)] : List Instr)))
+      (.seq (.ite .e zeroData (.block [])) (.block restore))) s fun s' =>
+      abiPreserved s₀ s' ∧ openSPost s₀ s' :=
+  WP.mono (tailTF_ok hp h) fun _ h => h.1
+
+/-- `openTail`, which writes only the data (zeroing it if the tag is wrong). -/
+theorem tailF_ok {s₀ : State} (hp : APre false s₀) {t : Addr} {s : State} (h : TailIn s₀ t s) :
+    WP isa openTail s fun s' => (abiPreserved s₀ s' ∧ openSPost s₀ s') ∧ Frame [dR s₀] s.mem s'.mem :=
+  WP.seq (WP.mono (tagLoadM_ok hp h) fun _ ⟨h', m'⟩ =>
+    WP.mono (tailTF_ok hp h') fun _ ⟨q, f⟩ => ⟨q, by rw [← m']; exact f⟩)
+
 theorem tail_ok {s₀ : State} (hp : APre false s₀) {t : Addr} {s : State} (h : TailIn s₀ t s) :
     WP isa openTail s fun s' => abiPreserved s₀ s' ∧ openSPost s₀ s' :=
-  WP.seq (WP.mono (tagLoad_ok hp h) fun _ h => tailT_ok hp h)
+  WP.mono (tailF_ok hp h) fun _ h => h.1
 
 /-- `APre` of a state that may read more. -/
 theorem APre.of_more {e : Bool} {u : State} {rd wr more : List Region} (h : preX86_64 e (u.withRegions rd wr)) :
@@ -284,6 +300,17 @@ theorem APre.of_more {e : Bool} {u : State} {rd wr more : List Region} (h : preX
 `Stitch.openStitchedShared`) starts from: `open`'s precondition, with the
 ciphertext at `r11` (`sp`), which is the data or apart from it. -/
 def SPreO (s₀ : State) : Prop := APre false s₀ ∧ SrcIO s₀ (sp s₀)
+
+/-- `openShared`, and what it leaves in the keystream area (`KsLeft`):
+`openTail` writes only the data. -/
+theorem shared_correctK (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : SPreO s₀) :
+    WP isa (openShared v.callee v.poly) s₀ fun s' =>
+      (abiPreserved s₀ s' ∧ openSPost s₀ s') ∧ KsLeft v s₀ s'.mem := by
+  have hp₁ : APre false s₀ := hp.1
+  refine WP.seq (WP.mono (body_okK v hp₁ hp.2) fun _ ⟨h, k⟩ => WP.mono (tailF_ok hp₁ h) fun _ ⟨q, f⟩ => ⟨q, ?_⟩)
+  intro i hi
+  rw [frame_byte f (R := sub s₀ (672 + i) 1) (by rdisj_all) (Region.contains_self _ _)]
+  exact k i hi
 
 theorem shared_correct (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : SPreO s₀) :
     WP isa (openShared v.callee v.poly) s₀ fun s' => abiPreserved s₀ s' ∧ openSPost s₀ s' :=

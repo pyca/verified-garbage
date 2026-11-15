@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Instances
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.Leaves
 public import VerifiedGarbage.Proof.Framework.X86_64.WidenArray
 public import VerifiedGarbage.Proof.Framework.X86_64.FlagBranch
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
@@ -223,35 +224,6 @@ theorem exec_narrow {c : Prog isa} {k : Contract isa} (hv : Verified X86_64.targ
   exact ⟨t', u', he', rfl⟩
 
 /-- What code leaves in its frame of `withStackArgScratch` (`L`, at the
-state `narrowS` it runs from), from what it leaves run by run from the
-states its contract's precondition implies `P` of. -/
-theorem framed_leaves {sig : Sig} {nm : String} {e : Elem} {n bytes stack : Nat}
-    {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
-    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {c : Prog isa} {P : State → Prop}
-    {R : State → Region} {L : State → Addr → Option (BitVec 8)}
-    (hv : Verified X86_64.target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
-    (hP : ∀ s, (Sig.scratchContract abi sig nm e n pre post wa stack leak).pre s → P s)
-    (hl : ∀ s t s', P s → Exec isa c s t s' → ∀ x, (R s).Contains x 1 → s'.mem x = (L s x).getD (s.mem x))
-    (hk : 6 ≤ (sig.words abi.ptrBits).length)
-    (hb : 16 + 8 * nStack sig + n * e.size ≤ bytes ∧ bytes < 4096 ∧ bytes % 8 = 0)
-    (hst : stack + bytes + 8 ≤ 2 ^ 64) (hsp : c.all (fun i => !isa.writesSp i) = true)
-    (hd : c.x86_64Depth ≤ stack)
-    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
-      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
-      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
-    {s : State} (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) {t : List Leak} {u : State}
-    (he : Exec isa (withStackArgScratch bytes (nStack sig) c) s t u) :
-    ∀ x, (R (narrowS sig e n bytes s)).Contains x 1 →
-      u.mem x = (L (narrowS sig e n bytes s) x).getD ((narrowS sig e n bytes s).mem x) := by
-  have hn := narrowS_pre (nm := nm) hk hb.1 hb.2.1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) hs
-  obtain ⟨t₃, s₃, he₃, ha, -⟩ := hv.1 _ hn
-  obtain ⟨hex, -, hm, -⟩ := withStackArgScratch_run hk hb hst (SpSafe.of_all hsp) hd hs he₃ ha
-  obtain ⟨-, rfl⟩ := Exec.det he hex
-  intro x hx
-  rw [hm]
-  exact hl _ _ _ (hP _ hn) he₃ x hx
-
-/-- What code leaves in its frame of `withStackArgScratch` (`L`, at the
 state `narrowS` it runs from), where `Q` says, from what it leaves run by
 run from the states its contract's precondition implies `P` of. -/
 theorem framed_leavesQ {sig : Sig} {nm : String} {e : Elem} {n bytes stack : Nat}
@@ -279,26 +251,6 @@ theorem framed_leavesQ {sig : Sig} {nm : String} {e : Elem} {n bytes stack : Nat
   intro x hx
   rw [hm]
   exact hl _ _ _ (hP _ hn) he₃ x hx
-
-/-- What `narrowS` keeps of `s`: the registers but `rax` and `rsp`, the
-stack arguments, the buffer after them, and the memory outside the copies. -/
-theorem narrowS_args {sig : Sig} {e : Elem} {n bytes stack : Nat}
-    {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
-    {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
-    (hk : 6 ≤ (sig.words abi.ptrBits).length) (hb : 16 + 8 * nStack sig + n * e.size ≤ bytes)
-    (hb1 : bytes < 4096) {s : State} (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) :
-    (∀ q, q ≠ .rax → q ≠ .rsp → (narrowS sig e n bytes s).gpr q = s.gpr q) ∧
-      (∀ j < nStack sig, stackArg (narrowS sig e n bytes s) j = stackArg s j) ∧
-      stackArg (narrowS sig e n bytes s) (nStack sig) =
-        s.gpr .rsp - BitVec.ofNat 64 bytes + BitVec.ofNat 64 (16 + 8 * nStack sig) ∧
-      Frame [⟨s.gpr .rsp - BitVec.ofNat 64 bytes + 8, 8 * (nStack sig + 1)⟩]
-        s.mem (narrowS sig e n bytes s).mem := by
-  obtain ⟨-, hg, -, -, hf⟩ := narrowS_facts (nm := "") hk hb hb1 hs
-  obtain ⟨-, -, -, -, -, -, ha, hl⟩ := argsState_run hs hk hb hb1
-  have e (j : Nat) : stackArg (narrowS sig e n bytes s) j =
-      stackArg (setArgsState bytes (nStack sig) (allocState bytes s)) j := by
-    simp only [stackArg, stackArgAddr, narrowS, State.withRegions_mem, State.withRegions_gpr]
-  exact ⟨hg, fun j hj => (e j).trans (ha j hj), (e _).trans hl, hf⟩
 
 /-- The stack arguments of `vg_aes_gcm_seal`'s code in the frame of
 `withStackArgScratch 2600 3` from `s`: those of `s`, then `work`. -/

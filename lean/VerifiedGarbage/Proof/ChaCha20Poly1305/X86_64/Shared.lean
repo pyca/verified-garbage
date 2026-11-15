@@ -521,9 +521,8 @@ theorem openCall_ct (v : XorImpl) : ConstantTime isa openK.pre openK.pub (openCa
     rw [hh.mem, hh.rdi, hh.rsi, hh.rdx, hh.rcx, CallOpen.hS, CallOpen.hT, CallOpen.hL, hh.r11, hh.r10, hh.r9]
   rw [leak hh₁, leak hh₂, ql]
 
-theorem openCall_verified (v : XorImpl) :
-    Verified X86_64.target (openCall v.callee v.poly) (openZeroScratchContract X86_64.abi 212 56) :=
-  Verified.of_correct (k := openK) (openCall_correct v) (openCall_ct v)
+/-- `open`'s call's contract on its working space is `openK`'s. -/
+theorem openCall_implies : openK.Implies (openZeroScratchContract X86_64.abi 212 56) :=
     { pre := by
         sig_implies_pre [Proof.ChaCha20Poly1305.openZeroScratchContract,
           Proof.ChaCha20Poly1305.openScratchSig, Spec.ChaCha20Poly1305.openZeroPost,
@@ -564,6 +563,10 @@ theorem openCall_verified (v : XorImpl) :
           Proof.ChaCha20Poly1305.pubX86_64, X86_64.abi, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
           List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
           [openSat] using openSat }
+
+theorem openCall_verified (v : XorImpl) :
+    Verified X86_64.target (openCall v.callee v.poly) (openZeroScratchContract X86_64.abi 212 56) :=
+  Verified.of_correct (k := openK) (openCall_correct v) (openCall_ct v) openCall_implies
 
 theorem openCall_spSafe (v : XorImpl) : (openCall v.callee v.poly).all (fun i => !isa.writesSp i) = true := by
   simp only [openCall, Code.all, CallOpen.callOpen_spSafe v, Bool.and_true]

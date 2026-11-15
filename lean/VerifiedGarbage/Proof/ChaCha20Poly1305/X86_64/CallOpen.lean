@@ -124,6 +124,21 @@ theorem inner_avx2 (v : XorImpl) (hv : v.poly = .avx2) :
 theorem inner_shared (v : XorImpl) (hv : ¬v.poly = .avx2) : inner v = openShared v.callee v.poly := by
   simp only [inner, openInner, hv, ↓reduceIte]
 
+/-- `sharedK`, with what the code leaves in the keystream area (`KsLeft`) in
+its postcondition. -/
+def sharedKL (v : XorImpl) : Contract isa where
+  pre := SPreO
+  post s s' := openSPost s s' ∧ KsLeft v s s'.mem
+  pub := sharedPub
+
+/-- The shared code, for an implementation without the stitched AVX2 code,
+leaves the keystream area as `KsLeft` says (`shared_correctK`). -/
+theorem inner_okL (v : XorImpl) (hv : ¬v.poly = .avx2) (s : State) (hs : (sharedKL v).pre s) :
+    ∃ t s', Exec isa (inner v) s t s' ∧ abiPreserved s s' ∧ (sharedKL v).post s s' := by
+  rw [inner_shared v hv]
+  obtain ⟨t, s', e, ⟨a, p⟩, k⟩ := shared_correctK v hs
+  exact ⟨t, s', e, a, p, k⟩
+
 open VG.Impl.ChaCha20Poly1305.X86_64.Stitch VG.Proof.ChaCha20Poly1305.X86_64.Stitch in
 /-- The callee never writes the stack pointer. The callees' code is
 generalized away (`P`), so that `simp` does not unfold the predicate, and the
@@ -616,6 +631,66 @@ theorem callOpen_ok (v : XorImpl) {h : State} (hs : CPre h) :
     unfold hPost at hp ⊢
     rw [popped_mem, ← m₂, e]
     exact hp
+
+/-- `callOpen_ok`, for an implementation without the stitched AVX2 code, and
+what the call leaves in the keystream area of `work` (`hW`). -/
+theorem callOpen_okK (v : XorImpl) (hv : ¬v.poly = .avx2) {h : State} (hs : CPre h) :
+    WP isa (callOpen v.callee v.poly) h fun z => COut h z ∧ KsLeftAt v (hW h) (hL h) h.mem z.mem := by
+  have hn : 8 * frameRegs.length ≤ (h.gpr .rsp).toNat := by have := hs.sp_lo; simp; omega_using [this]
+  have hu := hs.entry
+  have hB' := hs.hB_lt
+  have hd := inner_xdepth v
+  rw [callOpen_eq]
+  refine WP.frame (by decide) (by decide) (by decide) hn ?_
+  refine WP.callF (k := sharedKL v) (inner_okL v hv) (SpSafe.of_all (inner_spSafe v)) (by omega_using [hd]) (hu.spre hs)
+    (Covers.append_left (hu.rd_cov hs) (hu.wr_cov hs).right) (hu.wr_cov hs)
+    fun s' rd' wr' cs' f' ⟨s₂, m₂, g₂, ⟨post₂, ks₂⟩⟩ mx' => ?_
+  have prsp : (pushed frameRegs h).gpr .rsp = hB h + BitVec.ofNat 64 32 := by
+    rw [pushed_rsp, sub_hB h (by decide)]; rfl
+  refine ⟨cs' _ calleeSaved_rsp, wr', ⟨⟨fun r hr => ?_, by rw [popped_rd, rd', pushed_rd],
+    by rw [popped_wr, wr', pushed_wr]; rfl, ?_, ?_, ?_⟩, ?_⟩⟩
+  · by_cases hr' : r = .rsp
+    · subst hr'
+      rw [popped_rsp, cs' _ calleeSaved_rsp, prsp, Offset.add_ofNat_add_ofNat, rsp_eq h]
+      rfl
+    · have hra : r ≠ .r10 := by rintro rfl; simp [calleeSaved] at hr
+      rw [popped_gpr _ _ _ hr' hra, cs' r hr, pushed_gpr _ _ hr']
+  · -- The pushes, the return address and the callee: within the stack, the
+    -- destination and `work`.
+    rw [popped_mem]
+    have f₂ := Frame.below_mono f' (b := 32) (by omega_using [hd]) (by decide)
+    rw [prsp, show wrB (eS h) = [hdR h, hwR h] by show [dR (eS h), ctxR (eS h)] = _; rw [hu.ed, hu.ec]] at f₂
+    simp only [below, BitVec.add_sub_cancel] at f₂
+    refine Frame.trans (Frame.sub (pushed_frame hs) fun r hr => ?_) (Frame.sub f₂ fun r hr => ?_)
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨hstk h, by simp only [List.mem_cons, true_or, or_true],
+        Offset.sub_base _ (by decide)⟩
+    · simp only [List.mem_append, List.mem_cons, List.mem_singleton, List.not_mem_nil, or_false] at hr
+      rcases hr with (rfl | rfl) | rfl
+      · exact ⟨hdR h, by simp only [List.mem_cons, true_or], fun _ h => h⟩
+      · exact ⟨hwR h, by simp only [List.mem_cons, true_or, or_true], fun _ h => h⟩
+      · exact ⟨hstk h, by simp only [List.mem_cons, true_or, or_true],
+          Region.sub_prefix (by decide)⟩
+  · rw [popped_mxcsr, mx', pushed_mxcsr]
+  · have e : (popped .r10 [Reg.r11, Reg.rax, Reg.r10].length s').gpr .rax = s₂.gpr .rax :=
+      (popped_gpr _ _ _ (by decide) (by decide)).trans (g₂ .rax (by decide)).symm
+    have hp := hu.post hs post₂
+    unfold hPost at hp ⊢
+    rw [popped_mem, ← m₂, e]
+    exact hp
+  · -- The keystream area: as the callee left it, from `work` as the call found it.
+    have ec : cx ((eS h).withRegions (rdB (eS h) ++ [srcR (eS h)]) (wrB (eS h))) = hW h :=
+      (stackArg_wr _ _ _ 1).trans hu.arg1
+    have eL : L ((eS h).withRegions (rdB (eS h) ++ [srcR (eS h)]) (wrB (eS h))) = hL h := by
+      show ((eS h).gpr .r9).toNat = _; rw [hu.gpr _ (by decide)]
+    have k₂ := ks₂
+    simp only [KsLeft, ec, eL, State.withRegions_mem] at k₂
+    rw [popped_mem, ← m₂]
+    refine k₂.frame (rs := []) (Frame.refl _ _) (fun _ _ _ hr => by simp at hr) hu.mem fun k hk r hr => ?_
+    simp only [List.mem_singleton] at hr; subst hr
+    intro hc
+    refine CPre.stk_disj hs.b_w (d := 24) (n := 32) (by decide) _ hc ?_
+    rw [off_eq]; exact Offset.contains_base _ (by omega_using [hk]) (by have := hs.o_w; omega_using [this, hk])
 
 /-- The call, in two runs from states satisfying `CPre` that agree on what it
 reads. -/

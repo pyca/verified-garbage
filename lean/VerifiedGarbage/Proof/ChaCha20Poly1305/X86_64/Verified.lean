@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTail
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 public import VerifiedGarbage.Impl.StackScratch.X86_64
@@ -87,14 +88,17 @@ theorem seal_ct (v : Proof.ChaCha20.X86_64.XorImpl) :
     ConstantTime isa sealX86_64.pre sealX86_64.pub («seal» v.callee v.poly) :=
   fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (seal_rel v h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
+/-- `seal`'s contract on its working space is `sealX86_64`'s. -/
+theorem seal_implies : sealX86_64.Implies (sealScratchContract X86_64.abi 212 24) := by
+  sig_implies [Proof.ChaCha20Poly1305.sealScratchContract, Proof.ChaCha20Poly1305.sealScratchSig,
+    Spec.ChaCha20Poly1305.sealPost, Proof.ChaCha20Poly1305.sealX86_64,
+    Proof.ChaCha20Poly1305.preX86_64, Proof.ChaCha20Poly1305.pubX86_64, X86_64.abi, X86_64.stackArg,
+    X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
+    [sealSat] using sealSat
+
 theorem seal_verified (v : Proof.ChaCha20.X86_64.XorImpl) :
     Verified X86_64.target («seal» v.callee v.poly) (sealScratchContract X86_64.abi 212 24) :=
-  Verified.of_correct (seal_ok v) (seal_ct v) (by
-    sig_implies [Proof.ChaCha20Poly1305.sealScratchContract, Proof.ChaCha20Poly1305.sealScratchSig,
-      Spec.ChaCha20Poly1305.sealPost, Proof.ChaCha20Poly1305.sealX86_64,
-      Proof.ChaCha20Poly1305.preX86_64, Proof.ChaCha20Poly1305.pubX86_64, X86_64.abi, X86_64.stackArg,
-      X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below, X86_64.argRegs]
-      [sealSat] using sealSat)
+  Verified.of_correct (seal_ok v) (seal_ct v) seal_implies
 
 /-! ## The frame -/
 

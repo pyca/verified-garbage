@@ -38,6 +38,18 @@ structure SealFn where
   verified : Verified X86_64.target code (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1768)
   sp : SpSafe code
   depth : code.x86_64Depth ≤ 1768
+  /-- What else its runs leave, from the state it is called in to the memory
+  it returns with: nothing to say (`True`), but where its caller's clearing
+  needs what it leaves on the stack. -/
+  E : State → Mem → Prop
+  exec : ∀ s, (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1768).pre s → ∃ t s', Exec isa code s t s' ∧
+      abiPreserved s s' ∧ (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1768).post s s' ∧ E s s'.mem
+
+/-- The contract `SealFn.exec` states, `seal`'s with `E`. -/
+def SealFn.contractE (F : SealFn) : Contract isa where
+  pre := (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1768).pre
+  post s s' := (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1768).post s s' ∧ F.E s s'.mem
+  pub := (Spec.ChaCha20Poly1305.sealContract X86_64.abi 1768).pub
 
 /-- What a call of `vg_chacha20_poly1305_seal(key = rdi, nonce = rsi,
 aad = rdx, aad_len = rcx, data = r8, len = r9, tag = [rsp + 8])` needs. -/

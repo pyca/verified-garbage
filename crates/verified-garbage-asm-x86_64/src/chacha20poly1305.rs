@@ -1219,6 +1219,8 @@ pub const VG_CHACHA20_POLY1305_SEAL_SSSE3_FEATURES: verified_garbage_cpu::Featur
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -1234,7 +1236,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_ssse3(key: *const
     core::arch::naked_asm!(
         r#".base64 "SI1kJPhIi0QkEEiJBCQ="
 call {vg_chacha20_poly1305_seal_body_ssse3}
-.base64 "SI1kJAjD"
+.base64 "SI1kJAhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkGPn///MPf4Qk2AYAAPMPf4QkyAYAAPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQk6AYAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_chacha20_poly1305_seal_body_ssse3 = sym super::chacha20::vg_chacha20_poly1305_seal_body_ssse3::vg_chacha20_poly1305_seal_body_ssse3,
     )
@@ -1246,6 +1248,8 @@ pub const VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES: verified_garbage_cpu::Featur
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1262,7 +1266,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_ssse3(key: *const
     core::arch::naked_asm!(
         r#".base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
 call {vg_chacha20_poly1305_open_body_ssse3}
-.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAww=="
+.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJAj5///zD3+EJOgGAADzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJPgGAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_chacha20_poly1305_open_body_ssse3 = sym super::chacha20::vg_chacha20_poly1305_open_body_ssse3::vg_chacha20_poly1305_open_body_ssse3,
     )
@@ -1274,6 +1278,8 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES: verified_garbage_cpu::Fea
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1293,7 +1299,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_ssse3(key: *co
     core::arch::naked_asm!(
         r#".base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
 call {vg_chacha20_poly1305_open_body_ssse3}
-.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAAww=="
+.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJPj4///zD3+EJPgGAADzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJAgHAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_chacha20_poly1305_open_body_ssse3 = sym super::chacha20::vg_chacha20_poly1305_open_body_ssse3::vg_chacha20_poly1305_open_body_ssse3,
     )
@@ -1305,6 +1311,8 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_SSSE3_FEATURES: verified_garbage_cpu:
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1371,16 +1379,18 @@ jmp 21f
 20:
 21:
 .base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
-call {vg_chacha20_poly1305_seal_ssse3}
-.base64 "WFhYWFhYWMM="
+call {vg_chacha20_poly1305_seal_ssse3_core}
+.base64 "WFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCSo+P//8w9/hCRIBwAA8w9/hCQ4BwAA8w9/hCQoBwAA8w9/hCQYBwAA8w9/hCQIBwAA8w9/hCT4BgAA8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNpCRYBwAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
-        vg_chacha20_poly1305_seal_ssse3 = sym super::chacha20poly1305::vg_chacha20_poly1305_seal_ssse3,
+        vg_chacha20_poly1305_seal_ssse3_core = sym super::chacha20::vg_chacha20_poly1305_seal_ssse3_core::vg_chacha20_poly1305_seal_ssse3_core,
     )
 }
 
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8): with the key `*key` and the nonce `*nonce`, encrypts the `len` bytes at `data` in place and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealContract`. Constant time: only the pointers and the lengths may affect timing, not the key, the nonce or the data. The block counter wraps around beyond 2³²-1 blocks of data (RFC 8439's `P_MAX`), which the caller must not exceed for the construction to be secure.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1396,7 +1406,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal(key: *const [u8; 
     core::arch::naked_asm!(
         r#".base64 "SI1kJPhIi0QkEEiJBCQ="
 call {vg_chacha20_poly1305_seal_body}
-.base64 "SI1kJAjD"
+.base64 "SI1kJAhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQkGPn///MPf4Qk2AYAAPMPf4QkyAYAAPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQk6AYAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
         vg_chacha20_poly1305_seal_body = sym super::chacha20::vg_chacha20_poly1305_seal_body::vg_chacha20_poly1305_seal_body,
     )
@@ -1405,6 +1415,8 @@ call {vg_chacha20_poly1305_seal_body}
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8): with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `data` and the `aad_len` bytes of additional data at `aad`, having decrypted the ciphertext in place; otherwise returns 0, and the `len` bytes at `data` are zeros. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openZeroContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1420,7 +1432,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open(key: *const [u8; 
     core::arch::naked_asm!(
         r#".base64 "SI2kJED5//9Ii4QkyAYAAEiJRCQISIngSIPAGEiJRCQQTYnDSItEJBBMi1QkCEFTUEFS"
 call {vg_chacha20_poly1305_open_body}
-.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAww=="
+.base64 "QVpBWkFaZg/vwPMPf0QkGPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAEiNpCTABgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJAj5///zD3+EJOgGAADzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJPgGAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_chacha20_poly1305_open_body = sym super::chacha20::vg_chacha20_poly1305_open_body::vg_chacha20_poly1305_open_body,
     )
@@ -1429,6 +1441,8 @@ call {vg_chacha20_poly1305_open_body}
 /// ChaCha20-Poly1305 decryption (RFC 8439 §2.8), out of place: with the key `*key`, the nonce `*nonce` and the received tag `*tag`, returns 1 if the tag is that of the `len` bytes of ciphertext at `src` and the `aad_len` bytes of additional data at `aad`, having then written the plaintext to the `dst_len = len` bytes at `dst`; otherwise returns 0, having written zeros to them: `vg_chacha20_poly1305_open` with the ciphertext read from `src` and the plaintext written to `dst`. `src` is not written, and `dst` is a buffer of its own: it overlaps no other buffer, `src` included. The tags are compared without a branch.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.openToContract`. Constant time but for the result: only the pointers, the lengths and whether the function returns 1 or 0 may affect timing, not the key, the nonce, the additional data, the tag or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1447,7 +1461,7 @@ pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to(key: *const [u
     core::arch::naked_asm!(
         r#".base64 "SI2kJDD5//9Ii4Qk2AYAAEiJRCQISIuEJOAGAABIiUQkEEiLhCToBgAASIlEJBhIieBIg8AoSIlEJCBIi0QkIEyLVCQYTYnDTItEJAhBU1BBUg=="
 call {vg_chacha20_poly1305_open_body}
-.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAAww=="
+.base64 "QVpBWkFaZg/vwPMPf0QkKPMPf0QkOPMPf0QkSPMPf0QkWPMPf0QkaPMPf0QkePMPf4QkiAAAAPMPf4QkmAAAAPMPf4QkqAAAAPMPf4QkuAAAAPMPf4QkyAAAAPMPf4Qk2AAAAPMPf4Qk6AAAAPMPf4Qk+AAAAPMPf4QkCAEAAPMPf4QkGAEAAPMPf4QkKAEAAPMPf4QkOAEAAPMPf4QkSAEAAPMPf4QkWAEAAPMPf4QkaAEAAPMPf4QkeAEAAPMPf4QkiAEAAPMPf4QkmAEAAPMPf4QkqAEAAPMPf4QkuAEAAPMPf4QkyAEAAPMPf4Qk2AEAAPMPf4Qk6AEAAPMPf4Qk+AEAAPMPf4QkCAIAAPMPf4QkGAIAAPMPf4QkKAIAAPMPf4QkOAIAAPMPf4QkSAIAAPMPf4QkWAIAAPMPf4QkaAIAAPMPf4QkeAIAAPMPf4QkiAIAAPMPf4QkmAIAAPMPf4QkqAIAAPMPf4QkuAIAAEiNpCTQBgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJPj4///zD3+EJPgGAADzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJAgHAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_chacha20_poly1305_open_body = sym super::chacha20::vg_chacha20_poly1305_open_body::vg_chacha20_poly1305_open_body,
     )
@@ -1456,6 +1470,8 @@ call {vg_chacha20_poly1305_open_body}
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1521,9 +1537,9 @@ jmp 21f
 20:
 21:
 .base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
-call {vg_chacha20_poly1305_seal}
-.base64 "WFhYWFhYWMM="
+call {vg_chacha20_poly1305_seal_core}
+.base64 "WFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCSo+P//8w9/hCRIBwAA8w9/hCQ4BwAA8w9/hCQoBwAA8w9/hCQYBwAA8w9/hCQIBwAA8w9/hCT4BgAA8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNpCRYBwAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
-        vg_chacha20_poly1305_seal = sym super::chacha20poly1305::vg_chacha20_poly1305_seal,
+        vg_chacha20_poly1305_seal_core = sym super::chacha20::vg_chacha20_poly1305_seal_core::vg_chacha20_poly1305_seal_core,
     )
 }
