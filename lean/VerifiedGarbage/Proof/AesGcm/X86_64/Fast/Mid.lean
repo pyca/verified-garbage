@@ -53,12 +53,15 @@ theorem fastAad_spSafe : (Impl.AesGcm.X86_64.Fast.aad : Prog isa).all (fun i => 
 theorem fastAad_xdepth : (Impl.AesGcm.X86_64.Fast.aad : Prog isa).x86_64Depth = 0 := by decide +kernel
 
 /-- `aad` after the entry, for a 12-byte nonce and at most 16 bytes of
-additional data: what `oneAad` leaves. -/
-theorem aad_mid (hF : ShortFacts) {k : Nat} {s s₁ : State} {Ctx W SP Np A D : Addr} {al n : Nat}
+additional data: what `oneAad` leaves, writing only `W` from byte 16 to
+112. -/
+theorem aad_midF (hF : ShortFacts) {k : Nat} {s s₁ : State} {Ctx W SP Np A D : Addr} {al n : Nat}
     (C : OneCtx s k Ctx W SP Np A D 12 al n) (X : CtxExt (CtxMode.preparedN np hpn) Ctx (W + BitVec.ofNat 64 16) W SP D n s)
     (E : OneEntry s Ctx W SP A D n s₁)
     (hNp : s.gpr .rdx = Np) (hnl : (s.gpr .rcx).toNat = 12) (hal : (s.gpr .r9).toNat = al) (h16 : al ≤ 16) :
-    WP isa Impl.AesGcm.X86_64.Fast.aad s₁ (OneMid s Ctx W SP D n (ctxH s.mem Ctx) (bytesAt s.mem Np 12) (bytesAt s.mem A al) s₁.mem) := by
+    WP isa Impl.AesGcm.X86_64.Fast.aad s₁ fun t =>
+      OneMid s Ctx W SP D n (ctxH s.mem Ctx) (bytesAt s.mem Np 12) (bytesAt s.mem A al) s₁.mem t ∧
+        Frame [⟨W + BitVec.ofNat 64 16, 96⟩] s₁.mem t.mem := by
   have L := C.lay
   have dW : ∀ (p : Addr) (k : Nat), (⟨p, k⟩ : Region).Disjoint ⟨W, 2560⟩ → ∀ r ∈ [oneR W], (⟨p, k⟩ : Region).Disjoint r :=
     fun p k h r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.sub_right (Lay.wSub (by decide))
@@ -81,21 +84,30 @@ theorem aad_mid (hF : ShortFacts) {k : Nat} {s s₁ : State} {Ctx W SP Np A D : 
     simp only [Nat.mul_zero, Nat.add_zero] at e
     rw [E.frame.readW (r := ⟨Ctx + BitVec.ofNat 64 272, 16⟩) (Region.contains_self _ _) (dW _ _ cw) (by decide), e]
     exact hF.pp1 _
-  refine WP.mono (WP.with_rdwr (fastAad_ok L E.env hH₁ (by rw [E.r12, hNp])
+  refine WP.mono (WP.with_rdwr (fastAad_okF L E.env hH₁ (by rw [E.r12, hNp])
     (by rw [E.rbp, ← hnl, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (C.nonce.of_eq E.rd E.wr) (C.aad.of_eq E.rd E.wr)
-    E.aad hal' h16 hP inH cw ct)) fun s₂ ⟨ao, hrd₂, hwr₂⟩ => ?_
+    E.aad hal' h16 hP inH cw ct)) fun s₂ ⟨⟨ao, fF⟩, hrd₂, hwr₂⟩ => ?_
   rw [hiv, haa] at ao
   have f₂ := wFrame_one (D := D) (n := n) (o := 0) (.inl rfl) (wFrame_cons ao.frame)
   have kp : ∀ d, (128 ≤ d ∧ d + 8 ≤ 216) ∨ (224 ≤ d ∧ d + 8 ≤ 240) →
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun d hd => f₂.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (kept_oneFrame L C.dE hd)
       (by decide)
-  refine ⟨ao.env, ao.hH, ⟨by rw [kp 176 (.inl ⟨by decide, by decide⟩)]; exact E.rounds.1, E.rounds.2⟩,
+  refine ⟨⟨ao.env, ao.hH, ⟨by rw [kp 176 (.inl ⟨by decide, by decide⟩)]; exact E.rounds.1, E.rounds.2⟩,
     by rw [kp 200 (.inl ⟨by decide, by decide⟩)]; exact E.dat, by rw [kp 208 (.inl ⟨by decide, by decide⟩)]; exact E.len,
     by rw [kp 184 (.inl ⟨by decide, by decide⟩)]; exact E.alen, ao.j0, ao.abs, ao.cb,
-    E.saved.frame f₂ (saved_oneFrame L C.dE), ?_, ao.frame, hrd₂.trans E.rd, hwr₂.trans E.wr⟩
+    E.saved.frame f₂ (saved_oneFrame L C.dE), ?_, ao.frame, hrd₂.trans E.rd, hwr₂.trans E.wr⟩, fF⟩
   exact (E.frame.sub fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact oneR_w).trans
     (wFrame_w ao.frame)
+
+/-- `aad` after the entry, for a 12-byte nonce and at most 16 bytes of
+additional data: what `oneAad` leaves. -/
+theorem aad_mid (hF : ShortFacts) {k : Nat} {s s₁ : State} {Ctx W SP Np A D : Addr} {al n : Nat}
+    (C : OneCtx s k Ctx W SP Np A D 12 al n) (X : CtxExt (CtxMode.preparedN np hpn) Ctx (W + BitVec.ofNat 64 16) W SP D n s)
+    (E : OneEntry s Ctx W SP A D n s₁)
+    (hNp : s.gpr .rdx = Np) (hnl : (s.gpr .rcx).toNat = 12) (hal : (s.gpr .r9).toNat = al) (h16 : al ≤ 16) :
+    WP isa Impl.AesGcm.X86_64.Fast.aad s₁ (OneMid s Ctx W SP D n (ctxH s.mem Ctx) (bytesAt s.mem Np 12) (bytesAt s.mem A al) s₁.mem) :=
+  WP.mono (aad_midF hF C X E hNp hnl hal h16) fun _ h => h.1
 
 /-- `cond` after the entry: ZF clear iff the path applies, and the entry
 kept. -/
