@@ -1345,10 +1345,6 @@ pub(crate) mod vg_mldsa_hint_bit_pack;
 pub(crate) mod vg_mldsa_hint_bit_unpack;
 
 #[rustfmt::skip]
-#[path = "internal/vg_mldsa_inv_ntt.rs"]
-pub(crate) mod vg_mldsa_inv_ntt;
-
-#[rustfmt::skip]
 #[path = "internal/vg_mldsa_montgomery_dot4.rs"]
 pub(crate) mod vg_mldsa_montgomery_dot4;
 
@@ -1359,14 +1355,6 @@ pub(crate) mod vg_mldsa_montgomery_inv_ntt;
 #[rustfmt::skip]
 #[path = "internal/vg_mldsa_montgomery_product.rs"]
 pub(crate) mod vg_mldsa_montgomery_product;
-
-#[rustfmt::skip]
-#[path = "internal/vg_mldsa_multiply_add_ntt.rs"]
-pub(crate) mod vg_mldsa_multiply_add_ntt;
-
-#[rustfmt::skip]
-#[path = "internal/vg_mldsa_multiply_ntt.rs"]
-pub(crate) mod vg_mldsa_multiply_ntt;
 
 #[rustfmt::skip]
 #[path = "internal/vg_mldsa_norm_lt.rs"]
@@ -1423,10 +1411,6 @@ pub(crate) mod vg_mldsa_sub;
 #[rustfmt::skip]
 #[path = "internal/vg_mldsa_unpack_t1.rs"]
 pub(crate) mod vg_mldsa_unpack_t1;
-
-#[rustfmt::skip]
-#[path = "internal/vg_mldsa_use_hint.rs"]
-pub(crate) mod vg_mldsa_use_hint;
 
 #[rustfmt::skip]
 #[path = "internal/vg_mldsa_usehint_pack6.rs"]

@@ -87,7 +87,6 @@ abbrev cP : Ptr := vP p (1 + p.k + p.ℓ)
 abbrev tmP : Ptr := vP p (1 + p.k + p.ℓ + 1)
 abbrev tm2P : Ptr := vP p (1 + p.k + p.ℓ + 2)
 abbrev wP : Ptr := vP p (1 + p.k + p.ℓ + 3)
-abbrev w1P : Ptr := vP p (1 + p.k + p.ℓ + 4)
 
 end
 
@@ -124,11 +123,6 @@ def zOne (i : Nat) : Prog isa :=
 def samples : Prog isa :=
   .seq (.block (copy32 .x25 0 .x28 oSA)) (.seq (expAll P p)
     (sampled (ballAt P (sc oSS) (.x27, 0) p.ctildeLen p.τ (cP p)) (cP p)))
-
-/-- `Σₛ Â[r, s] ẑ[s]` to `w′`. -/
-def dot (r : Nat) : Prog isa :=
-  .seq (mulAt P (wP p) (aP (p.ℓ * r)) (zP p 0))
-    (seqR (fun s => mulAddAt P (wP p) (aP (p.ℓ * r + s)) (zP p s)) 1 (p.ℓ - 1))
 
 end
 
