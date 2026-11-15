@@ -298,16 +298,19 @@ namespace VG.Artifacts.MlDsa.AArch64.PkTr
 def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.MlDsa.pkTr44Api.artifact AArch64.target {
     suffix := v.callee.suffix
+    vendor := v.vendor
     code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee Spec.MlDsa.mlDsa44
     stack := 16
     verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inl rfl) },
   Spec.MlDsa.pkTr65Api.artifact AArch64.target {
     suffix := v.callee.suffix
+    vendor := v.vendor
     code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee Spec.MlDsa.mlDsa65
     stack := 16
     verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inl rfl)) },
   Spec.MlDsa.pkTr87Api.artifact AArch64.target {
     suffix := v.callee.suffix
+    vendor := v.vendor
     code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee Spec.MlDsa.mlDsa87
     stack := 16
     verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inr rfl)) }]

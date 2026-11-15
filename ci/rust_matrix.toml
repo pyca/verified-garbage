@@ -402,7 +402,8 @@ avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl,avx512fp16 | rsa_pkcs1_hashes
 # is unrestricted, and each runs only what its features choose differently:
 # `neon` ChaCha20's and Poly1305's NEON instances; `aes` AES-GCM's,
 # AES-GCM-SIV's and AES-CBC's `_aes` ones; `sha3` the SHA-3 prototype (and
-# the ML-KEM and Ed448 instances calling it), and RSAES-OAEP with SHA-512's
+# the ML-KEM and Ed448 instances calling it, and ML-DSA's hash of a public
+# key, whose verification tests import one), and RSAES-OAEP with SHA-512's
 # `_sha512` and SHA-1's scalar MGF1; `sha2` RSAES-OAEP with SHA-1's and
 # SHA-256's `_sha2` and SHA-512's scalar code; and `none` the scalar
 # instances of everything the runner's features accelerate: AES and every
@@ -420,7 +421,7 @@ os = "ubuntu-26.04-arm"
 runs = """
 neon | chacha20 poly1305
 aes | aes_gcm aes_gcm_siv aes_cbc
-sha3 | sha3 shake mlkem ed448 rsa_oaep_pairs
+sha3 | sha3 shake mlkem ed448 mldsa_public_key rsa_oaep_pairs
 sha2 | rsa_oaep_pairs
 none | aes_gcm aes_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac sm4_gcm chacha20 sha1 sha224 sha256 sha384 sha512 scrypt dsa ecdsa p224_sha p256_sha p384_sha ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs mlkem mldsa rsa_pkcs1_hashes rsa_oaep_pairs dit cpu
 """
