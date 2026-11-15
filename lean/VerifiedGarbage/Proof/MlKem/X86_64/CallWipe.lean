@@ -142,8 +142,6 @@ tactic_template "ecp_xd " v:ident p:ident P:ident hK:ident : tactic =>
     | (code_whnf; with_reducible apply xdLe_seq) | (code_whnf; with_reducible apply xdLe_ite)
     | (code_whnf; with_reducible apply xdLe_call)))
 
-
-
 /-! Each choice of code, for a property `P` of each code it chooses among. -/
 
 theorem keyGenSel_of {K : Kem16} (v : Sample4Impl) {P : Prog isa → Prop}

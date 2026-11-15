@@ -7,17 +7,6 @@ import VerifiedGarbage.Proof.BrainpoolP512r1.Point
 import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
-import VerifiedGarbage.Proof.Framework.Arm.Lit
-public import VerifiedGarbage.Proof.Framework.Arm.TaintMono
-public meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
-meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.Arm
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.Layout
-meta import VerifiedGarbage.Proof.Weierstrass.Arm.MontBrainpoolP512r1
-meta import VerifiedGarbage.Proof.BrainpoolP512r1.Point
-meta import VerifiedGarbage.Proof.Framework.Arm.Contract
-meta import VerifiedGarbage.Proof.Framework.Contract
-meta import VerifiedGarbage.Proof.Framework.Lit
-meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 /-! # brainpoolP512r1's configuration for public keys and ECDH on Arm -/
 
@@ -94,28 +83,4 @@ theorem brainpoolp512r1With_ok (u : Bool) : CfgOk (brainpoolp512r1With u) := by
   cases u
   · exact brainpoolp512r1_ok
   · exact brainpoolp512r1u_ok
-
-/-! The functions modulo `p` as literals, for their summaries (the kernel would otherwise build
-their instructions once for the analysis and once for the frame). -/
-materialize_code mulModP := Mont.mulFnWith false brainpoolp512r1.SP.k brainpoolp512r1.SP.m
-materialize_code addModP := Mont.addFn brainpoolp512r1.SP.k brainpoolp512r1.SP.m
-materialize_code subModP := Mont.subFn brainpoolp512r1.SP.k brainpoolp512r1.SP.m
-
-/-! The constant-time analyses of the calls of the functions modulo `p`, from their arguments,
-each done once for every check of code that calls them (`taint_decide_sum`: signing, ECDH, the
-public key and its compression). They keep what is public of `r10` (which the callers keep `lr`
-in) and of the loops' counter `r11`: the functions write neither. The analysis is `taintS`'s,
-which has summaries (`Proof/Framework/Arm/TaintMono.lean`); the `_umaal` variants' checks are
-`taintU`'s, which has none. -/
-taint_summary mulPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
-  (.call (Mont.mulName false brainpoolp512r1.SP)
-    (Mont.mulFnWith false brainpoolp512r1.SP.k brainpoolp512r1.SP.m))
-  keeping (Taint.ofRegs [.r10, .r11])
-taint_summary addPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
-  (.call (brainpoolp512r1.SP.fn "add") (Mont.addFn brainpoolp512r1.SP.k brainpoolp512r1.SP.m))
-  keeping (Taint.ofRegs [.r10, .r11])
-taint_summary subPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
-  (.call (brainpoolp512r1.SP.fn "sub") (Mont.subFn brainpoolp512r1.SP.k brainpoolp512r1.SP.m))
-  keeping (Taint.ofRegs [.r10, .r11])
-
 end VG.Proof.Ecdsa.Arm.BrainpoolP512r1

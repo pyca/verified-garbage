@@ -5,9 +5,6 @@ import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Main
 public import VerifiedGarbage.Spec.EcKey.P384
 import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
-import VerifiedGarbage.Proof.Framework.Arm.TaintMono
-meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
@@ -43,8 +40,7 @@ materialize_shared umaal := codeU
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2], flags := false }
 
 theorem ct : ConstantTime isa (compressContract Spec.P384.curve).pre (compressContract Spec.P384.curve).pub code := by
-  refine VG.Taint.constantTime_of_exists (A := taintS) τ₀ ?_
-    (by taint_decide_sum [mulPSum, addPSum, subPSum, mulSum])
+  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by taint_decide)
   intro s t _ _ ⟨_, h0, h1, h2⟩
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),

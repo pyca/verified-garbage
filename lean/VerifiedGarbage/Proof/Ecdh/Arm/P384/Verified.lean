@@ -5,8 +5,6 @@ public import VerifiedGarbage.Proof.Ecdh.Arm.P384.Contract
 import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Umaal
 import VerifiedGarbage.Proof.Framework.Arm.TaintUmaal
 import VerifiedGarbage.Proof.Ecdsa.Arm.P384.Verified
-import VerifiedGarbage.Proof.Framework.Arm.TaintMono
-meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 public import VerifiedGarbage.Impl.Ecdh.P384.Arm
 public import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
 public import VerifiedGarbage.Proof.Framework.Arm.Taint
@@ -109,8 +107,7 @@ theorem agree_τ₀ {s t : State} (h : ecdhArm.pub s t) : VG.Arm.Taint.Agree τ�
   · exact h3
 
 theorem ecdh_ct : ConstantTime isa ecdhArm.pre ecdhArm.pub exchangeP384 :=
-  VG.Taint.constantTime_of_exists (A := taintS) τ₀ (fun _ _ _ _ h => agree_τ₀ h)
-    (by taint_decide_sum [mulPSum, addPSum, subPSum, mulSum])
+  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by native_taint_decide)
 
 theorem ecdhU_ct : ConstantTime isa ecdhArm.pre ecdhArm.pub exchangeP384U :=
   VG.Taint.constantTime (A := taintU) τ₀ (fun _ _ _ _ h => agree_τ₀ h) (by taint_decide)

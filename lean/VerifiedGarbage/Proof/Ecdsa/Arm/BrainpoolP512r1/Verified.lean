@@ -139,9 +139,8 @@ theorem agree₁ {s t : State} (h : VG.Arm.Taint.Agree τ₀ s t) : VG.Arm.Taint
     fun _ h => (List.not_mem_nil h).elim⟩ h
 
 theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signBrainpoolP512r1 :=
-  VG.Taint.constantTime_of_exists (A := taintS) τ₁
-    (fun _ _ hs ht h => agree₁ (agree_τ₀ hs ht h))
-    (by taint_decide_sum [mulPSum, addPSum, subPSum])
+  VG.Taint.constantTime (A := taint) τ₁ (fun _ _ hs ht h => agree₁ (agree_τ₀ hs ht h))
+    (by native_taint_decide)
 
 theorem signU_ct : ConstantTime isa signArm.pre signArm.pub signBrainpoolP512r1U :=
   VG.Taint.constantTime (A := taintU) τ₁ (fun _ _ hs ht h => agree₁ (agree_τ₀ hs ht h)) (by taint_decide)

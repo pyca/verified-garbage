@@ -6,9 +6,6 @@ import VerifiedGarbage.Proof.EcKey.Compressed.Arm.DecompressMain
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Verified
 import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
-meta import VerifiedGarbage.Proof.Ecdsa.Arm.BrainpoolP512r1.Config
-import VerifiedGarbage.Proof.Framework.Arm.TaintMono
-meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 import VerifiedGarbage.Proof.Weierstrass.Sqrt
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.Arm.Lit
@@ -44,8 +41,7 @@ materialize_shared umaal := codeU
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2], flags := false }
 
 theorem ct : ConstantTime isa (decompressContract Spec.BrainpoolP512r1.curve Impl.EcKey.Compressed.rootThreeModFour).pre (decompressContract Spec.BrainpoolP512r1.curve Impl.EcKey.Compressed.rootThreeModFour).pub code := by
-  refine VG.Taint.constantTime_of_exists (A := taintS) τ₀ ?_
-    (by taint_decide_sum [mulPSum, addPSum, subPSum])
+  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by taint_decide)
   intro s t _ _ ⟨_, h0, h1, h2⟩
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),

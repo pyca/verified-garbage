@@ -29,8 +29,6 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-import VerifiedGarbage.Proof.Framework.Arm.TaintMono
-meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 
 /-!
 # ECDH over brainpoolP512r1 on 32-bit ARM: `Verified`
@@ -108,8 +106,7 @@ theorem agree_τ₀ {s t : State} (_hs : ecdhArm.pre s) (_ht : ecdhArm.pre t) (h
   · exact h3
 
 theorem ecdh_ct : ConstantTime isa ecdhArm.pre ecdhArm.pub exchangeBrainpoolP512r1 :=
-  VG.Taint.constantTime_of_exists (A := taintS) τ₀ (fun _ _ hs ht h => agree_τ₀ hs ht h)
-    (by taint_decide_sum [mulPSum, addPSum, subPSum])
+  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ hs ht h => agree_τ₀ hs ht h) (by native_taint_decide)
 
 theorem ecdhU_ct : ConstantTime isa ecdhArm.pre ecdhArm.pub exchangeBrainpoolP512r1U :=
   VG.Taint.constantTime (A := taintU) τ₀ (fun _ _ hs ht h => agree_τ₀ hs ht h) (by taint_decide)
