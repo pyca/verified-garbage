@@ -40,6 +40,18 @@ structure SealSplitFn where
   verified : Verified X86_64.target code (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800)
   sp : SpSafe code
   depth : code.x86_64Depth ≤ 1800
+  /-- What else its runs leave, from the state it is called in to the memory
+  it returns with: nothing to say (`True`), but where its caller's clearing
+  needs what it leaves on the stack. -/
+  E : State → Mem → Prop
+  exec : ∀ s, (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).pre s → ∃ t s', Exec isa code s t s' ∧
+      abiPreserved s s' ∧ (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).post s s' ∧ E s s'.mem
+
+/-- The contract `SealSplitFn.exec` states, `seal_split`'s with `E`. -/
+def SealSplitFn.contractE (F : SealSplitFn) : Contract isa where
+  pre := (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).pre
+  post s s' := (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).post s s' ∧ F.E s s'.mem
+  pub := (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).pub
 
 /-- What a call of `vg_chacha20_poly1305_seal_split(key = rdi, nonce = rsi,
 aad = rdx, aad_len = rcx, src = r8, src_len = r9, dst = [rsp + 8],

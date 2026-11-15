@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Shared
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.OpenTo
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Instance
 public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Whole.Fn
+public import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Contract
+import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Fn
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.By
 import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Gather.Verified
 import VerifiedGarbage.Proof.ChaCha20Poly1305.OpenToScratch
@@ -332,14 +334,17 @@ theorem sealWindow {R x : Addr} (hx : (⟨R - BitVec.ofNat 64 1768, 1768⟩ : Re
 def pSmall (v : XorImpl) (n : Addr) : Bool :=
   decide (n.toNat < Stitch.smallLim v.callee.small.vl ∨ (Stitch.winLo ≤ n.toNat ∧ n.toNat < Stitch.winHi))
 
-/-- What `seal` leaves below the stack pointer, run by run: its context as
-`ctxL` says, for the code its length chooses. -/
-def sealV (v : XorImpl) (s : State) : Addr → Option (BitVec 8) :=
+/-- What `seal` leaves below `R`, its stack pointer on entry, for the length
+`n`: its context as `ctxL` says, for the code the length chooses. -/
+def sealVA (v : XorImpl) (R n : Addr) : Addr → Option (BitVec 8) :=
   if v.poly = .avx512 then
-    if pSmall v (s.gpr .r9) then ctxL v.small (s.gpr .rsp - BitVec.ofNat 64 1720) (s.gpr .r9).toNat
-    else if v.callee.vl then ctxL v (s.gpr .rsp - BitVec.ofNat 64 1728 + BitVec.ofNat 64 24) (s.gpr .r9).toNat
-    else ctxL v (s.gpr .rsp - BitVec.ofNat 64 1720) (s.gpr .r9).toNat
-  else ctxL v (s.gpr .rsp - BitVec.ofNat 64 1720) (s.gpr .r9).toNat
+    if pSmall v n then ctxL v.small (R - BitVec.ofNat 64 1720) n.toNat
+    else if v.callee.vl then ctxL v (R - BitVec.ofNat 64 1728 + BitVec.ofNat 64 24) n.toNat
+    else ctxL v (R - BitVec.ofNat 64 1720) n.toNat
+  else ctxL v (R - BitVec.ofNat 64 1720) n.toNat
+
+/-- What `seal` leaves below the stack pointer, run by run. -/
+abbrev sealV (v : XorImpl) (s : State) : Addr → Option (BitVec 8) := sealVA v (s.gpr .rsp) (s.gpr .r9)
 
 theorem sealCode_ne {v : XorImpl} (hb : ¬ v.poly = .avx512) :
     sealCode v.callee v.poly = bodyCall v.callee v.poly := by
@@ -383,10 +388,10 @@ theorem sealCode_leaves (v : XorImpl) (s : State) (t : List Leak) (u : State)
           have he' : Exec isa (bodyCall v.callee v.poly) s t u := by rw [hb]; exact he
           exact bodyCall_leaves v s t u hs he' x (sR_ctx hx).1)
       hs he x hx
-    simp only [sealV, hb, ↓reduceIte]
+    simp only [sealV, sealVA, hb, ↓reduceIte]
     exact h
   · rw [sealCode_ne hb] at he
-    simp only [sealV, hb, ↓reduceIte]
+    simp only [sealV, sealVA, hb, ↓reduceIte]
     exact bodyCall_leaves v s t u hs he x (sR_ctx hx).1
 
 /-- Two runs of `seal` leave the same bytes in their stack but the granules
@@ -802,60 +807,44 @@ def openToReg (v : XorImpl) : Registration Spec.ChaCha20Poly1305.openToApi X86_6
 
 /-- What `seal` leaves, as `seal_gather` needs it of its callee (`SealFn.E`). -/
 def sealE (v : XorImpl) (s : State) (m : Mem) : Prop :=
-  ∀ x, (ctxR (s.gpr .rsp - BitVec.ofNat 64 1720)).Contains x 1 →
-    m x = (ctxL v (s.gpr .rsp - BitVec.ofNat 64 1720) (s.gpr .r9).toNat x).getD (s.mem x)
+  ∀ x, (sR (s.gpr .rsp)).Contains x 1 → m x = (sealV v s x).getD (s.mem x)
 
-/-- `seal_gather`'s callee, with what it leaves (`bodyCall_leaves`). -/
-def sealFnL (v : XorImpl) (hv : ¬ v.poly = .avx512) : Gather.Whole.SealFn :=
+/-- `seal_gather`'s callee `seal`, with what it leaves (`sealCode_leaves`). -/
+def sealFnL (v : XorImpl) : Gather.Whole.SealFn :=
   { Gather.Whole.sealFn v with
     E := sealE v
     exec := fun s h => by
       obtain ⟨t, s', e, a, p⟩ := (Shared.seal_verified v).1 s h
       refine ⟨t, s', e, a, p, fun x hx => ?_⟩
       change Exec isa (sealCode v.callee v.poly) s t s' at e
-      rw [sealCode_ne hv] at e
-      exact bodyCall_leaves v s t s' h e x hx }
-
-/-- The instances whose `seal_gather` gathers the whole data before one call
-of `seal` (`Gather.gatherCode`). -/
-abbrev Whole (v : XorImpl) : Prop := ¬ v.poly = .avx512 ∧ ¬ v.poly = .ifma
+      exact sealCode_leaves v s t s' h e x hx }
 
 open Gather.Whole in
-/-- `seal_gather` leaves its callee's context, at `rsp - 1832 + 48`, as
-`ctxL` says. -/
-theorem gather_leaves (v : XorImpl) (hv : Whole v) (s : State) (t : List Leak) (u : State)
-    (hs : (Spec.ChaCha20Poly1305.sealGatherContract abi 1880).pre s) (he : Exec isa (Gather.gatherCode v) s t u)
-    (x : Addr) (hx : (ctxR (Bs s + BitVec.ofNat 64 48)).Contains x 1) :
-    u.mem x = (ctxL v (Bs s + BitVec.ofNat 64 48) (stackArg s 1).toNat x).getD (s.mem x) := by
-  have hp : Gather.Whole.gatherPre s :=
-    Gather.whole_pre (s := s) (e := s) ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩ (Gather.gather_implies.pre s hs)
+/-- `seal_gather` gathering the whole data before its call of `seal` leaves
+`sR` of its callee's stack, at `rsp - 64`, as `sealVA` says. -/
+theorem gatherW_leaves (v : XorImpl) (s : State) (t : List Leak) (u : State) (hp : Gather.Whole.gatherPre s)
+    (he : Exec isa (Impl.ChaCha20Poly1305.X86_64.SealGather.sealGatherWhole (Gather.width v)
+      (sealFnL v).name (sealFnL v).code) s t u)
+    (x : Addr) (hx : (sR (s.gpr .rsp - BitVec.ofNat 64 64)).Contains x 1) :
+    u.mem x = (sealVA v (s.gpr .rsp - BitVec.ofNat 64 64) (stackArg s 1) x).getD (s.mem x) := by
   have h := lay hp
-  have hgc : Gather.gatherCode v = Impl.ChaCha20Poly1305.X86_64.SealGather.sealGatherWhole (Gather.width v)
-      (sealFnL v hv.1).name (sealFnL v hv.1).code := by
-    unfold Gather.gatherCode; split
-    · next hb => exact absurd hb hv.1
-    · next hb => exact absurd hb hv.2
-    · rfl
-  rw [hgc] at he
-  obtain ⟨t', u', he', c, hc, hE⟩ := sealGather_wpE (Gather.width v) (sealFnL v hv.1) hp
+  obtain ⟨t', u', he', c, hc, hE⟩ := sealGather_wpE (Gather.width v) (sealFnL v) hp
   obtain ⟨-, rfl⟩ := Exec.det he he'
   obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, bd, -⟩ := h.pre
-  have hsp : (xS s c).gpr .rsp - BitVec.ofNat 64 1720 = Bs s + BitVec.ofNat 64 48 := by
-    rw [hc.xsp, add_ofNat_sub_ofNat _ (show 1720 ≤ 1768 by decide)]
+  have hsp : (xS s c).gpr .rsp = s.gpr .rsp - BitVec.ofNat 64 64 := by
+    rw [hc.xsp]; exact sub_add_ofNat _ (show 1768 ≤ 1832 by decide)
   have hr9 : (xS s c).gpr .r9 = stackArg s 1 := by rw [xgpr_eq (by decide), hc.r9]
   have hE' := hE x (by rw [hsp]; exact hx)
-  rw [hsp, hr9] at hE'
+  simp only [sealV, hsp, hr9] at hE'
   rw [hE']
-  refine ctxL_congr fun hk => ?_
+  congr 1
   -- The callee's memory on entry: ours, with the pushes and the slices gathered elsewhere.
-  have h₀ := (Offset.lt_iff x (Bs s) (d := 48) (n := 1696) (by decide)).1 (by
-    simp only [Region.Contains] at hx; omega_using [hx])
-  have hxB : 720 ≤ (x - Bs s).toNat ∧ (x - Bs s).toNat < 720 + 1024 := by
-    refine ⟨?_, by omega_using [h₀]⟩
-    by_contra hlt
-    exact hk ((Offset.lt_iff x (Bs s) (d := 48) (n := 672) (by decide)).2 ⟨h₀.1, by omega_using [hlt]⟩)
+  have hBs : s.gpr .rsp - BitVec.ofNat 64 64 - BitVec.ofNat 64 1704 = Bs s + BitVec.ofNat 64 64 := by
+    rw [BitVec.sub_sub, ← BitVec.ofNat_add]; exact (sub_add_ofNat _ (show 64 ≤ 1832 by decide)).symm
+  have hxB := (Offset.lt_iff x (Bs s) (d := 64) (n := 1680) (by decide)).1 (by
+    simp only [Region.Contains] at hx; rw [hBs] at hx; omega_using [hx])
   have hBn := h.hBn
-  have nb : ∀ {d n : Nat}, (d + n ≤ 720 ∨ 1744 ≤ d) → d + n ≤ 1864 →
+  have nb : ∀ {d n : Nat}, (d + n ≤ 64 ∨ 1744 ≤ d) → d + n ≤ 1864 →
       ¬ (⟨Bs s + BitVec.ofNat 64 d, n⟩ : Region).Contains x 1 := fun {d n} h₁ h₂ hc' => by
     simp only [Region.Contains] at hc'
     have := (Offset.lt_iff x (Bs s) (d := d) (n := n) (by omega_using [h₂])).1 (by omega_using [hc'])
@@ -871,6 +860,133 @@ theorem gather_leaves (v : XorImpl) (hv : Whole v) (s : State) (t : List Leak) (
     exact bd x (by show (x - Bs s).toNat + 1 ≤ 1832; omega_using [hxB])
   rw [x₁, x₂, hc.mem, x₄, x₃]
 
+/-- `seal_split`'s code, of the instances with the AVX-512 implementations of
+`vg_poly1305_blocks`, leaves the keystream area of `work` as `ksL` says. -/
+theorem splitIn_leaves (v : XorImpl) (hv : v.poly = .avx512 ∨ v.poly = .ifma) (s : State) (t : List Leak)
+    (u : State) (hs : (sealSplitScratchContract X86_64.abi 212 64).pre s)
+    (he : Exec isa (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.callee v.poly) s t u) (x : Addr)
+    (hx : (ksR (Split.eW s)).Contains x 1) :
+    u.mem x = (ksL v (Split.eW s) (Split.eLn s) x).getD (s.mem x) := by
+  have hf : Split.FPre s := Split.split_implies.pre s hs
+  have hw : WP isa (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.callee v.poly) s fun z =>
+      KsLeftZ v (Split.eW s) (Split.eLn s) s.mem z.mem := by
+    rcases hv with hb | hb
+    · have h := Split.split_wpK v .avx512 hb (.inl rfl) hf
+      rw [hb]; exact h
+    · have h := Split.split_wpK v .ifma hb (.inr rfl) hf
+      rw [hb]; exact h
+  obtain ⟨t', u', he', k⟩ := hw
+  obtain ⟨-, rfl⟩ := Exec.det he he'
+  exact ksLeftAt_leaves k hx
+
+/-- In its frame of 1736 bytes, wiped after the code: its context is at
+`rsp - 1736 + 40`. -/
+theorem splitFrame_leaves (v : XorImpl) (hv : v.poly = .avx512 ∨ v.poly = .ifma) (s : State) (t : List Leak)
+    (u : State) (hs : (Proof.ChaCha20Poly1305.sealSplitContract X86_64.abi 1800).pre s)
+    (he : Exec isa (Impl.StackScratch.X86_64.withStackArgScratchWipedX 1736 3 42
+      (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.callee v.poly)) s t u) (x : Addr)
+    (hx : (ctxR (s.gpr .rsp - BitVec.ofNat 64 1736 + BitVec.ofNat 64 40)).Contains x 1) :
+    u.mem x = (ctxL v (s.gpr .rsp - BitVec.ofNat 64 1736 + BitVec.ofNat 64 40) (stackArg s 1).toNat x).getD
+      (s.mem x) := by
+  have hs' : (Proof.ChaCha20Poly1305.sealSplitSig.contract abi (Proof.ChaCha20Poly1305.sealSplitPre abi.ptrBits)
+      (Proof.ChaCha20Poly1305.sealSplitPost abi.ptrBits) true (64 + 1736) none).pre s := hs
+  obtain ⟨-, ha, hl, hf⟩ := narrowS_args (sig := Proof.ChaCha20Poly1305.sealSplitSig) (e := .u64) (n := 212)
+    (by decide) (by decide) (by decide) hs'
+  have n3 : nStack Proof.ChaCha20Poly1305.sealSplitSig = 3 := by decide
+  have hcx : Split.eW (narrowS Proof.ChaCha20Poly1305.sealSplitSig .u64 212 1736 s) =
+      s.gpr .rsp - BitVec.ofNat 64 1736 + BitVec.ofNat 64 40 := by
+    show stackArg _ 3 = _; rw [← n3]; exact hl
+  have hL : Split.eLn (narrowS Proof.ChaCha20Poly1305.sealSplitSig .u64 212 1736 s) = (stackArg s 1).toNat := by
+    show (stackArg _ 1).toNat = _; rw [ha 1 (by rw [n3]; decide)]
+  obtain ⟨hz, hk⟩ := framedW_leaves (sig := Proof.ChaCha20Poly1305.sealSplitSig) (nm := "work") (e := .u64)
+    (n := 212) (bytes := 1736) (stack := 64) (k := 42) (Split.sealSplit_verified v)
+    (P := fun s => (sealSplitScratchContract X86_64.abi 212 64).pre s) (fun _ h => h)
+    (R := fun s => ksR (Split.eW s)) (L := fun s => ksL v (Split.eW s) (Split.eLn s))
+    (splitIn_leaves v hv) (by decide) (by decide) (by decide) (Split.sealSplitFor_spSafe v)
+    (Split.sealSplitFor_xdepth v) (by decide) (sealSplitPre_local _) hs' he
+  rw [n3, show 16 + 8 * 3 = 40 by decide] at hz hk
+  refine ctx_leaves hz (fun x hx => ?_) hx
+  have h := hk x (by rw [hcx]; exact hx) (ks_not_wiped hx)
+  rw [hcx, hL] at h
+  rw [h]
+  congr 1
+  refine hf x fun r hr hc => ?_
+  simp only [List.mem_singleton] at hr; subst hr
+  simp only [Region.Contains] at hx hc
+  rw [Offset.add_add] at hx
+  rw [n3, show (8 : Addr) = BitVec.ofNat 64 8 from rfl] at hc
+  have h₁ := (Offset.lt_iff x (s.gpr .rsp - BitVec.ofNat 64 1736) (d := 40 + 672) (n := 1024) (by decide)).1
+    (by omega_using [hx])
+  have h₂ := (Offset.lt_iff x (s.gpr .rsp - BitVec.ofNat 64 1736) (d := 8) (n := 32) (by decide)).1
+    (by omega_using [hc])
+  omega_using [h₁, h₂]
+
+/-- What `seal_split` leaves, as `seal_gather` needs it of its callee
+(`SealSplitFn.E`). -/
+def splitE (v : XorImpl) (s : State) (m : Mem) : Prop :=
+  ∀ x, (ctxR (s.gpr .rsp - BitVec.ofNat 64 1736 + BitVec.ofNat 64 40)).Contains x 1 →
+    m x = (ctxL v (s.gpr .rsp - BitVec.ofNat 64 1736 + BitVec.ofNat 64 40) (stackArg s 1).toNat x).getD (s.mem x)
+
+/-- `seal_gather`'s callee `seal_split`, with what it leaves (`splitFrame_leaves`). -/
+def sealSplitFnL (v : XorImpl) (hv : v.poly = .avx512 ∨ v.poly = .ifma) : Gather.SealSplitFn :=
+  { Gather.sealSplitFn v with
+    E := splitE v
+    exec := fun s h => by
+      obtain ⟨t, s', e, a, p⟩ := (Split.sealSplit_framed v).1 s h
+      exact ⟨t, s', e, a, p, fun x hx => splitFrame_leaves v hv s t s' h e x hx⟩ }
+
+/-- `seal_gather` calling `seal_split` leaves the part of its callee's context
+in `sR (rsp - 64)` as `ctxL` says, with that context at `rsp - 1776`. -/
+theorem gatherS_leaves (v : XorImpl) (hv : v.poly = .avx512 ∨ v.poly = .ifma) (s : State) (t : List Leak)
+    (u : State) (hp : Gather.gatherPre s)
+    (he : Exec isa (Impl.ChaCha20Poly1305.X86_64.SealGather.sealGather (Gather.width v)
+      (sealSplitFnL v hv).name (sealSplitFnL v hv).code) s t u)
+    (x : Addr) (hx : (sR (s.gpr .rsp - BitVec.ofNat 64 64)).Contains x 1) :
+    u.mem x = (ctxL v (s.gpr .rsp - BitVec.ofNat 64 1776) (stackArg s 1).toNat x).getD (s.mem x) := by
+  have h := Gather.lay hp
+  obtain ⟨t', u', he', c, hc, hE⟩ := Gather.sealGather_wpE (Gather.width v) (sealSplitFnL v hv) hp
+  obtain ⟨-, rfl⟩ := Exec.det he he'
+  obtain ⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, -, bd, -⟩ := h.pre
+  have hC : (Gather.xS s c).gpr .rsp - BitVec.ofNat 64 1736 + BitVec.ofNat 64 40 = s.gpr .rsp - BitVec.ofNat 64 1776 := by
+    rw [hc.xsp, Gather.add_ofNat_sub_ofNat _ (show 1736 ≤ 1800 by decide), Offset.add_ofNat_add_ofNat]
+    exact sub_add_ofNat _ (show 104 ≤ 1880 by decide)
+  have hBs : s.gpr .rsp - BitVec.ofNat 64 64 - BitVec.ofNat 64 1704 = Gather.Bs s + BitVec.ofNat 64 112 := by
+    rw [BitVec.sub_sub, ← BitVec.ofNat_add]; exact (sub_add_ofNat _ (show 112 ≤ 1880 by decide)).symm
+  have hxB := (Offset.lt_iff x (Gather.Bs s) (d := 112) (n := 1680) (by decide)).1 (by
+    simp only [Region.Contains] at hx; rw [hBs] at hx; omega_using [hx])
+  have hctx : (ctxR (s.gpr .rsp - BitVec.ofNat 64 1776)).Contains x 1 := by
+    simp only [Region.Contains]
+    rw [show s.gpr .rsp - BitVec.ofNat 64 1776 = Gather.Bs s + BitVec.ofNat 64 104 from
+      (sub_add_ofNat _ (show 104 ≤ 1880 by decide)).symm]
+    have := (Offset.lt_iff x (Gather.Bs s) (d := 104) (n := 1696) (by decide)).2 ⟨by omega_using [hxB], by omega_using [hxB]⟩
+    omega_using [this]
+  have hE' := hE x (by rw [hC]; exact hctx)
+  rw [hC, hc.xa1 h] at hE'
+  rw [hE']
+  congr 1
+  -- The callee's memory on entry: ours, with the pushes and the slices gathered elsewhere.
+  have hBn := h.hBn
+  have nb : ∀ {d n : Nat}, (d + n ≤ 112 ∨ 1792 ≤ d) → d + n ≤ 1880 →
+      ¬ (⟨Gather.Bs s + BitVec.ofNat 64 d, n⟩ : Region).Contains x 1 := fun {d n} h₁ h₂ hc' => by
+    simp only [Region.Contains] at hc'
+    have := (Offset.lt_iff x (Gather.Bs s) (d := d) (n := n) (by omega_using [h₂])).1 (by omega_using [hc'])
+    omega_using [h₁, this, hxB]
+  have fx : Frame [⟨Gather.Bs s + BitVec.ofNat 64 1808, 24⟩, ⟨Gather.Bs s + BitVec.ofNat 64 1800, 8⟩]
+      (Gather.gM s) (Gather.xS s c).mem := by
+    rw [← hc.mem]
+    exact ((hc.qmem h).1.mono (fun r hr => by simp at hr ⊢; exact Or.inl hr)).trans
+      ((hc.xmem).mono (fun r hr => by simp at hr ⊢; exact Or.inr hr))
+  have x₁ : (Gather.xS s c).mem x = Gather.gM s x := (fx x fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl
+    · exact nb (by decide) (by decide)
+    · exact nb (by decide) (by decide)).symm ▸ rfl
+  have x₂ : Gather.gM s x = Gather.eM s x := h.frame_gM x fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact bd x (by show (x - Gather.Bs s).toNat + 1 ≤ 1880; omega_using [hxB])
+  have x₃ : Gather.eM s x = s.mem x := h.frame_eM x fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr; exact nb (by decide) (by decide)
+  rw [x₁, x₂, x₃]
 
 /-- `seal_gather`'s postcondition reads the memory on return only within
 `dst` and `tag`. -/
@@ -905,31 +1021,90 @@ theorem sealGatherPost_out (pb : Nat) : ∀ vs m m₁ m₂ r,
   exact h h₁ h₂
 
 /-- The granules `seal_gather`'s clearing wipes: all of the 1880 bytes below
-`rsp` but those wholly in its callee's context, `[96, 1792)` from their
-bottom. -/
-def gatherKs : List Nat := ksGran 1880 96 1792
+`rsp` but those wholly in `sR (rsp - 64)`, `[112, 1792)` from their bottom:
+the part of its callee's context that `seal`'s and `seal_split`'s layouts
+share. -/
+def gatherKs : List Nat := ksGran 1880 112 1792
 
 theorem gatherWindow {R x : Addr} (hx : (⟨R - BitVec.ofNat 64 1880, 1880⟩ : Region).Contains x 1)
-    (hw : ¬ WCov gatherKs (chunks 1880) R x) :
-    (ctxR (R - BitVec.ofNat 64 1832 + BitVec.ofNat 64 48)).Contains x 1 := by
+    (hw : ¬ WCov gatherKs (chunks 1880) R x) : (sR (R - BitVec.ofNat 64 64)).Contains x 1 := by
   have hm := ksWindow (by decide) (by decide) hx hw
   simp only [Region.Contains]
-  rw [Offset.sub_ofNat_eq R (show 1832 ≤ 1880 by decide), Offset.add_add]
-  have := (Offset.lt_iff x (R - BitVec.ofNat 64 1880) (d := 1880 - 1832 + 48) (n := 1696) (by decide)).2
+  rw [BitVec.sub_sub, ← BitVec.ofNat_add, Offset.sub_ofNat_eq R (show 64 + 1704 ≤ 1880 by decide)]
+  have := (Offset.lt_iff x (R - BitVec.ofNat 64 1880) (d := 1880 - (64 + 1704)) (n := 1680) (by decide)).2
     ⟨by omega_using [hm], by omega_using [hm]⟩
   omega_using [this]
 
-/-- What `seal_gather` leaves below the stack pointer, run by run. -/
+/-- What `seal_gather` leaves below the stack pointer, run by run: what its
+callee leaves of its context, `seal` by `sealVA`, or `seal_split` by `ctxL`. -/
 def gatherV (v : XorImpl) (s : State) : Addr → Option (BitVec 8) :=
-  ctxL v (s.gpr .rsp - BitVec.ofNat 64 1832 + BitVec.ofNat 64 48) (stackArg s 1).toNat
+  if v.poly = .avx512 ∨ v.poly = .ifma then
+    if (stackArg s 1).toNat < Impl.ChaCha20Poly1305.X86_64.SealGather.byLim v.poly then
+      sealVA v (s.gpr .rsp - BitVec.ofNat 64 64) (stackArg s 1)
+    else ctxL v (s.gpr .rsp - BitVec.ofNat 64 1776) (stackArg s 1).toNat
+  else sealVA v (s.gpr .rsp - BitVec.ofNat 64 64) (stackArg s 1)
 
-theorem gather_resOk (v : XorImpl) (hv : Whole v) :
+/-- What `seal_gather` leaves in `sR (rsp - 64)`: as `gatherV` says. -/
+theorem gatherCode_leaves (v : XorImpl) (s : State) (t : List Leak) (u : State)
+    (hs : (Spec.ChaCha20Poly1305.sealGatherContract abi 1880).pre s) (he : Exec isa (Gather.gatherCode v) s t u)
+    (x : Addr) (hx : (sR (s.gpr .rsp - BitVec.ofNat 64 64)).Contains x 1) :
+    u.mem x = (gatherV v s x).getD (s.mem x) := by
+  have hp : Gather.gatherPre s := Gather.gather_implies.pre s hs
+  by_cases hb : v.poly = .avx512 ∨ v.poly = .ifma
+  · have hgc : Gather.gatherCode v = Impl.ChaCha20Poly1305.X86_64.SealGather.sealGatherBy
+        (Impl.ChaCha20Poly1305.X86_64.SealGather.byLim v.poly) (Gather.width v) (sealFnL v).name (sealFnL v).code
+        (sealSplitFnL v hb).name (sealSplitFnL v hb).code := by
+      unfold Gather.gatherCode; split
+      · rfl
+      · rfl
+      · next h₁ h₂ => rcases hb with hb | hb
+                      · exact absurd hb h₁
+                      · exact absurd hb h₂
+    rw [hgc] at he
+    unfold Impl.ChaCha20Poly1305.X86_64.SealGather.sealGatherBy at he
+    obtain ⟨t₁, e, e₁, hq, hf⟩ := Gather.lenCmp_ok (lim := Impl.ChaCha20Poly1305.X86_64.SealGather.byLim v.poly)
+      (by rcases Gather.byLim_cases v with h | h <;> rw [h] <;> decide) s (Gather.len_in hp)
+    have hsp : e.gpr .rsp = s.gpr .rsp := hf.gpr .rsp (by decide)
+    have ha1 : stackArg e 1 = stackArg s 1 := hf.arg 1
+    have hx' : (sR (e.gpr .rsp - BitVec.ofNat 64 64)).Contains x 1 := by rw [hsp]; exact hx
+    cases he with
+    | @seq _ _ _ e' _ _ _ h₁ h₂ =>
+      have ee : e' = e := (Exec.det h₁ e₁).2
+      subst ee
+      simp only [gatherV, hb, ↓reduceIte]
+      cases h₂ with
+      | iteT hev hth =>
+        have hpt : (stackArg s 1).toNat < Impl.ChaCha20Poly1305.X86_64.SealGather.byLim v.poly := by
+          rw [hq] at hev; exact of_decide_eq_true (Option.some.inj hev)
+        simp only [hpt, ↓reduceIte]
+        have h := gatherW_leaves v e' _ u (Gather.whole_pre hf hp) hth x hx'
+        rw [hsp, ha1, hf.mem] at h
+        exact h
+      | iteF hev hel =>
+        have hpf : ¬ (stackArg s 1).toNat < Impl.ChaCha20Poly1305.X86_64.SealGather.byLim v.poly := by
+          rw [hq] at hev; exact of_decide_eq_false (Option.some.inj hev)
+        simp only [hpf, ↓reduceIte]
+        have h := gatherS_leaves v hb e' _ u (Gather.pre_same hf hp) hel x hx'
+        rw [hsp, ha1, hf.mem] at h
+        exact h
+  · have hgc : Gather.gatherCode v = Impl.ChaCha20Poly1305.X86_64.SealGather.sealGatherWhole (Gather.width v)
+        (sealFnL v).name (sealFnL v).code := by
+      unfold Gather.gatherCode; split
+      · next h => exact absurd (.inl h) hb
+      · next h => exact absurd (.inr h) hb
+      · rfl
+    rw [hgc] at he
+    simp only [gatherV, hb, ↓reduceIte]
+    exact gatherW_leaves v s t u
+      (Gather.whole_pre (s := s) (e := s) ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩ hp) he x hx
+
+theorem gather_resOk (v : XorImpl) :
     ResOk (Gather.gatherCode v) (Spec.ChaCha20Poly1305.sealGatherContract abi 1880) 1880 gatherKs
       (chunks 1880) := by
   unfold Spec.ChaCha20Poly1305.sealGatherContract
   refine resOk_of_leaves (V := gatherV v) ScrubAbi.plain ?_ ?_
   · intro s t u hs he x hx hw
-    exact gather_leaves v hv s t u hs he x (gatherWindow hx hw)
+    exact gatherCode_leaves v s t u hs he x (gatherWindow hx hw)
   · intro s₁ s₂ _ _ hp ho _
     obtain ⟨-, hpubs, -⟩ := (pubL_args (sig := Spec.ChaCha20Poly1305.sealGatherSig) (by decide)).mp hp
     have hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r := ho.2.2.1
@@ -952,11 +1127,10 @@ def gatherPlain (v : XorImpl) : Registration Spec.ChaCha20Poly1305.sealGatherApi
   verified := Gather.gather_verified v
   spSafe := Gather.gather_spSafe v
 
-/-- `seal_gather` of an instance that gathers the whole data (`Whole`), calling
-`seal`'s code unscrubbed (`…_core`), followed by the clearing of all of its
-stack but its callee's context (`gatherKs`); the others as they are. -/
+/-- `seal_gather` of an instance, calling `seal`'s code unscrubbed (`…_core`),
+followed by the clearing of all of its stack but its callee's context
+(`gatherKs`). -/
 def gatherReg (v : XorImpl) : Registration Spec.ChaCha20Poly1305.sealGatherApi X86_64.target :=
-  if hv : Whole v then RScrub.withScrubResM (gatherPlain v) (gatherOut _) gatherKs (gather_resOk v hv)
-  else gatherPlain v
+  RScrub.withScrubResM (gatherPlain v) (gatherOut _) gatherKs (gather_resOk v)
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Scrub

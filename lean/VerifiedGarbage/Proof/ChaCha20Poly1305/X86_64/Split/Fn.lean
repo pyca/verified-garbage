@@ -279,6 +279,14 @@ theorem stashM_frame (s : State) : Frame [ewR s] s.mem (stashM s) :=
     (List.mem_singleton_self _) _ (w_in s (by decide))).writeW (List.mem_singleton_self _) _
     (w_in s (by decide))).writeW (List.mem_singleton_self _) _ (w_in s (by decide))
 
+/-- `stash` writes only the first 32 bytes of `work`. -/
+theorem stashM_frame32 (s : State) : Frame [⟨eW s, 32⟩] s.mem (stashM s) := by
+  have w32 : ∀ k, k + 8 ≤ 32 → (⟨eW s, 32⟩ : Region).Contains (off (eW s) k) 8 := fun k hk => by
+    rw [off_eq]; exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
+  exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (w32 0 (by decide))).writeW
+    (List.mem_singleton_self _) _ (w32 8 (by decide))).writeW (List.mem_singleton_self _) _
+    (w32 16 (by decide))).writeW (List.mem_singleton_self _) _ (w32 24 (by decide))
+
 theorem wsep {W : Addr} {d e : Nat} (h : d + 8 ≤ e ∨ e + 8 ≤ d) (hd : d + 8 ≤ 1696) (he : e + 8 ≤ 1696) :
     Mem.Sep (off W d) (64 / 8) (off W e) (64 / 8) := by
   rw [off_eq, off_eq]; exact Offset.sep W h (by omega_using [hd]) (by omega_using [he])
@@ -371,6 +379,15 @@ theorem headM_frame (n : Nat) (hn : n ≤ eSN s) : Frame [ewR s, edR s] s.mem (h
       simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Proof.AesGcm.X86_64.length_bytesAt]; omega_using [hn, hle])
       x (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hx _ (by simp)),
     stashM_frame s x (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hx _ (by simp))]
+
+/-- `head` writes only the first 32 bytes of `work`, and the data. -/
+theorem headM_frame32 (n : Nat) (hn : n ≤ eSN s) : Frame [⟨eW s, 32⟩, edR s] s.mem (headM s n) := by
+  have hle := hs.le
+  intro x hx
+  rw [headM, writeBytes_frame _ _ _ (R := edR s) (by
+      simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero, Proof.AesGcm.X86_64.length_bytesAt]; omega_using [hn, hle])
+      x (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hx _ (by simp)),
+    stashM_frame32 s x (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hx _ (by simp))]
 
 /-- The working space after the copy, as `stash` left it. -/
 theorem headM_w (n : Nat) (hn : n ≤ eSN s) {k : Nat} (hk : k + 8 ≤ 1696) :
@@ -1133,6 +1150,50 @@ theorem split_wp (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.X86_64.B
     · rw [ite_eq_right (fun h => h₁ h.2), ite_eq_right (show ¬ k < min _ _ by omega_using [h₁]), ite_eq_right h₁]
   rw [hu.key_eq hs, hu.nonce_eq hs, hu.aad_eq hs, eP, hu.r8, hu.r9, hu.arg0, ← hm] at post'
   exact post'
+
+/-- `splitK`, with what the code leaves in the keystream area (`KsLeftZ`). -/
+def splitKK (v : Proof.ChaCha20.X86_64.XorImpl) : Contract isa where
+  pre := SPre
+  post s₀ s' := splitK.post s₀ s' ∧ KsLeftZ v (cx s₀) (L s₀) s₀.mem s'.mem
+  pub _ _ := True
+
+theorem split_hvK (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.X86_64.Blocks) (hvb : v.poly = b)
+    (hb : b = .avx512 ∨ b = .ifma) :
+    ∀ s, (splitKK v).pre s → ∃ t s', Exec isa (sealSplitBody v.callee b) s t s' ∧ abiPreserved s s' ∧
+      (splitKK v).post s s' :=
+  fun _ h => by
+    obtain ⟨t, s', he, ha, hp, hk⟩ := sealSplitBody_correctK v b hvb hb h
+    exact ⟨t, s', he, ha, hp, hk⟩
+
+/-- What the AVX-512 instances leave in the keystream area of `work`:
+as `KsLeftZ` says, from `work` on entry. -/
+theorem split_wpK (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.X86_64.Blocks) (hvb : v.poly = b)
+    (hb : b = .avx512 ∨ b = .ifma) {s : State} (hs : FPre s) :
+    WP isa (.seq (head false .z64) (framed (sealSplitBody v.callee b))) s fun z =>
+      KsLeftZ v (eW s) (eLn s) s.mem z.mem := by
+  refine WP.seq (WP.mono (head_ok false .z64 hs) fun h hh => ?_)
+  refine WP.mono (framed_ok (k := splitKK v) (split_hvK v b hvb hb) (SpSafe.of_all (sealSplitBody_spSafe v b hb))
+    (sealSplitBody_xdepth v b) (fun u => [arg2R u, spR u]) hs hh (fun u hu => hu.spre hs) (fun u hu => hu.more_cov hs))
+    fun z ⟨u, s₂, hu, ⟨_, post⟩, hm, _⟩ => ?_
+  have ec : cx (u.withRegions (rdB u ++ [arg2R u, spR u]) (wrB u)) = eW s :=
+    (stackArg_wr _ _ _ 1).trans hu.arg1
+  have eL : L (u.withRegions (rdB u ++ [arg2R u, spR u]) (wrB u)) = eLn s := by
+    show (u.gpr .r9).toNat = _; rw [hu.r9]
+  simp only [ec, eL, State.withRegions_mem] at post
+  have F : Frame [⟨eW s, 32⟩, edR s, ⟨fB s + BitVec.ofNat 64 24, 40⟩] s.mem u.mem :=
+    ((hs.headM_frame32 _ (FPre.cnt_le false)).mono (by simp)).trans (hu.mem.mono (by simp))
+  have ow := hs.o_w
+  rw [hm]
+  refine post.frame (rs := []) (Frame.refl _ _) (fun _ _ _ hr => by simp at hr) F fun k hk r hr hc => ?_
+  have hxw : (ewR s).Contains (off (eW s) (672 + k)) 1 := by
+    rw [off_eq]; exact Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · have hks : (⟨eW s + BitVec.ofNat 64 672, 1024⟩ : Region).Contains (off (eW s) (672 + k)) 1 := by
+      rw [off_eq]; exact Offset.contains _ (by omega_using []) (by omega_using [hk]) (by omega_using [ow])
+    exact Offset.base_disjoint (eW s) (e := 672) (n := 1024) (k := 32) (by decide) (by omega_using [ow]) _ hc hks
+  · exact hs.d_w _ hc hxw
+  · exact hs.b_w _ (stk_sub s (d := 24) (n := 40) (by decide) _ hc) hxw
 
 /-- The other instances: the copy of all of `src`, then `seal`. -/
 theorem whole_wp {x : Impl.ChaCha20.X86_64.Callee} {b : Impl.Poly1305.X86_64.Blocks}

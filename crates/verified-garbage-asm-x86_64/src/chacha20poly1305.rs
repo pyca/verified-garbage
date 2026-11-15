@@ -123,6 +123,8 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_IFMA_FEATURES: verified_garbage_cpu::
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -282,7 +284,7 @@ jmp 228f
 call {vg_chacha20_poly1305_seal_ifma_core}
 .base64 "WFhYWFhYWA=="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKj4///F/n+EJDgHAADF/n+EJBgHAADF/n+EJPgGAADF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJFgHAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_chacha20_poly1305_seal_split_ifma = sym super::chacha20::vg_chacha20_poly1305_seal_split_ifma::vg_chacha20_poly1305_seal_split_ifma,
         vg_chacha20_poly1305_seal_ifma_core = sym super::chacha20::vg_chacha20_poly1305_seal_ifma_core::vg_chacha20_poly1305_seal_ifma_core,
@@ -620,6 +622,8 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512VL_FEATURES: verified_garbage_c
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `key` must be valid for reads of 32 bytes.
@@ -767,7 +771,7 @@ jmp 226f
 call {vg_chacha20_poly1305_seal_avx512vl_core}
 .base64 "WFhYWFhYWA=="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKj4///F/n+EJDgHAADF/n+EJBgHAADF/n+EJPgGAADF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJFgHAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_chacha20_poly1305_seal_split_avx512vl = sym super::chacha20::vg_chacha20_poly1305_seal_split_avx512vl::vg_chacha20_poly1305_seal_split_avx512vl,
         vg_chacha20_poly1305_seal_avx512vl_core = sym super::chacha20::vg_chacha20_poly1305_seal_avx512vl_core::vg_chacha20_poly1305_seal_avx512vl_core,
@@ -903,6 +907,8 @@ pub const VG_CHACHA20_POLY1305_SEAL_GATHER_AVX512_FEATURES: verified_garbage_cpu
 /// ChaCha20-Poly1305 encryption (RFC 8439 §2.8), out of place, of a plaintext in pieces: with the key `*key` and the nonce `*nonce`, encrypts the concatenation of the `src_count` slices that `src` lists (each an address and a length, in bytes), writes the ciphertext to the `len` bytes at `dst`, and writes the tag of the ciphertext and the `aad_len` bytes of additional data at `aad` to `*tag`: `vg_chacha20_poly1305_seal` with the plaintext gathered from `src`.
 ///
 /// Contract: `VG.Spec.ChaCha20Poly1305.sealGatherContract`. Constant time: only the pointers, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1051,7 +1057,7 @@ jmp 226f
 call {vg_chacha20_poly1305_seal_avx512_core}
 .base64 "WFhYWFhYWA=="
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKj4///F/n+EJDgHAADF/n+EJBgHAADF/n+EJPgGAADF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJFgHAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
         vg_chacha20_poly1305_seal_split_avx512 = sym super::chacha20::vg_chacha20_poly1305_seal_split_avx512::vg_chacha20_poly1305_seal_split_avx512,
         vg_chacha20_poly1305_seal_avx512_core = sym super::chacha20::vg_chacha20_poly1305_seal_avx512_core::vg_chacha20_poly1305_seal_avx512_core,
@@ -1232,7 +1238,7 @@ jmp 21f
 21:
 .base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
 call {vg_chacha20_poly1305_seal_avx2_core}
-.base64 "WFhYWFhYWMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNpCSo+P//xf5/hCQ4BwAAxf5/hCQYBwAAxf5/hCT4BgAAxf5/RCRIxf5/RCQoxf5/RCQITIkcJEiNpCRYBwAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "WFhYWFhYWMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNpCSo+P//xf5/hCQ4BwAAxf5/hCQYBwAAxf5/hCT4BgAAxf5/RCRYxf5/RCQ4xf5/RCQY8w9/RCQITIkcJEiNpCRYBwAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_chacha20_poly1305_seal_avx2_core = sym super::chacha20::vg_chacha20_poly1305_seal_avx2_core::vg_chacha20_poly1305_seal_avx2_core,
     )
@@ -1406,7 +1412,7 @@ jmp 21f
 21:
 .base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
 call {vg_chacha20_poly1305_seal_ssse3_core}
-.base64 "WFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCSo+P//8w9/hCRIBwAA8w9/hCQ4BwAA8w9/hCQoBwAA8w9/hCQYBwAA8w9/hCQIBwAA8w9/hCT4BgAA8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNpCRYBwAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "WFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCSo+P//8w9/hCRIBwAA8w9/hCQ4BwAA8w9/hCQoBwAA8w9/hCQYBwAA8w9/hCQIBwAA8w9/hCT4BgAA8w9/RCRo8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNpCRYBwAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_chacha20_poly1305_seal_ssse3_core = sym super::chacha20::vg_chacha20_poly1305_seal_ssse3_core::vg_chacha20_poly1305_seal_ssse3_core,
     )
@@ -1564,7 +1570,7 @@ jmp 21f
 21:
 .base64 "SIt8JChIi3QkIEiLVCQYSItMJBBMi0QkOEyLTCRASItEJEhQ"
 call {vg_chacha20_poly1305_seal_core}
-.base64 "WFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCSo+P//8w9/hCRIBwAA8w9/hCQ4BwAA8w9/hCQoBwAA8w9/hCQYBwAA8w9/hCQIBwAA8w9/hCT4BgAA8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNpCRYBwAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
+.base64 "WFhYWFhYWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCSo+P//8w9/hCRIBwAA8w9/hCQ4BwAA8w9/hCQoBwAA8w9/hCQYBwAA8w9/hCQIBwAA8w9/hCT4BgAA8w9/RCRo8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNpCRYBwAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
         vg_chacha20_poly1305_seal_core = sym super::chacha20::vg_chacha20_poly1305_seal_core::vg_chacha20_poly1305_seal_core,
     )

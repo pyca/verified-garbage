@@ -400,6 +400,8 @@ def sealSplitFn (v : XorImpl) : SealSplitFn where
   code := withStackArgScratchWipedX 1736 3 42
     (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.callee v.poly)
   verified := Split.sealSplit_framed v
+  E _ _ := True
+  exec s h := let ⟨t, s', e, a, p⟩ := (Split.sealSplit_framed v).1 s h; ⟨t, s', e, a, p, trivial⟩
   sp := SpSafe.of_all (X86_64.withStackArgScratchWipedX_spSafe (Split.sealSplitFor_spSafe v))
   depth := by
     have := Split.sealSplitFor_xdepth v
