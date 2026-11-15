@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Ffdh.VettedGroupFacts
 public import VerifiedGarbage.Spec.Ffdh.VettedGroups
-public import VerifiedGarbage.Proof.Ffdh.VettedValidation.Power
+public import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Bignum.Math
 import VerifiedGarbage.Proof.Framework.Omega
 
@@ -11,8 +11,8 @@ import VerifiedGarbage.Proof.Framework.Omega
 namespace VG.Proof.Ffdh.VettedValidation
 
 /-- Append the low `8 * n` bits of `b` to a binary exponent whose residue is `a`, a byte at a
-time: `powerBlock` with eight squarings in a step and a shift for the byte's power of two, which
-the kernel evaluates several times faster. -/
+time: eight squarings and a shift for the byte's power of two in a step, which the kernel
+evaluates several times faster than a step for each bit. -/
 private def powerBytes (p a b : Nat) : Nat → Nat
   | 0 => a % p
   | n + 1 =>

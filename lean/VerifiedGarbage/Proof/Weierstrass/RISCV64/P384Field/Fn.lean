@@ -299,14 +299,14 @@ theorem roundWith_ok {quot qm : Reg → List Instr} {M : Nat} (hQ : QOk quot qm 
   obtain ⟨n32, n34, n35, n36, n37, n3t, n33, c3, n3a⟩ := dk 3 (by decide)
   simp only [Nat.add_zero] at n02 n04 n05 n06 n07 n0t n03 c0 n0a
   have hc := h.ctx
-  have e : roundWith quot qm i = (.load .d (rw (i + 3)) .a3 (ACC + 8 * (i + 3)) ::
+  have e : roundWith quot qm i = .load .d (rw (i + 3)) .a3 (ACC + 8 * (i + 3)) ::
       (quot (rw i) ++
       (.store .d (rw i) .a3 (ACC + 8 * i) :: (qm (rw i) ++
-      (([.sltu .a7 (rw (i + 1)) .a4, .sub (rw (i + 1)) (rw (i + 1)) .a4] : List Instr) ++
-      (([.sltu .t0 (rw (i + 2)) .a5, .sub (rw (i + 2)) (rw (i + 2)) .a5, .sltu .a4 (rw (i + 2)) .a7,
-        .sub (rw (i + 2)) (rw (i + 2)) .a7, .add .a7 .t0 .a4] : List Instr) ++
-      ([.add .a6 .a6 .a2, .add .a6 .a6 .a7, .sltu .a2 (rw (i + 3)) .a6,
-        .sub (rw (i + 3)) (rw (i + 3)) .a6] : List Instr)))) : List Instr)) : List Instr) := by
+      ([.sltu .a7 (rw (i + 1)) .a4, .sub (rw (i + 1)) (rw (i + 1)) .a4] ++
+      ([.sltu .t0 (rw (i + 2)) .a5, .sub (rw (i + 2)) (rw (i + 2)) .a5, .sltu .a4 (rw (i + 2)) .a7,
+        .sub (rw (i + 2)) (rw (i + 2)) .a7, .add .a7 .t0 .a4] ++
+      [.add .a6 .a6 .a2, .add .a6 .a6 .a7, .sltu .a2 (rw (i + 3)) .a6,
+        .sub (rw (i + 3)) (rw (i + 3)) .a6]))))) := by
     simp only [roundWith, List.cons_append, List.nil_append, List.append_assoc]
   rw [e]
   refine ld_ok hc (by simp only [ACC]; omega_using [hi]) (by simp only [ACC]; omega_using []) fun s1 u1 => ?_
@@ -557,15 +557,13 @@ theorem reduceWith_ok {quot qm : Reg → List Instr} {M Pm : Nat} (hQ : QOk quot
     WP isa (.block (reduceWith quot qm)) s fun s' =>
       Ctx b s' ∧ Rest clobR s s' ∧ Frame [AR ACC b] s.mem s'.mem ∧ (s'.gpr XC).toNat ≤ 1 ∧
       ∃ Q, Q < 2 ^ 384 ∧ (xv s' + 2 ^ 384 * (s'.gpr XC).toNat) * 2 ^ 384 = prodV s.mem b + Q * Pm := by
-  have e : reduceWith quot qm =
-      ((List.range 3).map (fun j => (.load .d (rw j) .a3 (ACC + 8 * j) : Instr)) ++
+  have e : reduceWith quot qm = ((List.range 3).map (fun j => .load .d (rw j) .a3 (ACC + 8 * j)) ++
       ([.li .a2 0] : List Instr)) ++ ((List.range 6).flatMap (roundWith quot qm) ++
       (.load .d .t4 .a3 (ACC + 72) :: .load .d .a1 .a3 (ACC + 80) :: .load .d .a4 .a3 (ACC + 88) ::
-      (([.sltu .a5 .t4 .a2, .sub .t4 .t4 .a2] : List Instr) ++
-      (([.sltu .a2 .a1 .a5, .sub .a1 .a1 .a5] : List Instr) ++
-      (([.sltu .a5 .a4 .a2, .sub .a4 .a4 .a2] : List Instr) ++ (.li .a2 0 ::
-      (((List.range 6).flatMap fun j => ((.load .d .a7 .a3 (ACC + 8 * j) : Instr) :: adcWord (X j) .a7)) ++
-      ([.sub XC XC .a5] : List Instr)) : List Instr)))) : List Instr)) := by
+      ([.sltu .a5 .t4 .a2, .sub .t4 .t4 .a2] ++ ([.sltu .a2 .a1 .a5, .sub .a1 .a1 .a5] ++
+      ([.sltu .a5 .a4 .a2, .sub .a4 .a4 .a2] ++ (.li .a2 0 ::
+      (((List.range 6).flatMap fun j => .load .d .a7 .a3 (ACC + 8 * j) :: adcWord (X j) .a7) ++
+      [.sub XC XC .a5]))))))) := by
     unfold reduceWith finish
     simp only [List.append_assoc, List.cons_append, List.nil_append]
     rfl

@@ -33,6 +33,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 
 /-!
 # ECDSA over P-224 on 32-bit ARM: `Verified`
@@ -162,8 +164,18 @@ theorem agree₀ {u : Bool} {s t : State} {extraS extraT : List Region}
   · rw [argByte_eq, argByte_eq, Mem.readW_byte s.mem _ hk, Mem.readW_byte t.mem _ hk]
     exact congrArg (fun v : BitVec 32 => v.extractLsb' (8 * k) 8) ha
 
+/-- `τ₀` without the regions, which the code's timing does not need (no address or branch is
+read back from memory): the analysis from it does not track the public bytes of `scratch`. -/
+def τ₁ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, argLen := 4 }
+
+/-- `τ₁` says no more than `τ₀`. -/
+theorem agree₁ {s t : State} (h : VG.Arm.Taint.Agree τ₀ s t) : VG.Arm.Taint.Agree τ₁ s t :=
+  VG.Arm.Taint.leS_sound (σ := τ₀) ⟨RegSet.subset_refl _, id, .inr ⟨rfl, rfl⟩,
+    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, .inl rfl,
+    fun _ h => (List.not_mem_nil h).elim⟩ h
+
 theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signP224 :=
-  VG.Taint.constantTime (A := taint) τ₀
-    (fun _ _ hs ht pub => agree₀ (pre_of hs) (pre_of ht) pub) (by native_taint_decide)
+  VG.Taint.constantTime (A := taint) τ₁
+    (fun _ _ hs ht pub => agree₁ (agree₀ (pre_of hs) (pre_of ht) pub)) (by native_taint_decide)
 
 end VG.Proof.Ecdsa.Arm.P224

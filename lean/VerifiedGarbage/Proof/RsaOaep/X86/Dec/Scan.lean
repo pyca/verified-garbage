@@ -28,10 +28,6 @@ import VerifiedGarbage.Proof.RsaPss.X86.CmpLoop
 public import VerifiedGarbage.Proof.RsaPss.VerifyCases
 import VerifiedGarbage.Proof.RsaPss.X86.Taint
 
-/-- `oomega` (`RsaOaep/X86/Base.lean`) without taking `offsO` apart at every call: the offsets'
-equations stay one hypothesis, a conjunction, which `omega_arith` reads as it is. -/
-local macro "oomega'" : tactic => `(tactic| (have := VG.Proof.RsaOaep.X86.offsO; omega_arith))
-
 /-! ### `RsaOaep.X86.Dec.Acc`, which only this module used -/
 
 section
@@ -730,11 +726,11 @@ theorem K0.keep (hk : K0 h P σ m) (hf : Frame rs m m') (hd : ∀ r ∈ rs, (slo
 
 theorem LH.keep (hl : LH h P σ m) (hf : Frame rs m m') (hd : ∀ r ∈ rs, (sR P.scr oLh h.H.D).Disjoint r) :
     LH h P σ m' :=
-  sbytes_keep hf hd (by have := h.D_le; oomega') hl
+  sbytes_keep hf hd (by have := h.D_le; oomega) hl
 
 theorem EMv.keep {f : Nat → Byte} (he : EMv P m f) (hf : Frame rs m m') (hK : P.K ≤ 1024)
     (hd : ∀ r ∈ rs, (sR P.scr oEm P.K).Disjoint r) : EMv P m' f :=
-  sbytes_keep hf hd (by oomega') he
+  sbytes_keep hf hd (by oomega) he
 
 end keep
 
@@ -800,8 +796,8 @@ theorem labT_vp (P : EP) {f : Fns} (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.t
   -- The label's hash.
   refine (labelT_vp hg h (f := f) (p := P.tabL) (ai := P.aiL) (au := P.auL) (af := P.afL) (tblL_of hi₀) fne
     (j := 17) (o := oLh) (ll := P.ll) (lab := P.lab) (by simp) updLab17_taint finLab17_taint
-    rfl rfl hlab (dS (by oomega')) (dS (by oomega')) (ok.low_buf (R := P.LAB) (.inl (by simp))).symm (by oomega')
-    (by oomega') (labB := labB P) (fun σ s hc => hc.st.ro (R := P.LAB) (by simp))
+    rfl rfl hlab (dS (by oomega)) (dS (by oomega)) (ok.low_buf (R := P.LAB) (.inl (by simp))).symm (by oomega)
+    (by oomega) (labB := labB P) (fun σ s hc => hc.st.ro (R := P.LAB) (by simp))
     (Inv := L0 h P) ?_ (fun _ _ hm => hm.2) (fun σ _ hm => hTL σ hm.1.1.1.tabTL)).mono
     (fun _ _ h => h) fun σ s ⟨⟨hc, ⟨hk, _⟩, hd⟩, sy⟩ => ⟨⟨hc, hk, hd⟩, sy⟩
   intro σ m m' ⟨⟨hk, he⟩, hs⟩ hf
@@ -809,17 +805,17 @@ theorem labT_vp (P : EP) {f : Fns} (hTL : ∀ σ, P.TL σ → TabFacts h.H f P.t
       sR P.scr oLh h.H.F], (slotR P.lay d).Disjoint r := fun d hd r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact hg.slot ok (by oomega') (by rw [hg.F]; unfold frameBytes at hd ⊢; omega_using [hd])
-    · exact hg.slot ok (by oomega') (by rw [hg.F]; unfold frameBytes at hd ⊢; omega_using [hd])
+    · exact hg.slot ok (by oomega) (by rw [hg.F]; unfold frameBytes at hd ⊢; omega_using [hd])
+    · exact hg.slot ok (by oomega) (by rw [hg.F]; unfold frameBytes at hd ⊢; omega_using [hd])
     · exact Lay.fr_low (by unfold frameBytes at hd; omega_using [hd]) (by show (3448 : Nat) ≤ 2 ^ 32; decide)
-    · exact hg.slot ok (by oomega') (by rw [hg.F]; unfold frameBytes at hd ⊢; omega_using [hd])
+    · exact hg.slot ok (by oomega) (by rw [hg.F]; unfold frameBytes at hd ⊢; omega_using [hd])
   refine ⟨⟨hk.keep h hf (dslot sRes (by decide)), he.keep hf hK fun r hr => ?_⟩, slot_keep hf (dslot sTab (by decide)) hs⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
-  · exact Geo.sep (by oomega') (by oomega') (by oomega')
-  · exact Geo.sep (by oomega') (by oomega') (by oomega')
-  · exact hg.low ok (by oomega')
-  · exact Geo.sep (by oomega') (by oomega') (by oomega')
+  · exact Geo.sep (by oomega) (by oomega) (by oomega)
+  · exact Geo.sep (by oomega) (by oomega) (by oomega)
+  · exact hg.low ok (by oomega)
+  · exact Geo.sep (by oomega) (by oomega) (by oomega)
 
 /-! ## The seed -/
 
@@ -834,18 +830,18 @@ theorem x1_keep {P : EP} (hg : Geo P.lay P.scr) {dOff dl : Nat} (hfd : dOff + dl
   refine ⟨hk.keep h hf (mgfW_slot g hg hfd (by decide) (by decide) (by decide)), hl.keep h hf fun r hr => ?_, ?_⟩
   · simp only [mgfW, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    · exact Geo.sep (by oomega') (by oomega') (by oomega')
-    · exact Geo.sep (by oomega') (by oomega') (by oomega')
-    · exact Geo.sep (by oomega') (by oomega') (by oomega')
-    · exact Geo.sep (by oomega') (by oomega') (by oomega')
-    · exact hg.low ok (by oomega')
-    · exact Geo.sep (by oomega') (by oomega') (by oomega')
-    · exact (hg.slot ok (by oomega') (by rw [hg.F]; decide)).symm
-    · exact (hg.slot ok (by oomega') (by rw [hg.F]; decide)).symm
-    · exact (hg.slot ok (by oomega') (by rw [hg.F]; decide)).symm
-    · exact (hg.slot ok (by oomega') (by rw [hg.F]; decide)).symm
+    · exact Geo.sep (by oomega) (by oomega) (by oomega)
+    · exact Geo.sep (by oomega) (by oomega) (by oomega)
+    · exact Geo.sep (by oomega) (by oomega) (by oomega)
+    · exact Geo.sep (by oomega) (by oomega) (by oomega)
+    · exact hg.low ok (by oomega)
+    · exact Geo.sep (by oomega) (by oomega) (by oomega)
+    · exact (hg.slot ok (by oomega) (by rw [hg.F]; decide)).symm
+    · exact (hg.slot ok (by oomega) (by rw [hg.F]; decide)).symm
+    · exact (hg.slot ok (by oomega) (by rw [hg.F]; decide)).symm
+    · exact (hg.slot ok (by oomega) (by rw [hg.F]; decide)).symm
   · rw [← h0']
-    exact hf _ fun r hr => mgfW_byte g hg hfd (o := oEm + 0) (by oomega') (by oomega') (by omega_arith) r hr _
+    exact hf _ fun r hr => mgfW_byte g hg hfd (o := oEm + 0) (by oomega) (by oomega) (by omega_arith) r hr _
       (Region.contains_self _ _)
 
 /-- Four slots written, and the memory around them. -/
@@ -888,11 +884,11 @@ theorem x1_keep4 {P : EP} (hg : Geo P.lay P.scr) {σ : State} {m m' : Mem}
     (hf : Frame [slotR P.lay sDst, slotR P.lay sDstLen, slotR P.lay sSrc, slotR P.lay sSrcLen] m m')
     (hx : X1 h P σ m) : X1 h P σ m' := by
   have := h.D_le
-  refine ⟨hx.1.keep h hf fun r hr => ?_, hx.2.1.keep h hf (slots4_dis hg _ _ (by oomega')), ?_⟩
+  refine ⟨hx.1.keep h hf fun r hr => ?_, hx.2.1.keep h hf (slots4_dis hg _ _ (by oomega)), ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact slotSep (by decide) (by decide) (by decide)
   · rw [← hx.2.2]
-    exact sbytes_keep (o := oEm) (n := 1) hf (slots4_dis hg _ _ (by oomega')) (by oomega')
+    exact sbytes_keep (o := oEm) (n := 1) hf (slots4_dis hg _ _ (by oomega)) (by oomega)
       (f := fun _ => m (sa P.scr (oEm + 0))) (fun i hi => by rw [show i = 0 by omega_arith]) 0 (by decide)
 
 /-- `k - hLen - 1`, from argument 4. -/
@@ -939,10 +935,10 @@ theorem seed_vp (P : EP) :
   have dis := slots4_dis hg
   refine ⟨c, ⟨x1_keep4 h hg fr ⟨hk, hl, he 0 (by omega_arith)⟩, r1, r2, r3, r4⟩, fun i hi' => ?_, fun i hi' => ?_⟩
   · rw [← he (1 + i) (by omega_arith), show oEm + (1 + i) = oEm + 1 + i by omega_arith]
-    exact sbytes_keep fr (dis _ _ (by oomega')) (by oomega') (o := oEm + 1) (n := h.H.D)
+    exact sbytes_keep fr (dis _ _ (by oomega)) (by oomega) (o := oEm + 1) (n := h.H.D)
       (f := fun i => s.mem (sa P.scr (oEm + 1 + i))) (fun _ _ => rfl) i hi'
   · rw [srcB_getD _ _ hi', ← he (1 + h.H.D + i) (by omega_arith), show oEm + (1 + h.H.D + i) = oEm + 1 + h.H.D + i by omega_arith]
-    exact sbytes_keep fr (dis _ _ (by oomega')) (by oomega') (o := oEm + 1 + h.H.D) (n := P.K - h.H.D - 1)
+    exact sbytes_keep fr (dis _ _ (by oomega)) (by oomega) (o := oEm + 1 + h.H.D) (n := P.K - h.H.D - 1)
       (f := fun i => s.mem (sa P.scr (oEm + 1 + h.H.D + i))) (fun _ _ => rfl) i hi'
 
 /-- The slots for unmasking `DB` with MGF1 of the seed. -/
@@ -987,9 +983,9 @@ theorem db_vp (P : EP) :
     (by rw [c11.st.sp, hc.st.sp]) (by rw [c11.ebp, hc.ebp])
   have dis := slots4_dis hg
   refine ⟨c, ⟨x1_keep4 h hg fr hx, r1, r2, r3, r4⟩, fun i hi' => ?_, fun i hi' => ?_⟩
-  · rw [V3, mix_out (by omega_arith), sbytes_keep fr (dis _ _ (by oomega')) (by oomega') hdb i hi', srcB_getD _ _ hi']
+  · rw [V3, mix_out (by omega_arith), sbytes_keep fr (dis _ _ (by oomega)) (by oomega) hdb i hi', srcB_getD _ _ hi']
   · rw [srcB_getD _ _ hi', V3, mix_in (by omega_arith) (by omega_arith), show 1 + i - 1 = i by omega_arith]
-    exact sbytes_keep fr (dis _ _ (by oomega')) (by oomega') hsd i hi'
+    exact sbytes_keep fr (dis _ _ (by oomega)) (by oomega) hsd i hi'
 
 /-! ## Unmasking -/
 
@@ -1024,12 +1020,12 @@ theorem unmask_vp (P : EP) {f : Fns} (hT : ∀ σ, P.T σ → TabFacts g.H f P.t
   have tab : ∀ σ m, X1 h P σ m → TabFacts g.H f (P.lay.argv.getD 24 0) P.ai P.au P.af σ :=
     fun σ m hx => hT σ hx.1.1.tabT
   have P1 := mpOf g hg (so := oEm + 1 + h.H.D) (sl := P.K - h.H.D - 1) (dOff := oEm + 1) (dl := h.H.D)
-    (by omega_arith) hD0 (by oomega') (by oomega') (by oomega') (by oomega') (.inr (Nat.le_refl _))
+    (by omega_arith) hD0 (by oomega) (by oomega) (by oomega) (by oomega) (.inr (Nat.le_refl _))
     (seed := fun σ => srcB (V P σ) (1 + h.H.D) (P.K - h.H.D - 1)) (fun σ => srcB_length _ _ _)
-    (x1_keep h g hg (by oomega') (by oomega')) (by simp) (tbl_of hi₀) tabArg24_taint tab fne
+    (x1_keep h g hg (by oomega) (by oomega)) (by simp) (tbl_of hi₀) tabArg24_taint tab fne
   have P2 := mpOf g hg (so := oEm + 1) (sl := h.H.D) (dOff := oEm + 1 + h.H.D) (dl := P.K - h.H.D - 1) hD0
-    (by omega_arith) (by oomega') (by oomega') (by oomega') (by oomega') (.inl (Nat.le_refl _))
-    (seed := fun σ => srcB (V3 h g P σ) 1 h.H.D) (fun σ => srcB_length _ _ _) (x1_keep h g hg (by oomega') (by oomega'))
+    (by omega_arith) (by oomega) (by oomega) (by oomega) (by oomega) (.inl (Nat.le_refl _))
+    (seed := fun σ => srcB (V3 h g P σ) 1 h.H.D) (fun σ => srcB_length _ _ _) (x1_keep h g hg (by oomega) (by oomega))
     (by simp) (tbl_of hi₀) tabArg24_taint tab fne
   refine VP.seq (VP.syms (seed_vp h P)) (VP.seq (mgf_vp g P1 (dstv := fun σ i => V P σ (1 + i)))
     (VP.seq (VP.syms (db_vp h g P)) ((mgf_vp g P2 (dstv := fun σ i => V3 h g P σ (1 + h.H.D + i))).mono
@@ -1117,7 +1113,7 @@ theorem acc_vp (P : EP) :
     · simp (disch := decide) only [u6.other, u5.other, u4.gpr, u3.gpr, u2.other, u1.other, hc.ebp]
     · rw [u6.gpr]
     · rw [u6.other _ (by decide), u5.gpr]; rfl
-  refine VP.seq (Vf.cmpLoop_vp hg (oa := oEm + 1 + h.H.D) (ob := oLh) (n := h.H.D) hD0 (by oomega') (by oomega')
+  refine VP.seq (Vf.cmpLoop_vp hg (oa := oEm + 1 + h.H.D) (ob := oLh) (n := h.H.D) hD0 (by oomega) (by oomega)
     (X := Y h g P) (f := fun σ i => V5 h g P σ (1 + h.H.D + i)) (g := fun σ i => (lhB h P σ).getD i 0)
     (fun σ m hy i hi => by
       rw [show oEm + 1 + h.H.D + i = oEm + (1 + h.H.D + i) by omega_using []]; exact hy.2 _ (by omega_using [hfit, hi]))
@@ -1130,8 +1126,8 @@ theorem acc_vp (P : EP) :
   have c2 := (hc.upd u1 (by decide) (by decide)).upd u2 (by decide) (by decide)
   have e2 : t2.gpr .esi = P.scr + BitVec.ofNat 32 oEm := by rw [u2.gpr, u1.gpr, hc.ebp]
   have m2 : t2.mem = s.mem := by rw [u2.mem, u1.mem]
-  refine wp_movzx8 (a := sa P.scr (oEm + 0)) (by show t2.ea ⟨.esi, 0⟩ = _; rw [ea_at, e2]; exact hg.addrD (by oomega'))
-    (hg.rd c2.st (by oomega')) fun t3 u3 => wp_or fun t4 u4 => ?_
+  refine wp_movzx8 (a := sa P.scr (oEm + 0)) (by show t2.ea ⟨.esi, 0⟩ = _; rw [ea_at, e2]; exact hg.addrD (by oomega))
+    (hg.rd c2.st (by oomega)) fun t3 u3 => wp_or fun t4 u4 => ?_
   have c4 := (c2.upd u3 (by decide) (by decide)).upd u4 (by decide) (by decide)
   refine c4.wp_st hg (d := sAcc) (by decide) fun t5 c5 m5 => WP.block_nil ?_
   have fr : Frame [slotR P.lay sAcc] s.mem t5.mem := by
@@ -1139,11 +1135,11 @@ theorem acc_vp (P : EP) :
   have dS : ∀ {o n : Nat}, o + n ≤ oRsa → ∀ r ∈ [slotR P.lay sAcc], (sR P.scr o n).Disjoint r :=
     fun hon r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (hg.slot ok hon (by rw [hg.F]; decide)).symm
-  refine ⟨c5, ⟨⟨hy.1.1.keep h fr fun r hr => ?_, hy.1.2.1.keep h fr (dS (by oomega')), ?_⟩,
-    hy.2.keep fr hK (dS (by oomega'))⟩, t4.gpr .edx, by rw [m5.mem, Mem.readW_writeW_self32], ?_⟩
+  refine ⟨c5, ⟨⟨hy.1.1.keep h fr fun r hr => ?_, hy.1.2.1.keep h fr (dS (by oomega)), ?_⟩,
+    hy.2.keep fr hK (dS (by oomega))⟩, t4.gpr .edx, by rw [m5.mem, Mem.readW_writeW_self32], ?_⟩
   · simp only [List.mem_singleton] at hr; subst hr; exact slotSep (by decide) (by decide) (by decide)
   · rw [← hy.1.2.2]
-    exact sbytes_keep (o := oEm) (n := 1) fr (dS (by oomega')) (by oomega') (f := fun _ => s.mem (sa P.scr (oEm + 0)))
+    exact sbytes_keep (o := oEm) (n := 1) fr (dS (by oomega)) (by oomega) (f := fun _ => s.mem (sa P.scr (oEm + 0)))
       (fun i hi => by rw [show i = 0 by omega_using [hi]]) 0 (by decide)
   · rw [u4.gpr, u3.other _ (by decide), u2.other _ (by decide), u1.other _ (by decide), u3.gpr, m2,
       or_eq_zero32, he, setWidth_byte_eq_zero, hy.1.2.2]
@@ -1407,10 +1403,10 @@ theorem Y.slot {P : EP} {σ : State} {m : Mem} (hy : Y h g P σ m) {d : Nat} (hd
     fun hon r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hg.slot ok hon (by rw [hg.F]; unfold frameBytes at hd ⊢; omega_arith)).symm
-  refine ⟨⟨hy.1.1.keep h fr fun r hr => ?_, hy.1.2.1.keep h fr (dS (by oomega')), ?_⟩, hy.2.keep fr hK (dS (by oomega'))⟩
+  refine ⟨⟨hy.1.1.keep h fr fun r hr => ?_, hy.1.2.1.keep h fr (dS (by oomega)), ?_⟩, hy.2.keep fr hK (dS (by oomega))⟩
   · simp only [List.mem_singleton] at hr; subst hr; exact slotSep (by decide) hd (by omega_arith)
   · rw [← hy.1.2.2]
-    exact sbytes_keep (o := oEm) (n := 1) fr (dS (by oomega')) (by oomega') (f := fun _ => m (sa P.scr (oEm + 0)))
+    exact sbytes_keep (o := oEm) (n := 1) fr (dS (by oomega)) (by oomega) (f := fun _ => m (sa P.scr (oEm + 0)))
       (fun i hi => by rw [show i = 0 by omega_arith]) 0 (by decide)
 
 theorem tscan_vp (P : EP) :
@@ -1434,7 +1430,7 @@ theorem tscan_vp (P : EP) :
   refine VP.seq (G := fun σ s => P.lay.St σ s ∧ Xs h g P σ s.mem ∧
       SC P.lay P.scr (oEm + 1 + 2 * h.H.D) (tN h P) (T h g P σ) 0 s)
     (VP.taint [.esp, .ebp] h.certs.scanSet (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, hy, ha⟩ => ?_)
-    (VP.seq (scan_vp hg (o := oEm + 1 + 2 * h.H.D) (n := tN h P) (by unfold tN; oomega') (by unfold tN; omega_arith) (f := T h g P)
+    (VP.seq (scan_vp hg (o := oEm + 1 + 2 * h.H.D) (n := tN h P) (by unfold tN; oomega) (by unfold tN; omega_arith) (f := T h g P)
       (X := Xs h g P) (fun σ m hx i hi => by
         rw [show oEm + 1 + 2 * h.H.D + i = oEm + (1 + 2 * h.H.D + i) by omega_arith]; exact hx.1.2 _ (by unfold tN at hi; omega_arith)) xs) ?_)
   · simp only [scanSet, atS, addi, ld, st, mi, List.cons_append, List.nil_append]

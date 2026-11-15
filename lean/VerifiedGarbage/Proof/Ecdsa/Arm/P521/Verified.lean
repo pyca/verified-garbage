@@ -179,18 +179,21 @@ taint_summary mulSum : taintS (Taint.ofRegs [.r0, .r10])
   (.call (s!"vg_{Impl.Weierstrass.Mul.p521.curve}_mul" ++ if p521.umaal then "_umaal" else "") mulP521)
   keeping (Taint.ofRegs []) using mulPSum addPSum subPSum
 
-/-- `τ₀` without the regions, which the code's timing does not need: no address or branch is
-read back from memory, so the analysis with summaries starts from less (`leS_sound`). -/
+/-- `τ₀` without the regions, which the code's timing does not need (no address or branch is
+read back from memory): the analysis from it does not track the public bytes of `scratch`. -/
 def τ₁ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, argLen := 4 }
+
+/-- `τ₁` says no more than `τ₀`. -/
+theorem agree₁ {s t : State} (h : VG.Arm.Taint.Agree τ₀ s t) : VG.Arm.Taint.Agree τ₁ s t :=
+  VG.Arm.Taint.leS_sound (σ := τ₀) ⟨RegSet.subset_refl _, id, .inr ⟨rfl, rfl⟩,
+    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, .inl rfl,
+    fun _ h => (List.not_mem_nil h).elim⟩ h
 
 theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signP521 := by
   refine VG.Taint.constantTime_of_exists (A := taintS) τ₁ ?_
     (by taint_decide_sum [mulPSum, mulSum])
   intro s t hs ht ⟨hsp, h0, h1, h2, h3, ha⟩
-  refine VG.Arm.Taint.leS_sound (σ := τ₀) ⟨RegSet.subset_refl _, id, .inr ⟨rfl, rfl⟩,
-    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, .inl rfl,
-    fun _ h => (List.not_mem_nil h).elim⟩ ?_
-  refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ hs, wf₀ ht,
+  refine agree₁ ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ hs, wf₀ ht,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun _ => hsp, fun k hk => ?_⟩
   · simp only [τ₀, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
