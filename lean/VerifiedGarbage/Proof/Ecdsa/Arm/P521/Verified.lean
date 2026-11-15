@@ -176,7 +176,8 @@ taint_summary subPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
 once for every check of code that calls it (signing, ECDH and the public key). It writes every
 register: its frame is empty. -/
 taint_summary mulSum : taintS (Taint.ofRegs [.r0, .r10])
-  (.call (s!"vg_{Impl.Weierstrass.Mul.p521.curve}_mul" ++ if p521.umaal then "_umaal" else "") mulP521)
+  (.call (s!"vg_{Impl.Weierstrass.Mul.p521.curve}_mul" ++ if p521.umaal then "_umaal" else "")
+    mulP521)
   keeping (Taint.ofRegs []) using mulPSum addPSum subPSum
 
 /-- `τ₀` without the regions, which the code's timing does not need (no address or branch is
