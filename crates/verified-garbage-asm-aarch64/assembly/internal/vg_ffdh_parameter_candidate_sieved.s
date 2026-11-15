@@ -135,37 +135,44 @@ vg_ffdh_parameter_candidate_sieved:
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x0, #256
-	lsl x5, x12, #3
-	add x10, x16, x5
+	ldr x2, [x16, #0]
 	add x14, x12, #0
+	movz x3, #0, lsl #0
+28:
+	ldr x5, [x16, #0]
+	lsr x4, x5, #32
+	lsl x6, x4, #32
+	sub x5, x5, x6
+	add x3, x3, x4
+	add x3, x3, x5
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 28b
+	movz x7, #39322, lsl #0
+	movk x7, #39321, lsl #16
+	movk x7, #39321, lsl #32
+	movk x7, #6553, lsl #48
+	movz x6, #43691, lsl #0
+	movk x6, #43690, lsl #16
+	movk x6, #43690, lsl #32
+	movk x6, #2730, lsl #48
 	ldr x9, [x0, #160]
-	movz x6, #3, lsl #0
-	subs x8, x9, x6
+	movz x10, #3, lsl #0
+	subs x8, x9, x10
+	csel x7, x7, x6, hs
 	movz x13, #10, lsl #0
 	movz x6, #24, lsl #0
 	csel x13, x13, x6, hs
-	movz x3, #0, lsl #0
-	movz x7, #0, lsl #0
-	sub x8, x7, #1
-28:
-	sub x10, x10, #8
-	ldr x2, [x10, #0]
-	movz x9, #64, lsl #0
-29:
-	adds x2, x2, x2
-	adcs x3, x3, x3
-	adc x4, x7, x7
-	subs x5, x3, x13
-	csel x6, x8, x7, hs
-	sub x4, x7, x4
-	orr x6, x6, x4
-	eor x5, x5, x3
-	and x5, x5, x6
-	eor x3, x3, x5
-	sub x9, x9, #1
-	cbnz x9, 29b
-	sub x14, x14, #1
-	cbnz x14, 28b
+	movz x4, #7, lsl #0
+	and x2, x2, x4
+	movz x4, #105, lsl #0
+	mul x2, x2, x4
+	movz x4, #16, lsl #0
+	mul x3, x3, x4
+	add x3, x3, x2
+	umulh x4, x3, x7
+	mul x4, x4, x13
+	sub x3, x3, x4
 	ldr x9, [x0, #160]
 	movz x6, #3, lsl #0
 	subs x8, x9, x6
@@ -178,13 +185,13 @@ vg_ffdh_parameter_candidate_sieved:
 	eor x5, x5, x6
 	str x5, [x0, #32]
 	ldr x5, [x0, #32]
-	cbz x5, 210f
+	cbz x5, 29f
 	ldr x3, [x0, #216]
 	ldr x2, [x0, #136]
 	str x3, [x2, #0]
 	movz x0, #2, lsl #0
-	b 211f
-210:
+	b 210f
+29:
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x9, x11, #0
@@ -1493,10 +1500,67 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x1, #0, lsl #0
 	movz x7, #0, lsl #0
 	sub x8, x7, #1
-212:
+211:
 	ldr x17, [x9, #0]
 	add x9, x9, #8
 	add x3, x17, #0
+	movz x4, #65535, lsl #0
+	and x3, x3, x4
+	add x4, x3, #0
+	mul x5, x3, x4
+	movz x6, #2, lsl #0
+	sub x5, x6, x5
+	mul x4, x4, x5
+	mul x5, x3, x4
+	movz x6, #2, lsl #0
+	sub x5, x6, x5
+	mul x4, x4, x5
+	mul x5, x3, x4
+	movz x6, #2, lsl #0
+	sub x5, x6, x5
+	mul x4, x4, x5
+	mul x5, x3, x4
+	movz x6, #2, lsl #0
+	sub x5, x6, x5
+	mul x4, x4, x5
+	mul x5, x3, x4
+	movz x6, #2, lsl #0
+	sub x5, x6, x5
+	mul x4, x4, x5
+	movz x6, #0, lsl #0
+	sub x15, x6, x4
+	add x13, x3, #0
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x16, x0, #256
+	add x14, x12, #0
+	movz x2, #0, lsl #0
+212:
+	ldr x5, [x16, #0]
+	add w4, w5, #0
+	add x4, x4, x2
+	mul w6, w4, w15
+	mul x6, x6, x13
+	add x6, x6, x4
+	lsr x2, x6, #32
+	lsr x4, x5, #32
+	add x4, x4, x2
+	mul w6, w4, w15
+	mul x6, x6, x13
+	add x6, x6, x4
+	lsr x2, x6, #32
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 212b
+	movz x4, #1, lsl #0
+	subs x3, x2, x4
+	csel x5, x7, x8, hs
+	eor x3, x2, x13
+	subs x3, x3, x4
+	csel x6, x7, x8, hs
+	orr x5, x5, x6
+	orr x1, x1, x5
+	lsr x3, x17, #16
 	movz x4, #65535, lsl #0
 	and x3, x3, x4
 	add x4, x3, #0
@@ -1553,7 +1617,7 @@ vg_ffdh_parameter_candidate_sieved:
 	csel x6, x7, x8, hs
 	orr x5, x5, x6
 	orr x1, x1, x5
-	lsr x3, x17, #16
+	lsr x3, x17, #32
 	movz x4, #65535, lsl #0
 	and x3, x3, x4
 	add x4, x3, #0
@@ -1610,7 +1674,7 @@ vg_ffdh_parameter_candidate_sieved:
 	csel x6, x7, x8, hs
 	orr x5, x5, x6
 	orr x1, x1, x5
-	lsr x3, x17, #32
+	lsr x3, x17, #48
 	movz x4, #65535, lsl #0
 	and x3, x3, x4
 	add x4, x3, #0
@@ -1667,78 +1731,21 @@ vg_ffdh_parameter_candidate_sieved:
 	csel x6, x7, x8, hs
 	orr x5, x5, x6
 	orr x1, x1, x5
-	lsr x3, x17, #48
-	movz x4, #65535, lsl #0
-	and x3, x3, x4
-	add x4, x3, #0
-	mul x5, x3, x4
-	movz x6, #2, lsl #0
-	sub x5, x6, x5
-	mul x4, x4, x5
-	mul x5, x3, x4
-	movz x6, #2, lsl #0
-	sub x5, x6, x5
-	mul x4, x4, x5
-	mul x5, x3, x4
-	movz x6, #2, lsl #0
-	sub x5, x6, x5
-	mul x4, x4, x5
-	mul x5, x3, x4
-	movz x6, #2, lsl #0
-	sub x5, x6, x5
-	mul x4, x4, x5
-	mul x5, x3, x4
-	movz x6, #2, lsl #0
-	sub x5, x6, x5
-	mul x4, x4, x5
-	movz x6, #0, lsl #0
-	sub x15, x6, x4
-	add x13, x3, #0
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x16, x0, #256
-	add x14, x12, #0
-	movz x2, #0, lsl #0
-216:
-	ldr x5, [x16, #0]
-	add w4, w5, #0
-	add x4, x4, x2
-	mul w6, w4, w15
-	mul x6, x6, x13
-	add x6, x6, x4
-	lsr x2, x6, #32
-	lsr x4, x5, #32
-	add x4, x4, x2
-	mul w6, w4, w15
-	mul x6, x6, x13
-	add x6, x6, x4
-	lsr x2, x6, #32
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 216b
-	movz x4, #1, lsl #0
-	subs x3, x2, x4
-	csel x5, x7, x8, hs
-	eor x3, x2, x13
-	subs x3, x3, x4
-	csel x6, x7, x8, hs
-	orr x5, x5, x6
-	orr x1, x1, x5
 	sub x10, x10, #1
 	eor x3, x1, x8
 	and x10, x10, x3
-	cbnz x10, 212b
+	cbnz x10, 211b
 	ldr x5, [x0, #32]
 	orr x5, x5, x1
 	str x5, [x0, #32]
 	ldr x5, [x0, #32]
-	cbz x5, 217f
+	cbz x5, 216f
 	ldr x3, [x0, #216]
 	ldr x2, [x0, #136]
 	str x3, [x2, #0]
 	movz x0, #2, lsl #0
-	b 218f
-217:
+	b 217f
+216:
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x0, #256
@@ -1748,7 +1755,7 @@ vg_ffdh_parameter_candidate_sieved:
 	ldr x5, [x16, #0]
 	add x16, x16, #8
 	sub x14, x12, #1
-219:
+218:
 	ldr x3, [x16, #0]
 	lsl x4, x3, #63
 	lsr x6, x5, #1
@@ -1761,7 +1768,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, #8
 	add x5, x3, #0
 	sub x14, x14, #1
-	cbnz x14, 219b
+	cbnz x14, 218b
 	lsr x6, x5, #1
 	eor x6, x6, x5
 	and x6, x6, x15
@@ -1795,10 +1802,67 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x1, #0, lsl #0
 	movz x7, #0, lsl #0
 	sub x8, x7, #1
-220:
+219:
 	ldr x17, [x9, #0]
 	add x9, x9, #8
 	add x3, x17, #0
+	movz x4, #65535, lsl #0
+	and x3, x3, x4
+	add x4, x3, #0
+	mul x5, x3, x4
+	movz x6, #2, lsl #0
+	sub x5, x6, x5
+	mul x4, x4, x5
+	mul x5, x3, x4
+	movz x6, #2, lsl #0
+	sub x5, x6, x5
+	mul x4, x4, x5
+	mul x5, x3, x4
+	movz x6, #2, lsl #0
+	sub x5, x6, x5
+	mul x4, x4, x5
+	mul x5, x3, x4
+	movz x6, #2, lsl #0
+	sub x5, x6, x5
+	mul x4, x4, x5
+	mul x5, x3, x4
+	movz x6, #2, lsl #0
+	sub x5, x6, x5
+	mul x4, x4, x5
+	movz x6, #0, lsl #0
+	sub x15, x6, x4
+	add x13, x3, #0
+	ldr x12, [x0, #48]
+	ldr x11, [x0, #224]
+	add x16, x0, #256
+	add x14, x12, #0
+	movz x2, #0, lsl #0
+220:
+	ldr x5, [x16, #0]
+	add w4, w5, #0
+	add x4, x4, x2
+	mul w6, w4, w15
+	mul x6, x6, x13
+	add x6, x6, x4
+	lsr x2, x6, #32
+	lsr x4, x5, #32
+	add x4, x4, x2
+	mul w6, w4, w15
+	mul x6, x6, x13
+	add x6, x6, x4
+	lsr x2, x6, #32
+	add x16, x16, #8
+	sub x14, x14, #1
+	cbnz x14, 220b
+	movz x4, #1, lsl #0
+	subs x3, x2, x4
+	csel x5, x7, x8, hs
+	eor x3, x2, x13
+	subs x3, x3, x4
+	csel x6, x7, x8, hs
+	orr x5, x5, x6
+	orr x1, x1, x5
+	lsr x3, x17, #16
 	movz x4, #65535, lsl #0
 	and x3, x3, x4
 	add x4, x3, #0
@@ -1855,7 +1919,7 @@ vg_ffdh_parameter_candidate_sieved:
 	csel x6, x7, x8, hs
 	orr x5, x5, x6
 	orr x1, x1, x5
-	lsr x3, x17, #16
+	lsr x3, x17, #32
 	movz x4, #65535, lsl #0
 	and x3, x3, x4
 	add x4, x3, #0
@@ -1912,7 +1976,7 @@ vg_ffdh_parameter_candidate_sieved:
 	csel x6, x7, x8, hs
 	orr x5, x5, x6
 	orr x1, x1, x5
-	lsr x3, x17, #32
+	lsr x3, x17, #48
 	movz x4, #65535, lsl #0
 	and x3, x3, x4
 	add x4, x3, #0
@@ -1969,78 +2033,21 @@ vg_ffdh_parameter_candidate_sieved:
 	csel x6, x7, x8, hs
 	orr x5, x5, x6
 	orr x1, x1, x5
-	lsr x3, x17, #48
-	movz x4, #65535, lsl #0
-	and x3, x3, x4
-	add x4, x3, #0
-	mul x5, x3, x4
-	movz x6, #2, lsl #0
-	sub x5, x6, x5
-	mul x4, x4, x5
-	mul x5, x3, x4
-	movz x6, #2, lsl #0
-	sub x5, x6, x5
-	mul x4, x4, x5
-	mul x5, x3, x4
-	movz x6, #2, lsl #0
-	sub x5, x6, x5
-	mul x4, x4, x5
-	mul x5, x3, x4
-	movz x6, #2, lsl #0
-	sub x5, x6, x5
-	mul x4, x4, x5
-	mul x5, x3, x4
-	movz x6, #2, lsl #0
-	sub x5, x6, x5
-	mul x4, x4, x5
-	movz x6, #0, lsl #0
-	sub x15, x6, x4
-	add x13, x3, #0
-	ldr x12, [x0, #48]
-	ldr x11, [x0, #224]
-	add x16, x0, #256
-	add x14, x12, #0
-	movz x2, #0, lsl #0
-224:
-	ldr x5, [x16, #0]
-	add w4, w5, #0
-	add x4, x4, x2
-	mul w6, w4, w15
-	mul x6, x6, x13
-	add x6, x6, x4
-	lsr x2, x6, #32
-	lsr x4, x5, #32
-	add x4, x4, x2
-	mul w6, w4, w15
-	mul x6, x6, x13
-	add x6, x6, x4
-	lsr x2, x6, #32
-	add x16, x16, #8
-	sub x14, x14, #1
-	cbnz x14, 224b
-	movz x4, #1, lsl #0
-	subs x3, x2, x4
-	csel x5, x7, x8, hs
-	eor x3, x2, x13
-	subs x3, x3, x4
-	csel x6, x7, x8, hs
-	orr x5, x5, x6
-	orr x1, x1, x5
 	sub x10, x10, #1
 	eor x3, x1, x8
 	and x10, x10, x3
-	cbnz x10, 220b
+	cbnz x10, 219b
 	ldr x5, [x0, #32]
 	orr x5, x5, x1
 	str x5, [x0, #32]
 	ldr x5, [x0, #32]
-	cbz x5, 225f
+	cbz x5, 224f
 	ldr x3, [x0, #216]
 	ldr x2, [x0, #136]
 	str x3, [x2, #0]
 	movz x0, #2, lsl #0
-	b 226f
-225:
+	b 225f
+224:
 	ldr x3, [x0, #152]
 	add x4, x3, #7
 	lsr x4, x4, #3
@@ -2086,11 +2093,11 @@ vg_ffdh_parameter_candidate_sieved:
 	sub x4, x7, #1
 	str x4, [x0, #176]
 	movz x9, #0, lsl #0
-227:
+226:
 	add x9, x9, x9
 	add x9, x9, #1
 	sub x6, x6, #1
-	cbnz x6, 227b
+	cbnz x6, 226b
 	str x9, [x0, #16]
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
@@ -2098,11 +2105,11 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-228:
+227:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 228b
+	cbnz x14, 227b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x0, #256
@@ -2110,21 +2117,21 @@ vg_ffdh_parameter_candidate_sieved:
 	ldr x2, [x0, #144]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-229:
+228:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 230f
-	b 231f
-230:
+	cbz x5, 229f
+	b 230f
+229:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-231:
-	cbnz x2, 229b
+230:
+	cbnz x2, 228b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x0, #256
@@ -2177,11 +2184,11 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-232:
+231:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 232b
+	cbnz x14, 231b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -2192,7 +2199,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x13, x9, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
-	cbz x3, 233f
+	cbz x3, 232f
 	ldr x11, [x0, #96]
 	ldr x9, [x0, #64]
 	ldr x6, [x0, #88]
@@ -2202,14 +2209,14 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x9, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-235:
+234:
 	ldr x4, [x17, #0]
 	sbcs x3, x7, x4
 	str x3, [x16, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 235b
+	cbnz x14, 234b
 	lsl x13, x12, #3
 	sub x13, x13, #8
 	add x13, x9, x13
@@ -2219,7 +2226,7 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x10, #0, lsl #0
 	movz x4, #1, lsl #0
 	movz x13, #64, lsl #0
-236:
+235:
 	lsr x3, x2, #63
 	lsl x2, x2, #1
 	orr x2, x2, x4
@@ -2231,11 +2238,11 @@ vg_ffdh_parameter_candidate_sieved:
 	add x10, x10, x10
 	add x10, x10, x16
 	sub x13, x13, #1
-	cbnz x13, 236b
+	cbnz x13, 235b
 	str x10, [x6, #0]
 	ldr x13, [x0, #48]
 	str x13, [x0, #208]
-237:
+236:
 	ldr x9, [x0, #64]
 	ldr x11, [x0, #96]
 	ldr x6, [x0, #88]
@@ -2305,7 +2312,7 @@ vg_ffdh_parameter_candidate_sieved:
 	sub x15, x15, #1
 	add x13, x15, #0
 	adds x3, x7, x7
-238:
+237:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -2319,7 +2326,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 238b
+	cbnz x14, 237b
 	adc x4, x13, x2
 	eor x4, x4, x15
 	str x4, [x16, #0]
@@ -2332,7 +2339,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-239:
+238:
 	ldr x4, [x17, #0]
 	and x4, x4, x15
 	ldr x3, [x16, #0]
@@ -2341,16 +2348,16 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 239b
+	cbnz x14, 238b
 	ldr x3, [x16, #0]
 	adc x3, x3, x7
 	str x3, [x16, #0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 237b
-	b 234f
-233:
+	cbnz x13, 236b
+	b 233f
+232:
 	ldr x12, [x0, #48]
 	ldr x8, [x0, #64]
 	sub x4, x12, #1
@@ -2360,27 +2367,27 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x9, #1, lsl #0
 	movz x13, #64, lsl #0
 	sub x6, x3, #1
-	cbz x6, 240f
-242:
+	cbz x6, 239f
+241:
 	lsr x3, x3, #1
 	add x9, x9, x9
 	sub x13, x13, #1
 	sub x6, x3, #1
-	cbnz x6, 242b
-	b 241f
+	cbnz x6, 241b
+	b 240f
+239:
 240:
-241:
 	str x13, [x0, #208]
 	sub x13, x12, #1
 	ldr x8, [x0, #96]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-243:
+242:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 243b
+	cbnz x14, 242b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -2388,7 +2395,7 @@ vg_ffdh_parameter_candidate_sieved:
 	ldr x12, [x0, #48]
 	add x13, x13, x12
 	str x13, [x0, #208]
-244:
+243:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -2399,14 +2406,14 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-245:
+244:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 245b
+	cbnz x14, 244b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -2414,7 +2421,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-246:
+245:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -2423,12 +2430,12 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 246b
+	cbnz x14, 245b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-247:
+246:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -2437,22 +2444,22 @@ vg_ffdh_parameter_candidate_sieved:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 247b
+	cbnz x14, 246b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 244b
+	cbnz x13, 243b
 	movz x13, #6, lsl #0
 	str x13, [x0, #208]
-248:
+247:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_4_4}
 	umov x30, v31.d[0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 248b
-234:
+	cbnz x13, 247b
+233:
 	ldr x8, [x0, #80]
 	ldr x9, [x0, #120]
 	ldr x10, [x0, #64]
@@ -2464,20 +2471,20 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-249:
+248:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 249b
+	cbnz x14, 248b
 	add x13, x12, #0
-250:
+249:
 	ldr x1, [x11, #0]
 	add x11, x11, #8
 	add x16, x8, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x2, x7, x7
-251:
+250:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -2489,7 +2496,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 251b
+	cbnz x14, 250b
 	adc x2, x2, x7
 	ldr x3, [x16, #0]
 	adds x3, x3, x2
@@ -2508,7 +2515,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x10, #8
 	sub x14, x12, #1
 	adds x3, x7, x7
-252:
+251:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -2520,7 +2527,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 252b
+	cbnz x14, 251b
 	adc x2, x2, x7
 	ldr x3, [x16, #8]
 	adds x3, x3, x2
@@ -2530,13 +2537,13 @@ vg_ffdh_parameter_candidate_sieved:
 	str x3, [x16, #8]
 	str x7, [x16, #16]
 	sub x13, x13, #1
-	cbnz x13, 250b
+	cbnz x13, 249b
 	add x16, x8, #0
 	add x17, x10, #0
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-253:
+252:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -2545,12 +2552,12 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 253b
+	cbnz x14, 252b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-254:
+253:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -2559,7 +2566,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 254b
+	cbnz x14, 253b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -2576,13 +2583,13 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x14, x12, #0
-255:
+254:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 255b
+	cbnz x14, 254b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	movz x7, #0, lsl #0
@@ -2604,7 +2611,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x8, x8, x8
 	add x8, x8, x0
 	add x8, x8, #256
-256:
+255:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	and x4, x4, x15
@@ -2614,7 +2621,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, #8
 	add x8, x8, #8
 	sub x14, x14, #1
-	cbnz x14, 256b
+	cbnz x14, 255b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x0, #256
@@ -2625,7 +2632,7 @@ vg_ffdh_parameter_candidate_sieved:
 	sub x14, x12, #1
 	movz x7, #0, lsl #0
 	sub x8, x7, #1
-257:
+256:
 	ldr x3, [x16, #0]
 	subs x6, x5, x4
 	csel x6, x7, x8, hs
@@ -2633,7 +2640,7 @@ vg_ffdh_parameter_candidate_sieved:
 	orr x5, x5, x3
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 257b
+	cbnz x14, 256b
 	add x10, x11, #0
 	add x10, x10, x10
 	add x10, x10, x11
@@ -2652,6 +2659,39 @@ vg_ffdh_parameter_candidate_sieved:
 	add x15, x8, #0
 	add x17, x10, #0
 	add x16, x0, #256
+	ldr x5, [x16, #0]
+	add x16, x16, #8
+	sub x14, x12, #1
+257:
+	ldr x3, [x16, #0]
+	lsl x4, x3, #63
+	lsr x6, x5, #1
+	orr x6, x6, x4
+	eor x6, x6, x5
+	and x6, x6, x15
+	eor x6, x6, x5
+	str x6, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	add x5, x3, #0
+	sub x14, x14, #1
+	cbnz x14, 257b
+	lsr x6, x5, #1
+	eor x6, x6, x5
+	and x6, x6, x15
+	eor x6, x6, x5
+	str x6, [x17, #0]
+	movz x4, #56797, lsl #0
+	movk x4, #56797, lsl #16
+	movk x4, #56797, lsl #32
+	movk x4, #56797, lsl #48
+	ldr x3, [x9, #0]
+	and x3, x3, x4
+	movz x4, #1, lsl #0
+	subs x3, x3, x4
+	csel x15, x8, x7, hs
+	add x16, x10, #0
+	add x17, x10, #0
 	ldr x5, [x16, #0]
 	add x16, x16, #8
 	sub x14, x12, #1
@@ -2674,10 +2714,10 @@ vg_ffdh_parameter_candidate_sieved:
 	and x6, x6, x15
 	eor x6, x6, x5
 	str x6, [x17, #0]
-	movz x4, #56797, lsl #0
-	movk x4, #56797, lsl #16
-	movk x4, #56797, lsl #32
-	movk x4, #56797, lsl #48
+	movz x4, #39321, lsl #0
+	movk x4, #39321, lsl #16
+	movk x4, #39321, lsl #32
+	movk x4, #39321, lsl #48
 	ldr x3, [x9, #0]
 	and x3, x3, x4
 	movz x4, #1, lsl #0
@@ -2707,10 +2747,10 @@ vg_ffdh_parameter_candidate_sieved:
 	and x6, x6, x15
 	eor x6, x6, x5
 	str x6, [x17, #0]
-	movz x4, #39321, lsl #0
-	movk x4, #39321, lsl #16
-	movk x4, #39321, lsl #32
-	movk x4, #39321, lsl #48
+	movz x4, #4369, lsl #0
+	movk x4, #4369, lsl #16
+	movk x4, #4369, lsl #32
+	movk x4, #4369, lsl #48
 	ldr x3, [x9, #0]
 	and x3, x3, x4
 	movz x4, #1, lsl #0
@@ -2740,42 +2780,9 @@ vg_ffdh_parameter_candidate_sieved:
 	and x6, x6, x15
 	eor x6, x6, x5
 	str x6, [x17, #0]
-	movz x4, #4369, lsl #0
-	movk x4, #4369, lsl #16
-	movk x4, #4369, lsl #32
-	movk x4, #4369, lsl #48
-	ldr x3, [x9, #0]
-	and x3, x3, x4
-	movz x4, #1, lsl #0
-	subs x3, x3, x4
-	csel x15, x8, x7, hs
-	add x16, x10, #0
-	add x17, x10, #0
-	ldr x5, [x16, #0]
-	add x16, x16, #8
-	sub x14, x12, #1
-261:
-	ldr x3, [x16, #0]
-	lsl x4, x3, #63
-	lsr x6, x5, #1
-	orr x6, x6, x4
-	eor x6, x6, x5
-	and x6, x6, x15
-	eor x6, x6, x5
-	str x6, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x5, x3, #0
-	sub x14, x14, #1
-	cbnz x14, 261b
-	lsr x6, x5, #1
-	eor x6, x6, x5
-	and x6, x6, x15
-	eor x6, x6, x5
-	str x6, [x17, #0]
 	movz x3, #0, lsl #0
 	str x3, [x0, #24]
-262:
+261:
 	ldr x3, [x0, #200]
 	ldr x4, [x0, #216]
 	sub x3, x3, x4
@@ -2784,7 +2791,7 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	movz x4, #1, lsl #0
 	csel x5, x4, x7, hs
-	cbz x5, 263f
+	cbz x5, 262f
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -2793,11 +2800,11 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-265:
+264:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 265b
+	cbnz x14, 264b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -2811,21 +2818,21 @@ vg_ffdh_parameter_candidate_sieved:
 	str x3, [x0, #216]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-266:
+265:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 267f
-	b 268f
-267:
+	cbz x5, 266f
+	b 267f
+266:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-268:
-	cbnz x2, 266b
+267:
+	cbnz x2, 265b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -2847,12 +2854,12 @@ vg_ffdh_parameter_candidate_sieved:
 	lsr x5, x5, #1
 	add x16, x16, #8
 	sub x14, x12, #1
-269:
+268:
 	ldr x3, [x16, #0]
 	orr x5, x5, x3
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 269b
+	cbnz x14, 268b
 	movz x7, #0, lsl #0
 	sub x8, x7, #1
 	movz x4, #1, lsl #0
@@ -2871,17 +2878,17 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x12, #1
-270:
+269:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 270b
+	cbnz x14, 269b
 	csel x15, x7, x8, hs
 	and x9, x9, x15
-	cbz x9, 271f
+	cbz x9, 270f
 	ldr x8, [x0, #80]
 	ldr x9, [x0, #96]
 	ldr x10, [x0, #64]
@@ -2893,20 +2900,20 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-273:
+272:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 273b
+	cbnz x14, 272b
 	add x13, x12, #0
-274:
+273:
 	ldr x1, [x11, #0]
 	add x11, x11, #8
 	add x16, x8, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x2, x7, x7
-275:
+274:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -2918,7 +2925,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 275b
+	cbnz x14, 274b
 	adc x2, x2, x7
 	ldr x3, [x16, #0]
 	adds x3, x3, x2
@@ -2937,7 +2944,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x10, #8
 	sub x14, x12, #1
 	adds x3, x7, x7
-276:
+275:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -2949,7 +2956,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 276b
+	cbnz x14, 275b
 	adc x2, x2, x7
 	ldr x3, [x16, #8]
 	adds x3, x3, x2
@@ -2959,13 +2966,13 @@ vg_ffdh_parameter_candidate_sieved:
 	str x3, [x16, #8]
 	str x7, [x16, #16]
 	sub x13, x13, #1
-	cbnz x13, 274b
+	cbnz x13, 273b
 	add x16, x8, #0
 	add x17, x10, #0
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-277:
+276:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -2974,12 +2981,12 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 277b
+	cbnz x14, 276b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-278:
+277:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -2988,7 +2995,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 278b
+	cbnz x14, 277b
 	ldr x2, [x0, #120]
 	ldr x3, [x0, #48]
 	lsl x3, x3, #3
@@ -3014,7 +3021,7 @@ vg_ffdh_parameter_candidate_sieved:
 	ldr x30, [x2, #8]
 	ldr x19, [x2, #0]
 	ldr x3, [x0, #184]
-	cbz x3, 279f
+	cbz x3, 278f
 	ldr x3, [x0, #24]
 	ldr x4, [x0, #0]
 	add x3, x3, #1
@@ -3024,42 +3031,42 @@ vg_ffdh_parameter_candidate_sieved:
 	csel x5, x7, x6, hs
 	str x3, [x0, #24]
 	str x5, [x0, #248]
-	b 280f
-279:
+	b 279f
+278:
 	movz x3, #2, lsl #0
 	str x3, [x0, #248]
-280:
-	b 272f
-271:
+279:
+	b 271f
+270:
 	movz x3, #4, lsl #0
 	str x3, [x0, #248]
-272:
-	b 264f
-263:
+271:
+	b 263f
+262:
 	movz x3, #0, lsl #0
 	str x3, [x0, #248]
-264:
+263:
 	ldr x3, [x0, #248]
 	sub x3, x3, #4
-	cbz x3, 262b
+	cbz x3, 261b
 	ldr x3, [x0, #248]
 	sub x3, x3, #1
-	cbz x3, 281f
+	cbz x3, 280f
 	ldr x3, [x0, #248]
-	cbz x3, 283f
+	cbz x3, 282f
 	ldr x3, [x0, #216]
 	ldr x2, [x0, #136]
 	str x3, [x2, #0]
 	movz x0, #2, lsl #0
-	b 284f
-283:
+	b 283f
+282:
 	movz x3, #0, lsl #0
 	ldr x2, [x0, #136]
 	str x3, [x2, #0]
 	movz x0, #0, lsl #0
-284:
-	b 282f
-281:
+283:
+	b 281f
+280:
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x0, #256
@@ -3069,7 +3076,7 @@ vg_ffdh_parameter_candidate_sieved:
 	ldr x5, [x16, #0]
 	add x16, x16, #8
 	sub x14, x12, #1
-285:
+284:
 	ldr x3, [x16, #0]
 	lsl x4, x3, #63
 	lsr x6, x5, #1
@@ -3082,7 +3089,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, #8
 	add x5, x3, #0
 	sub x14, x14, #1
-	cbnz x14, 285b
+	cbnz x14, 284b
 	lsr x6, x5, #1
 	eor x6, x6, x5
 	and x6, x6, x15
@@ -3144,11 +3151,11 @@ vg_ffdh_parameter_candidate_sieved:
 	sub x4, x7, #1
 	str x4, [x0, #176]
 	movz x9, #0, lsl #0
-286:
+285:
 	add x9, x9, x9
 	add x9, x9, #1
 	sub x6, x6, #1
-	cbnz x6, 286b
+	cbnz x6, 285b
 	str x9, [x0, #16]
 	ldr x8, [x0, #64]
 	ldr x3, [x8, #0]
@@ -3183,11 +3190,11 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-287:
+286:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 287b
+	cbnz x14, 286b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -3198,7 +3205,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x13, x9, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
-	cbz x3, 288f
+	cbz x3, 287f
 	ldr x11, [x0, #96]
 	ldr x9, [x0, #64]
 	ldr x6, [x0, #88]
@@ -3208,14 +3215,14 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x9, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-290:
+289:
 	ldr x4, [x17, #0]
 	sbcs x3, x7, x4
 	str x3, [x16, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 290b
+	cbnz x14, 289b
 	lsl x13, x12, #3
 	sub x13, x13, #8
 	add x13, x9, x13
@@ -3225,7 +3232,7 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x10, #0, lsl #0
 	movz x4, #1, lsl #0
 	movz x13, #64, lsl #0
-291:
+290:
 	lsr x3, x2, #63
 	lsl x2, x2, #1
 	orr x2, x2, x4
@@ -3237,11 +3244,11 @@ vg_ffdh_parameter_candidate_sieved:
 	add x10, x10, x10
 	add x10, x10, x16
 	sub x13, x13, #1
-	cbnz x13, 291b
+	cbnz x13, 290b
 	str x10, [x6, #0]
 	ldr x13, [x0, #48]
 	str x13, [x0, #208]
-292:
+291:
 	ldr x9, [x0, #64]
 	ldr x11, [x0, #96]
 	ldr x6, [x0, #88]
@@ -3311,7 +3318,7 @@ vg_ffdh_parameter_candidate_sieved:
 	sub x15, x15, #1
 	add x13, x15, #0
 	adds x3, x7, x7
-293:
+292:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -3325,7 +3332,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 293b
+	cbnz x14, 292b
 	adc x4, x13, x2
 	eor x4, x4, x15
 	str x4, [x16, #0]
@@ -3338,7 +3345,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-294:
+293:
 	ldr x4, [x17, #0]
 	and x4, x4, x15
 	ldr x3, [x16, #0]
@@ -3347,16 +3354,16 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 294b
+	cbnz x14, 293b
 	ldr x3, [x16, #0]
 	adc x3, x3, x7
 	str x3, [x16, #0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 292b
-	b 289f
-288:
+	cbnz x13, 291b
+	b 288f
+287:
 	ldr x12, [x0, #48]
 	ldr x8, [x0, #64]
 	sub x4, x12, #1
@@ -3366,27 +3373,27 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x9, #1, lsl #0
 	movz x13, #64, lsl #0
 	sub x6, x3, #1
-	cbz x6, 295f
-297:
+	cbz x6, 294f
+296:
 	lsr x3, x3, #1
 	add x9, x9, x9
 	sub x13, x13, #1
 	sub x6, x3, #1
-	cbnz x6, 297b
-	b 296f
+	cbnz x6, 296b
+	b 295f
+294:
 295:
-296:
 	str x13, [x0, #208]
 	sub x13, x12, #1
 	ldr x8, [x0, #96]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-298:
+297:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 298b
+	cbnz x14, 297b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -3394,7 +3401,7 @@ vg_ffdh_parameter_candidate_sieved:
 	ldr x12, [x0, #48]
 	add x13, x13, x12
 	str x13, [x0, #208]
-299:
+298:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -3405,14 +3412,14 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2100:
+299:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2100b
+	cbnz x14, 299b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -3420,7 +3427,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2101:
+2100:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -3429,12 +3436,12 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2101b
+	cbnz x14, 2100b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2102:
+2101:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -3443,22 +3450,22 @@ vg_ffdh_parameter_candidate_sieved:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2102b
+	cbnz x14, 2101b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 299b
+	cbnz x13, 298b
 	movz x13, #6, lsl #0
 	str x13, [x0, #208]
-2103:
+2102:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_4_4}
 	umov x30, v31.d[0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2103b
-289:
+	cbnz x13, 2102b
+288:
 	ldr x8, [x0, #80]
 	ldr x9, [x0, #120]
 	ldr x10, [x0, #64]
@@ -3470,20 +3477,20 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2104:
+2103:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2104b
+	cbnz x14, 2103b
 	add x13, x12, #0
-2105:
+2104:
 	ldr x1, [x11, #0]
 	add x11, x11, #8
 	add x16, x8, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x2, x7, x7
-2106:
+2105:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -3495,7 +3502,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2106b
+	cbnz x14, 2105b
 	adc x2, x2, x7
 	ldr x3, [x16, #0]
 	adds x3, x3, x2
@@ -3514,7 +3521,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x10, #8
 	sub x14, x12, #1
 	adds x3, x7, x7
-2107:
+2106:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -3526,7 +3533,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2107b
+	cbnz x14, 2106b
 	adc x2, x2, x7
 	ldr x3, [x16, #8]
 	adds x3, x3, x2
@@ -3536,13 +3543,13 @@ vg_ffdh_parameter_candidate_sieved:
 	str x3, [x16, #8]
 	str x7, [x16, #16]
 	sub x13, x13, #1
-	cbnz x13, 2105b
+	cbnz x13, 2104b
 	add x16, x8, #0
 	add x17, x10, #0
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2108:
+2107:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -3551,12 +3558,12 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2108b
+	cbnz x14, 2107b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2109:
+2108:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -3565,7 +3572,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2109b
+	cbnz x14, 2108b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -3582,13 +3589,13 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x14, x12, #0
-2110:
+2109:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2110b
+	cbnz x14, 2109b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	movz x7, #0, lsl #0
@@ -3610,7 +3617,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x8, x8, x8
 	add x8, x8, x0
 	add x8, x8, #256
-2111:
+2110:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	and x4, x4, x15
@@ -3620,7 +3627,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, #8
 	add x8, x8, #8
 	sub x14, x14, #1
-	cbnz x14, 2111b
+	cbnz x14, 2110b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x0, #256
@@ -3631,7 +3638,7 @@ vg_ffdh_parameter_candidate_sieved:
 	sub x14, x12, #1
 	movz x7, #0, lsl #0
 	sub x8, x7, #1
-2112:
+2111:
 	ldr x3, [x16, #0]
 	subs x6, x5, x4
 	csel x6, x7, x8, hs
@@ -3639,7 +3646,7 @@ vg_ffdh_parameter_candidate_sieved:
 	orr x5, x5, x3
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2112b
+	cbnz x14, 2111b
 	add x10, x11, #0
 	add x10, x10, x10
 	add x10, x10, x11
@@ -3658,6 +3665,39 @@ vg_ffdh_parameter_candidate_sieved:
 	add x15, x8, #0
 	add x17, x10, #0
 	add x16, x0, #256
+	ldr x5, [x16, #0]
+	add x16, x16, #8
+	sub x14, x12, #1
+2112:
+	ldr x3, [x16, #0]
+	lsl x4, x3, #63
+	lsr x6, x5, #1
+	orr x6, x6, x4
+	eor x6, x6, x5
+	and x6, x6, x15
+	eor x6, x6, x5
+	str x6, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	add x5, x3, #0
+	sub x14, x14, #1
+	cbnz x14, 2112b
+	lsr x6, x5, #1
+	eor x6, x6, x5
+	and x6, x6, x15
+	eor x6, x6, x5
+	str x6, [x17, #0]
+	movz x4, #56797, lsl #0
+	movk x4, #56797, lsl #16
+	movk x4, #56797, lsl #32
+	movk x4, #56797, lsl #48
+	ldr x3, [x9, #0]
+	and x3, x3, x4
+	movz x4, #1, lsl #0
+	subs x3, x3, x4
+	csel x15, x8, x7, hs
+	add x16, x10, #0
+	add x17, x10, #0
 	ldr x5, [x16, #0]
 	add x16, x16, #8
 	sub x14, x12, #1
@@ -3680,10 +3720,10 @@ vg_ffdh_parameter_candidate_sieved:
 	and x6, x6, x15
 	eor x6, x6, x5
 	str x6, [x17, #0]
-	movz x4, #56797, lsl #0
-	movk x4, #56797, lsl #16
-	movk x4, #56797, lsl #32
-	movk x4, #56797, lsl #48
+	movz x4, #39321, lsl #0
+	movk x4, #39321, lsl #16
+	movk x4, #39321, lsl #32
+	movk x4, #39321, lsl #48
 	ldr x3, [x9, #0]
 	and x3, x3, x4
 	movz x4, #1, lsl #0
@@ -3713,10 +3753,10 @@ vg_ffdh_parameter_candidate_sieved:
 	and x6, x6, x15
 	eor x6, x6, x5
 	str x6, [x17, #0]
-	movz x4, #39321, lsl #0
-	movk x4, #39321, lsl #16
-	movk x4, #39321, lsl #32
-	movk x4, #39321, lsl #48
+	movz x4, #4369, lsl #0
+	movk x4, #4369, lsl #16
+	movk x4, #4369, lsl #32
+	movk x4, #4369, lsl #48
 	ldr x3, [x9, #0]
 	and x3, x3, x4
 	movz x4, #1, lsl #0
@@ -3746,42 +3786,9 @@ vg_ffdh_parameter_candidate_sieved:
 	and x6, x6, x15
 	eor x6, x6, x5
 	str x6, [x17, #0]
-	movz x4, #4369, lsl #0
-	movk x4, #4369, lsl #16
-	movk x4, #4369, lsl #32
-	movk x4, #4369, lsl #48
-	ldr x3, [x9, #0]
-	and x3, x3, x4
-	movz x4, #1, lsl #0
-	subs x3, x3, x4
-	csel x15, x8, x7, hs
-	add x16, x10, #0
-	add x17, x10, #0
-	ldr x5, [x16, #0]
-	add x16, x16, #8
-	sub x14, x12, #1
-2116:
-	ldr x3, [x16, #0]
-	lsl x4, x3, #63
-	lsr x6, x5, #1
-	orr x6, x6, x4
-	eor x6, x6, x5
-	and x6, x6, x15
-	eor x6, x6, x5
-	str x6, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x5, x3, #0
-	sub x14, x14, #1
-	cbnz x14, 2116b
-	lsr x6, x5, #1
-	eor x6, x6, x5
-	and x6, x6, x15
-	eor x6, x6, x5
-	str x6, [x17, #0]
 	movz x3, #0, lsl #0
 	str x3, [x0, #24]
-2117:
+2116:
 	ldr x3, [x0, #200]
 	ldr x4, [x0, #216]
 	sub x3, x3, x4
@@ -3790,7 +3797,7 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	movz x4, #1, lsl #0
 	csel x5, x4, x7, hs
-	cbz x5, 2118f
+	cbz x5, 2117f
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -3799,11 +3806,11 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2120:
+2119:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2120b
+	cbnz x14, 2119b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -3817,21 +3824,21 @@ vg_ffdh_parameter_candidate_sieved:
 	str x3, [x0, #216]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2121:
+2120:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2122f
-	b 2123f
-2122:
+	cbz x5, 2121f
+	b 2122f
+2121:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2123:
-	cbnz x2, 2121b
+2122:
+	cbnz x2, 2120b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -3853,12 +3860,12 @@ vg_ffdh_parameter_candidate_sieved:
 	lsr x5, x5, #1
 	add x16, x16, #8
 	sub x14, x12, #1
-2124:
+2123:
 	ldr x3, [x16, #0]
 	orr x5, x5, x3
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2124b
+	cbnz x14, 2123b
 	movz x7, #0, lsl #0
 	sub x8, x7, #1
 	movz x4, #1, lsl #0
@@ -3877,17 +3884,17 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x12, #1
-2125:
+2124:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2125b
+	cbnz x14, 2124b
 	csel x15, x7, x8, hs
 	and x9, x9, x15
-	cbz x9, 2126f
+	cbz x9, 2125f
 	ldr x8, [x0, #80]
 	ldr x9, [x0, #96]
 	ldr x10, [x0, #64]
@@ -3899,20 +3906,20 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2128:
+2127:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2128b
+	cbnz x14, 2127b
 	add x13, x12, #0
-2129:
+2128:
 	ldr x1, [x11, #0]
 	add x11, x11, #8
 	add x16, x8, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x2, x7, x7
-2130:
+2129:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -3924,7 +3931,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2130b
+	cbnz x14, 2129b
 	adc x2, x2, x7
 	ldr x3, [x16, #0]
 	adds x3, x3, x2
@@ -3943,7 +3950,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x10, #8
 	sub x14, x12, #1
 	adds x3, x7, x7
-2131:
+2130:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -3955,7 +3962,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2131b
+	cbnz x14, 2130b
 	adc x2, x2, x7
 	ldr x3, [x16, #8]
 	adds x3, x3, x2
@@ -3965,13 +3972,13 @@ vg_ffdh_parameter_candidate_sieved:
 	str x3, [x16, #8]
 	str x7, [x16, #16]
 	sub x13, x13, #1
-	cbnz x13, 2129b
+	cbnz x13, 2128b
 	add x16, x8, #0
 	add x17, x10, #0
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2132:
+2131:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -3980,12 +3987,12 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2132b
+	cbnz x14, 2131b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2133:
+2132:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -3994,7 +4001,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2133b
+	cbnz x14, 2132b
 	ldr x2, [x0, #120]
 	ldr x3, [x0, #48]
 	lsl x3, x3, #3
@@ -4020,7 +4027,7 @@ vg_ffdh_parameter_candidate_sieved:
 	ldr x30, [x2, #8]
 	ldr x19, [x2, #0]
 	ldr x3, [x0, #184]
-	cbz x3, 2134f
+	cbz x3, 2133f
 	ldr x3, [x0, #24]
 	ldr x4, [x0, #0]
 	add x3, x3, #1
@@ -4030,42 +4037,42 @@ vg_ffdh_parameter_candidate_sieved:
 	csel x5, x7, x6, hs
 	str x3, [x0, #24]
 	str x5, [x0, #248]
-	b 2135f
-2134:
+	b 2134f
+2133:
 	movz x3, #2, lsl #0
 	str x3, [x0, #248]
-2135:
-	b 2127f
-2126:
+2134:
+	b 2126f
+2125:
 	movz x3, #4, lsl #0
 	str x3, [x0, #248]
-2127:
-	b 2119f
-2118:
+2126:
+	b 2118f
+2117:
 	movz x3, #0, lsl #0
 	str x3, [x0, #248]
-2119:
+2118:
 	ldr x3, [x0, #248]
 	sub x3, x3, #4
-	cbz x3, 2117b
+	cbz x3, 2116b
 	ldr x3, [x0, #248]
 	sub x3, x3, #1
-	cbz x3, 2136f
+	cbz x3, 2135f
 	ldr x3, [x0, #248]
-	cbz x3, 2138f
+	cbz x3, 2137f
 	ldr x3, [x0, #216]
 	ldr x2, [x0, #136]
 	str x3, [x2, #0]
 	movz x0, #2, lsl #0
-	b 2139f
-2138:
+	b 2138f
+2137:
 	movz x3, #0, lsl #0
 	ldr x2, [x0, #136]
 	str x3, [x2, #0]
 	movz x0, #0, lsl #0
-2139:
-	b 2137f
-2136:
+2138:
+	b 2136f
+2135:
 	ldr x3, [x0, #152]
 	add x4, x3, #7
 	lsr x4, x4, #3
@@ -4111,11 +4118,11 @@ vg_ffdh_parameter_candidate_sieved:
 	sub x4, x7, #1
 	str x4, [x0, #176]
 	movz x9, #0, lsl #0
-2140:
+2139:
 	add x9, x9, x9
 	add x9, x9, #1
 	sub x6, x6, #1
-	cbnz x6, 2140b
+	cbnz x6, 2139b
 	str x9, [x0, #16]
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
@@ -4123,11 +4130,11 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2141:
+2140:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2141b
+	cbnz x14, 2140b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x0, #256
@@ -4135,21 +4142,21 @@ vg_ffdh_parameter_candidate_sieved:
 	ldr x2, [x0, #144]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2142:
+2141:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2143f
-	b 2144f
-2143:
+	cbz x5, 2142f
+	b 2143f
+2142:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2144:
-	cbnz x2, 2142b
+2143:
+	cbnz x2, 2141b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x0, #256
@@ -4203,11 +4210,11 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2145:
+2144:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2145b
+	cbnz x14, 2144b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -4218,7 +4225,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x13, x9, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
-	cbz x3, 2146f
+	cbz x3, 2145f
 	ldr x11, [x0, #96]
 	ldr x9, [x0, #64]
 	ldr x6, [x0, #88]
@@ -4228,14 +4235,14 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x9, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2148:
+2147:
 	ldr x4, [x17, #0]
 	sbcs x3, x7, x4
 	str x3, [x16, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2148b
+	cbnz x14, 2147b
 	lsl x13, x12, #3
 	sub x13, x13, #8
 	add x13, x9, x13
@@ -4245,7 +4252,7 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x10, #0, lsl #0
 	movz x4, #1, lsl #0
 	movz x13, #64, lsl #0
-2149:
+2148:
 	lsr x3, x2, #63
 	lsl x2, x2, #1
 	orr x2, x2, x4
@@ -4257,11 +4264,11 @@ vg_ffdh_parameter_candidate_sieved:
 	add x10, x10, x10
 	add x10, x10, x16
 	sub x13, x13, #1
-	cbnz x13, 2149b
+	cbnz x13, 2148b
 	str x10, [x6, #0]
 	ldr x13, [x0, #48]
 	str x13, [x0, #208]
-2150:
+2149:
 	ldr x9, [x0, #64]
 	ldr x11, [x0, #96]
 	ldr x6, [x0, #88]
@@ -4331,7 +4338,7 @@ vg_ffdh_parameter_candidate_sieved:
 	sub x15, x15, #1
 	add x13, x15, #0
 	adds x3, x7, x7
-2151:
+2150:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -4345,7 +4352,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2151b
+	cbnz x14, 2150b
 	adc x4, x13, x2
 	eor x4, x4, x15
 	str x4, [x16, #0]
@@ -4358,7 +4365,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2152:
+2151:
 	ldr x4, [x17, #0]
 	and x4, x4, x15
 	ldr x3, [x16, #0]
@@ -4367,16 +4374,16 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2152b
+	cbnz x14, 2151b
 	ldr x3, [x16, #0]
 	adc x3, x3, x7
 	str x3, [x16, #0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2150b
-	b 2147f
-2146:
+	cbnz x13, 2149b
+	b 2146f
+2145:
 	ldr x12, [x0, #48]
 	ldr x8, [x0, #64]
 	sub x4, x12, #1
@@ -4386,27 +4393,27 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x9, #1, lsl #0
 	movz x13, #64, lsl #0
 	sub x6, x3, #1
-	cbz x6, 2153f
-2155:
+	cbz x6, 2152f
+2154:
 	lsr x3, x3, #1
 	add x9, x9, x9
 	sub x13, x13, #1
 	sub x6, x3, #1
-	cbnz x6, 2155b
-	b 2154f
+	cbnz x6, 2154b
+	b 2153f
+2152:
 2153:
-2154:
 	str x13, [x0, #208]
 	sub x13, x12, #1
 	ldr x8, [x0, #96]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2156:
+2155:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2156b
+	cbnz x14, 2155b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -4414,7 +4421,7 @@ vg_ffdh_parameter_candidate_sieved:
 	ldr x12, [x0, #48]
 	add x13, x13, x12
 	str x13, [x0, #208]
-2157:
+2156:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -4425,14 +4432,14 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2158:
+2157:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2158b
+	cbnz x14, 2157b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -4440,7 +4447,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2159:
+2158:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -4449,12 +4456,12 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2159b
+	cbnz x14, 2158b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2160:
+2159:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -4463,22 +4470,22 @@ vg_ffdh_parameter_candidate_sieved:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2160b
+	cbnz x14, 2159b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2157b
+	cbnz x13, 2156b
 	movz x13, #6, lsl #0
 	str x13, [x0, #208]
-2161:
+2160:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_4_4}
 	umov x30, v31.d[0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2161b
-2147:
+	cbnz x13, 2160b
+2146:
 	ldr x8, [x0, #80]
 	ldr x9, [x0, #120]
 	ldr x10, [x0, #64]
@@ -4490,20 +4497,20 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2162:
+2161:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2162b
+	cbnz x14, 2161b
 	add x13, x12, #0
-2163:
+2162:
 	ldr x1, [x11, #0]
 	add x11, x11, #8
 	add x16, x8, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x2, x7, x7
-2164:
+2163:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -4515,7 +4522,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2164b
+	cbnz x14, 2163b
 	adc x2, x2, x7
 	ldr x3, [x16, #0]
 	adds x3, x3, x2
@@ -4534,7 +4541,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x10, #8
 	sub x14, x12, #1
 	adds x3, x7, x7
-2165:
+2164:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -4546,7 +4553,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2165b
+	cbnz x14, 2164b
 	adc x2, x2, x7
 	ldr x3, [x16, #8]
 	adds x3, x3, x2
@@ -4556,13 +4563,13 @@ vg_ffdh_parameter_candidate_sieved:
 	str x3, [x16, #8]
 	str x7, [x16, #16]
 	sub x13, x13, #1
-	cbnz x13, 2163b
+	cbnz x13, 2162b
 	add x16, x8, #0
 	add x17, x10, #0
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2166:
+2165:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -4571,12 +4578,12 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2166b
+	cbnz x14, 2165b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2167:
+2166:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -4585,7 +4592,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2167b
+	cbnz x14, 2166b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -4602,13 +4609,13 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, x0
 	add x17, x17, #256
 	add x14, x12, #0
-2168:
+2167:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2168b
+	cbnz x14, 2167b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	movz x7, #0, lsl #0
@@ -4630,7 +4637,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x8, x8, x8
 	add x8, x8, x0
 	add x8, x8, #256
-2169:
+2168:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	and x4, x4, x15
@@ -4640,7 +4647,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, #8
 	add x8, x8, #8
 	sub x14, x14, #1
-	cbnz x14, 2169b
+	cbnz x14, 2168b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x0, #256
@@ -4651,7 +4658,7 @@ vg_ffdh_parameter_candidate_sieved:
 	sub x14, x12, #1
 	movz x7, #0, lsl #0
 	sub x8, x7, #1
-2170:
+2169:
 	ldr x3, [x16, #0]
 	subs x6, x5, x4
 	csel x6, x7, x8, hs
@@ -4659,7 +4666,7 @@ vg_ffdh_parameter_candidate_sieved:
 	orr x5, x5, x3
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2170b
+	cbnz x14, 2169b
 	add x10, x11, #0
 	add x10, x10, x10
 	add x10, x10, x11
@@ -4678,6 +4685,39 @@ vg_ffdh_parameter_candidate_sieved:
 	add x15, x8, #0
 	add x17, x10, #0
 	add x16, x0, #256
+	ldr x5, [x16, #0]
+	add x16, x16, #8
+	sub x14, x12, #1
+2170:
+	ldr x3, [x16, #0]
+	lsl x4, x3, #63
+	lsr x6, x5, #1
+	orr x6, x6, x4
+	eor x6, x6, x5
+	and x6, x6, x15
+	eor x6, x6, x5
+	str x6, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	add x5, x3, #0
+	sub x14, x14, #1
+	cbnz x14, 2170b
+	lsr x6, x5, #1
+	eor x6, x6, x5
+	and x6, x6, x15
+	eor x6, x6, x5
+	str x6, [x17, #0]
+	movz x4, #56797, lsl #0
+	movk x4, #56797, lsl #16
+	movk x4, #56797, lsl #32
+	movk x4, #56797, lsl #48
+	ldr x3, [x9, #0]
+	and x3, x3, x4
+	movz x4, #1, lsl #0
+	subs x3, x3, x4
+	csel x15, x8, x7, hs
+	add x16, x10, #0
+	add x17, x10, #0
 	ldr x5, [x16, #0]
 	add x16, x16, #8
 	sub x14, x12, #1
@@ -4700,10 +4740,10 @@ vg_ffdh_parameter_candidate_sieved:
 	and x6, x6, x15
 	eor x6, x6, x5
 	str x6, [x17, #0]
-	movz x4, #56797, lsl #0
-	movk x4, #56797, lsl #16
-	movk x4, #56797, lsl #32
-	movk x4, #56797, lsl #48
+	movz x4, #39321, lsl #0
+	movk x4, #39321, lsl #16
+	movk x4, #39321, lsl #32
+	movk x4, #39321, lsl #48
 	ldr x3, [x9, #0]
 	and x3, x3, x4
 	movz x4, #1, lsl #0
@@ -4733,10 +4773,10 @@ vg_ffdh_parameter_candidate_sieved:
 	and x6, x6, x15
 	eor x6, x6, x5
 	str x6, [x17, #0]
-	movz x4, #39321, lsl #0
-	movk x4, #39321, lsl #16
-	movk x4, #39321, lsl #32
-	movk x4, #39321, lsl #48
+	movz x4, #4369, lsl #0
+	movk x4, #4369, lsl #16
+	movk x4, #4369, lsl #32
+	movk x4, #4369, lsl #48
 	ldr x3, [x9, #0]
 	and x3, x3, x4
 	movz x4, #1, lsl #0
@@ -4766,42 +4806,9 @@ vg_ffdh_parameter_candidate_sieved:
 	and x6, x6, x15
 	eor x6, x6, x5
 	str x6, [x17, #0]
-	movz x4, #4369, lsl #0
-	movk x4, #4369, lsl #16
-	movk x4, #4369, lsl #32
-	movk x4, #4369, lsl #48
-	ldr x3, [x9, #0]
-	and x3, x3, x4
-	movz x4, #1, lsl #0
-	subs x3, x3, x4
-	csel x15, x8, x7, hs
-	add x16, x10, #0
-	add x17, x10, #0
-	ldr x5, [x16, #0]
-	add x16, x16, #8
-	sub x14, x12, #1
-2174:
-	ldr x3, [x16, #0]
-	lsl x4, x3, #63
-	lsr x6, x5, #1
-	orr x6, x6, x4
-	eor x6, x6, x5
-	and x6, x6, x15
-	eor x6, x6, x5
-	str x6, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	add x5, x3, #0
-	sub x14, x14, #1
-	cbnz x14, 2174b
-	lsr x6, x5, #1
-	eor x6, x6, x5
-	and x6, x6, x15
-	eor x6, x6, x5
-	str x6, [x17, #0]
 	movz x3, #0, lsl #0
 	str x3, [x0, #24]
-2175:
+2174:
 	ldr x3, [x0, #200]
 	ldr x4, [x0, #216]
 	sub x3, x3, x4
@@ -4810,7 +4817,7 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	movz x4, #1, lsl #0
 	csel x5, x4, x7, hs
-	cbz x5, 2176f
+	cbz x5, 2175f
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -4819,11 +4826,11 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2178:
+2177:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2178b
+	cbnz x14, 2177b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x8, x11, #0
@@ -4837,21 +4844,21 @@ vg_ffdh_parameter_candidate_sieved:
 	str x3, [x0, #216]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2179:
+2178:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2180f
-	b 2181f
-2180:
+	cbz x5, 2179f
+	b 2180f
+2179:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2181:
-	cbnz x2, 2179b
+2180:
+	cbnz x2, 2178b
 	ldr x12, [x0, #48]
 	ldr x11, [x0, #224]
 	add x16, x11, #0
@@ -4873,12 +4880,12 @@ vg_ffdh_parameter_candidate_sieved:
 	lsr x5, x5, #1
 	add x16, x16, #8
 	sub x14, x12, #1
-2182:
+2181:
 	ldr x3, [x16, #0]
 	orr x5, x5, x3
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2182b
+	cbnz x14, 2181b
 	movz x7, #0, lsl #0
 	sub x8, x7, #1
 	movz x4, #1, lsl #0
@@ -4897,17 +4904,17 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x12, #1
-2183:
+2182:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2183b
+	cbnz x14, 2182b
 	csel x15, x7, x8, hs
 	and x9, x9, x15
-	cbz x9, 2184f
+	cbz x9, 2183f
 	ldr x8, [x0, #80]
 	ldr x9, [x0, #96]
 	ldr x10, [x0, #64]
@@ -4919,20 +4926,20 @@ vg_ffdh_parameter_candidate_sieved:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2186:
+2185:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2186b
+	cbnz x14, 2185b
 	add x13, x12, #0
-2187:
+2186:
 	ldr x1, [x11, #0]
 	add x11, x11, #8
 	add x16, x8, #0
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x2, x7, x7
-2188:
+2187:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -4944,7 +4951,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2188b
+	cbnz x14, 2187b
 	adc x2, x2, x7
 	ldr x3, [x16, #0]
 	adds x3, x3, x2
@@ -4963,7 +4970,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x10, #8
 	sub x14, x12, #1
 	adds x3, x7, x7
-2189:
+2188:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -4975,7 +4982,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2189b
+	cbnz x14, 2188b
 	adc x2, x2, x7
 	ldr x3, [x16, #8]
 	adds x3, x3, x2
@@ -4985,13 +4992,13 @@ vg_ffdh_parameter_candidate_sieved:
 	str x3, [x16, #8]
 	str x7, [x16, #16]
 	sub x13, x13, #1
-	cbnz x13, 2187b
+	cbnz x13, 2186b
 	add x16, x8, #0
 	add x17, x10, #0
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2190:
+2189:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -5000,12 +5007,12 @@ vg_ffdh_parameter_candidate_sieved:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2190b
+	cbnz x14, 2189b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2191:
+2190:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -5014,7 +5021,7 @@ vg_ffdh_parameter_candidate_sieved:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2191b
+	cbnz x14, 2190b
 	ldr x2, [x0, #120]
 	ldr x3, [x0, #48]
 	lsl x3, x3, #3
@@ -5040,7 +5047,7 @@ vg_ffdh_parameter_candidate_sieved:
 	ldr x30, [x2, #8]
 	ldr x19, [x2, #0]
 	ldr x3, [x0, #184]
-	cbz x3, 2192f
+	cbz x3, 2191f
 	ldr x3, [x0, #24]
 	ldr x4, [x0, #0]
 	add x3, x3, #1
@@ -5050,34 +5057,34 @@ vg_ffdh_parameter_candidate_sieved:
 	csel x5, x7, x6, hs
 	str x3, [x0, #24]
 	str x5, [x0, #248]
-	b 2193f
-2192:
+	b 2192f
+2191:
 	movz x3, #2, lsl #0
 	str x3, [x0, #248]
-2193:
-	b 2185f
-2184:
+2192:
+	b 2184f
+2183:
 	movz x3, #4, lsl #0
 	str x3, [x0, #248]
-2185:
-	b 2177f
-2176:
+2184:
+	b 2176f
+2175:
 	movz x3, #0, lsl #0
 	str x3, [x0, #248]
-2177:
+2176:
 	ldr x3, [x0, #248]
 	sub x3, x3, #4
-	cbz x3, 2175b
+	cbz x3, 2174b
 	ldr x3, [x0, #248]
-	cbz x3, 2194f
+	cbz x3, 2193f
 	sub x3, x3, #1
-	cbz x3, 2196f
+	cbz x3, 2195f
 	ldr x3, [x0, #216]
 	ldr x2, [x0, #136]
 	str x3, [x2, #0]
 	movz x0, #2, lsl #0
-	b 2197f
-2196:
+	b 2196f
+2195:
 	ldr x3, [x0, #216]
 	ldr x2, [x0, #136]
 	str x3, [x2, #0]
@@ -5090,35 +5097,35 @@ vg_ffdh_parameter_candidate_sieved:
 	ldr x15, [x0, #176]
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2198:
+2197:
 	and x5, x2, x6
-	cbz x5, 2199f
-	b 2200f
-2199:
+	cbz x5, 2198f
+	b 2199f
+2198:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2200:
+2199:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2198b
+	cbnz x9, 2197b
 	movz x0, #1, lsl #0
-2197:
-	b 2195f
-2194:
+2196:
+	b 2194f
+2193:
 	movz x3, #0, lsl #0
 	ldr x2, [x0, #136]
 	str x3, [x2, #0]
 	movz x0, #0, lsl #0
-2195:
-2137:
-282:
-226:
-218:
-211:
+2194:
+2136:
+281:
+225:
+217:
+210:
 	b 22f
 21:
 	movz x3, #0, lsl #0
