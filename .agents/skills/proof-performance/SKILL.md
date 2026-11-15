@@ -233,7 +233,7 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   half evaluated (`t.rd = s.rd`: give `simp` every `RegUpd` lemma of the
   field, `rd_arithFlags` with `rd_setReg`, so that the field is `s.rd`
   itself), a function updated at other points (`upd (upd f 16 a) 19 b 3 =
-  f 3`: `if_neg (by decide)` for each update). Each took 2 to 3 s.
+  f 3`: `ite_eq_right (by decide)` for each update). Each took 2 to 3 s.
 * **An equality the elaborator finds by evaluating:** `rfl`, and an
   `exact h` or `fun _ h => h` whose type differs from the goal's, have the
   elaborator unify the two, and it may unfold the wrong thing first.

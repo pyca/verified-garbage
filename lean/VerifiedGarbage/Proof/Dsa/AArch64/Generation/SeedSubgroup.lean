@@ -149,6 +149,6 @@ theorem seedSubgroup_ok (H : GenerationHashes) (T : PrimeTest)
   intro k hk
   simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
   rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    exact (if_neg (by decide)).trans (if_neg (by decide))
+    exact (ite_eq_right (by decide)).trans (ite_eq_right (by decide))
 
 end VG.Proof.Dsa.AArch64.Generation
