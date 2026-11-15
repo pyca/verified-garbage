@@ -244,9 +244,45 @@ theorem endTail_ok {Ctx W SP : Addr} {H : Block} {u : State} (he : Env Ctx (W + 
 
 /-! ## The tag -/
 
+/-- `TagOkP`, writing only the regions `F W`. -/
+def TagOkPF (M : Gcm.X86_64.Stitch.CtxMode) (P : Addr → Addr → Nat → State → Prop) (F : Addr → List Region)
+    (tg : Prog isa) : Prop :=
+  ∀ {Ctx W SP : Addr}, Lay Ctx (W + BitVec.ofNat 64 16) W SP →
+    ∀ {R : Nat} {D : Addr} {n N al : Nat} {H : Block} {x : List Byte} {s : State},
+    x.length % 16 = 0 → Env Ctx (W + BitVec.ofNat 64 16) W SP s → blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H →
+    RoundsAt s.mem W R → s.mem.readW (W + BitVec.ofNat 64 200) 64 = D →
+    s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n → n < 16 →
+    s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 N → N < 2 ^ 64 →
+    s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al →
+    DataOk (W + BitVec.ofNat 64 16) W SP s D n → (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩ →
+    CtxOk M Ctx s →
+    WP isa tg s fun s' => ((Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧
+      Frame (⟨W + BitVec.ofNat 64 112, 16⟩ :: wFrame W SP) s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      blockAt s'.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) = blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) ∧
+      blockAt s'.mem (W + BitVec.ofNat 64 16) = inc32 (blockAt s.mem (W + BitVec.ofNat 64 16)) ∧
+      (Absorbed s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H x →
+        bytesAt s'.mem (W + BitVec.ofNat 64 112) 16 =
+          toBytes (ghashFrom H (ghash H (blocks (x ++ bytesAt s.mem D n ++
+              zeros (padLen (x ++ bytesAt s.mem D n).length))))
+            [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16))))) ∧
+      P Ctx W R s') ∧
+      Frame (F W) s.mem s'.mem
+
+theorem TagOkPF.toP {M : Gcm.X86_64.Stitch.CtxMode} {P : Addr → Addr → Nat → State → Prop}
+    {F : Addr → List Region} {tg : Prog isa} (h : TagOkPF M P F tg) : TagOkP M P tg :=
+  fun L _ _ _ _ _ _ _ _ hx he hH hR hdat hlen hn htl hN hal hd hDW X =>
+    WP.mono (h L hx he hH hR hdat hlen hn htl hN hal hd hDW X) fun _ h => h.1
+
+/-- The regions `tagP` writes: the keystream at `W + 1024`, `J₀`'s last
+word, the tag at `W + 112`, and `G` at `W + 512`. -/
+abbrev tagPFrame (W : Addr) : List Region :=
+  [⟨W + BitVec.ofNat 64 1024, 64⟩, ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] ++
+    [⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 512, 32⟩]
+
 /-- `tagP ks` with a prepared key context: what `oneTag 112` does, and `K[1]`
 the keystream of the counter block. -/
-theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (CtxMode.preparedN np hpn) KOk (tagP ks) := by
+theorem tagP_okPF (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) :
+    TagOkPF (CtxMode.preparedN np hpn) KOk tagPFrame (tagP ks) := by
   intro Ctx W SP L R D n N al H x s hx he hH hR hdat hlen hn16 htl hN hal hd hDW X
   -- `H'` and `H'²`.
   have hX : VG.Proof.Gcm.X86_64.Stitch.PowersN np s.mem Ctx := X.1
@@ -373,7 +409,7 @@ theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (Ctx
           toBytes (ghashFrom H (ghash H (blocks (x ++ bytesAt s.mem D n ++
               zeros (padLen (x ++ bytesAt s.mem D n).length))))
             [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16)))) →
-      (Env Ctx (W + BitVec.ofNat 64 16) W SP t ∧
+      ((Env Ctx (W + BitVec.ofNat 64 16) W SP t ∧
         Frame (⟨W + BitVec.ofNat 64 112, 16⟩ :: wFrame W SP) s.mem t.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
         blockAt t.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
           blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) ∧
@@ -383,7 +419,7 @@ theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (Ctx
             toBytes (ghashFrom H (ghash H (blocks (x ++ bytesAt s.mem D n ++
                 zeros (padLen (x ++ bytesAt s.mem D n).length))))
               [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16))))) ∧
-        KOk Ctx W R t := by
+        KOk Ctx W R t) ∧ Frame (tagPFrame W) s.mem t.mem := by
     intro t et rdt wrt ft tt
     have rd' : t.rd = s.rd := by rw [rdt, rd₅, rdJ, rd₃, U.rd, rd₂, o₁.rd]
     have wr' : t.wr = s.wr := by rw [wrt, wr₅, wrJ, wr₃, U.wr, wr₂, o₁.wr]
@@ -419,7 +455,7 @@ theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (Ctx
           · exact L.cw'.sub_right (Lay.wSub (by decide))
           · exact L.cw'.sub_right (Lay.wSub (by decide))) hR.2
       rw [kt, k₁, hCtx, cU, cT, cbT]
-    refine ⟨⟨et, ?_, rd', wr', ?_, ?_, tt⟩, kT⟩
+    refine ⟨⟨⟨et, ?_, rd', wr', ?_, ?_, tt⟩, kT⟩, FT⟩
     · refine FT.sub fun q hq => ?_
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
       rcases hq with rfl | rfl | rfl | rfl
@@ -462,6 +498,11 @@ theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (Ctx
     rw [bytesAt_toBytes', tagt, hY hab, hK₀, bK (.inl rfl), bK (.inr rfl), U.tail h0', U.lens, M₂, hpl,
       List.append_assoc, Proof.Gcm.blocks_append hx, bs, ghash_snoc, ← Proof.Gcm.ghashFrom_append]
     rfl
+
+/-- `tagP ks` with a prepared key context: what `oneTag 112` does, and `K[1]`
+the keystream of the counter block. -/
+theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (CtxMode.preparedN np hpn) KOk (tagP ks) :=
+  TagOkPF.toP (tagP_okPF hF hks)
 
 /-- `tagP ks` with a prepared key context: what `oneTag 112` does. -/
 theorem tagP_ok (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOk (CtxMode.preparedN np hpn) (tagP ks) :=
