@@ -33,8 +33,12 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
-import VerifiedGarbage.Proof.Framework.Arm.TaintMono
-meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+public import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+public meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.Arm.Lit
+meta import VerifiedGarbage.Proof.Framework.Arm.Lit
 
 /-!
 # ECDSA over P-384 on 32-bit ARM: `Verified`
@@ -161,6 +165,34 @@ theorem agree₀ {u : Bool} {s t : State} {extraS extraT : List Region}
   · rw [argByte_eq, argByte_eq, Mem.readW_byte s.mem _ hk, Mem.readW_byte t.mem _ hk]
     exact congrArg (fun v : BitVec 32 => v.extractLsb' (8 * k) 8) ha
 
+/-! The functions modulo `p` as literals, for their summaries (the kernel would otherwise build
+their instructions once for the analysis and once for the frame). -/
+materialize_code mulModP := Mont.mulFnWith false p384.SP.k p384.SP.m
+materialize_code addModP := Mont.addFn p384.SP.k p384.SP.m
+materialize_code subModP := Mont.subFn p384.SP.k p384.SP.m
+
+/-! The constant-time analyses of the calls of the functions modulo `p`, from their arguments,
+each done once for every check of code that calls them (`taint_decide_sum`: signing, ECDH, the
+public key and its compression). They keep what is public of `r10` (which the callers keep `lr`
+in) and of the loops' counter `r11`: the functions write neither. The analysis is `taintS`'s,
+which has summaries (`Proof/Framework/Arm/TaintMono.lean`); the `_umaal` variants' checks are
+`taintU`'s, which has none. -/
+taint_summary mulPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
+  (.call (Mont.mulName false p384.SP) (Mont.mulFnWith false p384.SP.k p384.SP.m))
+  keeping (Taint.ofRegs [.r10, .r11])
+taint_summary addPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
+  (.call (p384.SP.fn "add") (Mont.addFn p384.SP.k p384.SP.m))
+  keeping (Taint.ofRegs [.r10, .r11])
+taint_summary subPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3])
+  (.call (p384.SP.fn "sub") (Mont.subFn p384.SP.k p384.SP.m))
+  keeping (Taint.ofRegs [.r10, .r11])
+
+/-! The constant-time analysis of the call of `vg_p384_mul` from its argument and `r10`, done
+once for every check of code that calls it. It writes every register: its frame is empty. -/
+taint_summary mulSum : taintS (Taint.ofRegs [.r0, .r10])
+  (.call (s!"vg_{Impl.Weierstrass.Mul.p384.curve}_mul" ++ if p384.umaal then "_umaal" else "") mulP384)
+  keeping (Taint.ofRegs []) using mulPSum addPSum subPSum
+
 /-- `τ₀` without the regions, which the code's timing does not need (no address or branch is
 read back from memory): the analysis from it does not track the public bytes of `scratch`. -/
 def τ₁ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, argLen := 4 }
@@ -172,7 +204,8 @@ theorem agree₁ {s t : State} (h : VG.Arm.Taint.Agree τ₀ s t) : VG.Arm.Taint
     fun _ h => (List.not_mem_nil h).elim⟩ h
 
 theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signP384 :=
-  VG.Taint.constantTime (A := taint) τ₁
-    (fun _ _ hs ht pub => agree₁ (agree₀ (pre_of hs) (pre_of ht) pub)) (by native_taint_decide)
+  VG.Taint.constantTime_of_exists (A := taintS) τ₁
+    (fun _ _ hs ht pub => agree₁ (agree₀ (pre_of hs) (pre_of ht) pub))
+    (by taint_decide_sum [mulPSum, addPSum, subPSum, mulSum])
 
 end VG.Proof.Ecdsa.Arm.P384
