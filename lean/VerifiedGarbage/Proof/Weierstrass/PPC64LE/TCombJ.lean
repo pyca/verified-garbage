@@ -1021,7 +1021,8 @@ theorem bout_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {sta
       wordsVal s₃.mem base x K.L.M.n = wordsVal s.mem base x K.L.M.n := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    have top : x + 8 * K.L.M.n ≤ oAt K.L.M.n := by rcases hx with rfl | rfl | rfl <;> assumption
+    have top : x + 8 * K.L.M.n ≤ oAt K.L.M.n := by
+      rcases hx with rfl | rfl | rfl <;> [exact rx; exact rz; exact zlo]
     rw [o₃.wordsVal (by rcases hx with rfl | rfl | rfl <;> [exact rxy; exact ryz.symm; exact zy])
         (by omega_using [this, top]),
       o₂.wordsVal (.inl (by omega_using [top, hqx, hqy])) (by omega_using [this, top]), m₁]

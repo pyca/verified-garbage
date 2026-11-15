@@ -376,10 +376,10 @@ structure After (s : State) (ws : List Region) (s' : State) : Prop where
 /-! ## HMAC's `init` -/
 
 theorem hi_sdepth (hH : HashOK F.H) : sdepth F.H.init ≤ F.H.ibytes + F.H.F := by
-  have := hH.initSd; have := hH.updSd; have := hH.finSd
+  have h₁ := hH.initSd; have h₂ := hH.updSd; have h₃ := hH.finSd
   simp only [Hash.init, Hash.initMain, Hash.longKey, Hash.padKey, Hash.updBlock, Hash.callInit, Hash.callUpd,
     Hash.callFin, Hash.keyLoop, Hash.padLoop, sdepth, Instr.frameBytes]
-  omega_arith
+  simp only [Nat.add_le_add_iff_left, Nat.max_le, Nat.zero_le, h₁, h₂, h₃, and_self]
 
 theorem hf_sdepth (hH : HashOK F.H) : sdepth F.H.finalize ≤ F.H.fbytes + F.H.F := by
   have := hH.updSd; have := hH.finSd

@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.MlKem.Encode
 public import VerifiedGarbage.Proof.MlKem.Compress
 import VerifiedGarbage.Proof.MlKem.Arith
 import VerifiedGarbage.Proof.Framework.RISCV64.Run
+import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import all Init.Data.Nat.Bitwise.Basic
@@ -28,6 +29,8 @@ meta import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Proof.MlKem.Compress
 meta import VerifiedGarbage.Proof.MlKem.Arith
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Run
+meta import VerifiedGarbage.Proof.Framework.RISCV64.RegUpd
+public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import Init.Data.Nat.Bitwise.Basic
@@ -99,6 +102,23 @@ def Keep (s s' : State) : Prop :=
   s'.gpr .a6 = s.gpr .a6 ∧ s'.gpr .a7 = s.gpr .a7 ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
     s'.gpr .ra = s.gpr .ra ∧ ∀ r ∈ preserved, s'.gpr r = s.gpr r
 
+/-- `crun` for a body of many instructions: `State.write` stays folded, and the registers are read
+through the writes with `RegUpd`'s lemmas. Unfolded, every write's registers are a function that `simp`
+simplifies again at each instruction after it. -/
+tactic_template "crunw" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+  apply WP.of_runBlock
+  set_option linter.unusedSimpArgs false in
+  simp only [runBlock_cons, runStep_some, runBlock_nil,
+    exec, addr, State.load, State.store, Width.bytes, imm12,
+    BitVec.setWidth_eq, BitVec.add_zero, BitVec.ofNat_eq_ofNat,
+    Mem.read, BitVec.zero_width_append, BitVec.cast_eq, Option.bind_some, Option.map_some,
+    Option.some.injEq, exists_eq_left', ite_true, ite_false, reduceCtorEq, ne_eq,
+    not_false_eq_true, Nat.reduceMul, Nat.reduceMod, Nat.reduceLT, Nat.reduceAdd, Nat.reducePow,
+    Nat.reduceEqDiff, Nat.reduceLeDiff, Nat.reduceSub, Nat.reduceDiv, Nat.mod_one, implies_true,
+    true_implies, ↓reduceIte, and_self, true_and, and_true, Int.reduceLE, Int.reduceLT,
+    Int.reduceNeg, BitVec.ofInt_neg, BitVec.ofInt_ofNat, ← BitVec.sub_eq_add_neg,
+    RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write, RegUpd.wr_write, RegUpd.sp_write, $ls,*]))
+
 theorem body1_ok (h3 : s.gpr .a0 = x) (h5 : s.gpr .a2 = y) (h11 : s.gpr .t1 = c) (h9 : s.gpr .a6 = M)
     (h10 : s.gpr .a7 = 262080)
     (ia : ∀ j < 8, InRegions (s.rd ++ s.wr) (x + BitVec.ofNat 64 (4 * j)) 4)
@@ -126,7 +146,7 @@ theorem body1_ok (h3 : s.gpr .a0 = x) (h5 : s.gpr .a2 = y) (h11 : s.gpr .t1 = c)
   have j6 := aa 6 (by decide)
   have j7 := aa 7 (by decide)
   simp only [Nat.reduceMul, BitVec.add_zero] at i0 i1 i2 i3 i4 i5 i6 i7 j0 j1 j2 j3 j4 j5 j6 j7
-  crun [ce1Body, ce1Bit, compressAt, Keep, A, fld, cmpV, h3, h5, h11, h9, h10, i0, i1, i2, i3, i4, i5, i6, i7,
+  crunw [ce1Body, ce1Bit, compressAt, Keep, A, fld, cmpV, h3, h5, h11, h9, h10, i0, i1, i2, i3, i4, i5, i6, i7,
     j0, j1, j2, j3, j4, j5, j6, j7,
     ob, preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append,
     List.range, List.range.loop, List.flatMap_cons, List.flatMap_nil, List.append_nil]

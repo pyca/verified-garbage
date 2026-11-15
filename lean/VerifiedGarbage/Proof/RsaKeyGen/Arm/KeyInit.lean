@@ -150,9 +150,11 @@ theorem octet_step {s u : State} {E : BitVec 32} {n j : Nat} (hj : j < n) (hn : 
       t.gpr .r3 = BitVec.ofNat 32 (n - (j + 1)) ∧ t.z = decide (n - (j + 1) = 0) ∧ t.mem = u.mem) ?_
     (by rfl) (by rfl)) fun t ⟨⟨h2, h4, h5, h3, hz, hm⟩, k⟩ => ⟨h2, ?_, ?_, h3, hz, hm.trans h.mem, h.rest.trans k⟩
   · unfold octet
+    -- `↓reduceIte`, here and below: `ffrun`'s `simp` has a discharger, so it keeps no cache in an
+    -- `if`'s branches, and simplified both for every write a register is read through
     ffrun [h.ptr, hval, h.count, BitVec.add_zero, addr, hr, hbd, add_one32, shr24 _ hV, shl8_add _ hV,
       sub_one32 (k := n - j) (by omega_using [hj]) (by omega_using [hn]), show n - j - 1 = n - (j + 1) by omega_using [],
-      ofNat_beq (k := n - (j + 1)) (by omega_using [hn]), ofNat_beq0 (k := n - (j + 1)) (by omega_using [hn])]
+      ofNat_beq (k := n - (j + 1)) (by omega_using [hn]), ofNat_beq0 (k := n - (j + 1)) (by omega_using [hn]), ↓reduceIte]
   · have hb' : s.mem (State.addr E + BitVec.ofNat 64 j) = b := by rw [← h.mem]; exact hbd
     rw [h4, bytesAt_succ, os2ip_snoc, hVd, hb']
     congr 1
@@ -178,7 +180,7 @@ theorem scan_ok {s u : State} {E : BitVec 32} {n : Nat} (hp : u.gpr .r2 = E)
   unfold scan
   refine WP.seq (WP.mono (withRest_all [.r4, .r5] (Q := fun t =>
       t.gpr .r4 = 0 ∧ t.gpr .r5 = 0 ∧ t.z = decide (n = 0) ∧ t.mem = u.mem)
-    (by ffrun [hl, ofNat_beq hn]) (by rfl) (by rfl)) fun t ⟨⟨h4, h5, hz, hmt⟩, k⟩ => ?_)
+    (by ffrun [hl, ofNat_beq hn, ↓reduceIte]) (by rfl) (by rfl)) fun t ⟨⟨h4, h5, hz, hmt⟩, k⟩ => ?_)
   have h0 : ScanInv s E n 0 t := ⟨by rw [k.gpr .r2 (by decide), hp, BitVec.add_zero], by rw [h4]; rfl,
     by rw [h5]; simp [Spec.Rsa.bytesAt, Spec.Rsa.os2ip], by rw [k.gpr .r3 (by decide), hl, Nat.sub_zero],
     by rw [hz, Nat.sub_zero], hmt.trans hm, hk.trans (k.mono (by decide))⟩
@@ -247,7 +249,7 @@ theorem sizeTest_ok {u : State} {bits : Nat} (hb : bits < 2 ^ 32) (h1 : u.gpr .r
   refine withRest_all [.r3, .r12] ?_ (by rfl) (by rfl)
   unfold sizeTest
   have e1 : (BitVec.ofNat 32 bits).toNat = bits := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hb]
-  ffrun [h1, enc512]
+  ffrun [h1, enc512, ↓reduceIte]
   simp only [carry_dec, e1, show (512 : BitVec 32).toNat = 512 from rfl,
     show (BitVec.setWidth 32 (8193 : BitVec 16)).toNat = 8193 from rfl]
 
@@ -258,7 +260,7 @@ theorem expTest_ok {u : State} {V : Nat} (hV : V < 2 ^ 32) (h4 : u.gpr .r4 = Bit
   refine withRest_all [.r2, .r12] ?_ (by rfl) (by rfl)
   unfold expTest
   have e1 : (BitVec.ofNat 32 V).toNat = V := by rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hV]
-  ffrun [h4]
+  ffrun [h4, ↓reduceIte]
   simp only [carry_dec, e1, show (3 : BitVec 32).toNat = 3 from rfl, show (1 : BitVec 32).toNat = 1 from rfl]
   rw [show (1 : BitVec 32) = 1#32 from rfl, and1_32 hV]
 
@@ -272,7 +274,7 @@ theorem statusMask_ok {u : State} {a b c d : Bool} {o : Nat} (ho : o < 2) (hab :
   refine withRest_all [.r3, .r5, .r12] ?_ (by rfl) (by rfl)
   unfold statusMask
   obtain ⟨e1, e2⟩ := status_bits a b c d o ho hab
-  ffrun [h3, h12]
+  ffrun [h3, h12, ↓reduceIte]
   exact ⟨e1, e2⟩
 
 /-! ## The words -/
@@ -321,7 +323,7 @@ theorem wordsZero_ok {B : BitVec 32} {s : State} (h : Space B s) {bits : Nat}
     h.addr (d := 36) (by decide), h.addr (d := 44) (by decide), h.addr (d := 48) (by decide),
     h.space.write (off := 4) (by decide), h.space.write (off := 28) (by decide),
     h.space.write (off := 32) (by decide), h.space.write (off := 36) (by decide),
-    h.space.write (off := 44) (by decide), h.space.write (off := 48) (by decide)]
+    h.space.write (off := 44) (by decide), h.space.write (off := 48) (by decide), ↓reduceIte]
   exact ⟨rfl, rfl⟩
 
 theorem wordsSmall_ok {B : BitVec 32} {s : State} (h : Space B s) {bits : Nat} {M : BitVec 32}
@@ -331,7 +333,7 @@ theorem wordsSmall_ok {B : BitVec 32} {s : State} (h : Space B s) {bits : Nat} {
   refine withRest_all [.r1] ?_ (by rfl) (by rfl)
   unfold wordsSmall smallList writeSlots
   ffrun [h2, h12, h.addr (d := 8) (by decide), h.addr (d := 40) (by decide),
-    h.space.write (off := 8) (by decide), h.space.write (off := 40) (by decide)]
+    h.space.write (off := 8) (by decide), h.space.write (off := 40) (by decide), ↓reduceIte]
   rfl
 
 theorem wordsBig_ok {B : BitVec 32} {s : State} (h : Space B s) {bits V : Nat} {M : BitVec 32}
@@ -342,7 +344,7 @@ theorem wordsBig_ok {B : BitVec 32} {s : State} (h : Space B s) {bits V : Nat} {
   unfold wordsBig bigList writeSlots
   ffrun [rev_exec, h2, h4, h12, h.addr (d := 16) (by decide), h.addr (d := 24) (by decide),
     h.addr (d := 52) (by decide), h.space.write (off := 16) (by decide), h.space.write (off := 24) (by decide),
-    h.space.write (off := 52) (by decide)]
+    h.space.write (off := 52) (by decide), ↓reduceIte]
   rfl
 
 theorem limitFlag_ok {s : State} {V : Nat} (h4 : s.gpr .r4 = BitVec.ofNat 32 V) :
@@ -350,7 +352,7 @@ theorem limitFlag_ok {s : State} {V : Nat} (h4 : s.gpr .r4 = BitVec.ofNat 32 V) 
       t.mem = s.mem) ∧ Rest [.r1] s t := by
   refine withRest_all [.r1] ?_ (by rfl) (by rfl)
   unfold limitFlag
-  ffrun [h4]
+  ffrun [h4, ↓reduceIte]
   simp only [carry_dec, show (1 : BitVec 32).toNat = 1 from rfl]
 
 theorem limitStore_ok {B : BitVec 32} {s : State} (h : Space B s) {bits V : Nat} {M : BitVec 32}
@@ -360,7 +362,7 @@ theorem limitStore_ok {B : BitVec 32} {s : State} (h : Space B s) {bits V : Nat}
       Rest [.r1, .r3] s t := by
   refine withRest_all [.r1, .r3] ?_ (by rfl) (by rfl)
   unfold limitStore limitList writeSlots limitBV
-  ffrun [h1, h2, h12, h.addr (d := 0) (by decide), h.space.write (off := 0) (by decide)]
+  ffrun [h1, h2, h12, h.addr (d := 0) (by decide), h.space.write (off := 0) (by decide), ↓reduceIte]
   rfl
 
 theorem wordsLimit_ok {B : BitVec 32} {s : State} (h : Space B s) {bits V : Nat} {M : BitVec 32}
@@ -401,7 +403,7 @@ theorem save_ok {B : BitVec 32} {s : State} (h : Space B s) :
   refine withRest_all [] ?_ (by rfl) (by rfl)
   unfold save writeSlots
   ffrun [h.addr (d := 12) (by decide), h.addr (d := 20) (by decide), h.space.write (off := 12) (by decide),
-    h.space.write (off := 20) (by decide)]
+    h.space.write (off := 20) (by decide), ↓reduceIte]
   rfl
 
 theorem restore_ok {B : BitVec 32} {s : State} (h : Space B s) {a b : BitVec 32}
@@ -413,7 +415,7 @@ theorem restore_ok {B : BitVec 32} {s : State} (h : Space B s) {a b : BitVec 32}
   unfold slot at h3 h5
   ffrun [h.addr (d := 12) (by decide), h.addr (d := 20) (by decide), h.space.write (off := 12) (by decide),
     h.space.write (off := 20) (by decide), h.space.read (off := 12) (by decide), h.space.read (off := 20) (by decide),
-    h3, h5]
+    h3, h5, ↓reduceIte]
   rfl
 
 /-! ## The state's halves at the end -/

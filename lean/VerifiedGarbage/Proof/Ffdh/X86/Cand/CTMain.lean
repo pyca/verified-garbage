@@ -206,7 +206,8 @@ theorem shape_trace {T : List Byte} (G : TapeGeo Ex args base bytes sp T.length)
     refine hdr_store (S₃.inp.regs U₄.keeps U₄.mem) hdr_k fun u₅ S₅ W₅ k₅ O₅ _ _ _ => WP.block_nil ⟨?_, ?_⟩
     · exact run_step R ((Step.regs h₁ U₂.mem U₂.keeps).trans (S₃.trans ((Step.regs S₃.inp U₄.mem U₄.keeps).trans S₅)))
     · rw [W₅, U₄.gpr, k₃.word_eq, U₂.mem, hb, BitVec.toNat_ofNat, Nat.mod_eq_of_lt bl]
-  exact cutThen_trace cutSetLow9_check hb1 fun _ h => h
+  exact cutThen_trace (j := 9) (top := true) (k := .block (setLow (.slot .wide 9))) cutSetLow9_check hb1
+    fun _ h => h
 
 /-- `main`'s state: what results need, `bits`, the generator and RSA's table. -/
 abbrev MAt (Ex : List Region → List Region → Prop) (base : Addr) (bytes len : Nat) (args : Nat → BitVec 32)

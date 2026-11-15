@@ -3,10 +3,10 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTBase
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.StageA
 
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.CTStages
-import all Init.Data.Nat.Bitwise.Basic
 import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Control
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 
 /-!
 # ML-DSA verification on x86-64: constant time, the samplers
@@ -63,7 +63,12 @@ theorem slotBlock_tr {p : Params} {e j : Nat} {P : State → State → Prop}
     (hP : ∀ s₁ s₂, P s₁ s₂ → s₁.gpr .rbx = s₂.gpr .rbx) :
     RelCT isa P (.block (setSR p e j)) fun _ _ => True :=
   taintRel [.rbx] (fun s₁ s₂ h r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hP s₁ s₂ h)
-    (hc := .block []) (by with_unfolding_all rfl)
+    (hc := .block []) (by
+      refine (congrArg Option.isSome
+        (taint_eraseInv.check (.block (setSR p e j)) (Taint.ofRegs [.rbx]) (.block []) rfl).1).symm.trans ?_
+      change (taint.check (Taint.ofRegs [.rbx]) (.block [.mov32 .rax (.imm 0), .store8 { base := .rbx, disp := 0 } .rax,
+        .mov32 .rax (.imm 0), .store8 { base := .rbx, disp := 0 } .rax]) (.block [])).isSome = true
+      decide +kernel)
 
 /-- The bytes of seed `j` of `SB4`, from `GS j` to `GS (j + 1)`. -/
 theorem slot_tr {p : Params} (hp : p ∈ params) {e d j : Nat} (hj : j < 4) (he : e + j < p.k * p.ℓ)

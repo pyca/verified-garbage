@@ -78,6 +78,15 @@ theorem prodU (X : Int) (a b : Nat → Nat) : (((a 0 + a 8) : Int) * X ^ 0 + ((a
   rw [conv8 X ((a 0 + a 8) : Int) ((a 1 + a 9) : Int) ((a 2 + a 10) : Int) ((a 3 + a 11) : Int) ((a 4 + a 12) : Int) ((a 5 + a 13) : Int) ((a 6 + a 14) : Int) ((a 7 + a 15) : Int) ((b 0 + b 8) : Int) ((b 1 + b 9) : Int) ((b 2 + b 10) : Int) ((b 3 + b 11) : Int) ((b 4 + b 12) : Int) ((b 5 + b 13) : Int) ((b 6 + b 14) : Int) ((b 7 + b 15) : Int)]
   simp only [U, cv, hl]; push_cast; rfl
 
+/-- Karatsuba's identity over the halves and their products as they are: `ring` on the
+limbs' polynomials would expand every product of two limbs. -/
+theorem kara_halves (X A0 A1 B0 B1 AU BU PS PT PU K R : Int) (hAU : AU = A0 + A1) (hBU : BU = B0 + B1)
+    (h1 : A0 * B0 = PS) (h2 : A1 * B1 = PT) (h3 : AU * BU = PU)
+    (hk : PS + X ^ 8 * (PU - PS - PT) + X ^ 16 * PT - K = R) :
+    (A0 + X ^ 8 * A1) * (B0 + X ^ 8 * B1) - K = R := by
+  subst hAU hBU
+  linear_combination hk + h1 * (1 - X ^ 8) + h2 * (X ^ 16 - X ^ 8) + h3 * X ^ 8
+
 theorem kara_sum (X : Int) (a b : Nat → Nat) :
     ((a 0 : Int) * X ^ 0 + (a 1 : Int) * X ^ 1 + (a 2 : Int) * X ^ 2 + (a 3 : Int) * X ^ 3 + (a 4 : Int) * X ^ 4 + (a 5 : Int) * X ^ 5 + (a 6 : Int) * X ^ 6 + (a 7 : Int) * X ^ 7 + (a 8 : Int) * X ^ 8 + (a 9 : Int) * X ^ 9 + (a 10 : Int) * X ^ 10 + (a 11 : Int) * X ^ 11 + (a 12 : Int) * X ^ 12 + (a 13 : Int) * X ^ 13 + (a 14 : Int) * X ^ 14 + (a 15 : Int) * X ^ 15) * ((b 0 : Int) * X ^ 0 + (b 1 : Int) * X ^ 1 + (b 2 : Int) * X ^ 2 + (b 3 : Int) * X ^ 3 + (b 4 : Int) * X ^ 4 + (b 5 : Int) * X ^ 5 + (b 6 : Int) * X ^ 6 + (b 7 : Int) * X ^ 7 + (b 8 : Int) * X ^ 8 + (b 9 : Int) * X ^ 9 + (b 10 : Int) * X ^ 10 + (b 11 : Int) * X ^ 11 + (b 12 : Int) * X ^ 12 + (b 13 : Int) * X ^ 13 + (b 14 : Int) * X ^ 14 + (b 15 : Int) * X ^ 15) - (kara a b 0 * X ^ 0 + kara a b 1 * X ^ 1 + kara a b 2 * X ^ 2 + kara a b 3 * X ^ 3 + kara a b 4 * X ^ 4 + kara a b 5 * X ^ 5 + kara a b 6 * X ^ 6 + kara a b 7 * X ^ 7 + kara a b 8 * X ^ 8 + kara a b 9 * X ^ 9 + kara a b 10 * X ^ 10 + kara a b 11 * X ^ 11 + kara a b 12 * X ^ 12 + kara a b 13 * X ^ 13 + kara a b 14 * X ^ 14 + kara a b 15 * X ^ 15) =
       (X ^ 16 - X ^ 8 - 1) * (((T a b 0 : Int) * X ^ 0 + (T a b 1 : Int) * X ^ 1 + (T a b 2 : Int) * X ^ 2 + (T a b 3 : Int) * X ^ 3 + (T a b 4 : Int) * X ^ 4 + (T a b 5 : Int) * X ^ 5 + (T a b 6 : Int) * X ^ 6 + (T a b 7 : Int) * X ^ 7 + (T a b 8 : Int) * X ^ 8 + (T a b 9 : Int) * X ^ 9 + (T a b 10 : Int) * X ^ 10 + (T a b 11 : Int) * X ^ 11 + (T a b 12 : Int) * X ^ 12 + (T a b 13 : Int) * X ^ 13 + (T a b 14 : Int) * X ^ 14) + ((U a b 8 : Int) * X ^ 0 + (U a b 9 : Int) * X ^ 1 + (U a b 10 : Int) * X ^ 2 + (U a b 11 : Int) * X ^ 3 + (U a b 12 : Int) * X ^ 4 + (U a b 13 : Int) * X ^ 5 + (U a b 14 : Int) * X ^ 6) - ((S a b 8 : Int) * X ^ 0 + (S a b 9 : Int) * X ^ 1 + (S a b 10 : Int) * X ^ 2 + (S a b 11 : Int) * X ^ 3 + (S a b 12 : Int) * X ^ 4 + (S a b 13 : Int) * X ^ 5 + (S a b 14 : Int) * X ^ 6)) := by
@@ -96,7 +105,7 @@ theorem kara_sum (X : Int) (a b : Nat → Nat) :
     show ¬ (15 : Nat) < 8 by decide, ite_true, ite_false, Nat.reduceAdd, Nat.reduceSub, e15.1, e15.2.1, e15.2.2,
     Nat.cast_zero] at hk ⊢
   rw [hA, hB]
-  linear_combination hk + h1 * (1 - X ^ 8) + h2 * (X ^ 16 - X ^ 8) + h3 * X ^ 8
+  exact kara_halves X _ _ _ _ _ _ _ _ _ _ _ (by ring) (by ring) h1 h2 h3 hk
 
 theorem cv_mono {x y x' y' : Nat → Nat} (hx : ∀ i < 8, x i ≤ x' i) (hy : ∀ i < 8, y i ≤ y' i) (q : Nat) :
     cv x y q ≤ cv x' y' q := by

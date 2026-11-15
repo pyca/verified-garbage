@@ -59,7 +59,7 @@ theorem vecDst_ok {i : Instr} {d : XReg} (h : vecDst i = some d) (s : State) :
     all_goals first
       | exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
       | (simp only [VOp.exec]; split <;> exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩)
-      | (simp only [VOp.exec]; exact State.zlane_setV_ne _ _ hr _ _ _)
+      | (simp only [VOp.exec]; with_reducible exact State.zlane_setV_ne _ _ hr _ _ _)
       | (simp only [VOp.exec]; split <;> exact State.zlane_setV_ne _ _ hr _ _ _)
   · rename_i o
     simp only [Option.some.injEq] at h; subst h

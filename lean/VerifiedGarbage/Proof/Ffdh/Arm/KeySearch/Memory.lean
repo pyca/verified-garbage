@@ -62,9 +62,9 @@ theorem KeyLive.after_control {p : KeyPublic sampling} {original s t : State} {u
     ?_, ?_, ?_, headers, high, ?_, ?_, ?_, cacheSlots⟩
   · apply h.saved.frame (lo := 0) (hi := 24) (by decide) frame
     simpa using h.input.saved_control
-  · exact (bytesAt_frame frame (by simpa using h.input.random_control)
+  · exact (bytesAt_frame (r := ⟨State.addr p.rp, p.randLen⟩) frame (by simpa using h.input.random_control)
       (by change p.randLen ≤ 2 ^ 64; have := h.input.bounds.randomFits; omega_using [this])).trans h.random
-  · exact (bytesAt_frame frame (by simpa using h.input.domain_control)
+  · exact (bytesAt_frame (r := ⟨State.addr p.dp, p.dlen⟩) frame (by simpa using h.input.domain_control)
       (by change p.dlen ≤ 2 ^ 64; have := h.input.bounds.domainFit; omega_using [this])).trans h.domain
   · cases sampling <;> simpa only [KeyConstants.tablePtr, syms] using h.tablePtr
   · exact KeyConstants.held_after_frame h.held frame (by

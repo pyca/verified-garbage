@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Ed448.PPC64LE.BaseSel
 import VerifiedGarbage.Proof.X448.Field
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 import Mathlib.Tactic.Abel
@@ -1003,7 +1004,7 @@ theorem keyStep_ok {sK s : State} {p d : Point} {j : Nat} (hj : j < 7) (h : KInv
   rw [show keyPtr ++ stSlots .r12 KT [TX, TY, TZ] ++ copySlot RX TX ++ copySlot RY TY ++ copySlot RZ TZ ++
       [.subi .r14 .r14 1] =
       keyPtr ++ ((cp7 .r6 TX .r12 KT ++ (cp7 .r6 TY .r12 (KT + 56) ++ cp7 .r6 TZ .r12 (KT + 112))) ++
-        ((cp7 .r6 TX .r6 RX ++ (cp7 .r6 TY .r6 RY ++ cp7 .r6 TZ .r6 RZ)) ++ [.subi .r14 .r14 1])) from rfl]
+        ((cp7 .r6 TX .r6 RX ++ (cp7 .r6 TY .r6 RY ++ cp7 .r6 TZ .r6 RZ)) ++ [.subi .r14 .r14 1])) from by kernel_rfl]
   refine WP.append (keyPtr_ok C1.ctx hj e14) fun s2 ⟨r2, m2, p2⟩ => ?_
   have v2 : VCtx b s2 := C1.ctx.of_rest r2 (by decide) (by decide)
   have pT2 : Pt s2.mem b TX TY TZ (Spec.Ed448.pointAdd (kE p d j) d) := by rw [m2]; exact pT1
