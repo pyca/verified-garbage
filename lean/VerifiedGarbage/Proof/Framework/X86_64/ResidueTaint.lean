@@ -512,20 +512,33 @@ def natsEqC (a b : List Nat) : Bool := a == b
     (fun b => List.casesOn (motive := fun _ => Bool) b true fun _ _ => false)
     (fun x _ ih b => List.casesOn (motive := fun _ => Bool) b false fun y b' => Nat.beq x y && ih b') a b
 
-/-- `k rg`, with the set `rg` evaluated: what `k` is given is a numeral. -/
-def forceRegs {α : Type} (rg : RegSet Reg) (k : RegSet Reg → α) : α :=
-  Nat.casesOn (motive := fun _ => α) rg.bits (k ⟨0⟩) (fun n => k ⟨Nat.succ n⟩)
-
-/-- `k t`, with the registers and the flags of `t` evaluated. -/
-def forceT {α : Type} (t : Taint.T) (k : Taint.T → α) : α :=
-  match t with
-  | ⟨rg, f, l, b, sl, lo, x⟩ =>
-    forceRegs rg fun rg =>
-      Bool.casesOn (motive := fun _ => α) f (k ⟨rg, false, l, b, sl, lo, x⟩) (k ⟨rg, true, l, b, sl, lo, x⟩)
-
 /-- `k l`, with the list `l` evaluated to its first cell. -/
 def forceList {α β : Type} (l : List β) (k : List β → α) : α :=
   List.casesOn (motive := fun _ => α) l (k []) (fun a as => k (a :: as))
+
+/-- `k o`, with the option `o` evaluated. -/
+def forceOpt {α β : Type} (o : Option β) (k : Option β → α) : α :=
+  Option.casesOn (motive := fun _ => α) o (k none) (fun a => k (some a))
+
+/-- `k t`, with every field of `t` evaluated (`Taint.forceT`; the lists to
+their first cell). -/
+def forceTAll {α : Type} (t : Taint.T) (k : Taint.T → α) : α :=
+  match t with
+  | ⟨rg, f, l, b, sl, lo, x⟩ =>
+    forceList l fun l => forceList b fun b => forceList sl fun sl => Taint.forceRegs lo fun lo =>
+      Taint.forceT ⟨rg, f, l, b, sl, lo, x⟩ k
+
+/-- `step · i`, giving a taint that is evaluated, and whose fields `step`
+does not change are the terms they were (`slowFn_run`): `step` gives a taint
+whose every field is a term in the taint before. -/
+def slowFn (i : Instr) : RStep := ⟨fun τ =>
+  match τ with
+  | ⟨_, _, nfr, depth, room, sec, ras, _, _, _, fw, an, sa, sp⟩ =>
+    match step τ i with
+    | some τ' =>
+      forceTAll τ'.t fun t' => forceList τ'.ub fun ub' => forceOpt τ'.fl fun fl' => forceList τ'.mb fun mb' =>
+        some ⟨true, t', nfr, depth, room, sec, ras, ub', fl', mb', fw, an, sa, sp⟩
+    | none => none⟩
 
 /-- `step` of an instruction `isPlain` says is, whose base step is `b` and
 which writes the register `d`. -/
@@ -536,7 +549,7 @@ def fastFn (b : Taint.Step) (d : Option Reg) : RStep := ⟨fun τ =>
       match b.run t with
       | some t' =>
         bif natsEq t'.lens t.lens then
-          forceT t' fun t' => forceList (ubDrop d ub) fun ub' =>
+          Taint.forceT t' fun t' => forceList (ubDrop d ub) fun ub' =>
             some ⟨true, t', nfr, depth, room, sec, ras, ub', none, mb, fw, an, sa, sp⟩
         else none
       | none => none
@@ -617,7 +630,7 @@ def fastU (b : Taint.Step) (u : List (Reg × Nat) → List (Reg × Nat)) : RStep
       match b.run t with
       | some t' =>
         bif natsEq t'.lens t.lens then
-          forceT t' fun t' => forceList (u ub) fun ub' =>
+          Taint.forceT t' fun t' => forceList (u ub) fun ub' =>
             some ⟨true, t', nfr, depth, room, sec, ras, ub', none, mb, fw, an, sa, sp⟩
         else none
       | none => none
@@ -642,7 +655,7 @@ def fastLoad (b : Taint.Step) (d : Reg) (i : Instr) : RStep := ⟨fun τ =>
       | some t' =>
         bif natsEq t'.lens t.lens then
           let t₁ := match mb with | [] => t' | _ => post τ i t'
-          forceT (match sa, sp with | [], [] => t₁ | _, _ => argPost τ i t₁) fun t₂ =>
+          Taint.forceT (match sa, sp with | [], [] => t₁ | _, _ => argPost τ i t₁) fun t₂ =>
             forceList (ubDrop (some d) ub) fun ub' =>
               some ⟨true, t₂, nfr, depth, room, sec, ras, ub', none, mb, fw, an, sa, sp⟩
         else none
@@ -682,10 +695,10 @@ all four: the destination, for `isa.writesSp` and `Taint.dstOf`, and whether
 the instruction is plain, by its place among the patterns. -/
 def stepFn1 (i : Instr) : RStep :=
   match i with
-  | .store m r => bif m.index.isNone then fastStore (storeR m 8 r) m 8 (some r) else ⟨(step · i)⟩
-  | .store32 m r => bif m.index.isNone then fastStore (storeR m 4 r) m 4 none else ⟨(step · i)⟩
-  | .store8 m r => bif m.index.isNone then fastStore (storeR m 1 r) m 1 none else ⟨(step · i)⟩
-  | .store16 m r => bif m.index.isNone then fastStore (storeR m 2 r) m 2 none else ⟨(step · i)⟩
+  | .store m r => bif m.index.isNone then fastStore (storeR m 8 r) m 8 (some r) else slowFn i
+  | .store32 m r => bif m.index.isNone then fastStore (storeR m 4 r) m 4 none else slowFn i
+  | .store8 m r => bif m.index.isNone then fastStore (storeR m 1 r) m 1 none else slowFn i
+  | .store16 m r => bif m.index.isNone then fastStore (storeR m 2 r) m 2 none else slowFn i
   | .mov d (.mem _) => bif isSp d then ⟨fun _ => none⟩ else fastLoad (Taint.stepKeepFn i) d i
   | .mov d (.imm v) =>
     bif isSp d then ⟨fun _ => none⟩ else
@@ -699,13 +712,13 @@ def stepFn1 (i : Instr) : RStep :=
   | .movdquStore .. | .vmovdquStore .. | .vmovdqu32Store .. | .evStore .. | .e5ExtractStore .. | .stmxcsr _
   | .kStore .. | .kStore8 .. | .alu .and _ (.imm _) | .alu32 .and _ (.imm _) | .alu .cmp _ (.reg _)
   | .xop (.bin .pxor _ _) | .cmov .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ =>
-    bif isa.writesSp i then ⟨fun _ => none⟩ else ⟨(step · i)⟩
+    bif isa.writesSp i then ⟨fun _ => none⟩ else slowFn i
   -- Plain or not by their operands.
   | .mov32 d (.mem m) =>
     bif isSp d then ⟨fun _ => none⟩ else
-      bif !(regEq m.base .rsp && m.index.isNone) then fastFn (Taint.stepKeepFn i) (some d) else ⟨(step · i)⟩
+      bif !(regEq m.base .rsp && m.index.isNone) then fastFn (Taint.stepKeepFn i) (some d) else slowFn i
   | .alu .xor d (.reg d') | .alu32 .xor d (.reg d') =>
-    bif isSp d then ⟨fun _ => none⟩ else bif d != d' then fastFn (Taint.stepKeepFn i) (some d) else ⟨(step · i)⟩
+    bif isSp d then ⟨fun _ => none⟩ else bif d != d' then fastFn (Taint.stepKeepFn i) (some d) else slowFn i
   -- Plain, writing the register `d`.
   | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _

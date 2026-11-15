@@ -1906,23 +1906,46 @@ theorem ubDrop_eq {i : Instr} (hc : ∀ r, Taint.clobbers i r = (Taint.dstOf i =
       simp only [Bool.not_eq_true', beq_eq_false_iff_ne, ne_eq, Option.some.injEq]
       exact ⟨fun h h' => h h'.symm, fun h h' => h h'.symm⟩
 
-theorem forceRegs_eq {α : Type} (rg : RegSet Reg) (k : RegSet Reg → α) : forceRegs rg k = k rg := by
-  obtain ⟨n⟩ := rg
-  cases n <;> rfl
-
-theorem forceT_eq {α : Type} (t : Taint.T) (k : Taint.T → α) : forceT t k = k t := by
-  obtain ⟨rg, f, l, b, sl, lo, x⟩ := t
-  simp only [forceT, forceRegs_eq]
-  cases f <;> rfl
-
 theorem forceList_eq {α β : Type} (l : List β) (k : List β → α) : forceList l k = k l := by
   cases l <;> rfl
+
+theorem forceOpt_eq {α β : Type} (o : Option β) (k : Option β → α) : forceOpt o k = k o := by
+  cases o <;> rfl
+
+theorem forceTAll_eq {α : Type} (t : Taint.T) (k : Taint.T → α) : forceTAll t k = k t := by
+  obtain ⟨rg, f, l, b, sl, lo, x⟩ := t
+  simp only [forceTAll, forceList_eq, Taint.forceRegs_eq, Taint.forceT_eq]
+
+/-- `step` changes only the base taint, the bounds, the flags and the pointers in slots. -/
+theorem step_same {τ τ' : FT} {i : Instr} (h : step τ i = some τ') :
+    τ' = ⟨true, τ'.t, τ.nfr, τ.depth, τ.room, τ.sec, τ.ras, τ'.ub, τ'.fl, τ'.mb, τ.fw, τ.an, τ.sa, τ.sp⟩ := by
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
+  unfold step at h
+  cases ok
+  · cases h
+  · split at h <;> [skip; cases h]
+    split at h <;> [skip; cases h]
+    split at h <;> cases h
+    rfl
+
+theorem slowFn_run (i : Instr) (τ : FT) : (slowFn i).run τ = step τ i := by
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
+  simp only [slowFn]
+  cases h : step ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ i with
+  | none => rfl
+  | some τ' =>
+    simp only [forceTAll_eq, forceList_eq, forceOpt_eq]
+    exact congrArg some (step_same h).symm
+
+theorem slowFn_eq (i : Instr) : slowFn i = ⟨(step · i)⟩ :=
+  congrArg RStep.mk (funext (slowFn_run i))
 
 theorem fastFn_eq {i : Instr} (h : isPlain i = true) (hsp : isa.writesSp i = false) (τ : FT) :
     (fastFn (Taint.stepKDFn i) (Taint.dstOf i)).run τ = step τ i := by
   obtain ⟨hs, hp, hu, hf, hm, hc⟩ := plain_facts h τ
   have hb : baseStep τ i = (Taint.stepKDFn i).run τ.t := by
-    rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = id from funext hp, Option.map_id]; rfl
+    rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = id from funext hp, Option.map_id]
+    exact taint_step _ _
   unfold step
   rw [hb, hu, hf, hm, hsp]
   obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
@@ -1931,7 +1954,7 @@ theorem fastFn_eq {i : Instr} (h : isPlain i = true) (hsp : isa.writesSp i = fal
   · simp only [fastFn, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
     cases (Taint.stepKDFn i).run t with
     | none => rfl
-    | some t' => simp only [Bool.cond_eq_ite, Option.toList, List.nil_append, ubDrop_eq hc, forceT_eq, forceList_eq]
+    | some t' => simp only [Bool.cond_eq_ite, Option.toList, List.nil_append, ubDrop_eq hc, Taint.forceT_eq, forceList_eq]
 
 theorem fastStore_eq {i : Instr} {m : MemOp} {w : Nat} {src : Option Reg}
     (hsp : isa.writesSp i = false) (hs : ∀ τ, special τ i = none) (hp : ∀ τ t, argPost τ i (post τ i t) = t)
@@ -1939,7 +1962,8 @@ theorem fastStore_eq {i : Instr} {m : MemOp} {w : Nat} {src : Option Reg}
     (hm : ∀ τ, mbAfter τ i = mbStore τ m w src) (τ : FT) :
     (fastStore (Taint.stepKDFn i) m w src).run τ = step τ i := by
   have hb : baseStep τ i = (Taint.stepKDFn i).run τ.t := by
-    rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = id from funext (hp τ), Option.map_id]; rfl
+    rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = id from funext (hp τ), Option.map_id]
+    exact taint_step _ _
   have hk : ubKill τ.ub i = τ.ub := by
     simp only [ubKill, hc, Bool.not_false]; exact List.filter_eq_self.mpr fun _ _ => rfl
   unfold step
@@ -1984,7 +2008,8 @@ theorem fastU_eq {i : Instr} {u : List (Reg × Nat) → List (Reg × Nat)}
     (hu : ∀ τ, (ubNew τ i).toList ++ ubKill τ.ub i = u τ.ub) (τ : FT) :
     (fastU (Taint.stepKDFn i) u).run τ = step τ i := by
   have hb : baseStep τ i = (Taint.stepKDFn i).run τ.t := by
-    rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = id from funext (hp τ), Option.map_id]; rfl
+    rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = id from funext (hp τ), Option.map_id]
+    exact taint_step _ _
   unfold step
   rw [hb, hf, hm, hsp, hu τ]
   obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
@@ -1993,7 +2018,7 @@ theorem fastU_eq {i : Instr} {u : List (Reg × Nat) → List (Reg × Nat)}
   · simp only [fastU, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
     cases (Taint.stepKDFn i).run t with
     | none => rfl
-    | some t' => simp only [Bool.cond_eq_ite, forceT_eq, forceList_eq]
+    | some t' => simp only [Bool.cond_eq_ite, Taint.forceT_eq, forceList_eq]
 
 theorem ubDrop2_eq {i : Instr} {a b : Reg} (hc : ∀ r, Taint.clobbers i r = (r == a || r == b))
     (ub : List (Reg × Nat)) : ubDrop2 a b ub = ubKill ub i := by
@@ -2023,7 +2048,8 @@ theorem fastLoad_eq {d : Reg} {m : MemOp} (hsp : isa.writesSp (.mov d (.mem m)) 
     (fastLoad (Taint.stepKDFn (.mov d (.mem m))) d (.mov d (.mem m))).run τ = step τ (.mov d (.mem m)) := by
   have hb : baseStep τ (.mov d (.mem m)) =
       ((Taint.stepKDFn (.mov d (.mem m))).run τ.t).map
-        fun t' => argPost τ (.mov d (.mem m)) (post τ (.mov d (.mem m)) t') := rfl
+        fun t' => argPost τ (.mov d (.mem m)) (post τ (.mov d (.mem m)) t') :=
+    congrArg (Option.map _) (taint_step _ _)
   have hk : ubKill τ.ub (.mov d (.mem m)) = ubDrop (some d) τ.ub :=
     (ubDrop_eq (i := .mov d (.mem m)) (fun _ => rfl) τ.ub).symm
   have hm : mbAfter τ (.mov d (.mem m)) = τ.mb := rfl
@@ -2037,7 +2063,7 @@ theorem fastLoad_eq {d : Reg} {m : MemOp} (hsp : isa.writesSp (.mov d (.mem m)) 
     | none => rfl
     | some t' =>
       simp only [Option.map_some, argPost_lens, post_lens, Bool.cond_eq_ite, Option.toList, List.nil_append,
-        forceT_eq, forceList_eq]
+        Taint.forceT_eq, forceList_eq]
       cases mb <;> cases sa <;> cases sp <;> (try simp only [post_mb_nil, argPost_nil]) <;> rfl
 
 theorem stepFn_eq (i : Instr) (τ : FT) : (stepFn i).run τ = step τ i := by
@@ -2086,7 +2112,7 @@ theorem isSpR_eq (d : Reg) : isSpR d = (d == Reg.rsp) := by cases d <;> rfl
 
 theorem stepFn1_eq (i : Instr) : stepFn1 i = stepFn i := by
   unfold stepFn1 stepFn
-  simp only [isSp_eq, isSpR_eq, Taint.stepKeepFn_eq']
+  simp only [isSp_eq, isSpR_eq, Taint.stepKeepFn_eq, slowFn_eq]
   cases i with
   | mov d src | mov32 d src => cases src <;> rfl
   | alu op d src | alu32 op d src => cases op <;> cases src <;> rfl
