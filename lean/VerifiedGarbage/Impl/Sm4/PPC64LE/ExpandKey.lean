@@ -8,8 +8,8 @@ public import VerifiedGarbage.Impl.Sm4.Planes
 
 `expandKey(key = r3, schedule = r4, scratch = r5)`: `vg_sm4_expand_key`
 with its working space in the scratch buffer (`Layers.lean`, moved to
-`r8`), which the artifact allocates on the stack. As on x86-64 and AArch64
-(`Impl/Sm4/AArch64/ExpandKey.lean`): the bitsliced rounds of ECB, with `L'`
+`r8`), which the artifact allocates on the stack. As on x86-64
+(`Impl/Sm4/X86_64/ExpandKey.lean`): the bitsliced rounds of ECB, with `L'`
 for `L` and a table of `CK`'s planes for the round keys, run the key
 schedule on sixteen copies of `MK ⊕ FK`; after every four rounds `fromBs`
 puts the state's words in the tail buffer as a block, whose 64-bit words
