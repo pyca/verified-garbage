@@ -77,6 +77,18 @@ def fbPre (len : State → Nat) (s : State) : Prop :=
     (s.gpr .x0).toNat + 384 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 8 ≤ 2 ^ 64 ∧
     (s.gpr .x2).toNat + len s ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8 * 125 ≤ 2 ^ 64
 
+/-- The precondition of the modes over the batched core (`batchCore`), on
+AArch64: `fbPre` with that core's working space, 140 words. -/
+def batchPre (len : State → Nat) (s : State) : Prop :=
+  let sched : Region := ⟨s.gpr .x0, 384⟩
+  let iv : Region := ⟨s.gpr .x1, 8⟩
+  let data : Region := ⟨s.gpr .x2, len s⟩
+  let scratch : Region := ⟨s.gpr .x4, 8 * 140⟩
+  s.rd = [sched] ∧ s.wr = [iv, data, scratch] ∧ sched.Disjoint iv ∧ sched.Disjoint data ∧
+    sched.Disjoint scratch ∧ iv.Disjoint data ∧ iv.Disjoint scratch ∧ data.Disjoint scratch ∧
+    (s.gpr .x0).toNat + 384 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 8 ≤ 2 ^ 64 ∧
+    (s.gpr .x2).toNat + len s ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8 * 140 ≤ 2 ^ 64
+
 /-- The public arguments. -/
 def fbPub (s₁ s₂ : State) : Prop :=
   s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
@@ -241,6 +253,13 @@ theorem fbTaint_agree {len : State → Nat} (s₁ s₂ : State) (_ : fbPre len s
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
+theorem batchTaint_agree {len : State → Nat} (s₁ s₂ : State) (_ : batchPre len s₁) (_ : batchPre len s₂)
+    (hp : fbPub s₁ s₂) : VG.AArch64.Taint.Agree (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) s₁ s₂ := by
+  obtain ⟨h1, h2, h3, h4, h5, hsp⟩ := hp
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+
 /-- A state satisfying the precondition (one block, or one byte). -/
 def fbSat : State where
   gpr r := match r with
@@ -249,6 +268,9 @@ def fbSat : State where
   mem _ := 0
   rd := [⟨0x1000, 384⟩]
   wr := [⟨0x2000, 8⟩, ⟨0x3000, 8⟩, ⟨0x4000, 8 * 125⟩]
+
+/-- A state satisfying the batched modes' precondition (one block). -/
+def batchSat : State := { fbSat with wr := [⟨0x2000, 8⟩, ⟨0x3000, 8⟩, ⟨0x4000, 8 * 140⟩] }
 
 def cfb8Sat : State := { fbSat with wr := [⟨0x2000, 8⟩, ⟨0x3000, 1⟩, ⟨0x4000, 8 * 125⟩] }
 

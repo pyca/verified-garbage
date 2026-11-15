@@ -1,20 +1,20 @@
 module
 
 public import VerifiedGarbage.Impl.TripleDes.AArch64.Block
+public import VerifiedGarbage.Impl.TripleDes.AArch64.Bitsliced
 public import VerifiedGarbage.Impl.CmacTripleDes.AArch64
 public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
 
 /-!
 # Triple DES-CBC on AArch64
 
-`cbcEncryptChained` and `cbcDecryptChained` (schedule = x0, iv = x1,
-data = x2, n = x3, scratch = x4): the modes' generic CBC that updates the
-chaining value (`Impl/Modes/AArch64/CbcChained.lean`) over calls of the scalar block function
-(`vg_triple_des_encrypt_block` or `vg_triple_des_decrypt_block`), one 8-byte
-block at a time, with the working space in the scratch buffer, which the
-artifact allocates on the stack.
+`dirCore d`, the scalar core: the block function
+(`vg_triple_des_encrypt_block` or `vg_triple_des_decrypt_block`) called on
+one 8-byte block, for the modes whose blocks each need the one before (CBC
+encryption's `cbcEncryptChained` here; OFB, CFB64 encryption and CFB8,
+`Fb.lean`).
 
-The core's slots: the block function's 64 (`x2`), the buffer's one block,
+Its slots: the block function's 64 (`x2`), the buffer's one block,
 and a copy of the 384-byte schedule, which `prepare` makes so that nothing
 the modes write can reach it. `crypt` points `x0`, `x1` and `x2` at the
 copy, the buffer and the block function's slots, and restores the scratch
@@ -25,6 +25,23 @@ and `x26` (callee-saved, and saved by the modes for their caller), which
 carry the data's address, the blocks left and the return address, and
 `x25`, where encryption keeps the IV's address, which the block function
 never writes.
+
+`batchCore d`, the batched core: the ECB functions' bitsliced batch
+(`BitsliceNeon.batch d`, `Bitsliced.lean`) on a buffer of 128 blocks, for
+the modes whose blocks are deciphered independently: `cbcDecryptChained`
+(schedule = x0, iv = x1, data = x2, n = x3, scratch = x4), the modes'
+generic CBC decryption that updates the chaining value
+(`Impl/Modes/AArch64/CbcChained.lean`), and CFB64 decryption (`Fb.lean`),
+each group of up to 128 blocks by one batch. Its slots are the buffer's 128
+blocks, the batch's state words, on which the batch runs in place. The key
+is the schedule where the caller passed it, at `x0`, which neither the
+modes nor the batch write; `prepare` does nothing. `crypt` keeps the
+scratch buffer's address (`sb` = `x5`, which the batch writes) in `x16`,
+points `x4` at the buffer and runs the batch, which keeps `x23` and `x24`
+and writes no register the calling convention preserves.
+
+The working space is the scratch buffer, which the artifact allocates on
+the stack.
 -/
 
 @[expose] public section
@@ -32,7 +49,7 @@ never writes.
 namespace VG.Impl.TripleDes.AArch64
 
 open VG.AArch64
-open VG.Impl.Aes.AArch64 (sb)
+open VG.Impl.Aes.AArch64 (sb movR)
 open VG.Impl.Modes.AArch64 (copyW)
 open VG.Spec.TripleDes (Direction)
 
@@ -67,11 +84,29 @@ def dirCore (d : Direction) : Impl.Modes.AArch64.Core where
   dataReg := .x23
   leftReg := .x24
 
+/-- The batched core's `crypt`: the batch of the direction `d` on the buffer. -/
+def batchCrypt (d : Direction) : Prog isa :=
+  .seq (.block [movR .x16 sb, movR .x4 sb]) (.seq (BitsliceNeon.batch d) (.block [movR sb .x16]))
+
+/-- Triple DES's core for the modes whose blocks are independent, in the
+direction `d`: 128 blocks by one bitsliced batch. -/
+def batchCore (d : Direction) : Impl.Modes.AArch64.Core where
+  prepare := .block []
+  crypt := batchCrypt d
+  slots := 128
+  total := 140
+  buf := 0
+  lgG := 7
+  bw := 1
+  keyRegs := [.x0]
+  dataReg := .x23
+  leftReg := .x24
+
 /-- `vg_triple_des_cbc_encrypt_chained`. -/
 def cbcEncryptChained : Prog isa := (dirCore .encrypt).cbcEncryptChained ⟨.x1, .x2, .x3, .x4⟩ .x25
 
 /-- `vg_triple_des_cbc_decrypt_chained`. -/
-def cbcDecryptChained : Prog isa := (dirCore .decrypt).cbcDecryptChained ⟨.x1, .x2, .x3, .x4⟩
+def cbcDecryptChained : Prog isa := (batchCore .decrypt).cbcDecryptChained ⟨.x1, .x2, .x3, .x4⟩
 
 namespace TablesCbc
 

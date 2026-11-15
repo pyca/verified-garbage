@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.TripleDes.AArch64.FunctionsLit
 import VerifiedGarbage.Proof.TripleDes.AArch64.RoundLit
+import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Batch
 
 /-!
 # Triple DES's core for the modes on AArch64
@@ -25,6 +26,12 @@ its cipher `Spec.TripleDes.cipher` for encryption and
 `Spec.TripleDes.invCipher` for decryption, and the key ready when its copy
 in the core's slots is the schedule. `crypt` is the block function
 (`block_ok`) on the buffer.
+
+`batchCoreSpec d`: the batched core (`batchCore d`) meets it too, with the
+same cipher, and the key ready when the schedule is at `x0`, readable and
+outside every writable region (`SchedAt`), where nothing the modes or the
+core write can reach it. `crypt` is the ECB functions' batch (`batch_ok`) on
+the buffer's 128 blocks.
 -/
 
 @[expose] public section
@@ -258,5 +265,146 @@ def dirCoreSpec (d : Direction) : BlockSpec (dirCore d) where
   ready_frame h hf hd _ _ := readyAt_frame h hf hd
   prepare_wp := prepare_wp d
   crypt_wp := crypt_wp d
+
+/-! ## The batched core -/
+
+/-- The schedule at `p`: readable, within the address space, and outside
+every writable region. -/
+structure SchedAt (s : State) (p : Addr) : Prop where
+  rd : (⟨p, 384⟩ : Region) ∈ s.rd
+  fit : p.toNat + 384 ≤ 2 ^ 64
+  sep : ∀ w ∈ s.wr, Region.Disjoint ⟨p, 384⟩ w
+
+theorem SchedAt.congr {s s' : State} {p : Addr} (h : SchedAt s p) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
+    SchedAt s' p :=
+  ⟨by rw [hrd]; exact h.rd, h.fit, by rw [hwr]; exact h.sep⟩
+
+/-- The schedule at `x0`, outside the regions `rs` and every writable one. -/
+def BatchKeyArgs (s : State) (rs : List Region) (k : Spec.TripleDes.Schedule) : Prop :=
+  ∃ p : Addr, s.gpr .x0 = p ∧ k = Spec.TripleDes.scheduleAt s.mem p ∧ SchedAt s p ∧
+    ∀ r ∈ rs, Region.Disjoint ⟨p, 384⟩ r
+
+/-- The schedule at `x0` is `k`. -/
+def BatchReady (s : State) (k : Spec.TripleDes.Schedule) : Prop :=
+  ∃ p : Addr, s.gpr .x0 = p ∧ Spec.TripleDes.scheduleAt s.mem p = k ∧ SchedAt s p
+
+@[simp] theorem batchCore_bw (d : Direction) : (batchCore d).bw = 1 := rfl
+
+theorem batchCore_eq (d : Direction) (B : Addr) : coreRegion (batchCore d) B = ⟨B, 1024⟩ := rfl
+theorem batchTotal_eq (d : Direction) : (batchCore d).total = 140 := rfl
+
+theorem x0_not_mode (d : Direction) : Reg.x0 ∉ Modes.AArch64.modeRegs (batchCore d) := by
+  simp only [Modes.AArch64.modeRegs, batchCore]; decide
+
+theorem batchReady_frame {d : Direction} {s s' : State} {k : Spec.TripleDes.Schedule} {rs : List Region}
+    (h : BatchReady s k) (hf : Frame rs s.mem s'.mem) (hw : Modes.AArch64.WrIn rs s s')
+    (hg : ∀ r, r ∉ Modes.AArch64.modeRegs (batchCore d) → s'.gpr r = s.gpr r) : BatchReady s' k := by
+  obtain ⟨p, hp, hk, hS⟩ := h
+  refine ⟨p, by rw [hg _ (x0_not_mode d), hp], ?_, hS.congr hw.rd hw.wr⟩
+  rw [scheduleAt_eq_of_frame _ hf fun r hr => ?_, hk]
+  obtain ⟨w, hw', hsub⟩ := hw.sub r hr
+  exact (hS.sep w hw').sub_right hsub
+
+theorem batchKeyArgs_congr {s s' : State} {rs : List Region} {k : Spec.TripleDes.Schedule}
+    (h : BatchKeyArgs s rs k) (hr : ∀ r ∈ [Reg.x0], s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd)
+    (hwr : s'.wr = s.wr) (hf : Frame rs s.mem s'.mem) : BatchKeyArgs s' rs k := by
+  obtain ⟨p, hp, hk, hS, hdis⟩ := h
+  refine ⟨p, by rw [hr .x0 List.mem_cons_self, hp], ?_, hS.congr hrd hwr, hdis⟩
+  rw [hk]
+  exact (scheduleAt_eq_of_frame p hf hdis).symm
+
+theorem batchPrepare_wp {d : Direction} {s : State} {B : Addr} {rs : List Region}
+    {k : Spec.TripleDes.Schedule} (hB : s.gpr sb = B) (_ : ScrIn s B (batchCore d).total)
+    (_ : (⟨B, 8 * (batchCore d).total⟩ : Region) ∈ rs) (hk : BatchKeyArgs s rs k) :
+    WP isa (batchCore d).prepare s fun s' => BatchReady s' k ∧ s'.gpr sb = B ∧
+      s'.gpr .x23 = s.gpr .x23 ∧ s'.gpr .x24 = s.gpr .x24 ∧
+      Frame [coreRegion (batchCore d) B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨p, hp, hk, hS, -⟩ := hk
+  exact WP.block_nil ⟨⟨p, hp, hk.symm, hS⟩, hB, rfl, rfl, Frame.refl _ _, rfl, rfl⟩
+
+private theorem blockOut_eq (k : Spec.TripleDes.Schedule) (d : Direction) (b : Spec.TripleDes.Block) :
+    VG.Proof.TripleDes.Bitslice.blockOut k d b = blockResult k d b := by
+  cases d <;> rfl
+
+theorem batchCrypt_wp {d : Direction} {s : State} {B : Addr} {k : Spec.TripleDes.Schedule}
+    (hB : s.gpr sb = B) (hs : ScrIn s B (batchCore d).total) (hr : BatchReady s k) :
+    WP isa (batchCore d).crypt s fun s' => s'.gpr sb = B ∧
+      s'.gpr .x23 = s.gpr .x23 ∧ s'.gpr .x24 = s.gpr .x24 ∧ BatchReady s' k ∧
+      Frame [coreRegion (batchCore d) B] s.mem s'.mem ∧
+      (∀ j < (batchCore d).G, Spec.Aes.bytesAt s'.mem (blkAddr (batchCore d) B j) (8 * (batchCore d).bw) =
+        dirCipher d k (Spec.Aes.bytesAt s.mem (blkAddr (batchCore d) B j) (8 * (batchCore d).bw))) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
+  obtain ⟨p, hp, hK, hS⟩ := hr
+  have hw := hs.wr
+  have hfit := hs.fit
+  rw [batchTotal_eq] at hw hfit
+  -- `sb` to `x16`, and `x4` to the buffer.
+  obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := Modes.AArch64.movR_ok s .x16 sb
+  obtain ⟨s₂, e₂, r₂, o₂, m₂, rd₂, wr₂⟩ := Modes.AArch64.movR_ok s₁ .x4 sb
+  have g₂ : ∀ r, r ≠ .x16 → r ≠ .x4 → s₂.gpr r = s.gpr r := fun r h1 h2 => by rw [o₂ r h2, o₁ r h1]
+  have x16₂ : s₂.gpr .x16 = B := by rw [o₂ _ (by decide), r₁, hB]
+  have x4₂ : s₂.gpr .x4 = B := by rw [r₂, o₁ _ (by decide), hB]
+  have x0₂ : s₂.gpr .x0 = p := by rw [g₂ _ (by decide) (by decide), hp]
+  have mem₂ : s₂.mem = s.mem := by rw [m₂, m₁]
+  have rdE₂ : s₂.rd = s.rd := by rw [rd₂, rd₁]
+  have wrE₂ : s₂.wr = s.wr := by rw [wr₂, wr₁]
+  show WP isa (.seq (.block ([Impl.Aes.AArch64.movR .x16 sb] ++ ([Impl.Aes.AArch64.movR .x4 sb] : List Instr)))
+    (.seq (BitsliceNeon.batch d) (.block [Impl.Aes.AArch64.movR sb .x16]))) s _
+  refine WP.seq (WP.of_runBlock ⟨s₂, by rw [runBlock_app, e₁, Option.bind_some, e₂], ?_⟩)
+  -- The batch.
+  have hRoom : BitslicedNeon.Room s₂ := ⟨fun j hj => by
+    show InRegions s₂.wr (s₂.gpr .x4 + BitVec.ofNat 64 (16 * j)) 16
+    rw [x4₂, wrE₂]
+    have hj64 : j < 64 := hj
+    exact ⟨_, hw, Offset.contains_base B (by omega_using [hj64]) (by omega_using [hj64])⟩,
+    by decide⟩
+  have hSched : BitslicedNeon.Sched s₂ := ⟨fun i hi => by
+      rw [x0₂, rdE₂]
+      exact ⟨_, List.mem_append_left _ hS.rd, Offset.contains_base p (by omega_using [hi]) (by omega_using [hi])⟩,
+    by
+      show Region.Disjoint ⟨s₂.gpr .x0, 384⟩ ⟨s₂.gpr .x4, 1024⟩
+      rw [x0₂, x4₂]
+      exact (hS.sep _ hw).sub_right (Region.sub_prefix (by decide))⟩
+  refine WP.seq (WP.mono (BitslicedNeon.batch_ok d hRoom hSched) fun s₃ P => ?_)
+  -- `sb` back.
+  obtain ⟨s₄, e₄, r₄, o₄, m₄, rd₄, wr₄⟩ := Modes.AArch64.movR_ok s₃ sb .x16
+  refine WP.of_runBlock ⟨s₄, e₄, ?_⟩
+  have g₄ : ∀ r, r ≠ sb → r ≠ .x7 → r ≠ .x9 → r ≠ .x10 → r ≠ .x16 → r ≠ .x4 → s₄.gpr r = s.gpr r :=
+    fun r h5 h7 h9 h10 h16 h4 => by rw [o₄ r h5, P.gpr r h5 h7 h9 h10, g₂ r h16 h4]
+  have rdE : s₄.rd = s.rd := by rw [rd₄, P.rd, rdE₂]
+  have wrE : s₄.wr = s.wr := by rw [wr₄, P.wr, wrE₂]
+  have fr : Frame [⟨B, 1024⟩] s.mem s₄.mem := by
+    have := P.frame
+    rw [show BitslicedNeon.stateR s₂ = ⟨B, 1024⟩ by simp only [BitslicedNeon.stateR, x4₂], mem₂] at this
+    rw [m₄]; exact this
+  have sch : ∀ r ∈ [(⟨B, 1024⟩ : Region)], Region.Disjoint ⟨p, 384⟩ r := fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact (hS.sep _ hw).sub_right (Region.sub_prefix (by decide))
+  refine ⟨by rw [r₄, P.gpr _ (by decide) (by decide) (by decide) (by decide), x16₂],
+    g₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
+    g₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
+    ⟨p, by rw [g₄ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), hp], ?_,
+      hS.congr rdE wrE⟩, by rw [batchCore_eq]; exact fr, fun j hj => ?_, rdE, wrE⟩
+  · rw [scheduleAt_eq_of_frame _ fr sch]; exact hK
+  · have hj128 : j < 128 := hj
+    have ea : blkAddr (batchCore d) B j = VG.Proof.TripleDes.Bitslice.wAt (s₂.gpr .x4) j := by
+      rw [x4₂]; simp only [blkAddr, batchCore, Nat.mul_zero, Nat.zero_add, Nat.mul_one]
+    rw [batchCore_bw, Nat.mul_one, ea, dirCipher_bytes, bytesAt_eq, m₄, P.out j hj128, x0₂, mem₂, hK, blockOut_eq]
+
+/-- The batched core meets what the modes need. -/
+def batchCoreSpec (d : Direction) : BlockSpec (batchCore d) where
+  Key := Spec.TripleDes.Schedule
+  cipher := dirCipher d
+  KeyArgs := BatchKeyArgs
+  Ready s _ k := BatchReady s k
+  cipher_len _ _ := by cases d <;> simp [dirCipher, Spec.TripleDes.cipher, Spec.TripleDes.invCipher]
+  layout := ⟨by cases d <;> decide, by cases d <;> decide, by cases d <;> decide, by cases d <;> decide,
+    by cases d <;> decide, by cases d <;> decide, by cases d <;> decide⟩
+  keyRegs_ok := by cases d <;> decide
+  regs_ok := by cases d <;> decide
+  keyArgs_congr h hr hrd hwr _ hf := batchKeyArgs_congr h hr hrd hwr hf
+  ready_frame h hf _ hw hg := batchReady_frame h hf hw hg
+  prepare_wp := batchPrepare_wp
+  crypt_wp := batchCrypt_wp
 
 end VG.Proof.TripleDes.AArch64

@@ -17,8 +17,8 @@ def artifacts : List Artifact := [
     stack := 464
     verified := Proof.TripleDes.AArch64.TablesCbc.framed },
   Spec.TripleDes.cbcDecryptChainedApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 Impl.TripleDes.AArch64.cbcDecryptChained
-    stack := 1008
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1120 .x4 140 Impl.TripleDes.AArch64.cbcDecryptChained
+    stack := 1120
     verified := Proof.TripleDes.AArch64.cbcDecryptChained_framed }]
 
 end VG.Artifacts.TripleDesCbc.AArch64

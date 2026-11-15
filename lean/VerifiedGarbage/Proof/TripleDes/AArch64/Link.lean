@@ -122,8 +122,6 @@ tactic_template "keeps_x30" : tactic => `(tactic| repeat (first
   | apply KeepsReg.loop
   | exact Modes.AArch64.keepsReg_of_regSafe (by decide)))
 
-theorem cbcDecryptChained_keeps_x30 : KeepsReg .x30 cbcDecryptChained := by keeps_x30
-
 theorem ofb_keeps_x30 : KeepsReg .x30 ofb := by keeps_x30
 
 theorem cfbEncrypt_keeps_x30 : KeepsReg .x30 cfbEncrypt := by keeps_x30
