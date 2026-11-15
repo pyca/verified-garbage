@@ -458,12 +458,20 @@ analysis and its results are the same) written for the kernel:
   the register they write dropped. Stores without an index register only
   need the pointers in slots (`fastStore`), look for the slot of a
   public value with `mem3R`, and give the taint they were given when they
-  leave the slots as they are (`storeR`); loads (`mov r, [m]`) need `post` only when a
-  slot holds a pointer (`fastLoad`), and `argPost` only when the argument
-  area has public or pointer bytes; constants, `mul` and `mulx` only change
-  bounds (`fastU`). `stepFn1 i`, which the kernel evaluates, is `stepFn i`
-  with one match on `i` in place of its four (`isa.writesSp`, `isPlain`,
-  `Taint.dstOf` and its own).
+  leave the slots as they are (`storeR`; `storeSec` and `storeX` for the
+  vector stores); loads (`mov r, [m]`) need `post` only when a slot holds a
+  pointer (`fastLoad`), and `argPost` only when the argument area has public
+  or pointer bytes; constants, `mul`, `mulx`, `and` with a constant and
+  `cmov` only change bounds (`fastU`); a zeroing `xor` or `pxor`, a `cmp`
+  and a `cmovb` add to the base step what `fastG` is given. `stepFn1 i` is
+  `stepFn i` with one match on `i` in place of its four (`isa.writesSp`,
+  `isPlain`, `Taint.dstOf` and its own), and `stepFn1K`, which the kernel
+  evaluates, is `stepFn1` with the cases of that match closed
+  (`inline_match%`).
+* Every step gives a taint that is evaluated, and whose fields it does not
+  change are the terms they were (`Taint.forceT`, `forceList`; `slowFn` for
+  the instructions without a step of their own), so that the kernel finds
+  again a step it has made from the same taint: see `Taint.stepKeep`.
 * `leF` compares lists of slots in one pass when one is a sublist of the
   other in order (`subl`), as a hint's taints usually are of the analysis's,
   and compares numbers with `Nat.beq`.
@@ -623,7 +631,7 @@ def storeSec (m : MemOp) (w : Nat) : Taint.Step := ⟨fun τ =>
     else none⟩
 
 /-- The base step of `movdqu [m], x` without an index register (`baseStep`'s,
-`storeX_eq`): a slot of its 16 bytes if `x` is public (`special`), and a
+`storeX_run`): a slot of its 16 bytes if `x` is public (`special`), and a
 secret's store otherwise. -/
 def storeX (m : MemOp) (x : XReg) : Taint.Step := ⟨fun τ =>
   bif xpub τ x then
