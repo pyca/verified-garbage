@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubPaths
 public import VerifiedGarbage.Proof.Framework.CodeOnce
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueKeep
 import VerifiedGarbage.Proof.Framework.X86_64.CallInline
