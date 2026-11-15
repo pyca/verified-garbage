@@ -560,7 +560,7 @@ theorem restore_ok (hd : Dims P) {s : State} {scr : Addr} (h20 : s.gpr .x20 = sc
     rw [u₆.other _ h2, u₅.other _ h6, u₄.other _ h5, u₃.other _ h4, u₂.other _ h3, u₁.other _ h1]
 
 /-- The callee-saved registers but `x30` are the caller's again once `restore`
-has run and `untouched` were never written. -/
+has run and `untouched` are as they were. -/
 theorem preserved_of {s₀ s' : State} (hsv : ∀ p ∈ saved P, s'.gpr p.1 = s₀.gpr p.1)
     (hu : ∀ r ∈ untouched, s'.gpr r = s₀.gpr r) : ∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s₀.gpr r := by
   intro r hr h30
