@@ -2208,10 +2208,14 @@ theorem fgPass_ok {um : Bool} {s : State} {B : BitVec 32} {Z W k N : Nat} (g : G
     aw1 _ _ (by decide) hk4, aw1 _ _ (by decide) hk4] at m2
   rw [aw2 _ _ (by decide) (by simp only [cQ]; omega_using [hS8]), aw2 _ _ (by decide) (by simp only [cR]; omega_using [hS8]),
     aw2 _ _ (by decide) hk4, aw2 _ _ (by decide) hk4] at m3
-  generalize hwU : SG.aword s.mem B W cU.arr cU.off = wU at m2 hval
-  generalize hwV : SG.aword s.mem B W cV.arr cV.off = wV at m2 hval
-  generalize hwQ : SG.aword s.mem B W cQ.arr cQ.off = wQ at m3 hval
-  generalize hwR : SG.aword s.mem B W cR.arr cR.off = wR at m3 hval
+  obtain ⟨wU, hwU⟩ : ∃ w, SG.aword s.mem B W cU.arr cU.off = w := ⟨_, rfl⟩
+  simp only [hwU] at m2 hval
+  obtain ⟨wV, hwV⟩ : ∃ w, SG.aword s.mem B W cV.arr cV.off = w := ⟨_, rfl⟩
+  simp only [hwV] at m2 hval
+  obtain ⟨wQ, hwQ⟩ : ∃ w, SG.aword s.mem B W cQ.arr cQ.off = w := ⟨_, rfl⟩
+  simp only [hwQ] at m3 hval
+  obtain ⟨wR, hwR⟩ : ∃ w, SG.aword s.mem B W cR.arr cR.off = w := ⟨_, rfl⟩
+  simp only [hwR] at m3 hval
   -- The scratch.
   have sc : ∀ d, scr σ.mem B W d = scr s3.mem B W d := fun d => by rw [mσ]
   rw [m3, m2, m1] at sc
@@ -2761,10 +2765,14 @@ theorem dePass_ok {um : Bool} {s : State} {B : BitVec 32} {Z W k N : Nat} (g : G
   generalize hM2w : mdW (SG.aword s.mem B W cQ.arr cQ.off) (SG.aword s.mem B W cR.arr cR.off)
     (SG.aword s.mem B W bD (4 * k)) (SG.aword s.mem B W bE (4 * k)) (SG.aword s.mem B W bD 0)
     (SG.aword s.mem B W bE 0) (s.mem.readW (off (State.addr B) sB) 32) = m2 at D
-  generalize hwU : SG.aword s.mem B W cU.arr cU.off = wU at D hval hM1w
-  generalize hwV : SG.aword s.mem B W cV.arr cV.off = wV at D hval hM1w
-  generalize hwQ : SG.aword s.mem B W cQ.arr cQ.off = wQ at D hval hM2w
-  generalize hwR : SG.aword s.mem B W cR.arr cR.off = wR at D hval hM2w
+  obtain ⟨wU, hwU⟩ : ∃ w, SG.aword s.mem B W cU.arr cU.off = w := ⟨_, rfl⟩
+  simp only [hwU] at D hval hM1w
+  obtain ⟨wV, hwV⟩ : ∃ w, SG.aword s.mem B W cV.arr cV.off = w := ⟨_, rfl⟩
+  simp only [hwV] at D hval hM1w
+  obtain ⟨wQ, hwQ⟩ : ∃ w, SG.aword s.mem B W cQ.arr cQ.off = w := ⟨_, rfl⟩
+  simp only [hwQ] at D hval hM2w
+  obtain ⟨wR, hwR⟩ : ∃ w, SG.aword s.mem B W cR.arr cR.off = w := ⟨_, rfl⟩
+  simp only [hwR] at D hval hM2w
   have cs := D.cs
   have p10' := D.p0
   have p11' := D.p1
