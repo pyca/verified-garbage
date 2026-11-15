@@ -276,16 +276,33 @@ theorem pstage_step {R R' : StageRel} {c : Prog isa} (hct : RelCT isa (Two (Stag
     fun q t ⟨σ, xb, pb, qb, dpb, dqb, qib, h, hv, hr, hf⟩ =>
       WP.mono (hw q.m σ xb pb qb dpb dqb qib t h hv hr) fun _ h' => ⟨σ, xb, pb, qb, dpb, dqb, qib, h, hv, h', hf⟩
 
+/-- `PStage R0`, with the input zero. -/
+def PStage0 (q : PPub) (t : State) : Prop :=
+  ∃ (σ : State) (xb pb qb dpb dqb qib : List Byte),
+    CrtPre σ q.m.B q.m.Z q.m.k q.m.op q.m.np q.m.ip q.m.pp q.m.qp q.m.dpp q.m.dqp q.m.qip q.m.pl q.m.ql q.m.nb
+      xb pb qb dpb dqb qib ∧
+    Spec.Rsa.modulusValid q.m.N q.m.k = true ∧ R0 q.m σ xb pb qb dpb dqb qib t ∧ PreF q σ ∧ Spec.Rsa.os2ip xb = 0
+
+/-- `nSetup` leaks the same in runs that agree on the public data. -/
+theorem nSetupZ_ct (M : Mont) : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) fun _ _ => True := by
+  refine RelCT.seqs_append (by simp [Impl.Rsa.AArch64.Crt.nHead]) (by simp) (RelCT.seq (nHead_ct M) ?_)
+  simp only [seqs]
+  exact two_map (fun p : CrtPub => (⟨p.B, p.Z, p.w⟩ : Ws)) (fun _ _ h => h)
+    (zeroArr_ct (show Public.aXm < 8 by decide) (by taint_decide))
+
 /-- `n`'s setup, the primes' and the checks are constant time. -/
 theorem front_ct (M : Mont) :
-    RelCT isa (Two (PStage R0)) (seqs (Impl.Rsa.AArch64.Crt.nSetup M.mm ++ Impl.Rsa.AArch64.Crt.primesSetup ++
+    RelCT isa (Two PStage0) (seqs (nSetup M.mm ++ Impl.Rsa.AArch64.Crt.primesSetup ++
       Impl.Rsa.AArch64.Crt.checks)) (Two (PStage R3)) := by
-  refine RelCT.seqs_append (by simp [Impl.Rsa.AArch64.Crt.nSetup]) checks_okG.ne
+  refine RelCT.seqs_append (by simp [nSetup, Impl.Rsa.AArch64.Crt.nHead]) checks_okG.ne
     (RelCT.seq (R := Two (PStage R2)) ?_ ?_)
-  · refine RelCT.seqs_append (by simp [Impl.Rsa.AArch64.Crt.nSetup]) (by simp [Impl.Rsa.AArch64.Crt.primesSetup])
+  · refine RelCT.seqs_append (by simp [nSetup, Impl.Rsa.AArch64.Crt.nHead]) (by simp [Impl.Rsa.AArch64.Crt.primesSetup])
       (RelCT.seq (R := Two (PStage R1)) ?_ ?_)
-    · exact pstage_step (nSetup_ct M) fun p σ xb _ _ _ _ _ t h hv ht => by
-        subst ht; exact WP.mono (nPart_ok M h hv) fun _ ⟨minv, hr⟩ => ⟨minv, hr⟩
+    · exact two_post (two_map PPub.m (fun _ _ ⟨σ, xb, pb, qb, dpb, dqb, qib, h, hv, hr, _⟩ =>
+          ⟨σ, xb, pb, qb, dpb, dqb, qib, h, hv, hr⟩) (nSetupZ_ct M))
+        fun q t ⟨σ, xb, pb, qb, dpb, dqb, qib, h, hv, ht, hf, hx⟩ => by
+          subst ht
+          exact WP.mono (nPartZ_ok M h hv hx) fun _ ⟨minv, hr⟩ => ⟨_, xb, pb, qb, dpb, dqb, qib, h, hv, ⟨minv, hr⟩, hf⟩
     · exact pstage_step (two_map id (fun _ _ h => stage_true h)
           ((setupS_ct _ setup_ct).mono (fun _ _ h => h) fun _ _ _ => trivial))
         fun p σ xb pb qb dpb dqb qib t h hv ⟨minv, hr⟩ => WP.mono (setupPart_ok h hr) fun _ h' => ⟨minv, h'⟩
@@ -621,16 +638,19 @@ theorem e4_x9 {c : CPub} {t : State} (h : E4 c t) :
   rw [hh.x9, hnb, hk]
 
 theorem e4_pstage {c : CPub} {t : State} (h : E4 c t) (hv : Spec.Rsa.modulusValid c.q.m.N c.q.m.k = true) :
-    PStage R0 c.q t := by
+    PStage0 c.q t := by
   obtain ⟨s, ⟨hpre, -, hB, hZ, hk, hop, hip, hqip, hL, hnp, hpp, hdpp, hqp, hdqp, hpl, hql, hnb⟩, hh⟩ := h
   have cx := ppCtx_of hpre
   have hcp := hh.crt
+  have hC : Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (s.gpr .x0) (s.gpr .x3).toNat) = 0 :=
+    os2ip_zeros' hh.zeros (by have hp := cx.hpre; simp only [ppW, ppWP, ppWQ, wsWords] at hp; omega_using [hp])
   have e1 : c.q.m.ip = c.q.m.op := hip.symm.trans hop
   have e2 : c.q.m.qip = c.q.m.op := hqip.symm.trans hop
   have e3 : c.q.m.dpp = c.q.m.pp := hdpp.symm.trans hpp
   have e4 : c.q.m.dqp = c.q.m.qp := hdqp.symm.trans hqp
   rw [hnb, hB, hZ, hk, hop, hnp, hpp, hqp, hpl, hql] at hcp
-  refine ⟨t, _, _, _, _, _, _, by rw [e1, e2, e3, e4]; exact hcp, hv, rfl, fun i hi => ?_, ?_, fun x hx => ?_, ?_⟩
+  rw [hk, hop] at hC
+  refine ⟨t, _, _, _, _, _, _, by rw [e1, e2, e3, e4]; exact hcp, hv, rfl, ⟨fun i hi => ?_, ?_, fun x hx => ?_, ?_⟩, hC⟩
   · rw [hh.keep.wr, ← hop]; exact cx.hpw i (by rw [hL]; exact hi)
   · rw [← hL]; have := cx.hpL; omega_using [this]
   · rw [← hL, ← hop, Nat.mul_comm]; rw [← hB, ← hZ] at hx; exact cx.hps x hx
@@ -727,10 +747,10 @@ theorem ppCode_ct (M : Mont) : RelCT isa (Two PPRel) (code M.mm) fun _ _ => True
   refine RelCT.seq head_ct (two_ite (fun c s₁ s₂ h₁ h₂ => by rw [eval_zero, eval_zero, e4_x9 h₁, e4_x9 h₂]) ?_ ?_)
   · exact two_taint [] (fun _ _ _ _ _ r hr => absurd hr (List.not_mem_nil)) (by taint_decide)
   · simp only [main]
-    rw [show Impl.Rsa.AArch64.Crt.nSetup M.mm ++ Impl.Rsa.AArch64.Crt.primesSetup ++ Impl.Rsa.AArch64.Crt.checks ++
-        primes M.mm ++ outN = (Impl.Rsa.AArch64.Crt.nSetup M.mm ++ Impl.Rsa.AArch64.Crt.primesSetup ++
+    rw [show nSetup M.mm ++ Impl.Rsa.AArch64.Crt.primesSetup ++ Impl.Rsa.AArch64.Crt.checks ++
+        primes M.mm ++ outN = (nSetup M.mm ++ Impl.Rsa.AArch64.Crt.primesSetup ++
         Impl.Rsa.AArch64.Crt.checks) ++ (primes M.mm ++ outN) by simp only [List.append_assoc]]
-    refine RelCT.seqs_append (by simp [Impl.Rsa.AArch64.Crt.nSetup]) (by simp [primes]) (RelCT.seq ?_ (tail_ct M))
+    refine RelCT.seqs_append (by simp [nSetup, Impl.Rsa.AArch64.Crt.nHead]) (by simp [primes]) (RelCT.seq ?_ (tail_ct M))
     refine two_map CPub.q (fun c t ⟨h, he⟩ => e4_pstage h ?_) (front_ct M)
     change isa.eval (.zero .x .x9) t = some false at he
     rw [eval_zero, e4_x9 h] at he

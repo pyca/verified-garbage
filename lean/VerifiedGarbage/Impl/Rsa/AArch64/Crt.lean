@@ -69,8 +69,8 @@ otherwise; `x7 = 0`. -/
 def borrowMask : List Instr := [.subImm .x .x4 .x7 1, .csel .x .x15 .x7 .x4]
 
 /-- `n` and `-n⁻¹` (`pcLoad`); the input `c`; the mask of `c < n`; the number
-1; `R² mod n` (as `vg_rsa_public_precompute` computes it) and `c R mod n`. -/
-def nSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
+1; `R² mod n` (as `vg_rsa_public_precompute` computes it). -/
+def nHead (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
   pcLoad ++ [
   .block [ldh .x1 sIn, ldh .x2 sK, ldh .x8 (sArr aX)],
   loadBE,
@@ -78,7 +78,11 @@ def nSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
   cmpLoop,
   .block (borrowMask ++ [sth .x15 sMask, ldh .x12 sW, movi .x9 1, movi .x13 0]),
   setWord aOne] ++
-  r2StepsPub mul ++ [mul aXm aX aR2]
+  r2StepsPub mul
+
+/-- `nHead`, and `c R mod n`. -/
+def nSetup (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
+  nHead mul ++ [mul aXm aX aR2]
 
 /-! ## The prime workspaces -/
 

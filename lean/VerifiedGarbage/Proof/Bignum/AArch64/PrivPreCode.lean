@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.PrivPreMain
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Rsa.PrivatePrecompute
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCode
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtChecks
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtFront
 import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
@@ -30,7 +32,7 @@ namespace VG.Proof.Bignum.AArch64.PrivPre
 
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Crt VG.Impl.Rsa.AArch64
 open VG.Impl.Rsa.AArch64.PrivPre
-open VG.Impl.Rsa.AArch64.Crt (nSetup primesSetup checks)
+open VG.Impl.Rsa.AArch64.Crt (nHead primesSetup checks)
 open VG.Proof.Bignum VG.Proof.Bignum.AArch64
 open VG.Proof.MlKem.AArch64 (Keep eval_zero)
 
@@ -408,6 +410,72 @@ theorem ppHead_ok {s : State} (c : PpCtx s) : WP isa VG.Impl.Rsa.AArch64.PrivPre
       outSep := fun j hj => c.hpo j (by omega_using [hL8, hj]) }
   exact ⟨hz₄, fun i hi => by rw [hm42]; exact hz₂ i hi, k14.mono (by decide), hcp⟩
 
+/-- `nSetup`, for a valid modulus and the input 0: what `Crt.nSetup` leaves,
+the input's Montgomery form written as the zero it is. -/
+theorem nPartZ_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat}
+    {nb xb pb qb dpb dqb qib : List Byte}
+    (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
+    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) (hx : Spec.Rsa.os2ip xb = 0) :
+    WP isa (seqs (nSetup M.mm)) s fun t => ∃ minv,
+      NReady s t B Z ((k + 7) / 8) minv (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb) := by
+  have hk2 := h.k2
+  have hZq := h.z
+  have hn := h.scr.nowrap
+  have hZ : slot ((k + 7) / 8) 8 ≤ Z := by unfold offQ at hZq; omega_using [hZq]
+  have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_using [hn, hZ]
+  have lM := slot_le (w := (k + 7) / 8) (show Public.aXm < 8 by decide)
+  have hM0 := hdr_lt_slot ((k + 7) / 8) Public.aXm (show 31 < 32 by decide)
+  refine wp_seqs_append (by simp [nHead]) (by simp) (WP.mono (nHead_ok M h hv) fun t₃ ⟨minv, hh⟩ => ?_)
+  simp only [seqs]
+  refine WP.mono (zeroArr_ok hh.good hZ (by omega_using [hk2]) (show Public.aXm < 8 by decide))
+    fun t₄ ⟨hz, ho, k₄⟩ => ?_
+  have hw : ∀ i < 32, word t₄.mem B (8 * i) = word t₃.mem B (8 * i) := fun i hi =>
+    ho.word (Or.inl (by have := hdr_lt_slot ((k + 7) / 8) Public.aXm hi; omega_using [this])) (by omega_using [hi])
+  have ha : ∀ j < 8, j ≠ Public.aXm → wv t₄.mem B (slot ((k + 7) / 8) j) ((k + 7) / 8) =
+      wv t₃.mem B (slot ((k + 7) / 8) j) ((k + 7) / 8) := fun j hj hne => by
+    have hs := slot_sep (w := (k + 7) / 8) hne
+    have hl := slot_le (w := (k + 7) / 8) hj
+    exact ho.wv (by omega_using [hs]) (by omega_using [hn', hl])
+  have f₄ : Frm B [(slot ((k + 7) / 8) Public.aXm, 8 * ((k + 7) / 8 + 2))] t₃.mem t₄.mem :=
+    Frm.of_outside ho (List.mem_singleton.mpr rfl)
+  have kf₄ : ∀ r ∈ [(slot ((k + 7) / 8) Public.aXm, 8 * ((k + 7) / 8 + 2))], KeepsHdr r ∧ r.1 + r.2 ≤ Z := by
+    intro r hr
+    rw [List.mem_singleton.mp hr]
+    exact ⟨keepsHdr_ge (by simp only; omega_using [hM0]), by simp only; omega_using [lM, hZ]⟩
+  have hxm : wv t₄.mem B (slot ((k + 7) / 8) Public.aXm) ((k + 7) / 8) = 0 := by
+    have := wv_add t₄.mem B (slot ((k + 7) / 8) Public.aXm) ((k + 7) / 8) 2
+    rw [hz] at this
+    exact (Nat.eq_zero_of_add_eq_zero this.symm).1
+  refine ⟨minv, ⟨hh.good.scr.congr k₄.wr, (k₄.gpr .x0 (by decide)).trans hh.good.x0,
+      ⟨by rw [hw _ (by decide)]; exact hh.good.hdr.hw, by rw [hw _ (by decide)]; exact hh.good.hdr.hminv,
+        fun j hj => by rw [hw _ (by unfold sArr; omega_using [hj])]; exact hh.good.hdr.harr j hj⟩⟩,
+    ⟨by rw [ha _ (by decide) (by decide)]; exact hh.nv.n, ?_, by rw [ha _ (by decide) (by decide)]; exact hh.nv.r2,
+      by rw [ha _ (by decide) (by decide)]; exact hh.nv.r2lt, by rw [ha _ (by decide) (by decide)]; exact hh.nv.one⟩,
+    by rw [hxm, hx, Nat.zero_mul], by rw [hw _ (by decide)]; exact hh.msk,
+    hh.hfix.trans (HFix.of_frm f₄ fun r hr => (kf₄ r hr).1),
+    hh.iscr.trans (InScr.of_frm f₄ fun r hr => (kf₄ r hr).2), (hh.keep.trans k₄).mono (by decide)⟩
+  have hs := slot_sep (w := (k + 7) / 8) (show Public.aN ≠ Public.aXm by decide)
+  have hl := slot_le (w := (k + 7) / 8) (show Public.aN < 8 by decide)
+  rw [ho.word (by omega_using [hs]) (by omega_using [hn', hl])]
+  exact hh.nv.inv
+
+/-- Up to the checks, for a valid modulus and the input 0 (`Crt.front_ok`). -/
+theorem frontZ_ok (M : Mont) {s : State} {B : Addr} {Z k : Nat} {op np ip pp qp dpp dqp qip : Addr} {pl ql : Nat}
+    {nb xb pb qb dpb dqb qib : List Byte}
+    (h : CrtPre s B Z k op np ip pp qp dpp dqp qip pl ql nb xb pb qb dpb dqb qib)
+    (hv : Spec.Rsa.modulusValid (Spec.Rsa.os2ip nb) k = true) (hx : Spec.Rsa.os2ip xb = 0)
+    {C : List (Prog isa)} {G : Nat → Nat → Nat → Prop} (hC : ChecksOk C G)
+    (hG : G (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)) :
+    WP isa (seqs (nSetup M.mm ++ primesSetup ++ C)) s fun t => ∃ minv mp mq,
+      CrtReady s t B Z ((k + 7) / 8) pl ql minv mp mq (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip xb)
+        (Spec.Rsa.os2ip pb) (Spec.Rsa.os2ip qb)
+        (keyMask (decide (Spec.Rsa.os2ip xb < Spec.Rsa.os2ip nb)) (Spec.Rsa.os2ip nb) (Spec.Rsa.os2ip pb)
+          (Spec.Rsa.os2ip qb) (Spec.Rsa.os2ip qib)) :=
+  wp_seqs_append (by simp [nSetup, nHead]) hC.ne (wp_seqs_append (by simp [nSetup, nHead])
+    (by simp [primesSetup]) (WP.mono (nPartZ_ok M h hv hx) fun _ ⟨minv, hr⟩ =>
+      WP.mono (setupPart_ok h hr) fun _ ⟨_, _, hr'⟩ =>
+        WP.mono (checksPart_ok h hv hr' hC hG) fun _ ⟨mp', mq', hr''⟩ => ⟨minv, mp', mq', hr''⟩))
+
 /-- `vg_rsa_private_precompute` with Montgomery multiplication `M`. -/
 theorem ppCode_correct (M : Mont) (s : State) (h : ppA.pre s) :
     ∃ t s', Exec isa (code M.mm) s t s' ∧ abiPreserved s s' ∧ ppA.post s s' := by
@@ -462,7 +530,7 @@ theorem ppCode_correct (M : Mont) (s : State) (h : ppA.pre s) :
     simp only [main]
     rw [show nSetup M.mm ++ primesSetup ++ checks ++ primes M.mm ++ outN =
       (nSetup M.mm ++ primesSetup ++ checks) ++ (primes M.mm ++ outN) by simp only [List.append_assoc]]
-    refine wp_seqs_append (by simp [nSetup]) (by simp [primes]) (WP.mono (front_ok M hcp hv checks_okG trivial)
+    refine wp_seqs_append (by simp [nSetup, nHead]) (by simp [primes]) (WP.mono (frontZ_ok M hcp hv hC checks_okG trivial)
       fun t₅ ⟨minv, mp, mq, hr⟩ => ?_)
     rw [hC, hQI, keyMask_zero hN1] at hr
     have hpl := c.hpl2
