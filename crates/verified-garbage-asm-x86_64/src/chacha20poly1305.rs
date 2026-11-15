@@ -2908,75 +2908,6 @@ mov rax, QWORD PTR [rsp+16]
 mov QWORD PTR [rsp], rax
 call {vg_chacha20_poly1305_seal_body_ssse3}
 lea rsp, [rsp+8]
-pxor xmm0, xmm0
-pxor xmm1, xmm1
-pxor xmm2, xmm2
-pxor xmm3, xmm3
-pxor xmm4, xmm4
-pxor xmm5, xmm5
-pxor xmm6, xmm6
-pxor xmm7, xmm7
-pxor xmm8, xmm8
-pxor xmm9, xmm9
-pxor xmm10, xmm10
-pxor xmm11, xmm11
-pxor xmm12, xmm12
-pxor xmm13, xmm13
-pxor xmm14, xmm14
-pxor xmm15, xmm15
-xor r11d, r11d
-lea rsp, [rsp-792]
-movdqu XMMWORD PTR [rsp+0], xmm0
-movdqu XMMWORD PTR [rsp+16], xmm0
-movdqu XMMWORD PTR [rsp+32], xmm0
-movdqu XMMWORD PTR [rsp+48], xmm0
-movdqu XMMWORD PTR [rsp+64], xmm0
-movdqu XMMWORD PTR [rsp+80], xmm0
-movdqu XMMWORD PTR [rsp+96], xmm0
-movdqu XMMWORD PTR [rsp+112], xmm0
-movdqu XMMWORD PTR [rsp+128], xmm0
-movdqu XMMWORD PTR [rsp+144], xmm0
-movdqu XMMWORD PTR [rsp+160], xmm0
-movdqu XMMWORD PTR [rsp+176], xmm0
-movdqu XMMWORD PTR [rsp+192], xmm0
-movdqu XMMWORD PTR [rsp+208], xmm0
-movdqu XMMWORD PTR [rsp+224], xmm0
-movdqu XMMWORD PTR [rsp+240], xmm0
-movdqu XMMWORD PTR [rsp+256], xmm0
-movdqu XMMWORD PTR [rsp+272], xmm0
-movdqu XMMWORD PTR [rsp+288], xmm0
-movdqu XMMWORD PTR [rsp+304], xmm0
-movdqu XMMWORD PTR [rsp+320], xmm0
-movdqu XMMWORD PTR [rsp+336], xmm0
-movdqu XMMWORD PTR [rsp+352], xmm0
-movdqu XMMWORD PTR [rsp+368], xmm0
-movdqu XMMWORD PTR [rsp+384], xmm0
-movdqu XMMWORD PTR [rsp+400], xmm0
-movdqu XMMWORD PTR [rsp+416], xmm0
-movdqu XMMWORD PTR [rsp+432], xmm0
-movdqu XMMWORD PTR [rsp+448], xmm0
-movdqu XMMWORD PTR [rsp+464], xmm0
-movdqu XMMWORD PTR [rsp+480], xmm0
-movdqu XMMWORD PTR [rsp+496], xmm0
-movdqu XMMWORD PTR [rsp+512], xmm0
-movdqu XMMWORD PTR [rsp+528], xmm0
-movdqu XMMWORD PTR [rsp+544], xmm0
-movdqu XMMWORD PTR [rsp+560], xmm0
-movdqu XMMWORD PTR [rsp+576], xmm0
-movdqu XMMWORD PTR [rsp+592], xmm0
-movdqu XMMWORD PTR [rsp+608], xmm0
-movdqu XMMWORD PTR [rsp+624], xmm0
-movdqu XMMWORD PTR [rsp+640], xmm0
-movdqu XMMWORD PTR [rsp+656], xmm0
-movdqu XMMWORD PTR [rsp+672], xmm0
-movdqu XMMWORD PTR [rsp+688], xmm0
-movdqu XMMWORD PTR [rsp+704], xmm0
-movdqu XMMWORD PTR [rsp+720], xmm0
-movdqu XMMWORD PTR [rsp+736], xmm0
-movdqu XMMWORD PTR [rsp+752], xmm0
-movdqu XMMWORD PTR [rsp+768], xmm0
-mov QWORD PTR [rsp+784], r11
-lea rsp, [rsp+792]
 xor eax, eax
 xor ecx, ecx
 xor edx, edx
@@ -3012,8 +2943,8 @@ pub const VG_CHACHA20_POLY1305_OPEN_SSSE3_FEATURES: verified_garbage_cpu::Featur
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#"lea rsp, [rsp-760]
-mov rax, QWORD PTR [rsp+768]
+        r#"lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
 add rax, 24
@@ -3028,7 +2959,6 @@ call {vg_chacha20_poly1305_open_body_ssse3}
 pop r10
 pop r10
 pop r10
-lea rsp, [rsp+760]
 pxor xmm0, xmm0
 pxor xmm1, xmm1
 pxor xmm2, xmm2
@@ -3045,60 +2975,49 @@ pxor xmm12, xmm12
 pxor xmm13, xmm13
 pxor xmm14, xmm14
 pxor xmm15, xmm15
-xor r11d, r11d
-lea rsp, [rsp-808]
-movdqu XMMWORD PTR [rsp+0], xmm0
-movdqu XMMWORD PTR [rsp+16], xmm0
-movdqu XMMWORD PTR [rsp+32], xmm0
-movdqu XMMWORD PTR [rsp+48], xmm0
-movdqu XMMWORD PTR [rsp+64], xmm0
-movdqu XMMWORD PTR [rsp+80], xmm0
-movdqu XMMWORD PTR [rsp+96], xmm0
-movdqu XMMWORD PTR [rsp+112], xmm0
-movdqu XMMWORD PTR [rsp+128], xmm0
-movdqu XMMWORD PTR [rsp+144], xmm0
-movdqu XMMWORD PTR [rsp+160], xmm0
-movdqu XMMWORD PTR [rsp+176], xmm0
-movdqu XMMWORD PTR [rsp+192], xmm0
-movdqu XMMWORD PTR [rsp+208], xmm0
-movdqu XMMWORD PTR [rsp+224], xmm0
-movdqu XMMWORD PTR [rsp+240], xmm0
-movdqu XMMWORD PTR [rsp+256], xmm0
-movdqu XMMWORD PTR [rsp+272], xmm0
-movdqu XMMWORD PTR [rsp+288], xmm0
-movdqu XMMWORD PTR [rsp+304], xmm0
-movdqu XMMWORD PTR [rsp+320], xmm0
-movdqu XMMWORD PTR [rsp+336], xmm0
-movdqu XMMWORD PTR [rsp+352], xmm0
-movdqu XMMWORD PTR [rsp+368], xmm0
-movdqu XMMWORD PTR [rsp+384], xmm0
-movdqu XMMWORD PTR [rsp+400], xmm0
-movdqu XMMWORD PTR [rsp+416], xmm0
-movdqu XMMWORD PTR [rsp+432], xmm0
-movdqu XMMWORD PTR [rsp+448], xmm0
-movdqu XMMWORD PTR [rsp+464], xmm0
-movdqu XMMWORD PTR [rsp+480], xmm0
-movdqu XMMWORD PTR [rsp+496], xmm0
-movdqu XMMWORD PTR [rsp+512], xmm0
-movdqu XMMWORD PTR [rsp+528], xmm0
-movdqu XMMWORD PTR [rsp+544], xmm0
-movdqu XMMWORD PTR [rsp+560], xmm0
-movdqu XMMWORD PTR [rsp+576], xmm0
-movdqu XMMWORD PTR [rsp+592], xmm0
-movdqu XMMWORD PTR [rsp+608], xmm0
-movdqu XMMWORD PTR [rsp+624], xmm0
-movdqu XMMWORD PTR [rsp+640], xmm0
-movdqu XMMWORD PTR [rsp+656], xmm0
-movdqu XMMWORD PTR [rsp+672], xmm0
-movdqu XMMWORD PTR [rsp+688], xmm0
-movdqu XMMWORD PTR [rsp+704], xmm0
-movdqu XMMWORD PTR [rsp+720], xmm0
-movdqu XMMWORD PTR [rsp+736], xmm0
-movdqu XMMWORD PTR [rsp+752], xmm0
-movdqu XMMWORD PTR [rsp+768], xmm0
-movdqu XMMWORD PTR [rsp+784], xmm0
-mov QWORD PTR [rsp+800], r11
-lea rsp, [rsp+808]
+movdqu XMMWORD PTR [rsp+24], xmm0
+movdqu XMMWORD PTR [rsp+40], xmm0
+movdqu XMMWORD PTR [rsp+56], xmm0
+movdqu XMMWORD PTR [rsp+72], xmm0
+movdqu XMMWORD PTR [rsp+88], xmm0
+movdqu XMMWORD PTR [rsp+104], xmm0
+movdqu XMMWORD PTR [rsp+120], xmm0
+movdqu XMMWORD PTR [rsp+136], xmm0
+movdqu XMMWORD PTR [rsp+152], xmm0
+movdqu XMMWORD PTR [rsp+168], xmm0
+movdqu XMMWORD PTR [rsp+184], xmm0
+movdqu XMMWORD PTR [rsp+200], xmm0
+movdqu XMMWORD PTR [rsp+216], xmm0
+movdqu XMMWORD PTR [rsp+232], xmm0
+movdqu XMMWORD PTR [rsp+248], xmm0
+movdqu XMMWORD PTR [rsp+264], xmm0
+movdqu XMMWORD PTR [rsp+280], xmm0
+movdqu XMMWORD PTR [rsp+296], xmm0
+movdqu XMMWORD PTR [rsp+312], xmm0
+movdqu XMMWORD PTR [rsp+328], xmm0
+movdqu XMMWORD PTR [rsp+344], xmm0
+movdqu XMMWORD PTR [rsp+360], xmm0
+movdqu XMMWORD PTR [rsp+376], xmm0
+movdqu XMMWORD PTR [rsp+392], xmm0
+movdqu XMMWORD PTR [rsp+408], xmm0
+movdqu XMMWORD PTR [rsp+424], xmm0
+movdqu XMMWORD PTR [rsp+440], xmm0
+movdqu XMMWORD PTR [rsp+456], xmm0
+movdqu XMMWORD PTR [rsp+472], xmm0
+movdqu XMMWORD PTR [rsp+488], xmm0
+movdqu XMMWORD PTR [rsp+504], xmm0
+movdqu XMMWORD PTR [rsp+520], xmm0
+movdqu XMMWORD PTR [rsp+536], xmm0
+movdqu XMMWORD PTR [rsp+552], xmm0
+movdqu XMMWORD PTR [rsp+568], xmm0
+movdqu XMMWORD PTR [rsp+584], xmm0
+movdqu XMMWORD PTR [rsp+600], xmm0
+movdqu XMMWORD PTR [rsp+616], xmm0
+movdqu XMMWORD PTR [rsp+632], xmm0
+movdqu XMMWORD PTR [rsp+648], xmm0
+movdqu XMMWORD PTR [rsp+664], xmm0
+movdqu XMMWORD PTR [rsp+680], xmm0
+lea rsp, [rsp+1728]
 xor ecx, ecx
 xor edx, edx
 xor esi, esi
@@ -3136,12 +3055,12 @@ pub const VG_CHACHA20_POLY1305_OPEN_TO_SSSE3_FEATURES: verified_garbage_cpu::Fea
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to_ssse3(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#"lea rsp, [rsp-776]
-mov rax, QWORD PTR [rsp+784]
+        r#"lea rsp, [rsp-1744]
+mov rax, QWORD PTR [rsp+1752]
 mov QWORD PTR [rsp+8], rax
-mov rax, QWORD PTR [rsp+792]
+mov rax, QWORD PTR [rsp+1760]
 mov QWORD PTR [rsp+16], rax
-mov rax, QWORD PTR [rsp+800]
+mov rax, QWORD PTR [rsp+1768]
 mov QWORD PTR [rsp+24], rax
 mov rax, rsp
 add rax, 40
@@ -3157,7 +3076,6 @@ call {vg_chacha20_poly1305_open_body_ssse3}
 pop r10
 pop r10
 pop r10
-lea rsp, [rsp+776]
 pxor xmm0, xmm0
 pxor xmm1, xmm1
 pxor xmm2, xmm2
@@ -3174,61 +3092,49 @@ pxor xmm12, xmm12
 pxor xmm13, xmm13
 pxor xmm14, xmm14
 pxor xmm15, xmm15
-xor r11d, r11d
-lea rsp, [rsp-824]
-movdqu XMMWORD PTR [rsp+0], xmm0
-movdqu XMMWORD PTR [rsp+16], xmm0
-movdqu XMMWORD PTR [rsp+32], xmm0
-movdqu XMMWORD PTR [rsp+48], xmm0
-movdqu XMMWORD PTR [rsp+64], xmm0
-movdqu XMMWORD PTR [rsp+80], xmm0
-movdqu XMMWORD PTR [rsp+96], xmm0
-movdqu XMMWORD PTR [rsp+112], xmm0
-movdqu XMMWORD PTR [rsp+128], xmm0
-movdqu XMMWORD PTR [rsp+144], xmm0
-movdqu XMMWORD PTR [rsp+160], xmm0
-movdqu XMMWORD PTR [rsp+176], xmm0
-movdqu XMMWORD PTR [rsp+192], xmm0
-movdqu XMMWORD PTR [rsp+208], xmm0
-movdqu XMMWORD PTR [rsp+224], xmm0
-movdqu XMMWORD PTR [rsp+240], xmm0
-movdqu XMMWORD PTR [rsp+256], xmm0
-movdqu XMMWORD PTR [rsp+272], xmm0
-movdqu XMMWORD PTR [rsp+288], xmm0
-movdqu XMMWORD PTR [rsp+304], xmm0
-movdqu XMMWORD PTR [rsp+320], xmm0
-movdqu XMMWORD PTR [rsp+336], xmm0
-movdqu XMMWORD PTR [rsp+352], xmm0
-movdqu XMMWORD PTR [rsp+368], xmm0
-movdqu XMMWORD PTR [rsp+384], xmm0
-movdqu XMMWORD PTR [rsp+400], xmm0
-movdqu XMMWORD PTR [rsp+416], xmm0
-movdqu XMMWORD PTR [rsp+432], xmm0
-movdqu XMMWORD PTR [rsp+448], xmm0
-movdqu XMMWORD PTR [rsp+464], xmm0
-movdqu XMMWORD PTR [rsp+480], xmm0
-movdqu XMMWORD PTR [rsp+496], xmm0
-movdqu XMMWORD PTR [rsp+512], xmm0
-movdqu XMMWORD PTR [rsp+528], xmm0
-movdqu XMMWORD PTR [rsp+544], xmm0
-movdqu XMMWORD PTR [rsp+560], xmm0
-movdqu XMMWORD PTR [rsp+576], xmm0
-movdqu XMMWORD PTR [rsp+592], xmm0
-movdqu XMMWORD PTR [rsp+608], xmm0
-movdqu XMMWORD PTR [rsp+624], xmm0
-movdqu XMMWORD PTR [rsp+640], xmm0
-movdqu XMMWORD PTR [rsp+656], xmm0
-movdqu XMMWORD PTR [rsp+672], xmm0
-movdqu XMMWORD PTR [rsp+688], xmm0
-movdqu XMMWORD PTR [rsp+704], xmm0
-movdqu XMMWORD PTR [rsp+720], xmm0
-movdqu XMMWORD PTR [rsp+736], xmm0
-movdqu XMMWORD PTR [rsp+752], xmm0
-movdqu XMMWORD PTR [rsp+768], xmm0
-movdqu XMMWORD PTR [rsp+784], xmm0
-movdqu XMMWORD PTR [rsp+800], xmm0
-mov QWORD PTR [rsp+816], r11
-lea rsp, [rsp+824]
+movdqu XMMWORD PTR [rsp+40], xmm0
+movdqu XMMWORD PTR [rsp+56], xmm0
+movdqu XMMWORD PTR [rsp+72], xmm0
+movdqu XMMWORD PTR [rsp+88], xmm0
+movdqu XMMWORD PTR [rsp+104], xmm0
+movdqu XMMWORD PTR [rsp+120], xmm0
+movdqu XMMWORD PTR [rsp+136], xmm0
+movdqu XMMWORD PTR [rsp+152], xmm0
+movdqu XMMWORD PTR [rsp+168], xmm0
+movdqu XMMWORD PTR [rsp+184], xmm0
+movdqu XMMWORD PTR [rsp+200], xmm0
+movdqu XMMWORD PTR [rsp+216], xmm0
+movdqu XMMWORD PTR [rsp+232], xmm0
+movdqu XMMWORD PTR [rsp+248], xmm0
+movdqu XMMWORD PTR [rsp+264], xmm0
+movdqu XMMWORD PTR [rsp+280], xmm0
+movdqu XMMWORD PTR [rsp+296], xmm0
+movdqu XMMWORD PTR [rsp+312], xmm0
+movdqu XMMWORD PTR [rsp+328], xmm0
+movdqu XMMWORD PTR [rsp+344], xmm0
+movdqu XMMWORD PTR [rsp+360], xmm0
+movdqu XMMWORD PTR [rsp+376], xmm0
+movdqu XMMWORD PTR [rsp+392], xmm0
+movdqu XMMWORD PTR [rsp+408], xmm0
+movdqu XMMWORD PTR [rsp+424], xmm0
+movdqu XMMWORD PTR [rsp+440], xmm0
+movdqu XMMWORD PTR [rsp+456], xmm0
+movdqu XMMWORD PTR [rsp+472], xmm0
+movdqu XMMWORD PTR [rsp+488], xmm0
+movdqu XMMWORD PTR [rsp+504], xmm0
+movdqu XMMWORD PTR [rsp+520], xmm0
+movdqu XMMWORD PTR [rsp+536], xmm0
+movdqu XMMWORD PTR [rsp+552], xmm0
+movdqu XMMWORD PTR [rsp+568], xmm0
+movdqu XMMWORD PTR [rsp+584], xmm0
+movdqu XMMWORD PTR [rsp+600], xmm0
+movdqu XMMWORD PTR [rsp+616], xmm0
+movdqu XMMWORD PTR [rsp+632], xmm0
+movdqu XMMWORD PTR [rsp+648], xmm0
+movdqu XMMWORD PTR [rsp+664], xmm0
+movdqu XMMWORD PTR [rsp+680], xmm0
+movdqu XMMWORD PTR [rsp+696], xmm0
+lea rsp, [rsp+1744]
 xor ecx, ecx
 xor edx, edx
 xor esi, esi
@@ -3406,75 +3312,6 @@ mov rax, QWORD PTR [rsp+16]
 mov QWORD PTR [rsp], rax
 call {vg_chacha20_poly1305_seal_body}
 lea rsp, [rsp+8]
-pxor xmm0, xmm0
-pxor xmm1, xmm1
-pxor xmm2, xmm2
-pxor xmm3, xmm3
-pxor xmm4, xmm4
-pxor xmm5, xmm5
-pxor xmm6, xmm6
-pxor xmm7, xmm7
-pxor xmm8, xmm8
-pxor xmm9, xmm9
-pxor xmm10, xmm10
-pxor xmm11, xmm11
-pxor xmm12, xmm12
-pxor xmm13, xmm13
-pxor xmm14, xmm14
-pxor xmm15, xmm15
-xor r11d, r11d
-lea rsp, [rsp-792]
-movdqu XMMWORD PTR [rsp+0], xmm0
-movdqu XMMWORD PTR [rsp+16], xmm0
-movdqu XMMWORD PTR [rsp+32], xmm0
-movdqu XMMWORD PTR [rsp+48], xmm0
-movdqu XMMWORD PTR [rsp+64], xmm0
-movdqu XMMWORD PTR [rsp+80], xmm0
-movdqu XMMWORD PTR [rsp+96], xmm0
-movdqu XMMWORD PTR [rsp+112], xmm0
-movdqu XMMWORD PTR [rsp+128], xmm0
-movdqu XMMWORD PTR [rsp+144], xmm0
-movdqu XMMWORD PTR [rsp+160], xmm0
-movdqu XMMWORD PTR [rsp+176], xmm0
-movdqu XMMWORD PTR [rsp+192], xmm0
-movdqu XMMWORD PTR [rsp+208], xmm0
-movdqu XMMWORD PTR [rsp+224], xmm0
-movdqu XMMWORD PTR [rsp+240], xmm0
-movdqu XMMWORD PTR [rsp+256], xmm0
-movdqu XMMWORD PTR [rsp+272], xmm0
-movdqu XMMWORD PTR [rsp+288], xmm0
-movdqu XMMWORD PTR [rsp+304], xmm0
-movdqu XMMWORD PTR [rsp+320], xmm0
-movdqu XMMWORD PTR [rsp+336], xmm0
-movdqu XMMWORD PTR [rsp+352], xmm0
-movdqu XMMWORD PTR [rsp+368], xmm0
-movdqu XMMWORD PTR [rsp+384], xmm0
-movdqu XMMWORD PTR [rsp+400], xmm0
-movdqu XMMWORD PTR [rsp+416], xmm0
-movdqu XMMWORD PTR [rsp+432], xmm0
-movdqu XMMWORD PTR [rsp+448], xmm0
-movdqu XMMWORD PTR [rsp+464], xmm0
-movdqu XMMWORD PTR [rsp+480], xmm0
-movdqu XMMWORD PTR [rsp+496], xmm0
-movdqu XMMWORD PTR [rsp+512], xmm0
-movdqu XMMWORD PTR [rsp+528], xmm0
-movdqu XMMWORD PTR [rsp+544], xmm0
-movdqu XMMWORD PTR [rsp+560], xmm0
-movdqu XMMWORD PTR [rsp+576], xmm0
-movdqu XMMWORD PTR [rsp+592], xmm0
-movdqu XMMWORD PTR [rsp+608], xmm0
-movdqu XMMWORD PTR [rsp+624], xmm0
-movdqu XMMWORD PTR [rsp+640], xmm0
-movdqu XMMWORD PTR [rsp+656], xmm0
-movdqu XMMWORD PTR [rsp+672], xmm0
-movdqu XMMWORD PTR [rsp+688], xmm0
-movdqu XMMWORD PTR [rsp+704], xmm0
-movdqu XMMWORD PTR [rsp+720], xmm0
-movdqu XMMWORD PTR [rsp+736], xmm0
-movdqu XMMWORD PTR [rsp+752], xmm0
-movdqu XMMWORD PTR [rsp+768], xmm0
-mov QWORD PTR [rsp+784], r11
-lea rsp, [rsp+792]
 xor eax, eax
 xor ecx, ecx
 xor edx, edx
@@ -3506,8 +3343,8 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#"lea rsp, [rsp-760]
-mov rax, QWORD PTR [rsp+768]
+        r#"lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
 add rax, 24
@@ -3522,7 +3359,6 @@ call {vg_chacha20_poly1305_open_body}
 pop r10
 pop r10
 pop r10
-lea rsp, [rsp+760]
 pxor xmm0, xmm0
 pxor xmm1, xmm1
 pxor xmm2, xmm2
@@ -3539,60 +3375,49 @@ pxor xmm12, xmm12
 pxor xmm13, xmm13
 pxor xmm14, xmm14
 pxor xmm15, xmm15
-xor r11d, r11d
-lea rsp, [rsp-808]
-movdqu XMMWORD PTR [rsp+0], xmm0
-movdqu XMMWORD PTR [rsp+16], xmm0
-movdqu XMMWORD PTR [rsp+32], xmm0
-movdqu XMMWORD PTR [rsp+48], xmm0
-movdqu XMMWORD PTR [rsp+64], xmm0
-movdqu XMMWORD PTR [rsp+80], xmm0
-movdqu XMMWORD PTR [rsp+96], xmm0
-movdqu XMMWORD PTR [rsp+112], xmm0
-movdqu XMMWORD PTR [rsp+128], xmm0
-movdqu XMMWORD PTR [rsp+144], xmm0
-movdqu XMMWORD PTR [rsp+160], xmm0
-movdqu XMMWORD PTR [rsp+176], xmm0
-movdqu XMMWORD PTR [rsp+192], xmm0
-movdqu XMMWORD PTR [rsp+208], xmm0
-movdqu XMMWORD PTR [rsp+224], xmm0
-movdqu XMMWORD PTR [rsp+240], xmm0
-movdqu XMMWORD PTR [rsp+256], xmm0
-movdqu XMMWORD PTR [rsp+272], xmm0
-movdqu XMMWORD PTR [rsp+288], xmm0
-movdqu XMMWORD PTR [rsp+304], xmm0
-movdqu XMMWORD PTR [rsp+320], xmm0
-movdqu XMMWORD PTR [rsp+336], xmm0
-movdqu XMMWORD PTR [rsp+352], xmm0
-movdqu XMMWORD PTR [rsp+368], xmm0
-movdqu XMMWORD PTR [rsp+384], xmm0
-movdqu XMMWORD PTR [rsp+400], xmm0
-movdqu XMMWORD PTR [rsp+416], xmm0
-movdqu XMMWORD PTR [rsp+432], xmm0
-movdqu XMMWORD PTR [rsp+448], xmm0
-movdqu XMMWORD PTR [rsp+464], xmm0
-movdqu XMMWORD PTR [rsp+480], xmm0
-movdqu XMMWORD PTR [rsp+496], xmm0
-movdqu XMMWORD PTR [rsp+512], xmm0
-movdqu XMMWORD PTR [rsp+528], xmm0
-movdqu XMMWORD PTR [rsp+544], xmm0
-movdqu XMMWORD PTR [rsp+560], xmm0
-movdqu XMMWORD PTR [rsp+576], xmm0
-movdqu XMMWORD PTR [rsp+592], xmm0
-movdqu XMMWORD PTR [rsp+608], xmm0
-movdqu XMMWORD PTR [rsp+624], xmm0
-movdqu XMMWORD PTR [rsp+640], xmm0
-movdqu XMMWORD PTR [rsp+656], xmm0
-movdqu XMMWORD PTR [rsp+672], xmm0
-movdqu XMMWORD PTR [rsp+688], xmm0
-movdqu XMMWORD PTR [rsp+704], xmm0
-movdqu XMMWORD PTR [rsp+720], xmm0
-movdqu XMMWORD PTR [rsp+736], xmm0
-movdqu XMMWORD PTR [rsp+752], xmm0
-movdqu XMMWORD PTR [rsp+768], xmm0
-movdqu XMMWORD PTR [rsp+784], xmm0
-mov QWORD PTR [rsp+800], r11
-lea rsp, [rsp+808]
+movdqu XMMWORD PTR [rsp+24], xmm0
+movdqu XMMWORD PTR [rsp+40], xmm0
+movdqu XMMWORD PTR [rsp+56], xmm0
+movdqu XMMWORD PTR [rsp+72], xmm0
+movdqu XMMWORD PTR [rsp+88], xmm0
+movdqu XMMWORD PTR [rsp+104], xmm0
+movdqu XMMWORD PTR [rsp+120], xmm0
+movdqu XMMWORD PTR [rsp+136], xmm0
+movdqu XMMWORD PTR [rsp+152], xmm0
+movdqu XMMWORD PTR [rsp+168], xmm0
+movdqu XMMWORD PTR [rsp+184], xmm0
+movdqu XMMWORD PTR [rsp+200], xmm0
+movdqu XMMWORD PTR [rsp+216], xmm0
+movdqu XMMWORD PTR [rsp+232], xmm0
+movdqu XMMWORD PTR [rsp+248], xmm0
+movdqu XMMWORD PTR [rsp+264], xmm0
+movdqu XMMWORD PTR [rsp+280], xmm0
+movdqu XMMWORD PTR [rsp+296], xmm0
+movdqu XMMWORD PTR [rsp+312], xmm0
+movdqu XMMWORD PTR [rsp+328], xmm0
+movdqu XMMWORD PTR [rsp+344], xmm0
+movdqu XMMWORD PTR [rsp+360], xmm0
+movdqu XMMWORD PTR [rsp+376], xmm0
+movdqu XMMWORD PTR [rsp+392], xmm0
+movdqu XMMWORD PTR [rsp+408], xmm0
+movdqu XMMWORD PTR [rsp+424], xmm0
+movdqu XMMWORD PTR [rsp+440], xmm0
+movdqu XMMWORD PTR [rsp+456], xmm0
+movdqu XMMWORD PTR [rsp+472], xmm0
+movdqu XMMWORD PTR [rsp+488], xmm0
+movdqu XMMWORD PTR [rsp+504], xmm0
+movdqu XMMWORD PTR [rsp+520], xmm0
+movdqu XMMWORD PTR [rsp+536], xmm0
+movdqu XMMWORD PTR [rsp+552], xmm0
+movdqu XMMWORD PTR [rsp+568], xmm0
+movdqu XMMWORD PTR [rsp+584], xmm0
+movdqu XMMWORD PTR [rsp+600], xmm0
+movdqu XMMWORD PTR [rsp+616], xmm0
+movdqu XMMWORD PTR [rsp+632], xmm0
+movdqu XMMWORD PTR [rsp+648], xmm0
+movdqu XMMWORD PTR [rsp+664], xmm0
+movdqu XMMWORD PTR [rsp+680], xmm0
+lea rsp, [rsp+1728]
 xor ecx, ecx
 xor edx, edx
 xor esi, esi
@@ -3626,12 +3451,12 @@ ret
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_open_to(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#"lea rsp, [rsp-776]
-mov rax, QWORD PTR [rsp+784]
+        r#"lea rsp, [rsp-1744]
+mov rax, QWORD PTR [rsp+1752]
 mov QWORD PTR [rsp+8], rax
-mov rax, QWORD PTR [rsp+792]
+mov rax, QWORD PTR [rsp+1760]
 mov QWORD PTR [rsp+16], rax
-mov rax, QWORD PTR [rsp+800]
+mov rax, QWORD PTR [rsp+1768]
 mov QWORD PTR [rsp+24], rax
 mov rax, rsp
 add rax, 40
@@ -3647,7 +3472,6 @@ call {vg_chacha20_poly1305_open_body}
 pop r10
 pop r10
 pop r10
-lea rsp, [rsp+776]
 pxor xmm0, xmm0
 pxor xmm1, xmm1
 pxor xmm2, xmm2
@@ -3664,61 +3488,49 @@ pxor xmm12, xmm12
 pxor xmm13, xmm13
 pxor xmm14, xmm14
 pxor xmm15, xmm15
-xor r11d, r11d
-lea rsp, [rsp-824]
-movdqu XMMWORD PTR [rsp+0], xmm0
-movdqu XMMWORD PTR [rsp+16], xmm0
-movdqu XMMWORD PTR [rsp+32], xmm0
-movdqu XMMWORD PTR [rsp+48], xmm0
-movdqu XMMWORD PTR [rsp+64], xmm0
-movdqu XMMWORD PTR [rsp+80], xmm0
-movdqu XMMWORD PTR [rsp+96], xmm0
-movdqu XMMWORD PTR [rsp+112], xmm0
-movdqu XMMWORD PTR [rsp+128], xmm0
-movdqu XMMWORD PTR [rsp+144], xmm0
-movdqu XMMWORD PTR [rsp+160], xmm0
-movdqu XMMWORD PTR [rsp+176], xmm0
-movdqu XMMWORD PTR [rsp+192], xmm0
-movdqu XMMWORD PTR [rsp+208], xmm0
-movdqu XMMWORD PTR [rsp+224], xmm0
-movdqu XMMWORD PTR [rsp+240], xmm0
-movdqu XMMWORD PTR [rsp+256], xmm0
-movdqu XMMWORD PTR [rsp+272], xmm0
-movdqu XMMWORD PTR [rsp+288], xmm0
-movdqu XMMWORD PTR [rsp+304], xmm0
-movdqu XMMWORD PTR [rsp+320], xmm0
-movdqu XMMWORD PTR [rsp+336], xmm0
-movdqu XMMWORD PTR [rsp+352], xmm0
-movdqu XMMWORD PTR [rsp+368], xmm0
-movdqu XMMWORD PTR [rsp+384], xmm0
-movdqu XMMWORD PTR [rsp+400], xmm0
-movdqu XMMWORD PTR [rsp+416], xmm0
-movdqu XMMWORD PTR [rsp+432], xmm0
-movdqu XMMWORD PTR [rsp+448], xmm0
-movdqu XMMWORD PTR [rsp+464], xmm0
-movdqu XMMWORD PTR [rsp+480], xmm0
-movdqu XMMWORD PTR [rsp+496], xmm0
-movdqu XMMWORD PTR [rsp+512], xmm0
-movdqu XMMWORD PTR [rsp+528], xmm0
-movdqu XMMWORD PTR [rsp+544], xmm0
-movdqu XMMWORD PTR [rsp+560], xmm0
-movdqu XMMWORD PTR [rsp+576], xmm0
-movdqu XMMWORD PTR [rsp+592], xmm0
-movdqu XMMWORD PTR [rsp+608], xmm0
-movdqu XMMWORD PTR [rsp+624], xmm0
-movdqu XMMWORD PTR [rsp+640], xmm0
-movdqu XMMWORD PTR [rsp+656], xmm0
-movdqu XMMWORD PTR [rsp+672], xmm0
-movdqu XMMWORD PTR [rsp+688], xmm0
-movdqu XMMWORD PTR [rsp+704], xmm0
-movdqu XMMWORD PTR [rsp+720], xmm0
-movdqu XMMWORD PTR [rsp+736], xmm0
-movdqu XMMWORD PTR [rsp+752], xmm0
-movdqu XMMWORD PTR [rsp+768], xmm0
-movdqu XMMWORD PTR [rsp+784], xmm0
-movdqu XMMWORD PTR [rsp+800], xmm0
-mov QWORD PTR [rsp+816], r11
-lea rsp, [rsp+824]
+movdqu XMMWORD PTR [rsp+40], xmm0
+movdqu XMMWORD PTR [rsp+56], xmm0
+movdqu XMMWORD PTR [rsp+72], xmm0
+movdqu XMMWORD PTR [rsp+88], xmm0
+movdqu XMMWORD PTR [rsp+104], xmm0
+movdqu XMMWORD PTR [rsp+120], xmm0
+movdqu XMMWORD PTR [rsp+136], xmm0
+movdqu XMMWORD PTR [rsp+152], xmm0
+movdqu XMMWORD PTR [rsp+168], xmm0
+movdqu XMMWORD PTR [rsp+184], xmm0
+movdqu XMMWORD PTR [rsp+200], xmm0
+movdqu XMMWORD PTR [rsp+216], xmm0
+movdqu XMMWORD PTR [rsp+232], xmm0
+movdqu XMMWORD PTR [rsp+248], xmm0
+movdqu XMMWORD PTR [rsp+264], xmm0
+movdqu XMMWORD PTR [rsp+280], xmm0
+movdqu XMMWORD PTR [rsp+296], xmm0
+movdqu XMMWORD PTR [rsp+312], xmm0
+movdqu XMMWORD PTR [rsp+328], xmm0
+movdqu XMMWORD PTR [rsp+344], xmm0
+movdqu XMMWORD PTR [rsp+360], xmm0
+movdqu XMMWORD PTR [rsp+376], xmm0
+movdqu XMMWORD PTR [rsp+392], xmm0
+movdqu XMMWORD PTR [rsp+408], xmm0
+movdqu XMMWORD PTR [rsp+424], xmm0
+movdqu XMMWORD PTR [rsp+440], xmm0
+movdqu XMMWORD PTR [rsp+456], xmm0
+movdqu XMMWORD PTR [rsp+472], xmm0
+movdqu XMMWORD PTR [rsp+488], xmm0
+movdqu XMMWORD PTR [rsp+504], xmm0
+movdqu XMMWORD PTR [rsp+520], xmm0
+movdqu XMMWORD PTR [rsp+536], xmm0
+movdqu XMMWORD PTR [rsp+552], xmm0
+movdqu XMMWORD PTR [rsp+568], xmm0
+movdqu XMMWORD PTR [rsp+584], xmm0
+movdqu XMMWORD PTR [rsp+600], xmm0
+movdqu XMMWORD PTR [rsp+616], xmm0
+movdqu XMMWORD PTR [rsp+632], xmm0
+movdqu XMMWORD PTR [rsp+648], xmm0
+movdqu XMMWORD PTR [rsp+664], xmm0
+movdqu XMMWORD PTR [rsp+680], xmm0
+movdqu XMMWORD PTR [rsp+696], xmm0
+lea rsp, [rsp+1744]
 xor ecx, ecx
 xor edx, edx
 xor esi, esi

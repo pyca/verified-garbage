@@ -11,8 +11,8 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_chacha20_poly1305_seal_body_ssse3() {
     core::arch::naked_asm!(
-        r#"lea rsp, [rsp-760]
-mov rax, QWORD PTR [rsp+768]
+        r#"lea rsp, [rsp-1728]
+mov rax, QWORD PTR [rsp+1736]
 mov QWORD PTR [rsp+8], rax
 mov rax, rsp
 add rax, 24
@@ -330,7 +330,65 @@ mov r13, QWORD PTR [r15+16]
 mov r14, QWORD PTR [r15+24]
 mov r12, QWORD PTR [r15+40]
 mov r15, QWORD PTR [r15+32]
-lea rsp, [rsp+760]
+pxor xmm0, xmm0
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+pxor xmm3, xmm3
+pxor xmm4, xmm4
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+pxor xmm7, xmm7
+pxor xmm8, xmm8
+pxor xmm9, xmm9
+pxor xmm10, xmm10
+pxor xmm11, xmm11
+pxor xmm12, xmm12
+pxor xmm13, xmm13
+pxor xmm14, xmm14
+pxor xmm15, xmm15
+movdqu XMMWORD PTR [rsp+24], xmm0
+movdqu XMMWORD PTR [rsp+40], xmm0
+movdqu XMMWORD PTR [rsp+56], xmm0
+movdqu XMMWORD PTR [rsp+72], xmm0
+movdqu XMMWORD PTR [rsp+88], xmm0
+movdqu XMMWORD PTR [rsp+104], xmm0
+movdqu XMMWORD PTR [rsp+120], xmm0
+movdqu XMMWORD PTR [rsp+136], xmm0
+movdqu XMMWORD PTR [rsp+152], xmm0
+movdqu XMMWORD PTR [rsp+168], xmm0
+movdqu XMMWORD PTR [rsp+184], xmm0
+movdqu XMMWORD PTR [rsp+200], xmm0
+movdqu XMMWORD PTR [rsp+216], xmm0
+movdqu XMMWORD PTR [rsp+232], xmm0
+movdqu XMMWORD PTR [rsp+248], xmm0
+movdqu XMMWORD PTR [rsp+264], xmm0
+movdqu XMMWORD PTR [rsp+280], xmm0
+movdqu XMMWORD PTR [rsp+296], xmm0
+movdqu XMMWORD PTR [rsp+312], xmm0
+movdqu XMMWORD PTR [rsp+328], xmm0
+movdqu XMMWORD PTR [rsp+344], xmm0
+movdqu XMMWORD PTR [rsp+360], xmm0
+movdqu XMMWORD PTR [rsp+376], xmm0
+movdqu XMMWORD PTR [rsp+392], xmm0
+movdqu XMMWORD PTR [rsp+408], xmm0
+movdqu XMMWORD PTR [rsp+424], xmm0
+movdqu XMMWORD PTR [rsp+440], xmm0
+movdqu XMMWORD PTR [rsp+456], xmm0
+movdqu XMMWORD PTR [rsp+472], xmm0
+movdqu XMMWORD PTR [rsp+488], xmm0
+movdqu XMMWORD PTR [rsp+504], xmm0
+movdqu XMMWORD PTR [rsp+520], xmm0
+movdqu XMMWORD PTR [rsp+536], xmm0
+movdqu XMMWORD PTR [rsp+552], xmm0
+movdqu XMMWORD PTR [rsp+568], xmm0
+movdqu XMMWORD PTR [rsp+584], xmm0
+movdqu XMMWORD PTR [rsp+600], xmm0
+movdqu XMMWORD PTR [rsp+616], xmm0
+movdqu XMMWORD PTR [rsp+632], xmm0
+movdqu XMMWORD PTR [rsp+648], xmm0
+movdqu XMMWORD PTR [rsp+664], xmm0
+movdqu XMMWORD PTR [rsp+680], xmm0
+lea rsp, [rsp+1728]
 ret
 239:
 mov rsi, r13
