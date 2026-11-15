@@ -983,6 +983,77 @@ theorem blkBD_aesniPclmul_leaves : BlkLeavesD aesNiPclmulV.impl.blkB :=
     exact Blocks.decryptN_leaves (Blocks.BP.ofM hpre) _ (aesNiPclmulV.impl.ctr.free.get rfl) _
       (aesNiPclmulV.impl.gh.free.get rfl)
 
+/-! ### The VAES variant's decryption -/
+
+/-- `Stitch.dec` leaves `PieceL`: it clears the copy of the powers. -/
+theorem stitchD_pieceL {s₃ : State} (hp : Gcm.X86_64.Stitch.SPreM Gcm.X86_64.Stitch.CtxMode.base s₃)
+    (hm : Gcm.X86_64.Stitch.nb s₃ % 16 = 0) :
+    WP isa Impl.Gcm.X86_64.Stitch.dec s₃ fun s₄ =>
+      Gcm.X86_64.Stitch.DPost s₃ s₄ ∧ Gcm.X86_64.Stitch.PieceL 256 (fun _ _ => true) s₃ s₄ :=
+  Gcm.X86_64.Stitch.dec_okL hp.base hm
+
+/-- The key-context `vg_aes_gcm_decrypt_blocks_vaes_vpclmul` leaves in
+`scratch` the arguments kept, the 256 bytes of its loop's copy of the powers
+at `scratch + 64` cleared if it had at least 16 blocks, and nothing else
+written, as `blkB_vaes_leaves`. -/
+theorem blkBD_vaes_leaves : BlkLeavesD VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.blkB :=
+  blkLeavesD_of (fun n => n - n % 16) (fun n _ d => decide (16 ≤ n) && decide (64 ≤ d) && decide (d < 320))
+    fun s hpre => by
+      change WP isa (Impl.AesGcm.X86_64.Blocks.decrypt
+        ⟨VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.ctr.callee.name,
+          VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.ctr.callee.code⟩
+        VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.gh.fn (some Impl.Gcm.X86_64.Stitch.dec) false false)
+        s _
+      exact Blocks.decryptB_leaves (Blocks.BP.ofM hpre) _
+        (VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.ctr.free.get rfl) _
+        (VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.gh.free.get rfl) fun s₃ h₃ hm => stitchD_pieceL h₃ hm
+
+/-- `StitchR.decR` leaves `PieceL`: it clears the copy of the powers and the
+keystream it writes (`StitchR.zeroR`, as `encR`). -/
+theorem stitchRD_pieceL {s₃ : State} (hp : Gcm.X86_64.Stitch.SPreM Gcm.X86_64.Stitch.CtxMode.prepared16 s₃ 1) :
+    WP isa Impl.Gcm.X86_64.StitchR.decR s₃ fun s₄ =>
+      Gcm.X86_64.Stitch.DPost s₃ s₄ ∧ Gcm.X86_64.Stitch.PieceL 512 Gcm.X86_64.StitchR.zeroR s₃ s₄ :=
+  Gcm.X86_64.StitchR.decR_okL hp.toPrepared (by decide)
+
+/-- The prepared-16 `vg_aes_gcm_decrypt_blocks_prepared16_vaes_vpclmul`
+leaves in `scratch` what `blkR16_vaes_leaves` says its encryption does. -/
+theorem blkR16D_vaes_leaves : BlkLeavesD (blkR16 VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant) :=
+  blkLeavesD_of (fun _ => 0) (fun n S d => decide (2 ≤ n) && (decide (AlignedScratch.offset true S ≤ d) &&
+      decide (d < AlignedScratch.offset true S + 512) && Gcm.X86_64.StitchR.zeroR n (d - AlignedScratch.offset true S)))
+    fun s hpre => by
+      change WP isa (Impl.AesGcm.X86_64.Blocks.decrypt
+        ⟨VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.ctr.callee.name,
+          VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.ctr.callee.code⟩
+        VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.gh.fn (some Impl.Gcm.X86_64.StitchR.decR) true true
+        true false (some Impl.Gcm.X86_64.StitchR.decR)) s _
+      exact Blocks.decryptR_leaves (Blocks.BP.ofM hpre) _
+        (VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.ctr.free.get rfl) _
+        (VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.gh.free.get rfl) (ℓ := 512) (by decide)
+        fun s₃ h₃ => stitchRD_pieceL h₃
+
+open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
+theorem openCode_vaes : variant.impl.openCode variant.impl.callees = Impl.AesGcm.X86_64.«open» variant.impl.callees := by
+  have hs : variant.impl.short = false := rfl
+  unfold GcmImpl.openCode
+  simp only [hs, Bool.false_eq_true, ↓reduceIte]
+
+open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
+/-- The code of `vg_aes_gcm_open_prepared_vaes_vpclmul` for the key context
+of `vg_aes_gcm_init`: what it leaves in its return address, its stack
+arguments and `work`, byte by byte (`openV`), as
+`open_aesniPclmul_leaves`. -/
+theorem open_vaes_leaves :
+    ∃ Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
+        Option (BitVec 8),
+      ∀ s t s', (Proof.AesGcm.openX86_64M Gcm.X86_64.Stitch.CtxMode.base).pre s →
+        Exec isa (variant.impl.openCode variant.impl.callees) s t s' →
+        ∀ x, openQ (s.gpr .rsp) (stackArg s 4) x →
+          s'.mem x = (openV Lb (fun _ => none) s.gpr (fun i => stackArg s i) (s.gpr .rsp)
+            (stackArg s 4) x).getD (s.mem x) := by
+  rw [openCode_vaes]
+  exact open_leavesQ _ variant.impl.blkB blkBD_vaes_leaves (variant.impl.gh.free.get rfl)
+    (variant.impl.ctr.free.get rfl)
+
 theorem openCode_aesniPclmul :
     aesNiPclmulV.impl.openCode aesNiPclmulV.impl.callees = Impl.AesGcm.X86_64.«open» aesNiPclmulV.impl.callees := by
   have hs : aesNiPclmulV.impl.short = false := rfl
