@@ -1956,14 +1956,12 @@ theorem fastFn_eq {i : Instr} (h : isPlain i = true) (hsp : isa.writesSp i = fal
     | none => rfl
     | some t' => simp only [Bool.cond_eq_ite, Option.toList, List.nil_append, ubDrop_eq hc, Taint.forceT_eq, forceList_eq]
 
-theorem fastStore_eq {i : Instr} {m : MemOp} {w : Nat} {src : Option Reg}
-    (hsp : isa.writesSp i = false) (hs : ∀ τ, special τ i = none) (hp : ∀ τ t, argPost τ i (post τ i t) = t)
+/-- `fastStore`, of a base step `b` that is `baseStep`'s. -/
+theorem fastStore_run {i : Instr} {b : Taint.Step} {m : MemOp} {w : Nat} {src : Option Reg}
+    (hsp : isa.writesSp i = false) (hb : ∀ τ : FT, baseStep τ i = b.run τ.t)
     (hu : ∀ τ, ubNew τ i = none) (hf : flOf i = none) (hc : ∀ r, Taint.clobbers i r = false)
     (hm : ∀ τ, mbAfter τ i = mbStore τ m w src) (τ : FT) :
-    (fastStore (Taint.stepKDFn i) m w src).run τ = step τ i := by
-  have hb : baseStep τ i = (Taint.stepKDFn i).run τ.t := by
-    rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = id from funext (hp τ), Option.map_id]
-    exact taint_step _ _
+    (fastStore b m w src).run τ = step τ i := by
   have hk : ubKill τ.ub i = τ.ub := by
     simp only [ubKill, hc, Bool.not_false]; exact List.filter_eq_self.mpr fun _ _ => rfl
   unfold step
@@ -1972,9 +1970,18 @@ theorem fastStore_eq {i : Instr} {m : MemOp} {w : Nat} {src : Option Reg}
   cases ok
   · rfl
   · simp only [fastStore, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
-    cases (Taint.stepKDFn i).run t with
+    cases b.run t with
     | none => rfl
     | some t' => simp only [Bool.cond_eq_ite, Option.toList, List.nil_append, forceList_eq]
+
+theorem fastStore_eq {i : Instr} {m : MemOp} {w : Nat} {src : Option Reg}
+    (hsp : isa.writesSp i = false) (hs : ∀ τ, special τ i = none) (hp : ∀ τ t, argPost τ i (post τ i t) = t)
+    (hu : ∀ τ, ubNew τ i = none) (hf : flOf i = none) (hc : ∀ r, Taint.clobbers i r = false)
+    (hm : ∀ τ, mbAfter τ i = mbStore τ m w src) (τ : FT) :
+    (fastStore (Taint.stepKDFn i) m w src).run τ = step τ i :=
+  fastStore_run hsp (fun τ => by
+    rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = id from funext (hp τ), Option.map_id]
+    exact taint_step _ _) hu hf hc hm τ
 
 theorem mem3R_eq (i d w : Nat) : ∀ l : List (Nat × Nat × Nat), mem3R i d w l = Taint.mem3 (i, d, w) l
   | [] => rfl
@@ -2001,6 +2008,47 @@ theorem storeR_eq (m : MemOp) (w : Nat) (r : Reg) :
         simp only [Bool.cond_true, Bool.cond_false]
       · cases KList.all sl fun sl => !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 || Nat.ble (sl.2.1 + sl.2.2) d <;> rfl
       · cases Taint.mem3 (i, d, w) sl <;> rfl
+
+theorem storeSec_eq (m : MemOp) (w : Nat) :
+    storeSec m w = ⟨fun τ => Taint.storeStepKD τ m w false⟩ := by
+  unfold storeSec
+  congr 1; funext τ
+  obtain ⟨rg, f, l, b, sl, lo, x⟩ := τ
+  simp only [Taint.storeStepKD, Taint.storeSlotsKD, VG.Taint.filterKeep]
+  cases memPub ⟨rg, f, l, b, sl, lo, x⟩ m
+  · rfl
+  · rcases Taint.addrOfK ⟨rg, f, l, b, sl, lo, x⟩ m with _ | ⟨i, d⟩
+    · rfl
+    · have hk : slotKept i d w = fun sl => !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 || Nat.ble (sl.2.1 + sl.2.2) d :=
+        rfl
+      simp only [Bool.cond_true, hk]
+      cases Nat.ble (d + w) (l.getD i 0) <;> simp only [Bool.cond_true, Bool.cond_false]
+      cases KList.all sl fun sl => !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 || Nat.ble (sl.2.1 + sl.2.2) d <;> rfl
+
+/-- `storeX` is the base step of `movdqu [m], x` without an index register. -/
+theorem storeX_run {m : MemOp} {x : XReg} (hx : m.index = none) (τ : FT) :
+    baseStep τ (.movdquStore m x) = (storeX m x).run τ.t := by
+  have hsp : special τ (.movdquStore m x) =
+      if xpub τ.t x then Taint.storeStep τ.t m 16 true else none := by
+    simp only [special, hx, storeW]
+  have hstep : X86_64.taint.step τ.t (.movdquStore m x) = Taint.storeStepKD τ.t m 16 false := taint_step _ _
+  have hid : (fun t' => argPost τ (.movdquStore m x) (post τ (.movdquStore m x) t')) = id := rfl
+  rw [baseStep, hsp, hstep, hid, Option.map_id]
+  simp only [storeX]
+  generalize τ.t = t
+  obtain ⟨rg, f, l, b, sl, lo, xr⟩ := t
+  cases hxp : xpub ⟨rg, f, l, b, sl, lo, xr⟩ x
+  · simp only [Bool.false_eq_true, ↓reduceIte, Bool.cond_false, storeSec_eq, id_eq]
+  · cases hmp : memPub ⟨rg, f, l, b, sl, lo, xr⟩ m
+    · simp only [↓reduceIte, Bool.cond_true, Bool.cond_false, Taint.storeStep, hmp, Bool.false_eq_true,
+        Taint.storeStepKD, id_eq]
+    · simp only [↓reduceIte, Bool.cond_true, Taint.storeStep, hmp, Taint.storeSlots, ← Taint.addrOfK_eq]
+      rcases Taint.addrOfK ⟨rg, f, l, b, sl, lo, xr⟩ m with _ | ⟨i, d⟩
+      · rfl
+      · have hfl : List.filter (fun _ : Nat × Nat × Nat => true) sl = sl :=
+          List.filter_eq_self.mpr fun _ _ => rfl
+        simp only [Bool.true_or, hfl, KList.ble_eq, Bool.cond_eq_ite, decide_eq_true_eq]
+        split <;> rfl
 
 theorem fastU_eq {i : Instr} {u : List (Reg × Nat) → List (Reg × Nat)}
     (hsp : isa.writesSp i = false) (hs : ∀ τ, special τ i = none) (hp : ∀ τ t, argPost τ i (post τ i t) = t)
@@ -2193,6 +2241,44 @@ theorem stepFn_eq (i : Instr) (τ : FT) : (stepFn i).run τ = step τ i := by
             rfl
           | _ => rfl
         all_goals (cases src <;> rfl)
+      case xop op =>
+        cases op with
+        | bin bop x x' =>
+          cases bop
+          case pxor =>
+            have hk : ∀ τ : FT, ubKill τ.ub (.xop (.bin .pxor x x')) = τ.ub := fun τ => by
+              simp only [ubKill, Taint.clobbers, Taint.dstOf]
+              exact List.filter_eq_self.mpr fun _ _ => rfl
+            by_cases hxx : x = x'
+            · subst hxx
+              simp only [beq_self_eq_true, Bool.cond_true]
+              refine fastG_eq hsp (fun _ => rfl) (fun τ t => ?_) (fun t => ?_) rfl (fun _ => rfl)
+                (fun τ => (congrArg _ (hk τ)).trans (List.nil_append _)) τ
+              · obtain ⟨rg, f, l, b, sl, lo, xr⟩ := t
+                simp [post, argPost, insX]
+              · obtain ⟨rg, f, l, b, sl, lo, xr⟩ := t; rfl
+            · have hne : (x == x') = false := by simpa using hxx
+              simp only [hne, Bool.cond_false]
+              refine fastG_eq hsp (fun _ => rfl) (fun τ t => ?_) (fun _ => rfl) rfl (fun _ => rfl)
+                (fun τ => (congrArg _ (hk τ)).trans (List.nil_append _)) τ
+              simp [post, argPost, hne]
+          all_goals rfl
+        | _ => rfl
+      case movdquStore m x =>
+        cases hx : m.index
+        · simp only [hx, Option.isNone_none, Bool.cond_true]
+          refine fastStore_run hsp (storeX_run hx) (fun _ => rfl) rfl (fun _ => rfl) (fun τ => ?_) τ
+          unfold mbAfter mbStore; simp only [storeW]
+        · simp only [hx, Option.isNone_some, Bool.cond_false]
+      case vmovdquStore l m x =>
+        cases l <;>
+        · simp only [storeSec_eq]
+          refine fastStore_eq hsp (fun _ => rfl) (fun _ _ => rfl) (fun _ => rfl) rfl (fun _ => rfl) (fun τ => ?_) τ
+          unfold mbAfter mbStore; simp only [storeW]
+      case vmovdqu32Store m x | evStore m x | e5ExtractStore m x n | stmxcsr m =>
+        simp only [storeSec_eq]
+        refine fastStore_eq hsp (fun _ => rfl) (fun _ _ => rfl) (fun _ => rfl) rfl (fun _ => rfl) (fun τ => ?_) τ
+        unfold mbAfter mbStore; simp only [storeW]
       case cmov c d src =>
         have hk : ∀ τ : FT, ubKill τ.ub (.cmov c d src) = ubDrop (some d) τ.ub := fun τ =>
           (ubDrop_eq (i := .cmov c d src) (fun _ => rfl) τ.ub).symm
@@ -2241,6 +2327,7 @@ theorem stepFn1_eq (i : Instr) : stepFn1 i = stepFn i := by
     cases op with
     | bin op a b => cases op <;> rfl
     | _ => rfl
+  | vmovdquStore l m x => cases l <;> rfl
   | _ => rfl
 
 theorem stepFn1K_eq (i : Instr) : stepFn1K i = stepFn1 i := by
@@ -2252,6 +2339,7 @@ theorem stepFn1K_eq (i : Instr) : stepFn1K i = stepFn1 i := by
     cases op with
     | bin op a b => cases op <;> rfl
     | _ => rfl
+  | vmovdquStore l m x => cases l <;> rfl
   | _ => rfl
 
 theorem stepF_eq : stepF = step := by

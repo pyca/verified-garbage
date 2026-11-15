@@ -71,7 +71,19 @@ structure T where
   /-- SSE registers known to be public: written by `movq xmm, r64` from a
   public register. Any other write to the vector registers forgets them. -/
   xregs : RegSet XReg := .empty
-  deriving DecidableEq, Lean.ToExpr
+  deriving DecidableEq
+
+/-- A taint as a term, for the hints of a check: its sets of registers with
+numerals for their bits as the kernel's evaluation leaves them (`forceT`), so
+that a taint of a hint and the same taint as a step gives it are the same
+term, and the kernel finds again after a hint the steps it made before it. -/
+instance : Lean.ToExpr T where
+  toExpr t :=
+    let rs (R : Lean.Expr) (n : Nat) := Lean.mkApp2 (.const ``RegSet.mk []) R (Lean.mkRawNatLit n)
+    Lean.mkAppN (.const ``T.mk []) #[rs (Lean.toTypeExpr Reg) t.regs.bits, Lean.toExpr t.flags,
+      Lean.toExpr t.lens, Lean.toExpr t.bases, Lean.toExpr t.slots, rs (Lean.toTypeExpr Reg) t.lo.bits,
+      rs (Lean.toTypeExpr XReg) t.xregs.bits]
+  toTypeExpr := .const ``T []
 
 def pub (τ : T) (r : Reg) : Bool := τ.regs.mem r
 
@@ -2639,11 +2651,11 @@ def forceRegs {α R : Type} (s : RegSet R) (k : RegSet R → α) : α :=
 
 theorem forceRegs_eq {α R : Type} (s : RegSet R) (k : RegSet R → α) : forceRegs s k = k s := rfl
 
-/-- `k t`, with the registers, flags and vector registers of `t` evaluated. -/
+/-- `k t`, with the sets of registers and the flags of `t` evaluated. -/
 def forceT {α : Type} (t : T) (k : T → α) : α :=
   match t with
   | ⟨rg, f, l, b, sl, lo, x⟩ =>
-    forceRegs rg fun rg => forceRegs x fun x =>
+    forceRegs rg fun rg => forceRegs lo fun lo => forceRegs x fun x =>
       Bool.casesOn (motive := fun _ => α) f (k ⟨rg, false, l, b, sl, lo, x⟩) (k ⟨rg, true, l, b, sl, lo, x⟩)
 
 theorem forceT_eq {α : Type} (t : T) (k : T → α) : forceT t k = k t := by

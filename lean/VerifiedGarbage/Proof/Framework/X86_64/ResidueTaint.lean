@@ -607,6 +607,41 @@ def storeR (m : MemOp) (w : Nat) (r : Reg) : Taint.Step := ⟨fun τ =>
       | none => bif pub τ r then some τ else some ⟨rg, f, l, b, [], lo, x⟩
     else none⟩
 
+/-- The base step of a store of `w` bytes of a secret at `m` (`Taint.storeStepKD`
+of one, `storeSec_eq`), as `storeR`. -/
+def storeSec (m : MemOp) (w : Nat) : Taint.Step := ⟨fun τ =>
+  match τ with
+  | ⟨rg, f, l, b, sl, lo, x⟩ =>
+    bif memPub τ m then
+      match Taint.addrOfK τ m with
+      | some (i, d) =>
+        bif Nat.ble (d + w) (l.getD i 0) then
+          bif KList.all sl (slotKept i d w) then some τ
+          else some ⟨rg, f, l, b, KList.filter (slotKept i d w) sl, lo, x⟩
+        else some ⟨rg, f, l, b, [], lo, x⟩
+      | none => some ⟨rg, f, l, b, [], lo, x⟩
+    else none⟩
+
+/-- The base step of `movdqu [m], x` without an index register (`baseStep`'s,
+`storeX_eq`): a slot of its 16 bytes if `x` is public (`special`), and a
+secret's store otherwise. -/
+def storeX (m : MemOp) (x : XReg) : Taint.Step := ⟨fun τ =>
+  bif xpub τ x then
+    match τ with
+    | ⟨rg, f, l, b, sl, lo, xr⟩ =>
+      bif memPub τ m then
+        match Taint.addrOfK τ m with
+        | some (i, d) =>
+          bif Nat.ble (d + 16) (l.getD i 0) then some ⟨rg, f, l, b, (i, d, 16) :: sl, lo, xr⟩ else some τ
+        | none => some τ
+      else none
+  else (storeSec m 16).run τ⟩
+
+/-- The taint `t` with the vector register `x` public. -/
+def insX (x : XReg) (t : Taint.T) : Taint.T :=
+  match t with
+  | ⟨rg, f, l, b, sl, lo, xr⟩ => ⟨rg, f, l, b, sl, lo, xr.insert x⟩
+
 /-- `step` of a store without an index register, whose base step is `b`. -/
 def fastStore (b : Taint.Step) (m : MemOp) (w : Nat) (src : Option Reg) : RStep := ⟨fun τ =>
   match τ with
@@ -724,6 +759,15 @@ def stepFn (i : Instr) : RStep :=
     | .alu .cmp a (.reg b) => fastG (Taint.stepKDFn i) id (some (a, b)) fun _ ub => ubDrop (some a) ub
     | .cmov .b d (.reg x) => fastG (Taint.stepKDFn i) id none (cmovUb d x)
     | .cmov _ d _ => fastU (Taint.stepKDFn i) (ubDrop (some d))
+    | .xop (.bin .pxor x x') =>
+      bif x == x' then fastG (Taint.stepKDFn i) (insX x) none fun _ ub => ub
+      else fastG (Taint.stepKDFn i) id none fun _ ub => ub
+    | .movdquStore m x => bif m.index.isNone then fastStore (storeX m x) m 16 none else ⟨(step · i)⟩
+    | .vmovdquStore .l128 m _ => fastStore (storeSec m 16) m 16 none
+    | .vmovdquStore .l256 m _ => fastStore (storeSec m 32) m 32 none
+    | .vmovdqu32Store m _ => fastStore (storeSec m 64) m 64 none
+    | .evStore m _ | .e5ExtractStore m _ _ => fastStore (storeSec m 32) m 32 none
+    | .stmxcsr m => fastStore (storeSec m 4) m 4 none
     | _ => ⟨(step · i)⟩
 
 /-- `some d == some .rsp`, what `isa.writesSp` is of an instruction whose
@@ -766,10 +810,17 @@ def stepFn1 (i : Instr) : RStep :=
   | .cmov .b d (.reg x) =>
     bif isSp d then ⟨fun _ => none⟩ else fastG (Taint.stepKeepFn i) id none (cmovUb d x)
   | .cmov _ d _ => bif isSp d then ⟨fun _ => none⟩ else fastU (Taint.stepKeepFn i) (ubDrop (some d))
+  | .xop (.bin .pxor x x') =>
+    bif x == x' then fastG (Taint.stepKeepFn i) (insX x) none fun _ ub => ub
+    else fastG (Taint.stepKeepFn i) id none fun _ ub => ub
+  | .movdquStore m x => bif m.index.isNone then fastStore (storeX m x) m 16 none else slowFn i
+  | .vmovdquStore .l128 m _ => fastStore (storeSec m 16) m 16 none
+  | .vmovdquStore .l256 m _ => fastStore (storeSec m 32) m 32 none
+  | .vmovdqu32Store m _ => fastStore (storeSec m 64) m 64 none
+  | .evStore m _ | .e5ExtractStore m _ _ => fastStore (storeSec m 32) m 32 none
+  | .stmxcsr m => fastStore (storeSec m 4) m 4 none
   -- Not plain, and without a step of their own.
-  | .movdquStore .. | .vmovdquStore .. | .vmovdqu32Store .. | .evStore .. | .e5ExtractStore .. | .stmxcsr _
-  | .kStore .. | .kStore8 ..
-  | .xop (.bin .pxor _ _) | .push _ | .pop .. | .alloc _ | .free _ | .callr _ =>
+  | .kStore .. | .kStore8 .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ =>
     bif isa.writesSp i then ⟨fun _ => none⟩ else slowFn i
   -- Plain or not by their operands.
   | .mov32 d (.mem m) =>
