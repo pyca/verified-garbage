@@ -165,7 +165,9 @@ theorem encodable_byte {v : BitVec 32} (h : v.toNat < 256) : encodable v = true 
 tactic_template "ffrun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
   apply WP.of_runBlock
   set_option linter.unusedSimpArgs false in
-  simp (disch := decide) only [runBlock_cons, runStep_some, runBlock_nil,
+  -- `decide := true`, not `(disch := decide)`: with a tactic for a discharger, `simp`'s time
+  -- doubled with every instruction that has an `Op2` operand (3.6 s for ten instructions).
+  simp (config := { decide := true }) only [runBlock_cons, runStep_some, runBlock_nil,
     mov_exec, movw_exec, mul_exec, mla_exec, add_exec, cmp_exec, subs_exec, adc_exec, logic_exec, str_exec, ldr_exec, ldrb_exec, strb_exec, ldrSp_exec, addSp_exec, Op2.eval,
     RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
     gpr_subFlags, mem_subFlags, c_subFlags, z_subFlags, RegUpd.c_setReg,

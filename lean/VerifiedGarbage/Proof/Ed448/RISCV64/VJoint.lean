@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.X448.Field
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.X25519.RISCV64.Pass
 import Mathlib.Tactic.Abel
 
@@ -747,7 +748,7 @@ theorem keyStep_ok {sK : State} {p d : Point} {j : Nat} (hj : j < 7) {s : State}
   rw [show [Instr.addi .t2 .t2 168] ++ stSlots .t2 0 [TX, TY, TZ] ++ copySlot RX TX ++ copySlot RY TY ++
       copySlot RZ TZ ++ [.addi .t1 .t1 (-1)] =
     .addi .t2 .t2 168 :: ((cp7 .a3 TX .t2 0 ++ (cp7 .a3 TY .t2 56 ++ cp7 .a3 TZ .t2 112)) ++
-      ((cp7 .a3 TX .a3 RX ++ (cp7 .a3 TY .a3 RY ++ cp7 .a3 TZ .a3 RZ)) ++ [.addi .t1 .t1 (-1)])) from rfl]
+      ((cp7 .a3 TX .a3 RX ++ (cp7 .a3 TY .a3 RY ++ cp7 .a3 TZ .a3 RZ)) ++ [.addi .t1 .t1 (-1)])) by kernel_rfl]
   refine wp_addi (by decide) fun s3 u3 => ?_
   have hv3 : VCtx b s3 := hv2.of_rest (u3.rest (ws := [.t2]) (by decide)) (by decide) (by decide)
   have e3 : s3.gpr .t2 = b + BitVec.ofNat 64 (KT + 168 * (j + 1)) := by

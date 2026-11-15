@@ -40,7 +40,7 @@ theorem sampleScalarArgs_ok (s : State) {p : Inputs} {l : ScalarLayout p} {slots
     omega_using [this]
   refine withRest_all [.r0, .r1, .r2, .r3, .r12, .lr] ?_ (by rfl) (by rfl)
   unfold VG.Impl.Ffdh.Arm.Domain.GenerateKey.scalarArgs VG.Impl.Ffdh.Arm.Domain.st
-  ffrun [addr 20 (by decide), addr 32 (by decide), addr 40 (by decide), addr 48 (by decide),
+  ffrun [↓RegUpd.gpr_setReg, ↓reduceIte, addr 20 (by decide), addr 32 (by decide), addr 40 (by decide), addr 48 (by decide),
     addr 16 (by decide), r20, r32, r40, r48, w16, width, h.saved 32 h32,
     h.saved 40 h40, h.saved 48 h48, Inputs.slotValue, ScalarLayout.start, leadCount, BitVec.add_zero, off]
 

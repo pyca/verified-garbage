@@ -104,8 +104,9 @@ def Keep (s s' : State) : Prop :=
 
 /-- `crun` for a body of many instructions: `State.write` stays folded, and the registers are read
 through the writes with `RegUpd`'s lemmas. Unfolded, every write's registers are a function that `simp`
-simplifies again at each instruction after it. -/
-tactic_template "crunw" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
+simplifies again at each instruction after it. (As `crunw` of `Proof/MlKem1024/RISCV64/`, whose modules
+import this one: hence another name.) -/
+tactic_template "cerunw" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic| (
   apply WP.of_runBlock
   set_option linter.unusedSimpArgs false in
   simp only [runBlock_cons, runStep_some, runBlock_nil,
@@ -146,7 +147,7 @@ theorem body1_ok (h3 : s.gpr .a0 = x) (h5 : s.gpr .a2 = y) (h11 : s.gpr .t1 = c)
   have j6 := aa 6 (by decide)
   have j7 := aa 7 (by decide)
   simp only [Nat.reduceMul, BitVec.add_zero] at i0 i1 i2 i3 i4 i5 i6 i7 j0 j1 j2 j3 j4 j5 j6 j7
-  crunw [ce1Body, ce1Bit, compressAt, Keep, A, fld, cmpV, h3, h5, h11, h9, h10, i0, i1, i2, i3, i4, i5, i6, i7,
+  cerunw [ce1Body, ce1Bit, compressAt, Keep, A, fld, cmpV, h3, h5, h11, h9, h10, i0, i1, i2, i3, i4, i5, i6, i7,
     j0, j1, j2, j3, j4, j5, j6, j7,
     ob, preserved, List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append,
     List.range, List.range.loop, List.flatMap_cons, List.flatMap_nil, List.append_nil]

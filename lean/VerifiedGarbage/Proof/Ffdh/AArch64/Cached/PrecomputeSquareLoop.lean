@@ -39,7 +39,7 @@ theorem precomputeSquareStep (M : Mont) {s0 s : State} {p : Parameters} {E n j :
  rw [exponent] at powerT
  have remaining : n-j-1=n-(j+1) := by omega_using []
  rw [remaining] at counter
- refine ⟨⟨powerT,counter,?_,((h.keep.trans rest).trans keep).mono (by simp [mmRegs])⟩,?_⟩
+ refine ⟨⟨powerT,counter,?_,((h.keep.trans rest).trans keep).mono (by decide)⟩,?_⟩
  · exact (h.frame.trans (Frm.of_arrays arrays (by simp [squareRanges]))).trans
     (Frm.of_outside frame (by simp [squareRanges]))
  · rw [index,BitVec.toNat_ofNat,Nat.mod_eq_of_lt (by omega_using [size] : n-j-1<2^64)]

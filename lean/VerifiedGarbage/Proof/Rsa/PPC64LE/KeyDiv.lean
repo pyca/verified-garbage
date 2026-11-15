@@ -1026,9 +1026,9 @@ theorem divG_ok (q : Bool) {s : State} {B : Addr} {Z w N a r m t sv D A v : Nat}
       · simp only [S]; exact h1
       · simp only [S]; exact h2) h3
   have X1 : wordsVal s1.mem B (arr w a) A = X := by
-    rw [← hX]; exact wordsVal_congr_words fun j hj => nsr (d := arr w a + 8 * j) (by omega_arith) (by omega_arith) (by omega_arith)
+    rw [← hX]; exact wordsVal_congr_words fun j hj => nsr (d := arr w a + 8 * j) (by omega_using [dasv, hj]) (by omega_using [dar, hj]) (by omega_arith)
   have M1 : wordsVal s1.mem B (arr w m) D = M := by
-    rw [← hM]; exact wordsVal_congr_words fun j hj => nsr (d := arr w m + 8 * j) (by omega_arith) (by omega_arith) (by omega_arith)
+    rw [← hM]; exact wordsVal_congr_words fun j hj => nsr (d := arr w m + 8 * j) (by omega_using [dmsv, hj, hDv, hw]) (by omega_using [drm, hj, hDv, hw]) (by omega_arith)
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (normSetupG_ok h1 hm ht hN hdw) fun s2 ⟨r10, r9, r11, m2, k2⟩ => ?_
   have h2 := h1.of_keep k2
@@ -1054,15 +1054,15 @@ theorem divG_ok (q : Bool) {s : State} {B : Addr} {Z w N a r m t sv D A v : Nat}
   -- Memory from `s1` to `s5`: only the temporary changed.
   have w15 : ∀ {d : Nat}, (d + 8 ≤ arr w t ∨ arr w t + 32 ≤ d) → d + 8 ≤ 2 ^ 64 →
       word s5.mem B d = word s1.mem B d := fun h1 h2 => by
-    rw [m5, o4.word (by omega_arith) h2, o3.word h1 h2, m2]
+    rw [m5, o4.word (by omega_using [h1]) h2, o3.word h1 h2, m2]
   have X5 : wordsVal s5.mem B (arr w a) A = X := by
-    rw [← X1]; exact wordsVal_congr_words fun j hj => w15 (d := arr w a + 8 * j) (by omega_arith) (by omega_arith)
+    rw [← X1]; exact wordsVal_congr_words fun j hj => w15 (d := arr w a + 8 * j) (by omega_using [dat, hj, hw, hv]) (by omega_arith)
   have M5 : wordsVal s5.mem B (arr w m) D = M := by
-    rw [← M1]; exact wordsVal_congr_words fun j hj => w15 (d := arr w m + 8 * j) (by omega_arith) (by omega_arith)
+    rw [← M1]; exact wordsVal_congr_words fun j hj => w15 (d := arr w m + 8 * j) (by omega_using [dmt, hj, hDv, hw, hv]) (by omega_arith)
   have T5 : ∀ k, k < 4 → word s5.mem B (arr w t + 8 * k) = word s4.mem B (arr w t + 8 * k) := fun k _ => by rw [m5]
   have h0 : wordsVal s5.mem B (arr w r) D = 0 := by
     have := wordsVal_zero_top (m := s5.mem) (B := B) (d := arr w r) (n := 0) D fun i _ h2 => by
-      rw [w15 (d := arr w r + 8 * i) (by omega_arith) (by omega_arith)]; exact z1 i (by omega_arith)
+      rw [w15 (d := arr w r + 8 * i) (by omega_using [drt, h2, hDv, hw, hv]) (by omega_arith)]; exact z1 i (by omega_arith)
     rw [Nat.zero_add] at this
     rw [this]; rfl
   have P5 : (word s5.mem B (arr w t)).toNat = 2 ^ z := by rw [m5, o4.word (by omega_arith) (by omega_arith)]; exact hP
@@ -1092,16 +1092,16 @@ theorem divG_ok (q : Bool) {s : State} {B : Addr} {Z w N a r m t sv D A v : Nat}
     rw [um, show v = D + (v - D) by omega_arith, wordsVal_zero_top (v - D) fun i h1 h2 => ?_, q6]
     rcases Nat.eq_or_lt_of_le h1 with e | e
     · rw [← e]; exact top6
-    · rw [w56 (d := arr w r + 8 * i) (by omega_arith) (fun _ => by omega_arith) (by omega_arith),
-        w15 (d := arr w r + 8 * i) (by omega_arith) (by omega_arith)]
+    · rw [w56 (d := arr w r + 8 * i) (by omega_using [e]) (fun _ => by omega_using [dar, h2, hw, hDv]) (by omega_arith),
+        w15 (d := arr w r + 8 * i) (by omega_using [drt, h2, hw, hv, hDv]) (by omega_arith)]
       exact z1 i (by omega_arith)
   · rw [um]; exact qq6 hq
   · -- The saved registers are restored.
     have kAll := ((((k1.trans k2).trans k3).trans k4).trans k5).trans k6 |>.trans uk
     refine ⟨fun x hx => ?_, kAll.rd, kAll.wr, kAll.sp, kAll.lr⟩
     have sv7 : ∀ i < 7, word s6.mem B (arr w sv + 8 * i) = s.gpr (svReg i) := fun i hi => by
-      rw [w56 (d := arr w sv + 8 * i) (by omega_arith) (fun _ => by omega_arith) (by omega_arith),
-        w15 (d := arr w sv + 8 * i) (by omega_arith) (by omega_arith)]
+      rw [w56 (d := arr w sv + 8 * i) (by omega_using [drsv, hi, hw, hDv, hv]) (fun _ => by omega_using [dasv, hi, hw, hv]) (by omega_arith),
+        w15 (d := arr w sv + 8 * i) (by omega_using [dtsv, hi, hw, hv]) (by omega_arith)]
       exact sv1 i hi
     by_cases hs : x ∈ [Reg.r14, .r15, .r16, .r17, .r18, .r20, .r22]
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hs
@@ -1114,7 +1114,8 @@ theorem divG_ok (q : Bool) {s : State} {B : Addr} {Z w N a r m t sv D A v : Nat}
       · exact (ug 5 (by decide)).trans (sv7 5 (by decide))
       · exact (ug 6 (by decide)).trans (sv7 6 (by decide))
     · refine kAll.gpr x ?_
-      cases x <;> simp [divRegs, quotRegs, normRegs, recipRegs] at hx hs ⊢
+      revert hx hs
+      cases x <;> decide
   · -- The frame.
     rw [um]
     have F : ∀ x, x = (arr w r, 4 * (w + 2)) ∨ x = (arr w t, 4 * (w + 2)) ∨ x = (arr w sv, 4 * (w + 2)) →
