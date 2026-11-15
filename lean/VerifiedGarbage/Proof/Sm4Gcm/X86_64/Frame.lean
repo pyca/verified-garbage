@@ -535,13 +535,13 @@ def crSat : State where
   of := none
   mem _ := 0
   rd := [⟨0x1000, 256⟩, ⟨0x8008, 8⟩]
-  wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩, ⟨0, 2560⟩]
+  wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩, ⟨0, 768⟩]
 
 theorem streamEncrypt_verified (v : GcmImpl) :
     Verified X86_64.target (streamEncrypt v.callees)
-      (Proof.Sm4Gcm.streamEncryptScratchContract X86_64.abi stkN) :=
+      (Proof.Sm4Gcm.streamEncryptScratchContract96 X86_64.abi stkN) :=
   Verified.of_correct (streamEncrypt_correct v) (streamEncrypt_ct v) (by
-    sig_implies [Proof.Sm4Gcm.streamEncryptScratchContract, Proof.Sm4Gcm.streamCryptScratchSig,
+    sig_implies [Proof.Sm4Gcm.streamEncryptScratchContract96, Proof.Sm4Gcm.streamCryptScratchSig96,
       Spec.Sm4.Gcm.streamEncryptPost, Proof.Sm4Gcm.streamEncryptX86_64, Proof.Sm4Gcm.streamCryptPre,
       Proof.Sm4Gcm.streamCryptPub, X86_64.abi, Proof.Sm4Gcm.arg, Proof.Sm4Gcm.args, Proof.Sm4Gcm.stk, Proof.Sm4Gcm.spOk, Proof.Sm4Gcm.ret,
       stkN, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
@@ -549,9 +549,9 @@ theorem streamEncrypt_verified (v : GcmImpl) :
 
 theorem streamDecrypt_verified (v : GcmImpl) :
     Verified X86_64.target (streamDecrypt v.callees)
-      (Proof.Sm4Gcm.streamDecryptScratchContract X86_64.abi stkN) :=
+      (Proof.Sm4Gcm.streamDecryptScratchContract96 X86_64.abi stkN) :=
   Verified.of_correct (streamDecrypt_correct v) (streamDecrypt_ct v) (by
-    sig_implies [Proof.Sm4Gcm.streamDecryptScratchContract, Proof.Sm4Gcm.streamCryptScratchSig,
+    sig_implies [Proof.Sm4Gcm.streamDecryptScratchContract96, Proof.Sm4Gcm.streamCryptScratchSig96,
       Spec.Sm4.Gcm.streamDecryptPost, Proof.Sm4Gcm.streamDecryptX86_64, Proof.Sm4Gcm.streamCryptPre,
       Proof.Sm4Gcm.streamCryptPub, X86_64.abi, Proof.Sm4Gcm.arg, Proof.Sm4Gcm.args, Proof.Sm4Gcm.stk, Proof.Sm4Gcm.spOk, Proof.Sm4Gcm.ret,
       stkN, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below,
@@ -733,32 +733,32 @@ theorem init_framed :
 def crFrameSat : State := { crSat with rd := [⟨0x1000, 256⟩], wr := [⟨0x3000, 80⟩, ⟨0x2000, 0⟩] }
 
 theorem streamEncryptFrameSat_pre :
-    ∃ s, (Spec.Sm4.Gcm.streamEncryptContract X86_64.abi 5800).pre s := by
+    ∃ s, (Spec.Sm4.Gcm.streamEncryptContract X86_64.abi 4008).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamEncryptContract, Spec.Sm4.Gcm.streamCryptSig,
     Spec.Sm4.Gcm.streamEncryptPost, X86_64.abi, X86_64.argRegs] [crFrameSat, crSat] using crFrameSat
 
 theorem streamEncrypt_framed :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (streamEncrypt v.callees))
-      (Spec.Sm4.Gcm.streamEncryptContract X86_64.abi 5800) :=
+      (Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamEncrypt v.callees))
+      (Spec.Sm4.Gcm.streamEncryptContract X86_64.abi 4008) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
-    (n := 320) (post := Spec.Sm4.Gcm.streamEncryptPost X86_64.abi.ptrBits) (wa := true)
-    (stack := stkN) (bytes := 2576) (streamEncrypt_verified v) (by decide) (by decide) (by decide)
+    (n := 96) (post := Spec.Sm4.Gcm.streamEncryptPost X86_64.abi.ptrBits) (wa := true)
+    (stack := stkN) (bytes := 784) (streamEncrypt_verified v) (by decide) (by decide) (by decide)
     (streamEncrypt_spSafe v) (streamEncrypt_xdepth v) (Proof.Sm4Gcm.pre_local _ _)
     (Proof.Sm4Gcm.streamEncryptPost_local _) streamEncryptFrameSat_pre
 
 theorem streamDecryptFrameSat_pre :
-    ∃ s, (Spec.Sm4.Gcm.streamDecryptContract X86_64.abi 5800).pre s := by
+    ∃ s, (Spec.Sm4.Gcm.streamDecryptContract X86_64.abi 4008).pre s := by
   implies_sat [Spec.Sm4.Gcm.streamDecryptContract, Spec.Sm4.Gcm.streamCryptSig,
     Spec.Sm4.Gcm.streamDecryptPost, X86_64.abi, X86_64.argRegs] [crFrameSat, crSat] using crFrameSat
 
 theorem streamDecrypt_framed :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (streamDecrypt v.callees))
-      (Spec.Sm4.Gcm.streamDecryptContract X86_64.abi 5800) :=
+      (Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamDecrypt v.callees))
+      (Spec.Sm4.Gcm.streamDecryptContract X86_64.abi 4008) :=
   X86_64.Verified.stackArgScratch (sig := Spec.Sm4.Gcm.streamCryptSig) (nm := "scratch") (e := .u64)
-    (n := 320) (post := Spec.Sm4.Gcm.streamDecryptPost X86_64.abi.ptrBits) (wa := true)
-    (stack := stkN) (bytes := 2576) (streamDecrypt_verified v) (by decide) (by decide) (by decide)
+    (n := 96) (post := Spec.Sm4.Gcm.streamDecryptPost X86_64.abi.ptrBits) (wa := true)
+    (stack := stkN) (bytes := 784) (streamDecrypt_verified v) (by decide) (by decide) (by decide)
     (streamDecrypt_spSafe v) (streamDecrypt_xdepth v) (Proof.Sm4Gcm.pre_local _ _)
     (Proof.Sm4Gcm.streamDecryptPost_local _) streamDecryptFrameSat_pre
 
@@ -982,8 +982,8 @@ def openReg : Registration Spec.Sm4.Gcm.openApi X86_64.target :=
 def streamEncryptReg : Registration Spec.Sm4.Gcm.streamEncryptApi X86_64.target :=
   withScrubAll {
     suffix := v.gh.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (streamEncrypt v.callees)
-    stack := 5800
+    code := Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamEncrypt v.callees)
+    stack := 4008
     verified := streamEncrypt_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v) } (streamEncryptOut _)
 
@@ -991,8 +991,8 @@ def streamEncryptReg : Registration Spec.Sm4.Gcm.streamEncryptApi X86_64.target 
 def streamDecryptReg : Registration Spec.Sm4.Gcm.streamDecryptApi X86_64.target :=
   withScrubAll {
     suffix := v.gh.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (streamDecrypt v.callees)
-    stack := 5800
+    code := Impl.StackScratch.X86_64.withStackArgScratch 784 0 (streamDecrypt v.callees)
+    stack := 4008
     verified := streamDecrypt_framed v
     spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v) } (streamDecryptOut _)
 

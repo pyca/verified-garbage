@@ -46,12 +46,13 @@ theorem ret_stk (SP : Addr) : (⟨SP, 8⟩ : Region).Disjoint (below SP stkN) :=
 
 /-- The layout, from disjointness of the context, the state, `W` and the
 stack the calls use. -/
-theorem Lay4.of {Ctx St W SP : Addr} (cw : Ctx.toNat + 256 ≤ 2 ^ 64) (sw : St.toNat + 80 ≤ 2 ^ 64)
-    (ww : W.toNat + 2560 ≤ 2 ^ 64) (cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨St, 80⟩)
-    (cW : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, 2560⟩) (sW : (⟨St, 80⟩ : Region).Disjoint ⟨W, 2560⟩)
+theorem Lay4.of {Ctx St W SP : Addr} {N : Nat} (cw : Ctx.toNat + 256 ≤ 2 ^ 64) (sw : St.toNat + 80 ≤ 2 ^ 64)
+    (ww : W.toNat + N ≤ 2 ^ 64) (cs : (⟨Ctx, 256⟩ : Region).Disjoint ⟨St, 80⟩)
+    (cW : (⟨Ctx, 256⟩ : Region).Disjoint ⟨W, N⟩) (sW : (⟨St, 80⟩ : Region).Disjoint ⟨W, N⟩)
     (sp : stkN ≤ SP.toNat) (kc : (below SP stkN).Disjoint ⟨Ctx, 256⟩) (ks : (below SP stkN).Disjoint ⟨St, 80⟩)
-    (kw : (below SP stkN).Disjoint ⟨W, 2560⟩) : Lay4 Ctx St W SP :=
+    (kw : (below SP stkN).Disjoint ⟨W, N⟩) (hN : 176 ≤ N := by decide) (hN' : N < 2 ^ 64 := by decide) :
+    Lay4 Ctx St W SP N :=
   ⟨VG.Proof.AesGcm.X86_64.Lay.of cw sw ww cs cW sW (kc.sub_left (below8_stk SP)) (ks.sub_left (below8_stk SP))
-    (kw.sub_left (below8_stk SP)), sp, kc, ks, kw⟩
+    (kw.sub_left (below8_stk SP)) hN hN', sp, kc, ks, kw⟩
 
 end VG.Proof.Sm4Gcm.X86_64
