@@ -243,25 +243,12 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Message
 -- ML-DSA (FIPS 204) key generation on AArch64
 namespace VG.Artifacts.MlDsa.AArch64.KeyGen
 
-def legacyArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  Spec.MlDsa.keyGen44Api.artifact AArch64.target {
-    suffix := v.callee.suffix
-    code := Impl.MlDsa.AArch64.KeyGen.keyGen44With v.callee
-    verified := Proof.MlDsa.AArch64.KeyGen.keyGen44_verifiedWith (keccak := v) },
-  Spec.MlDsa.keyGen65Api.artifact AArch64.target {
-    suffix := v.callee.suffix
-    code := Impl.MlDsa.AArch64.KeyGen.keyGen65With v.callee
-    verified := Proof.MlDsa.AArch64.KeyGen.keyGen65_verifiedWith (keccak := v) },
-  Spec.MlDsa.keyGen87Api.artifact AArch64.target {
-    suffix := v.callee.suffix
-    code := Impl.MlDsa.AArch64.KeyGen.keyGen87With v.callee
-    verified := Proof.MlDsa.AArch64.KeyGen.keyGen87_verifiedWith (keccak := v) }]
-
-/-- SHA3 key generation uses hoisted matrix seeds, grouped secret sampling, and
-positive transform arithmetic. The scalar fallback shares its grouped secret
-sampling (`Optimized.secretsWith`), with the four-way samplers of its own
-permutation. -/
-def optimizedArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
+/-- Key generation over the permutation `v`: hoisted matrix seeds, grouped
+secret sampling with the four-way samplers of `v`, and positive transform
+arithmetic, which needs no CPU feature. Where the paired-state kernels may
+use the SHA3 instructions (`pairedSha3`), the matrix entries left after the
+groups of four are sampled as a pair; otherwise one at a time. -/
+def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.MlDsa.keyGen44Api.artifact AArch64.target {
     suffix := v.callee.suffix
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa44
@@ -274,12 +261,6 @@ def optimizedArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     suffix := v.callee.suffix
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa87
     verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inr rfl)) }]
-
-/-- The functions over the permutation `v`: the optimized ones where its
-paired-state kernels may use the SHA3 instructions (`pairedSha3`), the
-others otherwise. -/
-def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
-  if v.callee.pairedSha3 then optimizedArtifacts v else legacyArtifacts v
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v => artifactsFor v

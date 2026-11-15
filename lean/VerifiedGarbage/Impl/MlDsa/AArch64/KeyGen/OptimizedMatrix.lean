@@ -19,10 +19,13 @@ def matrixTwo (cd : Prog isa) (p : Spec.MlDsa.Params) (e : Nat) : Prog isa :=
       [(.x0,.ptr (sc oSA4)),(.x1,.ptr (aP e)),(.x2,.ptr (sc (oR4 p)))])
       (.seq (.block and24) (Impl.MlDsa.AArch64.Optimized.MatrixMask.code (aP e) 512)))
 
-def matrixWith (cd : Prog isa) (P : Prims) (p : Spec.MlDsa.Params) : Prog isa :=
+/-- The matrix, four entries at a time; the entries left (two, for ML-DSA-65)
+by the paired sampler `cd` where the paired kernels may use the SHA3
+instructions (`paired`), and one at a time otherwise. -/
+def matrixWith (paired : Bool) (cd : Prog isa) (P : Prims) (p : Spec.MlDsa.Params) : Prog isa :=
   let e:=4*(p.k*p.ℓ/4)
   .seq (.block ((List.range 4).flatMap copySeed4))
     (.seq (seqR (matrixGroup P p) 0 (p.k*p.ℓ/4))
-      (if p.k*p.ℓ%4=2 then matrixTwo cd p e else seqR (expA P p) e (p.k*p.ℓ%4)))
+      (if paired = true ∧ p.k*p.ℓ%4=2 then matrixTwo cd p e else seqR (expA P p) e (p.k*p.ℓ%4)))
 
 end VG.Impl.MlDsa.AArch64.KeyGen.Optimized
