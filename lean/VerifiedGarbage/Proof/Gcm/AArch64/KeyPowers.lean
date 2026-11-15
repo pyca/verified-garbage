@@ -34,7 +34,7 @@ meta import VerifiedGarbage.Proof.Gcm.Poly
 loads `H` from byte 240 of the key context into `x2:x3` and `Z`
 (`keyLoad_ok`), then, for `k` from 1 to 8, stores `preparedPower(Hᵏ)` from
 `Z` (`storeEnc_ok`, by `enc_eq`) and, below 8, multiplies `Z` by `H` with
-the 128 steps of `vg_ghash` (`round_ok`, by `mul_ok`).
+the 128 steps of SP 800-38D's Algorithm 1 (`round_ok`, by `mul_ok`).
 -/
 
 @[expose] public section

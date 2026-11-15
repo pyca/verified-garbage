@@ -1,17 +1,20 @@
 module
 
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
+public import VerifiedGarbage.Proof.Gcm.AArch64.Holes
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+import VerifiedGarbage.Proof.Gcm.AArch64.Lit
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ops
 
 /-!
-# AES-GCM on AArch64: `vg_ghash_aes`, `vg_ghash_prepared8_aes` and `vg_ghash_with_powers_aes`
+# AES-GCM on AArch64: `vg_ghash`, `vg_ghash_aes`, `vg_ghash_prepared8_aes` and `vg_ghash_with_powers_aes`
 
-Untrusted: everything here is checked by Lean. The `GhashImpl` of
-`vg_ghash_aes` and the `GhashPreparedImpl` of `vg_ghash_prepared8_aes`, from
-their proofs, apart from `Callee.lean`: only the variants
-need it, and its proof imports the algebra of `Proof/Gcm/Poly.lean`, which
-the rest of the AES-GCM proofs then need not import. So does `gh8Ok`, which
+Untrusted: everything here is checked by Lean. The `GhashImpl`s of
+`vg_ghash` and `vg_ghash_aes` and the `GhashPreparedImpl` of
+`vg_ghash_prepared8_aes`, from their proofs, apart from `Callee.lean`: only
+the variants need them, and their proofs import the algebra of
+`Proof/Gcm/Poly.lean`, which the rest of the AES-GCM proofs then need not
+import. So does `gh8Ok`, which
 the interleaved loops' proofs (`Proof/Gcm/AArch64/Stitch/`) take as a
 hypothesis: what `ghPart` computes (`gh8V`) is GHASH of its eight blocks, in
 the ring `Q` of `Proof/Gcm/Poly.lean`. Karatsuba's products (`kadd`) add
@@ -46,6 +49,16 @@ def GhashWithImpl.aes : GhashWithImpl where
   keepsV := by decide +kernel
 
 namespace GhashImpl
+
+/-- `vg_ghash`, in the baseline ISA. -/
+def scalar : GhashImpl where
+  fn := ⟨"vg_ghash", Impl.Gcm.AArch64.ghash⟩
+  noFrames := by lit_decide
+  ok := Proof.Gcm.AArch64.ghash_correct
+  ct := Proof.Gcm.AArch64.ghash_ct
+  keepsV := by lit_decide
+  suffix := ""
+  features := []
 
 /-- `vg_ghash_aes`, with PMULL (which Rust's `aes` feature stands for, with
 the AES instructions). -/
