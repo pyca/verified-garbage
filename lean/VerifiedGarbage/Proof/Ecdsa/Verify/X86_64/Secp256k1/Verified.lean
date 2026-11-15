@@ -286,7 +286,7 @@ theorem verifyHash_verified : Verified X86_64.target
     (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false verifySecp256k1)
     (Spec.Ecdsa.Secp256k1.inst.verifyHashContract (X86_64.abi.withConsts secp256k1v.combConsts) 96) :=
   Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.secp256k1_len (by decide) (verify_verified hL hT hI)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by taint_decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by taint_decide)
     (Hash.hashSat_cons (by decide) sat_spec8 (by decide) fun r hr => by
       simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))

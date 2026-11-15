@@ -124,9 +124,9 @@ def ArithImpl.sse2 : ArithImpl where
       useHint := FnOk.of Round.useHint_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
         (by decide +kernel)
       rej4 := ⟨Rej4.rejNTT4_verified, Proof.MlKem.X86_64.nosp_of (by decide +kernel), by decide +kernel,
-        by decide +kernel, Code.all_of_allInstrs (by decide +kernel), fun _ _ _ => Rej4.rejNTT4_ret⟩
+        by decide +kernel, Code.all_of_spTest (by decide +kernel), fun _ _ _ => Rej4.rejNTT4_ret⟩
       expandMask4 := ⟨Mask4.expandMask4_verified, Proof.MlKem.X86_64.nosp_of (by decide +kernel), by decide +kernel,
-        by decide +kernel, Code.all_of_allInstrs (by decide +kernel)⟩
+        by decide +kernel, Code.all_of_spTest (by decide +kernel)⟩
       dotInv := fun c hc => by
         rcases hc with rfl | rfl | rfl
         · exact FnOk.of Arith.DotS.verified4 (by decide +kernel) (by decide +kernel) (by decide +kernel)

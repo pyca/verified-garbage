@@ -120,7 +120,7 @@ def scalar : BlocksImpl where
   ok := scalar_ok
   ct := scalar_ct
   nosp := Avx2.blocks_nosp
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := ""
   features := Impl.Poly1305.X86_64.Blocks.features .scalar
   update := some scalarUpdate

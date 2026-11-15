@@ -150,10 +150,10 @@ theorem ctrFramed_sk : Verified X86_64.target ctrFramed (Proof.Camellia.ctrContr
     (n := 409) (pre := Spec.Camellia.ctrPre X86_64.abi.ptrBits)
     (post := Proof.Camellia.ctrPostSk X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3280) (by rw [← Proof.Camellia.ctrScratchContract_eq]; exact ctr_verified)
-    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.ctrPostOut_local _) ctrFrameSat_pre
 
-theorem ctrFramed_spSafe : SpSafe ctrFramed := SpSafe.of_all (Code.all_of_allInstrs (by lit_decide))
+theorem ctrFramed_spSafe : SpSafe ctrFramed := SpSafe.of_all (Code.all_of_spTest (by lit_decide))
 
 theorem ctrFramed_depth : ctrFramed.x86_64Depth = 3288 := by lit_decide
 
@@ -1027,7 +1027,7 @@ theorem final_ct : ConstantTime isa ctrFinalX86_64.pre ctrFinalX86_64.pub ctrFin
 
 /-! ## Verified -/
 
-theorem ctrFinal_spSafe : ctrFinal.all (fun i => !X86_64.isa.writesSp i) = true := Code.all_of_allInstrs (by lit_decide)
+theorem ctrFinal_spSafe : ctrFinal.all (fun i => !X86_64.isa.writesSp i) = true := Code.all_of_spTest (by lit_decide)
 
 theorem ctrFinal_xdepth : ctrFinal.x86_64Depth ≤ 3296 := by lit_decide
 

@@ -192,7 +192,7 @@ theorem cbcEncryptChained_framed :
     (n := 409) (pre := Proof.Camellia.cbcChainedPre X86_64.abi.ptrBits)
     (post := Proof.Camellia.cbcEncChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3280) (by rw [← Proof.Camellia.cbcEncChainedScratchContract_eq]; exact cbcEncryptChained_verified)
-    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.cbcEncChainedPostOut_local _) cbcEncFrameSat_pre
 
 /-- CBC decryption with its working space on the stack. -/
@@ -204,7 +204,7 @@ theorem cbcDecryptChained_framed :
     (n := 409) (pre := Proof.Camellia.cbcChainedPre X86_64.abi.ptrBits)
     (post := Proof.Camellia.cbcDecChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3280) (by rw [← Proof.Camellia.cbcDecChainedScratchContract_eq]; exact cbcDecryptChained_verified)
-    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.cbcDecChainedPostOut_local _) cbcDecFrameSat_pre
 
 end VG.Proof.Camellia.X86_64

@@ -493,8 +493,8 @@ tactic_template "ecp_ctl " v:ident p:ident P:ident hK:ident : tactic =>
 tactic_template "ecp_sp " v:ident p:ident P:ident hK:ident : tactic =>
   `(tactic| repeat' (first
     | with_reducible exact ($P (_, _) (by decide)).sp | with_reducible exact ($hK).enc.sp
-    | (closedP_in $v $p; exact Code.all_of_allInstrs (by decide +kernel))
-    | (code_whnf; closedP_in $v $p; exact Code.all_of_allInstrs (by decide +kernel))
+    | (closedP_in $v $p; exact Code.all_of_spTest (by decide +kernel))
+    | (code_whnf; closedP_in $v $p; exact Code.all_of_spTest (by decide +kernel))
     | with_reducible exact ($v).arith.cbd16.sp
     | (code_whnf; with_reducible apply all_seq) | (code_whnf; with_reducible apply all_ite)
     | (code_whnf; with_reducible apply all_call)))

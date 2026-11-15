@@ -212,7 +212,7 @@ theorem ofb_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Idea.ofbSig) (nm := "scratch") (e := .u64)
     (n := 22) (post := Proof.Idea.ofbPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 184) ofb_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Idea.ofbPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -223,7 +223,7 @@ theorem cfbEncrypt_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Idea.cfbSig) (nm := "scratch") (e := .u64)
     (n := 22) (post := Proof.Idea.cfbEncPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 184) cfbEncrypt_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Idea.cfbEncPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -234,7 +234,7 @@ theorem cfbDecrypt_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Idea.cfbSig) (nm := "scratch") (e := .u64)
     (n := 22) (post := Proof.Idea.cfbDecPost X86_64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 184) cfbDecrypt_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Idea.cfbDecPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

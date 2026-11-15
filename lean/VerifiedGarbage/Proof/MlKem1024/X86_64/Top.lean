@@ -113,12 +113,12 @@ theorem dd1024_ctl : ∀ cs : Codecs, ctlOk (dd1024 cs) = true
   | .avx2 => by decide +kernel
 
 theorem ce1024_sp : ∀ cs : Codecs, (ce1024 cs).all (fun i => !isa.writesSp i) = true
-  | .base => Code.all_of_allInstrs (by decide +kernel)
-  | .avx2 => Code.all_of_allInstrs (by decide +kernel)
+  | .base => Code.all_of_spTest (by decide +kernel)
+  | .avx2 => Code.all_of_spTest (by decide +kernel)
 
 theorem dd1024_sp : ∀ cs : Codecs, (dd1024 cs).all (fun i => !isa.writesSp i) = true
-  | .base => Code.all_of_allInstrs (by decide +kernel)
-  | .avx2 => Code.all_of_allInstrs (by decide +kernel)
+  | .base => Code.all_of_spTest (by decide +kernel)
+  | .avx2 => Code.all_of_spTest (by decide +kernel)
 
 /-- States satisfying the shared contracts' preconditions. -/
 def keyGen1024Sat : State where

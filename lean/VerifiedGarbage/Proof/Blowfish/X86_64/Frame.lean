@@ -893,14 +893,14 @@ theorem expandKey_framed :
     (n := 4) (pre := Spec.Blowfish.expandKeyPre X86_64.abi.ptrBits)
     (post := Spec.Blowfish.expandKeyPost X86_64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 40) expandKey_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by decide +kernel)) (by decide +kernel) (by decide)
+    (Code.all_of_spTest (by decide +kernel)) (by decide +kernel) (by decide)
     (Proof.Blowfish.expandKeyPostOut_local _) expandKeyFrameSat_pre
 
 /-- An implementation `c` of ECB in the direction `d`, proved with its
 working space as an argument and no stack, in its frame. -/
 theorem ecb_framed {c : Prog isa} {d : Spec.Blowfish.Direction}
     (h : Verified X86_64.target c (Proof.Blowfish.ecbScratchContract X86_64.abi d 0))
-    (hsp : c.all (fun i => !isa.writesSp i) = true := by exact Code.all_of_allInstrs (by lit_decide))
+    (hsp : c.all (fun i => !isa.writesSp i) = true := by exact Code.all_of_spTest (by lit_decide))
     (hd : c.x86_64Depth ≤ 0 := by lit_decide) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 264 .rcx 2 c)
       (Spec.Blowfish.ecbContract X86_64.abi d 264) :=

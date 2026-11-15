@@ -145,7 +145,7 @@ theorem verifyHash_verified (hL : Weierstrass.Law Spec.P192.curve) (hI : Weierst
       (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P192.inst.curve.len false verifyP192)
       (Spec.Ecdsa.P192.inst.verifyHashContract X86_64.abi 96) :=
   Proof.Ecdsa.Verify.X86_64.Hash.verifyHash_verified_nil Proof.Ecdsa.Verify.p192_len (by decide)
-    (verify_verified hL hI) (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by taint_decide)
+    (verify_verified hL hI) (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by taint_decide)
     (Proof.Ecdsa.Verify.X86_64.Hash.hashSat_nil (by decide) verify_pre8 (by decide) fun r hr => by
       simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))

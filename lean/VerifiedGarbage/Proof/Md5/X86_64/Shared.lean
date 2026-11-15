@@ -57,7 +57,7 @@ theorem update : Verified X86_64.target
     (Impl.StackScratch.X86_64.withStackScratch 56 .r8 Impl.Md5.X86_64.Stream.update)
     (Spec.Md5.updateContract X86_64.abi (8 + 56)) :=
   X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 6) (stack := 8) (bytes := 56)
-    updateScratch (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    updateScratch (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -65,7 +65,7 @@ theorem finalize : Verified X86_64.target
     (Impl.StackScratch.X86_64.withStackScratch 56 .rcx Impl.Md5.X86_64.Stream.finalize)
     (Spec.Md5.finalizeContract X86_64.abi (8 + 56)) :=
   X86_64.Verified.stackScratch (nm := "scratch") (e := .u64) (n := 6) (stack := 8) (bytes := 56)
-    finalizeScratch (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    finalizeScratch (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

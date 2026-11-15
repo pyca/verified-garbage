@@ -92,7 +92,7 @@ theorem ecb_framed :
       (Spec.Idea.ecbContract X86_64.abi 24) :=
   X86_64.Verified.stackScratch (sig := Spec.Idea.ecbSig) (nm := "scratch") (e := .u64) (n := 2)
     (post := Spec.Idea.ecbPost X86_64.abi.ptrBits) (wa := false) (stack := 0) (bytes := 24)
-    ecb_verified (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    ecb_verified (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

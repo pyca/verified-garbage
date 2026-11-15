@@ -150,7 +150,7 @@ def scalarTo : Ctr32ToImpl where
   ct := ctr32To_ct
   nosp := scalarTo_nosp
   mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
 
 /-- The bitsliced implementation, `vg_aes_ctr32`, in the baseline ISA. -/
 def scalar : Ctr32Impl where
@@ -160,7 +160,7 @@ def scalar : Ctr32Impl where
   ct := ctr32_ct
   nosp := scalar_nosp
   mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := ""
   features := []
   ctrTo := scalarTo
@@ -170,7 +170,7 @@ def scalar : Ctr32Impl where
   expandCt := expandKey_ct
   expandNosp := expandKey_nosp
   expandMxcsr := by lit_decide
-  expandSpSafe := Code.all_of_allInstrs (by lit_decide)
+  expandSpSafe := Code.all_of_spTest (by lit_decide)
 
 theorem aesni_nosp : NoSp Impl.Aes.X86_64.Ctr32.aesni.code := by
   have : ((instrs Impl.Aes.X86_64.Ctr32.aesni.code).all fun i => !Taint.clobbers i .rsp) = true := by
@@ -214,7 +214,7 @@ def aesniTo : Ctr32ToImpl where
   ct := AesNi.ctr32To_ct
   nosp := aesniTo_nosp
   mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
 
 /-- The AES-NI implementation, `vg_aes_ctr32_aesni`. -/
 def aesni : Ctr32Impl where
@@ -224,7 +224,7 @@ def aesni : Ctr32Impl where
   ct := aesni_ct
   nosp := aesni_nosp
   mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_aesni"
   features := ["aes", "ssse3"]
   ctrTo := aesniTo
@@ -235,7 +235,7 @@ def aesni : Ctr32Impl where
   expandCt := aesni_expandKey_ct
   expandNosp := aesni_expandKey_nosp
   expandMxcsr := by lit_decide
-  expandSpSafe := Code.all_of_allInstrs (by lit_decide)
+  expandSpSafe := Code.all_of_spTest (by lit_decide)
 
 theorem vaes_nosp : NoSp Impl.Aes.X86_64.Ctr32.vaes.code := by
   have : ((instrs Impl.Aes.X86_64.Ctr32.vaes.code).all fun i => !Taint.clobbers i .rsp) = true := by
@@ -261,7 +261,7 @@ def vaesTo : Ctr32ToImpl where
   ct := Vaes.ctr32To_ct
   nosp := vaesTo_nosp
   mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
 
 /-- The VAES implementation, `vg_aes_ctr32_vaes`. It goes with
 `vg_aes_expand_key_aesni`, which needs no more CPU features. -/
@@ -272,7 +272,7 @@ def vaes : Ctr32Impl where
   ct := vaes_ct
   nosp := vaes_nosp
   mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_vaes"
   features := ["aes", "avx", "avx2", "ssse3", "vaes"]
   ctrTo := vaesTo
@@ -283,7 +283,7 @@ def vaes : Ctr32Impl where
   expandCt := aesni_expandKey_ct
   expandNosp := aesni_expandKey_nosp
   expandMxcsr := by lit_decide
-  expandSpSafe := Code.all_of_allInstrs (by lit_decide)
+  expandSpSafe := Code.all_of_spTest (by lit_decide)
 
 end Ctr32Impl
 

@@ -200,7 +200,7 @@ theorem prefixN_xdepth {fTo : Fn} {c : Prog isa} (hc : c.x86_64Depth = 0) {d : N
 theorem encNR_mx : Impl.Gcm.X86_64.StitchR.encN.allInstrs (fun i => !loadsMxcsr i) = true := by
   lit_decide
 theorem encNR_spSafe : Impl.Gcm.X86_64.StitchR.encN.all (fun i => !X86_64.isa.writesSp i) = true :=
-  Code.all_of_allInstrs (by lit_decide)
+  Code.all_of_spTest (by lit_decide)
 theorem encNR_xdepth : Impl.Gcm.X86_64.StitchR.encN.x86_64Depth = 0 := by decide +kernel
 
 end VG.Proof.AesGcm.X86_64.Split

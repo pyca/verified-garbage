@@ -39,7 +39,7 @@ theorem init_framed :
   X86_64.Verified.stackArgScratchWiped (sig := Spec.Rc2.cbcInitSig) (nm := "scratch") (e := .u64)
     (n := 72) (post := Spec.Rc2.cbcInitPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 592) (words := 72) init_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (fun _ _ _ _ _ _ => by rw [Curry.apply_const]; trivial) (cbcInitPost_local _)
     (cbcInitPostOut_local _) initFrameSat_pre
 

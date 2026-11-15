@@ -123,8 +123,8 @@ tactic_template "s16_sp " v:ident c:ident S:ident hK:ident : tactic =>
   `(tactic| repeat' (first
     | with_reducible exact ($hK).kg.sp | with_reducible exact ($hK).enc.sp
     | with_reducible exact ($hK).dec.sp | with_reducible exact ($S).spSafe
-    | (closed16_in $v $c; exact Code.all_of_allInstrs (by decide +kernel))
-    | (code_whnf; closed16_in $v $c; exact Code.all_of_allInstrs (by decide +kernel))
+    | (closed16_in $v $c; exact Code.all_of_spTest (by decide +kernel))
+    | (code_whnf; closed16_in $v $c; exact Code.all_of_spTest (by decide +kernel))
     | with_reducible exact ($v).prfs_sp _ _ _ _ | with_reducible exact ($v).arith.cbd16.sp
     | (code_whnf; with_reducible apply all_seq) | (code_whnf; with_reducible apply all_ite)
     | (code_whnf; with_reducible apply all_call)))

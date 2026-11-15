@@ -336,7 +336,7 @@ theorem ofb_framed :
     (n := 409) (pre := Spec.Camellia.ofbPre X86_64.abi.ptrBits)
     (post := Proof.Camellia.ofbPostSk X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3280) (by rw [← Proof.Camellia.ofbScratchContract_eq]; exact ofb_verified)
-    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.ofbPostOut_local _) ofbFrameSat_pre
 
 /-- CFB128 encryption with its working space on the stack. -/
@@ -348,7 +348,7 @@ theorem cfbEncrypt_framed :
     (n := 409) (pre := Spec.Camellia.cfbPre X86_64.abi.ptrBits)
     (post := Proof.Camellia.cfbEncryptPostSk X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3280) (by rw [← Proof.Camellia.cfbEncScratchContract_eq]; exact cfbEncrypt_verified)
-    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.cfbEncryptPostOut_local _) cfbEncryptFrameSat_pre
 
 /-- CFB128 decryption with its working space on the stack. -/
@@ -360,7 +360,7 @@ theorem cfbDecrypt_framed :
     (n := 409) (pre := Spec.Camellia.cfbPre X86_64.abi.ptrBits)
     (post := Proof.Camellia.cfbDecryptPostSk X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3280) (by rw [← Proof.Camellia.cfbDecScratchContract_eq]; exact cfbDecrypt_verified)
-    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.cfbDecryptPostOut_local _) cfbDecryptFrameSat_pre
 
 end VG.Proof.Camellia.X86_64
