@@ -947,7 +947,8 @@ theorem divWAt_ok {s : State} {B : Addr} {Z w N a r m t sv wd : Nat} (h : Ws s B
       · exact (ug 5 (by decide)).trans (sv7 5 (by decide))
       · exact (ug 6 (by decide)).trans (sv7 6 (by decide))
     · refine kAll.gpr x ?_
-      cases x <;> simp [divRegs, quotRegs, VG.Proof.Rsa.PPC64LE.Loops.loopRegs] at hx hs ⊢
+      revert hx hs
+      cases x <;> decide
   · rw [um]
     exact ((ka'.mono (by simp) (by simp)).trans (kb.mono (by simp) (by simp))).trans (kc.mono (by simp) (by simp))
 
