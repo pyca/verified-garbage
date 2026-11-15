@@ -388,6 +388,11 @@ theorem dwA_frame {k : Nat} {b A : Addr} {m m' : Mem} (hf : Frame [PR k b] m m')
   exact dw_frame hf fun r hr => by
     rw [List.mem_singleton] at hr; subst hr; exact disj_sub (hdis i hi) (ownA_sub b (by omega_using [nq, tn]) (by omega_using [qtop, tq]))
 
+/-- A row's term added to the sum so far: `rows_ok`'s last step, without its hypotheses, which
+`grind` reads. -/
+private theorem row_sum (X Mi Rt Cn a E1 E2 : Nat) :
+    X + E1 * (Mi + a * Cn) + E2 * Rt = X + E1 * Mi + E2 * Rt + a * E1 * Cn := by grind
+
 /-- The rows. -/
 theorem rows_ok {k : Nat} {b A : Addr} {s0 : State} (h : SqOk k b A s0)
     (hz : ∀ j < 2 * k, dw s0.mem b (SQ k + 8 * j) = 0) :
@@ -450,7 +455,7 @@ theorem rows_ok {k : Nat} {b A : Addr} {s0 : State} (h : SqOk k b A s0)
       generalize colsV (fun j => dw s.mem b (SQ k + 8 * (0 + (2 * r + 1 + j)))) (k - 1 - r + 1) = Mi
       generalize colsV (fun j => dw s.mem b (SQ k + 8 * (0 + (2 * r + 1 + (k - 1 - r + 1) + j)))) (k - 1 - r) = Rt
       generalize colsV (fun j => dw s0.mem A (8 * (r + 1 + j))) (k - 1 - r) = Cn
-      grind
+      exact row_sum ..
     · intro j hj hj'
       rw [out _ (.inr (by omega_using [hj])) hj']; exact hs.zero j (by omega_using [hj]) hj'
 
@@ -602,6 +607,16 @@ theorem diag_ok {k : Nat} {b A : Addr} {s : State} (h : SqOk k b A s) {i : Nat} 
         rw [List.mem_singleton] at hr; subst hr
         exact ⟨_, List.mem_singleton_self _, Offset.sub b (by omega_using []) (by omega_using [])⟩)
 
+/-- A step's two words in the sum: `diags_ok`'s last step, among its two equations alone
+(`grind` reads every hypothesis). -/
+private theorem diag_sum {X Y Z P E r0 r1 w0 w1 c' c ai : Nat} (hv : X + P * c = 2 * Y + Z)
+    (e : r0 + E * r1 + E * E * c' = 2 * (w0 + E * w1) + c + ai * ai) :
+    X + P * r0 + P * E * r1 + P * (E * E) * c' = 2 * (Y + P * w0 + P * E * w1) + (Z + ai * ai * P) := by
+  calc X + P * r0 + P * E * r1 + P * (E * E) * c' = X + P * (r0 + E * r1 + E * E * c') := by grind
+    _ = X + P * (2 * (w0 + E * w1) + c + ai * ai) := by rw [e]
+    _ = (X + P * c) + 2 * (P * w0 + P * E * w1) + ai * ai * P := by grind
+    _ = _ := by rw [hv]; grind
+
 /-- After `i` steps of the doubling and the squares, from `sR`. -/
 structure DiagInv (k : Nat) (b A : Addr) (sR : State) (i : Nat) (s : State) : Prop where
   gpr : ∀ r, r ∉ [.t0, .a1, .a2, .a4, .a5, .a6, .a7] → s.gpr r = sR.gpr r
@@ -665,10 +680,7 @@ theorem diags_ok {k : Nat} {b A : Addr} {sR : State} (h : SqOk k b A sR) (h2 : s
     rw [E1, E0]
     generalize ((2 : Nat) ^ 64) ^ (2 * i) = P at hv ⊢
     generalize (2 : Nat) ^ 64 = E at e ⊢
-    calc X + P * r0 + P * E * r1 + P * (E * E) * c' = X + P * (r0 + E * r1 + E * E * c') := by grind
-      _ = X + P * (2 * (w0 + E * w1) + c + ai * ai) := by rw [e]
-      _ = (X + P * c) + 2 * (P * w0 + P * E * w1) + ai * ai * P := by grind
-      _ = _ := by rw [hv]; grind
+    exact diag_sum hv e
 
 /-- `P = a²`. -/
 theorem sqr_ok {k : Nat} {b A : Addr} {s : State} (h : SqOk k b A s) :
@@ -736,6 +748,23 @@ theorem sqr_ok {k : Nat} {b A : Addr} {s : State} (h : SqOk k b A s) :
       omega_using [hsq, hlt2, hv, this]
 
 /-! ## The reduction -/
+
+/-- A round's sums put together: `sred_ok`'s last step, among its four equations alone
+(`grind` reads every hypothesis). -/
+private theorem sred_sum {E X R8 t12 t10 t3 c13 Pl Nr q a58 a57 PK P0 N0 a2 : Nat}
+    (hv : R8 + X * a58 = Pl + Nr * q + a57) (hC0 : E * a57 = P0 + q * N0)
+    (e10 : t10 + E * t3 = PK + a58) (e12 : t12 + E * c13 = t10 + a2) :
+    E * (R8 + X * t12 + X * E * (c13 + t3)) = P0 + E * (Pl + X * PK) + X * E * a2 + q * (N0 + E * Nr) := by
+  calc E * (R8 + X * t12 + X * E * (c13 + t3))
+      = E * R8 + E * X * (t12 + E * c13) + E * X * E * t3 := by grind
+    _ = E * R8 + E * X * (t10 + a2) + E * X * E * t3 := by rw [e12]
+    _ = E * R8 + E * X * (t10 + E * t3) + E * X * a2 := by grind
+    _ = E * R8 + E * X * (PK + a58) + E * X * a2 := by rw [e10]
+    _ = E * (R8 + X * a58) + E * X * PK + E * X * a2 := by grind
+    _ = E * (Pl + Nr * q + a57) + E * X * PK + E * X * a2 := by rw [hv]
+    _ = E * a57 + E * Pl + E * Nr * q + E * X * PK + E * X * a2 := by grind
+    _ = (P0 + q * N0) + E * Pl + E * Nr * q + E * X * PK + E * X * a2 := by rw [hC0]
+    _ = _ := by grind
 
 /-- A round of the reduction in place: `P[i …] += q m` for `q = Pᵢ m'`, with
 the carry `a2` into word `i + k`, its carry out in `a2`. -/
@@ -910,16 +939,7 @@ theorem sred_ok {k : Nat} {b : Addr} {m' : Nat} {s : State} (h : RedOk k b m' s)
     rw [p1]
     generalize ((2 : Nat) ^ 64) ^ j = X at hv ⊢
     generalize (2 : Nat) ^ 64 = E at hv hC0 e10 e12 ⊢
-    calc E * (R8 + X * t12 + X * E * (c13 + t3))
-        = E * R8 + E * X * (t12 + E * c13) + E * X * E * t3 := by grind
-      _ = E * R8 + E * X * (t10 + a2) + E * X * E * t3 := by rw [e12]
-      _ = E * R8 + E * X * (t10 + E * t3) + E * X * a2 := by grind
-      _ = E * R8 + E * X * (PK + a58) + E * X * a2 := by rw [e10]
-      _ = E * (R8 + X * a58) + E * X * PK + E * X * a2 := by grind
-      _ = E * (Pl + Nr * q + a57) + E * X * PK + E * X * a2 := by rw [hv]
-      _ = E * a57 + E * Pl + E * Nr * q + E * X * PK + E * X * a2 := by grind
-      _ = (P0 + q * N0) + E * Pl + E * Nr * q + E * X * PK + E * X * a2 := by rw [hC0]
-      _ = _ := by grind
+    exact sred_sum hv hC0 e10 e12
 
 /-- After `i` rounds of the reduction from `s0`, of `V` (the product) modulo `M`. -/
 structure SRedInv (k : Nat) (b : Addr) (M V : Nat) (s0 : State) (i : Nat) (s : State) : Prop where
@@ -937,6 +957,18 @@ theorem nv_PR {k : Nat} {b : Addr} {m m' : Mem} (hf : Frame [PR k b] m m') (hk :
   obtain ⟨q8, qtop, nq, tq, tn⟩ := sq_facts k hk hk'
   exact colsV_congr fun i hi => dw_frame hf fun r hr => by
     rw [List.mem_singleton] at hr; subst hr; exact Offset.disjoint b (.inl (by omega_using [nq, hi])) (by omega_using [qtop, nq, hi]) (by omega_using [qtop])
+
+/-- A round added to the rounds before it: `srounds_ok`'s last step, among its two equations
+alone (`grind` reads every hypothesis). -/
+private theorem sround_sum {Ei Ek E R' Up R q P0 c' c V Q M : Nat}
+    (hv : Ei * (P0 + E * R + Ek * E * Up + Ek * c) = V + Q * M)
+    (e' : E * (R' + Ek * c') = P0 + E * R + Ek * c + q * M) :
+    Ei * E * (R' + Ek * Up + Ek * c') = V + (Q + Ei * q) * M := by
+  calc Ei * E * (R' + Ek * Up + Ek * c') = Ei * (E * (R' + Ek * c')) + Ei * E * Ek * Up := by grind
+    _ = Ei * (P0 + E * R + Ek * c + q * M) + Ei * E * Ek * Up := by rw [e']
+    _ = Ei * (P0 + E * R + Ek * E * Up + Ek * c) + Ei * q * M := by grind
+    _ = V + Q * M + Ei * q * M := by rw [hv]
+    _ = _ := by grind
 
 /-- The rounds of the reduction. -/
 theorem srounds_ok {k : Nat} {b : Addr} {m' M V : Nat} {s0 : State} (h : RedOk k b m' s0)
@@ -996,16 +1028,12 @@ theorem srounds_ok {k : Nat} {b : Addr} {m' M V : Nat} {s0 : State} (h : RedOk k
       generalize dw s.mem b (SQ k + 8 * i) = P0 at e' hv
       generalize (s'.gpr .a2).toNat = c' at e' ⊢
       generalize (s.gpr .a2).toNat = c at e' hv
-      rw [show ((2 : Nat) ^ 64) ^ (i + 1) = (2 ^ 64) ^ i * 2 ^ 64 from Nat.pow_succ ..,
-        show ((2 : Nat) ^ 64) ^ (k + 1) = (2 ^ 64) ^ k * 2 ^ 64 from Nat.pow_succ ..] at *
+      rw [show ((2 : Nat) ^ 64) ^ (i + 1) = (2 ^ 64) ^ i * 2 ^ 64 from Nat.pow_succ ..]
+      rw [show ((2 : Nat) ^ 64) ^ (k + 1) = (2 ^ 64) ^ k * 2 ^ 64 from Nat.pow_succ ..] at hv
       generalize ((2 : Nat) ^ 64) ^ i = Ei at hv ⊢
       generalize ((2 : Nat) ^ 64) ^ k = Ek at hv e' ⊢
       generalize (2 : Nat) ^ 64 = E at hv e' ⊢
-      calc Ei * E * (R' + Ek * Up + Ek * c') = Ei * (E * (R' + Ek * c')) + Ei * E * Ek * Up := by grind
-        _ = Ei * (P0 + E * R + Ek * c + q * M) + Ei * E * Ek * Up := by rw [e']
-        _ = Ei * (P0 + E * R + Ek * E * Up + Ek * c) + Ei * q * M := by grind
-        _ = V + Q * M + Ei * q * M := by rw [hv]
-        _ = _ := by grind
+      exact sround_sum hv e'
 
 /-! ## The result into `T` -/
 

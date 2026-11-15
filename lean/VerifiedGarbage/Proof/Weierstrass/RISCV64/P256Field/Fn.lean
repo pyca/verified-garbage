@@ -276,6 +276,22 @@ theorem mask_of_bits {a c : BitVec 64} (ha : a.toNat ≤ 1) (hc : c.toNat ≤ 1)
     · exact .inr (BitVec.eq_of_toNat_eq (by rw [h]; rfl))
   rcases ha' with rfl | rfl <;> rcases hc' with rfl | rfl <;> (unfold IsMask; decide)
 
+/-- The value of four registers is below `2²⁵⁶`. -/
+theorem v4_lt (s : State) (r₀ r₁ r₂ r₃ : Reg) : v4 s r₀ r₁ r₂ r₃ < 2 ^ 256 := by
+  simp only [v4]
+  omega_using [(s.gpr r₀).isLt, (s.gpr r₁).isLt, (s.gpr r₂).isLt, (s.gpr r₃).isLt]
+
+/-- The arithmetic of the conditional subtraction, with each four-word value one number. -/
+theorem csub_arith {V1 VX a7 xc M : Nat} (hM : M ≤ 2 ^ 256) (v1 : V1 + 2 ^ 256 * a7 = VX + (2 ^ 256 - M))
+    (c1 : a7 ≤ 1) (hc : xc ≤ 1) (hx : VX + 2 ^ 256 * xc < 2 * M) (h1 : V1 < 2 ^ 256) :
+    (a7 = 1 ∨ xc = 1 → V1 = (VX + 2 ^ 256 * xc) % M) ∧
+      (¬(a7 = 1 ∨ xc = 1) → VX = (VX + 2 ^ 256 * xc) % M) := by
+  refine ⟨fun hg => ?_, fun hg => ?_⟩
+  · rw [Nat.mod_eq_sub_mod (by omega_using [hM, v1, hg]), Nat.mod_eq_of_lt (by omega_using [hx])]
+    omega_using [hM, v1, hg, c1, hc, hx]
+  · rw [Nat.mod_eq_of_lt (by omega_using [hc, v1, hg, c1, h1, hM])]
+    omega_using [hc, hg]
+
 /-- `sum ++ csubTail`: `x mod m` at `[t2]`, for `x = X0 + … + 2¹⁹² X3 + 2²⁵⁶ XC`
 below `2m`, after a `sum` that leaves `x + (2²⁵⁶ - m)` in `t6`, `a4`–`a6` and its
 carry in `a7`. -/
@@ -356,18 +372,12 @@ theorem csubWith_ok {sum : List Instr} {M : Nat} (hM : M ≤ 2 ^ 256) {s : State
       dw_write_other _ _ _ (by omega_using []) (by omega_using []) (by omega_using []), dw_write_other _ _ _ (by omega_using []) (by omega_using []) (by omega_using []),
       dw_write_self, dw_write_other _ _ _ (by omega_using []) (by omega_using []) (by omega_using []), dw_write_self, dw_write_self]
     have hge := hm.2
-    simp only [v4] at v1 hx ⊢
-    have := (s.gpr X0).isLt; have := (s.gpr X1).isLt; have := (s.gpr X2).isLt; have := (s.gpr X3).isLt
-    have := (s1.gpr .t6).isLt; have := (s1.gpr .a4).isLt; have := (s1.gpr .a5).isLt; have := (s1.gpr .a6).isLt
+    have ar := csub_arith hM v1 c1 hc hx (v4_lt s1 .t6 .a4 .a5 .a6)
     by_cases h : s4.gpr .t0 = BitVec.allOnes 64
     · simp only [h, ↓reduceIte]
-      have hg := hge.mp h
-      rw [Nat.mod_eq_sub_mod (by omega_using [hM, v1, hg]), Nat.mod_eq_of_lt (by omega_using [hx])]
-      omega_arith
+      exact ar.1 (hge.mp h)
     · simp only [h, ↓reduceIte]
-      have hg : ¬ ((s1.gpr .a7).toNat = 1 ∨ (s.gpr XC).toNat = 1) := fun h' => h (hge.mpr h')
-      rw [Nat.mod_eq_of_lt (by omega_using [hc, v1, hg])]
-      omega_using [hc, hg]
+      exact ar.2 fun h' => h (hge.mpr h')
   · rw [m8, ← hm1]
     have c0 := out_contains O (j := 0) (by decide)
     have c1 := out_contains O (j := 1) (by decide)
@@ -791,7 +801,7 @@ theorem col2_ok {A B : Addr} (hA : s.gpr .t5 = A) (hB : s.gpr .t4 = B) (hrA : Rd
   refine wp_ldw (i := 2) (by decide) hB hrB fun s1 v1 k1 => ?_
   refine wp_ldw (i := 2) (by decide) (by rw [k1.1 _ (by decide), hA]) (hrA.keeps k1) fun s2 v2 k2 => ?_
   refine WP.block_append (WP.mono (paF_ok (r0 := .t0) (r1 := .t6) (x := .t3) (y := .a1) (a := .t3) (b := .a0))
-    fun s3 ⟨e3, c3, k3⟩ => ?_)
+    fun s3 ⟨e3, _, k3⟩ => ?_)
   have K3 := (k1.trans k2).trans k3
   refine WP.block_append (WP.mono (term3_ok (r0 := .t0) (r1 := .t6) (r2 := .a1) (x := .t3) (y := .a2) (b := .a4)
     (i := 1) (by decide) (by rw [K3.1 _ (by decide), hA]) (hrA.keeps K3)) fun s4 ⟨e4, k4⟩ => ?_)
@@ -813,7 +823,7 @@ theorem col2_ok {A B : Addr} (hA : s.gpr .t5 = A) (hB : s.gpr .t4 = B) (hrA : Rd
   have a7_4 : rv s4 .a7 = dw s.mem B 16 := by
     rw [rv, keeps_ne ((k2.trans k3).trans k4) (r := .a7) (by decide)]; exact v1
   have a6_5 : rv s5 .a6 = rv s .a6 := keeps_ne K5 (by decide)
-  simp only [val3, rv] at e3 e4 e5 e6 t0_2 t6_2 a0_2 a4_3 a7_4 a6_5 v2 ⊢
+  simp only [rv] at t0_2 t6_2 a0_2 a4_3 a7_4 a6_5 ⊢
   rw [v2, t0_2, t6_2, a0_2] at e3
   rw [a4_3] at e4
   rw [a7_4] at e5
@@ -821,14 +831,12 @@ theorem col2_ok {A B : Addr} (hA : s.gpr .t5 = A) (hB : s.gpr .t4 = B) (hrA : Rd
   have p0 := mul128 (dw_lt s.mem A 16) (rv_lt s .a0)
   have p1 := mul128 (dw_lt s.mem A 8) (rv_lt s .a4)
   have p2 := mul128 (dw_lt s.mem A 0) (dw_lt s.mem B 16)
-  have := rv_lt s .t0; have := rv_lt s .t6; have := rv_lt s .a6
-  have := rv_lt s3 .t0; have := rv_lt s3 .t6; have := rv_lt s4 .t0; have := rv_lt s4 .t6
-  have := rv_lt s5 .t0; have := rv_lt s5 .t6
-  simp only [rv] at *
-  have e4' := e4 (by omega_using [c3, p1])
-  have e5' := e5 (by omega_arith)
-  have e6' := e6 (by omega_arith)
-  refine ⟨?_, by omega_arith, K6.mono⟩
+  simp only [rv] at p0 p1
+  -- Each three-word value is one number for `omega`: the sums stay far below `2¹⁹²`.
+  have e4' := e4 (by omega_using [e3, p0, p1])
+  have e5' := e5 (by omega_using [e3, e4', p0, p1, p2])
+  have e6' := e6 (by omega_using [e3, e4', e5', p0, p1, p2])
+  refine ⟨?_, by omega_using [e3, e4', e5', e6'], K6.mono⟩
   rw [keeps_ne (k5.trans k6) (r := .a7) (by decide)]; exact a7_4
 
 /-- Column 3. -/
@@ -875,9 +883,10 @@ theorem col3_ok {A B : Addr} (hA : s.gpr .t5 = A) (hB : s.gpr .t4 = B) (hrA : Rd
   have f1 : rv s3 .t6 = rv s2 .t6 := keeps_ne k3 (by decide)
   have f2 : rv s3 .a1 = rv s2 .a1 := keeps_ne k3 (by decide)
   have f3 : rv s3 .t3 = rv s2 .t3 := keeps_ne k3 (by decide)
-  simp only [val3, rv] at e1 e2 e4 e5 e6 e7 a0_1 a4_3 a7_4 a0_5 t0_6 v3 f1 f2 f3 ⊢
+  have hv3 : val3 s3 .t6 .a1 .t3 = val3 s2 .t6 .a1 .t3 := by simp only [val3, f1, f2, f3]
+  simp only [rv] at a0_1 a4_3 a7_4 a0_5 t0_6 ⊢
   rw [a0_1] at e2
-  rw [a4_3, f1, f2, f3] at e4
+  rw [a4_3, hv3] at e4
   rw [a7_4] at e5
   rw [a0_5] at e6
   rw [t0_6] at e7
@@ -885,17 +894,14 @@ theorem col3_ok {A B : Addr} (hA : s.gpr .t5 = A) (hB : s.gpr .t4 = B) (hrA : Rd
   have p1 := mul128 (dw_lt s.mem A 16) (rv_lt s .a4)
   have p2 := mul128 (dw_lt s.mem A 8) (rv_lt s .a7)
   have p3 := mul128 (dw_lt s.mem A 0) (dw_lt s.mem B 24)
-  have := rv_lt s .t6; have := rv_lt s .a1; have := rv_lt s .a5; have := rv_lt s .t0
-  have := rv_lt s1 .t6; have := rv_lt s1 .a1
-  have := rv_lt s2 .t6; have := rv_lt s2 .a1; have := rv_lt s4 .t6; have := rv_lt s4 .a1
-  have := rv_lt s5 .t6; have := rv_lt s5 .a1; have := rv_lt s6 .t6; have := rv_lt s6 .a1
-  simp only [rv] at *
+  simp only [rv] at p0 p1 p2
+  -- Each three-word value is one number for `omega`: the sums stay far below `2¹⁹²`.
   have e2' := e2 (by omega_using [e1, p0])
-  have e4' := e4 (by omega_arith)
-  have e5' := e5 (by omega_arith)
-  have e6' := e6 (by omega_arith)
-  have e7' := e7 (by omega_arith)
-  refine ⟨?_, by omega_arith, K7.mono⟩
+  have e4' := e4 (by omega_using [e1, e2', p0, p1])
+  have e5' := e5 (by omega_using [e1, e2', e4', p0, p1, p2])
+  have e6' := e6 (by omega_using [e1, e2', e4', e5', p0, p1, p2, p3])
+  have e7' := e7 (by omega_using [e1, e2', e4', e5', e6', p0, p1, p2, p3])
+  refine ⟨?_, by omega_using [e1, e2', e4', e5', e6', e7'], K7.mono⟩
   rw [keeps_ne (k6.trans k7) (r := .a0) (by decide)]; exact a0_5
 
 /-- Column 4. -/
@@ -934,24 +940,22 @@ theorem col4_ok {A : Addr} (hA : s.gpr .t5 = A) (hrA : RdW A s) :
   have f1 : rv s2 .a1 = rv s1 .a1 := keeps_ne k2 (by decide)
   have f2 : rv s2 .t3 = rv s1 .t3 := keeps_ne k2 (by decide)
   have f3 : rv s2 .t4 = rv s1 .t4 := keeps_ne k2 (by decide)
-  simp only [val3, rv] at e1 e3 e4 e5 e6 a4_2 a7_3 a0_4 t6_5 v2 f1 f2 f3 ⊢
-  rw [v2, a4_2, f1, f2, f3] at e3
+  have hv2 : val3 s2 .a1 .t3 .t4 = val3 s1 .a1 .t3 .t4 := by simp only [val3, f1, f2, f3]
+  simp only [rv] at a4_2 a7_3 a0_4 t6_5 ⊢
+  rw [v2, a4_2, hv2] at e3
   rw [a7_3] at e4
   rw [a0_4] at e5
   rw [t6_5] at e6
   have p0 := mul128 (dw_lt s.mem A 24) (rv_lt s .a4)
   have p1 := mul128 (dw_lt s.mem A 16) (rv_lt s .a7)
   have p2 := mul128 (dw_lt s.mem A 8) (rv_lt s .a0)
-  have := rv_lt s .a1; have := rv_lt s .t3; have := rv_lt s .a6; have := rv_lt s .t6
-  have := rv_lt s1 .a1; have := rv_lt s1 .t3
-  have := rv_lt s3 .a1; have := rv_lt s3 .t3; have := rv_lt s4 .a1; have := rv_lt s4 .t3
-  have := rv_lt s5 .a1; have := rv_lt s5 .t3
-  simp only [rv] at *
+  simp only [rv] at p0 p1 p2
+  -- Each three-word value is one number for `omega`: the sums stay far below `2¹⁹²`.
   have e3' := e3 (by omega_using [e1, p0])
-  have e4' := e4 (by omega_arith)
-  have e5' := e5 (by omega_arith)
-  have e6' := e6 (by omega_arith)
-  refine ⟨?_, by omega_arith, K6.mono⟩
+  have e4' := e4 (by omega_using [e1, e3', p0, p1])
+  have e5' := e5 (by omega_using [e1, e3', e4', p0, p1, p2])
+  have e6' := e6 (by omega_using [e1, e3', e4', e5', p0, p1, p2])
+  refine ⟨?_, by omega_using [e1, e3', e4', e5', e6'], K6.mono⟩
   rw [keeps_ne (k3.trans (k4.trans (k5.trans k6))) (r := .a6) (by decide)]; exact v2
 
 /-- Columns 5 and 6. -/

@@ -1075,6 +1075,12 @@ def DPostC (s s' : State) : Prop :=
     (s'.gpr .a0 = 0 ∧ (¬ ∃ Q, Spec.EcKey.matchesCompressedPublicKey Spec.P224.curve bs Q) ∧
       bytesAt s'.mem (s.gpr .a0) 57 = List.replicate 57 0)
 
+/-- Two facts of the field for `tail_ok`, proven here, without its two hundred hypotheses, which
+`grind` reads. -/
+private theorem neg_mul_neg_self (r : Fe W) : -r * -r = r * r := by grind
+private theorem sub_eq_zero_iff_eq (a b : Fe W) : a - b = 0 ↔ a = b := by
+  constructor <;> intro h <;> grind
+
 /-- The root, the checks and the output, after the digits. -/
 theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s s₆ s₇ : State} (hs : DPre s) (F : FPost s s₆)
     (D : DSt (rhsOf s) (s.gpr .a2) (s.syms sqrtSym) s₆ s₇ 24) :
@@ -1168,10 +1174,10 @@ theorem tail_ok (hL : VG.Proof.Weierstrass.Law W) {s s₆ s₇ : State} (hs : DP
       VG.Impl.EcKey.Compressed.chooseRoot r (tag.toNat % 2) = r * r := by
     unfold VG.Impl.EcKey.Compressed.chooseRoot; split
     · rfl
-    · grind
+    · exact neg_mul_neg_self r
   have hdif : sv (s.gpr .a2) s₁₀ DIF = 0 ↔ r * r = rhsF := by
     rw [← toM_eq_zero_iff unit ltd₁₀, vd]
-    constructor <;> intro h <;> grind
+    exact sub_eq_zero_iff_eq _ _
   -- The specification's decoding.
   have hsplit : bytesAt s.mem (s.gpr .a1) 29 = tag :: bytesAt s.mem (s.gpr .a1 + BitVec.ofNat 64 1) 28 := by
     have h1 : bytesAt s.mem (s.gpr .a1) 1 = [tag] := by

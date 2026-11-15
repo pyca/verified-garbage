@@ -285,29 +285,29 @@ theorem stepW_ok {t : State} {B : Addr} {Z W h c R Y N Dd q : Nat} (hw : Ws t B 
   have FP₁ : FrmP B (fun y => (slot W sqU ≤ y ∧ y < slot W sqU + 24) ∨ (slot W sqS + 8 ≤ y ∧ y < slot W sqS + 24) ∨
       (208 ≤ y ∧ y < 216)) t.mem t₁.mem := by
     intro x hx
-    rw [hm₁, writeW_outside _ B _ (d := 8 * sU) (by omega_using [hsU]) x (by omega),
-      writeW_outside _ B _ (d := slot W sqS + 8 * 2) (by omega_using [hw2, sS]) x (by omega),
-      writeW_outside _ B _ (d := slot W sqS + 8 * 1) (by omega_using [hw2, sS]) x (by omega),
-      writeW_outside _ B _ (d := slot W sqU + 8 * 2) (by omega_using [hw2, sU']) x (by omega),
-      writeW_outside _ B _ (d := slot W sqU + 8 * 1) (by omega_using [hw2, sU']) x (by omega),
-      writeW_outside _ B _ (d := slot W sqU) (by omega_using [hw2, sU']) x (by omega)]
+    rw [hm₁, writeW_outside _ B _ (d := 8 * sU) (by omega_using [hsU]) x (by omega_using [hx, hsU]),
+      writeW_outside _ B _ (d := slot W sqS + 8 * 2) (by omega_using [hw2, sS]) x (by omega_using [hx]),
+      writeW_outside _ B _ (d := slot W sqS + 8 * 1) (by omega_using [hw2, sS]) x (by omega_using [hx]),
+      writeW_outside _ B _ (d := slot W sqU + 8 * 2) (by omega_using [hw2, sU']) x (by omega_using [hx]),
+      writeW_outside _ B _ (d := slot W sqU + 8 * 1) (by omega_using [hw2, sU']) x (by omega_using [hx]),
+      writeW_outside _ B _ (d := slot W sqU) (by omega_using [hw2, sU']) x (by omega_using [hx])]
   have hw₁ := hw.congrP FP₁ (fun y hy => by unfold DOk; omega_using [sU', sS, hy]) k₁ (by decide)
   have ct₁ : word t₁.mem B (8 * sCt) = BitVec.ofNat 64 c := by
-    rw [FP₁.word_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hsCt]), hct]
+    rw [FP₁.word_eq (fun y h1 h2 hy => by omega_using [h1, h2, hy, sZ, sD, sU', sS, hsU, hsCt, hwh, hc1, hch]) (by omega_using [hsCt]), hct]
   have hR₁ : wv t₁.mem B (slot W sqZ + 16 * (c - 1)) (h - (c - 1) + 2) = R := by
-    rw [FP₁.wv_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hwh, hch, hw2, sZ]), hRw]
+    rw [FP₁.wv_eq (fun y h1 h2 hy => by omega_using [h1, h2, hy, sZ, sD, sU', sS, hsU, hsCt, hwh, hc1, hch]) (by omega_using [hwh, hch, hw2, sZ]), hRw]
   have hY₁ : wv t₁.mem B (slot W sqD + 8 * (c - 1)) (h - (c - 1) + 2) = Y := by
-    rw [FP₁.wv_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hwh, hch, hw2, sD]), hYw]
+    rw [FP₁.wv_eq (fun y h1 h2 hy => by omega_using [h1, h2, hy, sZ, sD, sU', sS, hsU, hsCt, hwh, hc1, hch]) (by omega_using [hwh, hch, hw2, sD]), hYw]
   have hY0₁ : word t₁.mem B (slot W sqD + 8 * (c - 1)) = 0 := by
-    rw [FP₁.word_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hwh, hch, hw2, sD]), hY0]
+    rw [FP₁.word_eq (fun y h1 h2 hy => by omega_using [h1, h2, hy, sZ, sD, sU', sS, hsU, hsCt, hwh, hc1, hch]) (by omega_using [hwh, hch, hw2, sD]), hY0]
   have hy1₁ : (word t₁.mem B (slot W sqD + 8 * (c - 1) + 8)).toNat + 2 ≤ 2 ^ 64 := by
-    rw [FP₁.word_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hwh, hch, hw2, sD])]; exact hy1
+    rw [FP₁.word_eq (fun y h1 h2 hy => by omega_using [h1, h2, hy, sZ, sD, sU', sS, hsU, hsCt, hwh, hc1, hch]) (by omega_using [hwh, hch, hw2, sD])]; exact hy1
   have hqh : word t₁.mem B (8 * sU) = BitVec.ofNat 64 (min (N / Dd) (2 ^ 64 - 1)) := by
     rw [hm₁, word_writeW_self]
   -- The subtraction and the corrections, then the count.
   refine seq7 (WP.mono (corr_ok hw₁ hwh ct₁ hc1 hch hR₁ hY₁ hY0₁ hy1₁ hqh (by omega_using []) hqβ lo hi hq1 hq2 hR2 hB) fun t₂ ⟨hz₂, hd₂, FP₂, k₂, hw₂⟩ => ?_)
   have ct₂ : word t₂.mem B (8 * sCt) = BitVec.ofNat 64 c := by
-    rw [FP₂.word_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hsCt]), ct₁]
+    rw [FP₂.word_eq (fun y h1 h2 hy => by omega_using [h1, h2, hy, sZ, sD, sU', sS, hsU, hsCt, hwh, hc1, hch]) (by omega_using [hsCt]), ct₁]
   refine WP.mono (countNext_ok hw₂ ct₂ hc1 (by omega)) fun t₃ ⟨hzf, hm₃, k₃⟩ => ⟨hzf, ?_⟩
   have FP₃ : FrmP B (fun y => 200 ≤ y ∧ y < 208) t₂.mem t₃.mem := by
     rw [hm₃]; exact FrmP.of_writeW _ (by omega_using [hsCt]) fun y h1 h2 => by omega_using [hsCt, h1, h2]
@@ -318,8 +318,8 @@ theorem stepW_ok {t : State} {B : Addr} {Z W h c R Y N Dd q : Nat} (hw : Ws t B 
       (FP₃.mono fun y hy => .inr (.inr hy))
   refine ⟨by rw [hm₃, word_writeW_self], ?_, ?_, FP, ((k₁.trans k₂).trans k₃).mono (by decide),
     hw.congrP FP (fun y hy => by unfold DOk; omega_using [sZ, sD, sU', sS, hy]) ((k₁.trans k₂).trans k₃) (by decide)⟩
-  · rw [FP₃.wv_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hwh, hch, hw2, sZ]), hz₂]
-  · rw [FP₃.wv_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hwh, hch, hw2, sD]), hd₂]
+  · rw [FP₃.wv_eq (fun y h1 h2 hy => by omega_using [h1, h2, hy, sZ, sD, sU', sS, hsU, hsCt, hwh, hc1, hch]) (by omega_using [hwh, hch, hw2, sZ]), hz₂]
+  · rw [FP₃.wv_eq (fun y h1 h2 hy => by omega_using [h1, h2, hy, sZ, sD, sU', sS, hsU, hsCt, hwh, hc1, hch]) (by omega_using [hwh, hch, hw2, sD]), hd₂]
 
 /-- The estimate alone, for what the steps after it need: the working space and the count. -/
 theorem est_ok {t : State} {B : Addr} {Z W h c R Y N Dd : Nat} (hw : Ws t B Z W) (hwh : W = 2 * h + 4)
@@ -373,14 +373,19 @@ theorem est_ok {t : State} {B : Addr} {Z W h c R Y N Dd : Nat} (hw : Ws t B Z W)
   have FP₁ : FrmP B (fun y => (slot W sqU ≤ y ∧ y < slot W sqU + 24) ∨ (slot W sqS + 8 ≤ y ∧ y < slot W sqS + 24) ∨
       (208 ≤ y ∧ y < 216)) t.mem t₁.mem := by
     intro x hx
-    rw [hm₁, writeW_outside _ B _ (d := 8 * sU) (by omega_using [hsU]) x (by omega),
-      writeW_outside _ B _ (d := slot W sqS + 8 * 2) (by omega_using [hw2, sS]) x (by omega),
-      writeW_outside _ B _ (d := slot W sqS + 8 * 1) (by omega_using [hw2, sS]) x (by omega),
-      writeW_outside _ B _ (d := slot W sqU + 8 * 2) (by omega_using [hw2, sU']) x (by omega),
-      writeW_outside _ B _ (d := slot W sqU + 8 * 1) (by omega_using [hw2, sU']) x (by omega),
-      writeW_outside _ B _ (d := slot W sqU) (by omega_using [hw2, sU']) x (by omega)]
+    rw [hm₁, writeW_outside _ B _ (d := 8 * sU) (by omega_using [hsU]) x (by omega_using [hx, hsU]),
+      writeW_outside _ B _ (d := slot W sqS + 8 * 2) (by omega_using [hw2, sS]) x (by omega_using [hx]),
+      writeW_outside _ B _ (d := slot W sqS + 8 * 1) (by omega_using [hw2, sS]) x (by omega_using [hx]),
+      writeW_outside _ B _ (d := slot W sqU + 8 * 2) (by omega_using [hw2, sU']) x (by omega_using [hx]),
+      writeW_outside _ B _ (d := slot W sqU + 8 * 1) (by omega_using [hw2, sU']) x (by omega_using [hx]),
+      writeW_outside _ B _ (d := slot W sqU) (by omega_using [hw2, sU']) x (by omega_using [hx])]
   exact ⟨hw.congrP FP₁ (fun y hy => by unfold DOk; omega_using [sU', sS, hy]) k₁ (by decide),
-    by rw [FP₁.word_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hsCt]), hct]⟩
+    by rw [FP₁.word_eq (fun y h1 h2 hy => by omega_using [h1, h2, hy, sU', sS, hsU, hsCt]) (by omega_using [hsCt]), hct]⟩
+
+/-- `D`'s number as a multiple of `β^(c - 1)`, and with the digit added: identities `grind`
+proves at once here, and in seconds among `stepXE_ok`'s hypotheses. -/
+private theorem dShift (s E : Nat) : 2 * s * (E * 2 ^ 64) = 0 + E * (2 * s * 2 ^ 64) := by grind
+private theorem dNext (s q E : Nat) : E * (2 * s * 2 ^ 64 + 2 * q) = 2 * (s * 2 ^ 64 + q) * E := by grind
 
 /-- A digit step at count `c` (`1 ≤ c < h`), and its estimate alone. -/
 theorem stepXE_ok {s₀ t : State} {B : Addr} {Z W h X c : Nat} (hwh : W = 2 * h + 4) (hh : h ≤ 128)
@@ -510,18 +515,18 @@ theorem stepXE_ok {s₀ t : State} {B : Addr} {Z W h X c : Nat} (hwh : W = 2 * h
     rw [show slot W sqZ + 8 * (2 * (c - 1)) = slot W sqZ + 16 * (c - 1) by omega_using [], hz₂]
   have hZ₃ := wv_replace (m := t.mem) (m' := t₃.mem) (d := slot W sqZ) (k := 2 * (c - 1)) (L := h - (c - 1) + 2)
     (N := W) (show 2 * (c - 1) + (h - (c - 1) + 2) ≤ W by omega_using [hwh, hch]) hZw hXm hRL
-    (FP.wv_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hwh, hh, hch, sZ])) (FP.wv_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hwh, hh, hch, sZ])) hz₃
+    (FP.wv_eq (fun y h1 h2 hy => by omega_using [h1, h2, hy, sZ, sD, sU', sS, hsU, hsCt, hwh, hc1, hch]) (by omega_using [hwh, hh, hch, sZ])) (FP.wv_eq (fun y h1 h2 hy => by omega_using [h1, h2, hy, sZ, sD, sU', sS, hsU, hsCt, hwh, hc1, hch]) (by omega_using [hwh, hh, hch, sZ])) hz₃
   have hD₀ : wv t.mem B (slot W sqD) W = 0 + 2 ^ (64 * (c - 1)) * Y := by
-    rw [hD, pc, ← hY]; grind
+    rw [hD, pc, ← hY]; exact dShift _ _
   have hD₃ := wv_replace (m := t.mem) (m' := t₃.mem) (d := slot W sqD) (k := c - 1) (L := h - (c - 1) + 2)
     (N := W) (show (c - 1) + (h - (c - 1) + 2) ≤ W by omega_using [hwh, hch]) hD₀ hPc hYL
-    (FP.wv_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hwh, hh, hch, sD])) (FP.wv_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hwh, hh, hch, sD])) hd₂
+    (FP.wv_eq (fun y h1 h2 hy => by omega_using [h1, h2, hy, sZ, sD, sU', sS, hsU, hsCt, hwh, hc1, hch]) (by omega_using [hwh, hh, hch, sD])) (FP.wv_eq (fun y h1 h2 hy => by omega_using [h1, h2, hy, sZ, sD, sU', sS, hsU, hsCt, hwh, hc1, hch]) (by omega_using [hwh, hh, hch, sD])) hd₂
   refine ⟨hw₃, ct₃, ?_, ?_, ?_, hI.frm.trans (FP.mono fun y hy => stepP_sqLP hwh hc1 hch hy),
     (hI.keep.trans k).mono (by decide), ?_⟩
   · rw [hZ₃, hA', hsq, hrem]; exact congrArg _ (Nat.mul_comm _ _)
-  · rw [hD₃, hA', hsq, Nat.zero_add, ← hY]; grind
-  · rw [FP.word_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hw2, sS])]; exact hI.v
-  · rw [FP.word_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hw2, sD])]; exact hI.dtop
+  · rw [hD₃, hA', hsq, Nat.zero_add, ← hY]; exact dNext _ _ _
+  · rw [FP.word_eq (fun y h1 h2 hy => by omega_using [h1, h2, hy, sZ, sD, sU', sS, hsU, hsCt, hwh, hc1, hch]) (by omega_using [hw2, sS])]; exact hI.v
+  · rw [FP.word_eq (fun y h1 h2 hy => by omega_using [h1, h2, hy, sZ, sD, sU', sS, hsU, hsCt, hwh, hc1, hch]) (by omega_using [hw2, sD])]; exact hI.dtop
 
 /-- A digit step at count `c` (`1 ≤ c < h`). -/
 theorem stepX_ok {s₀ t : State} {B : Addr} {Z W h X c : Nat} (hwh : W = 2 * h + 4) (hh : h ≤ 128)

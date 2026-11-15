@@ -279,6 +279,31 @@ Avoid these patterns (each has cost tens of seconds in one proof):
     facts, in the interpreter: 5 to 11 s for `2 * x ≤ x * 2 ^ 63`. State the
     products as facts and use `omega_using` (which takes `2 ^ k` for an
     atom), or `linarith` where the products are hypotheses already.
+* **A module slow in many small places:** when no declaration stands out,
+  one idiom is usually repeated through the file. The ones found so far:
+  * *Facts `omega_arith` collects that no goal needs.* One alignment fact
+    (`x % 8 = 0`) among the hypotheses made each call three to four times
+    slower (`TComb`): state the conjuncts the goals use (`lay_lin`), not the
+    whole layout. An `omega_using` list that carries six separation
+    disjunctions where one is needed has `omega` split on each (`RdDiv`:
+    479 facts removed from 86 calls).
+  * *Multi-word values unfolded into their words.* `omega` over 8 to 14
+    atoms with coefficients up to `2 ^ 256`: keep each value one atom and
+    state the arithmetic about the values (`P256Field/Fn`), or state each
+    word's sum and carry once and close with one `omega` (`sub3w_ok`).
+  * *`grind` on a ring identity among a hundred hypotheses.* Move the
+    identity to a private lemma whose only hypotheses are the equations it
+    uses, and `exact` it (`GenWide/Sqr`, `SqrtLoop`).
+  * *An alignment closed by `dsimp`.* `(… .syms name).toNat % 64 = 0` on a
+    term with free variables has the kernel take the remainder in unary:
+    `rw [show … .syms name = <address> from rfl]; decide` (`SignEntryTiming`,
+    `Message`: 3 s to 0.2 s each).
+  * *A pattern-matching `fun` on a hypothesis with a very large type*
+    (`fun σ s ⟨⟨⟨h, x⟩, _⟩, z⟩ => …`) compiles a matcher each time, up to
+    1 s: take the hypothesis and project, or `obtain` on the next line.
+  * *A macro every proof calls.* `oomega` took a 23-fact conjunction apart
+    with `obtain` at each of its 225 uses: `have := offsO; omega_arith`
+    reads it as it is.
 * **Numeral exponents:** `2 ^ 64` elaborates in time quadratic in the number
   of numeral exponents in a statement; `Proof/Framework/PowLit.lean`'s macro
   elaborates it as `2 ^ (64 : Nat)` (the same term). A module with numeral

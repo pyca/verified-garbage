@@ -2171,7 +2171,7 @@ open VG.Impl.MlDsa.AArch64.Sign
 theorem selectedPairedChecks_tr {p : Params} (hp : Ok3 p) :
     PairedChecksCT p 16 (Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks p) := by
   intro t ht
-  apply positivePairedChecks_tr hp (by rcases hp with rfl|rfl|rfl <;> decide) (by decide) (by decide)
+  apply positivePairedChecks_tr hp (ksChk_ok hp) (by decide) (by decide)
   intro σ τ he hs ht'
   exact leq_prefixAgree (paramsOk hp) he ht hs ht'
 
@@ -2204,7 +2204,9 @@ theorem pairedRoots_pre {p : Params} {S : Nat} {s : State} (hS : 0<S)
   obtain ⟨N,rfl⟩ := Nat.exists_eq_succ_of_ne_zero (Nat.ne_of_gt hS)
   dsimp only [signK,scrLen] at hk
   rw [Nat.mul_comm 8 (scratchWords p)] at hk
-  obtain ⟨_,hw,d1,d2,d3,d4,d5,d6,d7,k1,k2,k3,k4,k5,n1,n2,n3,n4,n5,hsp⟩ := hk
+  sig_split hk
+  rename_i _ hw d1 d2 d3 d4 d5 d6 d7 k1 k2 k3 k4 k5 n1 n2 n3 n4 n5
+  have hsp := hk
   sig_pre [signContractT,signSig,abi,argRegs,Abi.withConsts,pairedSignRootConsts_eq,
     nttConsts_eq,Inverse.inverseConsts_eq,Abi.constRegions,Abi.constsHeld,
     TableConstants.staticNttWords_length,InverseTable.expandedWords_length,PairedTable.expandedWords_length,stackBelow]
@@ -2247,8 +2249,10 @@ theorem pairedSignSatWith_pre (p : Params) (hp : Ok3 p) (m : Mem)
     all_goals refine ⟨List.subset_append_left _ _, ?_⟩
     all_goals sig_and_intros
     all_goals first | rfl | exact Region.disjoint_of_sep (by decide) | decide
-  · refine ⟨⟨hf,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [pairedSignSatWith]; try decide⟩,
-      ⟨hi,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [pairedSignSatWith]; try decide⟩⟩
+  · refine ⟨⟨hf,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),
+        by rw [show (pairedSignSatWith p m).syms "VG_MLDSA_NTT_EXPANDED" = 1048576 from rfl]; decide⟩,
+      ⟨hi,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),
+        by rw [show (pairedSignSatWith p m).syms "VG_MLDSA_INV_FOLDED" = 1052480 from rfl]; decide⟩⟩
     · apply Covers.one
       exact ⟨⟨1048576,3904⟩,by simp [pairedSignSatWith],Region.contains_self _ _⟩
     · rcases hp with rfl|rfl|rfl
@@ -2263,7 +2267,8 @@ theorem pairedSignSatWith_pre (p : Params) (hp : Ok3 p) (m : Mem)
       all_goals simp only [List.mem_cons,List.not_mem_nil,or_false,forall_eq_or_imp,forall_eq]
       all_goals sig_and_intros
       all_goals first | rfl | exact Region.disjoint_of_sep (by decide)
-  · refine ⟨hr,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),by dsimp [pairedSignSatWith]; try decide⟩
+  · refine ⟨hr,by dsimp [pairedSignSatWith]; decide,?_,?_,by dsimp [pairedSignSatWith,signSat]; exact Region.disjoint_of_sep (by decide),
+      by rw [show (pairedSignSatWith p m).syms "VG_MLDSA_INV_PAIR" = 1056384 from rfl]; decide⟩
     · apply Covers.one
       exact ⟨⟨1056384,4096⟩,by simp [pairedSignSatWith],Region.contains_self _ _⟩
     · rcases hp with rfl|rfl|rfl
@@ -3839,7 +3844,9 @@ theorem verify_empty_pre {p : Params} {σ s : State}
     (verifyWithCacheContract p abi 48).pre
       (s.callEntry.withRegions (verifyEntryRd p s) σ.wr) := by
   sig_pre [verifyContract, verifySig, abi, VG.AArch64.argRegs] at pre
-  obtain ⟨sp, rd, wr, d1, d2, d3, k1, k2, k3, k4, n1, n2, n3, n4⟩ := pre
+  sig_split pre
+  rename_i sp rd wr d1 d2 d3 k1 k2 k3 k4 n1 n2 n3
+  have n4 := pre
   have e0 : s.gpr .x0 = σ.gpr .x0 := o.get .x0 (by decide)
   have e1 : s.gpr .x1 = σ.gpr .x1 := o.get .x1 (by decide)
   have e2 : s.gpr .x2 = σ.gpr .x2 := o.get .x2 (by decide)
@@ -3869,7 +3876,9 @@ theorem verify_prepared_pre {p : Params} (hp : Sign.Ok3 p) {σ s : State}
     (verifyWithCacheContract p abi 48).pre
       (s.callEntry.withRegions (verifyEntryRd p s) σ.wr) := by
   sig_pre [preparedVerifyContract, preparedVerifySig, abi, VG.AArch64.argRegs] at pre
-  obtain ⟨sp, rd, wr, d1, d2, d3, k1, k2, k3, k4, n1, n2, n3, n4, cached⟩ := pre
+  sig_split pre
+  rename_i sp rd wr d1 d2 d3 k1 k2 k3 k4 n1 n2 n3 n4
+  have cached := pre
   have hb : preparedPublicKeyBytes p < 2 ^ 32 := by
     rcases hp with rfl | rfl | rfl <;> decide
   have hn : n = 256 := rfl
@@ -3932,8 +3941,9 @@ theorem sign_empty_pre {p : Params} {σ s : State}
     (signWithCacheContract p abi 48).pre
       (s.callEntry.withRegions (signEntryRd p s) σ.wr) := by
   sig_pre [signContract, signSig, abi, VG.AArch64.argRegs] at pre
-  obtain ⟨sp, rd, wr, d1, d2, d3, d4, d5, d6, d7,
-    k1, k2, k3, k4, k5, n1, n2, n3, n4, n5⟩ := pre
+  sig_split pre
+  rename_i sp rd wr d1 d2 d3 d4 d5 d6 d7 k1 k2 k3 k4 k5 n1 n2 n3 n4
+  have n5 := pre
   have e0 : s.gpr .x0 = σ.gpr .x0 := o.get .x0 (by decide)
   have e1 : s.gpr .x1 = σ.gpr .x1 := o.get .x1 (by decide)
   have e2 : s.gpr .x2 = σ.gpr .x2 := o.get .x2 (by decide)
@@ -3965,8 +3975,9 @@ theorem sign_prepared_pre {p : Params} (hp : Sign.Ok3 p) {σ s : State}
     (signWithCacheContract p abi 48).pre
       (s.callEntry.withRegions (signEntryRd p s) σ.wr) := by
   sig_pre [preparedSignContract, preparedSignSig, abi, VG.AArch64.argRegs] at pre
-  obtain ⟨sp, rd, wr, d1, d2, d3, d4, d5, d6, d7,
-    k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, cached⟩ := pre
+  sig_split pre
+  rename_i sp rd wr d1 d2 d3 d4 d5 d6 d7 k1 k2 k3 k4 k5 n1 n2 n3 n4 n5
+  have cached := pre
   have hb : preparedSecretKeyBytes p < 2 ^ 32 := by
     rcases hp with rfl | rfl | rfl <;> decide
   have hn : n = 256 := rfl
@@ -4848,10 +4859,10 @@ theorem rawVerifyConstSat_roots (p : Params) (hp : Ok3 p) (prepared : Bool) (m :
     StaticRoots 64 (rawVerifyConstSat p prepared m) := by
   refine ⟨⟨hf, by dsimp [rawVerifyConstSat]; decide, ?_, ?_,
       by apply Region.disjoint_of_sep; dsimp [rawVerifyConstSat, rawVerifySat]; decide,
-      by dsimp [rawVerifyConstSat]⟩,
+      by rw [show (rawVerifyConstSat p prepared m).syms "VG_MLDSA_NTT_EXPANDED" = 1048576 from rfl]; decide⟩,
     ⟨hi, by dsimp [rawVerifyConstSat]; decide, ?_, ?_,
       by apply Region.disjoint_of_sep; dsimp [rawVerifyConstSat, rawVerifySat]; decide,
-      by dsimp [rawVerifyConstSat]⟩⟩
+      by rw [show (rawVerifyConstSat p prepared m).syms "VG_MLDSA_INV_FOLDED" = 1052480 from rfl]; decide⟩⟩
   · apply Covers.one
     exact ⟨⟨1048576,3904⟩, by simp [rawVerifyConstSat], Region.contains_self _ _⟩
   · rcases hp with rfl | rfl | rfl
@@ -5505,7 +5516,7 @@ theorem rawSignConstSat_roots (p : Params) (hp : Ok3 p) (prepared : Bool) (m : M
       Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords (rawSignConstSat p prepared m) := by
     refine ⟨hf, by dsimp [rawSignConstSat]; decide, ?_, ?_,
       by apply Region.disjoint_of_sep; dsimp [rawSignConstSat,rawSignSat]; decide,
-      by dsimp [rawSignConstSat]⟩
+      by rw [show (rawSignConstSat p prepared m).syms "VG_MLDSA_NTT_EXPANDED" = 1048576 from rfl]; decide⟩
     · exact Covers.one ⟨⟨1048576,3904⟩, by simp [rawSignConstSat], Region.contains_self _ _⟩
     · rcases hp with rfl | rfl | rfl
       all_goals
@@ -5515,7 +5526,7 @@ theorem rawSignConstSat_roots (p : Params) (hp : Ok3 p) (prepared : Bool) (m : M
       Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords (rawSignConstSat p prepared m) := by
     refine ⟨hi, by dsimp [rawSignConstSat]; decide, ?_, ?_,
       by apply Region.disjoint_of_sep; dsimp [rawSignConstSat,rawSignSat]; decide,
-      by dsimp [rawSignConstSat]⟩
+      by rw [show (rawSignConstSat p prepared m).syms "VG_MLDSA_INV_FOLDED" = 1052480 from rfl]; decide⟩
     · exact Covers.one ⟨⟨1052480,3904⟩, by simp [rawSignConstSat], Region.contains_self _ _⟩
     · rcases hp with rfl | rfl | rfl
       all_goals
@@ -5524,7 +5535,7 @@ theorem rawSignConstSat_roots (p : Params) (hp : Ok3 p) (prepared : Bool) (m : M
   have pair : PairedRoots 64 (rawSignConstSat p prepared m) := by
     refine ⟨hp', by dsimp [rawSignConstSat]; decide, ?_, ?_,
       by apply Region.disjoint_of_sep; dsimp [rawSignConstSat,rawSignSat]; decide,
-      by dsimp [rawSignConstSat]⟩
+      by rw [show (rawSignConstSat p prepared m).syms "VG_MLDSA_INV_PAIR" = 1056384 from rfl]; decide⟩
     · exact Covers.one ⟨⟨1056384,4096⟩, by simp [rawSignConstSat], Region.contains_self _ _⟩
     · rcases hp with rfl | rfl | rfl
       all_goals
