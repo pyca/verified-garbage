@@ -8,7 +8,6 @@ x86_64 vg_aes_ccm_seal_aesni
 x86_64 vg_aes_gcm_init
 x86_64 vg_aes_gcm_open_prepared
 x86_64 vg_aes_gcm_open_prepared_aesni
-x86_64 vg_aes_gcm_open_prepared_aesni_pclmul
 x86_64 vg_aes_gcm_open_prepared_aesni_pclmul_avx
 x86_64 vg_aes_gcm_open_prepared_pclmul
 x86_64 vg_aes_gcm_open_prepared_vaes_vpclmul
