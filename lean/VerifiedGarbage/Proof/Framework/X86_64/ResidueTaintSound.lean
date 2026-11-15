@@ -2243,8 +2243,19 @@ theorem stepFn1_eq (i : Instr) : stepFn1 i = stepFn i := by
     | _ => rfl
   | _ => rfl
 
+theorem stepFn1K_eq (i : Instr) : stepFn1K i = stepFn1 i := by
+  cases i with
+  | mov d src | mov32 d src => cases src <;> rfl
+  | alu op d src | alu32 op d src => cases op <;> cases src <;> rfl
+  | cmov c d src => cases c <;> cases src <;> rfl
+  | xop op =>
+    cases op with
+    | bin op a b => cases op <;> rfl
+    | _ => rfl
+  | _ => rfl
+
 theorem stepF_eq : stepF = step := by
-  funext τ i; show (stepFn1 i).run τ = _; rw [stepFn1_eq]; exact stepFn_eq i τ
+  funext τ i; show (stepFn1K i).run τ = _; rw [stepFn1K_eq, stepFn1_eq]; exact stepFn_eq i τ
 
 theorem eq2_iff {a b : Nat × Nat} : eq2 a b = true ↔ a = b := by
   obtain ⟨a1, a2⟩ := a; obtain ⟨b1, b2⟩ := b

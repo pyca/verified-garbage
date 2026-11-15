@@ -789,8 +789,11 @@ def stepFn1 (i : Instr) : RStep :=
   -- Plain, writing no general-purpose register.
   | _ => fastFn (Taint.stepKeepFn i) none
 
+/-- `stepFn1`, with its cases closed (`inline_match%`, `stepFn1K_eq`). -/
+def stepFn1K : Instr → RStep := inline_match% stepFn1 Taint.stepKeepFn Taint.stepKDFn Taint.xopStepFn
+
 /-- `step`, for the kernel (`stepF_eq`). -/
-def stepF (τ : FT) (i : Instr) : Option FT := (stepFn1 i).run τ
+def stepF (τ : FT) (i : Instr) : Option FT := (stepFn1K i).run τ
 
 /-- `a = b`, for pairs, slots and pointers in slots. -/
 def eq2 (a b : Nat × Nat) : Bool := Nat.beq a.1 b.1 && Nat.beq a.2 b.2
