@@ -11206,22 +11206,22 @@ vg_aes_gcm_open_prepared_vaes_vpclmul:
 	mov r15, QWORD PTR [r15+168]
 	lea rsp, [rsp+2616]
 21:
-	vpxor xmm0, xmm0, xmm0
-	vpxor xmm1, xmm1, xmm1
-	vpxor xmm2, xmm2, xmm2
-	vpxor xmm3, xmm3, xmm3
-	vpxor xmm4, xmm4, xmm4
-	vpxor xmm5, xmm5, xmm5
-	vpxor xmm6, xmm6, xmm6
-	vpxor xmm7, xmm7, xmm7
-	vpxor xmm8, xmm8, xmm8
-	vpxor xmm9, xmm9, xmm9
-	vpxor xmm10, xmm10, xmm10
-	vpxor xmm11, xmm11, xmm11
-	vpxor xmm12, xmm12, xmm12
-	vpxor xmm13, xmm13, xmm13
-	vpxor xmm14, xmm14, xmm14
-	vpxor xmm15, xmm15, xmm15
+	nop4	# was: vpxor xmm0, xmm0, xmm0
+	nop4	# was: vpxor xmm1, xmm1, xmm1
+	nop4	# was: vpxor xmm2, xmm2, xmm2
+	nop4	# was: vpxor xmm3, xmm3, xmm3
+	nop4	# was: vpxor xmm4, xmm4, xmm4
+	nop4	# was: vpxor xmm5, xmm5, xmm5
+	nop4	# was: vpxor xmm6, xmm6, xmm6
+	nop4	# was: vpxor xmm7, xmm7, xmm7
+	nop5	# was: vpxor xmm8, xmm8, xmm8
+	nop5	# was: vpxor xmm9, xmm9, xmm9
+	nop5	# was: vpxor xmm10, xmm10, xmm10
+	nop5	# was: vpxor xmm11, xmm11, xmm11
+	nop5	# was: vpxor xmm12, xmm12, xmm12
+	nop5	# was: vpxor xmm13, xmm13, xmm13
+	nop5	# was: vpxor xmm14, xmm14, xmm14
+	nop5	# was: vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
@@ -11243,14 +11243,14 @@ vg_aes_gcm_open_prepared_vaes_vpclmul:
 	lea rsp, [rsp+2344]
 	lea rsp, [rsp+8]
 	mov eax, eax
-	xor ecx, ecx
-	xor edx, edx
-	xor esi, esi
-	xor edi, edi
-	xor r8d, r8d
-	xor r9d, r9d
-	xor r10d, r10d
-	xor r11d, r11d
+	nop2	# was: xor ecx, ecx
+	nop2	# was: xor edx, edx
+	nop2	# was: xor esi, esi
+	nop2	# was: xor edi, edi
+	nop3	# was: xor r8d, r8d
+	nop3	# was: xor r9d, r9d
+	nop3	# was: xor r10d, r10d
+	nop3	# was: xor r11d, r11d
 	ret
 20:
 	lea rsp, [rsp-2616]
