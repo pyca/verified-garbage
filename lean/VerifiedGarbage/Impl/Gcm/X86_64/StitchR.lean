@@ -16,11 +16,11 @@ the blocks after the last group (1 to 15), which they also take: `decR`
 decrypts them after its loop (`remD`), and `encR` and `encToR` encrypt them
 after theirs (`remE`), two at a time, with the powers of the last `r` blocks.
 
-Encryption leaves no copy of the powers or of the keystream in the working
-space: `remE` reads the powers of its blocks from the key context
-(`remSetupC`), not from the copy the loops read, and clears the keystream it
-stored there (`zeroKs`); with fewer than 16 blocks `encR` makes no copy
-(`setupS`), and otherwise clears it once the loops end (`zeroPow`).
+Neither leaves a copy of the powers or of the keystream in the working
+space: `remD` and `remE` read the powers of their blocks from the key context
+(`remSetupC`), not from the copy the loops read, and clear the keystream they
+stored there (`zeroKs`); with fewer than 16 blocks `decR` and `encR` make no
+copy (`setupS`), and otherwise clear it once the loops end (`zeroPow`).
 -/
 
 @[expose] public section
@@ -59,7 +59,7 @@ def encN : Prog isa :=
             (.seq (.ite .b (.block []) (.loop body .ae))
               (.block (storeCtr ++ lastG ++ storeY)))))))
 
-/-! ## Decryption: the blocks after the last group -/
+/-! ## The blocks after the last group -/
 
 /-- The keystream of eight blocks, the next counters' in the lanes of
 `ymm3`–`ymm6`, stored to `scratch + 32 j`. -/
@@ -99,41 +99,13 @@ def foldLanes : List Instr :=
    .vop (.vextracti128 .xmm11 .xmm9 1), .vop (.vbin .vpxor .l128 .xmm9 .xmm9 .xmm11),
    .vop (.vextracti128 .xmm11 .xmm10 1), .vop (.vbin .vpxor .l128 .xmm10 .xmm10 .xmm11)]
 
-/-- The `r9 - 16` blocks at `rdx` after the last group, which the loop has
-already hashed and decrypted: the counter after them stored and `rax` at
-their powers (`StitchZH.remSetup`), their keystream (`ksSel`), then each
-block hashed as read and decrypted in place with its keystream, read at
-`r11 + r10 + 768` with `r11` lowered by 512: the first alone if `r` is odd
-(`StitchZH.remBodyD`, in the lower lanes), then two at a time (`remPairD`),
-after which the products of the two lanes are added (`foldLanes`); then the
-products are reduced into `Y`, and `Y` stored. -/
-def remD : Prog isa :=
-  .seq (.block StitchZH.remSetup)
-    (.seq ksSel
-      (.seq (.block (([.alu .sub .r11 (.imm 512), .mov32 .r10 (.imm 0)] : List Instr) ++ StitchAvx.zero ++
-          ([.alu .test .r9 (.imm 1)] : List Instr)))
-        (.seq (.ite .e (.block [.alu .cmp .r9 (.imm 16)]) (.block (StitchZH.remBodyD .rdx ++ StitchZH.remNext)))
-          (.seq (.ite .e (.block []) (.seq (.loop (.block (remPairD ++ remNextPair)) .ne) (.block foldLanes)))
-            (.block (StitchAvx.reduceHash ++ ([.alu .add .r11 (.imm 512)] : List Instr) ++ storeY))))))
+/-! ## The powers of the blocks after the last group, from the key context
 
-/-- `Stitch.dec`, for any number of blocks from 1 on: with fewer than 16, all
-of them by `remD` after the setup, without the loop; otherwise the blocks
-after the last group, if any, by `remD`. -/
-def decR : Prog isa :=
-  .seq (.block setup)
-    (.seq (.block [.alu .cmp .r9 (.imm 16)])
-      (.ite .b (.seq (.block [.alu .add .r9 (.imm 16)]) remD)
-        (.seq (.loop dbody .ae)
-          (.seq (.block [.alu .test .r9 (.reg .r9)])
-            (.ite .e (.block (storeCtr ++ storeY)) (.seq (.block [.alu .add .r9 (.imm 16)]) remD))))))
-
-/-! ## Encryption: the blocks after the last group
-
-`remE` reads the powers of the `r` blocks from the key context, where the
+`remD` and `remE` read the powers of the `r` blocks from the key context, where the
 prepared pairs are `H'²ᵐ⁺²`, `H'²ᵐ⁺¹` at `rdi + 256 + 32 m`: the pair of
 blocks `i` and `i + 1` (`r - i` even) at `rdi + 224 + 16 (r - i)`, and a
-first block alone (`r` odd) at `rdi + 256 + 16 r`. It loads them at
-`rax + r10` as `remD` does, with `rax` moved so that `rax + r10` is there:
+first block alone (`r` odd) at `rdi + 256 + 16 r`. They load them at
+`rax + r10`, with `rax` moved so that `rax + r10` is there:
 `rdi + 224 + 16 r` after `remSetupC`, `32` more for a first block alone and
 `64` less after each step, as `r10` grows by `16` or `32`. -/
 
@@ -150,13 +122,58 @@ pairs. -/
 def remOneC (src : Reg) : List Instr :=
   [.alu .add .rax (.imm 32)] ++ StitchZH.remBody src ++ [.alu .sub .rax (.imm 64)] ++ StitchZH.remNext
 
-/-- The keystream `remE` stored to `scratch + 256`, of eight blocks, or
+/-- The keystream `remD` or `remE` stored to `scratch + 256`, of eight blocks, or
 sixteen if `r > 8` (`r10 = 16 r`), cleared. -/
 def zeroKs : Prog isa :=
   .seq (.block (.vop (.vbin .vpxor .l128 .xmm12 .xmm12 .xmm12) :: storesK .r11 (List.replicate 4 .xmm12) 8))
     (.seq (.block [.alu .cmp .r10 (.imm 129)])
       (.ite .b (.block []) (.block (storesK .r11 (List.replicate 4 .xmm12) 12))))
 
+/-! ## Decryption -/
+
+/-- A first block alone, as `remOneC` does for encryption: its power at
+`rax + 32`, then `rax` moved for the pairs. -/
+def remOneD : List Instr :=
+  [.alu .add .rax (.imm 32)] ++ StitchZH.remBodyD .rdx ++ [.alu .sub .rax (.imm 64)] ++ StitchZH.remNext
+
+/-- The `r9 - 16` blocks at `rdx` after the last group, which the loop has
+already hashed and decrypted, as `remE` encrypts them: the counter after them
+stored and `rax` at their powers in the key context (`remSetupC`), their
+keystream (`ksSel`), then each block hashed as read and decrypted in place
+with its keystream, read at `r11 + r10 + 768` with `r11` lowered by 512: the
+first alone if `r` is odd (`remOneD`, in the lower lanes), then two at a time
+(`remPairD`, `rax` moved after each), after which the products of the two
+lanes are added (`foldLanes`); then the products reduced into `Y`, the
+keystream cleared (`zeroKs`), and `Y` stored. -/
+def remD : Prog isa :=
+  .seq (.block remSetupC)
+    (.seq ksSel
+      (.seq (.block (([.alu .sub .r11 (.imm 512), .mov32 .r10 (.imm 0)] : List Instr) ++ StitchAvx.zero ++
+          ([.alu .test .r9 (.imm 1)] : List Instr)))
+        (.seq (.ite .e (.block [.alu .cmp .r9 (.imm 16)]) (.block remOneD))
+          (.seq (.ite .e (.block [])
+              (.seq (.loop (.block (remPairD ++ [.alu .sub .rax (.imm 64)] ++ remNextPair)) .ne)
+                (.block foldLanes)))
+            (.seq (.block (StitchAvx.reduceHash ++ ([.alu .add .r11 (.imm 512)] : List Instr)))
+              (.seq zeroKs (.block storeY)))))))
+
+/-- The end of `decR`, with `r9 = r` once the loop has stopped: with no
+blocks after the last group (`r = 0`), the counter and `Y` stored as
+`Stitch.dec` does; otherwise `r9 = 16 + r` and `remD`. -/
+def tailD : Prog isa :=
+  .seq (.block [.alu .test .r9 (.reg .r9)])
+    (.ite .e (.block (storeCtr ++ storeY)) (.seq (.block [.alu .add .r9 (.imm 16)]) remD))
+
+/-- `Stitch.dec`, for any number of blocks from 1 on, as `encR` encrypts
+them: with fewer than 16, all of them by `remD` after the setup without the
+powers (`setupS`); otherwise the blocks after the last group, if any, by
+`remD`, and the copy of the powers cleared (`zeroPow`). -/
+def decR : Prog isa :=
+  .seq (.block [.alu .cmp .r9 (.imm 16)])
+    (.ite .b (.seq (.block (setupS ++ ([.alu .add .r9 (.imm 16)] : List Instr))) remD)
+      (.seq (.block setup) (.seq (.loop dbody .ae) (.seq tailD (.block zeroPow)))))
+
+/-! ## Encryption -/
 
 /-- `remPairD` for encryption: blocks `r10 / 16` and the next, read at
 `src + r10`, their keystream added from `r11 + r10 + 768` in `ymm13`, stored

@@ -330,7 +330,7 @@ theorem remETo_ok {M : CtxMode} {s₀ : State} (hp : SPreTo M s₀) (hc : CtxPow
       inW2 := fun j (hj : j + 2 ≤ r) (hev : (r - j) % 2 = 0) => by
         rw [eC j (by omega_arith), show E.rd ++ E.wr = s₃.rd ++ s₃.wr from rfl, hrd₃, hwr₃]
         exact in_sub hc.k_in (by omega_arith) }
-  have hI₃ : RInvC E 0 s₃ :=
+  have hI₃ : RInvC E E.X 0 s₃ :=
     { le := Nat.zero_le _, r10 := z₃
       ax := by
         show s₃.gpr .rax + s₃.gpr .r10 = kp s₀ + BitVec.ofNat 64 224 + BitVec.ofNat 64 (16 * (r - 0))
@@ -601,12 +601,11 @@ section
 /-!
 # The prepared 256-bit loops on fewer blocks than a group
 
-`decR` and `encR` take any number of blocks from 1 on: after the setup,
-`cmp r9, 16` sends fewer than 16 blocks to `remD` or `remE` at once, without
-the loop, from the state the loop would start from (`Stitch.Ready`), which is
-that of the blocks after no group (`DInv`; `encR`'s is `Ok.lean`'s
-`setupS_ok`); and 16 or more to the loops, as before (`decTailR_ok`, `encTailR_ok`), for which
-`SPre.ofLe` gives back the 16 blocks their proofs assume.
+`decR` and `encR` take any number of blocks from 1 on: `cmp r9, 16` sends
+fewer than 16 blocks to `remD` or `remE` at once, without the loop, after a
+setup without the powers (`setupS_ok`), from the state of the blocks after no
+group; and 16 or more to the loops, as before, for which `SPre.ofLe` gives
+back the 16 blocks their proofs assume (`zeroTail_ok`).
 -/
 
 @[expose] public section
@@ -632,15 +631,6 @@ theorem cmp9_ok (s : State) :
     e16, Option.bind_some, Option.some.injEq, exists_eq_left']
   exact ⟨rfl, trivial, fun _ _ => rfl, trivial, trivial, trivial⟩
 
-/-- `Ready` holds of a state with the same registers, memory and lanes. -/
-theorem Ready.keep {s₀ : State} {P : Nat → Nat → Block} {s s' : State} (hR : Ready s₀ P s) (g : s'.gpr = s.gpr)
-    (l : ∀ r k, s'.lane r k = s.lane r k) (m : s'.mem = s.mem) (rd : s'.rd = s.rd) (wr : s'.wr = s.wr) :
-    Ready s₀ P s' :=
-  ⟨hR.a.yframe (rs := []) ⟨g, m, rd, wr, fun x _ k _ => l x k⟩ (by simp) (by simp) (by simp), by rw [g]; exact hR.rdx,
-    by rw [g]; exact hR.rax, fun r h1 h2 h3 => by rw [g]; exact hR.gpr r h1 h2 h3,
-    fun k hk j hj => by rw [m]; exact hR.pw k hk j hj, fun k hk => by rw [l]; exact hR.m1 k hk, by rw [l]; exact hR.y,
-    by rw [l]; exact hR.y1⟩
-
 /-- `r9 + 16`, for the number of blocks in `r9`. -/
 theorem r9_add16 {s₀ : State} : s₀.gpr .r9 + 16 = BitVec.ofNat 64 (16 + (nb s₀ - 16 * 0)) := by
   have hn : nb s₀ < 2 ^ 64 := (s₀.gpr .r9).isLt
@@ -653,12 +643,6 @@ theorem r9_add16 {s₀ : State} : s₀.gpr .r9 + 16 = BitVec.ofNat 64 (16 + (nb 
 theorem dinv0 {s₀ : State} {P : Nat → Nat → Block} {s : State} (hR : Ready s₀ P s) : DInv s₀ P 0 s :=
   ⟨hR.a, by rw [hR.rdx]; simp, by rw [hR.gpr _ (by decide) (by decide) (by decide)]; simp, hR.rax,
     fun r h1 h2 _ h4 => hR.gpr r h1 h2 h4, hR.pw, hR.m1, by rw [hR.y]; simp [ghashFrom], hR.y1⟩
-
-/-- Decryption of fewer blocks than a group: all of them by `remD`. -/
-theorem decSmall_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {P : Nat → Nat → Block} (hr : RemLaw (hk s₀) P)
-    (h1 : 1 ≤ nb s₀) (hlt : nb s₀ < 16) {s : State} (hR : Ready s₀ P s) :
-    WP isa (.seq (.block [.alu .add .r9 (.imm 16)]) remD) s (DPost s₀) :=
-  remD_ok hp hr (dinv0 hR) (by omega_using [hlt]) (by omega_using [h1])
 
 /-- After the setup: `cmp r9, 16`, then fewer blocks than a group by
 `small`, the others by `big`. -/
@@ -752,15 +736,6 @@ theorem remLaw {H : Block} {P : Nat → Nat → Block}
   apply φ_inj
   rw [φ_reduceB, key r hr1 (Nat.le_refl _), Nat.sub_self, pow_zero, one_mul]
 
-/-- `decR`: the decryption of any number of blocks from 1 on. -/
-theorem decR_ok {s₀ : State} {np : Nat} (hp : SPrePrepared s₀ 1 np) (h8 : 8 ≤ np := by decide) :
-    WP isa Impl.Gcm.X86_64.StitchR.decR s₀ (DPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp h8) fun _ ⟨_, hR, hpw⟩ =>
-    zeroTail_ok (Rdy := Ready s₀ _) (fun _ _ h g l m rd wr => Ready.keep h g l m rd wr)
-      (fun _ h => h.gpr _ (by decide) (by decide) (by decide))
-      (fun hlt _ h => decSmall_ok hp.base (remLaw hpw) hp.base.nb16 hlt h)
-      (fun h16 _ h => decTailR_ok (hp.base.ofLe h16) (finD hpw) (remLaw hpw) h) hR)
-
 /-! ## Encryption: no copy of the powers left
 
 `encR` reads the powers of the blocks after the last group from the key
@@ -804,6 +779,12 @@ theorem _root_.VG.Proof.Gcm.X86_64.Stitch.SPrePrepared.congr {s s₀ : State} {l
 /-- The postcondition, of a state with the same registers, memory and regions. -/
 theorem _root_.VG.Proof.Gcm.X86_64.Stitch.EPost.congr {s s₀ t : State} (h : EPost s t) (g : s.gpr = s₀.gpr) (m : s.mem = s₀.mem)
     (rd : s.rd = s₀.rd) (wr : s.wr = s₀.wr) : EPost s₀ t := by
+  cases s; cases s₀; simp only at g m rd wr; subst g m rd wr
+  exact { h with }
+
+/-- The same, of the decryption. -/
+theorem _root_.VG.Proof.Gcm.X86_64.Stitch.DPost.congr {s s₀ t : State} (h : DPost s t) (g : s.gpr = s₀.gpr) (m : s.mem = s₀.mem)
+    (rd : s.rd = s₀.rd) (wr : s.wr = s₀.wr) : DPost s₀ t := by
   cases s; cases s₀; simp only at g m rd wr; subst g m rd wr
   exact { h with }
 
@@ -903,16 +884,6 @@ theorem encR_ok {s₀ : State} {np : Nat} (hp : SPrePrepared s₀ 1 np) (h8 : 8 
   · have hn : nb s = nb s₀ := by simp only [nb, g]
     exact WP.mono (encBig_ok ({ hp.congr g m rd wr with base := (hp.congr g m rd wr).base.ofLe (by rw [hn]; exact h16) }) h8)
       fun t ht => ht.congr g m rd wr
-
-/-- Both in-place loops, for a prepared key context, for any number of
-blocks from 1 on. -/
-theorem stitchR_okN (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24 := by decide) (h8 : 8 ≤ np := by decide) :
-    StitchOkM (CtxMode.preparedN np hn) Impl.Gcm.X86_64.StitchR.encR Impl.Gcm.X86_64.StitchR.decR 1 1 1 1 :=
-  ⟨fun _ hp _ => encR_ok hp.toPrepared h8, fun _ hp _ => decR_ok hp.toPrepared h8⟩
-
-theorem stitchR_ok :
-    StitchOkM CtxMode.prepared Impl.Gcm.X86_64.StitchR.encR Impl.Gcm.X86_64.StitchR.decR 1 1 1 1 :=
-  stitchR_okN 24
 
 /-- The out-of-place setup, as `StitchTo.setupTo_ok`. -/
 theorem setupTo_ok {s₀ : State} {np : Nat} {hn : 8 ≤ np ∧ np ≤ 24} (hp : SPreTo (CtxMode.preparedN np hn) s₀)
@@ -1104,5 +1075,130 @@ theorem encR_okL {s₀ : State} {np : Nat} (hp : SPrePrepared s₀ 1 np) (h8 : 8
   · have hn : nb s = nb s₀ := by simp only [nb, g]
     exact WP.mono (encBig_okL ({ hp.congr g m rd wr with base := (hp.congr g m rd wr).base.ofLe (by rw [hn]; exact h16) }) h8)
       fun t ⟨ht, hl⟩ => ⟨ht.congr g m rd wr, hl.congr g m⟩
+
+/-! ## Decryption: no copy of the powers left
+
+`decR` reads the powers of the blocks after the last group from the key
+context (`remD`), as `encR` does, with fewer than 16 blocks makes no copy of
+them (`setupS`), and otherwise clears the copy the loop reads once it ends
+(`zeroPow`). -/
+
+/-- Decryption of fewer blocks than a group, and what it leaves in its
+working space: no copy of the powers, all of them by `remD`. -/
+theorem decSmallC_okL {s₀ : State} {np : Nat} (hp : SPrePrepared s₀ 1 np) (h8 : 8 ≤ np) (h1 : 1 ≤ nb s₀)
+    (hlt : nb s₀ < 16) :
+    WP isa (.seq (.block (Impl.Gcm.X86_64.StitchR.setupS ++ ([.alu .add .r9 (.imm 16)] : List Instr)))
+      Impl.Gcm.X86_64.StitchR.remD) s₀ fun s => DPost s₀ s ∧ Stitch.PieceL 512 zeroR s₀ s := by
+  have hwp := hp.base.wrap_p
+  refine WP.seq (WP.mono (setupS_okF hp.base) fun s ⟨hI, hm⟩ => ?_)
+  refine WP.mono (remD_okF hp.base (hp.ctxPow h8) (remLawC s₀) (e := 0) hI.toD0 (by omega_using [hlt])
+    (by omega_using [h1])) fun s' ⟨h, f, b⟩ => ⟨h, ?_, fun i hi => ?_⟩
+  · rw [hm] at f
+    exact (f.sub fun r hr => frame512 r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h | h <;> simp [h]))
+  · by_cases h256 : i < 256
+    · have hz : zeroR (nb s₀) i = false := by
+        simp only [zeroR, Bool.or_eq_false_iff, Bool.and_eq_false_iff, decide_eq_false_iff_not]; omega_arith
+      simp only [hz, Bool.false_eq_true, ↓reduceIte]
+      rw [f _ fun r hr => ?_, hm]
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact notIn_p hp.base (by omega_arith) _ (by simp)
+      · exact notIn_p hp.base (by omega_arith) _ (by simp)
+      · exact notIn_p hp.base (by omega_arith) _ (by simp)
+      · exact notIn_off _ (by decide) (by omega_arith) (by omega_arith)
+    · have b' := b (i - 256) (by omega_arith)
+      rw [show 256 + (i - 256) = i by omega_arith, hm] at b'
+      rw [b']
+      have e : (i - 256 < 128 ∨ 8 < nb s₀ - 16 * 0) ↔ zeroR (nb s₀) i = true := by
+        simp only [zeroR, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq]; omega_arith
+      by_cases hz : i - 256 < 128 ∨ 8 < nb s₀ - 16 * 0
+      · simp only [hz, e.mp hz, ↓reduceIte]
+      · have hz' : zeroR (nb s₀) i = false := by
+          cases h : zeroR (nb s₀) i
+          · rfl
+          · exact absurd (e.mpr h) hz
+        simp only [hz, hz', Bool.false_eq_true, ↓reduceIte]
+
+/-- Decryption of a group or more, and what it leaves in its working space:
+the loop, as `Stitch.dec`, then the copy of the powers cleared, and `remD`'s
+keystream if any. -/
+theorem decBig_okL {s₀ : State} {np : Nat} (hp : SPrePrepared s₀ 16 np) (h8 : 8 ≤ np) :
+    WP isa (.seq (.block Impl.Gcm.X86_64.StitchR.setup) (.seq (.loop Impl.Gcm.X86_64.Stitch.dbody .ae)
+      (.seq Impl.Gcm.X86_64.StitchR.tailD (.block Impl.Gcm.X86_64.Stitch.zeroPow)))) s₀
+      fun s => DPost s₀ s ∧ Stitch.PieceL 512 zeroR s₀ s := by
+  have hwp := hp.base.wrap_p
+  have h16 := hp.base.nb16
+  refine WP.seq (WP.mono (setup_okF hp h8) fun s ⟨P, hR, hpw, f₁⟩ => ?_)
+  refine WP.seq (WP.mono (loopDR_okF hp.base (finD hpw) (dinv0 hR)) fun s₄ ⟨⟨e, hlt, hI₄⟩, f₄⟩ => ?_)
+  have hle := hI₄.a.le
+  refine WP.seq (WP.mono (dtailR_okF hp.base (hp.ctxPow h8) (remLawC s₀) hlt hI₄) fun s₅ ⟨h₅, f₅, b₅⟩ => ?_)
+  have h11 : s₅.gpr .r11 = Stitch.pp s₀ := h₅.gpr _ (by decide) (by decide) (by decide) (by decide)
+  refine WP.mono (Stitch.wp_and (Stitch.zeroPowD_ok hp.base h₅) (Stitch.zeroPow_zero hp.base h11 h₅.wr))
+    fun s₆ ⟨h₆, f₆, z₆⟩ => ⟨h₆, ?_, fun i hi => ?_⟩
+  · have F : Frame [⟨Stitch.pp s₀ + BitVec.ofNat 64 256, 256⟩, ⟨Stitch.pp s₀, 256⟩, Stitch.cR s₀, Stitch.yR s₀,
+        Stitch.dR s₀] s₀.mem s₆.mem := by
+      have m1 : ∀ r ∈ [(⟨Stitch.pp s₀, 256⟩ : Region)], r ∈ [⟨Stitch.pp s₀ + BitVec.ofNat 64 256, 256⟩,
+          ⟨Stitch.pp s₀, 256⟩, Stitch.cR s₀, Stitch.yR s₀, Stitch.dR s₀] := fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; simp
+      have m2 : ∀ r ∈ [Stitch.dR s₀], r ∈ [⟨Stitch.pp s₀ + BitVec.ofNat 64 256, 256⟩,
+          ⟨Stitch.pp s₀, 256⟩, Stitch.cR s₀, Stitch.yR s₀, Stitch.dR s₀] := fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; simp
+      exact (((f₁.mono m1).trans (f₄.mono m2)).trans (f₅.mono fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl | rfl <;> simp)).trans (f₆.mono m1)
+    exact F.sub (frame512)
+  · by_cases h256 : i < 256
+    · have hz : zeroR (nb s₀) i = true := by
+        simp only [zeroR, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq]; exact .inl ⟨h16, h256⟩
+      simp only [hz, ↓reduceIte]; exact z₆ i h256
+    · have k6 : s₆.mem (Stitch.pp s₀ + BitVec.ofNat 64 i) = s₅.mem (Stitch.pp s₀ + BitVec.ofNat 64 i) :=
+        f₆ _ fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact notIn_base _ (by omega_arith) (by omega_arith)
+      have nD : ∀ r ∈ [Stitch.dR s₀], ¬ r.Contains (Stitch.pp s₀ + BitVec.ofNat 64 i) 1 := fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact notIn_p hp.base (by omega_arith) _ (by simp)
+      have k4 : s₄.mem (Stitch.pp s₀ + BitVec.ofNat 64 i) = s₀.mem (Stitch.pp s₀ + BitVec.ofNat 64 i) := by
+        rw [f₄ _ nD, f₁ _ fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact notIn_base _ (by omega_arith) (by omega_arith)]
+      have b' := b₅ (i - 256) (by omega_arith)
+      rw [show 256 + (i - 256) = i by omega_arith, k4] at b'
+      rw [k6, b']
+      have e' : (nb s₀ ≠ 16 * e ∧ (i - 256 < 128 ∨ 8 < nb s₀ - 16 * e)) ↔ zeroR (nb s₀) i = true := by
+        simp only [zeroR, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq]; omega_arith
+      by_cases hz : nb s₀ ≠ 16 * e ∧ (i - 256 < 128 ∨ 8 < nb s₀ - 16 * e)
+      · simp only [hz, e'.mp hz, ↓reduceIte, ne_eq, not_false_eq_true, true_and]
+      · have hz' : zeroR (nb s₀) i = false := by
+          cases h : zeroR (nb s₀) i
+          · rfl
+          · exact absurd (e'.mpr h) hz
+        simp only [hz, hz', Bool.false_eq_true, ↓reduceIte]
+
+/-- `decR`, and what it leaves in its working space (`zeroR`, as `encR`). -/
+theorem decR_okL {s₀ : State} {np : Nat} (hp : SPrePrepared s₀ 1 np) (h8 : 8 ≤ np := by decide) :
+    WP isa Impl.Gcm.X86_64.StitchR.decR s₀ fun s => DPost s₀ s ∧ Stitch.PieceL 512 zeroR s₀ s := by
+  refine zeroTail_ok (Rdy := fun s => s.gpr = s₀.gpr ∧ s.mem = s₀.mem ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr)
+    (fun _ _ ⟨g, m, rd, wr⟩ g' _ m' rd' wr' => ⟨g'.trans g, m'.trans m, rd'.trans rd, wr'.trans wr⟩)
+    (fun _ ⟨g, _⟩ => by rw [g]) (fun hlt s ⟨g, m, rd, wr⟩ => ?_) (fun h16 s ⟨g, m, rd, wr⟩ => ?_) ⟨rfl, rfl, rfl, rfl⟩
+  · have hn : nb s = nb s₀ := by simp only [nb, g]
+    exact WP.mono (decSmallC_okL (hp.congr g m rd wr) h8 (by rw [hn]; exact hp.base.nb16) (by rw [hn]; exact hlt))
+      fun t ⟨ht, hl⟩ => ⟨ht.congr g m rd wr, hl.congr g m⟩
+  · have hn : nb s = nb s₀ := by simp only [nb, g]
+    exact WP.mono (decBig_okL ({ hp.congr g m rd wr with base := (hp.congr g m rd wr).base.ofLe (by rw [hn]; exact h16) }) h8)
+      fun t ⟨ht, hl⟩ => ⟨ht.congr g m rd wr, hl.congr g m⟩
+
+/-- `decR`: the decryption of any number of blocks from 1 on. -/
+theorem decR_ok {s₀ : State} {np : Nat} (hp : SPrePrepared s₀ 1 np) (h8 : 8 ≤ np := by decide) :
+    WP isa Impl.Gcm.X86_64.StitchR.decR s₀ (DPost s₀) :=
+  WP.mono (decR_okL hp h8) fun _ h => h.1
+
+/-- Both in-place loops, for a prepared key context, for any number of
+blocks from 1 on. -/
+theorem stitchR_okN (np : Nat) (hn : 8 ≤ np ∧ np ≤ 24 := by decide) (h8 : 8 ≤ np := by decide) :
+    StitchOkM (CtxMode.preparedN np hn) Impl.Gcm.X86_64.StitchR.encR Impl.Gcm.X86_64.StitchR.decR 1 1 1 1 :=
+  ⟨fun _ hp _ => encR_ok hp.toPrepared h8, fun _ hp _ => decR_ok hp.toPrepared h8⟩
+
+theorem stitchR_ok :
+    StitchOkM CtxMode.prepared Impl.Gcm.X86_64.StitchR.encR Impl.Gcm.X86_64.StitchR.decR 1 1 1 1 :=
+  stitchR_okN 24
 
 end VG.Proof.Gcm.X86_64.StitchR
