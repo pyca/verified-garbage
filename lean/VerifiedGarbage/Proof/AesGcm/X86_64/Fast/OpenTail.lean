@@ -61,9 +61,17 @@ theorem ctr_tailK {m m₁ : Mem} {cb ks k : Addr} {ciph : Block → Block} {icb 
   rw [Proof.Gcm.getD_bytesAt' _ _ hj, Proof.Gcm.bytes_toBytes_blockAt m₁ k (k := j) (by omega_using [hd, hj]), hk, hcb,
     Proof.Gcm.ksByte, show (n + j) / 16 = n / 16 by omega_using [h0, hd, hj], show (n + j) % 16 = j by omega_using [h0, hd, hj]]
 
-/-- `tailK`: the bytes left decrypted with `K[1]`. -/
-theorem crOk_tailK : CrOk KOk Impl.AesGcm.X86_64.FastOpen.tailK := by
-  intro Ctx W SP L R icb P₀ D n s hP hn he hR hdat hlen hd hK
+/-- `tailK`: the bytes left decrypted with `K[1]`, writing only them. -/
+theorem tailK_okF {Ctx W SP : Addr} {R : Nat} {icb : Block} {P₀ : Nat}
+    {D : Addr} {n : Nat} {s : State} (hP : P₀ % 16 = 0) (hn : n < 16)
+    (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s) (hdat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D)
+    (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n) (hd : DataW Ctx (W + BitVec.ofNat 64 16) W SP s D n)
+    (hK : KOk Ctx W R s) :
+    WP isa Impl.AesGcm.X86_64.FastOpen.tailK s fun s' => Env Ctx (W + BitVec.ofNat 64 16) W SP s' ∧
+      Frame [⟨D, n⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      (Ctr s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 64)
+          (ciphOf s.mem Ctx R) icb P₀ →
+        bytesAt s'.mem D n = xorKs (ciphOf s.mem Ctx R) icb P₀ (bytesAt s.mem D n)) := by
   have q₂ := he.perm.wR (show 208 + 8 ≤ 2560 by decide)
   obtain ⟨s₁, run₁, hcx₁, hz₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa [.mov .rcx (.mem (at_ .r15 lenO)),
       .alu .test .rcx (.reg .rcx)] s = some s₁ ∧ s₁.gpr .rcx = BitVec.ofNat 64 n ∧ s₁.zf = some (decide (n = 0)) ∧
@@ -111,9 +119,7 @@ theorem crOk_tailK : CrOk KOk Impl.AesGcm.X86_64.FastOpen.tailK := by
         rcases hr with rfl | rfl | rfl | rfl <;>
           rw [hg₃ _ (by decide) (by decide) (by decide), hg₂ _ (by decide) (by decide)])
         (by rw [hrd₃, hrd₂]) (by rw [hwr₃, hwr₂]),
-      fw.sub fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., fun _ h => h⟩,
-      by rw [hrd₃, hrd₂, hrd₁], by rw [hwr₃, hwr₂, hwr₁], fun hc => ?_⟩
+      fw, by rw [hrd₃, hrd₂, hrd₁], by rw [hwr₃, hwr₂, hwr₁], fun hc => ?_⟩
     have e : W + BitVec.ofNat 64 1024 + BitVec.ofNat 64 16 = W + BitVec.ofNat 64 1040 := by rw [add_ofNat_assoc]
     unfold KOk at hK
     rw [e] at hK
@@ -122,5 +128,12 @@ theorem crOk_tailK : CrOk KOk Impl.AesGcm.X86_64.FastOpen.tailK := by
     have hb := bytesAt_writeBytes_self s.mem D (xorBytes s.mem D (W + BitVec.ofNat 64 1040) n) (by rw [hxl]; omega_using [hn])
     rw [hxl] at hb
     rw [hm₃, hb, xorBytes, t]
+
+/-- `tailK`: the bytes left decrypted with `K[1]`. -/
+theorem crOk_tailK : CrOk KOk Impl.AesGcm.X86_64.FastOpen.tailK :=
+  fun _ _ _ _ _ _ _ hP hn he _ hdat hlen hd hK =>
+    WP.mono (tailK_okF hP hn he hdat hlen hd hK) fun _ ⟨e, f, rd, wr, o⟩ =>
+      ⟨e, f.sub fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self .., fun _ h => h⟩, rd, wr, o⟩
 
 end VG.Proof.AesGcm.X86_64.FastOpen
