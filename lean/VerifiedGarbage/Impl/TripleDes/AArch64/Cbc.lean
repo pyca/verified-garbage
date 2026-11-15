@@ -10,9 +10,8 @@ public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
 
 `dirCore d`, the scalar core: the block function
 (`vg_triple_des_encrypt_block` or `vg_triple_des_decrypt_block`) called on
-one 8-byte block, for the modes whose blocks each need the one before (CBC
-encryption's `cbcEncryptChained` here; OFB, CFB64 encryption and CFB8,
-`Fb.lean`).
+one 8-byte block (`cbcEncryptChained` here, which is not emitted: CBC
+encryption is `TablesCbc.encrypt`, below).
 
 Its slots: the block function's 64 (`x2`), the buffer's one block,
 and a copy of the 384-byte schedule, which `prepare` makes so that nothing
@@ -39,6 +38,21 @@ modes nor the batch write; `prepare` does nothing. `crypt` keeps the
 scratch buffer's address (`sb` = `x5`, which the batch writes) in `x16`,
 points `x4` at the buffer and runs the batch, which keeps `x23` and `x24`
 and writes no register the calling convention preserves.
+
+`tableCore`, the table core: CMAC's block (`CmacTripleDes.AArch64.block`,
+the S-boxes by `tbl` from tables in vector registers) on one 8-byte block,
+for the modes whose blocks each need the one before: OFB, CFB64 encryption,
+CFB8 and the functions of a message's last piece (`Fb.lean`,
+`FbFinal.lean`). Its slots: the block's 57 words (the spread round keys and
+the callee-saved registers it saves and restores), then the buffer's one
+block. `prepare` keeps the schedule's address, where the caller passed it,
+in `x4`; `crypt` points `x14` at the schedule and `x15` at the scratch
+buffer, takes the buffer's block into `x5` as a big-endian integer, runs
+the block, stores `x5` back and restores `sb` (`x5`) from `x15`. The block
+writes none of `x1`–`x4` nor `x28`: the modes keep the data's address and
+the blocks left in `x2` and `x3`, where the arguments are, and the IV's
+address in `x28`, and no value that must stay public is reloaded from the
+scratch buffer.
 
 The working space is the scratch buffer, which the artifact allocates on
 the stack.
@@ -101,6 +115,29 @@ def batchCore (d : Direction) : Impl.Modes.AArch64.Core where
   keyRegs := [.x0]
   dataReg := .x23
   leftReg := .x24
+
+/-- The table core's buffer: one block, after the table block's 57 words. -/
+def tableBuf : Nat := 57
+
+/-- The table core's `crypt`: the buffer's block through CMAC's block. -/
+def tableCrypt : Prog isa :=
+  .seq (.block [movR .x14 .x4, movR .x15 sb, .ldr .x .x5 .x15 (8 * tableBuf), .rev .x5 .x5])
+    (.seq CmacTripleDes.AArch64.block
+      (.block [.rev .x5 .x5, .str .x .x5 .x15 (8 * tableBuf), movR sb .x15]))
+
+/-- Triple DES's core for the modes whose blocks each need the one before:
+one block by CMAC's block, with the S-box tables in vector registers. -/
+def tableCore : Impl.Modes.AArch64.Core where
+  prepare := .block [movR .x4 .x0]
+  crypt := tableCrypt
+  slots := tableBuf + 1
+  total := tableBuf + 13
+  buf := tableBuf
+  lgG := 0
+  bw := 1
+  keyRegs := [.x0]
+  dataReg := .x2
+  leftReg := .x3
 
 /-- `vg_triple_des_cbc_encrypt_chained`. -/
 def cbcEncryptChained : Prog isa := (dirCore .encrypt).cbcEncryptChained ⟨.x1, .x2, .x3, .x4⟩ .x25
