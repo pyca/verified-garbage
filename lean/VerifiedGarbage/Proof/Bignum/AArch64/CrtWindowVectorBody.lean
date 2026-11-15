@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorLoop
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorSetup
+import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcGuard
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCopy
 import VerifiedGarbage.Proof.Bignum.AArch64.BlockedRedcMont
@@ -70,7 +71,7 @@ end
 namespace VG.Proof.Bignum.AArch64.WindowVector
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
 open VG.Impl.Rsa.AArch64.Crt
-open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Proof.MlKem.AArch64 (Keep eval_nonzero ne_zero_iff eval_zero eq_zero_iff)
 
 theorem blocked_eq (n : Nat) : VG.Impl.Rsa.AArch64.WindowSelectVector.blocked n =
     .seq (.block setup) (.seq (.loop (rawStep n) (.nonzero .x .x13)) (.block (finish n))) := rfl
@@ -128,6 +129,61 @@ theorem blockedN_ok {s : State} {P : Addr} {w v n : Nat} {mi : BitVec 64} {X Xc 
   rw [o₂.wv (by have := hdr_lt_slot w Crt.aT (show Crt.sJ < 32 by decide); omega_using [this]) (by omega_using [hn, hT]),
     o₁.wv (by have := hdr_lt_slot w Crt.aT (show Crt.sEnt < 32 by decide); omega_using [this]) (by omega_using [hn, hT])]
   exact hval
+
+def guard : List Instr := [ldh .x12 sW, .lsr .x .x3 .x12 3, movi .x4 7,
+  .logic .and .x .x4 .x12 .x4]
+
+theorem shr3_width {w : Nat} (hw : w < 2 ^ 64) :
+    BitVec.ofNat 64 w >>> 3 = BitVec.ofNat 64 (w / 8) := by
+  apply BitVec.eq_of_toNat_eq
+  simp only [BitVec.toNat_ushiftRight, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hw,
+    Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt (show w / 8 < 2 ^ 64 by omega_using [hw])]
+
+theorem guard_ok {s : State} {P : Addr} {w n : Nat} {mi : BitVec 64} {X Xc : Nat}
+    (hc : CExpCtx s P w mi X Xc n) (hw : w < 2 ^ 30) :
+    WP isa (.block guard) s fun t =>
+      (t.mem = s.mem ∧ t.gpr .x3 = BitVec.ofNat 64 (w / 8) ∧
+        t.gpr .x4 = BitVec.ofNat 64 (w % 8)) ∧ Keep [.x12,.x3,.x4] s t := by
+  refine WP.keep _ ?_ rfl rfl rfl
+  brun [guard, hc.good.x0, hdr_enc (show sW < 32 by decide), hc.ld (i := sW) (by decide),
+    hc.good.hdr.hw, shr3_width (show w < 2 ^ 64 by omega_using [hw])]
+  exact BlockedRedc.mask7_ofNat (by omega_using [hw])
+
+/-- The selection from a table of `n` entries, 16 or 32: by vectors when the
+width is whole tiles, and otherwise by `fallback`, which selects as it does. -/
+theorem select_ok {s : State} {P : Addr} {w v n : Nat} {mi : BitVec 64} {X Xc : Nat} {fallback : Prog isa}
+    (hN : n = 16 ∨ n = 32)
+    (hf : ∀ {u : State}, CExpCtx u P w mi X Xc n → word u.mem P (8 * Crt.sTab) = off P (slot w 8) →
+      word u.mem P (8 * Crt.sNib) = BitVec.ofNat 64 v →
+      WP isa fallback u fun t => CExpCtx t P w mi X Xc n ∧
+        wv t.mem P (slot w Crt.aT) w = wv u.mem P (slot w (8 + v)) w ∧
+        Frm P (selRanges w) u.mem t.mem ∧ Keep mmRegs u t)
+    (hc : CExpCtx s P w mi X Xc n) (hw' : w < 2 ^ 30) (hv : v < n)
+    (ht : word s.mem P (8 * Crt.sTab) = off P (slot w 8))
+    (hNib : word s.mem P (8 * Crt.sNib) = BitVec.ofNat 64 v) :
+    WP isa (VG.Impl.Rsa.AArch64.WindowSelectVector.select n fallback) s fun t => CExpCtx t P w mi X Xc n ∧
+      wv t.mem P (slot w Crt.aT) w = wv s.mem P (slot w (8 + v)) w ∧
+      Frm P (selRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
+  unfold VG.Impl.Rsa.AArch64.WindowSelectVector.select
+  refine WP.seq (WP.mono (guard_ok hc hw') fun u ⟨⟨hm,h3,h4⟩,ku⟩ => ?_)
+  have ctx := hc.of_win (by rw [hm]; exact Frm.refl _ _ _) ku.wr (ku.gpr .x0 (by decide))
+  have tab : word u.mem P (8 * Crt.sTab) = off P (slot w 8) := by rw [hm]; exact ht
+  have nib : word u.mem P (8 * Crt.sNib) = BitVec.ofNat 64 v := by rw [hm]; exact hNib
+  have slow : WP isa fallback u (fun t => CExpCtx t P w mi X Xc n ∧
+      wv t.mem P (slot w Crt.aT) w = wv s.mem P (slot w (8 + v)) w ∧
+      Frm P (selRanges w) s.mem t.mem ∧ Keep mmRegs s t) := WP.mono (hf ctx tab nib) fun t ⟨ct,hy,hf,kt⟩ =>
+    ⟨ct,hm ▸ hy,hm ▸ hf,(ku.trans kt).mono (by decide)⟩
+  by_cases fast : 8 ≤ w
+  · refine WP.ite true (by rw [eval_nonzero,h3,ne_zero_iff,BitVec.toNat_ofNat,
+      Nat.mod_eq_of_lt (show w / 8 < 2 ^ 64 by omega_using [hw']),decide_eq_true (show w / 8 ≠ 0 by omega_using [fast])])
+      (fun _ => ?_) (by simp)
+    by_cases hd : w % 8 = 0
+    · refine WP.ite true (by rw [eval_zero,h4,hd]; rfl) (fun _ => ?_) (by simp)
+      exact WP.mono (blockedN_ok hN ctx fast hw' hd hv tab nib) fun t ⟨ct,hy,hf,kt⟩ =>
+        ⟨ct,hm ▸ hy,hm ▸ hf,(ku.trans kt).mono (by decide)⟩
+    · exact WP.ite false (by rw [eval_zero,h4,eq_zero_iff,BitVec.toNat_ofNat,
+        Nat.mod_eq_of_lt (show w % 8 < 2 ^ 64 by omega_using []),decide_eq_false hd]) (by simp) (fun _ => slow)
+  · exact WP.ite false (by rw [eval_nonzero,h3,show w / 8 = 0 by omega_using [fast]]; rfl) (by simp) (fun _ => slow)
 
 /-- `blockedN_ok` for RSA's table of 32 entries. -/
 theorem blocked_ok {s : State} {P : Addr} {w v : Nat} {mi : BitVec 64} {X Xc : Nat}

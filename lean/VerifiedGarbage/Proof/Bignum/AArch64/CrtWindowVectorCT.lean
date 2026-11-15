@@ -1,22 +1,16 @@
 module
 
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorStepCT
-public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTableCT
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorSetup
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+public import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorStepCT
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowTableCT
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorSetup
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
 meta import Mathlib.Order.RelClasses
 meta import Mathlib.Tactic.Finiteness.Attr
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -29,7 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 namespace VG.Proof.Bignum.AArch64.WindowVector
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
 open VG.Impl.Rsa.AArch64.Crt
-open VG.Proof.MlKem.AArch64 (Keep)
+open VG.Proof.MlKem.AArch64 (Keep eval_nonzero ne_zero_iff eval_zero eq_zero_iff)
 
 def LoopPre (n : Nat) (p : XPub) (j : Nat) (s : State) : Prop :=
   ∃ s₀ mi X Xc v, LoopInv n s₀ (off p.B p.o) p.wx mi X Xc v j s ∧
@@ -80,12 +74,43 @@ theorem blockedN_ct {n : Nat} (hN : n = 16 ∨ n = 32) : RelCT isa (Two (BlockPr
   refine RelCT.seq (loop_ct hN) ?_
   rcases hN with rfl | rfl <;>
   · exact x0_ct (fun p : XPub => off p.B p.o) (fun _ _ h => h) (by taint_decide)
+structure GuardCtx (n : Nat) (p : XPub) (s : State) : Prop where
+  sel : SelPn n p s
+  width : s.gpr .x3 = BitVec.ofNat 64 (p.wx / 8)
+  rem : s.gpr .x4 = BitVec.ofNat 64 (p.wx % 8)
 
-/-- `BlockPreN` for RSA's table of 32 entries. -/
-def BlockPre (p : XPub) (s : State) : Prop := VG.Proof.Bignum.AArch64.WindowFive.SelP p s ∧ 8 ≤ p.wx
+theorem guard_ready {n : Nat} {p : XPub} {s : State} (h : SelPn n p s) :
+    WP isa (.block guard) s (GuardCtx n p) := by
+  obtain ⟨mi,X,Xc,v,hc,hw,hw',hv,ht,hN⟩ := h
+  refine WP.mono (guard_ok hc hw') fun u ⟨⟨hm,h3,h4⟩,ku⟩ => ?_
+  exact ⟨⟨mi,X,Xc,v,hc.of_win (by rw [hm]; exact Frm.refl _ _ _) ku.wr
+    (ku.gpr .x0 (by decide)),hw,hw',hv,hm ▸ ht,hm ▸ hN⟩,h3,h4⟩
 
-theorem blocked_ct : RelCT isa (Two BlockPre)
-    (VG.Impl.Rsa.AArch64.WindowSelectVector.blocked 32) (fun _ _ => True) :=
-  two_map id (fun _ _ ⟨⟨mi, X, Xc, v, hc, h⟩, hw⟩ => ⟨⟨mi, X, Xc, v, hc.toC, h⟩, hw⟩) (blockedN_ct (Or.inr rfl))
+theorem guard_width {n : Nat} {p : XPub} {s : State} (h : GuardCtx n p s)
+    (ht : isa.eval (.nonzero .x .x3) s = some true) : 8 ≤ p.wx := by
+  obtain ⟨_,_,_,_,_,_,hw',_⟩ := h.sel
+  rw [eval_nonzero,h.width,ne_zero_iff,BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (show p.wx / 8 < 2 ^ 64 by omega_using [hw'])] at ht
+  have := of_decide_eq_true (Option.some.inj ht)
+  omega_using [this]
+
+/-- The selection leaks the same in runs with the same workspace, as its
+`fallback` does. -/
+theorem select_ct {n : Nat} (hN : n = 16 ∨ n = 32) {fallback : Prog isa}
+    (hf : RelCT isa (Two (SelPn n)) fallback (fun _ _ => True)) :
+    RelCT isa (Two (SelPn n)) (VG.Impl.Rsa.AArch64.WindowSelectVector.select n fallback) (fun _ _ => True) := by
+  unfold VG.Impl.Rsa.AArch64.WindowSelectVector.select
+  refine RelCT.seq (two_piece (Ψ := GuardCtx n) [.x0]
+    (pins_x0B (fun p : XPub => off p.B p.o) (fun _ _ ⟨_,_,_,_,hc,_⟩ => hc.good.x0))
+    (by taint_decide) (fun _ _ h => guard_ready h)) ?_
+  refine two_ite (Φ := GuardCtx n) ?_ ?_ ?_
+  · intro p s t hs ht
+    rw [eval_nonzero,eval_nonzero,hs.width,ht.width]
+  · refine two_ite ?_ ?_ ?_
+    · intro p s t hs ht
+      rw [eval_zero,eval_zero,hs.1.rem,ht.1.rem]
+    · exact two_map id (fun _ _ h => ⟨h.1.1.sel,guard_width h.1.1 h.1.2⟩) (blockedN_ct hN)
+    · exact two_map id (fun _ _ h => h.1.1.sel) hf
+  · exact two_map id (fun _ _ h => h.1.sel) hf
 
 end VG.Proof.Bignum.AArch64.WindowVector

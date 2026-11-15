@@ -5,7 +5,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtTab
 import VerifiedGarbage.Proof.Dsa.Joint
 import VerifiedGarbage.Proof.Dsa.Arithmetic
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtBuild
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorGuard
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 import VerifiedGarbage.Proof.Bignum.AArch64.Rounds
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -125,7 +125,7 @@ theorem jointWindow_ok (M : Mont) {t : State} {P : Addr} {w n xc g y a b V count
       t'.gpr .x3 = BitVec.ofNat 64 (count - 1) ∧ Frm P (crtWinRanges w) t.mem t'.mem ∧ Keep mmRegs t t' := by
   have hn := hc.scrT.nowrap
   have hY0 := slot_le (w := w) (show aY < 8 by decide)
-  simp only [Joint.window, Joint.select, seqs]
+  simp only [Joint.window, VG.Impl.Rsa.AArch64.Crt.select, seqs]
   refine WP.seq (WP.mono (joint_mont_ok M hc hw hw' hR (Or.inl rfl) hY hYv hYv)
     fun t₁ ⟨hc₁, hY₁, hYv₁, hh₁, f₁, k₁⟩ => ?_)
   refine WP.seq (WP.mono (joint_mont_ok M hc₁ hw hw' hR (Or.inl rfl) hY₁ hYv₁ hYv₁)

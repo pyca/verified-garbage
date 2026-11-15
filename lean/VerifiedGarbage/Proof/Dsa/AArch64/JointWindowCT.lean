@@ -4,7 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.JointWindows
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 import VerifiedGarbage.Proof.Dsa.Joint
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorGuard
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -13,8 +14,10 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.JointWindows
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 meta import VerifiedGarbage.Proof.Dsa.Joint
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
-meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorGuard
-import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorGuard
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -24,7 +27,7 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 As RSA's window (`crtWin_ct`, `Proof/Bignum/AArch64/CrtCTExp.lean`): the
 digits flow only into data, the table is read by a selection from
-every entry (`Joint.select`), and the header's addresses and counts are pinned in both runs
+every entry (`Crt.select`), and the header's addresses and counts are pinned in both runs
 by the window's correctness. -/
 
 @[expose] public section
@@ -72,7 +75,7 @@ the digits. -/
 theorem jointWindow_ct (M : Mont) :
     RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 4 ∧ JointWinI q.1 q.2 s) (seqs (Joint.window M.mm))
       fun _ _ => True := by
-  simp only [Joint.window, Joint.select, seqs]
+  simp only [Joint.window, VG.Impl.Rsa.AArch64.Crt.select, seqs]
   have sq : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s) (M.mm aY aY aY)
       (Two fun (q : XPub × Nat) s => WinQ q.1 s) :=
     two_post (two_map (fun q : XPub × Nat => q.1.ws) (fun _ _ h => h.goodW) (M.ct (by unfold MmUse; decide)))

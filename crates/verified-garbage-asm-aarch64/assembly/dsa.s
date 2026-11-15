@@ -2835,11 +2835,16 @@ vg_dsa_validate_private_key:
 	movz x4, #15, lsl #0
 	and x3, x3, x4
 	str x3, [x0, #216]
+	ldr x12, [x0, #48]
+	lsr x3, x12, #3
+	movz x4, #7, lsl #0
+	and x4, x12, x4
+	cbnz x3, 2178f
 	ldr x3, [x0, #200]
 	str x3, [x0, #208]
 	movz x3, #0, lsl #0
 	str x3, [x0, #224]
-2178:
+2180:
 	ldr x3, [x0, #224]
 	ldr x4, [x0, #216]
 	eor x3, x3, x4
@@ -2852,7 +2857,7 @@ vg_dsa_validate_private_key:
 	ldr x16, [x0, #208]
 	ldr x17, [x0, #104]
 	add x14, x12, #0
-2179:
+2181:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -2862,7 +2867,7 @@ vg_dsa_validate_private_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2179b
+	cbnz x14, 2181b
 	ldr x3, [x0, #208]
 	ldr x4, [x0, #48]
 	add x4, x4, #2
@@ -2873,7 +2878,100 @@ vg_dsa_validate_private_key:
 	add x3, x3, #1
 	str x3, [x0, #224]
 	sub x4, x3, #16
-	cbnz x4, 2178b
+	cbnz x4, 2180b
+	b 2179f
+2178:
+	cbz x4, 2182f
+	ldr x3, [x0, #200]
+	str x3, [x0, #208]
+	movz x3, #0, lsl #0
+	str x3, [x0, #224]
+2184:
+	ldr x3, [x0, #224]
+	ldr x4, [x0, #216]
+	eor x3, x3, x4
+	movz x4, #1, lsl #0
+	subs x3, x3, x4
+	movz x7, #0, lsl #0
+	sub x4, x7, #1
+	csel x15, x7, x4, hs
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #208]
+	ldr x17, [x0, #104]
+	add x14, x12, #0
+2185:
+	ldr x3, [x16, #0]
+	ldr x4, [x17, #0]
+	eor x3, x3, x4
+	and x3, x3, x15
+	eor x4, x4, x3
+	str x4, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2185b
+	ldr x3, [x0, #208]
+	ldr x4, [x0, #48]
+	add x4, x4, #2
+	lsl x4, x4, #3
+	add x3, x3, x4
+	str x3, [x0, #208]
+	ldr x3, [x0, #224]
+	add x3, x3, #1
+	str x3, [x0, #224]
+	sub x4, x3, #16
+	cbnz x4, 2184b
+	b 2183f
+2182:
+	ldr x12, [x0, #48]
+	add x6, x12, #2
+	lsl x6, x6, #3
+	lsr x13, x12, #3
+	ldr x5, [x0, #216]
+	dup v22.2d, x5
+	movz x2, #1, lsl #0
+	dup v24.2d, x2
+	ldr x17, [x0, #104]
+2186:
+	ldr x16, [x0, #104]
+	sub x16, x17, x16
+	ldr x3, [x0, #200]
+	add x16, x16, x3
+	movi v23.2d, #0
+	movz x14, #16, lsl #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+2187:
+	cmeq v20.2d, v23.2d, v22.2d
+	ldr q21, [x16, #0]
+	bit v16.16b, v21.16b, v20.16b
+	ldr q21, [x16, #16]
+	bit v17.16b, v21.16b, v20.16b
+	ldr q21, [x16, #32]
+	bit v18.16b, v21.16b, v20.16b
+	ldr q21, [x16, #48]
+	bit v19.16b, v21.16b, v20.16b
+	add x16, x16, x6
+	add v23.2d, v23.2d, v24.2d
+	sub x14, x14, #1
+	cbnz x14, 2187b
+	str q16, [x17, #0]
+	str q17, [x17, #16]
+	str q18, [x17, #32]
+	str q19, [x17, #48]
+	add x17, x17, #64
+	sub x13, x13, #1
+	cbnz x13, 2186b
+	ldr x3, [x0, #200]
+	lsl x4, x6, #4
+	add x3, x3, x4
+	str x3, [x0, #208]
+	movz x3, #16, lsl #0
+	str x3, [x0, #224]
+2183:
+2179:
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_6_5}
 	umov x30, v31.d[0]
@@ -2899,21 +2997,21 @@ vg_dsa_validate_private_key:
 	sub x15, x15, #1
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2180:
+2188:
 	and x5, x2, x6
-	cbz x5, 2181f
-	b 2182f
-2181:
+	cbz x5, 2189f
+	b 2190f
+2189:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2182:
+2190:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2180b
+	cbnz x9, 2188b
 	ldr x0, [x0, #128]
 	movz x3, #14944, lsl #0
 	add x3, x0, x3
@@ -2922,7 +3020,7 @@ vg_dsa_validate_private_key:
 	add x2, x3, #0
 	ldr x9, [x0, #328]
 	movz x8, #0, lsl #0
-2183:
+2191:
 	ldrb w3, [x1, #0]
 	ldrb w10, [x2, #0]
 	eor x3, x3, x10
@@ -2930,7 +3028,7 @@ vg_dsa_validate_private_key:
 	add x1, x1, #1
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2183b
+	cbnz x9, 2191b
 	tst x8, x8
 	movz x3, #0, lsl #0
 	sub x4, x3, #1
@@ -6501,11 +6599,16 @@ vg_dsa_verify_prevalidated:
 	movz x4, #15, lsl #0
 	and x3, x3, x4
 	str x3, [x0, #216]
+	ldr x12, [x0, #48]
+	lsr x3, x12, #3
+	movz x4, #7, lsl #0
+	and x4, x12, x4
+	cbnz x3, 278f
 	ldr x3, [x0, #200]
 	str x3, [x0, #208]
 	movz x3, #0, lsl #0
 	str x3, [x0, #224]
-278:
+280:
 	ldr x3, [x0, #224]
 	ldr x4, [x0, #216]
 	eor x3, x3, x4
@@ -6518,7 +6621,7 @@ vg_dsa_verify_prevalidated:
 	ldr x16, [x0, #208]
 	ldr x17, [x0, #104]
 	add x14, x12, #0
-279:
+281:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -6528,7 +6631,7 @@ vg_dsa_verify_prevalidated:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 279b
+	cbnz x14, 281b
 	ldr x3, [x0, #208]
 	ldr x4, [x0, #48]
 	add x4, x4, #2
@@ -6539,7 +6642,100 @@ vg_dsa_verify_prevalidated:
 	add x3, x3, #1
 	str x3, [x0, #224]
 	sub x4, x3, #16
-	cbnz x4, 278b
+	cbnz x4, 280b
+	b 279f
+278:
+	cbz x4, 282f
+	ldr x3, [x0, #200]
+	str x3, [x0, #208]
+	movz x3, #0, lsl #0
+	str x3, [x0, #224]
+284:
+	ldr x3, [x0, #224]
+	ldr x4, [x0, #216]
+	eor x3, x3, x4
+	movz x4, #1, lsl #0
+	subs x3, x3, x4
+	movz x7, #0, lsl #0
+	sub x4, x7, #1
+	csel x15, x7, x4, hs
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #208]
+	ldr x17, [x0, #104]
+	add x14, x12, #0
+285:
+	ldr x3, [x16, #0]
+	ldr x4, [x17, #0]
+	eor x3, x3, x4
+	and x3, x3, x15
+	eor x4, x4, x3
+	str x4, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 285b
+	ldr x3, [x0, #208]
+	ldr x4, [x0, #48]
+	add x4, x4, #2
+	lsl x4, x4, #3
+	add x3, x3, x4
+	str x3, [x0, #208]
+	ldr x3, [x0, #224]
+	add x3, x3, #1
+	str x3, [x0, #224]
+	sub x4, x3, #16
+	cbnz x4, 284b
+	b 283f
+282:
+	ldr x12, [x0, #48]
+	add x6, x12, #2
+	lsl x6, x6, #3
+	lsr x13, x12, #3
+	ldr x5, [x0, #216]
+	dup v22.2d, x5
+	movz x2, #1, lsl #0
+	dup v24.2d, x2
+	ldr x17, [x0, #104]
+286:
+	ldr x16, [x0, #104]
+	sub x16, x17, x16
+	ldr x3, [x0, #200]
+	add x16, x16, x3
+	movi v23.2d, #0
+	movz x14, #16, lsl #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+287:
+	cmeq v20.2d, v23.2d, v22.2d
+	ldr q21, [x16, #0]
+	bit v16.16b, v21.16b, v20.16b
+	ldr q21, [x16, #16]
+	bit v17.16b, v21.16b, v20.16b
+	ldr q21, [x16, #32]
+	bit v18.16b, v21.16b, v20.16b
+	ldr q21, [x16, #48]
+	bit v19.16b, v21.16b, v20.16b
+	add x16, x16, x6
+	add v23.2d, v23.2d, v24.2d
+	sub x14, x14, #1
+	cbnz x14, 287b
+	str q16, [x17, #0]
+	str q17, [x17, #16]
+	str q18, [x17, #32]
+	str q19, [x17, #48]
+	add x17, x17, #64
+	sub x13, x13, #1
+	cbnz x13, 286b
+	ldr x3, [x0, #200]
+	lsl x4, x6, #4
+	add x3, x3, x4
+	str x3, [x0, #208]
+	movz x3, #16, lsl #0
+	str x3, [x0, #224]
+283:
+279:
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_6_5}
 	umov x30, v31.d[0]
@@ -6565,21 +6761,21 @@ vg_dsa_verify_prevalidated:
 	sub x15, x15, #1
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-280:
+288:
 	and x5, x2, x6
-	cbz x5, 281f
-	b 282f
-281:
+	cbz x5, 289f
+	b 290f
+289:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-282:
+290:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 280b
+	cbnz x9, 288b
 	ldr x0, [x0, #128]
 	ldr x3, [x0, #312]
 	str x3, [x0, #128]
@@ -6599,11 +6795,11 @@ vg_dsa_verify_prevalidated:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-283:
+291:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 283b
+	cbnz x14, 291b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -6613,7 +6809,7 @@ vg_dsa_verify_prevalidated:
 	lsl x4, x4, #3
 	add x4, x8, x4
 	ldr x3, [x4, #0]
-	cbz x3, 284f
+	cbz x3, 292f
 	ldr x12, [x0, #48]
 	ldr x9, [x0, #64]
 	lsl x13, x12, #3
@@ -6621,7 +6817,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x9, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
-	cbz x3, 286f
+	cbz x3, 294f
 	ldr x11, [x0, #96]
 	ldr x9, [x0, #64]
 	ldr x6, [x0, #88]
@@ -6631,14 +6827,14 @@ vg_dsa_verify_prevalidated:
 	add x17, x9, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-288:
+296:
 	ldr x4, [x17, #0]
 	sbcs x3, x7, x4
 	str x3, [x16, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 288b
+	cbnz x14, 296b
 	lsl x13, x12, #3
 	sub x13, x13, #8
 	add x13, x9, x13
@@ -6648,7 +6844,7 @@ vg_dsa_verify_prevalidated:
 	movz x10, #0, lsl #0
 	movz x4, #1, lsl #0
 	movz x13, #64, lsl #0
-289:
+297:
 	lsr x3, x2, #63
 	lsl x2, x2, #1
 	orr x2, x2, x4
@@ -6660,11 +6856,11 @@ vg_dsa_verify_prevalidated:
 	add x10, x10, x10
 	add x10, x10, x16
 	sub x13, x13, #1
-	cbnz x13, 289b
+	cbnz x13, 297b
 	str x10, [x6, #0]
 	ldr x13, [x0, #48]
 	str x13, [x0, #208]
-290:
+298:
 	ldr x9, [x0, #64]
 	ldr x11, [x0, #96]
 	ldr x6, [x0, #88]
@@ -6734,7 +6930,7 @@ vg_dsa_verify_prevalidated:
 	sub x15, x15, #1
 	add x13, x15, #0
 	adds x3, x7, x7
-291:
+299:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -6748,7 +6944,7 @@ vg_dsa_verify_prevalidated:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 291b
+	cbnz x14, 299b
 	adc x4, x13, x2
 	eor x4, x4, x15
 	str x4, [x16, #0]
@@ -6761,7 +6957,7 @@ vg_dsa_verify_prevalidated:
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-292:
+2100:
 	ldr x4, [x17, #0]
 	and x4, x4, x15
 	ldr x3, [x16, #0]
@@ -6770,16 +6966,16 @@ vg_dsa_verify_prevalidated:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 292b
+	cbnz x14, 2100b
 	ldr x3, [x16, #0]
 	adc x3, x3, x7
 	str x3, [x16, #0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 290b
-	b 287f
-286:
+	cbnz x13, 298b
+	b 295f
+294:
 	ldr x12, [x0, #48]
 	ldr x8, [x0, #64]
 	sub x4, x12, #1
@@ -6789,27 +6985,27 @@ vg_dsa_verify_prevalidated:
 	movz x9, #1, lsl #0
 	movz x13, #64, lsl #0
 	sub x6, x3, #1
-	cbz x6, 293f
-295:
+	cbz x6, 2101f
+2103:
 	lsr x3, x3, #1
 	add x9, x9, x9
 	sub x13, x13, #1
 	sub x6, x3, #1
-	cbnz x6, 295b
-	b 294f
-293:
-294:
+	cbnz x6, 2103b
+	b 2102f
+2101:
+2102:
 	str x13, [x0, #208]
 	sub x13, x12, #1
 	ldr x8, [x0, #96]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-296:
+2104:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 296b
+	cbnz x14, 2104b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -6817,7 +7013,7 @@ vg_dsa_verify_prevalidated:
 	ldr x12, [x0, #48]
 	add x13, x13, x12
 	str x13, [x0, #208]
-297:
+2105:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -6828,14 +7024,14 @@ vg_dsa_verify_prevalidated:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-298:
+2106:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 298b
+	cbnz x14, 2106b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -6843,7 +7039,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-299:
+2107:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -6852,12 +7048,12 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 299b
+	cbnz x14, 2107b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2100:
+2108:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -6866,24 +7062,24 @@ vg_dsa_verify_prevalidated:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2100b
+	cbnz x14, 2108b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 297b
+	cbnz x13, 2105b
 	movz x13, #6, lsl #0
 	str x13, [x0, #208]
-2101:
+2109:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_4_4}
 	umov x30, v31.d[0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2101b
-287:
-	b 285f
-284:
+	cbnz x13, 2109b
+295:
+	b 293f
+292:
 	ldr x12, [x0, #48]
 	movz x9, #1, lsl #0
 	movz x13, #0, lsl #0
@@ -6891,18 +7087,18 @@ vg_dsa_verify_prevalidated:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2102:
+2110:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2102b
+	cbnz x14, 2110b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
 	ldr x13, [x0, #48]
 	lsl x13, x13, #7
 	str x13, [x0, #208]
-2103:
+2111:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -6913,14 +7109,14 @@ vg_dsa_verify_prevalidated:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2104:
+2112:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2104b
+	cbnz x14, 2112b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -6928,7 +7124,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2105:
+2113:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -6937,12 +7133,12 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2105b
+	cbnz x14, 2113b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2106:
+2114:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -6951,12 +7147,12 @@ vg_dsa_verify_prevalidated:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2106b
+	cbnz x14, 2114b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2103b
-285:
+	cbnz x13, 2111b
+293:
 	ldr x12, [x0, #48]
 	movz x9, #256, lsl #0
 	movz x13, #0, lsl #0
@@ -6964,11 +7160,11 @@ vg_dsa_verify_prevalidated:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2107:
+2115:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2107b
+	cbnz x14, 2115b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -6980,28 +7176,28 @@ vg_dsa_verify_prevalidated:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2108:
+2116:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2108b
+	cbnz x14, 2116b
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2109:
+2117:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2109b
+	cbnz x14, 2117b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #128]
 	ldr x3, [x5, #136]
 	str x1, [x0, #184]
 	str x3, [x0, #176]
-	cbz x3, 2110f
-2112:
+	cbz x3, 2118f
+2120:
 	ldr x1, [x0, #184]
 	ldrb w3, [x1, #0]
 	ldr x8, [x0, #72]
@@ -7022,7 +7218,7 @@ vg_dsa_verify_prevalidated:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2113:
+2121:
 	ldr x3, [x9, #0]
 	ldr x4, [x17, #0]
 	adcs x3, x3, x4
@@ -7031,7 +7227,7 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2113b
+	cbnz x14, 2121b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -7039,7 +7235,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2114:
+2122:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -7048,12 +7244,12 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2114b
+	cbnz x14, 2122b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2115:
+2123:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -7062,14 +7258,14 @@ vg_dsa_verify_prevalidated:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2115b
+	cbnz x14, 2123b
 	ldr x3, [x0, #176]
 	sub x3, x3, #1
 	str x3, [x0, #176]
-	cbnz x3, 2112b
-	b 2111f
-2110:
-2111:
+	cbnz x3, 2120b
+	b 2119f
+2118:
+2119:
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #160]
 	ldr x9, [x5, #168]
@@ -7079,21 +7275,21 @@ vg_dsa_verify_prevalidated:
 	sub x15, x15, #1
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2116:
+2124:
 	and x5, x2, x6
-	cbz x5, 2117f
-	b 2118f
-2117:
+	cbz x5, 2125f
+	b 2126f
+2125:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2118:
+2126:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2116b
+	cbnz x9, 2124b
 	ldr x0, [x0, #128]
 	movz x3, #14880, lsl #0
 	add x3, x0, x3
@@ -7119,11 +7315,11 @@ vg_dsa_verify_prevalidated:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2119:
+2127:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2119b
+	cbnz x14, 2127b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -7133,7 +7329,7 @@ vg_dsa_verify_prevalidated:
 	lsl x4, x4, #3
 	add x4, x8, x4
 	ldr x3, [x4, #0]
-	cbz x3, 2120f
+	cbz x3, 2128f
 	ldr x12, [x0, #48]
 	ldr x9, [x0, #64]
 	lsl x13, x12, #3
@@ -7141,7 +7337,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x9, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
-	cbz x3, 2122f
+	cbz x3, 2130f
 	ldr x11, [x0, #96]
 	ldr x9, [x0, #64]
 	ldr x6, [x0, #88]
@@ -7151,14 +7347,14 @@ vg_dsa_verify_prevalidated:
 	add x17, x9, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2124:
+2132:
 	ldr x4, [x17, #0]
 	sbcs x3, x7, x4
 	str x3, [x16, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2124b
+	cbnz x14, 2132b
 	lsl x13, x12, #3
 	sub x13, x13, #8
 	add x13, x9, x13
@@ -7168,7 +7364,7 @@ vg_dsa_verify_prevalidated:
 	movz x10, #0, lsl #0
 	movz x4, #1, lsl #0
 	movz x13, #64, lsl #0
-2125:
+2133:
 	lsr x3, x2, #63
 	lsl x2, x2, #1
 	orr x2, x2, x4
@@ -7180,11 +7376,11 @@ vg_dsa_verify_prevalidated:
 	add x10, x10, x10
 	add x10, x10, x16
 	sub x13, x13, #1
-	cbnz x13, 2125b
+	cbnz x13, 2133b
 	str x10, [x6, #0]
 	ldr x13, [x0, #48]
 	str x13, [x0, #208]
-2126:
+2134:
 	ldr x9, [x0, #64]
 	ldr x11, [x0, #96]
 	ldr x6, [x0, #88]
@@ -7254,7 +7450,7 @@ vg_dsa_verify_prevalidated:
 	sub x15, x15, #1
 	add x13, x15, #0
 	adds x3, x7, x7
-2127:
+2135:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -7268,7 +7464,7 @@ vg_dsa_verify_prevalidated:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2127b
+	cbnz x14, 2135b
 	adc x4, x13, x2
 	eor x4, x4, x15
 	str x4, [x16, #0]
@@ -7281,7 +7477,7 @@ vg_dsa_verify_prevalidated:
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2128:
+2136:
 	ldr x4, [x17, #0]
 	and x4, x4, x15
 	ldr x3, [x16, #0]
@@ -7290,16 +7486,16 @@ vg_dsa_verify_prevalidated:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2128b
+	cbnz x14, 2136b
 	ldr x3, [x16, #0]
 	adc x3, x3, x7
 	str x3, [x16, #0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2126b
-	b 2123f
-2122:
+	cbnz x13, 2134b
+	b 2131f
+2130:
 	ldr x12, [x0, #48]
 	ldr x8, [x0, #64]
 	sub x4, x12, #1
@@ -7309,27 +7505,27 @@ vg_dsa_verify_prevalidated:
 	movz x9, #1, lsl #0
 	movz x13, #64, lsl #0
 	sub x6, x3, #1
-	cbz x6, 2129f
-2131:
+	cbz x6, 2137f
+2139:
 	lsr x3, x3, #1
 	add x9, x9, x9
 	sub x13, x13, #1
 	sub x6, x3, #1
-	cbnz x6, 2131b
-	b 2130f
-2129:
-2130:
+	cbnz x6, 2139b
+	b 2138f
+2137:
+2138:
 	str x13, [x0, #208]
 	sub x13, x12, #1
 	ldr x8, [x0, #96]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2132:
+2140:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2132b
+	cbnz x14, 2140b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -7337,7 +7533,7 @@ vg_dsa_verify_prevalidated:
 	ldr x12, [x0, #48]
 	add x13, x13, x12
 	str x13, [x0, #208]
-2133:
+2141:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -7348,14 +7544,14 @@ vg_dsa_verify_prevalidated:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2134:
+2142:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2134b
+	cbnz x14, 2142b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -7363,7 +7559,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2135:
+2143:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -7372,12 +7568,12 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2135b
+	cbnz x14, 2143b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2136:
+2144:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -7386,24 +7582,24 @@ vg_dsa_verify_prevalidated:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2136b
+	cbnz x14, 2144b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2133b
+	cbnz x13, 2141b
 	movz x13, #6, lsl #0
 	str x13, [x0, #208]
-2137:
+2145:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_4_4}
 	umov x30, v31.d[0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2137b
-2123:
-	b 2121f
-2120:
+	cbnz x13, 2145b
+2131:
+	b 2129f
+2128:
 	ldr x12, [x0, #48]
 	movz x9, #1, lsl #0
 	movz x13, #0, lsl #0
@@ -7411,18 +7607,18 @@ vg_dsa_verify_prevalidated:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2138:
+2146:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2138b
+	cbnz x14, 2146b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
 	ldr x13, [x0, #48]
 	lsl x13, x13, #7
 	str x13, [x0, #208]
-2139:
+2147:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -7433,14 +7629,14 @@ vg_dsa_verify_prevalidated:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2140:
+2148:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2140b
+	cbnz x14, 2148b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -7448,7 +7644,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2141:
+2149:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -7457,12 +7653,12 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2141b
+	cbnz x14, 2149b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2142:
+2150:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -7471,74 +7667,74 @@ vg_dsa_verify_prevalidated:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2142b
+	cbnz x14, 2150b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2139b
-2121:
+	cbnz x13, 2147b
+2129:
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2143:
+2151:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2143b
+	cbnz x14, 2151b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #128]
 	ldr x2, [x5, #136]
 	ldr x8, [x0, #72]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2144:
+2152:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2145f
-	b 2146f
-2145:
+	cbz x5, 2153f
+	b 2154f
+2153:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2146:
-	cbnz x2, 2144b
+2154:
+	cbnz x2, 2152b
 	ldr x8, [x0, #104]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2147:
+2155:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2147b
+	cbnz x14, 2155b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #144]
 	ldr x2, [x5, #152]
 	ldr x8, [x0, #104]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2148:
+2156:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2149f
-	b 2150f
-2149:
+	cbz x5, 2157f
+	b 2158f
+2157:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2150:
-	cbnz x2, 2148b
+2158:
+	cbnz x2, 2156b
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_1_1_4}
 	umov x30, v31.d[0]
@@ -7560,21 +7756,21 @@ vg_dsa_verify_prevalidated:
 	sub x15, x15, #1
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2151:
+2159:
 	and x5, x2, x6
-	cbz x5, 2152f
-	b 2153f
-2152:
+	cbz x5, 2160f
+	b 2161f
+2160:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2153:
+2161:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2151b
+	cbnz x9, 2159b
 	ldr x0, [x0, #128]
 	ldr x3, [x0, #296]
 	str x3, [x0, #128]
@@ -7599,11 +7795,11 @@ vg_dsa_verify_prevalidated:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2154:
+2162:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2154b
+	cbnz x14, 2162b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -7613,7 +7809,7 @@ vg_dsa_verify_prevalidated:
 	lsl x4, x4, #3
 	add x4, x8, x4
 	ldr x3, [x4, #0]
-	cbz x3, 2155f
+	cbz x3, 2163f
 	ldr x12, [x0, #48]
 	ldr x9, [x0, #64]
 	lsl x13, x12, #3
@@ -7621,7 +7817,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x9, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
-	cbz x3, 2157f
+	cbz x3, 2165f
 	ldr x11, [x0, #96]
 	ldr x9, [x0, #64]
 	ldr x6, [x0, #88]
@@ -7631,14 +7827,14 @@ vg_dsa_verify_prevalidated:
 	add x17, x9, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2159:
+2167:
 	ldr x4, [x17, #0]
 	sbcs x3, x7, x4
 	str x3, [x16, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2159b
+	cbnz x14, 2167b
 	lsl x13, x12, #3
 	sub x13, x13, #8
 	add x13, x9, x13
@@ -7648,7 +7844,7 @@ vg_dsa_verify_prevalidated:
 	movz x10, #0, lsl #0
 	movz x4, #1, lsl #0
 	movz x13, #64, lsl #0
-2160:
+2168:
 	lsr x3, x2, #63
 	lsl x2, x2, #1
 	orr x2, x2, x4
@@ -7660,11 +7856,11 @@ vg_dsa_verify_prevalidated:
 	add x10, x10, x10
 	add x10, x10, x16
 	sub x13, x13, #1
-	cbnz x13, 2160b
+	cbnz x13, 2168b
 	str x10, [x6, #0]
 	ldr x13, [x0, #48]
 	str x13, [x0, #208]
-2161:
+2169:
 	ldr x9, [x0, #64]
 	ldr x11, [x0, #96]
 	ldr x6, [x0, #88]
@@ -7734,7 +7930,7 @@ vg_dsa_verify_prevalidated:
 	sub x15, x15, #1
 	add x13, x15, #0
 	adds x3, x7, x7
-2162:
+2170:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -7748,7 +7944,7 @@ vg_dsa_verify_prevalidated:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2162b
+	cbnz x14, 2170b
 	adc x4, x13, x2
 	eor x4, x4, x15
 	str x4, [x16, #0]
@@ -7761,7 +7957,7 @@ vg_dsa_verify_prevalidated:
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2163:
+2171:
 	ldr x4, [x17, #0]
 	and x4, x4, x15
 	ldr x3, [x16, #0]
@@ -7770,16 +7966,16 @@ vg_dsa_verify_prevalidated:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2163b
+	cbnz x14, 2171b
 	ldr x3, [x16, #0]
 	adc x3, x3, x7
 	str x3, [x16, #0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2161b
-	b 2158f
-2157:
+	cbnz x13, 2169b
+	b 2166f
+2165:
 	ldr x12, [x0, #48]
 	ldr x8, [x0, #64]
 	sub x4, x12, #1
@@ -7789,27 +7985,27 @@ vg_dsa_verify_prevalidated:
 	movz x9, #1, lsl #0
 	movz x13, #64, lsl #0
 	sub x6, x3, #1
-	cbz x6, 2164f
-2166:
+	cbz x6, 2172f
+2174:
 	lsr x3, x3, #1
 	add x9, x9, x9
 	sub x13, x13, #1
 	sub x6, x3, #1
-	cbnz x6, 2166b
-	b 2165f
-2164:
-2165:
+	cbnz x6, 2174b
+	b 2173f
+2172:
+2173:
 	str x13, [x0, #208]
 	sub x13, x12, #1
 	ldr x8, [x0, #96]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2167:
+2175:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2167b
+	cbnz x14, 2175b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -7817,7 +8013,7 @@ vg_dsa_verify_prevalidated:
 	ldr x12, [x0, #48]
 	add x13, x13, x12
 	str x13, [x0, #208]
-2168:
+2176:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -7828,14 +8024,14 @@ vg_dsa_verify_prevalidated:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2169:
+2177:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2169b
+	cbnz x14, 2177b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -7843,7 +8039,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2170:
+2178:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -7852,12 +8048,12 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2170b
+	cbnz x14, 2178b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2171:
+2179:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -7866,24 +8062,24 @@ vg_dsa_verify_prevalidated:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2171b
+	cbnz x14, 2179b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2168b
+	cbnz x13, 2176b
 	movz x13, #6, lsl #0
 	str x13, [x0, #208]
-2172:
+2180:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_4_4}
 	umov x30, v31.d[0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2172b
-2158:
-	b 2156f
-2155:
+	cbnz x13, 2180b
+2166:
+	b 2164f
+2163:
 	ldr x12, [x0, #48]
 	movz x9, #1, lsl #0
 	movz x13, #0, lsl #0
@@ -7891,18 +8087,18 @@ vg_dsa_verify_prevalidated:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2173:
+2181:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2173b
+	cbnz x14, 2181b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
 	ldr x13, [x0, #48]
 	lsl x13, x13, #7
 	str x13, [x0, #208]
-2174:
+2182:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -7913,14 +8109,14 @@ vg_dsa_verify_prevalidated:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2175:
+2183:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2175b
+	cbnz x14, 2183b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -7928,7 +8124,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2176:
+2184:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -7937,12 +8133,12 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2176b
+	cbnz x14, 2184b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2177:
+2185:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -7951,74 +8147,74 @@ vg_dsa_verify_prevalidated:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2177b
+	cbnz x14, 2185b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2174b
-2156:
+	cbnz x13, 2182b
+2164:
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2178:
+2186:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2178b
+	cbnz x14, 2186b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #128]
 	ldr x2, [x5, #136]
 	ldr x8, [x0, #72]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2179:
+2187:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2180f
-	b 2181f
-2180:
+	cbz x5, 2188f
+	b 2189f
+2188:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2181:
-	cbnz x2, 2179b
+2189:
+	cbnz x2, 2187b
 	ldr x8, [x0, #104]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2182:
+2190:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2182b
+	cbnz x14, 2190b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #144]
 	ldr x2, [x5, #152]
 	ldr x8, [x0, #104]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2183:
+2191:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2184f
-	b 2185f
-2184:
+	cbz x5, 2192f
+	b 2193f
+2192:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2185:
-	cbnz x2, 2183b
+2193:
+	cbnz x2, 2191b
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_1_1_4}
 	umov x30, v31.d[0]
@@ -8040,21 +8236,21 @@ vg_dsa_verify_prevalidated:
 	sub x15, x15, #1
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2186:
+2194:
 	and x5, x2, x6
-	cbz x5, 2187f
-	b 2188f
-2187:
+	cbz x5, 2195f
+	b 2196f
+2195:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2188:
+2196:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2186b
+	cbnz x9, 2194b
 	ldr x0, [x0, #128]
 	ldr x3, [x0, #272]
 	str x3, [x0, #128]
@@ -8078,11 +8274,11 @@ vg_dsa_verify_prevalidated:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2189:
+2197:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2189b
+	cbnz x14, 2197b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -8092,7 +8288,7 @@ vg_dsa_verify_prevalidated:
 	lsl x4, x4, #3
 	add x4, x8, x4
 	ldr x3, [x4, #0]
-	cbz x3, 2190f
+	cbz x3, 2198f
 	ldr x12, [x0, #48]
 	ldr x9, [x0, #64]
 	lsl x13, x12, #3
@@ -8100,7 +8296,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x9, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
-	cbz x3, 2192f
+	cbz x3, 2200f
 	ldr x11, [x0, #96]
 	ldr x9, [x0, #64]
 	ldr x6, [x0, #88]
@@ -8110,14 +8306,14 @@ vg_dsa_verify_prevalidated:
 	add x17, x9, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2194:
+2202:
 	ldr x4, [x17, #0]
 	sbcs x3, x7, x4
 	str x3, [x16, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2194b
+	cbnz x14, 2202b
 	lsl x13, x12, #3
 	sub x13, x13, #8
 	add x13, x9, x13
@@ -8127,7 +8323,7 @@ vg_dsa_verify_prevalidated:
 	movz x10, #0, lsl #0
 	movz x4, #1, lsl #0
 	movz x13, #64, lsl #0
-2195:
+2203:
 	lsr x3, x2, #63
 	lsl x2, x2, #1
 	orr x2, x2, x4
@@ -8139,11 +8335,11 @@ vg_dsa_verify_prevalidated:
 	add x10, x10, x10
 	add x10, x10, x16
 	sub x13, x13, #1
-	cbnz x13, 2195b
+	cbnz x13, 2203b
 	str x10, [x6, #0]
 	ldr x13, [x0, #48]
 	str x13, [x0, #208]
-2196:
+2204:
 	ldr x9, [x0, #64]
 	ldr x11, [x0, #96]
 	ldr x6, [x0, #88]
@@ -8213,7 +8409,7 @@ vg_dsa_verify_prevalidated:
 	sub x15, x15, #1
 	add x13, x15, #0
 	adds x3, x7, x7
-2197:
+2205:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -8227,7 +8423,7 @@ vg_dsa_verify_prevalidated:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2197b
+	cbnz x14, 2205b
 	adc x4, x13, x2
 	eor x4, x4, x15
 	str x4, [x16, #0]
@@ -8240,7 +8436,7 @@ vg_dsa_verify_prevalidated:
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2198:
+2206:
 	ldr x4, [x17, #0]
 	and x4, x4, x15
 	ldr x3, [x16, #0]
@@ -8249,16 +8445,16 @@ vg_dsa_verify_prevalidated:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2198b
+	cbnz x14, 2206b
 	ldr x3, [x16, #0]
 	adc x3, x3, x7
 	str x3, [x16, #0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2196b
-	b 2193f
-2192:
+	cbnz x13, 2204b
+	b 2201f
+2200:
 	ldr x12, [x0, #48]
 	ldr x8, [x0, #64]
 	sub x4, x12, #1
@@ -8268,27 +8464,27 @@ vg_dsa_verify_prevalidated:
 	movz x9, #1, lsl #0
 	movz x13, #64, lsl #0
 	sub x6, x3, #1
-	cbz x6, 2199f
-2201:
+	cbz x6, 2207f
+2209:
 	lsr x3, x3, #1
 	add x9, x9, x9
 	sub x13, x13, #1
 	sub x6, x3, #1
-	cbnz x6, 2201b
-	b 2200f
-2199:
-2200:
+	cbnz x6, 2209b
+	b 2208f
+2207:
+2208:
 	str x13, [x0, #208]
 	sub x13, x12, #1
 	ldr x8, [x0, #96]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2202:
+2210:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2202b
+	cbnz x14, 2210b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -8296,7 +8492,7 @@ vg_dsa_verify_prevalidated:
 	ldr x12, [x0, #48]
 	add x13, x13, x12
 	str x13, [x0, #208]
-2203:
+2211:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -8307,14 +8503,14 @@ vg_dsa_verify_prevalidated:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2204:
+2212:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2204b
+	cbnz x14, 2212b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -8322,7 +8518,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2205:
+2213:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -8331,12 +8527,12 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2205b
+	cbnz x14, 2213b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2206:
+2214:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -8345,24 +8541,24 @@ vg_dsa_verify_prevalidated:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2206b
+	cbnz x14, 2214b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2203b
+	cbnz x13, 2211b
 	movz x13, #6, lsl #0
 	str x13, [x0, #208]
-2207:
+2215:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_4_4}
 	umov x30, v31.d[0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2207b
-2193:
-	b 2191f
-2190:
+	cbnz x13, 2215b
+2201:
+	b 2199f
+2198:
 	ldr x12, [x0, #48]
 	movz x9, #1, lsl #0
 	movz x13, #0, lsl #0
@@ -8370,18 +8566,18 @@ vg_dsa_verify_prevalidated:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2208:
+2216:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2208b
+	cbnz x14, 2216b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
 	ldr x13, [x0, #48]
 	lsl x13, x13, #7
 	str x13, [x0, #208]
-2209:
+2217:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -8392,14 +8588,14 @@ vg_dsa_verify_prevalidated:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2210:
+2218:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2210b
+	cbnz x14, 2218b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -8407,7 +8603,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2211:
+2219:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -8416,12 +8612,12 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2211b
+	cbnz x14, 2219b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2212:
+2220:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -8430,74 +8626,74 @@ vg_dsa_verify_prevalidated:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2212b
+	cbnz x14, 2220b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2209b
-2191:
+	cbnz x13, 2217b
+2199:
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2213:
+2221:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2213b
+	cbnz x14, 2221b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #128]
 	ldr x2, [x5, #136]
 	ldr x8, [x0, #72]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2214:
+2222:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2215f
-	b 2216f
-2215:
+	cbz x5, 2223f
+	b 2224f
+2223:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2216:
-	cbnz x2, 2214b
+2224:
+	cbnz x2, 2222b
 	ldr x8, [x0, #104]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2217:
+2225:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2217b
+	cbnz x14, 2225b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #144]
 	ldr x2, [x5, #152]
 	ldr x8, [x0, #104]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2218:
+2226:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2219f
-	b 2220f
-2219:
+	cbz x5, 2227f
+	b 2228f
+2227:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2220:
-	cbnz x2, 2218b
+2228:
+	cbnz x2, 2226b
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_4_7}
 	umov x30, v31.d[0]
@@ -8511,137 +8707,6 @@ vg_dsa_verify_prevalidated:
 	ldr x16, [x0, #72]
 	ldr x17, [x0, #96]
 	add x14, x12, #0
-2221:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2221b
-	ldr x12, [x0, #48]
-	ldr x16, [x0, #112]
-	ldr x17, [x0, #120]
-	add x14, x12, #0
-2222:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2222b
-	ldr x12, [x0, #48]
-	ldr x16, [x0, #112]
-	ldr x17, [x0, #72]
-	add x14, x12, #0
-2223:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2223b
-	ldr x3, [x0, #120]
-	ldr x4, [x0, #48]
-	add x4, x4, #2
-	lsl x4, x4, #3
-	add x3, x3, x4
-	str x3, [x0, #200]
-	str x3, [x0, #208]
-	ldr x12, [x0, #48]
-	ldr x16, [x0, #112]
-	ldr x17, [x0, #208]
-	add x14, x12, #0
-2224:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2224b
-	ldr x3, [x0, #208]
-	ldr x4, [x0, #48]
-	add x4, x4, #2
-	lsl x4, x4, #3
-	add x3, x3, x4
-	str x3, [x0, #208]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_6_5}
-	umov x30, v31.d[0]
-	ldr x12, [x0, #48]
-	ldr x16, [x0, #112]
-	ldr x17, [x0, #208]
-	add x14, x12, #0
-2225:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2225b
-	ldr x3, [x0, #208]
-	ldr x4, [x0, #48]
-	add x4, x4, #2
-	lsl x4, x4, #3
-	add x3, x3, x4
-	str x3, [x0, #208]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_6_5}
-	umov x30, v31.d[0]
-	ldr x12, [x0, #48]
-	ldr x16, [x0, #112]
-	ldr x17, [x0, #208]
-	add x14, x12, #0
-2226:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2226b
-	ldr x3, [x0, #208]
-	ldr x4, [x0, #48]
-	add x4, x4, #2
-	lsl x4, x4, #3
-	add x3, x3, x4
-	str x3, [x0, #208]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_6_5}
-	umov x30, v31.d[0]
-	ldr x12, [x0, #48]
-	ldr x16, [x0, #112]
-	ldr x17, [x0, #208]
-	add x14, x12, #0
-2227:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2227b
-	ldr x3, [x0, #208]
-	ldr x4, [x0, #48]
-	add x4, x4, #2
-	lsl x4, x4, #3
-	add x3, x3, x4
-	str x3, [x0, #208]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_1_1_4}
-	umov x30, v31.d[0]
-	ldr x12, [x0, #48]
-	ldr x16, [x0, #72]
-	ldr x17, [x0, #112]
-	add x14, x12, #0
-2228:
-	ldr x3, [x16, #0]
-	str x3, [x17, #0]
-	add x16, x16, #8
-	add x17, x17, #8
-	sub x14, x14, #1
-	cbnz x14, 2228b
-	ldr x12, [x0, #48]
-	ldr x16, [x0, #112]
-	ldr x17, [x0, #208]
-	add x14, x12, #0
 2229:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
@@ -8649,18 +8714,9 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	sub x14, x14, #1
 	cbnz x14, 2229b
-	ldr x3, [x0, #208]
-	ldr x4, [x0, #48]
-	add x4, x4, #2
-	lsl x4, x4, #3
-	add x3, x3, x4
-	str x3, [x0, #208]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_6_5}
-	umov x30, v31.d[0]
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #112]
-	ldr x17, [x0, #208]
+	ldr x17, [x0, #120]
 	add x14, x12, #0
 2230:
 	ldr x3, [x16, #0]
@@ -8669,18 +8725,9 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	sub x14, x14, #1
 	cbnz x14, 2230b
-	ldr x3, [x0, #208]
-	ldr x4, [x0, #48]
-	add x4, x4, #2
-	lsl x4, x4, #3
-	add x3, x3, x4
-	str x3, [x0, #208]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_6_5}
-	umov x30, v31.d[0]
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #112]
-	ldr x17, [x0, #208]
+	ldr x17, [x0, #72]
 	add x14, x12, #0
 2231:
 	ldr x3, [x16, #0]
@@ -8689,15 +8736,13 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	sub x14, x14, #1
 	cbnz x14, 2231b
-	ldr x3, [x0, #208]
+	ldr x3, [x0, #120]
 	ldr x4, [x0, #48]
 	add x4, x4, #2
 	lsl x4, x4, #3
 	add x3, x3, x4
+	str x3, [x0, #200]
 	str x3, [x0, #208]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_6_5}
-	umov x30, v31.d[0]
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #112]
 	ldr x17, [x0, #208]
@@ -8716,11 +8761,11 @@ vg_dsa_verify_prevalidated:
 	add x3, x3, x4
 	str x3, [x0, #208]
 	mov v31.d[0], x30
-	bl {vg_rsa_mul_1_1_4}
+	bl {vg_rsa_mul_6_6_5}
 	umov x30, v31.d[0]
 	ldr x12, [x0, #48]
-	ldr x16, [x0, #72]
-	ldr x17, [x0, #112]
+	ldr x16, [x0, #112]
+	ldr x17, [x0, #208]
 	add x14, x12, #0
 2233:
 	ldr x3, [x16, #0]
@@ -8729,6 +8774,15 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	sub x14, x14, #1
 	cbnz x14, 2233b
+	ldr x3, [x0, #208]
+	ldr x4, [x0, #48]
+	add x4, x4, #2
+	lsl x4, x4, #3
+	add x3, x3, x4
+	str x3, [x0, #208]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_6_6_5}
+	umov x30, v31.d[0]
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #112]
 	ldr x17, [x0, #208]
@@ -8767,11 +8821,11 @@ vg_dsa_verify_prevalidated:
 	add x3, x3, x4
 	str x3, [x0, #208]
 	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_6_5}
+	bl {vg_rsa_mul_1_1_4}
 	umov x30, v31.d[0]
 	ldr x12, [x0, #48]
-	ldr x16, [x0, #112]
-	ldr x17, [x0, #208]
+	ldr x16, [x0, #72]
+	ldr x17, [x0, #112]
 	add x14, x12, #0
 2236:
 	ldr x3, [x16, #0]
@@ -8780,15 +8834,6 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	sub x14, x14, #1
 	cbnz x14, 2236b
-	ldr x3, [x0, #208]
-	ldr x4, [x0, #48]
-	add x4, x4, #2
-	lsl x4, x4, #3
-	add x3, x3, x4
-	str x3, [x0, #208]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_6_5}
-	umov x30, v31.d[0]
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #112]
 	ldr x17, [x0, #208]
@@ -8807,11 +8852,11 @@ vg_dsa_verify_prevalidated:
 	add x3, x3, x4
 	str x3, [x0, #208]
 	mov v31.d[0], x30
-	bl {vg_rsa_mul_1_1_4}
+	bl {vg_rsa_mul_6_6_5}
 	umov x30, v31.d[0]
 	ldr x12, [x0, #48]
-	ldr x16, [x0, #72]
-	ldr x17, [x0, #112]
+	ldr x16, [x0, #112]
+	ldr x17, [x0, #208]
 	add x14, x12, #0
 2238:
 	ldr x3, [x16, #0]
@@ -8820,6 +8865,15 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	sub x14, x14, #1
 	cbnz x14, 2238b
+	ldr x3, [x0, #208]
+	ldr x4, [x0, #48]
+	add x4, x4, #2
+	lsl x4, x4, #3
+	add x3, x3, x4
+	str x3, [x0, #208]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_6_6_5}
+	umov x30, v31.d[0]
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #112]
 	ldr x17, [x0, #208]
@@ -8858,11 +8912,11 @@ vg_dsa_verify_prevalidated:
 	add x3, x3, x4
 	str x3, [x0, #208]
 	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_6_5}
+	bl {vg_rsa_mul_1_1_4}
 	umov x30, v31.d[0]
 	ldr x12, [x0, #48]
-	ldr x16, [x0, #112]
-	ldr x17, [x0, #208]
+	ldr x16, [x0, #72]
+	ldr x17, [x0, #112]
 	add x14, x12, #0
 2241:
 	ldr x3, [x16, #0]
@@ -8871,15 +8925,6 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	sub x14, x14, #1
 	cbnz x14, 2241b
-	ldr x3, [x0, #208]
-	ldr x4, [x0, #48]
-	add x4, x4, #2
-	lsl x4, x4, #3
-	add x3, x3, x4
-	str x3, [x0, #208]
-	mov v31.d[0], x30
-	bl {vg_rsa_mul_6_6_5}
-	umov x30, v31.d[0]
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #112]
 	ldr x17, [x0, #208]
@@ -8898,11 +8943,11 @@ vg_dsa_verify_prevalidated:
 	add x3, x3, x4
 	str x3, [x0, #208]
 	mov v31.d[0], x30
-	bl {vg_rsa_mul_1_1_4}
+	bl {vg_rsa_mul_6_6_5}
 	umov x30, v31.d[0]
 	ldr x12, [x0, #48]
-	ldr x16, [x0, #72]
-	ldr x17, [x0, #112]
+	ldr x16, [x0, #112]
+	ldr x17, [x0, #208]
 	add x14, x12, #0
 2243:
 	ldr x3, [x16, #0]
@@ -8911,9 +8956,18 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	sub x14, x14, #1
 	cbnz x14, 2243b
+	ldr x3, [x0, #208]
+	ldr x4, [x0, #48]
+	add x4, x4, #2
+	lsl x4, x4, #3
+	add x3, x3, x4
+	str x3, [x0, #208]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_6_6_5}
+	umov x30, v31.d[0]
 	ldr x12, [x0, #48]
-	ldr x16, [x0, #120]
-	ldr x17, [x0, #112]
+	ldr x16, [x0, #112]
+	ldr x17, [x0, #208]
 	add x14, x12, #0
 2244:
 	ldr x3, [x16, #0]
@@ -8922,6 +8976,148 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	sub x14, x14, #1
 	cbnz x14, 2244b
+	ldr x3, [x0, #208]
+	ldr x4, [x0, #48]
+	add x4, x4, #2
+	lsl x4, x4, #3
+	add x3, x3, x4
+	str x3, [x0, #208]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_6_6_5}
+	umov x30, v31.d[0]
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #112]
+	ldr x17, [x0, #208]
+	add x14, x12, #0
+2245:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2245b
+	ldr x3, [x0, #208]
+	ldr x4, [x0, #48]
+	add x4, x4, #2
+	lsl x4, x4, #3
+	add x3, x3, x4
+	str x3, [x0, #208]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_1_1_4}
+	umov x30, v31.d[0]
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #72]
+	ldr x17, [x0, #112]
+	add x14, x12, #0
+2246:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2246b
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #112]
+	ldr x17, [x0, #208]
+	add x14, x12, #0
+2247:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2247b
+	ldr x3, [x0, #208]
+	ldr x4, [x0, #48]
+	add x4, x4, #2
+	lsl x4, x4, #3
+	add x3, x3, x4
+	str x3, [x0, #208]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_6_6_5}
+	umov x30, v31.d[0]
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #112]
+	ldr x17, [x0, #208]
+	add x14, x12, #0
+2248:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2248b
+	ldr x3, [x0, #208]
+	ldr x4, [x0, #48]
+	add x4, x4, #2
+	lsl x4, x4, #3
+	add x3, x3, x4
+	str x3, [x0, #208]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_6_6_5}
+	umov x30, v31.d[0]
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #112]
+	ldr x17, [x0, #208]
+	add x14, x12, #0
+2249:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2249b
+	ldr x3, [x0, #208]
+	ldr x4, [x0, #48]
+	add x4, x4, #2
+	lsl x4, x4, #3
+	add x3, x3, x4
+	str x3, [x0, #208]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_6_6_5}
+	umov x30, v31.d[0]
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #112]
+	ldr x17, [x0, #208]
+	add x14, x12, #0
+2250:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2250b
+	ldr x3, [x0, #208]
+	ldr x4, [x0, #48]
+	add x4, x4, #2
+	lsl x4, x4, #3
+	add x3, x3, x4
+	str x3, [x0, #208]
+	mov v31.d[0], x30
+	bl {vg_rsa_mul_1_1_4}
+	umov x30, v31.d[0]
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #72]
+	ldr x17, [x0, #112]
+	add x14, x12, #0
+2251:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2251b
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #120]
+	ldr x17, [x0, #112]
+	add x14, x12, #0
+2252:
+	ldr x3, [x16, #0]
+	str x3, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 2252b
 	ldr x12, [x0, #48]
 	movz x9, #1, lsl #0
 	movz x13, #0, lsl #0
@@ -8929,11 +9125,11 @@ vg_dsa_verify_prevalidated:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2245:
+2253:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2245b
+	cbnz x14, 2253b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -8948,7 +9144,7 @@ vg_dsa_verify_prevalidated:
 	str x4, [x0, #176]
 	movz x3, #0, lsl #0
 	str x3, [x0, #152]
-2246:
+2254:
 	ldr x3, [x0, #136]
 	ldr x4, [x0, #152]
 	add x3, x3, x4
@@ -8961,7 +9157,7 @@ vg_dsa_verify_prevalidated:
 	str x3, [x0, #168]
 	movz x3, #4, lsl #0
 	str x3, [x0, #160]
-2247:
+2255:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_6_6}
 	umov x30, v31.d[0]
@@ -8983,12 +9179,12 @@ vg_dsa_verify_prevalidated:
 	lsr x3, x12, #3
 	movz x4, #7, lsl #0
 	and x4, x12, x4
-	cbnz x3, 2248f
+	cbnz x3, 2256f
 	ldr x3, [x0, #200]
 	str x3, [x0, #208]
 	movz x3, #0, lsl #0
 	str x3, [x0, #224]
-2250:
+2258:
 	ldr x3, [x0, #224]
 	ldr x4, [x0, #216]
 	eor x3, x3, x4
@@ -9001,7 +9197,7 @@ vg_dsa_verify_prevalidated:
 	ldr x16, [x0, #208]
 	ldr x17, [x0, #104]
 	add x14, x12, #0
-2251:
+2259:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -9011,7 +9207,7 @@ vg_dsa_verify_prevalidated:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2251b
+	cbnz x14, 2259b
 	ldr x3, [x0, #208]
 	ldr x4, [x0, #48]
 	add x4, x4, #2
@@ -9022,15 +9218,15 @@ vg_dsa_verify_prevalidated:
 	add x3, x3, #1
 	str x3, [x0, #224]
 	sub x4, x3, #16
-	cbnz x4, 2250b
-	b 2249f
-2248:
-	cbz x4, 2252f
+	cbnz x4, 2258b
+	b 2257f
+2256:
+	cbz x4, 2260f
 	ldr x3, [x0, #200]
 	str x3, [x0, #208]
 	movz x3, #0, lsl #0
 	str x3, [x0, #224]
-2254:
+2262:
 	ldr x3, [x0, #224]
 	ldr x4, [x0, #216]
 	eor x3, x3, x4
@@ -9043,7 +9239,7 @@ vg_dsa_verify_prevalidated:
 	ldr x16, [x0, #208]
 	ldr x17, [x0, #104]
 	add x14, x12, #0
-2255:
+2263:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -9053,7 +9249,7 @@ vg_dsa_verify_prevalidated:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2255b
+	cbnz x14, 2263b
 	ldr x3, [x0, #208]
 	ldr x4, [x0, #48]
 	add x4, x4, #2
@@ -9064,9 +9260,9 @@ vg_dsa_verify_prevalidated:
 	add x3, x3, #1
 	str x3, [x0, #224]
 	sub x4, x3, #16
-	cbnz x4, 2254b
-	b 2253f
-2252:
+	cbnz x4, 2262b
+	b 2261f
+2260:
 	ldr x12, [x0, #48]
 	add x6, x12, #2
 	lsl x6, x6, #3
@@ -9076,7 +9272,7 @@ vg_dsa_verify_prevalidated:
 	movz x2, #1, lsl #0
 	dup v24.2d, x2
 	ldr x17, [x0, #104]
-2256:
+2264:
 	ldr x16, [x0, #104]
 	sub x16, x17, x16
 	ldr x3, [x0, #200]
@@ -9087,7 +9283,7 @@ vg_dsa_verify_prevalidated:
 	movi v17.2d, #0
 	movi v18.2d, #0
 	movi v19.2d, #0
-2257:
+2265:
 	cmeq v20.2d, v23.2d, v22.2d
 	ldr q21, [x16, #0]
 	bit v16.16b, v21.16b, v20.16b
@@ -9100,35 +9296,35 @@ vg_dsa_verify_prevalidated:
 	add x16, x16, x6
 	add v23.2d, v23.2d, v24.2d
 	sub x14, x14, #1
-	cbnz x14, 2257b
+	cbnz x14, 2265b
 	str q16, [x17, #0]
 	str q17, [x17, #16]
 	str q18, [x17, #32]
 	str q19, [x17, #48]
 	add x17, x17, #64
 	sub x13, x13, #1
-	cbnz x13, 2256b
+	cbnz x13, 2264b
 	ldr x3, [x0, #200]
 	lsl x4, x6, #4
 	add x3, x3, x4
 	str x3, [x0, #208]
 	movz x3, #16, lsl #0
 	str x3, [x0, #224]
-2253:
-2249:
+2261:
+2257:
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_6_5}
 	umov x30, v31.d[0]
 	ldr x3, [x0, #160]
 	sub x3, x3, #1
 	str x3, [x0, #160]
-	cbnz x3, 2247b
+	cbnz x3, 2255b
 	ldr x3, [x0, #152]
 	add x3, x3, #1
 	str x3, [x0, #152]
 	ldr x4, [x0, #144]
 	sub x3, x4, x3
-	cbnz x3, 2246b
+	cbnz x3, 2254b
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_6_7}
 	umov x30, v31.d[0]
@@ -9141,21 +9337,21 @@ vg_dsa_verify_prevalidated:
 	sub x15, x15, #1
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2258:
+2266:
 	and x5, x2, x6
-	cbz x5, 2259f
-	b 2260f
-2259:
+	cbz x5, 2267f
+	b 2268f
+2267:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2260:
+2268:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2258b
+	cbnz x9, 2266b
 	ldr x0, [x0, #128]
 	movz x3, #14944, lsl #0
 	add x3, x0, x3
@@ -9176,11 +9372,11 @@ vg_dsa_verify_prevalidated:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2261:
+2269:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2261b
+	cbnz x14, 2269b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -9190,7 +9386,7 @@ vg_dsa_verify_prevalidated:
 	lsl x4, x4, #3
 	add x4, x8, x4
 	ldr x3, [x4, #0]
-	cbz x3, 2262f
+	cbz x3, 2270f
 	ldr x12, [x0, #48]
 	ldr x9, [x0, #64]
 	lsl x13, x12, #3
@@ -9198,7 +9394,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x9, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
-	cbz x3, 2264f
+	cbz x3, 2272f
 	ldr x11, [x0, #96]
 	ldr x9, [x0, #64]
 	ldr x6, [x0, #88]
@@ -9208,14 +9404,14 @@ vg_dsa_verify_prevalidated:
 	add x17, x9, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2266:
+2274:
 	ldr x4, [x17, #0]
 	sbcs x3, x7, x4
 	str x3, [x16, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2266b
+	cbnz x14, 2274b
 	lsl x13, x12, #3
 	sub x13, x13, #8
 	add x13, x9, x13
@@ -9225,7 +9421,7 @@ vg_dsa_verify_prevalidated:
 	movz x10, #0, lsl #0
 	movz x4, #1, lsl #0
 	movz x13, #64, lsl #0
-2267:
+2275:
 	lsr x3, x2, #63
 	lsl x2, x2, #1
 	orr x2, x2, x4
@@ -9237,11 +9433,11 @@ vg_dsa_verify_prevalidated:
 	add x10, x10, x10
 	add x10, x10, x16
 	sub x13, x13, #1
-	cbnz x13, 2267b
+	cbnz x13, 2275b
 	str x10, [x6, #0]
 	ldr x13, [x0, #48]
 	str x13, [x0, #208]
-2268:
+2276:
 	ldr x9, [x0, #64]
 	ldr x11, [x0, #96]
 	ldr x6, [x0, #88]
@@ -9311,7 +9507,7 @@ vg_dsa_verify_prevalidated:
 	sub x15, x15, #1
 	add x13, x15, #0
 	adds x3, x7, x7
-2269:
+2277:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -9325,7 +9521,7 @@ vg_dsa_verify_prevalidated:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2269b
+	cbnz x14, 2277b
 	adc x4, x13, x2
 	eor x4, x4, x15
 	str x4, [x16, #0]
@@ -9338,7 +9534,7 @@ vg_dsa_verify_prevalidated:
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2270:
+2278:
 	ldr x4, [x17, #0]
 	and x4, x4, x15
 	ldr x3, [x16, #0]
@@ -9347,16 +9543,16 @@ vg_dsa_verify_prevalidated:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2270b
+	cbnz x14, 2278b
 	ldr x3, [x16, #0]
 	adc x3, x3, x7
 	str x3, [x16, #0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2268b
-	b 2265f
-2264:
+	cbnz x13, 2276b
+	b 2273f
+2272:
 	ldr x12, [x0, #48]
 	ldr x8, [x0, #64]
 	sub x4, x12, #1
@@ -9366,27 +9562,27 @@ vg_dsa_verify_prevalidated:
 	movz x9, #1, lsl #0
 	movz x13, #64, lsl #0
 	sub x6, x3, #1
-	cbz x6, 2271f
-2273:
+	cbz x6, 2279f
+2281:
 	lsr x3, x3, #1
 	add x9, x9, x9
 	sub x13, x13, #1
 	sub x6, x3, #1
-	cbnz x6, 2273b
-	b 2272f
-2271:
-2272:
+	cbnz x6, 2281b
+	b 2280f
+2279:
+2280:
 	str x13, [x0, #208]
 	sub x13, x12, #1
 	ldr x8, [x0, #96]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2274:
+2282:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2274b
+	cbnz x14, 2282b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -9394,7 +9590,7 @@ vg_dsa_verify_prevalidated:
 	ldr x12, [x0, #48]
 	add x13, x13, x12
 	str x13, [x0, #208]
-2275:
+2283:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -9405,14 +9601,14 @@ vg_dsa_verify_prevalidated:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2276:
+2284:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2276b
+	cbnz x14, 2284b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -9420,7 +9616,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2277:
+2285:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -9429,12 +9625,12 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2277b
+	cbnz x14, 2285b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2278:
+2286:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -9443,24 +9639,24 @@ vg_dsa_verify_prevalidated:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2278b
+	cbnz x14, 2286b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2275b
+	cbnz x13, 2283b
 	movz x13, #6, lsl #0
 	str x13, [x0, #208]
-2279:
+2287:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_4_4}
 	umov x30, v31.d[0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2279b
-2265:
-	b 2263f
-2262:
+	cbnz x13, 2287b
+2273:
+	b 2271f
+2270:
 	ldr x12, [x0, #48]
 	movz x9, #1, lsl #0
 	movz x13, #0, lsl #0
@@ -9468,18 +9664,18 @@ vg_dsa_verify_prevalidated:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2280:
+2288:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2280b
+	cbnz x14, 2288b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
 	ldr x13, [x0, #48]
 	lsl x13, x13, #7
 	str x13, [x0, #208]
-2281:
+2289:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -9490,14 +9686,14 @@ vg_dsa_verify_prevalidated:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2282:
+2290:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2282b
+	cbnz x14, 2290b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -9505,7 +9701,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2283:
+2291:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -9514,12 +9710,12 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2283b
+	cbnz x14, 2291b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2284:
+2292:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -9528,12 +9724,12 @@ vg_dsa_verify_prevalidated:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2284b
+	cbnz x14, 2292b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2281b
-2263:
+	cbnz x13, 2289b
+2271:
 	ldr x12, [x0, #48]
 	movz x9, #256, lsl #0
 	movz x13, #0, lsl #0
@@ -9541,11 +9737,11 @@ vg_dsa_verify_prevalidated:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2285:
+2293:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2285b
+	cbnz x14, 2293b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -9557,28 +9753,28 @@ vg_dsa_verify_prevalidated:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2286:
+2294:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2286b
+	cbnz x14, 2294b
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2287:
+2295:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2287b
+	cbnz x14, 2295b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #128]
 	ldr x3, [x5, #136]
 	str x1, [x0, #184]
 	str x3, [x0, #176]
-	cbz x3, 2288f
-2290:
+	cbz x3, 2296f
+2298:
 	ldr x1, [x0, #184]
 	ldrb w3, [x1, #0]
 	ldr x8, [x0, #72]
@@ -9599,7 +9795,7 @@ vg_dsa_verify_prevalidated:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2291:
+2299:
 	ldr x3, [x9, #0]
 	ldr x4, [x17, #0]
 	adcs x3, x3, x4
@@ -9608,7 +9804,7 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2291b
+	cbnz x14, 2299b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -9616,7 +9812,7 @@ vg_dsa_verify_prevalidated:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2292:
+2300:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -9625,12 +9821,12 @@ vg_dsa_verify_prevalidated:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2292b
+	cbnz x14, 2300b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2293:
+2301:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -9639,14 +9835,14 @@ vg_dsa_verify_prevalidated:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2293b
+	cbnz x14, 2301b
 	ldr x3, [x0, #176]
 	sub x3, x3, #1
 	str x3, [x0, #176]
-	cbnz x3, 2290b
-	b 2289f
-2288:
-2289:
+	cbnz x3, 2298b
+	b 2297f
+2296:
+2297:
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #160]
 	ldr x9, [x5, #168]
@@ -9656,21 +9852,21 @@ vg_dsa_verify_prevalidated:
 	sub x15, x15, #1
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2294:
+2302:
 	and x5, x2, x6
-	cbz x5, 2295f
-	b 2296f
-2295:
+	cbz x5, 2303f
+	b 2304f
+2303:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2296:
+2304:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2294b
+	cbnz x9, 2302b
 	ldr x0, [x0, #128]
 	movz x3, #14816, lsl #0
 	add x3, x0, x3
@@ -9679,7 +9875,7 @@ vg_dsa_verify_prevalidated:
 	add x2, x3, #0
 	ldr x9, [x0, #336]
 	movz x8, #0, lsl #0
-2297:
+2305:
 	ldrb w3, [x1, #0]
 	ldrb w10, [x2, #0]
 	eor x3, x3, x10
@@ -9687,7 +9883,7 @@ vg_dsa_verify_prevalidated:
 	add x1, x1, #1
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2297b
+	cbnz x9, 2305b
 	tst x8, x8
 	movz x3, #0, lsl #0
 	sub x4, x3, #1
@@ -10956,11 +11152,16 @@ vg_dsa_derive_key:
 	movz x4, #15, lsl #0
 	and x3, x3, x4
 	str x3, [x0, #216]
+	ldr x12, [x0, #48]
+	lsr x3, x12, #3
+	movz x4, #7, lsl #0
+	and x4, x12, x4
+	cbnz x3, 268f
 	ldr x3, [x0, #200]
 	str x3, [x0, #208]
 	movz x3, #0, lsl #0
 	str x3, [x0, #224]
-268:
+270:
 	ldr x3, [x0, #224]
 	ldr x4, [x0, #216]
 	eor x3, x3, x4
@@ -10973,7 +11174,7 @@ vg_dsa_derive_key:
 	ldr x16, [x0, #208]
 	ldr x17, [x0, #104]
 	add x14, x12, #0
-269:
+271:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	eor x3, x3, x4
@@ -10983,7 +11184,7 @@ vg_dsa_derive_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 269b
+	cbnz x14, 271b
 	ldr x3, [x0, #208]
 	ldr x4, [x0, #48]
 	add x4, x4, #2
@@ -10994,7 +11195,100 @@ vg_dsa_derive_key:
 	add x3, x3, #1
 	str x3, [x0, #224]
 	sub x4, x3, #16
-	cbnz x4, 268b
+	cbnz x4, 270b
+	b 269f
+268:
+	cbz x4, 272f
+	ldr x3, [x0, #200]
+	str x3, [x0, #208]
+	movz x3, #0, lsl #0
+	str x3, [x0, #224]
+274:
+	ldr x3, [x0, #224]
+	ldr x4, [x0, #216]
+	eor x3, x3, x4
+	movz x4, #1, lsl #0
+	subs x3, x3, x4
+	movz x7, #0, lsl #0
+	sub x4, x7, #1
+	csel x15, x7, x4, hs
+	ldr x12, [x0, #48]
+	ldr x16, [x0, #208]
+	ldr x17, [x0, #104]
+	add x14, x12, #0
+275:
+	ldr x3, [x16, #0]
+	ldr x4, [x17, #0]
+	eor x3, x3, x4
+	and x3, x3, x15
+	eor x4, x4, x3
+	str x4, [x17, #0]
+	add x16, x16, #8
+	add x17, x17, #8
+	sub x14, x14, #1
+	cbnz x14, 275b
+	ldr x3, [x0, #208]
+	ldr x4, [x0, #48]
+	add x4, x4, #2
+	lsl x4, x4, #3
+	add x3, x3, x4
+	str x3, [x0, #208]
+	ldr x3, [x0, #224]
+	add x3, x3, #1
+	str x3, [x0, #224]
+	sub x4, x3, #16
+	cbnz x4, 274b
+	b 273f
+272:
+	ldr x12, [x0, #48]
+	add x6, x12, #2
+	lsl x6, x6, #3
+	lsr x13, x12, #3
+	ldr x5, [x0, #216]
+	dup v22.2d, x5
+	movz x2, #1, lsl #0
+	dup v24.2d, x2
+	ldr x17, [x0, #104]
+276:
+	ldr x16, [x0, #104]
+	sub x16, x17, x16
+	ldr x3, [x0, #200]
+	add x16, x16, x3
+	movi v23.2d, #0
+	movz x14, #16, lsl #0
+	movi v16.2d, #0
+	movi v17.2d, #0
+	movi v18.2d, #0
+	movi v19.2d, #0
+277:
+	cmeq v20.2d, v23.2d, v22.2d
+	ldr q21, [x16, #0]
+	bit v16.16b, v21.16b, v20.16b
+	ldr q21, [x16, #16]
+	bit v17.16b, v21.16b, v20.16b
+	ldr q21, [x16, #32]
+	bit v18.16b, v21.16b, v20.16b
+	ldr q21, [x16, #48]
+	bit v19.16b, v21.16b, v20.16b
+	add x16, x16, x6
+	add v23.2d, v23.2d, v24.2d
+	sub x14, x14, #1
+	cbnz x14, 277b
+	str q16, [x17, #0]
+	str q17, [x17, #16]
+	str q18, [x17, #32]
+	str q19, [x17, #48]
+	add x17, x17, #64
+	sub x13, x13, #1
+	cbnz x13, 276b
+	ldr x3, [x0, #200]
+	lsl x4, x6, #4
+	add x3, x3, x4
+	str x3, [x0, #208]
+	movz x3, #16, lsl #0
+	str x3, [x0, #224]
+273:
+269:
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_6_5}
 	umov x30, v31.d[0]
@@ -11020,21 +11314,21 @@ vg_dsa_derive_key:
 	sub x15, x15, #1
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-270:
+278:
 	and x5, x2, x6
-	cbz x5, 271f
-	b 272f
-271:
+	cbz x5, 279f
+	b 280f
+279:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-272:
+280:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 270b
+	cbnz x9, 278b
 	ldr x0, [x0, #128]
 	movz x3, #15328, lsl #0
 	add x1, x0, x3
@@ -11043,14 +11337,14 @@ vg_dsa_derive_key:
 	ldr x9, [x0, #328]
 	movz x8, #0, lsl #0
 	sub x8, x8, #1
-273:
+281:
 	ldrb w3, [x1, #0]
 	and x3, x3, x8
 	strb w3, [x2, #0]
 	add x1, x1, #1
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 273b
+	cbnz x9, 281b
 	ldr x3, [x0, #272]
 	str x3, [x0, #128]
 	ldr x3, [x0, #328]
@@ -11062,57 +11356,57 @@ vg_dsa_derive_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-274:
+282:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 274b
+	cbnz x14, 282b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #128]
 	ldr x2, [x5, #136]
 	ldr x8, [x0, #72]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-275:
+283:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 276f
-	b 277f
-276:
+	cbz x5, 284f
+	b 285f
+284:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-277:
-	cbnz x2, 275b
+285:
+	cbnz x2, 283b
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #72]
 	ldr x15, [x16, #0]
 	lsr x15, x15, #1
 	add x16, x16, #8
 	sub x14, x12, #1
-278:
+286:
 	ldr x3, [x16, #0]
 	orr x15, x15, x3
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 278b
+	cbnz x14, 286b
 	ldr x16, [x0, #72]
 	ldr x17, [x0, #64]
 	ldr x14, [x0, #48]
 	movz x7, #0, lsl #0
 	subs x3, x7, x7
-279:
+287:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 279b
+	cbnz x14, 287b
 	movz x3, #0, lsl #0
 	sub x4, x3, #1
 	csel x5, x3, x4, hs
@@ -11136,57 +11430,57 @@ vg_dsa_derive_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-280:
+288:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 280b
+	cbnz x14, 288b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #128]
 	ldr x2, [x5, #136]
 	ldr x8, [x0, #72]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-281:
+289:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 282f
-	b 283f
-282:
+	cbz x5, 290f
+	b 291f
+290:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-283:
-	cbnz x2, 281b
+291:
+	cbnz x2, 289b
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #72]
 	ldr x15, [x16, #0]
 	lsr x15, x15, #1
 	add x16, x16, #8
 	sub x14, x12, #1
-284:
+292:
 	ldr x3, [x16, #0]
 	orr x15, x15, x3
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 284b
+	cbnz x14, 292b
 	ldr x16, [x0, #72]
 	ldr x17, [x0, #64]
 	ldr x14, [x0, #48]
 	movz x7, #0, lsl #0
 	subs x3, x7, x7
-285:
+293:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 285b
+	cbnz x14, 293b
 	movz x3, #0, lsl #0
 	sub x4, x3, #1
 	csel x5, x3, x4, hs
@@ -11217,14 +11511,14 @@ vg_dsa_derive_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-286:
+294:
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 286b
+	cbnz x14, 294b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #160]
 	ldr x9, [x5, #168]
@@ -11234,21 +11528,21 @@ vg_dsa_derive_key:
 	sub x15, x15, #1
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-287:
+295:
 	and x5, x2, x6
-	cbz x5, 288f
-	b 289f
-288:
+	cbz x5, 296f
+	b 297f
+296:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-289:
+297:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 287b
+	cbnz x9, 295b
 	ldr x0, [x0, #128]
 	movz x3, #14944, lsl #0
 	add x3, x0, x3
@@ -11269,11 +11563,11 @@ vg_dsa_derive_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-290:
+298:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 290b
+	cbnz x14, 298b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -11283,7 +11577,7 @@ vg_dsa_derive_key:
 	lsl x4, x4, #3
 	add x4, x8, x4
 	ldr x3, [x4, #0]
-	cbz x3, 291f
+	cbz x3, 299f
 	ldr x12, [x0, #48]
 	ldr x9, [x0, #64]
 	lsl x13, x12, #3
@@ -11291,7 +11585,7 @@ vg_dsa_derive_key:
 	add x13, x9, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
-	cbz x3, 293f
+	cbz x3, 2101f
 	ldr x11, [x0, #96]
 	ldr x9, [x0, #64]
 	ldr x6, [x0, #88]
@@ -11301,14 +11595,14 @@ vg_dsa_derive_key:
 	add x17, x9, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-295:
+2103:
 	ldr x4, [x17, #0]
 	sbcs x3, x7, x4
 	str x3, [x16, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 295b
+	cbnz x14, 2103b
 	lsl x13, x12, #3
 	sub x13, x13, #8
 	add x13, x9, x13
@@ -11318,7 +11612,7 @@ vg_dsa_derive_key:
 	movz x10, #0, lsl #0
 	movz x4, #1, lsl #0
 	movz x13, #64, lsl #0
-296:
+2104:
 	lsr x3, x2, #63
 	lsl x2, x2, #1
 	orr x2, x2, x4
@@ -11330,11 +11624,11 @@ vg_dsa_derive_key:
 	add x10, x10, x10
 	add x10, x10, x16
 	sub x13, x13, #1
-	cbnz x13, 296b
+	cbnz x13, 2104b
 	str x10, [x6, #0]
 	ldr x13, [x0, #48]
 	str x13, [x0, #208]
-297:
+2105:
 	ldr x9, [x0, #64]
 	ldr x11, [x0, #96]
 	ldr x6, [x0, #88]
@@ -11404,7 +11698,7 @@ vg_dsa_derive_key:
 	sub x15, x15, #1
 	add x13, x15, #0
 	adds x3, x7, x7
-298:
+2106:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -11418,7 +11712,7 @@ vg_dsa_derive_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 298b
+	cbnz x14, 2106b
 	adc x4, x13, x2
 	eor x4, x4, x15
 	str x4, [x16, #0]
@@ -11431,7 +11725,7 @@ vg_dsa_derive_key:
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-299:
+2107:
 	ldr x4, [x17, #0]
 	and x4, x4, x15
 	ldr x3, [x16, #0]
@@ -11440,16 +11734,16 @@ vg_dsa_derive_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 299b
+	cbnz x14, 2107b
 	ldr x3, [x16, #0]
 	adc x3, x3, x7
 	str x3, [x16, #0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 297b
-	b 294f
-293:
+	cbnz x13, 2105b
+	b 2102f
+2101:
 	ldr x12, [x0, #48]
 	ldr x8, [x0, #64]
 	sub x4, x12, #1
@@ -11459,27 +11753,27 @@ vg_dsa_derive_key:
 	movz x9, #1, lsl #0
 	movz x13, #64, lsl #0
 	sub x6, x3, #1
-	cbz x6, 2100f
-2102:
+	cbz x6, 2108f
+2110:
 	lsr x3, x3, #1
 	add x9, x9, x9
 	sub x13, x13, #1
 	sub x6, x3, #1
-	cbnz x6, 2102b
-	b 2101f
-2100:
-2101:
+	cbnz x6, 2110b
+	b 2109f
+2108:
+2109:
 	str x13, [x0, #208]
 	sub x13, x12, #1
 	ldr x8, [x0, #96]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2103:
+2111:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2103b
+	cbnz x14, 2111b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -11487,7 +11781,7 @@ vg_dsa_derive_key:
 	ldr x12, [x0, #48]
 	add x13, x13, x12
 	str x13, [x0, #208]
-2104:
+2112:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -11498,14 +11792,14 @@ vg_dsa_derive_key:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2105:
+2113:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2105b
+	cbnz x14, 2113b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -11513,7 +11807,7 @@ vg_dsa_derive_key:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2106:
+2114:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -11522,12 +11816,12 @@ vg_dsa_derive_key:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2106b
+	cbnz x14, 2114b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2107:
+2115:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -11536,24 +11830,24 @@ vg_dsa_derive_key:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2107b
+	cbnz x14, 2115b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2104b
+	cbnz x13, 2112b
 	movz x13, #6, lsl #0
 	str x13, [x0, #208]
-2108:
+2116:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_4_4}
 	umov x30, v31.d[0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2108b
-294:
-	b 292f
-291:
+	cbnz x13, 2116b
+2102:
+	b 2100f
+299:
 	ldr x12, [x0, #48]
 	movz x9, #1, lsl #0
 	movz x13, #0, lsl #0
@@ -11561,18 +11855,18 @@ vg_dsa_derive_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2109:
+2117:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2109b
+	cbnz x14, 2117b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
 	ldr x13, [x0, #48]
 	lsl x13, x13, #7
 	str x13, [x0, #208]
-2110:
+2118:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -11583,14 +11877,14 @@ vg_dsa_derive_key:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2111:
+2119:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2111b
+	cbnz x14, 2119b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -11598,7 +11892,7 @@ vg_dsa_derive_key:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2112:
+2120:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -11607,12 +11901,12 @@ vg_dsa_derive_key:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2112b
+	cbnz x14, 2120b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2113:
+2121:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -11621,12 +11915,12 @@ vg_dsa_derive_key:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2113b
+	cbnz x14, 2121b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2110b
-292:
+	cbnz x13, 2118b
+2100:
 	ldr x12, [x0, #48]
 	movz x9, #256, lsl #0
 	movz x13, #0, lsl #0
@@ -11634,11 +11928,11 @@ vg_dsa_derive_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2114:
+2122:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2114b
+	cbnz x14, 2122b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -11650,28 +11944,28 @@ vg_dsa_derive_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2115:
+2123:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2115b
+	cbnz x14, 2123b
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2116:
+2124:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2116b
+	cbnz x14, 2124b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #128]
 	ldr x3, [x5, #136]
 	str x1, [x0, #184]
 	str x3, [x0, #176]
-	cbz x3, 2117f
-2119:
+	cbz x3, 2125f
+2127:
 	ldr x1, [x0, #184]
 	ldrb w3, [x1, #0]
 	ldr x8, [x0, #72]
@@ -11692,7 +11986,7 @@ vg_dsa_derive_key:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2120:
+2128:
 	ldr x3, [x9, #0]
 	ldr x4, [x17, #0]
 	adcs x3, x3, x4
@@ -11701,7 +11995,7 @@ vg_dsa_derive_key:
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2120b
+	cbnz x14, 2128b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -11709,7 +12003,7 @@ vg_dsa_derive_key:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2121:
+2129:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -11718,12 +12012,12 @@ vg_dsa_derive_key:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2121b
+	cbnz x14, 2129b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2122:
+2130:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -11732,14 +12026,14 @@ vg_dsa_derive_key:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2122b
+	cbnz x14, 2130b
 	ldr x3, [x0, #176]
 	sub x3, x3, #1
 	str x3, [x0, #176]
-	cbnz x3, 2119b
-	b 2118f
-2117:
-2118:
+	cbnz x3, 2127b
+	b 2126f
+2125:
+2126:
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #160]
 	ldr x9, [x5, #168]
@@ -11749,33 +12043,33 @@ vg_dsa_derive_key:
 	sub x15, x15, #1
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2123:
+2131:
 	and x5, x2, x6
-	cbz x5, 2124f
-	b 2125f
-2124:
+	cbz x5, 2132f
+	b 2133f
+2132:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2125:
+2133:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2123b
+	cbnz x9, 2131b
 	ldr x0, [x0, #128]
 	movz x3, #14816, lsl #0
 	add x3, x0, x3
 	add x1, x3, #0
 	ldr x9, [x0, #336]
 	movz x8, #0, lsl #0
-2126:
+2134:
 	ldrb w3, [x1, #0]
 	orr x8, x8, x3
 	add x1, x1, #1
 	sub x9, x9, #1
-	cbnz x9, 2126b
+	cbnz x9, 2134b
 	tst x8, x8
 	movz x3, #0, lsl #0
 	sub x4, x3, #1
@@ -11801,14 +12095,14 @@ vg_dsa_derive_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-2127:
+2135:
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2127b
+	cbnz x14, 2135b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #160]
 	ldr x9, [x5, #168]
@@ -11818,21 +12112,21 @@ vg_dsa_derive_key:
 	sub x15, x15, #1
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2128:
+2136:
 	and x5, x2, x6
-	cbz x5, 2129f
-	b 2130f
-2129:
+	cbz x5, 2137f
+	b 2138f
+2137:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2130:
+2138:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2128b
+	cbnz x9, 2136b
 	ldr x0, [x0, #128]
 	ldr x3, [x0, #272]
 	str x3, [x0, #128]
@@ -11856,11 +12150,11 @@ vg_dsa_derive_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2131:
+2139:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2131b
+	cbnz x14, 2139b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -11870,7 +12164,7 @@ vg_dsa_derive_key:
 	lsl x4, x4, #3
 	add x4, x8, x4
 	ldr x3, [x4, #0]
-	cbz x3, 2132f
+	cbz x3, 2140f
 	ldr x12, [x0, #48]
 	ldr x9, [x0, #64]
 	lsl x13, x12, #3
@@ -11878,7 +12172,7 @@ vg_dsa_derive_key:
 	add x13, x9, x13
 	ldr x3, [x13, #0]
 	lsr x3, x3, #63
-	cbz x3, 2134f
+	cbz x3, 2142f
 	ldr x11, [x0, #96]
 	ldr x9, [x0, #64]
 	ldr x6, [x0, #88]
@@ -11888,14 +12182,14 @@ vg_dsa_derive_key:
 	add x17, x9, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2136:
+2144:
 	ldr x4, [x17, #0]
 	sbcs x3, x7, x4
 	str x3, [x16, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2136b
+	cbnz x14, 2144b
 	lsl x13, x12, #3
 	sub x13, x13, #8
 	add x13, x9, x13
@@ -11905,7 +12199,7 @@ vg_dsa_derive_key:
 	movz x10, #0, lsl #0
 	movz x4, #1, lsl #0
 	movz x13, #64, lsl #0
-2137:
+2145:
 	lsr x3, x2, #63
 	lsl x2, x2, #1
 	orr x2, x2, x4
@@ -11917,11 +12211,11 @@ vg_dsa_derive_key:
 	add x10, x10, x10
 	add x10, x10, x16
 	sub x13, x13, #1
-	cbnz x13, 2137b
+	cbnz x13, 2145b
 	str x10, [x6, #0]
 	ldr x13, [x0, #48]
 	str x13, [x0, #208]
-2138:
+2146:
 	ldr x9, [x0, #64]
 	ldr x11, [x0, #96]
 	ldr x6, [x0, #88]
@@ -11991,7 +12285,7 @@ vg_dsa_derive_key:
 	sub x15, x15, #1
 	add x13, x15, #0
 	adds x3, x7, x7
-2139:
+2147:
 	ldr x3, [x17, #0]
 	mul x4, x1, x3
 	umulh x3, x1, x3
@@ -12005,7 +12299,7 @@ vg_dsa_derive_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2139b
+	cbnz x14, 2147b
 	adc x4, x13, x2
 	eor x4, x4, x15
 	str x4, [x16, #0]
@@ -12018,7 +12312,7 @@ vg_dsa_derive_key:
 	add x17, x9, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2140:
+2148:
 	ldr x4, [x17, #0]
 	and x4, x4, x15
 	ldr x3, [x16, #0]
@@ -12027,16 +12321,16 @@ vg_dsa_derive_key:
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2140b
+	cbnz x14, 2148b
 	ldr x3, [x16, #0]
 	adc x3, x3, x7
 	str x3, [x16, #0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2138b
-	b 2135f
-2134:
+	cbnz x13, 2146b
+	b 2143f
+2142:
 	ldr x12, [x0, #48]
 	ldr x8, [x0, #64]
 	sub x4, x12, #1
@@ -12046,27 +12340,27 @@ vg_dsa_derive_key:
 	movz x9, #1, lsl #0
 	movz x13, #64, lsl #0
 	sub x6, x3, #1
-	cbz x6, 2141f
-2143:
+	cbz x6, 2149f
+2151:
 	lsr x3, x3, #1
 	add x9, x9, x9
 	sub x13, x13, #1
 	sub x6, x3, #1
-	cbnz x6, 2143b
-	b 2142f
-2141:
-2142:
+	cbnz x6, 2151b
+	b 2150f
+2149:
+2150:
 	str x13, [x0, #208]
 	sub x13, x12, #1
 	ldr x8, [x0, #96]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2144:
+2152:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2144b
+	cbnz x14, 2152b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
@@ -12074,7 +12368,7 @@ vg_dsa_derive_key:
 	ldr x12, [x0, #48]
 	add x13, x13, x12
 	str x13, [x0, #208]
-2145:
+2153:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -12085,14 +12379,14 @@ vg_dsa_derive_key:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2146:
+2154:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2146b
+	cbnz x14, 2154b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -12100,7 +12394,7 @@ vg_dsa_derive_key:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2147:
+2155:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -12109,12 +12403,12 @@ vg_dsa_derive_key:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2147b
+	cbnz x14, 2155b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2148:
+2156:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -12123,24 +12417,24 @@ vg_dsa_derive_key:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2148b
+	cbnz x14, 2156b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2145b
+	cbnz x13, 2153b
 	movz x13, #6, lsl #0
 	str x13, [x0, #208]
-2149:
+2157:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_4_4}
 	umov x30, v31.d[0]
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2149b
-2135:
-	b 2133f
-2132:
+	cbnz x13, 2157b
+2143:
+	b 2141f
+2140:
 	ldr x12, [x0, #48]
 	movz x9, #1, lsl #0
 	movz x13, #0, lsl #0
@@ -12148,18 +12442,18 @@ vg_dsa_derive_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2150:
+2158:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2150b
+	cbnz x14, 2158b
 	lsl x16, x13, #3
 	add x16, x8, x16
 	str x9, [x16, #0]
 	ldr x13, [x0, #48]
 	lsl x13, x13, #7
 	str x13, [x0, #208]
-2151:
+2159:
 	ldr x5, [x0, #96]
 	ldr x10, [x0, #64]
 	ldr x8, [x0, #80]
@@ -12170,14 +12464,14 @@ vg_dsa_derive_key:
 	add x16, x8, #0
 	add x14, x12, #0
 	adds x3, x7, x7
-2152:
+2160:
 	ldr x3, [x17, #0]
 	adcs x3, x3, x3
 	str x3, [x16, #0]
 	add x17, x17, #8
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2152b
+	cbnz x14, 2160b
 	adc x3, x7, x7
 	str x3, [x16, #0]
 	add x16, x8, #0
@@ -12185,7 +12479,7 @@ vg_dsa_derive_key:
 	add x13, x6, #0
 	add x14, x12, #0
 	subs x3, x7, x7
-2153:
+2161:
 	ldr x3, [x16, #0]
 	ldr x4, [x17, #0]
 	sbcs x3, x3, x4
@@ -12194,12 +12488,12 @@ vg_dsa_derive_key:
 	add x17, x17, #8
 	add x13, x13, #8
 	sub x14, x14, #1
-	cbnz x14, 2153b
+	cbnz x14, 2161b
 	ldr x3, [x16, #0]
 	sbcs x3, x3, x7
 	add x16, x8, #0
 	add x14, x12, #0
-2154:
+2162:
 	ldr x3, [x16, #0]
 	ldr x4, [x6, #0]
 	csel x3, x4, x3, hs
@@ -12208,43 +12502,43 @@ vg_dsa_derive_key:
 	add x6, x6, #8
 	add x5, x5, #8
 	sub x14, x14, #1
-	cbnz x14, 2154b
+	cbnz x14, 2162b
 	ldr x13, [x0, #208]
 	sub x13, x13, #1
 	str x13, [x0, #208]
-	cbnz x13, 2151b
-2133:
+	cbnz x13, 2159b
+2141:
 	ldr x8, [x0, #72]
 	ldr x12, [x0, #48]
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2155:
+2163:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2155b
+	cbnz x14, 2163b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #128]
 	ldr x2, [x5, #136]
 	ldr x8, [x0, #72]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2156:
+2164:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2157f
-	b 2158f
-2157:
+	cbz x5, 2165f
+	b 2166f
+2165:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2158:
-	cbnz x2, 2156b
+2166:
+	cbnz x2, 2164b
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_4_7}
 	umov x30, v31.d[0]
@@ -12255,13 +12549,13 @@ vg_dsa_derive_key:
 	ldr x16, [x0, #104]
 	ldr x17, [x0, #96]
 	add x14, x12, #0
-2159:
+2167:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2159b
+	cbnz x14, 2167b
 	ldr x5, [x0, #128]
 	ldr x3, [x5, #144]
 	str x3, [x0, #136]
@@ -12280,13 +12574,13 @@ vg_dsa_derive_key:
 	ldr x16, [x0, #112]
 	ldr x17, [x0, #208]
 	add x14, x12, #0
-2160:
+2168:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2160b
+	cbnz x14, 2168b
 	ldr x3, [x0, #208]
 	ldr x4, [x0, #48]
 	add x4, x4, #2
@@ -12297,27 +12591,27 @@ vg_dsa_derive_key:
 	ldr x16, [x0, #96]
 	ldr x17, [x0, #208]
 	add x14, x12, #0
-2161:
+2169:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2161b
+	cbnz x14, 2169b
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #96]
 	ldr x17, [x0, #104]
 	add x14, x12, #0
-2162:
+2170:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2162b
+	cbnz x14, 2170b
 	movz x3, #14, lsl #0
 	str x3, [x0, #160]
-2163:
+2171:
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_5_5_4}
 	umov x30, v31.d[0]
@@ -12331,18 +12625,18 @@ vg_dsa_derive_key:
 	ldr x16, [x0, #104]
 	ldr x17, [x0, #208]
 	add x14, x12, #0
-2164:
+2172:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2164b
+	cbnz x14, 2172b
 	ldr x3, [x0, #160]
 	sub x3, x3, #1
 	str x3, [x0, #160]
-	cbnz x3, 2163b
-2165:
+	cbnz x3, 2171b
+2173:
 	ldr x3, [x0, #136]
 	ldr x4, [x0, #152]
 	add x3, x3, x4
@@ -12350,7 +12644,7 @@ vg_dsa_derive_key:
 	str x3, [x0, #168]
 	movz x3, #2, lsl #0
 	str x3, [x0, #160]
-2166:
+2174:
 	mov v31.d[0], x30
 	bl {vg_rsa_square_6_6}
 	umov x30, v31.d[0]
@@ -12371,7 +12665,7 @@ vg_dsa_derive_key:
 	and x3, x3, x4
 	str x3, [x0, #216]
 	ldr x3, [x0, #216]
-	cbz x3, 2167f
+	cbz x3, 2175f
 	ldr x12, [x0, #48]
 	add x4, x12, #2
 	ldr x3, [x0, #216]
@@ -12381,29 +12675,29 @@ vg_dsa_derive_key:
 	add x16, x16, x4
 	ldr x17, [x0, #104]
 	add x14, x12, #0
-2169:
+2177:
 	ldr x3, [x16, #0]
 	str x3, [x17, #0]
 	add x16, x16, #8
 	add x17, x17, #8
 	sub x14, x14, #1
-	cbnz x14, 2169b
+	cbnz x14, 2177b
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_6_5}
 	umov x30, v31.d[0]
-	b 2168f
-2167:
-2168:
+	b 2176f
+2175:
+2176:
 	ldr x3, [x0, #160]
 	sub x3, x3, #1
 	str x3, [x0, #160]
-	cbnz x3, 2166b
+	cbnz x3, 2174b
 	ldr x3, [x0, #152]
 	add x3, x3, #1
 	str x3, [x0, #152]
 	ldr x4, [x0, #144]
 	sub x3, x4, x3
-	cbnz x3, 2165b
+	cbnz x3, 2173b
 	mov v31.d[0], x30
 	bl {vg_rsa_mul_6_6_7}
 	umov x30, v31.d[0]
@@ -12416,21 +12710,21 @@ vg_dsa_derive_key:
 	sub x15, x15, #1
 	movz x2, #0, lsl #0
 	movz x6, #7, lsl #0
-2170:
+2178:
 	and x5, x2, x6
-	cbz x5, 2171f
-	b 2172f
-2171:
+	cbz x5, 2179f
+	b 2180f
+2179:
 	add x5, x8, x2
 	ldr x3, [x5, #0]
 	and x3, x3, x15
-2172:
+2180:
 	sub x1, x1, #1
 	strb w3, [x1, #0]
 	lsr x3, x3, #8
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2170b
+	cbnz x9, 2178b
 	ldr x0, [x0, #128]
 	movz x3, #14944, lsl #0
 	add x3, x0, x3
@@ -12444,32 +12738,32 @@ vg_dsa_derive_key:
 	movz x7, #0, lsl #0
 	add x16, x8, #0
 	add x14, x12, #2
-2173:
+2181:
 	str x7, [x16, #0]
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2173b
+	cbnz x14, 2181b
 	ldr x5, [x0, #128]
 	ldr x1, [x5, #128]
 	ldr x2, [x5, #136]
 	ldr x8, [x0, #72]
 	movz x3, #0, lsl #0
 	movz x6, #7, lsl #0
-2174:
+2182:
 	sub x2, x2, #1
 	lsl x3, x3, #8
 	ldrb w4, [x1, #0]
 	add x3, x3, x4
 	add x1, x1, #1
 	and x5, x2, x6
-	cbz x5, 2175f
-	b 2176f
-2175:
+	cbz x5, 2183f
+	b 2184f
+2183:
 	add x5, x8, x2
 	str x3, [x5, #0]
 	movz x3, #0, lsl #0
-2176:
-	cbnz x2, 2174b
+2184:
+	cbnz x2, 2182b
 	ldr x12, [x0, #48]
 	ldr x16, [x0, #72]
 	ldr x15, [x16, #0]
@@ -12477,12 +12771,12 @@ vg_dsa_derive_key:
 	eor x15, x15, x3
 	add x16, x16, #8
 	sub x14, x12, #1
-2177:
+2185:
 	ldr x3, [x16, #0]
 	orr x15, x15, x3
 	add x16, x16, #8
 	sub x14, x14, #1
-	cbnz x14, 2177b
+	cbnz x14, 2185b
 	tst x15, x15
 	movz x3, #0, lsl #0
 	sub x4, x3, #1
@@ -12501,41 +12795,41 @@ vg_dsa_derive_key:
 	ldr x1, [x0, #256]
 	add x9, x13, x13
 	add x9, x9, x14
-2178:
+2186:
 	ldrb w3, [x1, #0]
 	and x3, x3, x8
 	strb w3, [x2, #0]
 	add x1, x1, #1
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2178b
+	cbnz x9, 2186b
 	add x2, x10, x13
 	add x2, x2, x13
 	add x2, x2, x14
 	add x1, x11, #0
 	add x9, x13, #0
-2179:
+2187:
 	ldrb w3, [x1, #0]
 	and x3, x3, x8
 	strb w3, [x2, #0]
 	add x1, x1, #1
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2179b
+	cbnz x9, 2187b
 	add x2, x10, x13
 	add x2, x2, x13
 	add x2, x2, x13
 	add x2, x2, x14
 	add x1, x12, #0
 	add x9, x14, #0
-2180:
+2188:
 	ldrb w3, [x1, #0]
 	and x3, x3, x8
 	strb w3, [x2, #0]
 	add x1, x1, #1
 	add x2, x2, #1
 	sub x9, x9, #1
-	cbnz x9, 2180b
+	cbnz x9, 2188b
 	ldr x3, [x0, #360]
 	movz x0, #1, lsl #0
 	and x0, x3, x0
@@ -12549,11 +12843,11 @@ vg_dsa_derive_key:
 	add x2, x2, x3
 	add x2, x2, x3
 	movz x3, #0, lsl #0
-2181:
+2189:
 	strb w3, [x1, #0]
 	add x1, x1, #1
 	sub x2, x2, #1
-	cbnz x2, 2181b
+	cbnz x2, 2189b
 	movz x0, #0, lsl #0
 217:
 	ret

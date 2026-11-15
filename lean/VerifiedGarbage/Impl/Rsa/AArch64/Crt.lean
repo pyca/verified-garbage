@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Rsa.AArch64
 public import VerifiedGarbage.Impl.Bignum.CrtLayout
+public import VerifiedGarbage.Impl.Rsa.AArch64.WindowSelectVector
 
 /-!
 # RSA with the CRT private key on AArch64
@@ -316,13 +317,18 @@ def tabSelect : List (Prog isa) :=
       nextEnt,
       .block [ldh .x3 sJ, .addImm .x .x3 .x3 1, sth .x3 sJ, .subImm .x .x4 .x3 16]]) (.nonzero .x .x4)]
 
+/-- `[aT] := T_v`, `v` in `sNib`, from all sixteen entries: by the vector
+selection (`WindowSelectVector.select`) when the modulus is whole 64-byte
+tiles, and otherwise by `tabSelect`. -/
+def select : Prog isa := WindowSelectVector.select 16 (seqs tabSelect)
+
 /-- One window: `Y := Y¹⁶ T_v R⁻¹` for `v` the top 4 bits of the byte in
 `sV`, which moves up 4 bits. -/
 def expWin (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
   [mul aY aY aY, mul aY aY aY, mul aY aY aY, mul aY aY aY,
     .block [ldh .x3 sV, .lsl .x .x4 .x3 4, sth .x4 sV, .lsr .x .x3 .x3 4, movi .x4 15, .logic .and .x .x3 .x3 .x4,
       sth .x3 sNib]] ++
-  tabSelect ++
+  [select] ++
   [mul aY aY aT,
     .block [ldh .x3 sBit, .subImm .x .x3 .x3 1, sth .x3 sBit]]
 

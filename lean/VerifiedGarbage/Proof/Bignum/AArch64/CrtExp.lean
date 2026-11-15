@@ -3,6 +3,7 @@ public import VerifiedGarbage.Proof.Bignum.AArch64.CrtFrame
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtTab
 public import VerifiedGarbage.Proof.Bignum.AArch64.PubSetup
 
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtBuild
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtWs
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtRedc
@@ -97,7 +98,7 @@ theorem winMid_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc V :
 
 theorem expWin_eq (mul : Nat → Nat → Nat → Prog isa) : expWin mul =
     [mul aY aY aY, mul aY aY aY, mul aY aY aY, mul aY aY aY, .block winMid] ++
-    (tabSelect ++ [mul aY aY Crt.aT, .block [ldh .x3 Crt.sBit, .subImm .x .x3 .x3 1, sth .x3 Crt.sBit]]) := rfl
+    ([VG.Impl.Rsa.AArch64.Crt.select] ++ [mul aY aY Crt.aT, .block [ldh .x3 Crt.sBit, .subImm .x .x3 .x3 1, sth .x3 Crt.sBit]]) := rfl
 
 /-- One window: `Y ≡ x^E R` becomes `x^(16 E + v) R` for the window
 `v = ⌊V / 16⌋ mod 16` of the value `V` in `sV`, which moves up 4 bits; the
@@ -118,7 +119,7 @@ theorem crtWin_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64
   have hY0 := slot_le (w := wx) (show aY < 8 by decide)
   have hT0 := slot_le (w := wx) (show Crt.aT < 8 by decide)
   rw [expWin_eq]
-  refine wp_seqs_append (by simp) (by simp [tabSelect_eq]) ?_
+  refine wp_seqs_append (by simp) (by simp) ?_
   simp only [seqs]
   -- Four squarings.
   refine WP.seq (WP.mono (crtSq_ok M hc hw hw' hR hY hYv) fun t₁ ⟨hc₁, hY₁, hYv₁, hh₁, f₁, k₁⟩ => ?_)
@@ -149,8 +150,9 @@ theorem crtWin_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64
         hh04 k hk]
   have hv16 : V / 16 % 16 < 16 := Nat.mod_lt _ (by decide)
   -- `T := T_v`.
-  refine wp_seqs_append (by simp [tabSelect_eq]) (by simp) ?_
-  refine WP.mono (tabSel_ok hc₅ hw hw' hv16 (by rw [hh₅ _ (by decide) (by decide) (by decide)]; exact htab.tab)
+  refine wp_seqs_append (by simp) (by simp) ?_
+  refine WP.mono (WindowVector.select_ok (Or.inl rfl) (fun hu tab nib => tabSel_ok hu hw hw' hv16 tab nib)
+    hc₅ hw' hv16 (by rw [hh₅ _ (by decide) (by decide) (by decide)]; exact htab.tab)
     (by rw [hm₅, word_writeW_self])) fun t₆ ⟨hc₆, hT₆, f₆, k₆⟩ => ?_
   have f₆' : Frm P (crtWinRanges wx) t₅.mem t₆.mem := f₆.mono (selRanges_sub wx)
   have hY₆ : wv t₆.mem P (slot wx aY) wx = wv t₅.mem P (slot wx aY) wx :=
