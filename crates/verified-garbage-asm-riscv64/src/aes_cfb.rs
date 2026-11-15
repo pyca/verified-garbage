@@ -20,22 +20,12 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cfb128_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x7ff78293
-.insn 2, 0x02a1
-.insn 4, 0xff82f293
-.insn 4, 0x0012b823
-.insn 4, 0x0092bc23
-.insn 2, 0x84be
+.base64 "k4L3f6ECk/KC/yO4EgAjvJIAvoQ="
 call {vg_aes_cfb_chain}
-.insn 4, 0x7ff48293
-.insn 2, 0x02a1
-.insn 4, 0xff82f293
-.insn 4, 0x0102b083
-.insn 4, 0x0182b483
-.insn 2, 0x8082
-.option pop",
+.base64 "k4L0f6ECk/KC/4OwAgGDtIIBgoA="
+.option pop"#,
         vg_aes_cfb_chain = sym super::aes_cfb::vg_aes_cfb_chain::vg_aes_cfb_chain,
     )
 }
@@ -57,22 +47,12 @@ call {vg_aes_cfb_chain}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x7ff78293
-.insn 2, 0x02a1
-.insn 4, 0xff82f293
-.insn 4, 0x0012b823
-.insn 4, 0x0092bc23
-.insn 2, 0x84be
+.base64 "k4L3f6ECk/KC/yO4EgAjvJIAvoQ="
 call {vg_aes_cfb_dec_wide}
-.insn 4, 0x7ff48293
-.insn 2, 0x02a1
-.insn 4, 0xff82f293
-.insn 4, 0x0102b083
-.insn 4, 0x0182b483
-.insn 2, 0x8082
-.option pop",
+.base64 "k4L0f6ECk/KC/4OwAgGDtIIBgoA="
+.option pop"#,
         vg_aes_cfb_dec_wide = sym super::aes_cfb::vg_aes_cfb_dec_wide::vg_aes_cfb_dec_wide,
     )
 }
@@ -94,70 +74,22 @@ call {vg_aes_cfb_dec_wide}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cfb128_encrypt_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x7139
-.insn 2, 0x880a
-.insn 4, 0x00183023
-.insn 4, 0x00983423
-.insn 4, 0x01283823
-.insn 4, 0x01383c23
-.insn 4, 0x03483023
-.insn 4, 0x03583423
-.insn 4, 0x03683823
-.insn 4, 0x03783c23
-.insn 2, 0x84aa
-.insn 2, 0x8a2e
-.insn 2, 0x8ab2
-.insn 2, 0x8b3e
-.insn 2, 0x8bc2
-.insn 4, 0x00475293
-.insn 4, 0x00429313
-.insn 4, 0x00668933
-.insn 4, 0x406709b3
-.insn 2, 0x8716
+.base64 "OXEKiCMwGAAjNJgAIzgoASM8OAEjMEgDIzRYAyM4aAMjPHgDqoQuirKKPovCi5NSRwATk0IAM4lmALMJZ0AWhw=="
 call {vg_aes_cfb128_encrypt}
 beqz s3, 20f
-.insn 2, 0x8526
-.insn 2, 0x85d2
-.insn 2, 0x8656
-.insn 2, 0x4685
-.insn 2, 0x875a
+.base64 "JoXShVaGhUZahw=="
 call {vg_aes_encrypt_blocks}
-.insn 2, 0x83d6
+.base64 "1oM="
 22:
-.insn 4, 0x00094283
-.insn 4, 0x0003c303
-.insn 4, 0x0062c2b3
-.insn 4, 0x00590023
-.insn 2, 0x0905
-.insn 2, 0x0385
-.insn 2, 0x19fd
+.base64 "g0IJAAPDAwCzwmIAIwBZAAUJhQP9GQ=="
 bnez s3, 22b
 j 21f
 20:
 21:
-.insn 4, 0x000bb083
-.insn 4, 0x008bb483
-.insn 4, 0x010bb903
-.insn 4, 0x018bb983
-.insn 4, 0x020bba03
-.insn 4, 0x028bba83
-.insn 4, 0x030bbb03
-.insn 4, 0x038bbb83
-.insn 2, 0x8f0a
-.insn 2, 0x4f81
-.insn 4, 0x01ff3023
-.insn 4, 0x01ff3423
-.insn 4, 0x01ff3823
-.insn 4, 0x01ff3c23
-.insn 4, 0x03ff3023
-.insn 4, 0x03ff3423
-.insn 4, 0x03ff3823
-.insn 4, 0x03ff3c23
-.insn 2, 0x6121
-.insn 2, 0x8082
-.option pop",
+.base64 "g7ALAIO0iwADuQsBg7mLAQO6CwKDuosCA7sLA4O7iwMKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMhYYKA"
+.option pop"#,
         vg_aes_cfb128_encrypt = sym super::aes_cfb::vg_aes_cfb128_encrypt,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
@@ -180,70 +112,22 @@ j 21f
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt_final(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x7139
-.insn 2, 0x880a
-.insn 4, 0x00183023
-.insn 4, 0x00983423
-.insn 4, 0x01283823
-.insn 4, 0x01383c23
-.insn 4, 0x03483023
-.insn 4, 0x03583423
-.insn 4, 0x03683823
-.insn 4, 0x03783c23
-.insn 2, 0x84aa
-.insn 2, 0x8a2e
-.insn 2, 0x8ab2
-.insn 2, 0x8b3e
-.insn 2, 0x8bc2
-.insn 4, 0x00475293
-.insn 4, 0x00429313
-.insn 4, 0x00668933
-.insn 4, 0x406709b3
-.insn 2, 0x8716
+.base64 "OXEKiCMwGAAjNJgAIzgoASM8OAEjMEgDIzRYAyM4aAMjPHgDqoQuirKKPovCi5NSRwATk0IAM4lmALMJZ0AWhw=="
 call {vg_aes_cfb128_decrypt}
 beqz s3, 20f
-.insn 2, 0x8526
-.insn 2, 0x85d2
-.insn 2, 0x8656
-.insn 2, 0x4685
-.insn 2, 0x875a
+.base64 "JoXShVaGhUZahw=="
 call {vg_aes_encrypt_blocks}
-.insn 2, 0x83d6
+.base64 "1oM="
 22:
-.insn 4, 0x00094283
-.insn 4, 0x0003c303
-.insn 4, 0x0062c2b3
-.insn 4, 0x00590023
-.insn 2, 0x0905
-.insn 2, 0x0385
-.insn 2, 0x19fd
+.base64 "g0IJAAPDAwCzwmIAIwBZAAUJhQP9GQ=="
 bnez s3, 22b
 j 21f
 20:
 21:
-.insn 4, 0x000bb083
-.insn 4, 0x008bb483
-.insn 4, 0x010bb903
-.insn 4, 0x018bb983
-.insn 4, 0x020bba03
-.insn 4, 0x028bba83
-.insn 4, 0x030bbb03
-.insn 4, 0x038bbb83
-.insn 2, 0x8f0a
-.insn 2, 0x4f81
-.insn 4, 0x01ff3023
-.insn 4, 0x01ff3423
-.insn 4, 0x01ff3823
-.insn 4, 0x01ff3c23
-.insn 4, 0x03ff3023
-.insn 4, 0x03ff3423
-.insn 4, 0x03ff3823
-.insn 4, 0x03ff3c23
-.insn 2, 0x6121
-.insn 2, 0x8082
-.option pop",
+.base64 "g7ALAIO0iwADuQsBg7mLAQO6CwKDuosCA7sLA4O7iwMKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMhYYKA"
+.option pop"#,
         vg_aes_cfb128_decrypt = sym super::aes_cfb::vg_aes_cfb128_decrypt,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )

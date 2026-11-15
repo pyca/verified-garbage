@@ -61,16 +61,16 @@ macro "decP_pre" " at " h:ident : tactic => `(tactic| (
 /-- The variant's precondition gives `PreD true` (`pre`'s facts in `px`). -/
 theorem preD_ofP {ts : List FnTable} {s : State} (h : (decPSpec ts).pre s) : PreD true s := by
   decP_pre at h
-  obtain ⟨spal, sp1, sp2, -, -, -, hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, -, otl, ot, oa, mln, mle,
-    mlp, mlq, mldp, mldq, mlqi, mll, mlct, mls, -, mltl, mlt, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts, sP, stl, st,
-    sa, ko, kml, kn, ke, kp, kq, kdp, kdq, kqi, kl, kct, ks, kP, ktl, kt, ka, wo, wml, wn, we, wp, wq, wdp, wdq, wqi,
-    wl, wct, wsc, wP, wtl, wt, k1, k2, ok, oc, e1, e2, p1, p2, q1, q2, h4, h8, h6, hs, hpl, hk, alm, als, altl, alt,
-    alP⟩ := h
+  sig_split h
+  rename_i spal sp1 sp2 _ _ _ hrd hwr oml on oe op oq odp odq oqi ol oct os _ otl ot oa mln mle mlp mlq mldp
+    mldq mlqi mll mlct mls _ mltl mlt mla ns es ps qs dps dqs qis ls cts sP stl st sa ko kml kn ke kp kq kdp kdq
+    kqi kl kct ks kP ktl kt ka wo wml wn we wp wq wdp wdq wqi wl wct wsc wP wtl wt k1 k2 ok oc e1 e2 p1 p2 q1 q2
+    h4 h8 h6 hs hpl hk alm als altl alt
   exact ⟨spal, sp1, sp2, hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, otl, ot, oa, mln, mle, mlp,
     mlq, mldp, mldq, mlqi, mll, mlct, mls, mltl, mlt, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts, stl, st, sa, ko, kml,
     kn, ke, kp, kq, kdp, kdq, kqi, kl, kct, ks, ktl, kt, ka, wo, wml, wn, we, wp, wq, wdp, wdq, wqi, wl, wct, wsc, wtl,
     wt, k1, k2, ok, oc, e1, e2, p1, p2, q1, q2, h4, h8, h6, hs, alm, als, altl, alt,
-    fun _ => ⟨sP, kP, wP, hpl, alP, fun _ => hk⟩⟩
+    fun _ => ⟨sP, kP, wP, hpl, h, fun _ => hk⟩⟩
 
 /-- The tables, as the variant's contract gives them. -/
 theorem spec_tabDP {ts : List FnTable} {s : State} (h : (decPSpec ts).pre s) :

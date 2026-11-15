@@ -11,242 +11,27 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_finalize() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x7ff78293
-.insn 2, 0x02a1
-.insn 4, 0xff82f293
-.insn 4, 0x0012b823
-.insn 4, 0x0092bc23
-.insn 2, 0x84be
-.insn 4, 0xff070313
+.base64 "k4L3f6ECk/KC/yO4EgAjvJIAvoQTAwf/"
 beqz t1, 20f
-.insn 2, 0x8f36
-.insn 2, 0x8fb2
-.insn 2, 0x833a
+.base64 "No+yjzqD"
 beqz t1, 22f
 24:
-.insn 4, 0x000f4e03
-.insn 4, 0x000fce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01cf8023
-.insn 2, 0x0f05
-.insn 2, 0x0f85
-.insn 2, 0x137d
+.base64 "A04PAIPODwAzTt4BI4DPAQUPhQ99Ew=="
 bnez t1, 24b
 j 23f
 22:
 23:
-.insn 4, 0x000fce03
-.insn 4, 0x080e4e13
-.insn 4, 0x01cf8023
-.insn 4, 0x10050f13
-.insn 4, 0x00064e03
-.insn 4, 0x000f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60023
-.insn 4, 0x00164e03
-.insn 4, 0x001f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c600a3
-.insn 4, 0x00264e03
-.insn 4, 0x002f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60123
-.insn 4, 0x00364e03
-.insn 4, 0x003f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c601a3
-.insn 4, 0x00464e03
-.insn 4, 0x004f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60223
-.insn 4, 0x00564e03
-.insn 4, 0x005f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c602a3
-.insn 4, 0x00664e03
-.insn 4, 0x006f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60323
-.insn 4, 0x00764e03
-.insn 4, 0x007f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c603a3
-.insn 4, 0x00864e03
-.insn 4, 0x008f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60423
-.insn 4, 0x00964e03
-.insn 4, 0x009f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c604a3
-.insn 4, 0x00a64e03
-.insn 4, 0x00af4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60523
-.insn 4, 0x00b64e03
-.insn 4, 0x00bf4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c605a3
-.insn 4, 0x00c64e03
-.insn 4, 0x00cf4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60623
-.insn 4, 0x00d64e03
-.insn 4, 0x00df4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c606a3
-.insn 4, 0x00e64e03
-.insn 4, 0x00ef4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60723
-.insn 4, 0x00f64e03
-.insn 4, 0x00ff4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c607a3
+.base64 "A84PABNODggjgM8BEw8FEANOBgCDTg8AM07eASMAxgEDThYAg04fADNO3gGjAMYBA04mAINOLwAzTt4BIwHGAQNONgCDTj8AM07eAaMBxgEDTkYAg05PADNO3gEjAsYBA05WAINOXwAzTt4BowLGAQNOZgCDTm8AM07eASMDxgEDTnYAg05/ADNO3gGjA8YBA06GAINOjwAzTt4BIwTGAQNOlgCDTp8AM07eAaMExgEDTqYAg06vADNO3gEjBcYBA062AINOvwAzTt4BowXGAQNOxgCDTs8AM07eASMGxgEDTtYAg07fADNO3gGjBsYBA07mAINO7wAzTt4BIwfGAQNO9gCDTv8AM07eAaMHxgE="
 j 21f
 20:
-.insn 4, 0x00064e03
-.insn 4, 0x0006ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60023
-.insn 4, 0x00164e03
-.insn 4, 0x0016ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c600a3
-.insn 4, 0x00264e03
-.insn 4, 0x0026ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60123
-.insn 4, 0x00364e03
-.insn 4, 0x0036ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c601a3
-.insn 4, 0x00464e03
-.insn 4, 0x0046ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60223
-.insn 4, 0x00564e03
-.insn 4, 0x0056ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c602a3
-.insn 4, 0x00664e03
-.insn 4, 0x0066ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60323
-.insn 4, 0x00764e03
-.insn 4, 0x0076ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c603a3
-.insn 4, 0x00864e03
-.insn 4, 0x0086ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60423
-.insn 4, 0x00964e03
-.insn 4, 0x0096ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c604a3
-.insn 4, 0x00a64e03
-.insn 4, 0x00a6ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60523
-.insn 4, 0x00b64e03
-.insn 4, 0x00b6ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c605a3
-.insn 4, 0x00c64e03
-.insn 4, 0x00c6ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60623
-.insn 4, 0x00d64e03
-.insn 4, 0x00d6ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c606a3
-.insn 4, 0x00e64e03
-.insn 4, 0x00e6ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60723
-.insn 4, 0x00f64e03
-.insn 4, 0x00f6ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c607a3
-.insn 4, 0x0f050f13
-.insn 4, 0x00064e03
-.insn 4, 0x000f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60023
-.insn 4, 0x00164e03
-.insn 4, 0x001f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c600a3
-.insn 4, 0x00264e03
-.insn 4, 0x002f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60123
-.insn 4, 0x00364e03
-.insn 4, 0x003f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c601a3
-.insn 4, 0x00464e03
-.insn 4, 0x004f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60223
-.insn 4, 0x00564e03
-.insn 4, 0x005f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c602a3
-.insn 4, 0x00664e03
-.insn 4, 0x006f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60323
-.insn 4, 0x00764e03
-.insn 4, 0x007f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c603a3
-.insn 4, 0x00864e03
-.insn 4, 0x008f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60423
-.insn 4, 0x00964e03
-.insn 4, 0x009f4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c604a3
-.insn 4, 0x00a64e03
-.insn 4, 0x00af4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60523
-.insn 4, 0x00b64e03
-.insn 4, 0x00bf4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c605a3
-.insn 4, 0x00c64e03
-.insn 4, 0x00cf4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60623
-.insn 4, 0x00d64e03
-.insn 4, 0x00df4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c606a3
-.insn 4, 0x00e64e03
-.insn 4, 0x00ef4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c60723
-.insn 4, 0x00f64e03
-.insn 4, 0x00ff4e83
-.insn 4, 0x01de4e33
-.insn 4, 0x01c607a3
+.base64 "A04GAIPOBgAzTt4BIwDGAQNOFgCDzhYAM07eAaMAxgEDTiYAg84mADNO3gEjAcYBA042AIPONgAzTt4BowHGAQNORgCDzkYAM07eASMCxgEDTlYAg85WADNO3gGjAsYBA05mAIPOZgAzTt4BIwPGAQNOdgCDznYAM07eAaMDxgEDToYAg86GADNO3gEjBMYBA06WAIPOlgAzTt4BowTGAQNOpgCDzqYAM07eASMFxgEDTrYAg862ADNO3gGjBcYBA07GAIPOxgAzTt4BIwbGAQNO1gCDztYAM07eAaMGxgEDTuYAg87mADNO3gEjB8YBA072AIPO9gAzTt4BowfGARMPBQ8DTgYAg04PADNO3gEjAMYBA04WAINOHwAzTt4BowDGAQNOJgCDTi8AM07eASMBxgEDTjYAg04/ADNO3gGjAcYBA05GAINOTwAzTt4BIwLGAQNOVgCDTl8AM07eAaMCxgEDTmYAg05vADNO3gEjA8YBA052AINOfwAzTt4BowPGAQNOhgCDTo8AM07eASMExgEDTpYAg06fADNO3gGjBMYBA06mAINOrwAzTt4BIwXGAQNOtgCDTr8AM07eAaMFxgEDTsYAg07PADNO3gEjBsYBA07WAINO3wAzTt4BowbGAQNO5gCDTu8AM07eASMHxgEDTvYAg07/ADNO3gGjB8YB"
 21:
-.insn 2, 0x4685
-.insn 2, 0x8726
+.base64 "hUYmhw=="
 call {vg_aes_encrypt_blocks}
-.insn 4, 0x7ff48293
-.insn 2, 0x02a1
-.insn 4, 0xff82f293
-.insn 4, 0x0102b083
-.insn 4, 0x0182b483
-.insn 2, 0x8082
-.option pop",
+.base64 "k4L0f6ECk/KC/4OwAgGDtIIBgoA="
+.option pop"#,
         vg_aes_encrypt_blocks = sym crate::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
     )
 }

@@ -337,7 +337,7 @@ theorem guardG_ct {Φ : CvP → State → Prop} (hA : ∀ p s, Φ p s → GA p s
       h'.args.n hb (by simpa using h'.n.rd 0 hn0)) fun t ⟨⟨h9, mt⟩, kt⟩ => ⟨hpres _ _ _ h mt kt, h9⟩
 
 /-- `guarded a b`, from an invariant within `GA` that the guard keeps. -/
-theorem guarded_ct {Φ Ψ : CvP → State → Prop} (hA : ∀ p s, Φ p s → GA p s)
+theorem cvGuarded_ct {Φ Ψ : CvP → State → Prop} (hA : ∀ p s, Φ p s → GA p s)
     (hpres : ∀ p s t, Φ p s → t.mem = s.mem → Keep [.x3, .x4, .x9, .x13, .x14, .x15, .x16] s t → Φ p t)
     {a b : Prog isa} (ca : RelCT isa (Two fun p s => Φ p s ∧ GPass p) a (Two Ψ))
     (cb : RelCT isa (Two fun p s => Φ p s ∧ ¬ GPass p) b (Two Ψ)) :
@@ -491,7 +491,7 @@ theorem invGcd_ct [InvLaw] : RelCT isa (Two GB) (seqs invGcd) (Two GA) := by
   unfold invGcd
   exact ct_app (by simp [invSetup]) (by simp) invSetup_ct
     (ct_app (by simp) (by simp [eqA])
-      (ct_cons (by simp) (guarded_ct (Φ := GI) (fun _ _ h => h.1) GI.pres
+      (ct_cons (by simp) (cvGuarded_ct (Φ := GI) (fun _ _ h => h.1) GI.pres
           ((inverseAtS_ct (by taint_decide)).mono (fun _ _ h => two_mono (fun _ _ h => h.1) h) fun _ _ h => h)
           ((inverseAt_ct (by taint_decide)).mono (fun _ _ h => two_mono (fun _ _ h => h.1) h) fun _ _ h => h))
         (ct_cons (by simp) (zeroA_ct (by decide) (by taint_decide))
@@ -500,7 +500,7 @@ theorem invGcd_ct [InvLaw] : RelCT isa (Two GB) (seqs invGcd) (Two GA) := by
 
 theorem invPart_ct [InvLaw] : RelCT isa (Two GB) (seqs invPart) (Two GA) := by
   unfold invPart
-  exact ct_app (by simp [invGcd]) (by simp) invGcd_ct (ct_one (guarded_ct (Φ := GA) (fun _ _ h => h)
+  exact ct_app (by simp [invGcd]) (by simp) invGcd_ct (ct_one (cvGuarded_ct (Φ := GA) (fun _ _ h => h)
     (fun _ _ _ h hm k => h.same hm k (by decide)) qTail_ct skip_ct))
 
 /-! ## The stores -/

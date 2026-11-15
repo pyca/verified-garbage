@@ -39,9 +39,11 @@ theorem sPreP_of {s : State} (h : (Spec.RsaPkcs1Sig.signPrecomputedContract abi 
   rw [e] at h
   sig_pre [Spec.RsaPkcs1Sig.signPrecomputedContract, Spec.RsaPkcs1Sig.signPrecomputedSig,
     Spec.RsaPkcs1Sig.signSig, abi, argRegs, stackArgs_fifteen, List.append_eq, List.range, List.range.loop] at h
-  obtain ⟨sp1, sp2, hrd, hwr, on, oe, od, op, oq, odp, odq, oqi, os, oP, oa, ns, es, ds, ps, qs, dps, dqs, qis, sP,
-    sa, ko, kn, ke, kd, kp, kq, kdp, kdq, kqi, ks, kP, ka, wo, wn, we, wd, wp, wq, wdp, wdq, wqi, ws, wP, ⟨k1, k2⟩,
-    h4, e1, e2, p1, p2, q1, q2, h6, h10, h8, hs, hpl, hyp⟩ := h
+  sig_split h
+  rename_i sp1 sp2 hrd hwr on oe od op oq odp odq oqi os oP oa ns es ds ps qs dps dqs qis sP sa ko kn ke kd kp
+    kq kdp kdq kqi ks kP ka wo wn we wd wp wq wdp wdq wqi ws wP h_k1_k2 h4 e1 e2 p1 p2 q1 q2 h6 h10 h8 hs hpl
+  have hyp := h
+  obtain ⟨k1, k2⟩ := h_k1_k2
   exact ⟨⟨sp1, by simp only [↓reduceIte]; omega_using [sp2], hrd, hwr, on, oe, od, op, oq, odp, odq, oqi, os, oa, ns, es, ds,
     ps, qs, dps, dqs, qis, sa, ko, kn, ke, kd, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wd, wp, wq, wdp, wdq, wqi,
     ws, k1, k2, h4, e1, e2, p1, p2, q1, q2, h6, h10, h8, hs⟩, ⟨oP, sP, kP, wP, hpl, fun _ => hyp⟩⟩

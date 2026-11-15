@@ -80,6 +80,67 @@ theorem descs_array {name : String} {rest : List (String × Param)} (e : Elem) (
       Sig.descs 64 ((name, .array false e n) :: rest) vs := by
   cases vs <;> rfl
 
+/-- The precondition of the contract with the longer first array gives the
+one with the shorter, of the state with the array's region narrowed to its
+first `n` elements (`Verified.widenFirstArray`). -/
+theorem pre_narrowFirstArray {name : String} {e : Elem} {n n' : Nat}
+    (hn : n ≤ n') {rest : List (String × Param)} {ret : Option IntTy}
+    {pre : Curry ((firstArraySig name e n rest ret).words 64) (Mem → Prop)}
+    {pre' : Curry ((firstArraySig name e n' rest ret).words 64) (Mem → Prop)}
+    {post : (firstArraySig name e n rest ret).Post 64} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry ((firstArraySig name e n rest ret).words 64) (Mem → List Nat))}
+    (hp : Curry.Forall₂ (fun p q => ∀ m, p m → q m) _ pre' pre) {s : State}
+    (hs : ((firstArraySig name e n' rest ret).contract abi pre' post wa stack leak).pre s) :
+    ((firstArraySig name e n rest ret).contract abi pre post wa stack leak).pre
+      (s.withRegions (narrowHead (n * e.size) s.rd) s.wr) := by
+  dsimp only [Sig.contract] at hs ⊢
+  split at hs
+  · exact hs.elim
+  rename_i vals hvals
+  split
+  · rename_i h'; exact absurd (hvals.symm.trans h') nofun
+  rename_i vals' hvals'
+  obtain rfl : vals' = vals := Option.some.inj (hvals'.symm.trans hvals)
+  have hw := abi_args_withRegions hvals s (narrowHead (n * e.size) s.rd) s.wr
+  obtain ⟨p, vs, hv⟩ := abi_args_cons hvals (by simp [Sig.words, Param.words]) s
+  have hW : List.map (fun x => ArgWord.bits abi.ptrBits x)
+      ((firstArraySig name e n rest ret).words abi.ptrBits) =
+      List.map (fun x => ArgWord.bits abi.ptrBits x)
+      ((firstArraySig name e n' rest ret).words abi.ptrBits) := rfl
+  simp only [hw] at hs ⊢
+  rw [hv] at hs ⊢
+  simp only [Sig.bufs, Sig.lists, List.cons_append, List.filter_cons] at hs ⊢
+  rw [hW]
+  generalize List.map (fun x => ArgWord.bits abi.ptrBits x)
+      ((firstArraySig name e n' rest ret).words abi.ptrBits) = W at hs ⊢
+  have hm : abi.mem (s.withRegions (narrowHead (n * e.size) s.rd) s.wr) = abi.mem s := rfl
+  have ha : abi.argArea W (s.withRegions (narrowHead (n * e.size) s.rd) s.wr) =
+    abi.argArea W s := rfl
+  have hr : abi.reserved stack (s.withRegions (narrowHead (n * e.size) s.rd) s.wr) =
+    abi.reserved stack s := rfl
+  simp only [hm, ha, hr, Bool.not_false, Bool.false_eq_true, ↓reduceIte, List.map_cons] at hs ⊢
+  generalize Sig.bufs rest vs ++ List.map (fun r => (r, false))
+    (Sig.lists abi.ptrBits (abi.mem s) rest vs) = B at hs ⊢
+  obtain ⟨hwf, hrd, hwr, hpw, hres, hb, hpre⟩ := hs
+  have hsub : Region.Sub ⟨p, n * e.size⟩ ⟨p, n' * e.size⟩ :=
+    Region.sub_prefix (Nat.mul_le_mul_right _ hn)
+  refine ⟨hwf, ?_, hwr, ?_, ?_, ?_, ?_⟩
+  · change narrowHead (n * e.size) (abi.rd s) = _
+    rw [hrd, narrowHead, Nat.min_eq_left (Nat.mul_le_mul_right _ hn)]
+  · rw [List.pairwise_cons] at hpw ⊢
+    exact ⟨fun b hb hd => (hpw.1 b hb hd).sub_left hsub, hpw.2⟩
+  · intro r hr' a ha'
+    rcases List.mem_cons.mp ha' with rfl | ha'
+    · exact (hres r hr' _ (List.mem_cons_self ..)).sub_right hsub
+    · exact hres r hr' a (List.mem_cons_of_mem _ ha')
+  · intro a ha'
+    rcases List.mem_cons.mp ha' with rfl | ha'
+    · have := hb _ (List.mem_cons_self ..)
+      have := Nat.mul_le_mul_right e.size hn
+      dsimp only at *; omega_arith
+    · exact hb a (List.mem_cons_of_mem _ ha')
+  · exact hp.apply _ _ hpre
+
 /-- Moving a proof to a longer read-only first array and a stronger
 precondition, all else the same. -/
 theorem Verified.widenFirstArray {c : Prog isa} {name : String} {e : Elem} {n n' : Nat}
@@ -93,56 +154,8 @@ theorem Verified.widenFirstArray {c : Prog isa} {name : String} {e : Elem} {n n'
     (hsat : ∃ s, ((firstArraySig name e n' rest ret).contract abi pre' post wa stack leak).pre s) :
     Verified target c ((firstArraySig name e n' rest ret).contract abi pre' post wa stack leak) := by
   refine regionModel.verified_narrowTo (T := target) (fun _ _ _ _ h => h) h
-    (fun s => narrowHead (n * e.size) s.rd) (fun s => s.wr) ?_ ?_ (fun _ _ => Covers.refl _)
-    ?_ ?_ hsat
-  · intro s hs
-    dsimp only [Sig.contract] at hs ⊢
-    split at hs
-    · exact hs.elim
-    rename_i vals hvals
-    split
-    · rename_i h'; exact absurd (hvals.symm.trans h') nofun
-    rename_i vals' hvals'
-    obtain rfl : vals' = vals := Option.some.inj (hvals'.symm.trans hvals)
-    have hw := abi_args_withRegions hvals s (narrowHead (n * e.size) s.rd) s.wr
-    obtain ⟨p, vs, hv⟩ := abi_args_cons hvals (by simp [Sig.words, Param.words]) s
-    have hW : List.map (fun x => ArgWord.bits abi.ptrBits x)
-        ((firstArraySig name e n rest ret).words abi.ptrBits) =
-        List.map (fun x => ArgWord.bits abi.ptrBits x)
-        ((firstArraySig name e n' rest ret).words abi.ptrBits) := rfl
-    simp only [regionModel, hw] at hs ⊢
-    rw [hv] at hs ⊢
-    simp only [Sig.bufs, Sig.lists, List.cons_append, List.filter_cons] at hs ⊢
-    rw [hW]
-    generalize List.map (fun x => ArgWord.bits abi.ptrBits x)
-        ((firstArraySig name e n' rest ret).words abi.ptrBits) = W at hs ⊢
-    have hm : abi.mem (s.withRegions (narrowHead (n * e.size) s.rd) s.wr) = abi.mem s := rfl
-    have ha : abi.argArea W (s.withRegions (narrowHead (n * e.size) s.rd) s.wr) =
-      abi.argArea W s := rfl
-    have hr : abi.reserved stack (s.withRegions (narrowHead (n * e.size) s.rd) s.wr) =
-      abi.reserved stack s := rfl
-    simp only [hm, ha, hr, Bool.not_false, Bool.false_eq_true, ↓reduceIte, List.map_cons] at hs ⊢
-    generalize Sig.bufs rest vs ++ List.map (fun r => (r, false))
-      (Sig.lists abi.ptrBits (abi.mem s) rest vs) = B at hs ⊢
-    obtain ⟨hwf, hrd, hwr, hpw, hres, hb, hpre⟩ := hs
-    have hsub : Region.Sub ⟨p, n * e.size⟩ ⟨p, n' * e.size⟩ :=
-      Region.sub_prefix (Nat.mul_le_mul_right _ hn)
-    refine ⟨hwf, ?_, hwr, ?_, ?_, ?_, ?_⟩
-    · change narrowHead (n * e.size) (abi.rd s) = _
-      rw [hrd, narrowHead, Nat.min_eq_left (Nat.mul_le_mul_right _ hn)]
-    · rw [List.pairwise_cons] at hpw ⊢
-      exact ⟨fun b hb hd => (hpw.1 b hb hd).sub_left hsub, hpw.2⟩
-    · intro r hr' a ha'
-      rcases List.mem_cons.mp ha' with rfl | ha'
-      · exact (hres r hr' _ (List.mem_cons_self ..)).sub_right hsub
-      · exact hres r hr' a (List.mem_cons_of_mem _ ha')
-    · intro a ha'
-      rcases List.mem_cons.mp ha' with rfl | ha'
-      · have := hb _ (List.mem_cons_self ..)
-        have := Nat.mul_le_mul_right e.size hn
-        dsimp only at *; omega_arith
-      · exact hb a (List.mem_cons_of_mem _ ha')
-    · exact hp.apply _ _ hpre
+    (fun s => narrowHead (n * e.size) s.rd) (fun s => s.wr) (fun _ hs => pre_narrowFirstArray hn hp hs) ?_
+    (fun _ _ => Covers.refl _) ?_ ?_ hsat
   · exact fun s _ _ _ => InRegions.of_prefix (narrowHead_append_prefix _ _ _)
   · intro s s' _ h
     dsimp only [Sig.contract] at h ⊢

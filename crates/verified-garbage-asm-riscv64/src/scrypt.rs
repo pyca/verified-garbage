@@ -22,86 +22,29 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_scrypt(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, r: usize, b: *mut [u8; 128], blen: usize, v: *mut [u8; 128], vlen: usize, scratch: *mut [u8; 128], slen: usize, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x7111
-.insn 2, 0x828a
-.insn 4, 0x0012b023
-.insn 4, 0x0132b423
-.insn 4, 0x00a2b823
-.insn 4, 0x00b2bc23
-.insn 4, 0x02e2b023
-.insn 4, 0x02f2b423
-.insn 4, 0x0302b823
-.insn 4, 0x0312bc23
-.insn 2, 0x8996
-.insn 2, 0x4705
-.insn 2, 0x081e
+.base64 "EXGKgiOwEgAjtDIBI7iiACO8sgAjsOICI7TyAiO4AgMjvBIDlokFRx4I"
 call {vg_pbkdf2_hmac_sha256}
-.insn 4, 0x0289b503
-.insn 4, 0x04a9b023
-.insn 4, 0x0289b283
-.insn 4, 0x0389b303
-.insn 4, 0x0062e2b3
-.insn 4, 0x1089b303
-.insn 4, 0x0062e2b3
-.insn 4, 0x0072f293
+.base64 "A7WJAiOwqQSDsokCA7OJA7PiYgADs4kQs+JiAJPycgA="
 beqz t0, 20f
 22:
-.insn 4, 0x0409b503
-.insn 4, 0x0209b583
-.insn 4, 0x0389b603
-.insn 4, 0x1009b683
-.insn 4, 0x1089b703
-.insn 4, 0x05098793
+.base64 "A7UJBIO1CQIDtokDg7YJEAO3iRCThwkF"
 call {vg_scrypt_romix_bytes}
-.insn 4, 0x0409b503
-.insn 4, 0x0209b583
-.insn 2, 0x059e
-.insn 2, 0x952e
-.insn 4, 0x04a9b023
-.insn 4, 0x0289b283
-.insn 4, 0x0309b303
-.insn 2, 0x031e
-.insn 2, 0x929a
-.insn 4, 0x40a282b3
+.base64 "A7UJBIO1CQKeBS6VI7CpBIOyiQIDswkDHgOakrOCokA="
 bnez t0, 22b
 j 21f
 20:
 23:
-.insn 4, 0x0409b503
-.insn 4, 0x0209b583
-.insn 4, 0x0389b603
-.insn 4, 0x1009b683
-.insn 4, 0x1089b703
-.insn 4, 0x05098793
+.base64 "A7UJBIO1CQIDtokDg7YJEAO3iRCThwkF"
 call {vg_scrypt_romix}
-.insn 4, 0x0409b503
-.insn 4, 0x0209b583
-.insn 2, 0x059e
-.insn 2, 0x952e
-.insn 4, 0x04a9b023
-.insn 4, 0x0289b283
-.insn 4, 0x0309b303
-.insn 2, 0x031e
-.insn 2, 0x929a
-.insn 4, 0x40a282b3
+.base64 "A7UJBIO1CQKeBS6VI7CpBIOyiQIDswkDHgOakrOCokA="
 bnez t0, 23b
 21:
-.insn 4, 0x0109b503
-.insn 4, 0x0189b583
-.insn 4, 0x0289b603
-.insn 4, 0x0309b683
-.insn 2, 0x069e
-.insn 2, 0x4705
-.insn 4, 0x1189b783
-.insn 4, 0x1209b803
+.base64 "A7UJAYO1iQEDtokCg7YJA54GBUeDt4kRA7gJEg=="
 call {vg_pbkdf2_hmac_sha256}
-.insn 4, 0x0009b083
-.insn 4, 0x0089b983
-.insn 2, 0x6111
-.insn 2, 0x8082
-.option pop",
+.base64 "g7AJAIO5iQARYYKA"
+.option pop"#,
         vg_pbkdf2_hmac_sha256 = sym super::pbkdf2_sha256::vg_pbkdf2_hmac_sha256,
         vg_scrypt_romix_bytes = sym super::scrypt::vg_scrypt_romix_bytes::vg_scrypt_romix_bytes,
         vg_scrypt_romix = sym super::scrypt::vg_scrypt_romix::vg_scrypt_romix,

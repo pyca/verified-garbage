@@ -11,366 +11,49 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_bit_unpack() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x88aa
-.insn 2, 0x833a
-.insn 4, 0x007fe737
-.insn 2, 0x0705
-.insn 4, 0x00000837
-.insn 2, 0x0809
-.insn 4, 0x4106883b
+.base64 "qog6gzfnfwAFBzcIAAAJCDuIBkE="
 beqz a6, 20f
-.insn 4, 0x00000837
-.insn 2, 0x0811
-.insn 4, 0x4106883b
+.base64 "NwgAABEIO4gGQQ=="
 beqz a6, 22f
-.insn 2, 0x6805
-.insn 2, 0x8842
-.insn 4, 0x4106883b
+.base64 "BWhCiDuIBkE="
 beqz a6, 24f
-.insn 4, 0x00020837
-.insn 2, 0x8842
-.insn 4, 0x4106883b
+.base64 "NwgCAEKIO4gGQQ=="
 beqz a6, 26f
-.insn 4, 0x000805b7
-.insn 2, 0x85ae
-.insn 4, 0x08000393
+.base64 "twUIAK6FkwMACA=="
 28:
-.insn 2, 0x4781
-.insn 4, 0x0008c803
-.insn 2, 0x97c2
-.insn 4, 0x0018c803
-.insn 2, 0x0822
-.insn 2, 0x97c2
-.insn 4, 0x0028c803
-.insn 2, 0x0842
-.insn 2, 0x97c2
-.insn 4, 0x02c79813
-.insn 4, 0x02c85813
-.insn 2, 0x83d1
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032023
-.insn 4, 0x0038c803
-.insn 2, 0x0812
-.insn 2, 0x97c2
-.insn 4, 0x0048c803
-.insn 2, 0x0832
-.insn 2, 0x97c2
-.insn 4, 0x02c79813
-.insn 4, 0x02c85813
-.insn 2, 0x83d1
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032223
-.insn 2, 0x0895
-.insn 2, 0x0321
-.insn 2, 0x13fd
+.base64 "gUcDyAgAwpcDyBgAIgjClwPIKABCCMKXE5jHAhNYyALRgzOIBUGTUvhDs/LiABaYIyADAQPIOAASCMKXA8hIADIIwpcTmMcCE1jIAtGDM4gFQZNS+EOz8uIAFpgjIgMBlQghA/0T"
 bnez t2, 28b
 j 27f
 26:
-.insn 4, 0x000205b7
-.insn 2, 0x85ae
-.insn 4, 0x04000393
+.base64 "twUCAK6FkwMABA=="
 29:
-.insn 2, 0x4781
-.insn 4, 0x0008c803
-.insn 2, 0x97c2
-.insn 4, 0x0018c803
-.insn 2, 0x0822
-.insn 2, 0x97c2
-.insn 4, 0x0028c803
-.insn 2, 0x0842
-.insn 2, 0x97c2
-.insn 4, 0x02e79813
-.insn 4, 0x02e85813
-.insn 2, 0x83c9
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032023
-.insn 4, 0x0038c803
-.insn 2, 0x081a
-.insn 2, 0x97c2
-.insn 4, 0x0048c803
-.insn 2, 0x083a
-.insn 2, 0x97c2
-.insn 4, 0x02e79813
-.insn 4, 0x02e85813
-.insn 2, 0x83c9
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032223
-.insn 4, 0x0058c803
-.insn 2, 0x0812
-.insn 2, 0x97c2
-.insn 4, 0x0068c803
-.insn 2, 0x0832
-.insn 2, 0x97c2
-.insn 4, 0x02e79813
-.insn 4, 0x02e85813
-.insn 2, 0x83c9
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032423
-.insn 4, 0x0078c803
-.insn 2, 0x080a
-.insn 2, 0x97c2
-.insn 4, 0x0088c803
-.insn 2, 0x082a
-.insn 2, 0x97c2
-.insn 4, 0x02e79813
-.insn 4, 0x02e85813
-.insn 2, 0x83c9
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032623
-.insn 2, 0x08a5
-.insn 2, 0x0341
-.insn 2, 0x13fd
+.base64 "gUcDyAgAwpcDyBgAIgjClwPIKABCCMKXE5jnAhNY6ALJgzOIBUGTUvhDs/LiABaYIyADAQPIOAAaCMKXA8hIADoIwpcTmOcCE1joAsmDM4gFQZNS+EOz8uIAFpgjIgMBA8hYABIIwpcDyGgAMgjClxOY5wITWOgCyYMziAVBk1L4Q7Py4gAWmCMkAwEDyHgACgjClwPIiAAqCMKXE5jnAhNY6ALJgzOIBUGTUvhDs/LiABaYIyYDAaUIQQP9Ew=="
 bnez t2, 29b
 27:
 j 25f
 24:
-.insn 2, 0x6585
-.insn 2, 0x85ae
-.insn 4, 0x02000393
+.base64 "hWWuhZMDAAI="
 210:
-.insn 2, 0x4781
-.insn 4, 0x0008c803
-.insn 2, 0x97c2
-.insn 4, 0x0018c803
-.insn 2, 0x0822
-.insn 2, 0x97c2
-.insn 4, 0x03379813
-.insn 4, 0x03385813
-.insn 2, 0x83b5
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032023
-.insn 4, 0x0028c803
-.insn 2, 0x080e
-.insn 2, 0x97c2
-.insn 4, 0x0038c803
-.insn 2, 0x082e
-.insn 2, 0x97c2
-.insn 4, 0x03379813
-.insn 4, 0x03385813
-.insn 2, 0x83b5
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032223
-.insn 4, 0x0048c803
-.insn 2, 0x081a
-.insn 2, 0x97c2
-.insn 4, 0x03379813
-.insn 4, 0x03385813
-.insn 2, 0x83b5
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032423
-.insn 4, 0x0058c803
-.insn 2, 0x0806
-.insn 2, 0x97c2
-.insn 4, 0x0068c803
-.insn 2, 0x0826
-.insn 2, 0x97c2
-.insn 4, 0x03379813
-.insn 4, 0x03385813
-.insn 2, 0x83b5
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032623
-.insn 4, 0x0078c803
-.insn 2, 0x0812
-.insn 2, 0x97c2
-.insn 4, 0x0088c803
-.insn 2, 0x0832
-.insn 2, 0x97c2
-.insn 4, 0x03379813
-.insn 4, 0x03385813
-.insn 2, 0x83b5
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032823
-.insn 4, 0x0098c803
-.insn 2, 0x081e
-.insn 2, 0x97c2
-.insn 4, 0x03379813
-.insn 4, 0x03385813
-.insn 2, 0x83b5
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032a23
-.insn 4, 0x00a8c803
-.insn 2, 0x080a
-.insn 2, 0x97c2
-.insn 4, 0x00b8c803
-.insn 2, 0x082a
-.insn 2, 0x97c2
-.insn 4, 0x03379813
-.insn 4, 0x03385813
-.insn 2, 0x83b5
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032c23
-.insn 4, 0x00c8c803
-.insn 2, 0x0816
-.insn 2, 0x97c2
-.insn 4, 0x03379813
-.insn 4, 0x03385813
-.insn 2, 0x83b5
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032e23
-.insn 2, 0x08b5
-.insn 4, 0x02030313
-.insn 2, 0x13fd
+.base64 "gUcDyAgAwpcDyBgAIgjClxOYNwMTWDgDtYMziAVBk1L4Q7Py4gAWmCMgAwEDyCgADgjClwPIOAAuCMKXE5g3AxNYOAO1gzOIBUGTUvhDs/LiABaYIyIDAQPISAAaCMKXE5g3AxNYOAO1gzOIBUGTUvhDs/LiABaYIyQDAQPIWAAGCMKXA8hoACYIwpcTmDcDE1g4A7WDM4gFQZNS+EOz8uIAFpgjJgMBA8h4ABIIwpcDyIgAMgjClxOYNwMTWDgDtYMziAVBk1L4Q7Py4gAWmCMoAwEDyJgAHgjClxOYNwMTWDgDtYMziAVBk1L4Q7Py4gAWmCMqAwEDyKgACgjClwPIuAAqCMKXE5g3AxNYOAO1gzOIBUGTUvhDs/LiABaYIywDAQPIyAAWCMKXE5g3AxNYOAO1gzOIBUGTUvhDs/LiABaYIy4DAbUIEwMDAv0T"
 bnez t2, 210b
 25:
 j 23f
 22:
-.insn 4, 0x000005b7
-.insn 2, 0x0591
-.insn 4, 0x08000393
+.base64 "twUAAJEFkwMACA=="
 211:
-.insn 2, 0x4781
-.insn 4, 0x0008c803
-.insn 2, 0x97c2
-.insn 4, 0x03c79813
-.insn 4, 0x03c85813
-.insn 2, 0x8391
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032023
-.insn 4, 0x03c79813
-.insn 4, 0x03c85813
-.insn 2, 0x8391
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032223
-.insn 2, 0x0885
-.insn 2, 0x0321
-.insn 2, 0x13fd
+.base64 "gUcDyAgAwpcTmMcDE1jIA5GDM4gFQZNS+EOz8uIAFpgjIAMBE5jHAxNYyAORgzOIBUGTUvhDs/LiABaYIyIDAYUIIQP9Ew=="
 bnez t2, 211b
 23:
 j 21f
 20:
-.insn 4, 0x000005b7
-.insn 2, 0x0589
-.insn 4, 0x02000393
+.base64 "twUAAIkFkwMAAg=="
 212:
-.insn 2, 0x4781
-.insn 4, 0x0008c803
-.insn 2, 0x97c2
-.insn 4, 0x03d79813
-.insn 4, 0x03d85813
-.insn 2, 0x838d
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032023
-.insn 4, 0x03d79813
-.insn 4, 0x03d85813
-.insn 2, 0x838d
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032223
-.insn 4, 0x0018c803
-.insn 2, 0x080a
-.insn 2, 0x97c2
-.insn 4, 0x03d79813
-.insn 4, 0x03d85813
-.insn 2, 0x838d
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032423
-.insn 4, 0x03d79813
-.insn 4, 0x03d85813
-.insn 2, 0x838d
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032623
-.insn 4, 0x03d79813
-.insn 4, 0x03d85813
-.insn 2, 0x838d
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032823
-.insn 4, 0x0028c803
-.insn 2, 0x0806
-.insn 2, 0x97c2
-.insn 4, 0x03d79813
-.insn 4, 0x03d85813
-.insn 2, 0x838d
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032a23
-.insn 4, 0x03d79813
-.insn 4, 0x03d85813
-.insn 2, 0x838d
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032c23
-.insn 4, 0x03d79813
-.insn 4, 0x03d85813
-.insn 2, 0x838d
-.insn 4, 0x41058833
-.insn 4, 0x43f85293
-.insn 4, 0x00e2f2b3
-.insn 2, 0x9816
-.insn 4, 0x01032e23
-.insn 2, 0x088d
-.insn 4, 0x02030313
-.insn 2, 0x13fd
+.base64 "gUcDyAgAwpcTmNcDE1jYA42DM4gFQZNS+EOz8uIAFpgjIAMBE5jXAxNY2AONgzOIBUGTUvhDs/LiABaYIyIDAQPIGAAKCMKXE5jXAxNY2AONgzOIBUGTUvhDs/LiABaYIyQDAROY1wMTWNgDjYMziAVBk1L4Q7Py4gAWmCMmAwETmNcDE1jYA42DM4gFQZNS+EOz8uIAFpgjKAMBA8goAAYIwpcTmNcDE1jYA42DM4gFQZNS+EOz8uIAFpgjKgMBE5jXAxNY2AONgzOIBUGTUvhDs/LiABaYIywDAROY1wMTWNgDjYMziAVBk1L4Q7Py4gAWmCMuAwGNCBMDAwL9Ew=="
 bnez t2, 212b
 21:
-.insn 2, 0x8082
-.option pop",
+.base64 "goA="
+.option pop"#,
     )
 }

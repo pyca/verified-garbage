@@ -97,7 +97,8 @@ theorem keyArgs_of {post : State → State → Prop} {M : Mode} (c : Impl.Modes.
 theorem cipher_enc {g : Nat} {hg : 0 < g ∧ g ≤ 16} (k : Spec.Seed.Schedule) :
     (coreSpec .encrypt g hg).cipher k = Spec.Seed.cipher k := by
   simp only [coreSpec, Proof.Seed.dirCipher]
-theorem cipher_ser (k : Spec.Seed.Schedule) : (Serial.coreSpec .encrypt).cipher k = Spec.Seed.cipher k := rfl
+theorem cipher_ser (k : Spec.Seed.Schedule) : (Serial.coreSpec .encrypt).cipher k = Spec.Seed.cipher k := by
+  simp only [Serial.coreSpec, Proof.Seed.dirCipher]
 theorem cipher_dec {g : Nat} {hg : 0 < g ∧ g ≤ 16} (k : Spec.Seed.Schedule) :
     (coreSpec .decrypt g hg).cipher k = Spec.Seed.invCipher k := by
   simp only [coreSpec, Proof.Seed.dirCipher]

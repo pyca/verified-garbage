@@ -57,7 +57,7 @@ theorem refill_agree {s t : State} (h : (Spec.Dsa.parameterSearchContract abi re
   sig_pub [Spec.Dsa.parameterSearchContract, Spec.Dsa.parameterSearchSig, abi, argRegs] at h
   obtain ⟨hsp, hl, h0, h1, h2, h3, h4, h5, h6, h7⟩ := h
   rw [refill_wordsAt_four, refill_wordsAt_four] at hl
-  have hp := List.append_inj hl rfl
+  have hp := List.append_inj hl (by simp only [List.length_cons, List.length_nil])
   simp only [List.cons.injEq] at hp
   refine ⟨hsp, ?_, by simpa only [BitVec.add_zero] using hp.1.1, hp.1.2.1,
     (List.map_inj_right fun a b e => BitVec.eq_of_toNat_eq e).mp hp.2⟩

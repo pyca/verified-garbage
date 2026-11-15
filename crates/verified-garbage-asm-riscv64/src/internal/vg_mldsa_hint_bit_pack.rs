@@ -11,42 +11,27 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_hint_bit_pack() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1602
-.insn 2, 0x9201
-.insn 4, 0x40c705b3
-.insn 2, 0x883a
-.insn 2, 0x4281
-.insn 2, 0x88b6
+.base64 "AhYBkrMFx0A6iIFCtog="
 20:
-.insn 4, 0x00588023
-.insn 2, 0x0885
-.insn 2, 0x187d
+.base64 "I4BYAIUIfRg="
 bnez a6, 20b
-.insn 2, 0x882e
-.insn 4, 0x00c688b3
-.insn 2, 0x4301
+.base64 "LoiziMYAAUM="
 21:
-.insn 2, 0x4381
+.base64 "gUM="
 22:
-.insn 4, 0x00056783
+.base64 "g2cFAA=="
 beqz a5, 23f
-.insn 4, 0x006687b3
-.insn 4, 0x00778023
-.insn 2, 0x0305
+.base64 "s4dmACOAdwAFAw=="
 j 24f
 23:
 24:
-.insn 2, 0x0511
-.insn 2, 0x0385
-.insn 4, 0xf0038793
+.base64 "EQWFA5OHA/A="
 bnez a5, 22b
-.insn 4, 0x00688023
-.insn 2, 0x0885
-.insn 2, 0x187d
+.base64 "I4BoAIUIfRg="
 bnez a6, 21b
-.insn 2, 0x8082
-.option pop",
+.base64 "goA="
+.option pop"#,
     )
 }

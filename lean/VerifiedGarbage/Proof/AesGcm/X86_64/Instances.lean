@@ -2457,6 +2457,8 @@ theorem sPreM_ofFlagged {s₀ : VG.X86_64.State} {lo : Nat} (h : SPreM Proof.Gcm
   d_k := h.d_k.sub_right (sub_1024 _)
   p_k := h.p_k.sub_right (sub_1024 _)
   ok := h.ok.2.2 h.ok.1
+  c_k := h.c_k.sub_right (sub_1024 _)
+  y_k := h.y_k.sub_right (sub_1024 _)
 
 theorem sPreTo_ofFlagged {s₀ : VG.X86_64.State} (h : SPreTo Proof.Gcm.X86_64.Stitch.CtxMode.flagged s₀) : SPreTo Proof.Gcm.X86_64.Stitch.CtxMode.prepared s₀ :=
   { h with
@@ -2774,6 +2776,8 @@ theorem sPreM_ofFlagged16 {s₀ : VG.X86_64.State} {lo : Nat}
   d_k := h.d_k.sub_right (sub_1024 _)
   p_k := h.p_k.sub_right (sub_1024 _)
   ok := h.ok.2.1 h.ok.1
+  c_k := h.c_k.sub_right (sub_1024 _)
+  y_k := h.y_k.sub_right (sub_1024 _)
 
 theorem sPreTo_ofFlagged16 {s₀ : VG.X86_64.State} (h : SPreTo (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) s₀) :
     SPreTo Proof.Gcm.X86_64.Stitch.CtxMode.prepared16 s₀ :=
@@ -2999,8 +3003,21 @@ def toFnF16 (v : GcmVariant) : Gather.ToFn (Proof.Gcm.X86_64.Stitch.CtxMode.flag
     (StreamTo.framed_xdepth (StreamTo.encrypt_xdepth (blkToF16 v) (encFnF16 v)))
     (StreamTo.framed_mx (StreamTo.encrypt_mx (blkToF16 v) (encFnF16 v)))
 
+/-- Whether `vg_aes_gcm_seal_prepared` of a variant whose loops read 16
+powers is followed by the clearing of its stack (`sealF16Reg`): that of the
+variant on VAES and VPCLMULQDQ on 256-bit registers. -/
+def GcmVariant.sealF16Scrubbed (v : GcmVariant) : Bool :=
+  v.stitch.any fun p => match p.name with
+    | .vaes => true
+    | _ => false
+
+/-- The instance of `vg_aes_gcm_seal_prepared` of a variant whose loops read
+16 powers; where that function is followed by the clearing of its stack
+(`GcmVariant.sealF16Scrubbed`), as an internal function of its own,
+`vg_aes_gcm_seal_prepared<suffix>_core`, with the code as it was. -/
 def sealFnF16 (v : GcmVariant) (r : R16 v) : Gather.SealFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
-  .ofFlagged ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix, sealCodeF16 v⟩ (sealCodeF16_verified v r)
+  .ofFlagged ⟨Spec.Gcm.sealPreparedApi.name ++ v.impl.suffix ++ (if v.sealF16Scrubbed then "_core" else ""),
+      sealCodeF16 v⟩ (sealCodeF16_verified v r)
     (sealCodeF16_spAll v) (sealCodeF16_xdepth v) (sealCodeF16_mx v)
 
 /-- `vg_aes_gcm_seal_split_prepared16` of a variant, on a context whose count is

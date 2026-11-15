@@ -830,12 +830,11 @@ theorem private_contract_preP (s : State)
     Proof.Rsa.privateCheckedSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
   have addr : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
   rw [addr] at h
-  obtain ⟨stackFit, argFit, rd, wr, outN, outE, outI, outP, outQ, outDP, outDQ, outQI, outWs, outPre, outArgs,
-    nWs, eWs, iWs, pWs, qWs, dpWs, dqWs, qiWs, wsPre, wsArgs,
-    stackOut, stackN, stackE, stackI, stackP, stackQ, stackDP, stackDQ, stackQI, stackWs, stackPre, stackArgs,
-    outFit, nFit, eFit, iFit, pFit, qFit, dpFit, dqFit, qiFit, wsFit, preFit,
-    valid, outLen, inputLen, ePositive, eFits, pPositive, pShort, qPositive, qShort, dpLen, qiLen, dqLen, space,
-    preLen, preVal⟩ := h
+  sig_split h
+  rename_i stackFit argFit rd wr outN outE outI outP outQ outDP outDQ outQI outWs outPre outArgs nWs eWs iWs pWs
+    qWs dpWs dqWs qiWs wsPre wsArgs stackOut stackN stackE stackI stackP stackQ stackDP stackDQ stackQI stackWs
+    stackPre stackArgs outFit nFit eFit iFit pFit qFit dpFit dqFit qiFit wsFit preFit valid outLen inputLen
+    ePositive eFits pPositive pShort qPositive qShort dpLen qiLen dqLen space preLen
   rw [outLen] at wr outN outE outI outP outQ outDP outDQ outQI outWs outPre outArgs stackOut outFit
   rw [inputLen] at rd outI iWs stackI iFit
   rw [dpLen] at rd outDP dpWs stackDP dpFit
@@ -1003,7 +1002,7 @@ theorem private_contract_preP (s : State)
       · exact (whole.sub_left geometry.calleeSub).symm
       · exact outPre.symm
       · exact wsPre.symm
-    obtain ⟨pq, drop⟩ := privatePrecompute_r2 preVal
+    obtain ⟨pq, drop⟩ := privatePrecompute_r2 h
     have lenEq : (stackArg s 17).toNat = 2 * Spec.Rsa.modulusWords (privateGeometry s).length + r2Words (privateGeometry s) := by
       rw [preLen]
       simp only [Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords, r2Words]
@@ -1039,7 +1038,7 @@ theorem private_contract_preP (s : State)
       rw [nl] at drop
       simp only [Spec.Rsa.precomputedWords] at drop
       exact drop
-  · have pc := publicPrecompute_of_private preVal
+  · have pc := publicPrecompute_of_private h
     change Spec.Rsa.publicPrecompute (Spec.Rsa.bytesAt s.mem (BitVec.setWidth 64 (s.gpr .r2)) (s.gpr .r3).toNat) = _
     rw [pc]
     have w2' : 2 * Spec.Rsa.modulusWords (s.gpr .r3).toNat ≤ (stackArg s 17).toNat := w2

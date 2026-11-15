@@ -30,7 +30,11 @@ theorem scheduled_good : ∀ op ∈ scheduledOps, Good op := by decide +kernel
 original values preserved by both temporary slots. -/
 theorem scheduled_symbolic : ∀ i < 25,
     (symRun scheduledOps symInitial).regs (laneReg i) =
-    (symRun coreOps symInitial).regs (laneReg i) := by decide +kernel
+    (symRun coreOps symInitial).regs (laneReg i) := by
+  intro i hi
+  rw [symRun_regs, symRun_regs]
+  exact (by decide +kernel : ∀ i < 25,
+    (kRun scheduledOps kInitial).get (laneReg i) = (kRun coreOps kInitial).get (laneReg i)) i hi
 
 theorem scheduled_matches (f : File) (i : Nat) (hi : i < 25) :
     (run scheduledOps f).regs (laneReg i) = (run coreOps f).regs (laneReg i) := by

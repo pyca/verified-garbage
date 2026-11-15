@@ -53,7 +53,16 @@ class Collect(unittest.TestCase):
                             + line("03:10", "✔ [2/9] Built VerifiedGarbage.A:c.o (9s)")
                             + line("03:59", "✔ [3/9] Built VerifiedGarbage.B (500ms)")
                             # In the assembly: a step of its own.
-                            + line("05:00", "✔ [4/9] Built VerifiedGarbage.C (2s)")),
+                            + line("05:00", "✔ [4/9] Built VerifiedGarbage.C (2s)")
+                            # The emitter's check, a step of the assembly's action.
+                            + line("06:00", "##[start-action display=Check the generated Rust is up to date;"
+                                            "id=__self_5.__run_8]")
+                            + line("06:30", "VG.Emit.all depends on no axiom but the standard ones")
+                            + line("07:12", "##[end-action id=__self_5.__run_8;outcome=success;"
+                                            "conclusion=success;duration_ms=72108]")
+                            + line("07:12", "##[start-action display=Check that the audits reject;id=__self_5.__run_9]")
+                            + line("07:18", "##[end-action id=__self_5.__run_9;outcome=success;"
+                                            "conclusion=success;duration_ms=6073]")),
         "Lean: shard (2)": (line("01:10", f"  key: {KEY}") + line("01:20", f"Cache restored from key: {KEY}")
                             + line("02:10", "✔ [1/9] Built VerifiedGarbage.A (2s)")),
     }
@@ -87,8 +96,28 @@ class Collect(unittest.TestCase):
         one = self.metrics()["lean"]["jobs"][1]
         self.assertEqual(one["facets"], {SHARD_BUILD: {"VerifiedGarbage.A:c.o": 9.0}})
         self.assertEqual(one["phases"], {"queued_s": 60, "prepare_s": 60, "proof_s": 120,
-                                        "unpack_s": None, "assemble_s": 299, "planning_s": None})
+                                        "unpack_s": None, "assemble_s": 299, "planning_s": None,
+                                        "emit_check_s": 72.108})
         self.assertIn("### Lean wall time by phase", ci_metrics.summary(self.metrics()))
+
+    def test_emit_check_is_the_step_of_its_own_id(self):
+        m = self.metrics()
+        # A job that did not run it has none, not zero.
+        self.assertIsNone(m["lean"]["jobs"][2]["phases"]["emit_check_s"])
+        self.assertIn("| Lean: shard (1) | 60 s | 60 s | 120 s | – | 299 s | 72 s |", ci_metrics.summary(m))
+        start = "##[start-action display=Check the generated Rust is up to date;id=a.b]\n"
+        other = "##[end-action id=a.c;outcome=success;conclusion=success;duration_ms=5]\n"
+        self.assertIsNone(ci_metrics.emit_check_s(""))
+        # Not finished: its end is not in the log.
+        self.assertIsNone(ci_metrics.emit_check_s(start + other))
+        self.assertIsNone(ci_metrics.emit_check_s(
+            start + "##[end-action id=a.b;outcome=skipped;conclusion=skipped;duration_ms=0]\n"))
+        self.assertEqual(ci_metrics.emit_check_s(
+            start + other + "##[end-action id=a.b;outcome=failure;conclusion=failure;duration_ms=813000]\n"), 813.0)
+        # Metrics from before it was recorded still summarize.
+        for lj in m["lean"]["jobs"]:
+            del lj["phases"]["emit_check_s"]
+        self.assertIn("| Lean: shard (1) | 60 s | 60 s | 120 s | – | 299 s | – |", ci_metrics.summary(m))
 
     def test_missing_logs_are_explicit(self):
         m = ci_metrics.collect({}, self.jobs, {"Lean: plan and build": PLAN_LOG})

@@ -73,10 +73,11 @@ theorem w192_eqs {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W S
       simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by decide)⟩⟩
 
 /-- The bookkeeping of `oneBlocks` around its call: from the state `s₁` after
-the length is kept to the end, given the call's frame (`hframe`). -/
-theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W SP R D n s)
+the length is kept to the end, given the call's frame (`hframe`), which runs
+only if there is a whole block. -/
+theorem oneBlocks_coreZ (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W SP R D n s)
     {Out : State → State → Prop}
-    (hframe : ∀ s₂, ObIn M Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s₂ →
+    (hframe : ∀ s₂, n / 16 ≠ 0 → ObIn M Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s₂ →
       WP isa (.frame (.push [.rax]) (.call f.name f.code) (.pop .rax 1)) s₂ fun s₄ =>
         (∀ r ∈ calleeSaved, s₄.gpr r = s₂.gpr r) ∧ s₄.rd = s₂.rd ∧ s₄.wr = s₂.wr ∧
         Frame (obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)) s₂.mem s₄.mem ∧ Out s₂ s₄)
@@ -111,7 +112,7 @@ theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : 
       by omega_using [], h.t_c, h.t_w, h.t_d, h.sp24, a1, a2, a3, a4, a5, by rw [a6, r₁], a7, h.rounds.2, h.t_w.sub_right (Lay.wSub (by decide)),
       h.ext.keep (rd₂.trans rd₁) (wr₂.trans wr₁) (by rw [m₂, m₁]; exact f192) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact h.ext.cw.sub_right (Lay.wSub (by decide)))⟩
-    refine WP.seq (WP.mono (hframe s₂ obi) fun s₄ ⟨cs₄, rd₄, wr₄, fr₄, o₄⟩ => ?_)
+    refine WP.seq (WP.mono (hframe s₂ hz obi) fun s₄ ⟨cs₄, rd₄, wr₄, fr₄, o₄⟩ => ?_)
     have he₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₄ := he₂.keep (fun r hr => cs₄ r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> simp [calleeSaved])) rd₄ wr₄
@@ -138,6 +139,20 @@ theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : 
         simp only [List.mem_singleton] at hr; subst hr
         exact L.w_w (.inl (by decide)) (by decide) (by decide)) (by decide),
         kp 192 (by decide) (by decide), t₁]
+
+/-- The bookkeeping of `oneBlocks` around its call: from the state `s₁` after
+the length is kept to the end, given the call's frame (`hframe`). -/
+theorem oneBlocks_core (f : Fn) {R : Nat} {D : Addr} {n : Nat} {s : State} (h : ObPre M Ctx W SP R D n s)
+    {Out : State → State → Prop}
+    (hframe : ∀ s₂, ObIn M Ctx (W + BitVec.ofNat 64 16) W SP R D n (n / 16) s₂ →
+      WP isa (.frame (.push [.rax]) (.call f.name f.code) (.pop .rax 1)) s₂ fun s₄ =>
+        (∀ r ∈ calleeSaved, s₄.gpr r = s₂.gpr r) ∧ s₄.rd = s₂.rd ∧ s₄.wr = s₂.wr ∧
+        Frame (obFrame (W + BitVec.ofNat 64 16) W SP D (n / 16)) s₂.mem s₄.mem ∧ Out s₂ s₄)
+    (h0 : n / 16 = 0 → ∀ s₁, s₁.mem = s.mem.writeW (W + BitVec.ofNat 64 192) (BitVec.ofNat 64 n) → Out s s₁)
+    (hout : ∀ s₂ s₄ s₅, s₂.mem = s.mem.writeW (W + BitVec.ofNat 64 192) (BitVec.ofNat 64 n) → Out s₂ s₄ →
+      Frame [⟨W + BitVec.ofNat 64 200, 16⟩] s₄.mem s₅.mem → Out s s₅) :
+    WP isa (oneBlocks f) s fun s' => ObPost Ctx W SP D n s s' ∧ Out s s' :=
+  oneBlocks_coreZ L f h (fun s₂ _ hi => hframe s₂ hi) h0 hout
 
 
 /-- What encrypting the whole blocks does, from `s` to `s'`. -/

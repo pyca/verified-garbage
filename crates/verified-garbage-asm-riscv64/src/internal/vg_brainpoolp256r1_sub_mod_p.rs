@@ -11,90 +11,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_brainpoolp256r1_sub_mod_p() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x00b503b3
-.insn 4, 0x00c50eb3
-.insn 4, 0x00d50f33
-.insn 4, 0x7ff50693
-.insn 2, 0x0685
-.insn 4, 0x000eb583
-.insn 4, 0x008ebe03
-.insn 4, 0x010ebf83
-.insn 4, 0x018eb703
-.insn 4, 0x000f3783
-.insn 4, 0x008f3803
-.insn 4, 0x010f3883
-.insn 4, 0x018f3283
-.insn 4, 0x00f5b633
-.insn 2, 0x8d9d
-.insn 4, 0x010e37b3
-.insn 4, 0x410e0e33
-.insn 4, 0x00ce3533
-.insn 4, 0x40ce0e33
-.insn 4, 0x00a78633
-.insn 4, 0x011fb7b3
-.insn 4, 0x411f8eb3
-.insn 4, 0x00ceb533
-.insn 4, 0x40ce8eb3
-.insn 4, 0x00a78633
-.insn 4, 0x005737b3
-.insn 4, 0x40570f33
-.insn 4, 0x00cf3533
-.insn 4, 0x40cf0f33
-.insn 4, 0x00a78633
-.insn 2, 0x4281
-.insn 4, 0x40c282b3
-.insn 4, 0x20135fb7
-.insn 4, 0x81df8f9b
-.insn 2, 0x1f82
-.insn 4, 0x1f6e5537
-.insn 4, 0x3775051b
-.insn 2, 0x9faa
-.insn 4, 0x005fffb3
-.insn 2, 0x95fe
-.insn 4, 0x01f5b8b3
-.insn 4, 0x00b3b023
-.insn 4, 0x6e3bffb7
-.insn 4, 0x624f8f9b
-.insn 2, 0x1f82
-.insn 4, 0xd5262537
-.insn 4, 0x0285051b
-.insn 2, 0x9faa
-.insn 4, 0x005fffb3
-.insn 2, 0x9e7e
-.insn 4, 0x01fe3533
-.insn 2, 0x9e46
-.insn 4, 0x011e38b3
-.insn 2, 0x98aa
-.insn 4, 0x01c3b423
-.insn 4, 0x3e661fb7
-.insn 4, 0xa91f8f9b
-.insn 2, 0x1f82
-.insn 4, 0x9d839537
-.insn 4, 0xd725051b
-.insn 2, 0x9faa
-.insn 4, 0x005fffb3
-.insn 2, 0x9efe
-.insn 4, 0x01feb533
-.insn 2, 0x9ec6
-.insn 4, 0x011eb8b3
-.insn 2, 0x98aa
-.insn 4, 0x01d3b823
-.insn 4, 0xa9fb5fb7
-.insn 4, 0x7dcf8f9b
-.insn 2, 0x1f82
-.insn 4, 0xa1eeb537
-.insn 4, 0x9bc5051b
-.insn 2, 0x9faa
-.insn 4, 0x005fffb3
-.insn 2, 0x9f7e
-.insn 4, 0x01ff3533
-.insn 2, 0x9f46
-.insn 4, 0x011f38b3
-.insn 2, 0x98aa
-.insn 4, 0x01e3bc23
-.insn 2, 0x8082
-.option pop",
+.base64 "swO1ALMOxQAzD9UAkwb1f4UGg7UOAAO+jgCDvw4BA7eOAYM3DwADOI8AgzgPAYMyjwEztvUAnY2zNw4BMw4OQTM1zgAzDs5AM4anALO3HwGzjh9BM7XOALOOzkAzhqcAszdXADMPV0AzNc8AMw/PQDOGpwCBQrOCwkC3XxMgm4/fgYIfN1VuHxsFdTeqn7P/XwD+lbO49QEjsLMAt/87bpuPT2KCHzclJtUbBYUCqp+z/18Afp4zNf4BRp6zOB4BqpgjtMMBtx9mPpuPH6mCHzeVg50bBSXXqp+z/18A/p4ztf4Bxp6zuB4BqpgjuNMBt1/7qZuPz32CHze17qEbBcWbqp+z/18Afp8zNf8BRp+zOB8BqpgjvOMBgoA="
+.option pop"#,
     )
 }

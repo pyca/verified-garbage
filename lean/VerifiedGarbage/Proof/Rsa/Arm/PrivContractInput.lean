@@ -17,11 +17,11 @@ theorem private_contract_pre (s : State) (h : (Proof.Rsa.privateCheckedContract 
   sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, abi, argRegs, reduceClassify, Loc.val, State.addr] at h
   have addr : stackArgAddr s 0 = State.addr s.sp := by simp [stackArgAddr]
   rw [addr] at h
-  obtain ⟨stackFit, argFit, rd, wr, outN, outE, outI, outP, outQ, outDP, outDQ, outQI, outWs, outArgs,
-    nWs, eWs, iWs, pWs, qWs, dpWs, dqWs, qiWs, wsArgs,
-    stackOut, stackN, stackE, stackI, stackP, stackQ, stackDP, stackDQ, stackQI, stackWs, stackArgs,
-    outFit, nFit, eFit, iFit, pFit, qFit, dpFit, dqFit, qiFit, wsFit,
-    valid, outLen, inputLen, ePositive, eFits, pPositive, pShort, qPositive, qShort, dpLen, qiLen, dqLen, space⟩ := h
+  sig_split h
+  rename_i stackFit argFit rd wr outN outE outI outP outQ outDP outDQ outQI outWs outArgs nWs eWs iWs pWs qWs
+    dpWs dqWs qiWs wsArgs stackOut stackN stackE stackI stackP stackQ stackDP stackDQ stackQI stackWs stackArgs
+    outFit nFit eFit iFit pFit qFit dpFit dqFit qiFit wsFit valid outLen inputLen ePositive eFits pPositive
+    pShort qPositive qShort dpLen qiLen dqLen
   rw [outLen] at wr outN outE outI outP outQ outDP outDQ outQI outWs outArgs stackOut outFit
   rw [inputLen] at rd outI iWs stackI iFit
   rw [dpLen] at rd outDP dpWs stackDP dpFit
@@ -35,7 +35,7 @@ theorem private_contract_pre (s : State) (h : (Proof.Rsa.privateCheckedContract 
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     exacts [nFit, eFit, iFit, pFit, qFit, dpFit, dqFit, qiFit]
   have geometry : (privateGeometry s).Valid := by
-    refine ⟨valid.1, valid.2, ePositive, eFits, pPositive, pShort, qPositive, qShort, space,
+    refine ⟨valid.1, valid.2, ePositive, eFits, pPositive, pShort, qPositive, qShort, h,
       ?_, ?_, outFit, sourceFit, wsFit, ?_, outWs, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [privateGeometry_stackNat s stackFit]
       simp only [stackBytes, frameBytes] at stackFit ⊢; omega_arith

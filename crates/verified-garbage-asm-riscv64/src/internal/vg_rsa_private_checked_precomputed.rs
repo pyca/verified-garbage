@@ -11,152 +11,26 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_private_checked_precomputed() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x81010113
-.insn 4, 0xb4010113
-.insn 2, 0x828a
-.insn 4, 0x0692b023
-.insn 4, 0x0722b423
-.insn 4, 0x0732b823
-.insn 4, 0x0742bc23
-.insn 4, 0x0952b023
-.insn 4, 0x0962b423
-.insn 4, 0x0812b823
-.insn 2, 0x84aa
-.insn 2, 0x8932
-.insn 2, 0x89b6
-.insn 2, 0x8a3a
-.insn 2, 0x8abe
-.insn 2, 0x8b42
-.insn 4, 0x7f010f93
-.insn 4, 0x4c0f8f93
-.insn 4, 0x0b028513
-.insn 2, 0x85ce
-.insn 2, 0x875a
-.insn 2, 0x87ce
-.insn 4, 0x000fb803
-.insn 4, 0x008fb883
-.insn 4, 0x010fb303
-.insn 4, 0x0062b023
-.insn 4, 0x018fb303
-.insn 4, 0x0062b423
-.insn 4, 0x020fb303
-.insn 4, 0x0062b823
-.insn 4, 0x028fb303
-.insn 4, 0x0062bc23
-.insn 4, 0x030fb303
-.insn 4, 0x0262b023
-.insn 4, 0x038fb303
-.insn 4, 0x0262b423
-.insn 4, 0x040fb303
-.insn 4, 0x0262b823
-.insn 4, 0x048fb303
-.insn 4, 0x0262bc23
-.insn 4, 0x050fb303
-.insn 4, 0x0462b023
-.insn 4, 0x058fb303
-.insn 4, 0x0462b423
-.insn 2, 0x828a
-.insn 4, 0x0a92b423
-.insn 4, 0x7f010f93
-.insn 4, 0x4c0f8f93
-.insn 4, 0x060fb483
-.insn 4, 0x00798313
-.insn 4, 0x00335313
-.insn 2, 0x0312
-.insn 2, 0x949a
+.base64 "EwEBgRMBAbSKgiOwkgYjtCIHI7gyByO8QgcjsFIJI7RiCSO4EgiqhDKJtok6ir6KQouTDwF/k48PTBOFAgvOhVqHzocDuA8Ag7iPAAOzDwEjsGIAA7OPASO0YgADsw8CI7hiAAOzjwIjvGIAA7MPAyOwYgIDs48DI7RiAgOzDwQjuGICA7OPBCO8YgIDsw8FI7BiBAOzjwUjtGIEioIjtJIKkw8Bf5OPD0yDtA8GE4N5ABNTMwASA5qU"
 call {vg_rsa_private_crt_precomputed}
-.insn 2, 0x828a
-.insn 4, 0x0a82b483
-.insn 2, 0x828a
-.insn 4, 0x08a2bc23
-.insn 4, 0x7f010f93
-.insn 4, 0x4c0f8f93
-.insn 4, 0x060fb503
-.insn 4, 0x4b028593
-.insn 4, 0x00798613
-.insn 2, 0x820d
-.insn 2, 0x0606
+.base64 "ioKDtIIKioIjvKIIkw8Bf5OPD0wDtQ8Gk4UCSxOGeQANggYG"
 20:
-.insn 4, 0x00053303
-.insn 4, 0x0065b023
-.insn 2, 0x0521
-.insn 2, 0x05a1
-.insn 2, 0x167d
+.base64 "AzMFACOwZQAhBaEFfRY="
 bnez a2, 20b
-.insn 2, 0x828a
-.insn 2, 0x8526
-.insn 2, 0x85ce
-.insn 4, 0x4b028613
-.insn 4, 0x00798693
-.insn 2, 0x828d
-.insn 2, 0x0686
-.insn 2, 0x8752
-.insn 2, 0x87d6
-.insn 4, 0x0b028813
-.insn 2, 0x88ce
-.insn 4, 0x7f010f93
-.insn 4, 0x4c0f8f93
-.insn 4, 0x050fb303
-.insn 4, 0x0062b023
-.insn 4, 0x058fb303
-.insn 4, 0x0062b423
+.base64 "ioImhc6FE4YCS5OGeQCNgoYGUofWhxOIAgvOiJMPAX+Tjw9MA7MPBSOwYgADs48FI7RiAA=="
 call {vg_rsa_public_precomputed_checked}
-.insn 2, 0x828a
-.insn 4, 0x0aa2b023
-.insn 2, 0x83a6
-.insn 2, 0x8e5a
-.insn 2, 0x4e81
-.insn 2, 0x8f4e
+.base64 "ioIjsKIKpoNajoFOTo8="
 21:
-.insn 4, 0x0003c583
-.insn 4, 0x000e4603
-.insn 2, 0x8db1
-.insn 4, 0x00beeeb3
-.insn 2, 0x0385
-.insn 2, 0x0e05
-.insn 2, 0x1f7d
+.base64 "g8UDAANGDgCxjbPuvgCFAwUOfR8="
 bnez t5, 21b
-.insn 2, 0x828a
-.insn 4, 0x0982b503
-.insn 4, 0x0a02b583
-.insn 2, 0x8d6d
-.insn 2, 0x8905
-.insn 2, 0x1efd
-.insn 4, 0x03fede93
-.insn 2, 0x4589
-.insn 4, 0x41d585b3
-.insn 4, 0x00aefeb3
-.insn 2, 0x4601
-.insn 4, 0x41d606b3
-.insn 4, 0x40a60533
-.insn 2, 0x8d6d
-.insn 2, 0x8f4e
-.insn 2, 0x83a6
-.insn 4, 0x0b028e13
+.base64 "ioIDtYIJg7UCCm2NBYn9HpPe/gOJRbOF1UGz/q4AAUazBtZBMwWmQG2NTo+mgxOOAgs="
 22:
-.insn 4, 0x000e4583
-.insn 2, 0x8df5
-.insn 4, 0x00b38023
-.insn 2, 0x4601
-.insn 4, 0x00ce0023
-.insn 2, 0x0385
-.insn 2, 0x0e05
-.insn 2, 0x1f7d
+.base64 "g0UOAPWNI4CzAAFGIwDOAIUDBQ59Hw=="
 bnez t5, 22b
-.insn 2, 0x828a
-.insn 4, 0x0902b083
-.insn 4, 0x0602b483
-.insn 4, 0x0682b903
-.insn 4, 0x0702b983
-.insn 4, 0x0782ba03
-.insn 4, 0x0802ba83
-.insn 4, 0x0882bb03
-.insn 4, 0x4c010113
-.insn 4, 0x7f010113
-.insn 2, 0x8082
-.option pop",
+.base64 "ioKDsAIJg7QCBgO5ggaDuQIHA7qCB4O6AggDu4IIEwEBTBMBAX+CgA=="
+.option pop"#,
         vg_rsa_private_crt_precomputed = sym crate::rsa::vg_rsa_private_crt_precomputed::vg_rsa_private_crt_precomputed,
         vg_rsa_public_precomputed_checked = sym crate::rsa::vg_rsa_public_precomputed_checked::vg_rsa_public_precomputed_checked,
     )

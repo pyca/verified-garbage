@@ -123,7 +123,8 @@ theorem digestScratch :
       using MdStream.PPC64LE.Digest.digestSat 28 hash.lbytes)
 
 theorem digest : Verified PPC64LE.target (Impl.MdStream.PPC64LE.Digest.code hash) (Spec.Sha512.digestContract PPC64LE.abi 28 Spec.Sha512.sha512_224 (96 + Impl.MdStream.PPC64LE.Digest.frameBytes hash)) :=
-  MdStream.PPC64LE.Digest.digestFrame digestScratch (by decide) (by
+  MdStream.PPC64LE.Digest.digestFrame (SH := ok.SH) (bytes := Impl.MdStream.PPC64LE.Digest.frameBytes hash)
+    digestScratch (by decide) (by
     inst_sat [Spec.Sha256.digestContract, Spec.Sha256.digestSig, Spec.Sha256.digestPost, Spec.Hmac.sha512_224S,
       Spec.Hmac.sha512_224, PPC64LE.abi, PPC64LE.argRegs]
       using MdStream.PPC64LE.Digest.digestSat 28 0)

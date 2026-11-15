@@ -11,27 +11,12 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_pad() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0xdf010113
-.insn 2, 0x828a
-.insn 4, 0x2012b023
-.insn 4, 0x00c50333
-.insn 4, 0x00034383
-.insn 4, 0x00d3c3b3
-.insn 4, 0x00730023
-.insn 4, 0x00b50333
-.insn 2, 0x137d
-.insn 4, 0x00034383
-.insn 4, 0x0803c393
-.insn 4, 0x00730023
-.insn 2, 0x858a
+.base64 "EwEB34qCI7ASIDMDxQCDQwMAs8PTACMAcwAzA7UAfRODQwMAk8MDCCMAcwCKhQ=="
 call {vg_keccak_f1600}
-.insn 2, 0x828a
-.insn 4, 0x2002b083
-.insn 4, 0x21010113
-.insn 2, 0x8082
-.option pop",
+.base64 "ioKDsAIgEwEBIYKA"
+.option pop"#,
         vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }

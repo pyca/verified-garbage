@@ -11,52 +11,13 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_unpack_t1() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x88aa
-.insn 2, 0x832e
-.insn 4, 0x04000393
+.base64 "qogug5MDAAQ="
 20:
-.insn 2, 0x4781
-.insn 4, 0x0008c803
-.insn 2, 0x97c2
-.insn 4, 0x0018c803
-.insn 2, 0x0822
-.insn 2, 0x97c2
-.insn 4, 0x03679813
-.insn 4, 0x03685813
-.insn 2, 0x83a9
-.insn 2, 0x0836
-.insn 4, 0x01032023
-.insn 4, 0x0028c803
-.insn 2, 0x081a
-.insn 2, 0x97c2
-.insn 4, 0x03679813
-.insn 4, 0x03685813
-.insn 2, 0x83a9
-.insn 2, 0x0836
-.insn 4, 0x01032223
-.insn 4, 0x0038c803
-.insn 2, 0x0812
-.insn 2, 0x97c2
-.insn 4, 0x03679813
-.insn 4, 0x03685813
-.insn 2, 0x83a9
-.insn 2, 0x0836
-.insn 4, 0x01032423
-.insn 4, 0x0048c803
-.insn 2, 0x080a
-.insn 2, 0x97c2
-.insn 4, 0x03679813
-.insn 4, 0x03685813
-.insn 2, 0x83a9
-.insn 2, 0x0836
-.insn 4, 0x01032623
-.insn 2, 0x0895
-.insn 2, 0x0341
-.insn 2, 0x13fd
+.base64 "gUcDyAgAwpcDyBgAIgjClxOYZwMTWGgDqYM2CCMgAwEDyCgAGgjClxOYZwMTWGgDqYM2CCMiAwEDyDgAEgjClxOYZwMTWGgDqYM2CCMkAwEDyEgACgjClxOYZwMTWGgDqYM2CCMmAwGVCEED/RM="
 bnez t2, 20b
-.insn 2, 0x8082
-.option pop",
+.base64 "goA="
+.option pop"#,
     )
 }

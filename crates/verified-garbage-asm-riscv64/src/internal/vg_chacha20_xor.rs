@@ -11,73 +11,36 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_chacha20_xor() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x10768293
-.insn 4, 0xff82f293
-.insn 4, 0x0152b023
-.insn 4, 0x0162b423
-.insn 4, 0x0012b823
-.insn 4, 0x0172bc23
-.insn 2, 0x8aae
-.insn 2, 0x8b32
-.insn 2, 0x8bba
-.insn 2, 0x85b6
+.base64 "k4J2EJPygv8jsFIBI7RiASO4EgAjvHIBrooyi7qLtoU="
 beqz s6, 20f
 22:
 call {vg_chacha20_block}
-.insn 4, 0x006b5313
-.insn 2, 0x865a
+.base64 "E1NrAFqG"
 beqz t1, 23f
-.insn 4, 0x04000613
+.base64 "EwYABA=="
 j 24f
 23:
 24:
-.insn 4, 0x40cb0b33
-.insn 2, 0x83ae
-.insn 4, 0x007aee33
-.insn 4, 0x00ce6e33
-.insn 4, 0x017e6e33
-.insn 4, 0x007e7e13
+.base64 "MwvLQK6DM+56ADNuzgAzbn4BE35+AA=="
 beqz t3, 25f
 27:
-.insn 4, 0x000ace03
-.insn 4, 0x0003ce83
-.insn 4, 0x01de4e33
-.insn 4, 0x01cb8023
-.insn 2, 0x0a85
-.insn 2, 0x0b85
-.insn 2, 0x0385
-.insn 2, 0x167d
+.base64 "A84KAIPOAwAzTt4BI4DLAYUKhQuFA30W"
 bnez a2, 27b
 j 26f
 25:
 28:
-.insn 4, 0x000abe03
-.insn 4, 0x0003be83
-.insn 4, 0x01de4e33
-.insn 4, 0x01cbb023
-.insn 2, 0x0aa1
-.insn 2, 0x0ba1
-.insn 2, 0x03a1
-.insn 2, 0x1661
+.base64 "A74KAIO+AwAzTt4BI7DLAaEKoQuhA2EW"
 bnez a2, 28b
 26:
-.insn 4, 0x03056303
-.insn 2, 0x0305
-.insn 4, 0x02652823
+.base64 "A2MFAwUDIyhlAg=="
 bnez s6, 22b
 j 21f
 20:
 21:
-.insn 4, 0x10758293
-.insn 4, 0xff82f293
-.insn 4, 0x0102b083
-.insn 4, 0x0002ba83
-.insn 4, 0x0082bb03
-.insn 4, 0x0182bb83
-.insn 2, 0x8082
-.option pop",
+.base64 "k4J1EJPygv+DsAIBg7oCAAO7ggCDu4IBgoA="
+.option pop"#,
         vg_chacha20_block = sym crate::chacha20::vg_chacha20_block::vg_chacha20_block,
     )
 }

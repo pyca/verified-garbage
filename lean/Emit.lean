@@ -19,7 +19,10 @@ registration files (`.lake/emit/Driver<Target>.lean`, `VG.Emit.parts`) and
 runs them at once, as processes with the same arguments, each auditing and
 emitting the artifacts of its targets (`VG.Emit.run`'s `--part`); and then,
 if they all pass, checks that no target is in two of them and writes or
-checks the root module (`VG.Emit.finish`). (They are run by the
+checks the root module (`VG.Emit.finish`). The run takes as long as the
+part that runs longest, so that one, guessed by the size of its
+registration files, is set up and started first, and the others run at a
+lower priority (`command`). (They are run by the
 interpreter rather than as a `lean_exe` so that CI does not have to compile
 Mathlib to native code.) Each program is a module, run with Lake's setup for it
 (`lake setup-file`), so Lean reads only the `.olean`, `.olean.server` and IR of
@@ -51,10 +54,17 @@ def nativeTCB : IO (List System.FilePath) := do
   return (sharedLib "VerifiedGarbage_NativeTCB") ::
     (targets.qsort (· < ·)).toList.map fun t => sharedLib s!"VerifiedGarbage_NativeTCB{t}"
 
+/-- The command `cmd args`, at the lowest priority if `low` (`nice`, where there is one):
+for the parts that finish long before the longest does, so that they take the CPUs
+only when it does not use them. -/
+def command (low : Bool) (cmd : String) (args : Array String) : IO.Process.SpawnArgs :=
+  if low && !System.Platform.isWindows then { cmd := "nice", args := #["-n", "19", cmd] ++ args }
+  else { cmd, args }
+
 /-- Writes Lake's setup for the module `file` (`lake setup-file`, which builds what it
 imports) to `out`. -/
-def setupFile (file out : System.FilePath) : IO UInt32 := do
-  let r ← IO.Process.output { cmd := "lake", args := #["setup-file", file.toString] }
+def setupFile (file out : System.FilePath) (low : Bool := false) : IO UInt32 := do
+  let r ← IO.Process.output (command low "lake" #["setup-file", file.toString])
   unless r.exitCode == 0 do
     IO.eprint r.stderr
     return r.exitCode
@@ -81,17 +91,24 @@ def main (args : List String) : IO UInt32 := do
     let setup := emitDir / s!"Driver{t}.json"
     let targets := emitDir / s!"{t}.targets"
     let text := VG.Emit.driver mods
+    -- The size of its registration files, by which the part that runs longest is guessed.
+    let mut size := 0
+    for m in mods do
+      size := size + (← (System.FilePath.mk (m.replace "." "/" ++ ".lean")).metadata).byteSize.toNat
     -- Only if it changed, so that Lake does not take it for a new file.
     let old ← if ← driver.pathExists then some <$> IO.FS.readFile driver else pure none
     unless old == some text do IO.FS.writeFile driver text
     if ← targets.pathExists then IO.FS.removeFile targets
     let partArgs := (if check then ["--check"] else []) ++ ["--part", targets.toString] ++
       (if check then args.drop 1 else args)
-    return (driver, setup, targets, text.length, partArgs)
-  -- Lake's setup for the largest part first, alone: it builds what that driver imports
+    return (driver, setup, targets, size, partArgs)
+  -- Lake's setup for one part first, alone: it builds what that driver imports
   -- that is out of date, which is most of what the others import too. Several `lake
   -- setup-file`s building the same modules at once fail, each removing or replacing
-  -- the files another is writing.
+  -- the files another is writing. That part is the one whose registration files are
+  -- the largest, a guess at the one that runs longest (x86-64, whose every function
+  -- is scrubbed), which the whole run waits for: it starts first, and the others
+  -- run at a lower priority (`command`). A wrong guess only costs time.
   let first := (jobs.map (·.2.2.2.1)).foldl max 0
   let some (fDriver, fSetup, _) := jobs.find? (·.2.2.2.1 == first)
     | IO.eprintln "no registration files"; return 1
@@ -103,12 +120,12 @@ def main (args : List String) : IO UInt32 := do
   -- fewer artifacts finish while the larger ones are still setting up.
   let runs ← jobs.mapM fun (driver, setup, targets, _, partArgs) => do
     let task ← IO.asTask (prio := .dedicated) do
-      unless driver == fDriver do
-        let code ← setupFile driver setup
+      let low := driver != fDriver
+      if low then
+        let code ← setupFile driver setup low
         unless code == 0 do return code
-      let child ← IO.Process.spawn
-        { cmd := lean.toString,
-          args := #["--setup", setup.toString, "--run", driver.toString] ++ partArgs.toArray }
+      let child ← IO.Process.spawn (command low lean.toString
+        (#["--setup", setup.toString, "--run", driver.toString] ++ partArgs.toArray))
       child.wait
     return (targets, task)
   let mut code := 0

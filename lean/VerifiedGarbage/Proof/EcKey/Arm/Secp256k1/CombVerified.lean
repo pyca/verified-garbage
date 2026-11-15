@@ -24,7 +24,8 @@ theorem combPk_sat : combPkSpec.pre combPkSat := by
   generalize eqs : combPkSat=s
   sig_pre [combPkSpec,Spec.EcKey.Secp256k1.inst,Spec.EcKey.Instance.publicKeyContract,
     Spec.EcKey.Instance.publicKeySig,Spec.Secp256k1.curve,Spec.EcKey.scratchWords,abi,argRegs,reduceClassify,
-    Loc.val,State.addr,secp256k1CombConsts,Abi.withConsts,Abi.constRegions,Abi.constsHeld,stackBelow]
+    Loc.val,State.addr,secp256k1CombConsts,Abi.withConsts,Abi.constRegions_cons,Abi.constRegions_nil,Abi.constsHeld,
+    stackBelow]
   subst s
   rw [comb_words_length]
   rw [comb_words_length] at held

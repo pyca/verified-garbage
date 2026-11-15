@@ -11,98 +11,22 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_use_hint() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x00040737
-.insn 4, 0xf0070713
-.insn 4, 0x40e602bb
+.base64 "NwcEABMHB/C7AuZA"
 beqz t0, 20f
-.insn 2, 0x688d
-.insn 4, 0xc0b88893
-.insn 4, 0x00800337
-.insn 2, 0x831a
-.insn 4, 0x02c00393
-.insn 4, 0x0002f637
-.insn 4, 0x80060613
-.insn 4, 0x10000e13
+.base64 "jWiTiLjANwOAABqDkwPAAjf2AgATBgaAEw4AEA=="
 22:
-.insn 4, 0x0005e783
-.insn 4, 0x0005e803
-.insn 4, 0x07f80813
-.insn 4, 0x00785813
-.insn 4, 0x03180833
-.insn 2, 0x981a
-.insn 4, 0x01885813
-.insn 4, 0x02c802b3
-.insn 4, 0x40f282b3
-.insn 4, 0x03f2d293
-.insn 2, 0x0286
-.insn 4, 0x00056783
-.insn 2, 0x17fd
-.insn 2, 0x93fd
-.insn 2, 0x9816
-.insn 4, 0x02f282b3
-.insn 4, 0x40580833
-.insn 2, 0x983e
-.insn 2, 0x187d
-.insn 4, 0x43f85793
-.insn 4, 0x0077f7b3
-.insn 2, 0x983e
-.insn 4, 0x40780833
-.insn 4, 0x43f85793
-.insn 4, 0x0077f7b3
-.insn 2, 0x983e
-.insn 4, 0x0106a023
-.insn 2, 0x0511
-.insn 2, 0x0591
-.insn 2, 0x0691
-.insn 2, 0x1e7d
+.base64 "g+cFAAPoBQATCPgHE1h4ADMIGAMamBNYiAGzAsgCs4LyQJPS8gOGAoNnBQD9F/2TFpizgvICMwhYQD6YfRiTV/hDs/d3AD6YMwh4QJNX+EOz93cAPpgjoAYBEQWRBZEGfR4="
 bnez t3, 22b
 j 21f
 20:
-.insn 4, 0x000008b7
-.insn 4, 0x40188893
-.insn 4, 0x00200337
-.insn 2, 0x831a
-.insn 2, 0x43c1
-.insn 4, 0x00080637
-.insn 4, 0xe0060613
-.insn 4, 0x10000e13
+.base64 "twgAAJOIGEA3AyAAGoPBQzcGCAATBgbgEw4AEA=="
 23:
-.insn 4, 0x0005e783
-.insn 4, 0x0005e803
-.insn 4, 0x07f80813
-.insn 4, 0x00785813
-.insn 4, 0x03180833
-.insn 2, 0x981a
-.insn 4, 0x01685813
-.insn 4, 0x02c802b3
-.insn 4, 0x40f282b3
-.insn 4, 0x03f2d293
-.insn 2, 0x0286
-.insn 4, 0x00056783
-.insn 2, 0x17fd
-.insn 2, 0x93fd
-.insn 2, 0x9816
-.insn 4, 0x02f282b3
-.insn 4, 0x40580833
-.insn 2, 0x983e
-.insn 2, 0x187d
-.insn 4, 0x43f85793
-.insn 4, 0x0077f7b3
-.insn 2, 0x983e
-.insn 4, 0x40780833
-.insn 4, 0x43f85793
-.insn 4, 0x0077f7b3
-.insn 2, 0x983e
-.insn 4, 0x0106a023
-.insn 2, 0x0511
-.insn 2, 0x0591
-.insn 2, 0x0691
-.insn 2, 0x1e7d
+.base64 "g+cFAAPoBQATCPgHE1h4ADMIGAMamBNYaAGzAsgCs4LyQJPS8gOGAoNnBQD9F/2TFpizgvICMwhYQD6YfRiTV/hDs/d3AD6YMwh4QJNX+EOz93cAPpgjoAYBEQWRBZEGfR4="
 bnez t3, 23b
 21:
-.insn 2, 0x8082
-.option pop",
+.base64 "goA="
+.option pop"#,
     )
 }

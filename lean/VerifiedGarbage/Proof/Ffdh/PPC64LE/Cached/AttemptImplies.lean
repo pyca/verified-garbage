@@ -32,9 +32,10 @@ theorem cg_pre {s : State} (h : (Proof.Ffdh.cachedGenerateKeyContract abi).pre s
     Spec.Ffdh.domainLenValid, List.append_eq, List.filter_cons, List.filter_nil, List.map_cons, List.map_nil,
     List.filterMap_cons, List.filterMap_nil, Sig.pairFacts, Sig.conj_cons, Sig.conj_append, List.cons_append,
     List.nil_append, List.append_nil, Bool.not_true, Bool.not_false, Bool.cond_true, Bool.cond_false, Bool.or_true,
-    Bool.or_false] at h
+    Bool.or_false, List.range, List.range.loop] at h
   sig_split h
-  sig_reduce [cgContract, cgDom, Spec.Ffdh.pLenValid, Spec.Ffdh.domainLenValid, Spec.Ffdh.generationContextAt]
+  sig_reduce [cgContract, cgDom, Spec.Ffdh.pLenValid, Spec.Ffdh.domainLenValid, Spec.Ffdh.generationContextAt,
+    List.range, List.range.loop]
   sig_and_intros
   sig_close
   all_goals first

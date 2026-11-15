@@ -92,6 +92,10 @@ structure SPreM (M : CtxMode) (s₀ : State) (lo : Nat := 16) : Prop where
   d_k : (dR s₀).Disjoint (kMR M s₀)
   p_k : (pR s₀).Disjoint (kMR M s₀)
   ok : M.ok s₀.mem (kp s₀)
+  /-- The counter and `Y`, apart from the whole context (`base` has them
+  apart from its round keys), which loops reading it after storing them need. -/
+  c_k : (cR s₀).Disjoint (kMR M s₀)
+  y_k : (yR s₀).Disjoint (kMR M s₀)
 
 /-- `StitchOk`, for a key context of kind `M`, and for a number of blocks
 that is a multiple of `we` when encrypting and of `wd` when decrypting

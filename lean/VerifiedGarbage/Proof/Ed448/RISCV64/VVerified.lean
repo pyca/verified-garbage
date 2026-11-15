@@ -661,7 +661,7 @@ theorem neutral_eq {pk sig ch : List Byte} (hl : pk.length = 57) (hs : sig.lengt
           (Spec.Ed448.pointAdd Q (Proof.Ed448.negPoint r)))) Spec.Ed448.identity) := by
   have hR := Proof.Ed448.rep_toAffine (Proof.Ed448.decodePoint_valid hr)
   rw [Proof.Ed448.verifyEquation_some hl hs hc ha hr hQ hR]
-  congr 1
+  refine congrArg (decide (Spec.Ed448.decodeLE (sig.drop 57) < Spec.Ed448.L) && ·) ?_
   generalize Spec.Ed448.decodeLE (sig.drop 57) • baseAff + Spec.Ed448.decodeLE ch • (-Proof.Ed448.toAffine a) = x at hQ
   have h1 := Proof.Ed448.double_rep (Proof.Ed448.double_rep hQ)
   have h2 := Proof.Ed448.double_rep (Proof.Ed448.double_rep hR)

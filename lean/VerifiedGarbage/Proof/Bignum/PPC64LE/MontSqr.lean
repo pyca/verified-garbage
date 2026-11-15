@@ -737,7 +737,7 @@ theorem triS_inv (m : Mem) (B : Addr) (da w : Nat) : ∀ k, 8 * k ≤ w →
       rw [show 64 * (16 * k + 8) = 64 * (8 * k) + 64 * (8 * (k + 1)) by omega_using [], Nat.pow_add]
       grind
     have h16 : 2 ^ (64 * (16 * k)) = 2 ^ (64 * (8 * k)) * 2 ^ (64 * (8 * k)) := by
-      rw [← Nat.pow_add]; congr 1; omega_using []
+      rw [← Nat.pow_add]; refine congrArg _ ?_; omega_using []
     rw [triS, hI, hP, hQ]
     refine tri_step ih hR ?_
     rw [h16]
@@ -1178,7 +1178,8 @@ theorem triHead_ok {s : State} {B : Addr} {Z dB dS N p h : Nat} (hs : Scr s B Z)
     rw [w₆.mem, v₆] at e₇
     rw [v₅] at e₆
     rw [tot_eq hnw hS hp (by rw [mt, m₇, w₆.mem]) (mu5 ▸ o₆) (vt.trans e₇) e₆]
-    have : wordsVal s.mem B dS N = wordsVal s.mem B dS (p + (8 + (N - p - 8))) := by congr 1; omega_using [hp]
+    have : wordsVal s.mem B dS N = wordsVal s.mem B dS (p + (8 + (N - p - 8))) :=
+      congrArg _ (by omega_using [hp])
     rw [this, fios_wordsVal_append, fios_wordsVal_append, show dS + 8 * p + 8 * 8 = dS + 8 * p + 64 by omega_using []]
   · rw [mt, m₇, w₆.mem, ← mu5]; exact o₆
   · rw [Kt.gpr _ (by decide), k₇.gpr _ (by decide)]; exact p12₆

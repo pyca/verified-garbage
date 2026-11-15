@@ -106,9 +106,12 @@ structure KPre (s : State) : Prop where
   sl : 8 * (32 * kL s + 32) ≤ kZ s
 
 theorem kpre {s : State} (h : keyP.pre s) : KPre s := by
-  obtain ⟨hsp, hrd, hwr, nD, nP, nQ, nDp, nDq, nQi, -, nS, -, dP, dQ, dDp, dDq, dQi, -, dS, -, pQ, pDp, pDq, pQi, -,
-    pS, -, qDp, qDq, qQi, -, qS, -, dpDq, dpQi, -, dpS, -, dqQi, -, dqS, -, -, qiS, -, eS, sA, wN, wD, wP, wQ,
-    wDp, wDq, wQi, wE, wS, ⟨l1, l2, l8⟩, nl, dl, ql, dpl, dql, qil, el1, el8, sl⟩ := h
+  sig_split h
+  rename_i hsp hrd hwr nD nP nQ nDp nDq nQi _ nS _ dP dQ dDp dDq dQi _ dS _ pQ pDp pDq pQi _ pS _ qDp qDq qQi _
+    qS _ dpDq dpQi _ dpS _ dqQi _ dqS _ _ qiS _ eS sA wN wD wP wQ wDp wDq wQi wE wS h_l1_l2_l8 nl dl ql dpl dql
+    qil el1 el8
+  have sl := h
+  obtain ⟨l1, l2, l8⟩ := h_l1_l2_l8
   simp only [Spec.Rsa.scratchWords] at sl
   exact ⟨hsp, hrd, hwr, nS, dS, pS, qS, dpS, dqS, qiS, eS, sA, nD, nP, nQ, nDp, nDq, nQi, dP, dQ, dDp, dDq, dQi,
     pQ, pDp, pDq, pQi, qDp, qDq, qQi, dpDq, dpQi, dqQi, wN, wD, wP, wQ, wDp, wDq, wQi, wE, wS, l1, l2, l8, nl, dl,

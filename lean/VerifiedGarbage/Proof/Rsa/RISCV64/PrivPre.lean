@@ -121,9 +121,11 @@ theorem preP_of {s : State} (h : (Proof.Rsa.privateCheckedContract RISCV64.abi f
   rw [e] at h
   sig_pre [Proof.Rsa.privateCheckedContract, Proof.Rsa.privateCheckedSig, RISCV64.abi, RISCV64.argRegs,
     stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
-  obtain ⟨sp16, sp1, sp2, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
-    ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, ⟨k1, k2⟩, h1, h7,
-    e1, e2, p1, p2, q1, q2, h5, h9, h7', hs, al⟩ := h
+  sig_split h
+  rename_i sp16 sp1 sp2 hrd hwr on oe oi op oq odp odq oqi os oa ns es is ps qs dps dqs qis sa ko kn ke ki kp kq
+    kdp kdq kqi ks ka wo wn we wi wp wq wdp wdq wqi ws h_k1_k2 h1 h7 e1 e2 p1 p2 q1 q2 h5 h9 h7' hs
+  have al := h
+  obtain ⟨k1, k2⟩ := h_k1_k2
   exact ⟨sp16, sp1, sp2, hrd, hwr, on, oe, oi, op, oq, odp, odq, oqi, os, oa, ns, es, is, ps, qs, dps, dqs, qis, sa,
     ko, kn, ke, ki, kp, kq, kdp, kdq, kqi, ks, ka, wo, wn, we, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h1, h7, e1,
     e2, p1, p2, q1, q2, h5, h9, h7', hs, al⟩

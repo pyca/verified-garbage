@@ -11,91 +11,31 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_simple_bit_pack() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x88aa
-.insn 2, 0x8332
-.insn 4, 0x00000837
-.insn 2, 0x083d
-.insn 4, 0x4105883b
+.base64 "qogygzcIAAA9CDuIBUE="
 beqz a6, 20f
-.insn 4, 0x00000837
-.insn 4, 0x02b80813
-.insn 4, 0x4105883b
+.base64 "NwgAABMIuAI7iAVB"
 beqz a6, 22f
-.insn 4, 0x04000393
+.base64 "kwMABA=="
 24:
-.insn 2, 0x4781
-.insn 4, 0x0008e803
-.insn 2, 0x97c2
-.insn 4, 0x00f30023
-.insn 2, 0x83a1
-.insn 4, 0x0048e803
-.insn 2, 0x080a
-.insn 2, 0x97c2
-.insn 4, 0x00f300a3
-.insn 2, 0x83a1
-.insn 4, 0x0088e803
-.insn 2, 0x0812
-.insn 2, 0x97c2
-.insn 4, 0x00f30123
-.insn 2, 0x83a1
-.insn 4, 0x00c8e803
-.insn 2, 0x081a
-.insn 2, 0x97c2
-.insn 4, 0x00f301a3
-.insn 2, 0x83a1
-.insn 4, 0x00f30223
-.insn 2, 0x83a1
-.insn 2, 0x08c1
-.insn 2, 0x0315
-.insn 2, 0x13fd
+.base64 "gUcD6AgAwpcjAPMAoYMD6EgACgjCl6MA8wChgwPoiAASCMKXIwHzAKGDA+jIABoIwpejAfMAoYMjAvMAoYPBCBUD/RM="
 bnez t2, 24b
 j 23f
 22:
-.insn 4, 0x04000393
+.base64 "kwMABA=="
 25:
-.insn 2, 0x4781
-.insn 4, 0x0008e803
-.insn 2, 0x97c2
-.insn 4, 0x0048e803
-.insn 2, 0x081a
-.insn 2, 0x97c2
-.insn 4, 0x00f30023
-.insn 2, 0x83a1
-.insn 4, 0x0088e803
-.insn 2, 0x0812
-.insn 2, 0x97c2
-.insn 4, 0x00f300a3
-.insn 2, 0x83a1
-.insn 4, 0x00c8e803
-.insn 2, 0x080a
-.insn 2, 0x97c2
-.insn 4, 0x00f30123
-.insn 2, 0x83a1
-.insn 2, 0x08c1
-.insn 2, 0x030d
-.insn 2, 0x13fd
+.base64 "gUcD6AgAwpcD6EgAGgjClyMA8wChgwPoiAASCMKXowDzAKGDA+jIAAoIwpcjAfMAoYPBCA0D/RM="
 bnez t2, 25b
 23:
 j 21f
 20:
-.insn 4, 0x08000393
+.base64 "kwMACA=="
 26:
-.insn 2, 0x4781
-.insn 4, 0x0008e803
-.insn 2, 0x97c2
-.insn 4, 0x0048e803
-.insn 2, 0x0812
-.insn 2, 0x97c2
-.insn 4, 0x00f30023
-.insn 2, 0x83a1
-.insn 2, 0x08a1
-.insn 2, 0x0305
-.insn 2, 0x13fd
+.base64 "gUcD6AgAwpcD6EgAEgjClyMA8wChg6EIBQP9Ew=="
 bnez t2, 26b
 21:
-.insn 2, 0x8082
-.option pop",
+.base64 "goA="
+.option pop"#,
     )
 }

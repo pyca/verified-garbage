@@ -11,6 +11,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubUp
+public import VerifiedGarbage.Proof.Rsa.X86_64.Scrub
 
 /-! # RSASSA-PSS (RFC 8017) on x86-64 -/
 
@@ -44,7 +45,7 @@ open VG.Proof.RsaPss.X86_64 (verifyStack verify_ok chk_safe OK)
 
 def artifacts (c : Proof.Rsa.X86_64.PublicImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if h : OK vs then [
-    Spec.RsaPss.verifyPrecomputedMdTableApi.artifact X86_64.target {
+    Spec.RsaPss.verifyPrecomputedMdTableApi.artifact X86_64.target (X86_64.Scrub.withScrubAllUp {
       suffix := qualifiedName "" [("rsa", c.suffix)]
       tables := [("hash", Proof.MdHashTable.X86_64.tables vs), ("mgf1", Proof.MdHashTable.X86_64.tables vs)]
       code := Impl.RsaPss.X86_64.verifyC (Proof.MdHashTable.X86_64.fnsOf vs) (Proof.HashTable.X86_64.fnsOf vs)
@@ -52,7 +53,7 @@ def artifacts (c : Proof.Rsa.X86_64.PublicImpl) (vs : List Proof.Pbkdf2.Md.X86_6
       stack := verifyStack
       verified := verify_ok h c
       spSafe := Code.all_of_allInstrs (Proof.RsaPss.X86_64.Pc.codeC_spAll (fun i hi => (chk_safe h i hi).1)
-        (fun i hi => (chk_safe h i hi).2) c) }]
+        (fun i hi => (chk_safe h i hi).2) c) } (VG.Proof.Rsa.X86_64.Scrub.pssVerifyOut _ _ _))]
   else []
 
 end VG.Artifacts.RsaPss.X86_64.RsaPublicPrecomputedAllMdHash

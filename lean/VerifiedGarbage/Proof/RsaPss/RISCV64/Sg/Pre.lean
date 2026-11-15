@@ -206,15 +206,15 @@ macro "sign_pre" " at " h:ident : tactic => `(tactic| (
 theorem preS_of {H : Spec.Mgf1.Hash} {tsH tsG : List FnTable} {s : State} (h : (signSpec tsH tsG).pre s)
     (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 14) = some H) : PreS false H.len s := by
   sign_pre at h
-  obtain ⟨spal, sp1, sp2, -, -, -, hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oth, otg, oa, ns, es, ps,
-    qs, dps, dqs, qis, dgs, sls, sth, stg, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, kth, ktg, ka, wo, wn,
-    we, wp, wq, wdp, wdq, wqi, wdg, wsl, wsc, wth, wtg, k1, k2, ok, e1, e2, p1, p2, q1, q2, h3, h7, h5, hs, hl, als,
-    al14, al15⟩ := h
+  sig_split h
+  rename_i spal sp1 sp2 _ _ _ hrd hwr on oe op oq odp odq oqi odg osl os oth otg oa ns es ps qs dps dqs qis dgs
+    sls sth stg sa ko kn ke kp kq kdp kdq kqi kdg ksl ks kth ktg ka wo wn we wp wq wdp wdq wqi wdg wsl wsc wth
+    wtg k1 k2 ok e1 e2 p1 p2 q1 q2 h3 h7 h5 hs hl als al14
   have hl := hl H hH
   rw [hl] at hrd odg dgs kdg wdg
   exact ⟨spal, sp1, sp2, hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oth, otg, oa, ns, es, ps, qs, dps,
     dqs, qis, dgs, sls, sth, stg, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, kth, ktg, ka, wo, wn, we, wp,
-    wq, wdp, wdq, wqi, wdg, wsl, wsc, wth, wtg, k1, k2, ok, e1, e2, p1, p2, q1, q2, h3, h7, h5, hs, als, al14, al15,
+    wq, wdp, wdq, wqi, wdg, wsl, wsc, wth, wtg, k1, k2, ok, e1, e2, p1, p2, q1, q2, h3, h7, h5, hs, als, al14, h,
     nofun⟩
 
 /-- The tables, as the contract gives them: the hash function's one of `tsH`

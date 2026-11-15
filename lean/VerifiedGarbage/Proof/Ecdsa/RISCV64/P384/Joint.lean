@@ -118,14 +118,16 @@ theorem PtOk.of_eq {base : Addr} {s s' : State} {p : Pt} {P : Point W} (h : PtOk
     (hx : wordsVal s'.mem base p.x 6 = wordsVal s.mem base p.x 6)
     (hy : wordsVal s'.mem base p.y 6 = wordsVal s.mem base p.y 6)
     (hz : wordsVal s'.mem base p.z 6 = wordsVal s.mem base p.z 6) : PtOk base s' p P :=
-  ⟨by simp only [tmv]; rw [hx, hy, hz]; exact h.rep, hx ▸ h.x, hy ▸ h.y, hz ▸ h.z⟩
+  ⟨by simp only [tmv]; rw [hx, hy, hz]; exact h.rep, by rw [hx]; exact h.x, by rw [hy]; exact h.y,
+    by rw [hz]; exact h.z⟩
 
 /-- A point copied to other slots. -/
 theorem PtOk.move {base : Addr} {s s' : State} {p q : Pt} {P : Point W} (h : PtOk base s p P)
     (hx : wordsVal s'.mem base q.x 6 = wordsVal s.mem base p.x 6)
     (hy : wordsVal s'.mem base q.y 6 = wordsVal s.mem base p.y 6)
     (hz : wordsVal s'.mem base q.z 6 = wordsVal s.mem base p.z 6) : PtOk base s' q P :=
-  ⟨by simp only [tmv]; rw [hx, hy, hz]; exact h.rep, hx ▸ h.x, hy ▸ h.y, hz ▸ h.z⟩
+  ⟨by simp only [tmv]; rw [hx, hy, hz]; exact h.rep, by rw [hx]; exact h.x, by rw [hy]; exact h.y,
+    by rw [hz]; exact h.z⟩
 
 /-! ## The table's construction -/
 

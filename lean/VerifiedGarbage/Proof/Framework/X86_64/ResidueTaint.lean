@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.Taint
 public import VerifiedGarbage.Proof.Framework.Mem
@@ -207,27 +208,6 @@ def ubNew (τ : FT) : Instr → Option (Reg × Nat)
   | .cmov .b d (.reg x) =>
     if τ.fl == some (x, d) then (ubOf τ.ub d).map (d, ·) else none
   | _ => none
-
-/-- The memory an instruction may write: its operand and width. -/
-def storeW : Instr → Option (MemOp × Nat)
-  | .store m _ => some (m, 8)
-  | .store32 m _ => some (m, 4)
-  | .store8 m _ => some (m, 1)
-  | .store16 m _ => some (m, 2)
-  | .movdquStore m _ => some (m, 16)
-  | .vmovdquStore .l128 m _ => some (m, 16)
-  | .vmovdquStore .l256 m _ => some (m, 32)
-  | .vmovdqu32Store m _ => some (m, 64)
-  | .evStore m _ | .e5ExtractStore m _ _ => some (m, 32)
-  | .stmxcsr m => some (m, 4)
-  | _ => none
-
-/-- Whether an instruction may write memory: those of `storeW`, and the
-masked stores. -/
-def writesMem (i : Instr) : Bool :=
-  (storeW i).isSome || match i with
-    | .kStore .. | .kStore8 .. => true
-    | _ => false
 
 /-- The bytes `[lo, hi)` of region `ri` that a store through `m` of `w` bytes
 may write, if its base register points into region `ri` and its index
@@ -480,7 +460,9 @@ analysis and its results are the same) written for the kernel:
   public value with `mem3R`; loads (`mov r, [m]`) need `post` only when a
   slot holds a pointer (`fastLoad`), and `argPost` only when the argument
   area has public or pointer bytes; constants, `mul` and `mulx` only change
-  bounds (`fastU`).
+  bounds (`fastU`). `stepFn1 i`, which the kernel evaluates, is `stepFn i`
+  with one match on `i` in place of its four (`isa.writesSp`, `isPlain`,
+  `Taint.dstOf` and its own).
 * `leF` compares lists of slots in one pass when one is a sublist of the
   other in order (`subl`), as a hint's taints usually are of the analysis's,
   and compares numbers with `Nat.beq`.
@@ -650,8 +632,57 @@ def stepFn (i : Instr) : RStep :=
     | .mulx hi lo _ => fastU (Taint.stepKDFn i) (ubDrop2 hi lo)
     | _ => ⟨(step · i)⟩
 
+/-- `some d == some .rsp`, what `isa.writesSp` is of an instruction whose
+destination is `d`, by the registers' indices (`isSp_eq`). -/
+def isSp (d : Reg) : Bool := regEq d .rsp
+
+/-- `d == .rsp`, by the registers' indices (`isSpR_eq`). -/
+def isSpR (d : Reg) : Bool := regEq d .rsp
+
+/-- `stepFn`, classifying the instruction once (`stepFn1_eq`). `stepFn` asks
+`isa.writesSp`, `isPlain` and `Taint.dstOf` of an instruction, and then
+matches on it, and each is a match on `Instr`, whose three hundred
+constructors make one cost the kernel from 65 to 350 µs: more than the step
+itself of an instruction that only writes a register. Here one match gives
+all four: the destination, for `isa.writesSp` and `Taint.dstOf`, and whether
+the instruction is plain, by its place among the patterns. -/
+def stepFn1 (i : Instr) : RStep :=
+  match i with
+  | .store m r => bif m.index.isNone then fastStore (storeR m 8 r) m 8 (some r) else ⟨(step · i)⟩
+  | .store32 m r => bif m.index.isNone then fastStore (storeR m 4 r) m 4 none else ⟨(step · i)⟩
+  | .store8 m r => bif m.index.isNone then fastStore (storeR m 1 r) m 1 none else ⟨(step · i)⟩
+  | .store16 m r => bif m.index.isNone then fastStore (storeR m 2 r) m 2 none else ⟨(step · i)⟩
+  | .mov d (.mem _) => bif isSp d then ⟨fun _ => none⟩ else fastLoad (Taint.stepKDFn i) d i
+  | .mov d (.imm v) =>
+    bif isSp d then ⟨fun _ => none⟩ else
+      fastU (Taint.stepKDFn i) fun ub => bif v.msb then ubDrop (some d) ub else (d, v.toNat) :: ubDrop (some d) ub
+  | .mov32 d (.imm v) =>
+    bif isSp d then ⟨fun _ => none⟩ else fastU (Taint.stepKDFn i) fun ub => (d, v.toNat) :: ubDrop (some d) ub
+  | .mul _ => fastU (Taint.stepKDFn i) (ubDrop2 .rax .rdx)
+  | .mulx hi lo _ =>
+    bif isSpR hi || isSpR lo then ⟨fun _ => none⟩ else fastU (Taint.stepKDFn i) (ubDrop2 hi lo)
+  -- Not plain, and without a step of their own.
+  | .movdquStore .. | .vmovdquStore .. | .vmovdqu32Store .. | .evStore .. | .e5ExtractStore .. | .stmxcsr _
+  | .kStore .. | .kStore8 .. | .alu .and _ (.imm _) | .alu32 .and _ (.imm _) | .alu .cmp _ (.reg _)
+  | .xop (.bin .pxor _ _) | .cmov .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ =>
+    bif isa.writesSp i then ⟨fun _ => none⟩ else ⟨(step · i)⟩
+  -- Plain or not by their operands.
+  | .mov32 d (.mem m) =>
+    bif isSp d then ⟨fun _ => none⟩ else
+      bif !(regEq m.base .rsp && m.index.isNone) then fastFn (Taint.stepKDFn i) (some d) else ⟨(step · i)⟩
+  | .alu .xor d (.reg d') | .alu32 .xor d (.reg d') =>
+    bif isSp d then ⟨fun _ => none⟩ else bif d != d' then fastFn (Taint.stepKDFn i) (some d) else ⟨(step · i)⟩
+  -- Plain, writing the register `d`.
+  | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
+  | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
+  | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .adcx d _ | .adox d _
+  | .vpmovmskb _ d _ | .vpcmpltuw d .. | .movqR d _ | .imul d _ | .imul3 d .. | .shld d .. | .btr d _
+  | .aluTbl _ d .. => bif isSp d then ⟨fun _ => none⟩ else fastFn (Taint.stepKDFn i) (some d)
+  -- Plain, writing no general-purpose register.
+  | _ => fastFn (Taint.stepKDFn i) none
+
 /-- `step`, for the kernel (`stepF_eq`). -/
-def stepF (τ : FT) (i : Instr) : Option FT := (stepFn i).run τ
+def stepF (τ : FT) (i : Instr) : Option FT := (stepFn1 i).run τ
 
 /-- `a = b`, for pairs, slots and pointers in slots. -/
 def eq2 (a b : Nat × Nat) : Bool := Nat.beq a.1 b.1 && Nat.beq a.2 b.2

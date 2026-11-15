@@ -282,6 +282,17 @@ theorem slot_addr {kl pl : Nat} {s₀ : State} (hp : TPre (YP kl pl) s₀) {i : 
   rw [Buf.addr_eq hp (Lay.okW_iff.mp (okP (kl := kl) (o := kl + 1024 * i) (l := 1024) (by decide) hi)).1]
   simp only [n]
 
+/-- The body of `vg_mldsa*_prepare_verifying_key` never writes `esp`. -/
+theorem publicBody_nosp {P : Prims} (hP : PrimsOk P) (p : Params) :
+    NoSp (.seq (start p.pkLen) (seqR (publicPoly P p) 0 p.k)) := by
+  unfold start publicPoly nttSlot
+  exact NoSp.seq (NoSp.seq (NoSp.of_all (by kernel_rfl)) (NoSp.of_all (by kernel_rfl)))
+    (NoSp.seqR (fun r => NoSp.seq (NoSp.callP hP.unpackT1.nosp) (NoSp.callP hP.ntt.nosp)) _ _)
+
+/-- `vg_mldsa*_prepare_verifying_key` never writes `esp`. -/
+theorem public_nosp {P : Prims} (hP : PrimsOk P) (p : Params) : NoSp (preparePublic P p) :=
+  NoSp.leaf (publicBody_nosp hP p)
+
 /-- `vg_mldsa{44,65,87}_prepare_verifying_key`, with the primitives `P`, is verified against `preparePublicKeyContract`. -/
 theorem public_verified {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     Verified X86.target (preparePublic P p) (preparePublicKeyContract p X86.abi 96) := by
@@ -298,11 +309,7 @@ theorem public_verified {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = 
         (fun s₀ j => Verify.t1Hat (keyOf p.pkLen s₀) j) r) p.k 0
         fun r _ hr => publicPoly_piece hP hpk (by omega_using [hr]) hpl).mono (fun _ _ _ h => h)
         fun _ _ _ h => ⟨h.1, by simpa using h⟩)
-  have hsp : NoSp (.seq (start p.pkLen) (seqR (publicPoly P p) 0 p.k)) := by
-    unfold start publicPoly nttSlot
-    exact NoSp.seq (NoSp.seq (NoSp.of_all (by kernel_rfl)) (NoSp.of_all (by kernel_rfl)))
-      (NoSp.seqR (fun r => NoSp.seq (NoSp.callP hP.unpackT1.nosp) (NoSp.callP hP.ntt.nosp)) _ _)
-  refine Piece.verified (((topLeaf hsp hb).pre_mono (fun _ h => pub_pre_of h)
+  refine Piece.verified (((topLeaf (publicBody_nosp hP p) hb).pre_mono (fun _ h => pub_pre_of h)
     fun _ _ _ _ h => pub_pub_of h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · have hp := pub_pre_of h₀
     obtain ⟨habi, -, -, s, ⟨-, hk', hpol⟩, hm, -⟩ := hq
@@ -421,6 +428,17 @@ theorem secretPoly_piece {pl : Nat} {P : Prims} (hP : PrimsOk P) (ps : VG.Proof.
     rw [secret_val _ hi]
     exact out
 
+/-- The body of `vg_mldsa*_prepare_signing_key` never writes `esp`. -/
+theorem secretBody_nosp {P : Prims} (hP : PrimsOk P) (p : Params) :
+    NoSp (.seq (start p.skLen) (seqR (secretPoly P p) 0 (p.ℓ + 2 * p.k))) := by
+  unfold start secretPoly nttSlot
+  exact NoSp.seq (NoSp.seq (NoSp.of_all (by kernel_rfl)) (NoSp.of_all (by kernel_rfl)))
+    (NoSp.seqR (fun r => NoSp.seq (NoSp.callP hP.bitUnpack.nosp) (NoSp.callP hP.ntt.nosp)) _ _)
+
+/-- `vg_mldsa*_prepare_signing_key` never writes `esp`. -/
+theorem secret_nosp {P : Prims} (hP : PrimsOk P) (p : Params) : NoSp (prepareSecret P p) :=
+  NoSp.leaf (secretBody_nosp hP p)
+
 /-- `vg_mldsa{44,65,87}_prepare_signing_key`, with the primitives `P`, is verified against `prepareSecretKeyContract`. -/
 theorem secret_verified {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     Verified X86.target (prepareSecret P p) (prepareSecretKeyContract p X86.abi 96) := by
@@ -441,11 +459,7 @@ theorem secret_verified {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = 
         (fun s₀ j => (preparedSecretPolys p (keyOf p.skLen s₀))[j]!) r) (p.ℓ + 2 * p.k) 0
         fun r _ hr => secretPoly_piece hP ps (by omega_using [hr]) hpl).mono (fun _ _ _ h => h)
         fun _ _ _ h => ⟨h.1, by simpa using h⟩)
-  have hsp : NoSp (.seq (start p.skLen) (seqR (secretPoly P p) 0 (p.ℓ + 2 * p.k))) := by
-    unfold start secretPoly nttSlot
-    exact NoSp.seq (NoSp.seq (NoSp.of_all (by kernel_rfl)) (NoSp.of_all (by kernel_rfl)))
-      (NoSp.seqR (fun r => NoSp.seq (NoSp.callP hP.bitUnpack.nosp) (NoSp.callP hP.ntt.nosp)) _ _)
-  refine Piece.verified (((topLeaf hsp hb).pre_mono (fun _ h => sec_pre_of h)
+  refine Piece.verified (((topLeaf (secretBody_nosp hP p) hb).pre_mono (fun _ h => sec_pre_of h)
     fun _ _ _ _ h => sec_pub_of h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · have hp := sec_pre_of h₀
     obtain ⟨habi, -, -, s, ⟨-, hk', hpol⟩, hm, -⟩ := hq
@@ -485,6 +499,16 @@ theorem above_eq {a m : Mem} {i : Nat} (hi : i < 2 ^ 32) :
     rw [this]
     exact Nat.mod_eq_of_lt (by omega_using [hi])
   rw [e, ite_eq_right_iff.mpr fun h => absurd h (by omega_using [])]
+
+theorem above_low {a m : Mem} {x : Addr} (hx : x.toNat < 0x8000) : above a m x = a x := by
+  unfold above; simp only [hx, ↓reduceIte]
+
+/-- An argument word below `0x8000`, read from `a`: a read the kernel then evaluates with no
+variable in it. It adds and shifts numerals as such only in a closed term; with `m` in the
+term, even in the branch not taken, it does so in unary. -/
+theorem above_readW {a m : Mem} {x : Addr} (hx : ∀ i < 4, (x + BitVec.ofNat 64 i).toNat < 0x8000) :
+    (above a m).readW x 32 = a.readW x 32 :=
+  Mem.readW_congr fun i hi => above_low (hx i hi)
 
 theorem polyStored_congr {m m' : Mem} {a : Addr} {f : Poly}
     (hc : ∀ i < 1024, m' (a + BitVec.ofNat 64 i) = m (a + BitVec.ofNat 64 i)) (h : PolyStored m a f) :
@@ -557,7 +581,8 @@ theorem prepared_sign_sat {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p 
       arg τ 0 = 0x8000 ∧ arg τ 1 = 0x1000 ∧ arg τ 2 = 0x2000 ∧ arg τ 3 = 0x40000 ∧ arg τ 4 = 0x50000 := by
     intro τ hm he
     simp only [arg, argAddr, hm, he]
-    exact ⟨by kernel_rfl, by kernel_rfl, by kernel_rfl, by kernel_rfl, by kernel_rfl⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> rw [above_readW]
+    all_goals first | decide | kernel_rfl
   obtain ⟨b0, b1, b2, b3, b4⟩ := a0 (satState (above satMemE m) [⟨0x8000, preparedSecretKeyBytes p⟩, ⟨0x1000, 64⟩,
     ⟨0x2000, 32⟩] [⟨0x40000, p.sigLen⟩, ⟨0x50000, scratchWords p * 8⟩, ⟨0x5004, 20⟩]) rfl rfl
   have ag : argAddr (satState (above satMemE m) [⟨0x8000, preparedSecretKeyBytes p⟩, ⟨0x1000, 64⟩,
@@ -606,7 +631,8 @@ theorem prepared_verify_sat {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ 
       arg τ 0 = 0x8000 ∧ arg τ 1 = 0x1000 ∧ arg τ 2 = 0x2000 ∧ arg τ 3 = 0x40000 := by
     intro τ hm he
     simp only [arg, argAddr, hm, he]
-    exact ⟨by kernel_rfl, by kernel_rfl, by kernel_rfl, by kernel_rfl⟩
+    refine ⟨?_, ?_, ?_, ?_⟩ <;> rw [above_readW]
+    all_goals first | decide | kernel_rfl
   obtain ⟨b0, b1, b2, b3⟩ := a0 (satState (above satMemE m) [⟨0x8000, preparedPublicKeyBytes p⟩, ⟨0x1000, 64⟩,
     ⟨0x2000, p.sigLen⟩] [⟨0x40000, scratchWords p * 8⟩, ⟨0x5004, 16⟩]) rfl rfl
   have ag : argAddr (satState (above satMemE m) [⟨0x8000, preparedPublicKeyBytes p⟩, ⟨0x1000, 64⟩,
@@ -633,14 +659,6 @@ theorem t1In_of {m : Mem} {key t : Addr} (h : PreparedPublicKey p m key) (ht : t
 def satMemC (t : Nat) : Mem := fun a =>
   if a = 0x5014 then BitVec.ofNat 8 t else if a = 0x5015 then BitVec.ofNat 8 (t / 256) else
   if a = 0x5016 then 0 else satMemE a
-
-theorem above_low {a m : Mem} {x : Addr} (hx : x.toNat < 0x8000) : above a m x = a x := by
-  unfold above; simp only [hx, ↓reduceIte]
-
-/-- An argument word below `0x8000`, read from `a`. -/
-theorem above_readW {a m : Mem} {x : Addr} (hx : ∀ i < 4, (x + BitVec.ofNat 64 i).toNat < 0x8000) :
-    (above a m).readW x 32 = a.readW x 32 :=
-  Mem.readW_congr fun i hi => above_low (hx i hi)
 
 theorem verify_core_sat {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     ∃ s, (Verify.verifyCoreContract p X86.abi 96).pre s := by

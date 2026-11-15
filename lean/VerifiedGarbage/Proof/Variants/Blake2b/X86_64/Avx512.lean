@@ -102,9 +102,14 @@ theorem finalizeOk : ∃ h : VG.Taint.Hint RTaint.FT,
 
 end Scrub
 
+/-- Never chosen on Zen 5, whose vector integer instructions have twice the
+latency of its scalar ones: this compression function is one chain of
+them, and on a Ryzen 9 9950X hashes 16 KiB in 13.6 µs, the baseline's in
+8.2 µs. -/
 def variant : Proof.Blake2.X86_64.Backend where
   suffix := "_avx512"
   features := ["avx", "avx2", "avx512f", "avx512vl"]
+  notWith := ["zen5"]
   code := Impl.Blake2.X86_64.Avx512.compress
   callee := Proof.Blake2.X86_64.Avx512.callee
   verified := Proof.Blake2.X86_64.Avx512.compress_verified

@@ -85,12 +85,12 @@ theorem stackArgs_seven (s : State) : List.map (stackArg s) (List.range 7) =
     [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3, stackArg s 4, stackArg s 5, stackArg s 6] := rfl
 
 theorem cg_pre0 {s : State} (h : (Proof.Ffdh.cachedGenerateKeyContract abi).pre s) : cgPre s := by
-  sig_pre [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, generateKeySig, abi, argRegs, stackArgs_seven,
-    List.append_eq, pLenValid, domainLenValid] at h
-  sig_pre [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, generateKeySig, abi, argRegs, stackArgs_seven,
-    List.append_eq, pLenValid, domainLenValid] at h
+  sig_pre [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, generateKeySig, abi, argRegs,
+    List.append_eq, pLenValid, domainLenValid, List.range, List.range.loop] at h
+  sig_pre [Proof.Ffdh.cachedGenerateKeyContract, Proof.Ffdh.cachedGenerateKeySig, generateKeySig, abi, argRegs,
+    List.append_eq, pLenValid, domainLenValid, List.range, List.range.loop] at h
   sig_split h
-  sig_reduce [cgPre, pLenValid, domainLenValid, generationContextAt]
+  sig_reduce [cgPre, pLenValid, domainLenValid, generationContextAt, List.range, List.range.loop]
   sig_and_intros
   sig_close
   all_goals first | with_reducible assumption | with_reducible exact Region.Disjoint.symm ‹_›

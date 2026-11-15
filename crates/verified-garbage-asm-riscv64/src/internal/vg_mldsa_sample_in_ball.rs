@@ -11,117 +11,35 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_sample_in_ball() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x7d773823
-.insn 4, 0x7d873c23
-.insn 4, 0x7f973023
-.insn 4, 0x7fa73423
-.insn 4, 0x7fb73823
-.insn 4, 0x7e173c23
-.insn 2, 0x8dba
-.insn 2, 0x8d36
-.insn 2, 0x8caa
-.insn 2, 0x8c2e
-.insn 2, 0x8bb2
-.insn 2, 0x4281
-.insn 4, 0x005db023
-.insn 4, 0x005db423
-.insn 4, 0x005db823
-.insn 4, 0x005dbc23
-.insn 4, 0x025db023
-.insn 4, 0x025db423
-.insn 4, 0x025db823
-.insn 4, 0x025dbc23
-.insn 4, 0x045db023
-.insn 4, 0x045db423
-.insn 4, 0x045db823
-.insn 4, 0x045dbc23
-.insn 4, 0x065db023
-.insn 4, 0x065db423
-.insn 4, 0x065db823
-.insn 4, 0x065dbc23
-.insn 4, 0x085db023
-.insn 4, 0x085db423
-.insn 4, 0x085db823
-.insn 4, 0x085dbc23
-.insn 4, 0x0a5db023
-.insn 4, 0x0a5db423
-.insn 4, 0x0a5db823
-.insn 4, 0x0a5dbc23
-.insn 4, 0x0c5db023
-.insn 2, 0x856e
-.insn 4, 0x08800593
-.insn 2, 0x4601
-.insn 2, 0x86e6
-.insn 2, 0x8762
+.base64 "Izh3fSM8h30jMJd/IzSnfyM4t38jPBd+uo02jaqMLoyyi4FCI7BdACO0XQAjuF0AI7xdACOwXQIjtF0CI7hdAiO8XQIjsF0EI7RdBCO4XQQjvF0EI7BdBiO0XQYjuF0GI7xdBiOwXQgjtF0II7hdCCO8XQgjsF0KI7RdCiO4XQojvF0KI7BdDG6FkwWACAFG5oZihw=="
 call {vg_keccak_absorb}
-.insn 2, 0x862a
-.insn 2, 0x856e
-.insn 4, 0x08800593
-.insn 2, 0x46fd
+.base64 "KoZuhZMFgAj9Rg=="
 call {vg_keccak_pad}
-.insn 2, 0x856e
-.insn 4, 0x08800593
-.insn 2, 0x4601
-.insn 4, 0x348d8693
-.insn 4, 0x11000713
+.base64 "boWTBYAIAUaTho00EwcAEQ=="
 call {vg_keccak_squeeze}
-.insn 2, 0x4381
-.insn 2, 0x85ea
-.insn 4, 0x10000693
+.base64 "gUPqhZMGABA="
 20:
-.insn 4, 0x0075a023
-.insn 2, 0x0591
-.insn 2, 0x16fd
+.base64 "I6B1AJEF/RY="
 bnez a3, 20b
-.insn 4, 0x348db803
-.insn 4, 0x10000613
-.insn 4, 0x4176063b
-.insn 4, 0x00261593
-.insn 2, 0x95ea
-.insn 4, 0x350d8513
-.insn 4, 0x10800693
-.insn 4, 0x007fe737
-.insn 2, 0x177d
+.base64 "A7iNNBMGABA7BnZBkxUmAOqVE4UNNZMGgBA3538AfRc="
 21:
-.insn 4, 0xf0060393
-.insn 4, 0x03f3d393
+.base64 "kwMG8JPT8wM="
 beqz t2, 22f
-.insn 4, 0x00054783
-.insn 4, 0x40f60333
-.insn 4, 0x03f35313
+.base64 "g0cFADMD9kATU/MD"
 beqz t1, 24f
 j 25f
 24:
-.insn 4, 0x00279893
-.insn 2, 0x98ea
-.insn 4, 0x0008e303
-.insn 4, 0x0065a023
-.insn 4, 0x03f81393
-.insn 4, 0x03f3d393
-.insn 4, 0x02e383b3
-.insn 2, 0x0385
-.insn 4, 0x0078a023
-.insn 4, 0x00185813
-.insn 2, 0x0591
-.insn 2, 0x0605
+.base64 "k5gnAOqYA+MIACOgZQCTE/gDk9PzA7OD4wKFAyOgeAATWBgAkQUFBg=="
 25:
 j 23f
 22:
 23:
-.insn 2, 0x0505
-.insn 2, 0x16fd
+.base64 "BQX9Fg=="
 bnez a3, 21b
-.insn 4, 0x00865513
-.insn 4, 0x7f8db083
-.insn 4, 0x7d0dbb83
-.insn 4, 0x7d8dbc03
-.insn 4, 0x7e0dbc83
-.insn 4, 0x7e8dbd03
-.insn 4, 0x7f0dbd83
-.insn 2, 0x8082
-.option pop",
+.base64 "E1WGAIOwjX+Duw19A7yNfYO8DX4DvY1+g70Nf4KA"
+.option pop"#,
         vg_keccak_absorb = sym crate::ed448::vg_keccak_absorb::vg_keccak_absorb,
         vg_keccak_pad = sym crate::ed448::vg_keccak_pad::vg_keccak_pad,
         vg_keccak_squeeze = sym crate::ed448::vg_keccak_squeeze::vg_keccak_squeeze,

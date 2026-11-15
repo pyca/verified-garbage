@@ -177,12 +177,18 @@ structure OneEntry (s₀ : State) (Ctx W SP A D : Addr) (n : Nat) (s : State) : 
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
 
-/-- `oneEntry wo`, with `W` at `[rsp + wo]`. -/
-theorem oneEntry_ok {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Addr} {nl al n : Nat}
+/-- What the entry of `seal` and `open` writes in `W`: the saved registers
+and the slots of `rounds` and `aad_len` (`[128, 192)`), of `data` and `len`
+(`[200, 216)`) and of `aad` (`[232, 240)`). -/
+abbrev entryFrame (W : Addr) : List Region :=
+  [⟨W + BitVec.ofNat 64 128, 64⟩, ⟨W + BitVec.ofNat 64 200, 16⟩, ⟨W + BitVec.ofNat 64 232, 8⟩]
+
+/-- `oneEntry wo`, with `W` at `[rsp + wo]`, and what it writes (`entryFrame`). -/
+theorem oneEntry_okL {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Addr} {nl al n : Nat}
     (C : OneCtx s k Ctx W SP Np A D nl al n) {wo : Nat} (hCtx : s.gpr .rdi = Ctx) (hSP : s.gpr .rsp = SP)
     (hA : s.gpr .r8 = A) (hD : stackArg s 0 = D) (hn : (stackArg s 1).toNat = n)
     (hW' : s.mem.readW (SP + BitVec.ofNat 64 wo) 64 = W) (a₂ : InRegions (s.rd ++ s.wr) (SP + BitVec.ofNat 64 wo) 8) :
-    WP isa (.block (oneEntry wo)) s (OneEntry s Ctx W SP A D n) := by
+    WP isa (.block (oneEntry wo)) s fun s' => OneEntry s Ctx W SP A D n s' ∧ Frame (entryFrame W) s.mem s'.mem := by
   have hD' : s.mem.readW (SP + BitVec.ofNat 64 8) 64 = D := by rw [← hD, ← hSP]; rfl
   have hn' : s.mem.readW (SP + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 n := by
     rw [← hn, BitVec.ofNat_toNat, BitVec.setWidth_eq, ← hSP]; rfl
@@ -302,9 +308,20 @@ theorem oneEntry_ok {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Addr
     rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
       simp (disch := first | decide | with_reducible assumption) only [Mem.readW_writeW_self64,
         Mem.readW_writeW_sep]
-  refine ⟨⟨h13, h14, h15, hsp, C.perm.of_eq hrd' hwr'⟩, ⟨?_, C.rounds⟩, rd 232 _ (.inr (.inl ⟨rfl, rfl⟩)),
+  have f₂' : Frame [⟨W + BitVec.ofNat 64 176, 16⟩, ⟨W + BitVec.ofNat 64 200, 16⟩, ⟨W + BitVec.ofNat 64 232, 8⟩]
+      s₁.mem s₂.mem := by
+    rw [hm₂]
+    have c : ∀ e d, e ≤ d → d + 8 ≤ e + 16 → e + 16 < 2 ^ 64 →
+        (⟨W + BitVec.ofNat 64 e, 16⟩ : Region).Contains (W + BitVec.ofNat 64 d) (64 / 8) :=
+      fun e d h₁ h₂ h₃ => Offset.contains _ h₁ h₂ h₃
+    exact (((((Frame.refl _ _).writeW (List.mem_cons_self ..) _ (c 176 176 (by decide) (by decide) (by decide))).writeW
+      (by simp) _ (Region.contains_self _ _)).writeW
+      (List.mem_cons_self ..) _ (c 176 184 (by decide) (by decide) (by decide))).writeW
+      (by simp) _ (c 200 200 (by decide) (by decide) (by decide))).writeW
+      (by simp) _ (c 200 208 (by decide) (by decide) (by decide))
+  refine ⟨⟨⟨h13, h14, h15, hsp, C.perm.of_eq hrd' hwr'⟩, ⟨?_, C.rounds⟩, rd 232 _ (.inr (.inl ⟨rfl, rfl⟩)),
     rd 184 _ (.inr (.inr (.inl ⟨rfl, rfl⟩))), rd 200 _ (.inr (.inr (.inr (.inl ⟨rfl, rfl⟩)))),
-    rd 208 _ (.inr (.inr (.inr (.inr ⟨rfl, rfl⟩)))), h12, hbp, hsp, ?_, ?_, hrd', hwr'⟩
+    rd 208 _ (.inr (.inr (.inr (.inr ⟨rfl, rfl⟩)))), h12, hbp, hsp, ?_, ?_, hrd', hwr'⟩, ?_⟩
   · rw [rd 176 _ (.inl ⟨rfl, rfl⟩)]; exact BitVec.eq_of_toNat_eq (by simp)
   · exact hsv₁'.frame f₂ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -316,6 +333,23 @@ theorem oneEntry_ok {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Addr
       (f₂.sub fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩)
+  · rw [hm₀] at f₁
+    refine (f₁.sub fun r hr => ?_).trans (f₂'.sub fun r hr => ?_)
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_cons_self .., Offset.sub _ (by decide) (by decide)⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl
+      · exact ⟨_, List.mem_cons_self .., Offset.sub _ (by decide) (by decide)⟩
+      · exact ⟨_, by simp, fun _ h => h⟩
+      · exact ⟨_, by simp, fun _ h => h⟩
+
+/-- `oneEntry wo`, with `W` at `[rsp + wo]`. -/
+theorem oneEntry_ok {s : State} {k : Nat} (hk : 2 ≤ k) {Ctx W SP Np A D : Addr} {nl al n : Nat}
+    (C : OneCtx s k Ctx W SP Np A D nl al n) {wo : Nat} (hCtx : s.gpr .rdi = Ctx) (hSP : s.gpr .rsp = SP)
+    (hA : s.gpr .r8 = A) (hD : stackArg s 0 = D) (hn : (stackArg s 1).toNat = n)
+    (hW' : s.mem.readW (SP + BitVec.ofNat 64 wo) 64 = W) (a₂ : InRegions (s.rd ++ s.wr) (SP + BitVec.ofNat 64 wo) 8) :
+    WP isa (.block (oneEntry wo)) s (OneEntry s Ctx W SP A D n) :=
+  WP.mono (oneEntry_okL hk C hCtx hSP hA hD hn hW' a₂) fun _ h => h.1
 
 end VG.Proof.AesGcm.X86_64
 

@@ -42,6 +42,6 @@ theorem test_noFrames (v : RoundImpl) (bits : Nat) :
     Impl.Rsa.AArch64.r2StepsOld, Impl.Rsa.AArch64.sqs, Impl.Bignum.AArch64.R2Div.choice, RoundImpl.kernel, MillerRabin.AArch64.Kernel.called, Impl.MillerRabin.AArch64.Caller.call,
     List.cons_append, List.nil_append, Impl.Bignum.AArch64.seqs, Code.noFrames, Bool.and_eq_true, v.mmNoFrames, true_and, and_true]
   and_intros
-  all_goals first | exact v.noFrames | rfl
+  all_goals first | rfl | exact v.noFrames
 
 end VG.Proof.Dsa.AArch64.ProbablePrime

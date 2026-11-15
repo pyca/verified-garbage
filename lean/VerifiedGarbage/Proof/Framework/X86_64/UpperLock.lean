@@ -1,5 +1,7 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubPaths
+public import VerifiedGarbage.Proof.Framework.CodeOnce
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueKeep
 import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
@@ -32,31 +34,55 @@ open VG VG.X86_64
 /-- The upper halves of `zmm0`–`zmm15` agree. -/
 def UA (s₁ s₂ : State) : Prop := s₁.ymmHi = s₂.ymmHi ∧ s₁.zmmHi = s₂.zmmHi
 
-/-- Whether the upper halves agree after `i`, given whether they agreed before it. -/
-def stepI (a : Bool) (i : Instr) : Bool :=
-  match i with
-  | .vop .vzeroupper => true
-  | i => a && i.vecLevel == 0
+theorem stepI_mono {a a' : Bool} (h : a = true → a' = true) (i : Instr) (hs : stepI a i = true) :
+    stepI a' i = true := by
+  unfold stepI at hs ⊢
+  split
+  · rfl
+  · simp only [Bool.and_eq_true] at hs ⊢; exact ⟨h hs.1, hs.2⟩
 
-/-- Whether the upper halves agree after `c`, given whether they agreed before it. -/
-def up : Prog isa → Bool → Bool
-  | .block is, a => is.foldl stepI a
-  | .seq x y, a => up y (up x a)
-  | .ite _ t e, a => up t a && up e a
-  | .loop b _, a => up b a && up b true
-  | .call _ b, a => up b a
-  | .frame _ b _, a => up b a
-  | .icall _ _ b n, a => up b a && up n a
+theorem foldl_stepI_mono : ∀ (is : List Instr) {a a' : Bool}, (a = true → a' = true) →
+    is.foldl stepI a = true → is.foldl stepI a' = true
+  | [], _, _, h, hs => h hs
+  | i :: is, _, _, h, hs => foldl_stepI_mono is (stepI_mono h i) hs
 
-/-- The functions `c` may call indirectly. -/
-def inames : Prog isa → List String
-  | .block _ => []
-  | .seq x y => inames x ++ inames y
-  | .ite _ t e => inames t ++ inames e
-  | .loop b _ => inames b
-  | .call _ b => inames b
-  | .frame _ b _ => inames b
-  | .icall _ n b nx => n :: inames b ++ inames nx
+/-- The upper halves agree after `c` from a start at which they agree, if
+they do from one at which they need not: so a loop's body, which `up` runs
+once, ends every iteration with them agreeing. -/
+theorem up_mono : ∀ (c : Prog isa) {a a' : Bool}, (a = true → a' = true) → up c a = true → up c a' = true
+  | .block is, _, _, h, hs => foldl_stepI_mono is h hs
+  | .seq x y, _, _, h, hs => up_mono y (up_mono x h) hs
+  | .ite _ t e, _, _, h, hs => by
+    simp only [up, Bool.and_eq_true] at hs ⊢; exact ⟨up_mono t h hs.1, up_mono e h hs.2⟩
+  | .loop b _, _, _, h, hs => up_mono b h hs
+  | .call _ b, _, _, h, hs => up_mono b h hs
+  | .frame _ b _, _, _, h, hs => up_mono b h hs
+  | .icall _ _ b n, _, _, h, hs => by
+    simp only [up, Bool.and_eq_true] at hs ⊢; exact ⟨up_mono b h hs.1, up_mono n h hs.2⟩
+
+theorem upFrom_ok : ∀ (c : Prog isa) (a : Bool) (k : List (String × Prog isa × Bool × Bool)),
+    (∀ e ∈ k, e.2.2.2 = up e.2.1 e.2.2.1) →
+      (upFrom c a k).1 = up c a ∧ ∀ e ∈ (upFrom c a k).2, e.2.2.2 = up e.2.1 e.2.2.1
+  | .block _, _, _, hk => ⟨rfl, hk⟩
+  | .seq x y, a, k, hk => by
+    obtain ⟨hx, kx⟩ := upFrom_ok x a k hk
+    obtain ⟨hy, ky⟩ := upFrom_ok y (upFrom x a k).1 _ kx
+    exact ⟨by rw [upFrom, hy, hx, up], ky⟩
+  | .ite _ t e, a, k, hk => by
+    obtain ⟨ht, kt⟩ := upFrom_ok t a k hk
+    obtain ⟨he, ke⟩ := upFrom_ok e a _ kt
+    exact ⟨by rw [upFrom, he, ht, up], ke⟩
+  | .loop b _, a, k, hk => upFrom_ok b a k hk
+  | .call n b, a, k, hk =>
+    Code.memoCall_ok (n := n) (run := fun _ => upFrom b a k) (spec := up) hk (upFrom_ok b a k hk)
+  | .frame _ b _, a, k, hk => upFrom_ok b a k hk
+  | .icall _ n b nx, a, k, hk => by
+    obtain ⟨hb, kb⟩ := Code.memoCall_ok (n := n) (run := fun _ => upFrom b a k) (spec := up) hk (upFrom_ok b a k hk)
+    obtain ⟨hn, kn⟩ := upFrom_ok nx a _ kb
+    exact ⟨by rw [upFrom, hn, hb, up], kn⟩
+
+theorem upOnce_eq (c : Prog isa) (a : Bool) : upOnce c a = up c a :=
+  (upFrom_ok c a [] fun _ h => by cases h).1
 
 theorem exec_ua {i : Instr} {a : Bool} {s₁ s₂ s₁' s₂' : State} (e₁ : exec i s₁ = some s₁')
     (e₂ : exec i s₂ = some s₂') (h : stepI a i = true) (hu : a = true → UA s₁ s₂) : UA s₁' s₂' := by
@@ -199,7 +225,7 @@ theorem lock {c : Prog isa} {s₁ s₁' : State} {t₁ : List Leak} (e₁ : Exec
       simp only [List.append_assoc] at ht
       obtain ⟨h, u⟩ := ih x₂ ht hf
       subst h
-      exact ⟨rfl, fun a hv hu => u a (by simp only [up, Bool.and_eq_true] at hv; exact hv.1) hu⟩
+      exact ⟨rfl, fun a hv hu => u a hv hu⟩
     | loopNext x₂ _ _ =>
       simp only [List.append_assoc] at ht
       obtain ⟨h, -⟩ := ih x₂ ht hf
@@ -221,9 +247,7 @@ theorem lock {c : Prog isa} {s₁ s₁' : State} {t₁ : List Leak} (e₁ : Exec
       simp only [List.cons_append, List.cons.injEq, true_and] at ht'
       obtain ⟨h', ul⟩ := ihl l₂ ht' fun n hn => by rw [Exec.syms x₁, Exec.syms x₂]; exact hf n hn
       subst h'
-      refine ⟨rfl, fun a hv hu => ul true ?_ fun _ => ux a ?_ hu⟩
-      · simp only [up, Bool.and_eq_true] at hv ⊢; exact ⟨hv.2, hv.2⟩
-      · simp only [up, Bool.and_eq_true] at hv; exact hv.1
+      exact ⟨rfl, fun a hv hu => ul true (up_mono _ (fun _ => rfl) hv) fun _ => ux a hv hu⟩
   | call hc₁ x₁ hr₁ ih =>
     intro s₂ s₂' t₂ r₁ r₂ e₂ ht hf
     cases e₂ with

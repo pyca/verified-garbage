@@ -311,14 +311,14 @@ code's instructions are below the level `evex`, its upper halves agree at
 the end if they did at the start, and it calls indirectly only the
 functions of its tables. -/
 def UpOk (code : Prog isa) (tables : List (String × List FnTable)) : Bool :=
-  code.all (fun i => decide (i.vecLevel ≤ 1)) && UpperLock.up code true &&
+  levelLeOnce 1 code && UpperLock.upOnce code true &&
     (UpperLock.inames code).all (fun f => decide (f ∈ tableFns tables))
 
 theorem upOk_spec {code : Prog isa} {tables : List (String × List FnTable)} (h : UpOk code tables = true) :
     (∀ i ∈ instrs code, i.vecLevel ≤ 1) ∧ UpperLock.up code true = true ∧
       ∀ f ∈ UpperLock.inames code, f ∈ tableFns tables := by
-  simp only [UpOk, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h
-  exact ⟨fun i hi => by simpa using Code.all_instrs h.1.1 i hi, h.1.2, h.2⟩
+  simp only [UpOk, levelLeOnce, Code.allOnce_eq, UpperLock.upOnce_eq, Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h
+  exact ⟨fun i hi => by simpa [Instr.levelLe] using Code.all_instrs h.1.1 i hi, h.1.2, h.2⟩
 
 theorem scrubCodeU_verified {api : Api} (r : Registration api target)
     (hd : r.code.x86_64Depth ≤ r.stack) (hst : r.stack + 8 < 2 ^ 64) (h8 : r.stack % 8 = 0)
@@ -398,6 +398,7 @@ def withUp {api : Api} (r : Registration api target)
 def withScrubAllUp {api : Api} (r : Registration api target)
     (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) :
     Registration api target :=
-  if (withScrubAll r hpost).residue.isSome then withScrubAll r hpost else withUp r hpost
+  let r' := withScrubAll r hpost
+  if r'.residue.isSome then r' else withUp r hpost
 
 end VG.X86_64.Scrub

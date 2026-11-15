@@ -11,80 +11,22 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_low_bits() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x00040737
-.insn 4, 0xf0070713
-.insn 4, 0x40e582bb
+.base64 "NwcEABMHB/C7guVA"
 beqz t0, 20f
-.insn 2, 0x688d
-.insn 4, 0xc0b88893
-.insn 4, 0x00800337
-.insn 2, 0x831a
-.insn 4, 0x02c00393
-.insn 4, 0x0002f5b7
-.insn 4, 0x80058593
-.insn 4, 0x007fe737
-.insn 2, 0x0705
-.insn 4, 0x10000693
+.base64 "jWiTiLjANwOAABqDkwPAArf1AgCThQWAN+d/AAUHkwYAEA=="
 22:
-.insn 4, 0x00056783
-.insn 4, 0x00056283
-.insn 4, 0x07f78793
-.insn 2, 0x839d
-.insn 4, 0x031787b3
-.insn 2, 0x979a
-.insn 2, 0x83e1
-.insn 4, 0x407787b3
-.insn 4, 0x43f7d813
-.insn 4, 0x00787833
-.insn 2, 0x97c2
-.insn 4, 0x02b787b3
-.insn 4, 0x40f282b3
-.insn 4, 0x43f2d813
-.insn 4, 0x00e87833
-.insn 2, 0x92c2
-.insn 4, 0x00562023
-.insn 2, 0x0511
-.insn 2, 0x0611
-.insn 2, 0x16fd
+.base64 "g2cFAINiBQCTh/cHnYOzhxcDmpfhg7OHd0AT2PdDM3h4AMKXs4e3ArOC8kAT2PJDM3joAMKSIyBWABEFEQb9Fg=="
 bnez a3, 22b
 j 21f
 20:
-.insn 4, 0x000008b7
-.insn 4, 0x40188893
-.insn 4, 0x00200337
-.insn 2, 0x831a
-.insn 2, 0x43c1
-.insn 4, 0x000805b7
-.insn 4, 0xe0058593
-.insn 4, 0x007fe737
-.insn 2, 0x0705
-.insn 4, 0x10000693
+.base64 "twgAAJOIGEA3AyAAGoPBQ7cFCACThQXgN+d/AAUHkwYAEA=="
 23:
-.insn 4, 0x00056783
-.insn 4, 0x00056283
-.insn 4, 0x07f78793
-.insn 2, 0x839d
-.insn 4, 0x031787b3
-.insn 2, 0x979a
-.insn 2, 0x83d9
-.insn 4, 0x407787b3
-.insn 4, 0x43f7d813
-.insn 4, 0x00787833
-.insn 2, 0x97c2
-.insn 4, 0x02b787b3
-.insn 4, 0x40f282b3
-.insn 4, 0x43f2d813
-.insn 4, 0x00e87833
-.insn 2, 0x92c2
-.insn 4, 0x00562023
-.insn 2, 0x0511
-.insn 2, 0x0611
-.insn 2, 0x16fd
+.base64 "g2cFAINiBQCTh/cHnYOzhxcDmpfZg7OHd0AT2PdDM3h4AMKXs4e3ArOC8kAT2PJDM3joAMKSIyBWABEFEQb9Fg=="
 bnez a3, 23b
 21:
-.insn 2, 0x8082
-.option pop",
+.base64 "goA="
+.option pop"#,
     )
 }

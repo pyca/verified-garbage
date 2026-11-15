@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Dec
 import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Ghash
 public import VerifiedGarbage.Proof.Gcm.Poly
 public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Enc
-import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Setup
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -101,6 +101,15 @@ theorem setup_ok {s₀ : State} (hp : SPre s₀) :
   rw [WP.block_append_iff]
   exact WP.mono (setupG_ok hp) fun s₁ ⟨l0, l1, pw, g₁, m₁, rd₁, wr₁⟩ =>
     WP.mono (setupT_ok hp l0 l1 g₁ m₁ rd₁ wr₁) fun _ hR => ⟨_, hR, pw⟩
+
+/-- `setup_ok`, and what the setup writes: the powers, at `scratch`. -/
+theorem setup_okF {s₀ : State} (hp : SPre s₀) :
+    WP isa (.block setup) s₀ fun s => ∃ P, Ready s₀ P s ∧
+      (∀ k < 8, ∀ l < 2, x * φ (P k l) = φ (hk s₀) ^ (16 - 2 * k - l)) ∧ Frame [⟨pp s₀, 256⟩] s₀.mem s.mem := by
+  simp only [setup, List.append_assoc]
+  rw [WP.block_append_iff]
+  exact WP.mono (setupG_ok hp) fun s₁ ⟨l0, l1, pw, g₁, m₁, rd₁, wr₁⟩ =>
+    WP.mono (setupT_okF hp l0 l1 g₁ m₁ rd₁ wr₁) fun _ ⟨hR, f⟩ => ⟨_, hR, pw, f⟩
 
 /-! ## The products of a body, in the field -/
 
@@ -211,13 +220,34 @@ theorem finD {H : Block} {P : Nat → Nat → Block} (hP : ∀ k < 8, ∀ l < 2,
 
 /-! ## Both loops -/
 
-/-- The encryption of `n` blocks (a multiple of 16, at least 16). -/
+/-- The encryption of `n` blocks (a multiple of 16, at least 16), then the
+copy of the powers cleared. -/
 theorem enc_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) : WP isa enc s₀ (EPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => encTail_ok hp hm (finE hpw) hR)
+  WP.seq (WP.mono (WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => encTail_ok hp hm (finE hpw) hR))
+    fun _ h => zeroPow_ok hp h)
 
-/-- The decryption of `n` blocks (a multiple of 16, at least 16). -/
+/-- The decryption of `n` blocks (a multiple of 16, at least 16), then the
+copy of the powers cleared. -/
 theorem dec_ok {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) : WP isa dec s₀ (DPost s₀) :=
-  WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => decTail_ok hp hm (finD hpw) hR)
+  WP.seq (WP.mono (WP.seq (WP.mono (setup_ok hp) fun _ ⟨_, hR, hpw⟩ => decTail_ok hp hm (finD hpw) hR))
+    fun _ h => zeroPowD_ok hp h)
+
+/-- `enc_ok`, and what the encryption leaves in its working space: the
+256 bytes of the copy of the powers cleared, the rest as it was. -/
+theorem enc_okL {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
+    WP isa enc s₀ fun s => EPost s₀ s ∧ PieceL 256 (fun _ _ => true) s₀ s := by
+  have hL : WP isa Impl.Gcm.X86_64.Stitch.encLoops s₀ fun s =>
+      EPost s₀ s ∧ Frame [cR s₀, yR s₀, dR s₀, ⟨pp s₀, 256⟩] s₀.mem s.mem :=
+    WP.seq (WP.mono (setup_okF hp) fun _ ⟨_, hR, hpw, f₁⟩ =>
+      WP.mono (encTail_okF hp hm (finE hpw) hR) fun s₂ ⟨h, f₂⟩ => ⟨h,
+        (f₁.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp).trans
+          (f₂.mono fun r hr => by
+            simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> simp)⟩)
+  refine WP.seq (WP.mono hL fun s ⟨h, f⟩ => ?_)
+  refine WP.mono (wp_and (zeroPow_ok hp h)
+    (zeroPow_zero hp (h.gpr _ (by decide) (by decide) (by decide) (by decide)) h.wr)) fun s' ⟨h', f', z⟩ =>
+    ⟨h', f.trans (f'.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp), fun i hi => by
+      exact z i hi⟩
 
 /-- Both interleaved loops meet their contracts. -/
 theorem stitch_ok : StitchOk Impl.Gcm.X86_64.Stitch.enc Impl.Gcm.X86_64.Stitch.dec := ⟨fun _ hp hm => enc_ok hp hm, fun _ hp hm => dec_ok hp hm⟩

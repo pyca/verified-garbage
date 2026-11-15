@@ -55,10 +55,12 @@ theorem preS_ofP {hs gs : List FnTable} {s : State} (h : (signPSpec hs gs).pre s
     PreXS s ∧ ∀ {H : Spec.Mgf1.Hash}, Spec.MdHashTable.hashAt 64 s.mem (stackArg s 14) = some H →
       PreS true H.len s := by
   signP_pre at h
-  obtain ⟨sp1, sp2, -, -, -, hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oP, oth, otg, oa, ns, es, ps, qs,
-    dps, dqs, qis, dgs, sls, sP, sth, stg, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, kP, kth, ktg, ka, wo, wn,
-    we, wp, wq, wdp, wdq, wqi, wdg, wsl, wsc, wP, wth, wtg, ⟨k1, k2⟩, ok, e1, e2, p1, p2, q1, q2, h3, h7, h5, hs, hpl,
-    hk, hl⟩ := h
+  sig_split h
+  rename_i sp1 sp2 _ _ _ hrd hwr on oe op oq odp odq oqi odg osl os oP oth otg oa ns es ps qs dps dqs qis dgs
+    sls sP sth stg sa ko kn ke kp kq kdp kdq kqi kdg ksl ks kP kth ktg ka wo wn we wp wq wdp wdq wqi wdg wsl wsc
+    wP wth wtg h_k1_k2 ok e1 e2 p1 p2 q1 q2 h3 h7 h5 hs hpl hk
+  have hl := h
+  obtain ⟨k1, k2⟩ := h_k1_k2
   refine ⟨⟨oP, sP, kP, wP, hpl, fun _ => hk⟩, fun {H} hH => ?_⟩
   have hl := hl H hH
   rw [hl] at hrd odg dgs kdg wdg
@@ -69,10 +71,11 @@ theorem preS_ofP {hs gs : List FnTable} {s : State} (h : (signPSpec hs gs).pre s
 /-- The variant's precondition: `pre` holds the key's precomputed values. -/
 theorem hypS_ofP {hs gs : List FnTable} {s : State} (h : (signPSpec hs gs).pre s) : HypS true s := by
   signP_pre at h
-  obtain ⟨sp1, sp2, -, -, -, hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oP, oth, otg, oa, ns, es, ps, qs,
-    dps, dqs, qis, dgs, sls, sP, sth, stg, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, kP, kth, ktg, ka, wo, wn,
-    we, wp, wq, wdp, wdq, wqi, wdg, wsl, wsc, wP, wth, wtg, ⟨k1, k2⟩, ok, e1, e2, p1, p2, q1, q2, h3, h7, h5, hs, hpl,
-    hk, -⟩ := h
+  sig_split h
+  rename_i sp1 sp2 _ _ _ hrd hwr on oe op oq odp odq oqi odg osl os oP oth otg oa ns es ps qs dps dqs qis dgs
+    sls sP sth stg sa ko kn ke kp kq kdp kdq kqi kdg ksl ks kP kth ktg ka wo wn we wp wq wdp wdq wqi wdg wsl wsc
+    wP wth wtg h_k1_k2 ok e1 e2 p1 p2 q1 q2 h3 h7 h5 hs hpl hk
+  obtain ⟨k1, k2⟩ := h_k1_k2
   exact fun _ => hk
 
 /-- The tables, as the variant's contract gives them. -/

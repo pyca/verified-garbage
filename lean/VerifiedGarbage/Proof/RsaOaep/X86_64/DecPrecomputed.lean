@@ -240,7 +240,7 @@ theorem dec_pre_of {ts : List FnTable} {s : State} (hg : s.gpr = preState.gpr)
   sig_pre [Spec.RsaOaep.decryptPrecomputedMdTablesContract, Spec.RsaOaep.decryptPrecomputedMdTablesSig,
     Spec.RsaOaep.decryptSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
     Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, decStack, RsaPkcs1Enc.X86_64.privStack,
-    Impl.RsaOaep.X86_64.frameBytes, stackArgs_twentyone, List.append_eq]
+    Impl.RsaOaep.X86_64.frameBytes, List.append_eq, List.range, List.range.loop]
   simp only [ha 0 (by decide), ha 1 (by decide), ha 2 (by decide), ha 3 (by decide), ha 4 (by decide),
     ha 5 (by decide), ha 6 (by decide), ha 7 (by decide), ha 8 (by decide), ha 9 (by decide), ha 10 (by decide),
     ha 11 (by decide), ha 12 (by decide), ha 13 (by decide), ha 14 (by decide), ha 15 (by decide),
@@ -251,7 +251,7 @@ theorem dec_pre_of {ts : List FnTable} {s : State} (hg : s.gpr = preState.gpr)
   sig_pre [Spec.RsaOaep.decryptPrecomputedMdTablesContract, Spec.RsaOaep.decryptPrecomputedMdTablesSig,
     Spec.RsaOaep.decryptSig, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
     Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, decStack, RsaPkcs1Enc.X86_64.privStack,
-    Impl.RsaOaep.X86_64.frameBytes, stackArgs_twentyone, List.append_eq]
+    Impl.RsaOaep.X86_64.frameBytes, List.append_eq, List.range, List.range.loop]
   sig_and_intros
   all_goals first
     | exact hK

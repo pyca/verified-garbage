@@ -686,8 +686,7 @@ def retBytes : List Nat := [0xC3]
 
 /-- `b` as two hexadecimal digits, after `0x`. -/
 def hex8 (b : Nat) : String :=
-  let ds := Nat.toDigits 16 (b % 256)
-  "0x" ++ String.ofList (List.replicate (2 - ds.length) '0' ++ ds)
+  ("0x".push (Nat.digitChar (b % 256 / 16))).push (Nat.digitChar (b % 16))
 
 /-- The assembler directive emitting the bytes `bs`: `.byte` of each, as
 two hexadecimal digits, separated by commas alone (the form the emitter

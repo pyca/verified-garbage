@@ -161,11 +161,10 @@ theorem ep_lay (s : State) :
 theorem in_of_pre {s : State} (h : spec.pre s) : In (ep s) (entered frameBytes s) := by
   sig_pre [Spec.RsaPkcs1Enc.encryptRandomContract, Spec.RsaPkcs1Enc.encryptRandomSig, abi, argSlots,
     argVal, argBytes, stackBelow] at h
-  obtain ⟨hsp, hsa, hrd, hwr, oT, oN, oE, oM, oR, oS, oQ, oA, tN, tE, tM, tR, tS, tQ, tA,
-    nS, nA, eS, eA, mS, mA, rS, rA, sQ, sA, qA,
-    xO, xT, xN, xE, xM, xR, xS, xQ, xA, kO, kT, kN, kE, kM, kR, kS, kQ, kA,
-    fO, fT, fN, fE, fM, fR, fS, fQ,
-    kv, olk, el1, elK, mlK, lenC, slK, rlK⟩ := h
+  sig_split h
+  rename_i hsp hsa hrd hwr oT oN oE oM oR oS oQ oA tN tE tM tR tS tQ tA nS nA eS eA mS mA rS rA sQ sA qA xO xT
+    xN xE xM xR xS xQ xA kO kT kN kE kM kR kS kQ kA fO fT fN fE fM fR fS fQ kv olk el1 elK mlK lenC slK
+  have rlK := h
   simp only [stackBytes, frameBytes, roomC, Nat.reduceAdd] at hsp kO kT kN kE kM kR kS kQ kA
   have a1 : arg s 1 = arg s 4 := BitVec.eq_of_toNat_eq olk
   rw [olk] at hwr oT oN oE oM oR oS oQ oA xO kO fO

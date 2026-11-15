@@ -11,26 +11,13 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_norm_lt() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1582
-.insn 2, 0x9181
-.insn 2, 0x4805
-.insn 4, 0x10000313
-.insn 4, 0x007fe637
-.insn 2, 0x0605
+.base64 "ghWBkQVIEwMAEDfmfwAFBg=="
 20:
-.insn 4, 0x00056283
-.insn 4, 0x00b2b3b3
-.insn 4, 0x40560e33
-.insn 4, 0x00be3e33
-.insn 4, 0x01c3e3b3
-.insn 4, 0x00787833
-.insn 2, 0x0511
-.insn 2, 0x137d
+.base64 "g2IFALOzsgAzDlZAMz6+ALPjwwEzeHgAEQV9Ew=="
 bnez t1, 20b
-.insn 2, 0x8542
-.insn 2, 0x8082
-.option pop",
+.base64 "QoWCgA=="
+.option pop"#,
     )
 }

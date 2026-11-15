@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.SignCall
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
 import VerifiedGarbage.Proof.MlKem.X86.Top
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Contract
@@ -138,6 +139,25 @@ theorem callRet_nosp {rs : List Reg} {n : String} {c : Prog isa} (hc : NoSp c) :
   · exact hc i hi
   · rfl
 
+/-- The body of a leaf `top (enter si p) rest` never writes `esp`, if `rest` does not. -/
+theorem topBody_nosp (si : Nat) (p : Params) {rest : Prog isa} (hr : NoSp rest) :
+    NoSp (.seq (.block [.mov .eax (.mem (argAt 4)), .alu .cmp .eax (.imm 256)])
+      (.ite .ae (.block [.mov .eax (.imm 2)]) (.seq (enter si p) rest))) :=
+  nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_ite (NoSp.of_all (by decide +kernel))
+    (nosp_seq (enter_nosp si p) hr))
+
+/-- What `sign_message` runs after `enter` never writes `esp`, if the signing
+function it calls does not. -/
+theorem signRest_nosp {n : String} {f : Prog isa} (hf : NoSp f) :
+    NoSp (.seq (muHash (.argOff 0 64))
+      (.seq (.block (setArgs [(.eax, .arg 0), (.ecx, .off oMU), (.edx, .arg 5), (.ebx, .arg 6), (.edi, .arg 7)]))
+        (Impl.MlKem.X86.callRet rs5 n f))) :=
+  nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_seq (NoSp.of_all (by decide +kernel)) (callRet_nosp hf))
+
+/-- `sign_message` never writes `esp`, if the signing function it calls does not. -/
+theorem signMessage_nosp (p : Params) {n : String} {f : Prog isa} (hf : NoSp f) : NoSp (signMessage n f p) :=
+  KeyGen.NoSp.leaf (topBody_nosp 7 p (signRest_nosp hf))
+
 /-- `sign_message`, in its leaf. -/
 theorem signMessage_piece (hK : K.Ok p.skLen) {n : String} {f : Prog isa} (hf : SignFn p K f)
     {ht : Taint.Hint VG.X86.Taint.T}
@@ -145,11 +165,7 @@ theorem signMessage_piece (hK : K.Ok p.skLen) {n : String} {f : Prog isa} (hf : 
       .alu .add .esi (.imm (BitVec.ofNat 32 (oE p)))]) ht).isSome = true) :
     Piece (SPre p K) (SPub p) (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (fun s => (256 ≤ (arg s₀ 4).toNat ∧
       s.gpr .eax = 2) ∨ SB p K s₀ s) s₀ s') (signMessage n f p) :=
-  top_piece (sShape hK) tt (sW p K) sign_hW
-    (nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_ite (NoSp.of_all (by decide +kernel))
-      (nosp_seq (enter_nosp 7 p) (nosp_seq (NoSp.of_all (by decide +kernel))
-        (nosp_seq (NoSp.of_all (by decide +kernel)) (callRet_nosp hf.nosp))))))
-    (signRest_piece hK hf)
+  top_piece (sShape hK) tt (sW p K) sign_hW (topBody_nosp 7 p (signRest_nosp hf.nosp)) (signRest_piece hK hf)
 
 theorem signMessage_verified (hK : K.Ok p.skLen) {n : String} {f : Prog isa} (hf : SignFn p K f)
     {ht : Taint.Hint VG.X86.Taint.T}

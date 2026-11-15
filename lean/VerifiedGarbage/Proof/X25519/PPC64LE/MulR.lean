@@ -308,9 +308,8 @@ theorem productR_ok {x y : Nat} (hx : x + 32 ≤ 4096) (hy : y + 32 ≤ 4096) (h
   have hY : val4 (fun j => (s3.gpr (opB j)).toNat) = V s.mem b y := by
     rw [V_eq4]; exact val4_congr fun j hj => by rw [(ho3 j hj).2, eb j hj]
   rw [colsR_sum, hX, hY] at hv
-  have hlt : V s.mem b x * V s.mem b y < (2 ^ 64) ^ 8 := by
-    have := V_lt s.mem b x; have := V_lt s.mem b y
-    exact Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_lt (by assumption) (by assumption)) (by decide)
+  have hlt : V s.mem b x * V s.mem b y < (2 ^ 64) ^ 8 :=
+    Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_lt (V_lt s.mem b x) (V_lt s.mem b y)) (by decide)
   have h8 := (s4.gpr (pw 8)).isLt
   have hp7 : pwV s4 7 < (2 ^ 64) ^ 7 := by
     have : ∀ n, pwV s4 n < (2 ^ 64) ^ n := by

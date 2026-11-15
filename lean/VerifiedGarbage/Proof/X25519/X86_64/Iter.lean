@@ -145,7 +145,8 @@ def ops2 (fld : Field) : List Instr :=
 
 theorem step_eq : step fld =
     ops1 fld ++ (bitCmp ++ (ops2 fld ++ ([.alu .cmp .rbx (.imm 3)] : List Instr))) := by
-  simp only [step, ops1, ops2, List.append_assoc]
+  unfold step ops1 ops2
+  simp only [List.append_assoc]
   rfl
 
 /-- The slots after `ops1`. -/

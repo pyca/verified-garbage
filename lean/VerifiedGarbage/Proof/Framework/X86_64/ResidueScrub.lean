@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueTaintSound
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public meta import Lean.Meta.Eval
@@ -677,12 +678,65 @@ def keepFor (sig : Sig) (stack : Nat) (code : Prog isa) (pubs : List (Nat × Nat
   | some (τ, _) => keepOf τ.sec (chunks stack)
   | none => []
 
+theorem mxClassFrom_ok : ∀ (c : Prog isa) (k : List (String × Prog isa × Unit × Option MxC)),
+    (∀ e ∈ k, e.2.2.2 = mxClass e.2.1) →
+      (mxClassFrom c k).1 = mxClass c ∧ ∀ e ∈ (mxClassFrom c k).2, e.2.2.2 = mxClass e.2.1
+  | .block _, _, hk => ⟨rfl, hk⟩
+  | .seq a b, k, hk => by
+    obtain ⟨ha, ka⟩ := mxClassFrom_ok a k hk
+    obtain ⟨hb, kb⟩ := mxClassFrom_ok b _ ka
+    simp only [mxClassFrom, mxClass, ← ha, ← hb]
+    split
+    · exact ⟨rfl, hk⟩
+    · cases hx : (mxClassFrom a k).1 with
+      | none => exact ⟨rfl, ka⟩
+      | some x =>
+        cases hy : (mxClassFrom b (mxClassFrom a k).2).1 with
+        | none => exact ⟨rfl, kb⟩
+        | some y => exact ⟨rfl, kb⟩
+  | .ite _ t e, k, hk => by
+    obtain ⟨ha, ka⟩ := mxClassFrom_ok t k hk
+    obtain ⟨hb, kb⟩ := mxClassFrom_ok e _ ka
+    simp only [mxClassFrom, mxClass, ← ha, ← hb]
+    cases hx : (mxClassFrom t k).1 with
+    | none => exact ⟨rfl, ka⟩
+    | some x =>
+      cases hy : (mxClassFrom e (mxClassFrom t k).2).1 with
+      | none => exact ⟨rfl, kb⟩
+      | some y => exact ⟨rfl, kb⟩
+  | .loop b _, k, hk => mxClassFrom_ok b k hk
+  | .call n b, k, hk =>
+    Code.memoCall_ok (n := n) (run := fun _ => mxClassFrom b k) (spec := fun c _ => mxClass c) hk (mxClassFrom_ok b k hk)
+  | .frame i b j, k, hk => by
+    obtain ⟨hb, kb⟩ := mxClassFrom_ok b k hk
+    simp only [mxClassFrom, mxClass]
+    split
+    · exact ⟨hb, kb⟩
+    · exact ⟨rfl, hk⟩
+  | .icall i n b nx, k, hk => by
+    obtain ⟨ha, ka⟩ := Code.memoCall_ok (n := n) (run := fun _ => mxClassFrom b k) (spec := fun c _ => mxClass c) hk
+      (mxClassFrom_ok b k hk)
+    obtain ⟨hb, kb⟩ := mxClassFrom_ok nx _ ka
+    simp only [mxClassFrom, mxClass]
+    split
+    · exact ⟨rfl, hk⟩
+    · simp only [← ha, ← hb]
+      cases hx : (Code.memoCall n b () k fun _ => mxClassFrom b k).1 with
+      | none => exact ⟨rfl, ka⟩
+      | some x =>
+        cases hy : (mxClassFrom nx (Code.memoCall n b () k fun _ => mxClassFrom b k).2).1 with
+        | none => exact ⟨rfl, kb⟩
+        | some y => exact ⟨rfl, kb⟩
+
+theorem mxClassOnce_eq (c : Prog isa) : mxClassOnce c = mxClass c :=
+  (mxClassFrom_ok c [] fun _ h => by cases h).1
+
 /-- The level `scrub` clears the vector registers at for `code`: `pxor` if
 nothing in it writes bits 511:128 of a vector register, else `vpxor`
 (`Instr.vecLevelR`: whatever it does to MXCSR, which `withScrub` asks of
 separately). -/
 def levelFor (code : Prog isa) : VecLevel :=
-  if code.all (fun i => decide (i.vecLevelR ≤ VecLevel.sse.level)) then .sse else .avx
+  if levelLeROnce VecLevel.sse.level code then .sse else .avx
 
 theorem levelFor_ne (code : Prog isa) : levelFor code ≠ .evex := by
   unfold levelFor; split <;> exact VecLevel.noConfusion
@@ -726,14 +780,36 @@ def withScrub {api : Api} (r : Registration api target)
     if hd : r.code.x86_64Depth ≤ r.stack then
     if hst : r.stack + 8 < 2 ^ 64 then
     if h8 : r.stack % 8 = 0 then
-    if hlv : r.code.all (fun i => decide (i.vecLevelR ≤ v.level)) = true then
-    if hmx : (mxClass r.code).isSome = true then
+    if hlv : levelLeROnce v.level r.code = true then
+    if hmx : (mxClassOnce r.code).isSome = true then
     if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
         api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
     if hw : r.written = [] then
-      scrubRegM r v a.ks hd hst h8 hlv hmx hrb hpost
+      scrubRegM r v a.ks hd hst h8 ((Code.allOnce_eq _ r.code).symm.trans hlv) (mxClassOnce_eq r.code ▸ hmx) hrb hpost
         (by obtain ⟨_, hc⟩ := a.ok; exact resOk_reg r a.ks hfit hpub hc) hw (levelFor_ne _)
     else r else r else r else r else r else r else r else r
+
+/-- `withScrub`, for code whose two runs leave the same bytes in its stack
+but the granules `ks` (`hres`), proven of the code rather than by the
+residue analysis (as `X86_64.Scrub.resOk_of_leaves` gives it from what the
+code leaves run by run): `r` followed by the clearing of those granules,
+returning without secret residue (`scrubRegM`), if `scrub`'s side
+conditions hold; otherwise `r` itself, which then has no proof. -/
+def withScrubRes {api : Api} (r : Registration api target)
+    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
+    (ks : List Nat) (hres : ResOk r.code r.contract r.stack ks (chunks r.stack)) : Registration api target :=
+  let v := levelFor r.code
+  if hd : r.code.x86_64Depth ≤ r.stack then
+  if hst : r.stack + 8 < 2 ^ 64 then
+  if h8 : r.stack % 8 = 0 then
+  if hlv : r.code.allOnce (fun i => decide (i.vecLevelR ≤ v.level)) = true then
+  if hmx : (mxClassOnce r.code).isSome = true then
+  if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
+      api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
+  if hw : r.written = [] then
+    scrubRegM r v ks hd hst h8 ((Code.allOnce_eq _ r.code).symm.trans hlv) (mxClassOnce_eq r.code ▸ hmx) hrb hpost
+      hres hw (levelFor_ne _)
+  else r else r else r else r else r else r else r
 
 end VG.X86_64.RScrub
 

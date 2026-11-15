@@ -67,6 +67,8 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.PrivFrame
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Rsa.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 
 /-! # RSAES-PKCS1-v1_5 (RFC 8017) on x86-64 -/
 
@@ -99,11 +101,11 @@ open VG.Proof.RsaPkcs1Enc.X86_64
 def artifacts : List Artifact :=
   (VG.Proof.Variants.Sha256Compress.X86_64.variants.flatMap fun v => VG.Proof.Variants.RsaPrivateCrt.X86_64.variants.flatMap fun v2 => Sha256RsaPrivateCrt.artifacts v v2) ++
   (VG.Proof.Variants.RsaPublicPrecomputed.X86_64.variants.flatMap fun (v : PublicImpl) => [
-    Spec.RsaPkcs1Enc.encryptRandomApi.artifact X86_64.target {
+    Spec.RsaPkcs1Enc.encryptRandomApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
       suffix := v.suffix
       code := Impl.RsaPkcs1Enc.X86_64.Random.code (Rnd.encName v) (Rnd.encCode v)
       stack := Rnd.rndStack
       verified := Rnd.code_verified v
-      spSafe := Rnd.code_spSafe v }])
+      spSafe := Rnd.code_spSafe v } (VG.Proof.Rsa.X86_64.Scrub.pkcs1EncryptRandomOut _))])
 
 end VG.Artifacts.RsaPkcs1Enc.X86_64

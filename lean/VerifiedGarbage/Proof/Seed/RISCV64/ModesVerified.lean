@@ -20,6 +20,7 @@ meta import VerifiedGarbage.Spec.Seed.Cbc
 meta import VerifiedGarbage.Spec.Seed.Cfb
 meta import VerifiedGarbage.Spec.Seed.Ofb
 meta import VerifiedGarbage.TCB.RISCV64.Target
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # SEED's modes on RISC-V meet their contracts
@@ -120,9 +121,9 @@ theorem keyArgs_of {post : State → State → Prop} {M : Mode} (d : Spec.Seed.D
 /-! ## Correctness -/
 
 theorem cipher_enc {g : Nat} {h1 : 1 ≤ g} {h2 : g ≤ 16} (k : Spec.Seed.Schedule) :
-    (dirCoreSpec .encrypt g h1 h2).cipher k = Spec.Seed.cipher k := rfl
+    (dirCoreSpec .encrypt g h1 h2).cipher k = Spec.Seed.cipher k := by kernel_rfl
 theorem cipher_dec {g : Nat} {h1 : 1 ≤ g} {h2 : g ≤ 16} (k : Spec.Seed.Schedule) :
-    (dirCoreSpec .decrypt g h1 h2).cipher k = Spec.Seed.invCipher k := rfl
+    (dirCoreSpec .decrypt g h1 h2).cipher k = Spec.Seed.invCipher k := by kernel_rfl
 
 theorem cbcEncryptChained_correct (s : State) (hs : (modeContract 1 cbcEncPost).pre s) :
     ∃ t s', Exec isa cbcEncryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract 1 cbcEncPost).post s s' :=

@@ -97,7 +97,8 @@ theorem keyArgs_of {post : State → State → Prop} {M : Mode} (c : Impl.Modes.
 
 theorem cipher_enc (k : Spec.Sm4.Schedule) : (dirCoreSpec .encrypt).cipher k = Spec.Sm4.cipher k := by
   simp only [dirCoreSpec, Proof.Sm4.PPC64LE.dirCipher]
-theorem cipher_ser (k : Spec.Sm4.Schedule) : (Serial.coreSpec .encrypt).cipher k = Spec.Sm4.cipher k := rfl
+theorem cipher_ser (k : Spec.Sm4.Schedule) : (Serial.coreSpec .encrypt).cipher k = Spec.Sm4.cipher k := by
+  simp only [Serial.coreSpec, Proof.Sm4.PPC64LE.dirCipher]
 theorem cipher_dec (k : Spec.Sm4.Schedule) : (dirCoreSpec .decrypt).cipher k = Spec.Sm4.invCipher k := by
   simp only [dirCoreSpec, Proof.Sm4.PPC64LE.dirCipher]
 

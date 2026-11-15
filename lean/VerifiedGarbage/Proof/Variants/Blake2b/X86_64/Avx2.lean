@@ -101,9 +101,12 @@ theorem finalizeOk : ∃ h : VG.Taint.Hint RTaint.FT,
 
 end Scrub
 
+/-- Never chosen on Zen 5, as `_avx512`: on a Ryzen 9 9950X it hashes 16 KiB
+in 14.9 µs, the baseline's in 8.2 µs. -/
 def variant : Proof.Blake2.X86_64.Backend where
   suffix := "_avx2"
   features := ["avx", "avx2"]
+  notWith := ["zen5"]
   code := Impl.Blake2.X86_64.Avx2.compress
   callee := Proof.Blake2.X86_64.Avx2.callee
   verified := Proof.Blake2.X86_64.Avx2.compress_verified

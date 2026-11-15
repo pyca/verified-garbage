@@ -11,24 +11,13 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_sub() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x10000613
-.insn 2, 0x6785
-.insn 4, 0xd0178793
+.base64 "EwYAEIVnk4cX0A=="
 20:
-.insn 4, 0x00056683
-.insn 4, 0x0005e703
-.insn 2, 0x8e99
-.insn 4, 0x43f6d713
-.insn 2, 0x8f7d
-.insn 2, 0x96ba
-.insn 2, 0xc114
-.insn 2, 0x0511
-.insn 2, 0x0591
-.insn 2, 0x167d
+.base64 "g2YFAAPnBQCZjhPX9kN9j7qWFMERBZEFfRY="
 bnez a2, 20b
-.insn 2, 0x8082
-.option pop",
+.base64 "goA="
+.option pop"#,
     )
 }

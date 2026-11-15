@@ -86,9 +86,11 @@ structure SPrePrepared (s₀ : State) (lo : Nat := 16) (n : Nat := 24) : Prop wh
   d_k : (dR s₀).Disjoint (kPR s₀)
   p_k : (pR s₀).Disjoint (kPR s₀)
   pow : PowersN n s₀.mem (kp s₀)
+  c_k : (cR s₀).Disjoint (kPR s₀)
+  y_k : (yR s₀).Disjoint (kPR s₀)
 
 theorem SPreM.toPrepared {s₀ : State} {lo n : Nat} {hn : 8 ≤ n ∧ n ≤ 24} (h : SPreM (CtxMode.preparedN n hn) s₀ lo) :
     SPrePrepared s₀ lo n :=
-  ⟨h.base, h.k_in, h.wrap_k, h.d_k, h.p_k, h.ok⟩
+  ⟨h.base, h.k_in, h.wrap_k, h.d_k, h.p_k, h.ok, h.c_k, h.y_k⟩
 
 end VG.Proof.Gcm.X86_64.Stitch

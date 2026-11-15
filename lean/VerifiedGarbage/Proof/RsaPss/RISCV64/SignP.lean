@@ -145,7 +145,7 @@ theorem verify_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s :
   rw [e]
   sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
-    argRegs, stackArgs_eight, List.append_eq, Sig.tableRegion]
+    argRegs, List.append_eq, Sig.tableRegion, List.range, List.range.loop]
   have hdl' : (BitVec.ofNat 64 dl).toNat = dl := by rw [BitVec.toNat_ofNat]; omega_using [hdl]
   have hA : ∀ j, stackArgAddr s j = 0x10000 + BitVec.ofNat 64 (8 * j) := fun j => by
     simp only [stackArgAddr, hsp]
@@ -155,7 +155,7 @@ theorem verify_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s :
     List.getD_cons_zero, Option.some.injEq, exists_eq_left']
   sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
-    argRegs, stackArgs_eight, List.append_eq, Sig.tableRegion]
+    argRegs, List.append_eq, Sig.tableRegion, List.range, List.range.loop]
   sig_and_intros
   all_goals first
     | rfl
@@ -256,7 +256,7 @@ theorem sign_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : S
   rw [e]
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
     Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
-    argRegs, Sg.stackArgs_sixteen, List.append_eq, Sig.tableRegion]
+    argRegs, List.append_eq, Sig.tableRegion, List.range, List.range.loop]
   have hdl' : (BitVec.ofNat 64 dl).toNat = dl := by rw [BitVec.toNat_ofNat]; omega_using [hdl]
   have hA : ∀ j, stackArgAddr s j = 0x10000 + BitVec.ofNat 64 (8 * j) := fun j => by
     simp only [stackArgAddr, hsp]
@@ -268,7 +268,7 @@ theorem sign_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : S
     List.getD_cons_zero, Option.some.injEq, exists_eq_left']
   sig_pre [Spec.RsaPss.signMdTableContract, Spec.RsaPss.signMdTableSig, Spec.MdHashTable.param,
     Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
-    argRegs, Sg.stackArgs_sixteen, List.append_eq, Sig.tableRegion]
+    argRegs, List.append_eq, Sig.tableRegion, List.range, List.range.loop]
   sig_and_intros
   all_goals first
     | rfl
@@ -359,11 +359,11 @@ macro "signP_pre" " at " h:ident : tactic => `(tactic| (
   rw [e] at $h:ident
   sig_pre [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig,
     Spec.RsaPss.digestLenOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
-    Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_eighteen, List.append_eq,
+    Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, List.append_eq,
     List.range, List.range.loop, Spec.Rsa.lenValid] at $h:ident
   sig_pre [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig,
     Spec.RsaPss.digestLenOk, Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns,
-    Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_eighteen, List.append_eq,
+    Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi, argRegs, List.append_eq,
     List.range, List.range.loop, Spec.Rsa.lenValid] at $h:ident
   simp only [Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero, Option.some.injEq,
     exists_eq_left'] at $h:ident))
@@ -372,16 +372,16 @@ macro "signP_pre" " at " h:ident : tactic => `(tactic| (
 theorem preS_ofP {tsH tsG : List FnTable} {s : State} (h : (signPSpec tsH tsG).pre s) {H : Spec.Mgf1.Hash}
     (hH : Spec.MdHashTable.hashAt 64 s.mem (stackArg s 14) = some H) : PreS true H.len s := by
   signP_pre at h
-  obtain ⟨spal, sp1, sp2, -, -, -, hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oP, oth, otg, oa, ns, es,
-    ps, qs, dps, dqs, qis, dgs, sls, sP, sth, stg, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, kP, kth, ktg,
-    ka, wo, wn, we, wp, wq, wdp, wdq, wqi, wdg, wsl, wsc, wP, wth, wtg, k1, k2, ok, e1, e2, p1, p2, q1, q2, h3, h7,
-    h5, hs, hpl, hk, hl, als, al14, al15, alP⟩ := h
+  sig_split h
+  rename_i spal sp1 sp2 _ _ _ hrd hwr on oe op oq odp odq oqi odg osl os oP oth otg oa ns es ps qs dps dqs qis
+    dgs sls sP sth stg sa ko kn ke kp kq kdp kdq kqi kdg ksl ks kP kth ktg ka wo wn we wp wq wdp wdq wqi wdg wsl
+    wsc wP wth wtg k1 k2 ok e1 e2 p1 p2 q1 q2 h3 h7 h5 hs hpl hk hl als al14 al15
   have hl := hl H hH
   rw [hl] at hrd odg dgs kdg wdg
   exact ⟨spal, sp1, sp2, hrd, hwr, on, oe, op, oq, odp, odq, oqi, odg, osl, os, oth, otg, oa, ns, es, ps, qs, dps,
     dqs, qis, dgs, sls, sth, stg, sa, ko, kn, ke, kp, kq, kdp, kdq, kqi, kdg, ksl, ks, kth, ktg, ka, wo, wn, we, wp,
     wq, wdp, wdq, wqi, wdg, wsl, wsc, wth, wtg, k1, k2, ok, e1, e2, p1, p2, q1, q2, h3, h7, h5, hs, als, al14, al15,
-    fun _ => ⟨oP, sP, kP, wP, hpl, sp2, alP, fun _ => hk⟩⟩
+    fun _ => ⟨oP, sP, kP, wP, hpl, sp2, h, fun _ => hk⟩⟩
 
 /-- The tables, as the variant's contract gives them. -/
 theorem spec_tabSP {tsH tsG : List FnTable} {s : State} (h : (signPSpec tsH tsG).pre s) :
@@ -407,7 +407,7 @@ theorem pubS_ofP {tsH tsG : List FnTable} {s₁ s₂ : State} (h : (signPSpec ts
   rw [e] at h
   sig_pub [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig,
     Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-    Abi.withTables, Sig.wordIndex, abi, argRegs, stackArgs_eighteen, List.append_eq, List.range, List.range.loop] at h
+    Abi.withTables, Sig.wordIndex, abi, argRegs, List.append_eq, List.range, List.range.loop] at h
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq] at h
   obtain ⟨hsp, hsy, htabH, htabG, hl, g0, g1, g2, g3, g4, g5, g6, g7, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10,
@@ -522,7 +522,7 @@ theorem signP_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : 
   rw [e]
   sig_pre [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig,
     Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-    Abi.withTables, Sig.wordIndex, abi, argRegs, Sg.stackArgs_eighteen, List.append_eq, Sig.tableRegion, List.range,
+    Abi.withTables, Sig.wordIndex, abi, argRegs, List.append_eq, Sig.tableRegion, List.range,
     List.range.loop]
   have hdl' : (BitVec.ofNat 64 dl).toNat = dl := by rw [BitVec.toNat_ofNat]; omega_using [hdl]
   have hA : ∀ j, stackArgAddr s j = 0x10000 + BitVec.ofNat 64 (8 * j) := fun j => by
@@ -535,7 +535,7 @@ theorem signP_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s : 
     List.getD_cons_zero, Option.some.injEq, exists_eq_left', Nat.reduceEqDiff]
   sig_pre [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig,
     Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords,
-    Abi.withTables, Sig.wordIndex, abi, argRegs, Sg.stackArgs_eighteen, List.append_eq, Sig.tableRegion, List.range,
+    Abi.withTables, Sig.wordIndex, abi, argRegs, List.append_eq, Sig.tableRegion, List.range,
     List.range.loop]
   sig_and_intros
   all_goals first

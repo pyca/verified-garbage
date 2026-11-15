@@ -71,10 +71,14 @@ theorem store_ok {v : Vector Word 16} {s : State} {b : Reg} {p : Addr}
  unfold store
  rw [WP.block_append_iff]
  refine block_run (by decide) s ?_
- let a := run (unpack.map .xop) s
- have fa : F s a := run_frame _ _
- have hn : Natural outputReg v a := unpack_correct h
+ -- as a variable, not a `let`: the kernel would run the code to compare `a` with a state
+ -- built from it
+ obtain ⟨a, ha⟩ : ∃ a, a = run (unpack.map .xop) s := ⟨_, rfl⟩
+ rw [← ha]
+ have fa : F s a := ha ▸ run_frame _ _
+ have hn : Natural outputReg v a := ha ▸ unpack_correct h
  have hh : Holds v a := h.keep fun r hr => by
+  rw [ha]
   rcases cases4 hr with rfl|rfl|rfl|rfl
   all_goals exact unpack_keep _ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
  exact WP.mono (stores_ok (b:=b) (by rw [fa.gpr,hb]) (by rw [fa.wr]; exact hi)) fun t ht => by

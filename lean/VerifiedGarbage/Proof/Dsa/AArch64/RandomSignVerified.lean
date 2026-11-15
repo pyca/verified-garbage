@@ -16,6 +16,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignPublic
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignInvalidCT
 import VerifiedGarbage.Proof.Dsa.AArch64.RandomSignBodyCT
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! ### `Dsa.AArch64.RandomSignCorrect`, which only this module used -/
 
@@ -224,8 +225,10 @@ theorem randomPrevalidated_of_pre {extra : Nat} {s : State}
   sig_and_intros <;> with_reducible assumption
 
 theorem random_sign_sat_key :
-    Spec.Rsa.bytesAt randomSignSatState.mem 0x2000 424 = VG.Proof.Dsa.validPrivateKeyWitness := by
-  decide +kernel
+    Spec.Rsa.bytesAt randomSignSatState.mem 0x2000 424 = VG.Proof.Dsa.validPrivateKeyWitness :=
+  VG.Proof.Dsa.bytesAt_of_list (lo := 0x2000) (by decide +kernel) (by decide) fun a h1 h2 => by
+    have h : 0x2000 ≤ a.toNat ∧ a.toNat < 0x21a8 := ⟨h1, h2⟩
+    simp only [randomSignSatState, h, and_self, ↓reduceIte]
 
 theorem random_sign_prevalidated_verified (v : Backend) :
     Verified target (RandomSign.code (prevalidatedSignerName v) (PrevalidatedSign.sign v.mul))

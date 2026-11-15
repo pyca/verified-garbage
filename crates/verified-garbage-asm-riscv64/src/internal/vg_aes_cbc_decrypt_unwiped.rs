@@ -11,22 +11,12 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cbc_decrypt_unwiped() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x7ff78293
-.insn 2, 0x02a1
-.insn 4, 0xff82f293
-.insn 4, 0x0012b823
-.insn 4, 0x0092bc23
-.insn 2, 0x84be
+.base64 "k4L3f6ECk/KC/yO4EgAjvJIAvoQ="
 call {vg_aes_cbc_dec_wide}
-.insn 4, 0x7ff48293
-.insn 2, 0x02a1
-.insn 4, 0xff82f293
-.insn 4, 0x0102b083
-.insn 4, 0x0182b483
-.insn 2, 0x8082
-.option pop",
+.base64 "k4L0f6ECk/KC/4OwAgGDtIIBgoA="
+.option pop"#,
         vg_aes_cbc_dec_wide = sym crate::aes_cbc::vg_aes_cbc_dec_wide::vg_aes_cbc_dec_wide,
     )
 }

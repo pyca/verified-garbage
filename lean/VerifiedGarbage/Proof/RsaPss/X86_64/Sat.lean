@@ -175,7 +175,7 @@ theorem verify_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s :
     (VG.Proof.RsaPss.X86_64.verifyC tsH tsG).pre s := by
   sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
-    argRegs, verifyStack, chkStack, stackArgs_ten, List.append_eq, Sig.tableRegion]
+    argRegs, verifyStack, chkStack, List.append_eq, Sig.tableRegion, List.range, List.range.loop]
   have hsp : s.gpr .rsp = 0x10000 := by rw [hg]; rfl
   have hdl' : (BitVec.ofNat 64 dl).toNat = dl := by rw [BitVec.toNat_ofNat]; omega_using [hdl]
   have hA : ∀ j, stackArgAddr s j = 0x10000 + BitVec.ofNat 64 (8 * (j + 1)) := fun j => by
@@ -187,7 +187,7 @@ theorem verify_pre_of {tsH tsG : List FnTable} {dl : Nat} (hdl : dl ≤ 64) {s :
     List.getD_cons_zero, Option.some.injEq, exists_eq_left']
   sig_pre [Spec.RsaPss.verifyPrecomputedMdTableContract, Spec.RsaPss.verifyPrecomputedMdTableSig,
     Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
-    argRegs, verifyStack, chkStack, stackArgs_ten, List.append_eq, Sig.tableRegion]
+    argRegs, verifyStack, chkStack, List.append_eq, Sig.tableRegion, List.range, List.range.loop]
   sig_and_intros
   all_goals first
     | rfl

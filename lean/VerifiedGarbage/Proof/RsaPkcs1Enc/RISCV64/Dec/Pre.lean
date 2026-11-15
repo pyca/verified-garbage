@@ -171,10 +171,12 @@ theorem dPre_of {s : State} (h : (Spec.RsaPkcs1Enc.decryptContract RISCV64.abi s
   rw [e] at h
   sig_pre [Spec.RsaPkcs1Enc.decryptContract, Spec.RsaPkcs1Enc.decryptSig, RISCV64.abi, RISCV64.argRegs,
     stackArgs_fifteen, List.append_eq, List.range, List.range.loop] at h
-  obtain ⟨sp16, sp1, sp2, hrd, hwr, om, on, oe, od, oi, op, oq, odp, odq, oqi, os, oa, mn, me, md, mi, mp, mq, mdp,
-    mdq, mqi, ms, ma, ns, es, ds, is, ps, qs, dps, dqs, qis, sa, ko, km, kn, ke, kd, ki, kp, kq, kdp, kdq, kqi, ks,
-    ka, wo, wm, wn, we, wd, wi, wp, wq, wdp, wdq, wqi, ws, ⟨k1, k2⟩, h1, hi, e1, e2, d1, d2, p1, p2, q1, q2, h8, h12,
-    h10, hs, mal, al⟩ := h
+  sig_split h
+  rename_i sp16 sp1 sp2 hrd hwr om on oe od oi op oq odp odq oqi os oa mn me md mi mp mq mdp mdq mqi ms ma ns es
+    ds is ps qs dps dqs qis sa ko km kn ke kd ki kp kq kdp kdq kqi ks ka wo wm wn we wd wi wp wq wdp wdq wqi ws
+    h_k1_k2 h1 hi e1 e2 d1 d2 p1 p2 q1 q2 h8 h12 h10 hs mal
+  have al := h
+  obtain ⟨k1, k2⟩ := h_k1_k2
   exact ⟨sp16, sp1, by simp only [Bool.false_eq_true, ↓reduceIte]; omega_using [sp2], hrd, hwr, om, on, oe, od, oi, op, oq, odp, odq, oqi, os, oa, mn, me, md, mi, mp, mq, mdp,
     mdq, mqi, ms, ma, ns, es, ds, is, ps, qs, dps, dqs, qis, sa, ko, km, kn, ke, kd, ki, kp, kq, kdp, kdq, kqi, ks,
     ka, wo, wm, wn, we, wd, wi, wp, wq, wdp, wdq, wqi, ws, k1, k2, h1, hi, e1, e2, d1, d2, p1, p2, q1, q2, h8, h12,

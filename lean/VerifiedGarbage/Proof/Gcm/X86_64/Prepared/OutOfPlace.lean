@@ -21,7 +21,7 @@ open VG VG.X86_64
 /-- The in-place view used by the shared table-loader proofs. -/
 theorem SPreTo.toPrepared {s₀ : State} {np : Nat} {hn : 8 ≤ np ∧ np ≤ 24} (hp : SPreTo (CtxMode.preparedN np hn) s₀) :
     SPrePrepared (StitchZTo.dst s₀) 16 np :=
-  ⟨hp.toD, hp.k_in, hp.wrap_k, hp.k_o.symm, hp.k_p.symm, hp.ok⟩
+  ⟨hp.toD, hp.k_in, hp.wrap_k, hp.k_o.symm, hp.k_p.symm, hp.ok, hp.k_c.symm, hp.k_y.symm⟩
 end VG.Proof.Gcm.X86_64.Stitch
 
 namespace VG.Proof.Gcm.X86_64.StitchZRTo

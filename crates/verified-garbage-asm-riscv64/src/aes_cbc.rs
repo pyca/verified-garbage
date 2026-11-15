@@ -20,25 +20,14 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cbc_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1101
-.insn 2, 0x828a
-.insn 4, 0x0012b023
-.insn 4, 0x00f2b423
+.base64 "ARGKgiOwEgAjtPIA"
 call {vg_aes_cbc_encrypt_unwiped}
-.insn 2, 0x828a
-.insn 4, 0x00a2b823
-.insn 4, 0x0082b503
-.insn 4, 0x7ff00593
-.insn 4, 0x08158593
+.base64 "ioIjuKIAA7WCAJMF8H+ThRUI"
 call {vg_zeroize}
-.insn 2, 0x828a
-.insn 4, 0x0102b503
-.insn 4, 0x0002b083
-.insn 2, 0x6105
-.insn 2, 0x8082
-.option pop",
+.base64 "ioIDtQIBg7ACAAVhgoA="
+.option pop"#,
         vg_aes_cbc_encrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_encrypt_unwiped::vg_aes_cbc_encrypt_unwiped,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
@@ -61,25 +50,14 @@ call {vg_zeroize}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cbc_decrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1101
-.insn 2, 0x828a
-.insn 4, 0x0012b023
-.insn 4, 0x00f2b423
+.base64 "ARGKgiOwEgAjtPIA"
 call {vg_aes_cbc_decrypt_unwiped}
-.insn 2, 0x828a
-.insn 4, 0x00a2b823
-.insn 4, 0x0082b503
-.insn 4, 0x7ff00593
-.insn 4, 0x08158593
+.base64 "ioIjuKIAA7WCAJMF8H+ThRUI"
 call {vg_zeroize}
-.insn 2, 0x828a
-.insn 4, 0x0102b503
-.insn 4, 0x0002b083
-.insn 2, 0x6105
-.insn 2, 0x8082
-.option pop",
+.base64 "ioIDtQIBg7ACAAVhgoA="
+.option pop"#,
         vg_aes_cbc_decrypt_unwiped = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped::vg_aes_cbc_decrypt_unwiped,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )

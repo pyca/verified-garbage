@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Crypt
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Callee
 public import VerifiedGarbage.Proof.Gcm.Compose
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
+public import VerifiedGarbage.Proof.Framework.Bswap
 import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
@@ -159,16 +160,19 @@ theorem bytesAt_copy2 (m : Mem) {p q : Addr} (hd : (⟨p, 8⟩ : Region).Disjoin
   rw [Cmac.bytesAt_store2, Mem.readW_writeW_sep (Region.Disjoint.sep hd.symm (Region.contains_self _ _)
     (Region.contains_self _ _)) (by decide), Cmac.le8_readW, Cmac.le8_readW, ← Cmac.bytesAt_split]
 
-/-- `tag o` up to the call of `vg_aes_ctr32`. -/
-theorem tagMid_ok (hN : 184 ≤ N) {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State} (he : Env Ctx St W SP s N)
+/-- `tag o` up to the call of `vg_aes_ctr32`, with the lengths block left in
+`T`. -/
+theorem tagMid_okL (hN : 184 ≤ N) {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State} (he : Env Ctx St W SP s N)
     (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) (hR : RoundsAt s.mem W R) (hJ : blockAt s.mem St = J) :
     WP isa (.seq (lens v.callees 16) (.block (([.mov .rax (.mem (at_ .r14 16)), .store (at_ .r15 o) .rax,
         .mov .rax (.mem (at_ .r14 24)), .store (at_ .r15 (o + 8)) .rax, .mov .rdi (.reg .r13),
         .mov .rsi (.mem (at_ .r15 roundsO)), .mov .rdx (.reg .r14)] : List Instr) ++ ptr .rcx .r15 o ++ ([.mov32 .r8 (imm 1)] : List Instr) ++
-        ptr .r9 .r15 scrO))) s (TagMid Ctx St W SP o R H (blockAt s.mem (St + BitVec.ofNat 64 16)) J
-      (s.gpr .rbx).toNat (s.gpr .rbp).toNat s.mem N) := by
+        ptr .r9 .r15 scrO))) s fun s' => TagMid Ctx St W SP o R H (blockAt s.mem (St + BitVec.ofNat 64 16)) J
+      (s.gpr .rbx).toNat (s.gpr .rbp).toNat s.mem N s' ∧
+      s'.mem.readW (W + BitVec.ofNat 64 96) 64 = byteRev64 (BitVec.ofNat 64 (8 * (s.gpr .rbx).toNat)) ∧
+      s'.mem.readW (W + BitVec.ofNat 64 104) 64 = byteRev64 (BitVec.ofNat 64 (8 * (s.gpr .rbp).toNat)) := by
   have hoW : o + 16 ≤ 16 ∨ (96 ≤ o ∧ o + 16 ≤ N) := by omega_arith
-  refine WP.seq (WP.mono (lens_ok v L (yo := 16) (.inr rfl) he hH) fun s₁ ⟨he₁, hH₁, hY₁, f₁⟩ => ?_)
+  refine WP.seq (WP.mono (lens_okL v L (yo := 16) (.inr rfl) he hH) fun s₁ ⟨⟨he₁, hH₁, hY₁, f₁⟩, hT96, hT104⟩ => ?_)
   have h13 := he₁.r13; have h14 := he₁.r14; have h15 := he₁.r15
   have dJ : ∀ r ∈ tFrame St W SP 16 gs, (⟨St, 16⟩ : Region).Disjoint r := by
     intro r hr
@@ -268,7 +272,14 @@ theorem tagMid_ok (hN : 184 ≤ N) {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : B
       · simpa using covers_left (he₂.perm.stC (d := 0) (n := 16) (by decide))
     · exact covers_cons (by simpa using he₂.perm.stC (d := 0) (n := 16) (by decide))
         (he₂.perm.wC (by omega_arith) L.nlt)
-  refine ⟨he₂, hcall, hR₂, hc₂, hJ₂, ?_, ?_⟩
+  have dT : ∀ d, 96 ≤ d → d + 8 ≤ 112 → ∀ r ∈ [(⟨W + BitVec.ofNat 64 o, 16⟩ : Region)],
+      (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r := fun d h₁ h₂ r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact L.w_w (by omega_arith) (by omega_arith) (by omega_arith)
+  refine ⟨⟨he₂, hcall, hR₂, hc₂, hJ₂, ?_, ?_⟩, ?_, ?_⟩
+  rotate_left 2
+  · rw [f₂.readW (Region.contains_self _ _) (dT 96 (by decide) (by decide)) (by decide), hT96]
+  · rw [f₂.readW (Region.contains_self _ _) (dT 104 (by decide) (by decide)) (by decide), hT104]
   · rw [blockAt, hT, ← blockAt, hY₁]
   · have fA : Frame (tagFrame St W SP o N) s.mem s₁.mem := f₁.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -280,16 +291,40 @@ theorem tagMid_ok (hN : 184 ≤ N) {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : B
     exact fA.trans (f₂.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)
 
-/-- `tag o`, for `o` of 0 or 112, with the call of `vg_aes_ctr32` `T`. -/
-theorem tag_ok (hN : 184 ≤ N) (T : TagCall v N) {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State}
+/-- `tag o` up to the call of `vg_aes_ctr32`. -/
+theorem tagMid_ok (hN : 184 ≤ N) {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State} (he : Env Ctx St W SP s N)
+    (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) (hR : RoundsAt s.mem W R) (hJ : blockAt s.mem St = J) :
+    WP isa (.seq (lens v.callees 16) (.block (([.mov .rax (.mem (at_ .r14 16)), .store (at_ .r15 o) .rax,
+        .mov .rax (.mem (at_ .r14 24)), .store (at_ .r15 (o + 8)) .rax, .mov .rdi (.reg .r13),
+        .mov .rsi (.mem (at_ .r15 roundsO)), .mov .rdx (.reg .r14)] : List Instr) ++ ptr .rcx .r15 o ++ ([.mov32 .r8 (imm 1)] : List Instr) ++
+        ptr .r9 .r15 scrO))) s (TagMid Ctx St W SP o R H (blockAt s.mem (St + BitVec.ofNat 64 16)) J
+      (s.gpr .rbx).toNat (s.gpr .rbp).toNat s.mem N) :=
+  WP.mono (tagMid_okL v L hN ho he hH hR hJ) fun _ h => h.1
+
+/-- `tag o`, for `o` of 0 or 112, with the call of `vg_aes_ctr32` `T`, and
+the lengths block left in `T`. -/
+theorem tag_okL (hN : 184 ≤ N) (T : TagCall v N) {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State}
     (he : Env Ctx St W SP s N) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) (hR : RoundsAt s.mem W R)
     (hJ : blockAt s.mem St = J) :
-    WP isa (tag v.callees o) s (TagOut Ctx St W SP o R H (blockAt s.mem (St + BitVec.ofNat 64 16)) J
-      (s.gpr .rbx).toNat (s.gpr .rbp).toNat s.mem N) := by
-  refine WP.assoc (WP.seq (WP.mono (tagMid_ok v L hN ho he hH hR hJ) fun s₂ M => ?_))
+    WP isa (tag v.callees o) s fun s' => TagOut Ctx St W SP o R H (blockAt s.mem (St + BitVec.ofNat 64 16)) J
+      (s.gpr .rbx).toNat (s.gpr .rbp).toNat s.mem N s' ∧
+      s'.mem.readW (W + BitVec.ofNat 64 96) 64 = byteRev64 (BitVec.ofNat 64 (8 * (s.gpr .rbx).toNat)) ∧
+      s'.mem.readW (W + BitVec.ofNat 64 104) 64 = byteRev64 (BitVec.ofNat 64 (8 * (s.gpr .rbp).toNat)) := by
+  refine WP.assoc (WP.seq (WP.mono (tagMid_okL v L hN ho he hH hR hJ) fun s₂ ⟨M, hT96, hT104⟩ => ?_))
   refine WP.mono (T.ok L ho M.env M.call) fun s₃ g => ?_
   have gout := g.out
   rw [blocksAt_one, blocksAt_one, ctr32_single, List.cons.injEq] at gout
+  have dT : ∀ d, 96 ≤ d → d + 8 ≤ 112 → ∀ r ∈ [⟨St, 16⟩, ⟨W + BitVec.ofNat 64 o, 16⟩,
+      ⟨W + BitVec.ofNat 64 512, N - 512⟩, below SP 8], (⟨W + BitVec.ofNat 64 d, 8⟩ : Region).Disjoint r :=
+    fun d h₁ h₂ r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · simpa using (L.st_w (a := 0) (n := 16) (d := d) (k := 8) (by decide) (.inr ⟨h₁, Lay.leN hN (by omega_arith)⟩)).symm
+      · exact L.w_w (by omega_arith) (Lay.leN hN (by omega_arith)) (by omega_arith)
+      · exact L.w_hi (by omega_arith) (Lay.leN hN (by omega_arith))
+      · exact (L.stk_w (Lay.leN hN (by omega_arith))).symm
+  refine ⟨?_, by rw [g.frame.readW (Region.contains_self _ _) (dT 96 (by decide) (by decide)) (by decide), hT96],
+    by rw [g.frame.readW (Region.contains_self _ _) (dT 104 (by decide) (by decide)) (by decide), hT104]⟩
   refine ⟨M.env.of_saved g.saved g.rd g.wr, ?_, ?_, ?_, by rw [g.ctr, M.j]; rfl⟩
   · refine rounds_frame g.frame (fun r hr => ?_) M.rounds
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -307,6 +342,14 @@ theorem tag_ok (hN : 184 ≤ N) (T : TagCall v N) {o R : Nat} (ho : o = 0 ∨ o 
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨_, by simp, fun _ h => h⟩
+
+/-- `tag o`, for `o` of 0 or 112, with the call of `vg_aes_ctr32` `T`. -/
+theorem tag_ok (hN : 184 ≤ N) (T : TagCall v N) {o R : Nat} (ho : o = 0 ∨ o = 112) {H J : Block} {s : State}
+    (he : Env Ctx St W SP s N) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H) (hR : RoundsAt s.mem W R)
+    (hJ : blockAt s.mem St = J) :
+    WP isa (tag v.callees o) s (TagOut Ctx St W SP o R H (blockAt s.mem (St + BitVec.ofNat 64 16)) J
+      (s.gpr .rbx).toNat (s.gpr .rbp).toNat s.mem N) :=
+  WP.mono (tag_okL v L hN T ho he hH hR hJ) fun _ h => h.1
 
 end
 

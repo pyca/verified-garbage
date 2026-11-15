@@ -417,7 +417,13 @@ lemmas and tactics to use; read it before writing a proof:
   with `lit_decide` or `taint_decide`, never `decide +kernel`, and every
   module that evaluates the code imports its `Lit` module, registration
   files too (nothing checks this: `ci/lit_imports.py` ranks the misses
-  that cost the build).
+  that cost the build). Arithmetic it evaluates is in a closed term: with
+  a variable anywhere in the term it adds and shifts in unary. A checker's
+  environment is a list, not a function updated at every write. A property
+  of every instruction of code that calls verified functions follows from
+  theirs (`NoSp.seq`, `NoSp.leaf`), and its registration's `spSafe` from it
+  (`NoSp.spSafe`): never evaluate a wrapper with the code it calls. A
+  function evaluated at every instruction matches on the instruction once.
 * **Arithmetic side conditions:** finite facts by one `decide` on the
   bounded statement, not `interval_cases`; nested `if`s with
   `↓ite_eq_left`/`↓ite_eq_right`; ranges at offsets with `VG.Offset`, not
@@ -426,17 +432,22 @@ lemmas and tactics to use; read it before writing a proof:
   `Region.disjoint_of_sep (by decide)`.
 * **Unfolding:** close goals about symbolic memory or hash values with
   explicit lemmas (`congrArg`, `rw`), not `rfl`, `congr 1` or
-  `first | rfl | …`; never `rfl`, `decide` or `change` on a goal holding a
+  `first | rfl | …`; rewrite with a lemma where a hypothesis and the goal
+  differ by a definition, rather than leave `exact` or `fun _ h => h` to
+  unify them; never `rfl`, `decide` or `change` on a goal holding a
   large concrete value, which `generalize` does not hide from the kernel
   (abstract it with `obtain`); rewrite tables' regions with
   `Abi.constRegions_cons`, and state a table's facts with the `ConstsOk`
-  lemmas; evaluate a recursive definition that reuses a
+  lemmas; give `sig_pre` `List.range` and `List.range.loop` for a function
+  with stack arguments, so that it evaluates the contract in one step;
+  evaluate a recursive definition that reuses a
   recursive result with a `dsimproc`; unfold a model's function on an
   instruction with its `dsimproc` (`reduceExec`, `Proof/Framework/<ISA>/Reduce.lean`),
   not by naming it in `simp`, which copies its `match`'s equation lemmas into
   every module.
 * **Elaboration:** ascribe instruction-list literals next to `++`; use
-  `with_reducible assumption`; import `Proof/Framework/PowLit.lean` for
+  `with_reducible assumption`; split a precondition of many facts with
+  `sig_split` and `rename_i`, not one `obtain`; import `Proof/Framework/PowLit.lean` for
   numeral exponents; prefer simprocs to `simp (config := {decide := true})`
   on expensive facts; put tactic modules that import only core in
   `NativeTactics`, and keep Mathlib's interpreted tactics (`tauto`) out of

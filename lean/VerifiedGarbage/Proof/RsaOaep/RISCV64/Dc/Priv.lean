@@ -242,14 +242,15 @@ macro "dec_pre" " at " h:ident : tactic => `(tactic| (
 
 theorem preD_of {ts : List FnTable} {s : State} (h : (decSpec ts).pre s) : PreD false s := by
   dec_pre at h
-  obtain ⟨spal, sp1, sp2, -, -, -, hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, otl, ot, oa, mln, mle,
-    mlp, mlq, mldp, mldq, mlqi, mll, mlct, mls, mltl, mlt, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts, stl, st, sa,
-    ko, kml, kn, ke, kp, kq, kdp, kdq, kqi, kl, kct, ks, ktl, kt, ka, wo, wml, wn, we, wp, wq, wdp, wdq, wqi, wl, wct,
-    wsc, wtl, wt, k1, k2, ok, oc, e1, e2, p1, p2, q1, q2, h4, h8, h6, hs, alm, als, altl, alt⟩ := h
+  sig_split h
+  rename_i spal sp1 sp2 _ _ _ hrd hwr oml on oe op oq odp odq oqi ol oct os otl ot oa mln mle mlp mlq mldp mldq
+    mlqi mll mlct mls mltl mlt mla ns es ps qs dps dqs qis ls cts stl st sa ko kml kn ke kp kq kdp kdq kqi kl
+    kct ks ktl kt ka wo wml wn we wp wq wdp wdq wqi wl wct wsc wtl wt k1 k2 ok oc e1 e2 p1 p2 q1 q2 h4 h8 h6 hs
+    alm als altl
   exact ⟨spal, sp1, by show s.sp.toNat + 136 ≤ 2 ^ 64; omega_using [sp2], hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, otl, ot, oa, mln, mle, mlp,
     mlq, mldp, mldq, mlqi, mll, mlct, mls, mltl, mlt, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts, stl, st, sa, ko, kml,
     kn, ke, kp, kq, kdp, kdq, kqi, kl, kct, ks, ktl, kt, ka, wo, wml, wn, we, wp, wq, wdp, wdq, wqi, wl, wct, wsc, wtl,
-    wt, k1, k2, ok, oc, e1, e2, p1, p2, q1, q2, h4, h8, h6, hs, alm, als, altl, alt, nofun⟩
+    wt, k1, k2, ok, oc, e1, e2, p1, p2, q1, q2, h4, h8, h6, hs, alm, als, altl, h, nofun⟩
 
 /-- The tables, as the contract gives them: each one of `ts`, the label's
 hash function's at the stack argument 15 and MGF1's at 16, with the

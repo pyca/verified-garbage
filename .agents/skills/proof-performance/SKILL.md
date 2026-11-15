@@ -89,6 +89,23 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   in `NativeTCB` (the same script checks both).
 * **Properties of every instruction:** prove `(instrs c).all p` with
   `rw [← Code.allInstrs_eq]; decide +kernel`, not `decide +kernel` directly.
+  Evaluate each function's own code once: what holds of the functions it
+  calls holds of it by composition (`NoSp.seq`, `NoSp.callP`, `NoSp.leaf`,
+  `Proof/MlDsa/X86/KeyGen/NoSp.lean`), and its registration takes `spSafe`
+  from that (`spSafe := NoSp.spSafe …`), not from the default, which
+  evaluates the code with all it calls. A check of a wrapper by evaluation
+  builds and walks the whole function under it again, in every wrapper and
+  again in the registration: ML-DSA's on x86 cost 38 s so, in one
+  registration file and the proofs of its entry points.
+* **Matching on an instruction:** a function the kernel evaluates at every
+  instruction matches on the instruction once. Each `match` on an ISA's
+  `Instr` costs the kernel from 65 to 350 µs on x86-64, whose `Instr` has
+  three hundred constructors (`isa.writesSp i`, a match around
+  `Instr.dst`'s and a comparison of options, is the dearest): four of them
+  were most of the 0.8 ms a plain instruction took in the residue analysis.
+  Give what several matches computed by one, with the patterns of all of
+  them, and prove it equal to the function it replaces by cases
+  (`RTaint.stepFn1`, `stepFn1_eq`, `Proof/Framework/X86_64/`).
 * **Code the kernel evaluates:** code built by functions (unrolled
   compression functions, and the functions calling them) is rebuilt by the
   kernel in every check that evaluates it (constant time, `spSafe`, …), in
@@ -178,6 +195,13 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   each failed match; use `with_reducible assumption`, or name the hypothesis
   (`ci/check_lean_speed.py` rejects a bare `assumption` after `<;>` or in
   `first`).
+* **A hypothesis of many facts:** `obtain ⟨a₁, …, a₁₀₀⟩ := h` on a
+  contract's evaluated precondition does a `cases` for every name, each in
+  a context one fact larger: 4 to 12 s for the hundred facts of an RSA
+  contract. `sig_split h` (`Proof/Framework/SigEval.lean`) asserts every
+  conjunct in one step, and `rename_i` names them, in the conjunction's
+  order: 0.3 s. The last conjunct keeps the name `h`; a conjunct that is
+  itself a conjunction gets a name, and its own `obtain` or `sig_split`.
 * **Numeral exponents:** `2 ^ 64` elaborates in time quadratic in the number
   of numeral exponents in a statement; `Proof/Framework/PowLit.lean`'s macro
   elaborates it as `2 ^ (64 : Nat)` (the same term). A module with numeral
@@ -197,6 +221,36 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   `Proof/Blake2/X86_64/Avx/Round.lean`), prove it `:= (rfl)`. Keep the
   framework's `RegUpd` lemmas `rfl`: as propositional rewrites they measured
   slower.
+* **An equality the elaborator finds by evaluating:** `rfl`, and an
+  `exact h` or `fun _ h => h` whose type differs from the goal's, have the
+  elaborator unify the two, and it may unfold the wrong thing first.
+  `(Serial.coreSpec .encrypt).cipher k = Spec.Sm4.cipher k` differs by a
+  projection of a structure and a `match` on the direction, but the
+  elaborator unfolded the cipher on both sides and evaluated the
+  `Vector.ofFn` of its sixteen input bytes, 3 s a time and several times a
+  proof: fifteen proofs of one to three lines (SM4 and SEED's modes on
+  PPC64LE and RISC-V) took 353 s between them, and the kernel no time at
+  all. State such an equality once, proved by unfolding exactly what
+  differs (`simp only [Serial.coreSpec, dirCipher]`) or by `kernel_rfl`, and
+  rewrite a hypothesis with it before `exact`
+  (`fun _ h => by simp only [cipher_ser] at h; exact h`). A proof of a few
+  lines that elaborates for seconds, with no kernel time, is this. So is
+  `hx ▸ h.x` between facts about two states' memory, which first tries the
+  two as they are (`by rw [hx]; exact h.x`: Ecdsa's `PtOk.of_eq` on RISC-V,
+  86 s in eighteen copies), and a lemma applied with an implicit argument
+  that only the expected type determines, which is compared with it, in
+  vain, before the arguments are elaborated: name the argument
+  (`digestFrame (SH := ok.SH) (bytes := …)`).
+* **A proposition that is a `match` on a computed value:** the elaborator
+  reduces a term's type to weak head normal form whenever it elaborates the
+  term, to see whether it is a function, and so does the linter. For
+  `openOut (decryptWith …) …`, a definition by `match` on the result of a
+  decryption, that evaluates the decryption as far as its first comparison
+  of tags: AES on symbolic bytes, 1.4 s each time `hp` is named. AES-GCM-SIV's
+  `open` on RISC-V and PPC64LE spent 91 s there. Make such a definition
+  `@[irreducible]` and unfold it by name where a proof takes it apart; where
+  a hypothesis is itself such a `match`, generalize what it matches on
+  before using it (`generalize decryptWith _ _ _ _ _ _ = res at hp ⊢`).
 * **`generalize` does not hide a value from the kernel:** the proof term
   `generalize` (and `revert`) builds is an application of the new goal's
   proof to the value, which `instantiateMVars` beta-reduces, so the kernel
@@ -214,11 +268,41 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   unrelated upgrade of Lean). Prove the step once with the value a
   variable, and apply it (`fAcc_step`, `Proof/Blowfish/F.lean`), or
   abstract the value with `obtain` (not `generalize`: see above).
+* **Arithmetic the kernel evaluates is in a closed term:** the kernel adds,
+  multiplies, shifts and compares numerals as numerals only in a term with
+  no free variable in it (a state `s`, an opaque memory `m`, a hypothesis's
+  variable), even one in a branch it never takes. With one, it unfolds
+  `Nat.add`, `Nat.mul` and `Nat.shiftLeft` by their recursion: a byte
+  shifted left by 16 is 65,536 steps. `prepared_sign_sat`
+  (`Proof/MlDsa/X86/PreparedKey.lean`) read five argument words from
+  `above satMemE m`, below the address where `m` begins: 18 s. Rewrite to a
+  closed term first, with a lemma (`above_readW`), and evaluate that
+  (`decide +kernel`, `kernel_rfl`). The same is behind a `simp` that unfolds
+  `Mem.readW` under `… + 213056` on a state's registers, and behind most
+  proofs whose kernel profile is `Nat.add` or `Nat.mul` by the million.
+* **A checker's environment is data, not a function:** a reflective
+  checker that keeps its registers as `fun q => if q = r then v else f q`,
+  one function for every write, has the kernel follow the whole chain again
+  for every read: it remembers the values of terms it was asked for, and a
+  read part of the way down a chain is not one. As a list with a
+  register's value at its index, written with `List.set`, each list is
+  evaluated once. `Sha3.AArch64.Scalar`'s symbolic run of the 25 lanes took
+  29.5 s as functions and 2 s as a list (`KFile`, `symRun_regs`,
+  `Proof/Sha3/AArch64/Scalar/Reflect.lean`): keep the function, which the
+  proofs about the checker read easily, and prove it equal to the list's.
+  A fold that filters a list at every step has the same shape: the kernel
+  evaluates lazily, so after 15,000 instructions the list is a filter of a
+  filter of the first, and each element is forced through all of them.
+  Rebuild the list at each step (`forceL`, `checkK`, `keepsK_eq` in
+  `Proof/Bignum/AArch64/KeepLanes.lean`: half the time).
 * **Tables of constants:** the kernel evaluates a table's whole length
   (seconds for a comb's tables) when it compares `8 * words.length` with
   another form of it, such as a `Region`'s `len` projection. Never unfold
-  `Abi.constRegions` with `List.map_cons` or substitute a table's region
-  into a goal: rewrite with `Abi.constRegions_cons`, `Abi.constRegions_nil`
+  `Abi.constRegions` with `List.map_cons`, name it among the definitions
+  `sig_pre` unfolds (give it the two lemmas' names instead: each Arm comb's
+  satisfiability proof spent 5 to 13 s in the kernel on that one name), or
+  substitute a table's region into a goal: rewrite with
+  `Abi.constRegions_cons`, `Abi.constRegions_nil`
   and `Sig.forall_mem_const_single` (`Proof/Framework/Sig.lean`, which
   `sig_pre` already uses), before `List.forall_mem_cons` or `forall_eq` can
   take the region apart. State a table's own facts with the
@@ -229,6 +313,22 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   memory) states a table's size as a literal, not as `8 * words.length`. A
   table's shape (`<curve>Comb7_length`, `_rows`) is proven once, in
   `Proof/<Curve>/Comb7Shape.lean`, not by `decide` on each target.
+* **Signatures with stack arguments:** give `sig_pre`, `sig_post` and
+  `sig_pub` the definitions `List.range` and `List.range.loop` for a function
+  some of whose arguments are on the stack, not a lemma for the stack
+  arguments' list (`stackArgs_sixteen`). The calling conventions state those
+  arguments as `(List.range n).map (stackArg s)`; unless `sig_reduce` may
+  unfold `List.range` it stops there, with `Sig.bufs`, `Sig.alignedBufs` and
+  `Curry.apply` unfolded over the arguments in registers only. The kernel
+  checks that half-evaluated goal against the contract by unfolding both,
+  out of step, and where their heads agree it compares the arguments at the
+  same position: a register with a stack argument, or two different stack
+  arguments, which are not equal, as it finds only after evaluating their
+  memory reads as far as it can (10 to 40 s for an RSA contract with twenty
+  arguments). With `List.range` unfolded the evaluation finishes in that one
+  step, and what the kernel checks is the contract's own evaluation. The
+  lemmas that tidied the half-evaluated goal afterwards then have nothing to
+  do (a `simp only` after it, a trailing `-` in a pattern).
 * **Code without its literal:** `lit_decide` and `taint_decide` read the
   literal of code only if the module imports the module that materializes
   it, or a module that `public import`s it; otherwise the kernel builds the

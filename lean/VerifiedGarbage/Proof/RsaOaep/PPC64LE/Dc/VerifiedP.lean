@@ -64,10 +64,13 @@ macro "dec_preP" " at " h:ident : tactic => `(tactic| (
 
 theorem preDP_of {ts : List FnTable} {s : State} (h : (decSpecP ts).pre s) : PreD true s ∧ PreXD s := by
   dec_preP at h
-  obtain ⟨sp1, sp2, -, -, -, hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, oP, otl, ot, oa, mln, mle, mlp,
-    mlq, mldp, mldq, mlqi, mll, mlct, mls, mlP, mltl, mlt, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts, sP, stl, st,
-    sa, ko, kml, kn, ke, kp, kq, kdp, kdq, kqi, kl, kct, ks, kP, ktl, kt, ka, wo, wml, wn, we, wp, wq, wdp, wdq, wqi,
-    wl, wct, wsc, wP, wtl, wt, ⟨k1, k2⟩, ok, oc, e1, e2, p1, p2, q1, q2, h4, h8, h6, hs, hpl, hyp⟩ := h
+  sig_split h
+  rename_i sp1 sp2 _ _ _ hrd hwr oml on oe op oq odp odq oqi ol oct os oP otl ot oa mln mle mlp mlq mldp mldq
+    mlqi mll mlct mls mlP mltl mlt mla ns es ps qs dps dqs qis ls cts sP stl st sa ko kml kn ke kp kq kdp kdq
+    kqi kl kct ks kP ktl kt ka wo wml wn we wp wq wdp wdq wqi wl wct wsc wP wtl wt h_k1_k2 ok oc e1 e2 p1 p2 q1
+    q2 h4 h8 h6 hs hpl
+  have hyp := h
+  obtain ⟨k1, k2⟩ := h_k1_k2
   exact ⟨⟨sp1, by simp only [↓reduceIte]; omega_using [sp2], hrd, hwr, oml, on, oe, op, oq, odp, odq, oqi, ol, oct, os, otl, ot,
     oa, mln, mle, mlp, mlq, mldp, mldq, mlqi, mll, mlct, mls, mltl, mlt, mla, ns, es, ps, qs, dps, dqs, qis, ls, cts,
     stl, st, sa, ko, kml, kn, ke, kp, kq, kdp, kdq, kqi, kl, kct, ks, ktl, kt, ka, wo, wml, wn, we, wp, wq, wdp, wdq,

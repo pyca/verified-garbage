@@ -87,6 +87,8 @@ public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.MrWit
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.Trial
 public import VerifiedGarbage.Proof.RsaKeyGen.X86_64.TrialLoop
 public import VerifiedGarbage.Proof.Variants.MillerRabin.X86_64
+public import VerifiedGarbage.Proof.Rsa.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 
 /-! # RSA key generation (FIPS 186-5 A.1.3) on x86-64 -/
 
@@ -100,11 +102,11 @@ def direct : List Artifact := [
 def artifacts : List Artifact :=
   direct ++
   (VG.Proof.Variants.MillerRabin.X86_64.variants.flatMap fun (v : Proof.MillerRabin.X86_64.RoundImpl) => [
-    Spec.RsaKeyGen.keySearchApi.artifact X86_64.target {
+    Spec.RsaKeyGen.keySearchApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
       suffix := v.suffix
       code := Proof.RsaKeyGen.X86_64.Generate.genCode v
       stack := 552
       verified := Proof.RsaKeyGen.X86_64.Generate.gen_verified v
-      spSafe := Proof.RsaKeyGen.X86_64.Generate.genCode_sp v }])
+      spSafe := Proof.RsaKeyGen.X86_64.Generate.genCode_sp v } (VG.Proof.Rsa.X86_64.Scrub.keySearchOut 552))])
 
 end VG.Artifacts.RsaKeyGen.X86_64

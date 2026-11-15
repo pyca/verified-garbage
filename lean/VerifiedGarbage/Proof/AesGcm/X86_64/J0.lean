@@ -104,9 +104,10 @@ theorem st_j0Frame {m m' : Mem} {d k : Nat} (h : Frame [⟨St + BitVec.ofNat 64 
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_cons_self .., Lay.stSub hk⟩
 
-/-- `J₀` of a 12-byte nonce. -/
-theorem j012_ok {H : Block} {Np : Addr} {s : State} (h : J0In Ctx St W SP H Np 12 s N) :
-    WP isa (.block j012) s (J0Mid Ctx St W SP H (bytesAt s.mem Np 12) s.mem · N gs) := by
+/-- `J₀` of a 12-byte nonce, which writes only `J₀`. -/
+theorem j012_okL {H : Block} {Np : Addr} {s : State} (h : J0In Ctx St W SP H Np 12 s N) :
+    WP isa (.block j012) s fun s' => J0Mid Ctx St W SP H (bytesAt s.mem Np 12) s.mem s' N gs ∧
+      Frame [⟨St + BitVec.ofNat 64 0, 16⟩] s.mem s'.mem := by
   have he := h.env
   have h14 := he.r14
   have hd := h.data
@@ -130,10 +131,10 @@ theorem j012_ok {H : Block} {Np : Addr} {s : State} (h : J0In Ctx St W SP H Np 1
   refine WP.of_runBlock ⟨s', run, ?_⟩
   have f : Frame [⟨St + BitVec.ofNat 64 0, 16⟩] s.mem s'.mem := by
     rw [hm]; simpa using Cmac.frame_store4 (m := s.mem) St _ _ _ _
-  refine ⟨he.keep (fun r hr => by
+  refine ⟨⟨he.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact hg _ (by decide) (by decide) (by decide) (by decide)) hrd hwr,
-    ?_, ?_, st_j0Frame f (by decide)⟩
+    ?_, ?_, st_j0Frame f (by decide)⟩, f⟩
   · rw [blockAt_frame f fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_st (by decide) (by decide), h.hH]
   · have hb : bytesAt s.mem Np 12 = bytesAt s.mem Np 4 ++ bytesAt s.mem (Np + BitVec.ofNat 64 4) 4 ++
@@ -143,9 +144,16 @@ theorem j012_ok {H : Block} {Np : Addr} {s : State} (h : J0In Ctx St W SP H Np 1
     rw [Proof.Gcm.j0_12 _ (length_bytesAt _ _ _), blockAt, hm, Cmac.bytesAt_store4, Cmac.le4_readW,
       Cmac.le4_readW, Cmac.le4_readW, le4_one, hb]
 
-/-- The first counter block, and the accumulator zeroed. -/
-theorem initState_ok {H : Block} {iv : List Byte} {m₀ : Mem} {s : State} (h : J0Mid Ctx St W SP H iv m₀ s N gs) :
-    WP isa (.block initState) s (J0Out Ctx St W SP H iv m₀ · N gs) := by
+/-- `J₀` of a 12-byte nonce. -/
+theorem j012_ok {H : Block} {Np : Addr} {s : State} (h : J0In Ctx St W SP H Np 12 s N) :
+    WP isa (.block j012) s (J0Mid Ctx St W SP H (bytesAt s.mem Np 12) s.mem · N gs) :=
+  WP.mono (j012_okL L h) fun _ h => h.1
+
+/-- The first counter block, and the accumulator zeroed, which writes only
+the state. -/
+theorem initState_okL {H : Block} {iv : List Byte} {m₀ : Mem} {s : State} (h : J0Mid Ctx St W SP H iv m₀ s N gs) :
+    WP isa (.block initState) s fun s' => J0Out Ctx St W SP H iv m₀ s' N gs ∧
+      Frame [⟨St + BitVec.ofNat 64 0, 80⟩] s.mem s'.mem := by
   have he := h.env
   have h14 := he.r14
   have r₀ := he.perm.stR (show 0 + 4 ≤ 80 by decide)
@@ -218,10 +226,10 @@ theorem initState_ok {H : Block} {iv : List Byte} {m₀ : Mem} {s : State} (h : 
       blockAt_frame f₄ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         simpa using L.st_st (a := 0) (n := 16) (d := 48) (k := 16) (.inl (by decide)) (by decide) (by decide))]
-  refine ⟨he.keep (fun r hr => by
+  refine ⟨⟨he.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact hg _ (by decide) (by decide) (by decide) (by decide)) hrd hwr,
-    ?_, by rw [hJ, h.j0], ?_, ?_, h.frame.trans (st_j0Frame ff (by decide))⟩
+    ?_, by rw [hJ, h.j0], ?_, ?_, h.frame.trans (st_j0Frame ff (by decide))⟩, ff⟩
   · rw [blockAt_frame ff (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_st (by decide) (by decide)), h.hH]
   · rw [blockAt, hm, zeroT_bytes]; decide
@@ -230,6 +238,11 @@ theorem initState_ok {H : Block} {iv : List Byte} {m₀ : Mem} {s : State} (h : 
       Cmac.bytesAt_store4, Cmac.le4_readW, Cmac.le4_readW, Cmac.le4_readW, ← h.j0, blockAt,
       Cmac.ofBytes_rev4, ← Cmac.le4_readW s.mem St, ← Cmac.le4_readW, ← Cmac.le4_readW, ofBytes_le4, hw,
       Cmac.byteRev32_byteRev32, inc32_words]
+
+/-- The first counter block, and the accumulator zeroed. -/
+theorem initState_ok {H : Block} {iv : List Byte} {m₀ : Mem} {s : State} (h : J0Mid Ctx St W SP H iv m₀ s N gs) :
+    WP isa (.block initState) s (J0Out Ctx St W SP H iv m₀ · N gs) :=
+  WP.mono (initState_okL L h) fun _ h => h.1
 
 end
 
@@ -279,10 +292,11 @@ theorem aux_tFrame (hN : 224 ≤ N) (hg : gs = 0 ∨ 512 + gs ≤ N) :
   · exact (L.stk_w (Lay.leN hN)).symm
 
 /-- `J₀` of a nonce of any length but 12: GHASH of the nonce padded and of
-the lengths block. -/
-theorem j0hash_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St W SP H Np n s N) (hn : n ≠ 12)
+the lengths block, with the nonce's length left at `W + 216`. -/
+theorem j0hash_okL {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St W SP H Np n s N) (hn : n ≠ 12)
     (hN : 224 ≤ N := by decide) :
-    WP isa (j0hash v.callees) s (J0Mid Ctx St W SP H (bytesAt s.mem Np n) s.mem · N gs) := by
+    WP isa (j0hash v.callees) s fun s' => J0Mid Ctx St W SP H (bytesAt s.mem Np n) s.mem s' N gs ∧
+      s'.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n := by
   have he := h.env
   have hd := h.data
   have hlt := hd.lt
@@ -362,7 +376,7 @@ theorem j0hash_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₅ _ (by decide) (by decide)) hrd₅ hwr₅
   refine WP.mono (lens_ok v L (yo := 0) (.inl rfl) (H := H) he₅ (by rw [hm₅]; exact hf.hH)) fun s₆ ⟨he₆, hH₆, hY₆, f₆⟩ => ?_
-  refine ⟨he₆, hH₆, ?_, ?_⟩
+  refine ⟨⟨he₆, hH₆, ?_, ?_⟩, ?_⟩
   · have hw := (hf.abs hab₂).whole_eq (by
       simp only [List.length_append, length_bytesAt, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod n)
     rw [Proof.Gcm.j0_eq H (by rw [length_bytesAt]; exact hn), length_bytesAt, ← hw, ← hm₅,
@@ -377,11 +391,24 @@ theorem j0hash_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St
     have g₆ := t_j0Frame f₆
     rw [hm₅] at g₆
     exact ((g₁.trans (abs_j0Frame fa)).trans g₄).trans g₆
+  · rw [f₆.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (Region.contains_self _ _) (aux_tFrame L hN G.fit) (by decide),
+      hm₅, hn₄]
 
-/-- `j0`: the streaming state's `J₀`, accumulator and first counter block. -/
-theorem j0_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St W SP H Np n s N)
+/-- `J₀` of a nonce of any length but 12: GHASH of the nonce padded and of
+the lengths block. -/
+theorem j0hash_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St W SP H Np n s N) (hn : n ≠ 12)
     (hN : 224 ≤ N := by decide) :
-    WP isa (j0 v.callees) s (J0Out Ctx St W SP H (bytesAt s.mem Np n) s.mem · N gs) := by
+    WP isa (j0hash v.callees) s (J0Mid Ctx St W SP H (bytesAt s.mem Np n) s.mem · N gs) :=
+  WP.mono (j0hash_okL v L h hn hN) fun _ h => h.1
+
+/-- `j0`: the streaming state's `J₀`, accumulator and first counter block;
+for a 12-byte nonce writing only the state, and for any other the nonce's
+length at `W + 216`. -/
+theorem j0_okL {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St W SP H Np n s N)
+    (hN : 224 ≤ N := by decide) :
+    WP isa (j0 v.callees) s fun s' => J0Out Ctx St W SP H (bytesAt s.mem Np n) s.mem s' N gs ∧
+      (n = 12 → Frame [⟨St + BitVec.ofNat 64 0, 80⟩] s.mem s'.mem) ∧
+      (n ≠ 12 → s'.mem.readW (W + BitVec.ofNat 64 216) 64 = BitVec.ofNat 64 n) := by
   have hlt := h.data.lt
   obtain ⟨s₁, run₁, hzf, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa [.alu .cmp .rbp (imm 12)] s = some s₁ ∧
       s₁.zf = some (decide (n = 12)) ∧ s₁.gpr = s.gpr ∧ s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
@@ -397,8 +424,23 @@ theorem j0_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St W S
   refine WP.seq (WP.ite (decide (n = 12)) (eval_e hzf) (fun ht => ?_) (fun hf => ?_))
   · have h12 : n = 12 := by simpa using ht
     subst h12
-    exact WP.mono (j012_ok L h₁) fun _ hm => initState_ok L hm
-  · exact WP.mono (j0hash_ok v L h₁ (by simpa using hf) hN) fun _ hm => initState_ok L hm
+    exact WP.mono (j012_okL L h₁) fun _ ⟨hm, f₁⟩ => WP.mono (initState_okL L hm) fun _ ⟨ho, f₂⟩ =>
+      ⟨ho, fun _ => (f₁.sub fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_singleton_self _, by simpa using Offset.sub_base St (show 0 + 16 ≤ 80 by decide)⟩).trans f₂,
+        fun h => absurd rfl h⟩
+  · have hn : n ≠ 12 := by simpa using hf
+    exact WP.mono (j0hash_okL v L h₁ hn hN) fun _ ⟨hm, h216⟩ => WP.mono (initState_okL L hm) fun _ ⟨ho, f₂⟩ =>
+      ⟨ho, fun h => absurd h hn, fun _ => by
+        rw [f₂.readW (r := ⟨W + BitVec.ofNat 64 216, 8⟩) (Region.contains_self _ _) (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr
+          exact (L.st_w (by decide) (.inr ⟨by decide, (Lay.leN hN)⟩)).symm) (by decide), h216]⟩
+
+/-- `j0`: the streaming state's `J₀`, accumulator and first counter block. -/
+theorem j0_ok {H : Block} {Np : Addr} {n : Nat} {s : State} (h : J0In Ctx St W SP H Np n s N)
+    (hN : 224 ≤ N := by decide) :
+    WP isa (j0 v.callees) s (J0Out Ctx St W SP H (bytesAt s.mem Np n) s.mem · N gs) :=
+  WP.mono (j0_okL v L h hN) fun _ h => h.1
 
 end
 

@@ -90,6 +90,8 @@ pub unsafe fn vg_rsa_pkcs1_sign_precomputed_auto(_dit: verified_garbage_cpu::Dit
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pkcs1_verify_precomputed_ifma` if the CPU supports its features (`VG_RSA_PKCS1_VERIFY_PRECOMPUTED_IFMA_FEATURES`); `vg_rsa_pkcs1_verify_precomputed_adx` if the CPU supports its features (`VG_RSA_PKCS1_VERIFY_PRECOMPUTED_ADX_FEATURES`); or else `vg_rsa_pkcs1_verify_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `n` must be valid for reads of `n_len` bytes.
@@ -156,6 +158,8 @@ pub unsafe fn vg_rsa_pkcs1_verify_precomputed_auto(_dit: verified_garbage_cpu::D
 /// Contract: `VG.Spec.RsaPkcs1Sig.recoverPrecomputedContract`.
 ///
 /// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_rsa_pkcs1_recover_precomputed_ifma` if the CPU supports its features (`VG_RSA_PKCS1_RECOVER_PRECOMPUTED_IFMA_FEATURES`); `vg_rsa_pkcs1_recover_precomputed_adx` if the CPU supports its features (`VG_RSA_PKCS1_RECOVER_PRECOMPUTED_ADX_FEATURES`); or else `vg_rsa_pkcs1_recover_precomputed`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///

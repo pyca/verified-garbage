@@ -1,6 +1,9 @@
 module
 public import VerifiedGarbage.Impl.Gcm.X86_64.Stitch
 public import VerifiedGarbage.Proof.Aes.X86_64.Vaes.Ctr32
+public import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Spec
+import VerifiedGarbage.Proof.Framework.X86_64.ZFrame
+import VerifiedGarbage.Proof.Framework.X86_64.Avx512
 
 import VerifiedGarbage.Proof.Gcm.X86_64.Vpclmul.Exec
 import VerifiedGarbage.Proof.Gcm.X86_64.Stitch.Base
@@ -125,5 +128,117 @@ theorem setupC_ok (s : State) (h0 : ∀ l < 2, s.lane .xmm0 l = revMask)
   · bv_omega
   · simp [h1, h2, h3]
   · rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;> simp [h2, h13, h14, h15]
+
+/-- `vpxor xmm12, xmm12, xmm12`, which clears `ymm12`. -/
+theorem zero12_ok (s : State) :
+    WP isa (.block [.vop (.vbin .vpxor .l128 .xmm12 .xmm12 .xmm12)]) s fun s' =>
+      (∀ l < 2, s'.lane .xmm12 l = 0) ∧ (∀ x, x ≠ .xmm12 → ∀ l < 2, s'.lane x l = s.lane x l) ∧
+      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, exec, isa, Option.some.injEq, exists_eq_left']
+  refine ⟨fun l hl => ?_, fun x h l hl => ?_, rfl, rfl, rfl, rfl⟩
+  · have z : ((if l = 0 then 0#128 else 0) : BitVec 128) = 0 := ite_self _
+    rw [← State.zlane_lt2 _ _ hl]
+    simp only [VOp.exec, State.zlane_setV128 _ _ _ _ _ (show l < 4 by omega_arith), VBinOp.sse, Pclmul.eval_pxor,
+      BitVec.xor_self, ite_true, z]
+  · rw [← State.zlane_lt2 _ _ hl, ← State.zlane_lt2 _ _ hl]
+    simp only [VOp.exec, State.zlane_setV128 _ _ _ _ _ (show l < 4 by omega_arith), h, ite_false]
+
+/-- `zeroPow`: the copy of the powers at `scratch` cleared, which the
+postcondition allows. -/
+theorem zeroPow_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {s : State} (h : EPost s₀ s) :
+    WP isa (.block Impl.Gcm.X86_64.Stitch.zeroPow) s (EPost s₀) := by
+  have h11 : s.gpr .r11 = Stitch.pp s₀ := h.gpr _ (by decide) (by decide) (by decide) (by decide)
+  have hwp := hp.wrap_p
+  rw [show Impl.Gcm.X86_64.Stitch.zeroPow = [.vop (.vbin .vpxor .l128 .xmm12 .xmm12 .xmm12)] ++
+    Impl.Gcm.X86_64.Stitch.storesK .r11 (List.replicate 8 .xmm12) 0 from rfl, WP.block_append_iff]
+  refine WP.mono (zero12_ok s) fun s₁ ⟨z₁, k₁, g₁, m₁, rd₁, wr₁⟩ => ?_
+  refine WP.mono (Stitch.storesK_ok .r11 (List.replicate 8 .xmm12) 0 s₁ (fun k hk => by
+      rw [wr₁, h.wr, g₁, h11]; exact Stitch.in_sub_int hp.p_in (by simp at hk; omega_using [hk]))
+    (by rw [g₁, h11]; simp; omega_using [hwp])) fun s₂ ⟨sv, fr, g₂, rd₂, wr₂, l₂⟩ => ?_
+  rw [g₁, h11, m₁, Nat.mul_zero, BitVec.add_zero, show 32 * (List.replicate 8 XReg.xmm12).length = 256 by simp] at fr
+  have F : Frame [Stitch.pR s₀] s.mem s₂.mem := fr.sub fun r hr => ⟨Stitch.pR s₀, List.mem_singleton_self _, by
+    simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by decide)⟩
+  have keep : ∀ p, Region.Disjoint ⟨p, 16⟩ (Stitch.pR s₀) → Spec.Gcm.blockAt s₂.mem p = Spec.Gcm.blockAt s.mem p :=
+    fun p hd => VG.Proof.Aes.X86_64.AesNi.blockAt_frame F fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hd
+  have hbl : Spec.Gcm.blocksAt s₂.mem (Stitch.dp s₀) (nb s₀) = Spec.Gcm.blocksAt s.mem (Stitch.dp s₀) (nb s₀) := by
+    simp only [Spec.Gcm.blocksAt]
+    exact List.map_congr_left fun k hk => keep _
+      (hp.d_p.sub_left (Offset.sub_base _ (by simp at hk; omega_using [hk])))
+  exact ⟨by rw [hbl]; exact h.data, by rw [keep _ hp.p_c.symm]; exact h.ctr,
+    by rw [keep _ hp.p_y.symm, hbl]; exact h.y,
+    h.frame.trans (F.sub fun r hr => ⟨Stitch.pR s₀, by simp, by simp at hr; subst hr; exact fun _ h => h⟩),
+    fun q h1 h2 h3 h4 => by rw [g₂, g₁]; exact h.gpr q h1 h2 h3 h4, by rw [rd₂, rd₁]; exact h.rd,
+    by rw [wr₂, wr₁]; exact h.wr⟩
+
+/-- What interleaved loops leave in their working space, from `s₀` to `s`,
+beyond what they compute: nothing written but the counter, `Y`, the data
+and the first `ℓ` bytes of the working space, of which those `zf` names (for
+the number of blocks) are cleared and the others as they were. -/
+def PieceL (ℓ : Nat) (zf : Nat → Nat → Bool) (s₀ s : State) : Prop :=
+  Frame [cR s₀, yR s₀, dR s₀, ⟨pp s₀, ℓ⟩] s₀.mem s.mem ∧
+    ∀ i < ℓ, s.mem (pp s₀ + BitVec.ofNat 64 i) = if zf (nb s₀) i then 0 else s₀.mem (pp s₀ + BitVec.ofNat 64 i)
+
+/-- `PieceL`, from a state with the same registers and memory. -/
+theorem PieceL.congr {ℓ : Nat} {zf : Nat → Nat → Bool} {s s₀ t : State} (h : PieceL ℓ zf s t)
+    (g : s.gpr = s₀.gpr) (m : s.mem = s₀.mem) : PieceL ℓ zf s₀ t := by
+  unfold PieceL cR yR dR pp nb cp yp dp at *
+  rw [g, m] at h
+  exact h
+
+/-- Byte `j` of a 128-bit little-endian read. -/
+theorem byte_readW128 (m : Mem) (a : Addr) {j : Nat} (hj : j < 16) :
+    m (a + BitVec.ofNat 64 j) = (m.readW a 128).extractLsb' (8 * j) 8 := by
+  rw [← Mem.extractLsb'_read m a hj]; rfl
+
+/-- `zeroPow`: the 256 bytes at `scratch` cleared, nothing else written. -/
+theorem zeroPow_zero {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {s : State} (h11 : s.gpr .r11 = Stitch.pp s₀)
+    (hwr : s.wr = s₀.wr) :
+    WP isa (.block Impl.Gcm.X86_64.Stitch.zeroPow) s fun s' =>
+      Frame [⟨Stitch.pp s₀, 256⟩] s.mem s'.mem ∧ ∀ i < 256, s'.mem (Stitch.pp s₀ + BitVec.ofNat 64 i) = 0 := by
+  have hwp := hp.wrap_p
+  rw [show Impl.Gcm.X86_64.Stitch.zeroPow = [.vop (.vbin .vpxor .l128 .xmm12 .xmm12 .xmm12)] ++
+    Impl.Gcm.X86_64.Stitch.storesK .r11 (List.replicate 8 .xmm12) 0 from rfl, WP.block_append_iff]
+  refine WP.mono (zero12_ok s) fun s₁ ⟨z₁, _, g₁, m₁, _, wr₁⟩ => ?_
+  refine WP.mono (Stitch.storesK_ok .r11 (List.replicate 8 .xmm12) 0 s₁ (fun k hk => by
+      rw [wr₁, hwr, g₁, h11]; exact Stitch.in_sub_int hp.p_in (by simp at hk; omega_using [hk]))
+    (by rw [g₁, h11]; simp; omega_using [hwp])) fun s₂ ⟨sv, fr, _, _, _, _⟩ => ?_
+  rw [g₁, h11, m₁, Nat.mul_zero, BitVec.add_zero, show 32 * (List.replicate 8 XReg.xmm12).length = 256 by simp] at fr
+  refine ⟨fr, fun i hi => ?_⟩
+  have v := sv (i / 32) (by simp; omega_using [hi]) ((i % 32) / 16) (by omega_using [])
+  rw [g₁, h11, List.getElem_replicate, z₁ _ (by omega_using [])] at v
+  rw [show Stitch.pp s₀ + BitVec.ofNat 64 i = Stitch.pp s₀ + BitVec.ofNat 64 (32 * (0 + i / 32) + 16 * (i % 32 / 16)) +
+      BitVec.ofNat 64 (i % 16) by rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat]; congr 2; omega_using [],
+    byte_readW128 s₂.mem _ (j := i % 16) (by omega_using []), v]
+  simp
+
+/-- `zeroPow` after the decryption: the copy of the powers cleared, which the
+postcondition allows. -/
+theorem zeroPowD_ok {s₀ : State} {lo : Nat} (hp : SPre s₀ lo) {s : State} (h : DPost s₀ s) :
+    WP isa (.block Impl.Gcm.X86_64.Stitch.zeroPow) s (DPost s₀) := by
+  have h11 : s.gpr .r11 = Stitch.pp s₀ := h.gpr _ (by decide) (by decide) (by decide) (by decide)
+  have hwp := hp.wrap_p
+  rw [show Impl.Gcm.X86_64.Stitch.zeroPow = [.vop (.vbin .vpxor .l128 .xmm12 .xmm12 .xmm12)] ++
+    Impl.Gcm.X86_64.Stitch.storesK .r11 (List.replicate 8 .xmm12) 0 from rfl, WP.block_append_iff]
+  refine WP.mono (zero12_ok s) fun s₁ ⟨z₁, k₁, g₁, m₁, rd₁, wr₁⟩ => ?_
+  refine WP.mono (Stitch.storesK_ok .r11 (List.replicate 8 .xmm12) 0 s₁ (fun k hk => by
+      rw [wr₁, h.wr, g₁, h11]; exact Stitch.in_sub_int hp.p_in (by simp at hk; omega_using [hk]))
+    (by rw [g₁, h11]; simp; omega_using [hwp])) fun s₂ ⟨sv, fr, g₂, rd₂, wr₂, l₂⟩ => ?_
+  rw [g₁, h11, m₁, Nat.mul_zero, BitVec.add_zero, show 32 * (List.replicate 8 XReg.xmm12).length = 256 by simp] at fr
+  have F : Frame [Stitch.pR s₀] s.mem s₂.mem := fr.sub fun r hr => ⟨Stitch.pR s₀, List.mem_singleton_self _, by
+    simp only [List.mem_singleton] at hr; subst hr; exact Region.sub_prefix (by decide)⟩
+  have keep : ∀ p, Region.Disjoint ⟨p, 16⟩ (Stitch.pR s₀) → Spec.Gcm.blockAt s₂.mem p = Spec.Gcm.blockAt s.mem p :=
+    fun p hd => VG.Proof.Aes.X86_64.AesNi.blockAt_frame F fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact hd
+  have hbl : Spec.Gcm.blocksAt s₂.mem (Stitch.dp s₀) (nb s₀) = Spec.Gcm.blocksAt s.mem (Stitch.dp s₀) (nb s₀) := by
+    simp only [Spec.Gcm.blocksAt]
+    exact List.map_congr_left fun k hk => keep _
+      (hp.d_p.sub_left (Offset.sub_base _ (by simp at hk; omega_using [hk])))
+  exact ⟨by rw [hbl]; exact h.data, by rw [keep _ hp.p_c.symm]; exact h.ctr,
+    by rw [keep _ hp.p_y.symm]; exact h.y,
+    h.frame.trans (F.sub fun r hr => ⟨Stitch.pR s₀, by simp, by simp at hr; subst hr; exact fun _ h => h⟩),
+    fun q h1 h2 h3 h4 => by rw [g₂, g₁]; exact h.gpr q h1 h2 h3 h4, by rw [rd₂, rd₁]; exact h.rd,
+    by rw [wr₂, wr₁]; exact h.wr⟩
 
 end VG.Proof.Gcm.X86_64.Stitch

@@ -11,193 +11,59 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_rsa_prime_search() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x7135
-.insn 2, 0x8f8a
-.insn 4, 0x0a0fb283
-.insn 4, 0x0a8fb303
-.insn 4, 0x0b0fb383
-.insn 4, 0x0b8fbe03
-.insn 4, 0x000e3e83
-.insn 4, 0x028fb023
-.insn 2, 0x847e
-.insn 2, 0xf408
-.insn 2, 0xf80c
-.insn 2, 0xfc10
-.insn 2, 0xe034
-.insn 2, 0xe438
-.insn 2, 0xe83c
-.insn 4, 0x05043c23
-.insn 4, 0x07143023
-.insn 4, 0x06543423
-.insn 4, 0x06643823
-.insn 4, 0x06743c23
-.insn 4, 0x09c43823
-.insn 4, 0x01d43023
-.insn 2, 0xe40c
-.insn 4, 0x00f59e93
-.insn 2, 0x9eae
-.insn 4, 0x01d43823
-.insn 2, 0x4f01
-.insn 4, 0x01e43c23
-.insn 4, 0x09e43023
-.insn 2, 0x1141
-.insn 2, 0xe406
+.base64 "NXGKj4OyDwoDs48Kg7MPCwO+jwuDPg4AI7CPAn6ECPQM+BD8NOA45DzoIzwEBSMwFAcjNFQGIzhkBiM8dAYjOMQJIzDUAQzkk571AK6eIzjUAQFPIzzkASMw5AlBEQbk"
 20:
-.insn 4, 0x00043303
+.base64 "AzMEAA=="
 beqz t1, 21f
-.insn 2, 0x1101
-.insn 2, 0x7408
-.insn 2, 0x780c
-.insn 2, 0x7c10
-.insn 2, 0x6034
-.insn 2, 0x6438
-.insn 2, 0x683c
-.insn 4, 0x05843803
-.insn 4, 0x06043883
-.insn 4, 0x06843303
-.insn 4, 0x07043383
-.insn 4, 0x07843e03
-.insn 2, 0x828a
-.insn 4, 0x0062b023
-.insn 4, 0x0072b423
-.insn 4, 0x01c2b823
+.base64 "AREIdAx4EHw0YDhkPGgDOIQFgzgEBgMzhAaDMwQHAz6EB4qCI7BiACO0cgAjuMIB"
 call {vg_rsa_keygen_candidate}
-.insn 2, 0x6105
-.insn 4, 0x02051313
-.insn 4, 0x02035313
-.insn 4, 0x03843e03
-.insn 4, 0x000e3383
-.insn 4, 0xfff30e93
+.base64 "BWETEwUCE1MDAgM+hAODMw4Akw7z/w=="
 beqz t4, 23f
 beqz t1, 25f
 beqz t2, 27f
-.insn 4, 0x06043e03
-.insn 4, 0x06843e83
-.insn 4, 0x08043f03
-.insn 2, 0x9e1e
-.insn 4, 0x407e8eb3
-.insn 2, 0x9f1e
-.insn 2, 0x4f91
-.insn 4, 0x07c43023
-.insn 4, 0x07d43423
-.insn 4, 0x09e43023
-.insn 4, 0x09f43423
-.insn 4, 0xffe30f13
+.base64 "Az4EBoM+hAYDPwQIHp6zjn5AHp+RTyMwxAcjNNQHIzDkCSM09AkTD+P/"
 beqz t5, 29f
-.insn 4, 0x00043e03
-.insn 2, 0x1e7d
-.insn 4, 0x01c43023
+.base64 "Az4EAH0eIzDEAQ=="
 j 210f
 29:
 210:
 j 28f
 27:
-.insn 2, 0x4381
-.insn 2, 0x4e0d
-.insn 4, 0x00743023
-.insn 4, 0x00743c23
-.insn 4, 0x09c43423
-.insn 2, 0x740c
-.insn 2, 0x7810
-.insn 2, 0x4681
+.base64 "gUMNTiMwdAAjPHQAIzTECQx0EHiBRg=="
 211:
-.insn 4, 0x00d58023
-.insn 2, 0x0585
-.insn 2, 0x167d
+.base64 "I4DVAIUFfRY="
 bnez a2, 211b
 28:
 j 26f
 25:
-.insn 4, 0x06843383
-.insn 4, 0x01043e03
-.insn 4, 0x01c3beb3
+.base64 "gzOEBgM+BAGzvsMB"
 beqz t4, 212f
-.insn 4, 0x00843e83
-.insn 2, 0x0e92
-.insn 4, 0x01d3b2b3
-.insn 2, 0x4f01
-.insn 4, 0x405f02b3
-.insn 4, 0x01d3cf33
-.insn 4, 0x005f7f33
-.insn 4, 0x007f4f33
-.insn 2, 0x9f7a
-.insn 4, 0x01cf32b3
-.insn 2, 0x4f81
-.insn 4, 0x405f82b3
-.insn 4, 0x01cf4fb3
-.insn 4, 0x005fffb3
-.insn 4, 0x01cfcfb3
-.insn 2, 0x4e81
-.insn 4, 0x01f43c23
-.insn 4, 0x09d43423
+.base64 "gz6EAJIOs7LTAQFPswJfQDPP0wEzf18AM09/AHqfszLPAYFPs4JfQLNPzwGz/18As8/PAYFOIzz0ASM01Ak="
 j 213f
 212:
-.insn 2, 0x4381
-.insn 2, 0x4e0d
-.insn 4, 0x00743023
-.insn 4, 0x00743c23
-.insn 4, 0x09c43423
-.insn 2, 0x740c
-.insn 2, 0x7810
-.insn 2, 0x4681
+.base64 "gUMNTiMwdAAjPHQAIzTECQx0EHiBRg=="
 214:
-.insn 4, 0x00d58023
-.insn 2, 0x0585
-.insn 2, 0x167d
+.base64 "I4DVAIUFfRY="
 bnez a2, 214b
 213:
 26:
 j 24f
 23:
-.insn 4, 0x08043e03
-.insn 2, 0x9e1e
-.insn 4, 0x09c43023
-.insn 2, 0x4381
-.insn 2, 0x4e05
-.insn 4, 0x00743023
-.insn 4, 0x00743c23
-.insn 4, 0x09c43423
+.base64 "Az4ECB6eIzDECYFDBU4jMHQAIzx0ACM0xAk="
 24:
 j 22f
 21:
-.insn 2, 0x4381
-.insn 2, 0x4e0d
-.insn 4, 0x00743023
-.insn 4, 0x00743c23
-.insn 4, 0x09c43423
-.insn 2, 0x740c
-.insn 2, 0x7810
-.insn 2, 0x4681
+.base64 "gUMNTiMwdAAjPHQAIzTECQx0EHiBRg=="
 215:
-.insn 4, 0x00d58023
-.insn 2, 0x0585
-.insn 2, 0x167d
+.base64 "I4DVAIUFfRY="
 bnez a2, 215b
 22:
-.insn 4, 0x08843303
-.insn 2, 0x1371
+.base64 "AzOECHET"
 beqz t1, 20b
-.insn 2, 0x60a2
-.insn 2, 0x0141
-.insn 4, 0x09043283
-.insn 4, 0x00043303
-.insn 4, 0x00843383
-.insn 4, 0x01043e03
-.insn 4, 0x01843e83
-.insn 4, 0x03843f03
-.insn 4, 0x08043f83
-.insn 2, 0x6448
-.insn 2, 0x7000
-.insn 4, 0x0062b023
-.insn 4, 0x0072b423
-.insn 4, 0x01c2b823
-.insn 4, 0x01d2bc23
-.insn 4, 0x01ff3023
-.insn 2, 0x610d
-.insn 2, 0x8082
-.option pop",
+.base64 "omBBAYMyBAkDMwQAgzOEAAM+BAGDPoQBAz+EA4M/BAhIZABwI7BiACO0cgAjuMIBI7zSASMw/wENYYKA"
+.option pop"#,
         vg_rsa_keygen_candidate = sym crate::rsa_keygen::vg_rsa_keygen_candidate::vg_rsa_keygen_candidate,
     )
 }

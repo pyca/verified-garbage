@@ -106,7 +106,7 @@ theorem baseC_sat : (Spec.X25519.x25519BaseContract (RISCV64.abi.withConsts comb
   generalize combWords = W' at hl held ⊢
   generalize e : baseSatC = s
   sig_pre [Spec.X25519.x25519BaseContract, Spec.X25519.x25519BaseSig, RISCV64.abi, RISCV64.argRegs,
-    Abi.withConsts, Abi.constRegions, Abi.constsHeld, stackBelow]
+    Abi.withConsts, Abi.constRegions_cons, Abi.constRegions_nil, Abi.constsHeld, stackBelow]
   subst e
   rw [hl]
   repeat' apply And.intro

@@ -136,7 +136,7 @@ theorem candidate_noFrames (v : RoundImpl) : (code v.mont.mm v.kernel.run).noFra
     List.cons_append, List.nil_append, List.append_nil, ite_true, ite_false, Bool.false_eq_true,
     Impl.Bignum.AArch64.seqs, Code.noFrames, Bool.and_eq_true, v.mmNoFrames, true_and, and_true]
   and_intros
-  all_goals first | exact v.noFrames | rfl
+  all_goals first | rfl | exact v.noFrames
 
 /-- `vg_ffdh_parameter_candidate_sieved` calling the shared round `v`, as the
 search calls it. -/

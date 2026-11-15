@@ -11,92 +11,36 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_squeeze() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0xdd010113
-.insn 2, 0x828a
-.insn 4, 0x2012b023
-.insn 4, 0x2122b423
-.insn 4, 0x2132b823
-.insn 4, 0x2142bc23
-.insn 4, 0x2352b023
-.insn 4, 0x2362b423
-.insn 2, 0x892a
-.insn 2, 0x89ae
-.insn 2, 0x8a32
-.insn 2, 0x8ab6
-.insn 2, 0x8b3a
+.base64 "EwEB3YqCI7ASICO0IiEjuDIhI7xCISOwUiMjtGIjKomuiTKKtoo6iw=="
 beqz s6, 20f
 22:
-.insn 4, 0x413a0333
+.base64 "MwM6QQ=="
 beqz t1, 23f
 j 24f
 23:
-.insn 2, 0x4a01
-.insn 2, 0x854a
-.insn 2, 0x858a
+.base64 "AUpKhYqF"
 call {vg_keccak_f1600}
 24:
-.insn 4, 0x014903b3
-.insn 4, 0x0143e333
-.insn 4, 0x00737313
-.insn 2, 0x4ea1
-.insn 4, 0x01db3e33
-.insn 4, 0x01c36333
-.insn 4, 0x007afe93
+.base64 "swNJATPjQwETc3MAoU4zPtsBM2PDAZP+egA="
 beqz t1, 25f
-.insn 4, 0x014903b3
-.insn 4, 0x0003c303
-.insn 4, 0x006a8023
-.insn 2, 0x0a85
-.insn 2, 0x0a05
-.insn 2, 0x1b7d
+.base64 "swNJAQPDAwAjgGoAhQoFCn0b"
 j 26f
 25:
 beqz t4, 27f
-.insn 4, 0x0003b303
-.insn 4, 0x006a8023
-.insn 4, 0x00835e13
-.insn 4, 0x01ca80a3
-.insn 4, 0x01035e13
-.insn 4, 0x01ca8123
-.insn 4, 0x01835e13
-.insn 4, 0x01ca81a3
-.insn 4, 0x02035e13
-.insn 4, 0x01ca8223
-.insn 4, 0x008e5e93
-.insn 4, 0x01da82a3
-.insn 4, 0x010e5e93
-.insn 4, 0x01da8323
-.insn 4, 0x018e5e93
-.insn 4, 0x01da83a3
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A7MDACOAagATXoMAo4DKARNeAwEjgcoBE16DAaOBygETXgMCI4LKAZNejgCjgtoBk14OASOD2gGTXo4Bo4PaAaEKIQphGw=="
 j 28f
 27:
-.insn 4, 0x0003b303
-.insn 4, 0x006ab023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A7MDACOwagChCiEKYRs="
 28:
 26:
 bnez s6, 22b
 j 21f
 20:
 21:
-.insn 2, 0x8552
-.insn 2, 0x828a
-.insn 4, 0x2002b083
-.insn 4, 0x2082b903
-.insn 4, 0x2102b983
-.insn 4, 0x2182ba03
-.insn 4, 0x2202ba83
-.insn 4, 0x2282bb03
-.insn 4, 0x23010113
-.insn 2, 0x8082
-.option pop",
+.base64 "UoWKgoOwAiADuYIgg7kCIQO6giGDugIiA7uCIhMBASOCgA=="
+.option pop"#,
         vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }

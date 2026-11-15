@@ -14,39 +14,14 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_check_ek(ek: *const [u8; 1568]) -> u32 {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x20000593
-.insn 2, 0x4601
-.insn 2, 0x6785
-.insn 4, 0xd0078793
+.base64 "kwUAIAFGhWeThwfQ"
 20:
-.insn 4, 0x00154683
-.insn 2, 0x16f2
-.insn 2, 0x92d1
-.insn 4, 0x00054703
-.insn 2, 0x96ba
-.insn 4, 0x40d78733
-.insn 2, 0x937d
-.insn 2, 0x963a
-.insn 4, 0x00154683
-.insn 2, 0x8291
-.insn 4, 0x00254703
-.insn 2, 0x0712
-.insn 2, 0x96ba
-.insn 4, 0x40d78733
-.insn 2, 0x937d
-.insn 2, 0x963a
-.insn 2, 0x050d
-.insn 2, 0x15fd
+.base64 "g0YVAPIW0ZIDRwUAupYzh9dAfZM6loNGFQCRggNHJQASB7qWM4fXQH2TOpYNBf0V"
 bnez a1, 20b
-.insn 2, 0x4681
-.insn 2, 0x8e91
-.insn 2, 0x92fd
-.insn 2, 0x4505
-.insn 2, 0x8d15
-.insn 2, 0x8082
-.option pop",
+.base64 "gUaRjv2SBUUVjYKA"
+.option pop"#,
     )
 }
 
@@ -67,24 +42,14 @@ bnez a1, 20b
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_keygen(seed: *const [u8; 64], ek: *mut [u8; 1568], dk: *mut [u8; 3168], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1101
-.insn 2, 0x828a
-.insn 4, 0x0012b023
-.insn 4, 0x00d2b423
+.base64 "ARGKgiOwEgAjtNIA"
 call {vg_mlkem1024_keygen_body}
-.insn 2, 0x828a
-.insn 4, 0x00a2b823
-.insn 4, 0x0082b503
-.insn 2, 0x65b1
+.base64 "ioIjuKIAA7WCALFl"
 call {vg_zeroize}
-.insn 2, 0x828a
-.insn 4, 0x0102b503
-.insn 4, 0x0002b083
-.insn 2, 0x6105
-.insn 2, 0x8082
-.option pop",
+.base64 "ioIDtQIBg7ACAAVhgoA="
+.option pop"#,
         vg_mlkem1024_keygen_body = sym super::mlkem1024::vg_mlkem1024_keygen_body::vg_mlkem1024_keygen_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
@@ -109,24 +74,14 @@ call {vg_zeroize}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps(ek: *const [u8; 1568], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1101
-.insn 2, 0x828a
-.insn 4, 0x0012b023
-.insn 4, 0x00e2b423
+.base64 "ARGKgiOwEgAjtOIA"
 call {vg_mlkem1024_encaps_body}
-.insn 2, 0x828a
-.insn 4, 0x00a2b823
-.insn 4, 0x0082b503
-.insn 2, 0x65b1
+.base64 "ioIjuKIAA7WCALFl"
 call {vg_zeroize}
-.insn 2, 0x828a
-.insn 4, 0x0102b503
-.insn 4, 0x0002b083
-.insn 2, 0x6105
-.insn 2, 0x8082
-.option pop",
+.base64 "ioIDtQIBg7ACAAVhgoA="
+.option pop"#,
         vg_mlkem1024_encaps_body = sym super::mlkem1024::vg_mlkem1024_encaps_body::vg_mlkem1024_encaps_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
@@ -153,24 +108,14 @@ call {vg_zeroize}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_encaps_h(ek: *const [u8; 1568], h: *const [u8; 32], m: *const [u8; 32], key: *mut [u8; 32], ct: *mut [u8; 1568], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1101
-.insn 2, 0x828a
-.insn 4, 0x0012b023
-.insn 4, 0x00f2b423
+.base64 "ARGKgiOwEgAjtPIA"
 call {vg_mlkem1024_encaps_h_body}
-.insn 2, 0x828a
-.insn 4, 0x00a2b823
-.insn 4, 0x0082b503
-.insn 2, 0x65b1
+.base64 "ioIjuKIAA7WCALFl"
 call {vg_zeroize}
-.insn 2, 0x828a
-.insn 4, 0x0102b503
-.insn 4, 0x0002b083
-.insn 2, 0x6105
-.insn 2, 0x8082
-.option pop",
+.base64 "ioIDtQIBg7ACAAVhgoA="
+.option pop"#,
         vg_mlkem1024_encaps_h_body = sym super::mlkem1024::vg_mlkem1024_encaps_h_body::vg_mlkem1024_encaps_h_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
@@ -193,24 +138,14 @@ call {vg_zeroize}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_decaps(dk: *const [u8; 3168], ct: *const [u8; 1568], key: *mut [u8; 32], scratch: *mut [u64; 6144]) -> u32 {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1101
-.insn 2, 0x828a
-.insn 4, 0x0012b023
-.insn 4, 0x00d2b423
+.base64 "ARGKgiOwEgAjtNIA"
 call {vg_mlkem1024_decaps_body}
-.insn 2, 0x828a
-.insn 4, 0x00a2b823
-.insn 4, 0x0082b503
-.insn 2, 0x65b1
+.base64 "ioIjuKIAA7WCALFl"
 call {vg_zeroize}
-.insn 2, 0x828a
-.insn 4, 0x0102b503
-.insn 4, 0x0002b083
-.insn 2, 0x6105
-.insn 2, 0x8082
-.option pop",
+.base64 "ioIDtQIBg7ACAAVhgoA="
+.option pop"#,
         vg_mlkem1024_decaps_body = sym super::mlkem1024::vg_mlkem1024_decaps_body::vg_mlkem1024_decaps_body,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )

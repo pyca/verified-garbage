@@ -426,6 +426,19 @@ theorem tbl_ok {rs : List Rg} {σ : St} {s₀ s : State} (hc : Ctx rs s₀) (h :
     · rw [ite_eq_left_of_eq_true _ _ (eq_true h4), show e / 4 = 2 by omega_arith]
     · rw [ite_eq_right_of_eq_false _ _ (eq_false h4), show e / 4 = 3 by omega_arith]
 
+/-- The words of four quadwords of a table, found once (`St.step`), are those
+read from the table. -/
+theorem tbl4_eq {ws : List (BitVec 64)} {k : Nat} {a b c d : BitVec 64} {t : List (BitVec 64)}
+    (h : ws.drop k = a :: b :: c :: d :: t) :
+    (Y.ofFn fun e => tblW [a, b, c, d] (e / 4) (e % 4)) = Y.ofFn fun e => tblW ws (k + e / 4) (e % 4) := by
+  refine List.map_congr_left fun e he => ?_
+  have he' : e / 4 < 4 := by have := List.mem_range.mp he; omega_arith
+  have hg : ws.getD (k + e / 4) 0 = [a, b, c, d].getD (e / 4) 0 := by
+    rw [List.getD_eq_getElem?_getD, List.getD_eq_getElem?_getD, ← List.getElem?_drop, h]
+    match e / 4, he' with
+    | 0, _ | 1, _ | 2, _ | 3, _ => rfl
+  simp only [tblW, hg]
+
 theorem step_ok {R : Rules} (hM : Model R L O) {rs : List Rg} {σ σ' : St} {s₀ s : State} (hc : Ctx rs s₀) (h : Rel rs L O σ s₀ s)
     {i : Instr} (e : σ.step R rs i = some σ') : ∃ s', exec i s = some s' ∧ Rel rs L O σ' s₀ s' := by
   unfold St.step at e
@@ -435,7 +448,10 @@ theorem step_ok {R : Rules} (hM : Model R L O) {rs : List Rg} {σ σ' : St} {s�
     split at e <;> [skip; cases e]
     rename_i hcond
     obtain ⟨hb, hi, hn, h0, h8, hl, h32⟩ := hcond
+    split at e <;> [skip; cases e]
+    rename_i hd
     cases e; subst hn
+    rw [tbl4_eq hd]
     exact tbl_ok hc h hb hi h0 h8 hl h32
   · rename_i d m
     obtain ⟨⟨k, j⟩, hf, rfl⟩ := Option.map_eq_some_iff.1 e

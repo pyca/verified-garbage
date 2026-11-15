@@ -52,7 +52,7 @@ theorem pre_leak {s t : State} (P : PreD true s) (A : AtPriv true s t) :
     rw [X.pl]; unfold Spec.Rsa.privatePrecomputedWords; omega_using []
   simp only [Spec.Rsa.privatePrecomputedLeak, callE_stackArg A (i := 12) (by decide), psa,
     callE_gpr true s t (r := .a3), A.a3]
-  congr 1
+  refine congrArg _ ?_
   have subPre : Region.Sub ⟨stackArg s 17, 8 * Spec.Rsa.precomputedWords (s.gpr .a4).toNat⟩ (preR s) :=
     fun _ hx => by simp only [Region.Contains] at hx ⊢; omega_using [pwl, hx]
   exact VG.Proof.Rsa.RISCV64.Priv.words_of_frame A.mem (fun r hr => by

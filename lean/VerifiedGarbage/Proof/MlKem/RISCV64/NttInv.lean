@@ -63,6 +63,15 @@ theorem lp_ibfly {m : Mem} {F : Addr} {W : WPoly} (h : LP m F W) {j len : Nat} (
 section
 variable {s : State} {x y z c : BitVec 64}
 
+/-- A 32-bit load as its bytes, and a 32-bit store as a 4-byte write: as lemmas, so that the
+kernel matches their statements where `simp [Mem.readW, Mem.read]` would leave it to unfold
+them inside the arithmetic of the postcondition. -/
+private theorem readW32 (m : Mem) (a : Addr) :
+    m.readW a 32 = 0#0 ++ m (a + 1#64 + 1#64 + 1#64) ++ m (a + 1#64 + 1#64) ++ m (a + 1#64) ++ m a := by
+  simp [Mem.readW, Mem.read]
+private theorem writeW32 (m : Mem) (a : Addr) (v : BitVec 32) : m.writeW a v = m.write a 4 v := by
+  simp [Mem.writeW]
+
 theorem ibfly_ok (h5 : s.gpr .a2 = x) (h6 : s.gpr .a3 = y) (h7 : s.gpr .a4 = z)
     (h8 : s.gpr .a5 = 5541226816974932) (h9 : s.gpr .a6 = 3329) (h11 : s.gpr .t1 = c) (h12 : s.gpr .t5 = 213056)
     (ia : InRegions (s.rd ++ s.wr) x 4) (ib : InRegions (s.rd ++ s.wr) y 4)
@@ -76,7 +85,7 @@ theorem ibfly_ok (h5 : s.gpr .a2 = x) (h6 : s.gpr .a3 = y) (h7 : s.gpr .a4 = z)
         y ((barM (z * ((s.mem.readW y 32).setWidth 64 - (s.mem.readW x 32).setWidth 64 + 213056))).setWidth 32) := by
   crun [ibflyBody, barrettM, barM, barQ, kept, h5, h6, h7, h8, h9, h11, h12, ia, ib, oa, ob, ax, ay,
     List.forall_mem_cons, List.not_mem_nil, false_imp_iff, List.cons_append, List.nil_append]
-  simp [Mem.writeW, Mem.readW, Mem.read]
+  simp only [readW32, writeW32, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
 
 end
 

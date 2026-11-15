@@ -12,7 +12,8 @@ data = r8, n = r9, scratch = [rsp + 8])`.
 
 `vg_ghash_vpclmul`'s setup computes `H'`–`H'¹⁶` from the hash subkey at
 `ctx + 240`, which are stored, paired, to `scratch` (the pair that the `k`-th
-load of a sixteen-block body multiplies at `scratch + 32 k`). The first group
+load of a sixteen-block body multiplies at `scratch + 32 k`), and cleared
+there once the loops end (`zeroPow`). The first group
 is encrypted as `vg_aes_ctr32_vaes` does, sixteen blocks at a time in the
 lanes of `ymm3`–`ymm6` (two batches of eight); then each group is encrypted
 while the previous group's ciphertext is hashed, the products of the GHASH
@@ -151,13 +152,21 @@ def lastG : List Instr :=
 def storeY : List Instr :=
   [.vop (.vbin .vpshufb .l128 .xmm2 .xmm2 .xmm0), .vmovdquStore .l128 (at_ .rcx 0) .xmm2, .vop .vzeroupper]
 
-/-- `n` (a multiple of 16, at least 16) blocks. -/
-def enc : Prog isa :=
+/-- The copy of the powers at `scratch` cleared, once the loops end. -/
+def zeroPow : List Instr :=
+  .vop (.vbin .vpxor .l128 .xmm12 .xmm12 .xmm12) :: storesK .r11 (List.replicate 8 .xmm12) 0
+
+/-- The loops of `enc`, before the copy of the powers is cleared. -/
+def encLoops : Prog isa :=
   .seq (.block setup)
     (.seq first
       (.seq (.block [.alu .cmp .r9 (.imm 32)])
         (.seq (.ite .b (.block []) (.loop body .ae))
           (.block (storeCtr ++ lastG ++ storeY)))))
+
+/-- `n` (a multiple of 16, at least 16) blocks, then the copy of the powers
+cleared (`zeroPow`). -/
+def enc : Prog isa := .seq encLoops (.block zeroPow)
 
 /-! ## Decryption: each group hashed while it is decrypted -/
 
@@ -176,10 +185,14 @@ def dbody (ix : Bool := false) : Prog isa :=
       (.seq (batch 4 dB ix)
         (.block [.alu .add .rdx (.imm 256), .alu .sub .r9 (.imm 16), .alu .cmp .r9 (.imm 16)])))
 
-/-- `n` (a multiple of 16, at least 16) blocks. -/
-def dec : Prog isa :=
+/-- The loop of `dec`, before the copy of the powers is cleared. -/
+def decLoops : Prog isa :=
   .seq (.block setup)
     (.seq (.loop dbody .ae)
       (.block (storeCtr ++ storeY)))
+
+/-- `n` (a multiple of 16, at least 16) blocks, then the copy of the powers
+cleared (`zeroPow`). -/
+def dec : Prog isa := .seq decLoops (.block zeroPow)
 
 end VG.Impl.Gcm.X86_64.Stitch

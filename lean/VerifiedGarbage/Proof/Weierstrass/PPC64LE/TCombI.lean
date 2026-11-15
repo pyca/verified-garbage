@@ -118,8 +118,11 @@ theorem LayoutI.nums {K : TCombCfg} (h : LayoutI K) :
     rw [qx, qy, qz, nd] at hx
     by_cases hz : x = K.zero
     · subst hz; exact ⟨h.zeroLe, h.zero4⟩
-    exact ⟨le (sl x (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; omega_using [hz, hx])),
-      hL.al x (sl x (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; omega_using [hz, hx]))⟩
+    have hx' := sl x (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢
+      rcases hx with h | h | h | h | h | h | h | h | h | h
+      all_goals first | exact absurd h hz | simp only [h, true_or, or_true])
+    exact ⟨le hx', hL.al x hx'⟩
   · have tx := sl K.L.T.x (by simp)
     have ty := sl K.L.T.y (by simp)
     have tz := sl K.L.T.z (by simp)

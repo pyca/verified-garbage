@@ -18,289 +18,38 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_pbkdf2_hmac_md5(password: *const u8, password_len: usize, salt: *const u8, salt_len: usize, c: u32, out: *mut u8, out_len: usize) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x7115
-.insn 2, 0x710d
-.insn 2, 0x828a
-.insn 4, 0x0012b023
-.insn 4, 0x0092b423
-.insn 4, 0x0122b823
-.insn 4, 0x0132bc23
-.insn 4, 0x0342b023
-.insn 4, 0x0352b423
-.insn 4, 0x0362b823
-.insn 4, 0x0372bc23
-.insn 2, 0x8496
-.insn 2, 0x8936
-.insn 2, 0x89ba
-.insn 2, 0x8a3e
-.insn 2, 0x8ac2
-.insn 2, 0x8b32
-.insn 2, 0x862a
-.insn 2, 0x86ae
-.insn 4, 0x04048513
-.insn 4, 0x09048593
+.base64 "FXENcYqCI7ASACO0kgAjuCIBI7wyASOwQgMjtFIDI7hiAyO8cgOWhDaJuok+isKKMosqhq6GE4UEBJOFBAk="
 call {vg_hmac_md5_init}
-.insn 2, 0x4b85
+.base64 "hUs="
 beqz s5, 20f
 22:
-.insn 4, 0x0404c303
-.insn 4, 0x0e648023
-.insn 4, 0x0414c303
-.insn 4, 0x0e6480a3
-.insn 4, 0x0424c303
-.insn 4, 0x0e648123
-.insn 4, 0x0434c303
-.insn 4, 0x0e6481a3
-.insn 4, 0x0444c303
-.insn 4, 0x0e648223
-.insn 4, 0x0454c303
-.insn 4, 0x0e6482a3
-.insn 4, 0x0464c303
-.insn 4, 0x0e648323
-.insn 4, 0x0474c303
-.insn 4, 0x0e6483a3
-.insn 4, 0x0484c303
-.insn 4, 0x0e648423
-.insn 4, 0x0494c303
-.insn 4, 0x0e6484a3
-.insn 4, 0x04a4c303
-.insn 4, 0x0e648523
-.insn 4, 0x04b4c303
-.insn 4, 0x0e6485a3
-.insn 4, 0x04c4c303
-.insn 4, 0x0e648623
-.insn 4, 0x04d4c303
-.insn 4, 0x0e6486a3
-.insn 4, 0x04e4c303
-.insn 4, 0x0e648723
-.insn 4, 0x04f4c303
-.insn 4, 0x0e6487a3
-.insn 4, 0x0504c303
-.insn 4, 0x0e648823
-.insn 4, 0x0514c303
-.insn 4, 0x0e6488a3
-.insn 4, 0x0524c303
-.insn 4, 0x0e648923
-.insn 4, 0x0534c303
-.insn 4, 0x0e6489a3
-.insn 4, 0x0544c303
-.insn 4, 0x0e648a23
-.insn 4, 0x0554c303
-.insn 4, 0x0e648aa3
-.insn 4, 0x0564c303
-.insn 4, 0x0e648b23
-.insn 4, 0x0574c303
-.insn 4, 0x0e648ba3
-.insn 4, 0x0584c303
-.insn 4, 0x0e648c23
-.insn 4, 0x0594c303
-.insn 4, 0x0e648ca3
-.insn 4, 0x05a4c303
-.insn 4, 0x0e648d23
-.insn 4, 0x05b4c303
-.insn 4, 0x0e648da3
-.insn 4, 0x05c4c303
-.insn 4, 0x0e648e23
-.insn 4, 0x05d4c303
-.insn 4, 0x0e648ea3
-.insn 4, 0x05e4c303
-.insn 4, 0x0e648f23
-.insn 4, 0x05f4c303
-.insn 4, 0x0e648fa3
-.insn 4, 0x0604c303
-.insn 4, 0x10648023
-.insn 4, 0x0614c303
-.insn 4, 0x106480a3
-.insn 4, 0x0624c303
-.insn 4, 0x10648123
-.insn 4, 0x0634c303
-.insn 4, 0x106481a3
-.insn 4, 0x0644c303
-.insn 4, 0x10648223
-.insn 4, 0x0654c303
-.insn 4, 0x106482a3
-.insn 4, 0x0664c303
-.insn 4, 0x10648323
-.insn 4, 0x0674c303
-.insn 4, 0x106483a3
-.insn 4, 0x0684c303
-.insn 4, 0x10648423
-.insn 4, 0x0694c303
-.insn 4, 0x106484a3
-.insn 4, 0x06a4c303
-.insn 4, 0x10648523
-.insn 4, 0x06b4c303
-.insn 4, 0x106485a3
-.insn 4, 0x06c4c303
-.insn 4, 0x10648623
-.insn 4, 0x06d4c303
-.insn 4, 0x106486a3
-.insn 4, 0x06e4c303
-.insn 4, 0x10648723
-.insn 4, 0x06f4c303
-.insn 4, 0x106487a3
-.insn 4, 0x0704c303
-.insn 4, 0x10648823
-.insn 4, 0x0714c303
-.insn 4, 0x106488a3
-.insn 4, 0x0724c303
-.insn 4, 0x10648923
-.insn 4, 0x0734c303
-.insn 4, 0x106489a3
-.insn 4, 0x0744c303
-.insn 4, 0x10648a23
-.insn 4, 0x0754c303
-.insn 4, 0x10648aa3
-.insn 4, 0x0764c303
-.insn 4, 0x10648b23
-.insn 4, 0x0774c303
-.insn 4, 0x10648ba3
-.insn 4, 0x0784c303
-.insn 4, 0x10648c23
-.insn 4, 0x0794c303
-.insn 4, 0x10648ca3
-.insn 4, 0x07a4c303
-.insn 4, 0x10648d23
-.insn 4, 0x07b4c303
-.insn 4, 0x10648da3
-.insn 4, 0x07c4c303
-.insn 4, 0x10648e23
-.insn 4, 0x07d4c303
-.insn 4, 0x10648ea3
-.insn 4, 0x07e4c303
-.insn 4, 0x10648f23
-.insn 4, 0x07f4c303
-.insn 4, 0x10648fa3
-.insn 4, 0x0804c303
-.insn 4, 0x12648023
-.insn 4, 0x0814c303
-.insn 4, 0x126480a3
-.insn 4, 0x0824c303
-.insn 4, 0x12648123
-.insn 4, 0x0834c303
-.insn 4, 0x126481a3
-.insn 4, 0x0844c303
-.insn 4, 0x12648223
-.insn 4, 0x0854c303
-.insn 4, 0x126482a3
-.insn 4, 0x0864c303
-.insn 4, 0x12648323
-.insn 4, 0x0874c303
-.insn 4, 0x126483a3
-.insn 4, 0x0884c303
-.insn 4, 0x12648423
-.insn 4, 0x0894c303
-.insn 4, 0x126484a3
-.insn 4, 0x08a4c303
-.insn 4, 0x12648523
-.insn 4, 0x08b4c303
-.insn 4, 0x126485a3
-.insn 4, 0x08c4c303
-.insn 4, 0x12648623
-.insn 4, 0x08d4c303
-.insn 4, 0x126486a3
-.insn 4, 0x08e4c303
-.insn 4, 0x12648723
-.insn 4, 0x08f4c303
-.insn 4, 0x126487a3
-.insn 4, 0x0e048513
-.insn 4, 0x04000593
-.insn 2, 0x865a
-.insn 2, 0x86ca
+.base64 "A8MEBCOAZA4DwxQEo4BkDgPDJAQjgWQOA8M0BKOBZA4Dw0QEI4JkDgPDVASjgmQOA8NkBCODZA4Dw3QEo4NkDgPDhAQjhGQOA8OUBKOEZA4Dw6QEI4VkDgPDtASjhWQOA8PEBCOGZA4Dw9QEo4ZkDgPD5AQjh2QOA8P0BKOHZA4DwwQFI4hkDgPDFAWjiGQOA8MkBSOJZA4DwzQFo4lkDgPDRAUjimQOA8NUBaOKZA4Dw2QFI4tkDgPDdAWji2QOA8OEBSOMZA4Dw5QFo4xkDgPDpAUjjWQOA8O0BaONZA4Dw8QFI45kDgPD1AWjjmQOA8PkBSOPZA4Dw/QFo49kDgPDBAYjgGQQA8MUBqOAZBADwyQGI4FkEAPDNAajgWQQA8NEBiOCZBADw1QGo4JkEAPDZAYjg2QQA8N0BqODZBADw4QGI4RkEAPDlAajhGQQA8OkBiOFZBADw7QGo4VkEAPDxAYjhmQQA8PUBqOGZBADw+QGI4dkEAPD9Aajh2QQA8MEByOIZBADwxQHo4hkEAPDJAcjiWQQA8M0B6OJZBADw0QHI4pkEAPDVAejimQQA8NkByOLZBADw3QHo4tkEAPDhAcjjGQQA8OUB6OMZBADw6QHI41kEAPDtAejjWQQA8PEByOOZBADw9QHo45kEAPD5Acjj2QQA8P0B6OPZBADwwQII4BkEgPDFAijgGQSA8MkCCOBZBIDwzQIo4FkEgPDRAgjgmQSA8NUCKOCZBIDw2QII4NkEgPDdAijg2QSA8OECCOEZBIDw5QIo4RkEgPDpAgjhWQSA8O0CKOFZBIDw8QII4ZkEgPD1AijhmQSA8PkCCOHZBIDw/QIo4dkEhOFBA6TBQAEWobKhg=="
 call {vg_md5_update}
-.insn 4, 0x018bd313
-.insn 4, 0x14648823
-.insn 4, 0x010bd313
-.insn 4, 0x146488a3
-.insn 4, 0x008bd313
-.insn 4, 0x14648923
-.insn 4, 0x157489a3
-.insn 4, 0x0e048513
-.insn 4, 0x04090593
-.insn 4, 0x15048613
-.insn 2, 0x4691
+.base64 "E9OLASOIZBQT0wsBo4hkFBPTiwAjiWQUo4l0FROFBA6TBQkEE4YEFZFG"
 call {vg_md5_update}
-.insn 4, 0x0e048513
-.insn 4, 0x09048593
-.insn 4, 0x04490613
-.insn 4, 0x13048693
+.base64 "E4UEDpOFBAkTBkkEk4YEEw=="
 call {vg_hmac_md5_finalize}
-.insn 4, 0x1304c303
-.insn 4, 0x14648023
-.insn 4, 0x1314c303
-.insn 4, 0x146480a3
-.insn 4, 0x1324c303
-.insn 4, 0x14648123
-.insn 4, 0x1334c303
-.insn 4, 0x146481a3
-.insn 4, 0x1344c303
-.insn 4, 0x14648223
-.insn 4, 0x1354c303
-.insn 4, 0x146482a3
-.insn 4, 0x1364c303
-.insn 4, 0x14648323
-.insn 4, 0x1374c303
-.insn 4, 0x146483a3
-.insn 4, 0x1384c303
-.insn 4, 0x14648423
-.insn 4, 0x1394c303
-.insn 4, 0x146484a3
-.insn 4, 0x13a4c303
-.insn 4, 0x14648523
-.insn 4, 0x13b4c303
-.insn 4, 0x146485a3
-.insn 4, 0x13c4c303
-.insn 4, 0x14648623
-.insn 4, 0x13d4c303
-.insn 4, 0x146486a3
-.insn 4, 0x13e4c303
-.insn 4, 0x14648723
-.insn 4, 0x13f4c303
-.insn 4, 0x146487a3
-.insn 4, 0x04048513
-.insn 4, 0x13048593
-.insn 4, 0xfff98613
-.insn 4, 0x14048693
-.insn 4, 0x16048713
+.base64 "A8MEEyOAZBQDwxQTo4BkFAPDJBMjgWQUA8M0E6OBZBQDw0QTI4JkFAPDVBOjgmQUA8NkEyODZBQDw3QTo4NkFAPDhBMjhGQUA8OUE6OEZBQDw6QTI4VkFAPDtBOjhWQUA8PEEyOGZBQDw9QTo4ZkFAPD5BMjh2QUA8P0E6OHZBQThQQEk4UEExOG+f+ThgQUE4cEFg=="
 call {vg_pbkdf2_hmac_md5_iterate}
-.insn 4, 0xff0a8313
-.insn 4, 0x03f35313
-.insn 2, 0x83d6
+.base64 "E4MK/xNT8wPWgw=="
 bnez t1, 23f
-.insn 2, 0x43c1
+.base64 "wUM="
 j 24f
 23:
 24:
-.insn 2, 0x4e01
+.base64 "AU4="
 25:
-.insn 4, 0x01c48eb3
-.insn 4, 0x140ec303
-.insn 4, 0x01ca0eb3
-.insn 4, 0x006e8023
-.insn 2, 0x0e05
-.insn 2, 0x13fd
+.base64 "s47EAQPDDhSzDsoBI4BuAAUO/RM="
 bnez t2, 25b
-.insn 2, 0x9a72
-.insn 4, 0x41ca8ab3
-.insn 2, 0x0b85
+.base64 "cpqzispBhQs="
 bnez s5, 22b
 j 21f
 20:
 21:
-.insn 4, 0x0004b083
-.insn 4, 0x0104b903
-.insn 4, 0x0184b983
-.insn 4, 0x0204ba03
-.insn 4, 0x0284ba83
-.insn 4, 0x0304bb03
-.insn 4, 0x0384bb83
-.insn 2, 0x6484
-.insn 2, 0x6135
-.insn 2, 0x612d
-.insn 2, 0x8082
-.option pop",
+.base64 "g7AEAAO5BAGDuYQBA7oEAoO6hAIDuwQDg7uEA4RkNWEtYYKA"
+.option pop"#,
         vg_hmac_md5_init = sym super::hmac_md5::vg_hmac_md5_init,
         vg_md5_update = sym super::md5::vg_md5_update,
         vg_hmac_md5_finalize = sym super::hmac_md5::vg_hmac_md5_finalize,

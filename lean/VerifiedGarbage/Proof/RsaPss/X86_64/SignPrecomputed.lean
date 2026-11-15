@@ -215,11 +215,11 @@ theorem psign_implies (hsat : ∃ s, (pspec tsH tsG).pre s) : (psignK tsH tsG).I
     rintro s₁ s₂ - - h
     sig_pub [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig, Spec.MdHashTable.param,
       Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Spec.MdHashTable.param,
-      Abi.withTables, Sig.wordIndex, abi, argRegs, signStack, stackArgs_twenty, List.append_eq, tabFns] at h
+      Abi.withTables, Sig.wordIndex, abi, argRegs, signStack, List.append_eq, tabFns, List.range, List.range.loop] at h
     simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ, List.getD_cons_zero,
       Option.some.injEq] at h
     obtain ⟨hsp, hsy, htab, htab', hl, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12,
-      a13, a14, a15, a16, a17, a18, a19, -⟩ := h
+      a13, a14, a15, a16, a17, a18, a19⟩ := h
     obtain ⟨hne, hlk⟩ := List.append_inj hl (by
       simp only [List.length_map, List.length_append, Proof.Rsa.bytesAt_length', hcx, h9])
     obtain ⟨hn, he⟩ := leak_eq (by simp [Spec.Rsa.bytesAt, hcx]) hne
@@ -309,7 +309,7 @@ theorem psign_pre_of {tsH tsG : List FnTable} {D : Nat} (hD : D ≤ 64) {s : Sta
     (pspec tsH tsG).pre s := by
   sig_pre [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig, Spec.MdHashTable.param,
     Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
-    argRegs, signStack, stackArgs_twenty, List.append_eq, Sig.tableRegion]
+    argRegs, signStack, List.append_eq, Sig.tableRegion, List.range, List.range.loop]
   have hsp : s.gpr .rsp = 0x10000 := by rw [hg]; rfl
   have hD' : (BitVec.ofNat 64 D).toNat = D := by rw [BitVec.toNat_ofNat]; omega_using [hD]
   have hA : ∀ j, stackArgAddr s j = 0x10000 + BitVec.ofNat 64 (8 * (j + 1)) := fun j => by
@@ -323,7 +323,7 @@ theorem psign_pre_of {tsH tsG : List FnTable} {D : Nat} (hD : D ≤ 64) {s : Sta
     List.getD_cons_zero, Option.some.injEq, exists_eq_left']
   sig_pre [Spec.RsaPss.signPrecomputedMdTableContract, Spec.RsaPss.signPrecomputedMdTableSig, Spec.MdHashTable.param,
     Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Spec.MdHashTable.dataWords, Abi.withTables, Sig.wordIndex, abi,
-    argRegs, signStack, stackArgs_twenty, List.append_eq, Sig.tableRegion]
+    argRegs, signStack, List.append_eq, Sig.tableRegion, List.range, List.range.loop]
   sig_and_intros
   all_goals first
     | with_reducible exact hK

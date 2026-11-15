@@ -25,6 +25,7 @@ meta import VerifiedGarbage.Spec.Sm4.Ctr
 meta import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Proof.Sm4.RISCV64.PreparedBody
 meta import VerifiedGarbage.Proof.Sm4.RISCV64.PreparedBody
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-!
 # SM4's modes on RISC-V meet their contracts
@@ -120,8 +121,8 @@ theorem keyArgs_of {post : State → State → Prop} {M : Mode} (d : Dir) (hstep
 
 /-! ## Correctness -/
 
-theorem cipher_enc (k : Spec.Sm4.Schedule) : (dirCoreSpec .encrypt).cipher k = Spec.Sm4.cipher k := rfl
-theorem cipher_dec (k : Spec.Sm4.Schedule) : (dirCoreSpec .decrypt).cipher k = Spec.Sm4.invCipher k := rfl
+theorem cipher_enc (k : Spec.Sm4.Schedule) : (dirCoreSpec .encrypt).cipher k = Spec.Sm4.cipher k := by kernel_rfl
+theorem cipher_dec (k : Spec.Sm4.Schedule) : (dirCoreSpec .decrypt).cipher k = Spec.Sm4.invCipher k := by kernel_rfl
 
 theorem cbcEncryptChained_correct (s : State) (hs : (modeContract cbcEncPost).pre s) :
     ∃ t s', Exec isa cbcEncryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract cbcEncPost).post s s' :=

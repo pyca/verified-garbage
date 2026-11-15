@@ -14,50 +14,39 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_zeroize(p: *mut u8, len: usize) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x4281
-.insn 2, 0x4301
-.insn 4, 0x40a30333
-.insn 4, 0x00737313
-.insn 4, 0x0065b3b3
+.base64 "gUIBQzMDo0ATc3MAs7NlAA=="
 bnez t2, 20f
 j 21f
 20:
-.insn 2, 0x832e
+.base64 "LoM="
 21:
-.insn 4, 0x406585b3
+.base64 "s4VlQA=="
 beqz t1, 22f
 24:
-.insn 4, 0x00550023
-.insn 2, 0x0505
-.insn 2, 0x137d
+.base64 "IwBVAAUFfRM="
 bnez t1, 24b
 j 23f
 22:
 23:
-.insn 4, 0x0035d313
-.insn 2, 0x899d
+.base64 "E9M1AJ2J"
 beqz t1, 25f
 27:
-.insn 4, 0x00553023
-.insn 2, 0x0521
-.insn 2, 0x137d
+.base64 "IzBVACEFfRM="
 bnez t1, 27b
 j 26f
 25:
 26:
-.insn 2, 0x832e
+.base64 "LoM="
 beqz t1, 28f
 210:
-.insn 4, 0x00550023
-.insn 2, 0x0505
-.insn 2, 0x137d
+.base64 "IwBVAAUFfRM="
 bnez t1, 210b
 j 29f
 28:
 29:
-.insn 2, 0x8082
-.option pop",
+.base64 "goA="
+.option pop"#,
     )
 }

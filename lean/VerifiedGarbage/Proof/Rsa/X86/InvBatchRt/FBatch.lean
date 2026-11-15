@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Power
 import Mathlib.Data.Int.ModEq
 import Mathlib.Algebra.Order.Ring.Abs
+import VerifiedGarbage.Proof.Framework.KernelRfl
 
 /-! # The fused batches on i686: the window
 
@@ -286,26 +287,26 @@ structure MdmeAt (m₀ m : Mem) (B : Addr) (de0 n dx : Nat) : Prop where
 abbrev de0 (len : Nat) : Nat := rv (kw len) { arr := deArr, byte := deSz }
 
 theorem mdme_code (L : Lay) (dx : Nat) : mdme L dx = ptr L .esi { arr := deArr, byte := deSz } .edx ++
-    ([.mov .ebx (.mem (at_ .esi dx)), .mov .ecx (.mem (at_ .esi (dx + 4))),
+    (([.mov .ebx (.mem (at_ .esi dx)), .mov .ecx (.mem (at_ .esi (dx + 4))),
       .mov .eax (.mem (sc halfSlot)), .mov .edx (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
-      .alu .add .eax (.reg .edx), .alu .add .esi (.reg .eax)] ++
-    (([.mov .eax (.mem (at_ .esi dx))] ++ signEax ++ [.store (sc sMd) .eax]) ++
-    (([.mov .eax (.mem (at_ .esi (dx + 4)))] ++ signEax ++ [.store (sc (sMd + 4)) .eax]) ++
-    ([.mov .esi (.mem (sc (win + 12 + 8 * 0))), .alu .and .esi (.mem (sc sMd)), .mov .eax (.mem (sc (win + 16 + 8 * 0))),
+      .alu .add .eax (.reg .edx), .alu .add .esi (.reg .eax)] : List Instr) ++
+    ((([.mov .eax (.mem (at_ .esi dx))] : List Instr) ++ signEax ++ ([.store (sc sMd) .eax] : List Instr)) ++
+    ((([.mov .eax (.mem (at_ .esi (dx + 4)))] : List Instr) ++ signEax ++ ([.store (sc (sMd + 4)) .eax] : List Instr)) ++
+    (([.mov .esi (.mem (sc (win + 12 + 8 * 0))), .alu .and .esi (.mem (sc sMd)), .mov .eax (.mem (sc (win + 16 + 8 * 0))),
       .alu .and .eax (.mem (sc (sMd + 4))), .alu .add .esi (.reg .eax),
       .mov .eax (.mem (sc (win + 12 + 8 * 0))), .mul .ebx, .mov .ebp (.reg .eax), .mov .eax (.mem (sc (win + 16 + 8 * 0))),
       .mul .ecx, .alu .add .ebp (.reg .eax),
       .mov .eax (.mem (sc (win + 28))), .mul .ebp, .mov .edx (.reg .esi), .alu .sub .edx (.reg .eax),
-      .alu .and .edx (.imm 0x3FFFFFFF), .alu .sub .esi (.reg .edx), .store (sc (sMd + 8 + 4 * 0)) .esi] ++
-    ([.mov .esi (.mem (sc (win + 12 + 8 * 1))), .alu .and .esi (.mem (sc sMd)), .mov .eax (.mem (sc (win + 16 + 8 * 1))),
+      .alu .and .edx (.imm 0x3FFFFFFF), .alu .sub .esi (.reg .edx), .store (sc (sMd + 8 + 4 * 0)) .esi] : List Instr) ++
+    (([.mov .esi (.mem (sc (win + 12 + 8 * 1))), .alu .and .esi (.mem (sc sMd)), .mov .eax (.mem (sc (win + 16 + 8 * 1))),
       .alu .and .eax (.mem (sc (sMd + 4))), .alu .add .esi (.reg .eax),
       .mov .eax (.mem (sc (win + 12 + 8 * 1))), .mul .ebx, .mov .ebp (.reg .eax), .mov .eax (.mem (sc (win + 16 + 8 * 1))),
       .mul .ecx, .alu .add .ebp (.reg .eax),
       .mov .eax (.mem (sc (win + 28))), .mul .ebp, .mov .edx (.reg .esi), .alu .sub .edx (.reg .eax),
-      .alu .and .edx (.imm 0x3FFFFFFF), .alu .sub .esi (.reg .edx), .store (sc (sMd + 8 + 4 * 1)) .esi] ++
-    (([.mov .eax (.mem (sc (sMd + 8)))] ++ signEax ++ [.store (sc sMm) .eax]) ++
-    (([.mov .eax (.mem (sc (sMd + 12)))] ++ signEax ++ [.store (sc (sMm + 4)) .eax]) ++ restoreEdi L))))))) := by
-  rfl
+      .alu .and .edx (.imm 0x3FFFFFFF), .alu .sub .esi (.reg .edx), .store (sc (sMd + 8 + 4 * 1)) .esi] : List Instr) ++
+    ((([.mov .eax (.mem (sc (sMd + 8)))] : List Instr) ++ signEax ++ ([.store (sc sMm) .eax] : List Instr)) ++
+    ((([.mov .eax (.mem (sc (sMd + 12)))] : List Instr) ++ signEax ++ ([.store (sc (sMm + 4)) .eax] : List Instr)) ++ restoreEdi L))))))) := by
+  kernel_rfl
 
 theorem mdme_ok {s : State} (h : Bx L s B Z len N) {dx : Nat} (hdx : dx + 8 ≤ deSz) :
     WP isa (.block (mdme L dx)) s fun t =>

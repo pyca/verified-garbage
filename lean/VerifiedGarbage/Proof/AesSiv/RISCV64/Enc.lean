@@ -127,7 +127,7 @@ theorem encS2v_wp {c : Cx} {s : State} (Ar : Args c s) (hA : Ads c s.mem s) {res
       s4 := by rw [K₂.s4, En.s4, Nat.mul_zero, BitVec.add_zero]
       s5 := by rw [K₂.s5, En.s5, Nat.sub_zero]
       frame := f₂
-      acc := by rw [d₂, List.take_zero]; rfl }
+      acc := by rw [d₂, List.take_zero, Spec.Siv.s2vAcc, List.foldl_nil] }
   refine WP.seq (WP.mono (s2vAds_wp L I₀) fun s₃ I₃ => ?_)
   refine wp_mv fun s₄ u₄ => wp_mv fun s₅ u₅ => WP.block_nil ?_
   have pk₅ : PK s₃ s₅ := (PK.ofUpd u₄).trans (PK.ofUpd u₅)
