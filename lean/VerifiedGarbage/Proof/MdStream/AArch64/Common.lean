@@ -316,9 +316,33 @@ theorem WP.gprs {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s 
   obtain ⟨t, s', he, hq⟩ := h
   exact ⟨t, s', he, hq, fun r hr => Exec.gpr (hc r hr) he (hn.imp id fun h => h r hr)⟩
 
-/-- The callee-saved registers our code never touches (but for `x30`, which
-our calls change and the frame restores). -/
+/-- The callee-saved registers our own code never touches (but for `x30`,
+which our calls change and the frame restores). The compression function we
+call may write them: it keeps them, as it does every callee-saved register
+(`CalleeOk.verified`). -/
 def untouched : List Reg := [.x25, .x26, .x27, .x28]
+
+/-- A function that keeps the callee-saved registers keeps `untouched`. -/
+theorem untouched_preserved : ∀ r ∈ untouched, r ∈ preserved ∧ r ≠ .x30 := by decide
+
+/-- `untouched` are none of the registers our code writes. -/
+theorem untouched_ne : ∀ r ∈ untouched,
+    r ≠ .x1 ∧ r ≠ .x9 ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x23 ∧ r ≠ .x24 := by decide
+
+/-- No instruction of a list writes `untouched`, from the check of each. -/
+theorem untouched_of_all {is : List Instr}
+    (h : (is.all fun i => untouched.all fun r => !clobbers i r) = true) :
+    ∀ r ∈ untouched, ∀ i ∈ is, clobbers i r = false := by
+  intro r hr i hi
+  have := List.all_eq_true.mp (List.all_eq_true.mp h i hi) r hr
+  simpa using this
+
+theorem storeWord_untouched (P : Params) :
+    ((storeWord P).all fun i => untouched.all fun r => !clobbers i r) = true := by
+  unfold storeWord; split <;> rfl
+
+theorem restore_untouched (P : Params) : ∀ r ∈ untouched, ∀ i ∈ restore P, clobbers i r = false :=
+  untouched_of_all rfl
 
 /-- A byte of a region disjoint from a frame is unchanged by the push. -/
 theorem write_frame_apply {m : Mem} {sp : Addr} {v : BitVec (8 * 8)} {R : Region}
