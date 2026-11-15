@@ -181,48 +181,113 @@ theorem Consts.of_v {s t : State} (h : Consts s)
     (hv _ (by decide)).trans h.v4, (hv _ (by decide)).trans h.v5, (hv _ (by decide)).trans h.v6,
     (hv _ (by decide)).trans h.v7⟩
 
-/-- The three constant bytes, through `x6`. -/
-theorem consts_run (s : State) :
-    ∃ t, runBlock isa [.movz .w .x6 0x80 0, .vop (.dup .b16 .v5 .x6), .movz .w .x6 0x40 0,
-        .vop (.dup .b16 .v6 .x6), .movz .w .x6 0x1b 0, .vop (.dup .b16 .v7 .x6)] s = some t ∧
-      t.v .v5 = bc 0x80 ∧ t.v .v6 = bc 0x40 ∧ t.v .v7 = bc 0x1b ∧
-      (∀ v, v ≠ .v5 → v ≠ .v6 → v ≠ .v7 → t.v v = s.v v) ∧ (∀ r, r ≠ .x6 → t.gpr r = s.gpr r) ∧
-      t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
-  let a := s.write .w .x6 0x80
-  let b := a.setV .v5 (bc 0x80)
-  let c := b.write .w .x6 0x40
-  let d := c.setV .v6 (bc 0x40)
-  let e := d.write .w .x6 0x1b
-  let f := e.setV .v7 (bc 0x1b)
-  refine ⟨f, rfl, ?_, ?_, ?_, ?_, ?_, rfl, rfl, rfl, rfl⟩
-  · simp [f, e, d, c, b, a, State.setV, State.write]
-  · simp [f, e, d, c, b, a, State.setV, State.write]
-  · simp [f, State.setV]
-  · intro v h5 h6 h7
-    simp only [f, e, d, c, b, a, v_write, v_setV_of_ne _ _ h5, v_setV_of_ne _ _ h6, v_setV_of_ne _ _ h7]
-  · intro r hr
-    simp only [f, e, d, c, b, a, gpr_setV, gpr_write_of_ne _ _ _ hr]
+/-- A vector is its two doublewords. -/
+theorem halves_append (x : BitVec 128) : x.extractLsb' 64 64 ++ x.extractLsb' 0 64 = x :=
+  ofVDwords_halves x
 
-/-- `setup`: the tables and constants, through `x6` and `x7`. -/
+theorem tabWords_length : tabWords.length = 40 := by simp [tabWords]
+
+/-- The two words of vector `j` of the static, as `ldrqTbl` loads them. -/
+theorem tabWords_pair {j : Nat} (hj : j < 20) :
+    tabWords.getD (16 * j / 8 + 1) 0 ++ tabWords.getD (16 * j / 8) 0 = tabVec j := by
+  have g : ∀ i < 40, tabWords.getD i 0 = (tabVec (i / 2)).extractLsb' (64 * (i % 2)) 64 := fun i hi => by
+    simp [tabWords, hi]
+  rw [show 16 * j / 8 = 2 * j by omega_arith, g _ (by omega_arith), g _ (by omega_arith),
+    show (2 * j + 1) / 2 = j by omega_arith, show (2 * j + 1) % 2 = 1 by omega_arith,
+    show 2 * j / 2 = j by omega_arith, show 2 * j % 2 = 0 by omega_arith]
+  exact halves_append _
+
+/-- Loading vector `j` of the static, whose address is in `x6`. -/
+theorem exec_tld (r : VReg) {j : Nat} (hj : j < 20) {s : State} (hx : s.gpr .x6 = s.syms tabName) :
+    exec (tld r j) s = some (s.setV r (tabVec j)) := by
+  have hc : s.gpr .x6 = s.syms tabName ∧ 16 * j % 16 = 0 ∧ 16 * j < 65536 ∧
+      16 * j / 8 + 2 ≤ tabWords.length :=
+    ⟨hx, by omega_arith, by omega_arith, by rw [tabWords_length]; omega_arith⟩
+  simp only [tld, exec, ite_eq_left_of_eq_true _ _ (eq_true hc), tabWords_pair hj]
+
+/-- What a load of the static changes. -/
+structure Loaded (s t : State) : Prop where
+  gpr : t.gpr = s.gpr
+  mem : t.mem = s.mem
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  sp : t.sp = s.sp
+  syms : t.syms = s.syms
+
+theorem Loaded.refl (s : State) : Loaded s s := ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+theorem Loaded.trans {a b c : State} (h₁ : Loaded a b) (h₂ : Loaded b c) : Loaded a c :=
+  ⟨h₂.gpr.trans h₁.gpr, h₂.mem.trans h₁.mem, h₂.rd.trans h₁.rd, h₂.wr.trans h₁.wr, h₂.sp.trans h₁.sp,
+    h₂.syms.trans h₁.syms⟩
+
+theorem Loaded.setV (s : State) (r : VReg) (x : BitVec 128) : Loaded s (s.setV r x) :=
+  ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+/-- One load, then more code. -/
+theorem tld_ok {r : VReg} {j : Nat} (hj : j < 20) {s : State} (hx : s.gpr .x6 = s.syms tabName) :
+    WP isa (.block [tld r j]) s fun t => t.v r = tabVec j ∧ (∀ w, w ≠ r → t.v w = s.v w) ∧ Loaded s t := by
+  rw [WP.block_cons_iff]
+  exact ⟨_, exec_tld r hj hx, WP.block_nil ⟨v_setV_self _ _ _, fun w hw => v_setV_of_ne _ _ hw,
+    Loaded.setV _ _ _⟩⟩
+
+/-- The S-box from the static into the table registers. -/
+theorem tldTable_ok {s : State} (hx : s.gpr .x6 = s.syms tabName) :
+    WP isa (.block ((List.range 16).map fun r => tld (treg r) r)) s fun t =>
+      (∀ r < 16, t.v (treg r) = tabVec r) ∧ (∀ w, (∀ r < 16, w ≠ treg r) → t.v w = s.v w) ∧ Loaded s t := by
+  suffices h : ∀ n ≤ 16, WP isa (.block ((List.range n).map fun r => tld (treg r) r)) s fun t =>
+      (∀ r < n, t.v (treg r) = tabVec r) ∧ (∀ w, (∀ r < n, w ≠ treg r) → t.v w = s.v w) ∧ Loaded s t from
+    h 16 (Nat.le_refl _)
+  intro n hn
+  induction n with
+  | zero => exact WP.block_nil ⟨fun _ h => absurd h (by omega_arith), fun _ _ => rfl, Loaded.refl s⟩
+  | succ n ih =>
+    rw [List.range_succ, List.map_append, List.map_singleton, WP.block_append_iff]
+    refine WP.mono (ih (by omega_arith)) fun a ⟨arow, av, al⟩ => ?_
+    refine WP.mono (tld_ok (r := treg n) (j := n) (by omega_arith) (by rw [al.gpr, al.syms]; exact hx))
+      fun b ⟨brow, bv, bl⟩ => ⟨fun r hr => ?_, fun w hw => ?_, al.trans bl⟩
+    · by_cases he : r = n
+      · subst he; exact brow
+      · rw [bv _ (fun e => he (treg_inj r (by omega_arith) n (by omega_arith) e)), arow r (by omega_arith)]
+    · rw [bv _ (hw n (by omega_arith)), av w (fun r hr => hw r (by omega_arith))]
+
+/-- `setup`: the tables and constants, from the static, through `x6`. -/
 theorem setup_ok (s : State) :
     WP isa (.block setup) s fun t => Consts t ∧ t.v .v0 = s.v .v0 ∧
       (∀ g, g ≠ .x6 → g ≠ .x7 → t.gpr g = s.gpr g) ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       t.sp = s.sp := by
   unfold setup
-  rw [WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (loadTable_ok s _) fun a ⟨atab, av, ag, am, ard, awr, asp⟩ => ?_
-  refine WP.mono (const128_ok a .v4 shiftIdx) fun b ⟨b4, bv, bg, bm, brd, bwr, bsp⟩ => ?_
-  obtain ⟨t, ht, t5, t6, t7, tv, tg, tm, trd, twr, tsp⟩ := consts_run b
-  refine WP.of_runBlock ⟨t, ht, ⟨fun k hk => ?_, ?_, t5, t6, t7⟩, ?_, fun g h6 h7 => ?_, tm.trans (bm.trans am),
-    trd.trans (brd.trans ard), twr.trans (bwr.trans awr), tsp.trans (bsp.trans asp)⟩
-  · rw [tbyte_congr' (fun r hr => by
-      have hn := treg_ne8 r hr
-      rw [tv _ hn.2.2.2.2.2.1 hn.2.2.2.2.2.2.1 hn.2.2.2.2.2.2.2, bv _ hn.2.2.2.2.1]) k hk]
-    exact atab k hk
-  · rw [tv _ (by decide) (by decide) (by decide)]; exact b4
-  · rw [tv _ (by decide) (by decide) (by decide), bv _ (by decide),
-      av _ (fun r hr => (treg_ne8 r hr).1.symm)]
-  · rw [tg _ h6, bg _ h6 h7, ag _ h6 h7]
+  let a := s.write .x .x6 (s.syms tabName)
+  have ax : a.gpr .x6 = a.syms tabName := gpr_write_self _ _ _ _
+  rw [List.singleton_append, WP.block_cons_iff]
+  refine ⟨a, exec_adrSym, ?_⟩
+  rw [WP.block_append_iff]
+  refine WP.mono (tldTable_ok ax) fun b ⟨brow, bv, bl⟩ => ?_
+  have bx : b.gpr .x6 = b.syms tabName := by rw [bl.gpr, bl.syms]; exact ax
+  rw [show ([tld .v4 16, tld .v5 17, tld .v6 18, tld .v7 19] : List Instr) =
+    [tld .v4 16] ++ ([tld .v5 17] ++ ([tld .v6 18] ++ [tld .v7 19])) from rfl, WP.block_append_iff]
+  refine WP.mono (tld_ok (by decide) bx) fun c ⟨c4, cv, cl⟩ => ?_
+  have cx : c.gpr .x6 = c.syms tabName := by rw [cl.gpr, cl.syms]; exact bx
+  rw [WP.block_append_iff]
+  refine WP.mono (tld_ok (by decide) cx) fun d ⟨d5, dv, dl⟩ => ?_
+  have dx : d.gpr .x6 = d.syms tabName := by rw [dl.gpr, dl.syms]; exact cx
+  rw [WP.block_append_iff]
+  refine WP.mono (tld_ok (by decide) dx) fun e ⟨e6, ev, el⟩ => ?_
+  have ex : e.gpr .x6 = e.syms tabName := by rw [el.gpr, el.syms]; exact dx
+  refine WP.mono (tld_ok (by decide) ex) fun t ⟨t7, tv, tl⟩ => ?_
+  have l := (((bl.trans cl).trans dl).trans el).trans tl
+  refine ⟨⟨fun k hk => ?_, ?_, ?_, ?_, ?_⟩, ?_, fun g h6 _ => ?_, l.mem, l.rd, l.wr, l.sp⟩
+  · have hn := treg_ne8 (k / 16) (by omega_arith)
+    rw [tbyte, tv _ hn.2.2.2.2.2.2.2, ev _ hn.2.2.2.2.2.2.1, dv _ hn.2.2.2.2.2.1, cv _ hn.2.2.2.2.1,
+      brow _ (by omega_arith), tabVec, ite_eq_left (by omega_arith), vbyte_ofVBytes _ (by omega_arith)]
+    congr 2; omega_arith
+  · rw [tv _ (by decide), ev _ (by decide), dv _ (by decide), c4]; rfl
+  · rw [tv _ (by decide), ev _ (by decide), d5]; rfl
+  · rw [tv _ (by decide), e6]; rfl
+  · rw [t7]; rfl
+  · rw [tv _ (by decide), ev _ (by decide), dv _ (by decide), cv _ (by decide),
+      bv _ (fun r hr => (treg_ne8 r hr).1.symm)]
+    rfl
+  · rw [l.gpr]; exact gpr_write_of_ne _ _ _ h6
 
 /-! ## SubBytes and ShiftRows, and MixColumns -/
 

@@ -9,8 +9,9 @@ public import VerifiedGarbage.Impl.Tbl.AArch64
 the baseline ISA, for the functions that are given one block at a time (the
 bitsliced code, four blocks at a time, first bitslices every round key).
 
-The S-box is in the table registers `v16`–`v31`, loaded by immediates
-(`Impl.Tbl.AArch64.loadTable`), and a state byte selects from it with `tbl`,
+The S-box is in the table registers `v16`–`v31`, loaded from a static the
+code carries (`ldrqTbl`, `tabWords`: twenty loads, where immediates took
+some 170 instructions on every call), and a state byte selects from it with `tbl`,
 whose time does not depend on its data (`Impl.Tbl.AArch64.select`): no
 secret is an address or a branch condition. The state is in `v0`, as FIPS
 197 lays it out (byte `r + 4c` is `s[r, c]`), already XORed with the round
@@ -27,8 +28,8 @@ key. A round is:
   x_{t+3}`;
 * AddRoundKey: `eor` with the next 16 bytes of the schedule.
 
-The last round has no MixColumns. Only `x0`, `x1`, `x6`, `x7`, `v0`–`v7`
-and `v16`–`v31` are written.
+The last round has no MixColumns. Only `x0`, `x1`, `x6`, `v0`–`v7` and
+`v16`–`v31` are written.
 -/
 
 @[expose] public section
@@ -41,12 +42,31 @@ open VG.AArch64 VG.Impl.Tbl.AArch64
 `t mod 4 + 4 ((t / 4 + t mod 4) mod 4)` of the state. -/
 def shiftIdx : BitVec 128 := ofVBytes fun t => BitVec.ofNat 8 (t % 4 + 4 * ((t / 4 + t % 4) % 4))
 
+/-- The static that holds the tables and constants. -/
+def tabName : String := "VG_AES_SBOX"
+
+/-- Its vectors: the S-box, sixteen bytes each, then ShiftRows' indices and
+the bytes `0x80`, `0x40` and `0x1b` in every byte. -/
+def tabVec (j : Nat) : BitVec 128 :=
+  if j < 16 then ofVBytes fun e => aesSbox (BitVec.ofNat 8 (16 * j + e))
+  else if j = 16 then shiftIdx
+  else if j = 17 then ofVBytes fun _ => 0x80
+  else if j = 18 then ofVBytes fun _ => 0x40
+  else ofVBytes fun _ => 0x1b
+
+/-- The static's words: vector `j` at bytes `16 j` to `16 j + 15`. -/
+def tabWords : List (BitVec 64) :=
+  (List.range 40).map fun i => (tabVec (i / 2)).extractLsb' (64 * (i % 2)) 64
+
+/-- Vector `j` of the static, at `x6`, into `r`. -/
+def tld (r : VReg) (j : Nat) : Instr := .ldrqTbl r .x6 (16 * j) tabName tabWords
+
 /-- The S-box into `v16`–`v31`, ShiftRows' indices into `v4`, and the bytes
-`0x80`, `0x40` and `0x1b` into every byte of `v5`, `v6` and `v7`. -/
+`0x80`, `0x40` and `0x1b` into every byte of `v5`, `v6` and `v7`, loaded
+from the static, whose address is in `x6`. -/
 def setup : List Instr :=
-  loadTable (fun k => aesSbox (BitVec.ofNat 8 k)) ++ const128 .v4 shiftIdx ++
-  [.movz .w .x6 0x80 0, .vop (.dup .b16 .v5 .x6), .movz .w .x6 0x40 0, .vop (.dup .b16 .v6 .x6),
-    .movz .w .x6 0x1b 0, .vop (.dup .b16 .v7 .x6)]
+  ([.adrSym .x6 tabName] : List Instr) ++ (((List.range 16).map fun r => tld (treg r) r) ++
+    ([tld .v4 16, tld .v5 17, tld .v6 18, tld .v7 19] : List Instr))
 
 /-- ShiftRows, then SubBytes, of `v0`. -/
 def subShift : List Instr :=

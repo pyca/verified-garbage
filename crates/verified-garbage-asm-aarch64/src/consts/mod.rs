@@ -7,6 +7,10 @@
 pub struct Table<const N: usize>(pub [u8; N]);
 
 #[rustfmt::skip]
+mod vg_aes_sbox;
+pub use vg_aes_sbox::VG_AES_SBOX;
+
+#[rustfmt::skip]
 mod vg_blowfish_init;
 pub use vg_blowfish_init::VG_BLOWFISH_INIT;
 
