@@ -220,7 +220,20 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   then repeats; where a profile shows that (e.g. `exec` of an instruction,
   `Proof/Blake2/X86_64/Avx/Round.lean`), prove it `:= (rfl)`. Keep the
   framework's `RegUpd` lemmas `rfl`: as propositional rewrites they measured
-  slower.
+  slower. A lemma whose right side is one of its arguments
+  (`XBinOp.eval .movdqa a b = b`) is the worst case: where `b` is another
+  application of the same function, the kernel compares their arguments,
+  fails, and unfolds both (`vbfly_ok`, 4.5 s of 4.6).
+  The kernel compares two applications of one function by their arguments
+  first, and unfolds the function only when that fails, which for two
+  machine states or two memories is after evaluating what it can of them.
+  So `rfl` is slow on `f t … = f s …` whatever `f` is: an induction's base
+  case (`keyPartsBytes t base [] = keyPartsBytes s base []`: rewrite both
+  sides with the equation for `[]`), a frame fact of a state `simp` left
+  half evaluated (`t.rd = s.rd`: give `simp` every `RegUpd` lemma of the
+  field, `rd_arithFlags` with `rd_setReg`, so that the field is `s.rd`
+  itself), a function updated at other points (`upd (upd f 16 a) 19 b 3 =
+  f 3`: `if_neg (by decide)` for each update). Each took 2 to 3 s.
 * **An equality the elaborator finds by evaluating:** `rfl`, and an
   `exact h` or `fun _ h => h` whose type differs from the goal's, have the
   elaborator unify the two, and it may unfold the wrong thing first.

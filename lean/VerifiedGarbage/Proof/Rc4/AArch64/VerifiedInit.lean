@@ -118,14 +118,16 @@ def ksaRegs : List Reg := [.x4, .x5, .x6, .x7, .x8, .x10, .x11, .x14, .x15, .x16
 /-- The key schedule's globals for the call from `s`, entering the loop in `t`. -/
 def kglob (s t : State) : KGlob := ⟨s.gpr .x0, (s.gpr .x1).toNat, s.mem, t⟩
 
+/-- An entry of `Vector.ofFn f`, for any length: with the length a numeral,
+the kernel builds the vector to compare the forms of the goal. -/
+theorem getD_ofFn {α : Type} {n : Nat} (f : Fin n → α) {k : Nat} (hk : k < n) (d : α) :
+    (Vector.ofFn f).getD k d = f ⟨k, hk⟩ := by
+  simp [Vector.getD, hk]
+
 theorem ident_get {k : Nat} (hk : k < 256) :
     (Vector.ofFn fun i : Fin 256 => BitVec.ofNat 8 i.val).getD (BitVec.ofNat 8 (0 + k)).toNat 0 =
       BitVec.ofNat 8 k := by
-  rw [Nat.zero_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk]
-  simp [Vector.getD, hk]
-  apply BitVec.eq_of_toNat_eq
-  show k = k % 2 ^ 8
-  omega_using [hk]
+  rw [Nat.zero_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk, getD_ofFn _ hk]
 
 theorem scheduleSetup_eq : scheduleSetup = save false ++ (constants ++ (identCode ++
     ([.vop (.movi0 (dq 0)), .vop (.movi0 si), .addImm .x .x7 .x0 0, .addImm .x .x5 .x1 0,

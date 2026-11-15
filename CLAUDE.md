@@ -434,7 +434,9 @@ lemmas and tactics to use; read it before writing a proof:
   explicit lemmas (`congrArg`, `rw`), not `rfl`, `congr 1` or
   `first | rfl | …`; rewrite with a lemma where a hypothesis and the goal
   differ by a definition, rather than leave `exact` or `fun _ h => h` to
-  unify them; never `rfl`, `decide` or `change` on a goal holding a
+  unify them; never `rfl` on `f t … = f s …` with `t` and `s` states or
+  memories (the kernel compares the arguments before it unfolds `f`), nor
+  `rfl`, `decide` or `change` on a goal holding a
   large concrete value, which `generalize` does not hide from the kernel
   (abstract it with `obtain`); rewrite tables' regions with
   `Abi.constRegions_cons`, and state a table's facts with the `ConstsOk`

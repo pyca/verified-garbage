@@ -20,6 +20,13 @@ def keyPartsSize (parts : List (Pointer × Nat)) : Nat := (parts.map Prod.snd).s
 def keyPartsBytes (s : State) (base : Addr) (parts : List (Pointer × Nat)) : List Byte :=
   parts.flatMap fun part => Spec.Rsa.bytesAt s.mem ((pointerValue base s part.1).setWidth 64) part.2
 
+theorem keyPartsBytes_nil (s : State) (base : Addr) : keyPartsBytes s base [] = [] := rfl
+
+theorem keyPartsBytes_cons (s : State) (base : Addr) (part : Pointer × Nat) (rest : List (Pointer × Nat)) :
+    keyPartsBytes s base (part :: rest) =
+      Spec.Rsa.bytesAt s.mem ((pointerValue base s part.1).setWidth 64) part.2 ++ keyPartsBytes s base rest :=
+  List.flatMap_cons
+
 theorem keyPartsBytes_keep {s t : State} {base out : Addr} {size total : Nat}
     {parts : List (Pointer × Nat)}
     (R : ∀ part ∈ parts, KeyPartReady s base out total part)
@@ -28,11 +35,10 @@ theorem keyPartsBytes_keep {s t : State} {base out : Addr} {size total : Nat}
     (K : Keeps [.eax, .ecx, .edx, .esi] s t) :
     keyPartsBytes t base parts = keyPartsBytes s base parts := by
   induction parts with
-  | nil => rfl
+  | nil => rw [keyPartsBytes_nil, keyPartsBytes_nil]
   | cons part rest ih =>
-    simp only [keyPartsBytes, List.flatMap_cons]
-    rw [(R part List.mem_cons_self).bytes hs hz O A K]
-    exact congrArg _ (ih (fun p hp => R p (List.mem_cons_of_mem _ hp)))
+    rw [keyPartsBytes_cons, keyPartsBytes_cons, (R part List.mem_cons_self).bytes hs hz O A K,
+      ih (fun p hp => R p (List.mem_cons_of_mem _ hp))]
 
 theorem keyCopyParts_ok (parts : List (Pointer × Nat)) {s : State} {base : Addr}
     {size : Nat} {out : BitVec 32} {mask : BitVec 32}

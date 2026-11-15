@@ -91,7 +91,10 @@ theorem subq_mul_lt {a b c : Nat} (ha : a < 8380417) (hb : b < 8380417) (hc : c 
   exact Nat.lt_of_lt_of_le (Nat.mul_lt_mul_of_lt_of_le (show b + 8380417 - a < 2 * 8380417 by omega)
     (Nat.le_of_lt hc) (by decide)) (by decide)
 
-theorem eval_movdqa (a b : BitVec 128) : XBinOp.eval .movdqa a b = b := rfl
+/-- By `(rfl)`, not `rfl`: `simp` uses a lemma proven by `rfl` as a definitional
+rewrite, and the kernel then compares `XBinOp.eval .movdqa a b` with `b`
+itself: where `b` is another `XBinOp.eval`, it unfolds both. -/
+theorem eval_movdqa (a b : BitVec 128) : XBinOp.eval .movdqa a b = b := (rfl)
 
 /-! ## Butterflies -/
 
