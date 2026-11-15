@@ -134,6 +134,13 @@ structure Printer (M : ISA) where
   start (see the module docs). They come after its return, so any padding
   they insert is never executed. -/
   funcAlign : List String := []
+  /-- Whether an instruction is one that MXCSR-configuration-dependent timing
+  (MCDT) affects, on Intel's list (see "MCDT" in `TCB/X86_64/Isa.lean`):
+  the dispatcher of a function whose code, or a function it calls, has one
+  calls `vg_mcdt_enter` first (`TCB/Rust.lean`). `false` for every
+  instruction of a target whose code puts such instructions between Intel's
+  prologue and epilogue itself (x86), or has none. -/
+  mcdt : M.Instr → Bool := fun _ => false
 
 variable {M : ISA} (P : Printer M)
 

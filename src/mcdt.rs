@@ -3,9 +3,10 @@
 //! bits, so that it holds `0x1FBF` where the control bits are the default,
 //! as Rust's are (`lean/VerifiedGarbage/Spec/Mcdt.lean`).
 //!
-//! For now this holds only a test that runs it on the CPU: the dispatchers
-//! that call it, before the verified code that uses the instructions Intel
-//! lists, come in the next change.
+//! The generated dispatcher of every function whose code has an
+//! instruction Intel lists runs it first, and panics unless MXCSR then holds
+//! `0x1FBF` (`verified_garbage_cpu::mcdt_entered`; "Dispatchers" in
+//! `lean/VerifiedGarbage/TCB/Rust.lean`). This holds their tests.
 
 #![cfg(target_arch = "x86_64")]
 
@@ -31,5 +32,13 @@ mod tests {
             assert_eq!(unsafe { vg_mcdt_enter_auto(public(Why::Test)) }, 1);
             assert_eq!(mxcsr(), 0x1FBF);
         }
+    }
+
+    /// A dispatcher panics where `vg_mcdt_enter` reports that MXCSR is not
+    /// `0x1FBF`, which it does where its control bits are not the default.
+    #[test]
+    #[should_panic(expected = "MXCSR's control bits are not the default")]
+    fn other_control_bits_panic() {
+        verified_garbage_cpu::mcdt_entered(0);
     }
 }

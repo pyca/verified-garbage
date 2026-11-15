@@ -102,6 +102,20 @@ impl Features {
 #[derive(Clone, Copy, Debug)]
 pub struct Dit<'a>(core::marker::PhantomData<(&'a (), *const ())>);
 
+/// Panics unless `entered`, the result of the verified `vg_mcdt_enter`, is 1:
+/// MXCSR then holds `0x1FBF`, under which Intel guarantees the timing of the
+/// instructions MXCSR-configuration-dependent timing (MCDT) affects. It is 0
+/// only where MXCSR's control bits are not the default (FTZ, DAZ, another
+/// rounding mode or unmasked exceptions), which Rust assumes they are.
+///
+/// The generated dispatchers call it first, for the functions whose code
+/// has such an instruction, on x86-64 (`lean/VerifiedGarbage/TCB/Rust.lean`).
+#[inline]
+#[track_caller]
+pub fn mcdt_entered(entered: u32) {
+    assert!(entered == 1, "MXCSR's control bits are not the default");
+}
+
 impl Dit<'_> {
     /// A token, by the caller's word.
     ///

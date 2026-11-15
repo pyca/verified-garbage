@@ -150,6 +150,64 @@ class Enter(unittest.TestCase):
                                   "not preceded by `mov r32, 8127` and a store of it to its operand"])
 
 
+class Entered(unittest.TestCase):
+    """Affected instructions outside regions, in functions every run of which is
+    under `vg_mcdt_enter`, which their dispatchers run first (x86-64 only)."""
+
+    def fn(self, name, vis="pub(crate) "):
+        return f"#[unsafe(naked)]\n{vis}unsafe extern \"sysv64\" fn {name}() {{}}\n"
+
+    def dispatcher(self, name, enter=True):
+        first = check_mcdt.ENTER_LINE + "\n" if enter else ""
+        return (f"pub unsafe fn {name}_auto(_dit: verified_garbage_cpu::Dit<'_>) {{\n{first}"
+                f"    unsafe {{ crate::m::{name}() }}\n}}\n")
+
+    def check(self, src, assembly, dispatch="", tables=""):
+        with tempfile.TemporaryDirectory() as directory:
+            root = pathlib.Path(directory)
+            crate = root / "crates" / "verified-garbage-asm-x86_64"
+            for d in ("src/dispatch", "src/fn_tables", "assembly"):
+                (crate / d).mkdir(parents=True)
+            (crate / "src" / "m.rs").write_text(src)
+            (crate / "assembly" / "m.s").write_text(assembly)
+            (crate / "src" / "dispatch" / "m.rs").write_text(dispatch)
+            (crate / "src" / "fn_tables" / "t.rs").write_text(tables)
+            stderr = io.StringIO()
+            with patch.object(check_mcdt, "ROOT", root), contextlib.redirect_stderr(stderr), \
+                    contextlib.redirect_stdout(io.StringIO()):
+                status = check_mcdt.main()
+        return status, stderr.getvalue().splitlines()
+
+    ERROR = ("crates/verified-garbage-asm-x86_64/assembly/m.s (vg_f):2: `pmuludq xmm0, xmm1` is "
+             "outside Intel's MXCSR prologue and epilogue (MCDT, see "
+             "lean/VerifiedGarbage/TCB/X86_64/Isa.lean)")
+    F = "vg_f:\n\tpmuludq xmm0, xmm1\n\tret\n"
+
+    def test_dispatched(self):
+        self.assertEqual(self.check(self.fn("vg_f"), self.F, self.dispatcher("vg_f")), (0, []))
+
+    def test_dispatcher_without_enter(self):
+        self.assertEqual(self.check(self.fn("vg_f"), self.F, self.dispatcher("vg_f", enter=False)),
+                         (1, [self.ERROR]))
+
+    def test_never_named(self):
+        self.assertEqual(self.check(self.fn("vg_f"), self.F), (1, [self.ERROR]))
+
+    def test_called_from_entered(self):
+        asm = self.F + "\nvg_h:\n\tcall {vg_f}\n\tret\n"
+        src = self.fn("vg_f") + self.fn("vg_h")
+        self.assertEqual(self.check(src, asm, self.dispatcher("vg_h")), (0, []))
+        # A caller that is not.
+        self.assertEqual(self.check(src, asm, self.dispatcher("vg_h", enter=False)), (1, [self.ERROR]))
+
+    def test_table_or_public(self):
+        self.assertEqual(self.check(self.fn("vg_f"), self.F, self.dispatcher("vg_f"),
+                                  tables="static T: [*const (); 1] = [crate::m::vg_f as *const ()];\n"),
+                         (1, [self.ERROR]))
+        self.assertEqual(self.check(self.fn("vg_f", vis="pub "), self.F, self.dispatcher("vg_f")),
+                         (1, [self.ERROR]))
+
+
 class ColdBranch(unittest.TestCase):
     PROLOGUE = [
         "stmxcsr DWORD PTR [rsp]",

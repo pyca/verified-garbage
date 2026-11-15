@@ -221,7 +221,10 @@ own changes are rebuilt either way, on top of the restored build.
   `lean/VerifiedGarbage/TCB/X86_64/Isa.lean`. `ci/check_mcdt.py` checks the
   generated code instead: every instruction on Intel's MCDT list must be
   inside that exact sequence in its function, entered only through the
-  prologue.
+  prologue, or on x86-64 in a function that only runs under `vg_mcdt_enter`
+  (`Spec/Mcdt.lean`): the dispatcher of every function whose code has such
+  an instruction runs it first (`Printer.mcdt`, "Dispatchers" in
+  `TCB/Rust.lean`), so a new x86-64 function needs no sequence of its own.
 * `TCB/` holds definitions only and imports only Lean core; lemmas go in
   `Proof/`. `Spec/` and `Impl/` never import `Proof/`.
   `ci/check_lean_imports.py` checks both.

@@ -22,6 +22,8 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_x25519_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32 {
+    // SAFETY: it takes no argument and writes no memory but its stack.
+    verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(out: *mut [u8; 32], scalar: *const [u8; 32], point: *const [u8; 32], scratch: *mut [u64; 512]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -79,6 +81,8 @@ pub unsafe fn vg_x25519_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_x25519_base_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]) {
+    // SAFETY: it takes no argument and writes no memory but its stack.
+    verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(out: *mut [u8; 32], scalar: *const [u8; 32], scratch: *mut [u64; 1024]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
