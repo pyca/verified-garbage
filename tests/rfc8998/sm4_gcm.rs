@@ -169,6 +169,34 @@ fn rfc8998_example_in_pieces() {
     }
 }
 
+/// A message of forty blocks (the example's plaintext ten times over):
+/// encrypted at once, which runs the batches, it is what it is streamed in
+/// pieces of one to seven blocks, which run the code for a few blocks, as
+/// the example does, with the same tag; and it decrypts.
+#[test]
+fn long_message() {
+    let e = example();
+    let key = Sm4Gcm::new(&e.key);
+    let message = e.plaintext.repeat(10);
+    let mut whole = message.clone();
+    let tag = key.encrypt_in_place(&e.nonce, &e.aad, &mut whole).unwrap();
+    for blocks in 1..=7 {
+        let mut enc = key.encryptor(&e.nonce).unwrap();
+        enc.update_aad(&e.aad).unwrap();
+        let mut pieces = message.clone();
+        for piece in pieces.chunks_mut(16 * blocks) {
+            enc.update(piece).unwrap();
+        }
+        assert_eq!(enc.finalize(), tag, "pieces of {blocks} blocks");
+        assert_eq!(pieces, whole, "pieces of {blocks} blocks");
+    }
+    assert_eq!(
+        key.decrypt_in_place(&e.nonce, &e.aad, &mut whole, &tag),
+        Ok(())
+    );
+    assert_eq!(whole, message);
+}
+
 /// An empty nonce is an error; an empty message has a tag, the same
 /// streaming as at once.
 #[test]

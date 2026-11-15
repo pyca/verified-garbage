@@ -1,6 +1,5 @@
 module
 
-import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
 public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
 public import VerifiedGarbage.Impl.Tbl.AArch64
 public import VerifiedGarbage.Impl.Modes.AArch64.Ctr
