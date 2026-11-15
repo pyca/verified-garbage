@@ -122,6 +122,100 @@ bl {vg_aes_xts_decrypt_aes}
 /// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule` or `i` (distinct Rust objects never do).
 /// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_xts_encrypt_unit_neon(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r".inst 0xf90450d3,0xf90454d4,0xf90458d5,0xf9045cd6,0xf90460d7,0xf90464de,0xf90468d8,0x910000d8
+.inst 0x91000013,0x91000054,0x91000097,0x910000b6,0xf9400069,0xf9044309,0xf9400469,0xf9044709
+.inst 0xd2800009,0xf9044b09,0xf9044f09,0x91000020,0x91000281,0x91224302,0x91220303,0xd2800024
+.inst 0x91000305
+bl {vg_aes_xts_encrypt_neon}
+.inst 0x91000260,0x91000281,0x91220302,0x910002e3,0xd344fec4,0x91000305
+bl {vg_aes_xts_encrypt_neon}
+.inst 0xd344fec9,0xd37ced29,0xcb0902ca
+cbz x10, 20f
+.inst 0x8b0902eb,0xd100416b
+22:
+.inst 0x3940016d,0x3940416e,0x3900016e,0x3900416d,0x9100056b,0xd100054a
+cbnz x10, 22b
+.inst 0x8b0902e3,0xd1004063,0x91000260,0x91000281,0x91220302,0xd2800024,0x91000305
+bl {vg_aes_xts_encrypt_neon}
+b 21f
+20:
+21:
+.inst 0xf9445313,0xf9445714,0xf9445b15,0xf9445f16,0xf9446317,0xf944671e,0xf9446b18,0xd65f03c0
+.p2align 6",
+        vg_aes_xts_encrypt_neon = sym super::aes_xts::vg_aes_xts_encrypt_neon::vg_aes_xts_encrypt_neon,
+    )
+}
+
+/// XTS-AES decryption (IEEE Std 1619-2007 §5.4.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their decryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `C₀ … Cₘ₋₁` and `b` bytes `Cₘ` after them, each `Cⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Pⱼ = AES-dec(Key1, Cⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Pₘ` the first `b` bytes of `PP`, the decryption of `Cₘ₋₁` with `Tₘ`, and `Pₘ₋₁` the decryption with `Tₘ₋₁` of `Cₘ` followed by the other `16 - b` bytes of `PP`. `AES-dec(Key1, ·)` is the AES inverse cipher (FIPS 197 §5.3) and `AES-enc(Key2, ·)` AES, with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesDecryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule` or `i` (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_xts_decrypt_unit_neon(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
+    core::arch::naked_asm!(
+        r".inst 0xf90450d3,0xf90454d4,0xf90458d5,0xf9045cd6,0xf90460d7,0xf90464de,0xf90468d8,0x910000d8
+.inst 0x91000013,0x91000054,0x91000097,0x910000b6,0xf9400069,0xf9044309,0xf9400469,0xf9044709
+.inst 0xd2800009,0xf9044b09,0xf9044f09,0x91000020,0x91000281,0x91224302,0x91220303,0xd2800024
+.inst 0x91000305
+bl {vg_aes_xts_encrypt_neon}
+.inst 0xd344fec9,0xd37ced29,0xcb0902ca
+cbz x10, 20f
+.inst 0x91000260,0x91000281,0x91220302,0x910002e3,0xd344fec4,0x91000305,0xd1000484
+bl {vg_aes_xts_decrypt_neon}
+.inst 0x91224315,0xf9444309,0xf9044b09,0xf9444709,0xf9044f09,0xf94002a9,0xf94006aa,0xab090129
+.inst 0xba0a014a,0xd28010eb,0xd280000c,0x9a8c216b,0xca0b0129,0xf90002a9,0xf90006aa,0xd344fec9
+.inst 0xd37ced29,0xcb0902ca,0x8b0902e3,0xd1004063,0x91000260,0x91000281,0x91224302,0xd2800024
+.inst 0x91000305
+bl {vg_aes_xts_decrypt_neon}
+.inst 0xd344fec9,0xd37ced29,0xcb0902ca,0x8b0902eb,0xd100416b
+22:
+.inst 0x3940016d,0x3940416e,0x3900016e,0x3900416d,0x9100056b,0xd100054a
+cbnz x10, 22b
+.inst 0x8b0902e3,0xd1004063,0x91000260,0x91000281,0x91220302,0xd2800024,0x91000305
+bl {vg_aes_xts_decrypt_neon}
+b 21f
+20:
+.inst 0x91000260,0x91000281,0x91220302,0x910002e3,0xd344fec4,0x91000305
+bl {vg_aes_xts_decrypt_neon}
+21:
+.inst 0xf9445313,0xf9445714,0xf9445b15,0xf9445f16,0xf9446317,0xf944671e,0xf9446b18,0xd65f03c0
+.p2align 6",
+        vg_aes_xts_encrypt_neon = sym super::aes_xts::vg_aes_xts_encrypt_neon::vg_aes_xts_encrypt_neon,
+        vg_aes_xts_decrypt_neon = sym super::aes_xts::vg_aes_xts_decrypt_neon::vg_aes_xts_decrypt_neon,
+    )
+}
+
+/// XTS-AES encryption (IEEE Std 1619-2007 §5.3.2, NIST SP 800-38E) of a whole data unit, in place: replaces the `len` bytes at `data`, at least 16 and at most 2²⁰ blocks, with their encryption under the key `Key1 ‖ Key2` with the tweak value `*i`. With `m` whole blocks `P₀ … Pₘ₋₁` and `b` bytes `Pₘ` after them, each `Pⱼ` for `j < m` (`j < m - 1` if `b > 0`) becomes `Cⱼ = AES-enc(Key1, Pⱼ ⊕ Tⱼ) ⊕ Tⱼ`, where `Tⱼ = T ⊗ αʲ` (§5.2) and `T = AES-enc(Key2, i)`. If `b > 0`, ciphertext stealing makes `Cₘ` the first `b` bytes of `CC`, the encryption of `Pₘ₋₁` with `Tₘ₋₁`, and `Cₘ₋₁` the encryption with `Tₘ` of `Pₘ` followed by the other `16 - b` bytes of `CC`. `AES-enc(Key1, ·)` and `AES-enc(Key2, ·)` are AES (FIPS 197) with `rounds` rounds and the key schedules in the first `16 * (rounds + 1)` bytes of `*schedule` and `*tweak_schedule`, as `vg_aes_expand_key` writes them.
+///
+/// Contract: `VG.Spec.Xts.aesEncryptUnitContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedules, the tweak value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `tweak_schedule` must be valid for reads of 240 bytes.
+/// * `i` must be valid for reads of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2432 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * `len` must be at least 16 and at most `16 << 20` (2²⁰ blocks).
+/// * The contents of `scratch` on return are unspecified.
+/// * `data` and `scratch` must not overlap each other, `schedule`, `tweak_schedule` or `i` (distinct Rust objects never do).
+/// * None of `schedule`, `tweak_schedule`, `i`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_xts_encrypt_unit(schedule: *const [u8; 240], tweak_schedule: *const [u8; 240], rounds: usize, i: *const [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 304]) {
     core::arch::naked_asm!(
         r".inst 0xf90450d3,0xf90454d4,0xf90458d5,0xf9045cd6,0xf90460d7,0xf90464de,0xf90468d8,0x910000d8
@@ -208,9 +302,17 @@ pub(crate) mod vg_aes_xts_decrypt;
 pub(crate) mod vg_aes_xts_decrypt_aes;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_xts_decrypt_neon.rs"]
+pub(crate) mod vg_aes_xts_decrypt_neon;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_xts_encrypt.rs"]
 pub(crate) mod vg_aes_xts_encrypt;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_xts_encrypt_aes.rs"]
 pub(crate) mod vg_aes_xts_encrypt_aes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_xts_encrypt_neon.rs"]
+pub(crate) mod vg_aes_xts_encrypt_neon;

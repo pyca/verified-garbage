@@ -672,6 +672,36 @@ vg_aes_ecb_decrypt_aes:
 	ret
 	.p2align 6
 
+vg_aes_ecb_encrypt_neon:
+	sub sp, sp, #32
+	str x30, [sp, #0]
+	str x4, [sp, #8]
+	bl {vg_aes_encrypt_blocks_neon}
+	str x0, [sp, #16]
+	ldr x0, [sp, #8]
+	movz x1, #2048, lsl #0
+	bl {vg_zeroize}
+	ldr x0, [sp, #16]
+	ldr x30, [sp, #0]
+	add sp, sp, #32
+	ret
+	.p2align 6
+
+vg_aes_ecb_decrypt_neon:
+	sub sp, sp, #32
+	str x30, [sp, #0]
+	str x4, [sp, #8]
+	bl {vg_aes_decrypt_blocks_neon}
+	str x0, [sp, #16]
+	ldr x0, [sp, #8]
+	movz x1, #2048, lsl #0
+	bl {vg_zeroize}
+	ldr x0, [sp, #16]
+	ldr x30, [sp, #0]
+	add sp, sp, #32
+	ret
+	.p2align 6
+
 vg_aes_ecb_encrypt:
 	sub sp, sp, #32
 	str x30, [sp, #0]

@@ -200,12 +200,20 @@ pub(crate) mod vg_aes_decrypt_blocks;
 pub(crate) mod vg_aes_decrypt_blocks_aes;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_decrypt_blocks_neon.rs"]
+pub(crate) mod vg_aes_decrypt_blocks_neon;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_encrypt_blocks.rs"]
 pub(crate) mod vg_aes_encrypt_blocks;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_encrypt_blocks_aes.rs"]
 pub(crate) mod vg_aes_encrypt_blocks_aes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_encrypt_blocks_neon.rs"]
+pub(crate) mod vg_aes_encrypt_blocks_neon;
 
 #[rustfmt::skip]
 #[path = "internal/vg_aes_expand_key_scratch.rs"]

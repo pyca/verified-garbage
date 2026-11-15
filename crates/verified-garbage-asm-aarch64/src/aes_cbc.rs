@@ -503,6 +503,62 @@ b 215f
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_cbc_encrypt_neon(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r".inst 0xd10083ff,0xf90003fe,0xf90007e5
+bl {vg_aes_cbc_encrypt_unwiped_neon}
+.inst 0xf9000be0,0xf94007e0,0xd2811001
+bl {vg_zeroize}
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.p2align 6",
+        vg_aes_cbc_encrypt_unwiped_neon = sym super::aes_cbc::vg_aes_cbc_encrypt_unwiped_neon::vg_aes_cbc_encrypt_unwiped_neon,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
+    )
+}
+
+/// AES-CBC decryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = CIPH⁻¹_K(Cⱼ) ⊕ Cⱼ₋₁`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH⁻¹_K` is the AES inverse cipher (FIPS 197 §5.3) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is removed.
+///
+/// Contract: `VG.Spec.Cbc.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * On return each byte of `scratch` is unchanged or zero.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_cbc_decrypt_neon(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r".inst 0xd10083ff,0xf90003fe,0xf90007e5
+bl {vg_aes_cbc_decrypt_unwiped_neon}
+.inst 0xf9000be0,0xf94007e0,0xd2811001
+bl {vg_zeroize}
+.inst 0xf9400be0,0xf94003fe,0x910083ff,0xd65f03c0
+.p2align 6",
+        vg_aes_cbc_decrypt_unwiped_neon = sym super::aes_cbc::vg_aes_cbc_decrypt_unwiped_neon::vg_aes_cbc_decrypt_unwiped_neon,
+        vg_zeroize = sym super::zeroize::vg_zeroize,
+    )
+}
+
+/// AES-CBC encryption (NIST SP 800-38A §6.2) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it. No padding is added.
+///
+/// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * On return each byte of `scratch` is unchanged or zero.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 32 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cbc_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".inst 0xd10083ff,0xf90003fe,0xf90007e5
@@ -549,5 +605,13 @@ bl {vg_zeroize}
 pub(crate) mod vg_aes_cbc_decrypt_unwiped;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_cbc_decrypt_unwiped_neon.rs"]
+pub(crate) mod vg_aes_cbc_decrypt_unwiped_neon;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_cbc_encrypt_unwiped.rs"]
 pub(crate) mod vg_aes_cbc_encrypt_unwiped;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_cbc_encrypt_unwiped_neon.rs"]
+pub(crate) mod vg_aes_cbc_encrypt_unwiped_neon;

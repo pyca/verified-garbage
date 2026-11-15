@@ -276,6 +276,177 @@ b 21f
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
 /// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_cfb128_encrypt_neon(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
+.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
+cbz x23, 20f
+22:
+.inst 0x91000260,0x91000281,0x910002a2,0xd2800023,0x91000304
+bl {vg_aes_encrypt_blocks_neon}
+.inst 0xf94002c9,0xf94002aa,0xca0a0129,0xf90002c9,0xf94006c9,0xf94006aa,0xca0a0129,0xf90006c9
+.inst 0xf94002c9,0xf90002a9,0xf94006c9,0xf90006a9,0x910042d6,0xd10006f7
+cbnz x23, 22b
+b 21f
+20:
+21:
+.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+.p2align 6",
+        vg_aes_encrypt_blocks_neon = sym super::aes::vg_aes_encrypt_blocks_neon::vg_aes_encrypt_blocks_neon,
+    )
+}
+
+/// AES-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments) of whole blocks, in place: replaces the `n` 16-byte blocks `C₁ … Cₙ` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ`, the last block at `data` on entry (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb.aesDecryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt_neon(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013
+.inst 0x91000034,0x91000055,0x91000076,0x91000097,0x910000b8
+cbz x23, 20f
+.inst 0xd10012e9,0xd37ffd29
+cbnz x9, 22f
+24:
+.inst 0xf94002c9,0xf9042709,0xf94006c9,0xf9042b09,0xf9400ac9,0xf9042f09,0xf9400ec9,0xf9043309
+.inst 0xf94012c9,0xf9043709,0xf94016c9,0xf9043b09,0xf9401ac9,0xf9040309,0xf9401ec9,0xf9040709
+.inst 0xf9442709,0xf9000ac9,0xf9442b09,0xf9000ec9,0xf9442f09,0xf90012c9,0xf9443309,0xf90016c9
+.inst 0xf9443709,0xf9001ac9,0xf9443b09,0xf9001ec9,0xf94002a9,0xf90002c9,0xf94006a9,0xf90006c9
+.inst 0x91000260,0x91000281,0x910002c2,0xd2800083,0x91000304
+bl {vg_aes_encrypt_blocks_neon}
+.inst 0xf94002c9,0xf944270a,0xca0a0129,0xf90002c9,0xf94006c9,0xf9442b0a,0xca0a0129,0xf90006c9
+.inst 0xf9400ac9,0xf9442f0a,0xca0a0129,0xf9000ac9,0xf9400ec9,0xf944330a,0xca0a0129,0xf9000ec9
+.inst 0xf94012c9,0xf944370a,0xca0a0129,0xf90012c9,0xf94016c9,0xf9443b0a,0xca0a0129,0xf90016c9
+.inst 0xf9401ac9,0xf944030a,0xca0a0129,0xf9001ac9,0xf9401ec9,0xf944070a,0xca0a0129,0xf9001ec9
+.inst 0xf9440309,0xf90002a9,0xf9440709,0xf90006a9,0x910102d6,0xd10012f7,0xd10012e9,0xd37ffd29
+cbz x9, 24b
+b 23f
+22:
+23:
+cbz x23, 25f
+27:
+.inst 0x91000260,0x91000281,0x910002a2,0xd2800023,0x91000304
+bl {vg_aes_encrypt_blocks_neon}
+.inst 0xf94002c9,0xf94002aa,0xca0a0129,0xf90002c9,0xf94006c9,0xf94006aa,0xca0a0129,0xf90006c9
+.inst 0xf94002a9,0xf94002ca,0xca0a0129,0xf90002a9,0xf94006a9,0xf94006ca,0xca0a0129,0xf90006a9
+.inst 0x910042d6,0xd10006f7
+cbnz x23, 27b
+b 26f
+25:
+26:
+b 21f
+20:
+21:
+.inst 0xf9440b13,0xf9440f14,0xf9441315,0xf9441716,0xf9441b17,0xf9441f1e,0xf9442318,0xd65f03c0
+.p2align 6",
+        vg_aes_encrypt_blocks_neon = sym super::aes::vg_aes_encrypt_blocks_neon::vg_aes_encrypt_blocks_neon,
+    )
+}
+
+/// AES-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb.aesEncryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_cfb128_encrypt_final_neon(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r".inst 0xd10103ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
+.inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89
+.inst 0xd37ced2a,0x8b0a0076,0xcb0a0097,0x91000124
+bl {vg_aes_cfb128_encrypt_neon}
+cbz x23, 20f
+.inst 0x91000260,0x91000281,0x910002a2,0xd2800023,0x91000304
+bl {vg_aes_encrypt_blocks_neon}
+.inst 0x910002a9
+22:
+.inst 0x39400126,0x394002c7,0xca0600e7,0x390002c7,0x91000529,0x910006d6,0xd10006f7
+cbnz x23, 22b
+b 21f
+20:
+21:
+.inst 0xf9400333,0xf9400734,0xf9400b35,0xf9400f36,0xf9401337,0xf9401738,0xf9401b3e,0xf9401f39
+.inst 0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0x910103ff,0xd65f03c0
+.p2align 6",
+        vg_aes_cfb128_encrypt_neon = sym super::aes_cfb::vg_aes_cfb128_encrypt_neon,
+        vg_aes_encrypt_blocks_neon = sym super::aes::vg_aes_encrypt_blocks_neon::vg_aes_encrypt_blocks_neon,
+    )
+}
+
+/// AES-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb.aesDecryptFinalContract`. Constant time: only the pointers, `rounds` and `len` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the 64 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_cfb128_decrypt_final_neon(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
+    core::arch::naked_asm!(
+        r".inst 0xd10103ff,0x910003e6,0xf90000d3,0xf90004d4,0xf90008d5,0xf9000cd6,0xf90010d7,0xf90014d8
+.inst 0xf90018de,0xf9001cd9,0x91000013,0x91000034,0x91000055,0x910000b8,0x910000d9,0xd344fc89
+.inst 0xd37ced2a,0x8b0a0076,0xcb0a0097,0x91000124
+bl {vg_aes_cfb128_decrypt_neon}
+cbz x23, 20f
+.inst 0x91000260,0x91000281,0x910002a2,0xd2800023,0x91000304
+bl {vg_aes_encrypt_blocks_neon}
+.inst 0x910002a9
+22:
+.inst 0x39400126,0x394002c7,0xca0600e7,0x390002c7,0x91000529,0x910006d6,0xd10006f7
+cbnz x23, 22b
+b 21f
+20:
+21:
+.inst 0xf9400333,0xf9400734,0xf9400b35,0xf9400f36,0xf9401337,0xf9401738,0xf9401b3e,0xf9401f39
+.inst 0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611,0x910103ff,0xd65f03c0
+.p2align 6",
+        vg_aes_cfb128_decrypt_neon = sym super::aes_cfb::vg_aes_cfb128_decrypt_neon,
+        vg_aes_encrypt_blocks_neon = sym super::aes::vg_aes_encrypt_blocks_neon::vg_aes_encrypt_blocks_neon,
+    )
+}
+
+/// AES-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is AES (FIPS 197) with `rounds` rounds and the key schedule in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it.
+///
+/// Contract: `VG.Spec.Cfb.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `scratch` must be valid for reads and writes of 2176 bytes.
+/// * `rounds` must be 10, 12 or 14.
+/// * The contents of `scratch` on return are unspecified.
+/// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv`, `data` and `scratch` may wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_cfb128_encrypt(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r".inst 0xf90408b3,0xf9040cb4,0xf90410b5,0xf90414b6,0xf90418b7,0xf9041cbe,0xf90420b8,0x91000013

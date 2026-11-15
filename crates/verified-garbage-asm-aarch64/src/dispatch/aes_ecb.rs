@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.AesEcb.encryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_ecb_encrypt_aes` if the CPU supports its features (`VG_AES_ECB_ENCRYPT_AES_FEATURES`); or else `vg_aes_ecb_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_ecb_encrypt_aes` if the CPU supports its features (`VG_AES_ECB_ENCRYPT_AES_FEATURES`); `vg_aes_ecb_encrypt_neon` if detection reports some CPU feature; or else `vg_aes_ecb_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -30,6 +30,11 @@ pub unsafe fn vg_aes_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sched
             || cpu.contains(crate::aes_ecb::VG_AES_ECB_ENCRYPT_AES_FEATURES)
         {
             return crate::aes_ecb::vg_aes_ecb_encrypt_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::aes_ecb::vg_aes_ecb_encrypt_neon;
         }
         crate::aes_ecb::vg_aes_ecb_encrypt
     }
@@ -56,7 +61,7 @@ pub unsafe fn vg_aes_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sched
 ///
 /// Contract: `VG.Spec.AesEcb.decryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_ecb_decrypt_aes` if the CPU supports its features (`VG_AES_ECB_DECRYPT_AES_FEATURES`); or else `vg_aes_ecb_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_ecb_decrypt_aes` if the CPU supports its features (`VG_AES_ECB_DECRYPT_AES_FEATURES`); `vg_aes_ecb_decrypt_neon` if detection reports some CPU feature; or else `vg_aes_ecb_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -80,6 +85,11 @@ pub unsafe fn vg_aes_ecb_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sched
             || cpu.contains(crate::aes_ecb::VG_AES_ECB_DECRYPT_AES_FEATURES)
         {
             return crate::aes_ecb::vg_aes_ecb_decrypt_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::aes_ecb::vg_aes_ecb_decrypt_neon;
         }
         crate::aes_ecb::vg_aes_ecb_decrypt
     }
