@@ -10,8 +10,7 @@ public import VerifiedGarbage.Impl.Aes.AArch64.OneBlock
 runs it with `scratch` in a frame of its own (`Proof/Aes/AArch64/Frame.lean`).
 
 FIPS 197 §5.2 (`KEYEXPANSION`), one word at a time, with `SUBWORD` done by
-table lookups in vector registers, as the encryption of one block does
-`SubBytes` (`OneBlock.lean`): the S-box is loaded into `v16`–`v31` once
+table lookups in vector registers: the S-box is loaded into `v16`–`v31` once
 (`OneBlock.setup`), and the word, moved to `v0` from the low 32 bits of
 `q 0` and back, selects from it with `tbl`, whose time does not depend on
 its data.

@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.AArch64.Linear
-public import VerifiedGarbage.Impl.Aes.AArch64.OneBlock
+public import VerifiedGarbage.Impl.Aes.AArch64.Vperm
 
 /-!
 # AES counter mode (GCM's `inc₃₂`), bitsliced, on AArch64
@@ -34,8 +34,8 @@ licence): four blocks at a time, bitsliced in eight 64-bit registers
   public values; no address and no branch depends on anything else.
 
 `vg_aes_ctr32` is `ctr32N`: one block (`n = 1`, as the functions that
-encrypt a block alone give it) is encrypted by table lookups
-(`OneBlock.lean`), with no round key bitsliced and nothing written to
+encrypt a block alone give it) is encrypted by vector permutations
+(`Vperm.lean`), with no round key bitsliced and nothing written to
 `scratch`; no block (`n = 0`, as AES-GCM gives it for a text with no whole
 block, or with no bytes after them) returns at once; any other `n` runs the
 bitsliced code. `vg_aes_ctr32_to` is `ctr32ToN`, the same out of place.
@@ -174,22 +174,22 @@ def ctrOneLoad : List Instr :=
   [.ldrq .v0 .x2 0, .ldr .w .x6 .x2 12, .rev32 .x6 .x6, .addImm .w .x6 .x6 1, .rev32 .x6 .x6,
     .str .w .x6 .x2 12]
 
-/-- One block: the counter block, encrypted by table lookups, XORed into
-the block at `x3`. -/
+/-- One block: the counter block, encrypted by vector permutations, XORed
+into the block at `x3`. -/
 def ctr32One : Prog isa :=
   .seq (.block ctrOneLoad)
-    (.seq OneBlock.core (.block [.ldrq .v1 .x3 0, .vop (.logic .eor .v0 .v0 .v1), .strq .v0 .x3 0]))
+    (.seq Vperm.core (.block [.ldrq .v1 .x3 0, .vop (.logic .eor .v0 .v0 .v1), .strq .v0 .x3 0]))
 
 /-- One block out of place: `ctr32One` with the block at `x3` only read,
 and the result stored at the destination, kept in `x8` (the tables are
-loaded through `x6` and `x7`). -/
+loaded through `x6`). -/
 def ctr32OneTo : Prog isa :=
   .seq (.block ([movR .x8 .x6] ++ ctrOneLoad))
-    (.seq OneBlock.core (.block [.ldrq .v1 .x3 0, .vop (.logic .eor .v0 .v0 .v1), .strq .v0 .x8 0]))
+    (.seq Vperm.core (.block [.ldrq .v1 .x3 0, .vop (.logic .eor .v0 .v0 .v1), .strq .v0 .x8 0]))
 
 /-- `vg_aes_ctr32`: nothing for no block (some callers have none, and the
-bitsliced code would bitslice the round keys first), one block by table
-lookups, any other number of blocks bitsliced. -/
+bitsliced code would bitslice the round keys first), one block by vector
+permutations, any other number of blocks bitsliced. -/
 def ctr32N : Prog isa :=
   .ite (.zero .x .x4) (.block [])
     (.seq (.block [.subImm .x .x6 .x4 1]) (.ite (.zero .x .x6) ctr32One ctr32))

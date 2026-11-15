@@ -42,7 +42,7 @@ Only `x0`, `x3`–`x9`, `v0`–`v7` and `v16`–`v31` are written. `x0`, `x1`,
 branch depends on anything else.
 
 `vg_aes_encrypt_blocks_neon` is `encryptBlocks`: one block (`n = 1`) is
-encrypted by table lookups (`OneBlock.lean`), as `vg_aes_encrypt_blocks`
+encrypted by vector permutations (`Vperm.lean`), as `vg_aes_encrypt_blocks`
 does it, with nothing bitsliced.
 -/
 
@@ -231,8 +231,8 @@ def blocks (crypt8 : Prog isa) : Prog isa :=
       (.seq (.block keySetup)
         (.seq (.loop (.block keyBody) (.nonzero .x kp)) (.loop (group crypt8) (.nonzero .x .x4)))))
 
-/-- `vg_aes_encrypt_blocks_neon`: one block by table lookups, any other
-number of blocks bitsliced. -/
+/-- `vg_aes_encrypt_blocks_neon`: one block by vector permutations, any
+other number of blocks bitsliced. -/
 def encryptBlocks : Prog isa :=
   .seq (.block [.subImm .x .x6 .x3 1]) (.ite (.zero .x .x6) encryptOne (blocks encrypt8))
 
