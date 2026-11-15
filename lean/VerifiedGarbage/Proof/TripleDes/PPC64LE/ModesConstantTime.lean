@@ -3,10 +3,6 @@ module
 public import VerifiedGarbage.Proof.TripleDes.PPC64LE.ConstantTime
 public import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaint
-public import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaintMono
-public meta import VerifiedGarbage.Proof.Framework.PPC64LE.SlotTaintMono
-public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintMono
-public meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintMono
 import VerifiedGarbage.Proof.TripleDes.PPC64LE.Bitsliced.SboxLit
 meta import VerifiedGarbage.Proof.TripleDes.PPC64LE.Bitsliced.SboxLit
 meta import VerifiedGarbage.Proof.Framework.Taint
@@ -33,15 +29,7 @@ CBC and CFB64 decryption run the bitsliced ECB inline, which saves `r29`–`r31`
 in the scratch buffer and restores them from there: their analysis is
 `VG.PPC64LE.slotTaint`, which knows that those slots survive ECB's stores, all
 at fixed offsets of the scratch buffer (the third writable region, at `r7`
-on entry), as for SM4's modes (`Proof/Sm4/PPC64LE/ModesConstantTime.lean`).
-
-The bitsliced ECB of the two directions is the same code but for the order
-of its passes, whose rounds are those of one direction or the other: its
-blocks (the copy in and the transposition, two rounds in each direction,
-and the transposition back, the copy out and the registers' restoring) are
-analysed once, as summaries (`inSum`, `roundsEncSum`, `roundsDecSum`,
-`outSum`), which the checks of CBC and CFB64 decryption use
-(`taint_decide_sum`) in place of their analysis in each. -/
+on entry), as for SM4's modes (`Proof/Sm4/PPC64LE/ModesConstantTime.lean`). -/
 
 @[expose] public section
 
@@ -107,41 +95,10 @@ theorem wide_agree (s₁ s₂ : State) (h₁ : WidePre s₁) (h₂ : WidePre s�
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl <;> simp [SlotTaint.region, hw₂]
 
-/-- What ECB has public where it copies the blocks in, after its `setup`, of what the summary
-needs: the buffer (`r4`), the schedule (`r7`) and the working space (`r10`), the slots where it
-saved the modes' `r29`–`r31`, and the registers that hold addresses of the working space. A
-summary of this analysis applies only where the taint knows the same lengths and bases
-(`Proof/Framework/PPC64LE/SlotTaintMono.lean`). -/
-def τIn : SlotTaint.T :=
-  { regs := .ofList [.r4, .r7, .r10], lens := [8, 0, 1600],
-    bases := [(.r5, 2, 0), (.r6, 2, 0), (.r4, 2, 1024), (.r10, 2, 0), (.r8, 2, 0)],
-    slots := [(2, 704, 8), (2, 696, 8), (2, 688, 8)] }
-
-/-- The same in ECB's passes and after them, where the rounds' loops have also the key pointer
-(`r3`) and their count (`r5`) public, and know the bases that the rounds keep. -/
-def τRounds : SlotTaint.T :=
-  { regs := .ofList [.r3, .r4, .r5, .r7, .r10], lens := [8, 0, 1600],
-    bases := [(.r4, 2, 1024), (.r10, 2, 0), (.r8, 2, 0)],
-    slots := [(2, 704, 8), (2, 696, 8), (2, 688, 8)] }
-
-/-! The constant-time analysis of ECB's copy in and transposition, once for both directions. -/
-taint_summary inSum : slotTaint τIn (.block (Bitslice.copyIn64 ++ Bitslice.transpose))
-
-/-! The same of two rounds, in each direction: the body of the loop of every pass. -/
-taint_summary roundsEncSum : slotTaint τRounds (.block (Bitslice.roundPair .encrypt))
-
-taint_summary roundsDecSum : slotTaint τRounds (.block (Bitslice.roundPair .decrypt))
-
-/-! The same of ECB's transposition back, copy out and restoring of the registers, which leaves
-the modes' `r29`–`r31` public, from their slots. -/
-taint_summary outSum : slotTaint τRounds
-  (.block (Bitslice.transpose ++ Bitslice.copyOut64 ++ Bitslice.finish))
-
 theorem cbcDecryptChained_constantTime (pre : State → Prop) (hpre : ∀ s, pre s → WidePre s) :
     ConstantTime isa pre modePub cbcDecryptChained :=
-  VG.Taint.constantTime_of_exists (A := slotTaint) wideTaint
-    (fun s₁ s₂ h₁ h₂ hp => wide_agree s₁ s₂ (hpre _ h₁) (hpre _ h₂) hp)
-    (by taint_decide_sum [inSum, roundsEncSum, roundsDecSum, outSum])
+  VG.Taint.constantTime (A := slotTaint) wideTaint
+    (fun s₁ s₂ h₁ h₂ hp => wide_agree s₁ s₂ (hpre _ h₁) (hpre _ h₂) hp) (by taint_decide)
 
 theorem ofb_constantTime (pre : State → Prop) : ConstantTime isa pre modePub ofb :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
@@ -153,9 +110,8 @@ theorem cfbEncrypt_constantTime (pre : State → Prop) : ConstantTime isa pre mo
 
 theorem cfbDecrypt_constantTime (pre : State → Prop) (hpre : ∀ s, pre s → WidePre s) :
     ConstantTime isa pre modePub cfbDecrypt :=
-  VG.Taint.constantTime_of_exists (A := slotTaint) wideTaint
-    (fun s₁ s₂ h₁ h₂ hp => wide_agree s₁ s₂ (hpre _ h₁) (hpre _ h₂) hp)
-    (by taint_decide_sum [inSum, roundsEncSum, roundsDecSum, outSum])
+  VG.Taint.constantTime (A := slotTaint) wideTaint
+    (fun s₁ s₂ h₁ h₂ hp => wide_agree s₁ s₂ (hpre _ h₁) (hpre _ h₂) hp) (by taint_decide)
 
 theorem cfb8Encrypt_constantTime (pre : State → Prop) : ConstantTime isa pre modePub cfb8Encrypt :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])

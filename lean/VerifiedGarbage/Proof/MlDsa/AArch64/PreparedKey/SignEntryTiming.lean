@@ -2204,7 +2204,9 @@ theorem pairedRoots_pre {p : Params} {S : Nat} {s : State} (hS : 0<S)
   obtain ⟨N,rfl⟩ := Nat.exists_eq_succ_of_ne_zero (Nat.ne_of_gt hS)
   dsimp only [signK,scrLen] at hk
   rw [Nat.mul_comm 8 (scratchWords p)] at hk
-  obtain ⟨_,hw,d1,d2,d3,d4,d5,d6,d7,k1,k2,k3,k4,k5,n1,n2,n3,n4,n5,hsp⟩ := hk
+  sig_split hk
+  rename_i _ hw d1 d2 d3 d4 d5 d6 d7 k1 k2 k3 k4 k5 n1 n2 n3 n4 n5
+  have hsp := hk
   sig_pre [signContractT,signSig,abi,argRegs,Abi.withConsts,pairedSignRootConsts_eq,
     nttConsts_eq,Inverse.inverseConsts_eq,Abi.constRegions,Abi.constsHeld,
     TableConstants.staticNttWords_length,InverseTable.expandedWords_length,PairedTable.expandedWords_length,stackBelow]
@@ -3842,7 +3844,9 @@ theorem verify_empty_pre {p : Params} {σ s : State}
     (verifyWithCacheContract p abi 48).pre
       (s.callEntry.withRegions (verifyEntryRd p s) σ.wr) := by
   sig_pre [verifyContract, verifySig, abi, VG.AArch64.argRegs] at pre
-  obtain ⟨sp, rd, wr, d1, d2, d3, k1, k2, k3, k4, n1, n2, n3, n4⟩ := pre
+  sig_split pre
+  rename_i sp rd wr d1 d2 d3 k1 k2 k3 k4 n1 n2 n3
+  have n4 := pre
   have e0 : s.gpr .x0 = σ.gpr .x0 := o.get .x0 (by decide)
   have e1 : s.gpr .x1 = σ.gpr .x1 := o.get .x1 (by decide)
   have e2 : s.gpr .x2 = σ.gpr .x2 := o.get .x2 (by decide)
@@ -3872,7 +3876,9 @@ theorem verify_prepared_pre {p : Params} (hp : Sign.Ok3 p) {σ s : State}
     (verifyWithCacheContract p abi 48).pre
       (s.callEntry.withRegions (verifyEntryRd p s) σ.wr) := by
   sig_pre [preparedVerifyContract, preparedVerifySig, abi, VG.AArch64.argRegs] at pre
-  obtain ⟨sp, rd, wr, d1, d2, d3, k1, k2, k3, k4, n1, n2, n3, n4, cached⟩ := pre
+  sig_split pre
+  rename_i sp rd wr d1 d2 d3 k1 k2 k3 k4 n1 n2 n3 n4
+  have cached := pre
   have hb : preparedPublicKeyBytes p < 2 ^ 32 := by
     rcases hp with rfl | rfl | rfl <;> decide
   have hn : n = 256 := rfl
@@ -3935,8 +3941,9 @@ theorem sign_empty_pre {p : Params} {σ s : State}
     (signWithCacheContract p abi 48).pre
       (s.callEntry.withRegions (signEntryRd p s) σ.wr) := by
   sig_pre [signContract, signSig, abi, VG.AArch64.argRegs] at pre
-  obtain ⟨sp, rd, wr, d1, d2, d3, d4, d5, d6, d7,
-    k1, k2, k3, k4, k5, n1, n2, n3, n4, n5⟩ := pre
+  sig_split pre
+  rename_i sp rd wr d1 d2 d3 d4 d5 d6 d7 k1 k2 k3 k4 k5 n1 n2 n3 n4
+  have n5 := pre
   have e0 : s.gpr .x0 = σ.gpr .x0 := o.get .x0 (by decide)
   have e1 : s.gpr .x1 = σ.gpr .x1 := o.get .x1 (by decide)
   have e2 : s.gpr .x2 = σ.gpr .x2 := o.get .x2 (by decide)
@@ -3968,8 +3975,9 @@ theorem sign_prepared_pre {p : Params} (hp : Sign.Ok3 p) {σ s : State}
     (signWithCacheContract p abi 48).pre
       (s.callEntry.withRegions (signEntryRd p s) σ.wr) := by
   sig_pre [preparedSignContract, preparedSignSig, abi, VG.AArch64.argRegs] at pre
-  obtain ⟨sp, rd, wr, d1, d2, d3, d4, d5, d6, d7,
-    k1, k2, k3, k4, k5, n1, n2, n3, n4, n5, cached⟩ := pre
+  sig_split pre
+  rename_i sp rd wr d1 d2 d3 d4 d5 d6 d7 k1 k2 k3 k4 k5 n1 n2 n3 n4 n5
+  have cached := pre
   have hb : preparedSecretKeyBytes p < 2 ^ 32 := by
     rcases hp with rfl | rfl | rfl <;> decide
   have hn : n = 256 := rfl
