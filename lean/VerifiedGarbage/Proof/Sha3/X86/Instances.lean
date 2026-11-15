@@ -17,6 +17,7 @@ import VerifiedGarbage.Proof.Framework.X86.Taint
 import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Sha3.X86.Lit
 import VerifiedGarbage.Proof.Framework.Block
 
 meta import VerifiedGarbage.Proof.Sha3.X86.Permute
@@ -36,6 +37,7 @@ meta import VerifiedGarbage.Proof.Framework.X86.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Sha3.X86.Lit
 meta import VerifiedGarbage.Proof.Framework.Block
 
 /-!
@@ -177,12 +179,12 @@ theorem buf_step {B : Nat} {u₀ : State} {E : BitVec 32} {vs : List (BitVec 32)
 
 /-! ## The callee's view -/
 
-theorem absorb_nosp : NoSp Impl.Sha3.X86.Stream.absorb := NoSp.of_all (by decide +kernel)
-theorem pad_nosp : NoSp Impl.Sha3.X86.Stream.pad := NoSp.of_all (by decide +kernel)
-theorem squeeze_nosp : NoSp Impl.Sha3.X86.Stream.squeeze := NoSp.of_all (by decide +kernel)
-theorem absorb_stack : stackUse Impl.Sha3.X86.Stream.absorb = 12 := by decide +kernel
-theorem pad_stack : stackUse Impl.Sha3.X86.Stream.pad = 12 := by decide +kernel
-theorem squeeze_stack : stackUse Impl.Sha3.X86.Stream.squeeze = 12 := by decide +kernel
+theorem absorb_nosp : NoSp Impl.Sha3.X86.Stream.absorb := NoSp.of_all (by lit_decide)
+theorem pad_nosp : NoSp Impl.Sha3.X86.Stream.pad := NoSp.of_all (by lit_decide)
+theorem squeeze_nosp : NoSp Impl.Sha3.X86.Stream.squeeze := NoSp.of_all (by lit_decide)
+theorem absorb_stack : stackUse Impl.Sha3.X86.Stream.absorb = 12 := by lit_decide
+theorem pad_stack : stackUse Impl.Sha3.X86.Stream.pad = 12 := by lit_decide
+theorem squeeze_stack : stackUse Impl.Sha3.X86.Stream.squeeze = 12 := by lit_decide
 
 /-- The callee's argument `i`: word `i` of the frame. -/
 theorem entry_arg {B : Nat} {u₀ : State} {E : BitVec 32} {vs : List (BitVec 32)} {n : Nat}

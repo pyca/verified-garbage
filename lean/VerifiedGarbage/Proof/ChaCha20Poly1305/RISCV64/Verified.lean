@@ -24,6 +24,7 @@ import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 meta import VerifiedGarbage.Proof.Framework.RISCV64.StackScratch
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.Scratch
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.ContractPost
 meta import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Sig
 meta import VerifiedGarbage.Proof.Framework.Sig
@@ -1800,36 +1801,45 @@ theorem body_ok {s₀ : State} (hp : APre false s₀) :
 
 /-- What `open`'s body leaves, from the source to the destination: the
 result in `a0`, and the plaintext or zeros at the destination. -/
-def CorePost (s₀ s' : State) : Prop :=
-  match Spec.ChaCha20Poly1305.decrypt (K s₀) (N s₀) (A s₀) (D s₀) (T0 s₀) with
+def CorePostOf (res : Option (List Byte)) (s₀ s' : State) : Prop :=
+  match res with
   | some pt => s'.gpr .a0 = 1 ∧ bytesAt s'.mem (op s₀) (L s₀) = pt
   | none => s'.gpr .a0 = 0 ∧ bytesAt s'.mem (op s₀) (L s₀) = List.replicate (L s₀) 0
+
+/-- What `open` leaves, by the decryption of its arguments: stated through `CorePostOf`, so that
+the kernel never compares a `match` on the decryption with its unfolding (it would evaluate
+the decryption to do so: `Proof/Framework/ContractPost.lean`). -/
+def CorePost (s₀ s' : State) : Prop :=
+  CorePostOf (Spec.ChaCha20Poly1305.decrypt (K s₀) (N s₀) (A s₀) (D s₀) (T0 s₀)) s₀ s'
 
 theorem open_correct {s₀ : State} (hp : APre false s₀) :
     WP isa Impl.ChaCha20Poly1305.RISCV64.«open» s₀ fun s' => abiPreserved s₀ s' ∧ CorePost s₀ s' := by
   unfold «open»
   refine WP.seq (WP.mono (body_ok hp) fun s₇ ⟨i₇, t0₇, ok₇, d₇⟩ => ?_)
   show WP isa (.seq (.ite (.zero .t1) zeroData (.block [])) (.block (restore ++ [mov .a0 .t1]))) s₇ fun s' =>
-    abiPreserved s₀ s' ∧ match Spec.ChaCha20Poly1305.decrypt (K s₀) (N s₀) (A s₀) (D s₀) (T0 s₀) with
-      | some pt => s'.gpr .a0 = 1 ∧ bytesAt s'.mem (op s₀) (L s₀) = pt
-      | none => s'.gpr .a0 = 0 ∧ bytesAt s'.mem (op s₀) (L s₀) = List.replicate (L s₀) 0
+    abiPreserved s₀ s' ∧ CorePost s₀ s'
   refine WP.seq ?_
+  -- The decryption as a variable: the kernel would evaluate it to reduce a `match` on it.
+  obtain ⟨res, er⟩ : ∃ res, Spec.ChaCha20Poly1305.decrypt (K s₀) (N s₀) (A s₀) (D s₀) (T0 s₀) = res :=
+    ⟨_, rfl⟩
+  unfold CorePost
+  rw [er]
   by_cases hc : mac (otk s₀) (Spec.ChaCha20Poly1305.macData (A s₀) (D s₀)) = T0 s₀
   · simp only [hc, ↓reduceIte] at ok₇
     refine WP.ite false (by simp only [VG.RISCV64.eval, ok₇]; rfl) (by simp) fun _ => WP.block_nil ?_
     refine WP.mono (tail_ok hp i₇ t0₇) fun s₉ ⟨ha, a0₉, m₉⟩ => ⟨ha, ?_⟩
-    split
-    next pt hpt =>
-      obtain ⟨-, rfl⟩ := decrypt_eq_some hpt
+    cases res with
+    | some pt =>
+      obtain ⟨-, rfl⟩ := decrypt_eq_some er
       exact ⟨by rw [a0₉, ok₇], by rw [m₉, d₇]⟩
-    next hn => exact absurd hc (decrypt_eq_none hn)
+    | none => exact absurd hc (decrypt_eq_none er)
   · simp only [hc, ↓reduceIte] at ok₇
     refine WP.ite true (by simp only [VG.RISCV64.eval, ok₇]; rfl) (fun _ => ?_) (by simp)
     refine WP.mono (zeroData_ok hp i₇ ok₇) fun s₈ ⟨i₈, z₈, o₈⟩ => ?_
     refine WP.mono (tail_ok hp i₈ (by rw [o₈ _ (by decide) (by decide), t0₇])) fun s₉ ⟨ha, a0₉, m₉⟩ => ⟨ha, ?_⟩
-    split
-    next pt hpt => exact absurd (decrypt_eq_some hpt).1 hc
-    next hn => exact ⟨by rw [a0₉, o₈ _ (by decide) (by decide), ok₇], by rw [m₉, z₈]⟩
+    cases res with
+    | some pt => exact absurd (decrypt_eq_some er).1 hc
+    | none => exact ⟨by rw [a0₉, o₈ _ (by decide) (by decide), ok₇], by rw [m₉, z₈]⟩
 
 
 /-! ## Constant time
@@ -2049,9 +2059,14 @@ theorem open_ok (s : State) (hs : openRISCV64.pre s) :
     have eo : op s₁ = s.gpr .a4 := u.gpr
     have eL : L s₁ = (s.gpr .a5).toNat := by simp only [L, u.other .a5 (by decide)]
     unfold CorePost at hpost
-    rw [ed, eo, eL] at hpost
-    simp only [openRISCV64]
-    split at hpost <;> rename_i heq <;> simp only [heq] <;> exact hpost⟩
+    rw [ed] at hpost
+    rw [openRISCV64, Contract.post_mk]
+    -- The decryption as a variable: the kernel would evaluate it to reduce a `match` on it.
+    obtain ⟨res, er⟩ : ∃ res, Spec.ChaCha20Poly1305.decrypt (bytesAt s.mem (s.gpr .a0) 32)
+        (bytesAt s.mem (s.gpr .a1) 12) (bytesAt s.mem (s.gpr .a2) (s.gpr .a3).toNat)
+        (bytesAt s.mem (s.gpr .a4) (s.gpr .a5).toNat) (bytesAt s.mem (s.gpr .a6) 16) = res := ⟨_, rfl⟩
+    rw [er] at hpost ⊢
+    cases res <;> (simp only [CorePostOf, eo, eL] at hpost; exact hpost)⟩
 
 theorem seal_verified :
     Verified RISCV64.target (Impl.ChaCha20Poly1305.RISCV64.inPlace Impl.ChaCha20Poly1305.RISCV64.«seal»)
@@ -2062,6 +2077,16 @@ theorem seal_verified :
       Proof.ChaCha20Poly1305.pubRISCV64, RISCV64.abi, RISCV64.argRegs]
       [Proof.ChaCha20Poly1305.RISCV64.sealSat]
       using Proof.ChaCha20Poly1305.RISCV64.sealSat)
+
+/-- The postcondition of a contract on `openScratchSig`, for any `post`: with `post` a
+variable, the kernel evaluates only the signature (`sig_eval` on a postcondition that
+matches on `decrypt` has the kernel evaluate the decryption, twice). -/
+private theorem openScratch_post {n stack : Nat} (post : (openScratchSig n).Post RISCV64.abi.ptrBits)
+    (leak : Option (Curry ((openScratchSig n).words RISCV64.abi.ptrBits) (Mem → List Nat))) (s s' : State) :
+    ((openScratchSig n).contract RISCV64.abi (post := post) (writeArgs := true) (stack := stack)
+      (leak := leak)).post s s' =
+      post (s.gpr .a0) (s.gpr .a1) (s.gpr .a2) (s.gpr .a3) (s.gpr .a4) (s.gpr .a5) (s.gpr .a6) (s.gpr .a7)
+        s.mem s'.mem ((s'.gpr .a0).setWidth 32) := rfl
 
 /-- The postconditions match on `decrypt`; the result is the low word of `a0`. -/
 theorem open_verified :
@@ -2075,9 +2100,10 @@ theorem open_verified :
           Proof.ChaCha20Poly1305.pubRISCV64, RISCV64.abi, RISCV64.argRegs]
       post := by
         intro s s' _ h
-        sig_eval [Proof.ChaCha20Poly1305.openZeroScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
-          Spec.ChaCha20Poly1305.openZeroPost, RISCV64.abi, RISCV64.argRegs]
-        simp only [Proof.ChaCha20Poly1305.openRISCV64] at h
+        rw [Proof.ChaCha20Poly1305.openZeroScratchContract]
+        refine (openScratch_post _ _ s s').mpr ?_
+        refine (Spec.ChaCha20Poly1305.openZeroPost.eq_1 ..).mpr ?_
+        rw [Proof.ChaCha20Poly1305.openRISCV64, Contract.post_mk] at h
         split at h
         next _ pt e₁ =>
           split
@@ -2247,9 +2273,12 @@ theorem openTo_ok (s : State) (hs : openToRISCV64.pre s) :
       have eL : L s₄ = (s.gpr .a5).toNat := by
         simp only [L, h₄.gpr .a5 (by decide) (by decide) (by decide) (by decide)]
       unfold CorePost at hpost
-      rw [ed, eo, eL] at hpost
-      simp only [openToRISCV64]
-      split at hpost <;> rename_i heq <;> simp only [heq] <;> exact hpost⟩)
+      rw [ed] at hpost
+      rw [openToRISCV64, Contract.post_mk]
+      -- The decryption as a variable: the kernel would evaluate it to reduce a `match` on it.
+      obtain ⟨res, er⟩ : ∃ res, openToRes s = res := ⟨_, rfl⟩
+      rw [er] at hpost ⊢
+      cases res <;> (simp only [CorePostOf, eo, eL] at hpost; exact hpost)⟩)
 
 theorem openTo_ct : ConstantTime isa openToRISCV64.pre openToRISCV64.pub Impl.ChaCha20Poly1305.RISCV64.openTo := by
   intro σ₁ σ₂ t₁ t₂ σ₁' σ₂' h₁ h₂ hq e₁ e₂
@@ -2300,6 +2329,15 @@ def openToSat : State where
   rd := [⟨0x1000, 32⟩, ⟨0x1100, 12⟩, ⟨0x2000, 0⟩, ⟨0x5000, 0⟩, ⟨0x3000, 16⟩, ⟨0x8000, 16⟩]
   wr := [⟨0, 0⟩, ⟨0x4000, 624⟩]
 
+/-- As `openScratch_post`, for `openToScratchSig`: its last two arguments are on the stack. -/
+private theorem openToScratch_post {n stack : Nat} (post : (openToScratchSig n).Post RISCV64.abi.ptrBits)
+    (pre : Curry ((openToScratchSig n).words RISCV64.abi.ptrBits) (Mem → Prop))
+    (leak : Option (Curry ((openToScratchSig n).words RISCV64.abi.ptrBits) (Mem → List Nat))) (s s' : State) :
+    ((openToScratchSig n).contract RISCV64.abi (pre := pre) (post := post) (writeArgs := true) (stack := stack)
+      (leak := leak)).post s s' =
+      post (s.gpr .a0) (s.gpr .a1) (s.gpr .a2) (s.gpr .a3) (s.gpr .a4) (s.gpr .a5) (s.gpr .a6) (s.gpr .a7)
+        (RISCV64.stackArg s 0) (RISCV64.stackArg s 1) s.mem s'.mem ((s'.gpr .a0).setWidth 32) := rfl
+
 /-- The postconditions match on `decrypt`; the result is the low word of `a0`. -/
 theorem openTo_verified :
     Verified RISCV64.target Impl.ChaCha20Poly1305.RISCV64.openTo (openToScratchContract RISCV64.abi 78) :=
@@ -2328,10 +2366,11 @@ theorem openTo_verified :
           | bv_omega_arith
       post := by
         intro s s' _ h
-        sig_eval [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
-          Spec.ChaCha20Poly1305.openToPost, RISCV64.abi, RISCV64.argRegs, RISCV64.stackArg,
-          RISCV64.stackArgAddr, List.getD, List.range, List.range.loop]
-        simp only [Proof.ChaCha20Poly1305.openToRISCV64, Proof.ChaCha20Poly1305.openToRes] at h
+        rw [Proof.ChaCha20Poly1305.openToScratchContract]
+        refine (openToScratch_post _ _ _ s s').mpr ?_
+        refine (Spec.ChaCha20Poly1305.openToPost.eq_1 ..).mpr ?_
+        rw [Proof.ChaCha20Poly1305.openToRISCV64, Contract.post_mk] at h
+        simp only [Proof.ChaCha20Poly1305.openToRes] at h
         split at h
         next _ pt e₁ =>
           split
