@@ -27,6 +27,11 @@ import VerifiedGarbage.Proof.RsaPkcs1Enc.Decrypt
 import VerifiedGarbage.Proof.Framework.WriteBytes
 public import VerifiedGarbage.Proof.RsaPkcs1Enc.Select
 
+/-- `x ∈ [x₁, …]` for an element written as the list has it: the proof built element by element
+(not `simp`, which proves the membership as a disjunction). -/
+local macro "mem_here" : tactic =>
+  `(tactic| repeat (first | exact List.mem_cons_self | apply List.mem_cons_of_mem))
+
 /-! ### `RsaPkcs1Enc.X86.DecSel`, which only this module used -/
 
 section
@@ -124,10 +129,10 @@ def R1 (P : EP) (σ s : State) : Prop := S P σ s ∧ Slots P s.mem 20
 def R2 (P : EP) (σ s : State) : Prop := S P σ s ∧ Priv P σ s.mem (s.gpr .eax)
 
 theorem S.nB {σ s : State} (hs : S P σ s) : Spec.Rsa.bytesAt s.mem (P.n.setWidth 64) P.K = P.nB :=
-  (hs.2.ro (R := P.N) (by simp)).trans hs.1.nB
+  (hs.2.ro (R := P.N) (by mem_here)).trans hs.1.nB
 
 theorem S.eB {σ s : State} (hs : S P σ s) : Spec.Rsa.bytesAt s.mem (P.e.setWidth 64) P.el = P.eB :=
-  (hs.2.ro (R := P.E) (by simp)).trans hs.1.eB
+  (hs.2.ro (R := P.E) (by mem_here)).trans hs.1.eB
 
 /-- `mov eax, [arg j]; mov [esp + 4 i], eax`: argument `j` to the call's argument `i`. -/
 theorem copySlot {σ s : State} {i j : Nat} (h : S P σ s) (hs : Slots P s.mem i) (hi : i < 20)
@@ -229,8 +234,8 @@ theorem call_vp (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
         rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
       simp only [privWr, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl
-      · exact ok.rw_ro (w := P.OUT) (by simp) hr'
-      · exact ok.rw_ro (w := P.SCR) (by simp) hr'
+      · exact ok.rw_ro (w := P.OUT) (by mem_here) hr'
+      · exact ok.rw_ro (w := P.SCR) (by mem_here) hr'
       · rw [args0]; exact ok.stk_fr (.inl hr') (by simp only [frameBytes]; omega_using [])
     · simp only [privWr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
         forall_eq, List.Pairwise.nil, and_true]
@@ -238,28 +243,28 @@ theorem call_vp (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
       simp only [EP.rw, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false,
         forall_eq_or_imp, forall_eq] at ww
       refine ⟨⟨ww.1.2, ?_⟩, ?_, fun _ h => h.elim⟩
-      · rw [args0]; exact (ok.stk_fr (R := P.OUT) (.inr (by simp)) (by simp only [frameBytes]; omega_using [])).symm
-      · rw [args0]; exact (ok.stk_fr (R := P.SCR) (.inr (by simp)) (by simp only [frameBytes]; omega_using [])).symm
+      · rw [args0]; exact (ok.stk_fr (R := P.OUT) (.inr (by mem_here)) (by simp only [frameBytes]; omega_using [])).symm
+      · rw [args0]; exact (ok.stk_fr (R := P.SCR) (.inr (by mem_here)) (by simp only [frameBytes]; omega_using [])).symm
     · intro r hr
       rw [hsp, ← show P.lay.B = P.B from rfl, ok.low_eq]
       simp only [privWr, privRd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
         or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      · exact ok.low_buf (R := P.OUT) (.inr (by simp))
-      · exact ok.low_buf (R := P.SCR) (.inr (by simp))
+      · exact ok.low_buf (R := P.OUT) (.inr (by mem_here))
+      · exact ok.low_buf (R := P.SCR) (.inr (by mem_here))
       · rw [args0]; exact (Lay.fr_low (by omega_using []) (by show (3448 : Nat) ≤ 2 ^ 32; decide)).symm
-      all_goals exact ok.low_buf (.inl (by simp))
+      all_goals exact ok.low_buf (.inl (by mem_here))
     · intro r hr
       simp only [privWr, privRd, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
         or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-      · exact ok.fits P.OUT (by simp)
-      · exact ok.fits P.SCR (by simp)
+      · exact ok.fits P.OUT (by mem_here)
+      · exact ok.fits P.SCR (by mem_here)
       · rw [hsp]
         show (P.B.setWidth 64).toNat + 80 ≤ 2 ^ 32
         rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := P.B.isLt; omega_using [])]
         omega_using [fit]
-      all_goals exact ok.fits _ (by simp)
+      all_goals exact ok.fits _ (by mem_here)
   · -- What the callee is given is ours.
     have hs := h.1
     have ok := hs.1.ok
@@ -272,11 +277,11 @@ theorem call_vp (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
       simp only [Lay.fr, BitVec.add_zero] at this
       exact Covers.one this
     have wr : Covers (privWr P.B P.out P.scr P.K P.sl) s.wr :=
-      (hrw P.OUT (by simp)).cons ((hrw P.SCR (by simp)).cons (hA.cons Covers.nil))
+      (hrw P.OUT (by mem_here)).cons ((hrw P.SCR (by mem_here)).cons (hA.cons Covers.nil))
     refine ⟨Covers.append_left ?_ wr.right, wr⟩
-    refine (hro P.N (by simp)).cons ((hro P.E (by simp)).cons ((hro P.INP (by simp)).cons ((hro P.PP (by simp)).cons
-      ((hro P.QQ (by simp)).cons ((hro P.DP (by simp)).cons ((hro P.DQ (by simp)).cons
-      ((hro P.QI (by simp)).cons Covers.nil)))))))
+    refine (hro P.N (by mem_here)).cons ((hro P.E (by mem_here)).cons ((hro P.INP (by mem_here)).cons ((hro P.PP (by mem_here)).cons
+      ((hro P.QQ (by mem_here)).cons ((hro P.DP (by mem_here)).cons ((hro P.DQ (by mem_here)).cons
+      ((hro P.QI (by mem_here)).cons Covers.nil)))))))
   · rw [h.1.sp]
     have := h.1.1.BC
     simp only [Proof.Rsa.X86.PrivChecked.stackBytes] at hst
@@ -285,9 +290,9 @@ theorem call_vp (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
     · rw [h₁.1.nB, h₂.1.nB]
     · rw [h₁.1.eB, h₂.1.eB]
     · rw [h₁.1.sp, ← show P.lay.B = P.B from rfl, h₁.1.1.ok.low_eq]
-      exact h₁.1.1.ok.low_buf (R := P.N) (.inl (by simp))
+      exact h₁.1.1.ok.low_buf (R := P.N) (.inl (by mem_here))
     · rw [h₁.1.sp, ← show P.lay.B = P.B from rfl, h₁.1.1.ok.low_eq]
-      exact h₁.1.1.ok.low_buf (R := P.E) (.inl (by simp))
+      exact h₁.1.1.ok.low_buf (R := P.E) (.inl (by mem_here))
   · -- After the call.
     have hh := h
     obtain ⟨hs, -⟩ := h
@@ -312,9 +317,9 @@ theorem call_vp (v : Proof.Rsa.X86.PrivChecked.CrtImpl) :
     have := priv_post hh.privArgs po
     rw [m₂, g₂ .eax (by decide)] at this
     have ro := fun {R : Region} (hR : R ∈ P.lay.ro) => hs.2.callEntry_ro (by show 4 ≤ 3448; decide) hR
-    rw [ro (R := P.N) (by simp), hs.1.nB, ro (R := P.E) (by simp), hs.1.eB, ro (R := P.INP) (by simp),
-      ro (R := P.PP) (by simp), ro (R := P.QQ) (by simp), ro (R := P.DP) (by simp), ro (R := P.DQ) (by simp),
-      ro (R := P.QI) (by simp)] at this
+    rw [ro (R := P.N) (by mem_here), hs.1.nB, ro (R := P.E) (by mem_here), hs.1.eB, ro (R := P.INP) (by mem_here),
+      ro (R := P.PP) (by mem_here), ro (R := P.QQ) (by mem_here), ro (R := P.DP) (by mem_here), ro (R := P.DQ) (by mem_here),
+      ro (R := P.QI) (by mem_here)] at this
     exact this
 
 end VG.Proof.RsaPkcs1Enc.X86.Dec
@@ -381,12 +386,12 @@ theorem safe_sc {o n : Nat} (hn : o + n ≤ 8448) : Safe P (sc P o n) :=
   ⟨(h.sc_out hn).symm, h.fr_sc (by simp only [oR, frameBytes]; omega_using []) hn⟩
 
 theorem safe_low : Safe P P.lay.LOW :=
-  ⟨(h.ok.low_buf (R := P.OUT) (.inr (by simp))).symm, Lay.fr_low (by simp only [oR]; omega_using [])
+  ⟨(h.ok.low_buf (R := P.OUT) (.inr (by mem_here))).symm, Lay.fr_low (by simp only [oR]; omega_using [])
     (by show (3448 : Nat) ≤ 2 ^ 32; decide)⟩
 
 theorem safe_fr {d n : Nat} (hd : d + n ≤ frameBytes) (ho : d + n ≤ oR ∨ oR + 4 ≤ d) :
     Safe P ⟨P.lay.fr d, n⟩ :=
-  ⟨(h.ok.stk_fr (R := P.OUT) (.inr (by simp)) (by show d + n ≤ frameBytes + 16; omega_using [hd])).symm,
+  ⟨(h.ok.stk_fr (R := P.OUT) (.inr (by mem_here)) (by show d + n ≤ frameBytes + 16; omega_using [hd])).symm,
     Lay.fr_sep (by omega_using [ho]) (by simp only [oR]; omega_using []) (by simp only [frameBytes] at hd; omega_using [hd])⟩
 
 end In
@@ -431,7 +436,7 @@ theorem dZero_wp {σ s : State} (h : R2 P σ s) : WP isa (.block (saveR ++ dZero
       ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)) (fun r hr => ?_)
       (by omega_using [hK])) pr
     simp only [List.mem_singleton] at hr; subst hr
-    exact (hs.1.ok.stk_fr (R := P.OUT) (.inr (by simp)) (by simp only [oR, frameBytes]; omega_using [])).symm
+    exact (hs.1.ok.stk_fr (R := P.OUT) (.inr (by mem_here)) (by simp only [oR, frameBytes]; omega_using [])).symm
   · rw [mm, Mem.readW_writeW_self32]
   · rw [u5.other _ (by decide), u4.other _ (by decide), u3.gpr, u2.gpr]; rfl
   · rw [u5.other _ (by decide), u4.gpr]; rfl
@@ -494,7 +499,7 @@ theorem copy_wp {σ s : State} (h : D3 P σ s) : WP isa Impl.Bignum.X86.copyByte
   have ok := hs.1.ok
   have hK := hs.1.k1024
   have hdl := hs.1.dlK
-  have hfd := ok.fits P.D (by simp)
+  have hfd := ok.fits P.D (by mem_here)
   have fit := hs.1.scr_fit
   have sl8 := hs.1.sl8
   simp only [BitVec.toNat_setWidth] at hfd
@@ -503,10 +508,10 @@ theorem copy_wp {σ s : State} (h : D3 P σ s) : WP isa Impl.Bignum.X86.copyByte
       P.scr.setWidth 64 + BitVec.ofNat 64 (sD + (P.K - P.dl)) := hs.1.scrA (by simp only [sD]; omega_using [hK])
   have ctx := Proof.Bignum.X86.copyCtx_of_regions s P.d (P.scr + BitVec.ofNat 32 (sD + (P.K - P.dl))) (n := P.dl)
     (by omega_using [hK, hdl]) hfd (by rw [hs.1.scr_toNat (by simp only [sD]; omega_using [hK])]; simp only [sD]; omega_using [hK, hdl, fit, sl8])
-    ⟨P.D, hs.2.inRo (by simp), Region.contains_self _ _⟩
+    ⟨P.D, hs.2.inRo (by mem_here), Region.contains_self _ _⟩
     (by simp only [Proof.Bignum.X86.byteAddr]; rw [hdst]; exact St.sc_w hs (by simp only [sD]; omega_using [hK, hdl]))
     (by simp only [Proof.Bignum.X86.byteAddr]; rw [hdst]
-        exact (hs.1.sc_ro (by simp only [sD]; omega_using [hK, hdl]) (R := P.D) (by simp)).symm)
+        exact (hs.1.sc_ro (by simp only [sD]; omega_using [hK, hdl]) (R := P.D) (by mem_here)).symm)
   refine WP.mono (Proof.Bignum.X86.copyBytes_ok s ctx (by have := hs.1.dl1; omega_using [this]) esi ebx ecx) fun t ht => ?_
   have fr := ht.frame (by rw [hs.1.scr_toNat (by simp only [sD]; omega_using [hK])]; simp only [sD]; omega_using [hK, hdl, fit, sl8])
   simp only [Proof.Bignum.X86.byteAddr] at fr
@@ -548,7 +553,7 @@ theorem copy_wp {σ s : State} (h : D3 P σ s) : WP isa Impl.Bignum.X86.copyByte
       rw [show sD + (P.K - P.dl + j) = sD + (P.K - P.dl) + j by omega_using [], c,
         Proof.RsaPkcs1Sig.getD_append_right _ _ _ (by simp), List.length_replicate, Nat.add_sub_cancel_left,
         Proof.RsaPkcs1Sig.bytesAt_getD hj]
-      have ro := congrArg (fun l => l.getD j 0) (hs.2.ro (R := P.D) (by simp))
+      have ro := congrArg (fun l => l.getD j 0) (hs.2.ro (R := P.D) (by mem_here))
       simp only at ro
       rw [Proof.RsaPkcs1Sig.bytesAt_getD hj, Proof.RsaPkcs1Sig.bytesAt_getD hj] at ro
       simp only [Proof.Bignum.X86.byteAddr]
@@ -1412,12 +1417,12 @@ theorem kdkUpdArgs_vp : VP (K2 P) (.block kdkUpdArgs) (K3 P) :=
 
 theorem dataINP {σ s : State} (hs : S P σ s) : DataOk P s P.inp P.K :=
   { hlen := by have := hs.1.k1024; omega_using [this]
-    cd := St.cov_ro hs (R := P.INP) (by simp)
-    d_st := (hs.1.sr_ro (by decide) (by decide) (R := P.INP) (by simp)).symm
-    d_sc := (hs.1.sr_ro (by decide) (by decide) (R := P.INP) (by simp)).symm
-    b_d := hs.1.below_ro (by decide) (R := P.INP) (by simp)
+    cd := St.cov_ro hs (R := P.INP) (by mem_here)
+    d_st := (hs.1.sr_ro (by decide) (by decide) (R := P.INP) (by mem_here)).symm
+    d_sc := (hs.1.sr_ro (by decide) (by decide) (R := P.INP) (by mem_here)).symm
+    b_d := hs.1.below_ro (by decide) (R := P.INP) (by mem_here)
     nd := by
-      have := hs.1.ok.fits P.INP (by simp)
+      have := hs.1.ok.fits P.INP (by mem_here)
       simp only [BitVec.toNat_setWidth] at this
       rwa [Nat.mod_eq_of_lt (by have := P.inp.isLt; omega_using [])] at this }
 
@@ -1429,7 +1434,7 @@ theorem kdkUpd_vp (v : Backend) : VP (K3 P) (callUpd v.F) (K4 P) :=
       obtain ⟨⟨hb, -⟩, -⟩ := h
       have hs := hb.1
       refine ⟨c.base hb (by decide) updWs_scr, ?_⟩
-      rw [show Spec.Rsa.bytesAt s.mem (P.inp.setWidth 64) P.K = cB P σ from hs.2.ro (R := P.INP) (by simp)]
+      rw [show Spec.Rsa.bytesAt s.mem (P.inp.setWidth 64) P.K = cB P σ from hs.2.ro (R := P.INP) (by mem_here)]
         at md
       exact md
 
@@ -2841,7 +2846,7 @@ variable {σ : State} (h : In P σ)
 include h
 
 theorem out_fit : P.out.toNat + P.K ≤ 2 ^ 32 := by
-  have := h.ok.fits P.OUT (by simp)
+  have := h.ok.fits P.OUT (by mem_here)
   simp only [BitVec.toNat_setWidth] at this
   rwa [Nat.mod_eq_of_lt (by have := P.out.isLt; omega_using [])] at this
 
@@ -2854,7 +2859,7 @@ end In
 
 theorem St.out_w {σ s : State} (hs : S P σ s) {i n : Nat} (hn : i + n ≤ P.K) :
     InRegions s.wr (P.out.setWidth 64 + BitVec.ofNat 64 i) n :=
-  ⟨P.OUT, hs.2.inRw (by simp), Offset.contains_base _ hn (by have := hs.1.k1024; omega_using [hn, this])⟩
+  ⟨P.OUT, hs.2.inRw (by mem_here), Offset.contains_base _ hn (by have := hs.1.k1024; omega_using [hn, this])⟩
 
 theorem St.out_r {σ s : State} (hs : S P σ s) {i n : Nat} (hn : i + n ≤ P.K) :
     InRegions (s.rd ++ s.wr) (P.out.setWidth 64 + BitVec.ofNat 64 i) n :=
@@ -3157,7 +3162,7 @@ theorem SB.keep_fr {σ s t : State} (h : SB P σ s) (st : P.lay.St σ t) {d : Na
   · rw [hm, Lay.readW_fr_other _ _ _ hal.symm (by decide) (by simp only [frameBytes] at hd; omega_using [hd])]; exact al
   · rw [Proof.RsaPkcs1Sig.bytesAt_frame fr (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (hs.1.ok.stk_fr (R := P.OUT) (.inr (by simp)) (by show d + 4 ≤ frameBytes + 16; omega_using [hd])).symm) (by omega_using [hK])]
+      exact (hs.1.ok.stk_fr (R := P.OUT) (.inr (by mem_here)) (by show d + 4 ≤ frameBytes + 16; omega_using [hd])).symm) (by omega_using [hK])]
     exact out
   · rw [hm, Lay.readW_fr_other _ _ _ ho.symm (by decide) (by simp only [frameBytes] at hd; omega_using [hd])]; exact rc
 
@@ -3378,7 +3383,7 @@ theorem readW_pair (m : Mem) (a : Addr) {L : Nat} (hL : L < 2 ^ 32) :
     simp
 
 theorem In.ml_fit {σ : State} (h : In P σ) : P.ml.toNat + 8 ≤ 2 ^ 32 := by
-  have := h.ok.fits P.ML (by simp)
+  have := h.ok.fits P.ML (by mem_here)
   simp only [BitVec.toNat_setWidth] at this
   rwa [Nat.mod_eq_of_lt (by have := P.ml.isLt; omega_using [])] at this
 
@@ -3393,7 +3398,7 @@ theorem SB.keep_ml {σ s t : State} (h : SB P σ s) (st : P.lay.St σ t) (hf : F
   have hs := h.S
   have hK := hs.1.k1024
   have fr : ∀ d, d + 4 ≤ frameBytes → Region.Disjoint ⟨P.lay.fr d, 4⟩ P.ML := fun d hd =>
-    hs.1.ok.stk_fr (R := P.ML) (.inr (by simp)) (by show d + 4 ≤ frameBytes + 16; omega_using [hd])
+    hs.1.ok.stk_fr (R := P.ML) (.inr (by mem_here)) (by show d + 4 ≤ frameBytes + 16; omega_using [hd])
   have one : ∀ {R : Region}, R.Disjoint P.ML → ∀ r ∈ [P.ML], R.Disjoint r := fun hd r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hd
   obtain ⟨⟨⟨hb, cl, am⟩, al⟩, out, rc⟩ := h
@@ -3434,7 +3439,7 @@ theorem mlRest_vp : VP (VM P) (.block (mlStore.drop 1)) (VW P) :=
     have hK := hs.1.k1024
     have fit := hs.1.ml_fit
     have win : ∀ d, d + 4 ≤ 8 → InRegions s.wr (P.ml.setWidth 64 + BitVec.ofNat 64 d) 4 := fun d hd =>
-      ⟨P.ML, hs.2.inRw (by simp), Offset.contains_base _ hd (by omega_using [hd])⟩
+      ⟨P.ML, hs.2.inRw (by mem_here), Offset.contains_base _ hd (by omega_using [hd])⟩
     simp only [mlStore, List.drop_succ_cons, List.drop_zero]
     refine wp_storeS (a := P.ml.setWidth 64 + BitVec.ofNat 64 0)
       (by show s.ea ⟨.esi, 0⟩ = _; rw [ea_at, si]; exact addr_eq (by omega_using [])) (win 0 (by decide)) fun t1 m1 => ?_
@@ -3456,7 +3461,7 @@ theorem mlRest_vp : VP (VM P) (.block (mlStore.drop 1)) (VW P) :=
       (by rw [m3.gpr, u2.other _ (by decide), m1.gpr])
     have frd : ∀ d, d + 4 ≤ frameBytes → ∀ r ∈ [P.ML], Region.Disjoint ⟨P.lay.fr d, 4⟩ r := fun d hd r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact hs.1.ok.stk_fr (R := P.ML) (.inr (by simp)) (by show d + 4 ≤ frameBytes + 16; omega_using [hd])
+      exact hs.1.ok.stk_fr (R := P.ML) (.inr (by mem_here)) (by show d + 4 ≤ frameBytes + 16; omega_using [hd])
     refine ⟨⟨hb.keep_ml st fr, by rw [slot_keep fr (frd oV (by decide))]; exact v,
       by rw [slot_keep fr (frd oOK (by decide))]; exact ok, by rw [m3.gpr, u2.other _ (by decide), m1.gpr, bx]⟩, ?_⟩
     have hl : (if okB P σ then lselV P σ else 0) < 2 ^ 32 := by
@@ -3602,7 +3607,7 @@ theorem selBody_vp (n : Nat) : VP (SLM P (n + 1)) (.block selBody) fun σ s =>
       R.Disjoint r := fun hd r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hd.sub_right W1
   have frO : ∀ d, d + 4 ≤ frameBytes → Region.Disjoint ⟨P.lay.fr d, 4⟩ P.OUT := fun d hd =>
-    hs.1.ok.stk_fr (R := P.OUT) (.inr (by simp)) (by show d + 4 ≤ frameBytes + 16; omega_using [hd])
+    hs.1.ok.stk_fr (R := P.OUT) (.inr (by mem_here)) (by show d + 4 ≤ frameBytes + 16; omega_using [hd])
   have gg : ∀ r, r ≠ .eax → r ≠ .ebp → t12.gpr r = s.gpr r := fun r h1 h2 => by
     rw [m12.gpr]
     simp (disch := first | exact h1 | exact h2 | exact Ne.symm h1 | exact Ne.symm h2) only [u11.other,

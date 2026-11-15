@@ -627,9 +627,9 @@ theorem dqStep_ok {s₀ : State} {B : Addr} {Z eU eR eM eT wm c M z U : Nat} (hs
   · rw [kt _ (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8, hsc, hci]) (by omega_using [hw, hw', hR8, hHR, hHT, hRZ, hMZ, hTZ, sRT]) (by omega_using [hU8, hH, hHT, hUZ, hTZ, sUT, hi', hi, e8, hci]) (by omega_using [hHT])]; exact hI.v
   · rw [kt _ (by omega_using [hw, hw', hc, hU8, hR8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hi', hi, e8, hsc, hci]) (by omega_using [hw, hw', hR8, hHR, hHT, hRZ, hMZ, hTZ, sRT]) (by omega_using [hU8, hH, hHT, hUZ, hTZ, sUT, hi', hi, e8, hci]) (by omega_using [hHT])]; exact hI.dl
   · refine hI.frm.trans ?_
-    have f₁ : Frm B [(eU, 8 * c), (eR, 8 * (wm + 1)), (8 * sCnt, 8)] t.mem t₂.mem := Frm.of_outside o₂ (by simp)
-    exact (f₁.trans (Frm.of_outside (oW.mono (o' := eU) (n' := 8 * c) (by omega_using []) (by omega_using [hj, hi'])) (by simp))).trans
-      (Frm.of_outside oC (by simp))
+    have f₁ : Frm B [(eU, 8 * c), (eR, 8 * (wm + 1)), (8 * sCnt, 8)] t.mem t₂.mem := Frm.of_outside o₂ (List.mem_cons_of_mem _ List.mem_cons_self)
+    exact (f₁.trans (Frm.of_outside (oW.mono (o' := eU) (n' := 8 * c) (by omega_using []) (by omega_using [hj, hi'])) List.mem_cons_self)).trans
+      (Frm.of_outside oC (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))
   · rw [h13', ofNat_sub_ofNat (a := c - j) (b := 1) (by omega_using [hj]) (by omega_using [hc]), BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hc])]
     omega_using [hj]
 
@@ -746,10 +746,11 @@ theorem dqHead_ok {s : State} {B : Addr} {Z eU eR eM eT L wm : Nat} (hs : Scr s 
     · rw [o₅.word (by omega_using []) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hsc, hcv])]; exact hD₄
     · rw [o₅.word (by omega_using []) (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hsc, hcv])]; exact hDl₄
   have f₀ : Frm B [(eU, 8 * c), (eR, 8 * (wm + 1)), (eT, 32), (8 * sCnt, 8)] s.mem s₀.mem :=
-    (((((Frm.of_outside oC (by simp)).trans (by rw [m₃]; exact Frm.of_outside (o₂.mono (o' := eR)
-      (n' := 8 * (wm + 1)) (by omega_using []) (by omega_using [])) (by simp))).trans
-      (Frm.of_outside (o₄.mono (o' := eT) (n' := 32) (by omega_using []) (by omega_using [])) (by simp))).trans
-      (Frm.of_outside (o₅.mono (o' := eT) (n' := 32) (by omega_using []) (by omega_using [])) (by simp))))
+    (((((Frm.of_outside oC (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))).trans
+      (by rw [m₃]; exact Frm.of_outside (o₂.mono (o' := eR) (n' := 8 * (wm + 1)) (by omega_using []) (by omega_using []))
+            (List.mem_cons_of_mem _ List.mem_cons_self))).trans
+      (Frm.of_outside (o₄.mono (o' := eT) (n' := 32) (by omega_using []) (by omega_using [])) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))).trans
+      (Frm.of_outside (o₅.mono (o' := eT) (n' := 32) (by omega_using []) (by omega_using [])) (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)))))
   exact ⟨z, hz, hd₄, hUw, h₀, k₀₅.mono (by decide), kS _ _ (by omega_using [hw, hL, hL', _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hTZ, hn, hc, hc1, hsc, hcv]) (by omega_using [hw, hL, _hU8, hH, hHR, hHM, hHT, hUZ, hRZ, hMZ, hc, hc1, hsc, hcv]) (by omega_using [hw, hL, _hU8, hH, hHR, hUZ, hRZ, hMZ, sUR, hc, hc1, hcv]) (by omega_using [hw, hL, _hU8, hH, hHT, hUZ, hRZ, hMZ, hTZ, sUT, hc, hc1, hcv]), f₀⟩
 
 /-- `divQN`: `⌊U / M⌋` in place of `U`'s low `c = L - w_m + 1` words and `U mod M` into `[R]`, for `U` the `L`
@@ -1565,7 +1566,8 @@ theorem rbB_wv {B : Addr} {v : Nat} {m m' : Mem} (f : Frm B (rbB v) m m') {j k :
   · simp only [rbB, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> dsimp only <;> rw [q j] <;> try rw [q]
     all_goals rcases hj' with rfl | rfl | rfl | rfl | rfl | rfl <;> omega_arith
-  · rw [q j]; rcases hj' with rfl | rfl | rfl | rfl | rfl | rfl <;> omega
+  · have hj9 := Nat.mul_le_mul_right (8 * (v + 2)) (show j ≤ 9 by omega_using [hj'])
+    rw [q j]; omega_using [hj9, q32, hb, hk]
 
 theorem wpc {c : Prog isa} {l : List (Prog isa)} (hl : l ≠ []) {s : State} {Q : State → Prop}
     (h : WP isa c s fun t => WP isa (seqs l) t Q) : WP isa (seqs (c :: l)) s Q := by
@@ -1645,7 +1647,7 @@ theorem divB1_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (W
   have e10 : slot (Wk I.k) wM = slot (vk I.k) (2 * wM) := slot_wide _ _
   unfold divBP
   -- `m + 1` and `n - r`.
-  refine wpc (by simp) ?_
+  refine wpc (List.cons_ne_nil _ _) ?_
   rw [WP.block_append_iff]
   refine WP.mono (h.setNar_ok L) fun s₁ ⟨g₁, f₁, k₁⟩ => ?_
   refine WP.mono (ones_ok s₁) fun s₂ ⟨⟨h15, _, m₂⟩, k₂⟩ => ?_
@@ -1661,16 +1663,16 @@ theorem divB1_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (W
   have one₂ : wv s₂.mem I.B (slot (vk I.k) nOne) (vk I.k) = 1 := by
     rw [m₂, Frm.hdrW_wv f₁ (slot_ge _ _) (by omega_using [hv2, q1]), wv_low_of_lt (w := vk I.k + 2) (by omega_using [])
       (by rw [one]; exact Nat.one_lt_two_pow (by omega_using [hv9])), one]
-  refine wpc (by simp) (WP.mono (zeroA_ok g₂.ws (j := nM1) (by decide)) fun s₃ ⟨_, o₃, _, _, _, k₃⟩ => ?_)
+  refine wpc (List.cons_ne_nil _ _) (WP.mono (zeroA_ok g₂.ws (j := nM1) (by decide)) fun s₃ ⟨_, o₃, _, _, _, k₃⟩ => ?_)
   have g₃ := g₂.out (by decide) (Nat.le_refl _) o₃ k₃ (by decide)
-  refine wpc (by simp) (WP.mono (addA_ok g₃.ws (o := nM1) (a := 2 * wA) (b := nOne) (by decide) (by decide)
+  refine wpc (List.cons_ne_nil _ _) (WP.mono (addA_ok g₃.ws (o := nM1) (a := 2 * wA) (b := nOne) (by decide) (by decide)
     (by decide) (by decide) (by decide) (c := true) ((k₃.gpr .x15 (by decide)).trans h15)) fun s₄ ⟨v₄, _, o₄, k₄⟩ => ?_)
   have g₄ := g₃.out (by decide) (by omega_using []) o₄ k₄ (by decide)
   simp only [↓reduceIte] at v₄
   rw [o₃.wv (by omega_using [q2, q14]) (by omega_using [hv2, q14]), mlow, o₃.wv (by omega_using [q1, q2]) (by omega_using [hv2, q1]), one₂] at v₄
-  refine wpc (by simp) (WP.mono (zeroA_ok g₄.ws (j := nD) (by decide)) fun s₅ ⟨_, o₅, _, _, _, k₅⟩ => ?_)
+  refine wpc (List.cons_ne_nil _ _) (WP.mono (zeroA_ok g₄.ws (j := nD) (by decide)) fun s₅ ⟨_, o₅, _, _, _, k₅⟩ => ?_)
   have g₅ := g₄.out (by decide) (Nat.le_refl _) o₅ k₅ (by decide)
-  refine wpc (by simp) (WP.mono (subA_ok g₅.ws (o := nD) (a := Public.aN) (b := 2 * wX) (by decide) (by decide)
+  refine wpc (List.cons_ne_nil _ _) (WP.mono (subA_ok g₅.ws (o := nD) (a := Public.aN) (b := 2 * wX) (by decide) (by decide)
     (by decide) (by decide) (by decide)) fun s₆ ⟨v₆, _, _, o₆, k₆⟩ => ?_)
   have g₆ := g₅.out (by decide) (by omega_using []) o₆ k₆ (by decide)
   have rlow₅ : wv s₅.mem I.B (slot (vk I.k) (2 * wX)) (vk I.k) = R % 2 ^ (64 * vk I.k) := by
@@ -1690,7 +1692,7 @@ theorem divB1_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (W
       (rbB_out o₆ (by omega_using [q3, q6, q2']))
   clear v₄ v₆ rlow₅ n₅ mlow rlow n₂ one₂
   -- The divisor's top nonzero word, and the count of words to shift by.
-  refine wpc3 (by simp) (WP.mono (hiZ_ok g₆ L) fun s₇ ⟨g₇, f₇, hz₇, k₇⟩ => ?_)
+  refine wpc3 (List.cons_ne_nil _ _) (WP.mono (hiZ_ok g₆ L) fun s₇ ⟨g₇, f₇, hz₇, k₇⟩ => ?_)
   obtain ⟨-, hlt, -⟩ := hiOf_spec (fun j => word s₆.mem I.B (slot (vk I.k) nM1 + 8 * j)) (vk I.k)
   have hiD := wv_hi s₆.mem I.B (slot (vk I.k) nM1) (vk I.k)
   generalize hiOf (fun j => word s₆.mem I.B (slot (vk I.k) nM1 + 8 * j)) (vk I.k) = hi at hz₇ hlt hiD
@@ -1700,13 +1702,13 @@ theorem divB1_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (W
   have w7 : ∀ d n, 256 ≤ d → d + 8 * n ≤ 2 ^ 64 → wv s₇.mem I.B d n = wv s₆.mem I.B d n := fun d n hd hd' =>
     f₇.wv_eq (by simp only [List.mem_singleton]; rintro r rfl; dsimp only; omega_using [qc, hd]) hd'
   -- `x` into wide array `wM`.
-  refine wpc (by simp) (WP.mono (g₇.setWid_ok L) fun s₈ ⟨g₈, f₈, k₈⟩ => ?_)
-  refine wpc (by simp) (WP.mono (zeroA_ok g₈.ws (j := wM) (by decide)) fun s₉ ⟨z₉, o₉, _, _, _, k₉⟩ => ?_)
+  refine wpc (List.cons_ne_nil _ _) (WP.mono (g₇.setWid_ok L) fun s₈ ⟨g₈, f₈, k₈⟩ => ?_)
+  refine wpc (List.cons_ne_nil _ _) (WP.mono (zeroA_ok g₈.ws (j := wM) (by decide)) fun s₉ ⟨z₉, o₉, _, _, _, k₉⟩ => ?_)
   have g₉ := g₈.out (by decide) (Nat.le_refl _) o₉ k₉ (by decide)
-  refine wpc (by simp) (WP.mono (zeroA_ok g₉.ws (j := wT) (by decide)) fun s₁₀ ⟨_, o₁₀, _, _, _, k₁₀⟩ => ?_)
+  refine wpc (List.cons_ne_nil _ _) (WP.mono (zeroA_ok g₉.ws (j := wT) (by decide)) fun s₁₀ ⟨_, o₁₀, _, _, _, k₁₀⟩ => ?_)
   have g₁₀ := g₉.out (by decide) (Nat.le_refl _) o₁₀ k₁₀ (by decide)
-  refine wpc (by simp) (WP.mono (g₁₀.setNar_ok L) fun s₁₁ ⟨g₁₁, f₁₁, k₁₁⟩ => ?_)
-  refine wpc (by simp) (WP.mono (copyA_ok g₁₁.ws (o := 2 * wM) (a := nD) (by decide) (by decide) (by decide))
+  refine wpc (List.cons_ne_nil _ _) (WP.mono (g₁₀.setNar_ok L) fun s₁₁ ⟨g₁₁, f₁₁, k₁₁⟩ => ?_)
+  refine wpc (List.cons_ne_nil _ _) (WP.mono (copyA_ok g₁₁.ws (o := 2 * wM) (a := nD) (by decide) (by decide) (by decide))
     fun s₁₂ ⟨v₁₂, o₁₂, _, _, k₁₂⟩ => ?_)
   have g₁₂ := g₁₁.out (by decide) (by omega_using []) o₁₂ k₁₂ (by decide)
   -- What the copies keep.
@@ -1744,7 +1746,7 @@ theorem divB1_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (W
     fun s₁₃ ⟨g₁₃, f₁₃, vM1₁₃, vM₁₃, k₁₃⟩ => ?_)
   rw [m1₁₂] at vM1₁₃
   rw [x₁₂] at vM₁₃
-  refine wpc (by simp) (WP.mono (fixTop_ok g₁₃ L) fun s₁₄ ⟨g₁₄, f₁₄, top₁₄, k₁₄⟩ => ?_)
+  refine wpc (List.cons_ne_nil _ _) (WP.mono (fixTop_ok g₁₃ L) fun s₁₄ ⟨g₁₄, f₁₄, top₁₄, k₁₄⟩ => ?_)
   have htop₁₄ : 2 ^ (64 * (vk I.k - 1)) ≤ wv s₁₄.mem I.B (slot (vk I.k) nM1) (vk I.k) :=
     top_ge _ _ _ _ (by omega_using [hv9]) (by rw [top₁₄]; exact fixW_ne _)
   have w14 : ∀ d n, d + 8 * n ≤ 2 ^ 64 → 256 ≤ d → (d + 8 * n ≤ slot (vk I.k) nM1 ∨ slot (vk I.k) 3 ≤ d) →
@@ -1755,7 +1757,7 @@ theorem divB1_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (W
       · have := hdrW_rb r hr; omega_using [hd, this]
       · dsimp only; have : slot (vk I.k) 3 = 256 + 3 * (8 * (vk I.k + 2)) := rfl; omega_using [q2, q3', h1]) hd'
   -- The remainder's array cleared, and the division's registers.
-  refine wpc (by simp) (WP.mono (zeroA_ok g₁₄.ws (j := nRem) (by decide)) fun s₁₅ ⟨z₁₅, o₁₅, _, _, _, k₁₅⟩ => ?_)
+  refine wpc (List.cons_ne_nil _ _) (WP.mono (zeroA_ok g₁₄.ws (j := nRem) (by decide)) fun s₁₅ ⟨z₁₅, o₁₅, _, _, _, k₁₅⟩ => ?_)
   have g₁₅ := g₁₄.out (by decide) (Nat.le_refl _) o₁₅ k₁₅ (by decide)
   simp only [seqs]
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff,
@@ -1894,7 +1896,7 @@ theorem divB_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (Wk
     fun s₁₆ ⟨D, X, hi, g₁₆, hh, hval, hD, hX, F16f⟩ => ?_)
   rw [hD, hX]
   -- The division.
-  refine wpc (by simp) (WP.mono hh.ok fun s₁₇ ⟨hr₁₇, hq₁₇, _, f₁₇, _, k₁₇⟩ => ?_)
+  refine wpc (List.cons_ne_nil _ _) (WP.mono hh.ok fun s₁₇ ⟨hr₁₇, hq₁₇, _, f₁₇, _, k₁₇⟩ => ?_)
   rw [show 2 * vk I.k - vk I.k + 1 = vk I.k + 1 by omega_using []] at hq₁₇ f₁₇
   have g₁₇ : G I m₀ (Wk I.k) c s₁₇ := g₁₆.frmOwn (sl := sCnt) ⟨by decide, by decide, by decide⟩
     (rs := [(slot (Wk I.k) wM, 8 * (vk I.k + 1)), (slot (vk I.k) nRem, 8 * (vk I.k + 1)), (slot (Wk I.k) wT, 32)]) f₁₇
@@ -1906,13 +1908,13 @@ theorem divB_ok {I : RpIn} {m₀ : Mem} {c : Bool} {s : State} (h : G I m₀ (Wk
   have hM'l : M' < 2 ^ (64 * vk I.k) := hMM ▸ wv_lt _ _ _ _
   have hM'0 : 0 < M' := Nat.lt_of_lt_of_le (Nat.two_pow_pos _) (hMM ▸ hh.htop)
   -- The quotient into `nD`, and the remainder zero.
-  refine wpc (by simp) (WP.mono (g₁₇.setNar_ok L) fun s₁₈ ⟨g₁₈, f₁₈, k₁₈⟩ => ?_)
-  refine wpc (by simp) (WP.mono (zeroA_ok g₁₈.ws (j := nD) (by decide)) fun s₁₉ ⟨_, o₁₉, _, _, _, k₁₉⟩ => ?_)
+  refine wpc (List.cons_ne_nil _ _) (WP.mono (g₁₇.setNar_ok L) fun s₁₈ ⟨g₁₈, f₁₈, k₁₈⟩ => ?_)
+  refine wpc (List.cons_ne_nil _ _) (WP.mono (zeroA_ok g₁₈.ws (j := nD) (by decide)) fun s₁₉ ⟨_, o₁₉, _, _, _, k₁₉⟩ => ?_)
   have g₁₉ := g₁₈.out (by decide) (Nat.le_refl _) o₁₉ k₁₉ (by decide)
-  refine wpc (by simp) (WP.mono (copyA_ok g₁₉.ws (o := nD) (a := 2 * wM) (by decide) (by decide) (by decide))
+  refine wpc (List.cons_ne_nil _ _) (WP.mono (copyA_ok g₁₉.ws (o := nD) (a := 2 * wM) (by decide) (by decide) (by decide))
     fun s₂₀ ⟨v₂₀, o₂₀, _, _, k₂₀⟩ => ?_)
   have g₂₀ := g₁₉.out (by decide) (by omega_using []) o₂₀ k₂₀ (by decide)
-  refine wpc (by simp) (WP.mono (zeroA_ok g₂₀.ws (j := nZ) (by decide)) fun s₂₁ ⟨z₂₁, o₂₁, _, _, _, k₂₁⟩ => ?_)
+  refine wpc (List.cons_ne_nil _ _) (WP.mono (zeroA_ok g₂₀.ws (j := nZ) (by decide)) fun s₂₁ ⟨z₂₁, o₂₁, _, _, _, k₂₁⟩ => ?_)
   have g₂₁ := g₂₀.out (by decide) (Nat.le_refl _) o₂₁ k₂₁ (by decide)
   refine wp_seqs_append (by simp [eqA]) (by simp) (WP.mono (eqA_ok g₂₁.ws (a := nRem) (b := nZ) (by decide)
     (by decide)) fun s₂₂ ⟨h9, m₂₂, _, _, k₂₂⟩ => ?_)

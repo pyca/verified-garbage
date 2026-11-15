@@ -12,6 +12,10 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
 meta import VerifiedGarbage.Spec.EcKey.P384
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.EcdhLit
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.CombVerified
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.CombVerified
 
 /-!
 # P-384's public keys on RISC-V: `Verified`
@@ -31,13 +35,14 @@ namespace VG.Proof.Ecdh.RISCV64.P384
 open VG VG.RISCV64 VG.Impl.Ecdh.RISCV64 VG.Proof.Ecdsa.RISCV64.P384
 
 theorem pk_ct : ConstantTime isa pkRVC.pre pkRVC.pub publicKeyP384 :=
-  VG.Taint.constantTime (A := taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.ofRegs [.a0, .a1, .a2])
+  VG.Taint.constantTime_of_exists (A := taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.ofRegs [.a0, .a1, .a2])
     (fun _ _ _ _ ⟨⟨hsp, h0, h1, h2⟩, hsy⟩ => ⟨⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact h0
       · exact h1
-      · exact h2⟩, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩) (by taint_decide)
+      · exact h2⟩, fun n hn => by simp only [List.mem_singleton] at hn; subst hn; exact hsy⟩)
+    (by taint_decide_sum [VG.Proof.Ecdsa.RISCV64.P384.Comb.mulGSum, VG.Proof.Ecdsa.RISCV64.P384.Comb.pMulSymSum])
 
 /-- A state satisfying the precondition. -/
 def pkSat : State where

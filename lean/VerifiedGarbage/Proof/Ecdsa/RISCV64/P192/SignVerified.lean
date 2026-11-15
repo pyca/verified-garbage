@@ -9,6 +9,12 @@ import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.SignLit
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.Sign
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.SignLit
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.MulVerified
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P192.MulVerified
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.P192Field.Verified
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P192Field.Verified
 
 /-!
 # ECDSA signatures over P-192 on RISC-V: constant time
@@ -26,7 +32,7 @@ namespace VG.Proof.Ecdsa.RISCV64.P192
 open VG VG.RISCV64
 
 theorem sign_ct : ConstantTime isa signRV.pre signRV.pub Impl.Ecdsa.RISCV64.P192.signP192 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4])
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4])
     (fun _ _ _ _ ⟨hsp, h0, h1, h2, h3, h4⟩ => ⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -34,6 +40,8 @@ theorem sign_ct : ConstantTime isa signRV.pre signRV.pub Impl.Ecdsa.RISCV64.P192
       · exact h1
       · exact h2
       · exact h3
-      · exact h4⟩) (by taint_decide)
+      · exact h4⟩)
+    (by taint_decide_sum [VG.Proof.Ecdsa.RISCV64.P192.mulSum, VG.Proof.Weierstrass.RISCV64.P192Field.mulASum,
+      VG.Proof.Weierstrass.RISCV64.P192Field.mulASum_n, VG.Proof.Weierstrass.RISCV64.P192Field.addASum_n])
 
 end VG.Proof.Ecdsa.RISCV64.P192

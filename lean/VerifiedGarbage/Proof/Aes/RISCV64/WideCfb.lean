@@ -5,11 +5,15 @@ public import VerifiedGarbage.Proof.AesCfb.Spec
 import VerifiedGarbage.Proof.Aes.RISCV64.ChainModes
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 meta import VerifiedGarbage.Proof.Aes.RISCV64.WideCbc
 meta import VerifiedGarbage.Proof.AesCfb.Spec
 meta import VerifiedGarbage.Proof.Aes.RISCV64.ChainModes
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 meta import VerifiedGarbage.TCB.RISCV64.Target
 
 -- separate module: CFB128 decryption's instance of `wide`, which only AES-CFB's `Verified` imports,
@@ -344,8 +348,10 @@ theorem cfbDecWide_correct {s₀ : State} (hp : (blockKRISCV64 (AesCfb.cfbMode f
     (by rw [AesCbc.bytesAt_toList]; exact cfb_chain _ _ _ _ _ _)
 
 theorem cfbDecWide_ct : ConstantTime isa (blockKRISCV64 (AesCfb.cfbMode false)).pre
-    (blockKRISCV64 (AesCfb.cfbMode false)).pub cfbDecWide :=
-  wide_ct _ (by taint_decide)
+    (blockKRISCV64 (AesCfb.cfbMode false)).pub cfbDecWide := by
+  obtain ⟨_, hck⟩ : ∃ h, (taint.check (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5]) cfbDecWide h).isSome =
+      true := by taint_decide_sum [Impl.Aes.RISCV64.encrypt4Sum]
+  exact wide_ct _ hck
 
 theorem cfbDecWide_k :
     AesCbc.RISCV64.ChainK true (16 * ·) (blockKRISCV64 (AesCfb.cfbMode false)) cfbDecWide :=

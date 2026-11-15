@@ -3,9 +3,13 @@ module
 public import VerifiedGarbage.Proof.Aes.RISCV64.Chain
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 meta import VerifiedGarbage.Proof.Aes.RISCV64.Chain
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 meta import VerifiedGarbage.TCB.RISCV64.Target
 public import VerifiedGarbage.Impl.Aes.RISCV64.Chain
 
@@ -44,9 +48,9 @@ theorem chain_agree (out : Bool) :
 theorem chain_ct (out : Bool) : ConstantTime isa (Proof.Aes.chainRISCV64 out).pre
     (Proof.Aes.chainRISCV64 out).pub (Impl.Aes.RISCV64.chain out) := by
   cases out
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5])
-      (chain_agree _) (by taint_decide)
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5])
-      (chain_agree _) (by taint_decide)
+  · exact VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5])
+      (chain_agree _) (by taint_decide_sum [Impl.Aes.RISCV64.encrypt4Sum])
+  · exact VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5])
+      (chain_agree _) (by taint_decide_sum [Impl.Aes.RISCV64.encrypt4Sum])
 
 end VG.Proof.Aes.RISCV64

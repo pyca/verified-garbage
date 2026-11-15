@@ -6,9 +6,11 @@ public import VerifiedGarbage.Proof.Gcm.Contract
 meta import VerifiedGarbage.Proof.Gcm.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Aes.RISCV64.Ctr32
 meta import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Gcm.Contract
@@ -33,8 +35,8 @@ open VG VG.RISCV64 VG.Proof.Aes
 
 theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32RISCV64.pre Proof.Aes.ctr32RISCV64.pub
     Impl.Aes.RISCV64.ctr32 := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5])
-    ?_ (by taint_decide)
+  refine VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5])
+    ?_ (by taint_decide_sum [Impl.Aes.RISCV64.encrypt4Sum])
   rintro s₁ s₂ - - ⟨h0, h1, h2, h3, h4, h5, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -43,8 +45,8 @@ theorem ctr32_ct : ConstantTime isa Proof.Aes.ctr32RISCV64.pre Proof.Aes.ctr32RI
 
 theorem ctr32To_ct : ConstantTime isa Proof.Aes.ctr32ToRISCV64.pre Proof.Aes.ctr32ToRISCV64.pub
     Impl.Aes.RISCV64.ctr32To := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6])
-    ?_ (by taint_decide)
+  refine VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5, .a6])
+    ?_ (by taint_decide_sum [Impl.Aes.RISCV64.encrypt4Sum])
   rintro s₁ s₂ - - ⟨h0, h1, h2, h3, h4, h5, h6, hsp⟩
   refine ⟨hsp, fun r hr => ?_⟩
   simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr

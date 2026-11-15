@@ -17,7 +17,6 @@ import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.Comb
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.P384.MulVerified
 meta import VerifiedGarbage.Proof.Ecdh.RISCV64.P384.Tail
-meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
 meta import VerifiedGarbage.Proof.Framework.RISCV64.CallAny
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 meta import VerifiedGarbage.Proof.Framework.ConstMem
@@ -28,6 +27,13 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Framework.Covers
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Syms
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
+public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
+meta import VerifiedGarbage.Impl.Ecdsa.RISCV64.Comb
+meta import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 
 /-!
 # `vg_p384_mul_g` on RISC-V: the contract, and ECDH's `tail` with it
@@ -380,5 +386,27 @@ theorem tailG_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base)
     rw [show s₂.callEntry.mem = s₁.mem by rw [State.callEntry_mem, u₂.mem]] at this
     rw [u₄.mem]
     exact this
+
+/-! The constant-time analyses of the calls of the functions of P-384's `p` from their arguments,
+with the comb's table public, each done once for every check of code that calls it
+(`taint_decide_sum`), which keep what is public of `s0`–`s11`: the functions write none of them. -/
+taint_summary pMulSymSum : (taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Weierstrass.Mont.p384p.fn "mul") Impl.Weierstrass.RISCV64.P384Field.mulFnA)
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+taint_summary pAddSymSum : (taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Weierstrass.Mont.p384p.fn "add") Impl.Weierstrass.RISCV64.P384Field.addFnA)
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+taint_summary pSubSymSum : (taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Weierstrass.Mont.p384p.fn "sub") Impl.Weierstrass.RISCV64.P384Field.subFnA)
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+
+/-! The constant-time analysis of the call of `vg_p384_mul_g` from its argument, with the comb's
+table public, done once for every check of code that calls it (`taint_decide_sum [mulGSum]`:
+signing, verification and the public key), which keeps what is public of `s2`, `s3` and
+`s5`–`s11`: the function writes none of them (`s0`, `s1` and `s4` it restores from memory). -/
+taint_summary mulGSum : (taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.ofRegs [.a0])
+  (.call Impl.Ecdsa.RISCV64.Comb.mulGP384Name Impl.Ecdsa.RISCV64.Comb.mulGP384)
+  keeping (Taint.ofRegs [.s2, .s3, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+  using pMulSymSum pAddSymSum pSubSymSum
 
 end VG.Proof.Ecdsa.RISCV64.P384.Comb

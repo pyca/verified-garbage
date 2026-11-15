@@ -16,7 +16,11 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Mont.Read
-meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.P192Field.Verified
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P192Field.Verified
 
 /-!
 # `vg_p192_mul` on RISC-V: the contract
@@ -110,5 +114,13 @@ theorem sat_point (hL : VG.Proof.Weierstrass.Law W) : MC.PointOk 0x1000 satMem :
   rw [eG]
   exact VG.Proof.P192.onCurve_G
 
+/-! The constant-time analysis of the call of `vg_p192_mul` from its argument, done once for every
+check of code that calls it (`taint_decide_sum [mulSum]`: signing, ECDH and the public key), which
+keeps what is public of `s2`–`s6`: the function writes none of them (`s0` and `s1` it restores
+from memory). -/
+taint_summary mulSum : taint (Taint.ofRegs [.a0]) (.call "vg_p192_mul" mulP192)
+  keeping (Taint.ofRegs [.s2, .s3, .s4, .s5, .s6])
+  using VG.Proof.Weierstrass.RISCV64.P192Field.mulASum VG.Proof.Weierstrass.RISCV64.P192Field.addASum
+    VG.Proof.Weierstrass.RISCV64.P192Field.subASum
 
 end VG.Proof.Ecdsa.RISCV64.P192

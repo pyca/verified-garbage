@@ -5,10 +5,12 @@ public import VerifiedGarbage.Proof.Aes.RISCV64.Blocks
 public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Aes.RISCV64.Blocks
 meta import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Spec.Aes.Contract
@@ -54,13 +56,13 @@ theorem blocks_agree (f : Nat → List Byte → Spec.Aes.State → Spec.Aes.Stat
 
 theorem encryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksRISCV64 Spec.Aes.cipher).pre
     (Proof.Aes.blocksRISCV64 Spec.Aes.cipher).pub encryptBlocks :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4]) (blocks_agree _)
-    (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4]) (blocks_agree _)
+    (by taint_decide_sum [Impl.Aes.RISCV64.encrypt4Sum])
 
 theorem decryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksRISCV64 Spec.Aes.invCipher).pre
     (Proof.Aes.blocksRISCV64 Spec.Aes.invCipher).pub decryptBlocks :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4]) (blocks_agree _)
-    (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4]) (blocks_agree _)
+    (by taint_decide_sum [Impl.Aes.RISCV64.decrypt4Sum])
 
 /-- A state satisfying the precondition (one block). -/
 def blocksSat : State where

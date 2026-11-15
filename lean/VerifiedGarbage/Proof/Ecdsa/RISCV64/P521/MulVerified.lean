@@ -503,24 +503,25 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
     · rw [Impl.Weierstrass.Point.Curve.pointAt, x0, x1, x2, dq, dq, dq, ex, ey, ez, toM_out, toM_out, toM_out]
       exact represents_of_rep R₆
 
-/-! The constant-time analyses of the functions on limbs from their arguments, each done once
-for `mulSum`, whose calls of them differ in what else is public; they keep what is public of
-`s0`–`s11`, writing none of them. -/
-taint_summary uMulSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3]) Impl.Weierstrass.RISCV64.P521Unsat.mulFnA
+/-! The constant-time analyses of the calls of the functions on limbs from their arguments, each
+done once for `mulSum`, whose calls of them differ in what else is public; they keep what is
+public of `s0`–`s11`: the functions write none of them. -/
+taint_summary uMulSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3]) (.call (Impl.Weierstrass.RISCV64.P521Unsat.S.fn "mul") Impl.Weierstrass.RISCV64.P521Unsat.mulFnA)
   keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
-taint_summary uAddSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3]) Impl.Weierstrass.RISCV64.P521Unsat.addFn
+taint_summary uAddSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3]) (.call (Impl.Weierstrass.RISCV64.P521Unsat.S.fn "add") Impl.Weierstrass.RISCV64.P521Unsat.addFn)
   keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
-taint_summary uSubSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3]) Impl.Weierstrass.RISCV64.P521Unsat.subFn
+taint_summary uSubSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3]) (.call (Impl.Weierstrass.RISCV64.P521Unsat.S.fn "sub") Impl.Weierstrass.RISCV64.P521Unsat.subFn)
   keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
-taint_summary uPackSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3]) Impl.Weierstrass.RISCV64.P521Unsat.packFn
+taint_summary uPackSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3]) (.call (Impl.Weierstrass.RISCV64.P521Unsat.S.fn "pack") Impl.Weierstrass.RISCV64.P521Unsat.packFn)
   keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
-taint_summary uUnpackSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3]) Impl.Weierstrass.RISCV64.P521Unsat.unpackFn
+taint_summary uUnpackSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3]) (.call (Impl.Weierstrass.RISCV64.P521Unsat.S.fn "unpack") Impl.Weierstrass.RISCV64.P521Unsat.unpackFn)
   keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
 
-/-! The constant-time analysis of `vg_p521_mul` from its argument, done once for every check of
-code that calls it (`taint_decide_sum [mulSum]`: signing, ECDH and the public key), which keeps
-what is public of `s2`–`s11`: it writes none of them (`s0` and `s1` it restores from memory). -/
-taint_summary mulSum : taint (Taint.ofRegs [.a0]) mulP521
+/-! The constant-time analysis of the call of `vg_p521_mul` from its argument, done once for every
+check of code that calls it (`taint_decide_sum [mulSum]`: signing, ECDH and the public key), which
+keeps what is public of `s2`–`s11`: the function writes none of them (`s0` and `s1` it restores
+from memory). -/
+taint_summary mulSum : taint (Taint.ofRegs [.a0]) (.call "vg_p521_mul" mulP521)
   keeping (Taint.ofRegs [.s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
   using uMulSum uAddSum uSubSum uPackSum uUnpackSum
 
