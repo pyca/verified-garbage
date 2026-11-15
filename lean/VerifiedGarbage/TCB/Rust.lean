@@ -374,7 +374,7 @@ def dataBytes? (l : String) : Option (List Nat) := (byteLine? l).orElse fun _ =>
 /-- The base64 encoding of the bytes `bs` (RFC 4648, §4: the standard
 alphabet, padded with `=`). -/
 def base64 (bs : List Nat) : String :=
-  let alphabet := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toList
+  let alphabet := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toList.toArray
   let digit (n : Nat) : Char := alphabet.getD (n % 64) '='
   String.ofList (go bs digit)
 where
@@ -1076,6 +1076,12 @@ module `owner`. -/
 def Internal.of (name owner : String) (f : Fn) : Internal :=
   ⟨f, name, owner, _, _, _, _, rfl, rfl, rfl, rfl⟩
 
+/-- How many tasks `files` checks the artifacts on: the CPUs of CI's
+runners. The checks, and `render`, are pure functions of the artifacts, so
+running them on tasks (`Task.spawn`) changes how long they take, never what
+they return. -/
+def tasks : Nat := 4
+
 /-- The internal functions of the artifacts of `ps` (`Internal`): of each
 target, every function the code of one of its artifacts calls (`Code.calls`,
 those in the code of the functions it calls too) that is not an artifact of
@@ -1098,9 +1104,14 @@ def internalsOf (ps : List Prepared) : List Internal := Id.run do
         | some _ => callers.map fun (k, ms) =>
             if k == (t, n) && !ms.contains a.module then (k, a.module :: ms) else (k, ms)
         | none => ((t, n), [a.module]) :: callers
-  return found.reverse.map fun (t, n, f) =>
+  let named := found.reverse.map fun (t, n, f) =>
     let modules := Rust.dedup ((ps.filter (·.art.target.name == t)).map (·.art.module))
-    Internal.of n (internalOwner n modules (((callers.find? (·.1 == (t, n))).map (·.2)).getD [])) f
+    (n, internalOwner n modules (((callers.find? (·.1 == (t, n))).map (·.2)).getD []), f)
+  -- Each internal function's printed code on one of `tasks` tasks, as `prepareAll`.
+  let size := (named.length + tasks - 1) / tasks
+  let parts := (List.range tasks).map fun j =>
+    Task.spawn fun _ => ((named.drop (j * size)).take size).map fun (n, owner, f) => Internal.of n owner f
+  return (parts.map Task.get).flatten
 
 /-- The internal function of `hs` that a call of `name` in an artifact of the
 target `t` calls, if there is one. -/
@@ -1409,12 +1420,6 @@ def modDecls (ms : List String) (cfg : String → Option String) : String :=
       | some c => s!"#[cfg({c})]\n"
       | none => ""
     s!"\n{c}#[rustfmt::skip]\npub mod {m};\n")
-
-/-- How many tasks `files` checks the artifacts on: the CPUs of CI's
-runners. The checks, and `render`, are pure functions of the artifacts, so
-running them on tasks (`Task.spawn`) changes how long they take, never what
-they return. -/
-def tasks : Nat := 4
 
 /-- `as.forM check` on `tasks` tasks, each checking every `tasks`-th
 artifact: the error of the first artifact of `as` that fails, as `forM`
@@ -2080,7 +2085,9 @@ def render (ps : List Prepared) (hs : List Internal) (moduleOf : String → Stri
     (s!"{src}/lib.rs", targetRoot t cfg mods) ::
     (if ts.isEmpty then [] else
       (s!"{src}/consts/mod.rs", tablesMod t ts) ::
-        ts.map fun (n, ws) => (s!"{src}/consts/{tableModule n}.rs", tableFile t n ws)) ++
+        -- Each table's file on a task of its own.
+        (ts.map fun (n, ws) => Task.spawn fun _ =>
+          (s!"{src}/consts/{tableModule n}.rs", tableFile t n ws)).map Task.get) ++
     (match fts, arts.head? with
       | [], _ | _, none => []
       | fts, some p₀ =>
