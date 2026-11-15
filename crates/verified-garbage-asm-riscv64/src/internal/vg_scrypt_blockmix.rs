@@ -11,111 +11,18 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_scrypt_blockmix() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x0016b023
-.insn 4, 0x0156b423
-.insn 4, 0x0166b823
-.insn 4, 0x0176bc23
-.insn 4, 0x0386b023
-.insn 4, 0x0396b423
-.insn 4, 0x03a6b823
-.insn 2, 0x8c2e
-.insn 2, 0x8aaa
-.insn 2, 0x8b32
-.insn 2, 0x8d36
-.insn 4, 0x00659313
-.insn 4, 0x00660bb3
-.insn 4, 0x00759313
-.insn 4, 0x00650cb3
-.insn 4, 0xfc0c8c93
+.base64 "I7AWACO0VgEjuGYBI7x2ASOwhgMjtJYDI7imAy6MqooyizaNE5NlALMLZgATk3UAswxlAJOMDPw="
 20:
-.insn 4, 0x000cb283
-.insn 4, 0x000ab303
-.insn 4, 0x0062c2b3
-.insn 4, 0x005b3023
-.insn 4, 0x008cb283
-.insn 4, 0x008ab303
-.insn 4, 0x0062c2b3
-.insn 4, 0x005b3423
-.insn 4, 0x010cb283
-.insn 4, 0x010ab303
-.insn 4, 0x0062c2b3
-.insn 4, 0x005b3823
-.insn 4, 0x018cb283
-.insn 4, 0x018ab303
-.insn 4, 0x0062c2b3
-.insn 4, 0x005b3c23
-.insn 4, 0x020cb283
-.insn 4, 0x020ab303
-.insn 4, 0x0062c2b3
-.insn 4, 0x025b3023
-.insn 4, 0x028cb283
-.insn 4, 0x028ab303
-.insn 4, 0x0062c2b3
-.insn 4, 0x025b3423
-.insn 4, 0x030cb283
-.insn 4, 0x030ab303
-.insn 4, 0x0062c2b3
-.insn 4, 0x025b3823
-.insn 4, 0x038cb283
-.insn 4, 0x038ab303
-.insn 4, 0x0062c2b3
-.insn 4, 0x025b3c23
-.insn 2, 0x855a
-.insn 4, 0x038d0593
+.base64 "g7IMAAOzCgCzwmIAIzBbAIOyjAADs4oAs8JiACM0WwCDsgwBA7MKAbPCYgAjOFsAg7KMAQOzigGzwmIAIzxbAIOyDAIDswoCs8JiACMwWwKDsowCA7OKArPCYgAjNFsCg7IMAwOzCgOzwmIAIzhbAoOyjAMDs4oDs8JiACM8WwJahZMFjQM="
 call {vg_salsa20_8}
-.insn 4, 0x040a8a93
-.insn 4, 0x000b3283
-.insn 4, 0x000ab303
-.insn 4, 0x0062c2b3
-.insn 4, 0x005bb023
-.insn 4, 0x008b3283
-.insn 4, 0x008ab303
-.insn 4, 0x0062c2b3
-.insn 4, 0x005bb423
-.insn 4, 0x010b3283
-.insn 4, 0x010ab303
-.insn 4, 0x0062c2b3
-.insn 4, 0x005bb823
-.insn 4, 0x018b3283
-.insn 4, 0x018ab303
-.insn 4, 0x0062c2b3
-.insn 4, 0x005bbc23
-.insn 4, 0x020b3283
-.insn 4, 0x020ab303
-.insn 4, 0x0062c2b3
-.insn 4, 0x025bb023
-.insn 4, 0x028b3283
-.insn 4, 0x028ab303
-.insn 4, 0x0062c2b3
-.insn 4, 0x025bb423
-.insn 4, 0x030b3283
-.insn 4, 0x030ab303
-.insn 4, 0x0062c2b3
-.insn 4, 0x025bb823
-.insn 4, 0x038b3283
-.insn 4, 0x038ab303
-.insn 4, 0x0062c2b3
-.insn 4, 0x025bbc23
-.insn 2, 0x855e
-.insn 4, 0x038d0593
+.base64 "k4oKBIMyCwADswoAs8JiACOwWwCDMosAA7OKALPCYgAjtFsAgzILAQOzCgGzwmIAI7hbAIMyiwEDs4oBs8JiACO8WwCDMgsCA7MKArPCYgAjsFsCgzKLAgOzigKzwmIAI7RbAoMyCwMDswoDs8JiACO4WwKDMosDA7OKA7PCYgAjvFsCXoWTBY0D"
 call {vg_salsa20_8}
-.insn 2, 0x8cde
-.insn 4, 0x040a8a93
-.insn 4, 0x040b0b13
-.insn 4, 0x040b8b93
-.insn 2, 0x1c7d
+.base64 "3oyTigoEEwsLBJOLCwR9HA=="
 bnez s8, 20b
-.insn 4, 0x000d3083
-.insn 4, 0x008d3a83
-.insn 4, 0x010d3b03
-.insn 4, 0x018d3b83
-.insn 4, 0x020d3c03
-.insn 4, 0x028d3c83
-.insn 4, 0x030d3d03
-.insn 2, 0x8082
-.option pop",
+.base64 "gzANAIM6jQADOw0BgzuNAQM8DQKDPI0CAz0NA4KA"
+.option pop"#,
         vg_salsa20_8 = sym crate::scrypt::vg_salsa20_8::vg_salsa20_8,
     )
 }

@@ -11,20 +11,13 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_blowfish_modes_prepare2() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x040a0293
-.insn 2, 0x83aa
-.insn 4, 0x41200e93
-.insn 2, 0x0e8a
+.base64 "kwIKBKqDkw4gQYoO"
 20:
-.insn 4, 0x0003c303
-.insn 4, 0x00628023
-.insn 2, 0x0385
-.insn 2, 0x0285
-.insn 2, 0x1efd
+.base64 "A8MDACOAYgCFA4UC/R4="
 bnez t4, 20b
-.insn 2, 0x8082
-.option pop",
+.base64 "goA="
+.option pop"#,
     )
 }

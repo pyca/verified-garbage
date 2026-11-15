@@ -20,174 +20,25 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ctr(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x7ff78293
-.insn 2, 0x02a1
-.insn 4, 0xff82f293
-.insn 4, 0x0012b823
-.insn 4, 0x0092bc23
-.insn 4, 0x0322b023
-.insn 4, 0x0332b423
-.insn 4, 0x0342b823
-.insn 4, 0x0352bc23
-.insn 4, 0x0562b023
-.insn 2, 0x84aa
-.insn 2, 0x892e
-.insn 2, 0x89b2
-.insn 2, 0x8a36
-.insn 2, 0x8aba
-.insn 2, 0x8b3e
+.base64 "k4L3f6ECk/KC/yO4EgAjvJIAI7AiAyO0MgMjuEIDI7xSAyOwYgWqhC6Jsok2irqKPos="
 beqz s5, 20f
 22:
-.insn 4, 0x00c9c303
-.insn 2, 0x0362
-.insn 4, 0x00d9c383
-.insn 2, 0x03c2
-.insn 4, 0x00736333
-.insn 4, 0x00e9c383
-.insn 2, 0x03a2
-.insn 4, 0x00736333
-.insn 4, 0x00f9c383
-.insn 4, 0x00736333
-.insn 2, 0x4385
-.insn 2, 0x1382
-.insn 4, 0x406383b3
-.insn 4, 0x007abe33
-.insn 2, 0x4e81
-.insn 4, 0x41ce8e33
-.insn 4, 0x007aceb3
-.insn 4, 0x01cefeb3
-.insn 4, 0x01d3c3b3
-.insn 4, 0x7ffb0293
-.insn 2, 0x02a1
-.insn 4, 0xff82f293
-.insn 4, 0x0072b023
-.insn 2, 0x8526
-.insn 2, 0x85ca
-.insn 2, 0x864e
-.insn 2, 0x86d2
-.insn 2, 0x871e
-.insn 2, 0x87da
+.base64 "A8PJAGIDg8PZAMIDM2NzAIPD6QCiAzNjcwCDw/kAM2NzAIVDghOzg2NAM756AIFOM47OQbPOegCz/s4Bs8PTAZMC+3+hApPygv8jsHIAJoXKhU6G0oYeh9qH"
 call {vg_aes_ctr32}
-.insn 4, 0x7ffb0293
-.insn 2, 0x02a1
-.insn 4, 0xff82f293
-.insn 4, 0x0002b303
-.insn 4, 0x406a8ab3
-.insn 2, 0x0312
-.insn 2, 0x9a1a
-.insn 4, 0x00c9c303
-.insn 2, 0x0362
-.insn 4, 0x00d9c383
-.insn 2, 0x03c2
-.insn 4, 0x00736333
-.insn 4, 0x00e9c383
-.insn 2, 0x03a2
-.insn 4, 0x00736333
-.insn 4, 0x00f9c383
-.insn 4, 0x00736333
+.base64 "kwL7f6ECk/KC/wOzAgCzimpAEgMamgPDyQBiA4PD2QDCAzNjcwCDw+kAogMzY3MAg8P5ADNjcwA="
 beqz t1, 23f
 j 24f
 23:
-.insn 4, 0x0089c303
-.insn 2, 0x0322
-.insn 4, 0x0099c383
-.insn 4, 0x00736333
-.insn 2, 0x0322
-.insn 4, 0x00a9c383
-.insn 4, 0x00736333
-.insn 2, 0x0322
-.insn 4, 0x00b9c383
-.insn 4, 0x00736333
-.insn 2, 0x0322
-.insn 4, 0x00c9c383
-.insn 4, 0x00736333
-.insn 2, 0x0322
-.insn 4, 0x00d9c383
-.insn 4, 0x00736333
-.insn 2, 0x0322
-.insn 4, 0x00e9c383
-.insn 4, 0x00736333
-.insn 2, 0x0322
-.insn 4, 0x00f9c383
-.insn 4, 0x00736333
-.insn 2, 0x4385
-.insn 2, 0x1382
-.insn 2, 0x931e
-.insn 4, 0x03835e13
-.insn 4, 0x01c98423
-.insn 4, 0x03035e13
-.insn 4, 0x01c984a3
-.insn 4, 0x02835e13
-.insn 4, 0x01c98523
-.insn 4, 0x02035e13
-.insn 4, 0x01c985a3
-.insn 4, 0x01835e13
-.insn 4, 0x01c98623
-.insn 4, 0x01035e13
-.insn 4, 0x01c986a3
-.insn 4, 0x00835e13
-.insn 4, 0x01c98723
-.insn 4, 0x00035e13
-.insn 4, 0x01c987a3
-.insn 4, 0x00733e33
-.insn 4, 0x0009c303
-.insn 2, 0x0322
-.insn 4, 0x0019c383
-.insn 4, 0x00736333
-.insn 2, 0x0322
-.insn 4, 0x0029c383
-.insn 4, 0x00736333
-.insn 2, 0x0322
-.insn 4, 0x0039c383
-.insn 4, 0x00736333
-.insn 2, 0x0322
-.insn 4, 0x0049c383
-.insn 4, 0x00736333
-.insn 2, 0x0322
-.insn 4, 0x0059c383
-.insn 4, 0x00736333
-.insn 2, 0x0322
-.insn 4, 0x0069c383
-.insn 4, 0x00736333
-.insn 2, 0x0322
-.insn 4, 0x0079c383
-.insn 4, 0x00736333
-.insn 2, 0x9372
-.insn 4, 0x03835393
-.insn 4, 0x00798023
-.insn 4, 0x03035393
-.insn 4, 0x007980a3
-.insn 4, 0x02835393
-.insn 4, 0x00798123
-.insn 4, 0x02035393
-.insn 4, 0x007981a3
-.insn 4, 0x01835393
-.insn 4, 0x00798223
-.insn 4, 0x01035393
-.insn 4, 0x007982a3
-.insn 4, 0x00835393
-.insn 4, 0x00798323
-.insn 4, 0x00035393
-.insn 4, 0x007983a3
+.base64 "A8OJACIDg8OZADNjcwAiA4PDqQAzY3MAIgODw7kAM2NzACIDg8PJADNjcwAiA4PD2QAzY3MAIgODw+kAM2NzACIDg8P5ADNjcwCFQ4ITHpMTXoMDI4TJARNeAwOjhMkBE16DAiOFyQETXgMCo4XJARNegwEjhskBE14DAaOGyQETXoMAI4fJARNeAwCjh8kBMz5zAAPDCQAiA4PDGQAzY3MAIgODwykAM2NzACIDg8M5ADNjcwAiA4PDSQAzY3MAIgODw1kAM2NzACIDg8NpADNjcwAiA4PDeQAzY3MAcpOTU4MDI4B5AJNTAwOjgHkAk1ODAiOBeQCTUwMCo4F5AJNTgwEjgnkAk1MDAaOCeQCTU4MAI4N5AJNTAwCjg3kA"
 24:
 bnez s5, 22b
 j 21f
 20:
 21:
-.insn 4, 0x7ffb0293
-.insn 2, 0x02a1
-.insn 4, 0xff82f293
-.insn 4, 0x0102b083
-.insn 4, 0x0182b483
-.insn 4, 0x0202b903
-.insn 4, 0x0282b983
-.insn 4, 0x0302ba03
-.insn 4, 0x0382ba83
-.insn 4, 0x0402bb03
-.insn 2, 0x8082
-.option pop",
+.base64 "kwL7f6ECk/KC/4OwAgGDtIIBA7kCAoO5ggIDugIDg7qCAwO7AgSCgA=="
+.option pop"#,
         vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
@@ -209,76 +60,22 @@ j 21f
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ctr_final(schedule: *const [u8; 240], rounds: usize, ctr: *mut [u8; 16], data: *mut u8, len: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x715d
-.insn 2, 0x880a
-.insn 4, 0x00183023
-.insn 4, 0x00983423
-.insn 4, 0x01283823
-.insn 4, 0x01383c23
-.insn 4, 0x03483023
-.insn 4, 0x03583423
-.insn 4, 0x03683823
-.insn 4, 0x03783c23
-.insn 2, 0x84aa
-.insn 2, 0x8a2e
-.insn 2, 0x8ab2
-.insn 2, 0x8b3e
-.insn 2, 0x8bc2
-.insn 4, 0x00475293
-.insn 4, 0x00429313
-.insn 4, 0x00668933
-.insn 4, 0x406709b3
-.insn 2, 0x8716
+.base64 "XXEKiCMwGAAjNJgAIzgoASM8OAEjMEgDIzRYAyM4aAMjPHgDqoQuirKKPovCi5NSRwATk0IAM4lmALMJZ0AWhw=="
 call {vg_aes_ctr}
 beqz s3, 20f
-.insn 2, 0x4281
-.insn 4, 0x045bb023
-.insn 4, 0x045bb423
-.insn 2, 0x8526
-.insn 2, 0x85d2
-.insn 2, 0x8656
-.insn 4, 0x040b8693
-.insn 2, 0x4705
-.insn 2, 0x87da
+.base64 "gUIjsFsEI7RbBCaF0oVWhpOGCwQFR9qH"
 call {vg_aes_ctr}
-.insn 4, 0x040b8393
+.base64 "k4MLBA=="
 22:
-.insn 4, 0x00094283
-.insn 4, 0x0003c303
-.insn 4, 0x0062c2b3
-.insn 4, 0x00590023
-.insn 2, 0x0905
-.insn 2, 0x0385
-.insn 2, 0x19fd
+.base64 "g0IJAAPDAwCzwmIAIwBZAAUJhQP9GQ=="
 bnez s3, 22b
 j 21f
 20:
 21:
-.insn 4, 0x000bb083
-.insn 4, 0x008bb483
-.insn 4, 0x010bb903
-.insn 4, 0x018bb983
-.insn 4, 0x020bba03
-.insn 4, 0x028bba83
-.insn 4, 0x030bbb03
-.insn 4, 0x038bbb83
-.insn 2, 0x8f0a
-.insn 2, 0x4f81
-.insn 4, 0x01ff3023
-.insn 4, 0x01ff3423
-.insn 4, 0x01ff3823
-.insn 4, 0x01ff3c23
-.insn 4, 0x03ff3023
-.insn 4, 0x03ff3423
-.insn 4, 0x03ff3823
-.insn 4, 0x03ff3c23
-.insn 4, 0x05ff3023
-.insn 4, 0x05ff3423
-.insn 2, 0x6161
-.insn 2, 0x8082
-.option pop",
+.base64 "g7ALAIO0iwADuQsBg7mLAQO6CwKDuosCA7sLA4O7iwMKj4FPIzD/ASM0/wEjOP8BIzz/ASMw/wMjNP8DIzj/AyM8/wMjMP8FIzT/BWFhgoA="
+.option pop"#,
         vg_aes_ctr = sym super::aes_ctr::vg_aes_ctr,
     )
 }

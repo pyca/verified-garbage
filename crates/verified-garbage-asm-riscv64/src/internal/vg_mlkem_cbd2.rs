@@ -11,47 +11,13 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_cbd2() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x08000613
-.insn 2, 0x6785
-.insn 4, 0xd0178793
+.base64 "EwYACIVnk4cX0A=="
 20:
-.insn 4, 0x00054683
-.insn 2, 0x16fa
-.insn 2, 0x92f9
-.insn 4, 0x0016d813
-.insn 4, 0x410686b3
-.insn 4, 0x00054703
-.insn 2, 0x1772
-.insn 2, 0x9379
-.insn 4, 0x00175813
-.insn 4, 0x41070733
-.insn 2, 0x8e99
-.insn 4, 0x43f6d713
-.insn 2, 0x8f7d
-.insn 2, 0x96ba
-.insn 2, 0xc194
-.insn 4, 0x00054683
-.insn 2, 0x16ea
-.insn 2, 0x92f9
-.insn 4, 0x0016d813
-.insn 4, 0x410686b3
-.insn 4, 0x00054703
-.insn 2, 0x1762
-.insn 2, 0x9379
-.insn 4, 0x00175813
-.insn 4, 0x41070733
-.insn 2, 0x8e99
-.insn 4, 0x43f6d713
-.insn 2, 0x8f7d
-.insn 2, 0x96ba
-.insn 2, 0xc1d4
-.insn 2, 0x0505
-.insn 2, 0x05a1
-.insn 2, 0x167d
+.base64 "g0YFAPoW+ZIT2BYAs4YGQQNHBQByF3mTE1gXADMHB0GZjhPX9kN9j7qWlMGDRgUA6hb5khPYFgCzhgZBA0cFAGIXeZMTWBcAMwcHQZmOE9f2Q32PupbUwQUFoQV9Fg=="
 bnez a2, 20b
-.insn 2, 0x8082
-.option pop",
+.base64 "goA="
+.option pop"#,
     )
 }

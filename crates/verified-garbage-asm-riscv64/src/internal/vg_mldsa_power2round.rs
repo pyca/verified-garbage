@@ -11,31 +11,13 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_power2round() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x10000693
-.insn 4, 0x007fe737
-.insn 2, 0x0705
-.insn 2, 0x6385
-.insn 2, 0x13fd
+.base64 "kwYAEDfnfwAFB4Vj/RM="
 20:
-.insn 4, 0x00056783
-.insn 2, 0x979e
-.insn 4, 0x00d7d813
-.insn 4, 0x0105a023
-.insn 4, 0x00d81893
-.insn 4, 0x411787b3
-.insn 4, 0x407787b3
-.insn 4, 0x43f7d813
-.insn 4, 0x00e87833
-.insn 2, 0x97c2
-.insn 2, 0xc21c
-.insn 2, 0x0511
-.insn 2, 0x0591
-.insn 2, 0x0611
-.insn 2, 0x16fd
+.base64 "g2cFAJ6XE9jXACOgBQGTGNgAs4cXQbOHd0AT2PdDM3joAMKXHMIRBZEFEQb9Fg=="
 bnez a3, 20b
-.insn 2, 0x8082
-.option pop",
+.base64 "goA="
+.option pop"#,
     )
 }

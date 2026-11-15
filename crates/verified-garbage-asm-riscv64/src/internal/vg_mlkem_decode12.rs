@@ -11,37 +11,13 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem_decode12() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x08000613
-.insn 2, 0x6785
-.insn 4, 0xd0178793
+.base64 "EwYACIVnk4cX0A=="
 20:
-.insn 4, 0x00054683
-.insn 4, 0x00154703
-.insn 2, 0x1772
-.insn 2, 0x9351
-.insn 2, 0x96ba
-.insn 2, 0x8e9d
-.insn 4, 0x43f6d713
-.insn 2, 0x8f7d
-.insn 2, 0x96ba
-.insn 2, 0xc194
-.insn 4, 0x00154683
-.insn 2, 0x8291
-.insn 4, 0x00254703
-.insn 2, 0x0712
-.insn 2, 0x96ba
-.insn 2, 0x8e9d
-.insn 4, 0x43f6d713
-.insn 2, 0x8f7d
-.insn 2, 0x96ba
-.insn 2, 0xc1d4
-.insn 2, 0x050d
-.insn 2, 0x05a1
-.insn 2, 0x167d
+.base64 "g0YFAANHFQByF1GTupadjhPX9kN9j7qWlMGDRhUAkYIDRyUAEge6lp2OE9f2Q32PupbUwQ0FoQV9Fg=="
 bnez a2, 20b
-.insn 2, 0x8082
-.option pop",
+.base64 "goA="
+.option pop"#,
     )
 }

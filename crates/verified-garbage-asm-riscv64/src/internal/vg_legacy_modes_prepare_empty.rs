@@ -11,9 +11,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_legacy_modes_prepare_empty() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x8082
-.option pop",
+.base64 "goA="
+.option pop"#,
     )
 }

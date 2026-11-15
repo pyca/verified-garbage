@@ -17,137 +17,62 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_init(inner: *mut [u8; 80], outer: *mut [u8; 80], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x7175
-.insn 2, 0x828a
-.insn 4, 0x0612b023
-.insn 4, 0x0772b423
-.insn 4, 0x0782b823
-.insn 4, 0x0792bc23
-.insn 4, 0x09a2b023
-.insn 4, 0x09b2b423
-.insn 2, 0x8baa
-.insn 2, 0x8c16
-.insn 2, 0x8cae
-.insn 2, 0x8d32
-.insn 2, 0x8db6
-.insn 4, 0x0076d313
-.insn 4, 0x07f6f393
-.insn 4, 0x03f38393
-.insn 4, 0x0073d393
-.insn 2, 0x931e
+.base64 "dXGKgiOwEgYjtHIHI7iCByO8kgcjsKIJI7SyCaqLFoyujDKNto0T03YAk/P2B5OD8wOT03MAHpM="
 beqz t1, 20f
-.insn 2, 0x8562
+.base64 "YoU="
 call {vg_md5_init}
-.insn 2, 0x8562
-.insn 2, 0x4581
-.insn 2, 0x866a
-.insn 2, 0x86ee
+.base64 "YoWBRWqG7oY="
 call {vg_md5_update}
-.insn 2, 0x8562
-.insn 2, 0x85ee
-.insn 4, 0x050c0613
+.base64 "YoXuhRMGDAU="
 call {vg_md5_finalize}
-.insn 4, 0x050c0d13
-.insn 2, 0x4dc1
+.base64 "Ew0MBcFN"
 j 21f
 20:
 21:
-.insn 2, 0x855e
+.base64 "XoU="
 call {vg_md5_init}
-.insn 2, 0x8566
+.base64 "ZoU="
 call {vg_md5_init}
-.insn 4, 0x03600f13
-.insn 2, 0x4f81
-.insn 2, 0x83ea
-.insn 2, 0x8e6e
+.base64 "Ew9gA4FP6oNujg=="
 beqz t3, 22f
 24:
-.insn 4, 0x0003c303
-.insn 4, 0x01e34333
-.insn 4, 0x01fc8eb3
-.insn 4, 0x006e8823
-.insn 2, 0x0385
-.insn 2, 0x0f85
-.insn 2, 0x1e7d
+.base64 "A8MDADND4wGzjvwBI4huAIUDhQ99Hg=="
 bnez t3, 24b
 j 23f
 22:
 23:
-.insn 4, 0x04000e13
-.insn 4, 0x41fe0e33
+.base64 "Ew4ABDMO/kE="
 beqz t3, 25f
 27:
-.insn 4, 0x01fc8eb3
-.insn 4, 0x01ee8823
-.insn 2, 0x0f85
-.insn 2, 0x1e7d
+.base64 "s478ASOI7gGFD30e"
 bnez t3, 27b
 j 26f
 25:
 26:
-.insn 2, 0x855e
-.insn 2, 0x4581
-.insn 4, 0x010c8613
-.insn 4, 0x04000693
+.base64 "XoWBRROGDAGTBgAE"
 call {vg_md5_update}
-.insn 4, 0x05c00f13
-.insn 2, 0x4f81
-.insn 2, 0x83ea
-.insn 2, 0x8e6e
+.base64 "Ew/ABYFP6oNujg=="
 beqz t3, 28f
 210:
-.insn 4, 0x0003c303
-.insn 4, 0x01e34333
-.insn 4, 0x01fb8eb3
-.insn 4, 0x006e8823
-.insn 2, 0x0385
-.insn 2, 0x0f85
-.insn 2, 0x1e7d
+.base64 "A8MDADND4wGzjvsBI4huAIUDhQ99Hg=="
 bnez t3, 210b
 j 29f
 28:
 29:
-.insn 4, 0x04000e13
-.insn 4, 0x41fe0e33
+.base64 "Ew4ABDMO/kE="
 beqz t3, 211f
 213:
-.insn 4, 0x01fb8eb3
-.insn 4, 0x01ee8823
-.insn 2, 0x0f85
-.insn 2, 0x1e7d
+.base64 "s477ASOI7gGFD30e"
 bnez t3, 213b
 j 212f
 211:
 212:
-.insn 2, 0x8566
-.insn 2, 0x4581
-.insn 4, 0x010b8613
-.insn 4, 0x04000693
+.base64 "ZoWBRROGCwGTBgAE"
 call {vg_md5_update}
-.insn 2, 0x4301
-.insn 4, 0x006c3023
-.insn 4, 0x006c3423
-.insn 4, 0x006c3823
-.insn 4, 0x006c3c23
-.insn 4, 0x026c3023
-.insn 4, 0x026c3423
-.insn 4, 0x026c3823
-.insn 4, 0x026c3c23
-.insn 4, 0x046c3023
-.insn 4, 0x046c3423
-.insn 4, 0x046c3823
-.insn 4, 0x046c3c23
-.insn 4, 0x060c3083
-.insn 4, 0x068c3b83
-.insn 4, 0x078c3c83
-.insn 4, 0x080c3d03
-.insn 4, 0x088c3d83
-.insn 4, 0x070c3c03
-.insn 2, 0x6149
-.insn 2, 0x8082
-.option pop",
+.base64 "AUMjMGwAIzRsACM4bAAjPGwAIzBsAiM0bAIjOGwCIzxsAiMwbAQjNGwEIzhsBCM8bASDMAwGgzuMBoM8jAcDPQwIgz2MCAM8DAdJYYKA"
+.option pop"#,
         vg_md5_init = sym super::md5::vg_md5_init,
         vg_md5_update = sym super::md5::vg_md5_update,
         vg_md5_finalize = sym super::md5::vg_md5_finalize,
@@ -169,73 +94,16 @@ call {vg_md5_update}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_hmac_md5_finalize(inner: *mut [u8; 80], outer: *const [u8; 80], count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x7139
-.insn 2, 0x828a
-.insn 4, 0x0012b823
-.insn 4, 0x0172bc23
-.insn 4, 0x0382b023
-.insn 4, 0x0392b423
-.insn 4, 0x03a2b823
-.insn 4, 0x03b2bc23
-.insn 2, 0x8baa
-.insn 2, 0x8c16
-.insn 2, 0x8cae
-.insn 2, 0x8d36
-.insn 2, 0x85b2
-.insn 2, 0x8616
+.base64 "OXGKgiO4EgAjvHIBI7CCAyO0kgMjuKIDI7yyA6qLFoyujDaNsoUWhg=="
 call {vg_md5_finalize}
-.insn 4, 0x000cc303
-.insn 4, 0x006b8023
-.insn 4, 0x001cc303
-.insn 4, 0x006b80a3
-.insn 4, 0x002cc303
-.insn 4, 0x006b8123
-.insn 4, 0x003cc303
-.insn 4, 0x006b81a3
-.insn 4, 0x004cc303
-.insn 4, 0x006b8223
-.insn 4, 0x005cc303
-.insn 4, 0x006b82a3
-.insn 4, 0x006cc303
-.insn 4, 0x006b8323
-.insn 4, 0x007cc303
-.insn 4, 0x006b83a3
-.insn 4, 0x008cc303
-.insn 4, 0x006b8423
-.insn 4, 0x009cc303
-.insn 4, 0x006b84a3
-.insn 4, 0x00acc303
-.insn 4, 0x006b8523
-.insn 4, 0x00bcc303
-.insn 4, 0x006b85a3
-.insn 4, 0x00ccc303
-.insn 4, 0x006b8623
-.insn 4, 0x00dcc303
-.insn 4, 0x006b86a3
-.insn 4, 0x00ecc303
-.insn 4, 0x006b8723
-.insn 4, 0x00fcc303
-.insn 4, 0x006b87a3
-.insn 2, 0x855e
-.insn 4, 0x04000593
-.insn 2, 0x8662
-.insn 2, 0x46c1
+.base64 "A8MMACOAawADwxwAo4BrAAPDLAAjgWsAA8M8AKOBawADw0wAI4JrAAPDXACjgmsAA8NsACODawADw3wAo4NrAAPDjAAjhGsAA8OcAKOEawADw6wAI4VrAAPDvACjhWsAA8PMACOGawADw9wAo4ZrAAPD7AAjh2sAA8P8AKOHawBehZMFAARihsFG"
 call {vg_md5_update}
-.insn 2, 0x855e
-.insn 4, 0x05000593
-.insn 2, 0x866a
+.base64 "XoWTBQAFaoY="
 call {vg_md5_finalize}
-.insn 4, 0x010c3083
-.insn 4, 0x018c3b83
-.insn 4, 0x028c3c83
-.insn 4, 0x030c3d03
-.insn 4, 0x038c3d83
-.insn 4, 0x020c3c03
-.insn 2, 0x6121
-.insn 2, 0x8082
-.option pop",
+.base64 "gzAMAYM7jAGDPIwCAz0MA4M9jAMDPAwCIWGCgA=="
+.option pop"#,
         vg_md5_finalize = sym super::md5::vg_md5_finalize,
         vg_md5_update = sym super::md5::vg_md5_update,
     )

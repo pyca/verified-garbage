@@ -367,9 +367,32 @@ def wordLine? (l : String) : Option (List Nat) :=
       return [v % 256, v / 256 % 256, v / 65536 % 256, v / 16777216 % 256]
   else none
 
+/-- The bytes of an encoded `.insn` line, as RISC-V's printer emits each
+instruction (`TCB/RISCV64/Encode.lean`'s `insnLine`): `.insn 4, ` then a word
+of eight lowercase hexadecimal digits (`0xNNNNNNNN`), or `.insn 2, ` then a
+compressed instruction's parcel of four (`0xNNNN`), each little-endian (The
+RISC-V Instruction Set Manual, Volume I, "Base Instruction-Length Encoding":
+"Instructions are stored in memory as a sequence of 16-bit little-endian
+parcels, regardless of memory system endianness. Parcels forming one
+instruction are stored at increasing halfword addresses, with the
+lowest-addressed parcel holding the lowest-numbered bits in the instruction
+specification"); `none` for any other line. Packed (`packRun`), the bytes
+are the same and the object's mapping symbols (RISC-V ELF psABI, "Mapping
+Symbol") mark them as data, `$d`, where `.insn` marked instructions, `$x`:
+a disassembler of the object then prints them as words, and the assembly
+file has their text. -/
+def insnLine? (l : String) : Option (List Nat) :=
+  if l.startsWith ".insn 4, " then
+    (hexValue? 8 (l.drop 9).toString).map fun v =>
+      [v % 256, v / 256 % 256, v / 65536 % 256, v / 16777216 % 256]
+  else if l.startsWith ".insn 2, " then
+    (hexValue? 4 (l.drop 9).toString).map fun v => [v % 256, v / 256 % 256]
+  else none
+
 /-- The bytes of a line that a printer emits as an instruction's machine
-code as data (`byteLine?`, `wordLine?`), if it is one. -/
-def dataBytes? (l : String) : Option (List Nat) := (byteLine? l).orElse fun _ => wordLine? l
+code (`byteLine?`, `wordLine?`, `insnLine?`), if it is one. -/
+def dataBytes? (l : String) : Option (List Nat) :=
+  (byteLine? l).orElse fun _ => (wordLine? l).orElse fun _ => insnLine? l
 
 /-- The base64 encoding of the bytes `bs` (RFC 4648, §4: the standard
 alphabet, padded with `=`). -/
@@ -691,7 +714,10 @@ emit no bytes and change no instruction: the assembler accepts the `mul` and
 emits. `+c` likewise enables the C extension, whose compressed encodings
 the printer emits as `.insn 2, …` (`TCB/RISCV64/Encode.lean`'s `compress`),
 which the assembler accepts only with it, and which the target compiles only
-where Rust enables it (`target_feature = "c"`). (They are keyed on the target here, rather than being a field of its
+where Rust enables it (`target_feature = "c"`). (The Rust code has the
+printer's `.insn` lines as their bytes, `packRun`, which need neither
+extension: the options are then for the branches, jumps and calls, which stay
+text.) (They are keyed on the target here, rather than being a field of its
 `Printer`, so that adding them did not change what every proof imports.) -/
 def funcOptions : String → List String × List String
   | "riscv64" => ([".option push", ".option arch, +m, +c"], [".option pop"])

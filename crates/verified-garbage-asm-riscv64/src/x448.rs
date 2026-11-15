@@ -19,134 +19,12 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_x448_exchange(out: *mut [u8; 56], scalar: *const [u8; 56], point: *const [u8; 56], scratch: *mut [u64; 1024]) -> u32 {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1141
-.insn 2, 0xe406
-.insn 2, 0x828a
-.insn 4, 0x00a2b023
+.base64 "QREG5IqCI7CiAA=="
 call {vg_x448}
-.insn 2, 0x828a
-.insn 4, 0x0002b283
-.insn 2, 0x4301
-.insn 4, 0x0002c383
-.insn 4, 0x00736333
-.insn 4, 0x0012c383
-.insn 4, 0x00736333
-.insn 4, 0x0022c383
-.insn 4, 0x00736333
-.insn 4, 0x0032c383
-.insn 4, 0x00736333
-.insn 4, 0x0042c383
-.insn 4, 0x00736333
-.insn 4, 0x0052c383
-.insn 4, 0x00736333
-.insn 4, 0x0062c383
-.insn 4, 0x00736333
-.insn 4, 0x0072c383
-.insn 4, 0x00736333
-.insn 4, 0x0082c383
-.insn 4, 0x00736333
-.insn 4, 0x0092c383
-.insn 4, 0x00736333
-.insn 4, 0x00a2c383
-.insn 4, 0x00736333
-.insn 4, 0x00b2c383
-.insn 4, 0x00736333
-.insn 4, 0x00c2c383
-.insn 4, 0x00736333
-.insn 4, 0x00d2c383
-.insn 4, 0x00736333
-.insn 4, 0x00e2c383
-.insn 4, 0x00736333
-.insn 4, 0x00f2c383
-.insn 4, 0x00736333
-.insn 4, 0x0102c383
-.insn 4, 0x00736333
-.insn 4, 0x0112c383
-.insn 4, 0x00736333
-.insn 4, 0x0122c383
-.insn 4, 0x00736333
-.insn 4, 0x0132c383
-.insn 4, 0x00736333
-.insn 4, 0x0142c383
-.insn 4, 0x00736333
-.insn 4, 0x0152c383
-.insn 4, 0x00736333
-.insn 4, 0x0162c383
-.insn 4, 0x00736333
-.insn 4, 0x0172c383
-.insn 4, 0x00736333
-.insn 4, 0x0182c383
-.insn 4, 0x00736333
-.insn 4, 0x0192c383
-.insn 4, 0x00736333
-.insn 4, 0x01a2c383
-.insn 4, 0x00736333
-.insn 4, 0x01b2c383
-.insn 4, 0x00736333
-.insn 4, 0x01c2c383
-.insn 4, 0x00736333
-.insn 4, 0x01d2c383
-.insn 4, 0x00736333
-.insn 4, 0x01e2c383
-.insn 4, 0x00736333
-.insn 4, 0x01f2c383
-.insn 4, 0x00736333
-.insn 4, 0x0202c383
-.insn 4, 0x00736333
-.insn 4, 0x0212c383
-.insn 4, 0x00736333
-.insn 4, 0x0222c383
-.insn 4, 0x00736333
-.insn 4, 0x0232c383
-.insn 4, 0x00736333
-.insn 4, 0x0242c383
-.insn 4, 0x00736333
-.insn 4, 0x0252c383
-.insn 4, 0x00736333
-.insn 4, 0x0262c383
-.insn 4, 0x00736333
-.insn 4, 0x0272c383
-.insn 4, 0x00736333
-.insn 4, 0x0282c383
-.insn 4, 0x00736333
-.insn 4, 0x0292c383
-.insn 4, 0x00736333
-.insn 4, 0x02a2c383
-.insn 4, 0x00736333
-.insn 4, 0x02b2c383
-.insn 4, 0x00736333
-.insn 4, 0x02c2c383
-.insn 4, 0x00736333
-.insn 4, 0x02d2c383
-.insn 4, 0x00736333
-.insn 4, 0x02e2c383
-.insn 4, 0x00736333
-.insn 4, 0x02f2c383
-.insn 4, 0x00736333
-.insn 4, 0x0302c383
-.insn 4, 0x00736333
-.insn 4, 0x0312c383
-.insn 4, 0x00736333
-.insn 4, 0x0322c383
-.insn 4, 0x00736333
-.insn 4, 0x0332c383
-.insn 4, 0x00736333
-.insn 4, 0x0342c383
-.insn 4, 0x00736333
-.insn 4, 0x0352c383
-.insn 4, 0x00736333
-.insn 4, 0x0362c383
-.insn 4, 0x00736333
-.insn 4, 0x0372c383
-.insn 4, 0x00736333
-.insn 2, 0x4381
-.insn 4, 0x0063b533
-.insn 2, 0x60a2
-.insn 2, 0x0141
-.insn 2, 0x8082
-.option pop",
+.base64 "ioKDsgIAAUODwwIAM2NzAIPDEgAzY3MAg8MiADNjcwCDwzIAM2NzAIPDQgAzY3MAg8NSADNjcwCDw2IAM2NzAIPDcgAzY3MAg8OCADNjcwCDw5IAM2NzAIPDogAzY3MAg8OyADNjcwCDw8IAM2NzAIPD0gAzY3MAg8PiADNjcwCDw/IAM2NzAIPDAgEzY3MAg8MSATNjcwCDwyIBM2NzAIPDMgEzY3MAg8NCATNjcwCDw1IBM2NzAIPDYgEzY3MAg8NyATNjcwCDw4IBM2NzAIPDkgEzY3MAg8OiATNjcwCDw7IBM2NzAIPDwgEzY3MAg8PSATNjcwCDw+IBM2NzAIPD8gEzY3MAg8MCAjNjcwCDwxICM2NzAIPDIgIzY3MAg8MyAjNjcwCDw0ICM2NzAIPDUgIzY3MAg8NiAjNjcwCDw3ICM2NzAIPDggIzY3MAg8OSAjNjcwCDw6ICM2NzAIPDsgIzY3MAg8PCAjNjcwCDw9ICM2NzAIPD4gIzY3MAg8PyAjNjcwCDwwIDM2NzAIPDEgMzY3MAg8MiAzNjcwCDwzIDM2NzAIPDQgMzY3MAg8NSAzNjcwCDw2IDM2NzAIPDcgMzY3MAgUMztWMAomBBAYKA"
+.option pop"#,
         vg_x448 = sym super::x448::vg_x448::vg_x448,
     )
 }
@@ -166,106 +44,12 @@ call {vg_x448}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_x448_base(out: *mut [u8; 56], scalar: *const [u8; 56], scratch: *mut [u64; 1024]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x86b2
-.insn 2, 0x069d
-.insn 2, 0x9ae1
-.insn 2, 0x4715
-.insn 2, 0x4781
-.insn 2, 0xc298
-.insn 4, 0x0ae6a423
-.insn 2, 0xc2dc
-.insn 2, 0xc69c
-.insn 2, 0xc6dc
-.insn 2, 0xca9c
-.insn 2, 0xcadc
-.insn 2, 0xce9c
-.insn 2, 0xcedc
-.insn 2, 0xd29c
-.insn 2, 0xd2dc
-.insn 2, 0xd69c
-.insn 2, 0xd6dc
-.insn 2, 0xda9c
-.insn 2, 0xdadc
-.insn 4, 0x0af6a623
-.insn 4, 0x0af6a823
-.insn 4, 0x0af6aa23
-.insn 4, 0x0af6ac23
-.insn 4, 0x0af6ae23
-.insn 4, 0x0cf6a023
-.insn 4, 0x0cf6a223
-.insn 4, 0x0cf6a423
-.insn 4, 0x0cf6a623
-.insn 4, 0x0cf6a823
-.insn 4, 0x0cf6aa23
-.insn 4, 0x0cf6ac23
-.insn 4, 0x0cf6ae23
-.insn 2, 0x4705
-.insn 2, 0x4781
-.insn 2, 0x6629
-.insn 4, 0x8a96061b
-.insn 2, 0xde98
-.insn 2, 0xdabc
-.insn 4, 0x0ee6a023
-.insn 4, 0x30c6a823
-.insn 2, 0xdedc
-.insn 2, 0xc2bc
-.insn 2, 0xc2fc
-.insn 2, 0xc6bc
-.insn 2, 0xc6fc
-.insn 2, 0xcabc
-.insn 2, 0xcafc
-.insn 2, 0xcebc
-.insn 2, 0xcefc
-.insn 2, 0xd2bc
-.insn 2, 0xd2fc
-.insn 2, 0xd6bc
-.insn 2, 0xd6fc
-.insn 2, 0xdafc
-.insn 2, 0xdebc
-.insn 2, 0xdefc
-.insn 4, 0x08f6a023
-.insn 4, 0x08f6a223
-.insn 4, 0x08f6a423
-.insn 4, 0x08f6a623
-.insn 4, 0x08f6a823
-.insn 4, 0x08f6aa23
-.insn 4, 0x08f6ac23
-.insn 4, 0x08f6ae23
-.insn 4, 0x0af6a023
-.insn 4, 0x0af6a223
-.insn 4, 0x0ef6a223
-.insn 4, 0x0ef6a423
-.insn 4, 0x0ef6a623
-.insn 4, 0x0ef6a823
-.insn 4, 0x0ef6aa23
-.insn 4, 0x0ef6ac23
-.insn 4, 0x0ef6ae23
-.insn 4, 0x10f6a023
-.insn 4, 0x10f6a223
-.insn 4, 0x10f6a423
-.insn 4, 0x10f6a623
-.insn 4, 0x10f6a823
-.insn 4, 0x10f6aa23
-.insn 4, 0x30f6aa23
-.insn 4, 0x30f6ac23
-.insn 4, 0x30f6ae23
-.insn 4, 0x32f6a023
-.insn 4, 0x32f6a223
-.insn 4, 0x32f6a423
-.insn 4, 0x32f6a623
-.insn 4, 0x32f6a823
-.insn 4, 0x32f6aa23
-.insn 4, 0x32f6ac23
-.insn 4, 0x32f6ae23
-.insn 4, 0x34f6a023
-.insn 4, 0x34f6a223
-.insn 4, 0x7e16bc23
+.base64 "soadBuGaFUeBR5jCI6TmCtzCnMbcxpzK3MqcztzOnNLc0pzW3Nac2tzaI6b2CiOo9gojqvYKI6z2CiOu9gojoPYMI6L2DCOk9gwjpvYMI6j2DCOq9gwjrPYMI672DAVHgUcpZhsGloqY3rzaI6DmDiOoxjDc3rzC/MK8xvzGvMr8yrzO/M680vzSvNb81vzavN783iOg9ggjovYII6T2CCOm9ggjqPYII6r2CCOs9ggjrvYII6D2CiOi9gojovYOI6T2DiOm9g4jqPYOI6r2DiOs9g4jrvYOI6D2ECOi9hAjpPYQI6b2ECOo9hAjqvYQI6r2MCOs9jAjrvYwI6D2MiOi9jIjpPYyI6b2MiOo9jIjqvYyI6z2MiOu9jIjoPY0I6L2NCO8Fn4="
 call {vg_x448_tail}
-.insn 4, 0x7f86b083
-.insn 2, 0x8082
-.option pop",
+.base64 "g7CGf4KA"
+.option pop"#,
         vg_x448_tail = sym super::x448::vg_x448_tail::vg_x448_tail,
     )
 }

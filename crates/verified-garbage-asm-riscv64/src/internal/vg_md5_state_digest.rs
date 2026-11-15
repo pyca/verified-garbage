@@ -11,83 +11,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_md5_state_digest() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x8626
-.insn 2, 0x86ce
-.insn 2, 0x84aa
-.insn 2, 0x89ae
-.insn 4, 0x0004c303
-.insn 4, 0x0014c383
-.insn 2, 0x03a2
-.insn 4, 0x00736333
-.insn 4, 0x0024c383
-.insn 2, 0x03c2
-.insn 4, 0x00736333
-.insn 4, 0x0034c383
-.insn 2, 0x03e2
-.insn 4, 0x00736333
-.insn 4, 0x00698023
-.insn 4, 0x00835393
-.insn 4, 0x007980a3
-.insn 4, 0x01035393
-.insn 4, 0x00798123
-.insn 4, 0x01835393
-.insn 4, 0x007981a3
-.insn 4, 0x0044c303
-.insn 4, 0x0054c383
-.insn 2, 0x03a2
-.insn 4, 0x00736333
-.insn 4, 0x0064c383
-.insn 2, 0x03c2
-.insn 4, 0x00736333
-.insn 4, 0x0074c383
-.insn 2, 0x03e2
-.insn 4, 0x00736333
-.insn 4, 0x00698223
-.insn 4, 0x00835393
-.insn 4, 0x007982a3
-.insn 4, 0x01035393
-.insn 4, 0x00798323
-.insn 4, 0x01835393
-.insn 4, 0x007983a3
-.insn 4, 0x0084c303
-.insn 4, 0x0094c383
-.insn 2, 0x03a2
-.insn 4, 0x00736333
-.insn 4, 0x00a4c383
-.insn 2, 0x03c2
-.insn 4, 0x00736333
-.insn 4, 0x00b4c383
-.insn 2, 0x03e2
-.insn 4, 0x00736333
-.insn 4, 0x00698423
-.insn 4, 0x00835393
-.insn 4, 0x007984a3
-.insn 4, 0x01035393
-.insn 4, 0x00798523
-.insn 4, 0x01835393
-.insn 4, 0x007985a3
-.insn 4, 0x00c4c303
-.insn 4, 0x00d4c383
-.insn 2, 0x03a2
-.insn 4, 0x00736333
-.insn 4, 0x00e4c383
-.insn 2, 0x03c2
-.insn 4, 0x00736333
-.insn 4, 0x00f4c383
-.insn 2, 0x03e2
-.insn 4, 0x00736333
-.insn 4, 0x00698623
-.insn 4, 0x00835393
-.insn 4, 0x007986a3
-.insn 4, 0x01035393
-.insn 4, 0x00798723
-.insn 4, 0x01835393
-.insn 4, 0x007987a3
-.insn 2, 0x84b2
-.insn 2, 0x89b6
-.insn 2, 0x8082
-.option pop",
+.base64 "JobOhqqErokDwwQAg8MUAKIDM2NzAIPDJADCAzNjcwCDwzQA4gMzY3MAI4BpAJNTgwCjgHkAk1MDASOBeQCTU4MBo4F5AAPDRACDw1QAogMzY3MAg8NkAMIDM2NzAIPDdADiAzNjcwAjgmkAk1ODAKOCeQCTUwMBI4N5AJNTgwGjg3kAA8OEAIPDlACiAzNjcwCDw6QAwgMzY3MAg8O0AOIDM2NzACOEaQCTU4MAo4R5AJNTAwEjhXkAk1ODAaOFeQADw8QAg8PUAKIDM2NzAIPD5ADCAzNjcwCDw/QA4gMzY3MAI4ZpAJNTgwCjhnkAk1MDASOHeQCTU4MBo4d5ALKEtomCgA=="
+.option pop"#,
     )
 }

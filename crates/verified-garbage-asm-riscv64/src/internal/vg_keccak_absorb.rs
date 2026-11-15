@@ -11,105 +11,36 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_keccak_absorb() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0xdd010113
-.insn 2, 0x828a
-.insn 4, 0x2012b023
-.insn 4, 0x2122b423
-.insn 4, 0x2132b823
-.insn 4, 0x2142bc23
-.insn 4, 0x2352b023
-.insn 4, 0x2362b423
-.insn 2, 0x892a
-.insn 2, 0x89ae
-.insn 2, 0x8a32
-.insn 2, 0x8ab6
-.insn 2, 0x8b3a
+.base64 "EwEB3YqCI7ASICO0IiEjuDIhI7xCISOwUiMjtGIjKomuiTKKtoo6iw=="
 beqz s6, 20f
 22:
-.insn 4, 0x014903b3
-.insn 4, 0x0143e333
-.insn 4, 0x00737313
-.insn 2, 0x4ea1
-.insn 4, 0x01db3e33
-.insn 4, 0x01c36333
-.insn 4, 0x007afe93
+.base64 "swNJATPjQwETc3MAoU4zPtsBM2PDAZP+egA="
 beqz t1, 23f
-.insn 4, 0x000ac303
-.insn 4, 0x014903b3
-.insn 4, 0x0003ce03
-.insn 4, 0x01c34333
-.insn 4, 0x00638023
-.insn 2, 0x0a85
-.insn 2, 0x0a05
-.insn 2, 0x1b7d
+.base64 "A8MKALMDSQEDzgMAM0PDASOAYwCFCgUKfRs="
 j 24f
 23:
 beqz t4, 25f
-.insn 4, 0x000ac303
-.insn 4, 0x001ace03
-.insn 2, 0x0e22
-.insn 4, 0x01c36333
-.insn 4, 0x002ace03
-.insn 2, 0x0e42
-.insn 4, 0x01c36333
-.insn 4, 0x003ace03
-.insn 2, 0x0e62
-.insn 4, 0x01c36333
-.insn 4, 0x004ace83
-.insn 4, 0x005ace03
-.insn 2, 0x0e22
-.insn 4, 0x01ceeeb3
-.insn 4, 0x006ace03
-.insn 2, 0x0e42
-.insn 4, 0x01ceeeb3
-.insn 4, 0x007ace03
-.insn 2, 0x0e62
-.insn 4, 0x01ceeeb3
-.insn 2, 0x1e82
-.insn 4, 0x01d36333
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A8MKAAPOGgAiDjNjwwEDzioAQg4zY8MBA846AGIOM2PDAYPOSgADzloAIg6z7s4BA85qAEIOs+7OAQPOegBiDrPuzgGCHjNj0wEDvgMAM0PDASOwYwChCiEKYRs="
 j 26f
 25:
-.insn 4, 0x000ab303
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A7MKAAO+AwAzQ8MBI7BjAKEKIQphGw=="
 26:
 24:
-.insn 4, 0x413a0333
+.base64 "MwM6QQ=="
 beqz t1, 27f
 j 28f
 27:
-.insn 2, 0x4a01
-.insn 2, 0x854a
-.insn 2, 0x858a
+.base64 "AUpKhYqF"
 call {vg_keccak_f1600}
 28:
 bnez s6, 22b
 j 21f
 20:
 21:
-.insn 2, 0x8552
-.insn 2, 0x828a
-.insn 4, 0x2002b083
-.insn 4, 0x2082b903
-.insn 4, 0x2102b983
-.insn 4, 0x2182ba03
-.insn 4, 0x2202ba83
-.insn 4, 0x2282bb03
-.insn 4, 0x23010113
-.insn 2, 0x8082
-.option pop",
+.base64 "UoWKgoOwAiADuYIgg7kCIQO6giGDugIiA7uCIhMBASOCgA=="
+.option pop"#,
         vg_keccak_f1600 = sym crate::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }

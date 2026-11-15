@@ -11,81 +11,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_p256_add_mod_p() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x00b503b3
-.insn 4, 0x00c50eb3
-.insn 4, 0x00d50f33
-.insn 4, 0x7ff50693
-.insn 2, 0x0685
-.insn 4, 0x000eb583
-.insn 4, 0x008ebe03
-.insn 4, 0x010ebf83
-.insn 4, 0x018eb703
-.insn 4, 0x000f3783
-.insn 4, 0x008f3803
-.insn 4, 0x010f3883
-.insn 4, 0x018f3283
-.insn 2, 0x95be
-.insn 4, 0x00f5b633
-.insn 2, 0x9e42
-.insn 4, 0x010e37b3
-.insn 2, 0x9e32
-.insn 4, 0x00ce3633
-.insn 2, 0x963e
-.insn 4, 0x011f8eb3
-.insn 4, 0x011eb7b3
-.insn 2, 0x9eb2
-.insn 4, 0x00ceb633
-.insn 2, 0x963e
-.insn 4, 0x00570f33
-.insn 4, 0x005f37b3
-.insn 2, 0x9f32
-.insn 4, 0x00cf3633
-.insn 2, 0x963e
-.insn 4, 0x00158f93
-.insn 4, 0x00bfb8b3
-.insn 2, 0x52fd
-.insn 2, 0x1282
-.insn 4, 0x005e0733
-.insn 4, 0x00573533
-.insn 2, 0x9746
-.insn 4, 0x011738b3
-.insn 2, 0x98aa
-.insn 2, 0x52fd
-.insn 4, 0x005e87b3
-.insn 4, 0x0057b533
-.insn 2, 0x97c6
-.insn 4, 0x0117b8b3
-.insn 2, 0x98aa
-.insn 2, 0x52fd
-.insn 4, 0x0202d293
-.insn 2, 0x12fd
-.insn 4, 0x005f0833
-.insn 4, 0x00583533
-.insn 2, 0x9846
-.insn 4, 0x011838b3
-.insn 2, 0x98aa
-.insn 4, 0x00c8e8b3
-.insn 2, 0x4281
-.insn 4, 0x411282b3
-.insn 4, 0x00bfcfb3
-.insn 4, 0x005fffb3
-.insn 4, 0x00bfcfb3
-.insn 4, 0x01f3b023
-.insn 4, 0x01c74733
-.insn 4, 0x00577733
-.insn 4, 0x01c74733
-.insn 4, 0x00e3b423
-.insn 4, 0x01d7c7b3
-.insn 4, 0x0057f7b3
-.insn 4, 0x01d7c7b3
-.insn 4, 0x00f3b823
-.insn 4, 0x01e84833
-.insn 4, 0x00587833
-.insn 4, 0x01e84833
-.insn 4, 0x0103bc23
-.insn 2, 0x8082
-.option pop",
+.base64 "swO1ALMOxQAzD9UAkwb1f4UGg7UOAAO+jgCDvw4BA7eOAYM3DwADOI8AgzgPAYMyjwG+lTO29QBCnrM3DgEynjM2zgA+lrOOHwGztx4Bsp4zts4APpYzD1cAszdfADKfMzbPAD6Wk48VALO4vwD9UoISMwdeADM1VwBGl7M4FwGqmP1Ss4deADO1VwDGl7O4FwGqmP1Sk9ICAv0SMwhfADM1WABGmLM4GAGqmLPoyACBQrOCEkGzz78As/9fALPPvwAjsPMBM0fHATN3VwAzR8cBI7TjALPH1wGz91cAs8fXASO48wAzSOgBM3hYADNI6AEjvAMBgoA="
+.option pop"#,
     )
 }

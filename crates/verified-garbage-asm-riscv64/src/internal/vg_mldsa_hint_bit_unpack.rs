@@ -11,74 +11,41 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_hint_bit_unpack() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1602
-.insn 2, 0x9201
-.insn 4, 0x40c583b3
-.insn 2, 0x883a
-.insn 2, 0x4281
-.insn 2, 0x88b6
+.base64 "AhYBkrODxUA6iIFCtog="
 20:
-.insn 4, 0x0058a023
-.insn 2, 0x0891
-.insn 2, 0x187d
+.base64 "I6BYAJEIfRg="
 bnez a6, 20b
-.insn 2, 0x4301
-.insn 4, 0x00c508b3
+.base64 "AUOzCMUA"
 21:
-.insn 4, 0x406602b3
-.insn 4, 0x03f2d293
+.base64 "swJmQJPS8gM="
 beqz t0, 22f
 j 23f
 22:
-.insn 4, 0x0008c783
-.insn 4, 0x406782b3
-.insn 4, 0x03f2d293
+.base64 "g8cIALOCZ0CT0vID"
 beqz t0, 24f
-.insn 4, 0x10000313
+.base64 "EwMAEA=="
 j 25f
 24:
-.insn 4, 0x40f602b3
-.insn 4, 0x03f2d293
+.base64 "swL2QJPS8gM="
 beqz t0, 26f
-.insn 4, 0x10000313
+.base64 "EwMAEA=="
 j 27f
 26:
-.insn 4, 0x40f302b3
-.insn 4, 0x03f2d293
+.base64 "swLzQJPS8gM="
 beqz t0, 28f
-.insn 4, 0x00650833
-.insn 4, 0x00084803
-.insn 2, 0x080a
-.insn 2, 0x9836
-.insn 2, 0x4285
-.insn 4, 0x00582023
-.insn 2, 0x0305
-.insn 4, 0x40f302b3
-.insn 4, 0x03f2d293
+.base64 "MwhlAANICAAKCDaYhUIjIFgABQOzAvNAk9LyAw=="
 beqz t0, 210f
 212:
-.insn 4, 0x00650833
-.insn 4, 0x00084283
-.insn 2, 0x187d
-.insn 4, 0x00084803
-.insn 4, 0x405802b3
-.insn 4, 0x03f2d293
+.base64 "MwhlAINCCAB9GANICACzAlhAk9LyAw=="
 beqz t0, 213f
-.insn 4, 0x00650833
-.insn 4, 0x00084803
-.insn 2, 0x080a
-.insn 2, 0x9836
-.insn 2, 0x4285
-.insn 4, 0x00582023
-.insn 2, 0x0305
+.base64 "MwhlAANICAAKCDaYhUIjIFgABQM="
 j 214f
 213:
-.insn 4, 0x10000313
+.base64 "EwMAEA=="
 214:
-.insn 4, 0x40f302b3
-.insn 4, 0x03f2d293
+.base64 "swLzQJPS8gM="
 bnez t0, 212b
 j 211f
 210:
@@ -89,33 +56,24 @@ j 29f
 27:
 25:
 23:
-.insn 2, 0x0885
-.insn 4, 0x40068693
-.insn 2, 0x13fd
+.base64 "hQiThgZA/RM="
 bnez t2, 21b
-.insn 4, 0x40c302b3
-.insn 4, 0x03f2d293
+.base64 "swLDQJPS8gM="
 beqz t0, 215f
 217:
-.insn 4, 0x00650833
-.insn 4, 0x00084803
+.base64 "MwhlAANICAA="
 beqz a6, 218f
-.insn 4, 0x10000313
+.base64 "EwMAEA=="
 j 219f
 218:
-.insn 2, 0x0305
+.base64 "BQM="
 219:
-.insn 4, 0x40c302b3
-.insn 4, 0x03f2d293
+.base64 "swLDQJPS8gM="
 bnez t0, 217b
 j 216f
 215:
 216:
-.insn 4, 0x406602b3
-.insn 4, 0x03f2d293
-.insn 2, 0x4505
-.insn 4, 0x40550533
-.insn 2, 0x8082
-.option pop",
+.base64 "swJmQJPS8gMFRTMFVUCCgA=="
+.option pop"#,
     )
 }

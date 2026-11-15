@@ -11,33 +11,13 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mldsa_multiply_ntt() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x200807b7
-.insn 4, 0x1c078793
-.insn 2, 0x07b2
-.insn 4, 0x60178793
-.insn 4, 0x007fe837
-.insn 2, 0x0805
-.insn 4, 0x10000313
+.base64 "twcIIJOHBxyyB5OHF2A36H8ABQgTAwAQ"
 20:
-.insn 4, 0x0005e283
-.insn 4, 0x00066383
-.insn 4, 0x027282b3
-.insn 4, 0x02f2b3b3
-.insn 4, 0x030383b3
-.insn 4, 0x407282b3
-.insn 4, 0x410282b3
-.insn 4, 0x43f2d393
-.insn 4, 0x0103f3b3
-.insn 2, 0x929e
-.insn 4, 0x00552023
-.insn 2, 0x0511
-.insn 2, 0x0591
-.insn 2, 0x0611
-.insn 2, 0x137d
+.base64 "g+IFAINjBgCzgnICs7PyArODAwOzgnJAs4ICQZPT8kOz8wMBnpIjIFUAEQWRBREGfRM="
 bnez t1, 20b
-.insn 2, 0x8082
-.option pop",
+.base64 "goA="
+.option pop"#,
     )
 }

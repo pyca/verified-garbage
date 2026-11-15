@@ -18,25 +18,14 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ecb_encrypt(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1101
-.insn 2, 0x828a
-.insn 4, 0x0012b023
-.insn 4, 0x00e2b423
+.base64 "ARGKgiOwEgAjtOIA"
 call {vg_aes_encrypt_blocks}
-.insn 2, 0x828a
-.insn 4, 0x00a2b823
-.insn 4, 0x0082b503
-.insn 4, 0x7ff00593
-.insn 2, 0x0585
+.base64 "ioIjuKIAA7WCAJMF8H+FBQ=="
 call {vg_zeroize}
-.insn 2, 0x828a
-.insn 4, 0x0102b503
-.insn 4, 0x0002b083
-.insn 2, 0x6105
-.insn 2, 0x8082
-.option pop",
+.base64 "ioIDtQIBg7ACAAVhgoA="
+.option pop"#,
         vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )
@@ -57,25 +46,14 @@ call {vg_zeroize}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_ecb_decrypt(schedule: *const [u8; 240], rounds: usize, data: *mut [u8; 16], n: usize, scratch: *mut [u64; 256]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1101
-.insn 2, 0x828a
-.insn 4, 0x0012b023
-.insn 4, 0x00e2b423
+.base64 "ARGKgiOwEgAjtOIA"
 call {vg_aes_decrypt_blocks}
-.insn 2, 0x828a
-.insn 4, 0x00a2b823
-.insn 4, 0x0082b503
-.insn 4, 0x7ff00593
-.insn 2, 0x0585
+.base64 "ioIjuKIAA7WCAJMF8H+FBQ=="
 call {vg_zeroize}
-.insn 2, 0x828a
-.insn 4, 0x0102b503
-.insn 4, 0x0002b083
-.insn 2, 0x6105
-.insn 2, 0x8082
-.option pop",
+.base64 "ioIDtQIBg7ACAAVhgoA="
+.option pop"#,
         vg_aes_decrypt_blocks = sym super::aes::vg_aes_decrypt_blocks::vg_aes_decrypt_blocks,
         vg_zeroize = sym super::zeroize::vg_zeroize,
     )

@@ -11,72 +11,9 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_secp256k1_sub_mod_p() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x00b503b3
-.insn 4, 0x00c50eb3
-.insn 4, 0x00d50f33
-.insn 4, 0x7ff50693
-.insn 2, 0x0685
-.insn 4, 0x000eb583
-.insn 4, 0x008ebe03
-.insn 4, 0x010ebf83
-.insn 4, 0x018eb703
-.insn 4, 0x000f3783
-.insn 4, 0x008f3803
-.insn 4, 0x010f3883
-.insn 4, 0x018f3283
-.insn 4, 0x00f5b633
-.insn 2, 0x8d9d
-.insn 4, 0x010e37b3
-.insn 4, 0x410e0e33
-.insn 4, 0x00ce3533
-.insn 4, 0x40ce0e33
-.insn 4, 0x00a78633
-.insn 4, 0x011fb7b3
-.insn 4, 0x411f8eb3
-.insn 4, 0x00ceb533
-.insn 4, 0x40ce8eb3
-.insn 4, 0x00a78633
-.insn 4, 0x005737b3
-.insn 4, 0x40570f33
-.insn 4, 0x00cf3533
-.insn 4, 0x40cf0f33
-.insn 4, 0x00a78633
-.insn 2, 0x4281
-.insn 4, 0x40c282b3
-.insn 4, 0x00000fb7
-.insn 2, 0x3ffd
-.insn 2, 0x1f82
-.insn 4, 0x00000537
-.insn 4, 0xc2f5051b
-.insn 2, 0x9faa
-.insn 4, 0x005fffb3
-.insn 2, 0x95fe
-.insn 4, 0x01f5b8b3
-.insn 4, 0x00b3b023
-.insn 2, 0x8f96
-.insn 2, 0x9e7e
-.insn 4, 0x01fe3533
-.insn 2, 0x9e46
-.insn 4, 0x011e38b3
-.insn 2, 0x98aa
-.insn 4, 0x01c3b423
-.insn 2, 0x8f96
-.insn 2, 0x9efe
-.insn 4, 0x01feb533
-.insn 2, 0x9ec6
-.insn 4, 0x011eb8b3
-.insn 2, 0x98aa
-.insn 4, 0x01d3b823
-.insn 2, 0x8f96
-.insn 2, 0x9f7e
-.insn 4, 0x01ff3533
-.insn 2, 0x9f46
-.insn 4, 0x011f38b3
-.insn 2, 0x98aa
-.insn 4, 0x01e3bc23
-.insn 2, 0x8082
-.option pop",
+.base64 "swO1ALMOxQAzD9UAkwb1f4UGg7UOAAO+jgCDvw4BA7eOAYM3DwADOI8AgzgPAYMyjwEztvUAnY2zNw4BMw4OQTM1zgAzDs5AM4anALO3HwGzjh9BM7XOALOOzkAzhqcAszdXADMPV0AzNc8AMw/PQDOGpwCBQrOCwkC3DwAA/T+CHzcFAAAbBfXCqp+z/18A/pWzuPUBI7CzAJaPfp4zNf4BRp6zOB4BqpgjtMMBlo/+njO1/gHGnrO4HgGqmCO40wGWj36fMzX/AUafszgfAaqYI7zjAYKA"
+.option pop"#,
     )
 }

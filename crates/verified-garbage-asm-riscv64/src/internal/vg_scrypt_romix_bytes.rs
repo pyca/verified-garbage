@@ -11,112 +11,34 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_scrypt_romix_bytes() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x0017b023
-.insn 4, 0x0147b423
-.insn 4, 0x0157b823
-.insn 4, 0x0167bc23
-.insn 4, 0x0377b023
-.insn 4, 0x0387b423
-.insn 4, 0x0397b823
-.insn 4, 0x03a7bc23
-.insn 2, 0x8a2a
-.insn 2, 0x8ab2
-.insn 2, 0x8cba
-.insn 2, 0x8d3e
-.insn 4, 0x00759b13
-.insn 2, 0x82ae
-.insn 2, 0x4305
-.insn 4, 0x00d683b3
+.base64 "I7AXACO0RwEjuFcBI7xnASOwdwMjtIcDI7iXAyO8pwMqirKKuow+jRObdQCuggVDs4PWAA=="
 20:
-.insn 2, 0x9296
-.insn 2, 0x931a
-.insn 4, 0x40728e33
+.base64 "lpIakzOOckA="
 bnez t3, 20b
-.insn 4, 0x00135313
-.insn 4, 0x046d3023
-.insn 2, 0x8b9a
-.insn 2, 0x8c56
+.base64 "E1MTACMwbQSai1aM"
 21:
-.insn 2, 0x82d2
-.insn 2, 0x8362
-.insn 2, 0x83da
+.base64 "0oJig9qD"
 22:
-.insn 4, 0x0002ce03
-.insn 4, 0x01c30023
-.insn 2, 0x0285
-.insn 2, 0x0305
-.insn 2, 0x13fd
+.base64 "A84CACMAwwGFAgUD/RM="
 bnez t2, 22b
-.insn 2, 0x8562
-.insn 4, 0x007b5593
-.insn 2, 0x8652
-.insn 4, 0x048d0693
+.base64 "YoWTVXsAUoaTBo0E"
 call {vg_scrypt_blockmix_bytes}
-.insn 2, 0x9c5a
-.insn 2, 0x1bfd
+.base64 "Wpz9Gw=="
 bnez s7, 21b
-.insn 4, 0x040d3b83
-.insn 4, 0xfffb8c13
+.base64 "gzsNBBOM+/8="
 23:
-.insn 4, 0x016a0333
-.insn 4, 0xfc030313
-.insn 4, 0x00034283
-.insn 4, 0x00134383
-.insn 2, 0x03a2
-.insn 4, 0x0072e2b3
-.insn 4, 0x00234383
-.insn 2, 0x03c2
-.insn 4, 0x0072e2b3
-.insn 4, 0x00334383
-.insn 2, 0x03e2
-.insn 4, 0x0072e2b3
-.insn 4, 0x00434e03
-.insn 4, 0x00534383
-.insn 2, 0x03a2
-.insn 4, 0x007e6e33
-.insn 4, 0x00634383
-.insn 2, 0x03c2
-.insn 4, 0x007e6e33
-.insn 4, 0x00734383
-.insn 2, 0x03e2
-.insn 4, 0x007e6e33
-.insn 2, 0x1e02
-.insn 4, 0x01c2e2b3
-.insn 4, 0x0182f2b3
-.insn 4, 0x03628333
-.insn 2, 0x9356
-.insn 2, 0x82d2
-.insn 2, 0x83e6
-.insn 2, 0x8e5a
+.base64 "MwNqARMDA/yDQgMAg0MTAKIDs+JyAINDIwDCA7PicgCDQzMA4gOz4nIAA05DAINDUwCiAzNufgCDQ2MAwgMzbn4Ag0NzAOIDM25+AAIes+LCAbPyggEzg2IDVpPSguaDWo4="
 24:
-.insn 4, 0x0002ce83
-.insn 4, 0x00034f03
-.insn 4, 0x01eeceb3
-.insn 4, 0x01d38023
-.insn 2, 0x0285
-.insn 2, 0x0305
-.insn 2, 0x0385
-.insn 2, 0x1e7d
+.base64 "g84CAANPAwCzzu4BI4DTAYUCBQOFA30e"
 bnez t3, 24b
-.insn 2, 0x8566
-.insn 4, 0x007b5593
-.insn 2, 0x8652
-.insn 4, 0x048d0693
+.base64 "ZoWTVXsAUoaTBo0E"
 call {vg_scrypt_blockmix_bytes}
-.insn 2, 0x1bfd
+.base64 "/Rs="
 bnez s7, 23b
-.insn 4, 0x000d3083
-.insn 4, 0x008d3a03
-.insn 4, 0x010d3a83
-.insn 4, 0x018d3b03
-.insn 4, 0x020d3b83
-.insn 4, 0x028d3c03
-.insn 4, 0x030d3c83
-.insn 4, 0x038d3d03
-.insn 2, 0x8082
-.option pop",
+.base64 "gzANAAM6jQCDOg0BAzuNAYM7DQIDPI0CgzwNAwM9jQOCgA=="
+.option pop"#,
         vg_scrypt_blockmix_bytes = sym crate::scrypt::vg_scrypt_blockmix_bytes::vg_scrypt_blockmix_bytes,
     )
 }

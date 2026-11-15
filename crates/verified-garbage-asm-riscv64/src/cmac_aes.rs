@@ -17,74 +17,14 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_init(state: *mut [u64; 38], key: *const u8, key_len: usize) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x81010113
-.insn 2, 0x716d
-.insn 2, 0x868a
-.insn 4, 0x7ff68293
-.insn 4, 0x08828293
-.insn 4, 0xff82f293
-.insn 4, 0x0012b023
-.insn 4, 0x0092b423
-.insn 4, 0x0122b823
-.insn 4, 0x0132bc23
-.insn 2, 0x84aa
-.insn 2, 0x8936
-.insn 4, 0x00265993
-.insn 2, 0x0999
-.insn 2, 0x852e
-.insn 2, 0x85b2
-.insn 2, 0x8626
+.base64 "EwEBgW1xioaTgvZ/k4KCCJPygv8jsBIAI7SSACO4IgEjvDIBqoQ2iZNZJgCZCS6FsoUmhg=="
 call {vg_aes_expand_key_scratch}
-.insn 2, 0x8526
-.insn 2, 0x85ce
-.insn 4, 0x0f048613
-.insn 2, 0x86ca
+.base64 "JoXOhROGBA/Khg=="
 call {vg_cmac_aes_subkeys}
-.insn 2, 0x4301
-.insn 4, 0x10648823
-.insn 2, 0x4301
-.insn 4, 0x106488a3
-.insn 2, 0x4301
-.insn 4, 0x10648923
-.insn 2, 0x4301
-.insn 4, 0x106489a3
-.insn 2, 0x4301
-.insn 4, 0x10648a23
-.insn 2, 0x4301
-.insn 4, 0x10648aa3
-.insn 2, 0x4301
-.insn 4, 0x10648b23
-.insn 2, 0x4301
-.insn 4, 0x10648ba3
-.insn 2, 0x4301
-.insn 4, 0x10648c23
-.insn 2, 0x4301
-.insn 4, 0x10648ca3
-.insn 2, 0x4301
-.insn 4, 0x10648d23
-.insn 2, 0x4301
-.insn 4, 0x10648da3
-.insn 2, 0x4301
-.insn 4, 0x10648e23
-.insn 2, 0x4301
-.insn 4, 0x10648ea3
-.insn 2, 0x4301
-.insn 4, 0x10648f23
-.insn 2, 0x4301
-.insn 4, 0x10648fa3
-.insn 4, 0x7ff90293
-.insn 4, 0x08828293
-.insn 4, 0xff82f293
-.insn 4, 0x0002b083
-.insn 4, 0x0082b483
-.insn 4, 0x0102b903
-.insn 4, 0x0182b983
-.insn 2, 0x6151
-.insn 4, 0x7f010113
-.insn 2, 0x8082
-.option pop",
+.base64 "AUMjiGQQAUOjiGQQAUMjiWQQAUOjiWQQAUMjimQQAUOjimQQAUMji2QQAUOji2QQAUMjjGQQAUOjjGQQAUMjjWQQAUOjjWQQAUMjjmQQAUOjjmQQAUMjj2QQAUOjj2QQkwL5f5OCggiT8oL/g7ACAIO0ggADuQIBg7mCAVFhEwEBf4KA"
+.option pop"#,
         vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
         vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
@@ -104,123 +44,62 @@ call {vg_cmac_aes_subkeys}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_absorb(state: *mut [u64; 38], rounds: usize, count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x81010113
-.insn 2, 0x716d
-.insn 2, 0x878a
-.insn 4, 0x7ff78293
-.insn 4, 0x08828293
-.insn 4, 0xff82f293
-.insn 4, 0x0012b023
-.insn 4, 0x0092b423
-.insn 4, 0x0122b823
-.insn 4, 0x0132bc23
-.insn 4, 0x0342b023
-.insn 4, 0x0352b423
-.insn 4, 0x0362b823
-.insn 2, 0x84aa
-.insn 2, 0x892e
-.insn 2, 0x89b6
-.insn 2, 0x8a3a
-.insn 2, 0x8b3e
+.base64 "EwEBgW1xioeTgvd/k4KCCJPygv8jsBIAI7SSACO4IgEjvDIBI7BCAyO0UgMjuGIDqoQuibaJOoo+iw=="
 beqz a2, 20f
-.insn 4, 0xfff60313
-.insn 4, 0x00f37313
-.insn 2, 0x0305
+.base64 "EwP2/xNz8wAFAw=="
 j 21f
 20:
-.insn 2, 0x4301
+.base64 "AUM="
 21:
-.insn 4, 0x004a5393
+.base64 "k1NKAA=="
 beqz t2, 22f
-.insn 2, 0x43c1
+.base64 "wUM="
 j 23f
 22:
-.insn 2, 0x83d2
+.base64 "0oM="
 23:
-.insn 2, 0x4e41
-.insn 4, 0x406e0e33
-.insn 4, 0x01c3beb3
+.base64 "QU4zDm5As77DAQ=="
 beqz t4, 24f
 j 25f
 24:
-.insn 2, 0x83f2
+.base64 "8oM="
 25:
-.insn 2, 0x889e
-.insn 4, 0x00648f33
-.insn 4, 0x120f0f13
-.insn 2, 0x8fce
+.base64 "nogzj2QAEw8PEs6P"
 beqz t2, 26f
 28:
-.insn 4, 0x000fce03
-.insn 4, 0x01cf0023
-.insn 2, 0x0f85
-.insn 2, 0x0f05
-.insn 2, 0x13fd
+.base64 "A84PACMAzwGFDwUP/RM="
 bnez t2, 28b
 j 27f
 26:
 27:
-.insn 2, 0x99c6
-.insn 4, 0x411a0a33
-.insn 2, 0x4701
+.base64 "xpkzChpBAUc="
 beqz s4, 29f
-.insn 2, 0x4705
+.base64 "BUc="
 j 210f
 29:
 210:
-.insn 2, 0x8526
-.insn 2, 0x85ca
-.insn 4, 0x11048613
-.insn 4, 0x12048693
-.insn 2, 0x87da
+.base64 "JoXKhROGBBGThgQS2oc="
 call {vg_cmac_aes_update}
-.insn 2, 0x4a81
+.base64 "gUo="
 beqz s4, 211f
-.insn 4, 0xfffa0a93
-.insn 4, 0x00faf313
-.insn 4, 0x406a8ab3
+.base64 "kwr6/xPz+gCzimpA"
 j 212f
 211:
 212:
-.insn 4, 0x004ad713
-.insn 2, 0x8526
-.insn 2, 0x85ca
-.insn 4, 0x11048613
-.insn 2, 0x86ce
-.insn 2, 0x87da
+.base64 "E9dKACaFyoUThgQRzobahw=="
 call {vg_cmac_aes_update}
-.insn 2, 0x99d6
-.insn 4, 0x415a0a33
-.insn 4, 0x12048f13
-.insn 2, 0x8fce
-.insn 2, 0x83d2
+.base64 "1pkzClpBE48EEs6P0oM="
 beqz t2, 213f
 215:
-.insn 4, 0x000fce03
-.insn 4, 0x01cf0023
-.insn 2, 0x0f85
-.insn 2, 0x0f05
-.insn 2, 0x13fd
+.base64 "A84PACMAzwGFDwUP/RM="
 bnez t2, 215b
 j 214f
 213:
 214:
-.insn 4, 0x7ffb0293
-.insn 4, 0x08828293
-.insn 4, 0xff82f293
-.insn 4, 0x0002b083
-.insn 4, 0x0082b483
-.insn 4, 0x0102b903
-.insn 4, 0x0182b983
-.insn 4, 0x0202ba03
-.insn 4, 0x0282ba83
-.insn 4, 0x0302bb03
-.insn 2, 0x6151
-.insn 4, 0x7f010113
-.insn 2, 0x8082
-.option pop",
+.base64 "kwL7f5OCggiT8oL/g7ACAIO0ggADuQIBg7mCAQO6AgKDuoICA7sCA1FhEwEBf4KA"
+.option pop"#,
         vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
     )
 }
@@ -240,70 +119,17 @@ j 214f
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_cmac_aes_finish(state: *mut [u64; 38], rounds: usize, count: u64, out: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x81010113
-.insn 2, 0x716d
-.insn 2, 0x870a
-.insn 4, 0x11054303
-.insn 4, 0x00668023
-.insn 4, 0x11154303
-.insn 4, 0x006680a3
-.insn 4, 0x11254303
-.insn 4, 0x00668123
-.insn 4, 0x11354303
-.insn 4, 0x006681a3
-.insn 4, 0x11454303
-.insn 4, 0x00668223
-.insn 4, 0x11554303
-.insn 4, 0x006682a3
-.insn 4, 0x11654303
-.insn 4, 0x00668323
-.insn 4, 0x11754303
-.insn 4, 0x006683a3
-.insn 4, 0x11854303
-.insn 4, 0x00668423
-.insn 4, 0x11954303
-.insn 4, 0x006684a3
-.insn 4, 0x11a54303
-.insn 4, 0x00668523
-.insn 4, 0x11b54303
-.insn 4, 0x006685a3
-.insn 4, 0x11c54303
-.insn 4, 0x00668623
-.insn 4, 0x11d54303
-.insn 4, 0x006686a3
-.insn 4, 0x11e54303
-.insn 4, 0x00668723
-.insn 4, 0x11f54303
-.insn 4, 0x006687a3
-.insn 4, 0x7ff70293
-.insn 4, 0x08828293
-.insn 4, 0xff82f293
-.insn 4, 0x0012b023
-.insn 4, 0x0092b423
-.insn 2, 0x84ba
-.insn 2, 0x87ba
-.insn 2, 0x8732
-.insn 2, 0x8636
-.insn 4, 0x12050693
+.base64 "EwEBgW1xCocDQwURI4BmAANDFRGjgGYAA0MlESOBZgADQzURo4FmAANDRREjgmYAA0NVEaOCZgADQ2URI4NmAANDdRGjg2YAA0OFESOEZgADQ5URo4RmAANDpREjhWYAA0O1EaOFZgADQ8URI4ZmAAND1RGjhmYAA0PlESOHZgADQ/URo4dmAJMC93+TgoIIk/KC/yOwEgAjtJIAuoS6hzKHNoaTBgUS"
 beqz a4, 20f
-.insn 2, 0x177d
-.insn 2, 0x8b3d
-.insn 2, 0x0705
+.base64 "fRc9iwUH"
 j 21f
 20:
 21:
 call {vg_cmac_aes_finalize}
-.insn 4, 0x7ff48293
-.insn 4, 0x08828293
-.insn 4, 0xff82f293
-.insn 4, 0x0002b083
-.insn 4, 0x0082b483
-.insn 2, 0x6151
-.insn 4, 0x7f010113
-.insn 2, 0x8082
-.option pop",
+.base64 "k4L0f5OCggiT8oL/g7ACAIO0ggBRYRMBAX+CgA=="
+.option pop"#,
         vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
     )
 }

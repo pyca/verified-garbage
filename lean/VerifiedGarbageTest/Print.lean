@@ -659,10 +659,11 @@ def sampleRV : Prog RISCV64.isa :=
 #guard Rust.template "bl" [.text ".inst 0x1", .text "20:", .text ".inst 0x2", .text ".inst 0x3",
     .call "vg_f", .text ".inst 0x4"] ==
   "        r\".inst 0x1\n20:\n.inst 0x2,0x3\nbl {vg_f}\n.inst 0x4\",\n"
--- Each run of consecutive encoded `.byte` lines (x86's) and `.long` lines
--- (PPC64LE's, whose words are little-endian) is one `.base64` line of their
--- bytes; another `.byte` or `.long` line (`symPush`'s) is neither, and ends
--- a run.
+-- Each run of consecutive encoded `.byte` lines (x86's), `.long` lines
+-- (PPC64LE's, whose words are little-endian) and `.insn` lines (RISC-V's, a
+-- word or a compressed instruction's parcel, little-endian) is one `.base64`
+-- line of their bytes; another `.byte`, `.long` or `.insn` line (`symPush`'s)
+-- is none of them, and ends a run.
 #guard Rust.template "call" ((List.range 18).map fun i => .text (X86.byteLine [i])) ==
   "        " ++ Rust.literal ".base64 \"AAECAwQFBgcICQoLDA0ODxAR\"" ++ ",\n"
 #guard Rust.template "call" [.text ".byte 0x81, 199", .text (X86.byteLine [1, 2]),
@@ -677,6 +678,15 @@ def sampleRV : Prog RISCV64.isa :=
 #guard Rust.wordLine? ".long 0x28250000,0x00000001" == some [0, 0, 0x25, 0x28, 1, 0, 0, 0]
 #guard Rust.wordLine? ".long 0x1" == none
 #guard Rust.wordLine? ".long {VG_TABLE} - 2b" == none
+#guard Rust.template "call" [.text (RISCV64.insnLine 0x0125b823), .text (RISCV64.insnLine 0x0085b023),
+    .text "bnez t3, 20b"] ==
+  "        " ++ Rust.literal ".base64 \"I7glAYDh\"\nbnez t3, 20b" ++ ",\n"
+#guard Rust.insnLine? ".insn 4, 0x0125b823" == some [0x23, 0xb8, 0x25, 0x01]
+#guard Rust.insnLine? ".insn 2, 0xe180" == some [0x80, 0xe1]
+#guard Rust.insnLine? ".insn 4, 0xe180" == none
+#guard Rust.insnLine? ".insn 2, 0x0125b823" == none
+#guard Rust.insnLine? ".insn 4, 0x1" == none
+#guard Rust.insnLine? ".insn 4, 0x0125B823" == none
 -- RFC 4648's padding: none for whole groups of 3 bytes, `==` after 1, `=` after 2.
 #guard Rust.base64 [255, 255, 255] == "////"
 #guard Rust.base64 [0xfb] == "+w=="
@@ -733,7 +743,7 @@ def sampleRV : Prog RISCV64.isa :=
 -- the Rust code, but in the assembly file, in place of their machine code.
 #guard Rust.template RISCV64.printer.call
     (RISCV64.printer.function (.block [.li .a0 1, .lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) ==
-  "        r\".insn 2, 0x4505\nlla a5, {VG_TABLE}\n.insn 2, 0x8082\",\n"
+  "        " ++ Rust.literal ".base64 \"BUU=\"\nlla a5, {VG_TABLE}\n.base64 \"goA=\"" ++ ",\n"
 #guard Rust.assembly RISCV64.printer.call
     (RISCV64.printer.function (.block [.li .a0 1, .lla .a5 "VG_TABLE"] : Prog RISCV64.isa)) ==
   ["addi a0, zero, 1", "lla a5, {VG_TABLE}", "ret"]
@@ -751,34 +761,25 @@ def sampleRV : Prog RISCV64.isa :=
   ([".option push", ".option arch, +m, +c"], [".option pop"])
 #guard ["x86_64", "x86", "aarch64", "arm", "powerpc64le"].all (Rust.funcOptions · == ([], []))
 #guard match Artifacts.Ct.RISCV64.artifacts with
-  | [a] => ((Rust.function a (fun _ => "")).splitOn "naked_asm!(\n").getLast! == "        r\".option push
+  | [a] => ((Rust.function a (fun _ => "")).splitOn "naked_asm!(\n").getLast! == "        r#\".option push
 .option arch, +m, +c
-.insn 2, 0x4701
-.insn 4, 0x40d588b3
+.base64 \"AUeziNVA\"
 beqz a7, 20f
-.insn 2, 0x4501
+.base64 \"AUU=\"
 j 21f
 20:
-.insn 2, 0x4781
+.base64 \"gUc=\"
 beqz a1, 22f
 24:
-.insn 4, 0x00f502b3
-.insn 4, 0x0002c303
-.insn 4, 0x00f602b3
-.insn 4, 0x0002c383
-.insn 4, 0x00734333
-.insn 4, 0x00676733
-.insn 2, 0x0785
-.insn 4, 0x40b788b3
+.base64 \"swL1AAPDAgCzAvYAg8MCADNDcwAzZ2cAhQeziLdA\"
 bnez a7, 24b
 j 23f
 22:
 23:
-.insn 2, 0x177d
-.insn 4, 0x03f75513
+.base64 \"fRcTVfcD\"
 21:
-.insn 2, 0x8082
-.option pop\",
+.base64 \"goA=\"
+.option pop\"#,
     )
 }
 "

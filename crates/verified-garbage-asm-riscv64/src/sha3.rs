@@ -19,111 +19,36 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha3_224_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x87ba
-.insn 2, 0x8736
-.insn 2, 0x86b2
-.insn 2, 0x862e
-.insn 4, 0x09000593
-.insn 2, 0x82be
-.insn 4, 0x2012b023
-.insn 4, 0x2122b423
-.insn 4, 0x2132b823
-.insn 4, 0x2142bc23
-.insn 4, 0x2352b023
-.insn 4, 0x2362b423
-.insn 4, 0x2372b823
-.insn 2, 0x892a
-.insn 2, 0x89ae
-.insn 2, 0x8a32
-.insn 2, 0x8ab6
-.insn 2, 0x8b3a
-.insn 2, 0x8bbe
+.base64 "uoc2h7KGLoaTBQAJvoIjsBIgI7QiISO4MiEjvEIhI7BSIyO0YiMjuHIjKomuiTKKtoo6i76L"
 beqz s6, 20f
 22:
-.insn 4, 0x014903b3
-.insn 4, 0x0143e333
-.insn 4, 0x00737313
-.insn 2, 0x4ea1
-.insn 4, 0x01db3e33
-.insn 4, 0x01c36333
-.insn 4, 0x007afe93
+.base64 "swNJATPjQwETc3MAoU4zPtsBM2PDAZP+egA="
 beqz t1, 23f
-.insn 4, 0x000ac303
-.insn 4, 0x014903b3
-.insn 4, 0x0003ce03
-.insn 4, 0x01c34333
-.insn 4, 0x00638023
-.insn 2, 0x0a85
-.insn 2, 0x0a05
-.insn 2, 0x1b7d
+.base64 "A8MKALMDSQEDzgMAM0PDASOAYwCFCgUKfRs="
 j 24f
 23:
 beqz t4, 25f
-.insn 4, 0x000ac303
-.insn 4, 0x001ace03
-.insn 2, 0x0e22
-.insn 4, 0x01c36333
-.insn 4, 0x002ace03
-.insn 2, 0x0e42
-.insn 4, 0x01c36333
-.insn 4, 0x003ace03
-.insn 2, 0x0e62
-.insn 4, 0x01c36333
-.insn 4, 0x004ace83
-.insn 4, 0x005ace03
-.insn 2, 0x0e22
-.insn 4, 0x01ceeeb3
-.insn 4, 0x006ace03
-.insn 2, 0x0e42
-.insn 4, 0x01ceeeb3
-.insn 4, 0x007ace03
-.insn 2, 0x0e62
-.insn 4, 0x01ceeeb3
-.insn 2, 0x1e82
-.insn 4, 0x01d36333
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A8MKAAPOGgAiDjNjwwEDzioAQg4zY8MBA846AGIOM2PDAYPOSgADzloAIg6z7s4BA85qAEIOs+7OAQPOegBiDrPuzgGCHjNj0wEDvgMAM0PDASOwYwChCiEKYRs="
 j 26f
 25:
-.insn 4, 0x000ab303
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A7MKAAO+AwAzQ8MBI7BjAKEKIQphGw=="
 26:
 24:
-.insn 4, 0x413a0333
+.base64 "MwM6QQ=="
 beqz t1, 27f
 j 28f
 27:
-.insn 2, 0x4a01
-.insn 2, 0x854a
-.insn 2, 0x85de
+.base64 "AUpKhd6F"
 call {vg_keccak_f1600}
 28:
 bnez s6, 22b
 j 21f
 20:
 21:
-.insn 2, 0x8552
-.insn 2, 0x82de
-.insn 4, 0x2002b083
-.insn 4, 0x2082b903
-.insn 4, 0x2102b983
-.insn 4, 0x2182ba03
-.insn 4, 0x2202ba83
-.insn 4, 0x2282bb03
-.insn 4, 0x2302bb83
-.insn 2, 0x8082
-.option pop",
+.base64 "UoXegoOwAiADuYIgg7kCIQO6giGDugIiA7uCIoO7AiOCgA=="
+.option pop"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -143,34 +68,14 @@ j 21f
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha3_224_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 28]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1101
-.insn 2, 0x868a
-.insn 4, 0x0016b023
-.insn 4, 0x0126b423
-.insn 4, 0x0136b823
-.insn 4, 0x0146bc23
-.insn 2, 0x892a
-.insn 2, 0x89b2
-.insn 2, 0x8a36
-.insn 2, 0x862e
-.insn 4, 0x09000593
-.insn 2, 0x4699
+.base64 "ARGKhiOwFgAjtCYBI7g2ASO8RgEqibKJNoouhpMFAAmZRg=="
 call {vg_keccak_pad}
-.insn 2, 0x854a
-.insn 4, 0x09000593
-.insn 2, 0x4601
-.insn 2, 0x86ce
-.insn 2, 0x4771
+.base64 "SoWTBQAJAUbOhnFH"
 call {vg_keccak_squeeze}
-.insn 4, 0x000a3083
-.insn 4, 0x008a3903
-.insn 4, 0x010a3983
-.insn 4, 0x018a3a03
-.insn 2, 0x6105
-.insn 2, 0x8082
-.option pop",
+.base64 "gzAKAAM5igCDOQoBAzqKAQVhgoA="
+.option pop"#,
         vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
         vg_keccak_squeeze = sym super::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
     )
@@ -192,111 +97,36 @@ call {vg_keccak_squeeze}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha3_256_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x87ba
-.insn 2, 0x8736
-.insn 2, 0x86b2
-.insn 2, 0x862e
-.insn 4, 0x08800593
-.insn 2, 0x82be
-.insn 4, 0x2012b023
-.insn 4, 0x2122b423
-.insn 4, 0x2132b823
-.insn 4, 0x2142bc23
-.insn 4, 0x2352b023
-.insn 4, 0x2362b423
-.insn 4, 0x2372b823
-.insn 2, 0x892a
-.insn 2, 0x89ae
-.insn 2, 0x8a32
-.insn 2, 0x8ab6
-.insn 2, 0x8b3a
-.insn 2, 0x8bbe
+.base64 "uoc2h7KGLoaTBYAIvoIjsBIgI7QiISO4MiEjvEIhI7BSIyO0YiMjuHIjKomuiTKKtoo6i76L"
 beqz s6, 20f
 22:
-.insn 4, 0x014903b3
-.insn 4, 0x0143e333
-.insn 4, 0x00737313
-.insn 2, 0x4ea1
-.insn 4, 0x01db3e33
-.insn 4, 0x01c36333
-.insn 4, 0x007afe93
+.base64 "swNJATPjQwETc3MAoU4zPtsBM2PDAZP+egA="
 beqz t1, 23f
-.insn 4, 0x000ac303
-.insn 4, 0x014903b3
-.insn 4, 0x0003ce03
-.insn 4, 0x01c34333
-.insn 4, 0x00638023
-.insn 2, 0x0a85
-.insn 2, 0x0a05
-.insn 2, 0x1b7d
+.base64 "A8MKALMDSQEDzgMAM0PDASOAYwCFCgUKfRs="
 j 24f
 23:
 beqz t4, 25f
-.insn 4, 0x000ac303
-.insn 4, 0x001ace03
-.insn 2, 0x0e22
-.insn 4, 0x01c36333
-.insn 4, 0x002ace03
-.insn 2, 0x0e42
-.insn 4, 0x01c36333
-.insn 4, 0x003ace03
-.insn 2, 0x0e62
-.insn 4, 0x01c36333
-.insn 4, 0x004ace83
-.insn 4, 0x005ace03
-.insn 2, 0x0e22
-.insn 4, 0x01ceeeb3
-.insn 4, 0x006ace03
-.insn 2, 0x0e42
-.insn 4, 0x01ceeeb3
-.insn 4, 0x007ace03
-.insn 2, 0x0e62
-.insn 4, 0x01ceeeb3
-.insn 2, 0x1e82
-.insn 4, 0x01d36333
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A8MKAAPOGgAiDjNjwwEDzioAQg4zY8MBA846AGIOM2PDAYPOSgADzloAIg6z7s4BA85qAEIOs+7OAQPOegBiDrPuzgGCHjNj0wEDvgMAM0PDASOwYwChCiEKYRs="
 j 26f
 25:
-.insn 4, 0x000ab303
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A7MKAAO+AwAzQ8MBI7BjAKEKIQphGw=="
 26:
 24:
-.insn 4, 0x413a0333
+.base64 "MwM6QQ=="
 beqz t1, 27f
 j 28f
 27:
-.insn 2, 0x4a01
-.insn 2, 0x854a
-.insn 2, 0x85de
+.base64 "AUpKhd6F"
 call {vg_keccak_f1600}
 28:
 bnez s6, 22b
 j 21f
 20:
 21:
-.insn 2, 0x8552
-.insn 2, 0x82de
-.insn 4, 0x2002b083
-.insn 4, 0x2082b903
-.insn 4, 0x2102b983
-.insn 4, 0x2182ba03
-.insn 4, 0x2202ba83
-.insn 4, 0x2282bb03
-.insn 4, 0x2302bb83
-.insn 2, 0x8082
-.option pop",
+.base64 "UoXegoOwAiADuYIgg7kCIQO6giGDugIiA7uCIoO7AiOCgA=="
+.option pop"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -316,34 +146,14 @@ j 21f
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha3_256_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1101
-.insn 2, 0x868a
-.insn 4, 0x0016b023
-.insn 4, 0x0126b423
-.insn 4, 0x0136b823
-.insn 4, 0x0146bc23
-.insn 2, 0x892a
-.insn 2, 0x89b2
-.insn 2, 0x8a36
-.insn 2, 0x862e
-.insn 4, 0x08800593
-.insn 2, 0x4699
+.base64 "ARGKhiOwFgAjtCYBI7g2ASO8RgEqibKJNoouhpMFgAiZRg=="
 call {vg_keccak_pad}
-.insn 2, 0x854a
-.insn 4, 0x08800593
-.insn 2, 0x4601
-.insn 2, 0x86ce
-.insn 4, 0x02000713
+.base64 "SoWTBYAIAUbOhhMHAAI="
 call {vg_keccak_squeeze}
-.insn 4, 0x000a3083
-.insn 4, 0x008a3903
-.insn 4, 0x010a3983
-.insn 4, 0x018a3a03
-.insn 2, 0x6105
-.insn 2, 0x8082
-.option pop",
+.base64 "gzAKAAM5igCDOQoBAzqKAQVhgoA="
+.option pop"#,
         vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
         vg_keccak_squeeze = sym super::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
     )
@@ -365,111 +175,36 @@ call {vg_keccak_squeeze}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha3_384_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x87ba
-.insn 2, 0x8736
-.insn 2, 0x86b2
-.insn 2, 0x862e
-.insn 4, 0x06800593
-.insn 2, 0x82be
-.insn 4, 0x2012b023
-.insn 4, 0x2122b423
-.insn 4, 0x2132b823
-.insn 4, 0x2142bc23
-.insn 4, 0x2352b023
-.insn 4, 0x2362b423
-.insn 4, 0x2372b823
-.insn 2, 0x892a
-.insn 2, 0x89ae
-.insn 2, 0x8a32
-.insn 2, 0x8ab6
-.insn 2, 0x8b3a
-.insn 2, 0x8bbe
+.base64 "uoc2h7KGLoaTBYAGvoIjsBIgI7QiISO4MiEjvEIhI7BSIyO0YiMjuHIjKomuiTKKtoo6i76L"
 beqz s6, 20f
 22:
-.insn 4, 0x014903b3
-.insn 4, 0x0143e333
-.insn 4, 0x00737313
-.insn 2, 0x4ea1
-.insn 4, 0x01db3e33
-.insn 4, 0x01c36333
-.insn 4, 0x007afe93
+.base64 "swNJATPjQwETc3MAoU4zPtsBM2PDAZP+egA="
 beqz t1, 23f
-.insn 4, 0x000ac303
-.insn 4, 0x014903b3
-.insn 4, 0x0003ce03
-.insn 4, 0x01c34333
-.insn 4, 0x00638023
-.insn 2, 0x0a85
-.insn 2, 0x0a05
-.insn 2, 0x1b7d
+.base64 "A8MKALMDSQEDzgMAM0PDASOAYwCFCgUKfRs="
 j 24f
 23:
 beqz t4, 25f
-.insn 4, 0x000ac303
-.insn 4, 0x001ace03
-.insn 2, 0x0e22
-.insn 4, 0x01c36333
-.insn 4, 0x002ace03
-.insn 2, 0x0e42
-.insn 4, 0x01c36333
-.insn 4, 0x003ace03
-.insn 2, 0x0e62
-.insn 4, 0x01c36333
-.insn 4, 0x004ace83
-.insn 4, 0x005ace03
-.insn 2, 0x0e22
-.insn 4, 0x01ceeeb3
-.insn 4, 0x006ace03
-.insn 2, 0x0e42
-.insn 4, 0x01ceeeb3
-.insn 4, 0x007ace03
-.insn 2, 0x0e62
-.insn 4, 0x01ceeeb3
-.insn 2, 0x1e82
-.insn 4, 0x01d36333
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A8MKAAPOGgAiDjNjwwEDzioAQg4zY8MBA846AGIOM2PDAYPOSgADzloAIg6z7s4BA85qAEIOs+7OAQPOegBiDrPuzgGCHjNj0wEDvgMAM0PDASOwYwChCiEKYRs="
 j 26f
 25:
-.insn 4, 0x000ab303
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A7MKAAO+AwAzQ8MBI7BjAKEKIQphGw=="
 26:
 24:
-.insn 4, 0x413a0333
+.base64 "MwM6QQ=="
 beqz t1, 27f
 j 28f
 27:
-.insn 2, 0x4a01
-.insn 2, 0x854a
-.insn 2, 0x85de
+.base64 "AUpKhd6F"
 call {vg_keccak_f1600}
 28:
 bnez s6, 22b
 j 21f
 20:
 21:
-.insn 2, 0x8552
-.insn 2, 0x82de
-.insn 4, 0x2002b083
-.insn 4, 0x2082b903
-.insn 4, 0x2102b983
-.insn 4, 0x2182ba03
-.insn 4, 0x2202ba83
-.insn 4, 0x2282bb03
-.insn 4, 0x2302bb83
-.insn 2, 0x8082
-.option pop",
+.base64 "UoXegoOwAiADuYIgg7kCIQO6giGDugIiA7uCIoO7AiOCgA=="
+.option pop"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -489,34 +224,14 @@ j 21f
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha3_384_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 48]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1101
-.insn 2, 0x868a
-.insn 4, 0x0016b023
-.insn 4, 0x0126b423
-.insn 4, 0x0136b823
-.insn 4, 0x0146bc23
-.insn 2, 0x892a
-.insn 2, 0x89b2
-.insn 2, 0x8a36
-.insn 2, 0x862e
-.insn 4, 0x06800593
-.insn 2, 0x4699
+.base64 "ARGKhiOwFgAjtCYBI7g2ASO8RgEqibKJNoouhpMFgAaZRg=="
 call {vg_keccak_pad}
-.insn 2, 0x854a
-.insn 4, 0x06800593
-.insn 2, 0x4601
-.insn 2, 0x86ce
-.insn 4, 0x03000713
+.base64 "SoWTBYAGAUbOhhMHAAM="
 call {vg_keccak_squeeze}
-.insn 4, 0x000a3083
-.insn 4, 0x008a3903
-.insn 4, 0x010a3983
-.insn 4, 0x018a3a03
-.insn 2, 0x6105
-.insn 2, 0x8082
-.option pop",
+.base64 "gzAKAAM5igCDOQoBAzqKAQVhgoA="
+.option pop"#,
         vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
         vg_keccak_squeeze = sym super::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
     )
@@ -538,111 +253,36 @@ call {vg_keccak_squeeze}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha3_512_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x87ba
-.insn 2, 0x8736
-.insn 2, 0x86b2
-.insn 2, 0x862e
-.insn 4, 0x04800593
-.insn 2, 0x82be
-.insn 4, 0x2012b023
-.insn 4, 0x2122b423
-.insn 4, 0x2132b823
-.insn 4, 0x2142bc23
-.insn 4, 0x2352b023
-.insn 4, 0x2362b423
-.insn 4, 0x2372b823
-.insn 2, 0x892a
-.insn 2, 0x89ae
-.insn 2, 0x8a32
-.insn 2, 0x8ab6
-.insn 2, 0x8b3a
-.insn 2, 0x8bbe
+.base64 "uoc2h7KGLoaTBYAEvoIjsBIgI7QiISO4MiEjvEIhI7BSIyO0YiMjuHIjKomuiTKKtoo6i76L"
 beqz s6, 20f
 22:
-.insn 4, 0x014903b3
-.insn 4, 0x0143e333
-.insn 4, 0x00737313
-.insn 2, 0x4ea1
-.insn 4, 0x01db3e33
-.insn 4, 0x01c36333
-.insn 4, 0x007afe93
+.base64 "swNJATPjQwETc3MAoU4zPtsBM2PDAZP+egA="
 beqz t1, 23f
-.insn 4, 0x000ac303
-.insn 4, 0x014903b3
-.insn 4, 0x0003ce03
-.insn 4, 0x01c34333
-.insn 4, 0x00638023
-.insn 2, 0x0a85
-.insn 2, 0x0a05
-.insn 2, 0x1b7d
+.base64 "A8MKALMDSQEDzgMAM0PDASOAYwCFCgUKfRs="
 j 24f
 23:
 beqz t4, 25f
-.insn 4, 0x000ac303
-.insn 4, 0x001ace03
-.insn 2, 0x0e22
-.insn 4, 0x01c36333
-.insn 4, 0x002ace03
-.insn 2, 0x0e42
-.insn 4, 0x01c36333
-.insn 4, 0x003ace03
-.insn 2, 0x0e62
-.insn 4, 0x01c36333
-.insn 4, 0x004ace83
-.insn 4, 0x005ace03
-.insn 2, 0x0e22
-.insn 4, 0x01ceeeb3
-.insn 4, 0x006ace03
-.insn 2, 0x0e42
-.insn 4, 0x01ceeeb3
-.insn 4, 0x007ace03
-.insn 2, 0x0e62
-.insn 4, 0x01ceeeb3
-.insn 2, 0x1e82
-.insn 4, 0x01d36333
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A8MKAAPOGgAiDjNjwwEDzioAQg4zY8MBA846AGIOM2PDAYPOSgADzloAIg6z7s4BA85qAEIOs+7OAQPOegBiDrPuzgGCHjNj0wEDvgMAM0PDASOwYwChCiEKYRs="
 j 26f
 25:
-.insn 4, 0x000ab303
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A7MKAAO+AwAzQ8MBI7BjAKEKIQphGw=="
 26:
 24:
-.insn 4, 0x413a0333
+.base64 "MwM6QQ=="
 beqz t1, 27f
 j 28f
 27:
-.insn 2, 0x4a01
-.insn 2, 0x854a
-.insn 2, 0x85de
+.base64 "AUpKhd6F"
 call {vg_keccak_f1600}
 28:
 bnez s6, 22b
 j 21f
 20:
 21:
-.insn 2, 0x8552
-.insn 2, 0x82de
-.insn 4, 0x2002b083
-.insn 4, 0x2082b903
-.insn 4, 0x2102b983
-.insn 4, 0x2182ba03
-.insn 4, 0x2202ba83
-.insn 4, 0x2282bb03
-.insn 4, 0x2302bb83
-.insn 2, 0x8082
-.option pop",
+.base64 "UoXegoOwAiADuYIgg7kCIQO6giGDugIiA7uCIoO7AiOCgA=="
+.option pop"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -662,34 +302,14 @@ j 21f
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_sha3_512_finalize(state: *mut [u64; 25], pos: usize, out: *mut [u8; 64]) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1101
-.insn 2, 0x868a
-.insn 4, 0x0016b023
-.insn 4, 0x0126b423
-.insn 4, 0x0136b823
-.insn 4, 0x0146bc23
-.insn 2, 0x892a
-.insn 2, 0x89b2
-.insn 2, 0x8a36
-.insn 2, 0x862e
-.insn 4, 0x04800593
-.insn 2, 0x4699
+.base64 "ARGKhiOwFgAjtCYBI7g2ASO8RgEqibKJNoouhpMFgASZRg=="
 call {vg_keccak_pad}
-.insn 2, 0x854a
-.insn 4, 0x04800593
-.insn 2, 0x4601
-.insn 2, 0x86ce
-.insn 4, 0x04000713
+.base64 "SoWTBYAEAUbOhhMHAAQ="
 call {vg_keccak_squeeze}
-.insn 4, 0x000a3083
-.insn 4, 0x008a3903
-.insn 4, 0x010a3983
-.insn 4, 0x018a3a03
-.insn 2, 0x6105
-.insn 2, 0x8082
-.option pop",
+.base64 "gzAKAAM5igCDOQoBAzqKAQVhgoA="
+.option pop"#,
         vg_keccak_pad = sym super::ed448::vg_keccak_pad::vg_keccak_pad,
         vg_keccak_squeeze = sym super::ed448::vg_keccak_squeeze::vg_keccak_squeeze,
     )
@@ -711,111 +331,36 @@ call {vg_keccak_squeeze}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_shake128_update(state: *mut [u64; 25], pos: usize, data: *const u8, len: usize, scratch: *mut [u64; 80]) -> usize {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x87ba
-.insn 2, 0x8736
-.insn 2, 0x86b2
-.insn 2, 0x862e
-.insn 4, 0x0a800593
-.insn 2, 0x82be
-.insn 4, 0x2012b023
-.insn 4, 0x2122b423
-.insn 4, 0x2132b823
-.insn 4, 0x2142bc23
-.insn 4, 0x2352b023
-.insn 4, 0x2362b423
-.insn 4, 0x2372b823
-.insn 2, 0x892a
-.insn 2, 0x89ae
-.insn 2, 0x8a32
-.insn 2, 0x8ab6
-.insn 2, 0x8b3a
-.insn 2, 0x8bbe
+.base64 "uoc2h7KGLoaTBYAKvoIjsBIgI7QiISO4MiEjvEIhI7BSIyO0YiMjuHIjKomuiTKKtoo6i76L"
 beqz s6, 20f
 22:
-.insn 4, 0x014903b3
-.insn 4, 0x0143e333
-.insn 4, 0x00737313
-.insn 2, 0x4ea1
-.insn 4, 0x01db3e33
-.insn 4, 0x01c36333
-.insn 4, 0x007afe93
+.base64 "swNJATPjQwETc3MAoU4zPtsBM2PDAZP+egA="
 beqz t1, 23f
-.insn 4, 0x000ac303
-.insn 4, 0x014903b3
-.insn 4, 0x0003ce03
-.insn 4, 0x01c34333
-.insn 4, 0x00638023
-.insn 2, 0x0a85
-.insn 2, 0x0a05
-.insn 2, 0x1b7d
+.base64 "A8MKALMDSQEDzgMAM0PDASOAYwCFCgUKfRs="
 j 24f
 23:
 beqz t4, 25f
-.insn 4, 0x000ac303
-.insn 4, 0x001ace03
-.insn 2, 0x0e22
-.insn 4, 0x01c36333
-.insn 4, 0x002ace03
-.insn 2, 0x0e42
-.insn 4, 0x01c36333
-.insn 4, 0x003ace03
-.insn 2, 0x0e62
-.insn 4, 0x01c36333
-.insn 4, 0x004ace83
-.insn 4, 0x005ace03
-.insn 2, 0x0e22
-.insn 4, 0x01ceeeb3
-.insn 4, 0x006ace03
-.insn 2, 0x0e42
-.insn 4, 0x01ceeeb3
-.insn 4, 0x007ace03
-.insn 2, 0x0e62
-.insn 4, 0x01ceeeb3
-.insn 2, 0x1e82
-.insn 4, 0x01d36333
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A8MKAAPOGgAiDjNjwwEDzioAQg4zY8MBA846AGIOM2PDAYPOSgADzloAIg6z7s4BA85qAEIOs+7OAQPOegBiDrPuzgGCHjNj0wEDvgMAM0PDASOwYwChCiEKYRs="
 j 26f
 25:
-.insn 4, 0x000ab303
-.insn 4, 0x0003be03
-.insn 4, 0x01c34333
-.insn 4, 0x0063b023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A7MKAAO+AwAzQ8MBI7BjAKEKIQphGw=="
 26:
 24:
-.insn 4, 0x413a0333
+.base64 "MwM6QQ=="
 beqz t1, 27f
 j 28f
 27:
-.insn 2, 0x4a01
-.insn 2, 0x854a
-.insn 2, 0x85de
+.base64 "AUpKhd6F"
 call {vg_keccak_f1600}
 28:
 bnez s6, 22b
 j 21f
 20:
 21:
-.insn 2, 0x8552
-.insn 2, 0x82de
-.insn 4, 0x2002b083
-.insn 4, 0x2082b903
-.insn 4, 0x2102b983
-.insn 4, 0x2182ba03
-.insn 4, 0x2202ba83
-.insn 4, 0x2282bb03
-.insn 4, 0x2302bb83
-.insn 2, 0x8082
-.option pop",
+.base64 "UoXegoOwAiADuYIgg7kCIQO6giGDugIiA7uCIoO7AiOCgA=="
+.option pop"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -832,30 +377,12 @@ j 21f
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_shake128_finalize(state: *mut [u64; 25], pos: usize) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x862e
-.insn 4, 0x0a800593
-.insn 2, 0x46fd
-.insn 4, 0xdf010113
-.insn 2, 0x828a
-.insn 4, 0x2012b023
-.insn 4, 0x00c50333
-.insn 4, 0x00034383
-.insn 4, 0x00d3c3b3
-.insn 4, 0x00730023
-.insn 4, 0x00b50333
-.insn 2, 0x137d
-.insn 4, 0x00034383
-.insn 4, 0x0803c393
-.insn 4, 0x00730023
-.insn 2, 0x858a
+.base64 "LoaTBYAK/UYTAQHfioIjsBIgMwPFAINDAwCzw9MAIwBzADMDtQB9E4NDAwCTwwMIIwBzAIqF"
 call {vg_keccak_f1600}
-.insn 2, 0x828a
-.insn 4, 0x2002b083
-.insn 4, 0x21010113
-.insn 2, 0x8082
-.option pop",
+.base64 "ioKDsAIgEwEBIYKA"
+.option pop"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -874,96 +401,36 @@ call {vg_keccak_f1600}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_shake128_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x8736
-.insn 2, 0x86b2
-.insn 2, 0x862e
-.insn 4, 0x0a800593
-.insn 4, 0xdd010113
-.insn 2, 0x828a
-.insn 4, 0x2012b023
-.insn 4, 0x2122b423
-.insn 4, 0x2132b823
-.insn 4, 0x2142bc23
-.insn 4, 0x2352b023
-.insn 4, 0x2362b423
-.insn 2, 0x892a
-.insn 2, 0x89ae
-.insn 2, 0x8a32
-.insn 2, 0x8ab6
-.insn 2, 0x8b3a
+.base64 "Noeyhi6GkwWAChMBAd2KgiOwEiAjtCIhI7gyISO8QiEjsFIjI7RiIyqJrokyiraKOos="
 beqz s6, 20f
 22:
-.insn 4, 0x413a0333
+.base64 "MwM6QQ=="
 beqz t1, 23f
 j 24f
 23:
-.insn 2, 0x4a01
-.insn 2, 0x854a
-.insn 2, 0x858a
+.base64 "AUpKhYqF"
 call {vg_keccak_f1600}
 24:
-.insn 4, 0x014903b3
-.insn 4, 0x0143e333
-.insn 4, 0x00737313
-.insn 2, 0x4ea1
-.insn 4, 0x01db3e33
-.insn 4, 0x01c36333
-.insn 4, 0x007afe93
+.base64 "swNJATPjQwETc3MAoU4zPtsBM2PDAZP+egA="
 beqz t1, 25f
-.insn 4, 0x014903b3
-.insn 4, 0x0003c303
-.insn 4, 0x006a8023
-.insn 2, 0x0a85
-.insn 2, 0x0a05
-.insn 2, 0x1b7d
+.base64 "swNJAQPDAwAjgGoAhQoFCn0b"
 j 26f
 25:
 beqz t4, 27f
-.insn 4, 0x0003b303
-.insn 4, 0x006a8023
-.insn 4, 0x00835e13
-.insn 4, 0x01ca80a3
-.insn 4, 0x01035e13
-.insn 4, 0x01ca8123
-.insn 4, 0x01835e13
-.insn 4, 0x01ca81a3
-.insn 4, 0x02035e13
-.insn 4, 0x01ca8223
-.insn 4, 0x008e5e93
-.insn 4, 0x01da82a3
-.insn 4, 0x010e5e93
-.insn 4, 0x01da8323
-.insn 4, 0x018e5e93
-.insn 4, 0x01da83a3
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A7MDACOAagATXoMAo4DKARNeAwEjgcoBE16DAaOBygETXgMCI4LKAZNejgCjgtoBk14OASOD2gGTXo4Bo4PaAaEKIQphGw=="
 j 28f
 27:
-.insn 4, 0x0003b303
-.insn 4, 0x006ab023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A7MDACOwagChCiEKYRs="
 28:
 26:
 bnez s6, 22b
 j 21f
 20:
 21:
-.insn 2, 0x8552
-.insn 2, 0x828a
-.insn 4, 0x2002b083
-.insn 4, 0x2082b903
-.insn 4, 0x2102b983
-.insn 4, 0x2182ba03
-.insn 4, 0x2202ba83
-.insn 4, 0x2282bb03
-.insn 4, 0x23010113
-.insn 2, 0x8082
-.option pop",
+.base64 "UoWKgoOwAiADuYIgg7kCIQO6giGDugIiA7uCIhMBASOCgA=="
+.option pop"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -980,30 +447,12 @@ j 21f
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_shake256_finalize(state: *mut [u64; 25], pos: usize) {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x862e
-.insn 4, 0x08800593
-.insn 2, 0x46fd
-.insn 4, 0xdf010113
-.insn 2, 0x828a
-.insn 4, 0x2012b023
-.insn 4, 0x00c50333
-.insn 4, 0x00034383
-.insn 4, 0x00d3c3b3
-.insn 4, 0x00730023
-.insn 4, 0x00b50333
-.insn 2, 0x137d
-.insn 4, 0x00034383
-.insn 4, 0x0803c393
-.insn 4, 0x00730023
-.insn 2, 0x858a
+.base64 "LoaTBYAI/UYTAQHfioIjsBIgMwPFAINDAwCzw9MAIwBzADMDtQB9E4NDAwCTwwMIIwBzAIqF"
 call {vg_keccak_f1600}
-.insn 2, 0x828a
-.insn 4, 0x2002b083
-.insn 4, 0x21010113
-.insn 2, 0x8082
-.option pop",
+.base64 "ioKDsAIgEwEBIYKA"
+.option pop"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }
@@ -1022,96 +471,36 @@ call {vg_keccak_f1600}
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_shake256_squeeze(state: *mut [u64; 25], pos: usize, out: *mut u8, outlen: usize) -> usize {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x8736
-.insn 2, 0x86b2
-.insn 2, 0x862e
-.insn 4, 0x08800593
-.insn 4, 0xdd010113
-.insn 2, 0x828a
-.insn 4, 0x2012b023
-.insn 4, 0x2122b423
-.insn 4, 0x2132b823
-.insn 4, 0x2142bc23
-.insn 4, 0x2352b023
-.insn 4, 0x2362b423
-.insn 2, 0x892a
-.insn 2, 0x89ae
-.insn 2, 0x8a32
-.insn 2, 0x8ab6
-.insn 2, 0x8b3a
+.base64 "Noeyhi6GkwWACBMBAd2KgiOwEiAjtCIhI7gyISO8QiEjsFIjI7RiIyqJrokyiraKOos="
 beqz s6, 20f
 22:
-.insn 4, 0x413a0333
+.base64 "MwM6QQ=="
 beqz t1, 23f
 j 24f
 23:
-.insn 2, 0x4a01
-.insn 2, 0x854a
-.insn 2, 0x858a
+.base64 "AUpKhYqF"
 call {vg_keccak_f1600}
 24:
-.insn 4, 0x014903b3
-.insn 4, 0x0143e333
-.insn 4, 0x00737313
-.insn 2, 0x4ea1
-.insn 4, 0x01db3e33
-.insn 4, 0x01c36333
-.insn 4, 0x007afe93
+.base64 "swNJATPjQwETc3MAoU4zPtsBM2PDAZP+egA="
 beqz t1, 25f
-.insn 4, 0x014903b3
-.insn 4, 0x0003c303
-.insn 4, 0x006a8023
-.insn 2, 0x0a85
-.insn 2, 0x0a05
-.insn 2, 0x1b7d
+.base64 "swNJAQPDAwAjgGoAhQoFCn0b"
 j 26f
 25:
 beqz t4, 27f
-.insn 4, 0x0003b303
-.insn 4, 0x006a8023
-.insn 4, 0x00835e13
-.insn 4, 0x01ca80a3
-.insn 4, 0x01035e13
-.insn 4, 0x01ca8123
-.insn 4, 0x01835e13
-.insn 4, 0x01ca81a3
-.insn 4, 0x02035e13
-.insn 4, 0x01ca8223
-.insn 4, 0x008e5e93
-.insn 4, 0x01da82a3
-.insn 4, 0x010e5e93
-.insn 4, 0x01da8323
-.insn 4, 0x018e5e93
-.insn 4, 0x01da83a3
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A7MDACOAagATXoMAo4DKARNeAwEjgcoBE16DAaOBygETXgMCI4LKAZNejgCjgtoBk14OASOD2gGTXo4Bo4PaAaEKIQphGw=="
 j 28f
 27:
-.insn 4, 0x0003b303
-.insn 4, 0x006ab023
-.insn 2, 0x0aa1
-.insn 2, 0x0a21
-.insn 2, 0x1b61
+.base64 "A7MDACOwagChCiEKYRs="
 28:
 26:
 bnez s6, 22b
 j 21f
 20:
 21:
-.insn 2, 0x8552
-.insn 2, 0x828a
-.insn 4, 0x2002b083
-.insn 4, 0x2082b903
-.insn 4, 0x2102b983
-.insn 4, 0x2182ba03
-.insn 4, 0x2202ba83
-.insn 4, 0x2282bb03
-.insn 4, 0x23010113
-.insn 2, 0x8082
-.option pop",
+.base64 "UoWKgoOwAiADuYIgg7kCIQO6giGDugIiA7uCIhMBASOCgA=="
+.option pop"#,
         vg_keccak_f1600 = sym super::ed448::vg_keccak_f1600::vg_keccak_f1600,
     )
 }

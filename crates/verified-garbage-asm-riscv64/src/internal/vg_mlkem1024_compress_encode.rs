@@ -11,182 +11,22 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_mlkem1024_compress_encode() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 2, 0x1582
-.insn 2, 0x9181
-.insn 4, 0xffb58713
+.base64 "ghWBkROHtf8="
 beqz a4, 20f
-.insn 4, 0x000408b7
-.insn 4, 0xf0088893
-.insn 4, 0x0004f837
-.insn 4, 0xbee80813
-.insn 4, 0x02000313
+.base64 "twgEAJOICPA3+AQAEwjovhMDAAI="
 22:
-.insn 2, 0x4781
-.insn 2, 0x4381
-.insn 4, 0x00056703
-.insn 4, 0x03070733
-.insn 2, 0x9746
-.insn 2, 0x834d
-.insn 2, 0x1756
-.insn 2, 0x9355
-.insn 2, 0x97ba
-.insn 4, 0x00456703
-.insn 4, 0x03070733
-.insn 2, 0x9746
-.insn 2, 0x834d
-.insn 2, 0x1756
-.insn 2, 0x9329
-.insn 2, 0x97ba
-.insn 4, 0x00856703
-.insn 4, 0x03070733
-.insn 2, 0x9746
-.insn 2, 0x834d
-.insn 2, 0x1756
-.insn 2, 0x837d
-.insn 2, 0x97ba
-.insn 4, 0x00c56703
-.insn 4, 0x03070733
-.insn 2, 0x9746
-.insn 2, 0x834d
-.insn 2, 0x1756
-.insn 2, 0x8351
-.insn 2, 0x97ba
-.insn 4, 0x01056703
-.insn 4, 0x03070733
-.insn 2, 0x9746
-.insn 2, 0x834d
-.insn 2, 0x1756
-.insn 2, 0x9345
-.insn 2, 0x93ba
-.insn 4, 0x01456703
-.insn 4, 0x03070733
-.insn 2, 0x9746
-.insn 2, 0x834d
-.insn 2, 0x1756
-.insn 2, 0x9319
-.insn 2, 0x93ba
-.insn 4, 0x01856703
-.insn 4, 0x03070733
-.insn 2, 0x9746
-.insn 2, 0x834d
-.insn 2, 0x1756
-.insn 2, 0x836d
-.insn 2, 0x93ba
-.insn 4, 0x01c56703
-.insn 4, 0x03070733
-.insn 2, 0x9746
-.insn 2, 0x834d
-.insn 2, 0x1756
-.insn 2, 0x8341
-.insn 2, 0x93ba
-.insn 4, 0x00f60023
-.insn 4, 0x0087d713
-.insn 4, 0x00e600a3
-.insn 4, 0x0107d713
-.insn 4, 0x00e60123
-.insn 4, 0x0187d713
-.insn 4, 0x00e601a3
-.insn 4, 0x0207d713
-.insn 4, 0x00e60223
-.insn 2, 0x93a1
-.insn 2, 0x979e
-.insn 4, 0x00f602a3
-.insn 4, 0x0087d713
-.insn 4, 0x00e60323
-.insn 4, 0x0107d713
-.insn 4, 0x00e603a3
-.insn 4, 0x0187d713
-.insn 4, 0x00e60423
-.insn 4, 0x0207d713
-.insn 4, 0x00e604a3
-.insn 4, 0x0287d713
-.insn 4, 0x00e60523
-.insn 4, 0x02050513
-.insn 2, 0x062d
-.insn 2, 0x137d
+.base64 "gUeBQwNnBQAzBwcDRpdNg1YXVZO6lwNnRQAzBwcDRpdNg1YXKZO6lwNnhQAzBwcDRpdNg1YXfYO6lwNnxQAzBwcDRpdNg1YXUYO6lwNnBQEzBwcDRpdNg1YXRZO6kwNnRQEzBwcDRpdNg1YXGZO6kwNnhQEzBwcDRpdNg1YXbYO6kwNnxQEzBwcDRpdNg1YXQYO6kyMA9gAT14cAowDmABPXBwEjAeYAE9eHAaMB5gAT1wcCIwLmAKGTnpejAvYAE9eHACMD5gAT1wcBowPmABPXhwEjBOYAE9cHAqME5gAT14cCIwXmABMFBQItBn0T"
 bnez t1, 22b
 j 21f
 20:
-.insn 4, 0x000408b7
-.insn 4, 0xf0088893
-.insn 2, 0x6805
-.insn 4, 0x3b080813
-.insn 4, 0x02000313
+.base64 "twgEAJOICPAFaBMICDsTAwAC"
 23:
-.insn 2, 0x4781
-.insn 4, 0x00056703
-.insn 4, 0x03070733
-.insn 2, 0x9746
-.insn 2, 0x834d
-.insn 2, 0x176e
-.insn 2, 0x936d
-.insn 2, 0x97ba
-.insn 4, 0x00456703
-.insn 4, 0x03070733
-.insn 2, 0x9746
-.insn 2, 0x834d
-.insn 2, 0x176e
-.insn 2, 0x9359
-.insn 2, 0x97ba
-.insn 4, 0x00856703
-.insn 4, 0x03070733
-.insn 2, 0x9746
-.insn 2, 0x834d
-.insn 2, 0x176e
-.insn 2, 0x9345
-.insn 2, 0x97ba
-.insn 4, 0x00c56703
-.insn 4, 0x03070733
-.insn 2, 0x9746
-.insn 2, 0x834d
-.insn 2, 0x176e
-.insn 2, 0x9331
-.insn 2, 0x97ba
-.insn 4, 0x01056703
-.insn 4, 0x03070733
-.insn 2, 0x9746
-.insn 2, 0x834d
-.insn 2, 0x176e
-.insn 2, 0x931d
-.insn 2, 0x97ba
-.insn 4, 0x01456703
-.insn 4, 0x03070733
-.insn 2, 0x9746
-.insn 2, 0x834d
-.insn 2, 0x176e
-.insn 2, 0x9309
-.insn 2, 0x97ba
-.insn 4, 0x01856703
-.insn 4, 0x03070733
-.insn 2, 0x9746
-.insn 2, 0x834d
-.insn 2, 0x176e
-.insn 2, 0x8375
-.insn 2, 0x97ba
-.insn 4, 0x01c56703
-.insn 4, 0x03070733
-.insn 2, 0x9746
-.insn 2, 0x834d
-.insn 2, 0x176e
-.insn 2, 0x8361
-.insn 2, 0x97ba
-.insn 4, 0x00f60023
-.insn 4, 0x0087d713
-.insn 4, 0x00e600a3
-.insn 4, 0x0107d713
-.insn 4, 0x00e60123
-.insn 4, 0x0187d713
-.insn 4, 0x00e601a3
-.insn 4, 0x0207d713
-.insn 4, 0x00e60223
-.insn 4, 0x02050513
-.insn 2, 0x0615
-.insn 2, 0x137d
+.base64 "gUcDZwUAMwcHA0aXTYNuF22TupcDZ0UAMwcHA0aXTYNuF1mTupcDZ4UAMwcHA0aXTYNuF0WTupcDZ8UAMwcHA0aXTYNuFzGTupcDZwUBMwcHA0aXTYNuFx2TupcDZ0UBMwcHA0aXTYNuFwmTupcDZ4UBMwcHA0aXTYNuF3WDupcDZ8UBMwcHA0aXTYNuF2GDupcjAPYAE9eHAKMA5gAT1wcBIwHmABPXhwGjAeYAE9cHAiMC5gATBQUCFQZ9Ew=="
 bnez t1, 23b
 21:
-.insn 2, 0x8082
-.option pop",
+.base64 "goA="
+.option pop"#,
     )
 }

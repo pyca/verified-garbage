@@ -11,134 +11,61 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_argon2_hprime() {
     core::arch::naked_asm!(
-        r".option push
+        r#".option push
 .option arch, +m, +c
-.insn 4, 0x36173823
-.insn 4, 0x34873423
-.insn 4, 0x34973823
-.insn 4, 0x35273c23
-.insn 4, 0x37373023
-.insn 4, 0x37473423
-.insn 2, 0x8a3a
-.insn 2, 0x842a
-.insn 2, 0x84ae
-.insn 2, 0x8932
-.insn 2, 0x89b6
-.insn 4, 0x34da2023
-.insn 2, 0x85ce
-.insn 4, 0xfbf58893
-.insn 4, 0x03f8d893
+.base64 "IzgXNiM0hzQjOJc0IzwnNSMwNzcjNEc3OooqhK6EMom2iSMg2jTOhZOI9fuT2PgD"
 bnez a7, 20f
-.insn 4, 0x04000593
+.base64 "kwUABA=="
 j 21f
 20:
 21:
-.insn 2, 0x8552
-.insn 4, 0x340a0613
-.insn 2, 0x4681
+.base64 "UoUTBgo0gUY="
 call {vg_blake2b_init}
-.insn 2, 0x4581
-.insn 4, 0x340a0613
-.insn 2, 0x4691
-.insn 2, 0x8552
-.insn 4, 0x0c0a0713
+.base64 "gUUTBgo0kUZShRMHCgw="
 call {vg_blake2b_update_scratch}
-.insn 2, 0x4591
-.insn 2, 0x8622
-.insn 2, 0x86a6
-.insn 2, 0x8552
-.insn 4, 0x0c0a0713
+.base64 "kUUihqaGUoUTBwoM"
 call {vg_blake2b_update_scratch}
-.insn 4, 0x00448593
-.insn 2, 0x8552
-.insn 4, 0x300a0613
-.insn 4, 0x0c0a0693
+.base64 "k4VEAFKFEwYKMJMGCgw="
 call {vg_blake2b_finalize_scratch}
-.insn 4, 0xfbf98893
-.insn 4, 0x03f8d893
+.base64 "k4j5+5PY+AM="
 bnez a7, 22f
-.insn 4, 0x02000813
-.insn 4, 0x300a0613
+.base64 "EwgAAhMGCjA="
 24:
-.insn 4, 0x00064683
-.insn 4, 0x00d90023
-.insn 2, 0x0605
-.insn 2, 0x0905
-.insn 2, 0x187d
+.base64 "g0YGACMA2QAFBgUJfRg="
 bnez a6, 24b
-.insn 2, 0x1981
-.insn 4, 0xfbf98893
-.insn 4, 0x03f8d893
+.base64 "gRmTiPn7k9j4Aw=="
 bnez a7, 25f
 27:
-.insn 4, 0x04000593
-.insn 2, 0x8552
-.insn 4, 0x340a0613
-.insn 2, 0x4681
+.base64 "kwUABFKFEwYKNIFG"
 call {vg_blake2b_init}
-.insn 2, 0x4581
-.insn 4, 0x300a0613
-.insn 4, 0x04000693
-.insn 2, 0x8552
-.insn 4, 0x0c0a0713
+.base64 "gUUTBgowkwYABFKFEwcKDA=="
 call {vg_blake2b_update_scratch}
-.insn 4, 0x04000593
-.insn 2, 0x8552
-.insn 4, 0x300a0613
-.insn 4, 0x0c0a0693
+.base64 "kwUABFKFEwYKMJMGCgw="
 call {vg_blake2b_finalize_scratch}
-.insn 4, 0x02000813
-.insn 4, 0x300a0613
+.base64 "EwgAAhMGCjA="
 28:
-.insn 4, 0x00064683
-.insn 4, 0x00d90023
-.insn 2, 0x0605
-.insn 2, 0x0905
-.insn 2, 0x187d
+.base64 "g0YGACMA2QAFBgUJfRg="
 bnez a6, 28b
-.insn 2, 0x1981
-.insn 4, 0xfbf98893
-.insn 4, 0x03f8d893
+.base64 "gRmTiPn7k9j4Aw=="
 beqz a7, 27b
 j 26f
 25:
 26:
-.insn 2, 0x85ce
-.insn 2, 0x8552
-.insn 4, 0x340a0613
-.insn 2, 0x4681
+.base64 "zoVShRMGCjSBRg=="
 call {vg_blake2b_init}
-.insn 2, 0x4581
-.insn 4, 0x300a0613
-.insn 4, 0x04000693
-.insn 2, 0x8552
-.insn 4, 0x0c0a0713
+.base64 "gUUTBgowkwYABFKFEwcKDA=="
 call {vg_blake2b_update_scratch}
-.insn 4, 0x04000593
-.insn 2, 0x8552
-.insn 4, 0x300a0613
-.insn 4, 0x0c0a0693
+.base64 "kwUABFKFEwYKMJMGCgw="
 call {vg_blake2b_finalize_scratch}
 j 23f
 22:
 23:
-.insn 2, 0x884e
-.insn 4, 0x300a0613
+.base64 "TogTBgow"
 29:
-.insn 4, 0x00064683
-.insn 4, 0x00d90023
-.insn 2, 0x0605
-.insn 2, 0x0905
-.insn 2, 0x187d
+.base64 "g0YGACMA2QAFBgUJfRg="
 bnez a6, 29b
-.insn 4, 0x370a3083
-.insn 4, 0x348a3403
-.insn 4, 0x350a3483
-.insn 4, 0x358a3903
-.insn 4, 0x360a3983
-.insn 4, 0x368a3a03
-.insn 2, 0x8082
-.option pop",
+.base64 "gzAKNwM0ijSDNAo1AzmKNYM5CjYDOoo2goA="
+.option pop"#,
         vg_blake2b_init = sym crate::blake2b::vg_blake2b_init,
         vg_blake2b_update_scratch = sym crate::blake2b::vg_blake2b_update_scratch::vg_blake2b_update_scratch,
         vg_blake2b_finalize_scratch = sym crate::blake2b::vg_blake2b_finalize_scratch::vg_blake2b_finalize_scratch,
