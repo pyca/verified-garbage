@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Md5.Contract
 import VerifiedGarbage.Proof.Md5.X86_64.Stream.Init
 import VerifiedGarbage.Proof.Md5.X86_64.Stream.Md

@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Idea.X86_64.Ecb
 public import VerifiedGarbage.Spec.Idea.Contract
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch

@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.X86.Taint
 public import VerifiedGarbage.Proof.CmacTripleDes.Stream.X86.Frame
 import VerifiedGarbage.Proof.CmacTripleDes.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Registration
