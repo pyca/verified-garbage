@@ -101,6 +101,11 @@ def main (args : List String) : IO UInt32 := do
   if names.isEmpty || names.any (·.startsWith "-") then
     IO.eprintln usage
     return 2
+  -- An x86-64 dispatcher may call `vg_mcdt_enter` (`Rust.checkMcdt`), so the
+  -- registration that has it comes with every x86-64 one; its files are
+  -- compared as the others are.
+  let names := if names.any (·.endsWith ".X86_64") && !names.contains "Mcdt.X86_64" then
+    names ++ ["Mcdt.X86_64"] else names
   let regs := (← VG.Emit.registrations).filter fun m =>
     names.any fun n => m == s!"VerifiedGarbage.Artifacts.{n}"
   for n in names do
