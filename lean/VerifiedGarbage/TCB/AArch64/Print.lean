@@ -169,6 +169,13 @@ def VOp.asm : VOp → String
   | .sha512su1 d n m => s!"sha512su1 {d.arr "2d"}, {n.arr "2d"}, {m.arr "2d"}"
   | .sm4e d n => s!"sm4e {d.arr "4s"}, {n.arr "4s"}"
   | .sm4ekey d n m => s!"sm4ekey {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
+  | .sm3ss1 d n m a => s!"sm3ss1 {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}, {a.arr "4s"}"
+  | .sm3tt op d n m i =>
+    let name := match op with
+      | .tt1a => "sm3tt1a" | .tt1b => "sm3tt1b" | .tt2a => "sm3tt2a" | .tt2b => "sm3tt2b"
+    s!"{name} {d.arr "4s"}, {n.arr "4s"}, v{m.index}.s[{i}]"
+  | .sm3partw1 d n m => s!"sm3partw1 {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
+  | .sm3partw2 d n m => s!"sm3partw2 {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
   | .eor3 d n m a => s!"eor3 {d.b}, {n.b}, {m.b}, {a.b}"
   | .bcax d n m a => s!"bcax {d.b}, {n.b}, {m.b}, {a.b}"
   | .rax1 d n m => s!"rax1 {d.arr "2d"}, {n.arr "2d"}, {m.arr "2d"}"

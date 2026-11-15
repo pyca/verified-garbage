@@ -233,6 +233,18 @@ def VOp.encode : VOp → Option Nat
   -- 110010 Rn Rd`.
   | .sm4e d n => some (v2 0xCEC08400 d n)
   | .sm4ekey d n m => some (v3 0xCE60C800 d n m)
+  -- "SM3SS1": `11001110 010 Rm 0 Ra Rn Rd`; "SM3TT1A", "SM3TT1B", "SM3TT2A",
+  -- "SM3TT2B": `11001110 010 Rm 10 imm2 opcode Rn Rd`, `opcode` 00, 01, 10,
+  -- 11; "SM3PARTW1", "SM3PARTW2": `11001110 011 Rm 1100 opcode Rn Rd`,
+  -- `opcode` 00, 01.
+  | .sm3ss1 d n m a => some (v3 (0xCE400000 ||| a.index <<< 10) d n m)
+  | .sm3tt op d n m i =>
+    if i < 4 then
+      let opcode := match op with | .tt1a => 0 | .tt1b => 1 | .tt2a => 2 | .tt2b => 3
+      some (v3 (0xCE408000 ||| i <<< 12 ||| opcode <<< 10) d n m)
+    else none
+  | .sm3partw1 d n m => some (v3 0xCE60C000 d n m)
+  | .sm3partw2 d n m => some (v3 0xCE60C400 d n m)
   -- "EOR3", "BCAX": `Ra` at bits 14–10; "RAX1"; "XAR": `imm6` at 15–10.
   | .eor3 d n m a => some (v3 (0xCE000000 ||| a.index <<< 10) d n m)
   | .bcax d n m a => some (v3 (0xCE200000 ||| a.index <<< 10) d n m)

@@ -265,5 +265,75 @@ iterations with `intval = intval XOR ROL(intval, 13) XOR ROL(intval, 23)`;
 def sm4EKey (vn vm : BitVec 128) : BitVec 128 :=
   sm4Steps (fun x => x ^^^ x.rotateLeft 13 ^^^ x.rotateLeft 23) vn vm
 
+/-! ## SM3 (A64 ISA XML 2025-12: "SM3SS1", "SM3TT1A", "SM3TT1B", "SM3TT2A",
+"SM3TT2B", "SM3PARTW1", "SM3PARTW2") -/
+
+/-- SM3SS1, with `Vn = V[n]`, `Vm = V[m]`, `Va = V[a]`:
+`result[127:96] = ROL((ROL(Vn[127:96], 12) + Vm[127:96] + Va[127:96]), 7);
+result[95:0] = Zeros{96}; V[d] = result`. -/
+def sm3Ss1 (vn vm va : BitVec 128) : BitVec 128 :=
+  ofVWords 0 0 0 (((vword vn 3).rotateLeft 12 + vword vm 3 + vword va 3).rotateLeft 7)
+
+/-- SM3TT1A (`b = false`) and SM3TT1B (`b = true`), with `Vd = V[d]`,
+`Vn = V[n]` and `WjPrime = Vm[i*:32]`:
+`SS2 = Vn[127:96] XOR ROL(Vd[127:96], 12);`
+SM3TT1A: `TT1 = Vd[63:32] XOR (Vd[127:96] XOR Vd[95:64]);`
+SM3TT1B: `TT1 = (Vd[127:96] AND Vd[63:32]) OR (Vd[127:96] AND Vd[95:64]) OR
+(Vd[63:32] AND Vd[95:64]);`
+`TT1 = (TT1 + Vd[31:0] + SS2 + WjPrime)[31:0]; result[31:0] = Vd[63:32];
+result[63:32] = ROL(Vd[95:64], 9); result[95:64] = Vd[127:96];
+result[127:96] = TT1; V[d] = result`. -/
+def sm3Tt1 (b : Bool) (vd vn : BitVec 128) (wjPrime : BitVec 32) : BitVec 128 :=
+  let ss2 := vword vn 3 ^^^ (vword vd 3).rotateLeft 12
+  let tt1 :=
+    if b then (vword vd 3 &&& vword vd 1) ||| (vword vd 3 &&& vword vd 2) ||| (vword vd 1 &&& vword vd 2)
+    else vword vd 1 ^^^ (vword vd 3 ^^^ vword vd 2)
+  let tt1 := tt1 + vword vd 0 + ss2 + wjPrime
+  ofVWords (vword vd 1) ((vword vd 2).rotateLeft 9) (vword vd 3) tt1
+
+/-- SM3TT2A (`b = false`) and SM3TT2B (`b = true`), with `Vd = V[d]`,
+`Vn = V[n]` and `Wj = Vm[i*:32]`:
+SM3TT2A: `TT2 = Vd[63:32] XOR (Vd[127:96] XOR Vd[95:64]);`
+SM3TT2B: `TT2 = (Vd[127:96] AND Vd[95:64]) OR (NOT(Vd[127:96]) AND Vd[63:32]);`
+`TT2 = (TT2 + Vd[31:0] + Vn[127:96] + Wj)[31:0]; result[31:0] = Vd[63:32];
+result[63:32] = ROL(Vd[95:64], 19); result[95:64] = Vd[127:96];
+result[127:96] = TT2 XOR ROL(TT2, 9) XOR ROL(TT2, 17); V[d] = result`. -/
+def sm3Tt2 (b : Bool) (vd vn : BitVec 128) (wj : BitVec 32) : BitVec 128 :=
+  let tt2 :=
+    if b then (vword vd 3 &&& vword vd 2) ||| (~~~(vword vd 3) &&& vword vd 1)
+    else vword vd 1 ^^^ (vword vd 3 ^^^ vword vd 2)
+  let tt2 := tt2 + vword vd 0 + vword vn 3 + wj
+  ofVWords (vword vd 1) ((vword vd 2).rotateLeft 19) (vword vd 3)
+    (tt2 ^^^ tt2.rotateLeft 9 ^^^ tt2.rotateLeft 17)
+
+/-- SM3PARTW1, with `Vd = V[d]`, `Vn = V[n]`, `Vm = V[m]`:
+`result[95:0] = (Vd XOR Vn)[95:0] XOR (ROL(Vm[127:96], 15)::ROL(Vm[95:64],
+15)::ROL(Vm[63:32], 15)); for i = 0 to 3 do if i == 3 then result[127:96] =
+(Vd XOR Vn)[127:96] XOR (ROL(result[31:0], 15)); end; result[(32*i)+31:(32*i)]
+= (result[(32*i)+31:(32*i)] XOR ROL(result[(32*i)+31:(32*i)], 15) XOR
+ROL(result[(32*i)+31:(32*i)], 23)); end; V[d] = result`: word 3 is made
+from word 0 after the loop has replaced word 0 (at `i = 0`). -/
+def sm3PartW1 (vd vn vm : BitVec 128) : BitVec 128 :=
+  let x := vd ^^^ vn
+  let p (w : BitVec 32) : BitVec 32 := w ^^^ w.rotateLeft 15 ^^^ w.rotateLeft 23
+  let r0 := p (vword x 0 ^^^ (vword vm 1).rotateLeft 15)
+  let r1 := p (vword x 1 ^^^ (vword vm 2).rotateLeft 15)
+  let r2 := p (vword x 2 ^^^ (vword vm 3).rotateLeft 15)
+  let r3 := p (vword x 3 ^^^ r0.rotateLeft 15)
+  ofVWords r0 r1 r2 r3
+
+/-- SM3PARTW2, with `Vd = V[d]`, `Vn = V[n]`, `Vm = V[m]`:
+`tmp[127:0] = (Vn XOR (ROL(Vm[127:96], 7) :: ROL(Vm[95:64], 7) ::
+ROL(Vm[63:32], 7) :: ROL(Vm[31:0], 7))); result[127:0] = Vd[127:0] XOR
+tmp[127:0]; tmp2 = ROL(tmp[31:0], 15); tmp2 = tmp2 XOR ROL(tmp2, 15) XOR
+ROL(tmp2, 23); result[127:96] = result[127:96] XOR tmp2; V[d] = result`. -/
+def sm3PartW2 (vd vn vm : BitVec 128) : BitVec 128 :=
+  let tmp := vn ^^^ ofVWords ((vword vm 0).rotateLeft 7) ((vword vm 1).rotateLeft 7)
+    ((vword vm 2).rotateLeft 7) ((vword vm 3).rotateLeft 7)
+  let result := vd ^^^ tmp
+  let tmp2 := (vword tmp 0).rotateLeft 15
+  let tmp2 := tmp2 ^^^ tmp2.rotateLeft 15 ^^^ tmp2.rotateLeft 23
+  ofVWords (vword result 0) (vword result 1) (vword result 2) (vword result 3 ^^^ tmp2)
+
 
 end VG.AArch64

@@ -169,12 +169,13 @@ Modelling choices:
   ZIP1, ZIP2, TRN1, TRN2, UZP1, UZP2, TBL, TBX, UMULL, UMLAL, PMULL, MUL, MLA, MLS, SQDMULH, UMIN), and the cryptographic ones
   (AESE, AESD, AESMC, AESIMC, SHA1C, SHA1P, SHA1M, SHA1H, SHA1SU0, SHA1SU1,
   SHA256H, SHA256H2, SHA256SU0, SHA256SU1, SHA512H, SHA512H2, SHA512SU0,
-  SHA512SU1, EOR3, BCAX, RAX1, XAR, SM4E, SM4EKEY), and SVE2's XAR, are all among those whose
+  SHA512SU1, EOR3, BCAX, RAX1, XAR, SM4E, SM4EKEY, SM3SS1, SM3TT1A, SM3TT1B,
+  SM3TT2A, SM3TT2B, SM3PARTW1, SM3PARTW2), and SVE2's XAR, are all among those whose
   timing Arm specifies to be independent of their data when PSTATE.DIT is 1
   (DDI 0487, "About PSTATE.DIT"; the description of SVE2's XAR says "This
   instruction is a data-independent-time instruction as described in About
-  PSTATE.DIT", and so do those of SM4E and SM4EKEY in the A64 ISA XML
-  2025-12). CMHI, CMHS, ADDV and UADDLV are in the list of
+  PSTATE.DIT", and so do those of SM4E, SM4EKEY and the seven SM3
+  instructions in the A64 ISA XML 2025-12). CMHI, CMHS, ADDV and UADDLV are in the list of
   data-independent-time instructions of DDI 0487 M.b C5.2.4, "DIT, Data
   Independent Timing" (also DDI 0601 2026-09): "Advanced SIMD three same: ADD,
   ADDP, AND, …, CMEQ, CMGE, CMGT, CMHI, CMHS, …" and "Advanced SIMD across
@@ -307,6 +308,10 @@ inductive VSelOp | bsl | bit | bif
 inductive Sha1Op | c | p | m
   deriving DecidableEq, Repr
 
+/-- SM3TT1A, SM3TT1B, SM3TT2A and SM3TT2B. -/
+inductive Sm3TtOp | tt1a | tt1b | tt2a | tt2b
+  deriving DecidableEq, Repr
+
 /-- AdvSIMD and cryptographic instructions that write only a vector
 register (and access no memory). -/
 inductive VOp
@@ -425,6 +430,14 @@ inductive VOp
   | sm4e (d n : VReg)
   /-- `sm4ekey vd.4s, vn.4s, vm.4s` -/
   | sm4ekey (d n m : VReg)
+  /-- `sm3ss1 vd.4s, vn.4s, vm.4s, va.4s` -/
+  | sm3ss1 (d n m a : VReg)
+  /-- `sm3tt1a`/`sm3tt1b`/`sm3tt2a`/`sm3tt2b vd.4s, vn.4s, vm.s[i]` -/
+  | sm3tt (op : Sm3TtOp) (d n m : VReg) (i : Nat)
+  /-- `sm3partw1 vd.4s, vn.4s, vm.4s` -/
+  | sm3partw1 (d n m : VReg)
+  /-- `sm3partw2 vd.4s, vn.4s, vm.4s` -/
+  | sm3partw2 (d n m : VReg)
   /-- `eor3 vd.16b, vn.16b, vm.16b, va.16b` -/
   | eor3 (d n m a : VReg)
   /-- `bcax vd.16b, vn.16b, vm.16b, va.16b` -/
@@ -964,6 +977,10 @@ def Sha1Op.f : Sha1Op → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32
 * "SM4E", "SM4EKEY" (A64 ISA XML 2025-12): `sm4E`, `sm4EKey`, four rounds of
   SM4's encryption of `V[d]` under the round keys `V[n]`, and of its key
   expansion from `V[n]` with the constants `V[m]`;
+* "SM3SS1", "SM3TT1A", "SM3TT1B", "SM3TT2A", "SM3TT2B", "SM3PARTW1",
+  "SM3PARTW2" (A64 ISA XML 2025-12): `sm3Ss1`, `sm3Tt1`, `sm3Tt2`,
+  `sm3PartW1`, `sm3PartW2`, with `WjPrime`/`Wj = Vm[i*:32]` the word `i =
+  UInt(imm2)` of `V[m]`;
 * "EOR3": `Vn EOR Vm EOR Va`; "BCAX": `Vn EOR (Vm AND NOT(Va))`; "RAX1":
   `Elem[Vd, e, 64] = Elem[Vn, e, 64] EOR ROL(Elem[Vm, e, 64], 1)`; "XAR":
   `Elem[Vd, e, 64] = ROR(Elem[Vn, e, 64] EOR Elem[Vm, e, 64], imm6)`;
@@ -1091,6 +1108,17 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
   | .sha512su1 d n m => some (d, sha512Su1 (s.v d) (s.v n) (s.v m))
   | .sm4e d n => some (d, sm4E (s.v d) (s.v n))
   | .sm4ekey d n m => some (d, sm4EKey (s.v n) (s.v m))
+  | .sm3ss1 d n m a => some (d, sm3Ss1 (s.v n) (s.v m) (s.v a))
+  | .sm3tt op d n m i =>
+    if i < 4 then
+      some (d, match op with
+        | .tt1a => sm3Tt1 false (s.v d) (s.v n) (vword (s.v m) i)
+        | .tt1b => sm3Tt1 true (s.v d) (s.v n) (vword (s.v m) i)
+        | .tt2a => sm3Tt2 false (s.v d) (s.v n) (vword (s.v m) i)
+        | .tt2b => sm3Tt2 true (s.v d) (s.v n) (vword (s.v m) i))
+    else none
+  | .sm3partw1 d n m => some (d, sm3PartW1 (s.v d) (s.v n) (s.v m))
+  | .sm3partw2 d n m => some (d, sm3PartW2 (s.v d) (s.v n) (s.v m))
   | .eor3 d n m a => some (d, s.v n ^^^ s.v m ^^^ s.v a)
   | .bcax d n m a => some (d, s.v n ^^^ (s.v m &&& ~~~(s.v a)))
   | .rax1 d n m => some (d, VArr.d2.map2 (fun _ x y => x ^^^ y.rotateLeft 1) (s.v n) (s.v m))
@@ -1498,7 +1526,9 @@ SHA512H2, SHA512SU0, SHA512SU1 and FEAT_SHA3 for EOR3, BCAX, RAX1, XAR
 (Rust's `sha3`); FEAT_SM4 for SM4E and SM4EKEY (A64 ISA XML 2025-12, "SM4E",
 "SM4EKEY": `if !IsFeatureImplemented(FEAT_SM4) then
 EndOfDecode(Decode_UNDEF); end;`), Rust's `sm4`, which stands for FEAT_SM4
-and FEAT_SM3 together; FEAT_SVE2 for SVE2's XAR (DDI 0602, "XAR": `if
+and FEAT_SM3 together, so that it is also what SM3SS1, SM3TT1A, SM3TT1B,
+SM3TT2A, SM3TT2B, SM3PARTW1 and SM3PARTW2 need (`if
+!IsFeatureImplemented(FEAT_SM3) then EndOfDecode(Decode_UNDEF); end;`); FEAT_SVE2 for SVE2's XAR (DDI 0602, "XAR": `if
 !IsFeatureImplemented(FEAT_SVE2) && !IsFeatureImplemented(FEAT_SME) then
 UNDEFINED`; Rust's `sve2`, which implies `sve`, since FEAT_SVE2 requires
 FEAT_SVE); FEAT_DIT for MRS of the system register DIT (DDI 0601 2026-03,
@@ -1520,7 +1550,8 @@ def Instr.requires : Instr → List String
     ["sha2"]
   | .vop (.sha512h ..) | .vop (.sha512h2 ..) | .vop (.sha512su0 ..) | .vop (.sha512su1 ..)
   | .vop (.eor3 ..) | .vop (.bcax ..) | .vop (.rax1 ..) | .vop (.xar ..) => ["sha3"]
-  | .vop (.sm4e ..) | .vop (.sm4ekey ..) => ["sm4"]
+  | .vop (.sm4e ..) | .vop (.sm4ekey ..)
+  | .vop (.sm3ss1 ..) | .vop (.sm3tt ..) | .vop (.sm3partw1 ..) | .vop (.sm3partw2 ..) => ["sm4"]
   | .vop (.xarS ..) => ["sve2"]
   | .mrsDit _ | .msrDitImm _ => ["dit"]
   | .barrier .sb => ["sb"]
