@@ -25,7 +25,7 @@ pub unsafe fn vg_sm4_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *
 ///
 /// Contract: `VG.Spec.Sm4.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
 ///
-/// It runs `vg_sm4_ecb_encrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_ecb_encrypt_sm4` if the CPU supports its features (`VG_SM4_ECB_ENCRYPT_SM4_FEATURES`); or else `vg_sm4_ecb_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -36,15 +36,44 @@ pub unsafe fn vg_sm4_expand_key_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sm4::vg_sm4_ecb_encrypt(schedule, data, n) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::sm4::VG_SM4_ECB_ENCRYPT_SM4_FEATURES) }
+            || cpu.contains(crate::sm4::VG_SM4_ECB_ENCRYPT_SM4_FEATURES)
+        {
+            return crate::sm4::vg_sm4_ecb_encrypt_sm4;
+        }
+        crate::sm4::vg_sm4_ecb_encrypt
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, data, n) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, data, n) }
 }
 
 /// SM4 ECB decryption (draft-ribose-cfrg-sm4-10 §7.2, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_sm4_expand_key`: the encryption procedure with the round keys in reverse order. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Sm4.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
 ///
-/// It runs `vg_sm4_ecb_decrypt`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm4_ecb_decrypt_sm4` if the CPU supports its features (`VG_SM4_ECB_DECRYPT_SM4_FEATURES`); or else `vg_sm4_ecb_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -55,6 +84,35 @@ pub unsafe fn vg_sm4_ecb_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, sched
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm4_ecb_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sm4::vg_sm4_ecb_decrypt(schedule, data, n) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::sm4::VG_SM4_ECB_DECRYPT_SM4_FEATURES) }
+            || cpu.contains(crate::sm4::VG_SM4_ECB_DECRYPT_SM4_FEATURES)
+        {
+            return crate::sm4::vg_sm4_ecb_decrypt_sm4;
+        }
+        crate::sm4::vg_sm4_ecb_decrypt
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(schedule, data, n) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(schedule, data, n) }
 }

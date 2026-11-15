@@ -866,6 +866,316 @@ vg_sm4_expand_key:
 	ret
 	.p2align 6
 
+vg_sm4_ecb_encrypt_sm4:
+	ldr q16, [x0, #0]
+	ldr q17, [x0, #16]
+	ldr q18, [x0, #32]
+	ldr q19, [x0, #48]
+	ldr q20, [x0, #64]
+	ldr q21, [x0, #80]
+	ldr q22, [x0, #96]
+	ldr q23, [x0, #112]
+	lsr x13, x2, #3
+	cbz x13, 20f
+22:
+	ldr q0, [x1, #0]
+	ldr q1, [x1, #16]
+	ldr q2, [x1, #32]
+	ldr q3, [x1, #48]
+	ldr q4, [x1, #64]
+	ldr q5, [x1, #80]
+	ldr q6, [x1, #96]
+	ldr q7, [x1, #112]
+	rev32 v0.16b, v0.16b
+	rev32 v1.16b, v1.16b
+	rev32 v2.16b, v2.16b
+	rev32 v3.16b, v3.16b
+	rev32 v4.16b, v4.16b
+	rev32 v5.16b, v5.16b
+	rev32 v6.16b, v6.16b
+	rev32 v7.16b, v7.16b
+	sm4e v0.4s, v16.4s
+	sm4e v1.4s, v16.4s
+	sm4e v2.4s, v16.4s
+	sm4e v3.4s, v16.4s
+	sm4e v4.4s, v16.4s
+	sm4e v5.4s, v16.4s
+	sm4e v6.4s, v16.4s
+	sm4e v7.4s, v16.4s
+	sm4e v0.4s, v17.4s
+	sm4e v1.4s, v17.4s
+	sm4e v2.4s, v17.4s
+	sm4e v3.4s, v17.4s
+	sm4e v4.4s, v17.4s
+	sm4e v5.4s, v17.4s
+	sm4e v6.4s, v17.4s
+	sm4e v7.4s, v17.4s
+	sm4e v0.4s, v18.4s
+	sm4e v1.4s, v18.4s
+	sm4e v2.4s, v18.4s
+	sm4e v3.4s, v18.4s
+	sm4e v4.4s, v18.4s
+	sm4e v5.4s, v18.4s
+	sm4e v6.4s, v18.4s
+	sm4e v7.4s, v18.4s
+	sm4e v0.4s, v19.4s
+	sm4e v1.4s, v19.4s
+	sm4e v2.4s, v19.4s
+	sm4e v3.4s, v19.4s
+	sm4e v4.4s, v19.4s
+	sm4e v5.4s, v19.4s
+	sm4e v6.4s, v19.4s
+	sm4e v7.4s, v19.4s
+	sm4e v0.4s, v20.4s
+	sm4e v1.4s, v20.4s
+	sm4e v2.4s, v20.4s
+	sm4e v3.4s, v20.4s
+	sm4e v4.4s, v20.4s
+	sm4e v5.4s, v20.4s
+	sm4e v6.4s, v20.4s
+	sm4e v7.4s, v20.4s
+	sm4e v0.4s, v21.4s
+	sm4e v1.4s, v21.4s
+	sm4e v2.4s, v21.4s
+	sm4e v3.4s, v21.4s
+	sm4e v4.4s, v21.4s
+	sm4e v5.4s, v21.4s
+	sm4e v6.4s, v21.4s
+	sm4e v7.4s, v21.4s
+	sm4e v0.4s, v22.4s
+	sm4e v1.4s, v22.4s
+	sm4e v2.4s, v22.4s
+	sm4e v3.4s, v22.4s
+	sm4e v4.4s, v22.4s
+	sm4e v5.4s, v22.4s
+	sm4e v6.4s, v22.4s
+	sm4e v7.4s, v22.4s
+	sm4e v0.4s, v23.4s
+	sm4e v1.4s, v23.4s
+	sm4e v2.4s, v23.4s
+	sm4e v3.4s, v23.4s
+	sm4e v4.4s, v23.4s
+	sm4e v5.4s, v23.4s
+	sm4e v6.4s, v23.4s
+	sm4e v7.4s, v23.4s
+	rev64 v0.16b, v0.16b
+	ext v0.16b, v0.16b, v0.16b, #8
+	rev64 v1.16b, v1.16b
+	ext v1.16b, v1.16b, v1.16b, #8
+	rev64 v2.16b, v2.16b
+	ext v2.16b, v2.16b, v2.16b, #8
+	rev64 v3.16b, v3.16b
+	ext v3.16b, v3.16b, v3.16b, #8
+	rev64 v4.16b, v4.16b
+	ext v4.16b, v4.16b, v4.16b, #8
+	rev64 v5.16b, v5.16b
+	ext v5.16b, v5.16b, v5.16b, #8
+	rev64 v6.16b, v6.16b
+	ext v6.16b, v6.16b, v6.16b, #8
+	rev64 v7.16b, v7.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	str q0, [x1, #0]
+	str q1, [x1, #16]
+	str q2, [x1, #32]
+	str q3, [x1, #48]
+	str q4, [x1, #64]
+	str q5, [x1, #80]
+	str q6, [x1, #96]
+	str q7, [x1, #112]
+	add x1, x1, #128
+	sub x2, x2, #8
+	lsr x13, x2, #3
+	cbnz x13, 22b
+	b 21f
+20:
+21:
+	cbz x2, 23f
+25:
+	ldr q0, [x1, #0]
+	rev32 v0.16b, v0.16b
+	sm4e v0.4s, v16.4s
+	sm4e v0.4s, v17.4s
+	sm4e v0.4s, v18.4s
+	sm4e v0.4s, v19.4s
+	sm4e v0.4s, v20.4s
+	sm4e v0.4s, v21.4s
+	sm4e v0.4s, v22.4s
+	sm4e v0.4s, v23.4s
+	rev64 v0.16b, v0.16b
+	ext v0.16b, v0.16b, v0.16b, #8
+	str q0, [x1, #0]
+	add x1, x1, #16
+	sub x2, x2, #1
+	cbnz x2, 25b
+	b 24f
+23:
+24:
+	ret
+	.p2align 6
+
+vg_sm4_ecb_decrypt_sm4:
+	ldr q16, [x0, #112]
+	rev64 v16.4s, v16.4s
+	ext v16.16b, v16.16b, v16.16b, #8
+	ldr q17, [x0, #96]
+	rev64 v17.4s, v17.4s
+	ext v17.16b, v17.16b, v17.16b, #8
+	ldr q18, [x0, #80]
+	rev64 v18.4s, v18.4s
+	ext v18.16b, v18.16b, v18.16b, #8
+	ldr q19, [x0, #64]
+	rev64 v19.4s, v19.4s
+	ext v19.16b, v19.16b, v19.16b, #8
+	ldr q20, [x0, #48]
+	rev64 v20.4s, v20.4s
+	ext v20.16b, v20.16b, v20.16b, #8
+	ldr q21, [x0, #32]
+	rev64 v21.4s, v21.4s
+	ext v21.16b, v21.16b, v21.16b, #8
+	ldr q22, [x0, #16]
+	rev64 v22.4s, v22.4s
+	ext v22.16b, v22.16b, v22.16b, #8
+	ldr q23, [x0, #0]
+	rev64 v23.4s, v23.4s
+	ext v23.16b, v23.16b, v23.16b, #8
+	lsr x13, x2, #3
+	cbz x13, 20f
+22:
+	ldr q0, [x1, #0]
+	ldr q1, [x1, #16]
+	ldr q2, [x1, #32]
+	ldr q3, [x1, #48]
+	ldr q4, [x1, #64]
+	ldr q5, [x1, #80]
+	ldr q6, [x1, #96]
+	ldr q7, [x1, #112]
+	rev32 v0.16b, v0.16b
+	rev32 v1.16b, v1.16b
+	rev32 v2.16b, v2.16b
+	rev32 v3.16b, v3.16b
+	rev32 v4.16b, v4.16b
+	rev32 v5.16b, v5.16b
+	rev32 v6.16b, v6.16b
+	rev32 v7.16b, v7.16b
+	sm4e v0.4s, v16.4s
+	sm4e v1.4s, v16.4s
+	sm4e v2.4s, v16.4s
+	sm4e v3.4s, v16.4s
+	sm4e v4.4s, v16.4s
+	sm4e v5.4s, v16.4s
+	sm4e v6.4s, v16.4s
+	sm4e v7.4s, v16.4s
+	sm4e v0.4s, v17.4s
+	sm4e v1.4s, v17.4s
+	sm4e v2.4s, v17.4s
+	sm4e v3.4s, v17.4s
+	sm4e v4.4s, v17.4s
+	sm4e v5.4s, v17.4s
+	sm4e v6.4s, v17.4s
+	sm4e v7.4s, v17.4s
+	sm4e v0.4s, v18.4s
+	sm4e v1.4s, v18.4s
+	sm4e v2.4s, v18.4s
+	sm4e v3.4s, v18.4s
+	sm4e v4.4s, v18.4s
+	sm4e v5.4s, v18.4s
+	sm4e v6.4s, v18.4s
+	sm4e v7.4s, v18.4s
+	sm4e v0.4s, v19.4s
+	sm4e v1.4s, v19.4s
+	sm4e v2.4s, v19.4s
+	sm4e v3.4s, v19.4s
+	sm4e v4.4s, v19.4s
+	sm4e v5.4s, v19.4s
+	sm4e v6.4s, v19.4s
+	sm4e v7.4s, v19.4s
+	sm4e v0.4s, v20.4s
+	sm4e v1.4s, v20.4s
+	sm4e v2.4s, v20.4s
+	sm4e v3.4s, v20.4s
+	sm4e v4.4s, v20.4s
+	sm4e v5.4s, v20.4s
+	sm4e v6.4s, v20.4s
+	sm4e v7.4s, v20.4s
+	sm4e v0.4s, v21.4s
+	sm4e v1.4s, v21.4s
+	sm4e v2.4s, v21.4s
+	sm4e v3.4s, v21.4s
+	sm4e v4.4s, v21.4s
+	sm4e v5.4s, v21.4s
+	sm4e v6.4s, v21.4s
+	sm4e v7.4s, v21.4s
+	sm4e v0.4s, v22.4s
+	sm4e v1.4s, v22.4s
+	sm4e v2.4s, v22.4s
+	sm4e v3.4s, v22.4s
+	sm4e v4.4s, v22.4s
+	sm4e v5.4s, v22.4s
+	sm4e v6.4s, v22.4s
+	sm4e v7.4s, v22.4s
+	sm4e v0.4s, v23.4s
+	sm4e v1.4s, v23.4s
+	sm4e v2.4s, v23.4s
+	sm4e v3.4s, v23.4s
+	sm4e v4.4s, v23.4s
+	sm4e v5.4s, v23.4s
+	sm4e v6.4s, v23.4s
+	sm4e v7.4s, v23.4s
+	rev64 v0.16b, v0.16b
+	ext v0.16b, v0.16b, v0.16b, #8
+	rev64 v1.16b, v1.16b
+	ext v1.16b, v1.16b, v1.16b, #8
+	rev64 v2.16b, v2.16b
+	ext v2.16b, v2.16b, v2.16b, #8
+	rev64 v3.16b, v3.16b
+	ext v3.16b, v3.16b, v3.16b, #8
+	rev64 v4.16b, v4.16b
+	ext v4.16b, v4.16b, v4.16b, #8
+	rev64 v5.16b, v5.16b
+	ext v5.16b, v5.16b, v5.16b, #8
+	rev64 v6.16b, v6.16b
+	ext v6.16b, v6.16b, v6.16b, #8
+	rev64 v7.16b, v7.16b
+	ext v7.16b, v7.16b, v7.16b, #8
+	str q0, [x1, #0]
+	str q1, [x1, #16]
+	str q2, [x1, #32]
+	str q3, [x1, #48]
+	str q4, [x1, #64]
+	str q5, [x1, #80]
+	str q6, [x1, #96]
+	str q7, [x1, #112]
+	add x1, x1, #128
+	sub x2, x2, #8
+	lsr x13, x2, #3
+	cbnz x13, 22b
+	b 21f
+20:
+21:
+	cbz x2, 23f
+25:
+	ldr q0, [x1, #0]
+	rev32 v0.16b, v0.16b
+	sm4e v0.4s, v16.4s
+	sm4e v0.4s, v17.4s
+	sm4e v0.4s, v18.4s
+	sm4e v0.4s, v19.4s
+	sm4e v0.4s, v20.4s
+	sm4e v0.4s, v21.4s
+	sm4e v0.4s, v22.4s
+	sm4e v0.4s, v23.4s
+	rev64 v0.16b, v0.16b
+	ext v0.16b, v0.16b, v0.16b, #8
+	str q0, [x1, #0]
+	add x1, x1, #16
+	sub x2, x2, #1
+	cbnz x2, 25b
+	b 24f
+23:
+24:
+	ret
+	.p2align 6
+
 vg_sm4_ecb_encrypt:
 	str x30, [sp, #-16]!
 	movz x3, #0, lsl #0

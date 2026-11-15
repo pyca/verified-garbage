@@ -1365,7 +1365,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SM4</td>
 
 <td>✅</td>
 
@@ -1551,7 +1551,7 @@ yours to keep:
 
 <td>✅ PCLMULQDQ, VPCLMULQDQ, AVX2</td>
 
-<td>✅ AES, PMULL</td>
+<td>✅ AES, PMULL, SM4</td>
 
 <td>✅</td>
 

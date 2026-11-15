@@ -128,6 +128,112 @@ pub(crate) unsafe extern "C" fn vg_sm4_expand_key(key: *const [u8; 16], schedule
     )
 }
 
+/// The CPU features `vg_sm4_ecb_encrypt_sm4` requires (`Artifact.features`).
+pub const VG_SM4_ECB_ENCRYPT_SM4_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SM4);
+
+/// SM4 ECB encryption (draft-ribose-cfrg-sm4-10 §7.1, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_sm4_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Sm4.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sm4` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_ecb_encrypt_sm4(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+    core::arch::naked_asm!(
+        r".inst 0x3dc00010,0x3dc00411,0x3dc00812,0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17
+.inst 0xd343fc4d
+cbz x13, 20f
+22:
+.inst 0x3dc00020,0x3dc00421,0x3dc00822,0x3dc00c23,0x3dc01024,0x3dc01425,0x3dc01826,0x3dc01c27
+.inst 0x6e200800,0x6e200821,0x6e200842,0x6e200863,0x6e200884,0x6e2008a5,0x6e2008c6,0x6e2008e7
+.inst 0xcec08600,0xcec08601,0xcec08602,0xcec08603,0xcec08604,0xcec08605,0xcec08606,0xcec08607
+.inst 0xcec08620,0xcec08621,0xcec08622,0xcec08623,0xcec08624,0xcec08625,0xcec08626,0xcec08627
+.inst 0xcec08640,0xcec08641,0xcec08642,0xcec08643,0xcec08644,0xcec08645,0xcec08646,0xcec08647
+.inst 0xcec08660,0xcec08661,0xcec08662,0xcec08663,0xcec08664,0xcec08665,0xcec08666,0xcec08667
+.inst 0xcec08680,0xcec08681,0xcec08682,0xcec08683,0xcec08684,0xcec08685,0xcec08686,0xcec08687
+.inst 0xcec086a0,0xcec086a1,0xcec086a2,0xcec086a3,0xcec086a4,0xcec086a5,0xcec086a6,0xcec086a7
+.inst 0xcec086c0,0xcec086c1,0xcec086c2,0xcec086c3,0xcec086c4,0xcec086c5,0xcec086c6,0xcec086c7
+.inst 0xcec086e0,0xcec086e1,0xcec086e2,0xcec086e3,0xcec086e4,0xcec086e5,0xcec086e6,0xcec086e7
+.inst 0x4e200800,0x6e004000,0x4e200821,0x6e014021,0x4e200842,0x6e024042,0x4e200863,0x6e034063
+.inst 0x4e200884,0x6e044084,0x4e2008a5,0x6e0540a5,0x4e2008c6,0x6e0640c6,0x4e2008e7,0x6e0740e7
+.inst 0x3d800020,0x3d800421,0x3d800822,0x3d800c23,0x3d801024,0x3d801425,0x3d801826,0x3d801c27
+.inst 0x91020021,0xd1002042,0xd343fc4d
+cbnz x13, 22b
+b 21f
+20:
+21:
+cbz x2, 23f
+25:
+.inst 0x3dc00020,0x6e200800,0xcec08600,0xcec08620,0xcec08640,0xcec08660,0xcec08680,0xcec086a0
+.inst 0xcec086c0,0xcec086e0,0x4e200800,0x6e004000,0x3d800020,0x91004021,0xd1000442
+cbnz x2, 25b
+b 24f
+23:
+24:
+.inst 0xd65f03c0
+.p2align 6",
+    )
+}
+
+/// The CPU features `vg_sm4_ecb_decrypt_sm4` requires (`Artifact.features`).
+pub const VG_SM4_ECB_DECRYPT_SM4_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SM4);
+
+/// SM4 ECB decryption (draft-ribose-cfrg-sm4-10 §7.2, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_sm4_expand_key`: the encryption procedure with the round keys in reverse order. No padding is added or removed. For `n = 0`, no data is transformed.
+///
+/// Contract: `VG.Spec.Sm4.ecbDecryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `data` must not overlap `schedule` (distinct Rust objects never do).
+/// * Neither `schedule` nor `data` may wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sm4` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_ecb_decrypt_sm4(schedule: *const [u8; 128], data: *mut [u8; 16], n: usize) {
+    core::arch::naked_asm!(
+        r".inst 0x3dc01c10,0x4ea00a10,0x6e104210,0x3dc01811,0x4ea00a31,0x6e114231,0x3dc01412,0x4ea00a52
+.inst 0x6e124252,0x3dc01013,0x4ea00a73,0x6e134273,0x3dc00c14,0x4ea00a94,0x6e144294,0x3dc00815
+.inst 0x4ea00ab5,0x6e1542b5,0x3dc00416,0x4ea00ad6,0x6e1642d6,0x3dc00017,0x4ea00af7,0x6e1742f7
+.inst 0xd343fc4d
+cbz x13, 20f
+22:
+.inst 0x3dc00020,0x3dc00421,0x3dc00822,0x3dc00c23,0x3dc01024,0x3dc01425,0x3dc01826,0x3dc01c27
+.inst 0x6e200800,0x6e200821,0x6e200842,0x6e200863,0x6e200884,0x6e2008a5,0x6e2008c6,0x6e2008e7
+.inst 0xcec08600,0xcec08601,0xcec08602,0xcec08603,0xcec08604,0xcec08605,0xcec08606,0xcec08607
+.inst 0xcec08620,0xcec08621,0xcec08622,0xcec08623,0xcec08624,0xcec08625,0xcec08626,0xcec08627
+.inst 0xcec08640,0xcec08641,0xcec08642,0xcec08643,0xcec08644,0xcec08645,0xcec08646,0xcec08647
+.inst 0xcec08660,0xcec08661,0xcec08662,0xcec08663,0xcec08664,0xcec08665,0xcec08666,0xcec08667
+.inst 0xcec08680,0xcec08681,0xcec08682,0xcec08683,0xcec08684,0xcec08685,0xcec08686,0xcec08687
+.inst 0xcec086a0,0xcec086a1,0xcec086a2,0xcec086a3,0xcec086a4,0xcec086a5,0xcec086a6,0xcec086a7
+.inst 0xcec086c0,0xcec086c1,0xcec086c2,0xcec086c3,0xcec086c4,0xcec086c5,0xcec086c6,0xcec086c7
+.inst 0xcec086e0,0xcec086e1,0xcec086e2,0xcec086e3,0xcec086e4,0xcec086e5,0xcec086e6,0xcec086e7
+.inst 0x4e200800,0x6e004000,0x4e200821,0x6e014021,0x4e200842,0x6e024042,0x4e200863,0x6e034063
+.inst 0x4e200884,0x6e044084,0x4e2008a5,0x6e0540a5,0x4e2008c6,0x6e0640c6,0x4e2008e7,0x6e0740e7
+.inst 0x3d800020,0x3d800421,0x3d800822,0x3d800c23,0x3d801024,0x3d801425,0x3d801826,0x3d801c27
+.inst 0x91020021,0xd1002042,0xd343fc4d
+cbnz x13, 22b
+b 21f
+20:
+21:
+cbz x2, 23f
+25:
+.inst 0x3dc00020,0x6e200800,0xcec08600,0xcec08620,0xcec08640,0xcec08660,0xcec08680,0xcec086a0
+.inst 0xcec086c0,0xcec086e0,0x4e200800,0x6e004000,0x3d800020,0x91004021,0xd1000442
+cbnz x2, 25b
+b 24f
+23:
+24:
+.inst 0xd65f03c0
+.p2align 6",
+    )
+}
+
 /// SM4 ECB encryption (draft-ribose-cfrg-sm4-10 §7.1, SP 800-38A §6.1) of `n` complete 16-byte blocks at `data`, in place, under the schedule written by `vg_sm4_expand_key`. No padding is added or removed. For `n = 0`, no data is transformed.
 ///
 /// Contract: `VG.Spec.Sm4.ecbEncryptContract`. Constant time: only pointers and `n` may affect timing, not the schedule or data, including S-box inputs.

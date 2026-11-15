@@ -498,6 +498,10 @@ GROUPS = {
             "rfc8032::signing_with_aliased_read_only_inputs",
         ],
     },
+    "sm4_ecb": {
+        "lib": ["cipher::sm4::ecb"],
+        "tests": ["draft_ribose_sm4::sm4_ecb"],
+    },
     "sm4_gcm": {
         "lib": ["aead::sm4_gcm"],
         "tests": ["rfc8998::sm4_gcm", "wycheproof::sm4_gcm"],
