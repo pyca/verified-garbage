@@ -83,6 +83,6 @@ theorem encCE768 : KpkeEnc.EncCE kem768 [10] [4] :=
 theorem kpkeEnc768Y_correct : ∀ s, (kpkeEncK kem768).pre s →
     ∃ t s', Exec isa (kpkeEnc kem768 .avx2 encryptMul16Y) s t s' ∧ abiPreserved s s' ∧ (kpkeEncK kem768).post s s' :=
   KpkeEnc.kpkeEnc_correct PrimsOk.avx2 encCE768 keWf768 encMul16Y3_correct (by lit_decide) (by lit_decide)
-    (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)
+    (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)
 
 end VG.Proof.MlKem.X86_64

@@ -318,14 +318,12 @@ theorem row16_ok (hk : k ≤ 4) (hk3 : k = 3 ∨ k = 4) {i : Nat} (hi : i < k) {
       (hI.trest i' (by omega_arith) h2)
 
 /-- `keygenMul16Y k` meets `kgMulK16 k`. -/
-theorem wp_all16 (hk3 : k = 3 ∨ k = 4)
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
-      (innerG KpkeMul.nttK16 (KpkeMul.rowKRs rowY16 k 512) Bodies.avx2 k) = true) :
+theorem wp_all16 (hk3 : k = 3 ∨ k = 4) :
     WP isa (keygenMul16Y k) s₀ fun s' => gprPreserved s₀ s' ∧ (kgMulK16 k).post s₀ s' :=
   wp_allg hp (by omega_arith) BodiesOk.avx2 (by omega_arith) (se := 512) (ra := 512) (rA := rowW k s₀) (vecAtW_length _ _ _ _)
     (fun _ hj _ hI => nttStep16_ok hp (by omega_arith) hj hI) (by simp [matAtW])
     (fun i hi => by simp [matAtW, List.getD_eq_getElem?_getD, List.getElem?_range hi])
-    (fun _ hi _ hR => row16_ok hp (by omega_arith) hk3 hi hR) hwo
+    (fun _ hi _ hR => row16_ok hp (by omega_arith) hk3 hi hR)
 
 end
 

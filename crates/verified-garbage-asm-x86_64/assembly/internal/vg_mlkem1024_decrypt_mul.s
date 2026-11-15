@@ -16,13 +16,6 @@ vg_mlkem1024_decrypt_mul:
 	mov r12, rsi
 	mov r13, rdx
 	mov r14d, 4
-	stmxcsr DWORD PTR [rbx+768]
-	mov r11d, DWORD PTR [rbx+768]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+772], eax
-	ldmxcsr DWORD PTR [rbx+772]
-	lfence
 	mov rcx, rbx
 	mov rdi, rbp
 	pxor xmm0, xmm0
@@ -1076,9 +1069,6 @@ vg_mlkem1024_decrypt_mul:
 	add rdx, 16
 	sub rcx, 1
 	jne 232b
-	lfence
-	mov DWORD PTR [rbx+768], r11d
-	ldmxcsr DWORD PTR [rbx+768]
 	mov rbp, QWORD PTR [rbx+3072]
 	mov r12, QWORD PTR [rbx+3080]
 	mov r13, QWORD PTR [rbx+3088]

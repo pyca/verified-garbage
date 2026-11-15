@@ -707,8 +707,7 @@ variable {k : Nat} {s₀ : State} (hp : (encMulK k).pre s₀) (hk : k ≤ 4) {B 
   (hB : BodiesOk B R T)
 include hp hk hB
 
-theorem wp_all (hk0 : 0 < k)
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp] (innerE B k) = true) :
+theorem wp_all (hk0 : 0 < k) :
     WP isa (encryptMul B k) s₀ fun s' => gprPreserved s₀ s' ∧ (encMulK k).post s₀ s' := by
   have hcw : cR (cP s₀) ∈ s₀.wr := by rw [hp.2.1]; simp
   unfold encryptMul
@@ -723,8 +722,6 @@ theorem wp_all (hk0 : 0 < k)
         apply BitVec.eq_of_toNat_eq
         rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
         omega_using [hk]) fun s1 ⟨h1bx, h1bp, h112, h113, h115, h114, h1sp, h1rd, h1wr, hm1⟩ => ?_
-  have h0 : InRegions s1.wr (cP s₀ + BitVec.ofNat 64 768) 4 := by rw [h1wr]; exact ⟨_, hcw, in_c (by decide)⟩
-  have h4 : InRegions s1.wr (cP s₀ + BitVec.ofNat 64 772) 4 := by rw [h1wr]; exact ⟨_, hcw, in_c (by decide)⟩
   -- the memory after the prologue
   have hsv : Spill.Saved s1.mem (cP s₀) s₀.gpr KpkeMul.slots := by
     rw [hm1]; exact Spill.saveMem_saved _ _ _ _ (by decide)
@@ -736,7 +733,7 @@ theorem wp_all (hk0 : 0 < k)
   have hmx : ∀ r ∈ [mxR (cP s₀)], (hiR (cP s₀)).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
-  refine WP.seq (WP.mono (withMxcsr_ok' (r := .rbx) (by decide) _ (by decide) h1bx h0 h4 hwo
+  refine WP.seq (WP.mono (noMx_ok (sP := cP s₀)
     (Q := fun s' => Base k s₀ s' ∧ ∀ i < k + 1, PolyIs s'.mem (uP s₀ + BitVec.ofNat 64 (1024 * i))
       (nttInv (accE k s₀ k i)))
     (fun s2 k2 f2 => ?_)) fun s5 ⟨s4, ⟨hb4, hacc4⟩, hf5, k5⟩ => ?_)

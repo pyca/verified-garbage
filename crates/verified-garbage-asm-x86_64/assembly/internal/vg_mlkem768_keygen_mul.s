@@ -17,13 +17,6 @@ vg_mlkem768_keygen_mul:
 	mov r13, rdx
 	mov r15, rcx
 	mov r14d, 3
-	stmxcsr DWORD PTR [rbx+768]
-	mov r11d, DWORD PTR [rbx+768]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+772], eax
-	ldmxcsr DWORD PTR [rbx+772]
-	lfence
 20:
 	mov rdi, r12
 	mov rsi, rbx
@@ -1513,9 +1506,6 @@ vg_mlkem768_keygen_mul:
 	add r15, 1024
 	sub r14, 1
 	jne 229b
-	lfence
-	mov DWORD PTR [rbx+768], r11d
-	ldmxcsr DWORD PTR [rbx+768]
 	mov rbp, QWORD PTR [rbx+3072]
 	mov r12, QWORD PTR [rbx+3080]
 	mov r13, QWORD PTR [rbx+3088]

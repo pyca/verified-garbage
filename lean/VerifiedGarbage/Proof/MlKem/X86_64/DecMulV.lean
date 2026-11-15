@@ -26,10 +26,9 @@ open VG VG.X86_64 VG.Impl.MlKem.X86_64
 open VG.Spec.MlKem
 
 theorem decMul_correct {B : Bodies} {R : AccRep} {T : TabRep} (hB : BodiesOk B R T) {k : Nat} (hk : k ≤ 4) (hk0 : 0 < k)
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14] (DecMul.inner B) = true)
     (hctl : ctlOk (decryptMul B k) = true) (s : State) (hs : (decMulK k).pre s) :
     ∃ t s', Exec isa (decryptMul B k) s t s' ∧ abiPreserved s s' ∧ (decMulK k).post s s' := by
-  obtain ⟨t, s', he, hg, hpost⟩ := DecMul.wp_all hs hk hB hk0 hwo
+  obtain ⟨t, s', he, hg, hpost⟩ := DecMul.wp_all hs hk hB hk0
   exact ⟨t, s', he, abiPreserved_of_ctl hctl he hg, hpost⟩
 
 theorem decMul_agree {k : Nat} (s₁ s₂ : State) (_ : (decMulK k).pre s₁) (_ : (decMulK k).pre s₂)
@@ -48,18 +47,14 @@ theorem decMulSse4_ct : ConstantTime isa (decMulK 4).pre (decMulK 4).pub (decryp
 /-! The facts about the code, each checked once (on the literals of `Lit.lean`): the registers
 the inlined code writes, which depends only on the backend, and the loads of MXCSR. -/
 
-theorem decMulSse_wo :
-    writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14] (DecMul.inner .sse) = true :=
-  writesOnly_of (by lit_decide)
-
 theorem decMulSse3_ctl : ctlOk (decryptMul .sse 3) = true := by lit_decide
 theorem decMulSse4_ctl : ctlOk (decryptMul .sse 4) = true := by lit_decide
 theorem decMulSse3_correct : ∀ s, (decMulK 3).pre s →
     ∃ t s', Exec isa (decryptMul .sse 3) s t s' ∧ abiPreserved s s' ∧ (decMulK 3).post s s' :=
-  decMul_correct BodiesOk.sse (by decide) (by decide) decMulSse_wo decMulSse3_ctl
+  decMul_correct BodiesOk.sse (by decide) (by decide) decMulSse3_ctl
 
 theorem decMulSse4_correct : ∀ s, (decMulK 4).pre s →
     ∃ t s', Exec isa (decryptMul .sse 4) s t s' ∧ abiPreserved s s' ∧ (decMulK 4).post s s' :=
-  decMul_correct BodiesOk.sse (by decide) (by decide) decMulSse_wo decMulSse4_ctl
+  decMul_correct BodiesOk.sse (by decide) (by decide) decMulSse4_ctl
 
 end VG.Proof.MlKem.X86_64

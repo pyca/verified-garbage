@@ -19,11 +19,14 @@ time, as signed 16-bit words of SSE2 registers, with `q` in the words of
   then `vcadd`, from `[0, 2q)` to `[0, q)`.
 
 `pmullw` and `pmulhw` have data-dependent timing on processors with MCDT
-unless MXCSR is `0x1FBF` (see `TCB/X86_64/Isa.lean`): `withMxcsr` saves the
-caller's MXCSR in `r11` (its reserved bits 31:16, which are 0, cleared),
-loads `0x1FBF` from `scratch + off + 4`, runs its code, which never writes
-`r11`, and loads the saved value back through `scratch + off`, between
-`lfence`s, with `scratch` in `r`.
+unless MXCSR is `0x1FBF` (see `TCB/X86_64/Isa.lean`): ML-KEM's code sets no
+MXCSR of its own, as the dispatcher of every x86-64 ML-KEM function runs
+`vg_mcdt_enter` first, which leaves MXCSR `0x1FBF` for the whole call
+("Dispatchers" in `TCB/Rust.lean`). `withMxcsr` saves the caller's MXCSR in
+`r11` (its reserved bits 31:16, which are 0, cleared), loads `0x1FBF` from
+`scratch + off + 4`, runs its code, which never writes `r11`, and loads the
+saved value back through `scratch + off`, between `lfence`s, with `scratch`
+in `r`: ML-DSA's arithmetic still runs inside it.
 
 A polynomial is stored as 256 `u32`s, and in the working space as 256
 words (`vpack`, `vunpack`): 32 bytes of the former at `[a]` are the 16 bytes

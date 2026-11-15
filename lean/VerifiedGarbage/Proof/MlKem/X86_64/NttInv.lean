@@ -73,8 +73,7 @@ theorem nttInv_correct (s : State) (hs : (inPlaceK nttInv).pre s) :
         Frame [pR (s.gpr .rdi), pR (s.gpr .rsi)] s.mem s2.mem) ∧ Frame [mxR (s.gpr .rsi)] s2.mem s'.mem ∧
       Keep [] s2 s' := by
     unfold Impl.MlKem.X86_64.nttInv
-    refine withMxcsr_ok (by decide) [.rax, .rcx, .rdx, .r8, .r9] (by decide) rfl hw ?_ fun s1 k1 f1 => ?_
-    · decide +kernel
+    refine noMx_ok (sP := s.gpr .rsi) fun s1 k1 f1 => ?_
     have hdi1 : s1.gpr .rdi = s.gpr .rdi := k1.gpr (by decide)
     have hsi1 : s1.gpr .rsi = s.gpr .rsi := k1.gpr (by decide)
     have hF1 : PolyIs s1.mem (s.gpr .rdi) (polyAt s.mem (s.gpr .rdi)) :=
