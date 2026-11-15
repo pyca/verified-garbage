@@ -304,6 +304,24 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   * *A macro every proof calls.* `oomega` took a 23-fact conjunction apart
     with `obtain` at each of its 225 uses: `have := offsO; omega_arith`
     reads it as it is.
+  * *Alternatives that fail at every node.* A `repeat' (first | …)` over a
+    tree of code that begins with the callees' lemmas, each by `exact`,
+    elaborates every one that does not fit at every node, and an `exact`
+    that does not fit looks for a coercion first (about 1,300 in one
+    theorem): closed code and code that is a `seq`, `ite` or `call` as it
+    stands come first, and the lemmas are applied (`s16_xd`), or each is
+    tried only where the code's head is its function (`code_head`,
+    `MlKem/AArch64/CallWipe`).
+  * *Every hypothesis simplified once per goal.* `sig_and_intros` and then
+    `all_goals simp only […] at *`: simplify once, before the goals are
+    split. `split <;> split <;> omega_arith` among a hundred hypotheses,
+    whose discharger scans them for every `if`: a lemma about the `if`s
+    (`ite3_lt`), applied.
+  * *Two postconditions that match on the same computation.* Where the
+    kernel compares a `match decrypt … with` with a term that only unfolds
+    to it, it evaluates `decrypt` on symbolic bytes (52,000 unfolds each
+    time): match on a variable (`CorePostOf`) and unfold the contract's
+    postcondition by `rw`.
 * **Numeral exponents:** `2 ^ 64` elaborates in time quadratic in the number
   of numeral exponents in a statement; `Proof/Framework/PowLit.lean`'s macro
   elaborates it as `2 ^ (64 : Nat)` (the same term). A module with numeral

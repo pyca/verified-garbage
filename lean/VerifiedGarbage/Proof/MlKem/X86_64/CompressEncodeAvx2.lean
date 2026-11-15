@@ -266,10 +266,16 @@ theorem pack10 {R₀ R₁ : BitVec 128} {a b : Nat → Nat} (ha : ∀ j < 4, (dw
   have a0 := ha' 0 (by decide); have a1 := ha' 1 (by decide); have a2 := ha' 2 (by decide)
   have a3 := ha' 3 (by decide); have b0 := hb' 0 (by decide); have b1 := hb' 1 (by decide)
   have b2 := hb' 2 (by decide); have b3 := hb' 3 (by decide)
-  simp only [W, Nat.reduceMul, Nat.reducePow] at h₀ h₁ ⊢
+  -- The lanes' values as two numbers below `2^40`: `omega` on each byte then has two unknowns, not eight.
+  have hA : W 10 a < 2 ^ 40 := by simp only [W, Nat.reduceMul, Nat.reducePow]; omega_arith
+  have hB : W 10 b < 2 ^ 40 := by simp only [W, Nat.reduceMul, Nat.reducePow]; omega_arith
+  generalize W 10 a = A at h₀ hA ⊢
+  generalize W 10 b = B at h₁ hB ⊢
   rw [e₀, e₁, ea, eb]
+  have hlt : A + 2 ^ 40 * B < 2 ^ 128 := by omega_using [hA, hB]
   refine ext_byte fun t ht => ?_
-  simp only [XBinOp.eval, byte_or, byte_ofBytes _ ht, toNat_byte (BitVec.ofNat 128 _), BitVec.toNat_ofNat]
+  simp only [XBinOp.eval, byte_or, byte_ofBytes _ ht, toNat_byte (BitVec.ofNat 128 _), BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt hlt]
   rcases (by omega_arith : t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3 ∨ t = 4 ∨ t = 5 ∨ t = 6 ∨ t = 7 ∨ t = 8 ∨ t = 9 ∨ t = 10 ∨
     t = 11 ∨ t = 12 ∨ t = 13 ∨ t = 14 ∨ t = 15) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
@@ -278,7 +284,7 @@ theorem pack10 {R₀ R₁ : BitVec 128} {a b : Nat → Nat} (ha : ∀ j < 4, (dw
     toNat_byte_lo _ (show (1 : Nat) < 8 by decide), toNat_byte_lo _ (show (2 : Nat) < 8 by decide),
     toNat_byte_lo _ (show (3 : Nat) < 8 by decide), toNat_byte_lo _ (show (4 : Nat) < 8 by decide), h₀, h₁,
     show (0 : BitVec 8).toNat = 0 from rfl, Nat.reduceMul, Nat.reducePow, Nat.pow_zero, Nat.div_one] <;>
-  omega_arith
+  omega_using [hA, hB]
 
 /-- The two lanes of `d = 4` packed and combined: the eight values packed. -/
 theorem pack4 {R₀ R₁ : BitVec 128} {a b : Nat → Nat} (ha : ∀ j < 4, (dword R₀ j).toNat = a j)
@@ -299,15 +305,29 @@ theorem pack4 {R₀ R₁ : BitVec 128} {a b : Nat → Nat} (ha : ∀ j < 4, (dwo
       ofBytes fun i => if i = 2 then byte C₁ 0 else if i = 3 then byte C₁ 8 else 0 := by
     simp only [XBinOp.eval, ofBytes]; rfl
   rw [ea, eb]
-  simp only [W, Nat.reduceMul, Nat.reducePow] at hA0 hA2 hB0 hB2 ⊢
+  -- Each lane's doublewords as a number below `2^8`: `omega` on each byte then has four unknowns, not eight.
+  have hP0 : a 0 + a 1 * 2 ^ 4 < 2 ^ 8 := by omega_arith
+  have hP2 : a 2 + a 3 * 2 ^ 4 < 2 ^ 8 := by omega_arith
+  have hQ0 : b 0 + b 1 * 2 ^ 4 < 2 ^ 8 := by omega_arith
+  have hQ2 : b 2 + b 3 * 2 ^ 4 < 2 ^ 8 := by omega_arith
+  have eW : W 4 a + 2 ^ 16 * W 4 b = (a 0 + a 1 * 2 ^ 4) + 2 ^ 8 * (a 2 + a 3 * 2 ^ 4) +
+      2 ^ 16 * (b 0 + b 1 * 2 ^ 4) + 2 ^ 24 * (b 2 + b 3 * 2 ^ 4) := by
+    simp only [W, Nat.reduceMul, Nat.reducePow]; omega_arith
+  rw [eW]
+  generalize a 0 + a 1 * 2 ^ 4 = P0 at hA0 hP0 ⊢
+  generalize a 2 + a 3 * 2 ^ 4 = P2 at hA2 hP2 ⊢
+  generalize b 0 + b 1 * 2 ^ 4 = Q0 at hB0 hQ0 ⊢
+  generalize b 2 + b 3 * 2 ^ 4 = Q2 at hB2 hQ2 ⊢
+  have hlt : P0 + 2 ^ 8 * P2 + 2 ^ 16 * Q0 + 2 ^ 24 * Q2 < 2 ^ 128 := by omega_using [hP0, hP2, hQ0, hQ2]
   refine ext_byte fun t ht => ?_
-  simp only [XBinOp.eval, byte_or, byte_ofBytes _ ht, toNat_byte (BitVec.ofNat 128 _), BitVec.toNat_ofNat]
+  simp only [XBinOp.eval, byte_or, byte_ofBytes _ ht, toNat_byte (BitVec.ofNat 128 _), BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt hlt]
   rcases (by omega_arith : t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3 ∨ t = 4 ∨ t = 5 ∨ t = 6 ∨ t = 7 ∨ t = 8 ∨ t = 9 ∨ t = 10 ∨
     t = 11 ∨ t = 12 ∨ t = 13 ∨ t = 14 ∨ t = 15) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
   simp only [Nat.reduceEqDiff, ↓reduceIte, BitVec.toNat_or, Nat.or_zero, Nat.zero_or, toNat_byte0, toNat_byte8, hA0, hA2,
     hB0, hB2, show (0 : BitVec 8).toNat = 0 from rfl, Nat.reduceMul, Nat.reducePow, Nat.pow_zero, Nat.div_one] <;>
-  omega_arith
+  omega_using [hP0, hP2, hQ0, hQ2]
 
 /-! ## The code of a group -/
 

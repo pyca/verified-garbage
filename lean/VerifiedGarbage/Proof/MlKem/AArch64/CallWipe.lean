@@ -966,20 +966,40 @@ elab "code_whnf" : tactic => withMainContext do
     throwError "not a `block`, `seq`, `ite`, `loop` or `call`"
   replaceMainGoal [← g.replaceTargetDefEq (← mkEq (.app f x') rhs)]
 
+open Lean Meta Elab Tactic in
+/-- Fails unless the code `X` of a goal `adLe k X = true` is an application of
+the constant `c`: a test that costs nothing, before a lemma about `c` is
+elaborated against the goal. -/
+elab "code_head " c:ident : tactic => withMainContext do
+  let n ← realizeGlobalConstNoOverloadWithInfo c
+  let t := (← instantiateMVars (← getMainTarget)).consumeMData
+  let some (_, lhs, _) := t.eq? | throwError "not an equation"
+  let .app _ x := lhs.consumeMData | throwError "not an application"
+  unless x.consumeMData.getAppFn.isConstOf n do
+    throwError "the code is not an application of {n}"
+
 /-- That code calling the sponge functions of the Keccak implementation `v`
 uses at most `k ≥ 1` units of stack (a goal `adLe k _ = true`): the kernel
-evaluates its parts that do not call `v`. -/
+evaluates its parts that do not call `v`. A sponge function's lemma is tried
+only on that function (`code_head`), and the code is put in weak head normal
+form once for its five shapes. -/
 macro "sponge_depth " v:ident : tactic =>
   `(tactic| repeat' (first
     | (closed_in $v; decide +kernel)
-    | with_reducible exact adLe_one (Proof.Sha3.AArch64.Permutation.absorb_depth $v) (by decide)
-    | with_reducible exact adLe_one (Proof.Sha3.AArch64.Permutation.pad_depth $v) (by decide)
-    | with_reducible exact adLe_one (Proof.Sha3.AArch64.Permutation.squeeze_depth $v) (by decide)
-    | with_reducible exact adLe_one (Proof.MlKem.AArch64.sampleNTTWith_fdepth $v) (by decide)
+    | (code_head Impl.Sha3.AArch64.Stream.absorbWith
+       with_reducible exact adLe_one (Proof.Sha3.AArch64.Permutation.absorb_depth $v) (by decide))
+    | (code_head Impl.Sha3.AArch64.Stream.padWith
+       with_reducible exact adLe_one (Proof.Sha3.AArch64.Permutation.pad_depth $v) (by decide))
+    | (code_head Impl.Sha3.AArch64.Stream.squeezeWith
+       with_reducible exact adLe_one (Proof.Sha3.AArch64.Permutation.squeeze_depth $v) (by decide))
+    | (code_head Impl.MlKem.AArch64.sampleNTTWith
+       with_reducible exact adLe_one (Proof.MlKem.AArch64.sampleNTTWith_fdepth $v) (by decide))
     | with_reducible exact adLe_perm $v
-    | (code_whnf; with_reducible exact adLe_block _)
-    | (code_whnf; with_reducible apply adLe_seq) | (code_whnf; with_reducible apply adLe_ite)
-    | (code_whnf; with_reducible apply adLe_loop) | (code_whnf; with_reducible apply adLe_call)))
+    | (code_whnf
+       first
+       | with_reducible exact adLe_block _
+       | with_reducible apply adLe_seq | with_reducible apply adLe_ite
+       | with_reducible apply adLe_loop | with_reducible apply adLe_call)))
 
 /-- At most one unit of stack: `16 * depth ≤ 16`. -/
 theorem depth16 {c : Prog isa} (h : adLe 1 c = true) : 16 * c.aarch64Depth ≤ 16 := by
