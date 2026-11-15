@@ -854,7 +854,13 @@ theorem stepsQ_ok {mid post : List Instr} {midRegs postRegs : List Reg} {Q Q' : 
   · rw [mem_write]; exact (to.outV o1).outD o2
   · exact (((tk.trans k1).trans k2).trans (Keep.write _ _ _)).mono fun q hq => by
       simp only [List.mem_append, List.mem_cons] at hq ⊢
-      rcases hq with (((h | h) | h) | h) | h <;> simp_all
+      rcases hq with ((h | h | h) | h) | h | h
+      · exact h
+      · exact .inr (.inl (.inl h))
+      · exact .inr (.inl (.inr h))
+      · exact .inr (.inr h)
+      · exact .inl h
+      · exact absurd h List.not_mem_nil
 
 /-- `stepsQ_ok` without the quotient: `V = r 2^63 + c` for `c < 2^63` and some
 `r < 2 n` congruent to `X` modulo `n`, changing only `V`'s `w + 1` words. -/
