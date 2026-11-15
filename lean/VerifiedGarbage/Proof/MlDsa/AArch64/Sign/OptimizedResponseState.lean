@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductInit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRawFinalLoop
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ProductPassMemory
@@ -68,7 +69,7 @@ theorem productAdvance_ok (s : State) :
   exact ⟨rfl,rfl,rfl,rfl,rfl⟩
 
 theorem productBlock_eq : VG.Impl.MlDsa.AArch64.Optimized.MultiplyInverse.firstBlock=
-    productFiveCode++productAdvance := by decide +kernel
+    productFiveCode++productAdvance := by kernel_rfl
 
 theorem productFirstLoop_ok {s : State}
     (ht : InverseTable.Words s.mem (s.gpr .x1))

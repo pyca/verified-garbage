@@ -113,7 +113,7 @@ theorem pinsB154 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
     (fun _ => rfl) fun _ _ h =>
     WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
       (.seq scalar (.seq (.block ptrR) (.seq (loadArr 5) (.seq (copy 1 24) (.seq (montOp 6 6 4)
-      (.seq (montOp 6 6 1) (.seq (montOp 5 5 4) (.seq (montOp 5 5 1) (.block ptrBuf)))))))))))))) (by decide +kernel)
+      (.seq (montOp 6 6 1) (.seq (montOp 5 5 4) (.seq (montOp 5 5 1) (.block ptrBuf)))))))))))))) (by kernel_rfl)
       (stQ5 (hsem _ _ h) fun _ I h4 _ => prod_pre I h4 (hsem _ _ h).vals.2.2.2.1 (hsem _ _ h).vals.1 fun _ B =>
         WP.mono (ptrBuf_ok B.base.scr B.base.ok B.base.regs) fun _ ⟨⟨b7, b8, m⟩, k'⟩ =>
           (fix_QB (B.stepM k' m)).app ⟨b7, b8, trivial⟩)
@@ -125,7 +125,7 @@ theorem pinsB157 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
     WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
       (.seq scalar (.seq (.block ptrR) (.seq (loadArr 5) (.seq (copy 1 24) (.seq (montOp 6 6 4)
       (.seq (montOp 6 6 1) (.seq (montOp 5 5 4) (.seq (montOp 5 5 1) (.seq (.block ptrBuf)
-      (.seq (storeBE 6) (.block ptrBuf2)))))))))))))))) (by decide +kernel)
+      (.seq (storeBE 6) (.block ptrBuf2)))))))))))))))) (by kernel_rfl)
       (stQ5 (hsem _ _ h) fun _ I h4 _ => prod_pre I h4 (hsem _ _ h).vals.2.2.2.1 (hsem _ _ h).vals.1 fun _ B => by
         have hL := B.base.ok
         have hql := B.base.ql
@@ -213,7 +213,7 @@ theorem pinsB161 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
   pins_at_fix (fun v => fixB v ++ envP v ++ [(.s7, off v.key (v.L.pl + v.L.ql)), (.s8, BitVec.ofNat 64 v.L.pl),
       (.s9, off v.L.Buf 0)]) (fun _ => rfl) fun _ _ h =>
     WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products
-      (.seq (.block HEAD) (.block (getP .s8))))))))) (by decide +kernel) (stQ6 (hsem _ _ h) fun _ B _ =>
+      (.seq (.block HEAD) (.block (getP .s8))))))))) (by kernel_rfl) (stQ6 (hsem _ _ h) fun _ B _ =>
       WP.seq (WP.mono (head_QB B (hsem _ _ h).vals.2.2.2.2.2) fun _ ⟨c, a7, _, a9⟩ =>
         WP.mono (getP_ok c.1.scr c.1.ok c.1.regs .s8) fun _ ⟨⟨a8, m⟩, k⟩ => by
           exact ((c.1.keepM k m).fixB.app (fix_envP (c.2.1.keep k))).app
@@ -253,7 +253,7 @@ theorem pinsB169 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
   pins_at_fix (fun v => fixB v ++ envP v ++ [(.s7, off v.key (2 * v.L.pl + v.L.ql)), (.s8, BitVec.ofNat 64 v.L.pl),
       (.s9, off v.L.Buf 0)]) (fun _ => rfl) fun _ _ h =>
     WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products
-      (.seq (.block HEAD) (.seq (.block (getP .s8)) (.seq (loadArr 4) (.block ptrY)))))))))) (by decide +kernel)
+      (.seq (.block HEAD) (.seq (.block (getP .s8)) (.seq (loadArr 4) (.block ptrY)))))))))) (by kernel_rfl)
       (stQ6 (hsem _ _ h) fun _ B _ =>
       WP.seq (WP.mono (head_QB B (hsem _ _ h).vals.2.2.2.2.2) fun _ ⟨c, a7, _, a9⟩ =>
         WP.mono (combG_ok c.1.ok c.1.scr c.1.regs (c.1.hk.take B.ky) c.2.1 a7) fun _ ⟨⟨_, ip, o, b7, b8⟩, k⟩ =>
@@ -302,7 +302,7 @@ theorem pinsB341 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
       (.seq products (.seq (.block HEAD) (.seq (.block (getP .s8)) (.seq (loadArr 4) (.seq (.block ptrY)
       (.seq (loadArr 5) (.seq (copy 1 24) (.seq jointTable (.seq (.block (getQ .s10))
       (.seq (.loop (.seq jointByte (.block [.addi .s10 .s10 (-1)])) (.nonzero .s10))
-      (.seq (montOp 4 6 7) (.block (bufBase .s7 .t2 ++ getP .s8)))))))))))))))))) (by decide +kernel)
+      (.seq (montOp 4 6 7) (.block (bufBase .s7 .t2 ++ getP .s8)))))))))))))))))) (by kernel_rfl)
       (stC2 (hsem _ _ h) fun _ _ _ c J r a9 a10 => by
         obtain ⟨-, -, -, -, hp, hpo⟩ := (hsem _ _ h).vals
         exact WP.mono (combL_ok c.1.ok c.1.scr c.1.regs c.2.1 hp hpo J r a9 a10)
@@ -336,7 +336,7 @@ theorem pinsB344 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
     Pins (At Φ FB 344) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s10] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s9, v.L.Buf), (.s10, BitVec.ofNat 64 v.L.pl)]) (fun _ => rfl)
     fun _ _ h => WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
-      (.seq products (.seq combine (.block CMP)))))))) (by decide +kernel)
+      (.seq products (.seq combine (.block CMP)))))))) (by kernel_rfl)
       (stC4 (hsem _ _ h) fun _ B _ => (cmp_pre B).mono fun _ ⟨⟨B', iq, a9, a10, _⟩, _⟩ =>
         (B'.fixB.app (fix_envQ iq)).app ⟨a9, a10, trivial⟩)
 
@@ -344,7 +344,7 @@ theorem pinsB350 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
     Pins (At Φ FB 350) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.sig), (.s8, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl)
     fun v _ h => WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse
-      (.seq products (.seq combine (.seq (.block CMP) (.seq ModArith.reduce64 (.block ptrR)))))))))) (by decide +kernel)
+      (.seq products (.seq combine (.seq (.block CMP) (.seq ModArith.reduce64 (.block ptrR)))))))))) (by kernel_rfl)
       (stC4 (hsem _ _ h) fun _ B q0 => WP.seq ((cmp_pre B).mono fun s₁ ⟨⟨B1, iq, a9, a10, m1⟩, _⟩ => by
         have hL := B1.ok
         have hwq := hL.wq_ge

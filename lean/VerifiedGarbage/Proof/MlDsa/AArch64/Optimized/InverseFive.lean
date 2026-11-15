@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InversePackedTable
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseLocalTable
 import VerifiedGarbage.Proof.Framework.Contract
@@ -46,6 +47,6 @@ def firstStores : List Instr := (List.finRange 8).map fun j => Instr.strq (regs 
 def firstAdvance : List Instr := [.addImm .x .x0 .x0 128,.addImm .x .x1 .x1 480,.subImm .x .x11 .x11 1]
 
 theorem firstBlock_eq : VG.Impl.MlDsa.AArch64.Optimized.Inverse.firstBlock=
-    firstLoads ++ fiveCode ++ firstStores ++ firstAdvance := by decide +kernel
+    firstLoads ++ fiveCode ++ firstStores ++ firstAdvance := by kernel_rfl
 
 end VG.Proof.MlDsa.AArch64.Optimized.Inverse

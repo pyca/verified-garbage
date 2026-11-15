@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Dsa.RISCV64.SignCTB
 public import VerifiedGarbage.Proof.Dsa.RISCV64.PrevalidatedSignFn
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -204,7 +205,7 @@ theorem setMask_TS {v : VD} {s : State} (h : ΦRsp v s) :
   rw [mask_word0 hL wo, ku.gpr (by decide)]
   exact c.inv
 
-theorem drop27 : FRsp.drop 27 = FTl := by decide +kernel
+theorem drop27 : FRsp.drop 27 = FTl := by kernel_rfl
 
 theorem XRsp_rel : RelCT isa (Two ΦRsp) XRsp fun _ _ => True := by
   refine chain_start (chain_cons runRsp (m := 2) (by decide) (two_taint _ pinsRsp_0 (by taint_decide)) ?_)
