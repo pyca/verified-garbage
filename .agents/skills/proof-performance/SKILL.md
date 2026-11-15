@@ -97,6 +97,15 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   builds and walks the whole function under it again, in every wrapper and
   again in the registration: ML-DSA's on x86 cost 38 s so, in one
   registration file and the proofs of its entry points.
+* **Matching on an instruction:** a function the kernel evaluates at every
+  instruction matches on the instruction once. Each `match` on an ISA's
+  `Instr` costs the kernel from 65 to 350 µs on x86-64, whose `Instr` has
+  three hundred constructors (`isa.writesSp i`, a match around
+  `Instr.dst`'s and a comparison of options, is the dearest): four of them
+  were most of the 0.8 ms a plain instruction took in the residue analysis.
+  Give what several matches computed by one, with the patterns of all of
+  them, and prove it equal to the function it replaces by cases
+  (`RTaint.stepFn1`, `stepFn1_eq`, `Proof/Framework/X86_64/`).
 * **Code the kernel evaluates:** code built by functions (unrolled
   compression functions, and the functions calling them) is rebuilt by the
   kernel in every check that evaluates it (constant time, `spSafe`, …), in

@@ -480,7 +480,9 @@ analysis and its results are the same) written for the kernel:
   public value with `mem3R`; loads (`mov r, [m]`) need `post` only when a
   slot holds a pointer (`fastLoad`), and `argPost` only when the argument
   area has public or pointer bytes; constants, `mul` and `mulx` only change
-  bounds (`fastU`).
+  bounds (`fastU`). `stepFn1 i`, which the kernel evaluates, is `stepFn i`
+  with one match on `i` in place of its four (`isa.writesSp`, `isPlain`,
+  `Taint.dstOf` and its own).
 * `leF` compares lists of slots in one pass when one is a sublist of the
   other in order (`subl`), as a hint's taints usually are of the analysis's,
   and compares numbers with `Nat.beq`.
