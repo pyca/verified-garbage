@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Sm4.AArch64.KeyVerified
+public import VerifiedGarbage.Proof.Sm4.AArch64.Serial.Key
 public import VerifiedGarbage.Proof.Sm4.AArch64.EcbCall
 public import VerifiedGarbage.Proof.Sm4.AArch64.Verified
 public import VerifiedGarbage.Proof.Sm4.AArch64.PreparedVerified
@@ -15,8 +15,8 @@ namespace VG.Artifacts.Sm4.AArch64
 
 def artifacts : List Artifact := [
   Spec.Sm4.expandKeyApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 3168 .x2 396 Impl.Sm4.AArch64.expandKey
-    verified := Proof.Sm4.AArch64.expandKey_framed },
+    code := Impl.Sm4.AArch64.Serial.expandKey
+    verified := Proof.Sm4.AArch64.Serial.expandKey_verified },
   Spec.Sm4.ecbEncryptApi.artifact AArch64.target {
     code := Impl.Sm4.AArch64.ecbCall .encrypt Proof.Sm4.AArch64.ecbAnyFramed
     verified := Proof.Sm4.AArch64.ecbCall_verified .encrypt },

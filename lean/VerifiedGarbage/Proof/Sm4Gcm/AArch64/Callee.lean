@@ -7,7 +7,7 @@ public import VerifiedGarbage.Proof.Sm4.Contract
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Sm4.AArch64.Ctr32Verified
-import VerifiedGarbage.Proof.Sm4.AArch64.KeyVerified
+import VerifiedGarbage.Proof.Sm4.AArch64.Serial.Key
 import VerifiedGarbage.Proof.Sm4.AArch64.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
@@ -25,8 +25,9 @@ Untrusted: everything here is checked by Lean. Each call of `vg_sm4_ctr32`
 and `vg_sm4_expand_key` from its callee's contract (with `WP.callF`), with
 the regions it is given: what it needs (`CtrCall`, `KeyCall`) and what it
 leaves (`CtrPost`, `KeyPost`); and that it is constant time (`ctr_rel`,
-`key_rel`). Both keep their working space in frames below the stack pointer,
-within the 3264 bytes there (`stk`), which they change. The calls of
+`key_rel`). `vg_sm4_ctr32` keeps its working space in a frame below the
+stack pointer, within the 3264 bytes there (`stk`), which it changes;
+`vg_sm4_expand_key` has none. The calls of
 `vg_ghash` are AES-GCM's (`Proof/AesGcm/AArch64/Callee.lean`).
 
 The callees' contracts are the shared ones (`Proof.Sm4.ctr32Contract`,
@@ -91,8 +92,8 @@ theorem ctrF_implies : (Proof.Sm4.ctr32Contract AArch64.abi 3264).Implies ctrF w
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
       Region.disjoint_of_sep (by decide), by decide, by decide, by decide⟩⟩
 
-/-- `vg_sm4_expand_key(key = x0, schedule = x1)` with its 3168 bytes of
-stack, within `stk`. -/
+/-- `vg_sm4_expand_key(key = x0, schedule = x1)`, which uses no stack, with
+`stk` kept away from its arguments as the calls here have it. -/
 def keyF : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .x0, 16⟩
@@ -111,15 +112,11 @@ def keySat : State where
   rd := [⟨0x1000, 16⟩]
   wr := [⟨0x2000, 128⟩]
 
-/-- `vg_sm4_expand_key`'s stack within `stk`. -/
-theorem key_stk (sp : Addr) : Region.Sub (below sp 3168) (stk sp) :=
-  fun x hx => Offset.below_mono sp (by decide) (by decide) x hx
-
-theorem keyF_implies : (Spec.Sm4.expandKeyContract AArch64.abi 3168).Implies keyF where
+theorem keyF_implies : (Spec.Sm4.expandKeyContract AArch64.abi).Implies keyF where
   pre s hs := by
     obtain ⟨hsp, hrd, hwr, dKS, dSK, dSS, fK, fS⟩ := hs
     sig_pre [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, AArch64.abi, AArch64.argRegs]
-    exact ⟨by omega_using [hsp], hrd, hwr, dKS, dSK.sub_left (key_stk _), dSS.sub_left (key_stk _), fK, fS⟩
+    exact ⟨hrd, hwr, dKS, fK, fS⟩
   post s s' _ h := by
     sig_reduce [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, AArch64.abi, AArch64.argRegs] at h
     exact h
@@ -138,10 +135,10 @@ theorem ctr_ct : ConstantTime isa ctrF.pre ctrF.pub ctrCode :=
   (Proof.Sm4.AArch64.ctr32_framed.of_implies ctrF_implies).2.1
 
 theorem key_ok : ∀ s, keyF.pre s → ∃ t s', Exec isa keyCode s t s' ∧ abiPreserved s s' ∧ keyF.post s s' :=
-  (Proof.Sm4.AArch64.expandKey_framed.of_implies keyF_implies).1
+  (Proof.Sm4.AArch64.Serial.expandKey_verified.of_implies keyF_implies).1
 
 theorem key_ct : ConstantTime isa keyF.pre keyF.pub keyCode :=
-  (Proof.Sm4.AArch64.expandKey_framed.of_implies keyF_implies).2.1
+  (Proof.Sm4.AArch64.Serial.expandKey_verified.of_implies keyF_implies).2.1
 
 theorem ctr_depth : 16 * ctrCode.aarch64Depth ≤ 3264 := by lit_decide
 

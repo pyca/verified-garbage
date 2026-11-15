@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.AesGcm.AArch64
 public import VerifiedGarbage.Impl.Sm4.AArch64.Ctr32
-public import VerifiedGarbage.Impl.Sm4.AArch64.ExpandKey
+public import VerifiedGarbage.Impl.Sm4.AArch64.Serial.Key
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
@@ -19,9 +19,9 @@ They differ from AES-GCM's in what they call and where:
 * The key context is SM4's schedule (bytes 0–127) and the hash subkey `H`
   (bytes 128–143); there is no number of rounds, and `x22` is unused.
 * `vg_sm4_ctr32` takes `(schedule = x0, counter = x1, data = x2, n = x3)`, and
-  `vg_sm4_expand_key` `(key = x0, schedule = x1)`: both keep their working
-  space in frames on the stack below ours (3264 and 3168 bytes), and take no
-  working space from us.
+  `vg_sm4_expand_key` `(key = x0, schedule = x1)`: the first keeps its working
+  space in a frame on the stack below ours (3264 bytes), the second has none,
+  and neither takes working space from us.
 * So the working space `W` is 768 bytes: AES-GCM's layout up to `vg_ghash`'s
   256 bytes at `W + 512`.
 -/
@@ -39,7 +39,7 @@ artifact, `Artifacts/Sm4Gcm/AArch64.lean`). -/
 def ctrCode : Prog isa := Impl.StackScratch.AArch64.withStackScratchWiped 3264 .x4 408 Impl.Sm4.AArch64.ctr32
 
 /-- `vg_sm4_expand_key`'s code (as its artifact, `Artifacts/Sm4/AArch64.lean`). -/
-def keyCode : Prog isa := Impl.StackScratch.AArch64.withStackScratchWiped 3168 .x2 396 Impl.Sm4.AArch64.expandKey
+def keyCode : Prog isa := Impl.Sm4.AArch64.Serial.expandKey
 
 /-- The implementation of `vg_ghash` called. -/
 structure Callees where
