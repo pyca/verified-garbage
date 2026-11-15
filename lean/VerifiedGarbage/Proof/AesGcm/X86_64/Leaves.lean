@@ -1639,8 +1639,8 @@ theorem openCodeF16V_spAll : openCodeF16V.all (fun i => !X86_64.isa.writesSp i) 
 /-- The granules `vg_aes_gcm_open_prepared_vaes_vpclmul` wipes: `openKs`,
 and in `work` the block at 96 (the lengths, or, on the path for TLS records,
 the additional data padded), `G` at 512 (two granules) and the keystream at
-1024 (four), which only that path writes: nineteen. -/
-def openKsF : List Nat := [0, 8, 88, 104, 120, 136, 152, 168, 184, 288, 312, 328, 584, 600, 1096, 1112, 1128, 1144, 2632]
+1024 (two), which only that path writes: seventeen. -/
+def openKsF : List Nat := [0, 8, 88, 104, 120, 136, 152, 168, 184, 288, 312, 328, 584, 600, 1096, 1112, 2632]
 
 /-- A byte of the 2640 below `R` that `wipe openKsF` does not zero is where
 `openQF` says. -/
@@ -1653,7 +1653,7 @@ theorem openWindowF {R x : Addr} (hx : (⟨R - BitVec.ofNat 64 2640, 2640⟩ : R
   generalize hi : (x - (R - BitVec.ofNat 64 2640)).toNat = i at hlt hw
   have hc : ¬ cov openKsF openCs i = true := fun h => hw ⟨hx, h⟩
   have hi' : ¬ i < 24 ∧ ¬ (88 ≤ i ∧ i < 200) ∧ ¬ (288 ≤ i ∧ i < 296) ∧ ¬ (312 ≤ i ∧ i < 344) ∧
-      ¬ (584 ≤ i ∧ i < 616) ∧ ¬ (1096 ≤ i ∧ i < 1160) ∧ ¬ 2632 ≤ i := by
+      ¬ (584 ≤ i ∧ i < 616) ∧ ¬ (1096 ≤ i ∧ i < 1128) ∧ ¬ 2632 ≤ i := by
     have e : cov openKsF openCs i = if i < 280 then covC openKsF 0 280 i
         else if i < 288 then decide (i - 280 < 8) && covC openKsF 280 8 (i - 280)
         else if i < 2632 then decide (i - 288 < 2344) && covC openKsF 288 2344 (i - 288)
@@ -1695,8 +1695,7 @@ theorem openWindowF {R x : Addr} (hx : (⟨R - BitVec.ofNat 64 2640, 2640⟩ : R
         exact mid (by omega_arith) (by omega_arith) (by omega_arith) e (by decide)
     · rcases (by omega_arith : (i - 288 - 8) / 16 = 18 ∨ (i - 288 - 8) / 16 = 19) with e | e <;>
         exact mid (by omega_arith) (by omega_arith) (by omega_arith) e (by decide)
-    · rcases (by omega_arith : (i - 288 - 8) / 16 = 50 ∨ (i - 288 - 8) / 16 = 51 ∨ (i - 288 - 8) / 16 = 52 ∨
-        (i - 288 - 8) / 16 = 53) with e | e | e | e <;>
+    · rcases (by omega_arith : (i - 288 - 8) / 16 = 50 ∨ (i - 288 - 8) / 16 = 51) with e | e <;>
         exact mid (by omega_arith) (by omega_arith) (by omega_arith) e (by decide)
     · rw [e]
       simp only [show ¬ i < 280 by omega_arith, show ¬ i < 288 by omega_arith, show ¬ i < 2632 by omega_arith,

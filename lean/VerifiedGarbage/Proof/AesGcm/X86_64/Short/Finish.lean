@@ -187,17 +187,27 @@ theorem finKs_ok {Ctx W SP : Addr} {nr : Nat} (s : State) (he : Env Ctx (W + Bit
     rw [h₁, h₂]
 
 /-- What `finishWith` needs of its keystream program `ks`: `finKs_ok`'s
-effect, with `xmm8` also written (`AesNi.aes`'s round key). -/
-def KsOk (ks : Prog isa) : Prop :=
+effect, with `xmm8` also written (`AesNi.aes`'s round key), writing only the
+`kw` bytes at `W + 1024`. -/
+def KsOkW (kw : Nat) (ks : Prog isa) : Prop :=
   ∀ {Ctx W SP : Addr} {nr : Nat} (s : State), Env Ctx (W + BitVec.ofNat 64 16) W SP s →
     s.mem.readW (W + BitVec.ofNat 64 176) 64 = BitVec.ofNat 64 nr → (nr = 10 ∨ nr = 12 ∨ nr = 14) →
     WP isa ks s fun t =>
       blockAt t.mem (W + BitVec.ofNat 64 1024) = ciphOf s.mem Ctx nr (blockAt s.mem (W + BitVec.ofNat 64 16)) ∧
       blockAt t.mem (W + BitVec.ofNat 64 1024 + BitVec.ofNat 64 16) =
         ciphOf s.mem Ctx nr (blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48)) ∧
-      Frame [⟨W + BitVec.ofNat 64 1024, 64⟩] s.mem t.mem ∧
+      Frame [⟨W + BitVec.ofNat 64 1024, kw⟩] s.mem t.mem ∧
       (∀ r, r ≠ .rdi → r ≠ .rsi → r ≠ .r10 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ r, r ≠ .xmm5 → r ≠ .xmm7 → r ≠ .xmm8 → r ≠ .xmm13 → t.xmm r = s.xmm r)
+
+/-- `KsOkW` with the 64 bytes at `W + 1024` that `finKs` writes. -/
+abbrev KsOk (ks : Prog isa) : Prop := KsOkW 64 ks
+
+theorem KsOkW.mono {kw kw' : Nat} (h : kw ≤ kw') {ks : Prog isa} (hks : KsOkW kw ks) : KsOkW kw' ks :=
+  fun s he hR hnr => WP.mono (hks s he hR hnr) fun _ ⟨a, b, c, d, e, f, g⟩ =>
+    ⟨a, b, c.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix h⟩, d, e, f, g⟩
 
 theorem finKs_ksOk : KsOk finKs := fun s he hR hnr =>
   WP.mono (finKs_ok s he hR hnr) fun _ ⟨a, b, c, d, e, f, g⟩ =>
