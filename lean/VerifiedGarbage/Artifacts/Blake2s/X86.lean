@@ -17,11 +17,9 @@ def artifacts : List Artifact := [
     verified := Proof.Blake2.X86.S.init_verified },
   Spec.Blake2.updateSApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 604 5 (Impl.Blake2.X86.Stream.update 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress)
-    stack := 32 + 604
     verified := Proof.Blake2.X86.S.update_framed },
   Spec.Blake2.finalizeSApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratch 600 4 (Impl.Blake2.X86.Stream.finalize 32 "vg_blake2s_compress" Impl.Blake2.X86.CompressS.compress)
-    stack := 32 + 600
     verified := Proof.Blake2.X86.S.finalize_framed }]
 
 end VG.Artifacts.Blake2s.X86

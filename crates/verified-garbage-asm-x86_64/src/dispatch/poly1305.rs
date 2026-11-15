@@ -62,6 +62,8 @@ pub unsafe fn vg_poly1305_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, sta
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_poly1305_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u64; 16], count: u64, data: *const u8, len: usize) {
+    // SAFETY: it takes no argument and writes no memory but its stack.
+    verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(state: *mut [u64; 16], count: u64, data: *const u8, len: usize);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

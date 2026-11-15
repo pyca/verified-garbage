@@ -20,7 +20,6 @@ def artifacts : List Artifact :=
     Spec.Sha1.digestApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha1H v.stream)
-      stack := 48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha1H v.stream)
       verified := Proof.MdStream.X86.Digest.sha1_digest v.stream
       spSafe := Proof.MdStream.X86.Digest.sha1_digestSp v.stream }]) ++ [
   Spec.Sha1.initApi.artifact X86.target {

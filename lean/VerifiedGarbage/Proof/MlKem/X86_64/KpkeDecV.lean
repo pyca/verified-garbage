@@ -25,18 +25,12 @@ namespace VG.Proof.MlKem.X86_64
 open VG VG.X86_64 VG.Impl.MlKem.X86_64 VG.Impl.MlKem.X86_64.Kpke16
 open VG.Spec.MlKem
 
-theorem decMulY3_wo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14]
-    (DecMulY.innerY 3) = true := writesOnly_of (by lit_decide)
-
-theorem decMulY4_wo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14]
-    (DecMulY.innerY 4) = true := writesOnly_of (by lit_decide)
-
 /-- The products of `ŝᵀ ∘ NTT(u)` with AVX2, inline. -/
 theorem dmOkY : KpkeDec.DmOk dmInnerY where
   ok k hk s₀ hs := by
     rcases hk with rfl | rfl
-    · exact DecMulY.body_ok hs (by decide) (by decide) decMulY3_wo (rowEY_wo (.inl rfl) (.inl rfl))
-    · exact DecMulY.body_ok hs (by decide) (by decide) decMulY4_wo (rowEY_wo (.inr rfl) (.inl rfl))
+    · exact DecMulY.body_ok hs (by decide) (by decide) (rowEY_wo (.inl rfl) (.inl rfl))
+    · exact DecMulY.body_ok hs (by decide) (by decide) (rowEY_wo (.inr rfl) (.inl rfl))
   nc k hk := by rcases hk with rfl | rfl <;> lit_decide
   r15 k hk := by rcases hk with rfl | rfl <;> lit_decide
 

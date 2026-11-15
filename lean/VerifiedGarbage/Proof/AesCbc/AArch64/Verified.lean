@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Aes.AArch64.BlocksVariant
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Call
 import VerifiedGarbage.Proof.AesCbc.AArch64.CT
 import VerifiedGarbage.Proof.AesCbc.AArch64.Body
+import VerifiedGarbage.Proof.AesCbc.AArch64.Group
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 
@@ -29,7 +30,7 @@ theorem encrypt_keepsV (v : BlocksImpl) : (encrypt v.enc).allInstrs keepsV = tru
   simp only [encrypt, whole, encBody, Code.allInstrs, v.encKeepsV]; decide +kernel
 
 theorem decrypt_keepsV (v : BlocksImpl) : (decrypt v.dec).allInstrs keepsV = true := by
-  simp only [decrypt, whole, decBody, Code.allInstrs, v.decKeepsV]; decide +kernel
+  simp only [decrypt, batched, groups, decGroup, decBody, Code.allInstrs, v.decKeepsV]; decide +kernel
 
 theorem encrypt_correct (v : BlocksImpl) (s : State) (hs : (cbcAArch64 true).pre s) :
     ∃ t s', Exec isa (encrypt v.enc) s t s' ∧ abiPreserved s s' ∧ (cbcAArch64 true).post s s' :=
@@ -37,7 +38,7 @@ theorem encrypt_correct (v : BlocksImpl) (s : State) (hs : (cbcAArch64 true).pre
 
 theorem decrypt_correct (v : BlocksImpl) (s : State) (hs : (cbcAArch64 false).pre s) :
     ∃ t s', Exec isa (decrypt v.dec) s t s' ∧ abiPreserved s s' ∧ (cbcAArch64 false).post s s' :=
-  WP.withPreservedV (whole_wp (decBody_ok v) hs) (decrypt_keepsV v)
+  WP.withPreservedV (batched_wp (decGroup_ok v) (decBody_ok v) hs) (decrypt_keepsV v)
 
 /-- A state satisfying the precondition (with no blocks). -/
 def sat : State where
@@ -57,7 +58,8 @@ theorem encrypt_verified (v : BlocksImpl) :
 
 theorem decrypt_verified (v : BlocksImpl) :
     Verified AArch64.target (decrypt v.dec) (Proof.AesCbc.decryptRoundsContract AArch64.abi) :=
-  Verified.of_correct (decrypt_correct v) (whole_ct (decBody_ok v) (decBody_ct v)) (by
+  Verified.of_correct (decrypt_correct v)
+    (batched_ct (decGroup_ok v) (decGroup_ct v) (decBody_ok v) (decBody_ct v)) (by
     sig_implies [Proof.AesCbc.decryptRoundsContract, Spec.Cbc.aesSig, cbcAArch64, modeAArch64, cbcMode,
       ciphOf, cbc, cts, AArch64.abi,
       AArch64.argRegs] [sat] using sat)

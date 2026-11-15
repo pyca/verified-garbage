@@ -87,28 +87,28 @@ theorem prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) where
   sub := calleeOf v.ok.sub
   rejNtt := (CalleeOk.of_verified Proof.MlDsa.X86_64.Sample.RejNttShort.verified (by decide)
     (Proof.MlKem.X86_64.nosp_of (by lit_decide)) (by lit_decide) (by lit_decide)
-    (Code.all_of_allInstrs (by lit_decide)) :
+    (Code.all_of_spTest (by lit_decide)) :
     CalleeOk prims.rejNtt _)
   ball := (CalleeOk.of_verified Proof.MlDsa.X86_64.Sample.sampleInBall_verified (by decide)
     (Proof.MlKem.X86_64.nosp_of (by lit_decide)) (by lit_decide) (by lit_decide)
-    (Code.all_of_allInstrs (by lit_decide)) :
+    (Code.all_of_spTest (by lit_decide)) :
     CalleeOk prims.ball _)
   useHint := calleeOf v.ok.useHint
   simpleBitPack := (CalleeOk.of_verified Proof.MlDsa.X86_64.Pack.simpleBitPack_verified (by decide)
     (Proof.MlKem.X86_64.nosp_of (by lit_decide)) (by lit_decide) (by lit_decide)
-    (Code.all_of_allInstrs (by lit_decide)) :
+    (Code.all_of_spTest (by lit_decide)) :
     CalleeOk prims.simpleBitPack _)
   bitUnpack := (CalleeOk.of_verified Proof.MlDsa.X86_64.Pack.bitUnpack_verified (by decide)
     (Proof.MlKem.X86_64.nosp_of (by lit_decide)) (by lit_decide) (by lit_decide)
-    (Code.all_of_allInstrs (by lit_decide)) :
+    (Code.all_of_spTest (by lit_decide)) :
     CalleeOk prims.bitUnpack _)
   unpackT1 := (CalleeOk.of_verified Proof.MlDsa.X86_64.Pack.unpackT1_verified (by decide)
     (Proof.MlKem.X86_64.nosp_of (by lit_decide)) (by lit_decide) (by lit_decide)
-    (Code.all_of_allInstrs (by lit_decide)) :
+    (Code.all_of_spTest (by lit_decide)) :
     CalleeOk prims.unpackT1 _)
   hintUnpack := (CalleeOk.of_verified Proof.MlDsa.X86_64.Pack.hintBitUnpack_verified (by decide)
     (Proof.MlKem.X86_64.nosp_of (by lit_decide)) (by lit_decide) (by lit_decide)
-    (Code.all_of_allInstrs (by lit_decide)) :
+    (Code.all_of_spTest (by lit_decide)) :
     CalleeOk prims.hintUnpack _)
   normLt := calleeOf v.ok.normLt
   rej4 := ⟨v.ok.rej4.ver.1, v.ok.rej4.ver.2.1, v.ok.rej4.nosp, v.ok.rej4.depth, v.ok.rej4.ctl, v.ok.rej4.sp⟩

@@ -112,17 +112,18 @@ theorem vhalf_perm_h8 (op : VPermOp) (x y : BitVec 128) {e : Nat} (he : e < 8) :
   simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, List.length_map, List.length_range]
   rw [vhalf_ofVHalves _ he]
   cases op <;>
+  simp only [range8, List.map_cons, List.map_nil, BitVec.ofNat_eq_ofNat, List.getD_eq_getElem?_getD, Nat.reduceDiv,
+    range4, List.flatMap_cons, List.length_cons, List.length_nil, Nat.zero_add, Nat.reduceAdd, Nat.zero_lt_succ,
+    getElem?_pos, List.getElem_cons_zero, Option.getD_some, Nat.reduceLT, List.getElem_cons_succ, List.flatMap_nil,
+    List.append_nil, List.cons_append, List.nil_append, Nat.lt_add_one, Nat.add_zero, Nat.mul_zero, Nat.mul_one,
+    Nat.reduceMul, List.getElem?_cons_succ] <;>
   match e, he with
   | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ =>
-    simp only [range8, List.map_cons, List.map_nil, BitVec.ofNat_eq_ofNat, List.getD_eq_getElem?_getD,
-      Nat.reduceDiv, range4, List.flatMap_cons, List.length_cons, List.length_nil,
-      Nat.zero_add, Nat.reduceAdd, Nat.zero_lt_succ, getElem?_pos, List.getElem_cons_zero,
-      Option.getD_some, Nat.reduceLT, List.getElem_cons_succ, List.flatMap_nil, List.append_nil,
-      List.cons_append, List.nil_append, Nat.reduceLeDiff, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq,
-      Nat.zero_mod, ↓reduceIte, Nat.zero_div, Nat.mod_succ, Nat.succ_ne_self,
-      Nat.mod_self, Nat.div_self, Nat.reduceMod, Nat.lt_add_one, Nat.add_zero,
-      Nat.mul_zero, Nat.mul_one, Nat.reduceMul, Nat.sub_self, Nat.add_one_sub_one,
-      List.getElem?_cons_succ, Nat.lt_irrefl, Nat.reduceSub]
+    simp only [Nat.reduceDiv, List.length_cons, List.length_nil, Nat.zero_add, Nat.reduceAdd, Nat.zero_lt_succ,
+      getElem?_pos, List.getElem_cons_zero, Option.getD_some, Nat.reduceLT, List.getElem_cons_succ,
+      Nat.reduceLeDiff, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, Nat.zero_mod, ↓reduceIte, Nat.zero_div,
+      Nat.mod_succ, Nat.succ_ne_self, Nat.mod_self, Nat.div_self, Nat.reduceMod, Nat.lt_add_one, Nat.add_zero,
+      Nat.mul_zero, Nat.mul_one, Nat.reduceMul, Nat.sub_self, Nat.add_one_sub_one, Nat.lt_irrefl, Nat.reduceSub]
 
 /-- A permutation of words, as the sources of its halfwords. -/
 theorem vhalf_perm_s4 (op : VPermOp) (x y : BitVec 128) {e : Nat} (he : e < 8) :
@@ -138,20 +139,20 @@ theorem vhalf_perm_s4 (op : VPermOp) (x y : BitVec 128) {e : Nat} (he : e < 8) :
           else vhalf y (2 * (e / 2) * 2 + e % 2 - 6) := by
   simp only [VPermOp.eval, VArr.lanes, VArr.ofLanes, List.length_cons, List.length_nil,
     Nat.reduceAdd, Nat.reduceDiv]
-  rw [vhalf_ofVWords _ _ _ _ he]
   cases op <;>
+  simp only [Nat.mul_zero, BitVec.ofNat_eq_ofNat, List.getD_eq_getElem?_getD, range2, List.flatMap_cons,
+    List.length_cons, List.length_nil, Nat.zero_add, Nat.reduceAdd, Nat.zero_lt_succ, getElem?_pos,
+    List.getElem_cons_zero, Option.getD_some, Nat.reduceLT, List.getElem_cons_succ, List.flatMap_nil,
+    List.append_nil, List.cons_append, List.nil_append, Nat.reduceLeDiff, BitVec.setWidth_setWidth_of_le,
+    BitVec.setWidth_eq, Nat.lt_add_one, Nat.add_zero, Nat.mul_one, Nat.reduceMul, List.getElem?_cons_succ, range4,
+    List.map_cons, List.map_nil] <;>
+  rw [vhalf_ofVWords _ _ _ _ he] <;>
   match e, he with
   | 0, _ | 1, _ | 2, _ | 3, _ | 4, _ | 5, _ | 6, _ | 7, _ =>
-    simp only [Nat.zero_mod, Nat.mul_zero, BitVec.ofNat_eq_ofNat, List.getD_eq_getElem?_getD, range2,
-      List.flatMap_cons, List.length_cons, List.length_nil, Nat.zero_add, Nat.reduceAdd,
-      Nat.zero_lt_succ, getElem?_pos, List.getElem_cons_zero, Option.getD_some, Nat.reduceLT,
-      List.getElem_cons_succ, List.flatMap_nil, List.append_nil, List.cons_append, List.nil_append,
-      Nat.reduceLeDiff, BitVec.setWidth_setWidth_of_le, BitVec.setWidth_eq, Nat.lt_add_one, Nat.zero_div,
-      vword_lo, ↓reduceIte, Nat.zero_mul, Nat.add_zero, Nat.mod_succ,
-      Nat.mul_one, Nat.reduceDiv, vword_hi, Nat.mod_self, Nat.div_self,
-      Nat.succ_ne_self, Nat.reduceMod, Nat.one_mul, Nat.reduceMul, Nat.sub_self,
-      Nat.reduceSub, List.getElem?_cons_succ, range4, List.map_cons, List.map_nil,
-      Nat.lt_irrefl]
+    simp only [Nat.zero_mod, Nat.mul_zero, Nat.zero_add, Nat.reduceAdd, Nat.zero_lt_succ, List.getElem_cons_zero,
+      Nat.reduceLT, List.getElem_cons_succ, Nat.lt_add_one, Nat.zero_div, vword_lo, ↓reduceIte, Nat.zero_mul,
+      Nat.add_zero, Nat.mod_succ, Nat.mul_one, Nat.reduceDiv, vword_hi, Nat.mod_self, Nat.div_self,
+      Nat.succ_ne_self, Nat.reduceMod, Nat.one_mul, Nat.reduceMul, Nat.sub_self, Nat.reduceSub, Nat.lt_irrefl]
 
 private theorem eval_trn_d2 (x y : BitVec 128) :
     VPermOp.eval .trn1 .d2 x y = ofVDwords (vdword x 0) (vdword y 0) ∧

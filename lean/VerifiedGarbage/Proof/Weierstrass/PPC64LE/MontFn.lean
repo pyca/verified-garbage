@@ -1654,11 +1654,11 @@ theorem rmul_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp
     rw [hum, O₂.word (by omega_using []) (by omega_using [hn9, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hmi4]), ← V₁, ← wordsVal_eq_val32]
     simp only [wordsVal, Nat.mul_zero, Nat.add_zero]
   have hmu : wordsVal u.mem base M.mo M.n = m := by
-    rw [hum, O₂.wordsVal (by omega_using [hn9, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, sat, am, ao, aa, ab, tm, to, hmi4]) (by omega_using [hn9, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hmi4]), O₁.wordsVal (by omega_using [hn9, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, sat, am, ao, aa, ab, tm, to, hmi4]) (by omega_using [hn9, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hmi4]), wordsVal_eq_val32, hp.mo]
+    rw [hum, O₂.wordsVal (by omega_using [n0, am]) (by omega_using [hn9, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hmi4]), O₁.wordsVal (by omega_using [n0, am]) (by omega_using [hn9, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hmi4]), wordsVal_eq_val32, hp.mo]
   have hAu : wordsVal u.mem base A M.n = wordsVal s.mem base A M.n := by
-    rw [hum, O₂.wordsVal (by omega_using [hn9, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, sat, am, ao, aa, ab, tm, to, hmi4]) (by omega_using [hn9, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hmi4]), O₁.wordsVal (by omega_using [hn9, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, sat, am, ao, aa, ab, tm, to, hmi4]) (by omega_using [hn9, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hmi4])]
+    rw [hum, O₂.wordsVal (by omega_using [n0, aa]) (by omega_using [hn9, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hmi4]), O₁.wordsVal (by omega_using [n0, aa]) (by omega_using [hn9, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hmi4])]
   have hBu : wordsVal u.mem base B M.n = wordsVal s.mem base B M.n := by
-    rw [hum, O₂.wordsVal (by omega_using [hn9, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, sat, am, ao, aa, ab, tm, to, hmi4]) (by omega_using [hn9, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hmi4]), O₁.wordsVal (by omega_using [hn9, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, sat, am, ao, aa, ab, tm, to, hmi4]) (by omega_using [hn9, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hmi4])]
+    rw [hum, O₂.wordsVal (by omega_using [n0, ab]) (by omega_using [hn9, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hmi4]), O₁.wordsVal (by omega_using [n0, ab]) (by omega_using [hn9, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hmi4])]
   have hsv : ∀ j < M.n + 1, word u.mem base (acc + 8 * j) = s.gpr (treg j) := fun j hj => by
     rw [hum, Z₂ j hj, K₁.gpr _ (by simp)]
   have hws : Ws u base size := K₀u.ws hp.ws
@@ -1698,7 +1698,7 @@ theorem rmul_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (hp
         exact Outs.word O₃ (by
           intro r hr
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-          rcases hr with rfl | rfl <;> dsimp only <;> omega_arith) (by omega_using [hn9, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hmi4, hj])
+          rcases hr with rfl | rfl <;> dsimp only <;> omega_using [sat, ao, hj]) (by omega_using [hn9, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hmi4, hj])
       rw [this, I.mem]
     have Kall : Kp (opClob ++ tregs 0 (M.n + 1)) s w :=
       ((K₀u.mono fun r hr => by
@@ -2904,7 +2904,8 @@ theorem rmul4_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (h
     simp only [write_gpr, h1.2.2.2.1, ite_false]
     rw [nm5 _ (fun j hj => by
       have := (by decide : ∀ j < 4, mReg j = .r6 ∨ mReg j = .r7 ∨ mReg j = .r10 ∨ mReg j = .r0) j (by omega_using [hn4, sta, stb, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, sat, am, ao, aa, ab, tm, to, hj])
-      rcases this with e | e | e | e <;> rw [e] <;> simp_all), nb4 _ h2, keep3 _ h2]
+      rcases this with e | e | e | e <;> rw [e] <;> [exact h1.2.1; exact h1.2.2.1; exact h1.2.2.2.2.1; exact h1.1]),
+      nb4 _ h2, keep3 _ h2]
   have Ous : Outs base (opOuts M acc O) s.mem u.mem := by
     rw [hum]
     have o₁ : Outs base (opOuts M acc O) s.mem s₁.mem :=
@@ -2916,16 +2917,16 @@ theorem rmul4_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (h
     exact o₁.trans o₂
   have hmpm : word u.mem base M.tmp = s.gpr (mpReg M.n) := by rw [hum, M₂, word_writeW_self]
   have hAu : wordsVal u.mem base A M.n = wordsVal s.mem base A M.n := by
-    rw [hum, M₂, W₂.wordsVal (by omega_using [hn4, sta, stb, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, tmp4, sat, am, ao, aa, ab, tm, to]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to]), O₁.wordsVal (by omega_using [hn4, sta, stb, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, sat, am, ao, aa, ab, tm, to]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to])]
+    rw [hum, M₂, W₂.wordsVal (by omega_using [n0, sta]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to]), O₁.wordsVal (by omega_using [aa]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to])]
   have hBu : wordsVal u.mem base B M.n = wordsVal s.mem base B M.n := by
-    rw [hum, M₂, W₂.wordsVal (by omega_using [hn4, sta, stb, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, tmp4, sat, am, ao, aa, ab, tm, to]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to]), O₁.wordsVal (by omega_using [hn4, sta, stb, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, sat, am, ao, aa, ab, tm, to]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to])]
+    rw [hum, M₂, W₂.wordsVal (by omega_using [n0, stb]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to]), O₁.wordsVal (by omega_using [ab]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to])]
   have hsv : ∀ j < 2 * M.n + 1, word u.mem base (acc + 8 * j) = s.gpr (treg j) := fun j hj => by
-    rw [hum, M₂, W₂.word (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hj]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hj]), Z₁ j hj]
+    rw [hum, M₂, W₂.word (by omega_using [n0, sat, hj]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hj]), Z₁ j hj]
   have hws : Ws u base size := by rw [← hu]; exact (K₅.ws (K₄.ws hs₃)).write _ _
   have hreg : ∀ r : Reg, r ≠ .r8 → u.gpr r = s₅.gpr r := fun r h => by
     rw [← hu]; simp only [write_gpr, h, ite_false]
   have hBv : gval u (bReg M.n) M.n = wordsVal u.mem base B M.n := by
-    rw [hBu, ← O₁.wordsVal (by omega_using [hn4, sta, stb, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, sat, am, ao, aa, ab, tm, to]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to]), ← W₂.wordsVal (by omega_using [hn4, sta, stb, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, tmp4, sat, am, ao, aa, ab, tm, to]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to]), ← M₂, ← M₃]
+    rw [hBu, ← O₁.wordsVal (by omega_using [ab]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to]), ← W₂.wordsVal (by omega_using [n0, stb]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to]), ← M₂, ← M₃]
     refine gval_of_words fun j hj => ?_
     rw [hreg (bReg M.n j) (treg_ne (r := .r8) (by decide) _),
       nm5 (bReg M.n j) (fun i hi e => mReg_ne_treg (by omega_using [hn4, sta, stb, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, sat, am, ao, aa, ab, tm, to, hj, hi]) _ e.symm), Z₄ j hj]
@@ -2965,9 +2966,9 @@ theorem rmul4_ok {M : Mod} {base : Addr} {size acc O A B m : Nat} {s : State} (h
     rw [← hMv]; exact gval_congr fun j hj => I.kp.gpr _ (mReg_not_qclob (by omega_using [hn4, sta, stb, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, sat, am, ao, aa, ab, tm, to, hj]))
   refine WP.block_append (WP.mono (qcsubR_ok (I.kp.ws hws) h4t n0 hn4 o_le hMt hm I.lt) fun v ⟨V₃, O₃, Kc⟩ => ?_)
   have hsv' : ∀ j < 2 * M.n + 1, word v.mem base (acc + 8 * j) = s.gpr (treg j) := fun j hj => by
-    rw [O₃.word (by omega_using [hn4, sta, stb, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, sat, am, ao, aa, ab, tm, to, hj]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hj]), I.mem, hsv j hj]
+    rw [O₃.word (by omega_using [ao, hj]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to, hj]), I.mem, hsv j hj]
   have hmpv : word v.mem base M.tmp = s.gpr (mpReg M.n) := by
-    rw [O₃.word (by omega_using [hn4, sta, stb, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, tmp4, sat, am, ao, aa, ab, tm, to]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to]), I.mem, hmpm]
+    rw [O₃.word (by omega_using [n0, to]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, tmp4, sat, am, ao, aa, ab, tm, to]), I.mem, hmpm]
   have hwv := Kc.ws (I.kp.ws hws)
   have h3v : At v base .r3 0 := Kc.at h3t (by simp [tregs])
   refine WP.block_append (WP.mono (rrestore_ok hwv h3v acc4 (k := 2 * M.n + 1) (by omega_using [hn4, sta, stb, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, sat, am, ao, aa, ab, tm, to]) (by omega_using [hn4, sta, stb, hn, hs15, n0, acc_le, tmp_le, mo_le, o_le, a_le, b_le, acc4, sat, am, ao, aa, ab, tm, to]))

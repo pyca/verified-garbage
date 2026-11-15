@@ -16,19 +16,15 @@ namespace VG.Artifacts.TripleDesCfb.X86
 def artifacts : List Artifact := [
   Spec.TripleDes.cfbEncryptApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbEncrypt
-    stack := 984
     verified := Proof.TripleDes.X86.Fb.cfbEncrypt_framed },
   Spec.TripleDes.cfbDecryptApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbDecrypt
-    stack := 984
     verified := Proof.TripleDes.X86.Fb.cfbDecrypt_framed },
   Spec.TripleDes.cfbEncryptFinalApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbEncryptFinal
-    stack := 984
     verified := Proof.TripleDes.X86.FbFinal.cfbEncryptFinal_framed },
   Spec.TripleDes.cfbDecryptFinalApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 968 4 236 Impl.TripleDes.X86.cfbDecryptFinal
-    stack := 984
     verified := Proof.TripleDes.X86.FbFinal.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.TripleDesCfb.X86

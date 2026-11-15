@@ -1,5 +1,9 @@
 module
 
+import VerifiedGarbage.Proof.Framework.PPC64LE.TaintMono
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintMono
+import VerifiedGarbage.Proof.Sha1.PPC64LE.Compress
+meta import VerifiedGarbage.Proof.Sha1.PPC64LE.Compress
 public import VerifiedGarbage.Proof.Hmac.Stream.PPC64LE.Instance
 public import VerifiedGarbage.Proof.Hmac.Contract
 public import VerifiedGarbage.Proof.Sha1.PPC64LE.Stream.Md
@@ -88,18 +92,18 @@ def ok : HashOK hash where
 
 theorem init_ct : ConstantTime isa (initG ok.SH (hash.W + 48) 96).pre (initG ok.SH (hash.W + 48) 96).pub
     hash.init :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
-    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide_sum [VG.Proof.Sha1.PPC64LE.compressSum])
 
 theorem fin_ct : ConstantTime isa (finG ok.SH (hash.W + 48 + hash.FD) 96).pre
     (finG ok.SH (hash.W + 48 + hash.FD) 96).pub hash.finalize :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
-    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide_sum [VG.Proof.Sha1.PPC64LE.compressSum])
 
 theorem long_ct : ConstantTime isa (longG ok.SH hash.lbytes 144).pre (longG ok.SH hash.lbytes 144).pub
     hash.initLong :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
-    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide_sum [VG.Proof.Sha1.PPC64LE.compressSum])
 
 /-! ## The shared contracts -/
 
@@ -156,8 +160,8 @@ constant time, which the kernel checks, and its contract. -/
 
 theorem digest_ct : ConstantTime isa (MdStream.PPC64LE.Digest.digestG ok.SH hash.lbytes 96).pre
     (MdStream.PPC64LE.Digest.digestG ok.SH hash.lbytes 96).pub (Impl.MdStream.PPC64LE.Digest.digest hash) :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
-    (fun _ _ _ _ hp => MdStream.PPC64LE.Digest.agree hp) (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
+    (fun _ _ _ _ hp => MdStream.PPC64LE.Digest.agree hp) (by taint_decide_sum [VG.Proof.Sha1.PPC64LE.compressSum])
 
 theorem digestScratch :
     Verified PPC64LE.target (Impl.MdStream.PPC64LE.Digest.digest hash) (MdStream.PPC64LE.Digest.digestScratchContract ok.SH (hash.lbytes / 8)) :=

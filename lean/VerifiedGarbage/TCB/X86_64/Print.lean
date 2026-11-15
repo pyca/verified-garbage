@@ -410,6 +410,20 @@ def Instr.code (i : Instr) : List String :=
   | some bs => (i.asm.zip bs).flatMap fun (t, b) => [s!"// {t}", byteLine b]
   | none => i.asm
 
+/-- The mnemonics of Intel's list of the instructions MXCSR-configuration-dependent
+timing affects ("MCDT Data Operand Independent Timing Instructions", Table 1),
+as `ci/check_mcdt.py` lists them; the model has only some of them (see "MCDT"
+in `Isa.lean`). -/
+def mcdtMnemonics : List String :=
+  ["pmaddubsw", "pmaddwd", "pmuldq", "pmulhrsw", "pmulhuw", "pmulhw", "pmulld", "pmullw",
+    "pmuludq", "vplzcntd", "vplzcntq", "vpmadd52huq", "vpmadd52luq", "vpmaddubsw", "vpmaddwd",
+    "vpmuldq", "vpmulhrsw", "vpmulhuw", "vpmulhw", "vpmulld", "vpmullq", "vpmullw", "vpmuludq"]
+
+/-- Whether the text of `i` (`asm`) has an instruction of Intel's list: one
+whose mnemonic, its first word, is among `mcdtMnemonics`. -/
+def Instr.mcdt (i : Instr) : Bool :=
+  i.asm.any fun t => mcdtMnemonics.contains ((t.splitOn " ").headD "")
+
 def printer : Printer isa where
   instr := Instr.code
   branch c l := [s!"j{c.name} {l}"]
@@ -433,6 +447,7 @@ def printer : Printer isa where
   relative to them is fixed by the function alone: a change to other code
   cannot move them, and with them its performance. -/
   funcAlign := [".p2align 6"]
+  mcdt := Instr.mcdt
   unencodable
     | .leaSym .. => none
     | i => match i.memOps.filter (!·.dispOk) with

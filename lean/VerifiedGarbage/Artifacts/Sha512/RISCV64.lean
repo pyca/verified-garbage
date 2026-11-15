@@ -30,39 +30,30 @@ def artifacts : List Artifact := [
     verified := Proof.Sha512.RISCV64.Shared.init512_256 },
   Spec.Sha512.updateApi.artifact RISCV64.target {
     code := Impl.Sha512.RISCV64.Stream.update
-    stack := 208
     verified := Proof.Sha512.RISCV64.Shared.update },
   Spec.Sha512.finalizeApi.artifact RISCV64.target {
     code := Impl.Sha512.RISCV64.Stream.finalize
-    stack := 208
     verified := Proof.Sha512.RISCV64.Shared.finalize },
   Spec.Sha512.finalize384Api.artifact RISCV64.target {
     code := Impl.Sha512.RISCV64.Stream.finalize384
-    stack := 208
     verified := Proof.Sha512.RISCV64.Shared.finalize384 },
   Spec.Sha512.finalize512_256Api.artifact RISCV64.target {
     code := Impl.Sha512.RISCV64.Stream.finalize512_256
-    stack := 208
     verified := Proof.Sha512.RISCV64.Shared.finalize512_256 },
   Spec.Sha512.finalize512_224Api.artifact RISCV64.target {
     code := Impl.Sha512.RISCV64.Stream.finalize512_224
-    stack := 208
     verified := Proof.Sha512.RISCV64.Shared.finalize512_224 },
   Spec.Sha512.digest384Api.artifact RISCV64.target {
     code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha384.hash
-    stack := Impl.MdStream.RISCV64.Digest.dbytes Proof.Hmac.Stream.RISCV64.Sha384.hash + Proof.Hmac.Stream.RISCV64.Sha384.hash.F
     verified := Proof.Hmac.Stream.RISCV64.Sha384.digest },
   Spec.Sha512.digest512Api.artifact RISCV64.target {
     code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha512.hash
-    stack := Impl.MdStream.RISCV64.Digest.dbytes Proof.Hmac.Stream.RISCV64.Sha512.hash + Proof.Hmac.Stream.RISCV64.Sha512.hash.F
     verified := Proof.Hmac.Stream.RISCV64.Sha512.digest },
   Spec.Sha512.digest512_224Api.artifact RISCV64.target {
     code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha512_224.hash
-    stack := Impl.MdStream.RISCV64.Digest.dbytes Proof.Hmac.Stream.RISCV64.Sha512_224.hash + Proof.Hmac.Stream.RISCV64.Sha512_224.hash.F
     verified := Proof.Hmac.Stream.RISCV64.Sha512_224.digest },
   Spec.Sha512.digest512_256Api.artifact RISCV64.target {
     code := Impl.MdStream.RISCV64.Digest.digest Proof.Hmac.Stream.RISCV64.Sha512_256.hash
-    stack := Impl.MdStream.RISCV64.Digest.dbytes Proof.Hmac.Stream.RISCV64.Sha512_256.hash + Proof.Hmac.Stream.RISCV64.Sha512_256.hash.F
     verified := Proof.Hmac.Stream.RISCV64.Sha512_256.digest }]
 
 end VG.Artifacts.Sha512.RISCV64

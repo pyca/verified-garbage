@@ -20,7 +20,9 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Omega
 meta import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP384r1.MulLit
-meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 
 /-!
 # `vg_brainpoolp384r1_mul` on RISC-V: the contract
@@ -220,5 +222,13 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
     · show _ < W.p; rw [Impl.Weierstrass.Point.Curve.pointAt, x2]; exact lt₅.2.2
     · rw [Impl.Weierstrass.Point.Curve.pointAt, x0, x1, x2, dq, dq, dq]
       exact represents_of_rep R₅
+
+/-! The constant-time analysis of the call of `vg_brainpoolp384r1_mul` from its argument, done once for every
+check of code that calls it (`taint_decide_sum [mulSum]`: signing, ECDH and the public key), which
+keeps what is public of `s2`–`s5`: the function writes none of them (`s0` and `s1` it restores
+from memory). -/
+taint_summary mulSum : taint (Taint.ofRegs [.a0]) (.call "vg_brainpoolp384r1_mul" mulBrainpoolP384r1)
+  keeping (Taint.ofRegs [.s2, .s3, .s4, .s5])
+  using pMulSum pAddSum pSubSum
 
 end VG.Proof.Ecdsa.RISCV64.BrainpoolP384r1

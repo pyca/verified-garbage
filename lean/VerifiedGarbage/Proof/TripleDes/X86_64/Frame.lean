@@ -54,7 +54,7 @@ theorem expandKey_framed :
     (n := 64) (pre := Spec.TripleDes.expandKeyPre X86_64.abi.ptrBits)
     (post := Spec.TripleDes.expandKeyPost X86_64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 520) Key.verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.TripleDes.expandKeyPostOut_local _) expandKeyFrameSat_pre
 
 /-- An implementation `c` of ECB in the direction `d`, proved with its

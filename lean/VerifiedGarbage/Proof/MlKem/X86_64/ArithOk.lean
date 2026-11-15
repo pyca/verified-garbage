@@ -89,53 +89,53 @@ structure ArithOk (A : Arith) : Prop extends PrimsOk A.toPrims where
 
 theorem ArithOk.sse : ArithOk .sse where
   nttInv := ⟨nttInv_correct, nttInv_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
+    Code.all_of_spTest (by lit_decide)⟩
   add := ⟨add_correct, add_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
+    Code.all_of_spTest (by lit_decide)⟩
   sub := ⟨sub_correct, sub_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
+    Code.all_of_spTest (by lit_decide)⟩
   cbd := ⟨cbd2_correct, cbd2_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
+    Code.all_of_spTest (by lit_decide)⟩
   cbd16 := ⟨cbd2_16_correct, cbd2_16_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
+    Code.all_of_spTest (by lit_decide)⟩
   dec12 := ⟨decode12_correct, decode12_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
+    Code.all_of_spTest (by lit_decide)⟩
   enc12 := ⟨encode12_correct, encode12_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
+    Code.all_of_spTest (by lit_decide)⟩
   dm k hk := by
     rcases hk with rfl | rfl
     · exact ⟨decMulSse3_correct, decMulSse3_ct, nosp_of (by lit_decide), by lit_decide, decMulSse3_ctl,
-        Code.all_of_allInstrs (by lit_decide)⟩
+        Code.all_of_spTest (by lit_decide)⟩
     · exact ⟨decMulSse4_correct, decMulSse4_ct, nosp_of (by lit_decide), by lit_decide, decMulSse4_ctl,
-        Code.all_of_allInstrs (by lit_decide)⟩
+        Code.all_of_spTest (by lit_decide)⟩
   em k hk := by
     rcases hk with rfl | rfl
     · exact ⟨encMulSse3_correct, encMulSse3_ct, nosp_of (by lit_decide), by lit_decide, encMulSse3_ctl,
-        Code.all_of_allInstrs (by lit_decide)⟩
+        Code.all_of_spTest (by lit_decide)⟩
     · exact ⟨encMulSse4_correct, encMulSse4_ct, nosp_of (by lit_decide), by lit_decide, encMulSse4_ctl,
-        Code.all_of_allInstrs (by lit_decide)⟩
+        Code.all_of_spTest (by lit_decide)⟩
   km k hk := by
     rcases hk with rfl | rfl
     · exact ⟨kgMulSse3_correct, kgMulSse3_ct, nosp_of (by lit_decide), by lit_decide, kgMulSse3_ctl,
-        Code.all_of_allInstrs (by lit_decide)⟩
+        Code.all_of_spTest (by lit_decide)⟩
     · exact ⟨kgMulSse4_correct, kgMulSse4_ct, nosp_of (by lit_decide), by lit_decide, kgMulSse4_ctl,
-        Code.all_of_allInstrs (by lit_decide)⟩
+        Code.all_of_spTest (by lit_decide)⟩
 
 /-- The baseline, but for `vg_mlkem16_cbd2_avx2`. -/
 theorem ArithOk.sse16 : ArithOk .sse16 :=
   { ArithOk.sse with
     cbd16 := ⟨cbd2_16Y_correct, cbd2_16Y_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-      Code.all_of_allInstrs (by lit_decide)⟩ }
+      Code.all_of_spTest (by lit_decide)⟩ }
 
 theorem PrimsOk.avx2 : PrimsOk .avx2 where
   add := ⟨addY_correct, addY_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
+    Code.all_of_spTest (by lit_decide)⟩
   sub := ⟨subY_correct, subY_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
+    Code.all_of_spTest (by lit_decide)⟩
   dec12 := ⟨decode12Y_correct, decode12Y_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
+    Code.all_of_spTest (by lit_decide)⟩
   enc12 := ⟨encode12Y_correct, encode12Y_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
+    Code.all_of_spTest (by lit_decide)⟩
 
 /-- A call of `vg_mlkem*_decrypt_mul` keeps MXCSR's control bits. -/
 theorem ArithOk.dm_ctl {A : Arith} (hA : ArithOk A) {n : String} {k : Nat} (hk : k = 3 ∨ k = 4 := by decide) :

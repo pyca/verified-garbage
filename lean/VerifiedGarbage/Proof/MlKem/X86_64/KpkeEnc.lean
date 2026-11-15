@@ -111,7 +111,7 @@ keeps `KT` across one that writes only below the saved registers or to
 `u16`s, inline), and the epilogue. `y` becomes `u32`s with `vunpack`
 (`widenIn_ok`); `e₁` and `e₂` are added as `u16`s (`add16In_ok`). `u` and `v`
 are compressed by code that multiplies (`EncCE`), in an MXCSR region of
-their own (`post_wp`, with `withMxcsr_ok'`).
+their own (`post_wp`, with `noMx_ok`).
 -/
 
 @[expose] public section
@@ -958,7 +958,6 @@ theorem pre_wp {L : Kem} {A : Prims} (hA : PrimsOk A) (W : KeWf L) {mul : Nat �
 theorem post_wp {L : Kem} {A : Prims} (hA : PrimsOk A) {wu wv : List Nat} (K : EncCE L wu wv)
     (W : KeWf L) (hnA : A.add.noCalls = true) (hnU : L.ceU.noCalls = true) (hnV : L.ceV.noCalls = true)
     (hnD : A.codecs.dd.noCalls = true)
-    (hwo : writesOnly postRegs (.seq (seqR (uE L) 0 L.k) (vE L A)) = true)
     {σ : State} (hp : (kpkeEncK L).pre σ) {s : State} (h : EU L σ 0 s) :
     WP isa (kpkeEncPost L A) s fun s' => gprPreserved σ s' ∧ (kpkeEncK L).post σ s' := by
   have E := ep hp
@@ -969,8 +968,7 @@ theorem post_wp {L : Kem} {A : Prims} (hA : PrimsOk A) {wu wv : List Nat} (K : E
   have dM : ∀ r ∈ [mxR (σ.gpr .r9)], Region.Disjoint ⟨σ.gpr .rdi, L.ctLen⟩ r := fun r hr => by
     rw [List.mem_singleton] at hr; subst hr; exact E.cS.sub_right (Offset.sub_base _ (by decide))
   unfold kpkeEncPost
-  refine WP.seq (WP.mono (withMxcsr_ok' (r := .rbx) (by decide) postRegs (by decide) hkt.rbx
-    (inS E hkt (by decide)) (inS E hkt (by decide)) hwo
+  refine WP.seq (WP.mono (noMx_ok (sP := σ.gpr .r9)
     (Q := fun s' => KT L σ s' ∧
       bytesAt s'.mem (σ.gpr .rdi) L.ctLen = encCt L σ.mem (σ.gpr .rsi) (σ.gpr .rdx) (σ.gpr .rcx) (σ.gpr .r8))
     (fun s₁ k₁ f₁ => ?_)) fun s₃ ⟨s₂, ⟨kt₂, hm₂⟩, f₃, k₃⟩ => ?_)
@@ -998,10 +996,9 @@ theorem kpkeEnc_wp {L : Kem} {A : Prims} (hA : PrimsOk A) {wu wv : List Nat} (K 
       (encMulK16 L.k).post s s')
     (hn : (mul L.k).noCalls = true) (hn12 : A.dec12.noCalls = true) (hnA : A.add.noCalls = true)
     (hnU : L.ceU.noCalls = true) (hnV : L.ceV.noCalls = true) (hnD : A.codecs.dd.noCalls = true)
-    (hwo : writesOnly postRegs (.seq (seqR (uE L) 0 L.k) (vE L A)) = true)
     {σ : State} (hp : (kpkeEncK L).pre σ) :
     WP isa (kpkeEnc L A mul) σ fun s' => gprPreserved σ s' ∧ (kpkeEncK L).post σ s' :=
-  WP.seq (WP.mono (pre_wp hA W hv hn hn12 hp) fun _ h => post_wp hA K W hnA hnU hnV hnD hwo hp h)
+  WP.seq (WP.mono (pre_wp hA W hv hn hn12 hp) fun _ h => post_wp hA K W hnA hnU hnV hnD hp h)
 
 theorem kpkeEnc_correct {L : Kem} {A : Prims} (hA : PrimsOk A) {wu wv : List Nat} (K : EncCE L wu wv)
     (W : KeWf L) {mul : Nat → Prog isa}
@@ -1009,10 +1006,9 @@ theorem kpkeEnc_correct {L : Kem} {A : Prims} (hA : PrimsOk A) {wu wv : List Nat
       (encMulK16 L.k).post s s')
     (hn : (mul L.k).noCalls = true) (hn12 : A.dec12.noCalls = true) (hnA : A.add.noCalls = true)
     (hnU : L.ceU.noCalls = true) (hnV : L.ceV.noCalls = true) (hnD : A.codecs.dd.noCalls = true)
-    (hwo : writesOnly postRegs (.seq (seqR (uE L) 0 L.k) (vE L A)) = true)
     (hctl : ctlOk (kpkeEnc L A mul) = true) (σ : State) (hp : (kpkeEncK L).pre σ) :
     ∃ t s', Exec isa (kpkeEnc L A mul) σ t s' ∧ abiPreserved σ s' ∧ (kpkeEncK L).post σ s' := by
-  obtain ⟨t, s', he, hg, hq⟩ := kpkeEnc_wp hA K W hv hn hn12 hnA hnU hnV hnD hwo hp
+  obtain ⟨t, s', he, hg, hq⟩ := kpkeEnc_wp hA K W hv hn hn12 hnA hnU hnV hnD hp
   exact ⟨t, s', he, abiPreserved_of_ctl hctl he hg, hq⟩
 
 end KpkeEnc

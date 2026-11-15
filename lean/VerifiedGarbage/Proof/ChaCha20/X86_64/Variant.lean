@@ -109,7 +109,7 @@ def scalar : XorImpl where
   ct := Xor.xor_ctTo
   nosp := Avx2.xor_nosp
   mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := ""
   features := []
   poly := .scalar
@@ -142,7 +142,7 @@ def ssse3 : XorImpl where
   ct := ssse3_ct
   nosp := ssse3_nosp
   mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_ssse3"
   features := ["ssse3"]
   poly := .scalar
@@ -173,7 +173,7 @@ def avx2 : XorImpl where
   ct := avx2_ct
   nosp := avx2_nosp
   mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_avx2"
   features := ["avx", "avx2"]
   poly := .avx2
@@ -204,7 +204,7 @@ def avx512 : XorImpl where
   ct := avx512_ct
   nosp := avx512_nosp
   mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_avx512"
   features := ["avx", "avx512f"]
   poly := .avx512
@@ -224,7 +224,7 @@ def ifma : XorImpl where
   ct := avx512_ct
   nosp := avx512_nosp
   mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_ifma"
   features := ["avx", "avx512f"]
   poly := .ifma
@@ -251,7 +251,7 @@ def avx512vl : XorImpl where
   ct := Avx512VL.xor_ctTo
   nosp := avx512vl_nosp
   mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_avx512vl"
   features := ["avx", "avx2", "avx512f", "avx512vl"]
   poly := .avx512

@@ -22,6 +22,8 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_ecdh_p256_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32 {
+    // SAFETY: it takes no argument and writes no memory but its stack.
+    verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(out: *mut [u8; 32], d: *const [u8; 32], peer: *const [u8; 65], scratch: *mut [u64; 1024]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

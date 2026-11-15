@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Dsa.RISCV64.SignCT
 public import VerifiedGarbage.Proof.Dsa.RISCV64.CTBodyB
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -212,7 +213,7 @@ theorem pinsBs53 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SBs v 
   pins_at_fix (fun v => fixB v ++ envP v ++ [(.s7, off v.key (2 * v.L.pl + v.L.ql)), (.s8, BitVec.ofNat 64 v.L.pl)])
     (fun _ => rfl) fun _ _ h => by
     obtain ⟨-, -, -, -, hp, hpo⟩ := (hsem _ _ h).vals
-    exact WP.of_flat (c := .seq (.block KP0) (.seq Verify.powP (.block ptrY))) (by decide +kernel)
+    exact WP.of_flat (c := .seq (.block KP0) (.seq Verify.powP (.block ptrY))) (by kernel_rfl)
       (stKP0 (sbs_PK (hsem _ _ h)) fun _ c a7 _ a9 => WP.seq (WP.mono (powK c
         (c.cb.1.hk.sub (by have := c.cb.1.kn; omega_using [this])) a7 (c.os.key.sub (by omega_using [])) a9 hp hpo) fun _ c' =>
         WP.mono (ptrY_ok c'.cb.1.scr c'.cb.1.ok c'.cb.1.regs) fun _ ⟨⟨b7, b8, m⟩, k⟩ =>
@@ -336,7 +337,7 @@ theorem pinsTl53 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v u
     fun _ _ h => by
     obtain ⟨-, -, -, -, hp, hpo⟩ := (hsem _ _ h).vals
     exact WP.of_flat (c := .seq (.block G0) (.seq Verify.powP
-      (.block (bufBase .s7 .t2 ++ getP .s8)))) (by decide +kernel)
+      (.block (bufBase .s7 .t2 ++ getP .s8)))) (by kernel_rfl)
       (stG0 (hsem _ _ h).1.1 fun _ c a7 _ a9 => WP.seq (WP.mono (powK c
         (c.cb.1.hk.sub (by have := c.cb.1.kn; omega_using [this])) a7 (c.cb.1.ns (hsem _ _ h).2.1) a9 hp hpo) fun _ c' =>
         WP.block_append (WP.mono (bufBase_ok c'.cb.1.scr c'.cb.1.ok c'.cb.1.regs (rd := .s7) (t := .t2)
@@ -365,7 +366,7 @@ theorem stGK {v : VD} {s : State} {c : Prog isa} {Q : State → Prop} (h : TS v 
 theorem pinsTl56 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v u) :
     Pins (At Φ FTl 56) [.s6, .s11, .ra, .a7, .s5, .t0, .s9, .s10] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s9, v.L.Buf), (.s10, BitVec.ofNat 64 v.L.pl)]) (fun _ => rfl)
-    fun _ _ h => WP.of_flat (c := .seq Sign.gk (.block CMP)) (by decide +kernel)
+    fun _ _ h => WP.of_flat (c := .seq Sign.gk (.block CMP)) (by kernel_rfl)
       (stGK (hsem _ _ h) fun _ B _ _ _ _ => (cmp_pre B).mono fun _ ⟨⟨B', iq, a9, a10, _⟩, _⟩ =>
         (B'.fixB.app (fix_envQ iq)).app ⟨a9, a10, trivial⟩)
 
@@ -443,7 +444,7 @@ theorem pinsTl67 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v u
     Pins (At Φ FTl 67) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.sig), (.s8, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl)
     fun _ _ h => WP.of_flat (c := .seq Sign.gk (.seq (.block CMP) (.seq ModArith.reduce64
-      (.seq (copy 25 1) (.seq (zeroArr 7) (.block Verify.ptrR)))))) (by decide +kernel)
+      (.seq (copy 25 1) (.seq (zeroArr 7) (.block Verify.ptrR)))))) (by kernel_rfl)
       (stR6 (hsem _ _ h) fun _ K => WP.mono (ptrR_ok K.qs.scr K.base.ok K.qs.regs)
         fun _ ⟨⟨b7, b8, m⟩, k⟩ => (fix_QK (K.keepM k m)).app ⟨b7, b8, trivial⟩)
 
@@ -452,7 +453,7 @@ theorem pinsTl75 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v u
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, off v.key (3 * v.L.pl + v.L.ql)), (.s8, BitVec.ofNat 64 v.L.ql)])
     (fun _ => rfl) fun _ _ h => WP.of_flat (c := .seq Sign.gk (.seq (.block CMP)
       (.seq ModArith.reduce64 (.seq (copy 25 1) (.seq (zeroArr 7) (.seq (.block Verify.ptrR) (.seq (loadArr 6)
-        (.block Sign.ptrX)))))))) (by decide +kernel)
+        (.block Sign.ptrX)))))))) (by kernel_rfl)
       (stR6 (hsem _ _ h) fun _ K => by
         have hL := K.base.ok
         have hql : 20 ≤ _ ∧ _ ≤ 32 := K.base.ql
@@ -499,7 +500,7 @@ theorem pinsTl118 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v 
     Pins (At Φ FTl 118) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.L.Buf), (.s8, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl)
     fun v _ h => WP.of_flat (c := .seq Sign.gk (.seq Sign.rRanges (.seq Verify.rrQ
-      (.seq Verify.minus2 (.block Verify.ptrBuf))))) (by decide +kernel)
+      (.seq Verify.minus2 (.block Verify.ptrBuf))))) (by kernel_rfl)
       (stRQ (hsem _ _ h) fun _ K _ _ _ => by
         have hL := K.base.ok
         refine WP.seq (WP.mono (minus2_ok K.qs.inq.env (show 2 ≤ arrQ _ v.L 0 by rw [K.q0]; exact (hsem _ _ h).vals.1))
@@ -525,7 +526,7 @@ theorem pinsTl121 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v 
     Pins (At Φ FTl 121) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.sig), (.s8, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl)
     fun _ _ h => WP.of_flat (c := .seq Sign.gk (.seq Sign.rRanges (.seq Verify.rrQ
-      (.seq Verify.qMinus2 (.block Verify.ptrR))))) (by decide +kernel)
+      (.seq Verify.qMinus2 (.block Verify.ptrR))))) (by kernel_rfl)
       (stQM (hsem _ _ h) fun _ K _ _ _ => WP.mono (ptrR_ok K.qs.scr K.base.ok K.qs.regs)
         fun _ ⟨⟨b7, b8, m⟩, k⟩ => (fix_QK (K.keepM k m)).app ⟨b7, b8, trivial⟩)
 
@@ -535,7 +536,7 @@ theorem pinsTl131 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v 
       (.s10, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl)
     fun v _ h => WP.of_flat (c := .seq Sign.gk (.seq Sign.rRanges (.seq Verify.rrQ
       (.seq Verify.qMinus2 (.seq (.block Verify.ptrR) (.seq (loadArr 4) (.seq (copy 1 24)
-        (.block (Verify.ptrBuf ++ [.addi .s9 .s7 0, .addi .s10 .s8 0]))))))))) (by decide +kernel)
+        (.block (Verify.ptrBuf ++ [.addi .s9 .s7 0, .addi .s10 .s8 0]))))))))) (by kernel_rfl)
       (stQM (hsem _ _ h) fun _ K _ _ _ => by
         have hL := K.base.ok
         have hql : 20 ≤ _ ∧ _ ≤ 32 := K.base.ql
@@ -575,7 +576,7 @@ theorem pinsTl172 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v 
       (.a0, BitVec.ofNat 64 (if v.qb < v.d then 1 else 0))]) (fun _ => rfl) fun v _ h => by
     have hqb := (hsem _ _ h).vals.2.2.2.1
     refine WP.of_flat (c := .seq Sign.gk (.seq Sign.rRanges (.seq Verify.rrQ
-      (.seq Verify.qMinus2 (.seq Sign.inverseK (.block SLB)))))) (by decide +kernel)
+      (.seq Verify.qMinus2 (.seq Sign.inverseK (.block SLB)))))) (by kernel_rfl)
       (stINV (hsem _ _ h) fun _ K _ _ _ _ => ?_)
     have hL := K.base.ok
     have hp : v.L.pl < 2 ^ 16 := by have := K.base.pl; simp only [Nat.reducePow]; omega_using [this]
@@ -604,7 +605,7 @@ theorem pinsTl174 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v 
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.dig), (.s8, BitVec.ofNat 64 (min v.d v.qb))])
     (fun _ => rfl) fun v _ h => by
     refine WP.of_flat (c := .seq Sign.gk (.seq Sign.rRanges (.seq Verify.rrQ
-      (.seq Verify.qMinus2 (.seq Sign.inverseK (.seq Verify.scalarLen (.block [.load .d .s7 .s6 hDigest]))))))) (by decide +kernel)
+      (.seq Verify.qMinus2 (.seq Sign.inverseK (.seq Verify.scalarLen (.block [.load .d .s7 .s6 hDigest]))))))) (by kernel_rfl)
       (stINV (hsem _ _ h) fun _ K _ _ _ _ => ?_)
     have hL := K.base.ok
     have h3 : v.qb < 2 ^ 16 := by
@@ -624,7 +625,7 @@ theorem pinsTl188 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v 
       (.s9, off v.key (3 * v.L.pl + v.L.ql)), (.s10, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl) fun v _ h => by
     refine WP.of_flat (c := .seq Sign.gk (.seq Sign.rRanges (.seq Verify.rrQ
       (.seq Verify.qMinus2 (.seq Sign.inverseK (.seq Verify.scalar (.seq (zeroArr 7) (.seq (Sign.addMod 6 6 7)
-        (.block (Sign.ptrX ++ [.addi .s9 .s7 0, .addi .s10 .s8 0])))))))))) (by decide +kernel)
+        (.block (Sign.ptrX ++ [.addi .s9 .s7 0, .addi .s10 .s8 0])))))))))) (by kernel_rfl)
       (stINV (hsem _ _ h) fun _ K _ _ _ _ => ?_)
     have hL := K.base.ok
     have hwq := hL.wq_ge
@@ -676,7 +677,7 @@ theorem pinsTl259 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v 
       (.seq Verify.qMinus2 (.seq Sign.inverseK (.seq Sign.sValue (.seq (zeroArr 7)
         (.seq (.block [.load .d .a4 .s6 hMask]) (.seq (Sign.nonZero 6) (.seq (.block [.addi .s4 .a4 0])
           (.seq (Sign.sel 1 25 7) (.seq (Sign.sel 2 6 7) (.block ([.load .d .s7 .s6 Sign.hOut] ++ getQ .s8))))))))))))))
-      (by decide +kernel) (stSV (hsem _ _ h) fun _ K => ?_)
+      (by kernel_rfl) (stSV (hsem _ _ h) fun _ K => ?_)
     have hL := K.base.ok
     have hwq := hL.wq_ge
     have hqs := hL.qslot
@@ -747,7 +748,7 @@ theorem tail_rel {Ψ : VD → State → Prop} (runT : ∀ v s, Ψ v s → WP isa
   refine chain_cons runT (m := 259) (by decide) (two_taint _ (pinsTl188 hsem) (by taint_decide)) ?_
   exact two_taint _ (pinsTl259 hsem) (by taint_decide)
 
-theorem drop64 : FBs.drop 64 = FTl := by decide +kernel
+theorem drop64 : FBs.drop 64 = FTl := by kernel_rfl
 
 /-- `body`, from a level whose states are in its phase: `keyPair`'s cuts, then
 the tail's. -/

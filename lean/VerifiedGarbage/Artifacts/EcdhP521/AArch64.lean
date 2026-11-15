@@ -15,7 +15,6 @@ open VG.Proof.P521.AArch64 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.P521.exchangeApi.artifact AArch64.target {
     code := Impl.Weierstrass.AArch64.P521Native.exchange
-    stack := 3456
     verified := Proof.Weierstrass.AArch64.P521Native.native_verified hasLaw.law hasLaw.inv hasLaw.prime }]
 
 end VG.Artifacts.EcdhP521.AArch64

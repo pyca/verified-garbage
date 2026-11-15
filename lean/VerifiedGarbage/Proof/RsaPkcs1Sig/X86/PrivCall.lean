@@ -95,35 +95,19 @@ theorem priv_pre (h : PrivArgs s out n e inp p q dp dq qinv scr K el pl ql sl)
     Nat.mod_eq_of_lt (show pl < 4294967296 by omega_using [pl32]), Nat.mod_eq_of_lt (show ql < 4294967296 by omega_using [ql32]),
     Nat.mod_eq_of_lt (show sl < 4294967296 by have := h.sl32; omega_using [this]),
     argAddr_withRegions, argAddr_callEntry, Nat.mul_zero, BitVec.add_zero, e4]
-  have wr := fun {w r : Region} (hw : w ∈ privWr (s.gpr .esp) out scr K sl)
-    (hr : r ∈ privRd n e inp p q dp dq qinv K el pl ql) => dW w hw r hr
-  simp only [privWr, List.pairwise_cons, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
-    forall_eq, List.Pairwise.nil, and_true, forall_false, implies_true] at dWW
-  obtain ⟨⟨oS, oA⟩, sA⟩ := dWW
-  have lo := fun {r : Region} (hr : r ∈ privWr (s.gpr .esp) out scr K sl ++ privRd n e inp p q dp dq qinv K el pl ql) =>
-    dLow r hr
-  have fi := fun {r : Region} (hr : r ∈ privWr (s.gpr .esp) out scr K sl ++ privRd n e inp p q dp dq qinv K el pl ql) =>
-    fit r hr
-  have fi' : ∀ (x : BitVec 32) (k : Nat),
-      (⟨x.setWidth 64, k⟩ : Region) ∈ privWr (s.gpr .esp) out scr K sl ++ privRd n e inp p q dp dq qinv K el pl ql →
-      x.toNat + k ≤ 2 ^ 32 := by
-    intro x k hx
-    have := fi hx
-    rwa [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := x.isLt; omega_using [])] at this
   have ret : Region.Sub ⟨(s.gpr .esp - 4).setWidth 64, 4⟩ (below (s.gpr .esp) 3448) :=
     below_sub (by decide) h.sp
   have low : Region.Sub ⟨(s.gpr .esp - 4).setWidth 64 - BitVec.ofNat 64 3444, 3444⟩ (below (s.gpr .esp) 3448) := by
     rw [← Taint.sub_setWidth (by omega_using [hsp, e4])]
     exact below_inner (by decide) h.sp
-  repeat' apply And.intro
-  all_goals first
-    | omega | kernel_rfl | trivial | exact h.kv | exact h.el1 | exact h.elK | exact h.pl1 | exact h.plK
-    | exact h.ql1 | exact h.qlK | exact h.slK | exact oS | exact oA | exact sA
-    | (refine wr ?_ ?_ <;> simp <;> fail) | (refine (wr ?_ ?_).symm <;> simp <;> fail)
-    | (refine (lo ?_).sub_left ret; simp <;> fail) | (refine (lo ?_).sub_left low; simp <;> fail)
-    | (refine fi' _ _ ?_; simp <;> fail)
-    | (simp only [Proof.Rsa.X86.PrivChecked.stackBytes]; omega_using [hsp])
-    | exact h.kv.1 | exact h.kv.2
+  have dWs := fun (w : Region) hw (r : Region) hr => (dW w hw r hr).symm
+  have loR := fun (r : Region) hr => (dLow r hr).sub_left ret
+  have loL := fun (r : Region) hr => (dLow r hr).sub_left low
+  simp only [privWr, privRd, List.cons_append, List.nil_append, List.pairwise_cons, List.mem_cons,
+    List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, List.Pairwise.nil, and_true, forall_false,
+    implies_true, BitVec.toNat_setWidth_32_64, Nat.reducePow] at dW dWs dWW loR loL fit
+  simp only [dW, dWs, dWW, loR, loL, fit, h.kv, h.el1, h.elK, h.pl1, h.plK, h.ql1, h.qlK, h.slK, and_true]
+  exact ⟨by simp only [Proof.Rsa.X86.PrivChecked.stackBytes]; omega_using [hsp], by omega_using [hsp, hfit]⟩
 
 theorem priv_pub {s₁ s₂ : State} (h₁ : PrivArgs s₁ out n e inp p q dp dq qinv scr K el pl ql sl)
     (h₂ : PrivArgs s₂ out n e inp p q dp dq qinv scr K el pl ql sl) (hsp : s₁.gpr .esp = s₂.gpr .esp)

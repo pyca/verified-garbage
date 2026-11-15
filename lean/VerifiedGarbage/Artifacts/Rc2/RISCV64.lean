@@ -20,15 +20,12 @@ namespace VG.Artifacts.Rc2.RISCV64
 def artifacts : List Artifact := [
   Spec.Rc2.cbcInitApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchWiped 608 .a6 72 Impl.Rc2.RISCV64.Stream.init
-    stack := 608
     verified := Proof.Rc2.RISCV64.Stream.init_framed },
   Spec.Rc2.cbcEncryptChainedApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a4 64 Impl.Rc2.RISCV64.Cbc.encrypt
-    stack := 512
     verified := Proof.Rc2.RISCV64.Cbc.encryptChained_framed },
   Spec.Rc2.cbcDecryptChainedApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchWiped 512 .a4 64 Impl.Rc2.RISCV64.Cbc.decrypt
-    stack := 512
     verified := Proof.Rc2.RISCV64.Cbc.decryptChained_framed }]
 
 end VG.Artifacts.Rc2.RISCV64

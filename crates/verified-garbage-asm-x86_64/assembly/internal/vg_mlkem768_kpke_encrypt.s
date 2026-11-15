@@ -168,13 +168,6 @@ vg_mlkem768_kpke_encrypt:
 	mov r13, rcx
 	mov r15, rdx
 	mov r14d, 3
-	stmxcsr DWORD PTR [rbx+768]
-	mov r11d, DWORD PTR [rbx+768]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+772], eax
-	ldmxcsr DWORD PTR [rbx+772]
-	lfence
 	mov rcx, rbx
 	mov r10, rcx
 	add r10, 3328
@@ -3119,22 +3112,12 @@ vg_mlkem768_kpke_encrypt:
 	vmovdqu YMMWORD PTR [rdi+960], ymm6
 	vmovdqu YMMWORD PTR [rdi+992], ymm7
 	vzeroupper
-	lfence
-	mov DWORD PTR [rbx+768], r11d
-	ldmxcsr DWORD PTR [rbx+768]
 	mov rbp, QWORD PTR [rbx+3072]
 	mov r12, QWORD PTR [rbx+3080]
 	mov r13, QWORD PTR [rbx+3088]
 	mov r14, QWORD PTR [rbx+3096]
 	mov r15, QWORD PTR [rbx+3104]
 	mov rbx, QWORD PTR [rbx+3112]
-	stmxcsr DWORD PTR [rbx+768]
-	mov r11d, DWORD PTR [rbx+768]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+772], eax
-	ldmxcsr DWORD PTR [rbx+772]
-	lfence
 	mov rdi, rbx
 	add rdi, 10240
 	mov rsi, r13
@@ -3862,9 +3845,6 @@ vg_mlkem768_kpke_encrypt:
 	sub rcx, 1
 	jne 222b
 	vzeroupper
-	lfence
-	mov DWORD PTR [rbx+768], r11d
-	ldmxcsr DWORD PTR [rbx+768]
 	mov r15, QWORD PTR [rbx+19496]
 	mov r14, QWORD PTR [rbx+19488]
 	mov r13, QWORD PTR [rbx+19480]

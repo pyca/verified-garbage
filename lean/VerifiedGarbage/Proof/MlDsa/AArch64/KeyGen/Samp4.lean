@@ -177,19 +177,4 @@ theorem expA4_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : 
       (fun _ _ _ h => ⟨h,fun _ h => False.elim (Nat.not_lt_zero _ h)⟩)
       (fun _ _ _ h => by simpa using h)) (call_piece hP hF hg)
 
-theorem sampAll_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {p : Params} (hF : PFacts p) :
-    Piece p S (fun σ s => K1 p σ s ∧ s.gpr .x24 = 1) (KSamp p · (p.k*p.ℓ) 0) (expAll P p) := by
-  unfold expAll
-  have hB : Piece p S (KSamp p · 0 0) (KSamp p · (4*(p.k*p.ℓ/4)) 0)
-      (seqR (expA4 P p) 0 (p.k*p.ℓ/4)) := by
-    simpa only [Nat.zero_add,Nat.mul_zero] using
-      (Piece.seqR (I := fun g σ s => KSamp p σ (4*g) 0 s) (p.k*p.ℓ/4) 0
-        (fun g _ hg => expA4_piece hP hF (by omega_using [hg])))
-  refine Piece.mono (Piece.seq hB
-    (Piece.seqR (I := fun e σ s => KSamp p σ e 0 s) (p.k*p.ℓ%4) (4*(p.k*p.ℓ/4))
-      (fun e _ he => expA_piece hP hF (by omega_using [he]))))
-    (fun _ _ _ h => KSamp.zero h.1 h.2) (fun _ _ _ h => ?_)
-  have he : 4*(p.k*p.ℓ/4)+p.k*p.ℓ%4 = p.k*p.ℓ := by omega_using []
-  simpa only [he] using h
-
 end VG.Proof.MlDsa.AArch64.KeyGen

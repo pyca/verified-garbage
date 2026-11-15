@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.SliceFrame
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
@@ -309,7 +310,7 @@ theorem fiveCode_eq : fiveCode =
     ([4,8,16].flatMap fun len => (List.range (16/len)).flatMap fun b =>
       rootPair ((if len=4 then 256 else if len=8 then 384 else 448)+32*b) ++
       (List.range (len/4)).flatMap (fun j => batchPair (b*len/2+j) (b*len/2+j+len/4))) := by
-  decide +kernel
+  kernel_rfl
 
 theorem five_ok {s : State} {rest : List Instr} {Q : State → Prop} {v : Values}
     {zp : Nat → Nat → Nat → Int} {zl : Nat → Nat → Int}

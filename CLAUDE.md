@@ -55,9 +55,12 @@ own changes are rebuilt either way, on top of the restored build.
   code, `TCB/<ISA>/Encode.lean`, but ARM's, whose one crate serves both A32
   and Thumb, as text), and its assembly file, the text of that code,
   `assembly/<module>.s`, which is not compiled: read the code there.
-  The one exception is a prototype measuring an instruction the ISA model
-  lacks (the `benchmarking` skill): it lives only on a `bench/` branch,
-  is never opened as a PR, and is deleted once measured.
+  The one exception is a prototype that only measures speed (the
+  `benchmarking` skill): unproven code, written by hand, to find out
+  whether something is worth proving or where a cost comes from. It may
+  use an instruction the ISA model lacks, a code change before it is
+  proven, or the generated code with one part edited out. It lives only on
+  a `bench/` branch, is never opened as a PR, and is deleted once measured.
 * **The cryptography is in the verified code, never in Rust.** The Rust
   around a verified function is tested, not proven, so it does only what
   cannot be verified: it checks the API's arguments, lays out buffers and
@@ -218,7 +221,10 @@ own changes are rebuilt either way, on top of the restored build.
   `lean/VerifiedGarbage/TCB/X86_64/Isa.lean`. `ci/check_mcdt.py` checks the
   generated code instead: every instruction on Intel's MCDT list must be
   inside that exact sequence in its function, entered only through the
-  prologue.
+  prologue, or on x86-64 in a function that only runs under `vg_mcdt_enter`
+  (`Spec/Mcdt.lean`): the dispatcher of every function whose code has such
+  an instruction runs it first (`Printer.mcdt`, "Dispatchers" in
+  `TCB/Rust.lean`), so a new x86-64 function needs no sequence of its own.
 * `TCB/` holds definitions only and imports only Lean core; lemmas go in
   `Proof/`. `Spec/` and `Impl/` never import `Proof/`.
   `ci/check_lean_imports.py` checks both.
@@ -419,11 +425,14 @@ lemmas and tactics to use; read it before writing a proof:
   files too (nothing checks this: `ci/lit_imports.py` ranks the misses
   that cost the build). Arithmetic it evaluates is in a closed term: with
   a variable anywhere in the term it adds and shifts in unary. A checker's
-  environment is a list, not a function updated at every write. A property
+  environment is a list, not a function updated at every write. An equation
+  between code is `kernel_rfl`'s, never `decide +kernel`'s. A property
   of every instruction of code that calls verified functions follows from
   theirs (`NoSp.seq`, `NoSp.leaf`), and its registration's `spSafe` from it
   (`NoSp.spSafe`): never evaluate a wrapper with the code it calls. A
-  function evaluated at every instruction matches on the instruction once.
+  function evaluated at every instruction matches on the instruction once
+  (`spSafe` on x86 and x86-64 by `Code.all_of_spTest`, not
+  `Code.all_of_allInstrs`).
 * **Arithmetic side conditions:** finite facts by one `decide` on the
   bounded statement, not `interval_cases`; nested `if`s with
   `↓ite_eq_left`/`↓ite_eq_right`; ranges at offsets with `VG.Offset`, not
@@ -434,7 +443,9 @@ lemmas and tactics to use; read it before writing a proof:
   explicit lemmas (`congrArg`, `rw`), not `rfl`, `congr 1` or
   `first | rfl | …`; rewrite with a lemma where a hypothesis and the goal
   differ by a definition, rather than leave `exact` or `fun _ h => h` to
-  unify them; never `rfl`, `decide` or `change` on a goal holding a
+  unify them; never `rfl` on `f t … = f s …` with `t` and `s` states or
+  memories (the kernel compares the arguments before it unfolds `f`), nor
+  `rfl`, `decide` or `change` on a goal holding a
   large concrete value, which `generalize` does not hide from the kernel
   (abstract it with `obtain`); rewrite tables' regions with
   `Abi.constRegions_cons`, and state a table's facts with the `ConstsOk`
@@ -450,8 +461,12 @@ lemmas and tactics to use; read it before writing a proof:
   `sig_split` and `rename_i`, not one `obtain`; import `Proof/Framework/PowLit.lean` for
   numeral exponents; prefer simprocs to `simp (config := {decide := true})`
   on expensive facts; put tactic modules that import only core in
-  `NativeTactics`, and keep Mathlib's interpreted tactics (`tauto`) out of
-  hot proofs.
+  `NativeTactics`, and keep Mathlib's interpreted tactics (`tauto`,
+  `nlinarith`) out of hot proofs. One call often takes most of a slow
+  proof: work repeated in every case of a split (`cases x <;> simp_all`),
+  `simp (disch := omega)`, `omega` on a fact that is not linear, an
+  alternative of `first` that fails slowly, an implicit argument left to
+  unification.
 * **Imports:** never `Mathlib.Tactic` or all of Mathlib; keep
   `IntervalCases`, `NormNum`, `Ring` and heavy algebra out of modules many
   others import; a module of one target never imports another target's,

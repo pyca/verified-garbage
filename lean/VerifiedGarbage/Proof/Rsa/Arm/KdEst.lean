@@ -279,7 +279,27 @@ theorem fix3_ok {s : State} {B : BitVec 32} (h12 : s.gpr .r12 = B)
     simp only [BitVec.toNat_add]
     simp only [carry_div, show BitVec.toNat (0 : BitVec 32) = 0 from rfl, Nat.zero_add, Nat.zero_mod,
       Nat.add_zero]
-    omega_using []
+    -- one word's sum at a time: `omega` takes seconds on the nested quotients
+    have h0 := (s.gpr .r10).isLt
+    have h1 := (s.gpr .r11).isLt
+    have h2 := (s.gpr .lr).isLt
+    have hd := d.isLt
+    have hd1 := d1.isLt
+    generalize (s.gpr .r10).toNat = a at h0 ⊢
+    generalize (s.gpr .r11).toNat = b at h1 ⊢
+    generalize (s.gpr .lr).toNat = c at h2 ⊢
+    generalize d.toNat = f at hd ⊢
+    generalize d1.toNat = e at hd1 ⊢
+    rw [show min ((a + e) / 2 ^ 32) 1 % 2 ^ 32 = (a + e) / 2 ^ 32 by omega_using [h0, hd1]]
+    generalize hq0 : (a + e) / 2 ^ 32 = q0
+    generalize hr0 : (a + e) % 2 ^ 32 = r0
+    rw [show min ((b + q0) / 2 ^ 32) 1 % 2 ^ 32 % 2 ^ 32 = (b + q0) / 2 ^ 32 by omega_using [h0, h1, hd1, hq0]]
+    generalize hq1 : (b + q0) / 2 ^ 32 = q1
+    generalize hr1 : (b + q0) % 2 ^ 32 = r1
+    rw [show min ((r1 + f) / 2 ^ 32) 1 = (r1 + f) / 2 ^ 32 by omega_using [hd, hr1]]
+    generalize hq2 : (r1 + f) / 2 ^ 32 = q2
+    generalize hr2 : (r1 + f) % 2 ^ 32 = r2
+    omega_using [h0, h1, h2, hd, hd1, hq0, hr0, hq1, hr1, hq2, hr2]
   · simp only [hn, ↓reduceIte, true_and]
     have z0 : BitVec.toNat (0 : BitVec 32) = 0 := rfl
     have nc : ∀ x : BitVec 32, decide (2 ^ 32 ≤ x.toNat + 0) = false := fun x => by

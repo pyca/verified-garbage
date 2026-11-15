@@ -155,12 +155,10 @@ open VG.Proof.RsaPkcs1Sig.X86.Ver
 def direct : List Artifact := [
   Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact VG.X86.target {
     code := Impl.RsaPkcs1Sig.X86.Verify.code baseline.name baseline.code
-    stack := verifyStack
     verified := verify_verified baseline
     spSafe := code_sp baseline },
   Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact VG.X86.target {
     code := Impl.RsaPkcs1Sig.X86.Recover.code baseline.name baseline.code
-    stack := Proof.RsaPkcs1Sig.X86.Rcv.recoverStack
     verified := Proof.RsaPkcs1Sig.X86.Rcv.recover_verified baseline
     spSafe := Proof.RsaPkcs1Sig.X86.Rcv.code_sp baseline }]
 
@@ -178,7 +176,6 @@ def artifacts : List Artifact :=
       suffix := v.suffix
       code := Impl.RsaPkcs1Sig.X86.Sign.code (privNameP v) (privCodeP v crtPBaseline)
         Impl.RsaPkcs1Sig.X86.Sign.callArgsP
-      stack := sigStack
       verified := signPrecomputed_verified v
       spSafe := codeP_sp v crtPBaseline }])
 

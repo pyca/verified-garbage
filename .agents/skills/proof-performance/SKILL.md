@@ -105,7 +105,14 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   were most of the 0.8 ms a plain instruction took in the residue analysis.
   Give what several matches computed by one, with the patterns of all of
   them, and prove it equal to the function it replaces by cases
-  (`RTaint.stepFn1`, `stepFn1_eq`, `Proof/Framework/X86_64/`).
+  (`RTaint.stepFn1`, `stepFn1_eq`, `Proof/Framework/X86_64/`). So `spSafe`
+  on x86 and x86-64 is checked with the ISA's `keepsSp`
+  (`Proof/Framework/<ISA>/Taint.lean`), one match that compares the
+  constructor's index, and `Code.all_of_spTest` (`SpTest`,
+  `Proof/Framework/SpTest.lean`) gives the statement about `writesSp` from
+  it: write `Code.all_of_spTest (by lit_decide)`, as `sp_safe` does, not
+  `Code.all_of_allInstrs (by lit_decide)`, which tests `!isa.writesSp i`
+  and takes twice as long for each instruction.
 * **Code the kernel evaluates:** code built by functions (unrolled
   compression functions, and the functions calling them) is rebuilt by the
   kernel in every check that evaluates it (constant time, `spSafe`, …), in
@@ -113,7 +120,7 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   (`Proof/Framework/Lit.lean`), in a `Lit.lean` next to its proofs, defines
   `foo.lit` and checks `foo.lit_eq` once; then `taint_decide` and
   `lit_decide` (not `decide +kernel`) evaluate the literal, and the
-  registration file's `spSafe := Code.all_of_allInstrs (by lit_decide)`.
+  registration file's `spSafe := Code.all_of_spTest (by lit_decide)`.
   Functions that build code or tables (a register allocator, spec
   tables) get literals too: `materialize_table f n` (for `f : Nat → α`;
   `Nat`-valued tables are packed into one number, read by a shift),
@@ -127,8 +134,20 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   callee's taint once as a summary (`taint_summary`, `taint_decide_sum`,
   `Proof/Framework/TaintSum.lean`) rather than analysing its body in every
   caller's `taint_decide`; this needs a `Taint.Frame` instance for the ISA's
-  taint domain (so far `AArch64.VectorTaint`, `Framework/AArch64/TaintMono.lean`).
-  A summary pays when declarations or modules share it: within one
+  taint domain (`Proof/Framework/<ISA>/TaintMono.lean`, `TaintSymMono.lean`,
+  `SlotTaintMono.lean`, `SseTaintMono.lean`: each says which domains it is for).
+  A summary costs one analysis of the callee, and a second pass over its
+  instructions with `keeping` (the registers it does not write, which its
+  callers still know after the call), so it pays from the third check that
+  would analyse the callee: a hash's compression function, which `update`,
+  `finalize`, HMAC and PBKDF2 all call, not a function with one or two
+  callers. The callee's own constant time is the summary's
+  (`Taint.exists_check_of_sumOk`). For a function its callers call
+  (`.call name body`), summarize the call, named as they name it, not the
+  body, which the hints would compare with the code at every call; a callee
+  of a few hundred instructions does not pay, since what is left is a cost
+  per call site (the four-word curves' field functions on RISC-V, measured
+  and left). Within one
   `taint_decide`, the kernel already analyses identical code from the same
   taint once, so splitting one check into summaries makes it slower. Give a
   summary the smallest taint its callers need (public slots that are never
@@ -202,6 +221,89 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   conjunct in one step, and `rename_i` names them, in the conjunction's
   order: 0.3 s. The last conjunct keeps the name `h`; a conjunct that is
   itself a conjunction gets a name, and its own `obtain` or `sig_split`.
+* **One tactic call that takes seconds:** most of a slow elaboration is
+  often one call, and the build's profile names it (`lean-profiling`; a step
+  of a theorem with a doc comment is recorded under the declaration before
+  it). The causes found so far:
+  * *Cases that each repeat the work.* `cases x <;> simp_all`, `interval_cases
+    i <;> simp …`, or a block run again after `cases K <;> cases T`: `revert`
+    what the cases need and close them by `decide`, prove the fact once for a
+    general index, or run the block (and evaluate the precondition) once
+    before the split and split only the goals that mention the value
+    (`reduce_scan`, 512 `simp`s, over 20 s to 1 s; `qBase_ok`, `simp_all` in
+    1024 cases, 13.9 s to 1.4 s).
+  * *A discharger per side condition.* `simp (disch := omega)` runs `omega`
+    in the whole context for every condition of every rewrite. Closed
+    conditions take `(disch := decide)`; others, their facts proved once and
+    given to a plain `simp only`, or `(disch := omega_using [h₁, h₂])`
+    (`prepWord0_ok`, 1165 `omega`s).
+  * *`omega` on what is not linear.* A fact holding `BitVec.toNat 0`, a nest
+    of `2 ^ 64 * (…)` or of `% 2 ^ 32` sums costs each `omega_arith` seconds:
+    rewrite the fact first, or prove the nonlinear pieces once as named facts
+    and give only those (`omega_using`). Plain `omega` in a context of a
+    hundred facts is several times `omega_arith`.
+  * *An alternative that fails slowly.* In `first | A | B` and in
+    `repeat' apply And.intro` followed by `all_goals first | …`, a failing
+    `exact`, `refine … (lemma _ (by decide))`, `trivial` or `rfl` may unify
+    for seconds before it fails. Put the one that works first, make the
+    other fail fast (`with_reducible exact h`, `exact rfl`), or expand the
+    facts once and close every conjunct with one `simp only`.
+  * *An implicit argument left to unification.* `rw [wa_shift h]`, where `h`
+    determines a structure only through one of its fields, took 11.6 s to
+    find it: give it, even in part (`(τ' := ⟨_, _, _, _, τ.room - 8, _, …⟩)`).
+  * *A term elaborated before its implicit arguments are known.* `exact
+    lemma h₁ h₂`, `cutThen_trace check …` or `bytesAt_frame …` whose implicit
+    region or state appears in the goal only under a projection is unified
+    by unfolding (`bytesAt`, `taint.check`, a key's status): name the
+    arguments (`(r := ⟨addr, len⟩)`, `(s := s₂)`), or state the fact with
+    `have` and `exact` it. The same for `h ▸ e`, `congr n` and
+    `show a = b from rfl` between two states' memories or two programs:
+    `rw [h]`, `congrArg` with the function written out, `kernel_rfl`.
+  * *Small goals by a large tactic.* An inclusion of literal register lists
+    by `simp [regs]` (3.5 s), a propositional case analysis by `omega`,
+    fifty side goals over literal lists by default `simp`: `decide`. Thirty
+    nested `max` by `omega_arith` (3.7 s): `Nat.max_le` in a `simp only`. A
+    `fun | [x₁, …, x₁₈], h => …` on a computed list refutes every other
+    length once per pattern: take the length as a numeral in a lemma.
+  * *Reads through writes after the fact.* With `RegUpd.gpr_write` and
+    `ite_true, ite_false` as ordinary rewrites, `simp` simplifies the value
+    of every write a read passes: `↓RegUpd.gpr_write` and `↓reduceIte`
+    rewrite the read first and never visit the discarded branch. A shared
+    run tactic without `↓reduceIte` pays this in every block: `ffrun`'s time
+    doubled with each instruction that has an operand to evaluate (3.6 s for
+    ten), and its 125 modules took 141 s; with it, 98 s. A run tactic that
+    unfolds the writes themselves (`State.write`) re-simplifies every
+    earlier register function at each instruction: keep them folded and
+    read through them (`crunw`, `MlKem1024/RISCV64/`).
+  * *Interpreted arithmetic.* Mathlib's `nlinarith` multiplies every pair of
+    facts, in the interpreter: 5 to 11 s for `2 * x ≤ x * 2 ^ 63`. State the
+    products as facts and use `omega_using` (which takes `2 ^ k` for an
+    atom), or `linarith` where the products are hypotheses already.
+* **A module slow in many small places:** when no declaration stands out,
+  one idiom is usually repeated through the file. The ones found so far:
+  * *Facts `omega_arith` collects that no goal needs.* One alignment fact
+    (`x % 8 = 0`) among the hypotheses made each call three to four times
+    slower (`TComb`): state the conjuncts the goals use (`lay_lin`), not the
+    whole layout. An `omega_using` list that carries six separation
+    disjunctions where one is needed has `omega` split on each (`RdDiv`:
+    479 facts removed from 86 calls).
+  * *Multi-word values unfolded into their words.* `omega` over 8 to 14
+    atoms with coefficients up to `2 ^ 256`: keep each value one atom and
+    state the arithmetic about the values (`P256Field/Fn`), or state each
+    word's sum and carry once and close with one `omega` (`sub3w_ok`).
+  * *`grind` on a ring identity among a hundred hypotheses.* Move the
+    identity to a private lemma whose only hypotheses are the equations it
+    uses, and `exact` it (`GenWide/Sqr`, `SqrtLoop`).
+  * *An alignment closed by `dsimp`.* `(… .syms name).toNat % 64 = 0` on a
+    term with free variables has the kernel take the remainder in unary:
+    `rw [show … .syms name = <address> from rfl]; decide` (`SignEntryTiming`,
+    `Message`: 3 s to 0.2 s each).
+  * *A pattern-matching `fun` on a hypothesis with a very large type*
+    (`fun σ s ⟨⟨⟨h, x⟩, _⟩, z⟩ => …`) compiles a matcher each time, up to
+    1 s: take the hypothesis and project, or `obtain` on the next line.
+  * *A macro every proof calls.* `oomega` took a 23-fact conjunction apart
+    with `obtain` at each of its 225 uses: `have := offsO; omega_arith`
+    reads it as it is.
 * **Numeral exponents:** `2 ^ 64` elaborates in time quadratic in the number
   of numeral exponents in a statement; `Proof/Framework/PowLit.lean`'s macro
   elaborates it as `2 ^ (64 : Nat)` (the same term). A module with numeral
@@ -220,7 +322,20 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   then repeats; where a profile shows that (e.g. `exec` of an instruction,
   `Proof/Blake2/X86_64/Avx/Round.lean`), prove it `:= (rfl)`. Keep the
   framework's `RegUpd` lemmas `rfl`: as propositional rewrites they measured
-  slower.
+  slower. A lemma whose right side is one of its arguments
+  (`XBinOp.eval .movdqa a b = b`) is the worst case: where `b` is another
+  application of the same function, the kernel compares their arguments,
+  fails, and unfolds both (`vbfly_ok`, 4.5 s of 4.6).
+  The kernel compares two applications of one function by their arguments
+  first, and unfolds the function only when that fails, which for two
+  machine states or two memories is after evaluating what it can of them.
+  So `rfl` is slow on `f t … = f s …` whatever `f` is: an induction's base
+  case (`keyPartsBytes t base [] = keyPartsBytes s base []`: rewrite both
+  sides with the equation for `[]`), a frame fact of a state `simp` left
+  half evaluated (`t.rd = s.rd`: give `simp` every `RegUpd` lemma of the
+  field, `rd_arithFlags` with `rd_setReg`, so that the field is `s.rd`
+  itself), a function updated at other points (`upd (upd f 16 a) 19 b 3 =
+  f 3`: `ite_eq_right (by decide)` for each update). Each took 2 to 3 s.
 * **An equality the elaborator finds by evaluating:** `rfl`, and an
   `exact h` or `fun _ h => h` whose type differs from the goal's, have the
   elaborator unify the two, and it may unfold the wrong thing first.
@@ -338,6 +453,14 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   use `lit_decide`. `python3 ci/lit_imports.py` lists the checks that
   evaluate code without a literal they could import (see the
   `lean-profiling` skill).
+* **Equations between code:** prove that two programs, or two lists of
+  programs, are the same with `kernel_rfl`, not `decide +kernel`. `decide`
+  evaluates both sides to their last operand and compares them with
+  `DecidableEq`, whatever they share; the kernel's own comparison stops at a
+  subterm that is the same on both sides (a program both name) without
+  evaluating it. `Proof/Bignum/PPC64LE/CrtPinsB.lean` says ten times that a
+  prefix of the CRT's flattened code is a program written from the same
+  parts (`WP.of_flat`): 42 s by `decide +kernel`, 1.4 s by `kernel_rfl`.
 * **Unfolding recursive definitions:** `simp`/`dsimp` unfolding a recursive
   definition that uses a recursive call's result twice (`let r := f …;
   (… r.1, r.2)`) duplicates the call at every level. Evaluate it in one

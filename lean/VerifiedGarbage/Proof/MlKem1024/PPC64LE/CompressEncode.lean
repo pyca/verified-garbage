@@ -359,12 +359,21 @@ theorem byte11a (hM : M.toNat = compressMul1024 11) {g : Nat} (hg : g < 32) :
   refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> apply BitVec.eq_of_toNat_eq <;>
     rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat] <;>
     (try rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]) <;> rw [e] <;>
-    simp only [Nat.reducePow] <;> omega_arith
+    simp only [Nat.reducePow] <;> omega_using [b4, b5, b6, b7]
 
 end
 
 section
 variable (f : Poly) {M : BitVec 64}
+
+/-- The group's number without its low five bytes: what is left of the first four values, and the
+last four. -/
+private theorem eleven_tail (c0 c1 c2 c3 c4 c5 c6 c7 : Nat) :
+    (c0 + 2048 * c1 + 4194304 * c2 + 8589934592 * c3 + 17592186044416 * c4 + 36028797018963968 * c5 +
+      73786976294838206464 * c6 + 151115727451828646838272 * c7) / 2 ^ 40 =
+    (c0 + 2048 * c1 + 4194304 * c2 + 8589934592 * c3) / 1099511627776 + 16 * c4 + 32768 * c5 +
+      67108864 * c6 + 137438953472 * c7 := by
+  simp only [Nat.reducePow]; omega
 
 theorem byte11b (hM : M.toNat = compressMul1024 11) {g : Nat} (hg : g < 32) :
     (W11b f (M := M) g).setWidth 8 = (compressEncode 11 f)[11 * g + 5]! ∧
@@ -374,15 +383,7 @@ theorem byte11b (hM : M.toNat = compressMul1024 11) {g : Nat} (hg : g < 32) :
     (W11b f (M := M) g >>> 32).setWidth 8 = (compressEncode 11 f)[11 * g + 9]! ∧
     (W11b f (M := M) g >>> 40).setWidth 8 = (compressEncode 11 f)[11 * g + 10]! := by
   have e := w11b_toNat f hM g
-  have b0 := compress_lt 11 f[8 * g]!
-  have b1 := compress_lt 11 f[8 * g + 1]!
-  have b2 := compress_lt 11 f[8 * g + 2]!
-  have b3 := compress_lt 11 f[8 * g + 3]!
-  have b4 := compress_lt 11 f[8 * g + 4]!
-  have b5 := compress_lt 11 f[8 * g + 5]!
-  have b6 := compress_lt 11 f[8 * g + 6]!
-  have b7 := compress_lt 11 f[8 * g + 7]!
-  simp only [Nat.reducePow] at b0 b1 b2 b3 b4 b5 b6 b7
+  rw [← eleven_tail] at e
   have g5 := compressEncode11_group f hg (j := 5) (by decide)
   have g6 := compressEncode11_group f hg (j := 6) (by decide)
   have g7 := compressEncode11_group f hg (j := 7) (by decide)
@@ -392,10 +393,11 @@ theorem byte11b (hM : M.toNat = compressMul1024 11) {g : Nat} (hg : g < 32) :
   simp only [Nat.reduceMul] at g5 g6 g7 g8 g9 g10
   rw [g5, g6, g7, g8, g9, g10]
   generalize W11b f (M := M) g = V at *
+  -- Each byte is one of the group's number, `e`: no arithmetic is left.
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> apply BitVec.eq_of_toNat_eq <;>
     rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat] <;>
     (try rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]) <;> rw [e] <;>
-    simp only [Nat.reducePow] <;> omega_arith
+    (try rw [Nat.div_div_eq_div_mul]) <;> simp only [Nat.reducePow, Nat.reduceMul]
 
 end
 

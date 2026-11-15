@@ -16,11 +16,9 @@ def artifacts : List Artifact := [
     verified := Proof.Md5.PPC64LE.Shared.init },
   Spec.Md5.updateApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 144 .r7 Impl.Md5.PPC64LE.Stream.update
-    stack := 48 + 144
     verified := Proof.Md5.PPC64LE.Shared.update },
   Spec.Md5.finalizeApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratch 144 .r6 Impl.Md5.PPC64LE.Stream.finalize
-    stack := 48 + 144
     verified := Proof.Md5.PPC64LE.Shared.finalize }]
 
 end VG.Artifacts.Md5.PPC64LE

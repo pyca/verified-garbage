@@ -41,10 +41,9 @@ public import VerifiedGarbage.Proof.Argon2.Contract
 `vg_argon2_compress_avx512` meets `compressContract`, as `vg_argon2_compress`
 does: the initial XOR (`init_prefix`), the four pairs of rows and four pairs
 of columns (`rows_ok`, `cols_ok`) and the final XOR (`finish_prefix`)
-compose to `Spec.Argon2.compress`, between Intel's MXCSR prologue and
-epilogue (those of the AVX2 code, and their proofs), which keep MXCSR's
-control bits (`ctlOk`). Constant time is checked by evaluation, as for the
-scalar code.
+compose to `Spec.Argon2.compress`. The code loads no MXCSR (`ctlOk`): it
+runs under the dispatcher's `vg_mcdt_enter`. Constant time is checked by
+evaluation, as for the scalar code.
 -/
 
 @[expose] public section
@@ -54,11 +53,9 @@ namespace VG.Proof.Argon2.X86_64.Avx512
 open VG VG.X86_64 VG.Spec.Argon2
 open VG.Impl.Argon2.X86_64 (at_)
 open VG.Impl.Argon2.X86_64.Avx512
-open VG.Impl.Argon2.X86_64.Avx2 (mxcsrOff)
 open VG.Proof.Argon2.X86_64 (off Scratch ea_at Inputs blockAt_get xorBlock_get compressLocal
   initial_agree initialTaint compress_implies original_preserved round_frame scratch_unchanged)
-open VG.Proof.Argon2.X86_64.Avx2 (VKeep VKeep.refl ifp ifn save_ok set_ok restore_ok blockAt_mx
-  ldmxcsr_ok mxR mxR_sub vzeroupper_ok)
+open VG.Proof.Argon2.X86_64.Avx2 (VKeep VKeep.refl ifp ifn vzeroupper_ok)
 
 /-! ## The output -/
 
@@ -227,50 +224,13 @@ theorem compress_wp (s : State) (hs : compressLocal.pre s) :
   obtain ⟨hrd, hwr, hout, hx, hy, _, _⟩ := hs
   have scr : Scratch s (s.gpr .rcx) := ⟨rfl, by simp [hwr]⟩
   unfold Impl.Argon2.X86_64.Avx512.compress
-  apply WP.seq
-  refine (save_ok scr).mono ?_
-  rintro s1 ⟨h11, hg1, hr1, hw1, -, hf1⟩
-  have scr1 : Scratch s1 (s.gpr .rcx) := ⟨hg1 .rcx (by decide), hw1 ▸ scr.wr⟩
-  apply WP.seq
-  apply WP.seq
-  refine (set_ok scr1).mono ?_
-  rintro s2 ⟨-, hg2, hr2, hw2, hf2⟩
-  have hg12 : ∀ r, r ≠ .rax → r ≠ .r11 → s2.gpr r = s.gpr r :=
-    fun r h0 h11 => (hg2 r h0).trans (hg1 r h11)
-  have scr2 : Scratch s2 (s.gpr .rcx) := ⟨hg12 .rcx (by decide) (by decide), hw2 ▸ scr1.wr⟩
-  have hf12 := hf1.trans hf2
-  have inputs : Inputs s2 (s.gpr .rdi) (s.gpr .rsi) (s.gpr .rcx) :=
-    ⟨hg12 .rdi (by decide) (by decide), hg12 .rsi (by decide) (by decide),
-      by rw [hr2, hw2, hr1, hw1]; simp [hrd], by rw [hr2, hw2, hr1, hw1]; simp [hrd], hx, hy⟩
-  apply WP.seq
-  refine (body_ok scr2 inputs (out := s.gpr .rdx) (hg12 .rdx (by decide) (by decide))
-    (by rw [hw2, hw1, hwr]; simp) hout.symm).mono ?_
-  rintro s3 ⟨hpost, hf3, hg3, hr3, hw3, -⟩
-  refine WP.of_runBlock ⟨s3, by
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec], ?_⟩
-  have scr3 : Scratch s3 (s.gpr .rcx) := ⟨(hg3 .rcx (by decide)).trans scr2.reg, hw3 ▸ scr2.wr⟩
-  have h113 : s3.gpr .r11 = (s.mxcsr &&& 0xFFFF).setWidth 64 := by
-    rw [hg3 .r11 (by decide), hg2 .r11 (by decide), h11]
-  refine (restore_ok scr3 (by rw [h113]; exact ldmxcsr_ok _)).mono ?_
-  rintro t ⟨-, hgt, -, -, hft⟩
-  refine ⟨?_, fun r hr => ?_, ?_⟩
-  · change blockAt t.mem (s.gpr .rdx) = Spec.Argon2.compress (blockAt s.mem (s.gpr .rdi)) (blockAt s.mem (s.gpr .rsi))
-    rw [blockAt_mx hft hout, hpost, blockAt_mx hf12 hx, blockAt_mx hf12 hy]
-  · have h0 : r ≠ .rax := by
-      simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-    have h1 : r ≠ .r11 := by
-      simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-    rw [hgt, hg3 r h0, hg12 r h0 h1]
-  · have hmx : ∀ {m m' : Mem}, Frame [mxR (s.gpr .rcx)] m m' →
-        Frame [⟨s.gpr .rdx, 1024⟩, ⟨s.gpr .rcx, 4096⟩] m m' := fun h =>
-      h.sub fun r hr => by
-        simp only [List.mem_singleton] at hr
-        subst r
-        exact ⟨_, by simp, mxR_sub _⟩
-    rw [hwr]
-    exact ((hmx hf12).trans hf3).trans (hmx hft)
+  have inputs : Inputs s (s.gpr .rdi) (s.gpr .rsi) (s.gpr .rcx) :=
+    ⟨rfl, rfl, by simp [hrd], by simp [hrd], hx, hy⟩
+  refine (body_ok scr inputs (out := s.gpr .rdx) rfl (by rw [hwr]; simp) hout.symm).mono ?_
+  rintro t ⟨hpost, hft, hgt, -, -, -⟩
+  refine ⟨hpost, fun r hr => hgt r ?_, by rw [hwr]; exact hft⟩
+  simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem compress_ctl : ctlOk Impl.Argon2.X86_64.Avx512.compress = true := by lit_decide
 

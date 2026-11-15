@@ -11,11 +11,11 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mldsa_montgomery_multiply_add_ntt_avx2() {
     core::arch::naked_asm!(
-        r#".base64 "SYn4xf5vt+ADAABBD66Y+AMAAEWLmPgDAABBgeP//wAAuL8fAABBiYD8AwAAQQ+ukPwDAAAPrui4AeB/AMRh+W74xEJ9WP+4/99//MRh+W7wxEJ9WPa4/xkkAMRh+W7YxEJ9WNu5HwAAAA=="
+        r#".base64 "SYn4xf5vt+ADAAC4AeB/AMRh+W74xEJ9WP+4/99//MRh+W7wxEJ9WPa4/xkkAMRh+W7YxEJ9WNu5HwAAAA=="
 20:
 .base64 "xf5vHsV+byrF/m8vxEF9cOX1xf1w4/XFlfTbxZ305MWN9NPFhfTSxeXU2sXlc9MgxY301MWF9NLF3dTixeXr3MTBZfrfxe1y4x/FhdvSxeX+2sXl/t3EwWX638XtcuMfxYXb0sXl/trF/n8fSIPHIEiDxiBIg8IgSIPpAQ=="
 jne 20b
-.base64 "xf5vHsV+byrF/W/uxEF9cOX1xf1w4/XFlfTbxZ305MWN9NPFhfTSxeXU2sXlc9MgxY301MWF9NLF3dTixeXr3MTBZfrfxe1y4x/FhdvSxeX+2sXl/t3EwWX638XtcuMfxYXb0sXl/toPruhFiZj4AwAAQQ+ukPgDAADF/n8fxfh3ww=="
+.base64 "xf5vHsV+byrF/W/uxEF9cOX1xf1w4/XFlfTbxZ305MWN9NPFhfTSxeXU2sXlc9MgxY301MWF9NLF3dTixeXr3MTBZfrfxe1y4x/FhdvSxeX+2sXl/t3EwWX638XtcuMfxYXb0sXl/trF/n8fxfh3ww=="
 .p2align 6"#,
     )
 }

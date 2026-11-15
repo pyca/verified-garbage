@@ -17,7 +17,6 @@ def artifacts : List Artifact := [
     verified := Proof.AesOfb.keyed Proof.AesOfb.RISCV64.crypt_verified },
   Spec.Ofb.aesFinalApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchWiped 64 .a6 8 Impl.AesOfb.RISCV64.cryptFinal
-    stack := 64
     verified := Proof.AesOfb.final_keyed Proof.AesOfb.RISCV64.cryptFinal_framed }]
 
 end VG.Artifacts.AesOfb.RISCV64

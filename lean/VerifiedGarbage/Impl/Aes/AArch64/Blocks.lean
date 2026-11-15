@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Aes.AArch64.Ctr32
 public import VerifiedGarbage.Impl.Aes.AArch64.Inv
+public import VerifiedGarbage.Impl.Aes.AArch64.OneBlock
 
 /-!
 # AES encryption and decryption of whole blocks, bitsliced, on AArch64
@@ -25,6 +26,11 @@ it reaches round key 1, at `x0 + 64`.
 Only `x0` (the first round key), `x1`, `x2` during the key loop, `x3` (the
 data), `x4` (the blocks left), `x5` and the loop tests (`t0`) hold public
 values; no address and no branch depends on anything else.
+
+`vg_aes_encrypt_blocks` is `encryptBlocksN`: one block (`n = 1`, as the
+modes whose blocks each need the one before give it) is encrypted by table
+lookups (`OneBlock.lean`), with no round key bitsliced and nothing written
+to `scratch`; any other `n` runs the bitsliced code.
 -/
 
 @[expose] public section
@@ -98,5 +104,14 @@ def decrypt4 : Prog isa :=
 
 def encryptBlocks : Prog isa := blocks encrypt4
 def decryptBlocks : Prog isa := blocks decrypt4
+
+/-- The block at `x2`, encrypted in place by table lookups. -/
+def encryptOne : Prog isa :=
+  .seq (.block [.ldrq .v0 .x2 0]) (.seq OneBlock.core (.block [.strq .v0 .x2 0]))
+
+/-- `vg_aes_encrypt_blocks`: one block by table lookups, any other number
+of blocks bitsliced. -/
+def encryptBlocksN : Prog isa :=
+  .seq (.block [.subImm .x .x6 .x3 1]) (.ite (.zero .x .x6) encryptOne encryptBlocks)
 
 end VG.Impl.Aes.AArch64

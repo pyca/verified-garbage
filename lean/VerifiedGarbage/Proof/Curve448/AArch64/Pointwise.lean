@@ -28,7 +28,7 @@ theorem add_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
   · intro i hi t ts tm
     have ea := input_limb tm ha hi
     have eb := input_limb tm hb hi
-    refine WP.mono (addEval_ok ts ha ha8 hb hb8 hi (ea ▸ ab i hi) (eb ▸ bb i hi))
+    refine WP.mono (addEval_ok ts ha ha8 hb hb8 hi (by rw [ea]; exact ab i hi) (by rw [eb]; exact bb i hi))
       fun u ⟨uv, um, uk⟩ => ⟨?_, um, uk.mono (by decide)⟩
     rw [ea, eb] at uv; exact uv
   · rw [tv, valN_add]
@@ -48,7 +48,7 @@ theorem sub_ok {s : State} {base : Addr} (hs : Scr s base) {o a b : Nat}
   · intro i hi t ts tm
     have ea := input_limb tm ha hi
     have eb := input_limb tm hb hi
-    refine WP.mono (subEval_ok ts ha ha8 hb hb8 hi (ea ▸ ab i hi) (eb ▸ bb i hi))
+    refine WP.mono (subEval_ok ts ha ha8 hb hb8 hi (by rw [ea]; exact ab i hi) (by rw [eb]; exact bb i hi))
       fun u ⟨uv, um, uk⟩ => ⟨?_, um, uk.mono (by decide)⟩
     simp only [difference, ea, eb] at uv; exact uv
   · rw [Nat.add_mod, tv, ← Nat.add_mod, difference_val bb,

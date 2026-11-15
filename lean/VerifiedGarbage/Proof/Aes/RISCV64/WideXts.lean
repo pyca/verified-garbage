@@ -6,12 +6,16 @@ import VerifiedGarbage.Proof.AesXts.Alpha
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 meta import VerifiedGarbage.Proof.Aes.RISCV64.Wide
 meta import VerifiedGarbage.Proof.AesXts.Spec
 meta import VerifiedGarbage.Proof.AesXts.Alpha
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 meta import VerifiedGarbage.TCB.RISCV64.Target
 
 -- separate module: XTS's instance of `wide`, which only XTS-AES's `Verified` imports, apart from
@@ -497,12 +501,16 @@ theorem xtsDecWide_correct {s₀ : State} (hp : (blockKRISCV64 (AesXts.xtsMode f
     (by rw [AesCbc.bytesAt_toList]; exact xts_chain _ _ _ _ _ _ _)
 
 theorem xtsEncWide_ct : ConstantTime isa (blockKRISCV64 (AesXts.xtsMode true)).pre
-    (blockKRISCV64 (AesXts.xtsMode true)).pub xtsEncWide :=
-  wide_ct _ (by taint_decide)
+    (blockKRISCV64 (AesXts.xtsMode true)).pub xtsEncWide := by
+  obtain ⟨_, hck⟩ : ∃ h, (taint.check (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5]) xtsEncWide h).isSome =
+      true := by taint_decide_sum [Impl.Aes.RISCV64.encrypt4Sum]
+  exact wide_ct _ hck
 
 theorem xtsDecWide_ct : ConstantTime isa (blockKRISCV64 (AesXts.xtsMode false)).pre
-    (blockKRISCV64 (AesXts.xtsMode false)).pub xtsDecWide :=
-  wide_ct _ (by taint_decide)
+    (blockKRISCV64 (AesXts.xtsMode false)).pub xtsDecWide := by
+  obtain ⟨_, hck⟩ : ∃ h, (taint.check (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5]) xtsDecWide h).isSome =
+      true := by taint_decide_sum [Impl.Aes.RISCV64.decrypt4Sum]
+  exact wide_ct _ hck
 
 theorem xtsEncWide_k :
     AesCbc.RISCV64.ChainK true (16 * ·) (blockKRISCV64 (AesXts.xtsMode true)) xtsEncWide :=

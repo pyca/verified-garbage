@@ -16,19 +16,15 @@ namespace VG.Artifacts.IdeaCfb.AArch64
 def artifacts : List Artifact := [
   Spec.Idea.cfbEncryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cfbEncrypt
-    stack := 208
     verified := Proof.Idea.AArch64.cfbEncrypt_framed },
   Spec.Idea.cfbDecryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cfbDecrypt
-    stack := 208
     verified := Proof.Idea.AArch64.cfbDecrypt_framed },
   Spec.Idea.cfbEncryptFinalApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cfbEncryptFinal
-    stack := 208
     verified := Proof.Idea.AArch64.cfbEncryptFinal_framed },
   Spec.Idea.cfbDecryptFinalApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 208 .x4 26 Impl.Idea.AArch64.cfbDecryptFinal
-    stack := 208
     verified := Proof.Idea.AArch64.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.IdeaCfb.AArch64

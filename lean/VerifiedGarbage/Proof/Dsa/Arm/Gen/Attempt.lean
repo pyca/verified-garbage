@@ -370,7 +370,7 @@ theorem attemptG_vp {g : Geo} {n : Nat} (HO : HashOk Gh) (certs : GStepCerts g) 
         decide (Spec.Dsa.parametersValid ⟨p, qv, gv⟩) := by
       rw [hpk]
       exact VG.Proof.Dsa.Generation.check_encodedParams (by
-          unfold Spec.Dsa.generationLengthsValid at hlq; unfold Spec.Dsa.lengthsValid; omega_arith)
+          unfold Spec.Dsa.generationLengthsValid at hlq; unfold Spec.Dsa.lengthsValid; omega_using [hlq])
         (by rw [hpl8]; exact hpd.upper) (by rw [hql8]; exact qlt) (by rw [hpl8]; exact Nat.lt_trans hgb.2 hpd.upper)
     let xu := w + gNum G w HL p qv 0 * G.pLen
     let Dg : Cfg := ((({ c₁ with cl := (sG, Spec.Rsa.i2osp gv G.pLen) :: c₁.cl }).setV fG 1).setV fH

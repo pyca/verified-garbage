@@ -25,7 +25,7 @@ cancels the `2⁻³²`.
 namespace VG.Impl.MlDsa.X86_64.Arith
 
 open VG.X86_64
-open VG.Impl.MlKem.X86_64 (xb xmov withMxcsr rcxLoop)
+open VG.Impl.MlKem.X86_64 (xb xmov rcxLoop)
 
 /-- The sums, zero. -/
 def dotZero : List Instr := [xb .pxor .xmm5 .xmm5, xb .pxor .xmm6 .xmm6]
@@ -54,10 +54,9 @@ def dotBodyS (c : Nat) : List Instr :=
   dotZero ++ (List.range c).flatMap (fun j => dotLoadsS j ++ dotMac) ++ dotRed ++ dotPlain ++
     [.movdquStore (at_ .r8 0) .xmm5, .alu .add .r8 (.imm 16), .alu .add .r10 (.imm 16), .alu .add .rdx (.imm 16)]
 
-/-- `vg_mldsa_dot_inverse{c}`: the sum of the `c` products, then `NTT⁻¹`, in
-one MXCSR region. -/
+/-- `vg_mldsa_dot_inverse{c}`: the sum of the `c` products, then `NTT⁻¹`. -/
 def dotInvSse2 (c : Nat) : Prog isa :=
-  .seq (.block [.mov .r10 (.reg .rsi), .mov .rsi (.reg .rcx)]) <| withMxcsr .rsi 768 <|
+  .seq (.block [.mov .r10 (.reg .rsi), .mov .rsi (.reg .rcx)]) <|
     .seq (.block (mulPro ++ [.mov .r8 (.reg .rdi)])) (.seq (rcxLoop 64 (dotBodyS c)) nttInvBody)
 
 end VG.Impl.MlDsa.X86_64.Arith

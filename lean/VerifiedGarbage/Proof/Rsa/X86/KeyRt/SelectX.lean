@@ -314,6 +314,10 @@ theorem chunk3_ok {t : State} {W : Addr} {L x y d : Nat} (hw : Ws t W L) (hx : x
   have w₁ : s₁.wr = t.wr := RegUpd.wr_setXmm _ _ _
   have g₅ : s₅.gpr = t.gpr := by simp only [s₅, s₄, s₃, s₂, s₁, RegUpd.gpr_setXmm]
   have w₅ : s₅.wr = t.wr := by simp only [s₅, s₄, s₃, s₂, s₁, RegUpd.wr_setXmm]
+  have m₅ : s₅.mem = t.mem := by simp only [s₅, s₄, s₃, s₂, s₁, RegUpd.mem_setXmm]
+  have x₅ : s₅.xmm .xmm0 = sel128 t.mem W y x (t.xmm .xmm7) := RegUpd.xmm_setXmm_self _ _ _
+  have r₆ : s₆.rd = t.rd := by simp only [s₆, s₅, s₄, s₃, s₂, s₁, RegUpd.rd_setXmm]
+  have w₆ : s₆.wr = t.wr := by simp only [s₆, s₅, s₄, s₃, s₂, s₁, RegUpd.wr_setXmm]
   have eb₁ : s₁.ea (at_ .ebx 0) = off W y := by rw [State.ea, g₁]; exact eb
   have rb₁ : InRegions (s₁.rd ++ s₁.wr) (off W y) 16 := by rw [r₁, w₁]; exact rb
   have ei₅ : s₅.ea (at_ .edi 0) = off W d := by rw [State.ea, g₅]; exact ei
@@ -326,7 +330,7 @@ theorem chunk3_ok {t : State} {W : Addr} {L x y d : Nat} (hw : Ws t W L) (hx : x
   refine cons (s' := s₄) rfl ?_
   refine cons (s' := s₅) rfl ?_
   refine cons (s' := s₆) (by
-    simp only [exec, ei₅, State.store128, wi₅, ite_true]; rfl) ?_
+    simp only [exec, ei₅, State.store128, wi₅, ite_true, m₅, x₅]; rfl) ?_
   refine wp_addXm rfl fun u₁ a₁ x₁ => wp_addXm rfl fun u₂ a₂ x₂ => wp_addXm rfl fun u₃ a₃ x₃ =>
     wp_subXm rfl fun u₄ a₄ z₄ x₄ => ?_
   refine k u₄ (by rw [a₄.mem, a₃.mem, a₂.mem, a₁.mem]) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
@@ -336,8 +340,8 @@ theorem chunk3_ok {t : State} {W : Addr} {L x y d : Nat} (hw : Ws t W L) (hx : x
   · rw [a₄.gpr, a₃.other _ (by decide), a₂.other _ (by decide), a₁.other _ (by decide)]; rfl
   · rw [z₄, a₃.other _ (by decide), a₂.other _ (by decide), a₁.other _ (by decide)]; rfl
   · intro r h1 h2 h3 h4; rw [a₄.other _ h1, a₃.other _ h4, a₂.other _ h2, a₁.other _ h3]; rfl
-  · rw [a₄.rd, a₃.rd, a₂.rd, a₁.rd]; rfl
-  · rw [a₄.wr, a₃.wr, a₂.wr, a₁.wr]; rfl
+  · rw [a₄.rd, a₃.rd, a₂.rd, a₁.rd]; exact r₆
+  · rw [a₄.wr, a₃.wr, a₂.wr, a₁.wr]; exact w₆
   · rw [x₄, x₃, x₂, x₁]; rfl
 
 /-- The block's doublewords are the selected words. -/

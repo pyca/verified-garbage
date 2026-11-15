@@ -38,7 +38,7 @@ def scalar : GhashImpl where
   ct := Proof.Gcm.X86_64.ghash_ct
   nosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
   mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := ""
   features := []
 
@@ -50,7 +50,7 @@ def pclmul : GhashImpl where
   ct := Proof.Gcm.X86_64.Pclmul.ghash_ct
   nosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
   mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_pclmul"
   features := ["pclmulqdq", "ssse3"]
   free := some ⟨Proof.Gcm.X86_64.Pclmul.ghash_correctF, Proof.Gcm.X86_64.Pclmul.ghash_ctF⟩
@@ -63,7 +63,7 @@ def vpclmul : GhashImpl where
   ct := Proof.Gcm.X86_64.Vpclmul.ghash_ct
   nosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
   mxcsr := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_vpclmul"
   features := ["avx", "avx2", "pclmulqdq", "ssse3", "vpclmulqdq"]
   free := some ⟨Proof.Gcm.X86_64.Vpclmul.ghash_correctF, Proof.Gcm.X86_64.Vpclmul.ghash_ctF⟩

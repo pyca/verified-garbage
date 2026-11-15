@@ -1344,6 +1344,6 @@ theorem ctrFinal_framed :
 
 theorem ctrFinal_framed_spSafe :
     (Impl.StackScratch.X86.withStackScratchWiped 56 4 8 ctrFinal).all (fun i => !isa.writesSp i) = true :=
-  Code.all_of_allInstrs (by lit_decide)
+  Code.all_of_spTest (by lit_decide)
 
 end VG.Proof.Sm4.X86.CtrFinal

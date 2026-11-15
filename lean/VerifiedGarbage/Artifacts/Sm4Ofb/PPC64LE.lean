@@ -18,11 +18,9 @@ namespace VG.Artifacts.Sm4Ofb.PPC64LE
 def artifacts : List Artifact := [
   Spec.Sm4.ofbApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3296 .r7 408 Impl.Sm4.PPC64LE.ofb
-    stack := 3296
     verified := Proof.Sm4.PPC64LE.ofb_framed Proof.Sm4.PPC64LE.Modes.ofb_verified },
   Spec.Sm4.ofbFinalApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3296 .r7 408 Impl.Sm4.PPC64LE.ofbFinal
-    stack := 3296
     verified := Proof.Sm4.PPC64LE.FbFinal.ofbFinal_framed }]
 
 end VG.Artifacts.Sm4Ofb.PPC64LE

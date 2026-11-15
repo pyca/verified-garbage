@@ -52,16 +52,16 @@ def combSignPre (u : Bool) (s : State) : Prop :=
 def combSignPub (s t : State) : Prop := signArm.pub s t ∧ s.syms p224Comb.tsym=t.syms p224Comb.tsym
 
 theorem combSign_ct : ConstantTime isa (combSignPre false) combSignPub signP224Comb := by
-  refine VG.Taint.constantTime (A := taintSym [p224Comb.tsym]) τ₀ ?_ (by native_taint_decide)
+  refine VG.Taint.constantTime (A := taintSym [p224Comb.tsym]) τ₁ ?_ (by native_taint_decide)
   intro s t hs ht pub
-  exact ⟨agree₀ hs.1 ht.1 pub.1,fun n hn => by
+  exact ⟨agree₁ (agree₀ hs.1 ht.1 pub.1),fun n hn => by
     obtain rfl := List.mem_singleton.mp hn
     exact pub.2⟩
 
 theorem combSignU_ct : ConstantTime isa (combSignPre true) combSignPub signP224CombU := by
-  refine VG.Taint.constantTime (A := taintSymU [p224Comb.tsym]) τ₀ ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := taintSymU [p224Comb.tsym]) τ₁ ?_ (by taint_decide)
   intro s t hs ht pub
-  exact ⟨agree₀ hs.1 ht.1 pub.1,fun n hn => by
+  exact ⟨agree₁ (agree₀ hs.1 ht.1 pub.1),fun n hn => by
     obtain rfl := List.mem_singleton.mp hn
     exact pub.2⟩
 

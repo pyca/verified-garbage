@@ -16,11 +16,9 @@ namespace VG.Artifacts.Sm4Ofb.AArch64
 def artifacts : List Artifact := [
   Spec.Sm4.ofbApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 3264 .x4 408 Impl.Sm4.AArch64.ofb
-    stack := 3264
     verified := Proof.Sm4.AArch64.ofb_framed },
   Spec.Sm4.ofbFinalApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 3264 .x4 408 Impl.Sm4.AArch64.ofbFinal
-    stack := 3264
     verified := Proof.Sm4.AArch64.ofbFinal_framed }]
 
 end VG.Artifacts.Sm4Ofb.AArch64

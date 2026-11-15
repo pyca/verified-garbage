@@ -16,7 +16,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorTaint
 
 /-!
-# Tables of constants carried by instructions (`ldrqTbl`) on AArch64
+# Tables of constants carried by instructions (`ldrqTbl`, `ldrTbl`) on AArch64
 
 As on x86-64 (`TableInstrX86_64.lean`). A function `() -> u64` that returns
 word 3 of a table of constants: `adrp`/`add` of the table's `static` into `x1`
@@ -195,5 +195,44 @@ def st (a : BitVec 64) : State := { sat with gpr := fun r => if r = .x2 then a e
 #guard (VG.AArch64.Taint.step (RegSet.ofList []) (vld 16)).isSome
 #guard ((VG.AArch64.VectorTaint.step (RegSet.ofList [], RegSet.ofList []) (vld 16)).map fun τ => τ.2.mem .v3) ==
   some true
+
+/-! ## A general-purpose register from the table (`ldrTbl`) -/
+
+/-- A table whose words' halves differ. -/
+def htbl : List (BitVec 64) := [0x1111111122222222, 0x3333333344444444, 0x5555555566666666]
+
+def xld (sz : Size) (off : Nat) : Instr := .ldrTbl sz .x5 .x2 off name htbl
+
+-- Printed and encoded as any `ldr`; in the baseline ISA; carries its table.
+#guard Instr.asm (xld .x 8) == ["ldr x5, [x2, #8]"]
+#guard Instr.asm (xld .w 12) == ["ldr w5, [x2, #12]"]
+#guard (xld .x 8).encode == (Instr.ldr .x .x5 .x2 8).encode
+#guard (xld .w 12).encode == (Instr.ldr .w .x5 .x2 12).encode
+#guard (xld .x 8).requires == []
+#guard printer.tables (xld .x 8) == [(name, htbl)]
+#guard isa.writesSp (xld .x 8) == false
+-- The access is observed as the offset, wherever the table is.
+#guard addrs (xld .x 8) (st 0x1000) == [8]
+#guard addrs (xld .w 12) { st 0x2000 with syms := fun _ => 0x2000 } == [12]
+-- A word; and its halves, the low one first (little-endian), zero-extended.
+#guard ((AArch64.exec (xld .x 8) (st 0x1000)).map fun t => t.gpr .x5) == some 0x3333333344444444
+#guard ((AArch64.exec (xld .x 16) (st 0x1000)).map fun t => t.gpr .x5) == some 0x5555555566666666
+#guard ((AArch64.exec (xld .w 8) (st 0x1000)).map fun t => t.gpr .x5) == some 0x44444444
+#guard ((AArch64.exec (xld .w 12) (st 0x1000)).map fun t => t.gpr .x5) == some 0x33333333
+#guard ((AArch64.exec (xld .w 20) (st 0x1000)).map fun t => t.gpr .x5) == some 0x55555555
+-- Past the table, and an offset `ldr` does not encode (not a multiple of the
+-- access size, or at least 4096 times it): faults.
+#guard (AArch64.exec (xld .x 24) (st 0x1000)).isNone
+#guard (AArch64.exec (xld .w 24) (st 0x1000)).isNone
+#guard (AArch64.exec (xld .x 4) (st 0x1000)).isNone
+#guard (AArch64.exec (xld .w 2) (st 0x1000)).isNone
+#guard (AArch64.exec (.ldrTbl .x .x5 .x2 32768 name ((List.range 4097).map fun _ => 0)) (st 0x1000)).isNone
+#guard (AArch64.exec (.ldrTbl .w .x5 .x2 16384 name ((List.range 2049).map fun _ => 0)) (st 0x1000)).isNone
+-- A base register not holding the table's address: faults.
+#guard (AArch64.exec (xld .x 8) (st 0x1008)).isNone
+#guard (AArch64.exec (xld .x 8) (st 0x0FF8)).isNone
+-- The taint analysis: the offset is public whatever `x2` is, and so is the
+-- word loaded.
+#guard ((VG.AArch64.Taint.step (RegSet.ofList []) (xld .x 8)).map fun τ => τ.mem .x5) == some true
 
 end VG.Test.TableInstrAArch64

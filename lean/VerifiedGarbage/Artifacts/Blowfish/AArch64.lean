@@ -18,11 +18,9 @@ def artifacts : List Artifact := [
     verified := Proof.Blowfish.AArch64.expandKey_verified },
   Spec.Blowfish.ecbEncryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 256 .x3 32 Impl.Blowfish.AArch64.encrypt
-    stack := 256
     verified := Proof.Blowfish.AArch64.ecb_framed Proof.Blowfish.AArch64.encrypt_verified },
   Spec.Blowfish.ecbDecryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 256 .x3 32 Impl.Blowfish.AArch64.decrypt
-    stack := 256
     verified := Proof.Blowfish.AArch64.ecb_framed Proof.Blowfish.AArch64.decrypt_verified }]
 
 end VG.Artifacts.Blowfish.AArch64

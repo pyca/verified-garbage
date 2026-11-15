@@ -26,8 +26,8 @@ import VerifiedGarbage.Proof.MillerRabin.X86_64.Ifma.Lit
 
 `ifma_ok`: the round of a layout, in its frame of the six callee-saved
 registers: the setup (`setup_ok`), the vector code (`vec_ok`: `table_ok` and
-`windows_ok` between Intel's MXCSR prologue and epilogue, which keep the
-caller's MXCSR in `rbp`), and the flag and the registers back from the frame
+`windows_ok`, with no MXCSR of their own, as the dispatcher's `vg_mcdt_enter`
+sets it), and the flag and the registers back from the frame
 (`finish_ok`); only the table arrays and the frame change. `code_correct`:
 the dispatch on the candidate's size, `round mul` for the other sizes, with
 MXCSR's control bits from `code_ctl`. `code_spSafe`, `code_depth` and
@@ -50,56 +50,6 @@ open VG.Proof.RsaKeyGen (mrA mrE wEnd)
 open VG.Proof.MillerRabin.WindowK (kRun)
 
 variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
-
-/-! ## The MXCSR prologue and epilogue -/
-
-/-- `withMx`'s shape, from the prologue's and the epilogue's blocks whole. -/
-theorem wp_mx {S P L R V : List Instr} {c : Prog isa} {s : State} {Q : State → Prop}
-    (h : WP isa (.block (S ++ P)) s fun s₁ => WP isa c s₁ fun s₂ => WP isa (.block (L ++ R ++ V)) s₂ Q) :
-    WP isa (.seq (.seq (.block S) (.seq (.seq (.block P) (.seq c (.block L))) (.block R))) (.block V)) s Q := by
-  refine WP.seq (WP.seq (WP.mono (WP.block_append_iff.mp h) fun s₁ h₁ => WP.seq (WP.seq (WP.mono h₁
-    fun s₂ h₂ => WP.seq (WP.mono h₂ fun s₃ h₃ => ?_)))))
-  rw [List.append_assoc] at h₃
-  exact WP.mono (WP.block_append_iff.mp h₃) fun s₄ h₄ => WP.block_append_iff.mp h₄
-
-/-- The prologue: the caller's MXCSR, bits 31:16 cleared, in `rbp`, and
-`MXCSR := 0x1FBF`. -/
-theorem pro_ok {s : State} {B : Addr} {d Z : Nat} (hB : s.gpr .rbx = B) (hs : Scr s B Z) (hd : d + 8 ≤ Z) :
-    WP isa (.block [.stmxcsr (at_ .rbx d), .mov32 .rbp (.mem (at_ .rbx d)), .alu32 .and .rbp (.imm 0xFFFF),
-        .mov32 .rax (.imm 0x1FBF), .store32 (at_ .rbx (d + 4)) .rax, .ldmxcsr (at_ .rbx (d + 4)), .lfence]) s
-      fun s' => s'.mem = (s.mem.writeW (off B d) s.mxcsr).writeW (off B (d + 4)) (0x1FBF : BitVec 32) ∧
-        s'.gpr .rbp = (s.mxcsr &&& 0xFFFF).setWidth 64 ∧ Keep [.rbp, .rax] s s' := by
-  have hst : InRegions s.wr (B + BitVec.ofNat 64 d) 4 :=
-    let ⟨_, h, c⟩ := hs.region (d := d) (n := 4) (by omega_using [hd]) (by decide); ⟨_, h, c⟩
-  have hld : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 d) 4 :=
-    let ⟨_, h, c⟩ := hs.region (d := d) (n := 4) (by omega_using [hd]) (by decide);
-    ⟨_, List.mem_append_right _ h, c⟩
-  have hst4 : InRegions s.wr (B + BitVec.ofNat 64 (d + 4)) 4 :=
-    let ⟨_, h, c⟩ := hs.region (d := d + 4) (n := 4) (by omega_using [hd]) (by decide); ⟨_, h, c⟩
-  have hld4 : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 (d + 4)) 4 :=
-    let ⟨_, h, c⟩ := hs.region (d := d + 4) (n := 4) (by omega_using [hd]) (by decide);
-    ⟨_, List.mem_append_right _ h, c⟩
-  refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.rbp, .rax] (Q := fun s' =>
-    s'.mem = (s.mem.writeW (off B d) s.mxcsr).writeW (off B (d + 4)) (0x1FBF : BitVec 32) ∧
-      s'.gpr .rbp = (s.mxcsr &&& 0xFFFF).setWidth 64) (by
-    xrun [ea_at'', hB, hst, hld, hst4, hld4, Mem.readW_writeW_self32]) rfl)
-    fun s' ⟨⟨a, b⟩, k⟩ => ⟨a, b, k⟩
-
-/-- The epilogue: the saved MXCSR back from `rbp`. -/
-theorem epi_ok {s : State} {B : Addr} {d Z : Nat} {v : BitVec 32} (hB : s.gpr .rbx = B) (hs : Scr s B Z)
-    (hd : d + 8 ≤ Z) (hbp : s.gpr .rbp = (v &&& 0xFFFF).setWidth 64) :
-    WP isa (.block (([.lfence] : List Instr) ++ ([.store32 (at_ .rbx d) .rbp, .ldmxcsr (at_ .rbx d)] : List Instr) ++
-        ([.vop .vzeroupper] : List Instr))) s
-      fun s' => s'.mem = s.mem.writeW (off B d) (v &&& 0xFFFF) ∧ s'.gpr = s.gpr ∧ s'.rd = s.rd ∧
-        s'.wr = s.wr := by
-  have hst : InRegions s.wr (B + BitVec.ofNat 64 d) 4 :=
-    let ⟨_, h, c⟩ := hs.region (d := d) (n := 4) (by omega_using [hd]) (by decide); ⟨_, h, c⟩
-  have hld : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 d) 4 :=
-    let ⟨_, h, c⟩ := hs.region (d := d) (n := 4) (by omega_using [hd]) (by decide);
-    ⟨_, List.mem_append_right _ h, c⟩
-  simp only [List.cons_append, List.nil_append]
-  xrun [ea_at'', hB, hst, hld, hbp, Mem.readW_writeW_self32, VG.Proof.Bignum.X86_64.AmmSym.and_ffff_hi]
-  and_intros <;> rfl
 
 /-! ## The flag and the callee-saved registers -/
 
@@ -142,29 +92,8 @@ theorem hword_area {B H : Addr} {m m' : Mem} (f : Frm B [(0, size l)] m m') {d :
     have := hd i (by omega_arith)
     exact .inr (by simp only [Nat.zero_add]; exact this)
 
-/-- `Pre` through the MXCSR slots. -/
-theorem pre_mx (hl : MrOk l) {B : Addr} {m m' : Mem} {c k bR : Nat} (hp : Pre l m B c k bR)
-    (f : Frm B [(oMx l, 8)] m m') : Pre l m' B c k bR := by
-  obtain ⟨-, hsz, h1, h2, h3, hTj, h4, h5, h6, h7, h8, -⟩ := MrOk.offs hl
-  have e1 := hTj 1
-  have e4 := hTj 4
-  have hN : l.NB + 32 < 2 ^ 31 := by unfold size oF at hsz; omega_arith
-  exact ⟨mod_frm hl hp.mod f (one_r (p := fun r => l.NB + 32 ≤ r.1) (by omega_arith)) hN,
-    num_frm hl f hp.t0 (one_r (p := fun r => oT l 0 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 0) (.inl (by omega_arith)))
-      (by unfold size oF at hsz; omega_arith),
-    num_frm hl f hp.t1 (one_r (p := fun r => oT l 1 + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oT l 1) (.inl (by omega_arith)))
-      (by unfold size oF at hsz; omega_arith),
-    num_frm hl f hp.kk (one_r (p := fun r => oS l + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oS l) (.inl (by omega_arith)))
-      (by unfold size oF at hsz; omega_arith),
-    num_frm hl f hp.m1 (one_r (p := fun r => oM1 l + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oM1 l) (.inl (by omega_arith)))
-      (by unfold size oF at hsz; omega_arith),
-    num_frm hl f hp.p1c (one_r (p := fun r => oP1c l + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oP1c l) (.inl (by omega_arith)))
-      (by unfold size oF at hsz; omega_arith),
-    num_frm hl f hp.m1c (one_r (p := fun r => oM1c l + l.NB ≤ r.1 ∨ r.1 + r.2 ≤ oM1c l) (.inl (by omega_arith)))
-      (by unfold size oF at hsz; omega_arith)⟩
-
-/-- The vector code: the table and the windows, under the MXCSR prologue and
-epilogue; the flag at `oF`. -/
+/-- The vector code: the table and the windows, then `vzeroupper`, with no
+MXCSR of its own (`withVzu`); the flag at `oF`. -/
 theorem vec_ok (hl : MrOk l) {s : State} {B H : Addr} {c k b : Nat}
     (hB : s.gpr .rbx = B) (hdi : s.gpr .rdi = H) (h12 : s.gpr .r12 = mask52) (hs : Scr s B (size l))
     (hodd : c % 2 = 1) (h3 : 3 ≤ c) (hc : c < 2 ^ (64 * l.W))
@@ -180,53 +109,32 @@ theorem vec_ok (hl : MrOk l) {s : State} {B H : Addr} {c k b : Nat}
   obtain ⟨-, hsz, h1, h2, h3', hTj, h4, h5, h6, h7, h8, -⟩ := MrOk.offs hl
   have e1 := hTj 1
   have e4 := hTj 4
-  have hmx : oMx l + 8 ≤ size l := by unfold size oF; omega_arith
   have hF : oF l = oMx l + 8 := rfl
   have hz : size l = oF l + 8 := rfl
-  have hn := hs.nowrap
-  unfold vec withMx
-  refine wp_mx (WP.mono (pro_ok (d := oMx l) hB hs hmx) fun s₁ ⟨m₁, bp₁, k₁⟩ => ?_)
-  have O₁ : Outside B (oMx l) 8 s.mem s₁.mem := by
-    rw [m₁]
-    exact ((VG.Proof.Bignum.X86_64.AmmSym.writeW32_outside _ B _ (by omega_arith)).mono (by omega_arith)
-      (by omega_arith)).trans ((VG.Proof.Bignum.X86_64.AmmSym.writeW32_outside _ B _ (by omega_arith)).mono
-      (by omega_arith) (by omega_arith))
-  have hB₁ : s₁.gpr .rbx = B := (k₁.gpr (by decide)).trans hB
-  have h12₁ : s₁.gpr .r12 = mask52 := (k₁.gpr (by decide)).trans h12
-  have hs₁ : Scr s₁ B (size l) := hs.congr k₁.2.2
-  have F₁ : Frm B [(oMx l, 8)] s.mem s₁.mem := Frm.of_outside O₁ (List.mem_singleton_self _)
+  unfold vec withVzu
   rw [show VG.Impl.Bignum.X86_64.seqs (table l :: windows l) =
     .seq (table l) (VG.Impl.Bignum.X86_64.seqs (windows l)) from rfl]
-  refine WP.seq (WP.mono (table_ok hl hB₁ h12₁ hs₁ hodd h3 hc (pre_mx hl hp F₁))
-    fun t ⟨tb, F₂, g₂, r12₂, rd₂, wr₂, _⟩ => ?_)
+  refine WP.seq (WP.seq (WP.mono (table_ok hl hB h12 hs hodd h3 hc hp)
+    fun t ⟨tb, F₂, g₂, r12₂, rd₂, wr₂, _⟩ => ?_))
   have g : ∀ r : Reg, r ≠ .rax → r ≠ .rcx → r ≠ .rdx → r ≠ .rsi → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 →
-      r ≠ .r13 → t.gpr r = s₁.gpr r := g₂
+      r ≠ .r13 → t.gpr r = s.gpr r := g₂
   have FA : Frm B [(0, size l)] s.mem t.mem :=
-    (area_frm F₁ (one_r (p := fun r => r.1 + r.2 ≤ size l) hmx)).trans
-      (area_frm F₂ (one_r (p := fun r => r.1 + r.2 ≤ size l) (by have := (MrOk.ends hl).2.2; omega_arith)))
+    area_frm F₂ (one_r (p := fun r => r.1 + r.2 ≤ size l) (by have := (MrOk.ends hl).2.2; omega_arith))
   have e₂ : WEnv l B H c k b t :=
     ⟨(g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-        (by decide)).trans hB₁,
+        (by decide)).trans hB,
       (g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-        (by decide)).trans ((k₁.gpr (by decide)).trans hdi), r12₂, hs₁.congr wr₂, tb, hodd, h3, hc,
-      fun i hi => by rw [rd₂, wr₂, k₁.2.1, k₁.2.2]; exact erd i hi,
+        (by decide)).trans hdi, r12₂, hs.congr wr₂, tb, hodd, h3, hc,
+      fun i hi => by rw [rd₂, wr₂]; exact erd i hi,
       by rw [← ev]; exact VG.Proof.Bignum.wv_congr fun i hi => hword_area FA (esep i (by omega_arith)),
       by rw [hword_area FA (esep l.W (by omega_arith))]; exact el, esep⟩
-  refine WP.mono (windows_ok hl e₂) fun u ⟨fl, bp₃, bx₃, _, sp₃, _, rd₃, wr₃, _, F₃⟩ => ?_
-  have bp : u.gpr .rbp = (s.mxcsr &&& 0xFFFF).setWidth 64 := by
-    rw [bp₃, g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-        (by decide), bp₁]
-  refine WP.mono (epi_ok (d := oMx l) bx₃ (hs.congr (by rw [wr₃, wr₂, k₁.2.2])) hmx bp)
-    fun w ⟨m₄, g₄, rd₄, wr₄⟩ => ?_
-  have O₄ : Outside B (oMx l) 4 u.mem w.mem := by
-    rw [m₄]; exact VG.Proof.Bignum.X86_64.AmmSym.writeW32_outside _ B _ (by omega_arith)
-  refine ⟨by rw [O₄.word (by omega_arith) (by omega_arith)]; exact fl, by rw [g₄]; exact bx₃, ?_,
-    by rw [rd₄, rd₃, rd₂, k₁.2.1], by rw [wr₄, wr₃, wr₂, k₁.2.2], ?_⟩
-  · rw [g₄, sp₃, g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
-      (by decide) (by decide), k₁.gpr (by decide)]
-  · exact (FA.trans (area_frm F₃ (three_r (p := fun r => r.1 + r.2 ≤ size l) (by omega_arith) (by omega_arith)
-      (by omega_arith)))).trans (area_frm (Frm.of_outside O₄ (List.mem_singleton_self _))
-        (one_r (p := fun r => r.1 + r.2 ≤ size l) (by omega_arith)))
+  refine WP.mono (windows_ok hl e₂) fun u ⟨fl, _, bx₃, _, sp₃, _, rd₃, wr₃, _, F₃⟩ => ?_
+  rw [WP.block_cons_iff]
+  refine ⟨_, rfl, WP.block_nil ⟨fl, bx₃, ?_, rd₃.trans rd₂, wr₃.trans wr₂, ?_⟩⟩
+  · exact sp₃.trans (g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide))
+  · exact FA.trans (area_frm F₃ (three_r (p := fun r => r.1 + r.2 ≤ size l) (by omega_arith) (by omega_arith)
+      (by omega_arith)))
 
 /-! ## The body of the frame -/
 

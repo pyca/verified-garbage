@@ -8,8 +8,7 @@ public import VerifiedGarbage.Spec.MlKem
 
 `multiplyNTTs(h = rdi, f = rsi, g = rdx, scratch = rcx)` computes on the
 pairs of eight pairs of coefficients at a time, as the words of SSE2
-registers (see `Vec.lean`), with MXCSR `0x1FBF` (`withMxcsr`, through
-`scratch + 768`, with `scratch` in `r10`). It stores the 128 words
+registers (see `Vec.lean`), with `scratch` in `r10`. It stores the 128 words
 `γᵢ · 2¹⁶ mod q`, `γᵢ = ζ^(2 BitRev7(i) + 1)`, to `scratch` (`gTab`, with
 immediates: the code has no other memory), and `R² mod q = 1353` in each
 word of `xmm12`. Then, 16 times, with `rsi`, `rdx` and `rdi` at 16
@@ -73,6 +72,6 @@ def mulPro : List Instr :=
     [.mov32 .rax (.imm 0x05490549), .xop (.movq .xmm12 .rax), .xop (.pshufd .xmm12 .xmm12 0), .mov .r8 (.reg .r10)]
 
 def multiplyNTTs : Prog isa :=
-  .seq (.block [.mov .r10 (.reg .rcx)]) (withMxcsr .r10 768 (.seq (.block mulPro) (rcxLoop 16 mulBody)))
+  .seq (.block [.mov .r10 (.reg .rcx)]) (.seq (.block mulPro) (rcxLoop 16 mulBody))
 
 end VG.Impl.MlKem.X86_64

@@ -35,25 +35,22 @@ variable (l : Lay)
 /-- The area's offset in the workspace: after its eight arrays. -/
 def oArea : Nat := hdrBytes + 8 * (8 * (l.W + 2))
 
-/-- The first digit of the exponent's windows, after the MXCSR slots. -/
+/-- The first digit of the exponent's windows, after the 8 bytes at `oMx`
+(once MXCSR's slots, now unused). -/
 def oSt : Nat := l.oMx + 8
 
 /-- The workspace's `sCtr` while `k1` counts in it. -/
 def oSv : Nat := l.oMx + 16
 
-/-- Intel's MXCSR prologue and epilogue around `c`, the caller's MXCSR
-(bits 15:0) kept in `r14`, which `c` never writes: the shape of a save and
-restore that the proofs check (`ctlOk`). -/
-def withMx (c : Prog isa) : Prog isa :=
-  .seq (.seq (.block [.stmxcsr (at_ .rbx l.oMx), .mov32 .r14 (.mem (at_ .rbx l.oMx)), .alu32 .and .r14 (.imm 0xFFFF)])
-      (.seq (.seq (.block [.mov32 .rax (.imm 0x1FBF), .store32 (at_ .rbx (l.oMx + 4)) .rax,
-          .ldmxcsr (at_ .rbx (l.oMx + 4)), .lfence]) (.seq c (.block [.lfence])))
-        (.block [.store32 (at_ .rbx l.oMx) .r14, .ldmxcsr (at_ .rbx l.oMx)])))
-    (.block [.vop .vzeroupper])
+/-- `c`, then `vzeroupper`. The vector code sets no MXCSR of its own: the
+dispatcher of every function that runs it runs `vg_mcdt_enter` first, which
+leaves MXCSR `0x1FBF` for the whole call, as MCDT asks of its multiplies
+(see "MCDT" in `TCB/X86_64/Isa.lean`). -/
+def withVzu (c : Prog isa) : Prog isa := .seq c (.block [.vop .vzeroupper])
 
 /-- The vector code: `CrtIfma.expLoop` for one lane, from the digit in `rbp`
 (which it does not write, so that the loop's count is a register's). -/
-def vec : Prog isa := withMx l (seqs (expLoop l [.mov .r13 (.reg .rbp)]))
+def vec : Prog isa := withVzu (seqs (expLoop l [.mov .r13 (.reg .rbp)]))
 
 /-- The area's base into `rbx`, the first digit into `rbp`. -/
 def bases : List Instr := [.mov .rbx (.mem (hdr sIfma)), .mov .rbp (.mem (at_ .rbx (oSt l)))]

@@ -58,8 +58,8 @@ tactic_template "kgh_sp " v:ident b:ident p:ident B:ident P:ident hR:ident : tac
   `(tactic| repeat' (first
     | with_reducible exact ($B _ (by decide)).sp | with_reducible exact ($P (_, _) (by decide)).sp
     | with_reducible exact ($hR).ntt.sp | with_reducible exact ($hR).row.sp
-    | (closedH_in $v $b $p; exact Code.all_of_allInstrs (by decide +kernel))
-    | (code_whnf; closedH_in $v $b $p; exact Code.all_of_allInstrs (by decide +kernel))
+    | (closedH_in $v $b $p; exact Code.all_of_spTest (by decide +kernel))
+    | (code_whnf; closedH_in $v $b $p; exact Code.all_of_spTest (by decide +kernel))
     | with_reducible exact ($v).prfs_sp _ _ _ _ | with_reducible exact ($v).arith.cbd16.sp
     | (code_whnf; with_reducible apply all_seq) | (code_whnf; with_reducible apply all_ite)
     | (code_whnf; with_reducible apply all_call)))

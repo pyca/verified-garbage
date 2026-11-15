@@ -75,15 +75,12 @@ namespace VG.Artifacts.Ed448.Arm
 def artifacts : List Artifact := [
   Spec.Ed448.publicKeyApi.artifact Arm.target {
     code := Impl.Ed448.Arm.PublicKey.code
-    stack := 280
     verified := Proof.Ed448.Arm.PublicKey.publicKey_verified Proof.Ed448.baseLadder_ok },
   Spec.Ed448.signCachedApi.artifact Arm.target {
     code := Impl.Ed448.Arm.SignCached.code
-    stack := 280
     verified := Proof.Ed448.Arm.SignCached.signCached_verified Proof.Ed448.baseLadder_ok },
   Spec.Ed448.verifyApi.artifact Arm.target {
     code := Impl.Ed448.Arm.Verify.code
-    stack := 280
     verified := Proof.Ed448.Arm.Verify.verify_verified
       (Proof.Ed448.Arm.verifyEquation_ok Proof.Ed448.recover_ok Proof.Ed448.verifyEq_ok)
       Proof.Ed448.Arm.verifyEquation_ct }]

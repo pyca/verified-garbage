@@ -18,7 +18,6 @@ def artifacts : List Artifact := [
   Spec.Hmac.sha384I.pbkdf2Api.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch (Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha384I) 3
       Proof.Pbkdf2.Whole.Arm.sha384F.pbkdf2
-    stack := 24 + Proof.Pbkdf2.Whole.Arm.pbkFrame Spec.Hmac.sha384I
     verified := Proof.Pbkdf2.Whole.Arm.pbkFramed Proof.Pbkdf2.Whole.Arm.sha384
       Proof.Pbkdf2.Whole.Arm.sha384_pbkFrameSat }]
 

@@ -18,19 +18,15 @@ namespace VG.Artifacts.IdeaCfb.Arm
 def artifacts : List Artifact := [
   Spec.Idea.cfbEncryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbEncrypt
-    stack := 96
     verified := Proof.Idea.Arm.cfbEncrypt_framed },
   Spec.Idea.cfbDecryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbDecrypt
-    stack := 96
     verified := Proof.Idea.Arm.cfbDecrypt_framed },
   Spec.Idea.cfbEncryptFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbEncryptFinal
-    stack := 96
     verified := Proof.Idea.Arm.cfbEncryptFinal_framed },
   Spec.Idea.cfbDecryptFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 64 0 14 Impl.Idea.Arm.cfbDecryptFinal
-    stack := 96
     verified := Proof.Idea.Arm.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.IdeaCfb.Arm

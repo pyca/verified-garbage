@@ -50,8 +50,12 @@ theorem trialStart_ok (s : State) (dst : BitVec 32) (n : Nat)
       (VG.Proof.RsaKeyGen.nstep (s.gpr .r7) (VG.Proof.RsaKeyGen.nstep (s.gpr .r7) (s.gpr .r7))) := by
     rw [e5, div4, n2]
   have memory : u5.mem = s.mem := by rw [m5, m4, m3, v2.mem, v1.mem]
-  ffrun [show (4#32) = (4 : BitVec 32) from rfl,
-    show (12#32) = (12 : BitVec 32) from rfl, n3, div5, memory, keep5.sp, keep5.rd, keep5.wr, readOut, readWidth, out, width,
-    VG.Proof.RsaKeyGen.ninv]
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, mov_exec, logic_exec, ldrSp_exec, Op2.eval,
+    RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.sp_setReg, Option.map_some,
+    Option.some.injEq, exists_eq_left', ite_true, ite_false, reduceCtorEq, and_true, Nat.reduceLT, Nat.reduceLeDiff,
+    encodable_byte (v := 0) (by decide), show (4#32) = (4 : BitVec 32) from rfl,
+    show (12#32) = (12 : BitVec 32) from rfl, n3, div5, memory, keep5.sp, keep5.rd, keep5.wr, readOut, readWidth,
+    out, width, VG.Proof.RsaKeyGen.ninv]
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

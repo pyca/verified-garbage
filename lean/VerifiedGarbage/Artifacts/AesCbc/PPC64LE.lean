@@ -15,11 +15,9 @@ open VG.Proof.AesCbc.PPC64LE.Wiped
 def artifacts : List Artifact := [
   Spec.Cbc.aesEncryptApi.artifact PPC64LE.target {
     code := Impl.AesCbc.PPC64LE.Wiped.encrypt
-    stack := 48
     verified := encrypt_verified },
   Spec.Cbc.aesDecryptApi.artifact PPC64LE.target {
     code := Impl.AesCbc.PPC64LE.Wiped.decrypt
-    stack := 48
     verified := decrypt_verified }]
 
 end VG.Artifacts.AesCbc.PPC64LE

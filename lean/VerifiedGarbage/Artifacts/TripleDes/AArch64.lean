@@ -37,17 +37,14 @@ namespace VG.Artifacts.TripleDes.AArch64
 def artifacts : List Artifact := [
   Spec.TripleDes.expandKeyApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 512 .x3 64 Impl.TripleDes.AArch64.Key.expandKey
-    stack := 512
     verified := Proof.TripleDes.AArch64.expandKey_framed },
   Spec.TripleDes.ecbEncryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1024 .x3 128
       Impl.TripleDes.AArch64.BitsliceNeon.encrypt
-    stack := 1024
     verified := Proof.TripleDes.AArch64.ecb_framed Proof.TripleDes.AArch64.BitslicedNeon.encrypt_verified },
   Spec.TripleDes.ecbDecryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1024 .x3 128
       Impl.TripleDes.AArch64.BitsliceNeon.decrypt
-    stack := 1024
     verified := Proof.TripleDes.AArch64.ecb_framed Proof.TripleDes.AArch64.BitslicedNeon.decrypt_verified }]
 
 end VG.Artifacts.TripleDes.AArch64

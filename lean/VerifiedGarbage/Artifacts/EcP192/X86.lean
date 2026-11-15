@@ -71,16 +71,13 @@ open VG.Proof.P192.X86 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.EcKey.P192.inst.compressPublicKeyApi.artifact X86.target {
-    stack := 28
     code := Proof.EcKey.Compressed.X86.P192.code
     verified := Proof.EcKey.Compressed.X86.P192.verified },
   Spec.EcKey.P192.inst.decompressPublicKeyApi.artifact X86.target {
-    stack := 28
     code := Proof.EcKey.Compressed.X86.P192Decompress.code
     verified := Proof.EcKey.Compressed.X86.P192Decompress.verified hasLaw.law },
   Spec.EcKey.P192.publicKeyApi.artifact X86.target {
     code := Impl.EcKey.X86.publicKeyP192
-    stack := 28
     verified := Proof.EcKey.X86.P192.pk_verified hasLaw.law }]
 
 end VG.Artifacts.EcP192.X86

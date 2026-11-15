@@ -204,7 +204,7 @@ theorem init_correct (s : State) (h : initPre s) :
   obtain ⟨_, hwr, hroom, hret⟩ := h
   have scr : Scr s (s.gpr .rdi) 128 := Scr.of_mem (by rw [hwr]; simp) hroom
   obtain ⟨tr, t, he, hp, k⟩ := WP.keep [.rax, .rsi] (init_ok scr rfl) (by decide +kernel)
-  have safe : SpSafe init := SpSafe.of_all (Code.all_of_allInstrs (by decide +kernel))
+  have safe : SpSafe init := SpSafe.of_all (Code.all_of_spTest (by decide +kernel))
   have hd : init.x86_64Depth = 0 := rfl
   have hf := Exec.stackFrame safe he (by rw [hd]; decide)
   rw [hwr, hd] at hf

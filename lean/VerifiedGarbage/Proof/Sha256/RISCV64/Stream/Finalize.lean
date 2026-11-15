@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 public import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Common
 meta import VerifiedGarbage.Proof.Sha256.RISCV64.Stream.Common
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
@@ -821,16 +823,16 @@ theorem finalizeN_verified (hN : N ≤ 8)
 /-- SHA-256's `finalize`, all 8 words. -/
 theorem finalize_verified : Verified RISCV64.target finalize (Proof.Sha256.finalizeNRISCV64 8) :=
   finalizeN_verified (by decide) untouched_8 (keepsN_all _ (by decide))
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
-      (fun _ _ _ _ hp => agree₀ hp) (by taint_decide))
+    (VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
+      (fun _ _ _ _ hp => agree₀ hp) (by taint_decide_sum [VG.Proof.Sha256.RISCV64.compressSum]))
     ⟨sat 8, rfl, rfl, Region.disjoint_of_sep (by decide), by decide, by decide,
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩
 
 /-- SHA-224's `finalize`, the first 7 words. -/
 theorem finalize224_verified : Verified RISCV64.target finalize224 (Proof.Sha256.finalizeNRISCV64 7) :=
   finalizeN_verified (by decide) untouched_7 (keepsN_all _ (by decide))
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
-      (fun _ _ _ _ hp => agree₀ hp) (by taint_decide))
+    (VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
+      (fun _ _ _ _ hp => agree₀ hp) (by taint_decide_sum [VG.Proof.Sha256.RISCV64.compressSum]))
     ⟨sat 7, rfl, rfl, Region.disjoint_of_sep (by decide), by decide, by decide,
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩
 

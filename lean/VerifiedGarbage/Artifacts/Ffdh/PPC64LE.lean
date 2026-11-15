@@ -46,7 +46,6 @@ def direct : List Artifact := [
     code := Impl.Ffdh.PPC64LE.Cached.Precompute.code
     verified := Proof.Ffdh.PPC64LE.Cached.pc_verified },
   Spec.Ffdh.cachedKeySearchApi.artifact PPC64LE.target {
-    stack := 192
     code := Proof.Ffdh.PPC64LE.Cached.SearchProof.keyCode
     verified := Proof.Ffdh.PPC64LE.Cached.SearchProof.search_verified }]
 
@@ -55,7 +54,6 @@ def artifacts : List Artifact :=
   (VG.Proof.Variants.MillerRabin.PPC64LE.variants.flatMap fun (v : Proof.MillerRabin.PPC64LE.RoundImpl) => [
     Spec.Ffdh.sievedParameterSearchApi.artifact PPC64LE.target {
       suffix := v.suffix
-      stack := 336
       code := Proof.Ffdh.PPC64LE.Generation.searchCode v
       verified := Proof.Ffdh.PPC64LE.Generation.search_verified v }])
 

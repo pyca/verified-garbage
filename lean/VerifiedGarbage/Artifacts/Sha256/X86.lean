@@ -19,7 +19,6 @@ def artifactsFor (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
   Spec.Sha256.digest256Api.artifact X86.target {
     suffix := v.suffix
     code := Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha256H v.stream)
-    stack := 48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha256H v.stream)
     verified := Proof.MdStream.X86.Digest.sha256_digest v.stream
     spSafe := Proof.MdStream.X86.Digest.sha256_digestSp v.stream }]
 
@@ -35,7 +34,6 @@ def artifactsFor (v : Proof.Sha256.X86.Variants.Backend) : List Artifact := [
   Spec.Sha256.digest224Api.artifact X86.target {
     suffix := v.suffix
     code := Impl.MdStream.X86.Digest.digest (Proof.Pbkdf2.Stream.X86.sha224H v.stream)
-    stack := 48 + Impl.MdStream.X86.Digest.dframe (Proof.Pbkdf2.Stream.X86.sha224H v.stream)
     verified := Proof.MdStream.X86.Digest.sha224_digest v.stream
     spSafe := Proof.MdStream.X86.Digest.sha224_digestSp v.stream }]
 

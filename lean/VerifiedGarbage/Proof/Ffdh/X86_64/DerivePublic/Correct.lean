@@ -270,7 +270,8 @@ theorem body_ok (M : Mont) (E : CrtExpL M) (R : R2Impl M) {s : State} (hpre : dv
     have hp : parametersValid (dvOf s).params = true := by
       unfold domainValid at hv
       exact ((Bool.and_eq_true _ _).mp hv).1
-    exact main_spec hb' hm hp hmain
+    have spec := main_spec hb' hm hp hmain
+    exact spec
 
 theorem dv_correct (M : Mont) (E : CrtExpL M) (R : R2Impl M)
     (hmx : ctlOk (VG.Impl.Ffdh.X86_64.Domain.DerivePublic.code M.mm E.code (.seq (.block r2Head) R.code)) = true) (s : State) (h : dvContract.pre s) :

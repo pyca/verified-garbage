@@ -367,6 +367,8 @@ def Instr.encode : Instr → Option (List Nat)
   -- unsigned offset: `00 111 1 01 opc imm12 Rn Rt`, `imm12 = off / 16`.
   | .ldrq t n off => ldst 0x3DC00000 16 t.index n.index off
   | .ldrqTbl t n off .. => ldst 0x3DC00000 16 t.index n.index off
+  -- As `ldr`: "LDR (immediate)", unsigned offset.
+  | .ldrTbl sz t n off .. => ldst (if sz == .x then 0xF9400000 else 0xB9400000) sz.bytes t.index n.index off
   | .strq t n off => ldst 0x3D800000 16 t.index n.index off
   -- "UMOV": `0 Q 0 01110000 imm5 0 0111 1 Rn Rd`, `.s` (`Q = 0`) or `.d`
   -- (`Q = 1`).

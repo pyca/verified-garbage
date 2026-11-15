@@ -74,7 +74,8 @@ theorem splitSpec_pre {s : State} (h : splitPreK CtxMode.base s) :
     (Proof.Gcm.sealSplitContract X86_64.abi 2672).pre s := by
   sig_split h
   clear h
-  sig_pre [Proof.Gcm.sealSplitContract, Proof.Gcm.sealSplitSig, Proof.Gcm.sealSplitPre, X86_64.abi, X86_64.argRegs]
+  sig_pre [Proof.Gcm.sealSplitContract, Proof.Gcm.sealSplitSig, Proof.Gcm.sealSplitPre, X86_64.abi, X86_64.argRegs,
+    List.range, List.range.loop]
   sig_reduce [Proof.Gcm.sealSplitContract, Proof.Gcm.sealSplitSig, Proof.Gcm.sealSplitPre, X86_64.abi, X86_64.argRegs,
     Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD,
     List.range, List.range.loop, VG.X86_64.below]
@@ -91,7 +92,7 @@ theorem splitSpecP_pre {s : State} (h : splitPreK CtxMode.powers s) :
   have a₀ := h
   clear h
   sig_pre [Proof.Gcm.sealSplitPrecomputedContract, Proof.Gcm.sealSplitPrecomputedSig,
-    Proof.Gcm.sealSplitPrecomputedPre, X86_64.abi, X86_64.argRegs]
+    Proof.Gcm.sealSplitPrecomputedPre, X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.Gcm.sealSplitPrecomputedContract, Proof.Gcm.sealSplitPrecomputedSig,
     Proof.Gcm.sealSplitPrecomputedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,

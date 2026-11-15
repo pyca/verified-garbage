@@ -143,7 +143,7 @@ theorem cbcEncryptChained_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.TripleDes.cbcChainedSig) (nm := "scratch") (e := .u64)
     (n := 121) (post := Proof.TripleDes.cbcEncChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 976) cbcEncryptChained_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.TripleDes.cbcEncChainedPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

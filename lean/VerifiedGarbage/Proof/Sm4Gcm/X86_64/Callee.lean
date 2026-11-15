@@ -60,24 +60,22 @@ abbrev keyK : Contract isa := Spec.Sm4.expandKeyContract X86_64.abi 3144
 
 theorem ctr_spSafe : SpSafe ctrFn.code := by
   have hcore : (Impl.Sm4.X86_64.ctr32).all (fun i => !isa.writesSp i) = true :=
-    Code.all_of_allInstrs (by lit_decide)
+    Code.all_of_spTest (by lit_decide)
   apply SpSafe.of_all
-  refine withStackScratch_spSafe (r := .r8) (by decide) ?_
-  simp only [Code.all, hcore, wipe_spSafe, Bool.and_self]
+  exact withStackScratch_spSafe (r := .r8) (by decide) hcore
 
 theorem key_spSafe : SpSafe keyFn.code := by
   have hcore : (Impl.Sm4.X86_64.expandKey).all (fun i => !isa.writesSp i) = true :=
-    Code.all_of_allInstrs (by lit_decide)
+    Code.all_of_spTest (by lit_decide)
   apply SpSafe.of_all
-  refine withStackScratch_spSafe (r := .rdx) (by decide) ?_
-  simp only [Code.all, hcore, wipe_spSafe, Bool.and_self]
+  exact withStackScratch_spSafe (r := .rdx) (by decide) hcore
 
 theorem ctr_depth :
-    (Impl.StackScratch.X86_64.withStackScratchWiped 3208 .r8 400 Impl.Sm4.X86_64.ctr32).x86_64Depth ≤ 3216 := by
+    (Impl.StackScratch.X86_64.withStackScratch 3208 .r8 Impl.Sm4.X86_64.ctr32).x86_64Depth ≤ 3216 := by
   lit_decide
 
 theorem key_depth :
-    (Impl.StackScratch.X86_64.withStackScratchWiped 3144 .rdx 392 Impl.Sm4.X86_64.expandKey).x86_64Depth ≤ 3144 := by
+    (Impl.StackScratch.X86_64.withStackScratch 3144 .rdx Impl.Sm4.X86_64.expandKey).x86_64Depth ≤ 3144 := by
   lit_decide
 
 /-- The stack a callee using `d` bytes below its return address writes is
@@ -220,7 +218,7 @@ theorem KeyCall.pre {s : State} {Kk Sc : Addr} (h : KeyCall s Kk Sc) :
 
 theorem key_call {s : State} {Kk Sc : Addr} (h : KeyCall s Kk Sc) :
     WP isa (.call keyFn.name keyFn.code) s (KeyPost s Kk Sc) := by
-  refine WP.callF (k := keyK) Proof.Sm4.X86_64.expandKey_framed.1 key_spSafe
+  refine WP.callF (k := keyK) Proof.Sm4.X86_64.expandKey_framedU.1 key_spSafe
     (Nat.lt_of_le_of_lt (Nat.add_le_add_right key_depth 16) (by decide))
     (rd := [⟨Kk, 16⟩]) (wr := [⟨Sc, 128⟩]) h.pre h.reads h.writes ?_
   intro s' hrd hwr hcs hf ⟨s₂, hm₂, _, hpost⟩ _
@@ -247,7 +245,7 @@ theorem key_rel {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ Kk Sc : Addr,
       KeyCall s₁ Kk Sc ∧ KeyCall s₂ Kk Sc ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
     RelCT isa P (.call keyFn.name keyFn.code) fun _ _ => True := by
-  refine RelCT.callEx Proof.Sm4.X86_64.expandKey_framed.1 Proof.Sm4.X86_64.expandKey_framed.2.1
+  refine RelCT.callEx Proof.Sm4.X86_64.expandKey_framedU.1 Proof.Sm4.X86_64.expandKey_framedU.2.1
     fun s₁ s₂ hp => ?_
   obtain ⟨Kk, Sc, h₁, h₂, hsp⟩ := h s₁ s₂ hp
   refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩

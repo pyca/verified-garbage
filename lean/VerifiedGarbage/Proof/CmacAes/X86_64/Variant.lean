@@ -135,7 +135,7 @@ def UpdateImpl.aesniCbc : UpdateImpl where
   ct := AesNi.update_ct
   nosp := aesniCbc_nosp
   mxcsr := by decide +kernel
-  spSafe := Code.all_of_allInstrs (by decide +kernel)
+  spSafe := Code.all_of_spTest (by decide +kernel)
   xdepth := by decide +kernel
   suffix := "_aesni"
   features := ["aes"]

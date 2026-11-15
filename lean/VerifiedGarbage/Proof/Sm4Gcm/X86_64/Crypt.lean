@@ -1,4 +1,6 @@
 module
+
+public import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Crypt
 public import VerifiedGarbage.Proof.Sm4Gcm.X86_64.Callee
 public import VerifiedGarbage.Proof.Gcm.Ctr
@@ -31,32 +33,34 @@ open VG.Proof.AesGcm.X86_64 (Lay Env DataOk DataW)
 
 /-- AES-GCM's layout (`Lay`), and the stack the calls use below `SP`, apart
 from the context, the state and `W`. -/
-structure Lay4 (Ctx St W SP : Addr) : Prop where
-  lay : Lay Ctx St W SP
+structure Lay4 (Ctx St W SP : Addr) (N : Nat := 2560) : Prop where
+  lay : Lay Ctx St W SP N
   sp : stkN ≤ SP.toNat
   kc : (below SP stkN).Disjoint ⟨Ctx, 256⟩
   ks : (below SP stkN).Disjoint ⟨St, 80⟩
-  kw : (below SP stkN).Disjoint ⟨W, 2560⟩
+  kw : (below SP stkN).Disjoint ⟨W, N⟩
+  /-- `W` holds the 768 bytes the pieces use (`vg_ghash`'s 256 at 512 the last). -/
+  big : 768 ≤ N
 
 /-- A buffer of `n` bytes at `D` that the code may read and write
 (`DataW`), apart from the stack the calls use too. -/
-structure DataW4 (Ctx St W SP : Addr) (s : State) (D : Addr) (n : Nat) : Prop where
-  dw : DataW Ctx St W SP s D n
+structure DataW4 (Ctx St W SP : Addr) (s : State) (D : Addr) (n : Nat) (N : Nat := 2560) : Prop where
+  dw : DataW Ctx St W SP s D n N
   stk : (below SP stkN).Disjoint ⟨D, n⟩
 
 namespace DataW4
 
-variable {Ctx St W SP : Addr} {s : State} {D : Addr} {n : Nat}
+variable {Ctx St W SP : Addr} {s : State} {D : Addr} {n N : Nat}
 
-theorem of_eq {s' : State} (h : DataW4 Ctx St W SP s D n) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
-    DataW4 Ctx St W SP s' D n :=
+theorem of_eq {s' : State} (h : DataW4 Ctx St W SP s D n N) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) :
+    DataW4 Ctx St W SP s' D n N :=
   ⟨h.dw.of_eq hrd hwr, h.stk⟩
 
-theorem drop (h : DataW4 Ctx St W SP s D n) {k : Nat} (hk : k ≤ n) :
-    DataW4 Ctx St W SP s (D + BitVec.ofNat 64 k) (n - k) :=
+theorem drop (h : DataW4 Ctx St W SP s D n N) {k : Nat} (hk : k ≤ n) :
+    DataW4 Ctx St W SP s (D + BitVec.ofNat 64 k) (n - k) N :=
   ⟨h.dw.drop hk, h.stk.sub_right (Offset.sub_base D (by omega_using [hk]))⟩
 
-theorem take (h : DataW4 Ctx St W SP s D n) {k : Nat} (hk : k ≤ n) : DataW4 Ctx St W SP s D k :=
+theorem take (h : DataW4 Ctx St W SP s D n N) {k : Nat} (hk : k ≤ n) : DataW4 Ctx St W SP s D k N :=
   ⟨h.dw.take hk, h.stk.sub_right (Region.sub_prefix hk)⟩
 
 end DataW4
@@ -69,21 +73,22 @@ abbrev crFrame (St SP D : Addr) (n : Nat) : List Region :=
   [⟨D, n⟩, ⟨St + BitVec.ofNat 64 48, 32⟩, below SP stkN]
 
 /-- Before `crypt`: `P` bytes of text so far, `n` bytes at `D` to go. -/
-structure CrIn (Ctx St W SP : Addr) (icb : Block) (P : Nat) (D : Addr) (n : Nat) (s : State) : Prop where
-  env : Env Ctx St W SP s
+structure CrIn (Ctx St W SP : Addr) (icb : Block) (P : Nat) (D : Addr) (n : Nat) (s : State) (N : Nat := 2560) :
+    Prop where
+  env : Env Ctx St W SP s N
   r12 : s.gpr .r12 = D
   rbp : s.gpr .rbp = BitVec.ofNat 64 n
   rbx : s.gpr .rbx = BitVec.ofNat 64 (P % 16)
-  data : DataW4 Ctx St W SP s D n
+  data : DataW4 Ctx St W SP s D n N
 
 /-- Part of the way: `j` bytes done, from `m₀`. -/
 structure CrMid (Ctx St W SP : Addr) (icb : Block) (P : Nat) (D : Addr) (n : Nat) (m₀ : Mem)
-    (j : Nat) (s : State) : Prop where
-  env : Env Ctx St W SP s
+    (j : Nat) (s : State) (N : Nat := 2560) : Prop where
+  env : Env Ctx St W SP s N
   le : j ≤ n
   r12 : s.gpr .r12 = D + BitVec.ofNat 64 j
   rbp : s.gpr .rbp = BitVec.ofNat 64 (n - j)
-  data : DataW4 Ctx St W SP s D n
+  data : DataW4 Ctx St W SP s D n N
   ctr : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb P →
     Ctr s.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb (P + j)
   done : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb P →
@@ -94,8 +99,8 @@ structure CrMid (Ctx St W SP : Addr) (icb : Block) (P : Nat) (D : Addr) (n : Nat
 
 /-- After `crypt`. -/
 structure CrOut (Ctx St W SP : Addr) (icb : Block) (P : Nat) (D : Addr) (n : Nat) (m₀ : Mem)
-    (s : State) : Prop where
-  env : Env Ctx St W SP s
+    (s : State) (N : Nat := 2560) : Prop where
+  env : Env Ctx St W SP s N
   ctr : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb P →
     Ctr s.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb (P + n)
   out : Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx) icb P →
@@ -103,10 +108,10 @@ structure CrOut (Ctx St W SP : Addr) (icb : Block) (P : Nat) (D : Addr) (n : Nat
   frame : Frame (crFrame St SP D n) m₀ s.mem
 
 section
-variable {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP)
+variable {Ctx St W SP : Addr} {N : Nat} (L : Lay4 Ctx St W SP N)
 include L
 
-theorem ctx_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW4 Ctx St W SP s D n) :
+theorem ctx_crFrame {s : State} {D : Addr} {n : Nat} (hd : DataW4 Ctx St W SP s D n N) :
     ∀ r ∈ crFrame St SP D n, (⟨Ctx, 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -124,5 +129,10 @@ theorem ciph_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m')
       (by show 128 ≤ 2 ^ 64; omega_using []) hi]
 
 end
+
+
+/-- `vg_ghash`'s 256 bytes of working space at `W + 512` fit in the 768 bytes
+of `W` the streaming functions have. -/
+instance GhFits.inst768 (v : AesGcm.X86_64.GcmImpl) : AesGcm.X86_64.GhFits v 768 256 := AesGcm.X86_64.GhFits.base v (by decide)
 
 end VG.Proof.Sm4Gcm.X86_64

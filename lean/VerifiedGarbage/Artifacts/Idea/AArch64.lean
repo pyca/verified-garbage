@@ -18,15 +18,12 @@ namespace VG.Artifacts.Idea.AArch64
 def artifacts : List Artifact := [
   Spec.Idea.expandKeyApi.artifact AArch64.target {
     code := Impl.Idea.AArch64.expandKey
-    stack := 0
     verified := Proof.Idea.AArch64.expandKey_verified },
   Spec.Idea.invertKeyApi.artifact AArch64.target {
     code := Impl.Idea.AArch64.invertKey
-    stack := 0
     verified := Proof.Idea.AArch64.invertKey_verified },
   Spec.Idea.ecbApi.artifact AArch64.target {
     code := Impl.Idea.AArch64.ecb
-    stack := 0
     verified := Proof.Idea.AArch64.ecb_verified }]
 
 end VG.Artifacts.Idea.AArch64

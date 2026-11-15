@@ -884,10 +884,6 @@ vg_mldsa44_keygen:
 	str x9, [x10, #16]
 	ldr x9, [x28, #1176]
 	str x9, [x10, #24]
-	movz x9, #0, lsl #0
-	strb w9, [x28, #1440]
-	movz x9, #0, lsl #0
-	strb w9, [x28, #1441]
 	add x10, x28, #1442
 	ldr x9, [x28, #1152]
 	str x9, [x10, #0]
@@ -897,10 +893,6 @@ vg_mldsa44_keygen:
 	str x9, [x10, #16]
 	ldr x9, [x28, #1176]
 	str x9, [x10, #24]
-	movz x9, #1, lsl #0
-	strb w9, [x28, #1474]
-	movz x9, #0, lsl #0
-	strb w9, [x28, #1475]
 	add x10, x28, #1476
 	ldr x9, [x28, #1152]
 	str x9, [x10, #0]
@@ -910,10 +902,6 @@ vg_mldsa44_keygen:
 	str x9, [x10, #16]
 	ldr x9, [x28, #1176]
 	str x9, [x10, #24]
-	movz x9, #2, lsl #0
-	strb w9, [x28, #1508]
-	movz x9, #0, lsl #0
-	strb w9, [x28, #1509]
 	add x10, x28, #1510
 	ldr x9, [x28, #1152]
 	str x9, [x10, #0]
@@ -923,6 +911,18 @@ vg_mldsa44_keygen:
 	str x9, [x10, #16]
 	ldr x9, [x28, #1176]
 	str x9, [x10, #24]
+	movz x9, #0, lsl #0
+	strb w9, [x28, #1440]
+	movz x9, #0, lsl #0
+	strb w9, [x28, #1441]
+	movz x9, #1, lsl #0
+	strb w9, [x28, #1474]
+	movz x9, #0, lsl #0
+	strb w9, [x28, #1475]
+	movz x9, #2, lsl #0
+	strb w9, [x28, #1508]
+	movz x9, #0, lsl #0
+	strb w9, [x28, #1509]
 	movz x9, #3, lsl #0
 	strb w9, [x28, #1542]
 	movz x9, #0, lsl #0
@@ -936,64 +936,38 @@ vg_mldsa44_keygen:
 	and w24, w24, w0
 	movz x8, #0, lsl #0
 	sub w8, w8, w0
+	dup v0.4s, w8
 	movz x1, #4096, lsl #0
 	add x1, x28, x1
-	movz x2, #1024, lsl #0
+	movz x2, #64, lsl #0
 20:
-	ldr w9, [x1, #0]
-	and w9, w9, w8
-	str w9, [x1, #0]
-	add x1, x1, #4
+	ldr q1, [x1, #0]
+	and v1.16b, v1.16b, v0.16b
+	str q1, [x1, #0]
+	ldr q1, [x1, #16]
+	and v1.16b, v1.16b, v0.16b
+	str q1, [x1, #16]
+	ldr q1, [x1, #32]
+	and v1.16b, v1.16b, v0.16b
+	str q1, [x1, #32]
+	ldr q1, [x1, #48]
+	and v1.16b, v1.16b, v0.16b
+	str q1, [x1, #48]
+	add x1, x1, #64
 	sub x2, x2, #1
 	cbnz x2, 20b
-	add x10, x28, #1408
-	ldr x9, [x28, #1152]
-	str x9, [x10, #0]
-	ldr x9, [x28, #1160]
-	str x9, [x10, #8]
-	ldr x9, [x28, #1168]
-	str x9, [x10, #16]
-	ldr x9, [x28, #1176]
-	str x9, [x10, #24]
 	movz x9, #0, lsl #0
 	strb w9, [x28, #1440]
 	movz x9, #1, lsl #0
 	strb w9, [x28, #1441]
-	add x10, x28, #1442
-	ldr x9, [x28, #1152]
-	str x9, [x10, #0]
-	ldr x9, [x28, #1160]
-	str x9, [x10, #8]
-	ldr x9, [x28, #1168]
-	str x9, [x10, #16]
-	ldr x9, [x28, #1176]
-	str x9, [x10, #24]
 	movz x9, #1, lsl #0
 	strb w9, [x28, #1474]
 	movz x9, #1, lsl #0
 	strb w9, [x28, #1475]
-	add x10, x28, #1476
-	ldr x9, [x28, #1152]
-	str x9, [x10, #0]
-	ldr x9, [x28, #1160]
-	str x9, [x10, #8]
-	ldr x9, [x28, #1168]
-	str x9, [x10, #16]
-	ldr x9, [x28, #1176]
-	str x9, [x10, #24]
 	movz x9, #2, lsl #0
 	strb w9, [x28, #1508]
 	movz x9, #1, lsl #0
 	strb w9, [x28, #1509]
-	add x10, x28, #1510
-	ldr x9, [x28, #1152]
-	str x9, [x10, #0]
-	ldr x9, [x28, #1160]
-	str x9, [x10, #8]
-	ldr x9, [x28, #1168]
-	str x9, [x10, #16]
-	ldr x9, [x28, #1176]
-	str x9, [x10, #24]
 	movz x9, #3, lsl #0
 	strb w9, [x28, #1542]
 	movz x9, #1, lsl #0
@@ -1007,64 +981,38 @@ vg_mldsa44_keygen:
 	and w24, w24, w0
 	movz x8, #0, lsl #0
 	sub w8, w8, w0
+	dup v0.4s, w8
 	movz x1, #8192, lsl #0
 	add x1, x28, x1
-	movz x2, #1024, lsl #0
+	movz x2, #64, lsl #0
 21:
-	ldr w9, [x1, #0]
-	and w9, w9, w8
-	str w9, [x1, #0]
-	add x1, x1, #4
+	ldr q1, [x1, #0]
+	and v1.16b, v1.16b, v0.16b
+	str q1, [x1, #0]
+	ldr q1, [x1, #16]
+	and v1.16b, v1.16b, v0.16b
+	str q1, [x1, #16]
+	ldr q1, [x1, #32]
+	and v1.16b, v1.16b, v0.16b
+	str q1, [x1, #32]
+	ldr q1, [x1, #48]
+	and v1.16b, v1.16b, v0.16b
+	str q1, [x1, #48]
+	add x1, x1, #64
 	sub x2, x2, #1
 	cbnz x2, 21b
-	add x10, x28, #1408
-	ldr x9, [x28, #1152]
-	str x9, [x10, #0]
-	ldr x9, [x28, #1160]
-	str x9, [x10, #8]
-	ldr x9, [x28, #1168]
-	str x9, [x10, #16]
-	ldr x9, [x28, #1176]
-	str x9, [x10, #24]
 	movz x9, #0, lsl #0
 	strb w9, [x28, #1440]
 	movz x9, #2, lsl #0
 	strb w9, [x28, #1441]
-	add x10, x28, #1442
-	ldr x9, [x28, #1152]
-	str x9, [x10, #0]
-	ldr x9, [x28, #1160]
-	str x9, [x10, #8]
-	ldr x9, [x28, #1168]
-	str x9, [x10, #16]
-	ldr x9, [x28, #1176]
-	str x9, [x10, #24]
 	movz x9, #1, lsl #0
 	strb w9, [x28, #1474]
 	movz x9, #2, lsl #0
 	strb w9, [x28, #1475]
-	add x10, x28, #1476
-	ldr x9, [x28, #1152]
-	str x9, [x10, #0]
-	ldr x9, [x28, #1160]
-	str x9, [x10, #8]
-	ldr x9, [x28, #1168]
-	str x9, [x10, #16]
-	ldr x9, [x28, #1176]
-	str x9, [x10, #24]
 	movz x9, #2, lsl #0
 	strb w9, [x28, #1508]
 	movz x9, #2, lsl #0
 	strb w9, [x28, #1509]
-	add x10, x28, #1510
-	ldr x9, [x28, #1152]
-	str x9, [x10, #0]
-	ldr x9, [x28, #1160]
-	str x9, [x10, #8]
-	ldr x9, [x28, #1168]
-	str x9, [x10, #16]
-	ldr x9, [x28, #1176]
-	str x9, [x10, #24]
 	movz x9, #3, lsl #0
 	strb w9, [x28, #1542]
 	movz x9, #2, lsl #0
@@ -1078,64 +1026,38 @@ vg_mldsa44_keygen:
 	and w24, w24, w0
 	movz x8, #0, lsl #0
 	sub w8, w8, w0
+	dup v0.4s, w8
 	movz x1, #12288, lsl #0
 	add x1, x28, x1
-	movz x2, #1024, lsl #0
+	movz x2, #64, lsl #0
 22:
-	ldr w9, [x1, #0]
-	and w9, w9, w8
-	str w9, [x1, #0]
-	add x1, x1, #4
+	ldr q1, [x1, #0]
+	and v1.16b, v1.16b, v0.16b
+	str q1, [x1, #0]
+	ldr q1, [x1, #16]
+	and v1.16b, v1.16b, v0.16b
+	str q1, [x1, #16]
+	ldr q1, [x1, #32]
+	and v1.16b, v1.16b, v0.16b
+	str q1, [x1, #32]
+	ldr q1, [x1, #48]
+	and v1.16b, v1.16b, v0.16b
+	str q1, [x1, #48]
+	add x1, x1, #64
 	sub x2, x2, #1
 	cbnz x2, 22b
-	add x10, x28, #1408
-	ldr x9, [x28, #1152]
-	str x9, [x10, #0]
-	ldr x9, [x28, #1160]
-	str x9, [x10, #8]
-	ldr x9, [x28, #1168]
-	str x9, [x10, #16]
-	ldr x9, [x28, #1176]
-	str x9, [x10, #24]
 	movz x9, #0, lsl #0
 	strb w9, [x28, #1440]
 	movz x9, #3, lsl #0
 	strb w9, [x28, #1441]
-	add x10, x28, #1442
-	ldr x9, [x28, #1152]
-	str x9, [x10, #0]
-	ldr x9, [x28, #1160]
-	str x9, [x10, #8]
-	ldr x9, [x28, #1168]
-	str x9, [x10, #16]
-	ldr x9, [x28, #1176]
-	str x9, [x10, #24]
 	movz x9, #1, lsl #0
 	strb w9, [x28, #1474]
 	movz x9, #3, lsl #0
 	strb w9, [x28, #1475]
-	add x10, x28, #1476
-	ldr x9, [x28, #1152]
-	str x9, [x10, #0]
-	ldr x9, [x28, #1160]
-	str x9, [x10, #8]
-	ldr x9, [x28, #1168]
-	str x9, [x10, #16]
-	ldr x9, [x28, #1176]
-	str x9, [x10, #24]
 	movz x9, #2, lsl #0
 	strb w9, [x28, #1508]
 	movz x9, #3, lsl #0
 	strb w9, [x28, #1509]
-	add x10, x28, #1510
-	ldr x9, [x28, #1152]
-	str x9, [x10, #0]
-	ldr x9, [x28, #1160]
-	str x9, [x10, #8]
-	ldr x9, [x28, #1168]
-	str x9, [x10, #16]
-	ldr x9, [x28, #1176]
-	str x9, [x10, #24]
 	movz x9, #3, lsl #0
 	strb w9, [x28, #1542]
 	movz x9, #3, lsl #0
@@ -1149,14 +1071,24 @@ vg_mldsa44_keygen:
 	and w24, w24, w0
 	movz x8, #0, lsl #0
 	sub w8, w8, w0
+	dup v0.4s, w8
 	movz x1, #16384, lsl #0
 	add x1, x28, x1
-	movz x2, #1024, lsl #0
+	movz x2, #64, lsl #0
 23:
-	ldr w9, [x1, #0]
-	and w9, w9, w8
-	str w9, [x1, #0]
-	add x1, x1, #4
+	ldr q1, [x1, #0]
+	and v1.16b, v1.16b, v0.16b
+	str q1, [x1, #0]
+	ldr q1, [x1, #16]
+	and v1.16b, v1.16b, v0.16b
+	str q1, [x1, #16]
+	ldr q1, [x1, #32]
+	and v1.16b, v1.16b, v0.16b
+	str q1, [x1, #32]
+	ldr q1, [x1, #48]
+	and v1.16b, v1.16b, v0.16b
+	str q1, [x1, #48]
+	add x1, x1, #64
 	sub x2, x2, #1
 	cbnz x2, 23b
 	add x10, x28, #1408
@@ -1423,52 +1355,24 @@ vg_mldsa44_keygen:
 	bl {vg_mldsa_bit_pack}
 	movz x0, #20480, lsl #0
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	movz x0, #21504, lsl #0
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	movz x0, #22528, lsl #0
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	movz x0, #23552, lsl #0
 	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_ntt}
+	bl {vg_mldsa_ntt_positive}
 	movz x0, #28672, lsl #0
 	add x0, x28, x0
 	movz x1, #4096, lsl #0
 	add x1, x28, x1
 	movz x2, #20480, lsl #0
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
-	movz x0, #28672, lsl #0
-	add x0, x28, x0
-	movz x1, #5120, lsl #0
-	add x1, x28, x1
-	movz x2, #21504, lsl #0
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #28672, lsl #0
-	add x0, x28, x0
-	movz x1, #6144, lsl #0
-	add x1, x28, x1
-	movz x2, #22528, lsl #0
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #28672, lsl #0
-	add x0, x28, x0
-	movz x1, #7168, lsl #0
-	add x1, x28, x1
-	movz x2, #23552, lsl #0
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #28672, lsl #0
-	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_inv_ntt}
+	add x3, x28, #2048
+	bl {vg_mldsa_dot_inverse4}
 	movz x0, #28672, lsl #0
 	add x0, x28, x0
 	movz x1, #24576, lsl #0
@@ -1500,32 +1404,8 @@ vg_mldsa44_keygen:
 	add x1, x28, x1
 	movz x2, #20480, lsl #0
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
-	movz x0, #28672, lsl #0
-	add x0, x28, x0
-	movz x1, #9216, lsl #0
-	add x1, x28, x1
-	movz x2, #21504, lsl #0
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #28672, lsl #0
-	add x0, x28, x0
-	movz x1, #10240, lsl #0
-	add x1, x28, x1
-	movz x2, #22528, lsl #0
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #28672, lsl #0
-	add x0, x28, x0
-	movz x1, #11264, lsl #0
-	add x1, x28, x1
-	movz x2, #23552, lsl #0
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #28672, lsl #0
-	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_inv_ntt}
+	add x3, x28, #2048
+	bl {vg_mldsa_dot_inverse4}
 	movz x0, #28672, lsl #0
 	add x0, x28, x0
 	movz x1, #25600, lsl #0
@@ -1557,32 +1437,8 @@ vg_mldsa44_keygen:
 	add x1, x28, x1
 	movz x2, #20480, lsl #0
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
-	movz x0, #28672, lsl #0
-	add x0, x28, x0
-	movz x1, #13312, lsl #0
-	add x1, x28, x1
-	movz x2, #21504, lsl #0
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #28672, lsl #0
-	add x0, x28, x0
-	movz x1, #14336, lsl #0
-	add x1, x28, x1
-	movz x2, #22528, lsl #0
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #28672, lsl #0
-	add x0, x28, x0
-	movz x1, #15360, lsl #0
-	add x1, x28, x1
-	movz x2, #23552, lsl #0
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #28672, lsl #0
-	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_inv_ntt}
+	add x3, x28, #2048
+	bl {vg_mldsa_dot_inverse4}
 	movz x0, #28672, lsl #0
 	add x0, x28, x0
 	movz x1, #26624, lsl #0
@@ -1614,32 +1470,8 @@ vg_mldsa44_keygen:
 	add x1, x28, x1
 	movz x2, #20480, lsl #0
 	add x2, x28, x2
-	bl {vg_mldsa_multiply_ntt}
-	movz x0, #28672, lsl #0
-	add x0, x28, x0
-	movz x1, #17408, lsl #0
-	add x1, x28, x1
-	movz x2, #21504, lsl #0
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #28672, lsl #0
-	add x0, x28, x0
-	movz x1, #18432, lsl #0
-	add x1, x28, x1
-	movz x2, #22528, lsl #0
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #28672, lsl #0
-	add x0, x28, x0
-	movz x1, #19456, lsl #0
-	add x1, x28, x1
-	movz x2, #23552, lsl #0
-	add x2, x28, x2
-	bl {vg_mldsa_multiply_add_ntt}
-	movz x0, #28672, lsl #0
-	add x0, x28, x0
-	add x1, x28, #2048
-	bl {vg_mldsa_inv_ntt}
+	add x3, x28, #2048
+	bl {vg_mldsa_dot_inverse4}
 	movz x0, #28672, lsl #0
 	add x0, x28, x0
 	movz x1, #27648, lsl #0

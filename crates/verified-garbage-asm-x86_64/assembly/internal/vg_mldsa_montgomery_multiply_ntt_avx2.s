@@ -7,13 +7,6 @@
 vg_mldsa_montgomery_multiply_ntt_avx2:
 	mov r8, rdi
 	vmovdqu ymm6, YMMWORD PTR [rdi+992]
-	stmxcsr DWORD PTR [r8+1016]
-	mov r11d, DWORD PTR [r8+1016]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [r8+1020], eax
-	ldmxcsr DWORD PTR [r8+1020]
-	lfence
 	mov eax, 8380417
 	vmovq xmm15, rax
 	vpbroadcastd ymm15, xmm15
@@ -69,9 +62,6 @@ vg_mldsa_montgomery_multiply_ntt_avx2:
 	vpsrad ymm2, ymm3, 31
 	vpand ymm2, ymm2, ymm15
 	vpaddd ymm3, ymm3, ymm2
-	lfence
-	mov DWORD PTR [r8+1016], r11d
-	ldmxcsr DWORD PTR [r8+1016]
 	vmovdqu YMMWORD PTR [rdi], ymm3
 	vzeroupper
 	ret

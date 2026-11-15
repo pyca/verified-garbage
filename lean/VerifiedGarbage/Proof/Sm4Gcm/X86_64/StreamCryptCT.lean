@@ -55,11 +55,11 @@ open VG.Impl.AesGcm.X86_64 (at_ tlenO streamLoad partWith absorb firstFlush rest
 open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt)
 open VG.Proof.AesGcm.X86_64 (GcmImpl Lay Env AbsIn rel_taint rel_wp rel_ite_e rel_reassoc2 rel_both rel_envT
-  env_agree absRegs absorb_ok absorb_rel start_rel load_ok load_env toNat_mod16 test_ok fn_rel₂ ct_of_rel)
+  env_agree absRegs absorb_ok absorb_rel start_rel load_ok load_env toNat_mod16 test_ok fn_rel₂ fn_rel₂N ct_of_rel)
 
 /-- Between `crypt` and `absorb`, in either order. -/
 def PartM (Ctx St W SP : Addr) (P₀ : Nat) (D : Addr) (n : Nat) (s : State) : Prop :=
-  Env Ctx St W SP s ∧ DataW4 Ctx St W SP s D n ∧ s.mem.readW (W + BitVec.ofNat 64 200) 64 = D ∧
+  Env Ctx St W SP s 768 ∧ DataW4 Ctx St W SP s D n 768 ∧ s.mem.readW (W + BitVec.ofNat 64 200) 64 = D ∧
     s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n ∧
     s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 P₀
 
@@ -69,16 +69,16 @@ abbrev PartI (Ctx St W SP : Addr) (P₀ : Nat) (D : Addr) (n : Nat) (s : State) 
     s.gpr .rbx = BitVec.ofNat 64 (P₀ % 16)
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP) {P₀ : Nat} {D : Addr} {n : Nat}
+variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP 768) {P₀ : Nat} {D : Addr} {n : Nat}
 include L
 
 omit L in
-theorem PartI.crIn {s : State} (h : PartI Ctx St W SP P₀ D n s) : CrIn Ctx St W SP 0 P₀ D n s :=
+theorem PartI.crIn {s : State} (h : PartI Ctx St W SP P₀ D n s) : CrIn Ctx St W SP 0 P₀ D n s 768 :=
   ⟨h.1.1, h.2.1, h.2.2.1, h.2.2.2, h.1.2.1⟩
 
 omit L in
 theorem PartI.absIn {s : State} (h : PartI Ctx St W SP P₀ D n s) :
-    AbsIn Ctx St W SP 16 (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (List.replicate P₀ 0) D n s :=
+    AbsIn Ctx St W SP 16 (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (List.replicate P₀ 0) D n s 768 :=
   ⟨h.1.1, h.2.1, h.2.2.1, by rw [List.length_replicate]; exact h.2.2.2, h.1.2.1.dw.ok, rfl⟩
 
 omit L in
@@ -149,8 +149,8 @@ end
 
 /-- Before `streamText`: what the entry leaves, in each run. -/
 structure TPre (Ctx St W SP : Addr) (aL P₀ : Nat) (D : Addr) (n : Nat) (s : State) : Prop where
-  env : Env Ctx St W SP s
-  data : DataW4 Ctx St W SP s D n
+  env : Env Ctx St W SP s 768
+  data : DataW4 Ctx St W SP s D n 768
   rbp : s.gpr .rbp = BitVec.ofNat 64 n
   alen : s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 aL
   tlen : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 P₀
@@ -158,7 +158,7 @@ structure TPre (Ctx St W SP : Addr) (aL P₀ : Nat) (D : Addr) (n : Nat) (s : St
   len : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 n
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP) {aL P₀ : Nat} {D : Addr} {n : Nat}
+variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP 768) {aL P₀ : Nat} {D : Addr} {n : Nat}
 include L
 
 /-- The additional data padded if there is no text yet, in one run. -/
@@ -177,7 +177,7 @@ theorem tpre_start (hP : P₀ < 2 ^ 64) {s : State} (h : TPre Ctx St W SP aL P�
 /-- `streamText` in two runs, with the same data and lengths. -/
 theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
     RelCT isa (fun s₁ s₂ => TPre Ctx St W SP aL P₀ D n s₁ ∧ TPre Ctx St W SP aL P₀ D n s₂)
-      (streamText v.callees enc) fun s₁ s₂ => Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂ := by
+      (streamText v.callees enc) fun s₁ s₂ => Env Ctx St W SP s₁ 768 ∧ Env Ctx St W SP s₂ 768 := by
   have hlt := fun {s} (h : TPre Ctx St W SP aL P₀ D n s) => h.data.dw.ok.lt
   -- Whether there is any data.
   let T1 : State → Prop := fun s => TPre Ctx St W SP aL P₀ D n s ∧ s.zf = some (decide (n = 0))
@@ -189,7 +189,7 @@ theorem streamText_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
     (fun _ _ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.rbp, h₂.rbp]) ⟨_, by taint_decide⟩) g₁ g₁
   simp only [streamText]
-  refine RelCT.seq a (rel_ite_e (Q := fun s₁ s₂ => Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂)
+  refine RelCT.seq a (rel_ite_e (Q := fun s₁ s₂ => Env Ctx St W SP s₁ 768 ∧ Env Ctx St W SP s₂ 768)
     (fun _ _ h => by rw [h.1.2, h.2.2])
     (RelCT.block_nil fun _ _ h => ⟨h.1.1.1.env, h.1.2.1.env⟩) ?_)
   by_cases hn0 : n = 0
@@ -240,7 +240,7 @@ theorem stream_rel (v : GcmImpl) (enc : Bool) {s₀ s₀' : State}
   have hE₁ := cryptEntry_tpre hp
   rw [cryptEntry, List.append_assoc] at hE₁ hE₂
   rw [cryptEntry, List.append_assoc]
-  exact fn_rel₂ (Ctx := s₀.gpr .rdi) (St := s₀.gpr .rsi) (W := stackArg s₀ 0) (SP := s₀.gpr .rsp)
+  exact fn_rel₂N (Ctx := s₀.gpr .rdi) (St := s₀.gpr .rsi) (W := stackArg s₀ 0) (SP := s₀.gpr .rsp)
     [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] (k := 8) (by simp) ⟨_, by taint_decide⟩ (stream_pub hq) q₈
     (CryptCtx.of hp).args (CryptCtx.of hp').args ⟨_, by taint_decide⟩ hE₁ hE₂
     ((streamText_rel v L enc (s₀.gpr .rcx).isLt).mono (fun _ _ h => ⟨h.2.1, h.2.2⟩) fun _ _ h => h)

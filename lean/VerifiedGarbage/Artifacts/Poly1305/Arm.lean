@@ -17,11 +17,9 @@ def artifacts : List Artifact := [
     verified := Proof.Poly1305.Arm.init_verified },
   Spec.Poly1305.updateApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 144 2 Impl.Poly1305.Arm.update
-    stack := 144
     verified := Proof.Poly1305.Arm.update_framed },
   Spec.Poly1305.finalizeApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 144 1 Impl.Poly1305.Arm.finalize
-    stack := 144
     verified := Proof.Poly1305.Arm.finalize_framed }]
 
 end VG.Artifacts.Poly1305.Arm

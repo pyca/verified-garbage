@@ -149,7 +149,10 @@ theorem perms_ok (s : State) :
   apply WP.of_runBlock
   simp only [cbd16Perms, runBlock_cons, runStep_some, runBlock_nil, exec, VOp.exec, Option.some.injEq,
     exists_eq_left']
-  refine ⟨fun l hl => ?_, ⟨⟨rfl, rfl, rfl, rfl, rfl⟩, fun r hr l hl => ?_⟩⟩
+  have keep (t : State) (r : XReg) (lo hi : BitVec 128) : XKeep t (t.setV .l256 r lo hi) :=
+    ⟨rfl, rfl, rfl, rfl, rfl⟩
+  refine ⟨fun l hl => ?_,
+    ⟨(((keep _ _ _ _).trans (keep _ _ _ _)).trans (keep _ _ _ _)).trans (keep _ _ _ _), fun r hr l hl => ?_⟩⟩
   · rcases lane01 hl with rfl | rfl <;>
       simp [State.lane_setV256, perm2Lanes]
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr

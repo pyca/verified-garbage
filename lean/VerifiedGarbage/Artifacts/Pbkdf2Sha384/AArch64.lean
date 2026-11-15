@@ -33,7 +33,6 @@ def artifacts : List Artifact :=
     v.I.pbkdf2Api.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch (Proof.Pbkdf2.Md.AArch64.pbkdf2Frame v.I) .x7 v.H.pbkdf2
-      stack := 16 + Proof.Pbkdf2.Md.AArch64.pbkdf2Frame v.I
       verified := v.pbkdf2F }]
 
 end VG.Artifacts.Pbkdf2Sha384.AArch64

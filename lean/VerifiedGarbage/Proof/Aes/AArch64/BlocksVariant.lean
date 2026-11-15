@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Aes.AArch64.Variant
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Blocks
+public import VerifiedGarbage.Proof.Aes.AArch64.OneBlock
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
@@ -75,13 +76,14 @@ structure BlocksImpl where
 
 namespace BlocksImpl
 
-/-- The bitsliced implementation, `vg_aes_encrypt_blocks` and
-`vg_aes_decrypt_blocks`, in the baseline ISA. -/
+/-- The implementation in the baseline ISA, `vg_aes_encrypt_blocks` and
+`vg_aes_decrypt_blocks`: bitsliced, but one block encrypted by table
+lookups (`OneBlock.lean`). -/
 def scalar : BlocksImpl where
   enc := .encScalar
   encNoFrames := by lit_decide
-  encOk := encryptBlocks_correct
-  encCt := encryptBlocks_ct
+  encOk := OneBlock.encryptBlocksN_correct
+  encCt := OneBlock.encryptBlocksN_ct
   encKeepsV := by lit_decide
   dec := .decScalar
   decNoFrames := by lit_decide

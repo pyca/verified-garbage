@@ -61,8 +61,8 @@ theorem rel_both {F₁ F₂ G₁ G₂ : State → Prop} {c : Prog isa}
 
 /-- Code whose leakage depends only on the registers `rs` and the
 environment's. -/
-theorem rel_envT {Ctx St W SP : Addr} {F : State → Prop} {c : Prog isa} (rs : List Reg)
-    (hF : ∀ s, F s → Env Ctx St W SP s) (hag : ∀ s₁ s₂, F s₁ → F s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r)
+theorem rel_envT {Ctx St W SP : Addr} {N : Nat} {F : State → Prop} {c : Prog isa} (rs : List Reg)
+    (hF : ∀ s, F s → Env Ctx St W SP s N) (hag : ∀ s₁ s₂, F s₁ → F s₂ → ∀ r ∈ rs, s₁.gpr r = s₂.gpr r)
     (hc : ∃ hc, (taint.check (Taint.ofRegs (rs ++ ([.r13, .r14, .r15, .rsp] : List Reg))) c hc).isSome = true) :
     RelCT isa (fun s₁ s₂ => F s₁ ∧ F s₂) c fun _ _ => True :=
   rel_taint (rs ++ [.r13, .r14, .r15, .rsp]) (fun s₁ s₂ h r hr => by
@@ -344,16 +344,17 @@ end
 /-! ## The start -/
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
+variable (v : GcmImpl) {Ctx St W SP : Addr} {N : Nat} (L : Lay Ctx St W SP N)
 include L
 
 omit L in
 /-- Whether there is text yet. -/
-theorem tl_ok {P : Nat} (hP : P < 2 ^ 64) {s : State} (he : Env Ctx St W SP s)
-    (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 P) :
+theorem tl_ok {P : Nat} (hP : P < 2 ^ 64) {s : State} (he : Env Ctx St W SP s N)
+    (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 P)
+    (hN : 200 ≤ N := by decide) (hNl : N < 2 ^ 64 := by decide) :
     WP isa (.block [.mov .rax (.mem (at_ .r15 tlenO)), .alu .test .rax (.reg .rax)]) s fun s' =>
-      s'.zf = some (decide (P = 0)) ∧ Env Ctx St W SP s' ∧ s'.mem = s.mem := by
-  have r₂ := he.perm.wR (show 192 + 8 ≤ 2560 by decide)
+      s'.zf = some (decide (P = 0)) ∧ Env Ctx St W SP s' N ∧ s'.mem = s.mem := by
+  have r₂ := he.perm.wR (show 192 + 8 ≤ N by omega_using [hN]) (hk := hNl)
   obtain ⟨s₂, run₂, hz₂, hg₂, hm₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa [.mov .rax (.mem (at_ .r15 tlenO)),
       .alu .test .rax (.reg .rax)] s = some s₂ ∧ s₂.zf = some (decide (P = 0)) ∧
       (∀ r, r ≠ .rax → s₂.gpr r = s.gpr r) ∧ s₂.mem = s.mem ∧ s₂.rd = s.rd ∧ s₂.wr = s.wr := by
@@ -367,11 +368,12 @@ theorem tl_ok {P : Nat} (hP : P < 2 ^ 64) {s : State} (he : Env Ctx St W SP s)
 
 omit L in
 /-- The length of the additional data modulo 16. -/
-theorem al_ok {aL : Nat} {s : State} (he : Env Ctx St W SP s)
-    (hal : s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 aL) :
+theorem al_ok {aL : Nat} {s : State} (he : Env Ctx St W SP s N)
+    (hal : s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 aL)
+    (hN : 200 ≤ N := by decide) (hNl : N < 2 ^ 64 := by decide) :
     WP isa (.block [.mov .rbx (.mem (at_ .r15 alenO)), .alu .and .rbx (imm 15)]) s fun s' =>
-      s'.gpr .rbx = BitVec.ofNat 64 (aL % 16) ∧ Env Ctx St W SP s' := by
-  have r₃ := he.perm.wR (show 184 + 8 ≤ 2560 by decide)
+      s'.gpr .rbx = BitVec.ofNat 64 (aL % 16) ∧ Env Ctx St W SP s' N := by
+  have r₃ := he.perm.wR (show 184 + 8 ≤ N by omega_using [hN]) (hk := hNl)
   have hand := and15 (BitVec.ofNat 64 aL)
   rw [imm_eq (by decide), toNat_mod16] at hand
   obtain ⟨s₃, run₃, hbx₃, hg₃, hrd₃, hwr₃⟩ : ∃ s₃, runBlock isa [.mov .rbx (.mem (at_ .r15 alenO)),
@@ -386,23 +388,24 @@ theorem al_ok {aL : Nat} {s : State} (he : Env Ctx St W SP s)
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₃ _ (by decide)) hrd₃ hwr₃⟩
 
 /-- The additional data padded if there is no text yet, in both runs. -/
-theorem start_rel {aL P : Nat} (hP : P < 2 ^ 64) {F : State → Prop} (hF : ∀ s, F s → Env Ctx St W SP s ∧
+theorem start_rel {aL P : Nat} (hP : P < 2 ^ 64) {F : State → Prop} (hF : ∀ s, F s → Env Ctx St W SP s N ∧
       s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 P ∧
-      s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 aL) :
+      s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 aL) {gs : Nat} [GhFits v N gs]
+    (hN : 200 ≤ N := by decide) (hNl : N < 2 ^ 64 := by decide) :
     RelCT isa (fun s₁ s₂ => F s₁ ∧ F s₂) (.seq (.block [.mov .rax (.mem (at_ .r15 tlenO)), .alu .test .rax (.reg .rax)])
       (.ite .e (firstFlush v.callees) (.block []))) fun _ _ => True := by
-  let G : State → Prop := fun s' => s'.zf = some (decide (P = 0)) ∧ Env Ctx St W SP s' ∧
+  let G : State → Prop := fun s' => s'.zf = some (decide (P = 0)) ∧ Env Ctx St W SP s' N ∧
     s'.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 aL
   have g : ∀ s, F s → WP isa (.block [.mov .rax (.mem (at_ .r15 tlenO)), .alu .test .rax (.reg .rax)]) s G :=
-    fun s h => WP.mono (tl_ok hP (hF s h).1 (hF s h).2.1) fun s' ⟨z, e, m⟩ => ⟨z, e, by rw [m]; exact (hF s h).2.2⟩
+    fun s h => WP.mono (tl_ok hP (hF s h).1 (hF s h).2.1 hN hNl) fun s' ⟨z, e, m⟩ => ⟨z, e, by rw [m]; exact (hF s h).2.2⟩
   have a := rel_both (rel_envT (F := F) [] (fun s h => (hF s h).1) (fun _ _ _ _ _ h => by cases h)
     ⟨_, by taint_decide⟩) g g
   have b := rel_both (rel_envT (F := fun s => G s ∧ s.zf = some true) [] (fun _ h => h.1.2.1)
       (fun _ _ _ _ _ h => by cases h) ⟨_, by taint_decide⟩)
-    (fun s h => al_ok h.1.2.1 h.1.2.2) (fun s h => al_ok h.1.2.1 h.1.2.2)
+    (fun s h => al_ok h.1.2.1 h.1.2.2 hN hNl) (fun s h => al_ok h.1.2.1 h.1.2.2 hN hNl)
   have c := (flush_rel v L (yo := 16) (.inr rfl)).mono (P' := fun (s₁ s₂ : State) =>
-      (s₁.gpr .rbx = BitVec.ofNat 64 (aL % 16) ∧ Env Ctx St W SP s₁) ∧
-      (s₂.gpr .rbx = BitVec.ofNat 64 (aL % 16) ∧ Env Ctx St W SP s₂))
+      (s₁.gpr .rbx = BitVec.ofNat 64 (aL % 16) ∧ Env Ctx St W SP s₁ N) ∧
+      (s₂.gpr .rbx = BitVec.ofNat 64 (aL % 16) ∧ Env Ctx St W SP s₂ N))
     (fun _ _ h => ⟨h.1.2, h.2.2, fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h.1.1, h.2.1]⟩) fun _ _ h => h
   refine RelCT.seq a (rel_ite_e (fun _ _ h => by rw [h.1.1, h.2.1]) ?_ (RelCT.block_nil fun _ _ _ => trivial))

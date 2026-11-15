@@ -8,11 +8,14 @@ import VerifiedGarbage.Proof.Ed25519.Arm.PointMul
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointMul
 public import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
 public import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
 import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.FnLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
 meta import VerifiedGarbage.Proof.Ed25519.Arm.PointMulBody
 import VerifiedGarbage.Proof.Ed25519.Arm.Points
@@ -199,8 +202,8 @@ theorem pointMultiply_ct (b ptr : BitVec 32) (count scalar₁ scalar₂ : Nat)
       subst r
       exact h.1.1.r0.trans h.2.1.r0.symm
     rcases hn with rfl | rfl
-    · exact ctRegs [.r0] hr (by native_taint_decide)
-    · exact ctRegs [.r0] hr (by native_taint_decide)
+    · exact ctRegsS [.r0] hr (by taint_decide_sum [doubleSum])
+    · exact ctRegsS [.r0] hr (by taint_decide_sum [doubleSum])
   intro x y tx ty u v h ex ey
   cases ex with
   | seq ep ex =>

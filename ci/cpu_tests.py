@@ -232,6 +232,10 @@ GROUPS = {
             "wycheproof::mldsa87",
         ],
     },
+    "mldsa_public_key": {
+        "lib": [],
+        "tests": ["wycheproof::mldsa44::verify", "wycheproof::mldsa65::verify", "wycheproof::mldsa87::verify"],
+    },
     "mlkem": {
         "lib": [],
         "tests": ["acvp::mlkem1024", "acvp::mlkem768", "wycheproof::mlkem1024", "wycheproof::mlkem768"],

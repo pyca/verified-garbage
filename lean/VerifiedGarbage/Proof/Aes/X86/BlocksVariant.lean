@@ -113,13 +113,13 @@ def scalar : BlocksImpl where
   encOk := encryptBlocks_correct
   encCt := encryptBlocks_ct
   encNosp := NoSp.of_all (by lit_decide)
-  encSpSafe := Code.all_of_allInstrs (by lit_decide)
+  encSpSafe := Code.all_of_spTest (by lit_decide)
   dec := .decScalar
   decStack := by lit_decide
   decOk := decryptBlocks_correct
   decCt := decryptBlocks_ct
   decNosp := NoSp.of_all (by lit_decide)
-  decSpSafe := Code.all_of_allInstrs (by lit_decide)
+  decSpSafe := Code.all_of_spTest (by lit_decide)
   encWritten := 2048
   encWrittenLe := Nat.le_refl _
   encWrittenOk := fun _ _ _ _ _ _ h1 h2 => absurd h2 (Nat.not_lt.mpr h1)
@@ -142,13 +142,13 @@ def aesni : BlocksImpl where
   encOk := AesNi.encryptBlocks_correct
   encCt := AesNi.encryptBlocks_ct
   encNosp := NoSp.of_all (by lit_decide)
-  encSpSafe := Code.all_of_allInstrs (by lit_decide)
+  encSpSafe := Code.all_of_spTest (by lit_decide)
   dec := .decAesni
   decStack := by lit_decide
   decOk := AesNi.decryptBlocks_correct
   decCt := AesNi.decryptBlocks_ct
   decNosp := NoSp.of_all (by lit_decide)
-  decSpSafe := Code.all_of_allInstrs (by lit_decide)
+  decSpSafe := Code.all_of_spTest (by lit_decide)
   encWritten := 0
   encWrittenLe := Nat.zero_le _
   encWrittenOk := AesNi.encryptBlocks_unwritten

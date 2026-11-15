@@ -15,11 +15,9 @@ open VG.Proof.AesCcm.PPC64LE
 def artifacts : List Artifact := [
   Spec.Ccm.sealApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 Impl.AesCcm.PPC64LE.«seal»
-    stack := 2688
     verified := Proof.AesCcm.seal_keyed seal_framed },
   Spec.Ccm.openApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchArgs 2688 2 Impl.AesCcm.PPC64LE.«open»
-    stack := 2688
     verified := Proof.AesCcm.open_keyed open_framed }]
 
 end VG.Artifacts.AesCcm.PPC64LE

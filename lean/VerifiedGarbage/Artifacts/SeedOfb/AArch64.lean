@@ -16,11 +16,9 @@ namespace VG.Artifacts.SeedOfb.AArch64
 def artifacts : List Artifact := [
   Spec.Seed.ofbApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x4 182 Impl.Seed.AArch64.ofb
-    stack := 1456
     verified := Proof.Seed.AArch64.ofb_framed },
   Spec.Seed.ofbFinalApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x4 182 Impl.Seed.AArch64.ofbFinal
-    stack := 1456
     verified := Proof.Seed.AArch64.ofbFinal_framed }]
 
 end VG.Artifacts.SeedOfb.AArch64

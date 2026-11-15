@@ -199,7 +199,7 @@ theorem ctr_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Sm4.ctrSig) (nm := "scratch") (e := .u64)
     (n := 400) (post := Proof.Sm4.ctrPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3208) ctr_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Sm4.ctrPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by lit_decide) (by rw [Curry.apply_const]; trivial))
 

@@ -64,8 +64,7 @@ open VG.Impl.Dsa.Layout VG.Impl.Dsa.X86
 
 theorem supportedWidths_member {pLen qLen : Nat} (H : Spec.Dsa.lengthsValid pLen qLen) :
     (pLen, qLen) ∈ [(128, 20), (256, 28), (256, 32), (384, 32), (256, 20)] := by
-  simp only [List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq]
   unfold Spec.Dsa.lengthsValid at H
-  omega_using [H]
+  rcases H with ⟨rfl, rfl⟩ | ⟨rfl, rfl | rfl | rfl⟩ | ⟨rfl, rfl⟩ <;> decide
 
 end VG.Proof.Dsa.X86

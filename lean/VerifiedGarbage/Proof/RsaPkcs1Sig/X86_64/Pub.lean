@@ -25,6 +25,6 @@ def pubChecked : PubImpl where
   ct := Proof.Rsa.X86_64.publicChecked_constantTime
   nosp := Proof.Rsa.X86_64.noSp_of (by decide +kernel)
   depth := by decide +kernel
-  spSafe := Code.all_of_allInstrs (by decide +kernel)
+  spSafe := Code.all_of_spTest (by decide +kernel)
 
 end VG.Proof.RsaPkcs1Sig.X86_64

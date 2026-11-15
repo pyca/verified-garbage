@@ -26,7 +26,6 @@ def artifacts (c : Proof.Rsa.AArch64.CrtImpl) (vs : List Proof.Pbkdf2.Md.AArch64
       tables := [("hash", Proof.MdHashTable.AArch64.tables vs), ("mgf1", Proof.MdHashTable.AArch64.tables vs)]
       code := Impl.RsaPss.AArch64.signCP (Proof.MdHashTable.AArch64.fnsOf vs) (Proof.HashTable.AArch64.fnsOf vs)
         (privPOf c).name (privPOf c).code
-      stack := Proof.RsaPss.AArch64.Sgn.stk (privPOf c).stack
       verified := signP_ok h c }]
   else []
 
@@ -45,7 +44,6 @@ def artifacts (c : Proof.Rsa.AArch64.PublicImpl) (vs : List Proof.Pbkdf2.Md.AArc
       tables := [("hash", Proof.MdHashTable.AArch64.tables vs), ("mgf1", Proof.MdHashTable.AArch64.tables vs)]
       code := Impl.RsaPss.AArch64.verifyC (Proof.MdHashTable.AArch64.fnsOf vs) (Proof.HashTable.AArch64.fnsOf vs)
         (pdOf c).name (pdOf c).code
-      stack := Proof.RsaPss.AArch64.Sgn.stk 624
       verified := verify_ok h c }]
   else []
 

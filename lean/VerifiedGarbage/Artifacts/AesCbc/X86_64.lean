@@ -17,7 +17,6 @@ def direct : List Artifact := [
   Spec.Cbc.aesDecryptApi.artifact VG.X86_64.target (VG.X86_64.Scrub.withScrubAll {
     suffix := "_vaes_avx512"
     code := Proof.AesCbc.X86_64.Wiped.decryptVaes512
-    stack := 32
     spSafe := Proof.AesCbc.X86_64.Wiped.decryptVaes512_spSafe
     verified := Proof.AesCbc.X86_64.Wiped.decryptVaes512_verified }
     (Proof.AesCbc.X86_64.Wiped.decryptOut _))]

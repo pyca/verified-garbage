@@ -976,6 +976,7 @@ vg_rsa_pkcs1_sign_precomputed_ifma512:
 	stmxcsr DWORD PTR [rsp]
 	mov r11d, DWORD PTR [rsp]
 	and r11d, 65472
+	or r11d, 63
 	mov DWORD PTR [rsp], r11d
 	mov r11d, 8127
 	mov DWORD PTR [rsp+4], r11d
@@ -2114,6 +2115,7 @@ vg_rsa_pkcs1_sign_precomputed_ifma:
 	stmxcsr DWORD PTR [rsp]
 	mov r11d, DWORD PTR [rsp]
 	and r11d, 65472
+	or r11d, 63
 	mov DWORD PTR [rsp], r11d
 	mov r11d, 8127
 	mov DWORD PTR [rsp+4], r11d
@@ -5615,6 +5617,7 @@ vg_rsa_pkcs1_verify_precomputed_ifma:
 	stmxcsr DWORD PTR [rsp]
 	mov r11d, DWORD PTR [rsp]
 	and r11d, 65472
+	or r11d, 63
 	mov DWORD PTR [rsp], r11d
 	mov r11d, 8127
 	mov DWORD PTR [rsp+4], r11d
@@ -6726,6 +6729,7 @@ vg_rsa_pkcs1_recover_precomputed_ifma:
 	stmxcsr DWORD PTR [rsp]
 	mov r11d, DWORD PTR [rsp]
 	and r11d, 65472
+	or r11d, 63
 	mov DWORD PTR [rsp], r11d
 	mov r11d, 8127
 	mov DWORD PTR [rsp+4], r11d

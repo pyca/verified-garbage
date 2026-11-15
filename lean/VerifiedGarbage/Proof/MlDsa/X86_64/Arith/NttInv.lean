@@ -195,7 +195,7 @@ theorem vscale_ok {fP sP : Addr} (_hd : (pR sP).Disjoint (pR fP)) {G : Poly} (s 
   rw [n_eq] at hk
   rw [hS' k hk, ifp (by omega_using [hk]), map_mul_get _ _ (by rw [n_eq]; exact hk)]
 
-/-- Everything but `withMxcsr`, on any reduced `F` at `fP`, with the scratch at `sP`. -/
+/-- The code, on any reduced `F` at `fP`, with the scratch at `sP`. -/
 theorem invBody_ok {fP sP : Addr} {F : Poly} {s : State} (hdi : s.gpr .rdi = fP) (hsi : s.gpr .rsi = sP)
     (hF : PolyIs s.mem fP F) (hwf : pR fP ∈ s.wr) (hw : pR sP ∈ s.wr) (hd : (pR fP).Disjoint (pR sP)) :
     WP isa nttInvBody s fun s' => PolyIs s'.mem fP (nttInv F) ∧ Frame [pR fP, pR sP] s.mem s'.mem := by
@@ -229,7 +229,7 @@ theorem nttInv_correct (s : State) (hs : (inPlaceK nttInv).pre s) :
   have hw : pR (s.gpr .rsi) ∈ s.wr := by rw [hs.2.1]; simp
   have hwf : pR (s.gpr .rdi) ∈ s.wr := by rw [hs.2.1]; simp
   have hd : (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rsi)) := hs.2.2.1
-  refine mx_correct s hs (by decide +kernel) (by decide +kernel) (by decide +kernel) fun s1 k1 f1 => ?_
+  refine mx_correct s hs (by decide +kernel) (by decide +kernel) fun s1 k1 f1 => ?_
   have hF1 : PolyIs s1.mem (s.gpr .rdi) (polyAt s.mem (s.gpr .rdi)) :=
     polyIs_frame f1 (fun r hr => by rw [List.mem_singleton.mp hr]; exact hd.sub_right (mx_sub' _))
       ⟨hs.2.2.2.2.2, rfl⟩

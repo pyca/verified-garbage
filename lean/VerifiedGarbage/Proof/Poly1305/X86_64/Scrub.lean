@@ -131,8 +131,8 @@ open VG.X86_64.RScrub in
 /-- `vg_poly1305_update` over the implementation `v` of `vg_poly1305_blocks`:
 without secret residue where `v` gives its analysis (`BlocksImpl.update`),
 at the level of the registers its code writes, and without writing MXCSR,
-which the vector implementations save and restore in the state
-(`RScrub.withScrubM`). -/
+which none of the implementations loads: the vector ones run under the
+dispatcher's `vg_mcdt_enter` (`RScrub.withScrubM`). -/
 def updateReg (v : BlocksImpl) : Registration Spec.Poly1305.updateApi X86_64.target :=
   withScrubM {
     suffix := v.suffix

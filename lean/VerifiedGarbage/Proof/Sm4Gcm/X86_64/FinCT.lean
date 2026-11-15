@@ -45,11 +45,11 @@ namespace VG.Proof.Sm4Gcm.X86_64
 open VG VG.X86_64 VG.X86_64.RegUpd VG.Impl.Sm4Gcm.X86_64
 open VG.Impl.AesGcm.X86_64 (at_ tagLenOk recv cmp tlO tagPO)
 open VG.Proof.AesGcm.X86_64 (GcmImpl Lay Env Perm Keeps rel_regs rel_taint rel_wp rel_ite_e rel_env
-  rel_reassoc_inner EnvAgree EnvAgree.regs env_agree covers_of_mem TagAt tagOut_rel fn_rel fn_rel₂ ct_of_rel
+  rel_reassoc_inner EnvAgree EnvAgree.regs env_agree covers_of_mem TagAt TagAtN tagOut_rel fn_rel fn_rel₂ fn_relN fn_rel₂N ct_of_rel
   recv_ok tagLenOk_ok)
 
 theorem fin_lay {s : State} (hp : Proof.Sm4Gcm.finPre s) :
-    Lay4 (s.gpr .rdi) (s.gpr .rsi) (s.gpr .r9) (s.gpr .rsp) ∧ Perm (s.gpr .rdi) (s.gpr .rsi) (s.gpr .r9) s := by
+    Lay4 (s.gpr .rdi) (s.gpr .rsi) (s.gpr .r9) (s.gpr .rsp) 768 ∧ Perm (s.gpr .rdi) (s.gpr .rsi) (s.gpr .r9) s 768 := by
   simp only [Proof.Sm4Gcm.finPre, Proof.Sm4Gcm.stk, Proof.Sm4Gcm.ret, Proof.Sm4Gcm.spOk] at hp
   obtain ⟨hrd, hwr, d_cs, -, d_cw, d_sw, -, -, -, -, -, k_c, k_s, -, k_w, wc, ws, -, ww, hsp⟩ := hp
   exact ⟨Lay4.of wc ws ww d_cs d_cw d_sw hsp k_c k_s k_w,
@@ -72,7 +72,7 @@ theorem streamFinish_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.Sm4Gcm.s
   have hE₂ := finishEntry_fin hp'
   rw [← q₁, ← q₂, ← q₃, ← q₄, ← q₅, ← q₆, ← q₇] at hE₂
   have hE₁ := finishEntry_fin hp
-  refine fn_rel (Ctx := s₀.gpr .rdi) (St := s₀.gpr .rsi) (W := s₀.gpr .r9) (SP := s₀.gpr .rsp)
+  refine fn_relN (N := 768) (Ctx := s₀.gpr .rdi) (St := s₀.gpr .rsi) (W := s₀.gpr .r9) (SP := s₀.gpr .rsp)
     [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption)
@@ -84,7 +84,7 @@ theorem streamFinish_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.Sm4Gcm.s
   generalize s₀.gpr .r8 = T at *
   have hw : ∀ s, FinS Ctx St W SP (s₀.gpr .rdx) (s₀.gpr .rcx) s ∧
       s.mem.readW (W + BitVec.ofNat 64 200) 64 = T → WP isa (finTag v.callees 0) s fun s' =>
-        Env Ctx St W SP s' ∧ s'.mem.readW (W + BitVec.ofNat 64 200) 64 = T :=
+        Env Ctx St W SP s' 768 ∧ s'.mem.readW (W + BitVec.ofNat 64 200) 64 = T :=
     fun s h => WP.mono (finTag_ok v L (.inl rfl) h.1.1 h.1.2.1 h.1.2.2
       (x := List.replicate ((if s₀.gpr .rcx = 0 then (s₀.gpr .rdx).toNat else (s₀.gpr .rcx).toNat) % 16) 0)
       (by simp)) fun _ ⟨he, f, _⟩ => ⟨he, by
@@ -103,9 +103,9 @@ theorem streamFinish_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.Sm4Gcm.s
           s₂.mem.readW (W + BitVec.ofNat 64 200) 64 = T))
       (fun _ _ h => ⟨h.2.1.1, h.2.2.1⟩) fun _ _ h => h) (fun _ _ h => h.2) hw hw
   -- The address of `tag`, loaded from `W + 200`, is the same in both runs.
-  have tg : ∀ s, Env Ctx St W SP s ∧ s.mem.readW (W + BitVec.ofNat 64 200) 64 = T →
-      TagAt Ctx St W SP .r15 200 T s := fun s ⟨he, hT⟩ =>
-    ⟨he, by rw [he.r15]; exact hT, by rw [he.r15]; exact he.perm.wR (show 200 + 8 ≤ 2560 by decide)⟩
+  have tg : ∀ s, Env Ctx St W SP s 768 ∧ s.mem.readW (W + BitVec.ofNat 64 200) 64 = T →
+      TagAtN Ctx St W SP .r15 200 T 768 s := fun s ⟨he, hT⟩ =>
+    ⟨he, by rw [he.r15]; exact hT, by rw [he.r15]; exact he.perm.wR (show 200 + 8 ≤ 768 by decide)⟩
   exact RelCT.seq a ((tagOut_rel (b := .r15) (d := 200) (by simp) ⟨_, by taint_decide⟩
     (fun _ _ h => ⟨tg _ h.2.1, tg _ h.2.2⟩)).mono (fun _ _ h => h) fun _ _ h => h)
 
@@ -119,7 +119,7 @@ def VerS (Ctx St W SP : Addr) (aL tL tl : BitVec 64) (s : State) : Prop :=
   FinS Ctx St W SP aL tL s ∧ s.mem.readW (W + BitVec.ofNat 64 224) 64 = tl
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP)
+variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP 768)
 include L
 
 /-- What `verify` has before checking a received tag of length `t` at `Tp`. -/
@@ -138,7 +138,7 @@ theorem VerT.keep {aL tL : BitVec 64} {t : Nat} {Tp : Addr} {s s' : State}
 
 /-- The tag computed and compared, for an allowed length `t`. -/
 theorem verifyCheck_rel {t : Nat} (h1 : 1 ≤ t) (h16 : t ≤ 16) {aL tL : BitVec 64} {Tp : Addr}
-    (dTW : (⟨Tp, t⟩ : Region).Disjoint ⟨W, 2560⟩) :
+    (dTW : (⟨Tp, t⟩ : Region).Disjoint ⟨W, 768⟩) :
     RelCT isa (fun s₁ s₂ => VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) aL tL t Tp s₁ ∧
         VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) aL tL t Tp s₂)
       (.seq recv (.seq (finTag v.callees 0) (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))]) (cmp 0))))
@@ -165,7 +165,7 @@ theorem verifyCheck_rel {t : Nat} (h1 : 1 ≤ t) (h16 : t ≤ 16) {aL tL : BitVe
     (fun _ _ h => h) hR hR
   -- `finTag` keeps the tag length.
   have hT : ∀ s, VerS Ctx St W SP aL tL (BitVec.ofNat 64 t) s → WP isa (finTag v.callees 0) s fun s' =>
-      Env Ctx St W SP s' ∧ s'.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t := fun s ⟨h, ht⟩ =>
+      Env Ctx St W SP s' 768 ∧ s'.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t := fun s ⟨h, ht⟩ =>
     WP.mono (finTag_ok v L (.inl rfl) h.1 h.2.1 h.2.2
       (x := List.replicate ((if tL = 0 then aL.toNat else tL.toNat) % 16) 0) (by simp)) fun _ ⟨he', f, _⟩ =>
       ⟨he', by
@@ -182,10 +182,10 @@ theorem verifyCheck_rel {t : Nat} (h1 : 1 ≤ t) (h16 : t ≤ 16) {aL tL : BitVe
         VerS Ctx St W SP aL tL (BitVec.ofNat 64 t) s₂) (fun _ _ h => ⟨h.2.1.1, h.2.2.1⟩) fun _ _ h => h)
     (fun _ _ h => h.2) hT hT
   -- The tag length, and the comparison.
-  have hL : ∀ s, (Env Ctx St W SP s ∧ s.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t) →
-      WP isa (.block [.mov .rbx (.mem (at_ .r15 tlO))]) s fun s' => Env Ctx St W SP s' ∧
+  have hL : ∀ s, (Env Ctx St W SP s 768 ∧ s.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t) →
+      WP isa (.block [.mov .rbx (.mem (at_ .r15 tlO))]) s fun s' => Env Ctx St W SP s' 768 ∧
         s'.gpr .rbx = BitVec.ofNat 64 t := fun s ⟨he, ht⟩ => by
-    have r₁ := he.perm.wR (show 224 + 8 ≤ 2560 by decide)
+    have r₁ := he.perm.wR (show 224 + 8 ≤ 768 by decide)
     obtain ⟨s₁, run₁, hbx, hg, hrd, hwr⟩ : ∃ s₁, runBlock isa [.mov .rbx (.mem (at_ .r15 tlO))] s = some s₁ ∧
         s₁.gpr .rbx = BitVec.ofNat 64 t ∧ (∀ r, r ≠ .rbx → s₁.gpr r = s.gpr r) ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
       refine ⟨_, by xrun [he.r15, r₁], ?_, ?_, ?_, ?_⟩
@@ -195,12 +195,12 @@ theorem verifyCheck_rel {t : Nat} (h1 : 1 ≤ t) (h16 : t ≤ 16) {aL tL : BitVe
     refine WP.of_runBlock ⟨s₁, run₁, he.keep (fun r hr => ?_) hrd hwr, hbx⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg _ (by decide)
-  have c := rel_wp (rel_taint (P := fun s₁ s₂ => True ∧ (Env Ctx St W SP s₁ ∧
-      s₁.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t) ∧ (Env Ctx St W SP s₂ ∧
+  have c := rel_wp (rel_taint (P := fun s₁ s₂ => True ∧ (Env Ctx St W SP s₁ 768 ∧
+      s₁.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t) ∧ (Env Ctx St W SP s₂ 768 ∧
       s₂.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 t)) [.r13, .r14, .r15, .rsp]
       (fun _ _ h => env_agree h.2.1.1 h.2.2.1) ⟨_, by taint_decide⟩) (fun _ _ h => h.2) hL hL
-  have d := rel_taint (P := fun s₁ s₂ => True ∧ (Env Ctx St W SP s₁ ∧ s₁.gpr .rbx = BitVec.ofNat 64 t) ∧
-      (Env Ctx St W SP s₂ ∧ s₂.gpr .rbx = BitVec.ofNat 64 t)) (c := cmp 0) ([.rbx] ++ [.r13, .r14, .r15, .rsp])
+  have d := rel_taint (P := fun s₁ s₂ => True ∧ (Env Ctx St W SP s₁ 768 ∧ s₁.gpr .rbx = BitVec.ofNat 64 t) ∧
+      (Env Ctx St W SP s₂ 768 ∧ s₂.gpr .rbx = BitVec.ofNat 64 t)) (c := cmp 0) ([.rbx] ++ [.r13, .r14, .r15, .rsp])
     (fun _ _ h => EnvAgree.regs ⟨h.2.1.1, h.2.2.1, fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h.2.1.2, h.2.2.2]⟩) ⟨_, by taint_decide⟩
   exact RelCT.seq a (RelCT.seq b (RelCT.seq c d))
@@ -220,8 +220,8 @@ theorem streamVerify_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.Sm4Gcm.s
   let I : State → State → Prop := fun s₀ s => VerS (s₀.gpr .rdi) (s₀.gpr .rsi) (stackArg s₀ 0) (s₀.gpr .rsp)
       (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .r9) s ∧ s.gpr .rbx = s₀.gpr .r9 ∧
     s.gpr .rsi = s₀.gpr .r8 ∧ Covers [⟨s₀.gpr .r8, (s₀.gpr .r9).toNat⟩] (s.rd ++ s.wr)
-  have hE : ∀ {s : State}, Lay4 (s.gpr .rdi) (s.gpr .rsi) (stackArg s 0) (s.gpr .rsp) →
-      Perm (s.gpr .rdi) (s.gpr .rsi) (stackArg s 0) s → InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 8) 8 →
+  have hE : ∀ {s : State}, Lay4 (s.gpr .rdi) (s.gpr .rsi) (stackArg s 0) (s.gpr .rsp) 768 →
+      Perm (s.gpr .rdi) (s.gpr .rsi) (stackArg s 0) s 768 → InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 8) 8 →
       Covers [⟨s.gpr .r8, (s.gpr .r9).toNat⟩] (s.rd ++ s.wr) →
       WP isa (.block (([.mov .rax (.mem (at_ .rsp 8))] : List Instr) ++ (finEntry .rax ++
         ([.mov .rbx (.reg .r9), .store (at_ .r15 tlO) .rbx, .mov .rsi (.reg .r8)] : List Instr)))) s (I s) :=
@@ -234,7 +234,7 @@ theorem streamVerify_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.Sm4Gcm.s
   simp only [I] at hE₁ hE₂
   rw [← q₁, ← q₂, ← q₃, ← q₄, ← q₅, ← q₆, ← q₇, ← q₈] at hE₂
   rw [streamVerify, List.append_assoc]
-  refine rel_reassoc_inner (fn_rel₂ (Ctx := s₀.gpr .rdi) (St := s₀.gpr .rsi) (W := stackArg s₀ 0)
+  refine rel_reassoc_inner (fn_rel₂N (N := 768) (Ctx := s₀.gpr .rdi) (St := s₀.gpr .rsi) (W := stackArg s₀ 0)
     (SP := s₀.gpr .rsp) (k := 8) [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] (by simp) ⟨_, by taint_decide⟩
     (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -274,7 +274,7 @@ theorem streamVerify_rel (v : GcmImpl) {s₀ s₀' : State} (hp : Proof.Sm4Gcm.s
       omega_using [hok]
     have hc : ∀ s, VerT (Ctx := Ctx) (St := St) (W := W) (SP := SP) (s₀.gpr .rdx) (s₀.gpr .rcx) t Tp s →
         WP isa (.seq recv (.seq (finTag v.callees 0) (.seq (.block [.mov .rbx (.mem (at_ .r15 tlO))]) (cmp 0)))) s
-          (Env Ctx St W SP) := fun s ⟨⟨h, hm⟩, hbx, hsi, hTr⟩ =>
+          (Env Ctx St W SP · 768) := fun s ⟨⟨h, hm⟩, hbx, hsi, hTr⟩ =>
       WP.mono (verifyCheck_ok v L h.1 h.2.1 h.2.2 hm hbx hb.1 hb.2 hsi hTr dTW
         (x := List.replicate ((if s₀.gpr .rcx = 0 then (s₀.gpr .rdx).toNat else (s₀.gpr .rcx).toNat) % 16) 0)
         (by simp)) fun _ h => h.1

@@ -14,6 +14,8 @@ import VerifiedGarbage.Proof.Framework.RISCV64.Bytes
 import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 import VerifiedGarbage.Proof.AesCbc.Spec
 import VerifiedGarbage.Proof.Aes.RISCV64.Blocks
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 meta import VerifiedGarbage.Proof.Aes.RISCV64.Chain
 meta import VerifiedGarbage.Proof.Aes.RISCV64.ChainFrame
 meta import VerifiedGarbage.Proof.AesCbc.RISCV64.Chain
@@ -28,6 +30,8 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Bytes
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 meta import VerifiedGarbage.Proof.AesCbc.Spec
 meta import VerifiedGarbage.Proof.Aes.RISCV64.Blocks
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 meta import VerifiedGarbage.TCB.RISCV64.Target
 
 /-!
@@ -548,13 +552,13 @@ theorem ofbChain_correct {s₀ : State} (hp : (blockKRISCV64 AesOfb.ofbMode).pre
 
 theorem cfbChain_ct : ConstantTime isa (blockKRISCV64 (AesCfb.cfbMode true)).pre
     (blockKRISCV64 (AesCfb.cfbMode true)).pub cfbChain :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5])
-    (chain_agree true) (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5])
+    (chain_agree true) (by taint_decide_sum [Impl.Aes.RISCV64.encrypt4Sum])
 
 theorem ofbChain_ct : ConstantTime isa (blockKRISCV64 AesOfb.ofbMode).pre
     (blockKRISCV64 AesOfb.ofbMode).pub ofbChain :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5])
-    (chain_agree true) (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5])
+    (chain_agree true) (by taint_decide_sum [Impl.Aes.RISCV64.encrypt4Sum])
 
 /-- A chain with `blockKRISCV64 M`'s contract, as a chain to call. -/
 theorem blockK_k {M : AesCbc.Mode} {c : Prog isa}

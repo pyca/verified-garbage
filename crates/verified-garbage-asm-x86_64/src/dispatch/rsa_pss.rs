@@ -45,6 +45,8 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_pss_sign_precomputed_auto(_dit: verified_garbage_cpu::Dit<'_>, out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11], pre: *const u64, pre_len: usize) -> u32 {
+    // SAFETY: it takes no argument and writes no memory but its stack.
+    verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(out: *mut u8, out_len: usize, n: *const u8, n_len: usize, e: *const u8, e_len: usize, p: *const u8, p_len: usize, q: *const u8, q_len: usize, dp: *const u8, dp_len: usize, dq: *const u8, dq_len: usize, qinv: *const u8, qinv_len: usize, digest: *const u8, digest_len: usize, salt: *const u8, salt_len: usize, scratch: *mut u64, scratch_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11], pre: *const u64, pre_len: usize) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -123,6 +125,8 @@ pub unsafe fn vg_rsa_pss_sign_precomputed_auto(_dit: verified_garbage_cpu::Dit<'
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_rsa_pss_verify_precomputed_auto(_dit: verified_garbage_cpu::Dit<'_>, n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32 {
+    // SAFETY: it takes no argument and writes no memory but its stack.
+    verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(n: *const u8, n_len: usize, e: *const u8, e_len: usize, digest: *const u8, digest_len: usize, sig: *const u8, sig_len: usize, salt_len: usize, any_salt_len: u32, scratch: *mut u64, scratch_len: usize, pre: *const u64, pre_len: usize, hash: *const [usize; 11], mgf1: *const [usize; 11]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

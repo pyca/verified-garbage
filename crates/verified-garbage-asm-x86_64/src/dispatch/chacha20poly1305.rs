@@ -20,6 +20,8 @@
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_chacha20_poly1305_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: it takes no argument and writes no memory but its stack.
+    verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -91,6 +93,8 @@ pub unsafe fn vg_chacha20_poly1305_seal_auto(_dit: verified_garbage_cpu::Dit<'_>
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_chacha20_poly1305_open_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: it takes no argument and writes no memory but its stack.
+    verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -165,6 +169,8 @@ pub unsafe fn vg_chacha20_poly1305_open_auto(_dit: verified_garbage_cpu::Dit<'_>
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_chacha20_poly1305_open_to_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32 {
+    // SAFETY: it takes no argument and writes no memory but its stack.
+    verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const u8, len: usize, dst: *mut u8, dst_len: usize, tag: *const [u8; 16]) -> u32;
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
@@ -239,6 +245,8 @@ pub unsafe fn vg_chacha20_poly1305_open_to_auto(_dit: verified_garbage_cpu::Dit<
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_chacha20_poly1305_seal_gather_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    // SAFETY: it takes no argument and writes no memory but its stack.
+    verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });
     /// The type of the implementations.
     type Impl = unsafe extern "sysv64" fn(key: *const [u8; 32], nonce: *const [u8; 12], aad: *const u8, aad_len: usize, src: *const [usize; 2], src_count: usize, dst: *mut u8, len: usize, tag: *mut [u8; 16]);
     /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only

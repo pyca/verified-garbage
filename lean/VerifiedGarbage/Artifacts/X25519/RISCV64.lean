@@ -16,7 +16,6 @@ namespace VG.Artifacts.X25519.RISCV64
 def artifacts : List Artifact := [
   Spec.X25519.exchangeApi.artifact RISCV64.target {
     code := Impl.Xdh.RISCV64.exchange "vg_x25519" Impl.X25519.RISCV64.R64.x25519 32
-    stack := 16
     verified := Proof.X25519.RISCV64.Exchange.exchange_verified },
   Spec.X25519.x25519BaseApi.artifact RISCV64.target {
     code := Impl.X25519.RISCV64.Base.x25519Base

@@ -16,19 +16,15 @@ namespace VG.Artifacts.Cast5Cfb.X86
 def artifacts : List Artifact := [
   Spec.Cast5.cfbEncryptApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbEncrypt
-    stack := 336
     verified := Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.X86.ModeFns.cfbEncrypt_framed },
   Spec.Cast5.cfbDecryptApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbDecrypt
-    stack := 336
     verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.X86.ModeFns.cfbDecrypt_framed },
   Spec.Cast5.cfbEncryptFinalApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbEncryptFinal
-    stack := 336
     verified := Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.X86.FbFinal.cfbEncryptFinal_framed },
   Spec.Cast5.cfbDecryptFinalApi.artifact X86.target {
     code := Impl.StackScratch.X86.withStackScratchWiped 332 5 76 Impl.Cast5.X86.Modes.cfbDecryptFinal
-    stack := 336
     verified := Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.X86.FbFinal.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.Cast5Cfb.X86

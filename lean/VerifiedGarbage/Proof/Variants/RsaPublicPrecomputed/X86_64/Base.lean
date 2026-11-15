@@ -26,7 +26,7 @@ def variant : PublicImpl where
   ct := FoldedPublic.checked_ct _ FoldedPublic.base_final_ct
   nosp := noSp_of (by decide +kernel)
   depth := by decide +kernel
-  spSafe := Code.all_of_allInstrs (by decide +kernel)
+  spSafe := Code.all_of_spTest (by decide +kernel)
   suffix := ""
   features := []
 

@@ -5,13 +5,6 @@
 // gives.
 
 vg_argon2_compress_avx512:
-	stmxcsr DWORD PTR [rcx+2048]
-	mov r11d, DWORD PTR [rcx+2048]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rcx+2052], eax
-	ldmxcsr DWORD PTR [rcx+2052]
-	lfence
 	vmovdqu32 zmm0, ZMMWORD PTR [rdi]
 	vmovdqu32 zmm1, ZMMWORD PTR [rsi]
 	vpxord zmm0, zmm0, zmm1
@@ -685,8 +678,5 @@ vg_argon2_compress_avx512:
 	vmovdqu32 ZMMWORD PTR [rdx+832], zmm2
 	vmovdqu32 ZMMWORD PTR [rdx+960], zmm3
 	vzeroupper
-	lfence
-	mov DWORD PTR [rcx+2048], r11d
-	ldmxcsr DWORD PTR [rcx+2048]
 	ret
 	.p2align 6

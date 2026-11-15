@@ -60,6 +60,20 @@ theorem dword_words (v : BitVec 128) (k : Nat) : dword v k = word v (2 * k + 1) 
   · simp only [decide_eq_true ‹i < 16›, Bool.true_and]; exact congrArg _ (by omega_using [])
   · simp only [decide_eq_true (show i - 16 < 16 by omega_using [hi]), Bool.true_and]; exact congrArg _ (by omega_arith)
 
+/-- A byte at any of a dword's four positions, folded to the dword's low byte. -/
+theorem fold_byte (b : BitVec 8) {c : Nat} (hc : c = 0 ∨ c = 1) {D : BitVec 32}
+    (hD : D = 0#16 ++ b.setWidth 16 <<< (8 * c) ∨ D = b.setWidth 16 <<< (8 * c) ++ 0#16) :
+    (((D ||| D >>> 16) ||| (D ||| D >>> 16) >>> 8) <<< 24) >>> 24 = b.setWidth 32 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  by_cases h8 : i < 8
+  · rcases hc with rfl | rfl <;> rcases hD with rfl | rfl <;>
+      simp only [Nat.mul_zero, Nat.mul_one, BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_or,
+        BitVec.getLsbD_append, BitVec.getLsbD_setWidth] <;>
+      rcases (by omega_using [h8] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7) with
+        rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
+  · rw [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_of_ge _ _ (by omega_using [h8]), BitVec.getLsbD_setWidth,
+      BitVec.getLsbD_of_ge b i (by omega_using [h8]), Bool.and_false]
+
 theorem reduce_scan (p : Nat → Byte) {x : Nat} (hx : x < 256) :
     dword (reduceV (scanAcc p x 16)) 0 = (p x).setWidth 32 := by
   have hw : ∀ w < 8, word (scanAcc p x 16) w = if x % 16 / 2 = w then ((p x).setWidth 16 <<< (8 * (x % 2))) else 0 := by
@@ -70,17 +84,15 @@ theorem reduce_scan (p : Nat → Byte) {x : Nat} (hx : x < 256) :
     show 2 * 2 + 1 = 5 by rfl, show 2 * 3 + 1 = 7 by rfl, show 2 * 1 + 1 = 3 by rfl, show 2 * 1 = 2 by rfl,
     hw _ (by decide : 0 < 8), hw _ (by decide : 1 < 8), hw _ (by decide : 2 < 8), hw _ (by decide : 3 < 8),
     hw _ (by decide : 4 < 8), hw _ (by decide : 5 < 8), hw _ (by decide : 6 < 8), hw _ (by decide : 7 < 8)]
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
   have h8 : x % 16 / 2 < 8 := by omega_arith
   have h2 : x % 2 = 0 ∨ x % 2 = 1 := by omega_using []
   generalize x % 16 / 2 = w at h8
   rcases (by omega_arith : w = 0 ∨ w = 1 ∨ w = 2 ∨ w = 3 ∨ w = 4 ∨ w = 5 ∨ w = 6 ∨ w = 7) with
     rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    rcases h2 with h2 | h2 <;>
-    simp (disch := omega) only [reduceCtorEq, ite_true, ite_false, h2, Nat.mul_zero, Nat.mul_one] <;>
-    simp only [BitVec.getLsbD_ushiftRight, BitVec.getLsbD_shiftLeft, BitVec.getLsbD_or,
-      BitVec.getLsbD_append, BitVec.getLsbD_setWidth] <;>
-    rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 ∨ i = 6 ∨ i = 7 ∨ i = 8 ∨ i = 9 ∨ i = 10 ∨ i = 11 ∨ i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 ∨ i = 16 ∨ i = 17 ∨ i = 18 ∨ i = 19 ∨ i = 20 ∨ i = 21 ∨ i = 22 ∨ i = 23 ∨ i = 24 ∨ i = 25 ∨ i = 26 ∨ i = 27 ∨ i = 28 ∨ i = 29 ∨ i = 30 ∨ i = 31) with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp
+    simp only [Nat.reduceEqDiff, ↓reduceIte, BitVec.ofNat_eq_ofNat,
+      show (0#16 ++ 0#16 : BitVec 32) = 0#32 from rfl, BitVec.or_zero, BitVec.zero_or] <;>
+    first
+    | exact fold_byte (p x) h2 (Or.inl (by with_reducible rfl))
+    | exact fold_byte (p x) h2 (Or.inr (by with_reducible rfl))
 
 end VG.Proof.Blowfish.X86_64

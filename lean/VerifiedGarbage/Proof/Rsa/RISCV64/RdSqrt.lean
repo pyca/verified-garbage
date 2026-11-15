@@ -1400,6 +1400,10 @@ theorem digit_ok {s : State} {B : Addr} {Z W N m k : Nat} (h : Ws s B Z W N) (hR
   have c6 : e % 8 = 0 := by omega_using [hk, hm1, hmk, fS, hle, alS, dRS, hd, he, hd16, hd8m, hd8m1, c2, c3, c4]
   have c7 : 1 ≤ m + 1 := by omega_using []
   have c8 : m + 1 < 2 ^ 32 := by omega_using [hk, hm1, hmk, fR, fS, hle, alR, alS, dRS, hd, he, hd16, hd8m, hd8m1, c1, c2, c3, c4, c5, c6, c7]
+  -- The addresses, without truncated subtraction, and what `omega` needs with them.
+  have hdl : d + 16 * m + 16 = arr W wR + 16 * k := by omega_using [hk, hmk, hd]
+  have hel : e + 8 * m = arr W wSN + 8 * k := by omega_using [hmk, he]
+  have G := And.intro hdl (And.intro hel (And.intro hk (And.intro hm1 (And.intro hmk (And.intro fR (And.intro fS (And.intro nw (And.intro hle (And.intro hSz (dRS))))))))))
   unfold digit
   rw [wp_seqs_cons (List.cons_ne_nil _ _),
     show dLoad ++ dEst ++ dPtr ++ dSq = (dLoad ++ dEst) ++ (dPtr ++ dSq) from List.append_assoc _ _ _,
@@ -1414,10 +1418,10 @@ theorem digit_ok {s : State} {B : Addr} {Z W N m k : Nat} (h : Ws s B Z W N) (hR
   have h1 : Ws t1 B Z W N := hu.of_keep k1
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (msLoop_ok (n := m + 1) h1.scr a51 a61 a71 t21 (by omega_using []) (by omega_using [c8]) (by omega_using [c5]) (by omega_using [c6])
-    (by omega_arith) (by omega_arith) (by omega_arith)) fun t2 ⟨eq2, t22, out2, k2, a52, a62⟩ => ?_
+    (by omega_using [G]) (by omega_using [G]) (by omega_using [G])) fun t2 ⟨eq2, t22, out2, k2, a52, a62⟩ => ?_
   have h2' : Ws t2 B Z W N := h1.of_keep k2
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  refine WP.mono (dTop_ok (d := d + 8 + 8 * (m + 1)) h2'.scr a52 (by omega_arith) (by omega_using [hm1, hmk, hd, he, hd16, hd8m, hd8m1, c1, c2, c4, c5, c7, c8]))
+  refine WP.mono (dTop_ok (d := d + 8 + 8 * (m + 1)) h2'.scr a52 (by omega_using [G]) (by omega_using [hm1, hmk, hd, he, hd16, hd8m, hd8m1, c1, c2, c4, c5, c7, c8]))
     fun t3 ⟨⟨m3, a03⟩, k3⟩ => ?_
   have h3' : Ws t3 B Z W N := h2'.of_keep k3
   -- Registers through the multiply-subtract.
@@ -1452,10 +1456,10 @@ theorem digit_ok {s : State} {B : Addr} {Z W N m k : Nat} (h : Ws s B Z W N) (hR
   · -- The memory, but the window.
     have oU : Outside B d (8 * (m + 3)) s.mem u.mem := by rw [um]; exact Outside.refl _ _ _ _
     have o1 : Outside B d (8 * (m + 3)) u.mem t1.mem :=
-      (by rw [m1]; exact (writeW_outside _ _ _ (by omega_arith)).mono (by omega_using []) (by omega_using []))
+      (by rw [m1]; exact (writeW_outside _ _ _ (by omega_using [G])).mono (by omega_using []) (by omega_using []))
     have o2 : Outside B d (8 * (m + 3)) t1.mem t2.mem := out2.mono (by omega_using []) (by omega_using [])
     have o3 : Outside B d (8 * (m + 3)) t2.mem t3.mem :=
-      (by rw [m3]; exact (writeW_outside _ _ _ (by omega_arith)).mono (by omega_using []) (by omega_using []))
+      (by rw [m3]; exact (writeW_outside _ _ _ (by omega_using [G])).mono (by omega_using []) (by omega_using []))
     exact ((((((oU.trans o1).trans o2).trans o3).trans o4).trans o5).trans o6)
   · intro Sv R P q hSv hRv hPv hd0 hd1 hR2 hq hv
     rw [← hd] at hRv hPv ⊢
@@ -1493,19 +1497,19 @@ theorem digit_ok {s : State} {B : Addr} {Z W N m k : Nat} (h : Ws s B Z W N) (hR
     -- The multiply-subtract, `Enc` with the sign `b₀`.
     have w1 : t1.mem = s.mem.writeW (off B d) (word s.mem B d - u.gpr .s8 * u.gpr .s8) := by
       rw [m1, um, ← u1q]
-    have o1 : Outside B d 8 s.mem t1.mem := by rw [w1]; exact writeW_outside _ _ _ (by omega_arith)
-    have Se1 : wordsVal t1.mem B e (m + 1) = Sv := by rw [o1.wordsVal (by omega_arith) (by omega_arith), hSv]
+    have o1 : Outside B d 8 s.mem t1.mem := by rw [w1]; exact writeW_outside _ _ _ (by omega_using [G])
+    have Se1 : wordsVal t1.mem B e (m + 1) = Sv := by rw [o1.wordsVal (by omega_using [G]) (by omega_using [G]), hSv]
     have W11 : wordsVal t1.mem B (d + 8) (m + 1) = wordsVal s.mem B (d + 8) (m + 1) :=
-      o1.wordsVal (by omega_using []) (by omega_arith)
+      o1.wordsVal (by omega_using []) (by omega_using [G])
     have tb0 : (t2.gpr .t2).toNat / 2 ^ 63 = 0 := by
-      rw [t22, show m + 1 - 1 = m by omega_using [], o1.word (by omega_arith) (by omega_arith), sTop]; rfl
+      rw [t22, show m + 1 - 1 = m by omega_using [], o1.word (by omega_using [G]) (by omega_using [G]), sTop]; rfl
     rw [tb0, Nat.mul_zero, Nat.add_zero, Se1, W11, u1q] at eq2
     have xt2 : word t2.mem B (d + 8 + 8 * (m + 1)) = word s.mem B (d + 8 + 8 * (m + 1)) := by
-      rw [out2.word (by omega_using []) (by omega_arith), o1.word (by omega_using []) (by omega_arith)]
+      rw [out2.word (by omega_using []) (by omega_using [G]), o1.word (by omega_using []) (by omega_using [G])]
     have w3 : t3.mem = t2.mem.writeW (off B (d + 8 + 8 * (m + 1)))
         (word t2.mem B (d + 8 + 8 * (m + 1)) - t2.gpr .a4) := m3
     have o3 : Outside B (d + 8 + 8 * (m + 1)) 8 t2.mem t3.mem := by
-      rw [w3]; exact writeW_outside _ _ _ (by omega_arith)
+      rw [w3]; exact writeW_outside _ _ _ (by omega_using [G])
     have A := sqw_arith (u.gpr .s8) (word s.mem B d)
     have c0 : t1.gpr .a4 = BitVec.ofNat 64 ((u.gpr .s8).toNat * (u.gpr .s8).toNat / 2 ^ 64) +
         bor (word s.mem B d) (u.gpr .s8 * u.gpr .s8) := by rw [a41, um]
@@ -1513,9 +1517,9 @@ theorem digit_ok {s : State} {B : Addr} {Z W N m k : Nat} (h : Ws s B Z W N) (hR
     have C := subw_arith (word t2.mem B (d + 8 + 8 * (m + 1))) (t2.gpr .a4)
     rw [← a03] at C
     have x03 : word t3.mem B d = word s.mem B d - u.gpr .s8 * u.gpr .s8 := by
-      rw [o3.word (by omega_using []) (by omega_arith), out2.word (by omega_using []) (by omega_arith), w1, word_writeW_self]
+      rw [o3.word (by omega_using []) (by omega_using [G]), out2.word (by omega_using []) (by omega_using [G]), w1, word_writeW_self]
     have W13 : wordsVal t3.mem B (d + 8) (m + 1) = wordsVal t2.mem B (d + 8) (m + 1) :=
-      o3.wordsVal (by omega_using []) (by omega_arith)
+      o3.wordsVal (by omega_using []) (by omega_using [G])
     have xt3 : word t3.mem B (d + 8 + 8 * (m + 1)) = word t2.mem B (d + 8 + 8 * (m + 1)) - t2.gpr .a4 := by
       rw [w3, word_writeW_self]
     have e64 : 2 ^ (64 * (m + 1 + 2)) = 2 ^ 64 * 2 ^ (64 * (m + 1)) * 2 ^ 64 := by
@@ -1541,8 +1545,8 @@ theorem digit_ok {s : State} {B : Addr} {Z W N m k : Nat} (h : Ws s B Z W N) (hR
     -- `S` and its top word, through the writes in the window.
     have oS : ∀ {mm : Mem}, Outside B d (8 * (m + 3)) s.mem mm →
         wordsVal mm B e (m + 1) = Sv ∧ word mm B (e + 8 * (m + 1 - 1)) = 0 := fun {mm} o => by
-      refine ⟨by rw [o.wordsVal (by omega_arith) (by omega_arith), hSv], ?_⟩
-      rw [show m + 1 - 1 = m by omega_using [], o.word (by omega_arith) (by omega_arith), sTop]
+      refine ⟨by rw [o.wordsVal (by omega_using [G]) (by omega_using [G]), hSv], ?_⟩
+      rw [show m + 1 - 1 = m by omega_using [], o.word (by omega_using [G]) (by omega_using [G]), sTop]
     have o3' : Outside B d (8 * (m + 3)) s.mem t3.mem := by
       have oa : Outside B d (8 * (m + 3)) s.mem t1.mem := o1.mono (by omega_using []) (by omega_using [])
       have ob : Outside B d (8 * (m + 3)) t1.mem t2.mem := out2.mono (by omega_using []) (by omega_using [])

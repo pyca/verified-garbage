@@ -50,19 +50,16 @@ def artifacts : List Artifact :=
     Spec.Siv.initApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86.withStackScratch 2580 3 (Impl.AesSiv.X86.initCore v.expand v.callee v.suffix)
-      stack := 2632
       verified := init_framed v
       spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (init_spSafe v) },
     Spec.Siv.encryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86.withStackScratch 2612 7 (Impl.AesSiv.X86.encrypt v.callee v.suffix)
-      stack := 2672
       verified := Proof.AesSiv.encrypt_keyed (encrypt_framed v)
       spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (encrypt_spSafe v) },
     Spec.Siv.decryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86.withStackScratch 2612 7 (Impl.AesSiv.X86.decrypt v.callee v.suffix)
-      stack := 2672
       verified := Proof.AesSiv.decrypt_keyed (decrypt_framed v)
       spSafe := Proof.CmacAes.Stream.X86.withStackScratch_spSafe (decrypt_spSafe v) }]
 

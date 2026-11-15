@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Camellia.RISCV64.FbFinalLit
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Camellia.RISCV64.ModesConstantTime
 meta import VerifiedGarbage.Proof.Camellia.RISCV64.ModesVerified
 meta import VerifiedGarbage.Proof.Modes.RISCV64.SeqFinal
 meta import VerifiedGarbage.Impl.Camellia.RISCV64.FbFinal
@@ -20,6 +22,8 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Taint
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Camellia.RISCV64.FbFinalLit
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Camellia.RISCV64.ModesConstantTime
 
 /-!
 # Camellia-CFB128 and Camellia-OFB of a message's last piece on RISC-V meet their contracts
@@ -153,16 +157,16 @@ theorem ofbFinal_correct (s : State) (hs : (finalContract ofbFinalPost).pre s) :
 /-! ## Constant time -/
 
 theorem cfbEncryptFinal_constantTime (pre : State → Prop) : ConstantTime isa pre modePub cfbEncryptFinal :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4])
-    (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4])
+    (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide_sum [crypt8Sum])
 
 theorem cfbDecryptFinal_constantTime (pre : State → Prop) : ConstantTime isa pre modePub cfbDecryptFinal :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4])
-    (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4])
+    (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide_sum [crypt8Sum])
 
 theorem ofbFinal_constantTime (pre : State → Prop) : ConstantTime isa pre modePub ofbFinal :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4])
-    (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4])
+    (fun _ _ _ _ hp => modes_ofRegs _ _ hp) (by taint_decide_sum [crypt8Sum])
 
 /-! ## The contracts -/
 

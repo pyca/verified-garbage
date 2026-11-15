@@ -230,6 +230,7 @@ def Instr.asm : Instr → List String
   | .vop op => [op.asm]
   | .ldrq t n off => [s!"ldr {t.q}, [{n.name .x}, #{off}]"]
   | .ldrqTbl t n off .. => [s!"ldr {t.q}, [{n.name .x}, #{off}]"]
+  | .ldrTbl sz t n off .. => [s!"ldr {t.name sz}, [{n.name .x}, #{off}]"]
   | .strq t n off => [s!"str {t.q}, [{n.name .x}, #{off}]"]
   | .umov .w d n i => [s!"umov {d.name .w}, v{n.index}.s[{i}]"]
   | .umov .x d n i => [s!"umov {d.name .x}, v{n.index}.d[{i}]"]
@@ -265,6 +266,7 @@ def printer : Printer isa where
     | _ => none
   tables
     | .ldrqTbl _ _ _ name ws => [(name, ws)]
+    | .ldrTbl _ _ _ _ name ws => [(name, ws)]
     | _ => []
   /- Every function starts on a 64-byte boundary, a cache line, and so on
   the 32-byte boundaries the Arm Neoverse N1 Software Optimization Guide

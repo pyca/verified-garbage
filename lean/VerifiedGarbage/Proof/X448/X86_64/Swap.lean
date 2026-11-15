@@ -65,7 +65,7 @@ theorem swapStep_ok {s : State} {base : Addr} (hs : Scr s base) {x y i : Nat}
   simp only [runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu, ea_sc,
     State.load64, State.store64, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
     RegUpd.mem_setReg, RegUpd.mem_arithFlags, RegUpd.rd_setReg, RegUpd.wr_setReg,
-    RegUpd.wr_arithFlags, hs.rdi, hc, lx, ly, wx, wy, ite_true, ite_false, reduceCtorEq,
+    RegUpd.wr_arithFlags, RegUpd.rd_arithFlags, hs.rdi, hc, lx, ly, wx, wy, ite_true, ite_false, reduceCtorEq,
     Option.map_some, Option.bind_some, Option.some.injEq, exists_eq_left']
   simp only [(xor_sel sw _ _).1, (xor_sel sw _ _).2]
   refine ⟨trivial, (fun r hr => ?_), rfl, rfl⟩

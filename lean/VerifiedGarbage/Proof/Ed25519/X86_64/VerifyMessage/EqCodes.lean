@@ -40,7 +40,7 @@ theorem baseline_mx : ctlOk (verifyEquation Impl.X25519.X86_64.baseline
 
 theorem baseline_spSafe : (verifyEquation Impl.X25519.X86_64.baseline
     (windows Impl.X25519.X86_64.baseline)).all (fun i => !isa.writesSp i) = true :=
-  Code.all_of_allInstrs (by lit_decide)
+  Code.all_of_spTest (by lit_decide)
 
 theorem adx_mx : ctlOk (verifyEquation Impl.X25519.X86_64.adx
     (windows Impl.X25519.X86_64.adx)) = true := by
@@ -48,7 +48,7 @@ theorem adx_mx : ctlOk (verifyEquation Impl.X25519.X86_64.adx
 
 theorem adx_spSafe : (verifyEquation Impl.X25519.X86_64.adx
     (windows Impl.X25519.X86_64.adx)).all (fun i => !isa.writesSp i) = true :=
-  Code.all_of_allInstrs (by lit_decide)
+  Code.all_of_spTest (by lit_decide)
 
 theorem ifma_mx : ctlOk (verifyEquation Impl.X25519.X86_64.adx
     Ifma.windows) = true := by
@@ -57,7 +57,7 @@ theorem ifma_mx : ctlOk (verifyEquation Impl.X25519.X86_64.adx
 theorem ifma_spSafe : (verifyEquation Impl.X25519.X86_64.adx
     Ifma.windows).all
     (fun i => !isa.writesSp i) = true :=
-  Code.all_of_allInstrs (by lit_decide)
+  Code.all_of_spTest (by lit_decide)
 
 theorem baseline_inlineOk : (verifyEquation Impl.X25519.X86_64.baseline
     (windows Impl.X25519.X86_64.baseline)).InlineOk = true := by

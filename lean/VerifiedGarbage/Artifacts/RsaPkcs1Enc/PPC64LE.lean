@@ -16,11 +16,9 @@ namespace VG.Artifacts.RsaPkcs1Enc.PPC64LE
 def artifacts : List Artifact := [
   Spec.RsaPkcs1Enc.decryptPrecomputedApi.artifact PPC64LE.target {
     code := Impl.RsaPkcs1Enc.PPC64LE.Decrypt.codeP
-    stack := Proof.RsaPkcs1Enc.PPC64LE.Dec.stackBytes
     verified := Proof.RsaPkcs1Enc.PPC64LE.Dec.codeP_verified },
   Spec.RsaPkcs1Enc.encryptRandomApi.artifact PPC64LE.target {
     code := Impl.RsaPkcs1Enc.PPC64LE.Random.code
-    stack := 3440
     verified := Proof.RsaPkcs1Enc.PPC64LE.Rnd.code_verified }]
 
 end VG.Artifacts.RsaPkcs1Enc.PPC64LE

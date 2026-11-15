@@ -27,10 +27,11 @@ theorem keyMaskArgs_ok (s : State) {p : Inputs} {slots : List Nat} {flag : BitVe
   have addr (d : Nat) (hd : d + 4 ≤ 72) :
       State.addr (s.sp + BitVec.ofNat 32 d) = off (State.addr s.sp) d :=
     VG.Arm.addr_add (by have := h.locals.space.nowrap; omega_using [hd, this])
+  have k32 : p.slotValue 32 = BitVec.ofNat 32 p.k := rfl
   refine withRest_all [.r0, .r2, .r3, .lr] ?_ (by rfl) (by rfl)
   ffrun [(by omega_using [fit] : slot < 4096), addr slot fit, addr 32 (by decide), addr 64 (by decide),
     h.locals.read fit, h.locals.read (d := 32) (by decide), h.locals.read (d := 64) (by decide),
-    h.saved slot hs, h.saved 32 hk, result, Inputs.slotValue]
+    h.saved slot hs, h.saved 32 hk, result, k32]
 
 theorem keyMask_ok (s : State) {p : Inputs} {slots : List Nat} {flag : BitVec 32} (slot : Nat)
     (h : ArgumentMemory p slots s) (fit : slot + 4 ≤ 72) (hs : slot ∈ slots) (hk : 32 ∈ slots)

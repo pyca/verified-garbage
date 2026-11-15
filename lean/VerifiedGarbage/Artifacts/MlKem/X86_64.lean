@@ -55,56 +55,48 @@ def artifacts (v : Sample4Impl) (z : ZeroizeImpl) : List Artifact :=
   Spec.MlKem.keyGenApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.keyGenW v.callee v.suffix z.name z.code
-    stack := 56
     verified := Proof.MlKem.X86_64.keyGenW_verified v z
     spSafe := Proof.MlKem.X86_64.keyGenW_spSafe v z }
     (Proof.MlKem.X86_64.keyGenOut _)),
   Spec.MlKem.encapsHApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.encapsHW v.callee v.suffix z.name z.code
-    stack := 56
     verified := Proof.MlKem.X86_64.encapsHW_verified v z
     spSafe := Proof.MlKem.X86_64.encapsHW_spSafe v z }
     (Proof.MlKem.X86_64.encapsHOut _)),
   Spec.MlKem.encapsApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.encapsW v.callee v.suffix z.name z.code
-    stack := 56
     verified := Proof.MlKem.X86_64.encapsW_verified v z
     spSafe := Proof.MlKem.X86_64.encapsW_spSafe v z }
     (Proof.MlKem.X86_64.encapsOut _)),
   Spec.MlKem.decapsApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.decapsW v.callee v.suffix z.name z.code
-    stack := 56
     verified := Proof.MlKem.X86_64.decapsW_verified v z
     spSafe := Proof.MlKem.X86_64.decapsW_spSafe v z }
     (Proof.MlKem.X86_64.decapsOut _)),
   Spec.MlKem1024.keyGenApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.keyGen1024W v.callee v.suffix z.name z.code
-    stack := 56
     verified := Proof.MlKem.X86_64.keyGen1024W_verified v z
     spSafe := Proof.MlKem.X86_64.keyGen1024W_spSafe v z }
     (Proof.MlKem.X86_64.keyGen1024Out _)),
   Spec.MlKem1024.encapsHApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.encapsH1024W v.callee v.suffix z.name z.code
-    stack := 56
     verified := Proof.MlKem.X86_64.encapsH1024W_verified v z
     spSafe := Proof.MlKem.X86_64.encapsH1024W_spSafe v z }
     (Proof.MlKem.X86_64.encapsH1024Out _)),
   Spec.MlKem1024.encapsApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.encaps1024W v.callee v.suffix z.name z.code
-    stack := 56
     verified := Proof.MlKem.X86_64.encaps1024W_verified v z
     spSafe := Proof.MlKem.X86_64.encaps1024W_spSafe v z }
     (Proof.MlKem.X86_64.encaps1024Out _)),
   Spec.MlKem1024.decapsApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := Proof.MlKem.X86_64.Wipe.suffix v z
     code := Impl.MlKem.X86_64.decaps1024W v.callee v.suffix z.name z.code
-    stack := 56
     verified := Proof.MlKem.X86_64.decaps1024W_verified v z
     spSafe := Proof.MlKem.X86_64.decaps1024W_spSafe v z }
     (Proof.MlKem.X86_64.decaps1024Out _))]

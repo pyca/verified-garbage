@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Samp
-import all Init.Data.Nat.Bitwise.Basic
+import VerifiedGarbage.Proof.Framework.X86_64.TaintErase
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Mask
 import VerifiedGarbage.Proof.MlDsa.DecideAt
 import VerifiedGarbage.Proof.MlDsa.X86_64.KeyGen.Base
@@ -57,7 +57,12 @@ theorem slot_ok {p : Params} (hF : PFacts p) {σ : State} (hp : (kgK p).pre σ) 
 theorem slot_piece {p : Params} (hF : PFacts p) {e j : Nat} (he : e + 4 ≤ p.k * p.ℓ) (hj : j < 4) :
     Piece p (GS p · e j) (GS p · e (j + 1)) (.block (setSR p e j)) :=
   ⟨fun _ _ hp h => slot_ok hF hp he hj h,
-    rel_of (Q := Two p) (taintRel [.rbx] (fun x y h => two_rbx h) (hc := .block []) (by with_unfolding_all rfl))
+    rel_of (Q := Two p) (taintRel [.rbx] (fun x y h => two_rbx h) (hc := .block []) (by
+      refine (congrArg Option.isSome
+        (taint_eraseInv.check (.block (setSR p e j)) (Taint.ofRegs [.rbx]) (.block []) rfl).1).symm.trans ?_
+      change (taint.check (Taint.ofRegs [.rbx]) (.block [.mov32 .rax (.imm 0), .store8 { base := .rbx, disp := 0 } .rax,
+        .mov32 .rax (.imm 0), .store8 { base := .rbx, disp := 0 } .rax]) (.block [])).isSome = true
+      decide +kernel))
       fun _ _ _ _ p₁ p₂ pub h₁ h₂ => kc_two hF p₁ p₂ pub h₁.ks.k1.kc h₂.ks.k1.kc⟩
 
 theorem seed4_eq {p : Params} {σ : State} {e : Nat} {s : State} (h : GS p σ e 4 s) {k : Nat} (hk : k < 4) :

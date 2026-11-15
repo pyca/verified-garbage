@@ -536,7 +536,7 @@ theorem MxSame.of_fun {c : Prog isa} (h : ∃ f : BitVec 32 → BitVec 32, ∀ s
 /-- MXCSR after `mxFix v`. -/
 def fixMx (v : VecLevel) (x : BitVec 32) : BitVec 32 :=
   match v with
-  | .evex => x &&& 0xFFC0
+  | .evex => x &&& 0xFFC0 ||| 0x3F
   | _ => x
 
 /-- The trace of `mxFix v` from `rsp = p`. -/
@@ -546,23 +546,26 @@ def mxTr (v : VecLevel) (p : Addr) : List Leak :=
       .addr (p - 16#64 + 4#64), .addr (p - 16#64)]
   | _ => []
 
-theorem ctl_hi (x : BitVec 32) : (x &&& 0xFFC0#32).extractLsb' 16 16 = 0 := by
-  rw [BitVec.extractLsb'_and, show (0xFFC0#32).extractLsb' 16 16 = 0#16 by decide]
-  exact BitVec.and_zero
+theorem ctl_hi (x : BitVec 32) : (x &&& 0xFFC0#32 ||| 0x3F#32).extractLsb' 16 16 = 0 := by
+  rw [BitVec.extractLsb'_or, BitVec.extractLsb'_and, show (0xFFC0#32).extractLsb' 16 16 = 0#16 by decide,
+    show (0x3F#32).extractLsb' 16 16 = 0#16 by decide, BitVec.and_zero, BitVec.or_zero]
+  rfl
 
 /-- `mxFix` keeps MXCSR's control bits. -/
 theorem fixMx_ctl (v : VecLevel) (x : BitVec 32) : (fixMx v x).extractLsb' 6 10 = x.extractLsb' 6 10 := by
   cases v
   · rfl
   · rfl
-  · show (x &&& 0xFFC0#32).extractLsb' 6 10 = _
-    rw [BitVec.extractLsb'_and, show (0xFFC0#32).extractLsb' 6 10 = BitVec.allOnes 10 by decide, BitVec.and_allOnes]
+  · show (x &&& 0xFFC0#32 ||| 0x3F#32).extractLsb' 6 10 = _
+    rw [BitVec.extractLsb'_or, BitVec.extractLsb'_and, show (0xFFC0#32).extractLsb' 6 10 = BitVec.allOnes 10 by decide,
+      show (0x3F#32).extractLsb' 6 10 = 0#10 by decide, BitVec.and_allOnes, BitVec.or_zero]
 
 /-- What it leaves is a function of them. -/
 theorem fixMx_congr (v : VecLevel) {x y : BitVec 32} (hv : v = .evex)
     (h : x.extractLsb' 6 10 = y.extractLsb' 6 10) : fixMx v x = fixMx v y := by
   subst hv
-  show x &&& 0xFFC0#32 = y &&& 0xFFC0#32
+  show x &&& 0xFFC0#32 ||| 0x3F#32 = y &&& 0xFFC0#32 ||| 0x3F#32
+  congr 1
   apply BitVec.eq_of_getLsbD_eq
   intro i hi
   simp only [BitVec.getLsbD_and]
@@ -603,7 +606,7 @@ theorem mxFix_run (v : VecLevel) (u : State) (h16 : v = .evex → 16 ≤ (u.gpr 
     have hin' : InRegions (u₁.rd ++ u₁.wr) q 4 := by
       obtain ⟨r, hr, hc⟩ := hin; exact ⟨r, List.mem_append_right _ hr, hc⟩
     have hea : u₁.gpr .rsp + BitVec.ofInt 64 0 = q := by rw [hq]; show q + 0#64 = q; rw [BitVec.add_zero]
-    let w : BitVec 32 := u.mxcsr &&& 0xFFC0#32
+    let w : BitVec 32 := u.mxcsr &&& 0xFFC0#32 ||| 0x3F#32
     let m₂ : Mem := ((u.mem.writeW q u.mxcsr).writeW q w).writeW (q + 4#64) (0x1FBF#32)
     have hw : w.extractLsb' 16 16 = 0 := ctl_hi _
     have hin4 : InRegions u₁.wr (q + 4#64) 4 := by
@@ -619,7 +622,7 @@ theorem mxFix_run (v : VecLevel) (u : State) (h16 : v = .evex → 16 ≤ (u.gpr 
       show ¬ (x - (q + 4#64)).toNat < 4
       bv_omega
     have hb : execBlock isa [.stmxcsr { base := .rsp }, .mov32 .r11 (.mem { base := .rsp }),
-        .alu32 .and .r11 (.imm 0xFFC0), .store32 { base := .rsp } .r11,
+        .alu32 .and .r11 (.imm 0xFFC0), .alu32 .or .r11 (.imm 0x3F), .store32 { base := .rsp } .r11,
         .mov32 .r11 (.imm 0x1FBF), .store32 { base := .rsp, disp := 4 } .r11,
         .ldmxcsr { base := .rsp, disp := 4 }, .lfence, .lfence, .ldmxcsr { base := .rsp },
         .alu32 .xor .r11 (.reg .r11)] u₁ =
@@ -636,7 +639,7 @@ theorem mxFix_run (v : VecLevel) (u : State) (h16 : v = .evex → 16 ≤ (u.gpr 
         hin, hin', hin4, hin4', Option.bind_some, Option.map_some, Mem.readW_writeW_self32,
         Mem.readW_writeW_sep hsep (by decide), sw, BitVec.xor_self,
         show u₁.mxcsr = u.mxcsr from rfl, show u₁.mem = u.mem from rfl,
-        show (u.mxcsr &&& 65472).extractLsb' 16 16 = 0 from hw,
+        show (u.mxcsr &&& 65472 ||| 63).extractLsb' 16 16 = 0 from hw,
         show (8127 : BitVec 32).extractLsb' 16 16 = 0 from by decide,
         List.map_cons, List.map_nil, List.cons_append, List.nil_append, Option.some.injEq, Prod.mk.injEq, and_true]
       simp only [State.mk.injEq, and_true, true_and]
@@ -644,7 +647,7 @@ theorem mxFix_run (v : VecLevel) (u : State) (h16 : v = .evex → 16 ≤ (u.gpr 
       · funext r
         by_cases hr : r = .r11
         · subst hr; rw [ite_eq_left rfl, h11]; rfl
-        · rw [ite_eq_right hr, ite_eq_right hr, ite_eq_right hr, ite_eq_right hr]
+        · rw [ite_eq_right hr, ite_eq_right hr, ite_eq_right hr, ite_eq_right hr, ite_eq_right hr]
       · exact hzf.symm
       · exact hsf.symm
     let u₂ : State := { u₁ with mem := m₂, mxcsr := w }

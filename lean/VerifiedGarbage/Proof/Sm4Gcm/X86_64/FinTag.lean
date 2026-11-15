@@ -34,15 +34,15 @@ open VG.Spec.Gcm (Block blockAt ghashFrom ghash blocks zeros padLen ofBytes toBy
 open VG.Proof.Gcm (Absorbed lensBlock)
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP)
+variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP 768)
 include L
 
 /-- `finTag o`, for buffered input `x` (of the length the lengths give modulo 16). -/
-theorem finTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env Ctx St W SP s)
+theorem finTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env Ctx St W SP s 768)
     {aL tL : BitVec 64} (hA : s.mem.readW (W + BitVec.ofNat 64 184) 64 = aL)
     (hT : s.mem.readW (W + BitVec.ofNat 64 192) 64 = tL) {x : List Byte}
     (hx : x.length % 16 = (if tL = 0 then aL.toNat else tL.toNat) % 16) :
-    WP isa (finTag v.callees o) s fun s' => Env Ctx St W SP s' ∧
+    WP isa (finTag v.callees o) s fun s' => Env Ctx St W SP s' 768 ∧
       Frame (tagFrame St W SP o) s.mem s'.mem ∧
       (Absorbed s.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) x →
         bytesAt s'.mem (W + BitVec.ofNat 64 o) 16 =
@@ -50,8 +50,8 @@ theorem finTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env Ctx S
             (ghash (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (blocks (x ++ zeros (padLen x.length))))
             [ofBytes (lensBlock aL.toNat tL.toNat)] ^^^ ciphOf s.mem Ctx (blockAt s.mem St))) := by
   have h15 := he.r15
-  have r₁ := he.perm.wR (show 192 + 8 ≤ 2560 by decide)
-  have r₂ := he.perm.wR (show 184 + 8 ≤ 2560 by decide)
+  have r₁ := he.perm.wR (show 192 + 8 ≤ 768 by decide)
+  have r₂ := he.perm.wR (show 184 + 8 ≤ 768 by decide)
   generalize hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H
   obtain ⟨s₁, run₁, hbx₁, hax₁, hzf₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
       [.mov .rbx (.mem (at_ .r15 tlenO)), .mov .rax (.mem (at_ .r15 alenO)), .alu .test .rbx (.reg .rbx)] s =
@@ -68,11 +68,11 @@ theorem finTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env Ctx S
     · intro r a b; simp [gpr_setReg, gpr_arithFlags, a, b]
     all_goals simp [mem_arithFlags, mem_setReg, rd_arithFlags, rd_setReg, wr_arithFlags, wr_setReg]
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have he₁ : Env Ctx St W SP s₁ := he.keep (fun r hr => by
+  have he₁ : Env Ctx St W SP s₁ 768 := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide)) hrd₁ hwr₁
   -- `rbx`: the length of the buffered input, modulo 16.
-  refine WP.seq (WP.mono (Q := fun (s₂ : State) => Env Ctx St W SP s₂ ∧ s₂.gpr .rbx = (if tL = 0 then aL else tL) ∧
+  refine WP.seq (WP.mono (Q := fun (s₂ : State) => Env Ctx St W SP s₂ 768 ∧ s₂.gpr .rbx = (if tL = 0 then aL else tL) ∧
       s₂.mem = s.mem) (WP.ite (decide (tL.toNat = 0)) (eval_e hzf₁) (fun ht => ?_) (fun hf => ?_)) fun s₂ h₂ => ?_)
   · have h0 : tL = 0 := by
       have : tL.toNat = 0 := by simpa using ht
@@ -97,7 +97,7 @@ theorem finTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env Ctx S
     · intro r a; simp [gpr_setReg, gpr_arithFlags, a]
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨s₃, run₃, ?_⟩)
-  have he₃ : Env Ctx St W SP s₃ := he₂.keep (fun r hr => by
+  have he₃ : Env Ctx St W SP s₃ 768 := he₂.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₃ _ (by decide)) hrd₃ hwr₃
   have hm₃' : s₃.mem = s.mem := hm₃.trans hm₂
@@ -118,8 +118,8 @@ theorem finTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env Ctx S
   have hT₄ : s₄.mem.readW (W + BitVec.ofNat 64 192) 64 = tL := by
     rw [hf.frame.readW (r := ⟨W + BitVec.ofNat 64 192, 8⟩) (Region.contains_self _ _) (dT 192 (by decide) (by decide))
       (by decide), hT]
-  have r₃ := he₄.perm.wR (show 184 + 8 ≤ 2560 by decide)
-  have r₄ := he₄.perm.wR (show 192 + 8 ≤ 2560 by decide)
+  have r₃ := he₄.perm.wR (show 184 + 8 ≤ 768 by decide)
+  have r₄ := he₄.perm.wR (show 192 + 8 ≤ 768 by decide)
   obtain ⟨s₅, run₅, hbx₅, hbp₅, hg₅, hm₅, hrd₅, hwr₅⟩ : ∃ s₅, runBlock isa [.mov .rbx (.mem (at_ .r15 alenO)),
       .mov .rbp (.mem (at_ .r15 tlenO))] s₄ = some s₅ ∧
       s₅.gpr .rbx = aL ∧ s₅.gpr .rbp = tL ∧ (∀ r, r ≠ .rbx → r ≠ .rbp → s₅.gpr r = s₄.gpr r) ∧
@@ -130,7 +130,7 @@ theorem finTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {s : State} (he : Env Ctx S
     · intro r a b; simp [gpr_setReg, a, b]
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨s₅, run₅, ?_⟩)
-  have he₅ : Env Ctx St W SP s₅ := he₄.keep (fun r hr => by
+  have he₅ : Env Ctx St W SP s₅ 768 := he₄.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₅ _ (by decide) (by decide)) hrd₅ hwr₅
   have f₅ : Frame (tFrame St W SP 16) s.mem s₅.mem := hm₅ ▸ hf.frame

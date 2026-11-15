@@ -10,6 +10,7 @@ public import VerifiedGarbage.Proof.Ecdh.X86_64.VerifiedIfma
 import VerifiedGarbage.Proof.Ecdh.X86_64.LitIfma
 public import VerifiedGarbage.Impl.Ecdh.P256.X86_64.Ifma
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
 public import VerifiedGarbage.Proof.EcKey.X86_64.Scrub.Out
 public import VerifiedGarbage.Proof.Ecdsa.X86_64.VerifiedAdx
 import Mathlib.Data.Finset.Card
@@ -93,10 +94,9 @@ namespace VG.Artifacts.EcdhP256.X86_64
 open VG.Proof.P256.X86_64 (hasLaw)
 
 def artifacts : List Artifact := [
-  Spec.Ecdh.P256.exchangeApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
+  Spec.Ecdh.P256.exchangeApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
       suffix := "_ifma"
       code := Impl.Ecdh.X86_64.exchangeP256Ifma
-      stack := 16
       verified := Proof.Ecdh.X86_64.ecdh_verified_ifma hasLaw.law hasLaw.inv hasLaw.prime hasLaw.killed }
     (Proof.EcKey.X86_64.Scrub.exchangeOut _ _)),
   Spec.Ecdh.P256.exchangeApi.artifact X86_64.target

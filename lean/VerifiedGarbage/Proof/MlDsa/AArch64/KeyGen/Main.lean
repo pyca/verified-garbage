@@ -32,12 +32,12 @@ meta import VerifiedGarbage.TCB.Axioms
 /-!
 # ML-DSA key generation on AArch64: `vg_mldsa44_keygen`, `vg_mldsa65_keygen`, `vg_mldsa87_keygen`
 
-The function, piece by piece, for any parameter set of Table 1 and any
-verified implementations of the primitives (`keyGen_piece`): it returns 1 with
+The function's first and last pieces, for any parameter set of Table 1 and
+any verified implementations of the primitives: it returns 1 with
 `KeyGen_internal(ξ)` in `pk` and `sk` if every sampler succeeded (for some
 bounds), and 0 if key generation fails within the least bounds; it leaks only
-the pointers, `ρ` and what `RejBoundedPoly` leaks; so it meets the shared
-contract (`keyGen_verified`).
+the pointers, `ρ` and what `RejBoundedPoly` leaks. The function is
+`KeyGen/OptimizedVerified.lean`'s (`Optimized.keyGen_verified`).
 -/
 
 @[expose] public section
@@ -172,42 +172,5 @@ theorem epi_piece {p : Params} (hF : PFacts p) {S' : Nat} :
   have e27 : pa s (.x27, 0) = σ.gpr .x2 := by rw [pa_zero, h.kc.top.x27]
   rw [hr, h.x24, hm, ← e26, ← e27, pk_bytes hF h, sk_bytes hF h htr]
   exact outcome_of (by have := hF.l; omega_using [this]) h.good
-
-/-! ## The function -/
-
-theorem rest_piece {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (hF : PFacts p) :
-    Piece p S' (fun σ s => KSamp p σ (p.k * p.ℓ) (p.ℓ + p.k) s) (KFin p) ((restWith keccak.callee) P p) := by
-  unfold restWith
-  refine (copies_piece hF).seq (Piece.seq (J := KRx p (p.ℓ + p.k) 0 0) ?_
-    (Piece.seq (J := KRx p (p.ℓ + p.k) p.ℓ 0) ?_ (Piece.seq (J := KRx p (p.ℓ + p.k) p.ℓ p.k) ?_
-      (trHash_piece hF hP.s16 hP.s64))))
-  · refine Piece.mono (Piece.seqR (I := fun r => KRx p r 0 0) (p.ℓ + p.k) 0 fun r _ hr => packS_piece hP hF (by omega_using [hr]))
-      (fun _ _ _ h => h) fun _ _ _ h => ?_
-    simpa using h
-  · refine Piece.mono (Piece.seqR (I := fun j => KRx p (p.ℓ + p.k) j 0) p.ℓ 0
-      fun j _ hj => nttS_piece hP hF (by omega_using [hj])) (fun _ _ _ h => h) fun _ _ _ h => ?_
-    simpa using h
-  · refine Piece.mono (Piece.seqR (I := fun i => KRx p (p.ℓ + p.k) p.ℓ i) p.k 0
-      fun i _ hi => row_piece hP hF (by omega_using [hi])) (fun _ _ _ h => h) fun _ _ _ h => ?_
-    simpa using h
-
-theorem keyGen_piece {P : Prims} {S' : Nat} (hP : PrimsOk P S') {p : Params} (hF : PFacts p)
-    (hs : (p.ℓ + p.k) % 4 = 0 ∨ (p.ℓ + p.k) % 4 = 3) :
-    Piece p S' (fun σ s => s = σ)
-      (fun σ s => abiPreserved σ s ∧ (Spec.MlDsa.keyGenContract p AArch64.abi S').post σ s) (keyGenWith keccak.callee P p) :=
-  (pro_piece hF).seq ((seeds_piece hF hP.s16 hP.s64).seq ((sampAll_piece hP hF).seq
-    ((Optimized.secrets_piece keccak.callee hF hs S').seq ((rest_piece hP hF).seq (epi_piece hF)))))
-
-/-- `vg_mldsa*_keygen` of the parameter set `p` meets its contract, for any
-verified implementations `P` of the primitives it calls that use at most `S`
-bytes of stack, if the contract is satisfiable. -/
-theorem keyGen_verified {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params)
-    (hp : p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87)
-    (hsat : ∃ s, (Spec.MlDsa.keyGenContract p AArch64.abi S).pre s) :
-    Verified AArch64.target (keyGenWith keccak.callee P p) (Spec.MlDsa.keyGenContract p AArch64.abi S) :=
-  have hs : (p.ℓ + p.k) % 4 = 0 ∨ (p.ℓ + p.k) % 4 = 3 := by rcases hp with rfl | rfl | rfl <;> decide
-  ⟨fun σ hσ => (keyGen_piece hP (pfacts hp) hs).ok σ σ (kgPre_of_shared hσ) rfl,
-    fun s t l m u v hs' ht pub es et => relStart (Q := fun _ _ => True)
-      (keyGen_piece hP (pfacts hp) hs).tr s t l m u v (kgPre_of_shared hs') (kgPre_of_shared ht) pub es et, hsat⟩
 
 end VG.Proof.MlDsa.AArch64.KeyGen

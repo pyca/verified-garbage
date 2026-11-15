@@ -459,8 +459,7 @@ theorem start_ok {s : State} (hbx : s.gpr .rbx = cP s₀) (hbp : s.gpr .rbp = wP
     exact (dis_wc hp (by decide)).symm
 
 /-- The whole function. -/
-theorem wp_all (hk0 : 0 < k)
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14] (inner B) = true) :
+theorem wp_all (hk0 : 0 < k) :
     WP isa (decryptMul B k) s₀ fun s' => gprPreserved s₀ s' ∧ (decMulK k).post s₀ s' := by
   have hcw : cR (cP s₀) ∈ s₀.wr := by rw [hp.2.1]; simp
   unfold decryptMul
@@ -474,9 +473,7 @@ theorem wp_all (hk0 : 0 < k)
         apply BitVec.eq_of_toNat_eq
         rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
         omega_using [hk]) fun s1 ⟨h1bx, h1bp, h112, h113, h114, h1sp, h1rd, h1wr, hm1⟩ => ?_
-  have h0 : InRegions s1.wr (cP s₀ + BitVec.ofNat 64 768) 4 := by rw [h1wr]; exact ⟨_, hcw, in_c (by decide)⟩
-  have h4 : InRegions s1.wr (cP s₀ + BitVec.ofNat 64 772) 4 := by rw [h1wr]; exact ⟨_, hcw, in_c (by decide)⟩
-  refine WP.seq (WP.mono (withMxcsr_ok' (r := .rbx) (by decide) _ (by decide) h1bx h0 h4 hwo
+  refine WP.seq (WP.mono (noMx_ok (sP := cP s₀)
     (Q := fun s' => s'.gpr .rbx = cP s₀ ∧ s'.gpr .rsp = s₀.gpr .rsp ∧ s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧
       Frame [pR (wP s₀), cR (cP s₀)] s₀.mem s'.mem ∧ Spill.Saved s'.mem (cP s₀) s₀.gpr KpkeMul.slots ∧
       PolyIs s'.mem (wP s₀) (nttInv (dot (sv k s₀) (uv k s₀))))

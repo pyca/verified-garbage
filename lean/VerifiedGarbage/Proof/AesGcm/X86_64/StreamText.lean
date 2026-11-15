@@ -325,16 +325,17 @@ section
 variable {Ctx St W SP : Addr}
 
 /-- The data kept, its length and the text so far modulo 16. -/
-theorem load_ok {s : State} (he : Env Ctx St W SP s) {Dj : Addr} {k : Nat} {T : BitVec 64}
+theorem load_ok {s : State} {N : Nat} (he : Env Ctx St W SP s N) {Dj : Addr} {k : Nat} {T : BitVec 64}
     (hdat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = Dj) (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 k)
-    (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = T) :
+    (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = T) (hN : 216 ≤ N := by decide)
+    (hNl : N < 2 ^ 64 := by decide) :
     ∃ s', runBlock isa streamLoad s = some s' ∧ s'.gpr .r12 = Dj ∧ s'.gpr .rbp = BitVec.ofNat 64 k ∧
       s'.gpr .rbx = BitVec.ofNat 64 (T.toNat % 16) ∧ (∀ r, r ≠ .r12 → r ≠ .rbp → r ≠ .rbx → s'.gpr r = s.gpr r) ∧
       s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   unfold streamLoad
-  have q₁ := he.perm.wR (show 200 + 8 ≤ 2560 by decide)
-  have q₂ := he.perm.wR (show 208 + 8 ≤ 2560 by decide)
-  have q₃ := he.perm.wR (show 192 + 8 ≤ 2560 by decide)
+  have q₁ := he.perm.wR (show 200 + 8 ≤ N by omega_using [hN]) (hk := hNl)
+  have q₂ := he.perm.wR (show 208 + 8 ≤ N by omega_using [hN]) (hk := hNl)
+  have q₃ := he.perm.wR (show 192 + 8 ≤ N by omega_using [hN]) (hk := hNl)
   have hand := and15 T
   rw [imm_eq (by decide)] at hand
   refine ⟨_, by xrun [he.r15, q₁, q₂, q₃], ?_, ?_, ?_, ?_, ?_⟩

@@ -186,7 +186,7 @@ theorem cfbEncryptFinal_framed :
     (n := 409) (pre := Spec.Camellia.cfbFinalPre X86_64.abi.ptrBits)
     (post := Proof.Camellia.cfbEncryptFinalPostSk X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3280) cfbEncryptFinal_verified
-    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.cfbEncryptFinalPostOut_local _) cfbEncryptFinalFrameSat_pre
 
 theorem cfbDecryptFinal_ct : ConstantTime isa cfbDecFinalX86_64.pre cfbDecFinalX86_64.pub cfbDecryptFinal :=
@@ -215,7 +215,7 @@ theorem cfbDecryptFinal_framed :
     (n := 409) (pre := Spec.Camellia.cfbFinalPre X86_64.abi.ptrBits)
     (post := Proof.Camellia.cfbDecryptFinalPostSk X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3280) cfbDecryptFinal_verified
-    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.cfbDecryptFinalPostOut_local _) cfbDecryptFinalFrameSat_pre
 
 /-! ## OFB of a message's last piece -/
@@ -259,7 +259,7 @@ theorem ofbFinal_framed :
     (n := 409) (pre := Spec.Camellia.ofbFinalPre X86_64.abi.ptrBits)
     (post := Proof.Camellia.ofbFinalPostSk X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3280) ofbFinal_verified
-    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.ofbFinalPostOut_local _) ofbFinalFrameSat_pre
 
 end VG.Proof.Camellia.X86_64

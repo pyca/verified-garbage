@@ -117,6 +117,7 @@ pub mod ffdh;
 pub mod hashes;
 pub mod hmac;
 pub mod kdf;
+mod mcdt;
 pub mod mldsa44;
 pub mod mldsa65;
 pub mod mldsa87;

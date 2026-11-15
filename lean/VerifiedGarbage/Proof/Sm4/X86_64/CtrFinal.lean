@@ -165,7 +165,7 @@ theorem ctrFinal_implies : ctrFinalX86_64.Implies ctrFinalScratchContract := by
 
 /-! ## The callee -/
 
-theorem ctrFramed_spSafe : SpSafe ctrFramed := SpSafe.of_all (Code.all_of_allInstrs (by lit_decide))
+theorem ctrFramed_spSafe : SpSafe ctrFramed := SpSafe.of_all (Code.all_of_spTest (by lit_decide))
 
 theorem ctrFramed_depth : ctrFramed.x86_64Depth = 3216 := by lit_decide
 
@@ -1011,7 +1011,7 @@ theorem final_ct : ConstantTime isa ctrFinalX86_64.pre ctrFinalX86_64.pub ctrFin
 
 /-! ## Verified -/
 
-theorem ctrFinal_spSafe : ctrFinal.all (fun i => !X86_64.isa.writesSp i) = true := Code.all_of_allInstrs (by lit_decide)
+theorem ctrFinal_spSafe : ctrFinal.all (fun i => !X86_64.isa.writesSp i) = true := Code.all_of_spTest (by lit_decide)
 
 theorem ctrFinal_xdepth : ctrFinal.x86_64Depth ≤ 3224 := by lit_decide
 

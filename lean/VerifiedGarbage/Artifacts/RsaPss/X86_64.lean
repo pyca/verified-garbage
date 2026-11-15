@@ -20,7 +20,7 @@ public import VerifiedGarbage.Proof.Rsa.X86_64.Scrub
 namespace VG.Artifacts.RsaPss.X86_64.RsaPrivateCrtAllMdHash
 
 open VG.Proof.RsaPkcs1Enc.X86_64 (privNameP privCodeP privCodeP_spSafe)
-open VG.Proof.RsaPss.X86_64 (signStack signPrecomputed_ok signCP_spAll enc_safe OK)
+open VG.Proof.RsaPss.X86_64 (signPrecomputed_ok signCP_spAll enc_safe OK)
 
 def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if h : OK vs then [
@@ -30,7 +30,6 @@ def artifacts (c : Proof.Rsa.X86_64.CrtImpl) (vs : List Proof.Pbkdf2.Md.X86_64.M
       tables := [("hash", Proof.MdHashTable.X86_64.tables vs), ("mgf1", Proof.MdHashTable.X86_64.tables vs)]
       code := Impl.RsaPss.X86_64.signCP (Proof.MdHashTable.X86_64.fnsOf vs) (Proof.HashTable.X86_64.fnsOf vs)
         (privNameP c) (privCodeP c)
-      stack := signStack
       verified := signPrecomputed_ok h c
       spSafe := Code.all_of_allInstrs (signCP_spAll (fun i hi => (enc_safe h i hi).1) (fun i hi => (enc_safe h i hi).2)
         (X86_64.SpSafe.of_all (privCodeP_spSafe c))) } (VG.Proof.RsaPss.X86_64.signPrecomputed_postOut _ _))]
@@ -41,7 +40,7 @@ end VG.Artifacts.RsaPss.X86_64.RsaPrivateCrtAllMdHash
 -- RSASSA-PSS verification on x86-64, with the hash functions as tables
 namespace VG.Artifacts.RsaPss.X86_64.RsaPublicPrecomputedAllMdHash
 
-open VG.Proof.RsaPss.X86_64 (verifyStack verify_ok chk_safe OK)
+open VG.Proof.RsaPss.X86_64 (verify_ok chk_safe OK)
 
 def artifacts (c : Proof.Rsa.X86_64.PublicImpl) (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
   if h : OK vs then [
@@ -50,7 +49,6 @@ def artifacts (c : Proof.Rsa.X86_64.PublicImpl) (vs : List Proof.Pbkdf2.Md.X86_6
       tables := [("hash", Proof.MdHashTable.X86_64.tables vs), ("mgf1", Proof.MdHashTable.X86_64.tables vs)]
       code := Impl.RsaPss.X86_64.verifyC (Proof.MdHashTable.X86_64.fnsOf vs) (Proof.HashTable.X86_64.fnsOf vs)
         c.name c.code
-      stack := verifyStack
       verified := verify_ok h c
       spSafe := Code.all_of_allInstrs (Proof.RsaPss.X86_64.Pc.codeC_spAll (fun i hi => (chk_safe h i hi).1)
         (fun i hi => (chk_safe h i hi).2) c) } (VG.Proof.Rsa.X86_64.Scrub.pssVerifyOut _ _ _))]

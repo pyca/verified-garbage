@@ -226,7 +226,7 @@ theorem ecbCall_framed (d : Spec.Seed.Direction) :
   X86_64.Verified.stackScratchWiped (sig := Spec.Seed.ecbSig) (nm := "scratch") (e := .u64)
     (n := 136) (post := Spec.Seed.ecbPost d X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 1096) (ecbCall_verified d) (by decide) (by decide) (by decide)
-    (by cases d <;> exact Code.all_of_allInstrs (by lit_decide)) (by cases d <;> lit_decide) (by decide)
+    (by cases d <;> exact Code.all_of_spTest (by lit_decide)) (by cases d <;> lit_decide) (by decide)
     (Proof.Seed.ecbPostOut_local _ d)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

@@ -28,6 +28,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 
 /-!
 # ECDH over P-521 on 32-bit ARM: `Verified`
@@ -87,7 +89,8 @@ theorem ecdh_arm (hL : Weierstrass.Law Spec.P521.curve) (s : State) (hs : ecdhAr
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2, .r3], flags := false }
 
 theorem ecdh_ct : ConstantTime isa ecdhArm.pre ecdhArm.pub exchangeP521 := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by native_taint_decide)
+  refine VG.Taint.constantTime_of_exists (A := taintS) τ₀ ?_
+    (by taint_decide_sum [mulPSum, addPSum, subPSum, mulSum])
   intro s t _ _ ⟨_, h0, h1, h2, h3⟩
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),

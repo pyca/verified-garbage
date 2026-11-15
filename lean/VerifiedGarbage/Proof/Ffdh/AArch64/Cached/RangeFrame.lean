@@ -251,14 +251,14 @@ theorem scalarRange_ok {s : State} {B xp dp : Addr} {Z w k dl : Nat} {mi : BitVe
    have flag : (if Spec.Rsa.os2ip bs<Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom) then 1#64 else 0#64) &&&
     (if Spec.Rsa.os2ip bs=0 then 0#64 else 1#64)=
     (if 0<Spec.Rsa.os2ip bs ∧ Spec.Rsa.os2ip bs<Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom) then 1#64 else 0#64) := by
-    split <;> split <;> simp_all
+    split <;> split <;> rename_i h₁ h₂ <;> simp [h₁, h₂]
    refine WP.mono (WP.keep [.x3,.x9] (Q:=fun t =>
     t.gpr .x9=(if 0<Spec.Rsa.os2ip bs ∧ Spec.Rsa.os2ip bs<Spec.Ffdh.scalarBound (Spec.Ffdh.domainOf k dom) then 1#64 else 0#64) ∧ t.mem=e.mem)
     ?_ rfl rfl rfl) ?_
    · brun [(rest.gpr .x0 (by simp [mmRegs])).trans good.x0,hdr_enc (show sTmp<32 by decide),
       (good.scr.congr rest.wr).ld (d:=8*sTmp) (by have := hdr_lt_slot w 8 (show sTmp<32 by decide);omega_using [room, this]),maskE,lessE,flag]
    · rintro t ⟨⟨flagT,memT⟩,restT⟩
-     have total : Keep mmRegs s t := (rest.trans restT).mono (by simp [mmRegs])
+     have total : Keep mmRegs s t := (rest.trans restT).mono (by decide)
      have same : t.mem=d.mem := memT.trans memE
      have goodT : Good t B Z w mi :=
       ⟨good.scr.congr total.wr,(total.gpr .x0 (by simp [mmRegs])).trans good.x0,same ▸ goodD.hdr⟩

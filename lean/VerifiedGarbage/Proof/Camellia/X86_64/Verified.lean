@@ -153,7 +153,7 @@ theorem ecb_framed (dir : Dir) :
     (n := 401) (pre := Spec.Camellia.ecbPre X86_64.abi.ptrBits)
     (post := Proof.Camellia.ecbPostSk (specDir dir) X86_64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 3216) (by rw [← Proof.Camellia.ecbScratchContract_eq]; exact ecb_verified dir)
-    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by cases dir <;> lit_decide))
+    (by decide) (by decide) (by decide) (Code.all_of_spTest (by cases dir <;> lit_decide))
     (by cases dir <;> lit_decide) (by decide) (Proof.Camellia.ecbPostOut_local _ _) (ecbFrameSat_pre _)
 
 end VG.Proof.Camellia.X86_64

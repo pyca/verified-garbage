@@ -156,7 +156,7 @@ theorem cfbDecryptBatch_wp {s₀ : State} (hp : cfbDecAArch64.pre s₀) :
         s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cfbDecAArch64.post s₀ s' := by
   obtain ⟨hrd,hwr,dKV,dKD,dKS,dVD,dVS,dDS,fitK,fitV,fitD,fitB⟩ := hp
   have hwS : (⟨s₀.gpr .x4,8*(slots+12)⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.mono (Modes.AArch64.CfbDec.batched_wp (modeCoreSpec.toBlock rfl) rfl
+  refine WP.mono (Modes.AArch64.CfbDec.batched_wp (modeCoreSpec.toBlock rfl)
     (r:=⟨.x1,.x2,.x3,.x4⟩) ⟨by decide,by decide,by decide⟩ (by decide)
     (B:=s₀.gpr .x4) (P:=s₀.gpr .x1) (D:=s₀.gpr .x2) (n:=(s₀.gpr .x3).toNat)
     (k:=Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .x0))

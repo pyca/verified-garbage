@@ -281,7 +281,7 @@ theorem encSpecF_pre {t : Nat} {s : State} (h : encCallPre (CtxMode.flaggedT t) 
   have a₂₂ := h
   clear h
   sig_pre [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPreparedSig,
-    Spec.Gcm.streamCryptPreparedPre, X86_64.abi, X86_64.argRegs]
+    Spec.Gcm.streamCryptPreparedPre, X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPreparedSig,
     Spec.Gcm.streamCryptPreparedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
@@ -351,7 +351,7 @@ theorem sealSpecF_pre {t : Nat} {s : State} (h : sealPreK (CtxMode.flaggedT t) s
   have a₃₂ := h
   clear h
   sig_pre [Proof.AesGcm.Flag.sealRoundsContractB, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedPre,
-    X86_64.abi, X86_64.argRegs]
+    X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.AesGcm.Flag.sealRoundsContractB, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedPre,
     X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]
@@ -408,7 +408,7 @@ theorem splitSpecF_pre {t : Nat} {s : State} (h : splitPreK (CtxMode.flaggedT t)
   have a₀ := h
   clear h
   sig_pre [Proof.AesGcm.Flag.sealSplitFlaggedContract, Proof.AesGcm.Flag.sealSplitFlaggedSig,
-    Proof.AesGcm.Flag.sealSplitFlaggedPre, X86_64.abi, X86_64.argRegs]
+    Proof.AesGcm.Flag.sealSplitFlaggedPre, X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.AesGcm.Flag.sealSplitFlaggedContract, Proof.AesGcm.Flag.sealSplitFlaggedSig,
     Proof.AesGcm.Flag.sealSplitFlaggedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
@@ -460,7 +460,7 @@ theorem toSpecF_pre {t : Nat} {s : State} (h : toPre (CtxMode.flaggedT t) s) :
   have a₂₈ := h
   clear h
   sig_pre [Proof.AesGcm.Flag.streamEncryptToFlaggedContract, Proof.AesGcm.Flag.streamEncryptToFlaggedSig,
-    Proof.AesGcm.Flag.streamEncryptToFlaggedPre, X86_64.abi, X86_64.argRegs]
+    Proof.AesGcm.Flag.streamEncryptToFlaggedPre, X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.AesGcm.Flag.streamEncryptToFlaggedContract, Proof.AesGcm.Flag.streamEncryptToFlaggedSig,
     Proof.AesGcm.Flag.streamEncryptToFlaggedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,

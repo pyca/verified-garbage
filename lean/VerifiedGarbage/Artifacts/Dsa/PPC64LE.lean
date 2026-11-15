@@ -26,11 +26,9 @@ def artifacts : List Artifact := [
     code := Impl.Dsa.PPC64LE.Derive.derive
     verified := Proof.Dsa.PPC64LE.deriveKey_verified },
   Spec.Dsa.randomSignPrevalidatedApi.artifact PPC64LE.target {
-    stack := 304
     code := Impl.Dsa.PPC64LE.RandomSign.code
     verified := Proof.Dsa.PPC64LE.randomSign_verified },
   Spec.Dsa.generateKeyApi.artifact PPC64LE.target {
-    stack := 304
     code := Impl.Dsa.PPC64LE.Generate.code
     verified := Proof.Dsa.PPC64LE.generate_verified },
   Spec.Dsa.validatePublicKeyApi.artifact PPC64LE.target {
@@ -49,7 +47,6 @@ def artifacts : List Artifact := [
     Spec.Dsa.parameterSearchApi.artifact PPC64LE.target {
       suffix := v.suffix
       code := Impl.Dsa.PPC64LE.Generation.code (gen1 v) (gen2 v) (gen3 v)
-      stack := 176
       verified := search_params v }])
 
 end VG.Artifacts.Dsa.PPC64LE

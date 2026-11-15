@@ -2067,13 +2067,6 @@ vg_ecdsa_p256_verify_ifma:
 	mov QWORD PTR [rdi+592], rax
 	movabs rax, 0
 	mov QWORD PTR [rdi+600], rax
-	stmxcsr DWORD PTR [rdi+5864]
-	mov r12d, DWORD PTR [rdi+5864]
-	and r12d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rdi+5868], eax
-	ldmxcsr DWORD PTR [rdi+5868]
-	lfence
 	movabs rax, 0
 	mov QWORD PTR [rdi+6432], rax
 	movabs rax, -1
@@ -7839,9 +7832,6 @@ vg_ecdsa_p256_verify_ifma:
 227:
 	mov rbx, r11
 	vzeroupper
-	lfence
-	mov DWORD PTR [rdi+5864], r12d
-	ldmxcsr DWORD PTR [rdi+5864]
 	test rbx, rbx
 	je 228f
 	mov r8, QWORD PTR [rdi+5080]
@@ -24444,19 +24434,6 @@ vg_ecdsa_p256_verify_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-96]
 	vmovdqu YMMWORD PTR [rsp+64], ymm0
 	vmovdqu YMMWORD PTR [rsp+32], ymm0

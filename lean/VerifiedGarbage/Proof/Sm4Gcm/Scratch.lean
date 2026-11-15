@@ -66,6 +66,27 @@ def streamDecryptScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Cont
       streamDecryptPost A.ptrBits ctx state aadLen textLen data len)
     (writeArgs := true) (stack := stack)
 
+/-- `streamCryptScratchSig` with `scratch: *mut [u64; 96]`: the 768 bytes
+x86-64's `stream_encrypt` and `stream_decrypt` use. -/
+def streamCryptScratchSig96 : Sig where
+  params := [("ctx", .array false .u64 32), ("state", .array true .u64 10),
+    ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
+    ("data", .slice true .u8 "len"), ("scratch", .array true .u64 96)]
+
+/-- `streamEncryptContract`, whatever the 768 bytes of `scratch` are. -/
+def streamEncryptScratchContract96 {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  streamCryptScratchSig96.contract A
+    (post := fun ctx state aadLen textLen data len _scratch =>
+      streamEncryptPost A.ptrBits ctx state aadLen textLen data len)
+    (writeArgs := true) (stack := stack)
+
+/-- `streamDecryptContract`, whatever the 768 bytes of `scratch` are. -/
+def streamDecryptScratchContract96 {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  streamCryptScratchSig96.contract A
+    (post := fun ctx state aadLen textLen data len _scratch =>
+      streamDecryptPost A.ptrBits ctx state aadLen textLen data len)
+    (writeArgs := true) (stack := stack)
+
 /-- `vg_sm4_gcm_stream_finish` with `work: *mut [u64; 320]`. -/
 def streamFinishScratchSig : Sig where
   params := [("ctx", .array false .u64 32), ("state", .array true .u64 10),
@@ -89,6 +110,35 @@ def streamVerifyScratchSig : Sig where
 /-- `streamVerifyContract`, whatever `work` is. -/
 def streamVerifyScratchContract {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
   streamVerifyScratchSig.contract A
+    (post := fun ctx state aadLen textLen tag tagLen _work =>
+      streamVerifyPost A.ptrBits ctx state aadLen textLen tag tagLen)
+    (writeArgs := true) (stack := stack)
+
+/-- `streamFinishScratchSig` with `work: *mut [u64; 96]`: the 768 bytes
+x86-64's `stream_finish` uses. -/
+def streamFinishScratchSig96 : Sig where
+  params := [("ctx", .array false .u64 32), ("state", .array true .u64 10),
+    ("aad_len", .int .u64 true), ("text_len", .int .u64 true), ("tag", .array true .u8 16),
+    ("work", .array true .u64 96)]
+
+/-- `streamFinishContract`, whatever the 768 bytes of `work` are. -/
+def streamFinishScratchContract96 {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  streamFinishScratchSig96.contract A
+    (post := fun ctx state aadLen textLen tag _work =>
+      streamFinishPost A.ptrBits ctx state aadLen textLen tag)
+    (writeArgs := true) (stack := stack)
+
+/-- `streamVerifyScratchSig` with `work: *mut [u64; 96]`: the 768 bytes
+x86-64's `stream_verify` uses. -/
+def streamVerifyScratchSig96 : Sig where
+  params := [("ctx", .array false .u64 32), ("state", .array true .u64 10),
+    ("aad_len", .int .u64 true), ("text_len", .int .u64 true),
+    ("tag", .slice false .u8 "tag_len"), ("work", .array true .u64 96)]
+  ret := some .u32
+
+/-- `streamVerifyContract`, whatever the 768 bytes of `work` are. -/
+def streamVerifyScratchContract96 {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  streamVerifyScratchSig96.contract A
     (post := fun ctx state aadLen textLen tag tagLen _work =>
       streamVerifyPost A.ptrBits ctx state aadLen textLen tag tagLen)
     (writeArgs := true) (stack := stack)

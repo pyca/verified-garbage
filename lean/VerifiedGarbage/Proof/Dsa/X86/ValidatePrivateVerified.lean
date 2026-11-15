@@ -23,7 +23,7 @@ theorem privateValidatingPublic {s t : State} (H : (Spec.Dsa.validatePrivateKeyC
   sig_pub [Spec.Dsa.validatePrivateKeyContract, Spec.Dsa.validatePrivateKeySig, abi, argSlots, argVal,
     argBytes] at H
   obtain ⟨SP, Leak, a0, a1, a2, a3, a4, a5⟩ := H
-  refine ⟨SP, fun i hi => ?_, (List.append_inj' Leak rfl).1⟩
+  refine ⟨SP, fun i hi => ?_, (List.append_inj' Leak (List.length_singleton.trans List.length_singleton.symm)).1⟩
   have cases : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5 := by omega_using [hi]
   rcases cases with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 

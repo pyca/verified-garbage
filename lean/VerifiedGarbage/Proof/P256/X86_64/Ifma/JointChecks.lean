@@ -96,10 +96,6 @@ theorem joint_ifma_vchecks : VChecks publicJointIfma where
   tab := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .r10]) (fun _ _ _ _ h => h) (by taint_decide)
   out := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .r10, .r11]) (fun _ _ _ _ h => h) (by taint_decide)
   mov := VG.Taint.constantTime (A := taint) (Taint.ofRegs []) (fun _ _ _ _ h => h) (by taint_decide)
-  mx1 := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
-  mx2 := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
-  lf := VG.Taint.constantTime (A := taint) (Taint.ofRegs []) (fun _ _ _ _ h => h) (by taint_decide)
-  mx4 := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi]) (fun _ _ _ _ h => h) (by taint_decide)
   pack := VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rbx]) (fun _ _ _ _ h => h) (by taint_decide)
   ctr0 := VG.Taint.constantTime (A := taint) (Taint.ofRegs []) (fun _ _ _ _ h => h) (by taint_decide)
 

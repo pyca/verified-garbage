@@ -11,7 +11,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_mlkem768_decrypt_mul() {
     core::arch::naked_asm!(
-        r#".base64 "SImpAAwAAEyJoQgMAABMiakQDAAATImxGAwAAEyJuSAMAABIiZkoDAAASInLSIn9SYn0SYnVQb4DAAAAD66bAAMAAESLmwADAABBgeP//wAAuL8fAACJgwQDAAAPrpMEAwAAD67oSInZSInvZg/vwLlAAAAA"
+        r#".base64 "SImpAAwAAEyJoQgMAABMiakQDAAATImxGAwAAEyJuSAMAABIiZkoDAAASInLSIn9SYn0SYnVQb4DAAAASInZSInvZg/vwLlAAAAA"
 20:
 .base64 "8w9/B0iDxxBIg+kB"
 jne 20b
@@ -142,7 +142,7 @@ jne 231b
 232:
 .base64 "8w9vAmYPb8hmD2HEZg9pzPNBD38B80EPf0kQSYPBIEiDwhBIg+kB"
 jne 232b
-.base64 "D67oRImbAAMAAA+ukwADAABIi6sADAAATIujCAwAAEyLqxAMAABMi7MYDAAATIu7IAwAAEiLmygMAADD"
+.base64 "SIurAAwAAEyLowgMAABMi6sQDAAATIuzGAwAAEyLuyAMAABIi5soDAAAww=="
 .p2align 6"#,
     )
 }

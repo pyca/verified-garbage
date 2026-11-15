@@ -14,17 +14,14 @@ namespace VG.Artifacts.Camellia.PPC64LE
 def artifacts : List Artifact := [
   Spec.Camellia.expandKeyApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3344 .r6 414 Impl.Camellia.PPC64LE.expandKey
-    stack := 3344
     verified := Proof.Camellia.PPC64LE.expandKey_framed },
   Spec.Camellia.ecbEncryptApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3344 .r7 414
       (Impl.Camellia.PPC64LE.ecb .encrypt)
-    stack := 3344
     verified := Proof.Camellia.PPC64LE.ecb_framed .encrypt },
   Spec.Camellia.ecbDecryptApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3344 .r7 414
       (Impl.Camellia.PPC64LE.ecb .decrypt)
-    stack := 3344
     verified := Proof.Camellia.PPC64LE.ecb_framed .decrypt }]
 
 end VG.Artifacts.Camellia.PPC64LE

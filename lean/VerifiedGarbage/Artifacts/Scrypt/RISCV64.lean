@@ -16,7 +16,6 @@ def artifacts : List Artifact := [
   Spec.Scrypt.scryptApi.artifact RISCV64.target {
     code := Impl.Scrypt.RISCV64.Whole.scrypt Proof.Scrypt.RISCV64.Whole.pbkName
       Proof.Scrypt.RISCV64.Whole.pbkCode
-    stack := 1248
     verified := Proof.Scrypt.RISCV64.Whole.scrypt_verified }]
 
 end VG.Artifacts.Scrypt.RISCV64

@@ -106,13 +106,18 @@ theorem xdLe_prfs {k : Nat} (v : Sample4Impl) (N₀ n o wl : Nat) (hk : 16 ≤ k
   xdLe_of_le (Nat.le_trans (v.prfs_xd N₀ n o wl) hk)
 
 /-- That the calls of a top-level function with 16-bit polynomials use at
-most `k` bytes of stack (a goal `xdLe k _ = true`). -/
+most `k` bytes of stack (a goal `xdLe k _ = true`): closed code by evaluation first, then code
+that is a `seq`, `ite` or `call` as it stands, then the callees' lemmas, by `apply` (an `exact`
+that does not apply looks for a coercion before it fails, at every node of the code). -/
 tactic_template "s16_xd " v:ident c:ident S:ident hK:ident : tactic =>
   `(tactic| repeat' (first
-    | with_reducible exact xdLe_callee ($hK).kg | with_reducible exact xdLe_callee ($hK).enc
-    | with_reducible exact xdLe_callee ($hK).dec | with_reducible exact xdLe_s16 $S (by decide)
-    | (closed16_in $v $c; decide +kernel) | (code_whnf; closed16_in $v $c; decide +kernel)
-    | with_reducible exact xdLe_prfs $v _ _ _ _ (by decide) | with_reducible exact xdLe_callee ($v).arith.cbd16
+    | (closed16_in $v $c; decide +kernel)
+    | with_reducible exact xdLe_block _
+    | with_reducible apply xdLe_seq | with_reducible apply xdLe_ite | with_reducible apply xdLe_call
+    | with_reducible apply xdLe_callee ($hK).kg | with_reducible apply xdLe_callee ($hK).enc
+    | with_reducible apply xdLe_callee ($hK).dec | with_reducible apply xdLe_s16 $S (by decide)
+    | (code_whnf; closed16_in $v $c; decide +kernel)
+    | with_reducible apply xdLe_prfs $v _ _ _ _ (by decide) | with_reducible apply xdLe_callee ($v).arith.cbd16
     | (code_whnf; with_reducible apply xdLe_seq) | (code_whnf; with_reducible apply xdLe_ite)
     | (code_whnf; with_reducible apply xdLe_call)))
 
@@ -123,8 +128,8 @@ tactic_template "s16_sp " v:ident c:ident S:ident hK:ident : tactic =>
   `(tactic| repeat' (first
     | with_reducible exact ($hK).kg.sp | with_reducible exact ($hK).enc.sp
     | with_reducible exact ($hK).dec.sp | with_reducible exact ($S).spSafe
-    | (closed16_in $v $c; exact Code.all_of_allInstrs (by decide +kernel))
-    | (code_whnf; closed16_in $v $c; exact Code.all_of_allInstrs (by decide +kernel))
+    | (closed16_in $v $c; exact Code.all_of_spTest (by decide +kernel))
+    | (code_whnf; closed16_in $v $c; exact Code.all_of_spTest (by decide +kernel))
     | with_reducible exact ($v).prfs_sp _ _ _ _ | with_reducible exact ($v).arith.cbd16.sp
     | (code_whnf; with_reducible apply all_seq) | (code_whnf; with_reducible apply all_ite)
     | (code_whnf; with_reducible apply all_call)))

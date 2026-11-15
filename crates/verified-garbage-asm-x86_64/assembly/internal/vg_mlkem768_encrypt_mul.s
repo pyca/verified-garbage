@@ -17,13 +17,6 @@ vg_mlkem768_encrypt_mul:
 	mov r13, rcx
 	mov r15, rdx
 	mov r14d, 3
-	stmxcsr DWORD PTR [rbx+768]
-	mov r11d, DWORD PTR [rbx+768]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+772], eax
-	ldmxcsr DWORD PTR [rbx+772]
-	lfence
 	mov rcx, rbx
 	mov rdi, rbp
 	add rdi, 0
@@ -1760,9 +1753,6 @@ vg_mlkem768_encrypt_mul:
 	add rbp, 1024
 	sub r15, 1
 	jne 227b
-	lfence
-	mov DWORD PTR [rbx+768], r11d
-	ldmxcsr DWORD PTR [rbx+768]
 	mov rbp, QWORD PTR [rbx+3072]
 	mov r12, QWORD PTR [rbx+3080]
 	mov r13, QWORD PTR [rbx+3088]

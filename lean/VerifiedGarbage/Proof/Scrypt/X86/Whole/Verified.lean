@@ -804,7 +804,7 @@ theorem scrypt_verified :
 /-- No instruction writes `esp` but the frame's push and pop. -/
 theorem scrypt_spSafe : (scrypt (pbkName v) (pbkOf v)).all (fun i => !isa.writesSp i) = true := by
   have hr : Impl.Scrypt.X86.roMix.all (fun i => !isa.writesSp i) = true :=
-    Code.all_of_allInstrs (by lit_decide)
+    Code.all_of_spTest (by lit_decide)
   simp only [pbkOf, scrypt, scryptBody, pbkCall, romixLoop, Code.all, v.pbkdf2Sp, hr, Bool.and_true,
     Bool.true_and]
   decide

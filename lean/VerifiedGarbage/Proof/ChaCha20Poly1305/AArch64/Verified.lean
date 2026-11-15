@@ -2387,6 +2387,19 @@ theorem openWr_covers {s : State} (h : preOpenW s) : Covers (openWr s) s.wr := b
       show 0 + 1280 ≤ 1312 by decide⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), 1280, rfl, show 1280 + 32 ≤ 1312 by decide⟩
 
+/-- The postcondition of a contract given by its fields, as a rewrite. The kernel compares two
+`match`es on `decrypt` that are not the same term by evaluating `decrypt`, so the postconditions
+below are unfolded by rewriting, not by unification. -/
+private theorem contract_post_mk {M : ISA} (pre : M.State → Prop) (post : M.State → M.State → Prop)
+    (pub : M.State → M.State → Prop) : (Contract.mk pre post pub).post = post := rfl
+
+/-- `openInAArch64`'s postcondition, which reads only the memory and the registers, gives `openW`'s. -/
+private theorem openW_post_of {t t' u u' : State} (h : openInAArch64.post t t') (hm : t.mem = u.mem)
+    (hg : t.gpr = u.gpr) (hm' : t'.mem = u'.mem) (hg' : t'.gpr = u'.gpr) : openW.post u u' := by
+  rw [openW, contract_post_mk, openInAArch64, contract_post_mk]
+  rw [openInAArch64, contract_post_mk, hm, hg, hm', hg'] at h
+  exact h
+
 /-- The postconditions match on `decrypt` through different auxiliary
 functions, so the implication splits on it. -/
 theorem openW_implies : openW.Implies (openZeroScratchContract AArch64.abi 164) :=
@@ -2435,9 +2448,9 @@ it does with fewer permissions (`RegionModel.verified_narrowTo`). -/
 theorem open_verifiedW (v : Proof.ChaCha20.AArch64.XorImpl) :
     Verified AArch64.target (openInPlace v.callee v.stitched) openW :=
   regionModel.verified_narrowTo (T := AArch64.target) (fun _ _ _ _ h => h) (open_verifiedN v)
-    (fun s => s.rd) openWr (fun _ hs => preOpenW_narrow hs)
+    State.rd openWr (fun _ hs => preOpenW_narrow hs)
     (fun _ hs => (Covers.refl _).append (openWr_covers hs)) (fun _ hs => openWr_covers hs)
-    (fun _ _ _ h => h) (fun _ _ _ _ h => h) openW_implies.sat_left
+    (fun _ _ _ h => openW_post_of h rfl rfl rfl rfl) (fun _ _ _ _ h => h) openW_implies.sat_left
 
 theorem open_verified (v : Proof.ChaCha20.AArch64.XorImpl) :
     Verified AArch64.target (openInPlace v.callee v.stitched) (openZeroScratchContract AArch64.abi 164) :=
@@ -2504,6 +2517,14 @@ theorem toWr_covers {s : State} (h : preToW s) : Covers (toWr s) s.wr := by
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), 0, (BitVec.add_zero _).symm,
       show 0 + 1280 ≤ 1312 by decide⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_self ..), 1280, rfl, show 1280 + 32 ≤ 1312 by decide⟩
+
+/-- `openToN`'s postcondition, which reads only `openToRes`, the memory and the registers, gives
+`openToW`'s. -/
+private theorem openToW_post_of {t t' u u' : State} (h : openToN.post t t') (hr : openToRes t = openToRes u)
+    (hg : t.gpr = u.gpr) (hm' : t'.mem = u'.mem) (hg' : t'.gpr = u'.gpr) : openToW.post u u' := by
+  rw [openToW, contract_post_mk, openToN, contract_post_mk]
+  rw [openToN, contract_post_mk, hr, hg, hm', hg'] at h
+  exact h
 
 /-- The indices of `open_to`'s two stack arguments, for the calling
 convention's evaluation. -/
@@ -2606,9 +2627,9 @@ theorem openTo_verifiedN (v : Proof.ChaCha20.AArch64.XorImpl) :
 theorem openTo_verifiedW (v : Proof.ChaCha20.AArch64.XorImpl) :
     Verified AArch64.target (openTo v.callee v.stitched) openToW :=
   regionModel.verified_narrowTo (T := AArch64.target) (fun _ _ _ _ h => h) (openTo_verifiedN v)
-    (fun s => s.rd) toWr (fun _ hs => preToW_narrow hs)
+    State.rd toWr (fun _ hs => preToW_narrow hs)
     (fun _ hs => (Covers.refl _).append (toWr_covers hs)) (fun _ hs => toWr_covers hs)
-    (fun _ _ _ h => h) (fun _ _ _ _ h => h) openToW_implies.sat_left
+    (fun _ _ _ h => openToW_post_of h rfl rfl rfl rfl) (fun _ _ _ _ h => h) openToW_implies.sat_left
 
 theorem openTo_verified (v : Proof.ChaCha20.AArch64.XorImpl) :
     Verified AArch64.target (openTo v.callee v.stitched) (openToScratchContract AArch64.abi 164) :=

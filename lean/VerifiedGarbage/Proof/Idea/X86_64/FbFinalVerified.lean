@@ -166,7 +166,7 @@ theorem cfbEncryptFinal_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Idea.cfbFinalSig) (nm := "scratch") (e := .u64)
     (n := 22) (post := Proof.Modes.encFinalPost ciphAt 8 X86_64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 184) cfbEncryptFinal_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Modes.encFinalPost_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -177,7 +177,7 @@ theorem cfbDecryptFinal_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Idea.cfbFinalSig) (nm := "scratch") (e := .u64)
     (n := 22) (post := Proof.Modes.decFinalPost ciphAt 8 X86_64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 184) cfbDecryptFinal_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Modes.decFinalPost_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -214,7 +214,7 @@ theorem ofbFinal_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Idea.ofbFinalSig) (nm := "scratch") (e := .u64)
     (n := 22) (post := Proof.Modes.ofbFinalPost ciphAt 8 X86_64.abi.ptrBits) (wa := true) (stack := 0)
     (bytes := 184) ofbFinal_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Modes.ofbFinalPost_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

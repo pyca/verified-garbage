@@ -724,7 +724,7 @@ theorem operandsG_ok {g : Geo} {s : State} (h : Bx wid s g.B g.Z (16 * g.n + 24)
     cases c
     · simpa [oddInput] using V₈
     · exfalso; simp only [Bool.toNat_true, Nat.mul_one] at V₈
-      split at V₈ <;> omega_arith
+      split at V₈ <;> omega_using [V₈, hv, mlt, xlt, pw3]
   have M₈ : val32 s₈.mem g.B (160 + 7 * (4 * K + 8)) (g.w + 3) = m := by
     rw [O₈.val32 (by omega_using [eWw, eW]) (by omega_using [hn, eWw, hf16, ke, eW]), M₇]
   have eP : sP = 176 := rfl

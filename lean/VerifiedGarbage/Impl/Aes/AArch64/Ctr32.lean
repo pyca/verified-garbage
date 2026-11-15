@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Aes.AArch64.Linear
+public import VerifiedGarbage.Impl.Aes.AArch64.OneBlock
 
 /-!
 # AES counter mode (GCM's `inc₃₂`), bitsliced, on AArch64
@@ -31,6 +32,11 @@ licence): four blocks at a time, bitsliced in eight 64-bit registers
   (the data), `x30` (the destination, out of place), `x4` (the blocks
   left), `x5` and the loop tests (`t0`) hold
   public values; no address and no branch depends on anything else.
+
+`vg_aes_ctr32` is `ctr32N`: one block (`n = 1`, as the functions that
+encrypt a block alone give it) is encrypted by table lookups
+(`OneBlock.lean`), with no round key bitsliced and nothing written to
+`scratch`; any other `n` runs the bitsliced code.
 -/
 
 @[expose] public section
@@ -159,5 +165,22 @@ def ctr32Gen (to : Bool) : Prog isa :=
 def ctr32 : Prog isa := ctr32Gen false
 
 def ctr32To : Prog isa := ctr32Gen true
+
+/-- The counter block at `x2` into `v0`, and `inc₃₂` of it written back:
+its last four bytes, a big-endian integer, plus one. -/
+def ctrOneLoad : List Instr :=
+  [.ldrq .v0 .x2 0, .ldr .w .x6 .x2 12, .rev32 .x6 .x6, .addImm .w .x6 .x6 1, .rev32 .x6 .x6,
+    .str .w .x6 .x2 12]
+
+/-- One block: the counter block, encrypted by table lookups, XORed into
+the block at `x3`. -/
+def ctr32One : Prog isa :=
+  .seq (.block ctrOneLoad)
+    (.seq OneBlock.core (.block [.ldrq .v1 .x3 0, .vop (.logic .eor .v0 .v0 .v1), .strq .v0 .x3 0]))
+
+/-- `vg_aes_ctr32`: one block by table lookups, any other number of blocks
+bitsliced. -/
+def ctr32N : Prog isa :=
+  .seq (.block [.subImm .x .x6 .x4 1]) (.ite (.zero .x .x6) ctr32One ctr32)
 
 end VG.Impl.Aes.AArch64

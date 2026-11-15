@@ -691,7 +691,7 @@ theorem cws_wp {name zname : String} {body zcode : Prog isa} {zst k off : Nat} {
   refine WP.seq (WP.mono (cws_body_wp h hN hloc hl hk hoff hd hpre hpost hs hA4) fun c hc => ?_)
   refine WP.seq (WP.block ⟨_, zeroArgs_run hn32 c, ?_⟩)
   refine WP.seq (WP.mono (cws_zero_wp hz hzd hzs hsb (by omega_using []) hAw
-    (hres _ (List.mem_append_left _ harr)) hnw hn hn32 hc) fun g hg => ?_)
+    (hres (⟨A.setWidth 64, kk * e.size⟩, true) (List.mem_append_left _ harr)) hnw hn hn32 hc) fun g hg => ?_)
   obtain ⟨c', hc', -, hwrg, hspg, h5g, h6g, hcsg, hfs, hfc, hz0⟩ := hg
   obtain ⟨r4s, r5s, r6s, lrs⟩ := cwPush_read s h16
   have hrd : ∀ {k : Nat}, k + 4 ≤ 16 →
@@ -768,7 +768,7 @@ theorem cws_array {T : Nat} (hT : 0 < T) (hl : Sig.noLists sig.params = true) {A
     T ≤ s.sp.toNat ∧ (⟨A.setWidth 64, K⟩ : Region) ∈ s.wr ∧
       (belowA s.sp T).Disjoint ⟨A.setWidth 64, K⟩ ∧ (A.setWidth 64).toNat + K ≤ 2 ^ 32 := by
   refine ⟨(cws_sp hT hl hs).1, (cws_mem hl hs _ (List.mem_append_left _ harr)).2 rfl,
-    cws_res hT hl hs _ (List.mem_append_left _ harr), ?_⟩
+    cws_res hT hl hs (⟨A.setWidth 64, K⟩, true) (List.mem_append_left _ harr), ?_⟩
   rw [pre_arm hl] at hs
   exact hs.2.2.2.2.2.1 _ harr
 

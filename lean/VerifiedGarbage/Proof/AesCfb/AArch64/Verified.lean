@@ -8,6 +8,7 @@ public import VerifiedGarbage.Spec.Cfb.Contract
 
 import VerifiedGarbage.Proof.AesCbc.AArch64.Verified
 import VerifiedGarbage.Proof.AesCfb.AArch64.Body
+import VerifiedGarbage.Proof.AesCfb.AArch64.Group
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 
@@ -26,7 +27,7 @@ saves in the scratch buffer).
 namespace VG.Proof.AesCfb.AArch64
 
 open VG VG.AArch64 VG.Impl.AesCfb.AArch64
-open VG.Impl.AesCbc.AArch64 (whole)
+open VG.Impl.AesCbc.AArch64 (whole batched groups)
 open VG.Proof.AesCbc (cts)
 open VG.Proof.AesCbc.AArch64
 open VG.Proof.Aes.AArch64 (BlocksImpl)
@@ -35,7 +36,7 @@ theorem encrypt_keepsV (v : BlocksImpl) : (encrypt v.enc).allInstrs keepsV = tru
   simp only [encrypt, whole, body, Code.allInstrs, v.encKeepsV]; decide +kernel
 
 theorem decrypt_keepsV (v : BlocksImpl) : (decrypt v.enc).allInstrs keepsV = true := by
-  simp only [decrypt, whole, body, Code.allInstrs, v.encKeepsV]; decide +kernel
+  simp only [decrypt, batched, groups, decGroup, body, Code.allInstrs, v.encKeepsV]; decide +kernel
 
 theorem encrypt_correct (v : BlocksImpl) (s : State) (hs : (modeAArch64 (cfbMode true)).pre s) :
     ∃ t s', Exec isa (encrypt v.enc) s t s' ∧ abiPreserved s s' ∧ (modeAArch64 (cfbMode true)).post s s' :=
@@ -43,7 +44,11 @@ theorem encrypt_correct (v : BlocksImpl) (s : State) (hs : (modeAArch64 (cfbMode
 
 theorem decrypt_correct (v : BlocksImpl) (s : State) (hs : (modeAArch64 (cfbMode false)).pre s) :
     ∃ t s', Exec isa (decrypt v.enc) s t s' ∧ abiPreserved s s' ∧ (modeAArch64 (cfbMode false)).post s s' :=
-  WP.withPreservedV (whole_wp (decBody_ok v) hs) (decrypt_keepsV v)
+  WP.withPreservedV (batched_wp (decGroup_ok v) (decBody_ok v) hs) (decrypt_keepsV v)
+
+theorem decrypt_ct (v : BlocksImpl) :
+    ConstantTime isa (modeAArch64 (cfbMode false)).pre (modeAArch64 (cfbMode false)).pub (decrypt v.enc) :=
+  batched_ct (decGroup_ok v) (decGroup_ct v) (decBody_ok v) (decBody_ct v)
 
 theorem encrypt_verified (v : BlocksImpl) :
     Verified AArch64.target (encrypt v.enc) (Proof.AesCfb.encryptRoundsContract AArch64.abi) :=
@@ -53,7 +58,7 @@ theorem encrypt_verified (v : BlocksImpl) :
 
 theorem decrypt_verified (v : BlocksImpl) :
     Verified AArch64.target (decrypt v.enc) (Proof.AesCfb.decryptRoundsContract AArch64.abi) :=
-  Verified.of_correct (decrypt_correct v) (whole_ct (decBody_ok v) (decBody_ct v)) (by
+  Verified.of_correct (decrypt_correct v) (decrypt_ct v) (by
     sig_implies [Proof.AesCfb.decryptRoundsContract, Spec.Cfb.aesSig, Spec.Cbc.aesSig, modeAArch64, cfbMode, cfb, cts,
       AArch64.abi, AArch64.argRegs] [sat] using sat)
 

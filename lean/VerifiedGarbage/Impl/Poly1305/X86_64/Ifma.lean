@@ -39,8 +39,8 @@ them, and the rest (fewer than eight) by calling `vg_poly1305_blocks`.
   lanes 0 and 2 (`C₀ = r B₀ + B₁`, `C₁ = r B₂ + B₃`); lane 0 is multiplied
   by `r²` and lane 2 added to it, and the result by `r`:
   `r (r² (r B₀ + B₁) + r B₂ + B₃) = Σ_j B_j r^(4 - j)`.
-* `vpmadd52luq` and `vpmadd52huq` take secret operands, so the vector code
-  runs between Intel's MCDT prologue and epilogue, as in
+* `vpmadd52luq` and `vpmadd52huq` take secret operands: the dispatcher runs `vg_mcdt_enter` first, which leaves MXCSR `0x1FBF` for the
+  whole call, so the code sets none of its own, as in
   `vg_poly1305_blocks_avx2`.
 * The accumulator then goes to general-purpose registers as the three words
   of `vg_poly1305_blocks`, its bits from `2¹³⁰` on folded back (times 5),
@@ -49,7 +49,7 @@ them, and the rest (fewer than eight) by calling `vg_poly1305_blocks`.
 
 The working space of the state holds `r²` and `r⁴` (bytes 56–103, a limb
 per quadword), the mask `2⁴⁴ - 1` (byte 104) and the pad bit `2⁴⁰` (byte
-112); MXCSR is saved at bytes 120–127. `vzeroupper` precedes the calls and
+112). `vzeroupper` precedes the calls and
 the return. The branches are on `n` only, and every address is a pointer
 plus a constant, so only the pointers and `n` can affect timing.
 -/
@@ -252,10 +252,10 @@ def toWords : List Instr := [
 `rdx = n mod 8`. The groups before the last are counted down in `rcx`;
 `n` waits in `r9` while `vg_poly1305_blocks`'s reduction uses `rdx`. -/
 def body : Prog isa :=
-  .seq (.block (Avx2.mxcsrIn ++ powers ++ loadH ++
+  .seq (.block (powers ++ loadH ++
     ([.mov .rcx (.reg .rdx), .shift .shr .rcx 3, .alu .sub .rcx (.imm 1)] : List Instr)))
   (.seq (.loop groupBody .ne)
-    (.block (addGroup ++ step1 ++ step2 ++ step3 ++ Avx2.mxcsrOut ++ [.vop .vzeroupper] ++
+    (.block (addGroup ++ step1 ++ step2 ++ step3 ++ [.vop .vzeroupper] ++
       save ++ toWords ++ ([.mov .r9 (.reg .rdx)] : List Instr) ++ reduce ++
       ([.store (at_ .rdi 0) .r11, .store (at_ .rdi 8) .rbx, .store (at_ .rdi 16) .rbp] : List Instr) ++
       restore ++

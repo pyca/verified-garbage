@@ -624,89 +624,51 @@ theorem wprep_ok {s : State} {base : Addr} (hs : Scratch s base) :
   rw [e 0 (by decide), e 1 (by decide), e 2 (by decide), e 3 (by decide)]
   rfl
 
-/-- The MXCSR prologue: saving it into `r11`, then `0x1FBF` into it. -/
-def mxSave : List Instr := [.stmxcsr (VG.Impl.X25519.X86_64.sc EMX), .mov32 .r11 (.mem (VG.Impl.X25519.X86_64.sc EMX)),
-  .alu32 .and .r11 (.imm 0xFFFF)]
-def mxLoad : List Instr := [.mov32 .rax (.imm 0x1FBF), .store32 (VG.Impl.X25519.X86_64.sc (EMX + 4)) .rax,
-  .ldmxcsr (VG.Impl.X25519.X86_64.sc (EMX + 4)), .lfence]
-/-- The MXCSR epilogue: MXCSR back from `r11`. -/
-def mxRestore : List Instr := [.store32 (VG.Impl.X25519.X86_64.sc EMX) .r11,
-  .ldmxcsr (VG.Impl.X25519.X86_64.sc EMX)]
-
-theorem withMx_eq (c : Prog isa) : withMx c =
-    .seq (.block mxSave) (.seq (.seq (.block mxLoad) (.seq c (.block [.lfence]))) (.block mxRestore)) := rfl
-
 /-- A run in the lanes, from `s₃`, entered from a run started in `s₀` satisfying `R₀`: what has
-been kept since `s₀`, `r11` the saved MXCSR, whose reserved bits are clear, and `Q s₃`. -/
+been kept since `s₀`, and `Q s₃`. -/
 def VRun (R₀ : State → Prop) (base : Addr) (Q : State → State → Prop) (x : State) : Prop :=
-  ∃ s₀ s₃, R₀ s₀ ∧ ByteKeep base s₀ s₃ ∧ ((s₃.gpr .r11).setWidth 32).extractLsb' 16 16 = 0 ∧ Q s₃ x
+  ∃ s₀ s₃, R₀ s₀ ∧ ByteKeep base s₀ s₃ ∧ Q s₃ x
 
-/-- Into the lanes, and the MXCSR prologue: the skipping's start. -/
+/-- Into the lanes: the skipping's start. -/
 theorem enter_ok {R₀ : State → Prop} {s : State} {base kp sp T : Addr} {A : EPoint dZ}
     {fA fB : Nat → Nat} {top : Nat} (h : StartRun R₀ base kp sp T A fA fB top s) :
-    WP isa (.block (VG.Impl.X25519.X86_64.Ifma.consts ++ vload)) s fun s₁ => s₁.gpr .rdi = base ∧
-      WP isa (.block mxSave) s₁ fun s₂ => s₂.gpr .rdi = base ∧
-        WP isa (.block mxLoad) s₂
-          (VRun R₀ base fun s₃ => VSkip s₃ base kp sp T A fA fB top (top + 1)) := by
+    WP isa (.block (VG.Impl.X25519.X86_64.Ifma.consts ++ vload)) s
+      (VRun R₀ base fun s₃ => VSkip s₃ base kp sp T A fA fB top (top + 1)) := by
   obtain ⟨s₀, r₀, hk⟩ := h
   have h := hk.loop
   have hs := h.ctx.scratch
   refine WP.mono (wprep_ok hs) fun s₁ ⟨g₁, rd₁, wr₁, o₁, k₁, sm₁, p₁⟩ => ?_
-  have hs₁ : Scratch s₁ base := ⟨by rw [g₁ _ (by decide)]; exact hs.rdi, by rw [wr₁]; exact hs.wr, hs.nowrap⟩
-  refine ⟨hs₁.rdi, WP.mono (save_wp hs₁) fun s₂ ⟨g₂, r11₂, k₂⟩ => ?_⟩
-  have hs₂ : Scratch s₂ base := ⟨by rw [g₂ _ (by decide)]; exact hs₁.rdi, by rw [k₂.wr]; exact hs₁.wr, hs.nowrap⟩
-  refine ⟨hs₂.rdi, WP.mono (load_wp hs₂) fun s₃ ⟨g₃, k₃⟩ => ?_⟩
-  have q₃ : ∀ x l, qw s₃ x l = qw s₁ x l := fun x l => by rw [k₃.qw_eq, k₂.qw_eq]
-  have m₃ : Outside base 56 1832 s.mem s₃.mem :=
-    ((o₁.mono (by decide) (by decide)).trans (k₂.mem.mono (by decide) (by decide))).trans
-      (k₃.mem.mono (by decide) (by decide))
-  have k₀₃ : ByteKeep base s s₃ := ⟨fun r hc _ _ => by
-      rw [g₃ r (fun e => hc (e ▸ by decide)), g₂ r (fun e => hc (e ▸ by decide)), g₁ r hc],
-    by rw [k₃.rd, k₂.rd, rd₁], by rw [k₃.wr, k₂.wr, wr₁], m₃⟩
-  have m₃' : Outside base 1600 288 s.mem s₃.mem :=
-    ((o₁.mono (by decide) (by decide)).trans (k₂.mem.mono (by simp only [EMX]; omega_arith) (by simp only [EMX]; omega_arith))).trans
-      (k₃.mem.mono (by simp only [EMX]; omega_arith) (by simp only [EMX]; omega_arith))
-  refine ⟨s₀, s₃, r₀, h.keep.trans k₀₃, by rw [g₃ _ (by decide), r11₂]; exact and_ffff _, ?_⟩
-  refine ⟨⟨h.ctx.of_byte k₀₃, ?_, ?_, h.digits.of_byte k₀₃.mem, ?_,
-    fun l hl i hi => by rw [lanes_qw q₃]; exact sm₁ l hl i hi, (k₁.outsideMx k₂.mem).outsideMx k₃.mem,
-    BKeep.refl _ _⟩, hk.zero, hk.pos, hk.le⟩
-  · rw [show env s₃.mem base 16 = env s.mem base 16 from
-      Outside_F m₃' (by simp only [offset]; omega_arith) (Or.inl (by simp only [offset]; omega_arith))]
+  have m₁ : Outside base 56 1832 s.mem s₁.mem := o₁.mono (by decide) (by decide)
+  have k₀₁ : ByteKeep base s s₁ := ⟨fun r hc _ _ => by rw [g₁ r hc], by rw [rd₁], by rw [wr₁], m₁⟩
+  have m₁' : Outside base 1600 288 s.mem s₁.mem := o₁.mono (by decide) (by decide)
+  refine ⟨s₀, s₁, r₀, h.keep.trans k₀₁, ?_⟩
+  refine ⟨⟨h.ctx.of_byte k₀₁, ?_, ?_, h.digits.of_byte k₀₁.mem, ?_, sm₁, k₁, BKeep.refl _ _⟩, hk.zero,
+    hk.pos, hk.le⟩
+  · rw [show env s₁.mem base 16 = env s.mem base 16 from
+      Outside_F m₁' (by simp only [offset]; omega_arith) (Or.inl (by simp only [offset]; omega_arith))]
     exact h.d
-  · exact (m₃'.word (Or.inl (by decide)) (by decide)).trans h.counter
-  · rw [lanePt_qw q₃, p₁, winVal_zero hk.zero]; exact hk.full
+  · exact (m₁'.word (Or.inl (by decide)) (by decide)).trans h.counter
+  · rw [p₁, winVal_zero hk.zero]; exact hk.full
 
-/-- Back into slots 0–3, and the MXCSR epilogue. -/
+/-- Back into slots 0–3. -/
 theorem exit_ok {R₀ : State → Prop} {w : State} {base kp sp T : Addr} {A : EPoint dZ}
     {fA fB : Nat → Nat} {top : Nat}
     (h : VRun R₀ base (fun s₃ => VLoop s₃ base kp sp T A fA fB top 0) w) :
-    WP isa (.block vstore) w fun t₀ => t₀.gpr .rdi = base ∧
-      WP isa (.block [.lfence]) t₀ fun t₁ => t₁.gpr .rdi = base ∧
-        WP isa (.block mxRestore) t₁ (LoopRun R₀ base kp sp T A fA fB top 0) := by
-  obtain ⟨s₀, s₃, r₀, k₀₃, m₃, hw⟩ := h
+    WP isa (.block vstore) w (LoopRun R₀ base kp sp T A fA fB top 0) := by
+  obtain ⟨s₀, s₃, r₀, k₀₃, hw⟩ := h
   have hsw : Scratch w base := hw.ctx.scratch
-  refine WP.mono (vstore_wp hsw.rdi (ctx_of hsw) hw.consts hw.small) fun t₀ ⟨tg, trd, twr, tou, tf⟩ => ?_
-  have hs₀ : Scratch t₀ base := ⟨by rw [tg]; exact hsw.rdi, by rw [twr]; exact hsw.wr, hsw.nowrap⟩
-  refine ⟨hs₀.rdi, WP.mono (lfence_wp t₀) fun t₁ e₁ => ?_⟩
-  subst e₁
-  refine ⟨hs₀.rdi, ?_⟩
-  refine WP.mono (restore_wp hs₀ (by rw [tg, hw.keep.r11]; exact m₃)) fun t ⟨g₈, k₈⟩ => ?_
+  refine WP.mono (vstore_wp hsw.rdi (ctx_of hsw) hw.consts hw.small) fun t ⟨tg, trd, twr, tou, tf⟩ => ?_
   have pt : point (env t.mem base) 0 1 2 3 = lanePt w := by
     simp only [point, lanePt, env, VG.Impl.Ed25519.X86_64.offset]
-    rw [← tf 0 (by decide), ← tf 1 (by decide), ← tf 2 (by decide), ← tf 3 (by decide),
-      Outside_F k₈.mem (by decide) (Or.inl (by decide)), Outside_F k₈.mem (by decide) (Or.inl (by decide)),
-      Outside_F k₈.mem (by decide) (Or.inl (by decide)), Outside_F k₈.mem (by decide) (Or.inl (by decide))]
+    rw [← tf 0 (by decide), ← tf 1 (by decide), ← tf 2 (by decide), ← tf 3 (by decide)]
     rfl
-  have mwt : Outside base 64 1544 w.mem t.mem :=
-    (tou.mono (by decide) (by decide)).trans (k₈.mem.mono (by simp only [EMX]; omega_arith) (by simp only [EMX]; omega_arith))
-  have kwt : ByteKeep base w t := ⟨fun r _ _ _ => by rw [g₈, tg], by rw [k₈.rd, trd], by rw [k₈.wr, twr],
+  have mwt : Outside base 64 1544 w.mem t.mem := tou.mono (by decide) (by decide)
+  have kwt : ByteKeep base w t := ⟨fun r _ _ _ => by rw [tg], by rw [trd], by rw [twr],
     mwt.mono (by decide) (by decide)⟩
   have kst : ByteKeep base s₃ t := hw.keep.byte.trans kwt
   refine ⟨s₀, r₀, hw.ctx.of_byte kwt, ?_, ?_, hw.digits.of_byte kwt.mem, by rw [pt]; exact hw.value.proj,
     k₀₃.trans kst⟩
-  · rw [show env t.mem base 16 = env t₁.mem base 16 from
-        Outside_F k₈.mem (by simp only [offset]; omega_arith) (Or.inl (by simp only [offset, EMX]; omega_arith)),
-      show env t₁.mem base 16 = env w.mem base 16 from
+  · rw [show env t.mem base 16 = env w.mem base 16 from
         Outside_F tou (by simp only [offset]; omega_arith) (Or.inr (by simp only [offset]; omega_arith))]
     exact hw.d
   · exact (mwt.word (Or.inl (by decide)) (by decide)).trans hw.counter
@@ -715,11 +677,9 @@ theorem exit_ok {R₀ : State → Prop} {w : State} {base kp sp T : Addr} {A : E
 theorem windows_ok {R₀ : State → Prop} {s : State} {base kp sp T : Addr} {A : EPoint dZ}
     {fA fB : Nat → Nat} {top : Nat} (hdg : Digits fA fB top) (h : StartRun R₀ base kp sp T A fA fB top s) :
     WP isa Impl.Ed25519.X86_64.Ifma.windows s (LoopRun R₀ base kp sp T A fA fB top 0) := by
-  rw [Impl.Ed25519.X86_64.Ifma.windows, withMx_eq]
-  refine WP.seq (WP.mono (enter_ok h) fun s₁ ⟨_, h₁⟩ => WP.seq (WP.mono h₁ fun s₂ ⟨_, h₂⟩ => ?_))
-  refine WP.seq (WP.seq (WP.mono h₂ fun s₃ h₃ => ?_))
-  obtain ⟨s₀, s₃', r₀, k₀, m₀, v₃⟩ := h₃
-  refine WP.seq (vloops_ok hdg v₃ fun w hw => ?_)
-  exact WP.mono (exit_ok ⟨s₀, s₃', r₀, k₀, m₀, hw⟩) fun _ ⟨_, h₄⟩ => WP.mono h₄ fun _ ⟨_, h₅⟩ => h₅
+  rw [Impl.Ed25519.X86_64.Ifma.windows]
+  refine WP.seq (WP.mono (enter_ok h) fun s₃ h₃ => ?_)
+  obtain ⟨s₀, s₃', r₀, k₀, v₃⟩ := h₃
+  exact vloops_ok hdg v₃ fun w hw => exit_ok ⟨s₀, s₃', r₀, k₀, hw⟩
 
 end VG.Proof.Ed25519.X86_64.Ifma

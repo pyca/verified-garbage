@@ -985,7 +985,7 @@ call {vg_mldsa_ntt_avx2}
 20:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJOBIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdvD"
+.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//SI1kJOBIjWQkIDHAMckx0jH2Mf9FMcBFMcnD"
 .p2align 6"#,
         vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
         vg_mldsa_ntt_avx2 = sym super::mldsa44::vg_mldsa_ntt_avx2::vg_mldsa_ntt_avx2,
@@ -1138,7 +1138,7 @@ call {vg_mldsa_ntt}
 20:
 .base64 "SIsGSIkHSIPHCEiDxghIg+kB"
 jne 20b
-.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI1kJOBIjWQkIDHAMckx0jH2Mf9FMcBFMclFMdvD"
+.base64 "SYucJEgDAABJi6wkUAMAAE2LrCRgAwAATYu0JGgDAABNi7wkcAMAAE2LpCRYAwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//SI1kJOBIjWQkIDHAMckx0jH2Mf9FMcBFMcnD"
 .p2align 6"#,
         vg_mldsa_unpack_t1 = sym super::mldsa44::vg_mldsa_unpack_t1::vg_mldsa_unpack_t1,
         vg_mldsa_ntt = sym super::mldsa44::vg_mldsa_ntt::vg_mldsa_ntt,

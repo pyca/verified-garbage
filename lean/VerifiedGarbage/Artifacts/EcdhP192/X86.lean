@@ -70,7 +70,6 @@ open VG.Proof.P192.X86 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.P192.exchangeApi.artifact X86.target {
     code := Impl.Ecdh.X86.exchangeP192
-    stack := 28
     verified := Proof.Ecdh.X86.P192.ecdh_verified hasLaw.law }]
 
 end VG.Artifacts.EcdhP192.X86

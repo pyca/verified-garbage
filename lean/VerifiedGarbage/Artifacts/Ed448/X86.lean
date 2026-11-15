@@ -68,17 +68,14 @@ def artifacts : List Artifact :=
   [
     Spec.Ed448.publicKeyApi.artifact X86.target {
       code := Impl.Ed448.X86.PublicKey.code Impl.Ed448.X86.scalarBase
-      stack := 280
       verified := Proof.Ed448.X86.PublicKey.publicKey_verified Proof.Ed448.X86.scalarBase_calleeOk }] ++
   [
     Spec.Ed448.signCachedApi.artifact X86.target {
       code := Impl.Ed448.X86.SignCached.code Impl.Ed448.X86.scalarBase
-      stack := 280
       verified := Proof.Ed448.X86.SignCached.signCached_verified Proof.Ed448.X86.scalarBase_calleeOk }] ++
   [
     Spec.Ed448.verifyApi.artifact X86.target {
       code := Impl.Ed448.X86.Verify.code Impl.Ed448.X86.verifyEquation
-      stack := 280
       verified := Proof.Ed448.X86.Verify.verify_verified Proof.Ed448.X86.verifyEquation_calleeOk }]
 
 end VG.Artifacts.Ed448.X86

@@ -81,6 +81,20 @@ class Registrations(unittest.TestCase):
             [p] = check_registrations.problems(pathlib.Path(d))
             self.assertTrue(p.startswith("lean/VerifiedGarbage/Artifacts/A/X86_64.lean:4: `consts`"))
 
+    def test_stack(self):
+        # The default finds the stack in the contract; a field of the
+        # proofs' own structures may still be named `stack`.
+        with tree({"VerifiedGarbage/Artifacts/A/X86_64.lean":
+                    "module\ndef artifacts := [\n  api.artifact t {\n"
+                    "    code := c\n"
+                    "    stack := 8 + Proof.A.frame\n"
+                    "    verified := v }]\n",
+                    "VerifiedGarbage/Artifacts/B/X86_64.lean":
+                    "module\n-- stack := 8\ndef artifacts := [\n  api.artifact t {\n"
+                    "    code := c.stack\n    verified := v (mystack := 8) }]\n"}) as d:
+            [p] = check_registrations.problems(pathlib.Path(d))
+            self.assertTrue(p.startswith("lean/VerifiedGarbage/Artifacts/A/X86_64.lean:5: `stack`"))
+
     def test_a_theorem(self):
         with tree({"VerifiedGarbage/Artifacts/A/X86_64.lean":
                     "module\ntheorem ok : 1 = 1 := rfl\ndef artifacts := v\n"}) as d:

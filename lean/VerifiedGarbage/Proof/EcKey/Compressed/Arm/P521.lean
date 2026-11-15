@@ -3,6 +3,9 @@ module
 import VerifiedGarbage.Proof.EcKey.Compressed.Arm.Main
 public import VerifiedGarbage.Spec.EcKey.P521
 import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
+meta import VerifiedGarbage.Proof.Ecdsa.Arm.P521.Verified
+import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.Arm.Lit
 meta import VerifiedGarbage.Proof.Framework.LitShare
@@ -32,7 +35,8 @@ materialize_shared baseline := code
 def τ₀ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2], flags := false }
 
 theorem ct : ConstantTime isa (compressContract Spec.P521.curve).pre (compressContract Spec.P521.curve).pub code := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by taint_decide)
+  refine VG.Taint.constantTime_of_exists (A := taintS) τ₀ ?_
+    (by taint_decide_sum [mulPSum, addPSum, subPSum])
   intro s t _ _ ⟨_, h0, h1, h2⟩
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     ⟨fun h => absurd rfl h, fun _ h => (List.not_mem_nil h).elim, fun h => absurd h (by decide),

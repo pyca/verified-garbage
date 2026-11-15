@@ -23,7 +23,6 @@ namespace VG.Artifacts.X25519.AArch64
 def artifacts : List Artifact := [
   Spec.X25519.exchangeApi.artifact AArch64.target {
     code := Impl.Xdh.AArch64.exchange "vg_x25519" Impl.X25519.AArch64.AltLadder.x25519 32
-    stack := 16
     verified := Proof.X25519.AArch64.Exchange.exchange_verified },
   Spec.X25519.x25519BaseApi.artifact AArch64.target {
     written := [("scratch", 1024)]

@@ -530,6 +530,7 @@ theorem sqRow0_ok {s : State} {base bA : Addr} (hZ : 4096 ≤ Z) (hs : Scr s bas
     rw [hW, mul3 (word s.mem bA 0).toNat] at hB ⊢
     have h0 : BitVec.toNat (0 : BitVec 64) = 0 := rfl
     simp only [Bool.toNat_false, Nat.add_zero] at e₅
+    rw [h0] at e₈
     omega_arith
   · rw [hm₈, O₆.word (by t_omega) (by t_omega), hm₅, m₄, word_writeW_self, r8]
   · rw [hm₈, m₆, word_writeW_self, r82]

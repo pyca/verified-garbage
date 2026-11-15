@@ -14,7 +14,7 @@
 /// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the 560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_triple_des_cfb64_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
@@ -34,7 +34,7 @@ pub unsafe fn vg_triple_des_cfb64_encrypt_auto(_dit: verified_garbage_cpu::Dit<'
 /// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `8 * n` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the 1120 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_triple_des_cfb64_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut [u8; 8], n: usize) {
@@ -54,7 +54,7 @@ pub unsafe fn vg_triple_des_cfb64_decrypt_auto(_dit: verified_garbage_cpu::Dit<'
 /// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the 560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_triple_des_cfb64_encrypt_final_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {
@@ -74,7 +74,7 @@ pub unsafe fn vg_triple_des_cfb64_encrypt_final_auto(_dit: verified_garbage_cpu:
 /// * `iv` must be valid for reads and writes of 8 bytes.
 /// * `data` must be valid for reads and writes of `len` bytes.
 /// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv` and `data` may overlap the 1008 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv` and `data` may overlap the 560 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_triple_des_cfb64_decrypt_final_auto(_dit: verified_garbage_cpu::Dit<'_>, schedule: *const [u8; 384], iv: *mut [u8; 8], data: *mut u8, len: usize) {

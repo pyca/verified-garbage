@@ -67,34 +67,41 @@ theorem spec_spP {ts : List FnTable} {s : State} (hs : (specP ts).pre s) :
 theorem okP_of_pre {ts : List FnTable} {s : State} (h : (specP ts).pre s) :
     ((ep s ai au af T aiL auL afL TL).layP (arg s 25) (arg s 26).toNat).Ok (entered frameBytes s) := by
   decP_pre at h
-  sig_split h
-  rename_i hsp hsa hheld hheld2 hpw hrd hwr oM oN oE oP oQ oDP oDQ oQI oL oC oS oPre oTL oT oA
-    mN mE mP mQ mDP mDQ mQI mL mC mS mPre mTL mT mA nS nA eS eA pS pA qS qA dpS dpA dqS dqA qiS qiA lS lA cS cA
-    sPre sTL sT sA preA tlA tA rO rM rN rE rP rQ rDP rDQ rQI rL rC rS rPre rTL rT rA kO kM kN kE kP kQ kDP kDQ
-    kQI kL kC kS kPre kTL kT kA fO fM fN fE fP fQ fDP fDQ fQI fL fC fS fPre fTL fT kv olk clk el1 elK pl1 plK
-    ql1 qlK dpl qil dql slK preLen
-  simp only [stackBytes, frameBytes, Nat.reduceAdd] at hsp kO kM kN kE kP kQ kDP kDQ kQI kL kC kS kPre kTL kT kA
+  -- The lengths the contract states equal, rewritten in the precondition before it is split: a rewrite
+  -- of a fact among the hundred it splits into replaces the fact in a context of that size.
+  obtain ⟨olk, clk, dpl, qil, dql⟩ : (arg s 1).toNat = (arg s 4).toNat ∧ (arg s 20).toNat = (arg s 4).toNat ∧
+      (arg s 12).toNat = (arg s 8).toNat ∧ (arg s 16).toNat = (arg s 8).toNat ∧
+      (arg s 14).toNat = (arg s 10).toNat := by
+    sig_split h
+    rename_i hsp hsa hheld hheld2 hpw hrd hwr oM oN oE oP oQ oDP oDQ oQI oL oC oS oPre oTL oT oA
+      mN mE mP mQ mDP mDQ mQI mL mC mS mPre mTL mT mA nS nA eS eA pS pA qS qA dpS dpA dqS dqA qiS qiA lS lA cS cA
+      sPre sTL sT sA preA tlA tA rO rM rN rE rP rQ rDP rDQ rQI rL rC rS rPre rTL rT rA kO kM kN kE kP kQ kDP kDQ
+      kQI kL kC kS kPre kTL kT kA fO fM fN fE fP fQ fDP fDQ fQI fL fC fS fPre fTL fT kv olk clk el1 elK pl1 plK
+      ql1 qlK dpl qil dql slK preLen
+    exact ⟨olk, clk, dpl, qil, dql⟩
   have a1 : arg s 1 = arg s 4 := BitVec.eq_of_toNat_eq olk
   have a20 : arg s 20 = arg s 4 := BitVec.eq_of_toNat_eq clk
   have a12 : arg s 12 = arg s 8 := BitVec.eq_of_toNat_eq dpl
   have a16 : arg s 16 = arg s 8 := BitVec.eq_of_toNat_eq qil
   have a14 : arg s 14 = arg s 10 := BitVec.eq_of_toNat_eq dql
-  rw [olk] at hwr oM oN oE oP oQ oDP oDQ oQI oL oC oS oPre oTL oT oA rO kO fO
-  rw [clk] at hrd oC mC cS cA rC kC fC
-  rw [dpl] at hrd oDP mDP dpS dpA rDP kDP fDP
-  rw [qil] at hrd oQI mQI qiS qiA rQI kQI fQI
-  rw [dql] at hrd oDQ mDQ dqS dqA rDQ kDQ fDQ
+  rw [olk, clk, dpl, qil, dql] at h
+  simp only [stackBytes, frameBytes, Nat.reduceAdd] at h
+  sig_split h
+  rename_i hsp hsa hheld hheld2 hpw hrd hwr oM oN oE oP oQ oDP oDQ oQI oL oC oS oPre oTL oT oA
+    mN mE mP mQ mDP mDQ mQI mL mC mS mPre mTL mT mA nS nA eS eA pS pA qS qA dpS dpA dqS dqA qiS qiA lS lA cS cA
+    sPre sTL sT sA preA tlA tA rO rM rN rE rP rQ rDP rDQ rQI rL rC rS rPre rTL rT rA kO kM kN kE kP kQ kDP kDQ
+    kQI kL kC kS kPre kTL kT kA fO fM fN fE fP fQ fDP fDQ fQI fL fC fS fPre fTL fT kv _ _ el1 elK pl1 plK
+    ql1 qlK _ _ _ slK preLen
   rw [ep_layP]
   refine ok_entered_of (S := 3608) rfl (by decide) hsp (by simp) (by simp; omega_arith) ?_ ?_
     ⟨108, by simp, by rw [hwr]; simp⟩ ?_ ?_ ?_ ?_ ?_ ?_
-  · intro r hr
-    rw [hrd]
-    simp only [EP.ro, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [ep]
-  · intro r hr
-    rw [hwr]
-    simp only [EP.rw, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp [ep]
+  · rw [hrd]
+    simp only [EP.ro, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
+      forall_eq_or_imp, forall_eq]
+    simp only [ep, Region.mk.injEq, and_true, true_or, or_true, and_self]
+  · rw [hwr]
+    simp only [EP.rw, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
+    simp only [ep, Region.mk.injEq, true_or, Nat.reduceEqDiff, and_false, or_false, or_true, and_self]
   · intro r hr
     simp only [EP.ro, EP.rw, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -134,13 +141,10 @@ theorem okP_of_pre {ts : List FnTable} {s : State} (h : (specP ts).pre s) :
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 23).isLt; omega_arith)]; omega_arith)
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 24).isLt; omega_arith)]; omega_arith)
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 25).isLt; omega_arith)]; omega_arith)
-  · intro j hj
-    have : j < 27 := by simpa using hj
-    rcases (by omega_using [this] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
-        j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 ∨ j = 16 ∨ j = 17 ∨ j = 18 ∨ j = 19 ∨
-        j = 20 ∨ j = 21 ∨ j = 22 ∨ j = 23 ∨ j = 24 ∨ j = 25 ∨ j = 26) with
-      rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
-        rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [ep, a1, a12, a14, a16, a20]
+  · simp only [ep, EP.argv, List.cons_append, List.nil_append, List.length_cons, List.length_nil, Nat.zero_add,
+      Nat.reduceAdd, Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, implies_true,
+      List.getD_cons_zero, List.getD_cons_succ, BitVec.ofNat_toNat, BitVec.setWidth_eq, a1, a12, a14, a16, a20,
+      and_self]
 
 /-- The state the body starts from, and what the precomputed entry adds, from the facts of the
 precondition it needs. -/

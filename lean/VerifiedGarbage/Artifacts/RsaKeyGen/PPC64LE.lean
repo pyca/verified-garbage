@@ -27,7 +27,6 @@ def artifacts : List Artifact :=
   (VG.Proof.Variants.MillerRabin.PPC64LE.variants.flatMap fun (v : Proof.MillerRabin.PPC64LE.RoundImpl) => [
     Spec.RsaKeyGen.keySearchApi.artifact PPC64LE.target {
       suffix := v.suffix
-      stack := 1088
       code := Proof.RsaKeyGen.PPC64LE.Generate.genCode v
       verified := Proof.RsaKeyGen.PPC64LE.Generate.gen_verified v }])
 

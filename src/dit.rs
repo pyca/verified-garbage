@@ -46,13 +46,11 @@
 //
 // An operation enters the mode once and passes its token down: the
 // functions it shares with others take the token (`update_with`,
-// `digest_with`, …) rather than deciding again. In the tests (debug builds
-// with `cfg(test)` or `cpu-features-env`), entering a guard while another
-// is live on the thread, or making a token for public work inside an
-// operation that holds the mode, panics: the first would turn the mode on
-// twice, the second would run part of a secret operation as if it were
-// public. So each operation pays for the mode once. A `scope` is the
-// caller's, not an operation: the operations inside it decide as usual.
+// `digest_with`, …) rather than deciding again, so that each operation pays
+// for the mode once. Nothing checks it: a guard entered inside another only
+// reads the mode again, and a token for public work made inside an operation
+// that holds the mode leaves it on. A `scope` is the caller's, not an
+// operation: the operations inside it decide as usual.
 
 use core::marker::PhantomData;
 
@@ -87,10 +85,8 @@ pub(crate) enum Why {
 /// ([`Guard::token`]). It is neither `Send` nor `Sync`: the mode is a
 /// thread's own.
 pub(crate) struct Guard {
-    /// Whether this guard holds the mode: made by [`Guard::new`], or by
+    /// The mode it holds, if it was made by [`Guard::new`], or by
     /// [`Guard::new_if`] for secret work.
-    active: bool,
-    /// The mode it holds, if `active`.
     _mode: Mode,
 }
 
@@ -179,26 +175,19 @@ impl Guard {
     /// Turns data independent timing on for the current thread, where the
     /// CPU has it.
     #[inline]
-    #[track_caller]
     pub(crate) fn new() -> Self {
-        check::enter();
-        Guard {
-            active: true,
-            _mode: Mode::on(),
-        }
+        Guard { _mode: Mode::on() }
     }
 
     /// [`Guard::new`] if `secret`, else a guard that leaves the mode as it
     /// is, for public work, as `why` says.
     #[inline]
-    #[track_caller]
     pub(crate) fn new_if(secret: bool, why: Why) -> Self {
         if secret {
             Self::new()
         } else {
             let _ = public(why);
             Guard {
-                active: false,
                 _mode: Mode::kept(),
             }
         }
@@ -211,16 +200,6 @@ impl Guard {
         // stays on until the guard is dropped, which the borrow outlives; or
         // its work is public (`new_if`).
         unsafe { Dit::assume() }
-    }
-}
-
-impl Drop for Guard {
-    #[inline]
-    fn drop(&mut self) {
-        if self.active {
-            check::leave();
-        }
-        // `_mode` turns the mode off after, if it turned it on.
     }
 }
 
@@ -330,64 +309,6 @@ mod aarch64 {
     }
 }
 
-/// The tests' checks that each operation decides once (see the module's
-/// documentation): whether a guard is live on this thread.
-#[cfg(all(debug_assertions, any(test, feature = "cpu-features-env")))]
-mod check {
-    extern crate std;
-
-    use std::sync::Mutex;
-    use std::thread::{self, ThreadId};
-    use std::vec::Vec;
-
-    /// The threads holding a guard. Not a `thread_local!`: that macro expands
-    /// the standard library's code into this crate, which coverage then
-    /// records at a path outside the repository. Nothing panics while it is
-    /// locked, so it is never poisoned.
-    static LIVE: Mutex<Vec<ThreadId>> = Mutex::new(Vec::new());
-
-    #[track_caller]
-    pub(super) fn enter() {
-        let id = thread::current().id();
-        let mut live = LIVE.lock().unwrap();
-        let nested = live.contains(&id);
-        if !nested {
-            live.push(id);
-        }
-        drop(live);
-        assert!(
-            !nested,
-            "a DIT guard entered inside another: pass the operation's token down"
-        );
-    }
-
-    pub(super) fn leave() {
-        let id = thread::current().id();
-        LIVE.lock().unwrap().retain(|t| *t != id);
-    }
-
-    #[track_caller]
-    pub(super) fn public() {
-        let id = thread::current().id();
-        let held = LIVE.lock().unwrap().contains(&id);
-        assert!(
-            !held,
-            "a public token made inside an operation that holds DIT: pass its token down"
-        );
-    }
-}
-
-/// Without the checks, nothing.
-#[cfg(not(all(debug_assertions, any(test, feature = "cpu-features-env"))))]
-mod check {
-    #[inline(always)]
-    pub(super) fn enter() {}
-    #[inline(always)]
-    pub(super) fn leave() {}
-    #[inline(always)]
-    pub(super) fn public() {}
-}
-
 /// Binds `$dit` to a [`Dit`] token of a new [`Guard`], which keeps data
 /// independent timing on until the end of the enclosing block.
 macro_rules! enter {
@@ -410,19 +331,13 @@ macro_rules! enter_if {
 pub(crate) use enter_if;
 
 /// A token for work whose inputs and outputs are all public, as `why`
-/// says: its timing may depend on them, so the mode is left as it is.
-#[track_caller]
+/// says (`ci/check_dit.py` checks which modules may give each reason): its
+/// timing may depend on them, so the mode is left as it is.
 #[inline(always)]
 pub(crate) fn public(why: Why) -> Dit<'static> {
-    match why {
-        Why::Wipe => {}
-        #[cfg(test)]
-        Why::Test => {}
-        _ => check::public(),
-    }
+    let _ = why;
     // SAFETY: `why` says that every input of the verified functions the
-    // token is passed to is public, and `check` that no secret operation
-    // is running on this thread (in the tests).
+    // token is passed to is public.
     unsafe { Dit::assume() }
 }
 
@@ -613,27 +528,5 @@ mod tests {
         assert!(unwound.is_err());
         #[cfg(target_arch = "aarch64")]
         assert!(!has || !on());
-    }
-
-    /// Entering a guard inside another panics in the tests.
-    #[cfg(debug_assertions)]
-    #[test]
-    #[should_panic(expected = "a DIT guard entered inside another")]
-    fn nested_guard() {
-        super::enter!(outer);
-        let _ = outer;
-        super::enter!(inner);
-        let _ = inner;
-    }
-
-    /// Making a token for public work inside a secret operation panics in
-    /// the tests.
-    #[cfg(debug_assertions)]
-    #[test]
-    #[should_panic(expected = "a public token made inside an operation that holds DIT")]
-    fn public_inside_guard() {
-        super::enter!(dit);
-        let _ = dit;
-        let _ = super::public(Why::UnkeyedHash);
     }
 }

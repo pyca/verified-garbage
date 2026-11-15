@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Sha256.Stream
 public import VerifiedGarbage.Impl.Scrypt.AArch64.Transfer
 import VerifiedGarbage.Proof.Scrypt.AArch64.Transfer.Memory
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Scrypt.Memory
@@ -163,7 +164,9 @@ theorem xors_ok (s₀ : State) :
   refine WP.block_cons_iff.mpr ⟨_,exec_xorQ,?_⟩
   refine WP.block_cons_iff.mpr ⟨_,exec_xorQ,?_⟩
   refine WP.block_cons_iff.mpr ⟨_,exec_xorQ,?_⟩
-  refine WP.block_nil ⟨rfl,rfl,rfl,rfl,rfl,?_⟩
+  -- not `rfl`, which unfolds the four writes to compare the states
+  refine WP.block_nil ⟨by simp only [RegUpd.gpr_setV],by simp only [RegUpd.mem_setV],
+    by simp only [RegUpd.rd_setV],by simp only [RegUpd.wr_setV],by simp only [RegUpd.sp_setV],?_⟩
   intro j hj
   obtain rfl | rfl | rfl | rfl : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 := by omega_using [hj]
   all_goals rfl
