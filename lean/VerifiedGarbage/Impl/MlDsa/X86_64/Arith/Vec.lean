@@ -31,8 +31,10 @@ A coefficient `x` is multiplied by `ζ` as `vmont` with `ζ · 2³² mod q`,
 which the tables hold.
 
 `pmuludq` has data-dependent timing on processors with MCDT unless MXCSR is
-`0x1FBF` (see `TCB/X86_64/Isa.lean`): the functions run inside ML-KEM's
-`withMxcsr`.
+`0x1FBF` (see `TCB/X86_64/Isa.lean`): the functions set no MXCSR of their
+own, as the dispatcher of every public function that calls them runs
+`vg_mcdt_enter` first, which leaves MXCSR `0x1FBF` for the whole call
+("Dispatchers" in `TCB/Rust.lean`).
 -/
 
 @[expose] public section

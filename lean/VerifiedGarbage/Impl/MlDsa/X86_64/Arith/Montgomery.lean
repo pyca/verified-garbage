@@ -72,7 +72,7 @@ def montInvBody : Prog isa :=
       (.seq (ylay vibflyLazy 8 31 (-4)) (.seq (ylay vibflyLazy 16 15 (-4)) (.seq (ylay vibflyLazy 32 7 (-4))
         (.seq ylast (.block yepi)))))))))
 
-def montNttInvAvx2 : Prog isa := VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 montInvBody
+def montNttInvAvx2 : Prog isa := montInvBody
 
 /-! ## A row's sum of products, then `NTT⁻¹` -/
 
@@ -87,9 +87,9 @@ def dotBody (c : Nat) : List Instr :=
       .alu .add .rdx (.imm 32)]
 
 /-- `vg_mldsa_dot_inverse{c}_avx2`: the sum of the `c` products scaled by
-`2⁻³²`, then `NTT⁻¹` with Montgomery scaling, in one MXCSR region. -/
+`2⁻³²`, then `NTT⁻¹` with Montgomery scaling. -/
 def dotInvAvx2 (c : Nat) : Prog isa :=
-  .seq (.block [.mov .r10 (.reg .rsi), .mov .rsi (.reg .rcx)]) <| VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 <|
+  .seq (.block [.mov .r10 (.reg .rsi), .mov .rsi (.reg .rcx)]) <|
     .seq (.block (yconsts ++ [.mov .r8 (.reg .rdi)])) (.seq (rcxLoop 32 (dotBody c)) montInvBody)
 
 /-- AVX2 arithmetic with lazy forward NTT, scaled products and a compensating inverse NTT. -/

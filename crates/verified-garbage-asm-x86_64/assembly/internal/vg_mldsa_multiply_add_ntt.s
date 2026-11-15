@@ -7,13 +7,6 @@
 vg_mldsa_multiply_add_ntt:
 	mov r8, rdi
 	movdqu xmm6, XMMWORD PTR [rdi+1008]
-	stmxcsr DWORD PTR [r8+1016]
-	mov r11d, DWORD PTR [r8+1016]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [r8+1020], eax
-	ldmxcsr DWORD PTR [r8+1020]
-	lfence
 	mov eax, 8380417
 	movq xmm15, rax
 	pshufd xmm15, xmm15, 0
@@ -113,9 +106,6 @@ vg_mldsa_multiply_add_ntt:
 	psrad xmm2, 31
 	pand xmm2, xmm15
 	paddd xmm3, xmm2
-	lfence
-	mov DWORD PTR [r8+1016], r11d
-	ldmxcsr DWORD PTR [r8+1016]
 	movdqu XMMWORD PTR [rdi], xmm3
 	ret
 	.p2align 6

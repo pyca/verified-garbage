@@ -54,7 +54,7 @@ theorem lift_mem {m : Mem} {p : Addr} {f : VG.Spec.MlDsa.Poly} (hp : VG.Proof.Ml
 theorem correct (s : State) (hs : (inPlaceK ntt).pre s) :
     ∃ t s', Exec isa lazyNtt s t s' ∧ abiPreserved s s' ∧ (inPlaceK ntt).post s s' := by
   have hd : (pR (s.gpr .rsi)).Disjoint (pR (s.gpr .rdi)) := hs.2.2.1.symm
-  refine ymx_correct s hs (by decide +kernel) (by decide +kernel) (by decide +kernel) fun s1 k1 f1 =>
+  refine ymx_correct s hs (by decide +kernel) (by decide +kernel) fun s1 k1 f1 =>
     ynttBody_ok hs k1 f1 (G := ntt (polyAt s.mem (s.gpr .rdi))) fun s2 hI hdi hsi hwf hw => ?_
   refine WP.seq (WP.mono (yconst_ok .xmm11 16760834 s2) fun w ⟨lc, kc, mc, _, oc⟩ => ?_)
   have hc : YConsts w := fun l hl => ⟨⟨by
