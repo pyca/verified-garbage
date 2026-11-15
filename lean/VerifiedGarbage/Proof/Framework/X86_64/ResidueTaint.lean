@@ -643,7 +643,8 @@ def ubDrop2 (a b : Reg) (ub : List (Reg × Nat)) : List (Reg × Nat) :=
   | [] => []
   | ub => KList.filter (fun p => !(regEq p.1 a || regEq p.1 b)) ub
 
-/-- `step` of a load `i` = `mov d, [m]`, whose base step is `b`: `post` only
+/-- `step` of a load `i` = `mov d, [m]` (or its 32-bit form from the stack,
+which `post` leaves as it is), whose base step is `b`: `post` only
 if a slot holds a pointer (`mb`), `argPost` only if the analysis knows of
 public or pointer bytes in the argument area (`sa`, `sp`), and nothing else
 but the base step. -/
@@ -662,6 +663,43 @@ def fastLoad (b : Taint.Step) (d : Reg) (i : Instr) : RStep := ⟨fun τ =>
       | none => none
     else none⟩
 
+/-- `ubOf`, with `KList` and `regEq`. -/
+def ubOfK (l : List (Reg × Nat)) (r : Reg) : Option Nat := (KList.find? (fun p => regEq p.1 r) l).map (·.2)
+
+/-- The taint `t` with the register `d` public. -/
+def insReg (d : Reg) (t : Taint.T) : Taint.T :=
+  match t with
+  | ⟨rg, f, l, b, sl, lo, x⟩ => ⟨rg.insert d, f, l, b, sl, lo, x⟩
+
+/-- `step` of an instruction that adds to the base step `b` the taint `pf`
+makes of its taint (`post`), the flags `fl'` (`flOf`) and the bounds `u`
+gives from the flags and the bounds before (`ubNew` and `ubKill`). -/
+def fastG (b : Taint.Step) (pf : Taint.T → Taint.T) (fl' : Option (Reg × Reg))
+    (u : Option (Reg × Reg) → List (Reg × Nat) → List (Reg × Nat)) : RStep := ⟨fun τ =>
+  match τ with
+  | ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ =>
+    bif ok then
+      match b.run t with
+      | some t' =>
+        bif natsEq t'.lens t.lens then
+          Taint.forceT (pf t') fun t' => forceList (u fl ub) fun ub' =>
+            some ⟨true, t', nfr, depth, room, sec, ras, ub', fl', mb, fw, an, sa, sp⟩
+        else none
+      | none => none
+    else none⟩
+
+/-- The bounds after `cmovb d, x`: `d` keeps its bound if the flags are those
+of `cmp x, d` (`ubNew`). -/
+def cmovUb (d x : Reg) (fl : Option (Reg × Reg)) (ub : List (Reg × Nat)) : List (Reg × Nat) :=
+  match fl with
+  | some (a, b) =>
+    bif regEq a x && regEq b d then
+      match ubOfK ub d with
+      | some n => (d, n) :: ubDrop (some d) ub
+      | none => ubDrop (some d) ub
+    else ubDrop (some d) ub
+  | none => ubDrop (some d) ub
+
 /-- `step · i`, classifying `i` first. -/
 def stepFn (i : Instr) : RStep :=
   bif isa.writesSp i then ⟨fun _ => none⟩
@@ -675,8 +713,17 @@ def stepFn (i : Instr) : RStep :=
     | .mov d (.imm v) =>
       fastU (Taint.stepKDFn i) fun ub => bif v.msb then ubDrop (some d) ub else (d, v.toNat) :: ubDrop (some d) ub
     | .mov32 d (.imm v) => fastU (Taint.stepKDFn i) fun ub => (d, v.toNat) :: ubDrop (some d) ub
+    | .mov32 d (.mem _) => fastLoad (Taint.stepKDFn i) d i
     | .mul _ => fastU (Taint.stepKDFn i) (ubDrop2 .rax .rdx)
     | .mulx hi lo _ => fastU (Taint.stepKDFn i) (ubDrop2 hi lo)
+    | .alu .xor d (.reg _) | .alu32 .xor d (.reg _) =>
+      fastG (Taint.stepKDFn i) (insReg d) none fun _ ub => ubDrop (some d) ub
+    | .alu .and d (.imm v) =>
+      fastU (Taint.stepKDFn i) fun ub => bif v.msb then ubDrop (some d) ub else (d, v.toNat) :: ubDrop (some d) ub
+    | .alu32 .and d (.imm v) => fastU (Taint.stepKDFn i) fun ub => (d, v.toNat) :: ubDrop (some d) ub
+    | .alu .cmp a (.reg b) => fastG (Taint.stepKDFn i) id (some (a, b)) fun _ ub => ubDrop (some a) ub
+    | .cmov .b d (.reg x) => fastG (Taint.stepKDFn i) id none (cmovUb d x)
+    | .cmov _ d _ => fastU (Taint.stepKDFn i) (ubDrop (some d))
     | _ => ⟨(step · i)⟩
 
 /-- `some d == some .rsp`, what `isa.writesSp` is of an instruction whose
@@ -708,17 +755,31 @@ def stepFn1 (i : Instr) : RStep :=
   | .mul _ => fastU (Taint.stepKeepFn i) (ubDrop2 .rax .rdx)
   | .mulx hi lo _ =>
     bif isSpR hi || isSpR lo then ⟨fun _ => none⟩ else fastU (Taint.stepKeepFn i) (ubDrop2 hi lo)
+  | .alu .and d (.imm v) =>
+    bif isSp d then ⟨fun _ => none⟩ else
+      fastU (Taint.stepKeepFn i) fun ub => bif v.msb then ubDrop (some d) ub else (d, v.toNat) :: ubDrop (some d) ub
+  | .alu32 .and d (.imm v) =>
+    bif isSp d then ⟨fun _ => none⟩ else fastU (Taint.stepKeepFn i) fun ub => (d, v.toNat) :: ubDrop (some d) ub
+  | .alu .cmp a (.reg b) =>
+    bif isSp a then ⟨fun _ => none⟩ else
+      fastG (Taint.stepKeepFn i) id (some (a, b)) fun _ ub => ubDrop (some a) ub
+  | .cmov .b d (.reg x) =>
+    bif isSp d then ⟨fun _ => none⟩ else fastG (Taint.stepKeepFn i) id none (cmovUb d x)
+  | .cmov _ d _ => bif isSp d then ⟨fun _ => none⟩ else fastU (Taint.stepKeepFn i) (ubDrop (some d))
   -- Not plain, and without a step of their own.
   | .movdquStore .. | .vmovdquStore .. | .vmovdqu32Store .. | .evStore .. | .e5ExtractStore .. | .stmxcsr _
-  | .kStore .. | .kStore8 .. | .alu .and _ (.imm _) | .alu32 .and _ (.imm _) | .alu .cmp _ (.reg _)
-  | .xop (.bin .pxor _ _) | .cmov .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ =>
+  | .kStore .. | .kStore8 ..
+  | .xop (.bin .pxor _ _) | .push _ | .pop .. | .alloc _ | .free _ | .callr _ =>
     bif isa.writesSp i then ⟨fun _ => none⟩ else slowFn i
   -- Plain or not by their operands.
   | .mov32 d (.mem m) =>
     bif isSp d then ⟨fun _ => none⟩ else
-      bif !(regEq m.base .rsp && m.index.isNone) then fastFn (Taint.stepKeepFn i) (some d) else slowFn i
+      bif !(regEq m.base .rsp && m.index.isNone) then fastFn (Taint.stepKeepFn i) (some d)
+      else fastLoad (Taint.stepKeepFn i) d i
   | .alu .xor d (.reg d') | .alu32 .xor d (.reg d') =>
-    bif isSp d then ⟨fun _ => none⟩ else bif d != d' then fastFn (Taint.stepKeepFn i) (some d) else slowFn i
+    bif isSp d then ⟨fun _ => none⟩ else
+      bif d != d' then fastFn (Taint.stepKeepFn i) (some d)
+      else fastG (Taint.stepKeepFn i) (insReg d) none fun _ ub => ubDrop (some d) ub
   -- Plain, writing the register `d`.
   | .mov d _ | .mov32 d _ | .alu _ d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
   | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
@@ -759,9 +820,6 @@ def leKF (τ σ : Taint.T) : Bool :=
   τ.regs.subset σ.regs && (!τ.flags || σ.flags) && natsEq τ.lens σ.lens &&
     KList.all τ.bases (memB · σ.bases) && slotsLe τ.slots σ.slots && τ.lo.subset σ.lo &&
     τ.xregs.subset σ.xregs
-
-/-- `ubOf`, with `KList` and `regEq`. -/
-def ubOfK (l : List (Reg × Nat)) (r : Reg) : Option Nat := (KList.find? (fun p => regEq p.1 r) l).map (·.2)
 
 /-- `le`, for the kernel (`leF_eq`). -/
 def leF (τ σ : FT) : Bool :=

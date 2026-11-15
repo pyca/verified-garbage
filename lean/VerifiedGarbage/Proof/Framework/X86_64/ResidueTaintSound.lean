@@ -2020,6 +2020,28 @@ theorem fastU_eq {i : Instr} {u : List (Reg × Nat) → List (Reg × Nat)}
     | none => rfl
     | some t' => simp only [Bool.cond_eq_ite, Taint.forceT_eq, forceList_eq]
 
+theorem ubOfK_eq : ubOfK = ubOf := by
+  funext l r; simp only [ubOfK, ubOf, KList.find?_eq, regEq_eq]
+
+theorem fastG_eq {i : Instr} {pf : Taint.T → Taint.T} {fl' : Option (Reg × Reg)}
+    {u : Option (Reg × Reg) → List (Reg × Nat) → List (Reg × Nat)}
+    (hsp : isa.writesSp i = false) (hs : ∀ τ, special τ i = none) (hp : ∀ τ t, argPost τ i (post τ i t) = pf t)
+    (hpl : ∀ t, (pf t).lens = t.lens) (hf : flOf i = fl') (hm : ∀ τ, mbAfter τ i = τ.mb)
+    (hu : ∀ τ, (ubNew τ i).toList ++ ubKill τ.ub i = u τ.fl τ.ub) (τ : FT) :
+    (fastG (Taint.stepKDFn i) pf fl' u).run τ = step τ i := by
+  have hb : baseStep τ i = ((Taint.stepKDFn i).run τ.t).map pf := by
+    rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = pf from funext (hp τ)]
+    exact congrArg (Option.map pf) (taint_step _ _)
+  unfold step
+  rw [hb, hf, hm, hsp, hu τ]
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
+  cases ok
+  · rfl
+  · simp only [fastG, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
+    cases (Taint.stepKDFn i).run t with
+    | none => rfl
+    | some t' => simp only [Option.map_some, hpl, Bool.cond_eq_ite, Taint.forceT_eq, forceList_eq]
+
 theorem ubDrop2_eq {i : Instr} {a b : Reg} (hc : ∀ r, Taint.clobbers i r = (r == a || r == b))
     (ub : List (Reg × Nat)) : ubDrop2 a b ub = ubKill ub i := by
   simp only [ubKill, hc]
@@ -2066,6 +2088,28 @@ theorem fastLoad_eq {d : Reg} {m : MemOp} (hsp : isa.writesSp (.mov d (.mem m)) 
         Taint.forceT_eq, forceList_eq]
       cases mb <;> cases sa <;> cases sp <;> (try simp only [post_mb_nil, argPost_nil]) <;> rfl
 
+theorem fastLoad32_eq {d : Reg} {m : MemOp} (hsp : isa.writesSp (.mov32 d (.mem m)) = false) (τ : FT) :
+    (fastLoad (Taint.stepKDFn (.mov32 d (.mem m))) d (.mov32 d (.mem m))).run τ = step τ (.mov32 d (.mem m)) := by
+  have hb : baseStep τ (.mov32 d (.mem m)) =
+      ((Taint.stepKDFn (.mov32 d (.mem m))).run τ.t).map
+        fun t' => argPost τ (.mov32 d (.mem m)) (post τ (.mov32 d (.mem m)) t') :=
+    congrArg (Option.map _) (taint_step _ _)
+  have hk : ubKill τ.ub (.mov32 d (.mem m)) = ubDrop (some d) τ.ub :=
+    (ubDrop_eq (i := .mov32 d (.mem m)) (fun _ => rfl) τ.ub).symm
+  have hm : mbAfter τ (.mov32 d (.mem m)) = τ.mb := rfl
+  unfold step
+  rw [hb, hk, hm, hsp, show ubNew τ (.mov32 d (.mem m)) = none from rfl, show flOf (.mov32 d (.mem m)) = none from rfl]
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
+  cases ok
+  · rfl
+  · simp only [fastLoad, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
+    cases (Taint.stepKDFn (.mov32 d (.mem m))).run t with
+    | none => rfl
+    | some t' =>
+      simp only [Option.map_some, argPost_lens, post_lens, Bool.cond_eq_ite, Option.toList, List.nil_append,
+        Taint.forceT_eq, forceList_eq]
+      cases mb <;> cases sa <;> cases sp <;> (try simp only [argPost_nil]) <;> rfl
+
 theorem stepFn_eq (i : Instr) (τ : FT) : (stepFn i).run τ = step τ i := by
   unfold stepFn
   cases hsp : isa.writesSp i
@@ -2090,7 +2134,7 @@ theorem stepFn_eq (i : Instr) (τ : FT) : (stepFn i).run τ = step τ i := by
       case mov32 d src =>
         cases src with
         | reg => rfl
-        | mem => rfl
+        | mem m => exact fastLoad32_eq hsp τ
         | imm v =>
           refine fastU_eq hsp (fun _ => rfl) (fun _ _ => rfl) rfl (fun _ => rfl) (fun τ => ?_) τ
           rw [← ubDrop_eq (i := .mov32 d (.imm v)) (fun _ => rfl)]
@@ -2101,6 +2145,82 @@ theorem stepFn_eq (i : Instr) (τ : FT) : (stepFn i).run τ = step τ i := by
       case mulx hi lo src =>
         exact fastU_eq hsp (fun _ => rfl) (fun _ _ => rfl) rfl (fun _ => rfl)
           (fun τ => (ubDrop2_eq (i := .mulx hi lo src) (fun _ => rfl) τ.ub).symm) τ
+      case alu op d src =>
+        cases op
+        case xor =>
+          cases src with
+          | reg d' =>
+            have hd : d = d' := by simpa [isPlain] using hpl
+            subst hd
+            refine fastG_eq hsp (fun _ => rfl) (fun τ t => ?_) (fun t => ?_) rfl (fun _ => rfl) (fun τ => ?_) τ
+            · obtain ⟨rg, f, l, b, sl, lo, x⟩ := t
+              simp [post, argPost, insReg]
+            · obtain ⟨rg, f, l, b, sl, lo, x⟩ := t; rfl
+            · rw [← ubDrop_eq (i := .alu .xor d (.reg d)) (fun _ => rfl)]; rfl
+          | _ => rfl
+        case and =>
+          cases src with
+          | imm v =>
+            refine fastU_eq hsp (fun _ => rfl) (fun _ _ => rfl) rfl (fun _ => rfl) (fun τ => ?_) τ
+            rw [← ubDrop_eq (i := .alu .and d (.imm v)) (fun _ => rfl)]
+            cases hm : v.msb <;> simp [ubNew, hm] <;> rfl
+          | _ => rfl
+        case cmp =>
+          cases src with
+          | reg b =>
+            refine fastG_eq hsp (fun _ => rfl) (fun _ _ => rfl) (fun _ => rfl) rfl (fun _ => rfl) (fun τ => ?_) τ
+            rw [← ubDrop_eq (i := .alu .cmp d (.reg b)) (fun _ => rfl)]; rfl
+          | _ => rfl
+        all_goals (cases src <;> rfl)
+      case alu32 op d src =>
+        cases op
+        case xor =>
+          cases src with
+          | reg d' =>
+            have hd : d = d' := by simpa [isPlain] using hpl
+            subst hd
+            refine fastG_eq hsp (fun _ => rfl) (fun τ t => ?_) (fun t => ?_) rfl (fun _ => rfl) (fun τ => ?_) τ
+            · obtain ⟨rg, f, l, b, sl, lo, x⟩ := t
+              simp [post, argPost, insReg]
+            · obtain ⟨rg, f, l, b, sl, lo, x⟩ := t; rfl
+            · rw [← ubDrop_eq (i := .alu32 .xor d (.reg d)) (fun _ => rfl)]; rfl
+          | _ => rfl
+        case and =>
+          cases src with
+          | imm v =>
+            refine fastU_eq hsp (fun _ => rfl) (fun _ _ => rfl) rfl (fun _ => rfl) (fun τ => ?_) τ
+            rw [← ubDrop_eq (i := .alu32 .and d (.imm v)) (fun _ => rfl)]
+            rfl
+          | _ => rfl
+        all_goals (cases src <;> rfl)
+      case cmov c d src =>
+        have hk : ∀ τ : FT, ubKill τ.ub (.cmov c d src) = ubDrop (some d) τ.ub := fun τ =>
+          (ubDrop_eq (i := .cmov c d src) (fun _ => rfl) τ.ub).symm
+        cases c
+        case b =>
+          cases src with
+          | reg x =>
+            refine fastG_eq hsp (fun _ => rfl) (fun _ _ => rfl) (fun _ => rfl) rfl (fun _ => rfl) (fun τ => ?_) τ
+            rw [hk]
+            obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩ := τ
+            simp only [ubNew, cmovUb, ubOfK_eq]
+            rcases fl with _ | ⟨a, b⟩
+            · rfl
+            · simp only [regEq_eq]
+              by_cases h : (a, b) = (x, d)
+              · cases h
+                simp only [beq_self_eq_true, Bool.and_self, Bool.cond_true, ↓reduceIte]
+                cases ubOf ub d <;> rfl
+              · have h1 : (some (a, b) == some (x, d)) = false := by simpa using h
+                have h2 : (a == x && b == d) = false := by
+                  rw [Bool.and_eq_false_iff, beq_eq_false_iff_ne, beq_eq_false_iff_ne]
+                  by_cases ha : a = x
+                  · exact .inr fun hb => h (by rw [ha, hb])
+                  · exact .inl ha
+                simp only [h1, h2, Bool.false_eq_true, ↓reduceIte, Bool.cond_false, Option.toList, List.nil_append]
+          | _ =>
+            exact fastU_eq hsp (fun _ => rfl) (fun _ _ => rfl) rfl (fun _ => rfl) (fun τ => hk τ) τ
+        all_goals exact fastU_eq hsp (fun _ => rfl) (fun _ _ => rfl) rfl (fun _ => rfl) (fun τ => hk τ) τ
       all_goals rfl
     · exact fastFn_eq hpl hsp τ
   · show none = _
@@ -2116,6 +2236,7 @@ theorem stepFn1_eq (i : Instr) : stepFn1 i = stepFn i := by
   cases i with
   | mov d src | mov32 d src => cases src <;> rfl
   | alu op d src | alu32 op d src => cases op <;> cases src <;> rfl
+  | cmov c d src => cases c <;> cases src <;> rfl
   | xop op =>
     cases op with
     | bin op a b => cases op <;> rfl
@@ -2159,9 +2280,6 @@ theorem leKF_eq : leKF = Taint.le := by
   funext τ σ
   rw [← leK_eq]
   simp only [leKF, leK, natsEq_eq, slotsLe_eq, mem3_eq, KList.all_eq]
-
-theorem ubOfK_eq : ubOfK = ubOf := by
-  funext l r; simp only [ubOfK, ubOf, KList.find?_eq, regEq_eq]
 
 theorem any_eq2 (l : List (Nat × Nat)) (p : Nat × Nat) : KList.any l (eq2 p) = l.contains p := by
   rw [KList.any_eq, Bool.eq_iff_iff, List.any_eq_true, List.contains_iff_mem]
