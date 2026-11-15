@@ -2209,7 +2209,12 @@ theorem nShift_ok {s : State} {W hi : Nat} {top : BitVec 64} {nz : Bool} (h12 : 
       (t.gpr .x4 = BitVec.ofNat 64 (if nz then (64 * (W - 1 - hi) + top.clz.toNat) / 2 * 2 else 0) ∧
         t.mem = s.mem) ∧ Keep [.x3, .x4] s t := by
   refine WP.keep _ ?_ (by decide) (by decide) (by decide +kernel)
-  brun [exec_clz', h12, h5, h6, h9, c2_val hhi hW]
+  -- `clz` on its own: read back through the later writes by `rfl` lemmas, the kernel unfolds it.
+  refine (WP.block_append_iff (M := isa) (l₁ := [.clz .x .x3 .x6])).mpr ?_
+  refine WP.mono (Q := fun t : State => t.gpr .x3 = top.clz ∧ t.gpr .x12 = BitVec.ofNat 64 W ∧
+    t.gpr .x5 = BitVec.ofNat 64 hi ∧ t.gpr .x9 = mask nz ∧ t.mem = s.mem) (by brun [exec_clz', h12, h5, h6, h9])
+    fun t ⟨a3, a12, a5, a9, am⟩ => ?_
+  brun [a3, a12, a5, a9, am, c2_val hhi hW]
 
 /-- `norm`'s head: the bases, the scan's start. -/
 theorem nHead_ok {I : RpIn} {m₀ : Mem} {w : Nat} {c : Bool} {s : State} (h : G I m₀ w c s) (L : RpLens I) :

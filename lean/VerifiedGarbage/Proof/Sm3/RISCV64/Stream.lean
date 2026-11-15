@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 public import VerifiedGarbage.Proof.MdStream.RISCV64.Update
 public meta import VerifiedGarbage.Proof.MdStream.RISCV64.Update
 public import VerifiedGarbage.Proof.MdStream.RISCV64.Finalize
@@ -67,8 +69,8 @@ theorem shape : ShapeD (P := params) md 32 where
 
 theorem init_verified : Verified RISCV64.target Impl.Sm3.RISCV64.Stream.init Proof.Sm3.initRISCV64 :=
   have h := MdStream.RISCV64.init_verified (n := 96) Spec.Sm3.iv.toList (by decide) (by decide)
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0]) (fun _ _ _ _ h => initAgree h)
-      (by taint_decide))
+    (VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0]) (fun _ _ _ _ h => initAgree h)
+      (by taint_decide_sum [VG.Proof.Sm3.RISCV64.compressSum]))
   Verified.of_implies h ⟨fun _ h => h, fun s _ _ h => by
       refine (repr_iff (m := [])).mpr (md.repr_nil (stateAt_eq fun k hk => ?_))
       rw [h k (by simpa using hk), getElem!_pos _ k (by simpa using hk), Vector.getElem_toList],
@@ -76,8 +78,8 @@ theorem init_verified : Verified RISCV64.target Impl.Sm3.RISCV64.Stream.init Pro
 
 theorem update_verified : Verified RISCV64.target Impl.Sm3.RISCV64.Stream.update Proof.Sm3.updateRISCV64 :=
   have h := MdStream.RISCV64.Update.verified (P := params) (name := "vg_sm3_compress") (by decide) callee
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
-      (fun _ _ _ _ hp => MdStream.RISCV64.Update.agree₀ hp) (by taint_decide))
+    (VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+      (fun _ _ _ _ hp => MdStream.RISCV64.Update.agree₀ hp) (by taint_decide_sum [VG.Proof.Sm3.RISCV64.compressSum]))
     ⟨MdStream.RISCV64.Update.sat 32, rfl, rfl, Region.disjoint_of_sep (by decide), by decide, by decide,
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩
   Verified.of_implies h ⟨fun _ h => h, fun _ _ _ h m hr hc => h Spec.Sm3.iv m hr hc, fun _ _ _ _ h => h, h.2.2⟩
@@ -86,8 +88,8 @@ theorem finalize_verified :
     Verified RISCV64.target Impl.Sm3.RISCV64.Stream.finalize Proof.Sm3.finalizeRISCV64 :=
   have h := MdStream.RISCV64.Finalize.verifiedD (P := params) (name := "vg_sm3_compress") (by decide) shape callee
     (keepsN_all _ (by decide))
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
-      (fun _ _ _ _ hp => MdStream.RISCV64.Finalize.agree₀ hp) (by taint_decide))
+    (VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
+      (fun _ _ _ _ hp => MdStream.RISCV64.Finalize.agree₀ hp) (by taint_decide_sum [VG.Proof.Sm3.RISCV64.compressSum]))
     ⟨MdStream.RISCV64.Finalize.sat 32 32, rfl, rfl, Region.disjoint_of_sep (by decide), by decide, by decide,
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩
   Verified.of_implies h

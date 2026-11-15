@@ -236,8 +236,8 @@ theorem scalar_call : WP isa (.call "vg_poly1305_blocks" Impl.Poly1305.X86_64.bl
       by rw [hkeep .rdi (keeps_of blocks_keeps fun _ h => and_left h), hrdi], fun key msg hr => ?_, hmx⟩
     · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨_, by simp, fun _ h => h⟩
-      · exact ⟨_, by simp, below8_24' _⟩
+      · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, below8_24' _⟩
     simp only [Proof.Poly1305.blocksX86_64, State.withRegions_gpr, State.withRegions_mem,
       callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp), callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp),
       callEntry_gpr' s (by decide : Reg.rdx ≠ .rsp), hrdi, hrsi, hrdx, hn', hm₂] at hpost
@@ -266,8 +266,8 @@ theorem avx2_call :
       by rw [hkeep .rdi (keeps_of avx2_keeps fun _ h => and_left h), hrdi], fun key msg hr => ?_, hmx⟩
     · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨_, by simp, fun _ h => h⟩
-      · exact ⟨_, by simp, below16_24 _⟩
+      · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+      · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, below16_24 _⟩
     simp only [Proof.Poly1305.X86_64.Avx2.blocksAvx2X86_64, Proof.Poly1305.blocksX86_64,
       State.withRegions_gpr, State.withRegions_mem,
       callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp), callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp),
@@ -431,10 +431,10 @@ theorem xor_call (v : Proof.ChaCha20.X86_64.XorImpl) {s : State} {S D B : Addr} 
     refine hf.sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨below (s.gpr .rsp) 24, by simp, below_sub (by lit_omega) (by lit_omega)⟩
+    · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+    · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), fun _ h => h⟩
+    · exact ⟨below (s.gpr .rsp) 24, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)), below_sub (by lit_omega) (by lit_omega)⟩
   refine hQ s' hrd hwr hcs hf' ?_ ?_
   · rw [← hg₂ .rsi (by decide), hrsi₂, State.withRegions_gpr, callEntry_gpr' s (by decide), hrcx]
   · simp only [Proof.ChaCha20.xorX86_64, State.withRegions_gpr, State.withRegions_mem,
@@ -1844,7 +1844,7 @@ theorem prologueA_ok {fold pass w : Nat} (hf : fold ≤ 960) (hpass : PassOk fol
     fun h₁ h₂ => sub_sub s₀ h₁ (by lit_omega) (by lit_omega)
   have fwork : ∀ {k n : Nat} {m m' : Mem}, k + n ≤ 1696 → Frame [sub s₀ k n] m m' → Frame [workR s₀, stkR s₀] m m' :=
     fun h hf => hf.sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ⟨workR s₀, by simp, sub1 (Nat.zero_le _) h⟩
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨workR s₀, List.mem_cons_self, sub1 (Nat.zero_le _) h⟩
   have ff : Frame [workR s₀, stkR s₀] s₀.mem s₉.mem := by
     rw [mm]
     refine (fwork (k := 0) (n := 48) (by lit_omega) f₁).trans ((fwork (k := 64) (n := 64) (by lit_omega) f₂).trans
@@ -1938,10 +1938,10 @@ theorem foldCall_ok (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} {s₀ : Sta
   have fw : Frame [workR s₀, stkR s₀] s.mem s'.mem := f'.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact ⟨workR s₀, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-    · exact ⟨workR s₀, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-    · exact ⟨workR s₀, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-    · exact ⟨stkR s₀, by simp, fun _ h => h⟩
+    · exact ⟨workR s₀, List.mem_cons_self, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+    · exact ⟨workR s₀, List.mem_cons_self, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+    · exact ⟨workR s₀, List.mem_cons_self, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+    · exact ⟨stkR s₀, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
   have dsv : ∀ r ∈ [(⟨off (cx s₀) 608, 64⟩ : Region), ⟨off (cx s₀) 672, 64 + mOf v.callee.fold pass (L s₀)⟩,
       ⟨off (cx s₀) 128, 320⟩, stkR s₀], (sub s₀ 0 48).Disjoint r := by
     intro r hr
@@ -2050,15 +2050,15 @@ theorem prologueBF_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp :
     exact f₉.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨workR s₀, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-      · exact ⟨stkR s₀, by simp, below8_stk s₀⟩
+      · exact ⟨workR s₀, List.mem_cons_self, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+      · exact ⟨stkR s₀, List.mem_cons_of_mem _ List.mem_cons_self, below8_stk s₀⟩
   have fr : Frame [sub s₀ 448 128, stkR s₀] s.mem s₁₀.mem := by
     rw [m₁₀, ← mm₈]
     exact f₉.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · exact ⟨sub s₀ 448 128, by simp, fun _ h => h⟩
-      · exact ⟨stkR s₀, by simp, below8_stk s₀⟩
+      · exact ⟨sub s₀ 448 128, List.mem_cons_self, fun _ h => h⟩
+      · exact ⟨stkR s₀, List.mem_cons_of_mem _ List.mem_cons_self, below8_stk s₀⟩
   refine ⟨?_, fr⟩
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, by rw [rd₁₀, rd₉, rd₈, rd₇, rd₆, h.rd], by rw [wr₁₀, wr₉, wr₈'], ?_,
     (h.fine.trans ff).sub fun r hr => ?_⟩, ?_, ?_, h.fine.trans ff, ?_, ?_, fun k hk => ?_,
@@ -2072,8 +2072,8 @@ theorem prologueBF_ok {fold pass : Nat} (hf : fold ≤ 960) {s₀ : State} (hp :
     exact h.saved.frame (by rw [← mm₈]; exact f₉) (d9 (by lit_omega) (by lit_omega))
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
-    · exact ⟨workR s₀, by simp, fun _ h => h⟩
-    · exact ⟨stkR s₀, by simp, fun _ h => h⟩
+    · exact ⟨workR s₀, List.mem_cons_self, fun _ h => h⟩
+    · exact ⟨stkR s₀, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), fun _ h => h⟩
   · rw [cs .rbx (by decide) (by decide), h.rbx]
   · rw [cs .rbp (by decide) (by decide), h.rbp]
   · rw [m₁₀]
@@ -3237,10 +3237,10 @@ theorem InvT.step {s₀ s s' : State} (h : InvT s₀ t₁₂ s) (cs : ∀ r ∈ 
 /-- `ctx[k, k + n)` in the working space. -/
 theorem sub_work (s₀ : State) {k n : Nat} (h₁ : 0 ≤ k) (h₂ : k + n ≤ 1696) :
     ∃ r' ∈ [workR s₀, dR s₀, stkR s₀], Region.Sub (sub s₀ k n) r' :=
-  ⟨workR s₀, by simp, sub_sub s₀ h₁ (by lit_omega) (by lit_omega)⟩
+  ⟨workR s₀, List.mem_cons_self, sub_sub s₀ h₁ (by lit_omega) (by lit_omega)⟩
 
 theorem stk_work (s₀ : State) : ∃ r' ∈ [workR s₀, dR s₀, stkR s₀], Region.Sub (stkR s₀) r' :=
-  ⟨stkR s₀, by simp, fun _ h => h⟩
+  ⟨stkR s₀, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), fun _ h => h⟩
 
 theorem mac_inv {s₀ s s' : State} (hp : APre e s₀) (h : InvT s₀ t₁₂ s) (cs : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r)
     (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) (hf : Frame (macR s₀) s.mem s'.mem) : InvT s₀ t₁₂ s' :=
@@ -3536,7 +3536,7 @@ theorem cryptSmall_ok {fold pass w : Nat} (hf : fold ≤ 960) (hw : w = 4 ∨ w 
       g₂ r h'.2.2.1, g₁ r h'.2.2.2.1]
   · rw [m₄, ← m₁, ← m₂]
     exact h₃.frame.sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s₀, by simp, fun _ h => h⟩
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s₀, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
   · rw [m₄, encrypt_eq, VG.Proof.Poly1305.length_bytesAt]
     apply VG.Proof.ChaCha20.bytesAt_xor (VG.Proof.ChaCha20.length_keystream _ _)
     intro k hk
@@ -3593,7 +3593,7 @@ theorem cryptSmallTo_ok {fold pass w : Nat} (hf : fold ≤ 960) (hw : w = 4 ∨ 
     rw [g₅ r h'.2.2.2.1, k₄ r h'.1 h8.1 h'.2.1 h'.2.2.1 h'.2.2.2.1 h'.2.2.2.2 h8.2]
   · rw [m₅, ← m₁, ← m₂, ← m₃]
     exact h₄.frame.sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s₀, by simp, fun _ h => h⟩
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s₀, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
   · rw [m₅, encrypt_eq, VG.Proof.Poly1305.length_bytesAt]
     apply VG.Proof.ChaCha20.bytesAt_xor_to (VG.Proof.ChaCha20.length_keystream _ _)
     intro k hk
@@ -4053,15 +4053,15 @@ theorem cryptBig_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APr
   refine ⟨rsi₂, fun r hr _ => by rw [cs₂ r hr, cs₁ r hr], by rw [rd₂, rd₁], by rw [wr₂, a₁.wr, h.wr], ?_, ?_⟩
   · refine (fx.sub fun r hr => ?_).trans ((fw.sub fun r hr => ?_).trans (f₂.sub fun r hr => ?_))
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨dR s₀, by simp, Region.sub_prefix hML⟩
+      exact ⟨dR s₀, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix hML⟩
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
+      exact ⟨sub s₀ 64 384, List.mem_cons_self, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
-      · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
-      · exact ⟨dR s₀, by simp, dRm_sub s₀ hML⟩
-      · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-      · exact ⟨stkR s₀, by simp, fun _ h => h⟩
+      · exact ⟨sub s₀ 64 384, List.mem_cons_self, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
+      · exact ⟨dR s₀, List.mem_cons_of_mem _ List.mem_cons_self, dRm_sub s₀ hML⟩
+      · exact ⟨sub s₀ 64 384, List.mem_cons_self, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+      · exact ⟨stkR s₀, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), fun _ h => h⟩
   · rw [encrypt_eq, VG.Proof.Poly1305.length_bytesAt]
     apply VG.Proof.ChaCha20.bytesAt_xor (VG.Proof.ChaCha20.length_keystream _ _)
     intro k hk
@@ -4200,10 +4200,10 @@ theorem callTo_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre 
     refine f₂.sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨_, by simp, fun _ h => h⟩
-    · exact ⟨stkR s₀, by simp, by rw [hrsp]; exact below_sub (by omega_using [hd]) (by lit_omega)⟩
+    · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+    · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
+    · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), fun _ h => h⟩
+    · exact ⟨stkR s₀, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)), by rw [hrsp]; exact below_sub (by omega_using [hd]) (by lit_omega)⟩
   exact ⟨by rw [← hg₃ .rsi (by decide), hrsi₃, hE .rcx (by decide) (by decide), a₁.rcx], cs₂, rd₂, wr₂, f₂', data₂⟩
 
 /-- More than `fold` bytes, from the ciphertext at `t` (`r12`) to the
@@ -4265,15 +4265,15 @@ theorem cryptBigTo_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : A
     fun r hr _ => by rw [cs₂ r hr, cs₁ r hr], by rw [rd₂, a₁.rd, h.rd], by rw [wr₂, a₁.wr, h.wr], ?_, ?_⟩
   · refine (fx.sub fun r hr => ?_).trans ((fw.sub fun r hr => ?_).trans (f₂'.sub fun r hr => ?_))
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨dR s₀, by simp, Region.sub_prefix hML⟩
+      exact ⟨dR s₀, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix hML⟩
     · simp only [List.mem_singleton] at hr; subst hr
-      exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
+      exact ⟨sub s₀ 64 384, List.mem_cons_self, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
-      · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
-      · exact ⟨dR s₀, by simp, dRm_sub s₀ hML⟩
-      · exact ⟨sub s₀ 64 384, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-      · exact ⟨stkR s₀, by simp, fun _ h => h⟩
+      · exact ⟨sub s₀ 64 384, List.mem_cons_self, sub_sub s₀ (Nat.le_refl _) (by lit_omega) (by lit_omega)⟩
+      · exact ⟨dR s₀, List.mem_cons_of_mem _ List.mem_cons_self, dRm_sub s₀ hML⟩
+      · exact ⟨sub s₀ 64 384, List.mem_cons_self, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+      · exact ⟨stkR s₀, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), fun _ h => h⟩
   · rw [encrypt_eq, VG.Proof.Poly1305.length_bytesAt]
     apply VG.Proof.ChaCha20.bytesAt_xor_to (VG.Proof.ChaCha20.length_keystream _ _)
     intro k hk
@@ -4338,7 +4338,7 @@ theorem crypt_ok (v : Proof.ChaCha20.X86_64.XorImpl) {tb : Bool} {s₀ : State} 
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact sub_work s₀ (by lit_omega) (by lit_omega)
-      · exact ⟨dR s₀, by simp, fun _ h => h⟩
+      · exact ⟨dR s₀, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
       · exact stk_work s₀) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
@@ -4365,10 +4365,10 @@ theorem crypt_ok (v : Proof.ChaCha20.X86_64.XorImpl) {tb : Bool} {s₀ : State} 
     refine (fc.sub fun r hr => ?_).trans (f₅₆.sub fun r hr => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
-      · exact ⟨_, by simp, fun _ h => h⟩
-      · exact ⟨dR s₀, by simp, fun _ h => h⟩
-      · exact ⟨stkR s₀, by simp, fun _ h => h⟩
-    · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
+      · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+      · exact ⟨dR s₀, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), fun _ h => h⟩
+      · exact ⟨stkR s₀, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self)), fun _ h => h⟩
+    · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
   · rw [bytesAt_frame f₅₆ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (hp.c_d.sub_left (sub_ctx s₀ (by lit_omega))).symm) (Nat.le_of_lt hL9), m₃, c₂.data, ← m₁]
@@ -4480,9 +4480,9 @@ theorem finalizeTo_ok {s₀ : State} (hp : APre e s₀) {s : State} (h : InvT s�
     f₃.sub fun r hr => ?_, fun key msg hr => tag₃ key msg (by rw [m₁]; exact hr)⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact ⟨sub s₀ 448 128, by simp, fun _ h => h⟩
-  · exact ⟨sub s₀ out 16, by simp, fun _ h => h⟩
-  · exact ⟨stkR s₀, by simp, below8_stk s₀⟩
+  · exact ⟨sub s₀ 448 128, List.mem_cons_self, fun _ h => h⟩
+  · exact ⟨sub s₀ out 16, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
+  · exact ⟨stkR s₀, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), below8_stk s₀⟩
 
 theorem ftptrs_ok (s : State) :
     WP isa (.block (ptr .rdi .r15 448 ++ ([.mov32 .rsi (.imm 0)] : List Instr) ++ ([.mov .rdx (.reg .r12)] : List Instr))) s
@@ -4529,9 +4529,9 @@ theorem finalizeTag_ok {s₀ : State} (hp : APre true s₀) {s : State} (h : Inv
     f₃.sub fun r hr => ?_, fun key msg hr => tag₃ key msg (by rw [m₁]; exact hr)⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl
-  · exact ⟨sub s₀ 448 128, by simp, fun _ h => h⟩
-  · exact ⟨tR s₀, by simp, fun _ h => h⟩
-  · exact ⟨stkR s₀, by simp, below8_stk s₀⟩
+  · exact ⟨sub s₀ 448 128, List.mem_cons_self, fun _ h => h⟩
+  · exact ⟨tR s₀, List.mem_cons_of_mem _ List.mem_cons_self, fun _ h => h⟩
+  · exact ⟨stkR s₀, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), below8_stk s₀⟩
 
 end VG.Proof.ChaCha20Poly1305.X86_64
 
@@ -4816,9 +4816,9 @@ theorem body_ok (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ : State} (hp : APre fa
     by rw [mx₇, mx₆, mx₅, mx₃, mx₂, mx₁, mx₀]⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
-    · exact ⟨workR s₀, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-    · exact ⟨workR s₀, by simp, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
-    · exact ⟨stkR s₀, by simp, fun _ h => h⟩
+    · exact ⟨workR s₀, List.mem_cons_self, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+    · exact ⟨workR s₀, List.mem_cons_self, sub_sub s₀ (by lit_omega) (by lit_omega) (by lit_omega)⟩
+    · exact ⟨stkR s₀, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), fun _ h => h⟩
   · rw [T₇]
     simp only [macData, List.nil_append, List.append_assoc, VG.Proof.Poly1305.length_bytesAt]
 
