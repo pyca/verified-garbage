@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Camellia.RISCV64.Linear
 public import VerifiedGarbage.Impl.Camellia.RISCV64.Sbox
 public import VerifiedGarbage.Proof.Camellia.SboxTable
@@ -46,7 +47,7 @@ def sboxPost (e : Env Nat) : Bool :=
 
 theorem sbox_check :
     check (table 64 256) sboxCfg (fun _ => none) Impl.Camellia.RISCV64.sboxCode sboxEnv sboxPost = true := by
-  decide +kernel
+  lit_decide
 
 theorem sbox_writes_rest :
     restRegs.all (fun r => Impl.Camellia.RISCV64.sboxCode.all fun i => dst i != some r) = true := by

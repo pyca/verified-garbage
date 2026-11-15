@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Dsa.RISCV64.CTBase
 public import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
 public import VerifiedGarbage.Proof.Dsa.RISCV64.CTBodyA
@@ -275,7 +276,7 @@ theorem pinsB330 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → SB v u
     WP.of_flat (c := .seq ranges (.seq (.block keepMask) (.seq rrQ (.seq qMinus2 (.seq inverse (.seq products
       (.seq (.block HEAD) (.seq (.block (getP .s8)) (.seq (loadArr 4) (.seq (.block ptrY)
       (.seq (loadArr 5) (.seq (copy 1 24) (.seq jointTable (.block (getQ .s10)))))))))))))))
-      (by decide +kernel) (stC1 (hsem _ _ h) fun _ c hk a7 a8 a9 => by
+      (by kernel_rfl) (stC1 (hsem _ _ h) fun _ c hk a7 a8 a9 => by
       obtain ⟨-, -, -, -, hp, hpo⟩ := (hsem _ _ h).vals
       exact WP.mono (combT_ok c.1.ok c.1.scr c.1.regs hk c.2.1 c.2.2.1 c.2.2.2.1 hp hpo c.2.2.2.2 a7 a8)
         fun _ ⟨⟨_, _, ip, o, a10⟩, k⟩ =>

@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtPinsA
 public import VerifiedGarbage.Proof.Bignum.RISCV64.CrtMid2
 public meta import VerifiedGarbage.Proof.Bignum.RISCV64.Run
@@ -187,7 +188,7 @@ theorem nq0_ok {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ : S
 
 theorem pins177 : Pins (At (C0 pc) (crtF pc) (ix pc 177 149)) (rsPG pc) := by
   refine pins_at_list (fun s₀ => valsPG pc s₀ (oQa s₀) (cqL s₀) (s₀.gpr .s1 + BitVec.ofNat 64 (8 * cwP s₀)))
-    (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NQ0 pc (.block [])) (by cases pc <;> decide +kernel)
+    (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NQ0 pc (.block [])) (by cases pc <;> kernel_rfl)
       (nq0_ok h fun s t hP F hd X _ R c6 h2 => wp_nil (valsPG_map X R (fun hp => by
         rw [c6 hp, hd hp]; simp only [↓reduceIte]) h2)))) fun _ _ _ h h' => ?_
   obtain ⟨eS, ek, ep, eq, -⟩ := data_vals h h'
@@ -203,7 +204,7 @@ theorem oQa_al (s₀ : State) : oQa s₀ % 8 = 0 := by
 theorem pins205 : Pins (At (C0 pc) (crtF pc) (ix pc 205 172)) rsC := by
   refine pins_at_list (fun s₀ => valsC s₀ (oQa s₀) (cqL s₀))
     (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NQ0 pc (Win.powerPG pc 5 (Win.reduceInP (.block []))))
-      (by cases pc <;> decide +kernel) (nq0_ok h fun s t hP F hd X v6 R c6 _ => ?_))) fun _ _ _ h h' => ?_
+      (by cases pc <;> kernel_rfl) (nq0_ok h fun s t hP F hd X v6 R c6 _ => ?_))) fun _ _ _ h h' => ?_
   · obtain ⟨-, -, mQ1, mQo, -, mQb, -, -⟩ := masked_facts hP
     have room := hP.room
     refine WP.mono (stD134G_ok hP F X v6 R (by show slot (cwX s₀) 8 ≤ slot (cwX s₀) 8 + slot (cwP s₀) 24; omega_arith)
@@ -216,7 +217,7 @@ theorem pins205 : Pins (At (C0 pc) (crtF pc) (ix pc 205 172)) rsC := by
 theorem pins207 : Pins (At (C0 pc) (crtF pc) (ix pc 207 174)) rsC := by
   refine pins_at_list (fun s₀ => valsE s₀ (oQa s₀) (cqL s₀) (stackArg s₀ 4))
     (fun _ s₀ h => WP.of_flat (c := NQ0 pc (Win.powerPG pc 5 (.seq Crt.reduceIn
-      (.block [.load .d .s9 .s6 oDQ, .load .d .s10 .s6 oQLen])))) (by cases pc <;> decide +kernel)
+      (.block [.load .d .s9 .s6 oDQ, .load .d .s10 .s6 oQLen])))) (by cases pc <;> kernel_rfl)
       (nq0_ok h fun s t hP F hd X v6 R c6 _ => ?_)) fun _ _ _ h h' => ?_
   · obtain ⟨-, -, mQ1, mQo, -, mQb, -, -⟩ := masked_facts hP
     have room := hP.room
@@ -244,7 +245,7 @@ abbrev NR (pc : Bool) (c : Prog isa) : Prog isa :=
 
 theorem pins254 : Pins (At (C0 pc) (crtF pc) (ix pc 254 221)) rsP := by
   refine pins_at_list (fun s₀ => valsP s₀ (oPa s₀) (cpL s₀))
-    (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NR pc (.block [])) (by cases pc <;> decide +kernel)
+    (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NR pc (.block [])) (by cases pc <;> kernel_rfl)
       (nm_ok h fun s t hP F M => m2A_ok hP F M fun u Y h2 => wp_nil ?_)))
     fun _ _ _ h h' => ?_
   · simp only [List.map_cons, List.map_nil, Y.R.a7, Y.R.ra, Y.R.s5, Y.R.t0, h2, Y.s6, Y.s11]
@@ -253,7 +254,7 @@ theorem pins254 : Pins (At (C0 pc) (crtF pc) (ix pc 254 221)) rsP := by
 
 theorem pins275 : Pins (At (C0 pc) (crtF pc) (ix pc 275 242)) rsC := by
   refine pins_at_list (fun s₀ => valsC s₀ (oPa s₀) (cpL s₀))
-    (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NR pc (recPA (Win.reduceInP (.block [])))) (by cases pc <;> decide +kernel)
+    (fun _ s₀ h => wp_seqL_nil (WP.of_flat (c := NR pc (recPA (Win.reduceInP (.block [])))) (by cases pc <;> kernel_rfl)
       (nm_ok h fun s t hP F M => m2A_ok hP F M fun u Y _ => ?_))) fun _ _ _ h h' => ?_
   · have hn := hP.nw
     have room := hP.room
@@ -318,7 +319,7 @@ theorem valsW_eq {d : List (BitVec 64) × List (BitVec 64) × List Byte} {s₀ s
 
 theorem pins248 : Pins (At (C0 pc) (crtF pc) (ix pc 248 215)) rsW := by
   refine pins_at_list (fun s₀ => valsW s₀ (oQa s₀) (cqL s₀) 6)
-    (fun _ s₀ h => WP.of_flat (c := NM pc (.block (WD1 oBQ oQLen 6))) (by cases pc <;> decide +kernel)
+    (fun _ s₀ h => WP.of_flat (c := NM pc (.block (WD1 oBQ oQLen 6))) (by cases pc <;> kernel_rfl)
       (nm_ok h fun s t hP F M => ?_)) fun _ _ _ h h' => ?_
   · have room := hP.room
     have hZ : 256 ≤ cZ s₀ := by unfold slot at room; omega_arith
@@ -332,7 +333,7 @@ theorem pins248 : Pins (At (C0 pc) (crtF pc) (ix pc 248 215)) rsW := by
 theorem pins305 : Pins (At (C0 pc) (crtF pc) (ix pc 305 272)) rsW := by
   refine pins_at_list (fun s₀ => valsW s₀ (oPa s₀) (cpL s₀) 7)
     (fun _ s₀ h => WP.of_flat (c := NR pc (.seq recombineP
-      (.block (WD1 oBP oPLen 7)))) (by cases pc <;> decide +kernel)
+      (.block (WD1 oBP oPLen 7)))) (by cases pc <;> kernel_rfl)
       (nm_ok h fun s t hP F M => m2A_ok hP F M fun u Y _ => m2B_ok hP F Y fun v Y3 => ?_))
     fun _ _ _ h h' => ?_
   · have room := hP.room
@@ -347,7 +348,7 @@ theorem pins305 : Pins (At (C0 pc) (crtF pc) (ix pc 305 272)) rsW := by
 theorem pins311 : Pins (At (C0 pc) (crtF pc) (ix pc 311 278)) rsW := by
   refine pins_at_list (fun s₀ => valsW s₀ (oQa s₀) (cqL s₀) 6)
     (fun _ s₀ h => WP.of_flat (c := NR pc (.seq recombineP
-      (.seq (widen oBP oPLen 7) (.block (WD1 oBQ oQLen 6))))) (by cases pc <;> decide +kernel)
+      (.seq (widen oBP oPLen 7) (.block (WD1 oBQ oQLen 6))))) (by cases pc <;> kernel_rfl)
       (nm_ok h fun s t hP F M => m2A_ok hP F M fun u Y _ => m2B_ok hP F Y fun v Y3 => ?_))
     fun _ _ _ h h' => ?_
   · have room := hP.room; have k1024 := hP.k1024; have pk := hP.pk; have qk := hP.qk
@@ -381,7 +382,7 @@ theorem pins330 : Pins (At (C0 pc) (crtF pc) (ix pc 330 297)) [.a7, .s5, .s6, .s
   refine pins_at_list (fun s₀ => [Mont.off (cS s₀) (slot (cwX s₀) 0), BitVec.ofNat 64 (8 * (cwX s₀ + 2)), cS s₀,
       Mont.off (s₀.gpr .a0) 0, BitVec.ofNat 64 (ck s₀)])
     (fun _ s₀ h => WP.of_flat (c := NR pc (.seq recombineP
-      (.seq recombineX (.block finBlk)))) (by cases pc <;> decide +kernel)
+      (.seq recombineX (.block finBlk)))) (by cases pc <;> kernel_rfl)
       (nm_ok h fun s t hP F M => m2A_ok hP F M fun u Y _ => m2B_ok hP F Y fun v Y3 => m2C_ok hP F Y3 fun w Y4 => ?_))
     fun _ _ _ h h' => ?_
   · have room := hP.room

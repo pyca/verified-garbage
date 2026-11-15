@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Dsa.RISCV64.SignCT
 public import VerifiedGarbage.Proof.Dsa.RISCV64.CTBodyB
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -525,7 +526,7 @@ theorem pinsTl121 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → TS v 
     Pins (At Φ FTl 121) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.sig), (.s8, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl)
     fun _ _ h => WP.of_flat (c := .seq Sign.gk (.seq Sign.rRanges (.seq Verify.rrQ
-      (.seq Verify.qMinus2 (.block Verify.ptrR))))) (by decide +kernel)
+      (.seq Verify.qMinus2 (.block Verify.ptrR))))) (by kernel_rfl)
       (stQM (hsem _ _ h) fun _ K _ _ _ => WP.mono (ptrR_ok K.qs.scr K.base.ok K.qs.regs)
         fun _ ⟨⟨b7, b8, m⟩, k⟩ => (fix_QK (K.keepM k m)).app ⟨b7, b8, trivial⟩)
 

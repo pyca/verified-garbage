@@ -338,6 +338,14 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   use `lit_decide`. `python3 ci/lit_imports.py` lists the checks that
   evaluate code without a literal they could import (see the
   `lean-profiling` skill).
+* **Equations between code:** prove that two programs, or two lists of
+  programs, are the same with `kernel_rfl`, not `decide +kernel`. `decide`
+  evaluates both sides to their last operand and compares them with
+  `DecidableEq`, whatever they share; the kernel's own comparison stops at a
+  subterm that is the same on both sides (a program both name) without
+  evaluating it. `Proof/Bignum/PPC64LE/CrtPinsB.lean` says ten times that a
+  prefix of the CRT's flattened code is a program written from the same
+  parts (`WP.of_flat`): 42 s by `decide +kernel`, 1.4 s by `kernel_rfl`.
 * **Unfolding recursive definitions:** `simp`/`dsimp` unfolding a recursive
   definition that uses a recursive call's result twice (`let r := f …;
   (… r.1, r.2)`) duplicates the call at every level. Evaluate it in one

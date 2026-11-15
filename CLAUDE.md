@@ -419,7 +419,8 @@ lemmas and tactics to use; read it before writing a proof:
   files too (nothing checks this: `ci/lit_imports.py` ranks the misses
   that cost the build). Arithmetic it evaluates is in a closed term: with
   a variable anywhere in the term it adds and shifts in unary. A checker's
-  environment is a list, not a function updated at every write. A property
+  environment is a list, not a function updated at every write. An equation
+  between code is `kernel_rfl`'s, never `decide +kernel`'s. A property
   of every instruction of code that calls verified functions follows from
   theirs (`NoSp.seq`, `NoSp.leaf`), and its registration's `spSafe` from it
   (`NoSp.spSafe`): never evaluate a wrapper with the code it calls. A
