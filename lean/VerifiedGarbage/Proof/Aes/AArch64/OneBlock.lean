@@ -471,4 +471,112 @@ theorem core_ok {s : State} {K : Addr} {R : Nat} (hK : (⟨K, 240⟩ : Region) �
   refine ⟨by rw [tst, am, a0], fun r h0 h1 h6 h7 => (tg r h0 h1).trans (ag r h6 h7), tm.trans am,
     trd.trans ard, twr.trans awr, tsp.trans asp⟩
 
+/-! ## `vg_aes_encrypt_blocks` -/
+
+/-- The registers the bitsliced code saves are none of those `encryptOne`
+writes. -/
+theorem sreg_ne : ∀ i < 10, sreg i ≠ .x0 ∧ sreg i ≠ .x1 ∧ sreg i ≠ .x6 ∧ sreg i ≠ .x7 := by decide
+
+/-- One block, encrypted in place. -/
+theorem encryptOne_ok {s : State} (hp : (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre s)
+    (h3 : (s.gpr .x3).toNat = 1) :
+    WP isa encryptOne s fun s' =>
+      (∀ r, r ≠ .x0 → r ≠ .x1 → r ≠ .x6 → r ≠ .x7 → s'.gpr r = s.gpr r) ∧
+      (Proof.Aes.blocksAArch64 Spec.Aes.cipher).post s s' := by
+  obtain ⟨hrd, hwr, -, -, -, -, hR⟩ := hp
+  have hwD : (⟨s.gpr .x2, 16 * (s.gpr .x3).toNat⟩ : Region) ∈ s.wr := by rw [hwr]; simp
+  rw [h3] at hwD
+  have hrS : (⟨s.gpr .x0, 240⟩ : Region) ∈ s.rd := by rw [hrd]; simp
+  unfold encryptOne
+  -- The block.
+  refine WP.seq ?_
+  let a := s.setV .v0 (s.mem.readW (s.gpr .x2 + BitVec.ofNat 64 0) 128)
+  rw [WP.block_cons_iff]
+  refine ⟨a, Aese.exec_ldrq (off := 0) (by decide)
+    ⟨_, List.mem_append_right _ hwD, Offset.contains_base (s.gpr .x2) (d := 0) (by decide) (by decide)⟩,
+    WP.block_nil ?_⟩
+  -- The cipher.
+  have a1 : a.gpr .x1 = BitVec.ofNat 64 (s.gpr .x1).toNat := by
+    show s.gpr .x1 = _
+    rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  refine WP.seq (WP.mono (core_ok (s := a) (K := s.gpr .x0) (R := (s.gpr .x1).toNat) hrS rfl a1 hR)
+    fun b ⟨bst, bg, bm, brd, bwr, bsp⟩ => ?_)
+  -- The block, back.
+  have b2 : b.gpr .x2 = s.gpr .x2 := bg _ (by decide) (by decide) (by decide) (by decide)
+  have bm' : b.mem = s.mem := bm
+  rw [WP.block_cons_iff]
+  refine ⟨_, Aese.exec_strq (off := 0) (by decide) ⟨_, by rw [bwr]; exact hwD,
+    by rw [b2]; exact Offset.contains_base (s.gpr .x2) (d := 0) (by decide) (by decide)⟩,
+    WP.block_nil ⟨fun r h0 h1 h6 h7 => bg r h0 h1 h6 h7, ?_⟩⟩
+  have hE := (Aese.ecbInv_write (m₀ := s.mem) (m := b.mem) (D := s.gpr .x2) (n := 1) (k := 0)
+    (F := ecbOut cipher s.mem (s.gpr .x2) (s.gpr .x1).toNat
+      (bytesAt s.mem (s.gpr .x0) (16 * ((s.gpr .x1).toNat + 1)))) (v := b.v .v0) (by decide) (by decide)
+    (fun i hi => by rw [ite_eq_right (by omega_arith), bm']) (fun t ht => by
+      rw [← getD_st _ ht, bst, show a.v .v0 = s.mem.readW (s.gpr .x2 + BitVec.ofNat 64 0) 128 from rfl,
+        Aese.st_readW]
+      rfl)).1
+  show Spec.Aes.statesAt (b.mem.write (b.gpr .x2 + BitVec.ofNat 64 0) 16 (b.v .v0)) (s.gpr .x2)
+      (s.gpr .x3).toNat = _
+  rw [h3, b2]
+  refine (statesAt_of_ecbInv hE).trans ?_
+  simp only [Spec.Aes.statesAt, List.map_map]
+  rfl
+
+/-- `encryptBlocksN`: one block by the tables, any other number of blocks
+bitsliced. -/
+theorem encryptBlocksN_wp {s₀ : State} (hp : (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre s₀) :
+    WP isa encryptBlocksN s₀ fun s' =>
+      (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ (Proof.Aes.blocksAArch64 Spec.Aes.cipher).post s₀ s' := by
+  unfold encryptBlocksN
+  let s₁ := s₀.write .x .x6 (s₀.read .x .x3 - BitVec.ofNat 64 1)
+  refine WP.seq ?_
+  rw [WP.block_cons_iff]
+  refine ⟨s₁, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
+  have hp₁ : (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre s₁ := hp
+  have g₁ : ∀ r, r ≠ .x6 → s₁.gpr r = s₀.gpr r := fun r hr => by simp [s₁, State.write, hr]
+  refine WP.ite (s₀.gpr .x3 - BitVec.ofNat 64 1 == 0)
+    (by simp [AArch64.eval, State.read, s₁, State.write]) (fun hb => ?_) (fun _ => ?_)
+  · have x3 : s₀.gpr .x3 = BitVec.ofNat 64 1 := by
+      have h := BitVec.sub_add_cancel (s₀.gpr .x3) (BitVec.ofNat 64 1)
+      rw [eq_of_beq hb] at h
+      exact h.symm.trans (by decide)
+    have h3 : (s₁.gpr .x3).toNat = 1 := by
+      show (s₀.gpr .x3).toNat = 1
+      rw [x3]; rfl
+    refine WP.mono (encryptOne_ok hp₁ h3) fun s' ⟨hg, hpost⟩ => ⟨fun i hi => ?_, hpost⟩
+    have hn := sreg_ne i hi
+    rw [hg _ hn.1 hn.2.1 hn.2.2.1 hn.2.2.2]
+    exact g₁ _ hn.2.2.1
+  · exact WP.mono (correct_blocks encrypt4_cryptOk hp₁) fun s' ⟨hsv, hpost⟩ =>
+      ⟨fun i hi => (hsv i hi).trans (g₁ _ (sreg_ne i hi).2.2.1), hpost⟩
+
+theorem encryptBlocksN_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre s) :
+    ∃ t s', Exec isa encryptBlocksN s t s' ∧ abiPreserved s s' ∧
+      (Proof.Aes.blocksAArch64 Spec.Aes.cipher).post s s' := by
+  obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ :=
+    WP.gprs (rs := [.x30]) (encryptBlocksN_wp hs) (by lit_decide) (by lit_decide)
+  refine ⟨t, s', he, ⟨fun r hr => ?_, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
+  simp only [preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · exact h₁ 0 (by omega_arith)
+  · exact h₁ 1 (by omega_arith)
+  · exact h₁ 2 (by omega_arith)
+  · exact h₁ 3 (by omega_arith)
+  · exact h₁ 4 (by omega_arith)
+  · exact h₁ 5 (by omega_arith)
+  · exact h₁ 6 (by omega_arith)
+  · exact h₁ 7 (by omega_arith)
+  · exact h₁ 8 (by omega_arith)
+  · exact h₁ 9 (by omega_arith)
+  · exact h₃ _ (by simp)
+
+theorem encryptBlocksN_ct : ConstantTime isa (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre
+    (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pub encryptBlocksN := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
+    ?_ (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, hsp⟩
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
+
 end VG.Proof.Aes.AArch64.OneBlock
