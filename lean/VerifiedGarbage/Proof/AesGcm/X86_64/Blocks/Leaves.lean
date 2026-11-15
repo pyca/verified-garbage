@@ -419,18 +419,20 @@ theorem encryptB_leaves (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : Ghas
 
 /-- `Blocks.fullBody` with loops that take all the blocks from
 `smallMin false = 2` on (`small`, and `pieceS` the same loops), which leave
-`PieceL ℓ zf`, and calls that need no working space below that: `scratch`
-after the entry's slots, the first `ℓ` bytes of the working space cleared
-where `zf` says if the loops ran. -/
-theorem fullBodyL_ok {aligned : Bool} {piece : Prog isa} {ℓ : Nat} {zf : Nat → Nat → Bool}
+`PieceL ℓ zf` (and `Q`, the encryption's or the decryption's postcondition),
+and calls `first` and `second` that write nothing in `scratch` (`htail`):
+`scratch` after the entry's slots, the first `ℓ` bytes of the working space
+cleared where `zf` says if the loops ran. -/
+theorem fullBodyL_ok {aligned dec : Bool} {piece first second : Prog isa} {ℓ : Nat} {zf : Nat → Nat → Bool}
+    {Q : State → State → Prop}
     (hpiece : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ 1 →
-      WP isa piece s₃ fun s₄ => Gcm.X86_64.Stitch.EPost s₃ s₄ ∧ Gcm.X86_64.Stitch.PieceL ℓ zf s₃ s₄)
+      WP isa piece s₃ fun s₄ => Q s₃ s₄ ∧ Gcm.X86_64.Stitch.PieceL ℓ zf s₃ s₄)
     (hoℓ : AlignedScratch.offset aligned (S s) + ℓ ≤ 2112)
-    (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : GhashImpl) (gf : GhashFree gh.fn.code)
+    (htail : ∀ {ys : List Block} {Z : Nat → Bool} {st : State}, Mid s (n s - n s % 16) (n s - n s % 16) ys st →
+      Scr s (n s - n s % 16) Z st.mem → WP isa (tail first second) st fun st' => Scr s (n s - n s % 16) Z st'.mem)
     {s₁ : State} (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r) (hk : Kept s 0 s₁.mem)
     (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
-    WP isa (fullBody piece (ctrCall ⟨ctr.callee.name, ctr.callee.code⟩) (ghCall gh.fn) aligned true false
-      (some piece) false) s₁ fun st =>
+    WP isa (fullBody piece first second aligned true false (some piece) dec) s₁ fun st =>
       Scr s 0 (fun d => decide (2 ≤ n s) && (decide (AlignedScratch.offset aligned (S s) ≤ d) &&
         decide (d < AlignedScratch.offset aligned (S s) + ℓ) &&
         zf (n s) (d - AlignedScratch.offset aligned (S s)))) st.mem := by
@@ -465,7 +467,7 @@ theorem fullBodyL_ok {aligned : Bool} {piece : Prog isa} {ℓ : Nat} {zf : Nat �
     simp only [hn9, decide_eq_true h2, Bool.true_and, Bool.false_or]
   -- The calls, from a state with `s₁`'s registers and memory.
   have cl : n s < 2 → ∀ s₂ : State, s₂.gpr = s₁.gpr → s₂.mem = s₁.mem → s₂.rd = s₁.rd → s₂.wr = s₁.wr →
-      WP isa (.seq (.block rest) (tail (ctrCall ⟨ctr.callee.name, ctr.callee.code⟩) (ghCall gh.fn))) s₂ fun st =>
+      WP isa (.seq (.block rest) (tail first second)) s₂ fun st =>
         Scr s 0 (fun d => decide (2 ≤ n s) && (decide (AlignedScratch.offset aligned (S s) ≤ d) &&
           decide (d < AlignedScratch.offset aligned (S s) + ℓ) &&
           zf (n s) (d - AlignedScratch.offset aligned (S s)))) st.mem := by
@@ -473,8 +475,13 @@ theorem fullBodyL_ok {aligned : Bool} {piece : Prog isa} {ℓ : Nat} {zf : Nat �
     have M := mid_entry hp (fun r hr => by rw [g₂]; exact hg r hr) (by rw [m₂]; exact hk) (by rw [m₂]; exact hf)
       (rd₂.trans hrd) (wr₂.trans hwr)
     have hS₂ : Scr s 0 (fun _ => false) s₂.mem := by rw [m₂]; exact hS₀
+    have h0 : n s - n s % 16 = 0 := by omega_using [hlt]
     refine WP.seq (WP.mono (rest_okF hp (q := 0) (by omega_using [hlt]) M) fun st' ⟨M', hf'⟩ => ?_)
-    refine WP.mono (tailL_ok hp ctr cf gh gf M' (hS₂.slots hf' M'.kept)) fun st h => h.congr fun d _ _ => ?_
+    rw [← h0] at M'
+    have hS' := hS₂.slots hf' M'.kept
+    refine WP.mono (htail M' hS') fun st h => ?_
+    rw [h0] at h
+    refine h.congr fun d _ _ => ?_
     simp only [show ¬ 2 ≤ n s by omega_using [hlt], decide_false, Bool.false_and]
   refine WP.seq (WP.mono (cmp16_ok (hg _ (by decide))) fun s₂ ⟨g₂, m₂, rd₂, wr₂, cf₂⟩ => ?_)
   refine WP.ite (decide (n s < 16)) (by simp only [eval, cf₂]) (fun h => ?_) (fun h => ?_)
@@ -499,7 +506,100 @@ theorem encryptR_leaves (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : Ghas
         zf (n s) (d - AlignedScratch.offset aligned (S s)))) s'.mem :=
   WP.seq (WP.mono (entry_ok hp) fun _ ⟨h11, hg, hk, hf, hrd, hwr⟩ =>
     fullBodyL_ok hp hpiece (by have := AlignedScratch.offset_bounds aligned (S s); omega_using [hℓ, this])
-      ctr cf gh gf h11 hg hk hf hrd hwr)
+      (tailL_ok hp ctr cf gh gf) h11 hg hk hf hrd hwr)
+
+/-- `stitchL_ok` for decrypting loops: `Mid` with `Y` over the blocks as
+they were. -/
+theorem stitchLD_ok {aligned : Bool} {piece : Prog isa} {ℓ : Nat} {zf : Nat → Nat → Bool}
+    (hpiece : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ → Gcm.X86_64.Stitch.nb s₃ % 16 = 0 →
+      WP isa piece s₃ fun s₄ => Gcm.X86_64.Stitch.DPost s₃ s₄ ∧ Gcm.X86_64.Stitch.PieceL ℓ zf s₃ s₄)
+    (hoℓ : AlignedScratch.offset aligned (S s) + ℓ ≤ 2112)
+    {s₁ : State} (h11 : s₁.gpr .r11 = S s) (hg : ∀ r, r ≠ .r11 → s₁.gpr r = s.gpr r) (hk : Kept s 0 s₁.mem)
+    (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
+    WP isa (stitchPart piece aligned) s₁ fun st =>
+      Mid s (n s - n s % 16) 0 (blocksAt s.mem (D s) (n s - n s % 16)) st ∧
+      Scr s 0 (fun d => decide (16 ≤ n s) && (decide (AlignedScratch.offset aligned (S s) ≤ d) &&
+        decide (d < AlignedScratch.offset aligned (S s) + ℓ) &&
+        zf (n s - n s % 16) (d - AlignedScratch.offset aligned (S s)))) st.mem := by
+  have hS₀ := Scr.entry hk hf
+  have hn : n s < 2 ^ 64 := (s.gpr .r9).isLt
+  refine WP.seq (WP.mono (cmp16_ok (hg _ (by decide))) fun s₂ ⟨g₂, m₂, rd₂, wr₂, cf₂⟩ => ?_)
+  refine WP.ite (decide (n s < 16)) (by simp only [eval, cf₂]) (fun h => ?_) (fun h => ?_)
+  · have h0 : n s - n s % 16 = 0 := by simp at h; omega_arith
+    have hlt : ¬ 16 ≤ n s := by simp at h; omega_arith
+    refine WP.block_nil ⟨?_, ?_⟩
+    · rw [h0]
+      exact mid_entry hp (fun r hr => by rw [g₂]; exact hg r hr) (by rw [m₂]; exact hk)
+        (by rw [m₂]; exact hf) (rd₂.trans hrd) (wr₂.trans hwr)
+    · rw [m₂]; exact hS₀.congr fun d _ _ => by simp only [hlt, decide_false, Bool.false_and]
+  · have h16 : 16 ≤ n s := by simp at h; omega_arith
+    refine WP.seq (WP.mono (split_ok (s := s) (aligned := aligned) (by rw [g₂]; exact hg _ (by decide)))
+      fun s₃ ⟨h9, h11₃, g₃, m₃, rd₃, wr₃⟩ => ?_)
+    have ga : ∀ r ∈ argRegs, s₃.gpr r = s.gpr r := fun r hr => by
+      simp only [argRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rw [g₃ r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+        (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+        (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide), g₂,
+        hg r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
+    have gc : ∀ r ∈ calleeSaved, s₃.gpr r = s.gpr r := fun r hr => by
+      simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+      rw [g₃ r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+        (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
+        (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide), g₂,
+        hg r (by rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)]
+    have g11 : s₃.gpr .r11 = S s + BitVec.ofNat 64 (AlignedScratch.offset aligned (S s)) := by
+      rw [h11₃, g₂, h11]; exact AlignedScratch.ptr_eq aligned (S s) hp.w_s
+    have rd₃' : s₃.rd = s.rd := rd₃.trans (rd₂.trans hrd)
+    have wr₃' : s₃.wr = s.wr := wr₃.trans (wr₂.trans hwr)
+    have hk₃ : Kept s 0 s₃.mem := by rw [m₃, m₂]; exact hk
+    have hf₃ : Frame [kR' s] s.mem s₃.mem := by rw [m₃, m₂]; exact hf
+    have hnb : Gcm.X86_64.Stitch.nb s₃ = n s - n s % 16 := by
+      simp only [Gcm.X86_64.Stitch.nb, h9, toNat_ofNat_of_lt (show n s - n s % 16 < 2 ^ 64 by omega_arith)]
+    have hm : Gcm.X86_64.Stitch.nb s₃ % 16 = 0 := by rw [hnb]; omega_arith
+    have hS₃ : Scr s 0 (fun _ => false) s₃.mem := by rw [m₃, m₂]; exact hS₀
+    refine WP.mono (hpiece s₃ (spreM_of hp (by omega_arith) (by omega_arith) h9 ga g11 rd₃' wr₃' hf₃) hm)
+      fun s₄ ⟨hP, hL⟩ => ⟨?_, ?_⟩
+    · refine mid_of_post hp (by omega_arith) h9 ga gc g11 rd₃' wr₃' hk₃ hf₃ hP.data hP.ctr hP.frame hP.gpr hP.rd
+        hP.wr fun eH eY eD₃ _ => ?_
+      have hy := hP.y
+      simp only [Gcm.X86_64.Stitch.yp, Gcm.X86_64.Stitch.hk, Gcm.X86_64.Stitch.y₀, Gcm.X86_64.Stitch.kp,
+        Gcm.X86_64.Stitch.dp, Gcm.X86_64.Stitch.nb, h9, ga _ (by simp [argRegs] : Reg.rcx ∈ argRegs),
+        ga _ (by simp [argRegs] : Reg.rdi ∈ argRegs), ga _ (by simp [argRegs] : Reg.r8 ∈ argRegs),
+        toNat_ofNat_of_lt (show n s - n s % 16 < 2 ^ 64 by omega_arith)] at hy
+      rw [hy, eH, eY, eD₃]
+    · have ho := AlignedScratch.offset_bounds aligned (S s)
+      refine (Scr.piece hp (by omega_using [ho]) hoℓ hS₃ g11 ga (by rw [hnb]; omega_arith) hL).congr fun d _ _ => ?_
+      simp only [hnb, h16, decide_true, Bool.true_and, Bool.false_or]
+
+/-- `vg_aes_gcm_decrypt_blocks` with loops on the first `16 ⌊n / 16⌋` blocks
+that clear the 256 bytes they write, and calls that need no working space:
+what is left in `scratch`, as `encryptB_leaves`. -/
+theorem decryptB_leaves (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : GhashImpl) (gf : GhashFree gh.fn.code)
+    {piece : Prog isa}
+    (hpiece : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ → Gcm.X86_64.Stitch.nb s₃ % 16 = 0 →
+      WP isa piece s₃ fun s₄ => Gcm.X86_64.Stitch.DPost s₃ s₄ ∧ Gcm.X86_64.Stitch.PieceL 256 (fun _ _ => true) s₃ s₄) :
+    WP isa (decrypt ⟨ctr.callee.name, ctr.callee.code⟩ gh.fn (some piece) false false) s fun s' =>
+      Scr s (n s - n s % 16) (fun d => decide (16 ≤ n s) && decide (64 ≤ d) && decide (d < 320)) s'.mem := by
+  refine WP.seq (WP.mono (entry_ok hp) fun s₁ ⟨h11, hg, hk, hf, hrd, hwr⟩ => ?_)
+  refine WP.seq (WP.seq (WP.mono (stitchLD_ok hp (aligned := false) hpiece (by simp [AlignedScratch.offset])
+    h11 hg hk hf hrd hwr) fun st ⟨M, hS⟩ => WP.mono (rest_okF hp rfl M) fun st' ⟨M', hf'⟩ => ?_))
+  refine WP.mono (tailD_ok hp ctr cf gh gf M' ((hS.slots hf' M'.kept).congr fun d _ _ => ?_)) fun _ h => h
+  simp only [AlignedScratch.offset, Bool.false_eq_true, ↓reduceIte, Bool.and_true, Bool.and_assoc]
+
+/-- `vg_aes_gcm_decrypt_blocks` with loops on all the blocks from 2 on that
+leave `PieceL ℓ zf`, and calls that need no working space: what is left in
+`scratch`, as `encryptR_leaves`. -/
+theorem decryptR_leaves (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : GhashImpl) (gf : GhashFree gh.fn.code)
+    {aligned : Bool} {piece : Prog isa} {ℓ : Nat} {zf : Nat → Nat → Bool} (hℓ : ℓ ≤ 1024)
+    (hpiece : ∀ s₃, Gcm.X86_64.Stitch.SPreM M s₃ 1 →
+      WP isa piece s₃ fun s₄ => Gcm.X86_64.Stitch.DPost s₃ s₄ ∧ Gcm.X86_64.Stitch.PieceL ℓ zf s₃ s₄) :
+    WP isa (decrypt ⟨ctr.callee.name, ctr.callee.code⟩ gh.fn (some piece) aligned true true false (some piece)) s
+      fun s' => Scr s 0 (fun d => decide (2 ≤ n s) && (decide (AlignedScratch.offset aligned (S s) ≤ d) &&
+        decide (d < AlignedScratch.offset aligned (S s) + ℓ) &&
+        zf (n s) (d - AlignedScratch.offset aligned (S s)))) s'.mem :=
+  WP.seq (WP.mono (entry_ok hp) fun _ ⟨h11, hg, hk, hf, hrd, hwr⟩ =>
+    fullBodyL_ok hp hpiece (by have := AlignedScratch.offset_bounds aligned (S s); omega_using [hℓ, this])
+      (tailD_ok hp ctr cf gh gf) h11 hg hk hf hrd hwr)
 
 end
 
