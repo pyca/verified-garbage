@@ -117,7 +117,7 @@ theorem out_buf {ws : List Region} {buf : Addr} (hw : bufR buf ∈ ws) {d n : Na
 /-! ## Swapping the pair of third-row words -/
 
 theorem slotOff_succ {i : Nat} (hi : 8 ≤ i) : slotOff (i + 1) = slotOff i + 32 := by
-  simp only [slotOff]; omega_arith
+  simp only [slotOff]; omega_using [hi]
 
 theorem swap_ok {i j : Nat} (hi : i = 8 ∨ i = 10) (hj : j = 8 ∨ j = 10) {buf : Addr} {s : State}
     (hrcx : s.gpr .rcx = buf) (hw : bufR buf ∈ s.wr) :
@@ -308,7 +308,7 @@ theorem W2_frame {m m' : Mem} (buf : Addr) {i : Nat} (hi : slotOff i + 64 ≤ 12
   have c : ∀ d, d + 32 ≤ 128 → (slotsR buf).Contains (buf + BitVec.ofNat 64 d) (256 / 8) := by
     intro d hd
     simp only [Region.Contains]
-    rw [Mem.sub_ofNat_toNat buf (by lit_omega)]; omega_arith
+    rw [Mem.sub_ofNat_toNat buf (by lit_omega)]; omega_using [hd]
   exact (h.writeW (List.mem_singleton_self _) _ (c _ (by lit_omega))).writeW
     (List.mem_singleton_self _) _ (c _ (by lit_omega))
 
@@ -331,7 +331,7 @@ theorem swap_holds {p : Bool} {buf : Addr} {vs : Nat → CState} {s s' : State}
     (hm : s'.mem = W2 s.mem buf i (s.ymm .xmm12) (s.ymm .xmm13)) :
     Holds buf (!p) vs s' := by
   intro k hk l q hl' hq
-  have hx : 16 * l + 4 * q + 4 ≤ 32 := by omega_arith
+  have hx : 16 * l + 4 * q + 4 ≤ 32 := by omega_using [hl', hq]
   have old := h k hk l q hl' hq
   obtain ⟨v12, v13⟩ := hv l q hl' hq
   have ym : ∀ r, (s.ymm r).extractLsb' (8 * (16 * l + 4 * q)) (8 * 4) = vw s r l q :=
@@ -346,16 +346,16 @@ theorem swap_holds {p : Bool} {buf : Addr} {vs : Nat → CState} {s s' : State}
     simp only [ite_true, vw] at old ⊢
     obtain ⟨n12, n13⟩ := vreg_other hk hk'
     rw [hl _ _ n12 n13]; exact old
-  rcases (by omega_arith : k = 8 ∨ k = 9 ∨ k = 10 ∨ k = 11) with rfl | rfl | rfl | rfl <;> cases p <;>
+  rcases (by omega_using [hk'] : k = 8 ∨ k = 9 ∨ k = 10 ∨ k = 11) with rfl | rfl | rfl | rfl <;> cases p <;>
     simp (config := {decide := true}) only [inReg, vreg, Bool.not_false, Bool.not_true, ite_true,
       ite_false, Bool.false_eq_true, s9, s11] at old v12 v13 ⊢
   all_goals first
     | rw [W2_first _ _ (by decide) _ _ hx, ym, old]
     | rw [W2_second _ _ _ _ _ hx, ym, old]
-    | rw [v12, W2_other _ _ (by decide) _ _ (by simp only [slotOff]; omega_arith)
-        (by simp only [slotOff]; omega_arith), old]
-    | rw [v13, W2_other _ _ (by decide) _ _ (by simp only [slotOff]; omega_arith)
-        (by simp only [slotOff]; omega_arith), old]
+    | rw [v12, W2_other _ _ (by decide) _ _ (by simp only [slotOff]; omega_using [hl', hq])
+        (by simp only [slotOff]; omega_using [hl', hq]), old]
+    | rw [v13, W2_other _ _ (by decide) _ _ (by simp only [slotOff]; omega_using [hl', hq])
+        (by simp only [slotOff]; omega_using [hl', hq]), old]
 
 theorem swap_step {p : Bool} {buf : Addr} {vs : Nat → CState} {s₀ s : State} (h : RI buf p vs s₀ s)
     (hrcx : s₀.gpr .rcx = buf) (hb : bufR buf ∈ s₀.wr) :
@@ -446,7 +446,7 @@ theorem dword_row (m : Mem) (st : Addr) {row i : Nat} (hrow : row < 4) (hi : i <
       (stateAt m st)[4 * row + i]'(by lit_omega) := by
   rw [dword_readW _ _ hi, add_ofNat]
   simp only [stateAt, Vector.getElem_ofFn]
-  congr 3; omega_arith
+  congr 3; omega_using []
 
 /-- The state region. -/
 abbrev stR (st : Addr) : Region := ⟨st, 64⟩
@@ -553,7 +553,7 @@ theorem row2_ok {st buf : Addr} {s : State} (hrdi : s.gpr .rdi = st) (hrcx : s.g
     State.setV_rd, State.setV_wr, State.setMem_gpr, State.setMem_mem, State.setMem_rd,
     State.setMem_wr, s11]
   refine ⟨fun l q hl hq => ?_, fun r l n12 n13 n14 n15 => ?_, ⟨_, _, rfl⟩, trivial, trivial, trivial⟩
-  · have hx : 16 * l + 4 * q + 4 ≤ 32 := by omega_arith
+  · have hx : 16 * l + 4 * q + 4 ≤ 32 := by omega_using [hl, hq]
     rw [W2_first _ _ (i := 10) (by decide) _ _ hx, W2_second _ _ 10 _ _ hx, extract_ymm _ _ hl hq,
       extract_ymm _ _ hl hq]
     simp only [vw, lane_vpshufd256, State.lane_setV256, State.setMem_lane, reduceCtorEq, ite_true,
@@ -626,22 +626,22 @@ theorem setup_ok {st buf : Addr} {s : State} (hrdi : s.gpr .rdi = st) (hrcx : s.
   have b₁₂ := a₄ l q hl hq
   simp only [hrdi, g₁, g₂, m₁, m₂] at b₀ b₁ b₂ b₃ b₄ b₅ b₆ b₇ b₈ b₉ b₁₀ b₁₁
   simp only [m₄, e₃.2.1] at c₈ c₉ c₁₀ c₁₁
-  rcases (by omega_arith : k < 4 ∨ (4 ≤ k ∧ k < 8) ∨ (8 ≤ k ∧ k < 12) ∨ 12 ≤ k) with hg | hg | hg | hg
-  · obtain rfl | rfl | rfl | rfl : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 := by omega_arith
+  rcases (by omega_using [] : k < 4 ∨ (4 ≤ k ∧ k < 8) ∨ (8 ≤ k ∧ k < 12) ∨ 12 ≤ k) with hg | hg | hg | hg
+  · obtain rfl | rfl | rfl | rfl : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 := by omega_using [hg]
     all_goals
       simp (disch := decide) only [inReg, vreg, reduceCtorEq, or_self, Nat.reduceEqDiff, ite_true,
         ite_false, Bool.not_false, vw, f₆, f₅, f₄, f₃, f₂, b₀, b₁, b₂, b₃, R0, ctr_get _ _ _ hk,
         m₆]
-  · obtain rfl | rfl | rfl | rfl : k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega_arith
+  · obtain rfl | rfl | rfl | rfl : k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by omega_using [hg]
     all_goals
       simp (disch := decide) only [inReg, vreg, or_self, Nat.reduceEqDiff, ite_true, ite_false,
         Bool.not_false, vw, f₆, f₅, f₄, f₃, b₄, b₅, b₆, b₇, R1, ctr_get _ _ _ hk, m₆]
-  · obtain rfl | rfl | rfl | rfl : k = 8 ∨ k = 9 ∨ k = 10 ∨ k = 11 := by omega_arith
+  · obtain rfl | rfl | rfl | rfl : k = 8 ∨ k = 9 ∨ k = 10 ∨ k = 11 := by omega_using [hg]
     all_goals
       simp (disch := decide) only [inReg, vreg, or_self, or_false, false_or, Nat.reduceEqDiff,
         ite_true, ite_false, Bool.false_eq_true, Bool.not_false, vw, f₆, c₈, c₉, c₁₀, c₁₁, R2,
         ctr_get _ _ _ hk, m₆]
-  · obtain rfl | rfl | rfl | rfl : k = 12 ∨ k = 13 ∨ k = 14 ∨ k = 15 := by omega_arith
+  · obtain rfl | rfl | rfl | rfl : k = 12 ∨ k = 13 ∨ k = 14 ∨ k = 15 := by omega_using [hk, hg]
     all_goals
       simp (disch := decide) only [inReg, vreg, or_self, Nat.reduceEqDiff, ite_true, ite_false,
         Bool.not_false, vw, f₆, f₅, f₄, b₈, b₉, b₁₀, b₁₁, b₁₂, R3, ctr_get _ _ _ hk, m₆]
@@ -674,8 +674,8 @@ theorem readW_128 (m : Mem) (a : Addr) :
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   by_cases h : i < 64
   · simp [h]
-  · have e : 64 + (i - 64) = i := by omega_arith
-    simp only [h, decide_false, show i - 64 < 64 by omega_arith, decide_true, Bool.true_and, e, ite_false]
+  · have e : 64 + (i - 64) = i := by omega_using [h]
+    simp only [h, decide_false, show i - 64 < 64 by omega_using [hi], decide_true, Bool.true_and, e, ite_false]
 
 theorem readW_256 (m : Mem) (a : Addr) :
     m.readW a 256 = m.readW (a + BitVec.ofNat 64 16) 128 ++ m.readW a 128 := by
@@ -689,8 +689,8 @@ theorem readW_256 (m : Mem) (a : Addr) :
   simp only [BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
   by_cases h : i < 128
   · simp [h]
-  · have e : 128 + (i - 128) = i := by omega_arith
-    simp only [h, decide_false, show i - 128 < 128 by omega_arith, decide_true, Bool.true_and, e, ite_false]
+  · have e : 128 + (i - 128) = i := by omega_using [h]
+    simp only [h, decide_false, show i - 128 < 128 by omega_using [hi], decide_true, Bool.true_and, e, ite_false]
 
 theorem readW64_off (m : Mem) (p : Addr) (v : BitVec 64) {d e : Nat} (hd : d < 2 ^ 32)
     (he : e < 2 ^ 32) (h : d + 8 ≤ e ∨ e + 8 ≤ d) :
@@ -858,8 +858,8 @@ theorem consts_mem (m : Mem) (buf : Addr) : Consts (storeAll buf constPairs m) b
   rw [add_ofNat] at E
   refine E.symm.trans ?_
   rw [RI]
-  rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl <;>
-    rcases (by omega_arith : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl <;> decide
+  rcases (by omega_using [hl] : l = 0 ∨ l = 1) with rfl | rfl <;>
+    rcases (by omega_using [hq] : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl <;> decide
 
 end VG.Proof.ChaCha20.X86_64.Avx2
 
@@ -1056,17 +1056,17 @@ theorem piece_ok {to : Bool} {row i : Nat} (hrow : row < 4) (hi : i < 4) {x : XR
     w₃.trans w₁⟩
   · rw [m₃ k hk]
     by_cases h1 : 64 * i + 16 * row ≤ k ∧ k < 64 * i + 16 * row + 16
-    · have h2 : ¬ (64 * (i + 4) + 16 * row ≤ k ∧ k < 64 * (i + 4) + 16 * row + 16) := by omega_arith
-      have hc : (k / 64 = i ∨ k / 64 = i + 4) ∧ k % 64 / 16 = row := by omega_arith
-      rw [ite_eq_right h2, m₁ k hk, ite_eq_left h1, ite_eq_left hc, show k / 64 / 4 = 0 by omega_arith,
-        show k - (64 * i + 16 * row) = k % 16 by omega_arith]
+    · have h2 : ¬ (64 * (i + 4) + 16 * row ≤ k ∧ k < 64 * (i + 4) + 16 * row + 16) := by omega_using [h1]
+      have hc : (k / 64 = i ∨ k / 64 = i + 4) ∧ k % 64 / 16 = row := by omega_using [hrow, h1]
+      rw [ite_eq_right h2, m₁ k hk, ite_eq_left h1, ite_eq_left hc, show k / 64 / 4 = 0 by omega_using [hrow, hi, h1],
+        show k - (64 * i + 16 * row) = k % 16 by omega_using [h1]]
     · by_cases h2 : 64 * (i + 4) + 16 * row ≤ k ∧ k < 64 * (i + 4) + 16 * row + 16
-      · have hc : (k / 64 = i ∨ k / 64 = i + 4) ∧ k % 64 / 16 = row := by omega_arith
-        rw [ite_eq_left h2, a₁ k hk h1, ite_eq_left hc, show k / 64 / 4 = 1 by omega_arith,
-          show k - (64 * (i + 4) + 16 * row) = k % 16 by omega_arith]
-      · have hc : ¬ ((k / 64 = i ∨ k / 64 = i + 4) ∧ k % 64 / 16 = row) := by omega_arith
+      · have hc : (k / 64 = i ∨ k / 64 = i + 4) ∧ k % 64 / 16 = row := by omega_using [hrow, h2]
+        rw [ite_eq_left h2, a₁ k hk h1, ite_eq_left hc, show k / 64 / 4 = 1 by omega_using [hrow, hi, h2],
+          show k - (64 * (i + 4) + 16 * row) = k % 16 by omega_using [h2]]
+      · have hc : ¬ ((k / 64 = i ∨ k / 64 = i + 4) ∧ k % 64 / 16 = row) := by omega_using [h1, h2]
         rw [ite_eq_right h2, m₁ k hk, ite_eq_right h1, ite_eq_right hc]
-  · rw [a₃ k hk (by omega_arith), a₁ k hk (by omega_arith)]
+  · rw [a₃ k hk (by omega_using [hrow, hn]), a₁ k hk (by omega_using [hrow, hn])]
   · rw [l₃ r l h12, ite_eq_right h13, l₁ r l h12]
 
 theorem xorRow_eq (to : Bool) (row : Nat) (x0 x1 x2 x3 : XReg) : xorRow to row [x0, x1, x2, x3] =
@@ -1109,49 +1109,51 @@ theorem xorRow_ok {to : Bool} {row : Nat} (hrow : row < 4) {x0 x1 x2 x3 : XReg}
     by rw [g₄, g₃, g₂, g₁], by rw [r₄, r₃, r₂, r₁], by rw [w₄, w₃, w₂, w₁]⟩
   · rw [m₄ k hk]
     by_cases hr' : k % 64 / 16 = row
-    · rcases (by omega_arith : k / 64 = 0 ∨ k / 64 = 1 ∨ k / 64 = 2 ∨ k / 64 = 3 ∨
+    · rcases (by omega_using [hk] : k / 64 = 0 ∨ k / 64 = 1 ∨ k / 64 = 2 ∨ k / 64 = 3 ∨
         k / 64 = 4 ∨ k / 64 = 5 ∨ k / 64 = 6 ∨ k / 64 = 7) with h | h | h | h | h | h | h | h
-      · rw [ite_eq_right (by omega_arith), m₃ k hk, ite_eq_right (by omega_arith), m₂ k hk,
-          ite_eq_right (by omega_arith), m₁ k hk, ite_eq_left (by omega_arith), ite_eq_left hr']; simp [h]
-      · rw [ite_eq_right (by omega_arith), m₃ k hk, ite_eq_right (by omega_arith), m₂ k hk,
-          ite_eq_left (by omega_arith), a₁ k hk (by omega_arith), ite_eq_left hr', e1]; simp [h]
-      · rw [ite_eq_right (by omega_arith), m₃ k hk, ite_eq_left (by omega_arith), a₂ k hk (by omega_arith),
-          a₁ k hk (by omega_arith), ite_eq_left hr', e2]; simp [h]
-      · rw [ite_eq_left (by omega_arith), a₃ k hk (by omega_arith), a₂ k hk (by omega_arith),
-          a₁ k hk (by omega_arith), ite_eq_left hr', e3]; simp [h]
-      · rw [ite_eq_right (by omega_arith), m₃ k hk, ite_eq_right (by omega_arith), m₂ k hk,
-          ite_eq_right (by omega_arith), m₁ k hk, ite_eq_left (by omega_arith), ite_eq_left hr']; simp [h]
-      · rw [ite_eq_right (by omega_arith), m₃ k hk, ite_eq_right (by omega_arith), m₂ k hk,
-          ite_eq_left (by omega_arith), a₁ k hk (by omega_arith), ite_eq_left hr', e1]; simp [h]
-      · rw [ite_eq_right (by omega_arith), m₃ k hk, ite_eq_left (by omega_arith), a₂ k hk (by omega_arith),
-          a₁ k hk (by omega_arith), ite_eq_left hr', e2]; simp [h]
-      · rw [ite_eq_left (by omega_arith), a₃ k hk (by omega_arith), a₂ k hk (by omega_arith),
-          a₁ k hk (by omega_arith), ite_eq_left hr', e3]; simp [h]
-    · rw [ite_eq_right (by omega_arith), m₃ k hk, ite_eq_right (by omega_arith), m₂ k hk,
-        ite_eq_right (by omega_arith), m₁ k hk, ite_eq_right (by omega_arith), ite_eq_right hr']
-  · rw [a₄ k hk (by omega_arith), a₃ k hk (by omega_arith), a₂ k hk (by omega_arith), a₁ k hk (by omega_arith)]
+      · rw [ite_eq_right (by omega_using [h]), m₃ k hk, ite_eq_right (by omega_using [h]), m₂ k hk,
+          ite_eq_right (by omega_using [h]), m₁ k hk, ite_eq_left (by omega_using [hr', h]), ite_eq_left hr']; simp [h]
+      · rw [ite_eq_right (by omega_using [h]), m₃ k hk, ite_eq_right (by omega_using [h]), m₂ k hk,
+          ite_eq_left (by omega_using [hr', h]), a₁ k hk (by omega_using [h]), ite_eq_left hr', e1]; simp [h]
+      · rw [ite_eq_right (by omega_using [h]), m₃ k hk, ite_eq_left (by omega_using [hr',
+          h]), a₂ k hk (by omega_using [h]),
+          a₁ k hk (by omega_using [h]), ite_eq_left hr', e2]; simp [h]
+      · rw [ite_eq_left (by omega_using [hr', h]), a₃ k hk (by omega_using [h]), a₂ k hk (by omega_using [h]),
+          a₁ k hk (by omega_using [h]), ite_eq_left hr', e3]; simp [h]
+      · rw [ite_eq_right (by omega_using [h]), m₃ k hk, ite_eq_right (by omega_using [h]), m₂ k hk,
+          ite_eq_right (by omega_using [h]), m₁ k hk, ite_eq_left (by omega_using [hr', h]), ite_eq_left hr']; simp [h]
+      · rw [ite_eq_right (by omega_using [h]), m₃ k hk, ite_eq_right (by omega_using [h]), m₂ k hk,
+          ite_eq_left (by omega_using [hr', h]), a₁ k hk (by omega_using [h]), ite_eq_left hr', e1]; simp [h]
+      · rw [ite_eq_right (by omega_using [h]), m₃ k hk, ite_eq_left (by omega_using [hr',
+          h]), a₂ k hk (by omega_using [h]),
+          a₁ k hk (by omega_using [h]), ite_eq_left hr', e2]; simp [h]
+      · rw [ite_eq_left (by omega_using [hr', h]), a₃ k hk (by omega_using [h]), a₂ k hk (by omega_using [h]),
+          a₁ k hk (by omega_using [h]), ite_eq_left hr', e3]; simp [h]
+    · rw [ite_eq_right (by omega_using [hr']), m₃ k hk, ite_eq_right (by omega_using [hr']), m₂ k hk,
+        ite_eq_right (by omega_using [hr']), m₁ k hk, ite_eq_right (by omega_using [hr']), ite_eq_right hr']
+  · rw [a₄ k hk (by omega_using [hn]), a₃ k hk (by omega_using [hn]), a₂ k hk (by omega_using [hn]), a₁ k hk (by omega_using [hn])]
   · rw [l₄ r l n12 n13, l₃ r l n12 n13, l₂ r l n12 n13, l₁ r l n12 n13]
 
 /-! ## A row of the eight blocks, into the data -/
 
 theorem byte_ofDwords (a0 a1 a2 a3 : Word) (b : Nat) :
     byte (ofDwords a0 a1 a2 a3) b = (dword (ofDwords a0 a1 a2 a3) (b / 4)).extractLsb' (8 * (b % 4)) 8 := by
-  rw [byte, dword_eq, extract_extract _ _ _ _ _ (by lit_omega), show 32 * (b / 4) + 8 * (b % 4) = 8 * b by omega_arith]
+  rw [byte, dword_eq, extract_extract _ _ _ _ _ (by lit_omega), show 32 * (b / 4) + 8 * (b % 4) = 8 * b by omega_using []]
 
 /-- Byte `k % 64` of a serialized block, in row `row`. -/
 theorem serialize_row (S : CState) {k row : Nat} (hrow : row < 4) (hk : k % 64 / 16 = row) :
     (serialize S).getD (k % 64) 0 =
       byte (ofDwords (S[4 * row]'(by lit_omega)) (S[4 * row + 1]'(by lit_omega)) (S[4 * row + 2]'(by lit_omega))
         (S[4 * row + 3]'(by lit_omega))) (k % 16) := by
-  rw [serialize_getD _ (by lit_omega), byte_ofDwords, show k % 64 % 4 = k % 16 % 4 by omega_arith]
-  rcases (by omega_arith : k % 16 / 4 = 0 ∨ k % 16 / 4 = 1 ∨ k % 16 / 4 = 2 ∨ k % 16 / 4 = 3) with h | h | h | h
-  · have e : k % 64 / 4 = 4 * row := by omega_arith
+  rw [serialize_getD _ (by lit_omega), byte_ofDwords, show k % 64 % 4 = k % 16 % 4 by omega_using []]
+  rcases (by omega_using [] : k % 16 / 4 = 0 ∨ k % 16 / 4 = 1 ∨ k % 16 / 4 = 2 ∨ k % 16 / 4 = 3) with h | h | h | h
+  · have e : k % 64 / 4 = 4 * row := by omega_using [hk, h]
     simp only [h, e, dword_ofDwords_0]
-  · have e : k % 64 / 4 = 4 * row + 1 := by omega_arith
+  · have e : k % 64 / 4 = 4 * row + 1 := by omega_using [hk, h]
     simp only [h, e, dword_ofDwords_1]
-  · have e : k % 64 / 4 = 4 * row + 2 := by omega_arith
+  · have e : k % 64 / 4 = 4 * row + 2 := by omega_using [hk, h]
     simp only [h, e, dword_ofDwords_2]
-  · have e : k % 64 / 4 = 4 * row + 3 := by omega_arith
+  · have e : k % 64 / 4 = 4 * row + 3 := by omega_using [hk, h]
     simp only [h, e, dword_ofDwords_3]
 
 /-- The registers `x0 … x3` hold row `row` of the blocks `B 0, …, B 7`. -/
@@ -1193,10 +1195,10 @@ theorem rowOutT_ok {to : Bool} {row : Nat} (hrow : row < 4) {x0 x1 x2 x3 : XReg}
   by_cases hr : k % 64 / 16 = row
   · rw [ite_eq_left hr, ite_eq_left hr, serialize_row _ hrow hr]
     obtain ⟨l, q, hl, hq, e⟩ : ∃ l q, l < 2 ∧ q < 4 ∧ k / 64 = 4 * l + q :=
-      ⟨k / 64 / 4, k / 64 % 4, by omega_arith, by omega_arith, by omega_arith⟩
-    rw [e, show (4 * l + q) / 4 = l by omega_arith, show (4 * l + q) % 4 = q by omega_arith]
+      ⟨k / 64 / 4, k / 64 % 4, by omega_using [hk], by omega_using [], by omega_using []⟩
+    rw [e, show (4 * l + q) / 4 = l by omega_using [hq], show (4 * l + q) % 4 = q by omega_using [hq]]
     obtain ⟨b0, b1, b2, b3⟩ := hB l hl hrow
-    rcases (by omega_arith : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl
+    rcases (by omega_using [hq] : q = 0 ∨ q = 1 ∨ q = 2 ∨ q = 3) with rfl | rfl | rfl | rfl
     · rw [List.getD_cons_zero, b0]
     · rw [List.getD_cons_succ, List.getD_cons_zero, b1]
     · rw [List.getD_cons_succ, List.getD_cons_succ, List.getD_cons_zero, b2]
@@ -1230,8 +1232,8 @@ theorem store89_ok {buf : Addr} {vs : Nat → CState} {s : State} (h : Holds buf
     State.setMem_rd, State.setMem_wr, State.setMem_lane, State.setMem_ymm]
   refine ⟨fun r l q hr hl hq => ?_, fun r l => trivial, W2_frame buf (i := 8) (by decide) _ _
     (Frame.refl _ _), trivial, trivial, trivial⟩
-  have hx : 16 * l + 4 * q + 4 ≤ 32 := by omega_arith
-  rcases (by omega_arith : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl
+  have hx : 16 * l + 4 * q + 4 ≤ 32 := by omega_using [hl, hq]
+  rcases (by omega_using [hr] : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl
   · have e := h 8 (by decide) l q hl hq
     simp only [inReg, vreg, vw, Bool.not_false] at e
     simp only [Nat.add_zero]
@@ -1245,13 +1247,13 @@ theorem store89_ok {buf : Addr} {vs : Nat → CState} {s : State} (h : Holds buf
       Bool.false_eq_true] at e
     simp only [Nat.reduceAdd]
     rw [W2_other _ _ (i := 8) (by decide) _ _ (d := slotOff 10 + (16 * l + 4 * q))
-      (by simp only [slotOff]; omega_arith) (by simp only [slotOff]; omega_arith)]; exact e
+      (by simp only [slotOff]; omega_using []) (by simp only [slotOff]; omega_using [hl, hq])]; exact e
   · have e := h 11 (by decide) l q hl hq
     simp only [inReg, Nat.reduceEqDiff, or_false, or_true, ite_true, ite_false,
       Bool.false_eq_true] at e
     simp only [Nat.reduceAdd]
     rw [W2_other _ _ (i := 8) (by decide) _ _ (d := slotOff 11 + (16 * l + 4 * q))
-      (by simp only [slotOff]; omega_arith) (by simp only [slotOff]; omega_arith)]; exact e
+      (by simp only [slotOff]; omega_using []) (by simp only [slotOff]; omega_using [hl, hq])]; exact e
 
 def load4 : List Instr :=
   [.vmovdquLoad .l256 .xmm0 (at_ .rcx (slotOff 8)), .vmovdquLoad .l256 .xmm1 (at_ .rcx (slotOff 9)),
@@ -1448,7 +1450,7 @@ theorem rowS_frame {rs : List Region} {m m' : Mem} {st : Addr} (hf : Frame rs m 
 theorem slots_frame {rs : List Region} {m m' : Mem} {buf : Addr} {vs : Nat → CState}
     (h : Slots buf vs m) (hf : Frame rs m m') (hd : ∀ r ∈ rs, (slotsR buf).Disjoint r) :
     Slots buf vs m' := fun r l q hr hl hq => by
-  rw [hf.readW (slots_contains buf (by simp only [slotOff]; omega_arith)) hd (by decide)]
+  rw [hf.readW (slots_contains buf (by simp only [slotOff]; omega_using [hr, hl, hq])) hd (by decide)]
   exact h r l q hr hl hq
 
 /-- The counter increments in `buf[192, 224)`. -/
@@ -1677,15 +1679,15 @@ theorem finishTo_ok {to : Bool} {st buf a b : Addr} {vs : Nat → CState} {s : S
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       subst hr; exact (dba.sub_left (slotsR_sub buf)).symm) (show 512 ≤ 2 ^ 64 by decide) hk
   rw [d₂.1 k hk]
-  rcases (by omega_arith : k % 64 / 16 = 0 ∨ k % 64 / 16 = 1 ∨ k % 64 / 16 = 2 ∨ k % 64 / 16 = 3)
+  rcases (by omega_using [] : k % 64 / 16 = 0 ∨ k % 64 / 16 = 1 ∨ k % 64 / 16 = 2 ∨ k % 64 / 16 = 3)
     with h | h | h | h
-  · rw [ite_eq_right (by omega_arith), d₃.1 k hk, ite_eq_right (by omega_arith), d₁.1 k hk,
-      ite_eq_right (by omega_arith), d₀.1 k hk, ite_eq_left h, e₀]
-  · rw [ite_eq_right (by omega_arith), d₃.1 k hk, ite_eq_right (by omega_arith), d₁.1 k hk,
-      ite_eq_left h, d₀.2 k hk (by omega_arith), e₀]
-  · rw [ite_eq_left h, d₃.2 k hk (by omega_arith), d₁.2 k hk (by omega_arith), d₀.2 k hk (by omega_arith), e₀]
-  · rw [ite_eq_right (by omega_arith), d₃.1 k hk, ite_eq_left h, d₁.2 k hk (by omega_arith),
-      d₀.2 k hk (by omega_arith), e₀]
+  · rw [ite_eq_right (by omega_using [h]), d₃.1 k hk, ite_eq_right (by omega_using [h]), d₁.1 k hk,
+      ite_eq_right (by omega_using [h]), d₀.1 k hk, ite_eq_left h, e₀]
+  · rw [ite_eq_right (by omega_using [h]), d₃.1 k hk, ite_eq_right (by omega_using [h]), d₁.1 k hk,
+      ite_eq_left h, d₀.2 k hk (by omega_using [h]), e₀]
+  · rw [ite_eq_left h, d₃.2 k hk (by omega_using [h]), d₁.2 k hk (by omega_using [h]), d₀.2 k hk (by omega_using [h]), e₀]
+  · rw [ite_eq_right (by omega_using [h]), d₃.1 k hk, ite_eq_left h, d₁.2 k hk (by omega_using [h]),
+      d₀.2 k hk (by omega_using [h]), e₀]
 
 theorem finish_ok {st buf a : Addr} {vs : Nat → CState} {s : State} (hh : Holds buf false vs s)
     (hrdi : s.gpr .rdi = st) (hrcx : s.gpr .rcx = buf) (hrsi : s.gpr .rsi = a)
