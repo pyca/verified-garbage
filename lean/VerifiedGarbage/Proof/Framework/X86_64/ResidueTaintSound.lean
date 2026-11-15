@@ -2062,8 +2062,24 @@ theorem stepFn_eq (i : Instr) (τ : FT) : (stepFn i).run τ = step τ i := by
   · show none = _
     unfold step; rw [hsp]; simp only [Bool.not_true, Bool.and_false, Bool.false_eq_true, ↓reduceIte]
 
+theorem isSp_eq (d : Reg) : isSp d = (some d == some Reg.rsp) := by cases d <;> rfl
+
+theorem isSpR_eq (d : Reg) : isSpR d = (d == Reg.rsp) := by cases d <;> rfl
+
+theorem stepFn1_eq (i : Instr) : stepFn1 i = stepFn i := by
+  unfold stepFn1 stepFn
+  simp only [isSp_eq, isSpR_eq]
+  cases i with
+  | mov d src | mov32 d src => cases src <;> rfl
+  | alu op d src | alu32 op d src => cases op <;> cases src <;> rfl
+  | xop op =>
+    cases op with
+    | bin op a b => cases op <;> rfl
+    | _ => rfl
+  | _ => rfl
+
 theorem stepF_eq : stepF = step := by
-  funext τ i; exact stepFn_eq i τ
+  funext τ i; show (stepFn1 i).run τ = _; rw [stepFn1_eq]; exact stepFn_eq i τ
 
 theorem eq2_iff {a b : Nat × Nat} : eq2 a b = true ↔ a = b := by
   obtain ⟨a1, a2⟩ := a; obtain ⟨b1, b2⟩ := b
