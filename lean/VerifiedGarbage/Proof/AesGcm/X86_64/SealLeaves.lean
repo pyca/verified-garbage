@@ -45,11 +45,6 @@ open VG.Spec.Gcm (Block blockAt)
 theorem sub_empty {a : Addr} {r : Region} : Region.Sub ⟨a, 0⟩ r := fun _ h => by
   simp only [Region.Contains] at h; omega_using [h]
 
-/-- A byte apart from a frame's regions is unchanged. -/
-theorem frame_byte {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {x : Addr}
-    (hd : ∀ r ∈ rs, (⟨x, 1⟩ : Region).Disjoint r) : m' x = m x :=
-  hf x fun r hr hc => hd r hr x (Region.contains_self _ _) hc
-
 /-! ## `J₀` and the additional data -/
 
 /-- What `oneAad` writes, with `vg_ghash` writing none of its working space:
