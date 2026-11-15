@@ -1,5 +1,9 @@
 module
 
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Md5.RISCV64.Compress
+meta import VerifiedGarbage.Proof.Md5.RISCV64.Compress
 public import VerifiedGarbage.Proof.Pbkdf2.RISCV64.Correct
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 public import VerifiedGarbage.Proof.Md5.Md
@@ -70,8 +74,7 @@ theorem hashOkW (Wi : Nat) (h₁ : 223 ≤ Wi) (h₂ : Wi ≤ 8192) :
 
 /-- The taint analysis of `main`, which the kernel checks. -/
 theorem main_ck : ∃ hc, (VG.Taint.check taint (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4]) it.main hc).isSome = true := by
-  refine ⟨?_, ?_⟩
-  taint_decide_all
+  taint_decide_sum [VG.Proof.Md5.RISCV64.compressSum]
 
 /-- `iterate`'s constant time, with any working space. -/
 theorem ctW (Wi : Nat) : ConstantTime isa (iterK Spec.Hmac.md5S Wi).pre (iterK Spec.Hmac.md5S Wi).pub code :=

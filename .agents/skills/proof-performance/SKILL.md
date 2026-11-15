@@ -134,8 +134,15 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   callee's taint once as a summary (`taint_summary`, `taint_decide_sum`,
   `Proof/Framework/TaintSum.lean`) rather than analysing its body in every
   caller's `taint_decide`; this needs a `Taint.Frame` instance for the ISA's
-  taint domain (so far `AArch64.VectorTaint`, `Framework/AArch64/TaintMono.lean`).
-  A summary pays when declarations or modules share it: within one
+  taint domain (`Proof/Framework/<ISA>/TaintMono.lean`, `TaintSymMono.lean`,
+  `SlotTaintMono.lean`, `SseTaintMono.lean`: each says which domains it is for).
+  A summary costs one analysis of the callee, and a second pass over its
+  instructions with `keeping` (the registers it does not write, which its
+  callers still know after the call), so it pays from the third check that
+  would analyse the callee: a hash's compression function, which `update`,
+  `finalize`, HMAC and PBKDF2 all call, not a function with one or two
+  callers. The callee's own constant time is the summary's
+  (`Taint.exists_check_of_sumOk`). Within one
   `taint_decide`, the kernel already analyses identical code from the same
   taint once, so splitting one check into summaries makes it slower. Give a
   summary the smallest taint its callers need (public slots that are never

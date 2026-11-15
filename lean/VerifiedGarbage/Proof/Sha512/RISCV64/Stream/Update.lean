@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 public import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Common
 meta import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Common
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
@@ -1011,8 +1013,8 @@ theorem update_verified : Verified RISCV64.target update Proof.Sha512.updateRISC
   refine ⟨fun s hs => ?_, ?_, ?_⟩
   · obtain ⟨t, s', he, h⟩ := correct (pre_of hs)
     exact ⟨t, s', he, h⟩
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
-      (fun _ _ _ _ hp => agree₀ hp) (by taint_decide)
+  · exact VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+      (fun _ _ _ _ hp => agree₀ hp) (by taint_decide_sum [VG.Proof.Sha512.RISCV64.compressSum])
   · refine ⟨sat, rfl, rfl, ?_, by decide, by decide, ?_, ?_⟩ <;>
     exact Region.disjoint_of_sep (by decide)
 

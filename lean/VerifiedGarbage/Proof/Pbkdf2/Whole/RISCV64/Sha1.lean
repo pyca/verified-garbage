@@ -1,5 +1,9 @@
 module
 
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Sha1.RISCV64.Compress
+meta import VerifiedGarbage.Proof.Sha1.RISCV64.Compress
 public import VerifiedGarbage.Proof.Pbkdf2.Whole.RISCV64.Shared
 public import VerifiedGarbage.Proof.Pbkdf2.Sha1.RISCV64.Verified
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha1
@@ -46,7 +50,9 @@ def okF : FnsOK F where
   frB := by decide
 
 theorem checks : Checks F := by
-  constructor <;> refine ⟨?_, ?_⟩
+  constructor
+  case upd => unfold Ck; taint_decide_sum [VG.Proof.Sha1.RISCV64.compressSum]
+  all_goals refine ⟨?_, ?_⟩
   taint_decide_all
 
 theorem pbkdf2 : Verified RISCV64.target F.pbkdf2 (Spec.Hmac.sha1I.pbkdf2Contract RISCV64.abi (F.itB + F.frB + F.X)) :=
