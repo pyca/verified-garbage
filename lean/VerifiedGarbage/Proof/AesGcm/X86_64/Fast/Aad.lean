@@ -357,7 +357,7 @@ theorem aadSome_ok {A : Addr} {al : Nat} {s : State} (he : Env Ctx (W + BitVec.o
       blockAt t.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) =
         VG.Proof.Gcm.X86_64.Pclmul.reduce (VG.Proof.Gcm.X86_64.Pclmul.Prod.zero.acc
           (Spec.Gcm.ofBytes (bytesAt s.mem A al ++ zeros (16 - al))) (s.mem.readW (Ctx + BitVec.ofNat 64 272) 128)) ∧
-      Frame (wFrame W SP) s.mem t.mem ∧
+      Frame [⟨W + BitVec.ofNat 64 16, 96⟩] s.mem t.mem ∧
       ∀ {a : Nat}, a + 16 ≤ 80 → (a + 16 ≤ 16 ∨ 32 ≤ a) →
         blockAt t.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 a) =
           blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 a) := by
@@ -366,7 +366,8 @@ theorem aadSome_ok {A : Addr} {al : Nat} {s : State} (he : Env Ctx (W + BitVec.o
       Env Ctx (W + BitVec.ofNat 64 16) W SP s' → s'.rd = s.rd → s'.wr = s.wr →
       t.mem = s'.mem.writeW (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) Y →
       (∀ r, r ≠ .rax → t.gpr r = s'.gpr r) → t.rd = s'.rd → t.wr = s'.wr →
-      Env Ctx (W + BitVec.ofNat 64 16) W SP t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ Frame (wFrame W SP) s.mem t.mem ∧
+      Env Ctx (W + BitVec.ofNat 64 16) W SP t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+        Frame [⟨W + BitVec.ofNat 64 16, 96⟩] s.mem t.mem ∧
       ∀ {a : Nat}, a + 16 ≤ 80 → (a + 16 ≤ 16 ∨ 32 ≤ a) →
         blockAt t.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 a) =
           blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 a) := by
@@ -378,8 +379,10 @@ theorem aadSome_ok {A : Addr} {al : Nat} {s : State} (he : Env Ctx (W + BitVec.o
         rcases hr with rfl | rfl | rfl | rfl <;> exact g _ (by decide)) rd wr,
       rd.trans rd', wr.trans wr', ?_, fun {a} ha ho => ?_⟩
     · refine (fT.sub fun r hr => ?_).trans (fy.sub fun r hr => ?_)
-      · simp only [List.mem_singleton] at hr; subst hr; exact w_wFrame (.inl ⟨by decide, by decide⟩)
-      · simp only [List.mem_singleton] at hr; subst hr; exact st_wFrame (d := 16) (k := 16) (by decide)
+      · simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩
+      · simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by decide)⟩
     · rw [blockAt_frame fy fun r hr => ?_, blockAt_frame fT fun r hr => ?_]
       · simp only [List.mem_singleton] at hr; subst hr; exact L.st_w ha (.inr ⟨by decide, by decide⟩)
       · simp only [List.mem_singleton] at hr; subst hr; exact L.st_st (by omega_arith) ha (by decide)
@@ -482,8 +485,9 @@ theorem aadSome_ok {A : Addr} {al : Nat} {s : State} (he : Env Ctx (W + BitVec.o
 /-- `aad`: `J₀` of the 12-byte nonce at `Np`, the first counter block, and the
 `al` (at most 16) bytes of additional data at `A` absorbed and padded, for
 an `H'` at `ctx + 272` that multiplies as `H` (`IsH1`): what `oneAad`
-leaves (`OneAad`). -/
-theorem fastAad_ok {Np A : Addr} {al : Nat} {H : Block} {s : State}
+leaves (`OneAad`), writing only the state and `T` (`W` from byte 16 to
+112). -/
+theorem fastAad_okF {Np A : Addr} {al : Nat} {H : Block} {s : State}
     (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H)
     (h12 : s.gpr .r12 = Np) (hbp : s.gpr .rbp = BitVec.ofNat 64 12)
     (hN : DataOk (W + BitVec.ofNat 64 16) W SP s Np 12) (hAd : DataOk (W + BitVec.ofNat 64 16) W SP s A al)
@@ -493,10 +497,19 @@ theorem fastAad_ok {Np A : Addr} {al : Nat} {H : Block} {s : State}
     (inH : InRegions (s.rd ++ s.wr) (Ctx + BitVec.ofNat 64 272) 16)
     (cw : (⟨Ctx + BitVec.ofNat 64 272, 16⟩ : Region).Disjoint ⟨W, 2560⟩)
     (ct : (below SP 8).Disjoint ⟨Ctx + BitVec.ofNat 64 272, 16⟩) :
-    WP isa aad s (OneAad Ctx W SP H (bytesAt s.mem Np 12) (bytesAt s.mem A al) s.mem) := by
+    WP isa aad s fun t => OneAad Ctx W SP H (bytesAt s.mem Np 12) (bytesAt s.mem A al) s.mem t ∧
+      Frame [⟨W + BitVec.ofNat 64 16, 96⟩] s.mem t.mem := by
   unfold aad
-  refine WP.seq (WP.mono (WP.with_rdwr (j012_ok L (gs := 256) ⟨he, hH, h12, hbp, hN⟩)) fun s₁ ⟨j₁, hrd₁, hwr₁⟩ => ?_)
-  refine WP.seq (WP.mono (WP.with_rdwr (initState_ok L j₁)) fun s₂ ⟨j₂, hrd₂, hwr₂⟩ => ?_)
+  refine WP.seq (WP.mono (WP.with_rdwr (j012_okL L (gs := 256) ⟨he, hH, h12, hbp, hN⟩))
+    fun s₁ ⟨⟨j₁, fj⟩, hrd₁, hwr₁⟩ => ?_)
+  refine WP.seq (WP.mono (WP.with_rdwr (initState_okL L j₁)) fun s₂ ⟨⟨j₂, fi⟩, hrd₂, hwr₂⟩ => ?_)
+  have fF : Frame [⟨W + BitVec.ofNat 64 16, 96⟩] s.mem s₂.mem :=
+    (fj.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by decide)⟩).trans
+    (fi.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by decide)⟩)
   have f₂ := j₂.frame
   have he₂ := j₂.env
   -- What `j0` keeps.
@@ -550,8 +563,8 @@ theorem fastAad_ok {Np A : Addr} {al : Nat} {H : Block} {s : State}
   · -- No additional data: the accumulator stays zero.
     have h0 : al = 0 := by simpa using ht
     subst h0
-    refine WP.block_nil ⟨he₃, by rw [hm₃]; exact j₂.hH, by rw [hm₃]; exact j₂.j0, ?_, by rw [hm₃]; exact j₂.cb,
-      by rw [hm₃]; exact j0Frame_one f₂⟩
+    refine WP.block_nil ⟨⟨he₃, by rw [hm₃]; exact j₂.hH, by rw [hm₃]; exact j₂.j0, ?_, by rw [hm₃]; exact j₂.cb,
+      by rw [hm₃]; exact j0Frame_one f₂⟩, by rw [hm₃]; exact fF⟩
     rw [hm₃]
     simpa [bytesAt, padLen, zeros] using Proof.Gcm.absorbed_nil (b := W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H j₂.y
   · have h0 : al ≠ 0 := by simpa using hf
@@ -578,7 +591,9 @@ theorem fastAad_ok {Np A : Addr} {al : Nat} {H : Block} {s : State}
           blockAt s₂.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 a) := fun ha ho => by
       rw [keep' ha ho, hm₃]
     have hH₂ : blockAt t.mem (Ctx + BitVec.ofNat 64 240) = H := by
-      rw [blockAt_frame (fs₃.trans f₅) fun r hr => ?_]
+      rw [blockAt_frame f₅ (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact L.ctx_w (by decide) (by decide)),
+        blockAt_frame fs₃ fun r hr => ?_]
       · exact hH
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
@@ -587,7 +602,10 @@ theorem fastAad_ok {Np A : Addr} {al : Nat} {H : Block} {s : State}
       · exact L.ctx_w (by decide) (by decide)
       · exact (L.stk_ctx (by decide)).symm
     have hA₄ := length_bytesAt s.mem A al
-    refine ⟨he₅, hH₂, ?_, ?_, ?_, fs₃.trans f₅⟩
+    refine ⟨⟨he₅, hH₂, ?_, ?_, ?_, fs₃.trans (f₅.sub fun r hr => ?_)⟩, (by rw [hm₃]; exact fF : Frame _ s.mem s₃.mem).trans f₅⟩
+    rotate_left 3
+    · simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨⟨W + BitVec.ofNat 64 16, 112⟩, List.mem_cons_self .., Region.sub_prefix (by decide)⟩
     · have := keep (a := 0) (by decide) (.inl (by decide))
       simp only [BitVec.ofNat_eq_ofNat, BitVec.add_zero] at this
       rw [this]; exact j₂.j0
@@ -599,6 +617,21 @@ theorem fastAad_ok {Np A : Addr} {al : Nat} {H : Block} {s : State}
       · rw [j₂.y, b₅, aadMul_ghash hP₃, hA₃, List.drop_nil, List.nil_append,
           show padLen al = 16 - al by simp only [padLen]; omega_arith, List.append_eq]
     · rw [keep (by decide) (.inr (by decide))]; exact j₂.cb
+
+/-- `aad`: what `oneAad` leaves (`OneAad`, `fastAad_okF`). -/
+theorem fastAad_ok {Np A : Addr} {al : Nat} {H : Block} {s : State}
+    (he : Env Ctx (W + BitVec.ofNat 64 16) W SP s) (hH : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H)
+    (h12 : s.gpr .r12 = Np) (hbp : s.gpr .rbp = BitVec.ofNat 64 12)
+    (hN : DataOk (W + BitVec.ofNat 64 16) W SP s Np 12) (hAd : DataOk (W + BitVec.ofNat 64 16) W SP s A al)
+    (haad : s.mem.readW (W + BitVec.ofNat 64 232) 64 = A)
+    (hal : s.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al) (h16 : al ≤ 16)
+    (hP : IsH1 H (s.mem.readW (Ctx + BitVec.ofNat 64 272) 128))
+    (inH : InRegions (s.rd ++ s.wr) (Ctx + BitVec.ofNat 64 272) 16)
+    (cw : (⟨Ctx + BitVec.ofNat 64 272, 16⟩ : Region).Disjoint ⟨W, 2560⟩)
+    (ct : (below SP 8).Disjoint ⟨Ctx + BitVec.ofNat 64 272, 16⟩) :
+    WP isa aad s (OneAad Ctx W SP H (bytesAt s.mem Np 12) (bytesAt s.mem A al) s.mem) :=
+  WP.mono (fastAad_okF L he hH h12 hbp hN hAd haad hal h16 hP inH cw ct) fun _ h => h.1
+
 end
 
 end VG.Proof.AesGcm.X86_64.Fast
