@@ -1309,10 +1309,10 @@ macro "prep_word_tac" : tactic => `(tactic| (
     W0.2, W1.2, W2.2, W3.2, W4.2, W5.2, W6.2, W7.2, W8.2, W9.2, W10.2, W11.2]
   refine ⟨fun q hq j hj => ?_, fun k hk hk' => ?_, ?_, ?_⟩
   · interval_cases q <;> interval_cases j <;>
-      simp (disch := omega) only [fw, FP, opW, Holes.lo32, Holes.hi32, reduceCtorEq, ite_false, ite_true,
+      simp (disch := decide) only [fw, FP, opW, Holes.lo32, Holes.hi32, reduceCtorEq, ite_false, ite_true,
         Nat.reduceMul, Nat.reduceAdd, Nat.mul_zero, Nat.zero_add, Nat.add_zero, BitVec.ofNat_eq_ofNat,
         BitVec.add_zero, readW_wr_ne, readW_wr_ne0, readW_wr_ne0', Mem.readW_writeW_self64, Nat.reduceEqDiff]
-  · simp (disch := omega) only [fw, FP, reduceCtorEq, ite_false, ite_true, Nat.mul_zero, Nat.zero_add,
+  · simp (disch := omega_using [hk, hk']) only [fw, FP, reduceCtorEq, ite_false, ite_true, Nat.mul_zero, Nat.zero_add,
       readW_wr_ne, readW_wr_ne0]
   · glue_close
   · repeat (first
