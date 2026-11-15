@@ -170,8 +170,8 @@ def artifacts : List Artifact :=
   (VG.Proof.Variants.AesGcm.AArch64.variants.flatMap fun v => artifactsFor v) ++
   [
     Spec.Gcm.storePowersApi.artifact AArch64.target {
-      code := Impl.Gcm.AArch64.keyPowers
-      verified := Proof.Gcm.AArch64.KeyPowers.keyPowers_verified },
+      code := Impl.StackScratch.AArch64.withStackScratch 80 .x2 Impl.Gcm.AArch64.keyPowers
+      verified := Proof.Gcm.AArch64.KeyPowers.keyPowers_framed },
     Spec.Gcm.storePowersApi.artifact AArch64.target {
       suffix := "_aes"
       code := Impl.Gcm.AArch64.Pmull.keyPowers

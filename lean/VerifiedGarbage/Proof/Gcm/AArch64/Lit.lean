@@ -18,4 +18,5 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 namespace VG.Impl.Gcm.AArch64
 materialize_code ghash
+materialize_code keyPowers
 end VG.Impl.Gcm.AArch64

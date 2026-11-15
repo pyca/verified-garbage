@@ -761,7 +761,7 @@ pub unsafe fn vg_aes_gcm_open_to_with_powers_auto(_dit: verified_garbage_cpu::Di
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `pw` must be valid for reads and writes of 128 bytes.
 /// * `pw` must not overlap `ctx` (distinct Rust objects never do).
-/// * Neither `ctx` nor `pw` may wrap around the end of the address space (no Rust object does).
+/// * Neither `ctx` nor `pw` may overlap the 80 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_gcm_store_powers_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], pw: *mut [u64; 16]) {

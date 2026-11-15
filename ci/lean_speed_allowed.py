@@ -114,7 +114,6 @@ DECIDE_SIMP_ALLOWED = {
     "VerifiedGarbage/Proof/Dsa/Arm/Prime/Trial2.lean": 2,
     "VerifiedGarbage/Proof/Ed448/X86_64/VerifyChecks.lean": 1,
     "VerifiedGarbage/Proof/Ed448/X86_64/VerifyRoot.lean": 1,
-    "VerifiedGarbage/Proof/Gcm/AArch64/Ghash.lean": 3,
     "VerifiedGarbage/Proof/Gcm/Arm/Step.lean": 3,
     "VerifiedGarbage/Proof/Gcm/X86_64/Ghash.lean": 10,
     "VerifiedGarbage/Proof/Gcm/X86_64/Pclmul/Ghash.lean": 6,

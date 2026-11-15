@@ -195,116 +195,70 @@ def ghash : Prog isa :=
 
 /-! ## The powers from a key context
 
-`vg_aes_gcm_store_powers(ctx = x0, pw = x1)`, with SP 800-38D Algorithm 1 bit
-by bit, as `Spec.Gcm.mul` defines it (no PMULL, and no scratch buffer for the
-registers the multiplication above needs):
+`vg_aes_gcm_store_powers_scratch(ctx = x0, pw = x1, scratch = x2)`, with the
+multiplication of `vg_ghash` above (`mulCode`); `vg_aes_gcm_store_powers`
+runs it with `scratch`, 80 bytes, in a frame of its own
+(`Proof/Gcm/AArch64/KeyPowers.lean`).
 
-* A 128-bit value is kept in two registers, `hi` (the first eight bytes)
-  and `lo`.
-* The factor `X` is in `x5:x6`. Each step takes its most significant bit
-  `xᵢ` (`lsr` by 63), turns it into the mask `m = 0 − xᵢ`, and shifts it
-  left by one bit.
-* `Z` (in `x7:x8`) accumulates `V & m`, so `Z := Z ⊕ V` exactly when
-  `xᵢ = 1`.
-* `V` (in `x9:x10`, starting at `H`) is shifted right by one bit, and the
-  reduction constant `R` (the high half `0xE1 ‖ 0⁵⁶`, in `x13`) is XORed
-  into it under the mask `0 − LSB₁(V)`.
-* The 128 steps are a loop of `unroll` steps per iteration, counted down in
-  `x14`; `x15` holds zero.
+* `x19`–`x28` are saved in `scratch` and restored on exit, as in `vg_ghash`.
+* `setup` computes `H' = x⁻¹ · H` and the masks from the hash subkey `H`,
+  bytes 240–255 of the key context, to which `x0` is moved; `H` is also
+  loaded into `Z` (`ZH:ZL`).
+* `preparedPower(Z)` (`Z` shifted left one bit, `0xc2 ‖ 0¹¹⁸ ‖ 1` XORed in
+  under the mask of its top bit) is stored at `x1` as two little-endian
+  doublewords, the low first (`storeEnc`): first that of `H`, at `pw + 16`.
+* Then, for `k` from 2 to 8, `Z := Z • H` (`mulCode`, of `Y := Z`) and
+  `preparedPower(Z)` is stored at `x1 = pw + pwOff k`: pair `j` holds `H²ʲ⁺²`
+  at `32 j` and `H²ʲ⁺¹` at `32 j + 16`, so `x1` moves by 48 and by −16 in
+  turn, the step kept in `x3` (`32 −` the last one). `x4` counts the powers
+  left.
+* `x1`–`x4` hold only pointers and counts; no branch and no address depends
+  on `H`. -/
 
-The hash subkey `H`, bytes 240–255 of the key context, is loaded
-into `x2:x3` and `Z`; then for `k` from 1 to 8,
-`preparedPower(Hᵏ)` (`Z` shifted left one bit, `0xc2 ‖ 0¹¹⁸ ‖ 1` XORed
-in under the mask of its top bit) stored at `pwOff k` as two little-endian
-doublewords, the low first, and, below 8, `Z := Z • H` by the loop of
-steps, from `X := Z`, `V := H`. Only caller-saved registers are used
-(`x2`–`x15`); no branch and no address depends on `H`. -/
-
-/-- `Y ⊕ X`, shifted left one bit per step. -/
-def XH : Reg := .x5
-def XL : Reg := .x6
-/-- `V` (the product so far, `Z`, is in `ZH:ZL`). -/
-def VH : Reg := .x9
-def VL : Reg := .x10
-/-- The masks `−xᵢ` and `−LSB₁(V)`. -/
-def M : Reg := .x11
-/-- The high half of `R`. -/
-def RH : Reg := .x13
-/-- The loop counter. -/
-def CNT : Reg := .x14
-/-- Zero. -/
-def ZERO : Reg := .x15
-
-/-- The high half of `R = 11100001 ‖ 0¹²⁰` (its low half is 0). -/
-def rHigh : BitVec 64 := 0xE100000000000000
-
-/-- Steps per iteration of the inner loop. -/
-def unroll : Nat := 8
-
-/-- One step `i` of Algorithm 1. -/
-def step : List Instr := [
-  -- M := −xᵢ, and X := X << 1
-  .lsr .x T XH 63,
-  .sub .x M ZERO T,
-  .lsl .x XH XH 1,
-  .lsr .x T XL 63,
-  .logic .orr .x XH XH T,
-  .lsl .x XL XL 1,
-  -- Z := Z ⊕ (V ∧ M)
-  .logic .and .x T VH M,
-  .logic .eor .x ZH ZH T,
-  .logic .and .x T VL M,
-  .logic .eor .x ZL ZL T,
-  -- M := −LSB₁(V)
-  .lsl .x T VL 63,
-  .lsr .x T T 63,
-  .sub .x M ZERO T,
-  -- V := (V >> 1) ⊕ (R ∧ M)
-  .lsr .x VL VL 1,
-  .lsl .x T VH 63,
-  .logic .orr .x VL VL T,
-  .lsr .x VH VH 1,
-  .logic .and .x M M RH,
-  .logic .eor .x VH VH M]
-
-/-- `unroll` steps, then the count. -/
-def steps : List Instr :=
-  (List.range unroll).flatMap (fun _ => step) ++ ([.subImm .x CNT CNT 1] : List Instr)
+/-- The step of `x1` to the next power's place. -/
+def D : Reg := .x3
+/-- The powers left. -/
+def CNT : Reg := .x4
 
 /-- The offset in `pw` of `preparedPower(Hᵏ)`, `1 ≤ k ≤ 8`: pair `j` holds
 `H²ʲ⁺²` at `32 j` and `H²ʲ⁺¹` at `32 j + 16`. -/
 def pwOff (k : Nat) : Nat := if k % 2 = 0 then 32 * ((k - 2) / 2) else 16 + 32 * ((k - 1) / 2)
 
-/-- `H` into `x2:x3` and `Z`, with `R` and zero. -/
+def keySave : List Instr := saved.map fun (r, d) => .str .x r .x2 d
+def keyRestore : List Instr := saved.map fun (r, d) => .ldr .x r .x2 d
+
+/-- `x0` to `H`, for `setup`. -/
+def keyAddr : List Instr := [.addImm .x .x0 .x0 240]
+
+/-- `Z := H`. -/
 def keyLoad : List Instr := [
-  .movz .x RH 0xE100 3, .movz .x ZERO 0 0,
-  .ldr .x .x2 .x0 240, .rev .x2 .x2,
-  .ldr .x .x3 .x0 248, .rev .x3 .x3,
-  .logic .orr .x ZH .x2 ZERO, .logic .orr .x ZL .x3 ZERO]
+  .ldr .x ZH .x0 0, .rev ZH ZH,
+  .ldr .x ZL .x0 8, .rev ZL ZL]
 
-/-- `preparedPower(Z)` stored at `pw + off`: the high doubleword in `x4`,
-the low one in `T`. -/
+/-- `preparedPower(Z)` stored at `x1 + off`: the mask of the top bit of `Z`
+in `B`, the high doubleword in `x0` and the low one in `T`. -/
 def storeEnc (off : Nat) : List Instr := [
-  .lsr .x T ZH 63, .sub .x M ZERO T,
-  .lsl .x .x4 ZH 1, .lsr .x T ZL 63, .logic .orr .x .x4 .x4 T,
-  .movz .x VH 0xc200 3, .logic .and .x VH VH M, .logic .eor .x .x4 .x4 VH,
-  .lsl .x T ZL 1, .lsr .x VL M 63, .logic .eor .x T T VL,
-  .str .x T .x1 off, .str .x .x4 .x1 (off + 8)]
+  .lsr .x T ZH 63, .movz .x B 0 0, .sub .x B B T,
+  .lsl .x .x0 ZH 1, .lsr .x T ZL 63, .logic .orr .x .x0 .x0 T,
+  .movz .x T 0xc200 3, .logic .and .x T T B, .logic .eor .x .x0 .x0 T,
+  .lsl .x T ZL 1, .lsr .x B B 63, .logic .eor .x T T B,
+  .str .x T .x1 off, .str .x .x0 .x1 (off + 8)]
 
-/-- `X := Z`, `V := H`, `Z := 0` and the count, for `Z • H`. -/
-def nextMul : List Instr := [
-  .logic .orr .x XH ZH ZERO, .logic .orr .x XL ZL ZERO,
-  .logic .orr .x VH .x2 ZERO, .logic .orr .x VL .x3 ZERO,
-  .movz .x ZH 0 0, .movz .x ZL 0 0,
-  .movz .x CNT (BitVec.ofNat 16 (128 / unroll)) 0]
+/-- The count of the powers after `H`, and the first step. -/
+def keyCount : List Instr := [.movz .x CNT 7 0, .movz .x D 48 0]
 
-/-- `preparedPower(Hᵏ)` stored, then `Hᵏ⁺¹`. -/
-def keyRound (k : Nat) : Prog isa :=
-  .seq (.block (storeEnc (pwOff k) ++ nextMul)) (.loop (.block steps) (.nonzero .x CNT))
+/-- `Y := Z`, for `mulCode`. -/
+def keyY : List Instr := [mov Y0 ZH, mov Y1 ZL, .logic .eor .x YX Y0 Y1]
+
+/-- On to the next power's place. -/
+def keyNext : List Instr := [
+  .add .x .x1 .x1 D, .movz .x T 32 0, .sub .x D T D, .subImm .x CNT CNT 1]
+
+/-- The next power, stored. -/
+def keyBody : List Instr := keyY ++ (mulCode ++ (storeEnc 0 ++ keyNext))
 
 def keyPowers : Prog isa :=
-  .seq (.block keyLoad) (.seq (keyRound 1) (.seq (keyRound 2) (.seq (keyRound 3)
-    (.seq (keyRound 4) (.seq (keyRound 5) (.seq (keyRound 6) (.seq (keyRound 7)
-      (.block (storeEnc (pwOff 8))))))))))
+  .seq (.block (keySave ++ (keyAddr ++ (setup ++ (keyLoad ++ (storeEnc 16 ++ keyCount))))))
+    (.seq (.loop (.block keyBody) (.nonzero .x CNT)) (.block keyRestore))
 
 end VG.Impl.Gcm.AArch64
