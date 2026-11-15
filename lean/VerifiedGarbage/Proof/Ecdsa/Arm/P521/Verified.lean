@@ -33,6 +33,8 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+public import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+public meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 
 /-!
 # ECDSA over P-521 on 32-bit ARM: `Verified`
@@ -145,9 +147,39 @@ theorem argByte_eq (s : State) (k : Nat) :
     VG.Arm.Taint.argByte s k = stackArgAddr s 0 + BitVec.ofNat 64 k := by
   simp [VG.Arm.Taint.argByte, stackArgAddr]
 
+/-! The constant-time analyses of the calls of the functions modulo `p` and `n`, from their
+arguments, `r10` (which the callers keep `lr` in) and the loops' counter `r11`, each done once
+for every check of code that calls them (`taint_decide_sum`: signing, ECDH, the public key and
+its compression). The functions write neither `r10` nor `r11`, so they are still public after
+the call; the analysis is `taintS`'s, which has summaries (`Proof/Framework/Arm/TaintMono.lean`). -/
+taint_summary mulPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3, .r10, .r11])
+  (.call (Mont.mulName false p521.SP) (Mont.mulFnWith false p521.SP.k p521.SP.m))
+taint_summary addPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3, .r10, .r11])
+  (.call (p521.SP.fn "add") (Mont.addFn p521.SP.k p521.SP.m))
+taint_summary subPSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3, .r10, .r11])
+  (.call (p521.SP.fn "sub") (Mont.subFn p521.SP.k p521.SP.m))
+taint_summary mulNSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3, .r10, .r11])
+  (.call (Mont.mulName false p521.SN) (Mont.mulFnWith false p521.SN.k p521.SN.m))
+taint_summary addNSum : taintS (Taint.ofRegs [.r0, .r1, .r2, .r3, .r10, .r11])
+  (.call (p521.SN.fn "add") (Mont.addFn p521.SN.k p521.SN.m))
+
+/-! The constant-time analysis of the call of `vg_p521_mul` from its argument and `r10`, done
+once for every check of code that calls it (signing, ECDH and the public key). -/
+taint_summary mulSum : taintS (Taint.ofRegs [.r0, .r10])
+  (.call (s!"vg_{Impl.Weierstrass.Mul.p521.curve}_mul" ++ if p521.umaal then "_umaal" else "") mulP521)
+  using mulPSum addPSum subPSum
+
+/-- `τ₀` without the regions, which the code's timing does not need: no address or branch is
+read back from memory, so the analysis with summaries starts from less (`leS_sound`). -/
+def τ₁ : VG.Arm.Taint.T := { regs := .ofList [.r0, .r1, .r2, .r3], flags := false, argLen := 4 }
+
 theorem sign_ct : ConstantTime isa signArm.pre signArm.pub signP521 := by
-  refine VG.Taint.constantTime (A := taint) τ₀ ?_ (by native_taint_decide)
+  refine VG.Taint.constantTime_of_exists (A := taintS) τ₁ ?_
+    (by taint_decide_sum [mulPSum, mulNSum, addNSum, mulSum])
   intro s t hs ht ⟨hsp, h0, h1, h2, h3, ha⟩
+  refine VG.Arm.Taint.leS_sound (σ := τ₀) ⟨RegSet.subset_refl _, id, .inr ⟨rfl, rfl⟩,
+    fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim, .inl rfl,
+    fun _ h => (List.not_mem_nil h).elim⟩ ?_
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun _ => ?_, wf₀ hs, wf₀ ht,
     fun _ h => (List.not_mem_nil h).elim, fun _ h => (List.not_mem_nil h).elim,
     fun _ => hsp, fun k hk => ?_⟩

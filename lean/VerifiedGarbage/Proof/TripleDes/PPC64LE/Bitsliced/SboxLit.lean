@@ -56,8 +56,7 @@ materialize_code sbox5
 materialize_code sbox6
 materialize_code sbox7
 
--- Two rounds, in each direction, once: the functions' literals (`Lit`, `ModesLit`) and the
--- summaries of the modes' constant-time analysis (`ModesConstantTime`) read them.
+-- Two rounds, in each direction, once: the functions' literals (`Lit`, `ModesLit`) read them.
 materialize_value roundPairEncrypt := roundPair .encrypt
 materialize_value roundPairDecrypt := roundPair .decrypt
 
