@@ -35,7 +35,11 @@ import VerifiedGarbage.Proof.Sm4.X86_64.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.X86_64.Lit
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
-import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
+public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.Registration
+public import VerifiedGarbage.Proof.Framework.X86_64.Registration
+import VerifiedGarbage.Proof.AesGcm.Scratch
 
 /-! ### `Sm4Gcm.X86_64.Verified`, which only this module used -/
 
@@ -833,5 +837,183 @@ theorem open_framed :
     (open_verified v) (by decide) (by decide) (by decide) (open_spSafe v) (open_xdepth v)
     (Proof.Sm4Gcm.pre_local _ _) (Proof.Sm4Gcm.openPost_local _) openFrameSat_pre
     (hleak := Proof.Sm4Gcm.openLeak_local _)
+
+/-! ## Without secret residue
+
+Each function followed by the clearing of its whole stack
+(`X86_64.Scrub.withScrubAll`): its own frame, and below it the frames of
+`vg_sm4_ctr32` and `vg_sm4_expand_key`, which leave them as they are (the
+working space they share: the key schedule they prepare and the keystream,
+cleared once here for all the calls). Their postconditions read the memory
+on return only within the buffers (`X86_64.Scrub.PostOut`). -/
+
+section Scrub
+
+open VG.X86_64.Scrub
+
+theorem bytesAt_of0 {m₁ m₂ : Mem} {p : Addr} {L n : Nat}
+    (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) (hn : n ≤ L) :
+    Spec.Aes.bytesAt m₂ p n = Spec.Aes.bytesAt m₁ p n :=
+  Proof.AesGcm.bytesAt_congr fun i hi => Proof.AesGcm.agree_of h i (by omega_using [hi, hn])
+
+theorem bytesAt_of {m₁ m₂ : Mem} {p : Addr} {L d n : Nat}
+    (h : ∀ a, Region.Contains ⟨p, L⟩ a 1 → m₁ a = m₂ a) (hn : d + n ≤ L) :
+    Spec.Aes.bytesAt m₂ (p + BitVec.ofNat 64 d) n = Spec.Aes.bytesAt m₁ (p + BitVec.ofNat 64 d) n :=
+  Proof.AesGcm.bytesAt_congr_off hn (Proof.AesGcm.agree_of h)
+
+theorem initOut (stack : Nat) :
+    PostOut (Spec.Sm4.Gcm.initContract X86_64.abi stack) (Spec.Sm4.Gcm.initSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [key, ctx], _ =>
+      simp only [Spec.Sm4.Gcm.initSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+        forall_eq, Elem.size] at hb
+      change Spec.Sm4.Gcm.KeyRepr m₁ ctx _ at h
+      change Spec.Sm4.Gcm.KeyRepr m₂ ctx _
+      obtain ⟨h1, h2⟩ := h
+      have ha := Proof.AesGcm.agree_of hb.2
+      refine ⟨?_, ?_⟩
+      · rw [Proof.Sm4.scheduleAt_congr fun k hk => ha k (by omega_using [hk])]
+        exact h1
+      · simp only [Spec.Gcm.ctxH, Spec.Gcm.blockAt] at h2 ⊢
+        rw [show (240 : BitVec 64) = BitVec.ofNat 64 240 from rfl] at h2 ⊢
+        rw [bytesAt_of hb.2 (by decide)]
+        exact h2
+
+theorem sealOut (stack : Nat) :
+    PostOut (Spec.Sm4.Gcm.sealContract X86_64.abi stack) (Spec.Sm4.Gcm.sealSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, nonce, nl, aad, al, data, len, tag], _ =>
+      simp only [Spec.Sm4.Gcm.sealSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      show _ = (Spec.Aes.bytesAt m₂ data len.toNat, Spec.Aes.bytesAt m₂ tag 16)
+      rw [bytesAt_of0 hb.2.2.2.1 (by omega_arith), bytesAt_of0 hb.2.2.2.2 (by decide)]
+      exact h
+
+theorem openOut (stack : Nat) :
+    PostOut (Spec.Sm4.Gcm.openContract X86_64.abi stack) (Spec.Sm4.Gcm.openSig.retBits 64) :=
+  postOut_of_local ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, nonce, nl, aad, al, data, len, tag, tl], _ =>
+      simp only [Spec.Sm4.Gcm.openSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      show (match Spec.Gcm.openResult (Spec.Sm4.Gcm.ctxCiph m ctx) (Spec.Gcm.ctxH m ctx) tl.toNat
+          (Spec.Aes.bytesAt m nonce nl.toNat) (Spec.Aes.bytesAt m data len.toNat)
+          (Spec.Aes.bytesAt m aad al.toNat) (Spec.Aes.bytesAt m tag tl.toNat) with
+        | some pt => r = 1 ∧ Spec.Aes.bytesAt m₂ data len.toNat = pt
+        | none => r = 0 ∧ Spec.Aes.bytesAt m₂ data len.toNat = Spec.Aes.bytesAt m data len.toNat)
+      rw [bytesAt_of0 hb.2.2.2.1 (by omega_arith)]
+      exact h
+
+theorem streamEncryptOut (stack : Nat) :
+    PostOut (Spec.Sm4.Gcm.streamEncryptContract X86_64.abi stack) (Spec.Sm4.Gcm.streamCryptSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, st, al, tl, data, len], _ =>
+      simp only [Spec.Sm4.Gcm.streamCryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      intro iv a p hr hA hT
+      obtain ⟨h1, h2⟩ := h iv a p hr hA hT
+      refine ⟨Proof.AesGcm.streamRepr_congr (Proof.AesGcm.agree_of hb.2.1) h1, ?_⟩
+      show Spec.Aes.bytesAt m₂ data len.toNat = _
+      rw [bytesAt_of0 hb.2.2 (by omega_arith)]
+      exact h2
+
+theorem streamDecryptOut (stack : Nat) :
+    PostOut (Spec.Sm4.Gcm.streamDecryptContract X86_64.abi stack) (Spec.Sm4.Gcm.streamCryptSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, st, al, tl, data, len], _ =>
+      simp only [Spec.Sm4.Gcm.streamCryptSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      intro iv a c hr hA hT
+      obtain ⟨h1, h2⟩ := h iv a c hr hA hT
+      refine ⟨Proof.AesGcm.streamRepr_congr (Proof.AesGcm.agree_of hb.2.1) h1, ?_⟩
+      show Spec.Aes.bytesAt m₂ data len.toNat = _
+      rw [bytesAt_of0 hb.2.2 (by omega_arith)]
+      exact h2
+
+theorem streamFinishOut (stack : Nat) :
+    PostOut (Spec.Sm4.Gcm.streamFinishContract X86_64.abi stack) (Spec.Sm4.Gcm.streamFinishSig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen hb h => by
+    match vs, hlen with
+    | [ctx, st, al, tl, tag], _ =>
+      simp only [Spec.Sm4.Gcm.streamFinishSig, Sig.bufs, List.mem_cons, List.not_mem_nil, or_false,
+        forall_eq_or_imp, forall_eq, Elem.size] at hb
+      intro iv a c hr hA hT
+      show Spec.Aes.bytesAt m₂ tag 16 = _
+      rw [bytesAt_of0 hb.2.2 (by decide)]
+      exact h iv a c hr hA hT
+
+theorem streamVerifyOut (stack : Nat) :
+    PostOut (Spec.Sm4.Gcm.streamVerifyContract X86_64.abi stack) (Spec.Sm4.Gcm.streamVerifySig.retBits 64) :=
+  postOut_of_local (leak := none) ScrubAbi.plain fun vs m m₁ m₂ r hlen _ h => by
+    match vs, hlen with
+    | [ctx, st, al, tl, tag, tagLen], _ => exact h
+
+/-- `vg_sm4_gcm_init`, its whole stack cleared. -/
+def initReg : Registration Spec.Sm4.Gcm.initApi X86_64.target :=
+  withScrubAll {
+    code := Impl.StackScratch.X86_64.withStackScratch 2568 .rdx init
+    stack := 5792
+    verified := init_framed
+    spSafe := X86_64.withStackScratch_spSafe_of init_spSafe } (initOut _)
+
+/-- `vg_sm4_gcm_seal` over `v`, its whole stack cleared. -/
+def sealReg : Registration Spec.Sm4.Gcm.sealApi X86_64.target :=
+  withScrubAll {
+    suffix := v.gh.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2592 2 («seal» v.callees)
+    stack := 5816
+    verified := seal_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (seal_spSafe v) } (sealOut _)
+
+/-- `vg_sm4_gcm_open` over `v`, its whole stack cleared. -/
+def openReg : Registration Spec.Sm4.Gcm.openApi X86_64.target :=
+  withScrubAll {
+    suffix := v.gh.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 3 («open» v.callees)
+    stack := 5824
+    verified := open_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (open_spSafe v) } (openOut _)
+
+/-- `vg_sm4_gcm_stream_encrypt` over `v`, its whole stack cleared. -/
+def streamEncryptReg : Registration Spec.Sm4.Gcm.streamEncryptApi X86_64.target :=
+  withScrubAll {
+    suffix := v.gh.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (streamEncrypt v.callees)
+    stack := 5800
+    verified := streamEncrypt_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v) } (streamEncryptOut _)
+
+/-- `vg_sm4_gcm_stream_decrypt` over `v`, its whole stack cleared. -/
+def streamDecryptReg : Registration Spec.Sm4.Gcm.streamDecryptApi X86_64.target :=
+  withScrubAll {
+    suffix := v.gh.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (streamDecrypt v.callees)
+    stack := 5800
+    verified := streamDecrypt_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v) } (streamDecryptOut _)
+
+/-- `vg_sm4_gcm_stream_finish` over `v`, its whole stack cleared. -/
+def streamFinishReg : Registration Spec.Sm4.Gcm.streamFinishApi X86_64.target :=
+  withScrubAll {
+    suffix := v.gh.suffix
+    code := Impl.StackScratch.X86_64.withStackScratch 2568 .r9 (streamFinish v.callees)
+    stack := 5792
+    verified := streamFinish_framed v
+    spSafe := X86_64.withStackScratch_spSafe_of (streamFinish_spSafe v) } (streamFinishOut _)
+
+/-- `vg_sm4_gcm_stream_verify` over `v`, its whole stack cleared. -/
+def streamVerifyReg : Registration Spec.Sm4.Gcm.streamVerifyApi X86_64.target :=
+  withScrubAll {
+    suffix := v.gh.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (streamVerify v.callees)
+    stack := 5800
+    verified := streamVerify_framed v
+    spSafe := X86_64.withStackArgScratch_spSafe (streamVerify_spSafe v) } (streamVerifyOut _)
+
+end Scrub
 
 end VG.Proof.Sm4Gcm.X86_64
