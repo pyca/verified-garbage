@@ -217,7 +217,13 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   differs (`simp only [Serial.coreSpec, dirCipher]`) or by `kernel_rfl`, and
   rewrite a hypothesis with it before `exact`
   (`fun _ h => by simp only [cipher_ser] at h; exact h`). A proof of a few
-  lines that elaborates for seconds, with no kernel time, is this.
+  lines that elaborates for seconds, with no kernel time, is this. So is
+  `hx ▸ h.x` between facts about two states' memory, which first tries the
+  two as they are (`by rw [hx]; exact h.x`: Ecdsa's `PtOk.of_eq` on RISC-V,
+  86 s in eighteen copies), and a lemma applied with an implicit argument
+  that only the expected type determines, which is compared with it, in
+  vain, before the arguments are elaborated: name the argument
+  (`digestFrame (SH := ok.SH) (bytes := …)`).
 * **`generalize` does not hide a value from the kernel:** the proof term
   `generalize` (and `revert`) builds is an application of the new goal's
   proof to the value, which `instantiateMVars` beta-reduces, so the kernel
