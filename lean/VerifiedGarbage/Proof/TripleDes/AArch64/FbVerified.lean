@@ -52,15 +52,15 @@ meta import VerifiedGarbage.Proof.TripleDes.AArch64.RoundLit
 # Triple DES-OFB, -CFB64 and -CFB8 on AArch64 meet their contracts
 
 `ofb_wp`, …, `cfb8Decrypt_wp`: the modes' OFB, CFB and CFB8
-(`Proof.Modes.AArch64.fb_wp`, `cfb8_wp`) over CBC encryption's core
-(`dirCoreSpec .encrypt`), with the IV's address in `x25`, which the core
+(`Proof.Modes.AArch64.fb_wp`, `cfb8_wp`) over the table core
+(`tableCoreSpec`), with the IV's address in `x28`, which the core
 never writes (`keepsReg_of_regSafe`), and the specification's results
 (`Proof.Modes.ofb_of`, …). `ofb_verified`, …: each is correct and constant
 time, by the taint analysis: the pointers, `n` (or `len`) and the stack
 pointer are public, and so is everything the code computes from them, which
-it keeps in registers; the IV is secret. `ofb_framed`, … run them with their
-working space on the stack, zeroed on return: 1008 bytes, the 125 words of
-the scratch buffer rounded up to the stack's alignment.
+it keeps in registers that the block never reloads from the scratch buffer;
+the IV is secret. `ofb_framed`, … run them with their working space on the
+stack, zeroed on return: 560 bytes, the 70 words of the scratch buffer.
 
 `cfbDecrypt_wp`: the modes' batched CFB decryption
 (`Proof.Modes.AArch64.CfbDec.batched_wp`) over the batched core for
@@ -80,11 +80,11 @@ def fbPre (len : State → Nat) (s : State) : Prop :=
   let sched : Region := ⟨s.gpr .x0, 384⟩
   let iv : Region := ⟨s.gpr .x1, 8⟩
   let data : Region := ⟨s.gpr .x2, len s⟩
-  let scratch : Region := ⟨s.gpr .x4, 8 * 125⟩
+  let scratch : Region := ⟨s.gpr .x4, 8 * 70⟩
   s.rd = [sched] ∧ s.wr = [iv, data, scratch] ∧ sched.Disjoint iv ∧ sched.Disjoint data ∧
     sched.Disjoint scratch ∧ iv.Disjoint data ∧ iv.Disjoint scratch ∧ data.Disjoint scratch ∧
     (s.gpr .x0).toNat + 384 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 8 ≤ 2 ^ 64 ∧
-    (s.gpr .x2).toNat + len s ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8 * 125 ≤ 2 ^ 64
+    (s.gpr .x2).toNat + len s ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8 * 70 ≤ 2 ^ 64
 
 /-- The precondition of the modes over the batched core (`batchCore`), on
 AArch64: `fbPre` with that core's working space, 140 words. -/
@@ -149,15 +149,17 @@ def cfb8DecAArch64 : Contract isa where
       Spec.Cfb8.next (ivOf s) (Spec.TripleDes.bytesAt s.mem (s.gpr .x2) (byteLen s))
   pub := fbPub
 
-/-- The core keeps `x25`, where the modes keep the IV's address. -/
-theorem keeps_x25 :
-    Modes.AArch64.KeepsReg .x25 (dirCore .encrypt).prepare ∧ Modes.AArch64.KeepsReg .x25 (dirCore .encrypt).crypt :=
-  ⟨Modes.AArch64.keepsReg_of_regSafe (by decide +kernel), crypt_keeps_x25 .encrypt⟩
+/-- The core keeps `x28`, where the modes keep the IV's address. -/
+theorem keeps_x28 :
+    Modes.AArch64.KeepsReg .x28 tableCore.prepare ∧ Modes.AArch64.KeepsReg .x28 tableCore.crypt :=
+  ⟨Modes.AArch64.keepsReg_of_regSafe (by decide), Modes.AArch64.keepsReg_of_regSafe (by
+    show Modes.AArch64.regSafe .x28 tableCrypt = true
+    lit_decide)⟩
 
 /-- What the modes' OFB and CFB give, for a mode `mo`: the data and the
 IV as `fbOut` and `fbIn`, keeping the callee-saved registers. -/
 theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : fbPre blkLen s₀) :
-    WP isa ((dirCore .encrypt).fb mo fbRegs .x25) s₀ fun s' =>
+    WP isa (tableCore.fb mo fbRegs .x28) s₀ fun s' =>
       (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
         s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧
       Modes.blocksOf 8 s'.mem (s₀.gpr .x2) (s₀.gpr .x3).toNat =
@@ -165,21 +167,27 @@ theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : fbPre blkLen s₀) 
       Spec.TripleDes.bytesAt s'.mem (s₀.gpr .x1) 8 =
         Modes.fbIn mo 8 (ciphOf s₀) s₀.mem (s₀.gpr .x2) (ivOf s₀) (s₀.gpr .x3).toNat := by
   obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB⟩ := hp
-  have hwS : (⟨s₀.gpr .x4, 8 * 125⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.mono (Proof.Modes.AArch64.fb_wp (dirCoreSpec .encrypt) mo (r := fbRegs)
-    ⟨by decide, by decide, by decide⟩ (by decide) (ivR := .x25)
+  have hwS : (⟨s₀.gpr .x4, 8 * 70⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  refine WP.mono (Proof.Modes.AArch64.fb_wp tableCoreSpec mo (r := fbRegs)
+    ⟨by decide, by decide, by decide⟩ (by decide) (ivR := .x28)
     ⟨by decide, by decide, by decide, by decide, by decide⟩
     (B := s₀.gpr .x4) (P := s₀.gpr .x1) (D := s₀.gpr .x2) (n := (s₀.gpr .x3).toNat)
     (k := Spec.TripleDes.scheduleAt s₀.mem (s₀.gpr .x0)) rfl rfl rfl rfl ⟨hwS, fitB⟩
     (by rw [hwr]; simp) (by rw [hwr]; simp [Nat.mul_comm]) dVS dDS dVD fitD
-    ⟨s₀.gpr .x0, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dKS⟩ keeps_x25)
-    fun s' ⟨hcs, hdata, hiv, _, _, _⟩ => ⟨hcs, by rw [dirCore_bw, Nat.mul_one] at hdata hiv; exact ⟨hdata, hiv⟩⟩
+    ⟨s₀.gpr .x0, rfl, rfl, ⟨by rw [hrd]; simp, fitK, fun w hw => by
+      rw [hwr] at hw
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl | rfl
+      · exact dKV
+      · exact dKD
+      · exact dKS⟩, fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact dKS⟩ keeps_x28)
+    fun s' ⟨hcs, hdata, hiv, _, _, _⟩ => ⟨hcs, by rw [tableCore_bw, Nat.mul_one] at hdata hiv; exact ⟨hdata, hiv⟩⟩
 
 /-- What the modes' CFB8 gives: the data and the input block as `cfb8Out`
 and `cfb8In`, keeping the callee-saved registers. -/
 theorem cfb8_wp' (enc : Bool) {s₀ : State} (hp : fbPre byteLen s₀) :
-    WP isa ((dirCore .encrypt).cfb8 enc fbRegs .x25) s₀ fun s' =>
+    WP isa (tableCore.cfb8 enc fbRegs .x28) s₀ fun s' =>
       (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
         s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧
       Spec.TripleDes.bytesAt s'.mem (s₀.gpr .x2) (byteLen s₀) =
@@ -187,16 +195,22 @@ theorem cfb8_wp' (enc : Bool) {s₀ : State} (hp : fbPre byteLen s₀) :
       Spec.TripleDes.bytesAt s'.mem (s₀.gpr .x1) 8 =
         Modes.cfb8In enc (ciphOf s₀) s₀.mem (s₀.gpr .x2) (ivOf s₀) (byteLen s₀) := by
   obtain ⟨hrd, hwr, dKV, dKD, dKS, dVD, dVS, dDS, fitK, fitV, fitD, fitB⟩ := hp
-  have hwS : (⟨s₀.gpr .x4, 8 * 125⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  refine WP.mono (Proof.Modes.AArch64.cfb8_wp (dirCoreSpec .encrypt) enc (r := fbRegs)
-    ⟨by decide, by decide, by decide⟩ (by decide) (ivR := .x25)
+  have hwS : (⟨s₀.gpr .x4, 8 * 70⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  refine WP.mono (Proof.Modes.AArch64.cfb8_wp tableCoreSpec enc (r := fbRegs)
+    ⟨by decide, by decide, by decide⟩ (by decide) (ivR := .x28)
     ⟨by decide, by decide, by decide, by decide, by decide⟩
     (B := s₀.gpr .x4) (P := s₀.gpr .x1) (D := s₀.gpr .x2) (n := (s₀.gpr .x3).toNat)
     (k := Spec.TripleDes.scheduleAt s₀.mem (s₀.gpr .x0)) rfl rfl rfl rfl ⟨hwS, fitB⟩
     (by rw [hwr]; simp) (by rw [hwr]; simp) dVS dDS dVD fitD
-    ⟨s₀.gpr .x0, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact dKS⟩ keeps_x25)
-    fun s' ⟨hcs, hdata, hiv, _, _, _⟩ => ⟨hcs, by rw [dirCore_bw, Nat.mul_one] at hdata hiv; exact ⟨hdata, hiv⟩⟩
+    ⟨s₀.gpr .x0, rfl, rfl, ⟨by rw [hrd]; simp, fitK, fun w hw => by
+      rw [hwr] at hw
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
+      rcases hw with rfl | rfl | rfl
+      · exact dKV
+      · exact dKD
+      · exact dKS⟩, fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact dKS⟩ keeps_x28)
+    fun s' ⟨hcs, hdata, hiv, _, _, _⟩ => ⟨hcs, by rw [tableCore_bw, Nat.mul_one] at hdata hiv; exact ⟨hdata, hiv⟩⟩
 
 theorem ofb_wp {s₀ : State} (hp : ofbAArch64.pre s₀) :
     WP isa ofb s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
@@ -293,12 +307,12 @@ def fbSat : State where
   sp := 0x8000
   mem _ := 0
   rd := [⟨0x1000, 384⟩]
-  wr := [⟨0x2000, 8⟩, ⟨0x3000, 8⟩, ⟨0x4000, 8 * 125⟩]
+  wr := [⟨0x2000, 8⟩, ⟨0x3000, 8⟩, ⟨0x4000, 8 * 70⟩]
 
 /-- A state satisfying the batched modes' precondition (one block). -/
 def batchSat : State := { fbSat with wr := [⟨0x2000, 8⟩, ⟨0x3000, 8⟩, ⟨0x4000, 8 * 140⟩] }
 
-def cfb8Sat : State := { fbSat with wr := [⟨0x2000, 8⟩, ⟨0x3000, 1⟩, ⟨0x4000, 8 * 125⟩] }
+def cfb8Sat : State := { fbSat with wr := [⟨0x2000, 8⟩, ⟨0x3000, 1⟩, ⟨0x4000, 8 * 70⟩] }
 
 /-- A state satisfying the contracts' precondition: the schedule at
 `0x1000`, the IV at `0x2000`, one block (or byte) at `0x3000`. -/
@@ -313,26 +327,24 @@ def fbFrameSat : State where
 def cfb8FrameSat : State := { fbFrameSat with wr := [⟨0x2000, 8⟩, ⟨0x3000, 1⟩] }
 
 theorem ofb_verified :
-    Verified AArch64.target ofb (Proof.TripleDes.fbScratchContract AArch64.abi 125 Proof.TripleDes.ofbPost) :=
+    Verified AArch64.target ofb (Proof.TripleDes.fbScratchContract AArch64.abi 70 Proof.TripleDes.ofbPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' ofb_keeps_x30 (ofb_wp hs)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (ofb_wp hs) (by lit_decide)
+        (by lit_decide)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
-        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-      (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
-        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])) (by
+    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
+      (by taint_decide)) (by
     sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
       Proof.TripleDes.ofbPost, ofbAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs] [fbSat] using fbSat)
 
 theorem cfbEncrypt_verified :
-    Verified AArch64.target cfbEncrypt (Proof.TripleDes.fbScratchContract AArch64.abi 125 Proof.TripleDes.cfbEncPost) :=
+    Verified AArch64.target cfbEncrypt (Proof.TripleDes.fbScratchContract AArch64.abi 70 Proof.TripleDes.cfbEncPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfbEncrypt_keeps_x30 (cfbEncrypt_wp hs)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfbEncrypt_wp hs) (by lit_decide)
+        (by lit_decide)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
-        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-      (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
-        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])) (by
+    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
+      (by taint_decide)) (by
     sig_implies [Proof.TripleDes.fbScratchContract, Proof.TripleDes.fbScratchSig, Spec.TripleDes.ofbSig,
       Proof.TripleDes.cfbEncPost, cfbEncAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs] [fbSat] using fbSat)
 
@@ -350,37 +362,35 @@ theorem cfbDecrypt_verified :
 
 theorem cfb8Encrypt_verified :
     Verified AArch64.target cfb8Encrypt
-      (Proof.TripleDes.cfb8ScratchContract AArch64.abi 125 Proof.TripleDes.cfb8EncPost) :=
+      (Proof.TripleDes.cfb8ScratchContract AArch64.abi 70 Proof.TripleDes.cfb8EncPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfb8Encrypt_keeps_x30 (cfb8Encrypt_wp hs)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfb8Encrypt_wp hs) (by lit_decide)
+        (by lit_decide)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
-        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-      (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
-        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])) (by
+    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
+      (by taint_decide)) (by
     sig_implies [Proof.TripleDes.cfb8ScratchContract, Proof.TripleDes.cfb8ScratchSig, Spec.TripleDes.cfb8Sig,
       Proof.TripleDes.cfb8EncPost, cfb8EncAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs] [cfb8Sat]
       using cfb8Sat)
 
 theorem cfb8Decrypt_verified :
     Verified AArch64.target cfb8Decrypt
-      (Proof.TripleDes.cfb8ScratchContract AArch64.abi 125 Proof.TripleDes.cfb8DecPost) :=
+      (Proof.TripleDes.cfb8ScratchContract AArch64.abi 70 Proof.TripleDes.cfb8DecPost) :=
   Verified.of_correct (fun s hs => by
-      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' cfb8Decrypt_keeps_x30 (cfb8Decrypt_wp hs)
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (cfb8Decrypt_wp hs) (by lit_decide)
+        (by lit_decide)
       exact ⟨t, s', he, abi_of he h₁ h₃ (by lit_decide), h₂⟩)
-    (VG.Taint.constantTime_of_exists (A := VectorTaint.taint)
-        (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-      (fun s₁ s₂ h₁ h₂ hp => ⟨fbTaint_agree s₁ s₂ h₁ h₂ hp, fun v hv => by
-        simp [VectorTaint.ofRegs, RegSet.mem_ofList] at hv⟩) (by taint_decide_sum [encSum])) (by
+    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) fbTaint_agree
+      (by taint_decide)) (by
     sig_implies [Proof.TripleDes.cfb8ScratchContract, Proof.TripleDes.cfb8ScratchSig, Spec.TripleDes.cfb8Sig,
       Proof.TripleDes.cfb8DecPost, cfb8DecAArch64, fbPre, fbPub, AArch64.abi, AArch64.argRegs] [cfb8Sat]
       using cfb8Sat)
 
-theorem ofbFrameSat_pre : ∃ s, (Spec.TripleDes.ofbContract AArch64.abi 1008).pre s := by
+theorem ofbFrameSat_pre : ∃ s, (Spec.TripleDes.ofbContract AArch64.abi 560).pre s := by
   implies_sat [Spec.TripleDes.ofbContract, Spec.TripleDes.ofbSig, AArch64.abi, AArch64.argRegs]
     [fbFrameSat] using fbFrameSat
 
-theorem cfbEncFrameSat_pre : ∃ s, (Spec.TripleDes.cfbEncryptContract AArch64.abi 1008).pre s := by
+theorem cfbEncFrameSat_pre : ∃ s, (Spec.TripleDes.cfbEncryptContract AArch64.abi 560).pre s := by
   implies_sat [Spec.TripleDes.cfbEncryptContract, Spec.TripleDes.cfbSig, Spec.TripleDes.ofbSig, AArch64.abi,
     AArch64.argRegs] [fbFrameSat] using fbFrameSat
 
@@ -388,30 +398,30 @@ theorem cfbDecFrameSat_pre : ∃ s, (Spec.TripleDes.cfbDecryptContract AArch64.a
   implies_sat [Spec.TripleDes.cfbDecryptContract, Spec.TripleDes.cfbSig, Spec.TripleDes.ofbSig, AArch64.abi,
     AArch64.argRegs] [fbFrameSat] using fbFrameSat
 
-theorem cfb8EncFrameSat_pre : ∃ s, (Spec.TripleDes.cfb8EncryptContract AArch64.abi 1008).pre s := by
+theorem cfb8EncFrameSat_pre : ∃ s, (Spec.TripleDes.cfb8EncryptContract AArch64.abi 560).pre s := by
   implies_sat [Spec.TripleDes.cfb8EncryptContract, Spec.TripleDes.cfb8Sig, AArch64.abi, AArch64.argRegs]
     [cfb8FrameSat] using cfb8FrameSat
 
-theorem cfb8DecFrameSat_pre : ∃ s, (Spec.TripleDes.cfb8DecryptContract AArch64.abi 1008).pre s := by
+theorem cfb8DecFrameSat_pre : ∃ s, (Spec.TripleDes.cfb8DecryptContract AArch64.abi 560).pre s := by
   implies_sat [Spec.TripleDes.cfb8DecryptContract, Spec.TripleDes.cfb8Sig, AArch64.abi, AArch64.argRegs]
     [cfb8FrameSat] using cfb8FrameSat
 
 /-- OFB with its working space on the stack. -/
 theorem ofb_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 ofb)
-      (Spec.TripleDes.ofbContract AArch64.abi 1008) :=
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 560 .x4 70 ofb)
+      (Spec.TripleDes.ofbContract AArch64.abi 560) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.TripleDes.ofbSig) (nm := "scratch") (e := .u64)
-    (n := 125) (post := Proof.TripleDes.ofbPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1008) ofb_verified
+    (n := 70) (post := Proof.TripleDes.ofbPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 560) ofb_verified
     (by decide) (by decide) (by decide) (Proof.TripleDes.ofbPostOut_local _) ofbFrameSat_pre
 
 /-- CFB64 encryption with its working space on the stack. -/
 theorem cfbEncrypt_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 cfbEncrypt)
-      (Spec.TripleDes.cfbEncryptContract AArch64.abi 1008) :=
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 560 .x4 70 cfbEncrypt)
+      (Spec.TripleDes.cfbEncryptContract AArch64.abi 560) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.TripleDes.cfbSig) (nm := "scratch") (e := .u64)
-    (n := 125) (post := Proof.TripleDes.cfbEncPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1008) cfbEncrypt_verified
+    (n := 70) (post := Proof.TripleDes.cfbEncPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 560) cfbEncrypt_verified
     (by decide) (by decide) (by decide) (Proof.TripleDes.cfbEncPostOut_local _) cfbEncFrameSat_pre
 
 /-- CFB64 decryption with its working space on the stack. -/
@@ -425,20 +435,20 @@ theorem cfbDecrypt_framed :
 
 /-- CFB8 encryption with its working space on the stack. -/
 theorem cfb8Encrypt_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 cfb8Encrypt)
-      (Spec.TripleDes.cfb8EncryptContract AArch64.abi 1008) :=
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 560 .x4 70 cfb8Encrypt)
+      (Spec.TripleDes.cfb8EncryptContract AArch64.abi 560) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.TripleDes.cfb8Sig) (nm := "scratch") (e := .u64)
-    (n := 125) (post := Proof.TripleDes.cfb8EncPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1008) cfb8Encrypt_verified
+    (n := 70) (post := Proof.TripleDes.cfb8EncPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 560) cfb8Encrypt_verified
     (by decide) (by decide) (by decide) (Proof.TripleDes.cfb8EncPostOut_local _) cfb8EncFrameSat_pre
 
 /-- CFB8 decryption with its working space on the stack. -/
 theorem cfb8Decrypt_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 1008 .x4 125 cfb8Decrypt)
-      (Spec.TripleDes.cfb8DecryptContract AArch64.abi 1008) :=
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 560 .x4 70 cfb8Decrypt)
+      (Spec.TripleDes.cfb8DecryptContract AArch64.abi 560) :=
   AArch64.Verified.stackScratchWiped (sig := Spec.TripleDes.cfb8Sig) (nm := "scratch") (e := .u64)
-    (n := 125) (post := Proof.TripleDes.cfb8DecPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
-    (bytes := 1008) cfb8Decrypt_verified
+    (n := 70) (post := Proof.TripleDes.cfb8DecPost AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 560) cfb8Decrypt_verified
     (by decide) (by decide) (by decide) (Proof.TripleDes.cfb8DecPostOut_local _) cfb8DecFrameSat_pre
 
 end VG.Proof.TripleDes.AArch64
