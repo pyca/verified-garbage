@@ -93,7 +93,7 @@ abbrev openRes (s : State) : Option (List Byte) :=
 
 /-- The result of `vg_aes_gcm_siv_open`: `a0` and the `n` bytes of the data
 for the result `r` of the decryption. -/
-def openOut (r : Option (List Byte)) (a0 : BitVec 64) (out : List Byte) (n : Nat) : Prop :=
+@[irreducible] def openOut (r : Option (List Byte)) (a0 : BitVec 64) (out : List Byte) (n : Nat) : Prop :=
   match r with
   | some pt => a0.setWidth 32 = 1 ∧ out = pt
   | none => a0.setWidth 32 = 0 ∧ out = zeros n

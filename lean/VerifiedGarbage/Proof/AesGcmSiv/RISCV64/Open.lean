@@ -209,6 +209,7 @@ theorem open_wp' [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
         (bytesAt s.mem c.D c.n)) (bytesAt s.mem c.A c.al)) = bytesAt s.mem c.T 16
   · rw [ite_eq_left_of_eq_true _ _ (eq_true hc)]
     have hc' := hc.symm
+    unfold openOut
     refine ⟨?_, ?_⟩
     · rw [r3', ite_eq_left_of_eq_true _ _ (eq_true hc')]; rfl
     · rw [md]; simp only [ite_eq_left_of_eq_true _ _ (eq_true hc'), List.map_id']
@@ -216,6 +217,7 @@ theorem open_wp' [VG.Proof.Gcm.RISCV64.GhashLaw] (hti : TagInputEq) {c : Cx} {s 
     have hc' : ¬bytesAt s.mem c.T 16 = Spec.GcmSiv.aes dk.2 (tagInputG dk.1 (bytesAt s.mem c.N 12)
         (Spec.GcmSiv.ctr (Spec.GcmSiv.aes dk.2) (Spec.GcmSiv.initialCounter (bytesAt s.mem c.T 16))
           (bytesAt s.mem c.D c.n)) (bytesAt s.mem c.A c.al)) := fun h => hc h.symm
+    unfold openOut
     refine ⟨?_, ?_⟩
     · rw [r3', ite_eq_right_of_eq_false _ _ (eq_false hc')]; rfl
     · rw [md]; simp only [ite_eq_right_of_eq_false _ _ (eq_false hc'), List.map_const', hlen, Spec.GcmSiv.zeros]

@@ -211,6 +211,16 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   rewrite a hypothesis with it before `exact`
   (`fun _ h => by simp only [cipher_ser] at h; exact h`). A proof of a few
   lines that elaborates for seconds, with no kernel time, is this.
+* **A proposition that is a `match` on a computed value:** the elaborator
+  reduces a term's type to weak head normal form whenever it elaborates the
+  term, to see whether it is a function, and so does the linter. For
+  `openOut (decryptWith …) …`, a definition by `match` on the result of a
+  decryption, that evaluates the decryption as far as its first comparison
+  of tags: AES on symbolic bytes, 1.4 s each time `hp` is named. AES-GCM-SIV's
+  `open` on RISC-V and PPC64LE spent 91 s there. Make such a definition
+  `@[irreducible]` and unfold it by name where a proof takes it apart; where
+  a hypothesis is itself such a `match`, generalize what it matches on
+  before using it (`generalize decryptWith _ _ _ _ _ _ = res at hp ⊢`).
 * **`generalize` does not hide a value from the kernel:** the proof term
   `generalize` (and `revert`) builds is an application of the new goal's
   proof to the value, which `instantiateMVars` beta-reduces, so the kernel

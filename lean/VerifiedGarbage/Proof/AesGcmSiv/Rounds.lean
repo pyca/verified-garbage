@@ -108,12 +108,10 @@ theorem open_keyed {T : Target} {c : Prog T.isa} {A : Abi T.isa} {stack : Nat}
       rw [ctxCiph_eq hw, hn]
     have g : rounds.toNat = 10 ∨ rounds.toNat = 14 := by
       rw [hr]; rcases hl with h | h <;> rw [h] <;> decide
-    have h' := hp g
     rw [e]
-    split
-    all_goals
-      rename_i heq
-      rw [heq] at h'
-      exact h'
+    -- the result as a variable before anything reads the `match`es on it: to see what `hp g`
+    -- is, the elaborator would evaluate the decryption as far as its first comparison
+    generalize decryptWith _ _ _ _ _ _ = res at hp ⊢
+    cases res <;> exact hp g
 
 end VG.Proof.AesGcmSiv
