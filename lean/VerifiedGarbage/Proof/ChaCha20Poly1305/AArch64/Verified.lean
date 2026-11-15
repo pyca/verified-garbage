@@ -2412,7 +2412,7 @@ theorem openW_implies : openW.Implies (openZeroScratchContract AArch64.abi 164) 
         intro s s' _ h
         sig_eval [Proof.ChaCha20Poly1305.openZeroScratchContract, Proof.ChaCha20Poly1305.openScratchSig,
           Spec.ChaCha20Poly1305.openZeroPost, AArch64.abi, AArch64.argRegs]
-        rw [openW, contract_post_mk, openInAArch64, contract_post_mk] at h
+        simp only [openW, openInAArch64] at h
         -- The two `decrypt` terms are equal only up to unfolding numerals.
         split at h
         next _ pt e₁ =>
@@ -2585,8 +2585,7 @@ theorem openToW_implies : openToW.Implies (openToScratchContract AArch64.abi 164
         intro s s' _ h
         sig_eval [Proof.ChaCha20Poly1305.openToScratchContract, Proof.ChaCha20Poly1305.openToScratchSig,
           Spec.ChaCha20Poly1305.openToPost, AArch64.abi, AArch64.argRegs, range2]
-        rw [openToW, contract_post_mk, openToN, contract_post_mk] at h
-        simp only [openToRes] at h
+        simp only [openToW, openToN, openToRes] at h
         split at h
         next _ pt e₁ =>
           split
