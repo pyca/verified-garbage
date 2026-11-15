@@ -630,7 +630,8 @@ theorem gStep_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
     ⟨by decide, by decide⟩ (by simp) (by simp) (by g_simp; exact ite01_le _) (by g_simp; exact ite01_le _)) ?_
   refine VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2]) ?_ ?_
   · -- Out of range: nothing more.
-    refine VP.block_nil fun σ s ⟨⟨⟨⟨h, x⟩, _⟩, e⟩, z⟩ => ⟨?_, x⟩
+    refine VP.block_nil fun σ s hh => ⟨?_, hh.1.1.1.2⟩
+    obtain ⟨⟨⟨⟨h, _⟩, _⟩, e⟩, z⟩ := hh
     rw [e] at z
     have nr : ¬(1 < hv ∧ hv < pv - 1) := by
       intro hr; simp only [Option.some.injEq, decide_eq_true_eq] at z
@@ -641,7 +642,8 @@ theorem gStep_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
     exact h.back hkls rfl rfl rfl (kc hv)
   · by_cases hr : 1 < hv ∧ hv < pv - 1
     swap
-    · refine VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => ?_
+    · refine VP.of_false fun σ s hh => ?_
+      obtain ⟨⟨_, e⟩, z⟩ := hh
       rw [e] at z; simp only [Option.some.injEq, decide_eq_false_iff_not, Decidable.not_not] at z
       g_simp at z hOv hMv; simp only [hOv, hMv] at z
       exact hr ⟨(ite01_eq_one _).mp z.1, (ite01_eq_one _).mp z.2⟩
@@ -654,7 +656,7 @@ theorem gStep_vp {g : Geo} (hg : g.pLen = G.pLen) (hgq : g.qLen = G.qLen) (cert 
     -- `g`, back at the stage `c`.
     refine VP.seq ((power_vp (c := c) (X := X) (H := G.wit + BitVec.ofNat 64 i) (hb := hAt G i) cert hPc hpv hp2
       hpo hEc hev hH hHv (fun x hx => (hcl x hx).1) fun σ s h => ?_).mono
-      (fun σ s ⟨⟨⟨⟨h, x⟩, _⟩, _⟩, _⟩ => ⟨h.back hkls rfl rfl rfl (kc hv), x⟩)
+      (fun σ s hh => ⟨hh.1.1.1.1.back hkls rfl rfl rfl (kc hv), hh.1.1.1.2⟩)
       (G' := fun σ t => St G c X σ t ∧ VG.Proof.MillerRabin.PPC64LE.Env t G.pS (pZ G.pLen) (pw G.pLen) ∧
         VG.Proof.MillerRabin.PPC64LE.arr t.mem G.pS (pw G.pLen) 4 = gv ∧ (t.gpr .r0 = 0 ↔ 1 < gv ∧ gv < pv))
       fun σ t ⟨h, en, v4, r0⟩ => ⟨h, en, by rw [v4, eos, hgv], by rw [← hgv, ← eos, ← v4]; exact r0⟩) ?_

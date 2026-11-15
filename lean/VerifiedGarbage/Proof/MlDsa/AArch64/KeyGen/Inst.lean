@@ -26,9 +26,9 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Ntt
 
 The AArch64 implementations of the primitives (`primsWith`), with any
 implementation of the Keccak permutation, are verified with at most 16 bytes
-of stack, and their frames use at most that (`prims_okWith`), so key
-generation with them is verified with 16 bytes of stack
-(`keyGen44_verifiedWith`, …).
+of stack, and their frames use at most that (`prims_okWith`), which key
+generation (`KeyGen/OptimizedVerified.lean`), signing and verification
+with them take.
 -/
 
 @[expose] public section
@@ -87,17 +87,5 @@ theorem keyGen_sat (p : Spec.MlDsa.Params)
     sig_sat_check [Spec.MlDsa.keyGenContract, Spec.MlDsa.keyGenSig, AArch64.abi, VG.AArch64.argRegs]
   · refine ⟨kgSat Spec.MlDsa.mlDsa87, ?_⟩
     sig_sat_check [Spec.MlDsa.keyGenContract, Spec.MlDsa.keyGenSig, AArch64.abi, VG.AArch64.argRegs]
-
-theorem keyGen44_verifiedWith :
-    Verified AArch64.target (keyGen44With keccak.callee) (Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa44 AArch64.abi 16) :=
-  keyGen_verified (keccak := keccak) (prims_okWith (keccak := keccak)) Spec.MlDsa.mlDsa44 (.inl rfl) (keyGen_sat _ (.inl rfl))
-
-theorem keyGen65_verifiedWith :
-    Verified AArch64.target (keyGen65With keccak.callee) (Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa65 AArch64.abi 16) :=
-  keyGen_verified (keccak := keccak) (prims_okWith (keccak := keccak)) Spec.MlDsa.mlDsa65 (.inr (.inl rfl)) (keyGen_sat _ (.inr (.inl rfl)))
-
-theorem keyGen87_verifiedWith :
-    Verified AArch64.target (keyGen87With keccak.callee) (Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa87 AArch64.abi 16) :=
-  keyGen_verified (keccak := keccak) (prims_okWith (keccak := keccak)) Spec.MlDsa.mlDsa87 (.inr (.inr rfl)) (keyGen_sat _ (.inr (.inr rfl)))
 
 end VG.Proof.MlDsa.AArch64.KeyGen

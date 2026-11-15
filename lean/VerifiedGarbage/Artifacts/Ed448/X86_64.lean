@@ -107,7 +107,6 @@ def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
   Spec.Ed448.publicKeyApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     suffix := v.suffix
     code := Impl.Ed448.X86_64.publicKeyFor v
-    stack := 104
     verified := Proof.Ed448.X86_64.PublicKey.publicKey_verified (v := v)
       Proof.Ed448.baseLadder_ok }
     (Proof.Ed448.X86_64.Scrub.publicKeyOut _))]
@@ -124,7 +123,6 @@ def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
   Spec.Ed448.signCachedApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     suffix := v.suffix
     code := Impl.Ed448.X86_64.SignCached.signCachedFor v
-    stack := 464
     verified := Proof.Ed448.X86_64.SignCached.signCached_verified
       (Proof.Ed448.X86_64.scalarBaseFor_ok v Proof.Ed448.baseLadder_ok)
       (Proof.Ed448.X86_64.scalarBaseFor_ct v) }
@@ -142,7 +140,6 @@ def artifactsFor (v : Impl.Ed448.X86_64.FieldVariant) : List Artifact := [
   Spec.Ed448.verifyApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     suffix := v.suffix
     code := Impl.Ed448.X86_64.Verify.verifyFor v
-    stack := 272
     verified := Proof.Ed448.X86_64.Verify.verify_verified
       (Proof.Ed448.X86_64.verifyEquationFor_ok v Proof.Ed448.recover_ok Proof.Ed448.verifyEq_ok)
       (Proof.Ed448.X86_64.verifyEquationFor_ct v Proof.Ed448.recover_ok Proof.Ed448.verifyEq_ok) }

@@ -51,7 +51,7 @@ def encS (j : Nat) : Prog isa := .seq (.block (lea .rdi (.r12, 1024 * j) ++ lea 
 each `j < k` (`keygen_mul`'s first loop, from `e`'s `u16`s at `se + 512k`). -/
 def nttsN : Prog isa :=
   .seq (.block [.alu .add .r15 (.imm (BitVec.ofNat 32 (512 * L.k))), .mov32 .r14 (.imm (BitVec.ofNat 32 L.k))])
-    (withMxcsr .rbx oMx (.loop nttK16 .ne))
+    (.loop nttK16 .ne)
 
 /-- `vg_mlkem*_kpke_keygen_ntt` of the parameter set `L`, with the arithmetic of `A`. -/
 def kgNtt : Prog isa :=
@@ -65,12 +65,12 @@ def proR : List Instr :=
   saveE ++ [.mov .rbx (.reg .r8), .mov .r12 (.reg .rdi), .mov .rbp (.reg .rsi), .mov .r15 (.reg .rdx),
     .mov .r13 (.reg .rcx)]
 
-/-- The table of the products in `scratch`, then, in the MXCSR region, the
+/-- The table of the products in `scratch`, then the
 products of the row at `a` and `ŝ` at `s` added to `e` (`rowY16`). -/
 def rowR : Prog isa :=
   .seq (.block ([.mov .rcx (.reg .rbx)] ++ Bodies.avx2.tab))
-    (withMxcsr .rbx oMx (.seq (.block [.mov .rdi (.reg .r13), .mov .rsi (.reg .rbp), .mov .rdx (.reg .r15),
-      .mov .rcx (.reg .rbx)]) (rowY16 L.k)))
+    (.seq (.block [.mov .rdi (.reg .r13), .mov .rsi (.reg .rbp), .mov .rdx (.reg .r15),
+      .mov .rcx (.reg .rbx)]) (rowY16 L.k))
 
 /-- `vg_mlkem*_kpke_keygen_row` of the parameter set `L`, with the arithmetic of `A`. -/
 def kgRow : Prog isa :=

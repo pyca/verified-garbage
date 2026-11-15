@@ -75,7 +75,10 @@ theorem transpose_run (s : State) (h16 : s.vpr .v16 = caC) (h17 : s.vpr .v17 = c
   refine wp_vop (eval_perm _ _ _ _ _) ?_; simp only [vpr_writeV, reduceCtorEq, ite_true, ite_false]
   refine wp_vop (eval_perm _ _ _ _ _) ?_; simp only [vpr_writeV, reduceCtorEq, ite_true, ite_false]
   refine wp_vop (eval_perm _ _ _ _ _) ?_; simp only [vpr_writeV, reduceCtorEq, ite_true, ite_false]
-  refine WP.block_nil ⟨fun k hk r hr => ?_, ⟨fun r' hr' => ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩, rfl⟩
+  -- not `rfl`, which unfolds the eight writes to compare the states
+  refine WP.block_nil ⟨fun k hk r hr => ?_, ⟨fun r' hr' => ?_, by simp only [gpr_writeV],
+    by simp only [mem_writeV], by simp only [rd_writeV], by simp only [wr_writeV], by simp only [sp_writeV],
+    by simp only [lr_writeV]⟩, by simp only [syms_writeV]⟩
   · rw [h16, h17, h18, h19]
     rcases (by omega_using [hk] : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
     rcases (by omega_using [hr] : r = 0 ∨ r = 1 ∨ r = 2 ∨ r = 3) with rfl | rfl | rfl | rfl <;>

@@ -133,7 +133,6 @@ theorem offsO : Impl.RsaPss.X86.oCW = 0 ∧ Impl.RsaPss.X86.oSt = 512 ∧ oCtr =
 
 /-- `omega`, with the offsets of our part of `scratch` and of the frame as
 numbers. -/
-macro "oomega" : tactic =>
-  `(tactic| (obtain ⟨_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _⟩ := offsO; omega))
+macro "oomega" : tactic => `(tactic| (have := offsO; omega_arith))
 
 end VG.Proof.RsaOaep.X86

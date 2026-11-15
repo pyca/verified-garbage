@@ -234,12 +234,12 @@ theorem saveK_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) (hq : a
   refine ⟨h.of_keep kk, ?_, kk, ?_⟩
   · have o : Outside B A 72 s.mem t.mem := by
       rw [tm]
-      repeat refine Outside.writeW_in ?_ _ (by omega) (by omega) (by omega_arith)
+      repeat refine Outside.writeW_in ?_ _ (by omega_arith) (by omega_arith) (by omega_arith)
       exact Outside.refl _ _ _ _
     rw [← hA] at o
     exact Keys.Frame.of_arr (o := aDQ) (d := 0) (n := 72) (by simpa using o) (by omega_using [hw, hS]) (by simp)
   · rw [tm]
-    simp (disch := omega) only [wr_other, Mont.word_writeW_self, and_self]
+    simp (disch := first | decide | omega_arith) only [wr_other, Mont.word_writeW_self, and_self]
 
 /-- `restoreK`: `kept` back from `aDQ`'s first nine words. -/
 theorem restoreK_ok {u : State} {B : Addr} {Z w N : Nat} (h : Ws u B Z w N) (hq : aDQ < N) (hw : 7 ≤ w)

@@ -43,11 +43,6 @@ structure VChecks (c : Joint.Cfg) : Prop where
     (.ite .e (.block []) (.block (outPieces.flatten ++ storeOut))))
   mov : RegCT [] (.block [.mov .rbx (.reg .r11), .vop .vzeroupper])
   tab : RegCT [.rdi, .r10] (.seq (vtab c) (.block zeroAcc))
-  mx1 : RegCT [.rdi] (.block [.stmxcsr (sc MXV), .mov32 .r12 (.mem (sc MXV)), .alu32 .and .r12 (.imm 0xFFFF)])
-  mx2 : RegCT [.rdi] (.block [.mov32 .rax (.imm 0x1FBF), .store32 (sc (MXV + 4)) .rax, .ldmxcsr (sc (MXV + 4)),
-    .lfence])
-  lf : RegCT [] (.block [.lfence])
-  mx4 : RegCT [.rdi] (.block [.store32 (sc MXV) .r12, .ldmxcsr (sc MXV)])
   pack : RegCT [.rdi, .rbx] (packR c)
   ctr0 : RegCT [] (.block [.mov32 .rbx (.imm 0)])
 
@@ -237,16 +232,9 @@ theorem vmain_relCT (hk : VChecks c) (hV : VLay c size) (hL : JointLayout c size
     RelCT isa (fun s t => VBase c base T size u v Q row E s ∧ VBase c base T size u v Q row E t) (vmain c)
       (fun s t => VFin c base T size u v Q row E (accN c row (tqE c E) u v 257) A s ∧
         VFin c base T size u v Q row E (accN c row (tqE c E) u v 257) A t) := by
-  have rdi1 : ∀ s t : State, VBase c base T size u v Q row E s → VBase c base T size u v Q row E t →
-      ∀ r ∈ [Reg.rdi], s.gpr r = t.gpr r := by
-    intro s t hs ht r hr
-    rw [List.mem_singleton] at hr; subst hr
-    exact hs.core.field.scr.rdi.trans ht.core.field.scr.rdi.symm
-  let I1 : State → Prop := fun s => VBase c base T size u v Q row E s ∧ MxOk s
-  let I3 : State → Prop := fun s => VOut c base T size u v Q row E (accN c row (tqE c E) u v 257) s ∧ MxOk s
-  let I4 : State → Prop := fun s => VPack c base T size u v Q row E (accN c row (tqE c E) u v 257) s ∧ MxOk s
+  let I3 : State → Prop := VOut c base T size u v Q row E (accN c row (tqE c E) u v 257)
   let I5 : State → Prop := VPack c base T size u v Q row E (accN c row (tqE c E) u v 257)
-  rw [vmain, regionAt]
+  rw [vmain]
   refine RelCT.seq (R := fun s t => I5 s ∧ I5 t) ?_ (rel_stage hk.pack (I := I5)
     (fun s t hs ht r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -254,24 +242,9 @@ theorem vmain_relCT (hk : VChecks c) (hV : VLay c size) (hL : JointLayout c size
       · exact hs.core.field.scr.rdi.trans ht.core.field.scr.rdi.symm
       · exact packSt_rbx hs.pack ht.pack)
     (fun s h => WP.mono (packR_ok hV hL hN h.core hpt h.pack) fun w x => x.1))
-  refine RelCT.seq (R := fun s t => I1 s ∧ I1 t)
-    (rel_stage hk.mx1 rdi1 (fun s h => WP.mono (mxSave_vs hV h) fun _ x => x.1)) ?_
-  refine RelCT.seq (R := fun s t => I4 s ∧ I4 t) ?_ (rel_stage hk.mx4 (I := I4) (fun s t hs ht r hr => by
-      rw [List.mem_singleton] at hr; subst hr
-      exact hs.1.core.field.scr.rdi.trans ht.1.core.field.scr.rdi.symm)
-      (fun s h => WP.mono (mxRestore_vs hV h.1 h.2) fun _ x => x.1))
-  refine RelCT.seq (R := fun s t => I1 s ∧ I1 t) (rel_stage hk.mx2 (I := I1) (fun s t hs ht => rdi1 s t hs.1 ht.1)
-    (fun s h => WP.mono (mxSet_vs hV h.1 h.2) fun _ x => x.1)) ?_
-  refine RelCT.seq (R := fun s t => I4 s ∧ I4 t) ?_ (rel_stage hk.lf (I := I4)
-    (fun _ _ _ _ _ hr => absurd hr List.not_mem_nil) (fun s h => WP.block_cons_iff.2 ⟨s, rfl, WP.block_nil h⟩))
   refine RelCT.seq (R := fun s t => I3 s ∧ I3 t) ?_ (rel_stage hk.mov (I := I3)
-    (fun _ _ _ _ _ hr => absurd hr List.not_mem_nil) (fun s h => WP.mono (vmov_ok hV h.1 h.2) fun _ x => x.1))
-  have r₀ := (vloop_relCT (E := E) (u := u) (v := v) (Q := Q) (row := row) (base := base) (T := T) hk hV
-    h9).mono (P' := fun s t => I1 s ∧ I1 t) (fun _ _ h => ⟨h.1.1, h.2.1⟩) (fun _ _ h => h)
-  exact (r₀.wp (F₁ := MxOk) (F₂ := MxOk) (fun s t h =>
-    ⟨WP.mono (vloop_vs hV h9 h.1.1 h.1.2) (fun _ x => x.1.2),
-      WP.mono (vloop_vs hV h9 h.2.1 h.2.2) (fun _ x => x.1.2)⟩)).mono (fun _ _ h => h)
-    (fun _ _ ⟨⟨a, b⟩, x, y⟩ => ⟨⟨a, x⟩, b, y⟩)
+    (fun _ _ _ _ _ hr => absurd hr List.not_mem_nil) (fun s h => WP.mono (vmov_ok hV h) fun _ x => x.1))
+  exact vloop_relCT (E := E) (u := u) (v := v) (Q := Q) (row := row) (base := base) (T := T) hk hV h9
 
 /-- What the test of `R`'s `Z` leaves in each run: the fields `Joint.window` reads, and its input. -/
 def VZ (c : Joint.Cfg) (base T : Addr) (size u v : Nat) {G : Point Cv} (Q : Point Cv)

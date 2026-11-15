@@ -35,35 +35,29 @@ def artifacts : List Artifact := [
   Spec.X25519.exchangeApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := "_ifma"
     code := Impl.Xdh.X86_64.exchange "vg_x25519_ifma" Impl.X25519.X86_64.x25519Ifma 32
-    stack := 24
     verified := Proof.X25519.X86_64.Exchange.exchange_ifma }
     (Proof.X25519.X86_64.Scrub.exchangeOut [] 24)),
   Spec.X25519.exchangeApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := "_adx"
     code := Impl.Xdh.X86_64.exchange "vg_x25519_adx" Impl.X25519.X86_64.x25519Adx 32
-    stack := 24
     verified := Proof.X25519.X86_64.Exchange.exchange_adx }
     (Proof.X25519.X86_64.Scrub.exchangeOut [] 24)),
   Spec.X25519.exchangeApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     code := Impl.Xdh.X86_64.exchange "vg_x25519" Impl.X25519.X86_64.x25519 32
-    stack := 24
     verified := Proof.X25519.X86_64.Exchange.exchange_baseline }
     (Proof.X25519.X86_64.Scrub.exchangeOut [] 24)),
   Spec.X25519.x25519BaseApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
     suffix := "_ifma"
     code := Impl.X25519.X86_64.Base.x25519BaseIfma
-    stack := 8
     verified := Proof.X25519.X86_64.Base.x25519BaseIfma_verified }
     (Proof.X25519.X86_64.Scrub.baseOut Impl.Ed25519.X86_64.combConsts 8)),
   Spec.X25519.x25519BaseApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     suffix := "_adx"
     code := Impl.X25519.X86_64.Base.x25519BaseAdx
-    stack := 8
     verified := Proof.X25519.X86_64.Base.x25519BaseAdx_verified }
     (Proof.X25519.X86_64.Scrub.baseOut Impl.Ed25519.X86_64.combConsts 8)),
   Spec.X25519.x25519BaseApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     code := Impl.X25519.X86_64.Base.x25519Base Impl.X25519.X86_64.baseline
-    stack := 8
     verified := Proof.X25519.X86_64.Base.x25519Base_verified }
     (Proof.X25519.X86_64.Scrub.baseOut Impl.Ed25519.X86_64.combConsts 8))]
 

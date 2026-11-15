@@ -324,7 +324,7 @@ tactic_template "s4_ctl " v:ident : tactic =>
 
 /-- Code that does not call the implementation `v` never writes the stack pointer: by evaluation. -/
 tactic_template "s4_sp_closed " v:ident : tactic =>
-  `(tactic| (closed_in $v; exact Code.all_of_allInstrs (by decide +kernel)))
+  `(tactic| (closed_in $v; exact Code.all_of_spTest (by decide +kernel)))
 
 /-- That code that calls the implementation `v` never writes the stack pointer. -/
 tactic_template "s4_sp " v:ident : tactic =>

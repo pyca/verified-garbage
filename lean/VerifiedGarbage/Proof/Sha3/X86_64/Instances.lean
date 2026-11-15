@@ -287,7 +287,7 @@ def xofFinalizeSat : State := { xofPadSat with wr := [⟨0x1000, 200⟩] }
 
 theorem xofFinalize_verified {X : Xof} (hX : xofSponge X) (hr : X.rate ∈ rates)
     (hsp : (Code.seq (.block (xofPadArgs X.rate)) Impl.Sha3.X86_64.Stream.pad).all
-      (fun i => !isa.writesSp i) = true := by exact VG.Code.all_of_allInstrs (by lit_decide))
+      (fun i => !isa.writesSp i) = true := by exact VG.Code.all_of_spTest (by lit_decide))
     (hd : (Code.seq (.block (xofPadArgs X.rate)) Impl.Sha3.X86_64.Stream.pad).x86_64Depth ≤ 8 := by
       lit_decide) :
     Verified X86_64.target (xofFinalize X.rate) (Spec.Sha3.xofFinalizeContract X86_64.abi X 656) := by
@@ -406,7 +406,7 @@ def xofSqueezeTopSat : State := { xofSqueezeSat with wr := [⟨0x1000, 200⟩, �
 
 theorem xofSqueeze_verified {X : Xof} (hr : X.rate ∈ rates)
     (hsp : (Code.seq (.block (updateArgs X.rate)) Impl.Sha3.X86_64.Stream.squeeze).all
-      (fun i => !isa.writesSp i) = true := by exact VG.Code.all_of_allInstrs (by lit_decide))
+      (fun i => !isa.writesSp i) = true := by exact VG.Code.all_of_spTest (by lit_decide))
     (hd : (Code.seq (.block (updateArgs X.rate)) Impl.Sha3.X86_64.Stream.squeeze).x86_64Depth ≤ 8 :=
       by lit_decide) :
     Verified X86_64.target (xofSqueeze X.rate) (Spec.Sha3.xofSqueezeContract X86_64.abi X 656) := by
@@ -997,7 +997,7 @@ theorem finalize_sha3_224 :
     (by implies_sat [finX86_64, Spec.Sha3.hashSha3_224] [finSat, Stream.Absorb.sat] using finSat 28)
     (by implies_sat [VG.Proof.Sha3.Instances.finScratchContract, VG.Proof.Sha3.Instances.finScratchSig, Spec.Sha3.finalizePre, Spec.Sha3.finalizePost,
       X86_64.abi, X86_64.argRegs, Spec.Sha3.hashSha3_224] [finSat, Stream.Absorb.sat] using finSat 28)
-    (Code.all_of_allInstrs (by decide +kernel)) (by decide +kernel)
+    (Code.all_of_spTest (by decide +kernel)) (by decide +kernel)
     (by implies_sat [Spec.Sha3.finalizeContract, Spec.Sha3.finalizeSig, Spec.Sha3.finalizePre,
       Spec.Sha3.finalizePost, X86_64.abi, X86_64.argRegs, Spec.Sha3.hashSha3_224] [finSat, Stream.Absorb.sat]
       using { finSat 28 with wr := [⟨0x1000, 200⟩, ⟨0x2000, 28⟩] })
@@ -1009,7 +1009,7 @@ theorem finalize_sha3_256 :
     (by implies_sat [finX86_64, Spec.Sha3.hashSha3_256] [finSat, Stream.Absorb.sat] using finSat 32)
     (by implies_sat [VG.Proof.Sha3.Instances.finScratchContract, VG.Proof.Sha3.Instances.finScratchSig, Spec.Sha3.finalizePre, Spec.Sha3.finalizePost,
       X86_64.abi, X86_64.argRegs, Spec.Sha3.hashSha3_256] [finSat, Stream.Absorb.sat] using finSat 32)
-    (Code.all_of_allInstrs (by decide +kernel)) (by decide +kernel)
+    (Code.all_of_spTest (by decide +kernel)) (by decide +kernel)
     (by implies_sat [Spec.Sha3.finalizeContract, Spec.Sha3.finalizeSig, Spec.Sha3.finalizePre,
       Spec.Sha3.finalizePost, X86_64.abi, X86_64.argRegs, Spec.Sha3.hashSha3_256] [finSat, Stream.Absorb.sat]
       using { finSat 32 with wr := [⟨0x1000, 200⟩, ⟨0x2000, 32⟩] })
@@ -1021,7 +1021,7 @@ theorem finalize_sha3_384 :
     (by implies_sat [finX86_64, Spec.Sha3.hashSha3_384] [finSat, Stream.Absorb.sat] using finSat 48)
     (by implies_sat [VG.Proof.Sha3.Instances.finScratchContract, VG.Proof.Sha3.Instances.finScratchSig, Spec.Sha3.finalizePre, Spec.Sha3.finalizePost,
       X86_64.abi, X86_64.argRegs, Spec.Sha3.hashSha3_384] [finSat, Stream.Absorb.sat] using finSat 48)
-    (Code.all_of_allInstrs (by decide +kernel)) (by decide +kernel)
+    (Code.all_of_spTest (by decide +kernel)) (by decide +kernel)
     (by implies_sat [Spec.Sha3.finalizeContract, Spec.Sha3.finalizeSig, Spec.Sha3.finalizePre,
       Spec.Sha3.finalizePost, X86_64.abi, X86_64.argRegs, Spec.Sha3.hashSha3_384] [finSat, Stream.Absorb.sat]
       using { finSat 48 with wr := [⟨0x1000, 200⟩, ⟨0x2000, 48⟩] })
@@ -1033,7 +1033,7 @@ theorem finalize_sha3_512 :
     (by implies_sat [finX86_64, Spec.Sha3.hashSha3_512] [finSat, Stream.Absorb.sat] using finSat 64)
     (by implies_sat [VG.Proof.Sha3.Instances.finScratchContract, VG.Proof.Sha3.Instances.finScratchSig, Spec.Sha3.finalizePre, Spec.Sha3.finalizePost,
       X86_64.abi, X86_64.argRegs, Spec.Sha3.hashSha3_512] [finSat, Stream.Absorb.sat] using finSat 64)
-    (Code.all_of_allInstrs (by decide +kernel)) (by decide +kernel)
+    (Code.all_of_spTest (by decide +kernel)) (by decide +kernel)
     (by implies_sat [Spec.Sha3.finalizeContract, Spec.Sha3.finalizeSig, Spec.Sha3.finalizePre,
       Spec.Sha3.finalizePost, X86_64.abi, X86_64.argRegs, Spec.Sha3.hashSha3_512] [finSat, Stream.Absorb.sat]
       using { finSat 64 with wr := [⟨0x1000, 200⟩, ⟨0x2000, 64⟩] })

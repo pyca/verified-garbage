@@ -23,10 +23,9 @@ for `src/<name>_common.rs`, those of `src/<name>*.rs`; a file with no family
 may give only `Wipe`. And only `src/dit.rs` makes tokens from nothing
 (`Dit::assume`).
 
-The tests check the rest at run time (debug builds with `cfg(test)` or the
-`cpu-features-env` feature): no guard is entered inside another, and no
-public token is made inside an operation that holds the mode, so each
-operation decides once and passes its token down.
+Nothing checks that an operation decides once and passes its token down: a
+guard entered inside another only reads the mode again, and a public token
+made inside an operation that holds the mode leaves it on.
 
     python3 ci/check_dit.py
 """

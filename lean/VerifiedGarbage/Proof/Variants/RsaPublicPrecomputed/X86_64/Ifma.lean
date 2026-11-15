@@ -75,7 +75,7 @@ def variant : PublicImpl where
   ct := Ifma.Pub.checked_ct _ FoldedPublic.adx_final_ct
   nosp := noSp_of (by lit_decide)
   depth := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_ifma"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
 

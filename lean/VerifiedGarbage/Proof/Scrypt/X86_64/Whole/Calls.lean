@@ -376,7 +376,7 @@ def RMImpl.sse2 : RMImpl where
   code := Impl.Scrypt.X86_64.roMixDirectSse2
   eq := rfl
   mx := by lit_decide
-  sp := Code.all_of_allInstrs (by lit_decide)
+  sp := Code.all_of_spTest (by lit_decide)
   noclob := by rw [← Code.allInstrs_eq]; lit_decide
   depth := by lit_decide
 
@@ -388,7 +388,7 @@ def RMImpl.scalar : RMImpl where
   code := Impl.Scrypt.X86_64.roMixDirect
   eq := rfl
   mx := by lit_decide
-  sp := Code.all_of_allInstrs (by lit_decide)
+  sp := Code.all_of_spTest (by lit_decide)
   noclob := by rw [← Code.allInstrs_eq]; lit_decide
   depth := by lit_decide
 

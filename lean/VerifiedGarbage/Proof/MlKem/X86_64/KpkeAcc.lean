@@ -19,9 +19,8 @@ section
 The code `vg_mlkem*_decrypt_mul` inlines (`Bodies.sse`): `vg_mlkem_ntt`'s,
 storing its result through `r10` (`nttOB`, against `nttOK`),
 `vg_mlkem_inv_ntt`'s (`nttInvB`) and `vg_mlkem_multiply_ntts`'s (`mulB`),
-each without the MXCSR prologue and epilogue of its function, meet the
-contracts of the functions: the proofs are those of the functions
-(`Ntt.lean`, `NttInv.lean`, `Mul.lean`) without `withMxcsr_ok`.
+meet the contracts of the functions: the proofs are those of the functions
+(`Ntt.lean`, `NttInv.lean`, `Mul.lean`).
 -/
 
 @[expose] public section

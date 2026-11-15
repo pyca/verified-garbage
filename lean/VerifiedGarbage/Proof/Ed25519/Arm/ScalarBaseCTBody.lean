@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTLit
 import VerifiedGarbage.Proof.Framework.TaintSum
 meta import VerifiedGarbage.Proof.Framework.TaintSum
+import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Impl.Ed25519.Arm.ScalarBase
@@ -133,7 +135,7 @@ theorem prepareBatch_ct (b p : BitVec 32) (j : Nat) (hj : j < 32) :
     CT (fun x y => BodyCTReady b p j x ∧ BodyCTReady b p j y)
       prepareBatch (fun x y => BitsCTPre b p j x ∧ BitsCTPre b p j y) := by
   apply ctBoth
-  · apply ctRegs [.r0, .r11] _ (by native_taint_decide)
+  · apply ctRegsS [.r0, .r11] _ (by taint_decide_sum [doubleSum])
     intro x y h r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -150,7 +152,7 @@ theorem pointMulBody_ct (b p : BitVec 32) (j : Nat) (hj : j < 32) :
   rw [pointMulBody]
   refine RelCT.seq (batchStart_ct b p j)
     (RelCT.seq (prepareBatch_ct b p j hj) (RelCT.seq (batchBits_ct b p j) ?_))
-  apply ctRegs [.r0] _ (by native_taint_decide)
+  apply ctRegsS [.r0] _ (by taint_decide_sum [addSum])
   intro x y h
   exact h
 

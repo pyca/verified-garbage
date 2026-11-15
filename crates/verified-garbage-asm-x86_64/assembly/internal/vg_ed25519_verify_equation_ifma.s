@@ -1787,13 +1787,6 @@ vg_ed25519_verify_equation_ifma:
 	vpsllq ymm11, ymm11, 39
 	vpor ymm3, ymm3, ymm11
 	vpsrlq ymm4, ymm8, 12
-	stmxcsr DWORD PTR [rdi+1600]
-	mov r11d, DWORD PTR [rdi+1600]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rdi+1604], eax
-	ldmxcsr DWORD PTR [rdi+1604]
-	lfence
 224:
 	mov rbx, QWORD PTR [rdi+56]
 	sub rbx, 1
@@ -4173,9 +4166,6 @@ vg_ed25519_verify_equation_ifma:
 	vmovdqu YMMWORD PTR [rdi+128], ymm7
 	vmovdqu YMMWORD PTR [rdi+160], ymm8
 	vzeroupper
-	lfence
-	mov DWORD PTR [rdi+1600], r11d
-	ldmxcsr DWORD PTR [rdi+1600]
 	movabs rax, 7552
 	add rax, rdi
 	mov r8, QWORD PTR [rax]

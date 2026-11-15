@@ -248,13 +248,6 @@ vg_ed25519_scalar_base_ifma:
 	vshufi32x4 zmm2, zmm2, zmm2, 68
 	vshufi32x4 zmm3, zmm3, zmm3, 68
 	vshufi32x4 zmm4, zmm4, zmm4, 68
-	stmxcsr DWORD PTR [rdi+1600]
-	mov r11d, DWORD PTR [rdi+1600]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rdi+1604], eax
-	ldmxcsr DWORD PTR [rdi+1604]
-	lfence
 	mov ebx, 0
 21:
 	add rbx, 26
@@ -2933,9 +2926,6 @@ vg_ed25519_scalar_base_ifma:
 	vmovdqu YMMWORD PTR [rdi+128], ymm7
 	vmovdqu YMMWORD PTR [rdi+160], ymm8
 	vzeroupper
-	lfence
-	mov DWORD PTR [rdi+1600], r11d
-	ldmxcsr DWORD PTR [rdi+1600]
 	call {vg_gf25519_r64_invert}
 	mov rdx, QWORD PTR [rdi+544]
 	xor ebp, ebp

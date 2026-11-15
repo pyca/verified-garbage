@@ -116,7 +116,7 @@ theorem cSv8 : (scrR s₀).Contains (S s₀ + BitVec.ofNat 64 2048 + BitVec.ofNa
 /-- The frame of a step, in the regions the invariant allows. -/
 theorem stepFrame {k : Nat} (hk : k < N s₀) {m m' : Mem}
     (hf : Frame [⟨blk s₀ k, 16⟩, ivR s₀, ⟨S s₀, 2064⟩] m m') :
-    Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩] m m' :=
+    Frame [ivR s₀, dataR s₀, ⟨S s₀, 2064⟩, gR s₀] m m' :=
   hf.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -216,13 +216,8 @@ theorem encBody_ok (v : BlocksImpl) : BodyOk (cbcMode true) (encBody v.enc) := b
       · exact ⟨⟨S s₀, 2064⟩, by simp, Region.sub_prefix (by decide)⟩
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
   have big₁ : Frame (Big s₀) s₀.mem s₁.mem :=
-    (UPre.big_of h.frame).trans ((stepFrame hk (f₁.sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)).sub fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact ⟨ivR s₀, by simp, fun _ h => h⟩
-      · exact ⟨dataR s₀, by simp, fun _ h => h⟩
-      · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩)
+    (UPre.big_of h.frame).trans (UPre.bigStep (stepFrame hk (f₁.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)))
   have one (r : Region) (P : Addr) (hd : (⟨P, 16⟩ : Region).Disjoint r) :
       ∀ r' ∈ [r], (⟨P, 16⟩ : Region).Disjoint r' := fun r' hr' => by
     simp only [List.mem_singleton] at hr'; subst hr'; exact hd
@@ -346,13 +341,8 @@ theorem decBody_ok (v : BlocksImpl) : BodyOk (cbcMode false) (decBody v.dec) := 
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
   have big₁ : Frame (Big s₀) s₀.mem s₁.mem :=
-    (UPre.big_of h.frame).trans ((stepFrame hk (f₁.sub fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact ⟨⟨S s₀, 2064⟩, by simp, svSub⟩)).sub fun r hr => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact ⟨ivR s₀, by simp, fun _ h => h⟩
-      · exact ⟨dataR s₀, by simp, fun _ h => h⟩
-      · exact ⟨scrR s₀, by simp, Region.sub_prefix (by decide)⟩)
+    (UPre.big_of h.frame).trans (UPre.bigStep (stepFrame hk (f₁.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr; exact ⟨⟨S s₀, 2064⟩, by simp, svSub⟩)))
   have one (r : Region) (P : Addr) (hd : (⟨P, 16⟩ : Region).Disjoint r) :
       ∀ r' ∈ [r], (⟨P, 16⟩ : Region).Disjoint r' := fun r' hr' => by
     simp only [List.mem_singleton] at hr'; subst hr'; exact hd

@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mxcsr
 import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.VLay21
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
 import VerifiedGarbage.Proof.Framework.Range
@@ -23,8 +24,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # ML-DSA on x86-64: `vg_mldsa_ntt`
 
-ML-KEM's `withMxcsr` runs its code from any MXCSR and keeps what it does
-(`withMxcsr_ok`); the prologue leaves the table of zetas in `scratch` and the
+The code sets no MXCSR of its own (`noMx_ok`, `mx_correct`); the prologue leaves the table of zetas in `scratch` and the
 constants (`vpro_ok`), each layer is `nttLayer` (`vlay_ok`, `vlay2_ok`,
 `vlay1_ok`), and the eight layers are `NTT` (`ntt_eq_layers`). `LI`, `vpro_ok`
 and `inPlaceSat` serve `NTT⁻¹` too.
@@ -36,7 +36,7 @@ namespace VG.Proof.MlDsa.X86_64.Arith
 
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
-open VG.Proof.MlKem.X86_64 (writesIn writesOnly_of Keep WP.keep writesOnly gprPreserved_of withMxcsr_ok mxR mx_sub xmm_setXmm
+open VG.Proof.MlKem.X86_64 (writesIn writesOnly_of Keep WP.keep writesOnly gprPreserved_of mxR mx_sub xmm_setXmm
   GOnly add_ofNat_zero sel)
 open VG.Spec.MlDsa (q n Poly Zq zetas ntt)
 open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
@@ -156,7 +156,7 @@ theorem frame_fs {fP sP : Addr} {m m' : Mem} {rs : List Region} (h : Frame rs m 
   h.sub fun r hr => (hs r hr).elim (fun h => ⟨_, List.mem_cons_self .., h⟩)
     fun h => ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), h⟩
 
-/-- The code in `withMxcsr`, from its state `s1`: the prologue, then the
+/-- The code, from its state `s1`: the prologue, then the
 layers `l`, which leave `F`, then `NTT⁻¹`'s scaling or nothing. -/
 theorem nttBody_ok {t : Poly → Poly} {s s1 : State} (hs : (inPlaceK t).pre s) {l : Prog isa} {G : Poly}
     (k1 : Keep [.rax, .r11] s s1) (f1 : Frame [mxR (s.gpr .rsi)] s.mem s1.mem)
@@ -183,21 +183,18 @@ theorem nttBody_ok {t : Poly → Poly} {s s1 : State} (hs : (inPlaceK t).pre s) 
     intro r hr <;> simp only [List.mem_singleton] at hr <;> subst hr
   exacts [.inr (mx_sub' _), .inr fun _ h => h, .inl fun _ h => h]
 
-/-- `withMxcsr` around the body, and the ABI. -/
+/-- The body, and the ABI. -/
 theorem mx_correct {t : Poly → Poly} {l : Prog isa} (s : State) (hs : (inPlaceK t).pre s)
-    (hk : Code.allInstrs (writesIn [.rax, .rcx, .rdx, .r8, .r9]) (.seq (.block vpro) l) = true)
-    (hctl : ctlOk (VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 (.seq (.block vpro) l)) = true)
+    (hctl : ctlOk (.seq (.block vpro) l : Prog isa) = true)
     (hk' : Code.allInstrs (writesIn [.rax, .rcx, .rdx, .r8, .r9, .r11])
-      (VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 (.seq (.block vpro) l)) = true)
+      (.seq (.block vpro) l : Prog isa) = true)
     (hl : ∀ s1, Keep [.rax, .r11] s s1 → Frame [mxR (s.gpr .rsi)] s.mem s1.mem →
       WP isa (.seq (.block vpro) l) s1 fun s' => PolyIs s'.mem (s.gpr .rdi) (t (polyAt s.mem (s.gpr .rdi))) ∧
         Frame [pR (s.gpr .rdi), pR (s.gpr .rsi)] s.mem s'.mem) :
-    ∃ tr s', Exec isa (VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 (.seq (.block vpro) l)) s tr s' ∧
+    ∃ tr s', Exec isa (.seq (.block vpro) l : Prog isa) s tr s' ∧
       abiPreserved s s' ∧ (inPlaceK t).post s s' := by
-  have hw : pR (s.gpr .rsi) ∈ s.wr := by rw [hs.2.1]; simp
   have hd : (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rsi)) := hs.2.2.1
-  have hW := withMxcsr_ok (c := .seq (.block vpro) l) (by decide) [.rax, .rcx, .rdx, .r8, .r9] (by decide) rfl hw
-    (writesOnly_of hk) (hl)
+  have hW := noMx_ok (c := .seq (.block vpro) l) hl
   obtain ⟨tr, s', he, ⟨s2, ⟨hP, hf⟩, hf', -⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .r8, .r9, .r11] hW (writesOnly_of hk')
   refine ⟨tr, s', he, abiPreserved_of_ctl hctl he (gprPreserved_of hk (by decide)
     (hf.trans (hf'.sub fun r hr => ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), ?_⟩))
@@ -209,7 +206,7 @@ theorem mx_correct {t : Poly → Poly} {l : Prog isa} (s : State) (hs : (inPlace
 theorem ntt_correct (s : State) (hs : (inPlaceK ntt).pre s) :
     ∃ t s', Exec isa Impl.MlDsa.X86_64.Arith.ntt s t s' ∧ abiPreserved s s' ∧ (inPlaceK ntt).post s s' := by
   have hd : (pR (s.gpr .rsi)).Disjoint (pR (s.gpr .rdi)) := hs.2.2.1.symm
-  refine mx_correct s hs (by decide +kernel) (by decide +kernel) (by decide +kernel) fun s1 k1 f1 =>
+  refine mx_correct s hs (by decide +kernel) (by decide +kernel) fun s1 k1 f1 =>
     WP.mono (nttBody_ok hs k1 f1 (G := nttLens.foldl nttLayer (polyAt s.mem (s.gpr .rdi)))
       fun s2 hI hdi hsi hwf hw => ?_) fun s' ⟨hP, hf⟩ => ⟨by rw [ntt_eq_layers]; exact hP, hf⟩
   simp only [nttLens, List.foldl_cons, List.foldl_nil]

@@ -7,14 +7,6 @@
 vg_poly1305_blocks_ifma:
 	cmp rdx, 32
 	jb 20f
-	stmxcsr DWORD PTR [rdi+120]
-	mov eax, DWORD PTR [rdi+120]
-	and eax, 65535
-	mov DWORD PTR [rdi+120], eax
-	mov eax, 8127
-	mov DWORD PTR [rdi+124], eax
-	ldmxcsr DWORD PTR [rdi+124]
-	lfence
 	movabs rax, 1152921487695413247
 	mov r10, QWORD PTR [rdi+24]
 	and r10, rax
@@ -629,8 +621,6 @@ vg_poly1305_blocks_ifma:
 	vpsrlq zmm14, zmm0, 44
 	vpandq zmm0, zmm0, QWORD PTR [rdi+104]{1to8}
 	vpaddq zmm1, zmm1, zmm14
-	lfence
-	ldmxcsr DWORD PTR [rdi+120]
 	vzeroupper
 	mov QWORD PTR [rdi+72], rbx
 	mov QWORD PTR [rdi+80], rbp

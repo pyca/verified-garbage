@@ -45,9 +45,7 @@ theorem validate_safe (sq : Prog isa) (mul : Nat → Nat → Nat → Prog isa)
     (hs : generationSafe sq) (hm : ∀ o a b, generationSafe (mul o a b)) (pLen qLen : Nat) :
     generationSafe (validate (checkName := checkName) sq mul pLen qLen) := by
   unfold validate
-  repeat' first
-    | exact (checkParameters_safe sq mul hs hm).call checkName
-    | apply generationSafe.seq
+  refine .seq (.seq ?_ ((checkParameters_safe sq mul hs hm).call checkName)) (.seq ?_ ?_)
   all_goals rfl
 
 end VG.Proof.Dsa.X86_64.Generation

@@ -178,8 +178,8 @@ def ce1V : Prog isa :=
 same arguments; they read neither `d` nor `len`) on sixteen coefficients at
 a time, in the words of an AVX2 register, with the multiplications of the
 reference AVX2 code of Kyber: the instructions MXCSR must be `0x1FBF` for
-(`Vec.lean`), so they are only code of a function that runs them in a
-region of `withMxcsr`.
+(`Vec.lean`), which the dispatcher of every public function that runs them
+sees to (`vg_mcdt_enter`).
 
 * `cmLd`: sixteen `u32`s as words, in order (`vpackssdw`, `vpermq`).
 * `cmHi` (`d = 10`, `11`): with `v = 20159 = ⌈2²⁶/q⌉`, `vpmulhw` of `8x` by

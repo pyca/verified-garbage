@@ -15,16 +15,13 @@ namespace VG.Artifacts.X25519.Arm
 def artifacts : List Artifact := [
   Spec.X25519.exchangeApi.artifact Arm.target {
     code := Impl.Xdh.Arm.exchange "vg_x25519" Impl.X25519.Arm.x25519 32
-    stack := 8
     verified := Proof.X25519.Arm.Exchange.exchange_baseline },
   Spec.X25519.exchangeApi.artifact Arm.target {
     suffix := "_umaal"
     code := Impl.Xdh.Arm.exchange "vg_x25519_umaal" Impl.X25519.Arm.x25519Umaal 32
-    stack := 8
     verified := Proof.X25519.Arm.Exchange.exchange_umaal },
   Spec.X25519.x25519BaseApi.artifact Arm.target {
     code := Impl.X25519.Arm.Base.x25519Base
-    stack := 0
     verified := Proof.X25519.Arm.Base.x25519Base_verified }]
 
 end VG.Artifacts.X25519.Arm

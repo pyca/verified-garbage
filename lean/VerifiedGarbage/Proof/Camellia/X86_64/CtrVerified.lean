@@ -222,7 +222,7 @@ theorem ctr_framed :
     (n := 409) (pre := Spec.Camellia.ctrPre X86_64.abi.ptrBits)
     (post := Proof.Camellia.ctrPostSk X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3280) (by rw [← Proof.Camellia.ctrScratchContract_eq]; exact ctr_verified)
-    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.ctrPostOut_local _) ctrFrameSat_pre
 
 end VG.Proof.Camellia.X86_64

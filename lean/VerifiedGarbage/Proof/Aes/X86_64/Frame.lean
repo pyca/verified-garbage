@@ -66,6 +66,6 @@ theorem scalar_expandKey_framed :
     Verified X86_64.target
       (Impl.StackScratch.X86_64.withStackScratchWiped 520 .rcx 64 Impl.Aes.X86_64.expandKey)
       (Spec.Aes.expandKeyContract X86_64.abi 520) :=
-  expandKey_framed expandKey_verified (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)
+  expandKey_framed expandKey_verified (Code.all_of_spTest (by lit_decide)) (by lit_decide)
 
 end VG.Proof.Aes.X86_64

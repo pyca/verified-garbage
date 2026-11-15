@@ -31,7 +31,7 @@ def pclmul : GhashImpl where
   ok := Proof.Gcm.X86.Pclmul.ghash_correct
   ct := Proof.Gcm.X86.Pclmul.ghash_ct
   nosp := NoSp.of_all (by lit_decide)
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_pclmul"
   features := ["pclmulqdq", "ssse3"]
 

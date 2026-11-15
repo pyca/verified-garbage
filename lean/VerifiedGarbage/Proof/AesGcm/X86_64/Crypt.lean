@@ -32,21 +32,21 @@ open VG.Proof.Gcm (Ctr xorKs)
 
 /-- A buffer of `n` bytes at `D` that the code may read and write, apart from
 the context, the state, `W` and the stack below `SP`. -/
-structure DataW (Ctx St W SP : Addr) (s : State) (D : Addr) (n : Nat) : Prop where
-  ok : DataOk St W SP s D n
+structure DataW (Ctx St W SP : Addr) (s : State) (D : Addr) (n : Nat) (N : Nat := 2560) : Prop where
+  ok : DataOk St W SP s D n N
   wr : Covers [⟨D, n⟩] s.wr
   ctx : (⟨Ctx, 256⟩ : Region).Disjoint ⟨D, n⟩
 
-theorem DataW.of_eq {Ctx St W SP : Addr} {s s' : State} {D : Addr} {n : Nat} (h : DataW Ctx St W SP s D n)
-    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : DataW Ctx St W SP s' D n :=
+theorem DataW.of_eq {Ctx St W SP : Addr} {s s' : State} {D : Addr} {n N : Nat} (h : DataW Ctx St W SP s D n N)
+    (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr) : DataW Ctx St W SP s' D n N :=
   ⟨h.ok.of_eq hrd hwr, by rw [hwr]; exact h.wr, h.ctx⟩
 
-theorem DataW.drop {Ctx St W SP : Addr} {s : State} {D : Addr} {n : Nat} (h : DataW Ctx St W SP s D n)
-    {k : Nat} (hk : k ≤ n) : DataW Ctx St W SP s (D + BitVec.ofNat 64 k) (n - k) :=
+theorem DataW.drop {Ctx St W SP : Addr} {s : State} {D : Addr} {n N : Nat} (h : DataW Ctx St W SP s D n N)
+    {k : Nat} (hk : k ≤ n) : DataW Ctx St W SP s (D + BitVec.ofNat 64 k) (n - k) N :=
   ⟨h.ok.drop hk, covers_off h.wr (by omega_using [hk]) h.ok.lt, h.ctx.sub_right (Offset.sub_base D (by omega_using [hk]))⟩
 
-theorem DataW.take {Ctx St W SP : Addr} {s : State} {D : Addr} {n : Nat} (h : DataW Ctx St W SP s D n)
-    {k : Nat} (hk : k ≤ n) : DataW Ctx St W SP s D k :=
+theorem DataW.take {Ctx St W SP : Addr} {s : State} {D : Addr} {n N : Nat} (h : DataW Ctx St W SP s D n N)
+    {k : Nat} (hk : k ≤ n) : DataW Ctx St W SP s D k N :=
   ⟨h.ok.take hk, fun a m ⟨r, hr, hc⟩ => by
     simp only [List.mem_singleton] at hr; subst hr
     exact h.wr a m ⟨_, List.mem_singleton_self _, by simp only [Region.Contains] at hc ⊢; omega_using [hk, hc]⟩,

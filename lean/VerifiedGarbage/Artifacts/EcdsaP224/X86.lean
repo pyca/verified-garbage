@@ -73,7 +73,7 @@ public import VerifiedGarbage.Proof.Variants.Sha256.X86
 namespace VG.Artifacts.EcdsaP224.X86.Rfc6979
 
 open VG.Proof.P224.X86 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.X86 (signCodeT stackT OK p224 p224T_verified signCode_sp)
+open VG.Proof.Ecdsa.Rfc6979.X86 (signCodeT OK p224 p224T_verified signCode_sp)
 open VG.Proof.HmacTable.X86 (tables names vars)
 
 def artifactsFor (vs1 : List Proof.Sha1.X86.Variants.Backend)
@@ -82,7 +82,6 @@ def artifactsFor (vs1 : List Proof.Sha1.X86.Variants.Backend)
     Spec.Ecdsa.Rfc6979.Curves.p224SignApi.artifact X86.target {
       tables := [("hmac", tables (vars vs1 vs256))]
       code := signCodeT (p224 hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p224.tries (vars vs1 vs256)
-      stack := stackT
       verified := p224T_verified hasLaw.law (vars vs1 vs256) hv
       spSafe := signCode_sp _ _ _ }]
   else []
@@ -100,7 +99,6 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.P224.verifyHashApi.artifact X86.target {
     code := Impl.Ecdsa.X86.VerifyHash.verifyHash Spec.Ecdsa.P224.inst.curve.len false
       Impl.Ecdsa.Verify.X86.verifyP224
-    stack := 136
     verified := Proof.Ecdsa.Verify.X86.P224.verifyHash_verified hasLaw.law }] ++
   Rfc6979.artifacts
 

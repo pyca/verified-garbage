@@ -35,8 +35,9 @@ of `zmm` registers, and the rest (fewer than eight) by calling
   by multiplying `r` (from the key) by itself, `(r⁴, r³)` in each lane by
   multiplying `(r², r)` by `r²`, then `(r^(4 - j), r^(4 - j))` in lane `j`
   (with `vpunpck{l,h}qdq` and `vshufi32x4`), multiplied by `(r⁴, 1)`.
-* `vpmuludq` has MXCSR-configuration-dependent timing on some processors,
-  so the code that uses it runs between Intel's prologue and epilogue, as in
+* `vpmuludq` has MXCSR-configuration-dependent timing on some processors:
+  the dispatcher runs `vg_mcdt_enter` first, which leaves MXCSR `0x1FBF` for the
+  whole call, so the code sets none of its own, as in
   `vg_poly1305_blocks_avx2`.
 * At the end the quadwords of `H` are summed into quadword 0
   (`vshufi32x4`, `vpunpckhqdq`), carried, and then reduced and stored by
@@ -180,8 +181,7 @@ doubleword, all that `vpmuludq` reads) is limb `i` of `r⁸`, and at
 `72 + 4 i` five times limb `i` (`1 ≤ i ≤ 4`), so that `d_j` needs no
 multiplication by 5. The quadwords at bytes 104 and 112 are the mask
 `2²⁶ - 1` and the pad bit `2²⁴`, for `vpandq` and `vporq`.
-`Repr` leaves bytes 56–127 to working space, and MXCSR is saved at bytes
-120–127. -/
+`Repr` leaves bytes 56–127 to working space. -/
 
 def mR (i : Nat) : MemOp := at_ .rdi (56 + 4 * i)
 def mS (i : Nat) : MemOp := at_ .rdi (72 + 4 * i)
@@ -252,10 +252,10 @@ def sumLanes : List Instr :=
 /-- The first `8 ⌊n / 8⌋` blocks absorbed; `rsi` advanced past them,
 `rdx = n mod 8`. The groups before the last are counted down in `rcx`. -/
 def body : Prog isa :=
-  .seq (.block (Avx2.consts ++ Avx2.mxcsrIn ++ powers ++ Avx2.loadHw ++ loadH ++ storeY ++
+  .seq (.block (Avx2.consts ++ powers ++ Avx2.loadHw ++ loadH ++ storeY ++
     ([.mov .rcx (.reg .rdx), .shift .shr .rcx 3, .alu .sub .rcx (.imm 1)] : List Instr)))
   (.seq (.loop groupBody .ne)
-    (.block (Avx2.consts2 ++ last ++ sumLanes ++ Avx2.fullCarry ++ Avx2.reduce ++ Avx2.mxcsrOut ++
+    (.block (Avx2.consts2 ++ last ++ sumLanes ++ Avx2.fullCarry ++ Avx2.reduce ++
       Avx2.storeH ++
       ([.vop .vzeroupper, .alu .add .rsi (.imm 128), .alu .and .rdx (.imm 7)] : List Instr))))
 

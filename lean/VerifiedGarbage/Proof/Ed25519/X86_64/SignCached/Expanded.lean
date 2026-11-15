@@ -352,10 +352,10 @@ theorem spSafeE (v : Compress) :
   have hu := Proof.Sha512.X86_64.Shared.updateOwn_spSafe v.hso v.spSafe
   have hf := Proof.Sha512.X86_64.Shared.finalizeOwn_spSafe v.hso v.spSafe
   have hr : Impl.Ed25519.X86_64.scalarReduce.all (fun i => !isa.writesSp i) = true :=
-    Code.all_of_allInstrs (by lit_decide)
+    Code.all_of_spTest (by lit_decide)
   have hb : bs.all (fun i => !isa.writesSp i) = true := PublicKey.base_spSafe
   have hm : Impl.Ed25519.X86_64.scalarMulAdd.all (fun i => !isa.writesSp i) = true :=
-    Code.all_of_allInstrs (by lit_decide)
+    Code.all_of_spTest (by lit_decide)
   have hi : (Impl.Sha512.X86_64.Stream.init Spec.Sha512.H0_512).all (fun i => !isa.writesSp i) = true := by
     decide +kernel
   simp only [codeExpanded, bodyFrom, copyExpanded, copyWords, hashNonce, hashChallenge, init, update, finalize,

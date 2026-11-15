@@ -755,9 +755,7 @@ theorem wp_allg (hk0 : 0 < k) {term row : Prog isa} {se ra : Nat} {rA : Nat → 
     (hM : (aMat s₀.mem (aP s₀)).length = k) (hrA : ∀ i < k, (aMat s₀.mem (aP s₀)).getD i [] = rA i)
     (hrow : ∀ i < k, ∀ s, RInvG k s₀ ((eVec s₀.mem (eP s₀)).map ntt) ra rA R T i s → WP isa row s fun s' =>
       RInvG k s₀ ((eVec s₀.mem (eP s₀)).map ntt) ra rA R T (i + 1) s' ∧
-      s'.gpr .r14 = s.gpr .r14 - 1 ∧ s'.zf = some (s.gpr .r14 - 1 == 0))
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
-      (innerG term row B k) = true) :
+      s'.gpr .r14 = s.gpr .r14 - 1 ∧ s'.zf = some (s.gpr .r14 - 1 == 0)) :
     WP isa (keygenMulg term row B k) s₀ fun s' => gprPreserved s₀ s' ∧
       (kgMulKG k aR aRed aMat eR eRed eVec).post s₀ s' := by
   have hcw : cR (cP s₀) ∈ s₀.wr := by rw [hp.2.1]; simp
@@ -773,8 +771,6 @@ theorem wp_allg (hk0 : 0 < k) {term row : Prog isa} {se ra : Nat} {rA : Nat → 
         apply BitVec.eq_of_toNat_eq
         rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
         omega_arith) fun s1 ⟨h1bx, h1bp, h112, h113, h115, h114, h1sp, h1rd, h1wr, hm1⟩ => ?_
-  have h0 : InRegions s1.wr (cP s₀ + BitVec.ofNat 64 768) 4 := by rw [h1wr]; exact ⟨_, hcw, in_c (by decide)⟩
-  have h4 : InRegions s1.wr (cP s₀ + BitVec.ofNat 64 772) 4 := by rw [h1wr]; exact ⟨_, hcw, in_c (by decide)⟩
   have hsv : Spill.Saved s1.mem (cP s₀) s₀.gpr KpkeMul.slots := by
     rw [hm1]; exact Spill.saveMem_saved _ _ _ _ (by decide)
   have hfC : Frame [cR (cP s₀)] s₀.mem s1.mem := by
@@ -787,7 +783,7 @@ theorem wp_allg (hk0 : 0 < k) {term row : Prog isa} {se ra : Nat} {rA : Nat → 
   have hmxv : ∀ {p : Addr} {n i : Nat}, (vR p n).Disjoint (cR (cP s₀)) → i < n →
       ∀ r ∈ [mxR (cP s₀)], (pR (p + BitVec.ofNat 64 (1024 * i))).Disjoint r := fun h hi r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact vc_dis h hi (by decide)
-  refine WP.seq (WP.mono (withMxcsr_ok' (r := .rbx) (by decide) _ (by decide) h1bx h0 h4 hwo
+  refine WP.seq (WP.mono (noMx_ok (sP := cP s₀)
     (Q := fun s' => Base k s₀ s' ∧ (∀ j < k, PolyIs s'.mem (sP s₀ + BitVec.ofNat 64 (1024 * j)) ((sv k s₀)[j]!)) ∧
       ∀ i < k, PolyIs s'.mem (tP s₀ + BitVec.ofNat 64 (1024 * i)) (tgtG k s₀ ((eVec s₀.mem (eP s₀)).map ntt) rA i))
     (fun s2 k2 f2 => ?_)) fun s5 ⟨s4, ⟨hb4, hs4, ht4⟩, hf5, k5⟩ => ?_)
@@ -847,13 +843,12 @@ variable {k : Nat} {s₀ : State} (hp : (kgMulK k).pre s₀) (hk : k ≤ 4) {B :
   (hB : BodiesOk B R T)
 include hp hk hB
 
-theorem wp_all (hk0 : 0 < k) (hrow : RowOk B R T)
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp] (inner B k) = true) :
+theorem wp_all (hk0 : 0 < k) (hrow : RowOk B R T) :
     WP isa (keygenMul B k) s₀ fun s' => gprPreserved s₀ s' ∧ (kgMulK k).post s₀ s' :=
   wp_allg hp hk hB hk0 (term := KpkeMul.nttK B) (row := KpkeMul.rowOf B k) (ra := 1024) (rA := rowA k s₀)
     (vecAt_length _ _ _) (fun _ hj _ hI => nttStep_ok hp hk hB hj hI) (by simp [matAt])
     (fun i hi => by simp [matAt, List.getD_eq_getElem?_getD, List.getElem?_range hi])
-    (fun _ hi _ hR => hrow hp hk hi hR) hwo
+    (fun _ hi _ hR => hrow hp hk hi hR)
 end
 
 end KgMul

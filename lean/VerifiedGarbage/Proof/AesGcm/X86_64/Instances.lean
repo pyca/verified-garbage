@@ -116,7 +116,7 @@ theorem encSpecPrepared_pre {s : State} (h : encCallPre CtxMode.prepared s) :
   have a₂₂ := h
   clear h
   sig_pre [Proof.AesGcm.streamEncryptPreparedRoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig,
-    Proof.Gcm.streamCryptPowersPre, X86_64.abi, X86_64.argRegs]
+    Proof.Gcm.streamCryptPowersPre, X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.AesGcm.streamEncryptPreparedRoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig,
     Proof.Gcm.streamCryptPowersPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
@@ -188,7 +188,7 @@ theorem toSpecPrepared_pre {s : State} (h : toPre CtxMode.prepared s) :
   have a₂₈ := h
   clear h
   sig_pre [Proof.Gcm.streamEncryptToPreparedContract, Proof.Gcm.streamEncryptToPreparedSig, Proof.Gcm.streamEncryptToPrecomputedSig,
-    Proof.Gcm.streamEncryptToPreparedPre, X86_64.abi, X86_64.argRegs]
+    Proof.Gcm.streamEncryptToPreparedPre, X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.Gcm.streamEncryptToPreparedContract, Proof.Gcm.streamEncryptToPreparedSig, Proof.Gcm.streamEncryptToPrecomputedSig,
     Proof.Gcm.streamEncryptToPreparedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
@@ -266,7 +266,7 @@ theorem splitSpecR_pre {s : State} (h : splitPreK CtxMode.prepared s) :
   have a₀ := h
   clear h
   sig_pre [Proof.Gcm.sealSplitPreparedContract, Proof.Gcm.sealSplitPreparedSig, Proof.Gcm.sealSplitPrecomputedSig,
-    Proof.Gcm.sealSplitPreparedPre, X86_64.abi, X86_64.argRegs]
+    Proof.Gcm.sealSplitPreparedPre, X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.Gcm.sealSplitPreparedContract, Proof.Gcm.sealSplitPreparedSig, Proof.Gcm.sealSplitPrecomputedSig,
     Proof.Gcm.sealSplitPreparedPre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
@@ -954,7 +954,7 @@ theorem sealSpecR_pre {s : State} (h : sealPreK CtxMode.prepared s) :
   have a₃₂ := h
   clear h
   sig_pre [Proof.AesGcm.sealPreparedRoundsContract, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPowersPre,
-    X86_64.abi, X86_64.argRegs]
+    X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.AesGcm.sealPreparedRoundsContract, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPowersPre,
     X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]
@@ -1018,7 +1018,7 @@ theorem encSpecPrepared16_pre {s : State} (h : encCallPre CtxMode.prepared16 s) 
   have a₂₂ := h
   clear h
   sig_pre [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig,
-    Proof.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs]
+    Proof.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig,
     Proof.Gcm.streamCryptPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
@@ -1090,7 +1090,7 @@ theorem toSpecPrepared16_pre {s : State} (h : toPre CtxMode.prepared16 s) :
   have a₂₈ := h
   clear h
   sig_pre [Proof.Gcm.streamEncryptToPrepared16Contract, Proof.Gcm.streamEncryptToPreparedSig, Proof.Gcm.streamEncryptToPrecomputedSig,
-    Proof.Gcm.streamEncryptToPrepared16Pre, X86_64.abi, X86_64.argRegs]
+    Proof.Gcm.streamEncryptToPrepared16Pre, X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.Gcm.streamEncryptToPrepared16Contract, Proof.Gcm.streamEncryptToPreparedSig, Proof.Gcm.streamEncryptToPrecomputedSig,
     Proof.Gcm.streamEncryptToPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
@@ -1168,7 +1168,7 @@ theorem splitSpecR16_pre {s : State} (h : splitPreK CtxMode.prepared16 s) :
   have a₀ := h
   clear h
   sig_pre [Proof.Gcm.sealSplitPrepared16Contract, Proof.Gcm.sealSplitPreparedSig, Proof.Gcm.sealSplitPrecomputedSig,
-    Proof.Gcm.sealSplitPrepared16Pre, X86_64.abi, X86_64.argRegs]
+    Proof.Gcm.sealSplitPrepared16Pre, X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.Gcm.sealSplitPrepared16Contract, Proof.Gcm.sealSplitPreparedSig, Proof.Gcm.sealSplitPrecomputedSig,
     Proof.Gcm.sealSplitPrepared16Pre, X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args,
     Proof.AesGcm.ret, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop,
@@ -1248,7 +1248,7 @@ theorem sealSpecR16_pre {s : State} (h : sealPreK CtxMode.prepared16 s) :
   have a₃₂ := h
   clear h
   sig_pre [Proof.AesGcm.sealPrepared16RoundsContract, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrepared16Pre,
-    X86_64.abi, X86_64.argRegs]
+    X86_64.abi, X86_64.argRegs, List.range, List.range.loop]
   sig_reduce [Proof.AesGcm.sealPrepared16RoundsContract, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrepared16Pre,
     X86_64.abi, X86_64.argRegs, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.ret, X86_64.stackArg,
     X86_64.stackArgAddr, List.getD, List.range, List.range.loop, VG.X86_64.below]

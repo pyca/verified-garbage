@@ -814,7 +814,7 @@ theorem expandKey_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.Seed.expandKeySig) (nm := "scratch") (e := .u64)
     (n := 132) (post := Proof.Seed.expandKeyPost X86_64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 1064) expandKey_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.Seed.expandKeyPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

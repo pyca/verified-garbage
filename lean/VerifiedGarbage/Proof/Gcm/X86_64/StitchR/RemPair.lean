@@ -18,15 +18,14 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Lit
 
 /-!
-# The blocks after the last group, decrypted two at a time
+# The blocks after the last group, two at a time: the decryption's loads
 
 `StitchR.remD` decrypts the `r` blocks after the last group of the 256-bit
-loop as `StitchZH.remLoopD1_ok` does one at a time, but in pairs: the first
-alone if `r` is odd (`remStepD_ok`, in the lower lanes, which clears the
-upper lanes of what it writes: `oddStep_ok`), then two at a time, one in each
-lane (`remPairD`, `pairStep_ok`), the products of block `i + l` in lane `l`.
-`RInvP` is `RInvD` with the products of both lanes added; `foldLanes_ok`
-adds them into the lower lanes, where `RInvD` has them.
+loop as `StitchZH.remLoopD1_ok` does one at a time, but in pairs, one in each
+lane: `pairMem_ok` and `pairLanes_ok` are what `remPairD` does, the products of
+block `i + l` in lane `l`, and `foldLanes_run` adds the products of the upper
+lanes into the lower ones. The steps themselves, with the powers read from the
+key context, are `RemPairE.lean`'s (`pairStepDC_ok`, `oneStepDC_ok`).
 -/
 
 @[expose] public section
@@ -221,36 +220,6 @@ structure Ok2 (E : REnv) : Prop where
   inD : ∀ j, j + 2 ≤ E.r → InRegions E.wr (E.aD j) 32
   inW : ∀ j, j + 2 ≤ E.r → InRegions (E.rd ++ E.wr) (E.aW j) 32
 
-/-- After `i` of the `r` blocks, with the products of both lanes. -/
-structure RInvP (E : REnv) (i : Nat) (t : State) : Prop where
-  le : i ≤ E.r
-  r10 : t.gpr .r10 = BitVec.ofNat 64 (16 * i)
-  r9 : t.gpr .r9 = BitVec.ofNat 64 (16 + (E.r - i))
-  gpr : ∀ q, q ≠ .r9 → q ≠ .r10 → t.gpr q = E.g q
-  rd : t.rd = E.rd
-  wr : t.wr = E.wr
-  frame : Frame [⟨E.A, 16 * i⟩] E.m t.mem
-  ct : ∀ j < i, blockAt t.mem (E.aD j) = E.X j
-  prod : (prod (t.proj 0)).xor (prod (t.proj 1)) = accR E.H E.T E.y i
-  y : t.lane .xmm2 0 = if i = 0 then E.y else 0
-  y1 : t.lane .xmm2 1 = 0
-  m0 : ∀ l < 2, t.lane .xmm0 l = revMask
-  m1 : t.lane .xmm1 0 = poly
-
-/-- `RInvD` with nothing in the upper lanes of the products and `Y`. -/
-theorem RInvP.of_D {E : REnv} {i : Nat} {t : State} (hI : RInvD E i t) (h8 : t.lane .xmm8 1 = 0)
-    (h9 : t.lane .xmm9 1 = 0) (h10 : t.lane .xmm10 1 = 0) (y1 : t.lane .xmm2 1 = 0)
-    (m0 : t.lane .xmm0 1 = revMask) : RInvP E i t :=
-  { le := hI.le, r10 := hI.r10, r9 := hI.r9, gpr := hI.gpr, rd := hI.rd, wr := hI.wr, frame := hI.frame,
-    ct := hI.ct
-    prod := by
-      rw [← hI.prod, show Pclmul.prod (t.proj 1) = Prod.zero by
-        simp only [Pclmul.prod, State.proj_xmm, h8, h9, h10]; rfl,
-        xor_zero]
-    y := hI.y, y1 := y1
-    m0 := fun l hl => by rcases (by omega_arith : l = 0 ∨ l = 1) with rfl | rfl; exacts [hI.m0, m0]
-    m1 := hI.m1 }
-
 theorem aOff (p : Addr) (j l : Nat) :
     p + BitVec.ofNat 64 (16 * j) + BitVec.ofNat 64 (16 * l) = p + BitVec.ofNat 64 (16 * (j + l)) := by
   rw [Offset.add_add, Nat.mul_add]
@@ -258,100 +227,6 @@ theorem aOff (p : Addr) (j l : Nat) :
 theorem aOffK (p : Addr) (j l : Nat) :
     p + BitVec.ofNat 64 (768 + 16 * j) + BitVec.ofNat 64 (16 * l) = p + BitVec.ofNat 64 (768 + 16 * (j + l)) := by
   rw [Offset.add_add, Nat.mul_add, Nat.add_assoc]
-
-/-- Two blocks, one in each lane. -/
-theorem pairStep_ok {E : REnv} (hE : E.Ok) (h2 : Ok2 E) (hsrc : E.src = .rdx) {i : Nat} (hi : i + 2 ≤ E.r)
-    {t : State} (hI : RInvP E i t) :
-    WP isa (.block (remPairD ++ remNextPair)) t fun t' =>
-      RInvP E (i + 2) t' ∧ t'.zf = some (decide (E.r - i = 2)) := by
-  have r15 := hE.r15
-  have hSA : E.S = E.A := by rw [← hE.gS, hsrc, hE.gA]
-  have eS : ∀ j, E.aS j = E.aD j := fun j => by show E.S + _ = E.A + _; rw [hSA]
-  have gA : t.gpr .rdx = E.A := by rw [hI.gpr _ (by decide) (by decide), hE.gA]
-  have gP : t.gpr .r11 = E.P := by rw [hI.gpr _ (by decide) (by decide), hE.gP]
-  have gW : t.gpr .rax = E.W := by rw [hI.gpr _ (by decide) (by decide), hE.gW]
-  have eK : t.gpr .r11 + t.gpr .r10 + BitVec.ofInt 64 ((768 : Nat) : Int) = E.aK i := by rw [gP, hI.r10, addr768]
-  have eD : t.gpr .rdx + t.gpr .r10 + BitVec.ofInt 64 ((0 : Nat) : Int) = E.aD i := by rw [gA, hI.r10, addr0]
-  have eW : t.gpr .rax + t.gpr .r10 + BitVec.ofInt 64 ((0 : Nat) : Int) = E.aW i := by rw [gW, hI.r10, addr0]
-  rw [remPairD_eq, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (pairMem_ok t (by rw [eD, hI.rd, hI.wr, ← eS]; exact h2.inS i hi)
-    (by rw [eK, hI.rd, hI.wr]; exact h2.inK i hi) (by rw [eD, hI.wr]; exact h2.inD i hi)
-    (by rw [eW, hI.rd, hI.wr]; exact h2.inW i hi))
-    fun t₁ ⟨⟨v, m₁⟩, b₁, x13, x12, g₁, rd₁, wr₁, k₁⟩ => ?_
-  rw [eD] at m₁ b₁ x13
-  rw [eK] at b₁
-  rw [eW] at x12
-  rw [WP.block_append_iff]
-  refine WP.mono (pairLanes_ok t₁ fun l hl => by rw [k₁ _ (by decide) (by decide) l hl]; exact hI.m0 l hl)
-    fun t₂ ⟨kk, q₂⟩ => ?_
-  refine WP.mono (remNextPair_ok t₂ (m := E.r - i) (i := i) (by omega_arith) (by omega_arith) (by rw [kk.gpr, g₁, hI.r9])
-    (by rw [kk.gpr, g₁, hI.r10])) fun t' ⟨a10, a9, z, gg, ln, mm, rd', wr'⟩ => ⟨?_, z⟩
-  have fA : ∀ (R : Region), R.Disjoint ⟨E.A, 16 * E.r⟩ → ∀ k ≤ E.r, ∀ r' ∈ [(⟨E.A, 16 * k⟩ : Region)],
-      R.Disjoint r' := fun R hR k hk r' hr' => by
-    simp only [List.mem_singleton] at hr'; subst hr'
-    exact hR.sub_right (Region.sub_prefix (by omega_arith))
-  have F₁ : Frame [⟨E.A, 16 * (i + 2)⟩] E.m t₁.mem := by
-    rw [m₁]
-    exact (hI.frame.sub fun r' hr' => by
-        simp only [List.mem_singleton] at hr'; subst hr'
-        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩).writeW (List.mem_singleton_self _) _
-      (Offset.contains_base _ (by omega_arith) (by omega_arith))
-  have mt : t'.mem = t₁.mem := by rw [mm, kk.mem]
-  have bS : ∀ l < 2, blockAt t.mem (E.A + BitVec.ofNat 64 (16 * (i + l))) = blockAt E.m (E.aS (i + l)) :=
-    fun l hl => by
-      rw [show E.A + BitVec.ofNat 64 (16 * (i + l)) = E.aS (i + l) by rw [eS]]
-      exact blockAt_frame hI.frame fun r' hr' => by
-        simp only [List.mem_singleton] at hr'; subst hr'; exact hE.dS (i + l) (by omega_arith) i (by omega_arith)
-  have bK : ∀ l < 2, blockAt t.mem (E.P + BitVec.ofNat 64 (768 + 16 * (i + l))) = blockAt E.m (E.aK (i + l)) :=
-    fun l hl => blockAt_frame hI.frame (fA _ (hE.dK _ (by omega_arith)) i (by omega_arith))
-  have rW : ∀ l < 2, t₁.mem.readW (E.aW (i + l)) 128 = E.T (i + l) := fun l hl =>
-    F₁.readW (Region.contains_self _ _) (fA _ (hE.dW _ (by omega_arith)) (i + 2) hi) (by decide)
-  have P : ∀ l < 2, Pclmul.prod (t'.proj l) =
-      (Pclmul.prod (t.proj l)).acc (E.H (i + l) ^^^ t.lane .xmm2 l) (E.T (i + l)) := fun l hl => by
-    obtain ⟨p₂, -, -⟩ := q₂ l hl
-    have e : Pclmul.prod (t'.proj l) = Pclmul.prod (t₂.proj l) := by simp only [Pclmul.prod, State.proj_xmm, ln]
-    have e₁ : Pclmul.prod (t₁.proj l) = Pclmul.prod (t.proj l) := by
-      simp only [Pclmul.prod, State.proj_xmm, k₁ .xmm8 (by decide) (by decide) l hl,
-        k₁ .xmm9 (by decide) (by decide) l hl, k₁ .xmm10 (by decide) (by decide) l hl]
-    rw [e, p₂, e₁, x13 l hl, x12 l hl, k₁ _ (by decide) (by decide) l hl, aOff, aOff, rW l hl, ← blockAt_eq,
-      bS l hl]
-  refine ⟨by omega_arith, a10, by rw [a9, show E.r - i - 2 = E.r - (i + 2) by omega_arith],
-    fun q h9 h10 => by rw [gg q h9 h10, kk.gpr, g₁]; exact hI.gpr q h9 h10, by rw [rd', kk.rd, rd₁, hI.rd],
-    by rw [wr', kk.wr, wr₁, hI.wr], by rw [mt]; exact F₁, fun j hj => ?_, ?_, ?_, ?_, fun l hl => ?_, ?_⟩
-  · rw [mt]
-    by_cases hji : j < i
-    · rw [m₁, show E.aD i = (⟨E.aD i, 32⟩ : Region).base from rfl,
-        blockAt_writeW_sep' (Offset.disjoint _ (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) rfl]
-      exact hI.ct j hji
-    · obtain ⟨l, hl, rfl⟩ : ∃ l < 2, j = i + l := ⟨j - i, by omega_arith, by omega_arith⟩
-      have b := b₁ l hl
-      rw [aOff, aOffK, bS l hl, bK l hl] at b
-      exact b
-  · rw [P 0 (by decide), P 1 (by decide), xor_acc_acc, hI.prod, hI.y, hI.y1]
-    simp only [accR, Nat.add_zero, Nat.add_one_ne_zero, ↓reduceIte]
-    rw [BitVec.xor_comm (E.H i), BitVec.xor_comm (E.H (i + 1))]
-  · rw [ln, (q₂ 0 (by decide)).2.1]; exact (ite_eq_right_iff.mpr fun h => absurd h (by omega_arith)).symm
-  · rw [ln, (q₂ 1 (by decide)).2.1]
-  · rw [ln, (q₂ l hl).2.2 _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
-      k₁ _ (by decide) (by decide) l hl]
-    exact hI.m0 l hl
-  · rw [ln, (q₂ 0 (by decide)).2.2 _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
-      k₁ _ (by decide) (by decide) 0 (by decide)]
-    exact hI.m1
-
-/-- The pairs, while two or more blocks are left. -/
-theorem pairLoop_ok {E : REnv} (hE : E.Ok) (h2 : Ok2 E) (hsrc : E.src = .rdx) {i : Nat} (hi : i + 2 ≤ E.r)
-    (hev : (E.r - i) % 2 = 0) {t : State} (hI : RInvP E i t) :
-    WP isa (.loop (.block (remPairD ++ remNextPair)) .ne) t (RInvP E E.r) := by
-  refine WP.loop (M := isa) (fun n s => ∃ j, n = E.r - j ∧ j + 2 ≤ E.r ∧ (E.r - j) % 2 = 0 ∧ RInvP E j s) ?_
-    (E.r - i) t ⟨i, rfl, hi, hev, hI⟩
-  rintro n s ⟨j, rfl, hj, hjev, hIs⟩
-  refine WP.mono (pairStep_ok hE h2 hsrc hj hIs) fun s' ⟨hI', hz⟩ => ?_
-  by_cases h1 : E.r - j = 2
-  · refine .inl ⟨by simp only [eval, hz, h1, decide_true, Option.map_some, Bool.not_true], ?_⟩
-    rwa [show E.r = j + 2 by omega_arith]
-  · exact .inr ⟨by simp only [eval, hz, h1, decide_false, Option.map_some, Bool.not_false], E.r - (j + 2),
-      by omega_arith, j + 2, rfl, by omega_arith, by omega_arith, hI'⟩
 
 theorem wp_and_run {is : List Instr} {s : State} {Q R : State → Prop} (h : WP isa (.block is) s Q)
     (hR : ∀ s', runBlock isa is s = some s' → R s') : WP isa (.block is) s fun s' => Q s' ∧ R s' := by
@@ -364,33 +239,6 @@ theorem remNext_lanes {t t' : State} (e : runBlock isa remNext t = some t') : �
   subst e
   intro r l; rfl
 
-/-- The first block alone (for odd `r`), in the lower lanes, leaving the
-upper lanes of the products and `Y` clear. -/
-theorem oddStep_ok {E : REnv} (hE : E.Ok) {t : State} (hI : RInvD E 0 t) (h8 : t.lane .xmm8 1 = 0)
-    (h9 : t.lane .xmm9 1 = 0) (h10 : t.lane .xmm10 1 = 0) (y1 : t.lane .xmm2 1 = 0)
-    (m0 : t.lane .xmm0 1 = revMask) :
-    WP isa (.block (remBodyD E.src ++ remNext)) t fun t' =>
-      RInvP E 1 t' ∧ RInvD E 1 t' ∧ t'.zf = some (decide (E.r = 1)) := by
-  refine WP.mono (wp_and_run (remStepD_ok hE hE.r1 hI) (R := fun t' => t'.lane .xmm8 1 = 0 ∧
-      t'.lane .xmm9 1 = 0 ∧ t'.lane .xmm10 1 = 0 ∧ t'.lane .xmm2 1 = 0 ∧ t'.lane .xmm0 1 = revMask)
-      fun t' e => ?_) fun t' ⟨⟨hI', hz⟩, a8, a9, a10, a2, a0⟩ =>
-    ⟨RInvP.of_D hI' a8 a9 a10 a2 a0, hI', by rw [hz, Nat.sub_zero]⟩
-  rw [runBlock_append] at e
-  cases e₁ : runBlock isa (remBodyD E.src) t with
-  | none => rw [e₁] at e; cases e
-  | some t₁ =>
-    rw [e₁, Option.bind_some] at e
-    have nl := remNext_lanes e
-    have z : ∀ r, t.lane r 1 = 0 → t'.lane r 1 = 0 := fun r h => by
-      rw [nl, ← State.zlane_lt2 _ _ (by decide)]
-      exact lane0Block_zhi (lane0_remBodyD _) e₁ r (by decide) (by decide)
-        (by rw [State.zlane_lt2 _ _ (by decide)]; exact h)
-    refine ⟨z _ h8, z _ h9, z _ h10, z _ y1, ?_⟩
-    rw [nl, ← State.zlane_lt2 _ _ (by decide),
-      lane0Block_zkeep (lane0_remBodyD _) e₁ _ (remBodyD_dst _ _ (by decide)) (by decide),
-      State.zlane_lt2 _ _ (by decide)]
-    exact m0
-
 /-- `foldLanes`: the upper lanes of the products added into the lower. -/
 theorem foldLanes_run (t : State) :
     WP isa (.block foldLanes) t fun t' =>
@@ -402,34 +250,6 @@ theorem foldLanes_run (t : State) :
   repeat (rw [WP.block_cons_iff]; refine ⟨_, rfl, ?_⟩)
   refine WP.block_nil ⟨?_, ?_, ?_, fun r h8 h9 h10 h11 => ?_, ?_, ?_, ?_, ?_⟩ <;>
     simp [VBinOp.sse, Pclmul.eval_pxor, VOp.exec, State.setV, State.lane, *]
-
-/-- The products of both lanes added into the lower lanes: `RInvD`. -/
-theorem foldLanes_ok {E : REnv} {i : Nat} {t : State} (hI : RInvP E i t) :
-    WP isa (.block foldLanes) t (RInvD E i) :=
-  WP.mono (foldLanes_run t) fun t' ⟨a8, a9, a10, k, g, m, rd, wr⟩ =>
-    { le := hI.le, r10 := by rw [g]; exact hI.r10, r9 := by rw [g]; exact hI.r9
-      gpr := fun q h9 h10 => by rw [g]; exact hI.gpr q h9 h10
-      rd := by rw [rd]; exact hI.rd, wr := by rw [wr]; exact hI.wr
-      frame := by rw [m]; exact hI.frame
-      ct := fun j hj => by rw [m]; exact hI.ct j hj
-      prod := by
-        rw [← hI.prod]
-        simp only [Pclmul.prod, State.proj_xmm, a8, a9, a10, Prod.xor]
-      y := by rw [k _ (by decide) (by decide) (by decide) (by decide)]; exact hI.y
-      m0 := by rw [k _ (by decide) (by decide) (by decide) (by decide)]; exact hI.m0 0 (by decide)
-      m1 := by rw [k _ (by decide) (by decide) (by decide) (by decide)]; exact hI.m1 }
-
-/-- `RInvD` holds of a state with the same registers, memory and lanes. -/
-theorem rinvD_keep {E : REnv} {i : Nat} {t t' : State} (hI : RInvD E i t) (g : t'.gpr = t.gpr)
-    (m : t'.mem = t.mem) (rd : t'.rd = t.rd) (wr : t'.wr = t.wr) (l : ∀ x k, t'.lane x k = t.lane x k) :
-    RInvD E i t' :=
-  { le := hI.le, r10 := by rw [g]; exact hI.r10, r9 := by rw [g]; exact hI.r9
-    gpr := fun q h9 h10 => by rw [g]; exact hI.gpr q h9 h10
-    rd := by rw [rd]; exact hI.rd, wr := by rw [wr]; exact hI.wr
-    frame := by rw [m]; exact hI.frame
-    ct := fun j hj => by rw [m]; exact hI.ct j hj
-    prod := by simp only [Pclmul.prod, State.proj_xmm, l]; exact hI.prod
-    y := by rw [l]; exact hI.y, m0 := by rw [l]; exact hI.m0, m1 := by rw [l]; exact hI.m1 }
 
 /-- `test r9, 1`. -/
 theorem test91_ok (s : State) :
@@ -456,42 +276,5 @@ theorem cmp916_ok (s : State) :
 theorem parity16 : ∀ r < 16, (BitVec.ofNat 64 (16 + r) &&& 1 == 0) = decide (r % 2 = 0) := by decide
 
 theorem zero16 : ∀ r < 16, (BitVec.ofNat 64 (16 + r) - 16 == 0) = decide (r = 0) := by decide
-
-/-- The first block alone if `r` is odd, then the pairs and their lanes
-added: what `remD` does between clearing the products and reducing them. -/
-theorem remMid_ok {E : REnv} (hE : E.Ok) (h2 : Ok2 E) (hsrc : E.src = .rdx) {t : State} (hI : RInvD E 0 t)
-    (h8 : t.lane .xmm8 1 = 0) (h9 : t.lane .xmm9 1 = 0) (h10 : t.lane .xmm10 1 = 0) (y1 : t.lane .xmm2 1 = 0)
-    (m0 : t.lane .xmm0 1 = revMask) {X : Prog isa} {Q : State → Prop} (hX : ∀ s, RInvD E E.r s → WP isa X s Q) :
-    WP isa (.block [.alu .test .r9 (.imm 1)]) t fun s =>
-      WP isa (.seq (.ite .e (.block [.alu .cmp .r9 (.imm 16)]) (.block (remBodyD .rdx ++ remNext)))
-        (.seq (.ite .e (.block []) (.seq (.loop (.block (remPairD ++ remNextPair)) .ne) (.block foldLanes))) X))
-        s Q := by
-  have r1 := hE.r1
-  have r15 := hE.r15
-  -- After the first ite: `i` blocks done, `i ≤ 1`, an even number left, and `zf` whether none are.
-  have hlast : ∀ s, (∃ i, i ≤ 1 ∧ (E.r - i) % 2 = 0 ∧ RInvP E i s ∧ (E.r = i → RInvD E i s) ∧
-      s.zf = some (decide (E.r = i))) →
-      WP isa (.seq (.ite .e (.block []) (.seq (.loop (.block (remPairD ++ remNextPair)) .ne) (.block foldLanes)))
-        X) s Q := by
-    rintro s ⟨i, hi1, hev, hIs, hD, hz⟩
-    refine WP.seq (WP.ite (decide (E.r = i)) (by simp only [eval, hz]) (fun h => ?_) (fun h => ?_))
-    · have h' : E.r = i := by simpa using h
-      refine WP.block_nil (hX s ?_)
-      rw [h']; exact hD h'
-    · exact WP.seq (WP.mono (pairLoop_ok hE h2 hsrc (by simp at h; omega_arith) hev hIs) fun s' hP =>
-        WP.mono (foldLanes_ok hP) hX)
-  refine WP.mono (test91_ok t) fun t₁ ⟨z₁, g₁, l₁, m₁, rd₁, wr₁⟩ => ?_
-  have hI₁ := rinvD_keep hI g₁ m₁ rd₁ wr₁ l₁
-  rw [hI.r9, Nat.sub_zero, parity16 _ (by omega_arith)] at z₁
-  refine WP.seq (WP.ite (decide (E.r % 2 = 0)) (by simp only [eval, z₁]) (fun h => ?_) (fun h => ?_))
-  · refine WP.mono (cmp916_ok t₁) fun t₂ ⟨z₂, g₂, l₂, m₂, rd₂, wr₂⟩ =>
-      hlast t₂ ⟨0, by omega_arith, by simpa using h, ?_, fun h0 => absurd h0 (by omega_arith), ?_⟩
-    · exact RInvP.of_D (rinvD_keep hI₁ g₂ m₂ rd₂ wr₂ l₂) (by rw [l₂, l₁]; exact h8) (by rw [l₂, l₁]; exact h9)
-        (by rw [l₂, l₁]; exact h10) (by rw [l₂, l₁]; exact y1) (by rw [l₂, l₁]; exact m0)
-    · rw [z₂, g₁, hI.r9, Nat.sub_zero, zero16 _ (by omega_arith)]
-  · rw [← hsrc]
-    exact WP.mono (oddStep_ok (E := E) hE hI₁ (by rw [l₁]; exact h8) (by rw [l₁]; exact h9)
-      (by rw [l₁]; exact h10) (by rw [l₁]; exact y1) (by rw [l₁]; exact m0))
-      fun t₂ ⟨hP₂, hD₂, z₂⟩ => hlast t₂ ⟨1, Nat.le_refl _, by simp at h; omega_arith, hP₂, fun _ => hD₂, z₂⟩
 
 end VG.Proof.Gcm.X86_64.StitchR

@@ -84,7 +84,7 @@ theorem OneCtx.of {w k : Nat} {s : State} (hp : Proof.Sm4Gcm.oneLay w k s)
         (by omega_arith) (by omega_arith)
     · exact Offset.disjoint (stackArg s w) (d := 16) (n := 80) (e := 96) (k := 2464) (.inl (by decide))
         (by omega_arith) (by omega_arith)
-  refine ⟨⟨L, sp, t_c, t_w.sub_right hSt, t_w⟩, ⟨pc, covers_off pW (show 16 + 80 ≤ 2560 by decide) (by decide), pW⟩,
+  refine ⟨⟨L, sp, t_c, t_w.sub_right hSt, t_w, by decide⟩, ⟨pc, covers_off pW (show 16 + 80 ≤ 2560 by decide) (by decide), pW⟩,
     ww, fun i hi => ?_, d_wa.symm,
     ⟨pn, by have := (s.gpr .rdx).isLt; omega_arith, wn, d_nw.sub_right hSt, d_nw, t_n.sub_left b8⟩,
     ⟨pa, by have := (s.gpr .r8).isLt; omega_arith, wa, d_aw.sub_right hSt, d_aw, t_a.sub_left b8⟩,

@@ -91,10 +91,12 @@ theorem preT_of {H : Spec.Mgf1.Hash} {ts : List FnTable} {s : State} (h : (encC 
     encStack, stackArgs_twelve, List.append_eq, List.range, List.range.loop] at h
   simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
     List.getD_cons_zero, Option.some.injEq, exists_eq_left'] at h
-  obtain ⟨sp1, sp3, -, -, -, hrd, hwr, dOn, dOe, dOl, dOm, dOsd, dOs, dOq, dOtL, dOt, dOa, dns, des, dls, dms,
-    dsds, dsq, dstL, dst, dsa, dRo, dRn, dRe, dRl, dRm, dRsd, dRs, -, -, -, dRa, dKo, dKn, dKe, dKl, dKm, dKsd,
-    dKs, dKq, dKtL, dKt, dKa, wO, wN, wE, wL, wM, wSd, wS, wQ, wTL, wT, ⟨k1, k2⟩, hsi, L1, L2, hsl, pl, hsd⟩ := h
-  have hl := hsd H hH
+  sig_split h
+  rename_i sp1 sp3 _ _ _ hrd hwr dOn dOe dOl dOm dOsd dOs dOq dOtL dOt dOa dns des dls dms
+    dsds dsq dstL dst dsa dRo dRn dRe dRl dRm dRsd dRs _ _ _ dRa dKo dKn dKe dKl dKm dKsd
+    dKs dKq dKtL dKt dKa wO wN wE wL wM wSd wS wQ wTL wT k12 hsi L1 L2 hsl pl
+  obtain ⟨k1, k2⟩ := k12
+  have hl := h H hH
   rw [hl] at hrd dOsd dsds dRsd dKsd wSd
   have ha : Region.Sub ⟨stackArgAddr s 0, 64⟩ ⟨stackArgAddr s 0, 96⟩ := Region.sub_prefix (by decide)
   have hb : Region.Sub ⟨stackArgAddr s 0, 80⟩ ⟨stackArgAddr s 0, 96⟩ := Region.sub_prefix (by decide)

@@ -272,6 +272,68 @@ theorem tailL_ok (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : GhashImpl) 
   have hlt : q < n s := by simp at e; omega_using [e]
   exact WP.mono (callsF hp ctr cf gh gf M₁ hlt) fun st' hf => hS.frame hf (sR_calls hp M₁.q_le)
 
+/-- What the calls of the decryption's `tail` write, with implementations of
+`vg_ghash` and `vg_aes_ctr32` that need no working space (`callsF`, the
+other way round). -/
+theorem callsD (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : GhashImpl) (gf : GhashFree gh.fn.code)
+    {q : Nat} {ys : List Block} {st₁ : State} (M : Mid s q q ys st₁) (hlt : q < n s) :
+    WP isa (.seq (ghCall gh.fn) (ctrCall ⟨ctr.callee.name, ctr.callee.code⟩)) st₁ fun st =>
+      Frame [cR s, ⟨dq s q, 16 * (n s - q)⟩, below (SP s) 8, yR s] st₁.mem st.mem := by
+  have hq := M.q_le
+  refine WP.seq (WP.seq (WP.mono (ghArgs_ok hp (M.ready hp) hlt) fun st₂ ⟨hg, R₂, _, m₂⟩ =>
+    WP.mono (gh_callF gh gf (GhCall.toF hg)) fun st₃ g => ?_))
+  have f₃ := g.frame
+  rw [R₂.rsp] at f₃
+  have R₃ : Ready s q st₃ := R₂.frame f₃ (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact (apart_kR' hp hq).y
+      · exact (apart_kR' hp hq).t)
+    (fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact (apart_a hp hq).y
+      · exact (apart_a hp hq).t) (g.saved _ (by decide)) g.rd g.wr
+  refine WP.seq (WP.mono (ctrArgs_ok hp R₃ hlt) fun st₄ ⟨hc, R₄, _, m₄⟩ =>
+    WP.mono (ctr_callF ctr cf (CtrCall.toF hc)) fun st₅ g' => ?_)
+  have f₅ := g'.frame
+  rw [R₄.rsp] at f₅
+  rw [m₄] at f₅
+  rw [m₂] at f₃
+  exact (f₃.mono fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl <;> simp).trans
+    (f₅.mono fun r hr => by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> simp)
+
+/-- `tail` with the calls of `callsD`: `scratch` as it was. -/
+theorem tailD_ok (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : GhashImpl) (gf : GhashFree gh.fn.code)
+    {q : Nat} {ys : List Block} {Z : Nat → Bool} {st : State} (M : Mid s q q ys st) (hS : Scr s q Z st.mem) :
+    WP isa (tail (ghCall gh.fn) (ctrCall ⟨ctr.callee.name, ctr.callee.code⟩)) st fun st' => Scr s q Z st'.mem := by
+  refine WP.seq (WP.mono (tailHeadL_ok hp M) fun st₁ ⟨⟨M₁, hz⟩, hm⟩ => ?_)
+  rw [← hm] at hS
+  refine WP.ite (decide (n s - q = 0)) (by simp only [eval, hz]) (fun _ => WP.block_nil hS) (fun e => ?_)
+  have hlt : q < n s := by simp at e; omega_using [e]
+  exact WP.mono (callsD hp ctr cf gh gf M₁ hlt) fun st' hf => hS.frame hf (sR_calls hp M₁.q_le)
+
+/-! ## Without interleaved loops -/
+
+/-- `vg_aes_gcm_encrypt_blocks` without interleaved loops, with calls that
+need no working space: `scratch` holds the arguments kept, and nothing else
+written. -/
+theorem encryptN_leaves (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : GhashImpl) (gf : GhashFree gh.fn.code) :
+    WP isa (encrypt ⟨ctr.callee.name, ctr.callee.code⟩ gh.fn none) s fun s' =>
+      Scr s 0 (fun _ => false) s'.mem :=
+  WP.seq (WP.mono (entry_ok hp) fun _ ⟨_, hg, hk, hf, hrd, hwr⟩ =>
+    WP.seq (WP.block_nil (tailL_ok hp ctr cf gh gf (mid_entry hp hg hk hf hrd hwr) (Scr.entry hk hf))))
+
+/-- `vg_aes_gcm_decrypt_blocks` without interleaved loops, with calls that
+need no working space: `scratch` holds the arguments kept, and nothing else
+written. -/
+theorem decryptN_leaves (ctr : Ctr32Impl) (cf : Ctr32Free ctr.callee) (gh : GhashImpl) (gf : GhashFree gh.fn.code) :
+    WP isa (decrypt ⟨ctr.callee.name, ctr.callee.code⟩ gh.fn none) s fun s' =>
+      Scr s 0 (fun _ => false) s'.mem :=
+  WP.seq (WP.mono (entry_ok hp) fun _ ⟨_, hg, hk, hf, hrd, hwr⟩ =>
+    WP.seq (WP.block_nil (tailD_ok hp ctr cf gh gf (mid_entry hp hg hk hf hrd hwr) (Scr.entry hk hf))))
+
 /-! ## Loops that take the first `16 ⌊n / 16⌋` blocks -/
 
 /-- `stitchPart` of loops that also leave `Gcm.X86_64.Stitch.PieceL ℓ zf`, from the state after

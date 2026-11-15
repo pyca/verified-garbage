@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.PPC64LE.TaintMono
+meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintMono
 public import VerifiedGarbage.Proof.MdStream.PPC64LE.Update
 public import VerifiedGarbage.Proof.MdStream.PPC64LE.Finalize
 import VerifiedGarbage.Proof.MdStream.PPC64LE.Words
@@ -55,8 +57,8 @@ namespace Update
 
 theorem update_verified : Verified PPC64LE.target Impl.Md5.PPC64LE.Stream.update Proof.Md5.updatePPC64LE :=
   have h := MdStream.PPC64LE.Update.verified (name := "vg_md5_compress") dims callee
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
-      (fun _ _ _ _ hp => MdStream.PPC64LE.Update.agree₀ hp) (by taint_decide))
+    (VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6, .r7])
+      (fun _ _ _ _ hp => MdStream.PPC64LE.Update.agree₀ hp) (by taint_decide_sum [VG.Proof.Md5.PPC64LE.compressSum]))
     (by decide +kernel) (by decide +kernel)
   Verified.of_implies h ⟨fun _ h => h, fun _ _ _ h m hr hc => h Spec.Md5.H0 m hr hc, fun _ _ _ _ h => h, h.2.2⟩
 
@@ -69,8 +71,8 @@ namespace Finalize
 
 theorem finalize_verified : Verified PPC64LE.target Impl.Md5.PPC64LE.Stream.finalize Proof.Md5.finalizePPC64LE :=
   have h := MdStream.PPC64LE.Finalize.verifiedD (name := "vg_md5_compress") dims shape callee
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
-      (fun _ _ _ _ hp => MdStream.PPC64LE.Finalize.agree₀D hp) (by taint_decide))
+    (VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
+      (fun _ _ _ _ hp => MdStream.PPC64LE.Finalize.agree₀D hp) (by taint_decide_sum [VG.Proof.Md5.PPC64LE.compressSum]))
     (by decide +kernel) (by decide +kernel)
   Verified.of_implies h
     ⟨fun _ h => h, fun _ _ _ h m hr hc => by

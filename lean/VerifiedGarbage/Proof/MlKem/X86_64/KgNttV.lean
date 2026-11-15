@@ -43,8 +43,7 @@ theorem kgNtt768_ct :
 theorem kgNtt768_correct : ∀ s, (kgNttK 3).pre s →
     ∃ t s', Exec isa (KpkeKgRows.kgNtt kem768 .avx2) s t s' ∧ abiPreserved s s' ∧ (kgNttK 3).post s s' := by
   intro s hp
-  obtain ⟨t, s', he, hg, hq⟩ := KgNtt.kgNtt_wp PrimsOk.avx2 (by lit_decide) (L := kem768) (.inl rfl)
-    (by lit_decide) hp
+  obtain ⟨t, s', he, hg, hq⟩ := KgNtt.kgNtt_wp PrimsOk.avx2 (by lit_decide) (L := kem768) (.inl rfl) hp
   exact ⟨t, s', he, abiPreserved_of_ctl (by lit_decide) he hg, hq⟩
 
 end VG.Proof.MlKem.X86_64

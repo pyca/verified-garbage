@@ -87,8 +87,8 @@ never import proofs.
    list every `Artifact`, bundling target, Rust name and signature, code,
    contract and proof: a function's `Api`, with what its implementation
    chooses (`Api.artifact`, `TCB/Registration.lean`): the target, the code
-   and its proof, the stack its calls and frames use (`stack`), and the
-   suffix of its name. An artifact
+   and its proof, and the suffix of its name; the stack its calls and frames
+   use (`stack`) is the one the proof's contract is for. An artifact
    made from an `Api` takes the contract from it with the name and signature
    (`Api.contracts`), and must be proven against exactly that contract on its
    target (`Artifact.ofApi`), so a registration file, or a proof building

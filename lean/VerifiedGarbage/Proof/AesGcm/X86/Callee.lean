@@ -91,7 +91,7 @@ def scalar : GhashImpl where
   ok := Proof.Gcm.X86.ghash_correct
   ct := Proof.Gcm.X86.ghash_ct
   nosp := NoSp.of_all (by decide +kernel)
-  spSafe := Code.all_of_allInstrs (by decide +kernel)
+  spSafe := Code.all_of_spTest (by decide +kernel)
   suffix := ""
   features := []
 

@@ -90,7 +90,7 @@ def scalar : Compress where
   ok := Stream.scalar_ok
   okS := Stream.calleeS Stream.scalar_ok Stream.scalar_verified192
   mxcsr := by change Impl.Sha512.X86_64.Rolled.compress.allInstrs _ = true; lit_decide
-  spSafe := Code.all_of_allInstrs (by change Impl.Sha512.X86_64.Rolled.compress.allInstrs _ = true; lit_decide)
+  spSafe := Code.all_of_spTest (by change Impl.Sha512.X86_64.Rolled.compress.allInstrs _ = true; lit_decide)
   suffix := ""
   features := []
 
@@ -100,7 +100,7 @@ def avx2 : Compress where
   ok := Stream.avx2_ok
   okS := Stream.avx2_ok
   mxcsr := by change Impl.Sha512.X86_64.Avx2Rolled.compress.allInstrs _ = true; lit_decide
-  spSafe := Code.all_of_allInstrs (by change Impl.Sha512.X86_64.Avx2Rolled.compress.allInstrs _ = true; lit_decide)
+  spSafe := Code.all_of_spTest (by change Impl.Sha512.X86_64.Avx2Rolled.compress.allInstrs _ = true; lit_decide)
   suffix := "_avx2"
   features := ["avx", "avx2", "bmi1", "bmi2"]
 
@@ -110,7 +110,7 @@ def shani : Compress where
   ok := Stream.shani_ok
   okS := Stream.calleeS Stream.shani_ok Stream.shani_verified0
   mxcsr := by change Impl.Sha512.X86_64.ShaNi.compress.allInstrs _ = true; lit_decide
-  spSafe := Code.all_of_allInstrs (by change Impl.Sha512.X86_64.ShaNi.compress.allInstrs _ = true; lit_decide)
+  spSafe := Code.all_of_spTest (by change Impl.Sha512.X86_64.ShaNi.compress.allInstrs _ = true; lit_decide)
   suffix := "_shani"
   features := ["avx", "avx2", "sha512"]
 

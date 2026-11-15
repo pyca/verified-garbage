@@ -17,22 +17,18 @@ namespace VG.Artifacts.Rsa.X86_64
 def artifacts : List Artifact := [
   Spec.Rsa.publicPrecomputeApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     code := Impl.Rsa.X86_64.Precompute.code Proof.Rsa.X86_64.CallMont.base.mm
-    stack := 8
     verified := Proof.Rsa.X86_64.Instances.precompute_verified } (VG.Proof.Rsa.X86_64.Scrub.publicPrecomputeOut 8)),
   Spec.Rsa.publicPrecomputeApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     suffix := "_adx"
     code := Impl.Rsa.X86_64.Precompute.code Proof.Rsa.X86_64.CallMont.adx.mm
       (Impl.Bignum.X86_64.R2Adx.choice Proof.Rsa.X86_64.CallMont.adx.mm)
-    stack := 8
     verified := Proof.Rsa.X86_64.Instances.precomputeAdx_verified } (VG.Proof.Rsa.X86_64.Scrub.publicPrecomputeOut 8)),
   Spec.Rsa.privatePrecomputeApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     code := Impl.Rsa.X86_64.PrivPre.code Proof.Rsa.X86_64.CallMont.base.mm
-    stack := 8
     verified := Proof.Bignum.X86_64.PrivPre.pp_verified } (Proof.Bignum.X86_64.PrivPre.pp_postOut 8)),
   Spec.Rsa.privatePrecomputeApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     suffix := "_adx"
     code := Impl.Rsa.X86_64.PrivPre.code Proof.Rsa.X86_64.CallMont.adx.mm
-    stack := 8
     verified := Proof.Bignum.X86_64.PrivPre.ppAdx_verified } (Proof.Bignum.X86_64.PrivPre.pp_postOut 8)),
   Spec.Rsa.crtValuesApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     code := Impl.Rsa.X86_64.Keys.CrtValues.code

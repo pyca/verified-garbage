@@ -16,6 +16,15 @@ import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.P384.Point
+public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+public import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
+meta import VerifiedGarbage.Impl.Ecdsa.RISCV64.Comb
+meta import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P384Order.Lit
 
 /-!
 # ECDSA signatures over P-384 on RISC-V: correctness
@@ -767,5 +776,18 @@ theorem sign_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : signRVC.pre 
     ∃ t s', Exec isa signP384 s t s' ∧ abiPreserved s s' ∧ signRVC.post s s' := by
   obtain ⟨t, s', he, h⟩ := sign_ok hL hs
   exact ⟨t, s', he, h⟩
+
+/-! The constant-time analyses of the calls of the functions of P-384's `n` from their arguments,
+with the comb's table public, each done once for every check of code that calls it
+(`taint_decide_sum`), which keep what is public of `s0`–`s11`: the functions write none of them. -/
+taint_summary nMulSymSum : (taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Weierstrass.Mont.p384n.fn "mul") Impl.Weierstrass.RISCV64.P384Order.mulFnA)
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+taint_summary nAddSymSum : (taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Weierstrass.Mont.p384n.fn "add") Impl.Weierstrass.RISCV64.P384Order.addFnA)
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+taint_summary nSubSymSum : (taintSym [Impl.Ecdsa.RISCV64.Comb.p384Sym]) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Weierstrass.Mont.p384n.fn "sub") Impl.Weierstrass.RISCV64.P384Order.subFnA)
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
 
 end VG.Proof.Ecdsa.RISCV64.P384

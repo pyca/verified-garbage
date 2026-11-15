@@ -32,7 +32,6 @@ def artifacts : List Artifact :=
     Spec.RsaKeyGen.keySearchApi.artifact target {
       suffix := v.suffix
       code := Proof.RsaKeyGen.X86.Generate.genCode v
-      stack := 284
       verified := Proof.RsaKeyGen.X86.Generate.gen_verified v
       spSafe := Proof.RsaKeyGen.X86.Generate.genCode_sp v }])
 

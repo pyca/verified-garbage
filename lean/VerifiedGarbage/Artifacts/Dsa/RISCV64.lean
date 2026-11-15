@@ -28,11 +28,9 @@ def artifacts : List Artifact := [
     code := Impl.Dsa.RISCV64.PrevalidatedSign.validate
     verified := Proof.Dsa.RISCV64.validatePrivate_verified },
   Spec.Dsa.randomSignPrevalidatedApi.artifact RISCV64.target {
-    stack := 192
     code := Impl.Dsa.RISCV64.PrevalidatedSign.randomSign
     verified := Proof.Dsa.RISCV64.randomSignPre_verified },
   Spec.Dsa.generateKeyApi.artifact RISCV64.target {
-    stack := 192
     code := Impl.Dsa.RISCV64.Generate.code
     verified := Proof.Dsa.RISCV64.generateKey_verified },
   Spec.Dsa.validatePublicKeyApi.artifact RISCV64.target {

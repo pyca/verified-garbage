@@ -72,11 +72,9 @@ open VG.Spec.MlKem
 
 theorem kgMul_correct {B : Bodies} {R : AccRep} {T : TabRep} (hB : BodiesOk B R T) (hrow : KgMul.RowOk B R T) {k : Nat}
     (hk : k ≤ 4) (hk0 : 0 < k)
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
-      (KgMul.inner B k) = true)
     (hctl : ctlOk (keygenMul B k) = true) (s : State) (hs : (kgMulK k).pre s) :
     ∃ t s', Exec isa (keygenMul B k) s t s' ∧ abiPreserved s s' ∧ (kgMulK k).post s s' := by
-  obtain ⟨t, s', he, hg, hpost⟩ := KgMul.wp_all hs hk hB hk0 hrow hwo
+  obtain ⟨t, s', he, hg, hpost⟩ := KgMul.wp_all hs hk hB hk0 hrow
   exact ⟨t, s', he, abiPreserved_of_ctl hctl he hg, hpost⟩
 
 theorem kgMul_agree {k : Nat} (s₁ s₂ : State) (_ : (kgMulK k).pre s₁) (_ : (kgMulK k).pre s₂)
@@ -89,15 +87,7 @@ theorem kgMul_agree {k : Nat} (s₁ s₂ : State) (_ : (kgMulK k).pre s₁) (_ :
 
 /-! The facts about the code, each checked once (on the literals of `Lit.lean`). -/
 
-theorem kgMulSse3_wo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
-    (KgMul.inner .sse 3) = true :=
-  writesOnly_of (by lit_decide)
-
 theorem kgMulSse3_ctl : ctlOk (keygenMul .sse 3) = true := by lit_decide
-
-theorem kgMulSse4_wo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
-    (KgMul.inner .sse 4) = true :=
-  writesOnly_of (by lit_decide)
 
 theorem kgMulSse4_ctl : ctlOk (keygenMul .sse 4) = true := by lit_decide
 
@@ -106,13 +96,13 @@ theorem kgMulSse3_ct : ConstantTime isa (kgMulK 3).pre (kgMulK 3).pub (keygenMul
 
 theorem kgMulSse3_correct : ∀ s, (kgMulK 3).pre s →
     ∃ t s', Exec isa (keygenMul .sse 3) s t s' ∧ abiPreserved s s' ∧ (kgMulK 3).post s s' :=
-  kgMul_correct BodiesOk.sse (KgMul.RowOk.ofAcc BodiesOk.sse rfl) (by decide) (by decide) kgMulSse3_wo kgMulSse3_ctl
+  kgMul_correct BodiesOk.sse (KgMul.RowOk.ofAcc BodiesOk.sse rfl) (by decide) (by decide) kgMulSse3_ctl
 
 theorem kgMulSse4_ct : ConstantTime isa (kgMulK 4).pre (kgMulK 4).pub (keygenMul .sse 4) :=
   VG.Taint.constantTime (A := taint) _ kgMul_agree (by taint_decide)
 
 theorem kgMulSse4_correct : ∀ s, (kgMulK 4).pre s →
     ∃ t s', Exec isa (keygenMul .sse 4) s t s' ∧ abiPreserved s s' ∧ (kgMulK 4).post s s' :=
-  kgMul_correct BodiesOk.sse (KgMul.RowOk.ofAcc BodiesOk.sse rfl) (by decide) (by decide) kgMulSse4_wo kgMulSse4_ctl
+  kgMul_correct BodiesOk.sse (KgMul.RowOk.ofAcc BodiesOk.sse rfl) (by decide) (by decide) kgMulSse4_ctl
 
 end VG.Proof.MlKem.X86_64

@@ -78,7 +78,9 @@ theorem be8 (z : BitVec 64) :
   simp only [Proof.Gcm.toNat_append, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight,
     Nat.shiftRight_eq_div_pow]
   have := z.isLt
-  omega_using []
+  have d (a : Nat) : z.toNat / 2 ^ (a + 8) = z.toNat / 2 ^ a / 2 ^ 8 := by
+    rw [Nat.div_div_eq_div_mul, ← Nat.pow_add]
+  omega_using [d 8, d 16, d 24, d 32, d 40, d 48]
 
 /-- A block, as the two words `loadBE64` reads. -/
 theorem blockAt_hOf (m : Mem) (p : Addr) : blockAt m p = hOf m p := by

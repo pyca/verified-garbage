@@ -445,7 +445,7 @@ theorem ofb_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.TripleDes.ofbSig) (nm := "scratch") (e := .u64)
     (n := 121) (post := Proof.TripleDes.ofbPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 976) ofb_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.TripleDes.ofbPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -456,7 +456,7 @@ theorem cfbEncrypt_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.TripleDes.cfbSig) (nm := "scratch") (e := .u64)
     (n := 121) (post := Proof.TripleDes.cfbEncPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 976) cfbEncrypt_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.TripleDes.cfbEncPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -467,7 +467,7 @@ theorem cfb8Encrypt_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.TripleDes.cfb8Sig) (nm := "scratch") (e := .u64)
     (n := 121) (post := Proof.TripleDes.cfb8EncPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 976) cfb8Encrypt_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.TripleDes.cfb8EncPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 
@@ -478,7 +478,7 @@ theorem cfb8Decrypt_framed :
   X86_64.Verified.stackScratchWiped (sig := Spec.TripleDes.cfb8Sig) (nm := "scratch") (e := .u64)
     (n := 121) (post := Proof.TripleDes.cfb8DecPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 976) cfb8Decrypt_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by decide)
     (Proof.TripleDes.cfb8DecPostOut_local _)
     (X86_64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
 

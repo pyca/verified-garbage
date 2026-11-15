@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Framework.Lit
 public meta import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Framework.Semantics
 public meta import VerifiedGarbage.Proof.Framework.Semantics
+public import VerifiedGarbage.Proof.Framework.SpTest
+public meta import VerifiedGarbage.Proof.Framework.SpTest
 public meta import Lean.Elab.Tactic.Basic
 public meta import Lean.Elab.Tactic.ElabTerm
 
@@ -30,13 +32,20 @@ The tactics `TCB/Registration.lean` declares for the default proofs of a
   calling convention of the `Sig.contract` it unfolds to (as `of_sig`
   unfolds it), whose head is unfolded until it is an application of
   `Abi.withConsts`; and none if there is no such application.
+* `stack_of` gives `stack`, the stack that the contract `verified` proves
+  is for (the goal `StackOf contract`): the `stack` of the `Sig.contract` it
+  unfolds to (as `of_sig` unfolds it), as that contract states it, so that
+  `ofApi` and `ofSig` compare a number with itself; and 0 if it does not
+  unfold to one, which `ofSig` then reports.
 * `sp_safe` proves `spSafe`, `code.all (fun i => !T.isa.writesSp i) = true`:
   on the ISAs whose `writesSp` is always `false` (ARMv7, AArch64, PPC64LE) by
   `Code.all_of_forall`, which evaluates nothing, and on the others (x86,
-  x86-64) by `Code.all_of_allInstrs (by lit_decide)`, which evaluates the
-  code's literal if the module imports the one that materializes it
-  (`Lit.lean`), or, where that exceeds the recursion limit (rewriting some
-  code to its literal), by `Code.all_of_allInstrs (by decide +kernel)`.
+  x86-64) by `Code.all_of_spTest (by lit_decide)`, which evaluates the ISA's
+  cheaper test (`SpTest`, `Proof/Framework/SpTest.lean`) on the code's
+  literal if the module imports the one that materializes it (`Lit.lean`),
+  or, where that exceeds the recursion limit (rewriting some code to its
+  literal), by `decide +kernel`; and with `M.writesSp` itself
+  (`Code.all_of_allInstrs`) in a module that does not import the ISA's test.
   Code that depends on a variable of an enumeration (`adx : Bool`, a
   variant's `FieldVariant`) is proven for each of its values, by cases.
 -/
@@ -113,6 +122,32 @@ elab_rules : tactic
       g.assign cs
     | none => evalTactic (← `(tactic| exact []))
 
+elab_rules : tactic
+  | `(tactic| stack_of) => do
+    let g ← getMainGoal
+    let ty := (← instantiateMVars (← g.getType)).cleanupAnnotations
+    unless ty.isAppOfArity ``StackOf 2 do
+      throwError "stack_of: the goal is not `StackOf contract`: {ty}"
+    let c := ty.appArg!
+    if c.hasMVar then
+      throwError "stack_of: the contract is not known; give `contract`: {c}"
+    let s ← saveState
+    let n? ← try
+        let c' ← toSigContract c
+        -- `Sig.contract A sig pre post writeArgs stack leak`, implicit `M` first.
+        pure (if c'.getAppNumArgs ≥ 7 then some (c'.getArg! 6) else none)
+      catch _ =>
+        s.restore
+        pure none
+    match n? with
+    | some n =>
+      if n.hasMVar then
+        throwError "stack_of: the contract's stack is not known; give `stack`: {n}"
+      unless ← isDefEq (← inferType n) (← g.getType) do
+        throwError "stack_of: {n} is not a number of bytes"
+      g.assign n
+    | none => evalTactic (← `(tactic| exact (0 : Nat)))
+
 /-- A free variable of `e` whose type is an enumeration (`Bool`, an
 `inductive` of constructors without fields). -/
 def enumFVar? (e : Expr) : MetaM (Option FVarId) := do
@@ -145,9 +180,14 @@ elab_rules : tactic
     else
       let s ← saveState
       -- The recursion limit is a runtime exception, which `first` does not catch.
-      tryCatchRuntimeEx (evalTactic (← `(tactic| exact Code.all_of_allInstrs (by lit_decide))))
+      -- The ISA's cheaper test (`SpTest`), where its proofs give one and the module imports it.
+      tryCatchRuntimeEx (evalTactic (← `(tactic| first
+          | exact Code.all_of_spTest (by lit_decide)
+          | exact Code.all_of_allInstrs (by lit_decide))))
         fun _ => do
           s.restore
-          evalTactic (← `(tactic| exact Code.all_of_allInstrs (by decide +kernel)))
+          evalTactic (← `(tactic| first
+            | exact Code.all_of_spTest (by decide +kernel)
+            | exact Code.all_of_allInstrs (by decide +kernel)))
 
 end VG.RegistrationTactics

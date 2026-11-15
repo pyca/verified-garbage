@@ -55,8 +55,10 @@ Before the loop `vsetup` sets the constants, splits `x₁` into limbs and sets
 the lanes; after it `vfinish` carries the lanes and puts each back into four
 64-bit words (in the slots `x2, z2, x3, z3`, which `vg_x25519`'s code reads
 next). `vpmadd52luq` and `vpmadd52huq` have MXCSR-configuration-dependent
-timing on some processors, so the loop and `vfinish` run between Intel's
-prologue and epilogue (`withMxcsr`; see "MCDT" in `TCB/X86_64/Isa.lean`).
+timing on some processors (see "MCDT" in `TCB/X86_64/Isa.lean`): the code
+sets no MXCSR of its own, as the dispatcher of every function that runs it
+runs `vg_mcdt_enter` first, which leaves MXCSR `0x1FBF` for the whole call
+("Dispatchers" in `TCB/Rust.lean`).
 
 The only branches are on the loop counter, and every address is the working
 space plus a constant or a counter, so only the pointers can affect timing.
@@ -96,9 +98,6 @@ def KX1 : Nat := 1952
 def K13 : Nat := 2112
 def K26 : Nat := 2144
 def K39 : Nat := 2176
-/-- MXCSR, saved, and `0x1FBF` (`withMxcsr`). -/
-def MX : Nat := 2208
-
 /-- `ymm i`. -/
 def y : Nat → XReg
   | 0 => .xmm0 | 1 => .xmm1 | 2 => .xmm2 | 3 => .xmm3
@@ -373,20 +372,10 @@ into one field element per register and stored to the slots `x2, z2, x3,
 z3` (consecutive). -/
 def vfinish : List Instr := carry id ++ carry id ++ vpack
 
-/-- `c` with MXCSR `0x1FBF`, through `[rdi + MX]`: MXCSR saved in `r11`,
-and loaded back after `c`, which must not write `r11` (as ML-KEM's
-`withMxcsr`). -/
-def withMxcsr (c : Prog isa) : Prog isa :=
-  .seq (.block [.stmxcsr (sc MX), .mov32 .r11 (.mem (sc MX)), .alu32 .and .r11 (.imm 0xFFFF)])
-    (.seq (.seq (.block [.mov32 .rax (.imm 0x1FBF), .store32 (sc (MX + 4)) .rax,
-        .ldmxcsr (sc (MX + 4)), .lfence]) (.seq c (.block [.lfence])))
-      (.block [.store32 (sc MX) .r11, .ldmxcsr (sc MX)]))
-
-/-- The ladder: `vsetup`, then with MXCSR `0x1FBF` the 255 iterations and
-`vfinish`. -/
+/-- The ladder: `vsetup`, then the 255 iterations and `vfinish`. -/
 def vladder : Prog isa :=
-  .seq (.block vsetup) (withMxcsr (.seq (.block [.mov32 .rbx (.imm 255)])
-    (.seq (.loop (.block vstep) .ne) (.block vfinish))))
+  .seq (.block vsetup) (.seq (.block [.mov32 .rbx (.imm 255)])
+    (.seq (.loop (.block vstep) .ne) (.block vfinish)))
 
 end Ifma
 

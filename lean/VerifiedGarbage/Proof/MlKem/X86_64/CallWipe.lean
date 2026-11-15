@@ -82,24 +82,28 @@ theorem dd1024_xd {k : Nat} : ∀ cs : Codecs, xdLe k (kem1024w.L.dd cs) = true
 theorem xdLe_block {k : Nat} (l : List Instr) : xdLe k (.block l) = true := rfl
 
 /-- That the calls of code that calls the implementation `v` use at most `k`
-bytes of stack (a goal `xdLe k _ = true`). -/
+bytes of stack (a goal `xdLe k _ = true`). Code that is a `seq`, `ite` or `call` as it stands is
+taken apart before the lemmas of the callees are tried on it: each of those that does not apply
+is elaborated, and fails, at every such node. Those lemmas by `apply`, which unifies their
+statements with the goal, not `exact`, which on a mismatch looks for a coercion first. -/
 tactic_template "s4_xd " v:ident : tactic =>
   `(tactic| repeat' (first
     | (closed_in $v; decide +kernel)
-    | with_reducible exact xdLe_s4 $v (by decide)
-    | with_reducible exact xdLe_prfs $v _ _ _ _ (by decide)
-    | with_reducible exact xdLe_callee (($v).arith.dm _ (by decide))
-    | with_reducible exact xdLe_callee (($v).arith.em _ (by decide))
-    | with_reducible exact xdLe_callee (($v).arith.km _ (by decide))
-    | with_reducible exact xdLe_callee ($v).arith.nttInv | with_reducible exact xdLe_callee ($v).arith.add
-    | with_reducible exact xdLe_callee ($v).arith.sub | with_reducible exact xdLe_callee ($v).arith.cbd
-    | with_reducible exact xdLe_callee ($v).arith.cbd16 | with_reducible exact xdLe_callee ($v).arith.dec12
-    | with_reducible exact xdLe_callee ($v).arith.enc12
-    | with_reducible exact Codecs.ce_xd _ | with_reducible exact Codecs.dd_xd _
-    | with_reducible exact ce768_xd _ | with_reducible exact dd768_xd _
-    | with_reducible exact ce1024_xd _ | with_reducible exact dd1024_xd _
-    | with_reducible exact xdLe_seqR_zero _ _ | with_reducible apply xdLe_seqR_succ
     | with_reducible exact xdLe_block _
+    | with_reducible apply xdLe_seq | with_reducible apply xdLe_ite | with_reducible apply xdLe_call
+    | with_reducible apply xdLe_s4 $v (by decide)
+    | with_reducible apply xdLe_prfs $v _ _ _ _ (by decide)
+    | with_reducible apply xdLe_callee (($v).arith.dm _ (by decide))
+    | with_reducible apply xdLe_callee (($v).arith.em _ (by decide))
+    | with_reducible apply xdLe_callee (($v).arith.km _ (by decide))
+    | with_reducible apply xdLe_callee ($v).arith.nttInv | with_reducible apply xdLe_callee ($v).arith.add
+    | with_reducible apply xdLe_callee ($v).arith.sub | with_reducible apply xdLe_callee ($v).arith.cbd
+    | with_reducible apply xdLe_callee ($v).arith.cbd16 | with_reducible apply xdLe_callee ($v).arith.dec12
+    | with_reducible apply xdLe_callee ($v).arith.enc12
+    | with_reducible apply Codecs.ce_xd _ | with_reducible apply Codecs.dd_xd _
+    | with_reducible apply ce768_xd _ | with_reducible apply dd768_xd _
+    | with_reducible apply ce1024_xd _ | with_reducible apply dd1024_xd _
+    | with_reducible exact xdLe_seqR_zero _ _ | with_reducible apply xdLe_seqR_succ
     | (code_whnf; with_reducible apply xdLe_seq) | (code_whnf; with_reducible apply xdLe_ite)
     | (code_whnf; with_reducible apply xdLe_call)))
 
@@ -113,12 +117,14 @@ theorem xdLe_batchP {k N₀ m : Nat} {b : Prog isa} (B : BatchPOk16 N₀ m b) : 
 and the halves of K-PKE key generation (`hR`). -/
 tactic_template "kgh_xd " v:ident b:ident p:ident B:ident P:ident hR:ident : tactic =>
   `(tactic| repeat' (first
-    | with_reducible exact xdLe_batchHM ($B _ (by decide)) | with_reducible exact xdLe_batchP ($P (_, _) (by decide))
-    | with_reducible exact xdLe_callee ($hR).ntt | with_reducible exact xdLe_callee ($hR).row
-    | (closedH_in $v $b $p; decide +kernel) | (code_whnf; closedH_in $v $b $p; decide +kernel)
-    | with_reducible exact xdLe_prfs $v _ _ _ _ (by decide) | with_reducible exact xdLe_callee ($v).arith.cbd16
-    | with_reducible exact xdLe_seqR_zero _ _ | with_reducible apply xdLe_seqR_succ
+    | (closedH_in $v $b $p; decide +kernel)
     | with_reducible exact xdLe_block _
+    | with_reducible apply xdLe_seq | with_reducible apply xdLe_ite | with_reducible apply xdLe_call
+    | with_reducible apply xdLe_batchHM ($B _ (by decide)) | with_reducible apply xdLe_batchP ($P (_, _) (by decide))
+    | with_reducible apply xdLe_callee ($hR).ntt | with_reducible apply xdLe_callee ($hR).row
+    | (code_whnf; closedH_in $v $b $p; decide +kernel)
+    | with_reducible apply xdLe_prfs $v _ _ _ _ (by decide) | with_reducible apply xdLe_callee ($v).arith.cbd16
+    | with_reducible exact xdLe_seqR_zero _ _ | with_reducible apply xdLe_seqR_succ
     | (code_whnf; with_reducible apply xdLe_seq) | (code_whnf; with_reducible apply xdLe_ite)
     | (code_whnf; with_reducible apply xdLe_call)))
 
@@ -126,11 +132,13 @@ tactic_template "kgh_xd " v:ident b:ident p:ident B:ident P:ident hR:ident : tac
 functions (`hK`). -/
 tactic_template "ecp_xd " v:ident p:ident P:ident hK:ident : tactic =>
   `(tactic| repeat' (first
-    | with_reducible exact xdLe_batchP ($P (_, _) (by decide)) | with_reducible exact xdLe_callee ($hK).enc
-    | (closedP_in $v $p; decide +kernel) | (code_whnf; closedP_in $v $p; decide +kernel)
-    | with_reducible exact xdLe_callee ($v).arith.cbd16
-    | with_reducible exact xdLe_seqR_zero _ _ | with_reducible apply xdLe_seqR_succ
+    | (closedP_in $v $p; decide +kernel)
     | with_reducible exact xdLe_block _
+    | with_reducible apply xdLe_seq | with_reducible apply xdLe_ite | with_reducible apply xdLe_call
+    | with_reducible apply xdLe_batchP ($P (_, _) (by decide)) | with_reducible apply xdLe_callee ($hK).enc
+    | (code_whnf; closedP_in $v $p; decide +kernel)
+    | with_reducible apply xdLe_callee ($v).arith.cbd16
+    | with_reducible exact xdLe_seqR_zero _ _ | with_reducible apply xdLe_seqR_succ
     | (code_whnf; with_reducible apply xdLe_seq) | (code_whnf; with_reducible apply xdLe_ite)
     | (code_whnf; with_reducible apply xdLe_call)))
 

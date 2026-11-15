@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PrivPreCTA
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.PreCore
 import VerifiedGarbage.Proof.Bignum.Octets
@@ -136,7 +137,7 @@ theorem pins106 : Pins (At C0 privF 106) [.r11, .r19, .r23, .r27, .r28] := by
 theorem pins191 : Pins (At C0 privF 191) [.r14, .r17, .r23] := by
   refine pins_at_list (fun s₀ => [off (s₀.gpr .r3) 0, BitVec.ofNat 64 (2 * cw s₀), cS s₀])
     (fun _ s₀ h => WP.of_flat (c := NB (.block [.load .d .r14 .r23 oOut, .load .d .r17 .r23 oNLen, .addi .r17 .r17 7,
-        .lsr .d .r17 .r17 3, .lsl .r17 .r17 1])) (by decide +kernel)
+        .lsr .d .r17 .r17 3, .lsl .r17 .r17 1])) (by kernel_rfl)
       (partA_ok h.1 fun _ hA0 => partN_ok (pre_facts h.1) hA0 fun _ hA => partB_ok (pre_facts h.1) hA fun t hB => ?_))
     fun _ s₀ s₀' h h' => ?_
   · have hP := pre_facts h.1

@@ -19,19 +19,15 @@ namespace VG.Artifacts.MlKem.Arm
 def artifacts : List Artifact := [
   Spec.MlKem.keyGenApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Wipe.keyGen
-    stack := 24
     verified := Proof.MlKem.Arm.Wipe.keyGen_verified },
   Spec.MlKem.encapsApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Wipe.encaps
-    stack := 32
     verified := Proof.MlKem.Arm.Wipe.encaps_verified },
   Spec.MlKem.encapsHApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Wipe.encapsH
-    stack := 32
     verified := Proof.MlKem.Arm.Wipe.encapsH_verified },
   Spec.MlKem.decapsApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Wipe.decaps
-    stack := 24
     verified := Proof.MlKem.Arm.Wipe.decaps_verified },
   Spec.MlKem.checkEkApi.artifact Arm.target {
     code := Impl.MlKem.Arm.checkEk
@@ -41,19 +37,15 @@ def artifacts : List Artifact := [
     verified := Proof.MlKem1024.Arm.CheckEk.verified },
   Spec.MlKem1024.keyGenApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Wipe.keyGen1024
-    stack := 24
     verified := Proof.MlKem.Arm.Wipe.keyGen1024_verified },
   Spec.MlKem1024.encapsApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Wipe.encaps1024
-    stack := 32
     verified := Proof.MlKem.Arm.Wipe.encaps1024_verified },
   Spec.MlKem1024.encapsHApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Wipe.encapsH1024
-    stack := 32
     verified := Proof.MlKem.Arm.Wipe.encapsH1024_verified },
   Spec.MlKem1024.decapsApi.artifact Arm.target {
     code := Impl.MlKem.Arm.Wipe.decaps1024
-    stack := 24
     verified := Proof.MlKem.Arm.Wipe.decaps1024_verified }]
 
 end VG.Artifacts.MlKem.Arm

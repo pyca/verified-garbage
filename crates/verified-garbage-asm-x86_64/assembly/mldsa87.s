@@ -4970,7 +4970,6 @@ vg_mldsa87_prepare_verifying_key_avx2:
 	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
-	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -5465,7 +5464,6 @@ vg_mldsa87_prepare_verifying_key:
 	xor edi, edi
 	xor r8d, r8d
 	xor r9d, r9d
-	xor r11d, r11d
 	ret
 	.p2align 6
 

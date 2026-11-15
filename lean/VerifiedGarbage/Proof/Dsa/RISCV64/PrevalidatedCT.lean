@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Dsa.RISCV64.VerifyCT
 public import VerifiedGarbage.Proof.Dsa.RISCV64.PrevalidatedFn
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -176,7 +177,7 @@ theorem semBp {v : VD} {u : State} (h : At ΦRp FRp 26 v u) : SB v u :=
       (setupP_SR3 hs).mono fun _ ⟨c, _⟩ =>
         ⟨⟨c, (kvR h').1, (kvR h').2.1, (kvR h').2.2.2.1⟩, (kvR h').2.2.1, (kvR h').2.2.2.2⟩))) h
 
-theorem drop26 : FRp.drop 26 = FB := by decide +kernel
+theorem drop26 : FRp.drop 26 = FB := by kernel_rfl
 
 theorem runBp : ∀ v s, At ΦRp FRp 26 v s → WP isa (Code.seqL FB) s fun _ => True := by
   intro v s h

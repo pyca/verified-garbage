@@ -2394,6 +2394,7 @@ vg_rsa_oaep_decrypt_precomputed_crt_ifma512:
 	stmxcsr DWORD PTR [rsp]
 	mov r11d, DWORD PTR [rsp]
 	and r11d, 65472
+	or r11d, 63
 	mov DWORD PTR [rsp], r11d
 	mov r11d, 8127
 	mov DWORD PTR [rsp+4], r11d
@@ -4919,6 +4920,7 @@ vg_rsa_oaep_decrypt_precomputed_crt_ifma:
 	stmxcsr DWORD PTR [rsp]
 	mov r11d, DWORD PTR [rsp]
 	and r11d, 65472
+	or r11d, 63
 	mov DWORD PTR [rsp], r11d
 	mov r11d, 8127
 	mov DWORD PTR [rsp+4], r11d
@@ -12177,6 +12179,7 @@ vg_rsa_oaep_encrypt_precomputed_rsa_ifma:
 	stmxcsr DWORD PTR [rsp]
 	mov r11d, DWORD PTR [rsp]
 	and r11d, 65472
+	or r11d, 63
 	mov DWORD PTR [rsp], r11d
 	mov r11d, 8127
 	mov DWORD PTR [rsp+4], r11d

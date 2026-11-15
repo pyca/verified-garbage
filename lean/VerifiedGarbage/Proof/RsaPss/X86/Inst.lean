@@ -598,7 +598,7 @@ theorem bc_iff : ∀ a : Byte, a.setWidth 32 ^^^ 0xbc = 0 ↔ a = 0xbc := by dec
 theorem one_iff : ∀ a : Byte, a.setWidth 32 ^^^ 1 = 0 ↔ a = 1 := by decide
 theorem zero_iff : ∀ a : Byte, a.setWidth 32 = 0 ↔ a = 0 := by decide
 theorem top_iff : ∀ j < 9, ∀ b : Byte, (b.setWidth 32 &&& (BitVec.ofNat 32 (2 ^ j - 1) ^^^ 0xFF) = 0 ↔
-    b &&& ~~~((BitVec.ofNat 32 (2 ^ j - 1)).setWidth 8) = 0) := by decide
+    b &&& ~~~((BitVec.ofNat 32 (2 ^ j - 1)).setWidth 8) = 0) := by decide +kernel
 
 /-- The mask of a first byte not zero, `2^j - 1`. -/
 theorem cW_cases {b : Byte} (hb : b.toNat ≠ 0) : ∃ j < 9, cW (b.setWidth 32) = BitVec.ofNat 32 (2 ^ j - 1) := by

@@ -1294,7 +1294,7 @@ theorem expandKey_framed :
     (n := 401) (pre := Spec.Camellia.expandKeyPre X86_64.abi.ptrBits)
     (post := Spec.Camellia.expandKeyPost X86_64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 3216) (by rw [← Proof.Camellia.expandKeyScratchContract_eq]; exact expandKey_verified)
-    (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Camellia.expandKeyPostOut_local _) expandKeyFrameSat_pre
 
 end VG.Proof.Camellia.X86_64

@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.PairedCheckModel
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.Paired
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResponseVec
@@ -334,7 +335,7 @@ theorem zCheck_eq (g p j : Nat) : check .z g p j=zLane (vr (8*p+j)) (1024*p+128*
 theorem hCheck_eq (g p j : Nat) : check .h g p j=hintLane (vr (8*p+j)) (1024*p+128*j) := rfl
 
 theorem finalPrefix_eq : finalBody.take (finalBody.length-finalStore.length-2)=finalLoads++finalArithmetic := by
-  decide +kernel
+  kernel_rfl
 
 end VG.Proof.MlDsa.AArch64.Optimized.Paired
 

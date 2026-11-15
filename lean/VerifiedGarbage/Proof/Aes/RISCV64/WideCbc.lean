@@ -4,10 +4,14 @@ public import VerifiedGarbage.Proof.Aes.RISCV64.Wide
 public import VerifiedGarbage.Proof.AesCbc.Spec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 meta import VerifiedGarbage.Proof.Aes.RISCV64.Wide
 meta import VerifiedGarbage.Proof.AesCbc.Spec
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Exec
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Aes.RISCV64.CodeLit
 meta import VerifiedGarbage.TCB.RISCV64.Target
 
 -- separate module: CBC decryption's instance of `wide`, which only AES-CBC's `Verified` imports,
@@ -354,8 +358,10 @@ theorem cbcDecWide_correct {s₀ : State} (hp : (blockKRISCV64 (AesCbc.cbcMode f
     (by rw [AesCbc.bytesAt_toList]; exact cbc_chain _ _ _ _ _ _)
 
 theorem cbcDecWide_ct : ConstantTime isa (blockKRISCV64 (AesCbc.cbcMode false)).pre
-    (blockKRISCV64 (AesCbc.cbcMode false)).pub cbcDecWide :=
-  wide_ct _ (by taint_decide)
+    (blockKRISCV64 (AesCbc.cbcMode false)).pub cbcDecWide := by
+  obtain ⟨_, hck⟩ : ∃ h, (taint.check (Taint.ofRegs [.a0, .a1, .a2, .a3, .a4, .a5]) cbcDecWide h).isSome =
+      true := by taint_decide_sum [Impl.Aes.RISCV64.decrypt4Sum]
+  exact wide_ct _ hck
 
 theorem cbcDecWide_k :
     AesCbc.RISCV64.ChainK true (16 * ·) (blockKRISCV64 (AesCbc.cbcMode false)) cbcDecWide :=

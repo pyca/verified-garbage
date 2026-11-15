@@ -18,19 +18,15 @@ namespace VG.Artifacts.CamelliaCfb.PPC64LE
 def artifacts : List Artifact := [
   Spec.Camellia.cfbEncryptApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbEncrypt
-    stack := 3408
     verified := Proof.Camellia.PPC64LE.cfbEnc_framed Proof.Camellia.PPC64LE.Modes.cfbEncrypt_verified },
   Spec.Camellia.cfbDecryptApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbDecrypt
-    stack := 3408
     verified := Proof.Camellia.PPC64LE.cfbDec_framed Proof.Camellia.PPC64LE.Modes.cfbDecrypt_verified },
   Spec.Camellia.cfbEncryptFinalApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbEncryptFinal
-    stack := 3408
     verified := Proof.Camellia.PPC64LE.FbFinal.cfbEncryptFinal_framed },
   Spec.Camellia.cfbDecryptFinalApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 3408 .r8 422 Impl.Camellia.PPC64LE.cfbDecryptFinal
-    stack := 3408
     verified := Proof.Camellia.PPC64LE.FbFinal.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.CamelliaCfb.PPC64LE

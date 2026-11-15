@@ -18,8 +18,7 @@ each 16-byte store overwriting all but the first doubleword of the one before,
 then the mask and the pad bit at `rdi + 104` and `rdi + 112`. The doubleword
 at each of these addresses is then the low doubleword of quadword 0 of the
 register stored there, which is all that the loop's `vpmuludq`s read (`MemM`).
-Everything it writes is working space of the state (`wR`), below MXCSR's slot
-at byte 120.
+Everything it writes is working space of the state (`wR`), below byte 120.
 -/
 
 @[expose] public section

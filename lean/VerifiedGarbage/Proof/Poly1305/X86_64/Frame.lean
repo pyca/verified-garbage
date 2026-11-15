@@ -68,6 +68,6 @@ theorem finalize_framed :
   X86_64.Verified.stackScratch (sig := Spec.Poly1305.finalizeSig) (nm := "scratch") (e := .u64)
     (n := 16) (post := Spec.Poly1305.finalizePost X86_64.abi.ptrBits) (wa := false) (stack := 0)
     (bytes := 136) finalize_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) finalizeFrameSat_pre
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) finalizeFrameSat_pre
 
 end VG.Proof.Poly1305.X86_64

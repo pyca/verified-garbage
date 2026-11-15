@@ -151,15 +151,19 @@ theorem storeConsts_wp (vs : List (BitVec 64)) :
 theorem roundConsts_length : roundConsts.length = 47 := by
   rw [roundConsts.lit_eq]; decide +kernel
 
+/-- The constants fit the scratch buffer, by their number: `decide` on it would evaluate them. -/
+theorem consts_fit : constOff + 8 * roundConsts.length ≤ 2048 := by
+  rw [roundConsts_length]; decide
+
 theorem consts_ready {s t : State} (hb : t.gpr .r5 = s.gpr .r5)
     (hm : t.mem = constMem s.mem (s.gpr .r5) roundConsts constOff) : ConstsAt t := by
   intro c hc
   rw [hm, hb, wordAddr, show 8 * (15 + c) = constOff + 8 * c by unfold constOff; omega_using []]
-  exact constMem_read _ _ _ _ (by decide) c (by rw [roundConsts_length]; exact hc)
+  exact constMem_read _ _ _ _ consts_fit c (by rw [roundConsts_length]; exact hc)
 
 theorem consts_frame (s : State) :
     Frame [saveRegion s] s.mem (constMem s.mem (s.gpr .r5) roundConsts constOff) :=
-  (constMem_frame _ _ _ _ (by decide)).sub fun r hr => by
+  (constMem_frame _ _ _ _ consts_fit).sub fun r hr => by
     obtain rfl := List.mem_singleton.mp hr
     exact ⟨_, List.mem_singleton_self _, by
       rw [roundConsts_length]; exact Offset.sub_base _ (by decide)⟩
@@ -168,7 +172,7 @@ theorem consts_saved {original s t : State} (hs : Saved original s) (hb : t.gpr 
     (hm : t.mem = constMem s.mem (s.gpr .r5) roundConsts constOff) : Saved original t := by
   intro i hi
   rw [hm, hb, ← hs i hi]
-  exact (constMem_frame _ _ _ _ (by decide)).readW (r := ⟨s.gpr .r5 + BitVec.ofNat 64 (8 * i), 8⟩)
+  exact (constMem_frame _ _ _ _ consts_fit).readW (r := ⟨s.gpr .r5 + BitVec.ofNat 64 (8 * i), 8⟩)
     (Region.contains_self _ _) (fun q hq => by
       obtain rfl := List.mem_singleton.mp hq
       rw [roundConsts_length]

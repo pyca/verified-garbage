@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.SpTest
 public import VerifiedGarbage.Proof.Framework.RegSet
 import VerifiedGarbage.Proof.Framework.RegSetOrder
 public import VerifiedGarbage.TCB.X86_64.Isa
@@ -823,6 +824,27 @@ theorem Agree.store {τ : T} {s₁ s₂ : State} (ha : Agree τ s₁ s₂) {m : 
     · split at hsl <;> [exact same hsl ‹_›; cases hsl]
 
 /-! ### Instructions that write a register -/
+
+/-- Whether an instruction leaves `rsp` as it is: `!isa.writesSp i`
+(`keepsSp_eq`), in one match and a comparison of the registers' indices, for
+the kernel (`SpTest`, `Proof/Framework/SpTest.lean`). -/
+def keepsSp : Instr → Bool
+  | .mulx hi lo _ => !(Nat.beq hi.ctorIdx Reg.rsp.ctorIdx || Nat.beq lo.ctorIdx Reg.rsp.ctorIdx)
+  | .mov d _ | .alu _ d _ | .mov32 d _ | .alu32 _ d _ | .shift32 _ d _ | .bswap32 d
+  | .rorx32 d .. | .andn32 d .. | .rorx d .. | .andn d .. | .movzx8 d _ | .movzx16 d _ | .bswap d | .shift _ d _
+  | .shiftCl _ d | .shiftx _ d .. | .movImm64 d _ | .leaSym d _ | .aluTbl _ d .. | .adcx d _ | .adox d _
+  | .cmov _ d _ | .pop d _ | .vpmovmskb _ d _ | .movqR d _ | .imul d _
+  | .imul3 d .. | .shld d .. | .btr d _ | .vpcmpltuw d .. => !Nat.beq d.ctorIdx Reg.rsp.ctorIdx
+  | _ => true
+
+theorem ctorIdx_beq (a b : Reg) : Nat.beq a.ctorIdx b.ctorIdx = (a == b) := by
+  cases a <;> cases b <;> rfl
+
+theorem keepsSp_eq (i : Instr) : keepsSp i = !isa.writesSp i := by
+  cases i <;> simp only [keepsSp, ctorIdx_beq] <;> rfl
+
+instance : SpTest isa keepsSp where
+  sound i h := by rw [keepsSp_eq] at h; simpa using h
 
 /-- An SSE instruction on registers changes only the SSE registers. -/
 theorem XOp.exec_eq (op : XOp) (s : State) : op.exec s = { s with xmm := (op.exec s).xmm } := by

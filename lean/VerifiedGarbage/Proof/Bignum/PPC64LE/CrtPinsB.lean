@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtPinsA
 public import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtMid2
 import VerifiedGarbage.Proof.Bignum.PPC64LE.CrtSetup
@@ -160,7 +161,7 @@ abbrev NL (pc : Bool) (c : Prog isa) : Prog isa := NA pc (.seq loadIn c)
 
 theorem pins91 : Pins (At (C0 pc) (crtF pc) 91) [.r6, .r10, .r11, .r12, .r21, .r23, .r29] :=
   pins_at_list (fun s₀ => ldVals s₀ (s₀.gpr .r7) (ck s₀))
-    (fun _ s₀ h => WP.of_flat (c := NA pc (LD oIn oNLen)) (by cases pc <;> decide +kernel)
+    (fun _ s₀ h => WP.of_flat (c := NA pc (LD oIn oNLen)) (by cases pc <;> kernel_rfl)
       (WP.seq (WP.mono (front_okG pc s₀ (preG_core h.1)) fun s ⟨F, hhd⟩ => by
         have hP := pre_factsG (preG_core h.1)
         have hn := hP.nw; have room := hP.room
@@ -189,7 +190,7 @@ theorem pins100 : Pins (At (C0 pc) (crtF pc) 100) (pwRegs pc) := by
       BitVec.ofNat 64 (8 * (cwX s₀ + 2)), BitVec.ofNat 64 (8 * (cwP s₀ + 2))] ++
       if pc then [s₀.gpr .r31] else [])
     (fun _ s₀ h => WP.of_flat (c := NL pc (.seq (.block (setupP oBP oPLen)) (.block (PW1 4 ++ r2Ptr pc false))))
-      (by cases pc <;> decide +kernel)
+      (by cases pc <;> kernel_rfl)
       (WP.seq (WP.mono (front_okG pc s₀ (preG_core h.1)) fun s ⟨F, hhd⟩ => ?_))) fun _ _ _ h h' => ?_
   · have hP := pre_factsG (preG_core h.1)
     have hn := hP.nw; have room := hP.room; have p1 := hP.p1; have pk := hP.pk; have k1024 := hP.k1024
@@ -268,7 +269,7 @@ theorem pins148 : Pins (At (C0 pc) (crtF pc) (ix pc 148 142)) (pwRegs pc) := by
       BitVec.ofNat 64 (8 * (cwX s₀ + 2)), BitVec.ofNat 64 (8 * (cwQ s₀ + 2))] ++
       if pc then [s₀.gpr .r31 + BitVec.ofNat 64 (8 * cwP s₀)] else [])
     (fun _ s₀ h => WP.of_flat (c := NP pc (.seq (.block (setupP oBQ oQLen)) (.block (PW1 5 ++ r2Ptr pc true))))
-      (by cases pc <;> decide +kernel)
+      (by cases pc <;> kernel_rfl)
       (WP.seq (WP.mono (front_okG pc s₀ (preG_core h.1)) fun s ⟨F, hhd⟩ => ?_))) fun _ _ _ h h' => ?_
   · have hP := pre_factsG (preG_core h.1)
     have hn := hP.nw; have room := hP.room; have q1 := hP.q1; have qk := hP.qk; have k1024 := hP.k1024
@@ -299,7 +300,7 @@ theorem pins172 : Pins (At (C0 pc) (crtF pc) (ix pc 172 160)) [.r10, .r11, .r23,
   refine pins_at_list (fun s₀ => [off (off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 0), BitVec.ofNat 64 (2 * cwQ s₀), cS s₀,
       BitVec.ofNat 64 (8 * (cwQ s₀ + 2)), off (stackArg s₀ 4) 0, BitVec.ofNat 64 (cqL s₀)])
     (fun _ s₀ h => WP.of_flat (c := NP pc (.seq (.block (setupP oBQ oQLen))
-      (PH pc true 5 (.block [.load .d .r30 .r23 oDQ, .load .d .r31 .r23 oQLen])))) (by cases pc <;> decide +kernel)
+      (PH pc true 5 (.block [.load .d .r30 .r23 oDQ, .load .d .r31 .r23 oQLen])))) (by cases pc <;> kernel_rfl)
       (WP.seq (WP.mono (front_okG pc s₀ (preG_core h.1)) fun s ⟨F, hhd⟩ => ?_))) fun _ _ _ h h' => ?_
   · have hP := pre_factsG (preG_core h.1)
     have hn := hP.nw; have room := hP.room; have pq := hP.pq
@@ -352,7 +353,7 @@ theorem pins195 : Pins (At (C0 pc) (crtF pc) (ix pc 195 183)) [.r11, .r14, .r15,
   refine pins_at_list (fun s₀ => [BitVec.ofNat 64 (2 * cwX s₀), off (cS s₀) (slot (cwX s₀) 6),
       off (off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 4), BitVec.ofNat 64 (2 * cwQ s₀), cS s₀,
       off (cS s₀) (slot (cwX s₀) 0), BitVec.ofNat 64 (8 * (cwX s₀ + 2))])
-    (fun _ s₀ h => WP.of_flat (c := NQ pc (.block EX1)) (by cases pc <;> decide +kernel)
+    (fun _ s₀ h => WP.of_flat (c := NQ pc (.block EX1)) (by cases pc <;> kernel_rfl)
       (WP.seq (WP.mono (front_okG pc s₀ (preG_core h.1)) fun s ⟨F, hhd⟩ => ?_))) fun _ _ _ h h' => ?_
   · have hP := pre_factsG (preG_core h.1)
     have hn := hP.nw; have room := hP.room; have q1 := hP.q1; have qk := hP.qk; have k1024 := hP.k1024
@@ -383,7 +384,7 @@ theorem pins202 : Pins (At (C0 pc) (crtF pc) (ix pc 202 190))
       BitVec.ofNat 64 (8 * (cwX s₀ + 2)), BitVec.ofNat 64 (8 * (cwP s₀ + 2)), BitVec.ofNat 64 (ck s₀)] ++
       if pc then [s₀.gpr .r31] else [])
     (fun _ s₀ h => WP.of_flat (c := NE pc (.block ([.load .d .r25 .r23 oNLen] ++ r2Ptr pc false)))
-      (by cases pc <;> decide +kernel)
+      (by cases pc <;> kernel_rfl)
       (WP.seq (WP.mono (front_okG pc s₀ (preG_core h.1)) fun s ⟨F, hhd⟩ => ?_))) fun _ _ _ h h' => ?_
   · have hP := pre_factsG (preG_core h.1)
     have hn := hP.nw; have room := hP.room; have q1 := hP.q1; have qk := hP.qk; have k1024 := hP.k1024
@@ -467,7 +468,7 @@ theorem pins252 : Pins (At (C0 pc) (crtF pc) (ix pc 252 234)) [.r11, .r14, .r15,
   refine pins_at_list (fun s₀ => [BitVec.ofNat 64 (2 * cwX s₀), off (cS s₀) (slot (cwX s₀) 7),
       off (off (cS s₀) (oPa s₀)) (slot (cwP s₀) 4), BitVec.ofNat 64 (2 * cwP s₀), cS s₀,
       off (cS s₀) (slot (cwX s₀) 0), BitVec.ofNat 64 (8 * (cwX s₀ + 2))])
-    (fun _ s₀ h => WP.of_flat (c := NE pc (.seq (recombinePG pc) (.block X1))) (by cases pc <;> decide +kernel)
+    (fun _ s₀ h => WP.of_flat (c := NE pc (.seq (recombinePG pc) (.block X1))) (by cases pc <;> kernel_rfl)
       (pre_rec h fun s u hP F R k => ?_)) fun _ _ _ h h' => ?_
   · have hn := hP.nw; have room := hP.room; have p1 := hP.p1; have pk := hP.pk; have k1024 := hP.k1024
     have e8 : slot (cwX s₀) 8 = 256 + 8 * (8 * (cwX s₀ + 2)) := rfl
@@ -489,7 +490,7 @@ theorem pins258 : Pins (At (C0 pc) (crtF pc) (ix pc 258 240)) [.r11, .r14, .r15,
       off (off (cS s₀) (oQa s₀)) (slot (cwQ s₀) 4), BitVec.ofNat 64 (2 * cwQ s₀), cS s₀,
       off (cS s₀) (slot (cwX s₀) 0), BitVec.ofNat 64 (8 * (cwX s₀ + 2))])
     (fun _ s₀ h => WP.of_flat (c := NE pc (.seq (recombinePG pc) (.seq (.block X1) (.seq (.seq Precompute.zeroWords
-      (.seq (.block (xb .r14 7 ++ [.addi .r11 .r22 0])) copyN)) (.block X2))))) (by cases pc <;> decide +kernel)
+      (.seq (.block (xb .r14 7 ++ [.addi .r11 .r22 0])) copyN)) (.block X2))))) (by cases pc <;> kernel_rfl)
       (pre_rec h fun s u hP F R k => ?_)) fun _ _ _ h h' => ?_
   · have hn := hP.nw; have room := hP.room; have p1 := hP.p1; have pk := hP.pk; have k1024 := hP.k1024
     have q1 := hP.q1; have qk := hP.qk; have pq := hP.pq
@@ -534,7 +535,7 @@ abbrev FIN : List Instr := [.addi .r10 .r27 0, .addi .r29 .r28 0, .load .d .r27 
 theorem pins271 : Pins (At (C0 pc) (crtF pc) (ix pc 271 253)) [.r10, .r23, .r27, .r28, .r29] := by
   refine pins_at_list (fun s₀ => [off (cS s₀) (slot (cwX s₀) 0), cS s₀, off (s₀.gpr .r3) 0,
       BitVec.ofNat 64 (ck s₀), BitVec.ofNat 64 (8 * (cwX s₀ + 2))])
-    (fun _ s₀ h => WP.of_flat (c := NE pc (.seq (recombinePG pc) (.seq recombineX (.block FIN)))) (by cases pc <;> decide +kernel)
+    (fun _ s₀ h => WP.of_flat (c := NE pc (.seq (recombinePG pc) (.seq recombineX (.block FIN)))) (by cases pc <;> kernel_rfl)
       (pre_rec h fun s u hP F R k => ?_)) fun _ _ _ h h' => ?_
   · have hn := hP.nw; have room := hP.room; have p1 := hP.p1; have pk := hP.pk; have k1024 := hP.k1024
     have q1 := hP.q1; have qk := hP.qk; have pq := hP.pq

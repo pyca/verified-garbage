@@ -62,7 +62,7 @@ pointer: checked once for each, rather than at each of its calls in every
 configuration of the callers. -/
 theorem blocks_spSafe (b : Impl.Poly1305.X86_64.Blocks) :
     b.code.all (fun i => !X86_64.isa.writesSp i) = true := by
-  cases b <;> exact Code.all_of_allInstrs (by lit_decide)
+  cases b <;> exact Code.all_of_spTest (by lit_decide)
 
 /-- `seal` never writes the stack pointer. The callees' code is
 generalized away (`P`), so that `simp` does not unfold the predicate, and the

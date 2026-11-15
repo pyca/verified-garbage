@@ -177,7 +177,7 @@ theorem scalarByte_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {n : Nat} (hn :
   have vu : fe u.mem x scalarR = fe s.mem x scalarR :=
     fe_frame1 fu hc.fit (by decide) (by decide) (Or.inr (by decide))
   have bu : wv u.mem x 32 / 2 = (s.mem (addr x (128 + n))).toNat := by rw [eu]; omega_using []
-  refine WP.block_append (WP.mono (scalarEight_ok (ku.ctx hc) (vu ▸ hr)
+  refine WP.block_append (WP.mono (scalarEight_ok (ku.ctx hc) (by rw [vu]; exact hr)
     (by rw [bu]; exact BitVec.isLt _)) fun v ⟨kv, fv, ev⟩ => ?_)
   refine WP.mono (scalarTest_ok v) fun t ⟨gt, mt, rt, wt, zt⟩ => ?_
   have st : t.gpr .esi = BitVec.ofNat 32 n := by rw [gt, kv.esi, su]

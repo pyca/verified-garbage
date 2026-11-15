@@ -44,33 +44,35 @@ open VG.Proof.AesGcm.X86_64 (GcmImpl Lay Env rel_taint rel_wp rel_ite_e rel_reas
   env_agree lens_ok lens_rel flush_ok flush_rel and_self_beq and15 imm_eq WP.run)
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP)
+variable (v : GcmImpl) {Ctx St W SP : Addr} {N : Nat} (L : Lay4 Ctx St W SP N) 
+  [G : AesGcm.X86_64.GhFits v N 256]
+include G
 include L
 
 /-- `tag o`, with the same lengths. -/
 theorem tag_rel {o : Nat} (ho : o = 0 ∨ o = 112) :
-    RelCT isa (EnvAgree Ctx St W SP [.rbx, .rbp]) (tag v.callees o) fun _ _ => True := by
+    RelCT isa (EnvAgree Ctx St W SP [.rbx, .rbp] · · N) (tag v.callees o) fun _ _ => True := by
   have La := L.lay
   -- The arguments of the call, in each run.
-  let G : State → Prop := fun s => Env Ctx St W SP s ∧ CtrCall s Ctx St (W + BitVec.ofNat 64 o) 1
-  have hG : ∀ s, Env Ctx St W SP s → WP isa (.seq (lens v.callees 16)
+  let G : State → Prop := fun s => Env Ctx St W SP s N ∧ CtrCall s Ctx St (W + BitVec.ofNat 64 o) 1
+  have hG : ∀ s, Env Ctx St W SP s N → WP isa (.seq (lens v.callees 16)
       (.block (([.mov .rax (.mem (at_ .r14 16)), .store (at_ .r15 o) .rax,
         .mov .rax (.mem (at_ .r14 24)), .store (at_ .r15 (o + 8)) .rax, .mov .rdi (.reg .r13),
         .mov .rsi (.reg .r14)] : List Instr) ++ ptr .rdx .r15 o ++ ([.mov32 .rcx (imm 1)] : List Instr)))) s G :=
     fun s h => WP.mono (tagMid_ok v L ho h rfl rfl) fun _ M => ⟨M.env, M.call⟩
-  have hL : ∀ s, Env Ctx St W SP s → WP isa (lens v.callees 16) s (Env Ctx St W SP) := fun s he =>
+  have hL : ∀ s, Env Ctx St W SP s N → WP isa (lens v.callees 16) s (Env Ctx St W SP · N) := fun s he =>
     WP.mono (lens_ok v La (.inr rfl) he rfl) fun _ h => h.1
   have hc : ∃ hc, (taint.check (Taint.ofRegs [.r13, .r14, .r15, .rsp]) (.block (([.mov .rax (.mem (at_ .r14 16)),
       .store (at_ .r15 o) .rax, .mov .rax (.mem (at_ .r14 24)), .store (at_ .r15 (o + 8)) .rax, .mov .rdi (.reg .r13),
       .mov .rsi (.reg .r14)] : List Instr) ++ ptr .rdx .r15 o ++ ([.mov32 .rcx (imm 1)] : List Instr))) hc).isSome =
       true := by
     rcases ho with rfl | rfl <;> exact ⟨_, by taint_decide⟩
-  have l : RelCT isa (EnvAgree Ctx St W SP [.rbx, .rbp]) (lens v.callees 16)
-      fun s₁ s₂ => True ∧ Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂ :=
+  have l : RelCT isa (EnvAgree Ctx St W SP [.rbx, .rbp] · · N) (lens v.callees 16)
+      fun s₁ s₂ => True ∧ Env Ctx St W SP s₁ N ∧ Env Ctx St W SP s₂ N :=
     rel_wp (lens_rel v La (.inr rfl)) (fun _ _ h => ⟨h.1, h.2.1⟩) hL hL
-  have b : RelCT isa (fun s₁ s₂ => True ∧ Env Ctx St W SP s₁ ∧ Env Ctx St W SP s₂) _ fun _ _ => True :=
+  have b : RelCT isa (fun s₁ s₂ => True ∧ Env Ctx St W SP s₁ N ∧ Env Ctx St W SP s₂ N) _ fun _ _ => True :=
     rel_taint [.r13, .r14, .r15, .rsp] (fun _ _ h => env_agree h.2.1 h.2.2) hc
-  have pre : RelCT isa (EnvAgree Ctx St W SP [.rbx, .rbp]) _ fun s₁ s₂ => True ∧ G s₁ ∧ G s₂ :=
+  have pre : RelCT isa (EnvAgree Ctx St W SP [.rbx, .rbp] · · N) _ fun s₁ s₂ => True ∧ G s₁ ∧ G s₂ :=
     rel_wp (RelCT.seq l b) (fun _ _ h => ⟨h.1, h.2.1⟩) (fun s h => hG s h) (fun s h => hG s h)
   refine rel_reassoc2 (RelCT.seq pre (ctr_rel fun s₁ s₂ h => ⟨_, _, _, _, h.2.1.2, h.2.2.2, ?_⟩))
   rw [h.2.1.1.rsp, h.2.2.1.rsp]
@@ -79,7 +81,7 @@ end
 
 /-- The lengths kept in `W`. -/
 def FinS (Ctx St W SP : Addr) (aL tL : BitVec 64) (s : State) : Prop :=
-  Env Ctx St W SP s ∧ s.mem.readW (W + BitVec.ofNat 64 184) 64 = aL ∧
+  Env Ctx St W SP s 768 ∧ s.mem.readW (W + BitVec.ofNat 64 184) 64 = aL ∧
     s.mem.readW (W + BitVec.ofNat 64 192) 64 = tL
 
 /-- After loading the lengths. -/
@@ -96,7 +98,7 @@ def FinD (Ctx St W SP : Addr) (aL tL : BitVec 64) (s : State) : Prop :=
   FinS Ctx St W SP aL tL s ∧ s.gpr .rbx = aL ∧ s.gpr .rbp = tL
 
 section
-variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP)
+variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP 768)
 include L
 
 omit L in
@@ -106,7 +108,7 @@ theorem FinS.keep {aL tL : BitVec 64} {s s' : State} (h : FinS Ctx St W SP aL tL
   ⟨h.1.keep hg hrd hwr, by rw [hm]; exact h.2.1, by rw [hm]; exact h.2.2⟩
 
 theorem FinS.frame {aL tL : BitVec 64} {s s' : State} (h : FinS Ctx St W SP aL tL s)
-    (he : Env Ctx St W SP s') (hf : Frame (AesGcm.X86_64.tFrame St W SP 16) s.mem s'.mem) :
+    (he : Env Ctx St W SP s' 768) (hf : Frame (AesGcm.X86_64.tFrame St W SP 16) s.mem s'.mem) :
     FinS Ctx St W SP aL tL s' := by
   have La := L.lay
   have dT : ∀ d, 176 ≤ d → d + 8 ≤ 512 → ∀ r ∈ AesGcm.X86_64.tFrame St W SP 16,
@@ -128,8 +130,8 @@ omit L in
 theorem finA_ok {aL tL : BitVec 64} {s : State} (h : FinS Ctx St W SP aL tL s) :
     WP isa (.block [.mov .rbx (.mem (at_ .r15 tlenO)), .mov .rax (.mem (at_ .r15 alenO)),
       .alu .test .rbx (.reg .rbx)]) s (FinA Ctx St W SP aL tL) := by
-  have r₁ := h.1.perm.wR (show 192 + 8 ≤ 2560 by decide)
-  have r₂ := h.1.perm.wR (show 184 + 8 ≤ 2560 by decide)
+  have r₁ := h.1.perm.wR (show 192 + 8 ≤ 768 by decide)
+  have r₂ := h.1.perm.wR (show 184 + 8 ≤ 768 by decide)
   obtain ⟨s₁, run₁, hbx₁, hax₁, hzf₁, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa
       [.mov .rbx (.mem (at_ .r15 tlenO)), .mov .rax (.mem (at_ .r15 alenO)), .alu .test .rbx (.reg .rbx)] s =
         some s₁ ∧
@@ -194,8 +196,8 @@ omit L in
 theorem finD_ok {aL tL : BitVec 64} {s : State} (h : FinS Ctx St W SP aL tL s) :
     WP isa (.block [.mov .rbx (.mem (at_ .r15 alenO)), .mov .rbp (.mem (at_ .r15 tlenO))]) s
       (FinD Ctx St W SP aL tL) := by
-  have r₃ := h.1.perm.wR (show 184 + 8 ≤ 2560 by decide)
-  have r₄ := h.1.perm.wR (show 192 + 8 ≤ 2560 by decide)
+  have r₃ := h.1.perm.wR (show 184 + 8 ≤ 768 by decide)
+  have r₄ := h.1.perm.wR (show 192 + 8 ≤ 768 by decide)
   obtain ⟨s₅, run₅, hbx₅, hbp₅, hg₅, hm₅, hrd₅, hwr₅⟩ : ∃ s₅, runBlock isa [.mov .rbx (.mem (at_ .r15 alenO)),
       .mov .rbp (.mem (at_ .r15 tlenO))] s = some s₅ ∧
       s₅.gpr .rbx = aL ∧ s₅.gpr .rbp = tL ∧ (∀ r, r ≠ .rbx → r ≠ .rbp → s₅.gpr r = s.gpr r) ∧

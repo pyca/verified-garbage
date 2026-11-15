@@ -56,7 +56,8 @@ def oM1 : Nat := oP1c l + l.NB
 def oM1c : Nat := oM1 l + l.NB
 /-- The word of `E` being scanned. -/
 def oV : Nat := oM1c l + l.NB
-/-- The caller's MXCSR and `0x1FBF`. -/
+/-- 8 bytes that once held the caller's MXCSR and `0x1FBF`, now unused
+(`withVzu`). -/
 def oMx : Nat := oV l + 8
 /-- The flag, a mask. -/
 def oF : Nat := oMx l + 8
@@ -219,19 +220,14 @@ def windows : List (Prog isa) :=
       .mov32 .r15 (.imm (BitVec.ofNat 32 l.W))] : List Instr)),
     .loop (.seq (word l) (.block [.alu .sub .r15 (.imm 1), .alu .cmp .r15 (.imm (BitVec.ofInt 32 (-1)))])) .ne]
 
-/-- Intel's MXCSR prologue and epilogue around `c` (see "MCDT" in
-`TCB/X86_64/Isa.lean`), the caller's MXCSR (its bits 15:0) kept in `rbp`,
-which `c` never writes: the shape of a save and restore that the proofs check
-(`ctlOk`), as `Ffdh.X86_64.Ifma.withMx`. -/
-def withMx (c : Prog isa) : Prog isa :=
-  .seq (.seq (.block [.stmxcsr (at_ .rbx (oMx l)), .mov32 .rbp (.mem (at_ .rbx (oMx l))), .alu32 .and .rbp (.imm 0xFFFF)])
-      (.seq (.seq (.block [.mov32 .rax (.imm 0x1FBF), .store32 (at_ .rbx (oMx l + 4)) .rax,
-          .ldmxcsr (at_ .rbx (oMx l + 4)), .lfence]) (.seq c (.block [.lfence])))
-        (.block [.store32 (at_ .rbx (oMx l)) .rbp, .ldmxcsr (at_ .rbx (oMx l))])))
-    (.block [.vop .vzeroupper])
+/-- `c`, then `vzeroupper`. The vector code sets no MXCSR of its own: the
+dispatcher of every function that runs it runs `vg_mcdt_enter` first, which
+leaves MXCSR `0x1FBF` for the whole call, as MCDT asks of its multiplies
+(see "MCDT" in `TCB/X86_64/Isa.lean`). -/
+def withVzu (c : Prog isa) : Prog isa := .seq c (.block [.vop .vzeroupper])
 
 /-- The vector code: the table, then the windows. -/
-def vec : Prog isa := withMx l (seqs (table l :: windows l))
+def vec : Prog isa := withVzu (seqs (table l :: windows l))
 
 /-- The passing flag into `rax`, and the callee-saved registers back from
 the frame (`rbx` pushed first). -/

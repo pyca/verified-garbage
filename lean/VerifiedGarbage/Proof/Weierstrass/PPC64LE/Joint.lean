@@ -185,7 +185,7 @@ theorem jW_cover {W : List (Nat × Nat)}
     ∀ w ∈ W, ∃ w' ∈ jW J, w'.1 ≤ w.1 ∧ w.1 + w.2 ≤ w'.1 + w'.2 := by
   intro w hw
   rcases hW w hw with h | h
-  · exact ⟨(oAt J.L.M.n, 4096 - oAt J.L.M.n), by simp [jW], h.1, by simp only; omega_using [h]⟩
+  · exact ⟨(oAt J.L.M.n, 4096 - oAt J.L.M.n), by list_mem, h.1, by simp only; omega_using [h]⟩
   · exact ⟨w, h, le_refl _, le_refl _⟩
 
 /-- A slot the loop only reads keeps its value from the start. -/
@@ -196,12 +196,12 @@ theorem ro_keep (hJ : JLay J) {m m₀ : Mem} (hU : Unch base (jW J) m₀ m)
   have hap := hJ.ro x hx
   have hk6 := hJ.lad.k6
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, ho1, h8⟩ := lay_nums hJ.lad.k3 hk6
-  refine hU.wordsVal (fun w hw => ?_) (by omega_arith)
+  refine hU.wordsVal (fun w hw => ?_) (by omega_using [hl, h1, h2, hb3, ha, hq, hp, hoo])
   simp only [jW, List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
   all_goals first
-    | exact hap _ (by simp)
-    | (simp only; omega_arith)
+    | exact hap _ (by list_mem)
+    | (simp only; omega_using [hl])
 
 /-- The slots the loop writes below the point functions' are below them. -/
 theorem wL_low (hJ : JLay J) : ∀ x ∈ wL J, x + 8 * J.L.M.n ≤ oAt J.L.M.n := by
@@ -211,18 +211,19 @@ theorem wL_low (hJ : JLay J) : ∀ x ∈ wL J, x + 8 * J.L.M.n ≤ oAt J.L.M.n :
   · exact hJ.lad.rx
   · exact hJ.lad.ry
   · exact hJ.lad.rz
-  all_goals exact (hJ.low _ (by simp)).1
+  all_goals exact (hJ.low _ (by list_mem)).1
 
 /-- What the loop writes ends below byte 4096. -/
 theorem jW_le (hJ : JLay J) : ∀ w ∈ jW J, w.1 + w.2 ≤ 4096 := by
   have hl := wL_low hJ
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, ho1, h8⟩ := lay_nums hJ.lad.k3 hJ.lad.k6
-  have r1 := hl J.L.R.x (by simp); have r2 := hl J.L.R.y (by simp); have r3 := hl J.L.R.z (by simp)
-  have t1 := hl J.L.T.x (by simp); have t2 := hl J.L.T.y (by simp); have t3 := hl J.L.T.z (by simp)
-  have d1 := hl J.L.D.x (by simp); have d2 := hl J.L.D.y (by simp); have d3 := hl J.L.D.z (by simp)
+  have r1 := hl J.L.R.x (by list_mem); have r2 := hl J.L.R.y (by list_mem); have r3 := hl J.L.R.z (by list_mem)
+  have t1 := hl J.L.T.x (by list_mem); have t2 := hl J.L.T.y (by list_mem); have t3 := hl J.L.T.z (by list_mem)
+  have d1 := hl J.L.D.x (by list_mem); have d2 := hl J.L.D.y (by list_mem); have d3 := hl J.L.D.z (by list_mem)
   intro w hw
   simp only [jW, List.mem_cons, List.not_mem_nil, or_false] at hw
-  rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> (simp only; omega_arith)
+  rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> (simp only; omega_using [h1, h2, hb3, ha,
+      hq, hp, hoo, r1, r2, r3, t1, t2, t3, d1, d2, d3])
 
 /-- A byte above what the loop writes keeps its value. -/
 theorem jW_byte (hJ : JLay J) {m m₀ : Mem} (U : Unch base (jW J) m₀ m) {d : Nat} (h1 : 4096 ≤ d)
@@ -231,20 +232,20 @@ theorem jW_byte (hJ : JLay J) {m m₀ : Mem} (U : Unch base (jW J) m₀ m) {d : 
 
 theorem t_sub : ∀ d ∈ tL J, d ∈ wL J := by
   intro d hd; simp only [tL, List.mem_cons, List.not_mem_nil, or_false] at hd
-  rcases hd with rfl | rfl | rfl <;> simp [wL]
+  rcases hd with rfl | rfl | rfl <;> list_mem
 
 theorem d_sub : ∀ d ∈ dL J, d ∈ wL J := by
   intro d hd; simp only [dL, List.mem_cons, List.not_mem_nil, or_false] at hd
-  rcases hd with rfl | rfl | rfl <;> simp [wL]
+  rcases hd with rfl | rfl | rfl <;> list_mem
 
 /-- The slots of the entries, as `roL` has them. -/
 theorem og_sub : ∀ e ∈ [J.O.x, J.O.y, J.O.z, J.L.G.x, J.L.G.y, J.L.G.z], e ∈ roL J := by
   intro e he; simp only [List.mem_cons, List.not_mem_nil, or_false] at he
-  rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;> simp [roL]
+  rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;> list_mem
 
 theorem qgq_sub : ∀ e ∈ [J.Q.x, J.Q.y, J.Q.z, J.GQ.x, J.GQ.y, J.GQ.z], e ∈ roL J := by
   intro e he; simp only [List.mem_cons, List.not_mem_nil, or_false] at he
-  rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;> simp [roL]
+  rcases he with rfl | rfl | rfl | rfl | rfl | rfl <;> list_mem
 
 theorem low_of (hJ : JLay J) {l : List Nat} (h : ∀ x ∈ l, x ∈ roL J ++ tL J ++ dL J) :
     ∀ x ∈ l, x + 8 * J.L.M.n ≤ oAt J.L.M.n ∧ x % 4 = 0 := fun x hx => hJ.low x (h x hx)
@@ -263,7 +264,7 @@ theorem sel_conds {n : Nat} (hk3 : 3 ≤ n) (hk6 : n ≤ 6) {o a b : Pt}
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo', ho1, h8⟩ := lay_nums hk3 hk6
   refine ⟨fun d hd => (ho d hd).2, fun d hd => ?_, hoo, hab⟩
   have := (ho d hd).1
-  omega_arith
+  omega_using [h1, h2, hb3, ha, hq, hp, hoo', this]
 
 /-- What a selection into the point functions' `Q` from slots below them
 needs. -/
@@ -281,8 +282,11 @@ theorem selQ_conds {n : Nat} (hk3 : 3 ≤ n) (hk6 : n ≤ 6) {a b : Pt}
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, ho1, h8⟩ := lay_nums hk3 hk6
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at ho
   obtain ⟨⟨a1, a1'⟩, ⟨a2, a2'⟩, ⟨a3, a3'⟩, ⟨b1, b1'⟩, ⟨b2, b2'⟩, ⟨b3, b3'⟩⟩ := ho
+  have e4 : qAt n % 4 = 0 ∧ qAt n + 24 * n ≤ 4096 ∧ oAt n + 24 * n ≤ qAt n := by
+    omega_using [h1, h2, he, hb3, ha, hq, hp, hoo, ho1, h8]
+  obtain ⟨q4, qle, qge⟩ := e4
   simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-  omega_arith
+  omega_using [q4, qle, qge, a1, a2, a3, b1, b2, b3, a1', a2', a3', b1', b2', b3', he]
 
 /-- `Apart` is symmetric. -/
 theorem Apart.symm {n x y : Nat} (h : Apart n x y) : Apart n y x := Or.symm h
@@ -320,16 +324,18 @@ theorem dbl_ok {G Q : Point C} {u v : Nat} {S : Impl.Weierstrass.Mont.Modulus}
   have hn := hI.ws.nowrap
   obtain ⟨-, -, -, -, -, rxl, ryl, rzl⟩ := hL.al
   have rx := hL.rx; have ry := hL.ry; have rz := hL.rz
-  have cR := copyPt_conds (a := J.L.R) hk3 hk6 (.inl rfl) (by omega_arith) (by omega_arith) (by omega_arith)
+  have cR := copyPt_conds (a := J.L.R) hk3 hk6 (.inl rfl) (by omega_using [hoo, rx]) (by omega_using [hoo, ry])
+      (by omega_using [hoo, rz])
     ⟨rxl, ryl, rzl⟩
   have cO := copyPt_conds (a := ptAt J.L.M.n (oAt J.L.M.n)) hk3 hk6 (.inl rfl)
-    (by simp only [ptAt]; omega_arith) (by simp only [ptAt]; omega_arith) (by simp only [ptAt]; omega_arith)
-    (by simp only [ptAt]; omega_arith)
-  have lrx : wordsVal s.mem base J.L.R.x J.L.M.n < C.p := hI.lt _ (by simp)
-  have lry : wordsVal s.mem base J.L.R.y J.L.M.n < C.p := hI.lt _ (by simp)
-  have lrz : wordsVal s.mem base J.L.R.z J.L.M.n < C.p := hI.lt _ (by simp)
-  have la : wordsVal s.mem base (aAt J.L.M.n) J.L.M.n < C.p := by rw [hI.ab.1]; exact hF.lt _ (by simp)
-  have lb : wordsVal s.mem base (b3At J.L.M.n) J.L.M.n < C.p := by rw [hI.ab.2]; exact hF.lt _ (by simp)
+    (by simp only [ptAt]; omega_using [he, hoo]) (by simp only [ptAt]; omega_using [he, hoo])
+        (by simp only [ptAt]; omega_using [he, hoo])
+    (by simp only [ptAt]; omega_using [h1, h2, he, hb3, ha, hq, hp, hoo])
+  have lrx : wordsVal s.mem base J.L.R.x J.L.M.n < C.p := hI.lt _ (by list_mem)
+  have lry : wordsVal s.mem base J.L.R.y J.L.M.n < C.p := hI.lt _ (by list_mem)
+  have lrz : wordsVal s.mem base J.L.R.z J.L.M.n < C.p := hI.lt _ (by list_mem)
+  have la : wordsVal s.mem base (aAt J.L.M.n) J.L.M.n < C.p := by rw [hI.ab.1]; exact hF.lt _ (by list_mem)
+  have lb : wordsVal s.mem base (b3At J.L.M.n) J.L.M.n < C.p := by rw [hI.ab.2]; exact hF.lt _ (by list_mem)
   -- `r31 -= 1`.
   refine WP.seq (wp_decCounter hj hI.r31 ?_)
   generalize hs₁ : s.write .r31 (BitVec.ofNat 64 (j - 1)) = s₁
@@ -346,9 +352,9 @@ theorem dbl_ok {G Q : Point C} {u v : Nat} {S : Impl.Weierstrass.Mont.Modulus}
   have U₂ : Unch base [(pAt J.L.M.n, 8 * J.L.M.n), (pAt J.L.M.n + elemBytes J.L.M.n, 8 * J.L.M.n),
       (pAt J.L.M.n + 2 * elemBytes J.L.M.n, 8 * J.L.M.n)] s.mem s₂.mem := O₂
   have a₂ : wordsVal s₂.mem base (aAt J.L.M.n) J.L.M.n = wordsVal s.mem base (aAt J.L.M.n) J.L.M.n :=
-    U₂.wordsVal (by ppc_apart) (by omega_arith)
+    U₂.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha])
   have b₂ : wordsVal s₂.mem base (b3At J.L.M.n) J.L.M.n = wordsVal s.mem base (b3At J.L.M.n) J.L.M.n :=
-    U₂.wordsVal (by ppc_apart) (by omega_arith)
+    U₂.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3])
   -- `O = P + P`.
   refine WP.seq (WP.mono (ptCall_ok (S := ⟨c, w, C.p, J.L.M.n, d⟩) hM hodd hk3 hk6 true (a0 := false) w₂
     (rIds_lt_of true fun x hx => by
@@ -387,10 +393,12 @@ theorem dbl_ok {G Q : Point C} {u v : Nat} {S : Impl.Weierstrass.Mont.Modulus}
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with (h | (rfl | rfl | rfl)) | (rfl | rfl)
       · exact .inr h
-      all_goals exact .inl ⟨by simp only; omega_arith, by simp only; omega_arith⟩),
+      all_goals exact .inl ⟨by simp only; omega_using [hoo, hb3, ha, hq, hp], by simp only; omega_using [h1, h2, hb3,
+          ha, hq, hp, hoo]⟩),
     ⟨?_, ?_⟩, ⟨l3x, l3y, l3z⟩, R₃⟩
-  · rw [(show Unch base _ s₂.mem s₃.mem from O₃).wordsVal (by ppc_apart) (by omega_arith), a₂, hI.ab.1]
-  · rw [(show Unch base _ s₂.mem s₃.mem from O₃).wordsVal (by ppc_apart) (by omega_arith), b₂, hI.ab.2]
+  · rw [(show Unch base _ s₂.mem s₃.mem from O₃).wordsVal (by ppc_apart)
+      (by omega_using [h1, h2, hb3, ha]), a₂, hI.ab.1]
+  · rw [(show Unch base _ s₂.mem s₃.mem from O₃).wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3]), b₂, hI.ab.2]
 
 /-- After the selection: `P` holds `2 acc j` and `Q` the entry of the bits
 `j - 1`. -/
@@ -453,8 +461,9 @@ theorem selU_ok {G Q : Point C} {u v : Nat}
   have hbl := hL.bits
   have hbe := hL.bitsE
   have cO := copyPt_conds (a := ptAt J.L.M.n (oAt J.L.M.n)) hk3 hk6 (.inl rfl)
-    (by simp only [ptAt]; omega_arith) (by simp only [ptAt]; omega_arith) (by simp only [ptAt]; omega_arith)
-    (by simp only [ptAt]; omega_arith)
+    (by simp only [ptAt]; omega_using [he, hoo]) (by simp only [ptAt]; omega_using [he, hoo])
+        (by simp only [ptAt]; omega_using [he, hoo])
+    (by simp only [ptAt]; omega_using [h1, h2, he, hb3, ha, hq, hp, hoo])
   rw [WP.block_append_iff]
   refine WP.mono (copyPt_ok h.ws.ws h.ws.at3 (n := J.L.M.n) (o := ptAt J.L.M.n (pAt J.L.M.n))
     (a := ptAt J.L.M.n (oAt J.L.M.n)) cO.1 cO.2.1 cO.2.2.1 cO.2.2.2) fun s₄ ⟨px₄, py₄, pz₄, k₄, O₄⟩ => ?_
@@ -465,23 +474,24 @@ theorem selU_ok {G Q : Point C} {u v : Nat}
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with h | (rfl | rfl | rfl)
       · exact .inr h
-      all_goals exact .inl ⟨by simp only; omega_arith, by simp only; omega_arith⟩)
+      all_goals exact .inl ⟨by simp only; omega_using [hoo], by simp only; omega_using [h1, h2, hb3, ha, hq, hp]⟩)
   have c₄ : s₄.gpr .r31 = BitVec.ofNat 64 (j - 1) := by rw [k₄.gpr _ (by decide), h.r31]
   rw [WP.block_append_iff]
-  refine WP.mono (bitMask_bool_ok w₄.ws w₄.at3 (d := J.L.bits) c₄ (by omega_arith)
-    (c := u.testBit (j - 1)) (by rw [jW_byte hJ U₄ (by omega_arith) (by omega_arith), hF.bu _ (by omega_using [hj, hjn])]))
+  refine WP.mono (bitMask_bool_ok w₄.ws w₄.at3 (d := J.L.bits) c₄ (by omega_using [hj, hjn, hbe])
+    (c := u.testBit (j - 1)) (by rw [jW_byte hJ U₄ (by omega_using [hbl]) (by omega_using [hjn, hbe]), hF.bu _
+        (by omega_using [hj, hjn])]))
     fun s₅ ⟨g₅, k₅, m₅⟩ => ?_
   have w₅ := w₄.of_rk (k₅.rk (rs' := powClob))
   rw [WP.block_append_iff]
   have sT := sel_conds hk3 hk6 (o := J.L.T) (a := J.O) (b := J.L.G) (low_of hJ (by
       intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [roL, tL, dL]))
+      rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> list_mem))
     hJ.tne (fun d hd e he => Apart.symm (hJ.ro e (og_sub e he) d (t_sub d hd)))
   refine WP.mono (selPt_ok w₅.ws (k₅.at w₄.at3) _ g₅ (n := J.L.M.n) (o := J.L.T) (a := J.O) (b := J.L.G)
     sT.1 sT.2.1 sT.2.2.1 sT.2.2.2) fun s₆ ⟨tx₆, ty₆, tz₆, k₆, O₆⟩ => ?_
   have sD := sel_conds hk3 hk6 (o := J.L.D) (a := J.Q) (b := J.GQ) (low_of hJ (by
       intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [roL, tL, dL]))
+      rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> list_mem))
     hJ.dne (fun d hd e he => Apart.symm (hJ.ro e (qgq_sub e he) d (d_sub d hd)))
   refine WP.mono (selPt_ok (k₆.ws w₅.ws) (k₆.at (k₅.at w₄.at3)) (u.testBit (j - 1))
     (by rw [k₆.gpr _ (by decide)]; exact g₅)
@@ -493,36 +503,37 @@ theorem selU_ok {G Q : Point C} {u v : Nat}
   have U₆ : Unch base (jW J) s₀.mem s₆.mem :=
     (U₄.trans U₆₄).cover (jW_cover fun w hw => by
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with h | (rfl | rfl | rfl) <;> exact .inr (by first | exact h | simp [jW]))
+      rcases hw with h | (rfl | rfl | rfl) <;> exact .inr (by first | exact h | list_mem))
   have U₇ : Unch base (jW J) s₀.mem s₇.mem :=
     (U₆.trans U₇₆).cover (jW_cover fun w hw => by
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with h | (rfl | rfl | rfl) <;> exact .inr (by first | exact h | simp [jW]))
+      rcases hw with h | (rfl | rfl | rfl) <;> exact .inr (by first | exact h | list_mem))
   have tdL : ∀ x ∈ tL J ++ dL J, x + 8 * J.L.M.n ≤ oAt J.L.M.n := fun x hx => by
     rcases List.mem_append.mp hx with h | h
     · exact (hJ.low x (List.mem_append_left _ (List.mem_append_right _ h))).1
     · exact (hJ.low x (List.mem_append_right _ h)).1
-  have tl1 := tdL J.L.T.x (by simp); have tl2 := tdL J.L.T.y (by simp); have tl3 := tdL J.L.T.z (by simp)
-  have dl1 := tdL J.L.D.x (by simp); have dl2 := tdL J.L.D.y (by simp); have dl3 := tdL J.L.D.z (by simp)
+  have tl1 := tdL J.L.T.x (by list_mem); have tl2 := tdL J.L.T.y (by list_mem); have tl3 := tdL J.L.T.z (by list_mem)
+  have dl1 := tdL J.L.D.x (by list_mem); have dl2 := tdL J.L.D.y (by list_mem); have dl3 := tdL J.L.D.z (by list_mem)
   have U₇₄ := U₆₄.trans U₇₆
   have hi : ∀ {x : Nat}, oAt J.L.M.n ≤ x → x + 8 * J.L.M.n ≤ 4096 →
       wordsVal s₇.mem base x J.L.M.n = wordsVal s₄.mem base x J.L.M.n := fun h1 h2 =>
-    U₇₄.wordsVal (by ppc_apart) (by omega_arith)
+    U₇₄.wordsVal (by ppc_apart) (by omega_using [h2])
   have td := hJ.td
   refine ⟨w₅.of_rk ((k₆.rk (rs' := powClob)).trans (k₇.rk (rs' := powClob))),
     by rw [k₇.gpr _ (by decide), k₆.gpr _ (by decide), k₅.gpr _ (by decide), c₄],
     h.keep.trans ((k₄.rk (rs' := powClob)).trans ((k₅.rk (rs' := powClob)).trans ((k₆.rk (rs' := powClob)).trans
       (k₇.rk (rs' := powClob))))), U₇, ⟨?_, ?_⟩, ⟨?_, ?_, ?_⟩, ?_, ?_, ?_⟩
-  · rw [hi (by omega_arith) (by omega_arith),
-      (show Unch base _ s₃.mem s₄.mem from O₄).wordsVal (by ppc_apart) (by omega_arith), h.ab.1]
-  · rw [hi (by omega_arith) (by omega_arith),
-      (show Unch base _ s₃.mem s₄.mem from O₄).wordsVal (by ppc_apart) (by omega_arith), h.ab.2]
-  · rw [hi (by omega_arith) (by omega_arith), px₄]; exact h.lt.1
-  · rw [hi (by omega_arith) (by omega_arith), py₄]; exact h.lt.2.1
-  · rw [hi (by omega_arith) (by omega_arith), pz₄]; exact h.lt.2.2
+  · rw [hi (by omega_using [hq, hp, hoo]) (by omega_using [h1, h2, hb3, ha]),
+      (show Unch base _ s₃.mem s₄.mem from O₄).wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha]), h.ab.1]
+  · rw [hi (by omega_using [ha, hq, hp, hoo]) (by omega_using [h1, h2, hb3]),
+      (show Unch base _ s₃.mem s₄.mem from O₄).wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3]), h.ab.2]
+  · rw [hi (by omega_using [hoo]) (by omega_using [h1, h2, hb3, ha, hq, hp]), px₄]; exact h.lt.1
+  · rw [hi (by omega_using [hoo]) (by omega_using [h1, h2, hb3, ha, hq, hp]), py₄]; exact h.lt.2.1
+  · rw [hi (by omega_using [hoo]) (by omega_using [h1, h2, hb3, ha, hq, hp]), pz₄]; exact h.lt.2.2
   · show Rep C (toM _ _ _) (toM _ _ _) (toM _ _ _) _
-    rw [hi (by omega_arith) (by omega_arith), hi (by omega_arith) (by omega_arith),
-      hi (by omega_arith) (by omega_arith), px₄, py₄, pz₄]
+    rw [hi (by omega_using [hoo]) (by omega_using [h1, h2, hb3, ha, hq, hp]), hi (by omega_using [hoo])
+        (by omega_using [h1, h2, hb3, ha, hq, hp]),
+      hi (by omega_using [hoo]) (by omega_using [h1, h2, hb3, ha, hq, hp]), px₄, py₄, pz₄]
     exact h.rep
   · intro i hi'
     have k₄₀ : ∀ {x : Nat}, x ∈ roL J → wordsVal s₅.mem base x J.L.M.n = wordsVal s₀.mem base x J.L.M.n :=
@@ -530,21 +541,21 @@ theorem selU_ok {G Q : Point C} {u v : Nat}
     have t76 : ∀ {x : Nat}, x ∈ tL J → wordsVal s₇.mem base x J.L.M.n = wordsVal s₆.mem base x J.L.M.n :=
       fun hx => U₇₆.wordsVal (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-        rcases hw with rfl | rfl | rfl <;> exact td _ hx _ (by simp))
-        (by have := tdL _ (List.mem_append_left _ hx); omega_arith)
+        rcases hw with rfl | rfl | rfl <;> exact td _ hx _ (by list_mem))
+        (by have := tdL _ (List.mem_append_left _ hx); omega_using [h1, h2, hb3, ha, hq, hp, hoo, this])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi'
     rcases hi' with rfl | rfl | rfl
-    · rw [t76 (by simp), tx₆, k₄₀ (by simp), k₄₀ (by simp)]
-    · rw [t76 (by simp), ty₆, k₄₀ (by simp), k₄₀ (by simp)]
-    · rw [t76 (by simp), tz₆, k₄₀ (by simp), k₄₀ (by simp)]
+    · rw [t76 (by list_mem), tx₆, k₄₀ (by list_mem), k₄₀ (by list_mem)]
+    · rw [t76 (by list_mem), ty₆, k₄₀ (by list_mem), k₄₀ (by list_mem)]
+    · rw [t76 (by list_mem), tz₆, k₄₀ (by list_mem), k₄₀ (by list_mem)]
   · intro i hi'
     have k₆₀ : ∀ {x : Nat}, x ∈ roL J → wordsVal s₆.mem base x J.L.M.n = wordsVal s₀.mem base x J.L.M.n :=
       fun hx => ro_keep hJ U₆ hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi'
     rcases hi' with rfl | rfl | rfl
-    · rw [dx₇, k₆₀ (by simp), k₆₀ (by simp)]
-    · rw [dy₇, k₆₀ (by simp), k₆₀ (by simp)]
-    · rw [dz₇, k₆₀ (by simp), k₆₀ (by simp)]
+    · rw [dx₇, k₆₀ (by list_mem), k₆₀ (by list_mem)]
+    · rw [dy₇, k₆₀ (by list_mem), k₆₀ (by list_mem)]
+    · rw [dz₇, k₆₀ (by list_mem), k₆₀ (by list_mem)]
 
 /-- `Q = v ? D : T`: the entry. -/
 theorem selV_ok {G Q : Point C} {u v : Nat}
@@ -559,12 +570,13 @@ theorem selV_ok {G Q : Point C} {u v : Nat}
   have hn := h.ws.nowrap
   have hbv := hJ.bitsV
   rw [WP.block_append_iff]
-  refine WP.mono (bitMask_bool_ok h.ws.ws h.ws.at3 (d := J.bitsV) h.r31 (by omega_arith)
-    (c := v.testBit (j - 1)) (by rw [jW_byte hJ h.unch (by omega_arith) (by omega_arith), hF.bv _ (by omega_using [hj, hjn])]))
+  refine WP.mono (bitMask_bool_ok h.ws.ws h.ws.at3 (d := J.bitsV) h.r31 (by omega_using [hj, hjn, hbv])
+    (c := v.testBit (j - 1)) (by rw [jW_byte hJ h.unch (by omega_using [hbv]) (by omega_using [hjn, hbv]), hF.bv _
+        (by omega_using [hj, hjn])]))
     fun s₈ ⟨g₈, k₈, m₈⟩ => ?_
   have sQ := selQ_conds hk3 hk6 (a := J.L.T) (b := J.L.D) (low_of hJ (by
       intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-      rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> simp [roL, tL, dL]))
+      rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> list_mem))
   refine WP.mono (selPt_ok (k₈.ws h.ws.ws) (k₈.at h.ws.at3) (v.testBit (j - 1)) g₈ (n := J.L.M.n)
     (o := ptAt J.L.M.n (qAt J.L.M.n)) (a := J.L.T) (b := J.L.D) sQ.1 sQ.2.1 sQ.2.2.1 sQ.2.2.2)
     fun s₉ ⟨qx₉, qy₉, qz₉, k₉, O₉⟩ => ?_
@@ -574,14 +586,14 @@ theorem selV_ok {G Q : Point C} {u v : Nat}
       (qAt J.L.M.n + 2 * elemBytes J.L.M.n, 8 * J.L.M.n)] s₇.mem s₉.mem := O₉
   have hi : ∀ {x : Nat}, x + 8 * J.L.M.n ≤ qAt J.L.M.n ∨ aAt J.L.M.n ≤ x → x + 8 * J.L.M.n ≤ 4096 →
       wordsVal s₉.mem base x J.L.M.n = wordsVal s₇.mem base x J.L.M.n := fun h1 h2 =>
-    U₉₇.wordsVal (by ppc_apart) (by omega_arith)
+    U₉₇.wordsVal (by ppc_apart) (by omega_using [h2])
   have ex : ∀ {x t d gq q g o : Nat}, x = (if v.testBit (j - 1) then d else t) →
       d = (if u.testBit (j - 1) then gq else q) → t = (if u.testBit (j - 1) then g else o) →
       x = if v.testBit (j - 1) then (if u.testBit (j - 1) then gq else q)
         else (if u.testBit (j - 1) then g else o) := fun hx hd ht => by rw [hx, hd, ht]
-  have vx := ex qx₉ (h.d (J.L.D.x, J.GQ.x, J.Q.x) (by simp)) (h.t (J.L.T.x, J.L.G.x, J.O.x) (by simp))
-  have vy := ex qy₉ (h.d (J.L.D.y, J.GQ.y, J.Q.y) (by simp)) (h.t (J.L.T.y, J.L.G.y, J.O.y) (by simp))
-  have vz := ex qz₉ (h.d (J.L.D.z, J.GQ.z, J.Q.z) (by simp)) (h.t (J.L.T.z, J.L.G.z, J.O.z) (by simp))
+  have vx := ex qx₉ (h.d (J.L.D.x, J.GQ.x, J.Q.x) (by list_mem)) (h.t (J.L.T.x, J.L.G.x, J.O.x) (by list_mem))
+  have vy := ex qy₉ (h.d (J.L.D.y, J.GQ.y, J.Q.y) (by list_mem)) (h.t (J.L.T.y, J.L.G.y, J.O.y) (by list_mem))
+  have vz := ex qz₉ (h.d (J.L.D.z, J.GQ.z, J.Q.z) (by list_mem)) (h.t (J.L.T.z, J.L.G.z, J.O.z) (by list_mem))
   dsimp only at vx vy vz
   have lt := hF.lt
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at lt
@@ -593,16 +605,17 @@ theorem selV_ok {G Q : Point C} {u v : Nat}
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with h | (rfl | rfl | rfl)
       · exact .inr h
-      all_goals exact .inl ⟨by simp only; omega_arith, by simp only; omega_arith⟩),
+      all_goals exact .inl ⟨by simp only; omega_using [hp, hoo], by simp only; omega_using [h1, h2, hb3, ha, hq]⟩),
     ⟨?_, ?_⟩, ⟨?_, ?_, ?_⟩, ?_, ⟨?_, ?_, ?_⟩, ?_⟩
-  · rw [hi (.inr le_rfl) (by omega_arith)]; exact h.ab.1
-  · rw [hi (.inr (by omega_arith)) (by omega_arith)]; exact h.ab.2
-  · rw [hi (.inl (by omega_arith)) (by omega_arith)]; exact h.plt.1
-  · rw [hi (.inl (by omega_arith)) (by omega_arith)]; exact h.plt.2.1
-  · rw [hi (.inl (by omega_arith)) (by omega_arith)]; exact h.plt.2.2
+  · rw [hi (.inr le_rfl) (by omega_using [h1, h2, hb3, ha])]; exact h.ab.1
+  · rw [hi (.inr (by omega_using [ha])) (by omega_using [h1, h2, hb3])]; exact h.ab.2
+  · rw [hi (.inl (by omega_using [he, hp])) (by omega_using [h1, h2, hb3, ha, hq, hp])]; exact h.plt.1
+  · rw [hi (.inl (by omega_using [he, hp])) (by omega_using [h1, h2, hb3, ha, hq, hp])]; exact h.plt.2.1
+  · rw [hi (.inl (by omega_using [he, hp])) (by omega_using [h1, h2, hb3, ha, hq, hp])]; exact h.plt.2.2
   · show Rep C (toM _ _ _) (toM _ _ _) (toM _ _ _) _
-    rw [hi (.inl (by omega_arith)) (by omega_arith), hi (.inl (by omega_arith)) (by omega_arith),
-      hi (.inl (by omega_arith)) (by omega_arith)]
+    rw [hi (.inl (by omega_using [he, hp])) (by omega_using [h1, h2, hb3, ha, hq, hp]), hi (.inl
+        (by omega_using [he, hp])) (by omega_using [h1, h2, hb3, ha, hq, hp]),
+      hi (.inl (by omega_using [he, hp])) (by omega_using [h1, h2, hb3, ha, hq, hp])]
     exact h.prep
   · rw [vx]; split <;> split <;> with_reducible assumption
   · rw [vy]; split <;> split <;> with_reducible assumption
@@ -633,7 +646,8 @@ theorem copyR_conds (hJ : JLay J) :
   obtain ⟨-, -, -, -, -, rxl, ryl, rzl⟩ := hL.al
   have rx := hL.rx; have ry := hL.ry; have rz := hL.rz
   refine ⟨?_, ?_, hL.rne, ?_⟩ <;>
-    simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] <;> omega_arith
+    simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] <;> omega_using [h1, h2,
+        he, hb3, ha, hq, hp, hoo, rxl, ryl, rzl, rx, ry, rz]
 
 /-- `O = P + Q`, `R = O`. -/
 theorem add_ok {G Q : Point C} {u v : Nat} {S : Impl.Weierstrass.Mont.Modulus}
@@ -651,8 +665,8 @@ theorem add_ok {G Q : Point C} {u v : Nat} {S : Impl.Weierstrass.Mont.Modulus}
   have hk6 := hL.k6
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, ho1, h8⟩ := lay_nums hk3 hk6
   have hn := h.ws.nowrap
-  have la : wordsVal s₉.mem base (aAt J.L.M.n) J.L.M.n < C.p := by rw [h.ab.1]; exact hF.lt _ (by simp)
-  have lb : wordsVal s₉.mem base (b3At J.L.M.n) J.L.M.n < C.p := by rw [h.ab.2]; exact hF.lt _ (by simp)
+  have la : wordsVal s₉.mem base (aAt J.L.M.n) J.L.M.n < C.p := by rw [h.ab.1]; exact hF.lt _ (by list_mem)
+  have lb : wordsVal s₉.mem base (b3At J.L.M.n) J.L.M.n < C.p := by rw [h.ab.2]; exact hF.lt _ (by list_mem)
   refine WP.seq (WP.mono (ptCall_ok (S := ⟨c, w, C.p, J.L.M.n, d⟩) hM hodd hk3 hk6 false (a0 := false) h.ws
     (rIds_lt_of false fun x hx => by
       simp only [Bool.false_eq_true, ↓reduceIte, List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -695,14 +709,14 @@ theorem add_ok {G Q : Point C} {u v : Nat} {S : Impl.Weierstrass.Mont.Modulus}
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with (h | (rfl | rfl)) | (rfl | rfl | rfl)
       · exact .inr h
-      · exact .inl ⟨by simp only; omega_arith, by simp only; omega_arith⟩
-      · exact .inl ⟨by simp only; omega_arith, by simp only; omega_arith⟩
-      all_goals exact .inr (by simp [jW])), ⟨?_, ?_⟩, ?_, ?_⟩
-  · rw [U₁₁.wordsVal (by ppc_apart) (by omega_arith),
-      (show Unch base _ s₉.mem s₁₀.mem from O₁₀).wordsVal (by ppc_apart) (by omega_arith)]
+      · exact .inl ⟨by simp only; omega_using [], by simp only; omega_using [h1, h2, hb3, ha, hq, hp, hoo]⟩
+      · exact .inl ⟨by simp only; omega_using [hb3, ha, hq, hp, hoo], by simp only; omega_using [h1, h2]⟩
+      all_goals exact .inr (by list_mem)), ⟨?_, ?_⟩, ?_, ?_⟩
+  · rw [U₁₁.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha]),
+      (show Unch base _ s₉.mem s₁₀.mem from O₁₀).wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha])]
     exact h.ab.1
-  · rw [U₁₁.wordsVal (by ppc_apart) (by omega_arith),
-      (show Unch base _ s₉.mem s₁₀.mem from O₁₀).wordsVal (by ppc_apart) (by omega_arith)]
+  · rw [U₁₁.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3]),
+      (show Unch base _ s₉.mem s₁₀.mem from O₁₀).wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3])]
     exact h.ab.2
   · intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -757,7 +771,7 @@ theorem loop_ok {G Q : Point C} {u v : Nat} {S : Impl.Weierstrass.Mont.Modulus}
     (fun j s' h1 h2 hi => body_ok hkS hmS hM hodd hC hG hQ hJ hF h1 h2 hi)
     (fun s' hi => ⟨hi.keep, hi.unch, hi.lt, by
       have := hi.rep
-      rwa [acc, Nat.shiftRight_zero, Nat.shiftRight_zero] at this⟩) hnb.1 (by omega_arith)
+      rwa [acc, Nat.shiftRight_zero, Nat.shiftRight_zero] at this⟩) hnb.1 (by omega_using [hnb])
     ⟨hw, h31, Rk.refl _ _, Unch.refl _ _ _, ⟨rfl, rfl⟩, hlt, by rw [top]; exact hR⟩
 
 /-- After the setup and the first addition: the point functions' `a` and
@@ -800,23 +814,28 @@ theorem setup_ok {G Q : Point C} {S : Impl.Weierstrass.Mont.Modulus}
   have qsub : ∀ x ∈ [J.Q.x, J.Q.y, J.Q.z], x ∈ roL J ++ tL J ++ dL J := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl <;> simp [roL]
+    rcases hx with rfl | rfl | rfl <;> list_mem
   have qL := low_of hJ qsub
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at qL
   obtain ⟨⟨qx1, qx2⟩, ⟨qy1, qy2⟩, ⟨qz1, qz2⟩⟩ := qL
-  have cG := copyPt_conds (a := J.L.G) hk3 hk6 (.inl rfl) (by omega_arith) (by omega_arith) (by omega_arith)
+  have cG := copyPt_conds (a := J.L.G) hk3 hk6 (.inl rfl) (by omega_using [hoo, sgx]) (by omega_using [hoo, sgy])
+      (by omega_using [hoo, sgz])
     ⟨gxl, gyl, gzl⟩
-  have cQ := copyPt_conds (a := J.Q) hk3 hk6 (.inr rfl) (by omega_arith) (by omega_arith) (by omega_arith)
+  have cQ := copyPt_conds (a := J.Q) hk3 hk6 (.inr rfl) (by omega_using [hp, hoo, qx1]) (by omega_using [hp, hoo, qy1])
+      (by omega_using [hp, hoo, qz1])
     ⟨qx2, qy2, qz2⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hlt
   obtain ⟨la, lb, lgx, lgy, lgz, lqx, lqy, lqz⟩ := hlt
   refine WP.seq ?_
   rw [JointCfg.setup, List.append_assoc, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (copy_ok J.L.M.n hw.ws hw.at3 (o := aAt J.L.M.n) (a := J.L.S.a) (by omega_arith) al
-    (by omega_arith) (by omega_arith) (by omega_arith)) fun s₁ ⟨a₁, k₁, O₁⟩ => ?_
+  refine WP.mono (copy_ok J.L.M.n hw.ws hw.at3 (o := aAt J.L.M.n) (a := J.L.S.a) (by omega_using [h1, h2, hb3, ha]) al
+    (by omega_using [h1, h2, hb3, ha]) (by omega_using [h1, h2, hb3, ha, hq', hp, hoo, sa])
+        (by omega_using [hq', hp, hoo, sa])) fun s₁ ⟨a₁, k₁, O₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (copy_ok J.L.M.n (k₁.ws hw.ws) (k₁.at hw.at3) (o := b3At J.L.M.n) (a := J.L.S.b3)
-    (by omega_arith) bl (by omega_arith) (by omega_arith) (by omega_arith)) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_
+    (by omega_using [h1, h2, he, hb3]) bl (by omega_using [h1, h2, hb3])
+        (by omega_using [h1, h2, hb3, ha, hq', hp, hoo, sb])
+        (by omega_using [ha, hq', hp, hoo, sb])) fun s₂ ⟨b₂, k₂, O₂⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (copyPt_ok (k₂.ws (k₁.ws hw.ws)) (k₂.at (k₁.at hw.at3)) (n := J.L.M.n)
     (o := ptAt J.L.M.n (pAt J.L.M.n)) (a := J.L.G) cG.1 cG.2.1 cG.2.2.1 cG.2.2.2)
@@ -833,21 +852,24 @@ theorem setup_ok {G Q : Point C} {S : Impl.Weierstrass.Mont.Modulus}
       (qAt J.L.M.n + 2 * elemBytes J.L.M.n, 8 * J.L.M.n)] s₃.mem s₄.mem := O₄
   have lo : ∀ {x : Nat}, x + 8 * J.L.M.n ≤ oAt J.L.M.n →
       wordsVal s₂.mem base x J.L.M.n = wordsVal s.mem base x J.L.M.n := fun h =>
-    (U₃.wordsVal (by ppc_apart) (by omega_arith)).trans (U₂.wordsVal (by ppc_apart) (by omega_arith))
+    (U₃.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha, hq', hp, hoo, h])).trans (U₂.wordsVal (by ppc_apart)
+        (by omega_using [h1, h2, hb3, ha, hq', hp, hoo, h]))
   have lo3 : ∀ {x : Nat}, x + 8 * J.L.M.n ≤ oAt J.L.M.n →
       wordsVal s₃.mem base x J.L.M.n = wordsVal s.mem base x J.L.M.n := fun h =>
-    (U₄.wordsVal (by ppc_apart) (by omega_arith)).trans (lo h)
+    (U₄.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha, hq', hp, hoo, h])).trans (lo h)
   -- What the call reads.
   have a₄ : wordsVal s₄.mem base (aAt J.L.M.n) J.L.M.n = wordsVal s.mem base J.L.S.a J.L.M.n := by
-    rw [U₅.wordsVal (by ppc_apart) (by omega_arith), U₄.wordsVal (by ppc_apart) (by omega_arith),
-      U₃.wordsVal (by ppc_apart) (by omega_arith), a₁]
+    rw [U₅.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha]), U₄.wordsVal (by ppc_apart)
+        (by omega_using [h1, h2, hb3, ha]),
+      U₃.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha]), a₁]
   have b₄ : wordsVal s₄.mem base (b3At J.L.M.n) J.L.M.n = wordsVal s.mem base J.L.S.b3 J.L.M.n := by
-    rw [U₅.wordsVal (by ppc_apart) (by omega_arith), U₄.wordsVal (by ppc_apart) (by omega_arith), b₂,
-      U₂.wordsVal (by ppc_apart) (by omega_arith)]
+    rw [U₅.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3]), U₄.wordsVal (by ppc_apart)
+        (by omega_using [h1, h2, hb3]), b₂,
+      U₂.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha, hq', hp, hoo, sb])]
   have p₄ : ∀ i < 3, wordsVal s₄.mem base (pAt J.L.M.n + i * elemBytes J.L.M.n) J.L.M.n =
       wordsVal s₃.mem base (pAt J.L.M.n + i * elemBytes J.L.M.n) J.L.M.n := fun i hi => by
     obtain rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 := by omega_using [hi]
-    all_goals exact U₅.wordsVal (by ppc_apart) (by omega_arith)
+    all_goals exact U₅.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha, hq', hp])
   have gx₄ : wordsVal s₄.mem base (pAt J.L.M.n) J.L.M.n = wordsVal s.mem base J.L.G.x J.L.M.n := by
     have := p₄ 0 (by decide); simp only [Nat.zero_mul, Nat.add_zero] at this
     rw [this, gx₃, lo sgx]
@@ -897,9 +919,9 @@ theorem setup_ok {G Q : Point C} {S : Impl.Weierstrass.Mont.Modulus}
     ((((U₂.trans U₃).trans U₄).trans U₅).trans U₆).cover (pt_cover hk3 hk6 fun w hw => by
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with ((((rfl | rfl) | rfl | rfl | rfl) | rfl | rfl | rfl) | rfl | rfl) <;>
-        (simp only; omega_arith)), ⟨?_, ?_⟩, ⟨l0, l1, l2⟩, hC.add hG hQ hg hq E₅.symm⟩
-  · rw [U₆.wordsVal (by ppc_apart) (by omega_arith)]; exact a₄
-  · rw [U₆.wordsVal (by ppc_apart) (by omega_arith)]; exact b₄
+        (simp only; omega_using [h1, h2, hb3, ha, hq', hp, hoo])), ⟨?_, ?_⟩, ⟨l0, l1, l2⟩, hC.add hG hQ hg hq E₅.symm⟩
+  · rw [U₆.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha])]; exact a₄
+  · rw [U₆.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3])]; exact b₄
 
 /-- What the start writes: `G + Q`'s slots and `R`'s. -/
 abbrev startW (J : JointCfg) : List (Nat × Nat) :=
@@ -926,15 +948,15 @@ theorem start_apart (hJ : JLay J) :
   intro d hd y hy
   have hd' : d ∈ roL J := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
-    rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [roL]
+    rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> list_mem
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
   rcases hy with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact (hJ.gq.2 _ (by simp) d hd).symm
-  · exact (hJ.gq.2 _ (by simp) d hd).symm
-  · exact (hJ.gq.2 _ (by simp) d hd).symm
-  · exact hJ.ro d hd' _ (by simp [wL])
-  · exact hJ.ro d hd' _ (by simp [wL])
-  · exact hJ.ro d hd' _ (by simp [wL])
+  · exact (hJ.gq.2 _ (by list_mem) d hd).symm
+  · exact (hJ.gq.2 _ (by list_mem) d hd).symm
+  · exact (hJ.gq.2 _ (by list_mem) d hd).symm
+  · exact hJ.ro d hd' _ (by list_mem)
+  · exact hJ.ro d hd' _ (by list_mem)
+  · exact hJ.ro d hd' _ (by list_mem)
 
 /-- `G + Q`'s slots and `R`'s are below the point functions'. -/
 theorem start_low (hJ : JLay J) : ∀ w ∈ startW J, w.1 + w.2 ≤ oAt J.L.M.n ∧ w.2 = 8 * J.L.M.n := by
@@ -942,9 +964,9 @@ theorem start_low (hJ : JLay J) : ∀ w ∈ startW J, w.1 + w.2 ≤ oAt J.L.M.n 
   simp only [startW, List.mem_cons, List.not_mem_nil, or_false] at hw
   have hL := hJ.lad
   rcases hw with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact ⟨(hJ.low _ (by simp [roL])).1, rfl⟩
-  · exact ⟨(hJ.low _ (by simp [roL])).1, rfl⟩
-  · exact ⟨(hJ.low _ (by simp [roL])).1, rfl⟩
+  · exact ⟨(hJ.low _ (by list_mem)).1, rfl⟩
+  · exact ⟨(hJ.low _ (by list_mem)).1, rfl⟩
+  · exact ⟨(hJ.low _ (by list_mem)).1, rfl⟩
   · exact ⟨hL.rx, rfl⟩
   · exact ⟨hL.ry, rfl⟩
   · exact ⟨hL.rz, rfl⟩
@@ -955,10 +977,10 @@ theorem start_gR (hJ : JLay J) :
   intro g hg r hr
   have hg' : g ∈ roL J := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
-    rcases hg with rfl | rfl | rfl <;> simp [roL]
+    rcases hg with rfl | rfl | rfl <;> list_mem
   have hr' : r ∈ wL J := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> simp [wL]
+    rcases hr with rfl | rfl | rfl <;> list_mem
   exact hJ.ro g hg' r hr'
 
 /-- What the start block does. -/
@@ -985,7 +1007,7 @@ theorem start_run (hJ : JLay J) {t : State} (hw : WsReg t base) (hone' : J.one <
   have gqs : ∀ x ∈ [J.GQ.x, J.GQ.y, J.GQ.z], x ∈ roL J ++ tL J ++ dL J := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-    rcases hx with rfl | rfl | rfl <;> simp [roL]
+    rcases hx with rfl | rfl | rfl <;> list_mem
   have gqL := low_of hJ gqs
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at gqL
   obtain ⟨⟨gx1, gx2⟩, ⟨gy1, gy2⟩, ⟨gz1, gz2⟩⟩ := gqL
@@ -993,21 +1015,25 @@ theorem start_run (hJ : JLay J) {t : State} (hw : WsReg t base) (hone' : J.one <
   simp only [List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (copyPt_ok hw.ws hw.at3 (n := J.L.M.n) (o := J.GQ) (a := ptAt J.L.M.n (oAt J.L.M.n))
-    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith)
-    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith)
+    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_using [h1, h2,
+        he, hb3, ha, hq', hp', hoo, gx2, gy2, gz2])
+    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_using [h1, h2,
+        hb3, ha, hq', hp', hoo, gx1, gy1, gz1])
     hJ.gq.1
-    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith))
+    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_using [gx1, gy1,
+        gz1]))
     fun s₁ ⟨x₁, y₁, z₁, k₁, O₁⟩ => ?_
   simp only [ptAt] at x₁ y₁ z₁
   rw [WP.block_append_iff]
   refine WP.mono (setConst_ok (k₁.ws hw.ws) (k₁.at hw.at3) (n := J.L.M.n) (o := J.L.R.x) (x := 0)
-    (by omega_arith) (Nat.two_pow_pos _)) fun s₂ ⟨O₂, v₂, k₂⟩ => ?_
+    (by omega_using [h1, h2, hb3, ha, hq', hp', hoo, rx]) (Nat.two_pow_pos _)) fun s₂ ⟨O₂, v₂, k₂⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (setConst_ok (k₂.ws (k₁.ws hw.ws)) (k₂.at (k₁.at hw.at3)) (n := J.L.M.n) (o := J.L.R.y)
-    (x := J.one) (by omega_arith) hone') fun s₃ ⟨O₃, v₃, k₃⟩ => ?_
+    (x := J.one) (by omega_using [h1, h2, hb3, ha, hq', hp', hoo, ry]) hone') fun s₃ ⟨O₃, v₃, k₃⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (setConst_ok (k₃.ws (k₂.ws (k₁.ws hw.ws))) (k₃.at (k₂.at (k₁.at hw.at3))) (n := J.L.M.n)
-    (o := J.L.R.z) (x := 0) (by omega_arith) (Nat.two_pow_pos _)) fun s₄ ⟨O₄, v₄, k₄⟩ =>
+    (o := J.L.R.z) (x := 0)
+        (by omega_using [h1, h2, hb3, ha, hq', hp', hoo, rz]) (Nat.two_pow_pos _)) fun s₄ ⟨O₄, v₄, k₄⟩ =>
     wp_step (exec_li hnb.2) (WP.block_nil ?_)
   have U₁ : Unch base [(J.GQ.x, 8 * J.L.M.n), (J.GQ.y, 8 * J.L.M.n), (J.GQ.z, 8 * J.L.M.n)] t.mem s₁.mem := O₁
   have gR := start_gR hJ
@@ -1020,19 +1046,22 @@ theorem start_run (hJ : JLay J) {t : State} (hw : WsReg t base) (hone' : J.one <
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
       rcases hg with rfl | rfl | rfl <;> simp)).1
     simp only at l
-    rw [O₄.wordsVal (gR g hg _ (by simp)) (by omega_arith),
-      O₃.wordsVal (gR g hg _ (by simp)) (by omega_arith), O₂.wordsVal (gR g hg _ (by simp)) (by omega_arith), e]
+    rw [O₄.wordsVal (gR g hg _ (by list_mem)) (by omega_using [h1, h2, hb3, ha, hq', hp', hoo, l]),
+      O₃.wordsVal (gR g hg _ (by list_mem))
+          (by omega_using [h1, h2, hb3, ha, hq', hp', hoo, l]), O₂.wordsVal (gR g hg _ (by list_mem))
+          (by omega_using [h1, h2, hb3, ha, hq', hp', hoo, l]), e]
   refine ⟨(k₁.mono (by decide)).trans ((k₂.mono (by decide)).trans ((k₃.mono (by decide)).trans
       ((k₄.mono (by decide)).trans (Kp.write _ _ (by decide))))), ?_, by simp only [write_gpr, ite_true],
     ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [write_mem]
   · exact ((U₁.trans O₂.unch).trans O₃.unch).trans O₄.unch |>.mono fun w hw => by
       simpa only [List.cons_append, List.nil_append] using hw
-  · rw [O₄.wordsVal hRR.2.1 (by omega_arith), O₃.wordsVal hRR.1 (by omega_arith), wordsVal_eq_val32, v₂]
-  · rw [O₄.wordsVal hRR.2.2 (by omega_arith), wordsVal_eq_val32, v₃]
+  · rw [O₄.wordsVal hRR.2.1 (by omega_using [h1, h2, hb3, ha, hq', hp', hoo, rx]), O₃.wordsVal hRR.1
+      (by omega_using [h1, h2, hb3, ha, hq', hp', hoo, rx]), wordsVal_eq_val32, v₂]
+  · rw [O₄.wordsVal hRR.2.2 (by omega_using [h1, h2, hb3, ha, hq', hp', hoo, ry]), wordsVal_eq_val32, v₃]
   · rw [wordsVal_eq_val32, v₄]
-  · exact gq (by simp) x₁
-  · exact gq (by simp) y₁
-  · exact gq (by simp) z₁
+  · exact gq (by list_mem) x₁
+  · exact gq (by list_mem) y₁
+  · exact gq (by list_mem) z₁
 
 /-- `G + Q` from `O` to its slots, `R = (0 : 1 : 0)`, and the counter. -/
 theorem start_ok {G Q : Point C} {u v : Nat} (hC : Law C) (hJ : JLay J) {t : State} (hw : WsReg t base)
@@ -1063,13 +1092,13 @@ theorem start_ok {G Q : Point C} {u v : Nat} (hC : Law C) (hJ : JLay J) {t : Sta
       d + 8 * J.L.M.n ≤ 8192 → wordsVal s₀.mem base d J.L.M.n = wordsVal t.mem base d J.L.M.n :=
     fun hd hd' => R.unch.wordsVal (fun w hw => by
       simp only [startW, List.mem_cons, List.not_mem_nil, or_false] at hw
-      rcases hw with rfl | rfl | rfl | rfl | rfl | rfl <;> exact hd _ (by simp)) (by omega_arith)
+      rcases hw with rfl | rfl | rfl | rfl | rfl | rfl <;> exact hd _ (by list_mem)) (by omega_using [hd'])
   have roLow : ∀ d ∈ [J.L.G.x, J.L.G.y, J.L.G.z, J.Q.x, J.Q.y, J.Q.z, J.O.x, J.O.y, J.O.z],
       d + 8 * J.L.M.n ≤ 8192 := fun d hd => by
     have : d + 8 * J.L.M.n ≤ oAt J.L.M.n := (hJ.low d (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
-      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [roL])).1
-    omega_arith
+      rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> list_mem)).1
+    omega_using [h1, h2, hb3, ha, hq', hp', hoo, this]
   have kp : ∀ d ∈ [J.L.G.x, J.L.G.y, J.L.G.z, J.Q.x, J.Q.y, J.Q.z, J.O.x, J.O.y, J.O.z],
       wordsVal s₀.mem base d J.L.M.n = wordsVal t.mem base d J.L.M.n :=
     fun d hd => keep (start_apart hJ d hd) (roLow d hd)
@@ -1078,9 +1107,9 @@ theorem start_ok {G Q : Point C} {u v : Nat} (hC : Law C) (hJ : JLay J) {t : Sta
     R.unch.wordsVal (fun w hw => by
       obtain ⟨l1, l2⟩ := low w hw
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
-      right; rcases hd with rfl | rfl <;> omega_arith) (by
+      right; rcases hd with rfl | rfl <;> omega_using [hq', hp', hoo, l1, ha]) (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
-      rcases hd with rfl | rfl <;> omega_arith)
+      rcases hd with rfl | rfl <;> omega_using [h1, h2, hb3, ha])
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at kp kab hlt
   obtain ⟨kgx, kgy, kgz, kqx, kqy, kqz, kox, koy, koz⟩ := kp
   obtain ⟨ka, kb⟩ := kab
@@ -1091,7 +1120,7 @@ theorem start_ok {G Q : Point C} {u v : Nat} (hC : Law C) (hJ : JLay J) {t : Sta
   have by4 : ∀ {d : Nat}, 4096 ≤ d → d < 8192 → s₀.mem (off base d) = t.mem (off base d) := fun h1 h2 =>
     R.unch.byte (fun w hw => by
       obtain ⟨l1, -⟩ := low w hw
-      right; omega_arith) (by omega_arith)
+      right; omega_arith) (by omega_using [h2])
   have hbV := hJ.bitsV
   have hbL := hL.bits
   have hbE := hL.bitsE
@@ -1137,7 +1166,7 @@ theorem jointW_cover : ∀ w ∈ ([(oAt J.L.M.n, 4096 - oAt J.L.M.n)] ++ startW 
   rcases hw with (h | h) | h
   · exact List.mem_append_left _ (by simp at h; simp [jW, h])
   · simp only [startW, List.mem_cons, List.not_mem_nil, or_false] at h
-    rcases h with rfl | rfl | rfl | rfl | rfl | rfl <;> simp [jointW, jW]
+    rcases h with rfl | rfl | rfl | rfl | rfl | rfl <;> list_mem
   · exact List.mem_append_left _ h
 
 /-- What the setup leaves for the start: the setup's facts, at its end `t`. -/
@@ -1171,11 +1200,12 @@ theorem setPost_start {G Q : Point C} {u v : Nat} (hJ : JLay J) {s t : State} (h
   have lo : ∀ {d : Nat}, d + 8 * J.L.M.n ≤ oAt J.L.M.n →
       wordsVal t.mem base d J.L.M.n = wordsVal s.mem base d J.L.M.n := fun hd =>
     ht.unch.wordsVal (fun w hw => by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw; subst hw; left; exact hd) (by omega_arith)
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hw; subst hw; left; exact hd)
+          (by omega_using [h1, h2, hb3, ha, hq', hp', hoo, hd])
   have rl : ∀ d ∈ [J.L.G.x, J.L.G.y, J.L.G.z, J.Q.x, J.Q.y, J.Q.z, J.O.x, J.O.y, J.O.z],
       wordsVal t.mem base d J.L.M.n = wordsVal s.mem base d J.L.M.n := fun d hd => lo (hJ.low d (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
-    rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [roL])).1
+    rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> list_mem)).1
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at rl hlt
   obtain ⟨kgx, kgy, kgz, kqx, kqy, kqz, kox, koy, koz⟩ := rl
   obtain ⟨la, lb, lgx, lgy, lgz, lqx, lqy, lqz, lox, loy, loz⟩ := hlt
@@ -1185,7 +1215,7 @@ theorem setPost_start {G Q : Point C} {u v : Nat} (hJ : JLay J) {s t : State} (h
   have by4 : ∀ {d : Nat}, 4096 ≤ d → d < 8192 → t.mem (off base d) = s.mem (off base d) := fun h1 h2 =>
     ht.unch.byte (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw; subst hw; right; simp only; omega_arith)
-      (by omega_arith)
+      (by omega_using [h2])
   have hbV := hJ.bitsV
   have hbL := hL.bits
   have hbE := hL.bitsE

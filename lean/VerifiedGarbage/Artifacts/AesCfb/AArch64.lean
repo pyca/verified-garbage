@@ -31,12 +31,10 @@ def artifacts : List Artifact :=
     Spec.Cfb.aesEncryptFinalApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Final.encryptCode v)
-      stack := 64
       verified := Proof.AesCfb.encryptFinal_keyed (Final.encryptFinal_framed v) },
     Spec.Cfb.aesDecryptFinalApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratchWiped 64 .x6 8 (Final.decryptCode v)
-      stack := 64
       verified := Proof.AesCfb.decryptFinal_keyed (Final.decryptFinal_framed v) }]
 
 end VG.Artifacts.AesCfb.AArch64

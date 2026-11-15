@@ -311,7 +311,7 @@ def sboxPost (e : Env Nat) : Bool :=
 
 theorem sbox_check :
     check (table 64 256) sboxCfg (fun _ => none) Impl.Sm4.RISCV64.sboxCode sboxEnv sboxPost = true := by
-  decide +kernel
+  lit_decide
 
 theorem sbox_writes_rest :
     restRegs.all (fun r => Impl.Sm4.RISCV64.sboxCode.all fun i => dst i != some r) = true := by

@@ -478,7 +478,7 @@ theorem ofb_framed :
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.ofbSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Spec.Cast5.ofbPre X86_64.abi.ptrBits)
     (post := Proof.Cast5.ofbPost X86_64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 240)
-    ofb_verified (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    ofb_verified (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Cast5.ofbPostOut_local _) (fbFrame_sat _)
 
 /-- CFB64 encryption with its working space on the stack. -/
@@ -488,7 +488,7 @@ theorem cfbEncrypt_framed :
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Spec.Cast5.cfbPre X86_64.abi.ptrBits)
     (post := Proof.Cast5.cfbEncPost X86_64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 240)
-    cfbEncrypt_verified (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    cfbEncrypt_verified (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Cast5.cfbEncPostOut_local _) (fbFrame_sat _)
 
 /-- CFB64 decryption with its working space on the stack. -/
@@ -498,7 +498,7 @@ theorem cfbDecrypt_framed :
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Spec.Cast5.cfbPre X86_64.abi.ptrBits)
     (post := Proof.Cast5.cfbDecPost X86_64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 240)
-    cfbDecrypt_verified (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    cfbDecrypt_verified (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Cast5.cfbDecPostOut_local _) (fbFrame_sat _)
 
 end VG.Proof.Cast5.X86_64

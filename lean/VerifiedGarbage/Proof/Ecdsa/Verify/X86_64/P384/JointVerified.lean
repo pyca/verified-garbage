@@ -241,7 +241,7 @@ theorem verifyHash_verified : Verified X86_64.target
     (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false jointVerifyP384)
     (Spec.Ecdsa.P384.inst.verifyHashContract (X86_64.abi.withConsts p384v.combConsts) 96) :=
   Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.p384_len (by decide) (jointVerify_verified hL hT hI hO)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by taint_decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by taint_decide)
     (Hash.hashSat_cons (by decide) sat_spec8 (by decide) fun r hr => by
       simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))
@@ -252,7 +252,7 @@ theorem verifyHash_verified_adx : Verified X86_64.target
     (Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false jointVerifyP384Adx)
     (Spec.Ecdsa.P384.inst.verifyHashContract (X86_64.abi.withConsts p384v.combConsts) 96) :=
   Hash.verifyHash_verified_cons Proof.Ecdsa.Verify.p384_len (by decide) (jointVerify_verified_adx hL hT hI hO)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by taint_decide)
+    (Code.all_of_spTest (by lit_decide)) (by lit_decide) (by taint_decide)
     (Hash.hashSat_cons (by decide) sat_spec8 (by decide) fun r hr => by
       simp only [satState, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide))

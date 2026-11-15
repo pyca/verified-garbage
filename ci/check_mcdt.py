@@ -23,9 +23,25 @@ Intel's sequence, exactly:
 * the region: the code after that `lfence`, up to the next instruction that
   reads or writes MXCSR, which must be the epilogue's `ldmxcsr`;
 * the epilogue: `lfence`, then straight-line `mov`s, then `ldmxcsr` of the
-  slot the prologue's `stmxcsr` saved to. (That the value it loads is the
+  slot the prologue's `stmxcsr` saved to.
+  The value it loads keeps the status flags it was saved with, or has them
+  set (`flags_kept`): code after it may rely on flags set before it. (That the value it loads is the
   caller's is proven: MXCSR's control bits are callee-saved in the
   contracts.)
+
+One function loads MXCSR otherwise: `vg_mcdt_enter`, of the module `mcdt`
+of x86-64, which sets its status flags (`lean/VerifiedGarbage/Spec/Mcdt.lean`).
+It may neither run an instruction on Intel's list nor call.
+
+On x86-64, an affected instruction may also be outside any region, in a
+function every run of which is under `vg_mcdt_enter` (`entered`), which
+leaves MXCSR `0x1FBF` until the function returns (the regions inside
+restore what they found). The generated dispatchers run it first for every
+function whose code has such an instruction (`lean/VerifiedGarbage/TCB/Rust.lean`,
+"Dispatchers"), and Rust reaches the verified functions only through them:
+so such a function is `pub(crate)`, the crate's Rust names it only in
+dispatchers whose first line runs `vg_mcdt_enter`, never in a table of
+functions, and every function that calls it is one too.
 
 A region is only entered through its prologue: no jump from outside it may
 land inside it, and it may not contain a `call` or `ret`. So a cold branch
@@ -58,6 +74,10 @@ AFFECTED = {
 FN = re.compile(r"^(vg_\w+):$")
 LABEL = re.compile(r"^(\d+):$")
 MXCSR_VALUE = {"8127", "0x1FBF", "0x1fbf"}
+# `vg_mcdt_enter` (`lean/VerifiedGarbage/Impl/Mcdt/X86_64.lean`), the one
+# function that loads MXCSR other than in Intel's prologue and epilogue: of
+# the module `mcdt` of the target `x86_64`.
+ENTER = ("x86_64", "mcdt.s", "vg_mcdt_enter")
 
 
 def functions(text):
@@ -142,7 +162,51 @@ def prologue(instrs, i, labels):
     return None, "not preceded by stmxcsr in the same straight-line code"
 
 
-def check_function(name, instrs, lines, labels):
+def flags_kept(instrs, i, fence, end, saved):
+    """Whether the epilogue ending at `instrs[end]` restores a value of MXCSR
+    with the status flags it was saved with, or with them set: never one with
+    them cleared, so that code after it may rely on flags that code before it
+    set (Intel's mitigation is MXCSR `0x1FBF`, the default control bits with
+    every flag set). It follows the saved value, in the prologue (from its
+    `stmxcsr` to its `ldmxcsr` at `i`) and the epilogue's movs: loaded from
+    the slot into a register, `and` with an immediate that keeps bits 5:0 or
+    `or` with one that sets them, and stored back."""
+    j = i - 1
+    while mnemonic(instrs[j]) != "stmxcsr":
+        j -= 1
+    regs, slot = {}, "saved"
+
+    def imm(x):
+        try:
+            return int(x, 0)
+        except ValueError:
+            return None
+
+    def step(x):
+        nonlocal slot
+        op, ops = mnemonic(x), operands(x)
+        if op == "mov" and len(ops) == 2 and ops[1] == saved:
+            regs[ops[0]] = slot
+        elif op == "mov" and len(ops) == 2 and ops[0] == saved:
+            slot = regs.get(ops[1], "unknown")
+        elif op in ("and", "or") and len(ops) == 2 and ops[0] in regs and imm(ops[1]) is not None:
+            kept = imm(ops[1]) & 63 == 63
+            if op == "and" and not kept:
+                regs[ops[0]] = "cleared"
+            elif op == "or" and kept:
+                regs[ops[0]] = "set"
+        elif ops:
+            regs.pop(ops[0], None)
+
+    for x in instrs[j + 1:i] + instrs[fence + 1:end]:
+        step(x)
+    return slot in ("saved", "set")
+
+
+def check_function(name, instrs, lines, labels, entered=False):
+    """The errors of a function and its number of regions. `entered`: every
+    run of it is under `vg_mcdt_enter` (`entered`), so its affected
+    instructions need no region."""
     errors = []
 
     def at(k):
@@ -182,6 +246,11 @@ def check_function(name, instrs, lines, labels):
                     f"{at(end)}: `{instrs[end]}` is not Intel's MCDT epilogue: "
                     f"lfence, then straight-line movs, then ldmxcsr of {saved}"
                 )
+            elif not flags_kept(instrs, i, fence, end, saved):
+                errors.append(
+                    f"{at(end)}: `{instrs[end]}` may restore MXCSR with its status flags "
+                    "cleared, which code after it may rely on"
+                )
             regions.append((first, fence))
             i = end + 1
         else:
@@ -193,7 +262,7 @@ def check_function(name, instrs, lines, labels):
         region_at[r[0] : r[1]] = [r] * (r[1] - r[0])
     for k, (instr, op) in enumerate(zip(instrs, mnemonics)):
         r = region_at[k]
-        if op in AFFECTED and r is None:
+        if op in AFFECTED and r is None and not entered:
             errors.append(
                 f"{at(k)}: `{instr}` is outside Intel's MXCSR prologue and "
                 "epilogue (MCDT, see lean/VerifiedGarbage/TCB/X86_64/Isa.lean)"
@@ -220,11 +289,74 @@ def check_function(name, instrs, lines, labels):
     return errors, len(regions)
 
 
+CALL = re.compile(r"call \{(vg_\w+)\}")
+# A dispatcher (`Rust.dispatcher`): its signature's line, and the lines of its
+# body up to the `}` closing it.
+DISPATCHER = re.compile(r"^pub unsafe fn (vg_\w+_auto)\(.*\n((?:(?!\}\n).*\n)*?)\}$", re.M)
+# The lines with which a dispatcher runs `vg_mcdt_enter` first (`Rust.mcdtLine`).
+ENTER_LINE = ("    // SAFETY: it takes no argument and writes no memory but its stack.\n"
+              "    verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });")
+# The verified functions a piece of Rust names: `crate::<module>::<name>`.
+NAMED = re.compile(r"\bcrate::(?:\w+::)*(vg_\w+)\b")
+# A naked function visible outside its crate.
+PUBLIC = re.compile(r"^pub unsafe extern \"[\w-]+\" fn (vg_\w+)", re.M)
+
+
+def entered(fns, crate):
+    """Of the functions `fns` of a target (each name with its instructions),
+    the names of those that only run under `vg_mcdt_enter`: no Rust outside
+    the crate `crate` may name it (it is `pub(crate)`); the crate's Rust
+    names it only in dispatchers that run `vg_mcdt_enter` first
+    (`ENTER_LINE`, their first lines), never in a table of functions, and
+    names it there or calls it from another function; and every function
+    that calls it is one too. (The functions of the crate's
+    modules name the functions they call only as the `sym` operands of those
+    calls, which are the `call`s of their assembly.)"""
+    src = crate / "src"
+    public = {f for path in src.glob("*.rs") for f in PUBLIC.findall(path.read_text())}
+    direct, wrapped = set(), set()
+    for path in sorted((src / "dispatch").glob("*.rs")):
+        for _, body in DISPATCHER.findall(path.read_text()):
+            names = set(NAMED.findall(body))
+            if body.startswith(ENTER_LINE + "\n"):
+                wrapped |= names
+            else:
+                direct |= names
+    for path in sorted((src / "fn_tables").glob("*.rs")):
+        direct |= set(NAMED.findall(path.read_text()))
+    callers = {}
+    for name, instrs in fns:
+        for x in instrs:
+            if m := CALL.fullmatch(x):
+                callers.setdefault(m.group(1), set()).add(name)
+    out = {}
+
+    def ok(f, seen):
+        if f not in out:
+            out[f] = (f not in public and f not in direct and f != ENTER[2] and
+                      (f in wrapped or f in callers) and
+                      all(g not in seen and ok(g, seen | {g}) for g in callers.get(f, ())))
+        return out[f]
+
+    return {name for name, _ in fns if ok(name, {name})}
+
+
+def check_enter(name, instrs, lines):
+    """The errors of `vg_mcdt_enter`, which sets MXCSR's status flags (what
+    it leaves in MXCSR is proven: `VG.Proof.Mcdt.X86_64.enter_mxcsr`): it may
+    load MXCSR as it does, as no prologue does, but runs no instruction
+    that MCDT affects, and calls nothing."""
+    return [f"{name}:{lines[k]}: `{x}` is in vg_mcdt_enter, which may neither run an instruction "
+            "MCDT affects nor call"
+            for k, x in enumerate(instrs) if mnemonic(x) in AFFECTED or mnemonic(x) == "call"]
+
+
 def main():
     errors = []
     regions = 0
     for target_name in TARGETS:
         src = asm_layout.target_dir(ROOT, target_name)
+        read = []
         for path in sorted(src.glob("*.rs")) + sorted(src.glob("internal/vg_*.rs")):
             # Every naked function is checked: each is in its module's assembly file
             # (an internal function's, `internal/<name>.rs`, in `internal/<name>.s`),
@@ -239,18 +371,26 @@ def main():
             fns, unread = functions(assembly.read_text())
             where = assembly.relative_to(ROOT)
             errors += [f"{where}:{n}: neither a function, an instruction nor a label" for n in unread]
-            for name, instrs, lines, labels in fns:
-                errs, n = check_function(f"{where} ({name})", instrs, lines, labels)
-                errors += errs
-                regions += n
+            read += [(where, assembly.name, fn) for fn in fns]
             if len(fns) != naked:
                 errors.append(f"{where}: lists {len(fns)} of the {naked} naked functions of "
                               f"{path.relative_to(ROOT)}")
+        # Only x86-64 has `vg_mcdt_enter`, which its dispatchers run.
+        under = (entered([(fn[0], fn[1]) for _, _, fn in read], src.parent)
+                 if target_name == ENTER[0] else set())
+        for where, file, (name, instrs, lines, labels) in read:
+            if (target_name, file, name) == ENTER:
+                errors += check_enter(f"{where} ({name})", instrs, lines)
+                continue
+            errs, n = check_function(f"{where} ({name})", instrs, lines, labels, name in under)
+            errors += errs
+            regions += n
     for e in errors:
         print(e, file=sys.stderr)
     if errors:
         return 1
-    print(f"every MCDT-affected instruction is inside one of {regions} MXCSR-protected regions")
+    print(f"every MCDT-affected instruction is inside one of {regions} MXCSR-protected regions, "
+          "or runs under vg_mcdt_enter")
     return 0
 
 

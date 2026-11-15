@@ -14,7 +14,6 @@ namespace VG.Artifacts.X448.Arm
 def artifacts : List Artifact := [
   Spec.X448.exchangeApi.artifact Arm.target {
     code := Impl.Xdh.Arm.exchange "vg_x448" Impl.X448.Arm.x448 56
-    stack := 8
     verified := Proof.X448.Arm.Exchange.exchange_baseline },
   Spec.X448.x448BaseApi.artifact Arm.target {
     code := Impl.X448.Arm.x448Base

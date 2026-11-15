@@ -871,13 +871,6 @@ vg_mlkem1024_kpke_decrypt:
 	mov r12, rsi
 	mov r13, rdx
 	mov r14d, 4
-	stmxcsr DWORD PTR [rbx+768]
-	mov r11d, DWORD PTR [rbx+768]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+772], eax
-	ldmxcsr DWORD PTR [rbx+772]
-	lfence
 	mov rcx, rbx
 	mov r10, rcx
 	add r10, 3328
@@ -2828,9 +2821,6 @@ vg_mlkem1024_kpke_decrypt:
 	vmovdqu YMMWORD PTR [rdi+960], ymm6
 	vmovdqu YMMWORD PTR [rdi+992], ymm7
 	vzeroupper
-	lfence
-	mov DWORD PTR [rbx+768], r11d
-	ldmxcsr DWORD PTR [rbx+768]
 	mov rdi, rbx
 	add rdi, 13312
 	mov rsi, rbx

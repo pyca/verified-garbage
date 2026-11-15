@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseRun
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseWord
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseVec
@@ -324,7 +325,7 @@ def finalSliceMem (s : State) : Mem :=
   writeBank (finalValues (readBank s.mem (s.gpr .x2) 128) (s.v .v31)) (s.gpr .x2) 128 s.mem
 
 theorem finalBody_eq : VG.Impl.MlDsa.AArch64.Optimized.Inverse.finalBody=
-    finalSliceCode ++ finalAdvance := by decide +kernel
+    finalSliceCode ++ finalAdvance := by kernel_rfl
 
 theorem finalSlice_ok {s : State} {rest : List Instr} {Q : State → Prop}
     (hf : FinalRoots s) (hs : ScaleRoots s)

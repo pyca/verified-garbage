@@ -15,11 +15,9 @@ namespace VG.Artifacts.SeedOfb.Arm
 def artifacts : List Artifact := [
   Spec.Seed.ofbApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.ofb
-    stack := 832
     verified := Proof.Seed.Arm.ofb_framed },
   Spec.Seed.ofbFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 80 0 18 Impl.Seed.Arm.ofbFinal
-    stack := 832
     verified := Proof.Seed.Arm.ofbFinal_framed }]
 
 end VG.Artifacts.SeedOfb.Arm

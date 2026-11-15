@@ -59,7 +59,7 @@ def sse2 : XorImpl where
   ct := Xor.xor_ct
   nosp := NoSp.of_all (by lit_decide)
   stack := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := ""
   features := []
 
@@ -70,7 +70,7 @@ def ssse3 : XorImpl where
   ct := Xor.xorSsse3_ct
   nosp := NoSp.of_all (by lit_decide)
   stack := by lit_decide
-  spSafe := Code.all_of_allInstrs (by lit_decide)
+  spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_ssse3"
   features := ["ssse3"]
 

@@ -19,7 +19,78 @@ vg_aes_cbc_decrypt_unwiped:
 	add x23, x4, #0
 	add x24, x5, #0
 	cbz x23, 20f
+	sub x9, x23, #4
+	lsr x9, x9, #63
+	cbnz x9, 22f
+24:
+	ldr x9, [x22, #0]
+	str x9, [x24, #2120]
+	ldr x9, [x22, #8]
+	str x9, [x24, #2128]
+	ldr x9, [x22, #16]
+	str x9, [x24, #2136]
+	ldr x9, [x22, #24]
+	str x9, [x24, #2144]
+	ldr x9, [x22, #32]
+	str x9, [x24, #2152]
+	ldr x9, [x22, #40]
+	str x9, [x24, #2160]
+	ldr x9, [x22, #48]
+	str x9, [x24, #2048]
+	ldr x9, [x22, #56]
+	str x9, [x24, #2056]
+	add x0, x19, #0
+	add x1, x20, #0
+	add x2, x22, #0
+	movz x3, #4, lsl #0
+	add x4, x24, #0
+	bl {vg_aes_decrypt_blocks}
+	ldr x9, [x22, #0]
+	ldr x10, [x21, #0]
+	eor x9, x9, x10
+	str x9, [x22, #0]
+	ldr x9, [x22, #8]
+	ldr x10, [x21, #8]
+	eor x9, x9, x10
+	str x9, [x22, #8]
+	ldr x9, [x22, #16]
+	ldr x10, [x24, #2120]
+	eor x9, x9, x10
+	str x9, [x22, #16]
+	ldr x9, [x22, #24]
+	ldr x10, [x24, #2128]
+	eor x9, x9, x10
+	str x9, [x22, #24]
+	ldr x9, [x22, #32]
+	ldr x10, [x24, #2136]
+	eor x9, x9, x10
+	str x9, [x22, #32]
+	ldr x9, [x22, #40]
+	ldr x10, [x24, #2144]
+	eor x9, x9, x10
+	str x9, [x22, #40]
+	ldr x9, [x22, #48]
+	ldr x10, [x24, #2152]
+	eor x9, x9, x10
+	str x9, [x22, #48]
+	ldr x9, [x22, #56]
+	ldr x10, [x24, #2160]
+	eor x9, x9, x10
+	str x9, [x22, #56]
+	ldr x9, [x24, #2048]
+	str x9, [x21, #0]
+	ldr x9, [x24, #2056]
+	str x9, [x21, #8]
+	add x22, x22, #64
+	sub x23, x23, #4
+	sub x9, x23, #4
+	lsr x9, x9, #63
+	cbz x9, 24b
+	b 23f
 22:
+23:
+	cbz x23, 25f
+27:
 	ldr x9, [x22, #0]
 	str x9, [x24, #2048]
 	ldr x9, [x22, #8]
@@ -44,7 +115,10 @@ vg_aes_cbc_decrypt_unwiped:
 	str x9, [x21, #8]
 	add x22, x22, #16
 	sub x23, x23, #1
-	cbnz x23, 22b
+	cbnz x23, 27b
+	b 26f
+25:
+26:
 	b 21f
 20:
 21:

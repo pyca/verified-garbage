@@ -269,7 +269,7 @@ end
 section
 
 /-!
-# GHASH on AArch64: the whole function
+# GHASH on AArch64: the contracts, and what the proofs of their implementations share
 -/
 
 namespace VG.Proof.Gcm
@@ -461,54 +461,6 @@ theorem in_blk {i d : Nat} (hi : i < nb s₀) (hd : d + 8 ≤ 16) :
 
 end Pre
 
-/-! ## The loop invariant -/
-
-/-- What holds between blocks, after `i` of them. -/
-structure Common (s₀ : State) (i : Nat) (s : State) : Prop where
-  x0 : s.gpr .x0 = hA s₀
-  x1 : s.gpr .x1 = yp s₀
-  rd : s.rd = s₀.rd
-  wr : s.wr = s₀.wr
-  frame : Frame [yR s₀] s₀.mem s.mem
-  y : blockAt s.mem (yp s₀) = ghashFrom (H₀ s₀) (Y₀ s₀) (blocksAt s₀.mem (dp s₀) i)
-
-/-- The loop invariant, at the start of block `i`. -/
-structure LInv (s₀ : State) (i : Nat) (s : State) : Prop extends Common s₀ i s where
-  x2 : s.gpr .x2 = blkAddr s₀ i
-  x3 : s.gpr .x3 = BitVec.ofNat 64 (nb s₀ - i)
-
-/-! ## One block -/
-
-set_option simprocs false in
-theorem load_ok (s : State)
-    (hh : ∀ d : Nat, d + 8 ≤ 16 → InRegions (s.rd ++ s.wr) (s.gpr .x0 + BitVec.ofNat 64 d) 8)
-    (hy : ∀ d : Nat, d + 8 ≤ 16 → InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 d) 8)
-    (hd : ∀ d : Nat, d + 8 ≤ 16 → InRegions (s.rd ++ s.wr) (s.gpr .x2 + BitVec.ofNat 64 d) 8) :
-    WP isa (.block load) s fun s₁ =>
-      Inner (blockAt s.mem (s.gpr .x1) ^^^ blockAt s.mem (s.gpr .x2)) (blockAt s.mem (s.gpr .x0))
-        s 0 s₁ ∧ s₁.gpr CNT = BitVec.ofNat 64 (128 / unroll) := by
-  have h0 := hh 0 (by decide); have h8 := hh 8 (by decide)
-  have y0 := hy 0 (by decide); have y8 := hy 8 (by decide)
-  have d0 := hd 0 (by decide); have d8 := hd 8 (by decide)
-  apply WP.of_runBlock
-  simp only [load, XH, XL, ZH, ZL, VH, VL, T, RH, CNT, ZERO]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some,
-    runBlock_nil, exec, addr, State.load, Size.bytes, h0, h8, y0, y8, d0, d8, State.read, State.write,
-    BitVec.setWidth_eq, Size.bits, ite_true, ite_false, Option.bind_some, Option.map_some,
-    Option.some.injEq, exists_eq_left']
-  refine ⟨⟨?_, ?_, ?_, ?_, fun r hr => ?_, rfl, rfl, rfl⟩, trivial⟩
-  · simp (config := {decide := true}) only [ite_true, ite_false]
-    rw [BitVec.shiftLeft_zero, ← BitVec.xor_append, read_8, read_8, read_8, read_8, blockAt_rev,
-      blockAt_rev]
-  · simp (config := {decide := true}) only [ite_true, ite_false]
-    rw [mulSteps_zero, read_8, read_8, blockAt_rev]
-    rfl
-  · simp (config := {decide := true}) only [ite_true, ite_false, RH]
-  · simp (config := {decide := true}) only [ite_true, ite_false, ZERO]
-  · simp only [keepRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl | rfl <;>
-    simp (config := {decide := true}) only [ite_false]
-
 theorem write_8 (m : Mem) (a : Addr) (v : BitVec 64) : m.write a 8 v = m.writeW a v := by
   simp only [Mem.writeW]; exact congrArg (m.write a 8) (BitVec.setWidth_eq _).symm
 
@@ -525,121 +477,6 @@ theorem blockAt_storeMem (m : Mem) (p : Addr) (zh zl : BitVec 64) :
     Mem.readW_writeW_sep (half_sep p) (by decide), Mem.readW_writeW_self64, rev64_rev64,
     rev64_rev64]
 
-set_option simprocs false in
-theorem store_ok (s : State)
-    (hy : ∀ d : Nat, d + 8 ≤ 16 → InRegions s.wr (s.gpr .x1 + BitVec.ofNat 64 d) 8) :
-    WP isa (.block store) s fun s' =>
-      s'.mem = storeMem s.mem (s.gpr .x1) (s.gpr ZH) (s.gpr ZL) ∧
-      s'.gpr .x2 = s.gpr .x2 + 16 ∧ s'.gpr .x3 = s.gpr .x3 - 1 ∧
-      (∀ r, r ≠ .x2 → r ≠ .x3 → r ≠ ZH → r ≠ ZL → s'.gpr r = s.gpr r) ∧
-      s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have y0 := hy 0 (by decide); have y8 := hy 8 (by decide)
-  apply WP.of_runBlock
-  simp only [store, ZH, ZL]
-  simp (config := {decide := true}) only [runBlock_cons, runStep_some,
-    runBlock_nil, exec, addr, State.store, Size.bytes, y0, y8, State.read, State.write,
-    BitVec.setWidth_eq, Size.bits, ite_true, ite_false, Option.bind_some,
-    Option.some.injEq, exists_eq_left']
-  refine ⟨by rw [storeMem, write_8, write_8], rfl, rfl, fun r h2 h3 h7 h8 => ?_, trivial⟩
-  simp only [h2, h3, h7, h8, ite_false]
-
-theorem storeMem_frame {s₀ : State} {m m' : Mem} (h : Frame [yR s₀] m m') (zh zl : BitVec 64) :
-    Frame [yR s₀] m (storeMem m' (yp s₀) zh zl) :=
-  (h.writeW (List.mem_cons_self ..) _ (contains_offset (by decide) (by decide))).writeW
-    (List.mem_cons_self ..) _ (contains_offset (by decide) (by decide))
-
-/-- Memory outside `y` is as on entry. -/
-theorem blockAt_frame {s₀ : State} {m : Mem} (h : Frame [yR s₀] s₀.mem m) {p : Addr}
-    (hd : Region.Disjoint ⟨p, 16⟩ (yR s₀)) : blockAt m p = blockAt s₀.mem p :=
-  blockAt_congr fun _ hk =>
-    h.bytes (R := ⟨p, 16⟩) (by simpa using hd) (by show (16 : Nat) ≤ 2 ^ 64; decide) hk
-
-theorem body_ok {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i < nb s₀) {s : State}
-    (hL : LInv s₀ i s) :
-    WP isa body s fun s' =>
-      (eval (.nonzero .x .x3) s' = some false ∧ Common s₀ (nb s₀) s') ∨
-      (eval (.nonzero .x .x3) s' = some true ∧ i + 1 < nb s₀ ∧ LInv s₀ (i + 1) s') := by
-  refine WP.seq (WP.mono (load_ok s
-    (fun d hd => by rw [hL.rd, hL.wr, hL.x0]; exact hp.in_h hd)
-    (fun d hd => by rw [hL.rd, hL.wr, hL.x1]; exact hp.in_y hd)
-    (fun d hd => by rw [hL.rd, hL.wr, hL.x2]; exact hp.in_blk hi hd)) fun s₁ ⟨hI₁, hc₁⟩ => ?_)
-  refine WP.seq (WP.mono (mul_ok hI₁ hc₁) fun s₂ hI₂ => ?_)
-  have hx1₂ : s₂.gpr .x1 = yp s₀ := (hI₂.keep .x1 (by decide)).trans hL.x1
-  refine WP.mono (store_ok s₂ fun d hd => by rw [hI₂.wr, hL.wr, hx1₂]; exact hp.out_y hd)
-    fun s₃ ⟨hm₃, hx2₃, hx3₃, hk₃, hrd₃, hwr₃⟩ => ?_
-  have hk : ∀ r ∈ keepRegs, s₂.gpr r = s.gpr r := hI₂.keep
-  have hx3 : s₂.gpr .x3 - 1 = BitVec.ofNat 64 (nb s₀ - (i + 1)) := by
-    rw [hk .x3 (by decide), hL.x3, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl,
-      Offset.ofNat_sub_ofNat (by omega_using [hi]), Nat.sub_sub]
-  have hy : blockAt s₃.mem (yp s₀) =
-      ghashFrom (H₀ s₀) (Y₀ s₀) (blocksAt s₀.mem (dp s₀) (i + 1)) := by
-    have hz1 := congrArg Prod.fst hI₂.zv
-    simp only at hz1
-    rw [hm₃, hx1₂, blockAt_storeMem, ghashFrom_blocksAt_succ, ← hL.y, mul_eq, hz1, hL.x1, hL.x2,
-      hL.x0, blockAt_frame (p := hA s₀) hL.frame hp.h_y,
-      blockAt_frame (p := blkAddr s₀ i) hL.frame (hp.y_d.symm.sub_left (hp.blk_sub hi))]
-  have hcommon : Common s₀ (i + 1) s₃ := by
-    refine ⟨by rw [hk₃ _ (by decide) (by decide) (by decide) (by decide), hk .x0 (by decide), hL.x0],
-      by rw [hk₃ _ (by decide) (by decide) (by decide) (by decide), hx1₂],
-      by rw [hrd₃, hI₂.rd, hL.rd], by rw [hwr₃, hI₂.wr, hL.wr], ?_, hy⟩
-    rw [hm₃, hx1₂, hI₂.mem]; exact storeMem_frame hL.frame _ _
-  have hev : eval (.nonzero .x .x3) s₃ = some (BitVec.ofNat 64 (nb s₀ - (i + 1)) != 0) := by
-    simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hx3₃, hx3]
-  by_cases hlast : i + 1 = nb s₀
-  · left
-    rw [hlast, Nat.sub_self] at hev
-    exact ⟨hev.trans (by decide), hlast ▸ hcommon⟩
-  · right
-    have hne : nb s₀ - (i + 1) ≠ 0 := by omega_using [hi, hlast]
-    refine ⟨?_, by omega_using [hi, hlast], { hcommon with x2 := ?_, x3 := ?_ }⟩
-    · have := hp.nb_lt
-      have h0 : BitVec.ofNat 64 (nb s₀ - (i + 1)) ≠ 0 := by
-        intro h
-        have h' := congrArg BitVec.toNat h
-        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [this])] at h'
-        exact hne h'
-      exact hev.trans (by simpa using h0)
-    · rw [hx2₃, hk .x2 (by decide), hL.x2, blkAddr, blkAddr,
-        show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, Offset.add_add, Nat.mul_succ]
-    · rw [hx3₃, hx3]
-
-/-! ## The whole function -/
-
-theorem common_zero (s₀ : State) : Common s₀ 0 s₀ :=
-  ⟨rfl, rfl, rfl, rfl, Frame.refl _ _, (ghashFrom_blocksAt_zero _ _ _ _).symm⟩
-
-theorem loops_ok {s₀ : State} (hp : Pre s₀) :
-    WP isa ghash s₀ fun s' => Proof.Gcm.ghashAArch64.post s₀ s' := by
-  refine WP.mono (Q := Common s₀ (nb s₀)) ?_ fun s' hc => hc.y
-  have hev : eval (.zero .x .x3) s₀ = some (s₀.gpr .x3 == 0) := by
-    simp only [eval, State.read, Size.bits, BitVec.setWidth_eq]
-  refine WP.ite (s₀.gpr .x3 == 0) hev (fun h => ?_) (fun h => ?_)
-  · have h0 : nb s₀ = 0 := by simp at h; simp [nb, h]
-    exact WP.block_nil (M := isa) (h0 ▸ common_zero s₀)
-  · have hpos : 0 < nb s₀ := by
-      simp only [beq_eq_false_iff_ne, ne_eq] at h
-      exact Nat.pos_of_ne_zero fun h' => h (BitVec.eq_of_toNat_eq (by simpa using h'))
-    let Inv : Nat → State → Prop := fun m s => ∃ i, m = nb s₀ - i ∧ i < nb s₀ ∧ LInv s₀ i s
-    have hstep : ∀ m s, Inv m s → WP isa body s (fun s' =>
-        (eval (.nonzero .x .x3) s' = some false ∧ Common s₀ (nb s₀) s') ∨
-        (eval (.nonzero .x .x3) s' = some true ∧ ∃ m' < m, Inv m' s')) := by
-      rintro m s ⟨i, rfl, hi, hL⟩
-      refine WP.mono (body_ok hp hi hL) fun s' h => ?_
-      rcases h with ⟨he, hc⟩ | ⟨he, hi', hL'⟩
-      · exact .inl ⟨he, hc⟩
-      · exact .inr ⟨he, nb s₀ - (i + 1), by omega_using [hi], i + 1, rfl, hi', hL'⟩
-    have hL₀ : LInv s₀ 0 s₀ :=
-      { common_zero s₀ with
-        x2 := by simp [blkAddr]
-        x3 := by simp [nb] }
-    exact WP.loop (M := isa) Inv hstep (nb s₀) s₀ ⟨0, rfl, hpos, hL₀⟩
-
-theorem correct {s₀ : State} (hp : Pre s₀) :
-    WP isa ghash s₀ fun s' =>
-      (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Gcm.ghashAArch64.post s₀ s' :=
-  WP.mono (WP.gprs (rs := preserved) (loops_ok hp) (by decide +kernel) (by decide +kernel))
-    fun _ ⟨h₁, h₂⟩ => ⟨h₂, h₁⟩
-
 /-- A state satisfying the precondition (with no blocks). -/
 def satState : State where
   gpr r := match r with
@@ -648,21 +485,6 @@ def satState : State where
   mem _ := 0
   rd := [⟨0x1000, 16⟩, ⟨0x3000, 0⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x4000, 256⟩]
-
-theorem ghash_correct (s : State) (hs : Proof.Gcm.ghashAArch64.pre s) :
-    ∃ t s', Exec isa Impl.Gcm.AArch64.ghash s t s' ∧ abiPreserved s s' ∧
-      Proof.Gcm.ghashAArch64.post s s' := by
-  obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
-  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
-
-theorem ghash_ct : ConstantTime isa Proof.Gcm.ghashAArch64.pre Proof.Gcm.ghashAArch64.pub
-    Impl.Gcm.AArch64.ghash := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) ?_
-    (by taint_decide)
-  intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, hsp⟩
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
 end VG.Proof.Gcm.AArch64
 

@@ -22,7 +22,7 @@ import VerifiedGarbage.Proof.Ecdsa.PPC64LE.Secp256k1.CombLit
 
 namespace VG.Artifacts.EcdsaSecp256k1.PPC64LE
 
-open VG.Proof.Ecdsa.Rfc6979.PPC64LE (signCodeT stackT OK secp256k1R secp256k1T_verified)
+open VG.Proof.Ecdsa.Rfc6979.PPC64LE (signCodeT OK secp256k1R secp256k1T_verified)
 open VG.Proof.HmacTable.PPC64LE (vars tables names)
 
 open VG.Proof.Secp256k1.PPC64LE (hasLaw)
@@ -31,13 +31,11 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.Secp256k1.verifyHashApi.artifact PPC64LE.target {
     code := Impl.Ecdsa.PPC64LE.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
       Impl.Ecdsa.Verify.PPC64LE.verifySecp256k1
-    stack := 112
     verified := Proof.Ecdsa.Verify.PPC64LE.Secp256k1.verifyHash_verified hasLaw.law }] ++
   (if hv : OK vars ∧ "VG_SECP256K1_COMB" ∉ names vars then [
     Spec.Ecdsa.Rfc6979.Curves.secp256k1SignApi.artifact PPC64LE.target {
       tables := [("hmac", tables vars)]
       code := signCodeT (secp256k1R hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vars
-      stack := stackT
       verified := secp256k1T_verified hasLaw.law vars hv }]
   else [])
 

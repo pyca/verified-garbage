@@ -168,7 +168,33 @@ theorem pk_q0 {d s : Nat} (hds : (d = 5 ∨ d = 11) ∧ (s = 0 ∨ s = 4)) {R S 
   simp only [XBinOp.eval, qword_app0, qword_app1, BitVec.toNat_add, hF, hE, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq,
     hD0, hD1, hC0, hC2, W]
   rcases hds with ⟨rfl | rfl, rfl | rfl⟩ <;>
-    simp only [Nat.reduceMul, Nat.reducePow, Nat.reduceAdd] at b0 b1 b2 b3 ⊢ <;> omega_arith
+    simp only [Nat.reduceMul, Nat.reducePow, Nat.reduceAdd] at b0 b1 b2 b3 ⊢ <;> omega_using [b0, b1, b2, b3]
+
+/-- The byte `t` of `q mod 2^(8 n)`: that of `q` below byte `n`, and zero from there. -/
+private theorem byte_mod (q n t : Nat) :
+    q % 2 ^ (8 * n) / 2 ^ (8 * t) % 2 ^ 8 = if t < n then q / 2 ^ (8 * t) % 2 ^ 8 else 0 := by
+  by_cases h : t < n
+  · simp only [h, ↓reduceIte]
+    obtain ⟨v, rfl⟩ : ∃ v, n = t + (v + 1) := ⟨n - t - 1, by omega⟩
+    rw [Nat.mul_add, Nat.pow_add, Nat.mod_mul_right_div_self, Nat.mul_add, Nat.mul_one, Nat.pow_add,
+      Nat.mod_mul_left_mod]
+  · simp only [h, ↓reduceIte]
+    rw [Nat.div_eq_of_lt (Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos _))
+      (Nat.pow_le_pow_right (by decide) (by omega))), Nat.zero_mod]
+
+/-- The byte `t` of `q mod 2^(8 n)` moved up by `k` bytes. -/
+private theorem byte_shl_mod (q k n t : Nat) :
+    2 ^ (8 * k) * (q % 2 ^ (8 * n)) / 2 ^ (8 * t) % 2 ^ 8 =
+      if k ≤ t ∧ t < k + n then q / 2 ^ (8 * (t - k)) % 2 ^ 8 else 0 := by
+  by_cases h1 : k ≤ t
+  · obtain ⟨u, rfl⟩ : ∃ u, t = k + u := ⟨t - k, by omega⟩
+    rw [Nat.mul_add, Nat.pow_add, Nat.mul_div_mul_left _ _ (Nat.two_pow_pos _), Nat.add_sub_cancel_left,
+      byte_mod]
+    simp only [Nat.le_add_right, true_and, Nat.add_lt_add_iff_left]
+  · simp only [h1, false_and, ↓reduceIte]
+    obtain ⟨u, rfl⟩ : ∃ u, k = t + (u + 1) := ⟨k - t - 1, by omega⟩
+    rw [Nat.mul_add, Nat.pow_add, Nat.mul_assoc, Nat.mul_div_cancel_left _ (Nat.two_pow_pos _), Nat.mul_add,
+      Nat.mul_one, Nat.pow_add, Nat.mul_comm (2 ^ (8 * u)), Nat.mul_assoc, Nat.mul_mod_right]
 
 /-- The bytes `vpshufb` places: a lane's first `n` bytes from byte `o`. -/
 theorem shufA11 (G : BitVec 128) : XBinOp.eval .pshufb G pmA11 = BitVec.ofNat 128 ((qword G 0).toNat % 2 ^ 48) := by
@@ -176,16 +202,13 @@ theorem shufA11 (G : BitVec 128) : XBinOp.eval .pshufb G pmA11 = BitVec.ofNat 12
     simp only [XBinOp.eval, ofBytes]; rfl
   rw [e]
   refine ext_byte fun t ht => ?_
-  rw [byte_ofBytes _ ht, toNat_byte (BitVec.ofNat 128 _), BitVec.toNat_ofNat]
-  rcases (by omega_arith : t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3 ∨ t = 4 ∨ t = 5 ∨ t = 6 ∨ t = 7 ∨ t = 8 ∨ t = 9 ∨ t = 10 ∨
-    t = 11 ∨ t = 12 ∨ t = 13 ∨ t = 14 ∨ t = 15) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  simp only [Nat.reduceLT, ↓reduceIte, toNat_byte_lo _ (show (0 : Nat) < 8 by decide),
-    toNat_byte_lo _ (show (1 : Nat) < 8 by decide), toNat_byte_lo _ (show (2 : Nat) < 8 by decide),
-    toNat_byte_lo _ (show (3 : Nat) < 8 by decide), toNat_byte_lo _ (show (4 : Nat) < 8 by decide),
-    toNat_byte_lo _ (show (5 : Nat) < 8 by decide), show (0 : BitVec 8).toNat = 0 from rfl, Nat.reduceMul,
-    Nat.reducePow, Nat.pow_zero, Nat.div_one] <;>
-  omega_arith
+  rw [byte_ofBytes _ ht, toNat_byte (BitVec.ofNat 128 _), BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (a := (qword G 0).toNat % 2 ^ 48) (b := 2 ^ 128)
+      (Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos 48)) (Nat.pow_le_pow_right (by decide) (by decide))),
+    show (2 : Nat) ^ 48 = 2 ^ (8 * 6) from rfl, byte_mod]
+  by_cases h : t < 6 <;> simp only [h, ↓reduceIte]
+  · exact toNat_byte_lo _ (by omega)
+  · rfl
 
 theorem shufB11 (G : BitVec 128) :
     XBinOp.eval .pshufb G pmB11 = BitVec.ofNat 128 (2 ^ 40 * ((qword G 0).toNat % 2 ^ 48)) := by
@@ -193,31 +216,25 @@ theorem shufB11 (G : BitVec 128) :
     simp only [XBinOp.eval, ofBytes]; rfl
   rw [e]
   refine ext_byte fun t ht => ?_
-  rw [byte_ofBytes _ ht, toNat_byte (BitVec.ofNat 128 _), BitVec.toNat_ofNat]
-  rcases (by omega_arith : t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3 ∨ t = 4 ∨ t = 5 ∨ t = 6 ∨ t = 7 ∨ t = 8 ∨ t = 9 ∨ t = 10 ∨
-    t = 11 ∨ t = 12 ∨ t = 13 ∨ t = 14 ∨ t = 15) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  simp only [Nat.reduceLT, Nat.reduceLeDiff, and_true, and_false, ↓reduceIte, Nat.reduceSub,
-    toNat_byte_lo _ (show (0 : Nat) < 8 by decide),
-    toNat_byte_lo _ (show (1 : Nat) < 8 by decide), toNat_byte_lo _ (show (2 : Nat) < 8 by decide),
-    toNat_byte_lo _ (show (3 : Nat) < 8 by decide), toNat_byte_lo _ (show (4 : Nat) < 8 by decide),
-    toNat_byte_lo _ (show (5 : Nat) < 8 by decide), show (0 : BitVec 8).toNat = 0 from rfl, Nat.reduceMul,
-    Nat.reducePow, Nat.pow_zero, Nat.div_one] <;>
-  omega_arith
+  rw [byte_ofBytes _ ht, toNat_byte (BitVec.ofNat 128 _), BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (a := 2 ^ 40 * ((qword G 0).toNat % 2 ^ 48)) (b := 2 ^ 128) (by omega),
+    show (2 : Nat) ^ 40 = 2 ^ (8 * 5) from rfl, show (2 : Nat) ^ 48 = 2 ^ (8 * 6) from rfl, byte_shl_mod]
+  by_cases h : 5 ≤ t ∧ t < 11 <;> simp only [Nat.reduceAdd, h, ↓reduceIte]
+  · exact toNat_byte_lo _ (by omega)
+  · rfl
 
 theorem shufA5 (G : BitVec 128) : XBinOp.eval .pshufb G pmA5 = BitVec.ofNat 128 ((qword G 0).toNat % 2 ^ 24) := by
   have e : XBinOp.eval .pshufb G pmA5 = ofBytes fun i => if i < 3 then byte G i else 0 := by
     simp only [XBinOp.eval, ofBytes]; rfl
   rw [e]
   refine ext_byte fun t ht => ?_
-  rw [byte_ofBytes _ ht, toNat_byte (BitVec.ofNat 128 _), BitVec.toNat_ofNat]
-  rcases (by omega_arith : t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3 ∨ t = 4 ∨ t = 5 ∨ t = 6 ∨ t = 7 ∨ t = 8 ∨ t = 9 ∨ t = 10 ∨
-    t = 11 ∨ t = 12 ∨ t = 13 ∨ t = 14 ∨ t = 15) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  simp only [Nat.reduceLT, ↓reduceIte, toNat_byte_lo _ (show (0 : Nat) < 8 by decide),
-    toNat_byte_lo _ (show (1 : Nat) < 8 by decide), toNat_byte_lo _ (show (2 : Nat) < 8 by decide),
-    show (0 : BitVec 8).toNat = 0 from rfl, Nat.reduceMul, Nat.reducePow, Nat.pow_zero, Nat.div_one] <;>
-  omega_arith
+  rw [byte_ofBytes _ ht, toNat_byte (BitVec.ofNat 128 _), BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (a := (qword G 0).toNat % 2 ^ 24) (b := 2 ^ 128)
+      (Nat.lt_of_lt_of_le (Nat.mod_lt _ (Nat.two_pow_pos 24)) (Nat.pow_le_pow_right (by decide) (by decide))),
+    show (2 : Nat) ^ 24 = 2 ^ (8 * 3) from rfl, byte_mod]
+  by_cases h : t < 3 <;> simp only [h, ↓reduceIte]
+  · exact toNat_byte_lo _ (by omega)
+  · rfl
 
 theorem shufB5 (G : BitVec 128) :
     XBinOp.eval .pshufb G pmB5 = BitVec.ofNat 128 (2 ^ 16 * ((qword G 0).toNat % 2 ^ 24)) := by
@@ -225,15 +242,12 @@ theorem shufB5 (G : BitVec 128) :
     simp only [XBinOp.eval, ofBytes]; rfl
   rw [e]
   refine ext_byte fun t ht => ?_
-  rw [byte_ofBytes _ ht, toNat_byte (BitVec.ofNat 128 _), BitVec.toNat_ofNat]
-  rcases (by omega_arith : t = 0 ∨ t = 1 ∨ t = 2 ∨ t = 3 ∨ t = 4 ∨ t = 5 ∨ t = 6 ∨ t = 7 ∨ t = 8 ∨ t = 9 ∨ t = 10 ∨
-    t = 11 ∨ t = 12 ∨ t = 13 ∨ t = 14 ∨ t = 15) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  simp only [Nat.reduceLT, Nat.reduceLeDiff, and_true, and_false, ↓reduceIte, Nat.reduceSub,
-    toNat_byte_lo _ (show (0 : Nat) < 8 by decide),
-    toNat_byte_lo _ (show (1 : Nat) < 8 by decide), toNat_byte_lo _ (show (2 : Nat) < 8 by decide),
-    show (0 : BitVec 8).toNat = 0 from rfl, Nat.reduceMul, Nat.reducePow, Nat.pow_zero, Nat.div_one] <;>
-  omega_arith
+  rw [byte_ofBytes _ ht, toNat_byte (BitVec.ofNat 128 _), BitVec.toNat_ofNat,
+    Nat.mod_eq_of_lt (a := 2 ^ 16 * ((qword G 0).toNat % 2 ^ 24)) (b := 2 ^ 128) (by omega),
+    show (2 : Nat) ^ 16 = 2 ^ (8 * 2) from rfl, show (2 : Nat) ^ 24 = 2 ^ (8 * 3) from rfl, byte_shl_mod]
+  by_cases h : 2 ≤ t ∧ t < 5 <;> simp only [Nat.reduceAdd, h, ↓reduceIte]
+  · exact toNat_byte_lo _ (by omega)
+  · rfl
 
 /-- Two numbers whose bits do not overlap, merged by `vpor`. -/
 theorem por_ofNat {A B : Nat} (k : Nat) (hA : A < 2 ^ k) (h : A + 2 ^ k * B < 2 ^ 128) :
@@ -625,10 +639,17 @@ theorem lastY11 {V₀ V₁ : Nat} (h₀ : V₀ < 2 ^ 88) (h₁ : V₁ < 2 ^ 88) 
       ← Nat.two_pow_add_eq_or_of_lt (by omega_arith)]
   apply BitVec.eq_of_toNat_eq
   rw [toNat_byte, hY, BitVec.toNat_ofNat]
-  rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨ j = 10 ∨
-    j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15) with
-    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-  simp only [Nat.reduceLT, ↓reduceIte, Nat.reduceSub, Nat.reduceAdd, Nat.reduceMul, Nat.reducePow] <;> omega_arith
+  by_cases h : j < 5
+  · simp only [h, ↓reduceIte]
+    have e : (2 : Nat) ^ 40 = 2 ^ (8 * j) * (2 ^ 8 * 2 ^ (8 * (4 - j))) := by
+      rw [← Nat.pow_add, ← Nat.pow_add, show 8 * j + (8 + 8 * (4 - j)) = 40 by omega]
+    rw [e, Nat.mul_assoc, Nat.mul_add_div (Nat.two_pow_pos _), Nat.mul_assoc, Nat.mul_add_mod,
+      Nat.div_div_eq_div_mul, ← Nat.pow_add, show 48 + 8 * j = 8 * (6 + j) by omega]
+  · simp only [h, ↓reduceIte]
+    obtain ⟨u, rfl⟩ : ∃ u, j = 5 + u := ⟨j - 5, by omega⟩
+    rw [Nat.add_sub_cancel_left, Nat.mul_add, Nat.pow_add, ← Nat.div_div_eq_div_mul, show 8 * 5 = 40 from rfl,
+      Nat.mul_add_div (Nat.two_pow_pos _), Nat.div_eq_of_lt (a := V₀ / 2 ^ 48) (b := 2 ^ 40) (by omega),
+      Nat.add_zero]
 
 /-! ## The loops -/
 

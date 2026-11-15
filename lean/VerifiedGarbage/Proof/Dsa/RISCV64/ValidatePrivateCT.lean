@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Dsa.RISCV64.ParamsCT
 public import VerifiedGarbage.Proof.Dsa.RISCV64.CTParams
 public import VerifiedGarbage.Proof.Dsa.RISCV64.CTBodyB
@@ -267,7 +268,7 @@ theorem pinsV53 : Pins (At ΦVR FVR 53) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8
     (fun _ => rfl) fun _ _ h => by
     obtain ⟨V, hsz, hpo, -⟩ := onVR h
     have bd := VG.Proof.Dsa.supported_bounds hsz
-    exact WP.of_flat (c := .seq (.block KP0) (.seq Verify.powP (.block ptrY))) (by decide +kernel)
+    exact WP.of_flat (c := .seq (.block KP0) (.seq Verify.powP (.block ptrY))) (by kernel_rfl)
       (stKV0 V fun _ c a7 _ a9 => WP.seq (WP.mono (powV c
         (c.cb.1.hk.sub (by have := c.cb.1.kn; omega_using [this])) a7 (c.xs.sub (by omega_using [])) a9 (by omega_using [bd]) hpo) fun _ c' =>
         WP.mono (ptrY_ok c'.cb.1.scr c'.cb.1.ok c'.cb.1.regs) fun _ ⟨⟨b7, b8, m⟩, k⟩ =>
@@ -286,11 +287,11 @@ theorem kpV {v : VD} {s : State} (h : ΦVR v s) : WP isa Sign.keyPair s (Base v)
 
 theorem pinsV64 : Pins (At ΦVR FVR 64) [.s6, .s11, .ra] :=
   pins_at_fix fixB (fun _ => rfl) fun _ _ h =>
-    WP.of_flat (c := Sign.keyPair) (by decide +kernel) ((kpV h).mono fun _ B => B.fixB)
+    WP.of_flat (c := Sign.keyPair) (by kernel_rfl) ((kpV h).mono fun _ B => B.fixB)
 
 theorem pinsV65 : Pins (At ΦVR FVR 65) [.s6, .s11, .ra, .a7, .s5, .t0] :=
   pins_at_fix (fun v => fixB v ++ envQ v) (fun _ => rfl) fun _ _ h =>
-    WP.of_flat (c := .seq Sign.keyPair (.block enterQ)) (by decide +kernel)
+    WP.of_flat (c := .seq Sign.keyPair (.block enterQ)) (by kernel_rfl)
       (WP.seq ((kpV h).mono fun _ B => WP.mono (enterQ_ok B.ok B.scr B.regs) fun _ ⟨⟨iq, m⟩, k⟩ =>
         (B.keepM k m).fixB.app (fix_envQ iq)))
 
@@ -298,7 +299,7 @@ theorem pinsV69 : Pins (At ΦVR FVR 69) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, off v.key (3 * v.L.pl + v.L.ql)), (.s8, BitVec.ofNat 64 v.L.ql)])
     (fun _ => rfl) fun v _ h =>
     WP.of_flat (c := .seq Sign.keyPair (.seq (.block enterQ) (.seq (zeroArr 7) (.block Sign.ptrX))))
-      (by decide +kernel)
+      (by kernel_rfl)
       (WP.seq ((kpV h).mono fun _ B => WP.seq (WP.mono (enterQ_ok B.ok B.scr B.regs) fun _ ⟨⟨iq, m⟩, k⟩ => by
         have B1 := B.keepM k m
         have hL := B.ok

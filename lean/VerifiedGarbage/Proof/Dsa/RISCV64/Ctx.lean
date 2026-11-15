@@ -400,7 +400,7 @@ theorem qBase_ok {s : State} {L : Lay} {key sig : Addr} (hs : ScrL s L) (hL : L.
   have h6 : v.gpr .s6 = L.S := (kv.gpr (by simpa using hrd.symm)).trans hr.s6
   have hq := q_addr hL
   refine WP.mono (WP.keep [rd, t] (Q := fun u => u.gpr rd = L.Q ∧ u.mem = v.mem) ?_
-    (by cases rd <;> cases t <;> simp_all <;> decide) (by rfl)) fun u ⟨⟨b, mu⟩, ku⟩ =>
+    (by cases rd <;> cases t <;> decide) (by rfl)) fun u ⟨⟨b, mu⟩, ku⟩ =>
       ⟨⟨b, by rw [mu, mv]⟩, (kv.trans ku).mono fun _ h => mem_pair' h⟩
   brun [a, h6, exec_li_lit (show 28 < 2048 by decide), hrd.symm, ht.symm, hrt.symm, hrt, gpr_write_self, gpr_write_of_ne _ _ hrt.symm,
     gpr_write_of_ne _ _ hrd]

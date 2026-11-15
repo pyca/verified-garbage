@@ -160,7 +160,7 @@ theorem decrypt_verified (v : BlocksImpl) :
     (pre_local 32) (postTail_local 32 _ _) (postTail_out 32 _ v.decWrittenLe) (wipedTail 32 _ _) (sat' _)
 
 theorem zeroize_spSafe : Impl.Zeroize.X86.zeroize.all (fun i => !isa.writesSp i) = true :=
-  Code.all_of_allInstrs (by lit_decide)
+  Code.all_of_spTest (by lit_decide)
 
 /-- `wiped b` writes `esp` only in its frame and calls, if `b`'s code does
 only in its frames. -/

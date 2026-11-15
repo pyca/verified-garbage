@@ -42,7 +42,7 @@ abbrev entryR (W : Addr) : Region := ⟨W + BitVec.ofNat 64 128, 88⟩
 
 /-- After `cryptEntry`. -/
 structure CryptEntry (s₀ : State) (Ctx St W SP D : Addr) (n : Nat) (s : State) : Prop where
-  env : Env Ctx St W SP s
+  env : Env Ctx St W SP s 768
   alen : s.mem.readW (W + BitVec.ofNat 64 184) 64 = s₀.gpr .rdx
   tlen : s.mem.readW (W + BitVec.ofNat 64 192) 64 = s₀.gpr .rcx
   dat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D
@@ -57,7 +57,7 @@ structure CryptEntry (s₀ : State) (Ctx St W SP D : Addr) (n : Nat) (s : State)
 
 theorem cryptEntry_ok {s : State} {Ctx St W SP D : Addr} {n : Nat} (hCtx : s.gpr .rdi = Ctx) (hSt : s.gpr .rsi = St)
     (hD : s.gpr .r8 = D) (hSP : s.gpr .rsp = SP) (hW : stackArg s 0 = W) (hn : (s.gpr .r9).toNat = n)
-    (hperm : Perm Ctx St W s) (hargs : InRegions (s.rd ++ s.wr) (SP + BitVec.ofNat 64 8) 8) :
+    (hperm : Perm Ctx St W s 768) (hargs : InRegions (s.rd ++ s.wr) (SP + BitVec.ofNat 64 8) 8) :
     WP isa (.block cryptEntry) s (CryptEntry s Ctx St W SP D n) := by
   have hW' : s.mem.readW (SP + BitVec.ofNat 64 8) 64 = W := by rw [← hW, ← hSP]; rfl
   have h9 : s.gpr .r9 = BitVec.ofNat 64 n := by rw [← hn, BitVec.ofNat_toNat, BitVec.setWidth_eq]
@@ -67,18 +67,18 @@ theorem cryptEntry_ok {s : State} {Ctx St W SP D : Addr} {n : Nat} (hCtx : s.gpr
     · simp [gpr_setReg, hW']
     · intro r a; simp [gpr_setReg, a]
     all_goals rfl
-  have hperm₀ : Perm Ctx St W s₀ := hperm.of_eq hrd₀ hwr₀
+  have hperm₀ : Perm Ctx St W s₀ 768 := hperm.of_eq hrd₀ hwr₀
   obtain ⟨s₁, run₁, hg₁, hrd₁, hwr₁, hsv₁, f₁⟩ := save_ok s₀ .rax hax₀ hperm₀.w
   have hsv₁' : SavedAt s₁.mem W s := by
     intro p hp; rw [hsv₁ p hp]
     simp only [saved, List.mem_cons, List.not_mem_nil, or_false] at hp
     rcases hp with rfl | rfl | rfl | rfl | rfl | rfl <;> exact hg₀ _ (by decide)
-  have w₂ := in_off hperm.w (show 184 + 8 ≤ 2560 by decide) (by decide)
-  have w₃ := in_off hperm.w (show 192 + 8 ≤ 2560 by decide) (by decide)
-  have w₄ := in_off hperm.w (show 200 + 8 ≤ 2560 by decide) (by decide)
-  have w₅ := in_off hperm.w (show 208 + 8 ≤ 2560 by decide) (by decide)
+  have w₂ := in_off hperm.w (show 184 + 8 ≤ 768 by decide) (by decide)
+  have w₃ := in_off hperm.w (show 192 + 8 ≤ 768 by decide) (by decide)
+  have w₄ := in_off hperm.w (show 200 + 8 ≤ 768 by decide) (by decide)
+  have w₅ := in_off hperm.w (show 208 + 8 ≤ 768 by decide) (by decide)
   rw [← hwr₀, ← hwr₁] at w₂ w₃ w₄ w₅
-  have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 2560 → d + 8 ≤ 2560 →
+  have sep : ∀ a d : Nat, a + 8 ≤ d ∨ d + 8 ≤ a → a + 8 ≤ 768 → d + 8 ≤ 768 →
       Mem.Sep (W + BitVec.ofNat 64 a) (64 / 8) (W + BitVec.ofNat 64 d) (64 / 8) :=
     fun a d h ha hd => Offset.sep W h (by omega_using [ha]) (by omega_using [hd])
   have q4 := sep 184 192 (by decide) (by decide) (by decide)
@@ -149,14 +149,14 @@ theorem cryptEntry_ok {s : State} {Ctx St W SP D : Addr} {n : Nat} (hCtx : s.gpr
 
 /-- What the precondition of `encrypt` and `decrypt` gives. -/
 structure CryptCtx (s : State) (Ctx St W SP D : Addr) (n : Nat) : Prop where
-  lay : Lay4 Ctx St W SP
-  perm : Perm Ctx St W s
+  lay : Lay4 Ctx St W SP 768
+  perm : Perm Ctx St W s 768
   args : InRegions (s.rd ++ s.wr) (SP + BitVec.ofNat 64 8) 8
-  data : DataW4 Ctx St W SP s D n
+  data : DataW4 Ctx St W SP s D n 768
   rD : (⟨SP, 8⟩ : Region).Disjoint ⟨D, n⟩
   rS : (⟨SP, 8⟩ : Region).Disjoint ⟨St, 80⟩
-  rW : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 2560⟩
-  dE : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩
+  rW : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 768⟩
+  dE : (⟨D, n⟩ : Region).Disjoint ⟨W, 768⟩
 
 theorem CryptCtx.of {s : State} (hp : Proof.Sm4Gcm.streamCryptPre s) :
     CryptCtx s (s.gpr .rdi) (s.gpr .rsi) (stackArg s 0) (s.gpr .rsp) (s.gpr .r8) (s.gpr .r9).toNat := by
@@ -166,7 +166,7 @@ theorem CryptCtx.of {s : State} (hp : Proof.Sm4Gcm.streamCryptPre s) :
     wc, ws, wd, ww, sp, wsp⟩ := hp
   have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
   rw [hA] at hrd d_sa d_da d_wa
-  have L : Lay4 (s.gpr .rdi) (s.gpr .rsi) (stackArg s 0) (s.gpr .rsp) := Lay4.of wc ws ww d_cs d_cw d_sw sp t_c t_s t_w
+  have L : Lay4 (s.gpr .rdi) (s.gpr .rsi) (stackArg s 0) (s.gpr .rsp) 768 := Lay4.of wc ws ww d_cs d_cw d_sw sp t_c t_s t_w
   have pm : Covers [⟨s.gpr .rsp + BitVec.ofNat 64 8, 8⟩] (s.rd ++ s.wr) := by
     rw [hrd]
     exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
@@ -182,11 +182,11 @@ theorem CryptCtx.of {s : State} (hp : Proof.Sm4Gcm.streamCryptPre s) :
   · rw [hwr]; exact covers_of_mem (List.mem_cons_of_mem _ (List.mem_cons_self ..))
 
 section
-variable {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP)
+variable {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP 768)
 include L
 
 /-- The slots of `W` below `176` are outside `stFrame`. -/
-theorem w_stFrame {D : Addr} {n d k : Nat} (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩) (h₁ : 128 ≤ d)
+theorem w_stFrame {D : Addr} {n d k : Nat} (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 768⟩) (h₁ : 128 ≤ d)
     (h₂ : d + k ≤ 176) : ∀ r ∈ stFrame St W SP D n, (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -214,7 +214,7 @@ theorem j0_stFrame {D : Addr} {n : Nat} (hD : (⟨D, n⟩ : Region).Disjoint ⟨
 omit L in
 /-- The return address is outside `stFrame`. -/
 theorem ret_stFrame {D : Addr} {n : Nat} (rS : (⟨SP, 8⟩ : Region).Disjoint ⟨St, 80⟩)
-    (rD : (⟨SP, 8⟩ : Region).Disjoint ⟨D, n⟩) (rW : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 2560⟩) :
+    (rD : (⟨SP, 8⟩ : Region).Disjoint ⟨D, n⟩) (rW : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 768⟩) :
     ∀ r ∈ stFrame St W SP D n, (⟨SP, 8⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

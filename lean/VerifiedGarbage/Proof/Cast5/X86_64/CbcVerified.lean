@@ -248,7 +248,7 @@ theorem cbcEncryptChained_framed :
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Proof.Cast5.cbcChainedPre X86_64.abi.ptrBits)
     (post := Proof.Cast5.cbcEncChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 240)
-    cbcEncryptChained_verified (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    cbcEncryptChained_verified (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Cast5.cbcEncChainedPostOut_local _) (cbcFrame_sat _)
 
 /-- `cbcDecryptChained` with its working space on the stack. -/
@@ -258,7 +258,7 @@ theorem cbcDecryptChained_framed :
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cbcChainedSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Proof.Cast5.cbcChainedPre X86_64.abi.ptrBits)
     (post := Proof.Cast5.cbcDecChainedPost X86_64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 240)
-    cbcDecryptChained_verified (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    cbcDecryptChained_verified (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Cast5.cbcDecChainedPostOut_local _) (cbcFrame_sat _)
 
 end VG.Proof.Cast5.X86_64

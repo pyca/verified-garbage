@@ -143,6 +143,7 @@ theorem seedSubgroup_ok (H : GenerationHashes) (T : PrimeTest)
     bytes, fail, result, fu.trans ff, rd.trans ku.2.1, wr.trans ku.2.2⟩
   intro k hk
   simp only [generationSlots, List.mem_cons, List.not_mem_nil, or_false] at hk
-  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
+  rcases hk with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    exact (ite_eq_right (by decide)).trans (ite_eq_right (by decide))
 
 end VG.Proof.Dsa.X86_64.Generation

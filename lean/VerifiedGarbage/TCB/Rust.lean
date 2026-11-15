@@ -1686,6 +1686,36 @@ pub unsafe fn <base>_auto(_dit: verified_garbage_cpu::Dit<'_>, <the signature>) 
 A function whose base needs CPU features gets none (there is nothing to fall
 back on), and neither does an implementation that is not a base.
 
+On x86-64, the dispatcher of a function any of whose implementations has, in
+its code or the code of a function it calls (`Code.all`: those of the tables
+of functions it takes too), an instruction that MXCSR-configuration-dependent
+timing (MCDT) affects (`Printer.mcdt`, Intel's list: see "MCDT" in
+`TCB/X86_64/Isa.lean`) first runs Intel's mitigation, the verified
+`vg_mcdt_enter` (`Spec/Mcdt.lean`), and panics unless it returns 1, MXCSR
+then holding `0x1FBF` (`verified_garbage_cpu::mcdt_entered`):
+
+```rust
+pub unsafe fn <base>_auto(_dit: verified_garbage_cpu::Dit<'_>, <the signature>) {
+    // SAFETY: it takes no argument and writes no memory but its stack.
+    verified_garbage_cpu::mcdt_entered(unsafe { crate::mcdt::vg_mcdt_enter() });
+    …
+}
+```
+
+`vg_mcdt_enter` sets MXCSR's status flags, which nothing but a load of
+MXCSR clears, and the verified code loads it only as Intel's prologue and
+epilogue do, which restore what they found: so MXCSR holds `0x1FBF` from
+there until the implementation returns. Every call of an implementation
+from Rust is through its dispatcher (the implementations are `pub(crate)`,
+and only the dispatchers and the tables of functions name them; a table's
+functions are run by the verified code that takes it, whose dispatcher
+covers them), so every run of an affected instruction is under the
+mitigation. The emitter refuses a function that needs it but has no
+dispatcher (its base needs CPU features), and code that needs it on a target
+without `vg_mcdt_enter` (`checkMcdt`); `ci/check_mcdt.py` checks the
+generated crates for the same. A function none of whose implementations has
+such an instruction leaves MXCSR as it is.
+
 A table of functions (`FnTable`) is chosen the same way, by
 `dispatch/fn_tables.rs` (`tableDispatcher`). Its implementations are the
 tables of the same interface and the same words of data whose names are its
@@ -1739,6 +1769,25 @@ def checkGroups (as : List Artifact) : Except String Unit :=
     unless a.sig == g.base.sig && a.doc == g.base.doc do
       throw s!"{a.target.name}: {a.name}, an implementation of {g.base.name}, has another \
         signature or documentation"
+
+/-- Whether the code of `a`, or of a function it calls (`Code.all`, the
+functions of the tables it takes among them), has an instruction that
+MXCSR-configuration-dependent timing affects (`Printer.mcdt`): its
+dispatcher then runs `vg_mcdt_enter` first (see "Dispatchers"). -/
+def needsMcdt (a : Artifact) : Bool := !a.code.all fun i => !a.target.printer.mcdt i
+
+/-- The name of the function that runs Intel's mitigation of MCDT
+(`Spec/Mcdt.lean`), in the module `mcdt`. -/
+def mcdtEnter : String := "vg_mcdt_enter"
+
+/-- The first lines of the dispatcher of a function some of whose
+implementations need Intel's mitigation of MCDT (`needsMcdt`), or
+nothing. -/
+def mcdtLine (needs : Bool) : String :=
+  if needs then
+    "    // SAFETY: it takes no argument and writes no memory but its stack.\n" ++
+    s!"    verified_garbage_cpu::mcdt_entered(unsafe \{ crate::mcdt::{mcdtEnter}() });\n"
+  else ""
 
 /-- An implementation a dispatcher may choose: a function (`Impl.ofArtifact`)
 or a table of functions (`tableDispatcher`), by its name; the module, from
@@ -1904,6 +1953,7 @@ def dispatcher (g : Group) (arms : List Arm) : String :=
   "#[allow(clippy::too_many_arguments)]\n" ++
   "#[inline]\n" ++
   s!"pub unsafe fn {auto}{ditSig b.sig} " ++ "{\n" ++
+  mcdtLine (all.any needsMcdt) ++
   "    /// The type of the implementations.\n" ++
   s!"    type Impl = unsafe extern \"{abi}\" fn{b.sig.rust};\n" ++
   "    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only\n" ++
@@ -1945,6 +1995,7 @@ def soleDispatcher (g : Group) : String :=
   "#[allow(clippy::too_many_arguments)]\n" ++
   "#[inline]\n" ++
   s!"pub unsafe fn {auto}{ditSig b.sig} " ++ "{\n" ++
+  mcdtLine (needsMcdt b) ++
   "    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.\n" ++
   "    unsafe { " ++ s!"crate::{b.module}::{b.name}({argsOf b.sig})" ++ " }\n" ++
   "}\n"
@@ -1968,6 +2019,20 @@ def checkChoice (a : Artifact) : Except String Unit := do
     unless featureOk f do
       throw s!"{a.target.name}: {a.name} needs the feature `{f}`"
 
+/-- That every function of `as` (a module's artifacts) whose code needs
+Intel's mitigation of MCDT (`needsMcdt`) has a dispatcher, which runs
+it: its base needs no CPU feature, and the target has `vg_mcdt_enter`, of
+the module `mcdt` (`names`: the names of the target's artifacts). -/
+def checkMcdt (names : List String) (as : List Artifact) : Except String Unit :=
+  (groupsOf as).forM fun g => do
+    if let some a := (g.base :: g.members).find? needsMcdt then
+      unless g.base.features.isEmpty do
+        throw s!"{a.target.name}: {a.name} has an instruction that MCDT affects, but no \
+          dispatcher to run vg_mcdt_enter first: its base {g.base.name} needs CPU features"
+      unless names.contains mcdtEnter do
+        throw s!"{a.target.name}: {a.name} has an instruction that MCDT affects, and the target \
+          has no {mcdtEnter}"
+
 /-- The dispatchers of the artifacts `as` of a module of a target (see
 above), as the text that follows its functions in its file; `names` are the
 names of every artifact of the target, none of which may be a
@@ -1977,6 +2042,7 @@ def dispatchers (names : List String) (as : List Artifact) :
   if let some g := (groupsOf as).find? (!·.base.notWith.isEmpty) then
     throw s!"{g.base.target.name}: {g.base.name} is a base, which its dispatcher falls back on: \
       `notWith` means nothing for it"
+  checkMcdt names as
   let gs := (groupsOf as).filter (·.base.features.isEmpty)
   let texts ← gs.mapM fun g => do
     let auto := autoName g.base.name

@@ -58,7 +58,7 @@ pub unsafe fn vg_mldsa65_keygen_auto(_dit: verified_garbage_cpu::Dit<'_>, seed: 
 ///
 /// Contract: `VG.Spec.MlDsa.pkTrContract`. Constant time: only the pointers may affect timing, not the key, the digest or the working space.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa65_pk_tr_sha3` if the CPU supports its features (`VG_MLDSA65_PK_TR_SHA3_FEATURES`); or else `vg_mldsa65_pk_tr`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_mldsa65_pk_tr_sha3` if the target's vendor is `apple` (or `VG_CPU_FEATURES` names every feature it needs) and the CPU supports its features (`VG_MLDSA65_PK_TR_SHA3_FEATURES`); or else `vg_mldsa65_pk_tr`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -78,8 +78,9 @@ pub unsafe fn vg_mldsa65_pk_tr_auto(_dit: verified_garbage_cpu::Dit<'_>, pk: *co
     #[cold]
     fn select() -> Impl {
         let cpu = verified_garbage_cpu::detected();
-        if const { verified_garbage_cpu::target_contains(crate::mldsa65::VG_MLDSA65_PK_TR_SHA3_FEATURES) }
-            || cpu.contains(crate::mldsa65::VG_MLDSA65_PK_TR_SHA3_FEATURES)
+        if (cfg!(target_vendor = "apple") || verified_garbage_cpu::requested(crate::mldsa65::VG_MLDSA65_PK_TR_SHA3_FEATURES))
+            && (const { verified_garbage_cpu::target_contains(crate::mldsa65::VG_MLDSA65_PK_TR_SHA3_FEATURES) }
+            || cpu.contains(crate::mldsa65::VG_MLDSA65_PK_TR_SHA3_FEATURES))
         {
             return crate::mldsa65::vg_mldsa65_pk_tr_sha3;
         }

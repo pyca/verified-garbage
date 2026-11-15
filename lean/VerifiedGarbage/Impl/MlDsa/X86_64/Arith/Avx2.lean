@@ -31,11 +31,10 @@ the coefficients it loads and `r8` at the zetas of the table:
   `32 + 16l`, and the zetas of the blocks there in lane `l` of `ymm13`
   (`yzetaS`, or `vpermq` of eight zetas).
 
-`NTT⁻¹` then scales every coefficient (`yscale`). The multiplications run
-inside `withMxcsr` as in the SSE2 code: for `vg_mldsa_multiply*_ntt_avx2`,
-through the last 8 bytes of `h`, whose last eight coefficients are loaded
-to `ymm6` first; the loop stores the first 248, and the last eight are
-stored after MXCSR is loaded back. Every function clears the upper halves of
+`NTT⁻¹` then scales every coefficient (`yscale`). As in the SSE2 code,
+`vg_mldsa_multiply*_ntt_avx2` load the last eight coefficients of `h` to
+`ymm6` first; the loop stores the first 248, and the last eight are stored
+last. Every function clears the upper halves of
 the vector registers before returning (`vzeroupper`). Every address and
 branch depends only on the pointers.
 -/
@@ -45,7 +44,7 @@ branch depends only on the pointers.
 namespace VG.Impl.MlDsa.X86_64.Arith
 
 open VG.X86_64
-open VG.Impl.MlKem.X86_64 (xb xmov withMxcsr rcxLoop toY yconst)
+open VG.Impl.MlKem.X86_64 (xb xmov rcxLoop toY yconst)
 
 /-- `q` in the doublewords of `ymm15` and `-q⁻¹ mod 2³²` in those of `ymm14`. -/
 def yconsts : List Instr := yconst .xmm15 8380417 ++ yconst .xmm14 4236238847
@@ -147,12 +146,12 @@ def yscale : Prog isa :=
 /-- The table and the constants. -/
 def ypro : List Instr := ytabFill zetaTbl zmTab 256 .rsi ++ yconsts
 
-def nttAvx2 : Prog isa := withMxcsr .rsi 768 <|
+def nttAvx2 : Prog isa :=
   .seq (.block ypro) (.seq (ylay vbfly 128 1 4) (.seq (ylay vbfly 64 2 4) (.seq (ylay vbfly 32 4 4)
     (.seq (ylay vbfly 16 8 4) (.seq (ylay vbfly 8 16 4) (.seq (ylay4 vbfly 32 0x00 0x55 8)
       (.seq (ylay2 vbfly 64 0xA0 0xF5 16) (.seq (ylay1 vbfly 128 yzeta8 32) (.block yepi)))))))))
 
-def nttInvAvx2 : Prog isa := withMxcsr .rsi 768 <|
+def nttInvAvx2 : Prog isa :=
   .seq (.block ypro) (.seq (ylay1 vibfly 248 yzeta8R (-32)) (.seq (ylay2 vibfly 124 0x5F 0x0A (-16))
     (.seq (ylay4 vibfly 62 0x55 0x00 (-8)) (.seq (ylay vibfly 8 31 (-4)) (.seq (ylay vibfly 16 15 (-4))
       (.seq (ylay vibfly 32 7 (-4)) (.seq (ylay vibfly 64 3 (-4)) (.seq (ylay vibfly 128 1 (-4))
@@ -181,8 +180,7 @@ def ymulLast (core : List Instr) : List Instr :=
 /-- `mulFn` on eight coefficients at a time. -/
 def ymulFn (core : List Instr) : Prog isa :=
   .seq (.block [.mov .r8 (.reg .rdi), .vmovdquLoad .l256 .xmm6 (at_ .rdi 992)])
-    (.seq (withMxcsr .r8 1016
-        (.seq (.block ymulPro) (.seq (rcxLoop 31 (ymulLoads ++ toY core ++ ymulTail)) (.block (ymulLast core)))))
+    (.seq (.seq (.block ymulPro) (.seq (rcxLoop 31 (ymulLoads ++ toY core ++ ymulTail)) (.block (ymulLast core))))
       (.block (([.vmovdquStore .l256 (at_ .rdi 0) .xmm3] : List Instr) ++ yepi)))
 
 def mulAvx2 : Prog isa := ymulFn mulCore

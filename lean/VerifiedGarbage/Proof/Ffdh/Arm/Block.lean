@@ -172,7 +172,10 @@ tactic_template "ffrun" " [" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `
     gpr_putMem, mem_putMem, wr_putMem, rd_putMem, sp_putMem, z_putMem,
     RegUpd.sp_setReg, RegUpd.z_setReg, gpr_mem, mem_mem, wr_mem, rd_mem, sp_mem, z_mem,
     Option.map_some, Option.some.injEq, exists_eq_left',
-    ite_true, ite_false, reduceCtorEq, true_and, and_true, encodable_byte,
+    -- `↓reduceIte`: a read through the writes drops the branch it does not take before `simp`
+    -- visits it. Without it, `simp`'s time doubled with every instruction that has an `Op2`
+    -- operand (3.6 s for ten instructions).
+    ↓reduceIte, ite_true, ite_false, reduceCtorEq, true_and, and_true, encodable_byte,
     Nat.reduceLT, Nat.reduceLeDiff, Nat.reduceEqDiff, Nat.reduceAdd, Nat.reduceMul,
     BitVec.reduceSub, BitVec.reduceBEq, BitVec.reduceHShiftLeft, BitVec.reduceEq, decide_true, decide_false, $ls,*]))
 

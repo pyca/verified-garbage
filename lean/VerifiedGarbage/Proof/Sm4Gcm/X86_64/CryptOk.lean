@@ -40,14 +40,14 @@ open VG.Proof.AesGcm.X86_64 (Lay Env DataOk DataW LoopPre minLen_ok test_ok eval
   bytesAt_writeBytes_self length_bytesAt writeBytes_frame')
 
 section
-variable {Ctx St W SP : Addr} (L : Lay4 Ctx St W SP)
+variable {Ctx St W SP : Addr} {N : Nat} (L : Lay4 Ctx St W SP N)
 include L
 
 omit L in
 /-- The rest of the keystream block. -/
 theorem cryptHead_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
-    (h : CrIn Ctx St W SP icb P D n s) (hn : n ≠ 0) (hP : P % 16 ≠ 0) :
-    WP isa cryptHead s (CrMid Ctx St W SP icb P D n s.mem (min (16 - P % 16) n)) := by
+    (h : CrIn Ctx St W SP icb P D n s N) (hn : n ≠ 0) (hP : P % 16 ≠ 0) :
+    WP isa cryptHead s (CrMid Ctx St W SP icb P D n s.mem (min (16 - P % 16) n) · N) := by
   have hlt : P % 16 < 16 := Nat.mod_lt _ (by decide)
   have hn' := h.data.dw.ok.lt
   have he := h.env
@@ -102,7 +102,7 @@ theorem cryptHead_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
     · intro r h₁ h₂; simp [gpr_setReg, h₁, h₂]
     all_goals rfl
   refine WP.of_runBlock ⟨s₄, run₄, ?_⟩
-  have he₄ : Env Ctx St W SP s₄ := he.keep (fun r hr => by
+  have he₄ : Env Ctx St W SP s₄ N := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;>
       rw [hg₄ _ (by decide) (by decide),
@@ -133,7 +133,7 @@ theorem cryptHead_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
 
 omit L in
 /-- The arguments of `cryptWhole`'s call of `vg_sm4_ctr32`. -/
-theorem cwArgs_ok {s : State} (he : Env Ctx St W SP s) :
+theorem cwArgs_ok {s : State} (he : Env Ctx St W SP s N) :
     ∃ s', runBlock isa (([.mov .rdi (.reg .r13)] : List Instr) ++ ptr .rsi .r14 48) s = some s' ∧
       s'.gpr .rdi = Ctx ∧ s'.gpr .rsi = St + BitVec.ofNat 64 48 ∧
       (∀ r, r ≠ .rdi → r ≠ .rsi → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧
@@ -146,8 +146,8 @@ theorem cwArgs_ok {s : State} (he : Env Ctx St W SP s) :
   all_goals rfl
 
 /-- The arguments of `cryptWhole`'s call of `vg_sm4_ctr32`. -/
-theorem cwCall_of {D : Addr} {n j nb : Nat} {s₂ : State} (he₂ : Env Ctx St W SP s₂)
-    (hd : DataW4 Ctx St W SP s₂ D n) (hj : j ≤ n) (h16 : 16 * nb ≤ n - j)
+theorem cwCall_of {D : Addr} {n j nb : Nat} {s₂ : State} (he₂ : Env Ctx St W SP s₂ N)
+    (hd : DataW4 Ctx St W SP s₂ D n N) (hj : j ≤ n) (h16 : 16 * nb ≤ n - j)
     (hdi : s₂.gpr .rdi = Ctx) (hsi : s₂.gpr .rsi = St + BitVec.ofNat 64 48)
     (hdx : s₂.gpr .rdx = D + BitVec.ofNat 64 j) (hcx : s₂.gpr .rcx = BitVec.ofNat 64 nb) :
     CtrCall s₂ Ctx (St + BitVec.ofNat 64 48) (D + BitVec.ofNat 64 j) nb := by
@@ -169,8 +169,8 @@ theorem cwCall_of {D : Addr} {n j nb : Nat} {s₂ : State} (he₂ : Env Ctx St W
 
 /-- Whole blocks. -/
 theorem cryptWhole_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
-    (h : CrMid Ctx St W SP icb P D n m₀ j s) (hc : ciphOf s.mem Ctx = ciphOf m₀ Ctx) :
-    WP isa cryptWhole s (CrMid Ctx St W SP icb P D n m₀ (j + 16 * ((n - j) / 16))) := by
+    (h : CrMid Ctx St W SP icb P D n m₀ j s N) (hc : ciphOf s.mem Ctx = ciphOf m₀ Ctx) :
+    WP isa cryptWhole s (CrMid Ctx St W SP icb P D n m₀ (j + 16 * ((n - j) / 16)) · N) := by
   have hn' := h.data.dw.ok.lt
   have he := h.env
   obtain ⟨s₁, run₁, hdx, hcx, h12, hbp, hzf, hg₁, hm₁, hrd₁, hwr₁⟩ :=
@@ -178,11 +178,11 @@ theorem cryptWhole_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} 
   generalize hnb : (n - j) / 16 = nb at *
   have h16 : 16 * nb ≤ n - j := by omega_arith
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have he₁ : Env Ctx St W SP s₁ := he.keep (fun r hr => by
+  have he₁ : Env Ctx St W SP s₁ N := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide) (by decide) (by decide))
     hrd₁ hwr₁
-  have hd₁ : DataW4 Ctx St W SP s₁ D n := h.data.of_eq hrd₁ hwr₁
+  have hd₁ : DataW4 Ctx St W SP s₁ D n N := h.data.of_eq hrd₁ hwr₁
   refine WP.ite (decide (nb = 0)) (eval_e hzf) (fun ht => ?_) (fun hf => ?_)
   · have h0 : nb = 0 := by simpa using ht
     subst h0
@@ -195,7 +195,7 @@ theorem cryptWhole_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} 
     have hdj := (h.data.drop h.le).take (k := 16 * nb) h16
     obtain ⟨s₂, run₂, hdi, hsi, hg₂, hm₂, hrd₂, hwr₂⟩ := cwArgs_ok he₁
     refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
-    have he₂ : Env Ctx St W SP s₂ := he₁.keep (fun r hr => by
+    have he₂ : Env Ctx St W SP s₂ N := he₁.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> exact hg₂ _ (by decide) (by decide))
       hrd₂ hwr₂
@@ -258,13 +258,13 @@ theorem cryptWhole_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} 
 
 /-- The last bytes, with a new keystream block. -/
 theorem cryptTail_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
-    (h : CrMid Ctx St W SP icb P D n m₀ j s) (hj : n - j < 16) (hc : ciphOf s.mem Ctx = ciphOf m₀ Ctx) :
-    WP isa cryptTail s (CrOut Ctx St W SP icb P D n m₀) := by
+    (h : CrMid Ctx St W SP icb P D n m₀ j s N) (hj : n - j < 16) (hc : ciphOf s.mem Ctx = ciphOf m₀ Ctx) :
+    WP isa cryptTail s (CrOut Ctx St W SP icb P D n m₀ · N) := by
   have hn' := h.data.dw.ok.lt
   have he := h.env
   obtain ⟨s₁, run₁, hzf, hg₁, hm₁, hrd₁, hwr₁⟩ := test_ok s .rbp h.rbp (by omega_arith)
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have he₁ : Env Ctx St W SP s₁ := he.keep (fun r _ => by rw [hg₁]) hrd₁ hwr₁
+  have he₁ : Env Ctx St W SP s₁ N := he.keep (fun r _ => by rw [hg₁]) hrd₁ hwr₁
   refine WP.ite (decide (n - j = 0)) (eval_e hzf) (fun ht => ?_) (fun hf => ?_)
   · have h0 : j = n := by have := h.le; simp at ht; omega_arith
     subst h0
@@ -296,7 +296,7 @@ theorem cryptTail_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {
       · simp [rd_setReg, rd_arithFlags, hrd₁]
       · simp [wr_setReg, wr_arithFlags, hwr₁]
     refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
-    have he₂ : Env Ctx St W SP s₂ := he.keep (fun r hr => by
+    have he₂ : Env Ctx St W SP s₂ N := he.keep (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;>
         exact hg₂ _ (by decide) (by decide) (by decide) (by decide) (by decide)) hrd₂ hwr₂
@@ -333,7 +333,7 @@ theorem cryptTail_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {
       rw [gout.1, ← hc₂, hCB]
     have hCB₃ : blockAt s₃.mem (St + BitVec.ofNat 64 48) = Spec.Gcm.inc32 (blockAt s.mem (St + BitVec.ofNat 64 48)) := by
       rw [gctr, hCB]; rfl
-    have he₃ : Env Ctx St W SP s₃ := he₂.of_saved g.saved g.rd g.wr
+    have he₃ : Env Ctx St W SP s₃ N := he₂.of_saved g.saved g.rd g.wr
     obtain ⟨s₄, run₄, hdi₄, hsi₄, hcx₄, hg₄, hm₄, hrd₄, hwr₄⟩ : ∃ s₄, runBlock isa
         ([.mov .rdi (.reg .r12)] ++ ptr .rsi .r14 64 ++ [.mov .rcx (.reg .rbp)]) s₃ = some s₄ ∧
         s₄.gpr .rdi = D + BitVec.ofNat 64 j ∧ s₄.gpr .rsi = St + BitVec.ofNat 64 64 ∧
@@ -417,34 +417,34 @@ theorem cryptTail_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {
         exact ⟨_, List.mem_cons_self .., Offset.sub_base D (by omega_arith)⟩
 
 theorem CrMid.ciph {icb : Block} {P : Nat} {D : Addr} {n : Nat} {m₀ : Mem} {j : Nat} {s : State}
-    (h : CrMid Ctx St W SP icb P D n m₀ j s) : ciphOf s.mem Ctx = ciphOf m₀ Ctx :=
+    (h : CrMid Ctx St W SP icb P D n m₀ j s N) : ciphOf s.mem Ctx = ciphOf m₀ Ctx :=
   ciph_frame h.frame (ctx_crFrame L h.data)
 
 /-- `crypt`. -/
 theorem crypt_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
-    (h : CrIn Ctx St W SP icb P D n s) :
-    WP isa crypt s (CrOut Ctx St W SP icb P D n s.mem) := by
+    (h : CrIn Ctx St W SP icb P D n s N) :
+    WP isa crypt s (CrOut Ctx St W SP icb P D n s.mem · N) := by
   have hn' := h.data.dw.ok.lt
   have he := h.env
   obtain ⟨s₁, run₁, hzf, hg₁, hm₁, hrd₁, hwr₁⟩ := test_ok s .rbp h.rbp hn'
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have he₁ : Env Ctx St W SP s₁ := he.keep (fun r _ => by rw [hg₁]) hrd₁ hwr₁
+  have he₁ : Env Ctx St W SP s₁ N := he.keep (fun r _ => by rw [hg₁]) hrd₁ hwr₁
   refine WP.ite (decide (n = 0)) (eval_e hzf) (fun ht => ?_) (fun hf => ?_)
   · have h0 : n = 0 := by simpa using ht
     subst h0
     exact WP.block_nil ⟨he₁, fun hc₀ => by rw [hm₁]; exact hc₀,
       fun _ => by simp [bytesAt]; rfl, by rw [hm₁]; exact Frame.refl _ _⟩
   · have h0 : n ≠ 0 := by simpa using hf
-    have h₁ : CrIn Ctx St W SP icb P D n s₁ := ⟨he₁, by rw [hg₁]; exact h.r12, by rw [hg₁]; exact h.rbp,
+    have h₁ : CrIn Ctx St W SP icb P D n s₁ N := ⟨he₁, by rw [hg₁]; exact h.r12, by rw [hg₁]; exact h.rbp,
       by rw [hg₁]; exact h.rbx, h.data.of_eq hrd₁ hwr₁⟩
     obtain ⟨s₂, run₂, hzf₂, hg₂, hm₂, hrd₂, hwr₂⟩ := test_ok s₁ .rbx h₁.rbx
       (by have := Nat.mod_lt P (show 16 > 0 by decide); omega_arith)
-    have he₂ : Env Ctx St W SP s₂ := he₁.keep (fun r _ => by rw [hg₂]) hrd₂ hwr₂
-    have h₂ : CrIn Ctx St W SP icb P D n s₂ := ⟨he₂, by rw [hg₂]; exact h₁.r12, by rw [hg₂]; exact h₁.rbp,
+    have he₂ : Env Ctx St W SP s₂ N := he₁.keep (fun r _ => by rw [hg₂]) hrd₂ hwr₂
+    have h₂ : CrIn Ctx St W SP icb P D n s₂ N := ⟨he₂, by rw [hg₂]; exact h₁.r12, by rw [hg₂]; exact h₁.rbp,
       by rw [hg₂]; exact h₁.rbx, h₁.data.of_eq hrd₂ hwr₂⟩
     have hm₀ : s₂.mem = s.mem := hm₂.trans hm₁
     refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
-    refine WP.seq (WP.mono (Q := fun s' => ∃ j, CrMid Ctx St W SP icb P D n s.mem j s')
+    refine WP.seq (WP.mono (Q := fun s' => ∃ j, CrMid Ctx St W SP icb P D n s.mem j s' N)
       (WP.ite (decide (P % 16 = 0)) (eval_e hzf₂) (fun ht => ?_) (fun hf => ?_)) fun s' hj => ?_)
     · have ho : P % 16 = 0 := by simpa using ht
       exact WP.block_nil ⟨0, he₂, by omega_arith, by rw [h₂.r12]; simp, by rw [h₂.rbp, Nat.sub_zero], h₂.data,
@@ -459,14 +459,14 @@ theorem crypt_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
 omit L in
 /-- From the start of a keystream block, nothing done yet. -/
 theorem CrIn.mid {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
-    (h : CrIn Ctx St W SP icb P D n s) (hP : P % 16 = 0) : CrMid Ctx St W SP icb P D n s.mem 0 s :=
+    (h : CrIn Ctx St W SP icb P D n s N) (hP : P % 16 = 0) : CrMid Ctx St W SP icb P D n s.mem 0 s N :=
   ⟨h.env, Nat.zero_le _, by rw [h.r12]; simp, by rw [h.rbp, Nat.sub_zero], h.data,
     fun hc₀ => by simpa using hc₀, fun _ => by simp [bytesAt]; rfl, rfl, .inr (by omega_arith), Frame.refl _ _⟩
 
 /-- `cryptAl`: `crypt` from the start of a keystream block. -/
 theorem cryptAl_ok {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
-    (h : CrIn Ctx St W SP icb P D n s) (hP : P % 16 = 0) :
-    WP isa cryptAl s (CrOut Ctx St W SP icb P D n s.mem) := by
+    (h : CrIn Ctx St W SP icb P D n s N) (hP : P % 16 = 0) :
+    WP isa cryptAl s (CrOut Ctx St W SP icb P D n s.mem · N) := by
   have h₀ := h.mid hP
   refine WP.seq (WP.mono (cryptWhole_ok L h₀ rfl) fun s' hj => ?_)
   exact cryptTail_ok L hj (by omega_arith) (hj.ciph L)

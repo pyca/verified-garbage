@@ -16,11 +16,9 @@ namespace VG.Artifacts.BlowfishOfb.AArch64
 def artifacts : List Artifact := [
   Spec.Blowfish.ofbApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 224 .x4 28 Impl.Blowfish.AArch64.ofb
-    stack := 224
     verified := Proof.Blowfish.AArch64.ofb_framed },
   Spec.Blowfish.ofbFinalApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 224 .x4 28 Impl.Blowfish.AArch64.ofbFinal
-    stack := 224
     verified := Proof.Blowfish.AArch64.ofbFinal_framed }]
 
 end VG.Artifacts.BlowfishOfb.AArch64

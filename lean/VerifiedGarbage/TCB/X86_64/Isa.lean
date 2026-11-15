@@ -174,12 +174,20 @@ Modelling choices:
   its list of the instructions affected, "MCDT Data Operand Independent
   Timing Instructions"; the processors that enumerate `MCDT_NO`,
   CPUID.(EAX=7H,ECX=2):EDX[5], are not affected). The leakage model does
-  not see this, so code must only give these instructions secret operands
-  between Intel's prologue and epilogue:
+  not see this, so these instructions may only take secret operands while
+  MXCSR holds `0x1FBF`, loaded before them and followed by `lfence`. Code
+  ensures that in one of two ways. Between Intel's prologue and epilogue:
   `stmxcsr` (save the caller's MXCSR), `ldmxcsr` of `0x1FBF`, `lfence`, then
   the code that uses them, then `lfence` and `ldmxcsr` of the saved value.
-  `ci/check_mcdt.py` checks this in the generated code; `lfence` and the
-  MXCSR instructions exist in the model for it.
+  Or under `vg_mcdt_enter` (`Spec/Mcdt.lean`), which the dispatcher of a
+  function whose code has such an instruction runs first
+  (`Printer.mcdt`, "Dispatchers" in `TCB/Rust.lean`): it sets MXCSR's
+  status flags, keeping its control bits, which gives `0x1FBF` where they
+  are the default (the dispatcher panics where they are not), then
+  `lfence`; nothing but a load of MXCSR clears the flags, so they hold until
+  the function returns. `ci/check_mcdt.py` checks the generated code for
+  one or the other; `lfence` and the MXCSR instructions exist in the model
+  for them.
 -/
 
 @[expose] public section

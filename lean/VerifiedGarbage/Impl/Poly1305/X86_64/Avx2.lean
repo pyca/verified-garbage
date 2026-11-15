@@ -33,12 +33,9 @@ the first `4 ⌊n / 4⌋` blocks are absorbed four at a time, as in OpenSSL's
   computed on entry by multiplying `r` (from the key) by itself. `ymm10` is
   scratch, and the mask `2²⁶ - 1` and the pad bit `2²⁴` are broadcast from
   `r8` and `r9` when needed.
-* `vpmuludq` has MXCSR-configuration-dependent timing on some processors,
-  so the code that uses it runs between Intel's prologue and epilogue
-  (`stmxcsr`, `ldmxcsr` of `0x1FBF`, `lfence`, … `lfence`, `ldmxcsr` of the
-  saved value; see "MCDT" in `TCB/X86_64/Isa.lean`), in the state's working
-  space (bytes 120–127). Bits 31:16 of MXCSR are reserved and zero; the
-  saved value is stored with them cleared, which `ldmxcsr` requires.
+* `vpmuludq` has MXCSR-configuration-dependent timing on some processors
+  (see "MCDT" in `TCB/X86_64/Isa.lean`): the dispatcher runs `vg_mcdt_enter` first, which leaves MXCSR `0x1FBF` for the
+  whole call, so the code sets none of its own.
 * At the end the lanes of `H` are summed, carried, reduced fully (`h + 5 - 2¹³⁰`
   if that is not negative), put back into three 64-bit words and stored,
   all in vector registers.
@@ -162,14 +159,6 @@ def loadH : List Instr :=
 /-- The mask and the pad bit, in `r8` and `r9`. -/
 def consts : List Instr := [.mov32 .r8 (.imm 0x3ffffff), .mov32 .r9 (.imm 0x1000000)]
 
-/-- Intel's MCDT prologue and epilogue, with MXCSR saved at `[rdi + 120]`
-(bits 31:16 cleared) and `0x1FBF` at `[rdi + 124]`. -/
-def mxcsrIn : List Instr := [
-  .stmxcsr (at_ .rdi 120), .mov32 .rax (.mem (at_ .rdi 120)), .alu32 .and .rax (.imm 0xffff),
-  .store32 (at_ .rdi 120) .rax, .mov32 .rax (.imm 0x1FBF), .store32 (at_ .rdi 124) .rax,
-  .ldmxcsr (at_ .rdi 124), .lfence]
-def mxcsrOut : List Instr := [.lfence, .ldmxcsr (at_ .rdi 120)]
-
 /-- `Y`: `r` in both doublewords, then `r²`, `r³` and `r⁴` blended into
 the high doublewords of lanes 0–2, 0–1 and 0, and `r⁴` into every low
 doubleword. -/
@@ -228,10 +217,10 @@ def storeH : List Instr := [
 /-- The first `4 ⌊n / 4⌋` blocks absorbed; `rsi` advanced past them,
 `rdx = n mod 4`. The groups before the last are counted down in `rcx`. -/
 def body : Prog isa :=
-  .seq (.block (consts ++ mxcsrIn ++ powers ++ loadHw ++ loadH ++
+  .seq (.block (consts ++ powers ++ loadHw ++ loadH ++
     ([.mov .rcx (.reg .rdx), .shift .shr .rcx 2, .alu .sub .rcx (.imm 1)] : List Instr)))
   (.seq (.loop groupBody .ne)
-    (.block (consts2 ++ last ++ sumLanes ++ fullCarry ++ reduce ++ mxcsrOut ++ storeH ++
+    (.block (consts2 ++ last ++ sumLanes ++ fullCarry ++ reduce ++ storeH ++
       ([.vop .vzeroupper, .alu .add .rsi (.imm 64), .alu .and .rdx (.imm 3)] : List Instr))))
 
 def scalar : Prog isa := .call "vg_poly1305_blocks" blocks

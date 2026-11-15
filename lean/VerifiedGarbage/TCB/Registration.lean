@@ -8,9 +8,9 @@ public import VerifiedGarbage.TCB.Print
 
 **Trusted.** A registration file makes each function's `Artifact` from its
 `Api` with `Api.artifact`, stating only what the implementation chooses: the
-target, the code and its proof, the stack it uses, the constant tables it
-reads (which `consts_of` finds in the contract the proof is of), the tables
-of functions it takes, how much
+target, the code and its proof, the stack it uses and the constant tables it
+reads (which `stack_of` and `consts_of` find in the contract the proof is
+of), the tables of functions it takes, how much
 of its writable arrays it writes (`written`, with its proof), the proof that
 it returns without secret residue (`residue`), and the suffix of its name. Everything else
 comes from the `Api` (`Spec/`): the Rust module, name, signature and
@@ -312,6 +312,20 @@ syntax (name := constsOf) "consts_of" : tactic
 that `consts_of` can find them in it. -/
 abbrev ConstsOf {M : ISA} (_contract : Contract M) : Type := List (String × List (BitVec 64))
 
+/-- Gives `Registration.stack`, by default: the `stack` of the `Sig.contract`
+that the contract `verified` proves is (`StackOf`).
+`Proof/Framework/Registration.lean` implements it; what it gives is not
+trusted, since the contract must be `api`'s for that stack
+(`Registration.ofApi`), and one that `Sig.contract` derives for it
+(`Registration.ofSig`), whose requirements the emitter documents for exactly
+that stack (`Artifact.stack`). -/
+syntax (name := stackOf) "stack_of" : tactic
+
+/-- The stack that the calls and frames of a function whose contract is
+`contract` use, in bytes (`Registration.stack`): a number, whose type names
+the contract so that `stack_of` can find it in it. -/
+abbrev StackOf {M : ISA} (_contract : Contract M) : Type := Nat
+
 /-- The value of `f` on the code of each call of `calls` (`Code.calls`), in
 order, but for a call whose value is that of the first call of the same
 function.
@@ -390,19 +404,20 @@ structure Registration (api : Api) (target : Target) where
   suffix : String := ""
   /-- `Artifact.tables`. -/
   tables : List (String × List FnTable) := []
-  /-- `Artifact.stack`. -/
-  stack : Nat := 0
   code : Prog target.isa
   /-- The contract `verified` proves, which is `api`'s on `target` for
   `consts`, `tables` and `stack` (`ofApi`); unification finds it in
   `verified`'s type. The default, for a `verified` whose type does not
-  determine it, is `api`'s for no tables of constants. -/
+  determine it, is `api`'s for no tables of constants and no stack. -/
   contract : Contract target.isa :=
-    api.contract (target.abi.withTables api.sig tables) stack
+    api.contract (target.abi.withTables api.sig tables) 0
   verified : Verified target code contract
   /-- `Artifact.consts`: by default, those `contract` names (`consts_of`),
   so that a registration states them only where it does not. -/
   consts : ConstsOf contract := by consts_of
+  /-- `Artifact.stack`: by default, that of `contract` (`stack_of`), so that
+  a registration never states it. -/
+  stack : StackOf contract := by stack_of
   ofApi : contract = api.contract ((target.abi.withConsts consts).withTables api.sig tables) stack := by
     exact rfl
   /-- `Artifact.ofSig`. -/

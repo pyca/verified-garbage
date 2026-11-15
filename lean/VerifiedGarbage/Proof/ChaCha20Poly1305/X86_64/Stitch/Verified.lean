@@ -1837,16 +1837,16 @@ open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 
 /-- The stitched loops never write the stack pointer, for either rounds. -/
 theorem bulkO_spSafe (vl : Bool) : (bulkO vl).all (fun i => !X86_64.isa.writesSp i) = true := by
-  cases vl <;> exact Code.all_of_allInstrs (by lit_decide)
+  cases vl <;> exact Code.all_of_spTest (by lit_decide)
 
 theorem bulkP_spSafe (vl : Bool) : (bulkP vl).all (fun i => !X86_64.isa.writesSp i) = true := by
-  cases vl <;> exact Code.all_of_allInstrs (by lit_decide)
+  cases vl <;> exact Code.all_of_spTest (by lit_decide)
 
 theorem bigS_spSafe (vl : Bool) : (bigS vl).all (fun i => !X86_64.isa.writesSp i) = true := by
-  cases vl <;> exact Code.all_of_allInstrs (by lit_decide)
+  cases vl <;> exact Code.all_of_spTest (by lit_decide)
 
 theorem tailP_spSafe (vl : Bool) : (tailP vl).all (fun i => !X86_64.isa.writesSp i) = true := by
-  cases vl <;> exact Code.all_of_allInstrs (by lit_decide)
+  cases vl <;> exact Code.all_of_spTest (by lit_decide)
 
 /-- As `seal_spSafe`, with the stitched loops' checks above. -/
 theorem sealS_spSafe (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) :
@@ -5230,16 +5230,16 @@ open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64 VG.Impl.ChaCha20Poly1305.X86_6
 open VG.Impl.ChaCha20.X86_64.XorBuf (xData xBody xorBufX)
 
 theorem twoKs_spSafe (vl : Bool) : (twoKs vl).all (fun i => !X86_64.isa.writesSp i) = true := by
-  cases vl <;> exact Code.all_of_allInstrs (by lit_decide)
+  cases vl <;> exact Code.all_of_spTest (by lit_decide)
 
 theorem twoKsB_spSafe (vl : Bool) : (twoKsB vl).all (fun i => !X86_64.isa.writesSp i) = true := by
-  cases vl <;> exact Code.all_of_allInstrs (by lit_decide)
+  cases vl <;> exact Code.all_of_spTest (by lit_decide)
 
 theorem fourKs_spSafe (vl : Bool) : (fourKs vl).all (fun i => !X86_64.isa.writesSp i) = true := by
-  cases vl <;> exact Code.all_of_allInstrs (by lit_decide)
+  cases vl <;> exact Code.all_of_spTest (by lit_decide)
 
 theorem wholeO_spSafe (vl : Bool) : (wholeO vl).all (fun i => !X86_64.isa.writesSp i) = true := by
-  cases vl <;> exact Code.all_of_allInstrs (by lit_decide)
+  cases vl <;> exact Code.all_of_spTest (by lit_decide)
 
 theorem stitchedShared_ok (v : Proof.ChaCha20.X86_64.XorImpl) (hv : v.poly = .avx2) (s : State)
     (hs : sharedK.pre s) :

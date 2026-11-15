@@ -230,41 +230,41 @@ theorem enc_sat {vs : List MdHash} {w : MdHash} (hw : w ∈ vs) (hl : (names vs)
   have hha' := hha (encSatBase H)
   have hP : Enc.encP (RsaPkcs1Sig.AArch64.pdOf v) = 16 := rfl
   rw [hP]
-  simp only [mdHashes, List.mem_cons, List.not_mem_nil, or_false] at hH
-  rcases hH with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-  all_goals
-    sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
-      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
-      AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq]
-    simp only [withTable_arg _ vs w (hA _ 0 (by decide)), withTable_arg _ vs w (hA _ 1 (by decide)),
-      withTable_arg _ vs w (hA _ 2 (by decide)), withTable_arg _ vs w (hA _ 3 (by decide)),
-      withTable_arg _ vs w (hA _ 4 (by decide)), withTable_arg _ vs w (hA _ 5 (by decide)),
-      withTable_arg _ vs w (hA _ 6 (by decide)), withTable_arg _ vs w (hA _ 7 (by decide)),
-      withTable_arg _ vs w (hA _ 8 (by decide)), withTable_arg _ vs w (hA _ 9 (by decide))]
-    simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
-      List.getD_cons_zero, Option.some.injEq, exists_eq_left', withTable_addr]
-    sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
-      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
-      AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq]
-    sig_and_intros
-    all_goals first
-      | exact ⟨tableOf w, List.mem_map_of_mem hw, by
-          rw [show stackArg (encSatBase _) 8 = 0x300000 by decide]; exact held_twL _ _ _ rfl⟩
-      | exact ⟨tableOf w, List.mem_map_of_mem hw, by
-          rw [show stackArg (encSatBase _) 9 = 0x300000 by decide]; exact held_twL _ _ _ rfl⟩
-      | rfl
-      | decide
-      | exact Region.disjoint_of_sep (by decide)
-      | (intro H' hH'
-         rw [show stackArg (encSatBase _) 8 = 0x300000 by decide] at hH'
-         obtain rfl := Option.some.inj (hha'.symm.trans hH')
-         decide)
-      | exact symsOf_distinct2 hl
-      | (simp only [Spec.Rsa.lenValid]; decide)
-      | (intro a h₁ h₂
-         set_option linter.unusedSimpArgs false in
-         sig_simp_only [Region.Contains, encSatBase, stackArg, stackArgAddr, Mem.readW, Mem.read] at h₁ h₂
-         bv_omega)
+  have args := (show ∀ H ∈ mdHashes,
+      stackArg (encSatBase H) 0 = 0x4100 ∧ stackArg (encSatBase H) 1 = 0 ∧ stackArg (encSatBase H) 2 = 0x4200 ∧
+      stackArg (encSatBase H) 3 = BitVec.ofNat 64 H.len ∧ stackArg (encSatBase H) 4 = 0x20000 ∧
+      stackArg (encSatBase H) 5 = 2080 ∧ stackArg (encSatBase H) 6 = 0x5000 ∧ stackArg (encSatBase H) 7 = 16 ∧
+      stackArg (encSatBase H) 8 = 0x300000 ∧ stackArg (encSatBase H) 9 = 0x300000 by decide) H hH
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
+    AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq]
+  simp only [withTable_arg _ vs w (hA _ 0 (by decide)), withTable_arg _ vs w (hA _ 1 (by decide)),
+    withTable_arg _ vs w (hA _ 2 (by decide)), withTable_arg _ vs w (hA _ 3 (by decide)),
+    withTable_arg _ vs w (hA _ 4 (by decide)), withTable_arg _ vs w (hA _ 5 (by decide)),
+    withTable_arg _ vs w (hA _ 6 (by decide)), withTable_arg _ vs w (hA _ 7 (by decide)),
+    withTable_arg _ vs w (hA _ 8 (by decide)), withTable_arg _ vs w (hA _ 9 (by decide))]
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left', withTable_addr, args]
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
+    AArch64.abi, AArch64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq]
+  sig_and_intros
+  all_goals first
+    | exact ⟨tableOf w, List.mem_map_of_mem hw, held_twL _ _ _ rfl⟩
+    | exact rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | exact symsOf_distinct2 hl
+    | (simp only [Spec.Rsa.lenValid]; decide)
+    -- What mentions the seed's length, for each hash.
+    | (simp only [mdHashes, List.mem_cons, List.not_mem_nil, or_false] at hH
+       rcases hH with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> first
+         | exact rfl
+         | decide
+         | exact Region.disjoint_of_sep (by decide)
+         | (intro H' hH'
+            obtain rfl := Option.some.inj (hha'.symm.trans hH')
+            decide))
 
 /-! ## The instances -/
 

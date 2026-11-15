@@ -82,7 +82,7 @@ theorem subBody_ok {t : State} {base : Addr} {bytes a xx tt : Nat} (ws : Ws t ba
     have hb := (mul_words (t.mem.readW (off base a) 32) (t.gpr .ecx)).2
     have hc : w32 t.mem base tt < 2 ^ 32 := (t.mem.readW (off base tt) 32).isLt
     change (w32 t.mem base a * (t.gpr .ecx).toNat / 2 ^ 32 % 2 ^ 32 + 0 +
-      (decide (2 ^ 32 ≤ w32 t.mem base a * (t.gpr .ecx).toNat % 2 ^ 32 + w32 t.mem base tt)).toNat) % 2 ^ 32 = _ at *
+      (decide (2 ^ 32 ≤ w32 t.mem base a * (t.gpr .ecx).toNat % 2 ^ 32 + w32 t.mem base tt)).toNat) % 2 ^ 32 = _
     generalize w32 t.mem base a * (t.gpr .ecx).toNat = P at *
     cases h : decide (2 ^ 32 ≤ P % 2 ^ 32 + w32 t.mem base tt) <;>
       simp only [decide_eq_true_eq, decide_eq_false_iff_not] at h <;> simp only [Bool.toNat_false, Bool.toNat_true] <;>

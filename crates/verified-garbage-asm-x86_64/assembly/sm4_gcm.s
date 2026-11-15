@@ -36,6 +36,383 @@ vg_sm4_gcm_init:
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
 	lea rsp, [rsp+2568]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-4080]
+	movdqu XMMWORD PTR [rsp+4064], xmm0
+	movdqu XMMWORD PTR [rsp+4048], xmm0
+	movdqu XMMWORD PTR [rsp+4032], xmm0
+	movdqu XMMWORD PTR [rsp+4016], xmm0
+	movdqu XMMWORD PTR [rsp+4000], xmm0
+	movdqu XMMWORD PTR [rsp+3984], xmm0
+	movdqu XMMWORD PTR [rsp+3968], xmm0
+	movdqu XMMWORD PTR [rsp+3952], xmm0
+	movdqu XMMWORD PTR [rsp+3936], xmm0
+	movdqu XMMWORD PTR [rsp+3920], xmm0
+	movdqu XMMWORD PTR [rsp+3904], xmm0
+	movdqu XMMWORD PTR [rsp+3888], xmm0
+	movdqu XMMWORD PTR [rsp+3872], xmm0
+	movdqu XMMWORD PTR [rsp+3856], xmm0
+	movdqu XMMWORD PTR [rsp+3840], xmm0
+	movdqu XMMWORD PTR [rsp+3824], xmm0
+	movdqu XMMWORD PTR [rsp+3808], xmm0
+	movdqu XMMWORD PTR [rsp+3792], xmm0
+	movdqu XMMWORD PTR [rsp+3776], xmm0
+	movdqu XMMWORD PTR [rsp+3760], xmm0
+	movdqu XMMWORD PTR [rsp+3744], xmm0
+	movdqu XMMWORD PTR [rsp+3728], xmm0
+	movdqu XMMWORD PTR [rsp+3712], xmm0
+	movdqu XMMWORD PTR [rsp+3696], xmm0
+	movdqu XMMWORD PTR [rsp+3680], xmm0
+	movdqu XMMWORD PTR [rsp+3664], xmm0
+	movdqu XMMWORD PTR [rsp+3648], xmm0
+	movdqu XMMWORD PTR [rsp+3632], xmm0
+	movdqu XMMWORD PTR [rsp+3616], xmm0
+	movdqu XMMWORD PTR [rsp+3600], xmm0
+	movdqu XMMWORD PTR [rsp+3584], xmm0
+	movdqu XMMWORD PTR [rsp+3568], xmm0
+	movdqu XMMWORD PTR [rsp+3552], xmm0
+	movdqu XMMWORD PTR [rsp+3536], xmm0
+	movdqu XMMWORD PTR [rsp+3520], xmm0
+	movdqu XMMWORD PTR [rsp+3504], xmm0
+	movdqu XMMWORD PTR [rsp+3488], xmm0
+	movdqu XMMWORD PTR [rsp+3472], xmm0
+	movdqu XMMWORD PTR [rsp+3456], xmm0
+	movdqu XMMWORD PTR [rsp+3440], xmm0
+	movdqu XMMWORD PTR [rsp+3424], xmm0
+	movdqu XMMWORD PTR [rsp+3408], xmm0
+	movdqu XMMWORD PTR [rsp+3392], xmm0
+	movdqu XMMWORD PTR [rsp+3376], xmm0
+	movdqu XMMWORD PTR [rsp+3360], xmm0
+	movdqu XMMWORD PTR [rsp+3344], xmm0
+	movdqu XMMWORD PTR [rsp+3328], xmm0
+	movdqu XMMWORD PTR [rsp+3312], xmm0
+	movdqu XMMWORD PTR [rsp+3296], xmm0
+	movdqu XMMWORD PTR [rsp+3280], xmm0
+	movdqu XMMWORD PTR [rsp+3264], xmm0
+	movdqu XMMWORD PTR [rsp+3248], xmm0
+	movdqu XMMWORD PTR [rsp+3232], xmm0
+	movdqu XMMWORD PTR [rsp+3216], xmm0
+	movdqu XMMWORD PTR [rsp+3200], xmm0
+	movdqu XMMWORD PTR [rsp+3184], xmm0
+	movdqu XMMWORD PTR [rsp+3168], xmm0
+	movdqu XMMWORD PTR [rsp+3152], xmm0
+	movdqu XMMWORD PTR [rsp+3136], xmm0
+	movdqu XMMWORD PTR [rsp+3120], xmm0
+	movdqu XMMWORD PTR [rsp+3104], xmm0
+	movdqu XMMWORD PTR [rsp+3088], xmm0
+	movdqu XMMWORD PTR [rsp+3072], xmm0
+	movdqu XMMWORD PTR [rsp+3056], xmm0
+	movdqu XMMWORD PTR [rsp+3040], xmm0
+	movdqu XMMWORD PTR [rsp+3024], xmm0
+	movdqu XMMWORD PTR [rsp+3008], xmm0
+	movdqu XMMWORD PTR [rsp+2992], xmm0
+	movdqu XMMWORD PTR [rsp+2976], xmm0
+	movdqu XMMWORD PTR [rsp+2960], xmm0
+	movdqu XMMWORD PTR [rsp+2944], xmm0
+	movdqu XMMWORD PTR [rsp+2928], xmm0
+	movdqu XMMWORD PTR [rsp+2912], xmm0
+	movdqu XMMWORD PTR [rsp+2896], xmm0
+	movdqu XMMWORD PTR [rsp+2880], xmm0
+	movdqu XMMWORD PTR [rsp+2864], xmm0
+	movdqu XMMWORD PTR [rsp+2848], xmm0
+	movdqu XMMWORD PTR [rsp+2832], xmm0
+	movdqu XMMWORD PTR [rsp+2816], xmm0
+	movdqu XMMWORD PTR [rsp+2800], xmm0
+	movdqu XMMWORD PTR [rsp+2784], xmm0
+	movdqu XMMWORD PTR [rsp+2768], xmm0
+	movdqu XMMWORD PTR [rsp+2752], xmm0
+	movdqu XMMWORD PTR [rsp+2736], xmm0
+	movdqu XMMWORD PTR [rsp+2720], xmm0
+	movdqu XMMWORD PTR [rsp+2704], xmm0
+	movdqu XMMWORD PTR [rsp+2688], xmm0
+	movdqu XMMWORD PTR [rsp+2672], xmm0
+	movdqu XMMWORD PTR [rsp+2656], xmm0
+	movdqu XMMWORD PTR [rsp+2640], xmm0
+	movdqu XMMWORD PTR [rsp+2624], xmm0
+	movdqu XMMWORD PTR [rsp+2608], xmm0
+	movdqu XMMWORD PTR [rsp+2592], xmm0
+	movdqu XMMWORD PTR [rsp+2576], xmm0
+	movdqu XMMWORD PTR [rsp+2560], xmm0
+	movdqu XMMWORD PTR [rsp+2544], xmm0
+	movdqu XMMWORD PTR [rsp+2528], xmm0
+	movdqu XMMWORD PTR [rsp+2512], xmm0
+	movdqu XMMWORD PTR [rsp+2496], xmm0
+	movdqu XMMWORD PTR [rsp+2480], xmm0
+	movdqu XMMWORD PTR [rsp+2464], xmm0
+	movdqu XMMWORD PTR [rsp+2448], xmm0
+	movdqu XMMWORD PTR [rsp+2432], xmm0
+	movdqu XMMWORD PTR [rsp+2416], xmm0
+	movdqu XMMWORD PTR [rsp+2400], xmm0
+	movdqu XMMWORD PTR [rsp+2384], xmm0
+	movdqu XMMWORD PTR [rsp+2368], xmm0
+	movdqu XMMWORD PTR [rsp+2352], xmm0
+	movdqu XMMWORD PTR [rsp+2336], xmm0
+	movdqu XMMWORD PTR [rsp+2320], xmm0
+	movdqu XMMWORD PTR [rsp+2304], xmm0
+	movdqu XMMWORD PTR [rsp+2288], xmm0
+	movdqu XMMWORD PTR [rsp+2272], xmm0
+	movdqu XMMWORD PTR [rsp+2256], xmm0
+	movdqu XMMWORD PTR [rsp+2240], xmm0
+	movdqu XMMWORD PTR [rsp+2224], xmm0
+	movdqu XMMWORD PTR [rsp+2208], xmm0
+	movdqu XMMWORD PTR [rsp+2192], xmm0
+	movdqu XMMWORD PTR [rsp+2176], xmm0
+	movdqu XMMWORD PTR [rsp+2160], xmm0
+	movdqu XMMWORD PTR [rsp+2144], xmm0
+	movdqu XMMWORD PTR [rsp+2128], xmm0
+	movdqu XMMWORD PTR [rsp+2112], xmm0
+	movdqu XMMWORD PTR [rsp+2096], xmm0
+	movdqu XMMWORD PTR [rsp+2080], xmm0
+	movdqu XMMWORD PTR [rsp+2064], xmm0
+	movdqu XMMWORD PTR [rsp+2048], xmm0
+	movdqu XMMWORD PTR [rsp+2032], xmm0
+	movdqu XMMWORD PTR [rsp+2016], xmm0
+	movdqu XMMWORD PTR [rsp+2000], xmm0
+	movdqu XMMWORD PTR [rsp+1984], xmm0
+	movdqu XMMWORD PTR [rsp+1968], xmm0
+	movdqu XMMWORD PTR [rsp+1952], xmm0
+	movdqu XMMWORD PTR [rsp+1936], xmm0
+	movdqu XMMWORD PTR [rsp+1920], xmm0
+	movdqu XMMWORD PTR [rsp+1904], xmm0
+	movdqu XMMWORD PTR [rsp+1888], xmm0
+	movdqu XMMWORD PTR [rsp+1872], xmm0
+	movdqu XMMWORD PTR [rsp+1856], xmm0
+	movdqu XMMWORD PTR [rsp+1840], xmm0
+	movdqu XMMWORD PTR [rsp+1824], xmm0
+	movdqu XMMWORD PTR [rsp+1808], xmm0
+	movdqu XMMWORD PTR [rsp+1792], xmm0
+	movdqu XMMWORD PTR [rsp+1776], xmm0
+	movdqu XMMWORD PTR [rsp+1760], xmm0
+	movdqu XMMWORD PTR [rsp+1744], xmm0
+	movdqu XMMWORD PTR [rsp+1728], xmm0
+	movdqu XMMWORD PTR [rsp+1712], xmm0
+	movdqu XMMWORD PTR [rsp+1696], xmm0
+	movdqu XMMWORD PTR [rsp+1680], xmm0
+	movdqu XMMWORD PTR [rsp+1664], xmm0
+	movdqu XMMWORD PTR [rsp+1648], xmm0
+	movdqu XMMWORD PTR [rsp+1632], xmm0
+	movdqu XMMWORD PTR [rsp+1616], xmm0
+	movdqu XMMWORD PTR [rsp+1600], xmm0
+	movdqu XMMWORD PTR [rsp+1584], xmm0
+	movdqu XMMWORD PTR [rsp+1568], xmm0
+	movdqu XMMWORD PTR [rsp+1552], xmm0
+	movdqu XMMWORD PTR [rsp+1536], xmm0
+	movdqu XMMWORD PTR [rsp+1520], xmm0
+	movdqu XMMWORD PTR [rsp+1504], xmm0
+	movdqu XMMWORD PTR [rsp+1488], xmm0
+	movdqu XMMWORD PTR [rsp+1472], xmm0
+	movdqu XMMWORD PTR [rsp+1456], xmm0
+	movdqu XMMWORD PTR [rsp+1440], xmm0
+	movdqu XMMWORD PTR [rsp+1424], xmm0
+	movdqu XMMWORD PTR [rsp+1408], xmm0
+	movdqu XMMWORD PTR [rsp+1392], xmm0
+	movdqu XMMWORD PTR [rsp+1376], xmm0
+	movdqu XMMWORD PTR [rsp+1360], xmm0
+	movdqu XMMWORD PTR [rsp+1344], xmm0
+	movdqu XMMWORD PTR [rsp+1328], xmm0
+	movdqu XMMWORD PTR [rsp+1312], xmm0
+	movdqu XMMWORD PTR [rsp+1296], xmm0
+	movdqu XMMWORD PTR [rsp+1280], xmm0
+	movdqu XMMWORD PTR [rsp+1264], xmm0
+	movdqu XMMWORD PTR [rsp+1248], xmm0
+	movdqu XMMWORD PTR [rsp+1232], xmm0
+	movdqu XMMWORD PTR [rsp+1216], xmm0
+	movdqu XMMWORD PTR [rsp+1200], xmm0
+	movdqu XMMWORD PTR [rsp+1184], xmm0
+	movdqu XMMWORD PTR [rsp+1168], xmm0
+	movdqu XMMWORD PTR [rsp+1152], xmm0
+	movdqu XMMWORD PTR [rsp+1136], xmm0
+	movdqu XMMWORD PTR [rsp+1120], xmm0
+	movdqu XMMWORD PTR [rsp+1104], xmm0
+	movdqu XMMWORD PTR [rsp+1088], xmm0
+	movdqu XMMWORD PTR [rsp+1072], xmm0
+	movdqu XMMWORD PTR [rsp+1056], xmm0
+	movdqu XMMWORD PTR [rsp+1040], xmm0
+	movdqu XMMWORD PTR [rsp+1024], xmm0
+	movdqu XMMWORD PTR [rsp+1008], xmm0
+	movdqu XMMWORD PTR [rsp+992], xmm0
+	movdqu XMMWORD PTR [rsp+976], xmm0
+	movdqu XMMWORD PTR [rsp+960], xmm0
+	movdqu XMMWORD PTR [rsp+944], xmm0
+	movdqu XMMWORD PTR [rsp+928], xmm0
+	movdqu XMMWORD PTR [rsp+912], xmm0
+	movdqu XMMWORD PTR [rsp+896], xmm0
+	movdqu XMMWORD PTR [rsp+880], xmm0
+	movdqu XMMWORD PTR [rsp+864], xmm0
+	movdqu XMMWORD PTR [rsp+848], xmm0
+	movdqu XMMWORD PTR [rsp+832], xmm0
+	movdqu XMMWORD PTR [rsp+816], xmm0
+	movdqu XMMWORD PTR [rsp+800], xmm0
+	movdqu XMMWORD PTR [rsp+784], xmm0
+	movdqu XMMWORD PTR [rsp+768], xmm0
+	movdqu XMMWORD PTR [rsp+752], xmm0
+	movdqu XMMWORD PTR [rsp+736], xmm0
+	movdqu XMMWORD PTR [rsp+720], xmm0
+	movdqu XMMWORD PTR [rsp+704], xmm0
+	movdqu XMMWORD PTR [rsp+688], xmm0
+	movdqu XMMWORD PTR [rsp+672], xmm0
+	movdqu XMMWORD PTR [rsp+656], xmm0
+	movdqu XMMWORD PTR [rsp+640], xmm0
+	movdqu XMMWORD PTR [rsp+624], xmm0
+	movdqu XMMWORD PTR [rsp+608], xmm0
+	movdqu XMMWORD PTR [rsp+592], xmm0
+	movdqu XMMWORD PTR [rsp+576], xmm0
+	movdqu XMMWORD PTR [rsp+560], xmm0
+	movdqu XMMWORD PTR [rsp+544], xmm0
+	movdqu XMMWORD PTR [rsp+528], xmm0
+	movdqu XMMWORD PTR [rsp+512], xmm0
+	movdqu XMMWORD PTR [rsp+496], xmm0
+	movdqu XMMWORD PTR [rsp+480], xmm0
+	movdqu XMMWORD PTR [rsp+464], xmm0
+	movdqu XMMWORD PTR [rsp+448], xmm0
+	movdqu XMMWORD PTR [rsp+432], xmm0
+	movdqu XMMWORD PTR [rsp+416], xmm0
+	movdqu XMMWORD PTR [rsp+400], xmm0
+	movdqu XMMWORD PTR [rsp+384], xmm0
+	movdqu XMMWORD PTR [rsp+368], xmm0
+	movdqu XMMWORD PTR [rsp+352], xmm0
+	movdqu XMMWORD PTR [rsp+336], xmm0
+	movdqu XMMWORD PTR [rsp+320], xmm0
+	movdqu XMMWORD PTR [rsp+304], xmm0
+	movdqu XMMWORD PTR [rsp+288], xmm0
+	movdqu XMMWORD PTR [rsp+272], xmm0
+	movdqu XMMWORD PTR [rsp+256], xmm0
+	movdqu XMMWORD PTR [rsp+240], xmm0
+	movdqu XMMWORD PTR [rsp+224], xmm0
+	movdqu XMMWORD PTR [rsp+208], xmm0
+	movdqu XMMWORD PTR [rsp+192], xmm0
+	movdqu XMMWORD PTR [rsp+176], xmm0
+	movdqu XMMWORD PTR [rsp+160], xmm0
+	movdqu XMMWORD PTR [rsp+144], xmm0
+	movdqu XMMWORD PTR [rsp+128], xmm0
+	movdqu XMMWORD PTR [rsp+112], xmm0
+	movdqu XMMWORD PTR [rsp+96], xmm0
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp-1712]
+	movdqu XMMWORD PTR [rsp+1696], xmm0
+	movdqu XMMWORD PTR [rsp+1680], xmm0
+	movdqu XMMWORD PTR [rsp+1664], xmm0
+	movdqu XMMWORD PTR [rsp+1648], xmm0
+	movdqu XMMWORD PTR [rsp+1632], xmm0
+	movdqu XMMWORD PTR [rsp+1616], xmm0
+	movdqu XMMWORD PTR [rsp+1600], xmm0
+	movdqu XMMWORD PTR [rsp+1584], xmm0
+	movdqu XMMWORD PTR [rsp+1568], xmm0
+	movdqu XMMWORD PTR [rsp+1552], xmm0
+	movdqu XMMWORD PTR [rsp+1536], xmm0
+	movdqu XMMWORD PTR [rsp+1520], xmm0
+	movdqu XMMWORD PTR [rsp+1504], xmm0
+	movdqu XMMWORD PTR [rsp+1488], xmm0
+	movdqu XMMWORD PTR [rsp+1472], xmm0
+	movdqu XMMWORD PTR [rsp+1456], xmm0
+	movdqu XMMWORD PTR [rsp+1440], xmm0
+	movdqu XMMWORD PTR [rsp+1424], xmm0
+	movdqu XMMWORD PTR [rsp+1408], xmm0
+	movdqu XMMWORD PTR [rsp+1392], xmm0
+	movdqu XMMWORD PTR [rsp+1376], xmm0
+	movdqu XMMWORD PTR [rsp+1360], xmm0
+	movdqu XMMWORD PTR [rsp+1344], xmm0
+	movdqu XMMWORD PTR [rsp+1328], xmm0
+	movdqu XMMWORD PTR [rsp+1312], xmm0
+	movdqu XMMWORD PTR [rsp+1296], xmm0
+	movdqu XMMWORD PTR [rsp+1280], xmm0
+	movdqu XMMWORD PTR [rsp+1264], xmm0
+	movdqu XMMWORD PTR [rsp+1248], xmm0
+	movdqu XMMWORD PTR [rsp+1232], xmm0
+	movdqu XMMWORD PTR [rsp+1216], xmm0
+	movdqu XMMWORD PTR [rsp+1200], xmm0
+	movdqu XMMWORD PTR [rsp+1184], xmm0
+	movdqu XMMWORD PTR [rsp+1168], xmm0
+	movdqu XMMWORD PTR [rsp+1152], xmm0
+	movdqu XMMWORD PTR [rsp+1136], xmm0
+	movdqu XMMWORD PTR [rsp+1120], xmm0
+	movdqu XMMWORD PTR [rsp+1104], xmm0
+	movdqu XMMWORD PTR [rsp+1088], xmm0
+	movdqu XMMWORD PTR [rsp+1072], xmm0
+	movdqu XMMWORD PTR [rsp+1056], xmm0
+	movdqu XMMWORD PTR [rsp+1040], xmm0
+	movdqu XMMWORD PTR [rsp+1024], xmm0
+	movdqu XMMWORD PTR [rsp+1008], xmm0
+	movdqu XMMWORD PTR [rsp+992], xmm0
+	movdqu XMMWORD PTR [rsp+976], xmm0
+	movdqu XMMWORD PTR [rsp+960], xmm0
+	movdqu XMMWORD PTR [rsp+944], xmm0
+	movdqu XMMWORD PTR [rsp+928], xmm0
+	movdqu XMMWORD PTR [rsp+912], xmm0
+	movdqu XMMWORD PTR [rsp+896], xmm0
+	movdqu XMMWORD PTR [rsp+880], xmm0
+	movdqu XMMWORD PTR [rsp+864], xmm0
+	movdqu XMMWORD PTR [rsp+848], xmm0
+	movdqu XMMWORD PTR [rsp+832], xmm0
+	movdqu XMMWORD PTR [rsp+816], xmm0
+	movdqu XMMWORD PTR [rsp+800], xmm0
+	movdqu XMMWORD PTR [rsp+784], xmm0
+	movdqu XMMWORD PTR [rsp+768], xmm0
+	movdqu XMMWORD PTR [rsp+752], xmm0
+	movdqu XMMWORD PTR [rsp+736], xmm0
+	movdqu XMMWORD PTR [rsp+720], xmm0
+	movdqu XMMWORD PTR [rsp+704], xmm0
+	movdqu XMMWORD PTR [rsp+688], xmm0
+	movdqu XMMWORD PTR [rsp+672], xmm0
+	movdqu XMMWORD PTR [rsp+656], xmm0
+	movdqu XMMWORD PTR [rsp+640], xmm0
+	movdqu XMMWORD PTR [rsp+624], xmm0
+	movdqu XMMWORD PTR [rsp+608], xmm0
+	movdqu XMMWORD PTR [rsp+592], xmm0
+	movdqu XMMWORD PTR [rsp+576], xmm0
+	movdqu XMMWORD PTR [rsp+560], xmm0
+	movdqu XMMWORD PTR [rsp+544], xmm0
+	movdqu XMMWORD PTR [rsp+528], xmm0
+	movdqu XMMWORD PTR [rsp+512], xmm0
+	movdqu XMMWORD PTR [rsp+496], xmm0
+	movdqu XMMWORD PTR [rsp+480], xmm0
+	movdqu XMMWORD PTR [rsp+464], xmm0
+	movdqu XMMWORD PTR [rsp+448], xmm0
+	movdqu XMMWORD PTR [rsp+432], xmm0
+	movdqu XMMWORD PTR [rsp+416], xmm0
+	movdqu XMMWORD PTR [rsp+400], xmm0
+	movdqu XMMWORD PTR [rsp+384], xmm0
+	movdqu XMMWORD PTR [rsp+368], xmm0
+	movdqu XMMWORD PTR [rsp+352], xmm0
+	movdqu XMMWORD PTR [rsp+336], xmm0
+	movdqu XMMWORD PTR [rsp+320], xmm0
+	movdqu XMMWORD PTR [rsp+304], xmm0
+	movdqu XMMWORD PTR [rsp+288], xmm0
+	movdqu XMMWORD PTR [rsp+272], xmm0
+	movdqu XMMWORD PTR [rsp+256], xmm0
+	movdqu XMMWORD PTR [rsp+240], xmm0
+	movdqu XMMWORD PTR [rsp+224], xmm0
+	movdqu XMMWORD PTR [rsp+208], xmm0
+	movdqu XMMWORD PTR [rsp+192], xmm0
+	movdqu XMMWORD PTR [rsp+176], xmm0
+	movdqu XMMWORD PTR [rsp+160], xmm0
+	movdqu XMMWORD PTR [rsp+144], xmm0
+	movdqu XMMWORD PTR [rsp+128], xmm0
+	movdqu XMMWORD PTR [rsp+112], xmm0
+	movdqu XMMWORD PTR [rsp+96], xmm0
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+1712]
+	lea rsp, [rsp+4080]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -366,6 +743,219 @@ vg_sm4_gcm_seal_vpclmul:
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
 	lea rsp, [rsp+2592]
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-4080]
+	vmovdqu YMMWORD PTR [rsp+4048], ymm0
+	vmovdqu YMMWORD PTR [rsp+4016], ymm0
+	vmovdqu YMMWORD PTR [rsp+3984], ymm0
+	vmovdqu YMMWORD PTR [rsp+3952], ymm0
+	vmovdqu YMMWORD PTR [rsp+3920], ymm0
+	vmovdqu YMMWORD PTR [rsp+3888], ymm0
+	vmovdqu YMMWORD PTR [rsp+3856], ymm0
+	vmovdqu YMMWORD PTR [rsp+3824], ymm0
+	vmovdqu YMMWORD PTR [rsp+3792], ymm0
+	vmovdqu YMMWORD PTR [rsp+3760], ymm0
+	vmovdqu YMMWORD PTR [rsp+3728], ymm0
+	vmovdqu YMMWORD PTR [rsp+3696], ymm0
+	vmovdqu YMMWORD PTR [rsp+3664], ymm0
+	vmovdqu YMMWORD PTR [rsp+3632], ymm0
+	vmovdqu YMMWORD PTR [rsp+3600], ymm0
+	vmovdqu YMMWORD PTR [rsp+3568], ymm0
+	vmovdqu YMMWORD PTR [rsp+3536], ymm0
+	vmovdqu YMMWORD PTR [rsp+3504], ymm0
+	vmovdqu YMMWORD PTR [rsp+3472], ymm0
+	vmovdqu YMMWORD PTR [rsp+3440], ymm0
+	vmovdqu YMMWORD PTR [rsp+3408], ymm0
+	vmovdqu YMMWORD PTR [rsp+3376], ymm0
+	vmovdqu YMMWORD PTR [rsp+3344], ymm0
+	vmovdqu YMMWORD PTR [rsp+3312], ymm0
+	vmovdqu YMMWORD PTR [rsp+3280], ymm0
+	vmovdqu YMMWORD PTR [rsp+3248], ymm0
+	vmovdqu YMMWORD PTR [rsp+3216], ymm0
+	vmovdqu YMMWORD PTR [rsp+3184], ymm0
+	vmovdqu YMMWORD PTR [rsp+3152], ymm0
+	vmovdqu YMMWORD PTR [rsp+3120], ymm0
+	vmovdqu YMMWORD PTR [rsp+3088], ymm0
+	vmovdqu YMMWORD PTR [rsp+3056], ymm0
+	vmovdqu YMMWORD PTR [rsp+3024], ymm0
+	vmovdqu YMMWORD PTR [rsp+2992], ymm0
+	vmovdqu YMMWORD PTR [rsp+2960], ymm0
+	vmovdqu YMMWORD PTR [rsp+2928], ymm0
+	vmovdqu YMMWORD PTR [rsp+2896], ymm0
+	vmovdqu YMMWORD PTR [rsp+2864], ymm0
+	vmovdqu YMMWORD PTR [rsp+2832], ymm0
+	vmovdqu YMMWORD PTR [rsp+2800], ymm0
+	vmovdqu YMMWORD PTR [rsp+2768], ymm0
+	vmovdqu YMMWORD PTR [rsp+2736], ymm0
+	vmovdqu YMMWORD PTR [rsp+2704], ymm0
+	vmovdqu YMMWORD PTR [rsp+2672], ymm0
+	vmovdqu YMMWORD PTR [rsp+2640], ymm0
+	vmovdqu YMMWORD PTR [rsp+2608], ymm0
+	vmovdqu YMMWORD PTR [rsp+2576], ymm0
+	vmovdqu YMMWORD PTR [rsp+2544], ymm0
+	vmovdqu YMMWORD PTR [rsp+2512], ymm0
+	vmovdqu YMMWORD PTR [rsp+2480], ymm0
+	vmovdqu YMMWORD PTR [rsp+2448], ymm0
+	vmovdqu YMMWORD PTR [rsp+2416], ymm0
+	vmovdqu YMMWORD PTR [rsp+2384], ymm0
+	vmovdqu YMMWORD PTR [rsp+2352], ymm0
+	vmovdqu YMMWORD PTR [rsp+2320], ymm0
+	vmovdqu YMMWORD PTR [rsp+2288], ymm0
+	vmovdqu YMMWORD PTR [rsp+2256], ymm0
+	vmovdqu YMMWORD PTR [rsp+2224], ymm0
+	vmovdqu YMMWORD PTR [rsp+2192], ymm0
+	vmovdqu YMMWORD PTR [rsp+2160], ymm0
+	vmovdqu YMMWORD PTR [rsp+2128], ymm0
+	vmovdqu YMMWORD PTR [rsp+2096], ymm0
+	vmovdqu YMMWORD PTR [rsp+2064], ymm0
+	vmovdqu YMMWORD PTR [rsp+2032], ymm0
+	vmovdqu YMMWORD PTR [rsp+2000], ymm0
+	vmovdqu YMMWORD PTR [rsp+1968], ymm0
+	vmovdqu YMMWORD PTR [rsp+1936], ymm0
+	vmovdqu YMMWORD PTR [rsp+1904], ymm0
+	vmovdqu YMMWORD PTR [rsp+1872], ymm0
+	vmovdqu YMMWORD PTR [rsp+1840], ymm0
+	vmovdqu YMMWORD PTR [rsp+1808], ymm0
+	vmovdqu YMMWORD PTR [rsp+1776], ymm0
+	vmovdqu YMMWORD PTR [rsp+1744], ymm0
+	vmovdqu YMMWORD PTR [rsp+1712], ymm0
+	vmovdqu YMMWORD PTR [rsp+1680], ymm0
+	vmovdqu YMMWORD PTR [rsp+1648], ymm0
+	vmovdqu YMMWORD PTR [rsp+1616], ymm0
+	vmovdqu YMMWORD PTR [rsp+1584], ymm0
+	vmovdqu YMMWORD PTR [rsp+1552], ymm0
+	vmovdqu YMMWORD PTR [rsp+1520], ymm0
+	vmovdqu YMMWORD PTR [rsp+1488], ymm0
+	vmovdqu YMMWORD PTR [rsp+1456], ymm0
+	vmovdqu YMMWORD PTR [rsp+1424], ymm0
+	vmovdqu YMMWORD PTR [rsp+1392], ymm0
+	vmovdqu YMMWORD PTR [rsp+1360], ymm0
+	vmovdqu YMMWORD PTR [rsp+1328], ymm0
+	vmovdqu YMMWORD PTR [rsp+1296], ymm0
+	vmovdqu YMMWORD PTR [rsp+1264], ymm0
+	vmovdqu YMMWORD PTR [rsp+1232], ymm0
+	vmovdqu YMMWORD PTR [rsp+1200], ymm0
+	vmovdqu YMMWORD PTR [rsp+1168], ymm0
+	vmovdqu YMMWORD PTR [rsp+1136], ymm0
+	vmovdqu YMMWORD PTR [rsp+1104], ymm0
+	vmovdqu YMMWORD PTR [rsp+1072], ymm0
+	vmovdqu YMMWORD PTR [rsp+1040], ymm0
+	vmovdqu YMMWORD PTR [rsp+1008], ymm0
+	vmovdqu YMMWORD PTR [rsp+976], ymm0
+	vmovdqu YMMWORD PTR [rsp+944], ymm0
+	vmovdqu YMMWORD PTR [rsp+912], ymm0
+	vmovdqu YMMWORD PTR [rsp+880], ymm0
+	vmovdqu YMMWORD PTR [rsp+848], ymm0
+	vmovdqu YMMWORD PTR [rsp+816], ymm0
+	vmovdqu YMMWORD PTR [rsp+784], ymm0
+	vmovdqu YMMWORD PTR [rsp+752], ymm0
+	vmovdqu YMMWORD PTR [rsp+720], ymm0
+	vmovdqu YMMWORD PTR [rsp+688], ymm0
+	vmovdqu YMMWORD PTR [rsp+656], ymm0
+	vmovdqu YMMWORD PTR [rsp+624], ymm0
+	vmovdqu YMMWORD PTR [rsp+592], ymm0
+	vmovdqu YMMWORD PTR [rsp+560], ymm0
+	vmovdqu YMMWORD PTR [rsp+528], ymm0
+	vmovdqu YMMWORD PTR [rsp+496], ymm0
+	vmovdqu YMMWORD PTR [rsp+464], ymm0
+	vmovdqu YMMWORD PTR [rsp+432], ymm0
+	vmovdqu YMMWORD PTR [rsp+400], ymm0
+	vmovdqu YMMWORD PTR [rsp+368], ymm0
+	vmovdqu YMMWORD PTR [rsp+336], ymm0
+	vmovdqu YMMWORD PTR [rsp+304], ymm0
+	vmovdqu YMMWORD PTR [rsp+272], ymm0
+	vmovdqu YMMWORD PTR [rsp+240], ymm0
+	vmovdqu YMMWORD PTR [rsp+208], ymm0
+	vmovdqu YMMWORD PTR [rsp+176], ymm0
+	vmovdqu YMMWORD PTR [rsp+144], ymm0
+	vmovdqu YMMWORD PTR [rsp+112], ymm0
+	vmovdqu YMMWORD PTR [rsp+80], ymm0
+	vmovdqu YMMWORD PTR [rsp+48], ymm0
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp-1736]
+	vmovdqu YMMWORD PTR [rsp+1704], ymm0
+	vmovdqu YMMWORD PTR [rsp+1672], ymm0
+	vmovdqu YMMWORD PTR [rsp+1640], ymm0
+	vmovdqu YMMWORD PTR [rsp+1608], ymm0
+	vmovdqu YMMWORD PTR [rsp+1576], ymm0
+	vmovdqu YMMWORD PTR [rsp+1544], ymm0
+	vmovdqu YMMWORD PTR [rsp+1512], ymm0
+	vmovdqu YMMWORD PTR [rsp+1480], ymm0
+	vmovdqu YMMWORD PTR [rsp+1448], ymm0
+	vmovdqu YMMWORD PTR [rsp+1416], ymm0
+	vmovdqu YMMWORD PTR [rsp+1384], ymm0
+	vmovdqu YMMWORD PTR [rsp+1352], ymm0
+	vmovdqu YMMWORD PTR [rsp+1320], ymm0
+	vmovdqu YMMWORD PTR [rsp+1288], ymm0
+	vmovdqu YMMWORD PTR [rsp+1256], ymm0
+	vmovdqu YMMWORD PTR [rsp+1224], ymm0
+	vmovdqu YMMWORD PTR [rsp+1192], ymm0
+	vmovdqu YMMWORD PTR [rsp+1160], ymm0
+	vmovdqu YMMWORD PTR [rsp+1128], ymm0
+	vmovdqu YMMWORD PTR [rsp+1096], ymm0
+	vmovdqu YMMWORD PTR [rsp+1064], ymm0
+	vmovdqu YMMWORD PTR [rsp+1032], ymm0
+	vmovdqu YMMWORD PTR [rsp+1000], ymm0
+	vmovdqu YMMWORD PTR [rsp+968], ymm0
+	vmovdqu YMMWORD PTR [rsp+936], ymm0
+	vmovdqu YMMWORD PTR [rsp+904], ymm0
+	vmovdqu YMMWORD PTR [rsp+872], ymm0
+	vmovdqu YMMWORD PTR [rsp+840], ymm0
+	vmovdqu YMMWORD PTR [rsp+808], ymm0
+	vmovdqu YMMWORD PTR [rsp+776], ymm0
+	vmovdqu YMMWORD PTR [rsp+744], ymm0
+	vmovdqu YMMWORD PTR [rsp+712], ymm0
+	vmovdqu YMMWORD PTR [rsp+680], ymm0
+	vmovdqu YMMWORD PTR [rsp+648], ymm0
+	vmovdqu YMMWORD PTR [rsp+616], ymm0
+	vmovdqu YMMWORD PTR [rsp+584], ymm0
+	vmovdqu YMMWORD PTR [rsp+552], ymm0
+	vmovdqu YMMWORD PTR [rsp+520], ymm0
+	vmovdqu YMMWORD PTR [rsp+488], ymm0
+	vmovdqu YMMWORD PTR [rsp+456], ymm0
+	vmovdqu YMMWORD PTR [rsp+424], ymm0
+	vmovdqu YMMWORD PTR [rsp+392], ymm0
+	vmovdqu YMMWORD PTR [rsp+360], ymm0
+	vmovdqu YMMWORD PTR [rsp+328], ymm0
+	vmovdqu YMMWORD PTR [rsp+296], ymm0
+	vmovdqu YMMWORD PTR [rsp+264], ymm0
+	vmovdqu YMMWORD PTR [rsp+232], ymm0
+	vmovdqu YMMWORD PTR [rsp+200], ymm0
+	vmovdqu YMMWORD PTR [rsp+168], ymm0
+	vmovdqu YMMWORD PTR [rsp+136], ymm0
+	vmovdqu YMMWORD PTR [rsp+104], ymm0
+	vmovdqu YMMWORD PTR [rsp+72], ymm0
+	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+1736]
+	lea rsp, [rsp+4080]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -776,6 +1366,219 @@ vg_sm4_gcm_open_vpclmul:
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
 	lea rsp, [rsp+2600]
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-4080]
+	vmovdqu YMMWORD PTR [rsp+4048], ymm0
+	vmovdqu YMMWORD PTR [rsp+4016], ymm0
+	vmovdqu YMMWORD PTR [rsp+3984], ymm0
+	vmovdqu YMMWORD PTR [rsp+3952], ymm0
+	vmovdqu YMMWORD PTR [rsp+3920], ymm0
+	vmovdqu YMMWORD PTR [rsp+3888], ymm0
+	vmovdqu YMMWORD PTR [rsp+3856], ymm0
+	vmovdqu YMMWORD PTR [rsp+3824], ymm0
+	vmovdqu YMMWORD PTR [rsp+3792], ymm0
+	vmovdqu YMMWORD PTR [rsp+3760], ymm0
+	vmovdqu YMMWORD PTR [rsp+3728], ymm0
+	vmovdqu YMMWORD PTR [rsp+3696], ymm0
+	vmovdqu YMMWORD PTR [rsp+3664], ymm0
+	vmovdqu YMMWORD PTR [rsp+3632], ymm0
+	vmovdqu YMMWORD PTR [rsp+3600], ymm0
+	vmovdqu YMMWORD PTR [rsp+3568], ymm0
+	vmovdqu YMMWORD PTR [rsp+3536], ymm0
+	vmovdqu YMMWORD PTR [rsp+3504], ymm0
+	vmovdqu YMMWORD PTR [rsp+3472], ymm0
+	vmovdqu YMMWORD PTR [rsp+3440], ymm0
+	vmovdqu YMMWORD PTR [rsp+3408], ymm0
+	vmovdqu YMMWORD PTR [rsp+3376], ymm0
+	vmovdqu YMMWORD PTR [rsp+3344], ymm0
+	vmovdqu YMMWORD PTR [rsp+3312], ymm0
+	vmovdqu YMMWORD PTR [rsp+3280], ymm0
+	vmovdqu YMMWORD PTR [rsp+3248], ymm0
+	vmovdqu YMMWORD PTR [rsp+3216], ymm0
+	vmovdqu YMMWORD PTR [rsp+3184], ymm0
+	vmovdqu YMMWORD PTR [rsp+3152], ymm0
+	vmovdqu YMMWORD PTR [rsp+3120], ymm0
+	vmovdqu YMMWORD PTR [rsp+3088], ymm0
+	vmovdqu YMMWORD PTR [rsp+3056], ymm0
+	vmovdqu YMMWORD PTR [rsp+3024], ymm0
+	vmovdqu YMMWORD PTR [rsp+2992], ymm0
+	vmovdqu YMMWORD PTR [rsp+2960], ymm0
+	vmovdqu YMMWORD PTR [rsp+2928], ymm0
+	vmovdqu YMMWORD PTR [rsp+2896], ymm0
+	vmovdqu YMMWORD PTR [rsp+2864], ymm0
+	vmovdqu YMMWORD PTR [rsp+2832], ymm0
+	vmovdqu YMMWORD PTR [rsp+2800], ymm0
+	vmovdqu YMMWORD PTR [rsp+2768], ymm0
+	vmovdqu YMMWORD PTR [rsp+2736], ymm0
+	vmovdqu YMMWORD PTR [rsp+2704], ymm0
+	vmovdqu YMMWORD PTR [rsp+2672], ymm0
+	vmovdqu YMMWORD PTR [rsp+2640], ymm0
+	vmovdqu YMMWORD PTR [rsp+2608], ymm0
+	vmovdqu YMMWORD PTR [rsp+2576], ymm0
+	vmovdqu YMMWORD PTR [rsp+2544], ymm0
+	vmovdqu YMMWORD PTR [rsp+2512], ymm0
+	vmovdqu YMMWORD PTR [rsp+2480], ymm0
+	vmovdqu YMMWORD PTR [rsp+2448], ymm0
+	vmovdqu YMMWORD PTR [rsp+2416], ymm0
+	vmovdqu YMMWORD PTR [rsp+2384], ymm0
+	vmovdqu YMMWORD PTR [rsp+2352], ymm0
+	vmovdqu YMMWORD PTR [rsp+2320], ymm0
+	vmovdqu YMMWORD PTR [rsp+2288], ymm0
+	vmovdqu YMMWORD PTR [rsp+2256], ymm0
+	vmovdqu YMMWORD PTR [rsp+2224], ymm0
+	vmovdqu YMMWORD PTR [rsp+2192], ymm0
+	vmovdqu YMMWORD PTR [rsp+2160], ymm0
+	vmovdqu YMMWORD PTR [rsp+2128], ymm0
+	vmovdqu YMMWORD PTR [rsp+2096], ymm0
+	vmovdqu YMMWORD PTR [rsp+2064], ymm0
+	vmovdqu YMMWORD PTR [rsp+2032], ymm0
+	vmovdqu YMMWORD PTR [rsp+2000], ymm0
+	vmovdqu YMMWORD PTR [rsp+1968], ymm0
+	vmovdqu YMMWORD PTR [rsp+1936], ymm0
+	vmovdqu YMMWORD PTR [rsp+1904], ymm0
+	vmovdqu YMMWORD PTR [rsp+1872], ymm0
+	vmovdqu YMMWORD PTR [rsp+1840], ymm0
+	vmovdqu YMMWORD PTR [rsp+1808], ymm0
+	vmovdqu YMMWORD PTR [rsp+1776], ymm0
+	vmovdqu YMMWORD PTR [rsp+1744], ymm0
+	vmovdqu YMMWORD PTR [rsp+1712], ymm0
+	vmovdqu YMMWORD PTR [rsp+1680], ymm0
+	vmovdqu YMMWORD PTR [rsp+1648], ymm0
+	vmovdqu YMMWORD PTR [rsp+1616], ymm0
+	vmovdqu YMMWORD PTR [rsp+1584], ymm0
+	vmovdqu YMMWORD PTR [rsp+1552], ymm0
+	vmovdqu YMMWORD PTR [rsp+1520], ymm0
+	vmovdqu YMMWORD PTR [rsp+1488], ymm0
+	vmovdqu YMMWORD PTR [rsp+1456], ymm0
+	vmovdqu YMMWORD PTR [rsp+1424], ymm0
+	vmovdqu YMMWORD PTR [rsp+1392], ymm0
+	vmovdqu YMMWORD PTR [rsp+1360], ymm0
+	vmovdqu YMMWORD PTR [rsp+1328], ymm0
+	vmovdqu YMMWORD PTR [rsp+1296], ymm0
+	vmovdqu YMMWORD PTR [rsp+1264], ymm0
+	vmovdqu YMMWORD PTR [rsp+1232], ymm0
+	vmovdqu YMMWORD PTR [rsp+1200], ymm0
+	vmovdqu YMMWORD PTR [rsp+1168], ymm0
+	vmovdqu YMMWORD PTR [rsp+1136], ymm0
+	vmovdqu YMMWORD PTR [rsp+1104], ymm0
+	vmovdqu YMMWORD PTR [rsp+1072], ymm0
+	vmovdqu YMMWORD PTR [rsp+1040], ymm0
+	vmovdqu YMMWORD PTR [rsp+1008], ymm0
+	vmovdqu YMMWORD PTR [rsp+976], ymm0
+	vmovdqu YMMWORD PTR [rsp+944], ymm0
+	vmovdqu YMMWORD PTR [rsp+912], ymm0
+	vmovdqu YMMWORD PTR [rsp+880], ymm0
+	vmovdqu YMMWORD PTR [rsp+848], ymm0
+	vmovdqu YMMWORD PTR [rsp+816], ymm0
+	vmovdqu YMMWORD PTR [rsp+784], ymm0
+	vmovdqu YMMWORD PTR [rsp+752], ymm0
+	vmovdqu YMMWORD PTR [rsp+720], ymm0
+	vmovdqu YMMWORD PTR [rsp+688], ymm0
+	vmovdqu YMMWORD PTR [rsp+656], ymm0
+	vmovdqu YMMWORD PTR [rsp+624], ymm0
+	vmovdqu YMMWORD PTR [rsp+592], ymm0
+	vmovdqu YMMWORD PTR [rsp+560], ymm0
+	vmovdqu YMMWORD PTR [rsp+528], ymm0
+	vmovdqu YMMWORD PTR [rsp+496], ymm0
+	vmovdqu YMMWORD PTR [rsp+464], ymm0
+	vmovdqu YMMWORD PTR [rsp+432], ymm0
+	vmovdqu YMMWORD PTR [rsp+400], ymm0
+	vmovdqu YMMWORD PTR [rsp+368], ymm0
+	vmovdqu YMMWORD PTR [rsp+336], ymm0
+	vmovdqu YMMWORD PTR [rsp+304], ymm0
+	vmovdqu YMMWORD PTR [rsp+272], ymm0
+	vmovdqu YMMWORD PTR [rsp+240], ymm0
+	vmovdqu YMMWORD PTR [rsp+208], ymm0
+	vmovdqu YMMWORD PTR [rsp+176], ymm0
+	vmovdqu YMMWORD PTR [rsp+144], ymm0
+	vmovdqu YMMWORD PTR [rsp+112], ymm0
+	vmovdqu YMMWORD PTR [rsp+80], ymm0
+	vmovdqu YMMWORD PTR [rsp+48], ymm0
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp-1744]
+	vmovdqu YMMWORD PTR [rsp+1712], ymm0
+	vmovdqu YMMWORD PTR [rsp+1680], ymm0
+	vmovdqu YMMWORD PTR [rsp+1648], ymm0
+	vmovdqu YMMWORD PTR [rsp+1616], ymm0
+	vmovdqu YMMWORD PTR [rsp+1584], ymm0
+	vmovdqu YMMWORD PTR [rsp+1552], ymm0
+	vmovdqu YMMWORD PTR [rsp+1520], ymm0
+	vmovdqu YMMWORD PTR [rsp+1488], ymm0
+	vmovdqu YMMWORD PTR [rsp+1456], ymm0
+	vmovdqu YMMWORD PTR [rsp+1424], ymm0
+	vmovdqu YMMWORD PTR [rsp+1392], ymm0
+	vmovdqu YMMWORD PTR [rsp+1360], ymm0
+	vmovdqu YMMWORD PTR [rsp+1328], ymm0
+	vmovdqu YMMWORD PTR [rsp+1296], ymm0
+	vmovdqu YMMWORD PTR [rsp+1264], ymm0
+	vmovdqu YMMWORD PTR [rsp+1232], ymm0
+	vmovdqu YMMWORD PTR [rsp+1200], ymm0
+	vmovdqu YMMWORD PTR [rsp+1168], ymm0
+	vmovdqu YMMWORD PTR [rsp+1136], ymm0
+	vmovdqu YMMWORD PTR [rsp+1104], ymm0
+	vmovdqu YMMWORD PTR [rsp+1072], ymm0
+	vmovdqu YMMWORD PTR [rsp+1040], ymm0
+	vmovdqu YMMWORD PTR [rsp+1008], ymm0
+	vmovdqu YMMWORD PTR [rsp+976], ymm0
+	vmovdqu YMMWORD PTR [rsp+944], ymm0
+	vmovdqu YMMWORD PTR [rsp+912], ymm0
+	vmovdqu YMMWORD PTR [rsp+880], ymm0
+	vmovdqu YMMWORD PTR [rsp+848], ymm0
+	vmovdqu YMMWORD PTR [rsp+816], ymm0
+	vmovdqu YMMWORD PTR [rsp+784], ymm0
+	vmovdqu YMMWORD PTR [rsp+752], ymm0
+	vmovdqu YMMWORD PTR [rsp+720], ymm0
+	vmovdqu YMMWORD PTR [rsp+688], ymm0
+	vmovdqu YMMWORD PTR [rsp+656], ymm0
+	vmovdqu YMMWORD PTR [rsp+624], ymm0
+	vmovdqu YMMWORD PTR [rsp+592], ymm0
+	vmovdqu YMMWORD PTR [rsp+560], ymm0
+	vmovdqu YMMWORD PTR [rsp+528], ymm0
+	vmovdqu YMMWORD PTR [rsp+496], ymm0
+	vmovdqu YMMWORD PTR [rsp+464], ymm0
+	vmovdqu YMMWORD PTR [rsp+432], ymm0
+	vmovdqu YMMWORD PTR [rsp+400], ymm0
+	vmovdqu YMMWORD PTR [rsp+368], ymm0
+	vmovdqu YMMWORD PTR [rsp+336], ymm0
+	vmovdqu YMMWORD PTR [rsp+304], ymm0
+	vmovdqu YMMWORD PTR [rsp+272], ymm0
+	vmovdqu YMMWORD PTR [rsp+240], ymm0
+	vmovdqu YMMWORD PTR [rsp+208], ymm0
+	vmovdqu YMMWORD PTR [rsp+176], ymm0
+	vmovdqu YMMWORD PTR [rsp+144], ymm0
+	vmovdqu YMMWORD PTR [rsp+112], ymm0
+	vmovdqu YMMWORD PTR [rsp+80], ymm0
+	vmovdqu YMMWORD PTR [rsp+48], ymm0
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+1744]
+	lea rsp, [rsp+4080]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -1085,7 +1888,7 @@ vg_sm4_gcm_stream_aad_vpclmul:
 	.p2align 6
 
 vg_sm4_gcm_stream_encrypt_vpclmul:
-	lea rsp, [rsp-2576]
+	lea rsp, [rsp-784]
 	mov rax, rsp
 	add rax, 16
 	mov QWORD PTR [rsp+8], rax
@@ -1323,12 +2126,166 @@ vg_sm4_gcm_stream_encrypt_vpclmul:
 	mov r13, QWORD PTR [r15+152]
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
-	lea rsp, [rsp+2576]
+	lea rsp, [rsp+784]
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-4008]
+	vmovdqu YMMWORD PTR [rsp+3976], ymm0
+	vmovdqu YMMWORD PTR [rsp+3944], ymm0
+	vmovdqu YMMWORD PTR [rsp+3912], ymm0
+	vmovdqu YMMWORD PTR [rsp+3880], ymm0
+	vmovdqu YMMWORD PTR [rsp+3848], ymm0
+	vmovdqu YMMWORD PTR [rsp+3816], ymm0
+	vmovdqu YMMWORD PTR [rsp+3784], ymm0
+	vmovdqu YMMWORD PTR [rsp+3752], ymm0
+	vmovdqu YMMWORD PTR [rsp+3720], ymm0
+	vmovdqu YMMWORD PTR [rsp+3688], ymm0
+	vmovdqu YMMWORD PTR [rsp+3656], ymm0
+	vmovdqu YMMWORD PTR [rsp+3624], ymm0
+	vmovdqu YMMWORD PTR [rsp+3592], ymm0
+	vmovdqu YMMWORD PTR [rsp+3560], ymm0
+	vmovdqu YMMWORD PTR [rsp+3528], ymm0
+	vmovdqu YMMWORD PTR [rsp+3496], ymm0
+	vmovdqu YMMWORD PTR [rsp+3464], ymm0
+	vmovdqu YMMWORD PTR [rsp+3432], ymm0
+	vmovdqu YMMWORD PTR [rsp+3400], ymm0
+	vmovdqu YMMWORD PTR [rsp+3368], ymm0
+	vmovdqu YMMWORD PTR [rsp+3336], ymm0
+	vmovdqu YMMWORD PTR [rsp+3304], ymm0
+	vmovdqu YMMWORD PTR [rsp+3272], ymm0
+	vmovdqu YMMWORD PTR [rsp+3240], ymm0
+	vmovdqu YMMWORD PTR [rsp+3208], ymm0
+	vmovdqu YMMWORD PTR [rsp+3176], ymm0
+	vmovdqu YMMWORD PTR [rsp+3144], ymm0
+	vmovdqu YMMWORD PTR [rsp+3112], ymm0
+	vmovdqu YMMWORD PTR [rsp+3080], ymm0
+	vmovdqu YMMWORD PTR [rsp+3048], ymm0
+	vmovdqu YMMWORD PTR [rsp+3016], ymm0
+	vmovdqu YMMWORD PTR [rsp+2984], ymm0
+	vmovdqu YMMWORD PTR [rsp+2952], ymm0
+	vmovdqu YMMWORD PTR [rsp+2920], ymm0
+	vmovdqu YMMWORD PTR [rsp+2888], ymm0
+	vmovdqu YMMWORD PTR [rsp+2856], ymm0
+	vmovdqu YMMWORD PTR [rsp+2824], ymm0
+	vmovdqu YMMWORD PTR [rsp+2792], ymm0
+	vmovdqu YMMWORD PTR [rsp+2760], ymm0
+	vmovdqu YMMWORD PTR [rsp+2728], ymm0
+	vmovdqu YMMWORD PTR [rsp+2696], ymm0
+	vmovdqu YMMWORD PTR [rsp+2664], ymm0
+	vmovdqu YMMWORD PTR [rsp+2632], ymm0
+	vmovdqu YMMWORD PTR [rsp+2600], ymm0
+	vmovdqu YMMWORD PTR [rsp+2568], ymm0
+	vmovdqu YMMWORD PTR [rsp+2536], ymm0
+	vmovdqu YMMWORD PTR [rsp+2504], ymm0
+	vmovdqu YMMWORD PTR [rsp+2472], ymm0
+	vmovdqu YMMWORD PTR [rsp+2440], ymm0
+	vmovdqu YMMWORD PTR [rsp+2408], ymm0
+	vmovdqu YMMWORD PTR [rsp+2376], ymm0
+	vmovdqu YMMWORD PTR [rsp+2344], ymm0
+	vmovdqu YMMWORD PTR [rsp+2312], ymm0
+	vmovdqu YMMWORD PTR [rsp+2280], ymm0
+	vmovdqu YMMWORD PTR [rsp+2248], ymm0
+	vmovdqu YMMWORD PTR [rsp+2216], ymm0
+	vmovdqu YMMWORD PTR [rsp+2184], ymm0
+	vmovdqu YMMWORD PTR [rsp+2152], ymm0
+	vmovdqu YMMWORD PTR [rsp+2120], ymm0
+	vmovdqu YMMWORD PTR [rsp+2088], ymm0
+	vmovdqu YMMWORD PTR [rsp+2056], ymm0
+	vmovdqu YMMWORD PTR [rsp+2024], ymm0
+	vmovdqu YMMWORD PTR [rsp+1992], ymm0
+	vmovdqu YMMWORD PTR [rsp+1960], ymm0
+	vmovdqu YMMWORD PTR [rsp+1928], ymm0
+	vmovdqu YMMWORD PTR [rsp+1896], ymm0
+	vmovdqu YMMWORD PTR [rsp+1864], ymm0
+	vmovdqu YMMWORD PTR [rsp+1832], ymm0
+	vmovdqu YMMWORD PTR [rsp+1800], ymm0
+	vmovdqu YMMWORD PTR [rsp+1768], ymm0
+	vmovdqu YMMWORD PTR [rsp+1736], ymm0
+	vmovdqu YMMWORD PTR [rsp+1704], ymm0
+	vmovdqu YMMWORD PTR [rsp+1672], ymm0
+	vmovdqu YMMWORD PTR [rsp+1640], ymm0
+	vmovdqu YMMWORD PTR [rsp+1608], ymm0
+	vmovdqu YMMWORD PTR [rsp+1576], ymm0
+	vmovdqu YMMWORD PTR [rsp+1544], ymm0
+	vmovdqu YMMWORD PTR [rsp+1512], ymm0
+	vmovdqu YMMWORD PTR [rsp+1480], ymm0
+	vmovdqu YMMWORD PTR [rsp+1448], ymm0
+	vmovdqu YMMWORD PTR [rsp+1416], ymm0
+	vmovdqu YMMWORD PTR [rsp+1384], ymm0
+	vmovdqu YMMWORD PTR [rsp+1352], ymm0
+	vmovdqu YMMWORD PTR [rsp+1320], ymm0
+	vmovdqu YMMWORD PTR [rsp+1288], ymm0
+	vmovdqu YMMWORD PTR [rsp+1256], ymm0
+	vmovdqu YMMWORD PTR [rsp+1224], ymm0
+	vmovdqu YMMWORD PTR [rsp+1192], ymm0
+	vmovdqu YMMWORD PTR [rsp+1160], ymm0
+	vmovdqu YMMWORD PTR [rsp+1128], ymm0
+	vmovdqu YMMWORD PTR [rsp+1096], ymm0
+	vmovdqu YMMWORD PTR [rsp+1064], ymm0
+	vmovdqu YMMWORD PTR [rsp+1032], ymm0
+	vmovdqu YMMWORD PTR [rsp+1000], ymm0
+	vmovdqu YMMWORD PTR [rsp+968], ymm0
+	vmovdqu YMMWORD PTR [rsp+936], ymm0
+	vmovdqu YMMWORD PTR [rsp+904], ymm0
+	vmovdqu YMMWORD PTR [rsp+872], ymm0
+	vmovdqu YMMWORD PTR [rsp+840], ymm0
+	vmovdqu YMMWORD PTR [rsp+808], ymm0
+	vmovdqu YMMWORD PTR [rsp+776], ymm0
+	vmovdqu YMMWORD PTR [rsp+744], ymm0
+	vmovdqu YMMWORD PTR [rsp+712], ymm0
+	vmovdqu YMMWORD PTR [rsp+680], ymm0
+	vmovdqu YMMWORD PTR [rsp+648], ymm0
+	vmovdqu YMMWORD PTR [rsp+616], ymm0
+	vmovdqu YMMWORD PTR [rsp+584], ymm0
+	vmovdqu YMMWORD PTR [rsp+552], ymm0
+	vmovdqu YMMWORD PTR [rsp+520], ymm0
+	vmovdqu YMMWORD PTR [rsp+488], ymm0
+	vmovdqu YMMWORD PTR [rsp+456], ymm0
+	vmovdqu YMMWORD PTR [rsp+424], ymm0
+	vmovdqu YMMWORD PTR [rsp+392], ymm0
+	vmovdqu YMMWORD PTR [rsp+360], ymm0
+	vmovdqu YMMWORD PTR [rsp+328], ymm0
+	vmovdqu YMMWORD PTR [rsp+296], ymm0
+	vmovdqu YMMWORD PTR [rsp+264], ymm0
+	vmovdqu YMMWORD PTR [rsp+232], ymm0
+	vmovdqu YMMWORD PTR [rsp+200], ymm0
+	vmovdqu YMMWORD PTR [rsp+168], ymm0
+	vmovdqu YMMWORD PTR [rsp+136], ymm0
+	vmovdqu YMMWORD PTR [rsp+104], ymm0
+	vmovdqu YMMWORD PTR [rsp+72], ymm0
+	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+4008]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
 vg_sm4_gcm_stream_decrypt_vpclmul:
-	lea rsp, [rsp-2576]
+	lea rsp, [rsp-784]
 	mov rax, rsp
 	add rax, 16
 	mov QWORD PTR [rsp+8], rax
@@ -1566,12 +2523,166 @@ vg_sm4_gcm_stream_decrypt_vpclmul:
 	mov r13, QWORD PTR [r15+152]
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
-	lea rsp, [rsp+2576]
+	lea rsp, [rsp+784]
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-4008]
+	vmovdqu YMMWORD PTR [rsp+3976], ymm0
+	vmovdqu YMMWORD PTR [rsp+3944], ymm0
+	vmovdqu YMMWORD PTR [rsp+3912], ymm0
+	vmovdqu YMMWORD PTR [rsp+3880], ymm0
+	vmovdqu YMMWORD PTR [rsp+3848], ymm0
+	vmovdqu YMMWORD PTR [rsp+3816], ymm0
+	vmovdqu YMMWORD PTR [rsp+3784], ymm0
+	vmovdqu YMMWORD PTR [rsp+3752], ymm0
+	vmovdqu YMMWORD PTR [rsp+3720], ymm0
+	vmovdqu YMMWORD PTR [rsp+3688], ymm0
+	vmovdqu YMMWORD PTR [rsp+3656], ymm0
+	vmovdqu YMMWORD PTR [rsp+3624], ymm0
+	vmovdqu YMMWORD PTR [rsp+3592], ymm0
+	vmovdqu YMMWORD PTR [rsp+3560], ymm0
+	vmovdqu YMMWORD PTR [rsp+3528], ymm0
+	vmovdqu YMMWORD PTR [rsp+3496], ymm0
+	vmovdqu YMMWORD PTR [rsp+3464], ymm0
+	vmovdqu YMMWORD PTR [rsp+3432], ymm0
+	vmovdqu YMMWORD PTR [rsp+3400], ymm0
+	vmovdqu YMMWORD PTR [rsp+3368], ymm0
+	vmovdqu YMMWORD PTR [rsp+3336], ymm0
+	vmovdqu YMMWORD PTR [rsp+3304], ymm0
+	vmovdqu YMMWORD PTR [rsp+3272], ymm0
+	vmovdqu YMMWORD PTR [rsp+3240], ymm0
+	vmovdqu YMMWORD PTR [rsp+3208], ymm0
+	vmovdqu YMMWORD PTR [rsp+3176], ymm0
+	vmovdqu YMMWORD PTR [rsp+3144], ymm0
+	vmovdqu YMMWORD PTR [rsp+3112], ymm0
+	vmovdqu YMMWORD PTR [rsp+3080], ymm0
+	vmovdqu YMMWORD PTR [rsp+3048], ymm0
+	vmovdqu YMMWORD PTR [rsp+3016], ymm0
+	vmovdqu YMMWORD PTR [rsp+2984], ymm0
+	vmovdqu YMMWORD PTR [rsp+2952], ymm0
+	vmovdqu YMMWORD PTR [rsp+2920], ymm0
+	vmovdqu YMMWORD PTR [rsp+2888], ymm0
+	vmovdqu YMMWORD PTR [rsp+2856], ymm0
+	vmovdqu YMMWORD PTR [rsp+2824], ymm0
+	vmovdqu YMMWORD PTR [rsp+2792], ymm0
+	vmovdqu YMMWORD PTR [rsp+2760], ymm0
+	vmovdqu YMMWORD PTR [rsp+2728], ymm0
+	vmovdqu YMMWORD PTR [rsp+2696], ymm0
+	vmovdqu YMMWORD PTR [rsp+2664], ymm0
+	vmovdqu YMMWORD PTR [rsp+2632], ymm0
+	vmovdqu YMMWORD PTR [rsp+2600], ymm0
+	vmovdqu YMMWORD PTR [rsp+2568], ymm0
+	vmovdqu YMMWORD PTR [rsp+2536], ymm0
+	vmovdqu YMMWORD PTR [rsp+2504], ymm0
+	vmovdqu YMMWORD PTR [rsp+2472], ymm0
+	vmovdqu YMMWORD PTR [rsp+2440], ymm0
+	vmovdqu YMMWORD PTR [rsp+2408], ymm0
+	vmovdqu YMMWORD PTR [rsp+2376], ymm0
+	vmovdqu YMMWORD PTR [rsp+2344], ymm0
+	vmovdqu YMMWORD PTR [rsp+2312], ymm0
+	vmovdqu YMMWORD PTR [rsp+2280], ymm0
+	vmovdqu YMMWORD PTR [rsp+2248], ymm0
+	vmovdqu YMMWORD PTR [rsp+2216], ymm0
+	vmovdqu YMMWORD PTR [rsp+2184], ymm0
+	vmovdqu YMMWORD PTR [rsp+2152], ymm0
+	vmovdqu YMMWORD PTR [rsp+2120], ymm0
+	vmovdqu YMMWORD PTR [rsp+2088], ymm0
+	vmovdqu YMMWORD PTR [rsp+2056], ymm0
+	vmovdqu YMMWORD PTR [rsp+2024], ymm0
+	vmovdqu YMMWORD PTR [rsp+1992], ymm0
+	vmovdqu YMMWORD PTR [rsp+1960], ymm0
+	vmovdqu YMMWORD PTR [rsp+1928], ymm0
+	vmovdqu YMMWORD PTR [rsp+1896], ymm0
+	vmovdqu YMMWORD PTR [rsp+1864], ymm0
+	vmovdqu YMMWORD PTR [rsp+1832], ymm0
+	vmovdqu YMMWORD PTR [rsp+1800], ymm0
+	vmovdqu YMMWORD PTR [rsp+1768], ymm0
+	vmovdqu YMMWORD PTR [rsp+1736], ymm0
+	vmovdqu YMMWORD PTR [rsp+1704], ymm0
+	vmovdqu YMMWORD PTR [rsp+1672], ymm0
+	vmovdqu YMMWORD PTR [rsp+1640], ymm0
+	vmovdqu YMMWORD PTR [rsp+1608], ymm0
+	vmovdqu YMMWORD PTR [rsp+1576], ymm0
+	vmovdqu YMMWORD PTR [rsp+1544], ymm0
+	vmovdqu YMMWORD PTR [rsp+1512], ymm0
+	vmovdqu YMMWORD PTR [rsp+1480], ymm0
+	vmovdqu YMMWORD PTR [rsp+1448], ymm0
+	vmovdqu YMMWORD PTR [rsp+1416], ymm0
+	vmovdqu YMMWORD PTR [rsp+1384], ymm0
+	vmovdqu YMMWORD PTR [rsp+1352], ymm0
+	vmovdqu YMMWORD PTR [rsp+1320], ymm0
+	vmovdqu YMMWORD PTR [rsp+1288], ymm0
+	vmovdqu YMMWORD PTR [rsp+1256], ymm0
+	vmovdqu YMMWORD PTR [rsp+1224], ymm0
+	vmovdqu YMMWORD PTR [rsp+1192], ymm0
+	vmovdqu YMMWORD PTR [rsp+1160], ymm0
+	vmovdqu YMMWORD PTR [rsp+1128], ymm0
+	vmovdqu YMMWORD PTR [rsp+1096], ymm0
+	vmovdqu YMMWORD PTR [rsp+1064], ymm0
+	vmovdqu YMMWORD PTR [rsp+1032], ymm0
+	vmovdqu YMMWORD PTR [rsp+1000], ymm0
+	vmovdqu YMMWORD PTR [rsp+968], ymm0
+	vmovdqu YMMWORD PTR [rsp+936], ymm0
+	vmovdqu YMMWORD PTR [rsp+904], ymm0
+	vmovdqu YMMWORD PTR [rsp+872], ymm0
+	vmovdqu YMMWORD PTR [rsp+840], ymm0
+	vmovdqu YMMWORD PTR [rsp+808], ymm0
+	vmovdqu YMMWORD PTR [rsp+776], ymm0
+	vmovdqu YMMWORD PTR [rsp+744], ymm0
+	vmovdqu YMMWORD PTR [rsp+712], ymm0
+	vmovdqu YMMWORD PTR [rsp+680], ymm0
+	vmovdqu YMMWORD PTR [rsp+648], ymm0
+	vmovdqu YMMWORD PTR [rsp+616], ymm0
+	vmovdqu YMMWORD PTR [rsp+584], ymm0
+	vmovdqu YMMWORD PTR [rsp+552], ymm0
+	vmovdqu YMMWORD PTR [rsp+520], ymm0
+	vmovdqu YMMWORD PTR [rsp+488], ymm0
+	vmovdqu YMMWORD PTR [rsp+456], ymm0
+	vmovdqu YMMWORD PTR [rsp+424], ymm0
+	vmovdqu YMMWORD PTR [rsp+392], ymm0
+	vmovdqu YMMWORD PTR [rsp+360], ymm0
+	vmovdqu YMMWORD PTR [rsp+328], ymm0
+	vmovdqu YMMWORD PTR [rsp+296], ymm0
+	vmovdqu YMMWORD PTR [rsp+264], ymm0
+	vmovdqu YMMWORD PTR [rsp+232], ymm0
+	vmovdqu YMMWORD PTR [rsp+200], ymm0
+	vmovdqu YMMWORD PTR [rsp+168], ymm0
+	vmovdqu YMMWORD PTR [rsp+136], ymm0
+	vmovdqu YMMWORD PTR [rsp+104], ymm0
+	vmovdqu YMMWORD PTR [rsp+72], ymm0
+	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+4008]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
 vg_sm4_gcm_stream_finish_vpclmul:
-	lea rsp, [rsp-2568]
+	lea rsp, [rsp-776]
 	mov r9, rsp
 	add r9, 8
 	mov QWORD PTR [r9+128], rbx
@@ -1670,12 +2781,165 @@ vg_sm4_gcm_stream_finish_vpclmul:
 	mov r13, QWORD PTR [r15+152]
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
-	lea rsp, [rsp+2568]
+	lea rsp, [rsp+776]
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-4000]
+	vmovdqu YMMWORD PTR [rsp+3968], ymm0
+	vmovdqu YMMWORD PTR [rsp+3936], ymm0
+	vmovdqu YMMWORD PTR [rsp+3904], ymm0
+	vmovdqu YMMWORD PTR [rsp+3872], ymm0
+	vmovdqu YMMWORD PTR [rsp+3840], ymm0
+	vmovdqu YMMWORD PTR [rsp+3808], ymm0
+	vmovdqu YMMWORD PTR [rsp+3776], ymm0
+	vmovdqu YMMWORD PTR [rsp+3744], ymm0
+	vmovdqu YMMWORD PTR [rsp+3712], ymm0
+	vmovdqu YMMWORD PTR [rsp+3680], ymm0
+	vmovdqu YMMWORD PTR [rsp+3648], ymm0
+	vmovdqu YMMWORD PTR [rsp+3616], ymm0
+	vmovdqu YMMWORD PTR [rsp+3584], ymm0
+	vmovdqu YMMWORD PTR [rsp+3552], ymm0
+	vmovdqu YMMWORD PTR [rsp+3520], ymm0
+	vmovdqu YMMWORD PTR [rsp+3488], ymm0
+	vmovdqu YMMWORD PTR [rsp+3456], ymm0
+	vmovdqu YMMWORD PTR [rsp+3424], ymm0
+	vmovdqu YMMWORD PTR [rsp+3392], ymm0
+	vmovdqu YMMWORD PTR [rsp+3360], ymm0
+	vmovdqu YMMWORD PTR [rsp+3328], ymm0
+	vmovdqu YMMWORD PTR [rsp+3296], ymm0
+	vmovdqu YMMWORD PTR [rsp+3264], ymm0
+	vmovdqu YMMWORD PTR [rsp+3232], ymm0
+	vmovdqu YMMWORD PTR [rsp+3200], ymm0
+	vmovdqu YMMWORD PTR [rsp+3168], ymm0
+	vmovdqu YMMWORD PTR [rsp+3136], ymm0
+	vmovdqu YMMWORD PTR [rsp+3104], ymm0
+	vmovdqu YMMWORD PTR [rsp+3072], ymm0
+	vmovdqu YMMWORD PTR [rsp+3040], ymm0
+	vmovdqu YMMWORD PTR [rsp+3008], ymm0
+	vmovdqu YMMWORD PTR [rsp+2976], ymm0
+	vmovdqu YMMWORD PTR [rsp+2944], ymm0
+	vmovdqu YMMWORD PTR [rsp+2912], ymm0
+	vmovdqu YMMWORD PTR [rsp+2880], ymm0
+	vmovdqu YMMWORD PTR [rsp+2848], ymm0
+	vmovdqu YMMWORD PTR [rsp+2816], ymm0
+	vmovdqu YMMWORD PTR [rsp+2784], ymm0
+	vmovdqu YMMWORD PTR [rsp+2752], ymm0
+	vmovdqu YMMWORD PTR [rsp+2720], ymm0
+	vmovdqu YMMWORD PTR [rsp+2688], ymm0
+	vmovdqu YMMWORD PTR [rsp+2656], ymm0
+	vmovdqu YMMWORD PTR [rsp+2624], ymm0
+	vmovdqu YMMWORD PTR [rsp+2592], ymm0
+	vmovdqu YMMWORD PTR [rsp+2560], ymm0
+	vmovdqu YMMWORD PTR [rsp+2528], ymm0
+	vmovdqu YMMWORD PTR [rsp+2496], ymm0
+	vmovdqu YMMWORD PTR [rsp+2464], ymm0
+	vmovdqu YMMWORD PTR [rsp+2432], ymm0
+	vmovdqu YMMWORD PTR [rsp+2400], ymm0
+	vmovdqu YMMWORD PTR [rsp+2368], ymm0
+	vmovdqu YMMWORD PTR [rsp+2336], ymm0
+	vmovdqu YMMWORD PTR [rsp+2304], ymm0
+	vmovdqu YMMWORD PTR [rsp+2272], ymm0
+	vmovdqu YMMWORD PTR [rsp+2240], ymm0
+	vmovdqu YMMWORD PTR [rsp+2208], ymm0
+	vmovdqu YMMWORD PTR [rsp+2176], ymm0
+	vmovdqu YMMWORD PTR [rsp+2144], ymm0
+	vmovdqu YMMWORD PTR [rsp+2112], ymm0
+	vmovdqu YMMWORD PTR [rsp+2080], ymm0
+	vmovdqu YMMWORD PTR [rsp+2048], ymm0
+	vmovdqu YMMWORD PTR [rsp+2016], ymm0
+	vmovdqu YMMWORD PTR [rsp+1984], ymm0
+	vmovdqu YMMWORD PTR [rsp+1952], ymm0
+	vmovdqu YMMWORD PTR [rsp+1920], ymm0
+	vmovdqu YMMWORD PTR [rsp+1888], ymm0
+	vmovdqu YMMWORD PTR [rsp+1856], ymm0
+	vmovdqu YMMWORD PTR [rsp+1824], ymm0
+	vmovdqu YMMWORD PTR [rsp+1792], ymm0
+	vmovdqu YMMWORD PTR [rsp+1760], ymm0
+	vmovdqu YMMWORD PTR [rsp+1728], ymm0
+	vmovdqu YMMWORD PTR [rsp+1696], ymm0
+	vmovdqu YMMWORD PTR [rsp+1664], ymm0
+	vmovdqu YMMWORD PTR [rsp+1632], ymm0
+	vmovdqu YMMWORD PTR [rsp+1600], ymm0
+	vmovdqu YMMWORD PTR [rsp+1568], ymm0
+	vmovdqu YMMWORD PTR [rsp+1536], ymm0
+	vmovdqu YMMWORD PTR [rsp+1504], ymm0
+	vmovdqu YMMWORD PTR [rsp+1472], ymm0
+	vmovdqu YMMWORD PTR [rsp+1440], ymm0
+	vmovdqu YMMWORD PTR [rsp+1408], ymm0
+	vmovdqu YMMWORD PTR [rsp+1376], ymm0
+	vmovdqu YMMWORD PTR [rsp+1344], ymm0
+	vmovdqu YMMWORD PTR [rsp+1312], ymm0
+	vmovdqu YMMWORD PTR [rsp+1280], ymm0
+	vmovdqu YMMWORD PTR [rsp+1248], ymm0
+	vmovdqu YMMWORD PTR [rsp+1216], ymm0
+	vmovdqu YMMWORD PTR [rsp+1184], ymm0
+	vmovdqu YMMWORD PTR [rsp+1152], ymm0
+	vmovdqu YMMWORD PTR [rsp+1120], ymm0
+	vmovdqu YMMWORD PTR [rsp+1088], ymm0
+	vmovdqu YMMWORD PTR [rsp+1056], ymm0
+	vmovdqu YMMWORD PTR [rsp+1024], ymm0
+	vmovdqu YMMWORD PTR [rsp+992], ymm0
+	vmovdqu YMMWORD PTR [rsp+960], ymm0
+	vmovdqu YMMWORD PTR [rsp+928], ymm0
+	vmovdqu YMMWORD PTR [rsp+896], ymm0
+	vmovdqu YMMWORD PTR [rsp+864], ymm0
+	vmovdqu YMMWORD PTR [rsp+832], ymm0
+	vmovdqu YMMWORD PTR [rsp+800], ymm0
+	vmovdqu YMMWORD PTR [rsp+768], ymm0
+	vmovdqu YMMWORD PTR [rsp+736], ymm0
+	vmovdqu YMMWORD PTR [rsp+704], ymm0
+	vmovdqu YMMWORD PTR [rsp+672], ymm0
+	vmovdqu YMMWORD PTR [rsp+640], ymm0
+	vmovdqu YMMWORD PTR [rsp+608], ymm0
+	vmovdqu YMMWORD PTR [rsp+576], ymm0
+	vmovdqu YMMWORD PTR [rsp+544], ymm0
+	vmovdqu YMMWORD PTR [rsp+512], ymm0
+	vmovdqu YMMWORD PTR [rsp+480], ymm0
+	vmovdqu YMMWORD PTR [rsp+448], ymm0
+	vmovdqu YMMWORD PTR [rsp+416], ymm0
+	vmovdqu YMMWORD PTR [rsp+384], ymm0
+	vmovdqu YMMWORD PTR [rsp+352], ymm0
+	vmovdqu YMMWORD PTR [rsp+320], ymm0
+	vmovdqu YMMWORD PTR [rsp+288], ymm0
+	vmovdqu YMMWORD PTR [rsp+256], ymm0
+	vmovdqu YMMWORD PTR [rsp+224], ymm0
+	vmovdqu YMMWORD PTR [rsp+192], ymm0
+	vmovdqu YMMWORD PTR [rsp+160], ymm0
+	vmovdqu YMMWORD PTR [rsp+128], ymm0
+	vmovdqu YMMWORD PTR [rsp+96], ymm0
+	vmovdqu YMMWORD PTR [rsp+64], ymm0
+	vmovdqu YMMWORD PTR [rsp+32], ymm0
+	vmovdqu YMMWORD PTR [rsp], ymm0
+	lea rsp, [rsp+4000]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
 vg_sm4_gcm_stream_verify_vpclmul:
-	lea rsp, [rsp-2576]
+	lea rsp, [rsp-784]
 	mov rax, rsp
 	add rax, 16
 	mov QWORD PTR [rsp+8], rax
@@ -1846,7 +3110,161 @@ vg_sm4_gcm_stream_verify_vpclmul:
 	mov r13, QWORD PTR [r15+152]
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
-	lea rsp, [rsp+2576]
+	lea rsp, [rsp+784]
+	vpxor xmm0, xmm0, xmm0
+	vpxor xmm1, xmm1, xmm1
+	vpxor xmm2, xmm2, xmm2
+	vpxor xmm3, xmm3, xmm3
+	vpxor xmm4, xmm4, xmm4
+	vpxor xmm5, xmm5, xmm5
+	vpxor xmm6, xmm6, xmm6
+	vpxor xmm7, xmm7, xmm7
+	vpxor xmm8, xmm8, xmm8
+	vpxor xmm9, xmm9, xmm9
+	vpxor xmm10, xmm10, xmm10
+	vpxor xmm11, xmm11, xmm11
+	vpxor xmm12, xmm12, xmm12
+	vpxor xmm13, xmm13, xmm13
+	vpxor xmm14, xmm14, xmm14
+	vpxor xmm15, xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-4008]
+	vmovdqu YMMWORD PTR [rsp+3976], ymm0
+	vmovdqu YMMWORD PTR [rsp+3944], ymm0
+	vmovdqu YMMWORD PTR [rsp+3912], ymm0
+	vmovdqu YMMWORD PTR [rsp+3880], ymm0
+	vmovdqu YMMWORD PTR [rsp+3848], ymm0
+	vmovdqu YMMWORD PTR [rsp+3816], ymm0
+	vmovdqu YMMWORD PTR [rsp+3784], ymm0
+	vmovdqu YMMWORD PTR [rsp+3752], ymm0
+	vmovdqu YMMWORD PTR [rsp+3720], ymm0
+	vmovdqu YMMWORD PTR [rsp+3688], ymm0
+	vmovdqu YMMWORD PTR [rsp+3656], ymm0
+	vmovdqu YMMWORD PTR [rsp+3624], ymm0
+	vmovdqu YMMWORD PTR [rsp+3592], ymm0
+	vmovdqu YMMWORD PTR [rsp+3560], ymm0
+	vmovdqu YMMWORD PTR [rsp+3528], ymm0
+	vmovdqu YMMWORD PTR [rsp+3496], ymm0
+	vmovdqu YMMWORD PTR [rsp+3464], ymm0
+	vmovdqu YMMWORD PTR [rsp+3432], ymm0
+	vmovdqu YMMWORD PTR [rsp+3400], ymm0
+	vmovdqu YMMWORD PTR [rsp+3368], ymm0
+	vmovdqu YMMWORD PTR [rsp+3336], ymm0
+	vmovdqu YMMWORD PTR [rsp+3304], ymm0
+	vmovdqu YMMWORD PTR [rsp+3272], ymm0
+	vmovdqu YMMWORD PTR [rsp+3240], ymm0
+	vmovdqu YMMWORD PTR [rsp+3208], ymm0
+	vmovdqu YMMWORD PTR [rsp+3176], ymm0
+	vmovdqu YMMWORD PTR [rsp+3144], ymm0
+	vmovdqu YMMWORD PTR [rsp+3112], ymm0
+	vmovdqu YMMWORD PTR [rsp+3080], ymm0
+	vmovdqu YMMWORD PTR [rsp+3048], ymm0
+	vmovdqu YMMWORD PTR [rsp+3016], ymm0
+	vmovdqu YMMWORD PTR [rsp+2984], ymm0
+	vmovdqu YMMWORD PTR [rsp+2952], ymm0
+	vmovdqu YMMWORD PTR [rsp+2920], ymm0
+	vmovdqu YMMWORD PTR [rsp+2888], ymm0
+	vmovdqu YMMWORD PTR [rsp+2856], ymm0
+	vmovdqu YMMWORD PTR [rsp+2824], ymm0
+	vmovdqu YMMWORD PTR [rsp+2792], ymm0
+	vmovdqu YMMWORD PTR [rsp+2760], ymm0
+	vmovdqu YMMWORD PTR [rsp+2728], ymm0
+	vmovdqu YMMWORD PTR [rsp+2696], ymm0
+	vmovdqu YMMWORD PTR [rsp+2664], ymm0
+	vmovdqu YMMWORD PTR [rsp+2632], ymm0
+	vmovdqu YMMWORD PTR [rsp+2600], ymm0
+	vmovdqu YMMWORD PTR [rsp+2568], ymm0
+	vmovdqu YMMWORD PTR [rsp+2536], ymm0
+	vmovdqu YMMWORD PTR [rsp+2504], ymm0
+	vmovdqu YMMWORD PTR [rsp+2472], ymm0
+	vmovdqu YMMWORD PTR [rsp+2440], ymm0
+	vmovdqu YMMWORD PTR [rsp+2408], ymm0
+	vmovdqu YMMWORD PTR [rsp+2376], ymm0
+	vmovdqu YMMWORD PTR [rsp+2344], ymm0
+	vmovdqu YMMWORD PTR [rsp+2312], ymm0
+	vmovdqu YMMWORD PTR [rsp+2280], ymm0
+	vmovdqu YMMWORD PTR [rsp+2248], ymm0
+	vmovdqu YMMWORD PTR [rsp+2216], ymm0
+	vmovdqu YMMWORD PTR [rsp+2184], ymm0
+	vmovdqu YMMWORD PTR [rsp+2152], ymm0
+	vmovdqu YMMWORD PTR [rsp+2120], ymm0
+	vmovdqu YMMWORD PTR [rsp+2088], ymm0
+	vmovdqu YMMWORD PTR [rsp+2056], ymm0
+	vmovdqu YMMWORD PTR [rsp+2024], ymm0
+	vmovdqu YMMWORD PTR [rsp+1992], ymm0
+	vmovdqu YMMWORD PTR [rsp+1960], ymm0
+	vmovdqu YMMWORD PTR [rsp+1928], ymm0
+	vmovdqu YMMWORD PTR [rsp+1896], ymm0
+	vmovdqu YMMWORD PTR [rsp+1864], ymm0
+	vmovdqu YMMWORD PTR [rsp+1832], ymm0
+	vmovdqu YMMWORD PTR [rsp+1800], ymm0
+	vmovdqu YMMWORD PTR [rsp+1768], ymm0
+	vmovdqu YMMWORD PTR [rsp+1736], ymm0
+	vmovdqu YMMWORD PTR [rsp+1704], ymm0
+	vmovdqu YMMWORD PTR [rsp+1672], ymm0
+	vmovdqu YMMWORD PTR [rsp+1640], ymm0
+	vmovdqu YMMWORD PTR [rsp+1608], ymm0
+	vmovdqu YMMWORD PTR [rsp+1576], ymm0
+	vmovdqu YMMWORD PTR [rsp+1544], ymm0
+	vmovdqu YMMWORD PTR [rsp+1512], ymm0
+	vmovdqu YMMWORD PTR [rsp+1480], ymm0
+	vmovdqu YMMWORD PTR [rsp+1448], ymm0
+	vmovdqu YMMWORD PTR [rsp+1416], ymm0
+	vmovdqu YMMWORD PTR [rsp+1384], ymm0
+	vmovdqu YMMWORD PTR [rsp+1352], ymm0
+	vmovdqu YMMWORD PTR [rsp+1320], ymm0
+	vmovdqu YMMWORD PTR [rsp+1288], ymm0
+	vmovdqu YMMWORD PTR [rsp+1256], ymm0
+	vmovdqu YMMWORD PTR [rsp+1224], ymm0
+	vmovdqu YMMWORD PTR [rsp+1192], ymm0
+	vmovdqu YMMWORD PTR [rsp+1160], ymm0
+	vmovdqu YMMWORD PTR [rsp+1128], ymm0
+	vmovdqu YMMWORD PTR [rsp+1096], ymm0
+	vmovdqu YMMWORD PTR [rsp+1064], ymm0
+	vmovdqu YMMWORD PTR [rsp+1032], ymm0
+	vmovdqu YMMWORD PTR [rsp+1000], ymm0
+	vmovdqu YMMWORD PTR [rsp+968], ymm0
+	vmovdqu YMMWORD PTR [rsp+936], ymm0
+	vmovdqu YMMWORD PTR [rsp+904], ymm0
+	vmovdqu YMMWORD PTR [rsp+872], ymm0
+	vmovdqu YMMWORD PTR [rsp+840], ymm0
+	vmovdqu YMMWORD PTR [rsp+808], ymm0
+	vmovdqu YMMWORD PTR [rsp+776], ymm0
+	vmovdqu YMMWORD PTR [rsp+744], ymm0
+	vmovdqu YMMWORD PTR [rsp+712], ymm0
+	vmovdqu YMMWORD PTR [rsp+680], ymm0
+	vmovdqu YMMWORD PTR [rsp+648], ymm0
+	vmovdqu YMMWORD PTR [rsp+616], ymm0
+	vmovdqu YMMWORD PTR [rsp+584], ymm0
+	vmovdqu YMMWORD PTR [rsp+552], ymm0
+	vmovdqu YMMWORD PTR [rsp+520], ymm0
+	vmovdqu YMMWORD PTR [rsp+488], ymm0
+	vmovdqu YMMWORD PTR [rsp+456], ymm0
+	vmovdqu YMMWORD PTR [rsp+424], ymm0
+	vmovdqu YMMWORD PTR [rsp+392], ymm0
+	vmovdqu YMMWORD PTR [rsp+360], ymm0
+	vmovdqu YMMWORD PTR [rsp+328], ymm0
+	vmovdqu YMMWORD PTR [rsp+296], ymm0
+	vmovdqu YMMWORD PTR [rsp+264], ymm0
+	vmovdqu YMMWORD PTR [rsp+232], ymm0
+	vmovdqu YMMWORD PTR [rsp+200], ymm0
+	vmovdqu YMMWORD PTR [rsp+168], ymm0
+	vmovdqu YMMWORD PTR [rsp+136], ymm0
+	vmovdqu YMMWORD PTR [rsp+104], ymm0
+	vmovdqu YMMWORD PTR [rsp+72], ymm0
+	vmovdqu YMMWORD PTR [rsp+40], ymm0
+	vmovdqu YMMWORD PTR [rsp+8], ymm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+4008]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -2177,6 +3595,400 @@ vg_sm4_gcm_seal_pclmul:
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
 	lea rsp, [rsp+2592]
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-4080]
+	movdqu XMMWORD PTR [rsp+4064], xmm0
+	movdqu XMMWORD PTR [rsp+4048], xmm0
+	movdqu XMMWORD PTR [rsp+4032], xmm0
+	movdqu XMMWORD PTR [rsp+4016], xmm0
+	movdqu XMMWORD PTR [rsp+4000], xmm0
+	movdqu XMMWORD PTR [rsp+3984], xmm0
+	movdqu XMMWORD PTR [rsp+3968], xmm0
+	movdqu XMMWORD PTR [rsp+3952], xmm0
+	movdqu XMMWORD PTR [rsp+3936], xmm0
+	movdqu XMMWORD PTR [rsp+3920], xmm0
+	movdqu XMMWORD PTR [rsp+3904], xmm0
+	movdqu XMMWORD PTR [rsp+3888], xmm0
+	movdqu XMMWORD PTR [rsp+3872], xmm0
+	movdqu XMMWORD PTR [rsp+3856], xmm0
+	movdqu XMMWORD PTR [rsp+3840], xmm0
+	movdqu XMMWORD PTR [rsp+3824], xmm0
+	movdqu XMMWORD PTR [rsp+3808], xmm0
+	movdqu XMMWORD PTR [rsp+3792], xmm0
+	movdqu XMMWORD PTR [rsp+3776], xmm0
+	movdqu XMMWORD PTR [rsp+3760], xmm0
+	movdqu XMMWORD PTR [rsp+3744], xmm0
+	movdqu XMMWORD PTR [rsp+3728], xmm0
+	movdqu XMMWORD PTR [rsp+3712], xmm0
+	movdqu XMMWORD PTR [rsp+3696], xmm0
+	movdqu XMMWORD PTR [rsp+3680], xmm0
+	movdqu XMMWORD PTR [rsp+3664], xmm0
+	movdqu XMMWORD PTR [rsp+3648], xmm0
+	movdqu XMMWORD PTR [rsp+3632], xmm0
+	movdqu XMMWORD PTR [rsp+3616], xmm0
+	movdqu XMMWORD PTR [rsp+3600], xmm0
+	movdqu XMMWORD PTR [rsp+3584], xmm0
+	movdqu XMMWORD PTR [rsp+3568], xmm0
+	movdqu XMMWORD PTR [rsp+3552], xmm0
+	movdqu XMMWORD PTR [rsp+3536], xmm0
+	movdqu XMMWORD PTR [rsp+3520], xmm0
+	movdqu XMMWORD PTR [rsp+3504], xmm0
+	movdqu XMMWORD PTR [rsp+3488], xmm0
+	movdqu XMMWORD PTR [rsp+3472], xmm0
+	movdqu XMMWORD PTR [rsp+3456], xmm0
+	movdqu XMMWORD PTR [rsp+3440], xmm0
+	movdqu XMMWORD PTR [rsp+3424], xmm0
+	movdqu XMMWORD PTR [rsp+3408], xmm0
+	movdqu XMMWORD PTR [rsp+3392], xmm0
+	movdqu XMMWORD PTR [rsp+3376], xmm0
+	movdqu XMMWORD PTR [rsp+3360], xmm0
+	movdqu XMMWORD PTR [rsp+3344], xmm0
+	movdqu XMMWORD PTR [rsp+3328], xmm0
+	movdqu XMMWORD PTR [rsp+3312], xmm0
+	movdqu XMMWORD PTR [rsp+3296], xmm0
+	movdqu XMMWORD PTR [rsp+3280], xmm0
+	movdqu XMMWORD PTR [rsp+3264], xmm0
+	movdqu XMMWORD PTR [rsp+3248], xmm0
+	movdqu XMMWORD PTR [rsp+3232], xmm0
+	movdqu XMMWORD PTR [rsp+3216], xmm0
+	movdqu XMMWORD PTR [rsp+3200], xmm0
+	movdqu XMMWORD PTR [rsp+3184], xmm0
+	movdqu XMMWORD PTR [rsp+3168], xmm0
+	movdqu XMMWORD PTR [rsp+3152], xmm0
+	movdqu XMMWORD PTR [rsp+3136], xmm0
+	movdqu XMMWORD PTR [rsp+3120], xmm0
+	movdqu XMMWORD PTR [rsp+3104], xmm0
+	movdqu XMMWORD PTR [rsp+3088], xmm0
+	movdqu XMMWORD PTR [rsp+3072], xmm0
+	movdqu XMMWORD PTR [rsp+3056], xmm0
+	movdqu XMMWORD PTR [rsp+3040], xmm0
+	movdqu XMMWORD PTR [rsp+3024], xmm0
+	movdqu XMMWORD PTR [rsp+3008], xmm0
+	movdqu XMMWORD PTR [rsp+2992], xmm0
+	movdqu XMMWORD PTR [rsp+2976], xmm0
+	movdqu XMMWORD PTR [rsp+2960], xmm0
+	movdqu XMMWORD PTR [rsp+2944], xmm0
+	movdqu XMMWORD PTR [rsp+2928], xmm0
+	movdqu XMMWORD PTR [rsp+2912], xmm0
+	movdqu XMMWORD PTR [rsp+2896], xmm0
+	movdqu XMMWORD PTR [rsp+2880], xmm0
+	movdqu XMMWORD PTR [rsp+2864], xmm0
+	movdqu XMMWORD PTR [rsp+2848], xmm0
+	movdqu XMMWORD PTR [rsp+2832], xmm0
+	movdqu XMMWORD PTR [rsp+2816], xmm0
+	movdqu XMMWORD PTR [rsp+2800], xmm0
+	movdqu XMMWORD PTR [rsp+2784], xmm0
+	movdqu XMMWORD PTR [rsp+2768], xmm0
+	movdqu XMMWORD PTR [rsp+2752], xmm0
+	movdqu XMMWORD PTR [rsp+2736], xmm0
+	movdqu XMMWORD PTR [rsp+2720], xmm0
+	movdqu XMMWORD PTR [rsp+2704], xmm0
+	movdqu XMMWORD PTR [rsp+2688], xmm0
+	movdqu XMMWORD PTR [rsp+2672], xmm0
+	movdqu XMMWORD PTR [rsp+2656], xmm0
+	movdqu XMMWORD PTR [rsp+2640], xmm0
+	movdqu XMMWORD PTR [rsp+2624], xmm0
+	movdqu XMMWORD PTR [rsp+2608], xmm0
+	movdqu XMMWORD PTR [rsp+2592], xmm0
+	movdqu XMMWORD PTR [rsp+2576], xmm0
+	movdqu XMMWORD PTR [rsp+2560], xmm0
+	movdqu XMMWORD PTR [rsp+2544], xmm0
+	movdqu XMMWORD PTR [rsp+2528], xmm0
+	movdqu XMMWORD PTR [rsp+2512], xmm0
+	movdqu XMMWORD PTR [rsp+2496], xmm0
+	movdqu XMMWORD PTR [rsp+2480], xmm0
+	movdqu XMMWORD PTR [rsp+2464], xmm0
+	movdqu XMMWORD PTR [rsp+2448], xmm0
+	movdqu XMMWORD PTR [rsp+2432], xmm0
+	movdqu XMMWORD PTR [rsp+2416], xmm0
+	movdqu XMMWORD PTR [rsp+2400], xmm0
+	movdqu XMMWORD PTR [rsp+2384], xmm0
+	movdqu XMMWORD PTR [rsp+2368], xmm0
+	movdqu XMMWORD PTR [rsp+2352], xmm0
+	movdqu XMMWORD PTR [rsp+2336], xmm0
+	movdqu XMMWORD PTR [rsp+2320], xmm0
+	movdqu XMMWORD PTR [rsp+2304], xmm0
+	movdqu XMMWORD PTR [rsp+2288], xmm0
+	movdqu XMMWORD PTR [rsp+2272], xmm0
+	movdqu XMMWORD PTR [rsp+2256], xmm0
+	movdqu XMMWORD PTR [rsp+2240], xmm0
+	movdqu XMMWORD PTR [rsp+2224], xmm0
+	movdqu XMMWORD PTR [rsp+2208], xmm0
+	movdqu XMMWORD PTR [rsp+2192], xmm0
+	movdqu XMMWORD PTR [rsp+2176], xmm0
+	movdqu XMMWORD PTR [rsp+2160], xmm0
+	movdqu XMMWORD PTR [rsp+2144], xmm0
+	movdqu XMMWORD PTR [rsp+2128], xmm0
+	movdqu XMMWORD PTR [rsp+2112], xmm0
+	movdqu XMMWORD PTR [rsp+2096], xmm0
+	movdqu XMMWORD PTR [rsp+2080], xmm0
+	movdqu XMMWORD PTR [rsp+2064], xmm0
+	movdqu XMMWORD PTR [rsp+2048], xmm0
+	movdqu XMMWORD PTR [rsp+2032], xmm0
+	movdqu XMMWORD PTR [rsp+2016], xmm0
+	movdqu XMMWORD PTR [rsp+2000], xmm0
+	movdqu XMMWORD PTR [rsp+1984], xmm0
+	movdqu XMMWORD PTR [rsp+1968], xmm0
+	movdqu XMMWORD PTR [rsp+1952], xmm0
+	movdqu XMMWORD PTR [rsp+1936], xmm0
+	movdqu XMMWORD PTR [rsp+1920], xmm0
+	movdqu XMMWORD PTR [rsp+1904], xmm0
+	movdqu XMMWORD PTR [rsp+1888], xmm0
+	movdqu XMMWORD PTR [rsp+1872], xmm0
+	movdqu XMMWORD PTR [rsp+1856], xmm0
+	movdqu XMMWORD PTR [rsp+1840], xmm0
+	movdqu XMMWORD PTR [rsp+1824], xmm0
+	movdqu XMMWORD PTR [rsp+1808], xmm0
+	movdqu XMMWORD PTR [rsp+1792], xmm0
+	movdqu XMMWORD PTR [rsp+1776], xmm0
+	movdqu XMMWORD PTR [rsp+1760], xmm0
+	movdqu XMMWORD PTR [rsp+1744], xmm0
+	movdqu XMMWORD PTR [rsp+1728], xmm0
+	movdqu XMMWORD PTR [rsp+1712], xmm0
+	movdqu XMMWORD PTR [rsp+1696], xmm0
+	movdqu XMMWORD PTR [rsp+1680], xmm0
+	movdqu XMMWORD PTR [rsp+1664], xmm0
+	movdqu XMMWORD PTR [rsp+1648], xmm0
+	movdqu XMMWORD PTR [rsp+1632], xmm0
+	movdqu XMMWORD PTR [rsp+1616], xmm0
+	movdqu XMMWORD PTR [rsp+1600], xmm0
+	movdqu XMMWORD PTR [rsp+1584], xmm0
+	movdqu XMMWORD PTR [rsp+1568], xmm0
+	movdqu XMMWORD PTR [rsp+1552], xmm0
+	movdqu XMMWORD PTR [rsp+1536], xmm0
+	movdqu XMMWORD PTR [rsp+1520], xmm0
+	movdqu XMMWORD PTR [rsp+1504], xmm0
+	movdqu XMMWORD PTR [rsp+1488], xmm0
+	movdqu XMMWORD PTR [rsp+1472], xmm0
+	movdqu XMMWORD PTR [rsp+1456], xmm0
+	movdqu XMMWORD PTR [rsp+1440], xmm0
+	movdqu XMMWORD PTR [rsp+1424], xmm0
+	movdqu XMMWORD PTR [rsp+1408], xmm0
+	movdqu XMMWORD PTR [rsp+1392], xmm0
+	movdqu XMMWORD PTR [rsp+1376], xmm0
+	movdqu XMMWORD PTR [rsp+1360], xmm0
+	movdqu XMMWORD PTR [rsp+1344], xmm0
+	movdqu XMMWORD PTR [rsp+1328], xmm0
+	movdqu XMMWORD PTR [rsp+1312], xmm0
+	movdqu XMMWORD PTR [rsp+1296], xmm0
+	movdqu XMMWORD PTR [rsp+1280], xmm0
+	movdqu XMMWORD PTR [rsp+1264], xmm0
+	movdqu XMMWORD PTR [rsp+1248], xmm0
+	movdqu XMMWORD PTR [rsp+1232], xmm0
+	movdqu XMMWORD PTR [rsp+1216], xmm0
+	movdqu XMMWORD PTR [rsp+1200], xmm0
+	movdqu XMMWORD PTR [rsp+1184], xmm0
+	movdqu XMMWORD PTR [rsp+1168], xmm0
+	movdqu XMMWORD PTR [rsp+1152], xmm0
+	movdqu XMMWORD PTR [rsp+1136], xmm0
+	movdqu XMMWORD PTR [rsp+1120], xmm0
+	movdqu XMMWORD PTR [rsp+1104], xmm0
+	movdqu XMMWORD PTR [rsp+1088], xmm0
+	movdqu XMMWORD PTR [rsp+1072], xmm0
+	movdqu XMMWORD PTR [rsp+1056], xmm0
+	movdqu XMMWORD PTR [rsp+1040], xmm0
+	movdqu XMMWORD PTR [rsp+1024], xmm0
+	movdqu XMMWORD PTR [rsp+1008], xmm0
+	movdqu XMMWORD PTR [rsp+992], xmm0
+	movdqu XMMWORD PTR [rsp+976], xmm0
+	movdqu XMMWORD PTR [rsp+960], xmm0
+	movdqu XMMWORD PTR [rsp+944], xmm0
+	movdqu XMMWORD PTR [rsp+928], xmm0
+	movdqu XMMWORD PTR [rsp+912], xmm0
+	movdqu XMMWORD PTR [rsp+896], xmm0
+	movdqu XMMWORD PTR [rsp+880], xmm0
+	movdqu XMMWORD PTR [rsp+864], xmm0
+	movdqu XMMWORD PTR [rsp+848], xmm0
+	movdqu XMMWORD PTR [rsp+832], xmm0
+	movdqu XMMWORD PTR [rsp+816], xmm0
+	movdqu XMMWORD PTR [rsp+800], xmm0
+	movdqu XMMWORD PTR [rsp+784], xmm0
+	movdqu XMMWORD PTR [rsp+768], xmm0
+	movdqu XMMWORD PTR [rsp+752], xmm0
+	movdqu XMMWORD PTR [rsp+736], xmm0
+	movdqu XMMWORD PTR [rsp+720], xmm0
+	movdqu XMMWORD PTR [rsp+704], xmm0
+	movdqu XMMWORD PTR [rsp+688], xmm0
+	movdqu XMMWORD PTR [rsp+672], xmm0
+	movdqu XMMWORD PTR [rsp+656], xmm0
+	movdqu XMMWORD PTR [rsp+640], xmm0
+	movdqu XMMWORD PTR [rsp+624], xmm0
+	movdqu XMMWORD PTR [rsp+608], xmm0
+	movdqu XMMWORD PTR [rsp+592], xmm0
+	movdqu XMMWORD PTR [rsp+576], xmm0
+	movdqu XMMWORD PTR [rsp+560], xmm0
+	movdqu XMMWORD PTR [rsp+544], xmm0
+	movdqu XMMWORD PTR [rsp+528], xmm0
+	movdqu XMMWORD PTR [rsp+512], xmm0
+	movdqu XMMWORD PTR [rsp+496], xmm0
+	movdqu XMMWORD PTR [rsp+480], xmm0
+	movdqu XMMWORD PTR [rsp+464], xmm0
+	movdqu XMMWORD PTR [rsp+448], xmm0
+	movdqu XMMWORD PTR [rsp+432], xmm0
+	movdqu XMMWORD PTR [rsp+416], xmm0
+	movdqu XMMWORD PTR [rsp+400], xmm0
+	movdqu XMMWORD PTR [rsp+384], xmm0
+	movdqu XMMWORD PTR [rsp+368], xmm0
+	movdqu XMMWORD PTR [rsp+352], xmm0
+	movdqu XMMWORD PTR [rsp+336], xmm0
+	movdqu XMMWORD PTR [rsp+320], xmm0
+	movdqu XMMWORD PTR [rsp+304], xmm0
+	movdqu XMMWORD PTR [rsp+288], xmm0
+	movdqu XMMWORD PTR [rsp+272], xmm0
+	movdqu XMMWORD PTR [rsp+256], xmm0
+	movdqu XMMWORD PTR [rsp+240], xmm0
+	movdqu XMMWORD PTR [rsp+224], xmm0
+	movdqu XMMWORD PTR [rsp+208], xmm0
+	movdqu XMMWORD PTR [rsp+192], xmm0
+	movdqu XMMWORD PTR [rsp+176], xmm0
+	movdqu XMMWORD PTR [rsp+160], xmm0
+	movdqu XMMWORD PTR [rsp+144], xmm0
+	movdqu XMMWORD PTR [rsp+128], xmm0
+	movdqu XMMWORD PTR [rsp+112], xmm0
+	movdqu XMMWORD PTR [rsp+96], xmm0
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp-1736]
+	movdqu XMMWORD PTR [rsp+1720], xmm0
+	movdqu XMMWORD PTR [rsp+1704], xmm0
+	movdqu XMMWORD PTR [rsp+1688], xmm0
+	movdqu XMMWORD PTR [rsp+1672], xmm0
+	movdqu XMMWORD PTR [rsp+1656], xmm0
+	movdqu XMMWORD PTR [rsp+1640], xmm0
+	movdqu XMMWORD PTR [rsp+1624], xmm0
+	movdqu XMMWORD PTR [rsp+1608], xmm0
+	movdqu XMMWORD PTR [rsp+1592], xmm0
+	movdqu XMMWORD PTR [rsp+1576], xmm0
+	movdqu XMMWORD PTR [rsp+1560], xmm0
+	movdqu XMMWORD PTR [rsp+1544], xmm0
+	movdqu XMMWORD PTR [rsp+1528], xmm0
+	movdqu XMMWORD PTR [rsp+1512], xmm0
+	movdqu XMMWORD PTR [rsp+1496], xmm0
+	movdqu XMMWORD PTR [rsp+1480], xmm0
+	movdqu XMMWORD PTR [rsp+1464], xmm0
+	movdqu XMMWORD PTR [rsp+1448], xmm0
+	movdqu XMMWORD PTR [rsp+1432], xmm0
+	movdqu XMMWORD PTR [rsp+1416], xmm0
+	movdqu XMMWORD PTR [rsp+1400], xmm0
+	movdqu XMMWORD PTR [rsp+1384], xmm0
+	movdqu XMMWORD PTR [rsp+1368], xmm0
+	movdqu XMMWORD PTR [rsp+1352], xmm0
+	movdqu XMMWORD PTR [rsp+1336], xmm0
+	movdqu XMMWORD PTR [rsp+1320], xmm0
+	movdqu XMMWORD PTR [rsp+1304], xmm0
+	movdqu XMMWORD PTR [rsp+1288], xmm0
+	movdqu XMMWORD PTR [rsp+1272], xmm0
+	movdqu XMMWORD PTR [rsp+1256], xmm0
+	movdqu XMMWORD PTR [rsp+1240], xmm0
+	movdqu XMMWORD PTR [rsp+1224], xmm0
+	movdqu XMMWORD PTR [rsp+1208], xmm0
+	movdqu XMMWORD PTR [rsp+1192], xmm0
+	movdqu XMMWORD PTR [rsp+1176], xmm0
+	movdqu XMMWORD PTR [rsp+1160], xmm0
+	movdqu XMMWORD PTR [rsp+1144], xmm0
+	movdqu XMMWORD PTR [rsp+1128], xmm0
+	movdqu XMMWORD PTR [rsp+1112], xmm0
+	movdqu XMMWORD PTR [rsp+1096], xmm0
+	movdqu XMMWORD PTR [rsp+1080], xmm0
+	movdqu XMMWORD PTR [rsp+1064], xmm0
+	movdqu XMMWORD PTR [rsp+1048], xmm0
+	movdqu XMMWORD PTR [rsp+1032], xmm0
+	movdqu XMMWORD PTR [rsp+1016], xmm0
+	movdqu XMMWORD PTR [rsp+1000], xmm0
+	movdqu XMMWORD PTR [rsp+984], xmm0
+	movdqu XMMWORD PTR [rsp+968], xmm0
+	movdqu XMMWORD PTR [rsp+952], xmm0
+	movdqu XMMWORD PTR [rsp+936], xmm0
+	movdqu XMMWORD PTR [rsp+920], xmm0
+	movdqu XMMWORD PTR [rsp+904], xmm0
+	movdqu XMMWORD PTR [rsp+888], xmm0
+	movdqu XMMWORD PTR [rsp+872], xmm0
+	movdqu XMMWORD PTR [rsp+856], xmm0
+	movdqu XMMWORD PTR [rsp+840], xmm0
+	movdqu XMMWORD PTR [rsp+824], xmm0
+	movdqu XMMWORD PTR [rsp+808], xmm0
+	movdqu XMMWORD PTR [rsp+792], xmm0
+	movdqu XMMWORD PTR [rsp+776], xmm0
+	movdqu XMMWORD PTR [rsp+760], xmm0
+	movdqu XMMWORD PTR [rsp+744], xmm0
+	movdqu XMMWORD PTR [rsp+728], xmm0
+	movdqu XMMWORD PTR [rsp+712], xmm0
+	movdqu XMMWORD PTR [rsp+696], xmm0
+	movdqu XMMWORD PTR [rsp+680], xmm0
+	movdqu XMMWORD PTR [rsp+664], xmm0
+	movdqu XMMWORD PTR [rsp+648], xmm0
+	movdqu XMMWORD PTR [rsp+632], xmm0
+	movdqu XMMWORD PTR [rsp+616], xmm0
+	movdqu XMMWORD PTR [rsp+600], xmm0
+	movdqu XMMWORD PTR [rsp+584], xmm0
+	movdqu XMMWORD PTR [rsp+568], xmm0
+	movdqu XMMWORD PTR [rsp+552], xmm0
+	movdqu XMMWORD PTR [rsp+536], xmm0
+	movdqu XMMWORD PTR [rsp+520], xmm0
+	movdqu XMMWORD PTR [rsp+504], xmm0
+	movdqu XMMWORD PTR [rsp+488], xmm0
+	movdqu XMMWORD PTR [rsp+472], xmm0
+	movdqu XMMWORD PTR [rsp+456], xmm0
+	movdqu XMMWORD PTR [rsp+440], xmm0
+	movdqu XMMWORD PTR [rsp+424], xmm0
+	movdqu XMMWORD PTR [rsp+408], xmm0
+	movdqu XMMWORD PTR [rsp+392], xmm0
+	movdqu XMMWORD PTR [rsp+376], xmm0
+	movdqu XMMWORD PTR [rsp+360], xmm0
+	movdqu XMMWORD PTR [rsp+344], xmm0
+	movdqu XMMWORD PTR [rsp+328], xmm0
+	movdqu XMMWORD PTR [rsp+312], xmm0
+	movdqu XMMWORD PTR [rsp+296], xmm0
+	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
+	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+184], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+1736]
+	lea rsp, [rsp+4080]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -2587,6 +4399,400 @@ vg_sm4_gcm_open_pclmul:
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
 	lea rsp, [rsp+2600]
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-4080]
+	movdqu XMMWORD PTR [rsp+4064], xmm0
+	movdqu XMMWORD PTR [rsp+4048], xmm0
+	movdqu XMMWORD PTR [rsp+4032], xmm0
+	movdqu XMMWORD PTR [rsp+4016], xmm0
+	movdqu XMMWORD PTR [rsp+4000], xmm0
+	movdqu XMMWORD PTR [rsp+3984], xmm0
+	movdqu XMMWORD PTR [rsp+3968], xmm0
+	movdqu XMMWORD PTR [rsp+3952], xmm0
+	movdqu XMMWORD PTR [rsp+3936], xmm0
+	movdqu XMMWORD PTR [rsp+3920], xmm0
+	movdqu XMMWORD PTR [rsp+3904], xmm0
+	movdqu XMMWORD PTR [rsp+3888], xmm0
+	movdqu XMMWORD PTR [rsp+3872], xmm0
+	movdqu XMMWORD PTR [rsp+3856], xmm0
+	movdqu XMMWORD PTR [rsp+3840], xmm0
+	movdqu XMMWORD PTR [rsp+3824], xmm0
+	movdqu XMMWORD PTR [rsp+3808], xmm0
+	movdqu XMMWORD PTR [rsp+3792], xmm0
+	movdqu XMMWORD PTR [rsp+3776], xmm0
+	movdqu XMMWORD PTR [rsp+3760], xmm0
+	movdqu XMMWORD PTR [rsp+3744], xmm0
+	movdqu XMMWORD PTR [rsp+3728], xmm0
+	movdqu XMMWORD PTR [rsp+3712], xmm0
+	movdqu XMMWORD PTR [rsp+3696], xmm0
+	movdqu XMMWORD PTR [rsp+3680], xmm0
+	movdqu XMMWORD PTR [rsp+3664], xmm0
+	movdqu XMMWORD PTR [rsp+3648], xmm0
+	movdqu XMMWORD PTR [rsp+3632], xmm0
+	movdqu XMMWORD PTR [rsp+3616], xmm0
+	movdqu XMMWORD PTR [rsp+3600], xmm0
+	movdqu XMMWORD PTR [rsp+3584], xmm0
+	movdqu XMMWORD PTR [rsp+3568], xmm0
+	movdqu XMMWORD PTR [rsp+3552], xmm0
+	movdqu XMMWORD PTR [rsp+3536], xmm0
+	movdqu XMMWORD PTR [rsp+3520], xmm0
+	movdqu XMMWORD PTR [rsp+3504], xmm0
+	movdqu XMMWORD PTR [rsp+3488], xmm0
+	movdqu XMMWORD PTR [rsp+3472], xmm0
+	movdqu XMMWORD PTR [rsp+3456], xmm0
+	movdqu XMMWORD PTR [rsp+3440], xmm0
+	movdqu XMMWORD PTR [rsp+3424], xmm0
+	movdqu XMMWORD PTR [rsp+3408], xmm0
+	movdqu XMMWORD PTR [rsp+3392], xmm0
+	movdqu XMMWORD PTR [rsp+3376], xmm0
+	movdqu XMMWORD PTR [rsp+3360], xmm0
+	movdqu XMMWORD PTR [rsp+3344], xmm0
+	movdqu XMMWORD PTR [rsp+3328], xmm0
+	movdqu XMMWORD PTR [rsp+3312], xmm0
+	movdqu XMMWORD PTR [rsp+3296], xmm0
+	movdqu XMMWORD PTR [rsp+3280], xmm0
+	movdqu XMMWORD PTR [rsp+3264], xmm0
+	movdqu XMMWORD PTR [rsp+3248], xmm0
+	movdqu XMMWORD PTR [rsp+3232], xmm0
+	movdqu XMMWORD PTR [rsp+3216], xmm0
+	movdqu XMMWORD PTR [rsp+3200], xmm0
+	movdqu XMMWORD PTR [rsp+3184], xmm0
+	movdqu XMMWORD PTR [rsp+3168], xmm0
+	movdqu XMMWORD PTR [rsp+3152], xmm0
+	movdqu XMMWORD PTR [rsp+3136], xmm0
+	movdqu XMMWORD PTR [rsp+3120], xmm0
+	movdqu XMMWORD PTR [rsp+3104], xmm0
+	movdqu XMMWORD PTR [rsp+3088], xmm0
+	movdqu XMMWORD PTR [rsp+3072], xmm0
+	movdqu XMMWORD PTR [rsp+3056], xmm0
+	movdqu XMMWORD PTR [rsp+3040], xmm0
+	movdqu XMMWORD PTR [rsp+3024], xmm0
+	movdqu XMMWORD PTR [rsp+3008], xmm0
+	movdqu XMMWORD PTR [rsp+2992], xmm0
+	movdqu XMMWORD PTR [rsp+2976], xmm0
+	movdqu XMMWORD PTR [rsp+2960], xmm0
+	movdqu XMMWORD PTR [rsp+2944], xmm0
+	movdqu XMMWORD PTR [rsp+2928], xmm0
+	movdqu XMMWORD PTR [rsp+2912], xmm0
+	movdqu XMMWORD PTR [rsp+2896], xmm0
+	movdqu XMMWORD PTR [rsp+2880], xmm0
+	movdqu XMMWORD PTR [rsp+2864], xmm0
+	movdqu XMMWORD PTR [rsp+2848], xmm0
+	movdqu XMMWORD PTR [rsp+2832], xmm0
+	movdqu XMMWORD PTR [rsp+2816], xmm0
+	movdqu XMMWORD PTR [rsp+2800], xmm0
+	movdqu XMMWORD PTR [rsp+2784], xmm0
+	movdqu XMMWORD PTR [rsp+2768], xmm0
+	movdqu XMMWORD PTR [rsp+2752], xmm0
+	movdqu XMMWORD PTR [rsp+2736], xmm0
+	movdqu XMMWORD PTR [rsp+2720], xmm0
+	movdqu XMMWORD PTR [rsp+2704], xmm0
+	movdqu XMMWORD PTR [rsp+2688], xmm0
+	movdqu XMMWORD PTR [rsp+2672], xmm0
+	movdqu XMMWORD PTR [rsp+2656], xmm0
+	movdqu XMMWORD PTR [rsp+2640], xmm0
+	movdqu XMMWORD PTR [rsp+2624], xmm0
+	movdqu XMMWORD PTR [rsp+2608], xmm0
+	movdqu XMMWORD PTR [rsp+2592], xmm0
+	movdqu XMMWORD PTR [rsp+2576], xmm0
+	movdqu XMMWORD PTR [rsp+2560], xmm0
+	movdqu XMMWORD PTR [rsp+2544], xmm0
+	movdqu XMMWORD PTR [rsp+2528], xmm0
+	movdqu XMMWORD PTR [rsp+2512], xmm0
+	movdqu XMMWORD PTR [rsp+2496], xmm0
+	movdqu XMMWORD PTR [rsp+2480], xmm0
+	movdqu XMMWORD PTR [rsp+2464], xmm0
+	movdqu XMMWORD PTR [rsp+2448], xmm0
+	movdqu XMMWORD PTR [rsp+2432], xmm0
+	movdqu XMMWORD PTR [rsp+2416], xmm0
+	movdqu XMMWORD PTR [rsp+2400], xmm0
+	movdqu XMMWORD PTR [rsp+2384], xmm0
+	movdqu XMMWORD PTR [rsp+2368], xmm0
+	movdqu XMMWORD PTR [rsp+2352], xmm0
+	movdqu XMMWORD PTR [rsp+2336], xmm0
+	movdqu XMMWORD PTR [rsp+2320], xmm0
+	movdqu XMMWORD PTR [rsp+2304], xmm0
+	movdqu XMMWORD PTR [rsp+2288], xmm0
+	movdqu XMMWORD PTR [rsp+2272], xmm0
+	movdqu XMMWORD PTR [rsp+2256], xmm0
+	movdqu XMMWORD PTR [rsp+2240], xmm0
+	movdqu XMMWORD PTR [rsp+2224], xmm0
+	movdqu XMMWORD PTR [rsp+2208], xmm0
+	movdqu XMMWORD PTR [rsp+2192], xmm0
+	movdqu XMMWORD PTR [rsp+2176], xmm0
+	movdqu XMMWORD PTR [rsp+2160], xmm0
+	movdqu XMMWORD PTR [rsp+2144], xmm0
+	movdqu XMMWORD PTR [rsp+2128], xmm0
+	movdqu XMMWORD PTR [rsp+2112], xmm0
+	movdqu XMMWORD PTR [rsp+2096], xmm0
+	movdqu XMMWORD PTR [rsp+2080], xmm0
+	movdqu XMMWORD PTR [rsp+2064], xmm0
+	movdqu XMMWORD PTR [rsp+2048], xmm0
+	movdqu XMMWORD PTR [rsp+2032], xmm0
+	movdqu XMMWORD PTR [rsp+2016], xmm0
+	movdqu XMMWORD PTR [rsp+2000], xmm0
+	movdqu XMMWORD PTR [rsp+1984], xmm0
+	movdqu XMMWORD PTR [rsp+1968], xmm0
+	movdqu XMMWORD PTR [rsp+1952], xmm0
+	movdqu XMMWORD PTR [rsp+1936], xmm0
+	movdqu XMMWORD PTR [rsp+1920], xmm0
+	movdqu XMMWORD PTR [rsp+1904], xmm0
+	movdqu XMMWORD PTR [rsp+1888], xmm0
+	movdqu XMMWORD PTR [rsp+1872], xmm0
+	movdqu XMMWORD PTR [rsp+1856], xmm0
+	movdqu XMMWORD PTR [rsp+1840], xmm0
+	movdqu XMMWORD PTR [rsp+1824], xmm0
+	movdqu XMMWORD PTR [rsp+1808], xmm0
+	movdqu XMMWORD PTR [rsp+1792], xmm0
+	movdqu XMMWORD PTR [rsp+1776], xmm0
+	movdqu XMMWORD PTR [rsp+1760], xmm0
+	movdqu XMMWORD PTR [rsp+1744], xmm0
+	movdqu XMMWORD PTR [rsp+1728], xmm0
+	movdqu XMMWORD PTR [rsp+1712], xmm0
+	movdqu XMMWORD PTR [rsp+1696], xmm0
+	movdqu XMMWORD PTR [rsp+1680], xmm0
+	movdqu XMMWORD PTR [rsp+1664], xmm0
+	movdqu XMMWORD PTR [rsp+1648], xmm0
+	movdqu XMMWORD PTR [rsp+1632], xmm0
+	movdqu XMMWORD PTR [rsp+1616], xmm0
+	movdqu XMMWORD PTR [rsp+1600], xmm0
+	movdqu XMMWORD PTR [rsp+1584], xmm0
+	movdqu XMMWORD PTR [rsp+1568], xmm0
+	movdqu XMMWORD PTR [rsp+1552], xmm0
+	movdqu XMMWORD PTR [rsp+1536], xmm0
+	movdqu XMMWORD PTR [rsp+1520], xmm0
+	movdqu XMMWORD PTR [rsp+1504], xmm0
+	movdqu XMMWORD PTR [rsp+1488], xmm0
+	movdqu XMMWORD PTR [rsp+1472], xmm0
+	movdqu XMMWORD PTR [rsp+1456], xmm0
+	movdqu XMMWORD PTR [rsp+1440], xmm0
+	movdqu XMMWORD PTR [rsp+1424], xmm0
+	movdqu XMMWORD PTR [rsp+1408], xmm0
+	movdqu XMMWORD PTR [rsp+1392], xmm0
+	movdqu XMMWORD PTR [rsp+1376], xmm0
+	movdqu XMMWORD PTR [rsp+1360], xmm0
+	movdqu XMMWORD PTR [rsp+1344], xmm0
+	movdqu XMMWORD PTR [rsp+1328], xmm0
+	movdqu XMMWORD PTR [rsp+1312], xmm0
+	movdqu XMMWORD PTR [rsp+1296], xmm0
+	movdqu XMMWORD PTR [rsp+1280], xmm0
+	movdqu XMMWORD PTR [rsp+1264], xmm0
+	movdqu XMMWORD PTR [rsp+1248], xmm0
+	movdqu XMMWORD PTR [rsp+1232], xmm0
+	movdqu XMMWORD PTR [rsp+1216], xmm0
+	movdqu XMMWORD PTR [rsp+1200], xmm0
+	movdqu XMMWORD PTR [rsp+1184], xmm0
+	movdqu XMMWORD PTR [rsp+1168], xmm0
+	movdqu XMMWORD PTR [rsp+1152], xmm0
+	movdqu XMMWORD PTR [rsp+1136], xmm0
+	movdqu XMMWORD PTR [rsp+1120], xmm0
+	movdqu XMMWORD PTR [rsp+1104], xmm0
+	movdqu XMMWORD PTR [rsp+1088], xmm0
+	movdqu XMMWORD PTR [rsp+1072], xmm0
+	movdqu XMMWORD PTR [rsp+1056], xmm0
+	movdqu XMMWORD PTR [rsp+1040], xmm0
+	movdqu XMMWORD PTR [rsp+1024], xmm0
+	movdqu XMMWORD PTR [rsp+1008], xmm0
+	movdqu XMMWORD PTR [rsp+992], xmm0
+	movdqu XMMWORD PTR [rsp+976], xmm0
+	movdqu XMMWORD PTR [rsp+960], xmm0
+	movdqu XMMWORD PTR [rsp+944], xmm0
+	movdqu XMMWORD PTR [rsp+928], xmm0
+	movdqu XMMWORD PTR [rsp+912], xmm0
+	movdqu XMMWORD PTR [rsp+896], xmm0
+	movdqu XMMWORD PTR [rsp+880], xmm0
+	movdqu XMMWORD PTR [rsp+864], xmm0
+	movdqu XMMWORD PTR [rsp+848], xmm0
+	movdqu XMMWORD PTR [rsp+832], xmm0
+	movdqu XMMWORD PTR [rsp+816], xmm0
+	movdqu XMMWORD PTR [rsp+800], xmm0
+	movdqu XMMWORD PTR [rsp+784], xmm0
+	movdqu XMMWORD PTR [rsp+768], xmm0
+	movdqu XMMWORD PTR [rsp+752], xmm0
+	movdqu XMMWORD PTR [rsp+736], xmm0
+	movdqu XMMWORD PTR [rsp+720], xmm0
+	movdqu XMMWORD PTR [rsp+704], xmm0
+	movdqu XMMWORD PTR [rsp+688], xmm0
+	movdqu XMMWORD PTR [rsp+672], xmm0
+	movdqu XMMWORD PTR [rsp+656], xmm0
+	movdqu XMMWORD PTR [rsp+640], xmm0
+	movdqu XMMWORD PTR [rsp+624], xmm0
+	movdqu XMMWORD PTR [rsp+608], xmm0
+	movdqu XMMWORD PTR [rsp+592], xmm0
+	movdqu XMMWORD PTR [rsp+576], xmm0
+	movdqu XMMWORD PTR [rsp+560], xmm0
+	movdqu XMMWORD PTR [rsp+544], xmm0
+	movdqu XMMWORD PTR [rsp+528], xmm0
+	movdqu XMMWORD PTR [rsp+512], xmm0
+	movdqu XMMWORD PTR [rsp+496], xmm0
+	movdqu XMMWORD PTR [rsp+480], xmm0
+	movdqu XMMWORD PTR [rsp+464], xmm0
+	movdqu XMMWORD PTR [rsp+448], xmm0
+	movdqu XMMWORD PTR [rsp+432], xmm0
+	movdqu XMMWORD PTR [rsp+416], xmm0
+	movdqu XMMWORD PTR [rsp+400], xmm0
+	movdqu XMMWORD PTR [rsp+384], xmm0
+	movdqu XMMWORD PTR [rsp+368], xmm0
+	movdqu XMMWORD PTR [rsp+352], xmm0
+	movdqu XMMWORD PTR [rsp+336], xmm0
+	movdqu XMMWORD PTR [rsp+320], xmm0
+	movdqu XMMWORD PTR [rsp+304], xmm0
+	movdqu XMMWORD PTR [rsp+288], xmm0
+	movdqu XMMWORD PTR [rsp+272], xmm0
+	movdqu XMMWORD PTR [rsp+256], xmm0
+	movdqu XMMWORD PTR [rsp+240], xmm0
+	movdqu XMMWORD PTR [rsp+224], xmm0
+	movdqu XMMWORD PTR [rsp+208], xmm0
+	movdqu XMMWORD PTR [rsp+192], xmm0
+	movdqu XMMWORD PTR [rsp+176], xmm0
+	movdqu XMMWORD PTR [rsp+160], xmm0
+	movdqu XMMWORD PTR [rsp+144], xmm0
+	movdqu XMMWORD PTR [rsp+128], xmm0
+	movdqu XMMWORD PTR [rsp+112], xmm0
+	movdqu XMMWORD PTR [rsp+96], xmm0
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp-1744]
+	movdqu XMMWORD PTR [rsp+1728], xmm0
+	movdqu XMMWORD PTR [rsp+1712], xmm0
+	movdqu XMMWORD PTR [rsp+1696], xmm0
+	movdqu XMMWORD PTR [rsp+1680], xmm0
+	movdqu XMMWORD PTR [rsp+1664], xmm0
+	movdqu XMMWORD PTR [rsp+1648], xmm0
+	movdqu XMMWORD PTR [rsp+1632], xmm0
+	movdqu XMMWORD PTR [rsp+1616], xmm0
+	movdqu XMMWORD PTR [rsp+1600], xmm0
+	movdqu XMMWORD PTR [rsp+1584], xmm0
+	movdqu XMMWORD PTR [rsp+1568], xmm0
+	movdqu XMMWORD PTR [rsp+1552], xmm0
+	movdqu XMMWORD PTR [rsp+1536], xmm0
+	movdqu XMMWORD PTR [rsp+1520], xmm0
+	movdqu XMMWORD PTR [rsp+1504], xmm0
+	movdqu XMMWORD PTR [rsp+1488], xmm0
+	movdqu XMMWORD PTR [rsp+1472], xmm0
+	movdqu XMMWORD PTR [rsp+1456], xmm0
+	movdqu XMMWORD PTR [rsp+1440], xmm0
+	movdqu XMMWORD PTR [rsp+1424], xmm0
+	movdqu XMMWORD PTR [rsp+1408], xmm0
+	movdqu XMMWORD PTR [rsp+1392], xmm0
+	movdqu XMMWORD PTR [rsp+1376], xmm0
+	movdqu XMMWORD PTR [rsp+1360], xmm0
+	movdqu XMMWORD PTR [rsp+1344], xmm0
+	movdqu XMMWORD PTR [rsp+1328], xmm0
+	movdqu XMMWORD PTR [rsp+1312], xmm0
+	movdqu XMMWORD PTR [rsp+1296], xmm0
+	movdqu XMMWORD PTR [rsp+1280], xmm0
+	movdqu XMMWORD PTR [rsp+1264], xmm0
+	movdqu XMMWORD PTR [rsp+1248], xmm0
+	movdqu XMMWORD PTR [rsp+1232], xmm0
+	movdqu XMMWORD PTR [rsp+1216], xmm0
+	movdqu XMMWORD PTR [rsp+1200], xmm0
+	movdqu XMMWORD PTR [rsp+1184], xmm0
+	movdqu XMMWORD PTR [rsp+1168], xmm0
+	movdqu XMMWORD PTR [rsp+1152], xmm0
+	movdqu XMMWORD PTR [rsp+1136], xmm0
+	movdqu XMMWORD PTR [rsp+1120], xmm0
+	movdqu XMMWORD PTR [rsp+1104], xmm0
+	movdqu XMMWORD PTR [rsp+1088], xmm0
+	movdqu XMMWORD PTR [rsp+1072], xmm0
+	movdqu XMMWORD PTR [rsp+1056], xmm0
+	movdqu XMMWORD PTR [rsp+1040], xmm0
+	movdqu XMMWORD PTR [rsp+1024], xmm0
+	movdqu XMMWORD PTR [rsp+1008], xmm0
+	movdqu XMMWORD PTR [rsp+992], xmm0
+	movdqu XMMWORD PTR [rsp+976], xmm0
+	movdqu XMMWORD PTR [rsp+960], xmm0
+	movdqu XMMWORD PTR [rsp+944], xmm0
+	movdqu XMMWORD PTR [rsp+928], xmm0
+	movdqu XMMWORD PTR [rsp+912], xmm0
+	movdqu XMMWORD PTR [rsp+896], xmm0
+	movdqu XMMWORD PTR [rsp+880], xmm0
+	movdqu XMMWORD PTR [rsp+864], xmm0
+	movdqu XMMWORD PTR [rsp+848], xmm0
+	movdqu XMMWORD PTR [rsp+832], xmm0
+	movdqu XMMWORD PTR [rsp+816], xmm0
+	movdqu XMMWORD PTR [rsp+800], xmm0
+	movdqu XMMWORD PTR [rsp+784], xmm0
+	movdqu XMMWORD PTR [rsp+768], xmm0
+	movdqu XMMWORD PTR [rsp+752], xmm0
+	movdqu XMMWORD PTR [rsp+736], xmm0
+	movdqu XMMWORD PTR [rsp+720], xmm0
+	movdqu XMMWORD PTR [rsp+704], xmm0
+	movdqu XMMWORD PTR [rsp+688], xmm0
+	movdqu XMMWORD PTR [rsp+672], xmm0
+	movdqu XMMWORD PTR [rsp+656], xmm0
+	movdqu XMMWORD PTR [rsp+640], xmm0
+	movdqu XMMWORD PTR [rsp+624], xmm0
+	movdqu XMMWORD PTR [rsp+608], xmm0
+	movdqu XMMWORD PTR [rsp+592], xmm0
+	movdqu XMMWORD PTR [rsp+576], xmm0
+	movdqu XMMWORD PTR [rsp+560], xmm0
+	movdqu XMMWORD PTR [rsp+544], xmm0
+	movdqu XMMWORD PTR [rsp+528], xmm0
+	movdqu XMMWORD PTR [rsp+512], xmm0
+	movdqu XMMWORD PTR [rsp+496], xmm0
+	movdqu XMMWORD PTR [rsp+480], xmm0
+	movdqu XMMWORD PTR [rsp+464], xmm0
+	movdqu XMMWORD PTR [rsp+448], xmm0
+	movdqu XMMWORD PTR [rsp+432], xmm0
+	movdqu XMMWORD PTR [rsp+416], xmm0
+	movdqu XMMWORD PTR [rsp+400], xmm0
+	movdqu XMMWORD PTR [rsp+384], xmm0
+	movdqu XMMWORD PTR [rsp+368], xmm0
+	movdqu XMMWORD PTR [rsp+352], xmm0
+	movdqu XMMWORD PTR [rsp+336], xmm0
+	movdqu XMMWORD PTR [rsp+320], xmm0
+	movdqu XMMWORD PTR [rsp+304], xmm0
+	movdqu XMMWORD PTR [rsp+288], xmm0
+	movdqu XMMWORD PTR [rsp+272], xmm0
+	movdqu XMMWORD PTR [rsp+256], xmm0
+	movdqu XMMWORD PTR [rsp+240], xmm0
+	movdqu XMMWORD PTR [rsp+224], xmm0
+	movdqu XMMWORD PTR [rsp+208], xmm0
+	movdqu XMMWORD PTR [rsp+192], xmm0
+	movdqu XMMWORD PTR [rsp+176], xmm0
+	movdqu XMMWORD PTR [rsp+160], xmm0
+	movdqu XMMWORD PTR [rsp+144], xmm0
+	movdqu XMMWORD PTR [rsp+128], xmm0
+	movdqu XMMWORD PTR [rsp+112], xmm0
+	movdqu XMMWORD PTR [rsp+96], xmm0
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+1744]
+	lea rsp, [rsp+4080]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -2909,7 +5115,7 @@ vg_sm4_gcm_stream_aad_pclmul:
 	.p2align 6
 
 vg_sm4_gcm_stream_encrypt_pclmul:
-	lea rsp, [rsp-2576]
+	lea rsp, [rsp-784]
 	mov rax, rsp
 	add rax, 16
 	mov QWORD PTR [rsp+8], rax
@@ -3147,12 +5353,291 @@ vg_sm4_gcm_stream_encrypt_pclmul:
 	mov r13, QWORD PTR [r15+152]
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
-	lea rsp, [rsp+2576]
+	lea rsp, [rsp+784]
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-4008]
+	movdqu XMMWORD PTR [rsp+3992], xmm0
+	movdqu XMMWORD PTR [rsp+3976], xmm0
+	movdqu XMMWORD PTR [rsp+3960], xmm0
+	movdqu XMMWORD PTR [rsp+3944], xmm0
+	movdqu XMMWORD PTR [rsp+3928], xmm0
+	movdqu XMMWORD PTR [rsp+3912], xmm0
+	movdqu XMMWORD PTR [rsp+3896], xmm0
+	movdqu XMMWORD PTR [rsp+3880], xmm0
+	movdqu XMMWORD PTR [rsp+3864], xmm0
+	movdqu XMMWORD PTR [rsp+3848], xmm0
+	movdqu XMMWORD PTR [rsp+3832], xmm0
+	movdqu XMMWORD PTR [rsp+3816], xmm0
+	movdqu XMMWORD PTR [rsp+3800], xmm0
+	movdqu XMMWORD PTR [rsp+3784], xmm0
+	movdqu XMMWORD PTR [rsp+3768], xmm0
+	movdqu XMMWORD PTR [rsp+3752], xmm0
+	movdqu XMMWORD PTR [rsp+3736], xmm0
+	movdqu XMMWORD PTR [rsp+3720], xmm0
+	movdqu XMMWORD PTR [rsp+3704], xmm0
+	movdqu XMMWORD PTR [rsp+3688], xmm0
+	movdqu XMMWORD PTR [rsp+3672], xmm0
+	movdqu XMMWORD PTR [rsp+3656], xmm0
+	movdqu XMMWORD PTR [rsp+3640], xmm0
+	movdqu XMMWORD PTR [rsp+3624], xmm0
+	movdqu XMMWORD PTR [rsp+3608], xmm0
+	movdqu XMMWORD PTR [rsp+3592], xmm0
+	movdqu XMMWORD PTR [rsp+3576], xmm0
+	movdqu XMMWORD PTR [rsp+3560], xmm0
+	movdqu XMMWORD PTR [rsp+3544], xmm0
+	movdqu XMMWORD PTR [rsp+3528], xmm0
+	movdqu XMMWORD PTR [rsp+3512], xmm0
+	movdqu XMMWORD PTR [rsp+3496], xmm0
+	movdqu XMMWORD PTR [rsp+3480], xmm0
+	movdqu XMMWORD PTR [rsp+3464], xmm0
+	movdqu XMMWORD PTR [rsp+3448], xmm0
+	movdqu XMMWORD PTR [rsp+3432], xmm0
+	movdqu XMMWORD PTR [rsp+3416], xmm0
+	movdqu XMMWORD PTR [rsp+3400], xmm0
+	movdqu XMMWORD PTR [rsp+3384], xmm0
+	movdqu XMMWORD PTR [rsp+3368], xmm0
+	movdqu XMMWORD PTR [rsp+3352], xmm0
+	movdqu XMMWORD PTR [rsp+3336], xmm0
+	movdqu XMMWORD PTR [rsp+3320], xmm0
+	movdqu XMMWORD PTR [rsp+3304], xmm0
+	movdqu XMMWORD PTR [rsp+3288], xmm0
+	movdqu XMMWORD PTR [rsp+3272], xmm0
+	movdqu XMMWORD PTR [rsp+3256], xmm0
+	movdqu XMMWORD PTR [rsp+3240], xmm0
+	movdqu XMMWORD PTR [rsp+3224], xmm0
+	movdqu XMMWORD PTR [rsp+3208], xmm0
+	movdqu XMMWORD PTR [rsp+3192], xmm0
+	movdqu XMMWORD PTR [rsp+3176], xmm0
+	movdqu XMMWORD PTR [rsp+3160], xmm0
+	movdqu XMMWORD PTR [rsp+3144], xmm0
+	movdqu XMMWORD PTR [rsp+3128], xmm0
+	movdqu XMMWORD PTR [rsp+3112], xmm0
+	movdqu XMMWORD PTR [rsp+3096], xmm0
+	movdqu XMMWORD PTR [rsp+3080], xmm0
+	movdqu XMMWORD PTR [rsp+3064], xmm0
+	movdqu XMMWORD PTR [rsp+3048], xmm0
+	movdqu XMMWORD PTR [rsp+3032], xmm0
+	movdqu XMMWORD PTR [rsp+3016], xmm0
+	movdqu XMMWORD PTR [rsp+3000], xmm0
+	movdqu XMMWORD PTR [rsp+2984], xmm0
+	movdqu XMMWORD PTR [rsp+2968], xmm0
+	movdqu XMMWORD PTR [rsp+2952], xmm0
+	movdqu XMMWORD PTR [rsp+2936], xmm0
+	movdqu XMMWORD PTR [rsp+2920], xmm0
+	movdqu XMMWORD PTR [rsp+2904], xmm0
+	movdqu XMMWORD PTR [rsp+2888], xmm0
+	movdqu XMMWORD PTR [rsp+2872], xmm0
+	movdqu XMMWORD PTR [rsp+2856], xmm0
+	movdqu XMMWORD PTR [rsp+2840], xmm0
+	movdqu XMMWORD PTR [rsp+2824], xmm0
+	movdqu XMMWORD PTR [rsp+2808], xmm0
+	movdqu XMMWORD PTR [rsp+2792], xmm0
+	movdqu XMMWORD PTR [rsp+2776], xmm0
+	movdqu XMMWORD PTR [rsp+2760], xmm0
+	movdqu XMMWORD PTR [rsp+2744], xmm0
+	movdqu XMMWORD PTR [rsp+2728], xmm0
+	movdqu XMMWORD PTR [rsp+2712], xmm0
+	movdqu XMMWORD PTR [rsp+2696], xmm0
+	movdqu XMMWORD PTR [rsp+2680], xmm0
+	movdqu XMMWORD PTR [rsp+2664], xmm0
+	movdqu XMMWORD PTR [rsp+2648], xmm0
+	movdqu XMMWORD PTR [rsp+2632], xmm0
+	movdqu XMMWORD PTR [rsp+2616], xmm0
+	movdqu XMMWORD PTR [rsp+2600], xmm0
+	movdqu XMMWORD PTR [rsp+2584], xmm0
+	movdqu XMMWORD PTR [rsp+2568], xmm0
+	movdqu XMMWORD PTR [rsp+2552], xmm0
+	movdqu XMMWORD PTR [rsp+2536], xmm0
+	movdqu XMMWORD PTR [rsp+2520], xmm0
+	movdqu XMMWORD PTR [rsp+2504], xmm0
+	movdqu XMMWORD PTR [rsp+2488], xmm0
+	movdqu XMMWORD PTR [rsp+2472], xmm0
+	movdqu XMMWORD PTR [rsp+2456], xmm0
+	movdqu XMMWORD PTR [rsp+2440], xmm0
+	movdqu XMMWORD PTR [rsp+2424], xmm0
+	movdqu XMMWORD PTR [rsp+2408], xmm0
+	movdqu XMMWORD PTR [rsp+2392], xmm0
+	movdqu XMMWORD PTR [rsp+2376], xmm0
+	movdqu XMMWORD PTR [rsp+2360], xmm0
+	movdqu XMMWORD PTR [rsp+2344], xmm0
+	movdqu XMMWORD PTR [rsp+2328], xmm0
+	movdqu XMMWORD PTR [rsp+2312], xmm0
+	movdqu XMMWORD PTR [rsp+2296], xmm0
+	movdqu XMMWORD PTR [rsp+2280], xmm0
+	movdqu XMMWORD PTR [rsp+2264], xmm0
+	movdqu XMMWORD PTR [rsp+2248], xmm0
+	movdqu XMMWORD PTR [rsp+2232], xmm0
+	movdqu XMMWORD PTR [rsp+2216], xmm0
+	movdqu XMMWORD PTR [rsp+2200], xmm0
+	movdqu XMMWORD PTR [rsp+2184], xmm0
+	movdqu XMMWORD PTR [rsp+2168], xmm0
+	movdqu XMMWORD PTR [rsp+2152], xmm0
+	movdqu XMMWORD PTR [rsp+2136], xmm0
+	movdqu XMMWORD PTR [rsp+2120], xmm0
+	movdqu XMMWORD PTR [rsp+2104], xmm0
+	movdqu XMMWORD PTR [rsp+2088], xmm0
+	movdqu XMMWORD PTR [rsp+2072], xmm0
+	movdqu XMMWORD PTR [rsp+2056], xmm0
+	movdqu XMMWORD PTR [rsp+2040], xmm0
+	movdqu XMMWORD PTR [rsp+2024], xmm0
+	movdqu XMMWORD PTR [rsp+2008], xmm0
+	movdqu XMMWORD PTR [rsp+1992], xmm0
+	movdqu XMMWORD PTR [rsp+1976], xmm0
+	movdqu XMMWORD PTR [rsp+1960], xmm0
+	movdqu XMMWORD PTR [rsp+1944], xmm0
+	movdqu XMMWORD PTR [rsp+1928], xmm0
+	movdqu XMMWORD PTR [rsp+1912], xmm0
+	movdqu XMMWORD PTR [rsp+1896], xmm0
+	movdqu XMMWORD PTR [rsp+1880], xmm0
+	movdqu XMMWORD PTR [rsp+1864], xmm0
+	movdqu XMMWORD PTR [rsp+1848], xmm0
+	movdqu XMMWORD PTR [rsp+1832], xmm0
+	movdqu XMMWORD PTR [rsp+1816], xmm0
+	movdqu XMMWORD PTR [rsp+1800], xmm0
+	movdqu XMMWORD PTR [rsp+1784], xmm0
+	movdqu XMMWORD PTR [rsp+1768], xmm0
+	movdqu XMMWORD PTR [rsp+1752], xmm0
+	movdqu XMMWORD PTR [rsp+1736], xmm0
+	movdqu XMMWORD PTR [rsp+1720], xmm0
+	movdqu XMMWORD PTR [rsp+1704], xmm0
+	movdqu XMMWORD PTR [rsp+1688], xmm0
+	movdqu XMMWORD PTR [rsp+1672], xmm0
+	movdqu XMMWORD PTR [rsp+1656], xmm0
+	movdqu XMMWORD PTR [rsp+1640], xmm0
+	movdqu XMMWORD PTR [rsp+1624], xmm0
+	movdqu XMMWORD PTR [rsp+1608], xmm0
+	movdqu XMMWORD PTR [rsp+1592], xmm0
+	movdqu XMMWORD PTR [rsp+1576], xmm0
+	movdqu XMMWORD PTR [rsp+1560], xmm0
+	movdqu XMMWORD PTR [rsp+1544], xmm0
+	movdqu XMMWORD PTR [rsp+1528], xmm0
+	movdqu XMMWORD PTR [rsp+1512], xmm0
+	movdqu XMMWORD PTR [rsp+1496], xmm0
+	movdqu XMMWORD PTR [rsp+1480], xmm0
+	movdqu XMMWORD PTR [rsp+1464], xmm0
+	movdqu XMMWORD PTR [rsp+1448], xmm0
+	movdqu XMMWORD PTR [rsp+1432], xmm0
+	movdqu XMMWORD PTR [rsp+1416], xmm0
+	movdqu XMMWORD PTR [rsp+1400], xmm0
+	movdqu XMMWORD PTR [rsp+1384], xmm0
+	movdqu XMMWORD PTR [rsp+1368], xmm0
+	movdqu XMMWORD PTR [rsp+1352], xmm0
+	movdqu XMMWORD PTR [rsp+1336], xmm0
+	movdqu XMMWORD PTR [rsp+1320], xmm0
+	movdqu XMMWORD PTR [rsp+1304], xmm0
+	movdqu XMMWORD PTR [rsp+1288], xmm0
+	movdqu XMMWORD PTR [rsp+1272], xmm0
+	movdqu XMMWORD PTR [rsp+1256], xmm0
+	movdqu XMMWORD PTR [rsp+1240], xmm0
+	movdqu XMMWORD PTR [rsp+1224], xmm0
+	movdqu XMMWORD PTR [rsp+1208], xmm0
+	movdqu XMMWORD PTR [rsp+1192], xmm0
+	movdqu XMMWORD PTR [rsp+1176], xmm0
+	movdqu XMMWORD PTR [rsp+1160], xmm0
+	movdqu XMMWORD PTR [rsp+1144], xmm0
+	movdqu XMMWORD PTR [rsp+1128], xmm0
+	movdqu XMMWORD PTR [rsp+1112], xmm0
+	movdqu XMMWORD PTR [rsp+1096], xmm0
+	movdqu XMMWORD PTR [rsp+1080], xmm0
+	movdqu XMMWORD PTR [rsp+1064], xmm0
+	movdqu XMMWORD PTR [rsp+1048], xmm0
+	movdqu XMMWORD PTR [rsp+1032], xmm0
+	movdqu XMMWORD PTR [rsp+1016], xmm0
+	movdqu XMMWORD PTR [rsp+1000], xmm0
+	movdqu XMMWORD PTR [rsp+984], xmm0
+	movdqu XMMWORD PTR [rsp+968], xmm0
+	movdqu XMMWORD PTR [rsp+952], xmm0
+	movdqu XMMWORD PTR [rsp+936], xmm0
+	movdqu XMMWORD PTR [rsp+920], xmm0
+	movdqu XMMWORD PTR [rsp+904], xmm0
+	movdqu XMMWORD PTR [rsp+888], xmm0
+	movdqu XMMWORD PTR [rsp+872], xmm0
+	movdqu XMMWORD PTR [rsp+856], xmm0
+	movdqu XMMWORD PTR [rsp+840], xmm0
+	movdqu XMMWORD PTR [rsp+824], xmm0
+	movdqu XMMWORD PTR [rsp+808], xmm0
+	movdqu XMMWORD PTR [rsp+792], xmm0
+	movdqu XMMWORD PTR [rsp+776], xmm0
+	movdqu XMMWORD PTR [rsp+760], xmm0
+	movdqu XMMWORD PTR [rsp+744], xmm0
+	movdqu XMMWORD PTR [rsp+728], xmm0
+	movdqu XMMWORD PTR [rsp+712], xmm0
+	movdqu XMMWORD PTR [rsp+696], xmm0
+	movdqu XMMWORD PTR [rsp+680], xmm0
+	movdqu XMMWORD PTR [rsp+664], xmm0
+	movdqu XMMWORD PTR [rsp+648], xmm0
+	movdqu XMMWORD PTR [rsp+632], xmm0
+	movdqu XMMWORD PTR [rsp+616], xmm0
+	movdqu XMMWORD PTR [rsp+600], xmm0
+	movdqu XMMWORD PTR [rsp+584], xmm0
+	movdqu XMMWORD PTR [rsp+568], xmm0
+	movdqu XMMWORD PTR [rsp+552], xmm0
+	movdqu XMMWORD PTR [rsp+536], xmm0
+	movdqu XMMWORD PTR [rsp+520], xmm0
+	movdqu XMMWORD PTR [rsp+504], xmm0
+	movdqu XMMWORD PTR [rsp+488], xmm0
+	movdqu XMMWORD PTR [rsp+472], xmm0
+	movdqu XMMWORD PTR [rsp+456], xmm0
+	movdqu XMMWORD PTR [rsp+440], xmm0
+	movdqu XMMWORD PTR [rsp+424], xmm0
+	movdqu XMMWORD PTR [rsp+408], xmm0
+	movdqu XMMWORD PTR [rsp+392], xmm0
+	movdqu XMMWORD PTR [rsp+376], xmm0
+	movdqu XMMWORD PTR [rsp+360], xmm0
+	movdqu XMMWORD PTR [rsp+344], xmm0
+	movdqu XMMWORD PTR [rsp+328], xmm0
+	movdqu XMMWORD PTR [rsp+312], xmm0
+	movdqu XMMWORD PTR [rsp+296], xmm0
+	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
+	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+184], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+4008]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
 vg_sm4_gcm_stream_decrypt_pclmul:
-	lea rsp, [rsp-2576]
+	lea rsp, [rsp-784]
 	mov rax, rsp
 	add rax, 16
 	mov QWORD PTR [rsp+8], rax
@@ -3390,12 +5875,291 @@ vg_sm4_gcm_stream_decrypt_pclmul:
 	mov r13, QWORD PTR [r15+152]
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
-	lea rsp, [rsp+2576]
+	lea rsp, [rsp+784]
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-4008]
+	movdqu XMMWORD PTR [rsp+3992], xmm0
+	movdqu XMMWORD PTR [rsp+3976], xmm0
+	movdqu XMMWORD PTR [rsp+3960], xmm0
+	movdqu XMMWORD PTR [rsp+3944], xmm0
+	movdqu XMMWORD PTR [rsp+3928], xmm0
+	movdqu XMMWORD PTR [rsp+3912], xmm0
+	movdqu XMMWORD PTR [rsp+3896], xmm0
+	movdqu XMMWORD PTR [rsp+3880], xmm0
+	movdqu XMMWORD PTR [rsp+3864], xmm0
+	movdqu XMMWORD PTR [rsp+3848], xmm0
+	movdqu XMMWORD PTR [rsp+3832], xmm0
+	movdqu XMMWORD PTR [rsp+3816], xmm0
+	movdqu XMMWORD PTR [rsp+3800], xmm0
+	movdqu XMMWORD PTR [rsp+3784], xmm0
+	movdqu XMMWORD PTR [rsp+3768], xmm0
+	movdqu XMMWORD PTR [rsp+3752], xmm0
+	movdqu XMMWORD PTR [rsp+3736], xmm0
+	movdqu XMMWORD PTR [rsp+3720], xmm0
+	movdqu XMMWORD PTR [rsp+3704], xmm0
+	movdqu XMMWORD PTR [rsp+3688], xmm0
+	movdqu XMMWORD PTR [rsp+3672], xmm0
+	movdqu XMMWORD PTR [rsp+3656], xmm0
+	movdqu XMMWORD PTR [rsp+3640], xmm0
+	movdqu XMMWORD PTR [rsp+3624], xmm0
+	movdqu XMMWORD PTR [rsp+3608], xmm0
+	movdqu XMMWORD PTR [rsp+3592], xmm0
+	movdqu XMMWORD PTR [rsp+3576], xmm0
+	movdqu XMMWORD PTR [rsp+3560], xmm0
+	movdqu XMMWORD PTR [rsp+3544], xmm0
+	movdqu XMMWORD PTR [rsp+3528], xmm0
+	movdqu XMMWORD PTR [rsp+3512], xmm0
+	movdqu XMMWORD PTR [rsp+3496], xmm0
+	movdqu XMMWORD PTR [rsp+3480], xmm0
+	movdqu XMMWORD PTR [rsp+3464], xmm0
+	movdqu XMMWORD PTR [rsp+3448], xmm0
+	movdqu XMMWORD PTR [rsp+3432], xmm0
+	movdqu XMMWORD PTR [rsp+3416], xmm0
+	movdqu XMMWORD PTR [rsp+3400], xmm0
+	movdqu XMMWORD PTR [rsp+3384], xmm0
+	movdqu XMMWORD PTR [rsp+3368], xmm0
+	movdqu XMMWORD PTR [rsp+3352], xmm0
+	movdqu XMMWORD PTR [rsp+3336], xmm0
+	movdqu XMMWORD PTR [rsp+3320], xmm0
+	movdqu XMMWORD PTR [rsp+3304], xmm0
+	movdqu XMMWORD PTR [rsp+3288], xmm0
+	movdqu XMMWORD PTR [rsp+3272], xmm0
+	movdqu XMMWORD PTR [rsp+3256], xmm0
+	movdqu XMMWORD PTR [rsp+3240], xmm0
+	movdqu XMMWORD PTR [rsp+3224], xmm0
+	movdqu XMMWORD PTR [rsp+3208], xmm0
+	movdqu XMMWORD PTR [rsp+3192], xmm0
+	movdqu XMMWORD PTR [rsp+3176], xmm0
+	movdqu XMMWORD PTR [rsp+3160], xmm0
+	movdqu XMMWORD PTR [rsp+3144], xmm0
+	movdqu XMMWORD PTR [rsp+3128], xmm0
+	movdqu XMMWORD PTR [rsp+3112], xmm0
+	movdqu XMMWORD PTR [rsp+3096], xmm0
+	movdqu XMMWORD PTR [rsp+3080], xmm0
+	movdqu XMMWORD PTR [rsp+3064], xmm0
+	movdqu XMMWORD PTR [rsp+3048], xmm0
+	movdqu XMMWORD PTR [rsp+3032], xmm0
+	movdqu XMMWORD PTR [rsp+3016], xmm0
+	movdqu XMMWORD PTR [rsp+3000], xmm0
+	movdqu XMMWORD PTR [rsp+2984], xmm0
+	movdqu XMMWORD PTR [rsp+2968], xmm0
+	movdqu XMMWORD PTR [rsp+2952], xmm0
+	movdqu XMMWORD PTR [rsp+2936], xmm0
+	movdqu XMMWORD PTR [rsp+2920], xmm0
+	movdqu XMMWORD PTR [rsp+2904], xmm0
+	movdqu XMMWORD PTR [rsp+2888], xmm0
+	movdqu XMMWORD PTR [rsp+2872], xmm0
+	movdqu XMMWORD PTR [rsp+2856], xmm0
+	movdqu XMMWORD PTR [rsp+2840], xmm0
+	movdqu XMMWORD PTR [rsp+2824], xmm0
+	movdqu XMMWORD PTR [rsp+2808], xmm0
+	movdqu XMMWORD PTR [rsp+2792], xmm0
+	movdqu XMMWORD PTR [rsp+2776], xmm0
+	movdqu XMMWORD PTR [rsp+2760], xmm0
+	movdqu XMMWORD PTR [rsp+2744], xmm0
+	movdqu XMMWORD PTR [rsp+2728], xmm0
+	movdqu XMMWORD PTR [rsp+2712], xmm0
+	movdqu XMMWORD PTR [rsp+2696], xmm0
+	movdqu XMMWORD PTR [rsp+2680], xmm0
+	movdqu XMMWORD PTR [rsp+2664], xmm0
+	movdqu XMMWORD PTR [rsp+2648], xmm0
+	movdqu XMMWORD PTR [rsp+2632], xmm0
+	movdqu XMMWORD PTR [rsp+2616], xmm0
+	movdqu XMMWORD PTR [rsp+2600], xmm0
+	movdqu XMMWORD PTR [rsp+2584], xmm0
+	movdqu XMMWORD PTR [rsp+2568], xmm0
+	movdqu XMMWORD PTR [rsp+2552], xmm0
+	movdqu XMMWORD PTR [rsp+2536], xmm0
+	movdqu XMMWORD PTR [rsp+2520], xmm0
+	movdqu XMMWORD PTR [rsp+2504], xmm0
+	movdqu XMMWORD PTR [rsp+2488], xmm0
+	movdqu XMMWORD PTR [rsp+2472], xmm0
+	movdqu XMMWORD PTR [rsp+2456], xmm0
+	movdqu XMMWORD PTR [rsp+2440], xmm0
+	movdqu XMMWORD PTR [rsp+2424], xmm0
+	movdqu XMMWORD PTR [rsp+2408], xmm0
+	movdqu XMMWORD PTR [rsp+2392], xmm0
+	movdqu XMMWORD PTR [rsp+2376], xmm0
+	movdqu XMMWORD PTR [rsp+2360], xmm0
+	movdqu XMMWORD PTR [rsp+2344], xmm0
+	movdqu XMMWORD PTR [rsp+2328], xmm0
+	movdqu XMMWORD PTR [rsp+2312], xmm0
+	movdqu XMMWORD PTR [rsp+2296], xmm0
+	movdqu XMMWORD PTR [rsp+2280], xmm0
+	movdqu XMMWORD PTR [rsp+2264], xmm0
+	movdqu XMMWORD PTR [rsp+2248], xmm0
+	movdqu XMMWORD PTR [rsp+2232], xmm0
+	movdqu XMMWORD PTR [rsp+2216], xmm0
+	movdqu XMMWORD PTR [rsp+2200], xmm0
+	movdqu XMMWORD PTR [rsp+2184], xmm0
+	movdqu XMMWORD PTR [rsp+2168], xmm0
+	movdqu XMMWORD PTR [rsp+2152], xmm0
+	movdqu XMMWORD PTR [rsp+2136], xmm0
+	movdqu XMMWORD PTR [rsp+2120], xmm0
+	movdqu XMMWORD PTR [rsp+2104], xmm0
+	movdqu XMMWORD PTR [rsp+2088], xmm0
+	movdqu XMMWORD PTR [rsp+2072], xmm0
+	movdqu XMMWORD PTR [rsp+2056], xmm0
+	movdqu XMMWORD PTR [rsp+2040], xmm0
+	movdqu XMMWORD PTR [rsp+2024], xmm0
+	movdqu XMMWORD PTR [rsp+2008], xmm0
+	movdqu XMMWORD PTR [rsp+1992], xmm0
+	movdqu XMMWORD PTR [rsp+1976], xmm0
+	movdqu XMMWORD PTR [rsp+1960], xmm0
+	movdqu XMMWORD PTR [rsp+1944], xmm0
+	movdqu XMMWORD PTR [rsp+1928], xmm0
+	movdqu XMMWORD PTR [rsp+1912], xmm0
+	movdqu XMMWORD PTR [rsp+1896], xmm0
+	movdqu XMMWORD PTR [rsp+1880], xmm0
+	movdqu XMMWORD PTR [rsp+1864], xmm0
+	movdqu XMMWORD PTR [rsp+1848], xmm0
+	movdqu XMMWORD PTR [rsp+1832], xmm0
+	movdqu XMMWORD PTR [rsp+1816], xmm0
+	movdqu XMMWORD PTR [rsp+1800], xmm0
+	movdqu XMMWORD PTR [rsp+1784], xmm0
+	movdqu XMMWORD PTR [rsp+1768], xmm0
+	movdqu XMMWORD PTR [rsp+1752], xmm0
+	movdqu XMMWORD PTR [rsp+1736], xmm0
+	movdqu XMMWORD PTR [rsp+1720], xmm0
+	movdqu XMMWORD PTR [rsp+1704], xmm0
+	movdqu XMMWORD PTR [rsp+1688], xmm0
+	movdqu XMMWORD PTR [rsp+1672], xmm0
+	movdqu XMMWORD PTR [rsp+1656], xmm0
+	movdqu XMMWORD PTR [rsp+1640], xmm0
+	movdqu XMMWORD PTR [rsp+1624], xmm0
+	movdqu XMMWORD PTR [rsp+1608], xmm0
+	movdqu XMMWORD PTR [rsp+1592], xmm0
+	movdqu XMMWORD PTR [rsp+1576], xmm0
+	movdqu XMMWORD PTR [rsp+1560], xmm0
+	movdqu XMMWORD PTR [rsp+1544], xmm0
+	movdqu XMMWORD PTR [rsp+1528], xmm0
+	movdqu XMMWORD PTR [rsp+1512], xmm0
+	movdqu XMMWORD PTR [rsp+1496], xmm0
+	movdqu XMMWORD PTR [rsp+1480], xmm0
+	movdqu XMMWORD PTR [rsp+1464], xmm0
+	movdqu XMMWORD PTR [rsp+1448], xmm0
+	movdqu XMMWORD PTR [rsp+1432], xmm0
+	movdqu XMMWORD PTR [rsp+1416], xmm0
+	movdqu XMMWORD PTR [rsp+1400], xmm0
+	movdqu XMMWORD PTR [rsp+1384], xmm0
+	movdqu XMMWORD PTR [rsp+1368], xmm0
+	movdqu XMMWORD PTR [rsp+1352], xmm0
+	movdqu XMMWORD PTR [rsp+1336], xmm0
+	movdqu XMMWORD PTR [rsp+1320], xmm0
+	movdqu XMMWORD PTR [rsp+1304], xmm0
+	movdqu XMMWORD PTR [rsp+1288], xmm0
+	movdqu XMMWORD PTR [rsp+1272], xmm0
+	movdqu XMMWORD PTR [rsp+1256], xmm0
+	movdqu XMMWORD PTR [rsp+1240], xmm0
+	movdqu XMMWORD PTR [rsp+1224], xmm0
+	movdqu XMMWORD PTR [rsp+1208], xmm0
+	movdqu XMMWORD PTR [rsp+1192], xmm0
+	movdqu XMMWORD PTR [rsp+1176], xmm0
+	movdqu XMMWORD PTR [rsp+1160], xmm0
+	movdqu XMMWORD PTR [rsp+1144], xmm0
+	movdqu XMMWORD PTR [rsp+1128], xmm0
+	movdqu XMMWORD PTR [rsp+1112], xmm0
+	movdqu XMMWORD PTR [rsp+1096], xmm0
+	movdqu XMMWORD PTR [rsp+1080], xmm0
+	movdqu XMMWORD PTR [rsp+1064], xmm0
+	movdqu XMMWORD PTR [rsp+1048], xmm0
+	movdqu XMMWORD PTR [rsp+1032], xmm0
+	movdqu XMMWORD PTR [rsp+1016], xmm0
+	movdqu XMMWORD PTR [rsp+1000], xmm0
+	movdqu XMMWORD PTR [rsp+984], xmm0
+	movdqu XMMWORD PTR [rsp+968], xmm0
+	movdqu XMMWORD PTR [rsp+952], xmm0
+	movdqu XMMWORD PTR [rsp+936], xmm0
+	movdqu XMMWORD PTR [rsp+920], xmm0
+	movdqu XMMWORD PTR [rsp+904], xmm0
+	movdqu XMMWORD PTR [rsp+888], xmm0
+	movdqu XMMWORD PTR [rsp+872], xmm0
+	movdqu XMMWORD PTR [rsp+856], xmm0
+	movdqu XMMWORD PTR [rsp+840], xmm0
+	movdqu XMMWORD PTR [rsp+824], xmm0
+	movdqu XMMWORD PTR [rsp+808], xmm0
+	movdqu XMMWORD PTR [rsp+792], xmm0
+	movdqu XMMWORD PTR [rsp+776], xmm0
+	movdqu XMMWORD PTR [rsp+760], xmm0
+	movdqu XMMWORD PTR [rsp+744], xmm0
+	movdqu XMMWORD PTR [rsp+728], xmm0
+	movdqu XMMWORD PTR [rsp+712], xmm0
+	movdqu XMMWORD PTR [rsp+696], xmm0
+	movdqu XMMWORD PTR [rsp+680], xmm0
+	movdqu XMMWORD PTR [rsp+664], xmm0
+	movdqu XMMWORD PTR [rsp+648], xmm0
+	movdqu XMMWORD PTR [rsp+632], xmm0
+	movdqu XMMWORD PTR [rsp+616], xmm0
+	movdqu XMMWORD PTR [rsp+600], xmm0
+	movdqu XMMWORD PTR [rsp+584], xmm0
+	movdqu XMMWORD PTR [rsp+568], xmm0
+	movdqu XMMWORD PTR [rsp+552], xmm0
+	movdqu XMMWORD PTR [rsp+536], xmm0
+	movdqu XMMWORD PTR [rsp+520], xmm0
+	movdqu XMMWORD PTR [rsp+504], xmm0
+	movdqu XMMWORD PTR [rsp+488], xmm0
+	movdqu XMMWORD PTR [rsp+472], xmm0
+	movdqu XMMWORD PTR [rsp+456], xmm0
+	movdqu XMMWORD PTR [rsp+440], xmm0
+	movdqu XMMWORD PTR [rsp+424], xmm0
+	movdqu XMMWORD PTR [rsp+408], xmm0
+	movdqu XMMWORD PTR [rsp+392], xmm0
+	movdqu XMMWORD PTR [rsp+376], xmm0
+	movdqu XMMWORD PTR [rsp+360], xmm0
+	movdqu XMMWORD PTR [rsp+344], xmm0
+	movdqu XMMWORD PTR [rsp+328], xmm0
+	movdqu XMMWORD PTR [rsp+312], xmm0
+	movdqu XMMWORD PTR [rsp+296], xmm0
+	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
+	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+184], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+4008]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
 vg_sm4_gcm_stream_finish_pclmul:
-	lea rsp, [rsp-2568]
+	lea rsp, [rsp-776]
 	mov r9, rsp
 	add r9, 8
 	mov QWORD PTR [r9+128], rbx
@@ -3494,12 +6258,290 @@ vg_sm4_gcm_stream_finish_pclmul:
 	mov r13, QWORD PTR [r15+152]
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
-	lea rsp, [rsp+2568]
+	lea rsp, [rsp+776]
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-4000]
+	movdqu XMMWORD PTR [rsp+3984], xmm0
+	movdqu XMMWORD PTR [rsp+3968], xmm0
+	movdqu XMMWORD PTR [rsp+3952], xmm0
+	movdqu XMMWORD PTR [rsp+3936], xmm0
+	movdqu XMMWORD PTR [rsp+3920], xmm0
+	movdqu XMMWORD PTR [rsp+3904], xmm0
+	movdqu XMMWORD PTR [rsp+3888], xmm0
+	movdqu XMMWORD PTR [rsp+3872], xmm0
+	movdqu XMMWORD PTR [rsp+3856], xmm0
+	movdqu XMMWORD PTR [rsp+3840], xmm0
+	movdqu XMMWORD PTR [rsp+3824], xmm0
+	movdqu XMMWORD PTR [rsp+3808], xmm0
+	movdqu XMMWORD PTR [rsp+3792], xmm0
+	movdqu XMMWORD PTR [rsp+3776], xmm0
+	movdqu XMMWORD PTR [rsp+3760], xmm0
+	movdqu XMMWORD PTR [rsp+3744], xmm0
+	movdqu XMMWORD PTR [rsp+3728], xmm0
+	movdqu XMMWORD PTR [rsp+3712], xmm0
+	movdqu XMMWORD PTR [rsp+3696], xmm0
+	movdqu XMMWORD PTR [rsp+3680], xmm0
+	movdqu XMMWORD PTR [rsp+3664], xmm0
+	movdqu XMMWORD PTR [rsp+3648], xmm0
+	movdqu XMMWORD PTR [rsp+3632], xmm0
+	movdqu XMMWORD PTR [rsp+3616], xmm0
+	movdqu XMMWORD PTR [rsp+3600], xmm0
+	movdqu XMMWORD PTR [rsp+3584], xmm0
+	movdqu XMMWORD PTR [rsp+3568], xmm0
+	movdqu XMMWORD PTR [rsp+3552], xmm0
+	movdqu XMMWORD PTR [rsp+3536], xmm0
+	movdqu XMMWORD PTR [rsp+3520], xmm0
+	movdqu XMMWORD PTR [rsp+3504], xmm0
+	movdqu XMMWORD PTR [rsp+3488], xmm0
+	movdqu XMMWORD PTR [rsp+3472], xmm0
+	movdqu XMMWORD PTR [rsp+3456], xmm0
+	movdqu XMMWORD PTR [rsp+3440], xmm0
+	movdqu XMMWORD PTR [rsp+3424], xmm0
+	movdqu XMMWORD PTR [rsp+3408], xmm0
+	movdqu XMMWORD PTR [rsp+3392], xmm0
+	movdqu XMMWORD PTR [rsp+3376], xmm0
+	movdqu XMMWORD PTR [rsp+3360], xmm0
+	movdqu XMMWORD PTR [rsp+3344], xmm0
+	movdqu XMMWORD PTR [rsp+3328], xmm0
+	movdqu XMMWORD PTR [rsp+3312], xmm0
+	movdqu XMMWORD PTR [rsp+3296], xmm0
+	movdqu XMMWORD PTR [rsp+3280], xmm0
+	movdqu XMMWORD PTR [rsp+3264], xmm0
+	movdqu XMMWORD PTR [rsp+3248], xmm0
+	movdqu XMMWORD PTR [rsp+3232], xmm0
+	movdqu XMMWORD PTR [rsp+3216], xmm0
+	movdqu XMMWORD PTR [rsp+3200], xmm0
+	movdqu XMMWORD PTR [rsp+3184], xmm0
+	movdqu XMMWORD PTR [rsp+3168], xmm0
+	movdqu XMMWORD PTR [rsp+3152], xmm0
+	movdqu XMMWORD PTR [rsp+3136], xmm0
+	movdqu XMMWORD PTR [rsp+3120], xmm0
+	movdqu XMMWORD PTR [rsp+3104], xmm0
+	movdqu XMMWORD PTR [rsp+3088], xmm0
+	movdqu XMMWORD PTR [rsp+3072], xmm0
+	movdqu XMMWORD PTR [rsp+3056], xmm0
+	movdqu XMMWORD PTR [rsp+3040], xmm0
+	movdqu XMMWORD PTR [rsp+3024], xmm0
+	movdqu XMMWORD PTR [rsp+3008], xmm0
+	movdqu XMMWORD PTR [rsp+2992], xmm0
+	movdqu XMMWORD PTR [rsp+2976], xmm0
+	movdqu XMMWORD PTR [rsp+2960], xmm0
+	movdqu XMMWORD PTR [rsp+2944], xmm0
+	movdqu XMMWORD PTR [rsp+2928], xmm0
+	movdqu XMMWORD PTR [rsp+2912], xmm0
+	movdqu XMMWORD PTR [rsp+2896], xmm0
+	movdqu XMMWORD PTR [rsp+2880], xmm0
+	movdqu XMMWORD PTR [rsp+2864], xmm0
+	movdqu XMMWORD PTR [rsp+2848], xmm0
+	movdqu XMMWORD PTR [rsp+2832], xmm0
+	movdqu XMMWORD PTR [rsp+2816], xmm0
+	movdqu XMMWORD PTR [rsp+2800], xmm0
+	movdqu XMMWORD PTR [rsp+2784], xmm0
+	movdqu XMMWORD PTR [rsp+2768], xmm0
+	movdqu XMMWORD PTR [rsp+2752], xmm0
+	movdqu XMMWORD PTR [rsp+2736], xmm0
+	movdqu XMMWORD PTR [rsp+2720], xmm0
+	movdqu XMMWORD PTR [rsp+2704], xmm0
+	movdqu XMMWORD PTR [rsp+2688], xmm0
+	movdqu XMMWORD PTR [rsp+2672], xmm0
+	movdqu XMMWORD PTR [rsp+2656], xmm0
+	movdqu XMMWORD PTR [rsp+2640], xmm0
+	movdqu XMMWORD PTR [rsp+2624], xmm0
+	movdqu XMMWORD PTR [rsp+2608], xmm0
+	movdqu XMMWORD PTR [rsp+2592], xmm0
+	movdqu XMMWORD PTR [rsp+2576], xmm0
+	movdqu XMMWORD PTR [rsp+2560], xmm0
+	movdqu XMMWORD PTR [rsp+2544], xmm0
+	movdqu XMMWORD PTR [rsp+2528], xmm0
+	movdqu XMMWORD PTR [rsp+2512], xmm0
+	movdqu XMMWORD PTR [rsp+2496], xmm0
+	movdqu XMMWORD PTR [rsp+2480], xmm0
+	movdqu XMMWORD PTR [rsp+2464], xmm0
+	movdqu XMMWORD PTR [rsp+2448], xmm0
+	movdqu XMMWORD PTR [rsp+2432], xmm0
+	movdqu XMMWORD PTR [rsp+2416], xmm0
+	movdqu XMMWORD PTR [rsp+2400], xmm0
+	movdqu XMMWORD PTR [rsp+2384], xmm0
+	movdqu XMMWORD PTR [rsp+2368], xmm0
+	movdqu XMMWORD PTR [rsp+2352], xmm0
+	movdqu XMMWORD PTR [rsp+2336], xmm0
+	movdqu XMMWORD PTR [rsp+2320], xmm0
+	movdqu XMMWORD PTR [rsp+2304], xmm0
+	movdqu XMMWORD PTR [rsp+2288], xmm0
+	movdqu XMMWORD PTR [rsp+2272], xmm0
+	movdqu XMMWORD PTR [rsp+2256], xmm0
+	movdqu XMMWORD PTR [rsp+2240], xmm0
+	movdqu XMMWORD PTR [rsp+2224], xmm0
+	movdqu XMMWORD PTR [rsp+2208], xmm0
+	movdqu XMMWORD PTR [rsp+2192], xmm0
+	movdqu XMMWORD PTR [rsp+2176], xmm0
+	movdqu XMMWORD PTR [rsp+2160], xmm0
+	movdqu XMMWORD PTR [rsp+2144], xmm0
+	movdqu XMMWORD PTR [rsp+2128], xmm0
+	movdqu XMMWORD PTR [rsp+2112], xmm0
+	movdqu XMMWORD PTR [rsp+2096], xmm0
+	movdqu XMMWORD PTR [rsp+2080], xmm0
+	movdqu XMMWORD PTR [rsp+2064], xmm0
+	movdqu XMMWORD PTR [rsp+2048], xmm0
+	movdqu XMMWORD PTR [rsp+2032], xmm0
+	movdqu XMMWORD PTR [rsp+2016], xmm0
+	movdqu XMMWORD PTR [rsp+2000], xmm0
+	movdqu XMMWORD PTR [rsp+1984], xmm0
+	movdqu XMMWORD PTR [rsp+1968], xmm0
+	movdqu XMMWORD PTR [rsp+1952], xmm0
+	movdqu XMMWORD PTR [rsp+1936], xmm0
+	movdqu XMMWORD PTR [rsp+1920], xmm0
+	movdqu XMMWORD PTR [rsp+1904], xmm0
+	movdqu XMMWORD PTR [rsp+1888], xmm0
+	movdqu XMMWORD PTR [rsp+1872], xmm0
+	movdqu XMMWORD PTR [rsp+1856], xmm0
+	movdqu XMMWORD PTR [rsp+1840], xmm0
+	movdqu XMMWORD PTR [rsp+1824], xmm0
+	movdqu XMMWORD PTR [rsp+1808], xmm0
+	movdqu XMMWORD PTR [rsp+1792], xmm0
+	movdqu XMMWORD PTR [rsp+1776], xmm0
+	movdqu XMMWORD PTR [rsp+1760], xmm0
+	movdqu XMMWORD PTR [rsp+1744], xmm0
+	movdqu XMMWORD PTR [rsp+1728], xmm0
+	movdqu XMMWORD PTR [rsp+1712], xmm0
+	movdqu XMMWORD PTR [rsp+1696], xmm0
+	movdqu XMMWORD PTR [rsp+1680], xmm0
+	movdqu XMMWORD PTR [rsp+1664], xmm0
+	movdqu XMMWORD PTR [rsp+1648], xmm0
+	movdqu XMMWORD PTR [rsp+1632], xmm0
+	movdqu XMMWORD PTR [rsp+1616], xmm0
+	movdqu XMMWORD PTR [rsp+1600], xmm0
+	movdqu XMMWORD PTR [rsp+1584], xmm0
+	movdqu XMMWORD PTR [rsp+1568], xmm0
+	movdqu XMMWORD PTR [rsp+1552], xmm0
+	movdqu XMMWORD PTR [rsp+1536], xmm0
+	movdqu XMMWORD PTR [rsp+1520], xmm0
+	movdqu XMMWORD PTR [rsp+1504], xmm0
+	movdqu XMMWORD PTR [rsp+1488], xmm0
+	movdqu XMMWORD PTR [rsp+1472], xmm0
+	movdqu XMMWORD PTR [rsp+1456], xmm0
+	movdqu XMMWORD PTR [rsp+1440], xmm0
+	movdqu XMMWORD PTR [rsp+1424], xmm0
+	movdqu XMMWORD PTR [rsp+1408], xmm0
+	movdqu XMMWORD PTR [rsp+1392], xmm0
+	movdqu XMMWORD PTR [rsp+1376], xmm0
+	movdqu XMMWORD PTR [rsp+1360], xmm0
+	movdqu XMMWORD PTR [rsp+1344], xmm0
+	movdqu XMMWORD PTR [rsp+1328], xmm0
+	movdqu XMMWORD PTR [rsp+1312], xmm0
+	movdqu XMMWORD PTR [rsp+1296], xmm0
+	movdqu XMMWORD PTR [rsp+1280], xmm0
+	movdqu XMMWORD PTR [rsp+1264], xmm0
+	movdqu XMMWORD PTR [rsp+1248], xmm0
+	movdqu XMMWORD PTR [rsp+1232], xmm0
+	movdqu XMMWORD PTR [rsp+1216], xmm0
+	movdqu XMMWORD PTR [rsp+1200], xmm0
+	movdqu XMMWORD PTR [rsp+1184], xmm0
+	movdqu XMMWORD PTR [rsp+1168], xmm0
+	movdqu XMMWORD PTR [rsp+1152], xmm0
+	movdqu XMMWORD PTR [rsp+1136], xmm0
+	movdqu XMMWORD PTR [rsp+1120], xmm0
+	movdqu XMMWORD PTR [rsp+1104], xmm0
+	movdqu XMMWORD PTR [rsp+1088], xmm0
+	movdqu XMMWORD PTR [rsp+1072], xmm0
+	movdqu XMMWORD PTR [rsp+1056], xmm0
+	movdqu XMMWORD PTR [rsp+1040], xmm0
+	movdqu XMMWORD PTR [rsp+1024], xmm0
+	movdqu XMMWORD PTR [rsp+1008], xmm0
+	movdqu XMMWORD PTR [rsp+992], xmm0
+	movdqu XMMWORD PTR [rsp+976], xmm0
+	movdqu XMMWORD PTR [rsp+960], xmm0
+	movdqu XMMWORD PTR [rsp+944], xmm0
+	movdqu XMMWORD PTR [rsp+928], xmm0
+	movdqu XMMWORD PTR [rsp+912], xmm0
+	movdqu XMMWORD PTR [rsp+896], xmm0
+	movdqu XMMWORD PTR [rsp+880], xmm0
+	movdqu XMMWORD PTR [rsp+864], xmm0
+	movdqu XMMWORD PTR [rsp+848], xmm0
+	movdqu XMMWORD PTR [rsp+832], xmm0
+	movdqu XMMWORD PTR [rsp+816], xmm0
+	movdqu XMMWORD PTR [rsp+800], xmm0
+	movdqu XMMWORD PTR [rsp+784], xmm0
+	movdqu XMMWORD PTR [rsp+768], xmm0
+	movdqu XMMWORD PTR [rsp+752], xmm0
+	movdqu XMMWORD PTR [rsp+736], xmm0
+	movdqu XMMWORD PTR [rsp+720], xmm0
+	movdqu XMMWORD PTR [rsp+704], xmm0
+	movdqu XMMWORD PTR [rsp+688], xmm0
+	movdqu XMMWORD PTR [rsp+672], xmm0
+	movdqu XMMWORD PTR [rsp+656], xmm0
+	movdqu XMMWORD PTR [rsp+640], xmm0
+	movdqu XMMWORD PTR [rsp+624], xmm0
+	movdqu XMMWORD PTR [rsp+608], xmm0
+	movdqu XMMWORD PTR [rsp+592], xmm0
+	movdqu XMMWORD PTR [rsp+576], xmm0
+	movdqu XMMWORD PTR [rsp+560], xmm0
+	movdqu XMMWORD PTR [rsp+544], xmm0
+	movdqu XMMWORD PTR [rsp+528], xmm0
+	movdqu XMMWORD PTR [rsp+512], xmm0
+	movdqu XMMWORD PTR [rsp+496], xmm0
+	movdqu XMMWORD PTR [rsp+480], xmm0
+	movdqu XMMWORD PTR [rsp+464], xmm0
+	movdqu XMMWORD PTR [rsp+448], xmm0
+	movdqu XMMWORD PTR [rsp+432], xmm0
+	movdqu XMMWORD PTR [rsp+416], xmm0
+	movdqu XMMWORD PTR [rsp+400], xmm0
+	movdqu XMMWORD PTR [rsp+384], xmm0
+	movdqu XMMWORD PTR [rsp+368], xmm0
+	movdqu XMMWORD PTR [rsp+352], xmm0
+	movdqu XMMWORD PTR [rsp+336], xmm0
+	movdqu XMMWORD PTR [rsp+320], xmm0
+	movdqu XMMWORD PTR [rsp+304], xmm0
+	movdqu XMMWORD PTR [rsp+288], xmm0
+	movdqu XMMWORD PTR [rsp+272], xmm0
+	movdqu XMMWORD PTR [rsp+256], xmm0
+	movdqu XMMWORD PTR [rsp+240], xmm0
+	movdqu XMMWORD PTR [rsp+224], xmm0
+	movdqu XMMWORD PTR [rsp+208], xmm0
+	movdqu XMMWORD PTR [rsp+192], xmm0
+	movdqu XMMWORD PTR [rsp+176], xmm0
+	movdqu XMMWORD PTR [rsp+160], xmm0
+	movdqu XMMWORD PTR [rsp+144], xmm0
+	movdqu XMMWORD PTR [rsp+128], xmm0
+	movdqu XMMWORD PTR [rsp+112], xmm0
+	movdqu XMMWORD PTR [rsp+96], xmm0
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+4000]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
 vg_sm4_gcm_stream_verify_pclmul:
-	lea rsp, [rsp-2576]
+	lea rsp, [rsp-784]
 	mov rax, rsp
 	add rax, 16
 	mov QWORD PTR [rsp+8], rax
@@ -3670,7 +6712,286 @@ vg_sm4_gcm_stream_verify_pclmul:
 	mov r13, QWORD PTR [r15+152]
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
-	lea rsp, [rsp+2576]
+	lea rsp, [rsp+784]
+	pxor xmm0, xmm0
+	pxor xmm1, xmm1
+	pxor xmm2, xmm2
+	pxor xmm3, xmm3
+	pxor xmm4, xmm4
+	pxor xmm5, xmm5
+	pxor xmm6, xmm6
+	pxor xmm7, xmm7
+	pxor xmm8, xmm8
+	pxor xmm9, xmm9
+	pxor xmm10, xmm10
+	pxor xmm11, xmm11
+	pxor xmm12, xmm12
+	pxor xmm13, xmm13
+	pxor xmm14, xmm14
+	pxor xmm15, xmm15
+	xor r11d, r11d
+	lea rsp, [rsp-4008]
+	movdqu XMMWORD PTR [rsp+3992], xmm0
+	movdqu XMMWORD PTR [rsp+3976], xmm0
+	movdqu XMMWORD PTR [rsp+3960], xmm0
+	movdqu XMMWORD PTR [rsp+3944], xmm0
+	movdqu XMMWORD PTR [rsp+3928], xmm0
+	movdqu XMMWORD PTR [rsp+3912], xmm0
+	movdqu XMMWORD PTR [rsp+3896], xmm0
+	movdqu XMMWORD PTR [rsp+3880], xmm0
+	movdqu XMMWORD PTR [rsp+3864], xmm0
+	movdqu XMMWORD PTR [rsp+3848], xmm0
+	movdqu XMMWORD PTR [rsp+3832], xmm0
+	movdqu XMMWORD PTR [rsp+3816], xmm0
+	movdqu XMMWORD PTR [rsp+3800], xmm0
+	movdqu XMMWORD PTR [rsp+3784], xmm0
+	movdqu XMMWORD PTR [rsp+3768], xmm0
+	movdqu XMMWORD PTR [rsp+3752], xmm0
+	movdqu XMMWORD PTR [rsp+3736], xmm0
+	movdqu XMMWORD PTR [rsp+3720], xmm0
+	movdqu XMMWORD PTR [rsp+3704], xmm0
+	movdqu XMMWORD PTR [rsp+3688], xmm0
+	movdqu XMMWORD PTR [rsp+3672], xmm0
+	movdqu XMMWORD PTR [rsp+3656], xmm0
+	movdqu XMMWORD PTR [rsp+3640], xmm0
+	movdqu XMMWORD PTR [rsp+3624], xmm0
+	movdqu XMMWORD PTR [rsp+3608], xmm0
+	movdqu XMMWORD PTR [rsp+3592], xmm0
+	movdqu XMMWORD PTR [rsp+3576], xmm0
+	movdqu XMMWORD PTR [rsp+3560], xmm0
+	movdqu XMMWORD PTR [rsp+3544], xmm0
+	movdqu XMMWORD PTR [rsp+3528], xmm0
+	movdqu XMMWORD PTR [rsp+3512], xmm0
+	movdqu XMMWORD PTR [rsp+3496], xmm0
+	movdqu XMMWORD PTR [rsp+3480], xmm0
+	movdqu XMMWORD PTR [rsp+3464], xmm0
+	movdqu XMMWORD PTR [rsp+3448], xmm0
+	movdqu XMMWORD PTR [rsp+3432], xmm0
+	movdqu XMMWORD PTR [rsp+3416], xmm0
+	movdqu XMMWORD PTR [rsp+3400], xmm0
+	movdqu XMMWORD PTR [rsp+3384], xmm0
+	movdqu XMMWORD PTR [rsp+3368], xmm0
+	movdqu XMMWORD PTR [rsp+3352], xmm0
+	movdqu XMMWORD PTR [rsp+3336], xmm0
+	movdqu XMMWORD PTR [rsp+3320], xmm0
+	movdqu XMMWORD PTR [rsp+3304], xmm0
+	movdqu XMMWORD PTR [rsp+3288], xmm0
+	movdqu XMMWORD PTR [rsp+3272], xmm0
+	movdqu XMMWORD PTR [rsp+3256], xmm0
+	movdqu XMMWORD PTR [rsp+3240], xmm0
+	movdqu XMMWORD PTR [rsp+3224], xmm0
+	movdqu XMMWORD PTR [rsp+3208], xmm0
+	movdqu XMMWORD PTR [rsp+3192], xmm0
+	movdqu XMMWORD PTR [rsp+3176], xmm0
+	movdqu XMMWORD PTR [rsp+3160], xmm0
+	movdqu XMMWORD PTR [rsp+3144], xmm0
+	movdqu XMMWORD PTR [rsp+3128], xmm0
+	movdqu XMMWORD PTR [rsp+3112], xmm0
+	movdqu XMMWORD PTR [rsp+3096], xmm0
+	movdqu XMMWORD PTR [rsp+3080], xmm0
+	movdqu XMMWORD PTR [rsp+3064], xmm0
+	movdqu XMMWORD PTR [rsp+3048], xmm0
+	movdqu XMMWORD PTR [rsp+3032], xmm0
+	movdqu XMMWORD PTR [rsp+3016], xmm0
+	movdqu XMMWORD PTR [rsp+3000], xmm0
+	movdqu XMMWORD PTR [rsp+2984], xmm0
+	movdqu XMMWORD PTR [rsp+2968], xmm0
+	movdqu XMMWORD PTR [rsp+2952], xmm0
+	movdqu XMMWORD PTR [rsp+2936], xmm0
+	movdqu XMMWORD PTR [rsp+2920], xmm0
+	movdqu XMMWORD PTR [rsp+2904], xmm0
+	movdqu XMMWORD PTR [rsp+2888], xmm0
+	movdqu XMMWORD PTR [rsp+2872], xmm0
+	movdqu XMMWORD PTR [rsp+2856], xmm0
+	movdqu XMMWORD PTR [rsp+2840], xmm0
+	movdqu XMMWORD PTR [rsp+2824], xmm0
+	movdqu XMMWORD PTR [rsp+2808], xmm0
+	movdqu XMMWORD PTR [rsp+2792], xmm0
+	movdqu XMMWORD PTR [rsp+2776], xmm0
+	movdqu XMMWORD PTR [rsp+2760], xmm0
+	movdqu XMMWORD PTR [rsp+2744], xmm0
+	movdqu XMMWORD PTR [rsp+2728], xmm0
+	movdqu XMMWORD PTR [rsp+2712], xmm0
+	movdqu XMMWORD PTR [rsp+2696], xmm0
+	movdqu XMMWORD PTR [rsp+2680], xmm0
+	movdqu XMMWORD PTR [rsp+2664], xmm0
+	movdqu XMMWORD PTR [rsp+2648], xmm0
+	movdqu XMMWORD PTR [rsp+2632], xmm0
+	movdqu XMMWORD PTR [rsp+2616], xmm0
+	movdqu XMMWORD PTR [rsp+2600], xmm0
+	movdqu XMMWORD PTR [rsp+2584], xmm0
+	movdqu XMMWORD PTR [rsp+2568], xmm0
+	movdqu XMMWORD PTR [rsp+2552], xmm0
+	movdqu XMMWORD PTR [rsp+2536], xmm0
+	movdqu XMMWORD PTR [rsp+2520], xmm0
+	movdqu XMMWORD PTR [rsp+2504], xmm0
+	movdqu XMMWORD PTR [rsp+2488], xmm0
+	movdqu XMMWORD PTR [rsp+2472], xmm0
+	movdqu XMMWORD PTR [rsp+2456], xmm0
+	movdqu XMMWORD PTR [rsp+2440], xmm0
+	movdqu XMMWORD PTR [rsp+2424], xmm0
+	movdqu XMMWORD PTR [rsp+2408], xmm0
+	movdqu XMMWORD PTR [rsp+2392], xmm0
+	movdqu XMMWORD PTR [rsp+2376], xmm0
+	movdqu XMMWORD PTR [rsp+2360], xmm0
+	movdqu XMMWORD PTR [rsp+2344], xmm0
+	movdqu XMMWORD PTR [rsp+2328], xmm0
+	movdqu XMMWORD PTR [rsp+2312], xmm0
+	movdqu XMMWORD PTR [rsp+2296], xmm0
+	movdqu XMMWORD PTR [rsp+2280], xmm0
+	movdqu XMMWORD PTR [rsp+2264], xmm0
+	movdqu XMMWORD PTR [rsp+2248], xmm0
+	movdqu XMMWORD PTR [rsp+2232], xmm0
+	movdqu XMMWORD PTR [rsp+2216], xmm0
+	movdqu XMMWORD PTR [rsp+2200], xmm0
+	movdqu XMMWORD PTR [rsp+2184], xmm0
+	movdqu XMMWORD PTR [rsp+2168], xmm0
+	movdqu XMMWORD PTR [rsp+2152], xmm0
+	movdqu XMMWORD PTR [rsp+2136], xmm0
+	movdqu XMMWORD PTR [rsp+2120], xmm0
+	movdqu XMMWORD PTR [rsp+2104], xmm0
+	movdqu XMMWORD PTR [rsp+2088], xmm0
+	movdqu XMMWORD PTR [rsp+2072], xmm0
+	movdqu XMMWORD PTR [rsp+2056], xmm0
+	movdqu XMMWORD PTR [rsp+2040], xmm0
+	movdqu XMMWORD PTR [rsp+2024], xmm0
+	movdqu XMMWORD PTR [rsp+2008], xmm0
+	movdqu XMMWORD PTR [rsp+1992], xmm0
+	movdqu XMMWORD PTR [rsp+1976], xmm0
+	movdqu XMMWORD PTR [rsp+1960], xmm0
+	movdqu XMMWORD PTR [rsp+1944], xmm0
+	movdqu XMMWORD PTR [rsp+1928], xmm0
+	movdqu XMMWORD PTR [rsp+1912], xmm0
+	movdqu XMMWORD PTR [rsp+1896], xmm0
+	movdqu XMMWORD PTR [rsp+1880], xmm0
+	movdqu XMMWORD PTR [rsp+1864], xmm0
+	movdqu XMMWORD PTR [rsp+1848], xmm0
+	movdqu XMMWORD PTR [rsp+1832], xmm0
+	movdqu XMMWORD PTR [rsp+1816], xmm0
+	movdqu XMMWORD PTR [rsp+1800], xmm0
+	movdqu XMMWORD PTR [rsp+1784], xmm0
+	movdqu XMMWORD PTR [rsp+1768], xmm0
+	movdqu XMMWORD PTR [rsp+1752], xmm0
+	movdqu XMMWORD PTR [rsp+1736], xmm0
+	movdqu XMMWORD PTR [rsp+1720], xmm0
+	movdqu XMMWORD PTR [rsp+1704], xmm0
+	movdqu XMMWORD PTR [rsp+1688], xmm0
+	movdqu XMMWORD PTR [rsp+1672], xmm0
+	movdqu XMMWORD PTR [rsp+1656], xmm0
+	movdqu XMMWORD PTR [rsp+1640], xmm0
+	movdqu XMMWORD PTR [rsp+1624], xmm0
+	movdqu XMMWORD PTR [rsp+1608], xmm0
+	movdqu XMMWORD PTR [rsp+1592], xmm0
+	movdqu XMMWORD PTR [rsp+1576], xmm0
+	movdqu XMMWORD PTR [rsp+1560], xmm0
+	movdqu XMMWORD PTR [rsp+1544], xmm0
+	movdqu XMMWORD PTR [rsp+1528], xmm0
+	movdqu XMMWORD PTR [rsp+1512], xmm0
+	movdqu XMMWORD PTR [rsp+1496], xmm0
+	movdqu XMMWORD PTR [rsp+1480], xmm0
+	movdqu XMMWORD PTR [rsp+1464], xmm0
+	movdqu XMMWORD PTR [rsp+1448], xmm0
+	movdqu XMMWORD PTR [rsp+1432], xmm0
+	movdqu XMMWORD PTR [rsp+1416], xmm0
+	movdqu XMMWORD PTR [rsp+1400], xmm0
+	movdqu XMMWORD PTR [rsp+1384], xmm0
+	movdqu XMMWORD PTR [rsp+1368], xmm0
+	movdqu XMMWORD PTR [rsp+1352], xmm0
+	movdqu XMMWORD PTR [rsp+1336], xmm0
+	movdqu XMMWORD PTR [rsp+1320], xmm0
+	movdqu XMMWORD PTR [rsp+1304], xmm0
+	movdqu XMMWORD PTR [rsp+1288], xmm0
+	movdqu XMMWORD PTR [rsp+1272], xmm0
+	movdqu XMMWORD PTR [rsp+1256], xmm0
+	movdqu XMMWORD PTR [rsp+1240], xmm0
+	movdqu XMMWORD PTR [rsp+1224], xmm0
+	movdqu XMMWORD PTR [rsp+1208], xmm0
+	movdqu XMMWORD PTR [rsp+1192], xmm0
+	movdqu XMMWORD PTR [rsp+1176], xmm0
+	movdqu XMMWORD PTR [rsp+1160], xmm0
+	movdqu XMMWORD PTR [rsp+1144], xmm0
+	movdqu XMMWORD PTR [rsp+1128], xmm0
+	movdqu XMMWORD PTR [rsp+1112], xmm0
+	movdqu XMMWORD PTR [rsp+1096], xmm0
+	movdqu XMMWORD PTR [rsp+1080], xmm0
+	movdqu XMMWORD PTR [rsp+1064], xmm0
+	movdqu XMMWORD PTR [rsp+1048], xmm0
+	movdqu XMMWORD PTR [rsp+1032], xmm0
+	movdqu XMMWORD PTR [rsp+1016], xmm0
+	movdqu XMMWORD PTR [rsp+1000], xmm0
+	movdqu XMMWORD PTR [rsp+984], xmm0
+	movdqu XMMWORD PTR [rsp+968], xmm0
+	movdqu XMMWORD PTR [rsp+952], xmm0
+	movdqu XMMWORD PTR [rsp+936], xmm0
+	movdqu XMMWORD PTR [rsp+920], xmm0
+	movdqu XMMWORD PTR [rsp+904], xmm0
+	movdqu XMMWORD PTR [rsp+888], xmm0
+	movdqu XMMWORD PTR [rsp+872], xmm0
+	movdqu XMMWORD PTR [rsp+856], xmm0
+	movdqu XMMWORD PTR [rsp+840], xmm0
+	movdqu XMMWORD PTR [rsp+824], xmm0
+	movdqu XMMWORD PTR [rsp+808], xmm0
+	movdqu XMMWORD PTR [rsp+792], xmm0
+	movdqu XMMWORD PTR [rsp+776], xmm0
+	movdqu XMMWORD PTR [rsp+760], xmm0
+	movdqu XMMWORD PTR [rsp+744], xmm0
+	movdqu XMMWORD PTR [rsp+728], xmm0
+	movdqu XMMWORD PTR [rsp+712], xmm0
+	movdqu XMMWORD PTR [rsp+696], xmm0
+	movdqu XMMWORD PTR [rsp+680], xmm0
+	movdqu XMMWORD PTR [rsp+664], xmm0
+	movdqu XMMWORD PTR [rsp+648], xmm0
+	movdqu XMMWORD PTR [rsp+632], xmm0
+	movdqu XMMWORD PTR [rsp+616], xmm0
+	movdqu XMMWORD PTR [rsp+600], xmm0
+	movdqu XMMWORD PTR [rsp+584], xmm0
+	movdqu XMMWORD PTR [rsp+568], xmm0
+	movdqu XMMWORD PTR [rsp+552], xmm0
+	movdqu XMMWORD PTR [rsp+536], xmm0
+	movdqu XMMWORD PTR [rsp+520], xmm0
+	movdqu XMMWORD PTR [rsp+504], xmm0
+	movdqu XMMWORD PTR [rsp+488], xmm0
+	movdqu XMMWORD PTR [rsp+472], xmm0
+	movdqu XMMWORD PTR [rsp+456], xmm0
+	movdqu XMMWORD PTR [rsp+440], xmm0
+	movdqu XMMWORD PTR [rsp+424], xmm0
+	movdqu XMMWORD PTR [rsp+408], xmm0
+	movdqu XMMWORD PTR [rsp+392], xmm0
+	movdqu XMMWORD PTR [rsp+376], xmm0
+	movdqu XMMWORD PTR [rsp+360], xmm0
+	movdqu XMMWORD PTR [rsp+344], xmm0
+	movdqu XMMWORD PTR [rsp+328], xmm0
+	movdqu XMMWORD PTR [rsp+312], xmm0
+	movdqu XMMWORD PTR [rsp+296], xmm0
+	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
+	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+184], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+4008]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -4001,6 +7322,385 @@ vg_sm4_gcm_seal:
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
 	lea rsp, [rsp+2592]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-4080]
+	movdqu XMMWORD PTR [rsp+4064], xmm0
+	movdqu XMMWORD PTR [rsp+4048], xmm0
+	movdqu XMMWORD PTR [rsp+4032], xmm0
+	movdqu XMMWORD PTR [rsp+4016], xmm0
+	movdqu XMMWORD PTR [rsp+4000], xmm0
+	movdqu XMMWORD PTR [rsp+3984], xmm0
+	movdqu XMMWORD PTR [rsp+3968], xmm0
+	movdqu XMMWORD PTR [rsp+3952], xmm0
+	movdqu XMMWORD PTR [rsp+3936], xmm0
+	movdqu XMMWORD PTR [rsp+3920], xmm0
+	movdqu XMMWORD PTR [rsp+3904], xmm0
+	movdqu XMMWORD PTR [rsp+3888], xmm0
+	movdqu XMMWORD PTR [rsp+3872], xmm0
+	movdqu XMMWORD PTR [rsp+3856], xmm0
+	movdqu XMMWORD PTR [rsp+3840], xmm0
+	movdqu XMMWORD PTR [rsp+3824], xmm0
+	movdqu XMMWORD PTR [rsp+3808], xmm0
+	movdqu XMMWORD PTR [rsp+3792], xmm0
+	movdqu XMMWORD PTR [rsp+3776], xmm0
+	movdqu XMMWORD PTR [rsp+3760], xmm0
+	movdqu XMMWORD PTR [rsp+3744], xmm0
+	movdqu XMMWORD PTR [rsp+3728], xmm0
+	movdqu XMMWORD PTR [rsp+3712], xmm0
+	movdqu XMMWORD PTR [rsp+3696], xmm0
+	movdqu XMMWORD PTR [rsp+3680], xmm0
+	movdqu XMMWORD PTR [rsp+3664], xmm0
+	movdqu XMMWORD PTR [rsp+3648], xmm0
+	movdqu XMMWORD PTR [rsp+3632], xmm0
+	movdqu XMMWORD PTR [rsp+3616], xmm0
+	movdqu XMMWORD PTR [rsp+3600], xmm0
+	movdqu XMMWORD PTR [rsp+3584], xmm0
+	movdqu XMMWORD PTR [rsp+3568], xmm0
+	movdqu XMMWORD PTR [rsp+3552], xmm0
+	movdqu XMMWORD PTR [rsp+3536], xmm0
+	movdqu XMMWORD PTR [rsp+3520], xmm0
+	movdqu XMMWORD PTR [rsp+3504], xmm0
+	movdqu XMMWORD PTR [rsp+3488], xmm0
+	movdqu XMMWORD PTR [rsp+3472], xmm0
+	movdqu XMMWORD PTR [rsp+3456], xmm0
+	movdqu XMMWORD PTR [rsp+3440], xmm0
+	movdqu XMMWORD PTR [rsp+3424], xmm0
+	movdqu XMMWORD PTR [rsp+3408], xmm0
+	movdqu XMMWORD PTR [rsp+3392], xmm0
+	movdqu XMMWORD PTR [rsp+3376], xmm0
+	movdqu XMMWORD PTR [rsp+3360], xmm0
+	movdqu XMMWORD PTR [rsp+3344], xmm0
+	movdqu XMMWORD PTR [rsp+3328], xmm0
+	movdqu XMMWORD PTR [rsp+3312], xmm0
+	movdqu XMMWORD PTR [rsp+3296], xmm0
+	movdqu XMMWORD PTR [rsp+3280], xmm0
+	movdqu XMMWORD PTR [rsp+3264], xmm0
+	movdqu XMMWORD PTR [rsp+3248], xmm0
+	movdqu XMMWORD PTR [rsp+3232], xmm0
+	movdqu XMMWORD PTR [rsp+3216], xmm0
+	movdqu XMMWORD PTR [rsp+3200], xmm0
+	movdqu XMMWORD PTR [rsp+3184], xmm0
+	movdqu XMMWORD PTR [rsp+3168], xmm0
+	movdqu XMMWORD PTR [rsp+3152], xmm0
+	movdqu XMMWORD PTR [rsp+3136], xmm0
+	movdqu XMMWORD PTR [rsp+3120], xmm0
+	movdqu XMMWORD PTR [rsp+3104], xmm0
+	movdqu XMMWORD PTR [rsp+3088], xmm0
+	movdqu XMMWORD PTR [rsp+3072], xmm0
+	movdqu XMMWORD PTR [rsp+3056], xmm0
+	movdqu XMMWORD PTR [rsp+3040], xmm0
+	movdqu XMMWORD PTR [rsp+3024], xmm0
+	movdqu XMMWORD PTR [rsp+3008], xmm0
+	movdqu XMMWORD PTR [rsp+2992], xmm0
+	movdqu XMMWORD PTR [rsp+2976], xmm0
+	movdqu XMMWORD PTR [rsp+2960], xmm0
+	movdqu XMMWORD PTR [rsp+2944], xmm0
+	movdqu XMMWORD PTR [rsp+2928], xmm0
+	movdqu XMMWORD PTR [rsp+2912], xmm0
+	movdqu XMMWORD PTR [rsp+2896], xmm0
+	movdqu XMMWORD PTR [rsp+2880], xmm0
+	movdqu XMMWORD PTR [rsp+2864], xmm0
+	movdqu XMMWORD PTR [rsp+2848], xmm0
+	movdqu XMMWORD PTR [rsp+2832], xmm0
+	movdqu XMMWORD PTR [rsp+2816], xmm0
+	movdqu XMMWORD PTR [rsp+2800], xmm0
+	movdqu XMMWORD PTR [rsp+2784], xmm0
+	movdqu XMMWORD PTR [rsp+2768], xmm0
+	movdqu XMMWORD PTR [rsp+2752], xmm0
+	movdqu XMMWORD PTR [rsp+2736], xmm0
+	movdqu XMMWORD PTR [rsp+2720], xmm0
+	movdqu XMMWORD PTR [rsp+2704], xmm0
+	movdqu XMMWORD PTR [rsp+2688], xmm0
+	movdqu XMMWORD PTR [rsp+2672], xmm0
+	movdqu XMMWORD PTR [rsp+2656], xmm0
+	movdqu XMMWORD PTR [rsp+2640], xmm0
+	movdqu XMMWORD PTR [rsp+2624], xmm0
+	movdqu XMMWORD PTR [rsp+2608], xmm0
+	movdqu XMMWORD PTR [rsp+2592], xmm0
+	movdqu XMMWORD PTR [rsp+2576], xmm0
+	movdqu XMMWORD PTR [rsp+2560], xmm0
+	movdqu XMMWORD PTR [rsp+2544], xmm0
+	movdqu XMMWORD PTR [rsp+2528], xmm0
+	movdqu XMMWORD PTR [rsp+2512], xmm0
+	movdqu XMMWORD PTR [rsp+2496], xmm0
+	movdqu XMMWORD PTR [rsp+2480], xmm0
+	movdqu XMMWORD PTR [rsp+2464], xmm0
+	movdqu XMMWORD PTR [rsp+2448], xmm0
+	movdqu XMMWORD PTR [rsp+2432], xmm0
+	movdqu XMMWORD PTR [rsp+2416], xmm0
+	movdqu XMMWORD PTR [rsp+2400], xmm0
+	movdqu XMMWORD PTR [rsp+2384], xmm0
+	movdqu XMMWORD PTR [rsp+2368], xmm0
+	movdqu XMMWORD PTR [rsp+2352], xmm0
+	movdqu XMMWORD PTR [rsp+2336], xmm0
+	movdqu XMMWORD PTR [rsp+2320], xmm0
+	movdqu XMMWORD PTR [rsp+2304], xmm0
+	movdqu XMMWORD PTR [rsp+2288], xmm0
+	movdqu XMMWORD PTR [rsp+2272], xmm0
+	movdqu XMMWORD PTR [rsp+2256], xmm0
+	movdqu XMMWORD PTR [rsp+2240], xmm0
+	movdqu XMMWORD PTR [rsp+2224], xmm0
+	movdqu XMMWORD PTR [rsp+2208], xmm0
+	movdqu XMMWORD PTR [rsp+2192], xmm0
+	movdqu XMMWORD PTR [rsp+2176], xmm0
+	movdqu XMMWORD PTR [rsp+2160], xmm0
+	movdqu XMMWORD PTR [rsp+2144], xmm0
+	movdqu XMMWORD PTR [rsp+2128], xmm0
+	movdqu XMMWORD PTR [rsp+2112], xmm0
+	movdqu XMMWORD PTR [rsp+2096], xmm0
+	movdqu XMMWORD PTR [rsp+2080], xmm0
+	movdqu XMMWORD PTR [rsp+2064], xmm0
+	movdqu XMMWORD PTR [rsp+2048], xmm0
+	movdqu XMMWORD PTR [rsp+2032], xmm0
+	movdqu XMMWORD PTR [rsp+2016], xmm0
+	movdqu XMMWORD PTR [rsp+2000], xmm0
+	movdqu XMMWORD PTR [rsp+1984], xmm0
+	movdqu XMMWORD PTR [rsp+1968], xmm0
+	movdqu XMMWORD PTR [rsp+1952], xmm0
+	movdqu XMMWORD PTR [rsp+1936], xmm0
+	movdqu XMMWORD PTR [rsp+1920], xmm0
+	movdqu XMMWORD PTR [rsp+1904], xmm0
+	movdqu XMMWORD PTR [rsp+1888], xmm0
+	movdqu XMMWORD PTR [rsp+1872], xmm0
+	movdqu XMMWORD PTR [rsp+1856], xmm0
+	movdqu XMMWORD PTR [rsp+1840], xmm0
+	movdqu XMMWORD PTR [rsp+1824], xmm0
+	movdqu XMMWORD PTR [rsp+1808], xmm0
+	movdqu XMMWORD PTR [rsp+1792], xmm0
+	movdqu XMMWORD PTR [rsp+1776], xmm0
+	movdqu XMMWORD PTR [rsp+1760], xmm0
+	movdqu XMMWORD PTR [rsp+1744], xmm0
+	movdqu XMMWORD PTR [rsp+1728], xmm0
+	movdqu XMMWORD PTR [rsp+1712], xmm0
+	movdqu XMMWORD PTR [rsp+1696], xmm0
+	movdqu XMMWORD PTR [rsp+1680], xmm0
+	movdqu XMMWORD PTR [rsp+1664], xmm0
+	movdqu XMMWORD PTR [rsp+1648], xmm0
+	movdqu XMMWORD PTR [rsp+1632], xmm0
+	movdqu XMMWORD PTR [rsp+1616], xmm0
+	movdqu XMMWORD PTR [rsp+1600], xmm0
+	movdqu XMMWORD PTR [rsp+1584], xmm0
+	movdqu XMMWORD PTR [rsp+1568], xmm0
+	movdqu XMMWORD PTR [rsp+1552], xmm0
+	movdqu XMMWORD PTR [rsp+1536], xmm0
+	movdqu XMMWORD PTR [rsp+1520], xmm0
+	movdqu XMMWORD PTR [rsp+1504], xmm0
+	movdqu XMMWORD PTR [rsp+1488], xmm0
+	movdqu XMMWORD PTR [rsp+1472], xmm0
+	movdqu XMMWORD PTR [rsp+1456], xmm0
+	movdqu XMMWORD PTR [rsp+1440], xmm0
+	movdqu XMMWORD PTR [rsp+1424], xmm0
+	movdqu XMMWORD PTR [rsp+1408], xmm0
+	movdqu XMMWORD PTR [rsp+1392], xmm0
+	movdqu XMMWORD PTR [rsp+1376], xmm0
+	movdqu XMMWORD PTR [rsp+1360], xmm0
+	movdqu XMMWORD PTR [rsp+1344], xmm0
+	movdqu XMMWORD PTR [rsp+1328], xmm0
+	movdqu XMMWORD PTR [rsp+1312], xmm0
+	movdqu XMMWORD PTR [rsp+1296], xmm0
+	movdqu XMMWORD PTR [rsp+1280], xmm0
+	movdqu XMMWORD PTR [rsp+1264], xmm0
+	movdqu XMMWORD PTR [rsp+1248], xmm0
+	movdqu XMMWORD PTR [rsp+1232], xmm0
+	movdqu XMMWORD PTR [rsp+1216], xmm0
+	movdqu XMMWORD PTR [rsp+1200], xmm0
+	movdqu XMMWORD PTR [rsp+1184], xmm0
+	movdqu XMMWORD PTR [rsp+1168], xmm0
+	movdqu XMMWORD PTR [rsp+1152], xmm0
+	movdqu XMMWORD PTR [rsp+1136], xmm0
+	movdqu XMMWORD PTR [rsp+1120], xmm0
+	movdqu XMMWORD PTR [rsp+1104], xmm0
+	movdqu XMMWORD PTR [rsp+1088], xmm0
+	movdqu XMMWORD PTR [rsp+1072], xmm0
+	movdqu XMMWORD PTR [rsp+1056], xmm0
+	movdqu XMMWORD PTR [rsp+1040], xmm0
+	movdqu XMMWORD PTR [rsp+1024], xmm0
+	movdqu XMMWORD PTR [rsp+1008], xmm0
+	movdqu XMMWORD PTR [rsp+992], xmm0
+	movdqu XMMWORD PTR [rsp+976], xmm0
+	movdqu XMMWORD PTR [rsp+960], xmm0
+	movdqu XMMWORD PTR [rsp+944], xmm0
+	movdqu XMMWORD PTR [rsp+928], xmm0
+	movdqu XMMWORD PTR [rsp+912], xmm0
+	movdqu XMMWORD PTR [rsp+896], xmm0
+	movdqu XMMWORD PTR [rsp+880], xmm0
+	movdqu XMMWORD PTR [rsp+864], xmm0
+	movdqu XMMWORD PTR [rsp+848], xmm0
+	movdqu XMMWORD PTR [rsp+832], xmm0
+	movdqu XMMWORD PTR [rsp+816], xmm0
+	movdqu XMMWORD PTR [rsp+800], xmm0
+	movdqu XMMWORD PTR [rsp+784], xmm0
+	movdqu XMMWORD PTR [rsp+768], xmm0
+	movdqu XMMWORD PTR [rsp+752], xmm0
+	movdqu XMMWORD PTR [rsp+736], xmm0
+	movdqu XMMWORD PTR [rsp+720], xmm0
+	movdqu XMMWORD PTR [rsp+704], xmm0
+	movdqu XMMWORD PTR [rsp+688], xmm0
+	movdqu XMMWORD PTR [rsp+672], xmm0
+	movdqu XMMWORD PTR [rsp+656], xmm0
+	movdqu XMMWORD PTR [rsp+640], xmm0
+	movdqu XMMWORD PTR [rsp+624], xmm0
+	movdqu XMMWORD PTR [rsp+608], xmm0
+	movdqu XMMWORD PTR [rsp+592], xmm0
+	movdqu XMMWORD PTR [rsp+576], xmm0
+	movdqu XMMWORD PTR [rsp+560], xmm0
+	movdqu XMMWORD PTR [rsp+544], xmm0
+	movdqu XMMWORD PTR [rsp+528], xmm0
+	movdqu XMMWORD PTR [rsp+512], xmm0
+	movdqu XMMWORD PTR [rsp+496], xmm0
+	movdqu XMMWORD PTR [rsp+480], xmm0
+	movdqu XMMWORD PTR [rsp+464], xmm0
+	movdqu XMMWORD PTR [rsp+448], xmm0
+	movdqu XMMWORD PTR [rsp+432], xmm0
+	movdqu XMMWORD PTR [rsp+416], xmm0
+	movdqu XMMWORD PTR [rsp+400], xmm0
+	movdqu XMMWORD PTR [rsp+384], xmm0
+	movdqu XMMWORD PTR [rsp+368], xmm0
+	movdqu XMMWORD PTR [rsp+352], xmm0
+	movdqu XMMWORD PTR [rsp+336], xmm0
+	movdqu XMMWORD PTR [rsp+320], xmm0
+	movdqu XMMWORD PTR [rsp+304], xmm0
+	movdqu XMMWORD PTR [rsp+288], xmm0
+	movdqu XMMWORD PTR [rsp+272], xmm0
+	movdqu XMMWORD PTR [rsp+256], xmm0
+	movdqu XMMWORD PTR [rsp+240], xmm0
+	movdqu XMMWORD PTR [rsp+224], xmm0
+	movdqu XMMWORD PTR [rsp+208], xmm0
+	movdqu XMMWORD PTR [rsp+192], xmm0
+	movdqu XMMWORD PTR [rsp+176], xmm0
+	movdqu XMMWORD PTR [rsp+160], xmm0
+	movdqu XMMWORD PTR [rsp+144], xmm0
+	movdqu XMMWORD PTR [rsp+128], xmm0
+	movdqu XMMWORD PTR [rsp+112], xmm0
+	movdqu XMMWORD PTR [rsp+96], xmm0
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp-1736]
+	movdqu XMMWORD PTR [rsp+1720], xmm0
+	movdqu XMMWORD PTR [rsp+1704], xmm0
+	movdqu XMMWORD PTR [rsp+1688], xmm0
+	movdqu XMMWORD PTR [rsp+1672], xmm0
+	movdqu XMMWORD PTR [rsp+1656], xmm0
+	movdqu XMMWORD PTR [rsp+1640], xmm0
+	movdqu XMMWORD PTR [rsp+1624], xmm0
+	movdqu XMMWORD PTR [rsp+1608], xmm0
+	movdqu XMMWORD PTR [rsp+1592], xmm0
+	movdqu XMMWORD PTR [rsp+1576], xmm0
+	movdqu XMMWORD PTR [rsp+1560], xmm0
+	movdqu XMMWORD PTR [rsp+1544], xmm0
+	movdqu XMMWORD PTR [rsp+1528], xmm0
+	movdqu XMMWORD PTR [rsp+1512], xmm0
+	movdqu XMMWORD PTR [rsp+1496], xmm0
+	movdqu XMMWORD PTR [rsp+1480], xmm0
+	movdqu XMMWORD PTR [rsp+1464], xmm0
+	movdqu XMMWORD PTR [rsp+1448], xmm0
+	movdqu XMMWORD PTR [rsp+1432], xmm0
+	movdqu XMMWORD PTR [rsp+1416], xmm0
+	movdqu XMMWORD PTR [rsp+1400], xmm0
+	movdqu XMMWORD PTR [rsp+1384], xmm0
+	movdqu XMMWORD PTR [rsp+1368], xmm0
+	movdqu XMMWORD PTR [rsp+1352], xmm0
+	movdqu XMMWORD PTR [rsp+1336], xmm0
+	movdqu XMMWORD PTR [rsp+1320], xmm0
+	movdqu XMMWORD PTR [rsp+1304], xmm0
+	movdqu XMMWORD PTR [rsp+1288], xmm0
+	movdqu XMMWORD PTR [rsp+1272], xmm0
+	movdqu XMMWORD PTR [rsp+1256], xmm0
+	movdqu XMMWORD PTR [rsp+1240], xmm0
+	movdqu XMMWORD PTR [rsp+1224], xmm0
+	movdqu XMMWORD PTR [rsp+1208], xmm0
+	movdqu XMMWORD PTR [rsp+1192], xmm0
+	movdqu XMMWORD PTR [rsp+1176], xmm0
+	movdqu XMMWORD PTR [rsp+1160], xmm0
+	movdqu XMMWORD PTR [rsp+1144], xmm0
+	movdqu XMMWORD PTR [rsp+1128], xmm0
+	movdqu XMMWORD PTR [rsp+1112], xmm0
+	movdqu XMMWORD PTR [rsp+1096], xmm0
+	movdqu XMMWORD PTR [rsp+1080], xmm0
+	movdqu XMMWORD PTR [rsp+1064], xmm0
+	movdqu XMMWORD PTR [rsp+1048], xmm0
+	movdqu XMMWORD PTR [rsp+1032], xmm0
+	movdqu XMMWORD PTR [rsp+1016], xmm0
+	movdqu XMMWORD PTR [rsp+1000], xmm0
+	movdqu XMMWORD PTR [rsp+984], xmm0
+	movdqu XMMWORD PTR [rsp+968], xmm0
+	movdqu XMMWORD PTR [rsp+952], xmm0
+	movdqu XMMWORD PTR [rsp+936], xmm0
+	movdqu XMMWORD PTR [rsp+920], xmm0
+	movdqu XMMWORD PTR [rsp+904], xmm0
+	movdqu XMMWORD PTR [rsp+888], xmm0
+	movdqu XMMWORD PTR [rsp+872], xmm0
+	movdqu XMMWORD PTR [rsp+856], xmm0
+	movdqu XMMWORD PTR [rsp+840], xmm0
+	movdqu XMMWORD PTR [rsp+824], xmm0
+	movdqu XMMWORD PTR [rsp+808], xmm0
+	movdqu XMMWORD PTR [rsp+792], xmm0
+	movdqu XMMWORD PTR [rsp+776], xmm0
+	movdqu XMMWORD PTR [rsp+760], xmm0
+	movdqu XMMWORD PTR [rsp+744], xmm0
+	movdqu XMMWORD PTR [rsp+728], xmm0
+	movdqu XMMWORD PTR [rsp+712], xmm0
+	movdqu XMMWORD PTR [rsp+696], xmm0
+	movdqu XMMWORD PTR [rsp+680], xmm0
+	movdqu XMMWORD PTR [rsp+664], xmm0
+	movdqu XMMWORD PTR [rsp+648], xmm0
+	movdqu XMMWORD PTR [rsp+632], xmm0
+	movdqu XMMWORD PTR [rsp+616], xmm0
+	movdqu XMMWORD PTR [rsp+600], xmm0
+	movdqu XMMWORD PTR [rsp+584], xmm0
+	movdqu XMMWORD PTR [rsp+568], xmm0
+	movdqu XMMWORD PTR [rsp+552], xmm0
+	movdqu XMMWORD PTR [rsp+536], xmm0
+	movdqu XMMWORD PTR [rsp+520], xmm0
+	movdqu XMMWORD PTR [rsp+504], xmm0
+	movdqu XMMWORD PTR [rsp+488], xmm0
+	movdqu XMMWORD PTR [rsp+472], xmm0
+	movdqu XMMWORD PTR [rsp+456], xmm0
+	movdqu XMMWORD PTR [rsp+440], xmm0
+	movdqu XMMWORD PTR [rsp+424], xmm0
+	movdqu XMMWORD PTR [rsp+408], xmm0
+	movdqu XMMWORD PTR [rsp+392], xmm0
+	movdqu XMMWORD PTR [rsp+376], xmm0
+	movdqu XMMWORD PTR [rsp+360], xmm0
+	movdqu XMMWORD PTR [rsp+344], xmm0
+	movdqu XMMWORD PTR [rsp+328], xmm0
+	movdqu XMMWORD PTR [rsp+312], xmm0
+	movdqu XMMWORD PTR [rsp+296], xmm0
+	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
+	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+184], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+1736]
+	lea rsp, [rsp+4080]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -4411,6 +8111,385 @@ vg_sm4_gcm_open:
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
 	lea rsp, [rsp+2600]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-4080]
+	movdqu XMMWORD PTR [rsp+4064], xmm0
+	movdqu XMMWORD PTR [rsp+4048], xmm0
+	movdqu XMMWORD PTR [rsp+4032], xmm0
+	movdqu XMMWORD PTR [rsp+4016], xmm0
+	movdqu XMMWORD PTR [rsp+4000], xmm0
+	movdqu XMMWORD PTR [rsp+3984], xmm0
+	movdqu XMMWORD PTR [rsp+3968], xmm0
+	movdqu XMMWORD PTR [rsp+3952], xmm0
+	movdqu XMMWORD PTR [rsp+3936], xmm0
+	movdqu XMMWORD PTR [rsp+3920], xmm0
+	movdqu XMMWORD PTR [rsp+3904], xmm0
+	movdqu XMMWORD PTR [rsp+3888], xmm0
+	movdqu XMMWORD PTR [rsp+3872], xmm0
+	movdqu XMMWORD PTR [rsp+3856], xmm0
+	movdqu XMMWORD PTR [rsp+3840], xmm0
+	movdqu XMMWORD PTR [rsp+3824], xmm0
+	movdqu XMMWORD PTR [rsp+3808], xmm0
+	movdqu XMMWORD PTR [rsp+3792], xmm0
+	movdqu XMMWORD PTR [rsp+3776], xmm0
+	movdqu XMMWORD PTR [rsp+3760], xmm0
+	movdqu XMMWORD PTR [rsp+3744], xmm0
+	movdqu XMMWORD PTR [rsp+3728], xmm0
+	movdqu XMMWORD PTR [rsp+3712], xmm0
+	movdqu XMMWORD PTR [rsp+3696], xmm0
+	movdqu XMMWORD PTR [rsp+3680], xmm0
+	movdqu XMMWORD PTR [rsp+3664], xmm0
+	movdqu XMMWORD PTR [rsp+3648], xmm0
+	movdqu XMMWORD PTR [rsp+3632], xmm0
+	movdqu XMMWORD PTR [rsp+3616], xmm0
+	movdqu XMMWORD PTR [rsp+3600], xmm0
+	movdqu XMMWORD PTR [rsp+3584], xmm0
+	movdqu XMMWORD PTR [rsp+3568], xmm0
+	movdqu XMMWORD PTR [rsp+3552], xmm0
+	movdqu XMMWORD PTR [rsp+3536], xmm0
+	movdqu XMMWORD PTR [rsp+3520], xmm0
+	movdqu XMMWORD PTR [rsp+3504], xmm0
+	movdqu XMMWORD PTR [rsp+3488], xmm0
+	movdqu XMMWORD PTR [rsp+3472], xmm0
+	movdqu XMMWORD PTR [rsp+3456], xmm0
+	movdqu XMMWORD PTR [rsp+3440], xmm0
+	movdqu XMMWORD PTR [rsp+3424], xmm0
+	movdqu XMMWORD PTR [rsp+3408], xmm0
+	movdqu XMMWORD PTR [rsp+3392], xmm0
+	movdqu XMMWORD PTR [rsp+3376], xmm0
+	movdqu XMMWORD PTR [rsp+3360], xmm0
+	movdqu XMMWORD PTR [rsp+3344], xmm0
+	movdqu XMMWORD PTR [rsp+3328], xmm0
+	movdqu XMMWORD PTR [rsp+3312], xmm0
+	movdqu XMMWORD PTR [rsp+3296], xmm0
+	movdqu XMMWORD PTR [rsp+3280], xmm0
+	movdqu XMMWORD PTR [rsp+3264], xmm0
+	movdqu XMMWORD PTR [rsp+3248], xmm0
+	movdqu XMMWORD PTR [rsp+3232], xmm0
+	movdqu XMMWORD PTR [rsp+3216], xmm0
+	movdqu XMMWORD PTR [rsp+3200], xmm0
+	movdqu XMMWORD PTR [rsp+3184], xmm0
+	movdqu XMMWORD PTR [rsp+3168], xmm0
+	movdqu XMMWORD PTR [rsp+3152], xmm0
+	movdqu XMMWORD PTR [rsp+3136], xmm0
+	movdqu XMMWORD PTR [rsp+3120], xmm0
+	movdqu XMMWORD PTR [rsp+3104], xmm0
+	movdqu XMMWORD PTR [rsp+3088], xmm0
+	movdqu XMMWORD PTR [rsp+3072], xmm0
+	movdqu XMMWORD PTR [rsp+3056], xmm0
+	movdqu XMMWORD PTR [rsp+3040], xmm0
+	movdqu XMMWORD PTR [rsp+3024], xmm0
+	movdqu XMMWORD PTR [rsp+3008], xmm0
+	movdqu XMMWORD PTR [rsp+2992], xmm0
+	movdqu XMMWORD PTR [rsp+2976], xmm0
+	movdqu XMMWORD PTR [rsp+2960], xmm0
+	movdqu XMMWORD PTR [rsp+2944], xmm0
+	movdqu XMMWORD PTR [rsp+2928], xmm0
+	movdqu XMMWORD PTR [rsp+2912], xmm0
+	movdqu XMMWORD PTR [rsp+2896], xmm0
+	movdqu XMMWORD PTR [rsp+2880], xmm0
+	movdqu XMMWORD PTR [rsp+2864], xmm0
+	movdqu XMMWORD PTR [rsp+2848], xmm0
+	movdqu XMMWORD PTR [rsp+2832], xmm0
+	movdqu XMMWORD PTR [rsp+2816], xmm0
+	movdqu XMMWORD PTR [rsp+2800], xmm0
+	movdqu XMMWORD PTR [rsp+2784], xmm0
+	movdqu XMMWORD PTR [rsp+2768], xmm0
+	movdqu XMMWORD PTR [rsp+2752], xmm0
+	movdqu XMMWORD PTR [rsp+2736], xmm0
+	movdqu XMMWORD PTR [rsp+2720], xmm0
+	movdqu XMMWORD PTR [rsp+2704], xmm0
+	movdqu XMMWORD PTR [rsp+2688], xmm0
+	movdqu XMMWORD PTR [rsp+2672], xmm0
+	movdqu XMMWORD PTR [rsp+2656], xmm0
+	movdqu XMMWORD PTR [rsp+2640], xmm0
+	movdqu XMMWORD PTR [rsp+2624], xmm0
+	movdqu XMMWORD PTR [rsp+2608], xmm0
+	movdqu XMMWORD PTR [rsp+2592], xmm0
+	movdqu XMMWORD PTR [rsp+2576], xmm0
+	movdqu XMMWORD PTR [rsp+2560], xmm0
+	movdqu XMMWORD PTR [rsp+2544], xmm0
+	movdqu XMMWORD PTR [rsp+2528], xmm0
+	movdqu XMMWORD PTR [rsp+2512], xmm0
+	movdqu XMMWORD PTR [rsp+2496], xmm0
+	movdqu XMMWORD PTR [rsp+2480], xmm0
+	movdqu XMMWORD PTR [rsp+2464], xmm0
+	movdqu XMMWORD PTR [rsp+2448], xmm0
+	movdqu XMMWORD PTR [rsp+2432], xmm0
+	movdqu XMMWORD PTR [rsp+2416], xmm0
+	movdqu XMMWORD PTR [rsp+2400], xmm0
+	movdqu XMMWORD PTR [rsp+2384], xmm0
+	movdqu XMMWORD PTR [rsp+2368], xmm0
+	movdqu XMMWORD PTR [rsp+2352], xmm0
+	movdqu XMMWORD PTR [rsp+2336], xmm0
+	movdqu XMMWORD PTR [rsp+2320], xmm0
+	movdqu XMMWORD PTR [rsp+2304], xmm0
+	movdqu XMMWORD PTR [rsp+2288], xmm0
+	movdqu XMMWORD PTR [rsp+2272], xmm0
+	movdqu XMMWORD PTR [rsp+2256], xmm0
+	movdqu XMMWORD PTR [rsp+2240], xmm0
+	movdqu XMMWORD PTR [rsp+2224], xmm0
+	movdqu XMMWORD PTR [rsp+2208], xmm0
+	movdqu XMMWORD PTR [rsp+2192], xmm0
+	movdqu XMMWORD PTR [rsp+2176], xmm0
+	movdqu XMMWORD PTR [rsp+2160], xmm0
+	movdqu XMMWORD PTR [rsp+2144], xmm0
+	movdqu XMMWORD PTR [rsp+2128], xmm0
+	movdqu XMMWORD PTR [rsp+2112], xmm0
+	movdqu XMMWORD PTR [rsp+2096], xmm0
+	movdqu XMMWORD PTR [rsp+2080], xmm0
+	movdqu XMMWORD PTR [rsp+2064], xmm0
+	movdqu XMMWORD PTR [rsp+2048], xmm0
+	movdqu XMMWORD PTR [rsp+2032], xmm0
+	movdqu XMMWORD PTR [rsp+2016], xmm0
+	movdqu XMMWORD PTR [rsp+2000], xmm0
+	movdqu XMMWORD PTR [rsp+1984], xmm0
+	movdqu XMMWORD PTR [rsp+1968], xmm0
+	movdqu XMMWORD PTR [rsp+1952], xmm0
+	movdqu XMMWORD PTR [rsp+1936], xmm0
+	movdqu XMMWORD PTR [rsp+1920], xmm0
+	movdqu XMMWORD PTR [rsp+1904], xmm0
+	movdqu XMMWORD PTR [rsp+1888], xmm0
+	movdqu XMMWORD PTR [rsp+1872], xmm0
+	movdqu XMMWORD PTR [rsp+1856], xmm0
+	movdqu XMMWORD PTR [rsp+1840], xmm0
+	movdqu XMMWORD PTR [rsp+1824], xmm0
+	movdqu XMMWORD PTR [rsp+1808], xmm0
+	movdqu XMMWORD PTR [rsp+1792], xmm0
+	movdqu XMMWORD PTR [rsp+1776], xmm0
+	movdqu XMMWORD PTR [rsp+1760], xmm0
+	movdqu XMMWORD PTR [rsp+1744], xmm0
+	movdqu XMMWORD PTR [rsp+1728], xmm0
+	movdqu XMMWORD PTR [rsp+1712], xmm0
+	movdqu XMMWORD PTR [rsp+1696], xmm0
+	movdqu XMMWORD PTR [rsp+1680], xmm0
+	movdqu XMMWORD PTR [rsp+1664], xmm0
+	movdqu XMMWORD PTR [rsp+1648], xmm0
+	movdqu XMMWORD PTR [rsp+1632], xmm0
+	movdqu XMMWORD PTR [rsp+1616], xmm0
+	movdqu XMMWORD PTR [rsp+1600], xmm0
+	movdqu XMMWORD PTR [rsp+1584], xmm0
+	movdqu XMMWORD PTR [rsp+1568], xmm0
+	movdqu XMMWORD PTR [rsp+1552], xmm0
+	movdqu XMMWORD PTR [rsp+1536], xmm0
+	movdqu XMMWORD PTR [rsp+1520], xmm0
+	movdqu XMMWORD PTR [rsp+1504], xmm0
+	movdqu XMMWORD PTR [rsp+1488], xmm0
+	movdqu XMMWORD PTR [rsp+1472], xmm0
+	movdqu XMMWORD PTR [rsp+1456], xmm0
+	movdqu XMMWORD PTR [rsp+1440], xmm0
+	movdqu XMMWORD PTR [rsp+1424], xmm0
+	movdqu XMMWORD PTR [rsp+1408], xmm0
+	movdqu XMMWORD PTR [rsp+1392], xmm0
+	movdqu XMMWORD PTR [rsp+1376], xmm0
+	movdqu XMMWORD PTR [rsp+1360], xmm0
+	movdqu XMMWORD PTR [rsp+1344], xmm0
+	movdqu XMMWORD PTR [rsp+1328], xmm0
+	movdqu XMMWORD PTR [rsp+1312], xmm0
+	movdqu XMMWORD PTR [rsp+1296], xmm0
+	movdqu XMMWORD PTR [rsp+1280], xmm0
+	movdqu XMMWORD PTR [rsp+1264], xmm0
+	movdqu XMMWORD PTR [rsp+1248], xmm0
+	movdqu XMMWORD PTR [rsp+1232], xmm0
+	movdqu XMMWORD PTR [rsp+1216], xmm0
+	movdqu XMMWORD PTR [rsp+1200], xmm0
+	movdqu XMMWORD PTR [rsp+1184], xmm0
+	movdqu XMMWORD PTR [rsp+1168], xmm0
+	movdqu XMMWORD PTR [rsp+1152], xmm0
+	movdqu XMMWORD PTR [rsp+1136], xmm0
+	movdqu XMMWORD PTR [rsp+1120], xmm0
+	movdqu XMMWORD PTR [rsp+1104], xmm0
+	movdqu XMMWORD PTR [rsp+1088], xmm0
+	movdqu XMMWORD PTR [rsp+1072], xmm0
+	movdqu XMMWORD PTR [rsp+1056], xmm0
+	movdqu XMMWORD PTR [rsp+1040], xmm0
+	movdqu XMMWORD PTR [rsp+1024], xmm0
+	movdqu XMMWORD PTR [rsp+1008], xmm0
+	movdqu XMMWORD PTR [rsp+992], xmm0
+	movdqu XMMWORD PTR [rsp+976], xmm0
+	movdqu XMMWORD PTR [rsp+960], xmm0
+	movdqu XMMWORD PTR [rsp+944], xmm0
+	movdqu XMMWORD PTR [rsp+928], xmm0
+	movdqu XMMWORD PTR [rsp+912], xmm0
+	movdqu XMMWORD PTR [rsp+896], xmm0
+	movdqu XMMWORD PTR [rsp+880], xmm0
+	movdqu XMMWORD PTR [rsp+864], xmm0
+	movdqu XMMWORD PTR [rsp+848], xmm0
+	movdqu XMMWORD PTR [rsp+832], xmm0
+	movdqu XMMWORD PTR [rsp+816], xmm0
+	movdqu XMMWORD PTR [rsp+800], xmm0
+	movdqu XMMWORD PTR [rsp+784], xmm0
+	movdqu XMMWORD PTR [rsp+768], xmm0
+	movdqu XMMWORD PTR [rsp+752], xmm0
+	movdqu XMMWORD PTR [rsp+736], xmm0
+	movdqu XMMWORD PTR [rsp+720], xmm0
+	movdqu XMMWORD PTR [rsp+704], xmm0
+	movdqu XMMWORD PTR [rsp+688], xmm0
+	movdqu XMMWORD PTR [rsp+672], xmm0
+	movdqu XMMWORD PTR [rsp+656], xmm0
+	movdqu XMMWORD PTR [rsp+640], xmm0
+	movdqu XMMWORD PTR [rsp+624], xmm0
+	movdqu XMMWORD PTR [rsp+608], xmm0
+	movdqu XMMWORD PTR [rsp+592], xmm0
+	movdqu XMMWORD PTR [rsp+576], xmm0
+	movdqu XMMWORD PTR [rsp+560], xmm0
+	movdqu XMMWORD PTR [rsp+544], xmm0
+	movdqu XMMWORD PTR [rsp+528], xmm0
+	movdqu XMMWORD PTR [rsp+512], xmm0
+	movdqu XMMWORD PTR [rsp+496], xmm0
+	movdqu XMMWORD PTR [rsp+480], xmm0
+	movdqu XMMWORD PTR [rsp+464], xmm0
+	movdqu XMMWORD PTR [rsp+448], xmm0
+	movdqu XMMWORD PTR [rsp+432], xmm0
+	movdqu XMMWORD PTR [rsp+416], xmm0
+	movdqu XMMWORD PTR [rsp+400], xmm0
+	movdqu XMMWORD PTR [rsp+384], xmm0
+	movdqu XMMWORD PTR [rsp+368], xmm0
+	movdqu XMMWORD PTR [rsp+352], xmm0
+	movdqu XMMWORD PTR [rsp+336], xmm0
+	movdqu XMMWORD PTR [rsp+320], xmm0
+	movdqu XMMWORD PTR [rsp+304], xmm0
+	movdqu XMMWORD PTR [rsp+288], xmm0
+	movdqu XMMWORD PTR [rsp+272], xmm0
+	movdqu XMMWORD PTR [rsp+256], xmm0
+	movdqu XMMWORD PTR [rsp+240], xmm0
+	movdqu XMMWORD PTR [rsp+224], xmm0
+	movdqu XMMWORD PTR [rsp+208], xmm0
+	movdqu XMMWORD PTR [rsp+192], xmm0
+	movdqu XMMWORD PTR [rsp+176], xmm0
+	movdqu XMMWORD PTR [rsp+160], xmm0
+	movdqu XMMWORD PTR [rsp+144], xmm0
+	movdqu XMMWORD PTR [rsp+128], xmm0
+	movdqu XMMWORD PTR [rsp+112], xmm0
+	movdqu XMMWORD PTR [rsp+96], xmm0
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp-1744]
+	movdqu XMMWORD PTR [rsp+1728], xmm0
+	movdqu XMMWORD PTR [rsp+1712], xmm0
+	movdqu XMMWORD PTR [rsp+1696], xmm0
+	movdqu XMMWORD PTR [rsp+1680], xmm0
+	movdqu XMMWORD PTR [rsp+1664], xmm0
+	movdqu XMMWORD PTR [rsp+1648], xmm0
+	movdqu XMMWORD PTR [rsp+1632], xmm0
+	movdqu XMMWORD PTR [rsp+1616], xmm0
+	movdqu XMMWORD PTR [rsp+1600], xmm0
+	movdqu XMMWORD PTR [rsp+1584], xmm0
+	movdqu XMMWORD PTR [rsp+1568], xmm0
+	movdqu XMMWORD PTR [rsp+1552], xmm0
+	movdqu XMMWORD PTR [rsp+1536], xmm0
+	movdqu XMMWORD PTR [rsp+1520], xmm0
+	movdqu XMMWORD PTR [rsp+1504], xmm0
+	movdqu XMMWORD PTR [rsp+1488], xmm0
+	movdqu XMMWORD PTR [rsp+1472], xmm0
+	movdqu XMMWORD PTR [rsp+1456], xmm0
+	movdqu XMMWORD PTR [rsp+1440], xmm0
+	movdqu XMMWORD PTR [rsp+1424], xmm0
+	movdqu XMMWORD PTR [rsp+1408], xmm0
+	movdqu XMMWORD PTR [rsp+1392], xmm0
+	movdqu XMMWORD PTR [rsp+1376], xmm0
+	movdqu XMMWORD PTR [rsp+1360], xmm0
+	movdqu XMMWORD PTR [rsp+1344], xmm0
+	movdqu XMMWORD PTR [rsp+1328], xmm0
+	movdqu XMMWORD PTR [rsp+1312], xmm0
+	movdqu XMMWORD PTR [rsp+1296], xmm0
+	movdqu XMMWORD PTR [rsp+1280], xmm0
+	movdqu XMMWORD PTR [rsp+1264], xmm0
+	movdqu XMMWORD PTR [rsp+1248], xmm0
+	movdqu XMMWORD PTR [rsp+1232], xmm0
+	movdqu XMMWORD PTR [rsp+1216], xmm0
+	movdqu XMMWORD PTR [rsp+1200], xmm0
+	movdqu XMMWORD PTR [rsp+1184], xmm0
+	movdqu XMMWORD PTR [rsp+1168], xmm0
+	movdqu XMMWORD PTR [rsp+1152], xmm0
+	movdqu XMMWORD PTR [rsp+1136], xmm0
+	movdqu XMMWORD PTR [rsp+1120], xmm0
+	movdqu XMMWORD PTR [rsp+1104], xmm0
+	movdqu XMMWORD PTR [rsp+1088], xmm0
+	movdqu XMMWORD PTR [rsp+1072], xmm0
+	movdqu XMMWORD PTR [rsp+1056], xmm0
+	movdqu XMMWORD PTR [rsp+1040], xmm0
+	movdqu XMMWORD PTR [rsp+1024], xmm0
+	movdqu XMMWORD PTR [rsp+1008], xmm0
+	movdqu XMMWORD PTR [rsp+992], xmm0
+	movdqu XMMWORD PTR [rsp+976], xmm0
+	movdqu XMMWORD PTR [rsp+960], xmm0
+	movdqu XMMWORD PTR [rsp+944], xmm0
+	movdqu XMMWORD PTR [rsp+928], xmm0
+	movdqu XMMWORD PTR [rsp+912], xmm0
+	movdqu XMMWORD PTR [rsp+896], xmm0
+	movdqu XMMWORD PTR [rsp+880], xmm0
+	movdqu XMMWORD PTR [rsp+864], xmm0
+	movdqu XMMWORD PTR [rsp+848], xmm0
+	movdqu XMMWORD PTR [rsp+832], xmm0
+	movdqu XMMWORD PTR [rsp+816], xmm0
+	movdqu XMMWORD PTR [rsp+800], xmm0
+	movdqu XMMWORD PTR [rsp+784], xmm0
+	movdqu XMMWORD PTR [rsp+768], xmm0
+	movdqu XMMWORD PTR [rsp+752], xmm0
+	movdqu XMMWORD PTR [rsp+736], xmm0
+	movdqu XMMWORD PTR [rsp+720], xmm0
+	movdqu XMMWORD PTR [rsp+704], xmm0
+	movdqu XMMWORD PTR [rsp+688], xmm0
+	movdqu XMMWORD PTR [rsp+672], xmm0
+	movdqu XMMWORD PTR [rsp+656], xmm0
+	movdqu XMMWORD PTR [rsp+640], xmm0
+	movdqu XMMWORD PTR [rsp+624], xmm0
+	movdqu XMMWORD PTR [rsp+608], xmm0
+	movdqu XMMWORD PTR [rsp+592], xmm0
+	movdqu XMMWORD PTR [rsp+576], xmm0
+	movdqu XMMWORD PTR [rsp+560], xmm0
+	movdqu XMMWORD PTR [rsp+544], xmm0
+	movdqu XMMWORD PTR [rsp+528], xmm0
+	movdqu XMMWORD PTR [rsp+512], xmm0
+	movdqu XMMWORD PTR [rsp+496], xmm0
+	movdqu XMMWORD PTR [rsp+480], xmm0
+	movdqu XMMWORD PTR [rsp+464], xmm0
+	movdqu XMMWORD PTR [rsp+448], xmm0
+	movdqu XMMWORD PTR [rsp+432], xmm0
+	movdqu XMMWORD PTR [rsp+416], xmm0
+	movdqu XMMWORD PTR [rsp+400], xmm0
+	movdqu XMMWORD PTR [rsp+384], xmm0
+	movdqu XMMWORD PTR [rsp+368], xmm0
+	movdqu XMMWORD PTR [rsp+352], xmm0
+	movdqu XMMWORD PTR [rsp+336], xmm0
+	movdqu XMMWORD PTR [rsp+320], xmm0
+	movdqu XMMWORD PTR [rsp+304], xmm0
+	movdqu XMMWORD PTR [rsp+288], xmm0
+	movdqu XMMWORD PTR [rsp+272], xmm0
+	movdqu XMMWORD PTR [rsp+256], xmm0
+	movdqu XMMWORD PTR [rsp+240], xmm0
+	movdqu XMMWORD PTR [rsp+224], xmm0
+	movdqu XMMWORD PTR [rsp+208], xmm0
+	movdqu XMMWORD PTR [rsp+192], xmm0
+	movdqu XMMWORD PTR [rsp+176], xmm0
+	movdqu XMMWORD PTR [rsp+160], xmm0
+	movdqu XMMWORD PTR [rsp+144], xmm0
+	movdqu XMMWORD PTR [rsp+128], xmm0
+	movdqu XMMWORD PTR [rsp+112], xmm0
+	movdqu XMMWORD PTR [rsp+96], xmm0
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+1744]
+	lea rsp, [rsp+4080]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
@@ -4777,7 +8856,7 @@ vg_sm4_gcm_stream_aad:
 	.p2align 6
 
 vg_sm4_gcm_stream_encrypt:
-	lea rsp, [rsp-2576]
+	lea rsp, [rsp-784]
 	mov rax, rsp
 	add rax, 16
 	mov QWORD PTR [rsp+8], rax
@@ -5015,12 +9094,276 @@ vg_sm4_gcm_stream_encrypt:
 	mov r13, QWORD PTR [r15+152]
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
-	lea rsp, [rsp+2576]
+	lea rsp, [rsp+784]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-4008]
+	movdqu XMMWORD PTR [rsp+3992], xmm0
+	movdqu XMMWORD PTR [rsp+3976], xmm0
+	movdqu XMMWORD PTR [rsp+3960], xmm0
+	movdqu XMMWORD PTR [rsp+3944], xmm0
+	movdqu XMMWORD PTR [rsp+3928], xmm0
+	movdqu XMMWORD PTR [rsp+3912], xmm0
+	movdqu XMMWORD PTR [rsp+3896], xmm0
+	movdqu XMMWORD PTR [rsp+3880], xmm0
+	movdqu XMMWORD PTR [rsp+3864], xmm0
+	movdqu XMMWORD PTR [rsp+3848], xmm0
+	movdqu XMMWORD PTR [rsp+3832], xmm0
+	movdqu XMMWORD PTR [rsp+3816], xmm0
+	movdqu XMMWORD PTR [rsp+3800], xmm0
+	movdqu XMMWORD PTR [rsp+3784], xmm0
+	movdqu XMMWORD PTR [rsp+3768], xmm0
+	movdqu XMMWORD PTR [rsp+3752], xmm0
+	movdqu XMMWORD PTR [rsp+3736], xmm0
+	movdqu XMMWORD PTR [rsp+3720], xmm0
+	movdqu XMMWORD PTR [rsp+3704], xmm0
+	movdqu XMMWORD PTR [rsp+3688], xmm0
+	movdqu XMMWORD PTR [rsp+3672], xmm0
+	movdqu XMMWORD PTR [rsp+3656], xmm0
+	movdqu XMMWORD PTR [rsp+3640], xmm0
+	movdqu XMMWORD PTR [rsp+3624], xmm0
+	movdqu XMMWORD PTR [rsp+3608], xmm0
+	movdqu XMMWORD PTR [rsp+3592], xmm0
+	movdqu XMMWORD PTR [rsp+3576], xmm0
+	movdqu XMMWORD PTR [rsp+3560], xmm0
+	movdqu XMMWORD PTR [rsp+3544], xmm0
+	movdqu XMMWORD PTR [rsp+3528], xmm0
+	movdqu XMMWORD PTR [rsp+3512], xmm0
+	movdqu XMMWORD PTR [rsp+3496], xmm0
+	movdqu XMMWORD PTR [rsp+3480], xmm0
+	movdqu XMMWORD PTR [rsp+3464], xmm0
+	movdqu XMMWORD PTR [rsp+3448], xmm0
+	movdqu XMMWORD PTR [rsp+3432], xmm0
+	movdqu XMMWORD PTR [rsp+3416], xmm0
+	movdqu XMMWORD PTR [rsp+3400], xmm0
+	movdqu XMMWORD PTR [rsp+3384], xmm0
+	movdqu XMMWORD PTR [rsp+3368], xmm0
+	movdqu XMMWORD PTR [rsp+3352], xmm0
+	movdqu XMMWORD PTR [rsp+3336], xmm0
+	movdqu XMMWORD PTR [rsp+3320], xmm0
+	movdqu XMMWORD PTR [rsp+3304], xmm0
+	movdqu XMMWORD PTR [rsp+3288], xmm0
+	movdqu XMMWORD PTR [rsp+3272], xmm0
+	movdqu XMMWORD PTR [rsp+3256], xmm0
+	movdqu XMMWORD PTR [rsp+3240], xmm0
+	movdqu XMMWORD PTR [rsp+3224], xmm0
+	movdqu XMMWORD PTR [rsp+3208], xmm0
+	movdqu XMMWORD PTR [rsp+3192], xmm0
+	movdqu XMMWORD PTR [rsp+3176], xmm0
+	movdqu XMMWORD PTR [rsp+3160], xmm0
+	movdqu XMMWORD PTR [rsp+3144], xmm0
+	movdqu XMMWORD PTR [rsp+3128], xmm0
+	movdqu XMMWORD PTR [rsp+3112], xmm0
+	movdqu XMMWORD PTR [rsp+3096], xmm0
+	movdqu XMMWORD PTR [rsp+3080], xmm0
+	movdqu XMMWORD PTR [rsp+3064], xmm0
+	movdqu XMMWORD PTR [rsp+3048], xmm0
+	movdqu XMMWORD PTR [rsp+3032], xmm0
+	movdqu XMMWORD PTR [rsp+3016], xmm0
+	movdqu XMMWORD PTR [rsp+3000], xmm0
+	movdqu XMMWORD PTR [rsp+2984], xmm0
+	movdqu XMMWORD PTR [rsp+2968], xmm0
+	movdqu XMMWORD PTR [rsp+2952], xmm0
+	movdqu XMMWORD PTR [rsp+2936], xmm0
+	movdqu XMMWORD PTR [rsp+2920], xmm0
+	movdqu XMMWORD PTR [rsp+2904], xmm0
+	movdqu XMMWORD PTR [rsp+2888], xmm0
+	movdqu XMMWORD PTR [rsp+2872], xmm0
+	movdqu XMMWORD PTR [rsp+2856], xmm0
+	movdqu XMMWORD PTR [rsp+2840], xmm0
+	movdqu XMMWORD PTR [rsp+2824], xmm0
+	movdqu XMMWORD PTR [rsp+2808], xmm0
+	movdqu XMMWORD PTR [rsp+2792], xmm0
+	movdqu XMMWORD PTR [rsp+2776], xmm0
+	movdqu XMMWORD PTR [rsp+2760], xmm0
+	movdqu XMMWORD PTR [rsp+2744], xmm0
+	movdqu XMMWORD PTR [rsp+2728], xmm0
+	movdqu XMMWORD PTR [rsp+2712], xmm0
+	movdqu XMMWORD PTR [rsp+2696], xmm0
+	movdqu XMMWORD PTR [rsp+2680], xmm0
+	movdqu XMMWORD PTR [rsp+2664], xmm0
+	movdqu XMMWORD PTR [rsp+2648], xmm0
+	movdqu XMMWORD PTR [rsp+2632], xmm0
+	movdqu XMMWORD PTR [rsp+2616], xmm0
+	movdqu XMMWORD PTR [rsp+2600], xmm0
+	movdqu XMMWORD PTR [rsp+2584], xmm0
+	movdqu XMMWORD PTR [rsp+2568], xmm0
+	movdqu XMMWORD PTR [rsp+2552], xmm0
+	movdqu XMMWORD PTR [rsp+2536], xmm0
+	movdqu XMMWORD PTR [rsp+2520], xmm0
+	movdqu XMMWORD PTR [rsp+2504], xmm0
+	movdqu XMMWORD PTR [rsp+2488], xmm0
+	movdqu XMMWORD PTR [rsp+2472], xmm0
+	movdqu XMMWORD PTR [rsp+2456], xmm0
+	movdqu XMMWORD PTR [rsp+2440], xmm0
+	movdqu XMMWORD PTR [rsp+2424], xmm0
+	movdqu XMMWORD PTR [rsp+2408], xmm0
+	movdqu XMMWORD PTR [rsp+2392], xmm0
+	movdqu XMMWORD PTR [rsp+2376], xmm0
+	movdqu XMMWORD PTR [rsp+2360], xmm0
+	movdqu XMMWORD PTR [rsp+2344], xmm0
+	movdqu XMMWORD PTR [rsp+2328], xmm0
+	movdqu XMMWORD PTR [rsp+2312], xmm0
+	movdqu XMMWORD PTR [rsp+2296], xmm0
+	movdqu XMMWORD PTR [rsp+2280], xmm0
+	movdqu XMMWORD PTR [rsp+2264], xmm0
+	movdqu XMMWORD PTR [rsp+2248], xmm0
+	movdqu XMMWORD PTR [rsp+2232], xmm0
+	movdqu XMMWORD PTR [rsp+2216], xmm0
+	movdqu XMMWORD PTR [rsp+2200], xmm0
+	movdqu XMMWORD PTR [rsp+2184], xmm0
+	movdqu XMMWORD PTR [rsp+2168], xmm0
+	movdqu XMMWORD PTR [rsp+2152], xmm0
+	movdqu XMMWORD PTR [rsp+2136], xmm0
+	movdqu XMMWORD PTR [rsp+2120], xmm0
+	movdqu XMMWORD PTR [rsp+2104], xmm0
+	movdqu XMMWORD PTR [rsp+2088], xmm0
+	movdqu XMMWORD PTR [rsp+2072], xmm0
+	movdqu XMMWORD PTR [rsp+2056], xmm0
+	movdqu XMMWORD PTR [rsp+2040], xmm0
+	movdqu XMMWORD PTR [rsp+2024], xmm0
+	movdqu XMMWORD PTR [rsp+2008], xmm0
+	movdqu XMMWORD PTR [rsp+1992], xmm0
+	movdqu XMMWORD PTR [rsp+1976], xmm0
+	movdqu XMMWORD PTR [rsp+1960], xmm0
+	movdqu XMMWORD PTR [rsp+1944], xmm0
+	movdqu XMMWORD PTR [rsp+1928], xmm0
+	movdqu XMMWORD PTR [rsp+1912], xmm0
+	movdqu XMMWORD PTR [rsp+1896], xmm0
+	movdqu XMMWORD PTR [rsp+1880], xmm0
+	movdqu XMMWORD PTR [rsp+1864], xmm0
+	movdqu XMMWORD PTR [rsp+1848], xmm0
+	movdqu XMMWORD PTR [rsp+1832], xmm0
+	movdqu XMMWORD PTR [rsp+1816], xmm0
+	movdqu XMMWORD PTR [rsp+1800], xmm0
+	movdqu XMMWORD PTR [rsp+1784], xmm0
+	movdqu XMMWORD PTR [rsp+1768], xmm0
+	movdqu XMMWORD PTR [rsp+1752], xmm0
+	movdqu XMMWORD PTR [rsp+1736], xmm0
+	movdqu XMMWORD PTR [rsp+1720], xmm0
+	movdqu XMMWORD PTR [rsp+1704], xmm0
+	movdqu XMMWORD PTR [rsp+1688], xmm0
+	movdqu XMMWORD PTR [rsp+1672], xmm0
+	movdqu XMMWORD PTR [rsp+1656], xmm0
+	movdqu XMMWORD PTR [rsp+1640], xmm0
+	movdqu XMMWORD PTR [rsp+1624], xmm0
+	movdqu XMMWORD PTR [rsp+1608], xmm0
+	movdqu XMMWORD PTR [rsp+1592], xmm0
+	movdqu XMMWORD PTR [rsp+1576], xmm0
+	movdqu XMMWORD PTR [rsp+1560], xmm0
+	movdqu XMMWORD PTR [rsp+1544], xmm0
+	movdqu XMMWORD PTR [rsp+1528], xmm0
+	movdqu XMMWORD PTR [rsp+1512], xmm0
+	movdqu XMMWORD PTR [rsp+1496], xmm0
+	movdqu XMMWORD PTR [rsp+1480], xmm0
+	movdqu XMMWORD PTR [rsp+1464], xmm0
+	movdqu XMMWORD PTR [rsp+1448], xmm0
+	movdqu XMMWORD PTR [rsp+1432], xmm0
+	movdqu XMMWORD PTR [rsp+1416], xmm0
+	movdqu XMMWORD PTR [rsp+1400], xmm0
+	movdqu XMMWORD PTR [rsp+1384], xmm0
+	movdqu XMMWORD PTR [rsp+1368], xmm0
+	movdqu XMMWORD PTR [rsp+1352], xmm0
+	movdqu XMMWORD PTR [rsp+1336], xmm0
+	movdqu XMMWORD PTR [rsp+1320], xmm0
+	movdqu XMMWORD PTR [rsp+1304], xmm0
+	movdqu XMMWORD PTR [rsp+1288], xmm0
+	movdqu XMMWORD PTR [rsp+1272], xmm0
+	movdqu XMMWORD PTR [rsp+1256], xmm0
+	movdqu XMMWORD PTR [rsp+1240], xmm0
+	movdqu XMMWORD PTR [rsp+1224], xmm0
+	movdqu XMMWORD PTR [rsp+1208], xmm0
+	movdqu XMMWORD PTR [rsp+1192], xmm0
+	movdqu XMMWORD PTR [rsp+1176], xmm0
+	movdqu XMMWORD PTR [rsp+1160], xmm0
+	movdqu XMMWORD PTR [rsp+1144], xmm0
+	movdqu XMMWORD PTR [rsp+1128], xmm0
+	movdqu XMMWORD PTR [rsp+1112], xmm0
+	movdqu XMMWORD PTR [rsp+1096], xmm0
+	movdqu XMMWORD PTR [rsp+1080], xmm0
+	movdqu XMMWORD PTR [rsp+1064], xmm0
+	movdqu XMMWORD PTR [rsp+1048], xmm0
+	movdqu XMMWORD PTR [rsp+1032], xmm0
+	movdqu XMMWORD PTR [rsp+1016], xmm0
+	movdqu XMMWORD PTR [rsp+1000], xmm0
+	movdqu XMMWORD PTR [rsp+984], xmm0
+	movdqu XMMWORD PTR [rsp+968], xmm0
+	movdqu XMMWORD PTR [rsp+952], xmm0
+	movdqu XMMWORD PTR [rsp+936], xmm0
+	movdqu XMMWORD PTR [rsp+920], xmm0
+	movdqu XMMWORD PTR [rsp+904], xmm0
+	movdqu XMMWORD PTR [rsp+888], xmm0
+	movdqu XMMWORD PTR [rsp+872], xmm0
+	movdqu XMMWORD PTR [rsp+856], xmm0
+	movdqu XMMWORD PTR [rsp+840], xmm0
+	movdqu XMMWORD PTR [rsp+824], xmm0
+	movdqu XMMWORD PTR [rsp+808], xmm0
+	movdqu XMMWORD PTR [rsp+792], xmm0
+	movdqu XMMWORD PTR [rsp+776], xmm0
+	movdqu XMMWORD PTR [rsp+760], xmm0
+	movdqu XMMWORD PTR [rsp+744], xmm0
+	movdqu XMMWORD PTR [rsp+728], xmm0
+	movdqu XMMWORD PTR [rsp+712], xmm0
+	movdqu XMMWORD PTR [rsp+696], xmm0
+	movdqu XMMWORD PTR [rsp+680], xmm0
+	movdqu XMMWORD PTR [rsp+664], xmm0
+	movdqu XMMWORD PTR [rsp+648], xmm0
+	movdqu XMMWORD PTR [rsp+632], xmm0
+	movdqu XMMWORD PTR [rsp+616], xmm0
+	movdqu XMMWORD PTR [rsp+600], xmm0
+	movdqu XMMWORD PTR [rsp+584], xmm0
+	movdqu XMMWORD PTR [rsp+568], xmm0
+	movdqu XMMWORD PTR [rsp+552], xmm0
+	movdqu XMMWORD PTR [rsp+536], xmm0
+	movdqu XMMWORD PTR [rsp+520], xmm0
+	movdqu XMMWORD PTR [rsp+504], xmm0
+	movdqu XMMWORD PTR [rsp+488], xmm0
+	movdqu XMMWORD PTR [rsp+472], xmm0
+	movdqu XMMWORD PTR [rsp+456], xmm0
+	movdqu XMMWORD PTR [rsp+440], xmm0
+	movdqu XMMWORD PTR [rsp+424], xmm0
+	movdqu XMMWORD PTR [rsp+408], xmm0
+	movdqu XMMWORD PTR [rsp+392], xmm0
+	movdqu XMMWORD PTR [rsp+376], xmm0
+	movdqu XMMWORD PTR [rsp+360], xmm0
+	movdqu XMMWORD PTR [rsp+344], xmm0
+	movdqu XMMWORD PTR [rsp+328], xmm0
+	movdqu XMMWORD PTR [rsp+312], xmm0
+	movdqu XMMWORD PTR [rsp+296], xmm0
+	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
+	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+184], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+4008]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
 vg_sm4_gcm_stream_decrypt:
-	lea rsp, [rsp-2576]
+	lea rsp, [rsp-784]
 	mov rax, rsp
 	add rax, 16
 	mov QWORD PTR [rsp+8], rax
@@ -5258,12 +9601,276 @@ vg_sm4_gcm_stream_decrypt:
 	mov r13, QWORD PTR [r15+152]
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
-	lea rsp, [rsp+2576]
+	lea rsp, [rsp+784]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-4008]
+	movdqu XMMWORD PTR [rsp+3992], xmm0
+	movdqu XMMWORD PTR [rsp+3976], xmm0
+	movdqu XMMWORD PTR [rsp+3960], xmm0
+	movdqu XMMWORD PTR [rsp+3944], xmm0
+	movdqu XMMWORD PTR [rsp+3928], xmm0
+	movdqu XMMWORD PTR [rsp+3912], xmm0
+	movdqu XMMWORD PTR [rsp+3896], xmm0
+	movdqu XMMWORD PTR [rsp+3880], xmm0
+	movdqu XMMWORD PTR [rsp+3864], xmm0
+	movdqu XMMWORD PTR [rsp+3848], xmm0
+	movdqu XMMWORD PTR [rsp+3832], xmm0
+	movdqu XMMWORD PTR [rsp+3816], xmm0
+	movdqu XMMWORD PTR [rsp+3800], xmm0
+	movdqu XMMWORD PTR [rsp+3784], xmm0
+	movdqu XMMWORD PTR [rsp+3768], xmm0
+	movdqu XMMWORD PTR [rsp+3752], xmm0
+	movdqu XMMWORD PTR [rsp+3736], xmm0
+	movdqu XMMWORD PTR [rsp+3720], xmm0
+	movdqu XMMWORD PTR [rsp+3704], xmm0
+	movdqu XMMWORD PTR [rsp+3688], xmm0
+	movdqu XMMWORD PTR [rsp+3672], xmm0
+	movdqu XMMWORD PTR [rsp+3656], xmm0
+	movdqu XMMWORD PTR [rsp+3640], xmm0
+	movdqu XMMWORD PTR [rsp+3624], xmm0
+	movdqu XMMWORD PTR [rsp+3608], xmm0
+	movdqu XMMWORD PTR [rsp+3592], xmm0
+	movdqu XMMWORD PTR [rsp+3576], xmm0
+	movdqu XMMWORD PTR [rsp+3560], xmm0
+	movdqu XMMWORD PTR [rsp+3544], xmm0
+	movdqu XMMWORD PTR [rsp+3528], xmm0
+	movdqu XMMWORD PTR [rsp+3512], xmm0
+	movdqu XMMWORD PTR [rsp+3496], xmm0
+	movdqu XMMWORD PTR [rsp+3480], xmm0
+	movdqu XMMWORD PTR [rsp+3464], xmm0
+	movdqu XMMWORD PTR [rsp+3448], xmm0
+	movdqu XMMWORD PTR [rsp+3432], xmm0
+	movdqu XMMWORD PTR [rsp+3416], xmm0
+	movdqu XMMWORD PTR [rsp+3400], xmm0
+	movdqu XMMWORD PTR [rsp+3384], xmm0
+	movdqu XMMWORD PTR [rsp+3368], xmm0
+	movdqu XMMWORD PTR [rsp+3352], xmm0
+	movdqu XMMWORD PTR [rsp+3336], xmm0
+	movdqu XMMWORD PTR [rsp+3320], xmm0
+	movdqu XMMWORD PTR [rsp+3304], xmm0
+	movdqu XMMWORD PTR [rsp+3288], xmm0
+	movdqu XMMWORD PTR [rsp+3272], xmm0
+	movdqu XMMWORD PTR [rsp+3256], xmm0
+	movdqu XMMWORD PTR [rsp+3240], xmm0
+	movdqu XMMWORD PTR [rsp+3224], xmm0
+	movdqu XMMWORD PTR [rsp+3208], xmm0
+	movdqu XMMWORD PTR [rsp+3192], xmm0
+	movdqu XMMWORD PTR [rsp+3176], xmm0
+	movdqu XMMWORD PTR [rsp+3160], xmm0
+	movdqu XMMWORD PTR [rsp+3144], xmm0
+	movdqu XMMWORD PTR [rsp+3128], xmm0
+	movdqu XMMWORD PTR [rsp+3112], xmm0
+	movdqu XMMWORD PTR [rsp+3096], xmm0
+	movdqu XMMWORD PTR [rsp+3080], xmm0
+	movdqu XMMWORD PTR [rsp+3064], xmm0
+	movdqu XMMWORD PTR [rsp+3048], xmm0
+	movdqu XMMWORD PTR [rsp+3032], xmm0
+	movdqu XMMWORD PTR [rsp+3016], xmm0
+	movdqu XMMWORD PTR [rsp+3000], xmm0
+	movdqu XMMWORD PTR [rsp+2984], xmm0
+	movdqu XMMWORD PTR [rsp+2968], xmm0
+	movdqu XMMWORD PTR [rsp+2952], xmm0
+	movdqu XMMWORD PTR [rsp+2936], xmm0
+	movdqu XMMWORD PTR [rsp+2920], xmm0
+	movdqu XMMWORD PTR [rsp+2904], xmm0
+	movdqu XMMWORD PTR [rsp+2888], xmm0
+	movdqu XMMWORD PTR [rsp+2872], xmm0
+	movdqu XMMWORD PTR [rsp+2856], xmm0
+	movdqu XMMWORD PTR [rsp+2840], xmm0
+	movdqu XMMWORD PTR [rsp+2824], xmm0
+	movdqu XMMWORD PTR [rsp+2808], xmm0
+	movdqu XMMWORD PTR [rsp+2792], xmm0
+	movdqu XMMWORD PTR [rsp+2776], xmm0
+	movdqu XMMWORD PTR [rsp+2760], xmm0
+	movdqu XMMWORD PTR [rsp+2744], xmm0
+	movdqu XMMWORD PTR [rsp+2728], xmm0
+	movdqu XMMWORD PTR [rsp+2712], xmm0
+	movdqu XMMWORD PTR [rsp+2696], xmm0
+	movdqu XMMWORD PTR [rsp+2680], xmm0
+	movdqu XMMWORD PTR [rsp+2664], xmm0
+	movdqu XMMWORD PTR [rsp+2648], xmm0
+	movdqu XMMWORD PTR [rsp+2632], xmm0
+	movdqu XMMWORD PTR [rsp+2616], xmm0
+	movdqu XMMWORD PTR [rsp+2600], xmm0
+	movdqu XMMWORD PTR [rsp+2584], xmm0
+	movdqu XMMWORD PTR [rsp+2568], xmm0
+	movdqu XMMWORD PTR [rsp+2552], xmm0
+	movdqu XMMWORD PTR [rsp+2536], xmm0
+	movdqu XMMWORD PTR [rsp+2520], xmm0
+	movdqu XMMWORD PTR [rsp+2504], xmm0
+	movdqu XMMWORD PTR [rsp+2488], xmm0
+	movdqu XMMWORD PTR [rsp+2472], xmm0
+	movdqu XMMWORD PTR [rsp+2456], xmm0
+	movdqu XMMWORD PTR [rsp+2440], xmm0
+	movdqu XMMWORD PTR [rsp+2424], xmm0
+	movdqu XMMWORD PTR [rsp+2408], xmm0
+	movdqu XMMWORD PTR [rsp+2392], xmm0
+	movdqu XMMWORD PTR [rsp+2376], xmm0
+	movdqu XMMWORD PTR [rsp+2360], xmm0
+	movdqu XMMWORD PTR [rsp+2344], xmm0
+	movdqu XMMWORD PTR [rsp+2328], xmm0
+	movdqu XMMWORD PTR [rsp+2312], xmm0
+	movdqu XMMWORD PTR [rsp+2296], xmm0
+	movdqu XMMWORD PTR [rsp+2280], xmm0
+	movdqu XMMWORD PTR [rsp+2264], xmm0
+	movdqu XMMWORD PTR [rsp+2248], xmm0
+	movdqu XMMWORD PTR [rsp+2232], xmm0
+	movdqu XMMWORD PTR [rsp+2216], xmm0
+	movdqu XMMWORD PTR [rsp+2200], xmm0
+	movdqu XMMWORD PTR [rsp+2184], xmm0
+	movdqu XMMWORD PTR [rsp+2168], xmm0
+	movdqu XMMWORD PTR [rsp+2152], xmm0
+	movdqu XMMWORD PTR [rsp+2136], xmm0
+	movdqu XMMWORD PTR [rsp+2120], xmm0
+	movdqu XMMWORD PTR [rsp+2104], xmm0
+	movdqu XMMWORD PTR [rsp+2088], xmm0
+	movdqu XMMWORD PTR [rsp+2072], xmm0
+	movdqu XMMWORD PTR [rsp+2056], xmm0
+	movdqu XMMWORD PTR [rsp+2040], xmm0
+	movdqu XMMWORD PTR [rsp+2024], xmm0
+	movdqu XMMWORD PTR [rsp+2008], xmm0
+	movdqu XMMWORD PTR [rsp+1992], xmm0
+	movdqu XMMWORD PTR [rsp+1976], xmm0
+	movdqu XMMWORD PTR [rsp+1960], xmm0
+	movdqu XMMWORD PTR [rsp+1944], xmm0
+	movdqu XMMWORD PTR [rsp+1928], xmm0
+	movdqu XMMWORD PTR [rsp+1912], xmm0
+	movdqu XMMWORD PTR [rsp+1896], xmm0
+	movdqu XMMWORD PTR [rsp+1880], xmm0
+	movdqu XMMWORD PTR [rsp+1864], xmm0
+	movdqu XMMWORD PTR [rsp+1848], xmm0
+	movdqu XMMWORD PTR [rsp+1832], xmm0
+	movdqu XMMWORD PTR [rsp+1816], xmm0
+	movdqu XMMWORD PTR [rsp+1800], xmm0
+	movdqu XMMWORD PTR [rsp+1784], xmm0
+	movdqu XMMWORD PTR [rsp+1768], xmm0
+	movdqu XMMWORD PTR [rsp+1752], xmm0
+	movdqu XMMWORD PTR [rsp+1736], xmm0
+	movdqu XMMWORD PTR [rsp+1720], xmm0
+	movdqu XMMWORD PTR [rsp+1704], xmm0
+	movdqu XMMWORD PTR [rsp+1688], xmm0
+	movdqu XMMWORD PTR [rsp+1672], xmm0
+	movdqu XMMWORD PTR [rsp+1656], xmm0
+	movdqu XMMWORD PTR [rsp+1640], xmm0
+	movdqu XMMWORD PTR [rsp+1624], xmm0
+	movdqu XMMWORD PTR [rsp+1608], xmm0
+	movdqu XMMWORD PTR [rsp+1592], xmm0
+	movdqu XMMWORD PTR [rsp+1576], xmm0
+	movdqu XMMWORD PTR [rsp+1560], xmm0
+	movdqu XMMWORD PTR [rsp+1544], xmm0
+	movdqu XMMWORD PTR [rsp+1528], xmm0
+	movdqu XMMWORD PTR [rsp+1512], xmm0
+	movdqu XMMWORD PTR [rsp+1496], xmm0
+	movdqu XMMWORD PTR [rsp+1480], xmm0
+	movdqu XMMWORD PTR [rsp+1464], xmm0
+	movdqu XMMWORD PTR [rsp+1448], xmm0
+	movdqu XMMWORD PTR [rsp+1432], xmm0
+	movdqu XMMWORD PTR [rsp+1416], xmm0
+	movdqu XMMWORD PTR [rsp+1400], xmm0
+	movdqu XMMWORD PTR [rsp+1384], xmm0
+	movdqu XMMWORD PTR [rsp+1368], xmm0
+	movdqu XMMWORD PTR [rsp+1352], xmm0
+	movdqu XMMWORD PTR [rsp+1336], xmm0
+	movdqu XMMWORD PTR [rsp+1320], xmm0
+	movdqu XMMWORD PTR [rsp+1304], xmm0
+	movdqu XMMWORD PTR [rsp+1288], xmm0
+	movdqu XMMWORD PTR [rsp+1272], xmm0
+	movdqu XMMWORD PTR [rsp+1256], xmm0
+	movdqu XMMWORD PTR [rsp+1240], xmm0
+	movdqu XMMWORD PTR [rsp+1224], xmm0
+	movdqu XMMWORD PTR [rsp+1208], xmm0
+	movdqu XMMWORD PTR [rsp+1192], xmm0
+	movdqu XMMWORD PTR [rsp+1176], xmm0
+	movdqu XMMWORD PTR [rsp+1160], xmm0
+	movdqu XMMWORD PTR [rsp+1144], xmm0
+	movdqu XMMWORD PTR [rsp+1128], xmm0
+	movdqu XMMWORD PTR [rsp+1112], xmm0
+	movdqu XMMWORD PTR [rsp+1096], xmm0
+	movdqu XMMWORD PTR [rsp+1080], xmm0
+	movdqu XMMWORD PTR [rsp+1064], xmm0
+	movdqu XMMWORD PTR [rsp+1048], xmm0
+	movdqu XMMWORD PTR [rsp+1032], xmm0
+	movdqu XMMWORD PTR [rsp+1016], xmm0
+	movdqu XMMWORD PTR [rsp+1000], xmm0
+	movdqu XMMWORD PTR [rsp+984], xmm0
+	movdqu XMMWORD PTR [rsp+968], xmm0
+	movdqu XMMWORD PTR [rsp+952], xmm0
+	movdqu XMMWORD PTR [rsp+936], xmm0
+	movdqu XMMWORD PTR [rsp+920], xmm0
+	movdqu XMMWORD PTR [rsp+904], xmm0
+	movdqu XMMWORD PTR [rsp+888], xmm0
+	movdqu XMMWORD PTR [rsp+872], xmm0
+	movdqu XMMWORD PTR [rsp+856], xmm0
+	movdqu XMMWORD PTR [rsp+840], xmm0
+	movdqu XMMWORD PTR [rsp+824], xmm0
+	movdqu XMMWORD PTR [rsp+808], xmm0
+	movdqu XMMWORD PTR [rsp+792], xmm0
+	movdqu XMMWORD PTR [rsp+776], xmm0
+	movdqu XMMWORD PTR [rsp+760], xmm0
+	movdqu XMMWORD PTR [rsp+744], xmm0
+	movdqu XMMWORD PTR [rsp+728], xmm0
+	movdqu XMMWORD PTR [rsp+712], xmm0
+	movdqu XMMWORD PTR [rsp+696], xmm0
+	movdqu XMMWORD PTR [rsp+680], xmm0
+	movdqu XMMWORD PTR [rsp+664], xmm0
+	movdqu XMMWORD PTR [rsp+648], xmm0
+	movdqu XMMWORD PTR [rsp+632], xmm0
+	movdqu XMMWORD PTR [rsp+616], xmm0
+	movdqu XMMWORD PTR [rsp+600], xmm0
+	movdqu XMMWORD PTR [rsp+584], xmm0
+	movdqu XMMWORD PTR [rsp+568], xmm0
+	movdqu XMMWORD PTR [rsp+552], xmm0
+	movdqu XMMWORD PTR [rsp+536], xmm0
+	movdqu XMMWORD PTR [rsp+520], xmm0
+	movdqu XMMWORD PTR [rsp+504], xmm0
+	movdqu XMMWORD PTR [rsp+488], xmm0
+	movdqu XMMWORD PTR [rsp+472], xmm0
+	movdqu XMMWORD PTR [rsp+456], xmm0
+	movdqu XMMWORD PTR [rsp+440], xmm0
+	movdqu XMMWORD PTR [rsp+424], xmm0
+	movdqu XMMWORD PTR [rsp+408], xmm0
+	movdqu XMMWORD PTR [rsp+392], xmm0
+	movdqu XMMWORD PTR [rsp+376], xmm0
+	movdqu XMMWORD PTR [rsp+360], xmm0
+	movdqu XMMWORD PTR [rsp+344], xmm0
+	movdqu XMMWORD PTR [rsp+328], xmm0
+	movdqu XMMWORD PTR [rsp+312], xmm0
+	movdqu XMMWORD PTR [rsp+296], xmm0
+	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
+	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+184], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+4008]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
 vg_sm4_gcm_stream_finish:
-	lea rsp, [rsp-2568]
+	lea rsp, [rsp-776]
 	mov r9, rsp
 	add r9, 8
 	mov QWORD PTR [r9+128], rbx
@@ -5362,12 +9969,275 @@ vg_sm4_gcm_stream_finish:
 	mov r13, QWORD PTR [r15+152]
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
-	lea rsp, [rsp+2568]
+	lea rsp, [rsp+776]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-4000]
+	movdqu XMMWORD PTR [rsp+3984], xmm0
+	movdqu XMMWORD PTR [rsp+3968], xmm0
+	movdqu XMMWORD PTR [rsp+3952], xmm0
+	movdqu XMMWORD PTR [rsp+3936], xmm0
+	movdqu XMMWORD PTR [rsp+3920], xmm0
+	movdqu XMMWORD PTR [rsp+3904], xmm0
+	movdqu XMMWORD PTR [rsp+3888], xmm0
+	movdqu XMMWORD PTR [rsp+3872], xmm0
+	movdqu XMMWORD PTR [rsp+3856], xmm0
+	movdqu XMMWORD PTR [rsp+3840], xmm0
+	movdqu XMMWORD PTR [rsp+3824], xmm0
+	movdqu XMMWORD PTR [rsp+3808], xmm0
+	movdqu XMMWORD PTR [rsp+3792], xmm0
+	movdqu XMMWORD PTR [rsp+3776], xmm0
+	movdqu XMMWORD PTR [rsp+3760], xmm0
+	movdqu XMMWORD PTR [rsp+3744], xmm0
+	movdqu XMMWORD PTR [rsp+3728], xmm0
+	movdqu XMMWORD PTR [rsp+3712], xmm0
+	movdqu XMMWORD PTR [rsp+3696], xmm0
+	movdqu XMMWORD PTR [rsp+3680], xmm0
+	movdqu XMMWORD PTR [rsp+3664], xmm0
+	movdqu XMMWORD PTR [rsp+3648], xmm0
+	movdqu XMMWORD PTR [rsp+3632], xmm0
+	movdqu XMMWORD PTR [rsp+3616], xmm0
+	movdqu XMMWORD PTR [rsp+3600], xmm0
+	movdqu XMMWORD PTR [rsp+3584], xmm0
+	movdqu XMMWORD PTR [rsp+3568], xmm0
+	movdqu XMMWORD PTR [rsp+3552], xmm0
+	movdqu XMMWORD PTR [rsp+3536], xmm0
+	movdqu XMMWORD PTR [rsp+3520], xmm0
+	movdqu XMMWORD PTR [rsp+3504], xmm0
+	movdqu XMMWORD PTR [rsp+3488], xmm0
+	movdqu XMMWORD PTR [rsp+3472], xmm0
+	movdqu XMMWORD PTR [rsp+3456], xmm0
+	movdqu XMMWORD PTR [rsp+3440], xmm0
+	movdqu XMMWORD PTR [rsp+3424], xmm0
+	movdqu XMMWORD PTR [rsp+3408], xmm0
+	movdqu XMMWORD PTR [rsp+3392], xmm0
+	movdqu XMMWORD PTR [rsp+3376], xmm0
+	movdqu XMMWORD PTR [rsp+3360], xmm0
+	movdqu XMMWORD PTR [rsp+3344], xmm0
+	movdqu XMMWORD PTR [rsp+3328], xmm0
+	movdqu XMMWORD PTR [rsp+3312], xmm0
+	movdqu XMMWORD PTR [rsp+3296], xmm0
+	movdqu XMMWORD PTR [rsp+3280], xmm0
+	movdqu XMMWORD PTR [rsp+3264], xmm0
+	movdqu XMMWORD PTR [rsp+3248], xmm0
+	movdqu XMMWORD PTR [rsp+3232], xmm0
+	movdqu XMMWORD PTR [rsp+3216], xmm0
+	movdqu XMMWORD PTR [rsp+3200], xmm0
+	movdqu XMMWORD PTR [rsp+3184], xmm0
+	movdqu XMMWORD PTR [rsp+3168], xmm0
+	movdqu XMMWORD PTR [rsp+3152], xmm0
+	movdqu XMMWORD PTR [rsp+3136], xmm0
+	movdqu XMMWORD PTR [rsp+3120], xmm0
+	movdqu XMMWORD PTR [rsp+3104], xmm0
+	movdqu XMMWORD PTR [rsp+3088], xmm0
+	movdqu XMMWORD PTR [rsp+3072], xmm0
+	movdqu XMMWORD PTR [rsp+3056], xmm0
+	movdqu XMMWORD PTR [rsp+3040], xmm0
+	movdqu XMMWORD PTR [rsp+3024], xmm0
+	movdqu XMMWORD PTR [rsp+3008], xmm0
+	movdqu XMMWORD PTR [rsp+2992], xmm0
+	movdqu XMMWORD PTR [rsp+2976], xmm0
+	movdqu XMMWORD PTR [rsp+2960], xmm0
+	movdqu XMMWORD PTR [rsp+2944], xmm0
+	movdqu XMMWORD PTR [rsp+2928], xmm0
+	movdqu XMMWORD PTR [rsp+2912], xmm0
+	movdqu XMMWORD PTR [rsp+2896], xmm0
+	movdqu XMMWORD PTR [rsp+2880], xmm0
+	movdqu XMMWORD PTR [rsp+2864], xmm0
+	movdqu XMMWORD PTR [rsp+2848], xmm0
+	movdqu XMMWORD PTR [rsp+2832], xmm0
+	movdqu XMMWORD PTR [rsp+2816], xmm0
+	movdqu XMMWORD PTR [rsp+2800], xmm0
+	movdqu XMMWORD PTR [rsp+2784], xmm0
+	movdqu XMMWORD PTR [rsp+2768], xmm0
+	movdqu XMMWORD PTR [rsp+2752], xmm0
+	movdqu XMMWORD PTR [rsp+2736], xmm0
+	movdqu XMMWORD PTR [rsp+2720], xmm0
+	movdqu XMMWORD PTR [rsp+2704], xmm0
+	movdqu XMMWORD PTR [rsp+2688], xmm0
+	movdqu XMMWORD PTR [rsp+2672], xmm0
+	movdqu XMMWORD PTR [rsp+2656], xmm0
+	movdqu XMMWORD PTR [rsp+2640], xmm0
+	movdqu XMMWORD PTR [rsp+2624], xmm0
+	movdqu XMMWORD PTR [rsp+2608], xmm0
+	movdqu XMMWORD PTR [rsp+2592], xmm0
+	movdqu XMMWORD PTR [rsp+2576], xmm0
+	movdqu XMMWORD PTR [rsp+2560], xmm0
+	movdqu XMMWORD PTR [rsp+2544], xmm0
+	movdqu XMMWORD PTR [rsp+2528], xmm0
+	movdqu XMMWORD PTR [rsp+2512], xmm0
+	movdqu XMMWORD PTR [rsp+2496], xmm0
+	movdqu XMMWORD PTR [rsp+2480], xmm0
+	movdqu XMMWORD PTR [rsp+2464], xmm0
+	movdqu XMMWORD PTR [rsp+2448], xmm0
+	movdqu XMMWORD PTR [rsp+2432], xmm0
+	movdqu XMMWORD PTR [rsp+2416], xmm0
+	movdqu XMMWORD PTR [rsp+2400], xmm0
+	movdqu XMMWORD PTR [rsp+2384], xmm0
+	movdqu XMMWORD PTR [rsp+2368], xmm0
+	movdqu XMMWORD PTR [rsp+2352], xmm0
+	movdqu XMMWORD PTR [rsp+2336], xmm0
+	movdqu XMMWORD PTR [rsp+2320], xmm0
+	movdqu XMMWORD PTR [rsp+2304], xmm0
+	movdqu XMMWORD PTR [rsp+2288], xmm0
+	movdqu XMMWORD PTR [rsp+2272], xmm0
+	movdqu XMMWORD PTR [rsp+2256], xmm0
+	movdqu XMMWORD PTR [rsp+2240], xmm0
+	movdqu XMMWORD PTR [rsp+2224], xmm0
+	movdqu XMMWORD PTR [rsp+2208], xmm0
+	movdqu XMMWORD PTR [rsp+2192], xmm0
+	movdqu XMMWORD PTR [rsp+2176], xmm0
+	movdqu XMMWORD PTR [rsp+2160], xmm0
+	movdqu XMMWORD PTR [rsp+2144], xmm0
+	movdqu XMMWORD PTR [rsp+2128], xmm0
+	movdqu XMMWORD PTR [rsp+2112], xmm0
+	movdqu XMMWORD PTR [rsp+2096], xmm0
+	movdqu XMMWORD PTR [rsp+2080], xmm0
+	movdqu XMMWORD PTR [rsp+2064], xmm0
+	movdqu XMMWORD PTR [rsp+2048], xmm0
+	movdqu XMMWORD PTR [rsp+2032], xmm0
+	movdqu XMMWORD PTR [rsp+2016], xmm0
+	movdqu XMMWORD PTR [rsp+2000], xmm0
+	movdqu XMMWORD PTR [rsp+1984], xmm0
+	movdqu XMMWORD PTR [rsp+1968], xmm0
+	movdqu XMMWORD PTR [rsp+1952], xmm0
+	movdqu XMMWORD PTR [rsp+1936], xmm0
+	movdqu XMMWORD PTR [rsp+1920], xmm0
+	movdqu XMMWORD PTR [rsp+1904], xmm0
+	movdqu XMMWORD PTR [rsp+1888], xmm0
+	movdqu XMMWORD PTR [rsp+1872], xmm0
+	movdqu XMMWORD PTR [rsp+1856], xmm0
+	movdqu XMMWORD PTR [rsp+1840], xmm0
+	movdqu XMMWORD PTR [rsp+1824], xmm0
+	movdqu XMMWORD PTR [rsp+1808], xmm0
+	movdqu XMMWORD PTR [rsp+1792], xmm0
+	movdqu XMMWORD PTR [rsp+1776], xmm0
+	movdqu XMMWORD PTR [rsp+1760], xmm0
+	movdqu XMMWORD PTR [rsp+1744], xmm0
+	movdqu XMMWORD PTR [rsp+1728], xmm0
+	movdqu XMMWORD PTR [rsp+1712], xmm0
+	movdqu XMMWORD PTR [rsp+1696], xmm0
+	movdqu XMMWORD PTR [rsp+1680], xmm0
+	movdqu XMMWORD PTR [rsp+1664], xmm0
+	movdqu XMMWORD PTR [rsp+1648], xmm0
+	movdqu XMMWORD PTR [rsp+1632], xmm0
+	movdqu XMMWORD PTR [rsp+1616], xmm0
+	movdqu XMMWORD PTR [rsp+1600], xmm0
+	movdqu XMMWORD PTR [rsp+1584], xmm0
+	movdqu XMMWORD PTR [rsp+1568], xmm0
+	movdqu XMMWORD PTR [rsp+1552], xmm0
+	movdqu XMMWORD PTR [rsp+1536], xmm0
+	movdqu XMMWORD PTR [rsp+1520], xmm0
+	movdqu XMMWORD PTR [rsp+1504], xmm0
+	movdqu XMMWORD PTR [rsp+1488], xmm0
+	movdqu XMMWORD PTR [rsp+1472], xmm0
+	movdqu XMMWORD PTR [rsp+1456], xmm0
+	movdqu XMMWORD PTR [rsp+1440], xmm0
+	movdqu XMMWORD PTR [rsp+1424], xmm0
+	movdqu XMMWORD PTR [rsp+1408], xmm0
+	movdqu XMMWORD PTR [rsp+1392], xmm0
+	movdqu XMMWORD PTR [rsp+1376], xmm0
+	movdqu XMMWORD PTR [rsp+1360], xmm0
+	movdqu XMMWORD PTR [rsp+1344], xmm0
+	movdqu XMMWORD PTR [rsp+1328], xmm0
+	movdqu XMMWORD PTR [rsp+1312], xmm0
+	movdqu XMMWORD PTR [rsp+1296], xmm0
+	movdqu XMMWORD PTR [rsp+1280], xmm0
+	movdqu XMMWORD PTR [rsp+1264], xmm0
+	movdqu XMMWORD PTR [rsp+1248], xmm0
+	movdqu XMMWORD PTR [rsp+1232], xmm0
+	movdqu XMMWORD PTR [rsp+1216], xmm0
+	movdqu XMMWORD PTR [rsp+1200], xmm0
+	movdqu XMMWORD PTR [rsp+1184], xmm0
+	movdqu XMMWORD PTR [rsp+1168], xmm0
+	movdqu XMMWORD PTR [rsp+1152], xmm0
+	movdqu XMMWORD PTR [rsp+1136], xmm0
+	movdqu XMMWORD PTR [rsp+1120], xmm0
+	movdqu XMMWORD PTR [rsp+1104], xmm0
+	movdqu XMMWORD PTR [rsp+1088], xmm0
+	movdqu XMMWORD PTR [rsp+1072], xmm0
+	movdqu XMMWORD PTR [rsp+1056], xmm0
+	movdqu XMMWORD PTR [rsp+1040], xmm0
+	movdqu XMMWORD PTR [rsp+1024], xmm0
+	movdqu XMMWORD PTR [rsp+1008], xmm0
+	movdqu XMMWORD PTR [rsp+992], xmm0
+	movdqu XMMWORD PTR [rsp+976], xmm0
+	movdqu XMMWORD PTR [rsp+960], xmm0
+	movdqu XMMWORD PTR [rsp+944], xmm0
+	movdqu XMMWORD PTR [rsp+928], xmm0
+	movdqu XMMWORD PTR [rsp+912], xmm0
+	movdqu XMMWORD PTR [rsp+896], xmm0
+	movdqu XMMWORD PTR [rsp+880], xmm0
+	movdqu XMMWORD PTR [rsp+864], xmm0
+	movdqu XMMWORD PTR [rsp+848], xmm0
+	movdqu XMMWORD PTR [rsp+832], xmm0
+	movdqu XMMWORD PTR [rsp+816], xmm0
+	movdqu XMMWORD PTR [rsp+800], xmm0
+	movdqu XMMWORD PTR [rsp+784], xmm0
+	movdqu XMMWORD PTR [rsp+768], xmm0
+	movdqu XMMWORD PTR [rsp+752], xmm0
+	movdqu XMMWORD PTR [rsp+736], xmm0
+	movdqu XMMWORD PTR [rsp+720], xmm0
+	movdqu XMMWORD PTR [rsp+704], xmm0
+	movdqu XMMWORD PTR [rsp+688], xmm0
+	movdqu XMMWORD PTR [rsp+672], xmm0
+	movdqu XMMWORD PTR [rsp+656], xmm0
+	movdqu XMMWORD PTR [rsp+640], xmm0
+	movdqu XMMWORD PTR [rsp+624], xmm0
+	movdqu XMMWORD PTR [rsp+608], xmm0
+	movdqu XMMWORD PTR [rsp+592], xmm0
+	movdqu XMMWORD PTR [rsp+576], xmm0
+	movdqu XMMWORD PTR [rsp+560], xmm0
+	movdqu XMMWORD PTR [rsp+544], xmm0
+	movdqu XMMWORD PTR [rsp+528], xmm0
+	movdqu XMMWORD PTR [rsp+512], xmm0
+	movdqu XMMWORD PTR [rsp+496], xmm0
+	movdqu XMMWORD PTR [rsp+480], xmm0
+	movdqu XMMWORD PTR [rsp+464], xmm0
+	movdqu XMMWORD PTR [rsp+448], xmm0
+	movdqu XMMWORD PTR [rsp+432], xmm0
+	movdqu XMMWORD PTR [rsp+416], xmm0
+	movdqu XMMWORD PTR [rsp+400], xmm0
+	movdqu XMMWORD PTR [rsp+384], xmm0
+	movdqu XMMWORD PTR [rsp+368], xmm0
+	movdqu XMMWORD PTR [rsp+352], xmm0
+	movdqu XMMWORD PTR [rsp+336], xmm0
+	movdqu XMMWORD PTR [rsp+320], xmm0
+	movdqu XMMWORD PTR [rsp+304], xmm0
+	movdqu XMMWORD PTR [rsp+288], xmm0
+	movdqu XMMWORD PTR [rsp+272], xmm0
+	movdqu XMMWORD PTR [rsp+256], xmm0
+	movdqu XMMWORD PTR [rsp+240], xmm0
+	movdqu XMMWORD PTR [rsp+224], xmm0
+	movdqu XMMWORD PTR [rsp+208], xmm0
+	movdqu XMMWORD PTR [rsp+192], xmm0
+	movdqu XMMWORD PTR [rsp+176], xmm0
+	movdqu XMMWORD PTR [rsp+160], xmm0
+	movdqu XMMWORD PTR [rsp+144], xmm0
+	movdqu XMMWORD PTR [rsp+128], xmm0
+	movdqu XMMWORD PTR [rsp+112], xmm0
+	movdqu XMMWORD PTR [rsp+96], xmm0
+	movdqu XMMWORD PTR [rsp+80], xmm0
+	movdqu XMMWORD PTR [rsp+64], xmm0
+	movdqu XMMWORD PTR [rsp+48], xmm0
+	movdqu XMMWORD PTR [rsp+32], xmm0
+	movdqu XMMWORD PTR [rsp+16], xmm0
+	movdqu XMMWORD PTR [rsp], xmm0
+	lea rsp, [rsp+4000]
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6
 
 vg_sm4_gcm_stream_verify:
-	lea rsp, [rsp-2576]
+	lea rsp, [rsp-784]
 	mov rax, rsp
 	add rax, 16
 	mov QWORD PTR [rsp+8], rax
@@ -5538,6 +10408,270 @@ vg_sm4_gcm_stream_verify:
 	mov r13, QWORD PTR [r15+152]
 	mov r14, QWORD PTR [r15+160]
 	mov r15, QWORD PTR [r15+168]
-	lea rsp, [rsp+2576]
+	lea rsp, [rsp+784]
+	pxor xmm0, xmm0
+	xor r11d, r11d
+	lea rsp, [rsp-4008]
+	movdqu XMMWORD PTR [rsp+3992], xmm0
+	movdqu XMMWORD PTR [rsp+3976], xmm0
+	movdqu XMMWORD PTR [rsp+3960], xmm0
+	movdqu XMMWORD PTR [rsp+3944], xmm0
+	movdqu XMMWORD PTR [rsp+3928], xmm0
+	movdqu XMMWORD PTR [rsp+3912], xmm0
+	movdqu XMMWORD PTR [rsp+3896], xmm0
+	movdqu XMMWORD PTR [rsp+3880], xmm0
+	movdqu XMMWORD PTR [rsp+3864], xmm0
+	movdqu XMMWORD PTR [rsp+3848], xmm0
+	movdqu XMMWORD PTR [rsp+3832], xmm0
+	movdqu XMMWORD PTR [rsp+3816], xmm0
+	movdqu XMMWORD PTR [rsp+3800], xmm0
+	movdqu XMMWORD PTR [rsp+3784], xmm0
+	movdqu XMMWORD PTR [rsp+3768], xmm0
+	movdqu XMMWORD PTR [rsp+3752], xmm0
+	movdqu XMMWORD PTR [rsp+3736], xmm0
+	movdqu XMMWORD PTR [rsp+3720], xmm0
+	movdqu XMMWORD PTR [rsp+3704], xmm0
+	movdqu XMMWORD PTR [rsp+3688], xmm0
+	movdqu XMMWORD PTR [rsp+3672], xmm0
+	movdqu XMMWORD PTR [rsp+3656], xmm0
+	movdqu XMMWORD PTR [rsp+3640], xmm0
+	movdqu XMMWORD PTR [rsp+3624], xmm0
+	movdqu XMMWORD PTR [rsp+3608], xmm0
+	movdqu XMMWORD PTR [rsp+3592], xmm0
+	movdqu XMMWORD PTR [rsp+3576], xmm0
+	movdqu XMMWORD PTR [rsp+3560], xmm0
+	movdqu XMMWORD PTR [rsp+3544], xmm0
+	movdqu XMMWORD PTR [rsp+3528], xmm0
+	movdqu XMMWORD PTR [rsp+3512], xmm0
+	movdqu XMMWORD PTR [rsp+3496], xmm0
+	movdqu XMMWORD PTR [rsp+3480], xmm0
+	movdqu XMMWORD PTR [rsp+3464], xmm0
+	movdqu XMMWORD PTR [rsp+3448], xmm0
+	movdqu XMMWORD PTR [rsp+3432], xmm0
+	movdqu XMMWORD PTR [rsp+3416], xmm0
+	movdqu XMMWORD PTR [rsp+3400], xmm0
+	movdqu XMMWORD PTR [rsp+3384], xmm0
+	movdqu XMMWORD PTR [rsp+3368], xmm0
+	movdqu XMMWORD PTR [rsp+3352], xmm0
+	movdqu XMMWORD PTR [rsp+3336], xmm0
+	movdqu XMMWORD PTR [rsp+3320], xmm0
+	movdqu XMMWORD PTR [rsp+3304], xmm0
+	movdqu XMMWORD PTR [rsp+3288], xmm0
+	movdqu XMMWORD PTR [rsp+3272], xmm0
+	movdqu XMMWORD PTR [rsp+3256], xmm0
+	movdqu XMMWORD PTR [rsp+3240], xmm0
+	movdqu XMMWORD PTR [rsp+3224], xmm0
+	movdqu XMMWORD PTR [rsp+3208], xmm0
+	movdqu XMMWORD PTR [rsp+3192], xmm0
+	movdqu XMMWORD PTR [rsp+3176], xmm0
+	movdqu XMMWORD PTR [rsp+3160], xmm0
+	movdqu XMMWORD PTR [rsp+3144], xmm0
+	movdqu XMMWORD PTR [rsp+3128], xmm0
+	movdqu XMMWORD PTR [rsp+3112], xmm0
+	movdqu XMMWORD PTR [rsp+3096], xmm0
+	movdqu XMMWORD PTR [rsp+3080], xmm0
+	movdqu XMMWORD PTR [rsp+3064], xmm0
+	movdqu XMMWORD PTR [rsp+3048], xmm0
+	movdqu XMMWORD PTR [rsp+3032], xmm0
+	movdqu XMMWORD PTR [rsp+3016], xmm0
+	movdqu XMMWORD PTR [rsp+3000], xmm0
+	movdqu XMMWORD PTR [rsp+2984], xmm0
+	movdqu XMMWORD PTR [rsp+2968], xmm0
+	movdqu XMMWORD PTR [rsp+2952], xmm0
+	movdqu XMMWORD PTR [rsp+2936], xmm0
+	movdqu XMMWORD PTR [rsp+2920], xmm0
+	movdqu XMMWORD PTR [rsp+2904], xmm0
+	movdqu XMMWORD PTR [rsp+2888], xmm0
+	movdqu XMMWORD PTR [rsp+2872], xmm0
+	movdqu XMMWORD PTR [rsp+2856], xmm0
+	movdqu XMMWORD PTR [rsp+2840], xmm0
+	movdqu XMMWORD PTR [rsp+2824], xmm0
+	movdqu XMMWORD PTR [rsp+2808], xmm0
+	movdqu XMMWORD PTR [rsp+2792], xmm0
+	movdqu XMMWORD PTR [rsp+2776], xmm0
+	movdqu XMMWORD PTR [rsp+2760], xmm0
+	movdqu XMMWORD PTR [rsp+2744], xmm0
+	movdqu XMMWORD PTR [rsp+2728], xmm0
+	movdqu XMMWORD PTR [rsp+2712], xmm0
+	movdqu XMMWORD PTR [rsp+2696], xmm0
+	movdqu XMMWORD PTR [rsp+2680], xmm0
+	movdqu XMMWORD PTR [rsp+2664], xmm0
+	movdqu XMMWORD PTR [rsp+2648], xmm0
+	movdqu XMMWORD PTR [rsp+2632], xmm0
+	movdqu XMMWORD PTR [rsp+2616], xmm0
+	movdqu XMMWORD PTR [rsp+2600], xmm0
+	movdqu XMMWORD PTR [rsp+2584], xmm0
+	movdqu XMMWORD PTR [rsp+2568], xmm0
+	movdqu XMMWORD PTR [rsp+2552], xmm0
+	movdqu XMMWORD PTR [rsp+2536], xmm0
+	movdqu XMMWORD PTR [rsp+2520], xmm0
+	movdqu XMMWORD PTR [rsp+2504], xmm0
+	movdqu XMMWORD PTR [rsp+2488], xmm0
+	movdqu XMMWORD PTR [rsp+2472], xmm0
+	movdqu XMMWORD PTR [rsp+2456], xmm0
+	movdqu XMMWORD PTR [rsp+2440], xmm0
+	movdqu XMMWORD PTR [rsp+2424], xmm0
+	movdqu XMMWORD PTR [rsp+2408], xmm0
+	movdqu XMMWORD PTR [rsp+2392], xmm0
+	movdqu XMMWORD PTR [rsp+2376], xmm0
+	movdqu XMMWORD PTR [rsp+2360], xmm0
+	movdqu XMMWORD PTR [rsp+2344], xmm0
+	movdqu XMMWORD PTR [rsp+2328], xmm0
+	movdqu XMMWORD PTR [rsp+2312], xmm0
+	movdqu XMMWORD PTR [rsp+2296], xmm0
+	movdqu XMMWORD PTR [rsp+2280], xmm0
+	movdqu XMMWORD PTR [rsp+2264], xmm0
+	movdqu XMMWORD PTR [rsp+2248], xmm0
+	movdqu XMMWORD PTR [rsp+2232], xmm0
+	movdqu XMMWORD PTR [rsp+2216], xmm0
+	movdqu XMMWORD PTR [rsp+2200], xmm0
+	movdqu XMMWORD PTR [rsp+2184], xmm0
+	movdqu XMMWORD PTR [rsp+2168], xmm0
+	movdqu XMMWORD PTR [rsp+2152], xmm0
+	movdqu XMMWORD PTR [rsp+2136], xmm0
+	movdqu XMMWORD PTR [rsp+2120], xmm0
+	movdqu XMMWORD PTR [rsp+2104], xmm0
+	movdqu XMMWORD PTR [rsp+2088], xmm0
+	movdqu XMMWORD PTR [rsp+2072], xmm0
+	movdqu XMMWORD PTR [rsp+2056], xmm0
+	movdqu XMMWORD PTR [rsp+2040], xmm0
+	movdqu XMMWORD PTR [rsp+2024], xmm0
+	movdqu XMMWORD PTR [rsp+2008], xmm0
+	movdqu XMMWORD PTR [rsp+1992], xmm0
+	movdqu XMMWORD PTR [rsp+1976], xmm0
+	movdqu XMMWORD PTR [rsp+1960], xmm0
+	movdqu XMMWORD PTR [rsp+1944], xmm0
+	movdqu XMMWORD PTR [rsp+1928], xmm0
+	movdqu XMMWORD PTR [rsp+1912], xmm0
+	movdqu XMMWORD PTR [rsp+1896], xmm0
+	movdqu XMMWORD PTR [rsp+1880], xmm0
+	movdqu XMMWORD PTR [rsp+1864], xmm0
+	movdqu XMMWORD PTR [rsp+1848], xmm0
+	movdqu XMMWORD PTR [rsp+1832], xmm0
+	movdqu XMMWORD PTR [rsp+1816], xmm0
+	movdqu XMMWORD PTR [rsp+1800], xmm0
+	movdqu XMMWORD PTR [rsp+1784], xmm0
+	movdqu XMMWORD PTR [rsp+1768], xmm0
+	movdqu XMMWORD PTR [rsp+1752], xmm0
+	movdqu XMMWORD PTR [rsp+1736], xmm0
+	movdqu XMMWORD PTR [rsp+1720], xmm0
+	movdqu XMMWORD PTR [rsp+1704], xmm0
+	movdqu XMMWORD PTR [rsp+1688], xmm0
+	movdqu XMMWORD PTR [rsp+1672], xmm0
+	movdqu XMMWORD PTR [rsp+1656], xmm0
+	movdqu XMMWORD PTR [rsp+1640], xmm0
+	movdqu XMMWORD PTR [rsp+1624], xmm0
+	movdqu XMMWORD PTR [rsp+1608], xmm0
+	movdqu XMMWORD PTR [rsp+1592], xmm0
+	movdqu XMMWORD PTR [rsp+1576], xmm0
+	movdqu XMMWORD PTR [rsp+1560], xmm0
+	movdqu XMMWORD PTR [rsp+1544], xmm0
+	movdqu XMMWORD PTR [rsp+1528], xmm0
+	movdqu XMMWORD PTR [rsp+1512], xmm0
+	movdqu XMMWORD PTR [rsp+1496], xmm0
+	movdqu XMMWORD PTR [rsp+1480], xmm0
+	movdqu XMMWORD PTR [rsp+1464], xmm0
+	movdqu XMMWORD PTR [rsp+1448], xmm0
+	movdqu XMMWORD PTR [rsp+1432], xmm0
+	movdqu XMMWORD PTR [rsp+1416], xmm0
+	movdqu XMMWORD PTR [rsp+1400], xmm0
+	movdqu XMMWORD PTR [rsp+1384], xmm0
+	movdqu XMMWORD PTR [rsp+1368], xmm0
+	movdqu XMMWORD PTR [rsp+1352], xmm0
+	movdqu XMMWORD PTR [rsp+1336], xmm0
+	movdqu XMMWORD PTR [rsp+1320], xmm0
+	movdqu XMMWORD PTR [rsp+1304], xmm0
+	movdqu XMMWORD PTR [rsp+1288], xmm0
+	movdqu XMMWORD PTR [rsp+1272], xmm0
+	movdqu XMMWORD PTR [rsp+1256], xmm0
+	movdqu XMMWORD PTR [rsp+1240], xmm0
+	movdqu XMMWORD PTR [rsp+1224], xmm0
+	movdqu XMMWORD PTR [rsp+1208], xmm0
+	movdqu XMMWORD PTR [rsp+1192], xmm0
+	movdqu XMMWORD PTR [rsp+1176], xmm0
+	movdqu XMMWORD PTR [rsp+1160], xmm0
+	movdqu XMMWORD PTR [rsp+1144], xmm0
+	movdqu XMMWORD PTR [rsp+1128], xmm0
+	movdqu XMMWORD PTR [rsp+1112], xmm0
+	movdqu XMMWORD PTR [rsp+1096], xmm0
+	movdqu XMMWORD PTR [rsp+1080], xmm0
+	movdqu XMMWORD PTR [rsp+1064], xmm0
+	movdqu XMMWORD PTR [rsp+1048], xmm0
+	movdqu XMMWORD PTR [rsp+1032], xmm0
+	movdqu XMMWORD PTR [rsp+1016], xmm0
+	movdqu XMMWORD PTR [rsp+1000], xmm0
+	movdqu XMMWORD PTR [rsp+984], xmm0
+	movdqu XMMWORD PTR [rsp+968], xmm0
+	movdqu XMMWORD PTR [rsp+952], xmm0
+	movdqu XMMWORD PTR [rsp+936], xmm0
+	movdqu XMMWORD PTR [rsp+920], xmm0
+	movdqu XMMWORD PTR [rsp+904], xmm0
+	movdqu XMMWORD PTR [rsp+888], xmm0
+	movdqu XMMWORD PTR [rsp+872], xmm0
+	movdqu XMMWORD PTR [rsp+856], xmm0
+	movdqu XMMWORD PTR [rsp+840], xmm0
+	movdqu XMMWORD PTR [rsp+824], xmm0
+	movdqu XMMWORD PTR [rsp+808], xmm0
+	movdqu XMMWORD PTR [rsp+792], xmm0
+	movdqu XMMWORD PTR [rsp+776], xmm0
+	movdqu XMMWORD PTR [rsp+760], xmm0
+	movdqu XMMWORD PTR [rsp+744], xmm0
+	movdqu XMMWORD PTR [rsp+728], xmm0
+	movdqu XMMWORD PTR [rsp+712], xmm0
+	movdqu XMMWORD PTR [rsp+696], xmm0
+	movdqu XMMWORD PTR [rsp+680], xmm0
+	movdqu XMMWORD PTR [rsp+664], xmm0
+	movdqu XMMWORD PTR [rsp+648], xmm0
+	movdqu XMMWORD PTR [rsp+632], xmm0
+	movdqu XMMWORD PTR [rsp+616], xmm0
+	movdqu XMMWORD PTR [rsp+600], xmm0
+	movdqu XMMWORD PTR [rsp+584], xmm0
+	movdqu XMMWORD PTR [rsp+568], xmm0
+	movdqu XMMWORD PTR [rsp+552], xmm0
+	movdqu XMMWORD PTR [rsp+536], xmm0
+	movdqu XMMWORD PTR [rsp+520], xmm0
+	movdqu XMMWORD PTR [rsp+504], xmm0
+	movdqu XMMWORD PTR [rsp+488], xmm0
+	movdqu XMMWORD PTR [rsp+472], xmm0
+	movdqu XMMWORD PTR [rsp+456], xmm0
+	movdqu XMMWORD PTR [rsp+440], xmm0
+	movdqu XMMWORD PTR [rsp+424], xmm0
+	movdqu XMMWORD PTR [rsp+408], xmm0
+	movdqu XMMWORD PTR [rsp+392], xmm0
+	movdqu XMMWORD PTR [rsp+376], xmm0
+	movdqu XMMWORD PTR [rsp+360], xmm0
+	movdqu XMMWORD PTR [rsp+344], xmm0
+	movdqu XMMWORD PTR [rsp+328], xmm0
+	movdqu XMMWORD PTR [rsp+312], xmm0
+	movdqu XMMWORD PTR [rsp+296], xmm0
+	movdqu XMMWORD PTR [rsp+280], xmm0
+	movdqu XMMWORD PTR [rsp+264], xmm0
+	movdqu XMMWORD PTR [rsp+248], xmm0
+	movdqu XMMWORD PTR [rsp+232], xmm0
+	movdqu XMMWORD PTR [rsp+216], xmm0
+	movdqu XMMWORD PTR [rsp+200], xmm0
+	movdqu XMMWORD PTR [rsp+184], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
+	movdqu XMMWORD PTR [rsp+88], xmm0
+	movdqu XMMWORD PTR [rsp+72], xmm0
+	movdqu XMMWORD PTR [rsp+56], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
+	movdqu XMMWORD PTR [rsp+8], xmm0
+	mov QWORD PTR [rsp], r11
+	lea rsp, [rsp+4008]
+	mov eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 	.p2align 6

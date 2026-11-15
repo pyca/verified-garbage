@@ -183,13 +183,6 @@ vg_x25519_ifma:
 	vmovdqu YMMWORD PTR [rdi+2080], ymm11
 	vmovdqu YMMWORD PTR [rdi+1920], ymm12
 	vpblendd ymm4, ymm12, ymm4, 48
-	stmxcsr DWORD PTR [rdi+2208]
-	mov r11d, DWORD PTR [rdi+2208]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rdi+2212], eax
-	ldmxcsr DWORD PTR [rdi+2212]
-	lfence
 	mov ebx, 255
 21:
 	sub rbx, 1
@@ -783,9 +776,6 @@ vg_x25519_ifma:
 	vmovdqu YMMWORD PTR [rdi+160], ymm7
 	vmovdqu YMMWORD PTR [rdi+192], ymm8
 	vzeroupper
-	lfence
-	mov DWORD PTR [rdi+2208], r11d
-	ldmxcsr DWORD PTR [rdi+2208]
 	mov rdx, QWORD PTR [rdi+640]
 	mov ecx, 0
 	sub rcx, rdx

@@ -843,9 +843,11 @@ theorem sealM_leaves_wp (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn
     {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8)}
     (hL : BlkLeft Lb B.enc.code M) (gf : GhashFree v.gh.fn.code) (cf : Proof.Aes.X86_64.Ctr32Free v.ctr.callee)
     {s : State} (hp : (Proof.AesGcm.sealX86_64M M).pre s) :
-    WP isa («seal» (v.withBlk B)) s fun s' => ∀ x,
+    WP isa («seal» (v.withBlk B)) s fun s' => (∀ x,
       (⟨stackArg s 3 + BitVec.ofNat 64 96, 2464⟩ : Region).Contains x 1 →
-        s'.mem x = (sealL Lb s.gpr (fun i => stackArg s i) x).getD (s.mem x) := by
+        s'.mem x = (sealL Lb s.gpr (fun i => stackArg s i) x).getD (s.mem x)) ∧
+      Frame [⟨stackArg s 3, 2560⟩, ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArg s 2, 16⟩, below (s.gpr .rsp) 24]
+        s.mem s'.mem := by
   refine WP.reassoc_seal' ?_
   have X := CtxExt.ofSeal hp.1 hp.2
   obtain ⟨C, hTw, d_td, d_tw, r_t⟩ := OneCtx.ofSeal hp.1 M.ge
@@ -900,7 +902,15 @@ theorem sealM_leaves_wp (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn
     rw [ret_kept f₅ r₅, ret_kept SL.frame r₄, ret_kept fE r₁]
   refine WP.mono (exit_ok (s₀ := s) he₅.r15 he₅.rsp (covers_left he₅.perm.w) hsv₅ hret) fun s' ⟨_, hm, _⟩ => ?_
   rw [hm]
-  exact seal_final C rfl rfl rfl rfl rfl rfl E fE SL f₅ d_tw
+  refine ⟨seal_final C rfl rfl rfl rfl rfl rfl E fE SL f₅ d_tw, ?_⟩
+  refine ((fE.sub fun r hr => ?_).trans (SL.frame.sub fun r hr => ?_)).trans (f₅.sub fun r hr => ?_)
+  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> exact ⟨_, List.mem_cons_self .., Lay.wSub (by decide)⟩
+  · rcases leftF_sub r hr with h | h | h
+    · exact ⟨_, List.mem_cons_self .., h⟩
+    · exact ⟨_, by simp, h⟩
+    · exact ⟨_, by simp, h⟩
+  · simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
 
 
 /-- `sealWord` reads no register but those it names, and no stack argument
@@ -940,6 +950,23 @@ theorem seal_leaves (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) 
       ∀ s t s', (Proof.AesGcm.sealX86_64M M).pre s → Exec isa («seal» (v.withBlk B)) s t s' →
         ∀ x, (⟨stackArg s 3 + BitVec.ofNat 64 96, 2464⟩ : Region).Contains x 1 →
           s'.mem x = (sealL Lb s.gpr (fun i => stackArg s i) x).getD (s.mem x) := by
+  obtain ⟨Lb, hL⟩ := hB
+  refine ⟨Lb, fun s t s' hp he => ?_⟩
+  obtain ⟨_, s'', he', h⟩ := sealM_leaves_wp v B hL gf cf hp
+  obtain ⟨_, rfl⟩ := Exec.det he he'
+  exact h.1
+
+/-- `seal_leaves`, and what `seal` writes: `work`, the data, the tag and the
+stack below `rsp`. -/
+theorem seal_leavesF (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) (hB : BlkLeaves B)
+    (gf : GhashFree v.gh.fn.code) (cf : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
+    ∃ Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
+        Option (BitVec 8),
+      ∀ s t s', (Proof.AesGcm.sealX86_64M M).pre s → Exec isa («seal» (v.withBlk B)) s t s' →
+        (∀ x, (⟨stackArg s 3 + BitVec.ofNat 64 96, 2464⟩ : Region).Contains x 1 →
+          s'.mem x = (sealL Lb s.gpr (fun i => stackArg s i) x).getD (s.mem x)) ∧
+        Frame [⟨stackArg s 3, 2560⟩, ⟨stackArg s 0, (stackArg s 1).toNat⟩, ⟨stackArg s 2, 16⟩,
+          below (s.gpr .rsp) 24] s.mem s'.mem := by
   obtain ⟨Lb, hL⟩ := hB
   refine ⟨Lb, fun s t s' hp he => ?_⟩
   obtain ⟨_, s'', he', h⟩ := sealM_leaves_wp v B hL gf cf hp

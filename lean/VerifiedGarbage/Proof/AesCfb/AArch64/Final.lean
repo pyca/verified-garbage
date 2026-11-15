@@ -768,8 +768,8 @@ theorem decrypt_noFrames (v : BlocksImpl) : (Caller.decrypt v).noFrames = true :
   unfold Caller.decrypt
   split
   · lit_decide
-  · simp only [Impl.AesCfb.AArch64.decrypt, Impl.AesCbc.AArch64.whole, Impl.AesCfb.AArch64.body,
-      Code.noFrames, v.encNoFrames, Bool.and_self]
+  · simp only [Impl.AesCfb.AArch64.decrypt, Impl.AesCbc.AArch64.batched, Impl.AesCbc.AArch64.groups,
+      Impl.AesCfb.AArch64.decGroup, Impl.AesCfb.AArch64.body, Code.noFrames, v.encNoFrames, Bool.and_self]
 
 theorem decrypt_keepsV' (v : BlocksImpl) : (Caller.decrypt v).allInstrs keepsV = true := by
   unfold Caller.decrypt
@@ -796,7 +796,7 @@ theorem decrypt_ct' (v : BlocksImpl) :
   unfold Caller.decrypt
   split
   · exact Decrypt.ct
-  · exact AesCbc.AArch64.whole_ct (decBody_ok v) (decBody_ct v)
+  · exact decrypt_ct v
 
 /-! ## Constant time -/
 

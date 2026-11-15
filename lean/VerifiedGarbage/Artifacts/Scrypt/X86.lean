@@ -18,7 +18,6 @@ def artifacts : List Artifact :=
     Spec.Scrypt.scryptApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.Scrypt.X86.scrypt (pbkName v) (pbkOf v)
-      stack := 116
       verified := scrypt_verified v
       spSafe := scrypt_spSafe v }]
 

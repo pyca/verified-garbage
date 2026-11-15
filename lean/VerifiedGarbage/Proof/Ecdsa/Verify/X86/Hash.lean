@@ -1412,9 +1412,11 @@ theorem narrow_at (hb : 8 + 4 * slots sig + n * e.size ≤ bytes) {s : State}
   have hs' := hs
   rw [pre_stackL] at hs'
   obtain ⟨⟨hst, -⟩, -⟩ := hs'
+  have ea : arg (narrow sig e n bytes wa s) (slots sig) =
+      arg (setArgsState bytes (slots sig) (allocState bytes s)) (slots sig) := by
+    simp only [arg, argAddr, narrow, State.withRegions_mem, State.withRegions_gpr]
   unfold AtBuf
-  rw [hesp, show arg (narrow sig e n bytes wa s) (slots sig) =
-    arg (setArgsState bytes (slots sig) (allocState bytes s)) (slots sig) from rfl, hlast,
+  rw [hesp, ea, hlast,
     BitVec.toNat_add, BitVec.toNat_ofNat, sub_toNat (by omega_using [hst])]
   have := (s.gpr .esp).isLt
   rw [Nat.mod_eq_of_lt (a := 8 + 4 * slots sig) (by omega_using [hb, hst]), Nat.mod_eq_of_lt (by omega_using [hb, hst])]

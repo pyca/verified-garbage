@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveCTB
 public import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveChecked
 public import VerifiedGarbage.Proof.Framework.RelCT
@@ -159,7 +160,7 @@ theorem semBdc {v : VD} {u : State} (h : At ΦRdc FRdc 26 v u) : DB v u :=
       (setupP_SR3 hs).mono fun _ ⟨c, _⟩ => ⟨c, (kdcR h').1, (kdcR h').2⟩))) h,
     at_pure (G := GD) (fun _ _ h => gRdc h) h, ow_at (o := id) owRdc h⟩
 
-theorem drop26dc : FRdc.drop 26 = FBd := by decide +kernel
+theorem drop26dc : FRdc.drop 26 = FBd := by kernel_rfl
 
 theorem runBdc : ∀ v s, At ΦRdc FRdc 26 v s → WP isa (Code.seqL FBd) s fun _ => True := by
   intro v s h

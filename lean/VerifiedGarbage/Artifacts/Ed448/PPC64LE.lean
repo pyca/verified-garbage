@@ -23,15 +23,12 @@ namespace VG.Artifacts.Ed448.PPC64LE
 def artifacts : List Artifact := [
   Spec.Ed448.publicKeyApi.artifact PPC64LE.target {
     code := Impl.Ed448.PPC64LE.Whole.publicKeyCode
-    stack := 240
     verified := Proof.Ed448.PPC64LE.Whole.publicKey_framed Proof.Ed448.baseLadder2_ok },
   Spec.Ed448.signCachedApi.artifact PPC64LE.target {
     code := Impl.Ed448.PPC64LE.Whole.signCachedCode
-    stack := 624
     verified := Proof.Ed448.PPC64LE.Whole.signCached_framed Proof.Ed448.baseLadder2_ok },
   Spec.Ed448.verifyApi.artifact PPC64LE.target {
     code := Impl.Ed448.PPC64LE.Whole.verifyCode
-    stack := 352
     verified := Proof.Ed448.PPC64LE.Whole.verify_framed Proof.Ed448.recover_ok }]
 
 end VG.Artifacts.Ed448.PPC64LE

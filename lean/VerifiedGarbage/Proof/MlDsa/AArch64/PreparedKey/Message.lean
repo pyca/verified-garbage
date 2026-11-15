@@ -816,7 +816,7 @@ theorem messageSignSat_roots (p : Params) (hp : Ok3 p) (prepared : Bool) (m : Me
       Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords (messageSignSat p prepared m) := by
     refine ⟨hf, by dsimp [messageSignSat]; decide, ?_, ?_,
       by apply Region.disjoint_of_sep; dsimp [messageSignSat]; decide,
-      by dsimp [messageSignSat]⟩
+      by rw [show (messageSignSat p prepared m).syms "VG_MLDSA_NTT_EXPANDED" = 1048576 from by dsimp [messageSignSat]]; decide⟩
     · exact Covers.one ⟨⟨1048576,3904⟩, by simp [messageSignSat], Region.contains_self _ _⟩
     · rcases hp with rfl | rfl | rfl
       all_goals
@@ -826,7 +826,7 @@ theorem messageSignSat_roots (p : Params) (hp : Ok3 p) (prepared : Bool) (m : Me
       Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords (messageSignSat p prepared m) := by
     refine ⟨hi, by dsimp [messageSignSat]; decide, ?_, ?_,
       by apply Region.disjoint_of_sep; dsimp [messageSignSat]; decide,
-      by dsimp [messageSignSat]⟩
+      by rw [show (messageSignSat p prepared m).syms "VG_MLDSA_INV_FOLDED" = 1052480 from by dsimp [messageSignSat]]; decide⟩
     · exact Covers.one ⟨⟨1052480,3904⟩, by simp [messageSignSat], Region.contains_self _ _⟩
     · rcases hp with rfl | rfl | rfl
       all_goals
@@ -835,7 +835,7 @@ theorem messageSignSat_roots (p : Params) (hp : Ok3 p) (prepared : Bool) (m : Me
   have pair : PairedRoots 64 (messageSignSat p prepared m) := by
     refine ⟨hp', by dsimp [messageSignSat]; decide, ?_, ?_,
       by apply Region.disjoint_of_sep; dsimp [messageSignSat]; decide,
-      by dsimp [messageSignSat]⟩
+      by rw [show (messageSignSat p prepared m).syms "VG_MLDSA_INV_PAIR" = 1056384 from by dsimp [messageSignSat]]; decide⟩
     · exact Covers.one ⟨⟨1056384,4096⟩, by simp [messageSignSat], Region.contains_self _ _⟩
     · rcases hp with rfl | rfl | rfl
       all_goals
@@ -873,15 +873,16 @@ theorem messageSignSat_pre {p : Params} (hp : Ok3 p) (prepared : Bool) (m : Mem)
   apply message_sign_pre_extend ?_ roots.1 roots.2 rfl
   cases prepared
   all_goals
-    rcases hp with rfl | rfl | rfl
-    all_goals
-      simp only [messageSignK,Bool.false_eq_true,↓reduceIte]
-      sig_pre [signMessageContract,signMessageSig,preparedSignMessageContract,preparedSignMessageSig,
-        abi,VG.AArch64.argRegs]
-      simp only [messageSignRd,rawSignBytes,Bool.false_eq_true,↓reduceIte]
-      simp only [messageSignSat]
-      sig_and_intros
-      all_goals first | exact cache | exact Region.disjoint_of_sep (by decide) | decide +kernel
+    simp only [messageSignK,Bool.false_eq_true,↓reduceIte]
+    sig_pre [signMessageContract,signMessageSig,preparedSignMessageContract,preparedSignMessageSig,
+      abi,VG.AArch64.argRegs]
+    simp only [messageSignRd,rawSignBytes,Bool.false_eq_true,↓reduceIte]
+    simp only [messageSignSat]
+    sig_and_intros
+    all_goals first
+      | exact cache
+      | (rcases hp with rfl | rfl | rfl <;>
+          first | exact Region.disjoint_of_sep (by decide) | decide +kernel)
 
 theorem message_sign_sat {p : Params} (hp : Ok3 p) (prepared : Bool) :
     ∃ s,(messageSignK p prepared (abi.withConsts pairedSignRootConsts)).pre s := by
@@ -1781,14 +1782,16 @@ theorem messageVerifySat_bare (v : Proof.Sha3.AArch64.Permutation) {p : Params} 
         (messageVerifyRd p prepared (messageVerifySat v p prepared m)) (messageVerifySat v p prepared m).wr) := by
   cases prepared
   all_goals
-    rcases hp with rfl | rfl | rfl
-    all_goals
-      simp only [messageVerifyK,Bool.false_eq_true,↓reduceIte]
-      sig_pre [verifyMessageCachedContract,verifyMessageCachedSig,preparedVerifyMessageContract,preparedVerifyMessageSig,
-        abi,VG.AArch64.argRegs]
-      simp only [messageVerifyRd,messageVerifySat,rawVerifyBytes,Bool.false_eq_true,↓reduceIte]
-      sig_and_intros
-      all_goals first | exact cache | exact digest | exact Region.disjoint_of_sep (by decide) | decide +kernel
+    simp only [messageVerifyK,Bool.false_eq_true,↓reduceIte]
+    sig_pre [verifyMessageCachedContract,verifyMessageCachedSig,preparedVerifyMessageContract,preparedVerifyMessageSig,
+      abi,VG.AArch64.argRegs]
+    simp only [messageVerifyRd,messageVerifySat,rawVerifyBytes,Bool.false_eq_true,↓reduceIte]
+    sig_and_intros
+    all_goals first
+      | exact cache
+      | exact digest
+      | (rcases hp with rfl | rfl | rfl <;>
+          first | exact Region.disjoint_of_sep (by decide) | decide +kernel)
 
 theorem messageVerifySat_roots (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p) (prepared : Bool) (m : Mem)
     (hf : ∀ i < 488,m.readW (1048576 + BitVec.ofNat 64 (8*i)) 64 = Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords.getD i 0)
@@ -1798,7 +1801,7 @@ theorem messageVerifySat_roots (v : Proof.Sha3.AArch64.Permutation) (p : Params)
       (messageVerifySat v p prepared m) := by
     refine ⟨hf,by dsimp [messageVerifySat];decide,?_,?_,
       by apply Region.disjoint_of_sep;dsimp [messageVerifySat];decide,
-      by dsimp [messageVerifySat]⟩
+      by rw [show (messageVerifySat v p prepared m).syms "VG_MLDSA_NTT_EXPANDED" = 1048576 from by dsimp [messageVerifySat]]; decide⟩
     · exact Covers.one ⟨⟨1048576,3904⟩,by simp [messageVerifySat,hmode],Region.contains_self _ _⟩
     · intro R hR
       simp only [messageVerifySat,List.mem_cons,List.not_mem_nil,or_false] at hR
@@ -1809,7 +1812,7 @@ theorem messageVerifySat_roots (v : Proof.Sha3.AArch64.Permutation) (p : Params)
       (messageVerifySat v p prepared m) := by
     refine ⟨hi,by dsimp [messageVerifySat];decide,?_,?_,
       by apply Region.disjoint_of_sep;dsimp [messageVerifySat];decide,
-      by dsimp [messageVerifySat]⟩
+      by rw [show (messageVerifySat v p prepared m).syms "VG_MLDSA_INV_FOLDED" = 1052480 from by dsimp [messageVerifySat]]; decide⟩
     · exact Covers.one ⟨⟨1052480,3904⟩,by simp [messageVerifySat,hmode],Region.contains_self _ _⟩
     · intro R hR
       simp only [messageVerifySat,List.mem_cons,List.not_mem_nil,or_false] at hR

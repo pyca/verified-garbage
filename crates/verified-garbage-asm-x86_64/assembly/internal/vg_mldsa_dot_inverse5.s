@@ -7,13 +7,6 @@
 vg_mldsa_dot_inverse5:
 	mov r10, rsi
 	mov rsi, rcx
-	stmxcsr DWORD PTR [rsi+768]
-	mov r11d, DWORD PTR [rsi+768]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rsi+772], eax
-	ldmxcsr DWORD PTR [rsi+772]
-	lfence
 	mov eax, 8380417
 	movq xmm15, rax
 	pshufd xmm15, xmm15, 0
@@ -671,8 +664,5 @@ vg_mldsa_dot_inverse5:
 	add rdx, 16
 	sub rcx, 1
 	jne 215b
-	lfence
-	mov DWORD PTR [rsi+768], r11d
-	ldmxcsr DWORD PTR [rsi+768]
 	ret
 	.p2align 6

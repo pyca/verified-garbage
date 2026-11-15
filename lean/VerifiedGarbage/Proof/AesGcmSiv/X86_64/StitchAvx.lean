@@ -1264,11 +1264,13 @@ theorem loopE_ok {s₀ : State} (hp : SPre s₀) {P : Nat → Block} (hf : Law s
 /-! ## The last group, and `Y` stored -/
 
 theorem accN_congr {X X' P P' : Nat → Block} {y : Block} (hx : ∀ k < 8, X k = X' k)
-    (hq : ∀ k < 8, P k = P' k) : ∀ n, accN X P y n = accN X' P' y n
-  | 0 => rfl
-  | n + 1 => by
+    (hq : ∀ k < 8, P k = P' k) : ∀ n, accN X P y n = accN X' P' y n := by
+  intro n
+  induction n with
+  | zero => simp only [accN, List.range_zero, List.foldl_nil]
+  | succ n ih =>
     have hk : (n + 1) % 8 < 8 := Nat.mod_lt _ (by decide)
-    rw [accN_succ, accN_succ, accN_congr hx hq n, hq _ hk]
+    rw [accN_succ, accN_succ, ih, hq _ hk]
     simp only [hashInput, hx _ hk]
 
 

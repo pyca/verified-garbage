@@ -237,7 +237,7 @@ theorem cfbEncryptFinal_framed :
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbFinalSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Spec.Cast5.cfbFinalPre X86_64.abi.ptrBits)
     (post := Proof.Cast5.cfbEncFinalPost X86_64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 240)
-    cfbEncryptFinal_verified (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    cfbEncryptFinal_verified (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Cast5.cfbEncFinalPostOut_local _) (finalFrame_sat _)
 
 /-- The final CFB64 decryption with its working space on the stack. -/
@@ -247,7 +247,7 @@ theorem cfbDecryptFinal_framed :
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.cfbFinalSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Spec.Cast5.cfbFinalPre X86_64.abi.ptrBits)
     (post := Proof.Cast5.cfbDecFinalPost X86_64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 240)
-    cfbDecryptFinal_verified (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    cfbDecryptFinal_verified (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Cast5.cfbDecFinalPostOut_local _) (finalFrame_sat _)
 
 /-! ## OFB of a message's last piece -/
@@ -285,7 +285,7 @@ theorem ofbFinal_framed :
   X86_64.Verified.stackScratchWipedC (c₀ := (s1234Sym, s1234)) (cs := []) (sig := Spec.Cast5.ofbFinalSig)
     (nm := "scratch") (e := .u64) (n := 29) (pre := Spec.Cast5.ofbFinalPre X86_64.abi.ptrBits)
     (post := Proof.Cast5.ofbFinalPost X86_64.abi.ptrBits) (wa := true) (stack := 0) (bytes := 240)
-    ofbFinal_verified (by decide) (by decide) (by decide) (Code.all_of_allInstrs (by lit_decide))
+    ofbFinal_verified (by decide) (by decide) (by decide) (Code.all_of_spTest (by lit_decide))
     (by lit_decide) (by decide) (Proof.Cast5.ofbFinalPostOut_local _) (finalFrame_sat _)
 
 end VG.Proof.Cast5.X86_64

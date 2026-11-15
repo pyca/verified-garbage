@@ -42,17 +42,14 @@ def artifacts : List Artifact :=
     Spec.Ocb.initApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackScratch 2560 .x3 (Impl.AesOcb.AArch64.init (callees v))
-      stack := 2560
       verified := init_framed v },
     Spec.Ocb.sealApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesOcb.AArch64.seal (callees v))
-      stack := 2592
       verified := Proof.AesOcb.seal_keyed (seal_framed v) },
     Spec.Ocb.openApi.artifact AArch64.target {
       suffix := v.suffix
       code := Impl.StackScratch.AArch64.withStackArgScratch 2592 2 (Impl.AesOcb.AArch64.open (callees v))
-      stack := 2592
       verified := Proof.AesOcb.open_keyed (open_framed v) }]
 
 end VG.Artifacts.AesOcb.AArch64

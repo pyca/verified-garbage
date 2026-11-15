@@ -1701,38 +1701,44 @@ theorem encrypt_sat {vs : List TVar} {w : TVar} (hw : w ∈ vs) (hl : (names vs)
   have hA' := hA D hl'
   have e : argAddr (withTable (satState D) vs w) 0 = 0x20004 := rfl
   have hha' := hha (satState D)
-  simp only [Impl.RsaOaep.X86.lens, List.mem_cons, List.not_mem_nil, or_false] at hl'
-  rcases hl' with rfl | rfl | rfl | rfl | rfl | rfl
-  all_goals
-    sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
-      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
-      abi, argSlots, argVal, argBytes, stackBelow]
-    simp only [withTable_arg _ vs w (hA' 0 (by decide)), withTable_arg _ vs w (hA' 1 (by decide)),
-      withTable_arg _ vs w (hA' 2 (by decide)), withTable_arg _ vs w (hA' 3 (by decide)),
-      withTable_arg _ vs w (hA' 4 (by decide)), withTable_arg _ vs w (hA' 5 (by decide)),
-      withTable_arg _ vs w (hA' 6 (by decide)), withTable_arg _ vs w (hA' 7 (by decide)),
-      withTable_arg _ vs w (hA' 8 (by decide)), withTable_arg _ vs w (hA' 9 (by decide)),
-      withTable_arg _ vs w (hA' 10 (by decide)), withTable_arg _ vs w (hA' 11 (by decide)),
-      withTable_arg _ vs w (hA' 12 (by decide)), withTable_arg _ vs w (hA' 13 (by decide)),
-      withTable_arg _ vs w (hA' 14 (by decide)), withTable_arg _ vs w (hA' 15 (by decide)),
-      withTable_arg _ vs w (hA' 16 (by decide)), withTable_arg _ vs w (hA' 17 (by decide))]
-    simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
-      List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
-      a12, a13, a14, a15, a16, a17, e]
-    sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
-      Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
-      abi, argSlots, argVal, argBytes, stackBelow]
-    sig_and_intros
-    all_goals first
-      | exact ⟨tableOf w, List.mem_map_of_mem hw, held_twL _ _ _ rfl⟩
-      | rfl
-      | decide
-      | exact Region.disjoint_of_sep (by decide)
-      | (intro H' hH'
-         obtain rfl := Option.some.inj (hha'.symm.trans hH')
-         rw [hDd]; rfl)
-      | (rw [List.append_eq, List.append_eq, List.append_nil]; exact symsOf32_distinct2 hl)
-      | (simp only [Spec.Rsa.lenValid]; decide)
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
+    abi, argSlots, argVal, argBytes, stackBelow]
+  simp only [withTable_arg _ vs w (hA' 0 (by decide)), withTable_arg _ vs w (hA' 1 (by decide)),
+    withTable_arg _ vs w (hA' 2 (by decide)), withTable_arg _ vs w (hA' 3 (by decide)),
+    withTable_arg _ vs w (hA' 4 (by decide)), withTable_arg _ vs w (hA' 5 (by decide)),
+    withTable_arg _ vs w (hA' 6 (by decide)), withTable_arg _ vs w (hA' 7 (by decide)),
+    withTable_arg _ vs w (hA' 8 (by decide)), withTable_arg _ vs w (hA' 9 (by decide)),
+    withTable_arg _ vs w (hA' 10 (by decide)), withTable_arg _ vs w (hA' 11 (by decide)),
+    withTable_arg _ vs w (hA' 12 (by decide)), withTable_arg _ vs w (hA' 13 (by decide)),
+    withTable_arg _ vs w (hA' 14 (by decide)), withTable_arg _ vs w (hA' 15 (by decide)),
+    withTable_arg _ vs w (hA' 16 (by decide)), withTable_arg _ vs w (hA' 17 (by decide))]
+  simp only [String.reduceEq, ↓reduceIte, Option.map_some, Nat.reduceAdd, List.getD_cons_succ,
+    List.getD_cons_zero, Option.some.injEq, exists_eq_left', a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11,
+    a12, a13, a14, a15, a16, a17, e]
+  sig_pre [Spec.RsaOaep.encryptMdTablesContract, Spec.RsaOaep.encryptMdTablesSig, Spec.RsaOaep.seedLenMdOk,
+    Spec.MdHashTable.param, Spec.MdHashTable.wordCount, Spec.MdHashTable.fns, Abi.withTables, Sig.wordIndex,
+    abi, argSlots, argVal, argBytes, stackBelow]
+  sig_and_intros
+  all_goals first
+    | exact ⟨tableOf w, List.mem_map_of_mem hw, held_twL _ _ _ rfl⟩
+    | rfl
+    | decide
+    | exact Region.disjoint_of_sep (by decide)
+    | (intro H' hH'
+       obtain rfl := Option.some.inj (hha'.symm.trans hH')
+       rw [hDd]; rfl)
+    | (rw [List.append_eq, List.append_eq, List.append_nil]; exact symsOf32_distinct2 hl)
+    | (simp only [Spec.Rsa.lenValid]; decide)
+    -- What mentions the seed's length, for each length.
+    | (simp only [Impl.RsaOaep.X86.lens, List.mem_cons, List.not_mem_nil, or_false] at hl'
+       rcases hl' with rfl | rfl | rfl | rfl | rfl | rfl <;> first
+         | rfl
+         | decide
+         | exact Region.disjoint_of_sep (by decide)
+         | (intro H' hH'
+            obtain rfl := Option.some.inj (hha'.symm.trans hH')
+            rw [hDd]; rfl))
 
 end VG.Proof.RsaOaep.X86.Enc
 

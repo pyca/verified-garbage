@@ -5,13 +5,6 @@
 // gives.
 
 vg_argon2_compress_avx2:
-	stmxcsr DWORD PTR [rcx+2048]
-	mov r11d, DWORD PTR [rcx+2048]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rcx+2052], eax
-	ldmxcsr DWORD PTR [rcx+2052]
-	lfence
 	movabs rax, 144396693218329603
 	vmovq xmm14, rax
 	movabs rax, 723118075922942987
@@ -1497,8 +1490,5 @@ vg_argon2_compress_avx2:
 	vpxor ymm0, ymm0, ymm1
 	vmovdqu YMMWORD PTR [rdx+992], ymm0
 	vzeroupper
-	lfence
-	mov DWORD PTR [rcx+2048], r11d
-	ldmxcsr DWORD PTR [rcx+2048]
 	ret
 	.p2align 6

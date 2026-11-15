@@ -21,7 +21,6 @@ def artifacts : List Artifact := [
     verified := Proof.Poly1305.AArch64.init_verified },
   Spec.Poly1305.updateApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Radix64.update
-    stack := 128
     verified := Proof.Poly1305.AArch64.Radix64.update_framed },
   Spec.Poly1305.updateApi.artifact AArch64.target {
     suffix := "_neon"
@@ -32,11 +31,9 @@ def artifacts : List Artifact := [
     extra := ["neon"]
     vendor := some "apple"
     code := Impl.StackScratch.AArch64.withStackScratch 128 .x4 Impl.Poly1305.AArch64.Vector.update
-    stack := 128
     verified := Proof.Poly1305.AArch64.Vector.update_framed },
   Spec.Poly1305.finalizeApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 128 .x3 Impl.Poly1305.AArch64.Radix64.finalize
-    stack := 128
     verified := Proof.Poly1305.AArch64.Radix64.finalize_framed }]
 
 end VG.Artifacts.Poly1305.AArch64

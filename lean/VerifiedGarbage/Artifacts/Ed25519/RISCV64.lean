@@ -18,15 +18,12 @@ def artifacts : List Artifact := [
     code := Impl.Ed25519.RISCV64.KeyPair.keyPair Spec.Sha512.digest512Api.name
       Proof.Ed25519.RISCV64.KeyPair.dgCode "vg_ed25519_public_key_expanded"
       Impl.Ed25519.RISCV64.Whole.publicKeyExpandedCode
-    stack := 480
     verified := Proof.Ed25519.RISCV64.KeyPair.verified },
   Spec.Ed25519.signExpandedApi.artifact RISCV64.target {
     code := Impl.Ed25519.RISCV64.Whole.signExpandedCode
-    stack := 496
     verified := Proof.Ed25519.RISCV64.Whole.signExpanded_framed },
   Spec.Ed25519.verifyApi.artifact RISCV64.target {
     code := Impl.Ed25519.RISCV64.Whole.verifyCode
-    stack := 480
     verified := Proof.Ed25519.RISCV64.Whole.verify_framed }]
 
 end VG.Artifacts.Ed25519.RISCV64

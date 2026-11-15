@@ -466,12 +466,12 @@ theorem Codecs.dd_ctl : ∀ cs : Codecs, ctlOk cs.dd = true
   | .avx2 => by decide +kernel
 
 theorem Codecs.ce_sp : ∀ cs : Codecs, cs.ce.all (fun i => !isa.writesSp i) = true
-  | .base => Code.all_of_allInstrs (by decide +kernel)
-  | .avx2 => Code.all_of_allInstrs (by decide +kernel)
+  | .base => Code.all_of_spTest (by decide +kernel)
+  | .avx2 => Code.all_of_spTest (by decide +kernel)
 
 theorem Codecs.dd_sp : ∀ cs : Codecs, cs.dd.all (fun i => !isa.writesSp i) = true
-  | .base => Code.all_of_allInstrs (by decide +kernel)
-  | .avx2 => Code.all_of_allInstrs (by decide +kernel)
+  | .base => Code.all_of_spTest (by decide +kernel)
+  | .avx2 => Code.all_of_spTest (by decide +kernel)
 
 /-! ## `SampleNTT` -/
 

@@ -14,6 +14,16 @@ crates: anything goes there) and run the Benchmarks workflow on it against
 explaining why it is wanted and linking that run with its numbers, then
 delete the branch. The verified implementation follows once the model merges.
 
+The same goes for any code whose speed is in doubt: measure it before
+proving it, rather than proving something that turns out too slow. On a
+`bench/` branch, write the candidate by hand, for example a new layout, a
+smaller wipe, or a different loop, and benchmark it against `main`. Prove
+it only once it is fast enough. To find where an existing cost comes from,
+measure the generated code with that part edited out: replace it with
+`nop`s of the same length so that nothing else moves, and compare it with
+the unedited branch. Each such branch is only a measurement: it is never
+opened as a PR, and it is deleted once measured.
+
 Measure only what the change affects. `python3 ci/bench_arches.py --choices`
 lists the architectures, each one's `VG_CPU_FEATURES` configurations and the
 features `crates/verified-garbage-cpu/src/detect.rs` detects there, and the library modules with the

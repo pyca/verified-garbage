@@ -29,9 +29,10 @@ public import VerifiedGarbage.Proof.Sm4.Contract
 `ctr32` is correct and constant time, by the taint analysis: the pointers,
 `n` and the stack pointer are public, and so is everything the code computes
 from them; the counter block is secret. `ctr32_framed` runs it with its
-working space on the stack, zeroed on return, as `ctr_framed`
-(`CtrVerified.lean`): 3208 bytes, the 400 words of the scratch buffer and 8
-more, below the 8 bytes the call of `vg_sm4_crypt_prepared` uses.
+working space on the stack, as `ctr_framed` (`CtrVerified.lean`) but left as
+it is on return, for SM4-GCM's functions, its only callers, clear their whole
+stack: 3208 bytes, the 400 words of the scratch buffer and 8 more, below the
+8 bytes the call of `vg_sm4_crypt_prepared` uses.
 -/
 
 @[expose] public section
@@ -200,13 +201,12 @@ theorem ctr32_verified :
 
 /-- `vg_sm4_ctr32` with its working space on the stack. -/
 theorem ctr32_framed :
-    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratchWiped 3208 .r8 400 ctr32)
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackScratch 3208 .r8 ctr32)
       (Proof.Sm4.ctr32Contract X86_64.abi 3216) :=
-  X86_64.Verified.stackScratchWiped (sig := Proof.Sm4.ctr32Sig) (nm := "scratch") (e := .u64)
+  X86_64.Verified.stackScratch (sig := Proof.Sm4.ctr32Sig) (nm := "scratch") (e := .u64)
     (n := 400) (post := Proof.Sm4.ctr32Post X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (bytes := 3208) ctr32_verified (by decide) (by decide) (by decide)
-    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide) (by decide)
-    (Proof.Sm4.ctr32PostOut_local _)
+    (Code.all_of_allInstrs (by lit_decide)) (by lit_decide)
     (X86_64.sat_regs (by decide) (by decide) (by lit_decide) (by rw [Curry.apply_const]; trivial))
 
 end VG.Proof.Sm4.X86_64

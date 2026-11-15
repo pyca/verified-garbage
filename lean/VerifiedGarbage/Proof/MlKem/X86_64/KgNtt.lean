@@ -409,8 +409,7 @@ theorem mx_wok : ∀ r ∈ [mxR (σ.gpr .r8)], WOk k σ r := fun r hr => by
 
 /-- The transforms, in the MXCSR region. -/
 theorem ntts_ok {L : Kem} (hL : L.k = k) (hk : k ≤ 4) (hk0 : 0 < k)
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r14, .r15, .rbp]
-      (.loop KpkeMul.nttK16 .ne) = true) {s : State} (h : WI k σ k s) :
+    {s : State} (h : WI k σ k s) :
     WP isa (KpkeKgRows.nttsN L) s (NI k σ k) := by
   have nC := E.nC
   have hcw : cR (σ.gpr .r8) ∈ σ.wr := by rw [E.wr]; simp
@@ -426,12 +425,7 @@ theorem ntts_ok {L : Kem} (hL : L.k = k) (hk : k ≤ 4) (hk0 : 0 < k)
         · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
           simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr, ite_false]) fun s1 ⟨h115, h114, hm1, k1⟩ => ?_)
   have h1bx : s1.gpr .rbx = σ.gpr .r8 := by rw [k1.gpr (by decide), h.rbx]
-  have h0 : InRegions s1.wr (σ.gpr .r8 + BitVec.ofNat 64 768) 4 := by
-    rw [k1.2.2, h.wr]; exact ⟨_, hcw, in_c (by decide)⟩
-  have h4 : InRegions s1.wr (σ.gpr .r8 + BitVec.ofNat 64 772) 4 := by
-    rw [k1.2.2, h.wr]; exact ⟨_, hcw, in_c (by decide)⟩
-  show WP isa (withMxcsr .rbx 768 _) s1 _
-  refine WP.mono (withMxcsr_ok' (r := .rbx) ⟨by decide, by decide⟩ _ ⟨by decide, by decide⟩ h1bx h0 h4 hwo
+  refine WP.mono (noMx_ok (sP := σ.gpr .r8)
     (Q := NI k σ k) (fun s2 k2 f2 => ?_)) fun s5 ⟨s4, hq4, hf5, k5⟩ => ?_
   · have k12 := k1.trans k2
     rw [hm1] at f2
@@ -503,8 +497,7 @@ theorem enc_ok {A : Prims} (hA : PrimsOk A) (hn : A.enc12.noCalls = true) (hk : 
 end
 
 theorem kgNtt_wp {A : Prims} (hA : PrimsOk A) (hn : A.enc12.noCalls = true) {L : Kem} (hk : L.k = 3 ∨ L.k = 4)
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r14, .r15, .rbp]
-      (.loop KpkeMul.nttK16 .ne) = true) {σ : State} (hp : (kgNttK L.k).pre σ) :
+    {σ : State} (hp : (kgNttK L.k).pre σ) :
     WP isa (KpkeKgRows.kgNtt L A) σ fun s' => gprPreserved σ s' ∧ (kgNttK L.k).post σ s' := by
   have E := ep hp
   have hk4 : L.k ≤ 4 := by omega_arith
@@ -516,7 +509,7 @@ theorem kgNtt_wp {A : Prims} (hA : PrimsOk A) (hn : A.enc12.noCalls = true) {L :
     (fun j _ hj s h => wide_ok E hk4 (by omega_arith) h) s1 ⟨hb, h12, hbp, h15, fun _ h => absurd h (Nat.not_lt_zero _)⟩)
     fun s2 h2 => ?_)
   rw [Nat.zero_add] at h2
-  refine WP.seq (WP.mono (ntts_ok E rfl hk4 (by omega_arith) hwo h2) fun s3 h3 => ?_)
+  refine WP.seq (WP.mono (ntts_ok E rfl hk4 (by omega_arith) h2) fun s3 h3 => ?_)
   refine WP.seq (WP.mono (Q := fun (s4 : State) => s4.gpr .r12 = σ.gpr .rsi ∧ s4.mem = s3.mem ∧ Keep [.r12] s3 s4)
     (by
       vrunm [h3.r12, sx_ofNat (show 1024 * L.k < 2 ^ 31 by omega_arith)]

@@ -48,7 +48,7 @@ implementation `v` and the K-PKE functions, and inlines the fragment `b`, use
 at most `k` bytes of stack (a goal `xdLe k _ = true`). -/
 tactic_template "ek16_xd " v:ident c:ident b:ident S:ident B:ident hK:ident : tactic =>
   `(tactic| repeat' (first
-    | with_reducible exact xdLe_batch $B | (closed_in $b; s16_xd $v $c $S $hK; done)
+    | with_reducible apply xdLe_batch $B | (closed_in $b; s16_xd $v $c $S $hK; done)
     | (code_whnf; with_reducible apply xdLe_seq) | (code_whnf; with_reducible apply xdLe_ite) | rfl))
 
 theorem encaps16_narrow {K : Kem16} {n : Nat} (hn : n ≤ K.L.scr) (hK : KpkeOk K.L) (v : Sample4Impl)

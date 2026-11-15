@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Dsa.RISCV64.DeriveCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
@@ -217,7 +218,7 @@ theorem pinsBd71 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → DB v u
     fun _ _ h =>
     WP.of_flat (c := .seq (.block Y0) (.seq Verify.powP (.seq (zeroArr 7) (.seq (.block [.li .a4 (-1)])
       (.seq (Sign.nonZero 4) (.seq PublicChecked.one (.seq (Sign.nonZero 4)
-        (.block (bufBase .s7 .t2 ++ getP .s8))))))))) (by decide +kernel)
+        (.block (bufBase .s7 .t2 ++ getP .s8))))))))) (by kernel_rfl)
       (stY7 (hsem _ _ h) fun _ B ip _ => WP.block_append (WP.mono (bufBase_ok B.scr B.ok B.regs (rd := .s7) (t := .t2)
         (by decide) (by decide) (by decide)) fun _ ⟨⟨f7, mu⟩, ku⟩ =>
         WP.mono (getP_ok (B.keepM ku mu).scr B.ok (B.keepM ku mu).regs .s8) fun _ ⟨⟨f8, m9⟩, k9⟩ =>
@@ -238,7 +239,7 @@ theorem pinsBd74 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → DB v u
     Pins (At Φ FBd 74) [.s6, .s11, .ra, .a7, .s5, .t0, .s7, .s8] :=
   pins_at_fix (fun v => fixB v ++ envQ v ++ [(.s7, v.sig), (.s8, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl)
     fun _ _ h =>
-    WP.of_flat (c := .seq Derive.yValue (.block (enterQ ++ Verify.ptrR))) (by decide +kernel)
+    WP.of_flat (c := .seq Derive.yValue (.block (enterQ ++ Verify.ptrR))) (by kernel_rfl)
       (stY (hsem _ _ h) fun _ _ B _ _ _ => WP.block_append (WP.mono (enterQ_ok B.ok B.scr B.regs)
         fun _ ⟨⟨iq, mu⟩, ku⟩ => WP.mono (ptrR_ok (B.keepM ku mu).scr B.ok (B.keepM ku mu).regs)
           fun _ ⟨⟨b7, b8, m⟩, k'⟩ => (((B.keepM ku mu).keepM k' m).fixB.app (fix_envQ (iq.keep k'))).app
@@ -318,7 +319,7 @@ theorem pinsBd94 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → DB v u
     Pins (At Φ FBd 94) [.s6, .s11, .ra, .t4, .t3, .t5] :=
   pins_at_fix (fun v => fixB v ++ [(.t4, oOf v), (.t3, v.key), (.t5, BitVec.ofNat 64 (2 * v.L.pl + v.L.ql))])
     (fun _ => rfl) fun _ _ h =>
-    WP.of_flat (c := .seq Derive.yValue (.seq Derive.xRange (.block OH))) (by decide +kernel)
+    WP.of_flat (c := .seq Derive.yValue (.seq Derive.xRange (.block OH))) (by kernel_rfl)
       (stX (hsem _ _ h) fun _ _ B _ _ => (ohead_ok B (hsem _ _ h).2.1.out).mono
         fun _ ⟨⟨B', e4, e3, e5⟩, _⟩ => B'.fixB.app ⟨e4, e3, e5, trivial⟩)
 
@@ -327,7 +328,7 @@ theorem pinsBd96 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → DB v u
   pins_at_fix (fun v => fixB v ++ [(.t4, off (oOf v) (2 * v.L.pl + v.L.ql)), (.t3, v.L.Buf),
       (.t5, BitVec.ofNat 64 v.L.pl)]) (fun _ => rfl) fun _ _ h =>
     WP.of_flat (c := .seq Derive.yValue (.seq Derive.xRange (.seq (.block OH) (.seq Derive.maskCopy
-      (.block (bufBase .t3 .t2 ++ getP .t5)))))) (by decide +kernel)
+      (.block (bufBase .t3 .t2 ++ getP .t5)))))) (by kernel_rfl)
       (stO (hsem _ _ h) fun _ _ hL hs hr _ e4 _ => WP.block_append (WP.mono (bufBase_ok hs hL hr (rd := .t3) (t := .t2)
         (by decide) (by decide) (by decide)) fun _ ⟨⟨c3, mu⟩, ku⟩ =>
         WP.mono (getP_ok (hs.congr ku.2.2) hL (hr.keepM ku mu) .t5) fun _ ⟨⟨c5, mw⟩, kw⟩ => by
@@ -341,7 +342,7 @@ theorem pinsBd98 {Φ : VD → State → Prop} (hsem : ∀ v u, Φ v u → DB v u
       (.t5, BitVec.ofNat 64 v.L.ql)]) (fun _ => rfl) fun v _ h =>
     WP.of_flat (c := .seq Derive.yValue (.seq Derive.xRange (.seq (.block OH) (.seq Derive.maskCopy
       (.seq (.block (bufBase .t3 .t2 ++ getP .t5)) (.seq Derive.maskCopy
-        (.block ([.addi .t3 .ra 0] ++ getQ .t5)))))))) (by decide +kernel)
+        (.block ([.addi .t3 .ra 0] ++ getQ .t5)))))))) (by kernel_rfl)
       (stO (hsem _ _ h) fun s₁ _ hL hs hr ow e4 a4 => by
         have hpl : 128 ≤ v.L.pl ∧ v.L.pl ≤ 384 := by rcases hL.pl with e | e | e <;> omega_using [e]
         have hql : 20 ≤ v.L.ql ∧ v.L.ql ≤ 32 := by rcases hL.ql with e | e | e <;> omega_using [e]

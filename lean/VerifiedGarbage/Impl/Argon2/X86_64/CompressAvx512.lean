@@ -7,8 +7,7 @@ public import VerifiedGarbage.Impl.Argon2.X86_64.CompressAvx2
 
 `vg_argon2_compress_avx512(x = rdi, y = rsi, out = rdx, scratch = rcx)`, with
 the contract of `vg_argon2_compress`, for CPUs with AVX512F. `[0, 1024)` of
-scratch holds R = X XOR Y, `[1024, 2048)` the block P permutes, and
-`[2048, 2056)` the caller's MXCSR and `0x1FBF`, as in the AVX2 code.
+scratch holds R = X XOR Y and `[1024, 2048)` the block P permutes.
 
 * P works on two rows (or two columns) at once, in four 512-bit registers:
   each 256-bit half of `zmm0`–`zmm3` holds the sixteen words of one row (or
@@ -29,10 +28,10 @@ scratch holds R = X XOR Y, `[1024, 2048)` the block P permutes, and
   joined from the registers of two pairs of columns (`vshufi32x4` with
   `0x88` and `0xdd`) and XORed with R.
 * `vpmuludq` has MXCSR-dependent timing on some processors (see "MCDT" in
-  `TCB/X86_64/Isa.lean`), so the whole computation runs with MXCSR
-  `0x1FBF`, between Intel's prologue and epilogue (those of the AVX2 code),
-  with the caller's value saved in `r11`. Only `rax` and `r11` of the
-  general-purpose registers are written. `vzeroupper` precedes the epilogue.
+  `TCB/X86_64/Isa.lean`): the dispatcher runs `vg_mcdt_enter` first, which
+  leaves MXCSR `0x1FBF` for the whole call, so the code sets none of its
+  own. Only `rax` of the general-purpose registers is written. It ends with
+  `vzeroupper`.
 
 Every address is a pointer plus a constant, and there are no branches.
 -/
@@ -43,7 +42,7 @@ namespace VG.Impl.Argon2.X86_64.Avx512
 
 open VG.X86_64
 open VG.Impl.Argon2.X86_64 (at_)
-open VG.Impl.Argon2.X86_64.Avx2 (vreg mxcsrOff)
+open VG.Impl.Argon2.X86_64.Avx2 (vreg)
 
 /-- `op dst, a, b` on 512 bits. -/
 def z (op : ZBinOp) (d a b : XReg) : Instr := .zop (.zbin op d a b)
@@ -123,19 +122,15 @@ def colPass : Prog isa := (List.range 4).foldr (fun c rest => .seq (cols c) rest
 /-- The eight output chunks, `finishChunk n k` for `n < 2` and `k < 4`. -/
 def finish : List Instr := (List.range 8).flatMap fun i => finishChunk (i / 4) (i % 4)
 
-/-- G with MXCSR `0x1FBF`. -/
+/-- G. -/
 def body : Prog isa :=
   .seq (.block ((List.range 16).flatMap initChunk)) <|
   .seq rowPass <| .seq colPass <|
   .block (finish ++ ([.vop .vzeroupper] : List Instr))
 
-/-- `body` between Intel's MXCSR prologue and epilogue, those of the AVX2
-code. -/
-def compress : Prog isa :=
-  .seq (.block [.stmxcsr (at_ .rcx mxcsrOff), .mov32 .r11 (.mem (at_ .rcx mxcsrOff)),
-      .alu32 .and .r11 (.imm 0xFFFF)])
-    (.seq (.seq (.block [.mov32 .rax (.imm 0x1FBF), .store32 (at_ .rcx (mxcsrOff + 4)) .rax,
-        .ldmxcsr (at_ .rcx (mxcsrOff + 4)), .lfence]) (.seq body (.block [.lfence])))
-      (.block [.store32 (at_ .rcx mxcsrOff) .r11, .ldmxcsr (at_ .rcx mxcsrOff)]))
+/-- `body`: its multiplies run under the dispatcher's `vg_mcdt_enter`,
+which leaves MXCSR `0x1FBF` for the whole call ("Dispatchers" in
+`TCB/Rust.lean`), so it sets no MXCSR of its own. -/
+def compress : Prog isa := body
 
 end VG.Impl.Argon2.X86_64.Avx512

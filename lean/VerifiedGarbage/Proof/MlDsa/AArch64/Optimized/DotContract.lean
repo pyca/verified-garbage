@@ -1,5 +1,6 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.DotMemory
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.DotInverse
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.InverseFive
@@ -101,7 +102,7 @@ open VG.Impl.MlDsa.AArch64.Optimized (inverseDotLoads)
 
 theorem dotFirstArithmetic_eq :
     VG.Impl.MlDsa.AArch64.Optimized.DotInverse.firstArithmetic=fiveCode++firstStores := by
-  decide +kernel
+  kernel_rfl
 
 theorem dot_initial_regs (j : Fin 8) :
     (regs 0)[j.val]=VG.Impl.MlDsa.AArch64.Optimized.Inverse.vr j.val := by

@@ -16,8 +16,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # ML-KEM on x86-64: `vg_mlkem_ntt`
 
-`withMxcsr` runs its code from any MXCSR and keeps what it does
-(`withMxcsr_ok`); the prologue leaves the table of zetas and `f` as words in
+The code sets no MXCSR of its own (its dispatchers run `vg_mcdt_enter`
+first); the prologue leaves the table of zetas and `f` as words in
 `scratch` (`vpro_ok`), each layer is `nttLayer` (`vlay_ok`, `vlay4_ok`,
 `vlay2_ok`), and the seven layers are `NTT` (`ntt_eq_layers`).
 -/

@@ -172,7 +172,7 @@ def scalar : BlocksImpl where
   encCt := encryptBlocks_ct
   encNosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
   encMxcsr := by lit_decide
-  encSpSafe := Code.all_of_allInstrs (by lit_decide)
+  encSpSafe := Code.all_of_spTest (by lit_decide)
   encNoStack := by lit_decide
   dec := .decScalar
   decDepth := by lit_decide
@@ -180,7 +180,7 @@ def scalar : BlocksImpl where
   decCt := decryptBlocks_ct
   decNosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
   decMxcsr := by lit_decide
-  decSpSafe := Code.all_of_allInstrs (by lit_decide)
+  decSpSafe := Code.all_of_spTest (by lit_decide)
   decNoStack := by lit_decide
   encWritten := 2048
   encWrittenLe := Nat.le_refl _
@@ -196,7 +196,7 @@ def scalar : BlocksImpl where
   expandCt := expandKey_ct
   expandNosp := Ctr32Impl.expandKey_nosp
   expandMxcsr := by lit_decide
-  expandSpSafe := Code.all_of_allInstrs (by lit_decide)
+  expandSpSafe := Code.all_of_spTest (by lit_decide)
   expandNoStack := by lit_decide
 
 /-- The AES-NI implementation, `vg_aes_encrypt_blocks_aesni` and
@@ -208,7 +208,7 @@ def aesni : BlocksImpl where
   encCt := AesNi.encryptBlocks_ct
   encNosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
   encMxcsr := by lit_decide
-  encSpSafe := Code.all_of_allInstrs (by lit_decide)
+  encSpSafe := Code.all_of_spTest (by lit_decide)
   encNoStack := by lit_decide
   dec := .decAesni
   decDepth := by lit_decide
@@ -216,7 +216,7 @@ def aesni : BlocksImpl where
   decCt := AesNi.decryptBlocks_ct
   decNosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
   decMxcsr := by lit_decide
-  decSpSafe := Code.all_of_allInstrs (by lit_decide)
+  decSpSafe := Code.all_of_spTest (by lit_decide)
   decNoStack := by lit_decide
   encWritten := 0
   encWrittenLe := Nat.zero_le _
@@ -234,7 +234,7 @@ def aesni : BlocksImpl where
   expandCt := Ctr32Impl.aesni_expandKey_ct
   expandNosp := Ctr32Impl.aesni_expandKey_nosp
   expandMxcsr := by lit_decide
-  expandSpSafe := Code.all_of_allInstrs (by lit_decide)
+  expandSpSafe := Code.all_of_spTest (by lit_decide)
   expandNoStack := by lit_decide
 
 /-- The VAES implementation, `vg_aes_encrypt_blocks_vaes` and
@@ -247,7 +247,7 @@ def vaes : BlocksImpl where
   encCt := VaesBlocks.encryptBlocks_ct
   encNosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
   encMxcsr := by lit_decide
-  encSpSafe := Code.all_of_allInstrs (by lit_decide)
+  encSpSafe := Code.all_of_spTest (by lit_decide)
   encNoStack := by lit_decide
   dec := .decVaes
   decDepth := by lit_decide
@@ -255,7 +255,7 @@ def vaes : BlocksImpl where
   decCt := VaesBlocks.decryptBlocks_ct
   decNosp := nosp_of (by rw [← Code.allInstrs_eq]; lit_decide)
   decMxcsr := by lit_decide
-  decSpSafe := Code.all_of_allInstrs (by lit_decide)
+  decSpSafe := Code.all_of_spTest (by lit_decide)
   decNoStack := by lit_decide
   encWritten := 0
   encWrittenLe := Nat.zero_le _
@@ -273,7 +273,7 @@ def vaes : BlocksImpl where
   expandCt := Ctr32Impl.aesni_expandKey_ct
   expandNosp := Ctr32Impl.aesni_expandKey_nosp
   expandMxcsr := by lit_decide
-  expandSpSafe := Code.all_of_allInstrs (by lit_decide)
+  expandSpSafe := Code.all_of_spTest (by lit_decide)
   expandNoStack := by lit_decide
 
 end BlocksImpl

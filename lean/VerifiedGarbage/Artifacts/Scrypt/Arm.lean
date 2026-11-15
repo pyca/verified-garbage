@@ -14,7 +14,6 @@ namespace VG.Artifacts.Scrypt.Arm
 def artifacts : List Artifact := [
   Spec.Scrypt.scryptApi.artifact Arm.target {
     code := Impl.Scrypt.Arm.scrypt "vg_pbkdf2_hmac_sha256_scratch" Proof.Scrypt.Arm.Whole.pbkC
-    stack := 40
     verified := Proof.Scrypt.Arm.Whole.scrypt_verified }]
 
 end VG.Artifacts.Scrypt.Arm

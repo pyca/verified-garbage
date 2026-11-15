@@ -21,7 +21,6 @@ def artifacts : List Artifact :=
         suffix := c.suffix ++ R.suffix
         notWith := R.notWith
         code := Impl.Scrypt.X86_64.scrypt R.name R.code (pbkName c) (pbkOf c)
-        stack := 88
         verified := scrypt_verified c R
         spSafe := scrypt_spSafe c R } (scrypt_postOut 88))]
 

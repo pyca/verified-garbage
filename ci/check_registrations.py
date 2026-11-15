@@ -19,7 +19,10 @@ implementation chooses and bind proofs made under `Proof/`:
   * no `consts :=`: the tables of constants the code reads are an
     implementation detail its proof's contract names, which `Registration`'s
     default (`consts_of`) finds there, so that adding or changing a table
-    touches no file reviewed by hand.
+    touches no file reviewed by hand;
+  * no `stack :=`: the stack the code's calls and frames use is one too,
+    which `Registration`'s default (`stack_of`) finds in that contract, so
+    that code that uses more or less stack touches no file reviewed by hand.
 """
 
 import pathlib
@@ -37,6 +40,7 @@ DEFAULTS = {"sp_safe", "of_sig"}
 THEOREM = re.compile(r"(?<![\w.'])(theorem|lemma)\s")
 BY = re.compile(r"(?<![\w.'])by(?![\w'])\s*([\w.']*)")
 CONSTS = re.compile(r"(?<![\w.'])consts\s*:=")
+STACK = re.compile(r"(?<![\w.'])stack\s*:=")
 MODULE_DOC = re.compile(r"/-!.*?-/", re.S)
 TITLE = re.compile(r"/-! # [^\n]+ -/")
 OPEN, CLOSE = "([{⟨", ")]}⟩"
@@ -132,6 +136,10 @@ def problems(lean: pathlib.Path) -> list[str]:
                 out.append(f"lean/{rel}:{line(m.start())}: `consts` in a file reviewed by hand; "
                            "the default (`consts_of`) finds the tables in the contract `verified` "
                            "proves: state them there, in `Abi.withConsts` "
+                           "(.agents/skills/adding-a-primitive/SKILL.md)")
+            for m in STACK.finditer(code):
+                out.append(f"lean/{rel}:{line(m.start())}: `stack` in a file reviewed by hand; "
+                           "the default (`stack_of`) finds it in the contract `verified` proves "
                            "(.agents/skills/adding-a-primitive/SKILL.md)")
             for m in BY.finditer(code):
                 if m.group(1) in DEFAULTS and not rest_of_block(code, m.start(), m.end()):

@@ -110,13 +110,11 @@ def artifacts : List Artifact :=
   Compressed.artifacts ++ [
   Spec.EcKey.P384.publicKeyApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     code := Impl.EcKey.X86_64.publicKeyP384
-    stack := 8
     verified := Proof.EcKey.X86_64.P384.pk_verified hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv }
     (Proof.EcKey.X86_64.Scrub.publicKeyOut_consts Spec.EcKey.P384.inst 8 Impl.Ecdsa.X86_64.p384.combConsts)),
   Spec.EcKey.P384.publicKeyApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     suffix := "_adx"
     code := Impl.EcKey.X86_64.publicKeyP384Adx
-    stack := 8
     verified := Proof.EcKey.X86_64.P384.pk_verified_adx hasLaw.law (Proof.P384.combOk7 hasLaw.law) hasLaw.inv }
     (Proof.EcKey.X86_64.Scrub.publicKeyOut_consts Spec.EcKey.P384.inst 8 Impl.Ecdsa.X86_64.p384.combConsts))] ++
   Validate.artifacts

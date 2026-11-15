@@ -42,7 +42,7 @@ open VG.Proof.AesGcm.X86_64 (GcmImpl Lay Env Perm save_ok exit_ok SavedAt savedR
 
 /-- After `finEntry w`: the registers, the kept values, and what changed. -/
 structure FinEntry (s₀ : State) (Ctx St W SP : Addr) (s : State) : Prop where
-  env : Env Ctx St W SP s
+  env : Env Ctx St W SP s 768
   alen : s.mem.readW (W + BitVec.ofNat 64 184) 64 = s₀.gpr .rdx
   tlen : s.mem.readW (W + BitVec.ofNat 64 192) 64 = s₀.gpr .rcx
   r8 : s.gpr .r8 = s₀.gpr .r8
@@ -56,15 +56,15 @@ structure FinEntry (s₀ : State) (Ctx St W SP : Addr) (s : State) : Prop where
 those of `s`. -/
 theorem finEntry_ok {s₀ s : State} {w : Reg} {Ctx St W SP : Addr}
     (hg : ∀ r, r ≠ .rax → s.gpr r = s₀.gpr r) (hCtx : s.gpr .rdi = Ctx) (hSt : s.gpr .rsi = St)
-    (hSP : s.gpr .rsp = SP) (hW : s.gpr w = W) (hperm : Perm Ctx St W s) (hm : s.mem = s₀.mem)
+    (hSP : s.gpr .rsp = SP) (hW : s.gpr w = W) (hperm : Perm Ctx St W s 768) (hm : s.mem = s₀.mem)
     (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) (hsv : ∀ p ∈ saved, s.gpr p.1 = s₀.gpr p.1) :
     WP isa (.block (finEntry w)) s (FinEntry s₀ Ctx St W SP) := by
   obtain ⟨s₁, run₁, hg₁, hrd₁, hwr₁, hsv₁, f₁⟩ := save_ok s w hW hperm.w
   have hsv₁' : SavedAt s₁.mem W s₀ := by
     intro p hp; rw [hsv₁ p hp, hsv p hp]
   rw [hm] at f₁
-  have w₂ := in_off hperm.w (show 184 + 8 ≤ 2560 by decide) (by decide)
-  have w₃ := in_off hperm.w (show 192 + 8 ≤ 2560 by decide) (by decide)
+  have w₂ := in_off hperm.w (show 184 + 8 ≤ 768 by decide) (by decide)
+  have w₃ := in_off hperm.w (show 192 + 8 ≤ 768 by decide) (by decide)
   rw [← hwr₁] at w₂ w₃
   have hw₁ : s₁.gpr w = W := by rw [hg₁, hW]
   obtain ⟨s₂, run₂, h15, h14, h13, hsp, h8, h9, hm₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa
@@ -105,14 +105,14 @@ theorem finEntry_ok {s₀ s : State} {w : Reg} {Ctx St W SP : Addr}
   · exact (f₁.mono fun r hr => by simp at hr; subst hr; simp).trans (f₂.mono fun r hr => by simp at hr; subst hr; simp)
 
 /-- The entry of `finish`, and the address `T` of `tag` kept at `W + 200`. -/
-theorem finishEntry_ok {s : State} {Ctx St W SP T : Addr} (L : Lay4 Ctx St W SP) (hCtx : s.gpr .rdi = Ctx)
+theorem finishEntry_ok {s : State} {Ctx St W SP T : Addr} (L : Lay4 Ctx St W SP 768) (hCtx : s.gpr .rdi = Ctx)
     (hSt : s.gpr .rsi = St) (hSP : s.gpr .rsp = SP) (hT : s.gpr .r8 = T) (hW : s.gpr .r9 = W)
-    (hperm : Perm Ctx St W s) :
+    (hperm : Perm Ctx St W s 768) :
     WP isa (.block (finEntry .r9 ++ ([.store (at_ .r15 tagPO) .r8] : List Instr))) s fun s₂ =>
       FinEntry s Ctx St W SP s₂ ∧ s₂.mem.readW (W + BitVec.ofNat 64 200) 64 = T := by
   refine WP.block_append (WP.mono (finEntry_ok (fun _ _ => rfl) hCtx hSt hSP hW hperm rfl rfl rfl
     fun _ _ => rfl) fun s₁ he => ?_)
-  have w₁ := he.env.perm.wW (show 200 + 8 ≤ 2560 by decide)
+  have w₁ := he.env.perm.wW (show 200 + 8 ≤ 768 by decide)
   obtain ⟨s₂, run₂, hm₂, hg₂, hrd₂, hwr₂⟩ : ∃ s₂, runBlock isa [.store (at_ .r15 tagPO) .r8] s₁ = some s₂ ∧
       s₂.mem = s₁.mem.writeW (W + BitVec.ofNat 64 200) T ∧ (∀ r, s₂.gpr r = s₁.gpr r) ∧ s₂.rd = s₁.rd ∧
       s₂.wr = s₁.wr := by
@@ -122,7 +122,7 @@ theorem finishEntry_ok {s : State} {Ctx St W SP T : Addr} (L : Lay4 Ctx St W SP)
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   have f₂ : Frame [⟨W + BitVec.ofNat 64 200, 8⟩] s₁.mem s₂.mem := by
     rw [hm₂]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have rd₂ : ∀ d, (d + 8 ≤ 200 ∨ 208 ≤ d) → d + 8 ≤ 2560 →
+  have rd₂ : ∀ d, (d + 8 ≤ 200 ∨ 208 ≤ d) → d + 8 ≤ 768 →
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h h' =>
     f₂.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.lay.w_w (by omega_using [h]) h' (by decide)) (by decide)
@@ -156,8 +156,8 @@ theorem streamFinish_run (v : GcmImpl) {s : State} (hp : Proof.Sm4Gcm.streamFini
   generalize hT : s.gpr .r8 = T at *
   generalize hW : s.gpr .r9 = W at *
   generalize hSP : s.gpr .rsp = SP at *
-  have L : Lay4 Ctx St W SP := Lay4.of wc ws ww d_cs d_cw d_sw hsp k_c k_s k_w
-  have hperm : Perm Ctx St W s := ⟨by rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..)),
+  have L : Lay4 Ctx St W SP 768 := Lay4.of wc ws ww d_cs d_cw d_sw hsp k_c k_s k_w
+  have hperm : Perm Ctx St W s 768 := ⟨by rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..)),
     by rw [hwr]; exact covers_of_mem (List.mem_cons_self ..),
     by rw [hwr]; exact covers_of_mem (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (List.mem_cons_self ..)))⟩
   have hTw : Covers [⟨T, 16⟩] s.wr := by rw [hwr]; exact covers_of_mem (List.mem_cons_of_mem _ (List.mem_cons_self ..))
@@ -193,10 +193,10 @@ theorem streamFinish_run (v : GcmImpl) {s : State} (hp : Proof.Sm4Gcm.streamFini
   have hT₃ : s₃.mem.readW (s₃.gpr .r15 + BitVec.ofNat 64 200) 64 = T := by
     rw [he₃.r15, f₃.readW (r := ⟨W + BitVec.ofNat 64 200, 8⟩) (Region.contains_self _ _) dT (by decide), hT₂]
   obtain ⟨s₄, run₄, hb₄, f₄, hg₄, hrd₄, hwr₄⟩ := tagOut_ok (b := .r15) (d := 200) he₃.r15 hT₃
-    (by rw [he₃.r15]; exact he₃.perm.wR (show 200 + 8 ≤ 2560 by decide)) he₃.perm.w
+    (by rw [he₃.r15]; exact he₃.perm.wR (show 200 + 8 ≤ 768 by decide)) he₃.perm.w
     (by rw [hwr₃, he.wr]; exact hTw)
   refine WP.of_runBlock ⟨s₄, run₄, ?_⟩
-  have he₄ : Env Ctx St W SP s₄ := he₃.keep (fun r hr => by
+  have he₄ : Env Ctx St W SP s₄ 768 := he₃.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₄ _ (by decide) (by decide) (by decide)) hrd₄ hwr₄
   have hsv₄ : SavedAt s₄.mem W s :=

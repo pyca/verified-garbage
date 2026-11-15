@@ -139,9 +139,9 @@ theorem keyGenImp768 : (keyGenK kem768).Implies (Proof.MlKem.Scrubbed.keyGenBody
 /-- The halves of K-PKE key generation of ML-KEM-768, safe to call. -/
 theorem kgRows768 : KgRowsOk kem768w.L where
   ntt := ⟨kgNtt768_correct, kgNtt768_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
+    Code.all_of_spTest (by lit_decide)⟩
   row := ⟨kgRow768_correct, kgRow768_ct, nosp_of (by lit_decide), by lit_decide, by lit_decide,
-    Code.all_of_allInstrs (by lit_decide)⟩
+    Code.all_of_spTest (by lit_decide)⟩
 
 theorem kgH16Wf768 : KeyGenH.KgH16Wf kem768w :=
   { kgWf768.toKgWfB with
