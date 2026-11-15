@@ -229,6 +229,10 @@ def VOp.encode : VOp → Option Nat
   | .sha512h2 d n m => some (v3 0xCE608400 d n m)
   | .sha512su0 d n => some (v2 0xCEC08000 d n)
   | .sha512su1 d n m => some (v3 0xCE608800 d n m)
+  -- "SM4E": `11001110 11000000 100001 Rn Rd`; "SM4EKEY": `11001110 011 Rm
+  -- 110010 Rn Rd`.
+  | .sm4e d n => some (v2 0xCEC08400 d n)
+  | .sm4ekey d n m => some (v3 0xCE60C800 d n m)
   -- "EOR3", "BCAX": `Ra` at bits 14–10; "RAX1"; "XAR": `imm6` at 15–10.
   | .eor3 d n m a => some (v3 (0xCE000000 ||| a.index <<< 10) d n m)
   | .bcax d n m a => some (v3 (0xCE200000 ||| a.index <<< 10) d n m)

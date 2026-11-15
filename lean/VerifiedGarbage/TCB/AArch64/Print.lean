@@ -167,6 +167,8 @@ def VOp.asm : VOp → String
   | .sha512h2 d n m => s!"sha512h2 {d.q}, {n.q}, {m.arr "2d"}"
   | .sha512su0 d n => s!"sha512su0 {d.arr "2d"}, {n.arr "2d"}"
   | .sha512su1 d n m => s!"sha512su1 {d.arr "2d"}, {n.arr "2d"}, {m.arr "2d"}"
+  | .sm4e d n => s!"sm4e {d.arr "4s"}, {n.arr "4s"}"
+  | .sm4ekey d n m => s!"sm4ekey {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
   | .eor3 d n m a => s!"eor3 {d.b}, {n.b}, {m.b}, {a.b}"
   | .bcax d n m a => s!"bcax {d.b}, {n.b}, {m.b}, {a.b}"
   | .rax1 d n m => s!"rax1 {d.arr "2d"}, {n.arr "2d"}, {m.arr "2d"}"

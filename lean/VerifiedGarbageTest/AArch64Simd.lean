@@ -9,6 +9,7 @@ public meta import VerifiedGarbage.TCB.AArch64.Print
 Each expected value was computed by the same instruction, in inline assembly
 exactly as the printer prints it (checked below), in a program
 cross-compiled with `aarch64-linux-gnu-gcc -march=armv8.4-a+crypto+sha3`
+(`+sm4` too, for SM4E and SM4EKEY)
 and run under `qemu-aarch64 -cpu max`'s emulation of an AArch64 CPU with
 every feature, not on Arm hardware. Before each instruction the program
 loaded `v0`–`v3`, `x1` and `x0` from the inputs below (the pseudorandom
@@ -157,6 +158,12 @@ def xrun (k : Nat) (i : Instr) : Option (BitVec 64) := (exec i (s k)).map (·.gp
 #guard vrun 0 (.sha512h2 .v0 .v1 .v2) == some 0xfd4ab9e6b07a67152fcdcc94e07ca0f9#128
 #guard vrun 0 (.sha512su0 .v0 .v1) == some 0x9c7779b0e57cd56834c2e4b7e762c632#128
 #guard vrun 0 (.sha512su1 .v0 .v1 .v2) == some 0x074ce8dcceec869615fd4254e7abcb15#128
+#guard vrun 0 (.sm4e .v0 .v1) == some 0xb97c93e722dcdef27333ad3ce1637179#128
+#guard vrun 0 (.sm4e .v0 .v0) == some 0xe4419483c62ff8b7ed93cc0679795172#128
+#guard vrun 0 (.sm4ekey .v0 .v1 .v2) == some 0xb8418dc0821a81b6a76011928b2de305#128
+#guard vrun 0 (.sm4ekey .v0 .v0 .v1) == some 0xcd388321aa9203906c3d426283719754#128
+#guard vrun 0 (.sm4ekey .v0 .v1 .v0) == some 0x718bfdbf330ffedb4ae6e0f8b71cff06#128
+#guard vrun 0 (.sm4ekey .v0 .v0 .v0) == some 0x9a050672effaa43de7337b475b563816#128
 #guard vrun 0 (.eor3 .v0 .v1 .v2 .v3) == some 0xd38723c13fe4abb8ef0db051ad714e91#128
 #guard vrun 0 (.bcax .v0 .v1 .v2 .v3) == some 0xd58323c033e4ada0ef0cbc51b8715c91#128
 #guard vrun 0 (.rax1 .v0 .v1 .v2) == some 0xe5c4f60725678e0ea4523881a00bb4c9#128
@@ -277,6 +284,12 @@ def xrun (k : Nat) (i : Instr) : Option (BitVec 64) := (exec i (s k)).map (·.gp
 #guard vrun 1 (.sha512h2 .v0 .v1 .v2) == some 0x379e146e30a774b6e2dcb854bd79d4ed#128
 #guard vrun 1 (.sha512su0 .v0 .v1) == some 0xe05ada678228565c85de122042e15cd2#128
 #guard vrun 1 (.sha512su1 .v0 .v1 .v2) == some 0x31accce537ca31778baf01787ecbbc7e#128
+#guard vrun 1 (.sm4e .v0 .v1) == some 0x28f25e04d1e0bae0300a27f870c0d9c9#128
+#guard vrun 1 (.sm4e .v0 .v0) == some 0xfab553693c111d40f95bb1973c4d2a29#128
+#guard vrun 1 (.sm4ekey .v0 .v1 .v2) == some 0x12d40a14cea5c3c25c4f4d1b503e5d7b#128
+#guard vrun 1 (.sm4ekey .v0 .v0 .v1) == some 0xbc932d434ef1b3c0b2f8911de7395f0c#128
+#guard vrun 1 (.sm4ekey .v0 .v1 .v0) == some 0x7638cf8adb64150d498dbb04a8584f8f#128
+#guard vrun 1 (.sm4ekey .v0 .v0 .v0) == some 0x2b2a45104166d56bb847796264825546#128
 #guard vrun 1 (.eor3 .v0 .v1 .v2 .v3) == some 0xf877b13717bddcf3717782f1ceede32e#128
 #guard vrun 1 (.bcax .v0 .v1 .v2 .v3) == some 0xfb66af3715b3dde3717799e1cce5e32c#128
 #guard vrun 1 (.rax1 .v0 .v1 .v2) == some 0xabb20c466ea3e477424cf8dec5007c1d#128
@@ -454,6 +467,12 @@ def bytesAt (o : Nat) : BitVec 128 :=
 #guard Instr.asm (.vop (.sha512h2 .v0 .v1 .v2)) == ["sha512h2 q0, q1, v2.2d"]
 #guard Instr.asm (.vop (.sha512su0 .v0 .v1)) == ["sha512su0 v0.2d, v1.2d"]
 #guard Instr.asm (.vop (.sha512su1 .v0 .v1 .v2)) == ["sha512su1 v0.2d, v1.2d, v2.2d"]
+#guard Instr.asm (.vop (.sm4e .v0 .v1)) == ["sm4e v0.4s, v1.4s"]
+#guard Instr.asm (.vop (.sm4e .v0 .v0)) == ["sm4e v0.4s, v0.4s"]
+#guard Instr.asm (.vop (.sm4ekey .v0 .v1 .v2)) == ["sm4ekey v0.4s, v1.4s, v2.4s"]
+#guard Instr.asm (.vop (.sm4ekey .v0 .v0 .v1)) == ["sm4ekey v0.4s, v0.4s, v1.4s"]
+#guard Instr.asm (.vop (.sm4ekey .v0 .v1 .v0)) == ["sm4ekey v0.4s, v1.4s, v0.4s"]
+#guard Instr.asm (.vop (.sm4ekey .v0 .v0 .v0)) == ["sm4ekey v0.4s, v0.4s, v0.4s"]
 #guard Instr.asm (.vop (.eor3 .v0 .v1 .v2 .v3)) == ["eor3 v0.16b, v1.16b, v2.16b, v3.16b"]
 #guard Instr.asm (.vop (.bcax .v0 .v1 .v2 .v3)) == ["bcax v0.16b, v1.16b, v2.16b, v3.16b"]
 #guard Instr.asm (.vop (.rax1 .v0 .v1 .v2)) == ["rax1 v0.2d, v1.2d, v2.2d"]
@@ -478,6 +497,18 @@ def bytesAt (o : Nat) : BitVec 128 :=
 #guard Instr.asm (.ldrq .v31 .x2 16) == ["ldr q31, [x2, #16]"]
 #guard Instr.asm (.strq .v16 .x30 65520) == ["str q16, [x30, #65520]"]
 
+/-! ## SM4E and SM4EKEY: the machine code
+
+The words `aarch64-linux-gnu-as -march=armv8.4-a+sm4` (GNU Binutils 2.42)
+assembles the printed text to. -/
+
+#guard Instr.encode (.vop (.sm4e .v0 .v1)) == some [0xCEC08420]
+#guard Instr.encode (.vop (.sm4e .v31 .v9)) == some [0xCEC0853F]
+#guard Instr.encode (.vop (.sm4ekey .v0 .v1 .v2)) == some [0xCE62C820]
+#guard Instr.encode (.vop (.sm4ekey .v7 .v30 .v18)) == some [0xCE72CBC7]
+#guard Instr.asm (.vop (.sm4e .v31 .v9)) == ["sm4e v31.4s, v9.4s"]
+#guard Instr.asm (.vop (.sm4ekey .v7 .v30 .v18)) == ["sm4ekey v7.4s, v30.4s, v18.4s"]
+
 /-! ## CPU features -/
 
 #guard isa.requires (.vop (.aese .v0 .v1)) == ["aes"]
@@ -489,6 +520,8 @@ def bytesAt (o : Nat) : BitVec 128 :=
 #guard isa.requires (.vop (.sha512h2 .v0 .v1 .v2)) == ["sha3"]
 #guard isa.requires (.vop (.eor3 .v0 .v1 .v2 .v3)) == ["sha3"]
 #guard isa.requires (.vop (.xar .v0 .v1 .v2 3)) == ["sha3"]
+#guard isa.requires (.vop (.sm4e .v0 .v1)) == ["sm4"]
+#guard isa.requires (.vop (.sm4ekey .v0 .v1 .v2)) == ["sm4"]
 #guard isa.requires (.vop (.tbl .v0 .v1 .v2)) == []
 #guard isa.requires (.vop (.umullH true .v0 .v1 .v2)) == []
 #guard isa.requires (.vop (.umlalH false .v0 .v1 .v2)) == []

@@ -169,11 +169,12 @@ Modelling choices:
   ZIP1, ZIP2, TRN1, TRN2, UZP1, UZP2, TBL, TBX, UMULL, UMLAL, PMULL, MUL, MLA, MLS, SQDMULH, UMIN), and the cryptographic ones
   (AESE, AESD, AESMC, AESIMC, SHA1C, SHA1P, SHA1M, SHA1H, SHA1SU0, SHA1SU1,
   SHA256H, SHA256H2, SHA256SU0, SHA256SU1, SHA512H, SHA512H2, SHA512SU0,
-  SHA512SU1, EOR3, BCAX, RAX1, XAR), and SVE2's XAR, are all among those whose
+  SHA512SU1, EOR3, BCAX, RAX1, XAR, SM4E, SM4EKEY), and SVE2's XAR, are all among those whose
   timing Arm specifies to be independent of their data when PSTATE.DIT is 1
   (DDI 0487, "About PSTATE.DIT"; the description of SVE2's XAR says "This
   instruction is a data-independent-time instruction as described in About
-  PSTATE.DIT"). CMHI, CMHS, ADDV and UADDLV are in the list of
+  PSTATE.DIT", and so do those of SM4E and SM4EKEY in the A64 ISA XML
+  2025-12). CMHI, CMHS, ADDV and UADDLV are in the list of
   data-independent-time instructions of DDI 0487 M.b C5.2.4, "DIT, Data
   Independent Timing" (also DDI 0601 2026-09): "Advanced SIMD three same: ADD,
   ADDP, AND, …, CMEQ, CMGE, CMGT, CMHI, CMHS, …" and "Advanced SIMD across
@@ -420,6 +421,10 @@ inductive VOp
   | sha512su0 (d n : VReg)
   /-- `sha512su1 vd.2d, vn.2d, vm.2d` -/
   | sha512su1 (d n m : VReg)
+  /-- `sm4e vd.4s, vn.4s` -/
+  | sm4e (d n : VReg)
+  /-- `sm4ekey vd.4s, vn.4s, vm.4s` -/
+  | sm4ekey (d n m : VReg)
   /-- `eor3 vd.16b, vn.16b, vm.16b, va.16b` -/
   | eor3 (d n m a : VReg)
   /-- `bcax vd.16b, vn.16b, vm.16b, va.16b` -/
@@ -951,6 +956,9 @@ def Sha1Op.f : Sha1Op → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32
   `sha256Su0`, `sha256Su1`;
 * "SHA512H", "SHA512H2", "SHA512SU0", "SHA512SU1": `sha512H`, `sha512H2`,
   `sha512Su0`, `sha512Su1`;
+* "SM4E", "SM4EKEY" (A64 ISA XML 2025-12): `sm4E`, `sm4EKey`, four rounds of
+  SM4's encryption of `V[d]` under the round keys `V[n]`, and of its key
+  expansion from `V[n]` with the constants `V[m]`;
 * "EOR3": `Vn EOR Vm EOR Va`; "BCAX": `Vn EOR (Vm AND NOT(Va))`; "RAX1":
   `Elem[Vd, e, 64] = Elem[Vn, e, 64] EOR ROL(Elem[Vm, e, 64], 1)`; "XAR":
   `Elem[Vd, e, 64] = ROR(Elem[Vn, e, 64] EOR Elem[Vm, e, 64], imm6)`;
@@ -1076,6 +1084,8 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
   | .sha512h2 d n m => some (d, sha512H2 (s.v d) (s.v n) (s.v m))
   | .sha512su0 d n => some (d, sha512Su0 (s.v d) (s.v n))
   | .sha512su1 d n m => some (d, sha512Su1 (s.v d) (s.v n) (s.v m))
+  | .sm4e d n => some (d, sm4E (s.v d) (s.v n))
+  | .sm4ekey d n m => some (d, sm4EKey (s.v n) (s.v m))
   | .eor3 d n m a => some (d, s.v n ^^^ s.v m ^^^ s.v a)
   | .bcax d n m a => some (d, s.v n ^^^ (s.v m &&& ~~~(s.v a)))
   | .rax1 d n m => some (d, VArr.d2.map2 (fun _ x y => x ^^^ y.rotateLeft 1) (s.v n) (s.v m))
@@ -1463,7 +1473,10 @@ sources, which Rust's `aes` feature covers together; FEAT_SHA1 for SHA1C,
 SHA1P, SHA1M, SHA1H, SHA1SU0, SHA1SU1 and FEAT_SHA256 for SHA256H,
 SHA256H2, SHA256SU0, SHA256SU1 (Rust's `sha2`); FEAT_SHA512 for SHA512H,
 SHA512H2, SHA512SU0, SHA512SU1 and FEAT_SHA3 for EOR3, BCAX, RAX1, XAR
-(Rust's `sha3`); FEAT_SVE2 for SVE2's XAR (DDI 0602, "XAR": `if
+(Rust's `sha3`); FEAT_SM4 for SM4E and SM4EKEY (A64 ISA XML 2025-12, "SM4E",
+"SM4EKEY": `if !IsFeatureImplemented(FEAT_SM4) then
+EndOfDecode(Decode_UNDEF); end;`), Rust's `sm4`, which stands for FEAT_SM4
+and FEAT_SM3 together; FEAT_SVE2 for SVE2's XAR (DDI 0602, "XAR": `if
 !IsFeatureImplemented(FEAT_SVE2) && !IsFeatureImplemented(FEAT_SME) then
 UNDEFINED`; Rust's `sve2`, which implies `sve`, since FEAT_SVE2 requires
 FEAT_SVE); FEAT_DIT for MRS of the system register DIT (DDI 0601 2026-03,
@@ -1485,6 +1498,7 @@ def Instr.requires : Instr → List String
     ["sha2"]
   | .vop (.sha512h ..) | .vop (.sha512h2 ..) | .vop (.sha512su0 ..) | .vop (.sha512su1 ..)
   | .vop (.eor3 ..) | .vop (.bcax ..) | .vop (.rax1 ..) | .vop (.xar ..) => ["sha3"]
+  | .vop (.sm4e ..) | .vop (.sm4ekey ..) => ["sm4"]
   | .vop (.xarS ..) => ["sve2"]
   | .mrsDit _ | .msrDitImm _ => ["dit"]
   | .barrier .sb => ["sb"]

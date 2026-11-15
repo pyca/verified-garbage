@@ -201,5 +201,69 @@ def sha512Su1 (op1 op2 op3 : BitVec 128) : BitVec 128 :=
   ofVDwords (vdword op1 0 + sig (vdword op2 0) + vdword op3 0)
     (vdword op1 1 + sig (vdword op2 1) + vdword op3 1)
 
+/-! ## SM4 (A64 ISA XML 2025-12, shared pseudocode `Sbox`; "SM4E", "SM4EKEY") -/
+
+/-- The constant `sboxstring : bits(2048)` of the shared pseudocode function
+`Sbox` ("Used in SM4E crypto instruction"), its sixteen 128-bit rows
+concatenated (`::`) in the order the pseudocode lists them, row `F` first
+(most significant):
+`/*F*/ 0xd690e9fecce13db716b614c228fb2c05[127:0] :: … ::
+/*0*/ 0x18f07dec3adc4d2079ee5f3ed7cb3948[127:0]`. -/
+def sm4SboxString : BitVec 2048 :=
+  (0xd690e9fecce13db716b614c228fb2c05#128 ++ 0x2b679a762abe04c3aa44132649860699#128 ++
+   0x9c4250f491ef987a33540b43edcfac62#128 ++ 0xe4b31ca9c908e89580df94fa758f3fa6#128 ++
+   0x4707a7fcf37317ba83593c19e6854fa8#128 ++ 0x686b81b27164da8bf8eb0f4b70569d35#128 ++
+   0x1e240e5e6358d1a225227c3b01217887#128 ++ 0xd40046579fd327524c3602e7a0c4c89e#128 ++
+   0xeabf8ad240c738b5a3f7f2cef96115a1#128 ++ 0xe0ae5da49b341a55ad933230f58cb1e3#128 ++
+   0x1df6e22e8266ca60c02923ab0d534e6f#128 ++ 0xd5db3745defd8e2f03ff6a726d6c5b51#128 ++
+   0x8d1baf92bbddbc7f11d95c411f105ad8#128 ++ 0x0ac13188a5cd7bbd2d74d012b8e5b4b0#128 ++
+   0x8969974a0c96777e65b9f109c56ec684#128 ++ 0x18f07dec3adc4d2079ee5f3ed7cb3948#128 : BitVec 2048)
+
+/-- `Sbox(sboxin)`: `let sboxindex : integer = 255 - UInt(sboxin); sboxout =
+sboxstring[sboxindex*:8]` (the 8 bits from bit `8 * sboxindex`). -/
+def sm4Sbox (sboxin : BitVec 8) : BitVec 8 :=
+  sm4SboxString.extractLsb' (8 * (255 - sboxin.toNat)) 8
+
+/-- `for i = 0 to 3 do intval[i*:8] = Sbox(intval[i*:8]); end`. -/
+def sm4SboxWord (x : BitVec 32) : BitVec 32 :=
+  sm4Sbox (x.extractLsb' 24 8) ++ sm4Sbox (x.extractLsb' 16 8) ++ sm4Sbox (x.extractLsb' 8 8) ++
+    sm4Sbox (x.extractLsb' 0 8)
+
+/-- One iteration of the loop `for index = 0 to 3` of SM4E and SM4EKEY, which
+differ only in the line after the S-boxes (`lin`: `intval = intval XOR
+ROL(intval, 2) XOR ROL(intval, 10) XOR ROL(intval, 18) XOR ROL(intval, 24)`
+for SM4E, `intval = intval XOR ROL(intval, 13) XOR ROL(intval, 23)` for
+SM4EKEY), with `k` the iteration's `roundkey = Vn[index*:32]` (SM4E) or
+`const = Vm[index*:32]` (SM4EKEY):
+`intval = roundresult[127:96] XOR roundresult[95:64] XOR roundresult[63:32]
+XOR k; for i = 0 to 3 do intval[i*:8] = Sbox(intval[i*:8]); end; (lin);
+intval = intval XOR roundresult[31:0]; roundresult[31:0] =
+roundresult[63:32]; roundresult[63:32] = roundresult[95:64];
+roundresult[95:64] = roundresult[127:96]; roundresult[127:96] = intval`. -/
+def sm4Step (lin : BitVec 32 → BitVec 32) (roundresult : BitVec 128) (k : BitVec 32) : BitVec 128 :=
+  let intval := vword roundresult 3 ^^^ vword roundresult 2 ^^^ vword roundresult 1 ^^^ k
+  let intval := lin (sm4SboxWord intval)
+  let intval := intval ^^^ vword roundresult 0
+  ofVWords (vword roundresult 1) (vword roundresult 2) (vword roundresult 3) intval
+
+/-- The four iterations, `index = 0` to `3`, from `roundresult`, with the
+words of `ks` in turn. -/
+def sm4Steps (lin : BitVec 32 → BitVec 32) (roundresult ks : BitVec 128) : BitVec 128 :=
+  sm4Step lin (sm4Step lin (sm4Step lin (sm4Step lin roundresult (vword ks 0)) (vword ks 1))
+    (vword ks 2)) (vword ks 3)
+
+/-- SM4E, with `roundresult = V[d]` and the round keys `Vn = V[n]`: the four
+iterations with `intval = intval XOR ROL(intval, 2) XOR ROL(intval, 10) XOR
+ROL(intval, 18) XOR ROL(intval, 24)`; `V[d] = roundresult`. -/
+def sm4E (vd vn : BitVec 128) : BitVec 128 :=
+  sm4Steps (fun x => x ^^^ x.rotateLeft 2 ^^^ x.rotateLeft 10 ^^^ x.rotateLeft 18 ^^^ x.rotateLeft 24)
+    vd vn
+
+/-- SM4EKEY, with `roundresult = V[n]` and the constants `Vm = V[m]`: the four
+iterations with `intval = intval XOR ROL(intval, 13) XOR ROL(intval, 23)`;
+`V[d] = roundresult`. -/
+def sm4EKey (vn vm : BitVec 128) : BitVec 128 :=
+  sm4Steps (fun x => x ^^^ x.rotateLeft 13 ^^^ x.rotateLeft 23) vn vm
+
 
 end VG.AArch64
