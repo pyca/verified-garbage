@@ -15,11 +15,13 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 # An FFDH parameter candidate on AArch64: the sieve
 
 `tableWrite` (`tableWrite_ok`) writes RSA's table of small primes at
-`aTab`; `sieve` (`sieve_ok`) runs RSA's trial division by its first
-`4 (trialN w)` entries (512, or 1024 for `w > 16`) on `aN`, and or's the
-mask of a divisor into `fBad`. It stops after the first word of the table
-with a divisor (`stopN`, the words it reads): a divisor among those is one
-among all (`anyPre_stopN`), so the mask is the whole division's.
+`aTab`; `sieve first` (`sieve_ok`) runs RSA's trial division on `aN` by
+the table's first `4 (sieveWords first w)` entries, the whole division's
+`4 (trialN w)` (512, or 1024 for `w > 16`) or, for `p` before `q` is
+looked at, its first words' alone, and or's the mask of a divisor into
+`fBad`. It stops after the first word of the table with a divisor (`stopN`,
+the words it reads): a divisor among those is one among all
+(`anyPre_stopN`), so the mask is that of all the words it was given.
 -/
 
 @[expose] public section

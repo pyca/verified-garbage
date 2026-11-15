@@ -31,9 +31,10 @@ meta import VerifiedGarbage.Proof.RsaKeyGen.Slots
 # An FFDH parameter candidate on AArch64: constant time of the shape's checks
 
 The congruence (`residue_ct`), RSA's table (`tableWrite_ct`), the sieve
-(`sieve_ct`, RSA's `trialEntry_ct` for the words it reads, `stopN`, which
-the number in `aN` fixes) and `q` (`halveQ_ct`), each from the working
-space and what it reads.
+(`sieve_ct`, by the table's first words or by all of the division's:
+RSA's `trialEntry_ct` for the words it reads, `stopN`, which the number in
+`aN` fixes) and `q` (`halveQ_ct`), each from the working space and what it
+reads.
 -/
 
 @[expose] public section
@@ -77,9 +78,6 @@ def SIE (a : WsP × Nat) (s : State) : Prop := Ws s a.1.B a.1.Z a.1.w
 /-- The words the sieve reads. -/
 abbrev sieveN (first : Bool) (a : WsP × Nat) : Nat := stopN a.2 (sieveWords first a.1.w)
 
-theorem trialN_le (first : Bool) (w : Nat) : sieveWords first w ≤ 256 ∧ 1 ≤ sieveWords first w :=
-  ⟨(sieveWords_le first w).2, (sieveWords_le first w).1⟩
-
 theorem sieveIter_ok {first : Bool} {a : WsP × Nat} {k : Nat} {s : State}
     (hk : k < stopN a.2 (sieveWords first a.1.w)) (h : SI first a k s) :
     WP isa (seqs (([.block [ld .x17 .x9, next .x9]] : List (Prog isa)) ++ trialEntry 0 ++ trialEntry 1 ++
@@ -89,7 +87,7 @@ theorem sieveIter_ok {first : Bool} {a : WsP × Nat} {k : Nat} {s : State}
         (k + 1 < stopN a.2 (sieveWords first a.1.w) → SI first a (k + 1) t) ∧
         (k + 1 = stopN a.2 (sieveWords first a.1.w) → SIE a t) := by
   obtain ⟨hw, hT, h9, h10, h7, h8, htab, hc, h1⟩ := h
-  have hN := trialN_le first a.1.w
+  have hN := (sieveWords_le first a.1.w).symm
   have hle : stopN a.2 (sieveWords first a.1.w) ≤ sieveWords first a.1.w := stopN_le _ _
   obtain ⟨nxt, nxf⟩ := stopN_next hk
   have e10 : BitVec.ofNat 64 (sieveWords first a.1.w - k) - BitVec.ofNat 64 1 =
@@ -123,7 +121,7 @@ theorem sieveBody_ct (first : Bool) :
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.2.2.2.1, h₂.2.2.2.1]) (by taint_decide))
     (fun p s h => ?_)) ?_)
   · obtain ⟨hk, hw, hT, h9, -, h7, h8, htab, -, -⟩ := h
-    have hN := trialN_le first p.1.1.w
+    have hN := (sieveWords_le first p.1.1.w).symm
     have hle : stopN p.1.2 (sieveWords first p.1.1.w) ≤ sieveWords first p.1.1.w := stopN_le _ _
     replace hk : p.2 < stopN p.1.2 (sieveWords first p.1.1.w) := hk
     exact WP.mono (tlLoad_ok hT (by omega_using [hk, hN, hle]) htab ⟨hw, h7, h8, rfl, Keep.refl _ _⟩ h9) fun t ⟨⟨h17, _, hm⟩, k⟩ =>
@@ -149,7 +147,7 @@ theorem sieve_ct' (first : Bool) (hinit : RelCT isa (Two SV)
       (two_taint [.x0] (pins_ws' (fun a : WsP × Nat => a.1.B) (fun a : WsP × Nat => a.1.Z)
         (fun a : WsP × Nat => a.1.w) fun _ _ h => h) (by taint_decide)))
   refine WP.mono (sieveInit_ok first hw) fun t ⟨⟨h9, h10, h1, h7, h8, hm⟩, k⟩ =>
-    ⟨stopN_pos _ (trialN_le first a.1.w).2, ?_⟩
+    ⟨stopN_pos _ (sieveWords_le first a.1.w).1, ?_⟩
   exact ⟨hw.congr' (rs := []) (by rw [hm]; exact Frm.refl _ _ _) (by simp) k (by decide), hT, h9,
     by rw [h10, Nat.sub_zero], h7, h8, fun i hi => by rw [hm]; exact htab i hi, by rw [hm]; exact hc,
     by rw [h1, Nat.mul_zero, anyPre_zero]; rfl⟩
