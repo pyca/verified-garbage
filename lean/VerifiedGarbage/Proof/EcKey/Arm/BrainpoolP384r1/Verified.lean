@@ -31,6 +31,8 @@ meta import VerifiedGarbage.Proof.Weierstrass.Arm.LadderP
 import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
 
 /-!
 # brainpoolP384r1 public keys on 32-bit ARM: `Verified`
@@ -103,7 +105,8 @@ theorem agree_τ₀ {s t : State} (_hs : pkArm.pre s) (_ht : pkArm.pre t) (h : p
   · exact h2
 
 theorem pk_ct : ConstantTime isa pkArm.pre pkArm.pub Impl.EcKey.Arm.publicKeyBrainpoolP384r1 :=
-  VG.Taint.constantTime (A := taint) τ₀ (fun _ _ hs ht h => agree_τ₀ hs ht h) (by native_taint_decide)
+  VG.Taint.constantTime_of_exists (A := taintS) τ₀ (fun _ _ hs ht h => agree_τ₀ hs ht h)
+    (by taint_decide_sum [mulPSum, addPSum, subPSum])
 
 theorem pkU_ct : ConstantTime isa pkArm.pre pkArm.pub Impl.EcKey.Arm.publicKeyBrainpoolP384r1U :=
   VG.Taint.constantTime (A := taintU) τ₀ (fun _ _ hs ht h => agree_τ₀ hs ht h) (by taint_decide)

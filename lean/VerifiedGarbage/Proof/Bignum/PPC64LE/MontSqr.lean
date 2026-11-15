@@ -174,7 +174,7 @@ theorem rowCore_arith {Q RA RL c2 L CY1 CY2 c3 A0 R7 RH c4 H Px : Nat}
     (hCY2 : CY2 < 2 ^ 64) (hRL : RL = A0 + 2 ^ 64 * R7) (ehi : RH + 2 ^ 64 * Q * c4 = R7 + Q * CY2 + H)
     (lh : L + 2 ^ 64 * H = Px) :
     2 ^ 64 * (RH + 2 ^ 64 * Q * c4) + A0 = RA + 2 ^ 64 * Q * CY1 + Px := by
-  have c3z : c3 = 0 := by omega
+  have c3z : c3 = 0 := by omega_arith
   subst c3z
   grind
 
@@ -608,7 +608,7 @@ theorem boundary8_ok {ptr : Reg} {s : State} {B : Addr} {Z d : Nat} (hs : Scr s 
     have := Bool.toNat_le v.ca; have := Bool.toNat_le u.ca; have := (u.gpr .r4).isLt; have := (t.gpr .r4).isLt
     cases h : t.ca
     · rfl
-    · rw [h] at et; simp at et; omega
+    · rw [h] at et; simp at et; omega_arith
   · exact ((w.keep.trans kv).trans w'.keep).mono fun r hr => by
       simp only [List.mem_append, List.mem_cons, List.mem_map, List.mem_range, List.not_mem_nil, or_false] at hr ⊢
       grind
@@ -779,7 +779,7 @@ theorem cnt_decHi {h : Nat} (hh : h < 2 ^ 32) (h1 : 1 ≤ h) :
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_sub, BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat,
     Nat.shiftLeft_eq]
-  omega
+  omega_arith
 
 theorem eval_zero_w {s : State} {r : Reg} {h l : Nat} (hl : l < 2 ^ 32) (e : s.gpr r = cnt h l) :
     isa.eval (.zero .w r) s = some (decide (l = 0)) := by
@@ -2144,29 +2144,29 @@ theorem redBlock_ok {s : State} {B : Addr} {Z dS dM K q A2 : Nat} (hs : Scr s B 
         t.gpr .r30 = BitVec.ofNat 64 (K - q - 1) ∧ t.gpr .r0 = 0) ∧ Keep redRegs s t := by
   have hnw := hs.nowrap
   unfold redBlock
-  refine WP.seq (WP.mono (redHead_ok (N := 16 * K) (p := 8 * q) hs h0 h10 h7 h11 h9 (by omega) hK' (by omega) hS
-    (by omega) (by omega) hM hm) fun t₁ ⟨⟨e₁, o₁, r7₁, r12₁, r9₁, z₁, _⟩, k₁⟩ => ?_)
+  refine WP.seq (WP.mono (redHead_ok (N := 16 * K) (p := 8 * q) hs h0 h10 h7 h11 h9 (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]) hK' (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]) hS
+    (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]) (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]) hM hm) fun t₁ ⟨⟨e₁, o₁, r7₁, r12₁, r9₁, z₁, _⟩, k₁⟩ => ?_)
   have hs₁ := hs.congr k₁.wr
   refine WP.seq (WP.mono (redChunks_ok (p := 8 * q + 8) (N := 16 * K) (G := K - 1) (dU := dS + 8 * (8 * q)) hs₁ z₁
-    (by rw [r12₁, show dS + 8 * (8 * q) + 64 = dS + 8 * (8 * q + 8) by omega]) r7₁ (by rw [k₁.gpr _ (by decide), h10])
-    r9₁ (by omega) hS (by omega) (by omega) (by omega) (by omega))
+    (by rw [r12₁, show dS + 8 * (8 * q) + 64 = dS + 8 * (8 * q + 8) by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]]) r7₁ (by rw [k₁.gpr _ (by decide), h10])
+    r9₁ (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]) hS (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]) (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]) (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]) (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]))
     fun t₂ ⟨⟨e₂, o₂, r12₂, r7₂, r9₂, r10₂, z₂⟩, k₂⟩ => ?_)
   have hs₂ := hs₁.congr k₂.wr
   have g₂ : ∀ r, r ∉ redHeadRegs → r ∉ chunkRegsR → t₂.gpr r = s.gpr r := fun r h1 h2 => by
     rw [k₂.gpr r h2, k₁.gpr r h1]
   refine WP.mono (redTail_ok (p := 8 * q + 8 + 8 * (K - 1)) (N := 16 * K) (dM := dM) (dU := dS + 8 * (8 * q))
-    (w := 8 * K) hs₂ z₂ (by rw [r12₂, show dS + 8 * (8 * q + 8) + 64 * (K - 1) = dS + 8 * (8 * q + 8 + 8 * (K - 1)) by omega])
-    (by rw [r7₂, show dM + 64 + 64 * (K - 1) = dM + 8 * (8 * K) by omega]) (by rw [r10₂, k₁.gpr _ (by decide), h10])
-    (by rw [g₂ _ (by decide) (by decide), h11]) r9₂ (by omega) (by omega) hS (by omega))
+    (w := 8 * K) hs₂ z₂ (by rw [r12₂, show dS + 8 * (8 * q + 8) + 64 * (K - 1) = dS + 8 * (8 * q + 8 + 8 * (K - 1)) by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]])
+    (by rw [r7₂, show dM + 64 + 64 * (K - 1) = dM + 8 * (8 * K) by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]]) (by rw [r10₂, k₁.gpr _ (by decide), h10])
+    (by rw [g₂ _ (by decide) (by decide), h11]) r9₂ (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]) (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]) hS (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]))
     fun t ⟨⟨e₃, l₃, o₃, r7₃, r10₃, r9₃, r30₃⟩, k₃⟩ => ⟨⟨?_, l₃, ?_, ?_, r7₃, ?_, ?_, ?_⟩, ?_⟩
   -- The memory: what changed is `S`'s words from `8 q`.
   all_goals have O : Outside B (dS + 8 * (8 * q)) (8 * (16 * K - 8 * q)) s.mem t.mem :=
-    ((o₁.mono (Nat.le_refl _) (by omega)).trans (o₂.mono (by omega) (by omega))).trans (o₃.mono (by omega) (by omega))
+    ((o₁.mono (Nat.le_refl _) (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw])).trans (o₂.mono (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]) (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]))).trans (o₃.mono (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]) (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]))
   · have wM : ∀ d k, d + 8 * k ≤ dS → wordsVal t₁.mem B d k = wordsVal s.mem B d k :=
-      fun d k h => o₁.wordsVal (Or.inl (by omega)) (by omega)
+      fun d k h => o₁.wordsVal (Or.inl (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw, h])) (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw, h])
     have hU : wordsVal t.mem B (dS + 8 * (8 * q)) 8 = wordsVal t₁.mem B (dS + 8 * (8 * q)) 8 := by
-      rw [o₃.wordsVal (Or.inl (by omega)) (by omega), o₂.wordsVal (Or.inl (by omega)) (by omega)]
-    have pt : 8 * q + 8 + 8 * (K - 1) = 8 * q + 8 * K := by omega
+      rw [o₃.wordsVal (Or.inl (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw])) (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]), o₂.wordsVal (Or.inl (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw])) (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw])]
+    have pt : 8 * q + 8 + 8 * (K - 1) = 8 * q + 8 * K := by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]
     rw [pt] at e₂ e₃
     have hP1 : 2 ^ (64 * (8 * q + 8)) = 2 ^ (64 * (8 * q)) * 2 ^ (64 * 8) := by rw [← Nat.pow_add, Nat.mul_add]
     have hP2 : 2 ^ (64 * (8 * q + 8 * K)) = 2 ^ (64 * (8 * q)) * 2 ^ (64 * (8 * K)) := by
@@ -2176,17 +2176,17 @@ theorem redBlock_ok {s : State} {B : Addr} {Z dS dM K q A2 : Nat} (hs : Scr s B 
     have hM' : wordsVal s.mem B dM (8 * K) = wordsVal s.mem B dM 8 +
         2 ^ (64 * 8) * wordsVal s.mem B (dM + 64) (8 * (K - 1)) := by
       have := fios_wordsVal_append s.mem B dM 8 (8 * (K - 1))
-      rwa [show 8 + 8 * (K - 1) = 8 * K by omega, show dM + 8 * 8 = dM + 64 by omega] at this
+      rwa [show 8 + 8 * (K - 1) = 8 * K by omega_using [hq, hK', hS, hM, hsep, hmS, hnw], show dM + 8 * 8 = dM + 64 by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]] at this
     have hL : wordsVal t.mem B dS (8 * (q + 1)) = wordsVal s.mem B dS (8 * q) +
         2 ^ (64 * (8 * q)) * wordsVal t₁.mem B (dS + 8 * (8 * q)) 8 := by
-      rw [show 8 * (q + 1) = 8 * q + 8 by omega, fios_wordsVal_append, O.wordsVal (Or.inl (by omega)) (by omega), hU]
-    rw [hP1, wM _ _ (by omega)] at e₂
+      rw [show 8 * (q + 1) = 8 * q + 8 by omega_using [hq, hK', hS, hM, hsep, hmS, hnw], fios_wordsVal_append, O.wordsVal (Or.inl (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw])) (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]), hU]
+    rw [hP1, wM _ _ (by omega_using [hq, hK', hS, hM, hsep, hmS, hnw])] at e₂
     rw [hP3, hP2, g₂ _ (by decide) (by decide)] at e₃
     rw [hP2] at inv
-    rw [show 8 * (q + 1) + 8 * K = 8 * q + 8 * K + 8 by omega, hP3, hL]
+    rw [show 8 * (q + 1) + 8 * K = 8 * q + 8 * K + 8 by omega_using [hq, hK', hS, hM, hsep, hmS, hnw], hP3, hL]
     exact redBlock_arith e₁ e₂ e₃ inv hM'
   · exact O
-  · rw [r10₃, show dS + 8 * (8 * q) + 64 = dS + 8 * (8 * (q + 1)) by omega]
+  · rw [r10₃, show dS + 8 * (8 * q) + 64 = dS + 8 * (8 * (q + 1)) by omega_using [hq, hK', hS, hM, hsep, hmS, hnw]]
   · rw [r9₃, show K - q - 1 = K - q - 1 from rfl]
   · rw [r30₃]
   · rw [k₃.gpr _ (by decide), z₂]
@@ -2246,7 +2246,7 @@ theorem sqrRed_ok {s : State} {B : Addr} {Z dS dM K : Nat} (hs : Scr s B Z) (h0 
   refine WP.mono (count_loop (cr := .r30) (n := K) hK I (fun q hq t ⟨ht, t0, t10, t7, t9, t11, te, to, tk⟩ =>
     WP.mono (redBlock_ok (A2 := wordsVal s.mem B dS (16 * K)) ht t0 t10 t7 (by rw [t11, h11]) t9 hq hK'
       (by omega_using [hS]) (by omega_using [hlay, hS]) (by omega_using [hlay]) (by omega_using [hlay])
-      (by rw [to.word (Or.inl (by omega_using [hlay])) (by omega), to.word (Or.inr (by omega_using [hlay])) (by omega_using [hlay, hS, hnw])]; exact hm)
+      (by rw [to.word (Or.inl (by omega_using [hlay])) (by omega_arith), to.word (Or.inr (by omega_using [hlay])) (by omega_using [hlay, hS, hnw])]; exact hm)
       (by rw [to.wordsVal (d := dM) (Or.inl (by omega_using [hlay])) (by omega_using [hlay, hS, hnw])]; exact te))
       fun t' ⟨⟨e, _, o, r10, r7, r9, r30, r0⟩, k'⟩ => ⟨⟨ht.congr k'.wr, r0, r10, r7,
         by rw [r9, show K - q - 1 = K - (q + 1) by omega_using []], by rw [k'.gpr _ (by decide), t11],
@@ -2386,9 +2386,9 @@ theorem copyTail_ok {s : State} {B : Addr} {Z dS dM K : Nat} (hs : Scr s B Z)
   have sh3 : BitVec.ofNat 64 (2 * (8 * K)) <<< 3 = BitVec.ofNat 64 (16 * (8 * K)) := by
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_shiftLeft, BitVec.toNat_ofNat, Nat.shiftLeft_eq]
-    omega
+    omega_arith
   refine wp_st (a := off B (dS + 8 * (8 * K))) (by decide) ⟨by decide, by decide⟩
-    (by rw [h31, show dS + 64 * K = dS + 8 * (8 * K) by omega]; exact BitVec.add_zero _) (hs.st (by omega))
+    (by rw [h31, show dS + 64 * K = dS + 8 * (8 * K) by omega_arith]; exact BitVec.add_zero _) (hs.st (by omega_arith))
     fun u₀ k₀ m₀ _ => ?_
   refine wp_addi (by decide) (by decide) fun u₁ w₁ f₁ _ => ?_
   refine wp_write (exec_lsl (by decide)) fun u₂ w₂ f₂ _ => ?_
@@ -2414,24 +2414,24 @@ theorem copyTail_ok {s : State} {B : Addr} {Z dS dM K : Nat} (hs : Scr s B Z)
   have r10₇ : u₇.gpr .r10 = off B dM := by
     rw [f₇, f₆, f₅, w₅.gpr .r8 (by decide), w₄.gpr .r8 (by decide), w₃.gpr .r8 (by decide), w₂.gpr .r8 (by decide), r8₁,
       w₄.gpr .r11 (by decide), w₃.gpr .r11 (by decide), w₂.gpr .r11 (by decide), w₁.gpr .r11 (by decide),
-      k₀.gpr _ (by simp), h11, sh3, off_sub _ (by omega), off_sub _ (by omega), show dS - 16 * (8 * K) - 32 = dM by omega]
+      k₀.gpr _ (by simp), h11, sh3, off_sub _ (by omega_arith), off_sub _ (by omega_arith), show dS - 16 * (8 * K) - 32 = dM by omega_arith]
   have r30₁₀ : u₁₀.gpr .r30 = off B (dS + 8 * (16 * K + 1)) := by
     rw [f₁₀, f₉, f₈, w₈.gpr .r9 (by decide), w₇.gpr .r9 (by decide), w₆.gpr .r9 (by decide), w₅.gpr .r9 (by decide), r9₄,
       w₇.gpr .r11 (by decide), w₆.gpr .r11 (by decide), w₅.gpr .r11 (by decide), w₄.gpr .r11 (by decide),
       w₃.gpr .r11 (by decide), w₂.gpr .r11 (by decide), w₁.gpr .r11 (by decide), k₀.gpr _ (by simp), h11, sh2, off_add,
-      off_sub _ (by omega), show dS + 8 * (8 * K) + 16 + 8 * (8 * K) - 8 = dS + 8 * (16 * K + 1) by omega]
-  refine wp_ld (by decide) ⟨by decide, by decide⟩ (by rw [r30₁₀]; exact BitVec.add_zero _) ((hs.congr K₁₀.wr).ld (by omega))
+      off_sub _ (by omega_arith), show dS + 8 * (8 * K) + 16 + 8 * (8 * K) - 8 = dS + 8 * (16 * K + 1) by omega_arith]
+  refine wp_ld (by decide) ⟨by decide, by decide⟩ (by rw [r30₁₀]; exact BitVec.add_zero _) ((hs.congr K₁₀.wr).ld (by omega_arith))
     fun u₁₁ w₁₁ f₁₁ _ => ?_
   refine wp_addi (by decide) (by decide) fun t w₁₂ f₁₂ _ => WP.block_nil ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_⟩
   all_goals have mt : t.mem = u₁₀.mem := by rw [w₁₂.mem, w₁₁.mem]
   · rw [mt, m₁₀, word_writeW_self]
-  · rw [mt, m₁₀]; exact writeW_outside _ B _ (by omega)
+  · rw [mt, m₁₀]; exact writeW_outside _ B _ (by omega_arith)
   · rw [w₁₂.gpr .r8 (by decide), w₁₁.gpr .r8 (by decide), w₁₀.gpr .r8 (by decide), w₉.gpr .r8 (by decide),
       w₈.gpr .r8 (by decide), w₇.gpr .r8 (by decide), w₆.gpr .r8 (by decide), w₅.gpr .r8 (by decide),
       w₄.gpr .r8 (by decide), w₃.gpr .r8 (by decide), w₂.gpr .r8 (by decide), r8₁]
   · rw [w₁₂.gpr .r9 (by decide), w₁₁.gpr .r9 (by decide), w₁₀.gpr .r9 (by decide), w₉.gpr .r9 (by decide),
       w₈.gpr .r9 (by decide), w₇.gpr .r9 (by decide), w₆.gpr .r9 (by decide), w₅.gpr .r9 (by decide), r9₄,
-      show dS + 8 * (8 * K) + 16 = dS + 8 * (8 * K + 2) by omega]
+      show dS + 8 * (8 * K) + 16 = dS + 8 * (8 * K + 2) by omega_arith]
   · rw [w₁₂.gpr .r10 (by decide), w₁₁.gpr .r10 (by decide), w₁₀.gpr .r10 (by decide), w₉.gpr .r10 (by decide),
       w₈.gpr .r10 (by decide), r10₇]
   · rw [w₁₂.gpr .r22 (by decide), f₁₁, mt]
@@ -2606,7 +2606,7 @@ theorem sqr8_ok {s : State} {B : Addr} {Z da dS dM K : Nat} (hs : Scr s B Z) (h6
   have wA : ∀ {m m' : Mem} {o L : Nat}, Outside B o L m m' → dS ≤ o → o + L ≤ dS + 8 * (16 * K + 2) →
       wordsVal m' B da (8 * K) = wordsVal m B da (8 * K) := fun ot h1 h2 => ot.wordsVal (by omega_using [hsep, h1, h2]) (by omega_using [ha, hnw])
   refine WP.seq (WP.mono (sqrRed_ok hs₃ z₃ r10₃ (by rw [k₃.gpr _ (by decide), h11]) hK hK' hlay (by omega_using [hS])
-    (by rw [o₃.word (Or.inl (by omega_using [hlay])) (by omega), show dM + 32 * (8 * K) + 40 = dS + 8 * (16 * K + 1) by omega_using [hlay], m₃]
+    (by rw [o₃.word (Or.inl (by omega_using [hlay])) (by omega_arith), show dM + 32 * (8 * K) + 40 = dS + 8 * (16 * K + 1) by omega_using [hlay], m₃]
         exact hm)) fun t₄ ⟨⟨e₄, o₄, r10₄, _⟩, k₄⟩ => ?_)
   have hs₄ := hs₃.congr k₄.wr
   refine WP.mono (sqrCopy_ok (dM := dM) hs₄ r10₄ (by rw [k₄.gpr _ (by decide), k₃.gpr _ (by decide), h11]) hK hK' hlay hS)
