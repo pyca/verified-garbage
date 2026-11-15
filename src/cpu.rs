@@ -396,6 +396,7 @@ mod tests {
         assert_eq!(parse("umaal"), Some(1 << 20));
         assert_eq!(parse("avx512fp16"), Some(1 << 23));
         assert_eq!(parse("zen5"), Some(1 << 24));
+        assert_eq!(parse("sm4"), Some(1 << 25));
         for bad in ["avx512vbmi", "aes,", "aes,none", " aes", "AES"] {
             assert_eq!(parse(bad), None, "{bad}");
         }

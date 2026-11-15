@@ -21,7 +21,7 @@ pub use detect::{COMPILED, detected, requested, target_contains};
 /// The bit of each feature detection knows in a [`Features`], by its Rust
 /// `target_feature` name in uppercase: what the generated `_FEATURES`
 /// constants, and the code choosing among implementations, are made of.
-/// (Each target detects and uses only some of them.) The last bits are no
+/// (Each target detects and uses only some of them.) Some bits are no
 /// instructions but microarchitectures ([`TUNING`]), which a registration
 /// may name to keep an implementation from being chosen on those cores,
 /// where it is measured slower and no instruction set feature tells them
@@ -54,6 +54,7 @@ pub mod feature {
     /// AMD's Zen 5 cores (`detect::decode`). Not an instruction set
     /// feature, so no code needs it ([`TUNING`]).
     pub const ZEN5: u32 = 1 << 24;
+    pub const SM4: u32 = 1 << 25;
 }
 
 /// The bits of [`feature`] that are microarchitectures, not instruction
