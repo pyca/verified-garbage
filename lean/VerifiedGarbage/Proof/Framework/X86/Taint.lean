@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.Taint
+public import VerifiedGarbage.Proof.Framework.SpTest
 public import VerifiedGarbage.Proof.Framework.RegSet
 public import VerifiedGarbage.Proof.Framework.SlotsK
 public import VerifiedGarbage.Proof.Framework.X86.Exec
@@ -897,6 +898,23 @@ def dst : Instr → Option Reg
   | .mcdtEnter d => some d
   | .store .. | .store8 .. | .push _ | .mul _ | .movdquLoad .. | .movdquStore .. | .movqLoad .. | .movqStore .. | .xop _ | .mop _ | .mmxStore .. | .mmxEnter | .emms
   | .alloc _ | .free _ | .pmuludq .. | .mcdtLeave | .callr _ => none
+
+/-- Whether an instruction leaves `esp` as it is: `!isa.writesSp i`
+(`keepsSp_eq`), in one match and a comparison of the registers' indices, for
+the kernel (`SpTest`, `Proof/Framework/SpTest.lean`). -/
+def keepsSp : Instr → Bool
+  | .symPush d _ | .mcdtEnter d | .mov d _ | .alu _ d _ | .shift _ d _ | .bswap d | .movzx8 d _
+  | .pop d _ => !Nat.beq d.ctorIdx Reg.esp.ctorIdx
+  | _ => true
+
+theorem ctorIdx_beq (a b : Reg) : Nat.beq a.ctorIdx b.ctorIdx = (a == b) := by
+  cases a <;> cases b <;> rfl
+
+theorem keepsSp_eq (i : Instr) : keepsSp i = !isa.writesSp i := by
+  cases i <;> simp only [keepsSp, ctorIdx_beq] <;> rfl
+
+instance : SpTest isa keepsSp where
+  sound i h := by rw [keepsSp_eq] at h; simpa using h
 
 /-- Whether an instruction may write the register `r`. -/
 def clobbers (i : Instr) (r : Reg) : Bool :=
