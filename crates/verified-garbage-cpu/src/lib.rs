@@ -109,7 +109,9 @@ pub struct Dit<'a>(core::marker::PhantomData<(&'a (), *const ())>);
 /// rounding mode or unmasked exceptions), which Rust assumes they are.
 ///
 /// The generated dispatchers call it first, for the functions whose code
-/// has such an instruction, on x86-64 (`lean/VerifiedGarbage/TCB/Rust.lean`).
+/// has such an instruction, on x86-64 (`lean/VerifiedGarbage/TCB/Rust.lean`),
+/// the only architecture whose code calls it.
+#[cfg(target_arch = "x86_64")]
 #[inline]
 #[track_caller]
 pub fn mcdt_entered(entered: u32) {
