@@ -11226,7 +11226,6 @@ vg_aes_gcm_open_prepared_vaes_vpclmul:
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp-2344]
-	vmovdqu YMMWORD PTR [rsp+840], ymm0
 	vmovdqu YMMWORD PTR [rsp+808], ymm0
 	vmovdqu YMMWORD PTR [rsp+296], ymm0
 	vmovdqu YMMWORD PTR [rsp+24], ymm0
