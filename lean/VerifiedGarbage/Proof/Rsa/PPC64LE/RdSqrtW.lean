@@ -1293,8 +1293,8 @@ theorem estimate_ok {s : State} {B : Addr} {Z w N h j dX dS dT : Nat} (hW : Ws s
       Nat.div_eq_of_lt hx, Nat.zero_add]
   have red2 : ((Mont.word s3.mem B (arr w 3 + 32)).toNat + 2 ^ 64 * U) * 2 ^ 0 / 2 ^ (64 * (4 - 2)) =
       u2 * 2 ^ 64 + u1 := by
-    rw [show 64 * (4 - 2) = 64 + 64 from rfl, Nat.pow_add, ← Nat.div_div_eq_div_mul]
-    rw [show 2 ^ (64 * (4 - 3)) = 2 ^ 64 from rfl] at red
+    rw [show 64 * (4 - 2) = 64 + 64 from rfl, Nat.pow_add, ← Nat.div_div_eq_div_mul,
+      show 2 ^ (64 * (4 - 3)) = 2 ^ 64 from rfl] at *
     rw [red]
     have := (f1 (T (j - 1)) (T j)).isLt
     simp only [U]
@@ -2258,7 +2258,7 @@ theorem counts_ok {s : State} {B : Addr} {Z w N cw z0 : Nat} (hW : Ws s B Z w N)
   · rw [tm, ss]
     simp only [BitVec.toNat_setWidth, BitVec.toNat_shiftLeft, BitVec.toNat_ushiftRight, BitVec.toNat_ofNat,
       BitVec.toNat_add, BitVec.toNat_and, Nat.shiftLeft_eq, Nat.shiftRight_eq_div_pow]
-    rw [show (63 : Nat) = 2 ^ 6 - 1 from rfl]
+    rw [show (63 : Nat) = 2 ^ 6 - 1 from rfl] at *
     rw [show (2 ^ 6 - 1) % 2 ^ 64 = 2 ^ 6 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]; omega_using []
   · rw [tm]
     exact (((VG.Proof.Rsa.PPC64LE.Keys.keep_slot _ _ (by simp) (by omega_using [])).trans

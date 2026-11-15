@@ -756,11 +756,9 @@ theorem slots_kept (h : GenFrame p original used st s) (values : List (Nat × Bi
   rw [writeFrame_word _ _ _ hb e.1 hj, frameValue_unchanged _ _ _ ?_]
   · exact h.headers e he
   · intro x hx heq
-    obtain ⟨n0, n1, n2, n3, n4, n5, n6, n7, n8, n11⟩ := hnot x hx
+    have := hnot x hx
     simp only [GenPublic.headers, List.mem_cons, List.not_mem_nil, or_false] at he
-    rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
-    exacts [n0 heq.symm, n1 heq.symm, n2 heq.symm, n3 heq.symm, n4 heq.symm, n5 heq.symm, n6 heq.symm,
-      n7 heq.symm, n8 heq.symm, n11 heq.symm]
+    rcases he with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp_all
 
 theorem key_nowrap (h : GenFrame p original used st s) : p.kp.toNat + 9 * p.L ≤ 2 ^ 64 := by
   have := h.input.nowrap (r := inKey original) (by simp [inWrites])

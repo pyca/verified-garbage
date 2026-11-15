@@ -84,7 +84,7 @@ theorem okP_of_pre {tsH ts : List FnTable} {s : State} (h : (specP tsH ts).pre s
   rw [qil] at hrd oQI qiS qiA rQI kQI fQI
   rw [dql] at hrd oDQ dqS dqA rDQ kDQ fDQ
   rw [ep_layP]
-  refine ok_entered_of (S := 3608) rfl (by decide) hsp (by simp) (by simp; omega_using [hsa]) ?_ ?_
+  refine ok_entered_of (S := 3608) rfl (by decide) hsp (by simp) (by simp; omega_arith) ?_ ?_
     ⟨104, by simp, by rw [hwr]; simp⟩ ?_ ?_ ?_ ?_ ?_ ?_
   · intro r hr
     rw [hrd]
@@ -117,8 +117,7 @@ theorem okP_of_pre {tsH ts : List FnTable} {s : State} (h : (specP tsH ts).pre s
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
     all_goals simp only [ep, BitVec.toNat_setWidth, Sig.tableRegion]
     all_goals first
-      | (rw [Nat.mod_eq_of_lt (by have := (arg s 2).isLt; omega_using [])]; omega_using [fN, fE, fP, fQ, fDP, fDQ, fQI,
-          fD, fSl, fTH, fT, fPre, fO, fS])
+      | (rw [Nat.mod_eq_of_lt (by have := (arg s 2).isLt; omega_arith)]; omega_arith)
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 4).isLt; omega_arith)]; omega_arith)
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 6).isLt; omega_arith)]; omega_arith)
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 8).isLt; omega_arith)]; omega_arith)
@@ -134,10 +133,9 @@ theorem okP_of_pre {tsH ts : List FnTable} {s : State} (h : (specP tsH ts).pre s
       | (rw [Nat.mod_eq_of_lt (by have := (arg s 20).isLt; omega_arith)]; omega_arith)
   · intro j hj
     have : j < 26 := by simpa using hj
-    have h26 : ∀ j < 26, j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨
+    rcases (by omega_using [this] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨
         j = 9 ∨ j = 10 ∨ j = 11 ∨ j = 12 ∨ j = 13 ∨ j = 14 ∨ j = 15 ∨ j = 16 ∨ j = 17 ∨ j = 18 ∨ j = 19 ∨
-        j = 20 ∨ j = 21 ∨ j = 22 ∨ j = 23 ∨ j = 24 ∨ j = 25 := by decide
-    rcases h26 j this with
+        j = 20 ∨ j = 21 ∨ j = 22 ∨ j = 23 ∨ j = 24 ∨ j = 25) with
       rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
         rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [ep, a1, a11, a13, a15]
 
