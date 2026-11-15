@@ -21,9 +21,14 @@ nor the shared Miller–Rabin round changes.
    `k` steps); `p mod 24` (generator 2) or `p mod 10` (generator 5) by RSA's
    bit-serial reduction, and its congruence; RSA's trial division by its
    table's first 512 entries (1024 above 1024 bits), the odd primes of
-   `Spec.RsaKeyGen.obviouslyComposite`; then `q = (p − 1) / 2` in place,
-   its oddness and its trial division. Their flags are or'ed in `fBad`; the
-   result is 2 if it is set (`Spec.Ffdh.sievedParameterCandidate`).
+   `Spec.RsaKeyGen.obviouslyComposite`, four entries (a word of the table)
+   at a time, stopping after the first word with a divisor; then
+   `q = (p − 1) / 2` in place, its oddness and its trial division, as
+   `p`'s. Their flags are or'ed in `fBad`, which is looked at after the
+   congruence, after `p`'s trial division and after `q`'s; the result is 2
+   as soon as it is set (`Spec.Ffdh.sievedParameterCandidate`: most
+   candidates have a small factor, and end at one of the table's first
+   words).
 3. The witnesses of `Spec.Ffdh.screenedParameterWitnesses`: one for `p`,
    then `primeChecks` for `q`, then the other `primeChecks − 1` for `p`,
    each test with its modulus's word count `w = ⌈mb / 64⌉` (`mb` its bit
@@ -115,14 +120,20 @@ def residue : List (Prog isa) := [
 /-- RSA's table of small primes at `aTab`. -/
 def tableWrite : Prog isa := .block (ws ++ base aTab .x9 ++ tabWrite)
 
+/-- After a word of the table: the words left (`x10`) zeroed under the mask
+of a divisor (`x1`; `x8` is all ones), which ends the loop. -/
+def sieveStop : Prog isa := .block [.logic .eor .x .x3 .x1 .x8, .logic .and .x .x10 .x10 .x3]
+
 /-- The sieve: RSA's trial division by the first `4 N` entries of its table
-(`N = 256` words of four for `w > 16`, else 128, counted in `x10`), the
-mask of one dividing `aN` or'ed into `fBad`. -/
+(`N = 256` words of four for `w > 16`, else 128, counted in `x10`), up to
+the first word with an entry dividing `aN`; the mask of one dividing `aN`
+or'ed into `fBad`. -/
 def sieve : List (Prog isa) := [
   .block (ws ++ base aTab .x9 ++ [movi .x3 128, movi .x4 256, movi .x5 17, .subs .x .x6 .x12 .x5,
     .csel .x .x10 .x4 .x3, movi .x1 0, movi .x7 0, .subImm .x .x8 .x7 1]),
   .loop (seqs (([.block [ld .x17 .x9, next .x9]] : List (Prog isa)) ++ trialEntry 0 ++ trialEntry 1 ++
-    trialEntry 2 ++ trialEntry 3 ++ ([.block [.subImm .x .x10 .x10 1]] : List (Prog isa)))) (.nonzero .x .x10),
+    trialEntry 2 ++ trialEntry 3 ++ ([.block [.subImm .x .x10 .x10 1]] : List (Prog isa)) ++
+    ([sieveStop] : List (Prog isa)))) (.nonzero .x .x10),
   .block [ldh .x5 fBad, .logic .orr .x .x5 .x5 .x1, sth .x5 fBad]]
 
 /-- `q := p / 2` in place, and its evenness or'ed into `fBad`. -/
@@ -215,13 +226,18 @@ def tests (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa))
   seqs (test false [firstCheck] mul roundCode ++ [.block [ldh .x3 kStat, .subImm .x .x3 .x3 1],
     .ite (.zero .x .x3) (testQ mul roundCode) qResult])
 
+/-- Once `p` passed its sieve: `q`, its oddness and its sieve, and the
+tests. -/
+def mainQ (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : Prog isa :=
+  seqs (halveQ ++ sieve ++ [.block [ldh .x5 fBad], .ite (.zero .x .x5) (tests mul roundCode) (finUsed 2)])
+
 /-- Once `rand` holds the candidate's octets: `p`, its congruence, rejected
-before any other check (most candidates fail it); then the sieves of `p`
-and `q`, and the tests. -/
+before any other check (most candidates fail it); then the sieve of `p`,
+rejected before `q`'s; then `q`'s, and the tests. -/
 def main (mul : Nat → Nat → Nat → Prog isa) (roundCode : List (Prog isa)) : Prog isa :=
   seqs (phase false ++ shapeP ++ residue ++ [.block [ldh .x5 fBad], .ite (.zero .x .x5)
-    (seqs ([tableWrite] ++ sieve ++ halveQ ++ sieve ++
-      [.block [ldh .x5 fBad], .ite (.zero .x .x5) (tests mul roundCode) (finUsed 2)]))
+    (seqs ([tableWrite] ++ sieve ++
+      [.block [ldh .x5 fBad], .ite (.zero .x .x5) (mainQ mul roundCode) (finUsed 2)]))
     (finUsed 2)])
 
 /-- `vg_ffdh_parameter_candidate_sieved`. -/
