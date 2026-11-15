@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.AesGcm.X86_64.Open
 import VerifiedGarbage.Proof.AesGcm.X86_64.Undo
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.OpenTag
 import VerifiedGarbage.Proof.AesGcm.X86_64.Fast.Mid
+import VerifiedGarbage.Proof.AesGcm.X86_64.Short.KsA
 import VerifiedGarbage.Proof.AesGcm.X86_64.Cmp
 import VerifiedGarbage.Proof.AesGcm.X86_64.Tag
 import VerifiedGarbage.Proof.AesGcm.X86_64.Flush
@@ -1305,6 +1306,302 @@ theorem open_leavesQ (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M)
   refine ⟨Lb, fun s t s' hp he => ?_⟩
   obtain ⟨C, -⟩ := OneCtx.ofOpen hp.1 M.ge
   refine (hL s t s' hp he).all (fun y hy hW => ?_) C.ww
+  rcases retArgs_split hy with h | h
+  · exact C.rW y h hW
+  · exact C.dA y (by simpa using h) hW
+
+/-! ## What `open` leaves with the path for TLS records -/
+
+/-- The words of `work` whose bytes `OpenLF` states, from 128 to 240: those
+of `OpenJ` but the lengths block. -/
+def OpenJF (j : Nat) : Prop := (16 ≤ j ∧ j < 27) ∨ j = 28 ∨ j = 29
+
+theorem OpenJF.cases {j : Nat} (h : OpenJF j) : j = 16 ∨ j = 17 ∨ j = 18 ∨ j = 19 ∨ j = 20 ∨
+    j = 21 ∨ j = 22 ∨ j = 23 ∨ j = 24 ∨ j = 25 ∨ j = 26 ∨ j = 28 ∨ j = 29 := by
+  unfold OpenJF at h; omega_arith
+
+/-- What `open` with the path for TLS records leaves, from `s` to `s'`: what
+`OpenL` says, but in `work` from byte 272 on only where `RunOk` says, and
+without the lengths block. -/
+structure OpenLF (Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
+      Option (BitVec 8)) (s s' : State) : Prop where
+  rg : ∀ {d k : Nat}, RunOk d k → ∀ x, (⟨stackArg s 4 + BitVec.ofNat 64 d, k⟩ : Region).Contains x 1 →
+    s'.mem x = (openL Lb s.gpr (fun i => stackArg s i) x).getD (s.mem x)
+  w0 : ∀ x, (⟨stackArg s 4, 16⟩ : Region).Contains x 1 → s'.mem x = s.mem x
+  args : ∀ x, (⟨s.gpr .rsp, 48⟩ : Region).Contains x 1 → s'.mem x = s.mem x
+  words : ∀ j, OpenJF j → ∀ w, openWord s.gpr (fun i => stackArg s i) j = some w →
+    s'.mem.readW (stackArg s 4 + BitVec.ofNat 64 (8 * j)) 64 = w
+  rest : ∀ d, OpenJF (d / 8) → openWord s.gpr (fun i => stackArg s i) (d / 8) = none →
+    s'.mem (stackArg s 4 + BitVec.ofNat 64 d) = s.mem (stackArg s 4 + BitVec.ofNat 64 d)
+
+theorem OpenJF.toJ {j : Nat} (h : OpenJF j) : OpenJ j := by unfold OpenJF at h; unfold OpenJ; omega_arith
+
+theorem OpenL.toF {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
+      Option (BitVec 8)} {s s' : State} (h : OpenL Lb s s') : OpenLF Lb s s' :=
+  ⟨fun hk x hx => h.rg x (hk.sub x hx), h.w0, h.args, fun j hj => h.words j hj.toJ, fun d hj => h.rest d hj.toJ⟩
+
+theorem OpenRunLF.of_mem {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
+      Option (BitVec 8)} {Ctx W SP D : Addr} {R n : Nat} {s₂ s₃ s' : State} (hm : s₃.mem = s₂.mem)
+    (h : OpenRunLF Lb Ctx W SP D R n s₃ s') : OpenRunLF Lb Ctx W SP D R n s₂ s' :=
+  ⟨fun hk x hx => by rw [← hm]; exact h.rg hk x hx, by rw [← hm]; exact h.frame,
+    fun d hd => by rw [← hm]; exact h.kept d hd, h.tlen, h.dat, h.len⟩
+
+open Short (ShortFacts) in
+/-- `vg_aes_gcm_open` with the path for TLS records (`FastOpen.openFin` of
+`FastOpen.sel`, the code of `vg_aes_gcm_open_prepared` without the short
+path), for a prepared key context, with implementations of `vg_ghash` and
+`vg_aes_ctr32` that never touch their working space and a
+`vg_aes_gcm_decrypt_blocks` that leaves `Lb` in its `scratch`: what it leaves
+(`OpenLF`). -/
+theorem openFinM_leaves_wp (hF : ShortFacts) (v : GcmImpl) {np : Nat} {hpn : 8 ≤ np ∧ np ≤ 24}
+    (B : BlkFn (Gcm.X86_64.Stitch.CtxMode.preparedN np hpn))
+    {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8)}
+    (hL : BlkLeft Lb B.dec.code (Gcm.X86_64.Stitch.CtxMode.preparedN np hpn)) (gf : GhashFree v.gh.fn.code)
+    (cf : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) {s : State}
+    (hp : (Proof.AesGcm.openX86_64M (Gcm.X86_64.Stitch.CtxMode.preparedN np hpn)).pre s) :
+    WP isa (FastOpen.openFin (FastOpen.sel (v.withBlk B) (Short.openLong (v.withBlk B)) Short.finKsA true)) s
+      (OpenLF Lb s) := by
+  have X := CtxExt.ofOpen hp.1 hp.2
+  obtain ⟨C, hTr, d_td, d_tw, t_t⟩ := OneCtx.ofOpen hp.1 (Gcm.X86_64.Stitch.CtxMode.preparedN np hpn).ge
+  have L := C.lay
+  have hW' : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 40) 64 = stackArg s 4 := rfl
+  have hTa : s.mem.readW (s.gpr .rsp + BitVec.ofNat 64 24) 64 = stackArg s 2 := rfl
+  have hTar := C.args 2 (by decide)
+  have hst : stackArg s 3 = BitVec.ofNat 64 (stackArg s 3).toNat := by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have hn1 : stackArg s 1 = BitVec.ofNat 64 (stackArg s 1).toNat := by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have hsi : s.gpr .rsi = BitVec.ofNat 64 (s.gpr .rsi).toNat := by rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have oT : OutWDS (stackArg s 4) (stackArg s 0) (s.gpr .rsp) (stackArg s 1).toNat
+      ⟨stackArg s 2, (stackArg s 3).toNat⟩ := fun r hr =>
+    hr.elim d_tw.sub_right fun h => h.elim d_td.sub_right t_t.symm.sub_right
+  have oA : OutWDS (stackArg s 4) (stackArg s 0) (s.gpr .rsp) (stackArg s 1).toNat
+      ⟨s.gpr .rsp + BitVec.ofNat 64 24, 8⟩ := fun r hr => arg24_disj (by decide) C.dA C.dAD hr
+  -- What the entry writes.
+  let EF : List Region := entryFrame (stackArg s 4) ++ [⟨stackArg s 4 + BitVec.ofNat 64 224, 8⟩]
+  have eW : ∀ {d k : Nat}, ((d + k ≤ 128) ∨ (192 ≤ d ∧ d + k ≤ 200) ∨ (216 ≤ d ∧ d + k ≤ 224) ∨ (240 ≤ d ∧ d + k ≤ 2560)) →
+      ∀ r ∈ EF, (⟨stackArg s 4 + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := fun h r hr => by
+    simp only [EF, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with (rfl | rfl | rfl) | rfl <;> exact L.w_w (by omega_arith) (by omega_arith) (by decide)
+  have sW : ∀ r ∈ EF, r.Sub ⟨stackArg s 4, 2560⟩ := fun r hr => by
+    simp only [EF, List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with (rfl | rfl | rfl) | rfl <;> exact Lay.wSub (by decide)
+  have eA : ∀ r ∈ EF, (⟨s.gpr .rsp, 48⟩ : Region).Disjoint r := fun r hr x hx hr' => by
+    rcases retArgs_split hx with h | h
+    · exact C.rW x h (sW r hr x hr')
+    · exact C.dA x h (sW r hr x hr')
+  have w0E : ∀ m : Mem, Frame EF s.mem m → ∀ x, (⟨stackArg s 4, 16⟩ : Region).Contains x 1 → m x = s.mem x :=
+    fun m f x hx => frame_at f (fun r hr => by
+      have := eW (d := 0) (k := 16) (.inl (by decide)) r hr; simpa using this) hx
+  refine openSkelL_ok (t := (stackArg s 3).toNat)
+    (E := fun m => m.readW (stackArg s 4 + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 (stackArg s 3).toNat ∧
+      Frame EF s.mem m ∧ SavedAt m (stackArg s 4) s ∧ m.readW (stackArg s 4 + BitVec.ofNat 64 176) 64 = s.gpr .rsi ∧
+      m.readW (stackArg s 4 + BitVec.ofNat 64 184) 64 = s.gpr .r9 ∧
+      m.readW (stackArg s 4 + BitVec.ofNat 64 200) 64 = stackArg s 0 ∧
+      m.readW (stackArg s 4 + BitVec.ofNat 64 208) 64 = stackArg s 1 ∧
+      m.readW (stackArg s 4 + BitVec.ofNat 64 232) 64 = s.gpr .r8)
+    (Res := OpenLF Lb s) C rfl (stackArg s 3).isLt
+    (fun s₁ s₂ h _ hm => ⟨fun hk x hx => by rw [hm]; exact h.rg hk x hx, fun x hx => by rw [hm]; exact h.w0 x hx,
+      fun x hx => by rw [hm]; exact h.args x hx, fun j h₁ w hw => by rw [hm]; exact h.words j h₁ w hw,
+      fun d h₁ hn => by rw [hm]; exact h.rest d h₁ hn⟩) ?_ ?_ ?_
+  · exact WP.mono (openEntry_okF C rfl rfl rfl rfl rfl hW') fun s₁ ⟨E, hbx₁, htl₁, fE⟩ =>
+      ⟨E, by rw [hbx₁, ← hst], by rw [htl₁, ← hst], fE, E.saved, by rw [E.rounds.1, ← hsi], E.alen, E.dat,
+        by rw [E.len, ← hn1], E.aad⟩
+  · -- A length `tagLenOk` does not allow: what the entry wrote.
+    intro hbad s₅ _ ⟨htl, fE, hsv, h176, h184, h200, h208, h232⟩
+    refine ⟨fun {d k} hk x hx => ?_, w0E _ fE, fun x hx => frame_at fE eA hx, fun j hj w hw => ?_, fun d hj hn => ?_⟩
+    · simp only [openL, hbad, Bool.false_eq_true, ↓reduceIte, Option.getD_none]
+      exact frame_at fE (eW (d := d) (k := k) (.inr (.inr (.inr ⟨by have := hk.1; omega_arith, hk.2.1⟩)))) hx
+    · rcases hj.cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+        simp only [openWord, hbad, Bool.false_eq_true, ↓reduceIte, Option.some.injEq, reduceCtorEq] at hw ⊢ <;>
+        subst hw
+      · exact hsv (.rbx, 128) (by simp [saved])
+      · exact hsv (.rbp, 136) (by simp [saved])
+      · exact hsv (.r12, 144) (by simp [saved])
+      · exact hsv (.r13, 152) (by simp [saved])
+      · exact hsv (.r14, 160) (by simp [saved])
+      · exact hsv (.r15, 168) (by simp [saved])
+      · exact h176
+      · exact h184
+      · exact h200
+      · exact h208
+      · rw [htl, ← hst]
+      · exact h232
+    · have h24 : d / 8 = 24 := by
+        rcases hj.cases with e | e | e | e | e | e | e | e | e | e | e | e | e <;>
+          rw [e] at hn <;> simp only [openWord, hbad, Bool.false_eq_true, ↓reduceIte, reduceCtorEq] at hn <;>
+          omega_arith
+      exact frame_at fE (eW (d := d) (k := 1) (.inr (.inl ⟨by omega_arith, by omega_arith⟩)))
+        (Region.contains_self _ _)
+  · intro s₂ E₂ ⟨htl₂, fE₂, _, h176, h184, _, _, _⟩ hok
+    -- The path for TLS records, or the other instances' body.
+    unfold FastOpen.sel
+    refine WP.seq (WP.mono (Fast.condE_ok (any := true) C E₂ rfl rfl) fun s₃ ⟨hz, E₃, K⟩ => ?_)
+    have htl₃ : s₃.mem.readW (stackArg s 4 + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 (stackArg s 3).toNat := by
+      rw [K.mem]; exact htl₂
+    refine WP.mono (Q := fun s₅ : State => (Env (s.gpr .rdi) (stackArg s 4 + BitVec.ofNat 64 16) (stackArg s 4) (s.gpr .rsp) s₅ ∧
+        SavedAt s₅.mem (stackArg s 4) s ∧ s₅.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64) ∧
+        OpenRunLF Lb (s.gpr .rdi) (stackArg s 4) (s.gpr .rsp) (stackArg s 0) (s.gpr .rsi).toNat (stackArg s 1).toNat s₂ s₅)
+      (WP.ite (decide ¬Fast.IsFast (s.gpr .rcx).toNat (s.gpr .r9).toNat (stackArg s 1).toNat true) (eval_e hz)
+        (fun _ => WP.mono (wp_both (openOk_ok v B C X E₃ rfl rfl rfl hTa hTar hTr oT oA htl₃ hok)
+          (openRun_leaves v B hL gf cf C X E₃ rfl rfl rfl hTa hTar hTr oT oA htl₃ hok))
+          fun s₅ ⟨⟨he₅, hsv₅, hret₅, _⟩, R⟩ => ⟨⟨he₅, hsv₅, hret₅⟩, R.toF.of_mem K.mem⟩)
+        fun h => ?_) fun s₅ ⟨⟨he₅, hsv₅, hret₅⟩, R⟩ => ⟨he₅, hsv₅, hret₅, ?_⟩
+    · obtain ⟨h12, h17, -⟩ : Fast.IsFast (s.gpr .rcx).toNat (s.gpr .r9).toNat (stackArg s 1).toNat true :=
+        Decidable.not_not.mp (of_decide_eq_false h)
+      have C' : OneCtx s 5 (s.gpr .rdi) (stackArg s 4) (s.gpr .rsp) (s.gpr .rdx) (s.gpr .r8) (stackArg s 0) 12
+          (s.gpr .r9).toNat (stackArg s 1).toNat := h12 ▸ C
+      exact WP.mono (wp_both (openOkW_ok v B (FastOpen.tagP_okP hF Short.finKsA_ksOk) FastOpen.pStable_kOk
+          FastOpen.crOk_tailK C' X rfl hTa hTar hTr oT oA htl₃ hok
+          (Fast.aad_mid hF C' X E₃ rfl h12 rfl (by omega_arith)))
+        (fastRun_leaves hF v B hL cf Short.finKsA_ksOk C' X E₃ rfl h12 rfl (by omega_arith) hTa hTar hTr oT oA htl₃
+          hok))
+        fun s₅ ⟨⟨he₅, hsv₅, hret₅, _⟩, R⟩ => ⟨⟨he₅, hsv₅, hret₅⟩, R.of_mem K.mem⟩
+    refine ⟨fun {d k} hk x hx => ?_, fun x hx => ?_, fun x hx => ?_, fun j hj w hw => ?_, fun d hj hn => ?_⟩
+    · rw [R.rg hk x hx, frame_at fE₂ (eW (d := d) (k := k) (.inr (.inr (.inr ⟨by have := hk.1; omega_arith, hk.2.1⟩)))) hx]
+      simp only [openL, hok, ↓reduceIte]
+    · rw [frame_at R.frame (fun r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact (Offset.disjoint_base (stackArg s 4) (d := 16) (n := 2544) (k := 16) (by decide)
+            (by have := L.ww; omega_arith)).symm
+        · exact (C.dE.sub_right (Region.sub_prefix (by decide))).symm
+        · exact (C.t_w.sub_right (Region.sub_prefix (by decide))).symm) hx, w0E _ fE₂ x hx]
+    · have dR : ∀ {X : Region}, (∀ r : Region, r.Sub ⟨stackArg s 4, 2560⟩ ∨ r.Sub ⟨stackArg s 0, (stackArg s 1).toNat⟩ ∨
+          r.Sub (below (s.gpr .rsp) 24) → X.Disjoint r) →
+          ∀ r ∈ [(⟨stackArg s 4 + BitVec.ofNat 64 16, 2544⟩ : Region), ⟨stackArg s 0, (stackArg s 1).toNat⟩,
+            below (s.gpr .rsp) 24], X.Disjoint r := fun h r hr => by
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+        rcases hr with rfl | rfl | rfl
+        · exact h _ (.inl (Lay.wSub (by decide)))
+        · exact h _ (.inr (.inl fun _ h => h))
+        · exact h _ (.inr (.inr fun _ h => h))
+      rw [frame_at R.frame (dR fun r hr y hy hr' => by
+        rcases retArgs_split hy with h | h
+        · rcases hr with hr | hr | hr
+          · exact C.rW y h (hr y hr')
+          · exact C.rD y h (hr y hr')
+          · exact Offset.base_disjoint_below _ (n := 24) (k := 8) (by decide) y h (hr y hr')
+        · rcases hr with hr | hr | hr
+          · exact C.dA y h (hr y hr')
+          · exact C.dAD y h (hr y hr')
+          · exact Offset.disjoint_below _ (n := 24) (d := 8) (k := 40) (by decide) y h (hr y hr')) hx,
+        frame_at fE₂ eA hx]
+    · rcases hj.cases with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+        simp only [openWord, hok, ↓reduceIte, Option.some.injEq] at hw ⊢ <;> subst hw
+      · exact hsv₅ (.rbx, 128) (by simp [saved])
+      · exact hsv₅ (.rbp, 136) (by simp [saved])
+      · exact hsv₅ (.r12, 144) (by simp [saved])
+      · exact hsv₅ (.r13, 152) (by simp [saved])
+      · exact hsv₅ (.r14, 160) (by simp [saved])
+      · exact hsv₅ (.r15, 168) (by simp [saved])
+      · rw [R.kept 176 (.inl ⟨by decide, by decide⟩)]; exact h176
+      · rw [R.kept 184 (.inl ⟨by decide, by decide⟩)]; exact h184
+      · rw [R.tlen, ← hn1]
+      · exact R.dat
+      · exact R.len
+      · rw [R.kept 224 (.inr ⟨by decide, by decide⟩), htl₂, ← hst]
+      · rw [R.kept 232 (.inr ⟨by decide, by decide⟩)]; exact E₂.aad
+    · exfalso
+      rcases hj.cases with e | e | e | e | e | e | e | e | e | e | e | e | e <;>
+        rw [e] at hn <;> simp only [openWord, hok, ↓reduceIte, reduceCtorEq] at hn
+
+/-- The bytes `OpenLF` says what `open` leaves in: those of `openQ` but the
+lengths block and, in `work` from byte 272 on, where `RunOk` says. -/
+def openQF (A W x : Addr) : Prop :=
+  (⟨A, 48⟩ : Region).Contains x 1 ∨ (⟨W, 16⟩ : Region).Contains x 1 ∨
+    (⟨W + BitVec.ofNat 64 128, 88⟩ : Region).Contains x 1 ∨ (⟨W + BitVec.ofNat 64 224, 16⟩ : Region).Contains x 1 ∨
+    (⟨W + BitVec.ofNat 64 272, 240⟩ : Region).Contains x 1 ∨ (⟨W + BitVec.ofNat 64 544, 480⟩ : Region).Contains x 1 ∨
+    (⟨W + BitVec.ofNat 64 1088, 1472⟩ : Region).Contains x 1
+
+theorem openQF_openQ {A W x : Addr} (h : openQF A W x) : openQ A W x := by
+  unfold openQF at h
+  unfold openQ
+  rcases h with h | h | h | h | h | h | h
+  · exact .inl h
+  · exact .inr (.inl h)
+  · exact .inr (.inr (.inr (.inl h)))
+  · exact .inr (.inr (.inr (.inr (.inl h))))
+  · exact .inr (.inr (.inr (.inr (.inr (RunOk.sub (d := 272) (k := 240) ⟨by decide, by decide, .inl (by decide)⟩ x h)))))
+  · exact .inr (.inr (.inr (.inr (.inr (RunOk.sub (d := 544) (k := 480) ⟨by decide, by decide, .inr (.inl ⟨by decide, by decide⟩)⟩ x h)))))
+  · exact .inr (.inr (.inr (.inr (.inr (RunOk.sub (d := 1088) (k := 1472) ⟨by decide, by decide, .inr (.inr (by decide))⟩ x h)))))
+
+/-- `OpenLF`, byte by byte (`openV`), for a return address and stack
+arguments apart from `work`. -/
+theorem OpenLF.all {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
+      Option (BitVec 8)} {s s' : State} (h : OpenLF Lb s s')
+    (hAW : (⟨s.gpr .rsp, 48⟩ : Region).Disjoint ⟨stackArg s 4, 2560⟩)
+    (ww : (stackArg s 4).toNat + 2560 ≤ 2 ^ 64) :
+    ∀ x, openQF (s.gpr .rsp) (stackArg s 4) x →
+      s'.mem x = (openV Lb (fun _ => none) s.gpr (fun i => stackArg s i) (s.gpr .rsp) (stackArg s 4) x).getD
+        (s.mem x) := by
+  intro x hx
+  -- A byte of `work` at offset `d`.
+  have inW : ∀ {d k : Nat}, d + k ≤ 2560 → (⟨stackArg s 4 + BitVec.ofNat 64 d, k⟩ : Region).Contains x 1 →
+      ¬ (⟨s.gpr .rsp, 48⟩ : Region).Contains x 1 ∧
+        d ≤ (x - stackArg s 4).toNat ∧ (x - stackArg s 4).toNat < d + k := fun {d k} hk hc => by
+    have hlt : (x - (stackArg s 4 + BitVec.ofNat 64 d)).toNat < k := by
+      simp only [Region.Contains] at hc; omega_using [hc]
+    refine ⟨fun hA => hAW x hA (Offset.sub_base _ hk x hc), (Offset.lt_iff x _ (by omega_using [ww, hk])).1 hlt⟩
+  -- A byte of a word of `OpenJF`.
+  have word : ∀ {d k : Nat}, d + k ≤ 240 → 128 ≤ d →
+      (⟨stackArg s 4 + BitVec.ofNat 64 d, k⟩ : Region).Contains x 1 →
+      (∀ i, d ≤ i → i < d + k → OpenJF (i / 8)) →
+      s'.mem x = (openV Lb (fun _ => none) s.gpr (fun i => stackArg s i) (s.gpr .rsp) (stackArg s 4) x).getD
+        (s.mem x) := fun {d k} hk h96 hc hJ => by
+    obtain ⟨hA, h₁, h₂⟩ := inW (d := d) (k := k) (by omega_arith) hc
+    generalize hd : (x - stackArg s 4).toNat = i at h₁ h₂
+    have ex : x = stackArg s 4 + BitVec.ofNat 64 i := by
+      rw [← hd, BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
+    have hj := hJ i h₁ h₂
+    simp only [openV, hA, ↓reduceIte, hd, show ¬ i < 96 by omega_arith, show i < 240 by omega_arith]
+    cases hw : openWord s.gpr (fun i => stackArg s i) (i / 8) with
+    | none =>
+      simp only [Option.map_none, Option.getD_none]
+      rw [ex]; exact h.rest i hj hw
+    | some w =>
+      simp only [Option.map_some, Option.getD_some]
+      rw [ex, ← Offset.add_add_eq (stackArg s 4) (show 8 * (i / 8) + i % 8 = i by omega_arith),
+        Blocks.byte_readW64 s'.mem (stackArg s 4 + BitVec.ofNat 64 (8 * (i / 8))) (j := i % 8) (by omega_arith),
+        h.words (i / 8) hj w hw]
+  -- A byte from 272 on.
+  have high : ∀ {d k : Nat}, RunOk d k → (⟨stackArg s 4 + BitVec.ofNat 64 d, k⟩ : Region).Contains x 1 →
+      s'.mem x = (openV Lb (fun _ => none) s.gpr (fun i => stackArg s i) (s.gpr .rsp) (stackArg s 4) x).getD
+        (s.mem x) := fun {d k} hk hc => by
+    obtain ⟨hA, h₁, -⟩ := inW (d := d) (k := k) hk.2.1 hc
+    have := hk.1
+    simp only [openV, hA, ↓reduceIte, show ¬ (x - stackArg s 4).toNat < 96 by omega_arith,
+      show ¬ (x - stackArg s 4).toNat < 240 by omega_arith]
+    exact h.rg hk x hc
+  rcases hx with hx | hx | hx | hx | hx | hx | hx
+  · simp only [openV, hx, ↓reduceIte, Option.getD_none]; exact h.args x hx
+  · obtain ⟨hA, -, h16⟩ := inW (d := 0) (k := 16) (by decide) (by simpa using hx)
+    simp only [openV, hA, ↓reduceIte, show (x - stackArg s 4).toNat < 96 by omega_arith, Option.getD_none]
+    exact h.w0 x hx
+  · exact word (d := 128) (k := 88) (by decide) (by decide) hx fun i h₁ h₂ => by unfold OpenJF; omega_arith
+  · exact word (d := 224) (k := 16) (by decide) (by decide) hx fun i h₁ h₂ => by unfold OpenJF; omega_arith
+  · exact high ⟨by decide, by decide, .inl (by decide)⟩ hx
+  · exact high ⟨by decide, by decide, .inr (.inl ⟨by decide, by decide⟩)⟩ hx
+  · exact high ⟨by decide, by decide, .inr (.inr (by decide))⟩ hx
+
+open Short (ShortFacts) in
+/-- `openFinM_leaves_wp`, byte by byte (`openV`), for a decrypting function
+that leaves a function of its arguments in its `scratch`. -/
+theorem openFin_leavesQ (hF : ShortFacts) (v : GcmImpl) {np : Nat} {hpn : 8 ≤ np ∧ np ≤ 24}
+    (B : BlkFn (Gcm.X86_64.Stitch.CtxMode.preparedN np hpn)) (hB : BlkLeavesD B)
+    (gf : GhashFree v.gh.fn.code) (cf : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
+    ∃ Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr →
+        Option (BitVec 8),
+      ∀ s t s', (Proof.AesGcm.openX86_64M (Gcm.X86_64.Stitch.CtxMode.preparedN np hpn)).pre s →
+        Exec isa (FastOpen.openFin (FastOpen.sel (v.withBlk B) (Short.openLong (v.withBlk B)) Short.finKsA true))
+          s t s' →
+        ∀ x, openQF (s.gpr .rsp) (stackArg s 4) x →
+          s'.mem x = (openV Lb (fun _ => none) s.gpr (fun i => stackArg s i) (s.gpr .rsp)
+            (stackArg s 4) x).getD (s.mem x) := by
+  obtain ⟨Lb, hL⟩ := hB
+  refine ⟨Lb, fun s t s' hp he => ?_⟩
+  obtain ⟨_, s'', he', h⟩ := openFinM_leaves_wp hF v B hL gf cf hp
+  obtain ⟨_, rfl⟩ := Exec.det he he'
+  obtain ⟨C, -⟩ := OneCtx.ofOpen hp.1 (Gcm.X86_64.Stitch.CtxMode.preparedN np hpn).ge
+  refine h.all (fun y hy hW => ?_) C.ww
   rcases retArgs_split hy with h | h
   · exact C.rW y h hW
   · exact C.dA y (by simpa using h) hW
