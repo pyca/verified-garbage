@@ -443,4 +443,52 @@ theorem shapeFlag_zero {bits g x : Nat} (hb1 : 512 ≤ bits) (hb2 : bits ≤ 819
   · rw [sieved_sieve hb1 hb2 (by omega) hq2]
     rcases hg with rfl | rfl <;> simp [hq2]
 
+/-! ### The flag, as the code's checks build it -/
+
+/-- The flag after the congruence. -/
+abbrev scr1 (g c : Nat) : BitVec 64 := resFlag g (BitVec.ofNat 64 (c % resMod g))
+
+/-- After the sieve of `c` by the table's first words. -/
+abbrev scr2 (g w c : Nat) : BitVec 64 := scr1 g c ||| mask (anyPre c (4 * sieveWords true w))
+
+/-- After the oddness of `c / 2`. -/
+abbrev scr3 (g w c : Nat) : BitVec 64 := scr2 g w c ||| evenFlag (c / 2)
+
+/-- After the sieve of `c / 2`. -/
+abbrev scr4 (g w c : Nat) : BitVec 64 := scr3 g w c ||| mask (anyPre (c / 2) (4 * sieveWords false w))
+
+/-- After the whole sieve of `c`. -/
+abbrev scr5 (g w c : Nat) : BitVec 64 := scr4 g w c ||| mask (anyPre c (4 * sieveWords false w))
+
+/-- The last is the shape's flag, but for the first words, which are among
+the whole sieve's. -/
+theorem scr5_zero {g w c : Nat} : scr5 g w c = 0 ↔ shapeFlag g w c = 0 := by
+  simp only [scr5, scr4, scr3, scr2, scr1, shapeFlag, VG.Proof.Rsa.AArch64.or_eq_zero, mask_eq_zero,
+    sieveWords_false]
+  constructor
+  · rintro ⟨⟨⟨⟨h1, -⟩, h3⟩, h4⟩, h5⟩
+    exact ⟨⟨⟨h1, h5⟩, h3⟩, h4⟩
+  · rintro ⟨⟨⟨h1, h5⟩, h3⟩, h4⟩
+    refine ⟨⟨⟨⟨h1, ?_⟩, h3⟩, h4⟩, h5⟩
+    cases h : anyPre c (4 * sieveWords true w)
+    · rfl
+    · rw [anyPre_mono (Nat.mul_le_mul_left 4 (sieveWords_trialN true w)) h] at h5
+      cases h5
+
+theorem or_ne_zero {x : BitVec 64} (y : BitVec 64) (h : x ≠ 0) : x ||| y ≠ 0 :=
+  fun h0 => h ((VG.Proof.Rsa.AArch64.or_eq_zero _ _).mp h0).1
+
+/-- A check that fails: the shape's flag is not zero. -/
+theorem shape_ne {g w c : Nat}
+    (h : scr1 g c ≠ 0 ∨ scr2 g w c ≠ 0 ∨ scr3 g w c ≠ 0 ∨ scr4 g w c ≠ 0 ∨ scr5 g w c ≠ 0) :
+    shapeFlag g w c ≠ 0 := by
+  have h5 : scr5 g w c ≠ 0 := by
+    rcases h with h | h | h | h | h
+    · exact or_ne_zero _ (or_ne_zero _ (or_ne_zero _ (or_ne_zero _ h)))
+    · exact or_ne_zero _ (or_ne_zero _ (or_ne_zero _ h))
+    · exact or_ne_zero _ (or_ne_zero _ h)
+    · exact or_ne_zero _ h
+    · exact h
+  exact fun h0 => h5 (scr5_zero.mpr h0)
+
 end VG.Proof.Ffdh.AArch64.ParameterCandidate
