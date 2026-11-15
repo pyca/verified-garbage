@@ -107,6 +107,9 @@ theorem maj_xor (x y z : Word) : maj x y z = (y ^^^ z) &&& (x ^^^ y) ^^^ y := by
   ext i; simp only [maj, BitVec.getElem_xor, BitVec.getElem_and]
   cases x[i] <;> cases y[i] <;> cases z[i] <;> rfl
 
+/-- `T₁`, in the order the code adds it up and in the specification's. -/
+theorem t1_order (h s c k w : Word) : h + w + k + s + c = h + s + c + k + w := by ac_rfl
+
 /-- The round is symbolically executed once, for any registers `a … h`
 (which `round_nodup` says are different from each other and the temporaries). -/
 theorem round_ok (t : Nat) (s : State) (v : HashValue) (k w : Word)
@@ -159,6 +162,7 @@ theorem round_ok (t : Nat) (s : State) (v : HashValue) (k w : Word)
     have nd : r ≠ d := fun e => p3 (e ▸ hr')
     simp only [T] at n1
     simp only [nh, nd, n1, nk, np, ite_false]
+  all_goals try rw [t1_order v[7] _ _ k w]
   all_goals
     simp (config := {failIfUnchanged := false}) only [roundKW_0, roundKW_1, roundKW_2, roundKW_3,
       roundKW_4, roundKW_5, roundKW_6, roundKW_7, bsig1, ch_eq, bsig0, maj_xor, BitVec.add_assoc]

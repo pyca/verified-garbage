@@ -112,12 +112,17 @@ def kload (t : Nat) : List Instr :=
     ([.umov .x (mreg t) KV (t % 2)] : List Instr)
 
 /-- Round `t`, with `Wₜ` in `wreg t`, `Kₜ` in `mreg t` and `b ⊕ c` in
-`mreg (t + 1)`. The additions are in the order of the specification. -/
+`mreg (t + 1)`. `Wₜ` and `Kₜ`, which do not depend on the round before, are
+added to `h` first: the next round's `e` is then three additions after
+`Σ₁(e)`. -/
 def round (t : Nat) : List Instr :=
   let a := var t 0; let b := var t 1; let d := var t 3
   let e := var t 4; let f := var t 5; let g := var t 6; let h := var t 7
   let k := mreg t; let m := mreg (t + 1); let w := wreg t
-  [ -- h := h + Σ₁(e)
+  [ -- h := h + Wₜ + Kₜ
+    .add .x h h w,
+    .add .x h h k,
+    -- h := h + Σ₁(e)
     .ror .x T e 14,
     .logicRor .eor .x T T e 18,
     .logicRor .eor .x T T e 41,
@@ -127,10 +132,7 @@ def round (t : Nat) : List Instr :=
     .logic .and .x T T e,
     .logic .eor .x T T g,
     .add .x h h T,
-    -- h := h + Kₜ + Wₜ, which is T₁
-    .add .x h h k,
-    .add .x h h w,
-    -- e' := d + T₁
+    -- e' := d + T₁ (`h` is T₁ now)
     .add .x d d h,
     -- h := h + Σ₀(a)
     .ror .x T a 28,

@@ -23,6 +23,8 @@ vg_sha512_compress:
 	str x16, [x3, #0]
 	ldr q16, [x15, #0]
 	umov x13, v16.d[0]
+	add x11, x11, x16
+	add x11, x11, x13
 	ror x12, x8, #14
 	eor x12, x12, x8, ror #18
 	eor x12, x12, x8, ror #41
@@ -31,8 +33,6 @@ vg_sha512_compress:
 	and x12, x12, x8
 	eor x12, x12, x10
 	add x11, x11, x12
-	add x11, x11, x13
-	add x11, x11, x16
 	add x7, x7, x11
 	ror x12, x4, #28
 	eor x12, x12, x4, ror #34
@@ -46,6 +46,8 @@ vg_sha512_compress:
 	rev x17, x17
 	str x17, [x3, #8]
 	umov x14, v16.d[1]
+	add x10, x10, x17
+	add x10, x10, x14
 	ror x12, x7, #14
 	eor x12, x12, x7, ror #18
 	eor x12, x12, x7, ror #41
@@ -54,8 +56,6 @@ vg_sha512_compress:
 	and x12, x12, x7
 	eor x12, x12, x9
 	add x10, x10, x12
-	add x10, x10, x14
-	add x10, x10, x17
 	add x6, x6, x10
 	ror x12, x11, #28
 	eor x12, x12, x11, ror #34
@@ -70,6 +70,8 @@ vg_sha512_compress:
 	str x16, [x3, #16]
 	ldr q16, [x15, #16]
 	umov x13, v16.d[0]
+	add x9, x9, x16
+	add x9, x9, x13
 	ror x12, x6, #14
 	eor x12, x12, x6, ror #18
 	eor x12, x12, x6, ror #41
@@ -78,8 +80,6 @@ vg_sha512_compress:
 	and x12, x12, x6
 	eor x12, x12, x8
 	add x9, x9, x12
-	add x9, x9, x13
-	add x9, x9, x16
 	add x5, x5, x9
 	ror x12, x10, #28
 	eor x12, x12, x10, ror #34
@@ -93,6 +93,8 @@ vg_sha512_compress:
 	rev x17, x17
 	str x17, [x3, #24]
 	umov x14, v16.d[1]
+	add x8, x8, x17
+	add x8, x8, x14
 	ror x12, x5, #14
 	eor x12, x12, x5, ror #18
 	eor x12, x12, x5, ror #41
@@ -101,8 +103,6 @@ vg_sha512_compress:
 	and x12, x12, x5
 	eor x12, x12, x7
 	add x8, x8, x12
-	add x8, x8, x14
-	add x8, x8, x17
 	add x4, x4, x8
 	ror x12, x9, #28
 	eor x12, x12, x9, ror #34
@@ -117,6 +117,8 @@ vg_sha512_compress:
 	str x16, [x3, #32]
 	ldr q16, [x15, #32]
 	umov x13, v16.d[0]
+	add x7, x7, x16
+	add x7, x7, x13
 	ror x12, x4, #14
 	eor x12, x12, x4, ror #18
 	eor x12, x12, x4, ror #41
@@ -125,8 +127,6 @@ vg_sha512_compress:
 	and x12, x12, x4
 	eor x12, x12, x6
 	add x7, x7, x12
-	add x7, x7, x13
-	add x7, x7, x16
 	add x11, x11, x7
 	ror x12, x8, #28
 	eor x12, x12, x8, ror #34
@@ -140,6 +140,8 @@ vg_sha512_compress:
 	rev x17, x17
 	str x17, [x3, #40]
 	umov x14, v16.d[1]
+	add x6, x6, x17
+	add x6, x6, x14
 	ror x12, x11, #14
 	eor x12, x12, x11, ror #18
 	eor x12, x12, x11, ror #41
@@ -148,8 +150,6 @@ vg_sha512_compress:
 	and x12, x12, x11
 	eor x12, x12, x5
 	add x6, x6, x12
-	add x6, x6, x14
-	add x6, x6, x17
 	add x10, x10, x6
 	ror x12, x7, #28
 	eor x12, x12, x7, ror #34
@@ -164,6 +164,8 @@ vg_sha512_compress:
 	str x16, [x3, #48]
 	ldr q16, [x15, #48]
 	umov x13, v16.d[0]
+	add x5, x5, x16
+	add x5, x5, x13
 	ror x12, x10, #14
 	eor x12, x12, x10, ror #18
 	eor x12, x12, x10, ror #41
@@ -172,8 +174,6 @@ vg_sha512_compress:
 	and x12, x12, x10
 	eor x12, x12, x4
 	add x5, x5, x12
-	add x5, x5, x13
-	add x5, x5, x16
 	add x9, x9, x5
 	ror x12, x6, #28
 	eor x12, x12, x6, ror #34
@@ -187,6 +187,8 @@ vg_sha512_compress:
 	rev x17, x17
 	str x17, [x3, #56]
 	umov x14, v16.d[1]
+	add x4, x4, x17
+	add x4, x4, x14
 	ror x12, x9, #14
 	eor x12, x12, x9, ror #18
 	eor x12, x12, x9, ror #41
@@ -195,8 +197,6 @@ vg_sha512_compress:
 	and x12, x12, x9
 	eor x12, x12, x11
 	add x4, x4, x12
-	add x4, x4, x14
-	add x4, x4, x17
 	add x8, x8, x4
 	ror x12, x5, #28
 	eor x12, x12, x5, ror #34
@@ -211,6 +211,8 @@ vg_sha512_compress:
 	str x16, [x3, #64]
 	ldr q16, [x15, #64]
 	umov x13, v16.d[0]
+	add x11, x11, x16
+	add x11, x11, x13
 	ror x12, x8, #14
 	eor x12, x12, x8, ror #18
 	eor x12, x12, x8, ror #41
@@ -219,8 +221,6 @@ vg_sha512_compress:
 	and x12, x12, x8
 	eor x12, x12, x10
 	add x11, x11, x12
-	add x11, x11, x13
-	add x11, x11, x16
 	add x7, x7, x11
 	ror x12, x4, #28
 	eor x12, x12, x4, ror #34
@@ -234,6 +234,8 @@ vg_sha512_compress:
 	rev x17, x17
 	str x17, [x3, #72]
 	umov x14, v16.d[1]
+	add x10, x10, x17
+	add x10, x10, x14
 	ror x12, x7, #14
 	eor x12, x12, x7, ror #18
 	eor x12, x12, x7, ror #41
@@ -242,8 +244,6 @@ vg_sha512_compress:
 	and x12, x12, x7
 	eor x12, x12, x9
 	add x10, x10, x12
-	add x10, x10, x14
-	add x10, x10, x17
 	add x6, x6, x10
 	ror x12, x11, #28
 	eor x12, x12, x11, ror #34
@@ -258,6 +258,8 @@ vg_sha512_compress:
 	str x16, [x3, #80]
 	ldr q16, [x15, #80]
 	umov x13, v16.d[0]
+	add x9, x9, x16
+	add x9, x9, x13
 	ror x12, x6, #14
 	eor x12, x12, x6, ror #18
 	eor x12, x12, x6, ror #41
@@ -266,8 +268,6 @@ vg_sha512_compress:
 	and x12, x12, x6
 	eor x12, x12, x8
 	add x9, x9, x12
-	add x9, x9, x13
-	add x9, x9, x16
 	add x5, x5, x9
 	ror x12, x10, #28
 	eor x12, x12, x10, ror #34
@@ -281,6 +281,8 @@ vg_sha512_compress:
 	rev x17, x17
 	str x17, [x3, #88]
 	umov x14, v16.d[1]
+	add x8, x8, x17
+	add x8, x8, x14
 	ror x12, x5, #14
 	eor x12, x12, x5, ror #18
 	eor x12, x12, x5, ror #41
@@ -289,8 +291,6 @@ vg_sha512_compress:
 	and x12, x12, x5
 	eor x12, x12, x7
 	add x8, x8, x12
-	add x8, x8, x14
-	add x8, x8, x17
 	add x4, x4, x8
 	ror x12, x9, #28
 	eor x12, x12, x9, ror #34
@@ -305,6 +305,8 @@ vg_sha512_compress:
 	str x16, [x3, #96]
 	ldr q16, [x15, #96]
 	umov x13, v16.d[0]
+	add x7, x7, x16
+	add x7, x7, x13
 	ror x12, x4, #14
 	eor x12, x12, x4, ror #18
 	eor x12, x12, x4, ror #41
@@ -313,8 +315,6 @@ vg_sha512_compress:
 	and x12, x12, x4
 	eor x12, x12, x6
 	add x7, x7, x12
-	add x7, x7, x13
-	add x7, x7, x16
 	add x11, x11, x7
 	ror x12, x8, #28
 	eor x12, x12, x8, ror #34
@@ -328,6 +328,8 @@ vg_sha512_compress:
 	rev x17, x17
 	str x17, [x3, #104]
 	umov x14, v16.d[1]
+	add x6, x6, x17
+	add x6, x6, x14
 	ror x12, x11, #14
 	eor x12, x12, x11, ror #18
 	eor x12, x12, x11, ror #41
@@ -336,8 +338,6 @@ vg_sha512_compress:
 	and x12, x12, x11
 	eor x12, x12, x5
 	add x6, x6, x12
-	add x6, x6, x14
-	add x6, x6, x17
 	add x10, x10, x6
 	ror x12, x7, #28
 	eor x12, x12, x7, ror #34
@@ -352,6 +352,8 @@ vg_sha512_compress:
 	str x16, [x3, #112]
 	ldr q16, [x15, #112]
 	umov x13, v16.d[0]
+	add x5, x5, x16
+	add x5, x5, x13
 	ror x12, x10, #14
 	eor x12, x12, x10, ror #18
 	eor x12, x12, x10, ror #41
@@ -360,8 +362,6 @@ vg_sha512_compress:
 	and x12, x12, x10
 	eor x12, x12, x4
 	add x5, x5, x12
-	add x5, x5, x13
-	add x5, x5, x16
 	add x9, x9, x5
 	ror x12, x6, #28
 	eor x12, x12, x6, ror #34
@@ -375,6 +375,8 @@ vg_sha512_compress:
 	rev x17, x17
 	str x17, [x3, #120]
 	umov x14, v16.d[1]
+	add x4, x4, x17
+	add x4, x4, x14
 	ror x12, x9, #14
 	eor x12, x12, x9, ror #18
 	eor x12, x12, x9, ror #41
@@ -383,8 +385,6 @@ vg_sha512_compress:
 	and x12, x12, x9
 	eor x12, x12, x11
 	add x4, x4, x12
-	add x4, x4, x14
-	add x4, x4, x17
 	add x8, x8, x4
 	ror x12, x5, #28
 	eor x12, x12, x5, ror #34
@@ -408,6 +408,8 @@ vg_sha512_compress:
 	str x16, [x3, #0]
 	ldr q16, [x15, #128]
 	umov x13, v16.d[0]
+	add x11, x11, x16
+	add x11, x11, x13
 	ror x12, x8, #14
 	eor x12, x12, x8, ror #18
 	eor x12, x12, x8, ror #41
@@ -416,8 +418,6 @@ vg_sha512_compress:
 	and x12, x12, x8
 	eor x12, x12, x10
 	add x11, x11, x12
-	add x11, x11, x13
-	add x11, x11, x16
 	add x7, x7, x11
 	ror x12, x4, #28
 	eor x12, x12, x4, ror #34
@@ -440,6 +440,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #8]
 	umov x14, v16.d[1]
+	add x10, x10, x17
+	add x10, x10, x14
 	ror x12, x7, #14
 	eor x12, x12, x7, ror #18
 	eor x12, x12, x7, ror #41
@@ -448,8 +450,6 @@ vg_sha512_compress:
 	and x12, x12, x7
 	eor x12, x12, x9
 	add x10, x10, x12
-	add x10, x10, x14
-	add x10, x10, x17
 	add x6, x6, x10
 	ror x12, x11, #28
 	eor x12, x12, x11, ror #34
@@ -473,6 +473,8 @@ vg_sha512_compress:
 	str x16, [x3, #16]
 	ldr q16, [x15, #144]
 	umov x13, v16.d[0]
+	add x9, x9, x16
+	add x9, x9, x13
 	ror x12, x6, #14
 	eor x12, x12, x6, ror #18
 	eor x12, x12, x6, ror #41
@@ -481,8 +483,6 @@ vg_sha512_compress:
 	and x12, x12, x6
 	eor x12, x12, x8
 	add x9, x9, x12
-	add x9, x9, x13
-	add x9, x9, x16
 	add x5, x5, x9
 	ror x12, x10, #28
 	eor x12, x12, x10, ror #34
@@ -505,6 +505,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #24]
 	umov x14, v16.d[1]
+	add x8, x8, x17
+	add x8, x8, x14
 	ror x12, x5, #14
 	eor x12, x12, x5, ror #18
 	eor x12, x12, x5, ror #41
@@ -513,8 +515,6 @@ vg_sha512_compress:
 	and x12, x12, x5
 	eor x12, x12, x7
 	add x8, x8, x12
-	add x8, x8, x14
-	add x8, x8, x17
 	add x4, x4, x8
 	ror x12, x9, #28
 	eor x12, x12, x9, ror #34
@@ -538,6 +538,8 @@ vg_sha512_compress:
 	str x16, [x3, #32]
 	ldr q16, [x15, #160]
 	umov x13, v16.d[0]
+	add x7, x7, x16
+	add x7, x7, x13
 	ror x12, x4, #14
 	eor x12, x12, x4, ror #18
 	eor x12, x12, x4, ror #41
@@ -546,8 +548,6 @@ vg_sha512_compress:
 	and x12, x12, x4
 	eor x12, x12, x6
 	add x7, x7, x12
-	add x7, x7, x13
-	add x7, x7, x16
 	add x11, x11, x7
 	ror x12, x8, #28
 	eor x12, x12, x8, ror #34
@@ -570,6 +570,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #40]
 	umov x14, v16.d[1]
+	add x6, x6, x17
+	add x6, x6, x14
 	ror x12, x11, #14
 	eor x12, x12, x11, ror #18
 	eor x12, x12, x11, ror #41
@@ -578,8 +580,6 @@ vg_sha512_compress:
 	and x12, x12, x11
 	eor x12, x12, x5
 	add x6, x6, x12
-	add x6, x6, x14
-	add x6, x6, x17
 	add x10, x10, x6
 	ror x12, x7, #28
 	eor x12, x12, x7, ror #34
@@ -603,6 +603,8 @@ vg_sha512_compress:
 	str x16, [x3, #48]
 	ldr q16, [x15, #176]
 	umov x13, v16.d[0]
+	add x5, x5, x16
+	add x5, x5, x13
 	ror x12, x10, #14
 	eor x12, x12, x10, ror #18
 	eor x12, x12, x10, ror #41
@@ -611,8 +613,6 @@ vg_sha512_compress:
 	and x12, x12, x10
 	eor x12, x12, x4
 	add x5, x5, x12
-	add x5, x5, x13
-	add x5, x5, x16
 	add x9, x9, x5
 	ror x12, x6, #28
 	eor x12, x12, x6, ror #34
@@ -635,6 +635,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #56]
 	umov x14, v16.d[1]
+	add x4, x4, x17
+	add x4, x4, x14
 	ror x12, x9, #14
 	eor x12, x12, x9, ror #18
 	eor x12, x12, x9, ror #41
@@ -643,8 +645,6 @@ vg_sha512_compress:
 	and x12, x12, x9
 	eor x12, x12, x11
 	add x4, x4, x12
-	add x4, x4, x14
-	add x4, x4, x17
 	add x8, x8, x4
 	ror x12, x5, #28
 	eor x12, x12, x5, ror #34
@@ -668,6 +668,8 @@ vg_sha512_compress:
 	str x16, [x3, #64]
 	ldr q16, [x15, #192]
 	umov x13, v16.d[0]
+	add x11, x11, x16
+	add x11, x11, x13
 	ror x12, x8, #14
 	eor x12, x12, x8, ror #18
 	eor x12, x12, x8, ror #41
@@ -676,8 +678,6 @@ vg_sha512_compress:
 	and x12, x12, x8
 	eor x12, x12, x10
 	add x11, x11, x12
-	add x11, x11, x13
-	add x11, x11, x16
 	add x7, x7, x11
 	ror x12, x4, #28
 	eor x12, x12, x4, ror #34
@@ -700,6 +700,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #72]
 	umov x14, v16.d[1]
+	add x10, x10, x17
+	add x10, x10, x14
 	ror x12, x7, #14
 	eor x12, x12, x7, ror #18
 	eor x12, x12, x7, ror #41
@@ -708,8 +710,6 @@ vg_sha512_compress:
 	and x12, x12, x7
 	eor x12, x12, x9
 	add x10, x10, x12
-	add x10, x10, x14
-	add x10, x10, x17
 	add x6, x6, x10
 	ror x12, x11, #28
 	eor x12, x12, x11, ror #34
@@ -733,6 +733,8 @@ vg_sha512_compress:
 	str x16, [x3, #80]
 	ldr q16, [x15, #208]
 	umov x13, v16.d[0]
+	add x9, x9, x16
+	add x9, x9, x13
 	ror x12, x6, #14
 	eor x12, x12, x6, ror #18
 	eor x12, x12, x6, ror #41
@@ -741,8 +743,6 @@ vg_sha512_compress:
 	and x12, x12, x6
 	eor x12, x12, x8
 	add x9, x9, x12
-	add x9, x9, x13
-	add x9, x9, x16
 	add x5, x5, x9
 	ror x12, x10, #28
 	eor x12, x12, x10, ror #34
@@ -765,6 +765,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #88]
 	umov x14, v16.d[1]
+	add x8, x8, x17
+	add x8, x8, x14
 	ror x12, x5, #14
 	eor x12, x12, x5, ror #18
 	eor x12, x12, x5, ror #41
@@ -773,8 +775,6 @@ vg_sha512_compress:
 	and x12, x12, x5
 	eor x12, x12, x7
 	add x8, x8, x12
-	add x8, x8, x14
-	add x8, x8, x17
 	add x4, x4, x8
 	ror x12, x9, #28
 	eor x12, x12, x9, ror #34
@@ -798,6 +798,8 @@ vg_sha512_compress:
 	str x16, [x3, #96]
 	ldr q16, [x15, #224]
 	umov x13, v16.d[0]
+	add x7, x7, x16
+	add x7, x7, x13
 	ror x12, x4, #14
 	eor x12, x12, x4, ror #18
 	eor x12, x12, x4, ror #41
@@ -806,8 +808,6 @@ vg_sha512_compress:
 	and x12, x12, x4
 	eor x12, x12, x6
 	add x7, x7, x12
-	add x7, x7, x13
-	add x7, x7, x16
 	add x11, x11, x7
 	ror x12, x8, #28
 	eor x12, x12, x8, ror #34
@@ -830,6 +830,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #104]
 	umov x14, v16.d[1]
+	add x6, x6, x17
+	add x6, x6, x14
 	ror x12, x11, #14
 	eor x12, x12, x11, ror #18
 	eor x12, x12, x11, ror #41
@@ -838,8 +840,6 @@ vg_sha512_compress:
 	and x12, x12, x11
 	eor x12, x12, x5
 	add x6, x6, x12
-	add x6, x6, x14
-	add x6, x6, x17
 	add x10, x10, x6
 	ror x12, x7, #28
 	eor x12, x12, x7, ror #34
@@ -863,6 +863,8 @@ vg_sha512_compress:
 	str x16, [x3, #112]
 	ldr q16, [x15, #240]
 	umov x13, v16.d[0]
+	add x5, x5, x16
+	add x5, x5, x13
 	ror x12, x10, #14
 	eor x12, x12, x10, ror #18
 	eor x12, x12, x10, ror #41
@@ -871,8 +873,6 @@ vg_sha512_compress:
 	and x12, x12, x10
 	eor x12, x12, x4
 	add x5, x5, x12
-	add x5, x5, x13
-	add x5, x5, x16
 	add x9, x9, x5
 	ror x12, x6, #28
 	eor x12, x12, x6, ror #34
@@ -896,6 +896,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #120]
 	umov x14, v16.d[1]
+	add x4, x4, x17
+	add x4, x4, x14
 	ror x12, x9, #14
 	eor x12, x12, x9, ror #18
 	eor x12, x12, x9, ror #41
@@ -904,8 +906,6 @@ vg_sha512_compress:
 	and x12, x12, x9
 	eor x12, x12, x11
 	add x4, x4, x12
-	add x4, x4, x14
-	add x4, x4, x17
 	add x8, x8, x4
 	ror x12, x5, #28
 	eor x12, x12, x5, ror #34
@@ -929,6 +929,8 @@ vg_sha512_compress:
 	str x16, [x3, #0]
 	ldr q16, [x15, #256]
 	umov x13, v16.d[0]
+	add x11, x11, x16
+	add x11, x11, x13
 	ror x12, x8, #14
 	eor x12, x12, x8, ror #18
 	eor x12, x12, x8, ror #41
@@ -937,8 +939,6 @@ vg_sha512_compress:
 	and x12, x12, x8
 	eor x12, x12, x10
 	add x11, x11, x12
-	add x11, x11, x13
-	add x11, x11, x16
 	add x7, x7, x11
 	ror x12, x4, #28
 	eor x12, x12, x4, ror #34
@@ -961,6 +961,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #8]
 	umov x14, v16.d[1]
+	add x10, x10, x17
+	add x10, x10, x14
 	ror x12, x7, #14
 	eor x12, x12, x7, ror #18
 	eor x12, x12, x7, ror #41
@@ -969,8 +971,6 @@ vg_sha512_compress:
 	and x12, x12, x7
 	eor x12, x12, x9
 	add x10, x10, x12
-	add x10, x10, x14
-	add x10, x10, x17
 	add x6, x6, x10
 	ror x12, x11, #28
 	eor x12, x12, x11, ror #34
@@ -994,6 +994,8 @@ vg_sha512_compress:
 	str x16, [x3, #16]
 	ldr q16, [x15, #272]
 	umov x13, v16.d[0]
+	add x9, x9, x16
+	add x9, x9, x13
 	ror x12, x6, #14
 	eor x12, x12, x6, ror #18
 	eor x12, x12, x6, ror #41
@@ -1002,8 +1004,6 @@ vg_sha512_compress:
 	and x12, x12, x6
 	eor x12, x12, x8
 	add x9, x9, x12
-	add x9, x9, x13
-	add x9, x9, x16
 	add x5, x5, x9
 	ror x12, x10, #28
 	eor x12, x12, x10, ror #34
@@ -1026,6 +1026,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #24]
 	umov x14, v16.d[1]
+	add x8, x8, x17
+	add x8, x8, x14
 	ror x12, x5, #14
 	eor x12, x12, x5, ror #18
 	eor x12, x12, x5, ror #41
@@ -1034,8 +1036,6 @@ vg_sha512_compress:
 	and x12, x12, x5
 	eor x12, x12, x7
 	add x8, x8, x12
-	add x8, x8, x14
-	add x8, x8, x17
 	add x4, x4, x8
 	ror x12, x9, #28
 	eor x12, x12, x9, ror #34
@@ -1059,6 +1059,8 @@ vg_sha512_compress:
 	str x16, [x3, #32]
 	ldr q16, [x15, #288]
 	umov x13, v16.d[0]
+	add x7, x7, x16
+	add x7, x7, x13
 	ror x12, x4, #14
 	eor x12, x12, x4, ror #18
 	eor x12, x12, x4, ror #41
@@ -1067,8 +1069,6 @@ vg_sha512_compress:
 	and x12, x12, x4
 	eor x12, x12, x6
 	add x7, x7, x12
-	add x7, x7, x13
-	add x7, x7, x16
 	add x11, x11, x7
 	ror x12, x8, #28
 	eor x12, x12, x8, ror #34
@@ -1091,6 +1091,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #40]
 	umov x14, v16.d[1]
+	add x6, x6, x17
+	add x6, x6, x14
 	ror x12, x11, #14
 	eor x12, x12, x11, ror #18
 	eor x12, x12, x11, ror #41
@@ -1099,8 +1101,6 @@ vg_sha512_compress:
 	and x12, x12, x11
 	eor x12, x12, x5
 	add x6, x6, x12
-	add x6, x6, x14
-	add x6, x6, x17
 	add x10, x10, x6
 	ror x12, x7, #28
 	eor x12, x12, x7, ror #34
@@ -1124,6 +1124,8 @@ vg_sha512_compress:
 	str x16, [x3, #48]
 	ldr q16, [x15, #304]
 	umov x13, v16.d[0]
+	add x5, x5, x16
+	add x5, x5, x13
 	ror x12, x10, #14
 	eor x12, x12, x10, ror #18
 	eor x12, x12, x10, ror #41
@@ -1132,8 +1134,6 @@ vg_sha512_compress:
 	and x12, x12, x10
 	eor x12, x12, x4
 	add x5, x5, x12
-	add x5, x5, x13
-	add x5, x5, x16
 	add x9, x9, x5
 	ror x12, x6, #28
 	eor x12, x12, x6, ror #34
@@ -1156,6 +1156,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #56]
 	umov x14, v16.d[1]
+	add x4, x4, x17
+	add x4, x4, x14
 	ror x12, x9, #14
 	eor x12, x12, x9, ror #18
 	eor x12, x12, x9, ror #41
@@ -1164,8 +1166,6 @@ vg_sha512_compress:
 	and x12, x12, x9
 	eor x12, x12, x11
 	add x4, x4, x12
-	add x4, x4, x14
-	add x4, x4, x17
 	add x8, x8, x4
 	ror x12, x5, #28
 	eor x12, x12, x5, ror #34
@@ -1189,6 +1189,8 @@ vg_sha512_compress:
 	str x16, [x3, #64]
 	ldr q16, [x15, #320]
 	umov x13, v16.d[0]
+	add x11, x11, x16
+	add x11, x11, x13
 	ror x12, x8, #14
 	eor x12, x12, x8, ror #18
 	eor x12, x12, x8, ror #41
@@ -1197,8 +1199,6 @@ vg_sha512_compress:
 	and x12, x12, x8
 	eor x12, x12, x10
 	add x11, x11, x12
-	add x11, x11, x13
-	add x11, x11, x16
 	add x7, x7, x11
 	ror x12, x4, #28
 	eor x12, x12, x4, ror #34
@@ -1221,6 +1221,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #72]
 	umov x14, v16.d[1]
+	add x10, x10, x17
+	add x10, x10, x14
 	ror x12, x7, #14
 	eor x12, x12, x7, ror #18
 	eor x12, x12, x7, ror #41
@@ -1229,8 +1231,6 @@ vg_sha512_compress:
 	and x12, x12, x7
 	eor x12, x12, x9
 	add x10, x10, x12
-	add x10, x10, x14
-	add x10, x10, x17
 	add x6, x6, x10
 	ror x12, x11, #28
 	eor x12, x12, x11, ror #34
@@ -1254,6 +1254,8 @@ vg_sha512_compress:
 	str x16, [x3, #80]
 	ldr q16, [x15, #336]
 	umov x13, v16.d[0]
+	add x9, x9, x16
+	add x9, x9, x13
 	ror x12, x6, #14
 	eor x12, x12, x6, ror #18
 	eor x12, x12, x6, ror #41
@@ -1262,8 +1264,6 @@ vg_sha512_compress:
 	and x12, x12, x6
 	eor x12, x12, x8
 	add x9, x9, x12
-	add x9, x9, x13
-	add x9, x9, x16
 	add x5, x5, x9
 	ror x12, x10, #28
 	eor x12, x12, x10, ror #34
@@ -1286,6 +1286,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #88]
 	umov x14, v16.d[1]
+	add x8, x8, x17
+	add x8, x8, x14
 	ror x12, x5, #14
 	eor x12, x12, x5, ror #18
 	eor x12, x12, x5, ror #41
@@ -1294,8 +1296,6 @@ vg_sha512_compress:
 	and x12, x12, x5
 	eor x12, x12, x7
 	add x8, x8, x12
-	add x8, x8, x14
-	add x8, x8, x17
 	add x4, x4, x8
 	ror x12, x9, #28
 	eor x12, x12, x9, ror #34
@@ -1319,6 +1319,8 @@ vg_sha512_compress:
 	str x16, [x3, #96]
 	ldr q16, [x15, #352]
 	umov x13, v16.d[0]
+	add x7, x7, x16
+	add x7, x7, x13
 	ror x12, x4, #14
 	eor x12, x12, x4, ror #18
 	eor x12, x12, x4, ror #41
@@ -1327,8 +1329,6 @@ vg_sha512_compress:
 	and x12, x12, x4
 	eor x12, x12, x6
 	add x7, x7, x12
-	add x7, x7, x13
-	add x7, x7, x16
 	add x11, x11, x7
 	ror x12, x8, #28
 	eor x12, x12, x8, ror #34
@@ -1351,6 +1351,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #104]
 	umov x14, v16.d[1]
+	add x6, x6, x17
+	add x6, x6, x14
 	ror x12, x11, #14
 	eor x12, x12, x11, ror #18
 	eor x12, x12, x11, ror #41
@@ -1359,8 +1361,6 @@ vg_sha512_compress:
 	and x12, x12, x11
 	eor x12, x12, x5
 	add x6, x6, x12
-	add x6, x6, x14
-	add x6, x6, x17
 	add x10, x10, x6
 	ror x12, x7, #28
 	eor x12, x12, x7, ror #34
@@ -1384,6 +1384,8 @@ vg_sha512_compress:
 	str x16, [x3, #112]
 	ldr q16, [x15, #368]
 	umov x13, v16.d[0]
+	add x5, x5, x16
+	add x5, x5, x13
 	ror x12, x10, #14
 	eor x12, x12, x10, ror #18
 	eor x12, x12, x10, ror #41
@@ -1392,8 +1394,6 @@ vg_sha512_compress:
 	and x12, x12, x10
 	eor x12, x12, x4
 	add x5, x5, x12
-	add x5, x5, x13
-	add x5, x5, x16
 	add x9, x9, x5
 	ror x12, x6, #28
 	eor x12, x12, x6, ror #34
@@ -1417,6 +1417,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #120]
 	umov x14, v16.d[1]
+	add x4, x4, x17
+	add x4, x4, x14
 	ror x12, x9, #14
 	eor x12, x12, x9, ror #18
 	eor x12, x12, x9, ror #41
@@ -1425,8 +1427,6 @@ vg_sha512_compress:
 	and x12, x12, x9
 	eor x12, x12, x11
 	add x4, x4, x12
-	add x4, x4, x14
-	add x4, x4, x17
 	add x8, x8, x4
 	ror x12, x5, #28
 	eor x12, x12, x5, ror #34
@@ -1450,6 +1450,8 @@ vg_sha512_compress:
 	str x16, [x3, #0]
 	ldr q16, [x15, #384]
 	umov x13, v16.d[0]
+	add x11, x11, x16
+	add x11, x11, x13
 	ror x12, x8, #14
 	eor x12, x12, x8, ror #18
 	eor x12, x12, x8, ror #41
@@ -1458,8 +1460,6 @@ vg_sha512_compress:
 	and x12, x12, x8
 	eor x12, x12, x10
 	add x11, x11, x12
-	add x11, x11, x13
-	add x11, x11, x16
 	add x7, x7, x11
 	ror x12, x4, #28
 	eor x12, x12, x4, ror #34
@@ -1482,6 +1482,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #8]
 	umov x14, v16.d[1]
+	add x10, x10, x17
+	add x10, x10, x14
 	ror x12, x7, #14
 	eor x12, x12, x7, ror #18
 	eor x12, x12, x7, ror #41
@@ -1490,8 +1492,6 @@ vg_sha512_compress:
 	and x12, x12, x7
 	eor x12, x12, x9
 	add x10, x10, x12
-	add x10, x10, x14
-	add x10, x10, x17
 	add x6, x6, x10
 	ror x12, x11, #28
 	eor x12, x12, x11, ror #34
@@ -1515,6 +1515,8 @@ vg_sha512_compress:
 	str x16, [x3, #16]
 	ldr q16, [x15, #400]
 	umov x13, v16.d[0]
+	add x9, x9, x16
+	add x9, x9, x13
 	ror x12, x6, #14
 	eor x12, x12, x6, ror #18
 	eor x12, x12, x6, ror #41
@@ -1523,8 +1525,6 @@ vg_sha512_compress:
 	and x12, x12, x6
 	eor x12, x12, x8
 	add x9, x9, x12
-	add x9, x9, x13
-	add x9, x9, x16
 	add x5, x5, x9
 	ror x12, x10, #28
 	eor x12, x12, x10, ror #34
@@ -1547,6 +1547,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #24]
 	umov x14, v16.d[1]
+	add x8, x8, x17
+	add x8, x8, x14
 	ror x12, x5, #14
 	eor x12, x12, x5, ror #18
 	eor x12, x12, x5, ror #41
@@ -1555,8 +1557,6 @@ vg_sha512_compress:
 	and x12, x12, x5
 	eor x12, x12, x7
 	add x8, x8, x12
-	add x8, x8, x14
-	add x8, x8, x17
 	add x4, x4, x8
 	ror x12, x9, #28
 	eor x12, x12, x9, ror #34
@@ -1580,6 +1580,8 @@ vg_sha512_compress:
 	str x16, [x3, #32]
 	ldr q16, [x15, #416]
 	umov x13, v16.d[0]
+	add x7, x7, x16
+	add x7, x7, x13
 	ror x12, x4, #14
 	eor x12, x12, x4, ror #18
 	eor x12, x12, x4, ror #41
@@ -1588,8 +1590,6 @@ vg_sha512_compress:
 	and x12, x12, x4
 	eor x12, x12, x6
 	add x7, x7, x12
-	add x7, x7, x13
-	add x7, x7, x16
 	add x11, x11, x7
 	ror x12, x8, #28
 	eor x12, x12, x8, ror #34
@@ -1612,6 +1612,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #40]
 	umov x14, v16.d[1]
+	add x6, x6, x17
+	add x6, x6, x14
 	ror x12, x11, #14
 	eor x12, x12, x11, ror #18
 	eor x12, x12, x11, ror #41
@@ -1620,8 +1622,6 @@ vg_sha512_compress:
 	and x12, x12, x11
 	eor x12, x12, x5
 	add x6, x6, x12
-	add x6, x6, x14
-	add x6, x6, x17
 	add x10, x10, x6
 	ror x12, x7, #28
 	eor x12, x12, x7, ror #34
@@ -1645,6 +1645,8 @@ vg_sha512_compress:
 	str x16, [x3, #48]
 	ldr q16, [x15, #432]
 	umov x13, v16.d[0]
+	add x5, x5, x16
+	add x5, x5, x13
 	ror x12, x10, #14
 	eor x12, x12, x10, ror #18
 	eor x12, x12, x10, ror #41
@@ -1653,8 +1655,6 @@ vg_sha512_compress:
 	and x12, x12, x10
 	eor x12, x12, x4
 	add x5, x5, x12
-	add x5, x5, x13
-	add x5, x5, x16
 	add x9, x9, x5
 	ror x12, x6, #28
 	eor x12, x12, x6, ror #34
@@ -1677,6 +1677,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #56]
 	umov x14, v16.d[1]
+	add x4, x4, x17
+	add x4, x4, x14
 	ror x12, x9, #14
 	eor x12, x12, x9, ror #18
 	eor x12, x12, x9, ror #41
@@ -1685,8 +1687,6 @@ vg_sha512_compress:
 	and x12, x12, x9
 	eor x12, x12, x11
 	add x4, x4, x12
-	add x4, x4, x14
-	add x4, x4, x17
 	add x8, x8, x4
 	ror x12, x5, #28
 	eor x12, x12, x5, ror #34
@@ -1710,6 +1710,8 @@ vg_sha512_compress:
 	str x16, [x3, #64]
 	ldr q16, [x15, #448]
 	umov x13, v16.d[0]
+	add x11, x11, x16
+	add x11, x11, x13
 	ror x12, x8, #14
 	eor x12, x12, x8, ror #18
 	eor x12, x12, x8, ror #41
@@ -1718,8 +1720,6 @@ vg_sha512_compress:
 	and x12, x12, x8
 	eor x12, x12, x10
 	add x11, x11, x12
-	add x11, x11, x13
-	add x11, x11, x16
 	add x7, x7, x11
 	ror x12, x4, #28
 	eor x12, x12, x4, ror #34
@@ -1742,6 +1742,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #72]
 	umov x14, v16.d[1]
+	add x10, x10, x17
+	add x10, x10, x14
 	ror x12, x7, #14
 	eor x12, x12, x7, ror #18
 	eor x12, x12, x7, ror #41
@@ -1750,8 +1752,6 @@ vg_sha512_compress:
 	and x12, x12, x7
 	eor x12, x12, x9
 	add x10, x10, x12
-	add x10, x10, x14
-	add x10, x10, x17
 	add x6, x6, x10
 	ror x12, x11, #28
 	eor x12, x12, x11, ror #34
@@ -1775,6 +1775,8 @@ vg_sha512_compress:
 	str x16, [x3, #80]
 	ldr q16, [x15, #464]
 	umov x13, v16.d[0]
+	add x9, x9, x16
+	add x9, x9, x13
 	ror x12, x6, #14
 	eor x12, x12, x6, ror #18
 	eor x12, x12, x6, ror #41
@@ -1783,8 +1785,6 @@ vg_sha512_compress:
 	and x12, x12, x6
 	eor x12, x12, x8
 	add x9, x9, x12
-	add x9, x9, x13
-	add x9, x9, x16
 	add x5, x5, x9
 	ror x12, x10, #28
 	eor x12, x12, x10, ror #34
@@ -1807,6 +1807,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #88]
 	umov x14, v16.d[1]
+	add x8, x8, x17
+	add x8, x8, x14
 	ror x12, x5, #14
 	eor x12, x12, x5, ror #18
 	eor x12, x12, x5, ror #41
@@ -1815,8 +1817,6 @@ vg_sha512_compress:
 	and x12, x12, x5
 	eor x12, x12, x7
 	add x8, x8, x12
-	add x8, x8, x14
-	add x8, x8, x17
 	add x4, x4, x8
 	ror x12, x9, #28
 	eor x12, x12, x9, ror #34
@@ -1840,6 +1840,8 @@ vg_sha512_compress:
 	str x16, [x3, #96]
 	ldr q16, [x15, #480]
 	umov x13, v16.d[0]
+	add x7, x7, x16
+	add x7, x7, x13
 	ror x12, x4, #14
 	eor x12, x12, x4, ror #18
 	eor x12, x12, x4, ror #41
@@ -1848,8 +1850,6 @@ vg_sha512_compress:
 	and x12, x12, x4
 	eor x12, x12, x6
 	add x7, x7, x12
-	add x7, x7, x13
-	add x7, x7, x16
 	add x11, x11, x7
 	ror x12, x8, #28
 	eor x12, x12, x8, ror #34
@@ -1872,6 +1872,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #104]
 	umov x14, v16.d[1]
+	add x6, x6, x17
+	add x6, x6, x14
 	ror x12, x11, #14
 	eor x12, x12, x11, ror #18
 	eor x12, x12, x11, ror #41
@@ -1880,8 +1882,6 @@ vg_sha512_compress:
 	and x12, x12, x11
 	eor x12, x12, x5
 	add x6, x6, x12
-	add x6, x6, x14
-	add x6, x6, x17
 	add x10, x10, x6
 	ror x12, x7, #28
 	eor x12, x12, x7, ror #34
@@ -1905,6 +1905,8 @@ vg_sha512_compress:
 	str x16, [x3, #112]
 	ldr q16, [x15, #496]
 	umov x13, v16.d[0]
+	add x5, x5, x16
+	add x5, x5, x13
 	ror x12, x10, #14
 	eor x12, x12, x10, ror #18
 	eor x12, x12, x10, ror #41
@@ -1913,8 +1915,6 @@ vg_sha512_compress:
 	and x12, x12, x10
 	eor x12, x12, x4
 	add x5, x5, x12
-	add x5, x5, x13
-	add x5, x5, x16
 	add x9, x9, x5
 	ror x12, x6, #28
 	eor x12, x12, x6, ror #34
@@ -1938,6 +1938,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #120]
 	umov x14, v16.d[1]
+	add x4, x4, x17
+	add x4, x4, x14
 	ror x12, x9, #14
 	eor x12, x12, x9, ror #18
 	eor x12, x12, x9, ror #41
@@ -1946,8 +1948,6 @@ vg_sha512_compress:
 	and x12, x12, x9
 	eor x12, x12, x11
 	add x4, x4, x12
-	add x4, x4, x14
-	add x4, x4, x17
 	add x8, x8, x4
 	ror x12, x5, #28
 	eor x12, x12, x5, ror #34
@@ -1971,6 +1971,8 @@ vg_sha512_compress:
 	str x16, [x3, #0]
 	ldr q16, [x15, #512]
 	umov x13, v16.d[0]
+	add x11, x11, x16
+	add x11, x11, x13
 	ror x12, x8, #14
 	eor x12, x12, x8, ror #18
 	eor x12, x12, x8, ror #41
@@ -1979,8 +1981,6 @@ vg_sha512_compress:
 	and x12, x12, x8
 	eor x12, x12, x10
 	add x11, x11, x12
-	add x11, x11, x13
-	add x11, x11, x16
 	add x7, x7, x11
 	ror x12, x4, #28
 	eor x12, x12, x4, ror #34
@@ -2003,6 +2003,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #8]
 	umov x14, v16.d[1]
+	add x10, x10, x17
+	add x10, x10, x14
 	ror x12, x7, #14
 	eor x12, x12, x7, ror #18
 	eor x12, x12, x7, ror #41
@@ -2011,8 +2013,6 @@ vg_sha512_compress:
 	and x12, x12, x7
 	eor x12, x12, x9
 	add x10, x10, x12
-	add x10, x10, x14
-	add x10, x10, x17
 	add x6, x6, x10
 	ror x12, x11, #28
 	eor x12, x12, x11, ror #34
@@ -2036,6 +2036,8 @@ vg_sha512_compress:
 	str x16, [x3, #16]
 	ldr q16, [x15, #528]
 	umov x13, v16.d[0]
+	add x9, x9, x16
+	add x9, x9, x13
 	ror x12, x6, #14
 	eor x12, x12, x6, ror #18
 	eor x12, x12, x6, ror #41
@@ -2044,8 +2046,6 @@ vg_sha512_compress:
 	and x12, x12, x6
 	eor x12, x12, x8
 	add x9, x9, x12
-	add x9, x9, x13
-	add x9, x9, x16
 	add x5, x5, x9
 	ror x12, x10, #28
 	eor x12, x12, x10, ror #34
@@ -2068,6 +2068,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #24]
 	umov x14, v16.d[1]
+	add x8, x8, x17
+	add x8, x8, x14
 	ror x12, x5, #14
 	eor x12, x12, x5, ror #18
 	eor x12, x12, x5, ror #41
@@ -2076,8 +2078,6 @@ vg_sha512_compress:
 	and x12, x12, x5
 	eor x12, x12, x7
 	add x8, x8, x12
-	add x8, x8, x14
-	add x8, x8, x17
 	add x4, x4, x8
 	ror x12, x9, #28
 	eor x12, x12, x9, ror #34
@@ -2101,6 +2101,8 @@ vg_sha512_compress:
 	str x16, [x3, #32]
 	ldr q16, [x15, #544]
 	umov x13, v16.d[0]
+	add x7, x7, x16
+	add x7, x7, x13
 	ror x12, x4, #14
 	eor x12, x12, x4, ror #18
 	eor x12, x12, x4, ror #41
@@ -2109,8 +2111,6 @@ vg_sha512_compress:
 	and x12, x12, x4
 	eor x12, x12, x6
 	add x7, x7, x12
-	add x7, x7, x13
-	add x7, x7, x16
 	add x11, x11, x7
 	ror x12, x8, #28
 	eor x12, x12, x8, ror #34
@@ -2133,6 +2133,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #40]
 	umov x14, v16.d[1]
+	add x6, x6, x17
+	add x6, x6, x14
 	ror x12, x11, #14
 	eor x12, x12, x11, ror #18
 	eor x12, x12, x11, ror #41
@@ -2141,8 +2143,6 @@ vg_sha512_compress:
 	and x12, x12, x11
 	eor x12, x12, x5
 	add x6, x6, x12
-	add x6, x6, x14
-	add x6, x6, x17
 	add x10, x10, x6
 	ror x12, x7, #28
 	eor x12, x12, x7, ror #34
@@ -2166,6 +2166,8 @@ vg_sha512_compress:
 	str x16, [x3, #48]
 	ldr q16, [x15, #560]
 	umov x13, v16.d[0]
+	add x5, x5, x16
+	add x5, x5, x13
 	ror x12, x10, #14
 	eor x12, x12, x10, ror #18
 	eor x12, x12, x10, ror #41
@@ -2174,8 +2176,6 @@ vg_sha512_compress:
 	and x12, x12, x10
 	eor x12, x12, x4
 	add x5, x5, x12
-	add x5, x5, x13
-	add x5, x5, x16
 	add x9, x9, x5
 	ror x12, x6, #28
 	eor x12, x12, x6, ror #34
@@ -2198,6 +2198,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #56]
 	umov x14, v16.d[1]
+	add x4, x4, x17
+	add x4, x4, x14
 	ror x12, x9, #14
 	eor x12, x12, x9, ror #18
 	eor x12, x12, x9, ror #41
@@ -2206,8 +2208,6 @@ vg_sha512_compress:
 	and x12, x12, x9
 	eor x12, x12, x11
 	add x4, x4, x12
-	add x4, x4, x14
-	add x4, x4, x17
 	add x8, x8, x4
 	ror x12, x5, #28
 	eor x12, x12, x5, ror #34
@@ -2231,6 +2231,8 @@ vg_sha512_compress:
 	str x16, [x3, #64]
 	ldr q16, [x15, #576]
 	umov x13, v16.d[0]
+	add x11, x11, x16
+	add x11, x11, x13
 	ror x12, x8, #14
 	eor x12, x12, x8, ror #18
 	eor x12, x12, x8, ror #41
@@ -2239,8 +2241,6 @@ vg_sha512_compress:
 	and x12, x12, x8
 	eor x12, x12, x10
 	add x11, x11, x12
-	add x11, x11, x13
-	add x11, x11, x16
 	add x7, x7, x11
 	ror x12, x4, #28
 	eor x12, x12, x4, ror #34
@@ -2263,6 +2263,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #72]
 	umov x14, v16.d[1]
+	add x10, x10, x17
+	add x10, x10, x14
 	ror x12, x7, #14
 	eor x12, x12, x7, ror #18
 	eor x12, x12, x7, ror #41
@@ -2271,8 +2273,6 @@ vg_sha512_compress:
 	and x12, x12, x7
 	eor x12, x12, x9
 	add x10, x10, x12
-	add x10, x10, x14
-	add x10, x10, x17
 	add x6, x6, x10
 	ror x12, x11, #28
 	eor x12, x12, x11, ror #34
@@ -2296,6 +2296,8 @@ vg_sha512_compress:
 	str x16, [x3, #80]
 	ldr q16, [x15, #592]
 	umov x13, v16.d[0]
+	add x9, x9, x16
+	add x9, x9, x13
 	ror x12, x6, #14
 	eor x12, x12, x6, ror #18
 	eor x12, x12, x6, ror #41
@@ -2304,8 +2306,6 @@ vg_sha512_compress:
 	and x12, x12, x6
 	eor x12, x12, x8
 	add x9, x9, x12
-	add x9, x9, x13
-	add x9, x9, x16
 	add x5, x5, x9
 	ror x12, x10, #28
 	eor x12, x12, x10, ror #34
@@ -2328,6 +2328,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #88]
 	umov x14, v16.d[1]
+	add x8, x8, x17
+	add x8, x8, x14
 	ror x12, x5, #14
 	eor x12, x12, x5, ror #18
 	eor x12, x12, x5, ror #41
@@ -2336,8 +2338,6 @@ vg_sha512_compress:
 	and x12, x12, x5
 	eor x12, x12, x7
 	add x8, x8, x12
-	add x8, x8, x14
-	add x8, x8, x17
 	add x4, x4, x8
 	ror x12, x9, #28
 	eor x12, x12, x9, ror #34
@@ -2361,6 +2361,8 @@ vg_sha512_compress:
 	str x16, [x3, #96]
 	ldr q16, [x15, #608]
 	umov x13, v16.d[0]
+	add x7, x7, x16
+	add x7, x7, x13
 	ror x12, x4, #14
 	eor x12, x12, x4, ror #18
 	eor x12, x12, x4, ror #41
@@ -2369,8 +2371,6 @@ vg_sha512_compress:
 	and x12, x12, x4
 	eor x12, x12, x6
 	add x7, x7, x12
-	add x7, x7, x13
-	add x7, x7, x16
 	add x11, x11, x7
 	ror x12, x8, #28
 	eor x12, x12, x8, ror #34
@@ -2393,6 +2393,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #104]
 	umov x14, v16.d[1]
+	add x6, x6, x17
+	add x6, x6, x14
 	ror x12, x11, #14
 	eor x12, x12, x11, ror #18
 	eor x12, x12, x11, ror #41
@@ -2401,8 +2403,6 @@ vg_sha512_compress:
 	and x12, x12, x11
 	eor x12, x12, x5
 	add x6, x6, x12
-	add x6, x6, x14
-	add x6, x6, x17
 	add x10, x10, x6
 	ror x12, x7, #28
 	eor x12, x12, x7, ror #34
@@ -2426,6 +2426,8 @@ vg_sha512_compress:
 	str x16, [x3, #112]
 	ldr q16, [x15, #624]
 	umov x13, v16.d[0]
+	add x5, x5, x16
+	add x5, x5, x13
 	ror x12, x10, #14
 	eor x12, x12, x10, ror #18
 	eor x12, x12, x10, ror #41
@@ -2434,8 +2436,6 @@ vg_sha512_compress:
 	and x12, x12, x10
 	eor x12, x12, x4
 	add x5, x5, x12
-	add x5, x5, x13
-	add x5, x5, x16
 	add x9, x9, x5
 	ror x12, x6, #28
 	eor x12, x12, x6, ror #34
@@ -2459,6 +2459,8 @@ vg_sha512_compress:
 	add x17, x17, x12
 	str x17, [x3, #120]
 	umov x14, v16.d[1]
+	add x4, x4, x17
+	add x4, x4, x14
 	ror x12, x9, #14
 	eor x12, x12, x9, ror #18
 	eor x12, x12, x9, ror #41
@@ -2467,8 +2469,6 @@ vg_sha512_compress:
 	and x12, x12, x9
 	eor x12, x12, x11
 	add x4, x4, x12
-	add x4, x4, x14
-	add x4, x4, x17
 	add x8, x8, x4
 	ror x12, x5, #28
 	eor x12, x12, x5, ror #34
