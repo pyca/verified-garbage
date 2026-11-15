@@ -46,7 +46,6 @@ def artifacts : List Artifact := [
     Spec.Dsa.parameterSearchApi.artifact RISCV64.target {
       suffix := v.suffix
       code := Impl.Dsa.RISCV64.ParameterSearch.code (gen1 v) (gen2 v) (gen3 v)
-      stack := 512
       verified := params_verified v }])
 
 end VG.Artifacts.Dsa.RISCV64
