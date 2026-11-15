@@ -153,8 +153,7 @@ theorem est_vp {ar o m : Nat} (hm : 1 ≤ m) (hmW : o + m + 3 ≤ P.W) {L LW LS 
     rw [show arr P.W ar + 4 * (o + (m - 1)) + 4 * i = arr P.W ar + 4 * (o + (m - 1 + i)) by omega_using [],
       w32_digit _ _ _ (show o + (m - 1 + i) < P.W by omega_using [hm, hmW, hi]), x0,
       show 32 * (o + (m - 1 + i)) = 32 * o + 32 * (m - 1 + i) by omega_using [], Nat.pow_add, ← Nat.div_div_eq_div_mul, eR,
-      ← ea, Nat.div_div_eq_div_mul, ← Nat.pow_add]
-    congr 3; omega_using []
+      ← ea, Nat.div_div_eq_div_mul, ← Nat.pow_add, Nat.mul_add]
   simp only [estBody, List.append_assoc, List.cons_append, List.nil_append]
   refine wp_dp (op2_reg _ _) fun s1 u1 => ?_
   obtain ⟨h1, hv1⟩ := h.reg hv (u1.rest (ws := [.r10]) (by simp)) u1.mem
@@ -162,8 +161,8 @@ theorem est_vp {ar o m : Nat} (hm : 1 ≤ m) (hmW : o + m + 3 ≤ P.W) {L LW LS 
   obtain ⟨h2, hv2⟩ := h1.reg hv1 (u2.rest (ws := [.r10]) (by simp)) u2.mem
   have q10 : s2.gpr .r10 = P.B + BitVec.ofNat 32 (arr P.W ar + 4 * (o + (m - 1))) := by
     rw [u2.gpr, dpVal, u1.gpr, dpVal, p10, p1, VG.Proof.Rsa.Arm.KeyDiv.add_ofNat_assoc,
-      show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, sub_ofNat_eq _ (by omega_using [hm]) (by decide)]
-    congr 2; omega_using [hm]
+      show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl, sub_ofNat_eq _ (by omega_using [hm]) (by decide),
+      show arr P.W ar + 4 * o + 4 * m - 4 = arr P.W ar + 4 * (o + (m - 1)) by omega_using [hm]]
   have m2 : s2.mem = s.mem := by rw [u2.mem, u1.mem]
   refine wp_ldr (by decide) (by rw [q10, BitVec.add_zero, hv2.addr (by omega_using [hmW, fR])]) (hv2.read (by omega_using [hmW, fR])) fun s3 u3 => ?_
   obtain ⟨h3, hv3⟩ := h2.reg hv2 (u3.rest (ws := [.r0]) (by simp)) u3.mem

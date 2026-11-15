@@ -400,13 +400,13 @@ theorem sqInit_ok {s : State} {B : Addr} {Z W h X : Nat} (hw : Ws s B Z W) (hwh 
       (slot W sqD + 8 * (h - 1) ≤ y ∧ y < slot W sqD + 8 * (h + 1)) ∨ (slot W sqS ≤ y ∧ y < slot W sqS + 8) ∨
       (slot W sqS + 16 ≤ y ∧ y < slot W sqS + 24) ∨ (200 ≤ y ∧ y < 208)) m₃ t.mem := by
     intro x hx
-    rw [m₂, writeW_outside _ B _ (d := 8 * sCt) (by omega_using [hsCt]) x (by omega), m₁,
-      writeW_outside _ B _ (d := slot W sqS) (by omega_using [hw2, slS]) x (by omega),
-      writeW_outside _ B _ (d := slot W sqS + 16) (by omega_using [hw2, slS]) x (by omega),
-      writeW_outside _ B _ (d := slot W sqD + 8 * h) (by omega_using [hwh, hw2, slD]) x (by omega),
-      writeW_outside _ B _ (d := slot W sqD + 8 * (h - 1)) (by omega_using [hwh, hw2, slD]) x (by omega),
-      writeW_outside _ B _ (d := slot W sqZ + 8 * (W - 6)) (by omega_using [hw2, slZ]) x (by omega),
-      writeW_outside _ B _ (d := slot W sqZ + 8 * (W - 5)) (by omega_using [hw2, slZ]) x (by omega)]
+    rw [m₂, writeW_outside _ B _ (d := 8 * sCt) (by omega_using [hsCt]) x (by omega_using [hx, hsCt, hwh, h2, slZ, slD, slS]), m₁,
+      writeW_outside _ B _ (d := slot W sqS) (by omega_using [hw2, slS]) x (by omega_using [hx, hsCt, hwh, h2, slZ, slD, slS]),
+      writeW_outside _ B _ (d := slot W sqS + 16) (by omega_using [hw2, slS]) x (by omega_using [hx, hsCt, hwh, h2, slZ, slD, slS]),
+      writeW_outside _ B _ (d := slot W sqD + 8 * h) (by omega_using [hwh, hw2, slD]) x (by omega_using [hx, hsCt, hwh, h2, slZ, slD, slS]),
+      writeW_outside _ B _ (d := slot W sqD + 8 * (h - 1)) (by omega_using [hwh, hw2, slD]) x (by omega_using [hx, hsCt, hwh, h2, slZ, slD, slS]),
+      writeW_outside _ B _ (d := slot W sqZ + 8 * (W - 6)) (by omega_using [hw2, slZ]) x (by omega_using [hx, hsCt, hwh, h2, slZ, slD, slS]),
+      writeW_outside _ B _ (d := slot W sqZ + 8 * (W - 5)) (by omega_using [hw2, slZ]) x (by omega_using [hx, hsCt, hwh, h2, slZ, slD, slS])]
   -- The words written.
   have hrem : T - s0 * s0 < 2 ^ 64 * 2 ^ 64 := by omega_using [hT]
   have wZ6 : (word t.mem B (slot W sqZ + 8 * (W - 6))).toNat = (T - s0 * s0) % 2 ^ 64 := by
@@ -453,7 +453,7 @@ theorem sqInit_ok {s : State} {B : Addr} {Z W h X : Nat} (hw : Ws s B Z W) (hwh 
     exact Nat.mod_add_div _ _
   have hZt := wv_replace (m := m₃) (m' := t.mem) (d := slot W sqZ) (k := 2 * (h - 1)) (L := 2) (N := W) (by omega_using [hwh])
     hZ0 (Nat.mod_lt _ (Nat.two_pow_pos _)) (show T < 2 ^ (64 * 2) by rw [show 64 * 2 = 64 + 64 from rfl, Nat.pow_add]; exact hTβ)
-    (FP.wv_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hwh, hw2, slZ])) (FP.wv_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hwh, hw2, slZ])) hR'
+    (FP.wv_eq (fun y a b hy => by omega_using [a, b, hy, hwh, h2, hw2, slZ, slD, slS]) (by omega_using [hwh, hw2, slZ])) (FP.wv_eq (fun y a b hy => by omega_using [a, b, hy, hwh, h2, hw2, slZ, slD, slS]) (by omega_using [hwh, hw2, slZ])) hR'
   -- `D = 2 s₀ β^(h - 1)`.
   have hD0 : wv m₃ B (slot W sqD) W = 0 + 2 ^ (64 * (h - 1)) * 0 := by
     rw [← wv_mod_low m₃ B _ (show W ≤ W + 2 by omega_using []), zD]; rfl
@@ -465,15 +465,24 @@ theorem sqInit_ok {s : State} {B : Addr} {Z W h X : Nat} (hw : Ws s B Z W) (hwh 
     omega_using []
   have hDt := wv_replace (m := m₃) (m' := t.mem) (d := slot W sqD) (k := h - 1) (L := 2) (N := W) (by omega_using [hwh])
     hD0 (Nat.two_pow_pos _) (Nat.two_pow_pos _)
-    (FP.wv_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hwh, hw2, slD])) (FP.wv_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hwh, hw2, slD])) hDR'
+    (FP.wv_eq (fun y a b hy => by omega_using [a, b, hy, hwh, h2, hw2, slZ, slD, slS]) (by omega_using [hwh, hw2, slD])) (FP.wv_eq (fun y a b hy => by omega_using [a, b, hy, hwh, h2, hw2, slZ, slD, slS]) (by omega_using [hwh, hw2, slD])) hDR'
   have hAp : Ap X (h - 1) = T := hTd
+  -- each range in the array it is part of: one `omega` over the five by six cases takes seconds
+  have FL : FrmP B (SqLP W) m₃ t.mem := FP.mono fun y hy => by
+    unfold SqLP
+    rcases hy with hy | hy | hy | hy | hy
+    · exact .inr (.inr (.inr (.inl (by omega_using [hwh, hy]))))
+    · exact .inr (.inl (by omega_using [hwh, hy]))
+    · exact .inl (by omega_using [hwh, hy])
+    · exact .inl (by omega_using [hwh, hy])
+    · exact .inr (.inr (.inr (.inr (.inl (by omega_using [hsCt, hy])))))
   refine ⟨⟨h₁.congrW m₂ (by unfold DOk; simp only [sCt, sFn]; omega_using []) (by decide) k₂ (by simp), by rw [m₂, word_writeW_self],
-    ?_, ?_, ?_, FrmP.refl _ _ _, Keep.refl _ _, ?_⟩, F₃.trans (FP.mono fun y hy => by unfold SqLP; omega_using [hwh, hsCt, hy]),
+    ?_, ?_, ?_, FrmP.refl _ _ _, Keep.refl _ _, ?_⟩, F₃.trans FL,
     (k₁.trans k₂).mono (by simp [mmRegs])⟩
   · rw [hZt, hAp, hs0, Nat.mul_comm (2 ^ _)]
   · rw [hDt, hAp, hs0, Nat.zero_add, Nat.mul_comm (2 ^ _)]
   · rw [wS, hAp, hs0]
-  · rw [FP.word_eq (fun y h1 h2 hy => by omega_arith) (by omega_using [hw2, slD])]
+  · rw [FP.word_eq (fun y a b hy => by omega_using [a, b, hy, hwh, h2, hw2, slZ, slD, slS]) (by omega_using [hw2, slD])]
     exact (wv_eq_zero_iff _ _ _ _).mp zD W (by omega_using [])
 
 end VG.Proof.Rsa.X86_64.Rd

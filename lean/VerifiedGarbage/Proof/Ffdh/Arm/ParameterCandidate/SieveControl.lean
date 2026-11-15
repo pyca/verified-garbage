@@ -30,9 +30,14 @@ theorem sieveInitTail_ok (s : State) (stack : Workspace s s.sp 72) {n : Nat} (bo
   have count := trialCount_word bound
   simp only [show (0 : BitVec 32) = 0#32 from rfl, decide_eq_true_eq] at count
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.sieveInitTail VG.Impl.Ffdh.Arm.ParameterCandidate.sieveInitRegisters VG.Impl.Ffdh.Arm.ParameterCandidate.save
-  ffrun [List.cons_append, List.nil_append, BitVec.add_zero, BitVec.zero_add,
-    show (0 : BitVec 32) = 0#32 from rfl, show (129 : BitVec 32).toNat = 129 from rfl,
-    show encodable (512 : BitVec 32) = true from by decide,
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, mov_exec, subs_exec, adc_exec, logic_exec, str_exec,
+    ldrSp_exec, addSp_exec, Op2.eval, RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
+    gpr_subFlags, mem_subFlags, c_subFlags, RegUpd.c_setReg, gpr_putMem, mem_putMem, RegUpd.sp_setReg,
+    Option.map_some, Option.some.injEq, exists_eq_left', ite_true, ite_false, reduceCtorEq, and_true, Nat.reduceLT,
+    Nat.reduceLeDiff, encodable_byte (v := 129) (by decide), encodable_byte (v := 0#32) (by decide),
+    List.cons_append, List.nil_append, BitVec.add_zero, BitVec.zero_add, show (0 : BitVec 32) = 0#32 from rfl,
+    show (129 : BitVec 32).toNat = 129 from rfl, show encodable (512 : BitVec 32) = true from by decide,
     width, read, write, count, decide_eq_true_eq,
     show ∀ s x y, (subFlags s x y).wr = s.wr from fun _ _ _ => rfl,
     show ∀ s x y, (subFlags s x y).sp = s.sp from fun _ _ _ => rfl]

@@ -1113,19 +1113,19 @@ theorem rowT_hdr {W : Addr} {m m' : Mem} (h : HdrFrame W m m') {a sz n : Nat} {t
     rowT m' W a sz n ts signed = rowT m W a sz n ts signed := by
   have m2 := mul_step (sz := sz) (show n + 1 < n + 2 by omega_using [])
   have hW := W.isLt
-  unfold rowT
-  congr 1
-  · unfold rowA
-    congr 1
-    refine List.map_congr_left fun t ht => ?_
+  -- not `congr 1`, which first compares the two memories' sums by unfolding them
+  have eA : rowA m' W (a + sz) sz ts (n + 1) = rowA m W (a + sz) sz ts (n + 1) := by
+    unfold rowA
+    refine congrArg List.sum (List.map_congr_left fun t ht => ?_)
     obtain ⟨h1, h2, h3⟩ := hc t ht
     rw [h.readW h1 (by omega_using [h2]), sv_hdr h (by omega_using [ha]) (by omega_using [hfit, m2, h3]) (by omega_using [hfit, m2])]
-  · congr 1
+  have eT : topF m' W (a + sz * (n + 1)) signed = topF m W (a + sz * (n + 1)) signed := by
     unfold topF
-    congr 1
-    refine List.map_congr_left fun t ht => ?_
+    refine congrArg List.sum (List.map_congr_left fun t ht => ?_)
     obtain ⟨h1, h2, h3⟩ := hc t (hsg t ht)
     rw [h.readW h1 (by omega_using [h2]), h.w32 (.inr (by omega_using [ha])) (by omega_using [hfit, m2, h3])]
+  unfold rowT
+  rw [eA, eT]
 
 theorem HdrFrame.trans {W : Addr} {m₁ m₂ m₃ : Mem} (h₁ : HdrFrame W m₁ m₂) (h₂ : HdrFrame W m₂ m₃) :
     HdrFrame W m₁ m₃ := fun x hx => (h₂ x hx).trans (h₁ x hx)
@@ -1185,10 +1185,11 @@ theorem rowSetup_ok {u : State} {W : Addr} {bytes e n : Nat} (ws : Ws u W bytes)
         h.2.2.2.2.1, h.2.2.2.2.2, k⟩
     xrun [sc, hsi, hdi, aH, rH, hh, aE, aP, wE, wP, List.cons_append, List.nil_append, List.append_nil,
       Bool.false_eq_true, ↓reduceIte]
-    first
-    | exact setupN (BitVec.eq_of_toNat_eq (by
+  -- by `wide`, not `first`: `setupN` takes seconds to fail where the code stores `sP` too
+  iterate 2
+    · exact setupN (BitVec.eq_of_toNat_eq (by
         simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using []))
-    | exact setupW (by unfold sP sE at *; omega_using [hb, nw]) (BitVec.eq_of_toNat_eq (by
+    · exact setupW (by unfold sP sE at *; omega_using [hb, nw]) (BitVec.eq_of_toNat_eq (by
         simp only [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using []))
 
 /-! ## A row -/

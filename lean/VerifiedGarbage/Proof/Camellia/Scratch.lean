@@ -89,9 +89,21 @@ theorem ofBytes_wordBytes (w : BitVec 64) : ofBytes 64 (wordBytes w) = w := by
   apply BitVec.eq_of_toNat_eq
   simp only [ofBytes, wordBytes, List.range_succ, List.range_zero, List.nil_append, List.map_append,
     List.map_cons, List.map_nil, List.foldl_append, List.foldl_cons, List.foldl_nil,
-    BitVec.toNat_ofNat, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
-  have := w.isLt
-  omega_using []
+    BitVec.toNat_ofNat, BitVec.toNat_setWidth, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
+    Nat.reduceMul, Nat.reduceSub, Nat.reducePow, Nat.mul_zero, Nat.zero_add]
+  have h := w.isLt
+  generalize w.toNat = x at h ⊢
+  -- one byte at a time: a single `omega` over the eight quotients takes seconds
+  have e7 : x / 72057594037927936 % 256 = x / 72057594037927936 := by omega
+  have e6 : 256 * (x / 72057594037927936) + x / 281474976710656 % 256 = x / 281474976710656 := by omega
+  have e5 : 256 * (x / 281474976710656) + x / 1099511627776 % 256 = x / 1099511627776 := by omega
+  have e4 : 256 * (x / 1099511627776) + x / 4294967296 % 256 = x / 4294967296 := by omega
+  have e3 : 256 * (x / 4294967296) + x / 16777216 % 256 = x / 16777216 := by omega
+  have e2 : 256 * (x / 16777216) + x / 65536 % 256 = x / 65536 := by omega
+  have e1 : 256 * (x / 65536) + x / 256 % 256 = x / 256 := by omega
+  have e0 : 256 * (x / 256) + x / 1 % 256 = x := by omega
+  rw [e7, e6, e5, e4, e3, e2, e1, e0]
+  exact Nat.mod_eq_of_lt h
 
 theorem rounds_of_keySchedule {m : Mem} {p : Addr} {R : Nat} {key : List Byte}
     (h : KeySchedule m p R key) : R = 18 ∨ R = 24 := by
@@ -140,7 +152,12 @@ theorem subkeysOfWords_scheduleWords {sk : Subkeys} {R : Nat} (hR : R = 18 ∨ R
       obtain ⟨_, ke, rfl⟩ := List.exists_cons_of_length_eq_add_one hke
       replace hke := Nat.succ.inj hke
     obtain rfl := List.eq_nil_of_length_eq_zero hke
-    constructor <;> simp [subkeysOfWords, scheduleWords, scheduleLength, List.range_succ]
+    simp only [subkeysOfWords, scheduleWords, scheduleLength, List.getD_cons_zero, List.getD_cons_succ,
+      List.length_cons, List.length_nil, Nat.zero_add, Nat.reduceAdd, Nat.reduceLT, Nat.reduceDiv,
+      List.range_succ, List.range_zero, List.nil_append, List.cons_append, List.flatMap_cons,
+      Nat.mul_zero, List.drop_zero, List.take_succ_cons, List.take_zero, ↓reduceIte, Nat.mul_one,
+      List.drop_succ_cons, Nat.reduceMul, List.take_nil, List.append_nil, List.flatMap_nil,
+      List.map_cons, Nat.add_zero, List.map_nil, Nat.add_one_sub_one, and_self]
   · iterate 24
       obtain ⟨_, k, rfl⟩ := List.exists_cons_of_length_eq_add_one hk
       replace hk := Nat.succ.inj hk
@@ -149,7 +166,12 @@ theorem subkeysOfWords_scheduleWords {sk : Subkeys} {R : Nat} (hR : R = 18 ∨ R
       obtain ⟨_, ke, rfl⟩ := List.exists_cons_of_length_eq_add_one hke
       replace hke := Nat.succ.inj hke
     obtain rfl := List.eq_nil_of_length_eq_zero hke
-    constructor <;> simp [subkeysOfWords, scheduleWords, scheduleLength, List.range_succ]
+    simp only [subkeysOfWords, scheduleWords, scheduleLength, List.getD_cons_zero, List.getD_cons_succ,
+      List.length_cons, List.length_nil, Nat.zero_add, Nat.reduceAdd, Nat.reduceLT, Nat.reduceDiv,
+      List.range_succ, List.range_zero, List.nil_append, List.cons_append, List.flatMap_cons,
+      Nat.mul_zero, List.drop_zero, List.take_succ_cons, List.take_zero, ↓reduceIte, Nat.mul_one,
+      List.drop_succ_cons, Nat.reduceMul, List.take_nil, List.append_nil, List.flatMap_nil,
+      List.map_cons, Nat.add_zero, List.map_nil, Nat.add_one_sub_one, and_self]
 
 theorem expandKey_lengths (key : List Byte) :
     (expandKey key).kw.length = 4 ∧ (expandKey key).k.length = rounds key.length ∧

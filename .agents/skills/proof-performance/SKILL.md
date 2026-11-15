@@ -239,6 +239,20 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   * *An implicit argument left to unification.* `rw [wa_shift h]`, where `h`
     determines a structure only through one of its fields, took 11.6 s to
     find it: give it, even in part (`(τ' := ⟨_, _, _, _, τ.room - 8, _, …⟩)`).
+  * *A term elaborated before its implicit arguments are known.* `exact
+    lemma h₁ h₂`, `cutThen_trace check …` or `bytesAt_frame …` whose implicit
+    region or state appears in the goal only under a projection is unified
+    by unfolding (`bytesAt`, `taint.check`, a key's status): name the
+    arguments (`(r := ⟨addr, len⟩)`, `(s := s₂)`), or state the fact with
+    `have` and `exact` it. The same for `h ▸ e`, `congr n` and
+    `show a = b from rfl` between two states' memories or two programs:
+    `rw [h]`, `congrArg` with the function written out, `kernel_rfl`.
+  * *Small goals by a large tactic.* An inclusion of literal register lists
+    by `simp [regs]` (3.5 s), a propositional case analysis by `omega`,
+    fifty side goals over literal lists by default `simp`: `decide`. Thirty
+    nested `max` by `omega_arith` (3.7 s): `Nat.max_le` in a `simp only`. A
+    `fun | [x₁, …, x₁₈], h => …` on a computed list refutes every other
+    length once per pattern: take the length as a numeral in a lemma.
   * *Reads through writes after the fact.* With `RegUpd.gpr_write` and
     `ite_true, ite_false` as ordinary rewrites, `simp` simplifies the value
     of every write a read passes: `↓RegUpd.gpr_write` and `↓reduceIte`

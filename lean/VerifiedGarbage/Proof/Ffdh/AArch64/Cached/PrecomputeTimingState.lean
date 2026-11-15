@@ -210,7 +210,7 @@ theorem precomputeFinish_ok (M : Mont) {s : State} {p : Parameters} {domPtr : Ad
  · rintro t ⟨⟨status,mem⟩,rest⟩
    exact ⟨status,by rw [mem];exact canonical,
     by rw [mem];exact (PublicFrame.of_context frameA (by omega_using [])).trans (PublicFrame.of_build frameB),
-    ((restA.trans restB).trans rest).mono (by simp [mmRegs])⟩
+    ((restA.trans restB).trans rest).mono (by decide)⟩
 
 end VG.Proof.Ffdh.AArch64.Cached
 
@@ -281,7 +281,7 @@ theorem precomputeArithmetic_ok (M : Mont) {s : State} {p : Parameters} {domPtr 
   (headerA.trans header) modulus generator policy) ?_
  rintro t ⟨status,canonical,frameT,restT⟩
  exact ⟨status,canonical,(PublicFrame.of_inscr inscr).trans frameT,
-  (restA.trans restT).mono (by simp [mmRegs])⟩
+  (restA.trans restT).mono (by decide)⟩
 
 end VG.Proof.Ffdh.AArch64.Cached
 
@@ -629,7 +629,7 @@ theorem precomputeNative_ok (M : Mont) {s : State} {p : Parameters} {domPtr : Ad
   controls.2.1 headerC modulus generator policy) ?_
  rintro t ⟨status,canonical,frameT,restT⟩
  exact ⟨status,canonical,((frameA.trans publicB).trans publicC).trans frameT,
-  (total.trans restT).mono (by simp [recordClobbers,mmRegs])⟩
+  (total.trans restT).mono (by decide)⟩
 
 end VG.Proof.Ffdh.AArch64.Cached
 

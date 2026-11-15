@@ -846,8 +846,7 @@ theorem ev9_ok {s : State} (h : VEnv K L b s₀ s ∧ PolyIs s.mem (L.A 0 K.oAcc
       exact sepB_same cb1 (by omega_arith) (by omega_arith) (by omega_arith)
     simp only [Lay.A] at keep p ⊢
     rw [KemLay.ctLen, bytesAt_add, bytes_catK, ptr_add, VG.Proof.MlKem.KPke.ct, ← p]
-    congr 1
-    refine catK_congr fun i hi => ?_
+    refine congrArg (· ++ _) (catK_congr fun i hi => ?_)
     rw [ptr_add]; exact keep i hi
 
 end
