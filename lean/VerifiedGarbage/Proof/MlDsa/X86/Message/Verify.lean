@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.Message.VerifyCall
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
 import VerifiedGarbage.Proof.MlKem.X86.Top
 import VerifiedGarbage.Proof.Sha3.Stream
 import VerifiedGarbage.Proof.MlDsa.X86.Message.Sign
@@ -90,6 +91,20 @@ theorem cachedRest_piece (hK : K.Ok p.pkLen) {n : String} {f : Prog isa} (hf : V
         (by have := (arg s₀ 2).isLt; show (arg s₀ 2).toNat ≤ _; omega_using [])]
     rfl
 
+/-- What `verify_message_cached` runs after `enter` never writes `esp`, if the
+verification function it calls does not. -/
+theorem cachedRest_nosp {n : String} {f : Prog isa} (hf : NoSp f) :
+    NoSp (.seq (muHash (.arg 7))
+      (.seq (.block (setArgs [(.eax, .arg 0), (.ecx, .off oMU), (.edx, .arg 5), (.ebx, .arg 6)]))
+        (Impl.MlKem.X86.callRet [.ebx, .edx, .ecx, .eax] n f))) :=
+  nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_seq (NoSp.of_all (by decide +kernel)) (callRet_nosp hf))
+
+/-- `verify_message_cached` never writes `esp`, if the verification function it
+calls does not. -/
+theorem verifyMessageCached_nosp (p : Params) {n : String} {f : Prog isa} (hf : NoSp f) :
+    NoSp (verifyMessageCached n f p) :=
+  KeyGen.NoSp.leaf (topBody_nosp 6 p (cachedRest_nosp hf))
+
 /-- `verify_message_cached`, in its leaf. -/
 theorem verifyMessageCached_piece (hK : K.Ok p.pkLen) {n : String} {f : Prog isa} (hf : VerifyFn p K f)
     {ht : Taint.Hint VG.X86.Taint.T}
@@ -98,10 +113,7 @@ theorem verifyMessageCached_piece (hK : K.Ok p.pkLen) {n : String} {f : Prog isa
     Piece (CPre p K) (VPub p 8) (fun s₀ s => s = s₀) (fun s₀ s' => LeafPost (fun s => (256 ≤ (arg s₀ 4).toNat ∧
       s.gpr .eax = 2) ∨ VB p K 8 s₀ s) s₀ s') (verifyMessageCached n f p) :=
   top_piece ((vShape hK).pre_mono fun _ h => h.toVPre) tt (vW p K 8) (fun s₀ h₀ => verify_hW s₀ h₀.toVPre)
-    (nosp_seq (NoSp.of_all (by decide +kernel)) (nosp_ite (NoSp.of_all (by decide +kernel))
-      (nosp_seq (enter_nosp 6 p) (nosp_seq (NoSp.of_all (by decide +kernel))
-        (nosp_seq (NoSp.of_all (by decide +kernel)) (callRet_nosp hf.nosp))))))
-    (cachedRest_piece hK hf)
+    (topBody_nosp 6 p (cachedRest_nosp hf.nosp)) (cachedRest_piece hK hf)
 
 /-- Memory with the arguments `0`, `0x2000`, `0`, `0x2000`, `0`, `0x3000`,
 `0x10000` and `0x8000` at `0x5004`. -/

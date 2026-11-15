@@ -89,6 +89,14 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   in `NativeTCB` (the same script checks both).
 * **Properties of every instruction:** prove `(instrs c).all p` with
   `rw [← Code.allInstrs_eq]; decide +kernel`, not `decide +kernel` directly.
+  Evaluate each function's own code once: what holds of the functions it
+  calls holds of it by composition (`NoSp.seq`, `NoSp.callP`, `NoSp.leaf`,
+  `Proof/MlDsa/X86/KeyGen/NoSp.lean`), and its registration takes `spSafe`
+  from that (`spSafe := NoSp.spSafe …`), not from the default, which
+  evaluates the code with all it calls. A check of a wrapper by evaluation
+  builds and walks the whole function under it again, in every wrapper and
+  again in the registration: ML-DSA's on x86 cost 38 s so, in one
+  registration file and the proofs of its entry points.
 * **Code the kernel evaluates:** code built by functions (unrolled
   compression functions, and the functions calling them) is rebuilt by the
   kernel in every check that evaluates it (constant time, `spSafe`, …), in

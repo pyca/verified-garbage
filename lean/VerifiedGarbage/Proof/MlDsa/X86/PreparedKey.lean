@@ -282,6 +282,17 @@ theorem slot_addr {kl pl : Nat} {s₀ : State} (hp : TPre (YP kl pl) s₀) {i : 
   rw [Buf.addr_eq hp (Lay.okW_iff.mp (okP (kl := kl) (o := kl + 1024 * i) (l := 1024) (by decide) hi)).1]
   simp only [n]
 
+/-- The body of `vg_mldsa*_prepare_verifying_key` never writes `esp`. -/
+theorem publicBody_nosp {P : Prims} (hP : PrimsOk P) (p : Params) :
+    NoSp (.seq (start p.pkLen) (seqR (publicPoly P p) 0 p.k)) := by
+  unfold start publicPoly nttSlot
+  exact NoSp.seq (NoSp.seq (NoSp.of_all (by kernel_rfl)) (NoSp.of_all (by kernel_rfl)))
+    (NoSp.seqR (fun r => NoSp.seq (NoSp.callP hP.unpackT1.nosp) (NoSp.callP hP.ntt.nosp)) _ _)
+
+/-- `vg_mldsa*_prepare_verifying_key` never writes `esp`. -/
+theorem public_nosp {P : Prims} (hP : PrimsOk P) (p : Params) : NoSp (preparePublic P p) :=
+  NoSp.leaf (publicBody_nosp hP p)
+
 /-- `vg_mldsa{44,65,87}_prepare_verifying_key`, with the primitives `P`, is verified against `preparePublicKeyContract`. -/
 theorem public_verified {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     Verified X86.target (preparePublic P p) (preparePublicKeyContract p X86.abi 96) := by
@@ -298,11 +309,7 @@ theorem public_verified {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = 
         (fun s₀ j => Verify.t1Hat (keyOf p.pkLen s₀) j) r) p.k 0
         fun r _ hr => publicPoly_piece hP hpk (by omega_using [hr]) hpl).mono (fun _ _ _ h => h)
         fun _ _ _ h => ⟨h.1, by simpa using h⟩)
-  have hsp : NoSp (.seq (start p.pkLen) (seqR (publicPoly P p) 0 p.k)) := by
-    unfold start publicPoly nttSlot
-    exact NoSp.seq (NoSp.seq (NoSp.of_all (by kernel_rfl)) (NoSp.of_all (by kernel_rfl)))
-      (NoSp.seqR (fun r => NoSp.seq (NoSp.callP hP.unpackT1.nosp) (NoSp.callP hP.ntt.nosp)) _ _)
-  refine Piece.verified (((topLeaf hsp hb).pre_mono (fun _ h => pub_pre_of h)
+  refine Piece.verified (((topLeaf (publicBody_nosp hP p) hb).pre_mono (fun _ h => pub_pre_of h)
     fun _ _ _ _ h => pub_pub_of h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · have hp := pub_pre_of h₀
     obtain ⟨habi, -, -, s, ⟨-, hk', hpol⟩, hm, -⟩ := hq
@@ -421,6 +428,17 @@ theorem secretPoly_piece {pl : Nat} {P : Prims} (hP : PrimsOk P) (ps : VG.Proof.
     rw [secret_val _ hi]
     exact out
 
+/-- The body of `vg_mldsa*_prepare_signing_key` never writes `esp`. -/
+theorem secretBody_nosp {P : Prims} (hP : PrimsOk P) (p : Params) :
+    NoSp (.seq (start p.skLen) (seqR (secretPoly P p) 0 (p.ℓ + 2 * p.k))) := by
+  unfold start secretPoly nttSlot
+  exact NoSp.seq (NoSp.seq (NoSp.of_all (by kernel_rfl)) (NoSp.of_all (by kernel_rfl)))
+    (NoSp.seqR (fun r => NoSp.seq (NoSp.callP hP.bitUnpack.nosp) (NoSp.callP hP.ntt.nosp)) _ _)
+
+/-- `vg_mldsa*_prepare_signing_key` never writes `esp`. -/
+theorem secret_nosp {P : Prims} (hP : PrimsOk P) (p : Params) : NoSp (prepareSecret P p) :=
+  NoSp.leaf (secretBody_nosp hP p)
+
 /-- `vg_mldsa{44,65,87}_prepare_signing_key`, with the primitives `P`, is verified against `prepareSecretKeyContract`. -/
 theorem secret_verified {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) :
     Verified X86.target (prepareSecret P p) (prepareSecretKeyContract p X86.abi 96) := by
@@ -441,11 +459,7 @@ theorem secret_verified {P : Prims} (hP : PrimsOk P) (hp3 : p = mlDsa44 ∨ p = 
         (fun s₀ j => (preparedSecretPolys p (keyOf p.skLen s₀))[j]!) r) (p.ℓ + 2 * p.k) 0
         fun r _ hr => secretPoly_piece hP ps (by omega_using [hr]) hpl).mono (fun _ _ _ h => h)
         fun _ _ _ h => ⟨h.1, by simpa using h⟩)
-  have hsp : NoSp (.seq (start p.skLen) (seqR (secretPoly P p) 0 (p.ℓ + 2 * p.k))) := by
-    unfold start secretPoly nttSlot
-    exact NoSp.seq (NoSp.seq (NoSp.of_all (by kernel_rfl)) (NoSp.of_all (by kernel_rfl)))
-      (NoSp.seqR (fun r => NoSp.seq (NoSp.callP hP.bitUnpack.nosp) (NoSp.callP hP.ntt.nosp)) _ _)
-  refine Piece.verified (((topLeaf hsp hb).pre_mono (fun _ h => sec_pre_of h)
+  refine Piece.verified (((topLeaf (secretBody_nosp hP p) hb).pre_mono (fun _ h => sec_pre_of h)
     fun _ _ _ _ h => sec_pub_of h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · have hp := sec_pre_of h₀
     obtain ⟨habi, -, -, s, ⟨-, hk', hpol⟩, hm, -⟩ := hq

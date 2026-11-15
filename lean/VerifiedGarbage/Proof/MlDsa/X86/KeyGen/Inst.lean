@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Base
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Top
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.Contract
@@ -102,6 +103,9 @@ theorem prims_ok : PrimsOk prims where
   simpleBitPack := ⟨⟨15, by decide, Pack.SimpleBitPack.verified⟩, by lit_decide,
     NoSp.of_all (by lit_decide)⟩
   bitPack := ⟨⟨15, by decide, Pack.BitPack.verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
+
+/-- `vg_mldsa{44,65,87}_keygen` never write `esp`. -/
+theorem keyGen_nosp (p : Spec.MlDsa.Params) : NoSp (Impl.MlDsa.X86.KeyGen.keyGen prims p) := NoSp.leaf (body_nosp prims_ok p)
 
 theorem keyGen44_verified :
     Verified X86.target keyGen44 (Spec.MlDsa.keyGenContract Spec.MlDsa.mlDsa44 X86.abi 96) :=

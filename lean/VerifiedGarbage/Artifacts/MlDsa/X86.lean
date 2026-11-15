@@ -39,178 +39,215 @@ namespace VG.Artifacts.MlDsa.X86
 open VG
 
 open VG.Proof.MlDsa.X86.Sign (prims)
+open VG.Proof.MlDsa.X86.KeyGen (NoSp.spSafe)
 
 def artifacts : List Artifact := [
   Spec.MlDsa.keyGen44Api.artifact X86.target {
     code := Impl.MlDsa.X86.KeyGen.keyGen44
     stack := 96
-    verified := Proof.MlDsa.X86.KeyGen.keyGen44_verified },
+    verified := Proof.MlDsa.X86.KeyGen.keyGen44_verified
+    spSafe := NoSp.spSafe (Proof.MlDsa.X86.KeyGen.keyGen_nosp _) },
   Spec.MlDsa.keyGen65Api.artifact X86.target {
     code := Impl.MlDsa.X86.KeyGen.keyGen65
     stack := 96
-    verified := Proof.MlDsa.X86.KeyGen.keyGen65_verified },
+    verified := Proof.MlDsa.X86.KeyGen.keyGen65_verified
+    spSafe := NoSp.spSafe (Proof.MlDsa.X86.KeyGen.keyGen_nosp _) },
   Spec.MlDsa.keyGen87Api.artifact X86.target {
     code := Impl.MlDsa.X86.KeyGen.keyGen87
     stack := 96
-    verified := Proof.MlDsa.X86.KeyGen.keyGen87_verified },
+    verified := Proof.MlDsa.X86.KeyGen.keyGen87_verified
+    spSafe := NoSp.spSafe (Proof.MlDsa.X86.KeyGen.keyGen_nosp _) },
   Spec.MlDsa.pkTr44Api.artifact X86.target {
     code := Impl.MlDsa.X86.PkTr.pkTr Spec.MlDsa.mlDsa44
     stack := 56
-    verified := Proof.MlDsa.X86.PkTr.pkTr44_verified },
+    verified := Proof.MlDsa.X86.PkTr.pkTr44_verified
+    spSafe := NoSp.spSafe (Proof.MlDsa.X86.PkTr.pkTr_nosp _) },
   Spec.MlDsa.pkTr65Api.artifact X86.target {
     code := Impl.MlDsa.X86.PkTr.pkTr Spec.MlDsa.mlDsa65
     stack := 56
-    verified := Proof.MlDsa.X86.PkTr.pkTr65_verified },
+    verified := Proof.MlDsa.X86.PkTr.pkTr65_verified
+    spSafe := NoSp.spSafe (Proof.MlDsa.X86.PkTr.pkTr_nosp _) },
   Spec.MlDsa.pkTr87Api.artifact X86.target {
     code := Impl.MlDsa.X86.PkTr.pkTr Spec.MlDsa.mlDsa87
     stack := 56
-    verified := Proof.MlDsa.X86.PkTr.pkTr87_verified },
+    verified := Proof.MlDsa.X86.PkTr.pkTr87_verified
+    spSafe := NoSp.spSafe (Proof.MlDsa.X86.PkTr.pkTr_nosp _) },
   (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86.target {
     code := Impl.MlDsa.X86.PreparedKey.preparePublic Impl.MlDsa.X86.Verify.prims Spec.MlDsa.mlDsa44
     stack := 96
-    verified := Proof.MlDsa.X86.PreparedKey.public_verified Proof.MlDsa.X86.Verify.prims_ok (.inl rfl) },
+    verified := Proof.MlDsa.X86.PreparedKey.public_verified Proof.MlDsa.X86.Verify.prims_ok (.inl rfl)
+    spSafe := NoSp.spSafe (Proof.MlDsa.X86.PreparedKey.public_nosp Proof.MlDsa.X86.Verify.prims_ok _) },
   (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86.target {
     code := Impl.MlDsa.X86.PreparedKey.prepareSecret Impl.MlDsa.X86.Verify.prims Spec.MlDsa.mlDsa44
     stack := 96
-    verified := Proof.MlDsa.X86.PreparedKey.secret_verified Proof.MlDsa.X86.Verify.prims_ok (.inl rfl) },
+    verified := Proof.MlDsa.X86.PreparedKey.secret_verified Proof.MlDsa.X86.Verify.prims_ok (.inl rfl)
+    spSafe := NoSp.spSafe (Proof.MlDsa.X86.PreparedKey.secret_nosp Proof.MlDsa.X86.Verify.prims_ok _) },
   (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86.target {
     code := Impl.MlDsa.X86.PreparedKey.preparePublic Impl.MlDsa.X86.Verify.prims Spec.MlDsa.mlDsa65
     stack := 96
-    verified := Proof.MlDsa.X86.PreparedKey.public_verified Proof.MlDsa.X86.Verify.prims_ok (.inr (.inl rfl)) },
+    verified := Proof.MlDsa.X86.PreparedKey.public_verified Proof.MlDsa.X86.Verify.prims_ok (.inr (.inl rfl))
+    spSafe := NoSp.spSafe (Proof.MlDsa.X86.PreparedKey.public_nosp Proof.MlDsa.X86.Verify.prims_ok _) },
   (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86.target {
     code := Impl.MlDsa.X86.PreparedKey.prepareSecret Impl.MlDsa.X86.Verify.prims Spec.MlDsa.mlDsa65
     stack := 96
-    verified := Proof.MlDsa.X86.PreparedKey.secret_verified Proof.MlDsa.X86.Verify.prims_ok (.inr (.inl rfl)) },
+    verified := Proof.MlDsa.X86.PreparedKey.secret_verified Proof.MlDsa.X86.Verify.prims_ok (.inr (.inl rfl))
+    spSafe := NoSp.spSafe (Proof.MlDsa.X86.PreparedKey.secret_nosp Proof.MlDsa.X86.Verify.prims_ok _) },
   (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86.target {
     code := Impl.MlDsa.X86.PreparedKey.preparePublic Impl.MlDsa.X86.Verify.prims Spec.MlDsa.mlDsa87
     stack := 96
-    verified := Proof.MlDsa.X86.PreparedKey.public_verified Proof.MlDsa.X86.Verify.prims_ok (.inr (.inr rfl)) },
+    verified := Proof.MlDsa.X86.PreparedKey.public_verified Proof.MlDsa.X86.Verify.prims_ok (.inr (.inr rfl))
+    spSafe := NoSp.spSafe (Proof.MlDsa.X86.PreparedKey.public_nosp Proof.MlDsa.X86.Verify.prims_ok _) },
   (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86.target {
     code := Impl.MlDsa.X86.PreparedKey.prepareSecret Impl.MlDsa.X86.Verify.prims Spec.MlDsa.mlDsa87
     stack := 96
-    verified := Proof.MlDsa.X86.PreparedKey.secret_verified Proof.MlDsa.X86.Verify.prims_ok (.inr (.inr rfl)) },
+    verified := Proof.MlDsa.X86.PreparedKey.secret_verified Proof.MlDsa.X86.Verify.prims_ok (.inr (.inr rfl))
+    spSafe := NoSp.spSafe (Proof.MlDsa.X86.PreparedKey.secret_nosp Proof.MlDsa.X86.Verify.prims_ok _) },
   Spec.MlDsa.sign44Api.artifact X86.target {
     code := Impl.MlDsa.X86.Sign.signEntry Spec.MlDsa.mlDsa44 (Impl.MlDsa.X86.Sign.coreName "mldsa44")
       (Impl.MlDsa.X86.Sign.sign prims Spec.MlDsa.mlDsa44)
     stack := 136
-    verified := Proof.MlDsa.X86.Message.sign44_verified },
+    verified := Proof.MlDsa.X86.Message.sign44_verified
+    spSafe := NoSp.spSafe Proof.MlDsa.X86.Message.sign44Fn.nosp },
   Spec.MlDsa.sign65Api.artifact X86.target {
     code := Impl.MlDsa.X86.Sign.signEntry Spec.MlDsa.mlDsa65 (Impl.MlDsa.X86.Sign.coreName "mldsa65")
       (Impl.MlDsa.X86.Sign.sign prims Spec.MlDsa.mlDsa65)
     stack := 136
-    verified := Proof.MlDsa.X86.Message.sign65_verified },
+    verified := Proof.MlDsa.X86.Message.sign65_verified
+    spSafe := NoSp.spSafe Proof.MlDsa.X86.Message.sign65Fn.nosp },
   Spec.MlDsa.sign87Api.artifact X86.target {
     code := Impl.MlDsa.X86.Sign.signEntry Spec.MlDsa.mlDsa87 (Impl.MlDsa.X86.Sign.coreName "mldsa87")
       (Impl.MlDsa.X86.Sign.sign prims Spec.MlDsa.mlDsa87)
     stack := 136
-    verified := Proof.MlDsa.X86.Message.sign87_verified },
+    verified := Proof.MlDsa.X86.Message.sign87_verified
+    spSafe := NoSp.spSafe Proof.MlDsa.X86.Message.sign87Fn.nosp },
   (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86.target {
     code := Impl.MlDsa.X86.Sign.signPrepared Spec.MlDsa.mlDsa44 (Impl.MlDsa.X86.Sign.coreName "mldsa44")
       (Impl.MlDsa.X86.Sign.sign prims Spec.MlDsa.mlDsa44)
     stack := 136
-    verified := Proof.MlDsa.X86.Message.signPrepared44_verified },
+    verified := Proof.MlDsa.X86.Message.signPrepared44_verified
+    spSafe := NoSp.spSafe Proof.MlDsa.X86.Message.signPrepared44Fn.nosp },
   (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86.target {
     code := Impl.MlDsa.X86.Sign.signPrepared Spec.MlDsa.mlDsa65 (Impl.MlDsa.X86.Sign.coreName "mldsa65")
       (Impl.MlDsa.X86.Sign.sign prims Spec.MlDsa.mlDsa65)
     stack := 136
-    verified := Proof.MlDsa.X86.Message.signPrepared65_verified },
+    verified := Proof.MlDsa.X86.Message.signPrepared65_verified
+    spSafe := NoSp.spSafe Proof.MlDsa.X86.Message.signPrepared65Fn.nosp },
   (Spec.MlDsa.preparedSignApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86.target {
     code := Impl.MlDsa.X86.Sign.signPrepared Spec.MlDsa.mlDsa87 (Impl.MlDsa.X86.Sign.coreName "mldsa87")
       (Impl.MlDsa.X86.Sign.sign prims Spec.MlDsa.mlDsa87)
     stack := 136
-    verified := Proof.MlDsa.X86.Message.signPrepared87_verified }] ++
+    verified := Proof.MlDsa.X86.Message.signPrepared87_verified
+    spSafe := NoSp.spSafe Proof.MlDsa.X86.Message.signPrepared87Fn.nosp }] ++
   [
     Spec.MlDsa.signMessage44Api.artifact X86.target {
       code := Impl.MlDsa.X86.Message.signMessage Spec.MlDsa.sign44Api.name
         (Impl.MlDsa.X86.Sign.signEntry Spec.MlDsa.mlDsa44 (Impl.MlDsa.X86.Sign.coreName "mldsa44")
           (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa44)) Spec.MlDsa.mlDsa44
       stack := 176
-      verified := Proof.MlDsa.X86.Message.signMessage44_verified },
+      verified := Proof.MlDsa.X86.Message.signMessage44_verified
+      spSafe := NoSp.spSafe (Proof.MlDsa.X86.Message.signMessage_nosp _ Proof.MlDsa.X86.Message.sign44Fn.nosp) },
     (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86.target {
       code := Impl.MlDsa.X86.Message.signMessage (Impl.MlDsa.X86.Sign.preparedName "mldsa44")
         (Impl.MlDsa.X86.Sign.signPrepared Spec.MlDsa.mlDsa44 (Impl.MlDsa.X86.Sign.coreName "mldsa44")
           (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa44)) Spec.MlDsa.mlDsa44
       stack := 176
-      verified := Proof.MlDsa.X86.Message.signMessagePrepared44_verified },
+      verified := Proof.MlDsa.X86.Message.signMessagePrepared44_verified
+      spSafe := NoSp.spSafe (Proof.MlDsa.X86.Message.signMessage_nosp _ Proof.MlDsa.X86.Message.signPrepared44Fn.nosp) },
     Spec.MlDsa.signMessage65Api.artifact X86.target {
       code := Impl.MlDsa.X86.Message.signMessage Spec.MlDsa.sign65Api.name
         (Impl.MlDsa.X86.Sign.signEntry Spec.MlDsa.mlDsa65 (Impl.MlDsa.X86.Sign.coreName "mldsa65")
           (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa65)) Spec.MlDsa.mlDsa65
       stack := 176
-      verified := Proof.MlDsa.X86.Message.signMessage65_verified },
+      verified := Proof.MlDsa.X86.Message.signMessage65_verified
+      spSafe := NoSp.spSafe (Proof.MlDsa.X86.Message.signMessage_nosp _ Proof.MlDsa.X86.Message.sign65Fn.nosp) },
     (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86.target {
       code := Impl.MlDsa.X86.Message.signMessage (Impl.MlDsa.X86.Sign.preparedName "mldsa65")
         (Impl.MlDsa.X86.Sign.signPrepared Spec.MlDsa.mlDsa65 (Impl.MlDsa.X86.Sign.coreName "mldsa65")
           (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa65)) Spec.MlDsa.mlDsa65
       stack := 176
-      verified := Proof.MlDsa.X86.Message.signMessagePrepared65_verified },
+      verified := Proof.MlDsa.X86.Message.signMessagePrepared65_verified
+      spSafe := NoSp.spSafe (Proof.MlDsa.X86.Message.signMessage_nosp _ Proof.MlDsa.X86.Message.signPrepared65Fn.nosp) },
     Spec.MlDsa.signMessage87Api.artifact X86.target {
       code := Impl.MlDsa.X86.Message.signMessage Spec.MlDsa.sign87Api.name
         (Impl.MlDsa.X86.Sign.signEntry Spec.MlDsa.mlDsa87 (Impl.MlDsa.X86.Sign.coreName "mldsa87")
           (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa87)) Spec.MlDsa.mlDsa87
       stack := 176
-      verified := Proof.MlDsa.X86.Message.signMessage87_verified },
+      verified := Proof.MlDsa.X86.Message.signMessage87_verified
+      spSafe := NoSp.spSafe (Proof.MlDsa.X86.Message.signMessage_nosp _ Proof.MlDsa.X86.Message.sign87Fn.nosp) },
     (Spec.MlDsa.preparedSignMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86.target {
       code := Impl.MlDsa.X86.Message.signMessage (Impl.MlDsa.X86.Sign.preparedName "mldsa87")
         (Impl.MlDsa.X86.Sign.signPrepared Spec.MlDsa.mlDsa87 (Impl.MlDsa.X86.Sign.coreName "mldsa87")
           (Impl.MlDsa.X86.Sign.sign Proof.MlDsa.X86.Sign.prims Spec.MlDsa.mlDsa87)) Spec.MlDsa.mlDsa87
       stack := 176
-      verified := Proof.MlDsa.X86.Message.signMessagePrepared87_verified }] ++
+      verified := Proof.MlDsa.X86.Message.signMessagePrepared87_verified
+      spSafe := NoSp.spSafe (Proof.MlDsa.X86.Message.signMessage_nosp _ Proof.MlDsa.X86.Message.signPrepared87Fn.nosp) }] ++
   [
     Spec.MlDsa.verify44Api.artifact X86.target {
       code := Impl.MlDsa.X86.Verify.verify44
       stack := 136
-      verified := Proof.MlDsa.X86.Message.verify44_verified },
+      verified := Proof.MlDsa.X86.Message.verify44_verified
+      spSafe := NoSp.spSafe Proof.MlDsa.X86.Message.verify44Fn.nosp },
     Spec.MlDsa.verify65Api.artifact X86.target {
       code := Impl.MlDsa.X86.Verify.verify65
       stack := 136
-      verified := Proof.MlDsa.X86.Message.verify65_verified },
+      verified := Proof.MlDsa.X86.Message.verify65_verified
+      spSafe := NoSp.spSafe Proof.MlDsa.X86.Message.verify65Fn.nosp },
     Spec.MlDsa.verify87Api.artifact X86.target {
       code := Impl.MlDsa.X86.Verify.verify87
       stack := 136
-      verified := Proof.MlDsa.X86.Message.verify87_verified },
+      verified := Proof.MlDsa.X86.Message.verify87_verified
+      spSafe := NoSp.spSafe Proof.MlDsa.X86.Message.verify87Fn.nosp },
     (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86.target {
       code := Impl.MlDsa.X86.Verify.verifyPreparedOf Spec.MlDsa.mlDsa44 "mldsa44"
       stack := 136
-      verified := Proof.MlDsa.X86.Message.verifyPrepared44_verified },
+      verified := Proof.MlDsa.X86.Message.verifyPrepared44_verified
+      spSafe := NoSp.spSafe Proof.MlDsa.X86.Message.verifyPrepared44Fn.nosp },
     (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86.target {
       code := Impl.MlDsa.X86.Verify.verifyPreparedOf Spec.MlDsa.mlDsa65 "mldsa65"
       stack := 136
-      verified := Proof.MlDsa.X86.Message.verifyPrepared65_verified },
+      verified := Proof.MlDsa.X86.Message.verifyPrepared65_verified
+      spSafe := NoSp.spSafe Proof.MlDsa.X86.Message.verifyPrepared65Fn.nosp },
     (Spec.MlDsa.preparedVerifyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86.target {
       code := Impl.MlDsa.X86.Verify.verifyPreparedOf Spec.MlDsa.mlDsa87 "mldsa87"
       stack := 136
-      verified := Proof.MlDsa.X86.Message.verifyPrepared87_verified }] ++
+      verified := Proof.MlDsa.X86.Message.verifyPrepared87_verified
+      spSafe := NoSp.spSafe Proof.MlDsa.X86.Message.verifyPrepared87Fn.nosp }] ++
   [
     (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86.target {
       code := Impl.MlDsa.X86.Message.verifyMessageCached Spec.MlDsa.verify44Api.name
         Impl.MlDsa.X86.Verify.verify44 Spec.MlDsa.mlDsa44
       stack := 172
-      verified := Proof.MlDsa.X86.Message.verifyMessageCached44_verified },
+      verified := Proof.MlDsa.X86.Message.verifyMessageCached44_verified
+      spSafe := NoSp.spSafe (Proof.MlDsa.X86.Message.verifyMessageCached_nosp _ Proof.MlDsa.X86.Message.verify44Fn.nosp) },
     (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact X86.target {
       code := Impl.MlDsa.X86.Message.verifyMessageCached (Impl.MlDsa.X86.Verify.preparedName "mldsa44")
         (Impl.MlDsa.X86.Verify.verifyPreparedOf Spec.MlDsa.mlDsa44 "mldsa44") Spec.MlDsa.mlDsa44
       stack := 172
-      verified := Proof.MlDsa.X86.Message.verifyMessagePrepared44_verified },
+      verified := Proof.MlDsa.X86.Message.verifyMessagePrepared44_verified
+      spSafe := NoSp.spSafe (Proof.MlDsa.X86.Message.verifyMessageCached_nosp _ Proof.MlDsa.X86.Message.verifyPrepared44Fn.nosp) },
     (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86.target {
       code := Impl.MlDsa.X86.Message.verifyMessageCached Spec.MlDsa.verify65Api.name
         Impl.MlDsa.X86.Verify.verify65 Spec.MlDsa.mlDsa65
       stack := 172
-      verified := Proof.MlDsa.X86.Message.verifyMessageCached65_verified },
+      verified := Proof.MlDsa.X86.Message.verifyMessageCached65_verified
+      spSafe := NoSp.spSafe (Proof.MlDsa.X86.Message.verifyMessageCached_nosp _ Proof.MlDsa.X86.Message.verify65Fn.nosp) },
     (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact X86.target {
       code := Impl.MlDsa.X86.Message.verifyMessageCached (Impl.MlDsa.X86.Verify.preparedName "mldsa65")
         (Impl.MlDsa.X86.Verify.verifyPreparedOf Spec.MlDsa.mlDsa65 "mldsa65") Spec.MlDsa.mlDsa65
       stack := 172
-      verified := Proof.MlDsa.X86.Message.verifyMessagePrepared65_verified },
+      verified := Proof.MlDsa.X86.Message.verifyMessagePrepared65_verified
+      spSafe := NoSp.spSafe (Proof.MlDsa.X86.Message.verifyMessageCached_nosp _ Proof.MlDsa.X86.Message.verifyPrepared65Fn.nosp) },
     (Spec.MlDsa.verifyMessageCachedApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86.target {
       code := Impl.MlDsa.X86.Message.verifyMessageCached Spec.MlDsa.verify87Api.name
         Impl.MlDsa.X86.Verify.verify87 Spec.MlDsa.mlDsa87
       stack := 172
-      verified := Proof.MlDsa.X86.Message.verifyMessageCached87_verified },
+      verified := Proof.MlDsa.X86.Message.verifyMessageCached87_verified
+      spSafe := NoSp.spSafe (Proof.MlDsa.X86.Message.verifyMessageCached_nosp _ Proof.MlDsa.X86.Message.verify87Fn.nosp) },
     (Spec.MlDsa.preparedVerifyMessageApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact X86.target {
       code := Impl.MlDsa.X86.Message.verifyMessageCached (Impl.MlDsa.X86.Verify.preparedName "mldsa87")
         (Impl.MlDsa.X86.Verify.verifyPreparedOf Spec.MlDsa.mlDsa87 "mldsa87") Spec.MlDsa.mlDsa87
       stack := 172
-      verified := Proof.MlDsa.X86.Message.verifyMessagePrepared87_verified }]
+      verified := Proof.MlDsa.X86.Message.verifyMessagePrepared87_verified
+      spSafe := NoSp.spSafe (Proof.MlDsa.X86.Message.verifyMessageCached_nosp _ Proof.MlDsa.X86.Message.verifyPrepared87Fn.nosp) }]
 
 end VG.Artifacts.MlDsa.X86

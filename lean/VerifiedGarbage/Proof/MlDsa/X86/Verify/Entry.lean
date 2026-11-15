@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.MlDsa.X86.Verify.Verified
 public import VerifiedGarbage.Proof.MlDsa.PreparedKeyContract
 public import VerifiedGarbage.Impl.MlDsa.X86.Verify.Entry
+import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.NoSp
 import VerifiedGarbage.Proof.MlDsa.X86.KeyGen.Prim
 import VerifiedGarbage.Proof.MlDsa.X86.Verify.Prim
 import VerifiedGarbage.Proof.MlKem.X86.TopLocal
@@ -372,6 +373,27 @@ theorem ePub_of {kl : Nat} {s₀ s₀' : State} (h : (verifyContract p X86.abi 1
 /-- Memory with the arguments `0`, `0x1000`, `0x3000` and `0x10000` at `0x5004`. -/
 def satMemV : Mem := fun a => if a = 0x5009 then 0x10 else if a = 0x500d then 0x30 else if a = 0x5012 then 1 else 0
 
+/-- The body of `vg_mldsa*_verify` never writes `esp`, if its core does not. -/
+theorem entry_nosp {P : Prims} (hP : PrimsOk P) (p : Params) {n : String} {f : Prog isa} (hsp : NoSp f) :
+    NoSp (.seq (.block [.mov .esi (.mem (at_ .esp (20 + 4 * vS)))]) (.seq (seqR (t1One p P) 0 p.k)
+      (callPR vS n f (coreArgs p (sb (oT1 p) (1024 * p.k)))))) :=
+  NoSp.seq (NoSp.of_all (by kernel_rfl)) (NoSp.seq
+    (NoSp.seqR (fun _ => NoSp.seq (NoSp.callP hP.unpackT1.nosp) (NoSp.callP hP.ntt.nosp)) _ _) (NoSp.callPR hsp))
+
+/-- `vg_mldsa*_verify` never writes `esp`, if its core does not. -/
+theorem verifyEntry_nosp {P : Prims} (hP : PrimsOk P) (p : Params) {n : String} {f : Prog isa} (hsp : NoSp f) :
+    NoSp (verifyEntry p P n f) := NoSp.leaf (entry_nosp hP p hsp)
+
+/-- The body of `vg_mldsa*_verify_prepared` never writes `esp`, if its core does not. -/
+theorem prepared_nosp (p : Params) {n : String} {f : Prog isa} (hsp : NoSp f) :
+    NoSp (.seq (.block [.mov .esi (.mem (at_ .esp (20 + 4 * vS)))])
+      (callPR vS n f (coreArgs p ⟨0, p.pkLen, 1024 * p.k⟩))) :=
+  NoSp.seq (NoSp.of_all (by kernel_rfl)) (NoSp.callPR hsp)
+
+/-- `vg_mldsa*_verify_prepared` never writes `esp`, if its core does not. -/
+theorem verifyPrepared_nosp (p : Params) {n : String} {f : Prog isa} (hsp : NoSp f) :
+    NoSp (verifyPrepared p n f) := NoSp.leaf (prepared_nosp p hsp)
+
 /-- `vg_mldsa{44,65,87}_verify`, calling a core verified against `verifyCoreContract`,
 is verified against `verifyContract`. -/
 theorem entry_verified {P : Prims} (hP : PrimsOk P)
@@ -379,12 +401,10 @@ theorem entry_verified {P : Prims} (hP : PrimsOk P)
     (hv : Verified X86.target f (verifyCoreContract p X86.abi 96)) (hsp : NoSp f) (hst : stackUse f ≤ 96)
     {ht' : Taint.Hint VG.X86.Taint.T}
     (tt : (VG.X86.taint.check (τr [.esp, .esi])
-      (.block (setArgs 3 VG.Impl.MlDsa.X86.KeyGen.argRegs (coreArgs p (sb (oT1 p) (1024 * p.k))))) ht').isSome = true)
-    (hsp' : NoSp (.seq (.block [.mov .esi (.mem (at_ .esp (20 + 4 * vS)))]) (.seq (seqR (t1One p P) 0 p.k)
-        (callPR vS n f (coreArgs p (sb (oT1 p) (1024 * p.k))))))) :
+      (.block (setArgs 3 VG.Impl.MlDsa.X86.KeyGen.argRegs (coreArgs p (sb (oT1 p) (1024 * p.k))))) ht').isSome = true) :
     Verified X86.target (verifyEntry p P n f) (verifyContract p X86.abi 136) := by
   have hF := vfacts hp
-  refine Piece.verified (((topLeaf hsp' (entry_piece hP hF hv hsp hst tt)).pre_mono (fun _ h => ePre_of h)
+  refine Piece.verified (((topLeaf (entry_nosp hP p hsp) (entry_piece hP hF hv hsp hst tt)).pre_mono (fun _ h => ePre_of h)
     fun _ _ _ _ h => ePub_of h).mono (fun _ _ _ h => h) fun s₀ s' h₀ hq => ?_) ?_
   · obtain ⟨habi, -, -, s, hd, hm, hax⟩ := hq
     refine ⟨habi, ?_⟩
@@ -486,12 +506,10 @@ theorem prepared_verified (hp : p = mlDsa44 ∨ p = mlDsa65 ∨ p = mlDsa87) {n 
     {ht' : Taint.Hint VG.X86.Taint.T}
     (tt : (VG.X86.taint.check (τr [.esp, .esi])
       (.block (setArgs 3 VG.Impl.MlDsa.X86.KeyGen.argRegs (coreArgs p ⟨0, p.pkLen, 1024 * p.k⟩))) ht').isSome = true)
-    (hsp' : NoSp (.seq (.block [.mov .esi (.mem (at_ .esp (20 + 4 * vS)))])
-        (callPR vS n f (coreArgs p ⟨0, p.pkLen, 1024 * p.k⟩))))
     (hsat : ∃ s, (Proof.MlDsa.preparedVerifyContract p X86.abi 136).pre s) :
     Verified X86.target (verifyPrepared p n f) (Proof.MlDsa.preparedVerifyContract p X86.abi 136) := by
   have hF := vfacts hp
-  have hl := Piece.leaf (W (YVE p (preparedPublicKeyBytes p))) hsp'
+  have hl := Piece.leaf (W (YVE p (preparedPublicKeyBytes p))) (prepared_nosp p (n := n) hsp)
     (fun _ hp => ⟨hp.1.E0_big, by have := hp.1.sp'; omega_using [this]⟩) (fun _ hp => hp.1.hW) (fun _ _ _ _ hq => hq.1)
     ((prep_piece hF hv hsp hst tt).mono (fun _ _ _ h => h) fun _ _ _ h => ⟨⟨h.1.frame, h.1.esp, h.1.rd, h.1.wr⟩, h.2⟩)
   refine Piece.verified ((hl.pre_mono (fun _ h => pPre_of h) fun _ _ _ _ h => pPub_of h).mono

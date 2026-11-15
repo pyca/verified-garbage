@@ -50,6 +50,9 @@ theorem prims_ok : PrimsOk prims where
     NoSp.of_all (by lit_decide)⟩
   normLt := ⟨⟨15, by decide, Round.normLt_verified⟩, by lit_decide, NoSp.of_all (by lit_decide)⟩
 
+/-- `vg_mldsa{44,65,87}_verify_core` never write `esp`. -/
+theorem verify_nosp (p : Spec.MlDsa.Params) : NoSp (verify prims p) := KeyGen.NoSp.leaf (body_nosp prims_ok p)
+
 theorem verifyCore44_verified :
     Verified X86.target (verify prims Spec.MlDsa.mlDsa44) (verifyCoreContract Spec.MlDsa.mlDsa44 X86.abi 96) :=
   verify_verified prims_ok _ (.inl rfl) (PreparedKey.verify_core_sat prims_ok (.inl rfl))
