@@ -39,10 +39,10 @@ def KeysAt (m : Mem) (b : Addr) (R : Nat) (w : List Byte) : Prop :=
   ∀ j ≤ R, KeyRel (fun k => m.readW (vAddr (b + BitVec.ofNat 64 (128 + 128 * j)) k) 128)
     (roundKey w j)
 
-/-- What the eight blocks need: the scratch buffer (2048 bytes at `sb`) is
+/-- What the eight blocks need: the scratch buffer (2048 bytes at `sb`, `ScrIn`) is
 writable, the round keys are in it, and `x1` is the number of rounds. -/
 structure EncPre (s₀ : State) (R : Nat) (w : List Byte) : Prop where
-  scr : (⟨s₀.gpr sb, 2048⟩ : Region) ∈ s₀.wr
+  scr : ScrIn (s₀.gpr sb) s₀.wr
   rounds : R = 10 ∨ R = 12 ∨ R = 14
   x1 : s₀.gpr .x1 = BitVec.ofNat 64 R
   keys : KeysAt s₀.mem (s₀.gpr sb) R w
@@ -66,7 +66,7 @@ theorem Ctx.step {s₀ s s' : State} (hc : Ctx s₀ s) (hk : Keeps s s') : Ctx s
     hc.frame.trans (by rw [← hc.base]; exact hk.frame)⟩
 
 theorem Ctx.scr {s₀ s : State} {R : Nat} {w : List Byte} (hp : EncPre s₀ R w) (hc : Ctx s₀ s) :
-    (⟨s.gpr sb, 2048⟩ : Region) ∈ s.wr := by
+    ScrIn (s.gpr sb) s.wr := by
   rw [hc.base, hc.wr]; exact hp.scr
 
 theorem keyRel_congr {K K' : Nat → BitVec 128} {rk : List Byte} (h : KeyRel K rk)
@@ -93,14 +93,15 @@ theorem EncPre.keysAt {s₀ s : State} {R : Nat} {w : List Byte} (hp : EncPre s�
       exact Offset.disjoint_base _ (by omega_using []) (by omega_using []))
     (by decide)
 
-theorem ark_ok {s : State} {b : Addr} {n : Nat} (hscr : (⟨b, 2048⟩ : Region) ∈ s.wr)
+theorem ark_ok {s : State} {b : Addr} {n : Nat} (hscr : ScrIn b s.wr)
     (hk : s.gpr kp = b + BitVec.ofNat 64 n) (hn : n + 128 ≤ 2048) : StraightQ.Ok arkCfg s := by
+  obtain ⟨L, hL, _, hscr⟩ := hscr
   intro k hk'
   simp only [arkCfg] at hk'
-  refine ⟨⟨b, 2048⟩, List.mem_append_right _ hscr, ?_⟩
+  refine ⟨⟨b, L⟩, List.mem_append_right _ hscr, ?_⟩
   show Region.Contains _ (vAddr (s.gpr kp) k) 16
   rw [hk, key_addr]
-  exact Offset.contains_base b (by omega_using [hn, hk']) (by omega_using [hn, hk'])
+  exact Offset.contains_base b (by omega_using [hn, hk', hL]) (by omega_using [hn, hk'])
 
 /-! ## One layer at a time -/
 

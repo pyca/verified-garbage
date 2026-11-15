@@ -300,6 +300,14 @@ structure Keeps (s s' : State) : Prop where
   sp : s'.sp = s.sp
   frame : Frame [⟨s.gpr sb, 96⟩] s.mem s'.mem
 
+/-- The scratch buffer at `b`, 2048 bytes of it at least, is writable: the
+block functions' own (`ScrIn.of_mem`), or the head of a longer one. -/
+def ScrIn (b : Addr) (wr : List Region) : Prop :=
+  ∃ L, 2048 ≤ L ∧ L < 2 ^ 64 ∧ (⟨b, L⟩ : Region) ∈ wr
+
+theorem ScrIn.of_mem {b : Addr} {wr : List Region} (h : (⟨b, 2048⟩ : Region) ∈ wr) : ScrIn b wr :=
+  ⟨2048, Nat.le_refl _, by decide, h⟩
+
 theorem Keeps.refl (s : State) : Keeps s s := ⟨fun _ _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _⟩
 
 theorem Keeps.trans {a b c : State} (h₁ : Keeps a b) (h₂ : Keeps b c) : Keeps a c where
@@ -339,18 +347,19 @@ theorem circuit_ok {code : List Instr} {T : List Nat} {f : Byte → Byte}
     (hchk : StraightV.check (table 64 256) sboxCfg code sboxEnv (sboxPost T) = true)
     (hT : ∀ c < 256, ∀ j < 8, (T.getD j 0).testBit c = (f (BitVec.ofNat 8 c)).getLsbD j)
     (hg : code.all (fun i => (dsts i).isEmpty) = true)
-    {s : State} (hscr : (⟨s.gpr sb, 2048⟩ : Region) ∈ s.wr) :
+    {s : State} (hscr : ScrIn (s.gpr sb) s.wr) :
     ∃ s', runBlock isa code s = some s' ∧
       (∀ j < 8, ∀ p < 128,
         (s'.v (B j)).getLsbD p = (f (bsByte (fun k => s.v (A k)) p)).getLsbD j) ∧
       Keeps s s' := by
+  obtain ⟨L, hL, hL64, hscr⟩ := hscr
   obtain ⟨e', he, hpost⟩ := StraightV.of_check _ _ hchk
   have hout : ∀ j < 8, e'.reg (B j) = some (T.getD j 0) := by
     intro j hj
     exact beq_iff_eq.mp (List.all_eq_true.mp hpost j (List.mem_range.mpr hj))
   have hok : StraightV.Ok sboxCfg s :=
-    StraightV.Ok.of_off (r := ⟨s.gpr sb, 2048⟩) (off := 0) hscr (by simp [sboxCfg])
-      (by simp [sboxCfg]) (by simp)
+    StraightV.Ok.of_off (r := ⟨s.gpr sb, L⟩) (off := 0) hscr (by simp [sboxCfg])
+      (by simp only [sboxCfg]; omega_using [hL]) hL64
   have key : ∀ p < 64, ∃ s', runBlock isa code s = some s' ∧
       StraightV.Post (fun q => TableRel p (bsByte (fun k => s.v (A k)) (64 * q + p)).toNat) sboxCfg
         e' s s' (fun r => (code.all fun i => vdstOf i != some r) = false)
@@ -382,7 +391,7 @@ theorem circuit_ok {code : List Instr} {T : List Nat} {f : Byte → Byte}
     simpa using clobbers_eq_false_of_isEmpty (r := g) (List.all_eq_true.mp hg i hi)
 
 /-- The S-box, at every bit position of the words. -/
-theorem sbox_ok {s : State} (hscr : (⟨s.gpr sb, 2048⟩ : Region) ∈ s.wr) :
+theorem sbox_ok {s : State} (hscr : ScrIn (s.gpr sb) s.wr) :
     ∃ s', runBlock isa sboxCode s = some s' ∧
       (∀ j < 8, ∀ p < 128,
         (s'.v (B j)).getLsbD p = (sbox (bsByte (fun k => s.v (A k)) p)).getLsbD j) ∧
@@ -391,7 +400,7 @@ theorem sbox_ok {s : State} (hscr : (⟨s.gpr sb, 2048⟩ : Region) ∈ s.wr) :
     rw [← getLsbD_row _ _ hj, row_sboxT (by simp [inTs]) hc, row_inTs hc]) (by decide +kernel) hscr
 
 /-- The inverse S-box, at every bit position of the words. -/
-theorem invSbox_ok {s : State} (hscr : (⟨s.gpr sb, 2048⟩ : Region) ∈ s.wr) :
+theorem invSbox_ok {s : State} (hscr : ScrIn (s.gpr sb) s.wr) :
     ∃ s', runBlock isa invSboxCode s = some s' ∧
       (∀ j < 8, ∀ p < 128,
         (s'.v (B j)).getLsbD p = (invSbox (bsByte (fun k => s.v (A k)) p)).getLsbD j) ∧

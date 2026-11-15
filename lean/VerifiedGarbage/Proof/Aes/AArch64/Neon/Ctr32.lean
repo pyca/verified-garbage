@@ -371,7 +371,7 @@ theorem ctrGroup_ok {to : Bool} {s₀ : State} (hp : PreS to s₀) {g : Nat} {s 
   -- Their encryption.
   have hb₁ : s₁.gpr sb = s₀.gpr .x5 := (f₁.gpr _ (by decide)).trans hi.x5
   have hpe : EncPre s₁ (nr s₀) (sch s₀) :=
-    ⟨by rw [hb₁, f₁.wr, hi.wr]; exact hp.scr, hR, (f₁.gpr _ (by decide)).trans hi.x1,
+    ⟨by rw [hb₁, f₁.wr, hi.wr]; exact .of_mem hp.scr, hR, (f₁.gpr _ (by decide)).trans hi.x1,
       by rw [f₁.mem, hb₁]; exact hi.keys⟩
   refine WP.seq (WP.mono (encrypt8_cryptOk hpe (inRel_st (QA s₁))) fun s₂ h₂ => ?_)
   obtain ⟨hc₂, hin₂⟩ := h₂
@@ -587,7 +587,7 @@ theorem correct {to : Bool} {s₀ : State} (hp : PreS to s₀) (hn0 : nb s₀ �
   have rd₄ : s₄.rd = s₀.rd := rd₂.trans rd₁
   have wr₄ : s₄.wr = s₀.wr := wr₂.trans wr₁
   refine WP.seq (WP.mono (keyLoop_ok (S := s₀.gpr .x0) (b := s₀.gpr .x5) (R := nr s₀)
-    (w := sch s₀) (by rw [rd₄]; exact hp.sched) (by rw [wr₄]; exact hp.scr) hp.s_b hR14
+    (w := sch s₀) (by rw [rd₄]; exact hp.sched) (by rw [wr₄]; exact .of_mem hp.scr) hp.s_b hR14
     (by rw [m₄]) hi₀) fun s₅ hk₅ => ?_)
   -- The groups.
   have g₅ : ∀ r, r ≠ .x0 → r ≠ .x6 → r ≠ .x7 → r ≠ kp → s₅.gpr r = s₁.gpr r :=

@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesCbc.Wipe
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Caller
 public import VerifiedGarbage.Proof.AesCbc.AArch64.Decrypt.Verified
+public import VerifiedGarbage.Proof.AesCbc.AArch64.Neon.Verified
 public import VerifiedGarbage.Proof.Framework.AArch64.CallWipe
 public import VerifiedGarbage.Proof.Zeroize.AArch64Wide
 import VerifiedGarbage.Proof.AesEcb.AArch64
@@ -26,8 +27,9 @@ Which are emitted, for each implementation `v` of the blocks functions
 Extension's loop (`Caller.encrypt`), which writes no `scratch`, where `v` is
 the Cryptographic Extension's, and the call wiping `scratch` otherwise; for
 decryption, none where `v` writes nothing in `scratch` (the Cryptographic
-Extension's decryptions are their own artifacts), and the call wiping
-`scratch` otherwise.
+Extension's decryptions are their own artifacts), the decryption in AdvSIMD
+registers (`Neon.decrypt`, wiping `scratch`: `decryptNeon`) where `v` is the
+one in AdvSIMD registers, and the call wiping `scratch` otherwise.
 -/
 
 @[expose] public section
@@ -137,6 +139,17 @@ theorem decryptAes_scrubbed :
   Verified.cbc_of_unwritten (Proof.AesCbc.decrypt_keyed Proof.AesCbc.AArch64.Decrypt.verifiedAes)
     Proof.AesCbc.AArch64.Decrypt.writtenAes args_length
 
+/-- `vg_aes_cbc_decrypt_neon`: the decryption in AdvSIMD registers, wiping
+`scratch`. -/
+def decryptNeon : Prog isa :=
+  wiped "vg_aes_cbc_decrypt_unwiped_neon" Impl.AesCbc.AArch64.Neon.decrypt
+
+theorem decryptNeon_verified :
+    Verified target decryptNeon (Spec.Cbc.aesDecryptContract abi 32) :=
+  wiped_verified (Proof.AesCbc.decrypt_keyed Proof.AesCbc.AArch64.Neon.verified)
+    (AesEcb.AArch64.depth_of_noFrames Proof.AesCbc.AArch64.Neon.decrypt_noFrames)
+    (decPost_local 64) (decPost_out 64)
+
 /-- The implementation of `vg_aes_cbc_encrypt` over `v` that is emitted (see
 the module's documentation). -/
 def encryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesEncryptApi target) :=
@@ -156,6 +169,11 @@ def encryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesEncryptApi tar
 any (see the module's documentation). -/
 def decryptRegs (v : BlocksImpl) : List (Registration Spec.Cbc.aesDecryptApi target) :=
   if v.free then []
+  else if v.dec.name = "vg_aes_decrypt_blocks_neon" then [{
+    suffix := v.suffix
+    code := decryptNeon
+    stack := 32
+    verified := decryptNeon_verified }]
   else [{
     suffix := v.suffix
     code := decrypt v

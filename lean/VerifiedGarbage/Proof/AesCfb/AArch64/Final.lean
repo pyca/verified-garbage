@@ -27,6 +27,7 @@ import VerifiedGarbage.Proof.AesCfb.AArch64.Body
 import VerifiedGarbage.Proof.AesCbc.AArch64.Block
 import VerifiedGarbage.Proof.AesCbc.AArch64.CT
 import VerifiedGarbage.Proof.AesCfb.AArch64.Decrypt.Verified
+import VerifiedGarbage.Proof.AesCfb.AArch64.Neon.Verified
 import VerifiedGarbage.Proof.AesCfb.AArch64.Decrypt.Lit
 meta import VerifiedGarbage.Impl.AesCfb.AArch64.Final
 meta import VerifiedGarbage.Proof.AesCfb.Final
@@ -55,6 +56,7 @@ meta import VerifiedGarbage.Proof.AesCfb.AArch64.Body
 meta import VerifiedGarbage.Proof.AesCbc.AArch64.Block
 meta import VerifiedGarbage.Proof.AesCbc.AArch64.CT
 meta import VerifiedGarbage.Proof.AesCfb.AArch64.Decrypt.Verified
+meta import VerifiedGarbage.Proof.AesCfb.AArch64.Neon.Verified
 meta import VerifiedGarbage.Proof.AesCfb.AArch64.Decrypt.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
@@ -768,14 +770,19 @@ theorem decrypt_noFrames (v : BlocksImpl) : (Caller.decrypt v).noFrames = true :
   unfold Caller.decrypt
   split
   · lit_decide
-  · simp only [Impl.AesCfb.AArch64.decrypt, Impl.AesCbc.AArch64.batched, Impl.AesCbc.AArch64.groups,
-      Impl.AesCfb.AArch64.decGroup, Impl.AesCfb.AArch64.body, Code.noFrames, v.encNoFrames, Bool.and_self]
+  · split
+    · exact Neon.decrypt_noFrames
+    · simp only [Impl.AesCfb.AArch64.decrypt, Impl.AesCbc.AArch64.batched, Impl.AesCbc.AArch64.groups,
+        Impl.AesCfb.AArch64.decGroup, Impl.AesCfb.AArch64.body, Code.noFrames, v.encNoFrames,
+        Bool.and_self]
 
 theorem decrypt_keepsV' (v : BlocksImpl) : (Caller.decrypt v).allInstrs keepsV = true := by
   unfold Caller.decrypt
   split
   · lit_decide
-  · exact decrypt_keepsV v
+  · split
+    · exact Neon.decrypt_keepsV
+    · exact decrypt_keepsV v
 
 theorem final_keepsV {name : String} {whole : Prog isa} (v : BlocksImpl) (hw : whole.allInstrs keepsV = true) :
     (final name whole v.enc).allInstrs keepsV = true := by
@@ -789,14 +796,18 @@ theorem decrypt_correct' (v : BlocksImpl) (s : State) (hs : (modeAArch64 (cfbMod
   unfold Caller.decrypt
   split
   · exact Decrypt.correct s hs
-  · exact decrypt_correct v s hs
+  · split
+    · exact Neon.correct s hs
+    · exact decrypt_correct v s hs
 
 theorem decrypt_ct' (v : BlocksImpl) :
     ConstantTime isa (modeAArch64 (cfbMode false)).pre (modeAArch64 (cfbMode false)).pub (Caller.decrypt v) := by
   unfold Caller.decrypt
   split
   · exact Decrypt.ct
-  · exact decrypt_ct v
+  · split
+    · exact Neon.ct
+    · exact decrypt_ct v
 
 /-! ## Constant time -/
 

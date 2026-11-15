@@ -190,7 +190,7 @@ theorem keyWords_ok (k : Nat) (hk : k ≤ 8) {s : State} {a : Addr} (ha : s.gpr 
 
 /-- One round key bitsliced, and on to the next. -/
 theorem keyBody_ok {s : State} {S b : Addr} {j : Nat} (hS : (⟨S, 240⟩ : Region) ∈ s.rd)
-    (hb : (⟨b, 2048⟩ : Region) ∈ s.wr) (h0 : s.gpr .x0 = S + BitVec.ofNat 64 (16 * j))
+    (hb : ScrIn b s.wr) (h0 : s.gpr .x0 = S + BitVec.ofNat 64 (16 * j))
     (h7 : s.gpr .x7 = b + BitVec.ofNat 64 (128 + 128 * j)) (hj : j ≤ 14)
     (hmask : ∀ i < 8, s.v (B i) = bc (BitVec.ofNat 8 (2 ^ i))) :
     ∃ s', runBlock isa keyBody s = some s' ∧
@@ -203,6 +203,7 @@ theorem keyBody_ok {s : State} {S b : Addr} {j : Nat} (hS : (⟨S, 240⟩ : Regi
         plane (s.mem.readW (S + BitVec.ofNat 64 (16 * j)) 128) i) ∧
       Frame [⟨b + BitVec.ofNat 64 (128 + 128 * j), 128⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧
       s'.wr = s.wr ∧ s'.sp = s.sp := by
+  obtain ⟨L, hL, _, hb⟩ := hb
   -- The load.
   have hin0 : InRegions (s.rd ++ s.wr) (vAddr (s.gpr .x0) 0) 16 :=
     ⟨⟨S, 240⟩, List.mem_append_left _ hS, by
@@ -219,9 +220,9 @@ theorem keyBody_ok {s : State} {S b : Addr} {j : Nat} (hS : (⟨S, 240⟩ : Regi
     (fun i hi => by
       show (s.setV .v0 _).v (B i) = _
       rw [v_setV_of_ne _ _ (B_ne i hi).1]; exact hmask i hi)
-    (fun i hi => ⟨⟨b, 2048⟩, hb, by
+    (fun i hi => ⟨⟨b, L⟩, hb, by
       rw [key_addr]
-      exact Offset.contains_base b (by omega_using [hj, hi]) (by omega_using [hj, hi])⟩)
+      exact Offset.contains_base b (by omega_using [hj, hi, hL]) (by omega_using [hj, hi])⟩)
   -- The steps.
   let w := ((u.write .x .x0 (u.read .x .x0 + BitVec.ofNat 64 16)).write .x .x7
     ((u.write .x .x0 (u.read .x .x0 + BitVec.ofNat 64 16)).read .x .x7 + BitVec.ofNat 64 128))
@@ -278,7 +279,7 @@ structure KInv (s₂ : State) (S b : Addr) (R : Nat) (w : List Byte) (j : Nat) (
 
 /-- The key loop: every round key bitsliced. -/
 theorem keyLoop_ok {s₂ : State} {S b : Addr} {R : Nat} {w : List Byte}
-    (hS : (⟨S, 240⟩ : Region) ∈ s₂.rd) (hb : (⟨b, 2048⟩ : Region) ∈ s₂.wr)
+    (hS : (⟨S, 240⟩ : Region) ∈ s₂.rd) (hb : ScrIn b s₂.wr)
     (hd : Region.Disjoint ⟨S, 240⟩ ⟨b, 2048⟩) (hR : R ≤ 14)
     (hw : w = bytesAt s₂.mem S (16 * (R + 1))) {s : State} (hi : KInv s₂ S b R w 0 s) :
     WP isa (.loop (.block keyBody) (.nonzero .x kp)) s (KInv s₂ S b R w (R + 1)) := by
@@ -673,7 +674,7 @@ theorem group_ok (hcr : CryptOk crypt8 f) (hscr : (⟨b, 2048⟩ : Region) ∈ w
   -- The transformation.
   have hb₁ : s₁.gpr sb = b := (hg₁ sb (by decide)).trans hi.hx5
   have hp : EncPre s₁ R w :=
-    ⟨by rw [hb₁, hwr₁, hi.hwr]; exact hscr, hR, (hg₁ .x1 (by decide)).trans hi.hx1,
+    ⟨by rw [hb₁, hwr₁, hi.hwr]; exact .of_mem hscr, hR, (hg₁ .x1 (by decide)).trans hi.hx1,
       by rw [hm₁, hb₁]; exact hi.keys⟩
   refine WP.seq (WP.mono (hcr hp (inRel_st (QA s₁))) fun s₂ h₂ => ?_)
   obtain ⟨hc₂, hin₂⟩ := h₂
@@ -837,7 +838,7 @@ theorem correct_blocks {crypt8 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
     have wr₄ : s₄.wr = s₀.wr := wr₂.trans wr₁
     have sp₄ : s₄.sp = s₀.sp := sp₂.trans sp₁
     refine WP.seq (WP.mono (keyLoop_ok (S := S) (b := b) (R := R) (w := w) (by rw [rd₄]; exact hrS)
-      (by rw [wr₄]; exact hwS) dSS hR14 (by rw [m₄]) hi₀) fun s₅ hk₅ => ?_)
+      (by rw [wr₄]; exact .of_mem hwS) dSS hR14 (by rw [m₄]) hi₀) fun s₅ hk₅ => ?_)
     -- The groups.
     have g₅ : ∀ r, r ≠ .x0 → r ≠ .x6 → r ≠ .x7 → r ≠ kp → s₅.gpr r = s₁.gpr r :=
       fun r h0 h6 h7 hk => (hk₅.keep r h0 h7 hk).trans (g₄ r h6 h7 hk)
