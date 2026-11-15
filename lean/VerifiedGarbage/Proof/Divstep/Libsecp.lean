@@ -117,10 +117,10 @@ theorem deUpd_range {N : Nat} {p np u v d e : Int} (hnp : (p * np + 1) % 2 ^ N =
   constructor
   · by_contra hc
     have : 2 ^ N * deUpd N p np u v d e ≤ 2 ^ N * (-2 * p) := mul_le_mul_of_nonneg_left (not_lt.mp hc) h0.le
-    nlinarith
+    linarith
   · by_contra hc
     have : 2 ^ N * p ≤ 2 ^ N * deUpd N p np u v d e := mul_le_mul_of_nonneg_left (not_lt.mp hc) h0.le
-    nlinarith
+    linarith
 
 /-- The coefficients over a run of batches of 30, from `(0, 1)`, with `np = -p⁻¹ mod 2^30`. -/
 def deRunL (p np x : Nat) : Nat → Int × Int

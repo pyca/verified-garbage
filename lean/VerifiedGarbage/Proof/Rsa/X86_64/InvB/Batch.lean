@@ -349,7 +349,7 @@ theorem ab_val {R : Rw} {c₁ m₁ c₂ m₂ D p mi : Nat} {u v a b : Int}
       rw [hS, hL]; exact Divstep.cong_comb hA hB
     have tb : (2 : Int) ^ 63 * p < ((2 ^ (64 * R.n) * 2 ^ 63 : Nat) : Int) := by
       push_cast; have : (p : Int) < 2 ^ (64 * R.n) := by exact_mod_cast hpA
-      nlinarith [show (0 : Int) < 2 ^ 63 by norm_num]
+      omega_using [this]
     have ht' := abs_le.mp ht
     have hR' := sext_cong (M := 2 ^ (64 * R.n) * 2 ^ 63) (V := W) (B := 2 ^ 64) (t := u * a + v * b)
       (Nat.mul_pos (Nat.two_pow_pos _) (by decide)) (by rw [e2]; exact Nat.mod_lt _ (Nat.two_pow_pos _))
@@ -712,7 +712,7 @@ theorem abPart_ok {s : State} {B : Addr} {Z w n : Nat} (L : Lay B Z w n) (hs : S
     have : (p : Int) < 2 ^ (64 * n) := by exact_mod_cast hpA
     push_cast
     have : (2 : Int) * 2 ^ (64 * n) ≤ 2 ^ (64 * n) * 2 ^ 63 := by
-      have := pow_pos (show (0 : Int) < 2 by norm_num) (64 * n); nlinarith
+      have := pow_pos (show (0 : Int) < 2 by norm_num) (64 * n); omega_using [this]
     constructor <;> linarith
   refine WP.mono (abRow_ok hs hdi h9 h15 hRa huv hqr) fun t ⟨A, B', ft, r15t, kt⟩ => ⟨?_, ?_, ft, r15t, kt⟩
   · exact ab_val (R := abR B Z w n s.mem) (c₁ := oU) (m₁ := oMu) (c₂ := oV) (m₂ := oMv) A W.hU W.hV W.hMu W.hMv
@@ -781,7 +781,7 @@ theorem batch_ok {s : State} {B : Addr} {Z w n p mi c : Nat} (L : Lay B Z w n) {
       rw [abs_le] at this
       push_cast
       have : (2 : Int) ^ 59 * (2 ^ (64 * n) * 2 ^ 3) < 2 ^ (64 * n) * 2 ^ 63 := by
-        have := pow_pos (show (0 : Int) < 2 by norm_num) (64 * n); nlinarith
+        have := pow_pos (show (0 : Int) < 2 by norm_num) (64 * n); omega_using [this]
       constructor <;> linarith
   refine WP.mono (fgPart_ok L hs₂ di₂ r9₂ r15₂ W
     (by rw [aw₂ _ _ (by omega_arith) (by omega_arith)]; exact h.f)
@@ -910,7 +910,7 @@ theorem batchG_ok {s : State} {B : Addr} {Z w n p mi c : Nat} (L : Lay B Z w n) 
       rw [abs_le] at this
       push_cast
       have : (2 : Int) ^ 59 * (2 ^ (64 * n) * 2 ^ 3) < 2 ^ (64 * n) * 2 ^ 63 := by
-        have := pow_pos (show (0 : Int) < 2 by norm_num) (64 * n); nlinarith
+        have := pow_pos (show (0 : Int) < 2 by norm_num) (64 * n); omega_using [this]
       constructor <;> linarith
   refine WP.mono (fgPart_ok L hs₂ di₂ r9₂ r15₂ W
     (by rw [aw₂ _ _ (by omega_arith) (by omega_arith)]; exact h.f)

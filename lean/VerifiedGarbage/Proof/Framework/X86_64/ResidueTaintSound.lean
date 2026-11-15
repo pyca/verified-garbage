@@ -1184,7 +1184,8 @@ theorem call_sound {τ τ' : FT} {s₁ s₂ s₁' s₂' : State} (ha : Agree τ 
     exact List.pairwise_cons.mpr ⟨fun j hj => by have := inv.rasIn j hj; omega_using [h8, this], inv.rasSorted⟩
   · intro j hj i hi
     simp only [raSlot]
-    rw [wa_shift hsh₁, hrg]
+    -- The taint is given up to its `room`: left to unification, `wa_shift hsh₁` takes seconds to find it.
+    rw [wa_shift (τ := τ) (τ' := ⟨_, _, _, _, τ.room - 8, _, _, _, _, _, _, _, _, _⟩) hsh₁, hrg]
     dsimp only at hj
     rcases List.mem_cons.mp hj with rfl | hj
     · rw [hwa8]

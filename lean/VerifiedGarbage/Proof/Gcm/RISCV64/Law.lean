@@ -1317,8 +1317,8 @@ macro "prep_word_tac" : tactic => `(tactic| (
   · glue_close
   · repeat (first
       | exact Frame.refl _ _
-      | refine Frame.writeW ?_ List.mem_cons_self _ (cn _ (by decide))
-      | refine Frame.writeW ?_ List.mem_cons_self _ cn0)))
+      | (refine Frame.writeW ?_ List.mem_cons_self _ ?_
+         on_goal 2 => first | with_reducible exact cn0 | exact cn _ (by decide)))))
 
 set_option linter.unusedSimpArgs false in
 theorem prepWord0_ok (s : State) {w : Reg} (hw : w ∉ [.t6, .a6, .s4, .a7])  (hK : Masks s)
