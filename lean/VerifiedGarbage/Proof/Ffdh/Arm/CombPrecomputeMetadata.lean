@@ -27,7 +27,8 @@ theorem combBitCountStep_ok (s : State) {h : Nat} (positive : 0<h) (bound : h≤
   rcases cases with rfl|rfl|rfl|rfl|rfl|rfl|rfl|rfl <;>
     (refine withRest_all (c := .block bitCountStep) [.r1,.r3] ?_ (by rfl) rfl
      unfold bitCountStep
-     ffrun [mask,combLowMask])
+     ffrun [mask,combLowMask]
+     decide)
 
 theorem combBitLoop_ok (s : State) {h : Nat} (positive : 0<h) (bound : h≤8)
     (mask : s.gpr .r3 = combLowMask h) :

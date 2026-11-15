@@ -291,6 +291,17 @@ private def loadInputs (d k : Nat) (hs : Bool) : List Instr :=
    .vbinLoad .vpshufb .l128 .xmm7 .xmm7 (at_ .r11 768)] ++
     (if k % 8 = 0 then [.vop (.vbin .vpxor .l128 .xmm7 .xmm7 .xmm2)] else [])
 
+/-- A write of a register after another of the same one. -/
+private theorem setV_setV (s : State) (l l' : VLen) (r : XReg) (a b a' b' : BitVec 128) :
+    (s.setV l r a b).setV l' r a' b' = s.setV l' r a' b' := by
+  simp (config := { contextual := true }) [State.setV]
+
+/-- A 128-bit write takes no high half. -/
+private theorem setV_128_hi (s : State) (r : XReg) (a b : BitVec 128) :
+    s.setV .l128 r a b = s.setV .l128 r a 0 := rfl
+
+private theorem xor_zero128 (x : BitVec 128) : x ^^^ 0 = x := BitVec.xor_zero
+
 private theorem prefix_ok (s : State) (d k : Nat) (hs : Bool)
     (hp : InRegions (s.rd ++ s.wr) (s.ea (at_ .r11 (16 * (8 + k % 8)))) 16)
     (hx : InRegions (s.rd ++ s.wr) (s.ea (srcAt hs (d + 16 * (k % 8)))) 16)
@@ -305,7 +316,8 @@ private theorem prefix_ok (s : State) (d k : Nat) (hs : Bool)
       VOp.exec, reduceVBinOpSse, XBinOp.eval, State.lane, xmm_setV,
       reduceCtorEq, ite_true, ite_false, Option.some.injEq, exists_eq_left',
       inputs, input, dataIn, power] <;>
-    simp (config := { contextual := true }) [State.setV]
+    simp only [setV_setV, xor_zero128]
+  exact setV_128_hi _ _ _ _
 
 private theorem inputs_frame (s : State) (d k : Nat) (hs : Bool) :
     YFrame [.xmm12, .xmm7] s (inputs s d k hs) := by

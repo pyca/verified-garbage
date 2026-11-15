@@ -152,13 +152,14 @@ theorem g_ok (hR : ROk P) {a b c d : Reg}
     exec_ldr ok, isa, State.read, RegUpd.gpr_write, RegUpd.mem_write, RegUpd.rd_write,
     RegUpd.wr_write, hs, hs', ha, hb, hc, hd, hx1, hij, hik, hx, hy,
     ext_trunc, Option.some.injEq, exists_eq_left']
-  have add_left_comm (x y t : BitVec z.bits) : x + (y + t) = y + (x + t) := by
-    rw [← BitVec.add_assoc, BitVec.add_comm x y, BitVec.add_assoc]
+  -- The code adds the message word before `b`: the two sums, not the terms sorted (`add_comm`).
+  have swap (p q r : BitVec z.bits) : p + q + r = p + r + q := by
+    rw [BitVec.add_assoc, BitVec.add_comm q r, ← BitVec.add_assoc]
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
-  · simp only [mix, BitVec.add_assoc, add_left_comm, BitVec.add_comm]
-  · simp only [mix, BitVec.add_assoc, add_left_comm, BitVec.add_comm]
-  · simp only [mix, BitVec.add_assoc, add_left_comm, BitVec.add_comm]
-  · simp only [mix, BitVec.add_assoc, add_left_comm, BitVec.add_comm]
+  · simp only [mix, swap va x vb, swap (va + vb + x) y]
+  · simp only [mix, swap va x vb, swap (va + vb + x) y]
+  · simp only [mix, swap va x vb, swap (va + vb + x) y]
+  · simp only [mix, swap va x vb, swap (va + vb + x) y]
   and_intros
   · intro r ra rb rc rd rt
     simp only [ra, rb, rc, rd, rt, ite_false]

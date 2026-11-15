@@ -64,6 +64,8 @@ theorem r2Top_ok {s : State} {B : Addr} {Z w : Nat} (hs : Scr s B Z)
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq, BitVec.toNat_ofNat]
     have := B.isLt
     unfold slot hdrBytes at hZ ⊢
+    -- one remainder a side: `omega` takes a quotient for each
+    simp only [Nat.add_mod_mod, Nat.mod_add_mod, Nat.mod_mul_mod]
     omega_using [hw]
   refine WP.mono (WP.keep [.r0, .r14] (Q := fun t =>
       t.mem = s₂.mem.writeW (off B (slot w 1 + 8 * (w - 1))) (BitVec.ofNat 64 1)) (by

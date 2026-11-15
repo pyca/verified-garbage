@@ -103,7 +103,8 @@ theorem refill_agree {pBytes S : Nat} {s t : State} (h : (Refill.contract pBytes
   sig_pub [Refill.contract, Spec.Dsa.parameterSearchSig, abi, argRegs, Refill.stackArgs_two] at h
   obtain ⟨hsp, hl, r1, r2, r3, r4, r5, r6, a0, a1⟩ := h
   rw [refill_wordsAt_four, refill_wordsAt_four] at hl
-  have hp := List.append_inj hl rfl
+  -- the lengths of the four words, as numerals: `rfl` would first compare the words
+  have hp := List.append_inj hl (Eq.refl 4)
   simp only [List.cons.injEq] at hp
   refine ⟨hsp, ?_, by simpa using a0, by simpa using a1, ?_, ?_⟩
   · intro r hr

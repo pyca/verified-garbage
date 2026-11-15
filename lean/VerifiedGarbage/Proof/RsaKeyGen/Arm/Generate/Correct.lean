@@ -655,9 +655,7 @@ theorem entry_ok {p : GenPublic} {o : State} (h : GenInput p o) :
         Rest [.r0, .r1, .r10] u t := fun u h5 h0 => by
     refine withRest_all [.r0, .r1, .r10] ?_ (by rfl) (by rfl)
     unfold entryLimit
-    -- `↓reduceIte`, here and below: `ffrun`'s `simp` has a discharger, so it keeps no cache in an
-    -- `if`'s branches, and simplified both for every write a register is read through
-    ffrun [h5, h0, hlv, ↓reduceIte]
+    ffrun [h5, h0, hlv]
   have carry (P : Prop) [Decidable P] :
       ((0 : BitVec 32) + 0 + if decide P = true then (1 : BitVec 32) else 0) = BitVec.ofNat 32 (decide P).toNat := by
     by_cases hP : P
@@ -675,7 +673,7 @@ theorem entry_ok {p : GenPublic} {o : State} (h : GenInput p o) :
         t.mem = (pushed pushRegs o).mem) ?_ (by rfl) (by rfl)) fun u ⟨⟨u4, u5, u6, u7, u8, u9, u11, um⟩, ku⟩ => ?_))
     · unfold entryHead arg pushBytes
       ffrun [pushed_gpr, pushed_sp, pushed_rd, pushed_wr, a52, r52, v52, aT 8 (by decide), rT 8 (by decide), v8,
-        show 4 * pushRegs.length = 40 from rfl, ↓reduceIte]
+        show 4 * pushRegs.length = 40 from rfl]
     refine WP.mono (withRest_all [.r0, .r1] (c := .block entryThree) (Q := fun t => t.gpr .r0 = BitVec.ofNat 32
         (decide (1 ≤ (lo ||| (hi ^^^ 0x03000000)).toNat)).toNat ∧ t.mem = u.mem) ?_ (by rfl) (by rfl))
       fun w ⟨⟨w0, wm⟩, kw⟩ => ?_
@@ -683,7 +681,7 @@ theorem entry_ok {p : GenPublic} {o : State} (h : GenInput p o) :
       have rd : u.rd = o.rd := by rw [ku.rd, pushed_rd]
       unfold entryThree
       ffrun [u9, aT 48 (by decide), aT 52 (by decide), wr, rd, rT 48 (by decide), rT 52 (by decide), um, hlo, hhi,
-        enc3, show (1 : BitVec 32).toNat = 1 from rfl, carry, ↓reduceIte]
+        enc3, show (1 : BitVec 32).toNat = 1 from rfl, carry]
     refine WP.mono (k3 w ((kw.gpr .r5 (by decide)).trans u5) w0) fun t ⟨⟨t10, tm⟩, kt⟩ => ?_
     have k : Rest [.r0, .r1, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11] (pushed pushRegs o) t :=
       (ku.mono (by decide)).trans ((kw.mono (by decide)).trans (kt.mono (by decide)))
@@ -834,11 +832,11 @@ theorem clearAround_ok {p : GenPublic} {o s : State} {st : KeyProgress} (h : Gen
     fun u ⟨gu, zu, fu, ku⟩ => ?_)
   · refine withRest_all [.r0, .r2, .lr] ?_ (by rfl) (by rfl)
     ffrun [List.cons_append, List.nil_append, h.r4, h.r5, BitVec.add_zero, shl32 p.L 2 (by omega_using [hv]),
-      show p.L * 2 ^ 2 = 4 * p.L by omega_using [], ↓reduceIte]
+      show p.L * 2 ^ 2 = 4 * p.L by omega_using []]
   refine WP.mono (zeros_ok gu (d := 5 * p.L) (n := 4 * p.L) (by omega_using [hv]) (by omega_using []) ?_) fun t ⟨gt, zt, ft, kt⟩ => ?_
   · refine withRest_all [.r0, .r2, .lr] ?_ (by rfl) (by rfl)
     ffrun [List.cons_append, List.nil_append, gu.r4, gu.r5, shl32 p.L 2 (by omega_using [hv]), show p.L * 2 ^ 2 = 4 * p.L by omega_using [], BitVec.add_assoc,
-      add_ofNat32, show 4 * p.L + p.L = 5 * p.L by omega_using [], ↓reduceIte]
+      add_ofNat32, show 4 * p.L + p.L = 5 * p.L by omega_using []]
   have hd (a n : Nat) (ha : a + n ≤ 9 * p.L) (hsep : a + n ≤ 5 * p.L ∨ 9 * p.L ≤ a) :
       ∀ r ∈ [kRegion p (5 * p.L) (4 * p.L)], (⟨State.addr p.kp + BitVec.ofNat 64 a, n⟩ : Region).Disjoint r := by
     intro r hr; obtain rfl := List.mem_singleton.mp hr
@@ -865,7 +863,7 @@ theorem clearAll_ok {p : GenPublic} {o s : State} {used : Nat} {st : KeyProgress
   refine WP.mono (zeros_ok h (d := 0) (n := 9 * p.L) (by omega_using [hv]) (by omega_using []) ?_) fun t ⟨gt, zt, ft, kt⟩ =>
     ⟨gt, by rw [kp_zero (State.addr p.kp)]; exact zt, ft, kt⟩
   refine withRest_all [.r0, .r2, .lr] ?_ (by rfl) (by rfl)
-  ffrun [List.cons_append, List.nil_append, h.r4, h.r5, BitVec.add_zero, shl32 p.L 3 (by omega_using [hv]), add_ofNat32, show p.L * 2 ^ 3 + p.L = 9 * p.L by omega_using [], ↓reduceIte]
+  ffrun [List.cons_append, List.nil_append, h.r4, h.r5, BitVec.add_zero, shl32 p.L 3 (by omega_using [hv]), add_ofNat32, show p.L * 2 ^ 3 + p.L = 9 * p.L by omega_using []]
 
 end VG.Proof.RsaKeyGen.Arm.Generate
 
@@ -1032,7 +1030,7 @@ theorem searchRegs_ok (h : GenFrame p o used st s) {u : State} (hlr : u.gpr .lr 
   unfold searchRegs SearchRegs callArgs writeSlots
   ffrun [hlr, h4, h5, h6, h9, hrd, hwr, h.S2_keep (d := 4) (by decide) (e := 32) (w := 32) (by decide),
     h.slotS2 (d := 4) (by decide), h.slotS2 (d := 8) (by decide), S2_wr p o, aT, hT, hph,
-    shl32 p.L 2 (by omega_using [hv]), mul_ofNat32, show p.L * 2 ^ 2 = 4 * p.L by omega_using [], ↓reduceIte]
+    shl32 p.L 2 (by omega_using [hv]), mul_ofNat32, show p.L * 2 ^ 2 = 4 * p.L by omega_using []]
   refine ⟨⟨by rw [BitVec.add_assoc, add_ofNat32, outOf, Nat.add_mul], rfl⟩, ?_⟩
   simp only [List.drop_succ_cons, List.drop_zero, List.foldl_cons, List.foldl_nil, Nat.reduceMul, plenOf]
 
@@ -1092,7 +1090,7 @@ theorem randPtr_ok (h : GenFrame p o used st s) {u : State} (hlr : u.gpr .lr = p
   have hR : p.randLen < 2 ^ 32 := by
     have := h.facts.randLen; have hv := h.facts.valid; unfold primeLenValid at hv; unfold primeEntropy at *; omega_using [this, hv]
   unfold randPtr
-  ffrun [hlr, h7, h8, hrd, hwr, a0, ar, hargs, h.randLen_arg, ↓reduceIte]
+  ffrun [hlr, h7, h8, hrd, hwr, a0, ar, hargs, h.randLen_arg]
   have hpu := ptr_value hR h.used_le
   rw [usedPtr, ← hpu]
   exact congrArg (fun x => p.rp + x * BitVec.ofNat 32 used) (carry32 _)
@@ -1115,7 +1113,7 @@ theorem searchStack_ok (h : GenFrame p o used st s) {u : State} (hlr : u.gpr .lr
     (Q := fun t => t.mem = u.mem.writeW (off (State.addr p.S2) 0) (BitVec.ofNat 32 8)) ?_ (by rfl) (by rfl))
     fun u1 ⟨hm1, k1⟩ => ?_)
   · unfold stackHead
-    ffrun [hlr, hwr, h.slotS2 (d := 0) (by decide), S2_wr p o, show (8 : BitVec 32) = 8#32 from rfl, ↓reduceIte]
+    ffrun [hlr, hwr, h.slotS2 (d := 0) (by decide), S2_wr p o, show (8 : BitVec 32) = 8#32 from rfl]
   have hargs1 : ∀ j < 4, u1.mem.readW (stackArgAddr o j) 32 = stackArg o j := fun j hj => by
     rw [hm1, h.S2_keepA (by decide) hj, hargs j hj]
   refine WP.block_append (WP.mono (h.randPtr_ok ((k1.gpr .lr (by decide)).trans hlr)
@@ -1138,7 +1136,7 @@ theorem searchStack_ok (h : GenFrame p o used st s) {u : State} (hlr : u.gpr .lr
       h.slotS2 (d := 16) (by decide), h.slotS2 (d := 20) (by decide), h.slotS2 (d := 24) (by decide),
       h.slotS2 (d := 28) (by decide), S2_wr p o, ar, h.S2_keepA, hargs2, h.randLen_arg, h.scr_arg,
       h.scrLen_arg, List.take_succ_cons, List.take_zero, List.drop_succ_cons, List.drop_zero, List.foldl_cons,
-      List.foldl_nil, ↓reduceIte]
+      List.foldl_nil]
   · rw [hmt, hm2, hm1]
     simp only [callArgs, writeSlots, List.take_succ_cons, List.take_zero, List.drop_succ_cons, List.drop_zero,
       List.foldl_cons, List.foldl_nil, Nat.reduceMul]
@@ -1164,7 +1162,7 @@ theorem searchArgs_ok (h : GenFrame p o used st s) :
   unfold searchArgs
   rw [show ∀ (i : Instr) (l : List Instr), i :: l = [i] ++ l from fun _ _ => rfl]
   refine WP.block_append (WP.mono (withRest_all [.lr] (c := .block [.addSp .lr 0])
-    (Q := fun t => t.gpr .lr = p.S2 ∧ t.mem = s.mem) (by ffrun [hsp, am, BitVec.add_zero, ↓reduceIte]) (by rfl) (by rfl))
+    (Q := fun t => t.gpr .lr = p.S2 ∧ t.mem = s.mem) (by ffrun [hsp, am, BitVec.add_zero]) (by rfl) (by rfl))
     fun u0 ⟨⟨hlr, hm0⟩, k0⟩ => ?_)
   have g (r : Reg) (hr : r ≠ .lr) : u0.gpr r = s.gpr r := (k0.gpr r (by simp [hr])).trans (ag ▸ rfl)
   have hargs : ∀ j < 4, u0.mem.readW (stackArgAddr o j) 32 = stackArg o j := fun j hj => by
@@ -1912,7 +1910,7 @@ theorem keyArgs_ok (h : GenFrame p o used st s) :
     fun u1 ⟨⟨r0, r1, r2, r3, r12, hlr, hm1⟩, k1⟩ => ?_)
   · unfold keyRegs
     ffrun [List.cons_append, List.nil_append, hsp, ag, am, h.r4, h.r5, BitVec.add_zero, shl32 p.L 1 (by omega_using [hv]), kadd,
-      show p.L * 2 ^ 1 = 2 * p.L by omega_using [], show 2 * p.L + 2 * p.L = 4 * p.L by omega_using [], ↓reduceIte]
+      show p.L * 2 ^ 1 = 2 * p.L by omega_using [], show 2 * p.L + 2 * p.L = 4 * p.L by omega_using []]
   have u5 : u1.gpr .r5 = BitVec.ofNat 32 p.L := (k1.gpr .r5 (by decide)).trans (ag ▸ h.r5)
   have u9 : u1.gpr .r9 = p.stp := (k1.gpr .r9 (by decide)).trans (ag ▸ h.r9)
   have usp : u1.sp = p.S3 := k1.sp.trans hsp
@@ -1929,7 +1927,7 @@ theorem keyArgs_ok (h : GenFrame p o used st s) :
     ffrun [hlr, r12, u5, uwr, h.slotS3 (d := 0) (by decide), h.slotS3 (d := 4) (by decide),
       h.slotS3 (d := 8) (by decide), h.slotS3 (d := 12) (by decide), h.slotS3 (d := 16) (by decide),
       h.slotS3 (d := 20) (by decide), S3_wr p o, kadd, List.foldl_cons, List.foldl_nil,
-      show 4 * p.L + p.L = 5 * p.L by omega_using [], show 5 * p.L + p.L = 6 * p.L by omega_using [], ↓reduceIte]
+      show 4 * p.L + p.L = 5 * p.L by omega_using [], show 5 * p.L + p.L = 6 * p.L by omega_using []]
   have v5 := (k2.gpr .r5 (by decide)).trans u5
   have vlr := (k2.gpr .lr (by decide)).trans hlr
   -- dQ and qInv
@@ -1939,7 +1937,7 @@ theorem keyArgs_ok (h : GenFrame p o used st s) :
   · unfold keyCrt keyVals2 writeSlots
     ffrun [vlr, r12', v5, k2.wr.trans uwr, h.slotS3 (d := 24) (by decide), h.slotS3 (d := 28) (by decide),
       h.slotS3 (d := 32) (by decide), h.slotS3 (d := 36) (by decide), S3_wr p o, kadd, List.foldl_cons,
-      List.foldl_nil, show 6 * p.L + p.L = 7 * p.L by omega_using [], show 7 * p.L + p.L = 8 * p.L by omega_using [], ↓reduceIte]
+      List.foldl_nil, show 6 * p.L + p.L = 7 * p.L by omega_using [], show 7 * p.L + p.L = 8 * p.L by omega_using []]
   have hargs3 : ∀ j < 4, u3.mem.readW (stackArgAddr o j) 32 = stackArg o j := fun j hj => by
     rw [hm3, hm2]
     simp only [keyVals1, keyVals2, writeSlots, List.foldl_cons, List.foldl_nil, Nat.reduceMul]
@@ -1957,7 +1955,7 @@ theorem keyArgs_ok (h : GenFrame p o used st s) :
       k23.rd.trans urd, k23.wr.trans uwr, a1, a2, aT, h.slotS3 (d := 40) (by decide),
       h.slotS3 (d := 44) (by decide), h.slotS3 (d := 48) (by decide), h.slotS3 (d := 52) (by decide),
       S3_wr p o, ar, h.S3_keepA, hargs3, h.scr_arg, h.scrLen_arg, List.foldl_cons, List.foldl_nil,
-      show (8 : BitVec 32) = 8#32 from rfl, show (48 : BitVec 32) = 48#32 from rfl, ↓reduceIte]
+      show (8 : BitVec 32) = 8#32 from rfl, show (48 : BitVec 32) = 48#32 from rfl]
   have k : Rest [.r12] u1 t := k23.trans kt
   refine ⟨⟨(k.gpr .r0 (by decide)).trans r0, (k.gpr .r1 (by decide)).trans r1, (k.gpr .r2 (by decide)).trans r2,
     (k.gpr .r3 (by decide)).trans r3, k.sp.trans usp, k.rd.trans urd, k.wr.trans uwr, ?_⟩,
@@ -2523,7 +2521,7 @@ theorem nextPrime_ok (h : GenFrame p o used st s) (ph : KeyPhase) :
   have enc : encodable (BitVec.ofNat 32 (phaseWord ph)) = true := by cases ph <;> simp only [phaseWord] <;> decide
   ffrun [enc, w0, h.r9, h.r10, aT 4 (by decide), aT 32 (by decide), aT 36 (by decide), BitVec.add_zero,
     h.state_wr hw (u := s) (d := 4) (by decide), h.state_wr hw (u := s) (d := 32) (by decide),
-    h.state_wr hw (u := s) (d := 36) (by decide), show (0 : BitVec 32) = 0#32 from rfl, ↓reduceIte]
+    h.state_wr hw (u := s) (d := 36) (by decide), show (0 : BitVec 32) = 0#32 from rfl]
   done
 
 end GenFrame
@@ -2692,7 +2690,7 @@ theorem after_head {final : KeySearchResult} (hl : GenLive p o used st s)
       u.gpr .r12 = BitVec.ofNat 32 (rOf p o used st).used ∧
       u.gpr .r8 = BitVec.ofNat 32 (used + (rOf p o used st).used) ∧ u.mem = t.mem) ?_ (by rfl) (by rfl))
     fun u ⟨⟨he, h12, h8, hm⟩, k⟩ => ⟨he, (k.gpr .r0 (by decide)).trans h0, h12, ?_⟩
-  · ffrun [hf.r6, hf.r8, h0, hU, hu32, BitVec.add_zero, add_ofNat32, ↓reduceIte]
+  · ffrun [hf.r6, hf.r8, h0, hU, hu32, BitVec.add_zero, add_ofNat32]
     exact congrArg some (Search.sub_eq_beq hs32 (by decide))
   -- the key's buffer
   have kept {d n : Nat} (hdn : d + n ≤ 9 * p.L) (hO : (kRegion p d n).Disjoint (rO p st)) :=
@@ -2817,7 +2815,7 @@ theorem finishWith_ok (h : GenFrame p o used st s) {status : Nat} (hs : status <
   ffrun [enc, h.r9, aT 32 (by decide), aT 36 (by decide), aT 40 (by decide), aT 44 (by decide),
     h.state_wr hw (u := s) (d := 32) (by decide), h.state_wr hw (u := s) (d := 36) (by decide),
     h.state_wr hw (u := s) (d := 40) (by decide), h.state_wr hw (u := s) (d := 44) (by decide),
-    show (0 : BitVec 32) = 0#32 from rfl, ↓reduceIte]
+    show (0 : BitVec 32) = 0#32 from rfl]
 
 /-- The end of the key search with `final`. -/
 theorem finish_done (h : GenFrame p o used st s) {final : KeySearchResult} {status : Nat} (hstat : status < 4)
@@ -3197,7 +3195,7 @@ theorem decLeft_ok (h : GenFrame p o used st s) (hl : 1 ≤ st.left) :
   ffrun [h.r9, aT 40 (by decide), aT 44 (by decide), hrd 40 (by decide), hrd 44 (by decide), h.left_lo, h.left_hi,
     h.state_wr hw (u := s) (d := 40) (by decide), h.state_wr hw (u := s) (d := 44) (by decide),
     show (1 : BitVec 32) = 1#32 from rfl, carry, dec_lo hl, dec_hi hl h.state.left_lt,
-    show ∀ (t : State) a b, (subFlags t a b).wr = t.wr from fun _ _ _ => rfl, ↓reduceIte]
+    show ∀ (t : State) a b, (subFlags t a b).wr = t.wr from fun _ _ _ => rfl]
   refine congrArg (fun v => (s.mem.writeW (off p.st 40) (BitVec.ofNat 32 ((st.left - 1) % 2 ^ 32))).writeW
     (off p.st 44) v) ?_
   rw [← dec_hi hl h.state.left_lt]
@@ -3213,7 +3211,7 @@ theorem gen_flag (h : GenFrame p o used st s) :
     VG.Arm.addr_add (by have := h.facts.nT; omega_using [hd, this])
   have hrd (d : Nat) (hd : d + 4 ≤ 56) : InRegions (s.rd ++ s.wr) (off p.st d) 4 := h.state_rd hw hd
   ffrun [h.r9, aT 40 (by decide), aT 44 (by decide), hrd 40 (by decide), hrd 44 (by decide), h.left_lo, h.left_hi,
-    show ∀ (t : State) a b, (subFlags t a b).wr = t.wr from fun _ _ _ => rfl, ↓reduceIte]
+    show ∀ (t : State) a b, (subFlags t a b).wr = t.wr from fun _ _ _ => rfl]
   exact congrArg some ((congrArg (fun c => (c ||| BitVec.ofNat 32 (st.left / 2 ^ 32)) - 0 == 0) (carry32 _)).trans
     (left_flag h.state.left_lt))
 
@@ -3406,7 +3404,7 @@ theorem accepted_ok (name : String) {kc : Prog isa}
   refine WP.seq (WP.mono (withRest_all [.r12] (c := .block [.ldr .r12 .r9 32, .cmp .r12 (.imm 0)])
     (Q := fun t => isa.eval .eq t = some (decide (phaseWord st.phase = 0)) ∧ t.mem = u.mem) ?_ (by rfl) (by rfl))
     fun v ⟨⟨he, hvm⟩, kv⟩ => ?_)
-  · ffrun [h.r9, aT, h.state_rd hw (u := u) (d := 32) (by decide), low_half h.state.phase, ↓reduceIte]
+  · ffrun [h.r9, aT, h.state_rd hw (u := u) (d := 32) (by decide), low_half h.state.phase]
     exact congrArg some (Search.sub_eq_beq (by omega_using [hp1]) (by decide))
   have hv' := hm.keep kv hvm
   refine WP.ite _ he (fun z => ?_) (fun z => ?_)
@@ -3587,7 +3585,7 @@ theorem results_ok (hd : GenDone p o final s) :
   have w0 : InRegions s.wr (State.addr p.up) 4 := by
     have := wU 0 (by decide); simpa only [off, BitVec.add_zero] using this
   unfold results
-  ffrun [h.r6, h.r8, h11, aU, wU 4 (by decide), w0, BitVec.add_zero, show (0 : BitVec 32) = 0#32 from rfl, ↓reduceIte]
+  ffrun [h.r6, h.r8, h11, aU, wU 4 (by decide), w0, BitVec.add_zero, show (0 : BitVec 32) = 0#32 from rfl]
 
 /-- The callee-saved registers but `r4`, from the frame. -/
 theorem restore_ok (h : GenFrame p o used st s) :
@@ -3610,7 +3608,7 @@ theorem restore_ok (h : GenFrame p o used st s) :
     a 28 (by decide), a 36 (by decide), r 4 (by decide), r 8 (by decide), r 12 (by decide), r 16 (by decide),
     r 20 (by decide), r 24 (by decide), r 28 (by decide), r 36 (by decide),
     v (.r5, 4) (by simp), v (.r6, 8) (by simp), v (.r7, 12) (by simp), v (.r8, 16) (by simp), v (.r9, 20) (by simp),
-    v (.r10, 24) (by simp), v (.r11, 28) (by simp), v (.lr, 36) (by simp), ↓reduceIte]
+    v (.r10, 24) (by simp), v (.r11, 28) (by simp), v (.lr, 36) (by simp)]
   intro q hq
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hq
   rcases hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> rfl
