@@ -13,12 +13,12 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ffdh.Contract
 import VerifiedGarbage.Proof.MillerRabin.RISCV64.Search.Sieve
+import VerifiedGarbage.Proof.MillerRabin.RISCV64.Core
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Ffdh.Domain
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Search
 
 /-!
 # An FFDH parameter candidate on RISC-V: the contract, the invariant and a modulus's working space
@@ -45,8 +45,7 @@ namespace VG.Proof.Ffdh.RISCV64.ParameterCandidate
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Ffdh.RISCV64.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.RISCV64
-open VG.Impl.MillerRabin.RISCV64.Search VG.Impl.Ffdh.RISCV64.Search
-open VG.Proof.Ffdh.RISCV64.Search (rw_self frm_writeW)
+open VG.Impl.MillerRabin.RISCV64.Search
 open VG.Spec.Ffdh
 open VG.Spec.Rsa (bytesAt wordsAt i2osp)
 
@@ -339,6 +338,13 @@ theorem rw_off (m : Mem) (B : Addr) {a b : Nat} (v : BitVec 64) (hab : a + 8 ≤
   Mem.readW_writeW_sep (Offset.sep B (d := b) (e := a) (by simp only [Nat.reduceDiv]; omega) (by omega) (by omega))
     (by decide)
 
+/-- A store at a covered offset keeps a change within the ranges. -/
+theorem frm_writeW {B : Addr} {rs : List (Nat × Nat)} {m m' : Mem} (h : Frm B rs m m') {a : Nat} (v : BitVec 64)
+    (ha : ∃ r ∈ rs, r.1 ≤ a ∧ a + 8 ≤ r.1 + r.2) (ha' : a + 8 ≤ 2 ^ 64) :
+    Frm B rs m (m'.writeW (B + BitVec.ofNat 64 a) v) :=
+  h.trans ((Frm.of_outside (rs := [(a, 8)]) (writeW_outside m' B (d := a) v ha') (List.mem_singleton_self _)).widen
+    fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact ha)
+
 /-! ## A modulus's working space -/
 
 /-- The working space of a modulus of `mb` bits: `w = ⌈mb / 64⌉`. -/
@@ -429,7 +435,7 @@ theorem phaseTail_ok {p : PP} {s : State} (h : St p s) {mb : Nat} (h3 : s.gpr .t
   have ek : (BitVec.ofNat 64 mb + BitVec.ofNat 64 7) >>> 3 = BitVec.ofNat 64 ((mb + 7) / 8) :=
     add_shr _ _ _ (by omega_arith)
   have e5 : BitVec.ofNat 64 (wOf mb) <<< 3 + BitVec.ofNat 64 16 = BitVec.ofNat 64 (8 * (wOf mb + 2)) := by
-    rw [VG.Proof.Ffdh.RISCV64.Search.shl3_ofNat, BitVec.ofNat_add_ofNat]; congr 1
+    rw [VG.Proof.MillerRabin.RISCV64.shl3_ofNat, BitVec.ofNat_add_ofNat]; congr 1
   brun [h.s6, h3, BitVec.add_zero,
     h.st (d := 248) (by decide), h.al (d := 248) (by decide) (by decide),
     h.st (d := 216) (by decide), h.al (d := 216) (by decide) (by decide),
@@ -446,11 +452,11 @@ theorem phaseTail_ok {p : PP} {s : State} (h : St p s) {mb : Nat} (h3 : s.gpr .t
     h.st (d := 168) (by decide), h.al (d := 168) (by decide) (by decide), ew, ek, e5,
     exec_li (show imm12 128 by decide), checks_eq hm]
   refine ⟨by simp [off, slot, hdrBytes], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  any_goals simp (disch := decide) only [word, off, rw_off, rw_self]
+  any_goals simp (disch := decide) only [word, off, rw_off, Mem.readW_writeW_self64]
   · intro j hj
     rcases j with _ | _ | _ | _ | _ | _ | _ | _ | j
     all_goals first
-      | (simp (disch := decide) only [rw_off, rw_self, Nat.reduceMul, Nat.reduceAdd, VG.Proof.Mont.off, slot,
+      | (simp (disch := decide) only [rw_off, Mem.readW_writeW_self64, Nat.reduceMul, Nat.reduceAdd, VG.Proof.Mont.off, slot,
            hdrBytes]
          congr 2; omega_arith)
       | omega_arith
@@ -536,7 +542,7 @@ theorem topMask_ok {p : PP} {s : State} (h : St p s) {mb : Nat}
     · simp only [sth, hTop]
       brun [(kt.gpr (by decide)).trans h.s6, hst, hal]
     · show (t'.mem).readW (p.B + BitVec.ofNat 64 192) 64 = _
-      rw [e, rw_self, t5]
+      rw [e, Mem.readW_writeW_self64, t5]
     · rw [e, ← tm]; exact (frm_writeW (Frm.refl _ _ _) _ (by decide) (by decide))
 
 theorem phRanges_mut (n : Nat) : ∀ r ∈ phRanges ++ [(8 * hTop, 8)], InMut n r := by

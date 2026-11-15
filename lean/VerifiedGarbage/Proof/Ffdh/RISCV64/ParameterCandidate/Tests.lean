@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Ffdh.ParameterCandidate.Shape
 import VerifiedGarbage.Proof.Mont.RangeCover
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Search
 
 /-!
 # An FFDH parameter candidate on RISC-V: the tests
@@ -37,9 +36,8 @@ variable {C : Nat}
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Ffdh.RISCV64.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.RISCV64
 open VG.RISCV64.Steps (eval_zero eval_nonzero eval_zero_ofNat eval_nonzero_ofNat)
-open VG.Impl.MillerRabin.RISCV64 VG.Impl.MillerRabin.RISCV64.Search VG.Impl.Ffdh.RISCV64.Search
+open VG.Impl.MillerRabin.RISCV64 VG.Impl.MillerRabin.RISCV64.Search
 open VG.Proof.MillerRabin.RISCV64 (Env A MCtx RoundImpl)
-open VG.Proof.Ffdh.RISCV64.Search (rw_self frm_writeW)
 open VG.Proof.Ffdh.ParameterCandidate (checkWitnesses drawWitness_eq onPass sievedTests)
 
 /-! ## The witnesses, one draw at a time -/
@@ -179,7 +177,7 @@ theorem mrHead_ok {R : RoundImpl} (hR : RoundCall R) {p : PP} {mb N : Nat} {res 
       rw [List.mem_singleton] at hr; subst hr; exact Or.inl ⟨by simp, rfl⟩
     refine ⟨h.m.frm hf hfr kt' (tsp.trans sp12) (by decide) (kt'.gpr (by decide)) (kt'.gpr (by decide))
       (kt'.gpr (by decide)) (kt'.gpr (by decide)), Or.inl ⟨hr, ?_⟩⟩
-    simp only [word, off]; rw [tm, rw_self]
+    simp only [word, off]; rw [tm, Mem.readW_writeW_self64]
   · -- A draw.
     have hr : u + (mb + 7) / 8 ≤ p.r.length := by
       by_contra hc; simp only [decide_eq_false_iff_not, Decidable.not_not] at hb
@@ -300,9 +298,9 @@ theorem mrInit_ok {p : PP} {mb N u : Nat} {s : State} (h : MSt p mb N C s)
       rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]
     exact hu
   have t160 : word t.mem p.B 160 = BitVec.ofNat 64 4 := by
-    simp only [word, off]; rw [tm, rw_self]
+    simp only [word, off]; rw [tm, Mem.readW_writeW_self64]
   have t176 : word t.mem p.B 176 = BitVec.ofNat 64 0 := by
-    simp only [word, off]; rw [tm, rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), rw_self]
+    simp only [word, off]; rw [tm, rw_off _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), Mem.readW_writeW_self64]
   have hK : 0 < C := h.ph.k1
   exact ⟨M, t152, t176, t160, hul, hK, by rw [Nat.sub_zero]⟩
 
@@ -351,7 +349,7 @@ theorem montPrep_mst {p : PP} {mb N : Nat} {s : State} (h : St p s) (hp : Ph p m
   have env : Env s p.B (8 * p.n) (wOf mb) := ⟨h.scr, hp.a7, hp.s5, hp.t0, h.s6, by omega_arith, hw128,
     by simp only [PP.Z] at hZ; omega_arith⟩
   have harr : A s.mem p.B (wOf mb) 0 = N := by rw [A, Pre.wordsVal_eq_wv]; exact hn
-  refine WP.mono (WP.rdwr (VG.Proof.Ffdh.RISCV64.Search.montPrep_ok env harr hodd hN3))
+  refine WP.mono (WP.rdwr (VG.Proof.MillerRabin.RISCV64.Search.montPrep_ok env harr hodd hN3))
     fun t ⟨⟨⟨envt, nt, inv, it1, r1, r9, r10, e, l, outs⟩, k⟩, _, _, tsp⟩ => ?_
   have fo : Frm p.B (VG.Proof.MillerRabin.RISCV64.Search.mpRanges (wOf mb)) s.mem t.mem := outs
   have hf : Frm p.B (mutR p.n) s.mem t.mem := Frm.toMut fo fun r hr => by
@@ -513,7 +511,7 @@ theorem TCPre.setChecks {C' : Nat} {p : PP} {mb N u : Nat} {s t : State} (h : TC
     (ew _ (by simp only [hW]; omega_arith) (by simp only [hW]; omega_arith)).trans hp.wW,
     (ew _ (by simp only [hStride]; omega_arith) (by simp only [hStride]; omega_arith)).trans hp.strideW,
     fun j hj => (ew _ (by omega_arith) (by omega_arith)).trans (hp.arrW j hj),
-    by show t.mem.readW (p.B + BitVec.ofNat 64 168) 64 = _; rw [hm, rw_self], c1, c2,
+    by show t.mem.readW (p.B + BitVec.ofNat 64 168) 64 = _; rw [hm, Mem.readW_writeW_self64], c1, c2,
     (ew _ (by simp only [hTop]; omega_arith) (by simp only [hTop]; omega_arith)).trans hp.topW⟩
   refine ⟨st, ph, h.mb1, h.mb2, ?_, h.bl, h.odd, h.n3, (ew 152 (by decide) (by decide)).trans h.used, h.ul⟩
   have hb2 := h.st.dims.b2

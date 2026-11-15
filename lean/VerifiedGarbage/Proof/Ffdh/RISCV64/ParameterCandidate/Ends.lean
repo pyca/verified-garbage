@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.Bignum.RISCV64.PreLoad
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubMid
 import VerifiedGarbage.Proof.Bignum.RISCV64.PubOut
 import VerifiedGarbage.Proof.MillerRabin.RISCV64.Search.Sieve
+import VerifiedGarbage.Proof.MillerRabin.RISCV64.Core
 import VerifiedGarbage.Proof.Bignum.CrtFrame
 import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Rsa.BytesFrame
@@ -13,7 +14,6 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Search
 
 -- separate module: the entry, the end and the exit, whose symbolic executions the tests' changes need not re-check
 
@@ -34,8 +34,8 @@ namespace VG.Proof.Ffdh.RISCV64.ParameterCandidate
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Ffdh.RISCV64.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.RISCV64
-open VG.Impl.MillerRabin.RISCV64.Search VG.Impl.Ffdh.RISCV64.Search
-open VG.Proof.Ffdh.RISCV64.Search (rw_self frm_writeW shl3_ofNat)
+open VG.Impl.MillerRabin.RISCV64.Search
+open VG.Proof.MillerRabin.RISCV64 (shl3_ofNat)
 
 /-! ## The entry -/
 
@@ -77,7 +77,7 @@ theorem save_step {B : Addr} {n : Nat} {s₀ : State} (h4 : s₀.gpr .t4 = off B
   · simp only [word, off]
     rw [rw_off _ _ _ (by omega) (by omega) (by omega)]
     exact h.saved i hi
-  · simp only [word, off]; rw [rw_self, h.gpr]
+  · simp only [word, off]; rw [Mem.readW_writeW_self64, h.gpr]
 
 theorem map_flatMap {α β : Type} (g : α → β) (l : List α) : l.map g = l.flatMap fun i => [g i] := by
   induction l with
@@ -124,7 +124,7 @@ theorem hdrW_words (m : Mem) (B : Addr) (t3 a0 a1 a2 a3 a4 a5 a6 : BitVec 64) :
     let h := hdrW m B t3 a0 a1 a2 a3 a4 a5 a6
     word h B 0 = t3 ∧ word h B 16 = a0 ∧ word h B 24 = a1 ∧ word h B 152 = a1 ∧ word h B 32 = a2 ∧
       word h B 40 = a3 ∧ word h B 128 = a4 ∧ word h B 136 = a5 ∧ word h B 144 = a6 := by
-  simp (disch := decide) only [hdrW, word, off, rw_off, rw_self, and_self]
+  simp (disch := decide) only [hdrW, word, off, rw_off, Mem.readW_writeW_self64, and_self]
 
 theorem hdrW_frm (m : Mem) (B : Addr) (t3 a0 a1 a2 a3 a4 a5 a6 : BitVec 64) :
     Frm B [(0, 256)] m (hdrW m B t3 a0 a1 a2 a3 a4 a5 a6) := by

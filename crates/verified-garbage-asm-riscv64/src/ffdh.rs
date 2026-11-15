@@ -5894,7 +5894,3 @@ pub(crate) mod vg_ffdh_generate_key_cached;
 #[rustfmt::skip]
 #[path = "internal/vg_ffdh_parameter_candidate_sieved.rs"]
 pub(crate) mod vg_ffdh_parameter_candidate_sieved;
-
-#[rustfmt::skip]
-#[path = "internal/vg_miller_rabin_round.rs"]
-pub(crate) mod vg_miller_rabin_round;

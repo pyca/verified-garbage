@@ -12,7 +12,6 @@ import VerifiedGarbage.Proof.Framework.Mem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Search
 
 /-!
 # An FFDH parameter candidate on RISC-V: RSA's trial division
@@ -32,8 +31,7 @@ namespace VG.Proof.Ffdh.RISCV64.ParameterCandidate
 
 open VG VG.RISCV64 VG.RISCV64.RegUpd VG.Impl.Bignum VG.Impl.Bignum.RISCV64 VG.Impl.Ffdh.RISCV64.ParameterCandidate
 open VG.Proof.Bignum VG.Proof.Bignum.RISCV64
-open VG.Impl.MillerRabin.RISCV64.Search VG.Impl.Ffdh.RISCV64.Search
-open VG.Proof.Ffdh.RISCV64.Search (rw_self frm_writeW)
+open VG.Impl.MillerRabin.RISCV64.Search
 open VG.Impl.RsaKeyGen (TrialTable32.symbol TrialTable32.entry)
 
 /-! ## The entries tried -/
@@ -142,7 +140,7 @@ theorem MB.count {p : PP} {x : Nat} {B : Prop} {T : Addr} {s : State} (h : MB p 
         brun [h.st.s6, h.st.ld (d := 40) (by decide), h.st.al (d := 40) (by decide) (by decide),
           h.st.st (d := 208) (by decide), h.st.al (d := 208) (by decide) (by decide), h.st.args.bits',
           exec_li (show imm12 1024 by decide), trialCount_eq hb2])
-    (by rfl) (by rfl))) fun u ⟨⟨um, ku⟩, _, _, usp⟩ syu => ⟨?_, by rw [um, rw_self]⟩
+    (by rfl) (by rfl))) fun u ⟨⟨um, ku⟩, _, _, usp⟩ syu => ⟨?_, by rw [um, Mem.readW_writeW_self64]⟩
   have fu : Frm p.B [(208, 8)] s.mem u.mem := by
     rw [um]; exact frm_writeW (a := 208) (Frm.refl _ _ _) _ ⟨_, List.mem_singleton_self _, by decide, by decide⟩
       (by decide)
@@ -215,7 +213,7 @@ theorem MB.orBad {p : PP} {x : Nat} {B : Prop} {T : Addr} {u w : State} {n : Nat
     exact frm_writeW (Frm.refl _ _ _) _ ⟨(200, 8), by simp, by decide, by decide⟩ (by decide)
   have hbad : word t.mem p.B (8 * hBad) = 0#64 ↔ B ∧ VG.Proof.RsaKeyGen.trialPrefix x n = false := by
     show t.mem.readW (p.B + BitVec.ofNat 64 200) 64 = 0#64 ↔ _
-    rw [tm, rw_self, BitVec.or_eq_zero_iff, w4, ← h.bad]
+    rw [tm, Mem.readW_writeW_self64, BitVec.or_eq_zero_iff, w4, ← h.bad]
     refine and_congr Iff.rfl ?_
     cases VG.Proof.RsaKeyGen.trialPrefix x n <;> decide
   exact h.step (regs := ([.s9, .s10] ++ VG.Proof.RsaKeyGen.RISCV64.Trial.entryRegs) ++ [.t3]) fst

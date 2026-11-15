@@ -10,7 +10,6 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 import VerifiedGarbage.Proof.RsaKeyGen.TrialTable32
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Ffdh.Contract
-import VerifiedGarbage.Proof.Ffdh.RISCV64.Search
 
 /-!
 # An FFDH parameter candidate on RISC-V, verified for any round
@@ -30,8 +29,7 @@ namespace VG.Proof.Ffdh.RISCV64.ParameterCandidate
 
 open VG VG.RISCV64
 open VG.Impl.Ffdh.RISCV64.ParameterCandidate
-open VG.Impl.MillerRabin.RISCV64.Search (roundCall)
-open VG.Impl.Ffdh.RISCV64.Search (millerRabin draw round)
+open VG.Impl.MillerRabin.RISCV64.Search (roundCall millerRabin draw round)
 open VG.Proof.MillerRabin.RISCV64 (RoundImpl)
 
 theorem prep_to {s : State} {B : Addr} {L w c : Nat} (h : Prep s B L w c) :
@@ -48,7 +46,7 @@ theorem roundCall_spec (R : RoundImpl) : RoundCall R where
   ok := fun _ _ ⟨hp, ha, hac, hsp, h16, hd⟩ =>
     WP.mono (VG.Proof.MillerRabin.RISCV64.Search.roundCall_ok R (prep_to hp) ha hac h16 hsp hd) fun _ ht =>
       ⟨prep_of ht.prep, ht.a0, ht.keeps, ht.frame, ht.rd, ht.wr, ht.sp⟩
-  ct := (VG.Proof.Ffdh.RISCV64.Search.roundCall_ct R).mono
+  ct := (VG.Proof.MillerRabin.RISCV64.Search.roundCall_ct R).mono
     (fun _ _ ⟨d, ⟨p₁, a₁, c₁, sp₁, s₁, d₁⟩, ⟨p₂, a₂, c₂, sp₂, s₂, d₂⟩, hsp⟩ =>
       ⟨⟨d.B, d.L, d.w, d.c, d.a⟩, ⟨prep_to p₁, a₁, c₁, s₁, sp₁, d₁⟩, ⟨prep_to p₂, a₂, c₂, s₂, sp₂, d₂⟩, hsp⟩)
     fun _ _ h => h
