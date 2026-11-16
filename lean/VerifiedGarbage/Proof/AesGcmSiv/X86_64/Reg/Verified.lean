@@ -204,4 +204,39 @@ theorem open_framed :
     (Proof.AesGcmSiv.openPost_local _) openFrameSat_pre (hleak := Proof.AesGcmSiv.openLeak_local _)
 
 
+/-! ## In the first implementation's frame
+
+The same code in a frame of 3848 bytes, of which it uses the working space's
+first 488, against the contracts with 3856 bytes of stack, as the first
+implementation's: to be chosen by the lengths with it. -/
+
+theorem sealFrameSat_preL : ∃ s, (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856).pre s := by
+  implies_sat [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, Proof.AesGcmSiv.sealRoundsPost,
+    X86_64.abi, X86_64.argRegs] [sealFrameSat, sealSat] using sealFrameSat
+
+theorem seal_framedL :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 Impl.AesGcmSiv.X86_64Reg.seal)
+      (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856) :=
+  X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
+    (n := 61) (pre := Spec.GcmSiv.sealPre X86_64.abi.ptrBits)
+    (post := Proof.AesGcmSiv.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (bytes := 3848) seal_verified (by decide) (by decide) (by decide)
+    seal_spSafe seal_xdepth (Proof.AesGcmSiv.sealPre_local _) (Proof.AesGcmSiv.sealPost_local _) sealFrameSat_preL
+
+theorem openFrameSat_preL : ∃ s, (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856).pre s := by
+  implies_sat [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost,
+    Spec.GcmSiv.openLeak, X86_64.abi, X86_64.argRegs] [openFrameSat, sealSat] using openFrameSat
+
+theorem open_framedL :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 Impl.AesGcmSiv.X86_64Reg.open)
+      (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856) :=
+  X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
+    (n := 61) (pre := Spec.GcmSiv.openPre X86_64.abi.ptrBits)
+    (post := Proof.AesGcmSiv.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
+    (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (bytes := 3848)
+    (Proof.AesGcmSiv.Verified.of_openScratch open_verified)
+    (by decide) (by decide) (by decide) open_spSafe open_xdepth (Proof.AesGcmSiv.openPre_local _)
+    (Proof.AesGcmSiv.openPost_local _) openFrameSat_preL (hleak := Proof.AesGcmSiv.openLeak_local _)
+
+
 end VG.Proof.AesGcmSivReg.X86_64
