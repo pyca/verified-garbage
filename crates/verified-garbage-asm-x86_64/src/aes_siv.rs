@@ -31,8 +31,8 @@ call {vg_cmac_aes_subkeys_vaes}
 call {vg_aes_expand_key_scratch_aesni}
 .base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjWQkWMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0Ux20iNZCSYxf5/RCRIxf5/RCQoxf5/RCQITIkcJEiNZCRoMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes_siv::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_cmac_aes_subkeys_vaes = sym super::aes_siv::vg_cmac_aes_subkeys_vaes::vg_cmac_aes_subkeys_vaes,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_cmac_aes_subkeys_vaes = sym super::cmac_aes::vg_cmac_aes_subkeys_vaes::vg_cmac_aes_subkeys_vaes,
     )
 }
 
@@ -64,8 +64,8 @@ call {vg_cmac_aes_subkeys_aesni}
 call {vg_aes_expand_key_scratch_aesni}
 .base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjWQkWGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNZCSY8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNZCRoMcAxyTHSMfYx/0UxwEUxyUUx0sM="
 .p2align 6"#,
-        vg_aes_expand_key_scratch_aesni = sym super::aes_siv::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_cmac_aes_subkeys_aesni = sym super::aes_siv::vg_cmac_aes_subkeys_aesni::vg_cmac_aes_subkeys_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_cmac_aes_subkeys_aesni = sym super::cmac_aes::vg_cmac_aes_subkeys_aesni::vg_cmac_aes_subkeys_aesni,
     )
 }
 
@@ -93,8 +93,8 @@ call {vg_cmac_aes_subkeys}
 call {vg_aes_expand_key_scratch}
 .base64 "SYudoAAAAEmLragAAABNi6WwAAAATYu1wAAAAE2LrbgAAABIjaQkCAoAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCTo9f//8w9/hCQICgAA8w9/hCT4CQAA8w9/hCToCQAA8w9/hCTYCQAA8w9/hCTICQAA8w9/hCS4CQAA8w9/hCSoCQAA8w9/hCSYCQAA8w9/hCSICQAA8w9/hCR4CQAA8w9/hCRoCQAA8w9/hCRYCQAA8w9/hCRICQAA8w9/hCQ4CQAA8w9/hCQoCQAA8w9/hCQYCQAA8w9/hCQICQAA8w9/hCT4CAAA8w9/hCToCAAA8w9/hCTYCAAA8w9/hCTICAAA8w9/hCS4CAAA8w9/hCSoCAAA8w9/hCSYCAAA8w9/hCSICAAA8w9/hCR4CAAA8w9/hCRoCAAA8w9/hCRYCAAA8w9/hCRICAAA8w9/hCQ4CAAA8w9/hCQoCAAA8w9/hCQYCAAA8w9/hCQICAAA8w9/hCT4BwAA8w9/hCToBwAA8w9/hCTYBwAA8w9/hCTIBwAA8w9/hCS4BwAA8w9/hCSoBwAA8w9/hCSYBwAA8w9/hCSIBwAA8w9/hCR4BwAA8w9/hCRoBwAA8w9/hCRYBwAA8w9/hCRIBwAA8w9/hCQ4BwAA8w9/hCQoBwAA8w9/hCQYBwAA8w9/hCQIBwAA8w9/hCT4BgAA8w9/hCToBgAA8w9/hCTYBgAA8w9/hCTIBgAA8w9/hCS4BgAA8w9/hCSoBgAA8w9/hCSYBgAA8w9/hCSIBgAA8w9/hCR4BgAA8w9/hCRoBgAA8w9/hCRYBgAA8w9/hCRIBgAA8w9/hCQ4BgAA8w9/hCQoBgAA8w9/hCQYBgAA8w9/hCQIBgAA8w9/hCT4BQAA8w9/hCToBQAA8w9/hCTYBQAA8w9/hCTIBQAA8w9/hCS4BQAA8w9/hCSoBQAA8w9/hCSYBQAA8w9/hCSIBQAA8w9/hCR4BQAA8w9/hCRoBQAA8w9/hCRYBQAA8w9/hCRIBQAA8w9/hCQ4BQAA8w9/hCQoBQAA8w9/hCQYBQAA8w9/hCQIBQAA8w9/hCT4BAAA8w9/hCToBAAA8w9/hCTYBAAA8w9/hCTIBAAA8w9/hCS4BAAA8w9/hCSoBAAA8w9/hCSYBAAA8w9/hCSIBAAA8w9/hCR4BAAA8w9/hCRoBAAA8w9/hCRYBAAA8w9/hCRIBAAA8w9/hCQ4BAAA8w9/hCQoBAAA8w9/hCQYBAAA8w9/hCQIBAAA8w9/hCT4AwAA8w9/hCToAwAA8w9/hCTYAwAA8w9/hCTIAwAA8w9/hCS4AwAA8w9/hCSoAwAA8w9/hCSYAwAA8w9/hCSIAwAA8w9/hCR4AwAA8w9/hCRoAwAA8w9/hCRYAwAA8w9/hCRIAwAA8w9/hCQ4AwAA8w9/hCQoAwAA8w9/hCQYAwAA8w9/hCQIAwAA8w9/hCT4AgAA8w9/hCToAgAA8w9/hCTYAgAA8w9/hCTIAgAA8w9/hCS4AgAA8w9/hCSoAgAA8w9/hCSYAgAA8w9/hCSIAgAA8w9/hCR4AgAA8w9/hCRoAgAA8w9/hCRYAgAA8w9/hCRIAgAA8w9/hCQ4AgAA8w9/hCQoAgAA8w9/hCQYAgAA8w9/hCQIAgAA8w9/hCT4AQAA8w9/hCToAQAA8w9/hCTYAQAA8w9/hCTIAQAA8w9/hCS4AQAA8w9/hCSoAQAA8w9/hCSYAQAA8w9/hCSIAQAA8w9/hCR4AQAA8w9/hCRoAQAA8w9/hCRYAQAA8w9/hCRIAQAA8w9/hCQ4AQAA8w9/hCQoAQAA8w9/hCQYAQAA8w9/hCQIAQAA8w9/hCT4AAAA8w9/hCToAAAA8w9/hCTYAAAA8w9/hCTIAAAA8w9/hCS4AAAA8w9/hCSoAAAA8w9/hCSYAAAA8w9/hCSIAAAA8w9/RCR48w9/RCRo8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNpCQYCgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
-        vg_aes_expand_key_scratch = sym super::aes_siv::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_cmac_aes_subkeys = sym super::aes_siv::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_cmac_aes_subkeys = sym super::cmac_aes::vg_cmac_aes_subkeys::vg_cmac_aes_subkeys,
     )
 }
 
@@ -204,9 +204,9 @@ jmp 218f
 218:
 .base64 "TYuv0AAAAE2Lt9gAAABJi5+gAAAASYuvqAAAAE2Lp7AAAABNi6+4AAAATYu3wAAAAE2Lv8gAAABIi0QkCEyLVCQQTYsaTIkYTYtaCEyJWAhIjaQkOAEAAMM="
 .p2align 6"#,
-        vg_cmac_aes_finalize_aesni = sym super::aes_siv::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
-        vg_cmac_aes_update_aesni = sym super::aes_siv::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
-        vg_aes_ctr32_aesni = sym super::aes_siv::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
+        vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -332,9 +332,9 @@ jmp 227f
 227:
 .base64 "SYuHkAAAAEmLn6AAAABJi6+oAAAATYunsAAAAE2Lr7gAAABNi7fAAAAATYu/yAAAAEiNpCQ4AQAAww=="
 .p2align 6"#,
-        vg_cmac_aes_finalize_aesni = sym super::aes_siv::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
-        vg_cmac_aes_update_aesni = sym super::aes_siv::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
-        vg_aes_ctr32_aesni = sym super::aes_siv::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
+        vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
+        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -442,9 +442,9 @@ jmp 218f
 218:
 .base64 "TYuv0AAAAE2Lt9gAAABJi5+gAAAASYuvqAAAAE2Lp7AAAABNi6+4AAAATYu3wAAAAE2Lv8gAAABIi0QkCEyLVCQQTYsaTIkYTYtaCEyJWAhIjaQkKAoAAGYP78BmD+/JZg/v0mYP79tmD+/kZg/v7WYP7/ZmD+//ZkUP78BmRQ/vyWZFD+/SZkUP79tmRQ/v5GZFD+/tZkUP7/ZmRQ/v/0Ux20iNpCTI9f//8w9/hCQoCgAA8w9/hCQYCgAA8w9/hCQICgAA8w9/hCT4CQAA8w9/hCToCQAA8w9/hCTYCQAA8w9/hCTICQAA8w9/hCS4CQAA8w9/hCSoCQAA8w9/hCSYCQAA8w9/hCSICQAA8w9/hCR4CQAA8w9/hCRoCQAA8w9/hCRYCQAA8w9/hCRICQAA8w9/hCQ4CQAA8w9/hCQoCQAA8w9/hCQYCQAA8w9/hCQICQAA8w9/hCT4CAAA8w9/hCToCAAA8w9/hCTYCAAA8w9/hCTICAAA8w9/hCS4CAAA8w9/hCSoCAAA8w9/hCSYCAAA8w9/hCSICAAA8w9/hCR4CAAA8w9/hCRoCAAA8w9/hCRYCAAA8w9/hCRICAAA8w9/hCQ4CAAA8w9/hCQoCAAA8w9/hCQYCAAA8w9/hCQICAAA8w9/hCT4BwAA8w9/hCToBwAA8w9/hCTYBwAA8w9/hCTIBwAA8w9/hCS4BwAA8w9/hCSoBwAA8w9/hCSYBwAA8w9/hCSIBwAA8w9/hCR4BwAA8w9/hCRoBwAA8w9/hCRYBwAA8w9/hCRIBwAA8w9/hCQ4BwAA8w9/hCQoBwAA8w9/hCQYBwAA8w9/hCQIBwAA8w9/hCT4BgAA8w9/hCToBgAA8w9/hCTYBgAA8w9/hCTIBgAA8w9/hCS4BgAA8w9/hCSoBgAA8w9/hCSYBgAA8w9/hCSIBgAA8w9/hCR4BgAA8w9/hCRoBgAA8w9/hCRYBgAA8w9/hCRIBgAA8w9/hCQ4BgAA8w9/hCQoBgAA8w9/hCQYBgAA8w9/hCQIBgAA8w9/hCT4BQAA8w9/hCToBQAA8w9/hCTYBQAA8w9/hCTIBQAA8w9/hCS4BQAA8w9/hCSoBQAA8w9/hCSYBQAA8w9/hCSIBQAA8w9/hCR4BQAA8w9/hCRoBQAA8w9/hCRYBQAA8w9/hCRIBQAA8w9/hCQ4BQAA8w9/hCQoBQAA8w9/hCQYBQAA8w9/hCQIBQAA8w9/hCT4BAAA8w9/hCToBAAA8w9/hCTYBAAA8w9/hCTIBAAA8w9/hCS4BAAA8w9/hCSoBAAA8w9/hCSYBAAA8w9/hCSIBAAA8w9/hCR4BAAA8w9/hCRoBAAA8w9/hCRYBAAA8w9/hCRIBAAA8w9/hCQ4BAAA8w9/hCQoBAAA8w9/hCQYBAAA8w9/hCQIBAAA8w9/hCT4AwAA8w9/hCToAwAA8w9/hCTYAwAA8w9/hCTIAwAA8w9/hCS4AwAA8w9/hCSoAwAA8w9/hCSYAwAA8w9/hCSIAwAA8w9/hCR4AwAA8w9/hCRoAwAA8w9/hCRYAwAA8w9/hCRIAwAA8w9/hCQ4AwAA8w9/hCQoAwAA8w9/hCQYAwAA8w9/hCQIAwAA8w9/hCT4AgAA8w9/hCToAgAA8w9/hCTYAgAA8w9/hCTIAgAA8w9/hCS4AgAA8w9/hCSoAgAA8w9/hCSYAgAA8w9/hCSIAgAA8w9/hCR4AgAA8w9/hCRoAgAA8w9/hCRYAgAA8w9/hCRIAgAA8w9/hCQ4AgAA8w9/hCQoAgAA8w9/hCQYAgAA8w9/hCQIAgAA8w9/hCT4AQAA8w9/hCToAQAA8w9/hCTYAQAA8w9/hCTIAQAA8w9/hCS4AQAA8w9/hCSoAQAA8w9/hCSYAQAA8w9/hCSIAQAA8w9/hCR4AQAA8w9/hCRoAQAA8w9/hCRYAQAA8w9/hCRIAQAA8w9/hCQ4AQAA8w9/hCQoAQAA8w9/hCQYAQAA8w9/hCQIAQAA8w9/hCT4AAAA8w9/hCToAAAA8w9/hCTYAAAA8w9/hCTIAAAA8w9/hCS4AAAA8w9/hCSoAAAA8w9/hCSYAAAA8w9/hCSIAAAA8w9/RCR48w9/RCRo8w9/RCRY8w9/RCRI8w9/RCQ48w9/RCQo8w9/RCQY8w9/RCQITIkcJEiNpCQ4CgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
-        vg_cmac_aes_finalize = sym super::aes_siv::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
-        vg_cmac_aes_update = sym super::aes_siv::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes_siv::vg_aes_ctr32::vg_aes_ctr32,
+        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
+        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -568,56 +568,8 @@ jmp 227f
 227:
 .base64 "SYuHkAAAAEmLn6AAAABJi6+oAAAATYunsAAAAE2Lr7gAAABNi7fAAAAATYu/yAAAAEiNpCQoCgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJMj1///zD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJDgKAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_cmac_aes_finalize = sym super::aes_siv::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
-        vg_cmac_aes_update = sym super::aes_siv::vg_cmac_aes_update::vg_cmac_aes_update,
-        vg_aes_ctr32 = sym super::aes_siv::vg_aes_ctr32::vg_aes_ctr32,
+        vg_cmac_aes_finalize = sym super::cmac_aes::vg_cmac_aes_finalize::vg_cmac_aes_finalize,
+        vg_cmac_aes_update = sym super::cmac_aes::vg_cmac_aes_update::vg_cmac_aes_update,
+        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_ctr32.rs"]
-pub(crate) mod vg_aes_ctr32;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_ctr32_aesni.rs"]
-pub(crate) mod vg_aes_ctr32_aesni;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_ctr32_vaes.rs"]
-pub(crate) mod vg_aes_ctr32_vaes;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_expand_key_scratch.rs"]
-pub(crate) mod vg_aes_expand_key_scratch;
-
-#[rustfmt::skip]
-#[path = "internal/vg_aes_expand_key_scratch_aesni.rs"]
-pub(crate) mod vg_aes_expand_key_scratch_aesni;
-
-#[rustfmt::skip]
-#[path = "internal/vg_cmac_aes_finalize.rs"]
-pub(crate) mod vg_cmac_aes_finalize;
-
-#[rustfmt::skip]
-#[path = "internal/vg_cmac_aes_finalize_aesni.rs"]
-pub(crate) mod vg_cmac_aes_finalize_aesni;
-
-#[rustfmt::skip]
-#[path = "internal/vg_cmac_aes_subkeys.rs"]
-pub(crate) mod vg_cmac_aes_subkeys;
-
-#[rustfmt::skip]
-#[path = "internal/vg_cmac_aes_subkeys_aesni.rs"]
-pub(crate) mod vg_cmac_aes_subkeys_aesni;
-
-#[rustfmt::skip]
-#[path = "internal/vg_cmac_aes_subkeys_vaes.rs"]
-pub(crate) mod vg_cmac_aes_subkeys_vaes;
-
-#[rustfmt::skip]
-#[path = "internal/vg_cmac_aes_update.rs"]
-pub(crate) mod vg_cmac_aes_update;
-
-#[rustfmt::skip]
-#[path = "internal/vg_cmac_aes_update_aesni.rs"]
-pub(crate) mod vg_cmac_aes_update_aesni;
