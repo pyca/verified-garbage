@@ -527,34 +527,49 @@ open VG VG.AArch64 VG.Proof.Dsa.AArch64 VG.Proof.Bignum.AArch64
 
 open VG.Impl.Dsa.AArch64 in
 /-- What the kernel evaluates of the eight entry points: that none writes the
-stack pointer, and the stack of those that call. One declaration states it
-of all of them, since the kernel remembers what it has evaluated only within
-a declaration, and they are built of the same code (the arithmetic they
-call, and most of what is around it). -/
+stack pointer, the stack of those that call, and that those that run under
+DIT do not touch it. One declaration states it of all of them, since the
+kernel remembers what it has evaluated only within a declaration, and they
+are built of the same code (the arithmetic they call, and most of what is
+around it). -/
 theorem checks :
     (([Prevalidated.validate Mont.calledProductEight.mm, Prevalidated.verify Mont.calledProductEight.mm,
       Generate.checkParameters Mont.calledProductEight.mm, Generate.deriveKey Mont.calledProductEight.mm,
       SignVerify.sign Mont.calledProductEight.mm, PrevalidatedSign.sign Mont.calledProductEight.mm,
       PrevalidatedSign.validate Mont.calledProductEight.mm,
       Generate.deriveChecked Mont.calledProductEight.mm].all fun c => c.all (fun i => !isa.writesSp i)) &&
-    ([Generate.checkParameters Mont.calledProductEight.mm, Generate.deriveKey Mont.calledProductEight.mm,
+    (([Generate.checkParameters Mont.calledProductEight.mm, Generate.deriveKey Mont.calledProductEight.mm,
       SignVerify.sign Mont.calledProductEight.mm, PrevalidatedSign.sign Mont.calledProductEight.mm,
-      Generate.deriveChecked Mont.calledProductEight.mm].all fun c => Nat.ble (16 * c.aarch64Depth) 0)) = true := by
+      Generate.deriveChecked Mont.calledProductEight.mm].all fun c => Nat.ble (16 * c.aarch64Depth) 0) &&
+    ([Generate.checkParameters Mont.calledProductEight.mm, SignVerify.sign Mont.calledProductEight.mm,
+      PrevalidatedSign.sign Mont.calledProductEight.mm,
+      Generate.deriveChecked Mont.calledProductEight.mm].all fun c => c.all (fun i => !i.touchesDit)))) = true := by
   decide +kernel
 
 /-- Entry point `k` of `checks` does not write the stack pointer. -/
-theorem checks_sp {l l' : List (Prog isa)}
+theorem checks_sp {l l' l'' : List (Prog isa)}
     (h : ((l.all fun c => c.all (fun i => !isa.writesSp i)) &&
-      (l'.all fun c => Nat.ble (16 * c.aarch64Depth) 0)) = true)
+      ((l'.all fun c => Nat.ble (16 * c.aarch64Depth) 0) &&
+      (l''.all fun c => c.all (fun i => !i.touchesDit)))) = true)
     (k : Nat) (hk : k < l.length) : (l[k]'hk).all (fun i => !isa.writesSp i) = true :=
   List.all_eq_true.mp (Bool.and_eq_true_iff.mp h).1 _ (List.getElem_mem hk)
 
 /-- The stack of entry point `k` of those of `checks` that call. -/
-theorem checks_depth {l l' : List (Prog isa)}
+theorem checks_depth {l l' l'' : List (Prog isa)}
     (h : ((l.all fun c => c.all (fun i => !isa.writesSp i)) &&
-      (l'.all fun c => Nat.ble (16 * c.aarch64Depth) 0)) = true)
+      ((l'.all fun c => Nat.ble (16 * c.aarch64Depth) 0) &&
+      (l''.all fun c => c.all (fun i => !i.touchesDit)))) = true)
     (k : Nat) (hk : k < l'.length) : 16 * (l'[k]'hk).aarch64Depth ≤ 0 :=
-  Nat.le_of_ble_eq_true (List.all_eq_true.mp (Bool.and_eq_true_iff.mp h).2 _ (List.getElem_mem hk))
+  Nat.le_of_ble_eq_true (List.all_eq_true.mp
+    (Bool.and_eq_true_iff.mp (Bool.and_eq_true_iff.mp h).2).1 _ (List.getElem_mem hk))
+
+/-- Entry point `k` of those of `checks` that run under DIT does not touch it. -/
+theorem checks_dit {l l' l'' : List (Prog isa)}
+    (h : ((l.all fun c => c.all (fun i => !isa.writesSp i)) &&
+      ((l'.all fun c => Nat.ble (16 * c.aarch64Depth) 0) &&
+      (l''.all fun c => c.all (fun i => !i.touchesDit)))) = true)
+    (k : Nat) (hk : k < l''.length) : (l''[k]'hk).all (fun i => !i.touchesDit) = true :=
+  List.all_eq_true.mp (Bool.and_eq_true_iff.mp (Bool.and_eq_true_iff.mp h).2).2 _ (List.getElem_mem hk)
 
 def variant : Backend where
   mul := Mont.calledProductEight.mm
@@ -568,22 +583,22 @@ def variant : Backend where
   parametersVerified := parameters_verified Mont.calledProductEight
   deriveVerified := derive_verified Mont.calledProductEight
   parametersSp := checks_sp checks 2 (by decide)
-  parametersNoDit := by lit_decide
+  parametersNoDit := checks_dit checks 0 (by decide)
   parametersDepth := checks_depth checks 0 (by decide)
   deriveSp := checks_sp checks 3 (by decide)
   deriveDepth := checks_depth checks 1 (by decide)
   signSp := checks_sp checks 4 (by decide)
-  signNoDit := by lit_decide
+  signNoDit := checks_dit checks 1 (by decide)
   signDepth := checks_depth checks 2 (by decide)
   prevalidatedSignVerified := prevalidated_sign_verified Mont.calledProductEight
   prevalidatedSignSp := checks_sp checks 5 (by decide)
-  prevalidatedSignNoDit := by lit_decide
+  prevalidatedSignNoDit := checks_dit checks 2 (by decide)
   prevalidatedSignDepth := checks_depth checks 3 (by decide)
   validatePrivateVerified := validating_private_verified Mont.calledProductEight
   validatePrivateSp := checks_sp checks 6 (by decide)
   deriveCheckedVerified := derive_checked_verified Mont.calledProductEight
   deriveCheckedSp := checks_sp checks 7 (by decide)
-  deriveCheckedNoDit := by lit_decide
+  deriveCheckedNoDit := checks_dit checks 3 (by decide)
   deriveCheckedDepth := checks_depth checks 4 (by decide)
   stackBound := by decide
 

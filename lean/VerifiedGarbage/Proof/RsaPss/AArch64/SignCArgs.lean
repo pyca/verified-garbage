@@ -34,7 +34,19 @@ theorem wp_clz {s : State} {is : List Instr} {Q : State → Prop} {d n : Reg}
 
 theorem clz_table : ∀ x < 256, x ≠ 0 →
     ∃ j < 8, 2 ^ j ≤ x ∧ x < 2 ^ (j + 1) ∧ (BitVec.ofNat 64 x).clz = BitVec.ofNat 64 (63 - j) := by
-  decide +kernel
+  -- The kernel counts from bit 7, not from bit 63 (`clz`'s 56 steps over the zero bits of each byte).
+  have h7 : ∀ x < 256, x ≠ 0 → ∃ j < 8, 2 ^ j ≤ x ∧ x < 2 ^ (j + 1) ∧
+      (BitVec.ofNat 64 x).clzAuxRec 7 = BitVec.ofNat 64 (63 - j) := by
+    decide +kernel
+  intro x hx h0
+  obtain ⟨j, hj, hl, hu, he⟩ := h7 x hx h0
+  refine ⟨j, hj, hl, hu, ?_⟩
+  have hb : ∀ i, 7 < i → (BitVec.ofNat 64 x).getLsbD i = false := fun i hi => by
+    have h8 : x < 2 ^ i :=
+      Nat.lt_of_lt_of_le hx (Nat.pow_le_pow_right (n := 2) (i := 8) (by decide) hi)
+    rw [BitVec.getLsbD_ofNat, Nat.testBit_lt_two_pow h8, Bool.and_false]
+  rw [← he]
+  exact (BitVec.clzAuxRec_eq_clzAuxRec_of_getLsbD_false (n := 7) (k := 56) hb).symm
 
 theorem clz_val {x : Nat} (hx : x < 256) (h0 : x ≠ 0) :
     (BitVec.ofNat 64 x).clz = BitVec.ofNat 64 (63 - Nat.log2 x) := by

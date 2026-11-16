@@ -8,7 +8,7 @@ public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Lit
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Correct
 import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 
 import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Main
@@ -18,7 +18,7 @@ meta import VerifiedGarbage.Proof.Weierstrass.CombW
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Lit
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Comb.Correct
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
 public import VerifiedGarbage.Proof.Weierstrass.Law
 public import VerifiedGarbage.Proof.Ecdsa.Contract
@@ -47,7 +47,7 @@ theorem sign_a64 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (hI : Weierst
     (hs : signAArch64.pre s) :
     ∃ t s', Exec isa signComb s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := signWith_ok (cfg_ok hI) hL comb (correct hL hI) (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he (by lit_decide) (by lit_decide) (by lit_decide) hsv, hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he (by lit_decide) hsv, hpost⟩
 
 theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signComb :=
   VG.Taint.constantTime (A := taintS [combCfg.tsym]) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])

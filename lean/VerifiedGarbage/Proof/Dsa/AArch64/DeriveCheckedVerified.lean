@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Spec.Dsa.DomainChecked
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
 import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
+import VerifiedGarbage.Proof.Dsa.Encoding
 
 /-! # AArch64 DSA key derivation for a checked domain, against its contract
 
@@ -81,6 +82,12 @@ def deriveCheckedSatState : State where
 
 theorem deriveCheckedSat_valid : Spec.Dsa.checkParametersBytes 128 20
     (Spec.Rsa.bytesAt deriveCheckedSatState.mem 0x2000 276) = true := by
+  -- The memory's bytes are the list, by a lemma: evaluated, each is a walk of the list to its index.
+  have hb : Spec.Rsa.bytesAt deriveCheckedSatState.mem 0x2000 276 = validDomainWitness :=
+    VG.Proof.Dsa.bytesAt_of_list (lo := 0x2000) (by decide +kernel) (by decide) fun a h1 h2 => by
+      have h : 0x2000 ≤ a.toNat ∧ a.toNat < 0x2114 := ⟨h1, h2⟩
+      simp only [deriveCheckedSatState, h, and_self, ↓reduceIte]
+  rw [hb]
   decide +kernel
 
 theorem deriveCheckedSatisfiable : ∃ s, (Spec.Dsa.deriveKeyDomainCheckedContract abi).pre s := by

@@ -310,27 +310,40 @@ namespace VG.Proof.Variants.RsaPrivateCrt.AArch64.Base
 
 open VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
 
+/-- What the kernel evaluates of the four functions: that none has a frame or touches DIT. One
+declaration states it of all of them, since the kernel remembers what it has evaluated only
+within a declaration: each function's code is built once for its two checks, and the two
+exponentiations are built of the same code. -/
+theorem checks :
+    ((WindowFive.code.noFrames = true ∧ WindowFive.code.all (fun i => !i.touchesDit) = true) ∧
+      WindowFive.codeGiven.noFrames = true ∧ WindowFive.codeGiven.all (fun i => !i.touchesDit) = true) ∧
+    ((Impl.Rsa.AArch64.Precompute.code Mont.base.mm).noFrames = true ∧
+      (Impl.Rsa.AArch64.Precompute.code Mont.base.mm).all (fun i => !i.touchesDit) = true) ∧
+    (Impl.Rsa.AArch64.Folded.checked Mont.productEight.mm).noFrames = true ∧
+      (Impl.Rsa.AArch64.Folded.checked Mont.productEight.mm).all (fun i => !i.touchesDit) = true := by
+  decide +kernel
+
 def variant : Proof.Rsa.AArch64.CrtImpl where
   name := "vg_rsa_private_crt"
   code := WindowFive.code
   verified := WindowFive.base_verified
-  noFrames := by decide +kernel
-  noDit := by lit_decide
+  noFrames := checks.1.1.1
+  noDit := checks.1.1.2
   crtPName := "vg_rsa_private_crt_precomputed"
   crtP := WindowFive.codeGiven
   crtPVerified := WindowFive.given_verified
-  crtPNoFrames := by decide +kernel
-  crtPNoDit := by lit_decide
+  crtPNoFrames := checks.1.2.1
+  crtPNoDit := checks.1.2.2
   pcName := Spec.Rsa.publicPrecomputeApi.name
   pc := Impl.Rsa.AArch64.Precompute.code Mont.base.mm
   pcVerified := precompute_verified Mont.base
-  pcNoFrames := by decide +kernel
-  pcNoDit := by lit_decide
+  pcNoFrames := checks.2.1.1
+  pcNoDit := checks.2.1.2
   pdName := "vg_rsa_public_precomputed_checked"
   pd := Impl.Rsa.AArch64.Folded.checked Mont.productEight.mm
   pdVerified := Proof.Rsa.AArch64.FoldedPublic.checked_verified Mont.productEight
-  pdNoFrames := by decide +kernel
-  pdNoDit := by lit_decide
+  pdNoFrames := checks.2.2.1
+  pdNoDit := checks.2.2.2
   suffix := ""
   features := []
 

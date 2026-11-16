@@ -11,6 +11,8 @@ meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Block
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.Rsa.PPC64LE.Seqs
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Body
 public import VerifiedGarbage.Proof.RsaKeyGen.PPC64LE.Key.Stores
@@ -174,11 +176,16 @@ theorem flat_body : body.flat = (seqs bodyL).flat ++ (Code.seq VG.Impl.RsaKeyGen
   simp only [body_eq, VG.Impl.RsaKeyGen.PPC64LE.Key.consts, seqs, Code.flat, List.append_assoc,
     List.cons_append, List.nil_append]
 
-theorem body_ct [InvLaw] : RelCT isa (Two E2) body (Two D) :=
-  VG.Proof.Rsa.PPC64LE.Keys.RelCT.cut flat_body (two_post (two_taint _ pins_E2 (by taint_decide)) fun _ _ h => body_Q2 h)
-    (RelCT.seq (two_post (two_taint _ (pins_cut fun _ _ h => h.1) (by taint_decide)) fun _ _ h => h.2)
-      (RelCT.seq (two_post (two_taint _ (pins_cut fun _ _ h => h.1) (by taint_decide)) fun _ _ h => h.2)
-        (two_post (two_taint _ (pins_cut fun _ _ h => h.1) (by taint_decide)) fun _ _ h => h.2)))
+/-- The four pieces' checks are one kernel evaluation (`taint_decide_all`): they are built of the
+same arithmetic, which the kernel then builds once, and whose analysis it finds again where it
+starts from the same taint. -/
+theorem body_ct [InvLaw] : RelCT isa (Two E2) body (Two D) := by
+  refine VG.Proof.Rsa.PPC64LE.Keys.RelCT.cut flat_body
+    (two_post (two_taint _ pins_E2 (hc := ?_) ?_) fun _ _ h => body_Q2 h)
+    (RelCT.seq (two_post (two_taint _ (pins_cut fun _ _ h => h.1) (hc := ?_) ?_) fun _ _ h => h.2)
+      (RelCT.seq (two_post (two_taint _ (pins_cut fun _ _ h => h.1) (hc := ?_) ?_) fun _ _ h => h.2)
+        (two_post (two_taint _ (pins_cut fun _ _ h => h.1) (hc := ?_) ?_) fun _ _ h => h.2)))
+  taint_decide_all
 
 theorem pins_D : Pins D [.r31] := by
   rintro d s₁ s₂ ⟨a, _, ha, f₁⟩ ⟨b, _, hb, f₂⟩ r hr

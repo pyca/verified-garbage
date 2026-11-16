@@ -11,6 +11,8 @@ import VerifiedGarbage.Proof.Framework.PPC64LE.Call
 import VerifiedGarbage.Proof.Framework.PPC64LE.Step
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.X448.PPC64LE.Lit
 public import VerifiedGarbage.Impl.Ed448.PPC64LE.VerifyEquation
 public import VerifiedGarbage.Proof.Ed448.Ref
 public import VerifiedGarbage.TCB.PPC64LE.Target
@@ -274,7 +276,7 @@ theorem verifyEquation_ok (hR : Proof.Ed448.RecoverOk) (s : State) (hs : verifyP
   obtain ⟨t, s', he, h, hlr, h14, hnv⟩ := verifyEquation_correct hR ⟨h1, h2, h3, h4, h5⟩
   have hd : ∀ i ∈ instrs Impl.Ed448.PPC64LE.verifyEquation, dstOf i ≠ some .r2 := by
     have h : ((instrs Impl.Ed448.PPC64LE.verifyEquation).all fun i => dstOf i != some .r2) = true := by
-      rw [← Code.allInstrs_eq]; decide +kernel
+      rw [← Code.allInstrs_eq]; lit_decide
     intro i hi
     simpa using List.all_eq_true.mp h i hi
   have hpre : ∀ r ∈ preserved, r = .r2 ∨ r = .r14 ∨ ∃ i < 17, Impl.X448.PPC64LE.nvR i = r := by decide

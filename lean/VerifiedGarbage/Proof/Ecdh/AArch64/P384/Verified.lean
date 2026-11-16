@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.P384.EcdhMadd
 import VerifiedGarbage.Proof.P384.EcdhSelect
 import VerifiedGarbage.Proof.Ecdh.AArch64.WithMul
 import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Lit
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 public import VerifiedGarbage.Impl.Ecdh.P384.AArch64
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
@@ -20,6 +21,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P384.Verified
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.MulJ4
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.WithMul
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.P384.Lit
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 meta import VerifiedGarbage.Impl.Ecdh.P384.AArch64
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.WinJStep
@@ -68,11 +70,11 @@ theorem ecdh_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch6
     ∃ t s', Exec isa exchangeP384 s t s' ∧ abiPreserved s s' ∧ ecdhAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-384's
   -- terms before the literals' facts are known.
-  have hn : CallsKeep exchangeP384 := by lit_decide
-  have hu : KeepsUntouched exchangeP384 := by lit_decide
-  have hv : exchangeP384.allInstrs keepsV = true := by lit_decide
-  have hmc : CallsKeep (Impl.Ecdh.AArch64.Cfg.middle p384) := by lit_decide
-  have hmu : KeepsUntouched (Impl.Ecdh.AArch64.Cfg.middle p384) := by lit_decide
+  have ha : AbiOk exchangeP384 := by lit_decide
+  have hmc : CallsKeep (Impl.Ecdh.AArch64.Cfg.middle p384) :=
+    callsKeep_ofK (c := Impl.Ecdh.AArch64.Cfg.middle p384) (by lit_decide)
+  have hmu : KeepsUntouched (Impl.Ecdh.AArch64.Cfg.middle p384) :=
+    keepsUntouched_ofK (c := Impl.Ecdh.AArch64.Cfg.middle p384) (by lit_decide)
   have hm : Ecdh.AArch64.MulOk p384 (Cfg.mulJ4 p384
       (some (.block Impl.P384.EcdhAllocatedCode.doubleRD, .block Impl.P384.EcdhAllocatedCode.doubleDR))
       (some (.block Impl.P384.EcdhMadd.madd)) (some Impl.P384.EcdhSelect.sel)) :=
@@ -85,7 +87,7 @@ theorem ecdh_a64 (hL : Weierstrass.Law Spec.P384.curve) (hI : Weierstrass.AArch6
       P384.EcdhSelect.sel_ok
   obtain ⟨t, s', he, hsv, -, hpost⟩ :=
     Ecdh.AArch64.exchangeWith_ok' (p384_ok hI) hL hm (by decide +kernel) hmc hmu (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he ha hsv, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP384 :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])

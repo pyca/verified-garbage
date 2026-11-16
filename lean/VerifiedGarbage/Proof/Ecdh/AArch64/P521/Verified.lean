@@ -25,7 +25,7 @@ public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
 import VerifiedGarbage.Proof.Ecdh.AArch64.WithMul
 public import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Contract
 import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Lit
 public import VerifiedGarbage.Impl.Ecdh.P521.AArch64
 import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
@@ -33,7 +33,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.LaneCaller
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.Main
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.P521.Verified
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 meta import VerifiedGarbage.Proof.Ecdh.AArch64.P521.Lit
 meta import VerifiedGarbage.Impl.Ecdh.P521.AArch64
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.TComb
@@ -443,16 +443,16 @@ theorem ecdh_a64 (hL : Weierstrass.Law Spec.P521.curve) (hI : Weierstrass.AArch6
     ∃ t s', Exec isa exchangeP521 s t s' ∧ abiPreserved s s' ∧ ecdhAArch64.post s s' := by
   -- In steps: elaborated in one term, the unifier would compare P-521's
   -- terms before the literals' facts are known.
-  have hn : CallsKeep exchangeP521 := by lit_decide
-  have hu : KeepsUntouched exchangeP521 := by lit_decide
-  have hv : exchangeP521.allInstrs keepsV = true := by lit_decide
-  have hmc : CallsKeep (Impl.Ecdh.AArch64.Cfg.middle p521) := by lit_decide
-  have hmu : KeepsUntouched (Impl.Ecdh.AArch64.Cfg.middle p521) := by lit_decide
+  have ha : AbiOk exchangeP521 := by lit_decide
+  have hmc : CallsKeep (Impl.Ecdh.AArch64.Cfg.middle p521) :=
+    callsKeep_ofK (c := Impl.Ecdh.AArch64.Cfg.middle p521) (by lit_decide)
+  have hmu : KeepsUntouched (Impl.Ecdh.AArch64.Cfg.middle p521) :=
+    keepsUntouched_ofK (c := Impl.Ecdh.AArch64.Cfg.middle p521) (by lit_decide)
   have hm := @Window.multiply_ok (p521_ok hI) hL hO
   obtain ⟨t,s',he,hsv,_,hpost⟩ :=
     exchangeWith_ok' (c := P521Window.c) (mq := P521Window.multiply) (p521_ok hI) hL hm
       (by decide +kernel) hmc hmu (pre_of hs)
-  exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, post_of hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he ha hsv, post_of hpost⟩
 
 theorem ecdh_ct : ConstantTime isa ecdhAArch64.pre ecdhAArch64.pub exchangeP521 :=
   LaneTaint.constantTime (Taint.ofRegs [.x0, .x1, .x2, .x3])

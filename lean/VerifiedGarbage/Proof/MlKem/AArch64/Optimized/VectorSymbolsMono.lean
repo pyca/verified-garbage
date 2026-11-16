@@ -81,7 +81,9 @@ theorem step_dom (names : List String) {τ τ' : T} (i : Instr) (hs : VectorTain
 instance (names : List String) : LeFrame (analysis names) where
   le_trans := LeFrame.le_trans (A := VectorTaint.taint)
   le_right := LeFrame.le_right (A := VectorTaint.taint)
-  step i h hs := step_mono names i h hs
+  step {τ σ _} i h hs := by
+    obtain ⟨σ', hs', hle⟩ := step_mono names i h ((analysis_step names τ i).symm.trans hs)
+    exact ⟨σ', (analysis_step names σ i).trans hs', hle⟩
   condPub := LeFrame.condPub (A := VectorTaint.taint)
   meet := LeFrame.meet (A := VectorTaint.taint)
   call := LeFrame.call (A := VectorTaint.taint)
@@ -103,7 +105,7 @@ instance (names : List String) : LeFrame (analysis names) where
   keepsCall := keepsCall
   keeps_bot := LeFrame.keeps_bot (A := VectorTaint.taint)
   keepsCall_bot := LeFrame.keepsCall_bot (A := VectorTaint.taint)
-  step_keeps i hk hΦF hΦ hs := step_keeps names i hk hΦF hΦ hs
+  step_keeps i hk hΦF hΦ hs := step_keeps names i hk hΦF hΦ ((analysis_step names _ i).symm.trans hs)
   call_keeps := LeFrame.call_keeps (A := VectorTaint.taint)
   ret_keeps := LeFrame.ret_keeps (A := VectorTaint.taint)
   push_keeps := LeFrame.push_keeps (A := VectorTaint.taint)
@@ -124,7 +126,7 @@ theorem checkBlock_dom (names : List String) {is : List Instr} {τ σ τ' : T}
     obtain ⟨σ', h', hle'⟩ := ih hr (LeFrame.le_trans (A := VectorTaint.taint) hle₀ hle₁)
     refine ⟨σ', ?_, hle'⟩
     change ((analysis names).step σ i).bind ((analysis names).checkBlock · is) = some σ'
-    exact Option.bind_eq_some_iff.mpr ⟨σ₁, hs₁, h'⟩
+    exact Option.bind_eq_some_iff.mpr ⟨σ₁, (analysis_step names σ i).trans hs₁, h'⟩
 
 theorem checkChunks_dom (names : List String) {chunkSize : Nat} {ms : List T} {is : List Instr}
     {τ σ τ' : T} (h : VectorTaint.taint.checkChunks chunkSize τ is ms = some τ')

@@ -4,7 +4,7 @@ import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Main
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Contract
 public import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Lit
 public import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.AArch64
@@ -13,7 +13,7 @@ meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Main
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Contract
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Layout
-meta import VerifiedGarbage.Proof.Ecdsa.AArch64.Abi
+meta import VerifiedGarbage.Proof.Ecdsa.AArch64.AbiOnce
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Bytes
 meta import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Lit
 meta import VerifiedGarbage.Impl.Ecdsa.BrainpoolP512r1.AArch64
@@ -40,11 +40,9 @@ theorem output_of {s : State} (h : signAArch64.pre s) : SignOutput brainpoolp512
 theorem sign_a64 (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (hI : InvSounds)
     (s : State) (hs : signAArch64.pre s) :
     ∃ t s', Exec isa signBrainpoolP512r1 s t s' ∧ abiPreserved s s' ∧ signAArch64.post s s' := by
-  have hn : CallsKeep signBrainpoolP512r1 := by lit_decide
-  have hu : KeepsUntouched signBrainpoolP512r1 := by lit_decide
-  have hv : signBrainpoolP512r1.allInstrs keepsV = true := by lit_decide
+  have ha : AbiOk signBrainpoolP512r1 := by lit_decide
   obtain ⟨t, s', he, hsv, hpost⟩ := sign_ok (brainpoolp512r1_ok hI) hL (setup_of hs) (output_of hs)
-  exact ⟨t, s', he, abiPreserved_of he hn hu hv hsv, hpost⟩
+  exact ⟨t, s', he, abiPreserved_ofK he ha hsv, hpost⟩
 
 theorem sign_ct : ConstantTime isa signAArch64.pre signAArch64.pub signBrainpoolP512r1 :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
