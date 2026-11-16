@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.DoubleOutput
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.DoubleBlocks
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointEntry
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointExit
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.NativeLayout
@@ -55,7 +56,7 @@ structure DoublePre (s : State) (W a o : Nat) : Prop where
   argA : s.gpr .x2=BitVec.ofNat 64 a
 
 theorem double_fn_source : doubleFnBlocks.flatten=
-    doubleFnBlocks.flatten.take 14++(doubleArithmeticCode++doubleExit) := by lit_decide
+    doubleFnBlocks.flatten.take 14++(doubleArithmeticCode++doubleExit) := by rw_lit; kernel_rfl
 
 theorem double_fn_arithmetic_ok {s : State} {W a o : Nat} (pre : DoublePre s W a o)
     (bound : canonicalPoint s.mem (s.gpr .x0) a) :
