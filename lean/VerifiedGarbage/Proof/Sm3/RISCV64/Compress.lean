@@ -25,6 +25,9 @@ public import VerifiedGarbage.Proof.Framework.Semantics
 public meta import VerifiedGarbage.Proof.Framework.Semantics
 public import VerifiedGarbage.TCB.RISCV64.Target
 public meta import VerifiedGarbage.TCB.RISCV64.Target
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Lit
 
 /-!
 # SM3 compression function on RISC-V: the whole function
@@ -627,6 +630,10 @@ def satState : State where
   mem _ := 0
   rd := [⟨0x2000, 0⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x3000, 80⟩]
+
+/-! The code as a literal (`materialize_flat_code`): the summary below and its frame, and the
+checks of the modules that import this one, read it rather than build the unrolled rounds again. -/
+materialize_flat_code Impl.Sm3.RISCV64.compress
 
 /-! The constant-time analysis of the compression function from its arguments, done once for
 every check of code that calls it (`taint_decide_sum [compressSum]`), which keeps what is public

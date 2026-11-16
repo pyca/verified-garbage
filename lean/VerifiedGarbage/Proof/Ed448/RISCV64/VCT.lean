@@ -5,7 +5,9 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Impl.Ed448.RISCV64.VerifyEquation
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+import VerifiedGarbage.Proof.X448.RISCV64.R64.Lit
 meta import VerifiedGarbage.Proof.Framework.RelCT
+meta import VerifiedGarbage.Proof.X448.RISCV64.R64.Lit
 
 /-!
 # Ed448's verification equation on RISCV64: the pieces the taint analysis checks

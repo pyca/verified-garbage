@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Sha512.RISCV64.Rounds
 public meta import VerifiedGarbage.Proof.Sha512.RISCV64.Rounds
 public import VerifiedGarbage.Proof.Sha512.RISCV64.Contract
 public meta import VerifiedGarbage.Proof.Sha512.RISCV64.Contract
+public import VerifiedGarbage.Proof.Sha512.RISCV64.Lit
+public meta import VerifiedGarbage.Proof.Sha512.RISCV64.Lit
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Words64

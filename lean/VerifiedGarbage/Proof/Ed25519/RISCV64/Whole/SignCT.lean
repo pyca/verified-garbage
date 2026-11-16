@@ -4,10 +4,12 @@ public import VerifiedGarbage.Impl.Ed25519.RISCV64.Whole
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
 public import VerifiedGarbage.Impl.Ed25519.RISCV64.Comb
+import VerifiedGarbage.Proof.Sha512.RISCV64.Lit
 meta import VerifiedGarbage.Impl.Ed25519.RISCV64.Whole
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
 meta import VerifiedGarbage.Impl.Ed25519.RISCV64.Comb
+meta import VerifiedGarbage.Proof.Sha512.RISCV64.Lit
 
 /-!
 # `vg_ed25519_sign_expanded` on RISC-V, with its frame as an argument: constant time
