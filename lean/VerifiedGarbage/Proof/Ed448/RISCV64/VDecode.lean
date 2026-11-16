@@ -81,22 +81,22 @@ theorem decodeNeg_ok {s : State} (hc : VCtx b s) {xo yo : Nat} (ho : NegOut xo y
   have hA := ACC_eq
   unfold decodeNeg
   simp only [List.append_assoc, List.cons_append, List.nil_append]
-  have hS0 : SlotsOk s.mem b [DXX, DY, DK] (FS s.mem b) := fun _ _ => rfl
+  obtain hS0 : SlotsOk s.mem b [DXX, DY, DK] (FS s.mem b) := fun _ _ => rfl
   refine WP.append (R64.subS (o := DTMP) (x := DXX) (y := DXX) (by decide) (by decide) (by decide) (by decide)
     hc.ctx hS0) fun s1 ⟨hr1, hf1, hS1⟩ => ?_
-  have hc1 : VCtx b s1 := hc.of_rest hr1 (by decide) (by decide)
+  obtain hc1 : VCtx b s1 := hc.of_rest hr1 (by decide) (by decide)
   refine WP.append (R64.subS (o := DNEG) (x := DTMP) (y := DXX) (by decide) (by decide) (by decide) (by decide)
     hc1.ctx hS1) fun s2 ⟨hr2, hf2, hS2⟩ => ?_
-  have hc2 : VCtx b s2 := hc1.of_rest hr2 (by decide) (by decide)
-  have hf12 : Frame [FA b] s.mem s2.mem := hf1.trans hf2
+  obtain hc2 : VCtx b s2 := hc1.of_rest hr2 (by decide) (by decide)
+  obtain hf12 : Frame [FA b] s.mem s2.mem := hf1.trans hf2
   -- The mask: the low bit of `x` against the sign.
-  have hb2 : s2.mem (b + BitVec.ofNat 64 OUT) = BitVec.ofNat 8 x.val := by
+  obtain hb2 : s2.mem (b + BitVec.ofNat 64 OUT) = BitVec.ofNat 8 x.val := by
     rw [hf12 _ fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact fun h => Offset.disjoint_base b (d := OUT) (n := 1) (k := ACC + 112) (by omega_arith) (by omega_arith) _
         (Region.contains_self _ _) h]
     exact byte0 hout
-  have hs2 : s2.mem (b + BitVec.ofNat 64 SIGN) = BitVec.ofNat 8 sg := by
+  obtain hs2 : s2.mem (b + BitVec.ofNat 64 SIGN) = BitVec.ofNat 8 sg := by
     rw [hf12 _ fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact fun h => Offset.disjoint_base b (d := SIGN) (n := 1) (k := ACC + 112) (by omega_arith) (by omega_arith) _
@@ -109,53 +109,53 @@ theorem decodeNeg_ok {s : State} (hc : VCtx b s) {xo yo : Nat} (ho : NegOut xo y
     (by rw [u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide), hc2.ctx.a3])
     (by rw [u5.rd, u5.wr, u4.rd, u4.wr, u3.rd, u3.wr]; exact hc2.inR (by omega_arith)) fun s6 u6 => wp_xor fun s7 u7 => ?_
   refine wp_li (by decide) fun s8 u8 => wp_sub fun s9 u9 => ?_
-  have hm9 : s9.mem = s2.mem := by rw [u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem]
-  have hr9 : Rest [.a4, .a5, .a6, .t0] s2 s9 := (u3.rest (by decide)).trans ((u4.rest (by decide)).trans
+  obtain hm9 : s9.mem = s2.mem := by rw [u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem]
+  obtain hr9 : Rest [.a4, .a5, .a6, .t0] s2 s9 := (u3.rest (by decide)).trans ((u4.rest (by decide)).trans
     ((u5.rest (by decide)).trans ((u6.rest (by decide)).trans ((u7.rest (by decide)).trans
       ((u8.rest (by decide)).trans (u9.rest (by decide)))))))
-  have hc9 : VCtx b s9 := hc2.of_rest hr9 (by decide) (by decide)
-  have hsg' : sg < 2 ^ 64 := by omega_arith
-  have hm : x.val % 2 ^^^ sg ≤ 1 := xor_le_one' (by omega_arith) hsg
-  have e5 : (s5.gpr .a5).toNat = x.val % 2 := by
+  obtain hc9 : VCtx b s9 := hc2.of_rest hr9 (by decide) (by decide)
+  obtain hsg' : sg < 2 ^ 64 := by omega_arith
+  obtain hm : x.val % 2 ^^^ sg ≤ 1 := xor_le_one' (by omega_arith) hsg
+  obtain e5 : (s5.gpr .a5).toNat = x.val % 2 := by
     rw [u5.gpr, BitVec.toNat_and, u4.other _ (by decide), u4.gpr, u3.gpr, hb2]
     simp only [BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]
     rw [Nat.and_one_is_mod]
     omega_arith
-  have e6 : (s6.gpr .a4).toNat = sg := by
+  obtain e6 : (s6.gpr .a4).toNat = sg := by
     rw [u6.gpr, u5.mem, u4.mem, u3.mem, hs2]
     simp only [BitVec.toNat_ofNat, Nat.reducePow]
     omega_arith
-  have e7 : s7.gpr .a5 = BitVec.ofNat 64 (x.val % 2 ^^^ sg) := by
+  obtain e7 : s7.gpr .a5 = BitVec.ofNat 64 (x.val % 2 ^^^ sg) := by
     apply BitVec.eq_of_toNat_eq
     rw [u7.gpr, BitVec.toNat_xor, u6.other _ (by decide), e5, e6, toNat_imm (by omega_arith)]
-  have e11 : s9.gpr .t0 = 0 - BitVec.ofNat 64 (x.val % 2 ^^^ sg) := by
+  obtain e11 : s9.gpr .t0 = 0 - BitVec.ofNat 64 (x.val % 2 ^^^ sg) := by
     rw [u9.gpr, u8.gpr, u8.other _ (by decide), e7]; rfl
   -- The selections.
   refine WP.append (sel_ok (b := b) (o := xo) (q := DNEG) (r := DXX) (by omega_arith) (by decide) (by decide)
     (by unfold DNEG; omega_arith) (by unfold DXX; omega_arith) hx4 (by decide) (by decide) hc9.ctx hm e11) fun s10 h10 => ?_
-  have hc10 : VCtx b s10 := hc9.of_rest h10.rest (by decide) (by decide)
+  obtain hc10 : VCtx b s10 := hc9.of_rest h10.rest (by decide) (by decide)
   refine WP.mono (sel_ok (b := b) (o := yo) (q := DY) (r := DY) (by omega_arith) (by decide) (by decide)
     (by unfold DY; omega_arith) (by unfold DY; omega_arith) hy4 (by decide) (by decide) hc10.ctx hm (by rw [h10.rest.gpr _ (by decide), e11]))
     fun t ht => ?_
-  have hrt : Rest R64.clob64 s t :=
+  obtain hrt : Rest R64.clob64 s t :=
     (hr1.mono (by decide)).trans ((hr2.mono (by decide)).trans ((hr9.mono (by decide)).trans
       ((h10.rest.mono (by decide)).trans (ht.rest.mono (by decide)))))
   -- The values.
-  have v2 : ∀ q ∈ [DNEG, DXX, DY, DK], FS s2.mem b q = upd (upd (FS s.mem b) DTMP (FS s.mem b DXX - FS s.mem b DXX))
+  obtain v2 : ∀ q ∈ [DNEG, DXX, DY, DK], FS s2.mem b q = upd (upd (FS s.mem b) DTMP (FS s.mem b DXX - FS s.mem b DXX))
       DNEG (upd (FS s.mem b) DTMP (FS s.mem b DXX - FS s.mem b DXX) DTMP -
         upd (FS s.mem b) DTMP (FS s.mem b DXX - FS s.mem b DXX) DXX) q := fun q hq => hS2 q (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hq; rcases hq with rfl | rfl | rfl | rfl <;> decide)
   have hx' : FS s.mem b 672 = x := hx
   have hy' : FS s.mem b 168 = y := hy
-  have eN : FS s2.mem b DNEG = (x - x) - x := by
+  obtain eN : FS s2.mem b DNEG = (x - x) - x := by
     rw [v2 DNEG (by simp)]; simp only [upd, DNEG, DTMP, DXX, Nat.reduceEqDiff, ↓reduceIte, hx']
-  have eX : FS s2.mem b DXX = x := by
+  obtain eX : FS s2.mem b DXX = x := by
     rw [v2 DXX (by simp)]; simp only [upd, DNEG, DTMP, DXX, Nat.reduceEqDiff, ↓reduceIte, hx']
-  have eY : FS s2.mem b DY = y := by
+  obtain eY : FS s2.mem b DY = y := by
     rw [v2 DY (by simp)]; simp only [upd, DNEG, DTMP, DY, Nat.reduceEqDiff, ↓reduceIte, hy']
-  have hxo : FS s10.mem b xo = pick (x.val % 2 ^^^ sg) ((x - x) - x) x := by
+  obtain hxo : FS s10.mem b xo = pick (x.val % 2 ^^^ sg) ((x - x) - x) x := by
     rw [fs_pick hm h10.lo, hm9, eN, eX]
-  have eK : FS s2.mem b DK = FS s.mem b DK := by
+  obtain eK : FS s2.mem b DK = FS s.mem b DK := by
     rw [v2 DK (by simp)]; simp only [upd, DNEG, DTMP, DK, Nat.reduceEqDiff, ↓reduceIte]
   refine ⟨hc.of_rest hrt (by decide) (by decide), hrt, ?_, ?_, ?_, ?_⟩
   · refine (hf12.mono (by simp)).trans ?_
@@ -163,22 +163,22 @@ theorem decodeNeg_ok {s : State} (hc : VCtx b s) {xo yo : Nat} (ho : NegOut xo y
     exact (h10.frame.mono (by simp)).trans (ht.frame.mono (by simp))
   · -- `xo` is kept by the write of `yo`.
     rw [← hxo]
-    have e := limb_frame (o := xo) ht.frame fun r hr k hk => by
+    obtain e := limb_frame (o := xo) ht.frame fun r hr k hk => by
       rw [List.mem_singleton.mp hr]
       exact Offset.disjoint b (d := xo + 4 * k) (n := 4) (e := yo) (k := 4 * 14) (by omega_arith) (by omega_arith) (by omega_arith)
     rw [FS, V, val32_congr e]; rfl
   · -- `y`, kept by the write of `xo`.
     rw [fs_pick hm ht.lo]
-    have e := limb_frame (o := DY) h10.frame fun r hr k hk => by
+    obtain e := limb_frame (o := DY) h10.frame fun r hr k hk => by
       rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (by unfold DY; omega_arith) (by omega_arith) (by omega_arith)
     rw [show FS s10.mem b DY = FS s9.mem b DY by rw [FS, V, val32_congr e]; rfl, hm9, eY]
     unfold pick VG.Proof.X25519.sel; split <;> rfl
 
   · -- `d`, kept by both writes.
     rw [← eK, ← hm9]
-    have f : Frame [⟨b + BitVec.ofNat 64 xo, 4 * 14⟩, ⟨b + BitVec.ofNat 64 yo, 4 * 14⟩] s9.mem t.mem :=
+    obtain f : Frame [⟨b + BitVec.ofNat 64 xo, 4 * 14⟩, ⟨b + BitVec.ofNat 64 yo, 4 * 14⟩] s9.mem t.mem :=
       (h10.frame.mono (by simp)).trans (ht.frame.mono (by simp))
-    have e := limb_frame (o := DK) f fun r hr k hk => by
+    obtain e := limb_frame (o := DK) f fun r hr k hk => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact Offset.disjoint _ (by unfold DK; omega_arith) (by unfold DK; omega_arith) (by omega_arith)
     rw [FS, V, val32_congr e]; rfl
@@ -232,9 +232,9 @@ theorem rootQ_ok {qs : List Nat} (hq : R64.Sep8 R qs = true) (hZ : Z2 ∈ qs)
     (hS : ∀ q ∈ qs, q ≠ R → FS s.mem b q = v q) (h0 : s.gpr .t2 = a) :
     WP isa root s fun s' => R64.Stp b s s' ∧ Ctx b s' ∧
       SlotsOk s'.mem b qs (upd v R (VG.Proof.X448.pw (v Z2) RE)) := by
-  have hZR : Z2 ≠ R := by decide
+  obtain hZR : Z2 ≠ R := by decide
   obtain ⟨hfR, hfT, hC⟩ := R64.drop_R hq hT hc hS h0
-  have hZf : Z2 ∈ qs.filter (· ≠ R) := by simp [hZ, hZR]
+  obtain hZf : Z2 ∈ qs.filter (· ≠ R) := by simp [hZ, hZR]
   unfold root
   refine WP.seq (WP.mono (R64.chain223Call_ok hfR hZf hfT hC) fun s1 h1 => ?_)
   obtain ⟨f6, _⟩ := R64.temps_get hfT (t := T6) (by decide)
@@ -247,7 +247,7 @@ theorem rootQ_ok {qs : List Nat} (hq : R64.Sep8 R qs = true) (hZ : Z2 ∈ qs)
   · subst eR
     rw [h3.slots _ List.mem_cons_self, upd_self, upd_self]
   · have hq'' : q ∈ qs.filter (· ≠ R) := by simp [hq', eR]
-    have e6 : q ≠ T6 := fun e => (R64.temps_get hT (t := T6) (by decide)).2 (e ▸ hq')
+    obtain e6 : q ≠ T6 := fun e => (R64.temps_get hT (t := T6) (by decide)).2 (e ▸ hq')
     rw [h3.slots q (by repeat (first | exact hq'' | apply List.mem_cons_of_mem)), upd_of_ne _ _ eR]
     simp only [R64.chainV, upd_of_ne _ _ e6, upd_of_ne _ _ eR]
 
@@ -313,7 +313,7 @@ theorem decodeX_ok {s : State} (hc : Ctx b s) {y : Fe} (hy : FS s.mem b DY = y) 
   have hy' : FS s.mem b 168 = y := hy
   have hon' : FS s.mem b 224 = 1 := hon
   have hd' : FS s.mem b 336 = Spec.Ed448.d := hd
-  have h0 : R64.Cur b s (s.gpr .t2) (s.gpr .t1) XQ (FS s.mem b) s := ⟨hc, R64.Stp.refl _ _, rfl, rfl, fun _ _ => rfl⟩
+  obtain h0 : R64.Cur b s (s.gpr .t2) (s.gpr .t1) XQ (FS s.mem b) s := ⟨hc, R64.Stp.refl _ _, rfl, rfl, fun _ _ => rfl⟩
   rw [decodeX_eq]
   refine R64.ops_ok xOps XQ _ s xOps_ok h0 fun s1 h1 => ?_
   refine WP.seq (WP.mono (rootQ_ok (qs := RootQ) (by decide) (by decide) (by decide) h1.ctx
@@ -411,8 +411,8 @@ theorem decodeCore_ok {s : State} (hc : VCtx b s) {y : Fe} (hy : FS s.mem b DY =
   unfold decodeCore
   refine WP.seq (WP.mono (decodeX_ok hc.ctx hy hon hd)
     fun s2 ⟨hst2, hc2', hx2, hv2, hu2, hy2, hd2⟩ => ?_)
-  have hc2 : VCtx b s2 := hc.of_rest hst2.rest (by decide) (by decide)
-  have hs2 : s2.mem (b + BitVec.ofNat 64 SIGN) = BitVec.ofNat 8 sg := by
+  obtain hc2 : VCtx b s2 := hc.of_rest hst2.rest (by decide) (by decide)
+  obtain hs2 : s2.mem (b + BitVec.ofNat 64 SIGN) = BitVec.ofNat 8 sg := by
     rw [← hs]
     exact hst2.frame _ fun r hr => by
       rw [List.mem_singleton.mp hr]
@@ -420,7 +420,7 @@ theorem decodeCore_ok {s : State} (hc : VCtx b s) {y : Fe} (hy : FS s.mem b DY =
         (Region.contains_self _ _) h
   refine WP.mono (decodeCheck_ok hc2 hx2 hv2 hu2 hsg hs2)
     fun s3 ⟨hc3, hr3, hf3, hk3, hs3, hout3, hb3⟩ => ?_
-  have hb2 : bad s2.mem b = bad s.mem b := by
+  obtain hb2 : bad s2.mem b = bad s.mem b := by
     unfold bad
     rw [hst2.frame.readW (Region.contains_self _ (64 / 8)) (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact Offset.disjoint_base _ (by decide) (by decide)) (by decide)]
@@ -437,33 +437,33 @@ theorem decodeCoreCall_ok {s : State} (hc : VCtx b s) {y : Fe} (hy : FS s.mem b 
       CoreFacts b y sg s.mem t := by
   unfold decodeCoreCall
   refine WP.seq (R64.sd_ok hc.ctx (by decide) (by decide) fun s1 u1 => WP.block_nil ?_)
-  have hc1 := hc.of_rest (u1.rest []) (by decide) (by decide)
-  have fs : Frame [⟨b + BitVec.ofNat 64 DECODE_RA, 8⟩] s.mem s1.mem := by
+  obtain hc1 := hc.of_rest (u1.rest []) (by decide) (by decide)
+  obtain fs : Frame [⟨b + BitVec.ofNat 64 DECODE_RA, 8⟩] s.mem s1.mem := by
     rw [u1.mem]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   have keepFS {q : Nat} (hq : q + 56 ≤ DECODE_RA) : FS s1.mem b q = FS s.mem b q := by
-    have e := limb_frame fs (o := q) fun r hr k hk => by
+    obtain e := limb_frame fs (o := q) fun r hr k hk => by
       rw [List.mem_singleton.mp hr]
       have hRA : DECODE_RA = 1712 := rfl
       exact Offset.disjoint b (.inl (by omega_using [hq, hk])) (by omega_using [hq, hk, hRA]) (by decide)
     rw [FS, V, val32_congr e]; rfl
-  have hsign : s1.mem (b + BitVec.ofNat 64 SIGN) = s.mem (b + BitVec.ofNat 64 SIGN) :=
+  obtain hsign : s1.mem (b + BitVec.ofNat 64 SIGN) = s.mem (b + BitVec.ofNat 64 SIGN) :=
     fs _ fun r hr hcon => by
       rw [List.mem_singleton.mp hr] at hcon
       exact Offset.disjoint b (d := SIGN) (n := 1) (e := DECODE_RA) (k := 8)
         (by decide) (by decide) (by decide) _ (Region.contains_self _ _) hcon
-  have hbad : bad s1.mem b = bad s.mem b := by
+  obtain hbad : bad s1.mem b = bad s.mem b := by
     unfold bad
     rw [fs.readW (Region.contains_self _ (64 / 8)) (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact Offset.disjoint b (by decide) (by decide) (by decide)) (by decide)]
-  have hcE : VCtx b s1.callEntry := ⟨⟨hc1.ctx.a3, hc1.ctx.al, hc1.ctx.wr⟩, hc1.ws, hc1.a0⟩
+  obtain hcE : VCtx b s1.callEntry := ⟨⟨hc1.ctx.a3, hc1.ctx.al, hc1.ctx.wr⟩, hc1.ws, hc1.a0⟩
   obtain ⟨tr, s2, he, hc2, hr2, hf2, facts⟩ := decodeCore_ok hcE
     ((keepFS (q := DY) (by decide)).trans hy) ((keepFS (q := DON) (by decide)).trans hon)
     ((keepFS (q := DK) (by decide)).trans hd) hsg (hsign.trans hs)
-  have hra := hr2.gpr .ra (by decide)
-  have hret : isa.ret s1.callEntry s2 = some s2 := by simp only [isa, ret, hra, ↓reduceIte]
+  obtain hra := hr2.gpr .ra (by decide)
+  obtain hret : isa.ret s1.callEntry s2 = some s2 := by simp only [isa, ret, hra, ↓reduceIte]
   refine WP.seq ⟨_, s2, Exec.call (call_callEntry s1) he hret, ?_⟩
-  have saved : s2.mem.readW (b + BitVec.ofNat 64 DECODE_RA) 64 = s.gpr .ra := by
+  obtain saved : s2.mem.readW (b + BitVec.ofNat 64 DECODE_RA) 64 = s.gpr .ra := by
     rw [hf2.readW (Region.contains_self _ (64 / 8)) ?_ (by decide), State.callEntry_mem,
       u1.mem, Mem.readW_writeW_self64]
     intro r hr
@@ -472,7 +472,7 @@ theorem decodeCoreCall_ok {s : State} (hc : VCtx b s) {y : Fe} (hy : FS s.mem b 
     · exact Offset.disjoint_base b (by decide) (by decide)
     all_goals exact Offset.disjoint b (by decide) (by decide) (by decide)
   refine R64.ld_ok hc2.ctx (by decide) (by decide) fun s3 u3 => WP.block_nil ?_
-  have rest : Rest R64.work s s3 := by
+  obtain rest : Rest R64.work s s3 := by
     refine ⟨?_, u3.rd.trans (hr2.rd.trans u1.rd), u3.wr.trans (hr2.wr.trans u1.wr),
       u3.sp.trans (hr2.sp.trans u1.sp)⟩
     intro r hr
@@ -480,7 +480,7 @@ theorem decodeCoreCall_ok {s : State} (hc : VCtx b s) {y : Fe} (hy : FS s.mem b 
     · subst r; exact u3.gpr.trans saved
     · rw [u3.other r er, hr2.gpr r hr,
         State.callEntry_gpr s1 (by
-          have hn : ∀ (r : Reg), r ∉ R64.work → r ≠ Reg.ra → r ∉ linkRegs := by
+          obtain hn : ∀ (r : Reg), r ∉ R64.work → r ≠ Reg.ra → r ∉ linkRegs := by
             intro r; cases r <;> simp [R64.work, linkRegs]
           exact hn r hr er), u1.gpr]
   refine ⟨hc2.of_rest (u3.rest (ws := [.ra]) (by decide)) (by decide) (by decide), rest, ?_, ?_⟩
@@ -501,11 +501,11 @@ theorem decode_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hc : VCtx b s) {p : 
   rw [decode_eq]
   refine WP.seq (WP.mono (decodeY_ok hc hp hp' hp4) fun s1 ⟨hc1, hr1, hf1, hy1, hon1, hk1, hs1, hb1⟩ => ?_)
   generalize hB : (s.mem (b + BitVec.ofNat 64 (p + 56))).toNat = B at hs1 hb1
-  have hBl : B < 256 := by rw [← hB]; exact BitVec.isLt _
-  have hsg : B / 128 ≤ 1 := by omega_using [hB]
+  obtain hBl : B < 256 := by rw [← hB]; exact BitVec.isLt _
+  obtain hsg : B / 128 ≤ 1 := by omega_using [hB]
   generalize hY : VG.Proof.X448.toFe (yw s.mem b p) = y
-  have hy : FS s1.mem b DY = y := by rw [FS, hy1, hY]
-  have hon : FS s1.mem b DON = 1 := by rw [FS, hon1]; rfl
+  obtain hy : FS s1.mem b DY = y := by rw [FS, hy1, hY]
+  obtain hon : FS s1.mem b DON = 1 := by rw [FS, hon1]; rfl
   refine WP.seq (WP.mono (decodeCoreCall_ok hc1 hy hon (hk1.trans hd) hsg hs1)
     fun s3 ⟨hc3, hr3, hf3, hx3, hy3, hd3, hs3, hout3, hb3⟩ => ?_)
   refine WP.mono (decodeNeg_ok hc3 ho hx3 hy3 hout3 hsg hs3)
@@ -516,10 +516,10 @@ theorem decode_ok (hR : Proof.Ed448.RecoverOk) {s : State} (hc : VCtx b s) {p : 
   -- The code's view of `decodePoint`.
   obtain ⟨e56, eB⟩ := bytes57 (b := b) s.mem p
   rw [hB] at eB
-  have hdp := Proof.Ed448.decodePoint_impl hR (Spec.Ed448.bytesAt s.mem (b + BitVec.ofNat 64 p) 57)
+  obtain hdp := Proof.Ed448.decodePoint_impl hR (Spec.Ed448.bytesAt s.mem (b + BitVec.ofNat 64 p) 57)
     (by simp [Spec.Ed448.bytesAt]) _ B e56 eB y (uOf y) (vOf y) (tOf y) (xOf y) hY rfl rfl rfl (by
       rw [xOf, Proof.Ed448.rootPow_eq, VG.Proof.X448.pow_pw]; rfl)
-  have hbt : bad t.mem b = bad s3.mem b := by
+  obtain hbt : bad t.mem b = bad s3.mem b := by
     unfold bad
     rw [hft.readW (Region.contains_self _ (64 / 8)) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

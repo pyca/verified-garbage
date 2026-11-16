@@ -46,8 +46,8 @@ theorem ldr_key_run (r : Reg) (off : Nat) (hoff : off ≤ 100) {z : Spec.Idea.Sc
     (hk : KeyOk z s) :
     ∃ s', runBlock isa [.ldr r .r0 off] s = some s' ∧
       s'.gpr r = s.mem.readW (State.addr (s.gpr .r0) + BitVec.ofNat 64 off) 32 ∧ Keep [r] s s' := by
-  have hfit : (s.gpr .r0).toNat + off < 2 ^ 32 := by have := hk.fit; omega_using [hoff, this]
-  have hin : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 off)) 4 := by
+  obtain hfit : (s.gpr .r0).toNat + off < 2 ^ 32 := by have := hk.fit; omega_using [hoff, this]
+  obtain hin : InRegions (s.rd ++ s.wr) (State.addr (s.gpr .r0 + BitVec.ofNat 32 off)) 4 := by
     rw [addr_add hfit]
     exact ⟨_, hk.read, Offset.contains_base _ (by omega_using [hoff]) (by omega_using [hoff])⟩
   refine ⟨_, by rw [runBlock_cons, exec_ldr (by omega_using [hoff]) hin, runStep_some, runBlock_nil], ?_, ?_⟩
@@ -111,16 +111,16 @@ theorem round_run (j : Nat) (hj : j < 8) (b c : Reg)
         c b s' ∧
       Keep roundWrites s s' := by
   -- What the two registers are not.
-  have nb : ∀ r ∈ [Reg.r0, .r4, .r7, .r8, .r9, .r10, .r11, .r12], b ≠ r ∧ c ≠ r := by
+  obtain nb : ∀ r ∈ [Reg.r0, .r4, .r7, .r8, .r9, .r10, .r11, .r12], b ≠ r ∧ c ≠ r := by
     intro r hr
     rcases Bool.or_eq_true _ _ |>.mp hb with h | h <;>
       simp only [Bool.and_eq_true, beq_iff_eq] at h <;> obtain ⟨rfl, rfl⟩ := h <;>
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr <;>
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-  have hbc : b ≠ c := by
+  obtain hbc : b ≠ c := by
     rcases Bool.or_eq_true _ _ |>.mp hb with h | h <;>
       simp only [Bool.and_eq_true, beq_iff_eq] at h <;> obtain ⟨rfl, rfl⟩ := h <;> decide
-  have hsub : ∀ r ∈ [b, c], r ∈ roundWrites := by
+  obtain hsub : ∀ r ∈ [b, c], r ∈ roundWrites := by
     rcases Bool.or_eq_true _ _ |>.mp hb with h | h <;>
       simp only [Bool.and_eq_true, beq_iff_eq] at h <;> obtain ⟨rfl, rfl⟩ := h <;> decide
   obtain ⟨b0, c0⟩ := nb .r0 (by simp)
@@ -131,12 +131,12 @@ theorem round_run (j : Nat) (hj : j < 8) (b c : Reg)
   obtain ⟨b10, c10⟩ := nb .r10 (by simp)
   obtain ⟨b11, c11⟩ := nb .r11 (by simp)
   obtain ⟨b12, c12⟩ := nb .r12 (by simp)
-  have kb : ∀ {rs : List Reg} {s s' : State}, Keep rs s s' →
+  obtain kb : ∀ {rs : List Reg} {s s' : State}, Keep rs s s' →
       (∀ r ∈ rs, r ∈ [Reg.r4, .r7, .r8, .r9, .r10, .r11]) → s'.gpr b = s.gpr b ∧ s'.gpr c = s.gpr c :=
     fun {rs s s'} e h => ⟨e.reg b fun hm => by
         rcases List.mem_cons.mp (h b hm) with h' | h' <;> simp_all,
       e.reg c fun hm => by rcases List.mem_cons.mp (h c hm) with h' | h' <;> simp_all⟩
-  have r12 : ∀ {rs : List Reg} {s s' : State}, Keep rs s s' → .r12 ∉ rs → MaskOk s → MaskOk s' :=
+  obtain r12 : ∀ {rs : List Reg} {s s' : State}, Keep rs s s' → .r12 ∉ rs → MaskOk s → MaskOk s' :=
     fun e h hm => (e.reg .r12 h).trans hm
   -- X₁ ⊙ Z₁
   obtain ⟨s₁, h₁, v₁, e₁⟩ := loadKey_run .r9 (6 * j) (by omega_using [hj]) s hk
@@ -146,11 +146,11 @@ theorem round_run (j : Nat) (hj : j < 8) (b c : Reg)
     ((hk.keep e₁ (by decide)).keep e₂ (by decide))
   obtain ⟨s₄, h₄, v₄, e₄⟩ := mul_run .r7 .r7 .r9 (by decide) s₃
     (r12 e₃ (by decide) (r12 e₂ (by decide) (r12 e₁ (by decide) hm)))
-  have e₀₄ : Keep [.r4, .r7, .r8, .r9] s s₄ :=
+  obtain e₀₄ : Keep [.r4, .r7, .r8, .r9] s s₄ :=
     (((e₁.weaken (by decide)).trans (e₂.weaken (by decide))).trans (e₃.weaken (by decide))).trans
       (e₄.weaken (by decide))
-  have k₄ : KeyOk z s₄ := hk.keep e₀₄ (by decide)
-  have m₄ : MaskOk s₄ := r12 e₀₄ (by decide) hm
+  obtain k₄ : KeyOk z s₄ := hk.keep e₀₄ (by decide)
+  obtain m₄ : MaskOk s₄ := r12 e₀₄ (by decide) hm
   -- X₂ ⊞ Z₂, X₃ ⊞ Z₃
   obtain ⟨s₅, h₅, v₅, e₅⟩ := loadKey_run .r9 (6 * j + 1) (by omega_using [hj]) s₄ k₄
   obtain ⟨s₆, h₆, v₆, e₆⟩ := addKey_run b b12 s₅ (r12 e₅ (by decide) m₄)
@@ -158,11 +158,11 @@ theorem round_run (j : Nat) (hj : j < 8) (b c : Reg)
     ((k₄.keep e₅ (by decide)).keep e₆ (by simpa using b0.symm))
   obtain ⟨s₈, h₈, v₈, e₈⟩ := addKey_run c c12 s₇
     (r12 e₇ (by decide) (r12 e₆ (by simpa using b12.symm) (r12 e₅ (by decide) m₄)))
-  have e₄₈ : Keep [.r9, b, c] s₄ s₈ :=
+  obtain e₄₈ : Keep [.r9, b, c] s₄ s₈ :=
     (((e₅.mono (by simp)).trans (e₆.mono (by simp))).trans (e₇.mono (by simp))).trans
       (e₈.mono (by simp))
-  have k₈ : KeyOk z s₈ := k₄.keep e₄₈ (by simp [b0.symm, c0.symm])
-  have m₈ : MaskOk s₈ := r12 e₄₈ (by simp [b12.symm, c12.symm]) m₄
+  obtain k₈ : KeyOk z s₈ := k₄.keep e₄₈ (by simp [b0.symm, c0.symm])
+  obtain m₈ : MaskOk s₈ := r12 e₄₈ (by simp [b12.symm, c12.symm]) m₄
   -- t₀
   obtain ⟨s₉, h₉, v₉, e₉⟩ := dp_run .eor .r10 .r4 c s₈
   obtain ⟨s₁₀, h₁₀, v₁₀, e₁₀⟩ := loadKey_run .r9 (6 * j + 4) (by omega_using [hj]) s₉ (k₈.keep e₉ (by decide))
@@ -171,7 +171,7 @@ theorem round_run (j : Nat) (hj : j < 8) (b c : Reg)
   -- t₁
   obtain ⟨s₁₂, h₁₂, v₁₂, e₁₂⟩ := dp_run .eor .r11 b .r7 s₁₁
   obtain ⟨s₁₃, h₁₃, v₁₃, e₁₃⟩ := dp_run .add .r11 .r11 .r10 s₁₂
-  have e₈₁₃ : Keep [.r8, .r9, .r10, .r11] s₈ s₁₃ :=
+  obtain e₈₁₃ : Keep [.r8, .r9, .r10, .r11] s₈ s₁₃ :=
     ((((e₉.weaken (by decide)).trans (e₁₀.weaken (by decide))).trans (e₁₁.weaken (by decide))).trans
       (e₁₂.weaken (by decide))).trans (e₁₃.weaken (by decide))
   obtain ⟨s₁₄, h₁₄, v₁₄, e₁₄⟩ := loadKey_run .r9 (6 * j + 5) (by omega_using [hj]) s₁₃ (k₈.keep e₈₁₃ (by decide))
@@ -187,41 +187,41 @@ theorem round_run (j : Nat) (hj : j < 8) (b c : Reg)
   simp only at v₉ v₁₂ v₁₃ v₁₆ v₁₇ v₁₈ v₁₉ v₂₀ v₂₁
   refine ⟨s₂₁, ?_, ?_, ?_⟩
   · simp only [roundWith]
-    have t : runBlock isa ([.dp .add .r10 .r10 (.reg .r11), .dp .and .r10 .r10 (.reg .r12),
+    obtain t : runBlock isa ([.dp .add .r10 .r10 (.reg .r11), .dp .and .r10 .r10 (.reg .r12),
         .dp .eor .r4 .r4 (.reg .r11), .dp .eor c c (.reg .r11),
         .dp .eor b b (.reg .r10), .dp .eor .r7 .r7 (.reg .r10)] : List Instr) s₁₅ = some s₂₁ :=
       run_append h₁₆ (run_append h₁₇ (run_append h₁₈ (run_append h₁₉ (run_append h₂₀ h₂₁))))
-    have m : runBlock isa ([.dp .eor .r11 b (.reg .r7), .dp .add .r11 .r11 (.reg .r10)] : List Instr) s₁₁ =
+    obtain m : runBlock isa ([.dp .eor .r11 b (.reg .r7), .dp .add .r11 .r11 (.reg .r10)] : List Instr) s₁₁ =
         some s₁₃ := run_append h₁₂ h₁₃
     exact run_append (run_append (run_append (run_append (run_append (run_append (run_append
       (run_append (run_append (run_append (run_append (run_append (run_append (run_append
       h₁ h₂) h₃) h₄) h₅) h₆) h₇) h₈) h₉) h₁₀) h₁₁) m) h₁₄) h₁₅) t
   · -- The values, from the last write back.
-    have a : s₈.gpr .r4 = (Spec.Idea.mul (x.getD 0 0) (rk z j 0)).setWidth 32 := by
+    obtain a : s₈.gpr .r4 = (Spec.Idea.mul (x.getD 0 0) (rk z j 0)).setWidth 32 := by
       rw [e₄₈.reg .r4 (by simp [b4.symm, c4.symm]), e₄.reg .r4 (by decide), e₃.reg .r4 (by decide), v₂,
         e₁.reg .r4 (by decide), hx.r4, setWidth_setWidth16_32, v₁]
       rfl
-    have d : s₈.gpr .r7 = (Spec.Idea.mul (x.getD 3 0) (rk z j 3)).setWidth 32 := by
+    obtain d : s₈.gpr .r7 = (Spec.Idea.mul (x.getD 3 0) (rk z j 3)).setWidth 32 := by
       rw [e₄₈.reg .r7 (by simp [b7.symm, c7.symm]), v₄, v₃, e₃.reg .r7 (by decide),
         e₂.reg .r7 (by decide), e₁.reg .r7 (by decide), hx.r7, setWidth_setWidth16_32]
-    have bv : s₈.gpr b = (x.getD 1 0 + rk z j 1).setWidth 32 := by
-      have hb₄ := (kb e₀₄ (by decide)).1
+    obtain bv : s₈.gpr b = (x.getD 1 0 + rk z j 1).setWidth 32 := by
+      obtain hb₄ := (kb e₀₄ (by decide)).1
       rw [e₈.reg b (by simpa using hbc), e₇.reg b (by simpa using b9), v₆, e₅.reg b (by simpa using b9),
         hb₄, hx.b, add_mask32, v₅]
-    have cv : s₈.gpr c = (x.getD 2 0 + rk z j 2).setWidth 32 := by
-      have hc₄ := (kb e₀₄ (by decide)).2
+    obtain cv : s₈.gpr c = (x.getD 2 0 + rk z j 2).setWidth 32 := by
+      obtain hc₄ := (kb e₀₄ (by decide)).2
       rw [v₈, e₇.reg c (by simpa using c9), e₆.reg c (by simpa using Ne.symm hbc),
         e₅.reg c (by simpa using c9), hc₄, hx.c, add_mask32, v₇]
-    have t₀ : s₁₁.gpr .r10 = (Spec.Idea.mul (Spec.Idea.mul (x.getD 0 0) (rk z j 0) ^^^
+    obtain t₀ : s₁₁.gpr .r10 = (Spec.Idea.mul (Spec.Idea.mul (x.getD 0 0) (rk z j 0) ^^^
         (x.getD 2 0 + rk z j 2)) (rk z j 4)).setWidth 32 := by
       rw [v₁₁, e₁₀.reg .r10 (by decide), v₉, a, cv, xor_setWidth32, setWidth_setWidth16_32, v₁₀]
-    have keep₁₅ : ∀ r ∈ [Reg.r4, .r7], s₁₅.gpr r = s₈.gpr r := by
+    obtain keep₁₅ : ∀ r ∈ [Reg.r4, .r7], s₁₅.gpr r = s₈.gpr r := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;>
         exact (e₁₅.reg _ (by decide)).trans ((e₁₄.reg _ (by decide)).trans (e₈₁₃.reg _ (by decide)))
-    have kbc₁₅ := kb ((e₈₁₃.trans (e₁₄.weaken (by decide))).trans (e₁₅.weaken (by decide))) (by decide)
-    have t₁ : s₁₅.gpr .r11 = (Spec.Idea.mul (((x.getD 1 0 + rk z j 1) ^^^
+    obtain kbc₁₅ := kb ((e₈₁₃.trans (e₁₄.weaken (by decide))).trans (e₁₅.weaken (by decide))) (by decide)
+    obtain t₁ : s₁₅.gpr .r11 = (Spec.Idea.mul (((x.getD 1 0 + rk z j 1) ^^^
         Spec.Idea.mul (x.getD 3 0) (rk z j 3)) +
         Spec.Idea.mul (Spec.Idea.mul (x.getD 0 0) (rk z j 0) ^^^ (x.getD 2 0 + rk z j 2)) (rk z j 4))
         (rk z j 5)).setWidth 32 := by
@@ -230,18 +230,18 @@ theorem round_run (j : Nat) (hj : j < 8) (b c : Reg)
         e₉.reg b (by simpa using b10), bv,
         e₁₁.reg .r7 (by decide), e₁₀.reg .r7 (by decide), e₉.reg .r7 (by decide), d,
         xor_setWidth32, add_setWidth32, v₁₄]
-    have kbc₁₇ := kb ((e₁₆.weaken (rs' := [.r10]) (by decide)).trans (e₁₇.weaken (by decide))) (by decide)
-    have r10₁₅ : s₁₅.gpr .r10 = s₁₁.gpr .r10 := by
+    obtain kbc₁₇ := kb ((e₁₆.weaken (rs' := [.r10]) (by decide)).trans (e₁₇.weaken (by decide))) (by decide)
+    obtain r10₁₅ : s₁₅.gpr .r10 = s₁₁.gpr .r10 := by
       rw [e₁₅.reg .r10 (by decide), e₁₄.reg .r10 (by decide), e₁₃.reg .r10 (by decide)]
       · exact e₁₂.reg .r10 (by decide)
-    have r10₁₇ : s₁₇.gpr .r10 = (Spec.Idea.mul (Spec.Idea.mul (x.getD 0 0) (rk z j 0) ^^^
+    obtain r10₁₇ : s₁₇.gpr .r10 = (Spec.Idea.mul (Spec.Idea.mul (x.getD 0 0) (rk z j 0) ^^^
         (x.getD 2 0 + rk z j 2)) (rk z j 4) + Spec.Idea.mul (((x.getD 1 0 + rk z j 1) ^^^
         Spec.Idea.mul (x.getD 3 0) (rk z j 3)) +
         Spec.Idea.mul (Spec.Idea.mul (x.getD 0 0) (rk z j 0) ^^^ (x.getD 2 0 + rk z j 2)) (rk z j 4))
         (rk z j 5)).setWidth 32 := by
       rw [v₁₇, v₁₆, e₁₆.reg .r12 (by decide), e₁₅.reg .r12 (by decide), e₁₄.reg .r12 (by decide),
         e₈₁₃.reg .r12 (by decide), m₈, r10₁₅, t₀, t₁, add_mask32, setWidth_setWidth16_32]
-    have r11₁₇ : s₁₇.gpr .r11 = s₁₅.gpr .r11 := by
+    obtain r11₁₇ : s₁₇.gpr .r11 = s₁₅.gpr .r11 := by
       rw [e₁₇.reg .r11 (by decide), e₁₆.reg .r11 (by decide)]
     refine ⟨?_, ?_, ?_, ?_⟩
     · rw [e₂₁.reg .r4 (by decide), e₂₀.reg .r4 (by simpa using b4.symm), e₁₉.reg .r4 (by simpa using c4.symm),
@@ -262,8 +262,8 @@ theorem round_run (j : Nat) (hj : j < 8) (b c : Reg)
         e₁₇.reg .r7 (by decide), e₁₆.reg .r7 (by decide), keep₁₅ .r7 (by simp), d, xor_setWidth32]
       rfl
   · have hB : ∀ r ∈ [b], r ∈ roundWrites := fun r hr => hsub r (by simp at hr; simp [hr])
-    have hC : ∀ r ∈ [c], r ∈ roundWrites := fun r hr => hsub r (by simp at hr; simp [hr])
-    have e₄₈' : Keep roundWrites s₄ s₈ := e₄₈.mono fun r hr => by
+    obtain hC : ∀ r ∈ [c], r ∈ roundWrites := fun r hr => hsub r (by simp at hr; simp [hr])
+    obtain e₄₈' : Keep roundWrites s₄ s₈ := e₄₈.mono fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · decide

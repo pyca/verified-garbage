@@ -38,7 +38,7 @@ theorem coord_words2 {m m' : Mem} {base : Addr} {dst src n c : Nat} (hc : c < 2)
     wordsVal m' base (dst + 8 * n * c) n = wordsVal m base (src + 8 * n * c) n := by
   apply wordsVal_of_words₂
   intro i hi
-  have he := h (n * c + i) (by
+  obtain he := h (n * c + i) (by
     have : n * c + i < n * c + n := by omega_using [hi]
     have : n * c + n ≤ 2 * n := by rw [← Nat.mul_succ, Nat.mul_comm 2]; exact Nat.mul_le_mul_left _ hc
     omega_using [hi, this])
@@ -62,83 +62,83 @@ theorem entry_ok {K : WinCfg} {size : Nat} (hL : NafLay K size) {s : State} {bas
   have hn := hs.nowrap
   have hn0 := hW.n0
   have h6 := hL.n6
-  have hst : stride K < 65536 := by simp only [stride]; omega_using [h6]
-  have hEx : K.E.x ∈ winOther K := by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
-  have hEy : K.E.y ∈ winOther K := by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
-  have hEz : K.E.z ∈ winOther K := by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
-  have hRy : K.R.y ∈ winOther K := by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
-  have hRz : K.R.z ∈ winOther K := by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
-  have tx := hW.tbl K.E.x (List.mem_append_right _ hEx)
-  have tz := hW.tbl K.E.z (List.mem_append_right _ hEz)
-  have ty' := hW.tbl K.R.y (List.mem_append_right _ hRy)
-  have tz' := hW.tbl K.R.z (List.mem_append_right _ hRz)
-  have ez := hW.lay.le K.E.z (winOther_mem hEz)
-  have rz := hW.lay.le K.R.z (winOther_mem hRz)
-  have e8 := hL.al.sl K.E.x (winOther_mem hEx)
-  have r8 := hL.al.sl K.R.y (winOther_mem hRy)
-  have t8 := tbl8 hL.al
+  obtain hst : stride K < 65536 := by simp only [stride]; omega_using [h6]
+  obtain hEx : K.E.x ∈ winOther K := by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
+  obtain hEy : K.E.y ∈ winOther K := by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
+  obtain hEz : K.E.z ∈ winOther K := by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
+  obtain hRy : K.R.y ∈ winOther K := by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
+  obtain hRz : K.R.z ∈ winOther K := by simp only [winOther, rcbW, List.mem_append, List.mem_cons, true_or, or_true]
+  obtain tx := hW.tbl K.E.x (List.mem_append_right _ hEx)
+  obtain tz := hW.tbl K.E.z (List.mem_append_right _ hEz)
+  obtain ty' := hW.tbl K.R.y (List.mem_append_right _ hRy)
+  obtain tz' := hW.tbl K.R.z (List.mem_append_right _ hRz)
+  obtain ez := hW.lay.le K.E.z (winOther_mem hEz)
+  obtain rz := hW.lay.le K.R.z (winOther_mem hRz)
+  obtain e8 := hL.al.sl K.E.x (winOther_mem hEx)
+  obtain r8 := hL.al.sl K.R.y (winOther_mem hRy)
+  obtain t8 := tbl8 hL.al
   have c8 := hC.al
-  have clo := hC.slots K.R.z (winOther_mem hRz)
+  obtain clo := hC.slots K.R.z (winOther_mem hRz)
   have ctop := hC.top
-  have hle := tbl_le hW (i := 3 * (a - 1) + 2) (by omega_using [ha8])
+  obtain hle := tbl_le hW (i := 3 * (a - 1) + 2) (by omega_using [ha8])
   have exy := hL.exy
   have exz := hL.exz
   have rxy := hL.rxy
   have rxz := hL.rxz
   have hstr : stride K = 24 * K.M.n := rfl
   -- `R.y`, `R.z` apart from `E`.
-  have ap : ∀ x ∈ [K.R.y, K.R.z], ∀ y ∈ [K.E.x, K.E.y, K.E.z], x + 8 * K.M.n ≤ y ∨ y + 8 * K.M.n ≤ x := by
+  obtain ap : ∀ x ∈ [K.R.y, K.R.z], ∀ y ∈ [K.E.x, K.E.y, K.E.z], x + 8 * K.M.n ≤ y ∨ y + 8 * K.M.n ≤ x := by
     obtain ⟨-, -, -, hRE, -⟩ := hW.other_ne
     intro x hx y hy
-    have hxR : x ∈ [K.R.x, K.R.y, K.R.z] := by
+    obtain hxR : x ∈ [K.R.x, K.R.y, K.R.z] := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; rcases hx with rfl | rfl <;> simp
-    have hxs : x ∈ winSlots K := winOther_mem (R_other K x hxR)
-    have hys : y ∈ winSlots K := winOther_mem (E_other K y hy)
+    obtain hxs : x ∈ winSlots K := winOther_mem (R_other K x hxR)
+    obtain hys : y ∈ winSlots K := winOther_mem (E_other K y hy)
     exact hW.lay.apart x y hxs hys fun e => hRE x hxR (by
       subst e; simp only [List.mem_append, List.mem_cons]
       rcases mem3 hy with rfl | rfl | rfl <;> simp)
-  have aRyEx := ap _ (show K.R.y ∈ [K.R.y, K.R.z] by simp) _ (show K.E.x ∈ [K.E.x, K.E.y, K.E.z] by simp)
-  have aRyEy := ap _ (show K.R.y ∈ [K.R.y, K.R.z] by simp) _ (show K.E.y ∈ [K.E.x, K.E.y, K.E.z] by simp)
-  have aRyEz := ap _ (show K.R.y ∈ [K.R.y, K.R.z] by simp) _ (show K.E.z ∈ [K.E.x, K.E.y, K.E.z] by simp)
-  have aRzEx := ap _ (show K.R.z ∈ [K.R.y, K.R.z] by simp) _ (show K.E.x ∈ [K.E.x, K.E.y, K.E.z] by simp)
-  have aRzEy := ap _ (show K.R.z ∈ [K.R.y, K.R.z] by simp) _ (show K.E.y ∈ [K.E.x, K.E.y, K.E.z] by simp)
-  have aRzEz := ap _ (show K.R.z ∈ [K.R.y, K.R.z] by simp) _ (show K.E.z ∈ [K.E.x, K.E.y, K.E.z] by simp)
-  have hca := cacheAt_eq K a
-  have hm8 := Nat.mul_le_mul_left (16 * K.M.n) (show a - 1 + 1 ≤ 8 by omega_using [ha8])
+  obtain aRyEx := ap _ (show K.R.y ∈ [K.R.y, K.R.z] by simp) _ (show K.E.x ∈ [K.E.x, K.E.y, K.E.z] by simp)
+  obtain aRyEy := ap _ (show K.R.y ∈ [K.R.y, K.R.z] by simp) _ (show K.E.y ∈ [K.E.x, K.E.y, K.E.z] by simp)
+  obtain aRyEz := ap _ (show K.R.y ∈ [K.R.y, K.R.z] by simp) _ (show K.E.z ∈ [K.E.x, K.E.y, K.E.z] by simp)
+  obtain aRzEx := ap _ (show K.R.z ∈ [K.R.y, K.R.z] by simp) _ (show K.E.x ∈ [K.E.x, K.E.y, K.E.z] by simp)
+  obtain aRzEy := ap _ (show K.R.z ∈ [K.R.y, K.R.z] by simp) _ (show K.E.y ∈ [K.E.x, K.E.y, K.E.z] by simp)
+  obtain aRzEz := ap _ (show K.R.z ∈ [K.R.y, K.R.z] by simp) _ (show K.E.z ∈ [K.E.x, K.E.y, K.E.z] by simp)
+  obtain hca := cacheAt_eq K a
+  obtain hm8 := Nat.mul_le_mul_left (16 * K.M.n) (show a - 1 + 1 ≤ 8 by omega_using [ha8])
   rw [Nat.mul_add, Nat.mul_one] at hm8
-  have hm8' : 24 * K.M.n * (a - 1) + 24 * K.M.n ≤ 24 * K.M.n * 8 := by
+  obtain hm8' : 24 * K.M.n * (a - 1) + 24 * K.M.n ≤ 24 * K.M.n * 8 := by
     rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ (by omega_using [ha8])
-  have hmul : 8 * K.M.n * (3 * (a - 1) + 2) = 24 * K.M.n * (a - 1) + 16 * K.M.n := by grind
+  obtain hmul : 8 * K.M.n * (3 * (a - 1) + 2) = 24 * K.M.n * (a - 1) + 16 * K.M.n := by grind
   rw [entry, List.append_assoc, List.append_assoc, WP.block_append_iff]
   -- The cache's entry.
   refine WP.mono (cacheAddr_ok (c := 16 * K.M.n) hs.x0 h2 ha1 (by omega_using [hn0, h6, tx, tz, ty', tz', ez, rz, clo, ctop, hle, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul])) fun s₁ ⟨h16, h2', k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (ldOff_ok (p := 16 * K.M.n * (a - 1)) (o := cacheAt K 1) (dst := K.R.y) (n := 2 * K.M.n)
     hs₁ h16 (by omega_using [ha1, ha8, hn, hn0, h6, tx, tz, ty', tz', ez, rz, e8, r8, t8, c8, clo, ctop, hle, exy, exz, rxy, rxz, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul]) r8 c8 (by omega_using [ha1, ha8, hn, hn0, h6, tx, tz, ty', tz', ez, rz, c8, clo, ctop, hle, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul]) (Or.inl (by omega_using [ha1, ha8, hn, hn0, h6, tx, tz, ty', tz', ez, rz, e8, r8, t8, c8, clo, ctop, hle, exy, exz, rxy, rxz, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul])) (2 * K.M.n) (Nat.le_refl _))
     fun s₂ ⟨e₂, k₂, O₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
   rw [WP.block_append_iff]
   -- The table's entry.
   refine WP.mono (entryAddr2_ok K (a := a) hs₂.x0 ((k₂.gpr _ (by decide)).trans h2') hst)
     fun s₃ ⟨h16', k₃⟩ => ?_
-  have hs₃ := hs₂.of_keeps k₃ (by decide)
+  obtain hs₃ := hs₂.of_keeps k₃ (by decide)
   refine WP.mono (ldOff_ok (p := stride K * (a - 1)) (o := K.tbl) (dst := K.E.x) (n := 3 * K.M.n) hs₃ h16'
     (by omega_using [ha1, ha8, hn, hn0, h6, tx, tz, ty', tz', ez, rz, e8, r8, t8, c8, clo, ctop, hle, exy, exz, rxy, rxz, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul]) e8 t8 (by rw [hstr]; omega_using [ha1, ha8, hn, hn0, h6, tx, tz, ty', tz', ez, rz, t8, clo, ctop, hle, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul]) (by rw [hstr]; omega_using [ha1, ha8, hn, hn0, h6, tx, tz, ty', tz', ez, rz, e8, r8, t8, c8, clo, ctop, hle, exy, exz, rxy, rxz, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul]) (3 * K.M.n) (Nat.le_refl _))
     fun t ⟨e, kt, O⟩ => ⟨fun c hc => ?_, fun c hc => ?_, ?_, ?_⟩
   · have := coord_words (n := K.M.n) hc (dst := K.E.x) (src := stride K * (a - 1) + K.tbl) e
     rw [this, k₃.mem]
-    have hsrc : stride K * (a - 1) + K.tbl + 8 * K.M.n * c = K.tbl + 8 * K.M.n * (3 * (a - 1) + c) := by
+    obtain hsrc : stride K * (a - 1) + K.tbl + 8 * K.M.n * c = K.tbl + 8 * K.M.n * (3 * (a - 1) + c) := by
       rw [hstr]; grind
     rw [hsrc]
-    have hb : 8 * K.M.n * (3 * (a - 1) + c) + 8 * K.M.n ≤ 8 * K.M.n * (3 * (a - 1) + 2) + 8 * K.M.n := by
+    obtain hb : 8 * K.M.n * (3 * (a - 1) + c) + 8 * K.M.n ≤ 8 * K.M.n * (3 * (a - 1) + 2) + 8 * K.M.n := by
       have := Nat.mul_le_mul_left (8 * K.M.n) (show 3 * (a - 1) + c ≤ 3 * (a - 1) + 2 by omega_using [hc]); omega_using [ha1, ha8, hn0, h6, tx, tz, ty', tz', ez, rz, clo, ctop, hle, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul, hc, hsrc, this]
     refine (O₂.unch.wordsVal (fun w hw => ?_) (by omega_using [ha1, ha8, hn, hn0, h6, hst, tx, tz, ty', tz', ez, rz, e8, r8, t8, c8, clo, ctop, hle, exy, exz, rxy, rxz, hstr, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul, hc, hsrc, hb])).trans ?_
     · simp only [List.mem_singleton] at hw; subst hw; simp only
       omega_using [ha1, ha8, hn, hn0, h6, hst, tx, tz, ty', tz', ez, rz, e8, r8, t8, c8, clo, ctop, hle, exy, exz, rxy, rxz, hstr, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul, hc, hsrc, hb]
     · rw [k₁.mem]
   · have hw2 := coord_words2 (n := K.M.n) hc (dst := K.R.y) (src := 16 * K.M.n * (a - 1) + cacheAt K 1) e₂
-    have hc8 : 8 * K.M.n * c ≤ 8 * K.M.n := by
+    obtain hc8 : 8 * K.M.n * c ≤ 8 * K.M.n := by
       have := Nat.mul_le_mul_left (8 * K.M.n) (show c ≤ 1 by omega_using [hc]); omega_using [hn0, h6, tx, tz, ty', tz', ez, rz, clo, ctop, hle, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul, hc, this]
     rw [O.unch.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; simp only; omega_using [ha1, ha8, hn, hn0, h6, tx, tz, ty', tz', ez, rz, e8, r8, t8, c8, clo, ctop, hle, exy, exz, rxy, rxz, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul, hc, hc8])
       (by omega_using [ha1, ha8, hn, hn0, h6, tx, tz, ty', tz', ez, rz, e8, r8, t8, c8, clo, ctop, hle, exy, exz, rxy, rxz, aRyEx, aRyEy, aRyEz, aRzEx, aRzEy, aRzEz, hm8, hm8', hmul, hc, hc8]), k₃.mem, hw2, k₁.mem]
@@ -146,10 +146,10 @@ theorem entry_ok {K : WinCfg} {size : Nat} (hL : NafLay K size) {s : State} {bas
   · exact ((Keeps.regs k₁).mono (by sub_regs)).trans ((k₂.mono (by sub_regs)).trans
       ((Keeps.regs k₃).mono (by sub_regs) |>.trans (kt.mono (by sub_regs))))
   · intro x hx
-    have hE : ofs base x < K.E.x ∨ K.E.x + 8 * (3 * K.M.n) ≤ ofs base x := by
+    obtain hE : ofs base x < K.E.x ∨ K.E.x + 8 * (3 * K.M.n) ≤ ofs base x := by
       have := hx (K.E.x, 8 * K.M.n) (by simp); have := hx (K.E.y, 8 * K.M.n) (by simp)
       have := hx (K.E.z, 8 * K.M.n) (by simp); omega_arith
-    have hR : ofs base x < K.R.y ∨ K.R.y + 8 * (2 * K.M.n) ≤ ofs base x := by
+    obtain hR : ofs base x < K.R.y ∨ K.R.y + 8 * (2 * K.M.n) ≤ ofs base x := by
       have := hx (K.R.y, 8 * K.M.n) (by simp); have := hx (K.R.z, 8 * K.M.n) (by simp); omega_arith
     rw [O x hE, k₃.mem, O₂ x hR, k₁.mem]
 
@@ -192,77 +192,77 @@ theorem signedEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL
     WP isa (signedEntry K) s (EntryPost K C base size P k j s₀ s) := by
   have hW := hL.win
   have hn := h.scr.nowrap
-  have hmag := Naf5.magnitude_le k j
-  have hodd := (Naf5.magnitude_odd_or_zero k j).resolve_left hm0
+  obtain hmag := Naf5.magnitude_le k j
+  obtain hodd := (Naf5.magnitude_odd_or_zero k j).resolve_left hm0
   let a := (Naf5.magnitude k j + 1) / 2
-  have ha1 : 1 ≤ a := by omega
-  have ha8 : a ≤ 8 := by omega
-  have ha : 2 * a - 1 = Naf5.magnitude k j := by omega_using [hodd]
+  obtain ha1 : 1 ≤ a := by omega
+  obtain ha8 : a ≤ 8 := by omega
+  obtain ha : 2 * a - 1 = Naf5.magnitude k j := by omega_using [hodd]
   rw [signedEntry]
   apply WP.seq
   rw [WP.block_append_iff]
   refine WP.mono (nafIndex_ok h2) fun u ⟨u2, ku⟩ => ?_
   rw [nafMagnitude_byte] at u2
-  have Su := h.regs hW ku (fun r hr => nafClob_mem (by
+  obtain Su := h.regs hW ku (fun r hr => nafClob_mem (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl | rfl <;> simp))
     (by decide)
-  have cu := CacheUpTo.ofMem ku.mem hc
+  obtain cu := CacheUpTo.ofMem ku.mem hc
   refine WP.mono (entry_ok hL Su.scr u2 ha1 ha8) fun v ⟨ev, er, kv, Uv⟩ => ?_
-  have Uvl := ER_unch_loopW Uv
-  have Sv := Su.next hW (Su.scr.of_keepRegs kv (by decide)) (kv.mono fun r hr => nafClob_mem (by
+  obtain Uvl := ER_unch_loopW Uv
+  obtain Sv := Su.next hW (Su.scr.of_keepRegs kv (by decide)) (kv.mono fun r hr => nafClob_mem (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
     rcases hr with rfl | rfl | rfl | rfl <;> simp)) Uvl
   -- `E` is entry `a`, `R.y` and `R.z` its cached `Z²` and `Z³`.
   obtain ⟨tl, tJ⟩ := Su.tbl a ha1 ha8
   obtain ⟨cl2, cl3, ce2, ce3⟩ := cu a ha1 ha8
-  have eEx : wordsVal v.mem base K.E.x K.M.n = wordsVal u.mem base (K.tblPt a).x K.M.n := by
+  obtain eEx : wordsVal v.mem base K.E.x K.M.n = wordsVal u.mem base (K.tblPt a).x K.M.n := by
     have := ev 0 (by decide); rw [tblPt_x]; simpa using this
-  have eEy : wordsVal v.mem base K.E.y K.M.n = wordsVal u.mem base (K.tblPt a).y K.M.n := by
+  obtain eEy : wordsVal v.mem base K.E.y K.M.n = wordsVal u.mem base (K.tblPt a).y K.M.n := by
     have := ev 1 (by decide); rw [tblPt_y, hL.exy]; simpa using this
-  have eEz : wordsVal v.mem base K.E.z K.M.n = wordsVal u.mem base (K.tblPt a).z K.M.n := by
+  obtain eEz : wordsVal v.mem base K.E.z K.M.n = wordsVal u.mem base (K.tblPt a).z K.M.n := by
     have := ev 2 (by decide)
     rw [tblPt_z, hL.exz, show K.E.x + 16 * K.M.n = K.E.x + 8 * K.M.n * 2 by omega_using []]
     exact this
-  have eRy : wordsVal v.mem base K.R.y K.M.n = wordsVal u.mem base (cacheAt K a) K.M.n := by
+  obtain eRy : wordsVal v.mem base K.R.y K.M.n = wordsVal u.mem base (cacheAt K a) K.M.n := by
     have := er 0 (by decide); simpa using this
-  have eRz : wordsVal v.mem base K.R.z K.M.n = wordsVal u.mem base (cacheAt K a + 8 * K.M.n) K.M.n := by
+  obtain eRz : wordsVal v.mem base K.R.z K.M.n = wordsVal u.mem base (cacheAt K a + 8 * K.M.n) K.M.n := by
     have := er 1 (by decide)
     rw [hL.rxz, show K.R.x + 16 * K.M.n = K.R.y + 8 * K.M.n * 1 by rw [hL.rxy]; omega_using []]
     simpa using this
-  have lE : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal v.mem base x K.M.n < C.p := by
+  obtain lE : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal v.mem base x K.M.n < C.p := by
     intro x hx
     rcases mem3 hx with rfl | rfl | rfl
     · rw [eEx]; exact tl _ (by simp)
     · rw [eEy]; exact tl _ (by simp)
     · rw [eEz]; exact tl _ (by simp)
-  have JE : InvJ C (tmv C K.M.n base v K.E.x) (tmv C K.M.n base v K.E.y) (tmv C K.M.n base v K.E.z)
+  obtain JE : InvJ C (tmv C K.M.n base v K.E.x) (tmv C K.M.n base v K.E.y) (tmv C K.M.n base v K.E.z)
       (mul (Naf5.magnitude k j) P) := by
     show InvJ C (toM _ _ _) (toM _ _ _) (toM _ _ _) _
     rw [eEx, eEy, eEz, ← ha]
     exact tJ
-  have tEz : tmv C K.M.n base v K.E.z = tmv C K.M.n base u (K.tblPt a).z := by
+  obtain tEz : tmv C K.M.n base v K.E.z = tmv C K.M.n base u (K.tblPt a).z := by
     show toM _ _ _ = toM _ _ _; rw [eEz]
-  have zz : tmv C K.M.n base v K.R.y = tmv C K.M.n base v K.E.z * tmv C K.M.n base v K.E.z := by
+  obtain zz : tmv C K.M.n base v K.R.y = tmv C K.M.n base v K.E.z * tmv C K.M.n base v K.E.z := by
     rw [tEz, ← ce2]; show toM _ _ _ = toM _ _ _; rw [eRy]
-  have zzz : tmv C K.M.n base v K.R.z =
+  obtain zzz : tmv C K.M.n base v K.R.z =
       tmv C K.M.n base v K.E.z * (tmv C K.M.n base v K.E.z * tmv C K.M.n base v K.E.z) := by
     rw [tEz, ← ce3]; show toM _ _ _ = toM _ _ _; rw [eRz]
-  have lR : ∀ x ∈ [K.R.y, K.R.z], wordsVal v.mem base x K.M.n < C.p := by
+  obtain lR : ∀ x ∈ [K.R.y, K.R.z], wordsVal v.mem base x K.M.n < C.p := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl
     · rw [eRy]; exact cl2
     · rw [eRz]; exact cl3
-  have cv := CacheOk.unch hW hL.cache cu Uvl hn
-  have v19 : v.gpr .x19 = BitVec.ofNat 64 j := by
+  obtain cv := CacheOk.unch hW hL.cache cu Uvl hn
+  obtain v19 : v.gpr .x19 = BitVec.ofNat 64 j := by
     rw [kv.gpr _ (by decide), ku.gpr _ (by decide), h19]
-  have keepE : ∀ x ∈ winSlots K, x ∉ [K.E.x, K.E.y, K.E.z, K.R.y, K.R.z] →
+  obtain keepE : ∀ x ∈ winSlots K, x ∉ [K.E.x, K.E.y, K.E.z, K.R.y, K.R.z] →
       wordsVal v.mem base x K.M.n = wordsVal s.mem base x K.M.n := by
     intro x hx hxE
     rw [← ku.mem]
     refine Uv.wordsVal (fun w hw => ?_) (by have := hW.lay.le x hx; omega_using [hn, this])
-    have hne : ∀ y ∈ [K.E.x, K.E.y, K.E.z, K.R.y, K.R.z], x ≠ y := fun y hy e => hxE (e ▸ hy)
-    have hs : ∀ y ∈ [K.E.x, K.E.y, K.E.z, K.R.y, K.R.z], y ∈ winSlots K := by
+    obtain hne : ∀ y ∈ [K.E.x, K.E.y, K.E.z, K.R.y, K.R.z], x ≠ y := fun y hy e => hxE (e ▸ hy)
+    obtain hs : ∀ y ∈ [K.E.x, K.E.y, K.E.z, K.R.y, K.R.z], y ∈ winSlots K := by
       intro y hy
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
       rcases hy with rfl | rfl | rfl | rfl | rfl
@@ -275,7 +275,7 @@ theorem signedEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL
     rcases hw with rfl | rfl | rfl | rfl | rfl
     all_goals exact hW.lay.apart x _ hx (hs _ (by simp)) (hne _ (by simp))
   -- What the sign leaves, from `v`.
-  have fin : ∀ t : State, NSt K C base size P s₀ t → t.gpr .x19 = BitVec.ofNat 64 j →
+  obtain fin : ∀ t : State, NSt K C base size P s₀ t → t.gpr .x19 = BitVec.ofNat 64 j →
       (∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal t.mem base x K.M.n < C.p) →
       InvJ C (tmv C K.M.n base t K.E.x) (tmv C K.M.n base t K.E.y) (tmv C K.M.n base t K.E.z)
         (Naf5.point C P k j) →
@@ -283,15 +283,15 @@ theorem signedEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL
       Unch base (loopW K) v.mem t.mem → EntryPost K C base size P k j s₀ s t := by
     intro t St t19 tlE tJE tk tU
     obtain ⟨-, -, -, hRE, -, -, -, -, -, -⟩ := hW.other_ne
-    have hRyE : K.R.y ≠ K.E.y := fun e => hRE _ (show K.R.y ∈ [K.R.x, K.R.y, K.R.z] by simp)
+    obtain hRyE : K.R.y ≠ K.E.y := fun e => hRE _ (show K.R.y ∈ [K.R.x, K.R.y, K.R.z] by simp)
       (by rw [e]; simp)
-    have hRzE : K.R.z ≠ K.E.y := fun e => hRE _ (show K.R.z ∈ [K.R.x, K.R.y, K.R.z] by simp)
+    obtain hRzE : K.R.z ≠ K.E.y := fun e => hRE _ (show K.R.z ∈ [K.R.x, K.R.y, K.R.z] by simp)
       (by rw [e]; simp)
     obtain ⟨-, -, -, -, -, -, eyz, -⟩ := hW.other_ne
-    have sRy : K.R.y ∈ winSlots K := winOther_mem (R_other K _ (by simp))
-    have sRz : K.R.z ∈ winSlots K := winOther_mem (R_other K _ (by simp))
-    have sEz : K.E.z ∈ winSlots K := winOther_mem (E_other K _ (by simp))
-    have tm : ∀ x ∈ winSlots K, x ≠ K.E.y → tmv C K.M.n base t x = tmv C K.M.n base v x :=
+    obtain sRy : K.R.y ∈ winSlots K := winOther_mem (R_other K _ (by simp))
+    obtain sRz : K.R.z ∈ winSlots K := winOther_mem (R_other K _ (by simp))
+    obtain sEz : K.E.z ∈ winSlots K := winOther_mem (E_other K _ (by simp))
+    obtain tm : ∀ x ∈ winSlots K, x ≠ K.E.y → tmv C K.M.n base t x = tmv C K.M.n base v x :=
       fun x hx hne => by show toM _ _ _ = toM _ _ _; rw [tk x hx hne]
     refine ⟨St, t19, tlE, tJE, fun x hx => ?_, ?_, ?_, CacheOk.unch hW hL.cache cv tU hn, fun x hx hxE => ?_⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -309,22 +309,22 @@ theorem signedEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL
   refine WP.mono (nafSignRead_ok Sv.scr (by omega_using [hb4]) (by omega_using [hj, hbits, hdig]) v19 (Sv.digits hL hF j hj))
     fun w ⟨w3, kw⟩ => ?_
   rw [nafNegative_byte] at w3
-  have Sw := Sv.regs hW kw (fun r hr => nafClob_mem (by
+  obtain Sw := Sv.regs hW kw (fun r hr => nafClob_mem (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl <;> simp))
     (by decide)
-  have w19 : w.gpr .x19 = BitVec.ofNat 64 j := (kw.gpr _ (by decide)).trans v19
-  have tw : ∀ x, tmv C K.M.n base w x = tmv C K.M.n base v x := fun x => by
+  obtain w19 : w.gpr .x19 = BitVec.ofNat 64 j := (kw.gpr _ (by decide)).trans v19
+  obtain tw : ∀ x, tmv C K.M.n base w x = tmv C K.M.n base v x := fun x => by
     show toM _ _ _ = toM _ _ _; rw [kw.mem]
-  have lw : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal w.mem base x K.M.n < C.p := by
+  obtain lw : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal w.mem base x K.M.n < C.p := by
     rw [kw.mem]; exact lE
   refine WP.ite (Naf5.negative k j) (by
     change some (w.read .x .x3 != 0) = some (Naf5.negative k j)
     rw [read_x, w3]; cases Naf5.negative k j <;> decide) (fun hneg => ?_) (fun hneg => ?_)
   · -- Negate `y`.
     obtain ⟨rol, hz⟩ := Sw.ro hW hF
-    have hzs : K.zero ∈ winSlots K := winRo_slots K _ (by simp [winRo])
+    obtain hzs : K.zero ∈ winSlots K := winRo_slots K _ (by simp [winRo])
     let V := [K.E.x, K.E.y, K.E.z, K.zero]
-    have hVs : ∀ x ∈ V, x ∈ winSlots K := by
+    obtain hVs : ∀ x ∈ V, x ∈ winSlots K := by
       intro x hx
       simp only [V, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with h | h | h | h <;> subst h
@@ -332,7 +332,7 @@ theorem signedEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL
       · exact winOther_mem (E_other K _ (by simp))
       · exact winOther_mem (E_other K _ (by simp))
       · exact hzs
-    have hVl : ∀ x ∈ V, wordsVal w.mem base x K.M.n < C.p := by
+    obtain hVl : ∀ x ∈ V, wordsVal w.mem base x K.M.n < C.p := by
       intro x hx
       simp only [V, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with h | h | h | h <;> subst h
@@ -340,22 +340,22 @@ theorem signedEntry_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL
       · exact lw _ (by simp)
       · exact lw _ (by simp)
       · exact rol _ (by simp [winRo])
-    have I := inv_of Sw.scr Sw.mod hVs hVl
+    obtain I := inv_of Sw.scr Sw.mod hVs hVl
     obtain ⟨-, -, -, -, exy, -, eyz, -⟩ := hW.other_ne
-    have hz' : tmv C K.M.n base w K.zero = 0 := by
+    obtain hz' : tmv C K.M.n base w K.zero = 0 := by
       show toM _ _ _ = 0; rw [hz]; exact toM_zero _ _
-    have JEw : InvJ C (tmv C K.M.n base w K.E.x) (tmv C K.M.n base w K.E.y) (tmv C K.M.n base w K.E.z)
+    obtain JEw : InvJ C (tmv C K.M.n base w K.E.x) (tmv C K.M.n base w K.E.y) (tmv C K.M.n base w K.E.z)
         (mul (Naf5.magnitude k j) P) := by rw [tw, tw, tw]; exact JE
     refine WP.mono (nafNeg_ok hW.lay hL.al.al hp I (fun x hx => hx) exy (Ne.symm eyz) hz' JEw)
       fun t ⟨kt, it, jt⟩ => ?_
-    have hU : Unch base (loopW K) w.mem t.mem := kt.unch.mono fun w hw => by
+    obtain hU : Unch base (loopW K) w.mem t.mem := kt.unch.mono fun w hw => by
       simp only [List.mem_append, List.mem_map, List.mem_singleton] at hw
       simp only [loopW, List.mem_append, List.mem_map, List.mem_singleton]
       rcases hw with ⟨y, hy, rfl⟩ | rfl
       · subst hy
         exact Or.inl ⟨_, E_other K _ (by simp), rfl⟩
       · exact Or.inr rfl
-    have St := Sw.next hW it.scr ((⟨kt.gpr, kt.rd, kt.wr, kt.sp⟩ : KeepRegs (clob K.M.n) w t).mono
+    obtain St := Sw.next hW it.scr ((⟨kt.gpr, kt.rd, kt.wr, kt.sp⟩ : KeepRegs (clob K.M.n) w t).mono
       clob_nafClob) hU
     refine fin t St ((kt.gpr _ (x19_not_clob _)).trans w19) (fun x hx => it.lt x (by
         rcases mem3 hx with rfl | rfl | rfl <;> simp [V])) ?_ (fun x hx hne => ?_)

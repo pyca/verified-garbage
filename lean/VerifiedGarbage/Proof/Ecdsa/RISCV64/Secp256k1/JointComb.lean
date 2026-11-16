@@ -83,9 +83,9 @@ theorem selR_ok {s : State} {base : Addr} (hw : WsReg s base) (z : Bool)
     WP isa (.block (sel 4 (secp256k1.sl o) (secp256k1.sl o) (secp256k1.sl b))) s fun s' =>
       sv base s' o = (if z then sv base s b else sv base s o) ∧ Rest [.t0, .t1] s s' ∧
       Outside base (secp256k1.sl o) (8 * 4) s.mem s'.mem := by
-  have h1 := slR o (by simp at ho ⊢; omega_using [ho])
-  have h2 := slR b (by simp at hb ⊢; omega_using [hb])
-  have hsep : secp256k1.sl o ≤ secp256k1.sl b ∨ secp256k1.sl b + 8 * 4 ≤ secp256k1.sl o := by
+  obtain h1 := slR o (by simp at ho ⊢; omega_using [ho])
+  obtain h2 := slR b (by simp at hb ⊢; omega_using [hb])
+  obtain hsep : secp256k1.sl o ≤ secp256k1.sl b ∨ secp256k1.sl b + 8 * 4 ≤ secp256k1.sl o := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at ho hb
     rcases ho with rfl | rfl | rfl <;> rcases hb with rfl | rfl <;> decide
   exact sel_ok z 4 hw hc h1.1 h1.1 h2.1 h1.2 h1.2 h2.2 (.inl (Nat.le_refl _)) hsep
@@ -98,29 +98,29 @@ theorem zeroR_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base) (hz 
       Rest [.t0, .t1, .t3, .t4, .a7] s s' ∧ Unch base zW s.mem s'.mem ∧
       PtOk base s' (secp256k1.pt RX RY RZ) (if sv base s a = 0 then .infinity else P) ∧
       sv base s' BP = W.b * 2 ^ 256 % W.p := by
-  have hp0 : 0 < W.p := by decide
-  have hsa : secp256k1.sl a % 8 = 0 ∧ secp256k1.sl a + 8 * 4 ≤ 4096 := by rcases ha with rfl | rfl <;> decide
+  obtain hp0 : 0 < W.p := by decide
+  obtain hsa : secp256k1.sl a % 8 = 0 ∧ secp256k1.sl a + 8 * 4 ≤ 4096 := by rcases ha with rfl | rfl <;> decide
   rw [VerifyComb.Cfg.zeroR, List.append_assoc]
   refine WP.block_append (WP.mono (zeroMask_ok (n := 4) hw hsa.1 hsa.2) fun s₁ ⟨r₁, m₁, k₁⟩ => ?_)
-  have hw₁ := hw.of_rest r₁
+  obtain hw₁ := hw.of_rest r₁
   generalize hzb : decide (sv base s a = 0) = z
-  have hc₁ : s₁.gpr .a7 = (if z then BitVec.allOnes 64 else 0) := by
+  obtain hc₁ : s₁.gpr .a7 = (if z then BitVec.allOnes 64 else 0) := by
     rw [k₁, ← hzb]
-  have e₁ : ∀ i ∈ [RX, RY, RZ, ZERO, ONEP], sv base s₁ i = sv base s i := fun i _ => by
+  obtain e₁ : ∀ i ∈ [RX, RY, RZ, ZERO, ONEP], sv base s₁ i = sv base s i := fun i _ => by
     show wordsVal s₁.mem _ _ _ = wordsVal s.mem _ _ _; rw [m₁]
   rw [show VerifyComb.Cfg.oPt secp256k1 = secp256k1.pt ZERO ONEP ZERO from rfl, selPt, List.append_assoc,
     List.append_assoc]
   refine WP.block_append (WP.mono (selR_ok hw₁ z hc₁ (o := RX) (b := ZERO) (by simp) (by simp))
     fun s₂ ⟨x₂, r₂, O₂⟩ => ?_)
-  have hw₂ := hw₁.of_rest r₂
-  have hc₂ : s₂.gpr .a7 = _ := (r₂.gpr .a7 (by decide)).trans hc₁
+  obtain hw₂ := hw₁.of_rest r₂
+  obtain hc₂ : s₂.gpr .a7 = _ := (r₂.gpr .a7 (by decide)).trans hc₁
   refine WP.block_append (WP.mono (selR_ok hw₂ z hc₂ (o := RY) (b := ONEP) (by simp) (by simp))
     fun s₃ ⟨y₃, r₃, O₃⟩ => ?_)
-  have hw₃ := hw₂.of_rest r₃
-  have hc₃ : s₃.gpr .a7 = _ := (r₃.gpr .a7 (by decide)).trans hc₂
+  obtain hw₃ := hw₂.of_rest r₃
+  obtain hc₃ : s₃.gpr .a7 = _ := (r₃.gpr .a7 (by decide)).trans hc₂
   refine WP.block_append (WP.mono (selR_ok hw₃ z hc₃ (o := RZ) (b := ZERO) (by simp) (by simp))
     fun s₄ ⟨z₄, r₄, O₄⟩ => ?_)
-  have hw₄ := hw₃.of_rest r₄
+  obtain hw₄ := hw₃.of_rest r₄
   refine WP.mono (setConst_ok 4 hw₄ (o := secp256k1.sl BP) (x := Cfg.mont secp256k1 secp256k1.C.b) (by decide) (by decide))
     fun s₅ ⟨r₅, O₅, b₅⟩ => ⟨?_, ?_, ?_, by rw [← bp_val]; exact b₅⟩
   · exact (r₁.mono (ws' := [.t0, .t1, .t3, .t4, .a7]) (by decide)).trans
@@ -128,39 +128,39 @@ theorem zeroR_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base) (hz 
   · rw [← m₁]
     exact (((O₂.unch.trans O₃.unch).trans O₄.unch).trans O₅.unch).mono (by decide)
   · -- Each coordinate, through the later steps.
-    have U₂₅ := ((O₃.unch.trans O₄.unch).trans O₅.unch)
-    have U₃₅ := (O₄.unch.trans O₅.unch)
-    have fx : sv base s₅ RX = sv base s₂ RX := sv_unch U₂₅ RX (by decide)
-    have fy : sv base s₅ RY = sv base s₃ RY := sv_unch U₃₅ RY (by decide)
-    have fz : sv base s₅ RZ = sv base s₄ RZ := sv_unch O₅.unch RZ (by decide)
-    have gy : sv base s₂ RY = sv base s₁ RY := sv_unch O₂.unch RY (by decide)
-    have gz : sv base s₃ RZ = sv base s₁ RZ := sv_unch (O₂.unch.trans O₃.unch) RZ (by decide)
-    have g0 : sv base s₂ ZERO = sv base s₁ ZERO := sv_unch O₂.unch ZERO (by decide)
-    have g1 : sv base s₂ ONEP = sv base s₁ ONEP := sv_unch O₂.unch ONEP (by decide)
-    have g0' : sv base s₃ ZERO = sv base s₁ ZERO := sv_unch (O₂.unch.trans O₃.unch) ZERO (by decide)
-    have ex : sv base s₅ RX = if z then 0 else sv base s RX := by
+    obtain U₂₅ := ((O₃.unch.trans O₄.unch).trans O₅.unch)
+    obtain U₃₅ := (O₄.unch.trans O₅.unch)
+    obtain fx : sv base s₅ RX = sv base s₂ RX := sv_unch U₂₅ RX (by decide)
+    obtain fy : sv base s₅ RY = sv base s₃ RY := sv_unch U₃₅ RY (by decide)
+    obtain fz : sv base s₅ RZ = sv base s₄ RZ := sv_unch O₅.unch RZ (by decide)
+    obtain gy : sv base s₂ RY = sv base s₁ RY := sv_unch O₂.unch RY (by decide)
+    obtain gz : sv base s₃ RZ = sv base s₁ RZ := sv_unch (O₂.unch.trans O₃.unch) RZ (by decide)
+    obtain g0 : sv base s₂ ZERO = sv base s₁ ZERO := sv_unch O₂.unch ZERO (by decide)
+    obtain g1 : sv base s₂ ONEP = sv base s₁ ONEP := sv_unch O₂.unch ONEP (by decide)
+    obtain g0' : sv base s₃ ZERO = sv base s₁ ZERO := sv_unch (O₂.unch.trans O₃.unch) ZERO (by decide)
+    obtain ex : sv base s₅ RX = if z then 0 else sv base s RX := by
       rw [fx, x₂, e₁ ZERO (by simp), e₁ RX (by simp), hz]
-    have ey : sv base s₅ RY = if z then 1 * 2 ^ 256 % W.p else sv base s RY := by
+    obtain ey : sv base s₅ RY = if z then 1 * 2 ^ 256 % W.p else sv base s RY := by
       rw [fy, y₃, g1, gy, e₁ ONEP (by simp), e₁ RY (by simp), ho]
-    have ez : sv base s₅ RZ = if z then 0 else sv base s RZ := by
+    obtain ez : sv base s₅ RZ = if z then 0 else sv base s RZ := by
       rw [fz, z₄, g0', gz, e₁ ZERO (by simp), e₁ RZ (by simp), hz]
     by_cases h0 : sv base s a = 0
     · rw [ite_eq_left h0]
-      have hz' : z = true := by rw [← hzb]; exact decide_eq_true h0
+      obtain hz' : z = true := by rw [← hzb]; exact decide_eq_true h0
       rw [hz'] at ex ey ez
       simp only [↓reduceIte] at ex ey ez
       refine ⟨?_, by show sv base s₅ RX < W.p; rw [ex]; exact hp0,
         by show sv base s₅ RY < W.p; rw [ey]; exact Nat.mod_lt _ hp0,
         by show sv base s₅ RZ < W.p; rw [ez]; exact hp0⟩
       show Rep W (tmv W 4 base s₅ (secp256k1.sl RX)) (tmv W 4 base s₅ (secp256k1.sl RY)) (tmv W 4 base s₅ (secp256k1.sl RZ)) _
-      have t0 : tmv W 4 base s₅ (secp256k1.sl RX) = 0 := by simp only [tmv]; rw [show wordsVal _ _ _ _ = 0 from ex]; exact toM_zero _ _
-      have t1 : tmv W 4 base s₅ (secp256k1.sl RY) = 1 := by
+      obtain t0 : tmv W 4 base s₅ (secp256k1.sl RX) = 0 := by simp only [tmv]; rw [show wordsVal _ _ _ _ = 0 from ex]; exact toM_zero _ _
+      obtain t1 : tmv W 4 base s₅ (secp256k1.sl RY) = 1 := by
         simp only [tmv]; rw [show wordsVal _ _ _ _ = 1 * 2 ^ 256 % W.p from ey]; exact toM_one unit
-      have t2 : tmv W 4 base s₅ (secp256k1.sl RZ) = 0 := by simp only [tmv]; rw [show wordsVal _ _ _ _ = 0 from ez]; exact toM_zero _ _
+      obtain t2 : tmv W 4 base s₅ (secp256k1.sl RZ) = 0 := by simp only [tmv]; rw [show wordsVal _ _ _ _ = 0 from ez]; exact toM_zero _ _
       rw [t0, t1, t2]
       exact rep_infinity' hL
     · rw [ite_eq_right h0]
-      have hz' : z = false := by rw [← hzb]; exact decide_eq_false h0
+      obtain hz' : z = false := by rw [← hzb]; exact decide_eq_false h0
       rw [hz'] at ex ey ez
       simp only [Bool.false_eq_true, ↓reduceIte] at ex ey ez
       exact (hR h0).of_eq ex ey ez
@@ -173,10 +173,10 @@ theorem ptOk_of_result (hL : Law W) {base : Addr} {m : Mem} {s' : State} {k : Na
     PtOk base s' (secp256k1.pt RX RY RZ) (mul k P) := by
   obtain ⟨⟨bx, by', bz⟩, hrep⟩ := hR.1 h1 hn
   simp only [Impl.Weierstrass.Point.Curve.pointAt] at bx by' bz hrep
-  have c0 : MC.toPoint.coordAt s'.mem base MC.pAt = sv base s' RX := coord_sv _ _ RX
-  have c1 : MC.toPoint.coordAt s'.mem base (MC.pAt + Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
+  obtain c0 : MC.toPoint.coordAt s'.mem base MC.pAt = sv base s' RX := coord_sv _ _ RX
+  obtain c1 : MC.toPoint.coordAt s'.mem base (MC.pAt + Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
     sv base s' RY := coord_sv _ _ RY
-  have c2 : MC.toPoint.coordAt s'.mem base (MC.pAt + 2 * Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
+  obtain c2 : MC.toPoint.coordAt s'.mem base (MC.pAt + 2 * Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
     sv base s' RZ := coord_sv _ _ RZ
   rw [c0, c1, c2] at hrep
   rw [c0] at bx; rw [c1] at by'; rw [c2] at bz
@@ -207,7 +207,7 @@ theorem mulCall_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base) (h
   · have := hp₂
     simp only [mulRVc, State.withRegions_mem] at this
     rw [a₂, m₂, ← mm₂] at this
-    have hk : MC.scalar base s.mem = sv base s K := coord_sv _ _ K
+    obtain hk : MC.scalar base s.mem = sv base s K := coord_sv _ _ K
     rw [hk, point_eq hL] at this
     exact hP ▸ this
 
@@ -220,17 +220,17 @@ theorem combCall_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base) (
   rw [Cfg.wsCall]
   refine WP.seq (WP.seq (WP.cons (exec_addi (by decide)) (WP.block_nil ?_)))
   generalize hs₂ : s.write .a0 (s.gpr wb + BitVec.ofInt 64 0) = s₂
-  have u₂ : Upd s s₂ .a0 (s.gpr wb + BitVec.ofInt 64 0) := hs₂ ▸ Upd.write _ _ _
-  have sy₂ : s₂.syms = s.syms := by rw [← hs₂]; rfl
-  have K₂ : Kp s s₂ := Kp.of_upd u₂
-  have a0₂ : s₂.gpr .a0 = base := by rw [u₂.gpr, hw.s0]; simp
-  have hcov : Covers [⟨base, 8192⟩] s₂.wr := VG.Covers.of_mem fun r hr => by
+  obtain u₂ : Upd s s₂ .a0 (s.gpr wb + BitVec.ofInt 64 0) := hs₂ ▸ Upd.write _ _ _
+  obtain sy₂ : s₂.syms = s.syms := by rw [← hs₂]; rfl
+  obtain K₂ : Kp s s₂ := Kp.of_upd u₂
+  obtain a0₂ : s₂.gpr .a0 = base := by rw [u₂.gpr, hw.s0]; simp
+  obtain hcov : Covers [⟨base, 8192⟩] s₂.wr := VG.Covers.of_mem fun r hr => by
     rw [List.mem_singleton] at hr; subst hr; rw [K₂.wr]; exact hw.wr
-  have htab : Covers [Comb.tabRegion s₂] s₂.rd := VG.Covers.of_mem fun r hr => by
+  obtain htab : Covers [Comb.tabRegion s₂] s₂.rd := VG.Covers.of_mem fun r hr => by
     rw [List.mem_singleton] at hr; subst hr; rw [K₂.rd, Comb.tabRegion, sy₂]; exact hT.rd
-  have e0 : (s₂.callEntry.withRegions [Comb.tabRegion s₂] [⟨base, 8192⟩]).gpr .a0 = base := by
+  obtain e0 : (s₂.callEntry.withRegions [Comb.tabRegion s₂] [⟨base, 8192⟩]).gpr .a0 = base := by
     simp only [State.withRegions_gpr]; rw [State.callEntry_gpr _ (by decide), a0₂]
-  have em : (s₂.callEntry.withRegions [Comb.tabRegion s₂] [⟨base, 8192⟩]).mem = s.mem := by
+  obtain em : (s₂.callEntry.withRegions [Comb.tabRegion s₂] [⟨base, 8192⟩]).mem = s.mem := by
     simp only [State.withRegions_mem, State.callEntry_mem, u₂.mem]
   have esy : (s₂.callEntry.withRegions [Comb.tabRegion s₂] [⟨base, 8192⟩]).syms = s.syms := sy₂
   refine WP.call (Comb.mulG_rv hL) (rd := [Comb.tabRegion s₂]) (wr := [⟨base, 8192⟩]) ?_ (Covers.append htab hcov)
@@ -253,7 +253,7 @@ theorem combCall_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base) (
     simp only [Comb.mulGRVc, State.withRegions_mem] at this
     rw [e0] at this
     rw [show s₂.callEntry.mem = s.mem by rw [State.callEntry_mem, u₂.mem]] at this
-    have hk : MC.scalar base s.mem = sv base s K := coord_sv _ _ K
+    obtain hk : MC.scalar base s.mem = sv base s K := coord_sv _ _ K
     rw [hk] at this
     rw [u₄.mem]
     exact this
@@ -274,8 +274,8 @@ theorem copySl_ok {s : State} {base : Addr} (hw : WsReg s base) {o a : Nat} (ho 
     (hsep : secp256k1.sl o ≤ secp256k1.sl a ∨ secp256k1.sl a + 8 * 4 ≤ secp256k1.sl o) :
     WP isa (.block (copy 4 (secp256k1.sl o) (secp256k1.sl a))) s fun s' =>
       sv base s' o = sv base s a ∧ Rest [.t0] s s' ∧ Unch base [(secp256k1.sl o, 32)] s.mem s'.mem := by
-  have h1 : secp256k1.sl o % 8 = 0 ∧ secp256k1.sl o + 8 * 4 ≤ 4096 := by rw [sl_eq]; omega_using [ho]
-  have h2 : secp256k1.sl a % 8 = 0 ∧ secp256k1.sl a + 8 * 4 ≤ 4096 := by rw [sl_eq]; omega_using [ha]
+  obtain h1 : secp256k1.sl o % 8 = 0 ∧ secp256k1.sl o + 8 * 4 ≤ 4096 := by rw [sl_eq]; omega_using [ho]
+  obtain h2 : secp256k1.sl a % 8 = 0 ∧ secp256k1.sl a + 8 * 4 ≤ 4096 := by rw [sl_eq]; omega_using [ha]
   exact WP.mono (copy_ok 4 hw h1.1 h2.1 h1.2 h2.2 hsep) fun s' ⟨e, r, O⟩ => ⟨e, r, O.unch⟩
 
 theorem jointComb_ok (hL : Law W) {base : Addr} {s : State} {Q : Point W} (hp : JPre base s Q)
@@ -286,10 +286,10 @@ theorem jointComb_ok (hL : Law W) {base : Addr} {s : State} {Q : Point W} (hp : 
       PtOk base s' (secp256k1.pt RX RY RZ) (Spec.Weierstrass.add (mul (sv base s UU) (Spec.Weierstrass.G W))
         (mul (sv base s VV) Q)) := by
   have hw := hp.ws
-  have hp0 : 0 < W.p := by decide
+  obtain hp0 : 0 < W.p := by decide
   rw [VerifyComb.Cfg.joint, show secp256k1.n = 4 from rfl]
   -- `K = v`, `Q` to `R`'s first two slots.
-  have B1 : WP isa (.block (copy 4 (secp256k1.sl K) (secp256k1.sl VV) ++ copy 4 (secp256k1.sl RX) (secp256k1.sl CPX) ++
+  obtain B1 : WP isa (.block (copy 4 (secp256k1.sl K) (secp256k1.sl VV) ++ copy 4 (secp256k1.sl RX) (secp256k1.sl CPX) ++
       copy 4 (secp256k1.sl RY) (secp256k1.sl CPY))) s fun s₁ =>
       sv base s₁ K = sv base s VV ∧ sv base s₁ RX = sv base s CPX ∧ sv base s₁ RY = sv base s CPY ∧
       Rest [.t0] s s₁ ∧ Unch base [(secp256k1.sl K, 32), (secp256k1.sl RX, 32), (secp256k1.sl RY, 32)] s.mem s₁.mem := by
@@ -304,30 +304,30 @@ theorem jointComb_ok (hL : Law W) {base : Addr} {s : State} {Q : Point W} (hp : 
     · exact ((sv_unch U₃ RX (by decide)).trans x₂).trans (sv_unch U₁ CPX (by decide))
     · exact y₃.trans (sv_unch (U₁.trans U₂) CPY (by decide))
   refine WP.seq (WP.mono (wp_tab rfl hT hwr B1) fun s₁ ⟨⟨k₁, x₁, y₁, r₁, U₁⟩, T₁⟩ => ?_)
-  have hw₁ := hw.of_rest r₁
-  have hwr₁ : s₁.wr = [⟨base, 8192⟩] := r₁.wr.trans hwr
-  have hc₁ := hc.of_unch U₁ (by decide)
-  have eQ : Point.affine (toM W.p (2 ^ 256) (sv base s₁ RX)) (toM W.p (2 ^ 256) (sv base s₁ RY)) = Q := by
+  obtain hw₁ := hw.of_rest r₁
+  obtain hwr₁ : s₁.wr = [⟨base, 8192⟩] := r₁.wr.trans hwr
+  obtain hc₁ := hc.of_unch U₁ (by decide)
+  obtain eQ : Point.affine (toM W.p (2 ^ 256) (sv base s₁ RX)) (toM W.p (2 ^ 256) (sv base s₁ RY)) = Q := by
     rw [x₁, y₁]; exact hp.q
   -- `[v]Q`.
   refine WP.seq (WP.mono (wp_tab (wsCall_noFrames Impl.Ecdsa.RISCV64.mulSecp256k1_noFrames) T₁ hwr₁
     (mulCall_ok hL hw₁ ((r₁.gpr .s3 (by decide)).trans h3) hc₁ (by rw [x₁]; exact hp.qx) (by rw [y₁]; exact hp.qy)
       eQ hp.on)) fun s₂ ⟨⟨K₂, R₂⟩, T₂⟩ => ?_)
   rw [k₁] at R₂
-  have U₂ : Unch base mulKW s₁.mem s₂.mem := unch_of_mulKeeps R₂.2
-  have hw₂ := hw₁.of_kp K₂
-  have hc₂ := hc₁.of_unch U₂ (by decide)
-  have v₂ : sv base s₂ VV = sv base s VV := (sv_unch U₂ VV (by decide)).trans (sv_unch U₁ VV (by decide))
+  obtain U₂ : Unch base mulKW s₁.mem s₂.mem := unch_of_mulKeeps R₂.2
+  obtain hw₂ := hw₁.of_kp K₂
+  obtain hc₂ := hc₁.of_unch U₂ (by decide)
+  obtain v₂ : sv base s₂ VV = sv base s VV := (sv_unch U₂ VV (by decide)).trans (sv_unch U₁ VV (by decide))
   -- `O` if `v = 0`, `P = R`, `K = u`.
   simp only [List.append_assoc]
   refine WP.seq (WP.block_append (Comb.WP.mono_syms (zeroR_ok hL hw₂ hc₂.zero hc₂.onep (a := VV) (.inr rfl) (P := mul (sv base s VV) Q)
     (fun h0 => ptOk_of_result hL R₂ (by rw [v₂] at h0; omega_using [h0]) hv)) fun s₃ ⟨r₃, U₃, pR₃, _⟩ sy₃ => ?_))
   rw [v₂] at pR₃
-  have pR₃' : PtOk base s₃ (secp256k1.pt RX RY RZ) (mul (sv base s VV) Q) := by
+  obtain pR₃' : PtOk base s₃ (secp256k1.pt RX RY RZ) (mul (sv base s VV) Q) := by
     by_cases h0 : sv base s VV = 0
     · rw [ite_eq_left h0] at pR₃; rw [h0, mul_zero']; exact pR₃
     · rw [ite_eq_right h0] at pR₃; exact pR₃
-  have hw₃ := hw₂.of_rest r₃
+  obtain hw₃ := hw₂.of_rest r₃
   rw [WindowA.Cfg.copyPt, show secp256k1.n = 4 from rfl, List.append_assoc, List.append_assoc]
   refine WP.block_append (Comb.WP.mono_syms (copySl_ok hw₃ (o := GX) (a := RX) (by decide) (by decide) (by decide))
     fun t₁ ⟨cx, q₁, V₁⟩ sy₄a => ?_)
@@ -335,57 +335,57 @@ theorem jointComb_ok (hL : Law W) {base : Addr} {s : State} {Q : Point W} (hp : 
     (by decide)) fun t₂ ⟨cy, q₂, V₂⟩ sy₄b => ?_)
   refine WP.block_append (Comb.WP.mono_syms (copySl_ok ((hw₃.of_rest q₁).of_rest q₂) (o := CPY) (a := RZ) (by decide)
     (by decide) (by decide)) fun s₄ ⟨cz, q₃, V₃⟩ sy₄c => ?_)
-  have r₄ : Rest [.t0] s₃ s₄ := q₁.trans (q₂.trans q₃)
-  have U₄ : Unch base [(secp256k1.sl GX, 32), (secp256k1.sl CPX, 32), (secp256k1.sl CPY, 32)] s₃.mem s₄.mem :=
+  obtain r₄ : Rest [.t0] s₃ s₄ := q₁.trans (q₂.trans q₃)
+  obtain U₄ : Unch base [(secp256k1.sl GX, 32), (secp256k1.sl CPX, 32), (secp256k1.sl CPY, 32)] s₃.mem s₄.mem :=
     (V₁.trans V₂).trans V₃
-  have ex₄ : sv base s₄ GX = sv base s₃ RX :=
+  obtain ex₄ : sv base s₄ GX = sv base s₃ RX :=
     ((sv_unch (V₂.trans V₃) GX (by decide)).trans cx)
-  have ey₄ : sv base s₄ CPX = sv base s₃ RY :=
+  obtain ey₄ : sv base s₄ CPX = sv base s₃ RY :=
     ((sv_unch V₃ CPX (by decide)).trans cy).trans (sv_unch V₁ RY (by decide))
-  have ez₄ : sv base s₄ CPY = sv base s₃ RZ := cz.trans (sv_unch (V₁.trans V₂) RZ (by decide))
-  have pP₄ : PtOk base s₄ (secp256k1.pt GX CPX CPY) (mul (sv base s VV) Q) := pR₃'.move ex₄ ey₄ ez₄
-  have hw₄ := hw₃.of_rest r₄
+  obtain ez₄ : sv base s₄ CPY = sv base s₃ RZ := cz.trans (sv_unch (V₁.trans V₂) RZ (by decide))
+  obtain pP₄ : PtOk base s₄ (secp256k1.pt GX CPX CPY) (mul (sv base s VV) Q) := pR₃'.move ex₄ ey₄ ez₄
+  obtain hw₄ := hw₃.of_rest r₄
   refine Comb.WP.mono_syms (copySl_ok hw₄ (o := K) (a := UU) (by decide) (by decide) (by decide))
     fun s₅ ⟨k₅, r₅, U₅⟩ sy₅ => ?_
-  have hw₅ := hw₄.of_rest r₅
-  have sy₂₅ : s₅.syms = s₂.syms := by rw [sy₅, sy₄c, sy₄b, sy₄a, sy₃]
-  have rd₂₅ : s₅.rd = s₂.rd := by rw [r₅.rd, r₄.rd, r₃.rd]
-  have U₃₅ := (U₃.trans U₄).trans U₅
-  have T₅ : TabAt base s₅ := T₂.of_unch sy₂₅ rd₂₅ (by decide) U₃₅
-  have hc₅ := hc₂.of_unch U₃₅ (by decide)
-  have uU : sv base s₄ UU = sv base s UU :=
+  obtain hw₅ := hw₄.of_rest r₅
+  obtain sy₂₅ : s₅.syms = s₂.syms := by rw [sy₅, sy₄c, sy₄b, sy₄a, sy₃]
+  obtain rd₂₅ : s₅.rd = s₂.rd := by rw [r₅.rd, r₄.rd, r₃.rd]
+  obtain U₃₅ := (U₃.trans U₄).trans U₅
+  obtain T₅ : TabAt base s₅ := T₂.of_unch sy₂₅ rd₂₅ (by decide) U₃₅
+  obtain hc₅ := hc₂.of_unch U₃₅ (by decide)
+  obtain uU : sv base s₄ UU = sv base s UU :=
     (sv_unch ((U₁.trans U₂).trans (U₃.trans U₄)) UU (by decide))
-  have u₅ : sv base s₅ K = sv base s UU := k₅.trans uU
-  have h3₅ : s₅.gpr .s3 = base := by
+  obtain u₅ : sv base s₅ K = sv base s UU := k₅.trans uU
+  obtain h3₅ : s₅.gpr .s3 = base := by
     rw [r₅.gpr .s3 (by decide), r₄.gpr .s3 (by decide), r₃.gpr .s3 (by decide), K₂.gpr _ (by decide),
       r₁.gpr .s3 (by decide), h3]
   -- `[u]G`.
   refine WP.seq (WP.mono (combCall_ok hL hw₅ h3₅ hc₅ T₅) fun s₆ ⟨K₆, R₆⟩ => ?_)
   rw [u₅] at R₆
-  have U₆ : Unch base mulKW s₅.mem s₆.mem := unch_of_mulKeeps R₆.2
-  have hw₆ := hw₅.of_kp K₆
-  have hc₆ := hc₅.of_unch U₆ (by decide)
-  have u₆ : sv base s₆ UU = sv base s UU :=
+  obtain U₆ : Unch base mulKW s₅.mem s₆.mem := unch_of_mulKeeps R₆.2
+  obtain hw₆ := hw₅.of_kp K₆
+  obtain hc₆ := hc₅.of_unch U₆ (by decide)
+  obtain u₆ : sv base s₆ UU = sv base s UU :=
     ((sv_unch (U₅.trans U₆) UU (by decide))).trans uU
   -- `O` if `u = 0`.
   refine WP.seq (WP.mono (zeroR_ok hL hw₆ hc₆.zero hc₆.onep (a := UU) (.inl rfl)
     (P := mul (sv base s UU) (Spec.Weierstrass.G W))
     (fun h0 => ptOk_of_result hL R₆ (by rw [u₆] at h0; omega_using [h0]) hu)) fun s₇ ⟨r₇, U₇, pR₇, _⟩ => ?_)
   rw [u₆] at pR₇
-  have pR₇' : PtOk base s₇ (secp256k1.pt RX RY RZ) (mul (sv base s UU) (Spec.Weierstrass.G W)) := by
+  obtain pR₇' : PtOk base s₇ (secp256k1.pt RX RY RZ) (mul (sv base s UU) (Spec.Weierstrass.G W)) := by
     by_cases h0 : sv base s UU = 0
     · rw [ite_eq_left h0] at pR₇; rw [h0, mul_zero']; exact pR₇
     · rw [ite_eq_right h0] at pR₇; exact pR₇
-  have hw₇ := hw₆.of_rest r₇
-  have U₅₇ := (U₅.trans U₆).trans U₇
-  have pP₇ : PtOk base s₇ (secp256k1.pt GX CPX CPY) (mul (sv base s VV) Q) :=
+  obtain hw₇ := hw₆.of_rest r₇
+  obtain U₅₇ := (U₅.trans U₆).trans U₇
+  obtain pP₇ : PtOk base s₇ (secp256k1.pt GX CPX CPY) (mul (sv base s VV) Q) :=
     pP₄.of_eq (sv_unch U₅₇ GX (by decide)) (sv_unch U₅₇ CPX (by decide)) (sv_unch U₅₇ CPY (by decide))
-  have hc₇ := hc₆.of_unch U₇ (by decide)
+  obtain hc₇ := hc₆.of_unch U₇ (by decide)
   -- `T = R + P`.
   refine WP.seq (WP.mono (addPt_ok hL hw₇ hc₇.ap hc₇.b3p (p := secp256k1.pt RX RY RZ) (q := secp256k1.pt GX CPX CPY)
     (o := secp256k1.pt TX TY TZ) ⟨by decide, by decide⟩ (by decide)
     (hL.onCurve_mul VG.Proof.Secp256k1.onCurve_G _) (hL.onCurve_mul hp.on _) pR₇' pP₇) fun s₈ ⟨K₈, U₈, pT₈⟩ => ?_)
-  have hw₈ := hw₇.of_kp K₈
+  obtain hw₈ := hw₇.of_kp K₈
   -- `R = T`.
   refine WP.mono (copyPt_ok hw₈ (o := secp256k1.pt RX RY RZ) (p := secp256k1.pt TX TY TZ) (by decide) (by decide)
     (by decide) (by decide)) fun s₉ ⟨ex₉, ey₉, ez₉, r₉, U₉⟩ => ⟨?_, ?_, pT₈.move ex₉ ey₉ ez₉⟩

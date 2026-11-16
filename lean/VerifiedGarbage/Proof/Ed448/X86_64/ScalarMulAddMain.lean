@@ -73,13 +73,13 @@ theorem scalarMulAdd_correct {s : State} (hp : scalarMulAddLocal.pre s) :
   obtain ⟨hr, hw, hdr, hdk, hds, hro, hrs, hos, hn⟩ := hp
   obtain ⟨base, hbase⟩ : ∃ b, s.gpr .r8 = b := ⟨_, rfl⟩
   rw [hbase] at hdr hdk hds hrs hos hn
-  have hws : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hw, hbase]; simp
-  have hwo : (⟨s.gpr .rdi, 57⟩ : Region) ∈ s.wr := by rw [hw]; simp
-  have farR : ∀ i < 57, 8192 ≤ ofs base (s.gpr .rsi + BitVec.ofNat 64 i) :=
+  obtain hws : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hw, hbase]; simp
+  obtain hwo : (⟨s.gpr .rdi, 57⟩ : Region) ∈ s.wr := by rw [hw]; simp
+  obtain farR : ∀ i < 57, 8192 ≤ ofs base (s.gpr .rsi + BitVec.ofNat 64 i) :=
     fun i hi => far hdr hi (by decide)
-  have farK : ∀ i < 57, 8192 ≤ ofs base (s.gpr .rdx + BitVec.ofNat 64 i) :=
+  obtain farK : ∀ i < 57, 8192 ≤ ofs base (s.gpr .rdx + BitVec.ofNat 64 i) :=
     fun i hi => far hdk hi (by decide)
-  have farS : ∀ i < 57, 8192 ≤ ofs base (s.gpr .rcx + BitVec.ofNat 64 i) :=
+  obtain farS : ∀ i < 57, 8192 ≤ ofs base (s.gpr .rcx + BitVec.ofNat 64 i) :=
     fun i hi => far hds hi (by decide)
   rw [scalarMulAdd]
   apply WP.seq
@@ -88,81 +88,81 @@ theorem scalarMulAdd_correct {s : State} (hp : scalarMulAddLocal.pre s) :
   rw [WP.block_append_iff]
   refine WP.mono (args_ok (base := base) (by rw [g₁]; exact hbase) (by rw [wr₁]; exact hws))
     fun s₂ ⟨aO₂, aR₂, aK₂, aS₂, o₂, di₂, g₂, rd₂, wr₂⟩ => ?_
-  have hs₂ : Scr s₂ base := ⟨di₂, by rw [wr₂, wr₁]; exact hws, by omega_arith⟩
+  obtain hs₂ : Scr s₂ base := ⟨di₂, by rw [wr₂, wr₁]; exact hws, by omega_arith⟩
   rw [WP.block_append_iff]
   refine WP.mono (storeK_ok hs₂) fun s₃ ⟨k₃, o₃, g₃, rd₃, wr₃⟩ => ?_
-  have hs₃ : Scr s₃ base := ⟨(g₃ _ (by decide)).trans di₂, wr₃ ▸ hs₂.wr, hs₂.nowrap⟩
+  obtain hs₃ : Scr s₃ base := ⟨(g₃ _ (by decide)).trans di₂, wr₃ ▸ hs₂.wr, hs₂.nowrap⟩
   refine WP.mono (loadRsi_ok hs₃ (d := ARG_K) (by decide)) fun s₄ ⟨rsi₄, k₄⟩ => ?_
-  have hs₄ : Scr s₄ base := hs₃.of_keeps k₄ (by decide)
-  have rd₄ : s₄.rd = s.rd := by rw [k₄.2.2.1, rd₃, rd₂, rd₁]
-  have wr₄ : s₄.wr = s.wr := by rw [k₄.2.2.2, wr₃, wr₂, wr₁]
-  have O₄ : Outside base 0 8192 s.mem s₄.mem := by
+  obtain hs₄ : Scr s₄ base := hs₃.of_keeps k₄ (by decide)
+  obtain rd₄ : s₄.rd = s.rd := by rw [k₄.2.2.1, rd₃, rd₂, rd₁]
+  obtain wr₄ : s₄.wr = s.wr := by rw [k₄.2.2.2, wr₃, wr₂, wr₁]
+  obtain O₄ : Outside base 0 8192 s.mem s₄.mem := by
     rw [k₄.2.1]
     exact (o₁.mono (by decide) (by decide)).trans ((o₂.mono (by decide) (by decide)).trans
       (o₃.mono (by decide) (by decide)))
-  have kp₄ : s₄.gpr .rsi = s.gpr .rdx := by
+  obtain kp₄ : s₄.gpr .rsi = s.gpr .rdx := by
     rw [rsi₄, o₃.word (by decide) (by decide), aK₂, g₁]
-  have hR₄ : (⟨s₄.gpr .rsi, 57⟩ : Region) ∈ s₄.rd ++ s₄.wr := by
+  obtain hR₄ : (⟨s₄.gpr .rsi, 57⟩ : Region) ∈ s₄.rd ++ s₄.wr := by
     rw [kp₄, rd₄, hr]; simp
   -- k mod L
   apply WP.seq
   refine WP.mono (reduce57_ok hs₄ (by rw [k₄.2.1]; exact k₃) hR₄ (by rw [kp₄]; exact farK))
     fun s₅ ⟨v₅, g₅, rd₅, wr₅, o₅⟩ => ?_
-  have hs₅ : Scr s₅ base := ⟨(g₅ _ (by decide)).trans hs₄.rdi, wr₅ ▸ hs₄.wr, hs₄.nowrap⟩
+  obtain hs₅ : Scr s₅ base := ⟨(g₅ _ (by decide)).trans hs₄.rdi, wr₅ ▸ hs₄.wr, hs₄.nowrap⟩
   apply WP.seq
   rw [WP.block_append_iff]
   refine WP.mono (storeSlot_ok hs₅ SK (by decide)) fun s₆ ⟨m₆, o₆, g₆, rd₆, wr₆⟩ => ?_
-  have hs₆ : Scr s₆ base := ⟨(g₆ _).trans hs₅.rdi, wr₆ ▸ hs₅.wr, hs₅.nowrap⟩
+  obtain hs₆ : Scr s₆ base := ⟨(g₆ _).trans hs₅.rdi, wr₆ ▸ hs₅.wr, hs₅.nowrap⟩
   refine WP.mono (loadRsi_ok hs₆ (d := ARG_S) (by decide)) fun s₇ ⟨rsi₇, k₇⟩ => ?_
-  have hs₇ : Scr s₇ base := hs₆.of_keeps k₇ (by decide)
-  have rd₇ : s₇.rd = s.rd := by rw [k₇.2.2.1, rd₆, rd₅, rd₄]
-  have wr₇ : s₇.wr = s.wr := by rw [k₇.2.2.2, wr₆, wr₅, wr₄]
-  have O₇ : Outside base 0 8192 s.mem s₇.mem := by
+  obtain hs₇ : Scr s₇ base := hs₆.of_keeps k₇ (by decide)
+  obtain rd₇ : s₇.rd = s.rd := by rw [k₇.2.2.1, rd₆, rd₅, rd₄]
+  obtain wr₇ : s₇.wr = s.wr := by rw [k₇.2.2.2, wr₆, wr₅, wr₄]
+  obtain O₇ : Outside base 0 8192 s.mem s₇.mem := by
     rw [k₇.2.1]
     exact O₄.trans ((o₅.mono (by decide) (by decide)).trans (o₆.mono (by decide) (by decide)))
-  have kp₇ : s₇.gpr .rsi = s.gpr .rcx := by
+  obtain kp₇ : s₇.gpr .rsi = s.gpr .rcx := by
     rw [rsi₇, o₆.word (by decide) (by decide), o₅.word (by decide) (by decide), k₄.2.1,
       o₃.word (by decide) (by decide), aS₂, g₁]
-  have hK₇ : mv s₇.mem base KC 7 = wv kWords := by
+  obtain hK₇ : mv s₇.mem base KC 7 = wv kWords := by
     rw [k₇.2.1, o₆.mv (by decide) (by decide), o₅.mv (by decide) (by decide), k₄.2.1, k₃]
   -- s mod L
   apply WP.seq
   refine WP.mono (reduce57_ok hs₇ hK₇ (by rw [kp₇, rd₇, hr]; simp) (by rw [kp₇]; exact farS))
     fun s₈ ⟨v₈, g₈, rd₈, wr₈, o₈⟩ => ?_
-  have hs₈ : Scr s₈ base := ⟨(g₈ _ (by decide)).trans hs₇.rdi, wr₈ ▸ hs₇.wr, hs₇.nowrap⟩
+  obtain hs₈ : Scr s₈ base := ⟨(g₈ _ (by decide)).trans hs₇.rdi, wr₈ ▸ hs₇.wr, hs₇.nowrap⟩
   apply WP.seq
   rw [WP.block_append_iff]
   refine WP.mono (storeSlot_ok hs₈ SS (by decide)) fun s₉ ⟨m₉, o₉, g₉, rd₉, wr₉⟩ => ?_
-  have hs₉ : Scr s₉ base := ⟨(g₉ _).trans hs₈.rdi, wr₉ ▸ hs₈.wr, hs₈.nowrap⟩
+  obtain hs₉ : Scr s₉ base := ⟨(g₉ _).trans hs₈.rdi, wr₉ ▸ hs₈.wr, hs₈.nowrap⟩
   refine WP.mono (loadRsi_ok hs₉ (d := ARG_R) (by decide)) fun s₁₀ ⟨rsi₁₀, k₁₀⟩ => ?_
-  have hs₁₀ : Scr s₁₀ base := hs₉.of_keeps k₁₀ (by decide)
-  have rd₁₀ : s₁₀.rd = s.rd := by rw [k₁₀.2.2.1, rd₉, rd₈, rd₇]
-  have wr₁₀ : s₁₀.wr = s.wr := by rw [k₁₀.2.2.2, wr₉, wr₈, wr₇]
-  have O₁₀ : Outside base 0 8192 s.mem s₁₀.mem := by
+  obtain hs₁₀ : Scr s₁₀ base := hs₉.of_keeps k₁₀ (by decide)
+  obtain rd₁₀ : s₁₀.rd = s.rd := by rw [k₁₀.2.2.1, rd₉, rd₈, rd₇]
+  obtain wr₁₀ : s₁₀.wr = s.wr := by rw [k₁₀.2.2.2, wr₉, wr₈, wr₇]
+  obtain O₁₀ : Outside base 0 8192 s.mem s₁₀.mem := by
     rw [k₁₀.2.1]
     exact O₇.trans ((o₈.mono (by decide) (by decide)).trans (o₉.mono (by decide) (by decide)))
-  have kp₁₀ : s₁₀.gpr .rsi = s.gpr .rsi := by
+  obtain kp₁₀ : s₁₀.gpr .rsi = s.gpr .rsi := by
     rw [rsi₁₀, o₉.word (by decide) (by decide), o₈.word (by decide) (by decide), k₇.2.1,
       o₆.word (by decide) (by decide), o₅.word (by decide) (by decide), k₄.2.1,
       o₃.word (by decide) (by decide), aR₂, g₁]
-  have hK₁₀ : mv s₁₀.mem base KC 7 = wv kWords := by
+  obtain hK₁₀ : mv s₁₀.mem base KC 7 = wv kWords := by
     rw [k₁₀.2.1, o₉.mv (by decide) (by decide), o₈.mv (by decide) (by decide), hK₇]
   -- r mod L
   apply WP.seq
   refine WP.mono (reduce57_ok hs₁₀ hK₁₀ (by rw [kp₁₀, rd₁₀, hr]; simp) (by rw [kp₁₀]; exact farR))
     fun s₁₁ ⟨v₁₁, g₁₁, rd₁₁, wr₁₁, o₁₁⟩ => ?_
-  have hs₁₁ : Scr s₁₁ base := ⟨(g₁₁ _ (by decide)).trans hs₁₀.rdi, wr₁₁ ▸ hs₁₀.wr, hs₁₀.nowrap⟩
+  obtain hs₁₁ : Scr s₁₁ base := ⟨(g₁₁ _ (by decide)).trans hs₁₀.rdi, wr₁₁ ▸ hs₁₀.wr, hs₁₀.nowrap⟩
   -- The product.
   apply WP.seq
   rw [WP.block_append_iff]
   refine WP.mono (storeSlot_ok hs₁₁ SR (by decide)) fun s₁₂ ⟨m₁₂, o₁₂, g₁₂, rd₁₂, wr₁₂⟩ => ?_
-  have hs₁₂ : Scr s₁₂ base := ⟨(g₁₂ _).trans hs₁₁.rdi, wr₁₂ ▸ hs₁₁.wr, hs₁₁.nowrap⟩
+  obtain hs₁₂ : Scr s₁₂ base := ⟨(g₁₂ _).trans hs₁₁.rdi, wr₁₂ ▸ hs₁₁.wr, hs₁₁.nowrap⟩
   rw [WP.block_append_iff]
   refine WP.mono (product_ok hs₁₂) fun s₁₃ ⟨e₁₃, g₁₃, rd₁₃, wr₁₃, o₁₃⟩ => ?_
-  have hs₁₃ : Scr s₁₃ base := ⟨(g₁₃ _ (by decide)).trans hs₁₂.rdi, wr₁₃ ▸ hs₁₂.wr, hs₁₂.nowrap⟩
+  obtain hs₁₃ : Scr s₁₃ base := ⟨(g₁₃ _ (by decide)).trans hs₁₂.rdi, wr₁₃ ▸ hs₁₂.wr, hs₁₂.nowrap⟩
   refine WP.mono (accInit_ok hs₁₃) fun s₁₄ ⟨rsi₁₄, v₁₄, b₁₄, k₁₄⟩ => ?_
-  have hs₁₄ : Scr s₁₄ base := hs₁₃.of_keeps k₁₄ (by decide)
-  have hK₁₄ : mv s₁₄.mem base KC 7 = wv kWords := by
+  obtain hs₁₄ : Scr s₁₄ base := hs₁₃.of_keeps k₁₄ (by decide)
+  obtain hK₁₄ : mv s₁₄.mem base KC 7 = wv kWords := by
     rw [k₁₄.2.1, o₁₃.mv (by decide) (by decide), o₁₂.mv (by decide) (by decide),
       o₁₁.mv (by decide) (by decide), hK₁₀]
   -- The product's words, reduced.
@@ -176,19 +176,19 @@ theorem scalarMulAdd_correct {s : State} (hp : scalarMulAddLocal.pre s) :
       rw [rsi₁₄, Proof.X448.X86_64.ofs_off base (by simp only [Impl.X448.X86_64.ACC]; omega_arith)]
       simp only [Impl.X448.X86_64.ACC, TMP]; omega_arith)))
     fun s₁₅ ⟨v₁₅, g₁₅, rd₁₅, wr₁₅, o₁₅⟩ => ?_
-  have hs₁₅ : Scr s₁₅ base := ⟨(g₁₅ _ (by decide)).trans hs₁₄.rdi, wr₁₅ ▸ hs₁₄.wr, hs₁₄.nowrap⟩
+  obtain hs₁₅ : Scr s₁₅ base := ⟨(g₁₅ _ (by decide)).trans hs₁₄.rdi, wr₁₅ ▸ hs₁₄.wr, hs₁₄.nowrap⟩
   -- The three reduced inputs.
-  have eK : mv s₁₂.mem base SK 7 = decodeLE (bytesAt s.mem (s.gpr .rdx) 57) % L := by
+  obtain eK : mv s₁₂.mem base SK 7 = decodeLE (bytesAt s.mem (s.gpr .rdx) 57) % L := by
     rw [o₁₂.mv (by decide) (by decide), o₁₁.mv (by decide) (by decide), k₁₀.2.1,
       o₉.mv (by decide) (by decide), o₈.mv (by decide) (by decide), k₇.2.1, m₆, v₅, kp₄,
       bytes_far O₄ farK]
-  have eS : mv s₁₂.mem base SS 7 = decodeLE (bytesAt s.mem (s.gpr .rcx) 57) % L := by
+  obtain eS : mv s₁₂.mem base SS 7 = decodeLE (bytesAt s.mem (s.gpr .rcx) 57) % L := by
     rw [o₁₂.mv (by decide) (by decide), o₁₁.mv (by decide) (by decide), k₁₀.2.1, m₉, v₈, kp₇,
       bytes_far O₇ farS]
-  have eR : mv s₁₅.mem base SR 7 = decodeLE (bytesAt s.mem (s.gpr .rsi) 57) % L := by
+  obtain eR : mv s₁₅.mem base SR 7 = decodeLE (bytesAt s.mem (s.gpr .rsi) 57) % L := by
     rw [o₁₅.mv (by decide) (by decide), k₁₄.2.1, o₁₃.mv (by decide) (by decide), m₁₂, v₁₁, kp₁₀,
       bytes_far O₁₀ farR]
-  have e₁₅ : rem s₁₅ = (decodeLE (bytesAt s.mem (s.gpr .rdx) 57) % L *
+  obtain e₁₅ : rem s₁₅ = (decodeLE (bytesAt s.mem (s.gpr .rdx) 57) % L *
       (decodeLE (bytesAt s.mem (s.gpr .rcx) 57) % L)) % L := by
     rw [v₁₅, rsi₁₄, decode_acc, k₁₄.2.1, e₁₃, eK, eS]
   have hL := L_pos
@@ -199,7 +199,7 @@ theorem scalarMulAdd_correct {s : State} (hp : scalarMulAddLocal.pre s) :
     have := Nat.mod_lt (decodeLE (bytesAt s.mem (s.gpr .rdx) 57) % L *
       (decodeLE (bytesAt s.mem (s.gpr .rcx) 57) % L)) hL
     omega_arith)) fun s₁₆ ⟨v₁₆, k₁₆⟩ => ?_
-  have hs₁₆ : Scr s₁₆ base := hs₁₅.of_keeps k₁₆ (by decide)
+  obtain hs₁₆ : Scr s₁₆ base := hs₁₅.of_keeps k₁₆ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (csub_ok hs₁₆ (by
       rw [k₁₆.2.1, o₁₅.mv (by decide) (by decide)]; exact hK₁₄)
@@ -209,35 +209,35 @@ theorem scalarMulAdd_correct {s : State} (hp : scalarMulAddLocal.pre s) :
       have := Nat.mod_lt (decodeLE (bytesAt s.mem (s.gpr .rdx) 57) % L *
         (decodeLE (bytesAt s.mem (s.gpr .rcx) 57) % L)) hL
       omega_arith)) fun s₁₇ ⟨v₁₇, g₁₇, rd₁₇, wr₁₇, o₁₇⟩ => ?_
-  have hs₁₇ : Scr s₁₇ base := ⟨(g₁₇ _ (by decide)).trans hs₁₆.rdi, wr₁₇ ▸ hs₁₆.wr, hs₁₆.nowrap⟩
-  have hout : word s₁₇.mem base OUT = s.gpr .rdi := by
+  obtain hs₁₇ : Scr s₁₇ base := ⟨(g₁₇ _ (by decide)).trans hs₁₆.rdi, wr₁₇ ▸ hs₁₆.wr, hs₁₆.nowrap⟩
+  obtain hout : word s₁₇.mem base OUT = s.gpr .rdi := by
     rw [o₁₇.word (by decide) (by decide), k₁₆.2.1, o₁₅.word (by decide) (by decide), k₁₄.2.1,
       o₁₃.word (by decide) (by decide), o₁₂.word (by decide) (by decide),
       o₁₁.word (by decide) (by decide), k₁₀.2.1, o₉.word (by decide) (by decide),
       o₈.word (by decide) (by decide), k₇.2.1, o₆.word (by decide) (by decide),
       o₅.word (by decide) (by decide), k₄.2.1, o₃.word (by decide) (by decide), aO₂, g₁]
-  have sv : Saved base s.gpr s₁₇.mem := by
-    have h₃ := (sv₁.outside o₂ (by decide)).outside o₃ (by decide)
-    have h₄ : Saved base s.gpr s₄.mem := by rw [k₄.2.1]; exact h₃
-    have h₆ := (h₄.outside o₅ (by decide)).outside o₆ (by decide)
-    have h₇ : Saved base s.gpr s₇.mem := by rw [k₇.2.1]; exact h₆
-    have h₉ := (h₇.outside o₈ (by decide)).outside o₉ (by decide)
-    have h₁₀ : Saved base s.gpr s₁₀.mem := by rw [k₁₀.2.1]; exact h₉
-    have h₁₃ := ((h₁₀.outside o₁₁ (by decide)).outside o₁₂ (by decide)).outside o₁₃ (by decide)
-    have h₁₄ : Saved base s.gpr s₁₄.mem := by rw [k₁₄.2.1]; exact h₁₃
-    have h₁₅ := h₁₄.outside o₁₅ (by decide)
-    have h₁₆ : Saved base s.gpr s₁₆.mem := by rw [k₁₆.2.1]; exact h₁₅
+  obtain sv : Saved base s.gpr s₁₇.mem := by
+    obtain h₃ := (sv₁.outside o₂ (by decide)).outside o₃ (by decide)
+    obtain h₄ : Saved base s.gpr s₄.mem := by rw [k₄.2.1]; exact h₃
+    obtain h₆ := (h₄.outside o₅ (by decide)).outside o₆ (by decide)
+    obtain h₇ : Saved base s.gpr s₇.mem := by rw [k₇.2.1]; exact h₆
+    obtain h₉ := (h₇.outside o₈ (by decide)).outside o₉ (by decide)
+    obtain h₁₀ : Saved base s.gpr s₁₀.mem := by rw [k₁₀.2.1]; exact h₉
+    obtain h₁₃ := ((h₁₀.outside o₁₁ (by decide)).outside o₁₂ (by decide)).outside o₁₃ (by decide)
+    obtain h₁₄ : Saved base s.gpr s₁₄.mem := by rw [k₁₄.2.1]; exact h₁₃
+    obtain h₁₅ := h₁₄.outside o₁₅ (by decide)
+    obtain h₁₆ : Saved base s.gpr s₁₆.mem := by rw [k₁₆.2.1]; exact h₁₅
     exact h₁₆.outside o₁₇ (by decide)
-  have hlt : rem s₁₇ < L := by rw [v₁₇]; exact Nat.mod_lt _ hL
-  have hwo₁₇ : (⟨s.gpr .rdi, 57⟩ : Region) ∈ s₁₇.wr := by
+  obtain hlt : rem s₁₇ < L := by rw [v₁₇]; exact Nat.mod_lt _ hL
+  obtain hwo₁₇ : (⟨s.gpr .rdi, 57⟩ : Region) ∈ s₁₇.wr := by
     rw [wr₁₇, k₁₆.2.2.2, wr₁₅, k₁₄.2.2.2, wr₁₃, wr₁₂, wr₁₁, wr₁₀]; exact hwo
   refine WP.mono (finish_ok hs₁₇ hout hwo₁₇ hos sv hlt) fun t ⟨bt, rt, gt, ft, _, _⟩ => ?_
-  have O : Outside base 0 8192 s.mem s₁₇.mem := by
-    have O₁₄ : Outside base 0 8192 s.mem s₁₄.mem := by
+  obtain O : Outside base 0 8192 s.mem s₁₇.mem := by
+    obtain O₁₄ : Outside base 0 8192 s.mem s₁₄.mem := by
       rw [k₁₄.2.1]
       exact O₁₀.trans ((o₁₁.mono (by decide) (by decide)).trans ((o₁₂.mono (by decide)
         (by decide)).trans (o₁₃.mono (by decide) (by decide))))
-    have O₁₆ : Outside base 0 8192 s.mem s₁₆.mem := by
+    obtain O₁₆ : Outside base 0 8192 s.mem s₁₆.mem := by
       rw [k₁₆.2.1]; exact O₁₄.trans (o₁₅.mono (by decide) (by decide))
     exact O₁₆.trans (o₁₇.mono (by decide) (by decide))
   refine ⟨⟨fun r hr => ?_, ?_⟩, ?_⟩

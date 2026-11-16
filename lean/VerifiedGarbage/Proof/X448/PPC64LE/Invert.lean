@@ -55,7 +55,7 @@ theorem sub_beq {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) :
   · simp only [h, decide_false, beq_eq_false_iff_ne, ne_eq]
     intro h'
     apply h
-    have e : BitVec.ofNat 64 x = BitVec.ofNat 64 y := by
+    obtain e : BitVec.ofNat 64 x = BitVec.ofNat 64 y := by
       rw [← BitVec.sub_add_cancel (BitVec.ofNat 64 x) (BitVec.ofNat 64 y), h']; simp
     have := congrArg BitVec.toNat e
     rwa [toNat_imm hx, toNat_imm hy] at this
@@ -139,7 +139,7 @@ theorem sqStep_ok (hW : ∀ r ∈ work, r ∈ W) (hmf : MulCur W mf) {o n : Nat}
       (s'.gpr .r12 != 0) = decide (m - 1 ≠ 0) := by
   unfold sqStepW
   refine WP.seq (wp_subi (by decide) (by decide) fun s1 u1 => WP.block_nil ?_)
-  have h1 : CurW W b s0 a (BitVec.ofNat 64 (m - 1)) (o :: qs) (upd v o (VG.Proof.X448.sqn y (n - m))) s1 :=
+  obtain h1 : CurW W b s0 a (BitVec.ofNat 64 (m - 1)) (o :: qs) (upd v o (VG.Proof.X448.sqn y (n - m))) s1 :=
     ⟨h.ctx.of_rest (u1.rest (ws := [.r12]) (by decide)) (by decide),
       h.stp.trans (StpW.of_rest (u1.rest (ws := [.r12]) (by decide)) (fun r hr => hW r (by rw [List.mem_singleton.mp hr]; decide)) u1.mem),
       by rw [u1.other _ (by decide), h.r0],
@@ -162,7 +162,7 @@ theorem sqn_ok (hW : ∀ r ∈ work, r ∈ W) (hmf : MulCur W mf) {o x n : Nat} 
   · simp only [h1, ↓reduceIte]
     refine WP.seq (WP.mono (opMulE hmf hq ho hx hx hx4 hx4 ho4 h) fun s1 ⟨c1, h1'⟩ => ?_)
     refine WP.seq (wp_li (by omega_using [hn]) fun s2 u2 => WP.block_nil ?_)
-    have h2 : SqInv W b s0 a o n qs v (v x) (n - 1) s2 :=
+    obtain h2 : SqInv W b s0 a o n qs v (v x) (n - 1) s2 :=
       ⟨h1'.ctx.of_rest (u2.rest (ws := [.r12]) (by decide)) (by decide),
         h1'.stp.trans (StpW.of_rest (u2.rest (ws := [.r12]) (by decide)) (fun r hr => hW r (by rw [List.mem_singleton.mp hr]; decide)) u2.mem),
         by rw [u2.other _ (by decide), h1'.r0], by rw [u2.gpr],
@@ -222,7 +222,7 @@ theorem chain223_ok (hW : ∀ r ∈ work, r ∈ W) (hmf : MulCur W mf) {qs : Lis
   obtain ⟨q6, n6⟩ := temps_get hT (t := T6) (by decide)
   -- `z` as the power `z^1` in its slot.
   have hZ0 : Z2 ∈ Z2 :: qs := List.mem_cons_self
-  have h0 : CurE W b s0 a (Z2 :: qs) (upd v Z2 (VG.Proof.X448.pw (v Z2) 1)) s :=
+  obtain h0 : CurE W b s0 a (Z2 :: qs) (upd v Z2 (VG.Proof.X448.pw (v Z2) 1)) s :=
     let ⟨c, h⟩ := h
     ⟨c, h.congr (fun q hq => by
       simp only [List.mem_cons] at hq; rcases hq with rfl | hq
@@ -231,14 +231,14 @@ theorem chain223_ok (hW : ∀ r ∈ work, r ∈ W) (hmf : MulCur W mf) {qs : Lis
       by_cases e : q = Z2
       · subst e; rw [upd_self, VG.Proof.X448.pw_one]
       · rw [upd_of_ne _ _ e]⟩
-  have hRZ : Sep1 R (Z2 :: qs) = true := sep1_cons (by decide) hR
-  have g0 : Sep1 T0 (Z2 :: qs) = true := sep1_cons (by decide) q0
-  have g1 : Sep1 T1 (Z2 :: qs) = true := sep1_cons (by decide) q1
-  have g2 : Sep1 T2 (Z2 :: qs) = true := sep1_cons (by decide) q2
-  have g3 : Sep1 T3 (Z2 :: qs) = true := sep1_cons (by decide) q3
-  have g4 : Sep1 T4 (Z2 :: qs) = true := sep1_cons (by decide) q4
-  have g5 : Sep1 T5 (Z2 :: qs) = true := sep1_cons (by decide) q5
-  have g6 : Sep1 T6 (Z2 :: qs) = true := sep1_cons (by decide) q6
+  obtain hRZ : Sep1 R (Z2 :: qs) = true := sep1_cons (by decide) hR
+  obtain g0 : Sep1 T0 (Z2 :: qs) = true := sep1_cons (by decide) q0
+  obtain g1 : Sep1 T1 (Z2 :: qs) = true := sep1_cons (by decide) q1
+  obtain g2 : Sep1 T2 (Z2 :: qs) = true := sep1_cons (by decide) q2
+  obtain g3 : Sep1 T3 (Z2 :: qs) = true := sep1_cons (by decide) q3
+  obtain g4 : Sep1 T4 (Z2 :: qs) = true := sep1_cons (by decide) q4
+  obtain g5 : Sep1 T5 (Z2 :: qs) = true := sep1_cons (by decide) q5
+  obtain g6 : Sep1 T6 (Z2 :: qs) = true := sep1_cons (by decide) q6
   unfold chain223W
   refine WP.seq (WP.mono (sqnP hW hmf (z := v Z2) (ea := 1) (by decide) (by decide) (by sep1) (by decide) hZ0 (by look) (by decide) (by decide) h0) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (opMulP hmf (z := v Z2) (ea := 1 * 2 ^ 1) (eb := 1) (ee := 2 ^ 2 - 1) (by sep1) (by decide) (by simp) (by simp [hZ0])
@@ -290,12 +290,12 @@ theorem chain223_ok (hW : ∀ r ∈ work, r ∈ W) (hmf : MulCur W mf) {qs : Lis
     · simp (disch := decide) only [chainV, upd_self]
     · simp (disch := decide) only [chainV, upd_self, upd_of_ne]
     · have e0 : q ≠ T0 := fun e => n0 (e ▸ hq)
-      have e1 : q ≠ T1 := fun e => n1 (e ▸ hq)
-      have e2 : q ≠ T2 := fun e => n2 (e ▸ hq)
-      have e3 : q ≠ T3 := fun e => n3 (e ▸ hq)
-      have e4 : q ≠ T4 := fun e => n4 (e ▸ hq)
-      have e5 : q ≠ T5 := fun e => n5 (e ▸ hq)
-      have e6 : q ≠ T6 := fun e => n6 (e ▸ hq)
+      obtain e1 : q ≠ T1 := fun e => n1 (e ▸ hq)
+      obtain e2 : q ≠ T2 := fun e => n2 (e ▸ hq)
+      obtain e3 : q ≠ T3 := fun e => n3 (e ▸ hq)
+      obtain e4 : q ≠ T4 := fun e => n4 (e ▸ hq)
+      obtain e5 : q ≠ T5 := fun e => n5 (e ▸ hq)
+      obtain e6 : q ≠ T6 := fun e => n6 (e ▸ hq)
       by_cases eR : q = R
       · subst eR
         simp (disch := decide) only [chainV, upd_self]
@@ -315,12 +315,12 @@ theorem drop_R {qs : List Nat} (hq : Sep1 R qs = true) (hT : TempsOk qs = true) 
     Sep1 R (qs.filter (· ≠ R)) = true ∧ TempsOk (qs.filter (· ≠ R)) = true ∧
       CurE W b s a (qs.filter (· ≠ R)) v s := by
   -- `R`'s element is whatever is there; the chain overwrites it.
-  have hC : CurE W b s a (qs.filter (· ≠ R)) v s :=
+  obtain hC : CurE W b s a (qs.filter (· ≠ R)) v s :=
     ⟨_, hc, StpW.refl _ _ _, h0, rfl, fun q hq => by
       simp only [List.mem_filter, decide_eq_true_eq] at hq; exact hS q hq.1 hq.2⟩
-  have hfR : Sep1 R (qs.filter (· ≠ R)) = true := by
+  obtain hfR : Sep1 R (qs.filter (· ≠ R)) = true := by
     exact List.all_eq_true.mpr fun q hq' => List.all_eq_true.mp hq q (List.mem_filter.mp hq').1
-  have hfT : TempsOk (qs.filter (· ≠ R)) = true := by
+  obtain hfT : TempsOk (qs.filter (· ≠ R)) = true := by
     refine List.all_eq_true.mpr fun t ht => ?_
     obtain ⟨h1, h2⟩ := temps_get hT ht
     simp only [Bool.and_eq_true, Bool.not_eq_true']
@@ -339,9 +339,9 @@ theorem invertQW_ok (hW : ∀ r ∈ work, r ∈ W) (hmf : MulCur W mf) {qs : Lis
     (hS : ∀ q ∈ qs, q ≠ R → FS s.mem b q = v q) (h0 : s.gpr .r0 = a) :
     WP isa (invertW mf) s fun s' => StpW W b s s' ∧ Ctx b s' ∧
       SlotsOk s'.mem b qs (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) := by
-  have hZR : Z2 ≠ R := by decide
+  obtain hZR : Z2 ≠ R := by decide
   obtain ⟨hfR, hfT, hC⟩ := drop_R (W := W) hq hT hc hS h0
-  have hZf : Z2 ∈ qs.filter (· ≠ R) := by simp [hZ, hZR]
+  obtain hZf : Z2 ∈ qs.filter (· ≠ R) := by simp [hZ, hZR]
   obtain ⟨f6, _⟩ := temps_get hfT (t := T6) (by decide)
   unfold invertW invTailW
   refine WP.seq (WP.mono (chain223_ok hW hmf hfR hZf hfT hC) fun s1 h1 => ?_)
@@ -360,7 +360,7 @@ theorem invertQW_ok (hW : ∀ r ∈ work, r ∈ W) (hmf : MulCur W mf) {qs : Lis
   · subst eR
     rw [h5.slots _ List.mem_cons_self, upd_self, upd_self]
   · have hq' : q ∈ qs.filter (· ≠ R) := by simp [hq, eR]
-    have e6 : q ≠ T6 := fun e => (temps_get hT (t := T6) (by decide)).2 (e ▸ hq)
+    obtain e6 : q ≠ T6 := fun e => (temps_get hT (t := T6) (by decide)).2 (e ▸ hq)
     rw [h5.slots q (by repeat (first | exact hq' | apply List.mem_cons_of_mem)), upd_of_ne _ _ eR]
     simp only [chainV, upd_of_ne _ _ e6, upd_of_ne _ _ eR]
 

@@ -58,7 +58,7 @@ theorem jselectA_ok (hL : JacWinLay K size) {s : State} {base : Addr}
   have hg := hL.grid_le
   have ht := hL.tbl31
   have h6 := hL.n6
-  have h4 : 4 ≤ K.M.n := by rcases hL.n46 with h | h <;> omega_using [h]
+  obtain h4 : 4 ≤ K.M.n := by rcases hL.n46 with h | h <;> omega_using [h]
   obtain ⟨hnp, hst, h2n⟩ := np16_eq hL
   rw [JacWinCfg.selectA, List.append_assoc, WP.block_append_iff]
   -- `rdx = rdi + tbl`.
@@ -71,12 +71,12 @@ theorem jselectA_ok (hL : JacWinLay K size) {s : State} {base : Addr}
     refine ⟨trivial, fun r hr => ?_, rfl, rfl, rfl⟩
     simp only [List.mem_singleton] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr, ite_false]) fun s₁ ⟨x₁, k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
-  have h8₁ : s₁.gpr .r8 = BitVec.ofNat 64 a := by rw [k₁.1 _ (by decide), h8]
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
+  obtain h8₁ : s₁.gpr .r8 = BitVec.ofNat 64 a := by rw [k₁.1 _ (by decide), h8]
   have hT : K.T = jg K 80 := hL.T80
-  have hTl : K.T + 40 * K.M.n ≤ size := by rw [hT]; unfold jg; omega_using [hg]
+  obtain hTl : K.T + 40 * K.M.n ≤ size := by rw [hT]; unfold jg; omega_using [hg]
   have hTt : K.T = K.tbl + 16 * K.st := hL.T
-  have hr : ∀ e < 16, ∀ c < K.M.n, InRegions (s₁.rd ++ s₁.wr)
+  obtain hr : ∀ e < 16, ∀ c < K.M.n, InRegions (s₁.rd ++ s₁.wr)
       (base + BitVec.ofNat 64 K.tbl + BitVec.ofNat 64 (K.st * e + 16 * c)) 16 := by
     intro e he c hc
     rw [Offset.add_add]
@@ -84,7 +84,7 @@ theorem jselectA_ok (hL : JacWinLay K size) {s : State} {base : Addr}
     rw [Nat.mul_succ] at this
     exact ⟨_, List.mem_append_right _ (k₁.2.2.2 ▸ hs.wr), hs.contains (by omega_using [hTl, hTt, hc, this]) (by decide)⟩
   -- The pass: the first `n` pieces of the entry.
-  have hpass : WP isa (.block (if K.avx2 then selPassY K.T 16 K.st ((K.M.n + 1) / 2) (qY K.M.n)
+  obtain hpass : WP isa (.block (if K.avx2 then selPassY K.T 16 K.st ((K.M.n + 1) / 2) (qY K.M.n)
       else selPassAt K.T 16 K.st K.M.n (16 * ·))) s₁ fun t =>
       (∀ c < K.M.n, t.mem.readW (off base (K.T + 16 * c)) 128 =
         accVal s₁.mem (base + BitVec.ofNat 64 K.tbl) K.st (16 * ·) a 16 c) ∧
@@ -98,24 +98,24 @@ theorem jselectA_ok (hL : JacWinLay K size) {s : State} {base : Addr}
         fun t ⟨a₂, O₂, k₂⟩ => ⟨fun c hc => by rw [← a₂ c hc, Nat.add_zero], by rw [← Nat.add_zero K.T]; exact O₂, k₂⟩
   rw [WP.block_append_iff]
   refine WP.mono hpass fun s₂ ⟨a₂, O₂, k₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have hEz : K.E.z = K.T + 16 * K.M.n := rfl
   refine WP.mono (setConst_ok hs₂ (o := K.E.z) (by rw [hEz]; omega_using [hTl]) hone) fun t ⟨e₃, k₃, O₃⟩ =>
     ⟨fun c hc => ?_, by rw [← hL.Tz]; exact e₃, ?_, ?_⟩
   · have hcn := Nat.mul_le_mul_left K.M.n (show c + 1 ≤ 2 by omega_using [hc])
     rw [Nat.mul_succ] at hcn
-    have eT : jg K (80 + c) = K.T + 8 * (K.M.n * c) := by
+    obtain eT : jg K (80 + c) = K.T + 8 * (K.M.n * c) := by
       rw [hT]; unfold jg; rw [Nat.mul_add, ← Nat.mul_assoc]; omega_using []
     rw [eT, O₃.wordsVal (by rw [hEz]; omega_using [hcn]) (by omega_using [ht, hnp, hst, h2n, hTt, hcn])]
-    have hX : ∀ d, word s₁.mem (base + BitVec.ofNat 64 K.tbl) d = word s.mem base (K.tbl + d) := fun d => by
+    obtain hX : ∀ d, word s₁.mem (base + BitVec.ofNat 64 K.tbl) d = word s.mem base (K.tbl + d) := fun d => by
       rw [k₁.2.1, Mont.word, Mont.word, off, off, Offset.add_add]
-    have hw : ∀ i < K.M.n, word s₂.mem base (K.T + 8 * (K.M.n * c) + 8 * i) =
+    obtain hw : ∀ i < K.M.n, word s₂.mem base (K.T + 8 * (K.M.n * c) + 8 * i) =
         if 1 ≤ a then word s.mem base (jg K (5 * (a - 1) + c) + 8 * i) else 0 := by
       intro i hi
       obtain ⟨c', q, hq, e⟩ : ∃ c' q, q < 2 ∧ K.M.n * c + i = 2 * c' + q :=
         ⟨(K.M.n * c + i) / 2, (K.M.n * c + i) % 2, Nat.mod_lt _ (by decide), by omega_using []⟩
-      have hc' : c' < K.M.n := by omega_using [hcn, hi, e]
-      have w := accVal_word1 (a₂ c' hc') hq
+      obtain hc' : c' < K.M.n := by omega_using [hcn, hi, e]
+      obtain w := accVal_word1 (a₂ c' hc') hq
       rw [show K.T + 16 * c' + 8 * q = K.T + 8 * (K.M.n * c) + 8 * i by omega_using [e]] at w
       rw [w]
       by_cases h1 : 1 ≤ a
@@ -163,50 +163,50 @@ theorem jentryA_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : S
   have hs := hf.scr
   have hn := hs.nowrap
   have hbl := hL.bits
-  have hp0 : 0 < C.p := Nat.lt_of_le_of_lt (Nat.zero_le _) (hF.ro_lt K.P.x (by simp))
-  have hbits := hf.bits hL hF
+  obtain hp0 : 0 < C.p := Nat.lt_of_le_of_lt (Nat.zero_le _) (hF.ro_lt K.P.x (by simp))
+  obtain hbits := hf.bits hL hF
   generalize hk' : k + JacWinCfg.offset K.J = k' at hbits
-  have hwj : 5 * j + 5 ≤ 5 * K.J := by omega_using [hj]
+  obtain hwj : 5 * j + 5 ≤ 5 * K.J := by omega_using [hj]
   rw [WP.block_append_iff]
   refine WP.mono (digit_ok K.tc hs (k := k') (j := j) (N := 5 * K.J) (by show 1 ≤ 5; decide)
     (by show 5 < 9; decide) hwj (by show K.bits + 5 * K.J ≤ size; omega_using [hbl]) hb hbits) fun s₁ ⟨_, r₁, k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
-  have hwin : combWin K.tc.w k' j = Window5.nib k' j := Window5.combWin_five k' j
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
+  obtain hwin : combWin K.tc.w k' j = Window5.nib k' j := Window5.combWin_five k' j
   have hH : K.tc.H = 16 := rfl
   rw [hwin, hH] at r₁
   generalize ha : magH 16 (Window5.nib k' j) = a at r₁
-  have ha16 : a ≤ 16 := by rw [← ha]; exact magH_le (by have := Window5.nib_lt k' j; omega_using [this])
+  obtain ha16 : a ≤ 16 := by rw [← ha]; exact magH_le (by have := Window5.nib_lt k' j; omega_using [this])
   refine WP.mono (jselectA_ok hL hs₁ r₁ ha16 (Nat.lt_trans hone_lt hpn)) fun s₂ ⟨e₂, o₂, k₂, O₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
   have m₁ : s₁.mem = s.mem := k₁.2.1
   rw [m₁] at e₂
-  have U₂ : Unch base (jwLoopW K) s.mem s₂.mem := by
+  obtain U₂ : Unch base (jwLoopW K) s.mem s₂.mem := by
     rw [← m₁]; exact (outside_grid5 (b := 80) O₂).mono fun w hw => by
       obtain ⟨c, hc, rfl⟩ := List.mem_map.mp hw; exact T_loopW K (List.mem_range.mp hc)
-  have F₂ := hf.next hL hs₂ (((Keeps.regs k₁).mono (sub_powClob (by decide))).trans
+  obtain F₂ := hf.next hL hs₂ (((Keeps.regs k₁).mono (sub_powClob (by decide))).trans
     (k₂.mono (sub_powClob (by decide)))) U₂ (jwLoopW_sub K)
   -- The negation.
   obtain ⟨tx, ty, tz, -, -⟩ := hL.TS_eq
   obtain ⟨mx, my, mz, -, -⟩ := hL.T_mem
-  have hneg : K.neg ∈ jwSlots K := by jw_mem
-  have hzero : K.zero ∈ jwSlots K := by jw_mem
-  have hz₂ : wordsVal s₂.mem base K.zero K.M.n = 0 := by rw [F₂.ro hL (by jw_mem)]; exact hF.zero
-  have hy₂ : wordsVal s₂.mem base K.E.y K.M.n < C.p := by
+  obtain hneg : K.neg ∈ jwSlots K := by jw_mem
+  obtain hzero : K.zero ∈ jwSlots K := by jw_mem
+  obtain hz₂ : wordsVal s₂.mem base K.zero K.M.n = 0 := by rw [F₂.ro hL (by jw_mem)]; exact hF.zero
+  obtain hy₂ : wordsVal s₂.mem base K.E.y K.M.n < C.p := by
     rw [← ty, e₂ 1 (by decide)]
     split
     · exact (hT a (by omega_arith) ha16).lt 1 (by decide)
     · exact hp0
-  have hyneg : K.E.y + 8 * K.M.n ≤ K.neg ∨ K.neg + 8 * K.M.n ≤ K.E.y := by
+  obtain hyneg : K.E.y + 8 * K.M.n ≤ K.neg ∨ K.neg + 8 * K.M.n ≤ K.E.y := by
     rw [hL.Ty]; exact (hL.jg_apart (x := K.neg) (by jw_mem) (by decide)).symm
   rw [TCombCfg.negY, List.append_assoc, WP.block_append_iff]
   refine WP.mono (sub_ok hs₂ F₂.mod (o := K.neg) (a := K.zero) (b := K.E.y) (hL.le hneg) (hL.le hzero)
     (hL.le my) (hL.lay.tmp _ hneg) (hL.lay.tmp _ hzero) (hL.lay.tmp _ my) (hL.lay.mo _ hneg)
     (by rw [hz₂]; exact hp0) hy₂) fun s₃ ⟨k₃, e₃⟩ => ?_
-  have hs₃ := k₃.scr hs₂
-  have hbits₃ : ∀ t < 5 * K.J, s₃.mem (off base (K.bits + t)) = if k'.testBit t then 1 else 0 := by
+  obtain hs₃ := k₃.scr hs₂
+  obtain hbits₃ : ∀ t < 5 * K.J, s₃.mem (off base (K.bits + t)) = if k'.testBit t then 1 else 0 := by
     intro t ht
     rw [k₃.unch.byte (fun w hw => by
-      have hw' : w ∈ jwW K := by
+      obtain hw' : w ∈ jwW K := by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl
         · exact mem_jwW_ws (other_ws (by jw_mem))
@@ -217,36 +217,36 @@ theorem jentryA_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : S
   refine WP.mono (signMask_ok K.tc hs₃ (k := k') (j := j) (N := 5 * K.J) (by show 1 ≤ 5; decide)
     (by show 5 < 2 ^ 31; decide) hwj (by show K.bits + 5 * K.J ≤ size; omega_using [hbl]) (by rw [k₃.gpr _ (rbx_not_clob _), k₂.gpr _ (by decide),
       k₁.1 _ (by decide), hb]) hbits₃) fun s₄ ⟨x₄, k₄⟩ => ?_
-  have hs₄ := hs₃.of_keeps k₄ (by decide)
+  obtain hs₄ := hs₃.of_keeps k₄ (by decide)
   rw [hwin] at x₄
   refine WP.mono (sel_ok (decide (Window5.nib k' j < 2 ^ (K.tc.w - 1))) K.M.n hs₄ x₄ (o := K.E.y)
     (a := K.E.y) (b := K.neg) (hL.le my) (hL.le my) (hL.le hneg) (Or.inl (Nat.le_refl _))
     (by omega_using [hyneg])) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   have m₄ : s₄.mem = s₃.mem := k₄.2.1
-  have hs₅ := hs₄.of_keepRegs k₅ (by decide)
-  have b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega_using [hn, this]
+  obtain hs₅ := hs₄.of_keepRegs k₅ (by decide)
+  obtain b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega_using [hn, this]
   -- `T`'s words: as at `s₂` but `Y`.
-  have keepT : ∀ c < 5, c ≠ 1 → wordsVal s₅.mem base (TS K c) K.M.n = wordsVal s₂.mem base (TS K c) K.M.n := by
+  obtain keepT : ∀ c < 5, c ≠ 1 → wordsVal s₅.mem base (TS K c) K.M.n = wordsVal s₂.mem base (TS K c) K.M.n := by
     intro c hc h1
-    have hy : TS K c + 8 * K.M.n ≤ K.E.y ∨ K.E.y + 8 * K.M.n ≤ TS K c := by
+    obtain hy : TS K c + 8 * K.M.n ≤ K.E.y ∨ K.E.y + 8 * K.M.n ≤ TS K c := by
       rw [hL.Ty]; exact jg_sep K (by omega_using [h1])
     rw [O₅.wordsVal hy (b64 _ (jg_mem (by omega_using [hc]))), m₄, k₃.unch.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
       · exact (hL.jg_apart (x := K.neg) (by jw_mem) (i := 80 + c) (by omega_using [hc])).symm
       · exact hL.lay.tmp _ (jg_mem (by omega_using [hc]))) (b64 _ (jg_mem (by omega_using [hc])))]
-  have y₃ : wordsVal s₃.mem base K.E.y K.M.n = wordsVal s₂.mem base K.E.y K.M.n :=
+  obtain y₃ : wordsVal s₃.mem base K.E.y K.M.n = wordsVal s₂.mem base K.E.y K.M.n :=
     k₃.unch.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl
       · exact hyneg
       · exact hL.lay.tmp _ my) (b64 _ my)
-  have keepY : wordsVal s₅.mem base (TS K 1) K.M.n = if decide (Window5.nib k' j < 2 ^ (K.tc.w - 1)) then
+  obtain keepY : wordsVal s₅.mem base (TS K 1) K.M.n = if decide (Window5.nib k' j < 2 ^ (K.tc.w - 1)) then
       (0 + C.p - wordsVal s₂.mem base K.E.y K.M.n) % C.p else wordsVal s₂.mem base K.E.y K.M.n := by
     rw [ty, e₅, m₄, e₃, hz₂, y₃]
-  have tv : ∀ {x y : Nat}, wordsVal s₅.mem base x K.M.n = wordsVal s₂.mem base y K.M.n →
+  obtain tv : ∀ {x y : Nat}, wordsVal s₅.mem base x K.M.n = wordsVal s₂.mem base y K.M.n →
       tmv C K.M.n base s₅ x = tmv C K.M.n base s₂ y := fun h => by show toM _ _ _ = toM _ _ _; rw [h]
-  have hU : Unch base ((List.range 5).map (fun c => (jg K (80 + c), 8 * K.M.n)) ++
+  obtain hU : Unch base ((List.range 5).map (fun c => (jg K (80 + c), 8 * K.M.n)) ++
       [(K.neg, 8 * K.M.n), (K.M.tmp, 8 * K.M.n)]) s.mem s₅.mem := by
     rw [← m₁]
     refine (((outside_grid5 (b := 80) O₂).trans k₃.unch).trans (m₄ ▸ O₅.unch)).mono fun w hw => ?_
@@ -256,14 +256,14 @@ theorem jentryA_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : S
     · exact Or.inr (Or.inl h)
     · exact Or.inr (Or.inr h)
     · rw [h, hL.Ty]; exact Or.inl (List.mem_map.mpr ⟨1, by decide, rfl⟩)
-  have hcl : ∀ r ∈ [Reg.rax, .rcx, .rdx, .r8], r ∈ clob K.M.n := by
+  obtain hcl : ∀ r ∈ [Reg.rax, .rcx, .rdx, .r8], r ∈ clob K.M.n := by
     intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · simp [clob]
     · simp [clob]
     · simp [clob]
     · exact r8_mem_clob _
-  have kk : KeepRegs (clob K.M.n) s s₅ :=
+  obtain kk : KeepRegs (clob K.M.n) s s₅ :=
     ((((Keeps.regs k₁).mono hcl).trans (k₂.mono fun r hr => hcl r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h <;> simp [h]))).trans
       ((⟨k₃.gpr, k₃.rd, k₃.wr⟩ : KeepRegs (clob K.M.n) s₂ s₃).trans ((Keeps.regs k₄).mono fun r hr => hcl r (by
@@ -272,7 +272,7 @@ theorem jentryA_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : S
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> simp [h]))
   have h16 : (2 : Nat) ^ (K.tc.w - 1) = 16 := rfl
   rw [h16] at keepY
-  have z₅ : wordsVal s₅.mem base (TS K 2) K.M.n = K.one := by rw [keepT 2 (by decide) (by decide)]; exact o₂
+  obtain z₅ : wordsVal s₅.mem base (TS K 2) K.M.n = K.one := by rw [keepT 2 (by decide) (by decide)]; exact o₂
   refine ⟨hf.next hL hs₅ (kk.mono clob_powClob) hU (fun w hw => jwLoopW_sub K w (jent_loopW K w hw)), hU,
     kk, fun c hc => ?_, z₅, fun h => ?_⟩
   · by_cases h1 : c = 1
@@ -287,26 +287,26 @@ theorem jentryA_ok (hL : JacWinLay K size) {base : Addr} {P : Point C} {s₀ : S
         · exact (hT a ‹_› ha16).lt 0 (by decide)
         · exact hp0
   · rw [ha] at h
-    have J₂ := (hT a h ha16).jac
-    have ez : tmv C K.M.n base s₅ (TS K 2) = tmv C K.M.n base s (entS K a 2) := by
+    obtain J₂ := (hT a h ha16).jac
+    obtain ez : tmv C K.M.n base s₅ (TS K 2) = tmv C K.M.n base s (entS K a 2) := by
       show toM _ _ _ = toM _ _ _; rw [z₅, hO a h ha16]
-    have ex : tmv C K.M.n base s₅ (TS K 0) = tmv C K.M.n base s (entS K a 0) := by
+    obtain ex : tmv C K.M.n base s₅ (TS K 0) = tmv C K.M.n base s (entS K a 0) := by
       show toM _ _ _ = toM _ _ _
       rw [keepT 0 (by decide) (by decide), e₂ 0 (by decide), ite_eq_left_of_eq_true _ _ (eq_true h)]
-    have ey : wordsVal s₂.mem base K.E.y K.M.n = wordsVal s.mem base (entS K a 1) K.M.n := by
+    obtain ey : wordsVal s₂.mem base K.E.y K.M.n = wordsVal s.mem base (entS K a 1) K.M.n := by
       rw [← ty, e₂ 1 (by decide), ite_eq_left_of_eq_true _ _ (eq_true h)]
     rw [Window5.winPt_mag, ha, ex, ez]
     by_cases hng : Window5.nib k' j < 16
     · simp only [decide_eq_true hng, ↓reduceIte]
       simp only [decide_eq_true hng, ↓reduceIte] at keepY
-      have hy : tmv C K.M.n base s₅ (TS K 1) = -tmv C K.M.n base s (entS K a 1) := by
+      obtain hy : tmv C K.M.n base s₅ (TS K 1) = -tmv C K.M.n base s (entS K a 1) := by
         show toM _ _ _ = -toM _ _ _
         rw [keepY, toM_sub (by omega_using [hy₂]), toM_zero, ey]
         grind
       rw [hy]; exact J₂.negY
     · simp only [decide_eq_false hng, Bool.false_eq_true, ↓reduceIte]
       simp only [decide_eq_false hng, Bool.false_eq_true, ↓reduceIte] at keepY
-      have hy : tmv C K.M.n base s₅ (TS K 1) = tmv C K.M.n base s (entS K a 1) := by
+      obtain hy : tmv C K.M.n base s₅ (TS K 1) = tmv C K.M.n base s (entS K a 1) := by
         show toM _ _ _ = toM _ _ _; rw [keepY, ey]
       rw [hy]; exact J₂
 
@@ -351,7 +351,7 @@ theorem madd_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {b
         Inv K.M base size C.p (· ∈ jwSlots K) ([K.D.x, K.D.y, K.D.z] ++ V) E' t ∧
         (E' K.D.x, E' K.D.y, E' K.D.z) = maddJF (E K.R.x) (E K.R.y) (E K.R.z) (E K.E.x) (E K.E.y) := by
   have hA := hL.addApart
-  have hSl : ∀ x ∈ rcbW K.S K.D ++ rcbR K.S K.R K.E, x ∈ jwSlots K := by
+  obtain hSl : ∀ x ∈ rcbW K.S K.D ++ rcbR K.S K.R K.E, x ∈ jwSlots K := by
     intro x hx
     simp only [rcbW, rcbR, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil,
       or_false] at hx
@@ -359,7 +359,7 @@ theorem madd_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {b
     rcases hx with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h <;> rw [h]
     all_goals first
       | exact jg_mem (by decide) | jw_mem
-  have hR : readsOk (maddJ K.S K.R K.E K.D) V = true := by
+  obtain hR : readsOk (maddJ K.S K.R K.E K.D) V = true := by
     rw [maddJ_eq]
     refine readsOk_mono (readsOk_rename (rcbσ K.S K.R K.E K.D)
       (show readsOk maddJN [11, 12, 13, 14, 15] = true by decide)) fun x hx => hV x ?_
@@ -397,8 +397,8 @@ theorem jstepA_pt (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (
           else if Z1 = 0 then Y2 else (maddJF X1 Y1 Z1 X2 Y2).2.1)
         (if magH 16 (Window5.nib (k + 16 * Window5.geom J) i) = 0 then Z1
           else if Z1 = 0 then Z2 else (maddJF X1 Y1 Z1 X2 Y2).2.2) Q := by
-  have hadd := Window5.win_add hC hP (k := k + 16 * Window5.geom J) (J := J) (j := i) (Nat.le_add_left _ _) hi
-  have noexc : k < C.n → 1 ≤ Window5.winE (k + 16 * Window5.geom J) J (i + 1) →
+  obtain hadd := Window5.win_add hC hP (k := k + 16 * Window5.geom J) (J := J) (j := i) (Nat.le_add_left _ _) hi
+  obtain noexc : k < C.n → 1 ≤ Window5.winE (k + 16 * Window5.geom J) J (i + 1) →
       mul (32 * Window5.winE (k + 16 * Window5.geom J) J (i + 1)) P ≠
         Window5.winPt C P (k + 16 * Window5.geom J) i := fun hk he =>
     (Window5.loop_noexc hC hO hP hP0 hn17 hn64 hk hi he).1
@@ -411,14 +411,14 @@ theorem jstepA_pt (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (
   simp only [h0, ↓reduceIte]
   obtain ⟨J2, z2⟩ := h2 (by omega_arith)
   subst z2
-  have hW := Window5.onCurve_winPt hC hP k' i
+  obtain hW := Window5.onCurve_winPt hC hP k' i
   generalize hWe : Window5.winPt C P k' i = W at J2 hW hadd noexc ⊢
   cases W with
   | infinity => exact absurd ((J2.z_zero_iff hC).mpr rfl) hC.one_ne_zero
   | affine x2 y2 =>
   obtain ⟨ex2, ey2⟩ := J2.affine_coords hC
-  have ex2' : X2 = x2 := by rw [ex2]; grind
-  have ey2' : Y2 = y2 := by rw [ey2]; grind
+  obtain ex2' : X2 = x2 := by rw [ex2]; grind
+  obtain ey2' : Y2 = y2 := by rw [ey2]; grind
   subst ex2' ey2'
   by_cases hz : Z1 = 0
   · simp only [hz, ↓reduceIte]
@@ -431,7 +431,7 @@ theorem jstepA_pt (hC : Law C) (hM3 : AM3 C) (hO : PrimeOrder C) {P : Point C} (
       obtain ⟨hx1, -⟩ := h1.affine_coords hC
       rw [maddJF_z, hx1]; grind
     refine ⟨.infinity, rfl, fun hk => ?_, Or.inl ⟨rfl, hZ⟩⟩
-    have he1 : 1 ≤ e := by
+    obtain he1 : 1 ≤ e := by
       rcases Nat.eq_zero_or_pos e with rfl | h
       · exact absurd ((h1.z_zero_iff hC).mpr (by rw [hQ1e hk, Nat.mul_zero, Window5.mul_zero_pt])) hz
       · exact h
@@ -470,18 +470,18 @@ theorem jstepA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
   rw [JacWinCfg.stepA]
   simp only [Code.inline]
   refine WP.seq (WP.mono (decRbx_ok s hj1 (by omega_arith) hI.rbx) fun s₁ ⟨b₁, k₁⟩ => ?_)
-  have R₁ := R₀.rbxKeeps hL k₁
+  obtain R₁ := R₀.rbxKeeps hL k₁
   have m₁ : s₁.mem = s.mem := k₁.2.1
   rw [← mul_one_pt Q] at R₁
   refine WP.seq (WP.mono (dbls_ok hL hC hD hQ (j := j - 1) (by omega_arith) b₁ R₁) fun s₂ ⟨R₂, b₂, U₂⟩ => ?_)
-  have O₂ : JTblOne K base s₂ := (show JTblOne K base s₁ from fun m h1 h16 => by
+  obtain O₂ : JTblOne K base s₂ := (show JTblOne K base s₁ from fun m h1 h16 => by
     rw [m₁]; exact hO1 m h1 h16).loopW hL U₂ hn
   refine WP.seq (WP.mono (jentryA_ok hL hF hpn hone_lt (j := j - 1) (by omega_arith) R₂.fr R₂.tbl O₂ b₂) fun s₃ h₃ =>
     WP.seq (WP.mono h₃ fun s₄ E₄ => ?_))
   -- `R` is not written by the entry.
-  have hRe : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₄.mem base x K.M.n = wordsVal s₂.mem base x K.M.n := by
+  obtain hRe : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₄.mem base x K.M.n = wordsVal s₂.mem base x K.M.n := by
     intro x hx
-    have hxo : x ∈ jwOther K := by
+    obtain hxo : x ∈ jwOther K := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx; rcases hx with rfl | rfl | rfl <;> jw_mem
     refine E₄.unch.wordsVal (fun w hw => ?_) (by have := hL.le (other_mem hxo); omega_arith)
     rcases List.mem_append.mp hw with hw | hw
@@ -495,14 +495,14 @@ theorem jstepA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
         · exact hL.ap_oth (i := 1) (j := 6) (by decide) (by decide) (by decide)
         · exact hL.ap_oth (i := 2) (j := 6) (by decide) (by decide) (by decide)
       · exact hL.lay.tmp x (other_mem hxo)
-  have U₄ : Unch base (jwLoopW K) s₂.mem s₄.mem := E₄.unch.mono (jent_loopW K)
+  obtain U₄ : Unch base (jwLoopW K) s₂.mem s₄.mem := E₄.unch.mono (jent_loopW K)
   -- `T`'s `Z` is one.
-  have tz1 : 1 ≤ magH 16 (Window5.nib (k + JacWinCfg.offset K.J) (j - 1)) →
+  obtain tz1 : 1 ≤ magH 16 (Window5.nib (k + JacWinCfg.offset K.J) (j - 1)) →
       tmv C K.M.n base s₄ K.E.z = 1 := fun _ => by
     show toM _ _ _ = 1
     rw [← tz, E₄.one, hone]
   -- `D = R + T`.
-  have V₄ : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y],
+  obtain V₄ : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y],
       x ∈ jwSlots K ∧ wordsVal s₄.mem base x K.M.n < C.p := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -512,21 +512,21 @@ theorem jstepA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
     · exact ⟨by jw_mem, by rw [hRe _ (by simp)]; exact R₂.lt _ (by simp)⟩
     · exact ⟨mx, by rw [← tx]; exact E₄.lt 0 (by decide)⟩
     · exact ⟨my, by rw [← ty]; exact E₄.lt 1 (by decide)⟩
-  have I₄ : Inv K.M base size C.p (· ∈ jwSlots K) [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y]
+  obtain I₄ : Inv K.M base size C.p (· ∈ jwSlots K) [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y]
       (tmv C K.M.n base s₄) s₄ :=
     ⟨E₄.fr.scr, E₄.fr.mod, fun x hx => (V₄ x hx).1, fun x hx => (V₄ x hx).2, fun _ _ => rfl⟩
   refine WP.seq (WP.mono (madd_ok hL hp I₄ (fun x hx => hx)) fun s₅ ⟨k₅, E₅, I₅, v₅⟩ => ?_)
-  have U₅ : Unch base (jwLoopW K) s₄.mem s₅.mem := k₅.loopW (rcbW_loopW (by
+  obtain U₅ : Unch base (jwLoopW K) s₄.mem s₅.mem := k₅.loopW (rcbW_loopW (by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> exact other_loopW (by jw_mem)))
-  have F₅ := E₄.fr.next hL (k₅.scr E₄.fr.scr) k₅.regs U₅ (jwLoopW_sub K)
-  have hb₅ : s₅.gpr .rbx = BitVec.ofNat 64 (j - 1) := by
+  obtain F₅ := E₄.fr.next hL (k₅.scr E₄.fr.scr) k₅.regs U₅ (jwLoopW_sub K)
+  obtain hb₅ : s₅.gpr .rbx = BitVec.ofNat 64 (j - 1) := by
     rw [k₅.gpr _ (rbx_not_clob _), E₄.keep.gpr _ (rbx_not_clob _), b₂]
   -- `R` and `T` survive the addition.
-  have keep₅ : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z],
+  obtain keep₅ : ∀ x ∈ [K.R.x, K.R.y, K.R.z, K.E.x, K.E.y, K.E.z],
       wordsVal s₅.mem base x K.M.n = wordsVal s₄.mem base x K.M.n := by
     intro x hx
-    have hxs : x ∈ jwSlots K := by
+    obtain hxs : x ∈ jwSlots K := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl | rfl | rfl | rfl
       · jw_mem
@@ -544,59 +544,59 @@ theorem jstepA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) 
   rw [offset_eq] at w₆
   have ent := E₄.ent
   rw [offset_eq] at ent tz1
-  have R5 : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₅.mem base x K.M.n = wordsVal s₂.mem base x K.M.n :=
+  obtain R5 : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₅.mem base x K.M.n = wordsVal s₂.mem base x K.M.n :=
     fun x hx => by
       rw [keep₅ x (List.mem_append_left [K.E.x, K.E.y, K.E.z] hx), hRe x hx]
-  have T5 : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal s₅.mem base x K.M.n = wordsVal s₄.mem base x K.M.n :=
+  obtain T5 : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal s₅.mem base x K.M.n = wordsVal s₄.mem base x K.M.n :=
     fun x hx => keep₅ x (List.mem_append_right [K.R.x, K.R.y, K.R.z] hx)
-  have hz : wordsVal s₅.mem base K.R.z K.M.n = 0 ↔ tmv C K.M.n base s₂ K.R.z = 0 := by
+  obtain hz : wordsVal s₅.mem base K.R.z K.M.n = 0 ↔ tmv C K.M.n base s₂ K.R.z = 0 := by
     rw [R5 _ (by simp)]; exact (toM_eq_zero_iff hp (R₂.lt _ (by simp))).symm
-  have Dv : ∀ x ∈ [K.D.x, K.D.y, K.D.z], tmv C K.M.n base s₅ x = E₅ x ∧
+  obtain Dv : ∀ x ∈ [K.D.x, K.D.y, K.D.z], tmv C K.M.n base s₅ x = E₅ x ∧
       wordsVal s₅.mem base x K.M.n < C.p := fun x hx =>
     ⟨I₅.val x (List.mem_append_left _ hx), I₅.lt x (List.mem_append_left _ hx)⟩
-  have tvR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₅.mem base x K.M.n) =
+  obtain tvR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₅.mem base x K.M.n) =
       tmv C K.M.n base s₂ x := fun x hx => by rw [R5 x hx]
-  have tvT : ∀ x ∈ [K.E.x, K.E.y, K.E.z], toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₅.mem base x K.M.n) =
+  obtain tvT : ∀ x ∈ [K.E.x, K.E.y, K.E.z], toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₅.mem base x K.M.n) =
       tmv C K.M.n base s₄ x := fun x hx => by rw [T5 x hx]
-  have tR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], tmv C K.M.n base s₄ x = tmv C K.M.n base s₂ x := fun x hx => by
+  obtain tR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], tmv C K.M.n base s₄ x = tmv C K.M.n base s₂ x := fun x hx => by
     show toM _ _ _ = toM _ _ _; rw [hRe x hx]
   rw [tR _ (by simp), tR _ (by simp), tR _ (by simp)] at v₅
-  have ex : tmv C K.M.n base s₆ K.R.x =
+  obtain ex : tmv C K.M.n base s₆ K.R.x =
       if magH 16 (Window5.nib (k + 16 * Window5.geom K.J) (j - 1)) = 0 then tmv C K.M.n base s₂ K.R.x
       else if tmv C K.M.n base s₂ K.R.z = 0 then tmv C K.M.n base s₄ K.E.x else E₅ K.D.x := by
-    have w : wordsVal s₆.mem base K.R.x K.M.n = _ := w₆ 0 (by decide)
+    obtain w : wordsVal s₆.mem base K.R.x K.M.n = _ := w₆ 0 (by decide)
     show toM _ _ _ = _
     rw [w]
     exact tmv_sel hz (tvR K.R.x (by simp)) (tvT K.E.x (by simp)) (Dv K.D.x (by simp)).1
-  have ey : tmv C K.M.n base s₆ K.R.y =
+  obtain ey : tmv C K.M.n base s₆ K.R.y =
       if magH 16 (Window5.nib (k + 16 * Window5.geom K.J) (j - 1)) = 0 then tmv C K.M.n base s₂ K.R.y
       else if tmv C K.M.n base s₂ K.R.z = 0 then tmv C K.M.n base s₄ K.E.y else E₅ K.D.y := by
-    have w : wordsVal s₆.mem base K.R.y K.M.n = _ := w₆ 1 (by decide)
+    obtain w : wordsVal s₆.mem base K.R.y K.M.n = _ := w₆ 1 (by decide)
     show toM _ _ _ = _
     rw [w]
     exact tmv_sel hz (tvR K.R.y (by simp)) (tvT K.E.y (by simp)) (Dv K.D.y (by simp)).1
-  have ez : tmv C K.M.n base s₆ K.R.z =
+  obtain ez : tmv C K.M.n base s₆ K.R.z =
       if magH 16 (Window5.nib (k + 16 * Window5.geom K.J) (j - 1)) = 0 then tmv C K.M.n base s₂ K.R.z
       else if tmv C K.M.n base s₂ K.R.z = 0 then tmv C K.M.n base s₄ K.E.z else E₅ K.D.z := by
-    have w : wordsVal s₆.mem base K.R.z K.M.n = _ := w₆ 2 (by decide)
+    obtain w : wordsVal s₆.mem base K.R.z K.M.n = _ := w₆ 2 (by decide)
     show toM _ _ _ = _
     rw [w]
     exact tmv_sel hz (tvR K.R.z (by simp)) (tvT K.E.z (by simp)) (Dv K.D.z (by simp)).1
-  have vx := congrArg Prod.fst v₅
-  have vy := congrArg (fun p => p.2.1) v₅
-  have vz := congrArg (fun p => p.2.2) v₅
+  obtain vx := congrArg Prod.fst v₅
+  obtain vy := congrArg (fun p => p.2.1) v₅
+  obtain vz := congrArg (fun p => p.2.2) v₅
   dsimp only at vx vy vz
   rw [vx] at ex; rw [vy] at ey; rw [vz] at ez
-  have hR := jstepA_pt hC hM3 hO hP hP0 hn17 hn64 (k := k) (i := j - 1) (J := K.J) (by omega_arith)
+  obtain hR := jstepA_pt hC hM3 hO hP hP0 hn17 hn64 (k := k) (i := j - 1) (J := K.J) (by omega_arith)
     (hC.onCurve_mul hQ 32) (fun hk => by
       rw [hQe hk, Window5.mul_mul hC hP, show j - 1 + 1 = j by omega_arith]) R₂.rep
     (Z2 := tmv C K.M.n base s₄ K.E.z) (X2 := tmv C K.M.n base s₄ K.E.x) (Y2 := tmv C K.M.n base s₄ K.E.y)
     (fun h => by
-      have j1 := ent h
+      obtain j1 := ent h
       rw [tx, ty, tz] at j1
       exact ⟨j1, tz1 h⟩)
   obtain ⟨Q', hQ', hQe', hR⟩ := hR
-  have U₂₆ : Unch base (jwLoopW K) s₂.mem s₆.mem :=
+  obtain U₂₆ : Unch base (jwLoopW K) s₂.mem s₆.mem :=
     ((U₄.trans U₅).trans U₆).mono fun w hw => by
       simp only [List.mem_append] at hw; rcases hw with (hw | hw) | hw <;> exact hw
   refine ⟨⟨⟨⟨Q', hQ', hQe', F₆, ((R₂.tbl.loopW hL U₄ hn (by decide)).loopW hL U₅ hn (by decide)).loopW hL U₆ hn
@@ -632,7 +632,7 @@ theorem JacWinFixed.unchA (hL : JacWinLay K size) {base : Addr} {s s' : State} {
     {inv : Prog isa} {IW : List (Nat × Nat)} (hI : InvSpecJ K C base size inv IW)
     (hF : JacWinFixed K C base s P k) (hU : Unch base (jwW K ++ IW) s.mem s'.mem)
     (hn : base.toNat + size ≤ 2 ^ 64) : JacWinFixed K C base s' P k := by
-  have ro : ∀ x ∈ jwRo K, wordsVal s'.mem base x K.M.n = wordsVal s.mem base x K.M.n := fun x hx =>
+  obtain ro : ∀ x ∈ jwRo K, wordsVal s'.mem base x K.M.n = wordsVal s.mem base x K.M.n := fun x hx =>
     hU.wordsVal (fun w hw => by
       rcases List.mem_append.mp hw with hw | hw
       · exact hL.ro_w hx w hw
@@ -640,7 +640,7 @@ theorem JacWinFixed.unchA (hL : JacWinLay K size) {base : Addr} {s s' : State} {
         · rw [hL.Tx]; exact hL.jg_apart (List.mem_append_left _ hx) (by decide)
         · exact hL.lay.tmp x (ro_mem hx)
         · exact h x (ro_mem hx)) (by have := hL.le (ro_mem hx); omega_arith)
-  have tv : ∀ x ∈ jwRo K, tmv C K.M.n base s' x = tmv C K.M.n base s x := fun x hx => tmv_congr (ro x hx)
+  obtain tv : ∀ x ∈ jwRo K, tmv C K.M.n base s' x = tmv C K.M.n base s x := fun x hx => tmv_congr (ro x hx)
   refine ⟨⟨by rw [ro _ (by jw_mem)]; exact hF.zero, fun x hx => ?_, ?_, ?_⟩, fun t ht => ?_⟩
   · have hx' : x ∈ jwRo K := by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -673,21 +673,21 @@ theorem winJacA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
         (tmv C K.M.n base s' K.R.z) (mul k P)) := by
   have hn := hs₀.nowrap
   have hJ := hL.J
-  have hP0 : P ≠ .infinity := by
+  obtain hP0 : P ≠ .infinity := by
     intro h
     have := hF₀.pt
     rw [h, hF₀.pz] at this
     exact hC.one_ne_zero this.2.2
-  have pc : ∀ r ∈ powClob K.M.n, r ∈ invClob K.M.n := fun r h => List.mem_cons_of_mem _ h
+  obtain pc : ∀ r ∈ powClob K.M.n, r ∈ invClob K.M.n := fun r h => List.mem_cons_of_mem _ h
   rw [JacWinCfg.windowA]
   simp only [Code.inline]
   refine WP.seq (WP.mono (jbuild_ok hL hp hC hM3 hO hP hP0 (by omega_arith) hs₀ hM₀ hF₀.toJacWinPt) fun s₁ ⟨F₁, T₁⟩ => ?_)
   refine WP.seq (WP.mono (normA_ok hL hp hC hpn hone_lt hone hI F₁.scr F₁.mod T₁)
     fun s ⟨hs, Kn, Un, hM, T₂, O₂⟩ => ?_)
-  have U₀ : Unch base (jwW K ++ IW) s₀.mem s.mem := (F₁.unch.trans Un).mono fun w hw => by
+  obtain U₀ : Unch base (jwW K ++ IW) s₀.mem s.mem := (F₁.unch.trans Un).mono fun w hw => by
     simp only [List.mem_append] at hw ⊢; rcases hw with hw | hw | hw <;> simp [hw]
-  have hF : JacWinFixed K C base s P k := hF₀.unchA hL hI U₀ hn
-  have K₀ : KeepRegs (invClob K.M.n) s₀ s := (F₁.keep.mono pc).trans Kn
+  obtain hF : JacWinFixed K C base s P k := hF₀.unchA hL hI U₀ hn
+  obtain K₀ : KeepRegs (invClob K.M.n) s₀ s := (F₁.keep.mono pc).trans Kn
   refine WP.seq (WP.mono (jfirst_ok hL hC hP hF hkJ (JFrame.refl hs hM) T₂) fun s₂ ⟨I₂, U₂⟩ => ?_)
   refine WP.seq (WP.mono (countLoop_ok (Q := fun t => JInvA K C base size P s k 0 t)
     (Inv := fun j t => JInvA K C base size P s k j t) (n := K.J - 1)
@@ -697,8 +697,8 @@ theorem winJacA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
   rw [Window5.winE_zero'] at hQe
   -- `Y = 1` where `Z = 0`.
   have hs₃ := R₃.fr.scr
-  have hz₃ : wordsVal s₃.mem base K.zero K.M.n = 0 := by rw [R₃.fr.ro hL (by jw_mem)]; exact hF.zero
-  have ayz : K.R.y + 8 * K.M.n ≤ K.zero ∨ K.zero + 8 * K.M.n ≤ K.R.y :=
+  obtain hz₃ : wordsVal s₃.mem base K.zero K.M.n = 0 := by rw [R₃.fr.ro hL (by jw_mem)]; exact hF.zero
+  obtain ayz : K.R.y + 8 * K.M.n ≤ K.zero ∨ K.zero + 8 * K.M.n ≤ K.R.y :=
     hL.ap (by jw_mem) (by jw_mem) (fun e => hL.ro K.zero (by jw_mem) (by rw [← e]; jw_mem))
   refine WP.seq (WP.mono (outFix_ok K.tc hs₃ hL.n0 (Nat.lt_trans hone_lt hpn)
     (show K.R.y + 8 * K.M.n ≤ size from hL.le (by jw_mem)) (show K.R.z + 8 * K.M.n ≤ size from hL.le (by jw_mem))
@@ -706,16 +706,16 @@ theorem winJacA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
   have ey₄ : wordsVal s₄.mem base K.R.y K.M.n = if wordsVal s₃.mem base K.R.z K.M.n = 0 then K.one
       else wordsVal s₃.mem base K.R.y K.M.n := ey₄'
   have O₄ : Outside base K.R.y (8 * K.M.n) s₃.mem s₄.mem := O₄'
-  have hs₄ := hs₃.of_keepRegs k₄ (by decide)
-  have b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega_arith
-  have ex₄ : wordsVal s₄.mem base K.R.x K.M.n = wordsVal s₃.mem base K.R.x K.M.n :=
+  obtain hs₄ := hs₃.of_keepRegs k₄ (by decide)
+  obtain b64 : ∀ x ∈ jwSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by have := hL.le hx; omega_arith
+  obtain ex₄ : wordsVal s₄.mem base K.R.x K.M.n = wordsVal s₃.mem base K.R.x K.M.n :=
     O₄.wordsVal (hL.ap_oth (i := 0) (j := 1) (by decide) (by decide) (by decide)) (b64 _ (by jw_mem))
-  have ez₄ : wordsVal s₄.mem base K.R.z K.M.n = wordsVal s₃.mem base K.R.z K.M.n :=
+  obtain ez₄ : wordsVal s₄.mem base K.R.z K.M.n = wordsVal s₃.mem base K.R.z K.M.n :=
     O₄.wordsVal (hL.ap_oth (i := 2) (j := 1) (by decide) (by decide) (by decide)) (b64 _ (by jw_mem))
-  have U₄ : Unch base (jwLoopW K) s₃.mem s₄.mem := O₄.unch.mono fun w hw => by
+  obtain U₄ : Unch base (jwLoopW K) s₃.mem s₄.mem := O₄.unch.mono fun w hw => by
     rw [List.mem_singleton.mp hw]; exact other_loopW (by jw_mem)
-  have F₄ := R₃.fr.next hL hs₄ (k₄.mono (sub_powClob (by decide))) U₄ (jwLoopW_sub K)
-  have hlt₄ : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₄.mem base x K.M.n < C.p := by
+  obtain F₄ := R₃.fr.next hL hs₄ (k₄.mono (sub_powClob (by decide))) U₄ (jwLoopW_sub K)
+  obtain hlt₄ : ∀ x ∈ [K.R.x, K.R.y, K.R.z], wordsVal s₄.mem base x K.M.n < C.p := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl
@@ -724,45 +724,45 @@ theorem winJacA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
       · exact hone_lt
       · exact R₃.lt _ (by simp)
     · rw [ez₄]; exact R₃.lt _ (by simp)
-  have hSlR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ jwSlots K := by
+  obtain hSlR : ∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∈ jwSlots K := by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> jw_mem
-  have I₄ : Inv K.M base size C.p (· ∈ jwSlots K) [K.R.x, K.R.y, K.R.z] (tmv C K.M.n base s₄) s₄ :=
+  obtain I₄ : Inv K.M base size C.p (· ∈ jwSlots K) [K.R.x, K.R.y, K.R.z] (tmv C K.M.n base s₄) s₄ :=
     ⟨hs₄, F₄.mod, hSlR, hlt₄, fun _ _ => rfl⟩
-  have hS : ∀ op ∈ K.tc.outOps, ∀ x ∈ op.out :: op.ins, x ∈ jwSlots K := by
+  obtain hS : ∀ op ∈ K.tc.outOps, ∀ x ∈ op.out :: op.ins, x ∈ jwSlots K := by
     intro op hop x hx
     simp only [TCombCfg.outOps, JacWinCfg.tc, List.mem_cons, List.not_mem_nil, or_false] at hop
     rcases hop with rfl | rfl | rfl <;>
       simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false] at hx <;>
       rcases hx with rfl | rfl | rfl <;> jw_mem
-  have hR : readsOk K.tc.outOps [K.R.x, K.R.y, K.R.z] = true := by
+  obtain hR : readsOk K.tc.outOps [K.R.x, K.R.y, K.R.z] = true := by
     simp [readsOk, TCombCfg.outOps, FOp.ins, FOp.out, JacWinCfg.tc]
   refine WP.mono (ForwardField.programB_ok hL.lay hp _ I₄ hS hR) fun s₅ ⟨P₅, I₅⟩ => ?_
-  have hval : ∀ x ∈ [K.R.x, K.R.y, K.R.z], toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₅.mem base x K.M.n) =
+  obtain hval : ∀ x ∈ [K.R.x, K.R.y, K.R.z], toM C.p (2 ^ (64 * K.M.n)) (wordsVal s₅.mem base x K.M.n) =
       runOps K.tc.outOps (tmv C K.M.n base s₄) x ∧ wordsVal s₅.mem base x K.M.n < C.p := fun x hx => by
-    have hm : x ∈ validAfter K.tc.outOps [K.R.x, K.R.y, K.R.z] := (mem_validAfter _ _).mpr (Or.inl hx)
+    obtain hm : x ∈ validAfter K.tc.outOps [K.R.x, K.R.y, K.R.z] := (mem_validAfter _ _).mpr (Or.inl hx)
     exact ⟨I₅.val x hm, I₅.lt x hm⟩
-  have U₅ : Unch base (jwLoopW K) s₄.mem s₅.mem := P₅.loopW (by
+  obtain U₅ : Unch base (jwLoopW K) s₄.mem s₅.mem := P₅.loopW (by
     intro x hx
     simp only [TCombCfg.outOps, JacWinCfg.tc, FOp.out, List.map_cons, List.map_nil, List.mem_cons,
       List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> exact other_loopW (by jw_mem))
-  have F₅ := F₄.next hL (P₅.scr hs₄) P₅.regs U₅ (jwLoopW_sub K)
+  obtain F₅ := F₄.next hL (P₅.scr hs₄) P₅.regs U₅ (jwLoopW_sub K)
   refine ⟨K₀.trans (F₅.keep.mono pc), (U₀.trans F₅.unch).mono fun w hw => by
       simp only [List.mem_append] at hw ⊢; rcases hw with (hw | hw) | hw <;> simp [hw],
     F₅.mod, fun x hx => (hval x hx).2, fun hk => ?_⟩
-  have e : ∀ x ∈ [K.R.x, K.R.y, K.R.z], tmv C K.M.n base s₅ x = runOps K.tc.outOps (tmv C K.M.n base s₄) x :=
+  obtain e : ∀ x ∈ [K.R.x, K.R.y, K.R.z], tmv C K.M.n base s₅ x = runOps K.tc.outOps (tmv C K.M.n base s₄) x :=
     fun x hx => (hval x hx).1
   rw [e _ (by simp), e _ (by simp), e _ (by simp)]
-  have hxt : K.R.x ≠ K.S.t0 := hL.oth_ne (i := 0) (j := 7) (by decide) (by decide) (by decide)
-  have hzt : K.R.z ≠ K.S.t0 := hL.oth_ne (i := 2) (j := 7) (by decide) (by decide) (by decide)
-  have hxz : K.R.x ≠ K.R.z := hL.oth_ne (i := 0) (j := 2) (by decide) (by decide) (by decide)
-  have hxy : K.R.x ≠ K.R.y := hL.oth_ne (i := 0) (j := 1) (by decide) (by decide) (by decide)
-  have hyt : K.R.y ≠ K.S.t0 := hL.oth_ne (i := 1) (j := 7) (by decide) (by decide) (by decide)
-  have hyz : K.R.y ≠ K.R.z := hL.oth_ne (i := 1) (j := 2) (by decide) (by decide) (by decide)
+  obtain hxt : K.R.x ≠ K.S.t0 := hL.oth_ne (i := 0) (j := 7) (by decide) (by decide) (by decide)
+  obtain hzt : K.R.z ≠ K.S.t0 := hL.oth_ne (i := 2) (j := 7) (by decide) (by decide) (by decide)
+  obtain hxz : K.R.x ≠ K.R.z := hL.oth_ne (i := 0) (j := 2) (by decide) (by decide) (by decide)
+  obtain hxy : K.R.x ≠ K.R.y := hL.oth_ne (i := 0) (j := 1) (by decide) (by decide) (by decide)
+  obtain hyt : K.R.y ≠ K.S.t0 := hL.oth_ne (i := 1) (j := 7) (by decide) (by decide) (by decide)
+  obtain hyz : K.R.y ≠ K.R.z := hL.oth_ne (i := 1) (j := 2) (by decide) (by decide) (by decide)
   simp only [TCombCfg.outOps, JacWinCfg.tc, runOps, List.foldl_cons, List.foldl_nil, FOp.run,
     Function.update_apply, hxt, hzt, hxz, hyt, hyz, hxz.symm, hxt.symm, hxy.symm, ite_true, ite_false]
-  have hy : tmv C K.M.n base s₄ K.R.y = if tmv C K.M.n base s₃ K.R.z = 0 then 1
+  obtain hy : tmv C K.M.n base s₄ K.R.y = if tmv C K.M.n base s₃ K.R.z = 0 then 1
       else tmv C K.M.n base s₃ K.R.y := by
     show toM _ _ _ = _
     rw [ey₄]
@@ -772,9 +772,9 @@ theorem winJacA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
     · have h' : tmv C K.M.n base s₃ K.R.z ≠ 0 := fun h0 =>
         h ((toM_eq_zero_iff hp (R₃.lt _ (by simp))).mp h0)
       simp only [h, h', ↓reduceIte]
-  have ex : tmv C K.M.n base s₄ K.R.x = tmv C K.M.n base s₃ K.R.x := by
+  obtain ex : tmv C K.M.n base s₄ K.R.x = tmv C K.M.n base s₃ K.R.x := by
     show toM _ _ _ = toM _ _ _; rw [ex₄]
-  have ez : tmv C K.M.n base s₄ K.R.z = tmv C K.M.n base s₃ K.R.z := by
+  obtain ez : tmv C K.M.n base s₄ K.R.z = tmv C K.M.n base s₃ K.R.z := by
     show toM _ _ _ = toM _ _ _; rw [ez₄]
   rw [hy, ex, ez, ← hQe hk]
   exact InvJ.out hC R₃.rep

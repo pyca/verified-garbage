@@ -37,7 +37,7 @@ theorem range_bne {x b : Nat} (hx : x < 2 ^ 64) (hb : b < 64) :
     ((BitVec.ofNat 64 x - 1#64) >>> b != 0#64) = !decide (1 ≤ x ∧ x ≤ 2 ^ b) := by
   rw [bne_zero_toNat]
   congr 1
-  have hp : 2 ^ b ≤ 2 ^ 63 := Nat.pow_le_pow_right (by decide) (by omega_using [hb])
+  obtain hp : 2 ^ b ≤ 2 ^ 63 := Nat.pow_le_pow_right (by decide) (by omega_using [hb])
   have hp1 : 1 ≤ 2 ^ b := Nat.one_le_two_pow
   simp only [BitVec.toNat_ushiftRight, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.shiftRight_eq_div_pow]
   rw [Nat.mod_eq_of_lt hx]
@@ -68,15 +68,15 @@ theorem checks_run (s : State) :
       (¬valid (s.gpr .r4).toNat (s.gpr .r5).toNat (s.gpr .r7).toNat →
         t.gpr .r3 = BitVec.ofNat 64 (errCode (s.gpr .r4).toNat (s.gpr .r5).toNat)) ∧
       (valid (s.gpr .r4).toNat (s.gpr .r5).toNat (s.gpr .r7).toNat → t.gpr .r3 = s.gpr .r3) := by
-  have e4 := (BitVec.ofNat_toNat 64 (s.gpr .r4)).trans (BitVec.setWidth_eq _)
-  have e5 := (BitVec.ofNat_toNat 64 (s.gpr .r5)).trans (BitVec.setWidth_eq _)
-  have e7 := (BitVec.ofNat_toNat 64 (s.gpr .r7)).trans (BitVec.setWidth_eq _)
+  obtain e4 := (BitVec.ofNat_toNat 64 (s.gpr .r4)).trans (BitVec.setWidth_eq _)
+  obtain e5 := (BitVec.ofNat_toNat 64 (s.gpr .r5)).trans (BitVec.setWidth_eq _)
+  obtain e7 := (BitVec.ofNat_toNat 64 (s.gpr .r7)).trans (BitVec.setWidth_eq _)
   unfold checks
   apply WP.seq
   refine WP.mono (WP.keep [.r10] (c := .block [.subi .r10 .r4 1, .lsr .d .r10 .r10 7]) (Q := fun t =>
       t.gpr .r10 = (s.gpr .r4 - 1#64) >>> 7 ∧ t.mem = s.mem) (by rrun)
     (by rfl) rfl) fun t₁ ⟨⟨a₁, m₁⟩, k₁⟩ => ?_
-  have c₁ := range_bne (x := (s.gpr .r4).toNat) (b := 7) (s.gpr .r4).isLt (by decide)
+  obtain c₁ := range_bne (x := (s.gpr .r4).toNat) (b := 7) (s.gpr .r4).isLt (by decide)
   rw [e4] at c₁
   refine WP.ite _ (by rw [eval_nonzero, a₁, c₁]) (fun h => ?_) (fun h => ?_)
   · have hk : ¬(1 ≤ (s.gpr .r4).toNat ∧ (s.gpr .r4).toNat ≤ 128) := by simp at h; omega_using [h]
@@ -91,7 +91,7 @@ theorem checks_run (s : State) :
     refine WP.mono (WP.keep [.r10] (c := .block [.subi .r10 .r5 1, .lsr .d .r10 .r10 10]) (Q := fun t =>
         t.gpr .r10 = (s.gpr .r5 - 1#64) >>> 10 ∧ t.mem = t₁.mem) (by rrun [k₁.gpr (show Reg.r5 ∉ [Reg.r10] by decide)])
       (by rfl) rfl) fun t₂ ⟨⟨a₂, m₂⟩, k₂⟩ => ?_
-    have c₂ := range_bne (x := (s.gpr .r5).toNat) (b := 10) (s.gpr .r5).isLt (by decide)
+    obtain c₂ := range_bne (x := (s.gpr .r5).toNat) (b := 10) (s.gpr .r5).isLt (by decide)
     rw [e5] at c₂
     refine WP.ite _ (by rw [eval_nonzero, a₂, c₂]) (fun h => ?_) (fun h => ?_)
     · have hb : ¬(1 ≤ (s.gpr .r5).toNat ∧ (s.gpr .r5).toNat ≤ 1024) := by simp at h; omega_using [h]
@@ -107,7 +107,7 @@ theorem checks_run (s : State) :
           t.gpr .r10 = s.gpr .r7 - 8#64 ∧ t.mem = t₂.mem)
         (by rrun [k₂.gpr (show Reg.r7 ∉ [Reg.r10] by decide), k₁.gpr (show Reg.r7 ∉ [Reg.r10] by decide)])
         (by rfl) rfl) fun t₃ ⟨⟨a₃, m₃⟩, k₃⟩ => ?_
-      have c₃ := sub_bne (x := (s.gpr .r7).toNat) (y := 8) (s.gpr .r7).isLt (by decide)
+      obtain c₃ := sub_bne (x := (s.gpr .r7).toNat) (y := 8) (s.gpr .r7).isLt (by decide)
       rw [e7] at c₃
       refine WP.ite _ (by rw [eval_nonzero, a₃, c₃]) (fun h => ?_) (fun h => ?_)
       · have hi : (s.gpr .r7).toNat ≠ 8 := by simpa using h
@@ -164,24 +164,24 @@ theorem initBody_wp (s : State) (h : InitPre s)
   obtain ⟨V, hV⟩ : ∃ V, s.gpr .r6 = V := ⟨_, rfl⟩
   obtain ⟨C, hC⟩ : ∃ C, s.gpr .r8 = C := ⟨_, rfl⟩
   obtain ⟨W, hW⟩ : ∃ W, s.gpr .r9 = W := ⟨_, rfl⟩
-  have hrd := h.rd; have hwr := h.wr; have kC := h.kC; have kW := h.kW; have vC := h.vC; have vW := h.vW
+  obtain hrd := h.rd; have hwr := h.wr; have kC := h.kC; have kW := h.kW; have vC := h.vC; have vW := h.vW
   have CW := h.CW
   simp only [hK, hV, hC, hW] at hrd hwr kC kW vC vW CW
   rw [hK, hC, hV]
-  have inW : ∀ d, d + 8 ≤ 576 → InRegions s.wr (W + BitVec.ofNat 64 d) 8 := fun d hd => by
+  obtain inW : ∀ d, d + 8 ≤ 576 → InRegions s.wr (W + BitVec.ofNat 64 d) 8 := fun d hd => by
     rw [hwr]; exact ⟨⟨W, 576⟩, by simp, Offset.contains_base _ hd (by omega_arith)⟩
-  have inC : InRegions s.wr (C + 128) 8 := by
+  obtain inC : InRegions s.wr (C + 128) 8 := by
     rw [hwr]; exact ⟨⟨C, 144⟩, by simp, Offset.contains_base C (d := 128) (by omega_arith) (by omega_arith)⟩
-  have inV : InRegions (s.rd ++ s.wr) V 8 := by
+  obtain inV : InRegions (s.rd ++ s.wr) V 8 := by
     rw [hrd]; exact ⟨⟨V, (s.gpr .r7).toNat⟩, by simp, by rw [hi]; exact Region.contains_self _ _⟩
-  have cW : ∀ d, d + 8 ≤ 576 → (⟨W, 576⟩ : Region).Contains (W + BitVec.ofNat 64 d) 8 := fun d hd =>
+  obtain cW : ∀ d, d + 8 ≤ 576 → (⟨W, 576⟩ : Region).Contains (W + BitVec.ofNat 64 d) 8 := fun d hd =>
     Offset.contains_base W hd (by omega_arith)
-  have W512 := inW 512 (by decide)
-  have W520 := inW 520 (by decide)
+  obtain W512 := inW 512 (by decide)
+  obtain W520 := inW 520 (by decide)
   -- frames
-  have slot512 : Region.Sub ⟨W + BitVec.ofNat 64 512, 8⟩ ⟨W, 576⟩ := Offset.sub_base W (by omega_arith)
-  have slot520 : Region.Sub ⟨W + BitVec.ofNat 64 520, 8⟩ ⟨W, 576⟩ := Offset.sub_base W (by omega_arith)
-  have ivC : Region.Sub ⟨C + 128, 8⟩ ⟨C, 144⟩ := Offset.sub_base C (d := 128) (by omega_arith)
+  obtain slot512 : Region.Sub ⟨W + BitVec.ofNat 64 512, 8⟩ ⟨W, 576⟩ := Offset.sub_base W (by omega_arith)
+  obtain slot520 : Region.Sub ⟨W + BitVec.ofNat 64 520, 8⟩ ⟨W, 576⟩ := Offset.sub_base W (by omega_arith)
+  obtain ivC : Region.Sub ⟨C + 128, 8⟩ ⟨C, 144⟩ := Offset.sub_base C (d := 128) (by omega_arith)
   unfold initBody withLr
   apply WP.seq
   refine WP.mono (WP.keep [.r0, .r25] (c := .block [.mflr .r0, .store .d .r0 .r9 512, .store .d .r25 .r9 520,
@@ -189,27 +189,27 @@ theorem initBody_wp (s : State) (h : InitPre s)
       t.mem = (s.mem.writeW (W + BitVec.ofNat 64 512) s.lr).writeW (W + BitVec.ofNat 64 520) (s.gpr .r25))
     (by rrun [mov, hW, W512, W520]) (by rfl) rfl)
     fun t₁ ⟨⟨a₁, m₁⟩, k₁⟩ => ?_
-  have F₁ : Frame [⟨W, 576⟩] s.mem t₁.mem := by
+  obtain F₁ : Frame [⟨W, 576⟩] s.mem t₁.mem := by
     rw [m₁]
     exact ((Frame.refl _ _).writeW (r := ⟨W, 576⟩) (by simp) _ (cW 512 (by decide))).writeW
       (r := ⟨W, 576⟩) (by simp) _ (cW 520 (by decide))
-  have h6 : t₁.gpr .r6 = V := by rw [k₁.gpr (by decide), hV]
-  have h8 : t₁.gpr .r8 = C := by rw [k₁.gpr (by decide), hC]
-  have h9 : t₁.gpr .r9 = W := by rw [k₁.gpr (by decide), hW]
-  have inV₁ : InRegions (t₁.rd ++ t₁.wr) V 8 := by rw [k₁.2.1, k₁.2.2]; exact inV
-  have inC₁ : InRegions t₁.wr (C + 128#64) 8 := by rw [k₁.2.2]; exact inC
+  obtain h6 : t₁.gpr .r6 = V := by rw [k₁.gpr (by decide), hV]
+  obtain h8 : t₁.gpr .r8 = C := by rw [k₁.gpr (by decide), hC]
+  obtain h9 : t₁.gpr .r9 = W := by rw [k₁.gpr (by decide), hW]
+  obtain inV₁ : InRegions (t₁.rd ++ t₁.wr) V 8 := by rw [k₁.2.1, k₁.2.2]; exact inV
+  obtain inC₁ : InRegions t₁.wr (C + 128#64) 8 := by rw [k₁.2.2]; exact inC
   apply WP.seq
   apply WP.seq
   refine WP.mono (WP.keep [.r6, .r7, .r10] (c := .block initArgs) (Q := fun t =>
       t.gpr .r6 = C ∧ t.gpr .r7 = W ∧ t.mem = t₁.mem.writeW (C + 128#64) (t₁.mem.readW V 64))
     (by unfold initArgs; rrun [mov, h6, h8, h9, inV₁, inC₁])
     (by rfl) rfl) fun t₂ ⟨⟨a6, a7, m₂⟩, k₂⟩ => ?_
-  have k12 := k₁.trans k₂
-  have h3 : t₂.gpr .r3 = K := by rw [k12.gpr (by decide), hK]
-  have h4 : t₂.gpr .r4 = s.gpr .r4 := k12.gpr (by decide)
-  have h5 : t₂.gpr .r5 = s.gpr .r5 := k12.gpr (by decide)
-  have C128 : Region.Sub ⟨C, 128⟩ ⟨C, 144⟩ := Region.sub_prefix (by decide)
-  have W512r : Region.Sub ⟨W, 512⟩ ⟨W, 576⟩ := Region.sub_prefix (by decide)
+  obtain k12 := k₁.trans k₂
+  obtain h3 : t₂.gpr .r3 = K := by rw [k12.gpr (by decide), hK]
+  obtain h4 : t₂.gpr .r4 = s.gpr .r4 := k12.gpr (by decide)
+  obtain h5 : t₂.gpr .r5 = s.gpr .r5 := k12.gpr (by decide)
+  obtain C128 : Region.Sub ⟨C, 128⟩ ⟨C, 144⟩ := Region.sub_prefix (by decide)
+  obtain W512r : Region.Sub ⟨W, 512⟩ ⟨W, 576⟩ := Region.sub_prefix (by decide)
   apply WP.seq
   refine WP.call (k := keyC) expandKey_ok (rd := [⟨K, (s.gpr .r4).toNat⟩]) (wr := [⟨C, 128⟩, ⟨W, 512⟩]) ?_ ?_ ?_
     (fun t₃ rd₃ wr₃ _ F₃ P₃ _ post₃ => ?_) expandKey_noFrames
@@ -233,14 +233,14 @@ theorem initBody_wp (s : State) (h : InitPre s)
   -- after the call
   refine WP.mono (WP.keep [.r3] (c := .block [.li .r3 0]) (Q := fun t => t.gpr .r3 = 0#64 ∧ t.mem = t₃.mem)
     (by rrun) (by rfl) rfl) fun t₄ ⟨⟨a3, m₄⟩, k₄⟩ => ?_
-  have h31 : t₄.gpr .r25 = W := by rw [k₄.gpr (by decide), P₃ _ (by decide), k₂.gpr (by decide), a₁]
-  have F₂ : Frame [⟨C, 144⟩, ⟨W, 576⟩] s.mem t₂.mem := by
+  obtain h31 : t₄.gpr .r25 = W := by rw [k₄.gpr (by decide), P₃ _ (by decide), k₂.gpr (by decide), a₁]
+  obtain F₂ : Frame [⟨C, 144⟩, ⟨W, 576⟩] s.mem t₂.mem := by
     rw [m₂]
     exact (F₁.mono (by simp)).writeW (r := ⟨C, 144⟩) (by simp) _ (Offset.contains_base C (d := 128) (by omega_arith) (by omega_arith))
   -- the slots, apart from the context and the called function's working space
-  have slot : ∀ d, 512 ≤ d → d + 8 ≤ 576 → t₄.mem.readW (W + BitVec.ofNat 64 d) 64 = t₁.mem.readW (W + BitVec.ofNat 64 d) 64 := by
+  obtain slot : ∀ d, 512 ≤ d → d + 8 ≤ 576 → t₄.mem.readW (W + BitVec.ofNat 64 d) 64 = t₁.mem.readW (W + BitVec.ofNat 64 d) 64 := by
     intro d hd hd'
-    have sd : Region.Sub ⟨W + BitVec.ofNat 64 d, 8⟩ ⟨W, 576⟩ := Offset.sub_base W (by omega_arith)
+    obtain sd : Region.Sub ⟨W + BitVec.ofNat 64 d, 8⟩ ⟨W, 576⟩ := Offset.sub_base W (by omega_arith)
     rw [m₄, F₃.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl)
@@ -248,15 +248,15 @@ theorem initBody_wp (s : State) (h : InitPre s)
       · exact Offset.disjoint_base W (by omega_arith) (by omega_arith)) (by decide), m₂,
       Mem.readW_writeW_sep (((CW.sub_left ivC).symm.sub_left sd).sep (Region.contains_self _ _)
         (Region.contains_self _ _)) (by decide)]
-  have e512 : t₄.mem.readW (W + 512#64) 64 = s.lr := by
+  obtain e512 : t₄.mem.readW (W + 512#64) 64 = s.lr := by
     rw [slot 512 (by decide) (by decide), m₁, Mem.readW_writeW_sep (Offset.sep W (by omega_arith) (by omega_arith) (by omega_arith))
       (by decide), Mem.readW_writeW_self64]
-  have e520 : t₄.mem.readW (W + 520#64) 64 = s.gpr .r25 := by
+  obtain e520 : t₄.mem.readW (W + 520#64) 64 = s.gpr .r25 := by
     rw [slot 520 (by decide) (by decide), m₁, Mem.readW_writeW_self64]
-  have rw₄ : t₄.rd = s.rd ∧ t₄.wr = s.wr := ⟨by rw [k₄.2.1, rd₃, k12.2.1], by rw [k₄.2.2, wr₃, k12.2.2]⟩
-  have in512 : InRegions (t₄.rd ++ t₄.wr) (W + 512#64) 8 := by
+  obtain rw₄ : t₄.rd = s.rd ∧ t₄.wr = s.wr := ⟨by rw [k₄.2.1, rd₃, k12.2.1], by rw [k₄.2.2, wr₃, k12.2.2]⟩
+  obtain in512 : InRegions (t₄.rd ++ t₄.wr) (W + 512#64) 8 := by
     rw [rw₄.1, rw₄.2]; obtain ⟨r, hr, hc⟩ := W512; exact ⟨r, List.mem_append_right _ hr, hc⟩
-  have in520 : InRegions (t₄.rd ++ t₄.wr) (W + 520#64) 8 := by
+  obtain in520 : InRegions (t₄.rd ++ t₄.wr) (W + 520#64) 8 := by
     rw [rw₄.1, rw₄.2]; obtain ⟨r, hr, hc⟩ := W520; exact ⟨r, List.mem_append_right _ hr, hc⟩
   refine WP.mono (WP.keep [.r0, .r25] (c := .block [.load .d .r0 .r25 512, .mtlr .r0, .load .d .r25 .r25 520])
       (Q := fun t => t.gpr .r25 = s.gpr .r25 ∧ t.lr = s.lr ∧ t.mem = t₄.mem)
@@ -285,7 +285,7 @@ theorem initBody_wp (s : State) (h : InitPre s)
         rintro r (rfl | rfl)
         · exact Offset.disjoint_base C (d := 128) (by omega_arith) (by omega_arith)
         · exact (CW.sub_left ivC).sub_right W512r)
-    have hV₁ : Spec.Rc2.blockAt t₁.mem V = Spec.Rc2.blockAt s.mem V :=
+    obtain hV₁ : Spec.Rc2.blockAt t₁.mem V = Spec.Rc2.blockAt s.mem V :=
       Proof.Rc2.blockAt_frame F₁ V (by
         simp only [List.mem_cons, List.not_mem_nil, or_false]
         rintro r rfl
@@ -307,9 +307,9 @@ theorem init_wp (s : State) (h : InitPre s) :
   apply WP.seq
   refine WP.mono (WP.keepLr (checks_run s) (by decide) (by rw [← Code.allInstrs_eq]; decide))
     fun t₁ ⟨⟨m₁, k₁, c₁, e₁, v₁⟩, l₁⟩ => ?_
-  have g : ∀ r, r ∉ [Reg.r3, .r10] → t₁.gpr r = s.gpr r := fun r hr => k₁.gpr hr
-  have g4 := g .r4 (by decide); have g5 := g .r5 (by decide); have g6 := g .r6 (by decide)
-  have g7 := g .r7 (by decide); have g8 := g .r8 (by decide); have g9 := g .r9 (by decide)
+  obtain g : ∀ r, r ∉ [Reg.r3, .r10] → t₁.gpr r = s.gpr r := fun r hr => k₁.gpr hr
+  obtain g4 := g .r4 (by decide); have g5 := g .r5 (by decide); have g6 := g .r6 (by decide)
+  obtain g7 := g .r7 (by decide); have g8 := g .r8 (by decide); have g9 := g .r9 (by decide)
   refine WP.ite _ (by rw [eval_nonzero, c₁]) (fun hb => WP.block_nil ?_) (fun hb => ?_)
   · have hv : ¬valid (s.gpr .r4).toNat (s.gpr .r5).toNat (s.gpr .r7).toNat := by simpa using hb
     refine ⟨fun r hr => k₁.gpr (by revert hr; revert r; decide), l₁, ?_⟩
@@ -320,8 +320,8 @@ theorem init_wp (s : State) (h : InitPre s) :
     · rfl
     · split <;> rfl
   · have hv : valid (s.gpr .r4).toNat (s.gpr .r5).toNat (s.gpr .r7).toNat := by simpa using hb
-    have g3 := v₁ hv
-    have h' : InitPre t₁ := by
+    obtain g3 := v₁ hv
+    obtain h' : InitPre t₁ := by
       obtain ⟨rd, wr, kC, kW, vC, vW, CW⟩ := h
       refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> simp only [k₁.2.1, k₁.2.2, g3, g4, g6, g7, g8, g9] <;> with_reducible assumption
     refine WP.mono (initBody_wp t₁ h' (by rw [g4, g5, g7]; exact hv)) fun s' ⟨P, L, r3, S, V⟩ =>

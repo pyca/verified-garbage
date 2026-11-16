@@ -163,9 +163,9 @@ theorem crt_selectPower_input (s : State) {g : CrtGeometry} {bs : Fin 7 → List
   obtain ⟨member, ws, layout, _, slotFit, slotSmall, link⟩ := h.selected.1.child h.kind
   refine WP.mono (crt_selectLinked_ready s h.selected.1 ws layout member slotFit slotSmall h.selected.2.ptr link) ?_
   rintro t ⟨sharedT, readyT, frame, rest⟩
-  have eq := h.selected.1.workspace_eq_after_base ws member frame
-  have flag := acceptance_after_base_save frame rest
-  have modulus := eq.number h.selected.1.buffers.context.arraysFit (by decide : 0 < 8)
+  obtain eq := h.selected.1.workspace_eq_after_base ws member frame
+  obtain flag := acceptance_after_base_save frame rest
+  obtain modulus := eq.number h.selected.1.buffers.context.arraysFit (by decide : 0 < 8)
   exact ⟨sharedT, ⟨⟨readyT, by have := sharedT.stack.nowrap; omega_using [this], sharedT.stack.read (by decide),
     by rw [flag]; exact h.bit, by rw [flag, modulus]; exact h.valid⟩,
     sharedT.power_sources i exponent member⟩, by rw [modulus]; exact h.prime⟩
@@ -203,12 +203,12 @@ theorem montMixedProduct_ok (s : State) {base : BitVec 32} {len w o a b M x y : 
       numAt t.mem (State.addr base) w 0 = M ∧ numAt t.mem (State.addr base) w o = x * y % M ∧
       Keeps (State.addr base) len w o s.mem t.mem ∧
       Frame [⟨State.addr base, 8 * len⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  have positive : 0 < M := by have := h.modulus; rw [modulus] at this; omega
+  obtain positive : 0 < M := by have := h.modulus; rw [modulus] at this; omega
   refine WP.mono (montOp_ok s h ho ha hb ho0 (by rw [modulus, second]; exact Nat.mod_lt _ positive)) ?_
   rintro t ⟨ready, modT, bound, value, keeps, frame, rest⟩
   rw [modulus] at modT bound value
   rw [first, second, Nat.mul_mod_mod, ← Nat.mul_assoc] at value
-  have result := mont_cancel (coprime_pow2 odd (64 * w)) value
+  obtain result := mont_cancel (coprime_pow2 odd (64 * w)) value
   rw [Nat.mod_eq_of_lt bound] at result
   exact ⟨ready, modT, result, keeps, frame, rest⟩
 
@@ -244,86 +244,86 @@ theorem crt_coefficient_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
       numAt t.mem (State.addr (crtP g.base g.words)) g.words 5 = ((((a : Int) - b) * qi) % (P : Int)).toNat ∧
       Frame [⟨State.addr (crtP g.base g.words), 8 * workspaceWords g.words⟩,
         ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩] s.mem t.mem ∧ Rest roundClobbers s t := by
-  have kind : CrtChild g (crtP g.base g.words) 224 := Or.inl ⟨rfl, rfl⟩
+  obtain kind : CrtChild g (crtP g.base g.words) 224 := Or.inl ⟨rfl, rfl⟩
   have ctx := h.ctx
   have le := ctx.le
-  have fitsN : arrAt v 8 ≤ 8 * workspaceWords g.words := ctx.ready.width ▸ ctx.ready.layout.2.2.1
+  obtain fitsN : arrAt v 8 ≤ 8 * workspaceWords g.words := ctx.ready.width ▸ ctx.ready.layout.2.2.1
   have fitsC : arrAt g.words 8 ≤ 8 * workspaceWords g.words := ctx.shared.buffers.context.arraysFit
-  have end5 := Nat.le_trans (array_end_le (w := g.words) (by decide : 5 < 8)) fitsC
-  have words : g.words ≤ 128 := (crt_width_valid ctx.shared.buffers.lengthValid).2.1
-  have wsSmall : workspaceWords g.words ≤ 16 * 128 + 64 := by simp only [workspaceWords]; omega_using [words]
-  have op : ∀ q, q = 0 ∨ q = 1 ∨ q = 4 ∨ q = 5 ∨ q = 6 → Operand q := by
+  obtain end5 := Nat.le_trans (array_end_le (w := g.words) (by decide : 5 < 8)) fitsC
+  obtain words : g.words ≤ 128 := (crt_width_valid ctx.shared.buffers.lengthValid).2.1
+  obtain wsSmall : workspaceWords g.words ≤ 16 * 128 + 64 := by simp only [workspaceWords]; omega_using [words]
+  obtain op : ∀ q, q = 0 ∨ q = 1 ∨ q = 4 ∨ q = 5 ∨ q = 6 → Operand q := by
     intro q hq
     rcases hq with rfl | rfl | rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
-  have positive : 0 < P := by have := ctx.ready.modulus; rw [h.modulus] at this; omega_using [this]
-  have pSmall : P < 2 ^ (64 * v) := by rw [← h.modulus]; exact numAt_lt_pow _ _ _ _
+  obtain positive : 0 < P := by have := ctx.ready.modulus; rw [h.modulus] at this; omega_using [this]
+  obtain pSmall : P < 2 ^ (64 * v) := by rw [← h.modulus]; exact numAt_lt_pow _ _ _ _
   -- `qInv mod p`, kept in the full array 4.
   rw [coefficient, inverseHalf, WP.seq_iff, WP.seq_iff]
   refine WP.mono (crt_reduceHalf_ok s ctx (j := 4) (by decide) h.half h.modulus h.odd h.r2) ?_
   rintro s1 ⟨ready1, mod1, r21, _, inv1, frame1, rest1⟩
   rw [h.inverse] at inv1
-  have ctx1 := ctx.after_narrow ready1 frame1 rest1
-  have eq1 := ctx.child_eq frame1
+  obtain ctx1 := ctx.after_narrow ready1 frame1 rest1
+  obtain eq1 := ctx.child_eq frame1
   refine WP.mono (crt_copyOut_ok s1 ctx1 (j := 4) (a := 1) (by decide) (by decide)) ?_
   rintro s2 ⟨ready2, copied2, outside2, rest2⟩
   obtain ⟨ctx2, keeps2, frame2, eqN2⟩ := ctx1.after_copyOut kind (by decide) ready2 outside2 rest2
-  have mod2 := (eqN2.number fitsN (by decide)).trans mod1
-  have r22 := (eqN2.number fitsN (by decide)).trans r21
+  obtain mod2 := (eqN2.number fitsN (by decide)).trans mod1
+  obtain r22 := (eqN2.number fitsN (by decide)).trans r21
   -- `m_p - m_q mod p` in the narrow array 6.
   rw [differenceHalf, WP.seq_iff, WP.seq_iff]
   refine WP.mono (crt_reduceHalf_ok s2 ctx2 (j := 1) (by decide) h.half mod2 h.odd r22) ?_
   rintro s3 ⟨ready3, mod3, r23, _, other3, frame3, rest3⟩
   rw [keeps_array_num keeps2 fitsC (op 1 (by simp)) (by decide), eq1.number fitsC (by decide), h.other] at other3
-  have ctx3 := ctx2.after_narrow ready3 frame3 rest3
-  have eq3 := ctx2.child_eq frame3
+  obtain ctx3 := ctx2.after_narrow ready3 frame3 rest3
+  obtain eq3 := ctx2.child_eq frame3
   rw [WP.seq_iff]
   refine WP.mono (crt_copyLow_ok s3 ctx3 (j := 6) (d := 5) (by decide) (by decide) (by decide)) ?_
   rintro s4 ⟨ready4, residue4, keeps4, frame4, rest4⟩
   rw [eq3.number fitsC (by decide), keeps_array_num keeps2 fitsC (op 6 (by simp)) (by decide),
     eq1.number fitsC (by decide), h.residue, Nat.mod_eq_of_lt (Nat.lt_trans h.bound pSmall)] at residue4
-  have mod4 := (keeps_array_num keeps4 fitsN (op 0 (by simp)) (by decide)).trans mod3
-  have other4 := (keeps_array_num keeps4 fitsN (op 1 (by simp)) (by decide)).trans other3
+  obtain mod4 := (keeps_array_num keeps4 fitsN (op 0 (by simp)) (by decide)).trans mod3
+  obtain other4 := (keeps_array_num keeps4 fitsN (op 1 (by simp)) (by decide)).trans other3
   refine WP.mono (subModArray_ok s4 ready4 (o := 6) (a := 5) (b := 1) (op 6 (by simp)) (op 5 (by simp))
     (op 1 (by simp)) (by decide) (by decide) (by decide) (by rw [residue4, mod4]; exact h.bound)
     (by rw [other4, mod4]; exact Nat.mod_lt _ positive)) ?_
   rintro s5 ⟨ready5, diff5, keeps5, frame5, rest5⟩
   rw [residue4, mod4, other4] at diff5
-  have mod5 := (keeps_array_num keeps5 fitsN (op 0 (by simp)) (by decide)).trans mod4
-  have r25 := (keeps_array_num keeps5 fitsN (op 4 (by simp)) (by decide)).trans
+  obtain mod5 := (keeps_array_num keeps5 fitsN (op 0 (by simp)) (by decide)).trans mod4
+  obtain r25 := (keeps_array_num keeps5 fitsN (op 4 (by simp)) (by decide)).trans
     ((keeps_array_num keeps4 fitsN (op 4 (by simp)) (by decide)).trans r23)
-  have frame35 : Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩] s3.mem s5.mem :=
+  obtain frame35 : Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩] s3.mem s5.mem :=
     frame4.trans frame5
-  have ctx5 := ctx3.after_narrow ready5 frame35 (rest4.trans rest5)
-  have eq35 := ctx3.child_eq frame35
+  obtain ctx5 := ctx3.after_narrow ready5 frame35 (rest4.trans rest5)
+  obtain eq35 := ctx3.child_eq frame35
   -- The product with `qInv mod p` in Montgomery form, into the full array 5.
   rw [productHalf, WP.seq_iff]
   refine WP.mono (crt_copyLow_ok s5 ctx5 (j := 4) (d := 1) (by decide) (by decide) (by decide)) ?_
   rintro s6 ⟨ready6, inv6, keeps6, frame6, rest6⟩
-  have inv6' : numAt s6.mem (State.addr (crtN g.base g.words)) v 1 = qi % P := by
+  obtain inv6' : numAt s6.mem (State.addr (crtN g.base g.words)) v 1 = qi % P := by
     rw [inv6, eq35.number fitsC (by decide), eq3.number fitsC (by decide)]
     change (s2.mem.read (off (State.addr (crtP g.base g.words)) (arrAt g.words 4)) (8 * g.words)).toNat % _ = _
     rw [← (read_split le).1, copied2]
     exact inv1
-  have mod6 := (keeps_array_num keeps6 fitsN (op 0 (by simp)) (by decide)).trans mod5
-  have r26 := (keeps_array_num keeps6 fitsN (op 4 (by simp)) (by decide)).trans r25
-  have diff6 := (keeps_array_num keeps6 fitsN (op 6 (by simp)) (by decide)).trans diff5
+  obtain mod6 := (keeps_array_num keeps6 fitsN (op 0 (by simp)) (by decide)).trans mod5
+  obtain r26 := (keeps_array_num keeps6 fitsN (op 4 (by simp)) (by decide)).trans r25
+  obtain diff6 := (keeps_array_num keeps6 fitsN (op 6 (by simp)) (by decide)).trans diff5
   rw [WP.seq_iff]
   refine WP.mono (montEncode_ok s6 ready6 (op 1 (by simp)) (op 1 (by simp)) (by decide) mod6 h.odd r26) ?_
   rintro s7 ⟨ready7, mod7, enc7, keeps7, frame7, rest7⟩
   rw [inv6'] at enc7
-  have diff7 := (keeps_array_num keeps7 fitsN (op 6 (by simp)) (by decide)).trans diff6
+  obtain diff7 := (keeps_array_num keeps7 fitsN (op 6 (by simp)) (by decide)).trans diff6
   rw [WP.seq_iff]
   refine WP.mono (montMixedProduct_ok s7 ready7 (op 5 (by simp)) (op 6 (by simp)) (op 1 (by simp)) (by decide)
     mod7 h.odd diff7 enc7) ?_
   rintro s8 ⟨ready8, _, value8, _, frame8, rest8⟩
-  have frame58 : Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩] s5.mem s8.mem :=
+  obtain frame58 : Frame [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩] s5.mem s8.mem :=
     frame6.trans (frame7.trans frame8)
-  have ctx8 := ctx5.after_narrow ready8 frame58 (rest6.trans (rest7.trans rest8))
-  have eq58 := ctx5.child_eq frame58
+  obtain ctx8 := ctx5.after_narrow ready8 frame58 (rest6.trans (rest7.trans rest8))
+  obtain eq58 := ctx5.child_eq frame58
   refine WP.mono (crt_copyOut_ok s8 ctx8 (j := 5) (a := 5) (by decide) (by decide)) ?_
   rintro t ⟨_, copied, outside, restT⟩
   obtain ⟨ctxT, _, frameT, _⟩ := ctx8.after_copyOut kind (by decide) (by assumption) outside restT
-  have cleared8 : val32 s8.mem (State.addr (crtP g.base g.words)) (arrAt g.words 5) (2 * g.words + 2) = 0 := by
+  obtain cleared8 : val32 s8.mem (State.addr (crtP g.base g.words)) (arrAt g.words 5) (2 * g.words + 2) = 0 := by
     rw [← read_eq_val32, eq58.read _ _ (by omega_using [end5]), eq35.read _ _ (by omega_using [end5]), eq3.read _ _ (by omega_using [end5]), read_eq_val32,
       outside2.val32 (Or.inr (by simp only [arrAt, Proof.Rsa.Mont.hdrBytes]; omega_using [le])) (by omega_using [end5, wsSmall])]
     rw [← read_eq_val32, eq1.read _ _ (by omega_using [end5]), read_eq_val32]
@@ -361,8 +361,8 @@ end
 
 theorem crt_coefficient_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {v : Nat} :
     RelCT isa (fun s t => CoeffHalf g bs1 v s ∧ CoeffHalf g bs2 v t ∧ s.sp = t.sp) coefficient (fun _ _ => True) := by
-  have kind : CrtChild g (crtP g.base g.words) 224 := Or.inl ⟨rfl, rfl⟩
-  have op : ∀ q, q = 0 ∨ q = 1 ∨ q = 4 ∨ q = 5 ∨ q = 6 → Operand q := by
+  obtain kind : CrtChild g (crtP g.base g.words) 224 := Or.inl ⟨rfl, rfl⟩
+  obtain op : ∀ q, q = 0 ∨ q = 1 ∨ q = 4 ∨ q = 5 ∨ q = 6 → Operand q := by
     intro q hq
     rcases hq with rfl | rfl | rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   let N := State.addr (crtN g.base g.words)
@@ -388,7 +388,7 @@ theorem crt_coefficient_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {v 
       by rw [keeps_array_num keeps (fitsC s h) (op 6 (by simp)) (by decide)]; exact lt⟩
   have w3 (s : State) {bs : Fin 7 → List Byte} (h : CoeffHalf g bs v s) : WP isa (reduceHalf 224 1) s (CoeffOther g bs v) := by
     obtain ⟨M, h, lt⟩ := h
-    have positive : 0 < M := by have := h.1.ready.modulus; rw [h.2.1] at this; omega_using [lt]
+    obtain positive : 0 < M := by have := h.1.ready.modulus; rw [h.2.1] at this; omega_using [lt]
     refine (crt_reduceHalf_ok s h.1 (j := 1) (by decide) h.2.2.2.2 h.2.1 h.2.2.1 h.2.2.2.1).mono ?_
     rintro t ⟨ready, mod, r2, _, value, frame, rest⟩
     exact ⟨⟨M, ⟨h.1.after_narrow ready frame rest, mod, h.2.2.1, r2, h.2.2.2.2⟩,
@@ -397,7 +397,7 @@ theorem crt_coefficient_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {v 
     obtain ⟨⟨M, h, lt⟩, other⟩ := h
     refine (crt_copyLow_ok s h.1 (j := 6) (d := 5) (by decide) (by decide) (by decide)).mono ?_
     rintro t ⟨ready, value, keeps, frame, rest⟩
-    have mod := (keeps_array_num keeps (fitsN s h) (op 0 (by simp)) (by decide)).trans h.2.1
+    obtain mod := (keeps_array_num keeps (fitsN s h) (op 0 (by simp)) (by decide)).trans h.2.1
     refine ⟨⟨M, ⟨h.1.after_narrow ready frame rest, mod, h.2.2.1,
       (keeps_array_num keeps (fitsN s h) (op 4 (by simp)) (by decide)).trans h.2.2.2.1, h.2.2.2.2⟩⟩,
       by rw [keeps_array_num keeps (fitsN s h) (op 1 (by simp)) (by decide),
@@ -436,76 +436,76 @@ theorem crt_coefficient_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {v 
     exact crt_reduceHalf_ct hj s t tr1 tr2 u w ⟨h1, h2, h.2.2⟩ e1 e2
   have ctxOf {bs : Fin 7 → List Byte} (s : State) (h : ∃ M, CrtHalfReady g bs (crtP g.base g.words) 224 v M s) :
       CrtCopyCtx g bs (crtP g.base g.words) 224 v s := by obtain ⟨_, h⟩ := h; exact h.1
-  have size : ∀ s, CoeffReady g bs1 v s → 128 ≤ 8 * workspaceWords g.words := by
+  obtain size : ∀ s, CoeffReady g bs1 v s → 128 ≤ 8 * workspaceWords g.words := by
     intro s h
     obtain ⟨M, h⟩ := h
     have := fitsN s h
     simp only [arrAt, Proof.Rsa.Mont.hdrBytes] at this
     omega_using [this]
-  have fit3 : ∀ s, CoeffReady g bs1 v s → arrAt v 3 + 32 ≤ 8 * workspaceWords g.words := by
+  obtain fit3 : ∀ s, CoeffReady g bs1 v s → arrAt v 3 + 32 ≤ 8 * workspaceWords g.words := by
     intro s h
     obtain ⟨M, h⟩ := h
     have := Nat.le_trans (array_end_le (w := v) (by decide : 3 < 8)) (fitsN s h)
     have := h.1.ready.width ▸ h.1.ready.layout.1
     omega_arith
   intro s₁ s₂ tr1 tr2 u₁ u₂ hh e1 e2
-  have r0 : CoeffReady g bs1 v s₁ := by obtain ⟨M, h, _⟩ := hh.1; exact ⟨M, h⟩
-  have sz := size s₁ r0
-  have f3 := fit3 s₁ r0
-  have c1 := half (CoeffHalf g bs1 v) (fun s h => by obtain ⟨M, h, _⟩ := h; exact ⟨M, h⟩)
+  obtain r0 : CoeffReady g bs1 v s₁ := by obtain ⟨M, h, _⟩ := hh.1; exact ⟨M, h⟩
+  obtain sz := size s₁ r0
+  obtain f3 := fit3 s₁ r0
+  obtain c1 := half (CoeffHalf g bs1 v) (fun s h => by obtain ⟨M, h, _⟩ := h; exact ⟨M, h⟩)
     (CoeffHalf g bs2 v) (fun s h => by obtain ⟨M, h, _⟩ := h; exact ⟨M, h⟩) 4 (by decide)
-  have c2 : RelCT isa (fun s t => CoeffHalf g bs1 v s ∧ CoeffHalf g bs2 v t ∧ s.sp = t.sp) (copyOut 224 4 1)
+  obtain c2 : RelCT isa (fun s t => CoeffHalf g bs1 v s ∧ CoeffHalf g bs2 v t ∧ s.sp = t.sp) (copyOut 224 4 1)
       (fun _ _ => True) :=
     (crt_copyOut_ct (by decide) (by decide)).mono
       (fun s t h => ⟨ctxOf s (by obtain ⟨M, h, _⟩ := h.1; exact ⟨M, h⟩),
         ctxOf t (by obtain ⟨M, h, _⟩ := h.2.1; exact ⟨M, h⟩), h.2.2⟩) (fun _ _ _ => trivial)
-  have c3 := half (CoeffHalf g bs1 v) (fun s h => by obtain ⟨M, h, _⟩ := h; exact ⟨M, h⟩)
+  obtain c3 := half (CoeffHalf g bs1 v) (fun s h => by obtain ⟨M, h, _⟩ := h; exact ⟨M, h⟩)
     (CoeffHalf g bs2 v) (fun s h => by obtain ⟨M, h, _⟩ := h; exact ⟨M, h⟩) 1 (by decide)
-  have c4 : RelCT isa (fun s t => CoeffOther g bs1 v s ∧ CoeffOther g bs2 v t ∧ s.sp = t.sp) (copyLow 224 6 5)
+  obtain c4 : RelCT isa (fun s t => CoeffOther g bs1 v s ∧ CoeffOther g bs2 v t ∧ s.sp = t.sp) (copyLow 224 6 5)
       (fun _ _ => True) :=
     (crt_copyLow_ct (by decide) (by decide)).mono
       (fun s t h => ⟨ctxOf s (by obtain ⟨⟨M, h, _⟩, _⟩ := h.1; exact ⟨M, h⟩),
         ctxOf t (by obtain ⟨⟨M, h, _⟩, _⟩ := h.2.1; exact ⟨M, h⟩), h.2.2⟩) (fun _ _ _ => trivial)
-  have c5 : RelCT isa (fun s t => CoeffBoth g bs1 v s ∧ CoeffBoth g bs2 v t ∧ s.sp = t.sp) (subModArray 6 5 1)
+  obtain c5 : RelCT isa (fun s t => CoeffBoth g bs1 v s ∧ CoeffBoth g bs2 v t ∧ s.sp = t.sp) (subModArray 6 5 1)
       (fun _ _ => True) :=
     (subModArray_ct (by decide) (by decide) (by decide) (by decide) sz).mono
       (fun s t h => ⟨(ctxOf s h.1.1).ready, (ctxOf t h.2.1.1).ready, h.2.2⟩) (fun _ _ _ => trivial)
-  have c6 : RelCT isa (fun s t => CoeffReady g bs1 v s ∧ CoeffReady g bs2 v t ∧ s.sp = t.sp) (copyLow 224 4 1)
+  obtain c6 : RelCT isa (fun s t => CoeffReady g bs1 v s ∧ CoeffReady g bs2 v t ∧ s.sp = t.sp) (copyLow 224 4 1)
       (fun _ _ => True) :=
     (crt_copyLow_ct (by decide) (by decide)).mono (fun s t h => ⟨ctxOf s h.1, ctxOf t h.2.1, h.2.2⟩)
       (fun _ _ _ => trivial)
-  have c7 : RelCT isa (fun s t => CoeffReady g bs1 v s ∧ CoeffReady g bs2 v t ∧ s.sp = t.sp) (montOp 1 1 4)
+  obtain c7 : RelCT isa (fun s t => CoeffReady g bs1 v s ∧ CoeffReady g bs2 v t ∧ s.sp = t.sp) (montOp 1 1 4)
       (fun _ _ => True) :=
     (montOp_ct (op 1 (by simp)) (op 1 (by simp)) (op 4 (by simp)) f3).mono
       (fun s t h => ⟨by obtain ⟨M, h⟩ := h.1; exact ⟨h.1.ready, h.r2_lt⟩,
         by obtain ⟨M, h⟩ := h.2.1; exact ⟨h.1.ready, h.r2_lt⟩, h.2.2⟩) (fun _ _ _ => trivial)
-  have c8 : RelCT isa (fun s t => CoeffEncoded g bs1 v s ∧ CoeffEncoded g bs2 v t ∧ s.sp = t.sp) (montOp 5 6 1)
+  obtain c8 : RelCT isa (fun s t => CoeffEncoded g bs1 v s ∧ CoeffEncoded g bs2 v t ∧ s.sp = t.sp) (montOp 5 6 1)
       (fun _ _ => True) :=
     (montOp_ct (op 5 (by simp)) (op 6 (by simp)) (op 1 (by simp)) f3).mono
       (fun s t h => ⟨⟨(ctxOf s h.1.1).ready, h.1.2⟩, ⟨(ctxOf t h.2.1.1).ready, h.2.1.2⟩, h.2.2⟩)
       (fun _ _ _ => trivial)
-  have c9 : RelCT isa (fun s t => CrtCopyCtx g bs1 (crtP g.base g.words) 224 v s ∧
+  obtain c9 : RelCT isa (fun s t => CrtCopyCtx g bs1 (crtP g.base g.words) 224 v s ∧
       CrtCopyCtx g bs2 (crtP g.base g.words) 224 v t ∧ s.sp = t.sp) (copyOut 224 5 5) (fun _ _ => True) :=
     crt_copyOut_ct (by decide) (by decide)
-  have inverse := crt_seq_ct c1 (fun s h => w1 s h) (fun s h => w1 s h) c2
+  obtain inverse := crt_seq_ct c1 (fun s h => w1 s h) (fun s h => w1 s h) c2
   have inverseWP (s : State) {bs : Fin 7 → List Byte} (h : CoeffHalf g bs v s) : WP isa inverseHalf s (CoeffHalf g bs v) :=
     WP.seq_iff.mpr ((w1 s h).mono fun _ k => w2 _ k)
-  have difference := crt_seq_ct c3 (fun s h => w3 s h) (fun s h => w3 s h)
+  obtain difference := crt_seq_ct c3 (fun s h => w3 s h) (fun s h => w3 s h)
     (crt_seq_ct c4 (fun s h => w4 s h) (fun s h => w4 s h) c5)
   have differenceWP (s : State) {bs : Fin 7 → List Byte} (h : CoeffHalf g bs v s) :
       WP isa differenceHalf s (CoeffReady g bs v) :=
     WP.seq_iff.mpr ((w3 s h).mono fun _ k => WP.seq_iff.mpr ((w4 _ k).mono fun _ k' => w5 _ k'))
-  have product := crt_seq_ct c6 (fun s h => w6 s h) (fun s h => w6 s h)
+  obtain product := crt_seq_ct c6 (fun s h => w6 s h) (fun s h => w6 s h)
     (crt_seq_ct c7 (fun s h => w7 s h) (fun s h => w7 s h) (crt_seq_ct c8 (fun s h => w8 s h) (fun s h => w8 s h) c9))
-  have all := crt_seq_ct inverse (fun s h => inverseWP s h) (fun s h => inverseWP s h)
+  obtain all := crt_seq_ct inverse (fun s h => inverseWP s h) (fun s h => inverseWP s h)
     (crt_seq_ct difference (fun s h => differenceWP s h) (fun s h => differenceWP s h) product)
   exact all s₁ s₂ tr1 tr2 u₁ u₂ hh e1 e2
 
 theorem CrtPoweredState.after_keeps {m m' : Mem} {base : BitVec 32} {len w M value o : Nat}
     (h : CrtPoweredState base len w M value m) (keeps : Keeps (State.addr base) len w o m m')
     (ho0 : 0 ≠ o) (ho6 : 6 ≠ o) : CrtPoweredState base len w M value m' := by
-  have fit : arrAt w 8 ≤ 8 * len := h.layout.width ▸ h.layout.layout.2.2.1
-  have kl := keeps_layout h.layout.layout (by rw [h.layout.width]; exact keeps)
+  obtain fit : arrAt w 8 ≤ 8 * len := h.layout.width ▸ h.layout.layout.2.2.1
+  obtain kl := keeps_layout h.layout.layout (by rw [h.layout.width]; exact keeps)
   exact ⟨⟨kl.2, kl.1.trans h.layout.width⟩, h.positive,
     (keeps_array_num keeps fit (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) ho0).trans h.modulus,
     (keeps_array_num keeps fit (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) ho6).trans h.result⟩
@@ -526,19 +526,19 @@ theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
       CrtPoweredState (crtQ g.base g.words) (workspaceWords g.words) g.words Q v2 t.mem ∧
       t.mem.readW (off (State.addr t.sp) 48) 32 = s.mem.readW (off (State.addr s.sp) 48) 32 ∧
       Frame (crtLiveMutable g s.sp) s.mem t.mem ∧ Rest roundClobbers s t := by
-  have kind : CrtChild g (crtP g.base g.words) 224 := Or.inl ⟨rfl, rfl⟩
-  have memberP : (⟨State.addr (crtP g.base g.words), 8 * workspaceWords g.words⟩ : Region) ∈
+  obtain kind : CrtChild g (crtP g.base g.words) 224 := Or.inl ⟨rfl, rfl⟩
+  obtain memberP : (⟨State.addr (crtP g.base g.words), 8 * workspaceWords g.words⟩ : Region) ∈
       crtRegions g.base (workspaceWords g.words) g.words := by simp [crtRegions]
-  have memberQ : (⟨State.addr (crtQ g.base g.words), 8 * workspaceWords g.words⟩ : Region) ∈
+  obtain memberQ : (⟨State.addr (crtQ g.base g.words), 8 * workspaceWords g.words⟩ : Region) ∈
       crtRegions g.base (workspaceWords g.words) g.words := by simp [crtRegions]
   have fitsC : arrAt g.words 8 ≤ 8 * workspaceWords g.words := h.buffers.context.arraysFit
-  have op : ∀ q, q = 0 ∨ q = 1 ∨ q = 4 ∨ q = 6 → Operand q := by
+  obtain op : ∀ q, q = 0 ∨ q = 1 ∨ q = 4 ∨ q = 6 → Operand q := by
     intro q hq
     rcases hq with rfl | rfl | rfl | rfl <;> simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]
   obtain ⟨two, le, kfit, kpos, _, arrays, half⟩ := h.narrow_fits 1 (Or.inl rfl)
-  have words : g.words ≤ 128 := (crt_width_valid h.buffers.lengthValid).2.1
+  obtain words : g.words ≤ 128 := (crt_width_valid h.buffers.lengthValid).2.1
   let v := narrowWords (g.sourceLength (1 : Fin 6).succ) g.words
-  have pqFit : g.sourceLength (5 : Fin 6).succ ≤ 8 * g.words := by
+  obtain pqFit : g.sourceLength (5 : Fin 6).succ ≤ 8 * g.words := by
     have := h.buffers.pShort; have := (crt_width_valid h.buffers.lengthValid).2.2
     change g.pLength ≤ 8 * Spec.Rsa.modulusWords g.length; omega_arith
   -- p's full workspace selected.
@@ -547,9 +547,9 @@ theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
     (by have := h.buffers.context.size; omega_using [this] : 224 + 4 ≤ 8 * workspaceWords g.words)
     (by decide) ready.ptr h.main.p) ?_
   rintro u ⟨sharedU, readyU, frameU, restU⟩
-  have pU := p.congr (h.workspace_eq_after_base h.buffers.context.p memberP frameU)
-  have qU := q.congr (h.workspace_eq_after_base h.buffers.context.q memberQ frameU)
-  have flagU := acceptance_after_base_save frameU restU
+  obtain pU := p.congr (h.workspace_eq_after_base h.buffers.context.p memberP frameU)
+  obtain qU := q.congr (h.workspace_eq_after_base h.buffers.context.q memberQ frameU)
+  obtain flagU := acceptance_after_base_save frameU restU
   -- `m_q`, `qInv` and a cleared array 5 in p's full workspace.
   rw [WP.seq_iff, CrtFn.coefficientInput]
   apply WP.assoc
@@ -563,34 +563,34 @@ theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
   rintro x2 ⟨ready2, inv2, keeps2, frame2, rest2⟩
   refine WP.mono (clearLayout_ok x2 ready2 (o := 5) (by decide)) ?_
   rintro x3 ⟨ready3, cleared3, keeps3, frame3, rest3⟩
-  have frame13 : Frame [⟨State.addr (crtP g.base g.words), 8 * workspaceWords g.words⟩] u.mem x3.mem :=
+  obtain frame13 : Frame [⟨State.addr (crtP g.base g.words), 8 * workspaceWords g.words⟩] u.mem x3.mem :=
     frame1.trans (frame2.trans frame3)
-  have restU3 : Rest roundClobbers u x3 := rest1.trans (rest2.trans rest3)
-  have shared3 : CrtShared g bs x3 :=
+  obtain restU3 : Rest roundClobbers u x3 := rest1.trans (rest2.trans rest3)
+  obtain shared3 : CrtShared g bs x3 :=
     sharedU.after_p ((frame1.trans (frame2.trans frame3)).mono (by simp)) restU3 ⟨ready3.layout, ready3.width⟩
-  have flag3 := sharedU.acceptance_after_workspace memberP frame13 restU3
-  have p6 : numAt x3.mem (State.addr (crtP g.base g.words)) g.words 6 = v1 := by
+  obtain flag3 := sharedU.acceptance_after_workspace memberP frame13 restU3
+  obtain p6 : numAt x3.mem (State.addr (crtP g.base g.words)) g.words 6 = v1 := by
     rw [keeps_array_num keeps3 fitsC (op 6 (by simp)) (by decide), keeps_array_num keeps2 fitsC (op 6 (by simp))
       (by decide)]; exact p1.result
-  have p1' : numAt x3.mem (State.addr (crtP g.base g.words)) g.words 1 = v2 := by
+  obtain p1' : numAt x3.mem (State.addr (crtP g.base g.words)) g.words 1 = v2 := by
     rw [keeps_array_num keeps3 fitsC (op 1 (by simp)) (by decide), keeps_array_num keeps2 fitsC (op 1 (by simp))
       (by decide)]; exact residue1
-  have p4 : numAt x3.mem (State.addr (crtP g.base g.words)) g.words 4 = Spec.Rsa.os2ip (bs 6) := by
+  obtain p4 : numAt x3.mem (State.addr (crtP g.base g.words)) g.words 4 = Spec.Rsa.os2ip (bs 6) := by
     rw [keeps_array_num keeps3 fitsC (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide)]
     exact inv2
   have cleared5 := cleared3
   -- p prepared at its own width.
-  have sepN : ∀ r ∈ [(⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩ : Region)],
+  obtain sepN : ∀ r ∈ [(⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩ : Region)],
       (⟨State.addr (crtP g.base g.words), 8 * workspaceWords g.words⟩ : Region).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.buffers.context.sepPN
   rw [WP.seq_iff]
   refine WP.mono (crt_enterNarrow_ok x3 shared3 1 (Or.inl rfl)) ?_
   rintro y1 ⟨sharedY1, selected, flagY1, frameY1, restY1⟩
-  have eqY1 := shared3.eq_of_frame shared3.buffers.context.p memberP
+  obtain eqY1 := shared3.eq_of_frame shared3.buffers.context.p memberP
     (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩]) (frameY1.mono (by simp)) sepN
-  have flagS : y1.mem.readW (off (State.addr y1.sp) 48) 32 = (if crtAccepted bs then 1 else 0) := by
+  obtain flagS : y1.mem.readW (off (State.addr y1.sp) 48) 32 = (if crtAccepted bs then 1 else 0) := by
     rw [flagY1, flag3, flagU, flag]
-  have primeIn : NarrowPrimeInput (crtN g.base g.words) (g.source (1 : Fin 6).succ) (workspaceWords g.words) v
+  obtain primeIn : NarrowPrimeInput (crtN g.base g.words) (g.source (1 : Fin 6).succ) (workspaceWords g.words) v
       (g.sourceLength (1 : Fin 6).succ) (56 + 8 * (1 : Fin 6).val) (bs (1 : Fin 6).succ) y1 := by
     refine ⟨selected, sharedY1.savedOperand 1 sharedY1.narrow_member, kpos, kfit,
       by have := sharedY1.stack.nowrap; omega_using [this], sharedY1.stack.read (by decide), ?_, ?_⟩
@@ -607,11 +607,11 @@ theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
   rw [flagS] at modY oddY r2Y
   change numAt _ _ _ 0 = safePrime _ (Spec.Rsa.os2ip (bs 2)) at modY
   rw [crt_safeFactor] at modY oddY r2Y
-  have sharedY := sharedY1.after_narrow (frameY.mono (by simp)) restY
-  have eqY := sharedY1.eq_of_frame (sharedY1.child kind).2.1 memberP
+  obtain sharedY := sharedY1.after_narrow (frameY.mono (by simp)) restY
+  obtain eqY := sharedY1.eq_of_frame (sharedY1.child kind).2.1 memberP
     (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩]) (frameY.mono (by simp)) sepN
   -- The coefficient.
-  have input : CrtCoefficientInput g bs v (crtFactor bs 2) v1 v2 (Spec.Rsa.os2ip (bs 6)) y := by
+  obtain input : CrtCoefficientInput g bs v (crtFactor bs 2) v1 v2 (Spec.Rsa.os2ip (bs 6)) y := by
     refine ⟨sharedY.copyCtx kind readyY le, modY, oddY, r2Y, half, ?_, bound, ?_, ?_, ?_⟩
     · rw [eqY.number fitsC (by decide), eqY1.number fitsC (by decide)]; exact p6
     · rw [eqY.number fitsC (by decide), eqY1.number fitsC (by decide)]; exact p1'
@@ -628,8 +628,8 @@ theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
   have sepS (r : Region) (hr : r ∈ crtRegions g.base (workspaceWords g.words) g.words) (k : State) (hk : CrtShared g bs k) :
       Region.Disjoint ⟨State.addr k.sp, 112⟩ r :=
     hk.stack.separate.sub_right (crt_region_sub_workspace hk.buffers.workspace hk.buffers.storageFits hr)
-  have flagZ : z.mem.readW (off (State.addr z.sp) 48) 32 = y.mem.readW (off (State.addr y.sp) 48) 32 := by
-    have eq : WorkspaceEq (State.addr y.sp) 112 y.mem z.mem := WorkspaceEq.of_frame (by decide) frameZ (by
+  obtain flagZ : z.mem.readW (off (State.addr z.sp) 48) 32 = y.mem.readW (off (State.addr y.sp) 48) 32 := by
+    obtain eq : WorkspaceEq (State.addr y.sp) 112 y.mem z.mem := WorkspaceEq.of_frame (by decide) frameZ (by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -637,20 +637,20 @@ theorem crt_coefficientStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → Li
       · exact sepS _ sharedY.narrow_member y sharedY)
     rw [restZ.sp]
     exact eq.word (d := 48) (bits := 32) (by decide)
-  have flagT := acceptance_after_base_save frameT restT
-  have pEqT := sharedZ.workspace_eq_after_base sharedZ.buffers.context.p memberP frameT
+  obtain flagT := acceptance_after_base_save frameT restT
+  obtain pEqT := sharedZ.workspace_eq_after_base sharedZ.buffers.context.p memberP frameT
   have rs1 : u.sp = s.sp := restU.sp
-  have rs3 : x3.sp = s.sp := restU3.sp.trans rs1
-  have rsY1 : y1.sp = s.sp := restY1.sp.trans rs3
-  have rsY : y.sp = s.sp := restY.sp.trans rsY1
-  have rsZ : z.sp = s.sp := restZ.sp.trans rsY
+  obtain rs3 : x3.sp = s.sp := restU3.sp.trans rs1
+  obtain rsY1 : y1.sp = s.sp := restY1.sp.trans rs3
+  obtain rsY : y.sp = s.sp := restY.sp.trans rsY1
+  obtain rsZ : z.sp = s.sp := restZ.sp.trans rsY
   rw [rs3] at frameY1
   rw [rsZ] at frameT
-  have frameAll : Frame [⟨State.addr s.sp, 4⟩, ⟨State.addr (crtP g.base g.words), 8 * workspaceWords g.words⟩,
+  obtain frameAll : Frame [⟨State.addr s.sp, 4⟩, ⟨State.addr (crtP g.base g.words), 8 * workspaceWords g.words⟩,
       ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩] s.mem t.mem :=
     (frameU.mono (by simp)).trans ((frame13.mono (by simp)).trans ((frameY1.mono (by simp)).trans
       ((frameY.mono (by simp)).trans ((frameZ.mono (by simp)).trans (frameT.mono (by simp))))))
-  have qEq := h.eq_of_frame h.buffers.context.q memberQ
+  obtain qEq := h.eq_of_frame h.buffers.context.q memberQ
     (regions := [⟨State.addr (crtP g.base g.words), 8 * workspaceWords g.words⟩,
       ⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩]) frameAll (by
       intro r hr
@@ -708,15 +708,15 @@ theorem crt_finishStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List By
   rw [WP.seq_iff]
   refine WP.mono (crt_recombineStage_ok s h ready) ?_
   rintro u ⟨sharedU, readyU, value, frameU, restU⟩
-  have stackEq : WorkspaceEq (State.addr s.sp) 112 s.mem u.mem := WorkspaceEq.of_frame (by decide) frameU (by
+  obtain stackEq : WorkspaceEq (State.addr s.sp) 112 s.mem u.mem := WorkspaceEq.of_frame (by decide) frameU (by
     intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.stack.separate)
-  have flagU : u.mem.readW (off (State.addr u.sp) 48) 32 = BitVec.ofNat 32 accepted.toNat := by
+  obtain flagU : u.mem.readW (off (State.addr u.sp) 48) 32 = BitVec.ofNat 32 accepted.toNat := by
     rw [restU.sp, stackEq.word (d := 48) (bits := 32) (by decide)]; exact flag
   rw [WP.seq_iff]
   refine WP.mono (crt_outputArgs_ok u sharedU readyU.ptr) ?_
   rintro v ⟨source, output, count, memV, restV⟩
-  have sharedV := sharedU.of_mem memV restV
-  have input := sharedV.export_input source output count
+  obtain sharedV := sharedU.of_mem memV restV
+  obtain input := sharedV.export_input source output count
     (by rw [memV, restV.sp]; exact flagU)
     (by rw [memV, value]; exact bound)
   refine WP.mono (exportBufferMasked_ok v input) ?_
@@ -767,9 +767,9 @@ theorem crt_firstPower_qInput (s : State) {g : CrtGeometry} {bs : Fin 7 → List
   refine WP.mono ((crt_powerStage_ok (kernel := kernel)) s h.selected.1 h.selected.2 input.kind 1 3 (Or.inl ⟨rfl, rfl⟩)
     input.bit input.valid input.prime st hst) ?_
   rintro t ⟨sharedT, readyT, _, flag, frame, _⟩
-  have eq := h.selected.1.workspace_eq_after_power h.selected.1.buffers.context.q (by simp [crtRegions])
+  obtain eq := h.selected.1.workspace_eq_after_power h.selected.1.buffers.context.q (by simp [crtRegions])
     h.selected.1.buffers.context.sepPQ.symm h.selected.1.buffers.context.sepQN frame
-  have qValue := (eq.number h.selected.1.buffers.context.arraysFit (by decide : 0 < 8)).trans h.q
+  obtain qValue := (eq.number h.selected.1.buffers.context.arraysFit (by decide : 0 < 8)).trans h.q
   refine ⟨⟨sharedT, readyT⟩, Or.inr ⟨rfl, rfl⟩, ?_, ?_, qValue⟩
   · rw [flag]; exact input.bit
   · rw [flag, h.flag, qValue]
@@ -801,18 +801,18 @@ theorem crt_begin_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
     (valid : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (bs 0)) g.length = true) :
     WP isa CrtFn.prepare s fun t => CrtShared g bs t ∧ LayoutFrameReady g.base (workspaceWords g.words) g.words t ∧
       Frame (crtMutable g s.sp) s.mem t.mem ∧ Rest roundClobbers s t := by
-  have mainSub : (⟨State.addr g.base, 8 * workspaceWords g.words⟩ : Region).Sub ⟨State.addr g.base, g.size⟩ :=
+  obtain mainSub : (⟨State.addr g.base, 8 * workspaceWords g.words⟩ : Region).Sub ⟨State.addr g.base, g.size⟩ :=
     crt_region_sub_workspace buffers.workspace buffers.storageFits (by simp [crtRegions])
-  have source : SavedOperand g.base g.modulus (workspaceWords g.words) g.length 8 12 (bs 0) s :=
+  obtain source : SavedOperand g.base g.modulus (workspaceWords g.words) g.length 8 12 (bs 0) s :=
     ⟨stack.nowrap, ⟨stack.read (by decide), stack.read (by decide)⟩, stack.separate.sub_right mainSub, by decide, by decide,
       modulusPtr, stack.count, buffers.source 0, (buffers.sourceSeparate 0).sub_right mainSub⟩
-  have input : CrtPrepareInput g.base g.modulus g.size g.words g.length (bs 0) s :=
+  obtain input : CrtPrepareInput g.base g.modulus g.size g.words g.length (bs 0) s :=
     ⟨buffers.workspace, buffers.context, buffers.storageFits, source, stack.separate, buffers.sourceSeparate 0,
       by simpa only [off, BitVec.add_zero] using stack.read (d := 0) (by decide),
       stack.write (by decide), saved, ptr, count, buffers.lengthValid, rfl⟩
   refine WP.mono (crt_prepare_ok s input) ?_
   rintro t ⟨loaded, mainSaved, modulus, frame, rest⟩
-  have frame' : Frame (crtMutable g s.sp) s.mem t.mem := frame.mono (by
+  obtain frame' : Frame (crtMutable g s.sp) s.mem t.mem := frame.mono (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> simp [crtMutable])
@@ -879,9 +879,9 @@ theorem CrtProductInput.after_control {s t : State} {base value : BitVec 32} {si
   have beforeP := h.pBeforeOut
   have beforeQ := h.qBeforeOut
   have outFit := h.outFits
-  have outside := writeW32_outside s.mem (State.addr base) (d := d) value (by omega_using [hd'])
+  obtain outside := writeW32_outside s.mem (State.addr base) (d := d) value (by omega_using [hd'])
   rw [← mem] at outside
-  have frame := outside_workspace outside (size := size) (by omega_using [hd', fit])
+  obtain frame := outside_workspace outside (size := size) (by omega_using [hd', fit])
   refine ⟨h.toWideProductCtx.after_frame rest frame, h.parentFit, pHeader, qHeader, beforeP, beforeQ,
     (rest.gpr .r0 (by simp)).trans h.ptr, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [outside_read32 outside (d := 224) (by omega_using [hd']) (by decide)]; exact h.pLink
@@ -910,7 +910,7 @@ theorem crt_productArgs_ct {base : BitVec 32} {size o a b cp cq w : Nat} {coeffi
     RelCT isa (fun s t => CrtProductInput base size o a b cp cq w s coefficient ∧ CrtProductInput base size o a b cp cq w t coefficient)
       (productArgs coefficient) (fun _ _ => True) := by
   let P := fun s => CrtProductInput base size o a b cp cq w s coefficient
-  have first : RelCT isa (fun s t => P s ∧ P t) (.block (copyChildPointer 224 128 (productOperandSlot coefficient))) (fun _ _ => True) := by
+  obtain first : RelCT isa (fun s t => P s ∧ P t) (.block (copyChildPointer 224 128 (productOperandSlot coefficient))) (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     exact crt_copyChildPointer_ct (base := base) (child := base + BitVec.ofNat 32 cp)
       (size := size) (src := 224) (dst := 128) (by omega_using [fit]) (by decide) s t tr1 tr2 u v
@@ -922,7 +922,7 @@ theorem crt_productArgs_ct {base : BitVec 32} {size o a b cp cq w : Nat} {coeffi
       (by cases coefficient <;> decide) (by omega_using [before, outFit]) h.ptr h.pLink h.pArray) ?_
     rintro t ⟨mem, rest⟩
     exact h.after_control (by decide) (by decide) mem rest
-  have second : RelCT isa (fun s t => P s ∧ P t) (.block (copyChildPointer 228 132)) (fun _ _ => True) := by
+  obtain second : RelCT isa (fun s t => P s ∧ P t) (.block (copyChildPointer 228 132)) (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     exact crt_copyChildPointer_ct (base := base) (child := base + BitVec.ofNat 32 cq)
       (size := size) (src := 228) (dst := 132) (by omega_using [fit]) (by decide) s t tr1 tr2 u v
@@ -934,13 +934,13 @@ theorem crt_productArgs_ct {base : BitVec 32} {size o a b cp cq w : Nat} {coeffi
       (by decide) (by omega_using [before, outFit]) h.ptr h.qLink h.qArray) ?_
     rintro t ⟨mem, rest⟩
     exact h.after_control (by decide) (by decide) mem rest
-  have third := (crt_copyHeaderPointer_ct 232 136).mono (P' := fun s t => P s ∧ P t)
+  obtain third := (crt_copyHeaderPointer_ct 232 136).mono (P' := fun s t => P s ∧ P t)
     (fun _ _ h => h.1.ptr.trans h.2.ptr.symm) (fun _ _ _ => trivial)
   have thirdWP (s : State) (h : P s) : WP isa (.block (copyHeaderPointer 232 136)) s P := by
     refine WP.mono (crt_copyHeaderPointer_ok s h.workspace (by omega_using [fit]) (by omega_using [fit]) (by decide) (by decide) h.ptr h.product) ?_
     rintro t ⟨mem, rest⟩
     exact h.after_control (by decide) (by decide) mem rest
-  have last := crt_productCount_ct.mono (P' := fun s t => P s ∧ P t)
+  obtain last := crt_productCount_ct.mono (P' := fun s t => P s ∧ P t)
     (fun _ _ h => h.1.ptr.trans h.2.ptr.symm) (fun _ _ _ => trivial)
   exact (pair_posts first firstWP).seq ((pair_posts second secondWP).seq ((pair_posts third thirdWP).seq last))
 
@@ -954,7 +954,7 @@ theorem crt_productArgsWith_ct {base : BitVec 32} {size o a b cp cq w : Nat} {co
       (productArgsWith coefficient count) (fun _ _ => True) := by
   intro s₀ t₀ tr₁ tr₂ u₀ v₀ h₀ e₁ e₂
   let P := fun s => CrtProductInput base size o a b cp cq w s coefficient ∧ s.sp = s₀.sp
-  have first : RelCT isa (fun s t => P s ∧ P t) (.block (copyChildPointer 224 128 (productOperandSlot coefficient))) (fun _ _ => True) := by
+  obtain first : RelCT isa (fun s t => P s ∧ P t) (.block (copyChildPointer 224 128 (productOperandSlot coefficient))) (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     exact crt_copyChildPointer_ct (base := base) (child := base + BitVec.ofNat 32 cp)
       (size := size) (src := 224) (dst := 128) (by omega_using [fit]) (by decide) s t tr1 tr2 u v
@@ -966,7 +966,7 @@ theorem crt_productArgsWith_ct {base : BitVec 32} {size o a b cp cq w : Nat} {co
       (by cases coefficient <;> decide) (by omega_using [before, outFit]) h.1.ptr h.1.pLink h.1.pArray) ?_
     rintro t ⟨mem, rest⟩
     exact ⟨h.1.after_control (by decide) (by decide) mem rest, rest.sp.trans h.2⟩
-  have second : RelCT isa (fun s t => P s ∧ P t) (.block (copyChildPointer 228 132)) (fun _ _ => True) := by
+  obtain second : RelCT isa (fun s t => P s ∧ P t) (.block (copyChildPointer 228 132)) (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     exact crt_copyChildPointer_ct (base := base) (child := base + BitVec.ofNat 32 cq)
       (size := size) (src := 228) (dst := 132) (by omega_using [fit]) (by decide) s t tr1 tr2 u v
@@ -978,14 +978,14 @@ theorem crt_productArgsWith_ct {base : BitVec 32} {size o a b cp cq w : Nat} {co
       (by decide) (by omega_using [before, outFit]) h.1.ptr h.1.qLink h.1.qArray) ?_
     rintro t ⟨mem, rest⟩
     exact ⟨h.1.after_control (by decide) (by decide) mem rest, rest.sp.trans h.2⟩
-  have third := (crt_copyHeaderPointer_ct 232 136).mono (P' := fun s t => P s ∧ P t)
+  obtain third := (crt_copyHeaderPointer_ct 232 136).mono (P' := fun s t => P s ∧ P t)
     (fun _ _ h => h.1.1.ptr.trans h.2.1.ptr.symm) (fun _ _ _ => trivial)
   have thirdWP (s : State) (h : P s) : WP isa (.block (copyHeaderPointer 232 136)) s P := by
     refine WP.mono (crt_copyHeaderPointer_ok s h.1.workspace (by omega_using [fit]) (by omega_using [fit]) (by decide) (by decide) h.1.ptr
       h.1.product) ?_
     rintro t ⟨mem, rest⟩
     exact ⟨h.1.after_control (by decide) (by decide) mem rest, rest.sp.trans h.2⟩
-  have last := hcCT.mono (P' := fun s t => P s ∧ P t)
+  obtain last := hcCT.mono (P' := fun s t => P s ∧ P t)
     (fun _ _ h => ⟨h.1.1.ptr.trans h.2.1.ptr.symm, h.1.2.trans h.2.2.symm⟩) (fun _ _ _ => trivial)
   exact ((pair_posts first firstWP).seq ((pair_posts second secondWP).seq ((pair_posts third thirdWP).seq last)))
     s₀ t₀ tr₁ tr₂ u₀ v₀ ⟨⟨h₀.1, rfl⟩, ⟨h₀.2.1, h₀.2.2.symm⟩⟩ e₁ e₂
@@ -1011,13 +1011,13 @@ theorem wideProduct_ct {s01 s02 : State} {base : BitVec 32} {size o a b m n : Na
       WideProductInv s02 base o a b m n 0 t ∧ s.sp = t.sp) wideProduct (fun _ _ => True) := by
   let I := fun k (s t : State) => ∃ i, i + k = m ∧ 0 < k ∧
     WideProductInv s01 base o a b m n i s ∧ WideProductInv s02 base o a b m n i t ∧ s.sp = t.sp
-  have step : ∀ k, RelCT isa (I k) wideProductBody fun s t =>
+  obtain step : ∀ k, RelCT isa (I k) wideProductBody fun s t =>
       isa.eval .ne s = isa.eval .ne t ∧ (isa.eval .ne s = some false → True) ∧
       (isa.eval .ne s = some true → ∃ j, j < k ∧ I j s t) := by
     intro k s t tr1 tr2 u v h e1 e2
     obtain ⟨i, ik, hk, hs, ht, sp⟩ := h
-    have hi : i < m := by omega_using [ik, hk]
-    have ct := relCT_keep_sp (wideProductBody_ct ctx1 ctx2 hi) (fun _ _ h => h.2.2)
+    obtain hi : i < m := by omega_using [ik, hk]
+    obtain ct := relCT_keep_sp (wideProductBody_ct ctx1 ctx2 hi) (fun _ _ h => h.2.2)
     obtain ⟨trace, sp'⟩ := ct s t tr1 tr2 u v ⟨hs, ht, sp⟩ e1 e2
     obtain ⟨_, _, run1, next1, zero1⟩ := wideProductBody_ok s ctx1 hs hi
     obtain ⟨_, _, run2, next2, zero2⟩ := wideProductBody_ok t ctx2 ht hi
@@ -1027,7 +1027,7 @@ theorem wideProduct_ct {s01 s02 : State} {base : BitVec 32} {size o a b m n : Na
     · change some (!_ ) = some (!_ )
       rw [zero1, zero2]
     · intro again
-      have notLast : i + 1 ≠ m := by
+      obtain notLast : i + 1 ≠ m := by
         intro last
         change some (!_ ) = some true at again
         simp only [zero1, last, decide_true, Bool.not_true, Option.some.injEq, Bool.false_eq_true] at again
@@ -1058,7 +1058,7 @@ theorem crt_factorProductWith_ct {base : BitVec 32} {size o a b cp cq w m n : Na
       (factorProductWith coefficient count) (fun _ _ => True) := by
   let P := fun s => CrtProductInput base size o a b cp cq w s coefficient ∧ CountFrom count base size m n s
   let R := fun s : State => P s ∧ val32 s.mem (State.addr base) o (m + n + 2) = 0
-  have clear := (crt_clearWide_ct (base := base) (dst := base + BitVec.ofNat 32 o) (size := size) (slot := 232) (w := w)
+  obtain clear := (crt_clearWide_ct (base := base) (dst := base + BitVec.ofNat 32 o) (size := size) (slot := 232) (w := w)
     (by omega_using [fit]) (by omega_using [fit]) (by decide)).mono (P' := fun (s t : State) => P s ∧ P t ∧ s.sp = t.sp)
     (fun _ _ h => ⟨⟨h.1.1.workspace, h.1.1.ptr, h.1.1.count, h.1.1.product⟩,
       ⟨h.2.1.1.workspace, h.2.1.1.ptr, h.2.1.1.count, h.2.1.1.product⟩, h.2.2⟩) (fun _ _ _ => trivial)
@@ -1068,17 +1068,17 @@ theorem crt_factorProductWith_ct {base : BitVec 32} {size o a b cp cq w m n : Na
     refine WP.mono (crt_productClear_ready s h.1) fun u ⟨inputU, zeroU, outsideU, frameU, restU⟩ =>
       ⟨⟨inputU, h.2.after restU.sp restU.rd restU.wr frameU
         (outside_read32 outsideU (d := 48) (by omega_using [oHeader]) (by omega_using []))⟩, val32_zero_prefix zeroU (by omega_using [hm', hn'])⟩
-  have first := (relCT_keep_sp clear (fun _ _ h => h.2.2)).wp
+  obtain first := (relCT_keep_sp clear (fun _ _ h => h.2.2)).wp
     (fun s t h => ⟨clearWP s h.1, clearWP t h.2.1⟩)
-  have args := (crt_productArgsWith_ct (base := base) (o := o) (a := a) (b := b) (cp := cp) (cq := cq) (w := w)
+  obtain args := (crt_productArgsWith_ct (base := base) (o := o) (a := a) (b := b) (cp := cp) (cq := cq) (w := w)
     (coefficient := coefficient) fit hcCT).mono
     (P' := fun (s t : State) => s.sp = t.sp ∧ R s ∧ R t)
     (fun _ _ h => ⟨h.2.1.1.1, h.2.2.1.1, h.1⟩) (fun _ _ _ => trivial)
   have argsWP (s : State) (h : R s) : WP isa (productArgsWith coefficient count) s (CrtProductStart base size o a b m n) :=
     WP.mono (crt_productArgsWith_ready s h.1.1 h.1.2 hm hm' hn hn' h.2) (fun _ j => j.1)
-  have second := (relCT_keep_sp args (fun _ _ h => h.1)).wp
+  obtain second := (relCT_keep_sp args (fun _ _ h => h.1)).wp
     (fun s t h => ⟨argsWP s h.2.1, argsWP t h.2.2⟩)
-  have mul : RelCT isa (fun s t => s.sp = t.sp ∧ CrtProductStart base size o a b m n s ∧
+  obtain mul : RelCT isa (fun s t => s.sp = t.sp ∧ CrtProductStart base size o a b m n s ∧
       CrtProductStart base size o a b m n t) wideProduct (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     exact wideProduct_ct h.2.1.context h.2.2.context s t tr1 tr2 u v
@@ -1164,7 +1164,7 @@ theorem crt_recombineExport_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → 
   refine WP.mono (crt_recombineStage_ok s h.1.1 h.1.2) ?_
   rintro t ⟨sharedT, readyT, value, frame, rest⟩
   obtain ⟨accepted, flag, bound⟩ := h.2
-  have stackEq : WorkspaceEq (State.addr s.sp) 112 s.mem t.mem := WorkspaceEq.of_frame (by decide) frame (by
+  obtain stackEq : WorkspaceEq (State.addr s.sp) 112 s.mem t.mem := WorkspaceEq.of_frame (by decide) frame (by
     intro r hr; simp only [List.mem_singleton] at hr; subst r; exact h.1.1.stack.separate)
   exact ⟨⟨sharedT, readyT⟩, accepted,
     by rw [rest.sp, stackEq.word (d := 48) (bits := 32) (by decide)]; exact flag,
@@ -1203,11 +1203,11 @@ theorem crt_result_lt {P Q dp dq qi c : Nat} (p : 0 < P) (q : 0 < Q) :
   let a := c ^ dp % P
   let b := c ^ dq % Q
   let h := ((((a : Int) - b) * qi) % (P : Int)).toNat
-  have bh : b < Q := Nat.mod_lt _ q
-  have hh : h < P := by
+  obtain bh : b < Q := Nat.mod_lt _ q
+  obtain hh : h < P := by
     rw [show h = ((a + P - b % P) % P * qi) % P from (crt_coefficient_value p).symm]
     exact Nat.mod_lt _ p
-  have mul := Nat.mul_le_mul_left Q (by omega_using [hh] : h + 1 ≤ P)
+  obtain mul := Nat.mul_le_mul_left Q (by omega_using [hh] : h + 1 ≤ P)
   rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm Q P] at mul
   change b + Q * h < P * Q
   omega_using [bh, mul]
@@ -1215,11 +1215,11 @@ theorem crt_result_lt {P Q dp dq qi c : Nat} (p : 0 < P) (q : 0 < Q) :
 theorem CrtShared.result_fits {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
     (h : CrtShared g bs s) (accepted : crtAccepted bs) : crtPrivateValue bs < 2 ^ (8 * g.length) := by
   obtain ⟨p, q⟩ := h.accepted_factors accepted
-  have result := crt_result_lt (dp := Spec.Rsa.os2ip (bs 4)) (dq := Spec.Rsa.os2ip (bs 5))
+  obtain result := crt_result_lt (dp := Spec.Rsa.os2ip (bs 4)) (dq := Spec.Rsa.os2ip (bs 5))
     (qi := Spec.Rsa.os2ip (bs 6)) (c := Spec.Rsa.os2ip (bs 1)) (by omega_using [p] : 0 < Spec.Rsa.os2ip (bs 2))
     (by omega_using [q] : 0 < Spec.Rsa.os2ip (bs 3))
   rw [accepted.2.2] at result
-  have size := os2ip_lt (bs 0)
+  obtain size := os2ip_lt (bs 0)
   rw [(h.buffers.source 0).length, pow256_eq] at size
   exact Nat.lt_trans result size
 
@@ -1243,7 +1243,7 @@ theorem crt_importResidue_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {
       ⟨State.addr child, 8 * workspaceWords g.words⟩) :
     RelCT isa (fun s t => CrtSelected g bs1 child s ∧ CrtSelected g bs2 child t ∧ s.sp = t.sp)
       (.seq (.block CrtFn.qSource) (transferArray 1 6)) (fun _ _ => True) := by
-  have source : RelCT isa (fun s t => CrtSelected g bs1 child s ∧ CrtSelected g bs2 child t ∧ s.sp = t.sp)
+  obtain source : RelCT isa (fun s t => CrtSelected g bs1 child s ∧ CrtSelected g bs2 child t ∧ s.sp = t.sp)
       (.block CrtFn.qSource) (fun _ _ => True) :=
     crt_qSource_ct.mono (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ _ => trivial)
   have wp (s : State) {bs : Fin 7 → List Byte} (h : CrtSelected g bs child s) :
@@ -1251,7 +1251,7 @@ theorem crt_importResidue_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {
         (TransferArrayInput child (crtQ g.base g.words) (workspaceWords g.words) (workspaceWords g.words) g.words) := by
     refine WP.mono (crt_qSource_ok s h.1) ?_
     rintro t ⟨ptr, mem, rest⟩
-    have sharedT := h.1.of_mem mem rest
+    obtain sharedT := h.1.of_mem mem rest
     exact ⟨h.2.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.2.ptr), sharedT.buffers.context.q, sharedT.q, ptr, sep⟩
   exact crt_seq_ct source (fun s h => wp s h) (fun s h => wp s h)
     (transferArray_ct (by decide : 1 < 8) (by decide : 6 < 8))
@@ -1282,9 +1282,9 @@ structure CrtValidInput (g : CrtGeometry) (bs : Fin 7 → List Byte) (s : State)
 
 theorem CrtValidInput.prepare_input {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
     (h : CrtValidInput g bs s) : CrtPrepareInput g.base g.modulus g.size g.words g.length (bs 0) s := by
-  have mainSub : (⟨State.addr g.base, 8 * workspaceWords g.words⟩ : Region).Sub ⟨State.addr g.base, g.size⟩ :=
+  obtain mainSub : (⟨State.addr g.base, 8 * workspaceWords g.words⟩ : Region).Sub ⟨State.addr g.base, g.size⟩ :=
     crt_region_sub_workspace h.buffers.workspace h.buffers.storageFits (by simp [crtRegions])
-  have source : SavedOperand g.base g.modulus (workspaceWords g.words) g.length 8 12 (bs 0) s :=
+  obtain source : SavedOperand g.base g.modulus (workspaceWords g.words) g.length 8 12 (bs 0) s :=
     ⟨h.stack.nowrap, ⟨h.stack.read (by decide), h.stack.read (by decide)⟩, h.stack.separate.sub_right mainSub, by decide, by decide,
       h.modulusPtr, h.stack.count, h.buffers.source 0, (h.buffers.sourceSeparate 0).sub_right mainSub⟩
   exact ⟨h.buffers.workspace, h.buffers.context, h.buffers.storageFits, source, h.stack.separate, h.buffers.sourceSeparate 0,
@@ -1316,7 +1316,7 @@ open VG VG.Arm VG.Impl.Bignum.Arm.Crt
 
 theorem CrtSelected.accept_input {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byte}
     (h : CrtSelected g bs g.base s) : CrtAcceptInput g.base g.input (workspaceWords g.words) g.words g.length (bs 1) s := by
-  have mainSub := crt_region_sub_workspace h.1.buffers.workspace h.1.buffers.storageFits
+  obtain mainSub := crt_region_sub_workspace h.1.buffers.workspace h.1.buffers.storageFits
     (r := ⟨State.addr g.base, 8 * workspaceWords g.words⟩) (by simp [crtRegions])
   exact ⟨h.2, h.1.main, h.1.inputSaved (by simp [crtRegions]),
     by have := h.1.buffers.lengthValid.1; omega_using [this], (crt_width_valid h.1.buffers.lengthValid).2.2,
@@ -1352,15 +1352,15 @@ theorem crt_acceptInput_ct {base src : BitVec 32} {len w k : Nat} {bs1 bs2 : Lis
       CrtAcceptInput base src len w k bs2 t ∧ s.sp = t.sp) CrtFn.acceptInput (fun _ _ => True) := by
   let P := fun s t => CrtAcceptInput base src len w k bs1 s ∧
     CrtAcceptInput base src len w k bs2 t ∧ s.sp = t.sp
-  have load : RelCT isa P (savedOperand 1 56 12) (fun _ _ => True) :=
+  obtain load : RelCT isa P (savedOperand 1 56 12) (fun _ _ => True) :=
     (savedOperandLayout_ct (by decide : 1 < 8)).mono
       (fun _ _ h => ⟨⟨h.1.ready, h.1.source⟩, ⟨h.2.1.ready, h.2.1.source⟩, h.2.2⟩) (fun _ _ _ => trivial)
   have wp (s : State) {bs : List Byte} (h : CrtAcceptInput base src len w k bs s) :
       WP isa (savedOperand 1 56 12) s (LayoutFrameReady base len w) :=
     WP.mono (savedOperandLayout_ok s h.ready h.source (by decide : 1 < 8) h.positive h.fits) (fun _ j => j.1)
-  have first := (relCT_keep_sp load (fun _ _ h => h.2.2)).wp
+  obtain first := (relCT_keep_sp load (fun _ _ h => h.2.2)).wp
     (fun s t h => ⟨wp s h.1, wp t h.2.1⟩)
-  have compare : RelCT isa (fun s t => s.sp = t.sp ∧ LayoutFrameReady base len w s ∧ LayoutFrameReady base len w t)
+  obtain compare : RelCT isa (fun s t => s.sp = t.sp ∧ LayoutFrameReady base len w s ∧ LayoutFrameReady base len w t)
       inputCompare (fun _ _ => True) :=
     inputCompareLayout_ct.mono (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ _ => trivial)
   exact first.seq ((relCT_keep_sp compare (fun _ _ h => h.1)).seq saveAcceptance_ct)
@@ -1387,7 +1387,7 @@ theorem crt_loadPBody_ct {base pp qp : BitVec 32} {len w k : Nat} {pb1 qb1 pb2 q
     CrtLoadPInput base pp qp len w k pb2 qb2 t ∧ s.sp = t.sp
   let Q := fun (bs : List Byte) (s : State) => LayoutFrameReady base len w s ∧
     SavedOperand base qp len k 96 100 bs s ∧ 0 < k ∧ k ≤ 8 * w
-  have firstCT : RelCT isa P (savedOperand 0 64 68) (fun _ _ => True) :=
+  obtain firstCT : RelCT isa P (savedOperand 0 64 68) (fun _ _ => True) :=
     (savedOperandLayout_ct (by decide : 0 < 8)).mono
       (fun _ _ h => ⟨⟨h.1.ready, h.1.prime⟩, ⟨h.2.1.ready, h.2.1.prime⟩, h.2.2⟩) (fun _ _ _ => trivial)
   have firstWP (s : State) {pb qb : List Byte} (h : CrtLoadPInput base pp qp len w k pb qb s) :
@@ -1395,18 +1395,18 @@ theorem crt_loadPBody_ct {base pp qp : BitVec 32} {len w k : Nat} {pb1 qb1 pb2 q
     refine WP.mono (savedOperandLayout_ok s h.ready h.prime (by decide : 0 < 8) h.positive h.fits) ?_
     rintro t ⟨ready, _, _, frame, rest⟩
     exact ⟨ready, h.inverse.after_workspace frame rest, h.positive, h.fits⟩
-  have first := (relCT_keep_sp firstCT (fun _ _ h => h.2.2)).wp
+  obtain first := (relCT_keep_sp firstCT (fun _ _ h => h.2.2)).wp
     (fun s t h => ⟨firstWP s h.1, firstWP t h.2.1⟩)
-  have secondCT : RelCT isa (fun s t => s.sp = t.sp ∧ Q qb1 s ∧ Q qb2 t)
+  obtain secondCT : RelCT isa (fun s t => s.sp = t.sp ∧ Q qb1 s ∧ Q qb2 t)
       (savedOperand 1 96 100) (fun _ _ => True) :=
     (savedOperandLayout_ct (by decide : 1 < 8)).mono
       (fun _ _ h => ⟨⟨h.2.1.1, h.2.1.2.1⟩, ⟨h.2.2.1, h.2.2.2.1⟩, h.1⟩) (fun _ _ _ => trivial)
   have secondWP (s : State) {qb : List Byte} (h : Q qb s) :
       WP isa (savedOperand 1 96 100) s (LayoutFrameReady base len w) :=
     WP.mono (savedOperandLayout_ok s h.1 h.2.1 (by decide : 1 < 8) h.2.2.1 h.2.2.2) (fun _ j => j.1)
-  have second := (relCT_keep_sp secondCT (fun _ _ h => h.1)).wp
+  obtain second := (relCT_keep_sp secondCT (fun _ _ h => h.1)).wp
     (fun s t h => ⟨secondWP s h.2.1, secondWP t h.2.2⟩)
-  have compare : RelCT isa (fun s t => s.sp = t.sp ∧ LayoutFrameReady base len w s ∧ LayoutFrameReady base len w t)
+  obtain compare : RelCT isa (fun s t => s.sp = t.sp ∧ LayoutFrameReady base len w s ∧ LayoutFrameReady base len w t)
       inputCompare (fun _ _ => True) :=
     inputCompareLayout_ct.mono (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ _ => trivial)
   exact first.seq (second.seq ((relCT_keep_sp compare (fun _ _ h => h.1)).seq mergeAcceptance_ct))
@@ -1434,7 +1434,7 @@ theorem crt_acceptStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
 theorem crt_loadPStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
     RelCT isa (fun s t => CrtSelected g bs1 g.base s ∧ CrtSelected g bs2 g.base t ∧ s.sp = t.sp)
       CrtFn.loadP (fun _ _ => True) := by
-  have body : RelCT isa (fun s t => CrtSelected g bs1 (crtP g.base g.words) s ∧
+  obtain body : RelCT isa (fun s t => CrtSelected g bs1 (crtP g.base g.words) s ∧
       CrtSelected g bs2 (crtP g.base g.words) t ∧ s.sp = t.sp) CrtFn.loadPBody (fun _ _ => True) :=
     crt_loadPBody_ct.mono (fun _ _ h => ⟨h.1.loadP_input, h.2.1.loadP_input, h.2.2⟩) (fun _ _ _ => trivial)
   exact crt_seq_ct (crt_select_stage_ct 224) (fun s h => crt_selectP_stage s h) (fun s h => crt_selectP_stage s h)
@@ -1443,7 +1443,7 @@ theorem crt_loadPStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
 theorem crt_loadQStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
     RelCT isa (fun s t => CrtSelected g bs1 g.base s ∧ CrtSelected g bs2 g.base t ∧ s.sp = t.sp)
       CrtFn.loadQ (fun _ _ => True) := by
-  have load : RelCT isa (fun s t => CrtSelected g bs1 (crtQ g.base g.words) s ∧
+  obtain load : RelCT isa (fun s t => CrtSelected g bs1 (crtQ g.base g.words) s ∧
       CrtSelected g bs2 (crtQ g.base g.words) t ∧ s.sp = t.sp) (savedOperand 0 72 76) (fun _ _ => True) :=
     (savedOperandLayout_ct (by decide : 0 < 8)).mono
       (fun _ _ h => ⟨⟨h.1.2, h.1.1.savedOperand 2 (by simp [crtRegions])⟩,
@@ -1471,10 +1471,10 @@ theorem crt_checkProduct_ct {base : BitVec 32} {size len o a d w : Nat}
     RelCT isa (fun s t => CrtCheckProductInput base size len o a d w s ∧
       CrtCheckProductInput base size len o a d w t ∧ s.sp = t.sp) checkProduct (fun _ _ => True) := by
   let P := CrtCheckProductInput base size len o a d w
-  have pad : RelCT isa (fun (s t : State) => P s ∧ P t ∧ s.sp = t.sp) padModulus (fun _ _ => True) :=
+  obtain pad : RelCT isa (fun (s t : State) => P s ∧ P t ∧ s.sp = t.sp) padModulus (fun _ _ => True) :=
     (crt_padModulus_ct (base := base) (size := size) (len := len) (w := w) (d := d) fit).mono
       (fun _ _ h => ⟨h.1.padding, h.2.1.padding, h.2.2⟩) (fun _ _ _ => trivial)
-  have ready := (relCT_keep_sp pad (fun _ _ h => h.2.2)).wp (fun s t h =>
+  obtain ready := (relCT_keep_sp pad (fun _ _ h => h.2.2)).wp (fun s t h =>
     ⟨(crt_padComparison_ready s h.1).mono (fun _ j => j.1),
       (crt_padComparison_ready t h.2.1).mono (fun _ j => j.1)⟩)
   exact ready.seq (crt_compareProduct_ct.mono
@@ -1503,12 +1503,12 @@ theorem crt_validateProductWith_ct {base : BitVec 32} {size len product cmp pad 
       CountFrom count base size m n t) ∧ s.sp = t.sp)
       (validateProductWith count) (fun _ _ => True) := by
   let P := fun s => CrtValidateInput base size len product cmp pad a b cp cq w s ∧ CountFrom count base size m n s
-  have multiply : RelCT isa (fun (s t : State) => P s ∧ P t ∧ s.sp = t.sp)
+  obtain multiply : RelCT isa (fun (s t : State) => P s ∧ P t ∧ s.sp = t.sp)
       (factorProductWith false count) (fun _ _ => True) :=
     (crt_factorProductWith_ct (size := size) (by omega_using [fit]) hm hm' hn hn' hcCT).mono
       (fun _ _ h => ⟨⟨h.1.1.multiplication, h.1.2⟩, ⟨h.2.1.1.multiplication, h.2.1.2⟩, h.2.2⟩)
       (fun _ _ _ => trivial)
-  have ready := (relCT_keep_sp multiply (fun _ _ h => h.2.2)).wp (fun s t h =>
+  obtain ready := (relCT_keep_sp multiply (fun _ _ h => h.2.2)).wp (fun s t h =>
     ⟨(crt_validationProductWith_ready s h.1.1 h.1.2 hm hm' hn hn').mono (fun _ j => j.1),
       (crt_validationProductWith_ready t h.2.1.1 h.2.1.2 hm hm' hn hn').mono (fun _ j => j.1)⟩)
   exact ready.seq ((crt_checkProduct_ct fit).mono
@@ -1547,10 +1547,10 @@ theorem crt_productStageWith_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte
     (hcCT : RelCT isa (fun s t => s.gpr .r0 = t.gpr .r0 ∧ s.sp = t.sp) (.block count) (fun _ _ => True)) :
     RelCT isa (fun s t => CrtSelected g bs1 g.base s ∧ CrtSelected g bs2 g.base t ∧ s.sp = t.sp)
       (.seq (validateProductWith count) (.block mergeAcceptance)) (fun _ _ => True) := by
-  have product : RelCT isa (fun s t => CrtSelected g bs1 g.base s ∧ CrtSelected g bs2 g.base t ∧ s.sp = t.sp)
+  obtain product : RelCT isa (fun s t => CrtSelected g bs1 g.base s ∧ CrtSelected g bs2 g.base t ∧ s.sp = t.sp)
       (validateProductWith count) (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
-    have fit := (h.1.1.compare_input h.1.2).fit
+    obtain fit := (h.1.1.compare_input h.1.2).fit
     exact crt_validateProductWith_ct fit hm hm' hn hn' hcCT s t tr1 tr2 u v
       ⟨⟨h.1.1.validate_input h.1.2, hc s h.1.1⟩, ⟨h.2.1.1.validate_input h.2.1.2, hc t h.2.1.1⟩, h.2.2⟩ e1 e2
   exact (relCT_keep_sp product (fun _ _ h => h.2.2)).seq mergeAcceptance_ct
@@ -1657,8 +1657,8 @@ theorem crt_coefficientFinish_ready (s : State) {g : CrtGeometry} {bs : Fin 7 �
   · rw [flagT, h.flag]
     by_cases ac : crtAccepted bs <;> simp [ac]
   · intro accepted
-    have ac : crtAccepted bs := of_decide_eq_true accepted
-    have reconstruction : crtReconstruction g t.mem = crtPrivateValue bs := by
+    obtain ac : crtAccepted bs := of_decide_eq_true accepted
+    obtain reconstruction : crtReconstruction g t.mem = crtPrivateValue bs := by
       unfold crtReconstruction
       rw [coefficient, qT.modulus, qT.result]
       simp only [crtFactor, ite_eq_left ac, powMod_eq, crtPrivateValue, crtResult]
@@ -1687,8 +1687,8 @@ theorem crt_powerStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} {chi
     (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t => CrtPowerSelection g bs1 child slot j s ∧ CrtPowerSelection g bs2 child slot j t ∧
       s.sp = t.sp) ((CrtFn.powerOf st.prime kernel.code) slot (56 + 8 * j.val) (56 + 8 * i.val)) (fun _ _ => True) := by
-  have exponent : i = 3 ∨ i = 4 := by rcases pair with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> simp
-  have select : RelCT isa (fun s t => CrtPowerSelection g bs1 child slot j s ∧
+  obtain exponent : i = 3 ∨ i = 4 := by rcases pair with ⟨_, rfl⟩ | ⟨_, rfl⟩ <;> simp
+  obtain select : RelCT isa (fun s t => CrtPowerSelection g bs1 child slot j s ∧
       CrtPowerSelection g bs2 child slot j t ∧ s.sp = t.sp) (selectChild slot) (fun _ _ => True) :=
     (crt_selectChild_ct slot).mono
       (fun _ _ h => ⟨h.1.selected.2.ptr.trans h.2.1.selected.2.ptr.symm, h.2.2⟩) (fun _ _ _ => trivial)
@@ -1718,7 +1718,7 @@ theorem crt_bothPowers_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte}
     (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t => CrtCheckedState g bs1 s ∧ CrtCheckedState g bs2 t ∧ s.sp = t.sp)
       (.seq ((CrtFn.powerOf st.prime kernel.code) 224 64 80) ((CrtFn.powerOf st.prime kernel.code) 228 72 88)) (fun _ _ => True) := by
-  have first : RelCT isa (fun s t => CrtCheckedState g bs1 s ∧ CrtCheckedState g bs2 t ∧ s.sp = t.sp)
+  obtain first : RelCT isa (fun s t => CrtCheckedState g bs1 s ∧ CrtCheckedState g bs2 t ∧ s.sp = t.sp)
       ((CrtFn.powerOf st.prime kernel.code) 224 64 80) (fun _ _ => True) :=
     ((crt_powerStage_ct (kernel := kernel)) 1 3 (Or.inl ⟨rfl, rfl⟩) st hst1 hst2).mono
       (fun _ _ h => ⟨h.1.pSelection, h.2.1.pSelection, h.2.2⟩) (fun _ _ _ => trivial)
@@ -1746,8 +1746,8 @@ theorem crt_coefficientStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte
     (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) :
     RelCT isa (fun s t => CrtCoefficientSelection g bs1 g.base s ∧
       CrtCoefficientSelection g bs2 g.base t ∧ s.sp = t.sp) (CrtFn.coefficientPhaseOf st.prime) (fun _ _ => True) := by
-  have kind : CrtChild g (crtP g.base g.words) 224 := Or.inl ⟨rfl, rfl⟩
-  have memberP : (⟨State.addr (crtP g.base g.words), 8 * workspaceWords g.words⟩ : Region) ∈
+  obtain kind : CrtChild g (crtP g.base g.words) 224 := Or.inl ⟨rfl, rfl⟩
+  obtain memberP : (⟨State.addr (crtP g.base g.words), 8 * workspaceWords g.words⟩ : Region) ∈
       crtRegions g.base (workspaceWords g.words) g.words := by simp [crtRegions]
   let P := State.addr (crtP g.base g.words)
   let Sel := fun (bs : Fin 7 → List Byte) => CrtCoefficientSelection g bs (crtP g.base g.words)
@@ -1758,10 +1758,10 @@ theorem crt_coefficientStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte
     s.mem.readW (off (State.addr s.sp) 48) 32 = (if crtAccepted bs then 1 else 0)
   let CE := fun (bs : Fin 7 → List Byte) (s : State) => CA bs s ∧
     LayoutFrameReady (crtN g.base g.words) (workspaceWords g.words) v s
-  have select : RelCT isa (fun s t => CrtCoefficientSelection g bs1 g.base s ∧
+  obtain select : RelCT isa (fun s t => CrtCoefficientSelection g bs1 g.base s ∧
       CrtCoefficientSelection g bs2 g.base t ∧ s.sp = t.sp) (selectChild 224) (fun _ _ => True) :=
     (crt_select_stage_ct 224).mono (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ _ => trivial)
-  have transfer : RelCT isa (fun s t => Sel bs1 s ∧ Sel bs2 t ∧ s.sp = t.sp)
+  obtain transfer : RelCT isa (fun s t => Sel bs1 s ∧ Sel bs2 t ∧ s.sp = t.sp)
       (.seq (.block CrtFn.qSource) (transferArray 1 6)) (fun _ _ => True) := by
     intro s t tr1 tr2 u w h e1 e2
     exact crt_importResidue_ct h.1.1.1.buffers.context.sepPQ.symm s t tr1 tr2 u w ⟨h.1.1, h.2.1.1, h.2.2⟩ e1 e2
@@ -1772,7 +1772,7 @@ theorem crt_coefficientStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte
     rintro t ⟨sharedT, readyT, poweredT, _, frame, rest⟩
     exact ⟨⟨sharedT, readyT⟩, ⟨value, poweredT, bound⟩,
       by rw [shared.acceptance_after_workspace memberP frame rest]; exact flag⟩
-  have saved : RelCT isa (fun s t => Sel bs1 s ∧ Sel bs2 t ∧ s.sp = t.sp) (savedOperand 4 96 100) (fun _ _ => True) :=
+  obtain saved : RelCT isa (fun s t => Sel bs1 s ∧ Sel bs2 t ∧ s.sp = t.sp) (savedOperand 4 96 100) (fun _ _ => True) :=
     (savedOperandLayout_ct (base := crtP g.base g.words) (len := workspaceWords g.words) (w := g.words)
       (ps := 96) (cs := 100) (by decide : 4 < 8)).mono
       (fun _ _ h => ⟨⟨h.1.1.2, h.1.1.1.savedOperand 5 memberP⟩, ⟨h.2.1.1.2, h.2.1.1.1.savedOperand 5 memberP⟩, h.2.2⟩)
@@ -1787,12 +1787,12 @@ theorem crt_coefficientStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte
     exact ⟨⟨shared.after_p (frame.mono (by simp)) rest ⟨readyT.layout, readyT.width⟩, readyT⟩,
       ⟨value, powered.after_keeps keeps (by decide) (by decide), bound⟩,
       by rw [shared.acceptance_after_workspace memberP frame rest]; exact flag⟩
-  have clear : RelCT isa (fun s t => Sel bs1 s ∧ Sel bs2 t ∧ s.sp = t.sp) (clearOperandBuffer (64 + 8 * 5))
+  obtain clear : RelCT isa (fun s t => Sel bs1 s ∧ Sel bs2 t ∧ s.sp = t.sp) (clearOperandBuffer (64 + 8 * 5))
       (fun _ _ => True) := by
     intro s t tr1 tr2 u w h e1 e2
     have input (s' : State) {bs : Fin 7 → List Byte} (h' : Sel bs s') : ClearOperandBufferInput (crtP g.base g.words)
         (crtP g.base g.words + BitVec.ofNat 32 (arrAt g.words 5)) (8 * workspaceWords g.words) (64 + 8 * 5) g.words s' := by
-      have header := nativeHeader_of_layout s'.mem (crtP g.base g.words) h'.1.2.workspace.nowrap (Nat.le_refl _)
+      obtain header := nativeHeader_of_layout s'.mem (crtP g.base g.words) h'.1.2.workspace.nowrap (Nat.le_refl _)
         h'.1.2.layout
       rw [h'.1.2.width] at header
       exact ⟨h'.1.2.workspace, h'.1.2.ptr, header.count, header.array 5 (by decide)⟩
@@ -1808,14 +1808,14 @@ theorem crt_coefficientStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte
       by rw [keeps_array_num keeps fit (by simp [Operand, Proof.Rsa.Mont.aAcc, Proof.Rsa.Mont.aTmp]) (by decide),
         powered.result]; exact bound,
       by rw [shared.acceptance_after_workspace memberP frame rest]; exact flag⟩
-  have enter : RelCT isa (fun s t => CA bs1 s ∧ CA bs2 t ∧ s.sp = t.sp) (enterNarrow 68) (fun _ _ => True) :=
+  obtain enter : RelCT isa (fun s t => CA bs1 s ∧ CA bs2 t ∧ s.sp = t.sp) (enterNarrow 68) (fun _ _ => True) :=
     (crt_enterNarrow_ct (g := g) (bs1 := bs1) (bs2 := bs2) 1 (Or.inl rfl)).mono
       (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ _ => trivial)
   have enterWP (s : State) {bs : Fin 7 → List Byte} (h : CA bs s) : WP isa (enterNarrow 68) s (CE bs) := by
     obtain ⟨shared, lt, flag⟩ := h
     refine WP.mono (crt_enterNarrow_ok s shared 1 (Or.inl rfl)) ?_
     rintro t ⟨sharedT, selected, flagT, frame, _⟩
-    have eq := shared.eq_of_frame shared.buffers.context.p memberP
+    obtain eq := shared.eq_of_frame shared.buffers.context.p memberP
       (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩]) (frame.mono (by simp))
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact shared.buffers.context.sepPN)
     exact ⟨⟨sharedT, by rw [eq.number shared.buffers.context.arraysFit (by decide)]; exact lt,
@@ -1834,7 +1834,7 @@ theorem crt_coefficientStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte
       · simp [accepted]
   have words (s : State) {bs : Fin 7 → List Byte} (h : CA bs s) : g.words ≤ 128 :=
     (crt_width_valid h.1.buffers.lengthValid).2.1
-  have prime : RelCT isa (fun s t => CE bs1 s ∧ CE bs2 t ∧ s.sp = t.sp) (st.prime 64) (fun _ _ => True) :=
+  obtain prime : RelCT isa (fun s t => CE bs1 s ∧ CE bs2 t ∧ s.sp = t.sp) (st.prime 64) (fun _ _ => True) :=
     (st.primeCt 1 (Or.inl rfl) hst1 hst2).mono
       (fun s t h => ⟨⟨h.1.1.1, primeIn s h.1⟩, ⟨h.2.1.1.1, primeIn t h.2.1⟩, h.2.2⟩) (fun _ _ _ => trivial)
   have primeWP (s : State) {bs : Fin 7 → List Byte} (h : CE bs s) (hst : st.ok g bs) :
@@ -1846,17 +1846,17 @@ theorem crt_coefficientStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte
     rw [h.1.2.2] at modulus odd r2
     change numAt _ _ _ 0 = safePrime _ (Spec.Rsa.os2ip (bs 2)) at modulus
     rw [crt_safeFactor] at modulus odd r2
-    have sharedT := shared.after_narrow (frame.mono (by simp)) rest
-    have eq := shared.eq_of_frame shared.buffers.context.p memberP
+    obtain sharedT := shared.after_narrow (frame.mono (by simp)) rest
+    obtain eq := shared.eq_of_frame shared.buffers.context.p memberP
       (regions := [⟨State.addr (crtN g.base g.words), 8 * workspaceWords g.words⟩]) (frame.mono (by simp))
       (by intro r hr; simp only [List.mem_singleton] at hr; subst r; exact shared.buffers.context.sepPN)
     exact ⟨crtFactor bs 2, ⟨sharedT.copyCtx kind ready le, modulus, odd, r2, half⟩,
       by rw [eq.number shared.buffers.context.arraysFit (by decide)]; exact h.1.2.1⟩
-  have tail := crt_seq_ct enter (fun s h => enterWP s h) (fun s h => enterWP s h)
+  obtain tail := crt_seq_ct enter (fun s h => enterWP s h) (fun s h => enterWP s h)
     (crt_seq_ct prime (fun s h => primeWP s h hst1) (fun s h => primeWP s h hst2)
       ((relCT_keep_sp (crt_coefficient_ct (bs1 := bs1) (bs2 := bs2) (v := v)) (fun _ _ h => h.2.2)).seq
         crt_selectMain_ct))
-  have input := (crt_seq_ct transfer (fun s h => transferWP s h) (fun s h => transferWP s h)
+  obtain input := (crt_seq_ct transfer (fun s h => transferWP s h) (fun s h => transferWP s h)
     (crt_seq_ct saved (fun s h => savedWP s h) (fun s h => savedWP s h) clear)).assoc
   have inputWP (s : State) {bs : Fin 7 → List Byte} (h : Sel bs s) : WP isa CrtFn.coefficientInput s (CA bs) := by
     rw [CrtFn.coefficientInput]
@@ -1884,11 +1884,11 @@ theorem crt_finishRecombine_ct {base : BitVec 32} {size len w o d : Nat} (fit : 
     RelCT isa (fun s t => CrtFinishInput base size len w o d s ∧
       CrtFinishInput base size len w o d t ∧ s.sp = t.sp) finishRecombine (fun _ _ => True) := by
   let P := CrtFinishInput base size len w o d
-  have pad : RelCT isa (fun s t => P s ∧ P t ∧ s.sp = t.sp) (padModulus 1) (fun _ _ => True) :=
+  obtain pad : RelCT isa (fun s t => P s ∧ P t ∧ s.sp = t.sp) (padModulus 1) (fun _ _ => True) :=
     (crt_padModulus_ct fit 1).mono (fun _ _ h => ⟨h.1.padding, h.2.1.padding, h.2.2⟩) (fun _ _ _ => trivial)
   have wp (s : State) (h : P s) : WP isa (padModulus 1) s (CrtAddWideInput base size o d w) :=
     WP.mono (crt_finishPad_ready s h) (fun _ j => j.1)
-  have first := (relCT_keep_sp pad (fun _ _ h => h.2.2)).wp
+  obtain first := (relCT_keep_sp pad (fun _ _ h => h.2.2)).wp
     (fun s t h => ⟨wp s h.1, wp t h.2.1⟩)
   exact first.seq (crt_addWide_ct.mono (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ _ => trivial))
 
@@ -1911,12 +1911,12 @@ theorem crt_recombine_ct {base : BitVec 32} {size len w o a b cp cq d : Nat} (fi
     RelCT isa (fun s t => CrtRecombineInput base size len w o a b cp cq d s ∧
       CrtRecombineInput base size len w o a b cp cq d t ∧ s.sp = t.sp) recombine (fun _ _ => True) := by
   let P := CrtRecombineInput base size len w o a b cp cq d
-  have product : RelCT isa (fun s t => P s ∧ P t ∧ s.sp = t.sp) (factorProduct true) (fun _ _ => True) :=
+  obtain product : RelCT isa (fun s t => P s ∧ P t ∧ s.sp = t.sp) (factorProduct true) (fun _ _ => True) :=
     (crt_factorProduct_ct (by omega_using [fit] : 236 ≤ size)).mono
       (fun _ _ h => ⟨h.1.multiplication, h.2.1.multiplication, h.2.2⟩) (fun _ _ _ => trivial)
   have wp (s : State) (h : P s) : WP isa (factorProduct true) s (CrtFinishInput base size len w o d) :=
     WP.mono (crt_recombineProduct_ready s h) (fun _ j => j.1)
-  have first := (relCT_keep_sp product (fun _ _ h => h.2.2)).wp
+  obtain first := (relCT_keep_sp product (fun _ _ h => h.2.2)).wp
     (fun s t h => ⟨wp s h.1, wp t h.2.1⟩)
   exact first.seq ((crt_finishRecombine_ct fit).mono
     (fun _ _ h => ⟨h.2.1, h.2.2, h.1⟩) (fun _ _ _ => trivial))
@@ -1939,14 +1939,14 @@ open VG VG.Arm VG.Impl.Bignum.Arm VG.Impl.Bignum.Arm.Crt
 theorem crt_recombineStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
     RelCT isa (fun s t => CrtSelected g bs1 g.base s ∧ CrtSelected g bs2 g.base t ∧ s.sp = t.sp)
       (.seq (.seq (.block CrtFn.qSource) (transferArray 1 6)) recombine) (fun _ _ => True) := by
-  have transfer : RelCT isa (fun s t => CrtSelected g bs1 g.base s ∧ CrtSelected g bs2 g.base t ∧ s.sp = t.sp)
+  obtain transfer : RelCT isa (fun s t => CrtSelected g bs1 g.base s ∧ CrtSelected g bs2 g.base t ∧ s.sp = t.sp)
       (.seq (.block CrtFn.qSource) (transferArray 1 6)) (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     exact crt_importResidue_ct h.1.1.buffers.context.sepMQ.symm s t tr1 tr2 u v h e1 e2
   have wp (s : State) {bs : Fin 7 → List Byte} (h : CrtSelected g bs g.base s) :
       WP isa (.seq (.block CrtFn.qSource) (transferArray 1 6)) s (CrtSelected g bs g.base) :=
     (crt_importFinalResidue_ok s h.1 h.2).mono (fun _ j => ⟨j.1, j.2.1⟩)
-  have recombination : RelCT isa (fun s t => CrtSelected g bs1 g.base s ∧ CrtSelected g bs2 g.base t ∧ s.sp = t.sp)
+  obtain recombination : RelCT isa (fun s t => CrtSelected g bs1 g.base s ∧ CrtSelected g bs2 g.base t ∧ s.sp = t.sp)
       recombine (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     exact crt_recombine_ct (h.1.1.compare_input h.1.2).fit s t tr1 tr2 u v
@@ -1971,10 +1971,10 @@ open VG VG.Arm VG.Impl.Bignum.Arm
 theorem crt_finishStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} :
     RelCT isa (fun s t => CrtFinishSelection g bs1 s ∧ CrtFinishSelection g bs2 t ∧ s.sp = t.sp)
       CrtFn.finish (fun _ _ => True) := by
-  have reconstruct : RelCT isa (fun s t => CrtFinishSelection g bs1 s ∧ CrtFinishSelection g bs2 t ∧ s.sp = t.sp)
+  obtain reconstruct : RelCT isa (fun s t => CrtFinishSelection g bs1 s ∧ CrtFinishSelection g bs2 t ∧ s.sp = t.sp)
       (.seq (.seq (.block CrtFn.qSource) (transferArray 1 6)) VG.Impl.Bignum.Arm.Crt.recombine) (fun _ _ => True) :=
     crt_recombineStage_ct.mono (fun _ _ h => ⟨h.1.1, h.2.1.1, h.2.2⟩) (fun _ _ _ => trivial)
-  have args : RelCT isa (fun s t => CrtExportSelection g bs1 s ∧ CrtExportSelection g bs2 t ∧ s.sp = t.sp)
+  obtain args : RelCT isa (fun s t => CrtExportSelection g bs1 s ∧ CrtExportSelection g bs2 t ∧ s.sp = t.sp)
       (.block CrtFn.outputArgs) (fun _ _ => True) :=
     crt_outputArgs_ct.mono (fun _ _ h => ⟨h.1.1.2.ptr.trans h.2.1.1.2.ptr.symm, h.2.2⟩) (fun _ _ _ => trivial)
   exact (crt_seq_ct reconstruct (fun s h => crt_recombineExport_ready s h)
@@ -2000,7 +2000,7 @@ theorem crt_computeStage_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte}
     (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t => CrtCheckedState g bs1 s ∧ CrtCheckedState g bs2 t ∧ s.sp = t.sp)
       (CrtFn.computeOf st.prime kernel.code) (fun _ _ => True) := by
-  have coefficient : RelCT isa (fun s t => CrtPoweredPair g bs1 s ∧ CrtPoweredPair g bs2 t ∧ s.sp = t.sp)
+  obtain coefficient : RelCT isa (fun s t => CrtPoweredPair g bs1 s ∧ CrtPoweredPair g bs2 t ∧ s.sp = t.sp)
       (CrtFn.coefficientPhaseOf st.prime) (fun _ _ => True) :=
     (crt_coefficientStage_ct st hst1 hst2).mono
       (fun _ _ h => ⟨h.1.coefficientSelection, h.2.1.coefficientSelection, h.2.2⟩) (fun _ _ _ => trivial)
@@ -2030,7 +2030,7 @@ theorem crt_valid_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte}
     (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t => CrtValidInput g bs1 s ∧ CrtValidInput g bs2 t ∧ s.sp = t.sp)
       (CrtFn.validOf st.check st.prime kernel.code) (fun _ _ => True) := by
-  have prepare : RelCT isa (fun s t => CrtValidInput g bs1 s ∧ CrtValidInput g bs2 t ∧ s.sp = t.sp)
+  obtain prepare : RelCT isa (fun s t => CrtValidInput g bs1 s ∧ CrtValidInput g bs2 t ∧ s.sp = t.sp)
       CrtFn.prepare (fun _ _ => True) :=
     crt_prepare_ct.mono (fun _ _ h => ⟨h.1.prepare_input, h.2.1.prepare_input, h.2.2⟩) (fun _ _ _ => trivial)
   exact crt_seq_ct prepare (fun s h => crt_begin_selected s h) (fun s h => crt_begin_selected s h)
@@ -2062,7 +2062,7 @@ theorem crt_modulusCheck_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → Lis
   refine WP.mono (modulusCheck_ok s h.buffers.lengthValid.1 h.buffers.lengthValid.2
     (h.buffers.source 0).fits (h.buffers.source 0).read h.source h.count) ?_
   rintro t ⟨flag, mem, rest⟩
-  have nb : Spec.Rsa.bytesAt s.mem (State.addr g.modulus) g.length = bs 0 := (h.buffers.source 0).bytes
+  obtain nb : Spec.Rsa.bytesAt s.mem (State.addr g.modulus) g.length = bs 0 := (h.buffers.source 0).bytes
   change t.z = Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr g.modulus) g.length)) g.length at flag
   rw [nb] at flag
   exact ⟨h.of_mem mem rest ((rest.gpr .r0 (by simp)).trans h.ptr)
@@ -2072,12 +2072,12 @@ theorem crt_body_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus :
     (st : CrtStages) (hst1 : st.ok g bs1) (hst2 : st.ok g bs2) (kernel : WindowKernel := baselineWindowKernel) :
     RelCT isa (fun s t => CrtBodyInput g bs1 s ∧ CrtBodyInput g bs2 t ∧ s.sp = t.sp)
       (CrtFn.bodyOf st.check st.prime kernel.code) (fun _ _ => True) := by
-  have check : RelCT isa (fun s t => CrtBodyInput g bs1 s ∧ CrtBodyInput g bs2 t ∧ s.sp = t.sp)
+  obtain check : RelCT isa (fun s t => CrtBodyInput g bs1 s ∧ CrtBodyInput g bs2 t ∧ s.sp = t.sp)
       (.block modulusCheck) (fun _ _ => True) := by
     intro s t tr1 tr2 u v h e1 e2
     exact ⟨modulusCheck_ct s t tr1 tr2 u v trivial trivial
       ⟨h.1.source.trans h.2.1.source.symm, h.1.count.trans h.2.1.count.symm⟩ e1 e2, trivial⟩
-  have ready := (relCT_keep_sp check (fun _ _ h => h.2.2)).wp
+  obtain ready := (relCT_keep_sp check (fun _ _ h => h.2.2)).wp
     (fun s t h => ⟨crt_modulusCheck_ready s h.1, crt_modulusCheck_ready t h.2.1⟩)
   refine ready.seq (RelCT.ite ?_ ?_ ?_)
   · intro s t h
@@ -2085,9 +2085,9 @@ theorem crt_body_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (modulus :
     rw [h.2.1.flag, h.2.2.flag, modulus]
   · apply (crt_valid_ct (kernel := kernel) (g := g) (bs1 := bs1) (bs2 := bs2) st hst1 hst2).mono ?_ (fun _ _ _ => trivial)
     intro s t h
-    have flag : s.z = true := Option.some.inj h.2
-    have good := h.1.2.1.flag.symm.trans flag
-    have good2 : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (bs2 0)) g.length = true := by rw [← modulus]; exact good
+    obtain flag : s.z = true := Option.some.inj h.2
+    obtain good := h.1.2.1.flag.symm.trans flag
+    obtain good2 : Spec.Rsa.modulusValid (Spec.Rsa.os2ip (bs2 0)) g.length = true := by rw [← modulus]; exact good
     let a := h.1.2.1.input
     let b := h.1.2.2.input
     exact ⟨⟨a.buffers, a.stack, a.ptr, a.count, a.saved, a.modulusPtr, good⟩,
@@ -2127,7 +2127,7 @@ theorem crt_computeStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List B
   rw [WP.seq_iff]
   refine WP.mono ((crt_bothPowers_ok (kernel := kernel)) s h ready p q flag st hst) ?_
   rintro u ⟨sharedU, readyU, poweredP, poweredQ, flagU, frameU, restU⟩
-  have bound : Spec.Rsa.powMod (Spec.Rsa.os2ip (bs 1)) (Spec.Rsa.os2ip (bs 4)) (crtFactor bs 2) < crtFactor bs 2 := by
+  obtain bound : Spec.Rsa.powMod (Spec.Rsa.os2ip (bs 1)) (Spec.Rsa.os2ip (bs 4)) (crtFactor bs 2) < crtFactor bs 2 := by
     rw [powMod_eq]; exact Nat.mod_lt _ (by have := poweredP.positive; omega_using [this])
   rw [WP.seq_iff]
   refine WP.mono (crt_coefficientStage_ok u sharedU readyU poweredP poweredQ bound flagU st hst) ?_
@@ -2138,20 +2138,20 @@ theorem crt_computeStage_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List B
     simp only [crtFactor, ite_eq_left accepted, powMod_eq, crtPrivateValue, crtResult]
     rw [Nat.mul_comm]
     exact Nat.add_comm _ _
-  have flagExport : v.mem.readW (off (State.addr v.sp) 48) 32 = BitVec.ofNat 32 (decide (crtAccepted bs)).toNat := by
+  obtain flagExport : v.mem.readW (off (State.addr v.sp) 48) 32 = BitVec.ofNat 32 (decide (crtAccepted bs)).toNat := by
     rw [flagV, flagU]
     by_cases accepted : crtAccepted bs <;> simp [accepted]
   refine WP.mono (crt_finishStage_ok v sharedV readyV flagExport (by
     intro accepted
-    have ac : crtAccepted bs := of_decide_eq_true accepted
+    obtain ac : crtAccepted bs := of_decide_eq_true accepted
     rw [reconstruction ac]; exact h.result_fits ac)) ?_
   rintro t ⟨bytes, status, frameT, restT⟩
-  have bytesT : Spec.Rsa.bytesAt t.mem (State.addr g.output) g.length =
+  obtain bytesT : Spec.Rsa.bytesAt t.mem (State.addr g.output) g.length =
       (if crtAccepted bs then Spec.Rsa.i2osp (crtPrivateValue bs) g.length else List.replicate g.length 0) := by
     by_cases ac : crtAccepted bs
     · simpa only [ac, decide_true, ↓reduceIte, reconstruction ac] using bytes
     · simpa only [ac, decide_false, Bool.false_eq_true, ↓reduceIte] using bytes
-  have statusT : t.gpr .r0 = (if crtAccepted bs then 1 else 0) := by
+  obtain statusT : t.gpr .r0 = (if crtAccepted bs then 1 else 0) := by
     by_cases ac : crtAccepted bs <;> simpa [ac] using status
   rw [restU.sp] at frameV
   exact ⟨bytesT, statusT,
@@ -2181,8 +2181,8 @@ theorem crt_computed_written {s t : State} {g : CrtGeometry} {bs : Fin 7 → Lis
     (status : t.gpr .r0 = (if crtAccepted bs then 1 else 0)) :
     Spec.Rsa.written t.mem (State.addr g.output) g.length (t.gpr .r0)
       (Spec.Rsa.privateCrt (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6)) := by
-  have nLength : (bs 0).length = g.length := (h.buffers.source 0).length
-  have accepted : crtAccepted bs ↔ Spec.Rsa.os2ip (bs 1) < Spec.Rsa.os2ip (bs 0) ∧
+  obtain nLength : (bs 0).length = g.length := (h.buffers.source 0).length
+  obtain accepted : crtAccepted bs ↔ Spec.Rsa.os2ip (bs 1) < Spec.Rsa.os2ip (bs 0) ∧
       Spec.Rsa.os2ip (bs 2) * Spec.Rsa.os2ip (bs 3) = Spec.Rsa.os2ip (bs 0) ∧
       Spec.Rsa.os2ip (bs 6) < Spec.Rsa.os2ip (bs 2) := by
     simp only [crtAccepted, and_comm]
@@ -2273,10 +2273,10 @@ theorem crt_body_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h 
   refine WP.mono (modulusCheck_ok s h.buffers.lengthValid.1 h.buffers.lengthValid.2
     (h.buffers.source 0).fits (h.buffers.source 0).read h.source h.count) ?_
   rintro u ⟨flag, mem, rest⟩
-  have nb : Spec.Rsa.bytesAt s.mem (State.addr g.modulus) g.length = bs 0 := (h.buffers.source 0).bytes
+  obtain nb : Spec.Rsa.bytesAt s.mem (State.addr g.modulus) g.length = bs 0 := (h.buffers.source 0).bytes
   change u.z = Spec.Rsa.modulusValid (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (State.addr g.modulus) g.length)) g.length at flag
   rw [nb] at flag
-  have hu := h.of_mem mem rest ((rest.gpr .r0 (by decide)).trans h.ptr)
+  obtain hu := h.of_mem mem rest ((rest.gpr .r0 (by decide)).trans h.ptr)
     ((rest.gpr .r4 (by decide)).trans h.source) ((rest.gpr .r6 (by decide)).trans h.count)
   refine WP.ite (Spec.Rsa.modulusValid (Spec.Rsa.os2ip (bs 0)) g.length) (by change some u.z = _; rw [flag]) ?_ ?_
   · intro valid
@@ -2288,8 +2288,8 @@ theorem crt_body_ok (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte} (h 
   · intro invalid
     refine WP.mono (crt_fail_ok u hu) ?_
     rintro t ⟨status, bytes, frame, restT⟩
-    have failed : Spec.Rsa.privateCrt (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6) = none := by
-      have nLength : (bs 0).length = g.length := (h.buffers.source 0).length
+    obtain failed : Spec.Rsa.privateCrt (bs 0) (bs 1) (bs 2) (bs 3) (bs 4) (bs 5) (bs 6) = none := by
+      obtain nLength : (bs 0).length = g.length := (h.buffers.source 0).length
       simp only [Spec.Rsa.privateCrt, nLength, invalid, Bool.false_eq_true, ite_false]
     rw [failed]
     rw [mem] at frame
@@ -2336,11 +2336,11 @@ theorem crt_body_scoped_ct {g : CrtGeometry} {bs1 bs2 : Fin 7 → List Byte} (mo
   obtain ⟨trT, uT, runT, _⟩ := (crt_body_ok (kernel := kernel)) _ h.2.1.body st hst2
   obtain ⟨writeS, readS⟩ := crt_expanded_covers h.1.workspace h.1.body.buffers.storageFits
   obtain ⟨writeT, readT⟩ := crt_expanded_covers h.2.1.workspace h.2.1.body.buffers.storageFits
-  have wideS : Exec isa (CrtFn.bodyOf st.check st.prime kernel.code) s trS (uS.withRegions s.rd s.wr) := by
+  obtain wideS : Exec isa (CrtFn.bodyOf st.check st.prime kernel.code) s trS (uS.withRegions s.rd s.wr) := by
     simpa only [crtExpanded, State.withRegions_withRegions, State.withRegions_self] using VG.Arm.Exec.widen runS readS writeS
-  have wideT : Exec isa (CrtFn.bodyOf st.check st.prime kernel.code) t trT (uT.withRegions t.rd t.wr) := by
+  obtain wideT : Exec isa (CrtFn.bodyOf st.check st.prime kernel.code) t trT (uT.withRegions t.rd t.wr) := by
     simpa only [crtExpanded, State.withRegions_withRegions, State.withRegions_self] using VG.Arm.Exec.widen runT readT writeT
-  have trace := (crt_body_ct (kernel := kernel)) modulus st hst1 hst2 _ _ _ _ _ _ ⟨h.1.body, h.2.1.body, h.2.2⟩ runS runT
+  obtain trace := (crt_body_ct (kernel := kernel)) modulus st hst1 hst2 _ _ _ _ _ _ ⟨h.1.body, h.2.1.body, h.2.2⟩ runS runT
   exact ⟨(Exec.det e1 wideS).1.trans (trace.1.trans (Exec.det e2 wideT).1.symm), trivial⟩
 
 end VG.Proof.Bignum.Arm
@@ -2370,19 +2370,19 @@ theorem crt_entry_ok (s : State) {base : BitVec 32}
       Rest [.r0, .r4, .r6, .r12] s t := by
   unfold CrtFn.entry
   refine wp_stackAddr (by decide) fun u h => ?_
-  have ptr : u.gpr .r12 = s.sp := by simpa only [BitVec.add_zero] using h.gpr
+  obtain ptr : u.gpr .r12 = s.sp := by simpa only [BitVec.add_zero] using h.gpr
   refine wp_str (a := off (State.addr s.sp) 4) (by decide)
     (by rw [ptr]; exact addr_add (by omega_using [fit]))
     (by rw [h.wr]; exact ⟨_, stack, Offset.contains_base _ (by decide) (by decide)⟩) fun v j => ?_
-  have outside := writeW32_outside s.mem (State.addr s.sp) (d := 4) (s.gpr .r0) (by decide)
-  have memV : v.mem = s.mem.writeW (off (State.addr s.sp) 4) (s.gpr .r0) := by
+  obtain outside := writeW32_outside s.mem (State.addr s.sp) (d := 4) (s.gpr .r0) (by decide)
+  obtain memV : v.mem = s.mem.writeW (off (State.addr s.sp) 4) (s.gpr .r0) := by
     rw [j.mem, h.mem, h.other .r0 (by decide)]
-  have argV : v.mem.readW (off (State.addr s.sp) 104) 32 = base := by
+  obtain argV : v.mem.readW (off (State.addr s.sp) 104) 32 = base := by
     rw [memV, outside_read32 outside (by decide) (by decide)]; exact arg
   refine wp_loadStack (a := off (State.addr s.sp) 104) (by decide)
     (by rw [j.sp, h.sp]; exact addr_add (by omega_using [fit]))
     (by rw [j.rd, j.wr, h.rd, h.wr]; exact argRead) fun z l => ?_
-  have baseZ : z.gpr .r0 = base := l.gpr.trans argV
+  obtain baseZ : z.gpr .r0 = base := l.gpr.trans argV
   refine wp_str (a := State.addr s.sp) (by decide)
     (by rw [l.other .r12 (by decide), j.gpr, ptr]; simp)
     (by rw [l.wr, j.wr, h.wr]; exact ⟨_, stack, by simp [Region.Contains]⟩) fun a q => ?_
@@ -2429,9 +2429,9 @@ theorem crtExpanded_write {s : State} {base : BitVec 32} {w n : Nat} {a : Addr}
 theorem crt_entry_buffers {s t : State} {g : CrtGeometry} {bs : Fin 7 → List Byte} {rs : List Reg}
     (h : CrtFnInput g bs s) (frame : Frame [FrameStack.belowA s.sp 56] s.mem t.mem)
     (rest : Rest rs (pcPushed s) t) : CrtBuffers g bs (crtExpanded t g.base g.words) := by
-  have ws : Workspace t g.base g.size :=
+  obtain ws : Workspace t g.base g.size :=
     ⟨h.workspace.nowrap, by rw [rest.wr]; exact List.mem_cons_of_mem _ h.workspace.writable⟩
-  have width := crt_width_valid h.lengthValid
+  obtain width := crt_width_valid h.lengthValid
   have source (i : Fin 7) : PublicBytes (g.source i) (g.sourceLength i) (bs i) (crtExpanded t g.base g.words) := by
     refine ⟨(h.source i).fits, crtExpanded_read ?_, ?_⟩
     · rw [rest.rd, rest.wr]
@@ -2451,14 +2451,14 @@ theorem crt_entry_buffers {s t : State} {g : CrtGeometry} {bs : Fin 7 → List B
   · change Region.Disjoint _ ⟨State.addr t.sp, 56⟩
     rw [rest.sp]; exact h.stackOutput.symm
   · intro a ha
-    have r := h.r2 a ha
+    obtain r := h.r2 a ha
     have spT : t.sp = (pcPushed s).sp := rest.sp
-    have slotAddr : off (State.addr t.sp) 112 = off (State.addr s.sp) 56 := by
-      have e : off (State.addr (pcPushed s).sp) 112 = off (off (State.addr (pcPushed s).sp) 56) 56 :=
+    obtain slotAddr : off (State.addr t.sp) 112 = off (State.addr s.sp) 56 := by
+      obtain e : off (State.addr (pcPushed s).sp) 112 = off (off (State.addr (pcPushed s).sp) 56) 56 :=
         (Offset.add_add _ 56 56).symm
       rw [spT, e, public_push_argAddr h.stackFit]
-    have spNat : t.sp.toNat = s.sp.toNat - 56 := by rw [spT]; exact FrameStack.sub_toNat' h.stackFit
-    have below : FrameStack.belowA s.sp 56 = ⟨State.addr t.sp, 56⟩ := by rw [spT]; rfl
+    obtain spNat : t.sp.toNat = s.sp.toNat - 56 := by rw [spT]; exact FrameStack.sub_toNat' h.stackFit
+    obtain below : FrameStack.belowA s.sp 56 = ⟨State.addr t.sp, 56⟩ := by rw [spT]; rfl
     refine ⟨?_, ?_, ?_, ?_, ?_, r.fit, ?_, r.separate, ?_, r.output, ?_⟩
     · change t.sp.toNat + 116 ≤ _; rw [spNat]; have := r.slotFit; have := h.stackFit; omega_arith
     · change InRegions _ (off (State.addr t.sp) 112) 4
@@ -2515,7 +2515,7 @@ theorem crt_push_separate {s : State} {g : CrtGeometry} {bs : Fin 7 → List Byt
   · apply h.argsWorkspace a ?_ hb
     rw [← public_push_argAddr h.stackFit]
     change (a - (State.addr (pcPushed s).sp + BitVec.ofNat 64 56)).toNat + 1 ≤ 56
-    have inside := (Offset.lt_iff a (State.addr (pcPushed s).sp) (d := 56) (n := 56) (by decide)).mpr
+    obtain inside := (Offset.lt_iff a (State.addr (pcPushed s).sp) (d := 56) (n := 56) (by decide)).mpr
       ⟨by omega_using [low], by change (a - State.addr (pcPushed s).sp).toNat + 1 ≤ 112 at ha; omega_using [ha]⟩
     omega_using [inside]
 
@@ -2536,27 +2536,27 @@ theorem crt_entry_ready (s : State) {g : CrtGeometry} {bs : Fin 7 → List Byte}
       Spill.Saved t.mem (State.addr t.sp) s.gpr pcCalleeSaved ∧ Rest roundClobbers (pcPushed s) t := by
   have pushFrame := FrameStack.pushed_frameA
     (rs := [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r8, .r9, .r10, .r11, .r12, .lr]) h.stackFit
-  have spNat : (pcPushed s).sp.toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' h.stackFit
+  obtain spNat : (pcPushed s).sp.toNat = s.sp.toNat - 56 := FrameStack.sub_toNat' h.stackFit
   obtain ⟨argRead, argEq⟩ := crt_push_arguments h
   have argOffset (d : Nat) : VG.Proof.Mont.off (State.addr (pcPushed s).sp) (56 + d) = VG.Proof.Mont.off (State.addr s.sp) d :=
     public_push_argOffset h.stackFit d
-  have readBase := CallLay.inRegions_sub (off := 48) argRead (l := 4) (by decide) (by decide)
+  obtain readBase := CallLay.inRegions_sub (off := 48) argRead (l := 4) (by decide) (by decide)
   rw [show off (State.addr (pcPushed s).sp) 56 + BitVec.ofNat 64 48 = off (State.addr (pcPushed s).sp) 104
     from Offset.add_add _ 56 48] at readBase
-  have baseArg : (pcPushed s).mem.readW (off (State.addr (pcPushed s).sp) 104) 32 = g.base := by
+  obtain baseArg : (pcPushed s).mem.readW (off (State.addr (pcPushed s).sp) 104) 32 = g.base := by
     rw [public_push_argOffset h.stackFit 48, argEq.word (d := 48) (bits := 32) (by decide)]
     exact h.workspaceArg
   refine WP.mono (crt_entry_ok (pcPushed s) (by rw [spNat]; have := h.argFit; omega_using [this])
     (List.mem_cons_self) readBase baseArg) ?_
   rintro t ⟨ptr, source, count, mem, rest⟩
   obtain ⟨savedBase, savedOutput, outside, frameEntry⟩ := pcEntry_memory mem
-  have frameEntryFull : Frame [FrameStack.belowA s.sp 56] (pcPushed s).mem t.mem :=
+  obtain frameEntryFull : Frame [FrameStack.belowA s.sp 56] (pcPushed s).mem t.mem :=
     frameEntry.sub (by intro r hr; simp only [List.mem_singleton] at hr; subst r
                        exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩)
-  have frame := pushFrame.trans frameEntryFull
-  have savedAll := pc_push_saved s h.stackFit
-  have savedCallee := pcEntry_callee_saved (pc_push_callee_saved s h.stackFit) mem
-  have stack : CrtCallStack g (crtExpanded t g.base g.words) := by
+  obtain frame := pushFrame.trans frameEntryFull
+  obtain savedAll := pc_push_saved s h.stackFit
+  obtain savedCallee := pcEntry_callee_saved (pc_push_callee_saved s h.stackFit) mem
+  obtain stack : CrtCallStack g (crtExpanded t g.base g.words) := by
     refine ⟨?_, crtExpanded_read ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · change t.sp.toNat + 112 ≤ _
       rw [rest.sp, spNat]; have := h.argFit; omega_using [this]

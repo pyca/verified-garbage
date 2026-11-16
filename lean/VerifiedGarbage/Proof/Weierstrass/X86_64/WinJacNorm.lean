@@ -40,7 +40,7 @@ theorem slotMulJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))
       ModOkW K.M size C.p s'.mem base ∧ wordsVal s'.mem base o K.M.n < C.p ∧
       tmv C K.M.n base s' o = tmv C K.M.n base s a * tmv C K.M.n base s b ∧
       ∀ x ∈ jwSlots K, x ≠ o → wordsVal s'.mem base x K.M.n = wordsVal s.mem base x K.M.n := by
-  have I : Inv K.M base size C.p (· ∈ jwSlots K) [a, b] (tmv C K.M.n base s) s := by
+  obtain I : Inv K.M base size C.p (· ∈ jwSlots K) [a, b] (tmv C K.M.n base s) s := by
     refine ⟨hs, hM, fun x hx => ?_, fun x hx => ?_, fun _ _ => rfl⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl
@@ -50,7 +50,7 @@ theorem slotMulJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))
       rcases hx with rfl | rfl
       · exact hla
       · exact hlb
-  have hSo : o ∈ jwSlots K := ws_mem ho
+  obtain hSo : o ∈ jwSlots K := ws_mem ho
   refine WP.mono (opProg_ok hL.lay hp I (op := .mul o a b) (fun x hx => by
       simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl
@@ -58,7 +58,7 @@ theorem slotMulJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))
       · exact ha
       · exact hb)
     (fun x hx => hx)) fun s' ⟨k, I'⟩ => ?_
-  have U : Unch base [(o, 8 * K.M.n), (K.M.tmp, 8 * K.M.n)] s.mem s'.mem :=
+  obtain U : Unch base [(o, 8 * K.M.n), (K.M.tmp, 8 * K.M.n)] s.mem s'.mem :=
     fun x hx => k.mem x (hx _ (List.mem_cons_self ..)) (hx (K.M.tmp, 8 * K.M.n) (by simp))
   refine ⟨I'.scr, ⟨k.gpr, k.rd, k.wr⟩, U.mono fun w hw => ?_, I'.mod, I'.lt o (List.mem_cons_self ..),
     ?_, fun x hx hxo => U.wordsVal (fun w hw => ?_) (by have := hL.lay.le x hx; have := hs.nowrap; omega_arith)⟩
@@ -131,7 +131,7 @@ theorem pre_ws {m : Nat} (h1 : 1 ≤ m) (h16 : m ≤ 16) : K.pre m ∈ jwWs K :=
 theorem pre_inj {m m' : Nat} (h1 : 1 ≤ m) (h16 : m ≤ 16) (h1' : 1 ≤ m') (h16' : m' ≤ 16)
     (h : K.pre m = K.pre m') : m = m' := by
   refine Classical.byContradiction fun hne => ?_
-  have g : ∀ {m}, 1 ≤ m → m ≤ 15 → K.R.z ≠ K.pre m := fun h1 h15 => by
+  obtain g : ∀ {m}, 1 ≤ m → m ≤ 15 → K.R.z ≠ K.pre m := fun h1 h15 => by
     rw [pre_eq K h1 h15]
     exact hL.jg_ne (List.mem_append_right _ (RzD (K := K)).1) (by have := preG_lt (m := _) h15; omega_arith)
   rcases Nat.lt_or_ge m 16 with hm | hm <;> rcases Nat.lt_or_ge m' 16 with hm' | hm'
@@ -147,10 +147,10 @@ theorem pre_inj {m m' : Nat} (h1 : 1 ≤ m) (h16 : m ≤ 16) (h1' : 1 ≤ m') (h
 /-- `c_m`'s slot is not `D`'s or `E.x`. -/
 theorem pre_ne_DE {m : Nat} (h1 : 1 ≤ m) (h16 : m ≤ 16) :
     K.pre m ≠ K.D.x ∧ K.pre m ≠ K.D.y ∧ K.pre m ≠ K.D.z ∧ K.pre m ≠ K.E.x := by
-  have o := fun i j hi hj h => hL.oth_ne (K := K) (i := i) (j := j) hi hj h
+  obtain o := fun i j hi hj h => hL.oth_ne (K := K) (i := i) (j := j) hi hj h
   rcases Nat.lt_or_ge m 16 with hm | hm
   · rw [pre_eq K h1 (by omega_arith)]
-    have hg := preG_lt (m := m) (by omega_arith)
+    obtain hg := preG_lt (m := m) (by omega_arith)
     obtain ⟨-, dx, dy, dz⟩ := RzD (K := K)
     refine ⟨fun e => hL.jg_ne (List.mem_append_right _ dx) (by omega_arith) e.symm,
       fun e => hL.jg_ne (List.mem_append_right _ dy) (by omega_arith) e.symm,
@@ -170,7 +170,7 @@ theorem pre_ne_ent {m : Nat} (h1 : 1 ≤ m) (h16 : m ≤ 16) {m' : Nat} (h1' : 1
     refine ⟨jg_inj hL ?_, jg_inj hL ?_, fun h2 => jg_inj hL ?_⟩ <;> unfold preG <;> split <;> omega_arith
   · obtain rfl : m = 16 := by omega_arith
     rw [pre_16, ent_eq, ent_eq, ent_eq]
-    have r := List.mem_append_right (jwRo K) (RzD (K := K)).1
+    obtain r := List.mem_append_right (jwRo K) (RzD (K := K)).1
     exact ⟨hL.jg_ne r (by omega_arith), hL.jg_ne r (by omega_arith), fun _ => hL.jg_ne r (by omega_arith)⟩
 
 /-- `D`'s slots and `E.x` are not entries' slots. -/
@@ -201,7 +201,7 @@ theorem DE_ws : K.D.x ∈ jwWs K ∧ K.D.y ∈ jwWs K ∧ K.D.z ∈ jwWs K ∧ K
 
 theorem DEJ_ne : K.D.x ≠ K.D.y ∧ K.D.x ≠ K.D.z ∧ K.D.y ≠ K.D.z ∧ K.D.x ≠ K.E.x ∧ K.D.y ≠ K.E.x ∧
     K.D.z ≠ K.E.x := by
-  have o := fun i j hi hj h => hL.oth_ne (K := K) (i := i) (j := j) hi hj h
+  obtain o := fun i j hi hj h => hL.oth_ne (K := K) (i := i) (j := j) hi hj h
   obtain ⟨-, dx, dy, dz⟩ := RzD (K := K)
   rw [hL.Tx]
   exact ⟨o 3 4 (by decide) (by decide) (by decide), o 3 5 (by decide) (by decide) (by decide),
@@ -235,19 +235,19 @@ theorem prodJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {
     (hT : JTblOk K C base P 16 s₀) :
     WP isa (fprogB K.M K.prodOps).inline s₀ (PreInvJ K C base size s₀ 15) := by
   rw [JacWinCfg.prodOps, map_eq_flatMapJ]
-  have I₀ : PreInvJ K C base size s₀ 0 s₀ :=
+  obtain I₀ : PreInvJ K C base size s₀ 0 s₀ :=
     ⟨hs, ⟨fun _ _ => rfl, rfl, rfl⟩, Unch.refl _ _ _, hM, fun j h2 h1 => absurd h2 (by omega_arith),
       fun j h2 h1 => absurd h2 (by omega_arith), fun _ _ _ => rfl⟩
   refine fprogB_range_ok (N := 15) (fun i hi t I => ?_) 15 (Nat.le_refl _) s₀ I₀
   rw [fprogB_single]
   -- `Z_{i+2}` is as at `s₀`.
-  have zS := ent_slots (K := K) (m := i + 2) (c := 2) (by omega_arith) (by omega_arith) (by decide)
-  have ez : wordsVal t.mem base (K.ent (i + 2) 2) K.M.n = wordsVal s₀.mem base (K.ent (i + 2) 2) K.M.n :=
+  obtain zS := ent_slots (K := K) (m := i + 2) (c := 2) (by omega_arith) (by omega_arith) (by decide)
+  obtain ez : wordsVal t.mem base (K.ent (i + 2) 2) K.M.n = wordsVal s₀.mem base (K.ent (i + 2) 2) K.M.n :=
     I.same _ zS fun j h2 hj e => (pre_ne_ent hL (m := j) (by omega_arith) (by omega_arith) (m' := i + 2) (by omega_arith)
       (by omega_arith)).2.2 h2 e.symm
-  have ltb : wordsVal t.mem base (K.ent (i + 2) 2) K.M.n < C.p := by
+  obtain ltb : wordsVal t.mem base (K.ent (i + 2) 2) K.M.n < C.p := by
     rw [ez]; exact (hT (i + 2) (by omega_arith) (by omega_arith)).lt 2 (by decide)
-  have va : wordsVal t.mem base (K.pre (i + 1)) K.M.n < C.p ∧
+  obtain va : wordsVal t.mem base (K.pre (i + 1)) K.M.n < C.p ∧
       tmv C K.M.n base t (K.pre (i + 1)) = cprod (tzJ K C base s₀) (i + 1) := by
     rcases Nat.eq_zero_or_pos i with rfl | hi0
     · have e : wordsVal t.mem base (K.pre 1) K.M.n = wordsVal s₀.mem base (K.ent 1 2) K.M.n :=
@@ -259,7 +259,7 @@ theorem prodJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) {
   refine WP.mono (slotMulJ_ok hL hp I.scr I.mod (pre_ws (K := K) (m := i + 2) (by omega_arith) (by omega_arith))
     (pre_slots (K := K) (m := i + 1) (by omega_arith) (by omega_arith)) zS va.1 ltb)
     fun u ⟨su, ku, Uu, Mu, lu, vu, eu⟩ => ?_
-  have ne : ∀ j, 2 ≤ j → j ≤ i + 1 → K.pre j ≠ K.pre (i + 2) := fun j h2 hj h =>
+  obtain ne : ∀ j, 2 ≤ j → j ≤ i + 1 → K.pre j ≠ K.pre (i + 2) := fun j h2 hj h =>
     absurd (pre_inj hL (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith) h) (by omega_arith)
   refine ⟨su, I.keep.trans ku, (I.unch.trans Uu).mono jwW_append, Mu, fun j h2 hj => ?_,
     fun j h2 hj => ?_, fun x hx hne => ?_⟩
@@ -355,43 +355,43 @@ theorem backJ_step (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
     (I : BackInvJ K C base size u₀ X Y Z i t) :
     WP isa (fprogB K.M (K.backOps (16 - i))).inline t (BackInvJ K C base size u₀ X Y Z (i + 1)) := by
   generalize hm : 16 - i = m
-  have hm2 : 2 ≤ m := by omega_arith
-  have hm16 : m ≤ 16 := by omega_arith
-  have hmi : 16 - (i + 1) = m - 1 := by omega_arith
-  have hm1 : 1 ≤ m := by omega_arith
-  have hm1' : 1 ≤ m - 1 := by omega_arith
-  have hm15 : m - 1 ≤ 16 := by omega_arith
-  have hm15' : m - 1 ≤ 15 := by omega_arith
+  obtain hm2 : 2 ≤ m := by omega_arith
+  obtain hm16 : m ≤ 16 := by omega_arith
+  obtain hmi : 16 - (i + 1) = m - 1 := by omega_arith
+  obtain hm1 : 1 ≤ m := by omega_arith
+  obtain hm1' : 1 ≤ m - 1 := by omega_arith
+  obtain hm15 : m - 1 ≤ 16 := by omega_arith
+  obtain hm15' : m - 1 ≤ 15 := by omega_arith
   obtain ⟨dxy, dxz, dyz, dxe, dye, dze⟩ := DEJ_ne hL
   obtain ⟨Dw, Dyw, Dzw, Ew⟩ := DE_ws hL
-  have Ds := ws_mem Dw; have Dys := ws_mem Dyw; have Dzs := ws_mem Dzw; have Es := ws_mem Ew
-  have xw := ent_ws (K := K) (m := m) (c := 0) hm1 hm16 (by decide)
-  have yw := ent_ws (K := K) (m := m) (c := 1) hm1 hm16 (by decide)
-  have zS := ent_slots (K := K) (m := m) (c := 2) hm1 hm16 (by decide)
-  have dm := fun c (hc : c < 5) => DE_ent hL (m := m) (c := c) hm1 hm16 hc
+  obtain Ds := ws_mem Dw; have Dys := ws_mem Dyw; have Dzs := ws_mem Dzw; have Es := ws_mem Ew
+  obtain xw := ent_ws (K := K) (m := m) (c := 0) hm1 hm16 (by decide)
+  obtain yw := ent_ws (K := K) (m := m) (c := 1) hm1 hm16 (by decide)
+  obtain zS := ent_slots (K := K) (m := m) (c := 2) hm1 hm16 (by decide)
+  obtain dm := fun c (hc : c < 5) => DE_ent hL (m := m) (c := c) hm1 hm16 hc
   -- What is not done at `t`.
-  have nd : ∀ {x}, x ∈ jwSlots K → x ∉ backW K → (∀ j, m < j → j ≤ 16 →
+  obtain nd : ∀ {x}, x ∈ jwSlots K → x ∉ backW K → (∀ j, m < j → j ≤ 16 →
       x ≠ K.ent j 0 ∧ x ≠ K.ent j 1) → wordsVal t.mem base x K.M.n = wordsVal u₀.mem base x K.M.n :=
     fun hx h1 h3 => I.same _ hx h1 fun j hj hj' => h3 j (by omega_using [hj, hm]) hj'
-  have pc := pre_ne_DE hL (m := m - 1) hm1' hm15
-  have cS := pre_slots (K := K) (m := m - 1) hm1' hm15
-  have ec : wordsVal t.mem base (K.pre (m - 1)) K.M.n = wordsVal u₀.mem base (K.pre (m - 1)) K.M.n :=
+  obtain pc := pre_ne_DE hL (m := m - 1) hm1' hm15
+  obtain cS := pre_slots (K := K) (m := m - 1) hm1' hm15
+  obtain ec : wordsVal t.mem base (K.pre (m - 1)) K.M.n = wordsVal u₀.mem base (K.pre (m - 1)) K.M.n :=
     nd cS (not_backW pc.1 pc.2.1 pc.2.2.1 pc.2.2.2) fun j hj hj' =>
       ⟨(pre_ne_ent hL hm1' hm15 (m' := j) (by omega_using [hj, hm1]) hj').1,
         (pre_ne_ent hL hm1' hm15 (m' := j) (by omega_using [hj, hm1]) hj').2.1⟩
-  have notB : ∀ c < 5, K.ent m c ∉ backW K := fun c hc =>
+  obtain notB : ∀ c < 5, K.ent m c ∉ backW K := fun c hc =>
     not_backW (dm c hc).1.symm (dm c hc).2.1.symm (dm c hc).2.2.1.symm (dm c hc).2.2.2.symm
-  have enem : ∀ c < 5, ∀ j, m < j → j ≤ 16 → K.ent m c ≠ K.ent j 0 ∧ K.ent m c ≠ K.ent j 1 :=
+  obtain enem : ∀ c < 5, ∀ j, m < j → j ≤ 16 → K.ent m c ≠ K.ent j 0 ∧ K.ent m c ≠ K.ent j 1 :=
     fun c hc j hj _ => ⟨ent_ne hL hm1 (by omega_using [hj, hm1]) hc (by decide) (Or.inl (by omega_using [hj])),
       ent_ne hL hm1 (by omega_using [hj, hm1]) hc (by decide) (Or.inl (by omega_using [hj]))⟩
-  have ez : wordsVal t.mem base (K.ent m 2) K.M.n = wordsVal u₀.mem base (K.ent m 2) K.M.n :=
+  obtain ez : wordsVal t.mem base (K.ent m 2) K.M.n = wordsVal u₀.mem base (K.ent m 2) K.M.n :=
     nd zS (notB 2 (by decide)) (enem 2 (by decide))
-  have ex0 : wordsVal t.mem base (K.ent m 0) K.M.n = wordsVal u₀.mem base (K.ent m 0) K.M.n :=
+  obtain ex0 : wordsVal t.mem base (K.ent m 0) K.M.n = wordsVal u₀.mem base (K.ent m 0) K.M.n :=
     nd (ws_mem xw) (notB 0 (by decide)) (enem 0 (by decide))
-  have ey0 : wordsVal t.mem base (K.ent m 1) K.M.n = wordsVal u₀.mem base (K.ent m 1) K.M.n :=
+  obtain ey0 : wordsVal t.mem base (K.ent m 1) K.M.n = wordsVal u₀.mem base (K.ent m 1) K.M.n :=
     nd (ws_mem yw) (notB 1 (by decide)) (enem 1 (by decide))
-  have hcm := cprod_succ Z hm2
-  have nz := cprod_ne_zero16 hC B.nz (m - 1) hm1' hm15
+  obtain hcm := cprod_succ Z hm2
+  obtain nz := cprod_ne_zero16 hC B.nz (m - 1) hm1' hm15
   obtain ⟨tr1, tr2⟩ := trick_step hC nz (B.nz m hm1 hm16)
   rw [← hcm] at tr1 tr2
   rw [JacWinCfg.backOps, fprogB_cons_iff]
@@ -399,18 +399,18 @@ theorem backJ_step (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
   refine WP.mono (slotMulJ_ok hL hp I.scr I.mod Dw Es cS I.ex_lt
     (by rw [ec]; exact (B.c _ hm1' hm15').1)) fun t₁ ⟨s₁, k₁, U₁, M₁, l₁, v₁, e₁⟩ => ?_
   rw [fprogB_cons_iff]
-  have ex₁ := e₁ _ Es dxe.symm
+  obtain ex₁ := e₁ _ Es dxe.symm
   -- `E.x = E.x Z_m`.
   refine WP.mono (slotMulJ_ok hL hp s₁ M₁ Ew Es zS (by rw [ex₁]; exact I.ex_lt)
     (by rw [e₁ _ zS (dm 2 (by decide)).1.symm, ez]; exact (B.z m hm1 hm16).1))
     fun t₂ ⟨s₂, k₂, U₂, M₂, l₂, v₂, e₂⟩ => ?_
   rw [fprogB_cons_iff]
-  have dx₂ := e₂ _ Ds dxe
+  obtain dx₂ := e₂ _ Ds dxe
   -- `D.y = D.x²`.
   refine WP.mono (slotMulJ_ok hL hp s₂ M₂ Dyw Ds Ds (by rw [dx₂]; exact l₁) (by rw [dx₂]; exact l₁))
     fun t₃ ⟨s₃, k₃, U₃, M₃, l₃, v₃, e₃⟩ => ?_
   rw [fprogB_cons_iff]
-  have xx₃ : wordsVal t₃.mem base (K.ent m 0) K.M.n = wordsVal u₀.mem base (K.ent m 0) K.M.n := by
+  obtain xx₃ : wordsVal t₃.mem base (K.ent m 0) K.M.n = wordsVal u₀.mem base (K.ent m 0) K.M.n := by
     rw [e₃ _ (ws_mem xw) (dm 0 (by decide)).2.1.symm, e₂ _ (ws_mem xw) (dm 0 (by decide)).2.2.2.symm,
       e₁ _ (ws_mem xw) (dm 0 (by decide)).1.symm, ex0]
   -- `X_m = X_m D.y`.
@@ -418,14 +418,14 @@ theorem backJ_step (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
     (by rw [xx₃]; exact (B.x m hm1 hm16).1) l₃)
     fun t₄ ⟨s₄, k₄, U₄, M₄, l₄, v₄, e₄⟩ => ?_
   rw [fprogB_cons_iff]
-  have dy₄ := e₄ _ Dys (dm 0 (by decide)).2.1
-  have dx₄ : wordsVal t₄.mem base K.D.x K.M.n = wordsVal t₂.mem base K.D.x K.M.n := by
+  obtain dy₄ := e₄ _ Dys (dm 0 (by decide)).2.1
+  obtain dx₄ : wordsVal t₄.mem base K.D.x K.M.n = wordsVal t₂.mem base K.D.x K.M.n := by
     rw [e₄ _ Ds (dm 0 (by decide)).1, e₃ _ Ds dxy]
   -- `D.z = D.y D.x`.
   refine WP.mono (slotMulJ_ok hL hp s₄ M₄ Dzw Dys Ds (by rw [dy₄]; exact l₃) (by rw [dx₄, dx₂]; exact l₁))
     fun t₅ ⟨s₅, k₅, U₅, M₅, l₅, v₅, e₅⟩ => ?_
   rw [fprogB_single]
-  have yy₅ : wordsVal t₅.mem base (K.ent m 1) K.M.n = wordsVal u₀.mem base (K.ent m 1) K.M.n := by
+  obtain yy₅ : wordsVal t₅.mem base (K.ent m 1) K.M.n = wordsVal u₀.mem base (K.ent m 1) K.M.n := by
     rw [e₅ _ (ws_mem yw) (dm 1 (by decide)).2.2.1.symm,
       e₄ _ (ws_mem yw) (ent_ne hL hm1 hm1 (by decide) (by decide) (Or.inr (by decide))),
       e₃ _ (ws_mem yw) (dm 1 (by decide)).2.1.symm, e₂ _ (ws_mem yw) (dm 1 (by decide)).2.2.2.symm,
@@ -434,22 +434,22 @@ theorem backJ_step (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
   refine WP.mono (slotMulJ_ok hL hp s₅ M₅ yw (ws_mem yw) Dzs
     (by rw [yy₅]; exact (B.y m hm1 hm16).1) l₅)
     fun t₆ ⟨s₆, k₆, U₆, M₆, l₆, v₆, e₆⟩ => ?_
-  have k6 := fun {x} (hx : x ∈ jwSlots K) (hb : x ∉ backW K) (h0 : x ≠ K.ent m 0) (h1 : x ≠ K.ent m 1) =>
+  obtain k6 := fun {x} (hx : x ∈ jwSlots K) (hb : x ∉ backW K) (h0 : x ≠ K.ent m 0) (h1 : x ≠ K.ent m 1) =>
     keep6 (t := t) (m := m) e₁ e₂ e₃ e₄ e₅ e₆ hx hb h0 h1
-  have vD : tmv C K.M.n base t₁ K.D.x = Z m ^ (C.p - 2) := by
+  obtain vD : tmv C K.M.n base t₁ K.D.x = Z m ^ (C.p - 2) := by
     rw [v₁, I.ex, hm, tmv_congr ec, (B.c _ hm1' hm15').2]; exact tr1
-  have vE : tmv C K.M.n base t₂ K.E.x = cprod Z (m - 1) ^ (C.p - 2) := by
+  obtain vE : tmv C K.M.n base t₂ K.E.x = cprod Z (m - 1) ^ (C.p - 2) := by
     rw [v₂, tmv_congr ex₁, I.ex, hm, tmv_congr (e₁ _ zS (dm 2 (by decide)).1.symm), tmv_congr ez,
       (B.z m hm1 hm16).2]; exact tr2
-  have ex₆ : wordsVal t₆.mem base K.E.x K.M.n = wordsVal t₂.mem base K.E.x K.M.n := by
+  obtain ex₆ : wordsVal t₆.mem base K.E.x K.M.n = wordsVal t₂.mem base K.E.x K.M.n := by
     rw [e₆ _ Es (dm 1 (by decide)).2.2.2, e₅ _ Es dze.symm, e₄ _ Es (dm 0 (by decide)).2.2.2,
       e₃ _ Es dye.symm]
-  have xx₆ : wordsVal t₆.mem base (K.ent m 0) K.M.n = wordsVal t₄.mem base (K.ent m 0) K.M.n := by
+  obtain xx₆ : wordsVal t₆.mem base (K.ent m 0) K.M.n = wordsVal t₄.mem base (K.ent m 0) K.M.n := by
     rw [e₆ _ (ws_mem xw) (ent_ne hL hm1 hm1 (by decide) (by decide) (Or.inr (by decide))),
       e₅ _ (ws_mem xw) (dm 0 (by decide)).2.2.1.symm]
-  have vDy : tmv C K.M.n base t₃ K.D.y = Z m ^ (C.p - 2) * Z m ^ (C.p - 2) := by
+  obtain vDy : tmv C K.M.n base t₃ K.D.y = Z m ^ (C.p - 2) * Z m ^ (C.p - 2) := by
     rw [v₃, tmv_congr dx₂, vD]
-  have vDz : tmv C K.M.n base t₅ K.D.z = Z m ^ (C.p - 2) * Z m ^ (C.p - 2) * Z m ^ (C.p - 2) := by
+  obtain vDz : tmv C K.M.n base t₅ K.D.z = Z m ^ (C.p - 2) * Z m ^ (C.p - 2) * Z m ^ (C.p - 2) := by
     rw [v₅, tmv_congr dy₄, vDy, tmv_congr dx₄, tmv_congr dx₂, vD]
   refine ⟨s₆, I.keep.trans (k₁.trans (k₂.trans (k₃.trans (k₄.trans (k₅.trans k₆))))),
     (I.unch.trans (U₁.trans (U₂.trans (U₃.trans (U₄.trans (U₅.trans U₆)))))).mono fun w hw => ?_, M₆,
@@ -458,7 +458,7 @@ theorem backJ_step (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n)))
     rcases hw with hw | hw | hw | hw | hw | hw | hw <;> exact hw
   · rcases Nat.lt_or_ge m j with hj' | hj'
     · have tj := fun c (hc : c < 5) => DE_ent hL (m := j) (c := c) (by omega_using [hj']) hj16 hc
-      have nb := fun c (hc : c < 5) =>
+      obtain nb := fun c (hc : c < 5) =>
         not_backW (tj c hc).1.symm (tj c hc).2.1.symm (tj c hc).2.2.1.symm (tj c hc).2.2.2.symm
       exact (I.done j (by omega_using [hj', hm]) hj16).congr
         (k6 (ent_slots (K := K) (by omega_using [hj', hm1]) hj16 (by decide)) (nb 0 (by decide))
@@ -485,28 +485,28 @@ theorem backJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
       KeepRegs (clob K.M.n) u₀ t ∧ Unch base (jwW K) u₀.mem t.mem ∧ ModOkW K.M size C.p t.mem base ∧
       ∀ j, 1 ≤ j → j ≤ 16 → DoneJ K C base X Y Z t j := by
   rw [JacWinCfg.normOps, fprogB_append_iff]
-  have I₀ : BackInvJ K C base size u₀ X Y Z 0 u₀ :=
+  obtain I₀ : BackInvJ K C base size u₀ X Y Z 0 u₀ :=
     ⟨hs, ⟨fun _ _ => rfl, rfl, rfl⟩, Unch.refl _ _ _, hM, hel, hev, fun j hj hj' => absurd hj' (by omega_arith),
       fun _ _ _ _ => rfl⟩
   refine WP.mono (fprogB_range_ok (N := 15) (fun i hi t I => backJ_step hL hp hC B hi I) 15 (Nat.le_refl _) u₀ I₀)
     fun t I => ?_
   obtain ⟨dxy, dxz, dyz, dxe, dye, dze⟩ := DEJ_ne hL
   obtain ⟨Dw, Dyw, Dzw, Ew⟩ := DE_ws hL
-  have Ds := ws_mem Dw; have Dys := ws_mem Dyw; have Dzs := ws_mem Dzw; have Es := ws_mem Ew
-  have xw := ent_ws (K := K) (m := 1) (c := 0) (Nat.le_refl _) (by omega_arith) (by decide)
-  have yw := ent_ws (K := K) (m := 1) (c := 1) (Nat.le_refl _) (by omega_arith) (by decide)
-  have d1 := fun c (hc : c < 5) => DE_ent hL (m := 1) (c := c) (Nat.le_refl _) (by omega_arith) hc
-  have nb := fun c (hc : c < 5) =>
+  obtain Ds := ws_mem Dw; have Dys := ws_mem Dyw; have Dzs := ws_mem Dzw; have Es := ws_mem Ew
+  obtain xw := ent_ws (K := K) (m := 1) (c := 0) (Nat.le_refl _) (by omega_arith) (by decide)
+  obtain yw := ent_ws (K := K) (m := 1) (c := 1) (Nat.le_refl _) (by omega_arith) (by decide)
+  obtain d1 := fun c (hc : c < 5) => DE_ent hL (m := 1) (c := c) (Nat.le_refl _) (by omega_arith) hc
+  obtain nb := fun c (hc : c < 5) =>
     not_backW (d1 c hc).1.symm (d1 c hc).2.1.symm (d1 c hc).2.2.1.symm (d1 c hc).2.2.2.symm
-  have ex1 : wordsVal t.mem base (K.ent 1 0) K.M.n = wordsVal u₀.mem base (K.ent 1 0) K.M.n :=
+  obtain ex1 : wordsVal t.mem base (K.ent 1 0) K.M.n = wordsVal u₀.mem base (K.ent 1 0) K.M.n :=
     I.same _ (ws_mem xw) (nb 0 (by decide)) fun j hj _ =>
       ⟨ent_ne hL (by omega_arith) (by omega_arith) (by decide) (by decide) (Or.inl (by omega_arith)),
         ent_ne hL (by omega_arith) (by omega_arith) (by decide) (by decide) (Or.inl (by omega_arith))⟩
-  have ey1 : wordsVal t.mem base (K.ent 1 1) K.M.n = wordsVal u₀.mem base (K.ent 1 1) K.M.n :=
+  obtain ey1 : wordsVal t.mem base (K.ent 1 1) K.M.n = wordsVal u₀.mem base (K.ent 1 1) K.M.n :=
     I.same _ (ws_mem yw) (nb 1 (by decide)) fun j hj _ =>
       ⟨ent_ne hL (by omega_arith) (by omega_arith) (by decide) (by decide) (Or.inl (by omega_arith)),
         ent_ne hL (by omega_arith) (by omega_arith) (by decide) (by decide) (Or.inl (by omega_arith))⟩
-  have hex : tmv C K.M.n base t K.E.x = Z 1 ^ (C.p - 2) := by rw [I.ex]; rfl
+  obtain hex : tmv C K.M.n base t K.E.x = Z 1 ^ (C.p - 2) := by rw [I.ex]; rfl
   rw [fprogB_cons_iff]
   -- `D.y = E.x²`.
   refine WP.mono (slotMulJ_ok hL hp I.scr I.mod Dyw Es Es I.ex_lt I.ex_lt)
@@ -517,14 +517,14 @@ theorem backJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
     (by rw [e₁ _ (ws_mem xw) (d1 0 (by decide)).2.1.symm, ex1]; exact (B.x 1 (Nat.le_refl _) (by omega_arith)).1) l₁)
     fun t₂ ⟨s₂, k₂, U₂, M₂, l₂, v₂, e₂⟩ => ?_
   rw [fprogB_cons_iff]
-  have dy₂ := e₂ _ Dys (d1 0 (by decide)).2.1
-  have ee₂ : wordsVal t₂.mem base K.E.x K.M.n = wordsVal t.mem base K.E.x K.M.n := by
+  obtain dy₂ := e₂ _ Dys (d1 0 (by decide)).2.1
+  obtain ee₂ : wordsVal t₂.mem base K.E.x K.M.n = wordsVal t.mem base K.E.x K.M.n := by
     rw [e₂ _ Es (d1 0 (by decide)).2.2.2, e₁ _ Es dye.symm]
   -- `D.z = D.y E.x`.
   refine WP.mono (slotMulJ_ok hL hp s₂ M₂ Dzw Dys Es (by rw [dy₂]; exact l₁) (by rw [ee₂]; exact I.ex_lt))
     fun t₃ ⟨s₃, k₃, U₃, M₃, l₃, v₃, e₃⟩ => ?_
   rw [fprogB_single]
-  have yy₃ : wordsVal t₃.mem base (K.ent 1 1) K.M.n = wordsVal t.mem base (K.ent 1 1) K.M.n := by
+  obtain yy₃ : wordsVal t₃.mem base (K.ent 1 1) K.M.n = wordsVal t.mem base (K.ent 1 1) K.M.n := by
     rw [e₃ _ (ws_mem yw) (d1 1 (by decide)).2.2.1.symm,
       e₂ _ (ws_mem yw) (ent_ne hL (Nat.le_refl _) (Nat.le_refl _) (by decide) (by decide) (Or.inr (by decide))),
       e₁ _ (ws_mem yw) (d1 1 (by decide)).2.1.symm]
@@ -532,7 +532,7 @@ theorem backJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
   refine WP.mono (slotMulJ_ok hL hp s₃ M₃ yw (ws_mem yw) Dzs
     (by rw [yy₃, ey1]; exact (B.y 1 (Nat.le_refl _) (by omega_arith)).1) l₃)
     fun t₄ ⟨s₄, k₄, U₄, M₄, l₄, v₄, e₄⟩ => ?_
-  have k4 : ∀ x ∈ jwSlots K, x ∉ backW K → x ≠ K.ent 1 0 → x ≠ K.ent 1 1 →
+  obtain k4 : ∀ x ∈ jwSlots K, x ∉ backW K → x ≠ K.ent 1 0 → x ≠ K.ent 1 1 →
       wordsVal t₄.mem base x K.M.n = wordsVal t.mem base x K.M.n := fun x hx hb h0 h1 => by
     simp only [backW, List.mem_cons, List.not_mem_nil, or_false, not_or] at hb
     rw [e₄ x hx h1, e₃ x hx hb.2.2.1, e₂ x hx h0, e₁ x hx hb.2.1]
@@ -541,7 +541,7 @@ theorem backJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
   · simp only [List.mem_append] at hw; rcases hw with hw | hw | hw | hw | hw <;> exact hw
   · rcases Nat.lt_or_ge 1 j with hj' | hj'
     · have tj := fun c (hc : c < 5) => DE_ent hL (m := j) (c := c) (by omega_arith) hj16 hc
-      have nbj := fun c (hc : c < 5) =>
+      obtain nbj := fun c (hc : c < 5) =>
         not_backW (tj c hc).1.symm (tj c hc).2.1.symm (tj c hc).2.2.1.symm (tj c hc).2.2.2.symm
       exact (I.done j (by omega_arith) hj16).congr
         (k4 _ (ent_slots (K := K) (by omega_arith) hj16 (by decide)) (nbj 0 (by decide))
@@ -551,7 +551,7 @@ theorem backJ_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
           (ent_ne hL (by omega_arith) (by omega_arith) (by decide) (by decide) (Or.inl (by omega_arith)))
           (ent_ne hL (by omega_arith) (by omega_arith) (by decide) (by decide) (Or.inl (by omega_arith))))
     · obtain rfl : j = 1 := by omega_arith
-      have xx₄ : wordsVal t₄.mem base (K.ent 1 0) K.M.n = wordsVal t₂.mem base (K.ent 1 0) K.M.n := by
+      obtain xx₄ : wordsVal t₄.mem base (K.ent 1 0) K.M.n = wordsVal t₂.mem base (K.ent 1 0) K.M.n := by
         rw [e₄ _ (ws_mem xw) (ent_ne hL (Nat.le_refl _) (Nat.le_refl _) (by decide) (by decide)
           (Or.inr (by decide))), e₃ _ (ws_mem xw) (d1 0 (by decide)).2.2.1.symm]
       refine ⟨by rw [xx₄]; exact l₂, l₄, ?_, ?_⟩
@@ -577,12 +577,12 @@ theorem onesJ_ok (hL : JacWinLay K size) {base : Addr} {x : Nat} (hx : x < 2 ^ (
         wordsVal t.mem base y K.M.n = wordsVal s.mem base y K.M.n)
     (fun i hi t ⟨st, kt, Ut, vt, et⟩ => ?_) i hi s
     ⟨hs, ⟨fun _ _ => rfl, rfl, rfl⟩, Unch.refl _ _ _, fun j h0 => absurd h0 (by omega_arith), fun _ _ _ => rfl⟩
-  have zs := ent_slots (K := K) (m := i / 3 + 1) (c := 2 + i % 3) (by omega_arith) (by omega_arith) (by omega_arith)
-  have zw := ent_ws (K := K) (m := i / 3 + 1) (c := 2 + i % 3) (by omega_arith) (by omega_arith) (by omega_arith)
+  obtain zs := ent_slots (K := K) (m := i / 3 + 1) (c := 2 + i % 3) (by omega_arith) (by omega_arith) (by omega_arith)
+  obtain zw := ent_ws (K := K) (m := i / 3 + 1) (c := 2 + i % 3) (by omega_arith) (by omega_arith) (by omega_arith)
   refine WP.mono (setConst_ok st (n := K.M.n) (o := K.ent (i / 3 + 1) (2 + i % 3)) (hL.lay.le _ zs) hx)
     fun u ⟨eu, ku, Ou⟩ => ?_
   have hn := st.nowrap
-  have same : ∀ y ∈ jwSlots K, y ≠ K.ent (i / 3 + 1) (2 + i % 3) →
+  obtain same : ∀ y ∈ jwSlots K, y ≠ K.ent (i / 3 + 1) (2 + i % 3) →
       wordsVal u.mem base y K.M.n = wordsVal t.mem base y K.M.n := fun y hy hne =>
     Ou.unch.wordsVal (fun w hw => by
       rw [List.mem_singleton.mp hw]; exact hL.lay.apart y _ hy zs hne) (by have := hL.lay.le y hy; omega_arith)
@@ -656,25 +656,25 @@ theorem normA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
   refine WP.seq (WP.mono (prodJ_ok hL hp hs hM hT) fun t I => ?_)
   refine WP.seq (WP.mono (hI.ok t I.scr I.mod (I.lt 16 (by decide) (by decide)))
     fun u₀ ⟨Ku, Uu, lu, vu⟩ => ?_)
-  have hsu := I.scr.of_keepRegs Ku (rdi_not_invClob' _)
-  have Mu := I.mod.unch Uu (hI.mo hL I.mod) hn
+  obtain hsu := I.scr.of_keepRegs Ku (rdi_not_invClob' _)
+  obtain Mu := I.mod.unch Uu (hI.mo hL I.mod) hn
   -- The table and the products at `u₀`.
-  have tsame : ∀ {m c}, 1 ≤ m → m ≤ 16 → c < 3 → wordsVal u₀.mem base (K.ent m c) K.M.n =
+  obtain tsame : ∀ {m c}, 1 ≤ m → m ≤ 16 → c < 3 → wordsVal u₀.mem base (K.ent m c) K.M.n =
       wordsVal s.mem base (K.ent m c) K.M.n := @fun m c h1 h16 hc => by
-    have ys := ent_slots (K := K) h1 h16 (show c < 5 by omega_arith)
+    obtain ys := ent_slots (K := K) h1 h16 (show c < 5 by omega_arith)
     rw [hI.same hL Uu hn ys (DE_ent hL h1 h16 (show c < 5 by omega_arith)).2.2.2.symm]
     refine I.same _ ys fun j h2 hj e => ?_
-    have pe := pre_ne_ent hL (m := j) (by omega_arith) (by omega_arith) (m' := m) h1 h16
+    obtain pe := pre_ne_ent hL (m := j) (by omega_arith) (by omega_arith) (m' := m) h1 h16
     rcases (show c = 0 ∨ c = 1 ∨ c = 2 by omega_arith) with rfl | rfl | rfl
     · exact pe.1 e.symm
     · exact pe.2.1 e.symm
     · exact pe.2.2 h2 e.symm
-  have B : BackStartJ K C base u₀ (fun j => tmv C K.M.n base s (K.ent j 0))
+  obtain B : BackStartJ K C base u₀ (fun j => tmv C K.M.n base s (K.ent j 0))
       (fun j => tmv C K.M.n base s (K.ent j 1)) (tzJ K C base s) := by
     refine ⟨fun j h1 h15 => ?_, fun j h1 h16 => ?_, fun j h1 h16 => ?_, fun j h1 h16 => ?_, fun j h1 h16 => ?_⟩
     · rcases Nat.lt_or_ge j 2 with hj | hj
       · obtain rfl : j = 1 := by omega_arith
-        have e := tsame (m := 1) (c := 2) (Nat.le_refl _) (by omega_arith) (by decide)
+        obtain e := tsame (m := 1) (c := 2) (Nat.le_refl _) (by omega_arith) (by decide)
         have pe : K.pre 1 = K.ent 1 2 := rfl
         rw [pe, e, tmv_congr e]
         exact ⟨(hT 1 (Nat.le_refl _) (by omega_arith)).lt 2 (by decide), rfl⟩
@@ -689,45 +689,45 @@ theorem normA_ok (hL : JacWinLay K size) (hp : UnitMod C.p (2 ^ (64 * K.M.n))) (
     · have e := tsame (c := 2) h1 h16 (by decide)
       rw [e, tmv_congr e]; exact ⟨(hT j h1 h16).lt 2 (by decide), rfl⟩
     · exact (hT j h1 h16).z
-  have hev : tmv C K.M.n base u₀ K.E.x = cprod (tzJ K C base s) 16 ^ (C.p - 2) := by
+  obtain hev : tmv C K.M.n base u₀ K.E.x = cprod (tzJ K C base s) 16 ^ (C.p - 2) := by
     rw [vu]; exact congrArg (· ^ (C.p - 2)) (I.val 16 (by decide) (Nat.le_refl _))
   refine WP.seq (WP.mono (backJ_ok hL hp hC B hsu Mu lu hev) fun v ⟨sv, kv, Uv, Mv, dv⟩ => ?_)
   refine WP.mono (onesJ_ok hL (x := K.one) (Nat.lt_trans hone_lt hpn) 48 (Nat.le_refl _) v sv)
     fun w ⟨sw, kw, Uw, ow, ew⟩ => ?_
-  have c1 : ∀ r ∈ [Reg.rax], r ∈ invClob K.M.n := by
+  obtain c1 : ∀ r ∈ [Reg.rax], r ∈ invClob K.M.n := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp [invClob, powClob, clob]
-  have c2 : ∀ r ∈ clob K.M.n, r ∈ invClob K.M.n := fun r h =>
+  obtain c2 : ∀ r ∈ clob K.M.n, r ∈ invClob K.M.n := fun r h =>
     List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h)
-  have U : Unch base (jwW K ++ IW) s.mem w.mem :=
+  obtain U : Unch base (jwW K ++ IW) s.mem w.mem :=
     (I.unch.trans (Uu.trans (Uv.trans Uw))).mono fun x hx => by
       simp only [List.mem_append] at hx ⊢; rcases hx with hx | hx | hx | hx <;> simp [hx]
   -- `Z`, `Z²`, `Z³` one.
-  have one3 : ∀ m, 1 ≤ m → m ≤ 16 → ∀ c, 2 ≤ c → c < 5 → wordsVal w.mem base (K.ent m c) K.M.n = K.one :=
+  obtain one3 : ∀ m, 1 ≤ m → m ≤ 16 → ∀ c, 2 ≤ c → c < 5 → wordsVal w.mem base (K.ent m c) K.M.n = K.one :=
     fun m h1 h16 c h2 h5 => by
-      have e := ow (3 * (m - 1) + (c - 2)) (by omega_arith)
+      obtain e := ow (3 * (m - 1) + (c - 2)) (by omega_arith)
       rwa [show (3 * (m - 1) + (c - 2)) / 3 + 1 = m by omega_arith,
         show 2 + (3 * (m - 1) + (c - 2)) % 3 = c by omega_arith] at e
-  have xy : ∀ m, 1 ≤ m → m ≤ 16 → ∀ c < 2, wordsVal w.mem base (K.ent m c) K.M.n =
+  obtain xy : ∀ m, 1 ≤ m → m ≤ 16 → ∀ c < 2, wordsVal w.mem base (K.ent m c) K.M.n =
       wordsVal v.mem base (K.ent m c) K.M.n := fun m h1 h16 c hc =>
     ew _ (ent_slots (K := K) h1 h16 (by omega_arith)) fun j hj =>
       ent_ne hL h1 (by omega_arith) (by omega_arith) (by omega_arith) (Or.inr (by omega_arith))
   refine ⟨sw, ((I.keep.mono c2).trans Ku).trans ((kv.mono c2).trans (kw.mono c1)), U,
     Mv.unch Uw (hL.w_mo Mv) hn, fun m h1 h16 => ?_, fun m h1 h16 => one3 m h1 h16 2 (by decide) (by decide)⟩
   obtain ⟨l0, l1, v0, v1⟩ := dv m h1 h16
-  have ex := xy m h1 h16 0 (by decide)
-  have ey := xy m h1 h16 1 (by decide)
-  have to1 : ∀ c, 2 ≤ c → c < 5 → tmv C K.M.n base w (K.ent m c) = 1 := fun c h2 h5 => by
+  obtain ex := xy m h1 h16 0 (by decide)
+  obtain ey := xy m h1 h16 1 (by decide)
+  obtain to1 : ∀ c, 2 ≤ c → c < 5 → tmv C K.M.n base w (K.ent m c) = 1 := fun c h2 h5 => by
     show toM _ _ _ = 1; rw [one3 m h1 h16 c h2 h5]; exact hone
-  have J : InvJ C (tmv C K.M.n base s (K.ent m 0)) (tmv C K.M.n base s (K.ent m 1))
+  obtain J : InvJ C (tmv C K.M.n base s (K.ent m 0)) (tmv C K.M.n base s (K.ent m 1))
       (tmv C K.M.n base s (entS K m 2)) (mul m P) := (hT m h1 h16).jac
-  have Z0 := (hT m h1 h16).z
+  obtain Z0 := (hT m h1 h16).z
   dsimp only at v0 v1
   generalize hz : tmv C K.M.n base s (entS K m 2) = Z at J Z0
   have hz' : tzJ K C base s m = Z := hz
   rw [hz'] at v0 v1
-  have hf := hC.fermat Z0
+  obtain hf := hC.fermat Z0
   generalize Z ^ (C.p - 2) = zi at v0 v1 hf
-  have zi0 : zi ≠ 0 := fun h => h1p (by rw [← hf, h, Fin.mul_zero])
+  obtain zi0 : zi ≠ 0 := fun h => h1p (by rw [← hf, h, Fin.mul_zero])
   refine ⟨fun c hc => ?_, ?_, ?_, ?_, ?_⟩
   · rcases (show c = 0 ∨ c = 1 ∨ (2 ≤ c ∧ c < 5) by omega_arith) with rfl | rfl | ⟨h2, h5⟩
     · show wordsVal _ base (K.ent m 0) _ < _; rw [ex]; exact l0

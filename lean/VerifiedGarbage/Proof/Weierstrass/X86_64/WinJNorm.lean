@@ -125,7 +125,7 @@ theorem slotMul_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
       ModOkW K.M size C.p s'.mem base ∧ wordsVal s'.mem base o K.M.n < C.p ∧
       tmv C K.M.n base s' o = tmv C K.M.n base s a * tmv C K.M.n base s b ∧
       ∀ x ∈ winSlots K, x ≠ o → wordsVal s'.mem base x K.M.n = wordsVal s.mem base x K.M.n := by
-  have I : Inv K.M base size C.p (· ∈ winSlots K) [a, b] (tmv C K.M.n base s) s := by
+  obtain I : Inv K.M base size C.p (· ∈ winSlots K) [a, b] (tmv C K.M.n base s) s := by
     refine ⟨hs, hM, fun x hx => ?_, fun x hx => ?_, fun _ _ => rfl⟩
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl
@@ -135,7 +135,7 @@ theorem slotMul_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
       rcases hx with rfl | rfl
       · exact hla
       · exact hlb
-  have hSo : o ∈ winSlots K := winWs_slots K o ho
+  obtain hSo : o ∈ winSlots K := winWs_slots K o ho
   refine WP.mono (opProg_ok hL.lay hp I (op := .mul o a b) (fun x hx => by
       simp only [FOp.out, FOp.ins, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl
@@ -143,7 +143,7 @@ theorem slotMul_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
       · exact ha
       · exact hb)
     (fun x hx => hx)) fun s' ⟨k, I'⟩ => ?_
-  have U : Unch base [(o, 8 * K.M.n), (K.M.tmp, 8 * K.M.n)] s.mem s'.mem :=
+  obtain U : Unch base [(o, 8 * K.M.n), (K.M.tmp, 8 * K.M.n)] s.mem s'.mem :=
     fun x hx => k.mem x (hx _ (List.mem_cons_self ..)) (hx (K.M.tmp, 8 * K.M.n) (by simp))
   refine ⟨I'.scr, ⟨k.gpr, k.rd, k.wr⟩, U.mono fun w hw => ?_, I'.mod, I'.lt o (List.mem_cons_self ..),
     ?_, fun x hx hxo => U.wordsVal (fun w hw => ?_) (by have := hL.lay.le x hx; have := hs.nowrap; omega_arith)⟩
@@ -215,7 +215,7 @@ theorem prodSl_other {K : WinCfg} {j : Nat} (h1 : 1 ≤ j) (h8 : j ≤ 8) : WinC
 
 theorem normW_ne {K : WinCfg} {size : Nat} (hL : WinLay K size) {i i' : Nat} (hi : i < (normW K).length)
     (hi' : i' < (normW K).length) (h : i ≠ i') : (normW K)[i] ≠ (normW K)[i'] := by
-  have hp := List.pairwise_iff_getElem.mp (normW_nodup hL)
+  obtain hp := List.pairwise_iff_getElem.mp (normW_nodup hL)
   rcases Nat.lt_or_gt_of_ne h with h | h
   · exact hp i i' hi hi' h
   · exact fun e => hp i' i hi' hi h e.symm
@@ -280,11 +280,11 @@ theorem slotCopy_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Wi
       wordsVal s'.mem base o K.M.n = wordsVal s.mem base a K.M.n ∧
       ∀ x ∈ winSlots K, x ≠ o → wordsVal s'.mem base x K.M.n = wordsVal s.mem base x K.M.n := by
   have hn := hs.nowrap
-  have hoS := winWs_slots K o ho
-  have sep := hL.lay.apart o a hoS ha hoa
+  obtain hoS := winWs_slots K o ho
+  obtain sep := hL.lay.apart o a hoS ha hoa
   refine WP.mono (copy_ok (size := size) K.M.n hs (hL.lay.le o hoS) (hL.lay.le a ha) (by omega_arith))
     fun s' ⟨v, k, O⟩ => ?_
-  have U : Unch base (winW K) s.mem s'.mem := O.unch.mono fun w hw => by
+  obtain U : Unch base (winW K) s.mem s'.mem := O.unch.mono fun w hw => by
     rw [List.mem_singleton.mp hw]
     simp only [winW, List.mem_append, List.mem_map]
     exact Or.inl ⟨o, ho, rfl⟩
@@ -319,7 +319,7 @@ theorem mulTb_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLa
       ModOkW K.M size C.p s'.mem base ∧ wordsVal s'.mem base o K.M.n < C.p ∧
       tmv C K.M.n base s' o = tmv C K.M.n base s a * tmv C K.M.n base s b ∧
       ∀ x ∈ winSlots K, x ≠ o → x ≠ K.D.y → wordsVal s'.mem base x K.M.n = wordsVal s.mem base x K.M.n := by
-  have Dy : K.D.y ∈ winWs K := winOther_ws K _ (by win_mem)
+  obtain Dy : K.D.y ∈ winWs K := winOther_ws K _ (by win_mem)
   refine WP.seq (WP.mono (slotCopy_ok hL hs hM Dy hb hby.symm) fun s₁ ⟨s₁s, k₁, U₁, M₁, v₁, e₁⟩ => ?_)
   refine WP.mono (slotMul1_ok hL hp s₁s M₁ ho ha (winWs_slots K _ Dy) (by rw [e₁ a ha hay]; exact hla)
     (by rw [v₁]; exact hlb)) fun s₂ ⟨s₂s, k₂, U₂, M₂, l₂, v₂, e₂⟩ => ?_
@@ -339,9 +339,9 @@ theorem mulTx_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLa
       ModOkW K.M size C.p s'.mem base ∧ wordsVal s'.mem base x K.M.n < C.p ∧
       tmv C K.M.n base s' x = tmv C K.M.n base s x * tmv C K.M.n base s d ∧
       ∀ y ∈ winSlots K, y ≠ x → y ≠ K.D.y → wordsVal s'.mem base y K.M.n = wordsVal s.mem base y K.M.n := by
-  have Dy : K.D.y ∈ winWs K := winOther_ws K _ (by win_mem)
-  have DyS := winWs_slots K _ Dy
-  have xS := winWs_slots K _ hx
+  obtain Dy : K.D.y ∈ winWs K := winOther_ws K _ (by win_mem)
+  obtain DyS := winWs_slots K _ Dy
+  obtain xS := winWs_slots K _ hx
   refine WP.seq (WP.mono (slotCopy_ok hL hs hM Dy xS hxy.symm) fun s₁ ⟨s₁s, k₁, U₁, M₁, v₁, e₁⟩ => ?_)
   refine WP.seq (WP.mono (slotMul1_ok hL hp s₁s M₁ Dy DyS hd (by rw [v₁]; exact hlx)
     (by rw [e₁ d hd hdy]; exact hld)) fun s₂ ⟨s₂s, k₂, U₂, M₂, l₂, v₂, e₂⟩ => ?_)
@@ -389,8 +389,8 @@ theorem prod0_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLa
     {s₀ : State} (hs : Scr s₀ base size) (hM : ModOkW K.M size C.p s₀.mem base)
     (hz : wordsVal s₀.mem base (K.tblPt 1).z K.M.n < C.p) :
     WP isa (.block (copy K.M.n K.D.z (K.tblPt 1).z)) s₀ (PreInv K C base size s₀ 0) := by
-  have Dz : K.D.z ∈ winWs K := winOther_ws K _ (by win_mem)
-  have z1 := tz_same hL (m := 1) (Nat.le_refl _) (by omega_arith)
+  obtain Dz : K.D.z ∈ winWs K := winOther_ws K _ (by win_mem)
+  obtain z1 := tz_same hL (m := 1) (Nat.le_refl _) (by omega_arith)
   refine WP.mono (slotCopy_ok hL hs hM Dz z1.1 (z1.2.2 1 (Nat.le_refl _) (by omega_arith)).symm)
     fun s₁ ⟨s₁s, k₁, U₁, M₁, v₁, e₁⟩ => ⟨s₁s, k₁, U₁, M₁, fun j h1 h0 => ?_, fun j h1 h0 => ?_,
       fun x hx hne _ => e₁ x hx (hne 1 (Nat.le_refl _) (Nat.le_refl _))⟩
@@ -405,19 +405,19 @@ theorem prod_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinLay
     (I₀ : PreInv K C base size s₀ 0 s₁) :
     WP isa (WinCfg.seqRange (WinCfg.prodStep K) 7).inline s₁ (PreInv K C base size s₀ 7) := by
   refine seqRange_ok (N := 7) (fun i hi t I => ?_) 7 (Nat.le_refl _) s₁ I₀
-  have hsa := tz_same hL (m := i + 2) (by omega_arith) (by omega_arith)
-  have ltb : wordsVal t.mem base (K.tblPt (i + 2)).z K.M.n < C.p := by
+  obtain hsa := tz_same hL (m := i + 2) (by omega_arith) (by omega_arith)
+  obtain ltb : wordsVal t.mem base (K.tblPt (i + 2)).z K.M.n < C.p := by
     rw [I.same _ hsa.1 (fun j h1 hj => hsa.2.2 j h1 (by omega_arith)) hsa.2.1]
     exact (hT (i + 2) (by omega_arith) (by omega_arith)).1 _ (by simp)
-  have hoW : WinCfg.prodSl K (i + 2) ∈ winWs K := winOther_ws K _ (prodSl_other (by omega_arith) (by omega_arith))
-  have haS : WinCfg.prodSl K (i + 1) ∈ winSlots K := winOther_mem (prodSl_other (by omega_arith) (by omega_arith))
+  obtain hoW : WinCfg.prodSl K (i + 2) ∈ winWs K := winOther_ws K _ (prodSl_other (by omega_arith) (by omega_arith))
+  obtain haS : WinCfg.prodSl K (i + 1) ∈ winSlots K := winOther_mem (prodSl_other (by omega_arith) (by omega_arith))
   refine WP.mono (mulTb_ok hL hp I.scr I.mod hoW haS hsa.1
     (prodSl_ne_DE hL (j := i + 1) (by omega_arith) (by omega_arith)).2.2 hsa.2.1
     (I.lt (i + 1) (by omega_arith) (by omega_arith)) ltb)
     fun u ⟨su, ku, Uu, Mu, lu, vu, eu⟩ => ?_
-  have ne : ∀ j, 1 ≤ j → j ≤ i + 1 → WinCfg.prodSl K j ≠ WinCfg.prodSl K (i + 2) := fun j h1 hj h =>
+  obtain ne : ∀ j, 1 ≤ j → j ≤ i + 1 → WinCfg.prodSl K j ≠ WinCfg.prodSl K (i + 2) := fun j h1 hj h =>
     absurd (prodSl_inj hL h1 (by omega_arith) (by omega_arith) (by omega_arith) h) (by omega_arith)
-  have ny : ∀ j, 1 ≤ j → j ≤ 8 → WinCfg.prodSl K j ≠ K.D.y := fun j h1 h8 =>
+  obtain ny : ∀ j, 1 ≤ j → j ≤ 8 → WinCfg.prodSl K j ≠ K.D.y := fun j h1 h8 =>
     (prodSl_ne_DE hL h1 h8).2.2
   refine ⟨su, I.keep.trans ku, (I.unch.trans Uu).mono winW_append, Mu, fun j h1 hj => ?_,
     fun j h1 hj => ?_, fun x hx hne hxy => ?_⟩
@@ -472,8 +472,8 @@ theorem prodSl_ne {j : Nat} (h1 : 1 ≤ j) (h8 : j ≤ 8) {m : Nat} (hm1 : 1 ≤
     WinCfg.prodSl K j ≠ K.D.x ∧ WinCfg.prodSl K j ≠ K.E.x ∧ WinCfg.prodSl K j ≠ K.D.y ∧
       WinCfg.prodSl K j ≠ (K.tblPt m).x ∧ WinCfg.prodSl K j ≠ (K.tblPt m).y ∧
       WinCfg.prodSl K j ≠ (K.tblPt m).z := by
-  have o := prodSl_other (K := K) h1 h8
-  have d := prodSl_ne_DE hL h1 h8
+  obtain o := prodSl_other (K := K) h1 h8
+  obtain d := prodSl_ne_DE hL h1 h8
   exact ⟨d.1, d.2.1, d.2.2, other_ne_tbl hL o hm1 hm8 (by simp), other_ne_tbl hL o hm1 hm8 (by simp),
     other_ne_tbl hL o hm1 hm8 (by simp)⟩
 
@@ -655,23 +655,23 @@ theorem backOne_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
         wordsVal t.mem base (K.tblPt j).x K.M.n < C.p ∧ wordsVal t.mem base (K.tblPt j).y K.M.n < C.p ∧
         tmv C K.M.n base t (K.tblPt j).x = X j * Z j ^ (C.p - 2) ∧
         tmv C K.M.n base t (K.tblPt j).y = Y j * Z j ^ (C.p - 2) := by
-  have dDE := DE_ne hL
-  have Ew : K.E.x ∈ winWs K := winOther_ws K _ (by win_mem)
-  have st := tblPt_slots K (m := 1) (Nat.le_refl _) (by omega_arith)
-  have xw := (st _ (by simp : (K.tblPt 1).x ∈ _)).2
-  have yw := (st _ (by simp : (K.tblPt 1).y ∈ _)).2
-  have t1 := DE_tbl hL (m := 1) (Nat.le_refl _) (by omega_arith)
-  have ex1 : wordsVal t.mem base (K.tblPt 1).x K.M.n = wordsVal u₀.mem base (K.tblPt 1).x K.M.n :=
+  obtain dDE := DE_ne hL
+  obtain Ew : K.E.x ∈ winWs K := winOther_ws K _ (by win_mem)
+  obtain st := tblPt_slots K (m := 1) (Nat.le_refl _) (by omega_arith)
+  obtain xw := (st _ (by simp : (K.tblPt 1).x ∈ _)).2
+  obtain yw := (st _ (by simp : (K.tblPt 1).y ∈ _)).2
+  obtain t1 := DE_tbl hL (m := 1) (Nat.le_refl _) (by omega_arith)
+  obtain ex1 : wordsVal t.mem base (K.tblPt 1).x K.M.n = wordsVal u₀.mem base (K.tblPt 1).x K.M.n :=
     I.same _ (winWs_slots K _ xw) (t1 _ (by simp)).1.symm (t1 _ (by simp)).2.1.symm (t1 _ (by simp)).2.2.symm
       fun j hj _ => ⟨txx hL (by omega_arith) (by omega_arith) (by omega_arith), txy hL⟩
-  have ey1 : wordsVal t.mem base (K.tblPt 1).y K.M.n = wordsVal u₀.mem base (K.tblPt 1).y K.M.n :=
+  obtain ey1 : wordsVal t.mem base (K.tblPt 1).y K.M.n = wordsVal u₀.mem base (K.tblPt 1).y K.M.n :=
     I.same _ (winWs_slots K _ yw) (t1 _ (by simp)).1.symm (t1 _ (by simp)).2.1.symm (t1 _ (by simp)).2.2.symm
       fun j hj _ => ⟨tyx hL, tyy hL (by omega_arith) (by omega_arith) (by omega_arith)⟩
   rw [WinCfg.backOne]
   refine WP.seq (WP.mono (mulTx_ok hL hp I.scr I.mod xw (winWs_slots K _ Ew) (t1 _ (by simp)).2.2.symm
     dDE.2.2.symm (by rw [ex1]; exact (B.x 1 (Nat.le_refl _) (by omega_arith)).1) I.ex_lt)
     fun t₁ ⟨s₁, k₁, U₁, M₁, l₁, v₁, e₁⟩ => ?_)
-  have ee₁ := e₁ _ (winWs_slots K _ Ew) (t1 _ (by simp)).2.1 dDE.2.2.symm
+  obtain ee₁ := e₁ _ (winWs_slots K _ Ew) (t1 _ (by simp)).2.1 dDE.2.2.symm
   refine WP.mono (mulTx_ok hL hp s₁ M₁ yw (winWs_slots K _ Ew) (t1 _ (by simp)).2.2.symm
     dDE.2.2.symm
     (by rw [e₁ _ (winWs_slots K _ yw) (tyx hL) (t1 _ (by simp)).2.2.symm, ey1];
@@ -682,19 +682,19 @@ theorem backOne_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
   · simp only [List.mem_append] at hw; rcases hw with hw | hw | hw <;> exact hw
   · rcases Nat.lt_or_ge 1 j with hj' | hj'
     · obtain ⟨a1, a2, a3, a4⟩ := I.done j (by omega_arith) hj8
-      have tj := DE_tbl hL (m := j) (by omega_arith) hj8
-      have ex : wordsVal t₂.mem base (K.tblPt j).x K.M.n = wordsVal t.mem base (K.tblPt j).x K.M.n := by
-        have h := (tblPt_slots K (m := j) (by omega_arith) hj8 _ (by simp : (K.tblPt j).x ∈ _)).1
+      obtain tj := DE_tbl hL (m := j) (by omega_arith) hj8
+      obtain ex : wordsVal t₂.mem base (K.tblPt j).x K.M.n = wordsVal t.mem base (K.tblPt j).x K.M.n := by
+        obtain h := (tblPt_slots K (m := j) (by omega_arith) hj8 _ (by simp : (K.tblPt j).x ∈ _)).1
         rw [e₂ _ h (txy hL) (tj _ (by simp)).2.2.symm,
           e₁ _ h (txx hL (by omega_arith) (by omega_arith) (by omega_arith)) (tj _ (by simp)).2.2.symm]
-      have ey : wordsVal t₂.mem base (K.tblPt j).y K.M.n = wordsVal t.mem base (K.tblPt j).y K.M.n := by
-        have h := (tblPt_slots K (m := j) (by omega_arith) hj8 _ (by simp : (K.tblPt j).y ∈ _)).1
+      obtain ey : wordsVal t₂.mem base (K.tblPt j).y K.M.n = wordsVal t.mem base (K.tblPt j).y K.M.n := by
+        obtain h := (tblPt_slots K (m := j) (by omega_arith) hj8 _ (by simp : (K.tblPt j).y ∈ _)).1
         rw [e₂ _ h (tyy hL (by omega_arith) (by omega_arith) (by omega_arith)) (tj _ (by simp)).2.2.symm,
           e₁ _ h (tyx hL) (tj _ (by simp)).2.2.symm]
       exact ⟨by rw [ex]; exact a1, by rw [ey]; exact a2, by rw [tmv_congr ex]; exact a3,
         by rw [tmv_congr ey]; exact a4⟩
     · obtain rfl : j = 1 := by omega_arith
-      have xx₂ := e₂ _ (winWs_slots K _ xw) (txy hL) (t1 _ (by simp)).2.2.symm
+      obtain xx₂ := e₂ _ (winWs_slots K _ xw) (txy hL) (t1 _ (by simp)).2.2.symm
       refine ⟨by rw [xx₂]; exact l₁, l₂, ?_, ?_⟩
       · rw [tmv_congr xx₂, v₁, tmv_congr ex1, (B.x 1 (Nat.le_refl _) (by omega_arith)).2, I.ex]; rfl
       · rw [v₂, tmv_congr (e₁ _ (winWs_slots K _ yw) (tyx hL) (t1 _ (by simp)).2.2.symm), tmv_congr ey1,
@@ -718,11 +718,11 @@ theorem ones_ok {K : WinCfg} {size : Nat} (hL : WinLay K size) {base : Addr} {x 
         wordsVal t.mem base y K.M.n = wordsVal s.mem base y K.M.n)
     (fun i hi t ⟨st, kt, Ut, vt, et⟩ => ?_) i hi s
     ⟨hs, ⟨fun _ _ => rfl, rfl, rfl⟩, Unch.refl _ _ _, fun j h1 h0 => absurd h1 (by omega_arith), fun _ _ _ => rfl⟩
-  have zs := tblPt_slots K (m := i + 1) (by omega_arith) (by omega_arith) _ (by simp : (K.tblPt (i + 1)).z ∈ _)
+  obtain zs := tblPt_slots K (m := i + 1) (by omega_arith) (by omega_arith) _ (by simp : (K.tblPt (i + 1)).z ∈ _)
   refine WP.mono (setConst_ok st (n := K.M.n) (o := (K.tblPt (i + 1)).z) (hL.lay.le _ zs.1) hx)
     fun u ⟨eu, ku, Ou⟩ => ?_
   have hn := st.nowrap
-  have same : ∀ y ∈ winSlots K, y ≠ (K.tblPt (i + 1)).z →
+  obtain same : ∀ y ∈ winSlots K, y ≠ (K.tblPt (i + 1)).z →
       wordsVal u.mem base y K.M.n = wordsVal t.mem base y K.M.n := fun y hy hne =>
     Ou.unch.wordsVal (fun w hw => by
       rw [List.mem_singleton.mp hw]; exact hL.lay.apart y _ hy zs.1 hne) (by have := hL.lay.le y hy; omega_arith)
@@ -800,16 +800,16 @@ theorem normTbl_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
   refine WP.seq (WP.mono (prod_ok hL hp hT I₀) fun t₇ I₇ => ?_)
   refine WP.seq (WP.mono (hI.ok t₇ I₇.scr I₇.mod (I₇.lt 8 (by omega_arith) (by omega_arith)))
     fun u₀ ⟨Ku, Uu, lu, vu⟩ => ?_)
-  have hsu := I₇.scr.of_keepRegs Ku (rdi_not_invClob' _)
-  have Mu := I₇.mod.unch Uu (hI.mo hL I₇.mod) hn
+  obtain hsu := I₇.scr.of_keepRegs Ku (rdi_not_invClob' _)
+  obtain Mu := I₇.mod.unch Uu (hI.mo hL I₇.mod) hn
   -- The table and the products at `u₀`.
-  have tsame : ∀ {m}, 1 ≤ m → m ≤ 8 → ∀ y ∈ [(K.tblPt m).x, (K.tblPt m).y, (K.tblPt m).z],
+  obtain tsame : ∀ {m}, 1 ≤ m → m ≤ 8 → ∀ y ∈ [(K.tblPt m).x, (K.tblPt m).y, (K.tblPt m).z],
       wordsVal u₀.mem base y K.M.n = wordsVal s.mem base y K.M.n := fun h1 h8 y hy => by
-    have ys := (tblPt_slots K h1 h8 y hy).1
+    obtain ys := (tblPt_slots K h1 h8 y hy).1
     rw [hI.same hL Uu hn ys (DE_tbl hL h1 h8 y hy).2.1.symm]
     exact I₇.same y ys (fun j h1' hj => (other_ne_tbl hL (prodSl_other h1' (by omega_arith)) h1 h8 hy).symm)
       (DE_tbl hL h1 h8 y hy).2.2.symm
-  have B : BackStart K C base u₀ (fun j => tmv C K.M.n base s (K.tblPt j).x)
+  obtain B : BackStart K C base u₀ (fun j => tmv C K.M.n base s (K.tblPt j).x)
       (fun j => tmv C K.M.n base s (K.tblPt j).y) (tz K C base s) := by
     refine ⟨fun j h1 h7 => ?_, fun j h1 h8 => ?_, fun j h1 h8 => ?_, fun j h1 h8 => ?_, fun j h1 h8 => ?_⟩
     · have e := hI.same hL Uu hn (prodSl_slots h1 (by omega_arith)) (prodSl_ne_DE hL h1 (by omega_arith)).2.1
@@ -827,20 +827,20 @@ theorem normTbl_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
   refine WP.seq (WP.mono (backOne_ok hL hp B I') fun v ⟨sv, kv, Uv, Mv, dv⟩ => ?_)
   refine WP.mono (ones_ok hL (x := K.one) (Nat.lt_trans hone_lt hpn) 8 (Nat.le_refl _) v sv)
     fun w ⟨sw, kw, Uw, ow, ew⟩ => ?_
-  have c1 : ∀ r ∈ [Reg.rax], r ∈ invClob K.M.n := by
+  obtain c1 : ∀ r ∈ [Reg.rax], r ∈ invClob K.M.n := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp [invClob, powClob, clob]
-  have c2 : ∀ r ∈ clob K.M.n, r ∈ invClob K.M.n := fun r h =>
+  obtain c2 : ∀ r ∈ clob K.M.n, r ∈ invClob K.M.n := fun r h =>
     List.mem_cons_of_mem _ (List.mem_cons_of_mem _ h)
-  have U : Unch base (winW K ++ IW) s.mem w.mem :=
+  obtain U : Unch base (winW K ++ IW) s.mem w.mem :=
     (I₇.unch.trans (Uu.trans (Uv.trans Uw))).mono fun x hx => by
       simp only [List.mem_append] at hx ⊢; rcases hx with hx | hx | hx | hx <;> simp [hx]
   refine ⟨sw, ((I₇.keep.mono c2).trans Ku).trans ((kv.mono c2).trans (kw.mono c1)), U,
     Mv.unch Uw (fun x hx => winW_mo hL Mv x hx) hn, fun j h1 h8 => ?_⟩
   obtain ⟨l1, l2, v1, v2⟩ := dv j h1 h8
-  have zs := tblPt_slots K (m := j) h1 h8
-  have ex : wordsVal w.mem base (K.tblPt j).x K.M.n = wordsVal v.mem base (K.tblPt j).x K.M.n :=
+  obtain zs := tblPt_slots K (m := j) h1 h8
+  obtain ex : wordsVal w.mem base (K.tblPt j).x K.M.n = wordsVal v.mem base (K.tblPt j).x K.M.n :=
     ew _ (zs _ (by simp)).1 fun j' _ _ h => tzx hL h.symm
-  have ey : wordsVal w.mem base (K.tblPt j).y K.M.n = wordsVal v.mem base (K.tblPt j).y K.M.n :=
+  obtain ey : wordsVal w.mem base (K.tblPt j).y K.M.n = wordsVal v.mem base (K.tblPt j).y K.M.n :=
     ew _ (zs _ (by simp)).1 fun j' _ _ h => tzy hL h.symm
   refine ⟨fun x hx => ?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx

@@ -79,7 +79,7 @@ theorem tabOk_of_pre {s : State} {base : Addr} (hrd : (tabRegion s) ∈ s.rd)
   rd := hrd
   fit := hfit
   far d hd' := by
-    have hc : (tabRegion s).Contains (s.syms secp256k1Sym + BitVec.ofNat 64 d) 1 :=
+    obtain hc : (tabRegion s).Contains (s.syms secp256k1Sym + BitVec.ofNat 64 d) 1 :=
       Offset.contains_base _ (by omega_using [hd']) (by omega_using [hd'])
     have := hd _ hc
     simp only [Region.Contains, Nat.not_le] at this
@@ -94,7 +94,7 @@ theorem keepsG_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (savesG ++ bodyW) 
   have h8 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
   rw [show ws + BitVec.ofNat 64 i = off ws i from rfl, ofs_off0 ws (by omega_using [hi, h8])]
-  have hw' := (by decide : ∀ w ∈ savesG ++ bodyW, (w.1 = 512 ∧ w.2 = 544) ∨ 1504 ≤ w.1) w hw
+  obtain hw' := (by decide : ∀ w ∈ savesG ++ bodyW, (w.1 = 512 ∧ w.2 = 544) ∨ 1504 ≤ w.1) w hw
   simp only [Impl.Weierstrass.Mul.Curve.Own, Impl.Weierstrass.Mul.Curve.slot, Impl.Weierstrass.Mul.Curve.tmpAt,
     Impl.Weierstrass.Mul.Curve.bitsAt, Impl.Weierstrass.Mul.Curve.pAt, Impl.Weierstrass.Mul.Curve.ptBytes,
     true_and] at hown hp
@@ -239,7 +239,7 @@ structure TabAt (base : Addr) (s : State) : Prop where
 /-- The table survives what changes memory only in the working space. -/
 theorem TabAt.of_mem {base : Addr} {s s' : State} (h : TabAt base s) (hsy : s'.syms = s.syms) (hrd : s'.rd = s.rd)
     (hm : ∀ x, 8192 ≤ ofs base x → s'.mem x = s.mem x) : TabAt base s' := by
-  have hT := tabOk_of_pre h.rd h.held h.al h.fit h.disj
+  obtain hT := tabOk_of_pre h.rd h.held h.al h.fit h.disj
   refine ⟨by rw [hrd, tabRegion, hsy]; exact h.rd, fun i hi => ?_, by rw [hsy]; exact h.al,
     by rw [hsy]; exact h.fit, by rw [tabRegion, hsy]; exact h.disj⟩
   rw [hsy, ← h.held i hi]
@@ -274,7 +274,7 @@ evaluate the table). -/
 
 theorem combSatMem_held : ∀ i < secp256k1CombWords.length,
     combSatMem.readW (0x100000 + BitVec.ofNat 64 (8 * i)) 64 = secp256k1CombWords.getD i 0 := by
-  have h := constMem_held 0x100000 secp256k1CombWords (by rw [combWords_length]; decide)
+  obtain h := constMem_held 0x100000 secp256k1CombWords (by rw [combWords_length]; decide)
   unfold combSatMem
   exact h
 
@@ -283,9 +283,9 @@ among the writable regions. -/
 theorem tabAt_of_consts {st : Nat} {s : State} {base : Addr} (h : ConstsOk secp256k1CombConsts st s)
     (hw : (⟨base, 8192⟩ : Region) ∈ s.wr) : TabAt base s := by
   have h' : ConstsOk [(secp256k1Sym, secp256k1CombWords)] st s := h
-  have hr := ConstsOk.rd1 h'
-  have hw' := ConstsOk.wr1 h' _ hw
-  have hf := ConstsOk.fit h' List.mem_cons_self
+  obtain hr := ConstsOk.rd1 h'
+  obtain hw' := ConstsOk.wr1 h' _ hw
+  obtain hf := ConstsOk.fit h' List.mem_cons_self
   rw [combWords_length] at hr hw' hf
   exact ⟨hr, fun i hi => ConstsOk.held1 h' i (by rw [combWords_length]; exact hi),
     ConstsOk.aligned h' List.mem_cons_self, hf, hw'⟩
@@ -293,7 +293,7 @@ theorem tabAt_of_consts {st : Nat} {s : State} {base : Addr} (h : ConstsOk secp2
 theorem tab_wr_of_consts {st : Nat} {s : State} (h : ConstsOk secp256k1CombConsts st s) :
     ∀ r ∈ s.wr, Region.Disjoint (tabRegion s) r := by
   have h' : ConstsOk [(secp256k1Sym, secp256k1CombWords)] st s := h
-  have hw' := ConstsOk.wr1 h'
+  obtain hw' := ConstsOk.wr1 h'
   rw [combWords_length] at hw'
   exact hw'
 
@@ -317,12 +317,12 @@ theorem tailG_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base)
       sv base s' ACC < W.p ∧
       toM W.p (2 ^ 256) (sv base s' ACC) = toM W.p (2 ^ 256) (sv base s' RZ) ^ (W.p - 2) := by
   refine tailWith_ok hL hw h3 hc fun s₁ hw₁ h3₁ K₁ U₁ sy₁ => ?_
-  have hc₁ := hc.of_unch U₁ (by decide)
-  have e₁ : ∀ i, i < 44 → sv base s₁ i = sv base s i := fun i hi =>
+  obtain hc₁ := hc.of_unch U₁ (by decide)
+  obtain e₁ : ∀ i, i < 44 → sv base s₁ i = sv base s i := fun i hi =>
     sv_unch U₁ i (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; rw [sl_eq, FL]; omega_using [hi])
       (by omega_using [hi])
-  have hT₁ : TabAt base s₁ := hT.of_unch sy₁ K₁.rd (by decide) U₁
-  have eG : MC.point base s₁.mem = Spec.Weierstrass.G W := by
+  obtain hT₁ : TabAt base s₁ := hT.of_unch sy₁ K₁.rd (by decide) U₁
+  obtain eG : MC.point base s₁.mem = Spec.Weierstrass.G W := by
     rw [point_eq hL]
     show Point.affine (toM _ _ (sv base s₁ RX)) (toM _ _ (sv base s₁ RY)) = _
     rw [e₁ RX (by decide), e₁ RY (by decide), hx, hy]
@@ -331,17 +331,17 @@ theorem tailG_ok (hL : Law W) {s : State} {base : Addr} (hw : WsReg s base)
   rw [Cfg.wsCall, eG]
   refine WP.seq (WP.seq (WP.cons (exec_addi (by decide)) (WP.block_nil ?_)))
   generalize hs₂ : s₁.write .a0 (s₁.gpr wb + BitVec.ofInt 64 0) = s₂
-  have u₂ : Upd s₁ s₂ .a0 (s₁.gpr wb + BitVec.ofInt 64 0) := hs₂ ▸ Upd.write _ _ _
-  have sy₂ : s₂.syms = s₁.syms := by rw [← hs₂]; rfl
-  have K₂ : Kp s₁ s₂ := Kp.of_upd u₂
-  have a0₂ : s₂.gpr .a0 = base := by rw [u₂.gpr, hw₁.s0]; simp
-  have hcov : Covers [⟨base, 8192⟩] s₂.wr := Covers.of_mem fun r hr => by
+  obtain u₂ : Upd s₁ s₂ .a0 (s₁.gpr wb + BitVec.ofInt 64 0) := hs₂ ▸ Upd.write _ _ _
+  obtain sy₂ : s₂.syms = s₁.syms := by rw [← hs₂]; rfl
+  obtain K₂ : Kp s₁ s₂ := Kp.of_upd u₂
+  obtain a0₂ : s₂.gpr .a0 = base := by rw [u₂.gpr, hw₁.s0]; simp
+  obtain hcov : Covers [⟨base, 8192⟩] s₂.wr := Covers.of_mem fun r hr => by
     rw [List.mem_singleton] at hr; subst hr; rw [K₂.wr]; exact hw₁.wr
-  have htab : Covers [tabRegion s₂] s₂.rd := Covers.of_mem fun r hr => by
+  obtain htab : Covers [tabRegion s₂] s₂.rd := Covers.of_mem fun r hr => by
     rw [List.mem_singleton] at hr; subst hr; rw [K₂.rd, tabRegion, sy₂]; exact hT₁.rd
-  have e0 : (s₂.callEntry.withRegions [tabRegion s₂] [⟨base, 8192⟩]).gpr .a0 = base := by
+  obtain e0 : (s₂.callEntry.withRegions [tabRegion s₂] [⟨base, 8192⟩]).gpr .a0 = base := by
     simp only [State.withRegions_gpr]; rw [State.callEntry_gpr _ (by decide), a0₂]
-  have em : (s₂.callEntry.withRegions [tabRegion s₂] [⟨base, 8192⟩]).mem = s₁.mem := by
+  obtain em : (s₂.callEntry.withRegions [tabRegion s₂] [⟨base, 8192⟩]).mem = s₁.mem := by
     simp only [State.withRegions_mem, State.callEntry_mem, u₂.mem]
   refine WP.call (mulG_rv hL) (rd := [tabRegion s₂]) (wr := [⟨base, 8192⟩]) ?_ (Covers.append htab hcov) hcov
     (fun s₃ r₃ w₃ p₃ _ G₃ _ hp => ?_) Impl.Ecdsa.RISCV64.Comb.mulGSecp256k1_noFrames

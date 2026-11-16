@@ -96,7 +96,7 @@ theorem prepare_wp (up : Bool) {s : State} {B : Addr} {rs : List Region} {k : Sc
   have hfit : B.toNat + 8 * 528 ≤ 2 ^ 64 := hS.fit
   have hB' : s.gpr .s4 = B := hB
   obtain ⟨hkk, hin, hd⟩ := hk
-  have dK : (keyR s).Disjoint ⟨B, 8 * 528⟩ := hd _ hm
+  obtain dK : (keyR s).Disjoint ⟨B, 8 * 528⟩ := hd _ hm
   show WP isa modePrepare s _
   unfold modePrepare
   apply WP.seq
@@ -115,16 +115,16 @@ theorem prepare_wp (up : Bool) {s : State} {B : Addr} {rs : List Region} {k : Sc
       exact hS.wr _ _ (by decide) (by cases up <;> simp only [inlineCore, schOff, bufOff, bufSlot] <;> omega_using [hi])
         (by simp only [schOff, bufOff, bufSlot]; omega_using [])) (by
       rw [a0, a2]
-      have hs : Region.Sub ⟨B + BitVec.ofNat 64 schOff, 4168⟩ ⟨B, 8 * 528⟩ :=
+      obtain hs : Region.Sub ⟨B + BitVec.ofNat 64 schOff, 4168⟩ ⟨B, 8 * 528⟩ :=
         Offset.sub_base _ (by simp only [schOff, bufOff, bufSlot]; omega_using [])
-      have h : Region.Disjoint ⟨B + BitVec.ofNat 64 schOff, 4168⟩ ⟨s.gpr .a0, 4168⟩ :=
+      obtain h : Region.Disjoint ⟨B + BitVec.ofNat 64 schOff, 4168⟩ ⟨s.gpr .a0, 4168⟩ :=
         Region.Disjoint.sub_left (Region.Disjoint.symm dK) hs
       intro x hx hy
       exact h x (by simp only [Region.Contains]; omega_using [hx]) (by simp only [Region.Contains]; omega_using [hy]))) fun t ⟨tc, tf, tk⟩ => ?_
   rw [a0, a2, am] at tc
   rw [a0, am] at tf
-  have K : Keep [.t0, .t2, .t4, .t1, .t2, .t0, .t4] s t := ak.trans tk
-  have nk : ∀ r ∈ kept, r ∉ [Reg.t0, .t2, .t4, .t1, .t2, .t0, .t4] := by decide
+  obtain K : Keep [.t0, .t2, .t4, .t1, .t2, .t0, .t4] s t := ak.trans tk
+  obtain nk : ∀ r ∈ kept, r ∉ [Reg.t0, .t2, .t4, .t1, .t2, .t0, .t4] := by decide
   refine ⟨⟨by rw [scheduleAt_copy tc, hkk], hfit⟩, by rw [show sb = .s4 from rfl, K.gpr (by decide)]; exact hB',
     fun r hr => K.gpr (nk r hr), tf.sub fun r hr => ?_, K.2.1, K.2.2⟩
   simp only [List.mem_singleton] at hr; subst hr
@@ -147,9 +147,9 @@ theorem crypt_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sche
   have hal : B.toNat % 16 = 0 := hS.al
   have hB' : s.gpr .s4 = B := hB
   obtain ⟨hk, _⟩ := hR
-  have blkW : InRegions s.wr (B + BitVec.ofNat 64 48) 8 :=
+  obtain blkW : InRegions s.wr (B + BitVec.ofNat 64 48) 8 :=
     hS.low _ _ (by cases up <;> decide)
-  have blkR : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 48) 8 :=
+  obtain blkR : InRegions (s.rd ++ s.wr) (B + BitVec.ofNat 64 48) 8 :=
     let ⟨r, hr, hc⟩ := blkW; ⟨r, List.mem_append_right _ hr, hc⟩
   show WP isa (modeCrypt up) s _
   unfold modeCrypt
@@ -160,8 +160,8 @@ theorem crypt_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sche
     all_goals rfl) (by decide) rfl) fun a ⟨⟨a7, a1, am⟩, ak⟩ => ?_
   apply WP.seq
   refine WP.mono (loadBlock_run a a1 (by rw [ak.2.1, ak.2.2]; exact blkR)) fun u₁ ⟨l₁, h₁, k₁, m₁⟩ => ?_
-  have K₁ : Keep [.a7, .a1, .a3, .a4, .t4] s u₁ := ak.trans k₁
-  have E : LookEnv u₁ := by
+  obtain K₁ : Keep [.a7, .a1, .a3, .a4, .t4] s u₁ := ak.trans k₁
+  obtain E : LookEnv u₁ := by
     refine ⟨fun o ho ho' => ?_, fun o ho ho' => ?_, ?_, ?_⟩
     · rw [k₁.gpr (by decide), a7, K₁.2.1, K₁.2.2, Offset.add_add]
       obtain ⟨r, hr, hc⟩ := hS.wr (schOff + o) 4 (by decide) (by cases up <;> simp only [inlineCore, schOff, bufOff, bufSlot] <;> omega_using [ho'])
@@ -179,25 +179,25 @@ theorem crypt_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sche
       omega_using [hal]
   apply WP.seq
   refine WP.mono (cipher_run E up) fun u₂ ⟨c₂, k₂, m₂⟩ => ?_
-  have K₂ : Keep cryptRegs s u₂ := (K₁.trans k₂).mono (by decide)
-  have p₂ : u₂.gpr .a1 = B + BitVec.ofNat 64 48 := by rw [k₂.gpr (by decide), k₁.gpr (by decide), a1]
+  obtain K₂ : Keep cryptRegs s u₂ := (K₁.trans k₂).mono (by decide)
+  obtain p₂ : u₂.gpr .a1 = B + BitVec.ofNat 64 48 := by rw [k₂.gpr (by decide), k₁.gpr (by decide), a1]
   refine WP.mono (storeBlock_run u₂ p₂ (by rw [K₂.2.2]; exact blkW)) fun u₃ ⟨m₃, _, _, k₃⟩ => ?_
-  have K₃ : Keep cryptRegs s u₃ := (K₂.trans k₃).mono (by decide)
-  have nk : ∀ r ∈ kept, r ∉ cryptRegs := by decide
-  have F₃ : Frame [⟨B + BitVec.ofNat 64 48, 8⟩] s.mem u₃.mem := by
+  obtain K₃ : Keep cryptRegs s u₃ := (K₂.trans k₃).mono (by decide)
+  obtain nk : ∀ r ∈ kept, r ∉ cryptRegs := by decide
+  obtain F₃ : Frame [⟨B + BitVec.ofNat 64 48, 8⟩] s.mem u₃.mem := by
     rw [m₃, m₂, m₁, am]; exact stored_frame _ _ _ _
-  have dB : Region.Disjoint ⟨B + BitVec.ofNat 64 schOff, 4168⟩ ⟨B + BitVec.ofNat 64 48, 8⟩ := by
+  obtain dB : Region.Disjoint ⟨B + BitVec.ofNat 64 schOff, 4168⟩ ⟨B + BitVec.ofNat 64 48, 8⟩ := by
     have := copy_blk up B
     simpa [blkRegion, slotA, inlineCore, bufSlot] using this
-  have hK : scheduleAt u₃.mem (B + BitVec.ofNat 64 schOff) = k := by
+  obtain hK : scheduleAt u₃.mem (B + BitVec.ofNat 64 schOff) = k := by
     rw [scheduleAt_eq_of_frame _ F₃ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dB, hk]
   refine ⟨by rw [show sb = .s4 from rfl, K₃.gpr (by decide)]; exact hB', fun r hr => K₃.gpr (nk r hr),
     ⟨hK, hfit⟩, F₃.sub fun r hr => ?_, fun j hj => ?_, K₃.2.1, K₃.2.2⟩
   · simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by cases up <;> decide)⟩
   · obtain rfl : j = 0 := by simpa [inlineCore] using hj
-    have e1 := congrArg Prod.fst c₂
-    have e2 := congrArg Prod.snd c₂
+    obtain e1 := congrArg Prod.fst c₂
+    obtain e2 := congrArg Prod.snd c₂
     simp only at e1 e2
     rw [blkAddr_eq, show 4 * (inlineCore up).bw = 8 from rfl, bytesAt_eq, m₃, stored_block, e1, e2, l₁, h₁, m₁, am,
       k₁.gpr (show Reg.a7 ∉ [Reg.a3, .a4, .t4] by decide), a7, hk, ← blockOut_eq, dirCipher_bytes]
@@ -255,7 +255,7 @@ theorem prepare2_wp (up : Bool) {s : State} {B : Addr} {rs : List Region} {k : S
   have hfit : B.toNat + 8 * 540 ≤ 2 ^ 64 := hS.fit
   have hB' : s.gpr .s4 = B := hB
   obtain ⟨hkk, hin, hd⟩ := hk
-  have dK : (keyR s).Disjoint ⟨B, 8 * 540⟩ := hd _ hm
+  obtain dK : (keyR s).Disjoint ⟨B, 8 * 540⟩ := hd _ hm
   show WP isa modePrepare2 s _
   unfold modePrepare2
   apply WP.seq
@@ -274,16 +274,16 @@ theorem prepare2_wp (up : Bool) {s : State} {B : Addr} {rs : List Region} {k : S
       exact hS.wr _ _ (by decide) (by cases up <;> simp only [inlineCore2, schOff2, bufOff, bufSlot] <;> omega_using [hi])
         (by simp only [schOff2, bufOff, bufSlot]; omega_using [])) (by
       rw [a0, a2]
-      have hs : Region.Sub ⟨B + BitVec.ofNat 64 schOff2, 4168⟩ ⟨B, 8 * 540⟩ :=
+      obtain hs : Region.Sub ⟨B + BitVec.ofNat 64 schOff2, 4168⟩ ⟨B, 8 * 540⟩ :=
         Offset.sub_base _ (by simp only [schOff2, bufOff, bufSlot]; omega_using [])
-      have h : Region.Disjoint ⟨B + BitVec.ofNat 64 schOff2, 4168⟩ ⟨s.gpr .a0, 4168⟩ :=
+      obtain h : Region.Disjoint ⟨B + BitVec.ofNat 64 schOff2, 4168⟩ ⟨s.gpr .a0, 4168⟩ :=
         Region.Disjoint.sub_left (Region.Disjoint.symm dK) hs
       intro x hx hy
       exact h x (by simp only [Region.Contains]; omega_using [hx]) (by simp only [Region.Contains]; omega_using [hy]))) fun t ⟨tc, tf, tk⟩ => ?_
   rw [a0, a2, am] at tc
   rw [a0, am] at tf
-  have K : Keep [.t0, .t2, .t4, .t1, .t2, .t0, .t4] s t := ak.trans tk
-  have nk : ∀ r ∈ kept, r ∉ [Reg.t0, .t2, .t4, .t1, .t2, .t0, .t4] := by decide
+  obtain K : Keep [.t0, .t2, .t4, .t1, .t2, .t0, .t4] s t := ak.trans tk
+  obtain nk : ∀ r ∈ kept, r ∉ [Reg.t0, .t2, .t4, .t1, .t2, .t0, .t4] := by decide
   refine ⟨⟨by rw [scheduleAt_copy tc, hkk], hfit⟩, by rw [show sb = .s4 from rfl, K.gpr (by decide)]; exact hB',
     fun r hr => K.gpr (nk r hr), tf.sub fun r hr => ?_, K.2.1, K.2.2⟩
   simp only [List.mem_singleton] at hr; subst hr
@@ -331,26 +331,26 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
   let q := B + BitVec.ofNat 64 48
   let SA := B + BitVec.ofNat 64 4232
   have e64 : schOff2 = 64 := rfl
-  have blkW : InRegions s.wr q 16 := hS.low _ _ (by cases up <;> decide)
-  have hSA : SA.toNat % 8 = 0 := Spill.al8 (by omega_using [hal]) (by decide)
+  obtain blkW : InRegions s.wr q 16 := hS.low _ _ (by cases up <;> decide)
+  obtain hSA : SA.toNat % 8 = 0 := Spill.al8 (by omega_using [hal]) (by decide)
   -- The save slots, the copy and the buffer, in the frame.
-  have dSC : ∀ r ∈ [(⟨B + BitVec.ofNat 64 schOff2, 4168⟩ : Region)],
+  obtain dSC : ∀ r ∈ [(⟨B + BitVec.ofNat 64 schOff2, 4168⟩ : Region)],
       Region.Disjoint ⟨SA + BitVec.ofNat 64 0, 80⟩ r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     rw [BitVec.add_zero, e64]
     exact Offset.disjoint _ (.inr (by decide)) (by omega_using []) (by omega_using [])
-  have dSq : (⟨SA + BitVec.ofNat 64 0, 80⟩ : Region).Disjoint ⟨q, 16⟩ := by
+  obtain dSq : (⟨SA + BitVec.ofNat 64 0, 80⟩ : Region).Disjoint ⟨q, 16⟩ := by
     rw [BitVec.add_zero]
     exact Offset.disjoint _ (.inr (by decide)) (by omega_using []) (by omega_using [])
-  have e8 : q + 8#64 = B + BitVec.ofNat 64 56 := by
+  obtain e8 : q + 8#64 = B + BitVec.ofNat 64 56 := by
     rw [show (8#64 : BitVec 64) = BitVec.ofNat 64 8 from rfl, Offset.add_add]
-  have dSq₁ : (⟨SA + BitVec.ofNat 64 0, 80⟩ : Region).Disjoint ⟨q, 8⟩ := by
+  obtain dSq₁ : (⟨SA + BitVec.ofNat 64 0, 80⟩ : Region).Disjoint ⟨q, 8⟩ := by
     rw [BitVec.add_zero]
     exact Offset.disjoint _ (.inr (by decide)) (by omega_using []) (by omega_using [])
-  have dSq₂ : (⟨SA + BitVec.ofNat 64 0, 80⟩ : Region).Disjoint ⟨q + 8#64, 8⟩ := by
+  obtain dSq₂ : (⟨SA + BitVec.ofNat 64 0, 80⟩ : Region).Disjoint ⟨q + 8#64, 8⟩ := by
     rw [e8, BitVec.add_zero]
     exact Offset.disjoint _ (.inr (by decide)) (by omega_using []) (by omega_using [])
-  have dCq : (⟨B + BitVec.ofNat 64 schOff2, 4168⟩ : Region).Disjoint ⟨q, 16⟩ := by
+  obtain dCq : (⟨B + BitVec.ofNat 64 schOff2, 4168⟩ : Region).Disjoint ⟨q, 16⟩ := by
     rw [e64]; exact Offset.disjoint _ (.inr (by decide)) (by omega_using []) (by omega_using [])
   show WP isa (modeCrypt2 up) s _
   unfold modeCrypt2
@@ -365,12 +365,12 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
   -- The registers saved.
   refine Spill.save_ok (b := .t0) (by rw [a0]; exact hSA) saved_ok' (fun p hp => ?_) ?_
   · have := saved_in' p hp
-    have h8 := (saved_ok' p hp).1
+    obtain h8 := (saved_ok' p hp).1
     rw [ak.2.2, a0, Offset.add_add]
     exact hS.wr _ _ (by decide) (by cases up <;> simp only [inlineCore2] <;> omega_using [this]) (by omega_using [h8])
   rw [a0]
   let Ms := Spill.saveMem a.mem SA a.gpr saved2
-  have fs : Frame [⟨SA, 80⟩] s.mem Ms := by
+  obtain fs : Frame [⟨SA, 80⟩] s.mem Ms := by
     rw [← am]
     exact Spill.saveMem_frame_base (fun p hp => (saved_in' p hp).2) (by decide) _ _ _
   let b : State := { a with mem := Ms }
@@ -378,19 +378,19 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
   -- The modes' state parked.
   refine WP.mono (WP.keep [.s0, .s11, .ra] (Q := fun t => t.gpr .s0 = s.gpr .s1 ∧ t.gpr .s11 = s.gpr .s2 ∧
       t.gpr .ra = s.gpr .s3 ∧ t.mem = Ms) (by
-    have g1 : a.gpr .s1 = s.gpr .s1 := ak.gpr (by decide)
-    have g2 : a.gpr .s2 = s.gpr .s2 := ak.gpr (by decide)
-    have g3 : a.gpr .s3 = s.gpr .s3 := ak.gpr (by decide)
+    obtain g1 : a.gpr .s1 = s.gpr .s1 := ak.gpr (by decide)
+    obtain g2 : a.gpr .s2 = s.gpr .s2 := ak.gpr (by decide)
+    obtain g3 : a.gpr .s3 = s.gpr .s3 := ak.gpr (by decide)
     unfold park2
     brun [mov, g1, g2, g3]
     all_goals rfl) (by decide) rfl) fun pk ⟨⟨p0, p11, pra, pm⟩, pkk⟩ => ?_
-  have pg : ∀ r, r ∉ [Reg.s0, .s11, .ra] → pk.gpr r = a.gpr r := fun r hr => pkk.gpr hr
-  have dSq0 : (⟨SA, 80⟩ : Region).Disjoint ⟨q, 16⟩ := by have := dSq; rwa [BitVec.add_zero] at this
-  have hbq : ∀ o, o ≤ 8 → blockAt Ms (q + BitVec.ofNat 64 o) = blockAt s.mem (q + BitVec.ofNat 64 o) :=
+  obtain pg : ∀ r, r ∉ [Reg.s0, .s11, .ra] → pk.gpr r = a.gpr r := fun r hr => pkk.gpr hr
+  obtain dSq0 : (⟨SA, 80⟩ : Region).Disjoint ⟨q, 16⟩ := by have := dSq; rwa [BitVec.add_zero] at this
+  obtain hbq : ∀ o, o ≤ 8 → blockAt Ms (q + BitVec.ofNat 64 o) = blockAt s.mem (q + BitVec.ofNat 64 o) :=
     fun o ho => blockAt_frame fs fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact (dSq0.sub_right (r₂' := ⟨q + BitVec.ofNat 64 o, 8⟩) (Offset.sub_base _ (by omega_using [ho]))).symm
-  have hbk : scheduleAt Ms (B + BitVec.ofNat 64 schOff2) = k := by
+  obtain hbk : scheduleAt Ms (B + BitVec.ofNat 64 schOff2) = k := by
     rw [scheduleAt_eq_of_frame _ fs fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       have := dSC _ (List.mem_singleton_self _); rw [BitVec.add_zero] at this; exact this.symm, hk]
@@ -399,9 +399,9 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
   refine WP.mono (loadBlock2_run pk (q := q) (by rw [pg _ (by decide), a1]) (by
     rw [pkk.2.1, pkk.2.2, ak.2.1, ak.2.2]
     let ⟨r, hr, hc⟩ := blkW; exact ⟨r, List.mem_append_right _ hr, hc⟩)) fun u₁ ⟨l₁, h₁, l₁', h₁', k₁, m₁⟩ => ?_
-  have K₁ : Keep [.a7, .a1, .t0, .s0, .s11, .ra, .a3, .a4, .s1, .s2, .t4] s u₁ := (ak.trans pkk).trans k₁
-  have u7 : u₁.gpr .a7 = B + BitVec.ofNat 64 schOff2 := by rw [k₁.gpr (by decide), pg _ (by decide), a7]
-  have E : LookEnv u₁ := by
+  obtain K₁ : Keep [.a7, .a1, .t0, .s0, .s11, .ra, .a3, .a4, .s1, .s2, .t4] s u₁ := (ak.trans pkk).trans k₁
+  obtain u7 : u₁.gpr .a7 = B + BitVec.ofNat 64 schOff2 := by rw [k₁.gpr (by decide), pg _ (by decide), a7]
+  obtain E : LookEnv u₁ := by
     refine ⟨fun o ho ho' => ?_, fun o ho ho' => ?_, ?_, ?_⟩
     · rw [u7, K₁.2.1, K₁.2.2, Offset.add_add]
       obtain ⟨r, hr, hc⟩ := hS.wr (schOff2 + o) 4 (by decide) (by cases up <;> simp only [inlineCore2, schOff2, bufOff, bufSlot] <;> omega_using [ho'])
@@ -419,22 +419,22 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
       omega_using [hal]
   apply WP.seq
   refine WP.mono (cipher2_run E up) fun u₂ ⟨c₂, c₂', k₂, m₂⟩ => ?_
-  have K₂ : Keep crypt2Regs s u₂ := (K₁.trans k₂).mono (by decide)
-  have p₂ : u₂.gpr .a1 = q := by rw [k₂.gpr (by decide), k₁.gpr (by decide), pg _ (by decide), a1]
+  obtain K₂ : Keep crypt2Regs s u₂ := (K₁.trans k₂).mono (by decide)
+  obtain p₂ : u₂.gpr .a1 = q := by rw [k₂.gpr (by decide), k₁.gpr (by decide), pg _ (by decide), a1]
   rw [crypt2_restore_eq, WP.block_append_iff]
   refine WP.mono (storeBlock2_run u₂ p₂ (by rw [K₂.2.2]; exact blkW)) fun u₃ ⟨m₃, _, _, k₃⟩ => ?_
   rw [WP.block_append_iff]
-  have u₃7 : u₃.gpr .a7 = B + BitVec.ofNat 64 schOff2 := by
+  obtain u₃7 : u₃.gpr .a7 = B + BitVec.ofNat 64 schOff2 := by
     rw [k₃.gpr (by decide), k₂.gpr (by decide), u7]
-  have u₃p : ∀ r ∈ [Reg.s0, .s11, .ra], u₃.gpr r = pk.gpr r := fun r hr => by
+  obtain u₃p : ∀ r ∈ [Reg.s0, .s11, .ra], u₃.gpr r = pk.gpr r := fun r hr => by
     rw [k₃.gpr (by revert hr; revert r; decide), k₂.gpr (by revert hr; revert r; decide),
       k₁.gpr (by revert hr; revert r; decide)]
   -- The modes' state back.
   refine WP.mono (WP.keep [.s1, .s2, .s3, .s4] (Q := fun t => t.gpr .s1 = s.gpr .s1 ∧ t.gpr .s2 = s.gpr .s2 ∧
       t.gpr .s3 = s.gpr .s3 ∧ t.gpr .s4 = B ∧ t.gpr .a7 = B + BitVec.ofNat 64 schOff2 ∧ t.mem = u₃.mem) (by
-    have h0 : u₃.gpr .s0 = s.gpr .s1 := by rw [u₃p _ (by decide), p0]
-    have h11 : u₃.gpr .s11 = s.gpr .s2 := by rw [u₃p _ (by decide), p11]
-    have hra : u₃.gpr .ra = s.gpr .s3 := by rw [u₃p _ (by decide), pra]
+    obtain h0 : u₃.gpr .s0 = s.gpr .s1 := by rw [u₃p _ (by decide), p0]
+    obtain h11 : u₃.gpr .s11 = s.gpr .s2 := by rw [u₃p _ (by decide), p11]
+    obtain hra : u₃.gpr .ra = s.gpr .s3 := by rw [u₃p _ (by decide), pra]
     unfold unpark2
     brun [mov, h0, h11, hra, u₃7, schOff2, bufOff, bufSlot, sb]
     exact BitVec.add_sub_cancel _ _) (by decide) rfl) fun v ⟨⟨v1, v2, v3, v4, v7, vm⟩, kv⟩ => ?_
@@ -443,15 +443,15 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
     unfold slotBase
     brun [v7, schOff2, bufOff, bufSlot]
     rw [Offset.add_add, Offset.add_add, Offset.add_add]) (by decide) rfl) fun u₄ ⟨⟨u₄0, u₄m'⟩, k₄⟩ => ?_
-  have u₄m : u₄.mem = u₃.mem := u₄m'.trans vm
+  obtain u₄m : u₄.mem = u₃.mem := u₄m'.trans vm
   -- The memory after the stores.
-  have m₂' : u₂.mem = Ms := by rw [m₂, m₁, pm]
+  obtain m₂' : u₂.mem = Ms := by rw [m₂, m₁, pm]
   let M₁ := writeBytes Ms q (beBytes 4 (u₂.gpr .a3) ++ beBytes 4 (u₂.gpr .a4))
-  have f₁ := stored_frame Ms q (u₂.gpr .a3) (u₂.gpr .a4)
-  have f₂ := stored_frame M₁ (q + 8#64) (u₂.gpr .s1) (u₂.gpr .s2)
-  have mem₄ : u₄.mem = writeBytes M₁ (q + 8#64) (beBytes 4 (u₂.gpr .s1) ++ beBytes 4 (u₂.gpr .s2)) := by
+  obtain f₁ := stored_frame Ms q (u₂.gpr .a3) (u₂.gpr .a4)
+  obtain f₂ := stored_frame M₁ (q + 8#64) (u₂.gpr .s1) (u₂.gpr .s2)
+  obtain mem₄ : u₄.mem = writeBytes M₁ (q + 8#64) (beBytes 4 (u₂.gpr .s1) ++ beBytes 4 (u₂.gpr .s2)) := by
     rw [u₄m, m₃, m₂']
-  have hsv : Spill.Saved SA a.gpr saved2 u₄.mem := by
+  obtain hsv : Spill.Saved SA a.gpr saved2 u₄.mem := by
     rw [mem₄]
     refine ((Spill.saveMem_saved (by decide) a.mem SA a.gpr).frame_in saved_in' f₁ fun r hr => ?_).frame_in
       saved_in' f₂ fun r hr => ?_
@@ -460,12 +460,12 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
   refine WP.mono (Spill.restore_wp (B := SA) hSA u₄0 saved_ok' (by decide) (fun p hp => ?_) hsv)
     fun t R => ?_
   · have := saved_in' p hp
-    have h8 := (saved_ok' p hp).1
+    obtain h8 := (saved_ok' p hp).1
     rw [k₄.2.1, k₄.2.2, kv.2.1, kv.2.2, k₃.2.1, k₃.2.2, K₂.2.1, K₂.2.2, Offset.add_add]
     obtain ⟨r, hr, hc⟩ := hS.wr (4232 + p.2) 8 (by decide) (by cases up <;> simp only [inlineCore2] <;> omega_using [this]) (by omega_using [h8])
     exact ⟨r, List.mem_append_right _ hr, hc⟩
-  have Kt : Keep crypt2Regs s u₄ := (((K₂.trans k₃).trans kv).trans k₄).mono (by decide)
-  have tg : ∀ r ∈ kept, t.gpr r = s.gpr r := fun r hr => by
+  obtain Kt : Keep crypt2Regs s u₄ := (((K₂.trans k₃).trans kv).trans k₄).mono (by decide)
+  obtain tg : ∀ r ∈ kept, t.gpr r = s.gpr r := fun r hr => by
     by_cases hm : r ∈ saved2.map Prod.fst
     · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hm
       rw [R.gpr p hp, ak.gpr (saved_out p hp)]
@@ -479,7 +479,7 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
         · exact v3
         · exact v4.trans hB'.symm
       · exact Kt.gpr (kept_out r hr hm hq)
-  have hK4 : scheduleAt u₄.mem (B + BitVec.ofNat 64 schOff2) = k := by
+  obtain hK4 : scheduleAt u₄.mem (B + BitVec.ofNat 64 schOff2) = k := by
     rw [mem₄, scheduleAt_eq_of_frame _ f₂ fun r hr => ?_, scheduleAt_eq_of_frame _ f₁ fun r hr => ?_, hbk]
     · simp only [List.mem_singleton] at hr; subst hr
       exact dCq.sub_right (Region.sub_prefix (by decide))
@@ -488,7 +488,7 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
   refine ⟨by rw [show sb = .s4 from rfl]; exact (tg .s4 (by decide)).trans hB', tg, ⟨by rw [R.mem]; exact hK4, hfit⟩,
     ?_, fun j hj => ?_, by rw [R.rd]; exact Kt.2.1, by rw [R.wr]; exact Kt.2.2⟩
   · rw [R.mem, mem₄]
-    have eC : coreRegion (inlineCore2 up) B = ⟨B + BitVec.ofNat 64 48, 4272⟩ := by cases up <;> rfl
+    obtain eC : coreRegion (inlineCore2 up) B = ⟨B + BitVec.ofNat 64 48, 4272⟩ := by cases up <;> rfl
     rw [eC]
     refine ((fs.sub fun r hr => ?_).trans (f₁.sub fun r hr => ?_)).trans (f₂.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
@@ -502,20 +502,20 @@ theorem crypt2_wp (up : Bool) {s : State} {B : Addr} {ws : List Region} {k : Sch
     have u17 : u₁.gpr .a7 = B + BitVec.ofNat 64 schOff2 := u7
     rcases (by omega_using [hj'] : j = 0 ∨ j = 1) with rfl | rfl
     · have e1 := congrArg Prod.fst c₂
-      have e2 := congrArg Prod.snd c₂
+      obtain e2 := congrArg Prod.snd c₂
       simp only at e1 e2
-      have ea : blkAddr (inlineCore2 up) B 0 = q := by rw [blkAddr2_eq]
-      have h0 := hbq 0 (by decide); rw [BitVec.add_zero] at h0
+      obtain ea : blkAddr (inlineCore2 up) B 0 = q := by rw [blkAddr2_eq]
+      obtain h0 := hbq 0 (by decide); rw [BitVec.add_zero] at h0
       rw [ea, bytesAt_eq, mem₄, blockAt_frame f₂ fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
           rw [e8]; exact Offset.disjoint _ (.inl (by decide)) (by omega_using []) (by omega_using []),
         stored_block, e1, e2, l₁, h₁, m₁, pm, u17, hbk, ← blockOut_eq, h0, dirCipher_bytes]
       cases up <;> rfl
     · have e1 := congrArg Prod.fst c₂'
-      have e2 := congrArg Prod.snd c₂'
+      obtain e2 := congrArg Prod.snd c₂'
       simp only at e1 e2
-      have ea : blkAddr (inlineCore2 up) B 1 = q + 8#64 := by rw [blkAddr2_eq, e8]
-      have h8 := hbq 8 (by decide)
+      obtain ea : blkAddr (inlineCore2 up) B 1 = q + 8#64 := by rw [blkAddr2_eq, e8]
+      obtain h8 := hbq 8 (by decide)
       rw [show q + BitVec.ofNat 64 8 = q + 8#64 from rfl] at h8
       rw [ea, bytesAt_eq, mem₄, stored_block, e1, e2, l₁', h₁', m₁, pm, u17, hbk, ← blockOut_eq, h8,
         dirCipher_bytes]

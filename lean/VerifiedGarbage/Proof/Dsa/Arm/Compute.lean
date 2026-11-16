@@ -44,8 +44,8 @@ theorem verify_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R S D 
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := Sc.lens
   have big := Sc.big
   have fits := Sc.fits
-  have Plt := operand_lt_of Ip
-  have Qlt := operand_lt_of Iq
+  obtain Plt := operand_lt_of Ip
+  obtain Qlt := operand_lt_of Iq
   have Lt : Impl.Dsa.Layout.t = 14944 := rfl
   have Lt2 : Impl.Dsa.Layout.t2 = 15328 := rfl
   have Li : Impl.Dsa.Layout.inverse = 14784 := rfl
@@ -53,31 +53,31 @@ theorem verify_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R S D 
   have Lv : Impl.Dsa.Layout.v = 14848 := rfl
   have Lz : Impl.Dsa.Layout.z = 14880 := rfl
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
-  have qlt : ∀ x, x % Q < 256 ^ qLen := fun x => Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) Qlt
-  have plt : ∀ x, x % P < 256 ^ pLen := fun x => Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) Plt
+  obtain qlt : ∀ x, x % Q < 256 ^ qLen := fun x => Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) Qlt
+  obtain plt : ∀ x, x % P < 256 ^ pLen := fun x => Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) Plt
   simp only [Core.verify, Core.verifyScalars, Core.verifyPowers, Core.sequence, List.foldr]
   -- `w = s^(q-2) mod q`
   refine WP.seq (WP.seq (WP.mono (power_ok (output := Impl.Dsa.Layout.inverse) Sc.ws (by omega_arith) Sc.wq q4
     (Nat.le_refl _) qw Iq.toReady Is.toReady (localReady (o := Impl.Dsa.Layout.qMinusTwo) Sc.ws (by omega_arith)
     (by omega_arith) (by omega_arith)) Iq.value (by omega_arith) hQo (by omega_arith) (by omega_arith) (by omega_arith)) fun v₁ ⟨B₁, St₁⟩ => ?_))
   rw [Is.value, local_operand Sc.ws (by omega_arith), hq2] at B₁
-  have S₁ := Sc.stage St₁
-  have n₁ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₁ base size p len v :=
+  obtain S₁ := Sc.stage St₁
+  obtain n₁ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₁ base size p len v :=
     fun I => I.next Sc St₁ (.inr ⟨by omega_arith, by omega_arith⟩)
-  have W₁ : localVal base v₁ Impl.Dsa.Layout.inverse qLen = S ^ (Q - 2) % Q := localVal_of_bytes B₁ (qlt _)
+  obtain W₁ : localVal base v₁ Impl.Dsa.Layout.inverse qLen = S ^ (Q - 2) % Q := localVal_of_bytes B₁ (qlt _)
   -- `z = digest mod q`
-  have C₁ : countValue base v₁ Core.digestPrefix = c := by rw [countValue_stage St₁ (by omega_arith), hc]
-  have Id₁ := n₁ Id
+  obtain C₁ : countValue base v₁ Core.digestPrefix = c := by rw [countValue_stage St₁ (by omega_arith), hc]
+  obtain Id₁ := n₁ Id
   rw [← C₁] at Id₁
   refine WP.seq (WP.mono (reduce_ok (output := Impl.Dsa.Layout.z) S₁.ws (by omega_arith) Sc.wq (n₁ Iq).toReady
     (by simp only [CountOk, Core.digestPrefix]; decide) Id₁.toReady (n₁ Iq).value hQ hQo (by omega_arith) (by omega_arith)
     (by omega_arith)) fun v₂ ⟨B₂, St₂⟩ => ?_)
   rw [Id₁.value] at B₂
-  have S₂ := S₁.stage St₂
-  have n₂ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₂ base size p len v :=
+  obtain S₂ := S₁.stage St₂
+  obtain n₂ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₂ base size p len v :=
     fun I => (n₁ I).next S₁ St₂ (.inr ⟨by omega_arith, by omega_arith⟩)
-  have Z₂ : localVal base v₂ Impl.Dsa.Layout.z qLen = D % Q := localVal_of_bytes B₂ (qlt _)
-  have W₂ : localVal base v₂ Impl.Dsa.Layout.inverse qLen = S ^ (Q - 2) % Q := by
+  obtain Z₂ : localVal base v₂ Impl.Dsa.Layout.z qLen = D % Q := localVal_of_bytes B₂ (qlt _)
+  obtain W₂ : localVal base v₂ Impl.Dsa.Layout.inverse qLen = S ^ (Q - 2) % Q := by
     rw [St₂.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), W₁]
   -- `u₁ = z w mod q`
   refine WP.seq (WP.mono (productMod_ok (output := Impl.Dsa.Layout.u) S₂.ws (by omega_arith) Sc.wq (n₂ Iq).toReady
@@ -85,22 +85,22 @@ theorem verify_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R S D 
     (localReady (o := Impl.Dsa.Layout.inverse) S₂.ws (by omega_arith) (by omega_arith) (by omega_arith)) (n₂ Iq).value (by omega_arith) hQo
     (by omega_arith) (by omega_arith) (by omega_arith)) fun v₃ ⟨B₃, St₃⟩ => ?_)
   rw [local_operand S₂.ws (by omega_arith), local_operand S₂.ws (by omega_arith), Z₂, W₂] at B₃
-  have S₃ := S₂.stage St₃
-  have n₃ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₃ base size p len v :=
+  obtain S₃ := S₂.stage St₃
+  obtain n₃ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₃ base size p len v :=
     fun I => (n₂ I).next S₂ St₃ (.inr ⟨by omega_arith, by omega_arith⟩)
-  have U₃ : localVal base v₃ Impl.Dsa.Layout.u qLen = D % Q * (S ^ (Q - 2) % Q) % Q := localVal_of_bytes B₃ (qlt _)
-  have W₃ : localVal base v₃ Impl.Dsa.Layout.inverse qLen = S ^ (Q - 2) % Q := by
+  obtain U₃ : localVal base v₃ Impl.Dsa.Layout.u qLen = D % Q * (S ^ (Q - 2) % Q) % Q := localVal_of_bytes B₃ (qlt _)
+  obtain W₃ : localVal base v₃ Impl.Dsa.Layout.inverse qLen = S ^ (Q - 2) % Q := by
     rw [St₃.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), W₂]
   -- `u₂ = r w mod q`
   refine WP.seq (WP.mono (productMod_ok (output := Impl.Dsa.Layout.v) S₃.ws (by omega_arith) Sc.wq (n₃ Iq).toReady
     (n₃ Ir).toReady (localReady (o := Impl.Dsa.Layout.inverse) S₃.ws (by omega_arith) (by omega_arith) (by omega_arith))
     (n₃ Iq).value (by omega_arith) hQo (by omega_arith) (by omega_arith) (by omega_arith)) fun v₄ ⟨B₄, St₄⟩ => ?_)
   rw [(n₃ Ir).value, local_operand S₃.ws (by omega_arith), W₃] at B₄
-  have S₄ := S₃.stage St₄
-  have n₄ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₄ base size p len v :=
+  obtain S₄ := S₃.stage St₄
+  obtain n₄ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₄ base size p len v :=
     fun I => (n₃ I).next S₃ St₄ (.inr ⟨by omega_arith, by omega_arith⟩)
-  have V₄ : localVal base v₄ Impl.Dsa.Layout.v qLen = R * (S ^ (Q - 2) % Q) % Q := localVal_of_bytes B₄ (qlt _)
-  have U₄ : localVal base v₄ Impl.Dsa.Layout.u qLen = D % Q * (S ^ (Q - 2) % Q) % Q := by
+  obtain V₄ : localVal base v₄ Impl.Dsa.Layout.v qLen = R * (S ^ (Q - 2) % Q) % Q := localVal_of_bytes B₄ (qlt _)
+  obtain U₄ : localVal base v₄ Impl.Dsa.Layout.u qLen = D % Q * (S ^ (Q - 2) % Q) % Q := by
     rw [St₄.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), U₃]
   refine WP.block_nil ?_
   -- `g^u₁ mod p`
@@ -108,24 +108,24 @@ theorem verify_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R S D 
     (n₄ Ig).toReady (localReady (o := Impl.Dsa.Layout.u) S₄.ws (by omega_arith) (by omega_arith) (by omega_arith)) (n₄ Ip).value
     hP hPo (by omega_arith) (by omega_arith) (by omega_arith)) fun v₅ ⟨B₅, St₅⟩ => ?_)
   rw [(n₄ Ig).value, local_operand S₄.ws (by omega_arith), U₄] at B₅
-  have S₅ := S₄.stage St₅
-  have n₅ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₅ base size p len v :=
+  obtain S₅ := S₄.stage St₅
+  obtain n₅ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₅ base size p len v :=
     fun I => (n₄ I).next S₄ St₅ (.inr ⟨by omega_arith, by omega_arith⟩)
-  have T₅ : localVal base v₅ Impl.Dsa.Layout.t pLen = G ^ (D % Q * (S ^ (Q - 2) % Q) % Q) % P :=
+  obtain T₅ : localVal base v₅ Impl.Dsa.Layout.t pLen = G ^ (D % Q * (S ^ (Q - 2) % Q) % Q) % P :=
     localVal_of_bytes B₅ (plt _)
-  have V₅ : localVal base v₅ Impl.Dsa.Layout.v qLen = R * (S ^ (Q - 2) % Q) % Q := by
+  obtain V₅ : localVal base v₅ Impl.Dsa.Layout.v qLen = R * (S ^ (Q - 2) % Q) % Q := by
     rw [St₅.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), V₄]
   -- `y^u₂ mod p`
   refine WP.seq (WP.mono (power_ok (output := Impl.Dsa.Layout.t2) S₅.ws (by omega_arith) Sc.wp q4 qp qw (n₅ Ip).toReady
     (n₅ Iy).toReady (localReady (o := Impl.Dsa.Layout.v) S₅.ws (by omega_arith) (by omega_arith) (by omega_arith)) (n₅ Ip).value
     hP hPo (by omega_arith) (by omega_arith) (by omega_arith)) fun v₆ ⟨B₆, St₆⟩ => ?_)
   rw [(n₅ Iy).value, local_operand S₅.ws (by omega_arith), V₅] at B₆
-  have S₆ := S₅.stage St₆
-  have n₆ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₆ base size p len v :=
+  obtain S₆ := S₅.stage St₆
+  obtain n₆ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₆ base size p len v :=
     fun I => (n₅ I).next S₅ St₆ (.inr ⟨by omega_arith, by omega_arith⟩)
-  have T₆ : localVal base v₆ Impl.Dsa.Layout.t pLen = G ^ (D % Q * (S ^ (Q - 2) % Q) % Q) % P := by
+  obtain T₆ : localVal base v₆ Impl.Dsa.Layout.t pLen = G ^ (D % Q * (S ^ (Q - 2) % Q) % Q) % P := by
     rw [St₆.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), T₅]
-  have T2₆ : localVal base v₆ Impl.Dsa.Layout.t2 pLen = Y ^ (R * (S ^ (Q - 2) % Q) % Q) % P :=
+  obtain T2₆ : localVal base v₆ Impl.Dsa.Layout.t2 pLen = Y ^ (R * (S ^ (Q - 2) % Q) % Q) % P :=
     localVal_of_bytes B₆ (plt _)
   -- their product mod p
   refine WP.seq (WP.mono (productMod_ok (output := Impl.Dsa.Layout.t) S₆.ws (by omega_arith) Sc.wp (n₆ Ip).toReady
@@ -133,10 +133,10 @@ theorem verify_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R S D 
     (localReady (o := Impl.Dsa.Layout.t2) S₆.ws (by omega_arith) (by omega_arith) (by omega_arith)) (n₆ Ip).value hP hPo
     (by omega_arith) (by omega_arith) (by omega_arith)) fun v₇ ⟨B₇, St₇⟩ => ?_)
   rw [local_operand S₆.ws (by omega_arith), local_operand S₆.ws (by omega_arith), T₆, T2₆] at B₇
-  have S₇ := S₆.stage St₇
-  have n₇ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₇ base size p len v :=
+  obtain S₇ := S₆.stage St₇
+  obtain n₇ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input v₇ base size p len v :=
     fun I => (n₆ I).next S₆ St₇ (.inr ⟨by omega_arith, by omega_arith⟩)
-  have T₇ := localVal_of_bytes B₇ (plt _)
+  obtain T₇ := localVal_of_bytes B₇ (plt _)
   -- mod q
   refine WP.seq (WP.mono (reduce_ok (output := Impl.Dsa.Layout.u) S₇.ws (by omega_arith) Sc.wq (n₇ Iq).toReady
     (count := .imm pLen) (input := .local Impl.Dsa.Layout.t) (show pLen < 2 ^ 16 by omega_arith)
@@ -198,23 +198,23 @@ theorem signCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := Sc.lens
   have big := Sc.big
   have fits := Sc.fits
-  have Qlt := operand_lt_of Iq
-  have qlt : ∀ x, x % Q < 256 ^ qLen := fun x => Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) Qlt
+  obtain Qlt := operand_lt_of Iq
+  obtain qlt : ∀ x, x % Q < 256 ^ qLen := fun x => Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) Qlt
   have Lr : Impl.Dsa.Layout.r = 14720 := rfl
   have Ls : Impl.Dsa.Layout.s = 14752 := rfl
   simp only [SignVerify.signCompute, Core.sequence, List.foldr]
   refine WP.seq (WP.mono (signingKey_ok Sc Ip Iq Ig Iy hP hPo hQ hQo) fun u₁ ⟨F₁, L₁, Rn₁⟩ => ?_)
-  have r₁ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₁ base size p len v :=
+  obtain r₁ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₁ base size p len v :=
     fun I => I.run Rn₁ (by omega_arith) fits
   refine WP.seq (WP.mono (privateKey_ok (Sc.run Rn₁) (r₁ Ip) (r₁ Iq) (r₁ Ig) (r₁ Iy) (r₁ Ix) (r₁ Ik) hP hPo)
     fun u₂ ⟨F₂, K₂, Rn₂⟩ => ?_)
-  have r₂ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₂ base size p len v :=
+  obtain r₂ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₂ base size p len v :=
     fun I => (r₁ I).run Rn₂ (by omega_arith) fits
-  have L₂ : localVal base u₂ Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 := by
+  obtain L₂ : localVal base u₂ Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 := by
     rw [K₂ _ _ (by decide) (by simp only [Impl.Dsa.Layout.qMinusTwo, Impl.Dsa.Layout.t]; omega_arith), L₁]
   refine WP.seq (WP.mono (sign_ok (Sc.run (Rn₁.trans Rn₂)) (r₂ Ip) (r₂ Iq) (r₂ Ig) (r₂ Ix) (r₂ Ik) (r₂ Id)
     (by rw [countValue_run Rn₂, countValue_run Rn₁, hc]) L₂ hP hPo hQ hQo) fun u₃ ⟨R₃, S₃, M₃, Rn₃⟩ => ?_)
-  have Sc₃ := Sc.run ((Rn₁.trans Rn₂).trans Rn₃)
+  obtain Sc₃ := Sc.run ((Rn₁.trans Rn₂).trans Rn₃)
   refine WP.seq (WP.seq (WP.mono (zero_ok Sc₃.ws (by omega_arith) Sc.wq
     (localReady (o := Impl.Dsa.Layout.r) (len := qLen) Sc₃.ws (by omega_arith) (by omega_arith) (by omega_arith)) true)
     fun u₄ ⟨F₄, St₄⟩ => WP.mono (zero_ok (St₄.ws Sc₃.ws) (by omega_arith) Sc.wq
@@ -226,9 +226,9 @@ theorem signCompute_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y X
     rw [F₅, F₄, M₃, F₂, F₁, BitVec.and_assoc, BitVec.and_assoc, BitVec.and_assoc, mask32_and, mask32_and,
       mask32_and]
     apply congrArg _ (mask32_iff ?_)
-    have H := signingPublicChecks_consistent (P := P) (Q := Q) (G := G) (Y := Y) (X := X)
+    obtain H := signingPublicChecks_consistent (P := P) (Q := Q) (G := G) (Y := Y) (X := X)
       (A := ((0 < X ∧ X < Q) ∧ (0 < K ∧ K < Q))) hP
-    have H' := and_congr H (Iff.rfl :
+    obtain H' := and_congr H (Iff.rfl :
       (rValue P Q G K ≠ 0 ∧ sValue P Q G X K D ≠ 0) ↔
         (rValue P Q G K ≠ 0 ∧ sValue P Q G X K D ≠ 0))
     simpa only [↓reduceIte, signChecks, and_assoc] using H'
@@ -270,17 +270,17 @@ theorem verifyTail_ok {s : State} {base : Addr} {size pLen qLen nP nQ P Q G Y R 
     fun u₃ ⟨F₃, St₃⟩ => ?_))
   rw [Iq.value, Ir.value] at F₂
   rw [(Iq.next Sc St₂ (.inl ⟨rfl, rfl⟩)).value, (Is.next Sc St₂ (.inl ⟨rfl, rfl⟩)).value] at F₃
-  have Sc₃ := (Sc.stage St₂).stage St₃
-  have r₃ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₃ base size p len v :=
+  obtain Sc₃ := (Sc.stage St₂).stage St₃
+  obtain r₃ : ∀ {p : Impl.Dsa.Layout.Pointer} {len v : Nat}, Input s base size p len v → Input u₃ base size p len v :=
     fun I => (I.next Sc St₂ (.inl ⟨rfl, rfl⟩)).next (Sc.stage St₂) St₃ (.inl ⟨rfl, rfl⟩)
-  have L₃ : localVal base u₃ Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 := by
+  obtain L₃ : localVal base u₃ Impl.Dsa.Layout.qMinusTwo qLen = Q - 2 := by
     rw [St₃.localVal_eq (by decide) (by omega_arith) (by omega_arith) (by omega_arith),
       St₂.localVal_eq (by decide) (by omega_arith) (by omega_arith) (by omega_arith), L]
-  have C₃ : countValue base u₃ Core.digestPrefix = c := by
+  obtain C₃ : countValue base u₃ Core.digestPrefix = c := by
     rw [countValue_stage St₃ (by omega_arith), countValue_stage St₂ (by omega_arith), hc]
   refine WP.seq (WP.mono (verify_ok Sc₃ (r₃ Ip) (r₃ Iq) (r₃ Ig) (r₃ Iy) (r₃ Ir) (r₃ Is) (r₃ Id) C₃ L₃ hP hPo hQ hQo)
     fun u₄ ⟨V₄, M₄, Rn₄⟩ => ?_)
-  have Sc₄ := Sc₃.run Rn₄
+  obtain Sc₄ := Sc₃.run Rn₄
   refine WP.seq (WP.mono (equalValues_ok Sc₄.ws (by omega_arith) Sc.wq
     (localReady (o := Impl.Dsa.Layout.u) Sc₄.ws (by omega_arith) (by omega_arith) (by omega_arith)) ((r₃ Ir).run Rn₄ (by omega_arith) fits).toReady)
     fun u₅ ⟨F₅, St₅⟩ => WP.block_nil ⟨?_, ?_⟩)

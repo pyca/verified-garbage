@@ -39,8 +39,8 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
   obtain ⟨q4, qp, p384, q32, pw, qw⟩ := X.C₁.S.lens
   have b₁ := X.C₁.S.big
   have b₂ := X.C₂.S.big
-  have Q₁ := operand_lt_of (X.C₁.inp mq)
-  have Q₂ := operand_lt_of (X.C₂.inp mq)
+  obtain Q₁ := operand_lt_of (X.C₁.inp mq)
+  obtain Q₂ := operand_lt_of (X.C₂.inp mq)
   have hQ₁ := D₁.hQ
   have hQ₂ := D₂.hQ
   have Lt : Impl.Dsa.Layout.t = 14944 := rfl
@@ -63,9 +63,9 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
     (power_ok (output := Impl.Dsa.Layout.t) X.C₂.S.ws (by omega_arith) X.C₁.S.wp q4 qp qw (X.C₂.inp mp).toReady
       (X.C₂.inp mg).toReady (X.C₂.inp mk).toReady (X.C₂.inp mp).value D₂.hP D₂.hPo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_)
-  have A₁ := St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)
-  have A₂ := St₂.run (.inr ⟨by omega_arith, by omega_arith⟩)
-  have X₁ := X.run A₁ A₂
+  obtain A₁ := St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)
+  obtain A₂ := St₂.run (.inr ⟨by omega_arith, by omega_arith⟩)
+  obtain X₁ := X.run A₁ A₂
   -- `r = t mod q`
   refine SameTrace.assoc_left (SameTrace.seq (reduce_trace (output := Impl.Dsa.Layout.r) (count := .imm pLen)
       (X₁.C₁.opPre mq X.C₁.S.wq (by omega_arith) D₁.hQo) (X₁.C₂.opPre mq X.C₁.S.wq (by omega_arith) D₂.hQo)
@@ -80,9 +80,9 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
       (localReady (o := Impl.Dsa.Layout.t) X₁.C₂.S.ws (by omega_arith) (by simp only [countValue]; omega_arith) (by omega_arith))
       (X₁.C₂.inp mq).value D₂.hQ D₂.hQo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_)
-  have A₁ := A₁.trans (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩))
-  have A₂ := A₂.trans (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
-  have X₂ := X.run A₁ A₂
+  obtain A₁ := A₁.trans (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain A₂ := A₂.trans (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain X₂ := X.run A₁ A₂
   -- `k^(q-2) mod q`
   refine SameTrace.assoc_left (SameTrace.seq (power_trace (output := Impl.Dsa.Layout.inverse)
       (X₂.C₁.opPre mq X.C₁.S.wq (by omega_arith) D₁.hQo) (X₂.C₂.opPre mq X.C₁.S.wq (by omega_arith) D₂.hQo)
@@ -99,9 +99,9 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
       (localReady (o := Impl.Dsa.Layout.qMinusTwo) X₂.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₂.C₂.inp mq).value (by omega_arith) D₂.hQo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_)
-  have A₁ := A₁.trans (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩))
-  have A₂ := A₂.trans (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
-  have X₃ := X.run A₁ A₂
+  obtain A₁ := A₁.trans (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain A₂ := A₂.trans (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain X₃ := X.run A₁ A₂
   refine SameTrace.nil_seq ?_
   -- `u = x r mod q`
   refine SameTrace.seq (productMod_trace (output := Impl.Dsa.Layout.u)
@@ -117,14 +117,14 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
       (X₃.C₂.inp mx).toReady (localReady (o := Impl.Dsa.Layout.r) X₃.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₃.C₂.inp mq).value (by omega_arith) D₂.hQo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨B₁, St₁⟩ ⟨B₂, St₂⟩ => ?_
-  have U₁ := result_lt (by omega_arith) (Nat.le_of_lt Q₁) B₁
-  have U₂ := result_lt (by omega_arith) (Nat.le_of_lt Q₂) B₂
-  have A₁ := A₁.trans (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩))
-  have A₂ := A₂.trans (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
-  have X₄ := X.run A₁ A₂
+  obtain U₁ := result_lt (by omega_arith) (Nat.le_of_lt Q₁) B₁
+  obtain U₂ := result_lt (by omega_arith) (Nat.le_of_lt Q₂) B₂
+  obtain A₁ := A₁.trans (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain A₂ := A₂.trans (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain X₄ := X.run A₁ A₂
   -- `z = digest mod q`
-  have I₁ := X₄.C₁.inp md
-  have I₂ := X₄.C₂.inp md
+  obtain I₁ := X₄.C₁.inp md
+  obtain I₂ := X₄.C₂.inp md
   rw [← (countValue_run A₁).trans hc₁] at I₁
   rw [← (countValue_run A₂).trans hc₂] at I₂
   refine SameTrace.seq (reduce_trace (output := Impl.Dsa.Layout.z) (count := Core.digestPrefix)
@@ -139,15 +139,15 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
       (by simp only [CountOk, Core.digestPrefix]; decide) I₂.toReady (X₄.C₂.inp mq).value D₂.hQ D₂.hQo
       (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨B₁, St₁⟩ ⟨B₂, St₂⟩ => ?_
-  have Z₁ := result_lt (by omega_arith) (Nat.le_of_lt Q₁) B₁
-  have Z₂ := result_lt (by omega_arith) (Nat.le_of_lt Q₂) B₂
-  have U₁' : localVal base v₁ Impl.Dsa.Layout.u qLen < val₁ (.input .q) := by
+  obtain Z₁ := result_lt (by omega_arith) (Nat.le_of_lt Q₁) B₁
+  obtain Z₂ := result_lt (by omega_arith) (Nat.le_of_lt Q₂) B₂
+  obtain U₁' : localVal base v₁ Impl.Dsa.Layout.u qLen < val₁ (.input .q) := by
     rw [St₁.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]; exact U₁
-  have U₂' : localVal base v₂ Impl.Dsa.Layout.u qLen < val₂ (.input .q) := by
+  obtain U₂' : localVal base v₂ Impl.Dsa.Layout.u qLen < val₂ (.input .q) := by
     rw [St₂.localVal_eq (by omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]; exact U₂
-  have A₁ := A₁.trans (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩))
-  have A₂ := A₂.trans (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
-  have X₅ := X.run A₁ A₂
+  obtain A₁ := A₁.trans (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain A₂ := A₂.trans (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain X₅ := X.run A₁ A₂
   -- `v = z + u mod q`
   refine SameTrace.seq (sum_trace (output := Impl.Dsa.Layout.v)
       (X₅.C₁.opPre mq X.C₁.S.wq (by omega_arith) D₁.hQo) (X₅.C₂.opPre mq X.C₁.S.wq (by omega_arith) D₂.hQo)
@@ -166,9 +166,9 @@ theorem sign_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {ins 
       (X₅.C₂.inp mq).value (by omega_arith) D₂.hQo (by rw [local_operand X₅.C₂.S.ws (by omega_arith)]; exact Z₂)
       (by rw [local_operand X₅.C₂.S.ws (by omega_arith)]; exact U₂') (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_
-  have A₁ := A₁.trans (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩))
-  have A₂ := A₂.trans (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
-  have X₆ := X.run A₁ A₂
+  obtain A₁ := A₁.trans (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain A₂ := A₂.trans (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain X₆ := X.run A₁ A₂
   -- `s = k^(q-2) v mod q`
   exact SameTrace.seq (productMod_trace (output := Impl.Dsa.Layout.s)
       (X₆.C₁.opPre mq X.C₁.S.wq (by omega_arith) D₁.hQo) (X₆.C₂.opPre mq X.C₁.S.wq (by omega_arith) D₂.hQo)
@@ -208,7 +208,7 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
   have Lz : Impl.Dsa.Layout.z = 14880 := rfl
   have L2 : Impl.Dsa.Layout.qMinusTwo = 14912 := rfl
   have ok : ∀ o, o < 2 ^ 16 → PtrOk (.local o) := local_ptrOk
-  have ws : ∀ {a b : State} {s₁' s₂' : Nat}, Ws a base s₁' → Ws b base s₂' → ∀ o, PtrEq base a b (.local o) :=
+  obtain ws : ∀ {a b : State} {s₁' s₂' : Nat}, Ws a base s₁' → Ws b base s₂' → ∀ o, PtrEq base a b (.local o) :=
     fun h₁ h₂ o => ptrEq_local h₁ h₂ o
   simp only [Core.verify, Core.verifyScalars, Core.verifyPowers, Core.sequence, List.foldr]
   -- `w = s^(q-2) mod q`
@@ -227,12 +227,12 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (localReady (o := Impl.Dsa.Layout.qMinusTwo) X.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X.C₂.inp mq).value (by omega_arith) D₂.hQo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_)
-  have A₁ := St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)
-  have A₂ := St₂.run (.inr ⟨by omega_arith, by omega_arith⟩)
-  have X₁ := X.run A₁ A₂
+  obtain A₁ := St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)
+  obtain A₂ := St₂.run (.inr ⟨by omega_arith, by omega_arith⟩)
+  obtain X₁ := X.run A₁ A₂
   -- `z = digest mod q`
-  have I₁ := X₁.C₁.inp md
-  have I₂ := X₁.C₂.inp md
+  obtain I₁ := X₁.C₁.inp md
+  obtain I₂ := X₁.C₂.inp md
   rw [← (countValue_run A₁).trans hc₁] at I₁
   rw [← (countValue_run A₂).trans hc₂] at I₂
   refine SameTrace.assoc_left (SameTrace.seq (reduce_trace (output := Impl.Dsa.Layout.z) (count := Core.digestPrefix)
@@ -247,7 +247,7 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (by simp only [CountOk, Core.digestPrefix]; decide) I₂.toReady (X₁.C₂.inp mq).value D₂.hQ D₂.hQo
       (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_)
-  have X₂ := X₁.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain X₂ := X₁.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
   -- `u₁ = z w mod q`
   refine SameTrace.assoc_left (SameTrace.seq (productMod_trace (output := Impl.Dsa.Layout.u)
       (X₂.C₁.opPre mq X.C₁.S.wq (by omega_arith) D₁.hQo) (X₂.C₂.opPre mq X.C₁.S.wq (by omega_arith) D₂.hQo)
@@ -265,7 +265,7 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (localReady (o := Impl.Dsa.Layout.inverse) X₂.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₂.C₂.inp mq).value (by omega_arith) D₂.hQo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_)
-  have X₃ := X₂.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain X₃ := X₂.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
   -- `u₂ = r w mod q`
   refine SameTrace.assoc_left (SameTrace.seq (productMod_trace (output := Impl.Dsa.Layout.v)
       (X₃.C₁.opPre mq X.C₁.S.wq (by omega_arith) D₁.hQo) (X₃.C₂.opPre mq X.C₁.S.wq (by omega_arith) D₂.hQo)
@@ -280,7 +280,7 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (X₃.C₂.inp mr).toReady (localReady (o := Impl.Dsa.Layout.inverse) X₃.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₃.C₂.inp mq).value (by omega_arith) D₂.hQo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_)
-  have X₄ := X₃.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain X₄ := X₃.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
   refine SameTrace.nil_seq ?_
   -- `g^u₁ mod p`
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t)
@@ -296,7 +296,7 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (X₄.C₂.inp mg).toReady (localReady (o := Impl.Dsa.Layout.u) X₄.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₄.C₂.inp mp).value D₂.hP D₂.hPo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_
-  have X₅ := X₄.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain X₅ := X₄.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
   -- `y^u₂ mod p`
   refine SameTrace.seq (power_trace (output := Impl.Dsa.Layout.t2)
       (X₅.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo) (X₅.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo)
@@ -311,7 +311,7 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (X₅.C₂.inp my).toReady (localReady (o := Impl.Dsa.Layout.v) X₅.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₅.C₂.inp mp).value D₂.hP D₂.hPo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_
-  have X₆ := X₅.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain X₆ := X₅.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
   -- their product mod p
   refine SameTrace.seq (productMod_trace (output := Impl.Dsa.Layout.t)
       (X₆.C₁.opPre mp X.C₁.S.wp D₁.hP D₁.hPo) (X₆.C₂.opPre mp X.C₁.S.wp D₂.hP D₂.hPo)
@@ -329,7 +329,7 @@ theorem verify_trace {base : Addr} {size₁ size₂ pLen qLen nP nQ c : Nat} {in
       (localReady (o := Impl.Dsa.Layout.t2) X₆.C₂.S.ws (by omega_arith) (by omega_arith) (by omega_arith))
       (X₆.C₂.inp mp).value D₂.hP D₂.hPo (by omega_arith) (by omega_arith) (by omega_arith))
     fun v₁ v₂ ⟨_, St₁⟩ ⟨_, St₂⟩ => ?_
-  have X₇ := X₆.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
+  obtain X₇ := X₆.run (St₁.run (.inr ⟨by omega_arith, by omega_arith⟩)) (St₂.run (.inr ⟨by omega_arith, by omega_arith⟩))
   -- mod q
   exact SameTrace.seq (reduce_trace (output := Impl.Dsa.Layout.u) (count := .imm pLen)
       (X₇.C₁.opPre mq X.C₁.S.wq (by omega_arith) D₁.hQo) (X₇.C₂.opPre mq X.C₁.S.wq (by omega_arith) D₂.hQo)

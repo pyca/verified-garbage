@@ -35,7 +35,7 @@ theorem kmask_ok {s : State} {B : Addr} {Z w N : Nat} (h : Ws s B Z w N) (bit : 
   have hz := h.hdr_le
   have nw := h.nowrap
   refine WP.keep _ ?_ (by rfl) (by rfl)
-  have hz' : X8 + 8 ≤ Z := by simp only [hdr_eq, X8] at hz ⊢; omega_arith
+  obtain hz' : X8 + 8 ≤ Z := by simp only [hdr_eq, X8] at hz ⊢; omega_arith
   brun [mask, h.s11, VG.Proof.Bignum.RISCV64.fin64_exec_li_zero, add_ofNat_zero',
     h.scr.al8 (d := X8) (by omega_arith) (by decide), h.scr.ld (d := X8) (n := 8) hz', show X8 < 2048 by decide]
   exact mask_of_slot _ bit
@@ -105,13 +105,13 @@ theorem storeTo_ok {s0 s : State} {m : Mem} (hp : PreC s0) (h : Fr s0 m s) {rP r
       Fr s0 m t ∧ (∀ c < L, t.mem (off O c) = if b then m (off (bOf s0) (arr (wOf s0) j + (L - 1 - c))) else 0) ∧
         Outside O 0 L s.mem t.mem ∧ Keep [.t4, .t5, .t0, .t1, .t3] s t := by
   have hz := h.ws.hdr_le
-  have hs8 : slot s.mem (bOf s0) X8 = slot m (bOf s0) X8 := by
+  obtain hs8 : slot s.mem (bOf s0) X8 = slot m (bOf s0) X8 := by
     simp only [slot]; rw [h.word (by simp only [hdr_eq, X8] at hz ⊢; omega_arith)]
-  have hb' : decide (slot s.mem (bOf s0) X8 ≠ 0) = b := by rw [hs8, hb]; cases b <;> rfl
+  obtain hb' : decide (slot s.mem (bOf s0) X8 ≠ 0) = b := by rw [hs8, hb]; cases b <;> rfl
   rw [WP.seq_iff]
   refine WP.mono (kmask_ok h.ws (by rw [hs8, hb]; cases b <;> decide)) fun u ⟨⟨u4, um⟩, ku⟩ => ?_
   rw [hb'] at u4
-  have fu : Fr s0 m u := h.of_keep ku um
+  obtain fu : Fr s0 m u := h.of_keep ku um
   refine WP.mono (storeBytes_ok fu.ws hj (by decide) (by rw [ku.gpr (by simp [hP4, hP5])]; exact hO)
     (by rw [ku.gpr (by simp [hL4, hL5])]; exact hL) hL1 hP1 hL0 u4 hL1' hLw
     (fun i hi => by rw [fu.cb.wr]; exact bytes_in hrw (by omega_arith) i hi) (bytes_sep hds (by omega_arith)) hOw)
@@ -121,8 +121,8 @@ theorem storeTo_ok {s0 s : State} {m : Mem} (hp : PreC s0) (h : Fr s0 m s) {rP r
   cases b
   · rfl
   · simp only [ite_true]
-    have fit := h.ws.arr_fit hj
-    have fZ := Nat.le_trans (arr_end hj) h.ws.fits
+    obtain fit := h.ws.arr_fit hj
+    obtain fZ := Nat.le_trans (arr_end hj) h.ws.fits
     have nw := h.ws.nowrap
     simp only [S] at fit fZ
     refine h.scr _ ?_
@@ -185,33 +185,33 @@ theorem stores_ok {s0 s : State} (hp : PreC s0) (h : Fr s0 s.mem s) {a b : Bool}
     WP isa stores s fun t => CE s0 t ∧
       t.gpr .a0 = BitVec.ofNat 64 (2 * (if a then 1 else 0) + (if b then 1 else 0)) ∧
       Outs s0 s.mem b t.mem (outList s0) := by
-  have hn := hp.hn; have hd := hp.hd; have hq := hp.hq; have hdp := hp.hdp; have hdq := hp.hdq
+  obtain hn := hp.hn; have hd := hp.hd; have hq := hp.hq; have hdp := hp.hdp; have hdq := hp.hdq
   have hqi := hp.hqi
-  have p512 := hp.p512; have p32 := hp.p32
+  obtain p512 := hp.p512; have p32 := hp.p32
   have w4 := hp.wOf_eq
-  have lN : 2 * pLen s0 ≤ 8 * wOf s0 := by simp only [pLen] at w4 ⊢; omega_using [w4]
-  have lP : pLen s0 ≤ 8 * wOf s0 := by simp only [pLen] at w4 ⊢; omega_using [w4]
-  have oN : 1 ≤ 2 * pLen s0 := by simp only [pLen]; omega_using [p32]
-  have oP : 1 ≤ pLen s0 := by simp only [pLen]; omega_using [p32]
-  have bN : 2 * pLen s0 ≤ 2 ^ 64 := by simp only [pLen]; omega_using [hn]
-  have bP : pLen s0 ≤ 2 ^ 64 := by simp only [pLen]; omega_using []
-  have wN := hp.wn; have wD := hp.wd; have wP := hp.wp; have wQ := hp.wq
-  have wDp := hp.wdp; have wDq := hp.wdq; have wQi := hp.wqi
-  have mN : (⟨s0.gpr .a0, 2 * pLen s0⟩ : Region) ∈ s0.wr := by rw [hp.hwr]; simp [nR, hn]
-  have mD : (⟨s0.gpr .a2, 2 * pLen s0⟩ : Region) ∈ s0.wr := by rw [hp.hwr]; simp [dR, hd, hn]
-  have mP : (⟨s0.gpr .a4, pLen s0⟩ : Region) ∈ s0.wr := by rw [hp.hwr]; simp [pR]
-  have mQ : (⟨s0.gpr .a6, pLen s0⟩ : Region) ∈ s0.wr := by rw [hp.hwr]; simp [qR, hq]
-  have mDp : (⟨stackArg s0 0, pLen s0⟩ : Region) ∈ s0.wr := by rw [hp.hwr]; simp [dpR, hdp]
-  have mDq : (⟨stackArg s0 2, pLen s0⟩ : Region) ∈ s0.wr := by rw [hp.hwr]; simp [dqR, hdq]
-  have mQi : (⟨stackArg s0 4, pLen s0⟩ : Region) ∈ s0.wr := by rw [hp.hwr]; simp [qiR, hqi]
-  have pN := hp.ns; have pD := hp.ds; have pP := hp.ps; have pQ := hp.qs; have pDp := hp.dps
-  have pDq := hp.dqs; have pQi := hp.qis
-  have nD := hp.nd; have nP := hp.np; have nQ := hp.nq; have nDp := hp.ndp; have nDq := hp.ndq
+  obtain lN : 2 * pLen s0 ≤ 8 * wOf s0 := by simp only [pLen] at w4 ⊢; omega_using [w4]
+  obtain lP : pLen s0 ≤ 8 * wOf s0 := by simp only [pLen] at w4 ⊢; omega_using [w4]
+  obtain oN : 1 ≤ 2 * pLen s0 := by simp only [pLen]; omega_using [p32]
+  obtain oP : 1 ≤ pLen s0 := by simp only [pLen]; omega_using [p32]
+  obtain bN : 2 * pLen s0 ≤ 2 ^ 64 := by simp only [pLen]; omega_using [hn]
+  obtain bP : pLen s0 ≤ 2 ^ 64 := by simp only [pLen]; omega_using []
+  obtain wN := hp.wn; have wD := hp.wd; have wP := hp.wp; have wQ := hp.wq
+  obtain wDp := hp.wdp; have wDq := hp.wdq; have wQi := hp.wqi
+  obtain mN : (⟨s0.gpr .a0, 2 * pLen s0⟩ : Region) ∈ s0.wr := by rw [hp.hwr]; simp [nR, hn]
+  obtain mD : (⟨s0.gpr .a2, 2 * pLen s0⟩ : Region) ∈ s0.wr := by rw [hp.hwr]; simp [dR, hd, hn]
+  obtain mP : (⟨s0.gpr .a4, pLen s0⟩ : Region) ∈ s0.wr := by rw [hp.hwr]; simp [pR]
+  obtain mQ : (⟨s0.gpr .a6, pLen s0⟩ : Region) ∈ s0.wr := by rw [hp.hwr]; simp [qR, hq]
+  obtain mDp : (⟨stackArg s0 0, pLen s0⟩ : Region) ∈ s0.wr := by rw [hp.hwr]; simp [dpR, hdp]
+  obtain mDq : (⟨stackArg s0 2, pLen s0⟩ : Region) ∈ s0.wr := by rw [hp.hwr]; simp [dqR, hdq]
+  obtain mQi : (⟨stackArg s0 4, pLen s0⟩ : Region) ∈ s0.wr := by rw [hp.hwr]; simp [qiR, hqi]
+  obtain pN := hp.ns; have pD := hp.ds; have pP := hp.ps; have pQ := hp.qs; have pDp := hp.dps
+  obtain pDq := hp.dqs; have pQi := hp.qis
+  obtain nD := hp.nd; have nP := hp.np; have nQ := hp.nq; have nDp := hp.ndp; have nDq := hp.ndq
   have nQi := hp.nqi
-  have dP := hp.dp; have dQ := hp.dq; have dDp := hp.ddp; have dDq := hp.ddq; have dQi := hp.dqi
-  have pQ' := hp.pq; have pDp' := hp.pdp; have pDq' := hp.pdq; have pQi' := hp.pqi
-  have qDp := hp.qdp; have qDq := hp.qdq; have qQi := hp.qqi
-  have dpDq := hp.dpdq; have dpQi := hp.dpqi; have dqQi := hp.dqqi
+  obtain dP := hp.dp; have dQ := hp.dq; have dDp := hp.ddp; have dDq := hp.ddq; have dQi := hp.dqi
+  obtain pQ' := hp.pq; have pDp' := hp.pdp; have pDq' := hp.pdq; have pQi' := hp.pqi
+  obtain qDp := hp.qdp; have qDq := hp.qdq; have qQi := hp.qqi
+  obtain dpDq := hp.dpdq; have dpQi := hp.dpqi; have dqQi := hp.dqqi
   set_option linter.unusedSimpArgs false in
   simp only [nR, dR, pR, qR, dpR, dqR, qiR, hn, hd, hq, hdp, hdq, hqi] at pN pD pP pQ pDp pDq pQi nD nP nQ nDp
   set_option linter.unusedSimpArgs false in
@@ -227,53 +227,53 @@ theorem stores_ok {s0 s : State} (hp : PreC s0) (h : Fr s0 s.mem s) {a b : Bool}
   have c := h.cb
   have a1 : s.gpr .a1 = BitVec.ofNat 64 (pLen s0) := c.a1_ofNat
   rw [stores_eq, wp_seqs_cons (List.cons_ne_nil _ _)]
-  have b0 : WP isa (.block [.shift .sll .d .a5 .a1 1]) s fun u =>
+  obtain b0 : WP isa (.block [.shift .sll .d .a5 .a1 1]) s fun u =>
       (u.gpr .a5 = BitVec.ofNat 64 (2 * pLen s0) ∧ u.mem = s.mem) ∧ Keep [.a5] s u := by
     refine WP.keep _ ?_ (by rfl) (by rfl)
     brun [a1]
     exact twice_bv _
   refine WP.mono b0 fun u ⟨⟨u5, um⟩, ku⟩ => ?_
-  have f0 := h.of_keep ku um
+  obtain f0 := h.of_keep ku um
   rw [wp_seqs_pair (List.cons_ne_nil _ _)]
   refine WP.mono (storeTo_ok hp f0 (rP := .s0) (rL := .a5) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) f0.cb.rs0 u5 h8 mN pN wN oN lN (j := aN)
     (by decide)) fun t1 ⟨f1, v1, o1, k1⟩ => ?_
-  have O1 : Outs s0 s.mem b t1.mem [(s0.gpr .a0, 2 * pLen s0, aN)] :=
+  obtain O1 : Outs s0 s.mem b t1.mem [(s0.gpr .a0, 2 * pLen s0, aN)] :=
     Outs.cons (fun _ h => absurd h (by simp)) v1
-  have e1 : t1.gpr .a5 = BitVec.ofNat 64 (2 * pLen s0) := (k1.gpr (by decide)).trans u5
+  obtain e1 : t1.gpr .a5 = BitVec.ofNat 64 (2 * pLen s0) := (k1.gpr (by decide)).trans u5
   rw [wp_seqs_pair (List.cons_ne_nil _ _)]
   refine WP.mono (storeTo_ok hp f1 (rP := .s1) (rL := .a5) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) f1.cb.s1 e1 h8 mD pD wD oN lN (j := aD)
     (by decide)) fun t2 ⟨f2, v2, o2, k2⟩ => ?_
-  have O2 := (O1.step o2 (by
+  obtain O2 := (O1.step o2 (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq]; exact ⟨nD, bN⟩)).cons v2
-  have a1' : ∀ {t : State}, Fr s0 s.mem t → t.gpr .a1 = BitVec.ofNat 64 (pLen s0) := fun f => f.cb.a1_ofNat
+  obtain a1' : ∀ {t : State}, Fr s0 s.mem t → t.gpr .a1 = BitVec.ofNat 64 (pLen s0) := fun f => f.cb.a1_ofNat
   rw [wp_seqs_pair (List.cons_ne_nil _ _)]
   refine WP.mono (storeTo_ok hp f2 (rP := .s2) (rL := .a1) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) f2.cb.s2 (a1' f2) h8 mP pP wP oP lP (j := aP)
     (by decide)) fun t3 ⟨f3, v3, o3, k3⟩ => ?_
-  have O3 := (O2.step o3 (by
+  obtain O3 := (O2.step o3 (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨⟨dP, bN⟩, ⟨nP, bN⟩⟩)).cons v3
   rw [wp_seqs_pair (List.cons_ne_nil _ _)]
   refine WP.mono (storeTo_ok hp f3 (rP := .s3) (rL := .a1) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) f3.cb.s3 (a1' f3) h8 mQ pQ wQ oP lP (j := aQ)
     (by decide)) fun t4 ⟨f4, v4, o4, k4⟩ => ?_
-  have O4 := (O3.step o4 (by
+  obtain O4 := (O3.step o4 (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨⟨pQ', bP⟩, ⟨dQ, bN⟩, ⟨nQ, bN⟩⟩)).cons v4
   rw [wp_seqs_pair (List.cons_ne_nil _ _)]
   refine WP.mono (storeTo_ok hp f4 (rP := .s4) (rL := .a1) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) f4.cb.s4 (a1' f4) h8 mDp pDp wDp oP lP
     (j := aDP) (by decide)) fun t5 ⟨f5, v5, o5, k5⟩ => ?_
-  have O5 := (O4.step o5 (by
+  obtain O5 := (O4.step o5 (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨⟨qDp, bP⟩, ⟨pDp', bP⟩, ⟨dDp, bN⟩, ⟨nDp, bN⟩⟩)).cons v5
   rw [wp_seqs_pair (List.cons_ne_nil _ _)]
   refine WP.mono (storeTo_ok hp f5 (rP := .s5) (rL := .a1) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) f5.cb.s5 (a1' f5) h8 mDq pDq wDq oP lP
     (j := aDQ) (by decide)) fun t6 ⟨f6, v6, o6, k6⟩ => ?_
-  have O6 := (O5.step o6 (by
+  obtain O6 := (O5.step o6 (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨⟨dpDq, bP⟩, ⟨qDq, bP⟩, ⟨pDq', bP⟩, ⟨dDq, bN⟩,
       ⟨nDq, bN⟩⟩)).cons v6
@@ -281,7 +281,7 @@ theorem stores_ok {s0 s : State} (hp : PreC s0) (h : Fr s0 s.mem s) {a b : Bool}
   refine WP.mono (storeTo_ok hp f6 (rP := .s6) (rL := .a1) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) f6.cb.s6 (a1' f6) h8 mQi pQi wQi oP lP
     (j := aQi) (by decide)) fun t7 ⟨f7, v7, o7, k7⟩ => ?_
-  have O7 := (O6.step o7 (by
+  obtain O7 := (O6.step o7 (by
     simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     exact ⟨⟨dqQi, bP⟩, ⟨dpQi, bP⟩, ⟨qQi, bP⟩, ⟨pQi', bP⟩,
       ⟨dQi, bN⟩, ⟨nQi, bN⟩⟩)).cons v7
@@ -290,15 +290,15 @@ theorem stores_ok {s0 s : State} (hp : PreC s0) (h : Fr s0 s.mem s) {a b : Bool}
   have ws7 := f7.ws
   have hz := ws7.hdr_le
   have nw := ws7.nowrap
-  have z7 : X7 + 8 ≤ zOf s0 := by simp only [hdr_eq, X7] at hz ⊢; omega_arith
-  have z8 : X8 + 8 ≤ zOf s0 := by simp only [hdr_eq, X8] at hz ⊢; omega_arith
-  have m7 : word t7.mem (bOf s0) X7 = BitVec.ofNat 64 (if a then 1 else 0) := by
+  obtain z7 : X7 + 8 ≤ zOf s0 := by simp only [hdr_eq, X7] at hz ⊢; omega_arith
+  obtain z8 : X8 + 8 ≤ zOf s0 := by simp only [hdr_eq, X8] at hz ⊢; omega_arith
+  obtain m7 : word t7.mem (bOf s0) X7 = BitVec.ofNat 64 (if a then 1 else 0) := by
     rw [f7.word z7]; apply BitVec.eq_of_toNat_eq; rw [← h7]; simp only [slot, BitVec.toNat_ofNat]
     exact (Nat.mod_eq_of_lt (BitVec.isLt _)).symm
-  have m8 : word t7.mem (bOf s0) X8 = BitVec.ofNat 64 (if b then 1 else 0) := by
+  obtain m8 : word t7.mem (bOf s0) X8 = BitVec.ofNat 64 (if b then 1 else 0) := by
     rw [f7.word z8]; apply BitVec.eq_of_toNat_eq; rw [← h8]; simp only [slot, BitVec.toNat_ofNat]
     exact (Nat.mod_eq_of_lt (BitVec.isLt _)).symm
-  have hb4 : WP isa (.block [.load .d .a0 .s11 X7, .shift .sll .d .a0 .a0 1, .load .d .t5 .s11 X8,
+  obtain hb4 : WP isa (.block [.load .d .a0 .s11 X7, .shift .sll .d .a0 .a0 1, .load .d .t5 .s11 X8,
       .add .a0 .a0 .t5]) t7 fun t =>
       (t.gpr .a0 = BitVec.ofNat 64 (2 * (if a then 1 else 0) + (if b then 1 else 0)) ∧ t.mem = t7.mem) ∧
         Keep [.a0, .t5] t7 t := by

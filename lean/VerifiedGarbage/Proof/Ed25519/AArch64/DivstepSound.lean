@@ -52,10 +52,10 @@ theorem batch_ok {s : State} {base : Addr} (hs : Scr s base large) {x i : Nat} (
         (fe t.mem base V) ∧
       t.gpr .x20 = BitVec.ofNat 64 (10 - (i + 1)) ∧
       Outside base 192 296 s.mem t.mem ∧ KeepRegs batchRegs s t := by
-  have _hmin := workSize_ge large
-  have _hcap := workSize_le large
+  obtain _hmin := workSize_ge large
+  obtain _hcap := workSize_le large
   obtain ⟨hD, hF, hG, hFl, hGl, hUl, hVl, _, _, _⟩ := id h
-  have hd30 : |(dsI x i).1| ≤ 2 ^ 30 := by
+  obtain hd30 : |(dsI x i).1| ≤ 2 ^ 30 := by
     have := dsI_d x i
     have : (59 * i : Int) ≤ 59 * 9 := by exact_mod_cast (by omega_arith : 59 * i ≤ 59 * 9)
     linarith
@@ -69,25 +69,25 @@ theorem batch_ok {s : State} {base : Addr} (hs : Scr s base large) {x i : Nat} (
     hd30 (dsI_odd x i).2 (a1.trans hD)
     (by rw [a2]; exact low_rel hF) (by rw [a3]; exact low_rel hG))
     fun b ⟨b1, b4, b5, b6, b7, kb⟩ => ?_
-  have hsb : Scr b base large := (hs.of_keeps ka (by decide)).of_keeps kb (by decide)
+  obtain hsb : Scr b base large := (hs.of_keeps ka (by decide)).of_keeps kb (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (st_ok hsb (d := DSAVE) (by decide) (by simp only [DSAVE]; omega_arith) .x1)
     fun c ⟨mc, kc⟩ => ?_
-  have hsc : Scr c base large := ⟨(kc.gpr _ (by decide)).trans hsb.x0, kc.wr ▸ hsb.wr, hs.nowrap⟩
+  obtain hsc : Scr c base large := ⟨(kc.gpr _ (by decide)).trans hsb.x0, kc.wr ▸ hsb.wr, hs.nowrap⟩
   rw [WP.block_append_iff]
   refine WP.mono (mat_ok c) fun d ⟨d12, d4, d14, d5, d15, d6, d16, d7, d17, d13, d19, kd⟩ => ?_
-  have hsd : Scr d base large := hsc.of_keeps kd (by decide)
-  have gc : ∀ r, c.gpr r = b.gpr r := fun r => kc.gpr r (by simp)
-  have md : MatRegs (dsM x i) d := ⟨d12, by rw [d4, gc, b4], by rw [d14, gc, b4], by rw [d5, gc, b5],
+  obtain hsd : Scr d base large := hsc.of_keeps kd (by decide)
+  obtain gc : ∀ r, c.gpr r = b.gpr r := fun r => kc.gpr r (by simp)
+  obtain md : MatRegs (dsM x i) d := ⟨d12, by rw [d4, gc, b4], by rw [d14, gc, b4], by rw [d5, gc, b5],
     by rw [d15, gc, b5], by rw [d6, gc, b6], by rw [d16, gc, b6], by rw [d7, gc, b7],
     by rw [d17, gc, b7], by rw [d13, gc, gc, b4, b5], by rw [d19, gc, gc, b6, b7]⟩
   -- the memory the rows read
-  have mb : b.mem = s.mem := by rw [kb.mem, ka.mem]
-  have mdm : d.mem = s.mem.writeW (off base DSAVE) (BitVec.ofInt 64 (dsM x i).d) := by
+  obtain mb : b.mem = s.mem := by rw [kb.mem, ka.mem]
+  obtain mdm : d.mem = s.mem.writeW (off base DSAVE) (BitVec.ofInt 64 (dsM x i).d) := by
     rw [kd.mem, mc, mb, b1]
-  have od : Outside base 480 8 s.mem d.mem := by
+  obtain od : Outside base 480 8 s.mem d.mem := by
     rw [mdm]; exact writeW_outside _ _ _ (by decide)
-  have fd : ∀ o, o + 32 ≤ 480 → fe d.mem base o = fe s.mem base o := fun o ho =>
+  obtain fd : ∀ o, o + 32 ≤ 480 → fe d.mem base o = fe s.mem base o := fun o ho =>
     od.fe (Or.inl ho) (by omega_arith)
   -- the rows
   rw [WP.block_append_iff]
@@ -95,64 +95,64 @@ theorem batch_ok {s : State} {base : Addr} (hs : Scr s base large) {x i : Nat} (
     (by rw [md.u]; exact absW_le bu) (by rw [md.v]; exact absW_le bv)
     ⟨by decide, by simp only [TF]; omega_arith⟩ ⟨by decide, by simp only [oF]; omega_arith⟩
     ⟨by decide, by simp only [G]; omega_arith⟩ (by decide) (by decide)) fun e1 ⟨r1, o1, k1⟩ => ?_
-  have hs1 : Scr e1 base large := ⟨(k1.gpr _ (by decide)).trans hsd.x0, k1.wr ▸ hsd.wr, hs.nowrap⟩
-  have m1 := md.keep k1
+  obtain hs1 : Scr e1 base large := ⟨(k1.gpr _ (by decide)).trans hsd.x0, k1.wr ▸ hsd.wr, hs.nowrap⟩
+  obtain m1 := md.keep k1
   rw [md.u, md.su, md.v, md.sv', md.c0] at r1
-  have hWF := rowF_rel (m := d.mem) (m' := e1.mem) (base := base) (t := TF) (xo := oF) (yo := G) bu bv r1
+  obtain hWF := rowF_rel (m := d.mem) (m' := e1.mem) (base := base) (t := TF) (xo := oF) (yo := G) bu bv r1
   rw [WP.block_append_iff]
   refine WP.mono (row_ok hs1 true (t := TG) (xo := oF) (yo := G) (by decide) (by decide) m1.z
     (by rw [m1.q]; exact absW_le bq) (by rw [m1.r]; exact absW_le br)
     ⟨by decide, by simp only [TG]; omega_arith⟩ ⟨by decide, by simp only [oF]; omega_arith⟩
     ⟨by decide, by simp only [G]; omega_arith⟩ (by decide) (by decide)) fun e2 ⟨r2, o2, k2⟩ => ?_
-  have hs2 : Scr e2 base large := ⟨(k2.gpr _ (by decide)).trans hs1.x0, k2.wr ▸ hs1.wr, hs.nowrap⟩
-  have m2 := m1.keep k2
+  obtain hs2 : Scr e2 base large := ⟨(k2.gpr _ (by decide)).trans hs1.x0, k2.wr ▸ hs1.wr, hs.nowrap⟩
+  obtain m2 := m1.keep k2
   rw [m1.q, m1.sq, m1.r, m1.sr, m1.c1] at r2
-  have hWG := rowF_rel (m := e1.mem) (m' := e2.mem) (base := base) (t := TG) (xo := oF) (yo := G) bq br r2
+  obtain hWG := rowF_rel (m := e1.mem) (m' := e2.mem) (base := base) (t := TG) (xo := oF) (yo := G) bq br r2
   rw [WP.block_append_iff]
   refine WP.mono (row_ok hs2 false (t := TU) (xo := U) (yo := V) (by decide) (by decide) m2.z
     (by rw [m2.u]; exact absW_le bu) (by rw [m2.v]; exact absW_le bv)
     ⟨by decide, by simp only [TU]; omega_arith⟩ ⟨by decide, by simp only [U]; omega_arith⟩
     ⟨by decide, by simp only [V]; omega_arith⟩ (by decide) (by decide)) fun e3 ⟨r3, o3, k3⟩ => ?_
-  have hs3 : Scr e3 base large := ⟨(k3.gpr _ (by decide)).trans hs2.x0, k3.wr ▸ hs2.wr, hs.nowrap⟩
-  have m3 := m2.keep k3
+  obtain hs3 : Scr e3 base large := ⟨(k3.gpr _ (by decide)).trans hs2.x0, k3.wr ▸ hs2.wr, hs.nowrap⟩
+  obtain m3 := m2.keep k3
   rw [m2.u, m2.su, m2.v, m2.sv', m2.c0] at r3
-  have hWU := rowU_rel (m := e2.mem) (m' := e3.mem) (base := base) (t := TU) (xo := U) (yo := V) bu bv r3
+  obtain hWU := rowU_rel (m := e2.mem) (m' := e3.mem) (base := base) (t := TU) (xo := U) (yo := V) bu bv r3
   rw [WP.block_append_iff]
   refine WP.mono (row_ok hs3 false (t := TV) (xo := U) (yo := V) (by decide) (by decide) m3.z
     (by rw [m3.q]; exact absW_le bq) (by rw [m3.r]; exact absW_le br)
     ⟨by decide, by simp only [TV]; omega_arith⟩ ⟨by decide, by simp only [U]; omega_arith⟩
     ⟨by decide, by simp only [V]; omega_arith⟩ (by decide) (by decide)) fun e4 ⟨r4, o4, k4⟩ => ?_
-  have hs4 : Scr e4 base large := ⟨(k4.gpr _ (by decide)).trans hs3.x0, k4.wr ▸ hs3.wr, hs.nowrap⟩
-  have m4 := m3.keep k4
+  obtain hs4 : Scr e4 base large := ⟨(k4.gpr _ (by decide)).trans hs3.x0, k4.wr ▸ hs3.wr, hs.nowrap⟩
+  obtain m4 := m3.keep k4
   rw [m3.q, m3.sq, m3.r, m3.sr, m3.c1] at r4
-  have hWV := rowU_rel (m := e3.mem) (m' := e4.mem) (base := base) (t := TV) (xo := U) (yo := V) bq br r4
+  obtain hWV := rowU_rel (m := e3.mem) (m' := e4.mem) (base := base) (t := TV) (xo := U) (yo := V) bq br r4
   -- the shifts, the reductions and the counter
-  have cnt4 : e4.gpr .x20 = BitVec.ofNat 64 (10 - i) := by
+  obtain cnt4 : e4.gpr .x20 = BitVec.ofNat 64 (10 - i) := by
     rw [k4.gpr _ (by decide), k3.gpr _ (by decide), k2.gpr _ (by decide), k1.gpr _ (by decide),
       kd.gpr _ (by decide), kc.gpr _ (by decide), kb.gpr _ (by decide), ka.gpr _ (by decide), hc]
   refine WP.mono (outs_ok hs4 m4.z hi cnt4) fun t ⟨tF, tG, tU, tV, t20, tD, ot, kt⟩ => ?_
   -- what the rows read, as it was in `s`
-  have f1 : ∀ o, o + 32 ≤ TF → fe e1.mem base o = fe s.mem base o := fun o ho => by
+  obtain f1 : ∀ o, o + 32 ≤ TF → fe e1.mem base o = fe s.mem base o := fun o ho => by
     rw [o1.fe (Or.inl ho) (by simp only [TF] at ho; omega_arith), fd o (by simp only [TF] at ho; omega_arith)]
-  have f2 : ∀ o, o + 32 ≤ TF → fe e2.mem base o = fe s.mem base o := fun o ho => by
+  obtain f2 : ∀ o, o + 32 ≤ TF → fe e2.mem base o = fe s.mem base o := fun o ho => by
     rw [o2.fe (Or.inl (by simp only [TF, TG] at ho ⊢; omega_arith)) (by simp only [TF] at ho; omega_arith), f1 o ho]
   rw [f1 _ (by decide), f1 _ (by decide), hF, hG] at hWG
   rw [fd _ (by decide), fd _ (by decide), hF, hG] at hWF
-  have f3 : ∀ o, o + 32 ≤ TF → fe e3.mem base o = fe s.mem base o := fun o ho => by
+  obtain f3 : ∀ o, o + 32 ≤ TF → fe e3.mem base o = fe s.mem base o := fun o ho => by
     rw [o3.fe (Or.inl (by simp only [TF, TU] at ho ⊢; omega_arith)) (by simp only [TF] at ho; omega_arith), f2 o ho]
   rw [f2 _ (by decide), f2 _ (by decide)] at hWU
   rw [f3 _ (by decide), f3 _ (by decide)] at hWV
   -- the rows where the shifts and reductions read them
-  have vF : val5 e4.mem base TF = val5 e1.mem base TF := by
+  obtain vF : val5 e4.mem base TF = val5 e1.mem base TF := by
     rw [val5_out o4 (by decide) (by decide), val5_out o3 (by decide) (by decide),
       val5_out o2 (by decide) (by decide)]
-  have vG : val5 e4.mem base TG = val5 e2.mem base TG := by
+  obtain vG : val5 e4.mem base TG = val5 e2.mem base TG := by
     rw [val5_out o4 (by decide) (by decide), val5_out o3 (by decide) (by decide)]
-  have vU : red5 e4.mem base TU = red5 e3.mem base TU := redV_out o4 (by decide) (by decide)
-  have hU := redV_cong _ _ _ _ _ hWU (sum_bnd bu bv hUl hVl)
-  have hV := redV_cong _ _ _ _ _ hWV (sum_bnd bq br hUl hVl)
-  have hR := step_inv hx h hWF hWG hU (Nat.mod_lt _ (by decide)) hV (Nat.mod_lt _ (by decide))
-  have dD : word t.mem base DSAVE = BitVec.ofInt 64 (dsM x i).d := by
+  obtain vU : red5 e4.mem base TU = red5 e3.mem base TU := redV_out o4 (by decide) (by decide)
+  obtain hU := redV_cong _ _ _ _ _ hWU (sum_bnd bu bv hUl hVl)
+  obtain hV := redV_cong _ _ _ _ _ hWV (sum_bnd bq br hUl hVl)
+  obtain hR := step_inv hx h hWF hWG hU (Nat.mod_lt _ (by decide)) hV (Nat.mod_lt _ (by decide))
+  obtain dD : word t.mem base DSAVE = BitVec.ofInt 64 (dsM x i).d := by
     rw [tD, o4.word (by decide) (by decide), o3.word (by decide) (by decide),
       o2.word (by decide) (by decide), o1.word (by decide) (by decide), mdm, word_writeW_self]
   refine ⟨?_, t20, ?_, ?_⟩
@@ -183,7 +183,7 @@ theorem loop_ok {s : State} {base : Addr} (hs : Scr s base large) {x : Nat} (hx 
   refine WP.mono (batch_ok (scr_of hs tk (by decide)) hx (i := 10 - k) (by omega_arith) ht
     (by rw [tc, show 10 - (10 - k) = k by omega_arith])) fun u ⟨ui, uc, uO, uk⟩ => ?_
   rw [show 10 - (10 - k + 1) = k - 1 by omega_arith] at uc
-  have hev : isa.eval (.nonzero .x .x20) u = some (BitVec.ofNat 64 (k - 1) != 0) := by
+  obtain hev : isa.eval (.nonzero .x .x20) u = some (BitVec.ofNat 64 (k - 1) != 0) := by
     simp [eval, read_x, uc]
   by_cases hk1 : k = 1
   · subst hk1
@@ -213,7 +213,7 @@ theorem sound_eq {x U R : Nat} (hx : x < P)
     VG.Proof.X25519.toFe R = VG.Proof.X25519.invert (VG.Proof.X25519.toFe x) := by
   rw [VG.Proof.X25519.invert_eq, ← VG.Proof.Ed25519.toZ_inj, VG.Proof.Ed25519.toZ_pow, toZ_toFe,
     toZ_toFe]
-  have hRz := (ZMod.intCast_eq_intCast_iff' _ _ _).2 hR
+  obtain hRz := (ZMod.intCast_eq_intCast_iff' _ _ _).2 hR
   by_cases h0 : x = 0
   · have hU := (ZMod.intCast_eq_intCast_iff _ _ _).2 (hz h0)
     push_cast at hU hRz
@@ -222,31 +222,31 @@ theorem sound_eq {x U R : Nat} (hx : x < P)
     rw [zero_pow (by simp [P]), hRz]
     split <;> simp [hU]
   · -- 590 divsteps end with `g = 0` and `f = ±1`.
-    have hdone := divsteps_590 (f := (P : Int)) (g := (x : Int)) P_odd (by positivity)
+    obtain hdone := divsteps_590 (f := (P : Int)) (g := (x : Int)) P_odd (by positivity)
       (by exact_mod_cast hx.le) (by rw [P_val]; norm_num) (n := 590) le_rfl
-    have hcop : Int.gcd (P : Int) (x : Int) = 1 := by
+    obtain hcop : Int.gcd (P : Int) (x : Int) = 1 := by
       rw [Int.gcd_natCast_natCast]
       exact Nat.coprime_of_lt_prime h0 hx VG.Proof.Ed25519.prime_field
     have hs : dsI x 10 = divsteps 590 (1, (P : Int), (x : Int)) := rfl
     rw [hs] at hcu hRz
     generalize (divsteps 590 (1, (P : Int), (x : Int))).2.1 = f at hdone hcu hRz
     rw [hcop] at hdone
-    have hf : f = 1 ∨ f = -1 := by omega_arith
-    have hv := v0_spec.trans (by decide : (1 : Int) = 1 % P)
+    obtain hf : f = 1 ∨ f = -1 := by omega_arith
+    obtain hv := v0_spec.trans (by decide : (1 : Int) = 1 % P)
     generalize (2 : Int) ^ 590 = Ki at hcu hv
-    have hc := (ZMod.intCast_eq_intCast_iff _ _ _).2 hcu
-    have k := (ZMod.intCast_eq_intCast_iff' _ _ _).2 hv
+    obtain hc := (ZMod.intCast_eq_intCast_iff _ _ _).2 hcu
+    obtain k := (ZMod.intCast_eq_intCast_iff' _ _ _).2 hv
     push_cast at hc k
     generalize (Ki : ZMod P) = K at hc k
     -- `f = x U`
-    have hfu : (f : ZMod P) = x * U := by
+    obtain hfu : (f : ZMod P) = x * U := by
       calc (f : ZMod P) = (f : ZMod P) * (K * Impl.Ed25519.AArch64.Divstep.v0) := by rw [k, mul_one]
         _ = K * f * Impl.Ed25519.AArch64.Divstep.v0 := by ring
         _ = x * K * U * Impl.Ed25519.AArch64.Divstep.v0 := by rw [hc]
         _ = x * U * (K * Impl.Ed25519.AArch64.Divstep.v0) := by ring
         _ = x * U := by rw [k, mul_one]
     -- `x R = 1`
-    have hxr : (x : ZMod P) * R = 1 := by
+    obtain hxr : (x : ZMod P) * R = 1 := by
       rcases hf with rfl | rfl
       · simp only [show ¬ (1 : Int) < 0 by decide, ↓reduceIte] at hRz
         push_cast at hRz hfu
@@ -254,7 +254,7 @@ theorem sound_eq {x U R : Nat} (hx : x < P)
       · simp only [show (-1 : Int) < 0 by decide, ↓reduceIte] at hRz
         push_cast at hRz hfu
         rw [hRz, mul_neg, ← hfu, neg_neg]
-    have hX : (x : ZMod P) ≠ 0 := fun h => by rw [h, zero_mul] at hxr; exact zero_ne_one hxr
+    obtain hX : (x : ZMod P) ≠ 0 := fun h => by rw [h, zero_mul] at hxr; exact zero_ne_one hxr
     calc (R : ZMod P) = (R : ZMod P) * x * (x : ZMod P) ^ (P - 2) :=
           (VG.Proof.Ed25519.mul_pow_inv hX _).symm
       _ = x * R * (x : ZMod P) ^ (P - 2) := by ring
@@ -270,12 +270,12 @@ theorem invert_proof {s : State} {base : Addr} (hs : Scr s base large) :
       KeepRegs (.x19 :: VG.Proof.Mont.AArch64.clob 4 ++ ([.x2, .x20] : List Reg)) s t ∧
       t.gpr .x1 = s.gpr .x1 ∧ Outside base 192 512 s.mem t.mem := by
   refine WP.seq (WP.mono (init_ok hs) fun a ⟨ai, a20, a19, aO, ak⟩ => ?_)
-  have hx : fe s.mem base 128 % P < P := Nat.mod_lt _ (by decide)
+  obtain hx : fe s.mem base 128 % P < P := Nat.mod_lt _ (by decide)
   refine WP.seq (WP.mono (loop_ok (scr_of hs ak (by decide)) hx ai a20) fun b ⟨bi, bO, bk⟩ => ?_)
   refine WP.mono (finish_ok (scr_of (scr_of hs ak (by decide)) bk (by decide))) fun t ⟨tv, t1, tO, tk⟩ => ?_
   refine ⟨?_, ?_, ?_, ?_⟩
   · simp only [env, AArch64.F]
-    have e2 : VG.Proof.X25519.toFe (fe s.mem base (VG.Impl.Ed25519.AArch64.offset 2)) =
+    obtain e2 : VG.Proof.X25519.toFe (fe s.mem base (VG.Impl.Ed25519.AArch64.offset 2)) =
         VG.Proof.X25519.toFe (fe s.mem base 128 % P) :=
       Fin.ext (by simp only [VG.Proof.X25519.toFe_val, Nat.mod_mod]; rfl)
     rw [e2]

@@ -64,9 +64,9 @@ theorem ni_eq : (BitVec.ofNat 64 (Impl.Weierstrass.RISCV64.Gen4.negInv P)).toNat
 /-- The low word of `q c` is `w`, for the quotient word `q` of `w`. -/
 theorem low_eq {w q : Nat} (hw : w < 2 ^ 64) (h0 : (w + q * wd P 0) % 2 ^ 64 = 0) :
     q * c = w + 2 ^ 64 * (q * c / 2 ^ 64) := by
-  have e : wd P 0 = 2 ^ 64 - c := by decide
+  obtain e : wd P 0 = 2 ^ 64 - c := by decide
   rw [e] at h0
-  have hs : q * (2 ^ 64 - c) + q * c = 2 ^ 64 * q := by
+  obtain hs : q * (2 ^ 64 - c) + q * c = 2 ^ 64 * q := by
     rw [← Nat.mul_add, show 2 ^ 64 - c + c = 2 ^ 64 by decide, Nat.mul_comm]
   have := Nat.div_add_mod (q * c) (2 ^ 64)
   generalize q * (2 ^ 64 - c) = Y at *
@@ -127,7 +127,7 @@ theorem round_ok {b : Addr} {s0 : State} {i : Nat} (hi : i < 4) {s : State} (h :
   obtain ⟨n42, n44, n45, n46, n47, n4t, n43, c4⟩ := dk 4 (by decide)
   simp only [Nat.add_zero] at n02 n04 n05 n06 n07 n0t n03 c0
   have hc := h.red.ctx
-  have hd : ACC + 8 * (i + 4) + 8 ≤ 2048 := by simp only [ACC]; omega_using [hi]
+  obtain hd : ACC + 8 * (i + 4) + 8 ≤ 2048 := by simp only [ACC]; omega_using [hi]
   unfold Impl.Weierstrass.RISCV64.Secp256k1Field.round
   show WP isa (.block (.load .d (rw (i + 4)) .a3 (ACC + 8 * (i + 4)) :: .mul (rw i) (rw i) .t0 ::
     .mulhu .a4 (rw i) .a6 :: ([.sltu .a5 (rw (i + 1)) .a4, .sub (rw (i + 1)) (rw (i + 1)) .a4] ++
@@ -144,37 +144,37 @@ theorem round_ok {b : Addr} {s0 : State} {i : Nat} (hi : i < 4) {s : State} (h :
     fun s6 ⟨B3, b3, _, k6⟩ => ?_)
   refine wp_sub fun s7 u7 => ?_
   refine WP.mono (top_ok (d := rw (i + 4)) (by simp [n42, n44, n47])) fun s8 ⟨e8, k8⟩ => ?_
-  have k1 := upd_keeps u1
-  have k2 := upd_keeps u2
-  have k3 := upd_keeps u3
-  have k7 := upd_keeps u7
+  obtain k1 := upd_keeps u1
+  obtain k2 := upd_keeps u2
+  obtain k3 := upd_keeps u3
+  obtain k7 := upd_keeps u7
   -- What each step read.
-  have hT4 : (s1.gpr (rw (i + 4))).toNat = T s0.mem b (i + 4) := by
+  obtain hT4 : (s1.gpr (rw (i + 4))).toNat = T s0.mem b (i + 4) := by
     rw [u1.gpr, ← h.red.mem]; rfl
-  have q2 : (s2.gpr (rw i)).toNat = (s.gpr (rw i)).toNat * (Impl.Weierstrass.RISCV64.Gen4.negInv P % 2 ^ 64) %
+  obtain q2 : (s2.gpr (rw i)).toNat = (s.gpr (rw i)).toNat * (Impl.Weierstrass.RISCV64.Gen4.negInv P % 2 ^ 64) %
       2 ^ 64 := by
     rw [u2.gpr, BitVec.toNat_mul, kp k1 (by simp [d04]), kp k1 (by simp [Ne.symm n4t]), h.t0, ni_eq]
-  have a6_2 : s2.gpr .a6 = CV := by
+  obtain a6_2 : s2.gpr .a6 = CV := by
     rw [kp k2 (by simp [Ne.symm n06]), kp k1 (by simp [Ne.symm n46]), h.a6]
-  have hq := (s2.gpr (rw i)).isLt
-  have hh : (s3.gpr .a4).toNat = (s2.gpr (rw i)).toNat * c / 2 ^ 64 := by
+  obtain hq := (s2.gpr (rw i)).isLt
+  obtain hh : (s3.gpr .a4).toNat = (s2.gpr (rw i)).toNat * c / 2 ^ 64 := by
     rw [u3.gpr, a6_2, cv_toNat]
     exact ofNat_lt (Nat.div_lt_of_lt_mul (by simp only [c]; omega_using []))
-  have w1 : s3.gpr (rw (i + 1)) = s.gpr (rw (i + 1)) := by
+  obtain w1 : s3.gpr (rw (i + 1)) = s.gpr (rw (i + 1)) := by
     rw [kp k3 (by simp [n14]), kp k2 (by simp [Ne.symm d01]), kp k1 (by simp [d14])]
-  have w2 : s4.gpr (rw (i + 2)) = s.gpr (rw (i + 2)) := by
+  obtain w2 : s4.gpr (rw (i + 2)) = s.gpr (rw (i + 2)) := by
     rw [kp k4 (by simp [Ne.symm d12, n25]), kp k3 (by simp [n24]), kp k2 (by simp [Ne.symm d02]),
       kp k1 (by simp [d24])]
-  have w3 : s5.gpr (rw (i + 3)) = s.gpr (rw (i + 3)) := by
+  obtain w3 : s5.gpr (rw (i + 3)) = s.gpr (rw (i + 3)) := by
     rw [kp k5 (by simp [Ne.symm d23, n37]), kp k4 (by simp [Ne.symm d13, n35]), kp k3 (by simp [n34]),
       kp k2 (by simp [Ne.symm d03]), kp k1 (by simp [d34])]
-  have q6 : s6.gpr (rw i) = s2.gpr (rw i) := by
+  obtain q6 : s6.gpr (rw i) = s2.gpr (rw i) := by
     rw [kp k6 (by simp [d03, n05]), kp k5 (by simp [d02, n07]), kp k4 (by simp [d01, n05]),
       kp k3 (by simp [n04])]
-  have w4 : s7.gpr (rw (i + 4)) = s1.gpr (rw (i + 4)) := by
+  obtain w4 : s7.gpr (rw (i + 4)) = s1.gpr (rw (i + 4)) := by
     rw [kp k7 (by simp [n44]), kp k6 (by simp [Ne.symm d34, n45]), kp k5 (by simp [Ne.symm d24, n47]),
       kp k4 (by simp [Ne.symm d14, n45]), kp k3 (by simp [n44]), kp k2 (by simp [Ne.symm d04])]
-  have cy7 : s7.gpr .a2 = s.gpr .a2 := by
+  obtain cy7 : s7.gpr .a2 = s.gpr .a2 := by
     rw [kp k7 (by simp), kp k6 (by simp [Ne.symm n32]), kp k5 (by simp [Ne.symm n22]),
       kp k4 (by simp [Ne.symm n12]), kp k3 (by simp), kp k2 (by simp [Ne.symm n02]),
       kp k1 (by simp [Ne.symm n42])]
@@ -184,57 +184,57 @@ theorem round_ok {b : Addr} {s0 : State} {i : Nat} (hi : i < 4) {s : State} (h :
   obtain ⟨F4, cy8⟩ := e8 (by rw [cy7]; exact h.red.cy)
   rw [w4, hT4, cy7, u7.gpr, q6, BitVec.toNat_sub] at F4
   -- The new registers, read from the last state.
-  have o1 : s8.gpr (rw (i + 1)) = s4.gpr (rw (i + 1)) := by
+  obtain o1 : s8.gpr (rw (i + 1)) = s4.gpr (rw (i + 1)) := by
     rw [kp k8 (by simp [d14, n12, n17]), kp k7 (by simp [n14]), kp k6 (by simp [d13, n15]),
       kp k5 (by simp [d12, n17])]
-  have o2 : s8.gpr (rw (i + 2)) = s5.gpr (rw (i + 2)) := by
+  obtain o2 : s8.gpr (rw (i + 2)) = s5.gpr (rw (i + 2)) := by
     rw [kp k8 (by simp [d24, n22, n27]), kp k7 (by simp [n24]), kp k6 (by simp [d23, n25])]
-  have o3 : s8.gpr (rw (i + 3)) = s6.gpr (rw (i + 3)) := by
+  obtain o3 : s8.gpr (rw (i + 3)) = s6.gpr (rw (i + 3)) := by
     rw [kp k8 (by simp [d34, n32, n37]), kp k7 (by simp [n34])]
-  have t8 : s8.gpr .t0 = s.gpr .t0 := by
+  obtain t8 : s8.gpr .t0 = s.gpr .t0 := by
     rw [kp k8 (by simp [Ne.symm n4t]), kp k7 (by simp), kp k6 (by simp [Ne.symm n3t]), kp k5 (by simp [Ne.symm n2t]),
       kp k4 (by simp [Ne.symm n1t]), kp k3 (by simp), kp k2 (by simp [Ne.symm n0t]),
       kp k1 (by simp [Ne.symm n4t])]
-  have a68 : s8.gpr .a6 = s.gpr .a6 := by
+  obtain a68 : s8.gpr .a6 = s.gpr .a6 := by
     rw [kp k8 (by simp [Ne.symm n46]), kp k7 (by simp), kp k6 (by simp [Ne.symm n36]),
       kp k5 (by simp [Ne.symm n26]), kp k4 (by simp [Ne.symm n16]), kp k3 (by simp),
       kp k2 (by simp [Ne.symm n06]), kp k1 (by simp [Ne.symm n46])]
   -- The frame.
-  have sub : ∀ r ∈ clob64, r ∈ clobM := by decide
-  have cons : ∀ {r : Reg} {l : List Reg}, r ∈ clob64 → (∀ x ∈ l, x ∈ clobM) → ∀ x ∈ r :: l, x ∈ clobM :=
+  obtain sub : ∀ r ∈ clob64, r ∈ clobM := by decide
+  obtain cons : ∀ {r : Reg} {l : List Reg}, r ∈ clob64 → (∀ x ∈ l, x ∈ clobM) → ∀ x ∈ r :: l, x ∈ clobM :=
     fun hr hl x hx => by
       rcases List.mem_cons.mp hx with rfl | hx
       · exact sub _ hr
       · exact hl x hx
-  have hrest : Rest clobM s s8 :=
+  obtain hrest : Rest clobM s s8 :=
     ((Keeps.rest k1).mono (cons c4 (by decide))).trans <| ((Keeps.rest k2).mono (cons c0 (by decide))).trans <|
       ((Keeps.rest k3).mono (by decide)).trans <| ((Keeps.rest k4).mono (cons c1 (by decide))).trans <|
       ((Keeps.rest k5).mono (cons c2 (by decide))).trans <| ((Keeps.rest k6).mono (cons c3 (by decide))).trans <|
       ((Keeps.rest k7).mono (by decide)).trans ((Keeps.rest k8).mono (cons c4 (by decide)))
-  have hmem : s8.mem = s0.mem := by
+  obtain hmem : s8.mem = s0.mem := by
     rw [k8.2.1, k7.2.1, k6.2.1, k5.2.1, k4.2.1, k3.2.1, k2.2.1, k1.2.1, h.red.mem]
   -- The numbers.
-  have hw0 := (s.gpr (rw i)).isLt
-  have hw1 := (s.gpr (rw (i + 1))).isLt
-  have hw2 := (s.gpr (rw (i + 2))).isLt
-  have hw3 := (s.gpr (rw (i + 3))).isLt
-  have hy1 := (s4.gpr (rw (i + 1))).isLt
-  have hy2 := (s5.gpr (rw (i + 2))).isLt
-  have hy3 := (s6.gpr (rw (i + 3))).isLt
-  have h0 := mont_mod p_ok.inv (s.gpr (rw i)).toNat
+  obtain hw0 := (s.gpr (rw i)).isLt
+  obtain hw1 := (s.gpr (rw (i + 1))).isLt
+  obtain hw2 := (s.gpr (rw (i + 2))).isLt
+  obtain hw3 := (s.gpr (rw (i + 3))).isLt
+  obtain hy1 := (s4.gpr (rw (i + 1))).isLt
+  obtain hy2 := (s5.gpr (rw (i + 2))).isLt
+  obtain hy3 := (s6.gpr (rw (i + 3))).isLt
+  obtain h0 := mont_mod p_ok.inv (s.gpr (rw i)).toNat
   rw [← q2] at h0
-  have hqc := low_eq hw0 h0
-  have hqp : (s2.gpr (rw i)).toNat * P + (s2.gpr (rw i)).toNat * c = 2 ^ 256 * (s2.gpr (rw i)).toNat := by
+  obtain hqc := low_eq hw0 h0
+  obtain hqp : (s2.gpr (rw i)).toNat * P + (s2.gpr (rw i)).toNat * c = 2 ^ 256 * (s2.gpr (rw i)).toNat := by
     rw [← Nat.mul_add, show P + c = 2 ^ 256 by decide, Nat.mul_comm]
   generalize (s2.gpr (rw i)).toNat = q at hq hqc hqp F4 B1 q2
-  have hb : (s6.gpr .a5).toNat ≤ q := by
+  obtain hb : (s6.gpr .a5).toNat ≤ q := by
     simp only [c] at hqc
     omega_using [b1, B2, b2, B3, b3, e8, hT4, hh, cy8, hw0, hw1, hw3, hy1, hy3, h0, hq, hqc, hqp, F4, B1, q2]
   rw [show (2 ^ 64 - (s6.gpr .a5).toNat + q) % 2 ^ 64 = q - (s6.gpr .a5).toNat by omega_using [hq, hb]] at F4
   obtain ⟨i1, i2, i3, i4, i5, i6⟩ := idx i
-  have hup : upW s0.mem b (i + 4) (4 - i) = T s0.mem b (i + 4) + 2 ^ 64 * upW s0.mem b (i + 5) (3 - i) := by
+  obtain hup : upW s0.mem b (i + 4) (4 - i) = T s0.mem b (i + 4) + 2 ^ 64 * upW s0.mem b (i + 5) (3 - i) := by
     rw [i6 hi]; rfl
-  have key : 2 ^ 64 * wv s0.mem b (i + 1) s8 = wv s0.mem b i s + q * P := by
+  obtain key : 2 ^ 64 * wv s0.mem b (i + 1) s8 = wv s0.mem b i s + q * P := by
     simp only [wv, i1, i2, i3, i4, i5 hi, hup, o1, o2, o3]
     exact round_arith hqc hqp B1 B2 B3 hb F4
   obtain ⟨Q, hQ, hv⟩ := h.red.val
@@ -255,10 +255,10 @@ theorem rounds_ok {b : Addr} {s0 : State} : ∀ n ≤ 4, ∀ s, KInv b s0 0 s �
 theorem red_keeps {b : Addr} {s0 s s' : State} {i : Nat} {rs : List Reg} (h : RedInv P b s0 i s)
     (k : Keeps rs s s') (hc : ∀ r ∈ rs, r ∈ clobM) (hw : ∀ j, rw j ∉ rs) (h2 : Reg.a2 ∉ rs) :
     RedInv P b s0 i s' := by
-  have hr : Rest clobM s s' := (Keeps.rest k).mono hc
+  obtain hr : Rest clobM s s' := (Keeps.rest k).mono hc
   refine ⟨h.ctx.of_rest hr (by decide), h.rest.trans hr, by rw [k.2.1, h.mem], by rw [kp k h2]; exact h.cy, ?_⟩
   obtain ⟨Q, hQ, hv⟩ := h.val
-  have e : ∀ j, s'.gpr (rw j) = s.gpr (rw j) := fun j => kp k (hw j)
+  obtain e : ∀ j, s'.gpr (rw j) = s.gpr (rw j) := fun j => kp k (hw j)
   refine ⟨Q, hQ, ?_⟩
   simp only [wv, e, kp k h2]
   exact hv
@@ -283,7 +283,7 @@ theorem reduce_ok {b : Addr} {s : State} (hc : Ctx b s) :
   rw [← List.append_assoc]
   refine WP.block_append (WP.mono (loads_ok (m := P) hc) fun s1 h1 => ?_)
   refine wp_li64 (by decide) _ fun s2 e2 k2 => wp_li64 (by decide) _ fun s3 e3 k3 => ?_
-  have h3 : KInv b s 0 s3 :=
+  obtain h3 : KInv b s 0 s3 :=
     ⟨red_keeps (red_keeps h1 k2 (by decide) rw_ne_t0 (by decide)) k3 (by decide) rw_ne_a6 (by decide),
       by rw [kp k3 (by decide), e2], e3⟩
   refine WP.mono (rounds_ok 4 (Nat.le_refl _) s3 h3) fun s4 h4 => ?_
@@ -329,9 +329,9 @@ theorem sum_ok {s : State} :
   rw [kp k2 (by decide), kp k1 (by decide)] at f3
   rw [kp k3 (by decide), kp k2 (by decide), kp k1 (by decide)] at f4
   rw [kp k4 (by decide), kp k3 (by decide), kp k2 (by decide), kp k1 (by decide)] at f5
-  have o0 : s5.gpr .t6 = s2.gpr .t6 := by rw [kp k5 (by decide), kp k4 (by decide), kp k3 (by decide)]
-  have o1 : s5.gpr .a4 = s3.gpr .a4 := by rw [kp k5 (by decide), kp k4 (by decide)]
-  have o2 : s5.gpr .a5 = s4.gpr .a5 := kp k5 (by decide)
+  obtain o0 : s5.gpr .t6 = s2.gpr .t6 := by rw [kp k5 (by decide), kp k4 (by decide), kp k3 (by decide)]
+  obtain o1 : s5.gpr .a4 = s3.gpr .a4 := by rw [kp k5 (by decide), kp k4 (by decide)]
+  obtain o2 : s5.gpr .a5 = s4.gpr .a5 := kp k5 (by decide)
   refine ⟨?_, b5, ((((k1.trans k2).trans k3).trans k4).trans k5).mono⟩
   simp only [v4, o0, o1, o2, show 2 ^ 256 - P = c by decide]
   omega_using [f2, f3, f4, f5]
@@ -339,7 +339,7 @@ theorem sum_ok {s : State} :
 /-! ## The operations -/
 
 theorem k0_ok : KOk (li64 .t6 .a0 (BitVec.ofNat 64 (2 ^ 64 - c)) ++ ([.logic .and .t6 .t6 .t0] : List Instr)) (2 ^ 64 - c) := by
-  have h := kW (BitVec.ofNat 64 (2 ^ 64 - c))
+  obtain h := kW (BitVec.ofNat 64 (2 ^ 64 - c))
   rw [show (BitVec.ofNat 64 (2 ^ 64 - c)).toNat = 2 ^ 64 - c by decide] at h
   exact h
 
@@ -370,21 +370,21 @@ variable {S : Impl.Weierstrass.Mont.Modulus}
 
 theorem mul_rv (hk : S.k = 4) (hp : S.m = P) (s : State) (hs : (mulRV S).pre s) :
     ∃ t s', Exec isa Impl.Weierstrass.RISCV64.Secp256k1Field.mulFn s t s' ∧ abiPreserved s s' ∧ (mulRV S).post s s' := by
-  have hc : CoreOk Impl.Weierstrass.RISCV64.Secp256k1Field.mulCore (fun _ B => B < S.m) (Gen4.mulRes S.m) := by rw [hp]; exact mulCore_core
+  obtain hc : CoreOk Impl.Weierstrass.RISCV64.Secp256k1Field.mulCore (fun _ B => B < S.m) (Gen4.mulRes S.m) := by rw [hp]; exact mulCore_core
   obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := Gen4.fn_rv hk @hc hs.1 (by exact hs.2)
   exact ⟨t, s', he, a, by rw [res, hk]; exact v1,
     by rw [res, Impl.Weierstrass.Mont.Modulus.R, hk]; exact v2, by rw [hk]; exact k⟩
 
 theorem add_rv (hk : S.k = 4) (hp : S.m = P) (s : State) (hs : (addRV S).pre s) :
     ∃ t s', Exec isa Impl.Weierstrass.RISCV64.Secp256k1Field.addFn s t s' ∧ abiPreserved s s' ∧ (addRV S).post s s' := by
-  have hc : CoreOk (.block Impl.Weierstrass.RISCV64.Secp256k1Field.addCore) (fun A B => A + B < 2 * S.m) (fun A B r => r = (A + B) % S.m) := by
+  obtain hc : CoreOk (.block Impl.Weierstrass.RISCV64.Secp256k1Field.addCore) (fun A B => A + B < 2 * S.m) (fun A B r => r = (A + B) % S.m) := by
     rw [hp]; exact addCore_core
   obtain ⟨t, s', he, a, v, k⟩ := Gen4.fn_rv hk @hc hs.1 (by exact hs.2)
   exact ⟨t, s', he, a, by rw [res, hk]; exact v, by rw [hk]; exact k⟩
 
 theorem sub_rv (hk : S.k = 4) (hp : S.m = P) (s : State) (hs : (subRV S).pre s) :
     ∃ t s', Exec isa Impl.Weierstrass.RISCV64.Secp256k1Field.subFn s t s' ∧ abiPreserved s s' ∧ (subRV S).post s s' := by
-  have hc : CoreOk (.block Impl.Weierstrass.RISCV64.Secp256k1Field.subCore) (fun A B => A < S.m ∧ B < S.m) (fun A B r => r = (A + S.m - B) % S.m) := by
+  obtain hc : CoreOk (.block Impl.Weierstrass.RISCV64.Secp256k1Field.subCore) (fun A B => A < S.m ∧ B < S.m) (fun A B r => r = (A + S.m - B) % S.m) := by
     rw [hp]; exact subCore_core
   obtain ⟨t, s', he, a, v, k⟩ := Gen4.fn_rv hk @hc hs.1 (by exact hs.2)
   exact ⟨t, s', he, a, by rw [res, hk]; exact v, by rw [hk]; exact k⟩
@@ -392,7 +392,7 @@ theorem sub_rv (hk : S.k = 4) (hp : S.m = P) (s : State) (hs : (subRV S).pre s) 
 theorem mulA_rv (hk : S.k = 4) (hp : S.m = P) (s : State)
     (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (mulRV S)).pre s) :
     ∃ t s', Exec isa Impl.Weierstrass.RISCV64.Secp256k1Field.mulFnA s t s' ∧ abiPreserved s s' ∧ (mulRV S).post s s' := by
-  have hc : CoreOk Impl.Weierstrass.RISCV64.Secp256k1Field.mulCore (fun _ B => B < S.m) (Gen4.mulRes S.m) := by
+  obtain hc : CoreOk Impl.Weierstrass.RISCV64.Secp256k1Field.mulCore (fun _ B => B < S.m) (Gen4.mulRes S.m) := by
     rw [hp]; exact mulCore_core
   obtain ⟨t, s', he, a, ⟨v1, v2⟩, k⟩ := P256Field.fnA_rv hk @hc hs.1.1 hs.2 (by exact hs.1.2)
   exact ⟨t, s', he, a, by rw [res, hk]; exact v1,
@@ -401,7 +401,7 @@ theorem mulA_rv (hk : S.k = 4) (hp : S.m = P) (s : State)
 theorem addA_rv (hk : S.k = 4) (hp : S.m = P) (s : State)
     (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (addRV S)).pre s) :
     ∃ t s', Exec isa Impl.Weierstrass.RISCV64.Secp256k1Field.addFnA s t s' ∧ abiPreserved s s' ∧ (addRV S).post s s' := by
-  have hc : CoreOk (.block Impl.Weierstrass.RISCV64.Secp256k1Field.addCore) (fun A B => A + B < 2 * S.m)
+  obtain hc : CoreOk (.block Impl.Weierstrass.RISCV64.Secp256k1Field.addCore) (fun A B => A + B < 2 * S.m)
       (fun A B r => r = (A + B) % S.m) := by
     rw [hp]; exact addCore_core
   obtain ⟨t, s', he, a, v, k⟩ := P256Field.fnA_rv hk @hc hs.1.1 hs.2 (by exact hs.1.2)
@@ -410,7 +410,7 @@ theorem addA_rv (hk : S.k = 4) (hp : S.m = P) (s : State)
 theorem subA_rv (hk : S.k = 4) (hp : S.m = P) (s : State)
     (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (subRV S)).pre s) :
     ∃ t s', Exec isa Impl.Weierstrass.RISCV64.Secp256k1Field.subFnA s t s' ∧ abiPreserved s s' ∧ (subRV S).post s s' := by
-  have hc : CoreOk (.block Impl.Weierstrass.RISCV64.Secp256k1Field.subCore) (fun A B => A < S.m ∧ B < S.m)
+  obtain hc : CoreOk (.block Impl.Weierstrass.RISCV64.Secp256k1Field.subCore) (fun A B => A < S.m ∧ B < S.m)
       (fun A B r => r = (A + S.m - B) % S.m) := by
     rw [hp]; exact subCore_core
   obtain ⟨t, s', he, a, v, k⟩ := P256Field.fnA_rv hk @hc hs.1.1 hs.2 (by exact hs.1.2)

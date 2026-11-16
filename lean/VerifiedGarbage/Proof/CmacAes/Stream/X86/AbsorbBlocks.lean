@@ -64,7 +64,7 @@ theorem rest_zero {c L : Nat} (h : leftOf c L = 0) : restOf c L = 0 := by simp [
 theorem nb16_bv {x : Nat} (hx : 0 < x) (hx' : x < 2 ^ 32) :
     BitVec.ofNat 32 x - 1 - ((BitVec.ofNat 32 x - 1) &&& 15) = BitVec.ofNat 32 (16 * ((x - 1) / 16)) := by
   apply BitVec.eq_of_toNat_eq
-  have e : (BitVec.ofNat 32 x - 1).toNat = x - 1 := by
+  obtain e : (BitVec.ofNat 32 x - 1).toNat = x - 1 := by
     rw [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]; omega_arith
   rw [BitVec.toNat_sub, and15, e, BitVec.toNat_ofNat]
   omega_arith
@@ -207,22 +207,22 @@ structure Filled (s₀ s s' : State) : Prop where
 
 theorem fill_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
     (hax : s.gpr .eax = BitVec.ofNat 32 (held (aC s₀))) : WP isa fill s (Filled s₀ s) := by
-  have hh := held_le (aC s₀)
+  obtain hh := held_le (aC s₀)
   have hL := hp.lt
   have ⟨hfL, hfh⟩ := f_le (aC s₀) (aL s₀)
   unfold fill
   refine WP.seq (wp_movi fun s₁ u₁ => wp_sub fun s₂ u₂ _ => (h.upd u₁ (by decide)).upd u₂ (by decide) |>.wp_arg hp
     (by decide) (by decide) fun s₃ u₃ c₃ => wp_cmp fun s₄ f₄ cf₄ _ => WP.block_nil ?_)
-  have ecx₂ : s₂.gpr .ecx = BitVec.ofNat 32 (16 - held (aC s₀)) := by
+  obtain ecx₂ : s₂.gpr .ecx = BitVec.ofNat 32 (16 - held (aC s₀)) := by
     rw [u₂.gpr, u₁.gpr, u₁.other _ (by decide), hax]; exact sub_ofNat hh
-  have ecx₄ : s₄.gpr .ecx = BitVec.ofNat 32 (16 - held (aC s₀)) := by rw [f₄.gpr, u₃.other _ (by decide), ecx₂]
-  have edx₄ : s₄.gpr .edx = BitVec.ofNat 32 (aL s₀) := by rw [f₄.gpr, u₃.gpr]; exact arg_ofNat s₀ 5
-  have c₄ := c₃.fupd f₄
-  have cf : s₄.cf = some (decide (aL s₀ < 16 - held (aC s₀))) := by
+  obtain ecx₄ : s₄.gpr .ecx = BitVec.ofNat 32 (16 - held (aC s₀)) := by rw [f₄.gpr, u₃.other _ (by decide), ecx₂]
+  obtain edx₄ : s₄.gpr .edx = BitVec.ofNat 32 (aL s₀) := by rw [f₄.gpr, u₃.gpr]; exact arg_ofNat s₀ 5
+  obtain c₄ := c₃.fupd f₄
+  obtain cf : s₄.cf = some (decide (aL s₀ < 16 - held (aC s₀))) := by
     rw [cf₄, u₃.gpr, u₃.other _ (by decide), ecx₂, toNat_ofNat32 (by omega_arith)]
-  have eax₄ : s₄.gpr .eax = s.gpr .eax := by
+  obtain eax₄ : s₄.gpr .eax = s.gpr .eax := by
     rw [f₄.gpr, u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
-  have m₄ : s₄.mem = s.mem := by rw [f₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain m₄ : s₄.mem = s.mem := by rw [f₄.mem, u₃.mem, u₂.mem, u₁.mem]
   refine WP.seq (WP.mono (Q := fun (s₅ : State) => ACtx s₀ s₅ ∧ s₅.mem = s.mem ∧
       s₅.gpr .ecx = BitVec.ofNat 32 (fOf (aC s₀) (aL s₀)) ∧ s₅.gpr .eax = s.gpr .eax) ?_ fun s₅ h₅ => ?_)
   · have ev : isa.eval .b s₄ = some (decide (aL s₀ < 16 - held (aC s₀))) := by
@@ -264,9 +264,9 @@ theorem APre.uargs {s₀ s : State} (hp : APre s₀) {Dd : BitVec 32} {n : Nat}
     UArgs s (aSt s₀) (aSt s₀ + BitVec.ofNat 32 272) Dd (aSc s₀) (aR s₀) n := by
   have fSt : (aSt s₀).toNat + 304 ≤ 2 ^ 32 := hp.fSt
   have fS : (aSc s₀).toNat + 2304 ≤ 2 ^ 32 := hp.fS
-  have p272 : (aSt s₀ + BitVec.ofNat 32 272).setWidth 64 = (aSt s₀).setWidth 64 + BitVec.ofNat 64 272 :=
+  obtain p272 : (aSt s₀ + BitVec.ofNat 32 272).setWidth 64 = (aSt s₀).setWidth 64 + BitVec.ofNat 64 272 :=
     add_setWidth (by omega_arith)
-  have c272 : Region.Sub ⟨(aSt s₀ + BitVec.ofNat 32 272).setWidth 64, 16⟩ (astR s₀) := by
+  obtain c272 : Region.Sub ⟨(aSt s₀ + BitVec.ofNat 32 272).setWidth 64, 16⟩ (astR s₀) := by
     rw [p272]; exact Offset.sub_base _ (by decide)
   exact
   { eax := heax, ecx := hecx, edx := hedx, ebx := hebx, esi := hesi, edi := hedi, rounds := hp.rounds, hn := hn
@@ -315,13 +315,13 @@ theorem chain1_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
   unfold chain1
   refine WP.seq (wp_movi fun s₁ u₁ => (h.upd u₁ (by decide)).wp_arg hp (by decide) (by decide) fun s₂ u₂ c₂ =>
     wp_sub fun s₃ u₃ z₃ => WP.block_nil ?_)
-  have c₃ := c₂.upd u₃ (by decide)
-  have z : s₃.zf = some (decide (leftOf (aC s₀) (aL s₀) = 0)) := by
+  obtain c₃ := c₂.upd u₃ (by decide)
+  obtain z : s₃.zf = some (decide (leftOf (aC s₀) (aL s₀) = 0)) := by
     rw [z₃, u₂.gpr, u₂.other _ (by decide), u₁.other _ (by decide), hbp, arg_ofNat s₀ 5, sub_ofNat hfL,
       ofNat_beq_zero (by omega_arith)]; rfl
-  have ebp₃ : s₃.gpr .ebp = s.gpr .ebp := by
+  obtain ebp₃ : s₃.gpr .ebp = s.gpr .ebp := by
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
-  have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  obtain m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
   refine WP.seq (WP.mono (Q := fun (s₄ : State) => ACtx s₀ s₄ ∧ s₄.mem = s.mem ∧ s₄.gpr .ebp = s.gpr .ebp ∧
       s₄.gpr .esi = BitVec.ofNat 32 (b1Of (aC s₀) (aL s₀))) ?_ fun s₄ h₄ => ?_)
   · have ev : isa.eval .e s₃ = some (decide (leftOf (aC s₀) (aL s₀) = 0)) := by
@@ -337,13 +337,13 @@ theorem chain1_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
       wp_mov fun s₇ u₇ => wp_addi fun s₈ u₈ => wp_mov fun s₉ u₉ => wp_addi fun s₁₀ u₁₀ =>
       ((((c₆.upd u₇ (by decide)).upd u₈ (by decide)).upd u₉ (by decide)).upd u₁₀ (by decide)).wp_arg hp
         (by decide) (by decide) fun s₁₁ u₁₁ c₁₁ => WP.block_nil ?_
-    have eax₁₁ : s₁₁.gpr .eax = aSt s₀ := by
+    obtain eax₁₁ : s₁₁.gpr .eax = aSt s₀ := by
       rw [u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide),
         u₇.other _ (by decide), u₆.other _ (by decide), u₅.gpr]
-    have hb1 : 16 * b1Of (aC s₀) (aL s₀) ≤ 16 := by unfold b1Of; split <;> omega_arith
-    have p288 : (aSt s₀ + BitVec.ofNat 32 288).setWidth 64 = (aSt s₀).setWidth 64 + BitVec.ofNat 64 288 :=
+    obtain hb1 : 16 * b1Of (aC s₀) (aL s₀) ≤ 16 := by unfold b1Of; split <;> omega_arith
+    obtain p288 : (aSt s₀ + BitVec.ofNat 32 288).setWidth 64 = (aSt s₀).setWidth 64 + BitVec.ofNat 64 288 :=
       add_setWidth (by omega_arith)
-    have c288 : Region.Sub ⟨(aSt s₀ + BitVec.ofNat 32 288).setWidth 64, 16 * b1Of (aC s₀) (aL s₀)⟩ (astR s₀) := by
+    obtain c288 : Region.Sub ⟨(aSt s₀ + BitVec.ofNat 32 288).setWidth 64, 16 * b1Of (aC s₀) (aL s₀)⟩ (astR s₀) := by
       rw [p288]; exact Offset.sub_base _ (by omega_arith)
     refine ⟨hp.uargs eax₁₁ ?_ ?_ ?_ ?_ u₁₁.gpr c₁₁.esp c₁₁.rd c₁₁.wr (by omega_arith) ?_
       ((hp.st_s.sub_left c288).sub_right (Region.sub_prefix (by decide))) (hp.b_st.sub_right c288)
@@ -380,27 +380,27 @@ theorem chain2_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
     (hbp : s.gpr .ebp = BitVec.ofNat 32 (fOf (aC s₀) (aL s₀))) : WP isa chain2 s (Chained₂ s₀ s) := by
   have hL := hp.lt
   have ⟨hfL, _⟩ := f_le (aC s₀) (aL s₀)
-  have hsum := nb_le (aC s₀) (aL s₀)
+  obtain hsum := nb_le (aC s₀) (aL s₀)
   have fSt : (aSt s₀).toNat + 304 ≤ 2 ^ 32 := hp.fSt
   have fD : (aD s₀).toNat + aL s₀ ≤ 2 ^ 32 := hp.fD
   unfold chain2
   refine WP.seq (wp_movi fun s₁ u₁ => (h.upd u₁ (by decide)).wp_arg hp (by decide) (by decide) fun s₂ u₂ c₂ =>
     wp_addi fun s₃ u₃ => (c₂.upd u₃ (by decide)).wp_arg hp (by decide) (by decide) fun s₄ u₄ c₄ =>
     wp_sub fun s₅ u₅ z₅ => WP.block_nil ?_)
-  have c₅ := c₄.upd u₅ (by decide)
-  have ebp₄ : s₄.gpr .ebp = s.gpr .ebp := by
+  obtain c₅ := c₄.upd u₅ (by decide)
+  obtain ebp₄ : s₄.gpr .ebp = s.gpr .ebp := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)]
-  have ebp₅ : s₅.gpr .ebp = s.gpr .ebp := by rw [u₅.other _ (by decide), ebp₄]
-  have edx₅ : s₅.gpr .edx = BitVec.ofNat 32 (leftOf (aC s₀) (aL s₀)) := by
+  obtain ebp₅ : s₅.gpr .ebp = s.gpr .ebp := by rw [u₅.other _ (by decide), ebp₄]
+  obtain edx₅ : s₅.gpr .edx = BitVec.ofNat 32 (leftOf (aC s₀) (aL s₀)) := by
     rw [u₅.gpr, u₄.gpr, ebp₄, hbp, arg_ofNat s₀ 5, sub_ofNat hfL]; rfl
-  have z : s₅.zf = some (decide (leftOf (aC s₀) (aL s₀) = 0)) := by
+  obtain z : s₅.zf = some (decide (leftOf (aC s₀) (aL s₀) = 0)) := by
     rw [z₅, u₄.gpr, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide),
       u₁.other _ (by decide), hbp, arg_ofNat s₀ 5, sub_ofNat hfL, ofNat_beq_zero (by omega_arith)]; rfl
-  have ecx₅ : s₅.gpr .ecx = BitVec.ofNat 32 0 := by
+  obtain ecx₅ : s₅.gpr .ecx = BitVec.ofNat 32 0 := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr]; rfl
-  have ebx₅ : s₅.gpr .ebx = aSt s₀ + BitVec.ofNat 32 288 := by
+  obtain ebx₅ : s₅.gpr .ebx = aSt s₀ + BitVec.ofNat 32 288 := by
     rw [u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.gpr]; rfl
-  have m₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain m₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
   refine WP.seq (WP.mono (Q := fun (s₆ : State) => ACtx s₀ s₆ ∧ s₆.mem = s.mem ∧ s₆.gpr .ebp = s.gpr .ebp ∧
       s₆.gpr .ecx = BitVec.ofNat 32 (16 * nbOf (aC s₀) (aL s₀)) ∧ s₆.gpr .ebx = d2Of s₀) ?_ fun s₆ h₆ => ?_)
   · have ev : isa.eval .e s₅ = some (decide (leftOf (aC s₀) (aL s₀) = 0)) := by
@@ -418,8 +418,8 @@ theorem chain2_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
       · rw [u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.other _ (by decide),
           u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), ebp₅]
       · have ecx₇ : s₇.gpr .ecx = BitVec.ofNat 32 (leftOf (aC s₀) (aL s₀)) - 1 := by rw [u₇.gpr, u₆.gpr, edx₅]
-        have ecx₉ : s₉.gpr .ecx = s₇.gpr .ecx := by rw [u₉.other _ (by decide), u₈.other _ (by decide)]
-        have eax₉ : s₉.gpr .eax = s₇.gpr .ecx &&& 15 := by rw [u₉.gpr, u₈.gpr]
+        obtain ecx₉ : s₉.gpr .ecx = s₇.gpr .ecx := by rw [u₉.other _ (by decide), u₈.other _ (by decide)]
+        obtain eax₉ : s₉.gpr .eax = s₇.gpr .ecx &&& 15 := by rw [u₉.gpr, u₈.gpr]
         rw [u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.gpr, ecx₉, eax₉, ecx₇]
         simp only [nbOf, h0, ↓reduceIte]
         exact nb16_bv (by omega_arith) (by unfold leftOf; omega_arith)
@@ -427,27 +427,27 @@ theorem chain2_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
           u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), ebp₅, hbp]
         simp only [d2Of, h0, ↓reduceIte]
   · obtain ⟨c₆, m₆, ebp₆, ecx₆, ebx₆⟩ := h₆
-    have hn16 : 16 * nbOf (aC s₀) (aL s₀) < 2 ^ 32 := by omega_arith
+    obtain hn16 : 16 * nbOf (aC s₀) (aL s₀) < 2 ^ 32 := by omega_arith
     refine wp_mov fun s₇ u₇ => wp_shr (by decide) fun s₈ u₈ => wp_add fun s₉ u₉ =>
       (((c₆.upd u₇ (by decide)).upd u₈ (by decide)).upd u₉ (by decide)).wp_arg hp (by decide) (by decide)
         fun s₁₀ u₁₀ c₁₀ => c₁₀.wp_arg hp (by decide) (by decide) fun s₁₁ u₁₁ c₁₁ => wp_mov fun s₁₂ u₁₂ =>
         wp_addi fun s₁₃ u₁₃ => ((c₁₁.upd u₁₂ (by decide)).upd u₁₃ (by decide)).wp_arg hp (by decide) (by decide)
         fun s₁₄ u₁₄ c₁₄ => WP.block_nil ?_
-    have ebx₁₄ : s₁₄.gpr .ebx = d2Of s₀ := by
+    obtain ebx₁₄ : s₁₄.gpr .ebx = d2Of s₀ := by
       rw [u₁₄.other _ (by decide), u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide),
         u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide), ebx₆]
-    have hnb : nbOf (aC s₀) (aL s₀) = 0 ∨ 0 < leftOf (aC s₀) (aL s₀) := by
+    obtain hnb : nbOf (aC s₀) (aL s₀) = 0 ∨ 0 < leftOf (aC s₀) (aL s₀) := by
       unfold nbOf; split <;> omega_arith
     -- The data the call reads.
-    have hn0 : leftOf (aC s₀) (aL s₀) = 0 → nbOf (aC s₀) (aL s₀) = 0 := fun h => by simp [nbOf, h]
-    have hd2 : ((d2Of s₀).setWidth 64 = (aSt s₀).setWidth 64 + BitVec.ofNat 64 288 ∧ nbOf (aC s₀) (aL s₀) = 0) ∨
+    obtain hn0 : leftOf (aC s₀) (aL s₀) = 0 → nbOf (aC s₀) (aL s₀) = 0 := fun h => by simp [nbOf, h]
+    obtain hd2 : ((d2Of s₀).setWidth 64 = (aSt s₀).setWidth 64 + BitVec.ofNat 64 288 ∧ nbOf (aC s₀) (aL s₀) = 0) ∨
         ((d2Of s₀).setWidth 64 = (aD s₀).setWidth 64 + BitVec.ofNat 64 (fOf (aC s₀) (aL s₀)) ∧
           0 < leftOf (aC s₀) (aL s₀)) := by
       unfold d2Of
       split
       · exact .inl ⟨add_setWidth (by omega_arith), hn0 (by assumption)⟩
       · exact .inr ⟨add_setWidth (by unfold leftOf at *; omega_arith), by omega_arith⟩
-    have dD : 0 < leftOf (aC s₀) (aL s₀) →
+    obtain dD : 0 < leftOf (aC s₀) (aL s₀) →
         Region.Sub ⟨(aD s₀).setWidth 64 + BitVec.ofNat 64 (fOf (aC s₀) (aL s₀)), 16 * nbOf (aC s₀) (aL s₀)⟩
           (adR s₀) := fun _ => Offset.sub_base _ (by omega_arith)
     refine ⟨hp.uargs ?_ ?_ ?_ ebx₁₄ ?_ u₁₄.gpr c₁₄.esp c₁₄.rd c₁₄.wr hn16 ?_ ?_ ?_ ?_ ?_, c₁₄, ?_, ?_⟩
@@ -477,7 +477,7 @@ theorem chain2_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
       · exact ⟨adR s₀, by simp [hp.rd], fOf (aC s₀) (aL s₀), rfl, by simp; omega_arith⟩
     · have ebp₈ : s₈.gpr .ebp = s.gpr .ebp := by
         rw [u₈.other _ (by decide), u₇.other _ (by decide), ebp₆]
-      have ecx₈ : s₈.gpr .ecx = BitVec.ofNat 32 (16 * nbOf (aC s₀) (aL s₀)) := by
+      obtain ecx₈ : s₈.gpr .ecx = BitVec.ofNat 32 (16 * nbOf (aC s₀) (aL s₀)) := by
         rw [u₈.other _ (by decide), u₇.other _ (by decide), ecx₆]
       rw [u₁₄.other _ (by decide), u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide),
         u₁₀.other _ (by decide), u₉.gpr, ebp₈, ecx₈, hbp]
@@ -497,7 +497,7 @@ structure Rested (s₀ s s' : State) : Prop where
 theorem rest_wp {s₀ s : State} (hp : APre s₀) (h : ACtx s₀ s)
     (hbp : s.gpr .ebp = BitVec.ofNat 32 (fOf (aC s₀) (aL s₀) + 16 * nbOf (aC s₀) (aL s₀))) :
     WP isa (.block rest) s (Rested s₀ s) := by
-  have hsum := nb_le (aC s₀) (aL s₀)
+  obtain hsum := nb_le (aC s₀) (aL s₀)
   have hsum' : fOf (aC s₀) (aL s₀) + 16 * nbOf (aC s₀) (aL s₀) + restOf (aC s₀) (aL s₀) = (arg s₀ 5).toNat := hsum
   unfold rest
   refine h.wp_arg hp (by decide) (by decide) fun s₁ u₁ c₁ => wp_add fun s₂ u₂ =>

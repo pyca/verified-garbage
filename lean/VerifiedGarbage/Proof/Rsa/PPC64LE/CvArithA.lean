@@ -48,8 +48,8 @@ structure ArInit (m : Mem) (B : Addr) (w Nv P Q Dd : Nat) : Prop where
 /-- A number of `w + 1` digits below `2^(32 w)` is its low `w` digits. -/
 theorem num_of_num1 {m : Mem} {B : Addr} {w j : Nat} (h : num1 m B w j < 2 ^ (32 * w)) :
     num m B w j = num1 m B w j := by
-  have e := val32_append m B (arr w j) w 1
-  have hl := val32_lt m B (arr w j) w
+  obtain e := val32_append m B (arr w j) w 1
+  obtain hl := val32_lt m B (arr w j) w
   change val32 _ _ _ (w + 1) < _ at h
   change val32 _ _ _ w = val32 _ _ _ (w + 1)
   rw [e] at h ⊢
@@ -105,8 +105,8 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B 
   have hS : S w = 4 * (w + 2) := rfl
   have nw := h.nowrap
   have hwl := h.wle
-  have fit : ∀ j < nArr, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
-  have hk : ∀ {m m' : Mem} {js ds : List Nat}, KeyWorkspace.Keep B w js ds m m' → ∀ {j : Nat}, j < nArr →
+  obtain fit : ∀ j < nArr, arr w j + S w ≤ 2 ^ 64 := fun j hj => h.fit64 hj
+  obtain hk : ∀ {m m' : Mem} {js ds : List Nat}, KeyWorkspace.Keep B w js ds m m' → ∀ {j : Nat}, j < nArr →
       j ∉ js → (∀ d ∈ ds, d + 4 ≤ KeyWorkspace.hdr) → num m' B w j = num m B w j :=
     fun k _ hj hn hd => k.num (fun x hx e => hn (by subst e; exact hx)) hd (fit _ hj)
   unfold partA
@@ -114,20 +114,20 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B 
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   rw [← List.append_nil (bitOf sPodd aP)]
   refine bitOf_ok h (by decide) (by decide) (by decide) fun t1 h1 k1 o1 r1 => WP.block_nil ?_
-  have p1 : num t1.mem B w aP = P := by rw [hk k1 (by decide) (by simp) (by simp; decide), hi.p]
-  have q1 : num t1.mem B w aQ = Q := by rw [hk k1 (by decide) (by simp) (by simp; decide), hi.q]
-  have l1 : t1.gpr .r20 = BitVec.ofNat 64 pL := (r1.gpr _ (by decide)).trans h20
-  have l1' : t1.gpr .r22 = BitVec.ofNat 64 qL := (r1.gpr _ (by decide)).trans h22
+  obtain p1 : num t1.mem B w aP = P := by rw [hk k1 (by decide) (by simp) (by simp; decide), hi.p]
+  obtain q1 : num t1.mem B w aQ = Q := by rw [hk k1 (by decide) (by simp) (by simp; decide), hi.q]
+  obtain l1 : t1.gpr .r20 = BitVec.ofNat 64 pL := (r1.gpr _ (by decide)).trans h20
+  obtain l1' : t1.gpr .r22 = BitVec.ofNat 64 qL := (r1.gpr _ (by decide)).trans h22
   -- The guard.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (shape_ok h1.r29 l1 l1' (by omega_using [hwl]) (by omega_using [hpw, hwl]) (by omega_using [hqw, hwl])) fun s1 ⟨z1, m1, ks1⟩ => ?_
-  have h1s := h1.of_keep ks1
-  have p1s : num s1.mem B w aP = P := by rw [m1, p1]
-  have q1s : num s1.mem B w aQ = Q := by rw [m1, q1]
-  have l1s : s1.gpr .r20 = BitVec.ofNat 64 pL := (ks1.gpr _ (by decide)).trans l1
+  obtain h1s := h1.of_keep ks1
+  obtain p1s : num s1.mem B w aP = P := by rw [m1, p1]
+  obtain q1s : num s1.mem B w aQ = Q := by rw [m1, q1]
+  obtain l1s : s1.gpr .r20 = BitVec.ofNat 64 pL := (ks1.gpr _ (by decide)).trans l1
   -- `p q mod 2^(32 w)`: for a balanced key over the primes' `w / 2` digits, exact.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  have hprod : WP isa (.ite (.zero .d .r0) (VG.Impl.Rsa.PPC64LE.MontKey.mulHalf aDR aP aQ .r20)
+  obtain hprod : WP isa (.ite (.zero .d .r0) (VG.Impl.Rsa.PPC64LE.MontKey.mulHalf aDR aP aQ .r20)
       (VG.Impl.Rsa.PPC64LE.MontKey.mulLo aDR aP aQ .r20)) s1 fun t2 => Ws t2 B Z w nArr ∧
         KeyWorkspace.Keep B w [aDR] [] s1.mem t2.mem ∧ num t2.mem B w aDR = P * Q % 2 ^ (32 * w) ∧
         Keep VG.Proof.Rsa.PPC64LE.MontKey.mkRegs s1 t2 := by
@@ -136,13 +136,13 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B 
       refine WP.mono (VG.Proof.Rsa.PPC64LE.MontKey.mulHalf_ok h1s (by decide) (o := aDR) (x := aP) (y := aQ)
         (by decide) (by decide) (by decide) (by decide) (by decide) l1s hpL (by omega_using [p8, hpw2]) (by decide) (by decide))
         fun t2 ⟨h2, k2, v2, r2⟩ => ⟨h2, k2, ?_, r2⟩
-      have lt : ∀ {X : Nat}, X < 2 ^ (8 * pL) → X < 2 ^ (32 * ((pL + 3) / 4)) := fun hX =>
+      obtain lt : ∀ {X : Nat}, X < 2 ^ (8 * pL) → X < 2 ^ (32 * ((pL + 3) / 4)) := fun hX =>
         Nat.lt_of_lt_of_le hX (Nat.pow_le_pow_right (by decide) (by omega_using []))
-      have vP : val32 s1.mem B (arr w aP) ((pL + 3) / 4) = P :=
+      obtain vP : val32 s1.mem B (arr w aP) ((pL + 3) / 4) = P :=
         VG.Proof.Rsa.PPC64LE.MontKey.val32_low (n := w) p1s (by omega_using [hpw]) (lt hP)
-      have vQ : val32 s1.mem B (arr w aQ) ((pL + 3) / 4) = Q :=
+      obtain vQ : val32 s1.mem B (arr w aQ) ((pL + 3) / 4) = Q :=
         VG.Proof.Rsa.PPC64LE.MontKey.val32_low (n := w) q1s (by omega_using [hpw]) (lt (by rw [show 8 * pL = 8 * qL by omega_using [hpq]]; exact hQ))
-      have hlt : P * Q < 2 ^ (32 * w) :=
+      obtain hlt : P * Q < 2 ^ (32 * w) :=
         calc P * Q < 2 ^ (32 * ((pL + 3) / 4)) * 2 ^ (32 * ((pL + 3) / 4)) :=
               Nat.mul_lt_mul'' (lt hP) (lt (by rw [show 8 * pL = 8 * qL by omega_using [hpq]]; exact hQ))
           _ ≤ 2 ^ (32 * w) := by rw [← Nat.pow_add]; exact Nat.pow_le_pow_right (by decide) (by omega_using [p8, hpw2])
@@ -150,7 +150,7 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B 
     · refine WP.mono (VG.Proof.Rsa.PPC64LE.MontKey.mulLo_ok h1s (by decide) (o := aDR) (x := aP) (y := aQ)
         (by decide) (by decide) (by decide) (by decide) (by decide) l1s hpL hpw (by decide) (by decide))
         fun t2 ⟨h2, k2, v2, r2⟩ => ⟨h2, k2, ?_, r2⟩
-      have vP : val32 s1.mem B (arr w aP) ((pL + 3) / 4) = P :=
+      obtain vP : val32 s1.mem B (arr w aP) ((pL + 3) / 4) = P :=
         VG.Proof.Rsa.PPC64LE.MontKey.val32_low (n := w) p1s (by omega_using [hpw])
           (Nat.lt_of_lt_of_le hP (Nat.pow_le_pow_right (by decide) (by omega_using [])))
       rw [v2, vP, q1s]
@@ -159,22 +159,22 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B 
   -- `p q ≡ n`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (eqS_ok h2 (by decide) (by decide) (by decide) (by decide)) fun t3 ⟨h3, k3, e3, r3⟩ => ?_
-  have n2 : num t2.mem B w aDQ = Nv := by
+  obtain n2 : num t2.mem B w aDQ = Nv := by
     rw [hk k2 (by decide) (by decide) (by simp), hk k1 (by decide) (by simp) (by simp; decide), hi.n]
   rw [v2, n2] at e3
-  have p3 : num t3.mem B w aP = P := by
+  obtain p3 : num t3.mem B w aP = P := by
     rw [hk k3 (by decide) (by simp) (by simp; decide), hk k2 (by decide) (by decide) (by simp), p1]
-  have z3 : ∀ j < 25, j ≠ aDQ → j ≠ aP → j ≠ aQ → j ≠ aD → j ∉ partAArrs → num t3.mem B w j = 0 := by
+  obtain z3 : ∀ j < 25, j ≠ aDQ → j ≠ aP → j ≠ aQ → j ≠ aD → j ∉ partAArrs → num t3.mem B w j = 0 := by
     intro j hj a b c d e
     simp only [partAArrs, List.mem_cons, List.not_mem_nil, or_false, not_or] at e
     rw [hk k3 (show j < nArr by unfold nArr; omega_using [hj]) (by simp) (by simp; decide),
       hk k2 (show j < nArr by unfold nArr; omega_using [hj]) (by simp; exact e.1) (by simp),
       hk k1 (show j < nArr by unfold nArr; omega_using [hj]) (by simp) (by simp; decide), hi.zero j hj a b c d]
-  have n3 : num t3.mem B w aDQ = Nv := by rw [hk k3 (by decide) (by simp) (by simp; decide), n2]
-  have l3 : t3.gpr .r20 = BitVec.ofNat 64 pL := (r3.gpr _ (by decide)).trans ((r2.gpr _ (by decide)).trans l1s)
-  have l3' : t3.gpr .r22 = BitVec.ofNat 64 qL :=
+  obtain n3 : num t3.mem B w aDQ = Nv := by rw [hk k3 (by decide) (by simp) (by simp; decide), n2]
+  obtain l3 : t3.gpr .r20 = BitVec.ofNat 64 pL := (r3.gpr _ (by decide)).trans ((r2.gpr _ (by decide)).trans l1s)
+  obtain l3' : t3.gpr .r22 = BitVec.ofNat 64 qL :=
     (r3.gpr _ (by decide)).trans ((r2.gpr _ (by decide)).trans ((ks1.gpr _ (by decide)).trans l1'))
-  have top3 : w32 t3.mem B (arr w aDD + 4 * w) = 0 := by
+  obtain top3 : w32 t3.mem B (arr w aDD + 4 * w) = 0 := by
     rw [KeyWorkspace.Keep.word k3 (i := w) (by omega_using [hS]) (by simp) (by simp; decide) (fit _ (by decide)),
       KeyWorkspace.Keep.word k2 (i := w) (by omega_using [hS]) (by decide) (by simp) (fit _ (by decide)),
       KeyWorkspace.Keep.word k1 (i := w) (by omega_using [hS]) (by simp) (by simp; decide) (fit _ (by decide)),
@@ -182,10 +182,10 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B 
   -- The guard again.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (shape_ok h3.r29 l3 l3' (by omega_using [hwl]) (by omega_using [hpw, hwl]) (by omega_using [hqw, hwl])) fun s7 ⟨z7, m7, ks7⟩ => ?_
-  have h7s := h3.of_keep ks7
+  obtain h7s := h3.of_keep ks7
   -- `0` for a balanced key, else Montgomery's `n` modulo `p | 1`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  have hmn : WP isa (.ite (.zero .d .r0) (copy aDT aZero) (seqs [copy aDD aP,
+  obtain hmn : WP isa (.ite (.zero .d .r0) (copy aDT aZero) (seqs [copy aDD aP,
       .block (VG.Impl.Rsa.PPC64LE.Keys.orOne aDD ++ VG.Impl.Rsa.PPC64LE.Keys.setOne aDR3),
       VG.Impl.Rsa.PPC64LE.MontKey.montMul aDT aDQ aDR3 aDD aDR2 .r20 VG.Impl.Rsa.PPC64LE.MontKey.cntW])) s7
       fun t7 => Ws t7 B Z w nArr ∧ KeyWorkspace.Keep B w [aDT, aDR2, aDD, aDR3] [] s7.mem t7.mem ∧
@@ -210,20 +210,20 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B 
       refine orOne_ok h4 (j := aDD) (by decide) (by decide) fun t5 h5 k5 v5 r5 => ?_
       rw [← List.append_nil (VG.Impl.Rsa.PPC64LE.Keys.setOne aDR3)]
       refine setOne_ok h5 (j := aDR3) (by decide) (by decide) fun t6 h6 k6 v6 r6 => WP.block_nil ?_
-      have m6 : num t6.mem B w aDD = 2 * (P / 2) + 1 := by
+      obtain m6 : num t6.mem B w aDD = 2 * (P / 2) + 1 := by
         rw [hk k6 (by decide) (by decide) (by simp), v5, v4, m7, p3]
-      have o6 : num t6.mem B w aDR3 = 1 := by
+      obtain o6 : num t6.mem B w aDR3 = 1 := by
         rw [v6, hk k5 (by decide) (by decide) (by simp), hk k4 (by decide) (by decide) (by simp), m7,
           hk k3 (by decide) (by simp) (by simp; decide), hk k2 (by decide) (by decide) (by simp),
           hk k1 (by decide) (by simp) (by simp; decide), hi.zero _ (by decide) (by decide) (by decide) (by decide)
             (by decide)]
-      have n6 : num t6.mem B w aDQ = Nv := by
+      obtain n6 : num t6.mem B w aDQ = Nv := by
         rw [hk k6 (by decide) (by decide) (by simp), hk k5 (by decide) (by decide) (by simp),
           hk k4 (by decide) (by decide) (by simp), m7, n3]
-      have l6 : t6.gpr .r20 = BitVec.ofNat 64 pL := by
+      obtain l6 : t6.gpr .r20 = BitVec.ofNat 64 pL := by
         rw [r6.gpr _ (by decide), r5.gpr _ (by decide), r4.gpr _ (by decide), ks7.gpr _ (by decide)]; exact l3
-      have pw' : 2 ^ (8 * pL) ≤ 2 ^ (32 * ((pL + 3) / 4)) := Nat.pow_le_pow_right (by decide) (by omega_using [])
-      have hm : 2 * (P / 2) + 1 < 2 ^ (8 * pL) := by
+      obtain pw' : 2 ^ (8 * pL) ≤ 2 ^ (32 * ((pL + 3) / 4)) := Nat.pow_le_pow_right (by decide) (by omega_using [])
+      obtain hm : 2 * (P / 2) + 1 < 2 ^ (8 * pL) := by
         have : 2 ^ (8 * pL) = 2 * 2 ^ (8 * pL - 1) := by rw [← Nat.pow_succ']; congr 1; omega_using [hpL]
         omega_using [hP, this]
       refine WP.mono (VG.Proof.Rsa.PPC64LE.MontKey.montMul_ok h6 (by decide) (a := aDT) (x := aDQ) (y := aDR3)
@@ -232,7 +232,7 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B 
         (by decide) m6 (Nat.lt_of_lt_of_le hm pw') (by omega_using []) o6 (Nat.one_lt_two_pow (by omega_using [hpL])))
         fun t7 ⟨h7, k7, _, _, top7, cg7, r7⟩ => ⟨h7, (k4.mono.trans (k5.mono.trans (k6.mono.trans k7.mono))), top7,
           fun podd p2 _ => ?_, (((r4.trans r5).trans r6).trans r7).mono⟩
-      have e1 : 2 * (P / 2) + 1 = P := by omega_using [podd]
+      obtain e1 : 2 * (P / 2) + 1 = P := by omega_using [podd]
       rw [e1] at cg7
       obtain ⟨lt, cg⟩ := cg7 (by omega_using [p2])
       rw [Nat.mul_one, n6] at cg
@@ -241,7 +241,7 @@ theorem partA_ok {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B 
   rw [m7] at k7
   -- `M = 0`.
   refine WP.mono (eqS_ok h7 (by decide) (by decide) (by decide) (by decide)) fun t ⟨h8, k8, e8, r8⟩ => ?_
-  have z7 : num t7.mem B w aZero = 0 := by
+  obtain z7 : num t7.mem B w aZero = 0 := by
     rw [hk k7 (by decide) (by decide) (by simp)]
     exact z3 _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
   rw [z7] at e8

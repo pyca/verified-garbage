@@ -62,8 +62,8 @@ theorem len_b : 128 * L.r.toNat * L.pp = L.blen.toNat * 128 := by
 /-- The derived key of step 1 is not too long for PBKDF2. -/
 theorem ol1 : L.blen.toNat * 128 ≤ (2 ^ 32 - 1) * 32 := by
   have h₁ := h.valid.2.2.2.2.1
-  have h₂ := Nat.div_mul_le_self ((2 ^ 32 - 1) * 32) (128 * L.r.toNat)
-  have h₃ : L.pp * (128 * L.r.toNat) ≤ (2 ^ 32 - 1) * 32 / (128 * L.r.toNat) * (128 * L.r.toNat) :=
+  obtain h₂ := Nat.div_mul_le_self ((2 ^ 32 - 1) * 32) (128 * L.r.toNat)
+  obtain h₃ : L.pp * (128 * L.r.toNat) ≤ (2 ^ 32 - 1) * 32 / (128 * L.r.toNat) * (128 * L.r.toNat) :=
     Nat.mul_le_mul_right _ h₁
   rw [← h.len_b, Nat.mul_comm (128 * L.r.toNat)]
   omega_using [h₂, h₃]
@@ -192,10 +192,10 @@ theorem cur0_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
   have hnB := hL.nB
   unfold cur0
   refine fld_wp hL hc (d := bOff) 1032 (by decide) (by decide) (by decide) fun a ua => ?_
-  have ha := hc.upd ua (by decide)
+  obtain ha := hc.upd ua (by decide)
   refine fsd_wp hL ha (d := curOff) 1056 (by decide) (by decide) (by decide) fun b ub => WP.block_nil ?_
-  have e : a.gpr .a0 = L.b := by rw [ua.gpr]; exact hc.kept.b
-  have f : Frame [curR L] t.mem b.mem := by
+  obtain e : a.gpr .a0 = L.b := by rw [ua.gpr]; exact hc.kept.b
+  obtain f : Frame [curR L] t.mem b.mem := by
     rw [ub.mem, ua.mem]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
   refine ⟨hc.store hL (by rw [ub.rd, ua.rd]) (by rw [ub.wr, ua.wr]) (by rw [ub.sp, ua.sp])
@@ -210,24 +210,24 @@ theorem alignBits_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
     WP isa (.block alignBits) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ t'.gpr .t0 = alBits L := by
   unfold alignBits
   refine fld_wp hL hc (d := bOff) 1032 (by decide) (by decide) (by decide) fun a ua => ?_
-  have ha := hc.upd ua (by decide)
+  obtain ha := hc.upd ua (by decide)
   refine fld_wp hL ha (d := vOff) 1048 (by decide) (by decide) (by decide) fun b ub => ?_
-  have hb := ha.upd ub (by decide)
+  obtain hb := ha.upd ub (by decide)
   refine wp_or fun c uc => ?_
-  have hc' := hb.upd uc (by decide)
+  obtain hc' := hb.upd uc (by decide)
   refine fld_wp hL hc' (d := argOff scratchArg) 1256 (by decide) (by decide) (by decide) fun d ud => ?_
-  have hd := hc'.upd ud (by decide)
+  obtain hd := hc'.upd ud (by decide)
   refine wp_or fun e ue => ?_
-  have he := hd.upd ue (by decide)
+  obtain he := hd.upd ue (by decide)
   refine wp_andi (by decide) fun f uf => WP.block_nil ?_
   refine ⟨he.upd uf (by decide), by rw [uf.mem, ue.mem, ud.mem, uc.mem, ub.mem, ua.mem], ?_⟩
-  have e0 : a.gpr .t0 = L.b := by rw [ua.gpr]; exact hc.kept.b
-  have e1 : b.gpr .t1 = L.v := by rw [ub.gpr, ua.mem]; exact hc.kept.v
-  have e2 : b.gpr .t0 = L.b := by rw [ub.other _ (by decide), e0]
-  have e3 : c.gpr .t0 = L.b ||| L.v := by rw [uc.gpr, e2, e1]
-  have e4 : d.gpr .t1 = L.scr := by rw [ud.gpr, uc.mem, ub.mem, ua.mem]; exact hc.kept.scr
-  have e5 : d.gpr .t0 = L.b ||| L.v := by rw [ud.other _ (by decide), e3]
-  have e6 : e.gpr .t0 = L.b ||| L.v ||| L.scr := by rw [ue.gpr, e5, e4]
+  obtain e0 : a.gpr .t0 = L.b := by rw [ua.gpr]; exact hc.kept.b
+  obtain e1 : b.gpr .t1 = L.v := by rw [ub.gpr, ua.mem]; exact hc.kept.v
+  obtain e2 : b.gpr .t0 = L.b := by rw [ub.other _ (by decide), e0]
+  obtain e3 : c.gpr .t0 = L.b ||| L.v := by rw [uc.gpr, e2, e1]
+  obtain e4 : d.gpr .t1 = L.scr := by rw [ud.gpr, uc.mem, ub.mem, ua.mem]; exact hc.kept.scr
+  obtain e5 : d.gpr .t0 = L.b ||| L.v := by rw [ud.other _ (by decide), e3]
+  obtain e6 : e.gpr .t0 = L.b ||| L.v ||| L.scr := by rw [ue.gpr, e5, e4]
   rw [uf.gpr, e6]
 
 /-- The arguments of a call of ROMix on the block at `cur`. -/
@@ -244,17 +244,17 @@ theorem romixArgs_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {cur : Addr}
     WP isa (.block romixArgs) t fun t' => Ctx L g m₀ t' ∧ t'.mem = t.mem ∧ RomixArgs L cur t' := by
   unfold romixArgs
   refine fld_wp hL hc (d := curOff) 1056 (by decide) (by decide) (by decide) fun a ua => ?_
-  have ha := hc.upd ua (by decide)
+  obtain ha := hc.upd ua (by decide)
   refine fld_wp hL ha (d := rOff) 1024 (by decide) (by decide) (by decide) fun b ub => ?_
-  have hb := ha.upd ub (by decide)
+  obtain hb := ha.upd ub (by decide)
   refine fld_wp hL hb (d := vOff) 1048 (by decide) (by decide) (by decide) fun c uc => ?_
-  have hc' := hb.upd uc (by decide)
+  obtain hc' := hb.upd uc (by decide)
   refine fld_wp hL hc' (d := argOff vlenArg) 1248 (by decide) (by decide) (by decide) fun d ud => ?_
-  have hd := hc'.upd ud (by decide)
+  obtain hd := hc'.upd ud (by decide)
   refine fld_wp hL hd (d := argOff scratchArg) 1256 (by decide) (by decide) (by decide) fun e ue => ?_
-  have he := hd.upd ue (by decide)
+  obtain he := hd.upd ue (by decide)
   refine wp_addi (by decide) fun f uf => WP.block_nil ?_
-  have me : e.mem = t.mem := by rw [ue.mem, ud.mem, uc.mem, ub.mem, ua.mem]
+  obtain me : e.mem = t.mem := by rw [ue.mem, ud.mem, uc.mem, ub.mem, ua.mem]
   refine ⟨he.upd uf (by decide), by rw [uf.mem, me], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [uf.other _ (by decide), ue.other _ (by decide), ud.other _ (by decide), uc.other _ (by decide),
       ub.other _ (by decide), ua.gpr, hcur]
@@ -277,49 +277,49 @@ theorem nextBlock_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) {cur : Addr}
   have hnB := hL.nB
   unfold nextBlock
   refine fld_wp hL hc (d := curOff) 1056 (by decide) (by decide) (by decide) fun a ua => ?_
-  have ha := hc.upd ua (by decide)
+  obtain ha := hc.upd ua (by decide)
   refine fld_wp hL ha (d := rOff) 1024 (by decide) (by decide) (by decide) fun b ub => ?_
-  have hb := ha.upd ub (by decide)
+  obtain hb := ha.upd ub (by decide)
   refine wp_sll (by decide) fun c uc => ?_
-  have hc' := hb.upd uc (by decide)
+  obtain hc' := hb.upd uc (by decide)
   refine wp_add fun d ud => ?_
-  have hd := hc'.upd ud (by decide)
-  have e0 : d.gpr .a0 = cur + BitVec.ofNat 64 (L.r.toNat * 128) := by
+  obtain hd := hc'.upd ud (by decide)
+  obtain e0 : d.gpr .a0 = cur + BitVec.ofNat 64 (L.r.toNat * 128) := by
     rw [ud.gpr, uc.other _ (by decide), ub.other _ (by decide), ua.gpr, hcur, uc.gpr, ub.gpr, ua.mem,
       hc.kept.r, lsl7]
-  have md : d.mem = t.mem := by rw [ud.mem, uc.mem, ub.mem, ua.mem]
+  obtain md : d.mem = t.mem := by rw [ud.mem, uc.mem, ub.mem, ua.mem]
   refine fsd_wp hL hd (d := curOff) 1056 (by decide) (by decide) (by decide) fun e ue => ?_
-  have f : Frame [curR L] t.mem e.mem := by
+  obtain f : Frame [curR L] t.mem e.mem := by
     rw [ue.mem, md]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have he : Ctx L g m₀ e := hd.store hL ue.rd ue.wr ue.sp (fun r _ => by rw [ue.gpr]) (by rw [md]; exact f)
+  obtain he : Ctx L g m₀ e := hd.store hL ue.rd ue.wr ue.sp (fun r _ => by rw [ue.gpr]) (by rw [md]; exact f)
   refine fld_wp hL he (d := bOff) 1032 (by decide) (by decide) (by decide) fun h uh => ?_
-  have hh := he.upd uh (by decide)
+  obtain hh := he.upd uh (by decide)
   refine fld_wp hL hh (d := blenOff) 1040 (by decide) (by decide) (by decide) fun i ui => ?_
-  have hi := hh.upd ui (by decide)
+  obtain hi := hh.upd ui (by decide)
   refine wp_sll (by decide) fun j uj => ?_
-  have hj := hi.upd uj (by decide)
+  obtain hj := hi.upd uj (by decide)
   refine wp_add fun k uk => ?_
-  have hk := hj.upd uk (by decide)
+  obtain hk := hj.upd uk (by decide)
   refine wp_sub fun l ul => WP.block_nil ?_
-  have me : e.mem = t.mem.writeW (L.B + BitVec.ofNat 64 1056) (cur + BitVec.ofNat 64 (L.r.toNat * 128)) := by
+  obtain me : e.mem = t.mem.writeW (L.B + BitVec.ofNat 64 1056) (cur + BitVec.ofNat 64 (L.r.toNat * 128)) := by
     rw [ue.mem, md, e0]
-  have ml : l.mem = e.mem := by rw [ul.mem, uk.mem, uj.mem, ui.mem, uh.mem]
-  have eb : e.mem.readW (L.B + BitVec.ofNat 64 1032) 64 = L.b := by
+  obtain ml : l.mem = e.mem := by rw [ul.mem, uk.mem, uj.mem, ui.mem, uh.mem]
+  obtain eb : e.mem.readW (L.B + BitVec.ofNat 64 1032) 64 = L.b := by
     rw [me, readW_writeW_off (x := 1032) (y := 1056) _ _ _ (by decide) (by decide) (by decide)]
     exact hc.kept.b
-  have ebl : e.mem.readW (L.B + BitVec.ofNat 64 1040) 64 = L.blen := by
+  obtain ebl : e.mem.readW (L.B + BitVec.ofNat 64 1040) 64 = L.blen := by
     rw [me, readW_writeW_off (x := 1040) (y := 1056) _ _ _ (by decide) (by decide) (by decide)]
     exact hc.kept.blen
   refine ⟨hk.upd ul (by decide), by rw [ml]; exact f, by rw [ml, me]; exact Mem.readW_writeW_self64 _ _ _, ?_⟩
-  have k0 : k.gpr .a0 = cur + BitVec.ofNat 64 (L.r.toNat * 128) := by
+  obtain k0 : k.gpr .a0 = cur + BitVec.ofNat 64 (L.r.toNat * 128) := by
     rw [uk.other _ (by decide), uj.other _ (by decide), ui.other _ (by decide), uh.other _ (by decide),
       ue.gpr, e0]
-  have i0 : i.gpr .t0 = L.b := by
+  obtain i0 : i.gpr .t0 = L.b := by
     rw [ui.other _ (by decide), uh.gpr]; exact eb
-  have j1 : j.gpr .t1 = BitVec.ofNat 64 (L.blen.toNat * 128) := by
+  obtain j1 : j.gpr .t1 = BitVec.ofNat 64 (L.blen.toNat * 128) := by
     rw [uj.gpr, ui.gpr, uh.mem, ← lsl7]; exact congrArg (fun x : BitVec 64 => x <<< (7 : Nat)) ebl
-  have k1 : k.gpr .t0 = L.b + BitVec.ofNat 64 (L.blen.toNat * 128) := by
+  obtain k1 : k.gpr .t0 = L.b + BitVec.ofNat 64 (L.blen.toNat * 128) := by
     rw [uk.gpr, uj.other _ (by decide), i0, j1]
   rw [ul.gpr, k1, k0]
 
@@ -328,21 +328,21 @@ theorem pbk2Args_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
       PbkArgs L L.b (BitVec.ofNat 64 (L.blen.toNat * 128)) L.out L.ol t' := by
   unfold pbk2Args
   refine fld_wp hL hc (d := pwOff) 1008 (by decide) (by decide) (by decide) fun a ua => ?_
-  have ha := hc.upd ua (by decide)
+  obtain ha := hc.upd ua (by decide)
   refine fld_wp hL ha (d := pwlOff) 1016 (by decide) (by decide) (by decide) fun b ub => ?_
-  have hb := ha.upd ub (by decide)
+  obtain hb := ha.upd ub (by decide)
   refine fld_wp hL hb (d := bOff) 1032 (by decide) (by decide) (by decide) fun c uc => ?_
-  have hc' := hb.upd uc (by decide)
+  obtain hc' := hb.upd uc (by decide)
   refine fld_wp hL hc' (d := blenOff) 1040 (by decide) (by decide) (by decide) fun d ud => ?_
-  have hd := hc'.upd ud (by decide)
+  obtain hd := hc'.upd ud (by decide)
   refine wp_sll (by decide) fun e ue => ?_
-  have he := hd.upd ue (by decide)
+  obtain he := hd.upd ue (by decide)
   refine wp_li (imm := 1) (by decide) fun f uf => ?_
-  have hf := he.upd uf (by decide)
+  obtain hf := he.upd uf (by decide)
   refine fld_wp hL hf (d := argOff outArg) 1272 (by decide) (by decide) (by decide) fun h uh => ?_
-  have hh := hf.upd uh (by decide)
+  obtain hh := hf.upd uh (by decide)
   refine fld_wp hL hh (d := argOff outLenArg) 1280 (by decide) (by decide) (by decide) fun i ui => WP.block_nil ?_
-  have mh : h.mem = t.mem := by rw [uh.mem, uf.mem, ue.mem, ud.mem, uc.mem, ub.mem, ua.mem]
+  obtain mh : h.mem = t.mem := by rw [uh.mem, uf.mem, ue.mem, ud.mem, uc.mem, ub.mem, ua.mem]
   refine ⟨hh.upd ui (by decide), by rw [ui.mem, mh], ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [ui.other _ (by decide), uh.other _ (by decide), uf.other _ (by decide), ue.other _ (by decide),
       ud.other _ (by decide), uc.other _ (by decide), ub.other _ (by decide), ua.gpr]
@@ -367,7 +367,7 @@ theorem restore_ok (hL : L.Ok) {t : State} (hc : Ctx L g m₀ t) :
       t'.rd = t.rd ∧ t'.wr = t.wr ∧ ∀ r ∈ preserved, t'.gpr r = g r := by
   unfold restore
   refine fld_wp hL hc (d := raOff) 992 (by decide) (by decide) (by decide) fun a ua => ?_
-  have ha := hc.upd ua (by decide)
+  obtain ha := hc.upd ua (by decide)
   refine fld_wp hL ha (d := s3Off) 1000 (by decide) (by decide) (by decide) fun b ub => WP.block_nil ?_
   refine ⟨by rw [ub.other _ (by decide), ua.gpr]; exact hc.kept.ra, by rw [ub.mem, ua.mem],
     by rw [ub.sp, ua.sp], by rw [ub.rd, ua.rd], by rw [ub.wr, ua.wr], fun r hr => ?_⟩
@@ -399,41 +399,41 @@ theorem arg_addr (s : State) (i : Nat) :
 
 theorem entry_ok {s : State} (h : scryptRV.pre s) :
     WP isa (.block setup) (allocd 256 s) fun t => Ctx (lay s) s.gpr s.mem t ∧ Entry (lay s) t := by
-  have hL := lay_ok h
+  obtain hL := lay_ok h
   have hnB := hL.nB
-  have hsp : (allocd 256 s).sp = (lay s).B + BitVec.ofNat 64 992 :=
+  obtain hsp : (allocd 256 s).sp = (lay s).B + BitVec.ofNat 64 992 :=
     Offset.sub_ofNat_eq s.sp (by decide : 256 ≤ 1248)
-  have hw : (allocd 256 s).wr = (lay s).FR :: s.wr := by
+  obtain hw : (allocd 256 s).wr = (lay s).FR :: s.wr := by
     rw [show (allocd 256 s).wr = ⟨(allocd 256 s).sp, 256⟩ :: s.wr from rfl, hsp]
   unfold setup
   refine wp_addSp (by decide) fun a ua => ?_
-  have a0 : a.gpr .t0 = (lay s).B + BitVec.ofNat 64 992 := by
+  obtain a0 : a.gpr .t0 = (lay s).B + BitVec.ofNat 64 992 := by
     rw [ua.gpr, hsp]; exact BitVec.add_zero _
-  have aw : a.wr = (lay s).FR :: s.wr := ua.wr.trans hw
-  have ga : ∀ r, r ≠ .t0 → a.gpr r = s.gpr r := fun r hr => ua.other r hr
+  obtain aw : a.wr = (lay s).FR :: s.wr := ua.wr.trans hw
+  obtain ga : ∀ r, r ≠ .t0 → a.gpr r = s.gpr r := fun r hr => ua.other r hr
   refine esd hL a0 aw (d := raOff) 992 (by decide) (by decide) (by decide) fun b ub => ?_
   refine esd hL (by rw [ub.gpr]; exact a0) (ub.wr.trans aw) (d := s3Off) 1000 (by decide) (by decide)
     (by decide) fun c uc => ?_
-  have cg : c.gpr = a.gpr := uc.gpr.trans ub.gpr
-  have cw : c.wr = (lay s).FR :: s.wr := uc.wr.trans (ub.wr.trans aw)
+  obtain cg : c.gpr = a.gpr := uc.gpr.trans ub.gpr
+  obtain cw : c.wr = (lay s).FR :: s.wr := uc.wr.trans (ub.wr.trans aw)
   refine esd hL (by rw [cg]; exact a0) cw (d := pwOff) 1008 (by decide) (by decide) (by decide) fun d ud => ?_
   refine esd hL (by rw [ud.gpr, cg]; exact a0) (ud.wr.trans cw) (d := pwlOff) 1016 (by decide) (by decide)
     (by decide) fun e ue => ?_
-  have eg : e.gpr = a.gpr := ue.gpr.trans (ud.gpr.trans cg)
-  have ew : e.wr = (lay s).FR :: s.wr := ue.wr.trans (ud.wr.trans cw)
+  obtain eg : e.gpr = a.gpr := ue.gpr.trans (ud.gpr.trans cg)
+  obtain ew : e.wr = (lay s).FR :: s.wr := ue.wr.trans (ud.wr.trans cw)
   refine esd hL (by rw [eg]; exact a0) ew (d := rOff) 1024 (by decide) (by decide) (by decide) fun f uf => ?_
   refine esd hL (by rw [uf.gpr, eg]; exact a0) (uf.wr.trans ew) (d := bOff) 1032 (by decide) (by decide)
     (by decide) fun i ui => ?_
-  have ig : i.gpr = a.gpr := ui.gpr.trans (uf.gpr.trans eg)
-  have iw : i.wr = (lay s).FR :: s.wr := ui.wr.trans (uf.wr.trans ew)
+  obtain ig : i.gpr = a.gpr := ui.gpr.trans (uf.gpr.trans eg)
+  obtain iw : i.wr = (lay s).FR :: s.wr := ui.wr.trans (uf.wr.trans ew)
   refine esd hL (by rw [ig]; exact a0) iw (d := blenOff) 1040 (by decide) (by decide) (by decide) fun j uj => ?_
   refine esd hL (by rw [uj.gpr, ig]; exact a0) (uj.wr.trans iw) (d := vOff) 1048 (by decide) (by decide)
     (by decide) fun k uk => ?_
-  have kg : k.gpr = a.gpr := uk.gpr.trans (uj.gpr.trans ig)
+  obtain kg : k.gpr = a.gpr := uk.gpr.trans (uj.gpr.trans ig)
   refine wp_mv fun l ul => WP.block_nil ?_
-  have hl : ∀ r, r ≠ .s3 → r ≠ .t0 → l.gpr r = s.gpr r := fun r h1 h2 => by
+  obtain hl : ∀ r, r ≠ .s3 → r ≠ .t0 → l.gpr r = s.gpr r := fun r h1 h2 => by
     rw [ul.other r h1, kg, ga r h2]
-  have hm : l.mem = ((((((((s.mem.writeW ((lay s).B + BitVec.ofNat 64 992) (s.gpr .ra)).writeW
+  obtain hm : l.mem = ((((((((s.mem.writeW ((lay s).B + BitVec.ofNat 64 992) (s.gpr .ra)).writeW
       ((lay s).B + BitVec.ofNat 64 1000) (s.gpr .s3)).writeW ((lay s).B + BitVec.ofNat 64 1008) (s.gpr .a0)).writeW
       ((lay s).B + BitVec.ofNat 64 1016) (s.gpr .a1)).writeW ((lay s).B + BitVec.ofNat 64 1024) (s.gpr .a4)).writeW
       ((lay s).B + BitVec.ofNat 64 1032) (s.gpr .a5)).writeW ((lay s).B + BitVec.ofNat 64 1040) (s.gpr .a6)).writeW
@@ -442,18 +442,18 @@ theorem entry_ok {s : State} (h : scryptRV.pre s) :
       ud.gpr, cg, ub.gpr, ga _ (by decide), ga _ (by decide), ga _ (by decide), ga _ (by decide),
       ga _ (by decide), ga _ (by decide), ga _ (by decide), ga _ (by decide)]
     rfl
-  have k0 : s.mem.readW ((lay s).B + BitVec.ofNat 64 1248) 64 = (lay s).vlen := by
+  obtain k0 : s.mem.readW ((lay s).B + BitVec.ofNat 64 1248) 64 = (lay s).vlen := by
     rw [arg_addr s 0]; rfl
-  have k1 : s.mem.readW ((lay s).B + BitVec.ofNat 64 1256) 64 = (lay s).scr := by
+  obtain k1 : s.mem.readW ((lay s).B + BitVec.ofNat 64 1256) 64 = (lay s).scr := by
     rw [arg_addr s 1]; rfl
-  have k3 : s.mem.readW ((lay s).B + BitVec.ofNat 64 1272) 64 = (lay s).out := by
+  obtain k3 : s.mem.readW ((lay s).B + BitVec.ofNat 64 1272) 64 = (lay s).out := by
     rw [arg_addr s 3]; rfl
-  have k4 : s.mem.readW ((lay s).B + BitVec.ofNat 64 1280) 64 = (lay s).ol := by
+  obtain k4 : s.mem.readW ((lay s).B + BitVec.ofNat 64 1280) 64 = (lay s).ol := by
     rw [arg_addr s 4]; rfl
-  have lsp : l.sp = (lay s).B + BitVec.ofNat 64 992 := by
+  obtain lsp : l.sp = (lay s).B + BitVec.ofNat 64 992 := by
     rw [ul.sp, uk.sp, uj.sp, ui.sp, uf.sp, ue.sp, ud.sp, uc.sp, ub.sp, ua.sp, hsp]
-  have lwr : l.wr = (lay s).FR :: s.wr := by rw [ul.wr, uk.wr, uj.wr, iw]
-  have lrd : l.rd = s.rd := by
+  obtain lwr : l.wr = (lay s).FR :: s.wr := by rw [ul.wr, uk.wr, uj.wr, iw]
+  obtain lrd : l.rd = s.rd := by
     rw [ul.rd, uk.rd, uj.rd, ui.rd, uf.rd, ue.rd, ud.rd, uc.rd, ub.rd, ua.rd]; rfl
   refine ⟨⟨?_, ?_, lsp, ?_, fun r hr hr' => hl r hr' fun e => by subst e; revert hr; decide, ?_, ?_⟩,
     hl _ (by decide) (by decide), hl _ (by decide) (by decide), hl _ (by decide) (by decide),

@@ -66,7 +66,7 @@ theorem checkLtP_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr s
   rw [Impl.Ecdh.X86.Cfg.checkLtP, List.append_assoc]
   refine WP.block_append (WP.mono (ltP_ok c hs hn ha hm) fun s₁ ⟨e₁, k₁, m₁⟩ => ?_)
   refine wp_movS rfl fun s₂ u₂ _ => ?_
-  have k₂ : Keeps [.eax, .edx] s s₂ := k₁.widen u₂.keeps
+  obtain k₂ : Keeps [.eax, .edx] s s₂ := k₁.widen u₂.keeps
   refine WP.mono (andFlag_ok c (hs.of_keeps k₂ (by decide)) hf) fun s₃ ⟨e₃, k₃, O₃⟩ =>
     ⟨by rw [e₃, flagW, flagW, u₂.mem, m₁, u₂.gpr, e₁], k₂.widen k₃, by rw [← m₁, ← u₂.mem]; exact O₃⟩
 
@@ -84,7 +84,7 @@ theorem checkZero_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr 
   rw [Impl.Ecdh.X86.Cfg.checkZero, List.append_assoc]
   refine WP.block_append (WP.mono (nonzero_ok c hs hn ha) fun s₁ ⟨e₁, k₁, m₁⟩ => ?_)
   refine wp_logicS (.inr rfl) rfl fun s₂ u₂ => ?_
-  have k₂ : Keeps [.eax, .ecx, .edx] s s₂ := (k₁.mono (by decide)).widen u₂.keeps
+  obtain k₂ : Keeps [.eax, .ecx, .edx] s s₂ := (k₁.mono (by decide)).widen u₂.keeps
   refine WP.mono (andFlag_ok c (hs.of_keeps k₂ (by decide)) hf) fun s₃ ⟨e₃, k₃, O₃⟩ =>
     ⟨?_, k₂.widen k₃, by rw [← m₁, ← u₂.mem]; exact O₃⟩
   rw [e₃, flagW, flagW, u₂.mem, m₁, u₂.gpr, e₁]
@@ -126,9 +126,9 @@ theorem checkLead_ok (c : Cfg) {s : State} {base : Addr} {size : Nat} (hs : Scr 
   refine wp_logicS (.inr rfl) rfl fun s₃ u₃ => ?_
   refine wp_subS rfl fun s₄ u₄ c₄ => ?_
   refine wp_sbbS rfl c₄ fun s₅ u₅ _ => ?_
-  have k₅ : Keeps [.eax, .ebx, .edx] s s₅ :=
+  obtain k₅ : Keeps [.eax, .ebx, .edx] s s₅ :=
     ((((u₁.keeps.mono (by decide)).widen u₂.keeps).widen u₃.keeps).widen u₄.keeps).widen u₅.keeps
-  have m₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain m₅ : s₅.mem = s.mem := by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
   refine WP.mono (andFlag_ok c (hs.of_keeps k₅ (by decide)) hf) fun s₆ ⟨e₆, k₆, O₆⟩ =>
     ⟨?_, k₅.widen k₆, by rw [← m₅]; exact O₆⟩
   rw [e₆, flagW, flagW, m₅, u₅.gpr, sbb_mask]
@@ -190,36 +190,36 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
   have hsz : size = 8192 := rfl
   have hl8 := hc.len8
   have hlhi := hc.len_hi
-  have hF : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_using [hl8, hlhi, this]
-  have hR2 := sl_le c h7 (i := R2P) (by decide)
-  have hB := sl_le c h7 (i := BP) (by decide)
-  have hY := sl_le c h7 (i := QY) (by decide)
-  have hE := sl_le c h7 (i := E) (by decide)
-  have hM := sl_le c h7 (i := MP) (by decide)
+  obtain hF : c.sl FLAG + 4 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_using [hl8, hlhi, this]
+  obtain hR2 := sl_le c h7 (i := R2P) (by decide)
+  obtain hB := sl_le c h7 (i := BP) (by decide)
+  obtain hY := sl_le c h7 (i := QY) (by decide)
+  obtain hE := sl_le c h7 (i := E) (by decide)
+  obtain hM := sl_le c h7 (i := MP) (by decide)
   generalize hq64 : q32.setWidth 64 = q at hin hd ⊢
   rw [peer_eq]
   -- The constants.
   refine WP.block_append (WP.mono (setConst_ok hs hR2 (show c.R * c.R % c.C.p < 2 ^ (64 * c.n) from
     Nat.lt_trans (Nat.mod_lt _ (by omega_using [hp3])) hpl)) fun s₁ ⟨e₁, k₁, O₁⟩ => ?_)
-  have hs₁ := hs.of_keeps k₁ (by decide)
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
   refine WP.block_append (WP.mono (setConst_ok hs₁ hB (show c.mont c.C.b < 2 ^ (64 * c.n) from
     Nat.lt_trans (Nat.mod_lt _ (by omega_using [hp3])) hpl)) fun s₂ ⟨e₂, k₂, O₂⟩ => ?_)
-  have hs₂ := hs₁.of_keeps k₂ (by decide)
-  have W₂ : Outside base 0 size s.mem s₂.mem :=
+  obtain hs₂ := hs₁.of_keeps k₂ (by decide)
+  obtain W₂ : Outside base 0 size s.mem s₂.mem :=
     (O₁.mono (Nat.zero_le _) (by omega_using [hR2])).trans (O₂.mono (Nat.zero_le _) (by omega_using [hB]))
-  have k₂' : Keeps [.eax] s s₂ := k₁.trans k₂
+  obtain k₂' : Keeps [.eax] s s₂ := k₁.trans k₂
   -- `peer + 1`
   refine WP.block_append ?_
   refine wp_movS (hq s₂ (k₂'.1 _ (by decide)) (by rw [k₂'.2.1, k₂'.2.2]) W₂) fun s₃ u₃ _ => ?_
   refine wp_addS rfl fun s₄ u₄ _ => WP.block_nil ?_
-  have k₄ : Keeps [.eax, .ebx] s s₄ := ((k₂'.mono (by decide)).widen u₃.keeps).widen u₄.keeps
-  have hs₄ := hs.of_keeps k₄ (by decide)
-  have hm₄ : s₄.mem = s₂.mem := by rw [u₄.mem, u₃.mem]
-  have hrw₄ : s₄.rd ++ s₄.wr = s.rd ++ s.wr := by rw [k₄.2.1, k₄.2.2]
-  have hb₄ : s₄.gpr .ebx = q32 + BitVec.ofNat 32 1 := by rw [u₄.gpr, u₃.gpr]; rfl
-  have hb₄' : (s₄.gpr .ebx).setWidth 64 = q + BitVec.ofNat 64 1 := by
+  obtain k₄ : Keeps [.eax, .ebx] s s₄ := ((k₂'.mono (by decide)).widen u₃.keeps).widen u₄.keeps
+  obtain hs₄ := hs.of_keeps k₄ (by decide)
+  obtain hm₄ : s₄.mem = s₂.mem := by rw [u₄.mem, u₃.mem]
+  obtain hrw₄ : s₄.rd ++ s₄.wr = s.rd ++ s.wr := by rw [k₄.2.1, k₄.2.2]
+  obtain hb₄ : s₄.gpr .ebx = q32 + BitVec.ofNat 32 1 := by rw [u₄.gpr, u₃.gpr]; rfl
+  obtain hb₄' : (s₄.gpr .ebx).setWidth 64 = q + BitVec.ofNat 64 1 := by
     rw [hb₄, ← hq64]; exact addr_eq (by omega_using [hqfit, hl8])
-  have hbt₄ : (s₄.gpr .ebx).toNat = q32.toNat + 1 := by
+  obtain hbt₄ : (s₄.gpr .ebx).toNat = q32.toNat + 1 := by
     rw [hb₄, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hqfit, hl8])]
   -- `x`
   refine WP.block_append (WP.mono (loadBytes_ok hs₄ (src := .ebx) (by decide) hE (by omega_using [hqfit, hbt₄]) (by omega_using [hl8]) hlhi
@@ -229,17 +229,17 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
     fun s₅ ⟨e₅, k₅, O₅⟩ => ?_)
   rw [hb₄', hm₄] at e₅
   rw [hm₄] at O₅
-  have hs₅ := hs₄.of_keeps k₅ (by decide)
+  obtain hs₅ := hs₄.of_keeps k₅ (by decide)
   -- `peer + 1 + 8 n`
   refine WP.block_append (wp_addS rfl fun s₆ u₆ _ => WP.block_nil ?_)
-  have k₆ : Keeps [.eax, .ebx] s s₆ := (k₄.widen k₅).widen u₆.keeps
-  have hs₆ := hs.of_keeps k₆ (by decide)
-  have hrw₆ : s₆.rd ++ s₆.wr = s.rd ++ s.wr := by rw [k₆.2.1, k₆.2.2]
-  have hb₆ : s₆.gpr .ebx = q32 + BitVec.ofNat 32 (1 + c.C.len) := by
+  obtain k₆ : Keeps [.eax, .ebx] s s₆ := (k₄.widen k₅).widen u₆.keeps
+  obtain hs₆ := hs.of_keeps k₆ (by decide)
+  obtain hrw₆ : s₆.rd ++ s₆.wr = s.rd ++ s.wr := by rw [k₆.2.1, k₆.2.2]
+  obtain hb₆ : s₆.gpr .ebx = q32 + BitVec.ofNat 32 (1 + c.C.len) := by
     rw [u₆.gpr, k₅.1 _ (by decide), hb₄, Offset.add_add]
-  have hb₆' : (s₆.gpr .ebx).setWidth 64 = q + BitVec.ofNat 64 (1 + c.C.len) := by
+  obtain hb₆' : (s₆.gpr .ebx).setWidth 64 = q + BitVec.ofNat 64 (1 + c.C.len) := by
     rw [hb₆, ← hq64]; exact addr_eq (by omega_using [hqfit, hbt₄])
-  have hbt₆ : (s₆.gpr .ebx).toNat = q32.toNat + (1 + c.C.len) := by
+  obtain hbt₆ : (s₆.gpr .ebx).toNat = q32.toNat + (1 + c.C.len) := by
     rw [hb₆, BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [hqfit, hbt₄]), Nat.mod_eq_of_lt (by omega_using [hsz, hlhi, hM])]
   -- `y`
   refine WP.block_append (WP.mono (loadBytes_ok hs₆ (src := .ebx) (by decide) hY (by omega_using [hqfit, hbt₆]) (by omega_using [hl8]) hlhi
@@ -249,46 +249,46 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
     fun s₇ ⟨e₇, k₇, O₇⟩ => ?_)
   rw [hb₆', u₆.mem] at e₇
   rw [u₆.mem] at O₇
-  have hs₇ := hs₆.of_keeps k₇ (by decide)
-  have k₇' : Keeps [.eax, .ebx] s s₇ := k₆.widen k₇
-  have W₇ : Outside base 0 size s.mem s₇.mem :=
+  obtain hs₇ := hs₆.of_keeps k₇ (by decide)
+  obtain k₇' : Keeps [.eax, .ebx] s s₇ := k₆.widen k₇
+  obtain W₇ : Outside base 0 size s.mem s₇.mem :=
     ((W₂.trans (O₅.mono (Nat.zero_le _) (by omega_using [hE]))).trans (O₇.mono (Nat.zero_le _) (by omega_using [hY])))
-  have hrw₇ : s₇.rd ++ s₇.wr = s.rd ++ s.wr := by rw [k₇'.2.1, k₇'.2.2]
+  obtain hrw₇ : s₇.rd ++ s₇.wr = s.rd ++ s.wr := by rw [k₇'.2.1, k₇'.2.2]
   -- the first byte
   refine WP.block_append (WP.mono (checkLead_ok c hs₇ (hq s₇ (k₇'.1 _ (by decide)) hrw₇ W₇)
     ⟨_, by rw [hrw₇]; exact hin, by
       have := Offset.contains_base q (d := 0) (n := 1) (k := 1 + 2 * c.C.len) (by omega_using []) (by omega_using [])
       rw [BitVec.add_zero] at this; rw [hq64]; exact this⟩ hF) fun s₈ ⟨f₈, k₈, O₈⟩ => ?_)
   rw [hq64] at f₈
-  have hs₈ := hs₇.of_keeps k₈ (by decide)
+  obtain hs₈ := hs₇.of_keeps k₈ (by decide)
   -- `x < p`
   refine WP.block_append (WP.mono (checkLtP_ok c hs₈ h0 hE hM hF) fun s₉ ⟨f₉, k₉, O₉⟩ => ?_)
-  have hs₉ := hs₈.of_keeps k₉ (by decide)
+  obtain hs₉ := hs₈.of_keeps k₉ (by decide)
   -- `y < p`
   refine WP.mono (checkLtP_ok c hs₉ h0 hY hM hF) fun s₁₀ ⟨f₁₀, k₁₀, O₁₀⟩ => ?_
   -- The slots.
-  have v₇ : ∀ {i}, i < 45 → i ≠ R2P → i ≠ BP → i ≠ E → i ≠ QY →
+  obtain v₇ : ∀ {i}, i < 45 → i ≠ R2P → i ≠ BP → i ≠ E → i ≠ QY →
       wordsVal s₇.mem base (c.sl i) c.n = wordsVal s.mem base (c.sl i) c.n :=
     fun hi h₁ h₂ h₃ h₄ => by
       rw [sv_out O₇ h7 hn hi h₄, sv_out O₅ h7 hn hi h₃, sv_out O₂ h7 hn hi h₂, sv_out O₁ h7 hn hi h₁]
-  have v₁₀ : ∀ {i}, i < 45 → i ≠ FLAG →
+  obtain v₁₀ : ∀ {i}, i < 45 → i ≠ FLAG →
       wordsVal s₁₀.mem base (c.sl i) c.n = wordsVal s₇.mem base (c.sl i) c.n := fun hi hf =>
     ((sv_flag O₁₀ h0 h7 hn hi hf).trans (sv_flag O₉ h0 h7 hn hi hf)).trans (sv_flag O₈ h0 h7 hn hi hf)
-  have flag₇ : flagW c base s₇ = flagW c base s := by
-    have hap : ∀ {j}, j < 45 → j ≠ FLAG → c.sl FLAG + 4 ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl FLAG :=
+  obtain flag₇ : flagW c base s₇ = flagW c base s := by
+    obtain hap : ∀ {j}, j < 45 → j ≠ FLAG → c.sl FLAG + 4 ≤ c.sl j ∨ c.sl j + 8 * c.n ≤ c.sl FLAG :=
       fun hj hjf => by have := sl_apart c (Ne.symm hjf) (i := FLAG); omega_using [hl8, hlhi, this]
     rw [flagW, flagW, BitVec.eq_of_toNat_eq (O₇.w32 (hap (j := QY) (by decide) (by decide)) (by omega_using [hsz, hF])),
       BitVec.eq_of_toNat_eq (O₅.w32 (hap (j := E) (by decide) (by decide)) (by omega_using [hsz, hF])),
       BitVec.eq_of_toNat_eq (O₂.w32 (hap (j := BP) (by decide) (by decide)) (by omega_using [hsz, hF])),
       BitVec.eq_of_toNat_eq (O₁.w32 (hap (j := R2P) (by decide) (by decide)) (by omega_using [hsz, hF]))]
-  have mp₇ : wordsVal s₇.mem base (c.sl MP) c.n = c.C.p :=
+  obtain mp₇ : wordsVal s₇.mem base (c.sl MP) c.n = c.C.p :=
     (v₇ (i := MP) (by decide) (by decide) (by decide) (by decide) (by decide)).trans hmp
-  have xE : sv c base s₁₀ E = ofBytes (Spec.Ecdsa.bytesAt s.mem (q + BitVec.ofNat 64 1) c.C.len) := by
+  obtain xE : sv c base s₁₀ E = ofBytes (Spec.Ecdsa.bytesAt s.mem (q + BitVec.ofNat 64 1) c.C.len) := by
     show wordsVal s₁₀.mem _ _ _ = _
     rw [v₁₀ (i := E) (by decide) (by decide), sv_out O₇ h7 hn (by decide) (by decide), e₅]
     exact congrArg Spec.Weierstrass.ofBytes (bytesAt_keep W₂ ((hd.sub_left (Offset.sub_base q (by omega_using []))))
       (by omega_using [hsz]) (by omega_using [hbt₆]))
-  have yQ : sv c base s₁₀ QY =
+  obtain yQ : sv c base s₁₀ QY =
       ofBytes (Spec.Ecdsa.bytesAt s.mem (q + BitVec.ofNat 64 (1 + c.C.len)) c.C.len) := by
     show wordsVal s₁₀.mem _ _ _ = _
     rw [v₁₀ (i := QY) (by decide) (by decide), e₇]
@@ -310,16 +310,16 @@ theorem peer_ok (hc : CfgOk c) {base : Addr} {s : State} (hs : Scr s base size) 
       sv_out O₅ h7 hn (by decide) (by decide), e₂]
   · have mp₈ : wordsVal s₈.mem base (c.sl MP) c.n = c.C.p := by
       rw [sv_flag O₈ h0 h7 hn (i := MP) (by decide) (by decide)]; exact mp₇
-    have mp₉ : wordsVal s₉.mem base (c.sl MP) c.n = c.C.p := by
+    obtain mp₉ : wordsVal s₉.mem base (c.sl MP) c.n = c.C.p := by
       rw [sv_flag O₉ h0 h7 hn (i := MP) (by decide) (by decide)]; exact mp₈
-    have e₈ : wordsVal s₈.mem base (c.sl E) c.n = sv c base s₁₀ E := by
+    obtain e₈ : wordsVal s₈.mem base (c.sl E) c.n = sv c base s₁₀ E := by
       rw [sv_flag O₈ h0 h7 hn (i := E) (by decide) (by decide)]
       exact (((sv_flag O₁₀ h0 h7 hn (i := E) (by decide) (by decide)).trans
         (sv_flag O₉ h0 h7 hn (i := E) (by decide) (by decide))).trans
         (sv_flag O₈ h0 h7 hn (i := E) (by decide) (by decide))).symm
-    have y₉ : wordsVal s₉.mem base (c.sl QY) c.n = sv c base s₁₀ QY :=
+    obtain y₉ : wordsVal s₉.mem base (c.sl QY) c.n = sv c base s₁₀ QY :=
       (sv_flag O₁₀ h0 h7 hn (i := QY) (by decide) (by decide)).symm
-    have lead₇ : s₇.mem q = s.mem q := by
+    obtain lead₇ : s₇.mem q = s.mem q := by
       have := keep_of_disjoint' W₇ hd (by omega_using [hsz]) (i := 0) (by omega_using []) (by omega_using [hbt₆])
       rwa [BitVec.add_zero] at this
     rw [f₁₀, f₉, f₈, flag₇, lead₇, e₈, mp₈, y₉, mp₉]

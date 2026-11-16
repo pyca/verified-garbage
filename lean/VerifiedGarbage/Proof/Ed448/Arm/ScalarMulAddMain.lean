@@ -93,10 +93,10 @@ theorem mulAddArgs_ok {s : State} (hr : InRegions (s.rd ++ s.wr) (State.addr s.s
   refine WP.append (storeArgs_ok (by rw [gv]; exact hu.gpr) hfit
     (by rw [kv.wr, hu.wr]; exact hw)) fun w ⟨aw, fw, gw, kw⟩ => ?_
   refine wp_mov (op2_reg _ _) fun x hx => wp_movw fun t ht => WP.block_nil ?_
-  have kt : Rest [.r0, .r6, .r12] s t := (hu.rest (by decide)).trans
+  obtain kt : Rest [.r0, .r6, .r12] s t := (hu.rest (by decide)).trans
     ((kv.mono (by decide)).trans ((kw.mono (by decide)).trans ((hx.rest (by decide)).trans
       (ht.rest (by decide)))))
-  have mt : t.mem = w.mem := by rw [ht.mem, hx.mem]
+  obtain mt : t.mem = w.mem := by rw [ht.mem, hx.mem]
   refine ⟨⟨?_, hfit, by rw [kt.wr]; exact hw⟩, ht.gpr, ?_, ?_, kt, ?_⟩
   · rw [ht.other _ (by decide), hx.gpr, gw, gv, hu.gpr]
   · have sn : ∀ i < 8, savedReg i ≠ .r12 := by decide
@@ -128,7 +128,7 @@ theorem reduceArg_ok {o off : Nat} (ho : Buf o) (hoff : off + 4 ≤ 64) {p : Bit
   have hT := TF_eq
   obtain ⟨ho1, ho2⟩ := ho
   unfold reduceArg
-  have hld : WP isa (.block [.ldr .r12 .r0 off]) s fun u =>
+  obtain hld : WP isa (.block [.ldr .r12 .r0 off]) s fun u =>
       Rest [.r12] s u ∧ u.mem = s.mem ∧ u.gpr .r12 = p :=
     ldr0_ok hc (d := off) (by omega_arith) fun u hu => WP.block_nil ⟨hu.rest (by decide), hu.mem,
       by rw [hu.gpr, hp]⟩
@@ -161,14 +161,14 @@ theorem product_ok {s : State} (hc : Ctx8 b s) (h6 : s.gpr .r6 = mask16)
       (∀ j < 56, limb t.mem (State.addr b) Impl.X448.Arm.ACC j < 65536) ∧
       val16 (limb t.mem (State.addr b) Impl.X448.Arm.ACC) 56 =
         V28 s.mem (State.addr b) SK * V28 s.mem (State.addr b) SS := by
-  have hrc : Proof.X448.Arm.RowCtx b s := ⟨hc.r0, by have := hc.fit; omega_arith, hc.wr⟩
+  obtain hrc : Proof.X448.Arm.RowCtx b s := ⟨hc.r0, by have := hc.fit; omega_arith, hc.wr⟩
   unfold product
   refine WP.seq (WP.mono (Proof.X448.Arm.mulPre_ok (x := SK) (y := SS) hrc h6) fun u hu => ?_)
   refine WP.mono (Proof.X448.Arm.mulLoop_ok (by decide) (by decide) hk hs hu) fun t ht => ?_
   refine ⟨ht.rest, ht.frame, ht.lt, ?_⟩
-  have e : val16 (limb t.mem (State.addr b) Impl.X448.Arm.ACC) 56 =
+  obtain e : val16 (limb t.mem (State.addr b) Impl.X448.Arm.ACC) 56 =
       Proof.X448.Radix16.valN (Proof.X448.Arm.accw t.mem (State.addr b)) (28 + 28) := (valN_eq _ _).symm
-  have e' : Proof.X448.Radix16.valN (Proof.X448.Arm.limbs s.mem (State.addr b) SK) 28 *
+  obtain e' : Proof.X448.Radix16.valN (Proof.X448.Arm.limbs s.mem (State.addr b) SK) 28 *
       Proof.X448.Arm.fe s.mem (State.addr b) SS = V28 s.mem (State.addr b) SK * V28 s.mem (State.addr b) SS := by
     unfold Proof.X448.Arm.fe; rw [valN_eq, valN_eq]; rfl
   exact e.trans (ht.val.trans e')
@@ -181,7 +181,7 @@ theorem reduceProduct_ok {s : State} (hc : Ctx8 b s) (h6 : s.gpr .r6 = mask16)
   have hR := RA_eq
   have hT := TF_eq
   unfold reduceProduct
-  have hinit : WP isa (.block (zeroR RA ++ [.mov .r10 (.imm 224)])) s fun v => LoopKeep b RA s v ∧
+  obtain hinit : WP isa (.block (zeroR RA ++ [.mov .r10 (.imm 224)])) s fun v => LoopKeep b RA s v ∧
       v.gpr .r10 = BitVec.ofNat 32 (4 * 56) ∧ Lim28 v.mem (State.addr b) RA ∧
       V28 v.mem (State.addr b) RA = 0 :=
     WP.append (zeroR_ok (o := RA) (by decide) hc) fun u ⟨ku, fu, zu⟩ =>
@@ -189,7 +189,7 @@ theorem reduceProduct_ok {s : State} (hc : Ctx8 b s) (h6 : s.gpr .r6 = mask16)
         ⟨⟨(ku.mono (by decide)).trans (hv.rest (by decide)), by rw [hv.mem]; exact fu.mono (by simp)⟩,
           hv.gpr, by rw [hv.mem]; exact Lim28_zero zu, by rw [hv.mem]; exact V28_zero zu⟩
   refine WP.seq (WP.mono hinit fun v ⟨kv, cv, lv, vv⟩ => ?_)
-  have la : ∀ j < 56, limb v.mem (State.addr b) Impl.X448.Arm.ACC j =
+  obtain la : ∀ j < 56, limb v.mem (State.addr b) Impl.X448.Arm.ACC j =
       limb s.mem (State.addr b) Impl.X448.Arm.ACC j := fun j hj =>
     wd_frame kv.frame fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -212,7 +212,7 @@ theorem addPass_ok {s : State} (hc : Ctx8 b s) (h6 : s.gpr .r6 = mask16)
   unfold addPass
   simp only [List.cons_append, List.nil_append]
   refine wp_mov (op2_imm (by decide)) fun s1 u1 => ?_
-  have hc1 := hc.of_rest (u1.rest (ws := [.r5]) (by decide)) (by decide)
+  obtain hc1 := hc.of_rest (u1.rest (ws := [.r5]) (by decide)) (by decide)
   have r0 : s1.gpr .r0 = b := hc1.r0
   refine WP.mono (VG.Proof.X448.Arm.carryPass_ok (rb := .r0) (o := TF) (s0 := s1)
     (c := fun k => limb s.mem (State.addr b) RA k + limb s.mem (State.addr b) SR k) (cin := 0)
@@ -221,13 +221,13 @@ theorem addPass_ok {s : State} (hc : Ctx8 b s) (h6 : s.gpr .r6 = mask16)
     (by rw [u1.gpr]; rfl) (fun k hk => by have := ha k hk; have := hr k hk; omega_arith) (by decide)
     ?_) fun t ht => ?_
   · intro k hk s' hp
-    have hc' := hc1.of_rest hp.rest (by decide)
-    have hf : Frame [⟨State.addr b + BitVec.ofNat 64 TF, 4 * k⟩] s.mem s'.mem := by
+    obtain hc' := hc1.of_rest hp.rest (by decide)
+    obtain hf : Frame [⟨State.addr b + BitVec.ofNat 64 TF, 4 * k⟩] s.mem s'.mem := by
       have := hp.frame; rwa [r0, u1.mem] at this
-    have e1 : wd s'.mem (State.addr b) (RA + 4 * k) = limb s.mem (State.addr b) RA k :=
+    obtain e1 : wd s'.mem (State.addr b) (RA + 4 * k) = limb s.mem (State.addr b) RA k :=
       wd_frame hf fun r hr => by
         rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
-    have e2 : wd s'.mem (State.addr b) (SR + 4 * k) = limb s.mem (State.addr b) SR k :=
+    obtain e2 : wd s'.mem (State.addr b) (SR + 4 * k) = limb s.mem (State.addr b) SR k :=
       wd_frame hf fun r hr => by
         rw [List.mem_singleton.mp hr]; exact Offset.disjoint _ (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
     unfold addSrc
@@ -236,22 +236,22 @@ theorem addPass_ok {s : State} (hc : Ctx8 b s) (h6 : s.gpr .r6 = mask16)
       (by omega_arith) fun v2 w2 => wp_dp (op2_reg _ _) fun v3 w3 => WP.block_nil ⟨?_,
         (w1.rest (by decide)).trans ((w2.rest (by decide)).trans (w3.rest (by decide))),
         by rw [w3.mem, w2.mem, w1.mem]⟩
-    have x1 : (v2.gpr .r3).toNat = limb s.mem (State.addr b) RA k := by
+    obtain x1 : (v2.gpr .r3).toNat = limb s.mem (State.addr b) RA k := by
       rw [w2.other _ (by decide), w1.gpr]; exact e1
-    have x2 : (v2.gpr .r2).toNat = limb s.mem (State.addr b) SR k := by
+    obtain x2 : (v2.gpr .r2).toNat = limb s.mem (State.addr b) SR k := by
       rw [w2.gpr, w1.mem]; exact e2
     rw [w3.gpr]
     show (v2.gpr .r3 + v2.gpr .r2).toNat = _
     rw [toNat_add_lt (by rw [x1, x2]; have := ha k hk; have := hr k hk; omega_arith), x1, x2]
   · generalize hcf : (fun k => limb s.mem (State.addr b) RA k + limb s.mem (State.addr b) SR k) = c at ht
-    have outs : ∀ k < 28, limb t.mem (State.addr b) TF k = out c 0 k := by
+    obtain outs : ∀ k < 28, limb t.mem (State.addr b) TF k = out c 0 k := by
       intro k hk; have := ht.outs k hk; rwa [r0] at this
-    have hval := (chain_val c 0 28).trans (Nat.add_zero _)
-    have hcv : val16 c 28 = V28 s.mem (State.addr b) RA + V28 s.mem (State.addr b) SR := by
+    obtain hval := (chain_val c 0 28).trans (Nat.add_zero _)
+    obtain hcv : val16 c 28 = V28 s.mem (State.addr b) RA + V28 s.mem (State.addr b) SR := by
       unfold V28; rw [← hcf, val16_add]
     rw [hcv] at hval
     have hLM := two_L_le
-    have hV : V28 t.mem (State.addr b) TF = val16 (out c 0) 28 := val16_congr outs
+    obtain hV : V28 t.mem (State.addr b) TF = val16 (out c 0) 28 := val16_congr outs
     refine ⟨(u1.rest (by decide)).trans (ht.rest.mono (by decide)), ?_,
       fun k hk => by rw [outs k hk]; exact out_lt _ _ _, ?_⟩
     · have := ht.frame; rw [r0, u1.mem] at this; exact this
@@ -326,12 +326,12 @@ theorem inputs_ok {s : State} (hc : Ctx8 b s) (h6 : s.gpr .r6 = mask16) {g : Reg
   have hS := SS_eq
   have hR := SR_eq
   have hO := OUT_eq
-  have sub : ∀ o, TF ≤ o → o + 112 ≤ 688 → ∀ r ∈ [limbsR b TF, limbsR b o],
+  obtain sub : ∀ o, TF ≤ o → o + 112 ≤ 688 → ∀ r ∈ [limbsR b TF, limbsR b o],
       ∃ e ∈ [(⟨State.addr b + BitVec.ofNat 64 TF, 624⟩ : Region)], Region.Sub r e := fun o h1 h2 r hr => by
     refine ⟨_, List.mem_singleton_self _, ?_⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact Offset.sub _ (by omega_arith) (by omega_arith)
-  have hiTF : ∀ o, TF ≤ o → o + 112 ≤ 4096 → ∀ r ∈ [limbsR b TF, limbsR b o], Hi b r := fun o h1 h2 r hr => by
+  obtain hiTF : ∀ o, TF ≤ o → o + 112 ≤ 4096 → ∀ r ∈ [limbsR b TF, limbsR b o], Hi b r := fun o h1 h2 r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact hi_of (by omega_arith) (by omega_arith)
   unfold inputs
@@ -339,38 +339,38 @@ theorem inputs_ok {s : State} (hc : Ctx8 b s) (h6 : s.gpr .r6 = mask16) {g : Reg
   obtain ⟨k1, k2, k3⟩ := hin 2 (by decide) (by decide)
   refine WP.seq (WP.mono (reduceArg_ok (o := SK) ⟨by omega_arith, by omega_arith⟩ (by omega_arith) hc h6 (ha 2 (by decide))
     k1 k2 k3) fun u ⟨ku, fu, lu, vu⟩ => ?_)
-  have hcu := hc.of_rest ku (by decide)
-  have h6u : u.gpr .r6 = mask16 := (ku.gpr _ (by decide)).trans h6
-  have hau := ha.hi fu (hiTF SK (by omega_arith) (by omega_arith))
+  obtain hcu := hc.of_rest ku (by decide)
+  obtain h6u : u.gpr .r6 = mask16 := (ku.gpr _ (by decide)).trans h6
+  obtain hau := ha.hi fu (hiTF SK (by omega_arith) (by omega_arith))
   -- s
   obtain ⟨s1, s2, s3⟩ := (hin 3 (by decide) (by decide)).of_rest ku
   refine WP.seq (WP.mono (reduceArg_ok (o := SS) ⟨by omega_arith, by omega_arith⟩ (by omega_arith) hcu h6u (hau 3 (by decide))
     s1 s2 s3) fun v ⟨kv, fv, lv, vv⟩ => ?_)
-  have hcv := hcu.of_rest kv (by decide)
-  have h6v : v.gpr .r6 = mask16 := (kv.gpr _ (by decide)).trans h6u
-  have hav := hau.hi fv (hiTF SS (by omega_arith) (by omega_arith))
+  obtain hcv := hcu.of_rest kv (by decide)
+  obtain h6v : v.gpr .r6 = mask16 := (kv.gpr _ (by decide)).trans h6u
+  obtain hav := hau.hi fv (hiTF SS (by omega_arith) (by omega_arith))
   -- r
   obtain ⟨r1, r2, r3⟩ := ((hin 1 (by decide) (by decide)).of_rest ku).of_rest kv
   refine WP.mono (reduceArg_ok (o := SR) ⟨by omega_arith, by omega_arith⟩ (by omega_arith) hcv h6v (hav 1 (by decide))
     r1 r2 r3) fun t ⟨kt, ft, lt, vt⟩ => ?_
-  have hiW : ∀ r ∈ [(⟨State.addr b + BitVec.ofNat 64 TF, 624⟩ : Region)], Hi b r := fun r hr => by
+  obtain hiW : ∀ r ∈ [(⟨State.addr b + BitVec.ofNat 64 TF, 624⟩ : Region)], Hi b r := fun r hr => by
     rw [List.mem_singleton.mp hr]; exact hi_of (by omega_arith) (by omega_arith)
-  have fu' := fu.sub (sub SK (by omega_arith) (by omega_arith))
-  have fv' := fv.sub (sub SS (by omega_arith) (by omega_arith))
-  have ft' := ft.sub (sub SR (by omega_arith) (by omega_arith))
-  have pr : ∀ {o : Nat} {m m' : Mem}, o + 112 ≤ 4096 → Frame [limbsR b TF, limbsR b o] m m' →
+  obtain fu' := fu.sub (sub SK (by omega_arith) (by omega_arith))
+  obtain fv' := fv.sub (sub SS (by omega_arith) (by omega_arith))
+  obtain ft' := ft.sub (sub SR (by omega_arith) (by omega_arith))
+  obtain pr : ∀ {o : Nat} {m m' : Mem}, o + 112 ≤ 4096 → Frame [limbsR b TF, limbsR b o] m m' →
       ∀ {o' : Nat}, (o + 112 ≤ o' ∨ o' + 112 ≤ o) → TF + 112 ≤ o' → o' + 112 ≤ 4096 →
       ∀ k < 28, limb m' (State.addr b) o' k = limb m (State.addr b) o' k := fun ho hf o' h1 h2 h3 =>
     limbs_frame_hi hf (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact ⟨_, _, rfl, by omega_arith, by omega_arith⟩) (by omega_arith)
-  have fK : ∀ k < 28, limb t.mem (State.addr b) SK k = limb u.mem (State.addr b) SK k := fun k hk => by
+  obtain fK : ∀ k < 28, limb t.mem (State.addr b) SK k = limb u.mem (State.addr b) SK k := fun k hk => by
     rw [pr (o := SR) (by omega_arith) ft (o' := SK) (by omega_arith) (by omega_arith) (by omega_arith) k hk,
       pr (o := SS) (by omega_arith) fv (o' := SK) (by omega_arith) (by omega_arith) (by omega_arith) k hk]
-  have fS : ∀ k < 28, limb t.mem (State.addr b) SS k = limb v.mem (State.addr b) SS k :=
+  obtain fS : ∀ k < 28, limb t.mem (State.addr b) SS k = limb v.mem (State.addr b) SS k :=
     pr (o := SR) (by omega_arith) ft (o' := SS) (by omega_arith) (by omega_arith) (by omega_arith)
-  have bS := (hin 3 (by decide) (by decide)).bytes fu' hiW
-  have bR := (hin 1 (by decide) (by decide)).bytes (fu'.trans fv') hiW
+  obtain bS := (hin 3 (by decide) (by decide)).bytes fu' hiW
+  obtain bR := (hin 1 (by decide) (by decide)).bytes (fu'.trans fv') hiW
   refine ⟨(ku.trans kv).trans kt, fu'.trans (fv'.trans ft'), fun k hk => by rw [fK k hk]; exact lu k hk,
     fun k hk => by rw [fS k hk]; exact lv k hk, lt, ?_, ?_, ?_⟩
   · change _ = decodeLE (bytesAt s.mem (State.addr (g (argReg 2))) 57) % L
@@ -463,64 +463,64 @@ theorem scalarMulAdd_correct {s : State} (h : MulAddPre s) :
   have hA := RA_eq
   have hC := ACC_eq
   have hO := OUT_eq
-  have hw : (⟨State.addr (stackArg s 0), 8192⟩ : Region) ∈ s.wr := by rw [h.wr]; simp
-  have ha : InRegions (s.rd ++ s.wr) (State.addr s.sp) 4 :=
+  obtain hw : (⟨State.addr (stackArg s 0), 8192⟩ : Region) ∈ s.wr := by rw [h.wr]; simp
+  obtain ha : InRegions (s.rd ++ s.wr) (State.addr s.sp) 4 :=
     ⟨_, by rw [h.rd]; simp, Region.contains_self _ _⟩
   unfold scalarMulAdd
   refine WP.seq (WP.mono (mulAddArgs_ok ha h.fs hw) fun u ⟨hcu, h6u, su, au, ku, fu⟩ => ?_)
   refine WP.seq (WP.mono (inputs_ok hcu h6u au fun i h1 h4 => (h.input h1 h4).of_rest ku)
     fun v ⟨kv, fv, lK, lS, lR, vK, vS, vR⟩ => ?_)
-  have hcv0 := hcu.of_rest kv (by decide)
-  have hiv : ∀ r ∈ [(⟨State.addr (stackArg s 0) + BitVec.ofNat 64 TF, 624⟩ : Region)], Hi (stackArg s 0) r := fun r hr => by
+  obtain hcv0 := hcu.of_rest kv (by decide)
+  obtain hiv : ∀ r ∈ [(⟨State.addr (stackArg s 0) + BitVec.ofNat 64 TF, 624⟩ : Region)], Hi (stackArg s 0) r := fun r hr => by
     rw [List.mem_singleton.mp hr]; exact hi_of (by omega_using [hT]) (by omega_using [hT])
-  have av := au.hi fv hiv
-  have hld : WP isa (.block [.ldr .r12 .r0 OUT]) v fun v' =>
+  obtain av := au.hi fv hiv
+  obtain hld : WP isa (.block [.ldr .r12 .r0 OUT]) v fun v' =>
       Rest [.r12] v v' ∧ v'.mem = v.mem ∧ v'.gpr .r12 = s.gpr .r0 :=
     ldr0_ok hcv0 (d := OUT) (by omega_using [hO]) fun v' hv' => WP.block_nil ⟨hv'.rest (by decide), hv'.mem,
       by rw [hv'.gpr]; exact av 0 (by decide)⟩
   refine WP.seq (WP.mono hld fun v' ⟨kv', mv', qv'⟩ => ?_)
-  have hcv := hcv0.of_rest kv' (by decide)
-  have h6v : v'.gpr .r6 = mask16 := (kv'.gpr _ (by decide)).trans ((kv.gpr _ (by decide)).trans h6u)
+  obtain hcv := hcv0.of_rest kv' (by decide)
+  obtain h6v : v'.gpr .r6 = mask16 := (kv'.gpr _ (by decide)).trans ((kv.gpr _ (by decide)).trans h6u)
   rw [← mv'] at lK lS lR vK vS vR fv
   refine WP.seq (WP.mono (product_ok hcv h6v lK lS) fun w ⟨kw, fw, aw, vw⟩ => ?_)
-  have hcw := hcv.of_rest kw (by decide)
-  have h6w : w.gpr .r6 = mask16 := (kw.gpr _ (by decide)).trans h6v
-  have hiw : ∀ r ∈ [(⟨State.addr (stackArg s 0) + BitVec.ofNat 64 Impl.X448.Arm.ACC, 224⟩ : Region)], Hi (stackArg s 0) r :=
+  obtain hcw := hcv.of_rest kw (by decide)
+  obtain h6w : w.gpr .r6 = mask16 := (kw.gpr _ (by decide)).trans h6v
+  obtain hiw : ∀ r ∈ [(⟨State.addr (stackArg s 0) + BitVec.ofNat 64 Impl.X448.Arm.ACC, 224⟩ : Region)], Hi (stackArg s 0) r :=
     fun r hr => by rw [List.mem_singleton.mp hr]; exact hi_of (by omega_using [hC]) (by omega_using [hC])
   refine WP.seq (WP.mono (reduceProduct_ok hcw h6w aw) fun x ⟨kx, lx, vx⟩ => ?_)
-  have hcx := hcw.of_rest kx.rest (by decide)
-  have h6x : x.gpr .r6 = mask16 := (kx.rest.gpr _ (by decide)).trans h6w
-  have hix : ∀ r ∈ [limbsR (stackArg s 0) TF, limbsR (stackArg s 0) RA], Hi (stackArg s 0) r := fun r hr => by
+  obtain hcx := hcw.of_rest kx.rest (by decide)
+  obtain h6x : x.gpr .r6 = mask16 := (kx.rest.gpr _ (by decide)).trans h6w
+  obtain hix : ∀ r ∈ [limbsR (stackArg s 0) TF, limbsR (stackArg s 0) RA], Hi (stackArg s 0) r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact hi_of (by omega_arith) (by omega_arith)
   -- The reduced `r` survives the product and its reduction.
-  have eR : ∀ k < 28, limb x.mem (State.addr (stackArg s 0)) SR k = limb v'.mem (State.addr (stackArg s 0)) SR k := fun k hk => by
+  obtain eR : ∀ k < 28, limb x.mem (State.addr (stackArg s 0)) SR k = limb v'.mem (State.addr (stackArg s 0)) SR k := fun k hk => by
     rw [limbs_frame_hi kx.frame (o := SR) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact ⟨_, _, rfl, by omega_arith, by omega_arith⟩) (by omega_using [hR]) k hk,
       limbs_frame_hi fw (o := SR) (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact ⟨_, _, rfl, by omega_using [hR, hC], by omega_using [hC]⟩) (by omega_using [hR]) k hk]
-  have lRx : Lim28 x.mem (State.addr (stackArg s 0)) SR := fun k hk => by rw [eR k hk]; exact lR k hk
-  have vRx : V28 x.mem (State.addr (stackArg s 0)) SR = V28 v'.mem (State.addr (stackArg s 0)) SR := val16_congr eR
+  obtain lRx : Lim28 x.mem (State.addr (stackArg s 0)) SR := fun k hk => by rw [eR k hk]; exact lR k hk
+  obtain vRx : V28 x.mem (State.addr (stackArg s 0)) SR = V28 v'.mem (State.addr (stackArg s 0)) SR := val16_congr eR
   rw [List.append_assoc]
   refine WP.append (addPass_ok hcx h6x lx lRx (by rw [vx]; exact Nat.mod_lt _ L_pos)
     (by rw [vRx, vR]; exact Nat.mod_lt _ L_pos)) fun y ⟨ky, fy, ly, vy⟩ => ?_
-  have hcy := hcx.of_rest ky (by decide)
+  obtain hcy := hcx.of_rest ky (by decide)
   refine WP.append (reduceT_ok RA_buf hcy ((ky.gpr _ (by decide)).trans h6x) ly
     (by rw [vy, vx, vRx, vR]; have := Nat.mod_lt (val16 (limb w.mem (State.addr (stackArg s 0)) Impl.X448.Arm.ACC) 56) L_pos
         have := Nat.mod_lt (decodeLE (bytesAt u.mem (State.addr (s.gpr .r1)) 57)) L_pos
         omega_arith)) fun z ⟨kz, fz, lz, vz⟩ => ?_
-  have hcz := hcy.of_rest kz (by decide)
-  have hiy : ∀ r ∈ [limbsR (stackArg s 0) TF], Hi (stackArg s 0) r := fun r hr => by
+  obtain hcz := hcy.of_rest kz (by decide)
+  obtain hiy : ∀ r ∈ [limbsR (stackArg s 0) TF], Hi (stackArg s 0) r := fun r hr => by
     rw [List.mem_singleton.mp hr]; exact hi_of (by omega_using [hT]) (by omega_using [hT])
-  have hiz : ∀ r ∈ [limbsR (stackArg s 0) RA], Hi (stackArg s 0) r := fun r hr => by
+  obtain hiz : ∀ r ∈ [limbsR (stackArg s 0) RA], Hi (stackArg s 0) r := fun r hr => by
     rw [List.mem_singleton.mp hr]; exact hi_of (by omega_using [hA]) (by omega_using [hA])
-  have sz := ((((su.hi fv hiv).hi fw hiw).hi kx.frame hix).hi fy hiy).hi fz hiz
-  have rz' : Rest [.r1, .r2, .r3, .r4, .r5, .r6, .r7, .r9, .r10, .r11] w z :=
+  obtain sz := ((((su.hi fv hiv).hi fw hiw).hi kx.frame hix).hi fy hiy).hi fz hiz
+  obtain rz' : Rest [.r1, .r2, .r3, .r4, .r5, .r6, .r7, .r9, .r10, .r11] w z :=
     (kx.rest.mono (by decide)).trans ((ky.mono (by decide)).trans (kz.mono (by decide)))
-  have qz : z.gpr .r12 = s.gpr .r0 := by
+  obtain qz : z.gpr .r12 = s.gpr .r0 := by
     rw [rz'.gpr _ (by decide), kw.gpr _ (by decide), qv']
-  have rz : Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r9, .r10, .r11, .r12] s z :=
+  obtain rz : Rest [.r0, .r1, .r2, .r3, .r4, .r5, .r6, .r7, .r9, .r10, .r11, .r12] s z :=
     (ku.mono (by decide)).trans ((kv.mono (by decide)).trans ((kv'.mono (by decide)).trans
       ((kw.mono (by decide)).trans (rz'.mono (by decide)))))
   refine WP.mono (output_ok (by decide) hcz lz qz h.f0 (by rw [rz.wr, h.wr]; simp) h.out_ws sz)

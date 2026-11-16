@@ -45,13 +45,13 @@ open VG.Proof.MlKem.RISCV64.Lazy (barM barQ redM redM_toNat barM_lt barM_mod)
 theorem red_mac (x y z w : Zq) :
     (redM (BitVec.ofNat 64 x.val * BitVec.ofNat 64 y.val + BitVec.ofNat 64 z.val * BitVec.ofNat 64 w.val)).setWidth 32 =
       BitVec.ofNat 32 (x * y + z * w).val := by
-  have hx := val_lt x
-  have hy := val_lt y
-  have hz := val_lt z
-  have hw := val_lt w
-  have p1 := mul_lt_q2 hx hy
-  have p2 := mul_lt_q2 hz hw
-  have hs : (BitVec.ofNat 64 x.val * BitVec.ofNat 64 y.val + BitVec.ofNat 64 z.val * BitVec.ofNat 64 w.val).toNat =
+  obtain hx := val_lt x
+  obtain hy := val_lt y
+  obtain hz := val_lt z
+  obtain hw := val_lt w
+  obtain p1 := mul_lt_q2 hx hy
+  obtain p2 := mul_lt_q2 hz hw
+  obtain hs : (BitVec.ofNat 64 x.val * BitVec.ofNat 64 y.val + BitVec.ofNat 64 z.val * BitVec.ofNat 64 w.val).toNat =
       x.val * y.val + z.val * w.val := by
     rw [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_mul, toNat_val64, toNat_val64, toNat_val64, toNat_val64,
       Nat.mod_eq_of_lt (a := x.val * y.val) (by omega_arith), Nat.mod_eq_of_lt (a := z.val * w.val) (by omega_arith)]
@@ -67,21 +67,21 @@ theorem even_eq (a b c d γ : Zq) :
     (redM (BitVec.ofNat 64 a.val * BitVec.ofNat 64 b.val +
       barM (BitVec.ofNat 64 c.val * BitVec.ofNat 64 d.val) * BitVec.ofNat 64 γ.val)).setWidth 32 =
       BitVec.ofNat 32 (a * b + c * d * γ).val := by
-  have ha := val_lt a
-  have hb := val_lt b
-  have hg := val_lt γ
-  have hcd : (BitVec.ofNat 64 c.val * BitVec.ofNat 64 d.val).toNat = c.val * d.val := by
+  obtain ha := val_lt a
+  obtain hb := val_lt b
+  obtain hg := val_lt γ
+  obtain hcd : (BitVec.ofNat 64 c.val * BitVec.ofNat 64 d.val).toNat = c.val * d.val := by
     rw [BitVec.toNat_mul, toNat_val64, toNat_val64]
     exact Nat.mod_eq_of_lt (by have := mul_lt_q2 (val_lt c) (val_lt d); omega_arith)
   generalize hB : barM (BitVec.ofNat 64 c.val * BitVec.ofNat 64 d.val) = B
-  have hBl : B.toNat < 2 * q := hB ▸ barM_lt _
-  have hBm : B.toNat % q = (c * d).val % q := by
+  obtain hBl : B.toNat < 2 * q := hB ▸ barM_lt _
+  obtain hBm : B.toNat % q = (c * d).val % q := by
     rw [← hB, barM_mod, hcd, val_mul, Nat.mod_mod]
-  have p1 := mul_lt_q2 ha hb
-  have hBg : B.toNat * γ.val < 2 ^ 32 := by
+  obtain p1 := mul_lt_q2 ha hb
+  obtain hBg : B.toNat * γ.val < 2 ^ 32 := by
     have := Nat.mul_le_mul (Nat.le_of_lt hBl) (Nat.le_of_lt hg)
     have := q_eq; omega_arith
-  have hs : (BitVec.ofNat 64 a.val * BitVec.ofNat 64 b.val + B * BitVec.ofNat 64 γ.val).toNat =
+  obtain hs : (BitVec.ofNat 64 a.val * BitVec.ofNat 64 b.val + B * BitVec.ofNat 64 γ.val).toNat =
       a.val * b.val + B.toNat * γ.val := by
     rw [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_mul, toNat_val64, toNat_val64, toNat_val64,
       Nat.mod_eq_of_lt (a := a.val * b.val) (by omega_arith),
@@ -140,7 +140,7 @@ private theorem red_ok (h5 : s.gpr .a5 = 5541226816974932) (h6 : s.gpr .a6 = 332
     (by rw [u₅.mem, u₄.mem, u₃.mem, u₂.mem, m₁]) (by rw [u₅.rd, u₄.rd, u₃.rd, u₂.rd, rd₁])
     (by rw [u₅.wr, u₄.wr, u₃.wr, u₂.wr, wr₁]) (by rw [u₅.sp, u₄.sp, u₃.sp, u₂.sp, sp₁])
   · have e6 : s₁.gpr .a6 = 3329 := by rw [o₁ _ (by decide) (by decide), h6]
-    have e2 : s₄.gpr .t0 = barM (s.gpr .t0) - 3329 := by
+    obtain e2 : s₄.gpr .t0 = barM (s.gpr .t0) - 3329 := by
       rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, b₁, e6]
     rw [u₅.gpr, e2, u₄.gpr, u₃.gpr, u₃.other _ (by decide), u₂.gpr, u₂.other _ (by decide), b₁, e6]
     rfl
@@ -188,35 +188,35 @@ theorem body_ok (h3 : s.gpr .a0 = x3) (h4 : s.gpr .a1 = x4) (h5 : s.gpr .a2 = x5
   refine Steps.wp_lwu (a := x5 + BitVec.ofNat 64 4) (by decide)
     (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), h5]) a5'
     (by rw [u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact ig1) fun s₄ u₄ => ?_
-  have m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have v4 : s₄.gpr .a4 = f0 := by
+  obtain m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain v4 : s₄.gpr .a4 = f0 := by
     rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, ef0]
-  have v2 : s₄.gpr .t2 = f1 := by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.mem, ef1]
-  have v3 : s₄.gpr .t3 = g0 := by rw [u₄.other _ (by decide), u₃.gpr, u₂.mem, u₁.mem, eg0]
-  have v5 : s₄.gpr .t4 = g1 := by rw [u₄.gpr, u₃.mem, u₂.mem, u₁.mem, eg1]
-  have g4 : ∀ r, r ≠ .a4 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s₄.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
+  obtain v2 : s₄.gpr .t2 = f1 := by rw [u₄.other _ (by decide), u₃.other _ (by decide), u₂.gpr, u₁.mem, ef1]
+  obtain v3 : s₄.gpr .t3 = g0 := by rw [u₄.other _ (by decide), u₃.gpr, u₂.mem, u₁.mem, eg0]
+  obtain v5 : s₄.gpr .t4 = g1 := by rw [u₄.gpr, u₃.mem, u₂.mem, u₁.mem, eg1]
+  obtain g4 : ∀ r, r ≠ .a4 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s₄.gpr r = s.gpr r := fun r h1 h2 h3 h4 => by
     rw [u₄.other r h4, u₃.other r h3, u₂.other r h2, u₁.other r h1]
   refine wp_mul fun s₅ u₅ => ?_
-  have k5 : ∀ r, r ≠ .t0 → r ≠ .a4 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s₅.gpr r = s.gpr r :=
+  obtain k5 : ∀ r, r ≠ .t0 → r ≠ .a4 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s₅.gpr r = s.gpr r :=
     fun r h0 h1 h2 h3 h4 => by rw [u₅.other r h0, g4 r h1 h2 h3 h4]
   refine bar_ok (by rw [k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h8])
     (by rw [k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h9])
     fun s₆ b₆ o₆ m₆ rd₆ wr₆ sp₆ => ?_
-  have e6 : s₆.gpr .t0 = barM (f1 * g1) := by rw [b₆, u₅.gpr, v2, v5]
+  obtain e6 : s₆.gpr .t0 = barM (f1 * g1) := by rw [b₆, u₅.gpr, v2, v5]
   have k6 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₆.gpr r = s₅.gpr r := o₆
   -- γ, its product, and the even coefficient
   refine Steps.wp_lwu (a := x6) (by decide)
     (by rw [k6 _ (by decide) (by decide), k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h6]; simp)
     a6 (by rw [rd₆, wr₆, u₅.rd, u₅.wr, u₄.rd, u₄.wr, u₃.rd, u₃.wr, u₂.rd, u₂.wr, u₁.rd, u₁.wr]; exact iγ)
     fun s₇ u₇ => ?_
-  have v7 : s₇.gpr .a7 = γ := by rw [u₇.gpr, m₆, u₅.mem, m₄, eγ]
+  obtain v7 : s₇.gpr .a7 = γ := by rw [u₇.gpr, m₆, u₅.mem, m₄, eγ]
   refine wp_mul fun s₈ u₈ => wp_mul fun s₉ u₉ => Steps.wp_add fun s₁₀ u₁₀ => ?_
-  have k10 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₁₀.gpr r = s₅.gpr r := fun r h0 h7 => by
+  obtain k10 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₁₀.gpr r = s₅.gpr r := fun r h0 h7 => by
     rw [u₁₀.other r h0, u₉.other r h7, u₈.other r h0, u₇.other r h7, k6 r h0 h7]
-  have w4 : ∀ r, r = .a4 ∨ r = .t2 ∨ r = .t3 ∨ r = .t4 → s₁₀.gpr r = s₄.gpr r := fun r hr => by
+  obtain w4 : ∀ r, r = .a4 ∨ r = .t2 ∨ r = .t3 ∨ r = .t4 → s₁₀.gpr r = s₄.gpr r := fun r hr => by
     have := k10 r (by rcases hr with rfl | rfl | rfl | rfl <;> decide) (by rcases hr with rfl | rfl | rfl | rfl <;> decide)
     rw [this, u₅.other r (by rcases hr with rfl | rfl | rfl | rfl <;> decide)]
-  have e10 : s₁₀.gpr .t0 = f0 * g0 + barM (f1 * g1) * γ := by
+  obtain e10 : s₁₀.gpr .t0 = f0 * g0 + barM (f1 * g1) * γ := by
     rw [u₁₀.gpr, u₉.gpr, u₉.other _ (by decide), u₈.gpr, u₈.other _ (by decide), u₈.other _ (by decide),
       u₇.other _ (by decide), u₇.other _ (by decide), u₇.other _ (by decide), e6, v7,
       o₆ _ (by decide) (by decide), o₆ _ (by decide) (by decide), u₅.other _ (by decide),
@@ -224,35 +224,35 @@ theorem body_ok (h3 : s.gpr .a0 = x3) (h4 : s.gpr .a1 = x4) (h5 : s.gpr .a2 = x5
   refine red_ok (by rw [k10 _ (by decide) (by decide), k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h8])
     (by rw [k10 _ (by decide) (by decide), k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h9])
     fun s₁₁ r₁₁ o₁₁ m₁₁ rd₁₁ wr₁₁ sp₁₁ => ?_
-  have k11 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₁₁.gpr r = s₅.gpr r := fun r h0 h7 => by rw [o₁₁ r h0 h7, k10 r h0 h7]
-  have hm11 : s₁₁.mem = s.mem := by rw [m₁₁, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, m₆, u₅.mem, m₄]
-  have hw11 : s₁₁.wr = s.wr := by
+  obtain k11 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₁₁.gpr r = s₅.gpr r := fun r h0 h7 => by rw [o₁₁ r h0 h7, k10 r h0 h7]
+  obtain hm11 : s₁₁.mem = s.mem := by rw [m₁₁, u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, m₆, u₅.mem, m₄]
+  obtain hw11 : s₁₁.wr = s.wr := by
     rw [wr₁₁, u₁₀.wr, u₉.wr, u₈.wr, u₇.wr, wr₆, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
   refine Steps.wp_sw (a := x3) (by decide)
     (by rw [k11 _ (by decide) (by decide), k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h3]; simp)
     a3 (by rw [hw11]; exact o0) fun s₁₂ g₁₂ => ?_
   -- the odd coefficient
   refine wp_mul fun s₁₃ u₁₃ => wp_mul fun s₁₄ u₁₄ => Steps.wp_add fun s₁₅ u₁₅ => ?_
-  have q12 : ∀ r, s₁₂.gpr r = s₁₁.gpr r := fun r => by rw [g₁₂.gpr]
-  have e15 : s₁₅.gpr .t0 = f0 * g1 + f1 * g0 := by
+  obtain q12 : ∀ r, s₁₂.gpr r = s₁₁.gpr r := fun r => by rw [g₁₂.gpr]
+  obtain e15 : s₁₅.gpr .t0 = f0 * g1 + f1 * g0 := by
     rw [u₁₅.gpr, u₁₄.other _ (by decide), u₁₃.gpr, u₁₄.gpr, u₁₃.other _ (by decide), u₁₃.other _ (by decide),
       q12, q12, q12, q12, k11 _ (by decide) (by decide), k11 _ (by decide) (by decide),
       k11 _ (by decide) (by decide), k11 _ (by decide) (by decide), u₅.other _ (by decide), u₅.other _ (by decide),
       u₅.other _ (by decide), u₅.other _ (by decide), v4, v5, v2, v3]
-  have k15 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₁₅.gpr r = s₅.gpr r := fun r h0 h7 => by
+  obtain k15 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₁₅.gpr r = s₅.gpr r := fun r h0 h7 => by
     rw [u₁₅.other r h0, u₁₄.other r h7, u₁₃.other r h0, q12, k11 r h0 h7]
   refine red_ok (by rw [k15 _ (by decide) (by decide), k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h8])
     (by rw [k15 _ (by decide) (by decide), k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h9])
     fun s₁₆ r₁₆ o₁₆ m₁₆ rd₁₆ wr₁₆ sp₁₆ => ?_
-  have k16 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₁₆.gpr r = s₅.gpr r := fun r h0 h7 => by rw [o₁₆ r h0 h7, k15 r h0 h7]
+  obtain k16 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₁₆.gpr r = s₅.gpr r := fun r h0 h7 => by rw [o₁₆ r h0 h7, k15 r h0 h7]
   refine Steps.wp_sw (a := x3 + BitVec.ofNat 64 4) (by decide)
     (by rw [k16 _ (by decide) (by decide), k5 _ (by decide) (by decide) (by decide) (by decide) (by decide), h3])
     a3' (by rw [wr₁₆, u₁₅.wr, u₁₄.wr, u₁₃.wr, g₁₂.wr, hw11]; exact o1) fun s₁₇ g₁₇ => ?_
   refine Steps.wp_addi (by decide) fun s₁₈ u₁₈ => Steps.wp_addi (by decide) fun s₁₉ u₁₉ =>
     Steps.wp_addi (by decide) fun s₂₀ u₂₀ => Steps.wp_addi (by decide) fun s₂₁ u₂₁ =>
     Steps.wp_subi (imm := 1) (by decide) fun s₂₂ u₂₂ => WP.block_nil ?_
-  have k17 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₁₇.gpr r = s₅.gpr r := fun r h0 h7 => by rw [g₁₇.gpr, k16 r h0 h7]
-  have kk : ∀ r, r ≠ .t0 → r ≠ .a7 → r ≠ .a4 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s₁₇.gpr r = s.gpr r :=
+  obtain k17 : ∀ r, r ≠ .t0 → r ≠ .a7 → s₁₇.gpr r = s₅.gpr r := fun r h0 h7 => by rw [g₁₇.gpr, k16 r h0 h7]
+  obtain kk : ∀ r, r ≠ .t0 → r ≠ .a7 → r ≠ .a4 → r ≠ .t2 → r ≠ .t3 → r ≠ .t4 → s₁₇.gpr r = s.gpr r :=
     fun r h0 h7 h1 h2 h3 h4 => by rw [k17 r h0 h7, k5 r h0 h1 h2 h3 h4]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_, ?_⟩
   · rw [u₂₂.other _ (by decide), u₂₁.other _ (by decide), u₂₀.other _ (by decide), u₁₉.other _ (by decide),
@@ -361,33 +361,33 @@ theorem wide {m : Mem} {p : Addr} {f : Poly} {j : Nat}
 theorem step {s₀ : State} (hp : Pre s₀) {m₁ : Mem} (hm : Setup s₀ m₁) {i : Nat} (hi : i < 128) {s : State}
     (h : Inv s₀ m₁ i s) :
     WP isa (.block mulBody) s fun s' => Inv s₀ m₁ (i + 1) s' ∧ (s'.gpr .t1 != 0) = decide (i + 1 ≠ 128) := by
-  have e0 : ∀ p : Addr, p + BitVec.ofNat 64 (8 * i) = coeffAddr p (2 * i) := fun p => by
+  obtain e0 : ∀ p : Addr, p + BitVec.ofNat 64 (8 * i) = coeffAddr p (2 * i) := fun p => by
     rw [show 8 * i = 4 * (2 * i) by omega_arith]
-  have e1 : ∀ p : Addr, p + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 4 = coeffAddr p (2 * i + 1) := fun p => by
+  obtain e1 : ∀ p : Addr, p + BitVec.ofNat 64 (8 * i) + BitVec.ofNat 64 4 = coeffAddr p (2 * i + 1) := fun p => by
     rw [ptr_add, show 8 * i + 4 = 4 * (2 * i + 1) by omega_arith]
   have fS := hp.fitS
-  have cF0 := coeff_contains (F s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
-  have cF1 := coeff_contains (F s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
-  have cG0 := coeff_contains (G s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
-  have cG1 := coeff_contains (G s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
-  have cH0 := coeff_contains (H s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
-  have cH1 := coeff_contains (H s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
-  have cS : (polyRegion (S s₀)).Contains (S s₀ + BitVec.ofNat 64 (4 * i)) 4 :=
+  obtain cF0 := coeff_contains (F s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
+  obtain cF1 := coeff_contains (F s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
+  obtain cG0 := coeff_contains (G s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
+  obtain cG1 := coeff_contains (G s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
+  obtain cH0 := coeff_contains (H s₀) (i := 2 * i) (by rw [n_eq]; omega_arith)
+  obtain cH1 := coeff_contains (H s₀) (i := 2 * i + 1) (by rw [n_eq]; omega_arith)
+  obtain cS : (polyRegion (S s₀)).Contains (S s₀ + BitVec.ofNat 64 (4 * i)) 4 :=
     Offset.contains_base _ (by omega_arith) (by omega_arith)
-  have iR : ∀ {R : Region} {a : Addr} {n : Nat}, R ∈ s₀.rd ++ s₀.wr → R.Contains a n →
+  obtain iR : ∀ {R : Region} {a : Addr} {n : Nat}, R ∈ s₀.rd ++ s₀.wr → R.Contains a n →
       InRegions (s.rd ++ s.wr) a n := fun hR hc => by rw [h.rd, h.wr]; exact ⟨_, hR, hc⟩
-  have iW : ∀ {R : Region} {a : Addr} {n : Nat}, R ∈ s₀.wr → R.Contains a n → InRegions s.wr a n :=
+  obtain iW : ∀ {R : Region} {a : Addr} {n : Nat}, R ∈ s₀.wr → R.Contains a n → InRegions s.wr a n :=
     fun hR hc => by rw [h.wr]; exact ⟨_, hR, hc⟩
   -- The values read.
-  have vF : ∀ j < 256, coeffAt s.mem (F s₀) j = BitVec.ofNat 32 ((fp s₀)[j]!).val := fun j hj => by
+  obtain vF : ∀ j < 256, coeffAt s.mem (F s₀) j = BitVec.ofNat 32 ((fp s₀)[j]!).val := fun j hj => by
     rw [coeffAt_congr (bytes_frame h.frame (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact hp.hf.symm) (by decide)) (by rw [n_eq]; exact hj), hm.f j hj]
     exact ofNat_val_eq (polyAt_val hp.redF (by rw [n_eq]; exact hj)).symm
-  have vG : ∀ j < 256, coeffAt s.mem (G s₀) j = BitVec.ofNat 32 ((gp s₀)[j]!).val := fun j hj => by
+  obtain vG : ∀ j < 256, coeffAt s.mem (G s₀) j = BitVec.ofNat 32 ((gp s₀)[j]!).val := fun j hj => by
     rw [coeffAt_congr (bytes_frame h.frame (fun r hr => by
       rw [List.mem_singleton] at hr; subst hr; exact hp.hg.symm) (by decide)) (by rw [n_eq]; exact hj), hm.g j hj]
     exact ofNat_val_eq (polyAt_val hp.redG (by rw [n_eq]; exact hj)).symm
-  have vS : (s.mem.readW (S s₀ + BitVec.ofNat 64 (4 * i)) 32).setWidth 64 = BitVec.ofNat 64 (gamma i).val := by
+  obtain vS : (s.mem.readW (S s₀ + BitVec.ofNat 64 (4 * i)) 32).setWidth 64 = BitVec.ofNat 64 (gamma i).val := by
     rw [h.frame.readW cS (fun r hr => by rw [List.mem_singleton] at hr; subst hr; exact hp.hs.symm)
       (by decide), hm.tab i hi, gammaTable_eq, gammas_getD hi,
       setWidth64_ofNat (by have := val_lt (gamma i); omega_arith)]
@@ -427,12 +427,12 @@ theorem setup_base {s₀ : State} (hp : Pre s₀) :
       Setup s₀ s.mem ∧ (∀ r, r ≠ .t0 → r ≠ .t2 → s.gpr r = s₀.gpr r) ∧ s.rd = s₀.rd ∧ s.wr = s₀.wr ∧
         s.sp = s₀.sp := by
   have fS := hp.fitS
-  have wS : ∀ {o k : Nat}, o + k ≤ 1024 → InRegions s₀.wr (S s₀ + BitVec.ofNat 64 o) k := fun h => by
+  obtain wS : ∀ {o k : Nat}, o + k ≤ 1024 → InRegions s₀.wr (S s₀ + BitVec.ofNat 64 o) k := fun h => by
     rw [hp.wr]; exact ⟨_, by simp, Offset.contains_base _ h (by omega_arith)⟩
   have a8 : (s₀.gpr .a3).toNat % 8 = 0 := hp.alS
   refine WP.mono (table_ok gammaTable (by decide) (b := .a3) (by decide) (by decide) rfl (by omega_using [a8])
     fun k hk => wS (by omega_arith)) fun s₂ h₂ => ?_
-  have fr : Frame [polyRegion (S s₀)] s₀.mem s₂.mem := by
+  obtain fr : Frame [polyRegion (S s₀)] s₀.mem s₂.mem := by
     refine h₂.frame.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
     rw [List.mem_singleton] at hr; subst hr
     exact Ntt.sub_low _ (by omega_arith)

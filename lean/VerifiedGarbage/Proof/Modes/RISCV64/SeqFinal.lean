@@ -95,7 +95,7 @@ def finalNext (c : Core) (ciph : Spec.Cbc.Cipher) (F : StepFn) (s₀ : State) : 
 
 theorem byte_of_chunks1 {m m' : Mem} {D : Addr} {n : Nat} (h : chunksAt 1 m D n = chunksAt 1 m' D n) {i : Nat}
     (hi : i < n) : m (D + BitVec.ofNat 64 i) = m' (D + BitVec.ofNat 64 i) := by
-  have e := congrArg (fun l => l[i]?) h
+  obtain e := congrArg (fun l => l[i]?) h
   simpa [chunksAt, bytesAt, hi] using e
 
 theorem bytesAt_congr_of {m m' : Mem} {D : Addr} {n : Nat}
@@ -130,8 +130,8 @@ of `L` bytes, counted `L` at a time. -/
 theorem fixedL (hL : 0 < 4 * c.bw)
     (h : Fixed c s₂ (Fb s₀ c) (Dp s₀) (N s₀) 1 (4 * c.bw) (wrs0 c byteMode s₀) (N s₀) 1) :
     Fixed c s₂ (Fb s₀ c) (Dp s₀) (nF c s₀) (4 * c.bw) (4 * c.bw) (wrs0 c byteMode s₀) (N s₀) (4 * c.bw) := by
-  have hn := nF_le c s₀
-  have hbw : c.bw ≤ 4 := bw_le h.layout
+  obtain hn := nF_le c s₀
+  obtain hbw : c.bw ≤ 4 := bw_le h.layout
   have hD : (Dp s₀).toNat + 1 * N s₀ ≤ 2 ^ 64 := h.dataFit
   refine ⟨h.scr, fun o w h0 hw => h.dataW o w h0 (show o + w ≤ 1 * N s₀ by omega_arith), by omega_arith,
     (show Region.Disjoint ⟨Dp s₀, 1 * N s₀⟩ _ from h.dataScr).sub_left (Region.sub_prefix (by omega_arith)), h.nFit, hn, by omega_arith,
@@ -146,7 +146,7 @@ theorem invL (h : Inv cs s₂ (Fb s₀ c) (Dp s₀) (N s₀) 1 (wrs0 c byteMode 
       (xsF c s₀) 0 s₂ := by
   have hd := h.data
   simp only [List.take_zero, run, List.nil_append, List.drop_zero] at hd
-  have hb : ∀ i < N s₀, s₂.mem (Dp s₀ + BitVec.ofNat 64 i) = s₀.mem (Dp s₀ + BitVec.ofNat 64 i) :=
+  obtain hb : ∀ i < N s₀, s₂.mem (Dp s₀ + BitVec.ofNat 64 i) = s₀.mem (Dp s₀ + BitVec.ofNat 64 i) :=
     fun i hi => byte_of_chunks1 hd hi
   refine ⟨h.b, fun _ _ _ _ => rfl, rfl, rfl, by rw [h.dp, Nat.mul_zero, Nat.mul_zero],
     by rw [h.np, Nat.mul_zero, Nat.mul_zero], h.ready, ?_, h.chn, Frame.refl _ _⟩
@@ -195,8 +195,8 @@ theorem writeW_over_step {m : Mem} {P : Addr} {j : Nat} {f : Nat → Byte} (hj :
   simp only [Mem.writeW, Mem.write, BitVec.setWidth_eq]
   by_cases hx : (x - (P + BitVec.ofNat 64 j)).toNat < 8 / 8
   · rw [ite_eq_left (show (x - (P + BitVec.ofNat 64 j)).toNat < 8 / 8 from hx)]
-    have e : (x - P).toNat = j := by bv_omega
-    have z : (x - (P + BitVec.ofNat 64 j)).toNat = 0 := by omega_arith
+    obtain e : (x - P).toNat = j := by bv_omega
+    obtain z : (x - (P + BitVec.ofNat 64 j)).toNat = 0 := by omega_arith
     simp only [Proof.Modes.over]; rw [ite_eq_left (show (x - P).toNat < j + 1 by omega_arith), e, z]
     simp
   · rw [ite_eq_right (show ¬ (x - (P + BitVec.ofNat 64 j)).toNat < 8 / 8 from hx)]
@@ -216,10 +216,10 @@ theorem xorStep_wp {s₀ : State} {K R : Addr} {r : Nat} (hp : XPre s₀ K R r) 
   have hj := hi.lt
   have fK := hp.fK
   have fR := hp.fR
-  have hr64 : r ≤ 2 ^ 64 := by omega_arith
-  have mR : s.mem (R + BitVec.ofNat 64 j) = s₀.mem (R + BitVec.ofNat 64 j) := by
+  obtain hr64 : r ≤ 2 ^ 64 := by omega_arith
+  obtain mR : s.mem (R + BitVec.ofNat 64 j) = s₀.mem (R + BitVec.ofNat 64 j) := by
     rw [hi.mem]; exact Proof.Modes.over_out (by rw [Proof.Modes.off_self _ (by omega_arith)]; omega_arith)
-  have mK : s.mem (K + BitVec.ofNat 64 j) = s₀.mem (K + BitVec.ofNat 64 j) := by
+  obtain mK : s.mem (K + BitVec.ofNat 64 j) = s₀.mem (K + BitVec.ofNat 64 j) := by
     rw [hi.mem]
     exact Proof.Modes.over_sep (hp.disj.symm.sub_left (Region.sub_prefix (by omega_arith))) hj hr64
   simp only [xorStep]
@@ -233,18 +233,18 @@ theorem xorStep_wp {s₀ : State} {K R : Addr} {r : Nat} (hp : XPre s₀ K R r) 
     (by rw [u₃.wr, u₂.wr, u₁.wr, hi.wr]; exact hp.wrR j hj) fun s₄ u₄ => ?_
   refine wp_addi (imm := 1) (by decide) fun s₅ u₅ => wp_addi (imm := 1) (by decide) fun s₆ u₆ =>
     wp_subi (imm := 1) (by decide) fun s₇ u₇ => WP.block_nil ?_
-  have s3₇ : s₇.gpr .s3 = BitVec.ofNat 64 (r - (j + 1)) := by
+  obtain s3₇ : s₇.gpr .s3 = BitVec.ofNat 64 (r - (j + 1)) := by
     rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr, u₃.other _ (by decide),
       u₂.other _ (by decide), u₁.other _ (by decide), hi.s3, ofNat_sub64 (by omega_arith), Nat.sub_sub]
-  have ev : isa.eval (.nonzero .s3) s₇ = some (decide (r - (j + 1) ≠ 0)) :=
+  obtain ev : isa.eval (.nonzero .s3) s₇ = some (decide (r - (j + 1) ≠ 0)) :=
     eval_nonzero_ofNat _ _ (by omega_arith) s3₇
-  have mem₇ : s₇.mem = Proof.Modes.over s₀.mem R (j + 1) (xf s₀.mem K R) := by
+  obtain mem₇ : s₇.mem = Proof.Modes.over s₀.mem R (j + 1) (xf s₀.mem K R) := by
     rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₃.gpr, u₂.other _ (by decide), u₂.gpr, u₁.gpr, u₁.mem,
       mR, mK, setWidth_xor8, hi.mem]
     exact writeW_over_step (by omega_arith)
-  have rd₇ : s₇.rd = s₀.rd := by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, hi.rd]
-  have wr₇ : s₇.wr = s₀.wr := by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, hi.wr]
-  have g₇ : ∀ x, x ≠ .t0 → x ≠ .t1 → x ≠ .t2 → x ≠ .s2 → x ≠ .s3 → s₇.gpr x = s₀.gpr x :=
+  obtain rd₇ : s₇.rd = s₀.rd := by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, u₁.rd, hi.rd]
+  obtain wr₇ : s₇.wr = s₀.wr := by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, u₁.wr, hi.wr]
+  obtain g₇ : ∀ x, x ≠ .t0 → x ≠ .t1 → x ≠ .t2 → x ≠ .s2 → x ≠ .s3 → s₇.gpr x = s₀.gpr x :=
     fun x a b d e f => by
       rw [u₇.other _ f, u₆.other _ d, u₅.other _ e, u₄.gpr, u₃.other _ a, u₂.other _ b, u₁.other _ a,
         hi.gpr x a b d e f]
@@ -270,7 +270,7 @@ theorem xorLoop_wp {s₀ : State} {K R : Addr} {r : Nat} (hp : XPre s₀ K R r) 
 /-- The bytes `over` leaves: those at `R` XORed with those at `K`. -/
 theorem bytesAt_over_xf (m : Mem) (K R : Addr) {r L : Nat} (hr : r ≤ L) (h64 : r ≤ 2 ^ 64) :
     bytesAt (Proof.Modes.over m R r (xf m K R)) R r = Spec.Cbc.xor (bytesAt m R r) (bytesAt m K L) := by
-  have e : bytesAt (Proof.Modes.over m R r (xf m K R)) R r = (List.range r).map (xf m K R) :=
+  obtain e : bytesAt (Proof.Modes.over m R r (xf m K R)) R r = (List.range r).map (xf m K R) :=
     List.map_congr_left fun i hi => Proof.Modes.over_at (List.mem_range.mp hi) h64
   rw [e]
   apply List.ext_getElem (by simp [Spec.Cbc.xor, bytesAt]; omega_arith)
@@ -324,7 +324,7 @@ theorem Mid.tmp {cs : CoreSpec c} {s₀ : State} {B D : Addr} {st bl : Nat} {W :
 chaining value there. -/
 theorem rd_cryptBuf_copy {bw : Nat} (ciph : Spec.Cbc.Cipher) (hc : ∀ b, (ciph b).length = 4 * bw) (a : Areas) :
     rd (cryptBuf (4 * bw) ciph (applyOps (copyBlk bw .buf .chn) a)) .buf (4 * bw) = ciph (rd a .chn (4 * bw)) := by
-  have e : rd (applyOps (copyBlk bw .buf .chn) a) .buf (4 * bw) = rd a .chn (4 * bw) :=
+  obtain e : rd (applyOps (copyBlk bw .buf .chn) a) .buf (4 * bw) = rd a .chn (4 * bw) :=
     List.map_congr_left fun i hi => by
       rw [copyBlk_apply (by decide), ite_eq_left ⟨rfl, List.mem_range.mp hi⟩]
   refine rd_eq (by rw [hc]) fun i hi => ?_
@@ -376,16 +376,16 @@ theorem big_sub {B D : Addr} {n L N : Nat} (h : L * n ≤ N) :
 theorem done_whole {j : Nat} (hj : j = nF c s₀) {t : State} (hI : IL cs F s₀ s₂ k j t) (hr : rF c s₀ = 0) :
     FDone cs F s₀ s₂ k t := by
   subst hj
-  have hx : (xsF c s₀).take (nF c s₀) = xsF c s₀ := List.take_of_length_le (by rw [chunksAt_length])
-  have hd : (xsF c s₀).drop (nF c s₀) = [] := List.drop_of_length_le (by rw [chunksAt_length])
-  have hN : 4 * c.bw * nF c s₀ = N s₀ := by have := nF_rF c s₀; omega_using [hr, this]
+  obtain hx : (xsF c s₀).take (nF c s₀) = xsF c s₀ := List.take_of_length_le (by rw [chunksAt_length])
+  obtain hd : (xsF c s₀).drop (nF c s₀) = [] := List.drop_of_length_le (by rw [chunksAt_length])
+  obtain hN : 4 * c.bw * nF c s₀ = N s₀ := by have := nF_rF c s₀; omega_using [hr, this]
   have data := hI.data
   rw [hx, hd, List.append_nil] at data
   refine ⟨hI.b, hI.keep, hI.rd, hI.wr, ?_, ?_, hI.frame.sub (big_sub (nF_le c s₀))⟩
   · show chunksAt 1 t.mem (Dp s₀) (N s₀) = _
     rw [chunksAt_one']
     refine congrArg bytesSteps ?_
-    have e := VG.Proof.Modes.bytesAt_mul (4 * c.bw) t.mem (Dp s₀) (nF c s₀)
+    obtain e := VG.Proof.Modes.bytesAt_mul (4 * c.bw) t.mem (Dp s₀) (nF c s₀)
     rw [hN] at e
     rw [e, finalOut, hr]
     simp only [bytesAt, List.range_zero, List.map_nil, Spec.Cbc.xor, List.zipWith_nil_left, List.append_nil]
@@ -397,30 +397,30 @@ theorem whole_seg (hM : FinalOk c M) (hcomp : Computes M (4 * c.bw) (cs.cipher k
     (hF : Fixed c s₂ (Fb s₀ c) (Dp s₀) (nF c s₀) (4 * c.bw) (4 * c.bw) (wrs0 c byteMode s₀) (N s₀) (4 * c.bw))
     (hw : WordOk c w M (Fb s₀ c) (Dp s₀) (4 * c.bw)) {j : Nat} (hj : 4 * c.bw * (j + 1) ≤ N s₀) {t : State}
     (hI : IL cs F s₀ s₂ k j t) : WP isa (c.seg w M) t (IL cs F s₀ s₂ k (j + 1)) := by
-  have hbw := bw_le hF.layout
+  obtain hbw := bw_le hF.layout
   have hL : 0 < 4 * c.bw := hF.step.1
-  have hjn : j < nF c s₀ := by
+  obtain hjn : j < nF c s₀ := by
     have := (Nat.le_div_iff_mul_le hL).mpr (show (j + 1) * (4 * c.bw) ≤ N s₀ by rw [Nat.mul_comm]; exact hj)
     show j < N s₀ / (4 * c.bw)
     omega_using [this]
-  have hpre : ∀ o ∈ M.pre, o.InBounds (lens c (4 * c.bw) (4 * c.bw)) := by
+  obtain hpre : ∀ o ∈ M.pre, o.InBounds (lens c (4 * c.bw) (4 * c.bw)) := by
     rw [hM.pre]
     exact fun o ho => (copyBlk_ok' (ws := allLocs) (mem_allLocs _) (by simp [lens]) (by simp [lens]) o ho).1
-  have hpost : ∀ o ∈ M.post, o.InBounds (lens c (4 * c.bw) (4 * c.bw)) := by
+  obtain hpost : ∀ o ∈ M.post, o.InBounds (lens c (4 * c.bw) (4 * c.bw)) := by
     have := hM.post; rw [hM.step] at this; exact this
   unfold Core.seg
   refine WP.seq (WP.mono (pre_wp cs hF hw hpre hjn hI) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (crypt_step cs hF (bufCipher_one hF.layout.G_pos _) hjn h₁) fun s₃ h₃ => ?_)
   refine WP.seq (WP.of_syms (wp_li (imm := 4 * c.bw) (by omega_arith) fun s₄ u₄ => WP.block_nil fun sy₄ => ?_))
-  have h₄ := h₃.tmp u₄ sy₄
-  have s3₄ : s₄.gpr .s3 = BitVec.ofNat 64 (N s₀ - 4 * c.bw * j) := by
+  obtain h₄ := h₃.tmp u₄ sy₄
+  obtain s3₄ : s₄.gpr .s3 = BitVec.ofNat 64 (N s₀ - 4 * c.bw * j) := by
     rw [u₄.other _ (by decide), h₃.kept _ (mem_kept (by simp)), hI.np]
-  have ev : isa.eval (.ltu .s3 .t0) s₄ = some false := by
+  obtain ev : isa.eval (.ltu .s3 .t0) s₄ = some false := by
     rw [Nat.mul_succ] at hj
     rw [eval_ltu, s3₄, u₄.gpr, ofNat_ltu (by have := hF.nFit; omega_arith) (by omega_arith),
       decide_eq_false (by omega_arith)]
   refine WP.ite false ev (fun h => nomatch h) fun _ => ?_
-  have e : c.opsCode w M.post ++ c.advanceBytes =
+  obtain e : c.opsCode w M.post ++ c.advanceBytes =
       c.opsCode w M.post ++ (.addi .s2 .s2 (M.step : Int) :: .addi .s3 .s3 (-((4 * c.bw : Nat) : Int)) :: []) := by
     rw [hM.step]; rfl
   rw [e]
@@ -435,21 +435,21 @@ theorem tail_seg (hM : FinalOk c M)
     WP isa (c.seg w M) t fun t' => isa.eval (.nonzero .s3) t' = some false ∧ FDone cs F s₀ s₂ k t' := by
   subst hj
   have hL := hfx.layout
-  have hbw := bw_le hL
-  have hb4 := buf_le4 hL
+  obtain hbw := bw_le hL
+  obtain hb4 := buf_le4 hL
   have hge := hL.buf_ge
   have h6 : coreSlot = 6 := rfl
-  have hnr := nF_rF c s₀
-  have hbw0 : 0 < c.bw := by rcases hL.bw with h | h <;> omega_using [h]
-  have hrL : rF c s₀ < 4 * c.bw := Nat.mod_lt _ (by omega_using [hbw0])
+  obtain hnr := nF_rF c s₀
+  obtain hbw0 : 0 < c.bw := by rcases hL.bw with h | h <;> omega_using [h]
+  obtain hrL : rF c s₀ < 4 * c.bw := Nat.mod_lt _ (by omega_using [hbw0])
   have hD : (Dp s₀).toNat + 1 * N s₀ ≤ 2 ^ 64 := hfx.dataFit
   have hNf : N s₀ < 2 ^ 64 := hfx.nFit
   have hS := hfx.scr
   have hfit := hS.fit
   have wrt : t.wr = s₂.wr := hI.wr
-  have hTA : (tailA c s₀).toNat = (Dp s₀).toNat + 4 * c.bw * nF c s₀ := toNat_add_lt _ (by omega_arith)
+  obtain hTA : (tailA c s₀).toNat = (Dp s₀).toNat + 4 * c.bw * nF c s₀ := toNat_add_lt _ (by omega_arith)
   -- The partial segment as a step of its own.
-  have hT : Fixed c t (Fb s₀ c) (tailA c s₀) 1 (rF c s₀) (4 * c.bw) (wrs0 c byteMode s₀) (rF c s₀) 1 := by
+  obtain hT : Fixed c t (Fb s₀ c) (tailA c s₀) 1 (rF c s₀) (4 * c.bw) (wrs0 c byteMode s₀) (rF c s₀) 1 := by
     refine ⟨hS.congr wrt, fun o w h0 hw => ?_, by rw [hTA]; omega_arith, ?_, by omega_arith, by omega_arith,
       by decide, ⟨hr, by omega_arith⟩, hfx.buf, ⟨⟨Dp s₀, 1 * N s₀⟩, List.mem_cons_self, ?_⟩, hfx.scrIn, hL⟩
     · show InRegions t.wr (Dp s₀ + BitVec.ofNat 64 (4 * c.bw * nF c s₀) + BitVec.ofNat 64 o) w
@@ -457,15 +457,15 @@ theorem tail_seg (hM : FinalOk c M)
     · exact (show Region.Disjoint ⟨Dp s₀, 1 * N s₀⟩ _ from hfx.dataScr).sub_left
         (VG.Offset.sub_base _ (by omega_arith))
     · exact VG.Offset.sub_base _ (by omega_arith)
-  have hIT : Inv cs t (Fb s₀ c) (tailA c s₀) 1 (rF c s₀) (wrs0 c byteMode s₀) (rF c s₀) 1 k F
+  obtain hIT : Inv cs t (Fb s₀ c) (tailA c s₀) 1 (rF c s₀) (wrs0 c byteMode s₀) (rF c s₀) 1 k F
       (bytesAt t.mem (slotA (Fb s₀ c) Core.chnSlot) (4 * c.bw)) (chunksAt (rF c s₀) t.mem (tailA c s₀) 1) 0 t := by
     refine ⟨hI.b, fun _ _ _ _ => rfl, rfl, rfl, by rw [hI.dp, Nat.mul_zero, BitVec.add_zero],
       hI.np.trans (congrArg _ (by omega_arith)), hI.ready, ?_, ?_, Frame.refl _ _⟩
     · simp only [List.take_zero, run, List.nil_append, List.drop_zero]
     · simp only [List.take_zero, run]
-  have hwT : WordOk c false M (Fb s₀ c) (tailA c s₀) (rF c s₀) :=
+  obtain hwT : WordOk c false M (Fb s₀ c) (tailA c s₀) (rF c s₀) :=
     ⟨by rw [hM.pre]; exact copyBlk_wordAl _ _ _, hM.postA, by have := hS.al; omega_using [this], fun h => nomatch h⟩
-  have hpreT : ∀ o ∈ M.pre, o.InBounds (lens c (rF c s₀) (4 * c.bw)) := by
+  obtain hpreT : ∀ o ∈ M.pre, o.InBounds (lens c (rF c s₀) (4 * c.bw)) := by
     rw [hM.pre]
     exact fun o ho => (copyBlk_ok' (ws := allLocs) (mem_allLocs _) (by simp [lens]) (by simp [lens]) o ho).1
   unfold Core.seg
@@ -473,40 +473,40 @@ theorem tail_seg (hM : FinalOk c M)
   refine WP.seq (WP.mono (pre_wp cs hT hwT hpreT Nat.zero_lt_one hIT) fun s₁ h₁ => ?_)
   refine WP.seq (WP.mono (crypt_step cs hT (bufCipher_one hL.G_pos _) Nat.zero_lt_one h₁) fun s₃ h₃ => ?_)
   refine WP.seq (WP.of_syms (wp_li (imm := 4 * c.bw) (by omega_arith) fun s₄ u₄ => WP.block_nil fun sy₄ => ?_))
-  have h₄ := h₃.tmp u₄ sy₄
+  obtain h₄ := h₃.tmp u₄ sy₄
   rw [hM.pre] at h₄
-  have kp₄ : ∀ r, r = .a0 ∨ r = .s1 ∨ r = .s3 ∨ r = .s2 → s₄.gpr r = t.gpr r := fun r hr => by
+  obtain kp₄ : ∀ r, r = .a0 ∨ r = .s1 ∨ r = .s3 ∨ r = .s2 → s₄.gpr r = t.gpr r := fun r hr => by
     rw [u₄.other _ (by rcases hr with rfl | rfl | rfl | rfl <;> decide)]; exact h₃.kept r (mem_kept hr)
-  have ev : isa.eval (.ltu .s3 .t0) s₄ = some true := by
+  obtain ev : isa.eval (.ltu .s3 .t0) s₄ = some true := by
     rw [eval_ltu, kp₄ _ (by simp), hIT.np, u₄.gpr, ofNat_ltu (by omega_arith) (by omega_arith),
       decide_eq_true (by omega_arith)]
   refine WP.ite true ev (fun _ => ?_) (fun h => nomatch h)
   unfold Core.tail
   apply WP.seq
   -- The buffer to the chaining value.
-  have hA : AreasOk c s₄ (lens c (rF c s₀) (4 * c.bw)) (areas c (Fb s₀ c) (tailA c s₀) (rF c s₀) 0) [.chn] :=
+  obtain hA : AreasOk c s₄ (lens c (rF c s₀) (4 * c.bw)) (areas c (Fb s₀ c) (tailA c s₀) (rF c s₀) 0) [.chn] :=
     (areasOk hT Nat.zero_lt_one h₄.b (by rw [kp₄ _ (by simp)]; exact hIT.dp) h₄.wr).only _
   refine opsCode_wp c false (areas_al hwT 0) (copyBlk_ok' (List.mem_singleton_self _) (by simp [lens])
     (by simp [lens])) (copyBlk_wordAl _ _ _) hA fun s₅ a₅ f₅ g₅ rd₅ wr₅ => ?_
   refine wp_addi (imm := 8 * c.buf) (by omega_arith) fun s₆ u₆ => WP.block_nil ?_
-  have g₆ : ∀ r, r ≠ .t0 → r ≠ .t1 → r ≠ .t2 → s₆.gpr r = s₄.gpr r := fun r h0 h1 h2 => by
+  obtain g₆ : ∀ r, r ≠ .t0 → r ≠ .t1 → r ≠ .t2 → s₆.gpr r = s₄.gpr r := fun r h0 h1 h2 => by
     rw [u₆.other r h2, g₅ r h0 h1 h2]
-  have wr₆ : s₆.wr = s₂.wr := by rw [u₆.wr, wr₅, h₄.wr, wrt]
-  have rd₆ : s₆.rd = s₂.rd := by rw [u₆.rd, rd₅, h₄.rd, hI.rd]
+  obtain wr₆ : s₆.wr = s₂.wr := by rw [u₆.wr, wr₅, h₄.wr, wrt]
+  obtain rd₆ : s₆.rd = s₂.rd := by rw [u₆.rd, rd₅, h₄.rd, hI.rd]
   -- The byte loop.
-  have hK : (slotA (Fb s₀ c) c.buf).toNat = (Fb s₀ c).toNat + 8 * c.buf := toNat_add_lt _ (by omega_arith)
-  have subK : Region.Sub ⟨slotA (Fb s₀ c) c.buf, rF c s₀⟩ (scrRegion c (Fb s₀ c)) :=
+  obtain hK : (slotA (Fb s₀ c) c.buf).toNat = (Fb s₀ c).toNat + 8 * c.buf := toNat_add_lt _ (by omega_arith)
+  obtain subK : Region.Sub ⟨slotA (Fb s₀ c) c.buf, rF c s₀⟩ (scrRegion c (Fb s₀ c)) :=
     VG.Offset.sub_base _ (by omega_arith)
-  have subR : Region.Sub ⟨tailA c s₀, rF c s₀⟩ ⟨Dp s₀, 1 * N s₀⟩ := VG.Offset.sub_base _ (by omega_arith)
-  have dRS : Region.Disjoint ⟨tailA c s₀, rF c s₀⟩ (scrRegion c (Fb s₀ c)) :=
+  obtain subR : Region.Sub ⟨tailA c s₀, rF c s₀⟩ ⟨Dp s₀, 1 * N s₀⟩ := VG.Offset.sub_base _ (by omega_arith)
+  obtain dRS : Region.Disjoint ⟨tailA c s₀, rF c s₀⟩ (scrRegion c (Fb s₀ c)) :=
     (show Region.Disjoint ⟨Dp s₀, 1 * N s₀⟩ _ from hfx.dataScr).sub_left subR
-  have hX : XPre s₆ (slotA (Fb s₀ c) c.buf) (tailA c s₀) (rF c s₀) := by
+  obtain hX : XPre s₆ (slotA (Fb s₀ c) c.buf) (tailA c s₀) (rF c s₀) := by
     refine ⟨by rw [hK]; omega_arith, by rw [hTA]; omega_arith, (dRS.sub_right subK).symm,
       fun i hi => ?_, fun i hi => ?_⟩
     · rw [rd₆, wr₆, VG.Offset.add_add]; exact inRd_of (hS.low _ _ (by omega_arith))
     · show InRegions s₆.wr (Dp s₀ + BitVec.ofNat 64 (4 * c.bw * nF c s₀) + BitVec.ofNat 64 i) 1
       rw [wr₆, VG.Offset.add_add]; exact hfx.dataW _ _ (by decide) (by omega_arith)
-  have hX0 : XInv s₆ (slotA (Fb s₀ c) c.buf) (tailA c s₀) (rF c s₀) 0 s₆ := by
+  obtain hX0 : XInv s₆ (slotA (Fb s₀ c) c.buf) (tailA c s₀) (rF c s₀) 0 s₆ := by
     refine ⟨?_, ?_, ?_, hr, by rw [Proof.Modes.over_zero], rfl, rfl, fun _ _ _ _ _ _ => rfl⟩
     · rw [u₆.gpr, g₅ _ (by decide) (by decide) (by decide), h₄.b, BitVec.add_zero]
     · rw [g₆ _ (by decide) (by decide) (by decide), kp₄ _ (by simp), hIT.dp, BitVec.add_zero, Nat.mul_zero,
@@ -514,51 +514,51 @@ theorem tail_seg (hM : FinalOk c M)
     · rw [g₆ _ (by decide) (by decide) (by decide), kp₄ _ (by simp), hIT.np]
   refine WP.mono (xorLoop_wp hX hX0) fun s₇ h₇ => ⟨by rw [eval_nonzero_ofNat _ _ (by decide) h₇.s3]; rfl, ?_⟩
   -- The memory, region by region.
-  have hx : (xsF c s₀).take (nF c s₀) = xsF c s₀ := List.take_of_length_le (by rw [chunksAt_length])
-  have hd : (xsF c s₀).drop (nF c s₀) = [] := List.drop_of_length_le (by rw [chunksAt_length])
-  have hc := cs.cipher_len k
-  have dat0 : datRegion (tailA c s₀) (rF c s₀) 0 = ⟨tailA c s₀, rF c s₀⟩ := by
+  obtain hx : (xsF c s₀).take (nF c s₀) = xsF c s₀ := List.take_of_length_le (by rw [chunksAt_length])
+  obtain hd : (xsF c s₀).drop (nF c s₀) = [] := List.drop_of_length_le (by rw [chunksAt_length])
+  obtain hc := cs.cipher_len k
+  obtain dat0 : datRegion (tailA c s₀) (rF c s₀) 0 = ⟨tailA c s₀, rF c s₀⟩ := by
     simp only [datRegion, Nat.mul_zero, BitVec.add_zero]
-  have hcs := coreScr (B := Fb s₀ c) hL
-  have hhs := chnScr (B := Fb s₀ c) hL
-  have dRC : Region.Disjoint ⟨tailA c s₀, rF c s₀⟩ (chnRegion c (Fb s₀ c)) := dRS.sub_right hhs
-  have dKC : Region.Disjoint ⟨slotA (Fb s₀ c) c.buf, 4 * c.bw⟩ (chnRegion c (Fb s₀ c)) :=
+  obtain hcs := coreScr (B := Fb s₀ c) hL
+  obtain hhs := chnScr (B := Fb s₀ c) hL
+  obtain dRC : Region.Disjoint ⟨tailA c s₀, rF c s₀⟩ (chnRegion c (Fb s₀ c)) := dRS.sub_right hhs
+  obtain dKC : Region.Disjoint ⟨slotA (Fb s₀ c) c.buf, 4 * c.bw⟩ (chnRegion c (Fb s₀ c)) :=
     VG.Offset.disjoint _ (.inr (by simp only [Core.chnSlot]; omega_arith)) (by omega_arith)
       (by simp only [Core.chnSlot]; omega_arith)
-  have f₅' : Frame [chnRegion c (Fb s₀ c)] s₄.mem s₆.mem := by
+  obtain f₅' : Frame [chnRegion c (Fb s₀ c)] s₄.mem s₆.mem := by
     rw [u₆.mem]; exact f₅
   -- The buffer after the core: `CIPH_K` of the chaining value.
-  have buf₄ : bytesAt s₄.mem (slotA (Fb s₀ c) c.buf) (4 * c.bw) = cs.cipher k (run F (iv0 c s₀) (xsF c s₀)).2 := by
-    have e := rd_agree h₄.agree (l := .buf) (n := 4 * c.bw) (by simp [lens])
+  obtain buf₄ : bytesAt s₄.mem (slotA (Fb s₀ c) c.buf) (4 * c.bw) = cs.cipher k (run F (iv0 c s₀) (xsF c s₀)).2 := by
+    obtain e := rd_agree h₄.agree (l := .buf) (n := 4 * c.bw) (by simp [lens])
     rw [rd_cryptBuf_copy _ hc] at e
-    have e2 : rd (cont (areas c (Fb s₀ c) (tailA c s₀) (rF c s₀) 0) t.mem) .chn (4 * c.bw) =
+    obtain e2 : rd (cont (areas c (Fb s₀ c) (tailA c s₀) (rF c s₀) 0) t.mem) .chn (4 * c.bw) =
         (run F (iv0 c s₀) (xsF c s₀)).2 := by rw [← hx]; exact hI.chn
     rw [e2] at e
     exact e
-  have buf₆ : bytesAt s₆.mem (slotA (Fb s₀ c) c.buf) (4 * c.bw) = cs.cipher k (run F (iv0 c s₀) (xsF c s₀)).2 := by
+  obtain buf₆ : bytesAt s₆.mem (slotA (Fb s₀ c) c.buf) (4 * c.bw) = cs.cipher k (run F (iv0 c s₀) (xsF c s₀)).2 := by
     rw [← buf₄]
     exact List.map_congr_left fun i hi => f₅'.bytes (R := ⟨slotA (Fb s₀ c) c.buf, 4 * c.bw⟩)
       (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dKC) (show 4 * c.bw ≤ 2 ^ 64 by omega_arith)
       (List.mem_range.mp hi)
   -- The chaining value after the copy: the buffer.
-  have chn₆ : bytesAt s₆.mem (slotA (Fb s₀ c) Core.chnSlot) (4 * c.bw) =
+  obtain chn₆ : bytesAt s₆.mem (slotA (Fb s₀ c) Core.chnSlot) (4 * c.bw) =
       cs.cipher k (run F (iv0 c s₀) (xsF c s₀)).2 := by
     rw [← buf₄, u₆.mem]
     refine List.map_congr_left fun i hi => ?_
-    have hi := List.mem_range.mp hi
-    have e := a₅ .chn i (by simp [lens]; exact hi)
+    obtain hi := List.mem_range.mp hi
+    obtain e := a₅ .chn i (by simp [lens]; exact hi)
     simp only [cont, areas] at e
     rw [e, copyBlk_apply (by decide), ite_eq_left ⟨rfl, hi⟩]
     rfl
   -- The data's bytes after the core: as before it.
-  have dat₄ : ∀ i < rF c s₀, s₄.mem (tailA c s₀ + BitVec.ofNat 64 i) = t.mem (tailA c s₀ + BitVec.ofNat 64 i) :=
+  obtain dat₄ : ∀ i < rF c s₀, s₄.mem (tailA c s₀ + BitVec.ofNat 64 i) = t.mem (tailA c s₀ + BitVec.ofNat 64 i) :=
     fun i hi => by
-      have e := h₄.agree .dat i (by simp [lens]; exact hi)
+      obtain e := h₄.agree .dat i (by simp [lens]; exact hi)
       rw [cryptBuf_copy_dat] at e
       simpa [cont, areas] using e
-  have tl₆ : bytesAt s₆.mem (tailA c s₀) (rF c s₀) = bytesAt s₀.mem (tailA c s₀) (rF c s₀) := by
+  obtain tl₆ : bytesAt s₆.mem (tailA c s₀) (rF c s₀) = bytesAt s₀.mem (tailA c s₀) (rF c s₀) := by
     refine List.map_congr_left fun i hi => ?_
-    have hi := List.mem_range.mp hi
+    obtain hi := List.mem_range.mp hi
     rw [f₅'.bytes (R := ⟨tailA c s₀, rF c s₀⟩) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact dRC) (show rF c s₀ ≤ 2 ^ 64 by omega_arith) hi,
       dat₄ i hi]
@@ -573,15 +573,15 @@ theorem tail_seg (hM : FinalOk c M)
       s₀.mem (Dp s₀ + BitVec.ofNat 64 (4 * c.bw * nF c s₀) + BitVec.ofNat 64 i)
     rw [VG.Offset.add_add]; exact hb _ (by omega_arith)
   -- What the segment changed.
-  have fT : Frame [⟨tailA c s₀, rF c s₀⟩, coreRegion c (Fb s₀ c), chnRegion c (Fb s₀ c)] t.mem s₇.mem := by
-    have f₄ : Frame [⟨tailA c s₀, rF c s₀⟩, coreRegion c (Fb s₀ c), chnRegion c (Fb s₀ c)] t.mem s₄.mem := by
+  obtain fT : Frame [⟨tailA c s₀, rF c s₀⟩, coreRegion c (Fb s₀ c), chnRegion c (Fb s₀ c)] t.mem s₇.mem := by
+    obtain f₄ : Frame [⟨tailA c s₀, rF c s₀⟩, coreRegion c (Fb s₀ c), chnRegion c (Fb s₀ c)] t.mem s₄.mem := by
       rw [← dat0]; exact h₄.frame
     refine (f₄.trans (f₅'.mono (by simp))).trans ?_
     rw [h₇.mem]
     exact (Proof.Modes.over_frame _ _ _ _).mono (by simp)
-  have dBlk : ∀ r ∈ [(⟨tailA c s₀, rF c s₀⟩ : Region), coreRegion c (Fb s₀ c), chnRegion c (Fb s₀ c)],
+  obtain dBlk : ∀ r ∈ [(⟨tailA c s₀, rF c s₀⟩ : Region), coreRegion c (Fb s₀ c), chnRegion c (Fb s₀ c)],
       Region.Disjoint (dataRegion (Dp s₀) (4 * c.bw) (nF c s₀)) r := by
-    have dS : Region.Disjoint (dataRegion (Dp s₀) (4 * c.bw) (nF c s₀)) (scrRegion c (Fb s₀ c)) :=
+    obtain dS : Region.Disjoint (dataRegion (Dp s₀) (4 * c.bw) (nF c s₀)) (scrRegion c (Fb s₀ c)) :=
       (show Region.Disjoint ⟨Dp s₀, 1 * N s₀⟩ _ from hfx.dataScr).sub_left (Region.sub_prefix (by omega_arith))
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -600,12 +600,12 @@ theorem tail_seg (hM : FinalOk c M)
     rw [chunksAt_one']
     refine congrArg bytesSteps ?_
     rw [VG.Proof.Modes.bytesAt_blocks_tail (4 * c.bw) s₇.mem (Dp s₀) (N s₀)]
-    have blk : chunksAt (4 * c.bw) s₇.mem (Dp s₀) (nF c s₀) = (run F (iv0 c s₀) (xsF c s₀)).1 := by
+    obtain blk : chunksAt (4 * c.bw) s₇.mem (Dp s₀) (nF c s₀) = (run F (iv0 c s₀) (xsF c s₀)).1 := by
       rw [chunksAt_frame fT dBlk (by omega_arith)]
       have data := hI.data
       rw [hx, hd, List.append_nil] at data
       exact data
-    have tl : bytesAt s₇.mem (tailA c s₀) (rF c s₀) =
+    obtain tl : bytesAt s₇.mem (tailA c s₀) (rF c s₀) =
         Spec.Cbc.xor (bytesAt s₀.mem (tailA c s₀) (rF c s₀)) (cs.cipher k (run F (iv0 c s₀) (xsF c s₀)).2) := by
       rw [h₇.mem, bytesAt_over_xf _ _ _ (Nat.le_of_lt hrL) (by omega_arith), tl₆, buf₆]
     rw [finalOut]
@@ -627,19 +627,19 @@ theorem segs_ok (hM : FinalOk c M) (hcomp : Computes M (4 * c.bw) (cs.cipher k) 
       (c.segs w M) := by
   intro s₂ hfx hI0
   have hL := hfx.layout
-  have hbw0 : 0 < c.bw := by rcases hL.bw with h | h <;> omega_using [h]
-  have hL0 : 0 < 4 * c.bw := by omega_arith
-  have hFL := fixedL hL0 hfx
-  have hIL := invL hI0
+  obtain hbw0 : 0 < c.bw := by rcases hL.bw with h | h <;> omega_using [h]
+  obtain hL0 : 0 < 4 * c.bw := by omega_arith
+  obtain hFL := fixedL hL0 hfx
+  obtain hIL := invL hI0
   have hNf : N s₀ < 2 ^ 64 := hfx.nFit
   have hd0 := hI0.data
   simp only [List.take_zero, run, List.nil_append, List.drop_zero] at hd0
-  have hb : ∀ i < N s₀, s₂.mem (Dp s₀ + BitVec.ofNat 64 i) = s₀.mem (Dp s₀ + BitVec.ofNat 64 i) :=
+  obtain hb : ∀ i < N s₀, s₂.mem (Dp s₀ + BitVec.ofNat 64 i) = s₀.mem (Dp s₀ + BitVec.ofNat 64 i) :=
     fun i hi => byte_of_chunks1 hd0 hi
-  have hw : WordOk c w M (Fb s₀ c) (Dp s₀) (4 * c.bw) :=
+  obtain hw : WordOk c w M (Fb s₀ c) (Dp s₀) (4 * c.bw) :=
     ⟨by rw [hM.pre]; exact copyBlk_wordAl _ _ _, hM.postA, by have := hfx.scr.al; omega_using [this],
       fun h => by have := hD h; rw [hM.step] at this; exact this⟩
-  have hnr := nF_rF c s₀
+  obtain hnr := nF_rF c s₀
   unfold Core.segs
   by_cases hN0 : N s₀ = 0
   · refine WP.ite true (by rw [eval_zero_ofNat _ _ (by omega_arith) hIL.np]; simp [hN0]) (fun _ => ?_)
@@ -653,7 +653,7 @@ theorem segs_ok (hM : FinalOk c M) (hcomp : Computes M (4 * c.bw) (cs.cipher k) 
   subst hm
   by_cases hwh : 4 * c.bw * (j + 1) ≤ N s₀
   · refine WP.mono (whole_seg hM hcomp hFL hw hwh h) fun t' h' => ?_
-    have ev := eval_nonzero_ofNat t' .s3 (by omega_arith) h'.np
+    obtain ev := eval_nonzero_ofNat t' .s3 (by omega_arith) h'.np
     by_cases hend : 4 * c.bw * (j + 1) = N s₀
     · have hn : j + 1 = nF c s₀ := by
         show j + 1 = N s₀ / (4 * c.bw)
@@ -664,11 +664,11 @@ theorem segs_ok (hM : FinalOk c M) (hcomp : Computes M (4 * c.bw) (cs.cipher k) 
         by rw [Nat.mul_succ] at hwh ⊢; omega_arith, j + 1, rfl, by omega_arith, h'⟩
   · have hjn : j = nF c s₀ := by
       show j = N s₀ / (4 * c.bw)
-      have h1 := (Nat.div_lt_iff_lt_mul hL0).mpr (show N s₀ < (j + 1) * (4 * c.bw) by
+      obtain h1 := (Nat.div_lt_iff_lt_mul hL0).mpr (show N s₀ < (j + 1) * (4 * c.bw) by
         rw [Nat.mul_comm]; omega_arith)
-      have h2 := (Nat.le_div_iff_mul_le hL0).mpr (show j * (4 * c.bw) ≤ N s₀ by rw [Nat.mul_comm]; omega_arith)
+      obtain h2 := (Nat.le_div_iff_mul_le hL0).mpr (show j * (4 * c.bw) ≤ N s₀ by rw [Nat.mul_comm]; omega_arith)
       omega_arith
-    have hr : 0 < rF c s₀ := by
+    obtain hr : 0 < rF c s₀ := by
       show 0 < N s₀ % (4 * c.bw)
       have := Nat.div_add_mod (N s₀) (4 * c.bw)
       rw [← show j = N s₀ / (4 * c.bw) from hjn] at this
@@ -698,13 +698,13 @@ theorem seqFinal_wp (cs : CoreSpec c) {M : Mode} {F : StepFn} {s₀ : State} {k 
 
 theorem cfbEnc_finalOk (c : Core) : FinalOk c (Mode.cfbEnc c.bw) :=
   ⟨rfl, rfl, fun o ho => by
-    have b := blk_bounds (c := c) (st := (Mode.cfbEnc c.bw).step) rfl
+    obtain b := blk_bounds (c := c) (st := (Mode.cfbEnc c.bw).step) rfl
     exact append_ok (xorBlk_inBounds (b _) (b _) (b _)) (copyBlk_inBounds (b _) (b _)) o ho,
     append_ok (xorBlk_wordAl _ _ _ _) (copyBlk_wordAl _ _ _)⟩
 
 theorem cfbDec_finalOk (c : Core) : FinalOk c (Mode.cfbDec c.bw) :=
   ⟨rfl, rfl, fun o ho => by
-    have b := blk_bounds (c := c) (st := (Mode.cfbDec c.bw).step) rfl
+    obtain b := blk_bounds (c := c) (st := (Mode.cfbDec c.bw).step) rfl
     exact append_ok (copyBlk_inBounds (b _) (b _)) (xorBlk_inBounds (b _) (b _) (b _)) o ho,
     append_ok (copyBlk_wordAl _ _ _) (xorBlk_wordAl _ _ _ _)⟩
 
@@ -738,7 +738,7 @@ theorem cfbDecFinal_wp (cs : CoreSpec c) {s₀ : State} {k : cs.Key} (hp : SeqPr
 
 theorem ofb_finalOk (c : Core) : FinalOk c (Mode.ofb c.bw) :=
   ⟨rfl, rfl, fun o ho => by
-    have b := blk_bounds (c := c) (st := (Mode.ofb c.bw).step) rfl
+    obtain b := blk_bounds (c := c) (st := (Mode.ofb c.bw).step) rfl
     exact append_ok (copyBlk_inBounds (b _) (b _)) (xorBlk_inBounds (b _) (b _) (b _)) o ho,
     append_ok (copyBlk_wordAl _ _ _) (xorBlk_wordAl _ _ _ _)⟩
 
@@ -750,7 +750,7 @@ theorem ofbFinal_wp (cs : CoreSpec c) {s₀ : State} {k : cs.Key} (hp : SeqPre c
       Changes c byteMode s₀ s' :=
   WP.mono (seqFinal_wp cs (ofb_finalOk c) (ofb_computes (cs.cipher_len k)) hp hk)
     fun s' ⟨h1, h2, h3, h4⟩ => by
-      have hL0 : 0 < 4 * c.bw := by rcases hp.layout.bw with h | h <;> omega_using [h]
+      obtain hL0 : 0 < 4 * c.bw := by rcases hp.layout.bw with h | h <;> omega_using [h]
       obtain ⟨e1, e2⟩ := ofb_run (cs.cipher k) (iv0 c s₀) (xsF c s₀)
       rw [chunksAt_length] at e2
       refine ⟨h1, ⟨?_, ?_⟩, h4⟩

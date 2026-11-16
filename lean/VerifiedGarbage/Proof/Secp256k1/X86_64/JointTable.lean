@@ -83,13 +83,13 @@ theorem cachedAdd_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hL : Cached
     RelCT isa (FieldPair K.M base size m Sl V E)
       (Impl.Weierstrass.X86_64.CachedJac.add K K.R K.E K.D sel dbl).inline
       (fun s t => ∃ E', FieldPair K.M base size m Sl (jacCoords K.D ++ V) E' s t) := by
-  have dW : ∀ w ∈ jacCoords K.D, w ∈ rcbW K.S K.D := by
+  obtain dW : ∀ w ∈ jacCoords K.D, w ∈ rcbW K.S K.D := by
     intro w hw; simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl <;> simp [rcbW]
-  have dSl : ∀ x ∈ jacCoords K.D, Sl x := fun x hx => hL.sl x (List.mem_append_left _
+  obtain dSl : ∀ x ∈ jacCoords K.D, Sl x := fun x hx => hL.sl x (List.mem_append_left _
     (List.mem_append_left _ (dW x hx)))
-  have rV : ∀ x ∈ jacCoords K.R, x ∈ V := fun x hx => hV x (by simp [cV, hx])
-  have eV : ∀ x ∈ jacCoords K.E, x ∈ V := fun x hx => hV x (by simp [cV, hx])
+  obtain rV : ∀ x ∈ jacCoords K.R, x ∈ V := fun x hx => hV x (by simp [cV, hx])
+  obtain eV : ∀ x ∈ jacCoords K.E, x ∈ V := fun x hx => hV x (by simp [cV, hx])
   rw [Impl.Weierstrass.X86_64.CachedJac.add]
   apply fieldBranch_relCT hL.lay hm (rV _ (by simp [jacCoords])) hc.zeroP
   · intro _
@@ -99,13 +99,13 @@ theorem cachedAdd_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hL : Cached
   · intro _
     exact (copyPoint_relCT hL.lay dSl rV hc.copyP).mono (fun _ _ h => h) (fun _ _ h => ⟨_, h⟩)
   intro _
-  have hsH : ∀ op ∈ Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel, ∀ x ∈ op.out :: op.ins, Sl x := by
+  obtain hsH : ∀ op ∈ Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel, ∀ x ∈ op.out :: op.ins, Sl x := by
     rw [CachedJac.head_eq K.M.n K.S K.R K.E K.D sel]
     exact fun op hop x hx => hL.sl x (CachedJac.slots op hop x hx)
   apply RelCT.seq (programB_relCT hL.lay hm hsH (readsOk_mono hL.head hV) hc.head)
-  have oldV : ∀ x ∈ V, x ∈ validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel) V :=
+  obtain oldV : ∀ x ∈ V, x ∈ validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel) V :=
     fun x hx => (mem_validAfter _ _).mpr (Or.inl hx)
-  have subV : ∀ x ∈ jacCoords K.D ++ V, x ∈ jacCoords K.D ++
+  obtain subV : ∀ x ∈ jacCoords K.D ++ V, x ∈ jacCoords K.D ++
       validAfter (Impl.Weierstrass.X86_64.CachedJac.head K.M.n K.S K.R K.E sel) V := by
     intro x hx
     rcases List.mem_append.mp hx with hx | hx
@@ -118,7 +118,7 @@ theorem cachedAdd_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hL : Cached
       rw [mem_validAfter]; right; simp [Impl.Weierstrass.X86_64.CachedJac.head, FOp.out]) hc.zeroR
     · intro _
       obtain ⟨N, hN, hE⟩ := hds
-      have he : dbl K.S K.R K.D = ofN N K.S K.R K.R K.D := hE _ _ _
+      obtain he : dbl K.S K.R K.D = ofN N K.S K.R K.R K.D := hE _ _ _
       refine (programB_relCT hL.lay hm (fun op hop x hx => hL.sl x (by
           rw [he] at hop
           rcases List.mem_append.mp (ofN_slots op hop x hx) with h | h
@@ -153,7 +153,7 @@ theorem addCachedBody_relCT {dbl : RcbSlots → Pt → Pt → List FOp} (hL : Ca
   apply RelCT.seq (cachedAdd_relCT hL hm hOne hc hV hds)
   apply RelCT.exists_
   intro E'
-  have rSl : ∀ x ∈ jacCoords K.R, Sl x := fun x hx => hL.sl x (List.mem_append_left _
+  obtain rSl : ∀ x ∈ jacCoords K.R, Sl x := fun x hx => hL.sl x (List.mem_append_left _
     (List.mem_append_right _ (by
       simp only [jacCoords, List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl <;> simp [rcbR])))
@@ -237,12 +237,12 @@ theorem tcW_sl : ∀ x∈tcW, x∈jointSlots publicJoint := by decide +kernel
 theorem tcW_init : ∀ x∈tcW, x∈jointInitWork publicJoint := by decide +kernel
 
 theorem tbl_sl : ∀ a, 1≤a → a≤9 → ∀ x∈jacCoords (publicJoint.K.tblPt a), x∈jointSlots publicJoint := by
-  have h : ∀ a<10, 1≤a → ∀ x∈jacCoords (publicJoint.K.tblPt a), x∈jointSlots publicJoint := by
+  obtain h : ∀ a<10, 1≤a → ∀ x∈jacCoords (publicJoint.K.tblPt a), x∈jointSlots publicJoint := by
     decide +kernel
   exact fun a h1 h9 => h a (by omega_using [h9]) h1
 
 theorem tbl_w : ∀ a, 1≤a → a≤9 → ∀ x∈jacCoords (publicJoint.K.tblPt a), x∈tcW := by
-  have h : ∀ a<10, 1≤a → ∀ x∈jacCoords (publicJoint.K.tblPt a), x∈tcW := by decide +kernel
+  obtain h : ∀ a<10, 1≤a → ∀ x∈jacCoords (publicJoint.K.tblPt a), x∈tcW := by decide +kernel
   exact fun a h1 h9 => h a (by omega_using [h9]) h1
 
 /-- The writes of a cached addition's body, apart from the fixed slots but `R`
@@ -256,7 +256,7 @@ theorem addW_w : ∀ x∈addW, x∈tcW := by decide +kernel
 theorem addW_fixed : ∀ x∈tcFixed, x∉jacCoords publicJoint.K.R → x∉addW := by decide +kernel
 
 theorem addW_tbl : ∀ a, 1≤a → a≤9 → ∀ x∈jacCoords (publicJoint.K.tblPt a), x∉addW := by
-  have h : ∀ a<10, 1≤a → ∀ x∈jacCoords (publicJoint.K.tblPt a), x∉addW := by decide +kernel
+  obtain h : ∀ a<10, 1≤a → ∀ x∈jacCoords (publicJoint.K.tblPt a), x∉addW := by decide +kernel
   exact fun a h1 h9 => h a (by omega_using [h9]) h1
 
 /-- Distinct entries are apart. -/
@@ -267,7 +267,7 @@ theorem tbl_tbl : ∀ a b, 1≤a → a≤9 → 1≤b → b≤9 → a≠b →
   omega_using [h1, g1, hne, hx, hy]
 
 theorem fixed_tbl : ∀ a, 1≤a → a≤8 → ∀ x∈tcFixed, x∉jacCoords (publicJoint.K.tblPt a) := by
-  have h : ∀ a<9, 1≤a → ∀ x∈tcFixed, x∉jacCoords (publicJoint.K.tblPt a) := by decide +kernel
+  obtain h : ∀ a<9, 1≤a → ∀ x∈tcFixed, x∉jacCoords (publicJoint.K.tblPt a) := by decide +kernel
   exact fun a h1 h8 => h a (by omega_using [h8]) h1
 
 theorem mem_tcLive_fixed {m x : Nat} (h : x∈tcFixed) : x∈tcLive m := List.mem_append_left _ h
@@ -299,7 +299,7 @@ theorem TC.of_keeps {s x y : State} {m k : Nat} {rs : List Reg} (h : TC C base Q
     (hk : Keeps rs x y) (hr : Reg.rbx∉rs) (hd : Reg.rdi∉rs) (hc : ∀ r∈rs, r∈Reg.rbx::clob 4) :
     TC C base Q s y m k := by
   have hm : y.mem = x.mem := hk.2.1
-  have ht : ∀ z, tmv C 4 base y z = tmv C 4 base x z := fun z => by unfold tmv; rw [hm]
+  obtain ht : ∀ z, tmv C 4 base y z = tmv C 4 base x z := fun z => by unfold tmv; rw [hm]
   refine ⟨(h.field.of_keeps hk hd).to_tmv, h.keep.trans ⟨(VG.Proof.Mont.X86_64.Keeps.regs hk).mono hc, fun z _ => by rw [hm]⟩,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   all_goals try simp only [ht]
@@ -336,14 +336,14 @@ theorem table_step_ok {s t : State} {m : Nat} (hm : UnitMod C.p (2^(64*publicJoi
     (hm1 : 1≤m) (hm7 : m≤7) (h : TC C base Q s t m (2*m-1)) :
     WP isa (Joint.tableCallStep publicJoint Impl.Weierstrass.PointOps.secp256k1).inline t
       (fun u => TC C base Q s u (m+1) (2*(m+1)-1) ∧ u.cf=some (decide (m+1<8))) := by
-  have hnc : (PointOps.addCachedBody publicJoint.K publicJoint.selected dblJ0).noCalls=true := by
+  obtain hnc : (PointOps.addCachedBody publicJoint.K publicJoint.selected dblJ0).noCalls=true := by
     decide +kernel
-  have hclob : ∀ r∈Proof.Weierstrass.X86_64.PointOps.keptRegs, r∈clob publicJoint.K.M.n := by
+  obtain hclob : ∀ r∈Proof.Weierstrass.X86_64.PointOps.keptRegs, r∈clob publicJoint.K.M.n := by
     decide
   rw [Joint.tableCallStep]
   simp only [Code.inline]
   apply WP.seq
-  have call : WP isa (PointOps.wrap (PointOps.addCachedBody publicJoint.K publicJoint.selected dblJ0)) t
+  obtain call : WP isa (PointOps.wrap (PointOps.addCachedBody publicJoint.K publicJoint.selected dblJ0)) t
       (fun u => ProgKeep publicJoint.K.M base addW t u ∧ TC C base Q s u m (2*m+1)) := by
     refine Proof.Weierstrass.X86_64.PointOps.wrap_keep_ok (P := fun x => TC C base Q s x m (2*m-1))
       (F := fun u => TC C base Q s u m (2*m+1)) hclob
@@ -353,7 +353,7 @@ theorem table_step_ok {s t : State} {m : Nat} (hm : UnitMod C.p (2^(64*publicJoi
     rw [← Code.inline_of_noCalls hnc, PointOps.addCachedBody]
     simp only [Code.inline]
     apply WP.seq
-    have Lfix : ∀ z∈tcFixed, z∈tcLive m := fun _ hz => mem_tcLive_fixed hz
+    obtain Lfix : ∀ z∈tcFixed, z∈tcLive m := fun _ hz => mem_tcLive_fixed hz
     refine WP.mono (cachedJacAdd_ok lay hm hC hd joint_add_layout.addApart joint_add_layout.cache2Apart
       joint_add_layout.cache3Apart ⟨by decide +kernel,by decide +kernel⟩ (by decide +kernel) hx.field
       (fun z hz => Lfix z (rcbR_fixed z hz)) ⟨Lfix _ (by decide +kernel),Lfix _ (by decide +kernel)⟩
@@ -361,7 +361,7 @@ theorem table_step_ok {s t : State} {m : Nat} (hm : UnitMod C.p (2^(64*publicJoi
       fun d ⟨E',kd,id,jd⟩ => ?_
     refine WP.mono (copyPointFields_ok lay joint_add_layout.accumNodup joint_add_layout.copyApart
       (by decide +kernel) id (fun _ hz => List.mem_append_left _ hz)) fun u ⟨E'',ku,iu,vu⟩ => ?_
-    have kw : ProgKeep publicJoint.K.M base addW x u :=
+    obtain kw : ProgKeep publicJoint.K.M base addW x u :=
       (kd.mono (fun _ hz => List.mem_append_left _ hz)).trans (ku.mono (fun _ hz => List.mem_append_right _ hz))
     have hs := hx.field.scr
     refine ⟨kw,iu.to_tmv.sub (fun _ hz => List.mem_append_right _ (List.mem_append_right _ hz)),
@@ -375,7 +375,7 @@ theorem table_step_ok {s t : State} {m : Nat} (hm : UnitMod C.p (2^(64*publicJoi
         simp only [Prod.mk.injEq] at vu
         rw [vu.1,vu.2.1,vu.2.2]
         exact jd
-      have jt := iu.point_tmv (fun _ hz => List.mem_append_left _ hz) jr
+      obtain jt := iu.point_tmv (fun _ hz => List.mem_append_left _ hz) jr
       rw [hC.add_mul_mul hQ,show 2*m-1+2=2*m+1 by omega_using [hm1]] at jt
       exact jt
     · rw [tmv_keep kw hs addW_sl (by decide +kernel) (by decide +kernel),
@@ -388,8 +388,8 @@ theorem table_step_ok {s t : State} {m : Nat} (hm : UnitMod C.p (2^(64*publicJoi
     · rw [kw.gpr _ (rbx_not_clob _)]
       exact hx.counter
     · intro z hz
-      have hzf : z∈tcFixed := by revert z hz; decide +kernel
-      have hzr : z∉jacCoords publicJoint.K.R := by revert z hz; decide +kernel
+      obtain hzf : z∈tcFixed := by revert z hz; decide +kernel
+      obtain hzr : z∉jacCoords publicJoint.K.R := by revert z hz; decide +kernel
       exact (tmv_keep kw hs addW_sl (fixed_sl z hzf) (addW_fixed z hzf hzr)).trans (hx.ro z hz)
   refine WP.mono call fun u ⟨_,hu⟩ => ?_
   rw [WP.block_append_iff]
@@ -397,16 +397,16 @@ theorem table_step_ok {s t : State} {m : Nat} (hm : UnitMod C.p (2^(64*publicJoi
   refine WP.mono (nafTableFields_ok lay (Or.inl rfl) rfl rfl hu.field (j:=m) (by omega_using [hm7]) hu.counter
     (by decide) (by decide) (tbl_sl (m+1) (by omega_using []) (by omega_using [hm7]))
     (fun z hz => mem_tcLive_fixed (R_fixed z hz)) (by decide)) fun v ⟨kv,iv⟩ => ?_
-  have hsv : Scr v base 8192 := kv.scr hs
+  obtain hsv : Scr v base 8192 := kv.scr hs
   refine WP.mono (nafTable_advance_ok (m:=m) (by omega_using [hm7])
     (by rw [kv.gpr _ (rbx_not_clob _)]; exact hu.counter)) fun w ⟨cw,cf,kk⟩ => ⟨?_,cf⟩
   have hmw : w.mem = v.mem := kk.2.1
-  have tw : ∀ z, tmv C 4 base w z = tmv C 4 base v z := fun z => by unfold tmv; rw [hmw]
-  have hW : ∀ z∈jacCoords (publicJoint.K.tblPt (m+1)), z∈jointSlots publicJoint :=
+  obtain tw : ∀ z, tmv C 4 base w z = tmv C 4 base v z := fun z => by unfold tmv; rw [hmw]
+  obtain hW : ∀ z∈jacCoords (publicJoint.K.tblPt (m+1)), z∈jointSlots publicJoint :=
     tbl_sl (m+1) (by omega_using []) (by omega_using [hm7])
-  have keepF : ∀ z∈tcFixed, tmv C 4 base w z = tmv C 4 base u z := fun z hz =>
+  obtain keepF : ∀ z∈tcFixed, tmv C 4 base w z = tmv C 4 base u z := fun z hz =>
     (tw z).trans (tmv_keep kv hs hW (fixed_sl z hz) (fixed_tbl (m+1) (by omega_using []) (by omega_using [hm7]) z hz))
-  have keepJ : ∀ {p : Pt}, (∀ z∈jacCoords p, z∈tcFixed) → ∀ {P : Point C},
+  obtain keepJ : ∀ {p : Pt}, (∀ z∈jacCoords p, z∈tcFixed) → ∀ {P : Point C},
       InvJ C (tmv C 4 base u p.x) (tmv C 4 base u p.y) (tmv C 4 base u p.z) P →
       InvJ C (tmv C 4 base w p.x) (tmv C 4 base w p.y) (tmv C 4 base w p.z) P := by
     intro p hp P hP
@@ -426,24 +426,24 @@ theorem table_step_ok {s t : State} {m : Nat} (hm : UnitMod C.p (2^(64*publicJoi
   · intro a h1 ha
     by_cases he : a=m+1
     · subst he
-      have nv : ∀ z∈jacCoords (publicJoint.K.tblPt (m+1)),
+      obtain nv : ∀ z∈jacCoords (publicJoint.K.tblPt (m+1)),
           tmv C 4 base w z = pointTransferEnv (tmv C 4 base u) (publicJoint.K.tblPt (m+1))
             publicJoint.K.R z := fun z hz => (tw z).trans (iv.val z (List.mem_append_left _ hz))
-      have ne1 : (publicJoint.K.tblPt (m+1)).y≠(publicJoint.K.tblPt (m+1)).x := by
+      obtain ne1 : (publicJoint.K.tblPt (m+1)).y≠(publicJoint.K.tblPt (m+1)).x := by
         simp only [WinCfg.tblPt,k_n]; omega_using []
-      have ne2 : (publicJoint.K.tblPt (m+1)).z≠(publicJoint.K.tblPt (m+1)).x := by
+      obtain ne2 : (publicJoint.K.tblPt (m+1)).z≠(publicJoint.K.tblPt (m+1)).x := by
         simp only [WinCfg.tblPt,k_n]; omega_using []
-      have ne3 : (publicJoint.K.tblPt (m+1)).z≠(publicJoint.K.tblPt (m+1)).y := by
+      obtain ne3 : (publicJoint.K.tblPt (m+1)).z≠(publicJoint.K.tblPt (m+1)).y := by
         simp only [WinCfg.tblPt,k_n]; omega_using []
       rw [nv _ (by simp [jacCoords]),nv _ (by simp [jacCoords]),nv _ (by simp [jacCoords])]
       simp only [pointTransferEnv,ne1,ne2,ne3,↓reduceIte]
       rw [show 2*(m+1)-1=2*m+1 by omega_using []]
       exact hu.point
     · have ham : a≤m := by omega_using [ha, he]
-      have hn : ∀ z∈jacCoords (publicJoint.K.tblPt a), z∉jacCoords (publicJoint.K.tblPt (m+1)) :=
+      obtain hn : ∀ z∈jacCoords (publicJoint.K.tblPt a), z∉jacCoords (publicJoint.K.tblPt (m+1)) :=
         tbl_tbl a (m+1) h1 (by omega_using [hm7, ha]) (by omega_using []) (by omega_using [hm7]) he
-      have ht := hu.table a h1 ham
-      have eqa : ∀ z∈jacCoords (publicJoint.K.tblPt a), tmv C 4 base w z = tmv C 4 base u z :=
+      obtain ht := hu.table a h1 ham
+      obtain eqa : ∀ z∈jacCoords (publicJoint.K.tblPt a), tmv C 4 base w z = tmv C 4 base u z :=
         fun z hz => (tw z).trans (tmv_keep kv hs hW (tbl_sl a h1 (by omega_using [hm7, ha]) z hz) (hn z hz))
       rw [eqa _ (by simp [jacCoords]),eqa _ (by simp [jacCoords]),eqa _ (by simp [jacCoords])]
       exact ht
@@ -481,9 +481,9 @@ theorem cacheE_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
       runOps (Joint.cacheE publicJoint) e publicJoint.selected * e publicJoint.K.E.z ∧
     ∀ z, z≠publicJoint.selected → z≠publicJoint.selected + 8*publicJoint.K.M.n →
       runOps (Joint.cacheE publicJoint) e z = e z := by
-  have h1 : publicJoint.selected + 8*publicJoint.K.M.n ≠ publicJoint.selected := by decide
-  have h2 : publicJoint.K.E.z ≠ publicJoint.selected := by decide +kernel
-  have h1' : publicJoint.selected ≠ publicJoint.selected + 8*publicJoint.K.M.n := Ne.symm h1
+  obtain h1 : publicJoint.selected + 8*publicJoint.K.M.n ≠ publicJoint.selected := by decide
+  obtain h2 : publicJoint.K.E.z ≠ publicJoint.selected := by decide +kernel
+  obtain h1' : publicJoint.selected ≠ publicJoint.selected + 8*publicJoint.K.M.n := Ne.symm h1
   refine ⟨?_,?_,fun z hz1 hz2 => ?_⟩
   · simp only [Joint.cacheE, runOps, List.foldl, FOp.run, Function.update_apply, h1', h2, ite_true,
       ite_false]
@@ -495,15 +495,15 @@ theorem cacheE_run {F : Type _} [Lean.Grind.CommRing F] (e : Nat → F) :
 theorem table_call_ok : JointTableCallOk publicJoint Impl.Weierstrass.PointOps.secp256k1 8192 := by
   intro C base Q s hm hC hd hOne hQ hi hp h1
   have hs := hi.scr
-  have hi' : Inv publicJoint.K.M base 8192 C.p (·∈jointSlots publicJoint) (winRo publicJoint.K)
+  obtain hi' : Inv publicJoint.K.M base 8192 C.p (·∈jointSlots publicJoint) (winRo publicJoint.K)
       (tmv C 4 base s) s :=
     ⟨hi.scr,hi.mod,fun x hx => List.mem_append_left _ (List.mem_append_left _ (hi.sl x hx)),hi.lt,hi.val⟩
-  have roSl : ∀ z∈winRo publicJoint.K, z∈jointSlots publicJoint := by decide +kernel
-  have roW : ∀ z∈winRo publicJoint.K, z∉tcW := by decide +kernel
-  have tcW' : ∀ {W : List Nat}, (∀ z∈W, z∈tcW) → ∀ z∈W, z∈jointSlots publicJoint :=
+  obtain roSl : ∀ z∈winRo publicJoint.K, z∈jointSlots publicJoint := by decide +kernel
+  obtain roW : ∀ z∈winRo publicJoint.K, z∉tcW := by decide +kernel
+  obtain tcW' : ∀ {W : List Nat}, (∀ z∈W, z∈tcW) → ∀ z∈W, z∈jointSlots publicJoint :=
     fun hW z hz => tcW_sl z (hW z hz)
   -- `ro` along any writes within `tcW`
-  have roK : ∀ {W : List Nat} {x y : State}, (∀ z∈W, z∈tcW) → ProgKeep publicJoint.K.M base W x y →
+  obtain roK : ∀ {W : List Nat} {x y : State}, (∀ z∈W, z∈tcW) → ProgKeep publicJoint.K.M base W x y →
       Scr x base 8192 → ∀ z∈winRo publicJoint.K, tmv C 4 base y z = tmv C 4 base x z :=
     fun hW hk hx z hz => tmv_keep hk hx (tcW' hW) (roSl z hz) (fun h => roW z hz (hW z h))
   rw [Joint.tableCall]
@@ -512,27 +512,27 @@ theorem table_call_ok : JointTableCallOk publicJoint Impl.Weierstrass.PointOps.s
   apply WP.seq
   refine WP.mono (copyPointFields_ok lay (o:=publicJoint.K.R) (q:=publicJoint.K.P) (by decide +kernel)
     (by decide +kernel) (by decide +kernel) hi' (by decide +kernel)) fun a ⟨ea,ka,ia,va⟩ => ?_
-  have hsa := ka.scr hs
-  have jaR : InvJ C (tmv C 4 base a publicJoint.K.R.x) (tmv C 4 base a publicJoint.K.R.y)
+  obtain hsa := ka.scr hs
+  obtain jaR : InvJ C (tmv C 4 base a publicJoint.K.R.x) (tmv C 4 base a publicJoint.K.R.y)
       (tmv C 4 base a publicJoint.K.R.z) Q := by
     apply ia.point_tmv (fun _ hz => List.mem_append_left _ hz)
     simp only [Prod.mk.injEq] at va
     rw [va.1,va.2.1,va.2.2]
     exact hp
-  have wa : ∀ z∈jacCoords publicJoint.K.R, z∈tcW := by decide +kernel
+  obtain wa : ∀ z∈jacCoords publicJoint.K.R, z∈tcW := by decide +kernel
   have Ia : Inv publicJoint.K.M base 8192 C.p (·∈jointSlots publicJoint)
       (jacCoords publicJoint.K.R ++ winRo publicJoint.K) (tmv C 4 base a) a := ia.to_tmv
   -- `R = 2Q`, by a call of `vg_secp256k1_jac_double`
   apply WP.seq
-  have hnc : (PointOps.doubleBody publicJoint.K dblJ0).noCalls=true := by decide +kernel
-  have hclob : ∀ r∈Proof.Weierstrass.X86_64.PointOps.keptRegs, r∈clob publicJoint.K.M.n := by decide
+  obtain hnc : (PointOps.doubleBody publicJoint.K dblJ0).noCalls=true := by decide +kernel
+  obtain hclob : ∀ r∈Proof.Weierstrass.X86_64.PointOps.keptRegs, r∈clob publicJoint.K.M.n := by decide
   let V1 := jacCoords publicJoint.K.R ++ winRo publicJoint.K
-  have dbl : WP isa (PointOps.wrap (PointOps.doubleBody publicJoint.K dblJ0)) a (fun b =>
+  obtain dbl : WP isa (PointOps.wrap (PointOps.doubleBody publicJoint.K dblJ0)) a (fun b =>
       ProgKeep publicJoint.K.M base addW a b ∧
       (Inv publicJoint.K.M base 8192 C.p (·∈jointSlots publicJoint) V1 (tmv C 4 base b) b ∧
         InvJ C (tmv C 4 base b publicJoint.K.R.x) (tmv C 4 base b publicJoint.K.R.y)
           (tmv C 4 base b publicJoint.K.R.z) (mul 2 Q))) := by
-    have keepP : ∀ (P : Point C) (rs : List Reg), Reg.rdi∉rs → ∀ x y, Keeps rs x y →
+    obtain keepP : ∀ (P : Point C) (rs : List Reg), Reg.rdi∉rs → ∀ x y, Keeps rs x y →
         (Inv publicJoint.K.M base 8192 C.p (·∈jointSlots publicJoint) V1 (tmv C 4 base x) x ∧
           InvJ C (tmv C 4 base x publicJoint.K.R.x) (tmv C 4 base x publicJoint.K.R.y)
             (tmv C 4 base x publicJoint.K.R.z) P) →
@@ -540,7 +540,7 @@ theorem table_call_ok : JointTableCallOk publicJoint Impl.Weierstrass.PointOps.s
           InvJ C (tmv C 4 base y publicJoint.K.R.x) (tmv C 4 base y publicJoint.K.R.y)
             (tmv C 4 base y publicJoint.K.R.z) P) := by
       intro P rs hr x y k ⟨hI,hJ⟩
-      have ht : ∀ z, tmv C 4 base y z = tmv C 4 base x z := fun z => by unfold tmv; rw [k.2.1]
+      obtain ht : ∀ z, tmv C 4 base y z = tmv C 4 base x z := fun z => by unfold tmv; rw [k.2.1]
       refine ⟨(hI.of_keeps k hr).to_tmv,?_⟩
       simp only [ht]
       exact hJ
@@ -550,7 +550,7 @@ theorem table_call_ok : JointTableCallOk publicJoint Impl.Weierstrass.PointOps.s
     rw [← Code.inline_of_noCalls hnc, PointOps.doubleBody]
     simp only [Code.inline]
     apply WP.seq
-    have apart : RcbApart publicJoint.K.S publicJoint.K.R publicJoint.K.R publicJoint.K.D :=
+    obtain apart : RcbApart publicJoint.K.S publicJoint.K.R publicJoint.K.R publicJoint.K.D :=
       ⟨joint_add_layout.addApart.nodup,fun x hx => joint_add_layout.addApart.apart x (by
         simp only [rcbR,List.mem_cons,List.not_mem_nil,or_false] at hx ⊢; grind)⟩
     refine WP.mono (jacDouble_ok lay hm hd apart (by decide +kernel) hI (by decide +kernel) hQ hJ)
@@ -560,15 +560,15 @@ theorem table_call_ok : JointTableCallOk publicJoint Impl.Weierstrass.PointOps.s
     refine ⟨(kd.mono (fun _ hz => List.mem_append_left _ hz)).trans
         (ku.mono (fun _ hz => List.mem_append_right _ hz)),
       iu.to_tmv.sub (fun _ hz => List.mem_append_right _ (List.mem_append_right _ hz)),?_⟩
-    have jr : InvJ C (E'' publicJoint.K.R.x) (E'' publicJoint.K.R.y) (E'' publicJoint.K.R.z)
+    obtain jr : InvJ C (E'' publicJoint.K.R.x) (E'' publicJoint.K.R.y) (E'' publicJoint.K.R.z)
         (add Q Q) := by
       simp only [Prod.mk.injEq] at vu
       rw [vu.1,vu.2.1,vu.2.2]
       exact jd
-    have jt := iu.point_tmv (fun _ hz => List.mem_append_left _ hz) jr
+    obtain jt := iu.point_tmv (fun _ hz => List.mem_append_left _ hz) jr
     rwa [← mul_one_pt Q,hC.add_mul_mul hQ] at jt
   refine WP.mono dbl fun b ⟨kb,Ib,jbR⟩ => ?_
-  have hsb := kb.scr hsa
+  obtain hsb := kb.scr hsa
   -- `E = 2Q` and the ninth entry `2Q`
   apply WP.seq
   rw [WP.block_append_iff]
@@ -578,24 +578,24 @@ theorem table_call_ok : JointTableCallOk publicJoint Impl.Weierstrass.PointOps.s
   refine WP.mono (copyPointFields_ok lay (o:=Naf.twice publicJoint.K) (q:=publicJoint.K.R)
     (by decide +kernel) (by decide +kernel) (by decide +kernel) i1
     (fun _ hz => List.mem_append_right _ (List.mem_append_left _ hz))) fun c ⟨e2,k2,i2,v2⟩ => ?_
-  have hsc := k2.scr (k1.scr hsb)
+  obtain hsc := k2.scr (k1.scr hsb)
   have I2 := i2.to_tmv
-  have jE : InvJ C (tmv C 4 base c publicJoint.K.E.x) (tmv C 4 base c publicJoint.K.E.y)
+  obtain jE : InvJ C (tmv C 4 base c publicJoint.K.E.x) (tmv C 4 base c publicJoint.K.E.y)
       (tmv C 4 base c publicJoint.K.E.z) (mul 2 Q) := by
-    have j1 : InvJ C (tmv C 4 base c1 publicJoint.K.E.x) (tmv C 4 base c1 publicJoint.K.E.y)
+    obtain j1 : InvJ C (tmv C 4 base c1 publicJoint.K.E.x) (tmv C 4 base c1 publicJoint.K.E.y)
         (tmv C 4 base c1 publicJoint.K.E.z) (mul 2 Q) := by
       apply i1.point_tmv (fun _ hz => List.mem_append_left _ hz)
       simp only [Prod.mk.injEq] at v1
       rw [v1.1,v1.2.1,v1.2.2]
       exact jbR
     exact invJ_keep k2 (k1.scr hsb) (by decide +kernel) (by decide +kernel) (by decide +kernel) j1
-  have jT : InvJ C (tmv C 4 base c (Naf.twice publicJoint.K).x) (tmv C 4 base c (Naf.twice publicJoint.K).y)
+  obtain jT : InvJ C (tmv C 4 base c (Naf.twice publicJoint.K).x) (tmv C 4 base c (Naf.twice publicJoint.K).y)
       (tmv C 4 base c (Naf.twice publicJoint.K).z) (mul 2 Q) := by
-    have jR1 := invJ_keep k1 hsb (by decide +kernel) (by decide +kernel) (by decide +kernel) jbR
+    obtain jR1 := invJ_keep k1 hsb (by decide +kernel) (by decide +kernel) (by decide +kernel) jbR
     apply i2.point_tmv (fun _ hz => List.mem_append_left _ hz)
     simp only [Prod.mk.injEq] at v2
     rw [v2.1,v2.2.1,v2.2.2]
-    have e1R : ∀ z∈jacCoords publicJoint.K.R, e1 z = tmv C 4 base c1 z := fun z hz =>
+    obtain e1R : ∀ z∈jacCoords publicJoint.K.R, e1 z = tmv C 4 base c1 z := fun z hz =>
       (i1.val z (List.mem_append_right _ (List.mem_append_left _ hz))).symm
     rw [e1R _ (by simp [jacCoords]),e1R _ (by simp [jacCoords]),e1R _ (by simp [jacCoords])]
     exact jR1
@@ -603,26 +603,26 @@ theorem table_call_ok : JointTableCallOk publicJoint Impl.Weierstrass.PointOps.s
   apply WP.seq
   refine WP.mono (fprogB_ok lay hm (Joint.cacheE publicJoint) I2 (by decide +kernel) (by decide +kernel))
     fun d ⟨kd,id⟩ => ?_
-  have hsd := kd.scr hsc
-  have cr := cacheE_run (tmv C 4 base c)
-  have tvd : ∀ z∈[publicJoint.selected,publicJoint.selected + 8*publicJoint.K.M.n],
+  obtain hsd := kd.scr hsc
+  obtain cr := cacheE_run (tmv C 4 base c)
+  obtain tvd : ∀ z∈[publicJoint.selected,publicJoint.selected + 8*publicJoint.K.M.n],
       tmv C 4 base d z = runOps (Joint.cacheE publicJoint) (tmv C 4 base c) z := fun z hz =>
     id.val z ((mem_validAfter _ _).mpr (Or.inr (by revert z hz; decide +kernel)))
-  have cW : ∀ z∈(Joint.cacheE publicJoint).map FOp.out, z∈tcW := by decide +kernel
-  have kEz : tmv C 4 base d publicJoint.K.E.z = tmv C 4 base c publicJoint.K.E.z :=
+  obtain cW : ∀ z∈(Joint.cacheE publicJoint).map FOp.out, z∈tcW := by decide +kernel
+  obtain kEz : tmv C 4 base d publicJoint.K.E.z = tmv C 4 base c publicJoint.K.E.z :=
     tmv_keep kd hsc (tcW' cW) (by decide +kernel) (by decide +kernel)
-  have c2d : tmv C 4 base d publicJoint.selected =
+  obtain c2d : tmv C 4 base d publicJoint.selected =
       tmv C 4 base d publicJoint.K.E.z * tmv C 4 base d publicJoint.K.E.z := by
     rw [tvd _ (by simp),cr.1,kEz]
-  have c3d : tmv C 4 base d (publicJoint.selected + 8*publicJoint.K.M.n) =
+  obtain c3d : tmv C 4 base d (publicJoint.selected + 8*publicJoint.K.M.n) =
       tmv C 4 base d publicJoint.selected * tmv C 4 base d publicJoint.K.E.z := by
     rw [tvd _ (by simp),tvd _ (by simp),cr.2.1,kEz]
-  have Id : Inv publicJoint.K.M base 8192 C.p (·∈jointSlots publicJoint) tcFixed (tmv C 4 base d) d :=
+  obtain Id : Inv publicJoint.K.M base 8192 C.p (·∈jointSlots publicJoint) tcFixed (tmv C 4 base d) d :=
     id.to_tmv.sub (by decide +kernel)
   -- `Q` in the first entry and `R`, and the counter
   apply WP.seq
   rw [List.append_assoc,WP.block_append_iff]
-  have hP : ∀ z∈jacCoords publicJoint.K.P, z∈tcFixed := by decide +kernel
+  obtain hP : ∀ z∈jacCoords publicJoint.K.P, z∈tcFixed := by decide +kernel
   refine WP.mono (copyPointFields_ok lay (o:=publicJoint.K.tblPt 1) (q:=publicJoint.K.P)
     (by decide +kernel) (by decide +kernel) (tbl_sl 1 (by decide) (by decide)) Id hP)
     fun f ⟨ef,kf,iff,vf⟩ => ?_
@@ -631,13 +631,13 @@ theorem table_call_ok : JointTableCallOk publicJoint Impl.Weierstrass.PointOps.s
     (by decide +kernel) (by decide +kernel) (by decide +kernel) iff
     (fun z hz => List.mem_append_right _ (hP z hz))) fun g ⟨eg,kg,ig,vg⟩ => ?_
   refine WP.mono (nafTable_initCounter_ok g) fun t₀ ⟨ct,kt⟩ => ?_
-  have hsf := kf.scr hsd
-  have hsg := kg.scr hsf
+  obtain hsf := kf.scr hsd
+  obtain hsg := kg.scr hsf
   -- `P` is `Q` until then: no write reaches it.
-  have Wall : ∀ z∈addW ++ jacCoords publicJoint.K.E ++ jacCoords (Naf.twice publicJoint.K) ++
+  obtain Wall : ∀ z∈addW ++ jacCoords publicJoint.K.E ++ jacCoords (Naf.twice publicJoint.K) ++
       (Joint.cacheE publicJoint).map FOp.out ++ jacCoords (publicJoint.K.tblPt 1), z∈tcW := by
     decide +kernel
-  have kAll : ProgKeep publicJoint.K.M base (jacCoords publicJoint.K.R ++ (addW ++
+  obtain kAll : ProgKeep publicJoint.K.M base (jacCoords publicJoint.K.R ++ (addW ++
       jacCoords publicJoint.K.E ++ jacCoords (Naf.twice publicJoint.K) ++
       (Joint.cacheE publicJoint).map FOp.out ++ jacCoords (publicJoint.K.tblPt 1))) s f :=
     (ka.mono (fun _ hz => List.mem_append_left _ hz)).trans
@@ -646,45 +646,45 @@ theorem table_call_ok : JointTableCallOk publicJoint Impl.Weierstrass.PointOps.s
       ((k2.mono (by intro z hz; simp only [List.mem_append] at hz ⊢; grind)).trans
       ((kd.mono (by intro z hz; simp only [List.mem_append] at hz ⊢; grind)).trans
       (kf.mono (by intro z hz; simp only [List.mem_append] at hz ⊢; grind))))))
-  have kAllW : ∀ z∈jacCoords publicJoint.K.R ++ (addW ++
+  obtain kAllW : ∀ z∈jacCoords publicJoint.K.R ++ (addW ++
       jacCoords publicJoint.K.E ++ jacCoords (Naf.twice publicJoint.K) ++
       (Joint.cacheE publicJoint).map FOp.out ++ jacCoords (publicJoint.K.tblPt 1)), z∈tcW := by
     decide +kernel
-  have jPf : InvJ C (tmv C 4 base f publicJoint.K.P.x) (tmv C 4 base f publicJoint.K.P.y)
+  obtain jPf : InvJ C (tmv C 4 base f publicJoint.K.P.x) (tmv C 4 base f publicJoint.K.P.y)
       (tmv C 4 base f publicJoint.K.P.z) Q :=
     invJ_keep kAll hs (tcW' kAllW) (by decide +kernel) (by decide +kernel) hp
-  have jPd : InvJ C (tmv C 4 base d publicJoint.K.P.x) (tmv C 4 base d publicJoint.K.P.y)
+  obtain jPd : InvJ C (tmv C 4 base d publicJoint.K.P.x) (tmv C 4 base d publicJoint.K.P.y)
       (tmv C 4 base d publicJoint.K.P.z) Q := by
     have := jPf
     rwa [tmv_keep kf hsd (tbl_sl 1 (by decide) (by decide)) (by decide +kernel) (by decide +kernel),
       tmv_keep kf hsd (tbl_sl 1 (by decide) (by decide)) (by decide +kernel) (by decide +kernel),
       tmv_keep kf hsd (tbl_sl 1 (by decide) (by decide)) (by decide +kernel) (by decide +kernel)] at this
-  have j1f : InvJ C (tmv C 4 base f (publicJoint.K.tblPt 1).x) (tmv C 4 base f (publicJoint.K.tblPt 1).y)
+  obtain j1f : InvJ C (tmv C 4 base f (publicJoint.K.tblPt 1).x) (tmv C 4 base f (publicJoint.K.tblPt 1).y)
       (tmv C 4 base f (publicJoint.K.tblPt 1).z) Q := by
     apply iff.point_tmv (fun _ hz => List.mem_append_left _ hz)
     simp only [Prod.mk.injEq] at vf
     rw [vf.1,vf.2.1,vf.2.2]
     exact jPd
-  have jRg : InvJ C (tmv C 4 base g publicJoint.K.R.x) (tmv C 4 base g publicJoint.K.R.y)
+  obtain jRg : InvJ C (tmv C 4 base g publicJoint.K.R.x) (tmv C 4 base g publicJoint.K.R.y)
       (tmv C 4 base g publicJoint.K.R.z) Q := by
     apply ig.point_tmv (fun _ hz => List.mem_append_left _ hz)
     simp only [Prod.mk.injEq] at vg
-    have ef : ∀ z∈jacCoords publicJoint.K.P, ef z = tmv C 4 base f z := fun z hz =>
+    obtain ef : ∀ z∈jacCoords publicJoint.K.P, ef z = tmv C 4 base f z := fun z hz =>
       (iff.val z (List.mem_append_right _ (hP z hz))).symm
     rw [vg.1,vg.2.1,vg.2.2,ef _ (by simp [jacCoords]),ef _ (by simp [jacCoords]),ef _ (by simp [jacCoords])]
     exact jPf
-  have tt : ∀ z, tmv C 4 base t₀ z = tmv C 4 base g z := fun z => by unfold tmv; rw [kt.2.1]
-  have kfg : ProgKeep publicJoint.K.M base (jacCoords (publicJoint.K.tblPt 1) ++ jacCoords publicJoint.K.R) d g :=
+  obtain tt : ∀ z, tmv C 4 base t₀ z = tmv C 4 base g z := fun z => by unfold tmv; rw [kt.2.1]
+  obtain kfg : ProgKeep publicJoint.K.M base (jacCoords (publicJoint.K.tblPt 1) ++ jacCoords publicJoint.K.R) d g :=
     (kf.mono (fun _ hz => List.mem_append_left _ hz)).trans (kg.mono (fun _ hz => List.mem_append_right _ hz))
-  have kfgW : ∀ z∈jacCoords (publicJoint.K.tblPt 1) ++ jacCoords publicJoint.K.R, z∈jointSlots publicJoint := by
+  obtain kfgW : ∀ z∈jacCoords (publicJoint.K.tblPt 1) ++ jacCoords publicJoint.K.R, z∈jointSlots publicJoint := by
     decide +kernel
-  have keepEd : ∀ z∈jacCoords publicJoint.K.E ++ jacCoords (Naf.twice publicJoint.K) ++
+  obtain keepEd : ∀ z∈jacCoords publicJoint.K.E ++ jacCoords (Naf.twice publicJoint.K) ++
       [publicJoint.selected,publicJoint.selected + 8*publicJoint.K.M.n],
       tmv C 4 base t₀ z = tmv C 4 base d z := fun z hz =>
     (tt z).trans (tmv_keep kfg hsd kfgW (by revert z hz; decide +kernel) (by revert z hz; decide +kernel))
-  have jEd := invJ_keep kd hsc (tcW' cW) (by decide +kernel) (by decide +kernel) jE
-  have jTd := invJ_keep kd hsc (tcW' cW) (by decide +kernel) (by decide +kernel) jT
-  have init : TC C base Q s t₀ 1 1 := by
+  obtain jEd := invJ_keep kd hsc (tcW' cW) (by decide +kernel) (by decide +kernel) jE
+  obtain jTd := invJ_keep kd hsc (tcW' cW) (by decide +kernel) (by decide +kernel) jT
+  obtain init : TC C base Q s t₀ 1 1 := by
     refine ⟨?_,?_,?_,?_,?_,?_,?_,?_,ct,?_⟩
     · have it := (ig.of_keeps kt (by decide)).to_tmv
       refine it.sub fun z hz => ?_
@@ -714,7 +714,7 @@ theorem table_call_ok : JointTableCallOk publicJoint Impl.Weierstrass.PointOps.s
     · intro a h1 ha
       obtain rfl : a=1 := by omega_using [h1, ha]
       rw [show 2*1-1=1 from rfl,mul_one_pt]
-      have kt1 : ∀ z∈jacCoords (publicJoint.K.tblPt 1), tmv C 4 base t₀ z = tmv C 4 base f z :=
+      obtain kt1 : ∀ z∈jacCoords (publicJoint.K.tblPt 1), tmv C 4 base t₀ z = tmv C 4 base f z :=
         fun z hz => (tt z).trans (tmv_keep kg hsf (by decide +kernel)
           (tbl_sl 1 (by decide) (by decide) z hz) (by revert z hz; decide +kernel))
       rw [kt1 _ (by simp [jacCoords]),kt1 _ (by simp [jacCoords]),kt1 _ (by simp [jacCoords])]
@@ -754,14 +754,14 @@ theorem table_step_ct {C : Curve} {base : Addr} {size m : Nat} (hL : JointInitLa
     RelCT isa (TP C base size m) (Joint.tableCallStep publicJoint Impl.Weierstrass.PointOps.secp256k1).inline
       (fun s t => TP C base size (m+1) s t ∧
         s.cf=some (decide (m+1<8)) ∧ t.cf=some (decide (m+1<8))) := by
-  have hnc : (PointOps.addCachedBody publicJoint.K publicJoint.selected dblJ0).noCalls=true := by
+  obtain hnc : (PointOps.addCachedBody publicJoint.K publicJoint.selected dblJ0).noCalls=true := by
     decide +kernel
   unfold TP
   apply RelCT.exists_
   intro E
   rw [Joint.tableCallStep]
   simp only [Code.inline]
-  have hb := Proof.Weierstrass.X86_64.PointOps.addCachedBody_relCT (base:=base) (E:=E) (cachedLay hL) hm hOne
+  obtain hb := Proof.Weierstrass.X86_64.PointOps.addCachedBody_relCT (base:=base) (E:=E) (cachedLay hL) hm hOne
     joint_cached_checks.add joint_cached_checks.copy (V:=tcLive m) (fun x hx => mem_tcLive_fixed (cV_fixed x hx)) ⟨dblJ0N,dblJ0N_ok,dblJ0_eq⟩
   rw [Code.inline_of_noCalls hnc] at hb
   apply RelCT.seq ((relCT_keepGprS (v:=BitVec.ofNat 64 m) (Proof.Weierstrass.X86_64.PointOps.wrap_relCT hb) addCachedFn_keeps).mono
@@ -775,7 +775,7 @@ theorem table_step_ct {C : Curve} {base : Addr} {size m : Nat} (hL : JointInitLa
   apply RelCT.seq (nafTableStore_relCT (base:=base) (j:=m) (E:=e) hL.layout.lay (Or.inl rfl) rfl rfl hm8
     hL.tableSmall (by have := hL.naf.table_le; omega_using [this]) (tbl_sl (m+1) (by omega_using []) (by omega_using [hm8]))
     (fun _ hx => List.mem_append_left _ hx) (by decide) tableStore_ct)
-  have adv := keepsField_relCT (M:=publicJoint.K.M) (base:=base) (size:=size) (m:=C.p)
+  obtain adv := keepsField_relCT (M:=publicJoint.K.M) (base:=base) (size:=size) (m:=C.p)
     (Sl:=(·∈jointSlots publicJoint))
     (V:=jacCoords (publicJoint.K.tblPt (m+1))++(jacCoords publicJoint.K.R++tcLive m))
     (E:=pointTransferEnv e (publicJoint.K.tblPt (m+1)) publicJoint.K.R)
@@ -798,9 +798,9 @@ theorem table_step_ct {C : Curve} {base : Addr} {size m : Nat} (hL : JointInitLa
 theorem table_call_ct : JointTableCallCT publicJoint Impl.Weierstrass.PointOps.secp256k1 := by
   intro C base size E hL hm hOne
   have lay := hL.layout.lay
-  have hnc : (PointOps.doubleBody publicJoint.K dblJ0).noCalls=true := by decide +kernel
+  obtain hnc : (PointOps.doubleBody publicJoint.K dblJ0).noCalls=true := by decide +kernel
   let I := fun j s t => 1≤j ∧ j≤7 ∧ TP C base size (8-j) s t
-  have step : ∀ j, RelCT isa (I j) (Joint.tableCallStep publicJoint Impl.Weierstrass.PointOps.secp256k1).inline
+  obtain step : ∀ j, RelCT isa (I j) (Joint.tableCallStep publicJoint Impl.Weierstrass.PointOps.secp256k1).inline
       (fun s t => eval .b s=eval .b t ∧
         (eval .b s=some false → TP C base size 8 s t) ∧
         (eval .b s=some true → ∃ n<j, I n s t)) := by
@@ -812,18 +812,18 @@ theorem table_call_ct : JointTableCallCT publicJoint Impl.Weierstrass.PointOps.s
         intro s t ⟨hp,cs,ct⟩
         refine ⟨cs.trans ct.symm,fun he => ?_,fun he => ?_⟩
         · change s.cf=some false at he
-          have hn := of_decide_eq_false (Option.some.inj (cs.symm.trans he))
-          have hj1 : j=1 := by omega_using [hj, hn]
+          obtain hn := of_decide_eq_false (Option.some.inj (cs.symm.trans he))
+          obtain hj1 : j=1 := by omega_using [hj, hn]
           subst j
           exact hp
         · change s.cf=some true at he
-          have hy := of_decide_eq_true (Option.some.inj (cs.symm.trans he))
+          obtain hy := of_decide_eq_true (Option.some.inj (cs.symm.trans he))
           refine ⟨j-1,by omega_using [hj],by omega_using [hy],by omega_using [hj7],?_⟩
           rw [show 8-(j-1)=8-j+1 from by omega_using [hj, hj7]]
           exact hp
       · exact RelCT.of_false (fun _ _ h => hj7 h.2.1)
     · exact RelCT.of_false (fun _ _ h => hj h.1)
-  have lift : ∀ {V : List Nat} {E : Nat → Fe C} {s : State},
+  obtain lift : ∀ {V : List Nat} {E : Nat → Fe C} {s : State},
       Inv publicJoint.K.M base size C.p (·∈nafSlots publicJoint.K) V E s →
       Inv publicJoint.K.M base size C.p (·∈jointSlots publicJoint) V E s :=
     fun hi => ⟨hi.scr,hi.mod,fun x hx => List.mem_append_left _ (List.mem_append_left _ (hi.sl x hx)),hi.lt,hi.val⟩
@@ -835,7 +835,7 @@ theorem table_call_ct : JointTableCallCT publicJoint Impl.Weierstrass.PointOps.s
   apply RelCT.seq (copyPoint_relCT lay (o:=publicJoint.K.R) (q:=publicJoint.K.P) (E:=E)
     (V:=winRo publicJoint.K) (by decide +kernel) (by decide +kernel) tableCopyInit_ct)
   -- `R = 2R`, by a call of `vg_secp256k1_jac_double`
-  have hdb : RelCT isa (FieldPair publicJoint.K.M base size C.p (·∈jointSlots publicJoint)
+  obtain hdb : RelCT isa (FieldPair publicJoint.K.M base size C.p (·∈jointSlots publicJoint)
       (jacCoords publicJoint.K.R++winRo publicJoint.K)
       (copyPointEnv E publicJoint.K.R publicJoint.K.P)) (PointOps.doubleBody publicJoint.K dblJ0)
       (fun s t => ∃ E',FieldPair publicJoint.K.M base size C.p (·∈jointSlots publicJoint)

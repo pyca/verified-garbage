@@ -66,17 +66,17 @@ theorem pointFinish_ok (hc : CfgOk c) {x y : Nat} (hx : x < 45) (hy : y < 45) {b
   have hn0 := hc.n0
   have hn := hs.nowrap
   have hsz : size = 4096 := rfl
-  have hX := sl_le c h7 (i := x) hx
-  have hY := sl_le c h7 (i := y) hy
-  have hF := sl_le c h7 (i := FLAG) (by decide)
+  obtain hX := sl_le c h7 (i := x) hx
+  obtain hY := sl_le c h7 (i := y) hy
+  obtain hF := sl_le c h7 (i := FLAG) (by decide)
   generalize hout64 : State.addr o32 = out at hw hd ⊢
-  have hdsc : ∀ {a d : Nat}, a + 8 * c.n ≤ size → d + c.C.len ≤ 1 + 2 * c.C.len →
+  obtain hdsc : ∀ {a d : Nat}, a + 8 * c.n ≤ size → d + c.C.len ≤ 1 + 2 * c.C.len →
       Region.Disjoint ⟨off base a, 8 * c.n⟩ ⟨out + BitVec.ofNat 64 d, c.C.len⟩ := fun ha hd' =>
     (hd.symm.sub_left (Offset.sub_base base ha)).sub_right (Offset.sub_base out hd')
-  have hscd : ∀ {d : Nat}, d + c.C.len ≤ 1 + 2 * c.C.len →
+  obtain hscd : ∀ {d : Nat}, d + c.C.len ≤ 1 + 2 * c.C.len →
       Region.Disjoint ⟨base, size⟩ ⟨out + BitVec.ofNat 64 d, c.C.len⟩ := fun hd' =>
     hd.symm.sub_right (Offset.sub_base out hd')
-  have h16 : ∀ rd ∈ Cfg.saved, ∀ w ∈ [(size, 2 ^ 64)], rd.2 + 4 ≤ w.1 ∨ w.1 + w.2 ≤ rd.2 :=
+  obtain h16 : ∀ rd ∈ Cfg.saved, ∀ w ∈ [(size, 2 ^ 64)], rd.2 + 4 ≤ w.1 ∨ w.1 + w.2 ≤ rd.2 :=
     fun rd hrd w hw => by
       have := saved_lt rd hrd
       simp only [List.mem_singleton] at hw; subst hw; exact .inl (by omega_arith)
@@ -86,25 +86,25 @@ theorem pointFinish_ok (hc : CfgOk c) {x y : Nat} (hx : x < 45) (hy : y < 45) {b
     fun s₁ u₁ => ?_
   refine wp_mov (op2_imm (by decide)) fun s₂ u₂ => ?_
   refine wp_dp (op2_reg _ _) fun s₃ u₃ => ?_
-  have k₃ : Rest [.r4, .r10] s s₃ := (u₁.rest (by simp)).trans ((u₂.rest (by simp)).trans (u₃.rest (by simp)))
-  have hs₃ := hs.of_rest k₃ (by decide)
-  have hm₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
-  have hc₃ : s₃.gpr .r10 = mask32 (b = true) := by
+  obtain k₃ : Rest [.r4, .r10] s s₃ := (u₁.rest (by simp)).trans ((u₂.rest (by simp)).trans (u₃.rest (by simp)))
+  obtain hs₃ := hs.of_rest k₃ (by decide)
+  obtain hm₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  obtain hc₃ : s₃.gpr .r10 = mask32 (b = true) := by
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, ← flagW, hf]
-  have hb₃ : s₃.gpr .lr = o32 := by rw [k₃.gpr _ (by decide), hlr]
-  have ha₃ : (s₃.gpr .r4).setWidth 8 = (if b then 4 else 0 : BitVec 8) := by
+  obtain hb₃ : s₃.gpr .lr = o32 := by rw [k₃.gpr _ (by decide), hlr]
+  obtain ha₃ : (s₃.gpr .r4).setWidth 8 = (if b then 4 else 0 : BitVec 8) := by
     rw [u₃.gpr, dpVal, u₂.gpr, u₂.other .r10 (by decide), u₁.gpr, ← flagW, hf]
     exact mask4 b
   refine wp_strb (by decide) (a := off out 0)
     (by rw [hb₃, addr_add (by omega_arith), hout64])
     ⟨_, by rw [k₃.wr]; exact hw, Offset.contains_base out (by omega_arith) (by omega_arith)⟩ fun s₄ m₄ => ?_
-  have hs₄ := hs₃.of_rest (m₄.rest []) (by decide)
-  have O₄ : Outside out 0 1 s₃.mem s₄.mem := by rw [m₄.mem]; exact writeW8_outside _ _ _ (by omega_arith)
-  have L₄ : s₄.mem (out + BitVec.ofNat 64 0) = if b then 4 else 0 := by rw [m₄.mem, writeW8_self, ha₃]
-  have U₄ := O₄.unch_far (hd.symm.sub_right (Region.sub_prefix (by omega_arith)))
-  have hb₄ : s₄.gpr .lr = o32 := by rw [m₄.gpr, hb₃]
-  have hc₄ : s₄.gpr .r10 = mask32 (b = true) := by rw [m₄.gpr, hc₃]
-  have x₄ : wordsVal s₄.mem base (c.sl x) c.n = sv c base s x := by
+  obtain hs₄ := hs₃.of_rest (m₄.rest []) (by decide)
+  obtain O₄ : Outside out 0 1 s₃.mem s₄.mem := by rw [m₄.mem]; exact writeW8_outside _ _ _ (by omega_arith)
+  obtain L₄ : s₄.mem (out + BitVec.ofNat 64 0) = if b then 4 else 0 := by rw [m₄.mem, writeW8_self, ha₃]
+  obtain U₄ := O₄.unch_far (hd.symm.sub_right (Region.sub_prefix (by omega_arith)))
+  obtain hb₄ : s₄.gpr .lr = o32 := by rw [m₄.gpr, hb₃]
+  obtain hc₄ : s₄.gpr .r10 = mask32 (b = true) := by rw [m₄.gpr, hc₃]
+  obtain x₄ : wordsVal s₄.mem base (c.sl x) c.n = sv c base s x := by
     rw [U₄.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_arith) (by omega_arith), hm₃]
   -- `x`, from `out + 1`.
   refine VG.Proof.X25519.Arm.WP.append (storeBytes_ok hs₄ (dst := .lr) (d := 1) (a := c.sl x) (by decide)
@@ -113,11 +113,11 @@ theorem pointFinish_ok (hc : CfgOk c) {x y : Nat} (hx : x < 45) (hy : y < 45) {b
     (by rw [hb₄, hout64]; exact hdsc hX (by omega_arith))) fun s₅ ⟨e₅, k₅, O₅⟩ => ?_
   rw [hb₄, hout64, x₄] at e₅
   rw [hb₄, hout64] at O₅
-  have hs₅ := hs₄.of_rest k₅ (by decide)
-  have U₅ := O₅.unch_far (hscd (d := 1) (by omega_arith))
-  have hb₅ : s₅.gpr .lr = o32 := by rw [k₅.gpr _ (by decide), hb₄]
-  have hc₅ : s₅.gpr .r10 = mask32 (b = true) := by rw [k₅.gpr _ (by decide), hc₄]
-  have y₅ : wordsVal s₅.mem base (c.sl y) c.n = sv c base s y := by
+  obtain hs₅ := hs₄.of_rest k₅ (by decide)
+  obtain U₅ := O₅.unch_far (hscd (d := 1) (by omega_arith))
+  obtain hb₅ : s₅.gpr .lr = o32 := by rw [k₅.gpr _ (by decide), hb₄]
+  obtain hc₅ : s₅.gpr .r10 = mask32 (b = true) := by rw [k₅.gpr _ (by decide), hc₄]
+  obtain y₅ : wordsVal s₅.mem base (c.sl y) c.n = sv c base s y := by
     rw [U₅.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_arith) (by omega_arith),
       U₄.wordsVal (fun w hw => by simp only [List.mem_singleton] at hw; subst hw; omega_arith) (by omega_arith), hm₃]
   -- `y`, from `out + 1 + len`.
@@ -127,16 +127,16 @@ theorem pointFinish_ok (hc : CfgOk c) {x y : Nat} (hx : x < 45) (hy : y < 45) {b
     (by rw [hb₅, hout64]; exact hdsc hY (by omega_arith))) fun s₆ ⟨e₆, k₆, O₆⟩ => ?_
   rw [hb₅, hout64, y₅] at e₆
   rw [hb₅, hout64] at O₆
-  have hs₆ := hs₅.of_rest k₆ (by decide)
-  have U₆ := O₆.unch_far (hscd (d := 1 + c.C.len) (by omega_arith))
-  have hsv₆ : ∀ rd ∈ Cfg.saved, s₆.mem.readW (off base rd.2) 32 = g rd.1 := fun rd hrd => by
+  obtain hs₆ := hs₅.of_rest k₆ (by decide)
+  obtain U₆ := O₆.unch_far (hscd (d := 1 + c.C.len) (by omega_arith))
+  obtain hsv₆ : ∀ rd ∈ Cfg.saved, s₆.mem.readW (off base rd.2) 32 = g rd.1 := fun rd hrd => by
     have := saved_lt rd hrd
     rw [Unch.readW32 U₆ (h16 rd hrd) (by omega_arith), Unch.readW32 U₅ (h16 rd hrd) (by omega_arith),
       Unch.readW32 U₄ (h16 rd hrd) (by omega_arith), hm₃, hsv rd hrd]
   -- The return value and the callee-saved registers.
   refine wp_dp (op2_imm (by decide)) fun s₇ u₇ => ?_
-  have hs₇ := hs₆.of_rest (u₇.rest (ws := [.r0]) (by simp)) (by decide)
-  have r0₇ : s₇.gpr .r0 = if b then 1 else 0 := by
+  obtain hs₇ := hs₆.of_rest (u₇.rest (ws := [.r0]) (by simp)) (by decide)
+  obtain r0₇ : s₇.gpr .r0 = if b then 1 else 0 := by
     rw [u₇.gpr, dpVal, k₆.gpr _ (by decide), hc₅]; exact mask_bit b
   rw [restore_eq]
   refine WP.mono (ldrs_ok hs₇ Cfg.saved (fun p hp => by have := saved_lt p hp; omega_arith) saved_nodup
@@ -145,7 +145,7 @@ theorem pointFinish_ok (hc : CfgOk c) {x y : Nat} (hx : x < 45) (hy : y < 45) {b
       rw [bytesAt_keep O₆ (Offset.base_disjoint out (by omega_arith) (by omega_arith)) (by omega_arith) (by omega_arith),
         bytesAt_keep O₅ (Offset.base_disjoint out (by omega_arith) (by omega_arith)) (by omega_arith) (by omega_arith)]
       exact congrArg (· :: []) L₄
-    have xs : Spec.Ecdsa.bytesAt s₆.mem (out + BitVec.ofNat 64 1) c.C.len =
+    obtain xs : Spec.Ecdsa.bytesAt s₆.mem (out + BitVec.ofNat 64 1) c.C.len =
         if b then toBytes c.C.len (sv c base s x) else List.replicate c.C.len 0 := by
       rw [bytesAt_keep O₆ (Offset.disjoint out (.inl (Nat.le_refl _)) (by omega_arith) (by omega_arith)) (by omega_arith)
         (by omega_arith), e₅]

@@ -46,7 +46,7 @@ private theorem toZ_neg' (a : Fe) : toZ (-a) = -toZ a := rfl
 
 theorem pointDouble_rep {p : Point} {a : EPoint dZ} (h : RepP p a) :
     Rep (Proof.Ed25519.Point64.pointDouble p) (a + a) := by
-  have hr := dblPoint_rep h
+  obtain hr := dblPoint_rep h
   rw [pointDouble_neg]
   refine ⟨?_, ?_, ?_, ?_⟩
   · show toZ (-_) ≠ 0
@@ -130,9 +130,9 @@ theorem addEven_formula (e : Env) :
 theorem mixed_eval {e : Env} {a b c : Slot} {q : Spec.Ed25519.Point}
     (hq : cachedAt e a b c = cache q) (p : Spec.Ed25519.Point) (hz : q.Z = 1) :
     Point32.mixedResult p.X p.Y p.Z p.T (e a) (e b) (e c) = Spec.Ed25519.pointAdd p q := by
-  have h4 : e a = q.Y - q.X := congrArg Spec.Ed25519.Point.X hq
-  have h5 : e b = q.Y + q.X := congrArg Spec.Ed25519.Point.Y hq
-  have h6 : e c = q.T * 2 * Spec.Ed25519.d := congrArg Spec.Ed25519.Point.Z hq
+  obtain h4 : e a = q.Y - q.X := congrArg Spec.Ed25519.Point.X hq
+  obtain h5 : e b = q.Y + q.X := congrArg Spec.Ed25519.Point.Y hq
+  obtain h6 : e c = q.T * 2 * Spec.Ed25519.d := congrArg Spec.Ed25519.Point.Z hq
   rw [h4, h5, h6, Point32.mixedResult_eq p q hz]
 
 theorem addEven_ok {s : State} {x : BitVec 32} (hc : Ctx x s)
@@ -176,11 +176,11 @@ theorem combNeg_ok {s : State} {x : BitVec 32} (hc : Ctx x s) (a b c : Slot) {si
       env t.mem x = swapsEnv [(a, b), (c, 8)] sw (evalOps [.sub 8 21 c] (env s.mem x)) := by
   rw [combNeg, List.append_assoc, WP.block_append_iff]
   refine WP.mono (fieldCode_ok [.sub 8 21 c] hc) fun u ⟨ku, vu⟩ => ?_
-  have cu := ku.ctx hc
+  obtain cu := ku.ctx hc
   rw [List.singleton_append]
   refine Wp.wp_ldm cu.edi (cu.inRW hs2 (by decide)) fun v hv => ?_
-  have kv : FieldKeep x u v := FieldKeep.of_mem (updKeep hv) hv.mem
-  have hmv : v.gpr .ecx = mask sw.toNat := by
+  obtain kv : FieldKeep x u v := FieldKeep.of_mem (updKeep hv) hv.mem
+  obtain hmv : v.gpr .ecx = mask sw.toNat := by
     rw [hv.gpr]
     change wd u.mem x sign = _
     rw [wd_frame1 ku.frame hc.fit (by decide) hs2 (Or.inr (by omega_arith))]
@@ -228,12 +228,12 @@ theorem double4_ok {x : BitVec 32} {s : State} (hc : Ctx x s) {a : EPoint dZ}
   · intro n u h
     refine WP.mono (doubleStep_ok (h.keep.ctx hc) h.lo (by omega_using [h.hi]) h.counter)
       fun v ⟨kv, bv, zv, pv, high⟩ => ?_
-    have kk := h.keep.trans kv
-    have pp : Rep (point (env v.mem x) 0 1 2 3) ((2 ^ (4 - (n - 1)) : Nat) • a) := by
+    obtain kk := h.keep.trans kv
+    obtain pp : Rep (point (env v.mem x) 0 1 2 3) ((2 ^ (4 - (n - 1)) : Nat) • a) := by
       rw [pv, show 4 - (n - 1) = (4 - n) + 1 by omega_using [h.lo, h.hi],
         show (2 ^ ((4 - n) + 1) : Nat) = 2 ^ (4 - n) + 2 ^ (4 - n) by rw [pow_succ]; omega_arith, add_nsmul]
       exact pointDouble_rep h.value.proj
-    have hh : ∀ i : Slot, 16 ≤ i.val → env v.mem x i = env s.mem x i :=
+    obtain hh : ∀ i : Slot, 16 ≤ i.val → env v.mem x i = env s.mem x i :=
       fun i hi => (high i hi).trans (h.high i hi)
     by_cases hn : n = 1
     · subst n
@@ -268,7 +268,7 @@ theorem combNext_ok {s : State} {j : Nat} (hj : j < 32) (h : s.gpr .esi = BitVec
       t.gpr .esi = BitVec.ofNat 32 (j + 1) ∧ isa.eval .ne t = some (!decide (j + 1 = 32)) ∧
       t.gpr .edi = s.gpr .edi ∧ t.gpr .esp = s.gpr .esp ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mem = s.mem := by
   refine Wp.wp_addi fun u hu => Wp.wp_cmpi fun t ht _ zt => WP.block_nil ?_
-  have e : u.gpr .esi = BitVec.ofNat 32 (j + 1) := by rw [hu.gpr, h, BitVec.ofNat_add]; rfl
+  obtain e : u.gpr .esi = BitVec.ofNat 32 (j + 1) := by rw [hu.gpr, h, BitVec.ofNat_add]; rfl
   refine ⟨by rw [ht.gpr, e], ?_, by rw [ht.gpr, hu.other .edi (by decide)],
     by rw [ht.gpr, hu.other .esp (by decide)], by rw [ht.rd, hu.rd], by rw [ht.wr, hu.wr],
     by rw [ht.mem, hu.mem]⟩
@@ -302,27 +302,27 @@ theorem combStep_ok {x P : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j
     (h : CombInv x s₀ S P j s) (hj : j < 32) :
     WP isa combStep s fun t => isa.eval .ne t = some (!decide (j + 1 = 32)) ∧
       CombInv x s₀ S P (j + 1) t := by
-  have hc := h.keep.ctx hc₀
+  obtain hc := h.keep.ctx hc₀
   have hfit := hc.fit
-  have bits : ∀ q < 256, s.mem (addr x (7168 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2) :=
+  obtain bits : ∀ q < 256, s.mem (addr x (7168 + q)) = BitVec.ofNat 8 ((S / 2 ^ q) % 2) :=
     fun q hq => (h.keep.bit hc₀ q (by omega_arith)).trans (hb q hq)
   rw [combStep]
-  have no := nib_lt S (2 * j + 1)
-  have ne := nib_lt S (2 * j)
+  obtain no := nib_lt S (2 * j + 1)
+  obtain ne := nib_lt S (2 * j)
   -- Both digits' masks.
   refine WP.seq (WP.mono (combDigits_ok hc hj h.counter bits) fun a ⟨ka, ma⟩ => ?_)
-  have ca := ka.keep.ctx hc
-  have ea : env a.mem x = env s.mem x := digit_env ka.frame hfit
-  have pa : wd a.mem x combTbl = P :=
+  obtain ca := ka.keep.ctx hc
+  obtain ea : env a.mem x = env s.mem x := digit_env ka.frame hfit
+  obtain pa : wd a.mem x combTbl = P :=
     (wd_frame1 ka.frame hfit (by decide) (by decide) (Or.inr (by decide))).trans h.ptr
-  have ta : TblAt x P a := ht₀.mulkeep hc₀ hts (h.keep.trans (MulKeep.of_digit hc ka))
+  obtain ta : TblAt x P a := ht₀.mulkeep hc₀ hts (h.keep.trans (MulKeep.of_digit hc ka))
   -- Both entries.
   refine WP.seq (WP.mono (combSelect_ok ca (mag_lt no) (mag_lt ne) ⟨ma.oddMask, ma.evenMask⟩ hj
     (ka.keep.esi.trans h.counter) pa ta) fun b ⟨bo, be, kb, fb⟩ => ?_)
-  have cb := kb.ctx ca
-  have eb : ∀ i : Slot, (i.val < 4 ∨ (7 ≤ i.val ∧ i.val < 13) ∨ 16 ≤ i.val) →
+  obtain cb := kb.ctx ca
+  obtain eb : ∀ i : Slot, (i.val < 4 ∨ (7 ≤ i.val ∧ i.val < 13) ∨ 16 ≤ i.val) →
       env b.mem x i = env s.mem x i := fun i hi => by rw [sel_env fb hfit i hi, ea]
-  have sb : ∀ o, 1024 ≤ o → o + 4 ≤ 8192 → wd b.mem x o = wd a.mem x o := fun o h1 h2 =>
+  obtain sb : ∀ o, 1024 ≤ o → o + 4 ≤ 8192 → wd b.mem x o = wd a.mem x o := fun o h1 h2 =>
     wd_frame fb fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -335,65 +335,65 @@ theorem combStep_ok {x P : BitVec 32} {s₀ s : State} (hc₀ : Ctx x s₀) {S j
   refine WP.mono (combNeg_ok cb 13 14 15 (by decide) (by decide) (decide (nib S (2 * j) < 8))
     (by rw [sb _ (by decide) (by decide)]; exact ma.evenSign) dis_even) fun f ⟨kf, vf⟩ => ?_
   obtain ⟨qe, hqe, hqez, hrqe⟩ := combEntry_ok j (nib S (2 * j)) hj ne
-  have b21 : env b.mem x 21 = 0 := (eb 21 (by decide)).trans h.zero
-  have fe' : cachedAt (env f.mem x) 13 14 15 = cache qe := by
+  obtain b21 : env b.mem x 21 = 0 := (eb 21 (by decide)).trans h.zero
+  obtain fe' : cachedAt (env f.mem x) 13 14 15 = cache qe := by
     rw [vf, neg_env _ _ _ _ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) b21,
       be, ← hqe]
     by_cases hlt : nib S (2 * j) < 8 <;> simp only [hlt, decide_true, decide_false, ↓reduceIte,
       Bool.false_eq_true]
-  have ef : ∀ i : Slot, (i.val < 8 ∨ 16 ≤ i.val) → env f.mem x i = env b.mem x i := fun i hi => by
+  obtain ef : ∀ i : Slot, (i.val < 8 ∨ 16 ≤ i.val) → env f.mem x i = env b.mem x i := fun i hi => by
     rw [vf, neg_other _ _ _ _ _ i (fun e => by subst e; revert hi; decide)
       (fun e => by subst e; revert hi; decide) (fun e => by subst e; revert hi; decide)
       (fun e => by subst e; revert hi; decide)]
-  have cf := kf.ctx cb
+  obtain cf := kf.ctx cb
   rw [WP.block_append_iff]
   refine WP.mono (addEven_ok cf qe fe' hqez) fun g ⟨kg, gp, gh⟩ => ?_
-  have cg := kg.ctx cf
+  obtain cg := kg.ctx cf
   -- The odd entry, negated for a negative digit.
-  have eg : ∀ i : Slot, (i.val < 8 ∨ i.val = 16 ∨ 21 ≤ i.val) → env g.mem x i = env b.mem x i :=
+  obtain eg : ∀ i : Slot, (i.val < 8 ∨ i.val = 16 ∨ 21 ≤ i.val) → env g.mem x i = env b.mem x i :=
     fun i hi => by rw [gh i (by omega_arith), ef i (by omega_arith)]
-  have sg : wd g.mem x combOddSign = wd b.mem x combOddSign := by
+  obtain sg : wd g.mem x combOddSign = wd b.mem x combOddSign := by
     rw [wd_frame1 kg.frame hfit (by decide) (by decide) (Or.inr (by decide)),
       wd_frame1 kf.frame hfit (by decide) (by decide) (Or.inr (by decide))]
   refine WP.mono (combNeg_ok cg 4 5 6 (by decide) (by decide) (decide (nib S (2 * j + 1) < 8))
     (by rw [sg, sb _ (by decide) (by decide)]; exact ma.oddSign) dis_odd) fun c ⟨kc, vc⟩ => ?_
   obtain ⟨qo, hqo, hqoz, hrqo⟩ := combEntry_ok j (nib S (2 * j + 1)) hj no
-  have co : cachedAt (env c.mem x) 4 5 6 = cache qo := by
-    have g456 : cachedAt (env g.mem x) 4 5 6 = cachedAt (env b.mem x) 4 5 6 := by
+  obtain co : cachedAt (env c.mem x) 4 5 6 = cache qo := by
+    obtain g456 : cachedAt (env g.mem x) 4 5 6 = cachedAt (env b.mem x) 4 5 6 := by
       simp only [cachedAt, eg 4 (by decide), eg 5 (by decide), eg 6 (by decide)]
     rw [vc, neg_env _ _ _ _ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       ((eg 21 (by decide)).trans b21), g456, bo, ← hqo]
     by_cases hlt : nib S (2 * j + 1) < 8 <;> simp only [hlt, decide_true, decide_false, ↓reduceIte,
       Bool.false_eq_true]
-  have ec : ∀ i : Slot, (i.val < 4 ∨ 9 ≤ i.val) → env c.mem x i = env g.mem x i := fun i hi => by
+  obtain ec : ∀ i : Slot, (i.val < 4 ∨ 9 ≤ i.val) → env c.mem x i = env g.mem x i := fun i hi => by
     rw [vc, neg_other _ _ _ _ _ i (fun e => by subst e; revert hi; decide)
       (fun e => by subst e; revert hi; decide) (fun e => by subst e; revert hi; decide)
       (fun e => by subst e; revert hi; decide)]
-  have cc := kc.ctx cg
+  obtain cc := kc.ctx cg
   -- Added by a call of `vg_ed25519_r32_add_affine`.
-  have c4 := congrArg Spec.Ed25519.Point.X co
-  have c5 := congrArg Spec.Ed25519.Point.Y co
-  have c6 := congrArg Spec.Ed25519.Point.Z co
+  obtain c4 := congrArg Spec.Ed25519.Point.X co
+  obtain c5 := congrArg Spec.Ed25519.Point.Y co
+  obtain c6 := congrArg Spec.Ed25519.Point.Z co
   simp only [cachedAt, cache] at c4 c5 c6
   refine WP.seq (WP.mono (affCall_ok cc qo hqoz c4 c5 c6) fun d ⟨kd, dp, dh⟩ => ?_)
-  have d19 : d.gpr .esi = BitVec.ofNat 32 j := by
+  obtain d19 : d.gpr .esi = BitVec.ofNat 32 j := by
     rw [kd.keep.esi, kc.keep.esi, kg.keep.esi, kf.keep.esi, kb.esi, ka.keep.esi, h.counter]
   refine WP.mono (combNext_ok hj d19) fun t ⟨t19, t8, tedi, tesp, trd, twr, tmem⟩ => ⟨t8, ?_⟩
-  have kdt : MulKeep x d t := ⟨tedi, tesp, trd, twr, by rw [tmem]; exact Frame.refl _ _⟩
-  have kst : MulKeep x s t := (((((((MulKeep.of_digit hc ka).trans (MulKeep.of_sel ca kb fb)).trans
+  obtain kdt : MulKeep x d t := ⟨tedi, tesp, trd, twr, by rw [tmem]; exact Frame.refl _ _⟩
+  obtain kst : MulKeep x s t := (((((((MulKeep.of_digit hc ka).trans (MulKeep.of_sel ca kb fb)).trans
     (MulKeep.of_field cb kf)).trans (MulKeep.of_field cf kg)).trans (MulKeep.of_field cg kc)).trans
     (MulKeep.of_call cc kd)).trans kdt)
-  have pc : point (env c.mem x) 0 1 2 3 = point (env s.mem x) 0 1 2 3 := by
+  obtain pc : point (env c.mem x) 0 1 2 3 = point (env s.mem x) 0 1 2 3 := by
     simp only [point, ec 0 (by decide), ec 1 (by decide), ec 2 (by decide), ec 3 (by decide),
       eg 0 (by decide), eg 1 (by decide), eg 2 (by decide), eg 3 (by decide),
       eb 0 (by decide), eb 1 (by decide), eb 2 (by decide), eb 3 (by decide)]
-  have pf : point (env f.mem x) 17 18 19 20 = point (env s.mem x) 17 18 19 20 := by
+  obtain pf : point (env f.mem x) 17 18 19 20 = point (env s.mem x) 17 18 19 20 := by
     simp only [point, ef 17 (by decide), ef 18 (by decide), ef 19 (by decide), ef 20 (by decide),
       eb 17 (by decide), eb 18 (by decide), eb 19 (by decide), eb 20 (by decide)]
-  have pd : point (env d.mem x) 17 18 19 20 = point (env g.mem x) 17 18 19 20 := by
+  obtain pd : point (env d.mem x) 17 18 19 20 = point (env g.mem x) 17 18 19 20 := by
     simp only [point, dh 17 (by decide), dh 18 (by decide), dh 19 (by decide), dh 20 (by decide),
       ec 17 (by decide), ec 18 (by decide), ec 19 (by decide), ec 20 (by decide)]
-  have pt : wd t.mem x combTbl = P := by
+  obtain pt : wd t.mem x combTbl = P := by
     rw [tmem, wd_frame1s cc kd.frame (by decide) (by decide) (Or.inr (by decide)),
       wd_frame1 kc.frame hfit (by decide) (by decide) (Or.inr (by decide)),
       wd_frame1 kg.frame hfit (by decide) (by decide) (Or.inr (by decide)),
@@ -434,17 +434,17 @@ theorem combFinish_ok {s : State} {x : BitVec 32} (hc : Ctx x s) {v w : ℤ}
       Rep (point (env t.mem x) 0 1 2 3) ((16 * v + w) • baseAff) ∧ MulKeep x s t := by
   rw [combFinish]
   refine WP.seq (WP.mono (double4_ok hc ha) fun b ⟨kb, bp, bh⟩ => ?_)
-  have cb := kb.ctx hc
+  obtain cb := kb.ctx hc
   refine WP.seq (WP.mono (fieldCode_ok [.copy 4 17, .copy 5 18, .copy 6 19, .copy 7 20] cb)
     fun c ⟨kc, vc⟩ => ?_)
-  have cc := kc.ctx cb
-  have cd : env c.mem x 16 = Spec.Ed25519.d := by
+  obtain cc := kc.ctx cb
+  obtain cd : env c.mem x 16 = Spec.Ed25519.d := by
     rw [vc, show evalOps [.copy 4 17, .copy 5 18, .copy 6 19, .copy 7 20] (env b.mem x) 16 =
       env b.mem x 16 from rfl, bh 16 (by decide), hd]
   refine WP.mono (pointAddCall_ok cc cd) fun t ⟨kt, tp, _⟩ => ?_
   refine ⟨?_, ((MulKeep.of_ikeep hc kb).trans (MulKeep.of_field cb kc)).trans (MulKeep.of_call cc kt)⟩
-  have p0 : point (env c.mem x) 0 1 2 3 = point (env b.mem x) 0 1 2 3 := by rw [vc]; rfl
-  have p4 : point (env c.mem x) 4 5 6 7 = point (env s.mem x) 17 18 19 20 := by
+  obtain p0 : point (env c.mem x) 0 1 2 3 = point (env b.mem x) 0 1 2 3 := by rw [vc]; rfl
+  obtain p4 : point (env c.mem x) 4 5 6 7 = point (env s.mem x) 17 18 19 20 := by
     rw [vc]
     show point (env b.mem x) 17 18 19 20 = _
     simp only [point, bh 17 (by decide), bh 18 (by decide), bh 19 (by decide), bh 20 (by decide)]
@@ -459,11 +459,11 @@ theorem combMultiply_ok {s : State} {x P : BitVec 32} (hc : Ctx x s) {S : Nat} (
       Rep (point (env t.mem x) 0 1 2 3) (S • baseAff) ∧ MulKeep x s t := by
   rw [combMultiply]
   refine WP.seq (WP.mono (combInit_ok hc) fun b ⟨kb, bt, bz, bd, bp, bq, b19⟩ => ?_)
-  have hg : Rep combG (((combGVal : ℤ) + 0) • baseAff) := by
+  obtain hg : Rep combG (((combGVal : ℤ) + 0) • baseAff) := by
     rw [add_zero, natCast_zsmul]; exact combG_ok
-  have init : CombInv x s S P 0 b :=
+  obtain init : CombInv x s S P 0 b :=
     ⟨by decide, kb, b19, bt.trans hp, bz, bd.trans hd, by rw [bp]; exact hg, by rw [bq]; exact hg⟩
-  have hl : WP isa (.loop combStep .ne) b fun t => CombInv x s S P 32 t := by
+  obtain hl : WP isa (.loop combStep .ne) b fun t => CombInv x s S P 32 t := by
     apply WP.loop (fun n t => CombInv x s S P (32 - n) t ∧ 0 < n ∧ n ≤ 32) (n := 32)
     · intro n t ⟨hi, hn0, hn⟩
       obtain ⟨k, rfl⟩ : ∃ k, n = k + 1 := ⟨n - 1, by omega_arith⟩

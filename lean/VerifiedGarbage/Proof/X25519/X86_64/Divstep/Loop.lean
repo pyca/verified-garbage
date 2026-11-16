@@ -107,7 +107,7 @@ theorem pkStep_ok (s : State) {j : Nat} (hj : j ≤ 62) {g t : Reg}
     (hg : g = .r13 ∧ t = .rax ∨ g = .rax ∧ t = .r13) :
     WP isa (.block (pkStep j g t)) s fun s' =>
       (s'.gpr .rbx, s'.gpr .r8, s'.gpr t) = pstep j (s.gpr .rbx, s.gpr .r8, s.gpr g) ∧ Keeps pkRegs s s' := by
-  have h63 : 1 ≤ 63 - j ∧ 63 - j ≤ 63 := ⟨by omega_arith, by omega_arith⟩
+  obtain h63 : 1 ≤ 63 - j ∧ 63 - j ≤ 63 := ⟨by omega_arith, by omega_arith⟩
   obtain ⟨E, hE⟩ : ∃ E, s.gpr .rbx = E := ⟨_, rfl⟩
   obtain ⟨F, hF⟩ : ∃ F, s.gpr .r8 = F := ⟨_, rfl⟩
   obtain ⟨G, hG⟩ : ∃ G, s.gpr g = G := ⟨_, rfl⟩
@@ -174,11 +174,11 @@ theorem pkSteps_ok (s : State) {n : Nat} (hn : n ≤ 15) :
   refine WP.mono (pkStepsList_ok s n (by omega_arith)) fun s₁ ⟨e₁, k₁⟩ => ?_
   rcases Nat.mod_two_eq_zero_or_one n with h | h
   · rw [pk_ite_f (by omega_arith)]
-    have hg : pkReg n = .r13 := pk_ite_t h
+    obtain hg : pkReg n = .r13 := pk_ite_t h
     rw [hg] at e₁
     exact WP.block_nil_iff.mpr ⟨e₁, k₁⟩
   · rw [pk_ite_t h]
-    have hg : pkReg n = .rax := pk_ite_f (by omega_arith)
+    obtain hg : pkReg n = .rax := pk_ite_f (by omega_arith)
     rw [hg] at e₁
     drun
     refine ⟨e₁, k₁.trans ?_⟩
@@ -193,8 +193,8 @@ theorem pkSetRow_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : 
     (r : Reg) (hr : r ∉ [Reg.rax]) (c : BitVec 64) :
     WP isa (.block (pkSetRow r t c)) s fun s' =>
       s'.gpr r = (word s.mem base t &&& 0x7fff) + c ∧ Keeps [.rax, r] s s' := by
-  have h1 : ¬ r = .rax := fun h => hr (by simp [h])
-  have h2 : ¬ Reg.rax = r := fun h => h1 h.symm
+  obtain h1 : ¬ r = .rax := fun h => hr (by simp [h])
+  obtain h2 : ¬ Reg.rax = r := fun h => h1 h.symm
   drun [pkSetRow, load_sc hs ht, pk_sext7fff, h1, h2, RegUpd.gpr_setReg_self]
   refine ⟨fun q hq => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
@@ -229,7 +229,7 @@ theorem pkExt_ok (s : State) :
 theorem pkLdMul_ok {s : State} {base : Addr} (hs : Scr s base) {d : Nat} (hd : d + 8 ≤ 4096)
     (r : Reg) (hr : r ∉ [Reg.rax, .rdx]) :
     WP isa (.block (pkLdMul d r)) s fun s' => s'.gpr .rax = word s.mem base d * s.gpr r ∧ Keeps [.rax, .rdx] s s' := by
-  have h1 : ¬ r = .rax := fun h => hr (by simp [h])
+  obtain h1 : ¬ r = .rax := fun h => hr (by simp [h])
   drun [pkLdMul, load_sc hs hd, pk_mul_lo, h1]
   refine ⟨fun q hq => ?_, rfl, rfl, rfl⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hq
@@ -241,7 +241,7 @@ theorem pkAddShr_ok {s : State} {base : Addr} (hs : Scr s base) {d n e : Nat}
     WP isa (.block (pkAddShr d n e)) s fun s' =>
       s'.mem = s.mem.writeW (off base e) ((s.gpr .rax + word s.mem base d) >>> n) ∧ PKeep [.rax] s s' := by
   rw [pkAddShr, WP.block_append_iff]
-  have h : WP isa (.block [.alu .add .rax (.mem (sc d)), .shift .shr .rax n]) s fun s₁ =>
+  obtain h : WP isa (.block [.alu .add .rax (.mem (sc d)), .shift .shr .rax n]) s fun s₁ =>
       s₁.gpr .rax = (s.gpr .rax + word s.mem base d) >>> n ∧ Keeps [.rax] s s₁ := by
     drun [load_sc hs hd, hn]
     refine ⟨fun q hq => ?_, rfl, rfl, rfl⟩
@@ -266,70 +266,70 @@ theorem pkLow_ok {s : State} {base : Addr} (hs : Scr s base) {n t : Nat} (hn : 1
   simp only [pkLow, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (pkLdMul_ok hs (d := t) (by omega_arith) .r8 (by decide)) fun s₁ ⟨a₁, k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (pkStore_ok hs₁ .rax (d := t + 16) (by omega_arith)) fun s₂ ⟨m₂, g₂, k₂⟩ => ?_
-  have hs₂ := hs₁.of_pk k₂ (by decide)
+  obtain hs₂ := hs₁.of_pk k₂ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (pkLdMul_ok hs₂ (d := t + 8) (by omega_arith) .rcx (by decide)) fun s₃ ⟨a₃, k₃⟩ => ?_
-  have hs₃ := hs₂.of_keeps k₃ (by decide)
+  obtain hs₃ := hs₂.of_keeps k₃ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (pkAddShr_ok hs₃ (d := t + 16) (e := t + 16) (by omega_arith) (by omega_arith) hn) fun s₄ ⟨m₄, k₄⟩ => ?_
-  have hs₄ := hs₃.of_pk k₄ (by decide)
+  obtain hs₄ := hs₃.of_pk k₄ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (pkLdMul_ok hs₄ (d := t) (by omega_arith) .r13 (by decide)) fun s₅ ⟨a₅, k₅⟩ => ?_
-  have hs₅ := hs₄.of_keeps k₅ (by decide)
+  obtain hs₅ := hs₄.of_keeps k₅ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (pkStore_ok hs₅ .rax (d := t) (by omega_arith)) fun s₆ ⟨m₆, g₆, k₆⟩ => ?_
-  have hs₆ := hs₅.of_pk k₆ (by decide)
+  obtain hs₆ := hs₅.of_pk k₆ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (pkLdMul_ok hs₆ (d := t + 8) (by omega_arith) .rbp (by decide)) fun s₇ ⟨a₇, k₇⟩ => ?_
-  have hs₇ := hs₆.of_keeps k₇ (by decide)
+  obtain hs₇ := hs₆.of_keeps k₇ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (pkAddShr_ok hs₇ (d := t) (e := t + 8) (by omega_arith) (by omega_arith) hn) fun s₈ ⟨m₈, k₈⟩ => ?_
-  have hs₈ := hs₇.of_pk k₈ (by decide)
+  obtain hs₈ := hs₇.of_pk k₈ (by decide)
   rw [show [Instr.mov .rax (.mem (sc (t + 16))), .store (sc t) .rax] =
     [Instr.mov .rax (.mem (sc (t + 16)))] ++ [.store (sc t) .rax] from rfl, WP.block_append_iff]
   refine WP.mono (pkMov_ok hs₈ .rax (d := t + 16) (by omega_arith)) fun s₉ ⟨a₉, k₉⟩ => ?_
   refine WP.mono (pkStore_ok (hs₈.of_keeps k₉ (by decide)) .rax (d := t) (by omega_arith)) fun u ⟨mu, _, ku⟩ => ?_
-  have R2 : ∀ r ∉ [Reg.rax, .rdx], s₂.gpr r = s.gpr r := fun r hr => by rw [g₂, k₁.1 r hr]
-  have R4 : ∀ r ∉ [Reg.rax, .rdx], s₄.gpr r = s.gpr r := fun r hr => by
+  obtain R2 : ∀ r ∉ [Reg.rax, .rdx], s₂.gpr r = s.gpr r := fun r hr => by rw [g₂, k₁.1 r hr]
+  obtain R4 : ∀ r ∉ [Reg.rax, .rdx], s₄.gpr r = s.gpr r := fun r hr => by
     rw [k₄.gpr r (fun h => hr (by simp only [List.mem_singleton] at h; simp [h])), k₃.1 r hr, R2 r hr]
-  have R6 : ∀ r ∉ [Reg.rax, .rdx], s₆.gpr r = s.gpr r := fun r hr => by rw [g₆, k₅.1 r hr, R4 r hr]
-  have ap : ∀ (m : Mem) (d e : Nat) (v : BitVec 64), d + 8 ≤ e ∨ e + 8 ≤ d → d + 8 ≤ 4096 → e + 8 ≤ 4096 →
+  obtain R6 : ∀ r ∉ [Reg.rax, .rdx], s₆.gpr r = s.gpr r := fun r hr => by rw [g₆, k₅.1 r hr, R4 r hr]
+  obtain ap : ∀ (m : Mem) (d e : Nat) (v : BitVec 64), d + 8 ≤ e ∨ e + 8 ≤ d → d + 8 ≤ 4096 → e + 8 ≤ 4096 →
       word (m.writeW (off base e) v) base d = word m base d := fun m d e v h hd he =>
     pk_apart m base v h hd he
-  have ou : ∀ (m : Mem) (e : Nat) (v : BitVec 64), t ≤ e → e + 8 ≤ t + 24 →
+  obtain ou : ∀ (m : Mem) (e : Nat) (v : BitVec 64), t ≤ e → e + 8 ≤ t + 24 →
       Outside base t 24 m (m.writeW (off base e) v) := fun m e v h1 h2 x hx =>
     writeW_outside m base v (by omega_arith) x (by omega_arith)
-  have w2_0 : word s₂.mem base t = word s.mem base t := by rw [m₂, ap _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), k₁.2.1]
-  have w2_8 : word s₂.mem base (t + 8) = word s.mem base (t + 8) := by
+  obtain w2_0 : word s₂.mem base t = word s.mem base t := by rw [m₂, ap _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), k₁.2.1]
+  obtain w2_8 : word s₂.mem base (t + 8) = word s.mem base (t + 8) := by
     rw [m₂, ap _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), k₁.2.1]
-  have w2_16 : word s₂.mem base (t + 16) = word s.mem base t * s.gpr .r8 := by rw [m₂, pk_word_self, a₁]
-  have hF : (s₃.gpr .rax + word s₃.mem base (t + 16)) >>> n =
+  obtain w2_16 : word s₂.mem base (t + 16) = word s.mem base t * s.gpr .r8 := by rw [m₂, pk_word_self, a₁]
+  obtain hF : (s₃.gpr .rax + word s₃.mem base (t + 16)) >>> n =
       (word s.mem base (t + 8) * s.gpr .rcx + word s.mem base t * s.gpr .r8) >>> n := by
     rw [a₃, k₃.2.1, w2_8, w2_16, R2 .rcx (by decide)]
-  have w4_0 : word s₄.mem base t = word s.mem base t := by
+  obtain w4_0 : word s₄.mem base t = word s.mem base t := by
     rw [m₄, ap _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), k₃.2.1, w2_0]
-  have w4_8 : word s₄.mem base (t + 8) = word s.mem base (t + 8) := by
+  obtain w4_8 : word s₄.mem base (t + 8) = word s.mem base (t + 8) := by
     rw [m₄, ap _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), k₃.2.1, w2_8]
-  have w4_16 : word s₄.mem base (t + 16) =
+  obtain w4_16 : word s₄.mem base (t + 16) =
       (word s.mem base (t + 8) * s.gpr .rcx + word s.mem base t * s.gpr .r8) >>> n := by
     rw [m₄, pk_word_self, hF]
-  have w6_0 : word s₆.mem base t = word s.mem base t * s.gpr .r13 := by
+  obtain w6_0 : word s₆.mem base t = word s.mem base t * s.gpr .r13 := by
     rw [m₆, pk_word_self, a₅, w4_0, R4 .r13 (by decide)]
-  have w6_8 : word s₆.mem base (t + 8) = word s.mem base (t + 8) := by
+  obtain w6_8 : word s₆.mem base (t + 8) = word s.mem base (t + 8) := by
     rw [m₆, ap _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), k₅.2.1, w4_8]
-  have w6_16 : word s₆.mem base (t + 16) =
+  obtain w6_16 : word s₆.mem base (t + 16) =
       (word s.mem base (t + 8) * s.gpr .rcx + word s.mem base t * s.gpr .r8) >>> n := by
     rw [m₆, ap _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), k₅.2.1, w4_16]
-  have hG : (s₇.gpr .rax + word s₇.mem base t) >>> n =
+  obtain hG : (s₇.gpr .rax + word s₇.mem base t) >>> n =
       (word s.mem base (t + 8) * s.gpr .rbp + word s.mem base t * s.gpr .r13) >>> n := by
     rw [a₇, k₇.2.1, w6_8, w6_0, R6 .rbp (by decide)]
-  have w8_8 : word s₈.mem base (t + 8) =
+  obtain w8_8 : word s₈.mem base (t + 8) =
       (word s.mem base (t + 8) * s.gpr .rbp + word s.mem base t * s.gpr .r13) >>> n := by
     rw [m₈, pk_word_self, hG]
-  have w8_16 : word s₈.mem base (t + 16) =
+  obtain w8_16 : word s₈.mem base (t + 16) =
       (word s.mem base (t + 8) * s.gpr .rcx + word s.mem base t * s.gpr .r8) >>> n := by
     rw [m₈, ap _ _ _ _ (by omega_arith) (by omega_arith) (by omega_arith), k₇.2.1, w6_16]
   refine ⟨?_, ?_, ?_, ?_⟩
@@ -361,9 +361,9 @@ theorem pkCol_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t +
       s'.gpr y = s.gpr .rbp * s.gpr y + s.gpr .r13 * s.gpr x ∧
       PKeep [.rax, .rdx, x, y] s s' ∧ Outside base t 8 s.mem s'.mem := by
   have hN := hs.nowrap
-  have F : ∀ r ∈ [Reg.rax, .rdx, .r8, .rcx, .rbp, .r13, .rdi], (¬ r = x ∧ ¬ x = r) ∧ (¬ r = y ∧ ¬ y = r) := by
+  obtain F : ∀ r ∈ [Reg.rax, .rdx, .r8, .rcx, .rbp, .r13, .rdi], (¬ r = x ∧ ¬ x = r) ∧ (¬ r = y ∧ ¬ y = r) := by
     rcases hx with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide
-  have hxy : ¬ x = y ∧ ¬ y = x := by rcases hx with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide
+  obtain hxy : ¬ x = y ∧ ¬ y = x := by rcases hx with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide
   obtain ⟨⟨a1, a2⟩, a3, a4⟩ := F .rax (by simp)
   obtain ⟨⟨d1, d2⟩, d3, d4⟩ := F .rdx (by simp)
   obtain ⟨⟨e1, e2⟩, e3, e4⟩ := F .r8 (by simp)
@@ -374,17 +374,17 @@ theorem pkCol_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t +
   rw [pkCol, WP.block_append_iff, WP.block_append_iff,
     show [Instr.mov .rax (.reg .r13), .mul x, .store (sc t) .rax] =
       [Instr.mov .rax (.reg .r13), .mul x] ++ [.store (sc t) .rax] from rfl, WP.block_append_iff]
-  have h0 : WP isa (.block [.mov .rax (.reg .r13), .mul x]) s fun s₁ =>
+  obtain h0 : WP isa (.block [.mov .rax (.reg .r13), .mul x]) s fun s₁ =>
       s₁.gpr .rax = s.gpr .r13 * s.gpr x ∧ Keeps [.rax, .rdx] s s₁ := by
     drun [pk_mul_lo, a1, a2]
     refine ⟨fun r hr => ?_, rfl, rfl, rfl⟩
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, hr.1, hr.2, ↓reduceIte]
   refine WP.mono h0 fun s₁ ⟨a₁, k₁⟩ => ?_
-  have hs₁ := hs.of_keeps k₁ (by decide)
+  obtain hs₁ := hs.of_keeps k₁ (by decide)
   refine WP.mono (pkStore_ok hs₁ .rax (d := t) ht) fun s₂ ⟨m₂, g₂, k₂⟩ => ?_
-  have hs₂ := hs₁.of_pk k₂ (by decide)
-  have h1 : WP isa (.block [.mov .rax (.reg .r8), .mul x, .mov x (.reg .rax), .mov .rax (.reg .rcx), .mul y,
+  obtain hs₂ := hs₁.of_pk k₂ (by decide)
+  obtain h1 : WP isa (.block [.mov .rax (.reg .r8), .mul x, .mov x (.reg .rax), .mov .rax (.reg .rcx), .mul y,
       .alu .add x (.reg .rax), .mov .rax (.reg .rbp), .mul y]) s₂ fun s₃ =>
       s₃.gpr x = s₂.gpr .r8 * s₂.gpr x + s₂.gpr .rcx * s₂.gpr y ∧ s₃.gpr .rax = s₂.gpr .rbp * s₂.gpr y ∧
         Keeps [.rax, .rdx, x] s₂ s₃ := by
@@ -394,13 +394,13 @@ theorem pkCol_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t +
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [RegUpd.gpr_setReg, RegUpd.gpr_setFlags, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2, ↓reduceIte]
   refine WP.mono h1 fun s₃ ⟨x₃, a₃, k₃⟩ => ?_
-  have hs₃ := hs₂.of_keeps k₃ (by simp [i1])
-  have R : ∀ r, r ∉ [Reg.rax, .rdx] → s₂.gpr r = s.gpr r := fun r hr => by rw [g₂, k₁.1 r hr]
-  have y3 : s₃.gpr y = s.gpr y := by rw [k₃.1 y (by simp [a4, d4, hxy.2]), R y (by simp [a4, d4])]
-  have t3 : word s₃.mem base t = s.gpr .r13 * s.gpr x := by rw [k₃.2.1, m₂, pk_word_self, a₁]
-  have xx : s₃.gpr x = s.gpr .r8 * s.gpr x + s.gpr .rcx * s.gpr y := by
+  obtain hs₃ := hs₂.of_keeps k₃ (by simp [i1])
+  obtain R : ∀ r, r ∉ [Reg.rax, .rdx] → s₂.gpr r = s.gpr r := fun r hr => by rw [g₂, k₁.1 r hr]
+  obtain y3 : s₃.gpr y = s.gpr y := by rw [k₃.1 y (by simp [a4, d4, hxy.2]), R y (by simp [a4, d4])]
+  obtain t3 : word s₃.mem base t = s.gpr .r13 * s.gpr x := by rw [k₃.2.1, m₂, pk_word_self, a₁]
+  obtain xx : s₃.gpr x = s.gpr .r8 * s.gpr x + s.gpr .rcx * s.gpr y := by
     rw [x₃, R .r8 (by decide), R x (by simp [a2, d2]), R .rcx (by decide), R y (by simp [a4, d4])]
-  have ra : s₃.gpr .rax = s.gpr .rbp * s.gpr y := by rw [a₃, R .rbp (by decide), R y (by simp [a4, d4])]
+  obtain ra : s₃.gpr .rax = s.gpr .rbp * s.gpr y := by rw [a₃, R .rbp (by decide), R y (by simp [a4, d4])]
   drun [load_sc hs₃ ht, a1, a2, a3, a4, hxy.1, hxy.2, RegUpd.gpr_setReg_self, t3, xx, ra]
   refine ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
@@ -421,9 +421,9 @@ theorem pkComp_ok {s : State} {base : Addr} (hs : Scr s base) {t : Nat} (ht : t 
   rw [pkComp, WP.block_append_iff]
   refine WP.mono (pkCol_ok hs ht (Or.inl ⟨rfl, rfl⟩)) fun s₁ ⟨x₁, y₁, k₁, o₁⟩ => ?_
   refine WP.mono (pkCol_ok (hs.of_pk k₁ (by decide)) ht (Or.inr ⟨rfl, rfl⟩)) fun s₂ ⟨x₂, y₂, k₂, o₂⟩ => ?_
-  have g : ∀ r ∈ [Reg.r8, .rcx, .rbp, .r13, .r10, .r12], s₁.gpr r = s.gpr r := fun r hr => k₁.gpr r (by
+  obtain g : ∀ r ∈ [Reg.r8, .rcx, .rbp, .r13, .r10, .r12], s₁.gpr r = s.gpr r := fun r hr => k₁.gpr r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h | h | h | h | h <;> subst h <;> decide)
-  have g' : ∀ r ∈ [Reg.r9, .r11], s₂.gpr r = s₁.gpr r := fun r hr => k₂.gpr r (by
+  obtain g' : ∀ r ∈ [Reg.r9, .r11], s₂.gpr r = s₁.gpr r := fun r hr => k₂.gpr r (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h | h <;> subst h <;> decide)
   refine ⟨?_, ?_, ?_, ?_, (k₁.mono (by simp)).trans (k₂.mono (by simp)), o₁.trans o₂⟩
   · rw [g' .r9 (by simp), x₁]
@@ -456,9 +456,9 @@ theorem pkChunk_ok {s : State} {base : Addr} (hs : Scr s base) {t n : Nat} {firs
   rw [r8₁, r13₁, k₁.1 _ (by decide)] at e₂
   rw [WP.block_append_iff]
   refine WP.mono (pkExt_ok s₂) fun s₃ ⟨u₃, v₃, q₃, r₃, k₃⟩ => ?_
-  have hs₃ : Scr s₃ base := ((hs.of_keeps k₁ (by decide)).of_keeps k₂ (by decide)).of_keeps k₃ (by decide)
-  have mem₃ : s₃.mem = s.mem := by rw [k₃.2.1, k₂.2.1, k₁.2.1]
-  have keep₃ : ∀ r ∈ [Reg.r9, .r10, .r11, .r12], s₃.gpr r = s.gpr r := fun r hr => by
+  obtain hs₃ : Scr s₃ base := ((hs.of_keeps k₁ (by decide)).of_keeps k₂ (by decide)).of_keeps k₃ (by decide)
+  obtain mem₃ : s₃.mem = s.mem := by rw [k₃.2.1, k₂.2.1, k₁.2.1]
+  obtain keep₃ : ∀ r ∈ [Reg.r9, .r10, .r11, .r12], s₃.gpr r = s.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rw [k₃.1 r (by rcases hr with h | h | h | h <;> subst h <;> decide),
       k₂.1 r (by rcases hr with h | h | h | h <;> subst h <;> decide),
@@ -471,9 +471,9 @@ theorem pkChunk_ok {s : State} {base : Addr} (hs : Scr s base) {t n : Nat} {firs
   obtain ⟨d₂, f₂, g₂⟩ := e₂
   rw [f₂] at u₃ v₃
   rw [g₂] at q₃ r₃
-  have rbx₃ : s₃.gpr .rbx = E' := by rw [k₃.1 _ (by decide), d₂]
+  obtain rbx₃ : s₃.gpr .rbx = E' := by rw [k₃.1 _ (by decide), d₂]
   rw [WP.block_append_iff]
-  have hlow : WP isa (.block (if last = true then [] else pkLow n t)) s₃ fun s₄ =>
+  obtain hlow : WP isa (.block (if last = true then [] else pkLow n t)) s₃ fun s₄ =>
       (∀ r ∈ [Reg.rbx, .r8, .rcx, .r13, .rbp, .r9, .r10, .r11, .r12], s₄.gpr r = s₃.gpr r) ∧
       word s₄.mem base t = (if last then word s.mem base t else
         (word s.mem base (t + 8) * Divstep.pextHi R1 + word s.mem base t * Divstep.pextLo R1) >>> n) ∧
@@ -482,7 +482,7 @@ theorem pkChunk_ok {s : State} {base : Addr} (hs : Scr s base) {t n : Nat} {firs
       PKeep [.rax, .rdx] s₃ s₄ ∧ Outside base t 24 s₃.mem s₄.mem := by
     cases last
     · simp only [Bool.false_eq_true, ↓reduceIte]
-      have kr : ∀ r ∈ [Reg.rbx, .r8, .rcx, .r13, .rbp, .r9, .r10, .r11, .r12], r ∉ [Reg.rax, .rdx] := by decide
+      obtain kr : ∀ r ∈ [Reg.rbx, .r8, .rcx, .r13, .rbp, .r9, .r10, .r11, .r12], r ∉ [Reg.rax, .rdx] := by decide
       refine WP.mono (pkLow_ok hs₃ ⟨hn.1, by omega_arith⟩ ht) fun s₄ ⟨w0, w1, k₄, o₄⟩ =>
         ⟨fun r hr => k₄.gpr r (kr r hr), ?_, ?_, k₄, o₄⟩
       · rw [w0, mem₃, u₃, v₃]
@@ -491,15 +491,15 @@ theorem pkChunk_ok {s : State} {base : Addr} (hs : Scr s base) {t n : Nat} {firs
       exact WP.block_nil_iff.mpr ⟨fun _ _ => rfl, by rw [mem₃], by rw [mem₃], ⟨fun _ _ => rfl, rfl, rfl⟩,
         Outside.refl _ _ _ _⟩
   refine WP.mono hlow fun s₄ ⟨R₄, w₄, w₄', k₄, o₄⟩ => ?_
-  have hs₄ := hs₃.of_pk k₄ (by decide)
-  have k34 : PKeep pkChunkRegs s s₄ := ((((Keeps.pk k₁).mono (by decide)).trans ((Keeps.pk k₂).mono
+  obtain hs₄ := hs₃.of_pk k₄ (by decide)
+  obtain k34 : PKeep pkChunkRegs s s₄ := ((((Keeps.pk k₁).mono (by decide)).trans ((Keeps.pk k₂).mono
     (by decide))).trans ((Keeps.pk k₃).mono (by decide))).trans (k₄.mono (by decide))
   cases first
   · simp only [Bool.false_eq_true, ↓reduceIte]
     refine WP.mono (pkComp_ok hs₄ (t := t + 16) (by omega_arith)) fun s₅ ⟨x9, x11, x10, x12, k₅, o₅⟩ =>
       ⟨?_, k34.trans (k₅.mono (by decide)), ?_⟩
     · have w5 : word s₅.mem base t = word s₄.mem base t := o₅.word (by omega_arith) (by omega_arith)
-      have w5' : word s₅.mem base (t + 8) = word s₄.mem base (t + 8) := o₅.word (by omega_arith) (by omega_arith)
+      obtain w5' : word s₅.mem base (t + 8) = word s₄.mem base (t + 8) := o₅.word (by omega_arith) (by omega_arith)
       simp only [pkOf, pkChunkV, hP, Bool.false_eq_true, ↓reduceIte, PkSt.mk.injEq]
       refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
       · rw [k₅.gpr _ (by decide), R₄ _ (by simp), rbx₃]
@@ -686,8 +686,8 @@ theorem dsteps_ok {s : State} {base : Addr} (hs : Scr s base) :
   have hn := hs.nowrap
   rw [dsteps, List.append_assoc, List.append_assoc, List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (dstart_ok hs) fun s₁ ⟨b1, c1, f1, g1, O1, k1⟩ => ?_
-  have hs₁ := hs.of_pk k1 (by decide)
-  have w1 : pkOf s₁ base dsT =
+  obtain hs₁ := hs.of_pk k1 (by decide)
+  obtain w1 : pkOf s₁ base dsT =
       ⟨~~~word s.mem base dsD, word s.mem base dsF, word s.mem base dsG, s₁.gpr .r9, s₁.gpr .r10, s₁.gpr .r11,
         s₁.gpr .r12⟩ := by
     simp only [pkOf, b1, f1, g1]
@@ -695,33 +695,33 @@ theorem dsteps_ok {s : State} {base : Addr} (hs : Scr s base) :
   refine WP.mono (pkChunkT_ok hs₁ (first := true) (last := false) (n := 15) (by decide) w1)
     fun s₂ ⟨e2, k2, O2⟩ => ?_
   rw [pkChunkV_first] at e2
-  have hs₂ := hs₁.of_pk k2 (by decide)
+  obtain hs₂ := hs₁.of_pk k2 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (pkChunkT_ok hs₂ (first := false) (last := false) (n := 15) (by decide) e2)
     fun s₃ ⟨e3, k3, O3⟩ => ?_
-  have hs₃ := hs₂.of_pk k3 (by decide)
+  obtain hs₃ := hs₂.of_pk k3 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (pkChunkT_ok hs₃ (first := false) (last := false) (n := 15) (by decide) e3)
     fun s₄ ⟨e4, k4, O4⟩ => ?_
-  have hs₄ := hs₃.of_pk k4 (by decide)
+  obtain hs₄ := hs₃.of_pk k4 (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (pkChunkT_ok hs₄ (first := false) (last := true) (n := 14) (by decide) e4)
     fun s₅ ⟨e5, k5, O5⟩ => ?_
-  have hs₅ := hs₄.of_pk k5 (by decide)
+  obtain hs₅ := hs₄.of_pk k5 (by decide)
   refine WP.mono (dstore_ok hs₅) fun t ⟨eD, eU, eV, eQ, eR, O, eb, gt, rt, wt⟩ => ?_
   have hW : pkOf s₅ base dsT = pkW s.mem base := e5
-  have cE := congrArg PkSt.E hW; have cU := congrArg PkSt.U hW; have cV := congrArg PkSt.V hW
-  have cQ := congrArg PkSt.Q hW; have cR := congrArg PkSt.R hW
+  obtain cE := congrArg PkSt.E hW; have cU := congrArg PkSt.U hW; have cV := congrArg PkSt.V hW
+  obtain cQ := congrArg PkSt.Q hW; have cR := congrArg PkSt.R hW
   simp only [pkOf] at cE cU cV cQ cR
-  have kc : ∀ r, r ∉ dsClob → s₅.gpr r = s.gpr r := fun r hr => by
-    have h1 : r ∉ pkChunkRegs := fun h => hr (by
+  obtain kc : ∀ r, r ∉ dsClob → s₅.gpr r = s.gpr r := fun r hr => by
+    obtain h1 : r ∉ pkChunkRegs := fun h => hr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at h
       rcases h with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide)
-    have h2 : r ∉ [Reg.rax, .rbx, .r14] := fun h => hr (by
+    obtain h2 : r ∉ [Reg.rax, .rbx, .r14] := fun h => hr (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at h
       rcases h with rfl | rfl | rfl <;> decide)
     rw [k5.gpr r h1, k4.gpr r h1, k3.gpr r h1, k2.gpr r h1, k1.gpr r h2]
-  have r14 : s₅.gpr .r14 = s.gpr .rbp := by
+  obtain r14 : s₅.gpr .r14 = s.gpr .rbp := by
     rw [k5.gpr _ (by decide), k4.gpr _ (by decide), k3.gpr _ (by decide), k2.gpr _ (by decide), c1]
   refine ⟨eD.trans (by rw [cE]), eU.trans cU, eV.trans cV, eQ.trans cQ, eR.trans cR, ?_, eb.trans r14,
     fun r hr => ?_, ?_, ?_⟩
@@ -731,7 +731,7 @@ theorem dsteps_ok {s : State} {base : Addr} (hs : Scr s base) :
       (Ow O3 (by decide) (by decide)).trans <| (Ow O4 (by decide) (by decide)).trans <|
       (Ow O5 (by decide) (by decide)).trans (Ow O (by decide) (by decide))
   · have h1 : r ≠ .rbp := by intro h; subst h; exact hr (by decide)
-    have h2 : r ≠ .rbx := by intro h; subst h; exact hr (by decide)
+    obtain h2 : r ≠ .rbx := by intro h; subst h; exact hr (by decide)
     rw [gt r h1 h2, kc r hr]
   · rw [rt, k5.rd, k4.rd, k3.rd, k2.rd, k1.rd]
   · rw [wt, k5.wr, k4.wr, k3.wr, k2.wr, k1.wr]

@@ -70,12 +70,12 @@ theorem qm_nat {q lo hi c0 b d0 d1 d2 : Nat} (hq : q < 2 ^ 64) (hl : lo + 2 ^ 64
     (hd2 : d2 = if d1 < q then 1 else 0) :
     (q + 2 ^ 64 * c0 - lo) + 2 ^ 64 * (d0 + 2 ^ 64 * d1 + 2 ^ 128 * d2) = q * Mc ∧
       q + 2 ^ 64 * c0 - lo < 2 ^ 64 ∧ d2 ≤ 1 := by
-  have hh : hi < 2 ^ 32 := by omega_using [hq, hl]
-  have f0 : (c0 = 1 ∧ q < lo) ∨ (c0 = 0 ∧ lo ≤ q) := by subst hc0; split <;> omega_arith
-  have f1 : (b = 1 ∧ lo < hi + c0) ∨ (b = 0 ∧ hi + c0 ≤ lo) := by subst hb; split <;> omega_arith
-  have hbh : b ≤ hi := by omega_using [f0, f1]
-  have g0 : d0 + hi + c0 = lo + 2 ^ 64 * b := by subst hd0; omega_using [hlo, hh, f0, f1]
-  have g1 : d1 + 2 ^ 64 * d2 = hi - b + q ∧ d2 ≤ 1 := by
+  obtain hh : hi < 2 ^ 32 := by omega_using [hq, hl]
+  obtain f0 : (c0 = 1 ∧ q < lo) ∨ (c0 = 0 ∧ lo ≤ q) := by subst hc0; split <;> omega_arith
+  obtain f1 : (b = 1 ∧ lo < hi + c0) ∨ (b = 0 ∧ hi + c0 ≤ lo) := by subst hb; split <;> omega_arith
+  obtain hbh : b ≤ hi := by omega_using [f0, f1]
+  obtain g0 : d0 + hi + c0 = lo + 2 ^ 64 * b := by subst hd0; omega_using [hlo, hh, f0, f1]
+  obtain g1 : d1 + 2 ^ 64 * d2 = hi - b + q ∧ d2 ≤ 1 := by
     have : (hi + 2 ^ 64 - b) % 2 ^ 64 = hi - b := by omega_using [hh, hbh]
     subst hd2 hd1; rw [this]; split <;> omega_arith
   clear hc0 hb hd0 hd1 hd2 f1
@@ -112,50 +112,50 @@ theorem qm_ok {r : Reg} (h4 : r ≠ .a4 := by decide) (h5 : r ≠ .a5 := by deci
     Steps.wp_sub fun s6 u6 => Steps.wp_sub fun s7 u7 => Steps.wp_add fun s8 u8 =>
     Steps.wp_sltu fun s9 u9 => WP.block_nil ?_
   -- `q` through the steps.
-  have q1 : s1.gpr r = s.gpr r := u1.other _ h4
-  have q2 : s2.gpr r = s.gpr r := by rw [u2.other _ h5, q1]
-  have q3 : s3.gpr r = s.gpr r := by rw [u3.other _ h6, q2]
-  have q4 : s4.gpr r = s.gpr r := by rw [u4.other _ h6, q3]
-  have q5 : s5.gpr r = s.gpr r := by rw [u5.other _ h7, q4]
-  have q6 : s6.gpr r = s.gpr r := by rw [u6.other _ h4, q5]
-  have q7 : s7.gpr r = s.gpr r := by rw [u7.other _ h5, q6]
+  obtain q1 : s1.gpr r = s.gpr r := u1.other _ h4
+  obtain q2 : s2.gpr r = s.gpr r := by rw [u2.other _ h5, q1]
+  obtain q3 : s3.gpr r = s.gpr r := by rw [u3.other _ h6, q2]
+  obtain q4 : s4.gpr r = s.gpr r := by rw [u4.other _ h6, q3]
+  obtain q5 : s5.gpr r = s.gpr r := by rw [u5.other _ h7, q4]
+  obtain q6 : s6.gpr r = s.gpr r := by rw [u6.other _ h4, q5]
+  obtain q7 : s7.gpr r = s.gpr r := by rw [u7.other _ h5, q6]
   -- The values of the steps.
-  have lo2 : s2.gpr .a4 = s.gpr r <<< 32 := by rw [u2.other _ (by decide), u1.gpr]
-  have lo4 : s4.gpr .a4 = s.gpr r <<< 32 := by
+  obtain lo2 : s2.gpr .a4 = s.gpr r <<< 32 := by rw [u2.other _ (by decide), u1.gpr]
+  obtain lo4 : s4.gpr .a4 = s.gpr r <<< 32 := by
     rw [u4.other _ (by decide), u3.other _ (by decide), lo2]
-  have hi3 : s3.gpr .a5 = s.gpr r >>> 32 := by rw [u3.other _ (by decide), u2.gpr, q1]
-  have c3 : s3.gpr .a6 = if s.gpr r < s.gpr r <<< 32 then (1 : BitVec 64) else 0 := by rw [u3.gpr, q2, lo2]
-  have hc4 : s4.gpr .a6 = (if s.gpr r < s.gpr r <<< 32 then (1 : BitVec 64) else 0) + s.gpr r >>> 32 := by
+  obtain hi3 : s3.gpr .a5 = s.gpr r >>> 32 := by rw [u3.other _ (by decide), u2.gpr, q1]
+  obtain c3 : s3.gpr .a6 = if s.gpr r < s.gpr r <<< 32 then (1 : BitVec 64) else 0 := by rw [u3.gpr, q2, lo2]
+  obtain hc4 : s4.gpr .a6 = (if s.gpr r < s.gpr r <<< 32 then (1 : BitVec 64) else 0) + s.gpr r >>> 32 := by
     rw [u4.gpr, c3, hi3]
-  have b5 : s5.gpr .a7 = if s.gpr r <<< 32 < s4.gpr .a6 then (1 : BitVec 64) else 0 := by rw [u5.gpr, lo4]
-  have d6 : s6.gpr .a4 = s.gpr r <<< 32 - s4.gpr .a6 := by
+  obtain b5 : s5.gpr .a7 = if s.gpr r <<< 32 < s4.gpr .a6 then (1 : BitVec 64) else 0 := by rw [u5.gpr, lo4]
+  obtain d6 : s6.gpr .a4 = s.gpr r <<< 32 - s4.gpr .a6 := by
     rw [u6.gpr, u5.other _ (by decide), lo4, u5.other _ (by decide)]
-  have hi5 : s5.gpr .a5 = s.gpr r >>> 32 := by
+  obtain hi5 : s5.gpr .a5 = s.gpr r >>> 32 := by
     rw [u5.other _ (by decide), u4.other _ (by decide), hi3]
-  have e7 : s7.gpr .a5 = s.gpr r >>> 32 - s5.gpr .a7 := by
+  obtain e7 : s7.gpr .a5 = s.gpr r >>> 32 - s5.gpr .a7 := by
     rw [u7.gpr, u6.other _ (by decide), hi5, u6.other _ (by decide)]
-  have e8 : s8.gpr .a5 = (s.gpr r >>> 32 - s5.gpr .a7) + s.gpr r := by rw [u8.gpr, e7, q7]
-  have e9 : s9.gpr .a6 = if s8.gpr .a5 < s.gpr r then (1 : BitVec 64) else 0 := by
+  obtain e8 : s8.gpr .a5 = (s.gpr r >>> 32 - s5.gpr .a7) + s.gpr r := by rw [u8.gpr, e7, q7]
+  obtain e9 : s9.gpr .a6 = if s8.gpr .a5 < s.gpr r then (1 : BitVec 64) else 0 := by
     rw [u9.gpr, u8.other _ h5, q7]
-  have f4 : s9.gpr .a4 = s6.gpr .a4 := by
+  obtain f4 : s9.gpr .a4 = s6.gpr .a4 := by
     rw [u9.other _ (by decide), u8.other _ (by decide), u7.other _ (by decide)]
-  have f5 : s9.gpr .a5 = s8.gpr .a5 := u9.other _ (by decide)
-  have hq := (s.gpr r).isLt
-  have hsr : (s.gpr r >>> 32).toNat = (s.gpr r).toNat * 2 ^ 32 / 2 ^ 64 := by
+  obtain f5 : s9.gpr .a5 = s8.gpr .a5 := u9.other _ (by decide)
+  obtain hq := (s.gpr r).isLt
+  obtain hsr : (s.gpr r >>> 32).toNat = (s.gpr r).toNat * 2 ^ 32 / 2 ^ 64 := by
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]; omega_using []
-  have hsl : (s.gpr r <<< 32).toNat = (s.gpr r).toNat * 2 ^ 32 % 2 ^ 64 := by
+  obtain hsl : (s.gpr r <<< 32).toNat = (s.gpr r).toNat * 2 ^ 32 % 2 ^ 64 := by
     rw [BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
-  have hc0 := sltu_toNat (s.gpr r) (s.gpr r <<< 32)
-  have hcl : (if s.gpr r < s.gpr r <<< 32 then (1 : BitVec 64) else 0).toNat ≤ 1 := by
+  obtain hc0 := sltu_toNat (s.gpr r) (s.gpr r <<< 32)
+  obtain hcl : (if s.gpr r < s.gpr r <<< 32 then (1 : BitVec 64) else 0).toNat ≤ 1 := by
     rw [hc0]; split <;> omega_using []
-  have hHC : (s4.gpr .a6).toNat =
+  obtain hHC : (s4.gpr .a6).toNat =
       (if s.gpr r < s.gpr r <<< 32 then (1 : BitVec 64) else 0).toNat + (s.gpr r >>> 32).toNat := by
     rw [hc4, BitVec.toNat_add]; omega_using [hsr, hcl]
-  have hb := sltu_toNat (s.gpr r <<< 32) (s4.gpr .a6)
+  obtain hb := sltu_toNat (s.gpr r <<< 32) (s4.gpr .a6)
   rw [← b5] at hb
-  have hd2 := sltu_toNat (s8.gpr .a5) (s.gpr r)
+  obtain hd2 := sltu_toNat (s8.gpr .a5) (s.gpr r)
   rw [← e9] at hd2
-  have k := qm_nat (q := (s.gpr r).toNat) (lo := (s.gpr r <<< 32).toNat) (hi := (s.gpr r >>> 32).toNat)
+  obtain k := qm_nat (q := (s.gpr r).toNat) (lo := (s.gpr r <<< 32).toNat) (hi := (s.gpr r >>> 32).toNat)
     (c0 := (if s.gpr r < s.gpr r <<< 32 then (1 : BitVec 64) else 0).toNat) (b := (s5.gpr .a7).toNat)
     (d0 := (s6.gpr .a4).toNat) (d1 := (s8.gpr .a5).toNat) (d2 := (s9.gpr .a6).toNat) hq
     (by rw [hsl, hsr]; omega_using []) (BitVec.isLt _) hc0 (by rw [hb, hHC, Nat.add_comm (BitVec.toNat _)])
@@ -299,7 +299,7 @@ theorem roundWith_ok {quot qm : Reg → List Instr} {M : Nat} (hQ : QOk quot qm 
   obtain ⟨n32, n34, n35, n36, n37, n3t, n33, c3, n3a⟩ := dk 3 (by decide)
   simp only [Nat.add_zero] at n02 n04 n05 n06 n07 n0t n03 c0 n0a
   have hc := h.ctx
-  have e : roundWith quot qm i = .load .d (rw (i + 3)) .a3 (ACC + 8 * (i + 3)) ::
+  obtain e : roundWith quot qm i = .load .d (rw (i + 3)) .a3 (ACC + 8 * (i + 3)) ::
       (quot (rw i) ++
       (.store .d (rw i) .a3 (ACC + 8 * i) :: (qm (rw i) ++
       ([.sltu .a7 (rw (i + 1)) .a4, .sub (rw (i + 1)) (rw (i + 1)) .a4] ++
@@ -310,13 +310,13 @@ theorem roundWith_ok {quot qm : Reg → List Instr} {M : Nat} (hQ : QOk quot qm 
     simp only [roundWith, List.cons_append, List.nil_append, List.append_assoc]
   rw [e]
   refine ld_ok hc (by simp only [ACC]; omega_using [hi]) (by simp only [ACC]; omega_using []) fun s1 u1 => ?_
-  have hT3 : (s1.gpr (rw (i + 3))).toNat = T s0.mem b (i + 3) := by
+  obtain hT3 : (s1.gpr (rw (i + 3))).toNat = T s0.mem b (i + 3) := by
     rw [u1.gpr]; exact h.hi (i + 3) (by omega_using []) (by omega_using [hi])
   refine WP.block_append (WP.mono (hQ.quot i hi s1) fun s2 ⟨e2, k2⟩ => ?_)
-  have k2r : Rest clobR s1 s2 := (Keeps.rest k2).mono (by
+  obtain k2r : Rest clobR s1 s2 := (Keeps.rest k2).mono (by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl; exacts [by decide, by decide, List.mem_cons_of_mem _ c0])
-  have hc2 : Ctx b s2 := hc.of_rest ((u1.rest (ws := clobR) (List.mem_cons_of_mem _ c3)).trans k2r) (by decide)
+  obtain hc2 : Ctx b s2 := hc.of_rest ((u1.rest (ws := clobR) (List.mem_cons_of_mem _ c3)).trans k2r) (by decide)
   refine sd_ok hc2 (by simp only [ACC]; omega_using [hi]) (by simp only [ACC]; omega_using []) fun s3 u3 => ?_
   refine WP.block_append (WP.mono (hQ.qm i hi s3) fun s4 ⟨e4, l4, k4⟩ => ?_)
   refine WP.block_append (WP.mono (sbb0_ok (d := rw (i + 1)) (y := .a4) (c := .a7) n17 (by decide))
@@ -327,50 +327,50 @@ theorem roundWith_ok {quot qm : Reg → List Instr} {M : Nat} (hQ : QOk quot qm 
   refine WP.mono (subTop_ok (x := rw (i + 3)) (y := .a6) (c := .a2) (k := .a7) n36 n32 (by decide)
     (by decide)) fun s7 ⟨e7, l7, k7⟩ => ?_
   -- Registers read by each step, through the steps before it.
-  have r0 : s1.gpr (rw i) = s.gpr (rw i) := u1.other _ d03
-  have q3 : s3.gpr (rw i) = s2.gpr (rw i) := by rw [u3.gpr]
-  have r1 : s4.gpr (rw (i + 1)) = s.gpr (rw (i + 1)) := by
+  obtain r0 : s1.gpr (rw i) = s.gpr (rw i) := u1.other _ d03
+  obtain q3 : s3.gpr (rw i) = s2.gpr (rw i) := by rw [u3.gpr]
+  obtain r1 : s4.gpr (rw (i + 1)) = s.gpr (rw (i + 1)) := by
     rw [k4.1 _ (by simp [n14, n15, n16, n17, n1t, n1a]), u3.gpr, k2.1 _ (by simp [n1t, n1a, Ne.symm d01]),
       u1.other _ d13]
-  have a44 : s5.gpr .a4 = s4.gpr .a4 := k5.1 _ (by simp [Ne.symm n14])
-  have r2 : s5.gpr (rw (i + 2)) = s.gpr (rw (i + 2)) := by
+  obtain a44 : s5.gpr .a4 = s4.gpr .a4 := k5.1 _ (by simp [Ne.symm n14])
+  obtain r2 : s5.gpr (rw (i + 2)) = s.gpr (rw (i + 2)) := by
     rw [k5.1 _ (by simp [Ne.symm d12, n27]), k4.1 _ (by simp [n24, n25, n26, n27, n2t, n2a]), u3.gpr,
       k2.1 _ (by simp [n2t, n2a, Ne.symm d02]), u1.other _ d23]
-  have a55 : s5.gpr .a5 = s4.gpr .a5 := k5.1 _ (by simp [Ne.symm n15])
-  have r3 : s6.gpr (rw (i + 3)) = s1.gpr (rw (i + 3)) := by
+  obtain a55 : s5.gpr .a5 = s4.gpr .a5 := k5.1 _ (by simp [Ne.symm n15])
+  obtain r3 : s6.gpr (rw (i + 3)) = s1.gpr (rw (i + 3)) := by
     rw [k6.1 _ (by simp [Ne.symm d23, n3t, n34, n37]), k5.1 _ (by simp [Ne.symm d13, n37]),
       k4.1 _ (by simp [n34, n35, n36, n37, n3t, n3a]), u3.gpr, k2.1 _ (by simp [n3t, n3a, Ne.symm d03])]
-  have a66 : s6.gpr .a6 = s4.gpr .a6 := by
+  obtain a66 : s6.gpr .a6 = s4.gpr .a6 := by
     rw [k6.1 _ (by simp [Ne.symm n26]), k5.1 _ (by simp [Ne.symm n16])]
-  have a22 : s6.gpr .a2 = s.gpr .a2 := by
+  obtain a22 : s6.gpr .a2 = s.gpr .a2 := by
     rw [k6.1 _ (by simp [Ne.symm n22]), k5.1 _ (by simp [Ne.symm n12]),
       k4.1 _ (by decide), u3.gpr, k2.1 _ (by simp [Ne.symm n02]), u1.other _ (Ne.symm n32)]
   -- The new registers, read from the last state.
-  have o1 : s7.gpr (rw (i + 1)) = s5.gpr (rw (i + 1)) := by
+  obtain o1 : s7.gpr (rw (i + 1)) = s5.gpr (rw (i + 1)) := by
     rw [k7.1 _ (by simp [n16, n12, d13]), k6.1 _ (by simp [d12, n1t, n14, n17])]
-  have o2 : s7.gpr (rw (i + 2)) = s6.gpr (rw (i + 2)) := k7.1 _ (by simp [n26, n22, d23])
+  obtain o2 : s7.gpr (rw (i + 2)) = s6.gpr (rw (i + 2)) := k7.1 _ (by simp [n26, n22, d23])
   rw [r1] at e5
   rw [r2, a55] at e6
   rw [r3, hT3, a66, a22] at e7
   have hcy := h.cy
-  have e6' := e6 l5
+  obtain e6' := e6 l5
   -- The quotient word.
-  have hq : (s2.gpr (rw i)).toNat * M =
+  obtain hq : (s2.gpr (rw i)).toNat * M =
       (s.gpr (rw i)).toNat + 2 ^ 64 * ((s4.gpr .a4).toNat + 2 ^ 64 * (s4.gpr .a5).toNat +
         2 ^ 128 * (s4.gpr .a6).toNat) := by
     rw [q3] at e4
-    have hl : (s2.gpr (rw i)).toNat * M % 2 ^ 64 = (s.gpr (rw i)).toNat := by
+    obtain hl : (s2.gpr (rw i)).toNat * M % 2 ^ 64 = (s.gpr (rw i)).toNat := by
       rw [e2, r0]
     have := Nat.mod_add_div ((s2.gpr (rw i)).toNat * M) (2 ^ 64)
     rw [e4]
     omega_using [hl]
-  have b4 := (s4.gpr .a4).isLt
-  have b5 := (s4.gpr .a5).isLt
-  have e7' := e7 (by omega_using [l4, hcy, e6'])
+  obtain b4 := (s4.gpr .a4).isLt
+  obtain b5 := (s4.gpr .a5).isLt
+  obtain e7' := e7 (by omega_using [l4, hcy, e6'])
   -- The memory.
-  have hm7 : s7.mem = s.mem.writeW (b + BitVec.ofNat 64 (ACC + 8 * i)) (s2.gpr (rw i)) := by
+  obtain hm7 : s7.mem = s.mem.writeW (b + BitVec.ofNat 64 (ACC + 8 * i)) (s2.gpr (rw i)) := by
     rw [k7.2.1, k6.2.1, k5.2.1, k4.2.1, u3.mem, k2.2.1, u1.mem]
-  have hrest : Rest clobR s s7 :=
+  obtain hrest : Rest clobR s s7 :=
     (u1.rest (List.mem_cons_of_mem _ c3)).trans (k2r.trans ((u3.rest _).trans
       ((Keeps.rest k4).mono (by decide) |>.trans ((Keeps.rest k5).mono (by
         intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -381,14 +381,14 @@ theorem roundWith_ok {quot qm : Reg → List Instr} {M : Nat} (hQ : QOk quot qm 
         |>.trans ((Keeps.rest k7).mono (by
         intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
         rcases hx with rfl | rfl | rfl; exacts [by decide, by decide, List.mem_cons_of_mem _ c3])))))))
-  have hup : upW s0.mem b (i + 3) (9 - i) = T s0.mem b (i + 3) + 2 ^ 64 * upW s0.mem b (i + 4) (8 - i) := by
+  obtain hup : upW s0.mem b (i + 3) (9 - i) = T s0.mem b (i + 3) + 2 ^ 64 * upW s0.mem b (i + 4) (8 - i) := by
     rw [show 9 - i = (8 - i) + 1 by omega_using [hi]]; rfl
-  have hacc : accW ACC s7.mem b (i + 1) = accW ACC s.mem b i + (2 ^ 64) ^ i * (s2.gpr (rw i)).toNat := by
-    have ha : accW ACC (s.mem.writeW (b + BitVec.ofNat 64 (ACC + 8 * i)) (s2.gpr (rw i))) b i =
+  obtain hacc : accW ACC s7.mem b (i + 1) = accW ACC s.mem b i + (2 ^ 64) ^ i * (s2.gpr (rw i)).toNat := by
+    obtain ha : accW ACC (s.mem.writeW (b + BitVec.ofNat 64 (ACC + 8 * i)) (s2.gpr (rw i))) b i =
         accW ACC s.mem b i := accW_congr fun c hc' => by
       rw [dw_write_other _ _ _ (by omega_using [hc']) (by simp only [ACC]; omega_using [hi, hc']) (by simp only [ACC]; omega_using [hi])]
     rw [accW, hm7, ha, dw_write_self]
-  have key : 2 ^ 64 * wv s0.mem b (i + 1) s7 + (s2.gpr (rw i)).toNat * M + 2 ^ 192 * (s.gpr .a2).toNat =
+  obtain key : 2 ^ 64 * wv s0.mem b (i + 1) s7 + (s2.gpr (rw i)).toNat * M + 2 ^ 192 * (s.gpr .a2).toNat =
       wv s0.mem b i s + 2 ^ 256 * (s7.gpr .a2).toNat := by
     simp only [wv, show i + 1 + 1 = i + 2 by omega_using [], show i + 1 + 2 = i + 3 by omega_using [],
       show i + 1 + 3 = i + 4 by omega_using [], show 9 - (i + 1) = 8 - i by omega_using [], hup, o1, o2, hq]
@@ -430,22 +430,22 @@ theorem loads_ok {M : Nat} {b : Addr} {s : State} (hc : Ctx b s) :
   simp only [List.range_succ, List.range_zero, List.nil_append, List.map_cons, List.map_nil,
     List.cons_append, List.nil_append]
   refine ld_ok hc (by unfold ACC; omega_using []) (by unfold ACC; omega_using []) fun s1 u1 => ?_
-  have hc1 : Ctx b s1 := hc.of_rest (u1.rest (ws := clob64) (by decide)) (by decide)
+  obtain hc1 : Ctx b s1 := hc.of_rest (u1.rest (ws := clob64) (by decide)) (by decide)
   refine ld_ok hc1 (by unfold ACC; omega_using []) (by unfold ACC; omega_using []) fun s2 u2 => ?_
-  have hc2 : Ctx b s2 := hc1.of_rest (u2.rest (ws := clob64) (by decide)) (by decide)
+  obtain hc2 : Ctx b s2 := hc1.of_rest (u2.rest (ws := clob64) (by decide)) (by decide)
   refine ld_ok hc2 (by unfold ACC; omega_using []) (by unfold ACC; omega_using []) fun s3 u3 => ?_
-  have hc3 : Ctx b s3 := hc2.of_rest (u3.rest (ws := clob64) (by decide)) (by decide)
+  obtain hc3 : Ctx b s3 := hc2.of_rest (u3.rest (ws := clob64) (by decide)) (by decide)
   refine wp_li (by decide) fun s4 u4 => WP.block_nil ?_
-  have hr : Rest clobR s s4 := (u1.rest (by decide)).trans ((u2.rest (by decide)).trans
+  obtain hr : Rest clobR s s4 := (u1.rest (by decide)).trans ((u2.rest (by decide)).trans
     ((u3.rest (by decide)).trans (u4.rest (by decide))))
-  have hm : s4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
-  have w0 : (s4.gpr (rw 0)).toNat = T s.mem b 0 := by
+  obtain hm : s4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
+  obtain w0 : (s4.gpr (rw 0)).toNat = T s.mem b 0 := by
     rw [u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), u1.gpr]; rfl
-  have w1 : (s4.gpr (rw 1)).toNat = T s.mem b 1 := by
+  obtain w1 : (s4.gpr (rw 1)).toNat = T s.mem b 1 := by
     rw [u4.other _ (by decide), u3.other _ (by decide), u2.gpr, u1.mem]; rfl
-  have w2 : (s4.gpr (rw 2)).toNat = T s.mem b 2 := by
+  obtain w2 : (s4.gpr (rw 2)).toNat = T s.mem b 2 := by
     rw [u4.other _ (by decide), u3.gpr, u2.mem, u1.mem]; rfl
-  have wc : (s4.gpr .a2).toNat = 0 := by rw [u4.gpr]; rfl
+  obtain wc : (s4.gpr .a2).toNat = 0 := by rw [u4.gpr]; rfl
   refine ⟨hc3.of_rest (u4.rest (ws := clob64) (by decide)) (by decide), hr, by rw [hm]; exact Frame.refl _ _,
     fun j _ _ => by rw [hm], by rw [wc]; omega_using [], ?_⟩
   have hp : prodV s.mem b = T s.mem b 0 + 2 ^ 64 * (T s.mem b 1 + 2 ^ 64 * (T s.mem b 2 +
@@ -484,17 +484,17 @@ theorem addQ_ok {b : Addr} {s0 : State} {j : Nat} (hj : j < 6) {s : State} (h : 
   refine ld_ok h.ctx (by unfold ACC; omega_using [hj]) (by unfold ACC; omega_using []) fun s1 u1 => ?_
   refine WP.mono (adc_ok (d := X j) (x := X j) (y := .a7) (c := .a2) (u := .a6) x7 x2 (Ne.symm x6) (by decide))
     fun s2 ⟨e2, k2⟩ => ?_
-  have hr : Rest clob64 s s2 := (u1.rest (by decide)).trans ((Keeps.rest k2).mono (by
+  obtain hr : Rest clob64 s s2 := (u1.rest (by decide)).trans ((Keeps.rest k2).mono (by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl; exacts [xc, by decide, by decide]))
-  have hm : s2.mem = s0.mem := by rw [k2.2.1, u1.mem, h.mem]
-  have ex : s1.gpr (X j) = s0.gpr (X j) := by rw [u1.other _ x7, h.hi j (Nat.le_refl _) hj]
-  have ey : (s1.gpr .a7).toNat = dw s0.mem b (ACC + 8 * j) := by rw [u1.gpr, ← h.mem]; rfl
-  have ec : s1.gpr .a2 = s.gpr .a2 := u1.other _ (by decide)
-  have g : ∀ k < 6, k ≠ j → s2.gpr (X k) = s.gpr (X k) := fun k hk hkj => by
+  obtain hm : s2.mem = s0.mem := by rw [k2.2.1, u1.mem, h.mem]
+  obtain ex : s1.gpr (X j) = s0.gpr (X j) := by rw [u1.other _ x7, h.hi j (Nat.le_refl _) hj]
+  obtain ey : (s1.gpr .a7).toNat = dw s0.mem b (ACC + 8 * j) := by rw [u1.gpr, ← h.mem]; rfl
+  obtain ec : s1.gpr .a2 = s.gpr .a2 := u1.other _ (by decide)
+  obtain g : ∀ k < 6, k ≠ j → s2.gpr (X k) = s.gpr (X k) := fun k hk hkj => by
     obtain ⟨y2, -, y6, y7, -⟩ := X_facts k hk
     rw [k2.1 _ (by simp [xne k hk hkj, y6, y2]), u1.other _ y7]
-  have e2' := e2 (by rw [ec]; exact h.cy)
+  obtain e2' := e2 (by rw [ec]; exact h.cy)
   rw [ex, ey, ec] at e2'
   refine ⟨h.ctx.of_rest hr (by decide), h.rest.trans hr, hm, fun k hk hk' => ?_, ?_, ?_, ?_⟩
   · rw [g k hk' (by omega_using [hk])]; exact h.hi k (by omega_using [hk]) hk'
@@ -505,7 +505,7 @@ theorem addQ_ok {b : Addr} {s0 : State} {j : Nat} (hj : j < 6) {s : State} (h : 
     have := h.cy
     omega_using [ey, e2', this]
   · have hv := h.val
-    have hc : colsV (fun k => (s2.gpr (X k)).toNat) j = colsV (fun k => (s.gpr (X k)).toNat) j :=
+    obtain hc : colsV (fun k => (s2.gpr (X k)).toNat) j = colsV (fun k => (s.gpr (X k)).toNat) j :=
       colsV_congr fun k hk => by rw [g k (by omega_using [hj, hk]) (by omega_using [hk])]
     show colsV (fun k => (s2.gpr (X k)).toNat) j + (2 ^ 64) ^ j * (s2.gpr (X j)).toNat +
         (2 ^ 64) ^ (j + 1) * (s2.gpr .a2).toNat =
@@ -519,7 +519,7 @@ theorem addQ_ok {b : Addr} {s0 : State} {j : Nat} (hj : j < 6) {s : State} (h : 
     generalize (s.gpr .a2).toNat = c at *
     generalize (s0.gpr (X j)).toNat = y at *
     generalize dw s0.mem b (ACC + 8 * j) = z at *
-    have key : E * x + E * 2 ^ 64 * c' = E * c + E * (y + z) := by
+    obtain key : E * x + E * 2 ^ 64 * c' = E * c + E * (y + z) := by
       rw [Nat.mul_assoc, ← Nat.mul_add, ← Nat.mul_add, e2', Nat.add_comm c]
     omega_using [key]
 
@@ -557,7 +557,7 @@ theorem reduceWith_ok {quot qm : Reg → List Instr} {M Pm : Nat} (hQ : QOk quot
     WP isa (.block (reduceWith quot qm)) s fun s' =>
       Ctx b s' ∧ Rest clobR s s' ∧ Frame [AR ACC b] s.mem s'.mem ∧ (s'.gpr XC).toNat ≤ 1 ∧
       ∃ Q, Q < 2 ^ 384 ∧ (xv s' + 2 ^ 384 * (s'.gpr XC).toNat) * 2 ^ 384 = prodV s.mem b + Q * Pm := by
-  have e : reduceWith quot qm = ((List.range 3).map (fun j => .load .d (rw j) .a3 (ACC + 8 * j)) ++
+  obtain e : reduceWith quot qm = ((List.range 3).map (fun j => .load .d (rw j) .a3 (ACC + 8 * j)) ++
       ([.li .a2 0] : List Instr)) ++ ((List.range 6).flatMap (roundWith quot qm) ++
       (.load .d .t4 .a3 (ACC + 72) :: .load .d .a1 .a3 (ACC + 80) :: .load .d .a4 .a3 (ACC + 88) ::
       ([.sltu .a5 .t4 .a2, .sub .t4 .t4 .a2] ++ ([.sltu .a2 .a1 .a5, .sub .a1 .a1 .a5] ++
@@ -572,95 +572,95 @@ theorem reduceWith_ok {quot qm : Reg → List Instr} {M Pm : Nat} (hQ : QOk quot
   refine WP.block_append (WP.mono (roundsWith_ok hQ 6 (Nat.le_refl _) s1 h1) fun s6 h6 => ?_)
   have hc6 := h6.ctx
   refine ld_ok hc6 (by unfold ACC; omega_using []) (by unfold ACC; omega_using []) fun s7 u7 => ?_
-  have hc7 : Ctx b s7 := hc6.of_rest (u7.rest (ws := clob64) (by decide)) (by decide)
+  obtain hc7 : Ctx b s7 := hc6.of_rest (u7.rest (ws := clob64) (by decide)) (by decide)
   refine ld_ok hc7 (by unfold ACC; omega_using []) (by unfold ACC; omega_using []) fun s8 u8 => ?_
-  have hc8 : Ctx b s8 := hc7.of_rest (u8.rest (ws := clob64) (by decide)) (by decide)
+  obtain hc8 : Ctx b s8 := hc7.of_rest (u8.rest (ws := clob64) (by decide)) (by decide)
   refine ld_ok hc8 (by unfold ACC; omega_using []) (by unfold ACC; omega_using []) fun s9 u9 => ?_
   refine WP.block_append (WP.mono (sbb0_ok (d := .t4) (y := .a2) (c := .a5)) fun t1 ⟨f1, l1, k1⟩ => ?_)
   refine WP.block_append (WP.mono (sbb0_ok (d := .a1) (y := .a5) (c := .a2)) fun t2 ⟨f2, l2, k2⟩ => ?_)
   refine WP.block_append (WP.mono (sbb0_ok (d := .a4) (y := .a2) (c := .a5)) fun t3 ⟨f3, l3, k3⟩ => ?_)
   refine wp_li (by decide) fun t4 u4 => ?_
-  have r4 : Rest clob64 s9 t4 := (Keeps.rest k1).mono (by decide) |>.trans ((Keeps.rest k2).mono (by decide)
+  obtain r4 : Rest clob64 s9 t4 := (Keeps.rest k1).mono (by decide) |>.trans ((Keeps.rest k2).mono (by decide)
     |>.trans ((Keeps.rest k3).mono (by decide) |>.trans (u4.rest (by decide))))
-  have r94 : Rest clob64 s6 s9 := (u7.rest (by decide)).trans ((u8.rest (by decide)).trans (u9.rest (by decide)))
-  have hc4 : Ctx b t4 := hc6.of_rest (r94.trans r4) (by decide)
-  have hm4 : t4.mem = s6.mem := by rw [u4.mem, k3.2.1, k2.2.1, k1.2.1, u9.mem, u8.mem, u7.mem]
+  obtain r94 : Rest clob64 s6 s9 := (u7.rest (by decide)).trans ((u8.rest (by decide)).trans (u9.rest (by decide)))
+  obtain hc4 : Ctx b t4 := hc6.of_rest (r94.trans r4) (by decide)
+  obtain hm4 : t4.mem = s6.mem := by rw [u4.mem, k3.2.1, k2.2.1, k1.2.1, u9.mem, u8.mem, u7.mem]
   refine WP.block_append (WP.mono (addQs_ok (s0 := t4) 6 (Nat.le_refl _) t4
     ⟨hc4, Rest.refl _ _, rfl, fun _ _ _ => rfl, rfl, by rw [u4.gpr]; decide, by
       simp only [colsV, u4.gpr]; rfl⟩) fun t5 h5 => ?_)
   refine wp_sub fun t6 u6 => WP.block_nil ?_
   -- The words loaded.
-  have L9 : (s9.gpr .t4).toNat = T s.mem b 9 := by
+  obtain L9 : (s9.gpr .t4).toNat = T s.mem b 9 := by
     rw [u9.other _ (by decide), u8.other _ (by decide), u7.gpr]; exact h6.hi 9 (by omega_using []) (by omega_using [])
-  have L10 : (s9.gpr .a1).toNat = T s.mem b 10 := by
+  obtain L10 : (s9.gpr .a1).toNat = T s.mem b 10 := by
     rw [u9.other _ (by decide), u8.gpr, u7.mem]; exact h6.hi 10 (by omega_using []) (by omega_using [])
-  have L11 : (s9.gpr .a4).toNat = T s.mem b 11 := by
+  obtain L11 : (s9.gpr .a4).toNat = T s.mem b 11 := by
     rw [u9.gpr, u8.mem, u7.mem]; exact h6.hi 11 (by omega_using []) (by omega_using [])
-  have hβ : s9.gpr .a2 = s6.gpr .a2 := by
+  obtain hβ : s9.gpr .a2 = s6.gpr .a2 := by
     rw [u9.other _ (by decide), u8.other _ (by decide), u7.other _ (by decide)]
   rw [L9, hβ] at f1
   rw [k1.1 .a1 (by decide), L10] at f2
   rw [k2.1 .a4 (by decide), k1.1 .a4 (by decide), L11] at f3
   -- The registers before the sum of the quotient words.
-  have g9 : ∀ r, r ≠ .t4 → r ≠ .a1 → r ≠ .a4 → s9.gpr r = s6.gpr r := fun r h1 h2 h3 => by
+  obtain g9 : ∀ r, r ≠ .t4 → r ≠ .a1 → r ≠ .a4 → s9.gpr r = s6.gpr r := fun r h1 h2 h3 => by
     rw [u9.other _ h3, u8.other _ h2, u7.other _ h1]
-  have x0 : (t4.gpr (X 0)) = s6.gpr (rw 6) := by
+  obtain x0 : (t4.gpr (X 0)) = s6.gpr (rw 6) := by
     show t4.gpr .t5 = s6.gpr .t5
     rw [u4.other _ (by decide), k3.1 _ (by decide), k2.1 _ (by decide), k1.1 _ (by decide),
       g9 _ (by decide) (by decide) (by decide)]
-  have x1 : (t4.gpr (X 1)) = s6.gpr (rw 7) := by
+  obtain x1 : (t4.gpr (X 1)) = s6.gpr (rw 7) := by
     show t4.gpr .t6 = s6.gpr .t6
     rw [u4.other _ (by decide), k3.1 _ (by decide), k2.1 _ (by decide), k1.1 _ (by decide),
       g9 _ (by decide) (by decide) (by decide)]
-  have x2 : (t4.gpr (X 2)) = s6.gpr (rw 8) := by
+  obtain x2 : (t4.gpr (X 2)) = s6.gpr (rw 8) := by
     show t4.gpr .t3 = s6.gpr .t3
     rw [u4.other _ (by decide), k3.1 _ (by decide), k2.1 _ (by decide), k1.1 _ (by decide),
       g9 _ (by decide) (by decide) (by decide)]
-  have x3 : (t4.gpr (X 3)) = t1.gpr .t4 := by
+  obtain x3 : (t4.gpr (X 3)) = t1.gpr .t4 := by
     show t4.gpr .t4 = _
     rw [u4.other _ (by decide), k3.1 _ (by decide), k2.1 _ (by decide)]
-  have x4 : (t4.gpr (X 4)) = t2.gpr .a1 := by
+  obtain x4 : (t4.gpr (X 4)) = t2.gpr .a1 := by
     show t4.gpr .a1 = _
     rw [u4.other _ (by decide), k3.1 _ (by decide)]
-  have x5 : (t4.gpr (X 5)) = t3.gpr .a4 := by
+  obtain x5 : (t4.gpr (X 5)) = t3.gpr .a4 := by
     show t4.gpr .a4 = _
     rw [u4.other _ (by decide)]
-  have hB : t5.gpr .a5 = t3.gpr .a5 := by rw [h5.a5, u4.other _ (by decide)]
-  have hm5 : t5.mem = s6.mem := by rw [h5.mem, hm4]
-  have hx : ∀ k < 6, t6.gpr (X k) = t5.gpr (X k) := fun k hk => u6.other _ (X_facts k hk).1
-  have ha2 : t6.gpr XC = t5.gpr .a2 - t5.gpr .a5 := by rw [u6.gpr]; rfl
+  obtain hB : t5.gpr .a5 = t3.gpr .a5 := by rw [h5.a5, u4.other _ (by decide)]
+  obtain hm5 : t5.mem = s6.mem := by rw [h5.mem, hm4]
+  obtain hx : ∀ k < 6, t6.gpr (X k) = t5.gpr (X k) := fun k hk => u6.other _ (X_facts k hk).1
+  obtain ha2 : t6.gpr XC = t5.gpr .a2 - t5.gpr .a5 := by rw [u6.gpr]; rfl
   -- The numbers.
   have hv5 := h5.val
   rw [colsV_add] at hv5
-  have hQ : colsV (fun k => dw t4.mem b (ACC + 8 * k)) 6 = accW ACC s6.mem b 6 := by
+  obtain hQ : colsV (fun k => dw t4.mem b (ACC + 8 * k)) 6 = accW ACC s6.mem b 6 := by
     rw [accW_eq, hm4]
   rw [hQ] at hv5
   have hv6 := h6.val
-  have hup : upW s.mem b (6 + 3) (9 - 6) = T s.mem b 9 + 2 ^ 64 * (T s.mem b 10 + 2 ^ 64 * T s.mem b 11) := by
+  obtain hup : upW s.mem b (6 + 3) (9 - 6) = T s.mem b 9 + 2 ^ 64 * (T s.mem b 10 + 2 ^ 64 * T s.mem b 11) := by
     simp only [upW, Nat.reduceAdd, Nat.reduceSub, Nat.mul_zero, Nat.add_zero]
-  have hw6 : wv s.mem b 6 s6 = (s6.gpr (rw 6)).toNat + 2 ^ 64 * (s6.gpr (rw 7)).toNat +
+  obtain hw6 : wv s.mem b 6 s6 = (s6.gpr (rw 6)).toNat + 2 ^ 64 * (s6.gpr (rw 7)).toNat +
       2 ^ 128 * (s6.gpr (rw 8)).toNat +
       2 ^ 192 * (T s.mem b 9 + 2 ^ 64 * (T s.mem b 10 + 2 ^ 64 * T s.mem b 11)) := by
     rw [wv, hup]
   rw [hw6] at hv6
-  have hX4 : colsV (fun k => (t4.gpr (X k)).toNat) 6 = (s6.gpr (rw 6)).toNat + 2 ^ 64 * (s6.gpr (rw 7)).toNat +
+  obtain hX4 : colsV (fun k => (t4.gpr (X k)).toNat) 6 = (s6.gpr (rw 6)).toNat + 2 ^ 64 * (s6.gpr (rw 7)).toNat +
       2 ^ 128 * (s6.gpr (rw 8)).toNat + 2 ^ 192 * (t1.gpr .t4).toNat + 2 ^ 256 * (t2.gpr .a1).toNat +
       2 ^ 320 * (t3.gpr .a4).toNat := by
     simp only [colsV, x0, x1, x2, x3, x4, x5]; omega_using []
   rw [hX4] at hv5
-  have hX6 : colsV (fun k => (t6.gpr (X k)).toNat) 6 = colsV (fun k => (t5.gpr (X k)).toNat) 6 :=
+  obtain hX6 : colsV (fun k => (t6.gpr (X k)).toNat) 6 = colsV (fun k => (t5.gpr (X k)).toNat) 6 :=
     colsV_congr fun k hk => by rw [hx k hk]
-  have hQlt := accW_lt (acc := ACC) s6.mem b 6
+  obtain hQlt := accW_lt (acc := ACC) s6.mem b 6
   have hc5 := h5.cy
-  have hcol := colsV_lt_of (fun k => (t5.gpr (X k)).toNat) (fun k => (BitVec.isLt _)) 6
+  obtain hcol := colsV_lt_of (fun k => (t5.gpr (X k)).toNat) (fun k => (BitVec.isLt _)) 6
   rw [← hB] at l3 f3
-  have hsub : (t5.gpr .a5).toNat ≤ (t5.gpr .a2).toNat →
+  obtain hsub : (t5.gpr .a5).toNat ≤ (t5.gpr .a2).toNat →
       (t6.gpr XC).toNat = (t5.gpr .a2).toNat - (t5.gpr .a5).toNat := fun h => by
     rw [ha2, BitVec.toNat_sub]
     have := (t5.gpr .a2).isLt
     omega_using [h]
   -- The borrow out of the top words, and the number before the quotient words.
-  have ha : (s6.gpr (rw 6)).toNat + 2 ^ 64 * (s6.gpr (rw 7)).toNat + 2 ^ 128 * (s6.gpr (rw 8)).toNat +
+  obtain ha : (s6.gpr (rw 6)).toNat + 2 ^ 64 * (s6.gpr (rw 7)).toNat + 2 ^ 128 * (s6.gpr (rw 8)).toNat +
       2 ^ 192 * (t1.gpr .t4).toNat + 2 ^ 256 * (t2.gpr .a1).toNat + 2 ^ 320 * (t3.gpr .a4).toNat +
       2 ^ 192 * (s6.gpr .a2).toNat =
       ((s6.gpr (rw 6)).toNat + 2 ^ 64 * (s6.gpr (rw 7)).toNat + 2 ^ 128 * (s6.gpr (rw 8)).toNat +
@@ -677,22 +677,22 @@ theorem reduceWith_ok {quot qm : Reg → List Instr} {M Pm : Nat} (hQ : QOk quot
   generalize (s6.gpr .a2).toNat = β at *
   generalize (t5.gpr .a5).toNat = B at *
   generalize (t5.gpr .a2).toNat = c at *
-  have key : (C + 2 ^ 384 * c) * 2 ^ 384 = Pr + Q * Pm + 2 ^ 768 * B := by
-    have hQM : Q * Pm + Q * M = Q * 2 ^ 384 := by rw [← Nat.mul_add, hPM]
+  obtain key : (C + 2 ^ 384 * c) * 2 ^ 384 = Pr + Q * Pm + 2 ^ 768 * B := by
+    obtain hQM : Q * Pm + Q * M = Q * 2 ^ 384 := by rw [← Nat.mul_add, hPM]
     generalize Q * M = QM at *
     generalize Q * Pm = QP at *
     omega_using [ha, hv5, hv6, hQM]
-  have hge : B ≤ c := by
+  obtain hge : B ≤ c := by
     rcases Nat.lt_or_ge c B with h | h
     · have h0 : c = 0 := by omega_using [hPM, ha2, hcol, hQlt, hv6, f3, l3, ha, hc5, hv5, hsub, key, h]
-      have h1 : B = 1 := by omega_using [f3, h]
+      obtain h1 : B = 1 := by omega_using [f3, h]
       rw [h0, h1] at key
-      have hC : C < 2 ^ 384 := by rw [two384]; exact hcol
+      obtain hC : C < 2 ^ 384 := by rw [two384]; exact hcol
       have := Nat.mul_lt_mul_of_pos_right hC (Nat.two_pow_pos 384)
       simp only [Nat.mul_zero, Nat.add_zero, Nat.mul_one] at key
       omega_using [f2, l2, L11, ha2, hcol, hQlt, f1, hv6, f3, l3, ha, hc5, hv5, hsub, h, h0, h1, hC, this, key]
     · exact h
-  have hxc : (t6.gpr XC).toNat = c - B := hsub hge
+  obtain hxc : (t6.gpr XC).toNat = c - B := hsub hge
   refine ⟨hc4.of_rest (h5.rest.trans (u6.rest (by decide))) (by decide),
     h6.rest.trans ((r94.trans (r4.trans (h5.rest.trans (u6.rest (by decide))))).mono (by decide)), ?_,
     by rw [hxc]; omega_using [hc5], Q,
@@ -758,11 +758,11 @@ theorem sel_mask {x e m : BitVec 64} (hm : IsMask m) :
 /-- The mask of `a ∨ c`, for bits `a` and `c`. -/
 theorem mask_of_bits {a c : BitVec 64} (ha : a.toNat ≤ 1) (hc : c.toNat ≤ 1) :
     IsMask (0 - (a ||| c)) ∧ (0 - (a ||| c) = BitVec.allOnes 64 ↔ a.toNat = 1 ∨ c.toNat = 1) := by
-  have ha' : a = 0 ∨ a = 1 := by
+  obtain ha' : a = 0 ∨ a = 1 := by
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp ha with h | h
     · exact .inl (BitVec.eq_of_toNat_eq (by rw [h]; rfl))
     · exact .inr (BitVec.eq_of_toNat_eq (by rw [h]; rfl))
-  have hc' : c = 0 ∨ c = 1 := by
+  obtain hc' : c = 0 ∨ c = 1 := by
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc with h | h
     · exact .inl (BitVec.eq_of_toNat_eq (by rw [h]; rfl))
     · exact .inr (BitVec.eq_of_toNat_eq (by rw [h]; rfl))
@@ -807,7 +807,7 @@ theorem sumStep_ok {O : Addr} {N : Nat → Nat} (hN : ∀ j, N j < 2 ^ 64) {k : 
     (hw : ∀ j < 6, InRegions s0.wr (O + BitVec.ofNat 64 (8 * j)) 8) (h : SumInv O N s0 j s) :
     WP isa (.block (k ++ sumWord j)) s (SumInv O N s0 (j + 1)) := by
   obtain ⟨-, x5, x6, x7, x0, xa, -, -, -, -, -⟩ := X_facts j hj
-  have hpre : j = 0 ∨ (s.gpr .t0).toNat = N (j - 1) := by
+  obtain hpre : j = 0 ∨ (s.gpr .t0).toNat = N (j - 1) := by
     rcases Nat.eq_zero_or_pos j with h0 | h0
     · exact .inl h0
     · exact .inr (h.t0 h0)
@@ -815,19 +815,19 @@ theorem sumStep_ok {O : Addr} {N : Nat → Nat} (hN : ∀ j, N j < 2 ^ 64) {k : 
   unfold sumWord
   refine WP.block_append (WP.mono (adc_ok (d := .a5) (x := X j) (y := .t0) (c := .a7) (u := .a0))
     fun s2 ⟨e2, k2⟩ => ?_)
-  have g2 : ∀ r, r ∉ clobC → s2.gpr r = s0.gpr r := fun r hr => by
+  obtain g2 : ∀ r, r ∉ clobC → s2.gpr r = s0.gpr r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨r0, ra, r5, r6, r7⟩ := hr
     rw [k2.1 _ (by simp [ra, r5, r7]), k1.1 _ (by simp [r0, r6]), h.gpr r (by simp [r0, ra, r5, r6, r7])]
-  have p2 : s2.gpr .t2 + BitVec.ofNat 64 (8 * j) = O + BitVec.ofNat 64 (8 * j) := by
+  obtain p2 : s2.gpr .t2 + BitVec.ofNat 64 (8 * j) = O + BitVec.ofNat 64 (8 * j) := by
     rw [g2 _ (by decide), h2]
   refine wp_sd (by omega_using [hj]) p2 (al8 hal (by omega_using [])) (by rw [k2.2.2.2.1, k1.2.2.2.1, h.wr]; exact hw j hj)
     fun s3 u3 => WP.block_nil ?_
-  have ex : s1.gpr (X j) = s0.gpr (X j) := by rw [k1.1 _ (by simp [x0, x6]), h.gpr _ (by simp [x0, xa, x5, x6, x7])]
-  have ec : s1.gpr .a7 = s.gpr .a7 := k1.1 _ (by decide)
-  have e2' := e2 (by rw [ec]; exact h.cy)
+  obtain ex : s1.gpr (X j) = s0.gpr (X j) := by rw [k1.1 _ (by simp [x0, x6]), h.gpr _ (by simp [x0, xa, x5, x6, x7])]
+  obtain ec : s1.gpr .a7 = s.gpr .a7 := k1.1 _ (by decide)
+  obtain e2' := e2 (by rw [ec]; exact h.cy)
   rw [ex, ec, e1] at e2'
-  have hm3 : s3.mem = s.mem.writeW (O + BitVec.ofNat 64 (8 * j)) (s2.gpr .a5) := by
+  obtain hm3 : s3.mem = s.mem.writeW (O + BitVec.ofNat 64 (8 * j)) (s2.gpr .a5) := by
     rw [u3.mem, k2.2.1, k1.2.1]
   refine ⟨fun r hr => by rw [u3.gpr]; exact g2 r hr, by rw [u3.rd, k2.2.2.1, k1.2.2.1, h.rd],
     by rw [u3.wr, k2.2.2.2.1, k1.2.2.2.1, h.wr], by rw [u3.sp, k2.2.2.2.2, k1.2.2.2.2, h.sp], ?_,
@@ -837,7 +837,7 @@ theorem sumStep_ok {O : Addr} {N : Nat → Nat} (hN : ∀ j, N j < 2 ^ 64) {k : 
     have := (s2.gpr .a5).isLt; have := (s0.gpr (X j)).isLt; have := hN j; have := h.cy
     omega_using [e1, e2', this]
   · have hv := h.val
-    have hc : colsV (fun k => dw s3.mem O (8 * k)) j = colsV (fun k => dw s.mem O (8 * k)) j :=
+    obtain hc : colsV (fun k => dw s3.mem O (8 * k)) j = colsV (fun k => dw s.mem O (8 * k)) j :=
       colsV_congr' fun k hk => by rw [hm3, dw_write_other _ _ _ (by omega_using [hk]) (by omega_using [hj, hk]) (by omega_using [hj])]
     show colsV (fun k => dw s3.mem O (8 * k)) j + (2 ^ 64) ^ j * dw s3.mem O (8 * j) +
         (2 ^ 64) ^ (j + 1) * (s3.gpr .a7).toNat =
@@ -846,7 +846,7 @@ theorem sumStep_ok {O : Addr} {N : Nat → Nat} (hN : ∀ j, N j < 2 ^ 64) {k : 
       ← hv]
     generalize (2 ^ 64) ^ j = E at *
     generalize colsV (fun k => dw s.mem O (8 * k)) j = C at *
-    have key : E * (s2.gpr .a5).toNat + E * 2 ^ 64 * (s2.gpr .a7).toNat =
+    obtain key : E * (s2.gpr .a5).toNat + E * 2 ^ 64 * (s2.gpr .a7).toNat =
         E * (s.gpr .a7).toNat + E * ((s0.gpr (X j)).toNat + N j) := by
       rw [Nat.mul_assoc, ← Nat.mul_add, ← Nat.mul_add, e2']; congr 1; omega_using []
     omega_using [key]
@@ -877,23 +877,23 @@ theorem selStep_ok {O : Addr} (hal : O.toNat % 8 = 0) {s0 s : State} (h2 : s0.gp
     WP isa (.block (selWord j)) s (SelInv O s0 (j + 1)) := by
   obtain ⟨-, x5, -, -, x0, -, -, x2, -, -, -⟩ := X_facts j hj
   unfold selWord
-  have p : s.gpr .t2 + BitVec.ofNat 64 (8 * j) = O + BitVec.ofNat 64 (8 * j) := by
+  obtain p : s.gpr .t2 + BitVec.ofNat 64 (8 * j) = O + BitVec.ofNat 64 (8 * j) := by
     rw [h.gpr _ (by decide), h2]
-  have hr : InRegions (s.rd ++ s.wr) (O + BitVec.ofNat 64 (8 * j)) 8 := by
+  obtain hr : InRegions (s.rd ++ s.wr) (O + BitVec.ofNat 64 (8 * j)) 8 := by
     obtain ⟨r, hr, hc⟩ := hw j hj
     exact ⟨r, List.mem_append_right _ (by rw [h.wr]; exact hr), hc⟩
   refine wp_ld (by omega_using [hj]) p (al8 hal (by omega_using [])) hr fun s1 u1 => wp_xor fun s2 u2 =>
     VG.Proof.X25519.RISCV64.wp_and fun s3 u3 => wp_xor fun s4 u4 => ?_
-  have g4 : ∀ r, r ≠ .a5 → s4.gpr r = s.gpr r := fun r hr => by
+  obtain g4 : ∀ r, r ≠ .a5 → s4.gpr r = s.gpr r := fun r hr => by
     rw [u4.other _ hr, u3.other _ hr, u2.other _ hr, u1.other _ hr]
-  have v4 : s4.gpr .a5 = if s0.gpr .t0 = BitVec.allOnes 64 then s.mem.readW (O + BitVec.ofNat 64 (8 * j)) 64
+  obtain v4 : s4.gpr .a5 = if s0.gpr .t0 = BitVec.allOnes 64 then s.mem.readW (O + BitVec.ofNat 64 (8 * j)) 64
       else s0.gpr (X j) := by
     rw [u4.gpr, u3.gpr, u2.gpr, u1.gpr, u3.other _ x5, u2.other _ x5, u1.other _ x5,
       u2.other .t0 (by decide), u1.other .t0 (by decide), h.gpr _ x5, h.gpr .t0 (by decide)]
     exact sel_mask hm
   refine wp_sd (by omega_using [hj]) (by rw [g4 _ (by decide), p]) (al8 hal (by omega_using []))
     (by rw [u4.wr, u3.wr, u2.wr, u1.wr, h.wr]; exact hw j hj) fun s5 u5 => WP.block_nil ?_
-  have hm5 : s5.mem = s.mem.writeW (O + BitVec.ofNat 64 (8 * j)) (s4.gpr .a5) := by
+  obtain hm5 : s5.mem = s.mem.writeW (O + BitVec.ofNat 64 (8 * j)) (s4.gpr .a5) := by
     rw [u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
   refine ⟨fun r hr => by rw [u5.gpr, g4 r hr, h.gpr r hr], by rw [u5.rd, u4.rd, u3.rd, u2.rd, u1.rd, h.rd],
     by rw [u5.wr, u4.wr, u3.wr, u2.wr, u1.wr, h.wr], by rw [u5.sp, u4.sp, u3.sp, u2.sp, u1.sp, h.sp], ?_,
@@ -930,42 +930,42 @@ theorem csubWith_ok {ks : List (List Instr)} {N : Nat → Nat} {M : Nat} (hN : �
   unfold sumWith csubTail
   rw [List.cons_append]
   refine wp_li (by decide) fun s1 u1 => ?_
-  have h0 : SumInv O N s 0 s1 :=
+  obtain h0 : SumInv O N s 0 s1 :=
     ⟨fun r hr => u1.other _ (fun h => hr (by simp [h])), u1.rd, u1.wr, u1.sp, by rw [u1.mem]; exact Frame.refl _ _,
       fun h => absurd h (Nat.lt_irrefl _), by rw [u1.gpr]; decide, by simp only [colsV, u1.gpr]; rfl⟩
   refine WP.block_append (WP.mono (sums_ok hN hk hal ht2 hw 6 (Nat.le_refl _) s1 h0) fun s2 h2 => ?_)
   rw [List.cons_append, List.cons_append, List.cons_append, List.nil_append]
   refine wp_or fun s3 u3 => wp_li (imm := 0) (by decide) fun s4 u4 => wp_sub fun s5 u5 => ?_
-  have hxc : s2.gpr XC = s.gpr XC := h2.gpr _ (by decide)
-  have hm : IsMask (s5.gpr .t0) ∧ (s5.gpr .t0 = BitVec.allOnes 64 ↔
+  obtain hxc : s2.gpr XC = s.gpr XC := h2.gpr _ (by decide)
+  obtain hm : IsMask (s5.gpr .t0) ∧ (s5.gpr .t0 = BitVec.allOnes 64 ↔
       (s2.gpr .a7).toNat = 1 ∨ (s.gpr XC).toNat = 1) := by
     rw [u5.gpr, u4.gpr, u4.other _ (by decide), u3.gpr, ← hxc]
     exact mask_of_bits h2.cy (by rw [hxc]; exact hc)
-  have g5 : ∀ r, r ≠ .t0 → r ≠ .a7 → s5.gpr r = s2.gpr r := fun r h0 h7 => by
+  obtain g5 : ∀ r, r ≠ .t0 → r ≠ .a7 → s5.gpr r = s2.gpr r := fun r h0 h7 => by
     rw [u5.other _ h0, u4.other _ h0, u3.other _ h7]
-  have m5 : s5.mem = s2.mem := by rw [u5.mem, u4.mem, u3.mem]
-  have p5 : s5.gpr .t2 = O := by rw [g5 _ (by decide) (by decide), h2.gpr _ (by decide), ht2]
-  have w5 : s5.wr = s.wr := by rw [u5.wr, u4.wr, u3.wr, h2.wr]
+  obtain m5 : s5.mem = s2.mem := by rw [u5.mem, u4.mem, u3.mem]
+  obtain p5 : s5.gpr .t2 = O := by rw [g5 _ (by decide) (by decide), h2.gpr _ (by decide), ht2]
+  obtain w5 : s5.wr = s.wr := by rw [u5.wr, u4.wr, u3.wr, h2.wr]
   refine WP.mono (sels_ok hal p5 (by rw [w5]; exact hw) hm.1 6 (Nat.le_refl _) s5
     ⟨fun _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _),
       fun _ _ _ => rfl⟩) fun s6 h6 => ?_
-  have rt : ∀ r, r ∉ clobC → s6.gpr r = s.gpr r := fun r hr => by
-    have h0 : r ≠ .t0 := fun h => hr (by simp [h])
-    have h5 : r ≠ .a5 := fun h => hr (by simp [h])
-    have h7 : r ≠ .a7 := fun h => hr (by simp [h])
+  obtain rt : ∀ r, r ∉ clobC → s6.gpr r = s.gpr r := fun r hr => by
+    obtain h0 : r ≠ .t0 := fun h => hr (by simp [h])
+    obtain h5 : r ≠ .a5 := fun h => hr (by simp [h])
+    obtain h7 : r ≠ .a7 := fun h => hr (by simp [h])
     rw [h6.gpr r h5, g5 r h0 h7, h2.gpr r hr]
-  have hxk : ∀ k < 6, (s5.gpr (X k)).toNat = (s.gpr (X k)).toNat := fun k hk => by
+  obtain hxk : ∀ k < 6, (s5.gpr (X k)).toNat = (s.gpr (X k)).toNat := fun k hk => by
     obtain ⟨-, x5, x6, x7, x0, xa, -⟩ := X_facts k hk
     rw [g5 _ x0 x7, h2.gpr _ (by simp [x0, xa, x5, x6, x7])]
-  have hd : d6 s6.mem O = if s5.gpr .t0 = BitVec.allOnes 64 then d6 s2.mem O else xv s := by
+  obtain hd : d6 s6.mem O = if s5.gpr .t0 = BitVec.allOnes 64 then d6 s2.mem O else xv s := by
     split
     · exact colsV_congr' fun k hk => by rw [h6.lo k hk, ite_eq_left ‹_›, m5]
     · exact colsV_congr' fun k hk => by rw [h6.lo k hk, ite_eq_right ‹_›, hxk k hk]
   have hv := h2.val
   rw [colsV_add] at hv
-  have hs : d6 s2.mem O + 2 ^ 384 * (s2.gpr .a7).toNat + M = xv s + 2 ^ 384 := by
+  obtain hs : d6 s2.mem O + 2 ^ 384 * (s2.gpr .a7).toNat + M = xv s + 2 ^ 384 := by
     rw [two384]; simp only [d6, xv] at hv ⊢; omega_using [hNv, hv]
-  have hd6 := colsV_lt_of (fun k => dw s2.mem O (8 * k)) (fun k => dw_lt _ _ _) 6
+  obtain hd6 := colsV_lt_of (fun k => dw s2.mem O (8 * k)) (fun k => dw_lt _ _ _) 6
   rw [← two384] at hd6
   have hc7 := h2.cy
   refine ⟨?_, ?_, rt, ?_, ?_, ?_⟩
@@ -976,11 +976,11 @@ theorem csubWith_ok {ks : List (List Instr)} {N : Nat → Nat} {M : Nat} (hN : �
     generalize colsV (fun k => (s.gpr (X k)).toNat) 6 = Y at *
     split
     · rename_i h
-      have hg := hge.mp h
+      obtain hg := hge.mp h
       rw [Nat.mod_eq_sub_mod (by omega_using [hNv, hv, hg]), Nat.mod_eq_of_lt (by omega_using [hx])]
       omega_using [hNv, hx, hv, hg]
     · rename_i h
-      have hg : ¬ ((s2.gpr .a7).toNat = 1 ∨ (s.gpr XC).toNat = 1) := fun h' => h (hge.mpr h')
+      obtain hg : ¬ ((s2.gpr .a7).toNat = 1 ∨ (s.gpr XC).toNat = 1) := fun h' => h (hge.mpr h')
       rw [Nat.mod_eq_of_lt (by omega_using [hNv, hc, hc7, hd6, hv, hg])]
       omega_using [hc, hg]
   · exact h2.frame.trans (by rw [← m5]; exact h6.frame)
@@ -1012,13 +1012,13 @@ theorem kP_ok : ∀ j < 6, KOk (sumPKs.getD j []) j NP := by
   · exact wp_li (imm := 1) (by decide) fun s1 u1 => WP.block_nil ⟨by rw [u1.gpr]; decide, (upd_keeps u1).mono⟩
   · exact wp_li (imm := 0) (by decide) fun s1 u1 => WP.block_nil ⟨by rw [u1.gpr]; decide, (upd_keeps u1).mono⟩
   · rename_i h
-    have h' : (s.gpr .t0).toNat = 0 := by
+    obtain h' : (s.gpr .t0).toNat = 0 := by
       rcases h with h | h
       · omega
       · exact h
     exact WP.block_nil ⟨h', ⟨fun _ _ => rfl, rfl, rfl, rfl, rfl⟩⟩
   · rename_i h
-    have h' : (s.gpr .t0).toNat = 0 := by
+    obtain h' : (s.gpr .t0).toNat = 0 := by
       rcases h with h | h
       · omega
       · exact h
@@ -1060,7 +1060,7 @@ abbrev clobI : List Reg := [.t3, .t6, .a1, .a2, .a4, .a5]
 
 /-- The six doublewords at `b + o`, as offsets from `b`. -/
 theorem d6_add (m : Mem) (b : Addr) (o : Nat) : d6 m (b + BitVec.ofNat 64 o) = E6 m b o := by
-  have e : ∀ k, (b + BitVec.ofNat 64 o) + BitVec.ofNat 64 k = b + BitVec.ofNat 64 (o + k) := fun k => by
+  obtain e : ∀ k, (b + BitVec.ofNat 64 o) + BitVec.ofNat 64 k = b + BitVec.ofNat 64 (o + k) := fun k => by
     rw [BitVec.add_assoc, BitVec.ofNat_add]
   simp only [d6, E6, val6, colsV, dw, e, Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reduceMul,
     Nat.pow_zero, Nat.zero_add, Nat.reducePow]
@@ -1078,13 +1078,13 @@ theorem copyIn_ok {b A : Addr} {s : State} (hc : Ctx b s) {p : Reg} (hp : s.gpr 
       Ctx b s' ∧ Rest clobI s s' ∧ Frame [⟨b + BitVec.ofNat 64 o, 48⟩] s.mem s'.mem ∧
       d6 s'.mem (b + BitVec.ofNat 64 o) = d6 s.mem A := by
   unfold copyIn
-  have hp' : ∀ r ∈ clobI, r ≠ p := fun r hr h => hpr (h ▸ hr)
-  have h0 := hr 0 (by decide)
-  have h1 := hr 1 (by decide)
-  have h2 := hr 2 (by decide)
-  have h3 := hr 3 (by decide)
-  have h4 := hr 4 (by decide)
-  have h5 := hr 5 (by decide)
+  obtain hp' : ∀ r ∈ clobI, r ≠ p := fun r hr h => hpr (h ▸ hr)
+  obtain h0 := hr 0 (by decide)
+  obtain h1 := hr 1 (by decide)
+  obtain h2 := hr 2 (by decide)
+  obtain h3 := hr 3 (by decide)
+  obtain h4 := hr 4 (by decide)
+  obtain h5 := hr 5 (by decide)
   simp only [Nat.mul_zero, Nat.mul_one, Nat.reduceMul] at h0 h1 h2 h3 h4 h5
   refine wp_ld (off := 0) (a := A + BitVec.ofNat 64 0) (by decide) (by rw [hp]) (al8 hal (by decide))
     (by exact h0) fun s1 u1 => ?_
@@ -1098,59 +1098,59 @@ theorem copyIn_ok {b A : Addr} {s : State} (hc : Ctx b s) {p : Reg} (hp : s.gpr 
     (by rw [u4.rd, u4.wr, u3.rd, u3.wr, u2.rd, u2.wr, u1.rd, u1.wr]; exact h4) fun s5 u5 => ?_
   refine wp_ld (off := 40) (a := A + BitVec.ofNat 64 40) (by decide) (by rw [u5.other _ (hp' .a4 (by decide)).symm, u4.other _ (hp' .a2 (by decide)).symm, u3.other _ (hp' .a1 (by decide)).symm, u2.other _ (hp' .t6 (by decide)).symm, u1.other _ (hp' .t3 (by decide)).symm, hp]) (al8 hal (by decide))
     (by rw [u5.rd, u5.wr, u4.rd, u4.wr, u3.rd, u3.wr, u2.rd, u2.wr, u1.rd, u1.wr]; exact h5) fun s6 u6 => ?_
-  have r6 : Rest clobI s s6 := (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
+  obtain r6 : Rest clobI s s6 := (u1.rest (by decide)).trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
     ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans (u6.rest (by decide))))))
-  have hc6 : Ctx b s6 := hc.of_rest r6 (by decide)
-  have m6 : s6.mem = s.mem := by rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
-  have v0 : s6.gpr .t3 = s.mem.readW (A + BitVec.ofNat 64 0) 64 := by
+  obtain hc6 : Ctx b s6 := hc.of_rest r6 (by decide)
+  obtain m6 : s6.mem = s.mem := by rw [u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
+  obtain v0 : s6.gpr .t3 = s.mem.readW (A + BitVec.ofNat 64 0) 64 := by
     rw [u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), u1.gpr]
-  have v1 : s6.gpr .t6 = s.mem.readW (A + BitVec.ofNat 64 8) 64 := by
+  obtain v1 : s6.gpr .t6 = s.mem.readW (A + BitVec.ofNat 64 8) 64 := by
     rw [u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide), u2.gpr, u1.mem]
-  have v2 : s6.gpr .a1 = s.mem.readW (A + BitVec.ofNat 64 16) 64 := by
+  obtain v2 : s6.gpr .a1 = s.mem.readW (A + BitVec.ofNat 64 16) 64 := by
     rw [u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide), u3.gpr, u2.mem, u1.mem]
-  have v3 : s6.gpr .a2 = s.mem.readW (A + BitVec.ofNat 64 24) 64 := by
+  obtain v3 : s6.gpr .a2 = s.mem.readW (A + BitVec.ofNat 64 24) 64 := by
     rw [u6.other _ (by decide), u5.other _ (by decide), u4.gpr, u3.mem, u2.mem, u1.mem]
-  have v4 : s6.gpr .a4 = s.mem.readW (A + BitVec.ofNat 64 32) 64 := by
+  obtain v4 : s6.gpr .a4 = s.mem.readW (A + BitVec.ofNat 64 32) 64 := by
     rw [u6.other _ (by decide), u5.gpr, u4.mem, u3.mem, u2.mem, u1.mem]
-  have v5 : s6.gpr .a5 = s.mem.readW (A + BitVec.ofNat 64 40) 64 := by
+  obtain v5 : s6.gpr .a5 = s.mem.readW (A + BitVec.ofNat 64 40) 64 := by
     rw [u6.gpr, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
   refine sd_ok hc6 (d := o + 0) (by omega_using [ho]) (by omega_using [ho8]) fun s7 u7 => ?_
-  have hc7 : Ctx b s7 := hc6.of_rest (u7.rest []) (by decide)
+  obtain hc7 : Ctx b s7 := hc6.of_rest (u7.rest []) (by decide)
   refine sd_ok hc7 (d := o + 8) (by omega_using [ho]) (by omega_using [ho8]) fun s8 u8 => ?_
-  have hc8 : Ctx b s8 := hc7.of_rest (u8.rest []) (by decide)
+  obtain hc8 : Ctx b s8 := hc7.of_rest (u8.rest []) (by decide)
   refine sd_ok hc8 (d := o + 16) (by omega_using [ho]) (by omega_using [ho8]) fun s9 u9 => ?_
-  have hc9 : Ctx b s9 := hc8.of_rest (u9.rest []) (by decide)
+  obtain hc9 : Ctx b s9 := hc8.of_rest (u9.rest []) (by decide)
   refine sd_ok hc9 (d := o + 24) (by omega_using [ho]) (by omega_using [ho8]) fun s10 u10 => ?_
-  have hc10 : Ctx b s10 := hc9.of_rest (u10.rest []) (by decide)
+  obtain hc10 : Ctx b s10 := hc9.of_rest (u10.rest []) (by decide)
   refine sd_ok hc10 (d := o + 32) (by omega_using [ho]) (by omega_using [ho8]) fun s11 u11 => ?_
-  have hc11 : Ctx b s11 := hc10.of_rest (u11.rest []) (by decide)
+  obtain hc11 : Ctx b s11 := hc10.of_rest (u11.rest []) (by decide)
   refine sd_ok hc11 (d := o + 40) (by omega_using [ho]) (by omega_using [ho8]) fun s12 u12 => ?_
   refine WP.block_nil ?_
-  have g12 : s12.gpr = s6.gpr := by rw [u12.gpr, u11.gpr, u10.gpr, u9.gpr, u8.gpr, u7.gpr]
-  have hm : s12.mem = ((((((s.mem.writeW (b + BitVec.ofNat 64 (o + 0)) (s6.gpr .t3)).writeW
+  obtain g12 : s12.gpr = s6.gpr := by rw [u12.gpr, u11.gpr, u10.gpr, u9.gpr, u8.gpr, u7.gpr]
+  obtain hm : s12.mem = ((((((s.mem.writeW (b + BitVec.ofNat 64 (o + 0)) (s6.gpr .t3)).writeW
       (b + BitVec.ofNat 64 (o + 8)) (s6.gpr .t6)).writeW (b + BitVec.ofNat 64 (o + 16)) (s6.gpr .a1)).writeW
       (b + BitVec.ofNat 64 (o + 24)) (s6.gpr .a2)).writeW (b + BitVec.ofNat 64 (o + 32)) (s6.gpr .a4)).writeW
       (b + BitVec.ofNat 64 (o + 40)) (s6.gpr .a5)) := by
     rw [u12.mem, u11.mem, u10.mem, u9.mem, u8.mem, u7.mem, m6, u11.gpr, u10.gpr, u9.gpr, u8.gpr, u7.gpr]
-  have r612 : Rest [] s6 s12 := ⟨fun r _ => by rw [g12], by rw [u12.rd, u11.rd, u10.rd, u9.rd, u8.rd, u7.rd],
+  obtain r612 : Rest [] s6 s12 := ⟨fun r _ => by rw [g12], by rw [u12.rd, u11.rd, u10.rd, u9.rd, u8.rd, u7.rd],
     by rw [u12.wr, u11.wr, u10.wr, u9.wr, u8.wr, u7.wr], by rw [u12.sp, u11.sp, u10.sp, u9.sp, u8.sp, u7.sp]⟩
   refine ⟨hc6.of_rest r612 (by decide), r6.trans (r612.mono (by decide)), ?_, ?_⟩
   · rw [hm]
-    have c : ∀ k < 6, (⟨b + BitVec.ofNat 64 o, 48⟩ : Region).Contains (b + BitVec.ofNat 64 (o + 8 * k)) 8 :=
+    obtain c : ∀ k < 6, (⟨b + BitVec.ofNat 64 o, 48⟩ : Region).Contains (b + BitVec.ofNat 64 (o + 8 * k)) 8 :=
       fun k hk => Offset.contains b (by omega_using []) (by omega_using [hk]) (by omega_using [ho])
-    have c0 := c 0 (by decide)
-    have c1 := c 1 (by decide)
-    have c2 := c 2 (by decide)
-    have c3 := c 3 (by decide)
-    have c4 := c 4 (by decide)
-    have c5 := c 5 (by decide)
+    obtain c0 := c 0 (by decide)
+    obtain c1 := c 1 (by decide)
+    obtain c2 := c 2 (by decide)
+    obtain c3 := c 3 (by decide)
+    obtain c4 := c 4 (by decide)
+    obtain c5 := c 5 (by decide)
     simp only [Nat.mul_zero, Nat.mul_one, Nat.reduceMul] at c0 c1 c2 c3 c4 c5
     exact ((((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ c0).writeW
       (List.mem_singleton_self _) _ c1).writeW (List.mem_singleton_self _) _ c2).writeW
       (List.mem_singleton_self _) _ c3).writeW (List.mem_singleton_self _) _ c4).writeW
       (List.mem_singleton_self _) _ c5
   · rw [d6_add]
-    have w : ∀ k < 6, dw s12.mem b (o + 8 * k) = dw s.mem A (8 * k) := by
+    obtain w : ∀ k < 6, dw s12.mem b (o + 8 * k) = dw s.mem A (8 * k) := by
       intro k hk
       rw [hm]
       obtain rfl | rfl | rfl | rfl | rfl | rfl : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 := by omega_using [hk]
@@ -1244,13 +1244,13 @@ theorem mulWithF_ok {red : List Instr} {ks : List (List Instr)} {N : Nat → Nat
       Frame (mulW W o) s.mem s'.mem ∧ (∀ r, r ∉ clobM → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   have hc := hw.ctx
-  have alA : (W + BitVec.ofNat 64 a).toNat % 8 = 0 := al8 hw.al ha8
-  have alB : (W + BitVec.ofNat 64 bb).toNat % 8 = 0 := al8 hw.al hb8
-  have eMA : W + BitVec.ofNat 64 2048 + BitVec.ofNat 64 MA = W + BitVec.ofNat 64 3712 := off_add _ _ _
-  have eMB : W + BitVec.ofNat 64 2048 + BitVec.ofNat 64 MB = W + BitVec.ofNat 64 3760 := off_add _ _ _
-  have eAC : W + BitVec.ofNat 64 2048 + BitVec.ofNat 64 ACC = W + BitVec.ofNat 64 3808 := off_add _ _ _
+  obtain alA : (W + BitVec.ofNat 64 a).toNat % 8 = 0 := al8 hw.al ha8
+  obtain alB : (W + BitVec.ofNat 64 bb).toNat % 8 = 0 := al8 hw.al hb8
+  obtain eMA : W + BitVec.ofNat 64 2048 + BitVec.ofNat 64 MA = W + BitVec.ofNat 64 3712 := off_add _ _ _
+  obtain eMB : W + BitVec.ofNat 64 2048 + BitVec.ofNat 64 MB = W + BitVec.ofNat 64 3760 := off_add _ _ _
+  obtain eAC : W + BitVec.ofNat 64 2048 + BitVec.ofNat 64 ACC = W + BitVec.ofNat 64 3808 := off_add _ _ _
   -- The product at `ACC`, by either branch.
-  have hprod : WP isa prodCode s fun s' =>
+  obtain hprod : WP isa prodCode s fun s' =>
       Ctx (W + BitVec.ofNat 64 2048) s' ∧ Rest clob64 s s' ∧ Frame (mulW W o) s.mem s'.mem ∧
       prodV s'.mem (W + BitVec.ofNat 64 2048) =
         d6 s.mem (W + BitVec.ofNat 64 a) * d6 s.mem (W + BitVec.ofNat 64 bb) := by
@@ -1282,17 +1282,17 @@ theorem mulWithF_ok {red : List Instr} {ks : List (List Instr)} {N : Nat → Nat
           (by omega_using [hb]) (by omega_using []), d6_frame f2 (x := 3712) (by omega_using []) (by omega_using []) (by omega_using []), v1]
   refine WP.seq (WP.mono hprod fun s1 ⟨c1, r1, f1, v1⟩ => ?_)
   refine WP.block_append (WP.mono (hred c1) fun s2 ⟨c2, r2, f2, x2, Q, hQ, hv2⟩ => ?_)
-  have r12 : Rest clobM s s2 := (r1.mono (by decide) : Rest clobM _ _).trans r2
-  have hw2 : WsAt W s2 := hw.of_rest r12 (by decide)
-  have hlt : prodV s1.mem (W + BitVec.ofNat 64 2048) < 2 ^ 384 * M := by
+  obtain r12 : Rest clobM s s2 := (r1.mono (by decide) : Rest clobM _ _).trans r2
+  obtain hw2 : WsAt W s2 := hw.of_rest r12 (by decide)
+  obtain hlt : prodV s1.mem (W + BitVec.ofNat 64 2048) < 2 ^ 384 * M := by
     rw [v1]
     exact @Nat.mul_lt_mul_of_lt_of_le (d6 s.mem (W + BitVec.ofNat 64 a)) (2 ^ 384)
       (d6 s.mem (W + BitVec.ofNat 64 bb)) M (d6_lt _ _) (Nat.le_of_lt hB) hM0
-  have hx : xv s2 + 2 ^ 384 * (s2.gpr XC).toNat < 2 * M := by
+  obtain hx : xv s2 + 2 ^ 384 * (s2.gpr XC).toNat < 2 * M := by
     generalize xv s2 + 2 ^ 384 * (s2.gpr XC).toNat = x at hv2 ⊢
     generalize (2 : Nat) ^ 384 = R at hQ hv2 hlt ⊢
-    have h1 : Q * M < R * M := Nat.mul_lt_mul_of_pos_right hQ hM0
-    have h2 : x * R < 2 * M * R := by
+    obtain h1 : Q * M < R * M := Nat.mul_lt_mul_of_pos_right hQ hM0
+    obtain h2 : x * R < 2 * M * R := by
       rw [hv2]
       calc _ < R * M + R * M := Nat.add_lt_add hlt h1
         _ = 2 * M * R := by rw [← Nat.two_mul, Nat.mul_comm R M, Nat.mul_assoc]
@@ -1406,31 +1406,31 @@ theorem addStep_ok {A B : Addr} {s0 : State} (hA : s0.gpr .a0 = A) (hB : s0.gpr 
     WP isa (.block (([.load .d (X j) .a0 (8 * j), .load .d .a5 .a7 (8 * j)] : List Instr) ++ adcWord (X j) .a5)) s
       (AddInv A B s0 (j + 1)) := by
   obtain ⟨x2, x5, x6, -, -, -, -, -, -, -, xne⟩ := X_facts j hj
-  have rd : s.rd ++ s.wr = s0.rd ++ s0.wr := by rw [h.rd, h.wr]
+  obtain rd : s.rd ++ s.wr = s0.rd ++ s0.wr := by rw [h.rd, h.wr]
   rw [List.cons_append, List.cons_append, List.nil_append]
   refine ld2_ok (by rw [h.gpr _ (by decide), hA]) (by rw [h.gpr _ (by decide), hB]) hj halA halB
     (by rw [rd]; exact hrA) (by rw [rd]; exact hrB) fun s1 ex ey k1 => ?_
   refine WP.mono (adc_ok (d := X j) (x := X j) (y := .a5) (c := .a2) (u := .a6) x5 x2 (Ne.symm x6) (by decide))
     fun s2 ⟨e2, k2⟩ => ?_
-  have ec : s1.gpr .a2 = s.gpr .a2 := k1.1 _ (by simp [Ne.symm x2])
-  have e2' := e2 (by rw [ec]; exact h.cy)
+  obtain ec : s1.gpr .a2 = s.gpr .a2 := k1.1 _ (by simp [Ne.symm x2])
+  obtain e2' := e2 (by rw [ec]; exact h.cy)
   rw [ex, ey, ec, h.mem] at e2'
-  have g : ∀ k < 6, k ≠ j → s2.gpr (X k) = s.gpr (X k) := fun k hk hkj => by
+  obtain g : ∀ k < 6, k ≠ j → s2.gpr (X k) = s.gpr (X k) := fun k hk hkj => by
     obtain ⟨y2, y5, y6, -⟩ := X_facts k hk
     rw [k2.1 _ (by simp [xne k hk hkj, y6, y2]), k1.1 _ (by simp [xne k hk hkj, y5])]
-  have kk := k1.trans k2
+  obtain kk := k1.trans k2
   refine ⟨fun r hr => ?_, by rw [kk.2.1, h.mem], by rw [kk.2.2.1, h.rd], by rw [kk.2.2.2.1, h.wr],
     by rw [kk.2.2.2.2, h.sp], ?_, ?_⟩
   · have n1 : r ≠ X j := fun e => hr (e ▸ X_clobS j hj)
-    have n5 : r ≠ .a5 := fun e => hr (by rw [e]; decide)
-    have n6 : r ≠ .a6 := fun e => hr (by rw [e]; decide)
-    have n2 : r ≠ .a2 := fun e => hr (by rw [e]; decide)
+    obtain n5 : r ≠ .a5 := fun e => hr (by rw [e]; decide)
+    obtain n6 : r ≠ .a6 := fun e => hr (by rw [e]; decide)
+    obtain n2 : r ≠ .a2 := fun e => hr (by rw [e]; decide)
     rw [k2.1 r (by simp [n1, n6, n2]), k1.1 r (by simp [n1, n5]), h.gpr r hr]
   · have := (s2.gpr (X j)).isLt
     have := dw_lt s0.mem A (8 * j); have := dw_lt s0.mem B (8 * j); have := h.cy
     omega_arith
   · have hv := h.val
-    have hc : colsV (fun k => (s2.gpr (X k)).toNat) j = colsV (fun k => (s.gpr (X k)).toNat) j :=
+    obtain hc : colsV (fun k => (s2.gpr (X k)).toNat) j = colsV (fun k => (s.gpr (X k)).toNat) j :=
       colsV_congr' fun k hk => by rw [g k (by omega_using [hj, hk]) (by omega_using [hk])]
     show colsV (fun k => (s2.gpr (X k)).toNat) j + (2 ^ 64) ^ j * (s2.gpr (X j)).toNat +
         (2 ^ 64) ^ (j + 1) * (s2.gpr .a2).toNat =
@@ -1439,7 +1439,7 @@ theorem addStep_ok {A B : Addr} {s0 : State} (hA : s0.gpr .a0 = A) (hB : s0.gpr 
     rw [hc, show (2 ^ 64) ^ (j + 1) = (2 ^ 64) ^ j * 2 ^ 64 from Nat.pow_succ .., ← hv]
     generalize (2 ^ 64) ^ j = E at *
     generalize colsV (fun k => (s.gpr (X k)).toNat) j = C at *
-    have key : E * (s2.gpr (X j)).toNat + E * 2 ^ 64 * (s2.gpr .a2).toNat =
+    obtain key : E * (s2.gpr (X j)).toNat + E * 2 ^ 64 * (s2.gpr .a2).toNat =
         E * (s.gpr .a2).toNat + E * (dw s0.mem A (8 * j) + dw s0.mem B (8 * j)) := by
       rw [Nat.mul_assoc, ← Nat.mul_add, ← Nat.mul_add, e2']; congr 1; omega_using []
     omega_using [key]
@@ -1466,7 +1466,7 @@ theorem addSum_ok {W : Addr} {s : State} (hw : WsAt W s) {a bb : Nat}
       (s'.gpr XC).toNat ≤ 1 ∧ Rest clobM s s' ∧ s'.mem = s.mem := by
   unfold addSum
   refine movAB_ok fun s1 e0 e7 e2 r1 m1 => ?_
-  have hw1 : WsAt W s1 := hw.of_rest r1 (by decide)
+  obtain hw1 : WsAt W s1 := hw.of_rest r1 (by decide)
   refine WP.mono (wp_range_flatMap (M := isa) (AddInv (W + BitVec.ofNat 64 a) (W + BitVec.ofNat 64 bb) s1)
     (fun j s hj h => addStep_ok (by rw [e0, h4]) (by rw [e7, h5]) (al8 hw.al ha8) (al8 hw.al hb8)
       (hw1.inR ha) (hw1.inR hb) hj h) 6 (Nat.le_refl _) s1
@@ -1491,12 +1491,12 @@ theorem addCore_ok {W : Addr} {s : State} (hw : WsAt W s) {a bb o : Nat}
       s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp := by
   unfold addCore
   refine WP.block_append (WP.mono (addSum_ok hw h4 h5 ha8 hb8 ha hb) fun s1 ⟨v1, c1, r1, m1⟩ => ?_)
-  have hw1 : WsAt W s1 := hw.of_rest r1 (by decide)
+  obtain hw1 : WsAt W s1 := hw.of_rest r1 (by decide)
   refine WP.mono (csub_ok (O := W + BitVec.ofNat 64 o) (by rw [r1.gpr _ (by decide), h2]) (al8 hw.al ho8)
     (hw1.inW ho) c1 (by rw [v1]; exact hab)) fun s2 ⟨v2, f2, g2, rd2, wr2, sp2⟩ => ?_
   refine ⟨by rw [v2, v1], by rw [← m1]; exact f2, fun r hr => ?_, by rw [rd2, r1.rd], by rw [wr2, r1.wr],
     by rw [sp2, r1.sp]⟩
-  have hC : r ∉ clobC := fun h => hr (by
+  obtain hC : r ∉ clobC := fun h => hr (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢
     rcases h with h | h | h | h <;> simp [h])
   rw [g2 r hC, r1.gpr r hr]
@@ -1521,29 +1521,29 @@ theorem subStep_ok {A B : Addr} {s0 : State} (hA : s0.gpr .a0 = A) (hB : s0.gpr 
     WP isa (.block (([.load .d (X j) .a0 (8 * j), .load .d .a5 .a7 (8 * j)] : List Instr) ++ sbbWord (X j) .a5)) s
       (SubInv A B s0 (j + 1)) := by
   obtain ⟨x2, x5, x6, -, x0, -, -, -, -, -, xne⟩ := X_facts j hj
-  have rd : s.rd ++ s.wr = s0.rd ++ s0.wr := by rw [h.rd, h.wr]
+  obtain rd : s.rd ++ s.wr = s0.rd ++ s0.wr := by rw [h.rd, h.wr]
   rw [List.cons_append, List.cons_append, List.nil_append]
   refine ld2_ok (by rw [h.gpr _ (by decide), hA]) (by rw [h.gpr _ (by decide), hB]) hj halA halB
     (by rw [rd]; exact hrA) (by rw [rd]; exact hrB) fun s1 ex ey k1 => ?_
   refine WP.mono (sbb_ok (d := X j) (x := X j) (y := .a5) (c := .a2) (u := .a6) (v := .t0) x2 (Ne.symm x6)
     (by decide) (Ne.symm x0) (by decide) (by decide) (Ne.symm x6) (by decide)) fun s2 ⟨e2, k2⟩ => ?_
-  have ec : s1.gpr .a2 = s.gpr .a2 := k1.1 _ (by simp [Ne.symm x2])
-  have e2' := e2 (by rw [ec]; exact h.cy)
+  obtain ec : s1.gpr .a2 = s.gpr .a2 := k1.1 _ (by simp [Ne.symm x2])
+  obtain e2' := e2 (by rw [ec]; exact h.cy)
   rw [ex, ey, ec, h.mem] at e2'
-  have g : ∀ k < 6, k ≠ j → s2.gpr (X k) = s.gpr (X k) := fun k hk hkj => by
+  obtain g : ∀ k < 6, k ≠ j → s2.gpr (X k) = s.gpr (X k) := fun k hk hkj => by
     obtain ⟨y2, y5, y6, -, y0, -⟩ := X_facts k hk
     rw [k2.1 _ (by simp [xne k hk hkj, y6, y2, y0]), k1.1 _ (by simp [xne k hk hkj, y5])]
-  have kk := k1.trans k2
+  obtain kk := k1.trans k2
   refine ⟨fun r hr => ?_, by rw [kk.2.1, h.mem], by rw [kk.2.2.1, h.rd], by rw [kk.2.2.2.1, h.wr],
     by rw [kk.2.2.2.2, h.sp], e2'.2, ?_⟩
   · have n1 : r ≠ X j := fun e => hr (e ▸ X_clobS j hj)
-    have n5 : r ≠ .a5 := fun e => hr (by rw [e]; decide)
-    have n6 : r ≠ .a6 := fun e => hr (by rw [e]; decide)
-    have n2 : r ≠ .a2 := fun e => hr (by rw [e]; decide)
-    have n0 : r ≠ .t0 := fun e => hr (by rw [e]; decide)
+    obtain n5 : r ≠ .a5 := fun e => hr (by rw [e]; decide)
+    obtain n6 : r ≠ .a6 := fun e => hr (by rw [e]; decide)
+    obtain n2 : r ≠ .a2 := fun e => hr (by rw [e]; decide)
+    obtain n0 : r ≠ .t0 := fun e => hr (by rw [e]; decide)
     rw [k2.1 r (by simp [n1, n6, n2, n0]), k1.1 r (by simp [n1, n5]), h.gpr r hr]
   · have hv := h.val
-    have hc : colsV (fun k => (s2.gpr (X k)).toNat) j = colsV (fun k => (s.gpr (X k)).toNat) j :=
+    obtain hc : colsV (fun k => (s2.gpr (X k)).toNat) j = colsV (fun k => (s.gpr (X k)).toNat) j :=
       colsV_congr' fun k hk => by rw [g k (by omega_using [hj, hk]) (by omega_using [hk])]
     show colsV (fun k => (s2.gpr (X k)).toNat) j + (2 ^ 64) ^ j * (s2.gpr (X j)).toNat +
         (colsV (fun k => dw s0.mem B (8 * k)) j + (2 ^ 64) ^ j * dw s0.mem B (8 * j)) =
@@ -1552,7 +1552,7 @@ theorem subStep_ok {A B : Addr} {s0 : State} (hA : s0.gpr .a0 = A) (hB : s0.gpr 
     rw [hc, show (2 ^ 64) ^ (j + 1) = (2 ^ 64) ^ j * 2 ^ 64 from Nat.pow_succ ..]
     generalize (2 ^ 64) ^ j = E at *
     generalize colsV (fun k => (s.gpr (X k)).toNat) j = C at *
-    have key : E * (s2.gpr (X j)).toNat + E * dw s0.mem B (8 * j) + E * (s.gpr .a2).toNat =
+    obtain key : E * (s2.gpr (X j)).toNat + E * dw s0.mem B (8 * j) + E * (s.gpr .a2).toNat =
         E * dw s0.mem A (8 * j) + E * 2 ^ 64 * (s2.gpr .a2).toNat := by
       rw [Nat.mul_assoc, ← Nat.mul_add, ← Nat.mul_add, ← Nat.mul_add, e2'.1]
     omega_using [hv, key]
@@ -1566,7 +1566,7 @@ theorem subDiff_ok {W : Addr} {s : State} (hw : WsAt W s) {a bb : Nat}
       (s'.gpr .a2).toNat ≤ 1 ∧ Rest clobM s s' ∧ s'.mem = s.mem := by
   unfold subDiff
   refine movAB_ok fun s1 e0 e7 e2 r1 m1 => ?_
-  have hw1 : WsAt W s1 := hw.of_rest r1 (by decide)
+  obtain hw1 : WsAt W s1 := hw.of_rest r1 (by decide)
   refine WP.mono (wp_range_flatMap (M := isa) (SubInv (W + BitVec.ofNat 64 a) (W + BitVec.ofNat 64 bb) s1)
     (fun j s hj h => subStep_ok (by rw [e0, h4]) (by rw [e7, h5]) (al8 hw.al ha8) (al8 hw.al hb8)
       (hw1.inR ha) (hw1.inR hb) hj h) 6 (Nat.le_refl _) s1
@@ -1665,7 +1665,7 @@ theorem addMStep_ok {O : Addr} {PW : Nat → Nat} (hP : ∀ j, PW j < 2 ^ 64) {k
 /-- The mask of a borrow. -/
 theorem neg_mask {c : BitVec 64} (hc : c.toNat ≤ 1) :
     IsMask (0 - c) ∧ (0 - c = BitVec.allOnes 64 ↔ c.toNat = 1) := by
-  have hc' : c = 0 ∨ c = 1 := by
+  obtain hc' : c = 0 ∨ c = 1 := by
     rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hc with h | h
     · exact .inl (BitVec.eq_of_toNat_eq (by rw [h]; rfl))
     · exact .inr (BitVec.eq_of_toNat_eq (by rw [h]; rfl))
@@ -1699,28 +1699,28 @@ theorem subWith_ok {ks : List (List Instr)} {PW : Nat → Nat} {M : Nat} (hP : �
   rw [List.cons_append, List.cons_append, List.cons_append, List.nil_append]
   refine wp_li (imm := 0) (by decide) fun s2 u2 => wp_sub fun s3 u3 => wp_li (imm := 0) (by decide)
     fun s4 u4 => ?_
-  have hm : IsMask (s4.gpr .t0) ∧ (s4.gpr .t0 = BitVec.allOnes 64 ↔ (s1.gpr .a2).toNat = 1) := by
+  obtain hm : IsMask (s4.gpr .t0) ∧ (s4.gpr .t0 = BitVec.allOnes 64 ↔ (s1.gpr .a2).toNat = 1) := by
     rw [u4.other _ (by decide), u3.gpr, u2.gpr, u2.other _ (by decide)]
     exact neg_mask c1
-  have r4 : Rest clobM s s4 := r1.trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
+  obtain r4 : Rest clobM s s4 := r1.trans ((u2.rest (by decide)).trans ((u3.rest (by decide)).trans
     (u4.rest (by decide))))
-  have hw4 : WsAt W s4 := hw.of_rest r4 (by decide)
-  have p4 : s4.gpr .t2 = W + BitVec.ofNat 64 o := by rw [r4.gpr _ (by decide), h2]
+  obtain hw4 : WsAt W s4 := hw.of_rest r4 (by decide)
+  obtain p4 : s4.gpr .t2 = W + BitVec.ofNat 64 o := by rw [r4.gpr _ (by decide), h2]
   refine WP.mono (wp_range_flatMap (M := isa) (AddMInv (W + BitVec.ofNat 64 o) PW s4)
     (fun j s hj h => addMStep_ok hP hj (hk j hj) (al8 hw.al ho8) p4 hm.1 (hw4.inW ho) h) 6 (Nat.le_refl _) s4
     ⟨fun _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _, fun _ _ _ => rfl, by rw [u4.gpr]; decide,
       by simp only [colsV, u4.gpr]; rfl⟩) fun s5 h5 => ?_
-  have hx4 : ∀ k < 6, s4.gpr (X k) = s1.gpr (X k) := fun k hk => by
+  obtain hx4 : ∀ k < 6, s4.gpr (X k) = s1.gpr (X k) := fun k hk => by
     obtain ⟨-, -, -, x7, x0, -⟩ := X_facts k hk
     rw [u4.other _ x7, u3.other _ x0, u2.other _ x0]
-  have hm4 : s4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, m1]
+  obtain hm4 : s4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, m1]
   have hv := h5.val
   rw [VG.Proof.X448.RISCV64.R64.colsV_add, colsV_ite, hPv] at hv
-  have hxv : colsV (fun k => (s4.gpr (X k)).toNat) 6 = xv s1 := colsV_congr' fun k hk => by rw [hx4 k hk]
+  obtain hxv : colsV (fun k => (s4.gpr (X k)).toNat) 6 = xv s1 := colsV_congr' fun k hk => by rw [hx4 k hk]
   rw [hxv] at hv
-  have hd := d6_lt s5.mem (W + BitVec.ofNat 64 o)
-  have hY : xv s1 < 2 ^ 384 := by rw [two384]; exact colsV_lt_of _ (fun _ => BitVec.isLt _) 6
-  have hMl : M < 2 ^ 384 := by rw [two384, ← hPv]; exact colsV_lt_of PW hP 6
+  obtain hd := d6_lt s5.mem (W + BitVec.ofNat 64 o)
+  obtain hY : xv s1 < 2 ^ 384 := by rw [two384]; exact colsV_lt_of _ (fun _ => BitVec.isLt _) 6
+  obtain hMl : M < 2 ^ 384 := by rw [two384, ← hPv]; exact colsV_lt_of PW hP 6
   have hc7 := h5.cy
   refine ⟨?_, by rw [← hm4]; exact h5.frame, fun r hr => ?_, by rw [h5.rd, r4.rd], by rw [h5.wr, r4.wr],
     by rw [h5.sp, r4.sp]⟩
@@ -1734,17 +1734,17 @@ theorem subWith_ok {ks : List (List Instr)} {PW : Nat → Nat} {M : Nat} (hP : �
     generalize d6 s.mem (W + BitVec.ofNat 64 bb) = B at *
     split at hv
     · rename_i h
-      have h1 := hge.mp h
+      obtain h1 := hge.mp h
       rw [h1] at v1
-      have hAB : A < B := by omega_using [hY, v1]
-      have hlt : A + M - B < M := by omega_using [hA, hAB]
+      obtain hAB : A < B := by omega_using [hY, v1]
+      obtain hlt : A + M - B < M := by omega_using [hA, hAB]
       rw [Nat.mod_eq_of_lt hlt]
       omega_using [hMl, hd, hB, v1, hv, hAB]
     · rename_i h
-      have h0 : (s1.gpr .a2).toNat = 0 := by
+      obtain h0 : (s1.gpr .a2).toNat = 0 := by
         have := c1; have : ¬ (s1.gpr .a2).toNat = 1 := fun h' => h (hge.mpr h'); omega_using [c1, this]
       rw [h0] at v1
-      have hBA : B ≤ A := by omega_using [v1]
+      obtain hBA : B ≤ A := by omega_using [v1]
       rw [show A + M - B = (A - B) + M by omega_using [v1], Nat.add_mod_right, Nat.mod_eq_of_lt (by omega_using [hA])]
       omega_using [hY, v1, hv]
   · have hA' : r ∉ clobA := fun h => hr (by
@@ -1817,22 +1817,22 @@ theorem pack12_ok {b q : Addr} {s0 : State} (hc : Ctx b s0) {p : Reg}
     (hw : ∀ k < 12, InRegions s0.wr (q + BitVec.ofNat 64 (dst + 4 * k)) 4)
     (hd : (⟨q + BitVec.ofNat 64 dst, 48⟩ : Region).Disjoint ⟨b + BitVec.ofNat 64 a, 48⟩) :
     WP isa (.block (pack p a dst)) s0 (PackInv12 b q a dst s0 12) := by
-  have hp' := not_a4_a5 hp
+  obtain hp' := not_a4_a5 hp
   refine wp_range_flatMap (M := isa) (PackInv12 b q a dst s0) (fun k s hk h => ?_)
     12 (Nat.le_refl _) s0 ⟨Rest.refl _ _, Frame.refl _ _, fun j hj => by omega⟩
-  have hcs : Ctx b s := hc.of_rest h.rest (by decide)
+  obtain hcs : Ctx b s := hc.of_rest h.rest (by decide)
   refine lw0_ok hcs (d := a + 4 * k) (by omega_using [ha, hk]) (by omega_using [ha4]) fun t1 v1 => ?_
-  have hq1 : t1.gpr p = q := by rw [v1.other _ hp'.1, h.rest.gpr _ hp, h14]
+  obtain hq1 : t1.gpr p = q := by rw [v1.other _ hp'.1, h.rest.gpr _ hp, h14]
   refine WP.mono (ByteLoad.storeLE32_ok (v := .a4) (tmp := .a5) (n := p) (off := dst + 4 * k)
     (by decide) hp'.2.symm (by omega_using [hdst, hk]) (by rw [hq1, v1.wr, h.rest.wr]; exact hw k hk)) fun t2 e2 => ?_
-  have em : t2.mem = s.mem.writeW (q + BitVec.ofNat 64 (dst + 4 * k)) ((t1.gpr .a4).setWidth 32) := by
+  obtain em : t2.mem = s.mem.writeW (q + BitVec.ofNat 64 (dst + 4 * k)) ((t1.gpr .a4).setWidth 32) := by
     rw [e2, RegUpd.mem_write, hq1]
     show t1.mem.writeW _ _ = _
     rw [v1.mem]
-  have hr2 : Rest [.a4, .a5] t1 t2 := by
+  obtain hr2 : Rest [.a4, .a5] t1 t2 := by
     rw [e2]
     exact ⟨fun r hr => RegUpd.gpr_write_of_ne _ _ (not_a4_a5 hr).2, rfl, rfl, rfl⟩
-  have hsrc : wd s.mem b (a + 4 * k) = limb s0.mem b a k := by
+  obtain hsrc : wd s.mem b (a + 4 * k) = limb s0.mem b a k := by
     refine wd_frame h.frame fun r hr => ?_
     rw [List.mem_singleton.mp hr]
     refine fun x hx hx' => hd x ?_ ?_
@@ -1866,21 +1866,21 @@ theorem unpack12_ok {b q : Addr} {s0 : State} (hc : Ctx b s0) {p : Reg}
     WP isa (.block (unpack p o src)) s0 fun t =>
       Rest [.a4, .a5] s0 t ∧ Frame [⟨b + BitVec.ofNat 64 o, 48⟩] s0.mem t.mem ∧
       ∀ j < 12, limb t.mem b o j = wd s0.mem q (src + 4 * j) := by
-  have hp' := not_a4_a5 hp
+  obtain hp' := not_a4_a5 hp
   let f := fun k => wd s0.mem q (src + 4 * k)
   refine WP.mono (wp_range_flatMap (M := isa) (UnpackInv12 b o s0 f) (fun k s hk h => ?_)
     12 (Nat.le_refl _) s0 ⟨Rest.refl _ _, Frame.refl _ _, fun j hj => by omega⟩)
     fun t ht => ⟨ht.rest, ht.frame, ht.outs⟩
-  have hq : s.gpr p = q := by rw [h.rest.gpr _ hp, h14]
+  obtain hq : s.gpr p = q := by rw [h.rest.gpr _ hp, h14]
   refine WP.append (ByteLoad.loadLE32_ok (d := .a4) (tmp := .a5) (n := p) (off := src + 4 * k)
     hp'.1.symm hp'.2.symm (by decide) (by omega_using [hsrc, hk])
     (by rw [hq, h.rest.rd, h.rest.wr]; exact hr k hk)) fun t1 e1 => ?_
-  have hr1 : Rest [.a4, .a5] s t1 := by
+  obtain hr1 : Rest [.a4, .a5] s t1 := by
     rw [e1]
     refine ⟨fun r hr' => ?_, rfl, rfl, rfl⟩
     rw [RegUpd.gpr_write_of_ne _ _ (not_a4_a5 hr').1, RegUpd.gpr_write_of_ne _ _ (not_a4_a5 hr').2]
-  have hm1 : t1.mem = s.mem := by rw [e1]; rfl
-  have hv : (t1.gpr .a4).toNat % 2 ^ 32 = f k := by
+  obtain hm1 : t1.mem = s.mem := by rw [e1]; rfl
+  obtain hv : (t1.gpr .a4).toNat % 2 ^ 32 = f k := by
     rw [e1, RegUpd.gpr_write_self, toNat_ext32, Nat.mod_eq_of_lt (BitVec.isLt _), hq]
     show wd s.mem q (src + 4 * k) = _
     refine wd_frame h.frame fun r hr' => ?_
@@ -1890,7 +1890,7 @@ theorem unpack12_ok {b q : Addr} {s0 : State} (hc : Ctx b s0) {p : Reg}
     · exact Region.sub_prefix (by omega_using [hk]) x hx'
   refine sw0_ok ((hc.of_rest h.rest (by decide)).of_rest hr1 (by decide))
     (by omega_using [ho, hk]) (by omega_using [ho4]) fun u hu => WP.block_nil ?_
-  have em : u.mem = s.mem.writeW (b + BitVec.ofNat 64 (o + 4 * k)) ((t1.gpr .a4).setWidth 32) := by
+  obtain em : u.mem = s.mem.writeW (b + BitVec.ofNat 64 (o + 4 * k)) ((t1.gpr .a4).setWidth 32) := by
     rw [hu.mem, hm1]
   refine ⟨h.rest.trans (hr1.trans (hu.rest _)), ?_, fun j hj => ?_⟩
   · rw [em]
@@ -1958,21 +1958,21 @@ theorem slowIn_ok {W : Addr} {s : State} (hw : WsAt W s) {a bb o : Nat}
         Rest [.t1, .t2, .t4, .t5, .a4, .a5] s t := by
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine wp_mv fun s1 u1 => ?_
-  have hw1 : WsAt W s1 := hw.of_rest (u1.rest (ws := [.t1]) (by decide)) (by decide)
+  obtain hw1 : WsAt W s1 := hw.of_rest (u1.rest (ws := [.t1]) (by decide)) (by decide)
   refine WP.block_append (WP.mono (unpack_ok hw1 (p := .t4) (by decide) (by rw [u1.other _ (by decide), h4]) ha
     (o := SA) (by decide) (by decide) (by decide)) fun s2 ⟨r2, f2, v2⟩ => ?_)
-  have hw2 : WsAt W s2 := hw1.of_rest r2 (by decide)
+  obtain hw2 : WsAt W s2 := hw1.of_rest r2 (by decide)
   refine WP.block_append (WP.mono (unpack_ok hw2 (p := .t5) (by decide)
     (by rw [r2.gpr _ (by decide), u1.other _ (by decide), h5]) hb (o := SB) (by decide) (by decide) (by decide))
     fun s3 ⟨r3, f3, v3⟩ => ?_)
-  have hw3 : WsAt W s3 := hw2.of_rest r3 (by decide)
+  obtain hw3 : WsAt W s3 := hw2.of_rest r3 (by decide)
   refine wp_addi (by decide) fun s4 u4 => wp_addi (by decide) fun s5 u5 => wp_addi (by decide) fun s6 u6 =>
     WP.block_nil ?_
-  have a3 : ∀ t : State, WsAt W t → t.gpr .a3 = W + BitVec.ofNat 64 2048 := fun t h => h.a3
-  have r6 : Rest [.t1, .t2, .t4, .t5, .a4, .a5] s s6 :=
+  obtain a3 : ∀ t : State, WsAt W t → t.gpr .a3 = W + BitVec.ofNat 64 2048 := fun t h => h.a3
+  obtain r6 : Rest [.t1, .t2, .t4, .t5, .a4, .a5] s s6 :=
     (u1.rest (by decide)).trans ((r2.mono (by decide)).trans ((r3.mono (by decide)).trans
       ((u4.rest (by decide)).trans ((u5.rest (by decide)).trans (u6.rest (by decide))))))
-  have m6 : s6.mem = s3.mem := by rw [u6.mem, u5.mem, u4.mem]
+  obtain m6 : s6.mem = s3.mem := by rw [u6.mem, u5.mem, u4.mem]
   have f2' := f2
   rw [show 2048 + SA = 3904 from rfl] at f2' v2
   rw [show 2048 + SB = 3952 from rfl] at f3 v3
@@ -2085,12 +2085,12 @@ theorem fnA_ok {core : Prog isa} {pre : Nat → Nat → Prop} {res : Nat → Nat
   unfold fnA
   refine WP.seq (WP.mono (VG.Proof.Weierstrass.RISCV64.P256Field.ptrsA_ok h0 h1.1 h2.1 h3.1)
     fun s1 ⟨p2, p4, p5, p3, r1, m1⟩ => ?_)
-  have hlo : ∀ r, VG.Proof.Weierstrass.RISCV64.P256Field.lo s r = lo s r := fun _ => rfl
+  obtain hlo : ∀ r, VG.Proof.Weierstrass.RISCV64.P256Field.lo s r = lo s r := fun _ => rfl
   rw [hlo] at p2 p4 p5
-  have hw1 : WsAt W s1 := ⟨hal, by rw [r1.wr]; exact hwr, hfit, p3⟩
-  have sub1 : ∀ x ∈ [Reg.a3, .t2, .t4, .t5], x ∈ clobF := by decide
-  have subM : ∀ x ∈ clobM, x ∈ clobF := by decide
-  have al : ∀ r, (s.gpr r).toNat < 2 ^ 32 ∧ (s.gpr r).toNat % 8 = 0 → lo s r % 8 = 0 := fun r hr => by
+  obtain hw1 : WsAt W s1 := ⟨hal, by rw [r1.wr]; exact hwr, hfit, p3⟩
+  obtain sub1 : ∀ x ∈ [Reg.a3, .t2, .t4, .t5], x ∈ clobF := by decide
+  obtain subM : ∀ x ∈ clobM, x ∈ clobF := by decide
+  obtain al : ∀ r, (s.gpr r).toNat < 2 ^ 32 ∧ (s.gpr r).toNat % 8 = 0 → lo s r % 8 = 0 := fun r hr => by
     rw [show lo s r = VG.Proof.Weierstrass.RISCV64.P256Field.lo s r from rfl,
       VG.Proof.Weierstrass.RISCV64.P256Field.lo_eq hr.1]; exact hr.2
   refine WP.mono (hcore hw1 p4 p5 p2 (al _ h2) (al _ h3) (al _ h1) (by omega_using [ha]) (by omega_using [hb]) (by omega_using [ho])
@@ -2117,14 +2117,14 @@ theorem fn_ok {core : Prog isa} {pre : Nat → Nat → Prop} {res : Nat → Nat 
   unfold fn
   refine WP.seq (WP.mono (zext_ok s) fun s0 ⟨z0, r0, m0⟩ => ?_)
   refine WP.seq (WP.mono (ptrs_ok z0 h0) fun s1 ⟨p2, p4, p5, p3, p0, r1', m1'⟩ => ?_)
-  have hlo : ∀ r, VG.Proof.Weierstrass.RISCV64.P256Field.lo s r = lo s r := fun _ => rfl
+  obtain hlo : ∀ r, VG.Proof.Weierstrass.RISCV64.P256Field.lo s r = lo s r := fun _ => rfl
   rw [hlo] at p2 p4 p5 p0
   rw [hlo, hlo] at p0
-  have r1 : Rest [.a1, .a2, .a3, .t0, .t2, .t4, .t5] s s1 := (r0.mono (by decide)).trans (r1'.mono (by decide))
-  have m1 : s1.mem = s.mem := by rw [m1', m0]
-  have hw1 : WsAt W s1 := ⟨hal, by rw [r1.wr]; exact hwr, hfit, p3⟩
-  have sub1 : ∀ x ∈ [Reg.a1, .a2, .a3, .t0, .t2, .t4, .t5], x ∈ clobF := by decide
-  have subM : ∀ x ∈ clobM, x ∈ clobF := by decide
+  obtain r1 : Rest [.a1, .a2, .a3, .t0, .t2, .t4, .t5] s s1 := (r0.mono (by decide)).trans (r1'.mono (by decide))
+  obtain m1 : s1.mem = s.mem := by rw [m1', m0]
+  obtain hw1 : WsAt W s1 := ⟨hal, by rw [r1.wr]; exact hwr, hfit, p3⟩
+  obtain sub1 : ∀ x ∈ [Reg.a1, .a2, .a3, .t0, .t2, .t4, .t5], x ∈ clobF := by decide
+  obtain subM : ∀ x ∈ clobM, x ∈ clobF := by decide
   refine WP.ite (s1.gpr .t0 == 0) rfl (fun hz => ?_) (fun _ => ?_)
   · -- The offsets are multiples of 8.
     rw [p0] at hz
@@ -2142,7 +2142,7 @@ theorem fn_ok {core : Prog isa} {pre : Nat → Nat → Prop} {res : Nat → Nat 
     refine WP.seq (WP.mono (slowIn_ok hw1 p4 p5 p2 ha hb) fun s2 ⟨hw2, q1, q4, q5, q2, v4, v5, f2, r2⟩ => ?_)
     refine WP.seq (WP.mono (hcore hw2 q4 q5 q2 (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (.inr (by decide)) (by rw [v4, v5, m1]; exact hpre)) fun s3 ⟨v3, f3, g3, rd3, wr3, sp3⟩ => ?_)
-    have hw3 : WsAt W s3 := ⟨hal, by rw [wr3]; exact hw2.wr, hfit, by rw [g3 _ (by decide), hw2.a3]⟩
+    obtain hw3 : WsAt W s3 := ⟨hal, by rw [wr3]; exact hw2.wr, hfit, by rw [g3 _ (by decide), hw2.a3]⟩
     refine WP.mono (slowOut_ok hw3 (by rw [g3 _ (by decide), q1]) ho) fun s4 ⟨r4, f4, v4'⟩ =>
       ⟨by rw [v4']; rw [v4, v5, m1] at v3; exact v3, ?_, ?_, ?_, ?_, ?_⟩
     · rw [← m1]
@@ -2160,8 +2160,8 @@ theorem fn_ok {core : Prog isa} {pre : Nat → Nat → Prop} {res : Nat → Nat 
       · rw [List.mem_singleton.mp hr]
         exact ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), fun _ h => h⟩
     · intro r hr
-      have s2' : ∀ x ∈ [Reg.t1, .t2, .t4, .t5, .a4, .a5], x ∈ clobF := by decide
-      have s4' : ∀ x ∈ [Reg.a4, .a5], x ∈ clobF := by decide
+      obtain s2' : ∀ x ∈ [Reg.t1, .t2, .t4, .t5, .a4, .a5], x ∈ clobF := by decide
+      obtain s4' : ∀ x ∈ [Reg.a4, .a5], x ∈ clobF := by decide
       rw [r4.gpr r (fun h => hr (s4' r h)), g3 r (fun h => hr (subM r h)), r2.gpr r (fun h => hr (s2' r h)),
         r1.gpr r (fun h => hr (sub1 r h))]
     · rw [r4.rd, rd3, r2.rd, r1.rd]

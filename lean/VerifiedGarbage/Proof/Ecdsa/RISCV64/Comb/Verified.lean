@@ -63,7 +63,7 @@ theorem tabOk_of_pre {s : State} {base : Addr} (hrd : (tabRegion s) ∈ s.rd)
   rd := hrd
   fit := hfit
   far d hd' := by
-    have hc : (tabRegion s).Contains (s.syms p256Sym + BitVec.ofNat 64 d) 1 :=
+    obtain hc : (tabRegion s).Contains (s.syms p256Sym + BitVec.ofNat 64 d) 1 :=
       Offset.contains_base _ (by omega_using [hd']) (by omega_using [hd'])
     have := hd _ hc
     simp only [Region.Contains, Nat.not_le] at this
@@ -78,7 +78,7 @@ theorem keepsG_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (savesG ++ bodyW) 
   have h8 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
   rw [show ws + BitVec.ofNat 64 i = off ws i from rfl, ofs_off0 ws (by omega_using [hi, h8])]
-  have hw' := (by decide : ∀ w ∈ savesG ++ bodyW, (w.1 = 512 ∧ w.2 = 544) ∨ 1504 ≤ w.1) w hw
+  obtain hw' := (by decide : ∀ w ∈ savesG ++ bodyW, (w.1 = 512 ∧ w.2 = 544) ∨ 1504 ≤ w.1) w hw
   simp only [Impl.Weierstrass.Mul.Curve.Own, Impl.Weierstrass.Mul.Curve.slot, Impl.Weierstrass.Mul.Curve.tmpAt,
     Impl.Weierstrass.Mul.Curve.bitsAt, Impl.Weierstrass.Mul.Curve.pAt, Impl.Weierstrass.Mul.Curve.ptBytes,
     MC, Impl.Weierstrass.Mul.p256, true_and] at hown hp

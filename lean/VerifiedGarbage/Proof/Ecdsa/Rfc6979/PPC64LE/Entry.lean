@@ -47,21 +47,21 @@ theorem entry_ok {I : Proof.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : L
     (h : (rfcPPC I 736 (tabFacts w f) ns cs).pre s) :
     WP isa (.block Impl.Ecdsa.Rfc6979.PPC64LE.Cfg.saveArgs) (entered s)
       (Ctx (lay I.hashLen I.ecdsa.curve.len w f s cs) s.gpr s.lr s.mem) := by
-  have hL := lay_ok h
-  have hsp := entered_sp I.hashLen I.ecdsa.curve.len w f s cs
-  have hwr := entered_wr I.hashLen I.ecdsa.curve.len w f s cs
-  have hm := entered_mem I.hashLen I.ecdsa.curve.len w f s cs
-  have hrd : (entered s).rd = [(lay I.hashLen I.ecdsa.curve.len w f s cs).D, (lay I.hashLen I.ecdsa.curve.len w f s cs).DG,
+  obtain hL := lay_ok h
+  obtain hsp := entered_sp I.hashLen I.ecdsa.curve.len w f s cs
+  obtain hwr := entered_wr I.hashLen I.ecdsa.curve.len w f s cs
+  obtain hm := entered_mem I.hashLen I.ecdsa.curve.len w f s cs
+  obtain hrd : (entered s).rd = [(lay I.hashLen I.ecdsa.curve.len w f s cs).D, (lay I.hashLen I.ecdsa.curve.len w f s cs).DG,
       (lay I.hashLen I.ecdsa.curve.len w f s cs).TAB] ++ (lay I.hashLen I.ecdsa.curve.len w f s cs).TBLs := by
     rw [entered_rd, h.1]; exact congrArg (_ ++ ·) (constRegions_csSyms cs s.syms).symm
   have hw₀ : s.wr = [(lay I.hashLen I.ecdsa.curve.len w f s cs).OUT, (lay I.hashLen I.ecdsa.curve.len w f s cs).SCR] :=
     h.2.1
   have htf : tabFacts w f s := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
   have hheld : Abi.constsHeld s.mem s.syms cs := h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
-  have hg : ∀ r, r ≠ .r0 → (entered s).gpr r = s.gpr r := fun r hr => entered_gpr s hr
-  have hspS : s.sp = (lay I.hashLen I.ecdsa.curve.len w f s cs).B + BitVec.ofNat 64 736 := by
+  obtain hg : ∀ r, r ≠ .r0 → (entered s).gpr r = s.gpr r := fun r hr => entered_gpr s hr
+  obtain hspS : s.sp = (lay I.hashLen I.ecdsa.curve.len w f s cs).B + BitVec.ofNat 64 736 := by
     show s.sp = s.sp - BitVec.ofNat 64 736 + BitVec.ofNat 64 736; bv_omega
-  have hlr : (lay I.hashLen I.ecdsa.curve.len w f s cs).B + BitVec.ofNat 64 720 = s.sp - 16 := by
+  obtain hlr : (lay I.hashLen I.ecdsa.curve.len w f s cs).B + BitVec.ofNat 64 720 = s.sp - 16 := by
     rw [hspS]; bv_omega
   have eOut : (lay I.hashLen I.ecdsa.curve.len w f s cs).out = s.gpr .r3 := rfl
   have eD : (lay I.hashLen I.ecdsa.curve.len w f s cs).d = s.gpr .r4 := rfl
@@ -78,22 +78,22 @@ theorem entry_ok {I : Proof.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : L
   rw [hl] at hL hsp hwr hm hrd hw₀ hspS hlr eOut eD eDg eScr eTab eW eF eFa eSy eCs ⊢
   have hnB := hL.nB
   have hnt := hL.nt
-  have hw : ∀ d, 128 ≤ d → d + 8 ≤ 688 → InRegions (entered s).wr (L.B + BitVec.ofNat 64 d) 8 :=
+  obtain hw : ∀ d, 128 ≤ d → d + 8 ≤ 688 → InRegions (entered s).wr (L.B + BitVec.ofNat 64 d) 8 :=
     fun d h₁ h₂ => ⟨L.FR, by rw [hwr]; simp, Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])⟩
-  have hin : ∀ o, o + 8 ≤ 48 → InRegions ((entered s).rd ++ (entered s).wr) (L.tab + BitVec.ofNat 64 o) 8 :=
+  obtain hin : ∀ o, o + 8 ≤ 48 → InRegions ((entered s).rd ++ (entered s).wr) (L.tab + BitVec.ofNat 64 o) 8 :=
     fun o ho => ⟨L.TAB, by rw [hrd]; simp, Offset.contains_base _ ho (by omega_using [ho])⟩
-  have sep : ∀ x y, x + 8 ≤ y ∨ y + 8 ≤ x → x + 8 ≤ 736 → y + 8 ≤ 736 →
+  obtain sep : ∀ x y, x + 8 ≤ y ∨ y + 8 ≤ x → x + 8 ≤ 736 → y + 8 ≤ 736 →
       Mem.Sep (L.B + BitVec.ofNat 64 x) (64 / 8) (L.B + BitVec.ofNat 64 y) (64 / 8) :=
     fun x y h h₁ h₂ => Offset.sep L.B h (by omega_using [h₁]) (by omega_using [h₂])
   simp only [Impl.Ecdsa.Rfc6979.PPC64LE.Cfg.saveArgs, Impl.Ecdsa.Rfc6979.PPC64LE.fOut,
     Impl.Ecdsa.Rfc6979.PPC64LE.fD, Impl.Ecdsa.Rfc6979.PPC64LE.fDigest, Impl.Ecdsa.Rfc6979.PPC64LE.fScratch,
     Impl.Ecdsa.Rfc6979.PPC64LE.fTab, Impl.Ecdsa.Rfc6979.PPC64LE.fDl, Impl.Ecdsa.Rfc6979.PPC64LE.fBl]
   refine WP.of_syms (stepAddSp (by decide) fun t₁ k₁ m₁ v₁ => ?_)
-  have a₁ : ∀ o, t₁.gpr .r11 + BitVec.ofNat 64 o = L.B + BitVec.ofNat 64 (96 + o) := fun o => by
+  obtain a₁ : ∀ o, t₁.gpr .r11 + BitVec.ofNat 64 o = L.B + BitVec.ofNat 64 (96 + o) := fun o => by
     rw [v₁, BitVec.add_zero, hsp, fr_add]
-  have w₁ : ∀ d, 128 ≤ d → d + 8 ≤ 688 → InRegions t₁.wr (L.B + BitVec.ofNat 64 d) 8 := fun d h₁ h₂ => by
+  obtain w₁ : ∀ d, 128 ≤ d → d + 8 ≤ 688 → InRegions t₁.wr (L.B + BitVec.ofNat 64 d) 8 := fun d h₁ h₂ => by
     rw [k₁.wr]; exact hw d h₁ h₂
-  have r₁ : ∀ r, r ≠ .r11 → r ≠ .r0 → t₁.gpr r = s.gpr r := fun r h₁ h₂ => by
+  obtain r₁ : ∀ r, r ≠ .r11 → r ≠ .r0 → t₁.gpr r = s.gpr r := fun r h₁ h₂ => by
     rw [k₁.gpr r (by simp [h₁]), hg r h₂]
   refine stepStd (a := L.B + BitVec.ofNat 64 296) (by decide) (by decide) (a₁ 200) (w₁ 296 (by omega_using []) (by omega_using []))
     fun t₂ k₂ g₂ m₂ => ?_
@@ -105,11 +105,11 @@ theorem entry_ok {I : Proof.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : L
     (by rw [k₄.wr, k₃.wr, k₂.wr]; exact w₁ 272 (by omega_using []) (by omega_using [])) fun t₅ k₅ g₅ m₅ => ?_
   refine stepStd (a := L.B + BitVec.ofNat 64 320) (by decide) (by decide) (by rw [g₅, g₄, g₃, g₂]; exact a₁ 224)
     (by rw [k₅.wr, k₄.wr, k₃.wr, k₂.wr]; exact w₁ 320 (by omega_using []) (by omega_using [])) fun t₆ k₆ g₆ m₆ => ?_
-  have g₆' : t₆.gpr = t₁.gpr := by rw [g₆, g₅, g₄, g₃, g₂]
-  have r8 : t₆.gpr .r8 = L.tab := by rw [g₆', r₁ .r8 (by decide) (by decide), eTab]
-  have K₆ : Kp [Reg.r11] (entered s) t₆ :=
+  obtain g₆' : t₆.gpr = t₁.gpr := by rw [g₆, g₅, g₄, g₃, g₂]
+  obtain r8 : t₆.gpr .r8 = L.tab := by rw [g₆', r₁ .r8 (by decide) (by decide), eTab]
+  obtain K₆ : Kp [Reg.r11] (entered s) t₆ :=
     (((k₁.trans k₂.mono).trans k₃.mono).trans k₄.mono).trans (k₅.mono.trans k₆.mono)
-  have hM₆ : t₆.mem = (((((((s.mem.writeW (L.B + BitVec.ofNat 64 688) s.sp).writeW
+  obtain hM₆ : t₆.mem = (((((((s.mem.writeW (L.B + BitVec.ofNat 64 688) s.sp).writeW
       (L.B + BitVec.ofNat 64 720) s.lr).writeW (L.B + BitVec.ofNat 64 96) (s.sp - 48)).writeW
       (L.B + BitVec.ofNat 64 296) (s.gpr .r3)).writeW (L.B + BitVec.ofNat 64 288) (s.gpr .r4)).writeW
       (L.B + BitVec.ofNat 64 280) (s.gpr .r5)).writeW (L.B + BitVec.ofNat 64 272) (s.gpr .r7)).writeW
@@ -118,9 +118,9 @@ theorem entry_ok {I : Proof.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : L
     rw [r₁ .r8 (by decide) (by decide), r₁ .r7 (by decide) (by decide), r₁ .r5 (by decide) (by decide),
       r₁ .r4 (by decide) (by decide), r₁ .r3 (by decide) (by decide)]
   -- The table's words, as on entry: the stack is apart from it.
-  have tw : ∀ o, o + 8 ≤ 48 → t₆.mem.readW (L.tab + BitVec.ofNat 64 o) 64 = s.mem.readW (L.tab + BitVec.ofNat 64 o) 64 := by
+  obtain tw : ∀ o, o + 8 ≤ 48 → t₆.mem.readW (L.tab + BitVec.ofNat 64 o) 64 = s.mem.readW (L.tab + BitVec.ofNat 64 o) 64 := by
     intro o ho
-    have d : ∀ y, y + 8 ≤ 736 → Mem.Sep (L.tab + BitVec.ofNat 64 o) (64 / 8) (L.B + BitVec.ofNat 64 y) (64 / 8) :=
+    obtain d : ∀ y, y + 8 ≤ 736 → Mem.Sep (L.tab + BitVec.ofNat 64 o) (64 / 8) (L.B + BitVec.ofNat 64 y) (64 / 8) :=
       fun y hy => hL.tstk.sep (Offset.contains_base _ ho (by omega_using [ho])) (Offset.contains_base _ hy (by omega_using [hy]))
     rw [hM₆, Mem.readW_writeW_sep (d 320 (by omega_using [])) (by decide), Mem.readW_writeW_sep (d 272 (by omega_using [])) (by decide),
       Mem.readW_writeW_sep (d 280 (by omega_using [])) (by decide), Mem.readW_writeW_sep (d 288 (by omega_using [])) (by decide),
@@ -128,16 +128,16 @@ theorem entry_ok {I : Proof.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : L
       Mem.readW_writeW_sep (d 720 (by omega_using [])) (by decide), Mem.readW_writeW_sep (d 688 (by omega_using [])) (by decide)]
   refine stepLd (a := L.tab + BitVec.ofNat 64 32) (by decide) (by decide) (by rw [r8])
     (by rw [K₆.rd, K₆.wr]; exact hin 32 (by omega_using [])) fun t₇ k₇ m₇ v₇ => ?_
-  have v₇' : t₇.gpr .r9 = BitVec.ofNat 64 w.H.D := by rw [v₇, tw 32 (by omega_using []), eTab]; exact htf.2.2.1
+  obtain v₇' : t₇.gpr .r9 = BitVec.ofNat 64 w.H.D := by rw [v₇, tw 32 (by omega_using []), eTab]; exact htf.2.2.1
   refine stepStd (a := L.B + BitVec.ofNat 64 304) (by decide) (by decide)
     (by rw [k₇.gpr _ (by decide), g₆']; exact a₁ 208)
     (by rw [k₇.wr, K₆.wr]; exact hw 304 (by omega_using []) (by omega_using [])) fun t₈ k₈ g₈ m₈ => ?_
   refine stepLd (a := L.tab + BitVec.ofNat 64 40) (by decide) (by decide)
     (by rw [g₈, k₇.gpr _ (by decide), r8])
     (by rw [k₈.rd, k₈.wr, k₇.rd, k₇.wr, K₆.rd, K₆.wr]; exact hin 40 (by omega_using [])) fun t₉ k₉ m₉ v₉ => ?_
-  have hM₈ : t₈.mem = t₆.mem.writeW (L.B + BitVec.ofNat 64 304) (BitVec.ofNat 64 w.H.D) := by
+  obtain hM₈ : t₈.mem = t₆.mem.writeW (L.B + BitVec.ofNat 64 304) (BitVec.ofNat 64 w.H.D) := by
     rw [m₈, m₇, v₇']
-  have v₉' : t₉.gpr .r9 = BitVec.ofNat 64 w.H.B := by
+  obtain v₉' : t₉.gpr .r9 = BitVec.ofNat 64 w.H.B := by
     rw [v₉, hM₈, Mem.readW_writeW_sep (hL.tstk.sep (Offset.contains_base _ (show 40 + 8 ≤ 48 by omega_using []) (by omega_using []))
         (Offset.contains_base _ (show 304 + 8 ≤ 736 by omega_using []) (by omega_using []))) (by decide), tw 40 (by omega_using []), eTab]
     exact htf.2.2.2
@@ -145,24 +145,24 @@ theorem entry_ok {I : Proof.Ecdsa.Rfc6979.Instance} {w : HVar} {f : Fns} {ns : L
     (by rw [k₉.gpr _ (by decide), g₈, k₇.gpr _ (by decide), g₆']; exact a₁ 216)
     (by rw [k₉.wr, k₈.wr, k₇.wr, K₆.wr]; exact hw 312 (by omega_using []) (by omega_using [])) fun t₁₀ k₁₀ g₁₀ m₁₀ => ?_
   refine wp_nil fun hsy' => ?_
-  have K : Kp [Reg.r11, .r9] (entered s) t₁₀ :=
+  obtain K : Kp [Reg.r11, .r9] (entered s) t₁₀ :=
     ((((K₆.mono.trans k₇.mono).trans k₈.mono).trans k₉.mono).trans k₁₀.mono)
-  have hM : t₁₀.mem = (t₆.mem.writeW (L.B + BitVec.ofNat 64 304) (BitVec.ofNat 64 w.H.D)).writeW
+  obtain hM : t₁₀.mem = (t₆.mem.writeW (L.B + BitVec.ofNat 64 304) (BitVec.ofNat 64 w.H.D)).writeW
       (L.B + BitVec.ofNat 64 312) (BitVec.ofNat 64 w.H.B) := by
     rw [m₁₀, m₉, hM₈, v₉']
-  have rd : ∀ x y v (m : Mem), x + 8 ≤ y ∨ y + 8 ≤ x → x + 8 ≤ 736 → y + 8 ≤ 736 →
+  obtain rd : ∀ x y v (m : Mem), x + 8 ≤ y ∨ y + 8 ≤ x → x + 8 ≤ 736 → y + 8 ≤ 736 →
       (m.writeW (L.B + BitVec.ofNat 64 y) v).readW (L.B + BitVec.ofNat 64 x) 64 = m.readW (L.B + BitVec.ofNat 64 x) 64 :=
     fun x y v m h h₁ h₂ => Mem.readW_writeW_sep (sep x y h h₁ h₂) (by decide)
-  have st : ∀ y (v : BitVec 64) (m m' : Mem), y + 8 ≤ 736 → Frame [L.OUT, L.SCR, L.STK] m m' →
+  obtain st : ∀ y (v : BitVec 64) (m m' : Mem), y + 8 ≤ 736 → Frame [L.OUT, L.SCR, L.STK] m m' →
       Frame [L.OUT, L.SCR, L.STK] m (m'.writeW (L.B + BitVec.ofNat 64 y) v) :=
     fun y v m m' hy f => f.writeW (r := L.STK) (by simp) _ (Offset.contains_base _ hy (by omega_using [hy]))
-  have hsy : t₁₀.syms = s.syms := by rw [hsy', entered_syms]
+  obtain hsy : t₁₀.syms = s.syms := by rw [hsy', entered_syms]
   refine ⟨by rw [K.rd, hrd], by rw [K.wr, hwr, hw₀], by rw [K.sp, hsp], fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, fun c hc' => by rw [hsy, eSy, csSyms_eq (by rw [eCs] at hc'; exact hc')], by
       rw [eSy, eCs]; exact constsHeld_csSyms hheld⟩
   · have h₁ : r ≠ .r11 := fun e => by subst e; simp [preserved] at hr
-    have h₂ : r ≠ .r9 := fun e => by subst e; simp [preserved] at hr
-    have h₀ : r ≠ .r0 := fun e => by subst e; simp [preserved] at hr
+    obtain h₂ : r ≠ .r9 := fun e => by subst e; simp [preserved] at hr
+    obtain h₀ : r ≠ .r0 := fun e => by subst e; simp [preserved] at hr
     rw [K.gpr r (by simp [h₁, h₂]), hg r h₀]
   · rw [hM, rd 272 312 _ _ (by omega_using []) (by omega_using []) (by omega_using []), rd 272 304 _ _ (by omega_using []) (by omega_using []) (by omega_using []), hM₆,
       rd 272 320 _ _ (by omega_using []) (by omega_using []) (by omega_using []), Mem.readW_writeW_self64, eScr]

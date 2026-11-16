@@ -129,20 +129,20 @@ theorem power_steps (M : Mont) (p : SPub) {s : State}
   obtain ⟨⟨⟨⟨⟨B, Z, o, w, wx⟩, xp, len⟩, minv, m, hw2, hwx, hw30, hm, hodd⟩, base, baseLen, hw48, hb1', hbw',
     he1', he2'⟩, qp, qb, hql', hw8, hd⟩ := p
   dsimp only at hc hn hinv hb hblen hbl hbs he helen hxl hes hq hqs hK hw2 hwx hw30 hw48 hb1' hbw' he1' he2' hql' hw8 hd
-  have hb1 : 1 ≤ bb.length := hbl ▸ hb1'
-  have hbw : (bb.length + 7) / 8 ≤ wx := hbl ▸ hbw'
-  have he1 : 1 ≤ xb.length := hxl ▸ he1'
-  have he2 : xb.length ≤ 1024 := hxl ▸ he2'
-  have hql : qb.length = xb.length := hql'.trans hxl.symm
-  have hw' : wx < 2 ^ 30 := by omega_arith
-  have hm0 : 0 < m := by omega_arith
-  have hR := VG.Proof.Bignum.coprime_pow2 hodd (64 * wx)
+  obtain hb1 : 1 ≤ bb.length := hbl ▸ hb1'
+  obtain hbw : (bb.length + 7) / 8 ≤ wx := hbl ▸ hbw'
+  obtain he1 : 1 ≤ xb.length := hxl ▸ he1'
+  obtain he2 : xb.length ≤ 1024 := hxl ▸ he2'
+  obtain hql : qb.length = xb.length := hql'.trans hxl.symm
+  obtain hw' : wx < 2 ^ 30 := by omega_arith
+  obtain hm0 : 0 < m := by omega_arith
+  obtain hR := VG.Proof.Bignum.coprime_pow2 hodd (64 * wx)
   have hlo := hc.lo
   have hhi := hc.hi
   have hBn := hc.scr.nowrap
-  have h384 : 384 ≤ slot w 8 := by unfold slot hdrBytes; omega_arith
+  obtain h384 : 384 ≤ slot w 8 := by unfold slot hdrBytes; omega_arith
   have hqo : Field.q.offset = 264 := rfl
-  have h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
+  obtain h256 : 256 ≤ slot wx 8 := by unfold slot hdrBytes; omega_arith
   have field {t : State} (hf : Frm (off B o) (workRanges wx) s.mem t.mem) :
       word t.mem B Field.q.offset = qp :=
     (hf.word_below (fun r hr => (workRanges_ok wx r hr).2) (by omega_arith) (by omega_arith)
@@ -156,15 +156,15 @@ theorem power_steps (M : Mont) (p : SPub) {s : State}
   refine WP.mono (VG.Proof.Dsa.AArch64.load_ok hcu hw2 hwx hw30 (by decide) (by decide) (by decide)
     ((work_parent hc hfu (by decide)).trans hb) ((work_parent hc hfu (by decide)).trans hblen)
     (work_source hc hfu hku hbs) hb1 (by omega_arith) hbw) fun v ⟨hcv, hvbase, hfv, hkv⟩ => ?_
-  have hfa : Arrays (off B o) wx [aX] u.mem v.mem :=
+  obtain hfa : Arrays (off B o) wx [aX] u.mem v.mem :=
     Arrays.of_outside (List.mem_singleton_self aX) hfv (Nat.le_refl _) (Nat.le_refl _)
   have hz := hcu.good.scr.nowrap
-  have vn := (hfa.wv_of_not_mem (show aN < 8 by decide) (by decide) hz).trans hmu.modulus
-  have vi : ((word v.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
+  obtain vn := (hfa.wv_of_not_mem (show aN < 8 by decide) (by decide) hz).trans hmu.modulus
+  obtain vi : ((word v.mem (off B o) (slot wx aN)).toNat * minv.toNat + 1) % 2 ^ 64 = 0 := by
     rw [hfa.word0_of_not_mem (by decide) (by decide) hz (by omega_arith)]
     exact hmu.inverse
-  have vone := (hfa.wv_of_not_mem (show aOne < 8 by decide) (by decide) hz).trans huone
-  have vr2 : wv v.mem (off B o) (slot wx aR2) wx = (2 ^ (64 * wx) * 2 ^ (64 * wx)) % m := by
+  obtain vone := (hfa.wv_of_not_mem (show aOne < 8 by decide) (by decide) hz).trans huone
+  obtain vr2 : wv v.mem (off B o) (slot wx aR2) wx = (2 ^ (64 * wx) * 2 ^ (64 * wx)) % m := by
     rw [(hfa.wv_of_not_mem (show aR2 < 8 by decide) (by decide) hz).trans hur2, ← Nat.pow_add,
       show 64 * wx + 64 * wx = 128 * wx by omega_arith]
   refine ⟨⟨⟨hcv.good, vn, vi⟩, fun j hj => ?_⟩, ?_⟩
@@ -176,11 +176,11 @@ theorem power_steps (M : Mont) (p : SPub) {s : State}
       rw [vone]; exact hm
   refine WP.mono (encodePower_ok M ⟨hcv.good, vn, vi⟩ (Nat.le_refl _) hw2 (by omega_arith) hm hodd hvbase vr2 vone)
     fun e ⟨hme, hex, hey, heone, hfe, hke⟩ => ?_
-  have hce := arrays_context hcv hfe (by decide) hke
-  have hfE : Frm (off B o) (workRanges wx) s.mem e.mem :=
+  obtain hce := arrays_context hcv hfe (by decide) hke
+  obtain hfE : Frm (off B o) (workRanges wx) s.mem e.mem :=
     (hfu.trans (arrays_work hfa (by decide))).trans (arrays_work hfe (by decide))
-  have hkE : Keep mmRegs s e := ((hku.trans hkv).trans hke).mono (by decide)
-  have cE : CExpCtx e (off B o) wx minv m (wv e.mem (off B o) (slot wx Crt.aXc) wx) :=
+  obtain hkE : Keep mmRegs s e := ((hku.trans hkv).trans hke).mono (by decide)
+  obtain cE : CExpCtx e (off B o) wx minv m (wv e.mem (off B o) (slot wx Crt.aXc) wx) :=
     ⟨hme.good, hce.scrT, hme.modulus, hme.inverse, rfl⟩
   refine ⟨⟨minv, m, _, cE, by rw [hex]; exact Nat.mod_lt _ hm0, hw2, hw'⟩, ?_⟩
   -- The buckets' start.
@@ -189,31 +189,31 @@ theorem power_steps (M : Mont) (p : SPub) {s : State}
     (by rw [hey]; exact Nat.mod_lt _ hm0) (by rw [hey, Nat.mod_mod])
     (by rw [hex]; exact Nat.mod_lt _ hm0) (by rw [hex, Nat.mod_mod]; rfl))
     fun t₁ ⟨hD₁, harr₁, hhdr₁, hf₁, hk₁⟩ => ?_
-  have hF₁ := hfE.trans hf₁
-  have hK₁ : Keep mmRegs s t₁ := (hkE.trans hk₁).mono (by decide)
-  have hc₁ : SubCtx t₁ B Z o w wx minv := hc.of_frmT hF₁ (workRanges_ok wx) hK₁.wr (hK₁.gpr .x0 (by decide))
+  obtain hF₁ := hfE.trans hf₁
+  obtain hK₁ : Keep mmRegs s t₁ := (hkE.trans hk₁).mono (by decide)
+  obtain hc₁ : SubCtx t₁ B Z o w wx minv := hc.of_frmT hF₁ (workRanges_ok wx) hK₁.wr (hK₁.gpr .x0 (by decide))
   refine ⟨⟨minv, hc₁⟩, ?_⟩
   -- The exponents.
   refine WP.mono (expInit_ok hc₁ (xp := xp) (qp := qp) (L := xb.length)
     ((work_parent hc hF₁ (by decide)).trans he) ((work_parent hc hF₁ (by decide)).trans helen) (field hF₁))
     fun t₂ ⟨hm₂, hk₂⟩ => ?_
-  have o₂ : Outside (off B o) 136 120 t₁.mem t₂.mem := by
+  obtain o₂ : Outside (off B o) 136 120 t₁.mem t₂.mem := by
     rw [hm₂]
     exact ((fn_outside _ _ _ (by decide) (by decide)).trans (fn_outside _ _ _ (by decide) (by decide))).trans
       (fn_outside _ _ _ (by decide) (by decide))
-  have hF₂ := hF₁.trans (fn_work o₂)
-  have hK₂ : Keep mmRegs s t₂ := (hK₁.trans hk₂).mono (by decide)
-  have hD₂ := hD₁.of_fn o₂ (by
+  obtain hF₂ := hF₁.trans (fn_work o₂)
+  obtain hK₂ : Keep mmRegs s t₂ := (hK₁.trans hk₂).mono (by decide)
+  obtain hD₂ := hD₁.of_fn o₂ (by
     rw [hm₂, hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
       hdrStore_hdr _ _ _ (by decide) (by decide) (by decide),
       hdrStore_hdr _ _ _ (by decide) (by decide) (by decide)]) hk₂.wr (hk₂.gpr .x0 (by decide))
   have hn₂ := hD₂.ctx.scrT.nowrap
-  have hc₂ : SubCtx t₂ B Z o w wx minv := hc.of_frmT hF₂ (workRanges_ok wx) hK₂.wr (hK₂.gpr .x0 (by decide))
-  have sx := work_source hc hF₂ hK₂ hes
-  have sq := work_source hc hF₂ hK₂ hqs
-  have hx : Exps t₂ (off B o) wx xp qp xb qb :=
+  obtain hc₂ : SubCtx t₂ B Z o w wx minv := hc.of_frmT hF₂ (workRanges_ok wx) hK₂.wr (hK₂.gpr .x0 (by decide))
+  obtain sx := work_source hc hF₂ hK₂ hes
+  obtain sq := work_source hc hF₂ hK₂ hqs
+  obtain hx : Exps t₂ (off B o) wx xp qp xb qb :=
     ⟨sx.rd, sx.val, src_out hc₂ sx, sq.rd, sq.val, src_out hc₂ sq, hql⟩
-  have G0 : GroupsInv t₂ (off B o) wx minv m (Spec.Rsa.os2ip bb) xp qp xb qb 0 0 t₂ :=
+  obtain G0 : GroupsInv t₂ (off B o) wx minv m (Spec.Rsa.os2ip bb) xp qp xb qb 0 0 t₂ :=
     ⟨hD₂, by rw [Nat.pow_zero, Nat.div_one, Nat.mul_zero, Nat.sub_zero, pre_len],
       by rw [Nat.pow_zero, Nat.div_one, Nat.mul_zero, Nat.sub_zero, ← hql, pre_len],
       by rw [hm₂, word_writeW_self, Nat.mul_zero, Nat.sub_zero],
@@ -224,15 +224,15 @@ theorem power_steps (M : Mont) (p : SPub) {s : State}
   refine ⟨⟨show 0 < (qb.length + 2) / 3 by omega_arith, t₂, minv, m, Spec.Rsa.os2ip bb, xb, 0, G0, hx, hw8, hw', hd,
     hR, by omega_arith⟩, ?_⟩
   refine WP.mono (digits_ok M hw8 hw' hd hR hx he1 (by omega_arith) G0) fun t₃ ⟨k, hG⟩ => ?_
-  have hL0 : xb.length - 3 * ((xb.length + 2) / 3) = 0 := by omega_arith
-  have hxk : Spec.Rsa.os2ip xb / 8 ^ k = 0 := by rw [hG.xr, hL0, pre_zero]
-  have hqk : Spec.Rsa.os2ip qb / 8 ^ k = 0 := by rw [hG.qr, hL0, pre_zero]
-  have hone₃ : wv t₃.mem (off B o) (slot wx aOne) wx = 1 := by
+  obtain hL0 : xb.length - 3 * ((xb.length + 2) / 3) = 0 := by omega_arith
+  obtain hxk : Spec.Rsa.os2ip xb / 8 ^ k = 0 := by rw [hG.xr, hL0, pre_zero]
+  obtain hqk : Spec.Rsa.os2ip qb / 8 ^ k = 0 := by rw [hG.qr, hL0, pre_zero]
+  obtain hone₃ : wv t₃.mem (off B o) (slot wx aOne) wx = 1 := by
     rw [hG.arr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
       fn_arr o₂ hn₂ (by decide), harr₁ _ (by decide)]
     exact heone
   -- `g^q`, and whether it is 1.
-  have lt₃ : ∀ d < 8, d ≠ 0 → wv t₃.mem (off B o) (slot wx (8 + (8 + d))) wx < m :=
+  obtain lt₃ : ∀ d < 8, d ≠ 0 → wv t₃.mem (off B o) (slot wx (8 + (8 + d))) wx < m :=
     fun d hd' _ => hG.dig.lt (8 + d) (by omega_arith)
   refine ⟨⟨minv, m, _, Spec.Rsa.os2ip bb, bexp (Spec.Rsa.os2ip qb) k, hG.dig.ctx, hw2, hw', hR, hm, hG.dig.tab,
     lt₃, fun d hd' hd0 => hG.dig.qs d hd' hd0, hone₃⟩, ?_⟩
@@ -243,16 +243,16 @@ theorem power_steps (M : Mont) (p : SPub) {s : State}
   refine ⟨⟨minv, m, _, hc₄, hw2, hw'⟩, ?_⟩
   refine WP.mono (orderCheck_ok hc₄ hw2 hw') fun t₅ ⟨hc₅, hmask₅, hent₅, harr₅, hhdr₅, hf₅, hk₅⟩ => ?_
   -- `g^x`.
-  have tab₅ := (hhdr₅ _ (by decide) (by decide)).trans
+  obtain tab₅ := (hhdr₅ _ (by decide) (by decide)).trans
     ((c₄.hdr _ (by decide) (by decide) (by decide)).trans hG.dig.tab)
-  have lt₅ : ∀ d < 8, d ≠ 0 → wv t₅.mem (off B o) (slot wx (8 + (0 + d))) wx < m := fun d hd' _ => by
+  obtain lt₅ : ∀ d < 8, d ≠ 0 → wv t₅.mem (off B o) (slot wx (8 + (0 + d))) wx < m := fun d hd' _ => by
     rw [Nat.zero_add, hent₅ d (by omega_arith), c₄.ent d (by omega_arith)]
     exact hG.dig.lt d (by omega_arith)
-  have xs₅ : ∀ d < 8, d ≠ 0 → wv t₅.mem (off B o) (slot wx (8 + (0 + d))) wx % m =
+  obtain xs₅ : ∀ d < 8, d ≠ 0 → wv t₅.mem (off B o) (slot wx (8 + (0 + d))) wx % m =
       Spec.Rsa.os2ip bb ^ bexp (Spec.Rsa.os2ip xb) k d * 2 ^ (64 * wx) % m := fun d hd' _ => by
     rw [Nat.zero_add, hent₅ d (by omega_arith), c₄.ent d (by omega_arith)]
     exact hG.dig.xs d hd'
-  have one₅ := (harr₅ _ (by decide) (by decide)).trans
+  obtain one₅ := (harr₅ _ (by decide) (by decide)).trans
     ((c₄.arr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)).trans hone₃)
   refine ⟨⟨minv, m, _, Spec.Rsa.os2ip bb, bexp (Spec.Rsa.os2ip xb) k, hc₅, hw2, hw', hR, hm, tab₅, lt₅, xs₅,
     one₅⟩, ?_⟩
@@ -262,12 +262,12 @@ theorem power_steps (M : Mont) (p : SPub) {s : State}
   refine ⟨⟨minv, hc₆.good⟩, ?_⟩
   refine WP.mono (copyArr_ok hc₆.good (Nat.le_refl _) (by omega_arith) (by omega_arith) (o := aY) (a := Crt.aT)
     (by decide) (by decide) (by decide)) fun t ⟨hY, oY, kY⟩ => hK t ?_
-  have aY7 : Arrays (off B o) wx [aY] t₆.mem t.mem :=
+  obtain aY7 : Arrays (off B o) wx [aY] t₆.mem t.mem :=
     Arrays.of_outside (List.mem_singleton_self _) oY (Nat.le_refl _) (by omega_arith)
-  have hct := ctx_of_arrays hc₆ aY7 (by decide) (by decide) kY.wr (kY.gpr .x0 (by decide))
-  have hF : Frm (off B o) (workRanges wx) s.mem t.mem :=
+  obtain hct := ctx_of_arrays hc₆ aY7 (by decide) (by decide) kY.wr (kY.gpr .x0 (by decide))
+  obtain hF : Frm (off B o) (workRanges wx) s.mem t.mem :=
     hF₂.trans (hG.frm.trans (c₄.frm.trans (hf₅.trans (c₆.frm.trans (arrays_work aY7 (by decide))))))
-  have hK' : Keep mmRegs s t :=
+  obtain hK' : Keep mmRegs s t :=
     (((((hK₂.trans hG.keep).trans c₄.keep).trans hk₅).trans c₆.keep).trans kY).mono (by decide)
   refine ⟨hc.of_frmT hF (workRanges_ok wx) hK'.wr (hK'.gpr .x0 (by decide)), ?_, ?_,
     ⟨hct.good, hct.n, hct.inv⟩, hF, hK'⟩
@@ -299,7 +299,7 @@ theorem power_ok (M : Mont) {s : State} {B : Addr} {Z o w wx m : Nat} {minv : Bi
         mask (decide (Spec.Dsa.powMod (Spec.Dsa.decodeBE bb) (Spec.Dsa.decodeBE qb) m = 1)) ∧
       ModCtx t (off B o) (slot wx 8) wx minv m ∧
       Frm (off B o) (workRanges wx) s.mem t.mem ∧ Keep mmRegs s t := by
-  have h := power_steps M
+  obtain h := power_steps M
     { bytes := ⟨⟨B, Z, o, w, wx⟩, xp, xb.length⟩, minv := minv, modulus := m, lower := (show 2 ≤ wx by omega_arith),
       fits := hwx,
       upper := hw30, greater := hm, odd := hodd, base := base, baseLen := bb.length, width48 := hw48,
@@ -341,7 +341,7 @@ theorem power_ct (M : Mont) : RelCT isa (Two SPre) (power M.mm) (fun _ _ => True
   · obtain ⟨⟨⟨hc, _, bb, _, hp, hl, _, _, hbl, _, hb, _⟩, _⟩, _⟩ := h
     refine ⟨p.minv, bb, hc, p.lower, p.fits, p.upper, by decide, by decide, by decide,
       hp, hl, hbl, hb, hbl ▸ p.basePositive, ?_, hbl ▸ p.baseFits⟩
-    have hbw : (bb.length + 7) / 8 ≤ p.x.wx := hbl ▸ p.baseFits
+    obtain hbw : (bb.length + 7) / 8 ≤ p.x.wx := hbl ▸ p.baseFits
     have hw48 : p.x.wx ≤ 48 := p.width48
     omega_using [hbw, hw48]
   refine RelCT.seqs_append (by simp [tableInit]) (by simp) (RelCT.seq (two_post

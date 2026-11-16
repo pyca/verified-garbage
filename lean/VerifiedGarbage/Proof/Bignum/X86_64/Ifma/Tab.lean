@@ -75,22 +75,22 @@ theorem copies_ok (hl : AmmOk l) {B : Addr} :
   | [], s, _, _, _, _ => WP.block_nil ⟨rfl, rfl, rfl, rfl, rfl⟩
   | (a, o) :: rest, s, hB, hs, hxs, hsep => by
     have hD := hl.D_bounds
-    have ho := hxs (a, o) (List.mem_cons_self ..)
+    obtain ho := hxs (a, o) (List.mem_cons_self ..)
     have hn := hs.nowrap
     rw [copyCode, List.flatMap_cons, List.cons_append, List.cons_append, List.nil_append, WP.block_cons_iff]
-    have hld : InRegions (s.rd ++ s.wr) (off B a) 32 :=
+    obtain hld : InRegions (s.rd ++ s.wr) (off B a) 32 :=
       let ⟨_, h, c⟩ := hs.region (d := a) (n := 32) (by omega_using [ho]) (by decide); ⟨_, List.mem_append_right _ h, c⟩
-    have hst : InRegions s.wr (off B o) 32 :=
+    obtain hst : InRegions s.wr (off B o) 32 :=
       let ⟨_, h, c⟩ := hs.region (d := o) (n := 32) (by omega_using [ho]) (by decide); ⟨_, h, c⟩
     refine ⟨s.setVy (vreg 0) (s.mem.readW (off B a) 256),
       by simp only [exec, ea_rG hB, State.load256, hld, ite_true, Option.map_some], ?_⟩
-    have y₁ := vy_setVy_self s (vreg 0) (s.mem.readW (off B a) 256)
-    have e₁ : ∀ t : State, t = s.setVy (vreg 0) (s.mem.readW (off B a) 256) →
+    obtain y₁ := vy_setVy_self s (vreg 0) (s.mem.readW (off B a) 256)
+    obtain e₁ : ∀ t : State, t = s.setVy (vreg 0) (s.mem.readW (off B a) 256) →
         t.gpr = s.gpr ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr := by
       rintro t rfl; exact ⟨rfl, rfl, rfl, rfl, rfl⟩
     generalize hs₁ : s.setVy (vreg 0) (s.mem.readW (off B a) 256) = s₁ at y₁ ⊢
     obtain ⟨g₁, m₁, rd₁, wr₁, x₁⟩ := e₁ s₁ hs₁.symm
-    have hB₁ : s₁.gpr .rbx = B := by rw [g₁]; exact hB
+    obtain hB₁ : s₁.gpr .rbx = B := by rw [g₁]; exact hB
     rw [WP.block_cons_iff]
     refine ⟨{ s₁ with mem := s₁.mem.writeW (off B o) (s₁.vy (vreg 0)) }, by
       simp only [exec, ea_rG hB₁, State.store256, wr₁, hst, ite_true], ?_⟩
@@ -102,7 +102,7 @@ theorem copies_ok (hl : AmmOk l) {B : Addr} :
     rw [m', List.map_cons, wrList]
     refine congrArg (wrList _ B) (List.map_congr_left fun y hy => ?_)
     have := hxs y (List.mem_cons_of_mem _ hy)
-    have hs' := hsep (a, o) (List.mem_cons_self ..) y (List.mem_cons_of_mem _ hy)
+    obtain hs' := hsep (a, o) (List.mem_cons_self ..) y (List.mem_cons_of_mem _ hy)
     exact congrArg _ (readW256_outside (writeW256_outside _ B _ (by omega_arith)) (by omega_using [hs']) (by omega_using [hn, this]))
 
 /-- The copies of `copyN o a`. -/
@@ -131,15 +131,15 @@ theorem copyN_ok (hl : AmmOk l) {s : State} {B : Addr} {o a : Nat} (hB : s.gpr .
   refine WP.mono (copies_ok hl _ s hB hs (fun x hx => ?_) (fun x hx y hy => ?_))
     fun s' ⟨hm, hg, hrd, hwr, hx⟩ => ⟨fun p hp q hq => ?_, ?_, hg, hrd, hwr, hx⟩
   · obtain ⟨p, hp, k, hk, rfl⟩ := mem_cpList hx
-    have hle := lane_end hl hp
+    obtain hle := lane_end hl hp
     rcases D_mulN hl hp with h | h <;> dsimp only <;> omega_using [ho, ha, hNB, hk, h, hle]
   · obtain ⟨p, hp, k, hk, rfl⟩ := mem_cpList hx
     obtain ⟨p', hp', k', hk', rfl⟩ := mem_cpList hy
     rcases (lane01 hl hp) with rfl | rfl <;> rcases (lane01 hl hp') with rfl | rfl <;>
           dsimp only <;> simp only [Nat.mul_zero, Nat.mul_one] <;> omega_using [hoa, hNB, hk, hk', ho, ha]
   · have hk : q % l.R < l.R := Nat.mod_lt _ (by omega_using [hR])
-    have ht : q / l.R < 4 := Nat.div_lt_of_lt_mul (by simp only [Lay.L] at hq; rw [Nat.mul_comm]; exact hq)
-    have e := word_wrList_unique B (e := l.D * p + o + 32 * (q % l.R)) (t := q / l.R)
+    obtain ht : q / l.R < 4 := Nat.div_lt_of_lt_mul (by simp only [Lay.L] at hq; rw [Nat.mul_comm]; exact hq)
+    obtain e := word_wrList_unique B (e := l.D * p + o + 32 * (q % l.R)) (t := q / l.R)
       (v := s.mem.readW (off B (l.D * p + a + 32 * (q % l.R))) 256) ht
       (by have hle := lane_end hl hp; rcases D_mulN hl hp with h | h <;> omega_using [ho, hD, hNB, hk, h, hle])
       ((cpList l o a).map fun x => (x.2, s.mem.readW (off B x.1) 256)) s.mem
@@ -159,7 +159,7 @@ theorem copyN_ok (hl : AmmOk l) {s : State} {B : Addr} {o a : Nat} (hB : s.gpr .
             simp only [Nat.mul_zero, Nat.mul_one] at he <;> omega_using [he, hD, hNB, hk, hk']
         rw [this.1, this.2])
     show (word s'.mem B _).toNat = (word s.mem B _).toNat
-    have ex := readW_extract s.mem (off B (l.D * p + a + 32 * (q % l.R))) (w := 256) (k := 8 * (q / l.R)) (n := 8)
+    obtain ex := readW_extract s.mem (off B (l.D * p + a + 32 * (q % l.R))) (w := 256) (k := 8 * (q / l.R)) (n := 8)
       (by omega_using [ht])
     rw [hm, show l.D * p + o + l.off q = l.D * p + o + 32 * (q % l.R) + 8 * (q / l.R) by unfold Lay.off; omega_using [], e,
       show 64 * (q / l.R) = 8 * (8 * (q / l.R)) by omega_using []]
@@ -202,7 +202,7 @@ theorem convSetup_ok (hl : AmmOk l) {s : State} {B : Addr} {i : Nat}
       VG.Proof.MlKem.X86_64.Keep [.r8, .r9, .r11] s s' ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr := by
   have hD := hl.D_bounds
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  have e : off B (l.oY + l.NB * i) = B + BitVec.ofNat 64 (l.oTab + l.NB * i) - BitVec.ofNat 64 (l.oTab - l.oY) := by
+  obtain e : off B (l.oY + l.NB * i) = B + BitVec.ofNat 64 (l.oTab + l.NB * i) - BitVec.ofNat 64 (l.oTab - l.oY) := by
     rw [VG.Offset.add_ofNat_sub _ (by omega_using [o2, o5])]
     exact congrArg (off B) (by omega_using [o2, o5])
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r8, .r9, .r11] (Q := fun s' =>
@@ -222,7 +222,7 @@ theorem tabHead_ok (hl : AmmOk l) {s : State} {B : Addr} {i : Nat} (hi : 1 ≤ i
       VG.Proof.MlKem.X86_64.Keep [.r8, .r9, .r11] s s' ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr := by
   have hD := hl.D_bounds
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  have hNi : l.NB ≤ l.NB * i := Nat.le_mul_of_pos_right _ (by omega_using [hi])
+  obtain hNi : l.NB ≤ l.NB * i := Nat.le_mul_of_pos_right _ (by omega_using [hi])
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r8, .r9, .r11] (Q := fun s' =>
     s'.gpr .r8 = off B (l.oTab + l.NB * (i - 1)) ∧ s'.gpr .r9 = off B l.oX ∧
       s'.gpr .r11 = off B (l.oTab + l.NB * i) ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr) (by
@@ -242,7 +242,7 @@ theorem tabTail_ok (hl : AmmOk l) {s : State} {i : Nat} (hi : i < l.T)
       VG.Proof.MlKem.X86_64.Keep [.r13] s s' ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr := by
   have hD := hl.D_bounds
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  have hNi : l.NB * i + l.NB ≤ l.T * l.NB := tab_le hl hi
+  obtain hNi : l.NB * i + l.NB ≤ l.T * l.NB := tab_le hl hi
   refine WP.mono (VG.Proof.MlKem.X86_64.WP.keep [.r13] (Q := fun s' =>
     s'.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * (i + 1)) ∧ s'.zf = some (decide (i + 1 = l.T)) ∧
       s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr) (by
@@ -270,11 +270,11 @@ theorem bodyHead_ok (hl : AmmOk l) {s : State} {i : Nat} (hi : i < l.T) {R : Pro
       (.seq (.ite .b (.block (convSetup l)) (.block (tabSetup l))) R)) s Q := by
   have hD := hl.D_bounds
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  have hNi : l.NB * i + l.NB ≤ l.T * l.NB := tab_le hl hi
+  obtain hNi : l.NB * i + l.NB ≤ l.T * l.NB := tab_le hl hi
   refine WP.seq (WP.mono (cmp13_ok s h13 (by omega_using [hD, o5, o10, hNi]) (by omega_using [hD, o5, o10]))
     fun t ⟨_, hcf, hg, hm, hrd, hwr, hx⟩ => ?_)
-  have hf : Flags s t := ⟨hg, hm, hrd, hwr, hx⟩
-  have e : decide (l.oTab + l.NB * i < l.oTab + 2 * l.NB) = decide (i < 2) := by
+  obtain hf : Flags s t := ⟨hg, hm, hrd, hwr, hx⟩
+  obtain e : decide (l.oTab + l.NB * i < l.oTab + 2 * l.NB) = decide (i < 2) := by
     refine decide_eq_decide.mpr ⟨fun h => ?_, fun h => ?_⟩
     · by_contra h'
       have := Nat.mul_le_mul_left l.NB (show 2 ≤ i by omega_using [h'])
@@ -298,10 +298,10 @@ theorem bodyTail_ok (hl : AmmOk l) {s : State} {i : Nat} (hi : i < l.T) (h1 : i 
       VG.Proof.MlKem.X86_64.Keep [.r13] s s' ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mxcsr := by
   have hD := hl.D_bounds
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  have hNi : l.NB * i + l.NB ≤ l.T * l.NB := tab_le hl hi
+  obtain hNi : l.NB * i + l.NB ≤ l.T * l.NB := tab_le hl hi
   refine WP.seq (WP.mono (cmp13_ok s h13 (by omega_using [hD, o5, o10, hNi]) (by omega_using [hD, o5, o10]))
     fun t ⟨hz, _, hg, hm, hrd, hwr, hx⟩ => ?_)
-  have hne : l.oTab + l.NB * i ≠ l.oTab + l.NB := fun h => h1 (by
+  obtain hne : l.oTab + l.NB * i ≠ l.oTab + l.NB := fun h => h1 (by
     have := NB_le hl
     exact Nat.eq_of_mul_eq_mul_left (show 0 < l.NB by omega_using [this]) (by rw [Nat.mul_one]; omega_using [h]))
   rw [decide_eq_false hne] at hz
@@ -338,17 +338,17 @@ theorem tabIter_ok (hl : AmmOk l) {s₀ t : State} {B : Addr} {M k x : Nat → N
     WP isa (convTabBody l) t fun t' => TabInv l s₀ B M k x Q (i + 1) t' ∧ t'.zf = some (decide (i + 1 = l.T)) := by
   have hD := hl.D_bounds
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  have hNi : l.NB * i + l.NB ≤ l.T * l.NB := tab_le hl hi'
-  have hNi1 : l.NB * (i - 1) + l.NB = l.NB * i := by
+  obtain hNi : l.NB * i + l.NB ≤ l.T * l.NB := tab_le hl hi'
+  obtain hNi1 : l.NB * (i - 1) + l.NB = l.NB * i := by
     rw [← Nat.mul_succ, show (i - 1).succ = i by omega_using [hi]]
   unfold convTabBody
   refine bodyHead_ok hl hi' h.r13 (fun h' => absurd h' (by omega_using [hi])) fun _ t₀ hf => ?_
-  have hB₀ : t₀.gpr .rbx = B := by rw [hf.1]; exact h.rbx
-  have h13₀ : t₀.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * i) := by rw [hf.1]; exact h.r13
+  obtain hB₀ : t₀.gpr .rbx = B := by rw [hf.1]; exact h.rbx
+  obtain h13₀ : t₀.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * i) := by rw [hf.1]; exact h.r13
   refine WP.mono (tabHead_ok hl (by omega_using [hi]) hi' hB₀ h13₀) fun t₁ ⟨h8, h9, h11, k₁, me₁, mx₁⟩ => ?_
   rw [hf.2.1] at me₁
-  have rbx₁ : t₁.gpr .rbx = B := by rw [k₁.gpr (by decide)]; exact hB₀
-  have hg : ∀ p < l.nl, Good l t₁.mem B M (l.oTab + l.NB * (i - 1)) p := fun p hp => by
+  obtain rbx₁ : t₁.gpr .rbx = B := by rw [k₁.gpr (by decide)]; exact hB₀
+  obtain hg : ∀ p < l.nl, Good l t₁.mem B M (l.oTab + l.NB * (i - 1)) p := fun p hp => by
     rw [me₁]; exact (h.tab (i - 1) (by omega_using [hi]) p hp).1
   refine WP.seq (WP.mono (ammCore2_ok hl (o := l.oTab + l.NB * i) (k := k) rbx₁ h8 h9 h11
     (h.scr.congr (by rw [k₁.2.2, hf.2.2.2.1]))
@@ -356,7 +356,7 @@ theorem tabIter_ok (hl : AmmOk l) {s₀ t : State} {B : Addr} {M k x : Nat → N
         (by omega_using [o5, o10, hNi, hNi1]) (by omega_using [o3, o10]) hg
     (fun p hp => by rw [me₁]; exact h.xg p hp))
     fun t₂ ⟨hv₂, f₂, ar₂, g₂, rd₂, wr₂, x₂⟩ => ?_)
-  have r13₂ : t₂.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * i) := by
+  obtain r13₂ : t₂.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * i) := by
     rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
       k₁.gpr (by decide)]; exact h13₀
   refine WP.mono (bodyTail_ok hl hi' (by omega_using [hi]) r13₂) fun t₃ ⟨r13₃, z₃, k₃, me₃, mx₃⟩ => ⟨⟨?_, r13₃, ?_, ?_,
@@ -370,9 +370,9 @@ theorem tabIter_ok (hl : AmmOk l) {s₀ t : State} {B : Addr} {M k x : Nat → N
     rcases Nat.lt_or_eq_of_le (Nat.le_of_lt_succ hj) with hj | rfl
     · have hNj : l.NB * j + l.NB ≤ l.NB * i := by
         rw [← Nat.mul_succ]; exact Nat.mul_le_mul_left _ hj
-      have hc : l.oTab + l.NB * j + l.NB ≤ l.oTab + l.NB * i ∨ l.oTab + l.NB * i + l.NB ≤ l.oTab + l.NB * j :=
+      obtain hc : l.oTab + l.NB * j + l.NB ≤ l.oTab + l.NB * i ∨ l.oTab + l.NB * i + l.NB ≤ l.oTab + l.NB * j :=
         .inl (by omega_using [hNj])
-      have hcD : l.oTab + l.NB * j + l.NB ≤ l.D := by omega_using [hoD, hNj]
+      obtain hcD : l.oTab + l.NB * j + l.NB ≤ l.D := by omega_using [hoD, hNj]
       obtain ⟨g, v⟩ := h.tab j hj p hp
       refine ⟨?_, fun hq => ?_⟩
       · have g₁ : Good l t₁.mem B M (l.oTab + l.NB * j) p := by rw [me₁]; exact g
@@ -381,19 +381,19 @@ theorem tabIter_ok (hl : AmmOk l) {s₀ t : State} {B : Addr} {M k x : Nat → N
     · obtain ⟨g, v⟩ := hv₂ p hp
       refine ⟨by rw [me₃]; exact g, fun hq => ?_⟩
       rw [me₁] at v
-      have e := mont_mul2 (R := 2 ^ (52 * l.S)) (hR p hp) ((h.tab (j - 1) (by omega_using [hi]) p hp).2 hq) (h.xv hq p hp) v
+      obtain e := mont_mul2 (R := 2 ^ (52 * l.S)) (hR p hp) ((h.tab (j - 1) (by omega_using [hi]) p hp).2 hq) (h.xv hq p hp) v
       rw [show j - 1 + 1 = j by omega_using [hi]] at e
       rw [me₃]; exact e
   · intro p hp
     rw [me₃]
-    have g₁ : Good l t₁.mem B M l.oY p := by rw [me₁]; exact h.yg p hp
+    obtain g₁ : Good l t₁.mem B M l.oY p := by rw [me₁]; exact h.yg p hp
     exact g₁.of_out2 hl hp f₂ (.inl (by omega_using [o2, o5])) (by omega_using [o2, o10]) (by omega_using [o5, o10, hNi])
   · intro hq p hp
     rw [me₃, f₂.val hl hp (.inl (by omega_using [o2, o5])) (by omega_using [o2, o10]) (by omega_using [o5, o10, hNi]), me₁]
     exact h.yv hq p hp
   · intro p hp
     rw [me₃]
-    have g₁ : Good l t₁.mem B M l.oX p := by rw [me₁]; exact h.xg p hp
+    obtain g₁ : Good l t₁.mem B M l.oX p := by rw [me₁]; exact h.xg p hp
     exact g₁.of_out2 hl hp f₂ (.inl (by omega_using [o3, o5])) (by omega_using [o3, o10]) (by omega_using [o5, o10, hNi])
   · intro hq p hp
     rw [me₃, f₂.val hl hp (.inl (by omega_using [o3, o5])) (by omega_using [o3, o10]) (by omega_using [o5, o10, hNi]), me₁]
@@ -452,18 +452,18 @@ theorem conv0_ok (hl : AmmOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
   unfold convTabBody
   refine bodyHead_ok hl (T_gt hl (by decide)) h.r13 (fun _ t₀ hf => ?_) fun h' => absurd h' (by decide)
-  have hB₀ : t₀.gpr .rbx = B := by rw [hf.1, h.gpr _ (by decide)]; exact hc.rbx
-  have h13₀ : t₀.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * 0) := by rw [hf.1]; exact h.r13
+  obtain hB₀ : t₀.gpr .rbx = B := by rw [hf.1, h.gpr _ (by decide)]; exact hc.rbx
+  obtain h13₀ : t₀.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * 0) := by rw [hf.1]; exact h.r13
   refine WP.mono (convSetup_ok hl hB₀ h13₀) fun t₁ ⟨h8, h9, h11, k₁, me₁, mx₁⟩ => ?_
   simp only [Nat.mul_zero, Nat.add_zero] at h8 h11
-  have me : t₁.mem = s₀.mem := by rw [me₁, hf.2.1, h.mem]
-  have rbx₁ : t₁.gpr .rbx = B := by rw [k₁.gpr (by decide)]; exact hB₀
+  obtain me : t₁.mem = s₀.mem := by rw [me₁, hf.2.1, h.mem]
+  obtain rbx₁ : t₁.gpr .rbx = B := by rw [k₁.gpr (by decide)]; exact hB₀
   refine WP.seq (WP.mono (ammCore2_ok hl (o := l.oY) (M := M) (k := k) rbx₁ h8 h9 h11
     (hc.scr.congr (by rw [k₁.2.2, hf.2.2.2.1, h.wr])) (by rw [me]; exact hc.ar) (by omega_using [])
     (by omega_using [o2, o9]) (by omega_using [o2, o10]) (by omega_using [o7, o10])
     (by rw [me]; exact hc.gy) (by rw [me]; exact hc.gk))
     fun t₂ ⟨hv₂, f₂, ar₂, g₂, rd₂, wr₂, x₂⟩ => ?_)
-  have r13₂ : t₂.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * 0) := by
+  obtain r13₂ : t₂.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * 0) := by
     rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
       k₁.gpr (by decide)]; exact h13₀
   refine WP.mono (bodyTail_ok hl (T_gt hl (by decide)) (by decide) r13₂) fun t₃ ⟨r13₃, z₃, k₃, me₃, mx₃⟩ =>
@@ -480,73 +480,73 @@ theorem conv1_ok (hl : AmmOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat
     WP isa (convTabBody l) t fun t' => TabInv l s₀ B M k x Q 2 t' ∧ t'.zf = some false := by
   have hD := hl.D_bounds
   obtain ⟨o1, o2, o3, o4, o5, o6, o7, o8, o9, o10⟩ := lay_offs l
-  have e2 : 2 ^ l.cv * 2 ^ (104 * l.S - l.cv) = 2 ^ (52 * l.S) * 2 ^ (52 * l.S) := by
+  obtain e2 : 2 ^ l.cv * 2 ^ (104 * l.S - l.cv) = 2 ^ (52 * l.S) * 2 ^ (52 * l.S) := by
     have := dbl_le hl
     rw [← Nat.pow_add, ← Nat.pow_add]; congr 1; omega_using [this]
-  have hB : t.gpr .rbx = B := by
+  obtain hB : t.gpr .rbx = B := by
     rw [h.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide)]; exact hc.rbx
   -- `X` and `K1` as in `s₀`
-  have gx : ∀ p < l.nl, Good l t.mem B M l.oX p := fun p hp =>
+  obtain gx : ∀ p < l.nl, Good l t.mem B M l.oX p := fun p hp =>
     (hc.gx p hp).of_out2 hl hp h.f (.inr (by omega_using [o2, o3])) (by omega_using [o3, o10]) (by omega_using [o2, o10])
-  have gk : ∀ p < l.nl, Good l t.mem B M l.oK1 p := fun p hp =>
+  obtain gk : ∀ p < l.nl, Good l t.mem B M l.oK1 p := fun p hp =>
     (hc.gk p hp).of_out2 hl hp h.f (.inr (by omega_using [o2, o7])) (by omega_using [o7, o10]) (by omega_using [o2, o10])
   unfold convTabBody
   refine bodyHead_ok hl (T_gt hl (by decide)) h.r13 (fun _ t₀ hf => ?_) fun h' => absurd h' (by decide)
-  have hB₀ : t₀.gpr .rbx = B := by rw [hf.1]; exact hB
-  have h13₀ : t₀.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * 1) := by rw [hf.1]; exact h.r13
+  obtain hB₀ : t₀.gpr .rbx = B := by rw [hf.1]; exact hB
+  obtain h13₀ : t₀.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * 1) := by rw [hf.1]; exact h.r13
   refine WP.mono (convSetup_ok hl hB₀ h13₀) fun t₁ ⟨h8, h9, h11, k₁, me₁, mx₁⟩ => ?_
   rw [show l.oY + l.NB * 1 = l.oX by omega_using [o2, o3]] at h8 h11
-  have me : t₁.mem = t.mem := by rw [me₁, hf.2.1]
-  have rbx₁ : t₁.gpr .rbx = B := by rw [k₁.gpr (by decide)]; exact hB₀
+  obtain me : t₁.mem = t.mem := by rw [me₁, hf.2.1]
+  obtain rbx₁ : t₁.gpr .rbx = B := by rw [k₁.gpr (by decide)]; exact hB₀
   refine WP.seq (WP.mono (ammCore2_ok hl (o := l.oX) (M := M) (k := k) rbx₁ h8 h9 h11
     (hc.scr.congr (by rw [k₁.2.2, hf.2.2.2.1, h.wr])) (by rw [me]; exact h.ar) (by omega_using [o2, o3])
     (by omega_using [o3, o9]) (by omega_using [o3, o10]) (by omega_using [o7, o10])
     (by rw [me]; exact gx) (by rw [me]; exact gk))
     fun t₂ ⟨hv₂, f₂, ar₂, g₂, rd₂, wr₂, x₂⟩ => ?_)
   rw [me] at hv₂ f₂
-  have r13₂ : t₂.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * 1) := by
+  obtain r13₂ : t₂.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * 1) := by
     rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
       k₁.gpr (by decide)]; exact h13₀
-  have hB₂ : t₂.gpr .rbx = B := by
+  obtain hB₂ : t₂.gpr .rbx = B := by
     rw [g₂ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]; exact rbx₁
-  have hs₂ : Scr t₂ B (l.nl * l.D) := hc.scr.congr (by rw [wr₂, k₁.2.2, hf.2.2.2.1, h.wr])
+  obtain hs₂ : Scr t₂ B (l.nl * l.D) := hc.scr.congr (by rw [wr₂, k₁.2.2, hf.2.2.2.1, h.wr])
   -- the copies
-  have hNB := NB_le hl
+  obtain hNB := NB_le hl
   refine WP.seq (WP.mono (cmp13_ok t₂ r13₂ (by omega_using [hD, o5]) (by omega_using [hD, o5]))
     fun t₃ ⟨hz, _, hg₃, hm₃, hrd₃, hwr₃, hx₃⟩ => ?_)
   rw [Nat.mul_one, decide_eq_true rfl] at hz
-  have hB₃ : t₃.gpr .rbx = B := by rw [hg₃]; exact hB₂
+  obtain hB₃ : t₃.gpr .rbx = B := by rw [hg₃]; exact hB₂
   refine WP.seq (WP.ite true hz (fun _ => ?_) fun h' => by cases h')
   rw [WP.block_append_iff]
   refine WP.mono (copyN_ok hl hB₃ (hs₂.congr hwr₃) (by omega_using [o5, o10]) (by omega_using [o2, o10])
     (.inl (by omega_using [o2, o5]))) fun t₄ ⟨l₄, f₄, g₄, rd₄, wr₄, x₄⟩ => ?_
-  have hB₄ : t₄.gpr .rbx = B := by rw [g₄]; exact hB₃
+  obtain hB₄ : t₄.gpr .rbx = B := by rw [g₄]; exact hB₃
   refine WP.mono (copyN_ok hl hB₄ (hs₂.congr (by rw [wr₄, hwr₃])) (by omega_using [o5, o10]) (by omega_using [o3, o10])
     (.inl (by omega_using [o3, o5]))) fun t₅ ⟨l₅, f₅, g₅, rd₅, wr₅, x₅⟩ => ?_
   rw [hm₃] at l₄ f₄
-  have r13₅ : t₅.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * 1) := by rw [g₅, g₄, hg₃]; exact r13₂
+  obtain r13₅ : t₅.gpr .r13 = BitVec.ofNat 64 (l.oTab + l.NB * 1) := by rw [g₅, g₄, hg₃]; exact r13₂
   refine WP.mono (tabTail_ok hl (T_gt hl (by decide)) r13₅) fun t₆ ⟨r13₆, z₆, k₆, me₆, mx₆⟩ =>
     ⟨?_, z₆.trans (congrArg some (dec_T hl (by decide)))⟩
-  have hoD : l.oTab + l.NB ≤ l.D := by omega_using [o5, o10]
-  have hoD' : l.oTab + l.NB + l.NB ≤ l.D := by omega_using [o5, o10]
+  obtain hoD : l.oTab + l.NB ≤ l.D := by omega_using [o5, o10]
+  obtain hoD' : l.oTab + l.NB + l.NB ≤ l.D := by omega_using [o5, o10]
   -- `Y` and `X` in Montgomery form, after the conversions
-  have vy₂ : Q → ∀ p < l.nl, val52 l t₂.mem B (l.D * p + l.oY) % M p = x p ^ 0 * 2 ^ (52 * l.S) % M p :=
+  obtain vy₂ : Q → ∀ p < l.nl, val52 l t₂.mem B (l.D * p + l.oY) % M p = x p ^ 0 * 2 ^ (52 * l.S) % M p :=
     fun hq p hp => by
       rw [f₂.val hl hp (.inl (by omega_using [o2, o3])) (by omega_using [o2, o10]) (by omega_using [o3, o10])]
       exact mont_into0 (hc.hR p hp) (hc.vy hq p hp) (hc.vk hq p hp) e2 (h.yv p hp)
-  have gy₂ : ∀ p < l.nl, Good l t₂.mem B M l.oY p := fun p hp =>
+  obtain gy₂ : ∀ p < l.nl, Good l t₂.mem B M l.oY p := fun p hp =>
     (h.yg p hp).of_out2 hl hp f₂ (.inl (by omega_using [o2, o3])) (by omega_using [o2, o10]) (by omega_using [o3, o10])
-  have vx₂ : Q → ∀ p < l.nl, val52 l t₂.mem B (l.D * p + l.oX) % M p = x p ^ 1 * 2 ^ (52 * l.S) % M p :=
+  obtain vx₂ : Q → ∀ p < l.nl, val52 l t₂.mem B (l.D * p + l.oX) % M p = x p ^ 1 * 2 ^ (52 * l.S) % M p :=
     fun hq p hp => by
-      have e := (hv₂ p hp).2
+      obtain e := (hv₂ p hp).2
       rw [h.f.val hl hp (.inr (by omega_using [o2, o3])) (by omega_using [o3, o10]) (by omega_using [o2, o10]),
         h.f.val hl hp (.inr (by omega_using [o2, o7])) (by omega_using [o7, o10]) (by omega_using [o2, o10])] at e
       exact mont_into1 (hc.hR p hp) (hc.vx hq p hp) (hc.vk hq p hp) e2 e
   -- through the copies
-  have keepY : ∀ {c : Nat}, c + l.NB ≤ l.oTab → ∀ p < l.nl, (Good l t₂.mem B M c p → Good l t₆.mem B M c p) ∧
+  obtain keepY : ∀ {c : Nat}, c + l.NB ≤ l.oTab → ∀ p < l.nl, (Good l t₂.mem B M c p → Good l t₆.mem B M c p) ∧
       val52 l t₆.mem B (l.D * p + c) = val52 l t₂.mem B (l.D * p + c) := fun {c} hcT p hp => by
-    have hcD : c + l.NB ≤ l.D := by omega_using [hcT, o5, o10]
+    obtain hcD : c + l.NB ≤ l.D := by omega_using [hcT, o5, o10]
     refine ⟨fun g => ?_, ?_⟩
     · rw [me₆]
       exact (g.of_out2 hl hp f₄ (.inl hcT) hcD hoD).of_out2 hl hp f₅ (.inl (by omega_using [hcT])) hcD hoD'
@@ -563,18 +563,18 @@ theorem conv1_ok (hl : AmmOk l) {s₀ t : State} {B : Addr} {M k x : Nat → Nat
   · rw [me₆]
     rcases (by omega_using [hj] : j = 0 ∨ j = 1) with rfl | rfl
     · rw [Nat.mul_zero, Nat.add_zero]
-      have g0 := ((gy₂ p hp).of_limbs (l₄ p hp)).of_out2 hl hp f₅ (.inl (by omega_using [])) (by omega_using [hoD']) hoD'
+      obtain g0 := ((gy₂ p hp).of_limbs (l₄ p hp)).of_out2 hl hp f₅ (.inl (by omega_using [])) (by omega_using [hoD']) hoD'
       refine ⟨g0, fun hq => ?_⟩
       rw [f₅.val hl hp (.inl (by omega_using [])) (by omega_using [hoD']) hoD', val52_of_limbs (l₄ p hp)]
       exact vy₂ hq p hp
     · rw [Nat.mul_one]
-      have gx₄ : Good l t₄.mem B M l.oX p :=
+      obtain gx₄ : Good l t₄.mem B M l.oX p :=
         (hv₂ p hp).1.of_out2 hl hp f₄ (.inl (by omega_using [o3, o5])) (by omega_using [o3, o10]) hoD
       refine ⟨gx₄.of_limbs (l₅ p hp), fun hq => ?_⟩
       rw [val52_of_limbs (l₅ p hp), f₄.val hl hp (.inl (by omega_using [o3, o5])) (by omega_using [o3, o10]) hoD]
       exact vx₂ hq p hp
   · rw [me₆]
-    have hT2 := tab_le hl (T_gt hl (show 1 < 16 by decide))
+    obtain hT2 := tab_le hl (T_gt hl (show 1 < 16 by decide))
     exact (((h.f.mono (by omega_using []) (by omega_using [o2, o5, hT2])).trans
       (f₂.mono (by omega_using [o2, o3]) (by omega_using [o3, o5, hT2]))).trans
       (f₄.mono (by omega_using [o2, o5]) (by omega_using [o5, hT2]))).trans

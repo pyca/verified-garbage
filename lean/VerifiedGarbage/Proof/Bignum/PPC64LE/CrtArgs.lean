@@ -85,81 +85,81 @@ theorem args_ok {s : State} {S : Addr} {Z : Nat} (hs : Scr s S Z) (hZ : 256 ≤ 
   rw [WP.block_append_iff]
   refine WP.mono (st1_ok (r := .r5) (hs.congr k1.wr) ((k1.gpr _ (by decide)).trans h23) (by omega_arith) (by decide))
     fun s₂ ⟨⟨w2, F2⟩, k2⟩ => ?_
-  have k12 := k1.trans k2
+  obtain k12 := k1.trans k2
   rw [WP.block_append_iff]
   refine WP.mono (st1_ok (r := .r6) (hs.congr k12.wr) ((k12.gpr _ (by decide)).trans h23) (by omega_arith) (by decide))
     fun s₃ ⟨⟨w3, F3⟩, k3⟩ => ?_
-  have k13 := k12.trans k3
+  obtain k13 := k12.trans k3
   rw [WP.block_append_iff]
   refine WP.mono (st1_ok (r := .r7) (hs.congr k13.wr) ((k13.gpr _ (by decide)).trans h23) (by omega_arith) (by decide))
     fun s₄ ⟨⟨w4, F4⟩, k4⟩ => ?_
-  have k14 := k13.trans k4
+  obtain k14 := k13.trans k4
   rw [WP.block_append_iff]
   refine WP.mono (st1_ok (r := .r9) (hs.congr k14.wr) ((k14.gpr _ (by decide)).trans h23) (by omega_arith) (by decide))
     fun s₅ ⟨⟨w5, F5⟩, k5⟩ => ?_
-  have k15 := k14.trans k5
+  obtain k15 := k14.trans k5
   rw [WP.block_append_iff]
   refine WP.mono (st1_ok (r := .r10) (hs.congr k15.wr) ((k15.gpr _ (by decide)).trans h23) (by omega_arith)
     (by decide)) fun s₆ ⟨⟨w6, F6⟩, k6⟩ => ?_
-  have k16 := k15.trans k6
+  obtain k16 := k15.trans k6
   rw [WP.block_append_iff]
   refine WP.mono (WP.keep [.r11] (Q := fun t => t.gpr .r11 = s.sp + BitVec.ofNat 64 96 ∧ t.mem = s₆.mem)
     (by
-      have ea : exec (.addSp .r11 96) s₆ = some (s₆.write .r11 (s₆.sp + BitVec.ofNat 64 96)) := by simp [exec]
+      obtain ea : exec (.addSp .r11 96) s₆ = some (s₆.write .r11 (s₆.sp + BitVec.ofNat 64 96)) := by simp [exec]
       prun [ea, k16.sp]) (by decide)) fun s₇ ⟨⟨a11, m7⟩, k7⟩ => ?_
-  have k17 := k16.trans k7
-  have O7 : Outside S 0 88 s.mem s₇.mem := by
+  obtain k17 := k16.trans k7
+  obtain O7 : Outside S 0 88 s.mem s₇.mem := by
     rw [m7]
     exact ((((F1.mono (by omega_arith) (by omega_arith)).trans (F2.mono (by omega_arith) (by omega_arith))).trans
       (F3.mono (by omega_arith) (by omega_arith))).trans ((F4.mono (by omega_arith) (by omega_arith)).trans
       (F5.mono (by omega_arith) (by omega_arith)))).trans (F6.mono (by omega_arith) (by omega_arith))
-  have st : ∀ {u : State} (i : Nat), i < 10 → Outside S 0 88 s.mem u.mem → u.rd = s.rd → u.wr = s.wr →
+  obtain st : ∀ {u : State} (i : Nat), i < 10 → Outside S 0 88 s.mem u.mem → u.rd = s.rd → u.wr = s.wr →
       InRegions (u.rd ++ u.wr) (s.sp + BitVec.ofNat 64 96 + BitVec.ofNat 64 (8 * i)) 8 ∧
       u.mem.readW (s.sp + BitVec.ofNat 64 96 + BitVec.ofNat 64 (8 * i)) 64 = stackArg s i :=
     fun i hi O hr hw => by
       rw [sp96, hr, hw]
       exact ⟨hrd i hi, readW_out O (by omega_arith) (hsep i hi)⟩
   rw [WP.block_append_iff]
-  have g7 := st (u := s₇) 0 (by decide) O7 k17.rd k17.wr
+  obtain g7 := st (u := s₇) 0 (by decide) O7 k17.rd k17.wr
   refine WP.mono (ld1_ok (o := 48) (a := 0) (hs.congr k17.wr) ((k17.gpr _ (by decide)).trans h23) a11 (by omega_arith)
     (by decide) (by decide) g7.1) fun s₈ ⟨⟨w8, F8⟩, k8⟩ => ?_
-  have k18 := k17.trans k8
-  have O8 := O7.trans (F8.mono (by omega_arith) (by omega_arith))
+  obtain k18 := k17.trans k8
+  obtain O8 := O7.trans (F8.mono (by omega_arith) (by omega_arith))
   rw [WP.block_append_iff]
-  have g8 := st (u := s₈) 1 (by decide) O8 k18.rd k18.wr
+  obtain g8 := st (u := s₈) 1 (by decide) O8 k18.rd k18.wr
   refine WP.mono (ld1_ok (o := 56) (a := 8) (hs.congr k18.wr) ((k18.gpr _ (by decide)).trans h23)
     ((k8.gpr _ (by decide)).trans a11) (by omega_arith) (by decide) (by decide) g8.1) fun s₉ ⟨⟨w9, F9⟩, k9⟩ => ?_
-  have k19 := k18.trans k9
-  have O9 := O8.trans (F9.mono (by omega_arith) (by omega_arith))
+  obtain k19 := k18.trans k9
+  obtain O9 := O8.trans (F9.mono (by omega_arith) (by omega_arith))
   rw [WP.block_append_iff]
-  have g9 := st (u := s₉) 2 (by decide) O9 k19.rd k19.wr
+  obtain g9 := st (u := s₉) 2 (by decide) O9 k19.rd k19.wr
   refine WP.mono (ld1_ok (o := 64) (a := 16) (hs.congr k19.wr) ((k19.gpr _ (by decide)).trans h23)
     ((k9.gpr _ (by decide)).trans ((k8.gpr _ (by decide)).trans a11)) (by omega_arith) (by decide) (by decide) g9.1)
     fun s₁₀ ⟨⟨w10, F10⟩, k10⟩ => ?_
-  have k110 := k19.trans k10
-  have O10 := O9.trans (F10.mono (by omega_arith) (by omega_arith))
+  obtain k110 := k19.trans k10
+  obtain O10 := O9.trans (F10.mono (by omega_arith) (by omega_arith))
   rw [WP.block_append_iff]
-  have g10 := st (u := s₁₀) 4 (by decide) O10 k110.rd k110.wr
+  obtain g10 := st (u := s₁₀) 4 (by decide) O10 k110.rd k110.wr
   refine WP.mono (ld1_ok (o := 72) (a := 32) (hs.congr k110.wr) ((k110.gpr _ (by decide)).trans h23)
     ((((k8.trans k9).trans k10).gpr _ (by decide)).trans a11) (by omega_arith) (by decide) (by decide) g10.1)
     fun s₁₁ ⟨⟨w11, F11⟩, k11⟩ => ?_
-  have k111 := k110.trans k11
-  have O11 := O10.trans (F11.mono (by omega_arith) (by omega_arith))
-  have g11 := st (u := s₁₁) 6 (by decide) O11 k111.rd k111.wr
+  obtain k111 := k110.trans k11
+  obtain O11 := O10.trans (F11.mono (by omega_arith) (by omega_arith))
+  obtain g11 := st (u := s₁₁) 6 (by decide) O11 k111.rd k111.wr
   refine WP.mono (ld1_ok (o := 80) (a := 48) (hs.congr k111.wr) ((k111.gpr _ (by decide)).trans h23)
     (((((k8.trans k9).trans k10).trans k11).gpr _ (by decide)).trans a11) (by omega_arith) (by decide) (by decide)
     g11.1) fun t ⟨⟨w12, F12⟩, k12'⟩ => ?_
   have R11 : Outside S 80 8 s₁₁.mem t.mem := F12
-  have R10 : Outside S 72 16 s₁₀.mem t.mem := (F11.mono (by omega_arith) (by omega_arith)).trans (R11.mono (by omega_arith) (by omega_arith))
-  have R9 : Outside S 64 24 s₉.mem t.mem := (F10.mono (by omega_arith) (by omega_arith)).trans (R10.mono (by omega_arith) (by omega_arith))
-  have R8 : Outside S 56 32 s₈.mem t.mem := (F9.mono (by omega_arith) (by omega_arith)).trans (R9.mono (by omega_arith) (by omega_arith))
-  have R7 : Outside S 48 40 s₇.mem t.mem := (F8.mono (by omega_arith) (by omega_arith)).trans (R8.mono (by omega_arith) (by omega_arith))
-  have R6 : Outside S 48 40 s₆.mem t.mem := by rw [← m7]; exact R7
-  have R5 : Outside S 40 48 s₅.mem t.mem := (F6.mono (by omega_arith) (by omega_arith)).trans (R6.mono (by omega_arith) (by omega_arith))
-  have R4 : Outside S 32 56 s₄.mem t.mem := (F5.mono (by omega_arith) (by omega_arith)).trans (R5.mono (by omega_arith) (by omega_arith))
-  have R3 : Outside S 24 64 s₃.mem t.mem := (F4.mono (by omega_arith) (by omega_arith)).trans (R4.mono (by omega_arith) (by omega_arith))
-  have R2 : Outside S 16 72 s₂.mem t.mem := (F3.mono (by omega_arith) (by omega_arith)).trans (R3.mono (by omega_arith) (by omega_arith))
-  have R1 : Outside S 8 80 s₁.mem t.mem := (F2.mono (by omega_arith) (by omega_arith)).trans (R2.mono (by omega_arith) (by omega_arith))
+  obtain R10 : Outside S 72 16 s₁₀.mem t.mem := (F11.mono (by omega_arith) (by omega_arith)).trans (R11.mono (by omega_arith) (by omega_arith))
+  obtain R9 : Outside S 64 24 s₉.mem t.mem := (F10.mono (by omega_arith) (by omega_arith)).trans (R10.mono (by omega_arith) (by omega_arith))
+  obtain R8 : Outside S 56 32 s₈.mem t.mem := (F9.mono (by omega_arith) (by omega_arith)).trans (R9.mono (by omega_arith) (by omega_arith))
+  obtain R7 : Outside S 48 40 s₇.mem t.mem := (F8.mono (by omega_arith) (by omega_arith)).trans (R8.mono (by omega_arith) (by omega_arith))
+  obtain R6 : Outside S 48 40 s₆.mem t.mem := by rw [← m7]; exact R7
+  obtain R5 : Outside S 40 48 s₅.mem t.mem := (F6.mono (by omega_arith) (by omega_arith)).trans (R6.mono (by omega_arith) (by omega_arith))
+  obtain R4 : Outside S 32 56 s₄.mem t.mem := (F5.mono (by omega_arith) (by omega_arith)).trans (R5.mono (by omega_arith) (by omega_arith))
+  obtain R3 : Outside S 24 64 s₃.mem t.mem := (F4.mono (by omega_arith) (by omega_arith)).trans (R4.mono (by omega_arith) (by omega_arith))
+  obtain R2 : Outside S 16 72 s₂.mem t.mem := (F3.mono (by omega_arith) (by omega_arith)).trans (R3.mono (by omega_arith) (by omega_arith))
+  obtain R1 : Outside S 8 80 s₁.mem t.mem := (F2.mono (by omega_arith) (by omega_arith)).trans (R2.mono (by omega_arith) (by omega_arith))
   refine ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, O11.trans (F12.mono (by omega_arith) (by omega_arith))⟩,
     (k111.trans k12').mono⟩
   · rw [oOut, R1.word (Or.inl (by omega_arith)) (by omega_arith), w1]
@@ -195,7 +195,7 @@ theorem argsG_ok {pc : Bool} {s : State} {S : Addr} {Z : Nat} (hs : Scr s S Z) (
     refine WP.mono (args_ok hs hZ h23 hrd hsep) fun t ⟨⟨w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10, O⟩, k⟩ => ?_
     refine WP.mono (st1_ok (r := .r31) (hs.congr k.wr) ((k.gpr _ (by decide)).trans h23)
       (by unfold oR2; omega_arith) (by decide)) fun u ⟨⟨u88, F⟩, ku⟩ => ?_
-    have hw : ∀ d, d + 8 ≤ 88 → word u.mem S d = word t.mem S d := fun d hd =>
+    obtain hw : ∀ d, d + 8 ≤ 88 → word u.mem S d = word t.mem S d := fun d hd =>
       F.word (Or.inl hd) (by omega_arith)
     refine ⟨⟨by rw [hw _ (by decide)]; exact w0, by rw [hw _ (by decide)]; exact w1,
       by rw [hw _ (by decide)]; exact w2, by rw [hw _ (by decide)]; exact w3, by rw [hw _ (by decide)]; exact w4,

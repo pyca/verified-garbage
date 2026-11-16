@@ -48,11 +48,11 @@ theorem half_ok (s : State) {a m wi wo ci co : Reg}
   · simp only [RegUpd.gpr_addWithCarry, RegUpd.c_addWithCarry,
       RegUpd.gpr_write, ha9, hm9, hw9, hw10, hc9, hc10, hco, hwo10, hwc,
       Ne.symm hwo10, Ne.symm hwc, reduceCtorEq, ite_true, ite_false, BitVec.setWidth_eq]
-    have hm := mul_lo_hi (s.gpr a) (s.gpr m)
-    have h1 := addCarry_value (s.gpr wi) (s.gpr a * s.gpr m) false
+    obtain hm := mul_lo_hi (s.gpr a) (s.gpr m)
+    obtain h1 := addCarry_value (s.gpr wi) (s.gpr a * s.gpr m) false
     refine ⟨(carryOut (s.gpr ci) (mulHi (s.gpr a) (s.gpr m))
         (carryOut (s.gpr wi) (s.gpr a * s.gpr m) false)).toNat, Bool.toNat_le _, ?_⟩
-    have h3 := addCarry_value (s.gpr ci) (mulHi (s.gpr a) (s.gpr m))
+    obtain h3 := addCarry_value (s.gpr ci) (mulHi (s.gpr a) (s.gpr m))
       (carryOut (s.gpr wi) (s.gpr a * s.gpr m) false)
     simp only [addCarry, carryOut, mulHi, Bool.toNat_false, Nat.add_zero, BitVec.add_zero] at h1 h3 hm ⊢
     exact half_arith hm h1 h3
@@ -173,27 +173,27 @@ theorem digit_ok {s : State} {base : Addr} (hs : Scr s base large) {t xo yo : Na
   simp only [digit, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (ldx_ok hs hx.1 hx.2 sa8) fun a ⟨a8, ka⟩ => ?_
-  have hsa : Scr a base large := hs.of_keeps ka (by decide)
+  obtain hsa : Scr a base large := hs.of_keeps ka (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (half_ok a (by decide) ma9 w9 w10 (by decide) (by decide) (by decide) (by decide)
     (by decide)) fun b ⟨⟨e1, _, h1⟩, kb⟩ => ?_
-  have hsb : Scr b base large := hsa.of_keeps kb (by decide)
+  obtain hsb : Scr b base large := hsa.of_keeps kb (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (ldx_ok hsb hy.1 hy.2 sb8) fun c ⟨c8, kc⟩ => ?_
-  have hsc : Scr c base large := hsb.of_keeps kc (by decide)
+  obtain hsc : Scr c base large := hsb.of_keeps kc (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (half_ok c (by decide) mb9 (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)) fun d ⟨⟨e2, _, h2⟩, kd⟩ => ?_
-  have hsd : Scr d base large := hsc.of_keeps kd (by decide)
+  obtain hsd : Scr d base large := hsc.of_keeps kd (by decide)
   refine WP.mono (st_ok hsd ht.1 ht.2 .x1) fun u ⟨mu, ku⟩ => ?_
   -- the registers each step read
-  have ga : ∀ r, r ≠ .x8 → a.gpr r = s.gpr r := fun r h => ka.gpr r (by simpa using h)
-  have gb : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x1 → r ≠ .x2 → b.gpr r = a.gpr r := fun r h9 h10 h1 h2 =>
+  obtain ga : ∀ r, r ≠ .x8 → a.gpr r = s.gpr r := fun r h => ka.gpr r (by simpa using h)
+  obtain gb : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x1 → r ≠ .x2 → b.gpr r = a.gpr r := fun r h9 h10 h1 h2 =>
     kb.gpr r (by simp [h9, h10, h1, h2])
-  have gc : ∀ r, r ≠ .x8 → c.gpr r = b.gpr r := fun r h => kc.gpr r (by simpa using h)
-  have gd : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x1 → r ≠ .x2 → d.gpr r = c.gpr r := fun r h9 h10 h1 h2 =>
+  obtain gc : ∀ r, r ≠ .x8 → c.gpr r = b.gpr r := fun r h => kc.gpr r (by simpa using h)
+  obtain gd : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x1 → r ≠ .x2 → d.gpr r = c.gpr r := fun r h9 h10 h1 h2 =>
     kd.gpr r (by simp [h9, h10, h1, h2])
-  have gu : ∀ r, u.gpr r = d.gpr r := fun r => ku.gpr r (by simp)
+  obtain gu : ∀ r, u.gpr r = d.gpr r := fun r => ku.gpr r (by simp)
   have amem : a.mem = s.mem := ka.mem
   have bmem : b.mem = a.mem := kb.mem
   refine ⟨?_, ?_, ⟨fun r hr => ?_, by rw [ku.rd, kd.rd, kc.rd, kb.rd, ka.rd],
@@ -248,63 +248,63 @@ theorem top_ok {s : State} {base : Addr} (hs : Scr s base large) (signed : Bool)
   simp only [top, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (ldx_ok hs hx.1 hx.2 sa8) fun a ⟨a8, ka⟩ => ?_
-  have ga : ∀ r, r ≠ .x8 → a.gpr r = s.gpr r := fun r h => ka.gpr r (by simpa using h)
-  have hsa : Scr a base large := hs.of_keeps ka (by decide)
+  obtain ga : ∀ r, r ≠ .x8 → a.gpr r = s.gpr r := fun r h => ka.gpr r (by simpa using h)
+  obtain hsa : Scr a base large := hs.of_keeps ka (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (corr_ok a signed ((ga _ (by decide)).trans hz) (by decide) ma3)
     fun b ⟨b3, kb⟩ => ?_
-  have gb : ∀ r, r ≠ .x3 → b.gpr r = a.gpr r := fun r h => kb.gpr r (by simpa using h)
-  have hsb : Scr b base large := hsa.of_keeps kb (by decide)
+  obtain gb : ∀ r, r ≠ .x3 → b.gpr r = a.gpr r := fun r h => kb.gpr r (by simpa using h)
+  obtain hsb : Scr b base large := hsa.of_keeps kb (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (half_ok b (by decide) ma9 (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)) fun c ⟨⟨e1, _, h1⟩, kc⟩ => ?_
-  have gc : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x1 → r ≠ .x3 → c.gpr r = b.gpr r := fun r h9 h10 h1 h3 =>
+  obtain gc : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x1 → r ≠ .x3 → c.gpr r = b.gpr r := fun r h9 h10 h1 h3 =>
     kc.gpr r (by simp [h9, h10, h1, h3])
-  have hsc : Scr c base large := hsb.of_keeps kc (by decide)
+  obtain hsc : Scr c base large := hsb.of_keeps kc (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (ldx_ok hsc hy.1 hy.2 sb8) fun d ⟨d8, kd⟩ => ?_
-  have gd : ∀ r, r ≠ .x8 → d.gpr r = c.gpr r := fun r h => kd.gpr r (by simpa using h)
-  have hsd : Scr d base large := hsc.of_keeps kd (by decide)
+  obtain gd : ∀ r, r ≠ .x8 → d.gpr r = c.gpr r := fun r h => kd.gpr r (by simpa using h)
+  obtain hsd : Scr d base large := hsc.of_keeps kd (by decide)
   rw [WP.block_append_iff]
-  have dz : d.gpr .x12 = 0 := by
+  obtain dz : d.gpr .x12 = 0 := by
     rw [gd _ (by decide), gc _ (by decide) (by decide) (by decide) (by decide), gb _ (by decide),
       ga _ (by decide), hz]
   refine WP.mono (corr_ok d signed dz (by decide) mb2) fun e ⟨e2, ke⟩ => ?_
-  have ge : ∀ r, r ≠ .x2 → e.gpr r = d.gpr r := fun r h => ke.gpr r (by simpa using h)
-  have hse : Scr e base large := hsd.of_keeps ke (by decide)
+  obtain ge : ∀ r, r ≠ .x2 → e.gpr r = d.gpr r := fun r h => ke.gpr r (by simpa using h)
+  obtain hse : Scr e base large := hsd.of_keeps ke (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (add_ok e .x3 .x3 .x2) fun f ⟨f3, kf⟩ => ?_
-  have gf : ∀ r, r ≠ .x3 → f.gpr r = e.gpr r := fun r h => kf.gpr r (by simpa using h)
-  have hsf : Scr f base large := hse.of_keeps kf (by decide)
+  obtain gf : ∀ r, r ≠ .x3 → f.gpr r = e.gpr r := fun r h => kf.gpr r (by simpa using h)
+  obtain hsf : Scr f base large := hse.of_keeps kf (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (half_ok f (by decide) mb9 (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)) fun g ⟨⟨e2', _, h2⟩, kg⟩ => ?_
-  have gg : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x1 → r ≠ .x3 → g.gpr r = f.gpr r := fun r h9 h10 h1 h3 =>
+  obtain gg : ∀ r, r ≠ .x9 → r ≠ .x10 → r ≠ .x1 → r ≠ .x3 → g.gpr r = f.gpr r := fun r h9 h10 h1 h3 =>
     kg.gpr r (by simp [h9, h10, h1, h3])
-  have hsg : Scr g base large := hsf.of_keeps kg (by decide)
+  obtain hsg : Scr g base large := hsf.of_keeps kg (by decide)
   rw [WP.block_cons_iff]
   refine ⟨_, store_sc hsg ht.1 (by omega_arith) .x1, ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, store_sc (hsg.setMem _) (by omega_arith) (by omega_arith) .x3, WP.block_nil ?_⟩
   -- memory: the loads read `s.mem`
-  have mc : c.mem = s.mem := by rw [kc.mem, kb.mem, ka.mem]
-  have mf : f.mem = s.mem := by rw [kf.mem, ke.mem, kd.mem, mc]
+  obtain mc : c.mem = s.mem := by rw [kc.mem, kb.mem, ka.mem]
+  obtain mf : f.mem = s.mem := by rw [kf.mem, ke.mem, kd.mem, mc]
   refine ⟨?_, ?_, ⟨fun r hr => ?_, by simp only [kg.rd, kf.rd, ke.rd, kd.rd, kc.rd, kb.rd, ka.rd],
     by simp only [kg.wr, kf.wr, ke.wr, kd.wr, kc.wr, kb.wr, ka.wr],
     by simp only [kg.sp, kf.sp, ke.sp, kd.sp, kc.sp, kb.sp, ka.sp]⟩⟩
   · simp only
     rw [b3, gb .x2 (by decide), gb .x8 (by decide), gb ma ma3] at h1
     rw [a8, ga .x2 (by decide), ga ma ma8, ga sa sa8, neg_toNat] at h1
-    have hx3 : f.gpr .x3 = c.gpr .x3 +
+    obtain hx3 : f.gpr .x3 = c.gpr .x3 +
         (0 - corrV signed (word s.mem base yo ^^^ s.gpr sb) (s.gpr mb) (s.gpr sb)) := by
       rw [f3, ge .x3 (by decide), gd .x3 (by decide), e2, d8, gd mb mb8, gd sb sb8,
         gc mb mb9 mb10 mb1 mb3, gc sb sb9 sb10 sb1 sb3, gb mb mb3, gb sb sb3, ga mb mb8,
         ga sb sb8, mc]
-    have hx1 : f.gpr .x1 = c.gpr .x1 := by
+    obtain hx1 : f.gpr .x1 = c.gpr .x1 := by
       rw [gf .x1 (by decide), ge .x1 (by decide), gd .x1 (by decide)]
-    have hx8 : f.gpr .x8 = word s.mem base yo ^^^ s.gpr sb := by
+    obtain hx8 : f.gpr .x8 = word s.mem base yo ^^^ s.gpr sb := by
       rw [gf .x8 (by decide), ge .x8 (by decide), d8, gc sb sb9 sb10 sb1 sb3, gb sb sb3,
         ga sb sb8, mc]
-    have hmb : f.gpr mb = s.gpr mb := by
+    obtain hmb : f.gpr mb = s.gpr mb := by
       rw [gf mb mb3, ge mb mb2, gd mb mb8, gc mb mb9 mb10 mb1 mb3, gb mb mb3, ga mb mb8]
     rw [hx3, hx1, hx8, hmb, BitVec.toNat_add, neg_toNat] at h2
     exact top_arith (corrV signed _ _ _).isLt (corrV signed _ _ _).isLt h1 h2
@@ -353,7 +353,7 @@ theorem row_ok {s : State} {base : Addr} (hs : Scr s base large) (signed : Bool)
         ((s.gpr car).toNat + flip4 s.mem base xo (s.gpr sa) * (s.gpr ma).toNat +
           flip4 s.mem base yo (s.gpr sb) * (s.gpr mb).toNat) % (2 ^ 256 * 2 ^ 64) ∧
       Outside base t 40 s.mem u.mem ∧ KeepRegs [.x1, .x2, .x3, .x8, .x9, .x10] s u := by
-  have _hcap := workSize_le large
+  obtain _hcap := workSize_le large
   have hrr := hr
   obtain ⟨⟨_, ma1, ma2, ma3, ma8, ma9, ma10, ma12⟩, ⟨_, sa1, sa2, sa3, sa8, sa9, sa10, sa12⟩,
     ⟨_, mb1, mb2, mb3, mb8, mb9, mb10, mb12⟩, ⟨_, sb1, sb2, sb3, sb8, sb9, sb10, sb12⟩⟩ :=
@@ -362,50 +362,50 @@ theorem row_ok {s : State} {base : Addr} (hs : Scr s base large) (signed : Bool)
       (sa ≠ .x0 ∧ sa ≠ .x1 ∧ sa ≠ .x2 ∧ sa ≠ .x3 ∧ sa ≠ .x8 ∧ sa ≠ .x9 ∧ sa ≠ .x10 ∧ sa ≠ .x12) ∧
       (mb ≠ .x0 ∧ mb ≠ .x1 ∧ mb ≠ .x2 ∧ mb ≠ .x3 ∧ mb ≠ .x8 ∧ mb ≠ .x9 ∧ mb ≠ .x10 ∧ mb ≠ .x12) ∧
       (sb ≠ .x0 ∧ sb ≠ .x1 ∧ sb ≠ .x2 ∧ sb ≠ .x3 ∧ sb ≠ .x8 ∧ sb ≠ .x9 ∧ sb ≠ .x10 ∧ sb ≠ .x12))
-  have k5 : ∀ r ∈ ([.x1, .x2, .x8, .x9, .x10] : List Reg), r ∈ ([.x1, .x2, .x3, .x8, .x9, .x10] : List Reg) := by
+  obtain k5 : ∀ r ∈ ([.x1, .x2, .x8, .x9, .x10] : List Reg), r ∈ ([.x1, .x2, .x3, .x8, .x9, .x10] : List Reg) := by
     decide
   -- a register the row keeps
-  have keep : ∀ {r : Reg}, r ∈ [ma, sa, mb, sb] → r ∉ ([.x1, .x2, .x3, .x8, .x9, .x10] : List Reg) := by
+  obtain keep : ∀ {r : Reg}, r ∈ [ma, sa, mb, sb] → r ∉ ([.x1, .x2, .x3, .x8, .x9, .x10] : List Reg) := by
     intro r h
     have := hrr r h
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or]
     exact ⟨this.2.1, this.2.2.1, this.2.2.2.1, this.2.2.2.2.1, this.2.2.2.2.2.1, this.2.2.2.2.2.2.1⟩
-  have sep : ∀ {d e : Nat}, d + 8 ≤ e ∨ e + 8 ≤ d → d + 8 ≤ workSize large → e + 8 ≤ workSize large →
+  obtain sep : ∀ {d e : Nat}, d + 8 ≤ e ∨ e + 8 ≤ d → d + 8 ≤ workSize large → e + 8 ≤ workSize large →
       ∀ (m : Mem) (v : Word), word (m.writeW (off base d) v) base e = word m base e :=
     fun h hd he m v => word_writeW_sep m base v h.symm (by omega_arith) (by omega_arith)
   simp only [row, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (digit_ok hs hr hcar hz hA hB ⟨ht.1, by omega_arith⟩ ⟨hx.1, by omega_arith⟩ ⟨hy.1, by omega_arith⟩)
     fun u0 ⟨e0, m0, k0⟩ => ?_
-  have hs0 : Scr u0 base large := ⟨(k0.gpr _ (by decide)).trans hs.x0, k0.wr ▸ hs.wr, hs.nowrap⟩
-  have g0 : ∀ {r : Reg}, r ∈ [ma, sa, mb, sb] → u0.gpr r = s.gpr r := fun h =>
+  obtain hs0 : Scr u0 base large := ⟨(k0.gpr _ (by decide)).trans hs.x0, k0.wr ▸ hs.wr, hs.nowrap⟩
+  obtain g0 : ∀ {r : Reg}, r ∈ [ma, sa, mb, sb] → u0.gpr r = s.gpr r := fun h =>
     k0.gpr _ fun hm => keep h (k5 _ hm)
   rw [WP.block_append_iff]
   refine WP.mono (digit_ok hs0 hr (by decide) ((k0.gpr _ (by decide)).trans hz)
     (by rw [g0 (r := ma) (by simp)]; exact hA) (by rw [g0 (r := mb) (by simp)]; exact hB)
     ⟨by omega_arith, by omega_arith⟩ ⟨by omega_arith, by omega_arith⟩ ⟨by omega_arith, by omega_arith⟩)
     fun u1 ⟨e1, m1, k1⟩ => ?_
-  have hs1 : Scr u1 base large := ⟨(k1.gpr _ (by decide)).trans hs0.x0, k1.wr ▸ hs0.wr, hs.nowrap⟩
-  have g1 : ∀ {r : Reg}, r ∈ [ma, sa, mb, sb] → u1.gpr r = s.gpr r := fun h =>
+  obtain hs1 : Scr u1 base large := ⟨(k1.gpr _ (by decide)).trans hs0.x0, k1.wr ▸ hs0.wr, hs.nowrap⟩
+  obtain g1 : ∀ {r : Reg}, r ∈ [ma, sa, mb, sb] → u1.gpr r = s.gpr r := fun h =>
     (k1.gpr _ fun hm => keep h (k5 _ hm)).trans (g0 h)
   rw [WP.block_append_iff]
   refine WP.mono (digit_ok hs1 hr (by decide) ((k1.gpr _ (by decide)).trans ((k0.gpr _ (by decide)).trans hz))
     (by rw [g1 (r := ma) (by simp)]; exact hA) (by rw [g1 (r := mb) (by simp)]; exact hB)
     ⟨by omega_arith, by omega_arith⟩ ⟨by omega_arith, by omega_arith⟩ ⟨by omega_arith, by omega_arith⟩)
     fun u2 ⟨e2, m2, k2⟩ => ?_
-  have hs2 : Scr u2 base large := ⟨(k2.gpr _ (by decide)).trans hs1.x0, k2.wr ▸ hs1.wr, hs.nowrap⟩
-  have g2 : ∀ {r : Reg}, r ∈ [ma, sa, mb, sb] → u2.gpr r = s.gpr r := fun h =>
+  obtain hs2 : Scr u2 base large := ⟨(k2.gpr _ (by decide)).trans hs1.x0, k2.wr ▸ hs1.wr, hs.nowrap⟩
+  obtain g2 : ∀ {r : Reg}, r ∈ [ma, sa, mb, sb] → u2.gpr r = s.gpr r := fun h =>
     (k2.gpr _ fun hm => keep h (k5 _ hm)).trans (g1 h)
   refine WP.mono (top_ok hs2 signed hr ((k2.gpr _ (by decide)).trans ((k1.gpr _ (by decide)).trans
       ((k0.gpr _ (by decide)).trans hz))) ⟨by omega_arith, by omega_arith⟩ ⟨by omega_arith, by omega_arith⟩
       ⟨by omega_arith, by omega_arith⟩)
     fun u ⟨e3, m3, k3⟩ => ?_
   -- the words the later steps read are the first's
-  have r1 : ∀ e, (t + 8 ≤ e ∨ e + 8 ≤ t) → e + 8 ≤ workSize large → word u0.mem base e = word s.mem base e :=
+  obtain r1 : ∀ e, (t + 8 ≤ e ∨ e + 8 ≤ t) → e + 8 ≤ workSize large → word u0.mem base e = word s.mem base e :=
     fun e h he => by rw [m0]; exact sep h (by omega_arith) he _ _
-  have r2 : ∀ e, (t + 16 ≤ e ∨ e + 8 ≤ t) → e + 8 ≤ workSize large → word u1.mem base e = word s.mem base e :=
+  obtain r2 : ∀ e, (t + 16 ≤ e ∨ e + 8 ≤ t) → e + 8 ≤ workSize large → word u1.mem base e = word s.mem base e :=
     fun e h he => by rw [m1, sep (by omega_arith) (by omega_arith) he, r1 e (by omega_arith) he]
-  have r3 : ∀ e, (t + 24 ≤ e ∨ e + 8 ≤ t) → e + 8 ≤ workSize large → word u2.mem base e = word s.mem base e :=
+  obtain r3 : ∀ e, (t + 24 ≤ e ∨ e + 8 ≤ t) → e + 8 ≤ workSize large → word u2.mem base e = word s.mem base e :=
     fun e h he => by rw [m2, sep (by omega_arith) (by omega_arith) he, r2 e (by omega_arith) he]
   rw [g0 (r := sa) (by simp), g0 (r := ma) (by simp), g0 (r := sb) (by simp), g0 (r := mb) (by simp), r1 _ (by omega_arith) (by omega_arith),
     r1 _ (by omega_arith) (by omega_arith)] at e1
@@ -414,30 +414,30 @@ theorem row_ok {s : State} {base : Addr} (hs : Scr s base large) (signed : Bool)
   rw [g2 (r := sa) (by simp), g2 (r := ma) (by simp), g2 (r := sb) (by simp), g2 (r := mb) (by simp), r3 _ (by omega_arith) (by omega_arith),
     r3 _ (by omega_arith) (by omega_arith)] at e3
   -- the words of the result
-  have w0 : word u.mem base t = u0.gpr .x1 := by
+  obtain w0 : word u.mem base t = u0.gpr .x1 := by
     rw [m3, sep (by omega_arith) (by omega_arith) (by omega_arith), sep (by omega_arith) (by omega_arith) (by omega_arith), m2,
       sep (by omega_arith) (by omega_arith) (by omega_arith), m1, sep (by omega_arith) (by omega_arith) (by omega_arith), m0,
       word_writeW_self]
-  have w1 : word u.mem base (t + 8) = u1.gpr .x1 := by
+  obtain w1 : word u.mem base (t + 8) = u1.gpr .x1 := by
     rw [m3, sep (by omega_arith) (by omega_arith) (by omega_arith), sep (by omega_arith) (by omega_arith) (by omega_arith), m2,
       sep (by omega_arith) (by omega_arith) (by omega_arith), m1, word_writeW_self]
-  have w2 : word u.mem base (t + 16) = u2.gpr .x1 := by
+  obtain w2 : word u.mem base (t + 16) = u2.gpr .x1 := by
     rw [m3, sep (by omega_arith) (by omega_arith) (by omega_arith), sep (by omega_arith) (by omega_arith) (by omega_arith), m2,
       word_writeW_self]
-  have w3 : word u.mem base (t + 24) = u.gpr .x1 := by
+  obtain w3 : word u.mem base (t + 24) = u.gpr .x1 := by
     rw [m3, sep (by omega_arith) (by omega_arith) (by omega_arith), word_writeW_self]
-  have w4 : word u.mem base (t + 32) = u.gpr .x3 := by
+  obtain w4 : word u.mem base (t + 32) = u.gpr .x3 := by
     rw [m3, show t + 32 = t + 24 + 8 by omega_arith, word_writeW_self]
   refine ⟨?_, ?_, ((k0.mono k5).trans (k1.mono k5)).trans ((k2.mono k5).trans k3)⟩
   · simp only [val5, fe, w0, w1, w2, w3, w4, flip4, val4_mul]
     exact row_arith e0 e1 e2 e3
   · have o0 : Outside base t 40 s.mem u0.mem := by
       rw [m0]; exact (writeW_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith)
-    have o1 : Outside base t 40 u0.mem u1.mem := by
+    obtain o1 : Outside base t 40 u0.mem u1.mem := by
       rw [m1]; exact (writeW_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith)
-    have o2 : Outside base t 40 u1.mem u2.mem := by
+    obtain o2 : Outside base t 40 u1.mem u2.mem := by
       rw [m2]; exact (writeW_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith)
-    have o3 : Outside base t 40 u2.mem u.mem := by
+    obtain o3 : Outside base t 40 u2.mem u.mem := by
       rw [m3]
       exact ((writeW_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith)).trans
         ((writeW_outside _ _ _ (by omega_arith)).mono (by omega_arith) (by omega_arith))

@@ -161,7 +161,7 @@ theorem rejected_vp {d : Cfg} {u j : Nat} (hU : fUsed ∈ d.LS) (hUv : d.V fUsed
   refine VP.seq (G := St G (d.setV fC (BitVec.ofNat 32 u)) X)
     (st_vp (c := fun _ => d) (fun σ s h => h.1.1) (by decide) (varOk_of (by decide))
       fun σ s t ⟨⟨_, x⟩, r0⟩ h' _ => ⟨r0 ▸ h', x⟩) ?_
-  have hL' : fSeedLeft ∈ (d.setV fC (BitVec.ofNat 32 u)).LS := List.mem_cons_of_mem _ hL
+  obtain hL' : fSeedLeft ∈ (d.setV fC (BitVec.ofNat 32 u)).LS := List.mem_cons_of_mem _ hL
   refine VP.seq (G := fun σ s => St G (d.setV fC (BitVec.ofNat 32 u)) X σ s ∧ s.gpr .r0 = BitVec.ofNat 32 (j + 1))
     (ld_vp (c := fun _ => d.setV fC (BitVec.ofNat 32 u)) (fun σ s h => h.1) (by decide) (by decide)
       (fun σ s h => (h.1.slotV hL').trans ((upd_ne (o := fC) d.V (BitVec.ofNat 32 u) (by decide)).trans hLv))
@@ -273,9 +273,9 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {N :
         (r = 0 → St G (cFin G (cOut G N)) X σ s ∧ cRes G (cOut G N) = sW G ∧ cOk G (cOut G N)) ∧
         (0 < r → sInv G HO N X r σ s)) := by
   refine VG.Proof.Dsa.Arm.Gen.VP.intro fun ⟨hr, hc, hW, hcw, hj⟩ => ?_
-  have hq0 : 0 < G.qLen := by have := O.hlq; omega_arith
-  have hq8 : G.qLen < 256 := by have := O.hlq; omega_arith
-  have hpL : 0 < G.pLen := by have := O.hlq; omega_arith
+  obtain hq0 : 0 < G.qLen := by have := O.hlq; omega_arith
+  obtain hq8 : G.qLen < 256 := by have := O.hlq; omega_arith
+  obtain hpL : 0 < G.pLen := by have := O.hlq; omega_arith
   have h32 := O.h32
   have hwl := O.hwl
   have hqL := O.hqL
@@ -283,18 +283,18 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {N :
   generalize hp : sPos G i = jc at hc hW hcw hj
   obtain ⟨j, c⟩ := jc
   dsimp only at hc hW hcw hj
-  have hNi : N - 1 = i + r := by omega_arith
+  obtain hNi : N - 1 = i + r := by omega_arith
   refine VP.seq (G := fun σ s => St G (cBase G HO c j) X σ s ∧
       isa.eval .eq s = some (BitVec.ofNat 32 j == BitVec.ofNat 32 0))
     (cmpF_vp (x := BitVec.ofNat 32 j) (fun σ s h => h.1) (by decide) (by decide) (by decide)
       (fun σ s h => (h.1.slotV (by simp)).trans (by simp [upd, fSeedLeft, fStatus]))
       fun σ s t ⟨h, x⟩ R m e => ⟨⟨h.of_rest R m, x⟩, e⟩) ?_
-  have jl : j < 2 ^ 32 := by simp only [Spec.Dsa.parameterSeeds] at hj; omega_arith
+  obtain jl : j < 2 ^ 32 := by simp only [Spec.Dsa.parameterSeeds] at hj; omega_arith
   rcases j with _ | j
   · -- No seeds left: `fStatus` := 3.
-    have r0 : r = 0 := by simp only [sCount] at hc; omega_arith
+    obtain r0 : r = 0 := by simp only [sCount] at hc; omega_arith
     subst r0
-    have hout : cOut G N = .noSeeds c := by simp only [cOut, hNi, Nat.add_zero, hp, cOutAt]
+    obtain hout : cOut G N = .noSeeds c := by simp only [cOut, hNi, Nat.add_zero, hp, cOutAt]
     refine VP.seq (G := St G ((cBase G HO c 0).setV fStatus (BitVec.ofNat 32 3)) X) (VP.ite
       (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2])
       (stImm_vp (c := fun _ => cBase G HO c 0) (fun σ s h => h.1.1.1) (by decide) (varOk_of (by decide))
@@ -314,20 +314,20 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {N :
   · have e0 : (BitVec.ofNat 32 (j + 1) == BitVec.ofNat 32 0) = false := by
       refine beq_false_of_ne fun e => ?_
       have := congrArg BitVec.toNat e; simp only [BitVec.toNat_ofNat] at this; omega_arith
-    have notZ : ∀ {G₁ : State → State → Prop} {c' : Prog isa}, VP (fun σ s => (St G (cBase G HO c (j + 1)) X σ s ∧
+    obtain notZ : ∀ {G₁ : State → State → Prop} {c' : Prog isa}, VP (fun σ s => (St G (cBase G HO c (j + 1)) X σ s ∧
         isa.eval .eq s = some (BitVec.ofNat 32 (j + 1) == BitVec.ofNat 32 0)) ∧
         isa.eval .eq s = some true) c' G₁ :=
       VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e, e0] at z; simp at z
-    have avail := (avail_vp (X := X) O.hq (d := cBase G HO c (j + 1)) (by simp)
+    obtain avail := (avail_vp (X := X) O.hq (d := cBase G HO c (j + 1)) (by simp)
       (by simp [upd, fC, fSeedLeft, fStatus]) hcw h32 (by omega_arith)).mono
       (F' := fun σ s => (St G (cBase G HO c (j + 1)) X σ s ∧
         isa.eval .eq s = some (BitVec.ofNat 32 (j + 1) == BitVec.ofNat 32 0)) ∧
         isa.eval .eq s = some false) (fun σ s h => h.1.1) fun _ _ h => h
     by_cases hshort : G.witLen - c < G.qLen
     · -- Too few octets for a seed: `fStatus` := 2.
-      have r0 : r = 0 := by simp only [sCount, hshort, ↓reduceIte] at hc; omega_arith
+      obtain r0 : r = 0 := by simp only [sCount, hshort, ↓reduceIte] at hc; omega_arith
       subst r0
-      have hout : cOut G N = .ranOut (j + 1) c := by
+      obtain hout : cOut G N = .ranOut (j + 1) c := by
         simp only [cOut, hNi, Nat.add_zero, hp, cOutAt, hshort, ↓reduceIte]
       refine VP.seq (G := St G ((cBase G HO c (j + 1)).setV fStatus (BitVec.ofNat 32 2)) X)
         (VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2]) notZ (VP.seq avail (VP.ite
@@ -347,9 +347,9 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {N :
       · rw [hout, ← hW, cRes, VG.Proof.Dsa.Generation.search_short (by rw [hwl, ← hqL]; exact hshort), hwl]
       · rw [hout]; exact ⟨hcw, hj⟩
     · -- A seed.
-      have hcq : c + G.qLen ≤ G.witLen := by omega_arith
-      have attempt := O.attempt_vp (X := X) (k := c) (u := c + G.qLen) (n' := BitVec.ofNat 32 (j + 1)) hcq hcq
-      have hmono : ∀ σ s, St G (((cBase G HO c (j + 1)).setV fSeed (G.seeds + BitVec.ofNat 32 c)).setV fUsed
+      obtain hcq : c + G.qLen ≤ G.witLen := by omega_arith
+      obtain attempt := O.attempt_vp (X := X) (k := c) (u := c + G.qLen) (n' := BitVec.ofNat 32 (j + 1)) hcq hcq
+      obtain hmono : ∀ σ s, St G (((cBase G HO c (j + 1)).setV fSeed (G.seeds + BitVec.ofNat 32 c)).setV fUsed
           (BitVec.ofNat 32 (c + G.qLen))) X σ s →
           St G ((aBase G HO c (BitVec.ofNat 32 (j + 1))).setV fUsed (BitVec.ofNat 32 (c + G.qLen))) X σ s := by
         intro σ s h
@@ -359,11 +359,11 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {N :
         simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
         rcases ho with rfl | rfl | rfl | rfl | rfl <;>
           exact ⟨by simp, by simp [upd, fUsed, fStatus, fSeedLeft, fSeed, fC]⟩
-      have start := (seedStart_vp (X := X) O.hq (d := cBase G HO c (j + 1)) (c := c) (by simp)
+      obtain start := (seedStart_vp (X := X) O.hq (d := cBase G HO c (j + 1)) (c := c) (by simp)
         (by simp [upd, fC, fSeedLeft, fStatus]) hq8).mono (F' := fun σ s =>
           (St G (cBase G HO c (j + 1)) X σ s ∧ isa.eval .eq s = some (decide (G.witLen - c < G.qLen))) ∧
           isa.eval .eq s = some false) (fun σ s h => h.1.1) hmono
-      have wrap : ∀ {G₁ : State → State → Prop}, VP (St G ((aBase G HO c (BitVec.ofNat 32 (j + 1))).setV fUsed
+      obtain wrap : ∀ {G₁ : State → State → Prop}, VP (St G ((aBase G HO c (BitVec.ofNat 32 (j + 1))).setV fUsed
           (BitVec.ofNat 32 (c + G.qLen))) X) (VG.Impl.Rsa.Arm.Keys.seqs [g.attempt, .block (cmpF fStatus 0),
             .ite .eq Geo.rejected (.block [])]) G₁ →
           VP (fun σ s => St G (cBase G HO c (j + 1)) X σ s ∧
@@ -376,10 +376,10 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {N :
         VP.ite (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2]) notZ (VP.seq avail (VP.ite
           (fun σ₁ σ₂ s₁ s₂ h₁ h₂ => by rw [h₁.2, h₂.2])
           (VP.of_false fun σ s ⟨⟨_, e⟩, z⟩ => by rw [e] at z; simp [hshort] at z) (VP.seq start k)))
-      have hRc : (G.witB.drop c).take (Spec.Dsa.generationQLen G.pLen) = seedAt G c := by
+      obtain hRc : (G.witB.drop c).take (Spec.Dsa.generationQLen G.pLen) = seedAt G c := by
         show _ = (G.witB.drop c).take G.qLen; rw [hqL]
-      have hcq' : c + Spec.Dsa.generationQLen G.pLen ≤ G.witB.length := by rw [hwl, ← hqL]; exact hcq
-      have suffix : ∀ {x : Option Spec.Dsa.Params} {rest : List Byte}, sR G c = some (x, rest) →
+      obtain hcq' : c + Spec.Dsa.generationQLen G.pLen ≤ G.witB.length := by rw [hwl, ← hqL]; exact hcq
+      obtain suffix : ∀ {x : Option Spec.Dsa.Params} {rest : List Byte}, sR G c = some (x, rest) →
           G.witB.drop (G.witLen - rest.length) = rest := fun {x rest} e => by
         rw [← hwl]
         exact VG.Proof.Dsa.Generation.suffix_drop_length
@@ -387,10 +387,10 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {N :
       change VP _ _ (St G (aOut G HO c (BitVec.ofNat 32 (j + 1)) (sR G c)) X) at attempt
       rcases hR : sR G c with _ | ⟨_ | a, rest⟩ <;> rw [hR] at attempt
       · -- `rand` ran out inside the seed.
-        have r0 : r = 0 := by
+        obtain r0 : r = 0 := by
           simp only [sCount, hshort, ↓reduceIte, hR] at hc; omega_arith
         subst r0
-        have hout : cOut G N = .ranOut (j + 1) c := by
+        obtain hout : cOut G N = .ranOut (j + 1) c := by
           simp only [cOut, hNi, Nat.add_zero, hp, cOutAt, hshort, ↓reduceIte, hR]
         refine VP.seq (wrap (VP.seq attempt (VP.seq (G := fun σ s =>
             St G (aOut G HO c (BitVec.ofNat 32 (j + 1)) none) X σ s ∧ isa.eval .eq s = some false)
@@ -413,13 +413,13 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {N :
             hwl]
         · rw [hout]; exact ⟨hcw, hj⟩
       · -- Rejected: the next seed.
-        have hsuf := suffix hR
-        have hcs : sCount G (j + 1) c i = sCount G j (G.witLen - rest.length) (i + 1) := by
+        obtain hsuf := suffix hR
+        obtain hcs : sCount G (j + 1) c i = sCount G j (G.witLen - rest.length) (i + 1) := by
           simp only [sCount, hshort, ↓reduceIte, hR]
-        have hgt := sCount_gt G j (G.witLen - rest.length) (i + 1)
-        have rpos : 0 < r := by omega_arith
-        have hNr : N - r = i + 1 := by omega_arith
-        have hp1 : sPos G (i + 1) = (j, G.witLen - rest.length) := by
+        obtain hgt := sCount_gt G j (G.witLen - rest.length) (i + 1)
+        obtain rpos : 0 < r := by omega_arith
+        obtain hNr : N - r = i + 1 := by omega_arith
+        obtain hp1 : sPos G (i + 1) = (j, G.witLen - rest.length) := by
           simp only [sPos, hp, hR, Nat.add_sub_cancel]
         refine VP.seq (wrap (VP.seq attempt (VP.seq (G := fun σ s =>
             St G (aOut G HO c (BitVec.ofNat 32 (j + 1)) (some (none, rest))) X σ s ∧
@@ -446,11 +446,11 @@ theorem sBody_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) {N :
           rcases ho with rfl | rfl | rfl <;>
             exact ⟨by simp [aOut], by simp [aOut, upd, fStatus, fC, fSeedLeft, fUsed]⟩
       · -- Parameters: `fStatus` = 1.
-        have hsuf := suffix hR
-        have r0 : r = 0 := by
+        obtain hsuf := suffix hR
+        obtain r0 : r = 0 := by
           simp only [sCount, hshort, ↓reduceIte, hR] at hc; omega_arith
         subst r0
-        have hout : cOut G N = .found a (G.witLen - rest.length) := by
+        obtain hout : cOut G N = .found a (G.witLen - rest.length) := by
           simp only [cOut, hNi, Nat.add_zero, hp, cOutAt, hshort, ↓reduceIte, hR]
         refine VP.seq (wrap (VP.seq attempt (VP.seq (G := fun σ s =>
             St G (aOut G HO c (BitVec.ofNat 32 (j + 1)) (some (some a, rest))) X σ s ∧
@@ -485,7 +485,7 @@ theorem sLoop_vp {g : Geo} {HO : HashOk g.G} {n : Nat} (O : GenOk G g HO n) :
         .block (cmpF fStatus 0)]) .eq)
       (fun σ s => St G (cFin G (cOut G (sCount G G.k0 0 0))) X σ s ∧
         cRes G (cOut G (sCount G G.k0 0 0)) = sW G ∧ cOk G (cOut G (sCount G G.k0 0 0))) := by
-  have hN := sCount_gt G G.k0 0 0
+  obtain hN := sCount_gt G G.k0 0 0
   generalize hNN : sCount G G.k0 0 0 = N at hN ⊢
   refine VP.mono (F := sInv G HO N X (N - 1 + 1)) ?_ (fun σ s h => ⟨⟨by omega_using [hN],
     by rw [show N - (N - 1 + 1) = 0 by omega_using []]; exact hNN,

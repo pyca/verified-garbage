@@ -43,8 +43,8 @@ theorem rest_orig {s₀ s w u : State} {key msg : List Byte} {o T : Nat}
   simp only [bytesAt]
   apply List.map_congr_left
   intro i hi
-  have hi := List.mem_range.mp hi
-  have e : dp s₀ + BitVec.ofNat 64 (pre o false T) + BitVec.ofNat 64 i =
+  obtain hi := List.mem_range.mp hi
+  obtain e : dp s₀ + BitVec.ofNat 64 (pre o false T) + BitVec.ofNat 64 i =
       dp s₀ + BitVec.ofNat 64 (o + 512 * T + i) := by
     rw [BitVec.add_assoc, ← BitVec.ofNat_add]; rfl
   have hle := hc.le
@@ -53,36 +53,36 @@ theorem rest_orig {s₀ s w u : State} {key msg : List Byte} {o T : Nat}
 
 theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀) :
     WP isa (openStitchedMain v.callee) s₀ (MainO s₀) := by
-  have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
+  obtain hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
   unfold openStitchedMain
   refine WP.seq (WP.mono (WP.preservedV (prologue_ok hp) (by lit_decide)) fun s₁ ⟨h₁, v₁⟩ => ?_)
-  have hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
+  obtain hA : bytesAt s₁.mem (ad s₀) (AL s₀) = A s₀ :=
     bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt)
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x24) (n := .x25) ⟨.inl rfl, .inl rfl⟩
     (srcA hp) h₁.inv.x21 h₁.inv.rd h₁.inv.wr h₁.inv.x24 (by rw [h₁.inv.x25]; exact hRDX s₀)) (by lit_decide))
     fun s₂ ⟨⟨k₂, r₂⟩, v₂⟩ => ?_)
-  have i₂ := mac_inv h₁.inv k₂
+  obtain i₂ := mac_inv h₁.inv k₂
   refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp i₂) (by lit_decide)) fun s₃ ⟨⟨i₃, k₃, len₃⟩, v₃⟩ => ?_)
-  have st₃ : stateAt s₃.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
+  obtain st₃ : stateAt s₃.mem (off (cx s₀) 64) = Spec.ChaCha20.initState (K s₀) 0 (N s₀) := by
     rw [stateAt_frame k₃.frame (by rdisj_all), stateAt_frame k₂.frame (by rdisj_all), h₁.st]
-  have D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by
+  obtain D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by
     rw [bytesAt_frame k₃.frame (by rdisj_all) hL', bytesAt_frame k₂.frame (by rdisj_all) hL',
       bytesAt_frame h₁.fine (by rdisj_all) hL']
-  have R₃ := Repr.frame k₃.frame (by rdisj_all) (r₂ (otk s₀) [] h₁.poly)
+  obtain R₃ := Repr.frame k₃.frame (by rdisj_all) (r₂ (otk s₀) [] h₁.poly)
   refine WP.seq (WP.mono (counterOne_ok hp i₃) fun s₃' ⟨m₃', k₃', v₃'⟩ => ?_)
-  have D₃' : bytesAt s₃'.mem (dp s₀) (L s₀) = D s₀ := by
+  obtain D₃' : bytesAt s₃'.mem (dp s₀) (L s₀) = D s₀ := by
     rw [bytesAt_frame k₃'.frame (by rdisj_all) hL', D₃]
   refine WP.seq ((cryptStitched_ok false rfl hp (entry_zero false i₃ st₃ R₃ m₃' k₃')).mono
     fun s₄ ⟨T, hc⟩ => ?_)
   have hle := hc.le
-  have hpre : pre 0 false T = 512 * T := by simp [pre]
+  obtain hpre : pre 0 false T = 512 * T := by simp [pre]
   -- The rest: stitched from 65 to 256 bytes (`TailO.rest`), otherwise absorbed and then
   -- decrypted (`openRest`).
   have hr512 := hc.lt
   refine WP.seq ((TailO.test_ok s₄ (r := L s₀ - 512 * T) (by omega_arith)
     (by rw [hc.x23, hpre])).mono fun s₄' ⟨e₄, k₄', g₄', v₄'⟩ => ?_)
-  have hc' := TailO.Crypted.keep hc k₄' g₄' v₄'
-  have hm₄ : s₄'.mem = s₄.mem := by funext x; exact k₄'.frame x fun r hr => by simp at hr
+  obtain hc' := TailO.Crypted.keep hc k₄' g₄' v₄'
+  obtain hm₄ : s₄'.mem = s₄.mem := by funext x; exact k₄'.frame x fun r hr => by simp at hr
   refine WP.seq (WP.mono (Q := fun (s₆ : State) =>
     (∀ r ∈ preservedV, (s₆.v r).extractLsb' 0 64 = (s₄.v r).extractLsb' 0 64) ∧ Inv0 false s₀ s₆ ∧
     Frame [sub s₀ 16 16, sub s₀ 32 16, sub s₀ 64 512, sub s₀ 768 512, oR false s₀] s₄.mem s₆.mem ∧
@@ -106,11 +106,11 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
         (srcAt hp (p := pre 0 false T) (by rw [hpre]; omega_arith)) hc'.inv.x21 hc'.inv.rd hc'.inv.wr hc'.x22
         hc'.x23) (by lit_decide))
         fun s₅ ⟨⟨k₅, r₅⟩, v₅⟩ => ?_)
-      have i₅ := mac_inv0 hc'.inv k₅
-      have hd₅ : ∀ r ∈ macR s₀, (dR s₀).Disjoint r := by
+      obtain i₅ := mac_inv0 hc'.inv k₅
+      obtain hd₅ : ∀ r ∈ macR s₀, (dR s₀).Disjoint r := by
         intro r hr; simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl <;> exact hp.c_d.symm.sub_right (sub_ctx s₀ (by lit_omega))
-      have hq₅ : ∀ r ∈ macR s₀, (oR false s₀).Disjoint r := by
+      obtain hq₅ : ∀ r ∈ macR s₀, (oR false s₀).Disjoint r := by
         intro r hr; simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl <;> exact hp.o.ctx.symm.sub_right (sub_ctx s₀ (by lit_omega))
       refine (openRest_ok v hp (s := s₃') (P := 512 * T) (by omega_arith) (by omega_arith) (fun _ => by omega_arith)
@@ -122,7 +122,7 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
         (fun k hk hk' => by rw [data_frame k₅.frame hd₅ hk, hc'.data k hk (by omega_arith)])
         (fun k hk => by rw [out_frame k₅.frame hq₅ (by omega_arith), hc'.out k (by omega_arith)])).mono
         fun s₆ ⟨v₆, k₅₆, _, pt₆⟩ => ?_
-      have i₆ : Inv0 false s₀ s₆ := i₅.step k₅₆ (fun r hr => by
+      obtain i₆ : Inv0 false s₀ s₆ := i₅.step k₅₆ (fun r hr => by
           simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
           rcases hr with rfl | rfl | rfl
           · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩
@@ -136,7 +136,7 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
           · exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega))
       have R₄ := hc'.mac
       simp only [Bool.false_eq_true, ↓reduceIte] at R₄
-      have R₅ := r₅ _ _ R₄
+      obtain R₅ := r₅ _ _ R₄
       rw [rest_orig hc', hpre] at R₅
       refine ⟨fun r hr => (v₆ r hr).trans ((v₅ r hr).trans (v₄' r hr)), i₆, ?_,
         Repr.frame k₅₆.frame (by rdisj_all) R₅, pt₆⟩
@@ -159,8 +159,8 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
   -- The tag computed.
   have R₅ := R₆
   rw [← hpre, List.append_assoc, split_pad (pre_mod (by decide) false T) (by rw [hpre]; omega_arith), D₃'] at R₅
-  have T₈ := tag₈ _ _ (r₇ _ _ R₅)
-  have L₆ : bytesAt s₆.mem (off (cx s₀) 0) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by
+  obtain T₈ := tag₈ _ _ (r₇ _ _ R₅)
+  obtain L₆ : bytesAt s₆.mem (off (cx s₀) 0) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by
     rw [bytesAt_frame f₆ (by rdisj_all) (by lit_omega),
       bytesAt_frame hc.frame (by rdisj_all) (by lit_omega),
       bytesAt_frame k₃'.frame (by rdisj_all) (by lit_omega), len₃]
@@ -181,29 +181,29 @@ theorem openStitchedMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} 
 theorem openWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp : APre false s₀)
     (hL : 512 ≤ L s₀) :
     WP isa (openWideMain v.callee) s₀ (MainO s₀) := by
-  have hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
-  have hL256 : 256 ≤ L s₀ := by omega_arith
+  obtain hL' := (Nat.le_of_lt (s₀.gpr .x5).isLt)
+  obtain hL256 : 256 ≤ L s₀ := by omega_arith
   unfold openWideMain
   refine WP.seq (WP.mono (WP.preservedV (Short.prologue_ok hp) (Short.prologue_keepsV v.callee.sve))
     fun s₁ ⟨h₁, v₁⟩ => ?_)
   refine WP.seq (WP.mono (WP.preservedV (ShortRest.stash_ok hp h₁.inv h₁.st0) (by lit_decide))
     fun s₂ ⟨⟨i₂, k₂, st₂⟩, v₂⟩ => ?_)
-  have hA : bytesAt s₂.mem (ad s₀) (AL s₀) = A s₀ := by
+  obtain hA : bytesAt s₂.mem (ad s₀) (AL s₀) = A s₀ := by
     rw [bytesAt_frame k₂.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt),
       bytesAt_frame h₁.inv.frame (by rdisj_all) (Nat.le_of_lt (s₀.gpr .x3).isLt)]
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x24) (n := .x25) ⟨.inl rfl, .inl rfl⟩
     (srcA hp) i₂.x21 i₂.rd i₂.wr i₂.x24 (by rw [i₂.x25]; exact hRDX s₀)) (by lit_decide))
     fun s₃ ⟨⟨k₃, r₃⟩, v₃⟩ => ?_)
-  have i₃ := mac_inv i₂ k₃
-  have D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by
+  obtain i₃ := mac_inv i₂ k₃
+  obtain D₃ : bytesAt s₃.mem (dp s₀) (L s₀) = D s₀ := by
     rw [bytesAt_frame k₃.frame (by rdisj_all) hL', bytesAt_frame k₂.frame (by rdisj_all) hL',
       bytesAt_frame h₁.fine (by rdisj_all) hL']
-  have R₃ : Repr s₃.mem (off (cx s₀) 448) (otk s₀) (A s₀ ++ pad16 (A s₀)) := by
+  obtain R₃ : Repr s₃.mem (off (cx s₀) 448) (otk s₀) (A s₀ ++ pad16 (A s₀)) := by
     have := r₃ _ _ (Repr.frame k₂.frame (by rdisj_all) h₁.poly)
     rwa [List.nil_append, hA] at this
   refine WP.seq (WP.mono (WP.preservedV (absorbFirst_ok hp i₃ hL256) (by lit_decide))
     fun s₄ ⟨⟨i₄, k₄, r₄⟩, v₄⟩ => ?_)
-  have K₄ : ∀ i < 256, s₄.mem (Short.kp' s₀ + BitVec.ofNat 64 i) = Short.ks5 s₀ (64 + i) :=
+  obtain K₄ : ∀ i < 256, s₄.mem (Short.kp' s₀ + BitVec.ofNat 64 i) = Short.ks5 s₀ (64 + i) :=
     fun i hi => by
       rw [Short.ks_frame k₄.frame (by rdisj_all) hi, Short.ks_frame k₃.frame (by rdisj_all) hi,
         Short.ks_frame k₂.frame (by rdisj_all) hi]
@@ -213,7 +213,7 @@ theorem openWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
   refine WP.seq (WP.mono (WP.preservedV (lengths_ok hp i₅) (by lit_decide))
     fun s₆ ⟨⟨i₆, k₆, len₆⟩, v₆⟩ => ?_)
   refine WP.seq (WP.mono (skipFirst_ok i₆ hL256) fun s₇ ⟨i₇, x22₇, x23₇, m₇, v₇⟩ => ?_)
-  have E : Entry false 256 s₀ s₃ (otk s₀) (A s₀ ++ pad16 (A s₀)) s₇ := by
+  obtain E : Entry false 256 s₀ s₃ (otk s₀) (A s₀ ++ pad16 (A s₀)) s₇ := by
     refine ⟨i₇, by decide, hL256, x22₇, x23₇, ?_, fun k hk h => ?_, fun k h => ?_, ?_, fun r hr => ?_⟩
     · rw [m₇, stateAt_frame k₆.frame (by rdisj_all), stateAt_frame k₅.frame (by rdisj_all),
         stateAt_frame k₄.frame (by rdisj_all), stateAt_frame k₃.frame (by rdisj_all), st₂,
@@ -234,11 +234,11 @@ theorem openWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
   refine WP.seq (WP.mono (WP.preservedV (macPad_ok hp (p := .x22) (n := .x23) ⟨.inr rfl, .inr rfl⟩
     (srcAt hp (p := pre 256 false T) (by rw [hpre]; omega_arith)) hc.inv.x21 hc.inv.rd hc.inv.wr hc.x22 hc.x23)
     (by lit_decide)) fun s₉ ⟨⟨k₉, r₉⟩, v₉⟩ => ?_)
-  have i₉ := mac_inv0 hc.inv k₉
-  have hd₉ : ∀ r ∈ macR s₀, (dR s₀).Disjoint r := by
+  obtain i₉ := mac_inv0 hc.inv k₉
+  obtain hd₉ : ∀ r ∈ macR s₀, (dR s₀).Disjoint r := by
     intro r hr; simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact hp.c_d.symm.sub_right (sub_ctx s₀ (by lit_omega))
-  have hq₉ : ∀ r ∈ macR s₀, (oR false s₀).Disjoint r := by
+  obtain hq₉ : ∀ r ∈ macR s₀, (oR false s₀).Disjoint r := by
     intro r hr; simp only [macR, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> exact hp.o.ctx.symm.sub_right (sub_ctx s₀ (by lit_omega))
   refine WP.seq ((openRest_ok v hp (s := s₃) (P := 256 + 512 * T) hle hc.lt (fun _ => by omega_arith) i₉.x21
@@ -251,7 +251,7 @@ theorem openWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
     (fun k hk => by rw [out_frame k₉.frame hq₉ (by omega_arith), hc.out k hk])).mono
     fun s₁₀ ⟨v₁₀, k₉₁₀, _, pt₁₀⟩ => ?_)
   rw [D₃] at pt₁₀
-  have i₁₀ : Inv0 false s₀ s₁₀ := i₉.step k₉₁₀ (fun r hr => by
+  obtain i₁₀ : Inv0 false s₀ s₁₀ := i₉.step k₉₁₀ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨workR s₀, by simp, sub1 s₀ (by lit_omega) (by lit_omega)⟩
@@ -270,10 +270,10 @@ theorem openWideMain_ok (v : Proof.ChaCha20.AArch64.XorImpl) {s₀ : State} (hp 
   -- The tag computed.
   have R₈ := hc.mac
   simp only [Bool.false_eq_true, ↓reduceIte] at R₈
-  have R₉ := r₉ _ _ R₈
+  obtain R₉ := r₉ _ _ R₈
   rw [rest_orig hc, List.append_assoc, split_pad (pre_mod (by decide) false T) (by omega_arith), D₃] at R₉
-  have T₁₂ := tag₁₂ _ _ (r₁₁ _ _ (Repr.frame k₉₁₀.frame (by rdisj_all) R₉))
-  have L₁₀ : bytesAt s₁₀.mem (off (cx s₀) 0) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by
+  obtain T₁₂ := tag₁₂ _ _ (r₁₁ _ _ (Repr.frame k₉₁₀.frame (by rdisj_all) R₉))
+  obtain L₁₀ : bytesAt s₁₀.mem (off (cx s₀) 0) 16 = leBytes 8 (AL s₀) ++ leBytes 8 (L s₀) := by
     rw [bytesAt_frame k₉₁₀.frame (by rdisj_all) (by lit_omega),
       bytesAt_frame k₉.frame (by rdisj_all) (by lit_omega),
       bytesAt_frame hc.frame (by rdisj_all) (by lit_omega), m₇, len₆]
