@@ -23,6 +23,8 @@ public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Reg.Verified
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.RingTheory.AdjoinRoot
 import VerifiedGarbage.Proof.Framework.EntryBranch
+import VerifiedGarbage.Proof.Framework.Cold
+import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Mem
@@ -740,6 +742,47 @@ theorem cmpLens_out {s₁ s₂ u₁ u₂ : State} {l₁ l₂ : List Leak}
   exact ⟨⟨hrd, hwr, fun r hr => by simp only [gpr_arithFlags, gpr_setReg, hr, ite_false, hg r hr],
     by simp only [gpr_arithFlags, gpr_setReg, ite_true], rfl, rfl, rfl, rfl, hx, hy, hz, hyh, hzh, hmx, hm⟩, rfl, rfl⟩
 
+/-- `bySize wide narrow` returns without secret residue where both do. -/
+theorem bySize_noResidue {k : Contract isa} {wide narrow : Prog isa} {rb : Nat}
+    (hw : NoResidue wide k rb) (hn : NoResidue narrow k rb)
+    (hin : ∀ s, k.pre s → InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 8)
+    (hpre : ∀ s u, Same s u → k.pre s → k.pre u)
+    (hpub : ∀ s u s' u', Same s u → Same s' u' → k.pub s s' → k.pub u u')
+    (hargs : ∀ s s', k.pub s s' →
+      stackArg s 0 = stackArg s' 0 ∧ s.gpr .r8 = s'.gpr .r8 ∧ s.gpr .rsp = s'.gpr .rsp) :
+    NoResidue (bySize wide narrow) k rb := by
+  intro s₁ s₂ t₁ t₂ s₁' s₂' p₁ p₂ hq ho hu e₁ e₂
+  obtain ⟨u₁, eb₁, hS₁, ec₁⟩ := cmpLens_run s₁ (hin s₁ p₁)
+  obtain ⟨u₂, eb₂, hS₂, ec₂⟩ := cmpLens_run s₂ (hin s₂ p₂)
+  obtain ⟨a0, a8, -⟩ := hargs s₁ s₂ hq
+  obtain ⟨hO, hu₁, hu₂⟩ := cmpLens_out (hin s₁ p₁) (hin s₂ p₂) ho a0 a8 eb₁ eb₂
+  have hu' : u₁.unknowns = u₂.unknowns := by rw [hu₁, hu₂, hu]
+  rw [← a0, ← a8] at ec₂
+  cases e₁ with
+  | seq a₁ i₁ =>
+    cases e₂ with
+    | seq a₂ i₂ =>
+      have x₁ := Exec.block_eq (T := X86_64.target) a₁
+      have x₂ := Exec.block_eq (T := X86_64.target) a₂
+      rw [eb₁] at x₁; rw [eb₂] at x₂
+      obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj x₁)
+      obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj x₂)
+      have i₁ := Exec.iteCold_iff.mp i₁
+      have i₂ := Exec.iteCold_iff.mp i₂
+      cases i₁ with
+      | iteT hc₁ r₁ =>
+        cases i₂ with
+        | iteT _ r₂ =>
+          exact hw _ _ _ _ _ _ (hpre _ _ hS₁ p₁) (hpre _ _ hS₂ p₂) (hpub _ _ _ _ hS₁ hS₂ hq) hO hu' r₁ r₂
+        | iteF hc₂ _ =>
+          cases Option.some.inj ((hc₁.symm.trans ec₁).trans (ec₂.symm.trans hc₂))
+      | iteF hc₁ r₁ =>
+        cases i₂ with
+        | iteF _ r₂ =>
+          exact hn _ _ _ _ _ _ (hpre _ _ hS₁ p₁) (hpre _ _ hS₂ p₂) (hpub _ _ _ _ hS₁ hS₂ hq) hO hu' r₁ r₂
+        | iteT hc₂ _ =>
+          cases Option.some.inj ((hc₁.symm.trans ec₁).trans (ec₂.symm.trans hc₂))
+
 /-- `seal` by the lengths, from its code with and without the AVX2 copies. -/
 theorem seal_bySize {wide narrow : Prog isa}
     (hw : Verified X86_64.target wide (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856))
@@ -964,6 +1007,153 @@ theorem avx2Open_spSafe (v : GcmImpl) : (avx2OpenCode v).all (fun i => !X86_64.i
       shortOpen_spSafe v, Bool.and_true]
     rfl
 
+
+/-- `seal` by the lengths, against the shared contract: verified, and without
+secret residue, where both codes are. -/
+theorem sealK_by {wide narrow : Prog isa} :
+    (Verified X86_64.target wide (Spec.GcmSiv.sealContract X86_64.abi 3856) →
+      Verified X86_64.target narrow (Spec.GcmSiv.sealContract X86_64.abi 3856) →
+      Verified X86_64.target (bySize wide narrow) (Spec.GcmSiv.sealContract X86_64.abi 3856)) ∧
+    ∀ rb, NoResidue wide (Spec.GcmSiv.sealContract X86_64.abi 3856) rb → NoResidue narrow (Spec.GcmSiv.sealContract X86_64.abi 3856) rb →
+      NoResidue (bySize wide narrow) (Spec.GcmSiv.sealContract X86_64.abi 3856) rb := by
+  have hin : ∀ s, (Spec.GcmSiv.sealContract X86_64.abi 3856).pre s → InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 8 := by
+    intro s hs
+    sig_pre [Spec.GcmSiv.sealContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, X86_64.abi,
+      X86_64.argRegs] at hs
+    obtain ⟨-, -, hrd, -⟩ := hs
+    refine ⟨⟨stackArgAddr s 0, 16⟩, List.mem_append_left _ ?_, ?_⟩
+    · rw [hrd]; simp
+    · simp [Region.Contains]
+  have hpre : ∀ s u, Same s u → (Spec.GcmSiv.sealContract X86_64.abi 3856).pre s → (Spec.GcmSiv.sealContract X86_64.abi 3856).pre u := by
+    intro s u h hs
+    sig_pre [Spec.GcmSiv.sealContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, X86_64.abi,
+      X86_64.argRegs] at hs ⊢
+    simp only [h.saF, h.saaF, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
+      h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.gpr .rsp (by decide), h.mem,
+      h.rd, h.wr]
+    exact hs
+  have hpost : ∀ s u s', Same s u → (Spec.GcmSiv.sealContract X86_64.abi 3856).post u s' → (Spec.GcmSiv.sealContract X86_64.abi 3856).post s s' := by
+    intro s u s' h q
+    sig_post [Spec.GcmSiv.sealContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPost,
+      X86_64.abi, X86_64.argRegs] at q ⊢
+    simp only [h.saF, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
+      h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.mem] at q
+    revert q; exact id
+  have hpub : ∀ s u s' u', Same s u → Same s' u' → (Spec.GcmSiv.sealContract X86_64.abi 3856).pub s s' →
+      (Spec.GcmSiv.sealContract X86_64.abi 3856).pub u u' := by
+    intro s u s' u' h h' q
+    sig_pub [Spec.GcmSiv.sealContract, Spec.GcmSiv.sealSig, X86_64.abi, X86_64.argRegs] at q ⊢
+    simp only [h.saF, h.saaF, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
+      h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.gpr .rsp (by decide), h.mem,
+      h'.saF, h'.saaF, h'.gpr .rdi (by decide), h'.gpr .rsi (by decide), h'.gpr .rdx (by decide),
+      h'.gpr .rcx (by decide), h'.gpr .r8 (by decide), h'.gpr .r9 (by decide), h'.gpr .rsp (by decide),
+      h'.mem, h.mx, h'.mx]
+    exact q
+  have hargs : ∀ s s', (Spec.GcmSiv.sealContract X86_64.abi 3856).pub s s' →
+      stackArg s 0 = stackArg s' 0 ∧ s.gpr .r8 = s'.gpr .r8 ∧ s.gpr .rsp = s'.gpr .rsp := by
+    intro s s' q
+    sig_pub [Spec.GcmSiv.sealContract, Spec.GcmSiv.sealSig, X86_64.abi, X86_64.argRegs] at q
+    obtain ⟨hsp, -, -, -, -, h8, -, h6, -⟩ := q
+    exact ⟨by simpa [List.getD, List.range, List.range.loop] using h6, h8, hsp⟩
+  exact ⟨fun hw hn => bySize_verified hw hn hin hpre hpost hpub hargs,
+    fun _ hw hn => bySize_noResidue hw hn hin hpre hpub hargs⟩
+
+/-- `open` by the lengths, against the shared contract: verified, and without
+secret residue, where both codes are. -/
+theorem openK_by {wide narrow : Prog isa} :
+    (Verified X86_64.target wide (Spec.GcmSiv.openContract X86_64.abi 3856) →
+      Verified X86_64.target narrow (Spec.GcmSiv.openContract X86_64.abi 3856) →
+      Verified X86_64.target (bySize wide narrow) (Spec.GcmSiv.openContract X86_64.abi 3856)) ∧
+    ∀ rb, NoResidue wide (Spec.GcmSiv.openContract X86_64.abi 3856) rb → NoResidue narrow (Spec.GcmSiv.openContract X86_64.abi 3856) rb →
+      NoResidue (bySize wide narrow) (Spec.GcmSiv.openContract X86_64.abi 3856) rb := by
+  have hin : ∀ s, (Spec.GcmSiv.openContract X86_64.abi 3856).pre s → InRegions (s.rd ++ s.wr) (stackArgAddr s 0) 8 := by
+    intro s hs
+    sig_pre [Spec.GcmSiv.openContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, X86_64.abi,
+      X86_64.argRegs] at hs
+    obtain ⟨-, -, hrd, -⟩ := hs
+    refine ⟨⟨stackArgAddr s 0, 16⟩, List.mem_append_left _ ?_, ?_⟩
+    · rw [hrd]; simp
+    · simp [Region.Contains]
+  have hpre : ∀ s u, Same s u → (Spec.GcmSiv.openContract X86_64.abi 3856).pre s → (Spec.GcmSiv.openContract X86_64.abi 3856).pre u := by
+    intro s u h hs
+    sig_pre [Spec.GcmSiv.openContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, X86_64.abi,
+      X86_64.argRegs] at hs ⊢
+    simp only [h.saF, h.saaF, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
+      h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.gpr .rsp (by decide), h.mem,
+      h.rd, h.wr]
+    exact hs
+  have hpost : ∀ s u s', Same s u → (Spec.GcmSiv.openContract X86_64.abi 3856).post u s' → (Spec.GcmSiv.openContract X86_64.abi 3856).post s s' := by
+    intro s u s' h q
+    sig_post [Spec.GcmSiv.openContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPost,
+      X86_64.abi, X86_64.argRegs] at q ⊢
+    simp only [h.saF, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
+      h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.mem] at q
+    revert q; exact id
+  have hpub : ∀ s u s' u', Same s u → Same s' u' → (Spec.GcmSiv.openContract X86_64.abi 3856).pub s s' →
+      (Spec.GcmSiv.openContract X86_64.abi 3856).pub u u' := by
+    intro s u s' u' h h' q
+    sig_pub [Spec.GcmSiv.openContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openLeak, X86_64.abi, X86_64.argRegs] at q ⊢
+    simp only [h.saF, h.saaF, h.gpr .rdi (by decide), h.gpr .rsi (by decide), h.gpr .rdx (by decide),
+      h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.gpr .rsp (by decide), h.mem,
+      h'.saF, h'.saaF, h'.gpr .rdi (by decide), h'.gpr .rsi (by decide), h'.gpr .rdx (by decide),
+      h'.gpr .rcx (by decide), h'.gpr .r8 (by decide), h'.gpr .r9 (by decide), h'.gpr .rsp (by decide),
+      h'.mem, h.mx, h'.mx]
+    exact q
+  have hargs : ∀ s s', (Spec.GcmSiv.openContract X86_64.abi 3856).pub s s' →
+      stackArg s 0 = stackArg s' 0 ∧ s.gpr .r8 = s'.gpr .r8 ∧ s.gpr .rsp = s'.gpr .rsp := by
+    intro s s' q
+    sig_pub [Spec.GcmSiv.openContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openLeak, X86_64.abi, X86_64.argRegs] at q
+    obtain ⟨hsp, -, -, -, -, -, h8, -, h6, -⟩ := q
+    exact ⟨by simpa [List.getD, List.range, List.range.loop] using h6, h8, hsp⟩
+  exact ⟨fun hw hn => bySize_verified hw hn hin hpre hpost hpub hargs,
+    fun _ hw hn => bySize_noResidue hw hn hin hpre hpub hargs⟩
+
+/-- The precondition of a contract with `n'` bytes of stack gives the one
+with fewer, `n` (as `Verified.stack_mono`). -/
+theorem pre_stack_mono {sig : Sig} {pre : Curry (sig.words 64) (Mem → Prop)}
+    {post : sig.Post 64} {wa : Bool} {n n' : Nat}
+    {leak : Option (Curry (sig.words 64) (Mem → List Nat))} (hn : n ≤ n') (s : State)
+    (hs : (sig.contract X86_64.abi pre post wa n' leak).pre s) : (sig.contract X86_64.abi pre post wa n leak).pre s := by
+  dsimp only [Sig.contract] at hs ⊢
+  split at hs
+  · exact hs.elim
+  obtain ⟨w, rd, wr, pw, res, b, p⟩ := hs
+  refine ⟨?_, rd, wr, pw, fun r hr a ha => ?_, b, p⟩
+  · simp only [X86_64.abi] at w ⊢
+    split at w <;> rename_i hl <;> simp only [hl, ↓reduceIte] at w ⊢
+    · cases n with
+      | zero => trivial
+      | succ k => cases n' with
+        | zero => omega
+        | succ k' =>
+          have w' : k' + 1 ≤ (s.gpr .rsp).toNat := w
+          show k + 1 ≤ (s.gpr .rsp).toNat
+          omega
+    · refine ⟨?_, w.2⟩
+      cases n with
+      | zero => trivial
+      | succ k => cases n' with
+        | zero => omega
+        | succ k' =>
+          have w' : k' + 1 ≤ (s.gpr .rsp).toNat := w.1
+          show k + 1 ≤ (s.gpr .rsp).toNat
+          omega
+  · simp only [X86_64.abi] at hr res
+    rcases List.mem_cons.mp hr with rfl | hr
+    · exact res _ List.mem_cons_self a ha
+    · cases n with
+      | zero => simp [stackBelow] at hr
+      | succ k =>
+        cases n' with
+        | zero => omega
+        | succ k' =>
+          simp only [stackBelow, List.mem_singleton] at hr
+          subst hr
+          exact (res _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)) a ha).sub_left
+            (Offset.sub_below _ (a := k + 1) (n := k + 1) (b := k' + 1) (m := k' + 1) (by omega)
+              (by omega))
+
+
 end
 
 /-! ## Without secret residue
@@ -975,7 +1165,7 @@ writes, and is wiped whole on return, in aligned stores
 return only within the data and the tag (`sealOut`, `openOut`). -/
 
 section
-open VG.X86_64.Scrub VG.X86_64.RScrub
+open VG VG.X86_64 VG.X86_64.Scrub VG.X86_64.RScrub
 
 theorem sealOut (stack : Nat) :
     PostOut (Spec.GcmSiv.sealContract X86_64.abi stack) (Spec.GcmSiv.sealSig.retBits 64) :=
@@ -1011,48 +1201,247 @@ theorem openOut (stack : Nat) :
       rw [e]
       exact h key hl hk
 
-/-- A registration over the bitsliced AES, its 3856 bytes of stack wiped
-whole on return, in the chunks `[8, 3848]`; any other as it is. -/
-def scrubSoft {api : Api} (v : GcmImpl) (r : Registration api X86_64.target)
-    (hpost : PostOut r.contract (api.sig.retBits
-      ((X86_64.abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)) : Registration api X86_64.target :=
-  if v.ctr.features = [] then withScrubAllC r hpost [8, 3848] else r
+/-- The result of `r`, in bits. -/
+abbrev rbOf {api : Api} (r : Registration api X86_64.target) : Nat :=
+  api.sig.retBits ((X86_64.abi.withConsts r.consts).withTables api.sig r.tables).ptrBits
 
-/-- `vg_aes_gcm_siv_seal` over `v`. -/
+/-- The side conditions of `withScrubAllC r hpost cs`, which gives `r`
+itself where one fails. -/
+def ScrubC {api : Api} (r : Registration api X86_64.target) (cs : List Nat) : Prop :=
+  cs.all (fun b => b % 8 == 0) = true ∧ cs.sum = r.stack ∧
+  cs.all (fun b => decide (0 < b ∧ b < 4096 ∧ b % 8 = 0)) = true ∧
+  r.code.x86_64Depth ≤ r.stack ∧ r.stack + 8 < 2 ^ 64 ∧
+  r.code.allOnce (fun i => decide (i.vecLevelR ≤ (levelFor r.code).level)) = true ∧
+  (mxClassOnce r.code).isSome = true ∧ (rbOf r ≤ 32 ∨ rbOf r = 64) ∧ r.written = []
+
+instance {api : Api} (r : Registration api X86_64.target) (cs : List Nat) : Decidable (ScrubC r cs) := by
+  unfold ScrubC; infer_instance
+
+/-- `withScrubAllC r hpost cs`, given its side conditions: the registration
+it then gives, whose code, contract and proofs are known. -/
+def scrubC {api : Api} (r : Registration api X86_64.target) (hpost : PostOut r.contract (rbOf r))
+    (cs : List Nat) (h : ScrubC r cs) : Registration api X86_64.target :=
+  scrubRegMC r (levelFor r.code) (allKs cs) cs h.2.1
+    (fun b hb => of_decide_eq_true (List.all_eq_true.mp h.2.2.1 b hb)) h.2.2.2.1 h.2.2.2.2.1
+    ((Code.allOnce_eq _ r.code).symm.trans h.2.2.2.2.2.1) (mxClassOnce_eq r.code ▸ h.2.2.2.2.2.2.1)
+    h.2.2.2.2.2.2.2.1 hpost
+    (resOk_allC _ _ (fun b hb => by have := List.all_eq_true.mp h.1 b hb; simpa using this) h.2.1)
+    h.2.2.2.2.2.2.2.2 (levelFor_ne _)
+
+theorem scrubC_noResidue {api : Api} (r : Registration api X86_64.target) (hpost : PostOut r.contract (rbOf r))
+    (cs : List Nat) (h : ScrubC r cs) : NoResidue (scrubC r hpost cs h).code r.contract (rbOf r) :=
+  scrubCodeMC_noResidue r (levelFor r.code) (allKs cs) cs h.2.1
+    (fun b hb => of_decide_eq_true (List.all_eq_true.mp h.2.2.1 b hb)) h.2.2.2.1 h.2.2.2.2.1
+    ((Code.allOnce_eq _ r.code).symm.trans h.2.2.2.2.2.1) (mxClassOnce_eq r.code ▸ h.2.2.2.2.2.2.1)
+    h.2.2.2.2.2.2.2.1 hpost
+    (resOk_allC _ _ (fun b hb => by have := List.all_eq_true.mp h.1 b hb; simpa using this) h.2.1)
+    (levelFor_ne _)
+
+/-- A function verified with `n` bytes of stack is with more. -/
+theorem verified_more_stack {c : Prog isa} {sig : Sig} {pre : Curry (sig.words 64) (Mem → Prop)}
+    {post : sig.Post 64} {wa : Bool} {n n' : Nat}
+    {leak : Option (Curry (sig.words 64) (Mem → List Nat))} (hn : n ≤ n')
+    (h : Verified X86_64.target c (sig.contract X86_64.abi pre post wa n leak))
+    (hsat : ∃ s, (sig.contract X86_64.abi pre post wa n' leak).pre s) :
+    Verified X86_64.target c (sig.contract X86_64.abi pre post wa n' leak) :=
+  h.of_implies ⟨fun s hs => pre_stack_mono hn s hs, fun _ _ _ q => q, fun _ _ _ _ q => q, hsat⟩
+
+/-- A function that returns without secret residue with `n` bytes of stack
+does with more. -/
+theorem noResidue_more_stack {c : Prog isa} {sig : Sig} {pre : Curry (sig.words 64) (Mem → Prop)}
+    {post : sig.Post 64} {wa : Bool} {n n' rb : Nat}
+    {leak : Option (Curry (sig.words 64) (Mem → List Nat))} (hn : n ≤ n')
+    (h : NoResidue c (sig.contract X86_64.abi pre post wa n leak) rb) :
+    NoResidue c (sig.contract X86_64.abi pre post wa n' leak) rb :=
+  fun s₁ s₂ t₁ t₂ a b p₁ p₂ hq => h s₁ s₂ t₁ t₂ a b (pre_stack_mono hn s₁ p₁) (pre_stack_mono hn s₂ p₂) hq
+
+theorem bySize_spSafe {wide narrow : Prog isa} (hw : wide.all (fun i => !X86_64.isa.writesSp i) = true)
+    (hn : narrow.all (fun i => !X86_64.isa.writesSp i) = true) :
+    (bySize wide narrow).all (fun i => !X86_64.isa.writesSp i) = true := by
+  simp only [bySize, Code.iteCold, Code.all, hw, hn, Bool.and_true]
+  rfl
+
+/-- `seal` with the code `c`, in the 3856 bytes of stack. -/
+def sealPiece (sfx : String) (c : Prog isa)
+    (hv : Verified X86_64.target c (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856))
+    (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) : Registration Spec.GcmSiv.sealApi X86_64.target where
+  suffix := sfx
+  code := c
+  stack := 3856
+  verified := Proof.AesGcmSiv.seal_keyed hv
+  spSafe := hsp
+
+theorem sealShort_verified :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 520 2 Impl.AesGcmSiv.X86_64Reg.seal)
+      (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 528) :=
+  Proof.AesGcmSivReg.X86_64.seal_framed mulFacts
+
+theorem sealShort_more {c : Prog isa} (h : Verified X86_64.target c (Spec.GcmSiv.sealContract X86_64.abi 528))
+    (hsat : ∃ s, (Spec.GcmSiv.sealContract X86_64.abi 3856).pre s) :
+    Verified X86_64.target c (Spec.GcmSiv.sealContract X86_64.abi 3856) :=
+  verified_more_stack (n := 528) (by decide) h hsat
+
+theorem sealShort_res {c : Prog isa} {rb : Nat} (h : NoResidue c (Spec.GcmSiv.sealContract X86_64.abi 528) rb) :
+    NoResidue c (Spec.GcmSiv.sealContract X86_64.abi 3856) rb :=
+  noResidue_more_stack (n := 528) (by decide) h
+
+/-- `seal` in registers, in its own frame: 520 bytes, 528 of stack. -/
+def sealShort (sfx : String) : Registration Spec.GcmSiv.sealApi X86_64.target where
+  suffix := sfx
+  code := Impl.StackScratch.X86_64.withStackArgScratch 520 2 Impl.AesGcmSiv.X86_64Reg.seal
+  stack := 528
+  verified := Proof.AesGcmSiv.seal_keyed sealShort_verified
+  spSafe := X86_64.withStackArgScratch_spSafe Proof.AesGcmSivReg.X86_64.seal_spSafe
+
+theorem sealBy_res (sfx : String) (wide : Prog isa)
+    (hv : Verified X86_64.target wide (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856))
+    (hsp : wide.all (fun i => !X86_64.isa.writesSp i) = true)
+    (hW : ScrubC (sealPiece sfx wide hv hsp) [8, 3848]) (hN : ScrubC (sealShort sfx) [8, 520]) :
+    NoResidue (bySize (scrubC (sealPiece sfx wide hv hsp) (sealOut _) _ hW).code
+        (scrubC (sealShort sfx) (sealOut _) _ hN).code) (Spec.GcmSiv.sealContract X86_64.abi 3856)
+      (Spec.GcmSiv.sealSig.retBits 64) := by
+  have a : NoResidue (scrubC (sealPiece sfx wide hv hsp) (sealOut _) _ hW).code
+      (Spec.GcmSiv.sealContract X86_64.abi 3856) (Spec.GcmSiv.sealSig.retBits 64) :=
+    scrubC_noResidue (sealPiece sfx wide hv hsp) (sealOut _) _ hW
+  have b : NoResidue (scrubC (sealShort sfx) (sealOut _) _ hN).code
+      (Spec.GcmSiv.sealContract X86_64.abi 528) (Spec.GcmSiv.sealSig.retBits 64) :=
+    scrubC_noResidue (sealShort sfx) (sealOut _) _ hN
+  exact sealK_by.2 _ a (sealShort_res b)
+
+/-- `seal` by the lengths, each code wiping its own stack on return: `wide`
+its 3856 bytes, and the code in registers, below 128 bytes of text and of
+additional data, the 528 of its own frame. `plain` where a side condition
+of a wipe fails. -/
+def sealBy (sfx : String) (wide : Prog isa)
+    (hv : Verified X86_64.target wide (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856))
+    (hsp : wide.all (fun i => !X86_64.isa.writesSp i) = true)
+    (plain : Registration Spec.GcmSiv.sealApi X86_64.target) : Registration Spec.GcmSiv.sealApi X86_64.target :=
+  if hW : ScrubC (sealPiece sfx wide hv hsp) [8, 3848] then
+  if hN : ScrubC (sealShort sfx) [8, 520] then
+    { suffix := sfx
+      code := bySize (scrubC (sealPiece sfx wide hv hsp) (sealOut _) _ hW).code
+        (scrubC (sealShort sfx) (sealOut _) _ hN).code
+      stack := 3856
+      verified := sealK_by.1 (scrubC (sealPiece sfx wide hv hsp) (sealOut _) _ hW).verified
+        (sealShort_more (scrubC (sealShort sfx) (sealOut _) _ hN).verified
+          (scrubC (sealPiece sfx wide hv hsp) (sealOut _) _ hW).verified.2.2)
+      spSafe := bySize_spSafe (scrubC (sealPiece sfx wide hv hsp) (sealOut _) _ hW).spSafe
+        (scrubC (sealShort sfx) (sealOut _) _ hN).spSafe
+      residue := some ⟨sealBy_res sfx wide hv hsp hW hN⟩ }
+  else plain else plain
+
+/-- `open` with the code `c`, in the 3856 bytes of stack. -/
+def openPiece (sfx : String) (c : Prog isa)
+    (hv : Verified X86_64.target c (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856))
+    (hsp : c.all (fun i => !X86_64.isa.writesSp i) = true) : Registration Spec.GcmSiv.openApi X86_64.target where
+  suffix := sfx
+  code := c
+  stack := 3856
+  verified := Proof.AesGcmSiv.open_keyed hv
+  spSafe := hsp
+
+theorem openShort_verified :
+    Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 520 2 Impl.AesGcmSiv.X86_64Reg.open)
+      (Proof.AesGcmSiv.openRoundsContract X86_64.abi 528) :=
+  Proof.AesGcmSivReg.X86_64.open_framed mulFacts
+
+theorem openShort_more {c : Prog isa} (h : Verified X86_64.target c (Spec.GcmSiv.openContract X86_64.abi 528))
+    (hsat : ∃ s, (Spec.GcmSiv.openContract X86_64.abi 3856).pre s) :
+    Verified X86_64.target c (Spec.GcmSiv.openContract X86_64.abi 3856) :=
+  verified_more_stack (n := 528) (by decide) h hsat
+
+theorem openShort_res {c : Prog isa} {rb : Nat} (h : NoResidue c (Spec.GcmSiv.openContract X86_64.abi 528) rb) :
+    NoResidue c (Spec.GcmSiv.openContract X86_64.abi 3856) rb :=
+  noResidue_more_stack (n := 528) (by decide) h
+
+/-- `open` in registers, in its own frame: 520 bytes, 528 of stack. -/
+def openShort (sfx : String) : Registration Spec.GcmSiv.openApi X86_64.target where
+  suffix := sfx
+  code := Impl.StackScratch.X86_64.withStackArgScratch 520 2 Impl.AesGcmSiv.X86_64Reg.open
+  stack := 528
+  verified := Proof.AesGcmSiv.open_keyed openShort_verified
+  spSafe := X86_64.withStackArgScratch_spSafe Proof.AesGcmSivReg.X86_64.open_spSafe
+
+theorem openBy_res (sfx : String) (wide : Prog isa)
+    (hv : Verified X86_64.target wide (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856))
+    (hsp : wide.all (fun i => !X86_64.isa.writesSp i) = true)
+    (hW : ScrubC (openPiece sfx wide hv hsp) [8, 3848]) (hN : ScrubC (openShort sfx) [8, 520]) :
+    NoResidue (bySize (scrubC (openPiece sfx wide hv hsp) (openOut _) _ hW).code
+        (scrubC (openShort sfx) (openOut _) _ hN).code) (Spec.GcmSiv.openContract X86_64.abi 3856)
+      (Spec.GcmSiv.openSig.retBits 64) := by
+  have a : NoResidue (scrubC (openPiece sfx wide hv hsp) (openOut _) _ hW).code
+      (Spec.GcmSiv.openContract X86_64.abi 3856) (Spec.GcmSiv.openSig.retBits 64) :=
+    scrubC_noResidue (openPiece sfx wide hv hsp) (openOut _) _ hW
+  have b : NoResidue (scrubC (openShort sfx) (openOut _) _ hN).code
+      (Spec.GcmSiv.openContract X86_64.abi 528) (Spec.GcmSiv.openSig.retBits 64) :=
+    scrubC_noResidue (openShort sfx) (openOut _) _ hN
+  exact openK_by.2 _ a (openShort_res b)
+
+/-- `open` by the lengths, each code wiping its own stack on return: `wide`
+its 3856 bytes, and the code in registers, below 128 bytes of text and of
+additional data, the 528 of its own frame. `plain` where a side condition
+of a wipe fails. -/
+def openBy (sfx : String) (wide : Prog isa)
+    (hv : Verified X86_64.target wide (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856))
+    (hsp : wide.all (fun i => !X86_64.isa.writesSp i) = true)
+    (plain : Registration Spec.GcmSiv.openApi X86_64.target) : Registration Spec.GcmSiv.openApi X86_64.target :=
+  if hW : ScrubC (openPiece sfx wide hv hsp) [8, 3848] then
+  if hN : ScrubC (openShort sfx) [8, 520] then
+    { suffix := sfx
+      code := bySize (scrubC (openPiece sfx wide hv hsp) (openOut _) _ hW).code
+        (scrubC (openShort sfx) (openOut _) _ hN).code
+      stack := 3856
+      verified := openK_by.1 (scrubC (openPiece sfx wide hv hsp) (openOut _) _ hW).verified
+        (openShort_more (scrubC (openShort sfx) (openOut _) _ hN).verified
+          (scrubC (openPiece sfx wide hv hsp) (openOut _) _ hW).verified.2.2)
+      spSafe := bySize_spSafe (scrubC (openPiece sfx wide hv hsp) (openOut _) _ hW).spSafe
+        (scrubC (openShort sfx) (openOut _) _ hN).spSafe
+      residue := some ⟨openBy_res sfx wide hv hsp hW hN⟩ }
+  else plain else plain
+
+/-- `vg_aes_gcm_siv_seal` over `v`, its stack wiped whole on return, in
+aligned stores: where it runs the code in registers below 128 bytes
+(`sivReg`, with `loopsOf`), each code its own (`sealBy`); the code in
+registers alone, its 528 bytes; any other, its 3856. -/
 def sealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :=
-  scrubSoft v {
-    suffix := v.suffix
-    code := framedSeal v
-    stack := 3856
-    verified := Proof.AesGcmSiv.seal_keyed (framedSeal_verified v)
-    spSafe := framedSeal_spSafe v } (sealOut _)
+  if sivReg v then
+    if (loopsOf v).isSome then
+      sealBy v.suffix (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (sealCode v)) (sealCode_framed v)
+        (X86_64.withStackArgScratch_spSafe (sealCode_spSafe v))
+        (sealPiece v.suffix (framedSeal v) (framedSeal_verified v) (framedSeal_spSafe v))
+    else withScrubAllC (sealShort v.suffix) (sealOut _) [8, 520]
+  else withScrubAllC (sealPiece v.suffix (framedSeal v) (framedSeal_verified v) (framedSeal_spSafe v)) (sealOut _)
+    [8, 3848]
 
-/-- `vg_aes_gcm_siv_open` over `v`. -/
+/-- `vg_aes_gcm_siv_open` over `v`, as `sealReg`. -/
 def openReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target :=
-  scrubSoft v {
-    suffix := v.suffix
-    code := framedOpen v
-    stack := 3856
-    verified := Proof.AesGcmSiv.open_keyed (framedOpen_verified v)
-    spSafe := framedOpen_spSafe v } (openOut _)
+  if sivReg v then
+    if (loopsOf v).isSome then
+      openBy v.suffix (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (openCode v)) (openCode_framed v)
+        (X86_64.withStackArgScratch_spSafe (openCode_spSafe v))
+        (openPiece v.suffix (framedOpen v) (framedOpen_verified v) (framedOpen_spSafe v))
+    else withScrubAllC (openShort v.suffix) (openOut _) [8, 520]
+  else withScrubAllC (openPiece v.suffix (framedOpen v) (framedOpen_verified v) (framedOpen_spSafe v)) (openOut _)
+    [8, 3848]
 
-/-- `vg_aes_gcm_siv_seal` over `v`, with the AVX2 copies. -/
+/-- `vg_aes_gcm_siv_seal` over `v`, with the AVX2 copies, its stack wiped
+as `sealReg`'s. -/
 def wideSealReg (v : GcmImpl) : Registration Spec.GcmSiv.sealApi X86_64.target :=
-  scrubSoft v {
-    suffix := v.suffix ++ "_avx2"
-    code := avx2SealCode v
-    stack := 3856
-    verified := Proof.AesGcmSiv.seal_keyed (avx2Seal_verified v)
-    spSafe := avx2Seal_spSafe v } (sealOut _)
+  if sivReg v && !sivWide v then
+    sealBy (v.suffix ++ "_avx2") (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideSealCode v))
+      (wideSeal_framed v) (X86_64.withStackArgScratch_spSafe (wideSeal_spSafe v))
+      (sealPiece (v.suffix ++ "_avx2") (avx2SealCode v) (avx2Seal_verified v) (avx2Seal_spSafe v))
+  else withScrubAllC (sealPiece (v.suffix ++ "_avx2") (avx2SealCode v) (avx2Seal_verified v) (avx2Seal_spSafe v))
+    (sealOut _) [8, 3848]
 
-/-- `vg_aes_gcm_siv_open` over `v`, with the AVX2 copies. -/
+/-- `vg_aes_gcm_siv_open` over `v`, with the AVX2 copies, as `wideSealReg`. -/
 def wideOpenReg (v : GcmImpl) : Registration Spec.GcmSiv.openApi X86_64.target :=
-  scrubSoft v {
-    suffix := v.suffix ++ "_avx2"
-    code := avx2OpenCode v
-    stack := 3856
-    verified := Proof.AesGcmSiv.open_keyed (avx2Open_verified v)
-    spSafe := avx2Open_spSafe v } (openOut _)
+  if sivReg v && !sivWide v then
+    openBy (v.suffix ++ "_avx2") (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (wideOpenCode v))
+      (wideOpen_framed v) (X86_64.withStackArgScratch_spSafe (wideOpen_spSafe v))
+      (openPiece (v.suffix ++ "_avx2") (avx2OpenCode v) (avx2Open_verified v) (avx2Open_spSafe v))
+  else withScrubAllC (openPiece (v.suffix ++ "_avx2") (avx2OpenCode v) (avx2Open_verified v) (avx2Open_spSafe v))
+    (openOut _) [8, 3848]
 
 end
 

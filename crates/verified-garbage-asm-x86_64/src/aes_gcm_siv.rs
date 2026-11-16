@@ -12,6 +12,8 @@ pub const VG_AES_GCM_SIV_SEAL_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -28,7 +30,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_vaes_vpclmul_avx512(sch
     core::arch::naked_asm!(
         r#".base64 "SItEJAhMCcBIPYAAAAA="
 jae 20f
-.base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABMie9Ji7fIAAAASYnyScHiBEkB+kmLl9AAAAC7AAAAAA=="
+.base64 "SI2kJPj9//9Ii4QkEAIAAEiJRCQISIuEJBgCAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABMie9Ji7fIAAAASYnyScHiBEkB+kmLl9AAAAC7AAAAAA=="
 22:
 .base64 "SItCBGZID27QiwJIweAgSAnYZkgPbsBmD2zCSIPIAWZID27IZg9syvNED28HZkEP78BmQQ/vyPNED29HEGZBDzjcwGZBDzjcyPNED29HIGZBDzjcwGZBDzjcyPNED29HMGZBDzjcwGZBDzjcyPNED29HQGZBDzjcwGZBDzjcyPNED29HUGZBDzjcwGZBDzjcyPNED29HYGZBDzjcwGZBDzjcyPNED29HcGZBDzjcwGZBDzjcyPNED2+HgAAAAGZBDzjcwGZBDzjcyPNED2+HkAAAAGZBDzjcwGZBDzjcyEiD/go="
 je 23f
@@ -180,7 +182,7 @@ jne 254b
 jmp 249f
 248:
 249:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJPj9///zD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJAgCAABIjWQkCDHAMckx0jH2Mf9FMcBFMdJFMds="
 21:
 .base64 "ww=="
 20:
@@ -624,13 +626,13 @@ jmp 2187f
 2186:
 2187:
 2147:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJPjw///F/n+EJOgOAADF/n+EJMgOAADF/n+EJKgOAADF/n+EJIgOAADF/n+EJGgOAADF/n+EJEgOAADF/n+EJCgOAADF/n+EJAgOAADF/n+EJOgNAADF/n+EJMgNAADF/n+EJKgNAADF/n+EJIgNAADF/n+EJGgNAADF/n+EJEgNAADF/n+EJCgNAADF/n+EJAgNAADF/n+EJOgMAADF/n+EJMgMAADF/n+EJKgMAADF/n+EJIgMAADF/n+EJGgMAADF/n+EJEgMAADF/n+EJCgMAADF/n+EJAgMAADF/n+EJOgLAADF/n+EJMgLAADF/n+EJKgLAADF/n+EJIgLAADF/n+EJGgLAADF/n+EJEgLAADF/n+EJCgLAADF/n+EJAgLAADF/n+EJOgKAADF/n+EJMgKAADF/n+EJKgKAADF/n+EJIgKAADF/n+EJGgKAADF/n+EJEgKAADF/n+EJCgKAADF/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJAgPAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMds="
 jmp 21b
 .p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
+        vg_aes_encrypt_blocks_vaes = sym super::aes_gcm_siv::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_expand_key_scratch_aesni = sym super::aes_gcm_siv::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_vaes = sym super::aes_gcm_siv::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -643,6 +645,8 @@ pub const VG_AES_GCM_SIV_OPEN_VAES_VPCLMUL_AVX512_FEATURES: verified_garbage_cpu
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -660,7 +664,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_vaes_vpclmul_avx512(sch
     core::arch::naked_asm!(
         r#".base64 "SItEJAhMCcBIPYAAAAA="
 jae 20f
-.base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcITInvSYu3yAAAAEmJ8knB4gRJAfpJi5fQAAAAuwAAAAA="
+.base64 "SI2kJPj9//9Ii4QkEAIAAEiJRCQISIuEJBgCAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcITInvSYu3yAAAAEmJ8knB4gRJAfpJi5fQAAAAuwAAAAA="
 22:
 .base64 "SItCBGZID27QiwJIweAgSAnYZkgPbsBmD2zCSIPIAWZID27IZg9syvNED28HZkEP78BmQQ/vyPNED29HEGZBDzjcwGZBDzjcyPNED29HIGZBDzjcwGZBDzjcyPNED29HMGZBDzjcwGZBDzjcyPNED29HQGZBDzjcwGZBDzjcyPNED29HUGZBDzjcwGZBDzjcyPNED29HYGZBDzjcwGZBDzjcyPNED29HcGZBDzjcwGZBDzjcyPNED2+HgAAAAGZBDzjcwGZBDzjcyPNED2+HkAAAAGZBDzjcwGZBDzjcyEiD/go="
 je 23f
@@ -829,7 +833,7 @@ jne 260b
 jmp 259f
 258:
 259:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJPj9///zD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJAgCAABIjWQkCInAMckx0jH2Mf9FMcBFMdJFMds="
 21:
 .base64 "ww=="
 20:
@@ -1305,13 +1309,13 @@ jne 2207b
 jmp 2206f
 2205:
 2206:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJPjw///F/n+EJOgOAADF/n+EJMgOAADF/n+EJKgOAADF/n+EJIgOAADF/n+EJGgOAADF/n+EJEgOAADF/n+EJCgOAADF/n+EJAgOAADF/n+EJOgNAADF/n+EJMgNAADF/n+EJKgNAADF/n+EJIgNAADF/n+EJGgNAADF/n+EJEgNAADF/n+EJCgNAADF/n+EJAgNAADF/n+EJOgMAADF/n+EJMgMAADF/n+EJKgMAADF/n+EJIgMAADF/n+EJGgMAADF/n+EJEgMAADF/n+EJCgMAADF/n+EJAgMAADF/n+EJOgLAADF/n+EJMgLAADF/n+EJKgLAADF/n+EJIgLAADF/n+EJGgLAADF/n+EJEgLAADF/n+EJCgLAADF/n+EJAgLAADF/n+EJOgKAADF/n+EJMgKAADF/n+EJKgKAADF/n+EJIgKAADF/n+EJGgKAADF/n+EJEgKAADF/n+EJCgKAADF/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJAgPAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdJFMds="
 jmp 21b
 .p2align 6"#,
-        vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_encrypt_blocks_vaes = sym super::aes_gcm_siv::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
+        vg_aes_expand_key_scratch_aesni = sym super::aes_gcm_siv::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
-        vg_aes_ctr32_vaes = sym super::aes::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
+        vg_aes_ctr32_vaes = sym super::aes_gcm_siv::vg_aes_ctr32_vaes::vg_aes_ctr32_vaes,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -1324,6 +1328,8 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_AVX2_FEATURES: verified_garbage_c
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1341,7 +1347,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul_avx_avx2(s
     core::arch::naked_asm!(
         r#".base64 "SItEJAhMCcBIPYAAAAA="
 jae 20f
-.base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABMie9Ji7fIAAAASYnyScHiBEkB+kmLl9AAAAC7AAAAAA=="
+.base64 "SI2kJPj9//9Ii4QkEAIAAEiJRCQISIuEJBgCAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABMie9Ji7fIAAAASYnyScHiBEkB+kmLl9AAAAC7AAAAAA=="
 22:
 .base64 "SItCBGZID27QiwJIweAgSAnYZkgPbsBmD2zCSIPIAWZID27IZg9syvNED28HZkEP78BmQQ/vyPNED29HEGZBDzjcwGZBDzjcyPNED29HIGZBDzjcwGZBDzjcyPNED29HMGZBDzjcwGZBDzjcyPNED29HQGZBDzjcwGZBDzjcyPNED29HUGZBDzjcwGZBDzjcyPNED29HYGZBDzjcwGZBDzjcyPNED29HcGZBDzjcwGZBDzjcyPNED2+HgAAAAGZBDzjcwGZBDzjcyPNED2+HkAAAAGZBDzjcwGZBDzjcyEiD/go="
 je 23f
@@ -1493,7 +1499,7 @@ jne 254b
 jmp 249f
 248:
 249:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJPj9///zD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJAgCAABIjWQkCDHAMckx0jH2Mf9FMcBFMdJFMds="
 21:
 .base64 "ww=="
 20:
@@ -1929,13 +1935,13 @@ jmp 2187f
 2186:
 2187:
 2147:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJPjw///F/n+EJOgOAADF/n+EJMgOAADF/n+EJKgOAADF/n+EJIgOAADF/n+EJGgOAADF/n+EJEgOAADF/n+EJCgOAADF/n+EJAgOAADF/n+EJOgNAADF/n+EJMgNAADF/n+EJKgNAADF/n+EJIgNAADF/n+EJGgNAADF/n+EJEgNAADF/n+EJCgNAADF/n+EJAgNAADF/n+EJOgMAADF/n+EJMgMAADF/n+EJKgMAADF/n+EJIgMAADF/n+EJGgMAADF/n+EJEgMAADF/n+EJCgMAADF/n+EJAgMAADF/n+EJOgLAADF/n+EJMgLAADF/n+EJKgLAADF/n+EJIgLAADF/n+EJGgLAADF/n+EJEgLAADF/n+EJCgLAADF/n+EJAgLAADF/n+EJOgKAADF/n+EJMgKAADF/n+EJKgKAADF/n+EJIgKAADF/n+EJGgKAADF/n+EJEgKAADF/n+EJCgKAADF/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJAgPAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMds="
 jmp 21b
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_aesni = sym super::aes_gcm_siv::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes_gcm_siv::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes_gcm_siv::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -1948,6 +1954,8 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_AVX2_FEATURES: verified_garbage_c
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -1965,7 +1973,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul_avx_avx2(s
     core::arch::naked_asm!(
         r#".base64 "SItEJAhMCcBIPYAAAAA="
 jae 20f
-.base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcITInvSYu3yAAAAEmJ8knB4gRJAfpJi5fQAAAAuwAAAAA="
+.base64 "SI2kJPj9//9Ii4QkEAIAAEiJRCQISIuEJBgCAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcITInvSYu3yAAAAEmJ8knB4gRJAfpJi5fQAAAAuwAAAAA="
 22:
 .base64 "SItCBGZID27QiwJIweAgSAnYZkgPbsBmD2zCSIPIAWZID27IZg9syvNED28HZkEP78BmQQ/vyPNED29HEGZBDzjcwGZBDzjcyPNED29HIGZBDzjcwGZBDzjcyPNED29HMGZBDzjcwGZBDzjcyPNED29HQGZBDzjcwGZBDzjcyPNED29HUGZBDzjcwGZBDzjcyPNED29HYGZBDzjcwGZBDzjcyPNED29HcGZBDzjcwGZBDzjcyPNED2+HgAAAAGZBDzjcwGZBDzjcyPNED2+HkAAAAGZBDzjcwGZBDzjcyEiD/go="
 je 23f
@@ -2134,7 +2142,7 @@ jne 260b
 jmp 259f
 258:
 259:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJPj9///zD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJAgCAABIjWQkCInAMckx0jH2Mf9FMcBFMdJFMds="
 21:
 .base64 "ww=="
 20:
@@ -2604,13 +2612,13 @@ jne 2207b
 jmp 2206f
 2205:
 2206:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJPjw///F/n+EJOgOAADF/n+EJMgOAADF/n+EJKgOAADF/n+EJIgOAADF/n+EJGgOAADF/n+EJEgOAADF/n+EJCgOAADF/n+EJAgOAADF/n+EJOgNAADF/n+EJMgNAADF/n+EJKgNAADF/n+EJIgNAADF/n+EJGgNAADF/n+EJEgNAADF/n+EJCgNAADF/n+EJAgNAADF/n+EJOgMAADF/n+EJMgMAADF/n+EJKgMAADF/n+EJIgMAADF/n+EJGgMAADF/n+EJEgMAADF/n+EJCgMAADF/n+EJAgMAADF/n+EJOgLAADF/n+EJMgLAADF/n+EJKgLAADF/n+EJIgLAADF/n+EJGgLAADF/n+EJEgLAADF/n+EJCgLAADF/n+EJAgLAADF/n+EJOgKAADF/n+EJMgKAADF/n+EJKgKAADF/n+EJIgKAADF/n+EJGgKAADF/n+EJEgKAADF/n+EJCgKAADF/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJAgPAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdJFMds="
 jmp 21b
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_encrypt_blocks_aesni = sym super::aes_gcm_siv::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes_gcm_siv::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_aesni = sym super::aes_gcm_siv::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -2623,6 +2631,8 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::F
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -2640,7 +2650,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul_avx(schedu
     core::arch::naked_asm!(
         r#".base64 "SItEJAhMCcBIPYAAAAA="
 jae 20f
-.base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABMie9Ji7fIAAAASYnyScHiBEkB+kmLl9AAAAC7AAAAAA=="
+.base64 "SI2kJPj9//9Ii4QkEAIAAEiJRCQISIuEJBgCAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABMie9Ji7fIAAAASYnyScHiBEkB+kmLl9AAAAC7AAAAAA=="
 22:
 .base64 "SItCBGZID27QiwJIweAgSAnYZkgPbsBmD2zCSIPIAWZID27IZg9syvNED28HZkEP78BmQQ/vyPNED29HEGZBDzjcwGZBDzjcyPNED29HIGZBDzjcwGZBDzjcyPNED29HMGZBDzjcwGZBDzjcyPNED29HQGZBDzjcwGZBDzjcyPNED29HUGZBDzjcwGZBDzjcyPNED29HYGZBDzjcwGZBDzjcyPNED29HcGZBDzjcwGZBDzjcyPNED2+HgAAAAGZBDzjcwGZBDzjcyPNED2+HkAAAAGZBDzjcwGZBDzjcyEiD/go="
 je 23f
@@ -2792,7 +2802,7 @@ jne 254b
 jmp 249f
 248:
 249:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJPj9///zD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJAgCAABIjWQkCDHAMckx0jH2Mf9FMcBFMdJFMds="
 21:
 .base64 "ww=="
 20:
@@ -3096,13 +3106,13 @@ jmp 2139f
 2138:
 2139:
 2111:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJPjw///F/n+EJOgOAADF/n+EJMgOAADF/n+EJKgOAADF/n+EJIgOAADF/n+EJGgOAADF/n+EJEgOAADF/n+EJCgOAADF/n+EJAgOAADF/n+EJOgNAADF/n+EJMgNAADF/n+EJKgNAADF/n+EJIgNAADF/n+EJGgNAADF/n+EJEgNAADF/n+EJCgNAADF/n+EJAgNAADF/n+EJOgMAADF/n+EJMgMAADF/n+EJKgMAADF/n+EJIgMAADF/n+EJGgMAADF/n+EJEgMAADF/n+EJCgMAADF/n+EJAgMAADF/n+EJOgLAADF/n+EJMgLAADF/n+EJKgLAADF/n+EJIgLAADF/n+EJGgLAADF/n+EJEgLAADF/n+EJCgLAADF/n+EJAgLAADF/n+EJOgKAADF/n+EJMgKAADF/n+EJKgKAADF/n+EJIgKAADF/n+EJGgKAADF/n+EJEgKAADF/n+EJCgKAADF/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJAgPAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMds="
 jmp 21b
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_aesni = sym super::aes_gcm_siv::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes_gcm_siv::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes_gcm_siv::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -3114,6 +3124,8 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_AVX_FEATURES: verified_garbage_cpu::F
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -3131,7 +3143,7 @@ pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul_avx(schedu
     core::arch::naked_asm!(
         r#".base64 "SItEJAhMCcBIPYAAAAA="
 jae 20f
-.base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcITInvSYu3yAAAAEmJ8knB4gRJAfpJi5fQAAAAuwAAAAA="
+.base64 "SI2kJPj9//9Ii4QkEAIAAEiJRCQISIuEJBgCAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcITInvSYu3yAAAAEmJ8knB4gRJAfpJi5fQAAAAuwAAAAA="
 22:
 .base64 "SItCBGZID27QiwJIweAgSAnYZkgPbsBmD2zCSIPIAWZID27IZg9syvNED28HZkEP78BmQQ/vyPNED29HEGZBDzjcwGZBDzjcyPNED29HIGZBDzjcwGZBDzjcyPNED29HMGZBDzjcwGZBDzjcyPNED29HQGZBDzjcwGZBDzjcyPNED29HUGZBDzjcwGZBDzjcyPNED29HYGZBDzjcwGZBDzjcyPNED29HcGZBDzjcwGZBDzjcyPNED2+HgAAAAGZBDzjcwGZBDzjcyPNED2+HkAAAAGZBDzjcwGZBDzjcyEiD/go="
 je 23f
@@ -3300,7 +3312,7 @@ jne 260b
 jmp 259f
 258:
 259:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJPj9///zD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJAgCAABIjWQkCInAMckx0jH2Mf9FMcBFMdJFMds="
 21:
 .base64 "ww=="
 20:
@@ -3638,13 +3650,13 @@ jne 2159b
 jmp 2158f
 2157:
 2158:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJPjw///F/n+EJOgOAADF/n+EJMgOAADF/n+EJKgOAADF/n+EJIgOAADF/n+EJGgOAADF/n+EJEgOAADF/n+EJCgOAADF/n+EJAgOAADF/n+EJOgNAADF/n+EJMgNAADF/n+EJKgNAADF/n+EJIgNAADF/n+EJGgNAADF/n+EJEgNAADF/n+EJCgNAADF/n+EJAgNAADF/n+EJOgMAADF/n+EJMgMAADF/n+EJKgMAADF/n+EJIgMAADF/n+EJGgMAADF/n+EJEgMAADF/n+EJCgMAADF/n+EJAgMAADF/n+EJOgLAADF/n+EJMgLAADF/n+EJKgLAADF/n+EJIgLAADF/n+EJGgLAADF/n+EJEgLAADF/n+EJCgLAADF/n+EJAgLAADF/n+EJOgKAADF/n+EJMgKAADF/n+EJKgKAADF/n+EJIgKAADF/n+EJGgKAADF/n+EJEgKAADF/n+EJCgKAADF/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJAgPAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdJFMds="
 jmp 21b
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_encrypt_blocks_aesni = sym super::aes_gcm_siv::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes_gcm_siv::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_ctr32_aesni = sym super::aes_gcm_siv::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -3657,6 +3669,8 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -3666,12 +3680,12 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * `tag` must be valid for reads and writes of 16 bytes.
 /// * `rounds` must be 10 or 14.
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce`, `aad` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 528 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `ssse3` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_seal_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABMie9Ji7fIAAAASYnyScHiBEkB+kmLl9AAAAC7AAAAAA=="
+        r#".base64 "SI2kJPj9//9Ii4QkEAIAAEiJRCQISIuEJBgCAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABMie9Ji7fIAAAASYnyScHiBEkB+kmLl9AAAAC7AAAAAA=="
 20:
 .base64 "SItCBGZID27QiwJIweAgSAnYZkgPbsBmD2zCSIPIAWZID27IZg9syvNED28HZkEP78BmQQ/vyPNED29HEGZBDzjcwGZBDzjcyPNED29HIGZBDzjcwGZBDzjcyPNED29HMGZBDzjcwGZBDzjcyPNED29HQGZBDzjcwGZBDzjcyPNED29HUGZBDzjcwGZBDzjcyPNED29HYGZBDzjcwGZBDzjcyPNED29HcGZBDzjcwGZBDzjcyPNED2+HgAAAAGZBDzjcwGZBDzjcyPNED2+HkAAAAGZBDzjcwGZBDzjcyEiD/go="
 je 21f
@@ -3823,7 +3837,7 @@ jne 252b
 jmp 247f
 246:
 247:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJPj9///zD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJAgCAABIjWQkCDHAMckx0jH2Mf9FMcBFMdJFMdvD"
 .p2align 6"#,
     )
 }
@@ -3837,6 +3851,8 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// # Safety
 ///
 /// * `schedule` must be valid for reads of 240 bytes.
@@ -3846,12 +3862,12 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_PCLMUL_FEATURES: verified_garbage_cpu::Featu
 /// * `tag` must be valid for reads of 16 bytes.
 /// * `rounds` must be 10 or 14.
 /// * `data` must not overlap `schedule`, `nonce`, `aad`, `tag` or the arguments on the stack (distinct Rust objects never do).
-/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 3856 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the return address on the stack or the 528 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes`, `ssse3` and `pclmulqdq` target features.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_gcm_siv_open_aesni_pclmul(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
     core::arch::naked_asm!(
-        r#".base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcITInvSYu3yAAAAEmJ8knB4gRJAfpJi5fQAAAAuwAAAAA="
+        r#".base64 "SI2kJPj9//9Ii4QkEAIAAEiJRCQISIuEJBgCAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcITInvSYu3yAAAAEmJ8knB4gRJAfpJi5fQAAAAuwAAAAA="
 20:
 .base64 "SItCBGZID27QiwJIweAgSAnYZkgPbsBmD2zCSIPIAWZID27IZg9syvNED28HZkEP78BmQQ/vyPNED29HEGZBDzjcwGZBDzjcyPNED29HIGZBDzjcwGZBDzjcyPNED29HMGZBDzjcwGZBDzjcyPNED29HQGZBDzjcwGZBDzjcyPNED29HUGZBDzjcwGZBDzjcyPNED29HYGZBDzjcwGZBDzjcyPNED29HcGZBDzjcwGZBDzjcyPNED2+HgAAAAGZBDzjcwGZBDzjcyPNED2+HkAAAAGZBDzjcwGZBDzjcyEiD/go="
 je 21f
@@ -4020,7 +4036,7 @@ jne 258b
 jmp 257f
 256:
 257:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIAgAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJPj9///zD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJAgCAABIjWQkCInAMckx0jH2Mf9FMcBFMdJFMdvD"
 .p2align 6"#,
     )
 }
@@ -4033,6 +4049,8 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_AVX2_FEATURES: verified_garbage_cpu::Feature
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -4212,7 +4230,7 @@ jmp 244f
 244:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJPjw///F/n+EJOgOAADF/n+EJMgOAADF/n+EJKgOAADF/n+EJIgOAADF/n+EJGgOAADF/n+EJEgOAADF/n+EJCgOAADF/n+EJAgOAADF/n+EJOgNAADF/n+EJMgNAADF/n+EJKgNAADF/n+EJIgNAADF/n+EJGgNAADF/n+EJEgNAADF/n+EJCgNAADF/n+EJAgNAADF/n+EJOgMAADF/n+EJMgMAADF/n+EJKgMAADF/n+EJIgMAADF/n+EJGgMAADF/n+EJEgMAADF/n+EJCgMAADF/n+EJAgMAADF/n+EJOgLAADF/n+EJMgLAADF/n+EJKgLAADF/n+EJIgLAADF/n+EJGgLAADF/n+EJEgLAADF/n+EJCgLAADF/n+EJAgLAADF/n+EJOgKAADF/n+EJMgKAADF/n+EJKgKAADF/n+EJIgKAADF/n+EJGgKAADF/n+EJEgKAADF/n+EJCgKAADF/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJAgPAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 20:
 .base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 246:
@@ -4460,10 +4478,10 @@ jmp 2118f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
 jmp 21b
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_aesni = sym super::aes_gcm_siv::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes_gcm_siv::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes_gcm_siv::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -4476,6 +4494,8 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_AVX2_FEATURES: verified_garbage_cpu::Feature
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -4672,7 +4692,7 @@ jmp 250f
 250:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
 21:
-.base64 "ww=="
+.base64 "xfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI1kJPhMiRwkSI2kJPjw///F/n+EJOgOAADF/n+EJMgOAADF/n+EJKgOAADF/n+EJIgOAADF/n+EJGgOAADF/n+EJEgOAADF/n+EJCgOAADF/n+EJAgOAADF/n+EJOgNAADF/n+EJMgNAADF/n+EJKgNAADF/n+EJIgNAADF/n+EJGgNAADF/n+EJEgNAADF/n+EJCgNAADF/n+EJAgNAADF/n+EJOgMAADF/n+EJMgMAADF/n+EJKgMAADF/n+EJIgMAADF/n+EJGgMAADF/n+EJEgMAADF/n+EJCgMAADF/n+EJAgMAADF/n+EJOgLAADF/n+EJMgLAADF/n+EJKgLAADF/n+EJIgLAADF/n+EJGgLAADF/n+EJEgLAADF/n+EJCgLAADF/n+EJAgLAADF/n+EJOgKAADF/n+EJMgKAADF/n+EJKgKAADF/n+EJIgKAADF/n+EJGgKAADF/n+EJEgKAADF/n+EJCgKAADF/n+EJAgKAADF/n+EJOgJAADF/n+EJMgJAADF/n+EJKgJAADF/n+EJIgJAADF/n+EJGgJAADF/n+EJEgJAADF/n+EJCgJAADF/n+EJAgJAADF/n+EJOgIAADF/n+EJMgIAADF/n+EJKgIAADF/n+EJIgIAADF/n+EJGgIAADF/n+EJEgIAADF/n+EJCgIAADF/n+EJAgIAADF/n+EJOgHAADF/n+EJMgHAADF/n+EJKgHAADF/n+EJIgHAADF/n+EJGgHAADF/n+EJEgHAADF/n+EJCgHAADF/n+EJAgHAADF/n+EJOgGAADF/n+EJMgGAADF/n+EJKgGAADF/n+EJIgGAADF/n+EJGgGAADF/n+EJEgGAADF/n+EJCgGAADF/n+EJAgGAADF/n+EJOgFAADF/n+EJMgFAADF/n+EJKgFAADF/n+EJIgFAADF/n+EJGgFAADF/n+EJEgFAADF/n+EJCgFAADF/n+EJAgFAADF/n+EJOgEAADF/n+EJMgEAADF/n+EJKgEAADF/n+EJIgEAADF/n+EJGgEAADF/n+EJEgEAADF/n+EJCgEAADF/n+EJAgEAADF/n+EJOgDAADF/n+EJMgDAADF/n+EJKgDAADF/n+EJIgDAADF/n+EJGgDAADF/n+EJEgDAADF/n+EJCgDAADF/n+EJAgDAADF/n+EJOgCAADF/n+EJMgCAADF/n+EJKgCAADF/n+EJIgCAADF/n+EJGgCAADF/n+EJEgCAADF/n+EJCgCAADF/n+EJAgCAADF/n+EJOgBAADF/n+EJMgBAADF/n+EJKgBAADF/n+EJIgBAADF/n+EJGgBAADF/n+EJEgBAADF/n+EJCgBAADF/n+EJAgBAADF/n+EJOgAAADF/n+EJMgAAADF/n+EJKgAAADF/n+EJIgAAADF/n9EJGjF/n9EJEjF/n9EJCjF/n9EJAhMiRwkSI2kJAgPAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 20:
 .base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 252:
@@ -4937,9 +4957,9 @@ jmp 2130f
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
 jmp 21b
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_encrypt_blocks_aesni = sym super::aes_gcm_siv::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes_gcm_siv::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes_gcm_siv::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
@@ -4953,6 +4973,8 @@ pub const VG_AES_GCM_SIV_SEAL_AESNI_FEATURES: verified_garbage_cpu::Features = v
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
 ///
 /// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -5128,12 +5150,12 @@ jne 243b
 jmp 242f
 241:
 242:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJPjw///zD3+EJPgOAADzD3+EJOgOAADzD3+EJNgOAADzD3+EJMgOAADzD3+EJLgOAADzD3+EJKgOAADzD3+EJJgOAADzD3+EJIgOAADzD3+EJHgOAADzD3+EJGgOAADzD3+EJFgOAADzD3+EJEgOAADzD3+EJDgOAADzD3+EJCgOAADzD3+EJBgOAADzD3+EJAgOAADzD3+EJPgNAADzD3+EJOgNAADzD3+EJNgNAADzD3+EJMgNAADzD3+EJLgNAADzD3+EJKgNAADzD3+EJJgNAADzD3+EJIgNAADzD3+EJHgNAADzD3+EJGgNAADzD3+EJFgNAADzD3+EJEgNAADzD3+EJDgNAADzD3+EJCgNAADzD3+EJBgNAADzD3+EJAgNAADzD3+EJPgMAADzD3+EJOgMAADzD3+EJNgMAADzD3+EJMgMAADzD3+EJLgMAADzD3+EJKgMAADzD3+EJJgMAADzD3+EJIgMAADzD3+EJHgMAADzD3+EJGgMAADzD3+EJFgMAADzD3+EJEgMAADzD3+EJDgMAADzD3+EJCgMAADzD3+EJBgMAADzD3+EJAgMAADzD3+EJPgLAADzD3+EJOgLAADzD3+EJNgLAADzD3+EJMgLAADzD3+EJLgLAADzD3+EJKgLAADzD3+EJJgLAADzD3+EJIgLAADzD3+EJHgLAADzD3+EJGgLAADzD3+EJFgLAADzD3+EJEgLAADzD3+EJDgLAADzD3+EJCgLAADzD3+EJBgLAADzD3+EJAgLAADzD3+EJPgKAADzD3+EJOgKAADzD3+EJNgKAADzD3+EJMgKAADzD3+EJLgKAADzD3+EJKgKAADzD3+EJJgKAADzD3+EJIgKAADzD3+EJHgKAADzD3+EJGgKAADzD3+EJFgKAADzD3+EJEgKAADzD3+EJDgKAADzD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJAgPAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
+        vg_aes_encrypt_blocks_aesni = sym super::aes_gcm_siv::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes_gcm_siv::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes_gcm_siv::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
     )
 }
 
@@ -5145,6 +5167,8 @@ pub const VG_AES_GCM_SIV_OPEN_AESNI_FEATURES: verified_garbage_cpu::Features = v
 /// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
 ///
 /// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
 ///
 /// # Safety
 ///
@@ -5337,11 +5361,11 @@ jne 249b
 jmp 248f
 247:
 248:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJPjw///zD3+EJPgOAADzD3+EJOgOAADzD3+EJNgOAADzD3+EJMgOAADzD3+EJLgOAADzD3+EJKgOAADzD3+EJJgOAADzD3+EJIgOAADzD3+EJHgOAADzD3+EJGgOAADzD3+EJFgOAADzD3+EJEgOAADzD3+EJDgOAADzD3+EJCgOAADzD3+EJBgOAADzD3+EJAgOAADzD3+EJPgNAADzD3+EJOgNAADzD3+EJNgNAADzD3+EJMgNAADzD3+EJLgNAADzD3+EJKgNAADzD3+EJJgNAADzD3+EJIgNAADzD3+EJHgNAADzD3+EJGgNAADzD3+EJFgNAADzD3+EJEgNAADzD3+EJDgNAADzD3+EJCgNAADzD3+EJBgNAADzD3+EJAgNAADzD3+EJPgMAADzD3+EJOgMAADzD3+EJNgMAADzD3+EJMgMAADzD3+EJLgMAADzD3+EJKgMAADzD3+EJJgMAADzD3+EJIgMAADzD3+EJHgMAADzD3+EJGgMAADzD3+EJFgMAADzD3+EJEgMAADzD3+EJDgMAADzD3+EJCgMAADzD3+EJBgMAADzD3+EJAgMAADzD3+EJPgLAADzD3+EJOgLAADzD3+EJNgLAADzD3+EJMgLAADzD3+EJLgLAADzD3+EJKgLAADzD3+EJJgLAADzD3+EJIgLAADzD3+EJHgLAADzD3+EJGgLAADzD3+EJFgLAADzD3+EJEgLAADzD3+EJDgLAADzD3+EJCgLAADzD3+EJBgLAADzD3+EJAgLAADzD3+EJPgKAADzD3+EJOgKAADzD3+EJNgKAADzD3+EJMgKAADzD3+EJLgKAADzD3+EJKgKAADzD3+EJJgKAADzD3+EJIgKAADzD3+EJHgKAADzD3+EJGgKAADzD3+EJFgKAADzD3+EJEgKAADzD3+EJDgKAADzD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJAgPAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
-        vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
-        vg_aes_ctr32_aesni = sym super::aes::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
+        vg_aes_encrypt_blocks_aesni = sym super::aes_gcm_siv::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
+        vg_aes_expand_key_scratch_aesni = sym super::aes_gcm_siv::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
+        vg_aes_ctr32_aesni = sym super::aes_gcm_siv::vg_aes_ctr32_aesni::vg_aes_ctr32_aesni,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
@@ -5783,10 +5807,10 @@ jmp 2118f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
 jmp 21b
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes_gcm_siv::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes_gcm_siv::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes_gcm_siv::vg_aes_ctr32::vg_aes_ctr32,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -6262,9 +6286,9 @@ jmp 2130f
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
 jmp 21b
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_encrypt_blocks = sym super::aes_gcm_siv::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+        vg_aes_expand_key_scratch = sym super::aes_gcm_siv::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes_gcm_siv::vg_aes_ctr32::vg_aes_ctr32,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
@@ -6457,10 +6481,10 @@ jmp 242f
 242:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJPjw///zD3+EJPgOAADzD3+EJOgOAADzD3+EJNgOAADzD3+EJMgOAADzD3+EJLgOAADzD3+EJKgOAADzD3+EJJgOAADzD3+EJIgOAADzD3+EJHgOAADzD3+EJGgOAADzD3+EJFgOAADzD3+EJEgOAADzD3+EJDgOAADzD3+EJCgOAADzD3+EJBgOAADzD3+EJAgOAADzD3+EJPgNAADzD3+EJOgNAADzD3+EJNgNAADzD3+EJMgNAADzD3+EJLgNAADzD3+EJKgNAADzD3+EJJgNAADzD3+EJIgNAADzD3+EJHgNAADzD3+EJGgNAADzD3+EJFgNAADzD3+EJEgNAADzD3+EJDgNAADzD3+EJCgNAADzD3+EJBgNAADzD3+EJAgNAADzD3+EJPgMAADzD3+EJOgMAADzD3+EJNgMAADzD3+EJMgMAADzD3+EJLgMAADzD3+EJKgMAADzD3+EJJgMAADzD3+EJIgMAADzD3+EJHgMAADzD3+EJGgMAADzD3+EJFgMAADzD3+EJEgMAADzD3+EJDgMAADzD3+EJCgMAADzD3+EJBgMAADzD3+EJAgMAADzD3+EJPgLAADzD3+EJOgLAADzD3+EJNgLAADzD3+EJMgLAADzD3+EJLgLAADzD3+EJKgLAADzD3+EJJgLAADzD3+EJIgLAADzD3+EJHgLAADzD3+EJGgLAADzD3+EJFgLAADzD3+EJEgLAADzD3+EJDgLAADzD3+EJCgLAADzD3+EJBgLAADzD3+EJAgLAADzD3+EJPgKAADzD3+EJOgKAADzD3+EJNgKAADzD3+EJMgKAADzD3+EJLgKAADzD3+EJKgKAADzD3+EJJgKAADzD3+EJIgKAADzD3+EJHgKAADzD3+EJGgKAADzD3+EJFgKAADzD3+EJEgKAADzD3+EJDgKAADzD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJAgPAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes_gcm_siv::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes_gcm_siv::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes_gcm_siv::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -6668,9 +6692,9 @@ jmp 248f
 248:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJPjw///zD3+EJPgOAADzD3+EJOgOAADzD3+EJNgOAADzD3+EJMgOAADzD3+EJLgOAADzD3+EJKgOAADzD3+EJJgOAADzD3+EJIgOAADzD3+EJHgOAADzD3+EJGgOAADzD3+EJFgOAADzD3+EJEgOAADzD3+EJDgOAADzD3+EJCgOAADzD3+EJBgOAADzD3+EJAgOAADzD3+EJPgNAADzD3+EJOgNAADzD3+EJNgNAADzD3+EJMgNAADzD3+EJLgNAADzD3+EJKgNAADzD3+EJJgNAADzD3+EJIgNAADzD3+EJHgNAADzD3+EJGgNAADzD3+EJFgNAADzD3+EJEgNAADzD3+EJDgNAADzD3+EJCgNAADzD3+EJBgNAADzD3+EJAgNAADzD3+EJPgMAADzD3+EJOgMAADzD3+EJNgMAADzD3+EJMgMAADzD3+EJLgMAADzD3+EJKgMAADzD3+EJJgMAADzD3+EJIgMAADzD3+EJHgMAADzD3+EJGgMAADzD3+EJFgMAADzD3+EJEgMAADzD3+EJDgMAADzD3+EJCgMAADzD3+EJBgMAADzD3+EJAgMAADzD3+EJPgLAADzD3+EJOgLAADzD3+EJNgLAADzD3+EJMgLAADzD3+EJLgLAADzD3+EJKgLAADzD3+EJJgLAADzD3+EJIgLAADzD3+EJHgLAADzD3+EJGgLAADzD3+EJFgLAADzD3+EJEgLAADzD3+EJDgLAADzD3+EJCgLAADzD3+EJBgLAADzD3+EJAgLAADzD3+EJPgKAADzD3+EJOgKAADzD3+EJNgKAADzD3+EJMgKAADzD3+EJLgKAADzD3+EJKgKAADzD3+EJJgKAADzD3+EJIgKAADzD3+EJHgKAADzD3+EJGgKAADzD3+EJFgKAADzD3+EJEgKAADzD3+EJDgKAADzD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJAgPAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_encrypt_blocks = sym super::aes_gcm_siv::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+        vg_aes_expand_key_scratch = sym super::aes_gcm_siv::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes_gcm_siv::vg_aes_ctr32::vg_aes_ctr32,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
     )
 }
@@ -7112,10 +7136,10 @@ jmp 2118f
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
 jmp 21b
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes_gcm_siv::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes_gcm_siv::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes_gcm_siv::vg_aes_ctr32::vg_aes_ctr32,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
 }
@@ -7591,9 +7615,9 @@ jmp 2130f
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
 jmp 21b
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_encrypt_blocks = sym super::aes_gcm_siv::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+        vg_aes_expand_key_scratch = sym super::aes_gcm_siv::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes_gcm_siv::vg_aes_ctr32::vg_aes_ctr32,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
         VG_GCM_CONSTS = sym super::consts::VG_GCM_CONSTS,
     )
@@ -7782,10 +7806,10 @@ jmp 242f
 242:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJPjw///zD3+EJPgOAADzD3+EJOgOAADzD3+EJNgOAADzD3+EJMgOAADzD3+EJLgOAADzD3+EJKgOAADzD3+EJJgOAADzD3+EJIgOAADzD3+EJHgOAADzD3+EJGgOAADzD3+EJFgOAADzD3+EJEgOAADzD3+EJDgOAADzD3+EJCgOAADzD3+EJBgOAADzD3+EJAgOAADzD3+EJPgNAADzD3+EJOgNAADzD3+EJNgNAADzD3+EJMgNAADzD3+EJLgNAADzD3+EJKgNAADzD3+EJJgNAADzD3+EJIgNAADzD3+EJHgNAADzD3+EJGgNAADzD3+EJFgNAADzD3+EJEgNAADzD3+EJDgNAADzD3+EJCgNAADzD3+EJBgNAADzD3+EJAgNAADzD3+EJPgMAADzD3+EJOgMAADzD3+EJNgMAADzD3+EJMgMAADzD3+EJLgMAADzD3+EJKgMAADzD3+EJJgMAADzD3+EJIgMAADzD3+EJHgMAADzD3+EJGgMAADzD3+EJFgMAADzD3+EJEgMAADzD3+EJDgMAADzD3+EJCgMAADzD3+EJBgMAADzD3+EJAgMAADzD3+EJPgLAADzD3+EJOgLAADzD3+EJNgLAADzD3+EJMgLAADzD3+EJLgLAADzD3+EJKgLAADzD3+EJJgLAADzD3+EJIgLAADzD3+EJHgLAADzD3+EJGgLAADzD3+EJFgLAADzD3+EJEgLAADzD3+EJDgLAADzD3+EJCgLAADzD3+EJBgLAADzD3+EJAgLAADzD3+EJPgKAADzD3+EJOgKAADzD3+EJNgKAADzD3+EJMgKAADzD3+EJLgKAADzD3+EJKgKAADzD3+EJJgKAADzD3+EJIgKAADzD3+EJHgKAADzD3+EJGgKAADzD3+EJFgKAADzD3+EJEgKAADzD3+EJDgKAADzD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJAgPAABIjWQkCDHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+        vg_aes_encrypt_blocks = sym super::aes_gcm_siv::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_expand_key_scratch = sym super::aes_gcm_siv::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes_gcm_siv::vg_aes_ctr32::vg_aes_ctr32,
     )
 }
 
@@ -7989,12 +8013,44 @@ jmp 248f
 248:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI1kJPhMiRwkSI2kJPjw///zD3+EJPgOAADzD3+EJOgOAADzD3+EJNgOAADzD3+EJMgOAADzD3+EJLgOAADzD3+EJKgOAADzD3+EJJgOAADzD3+EJIgOAADzD3+EJHgOAADzD3+EJGgOAADzD3+EJFgOAADzD3+EJEgOAADzD3+EJDgOAADzD3+EJCgOAADzD3+EJBgOAADzD3+EJAgOAADzD3+EJPgNAADzD3+EJOgNAADzD3+EJNgNAADzD3+EJMgNAADzD3+EJLgNAADzD3+EJKgNAADzD3+EJJgNAADzD3+EJIgNAADzD3+EJHgNAADzD3+EJGgNAADzD3+EJFgNAADzD3+EJEgNAADzD3+EJDgNAADzD3+EJCgNAADzD3+EJBgNAADzD3+EJAgNAADzD3+EJPgMAADzD3+EJOgMAADzD3+EJNgMAADzD3+EJMgMAADzD3+EJLgMAADzD3+EJKgMAADzD3+EJJgMAADzD3+EJIgMAADzD3+EJHgMAADzD3+EJGgMAADzD3+EJFgMAADzD3+EJEgMAADzD3+EJDgMAADzD3+EJCgMAADzD3+EJBgMAADzD3+EJAgMAADzD3+EJPgLAADzD3+EJOgLAADzD3+EJNgLAADzD3+EJMgLAADzD3+EJLgLAADzD3+EJKgLAADzD3+EJJgLAADzD3+EJIgLAADzD3+EJHgLAADzD3+EJGgLAADzD3+EJFgLAADzD3+EJEgLAADzD3+EJDgLAADzD3+EJCgLAADzD3+EJBgLAADzD3+EJAgLAADzD3+EJPgKAADzD3+EJOgKAADzD3+EJNgKAADzD3+EJMgKAADzD3+EJLgKAADzD3+EJKgKAADzD3+EJJgKAADzD3+EJIgKAADzD3+EJHgKAADzD3+EJGgKAADzD3+EJFgKAADzD3+EJEgKAADzD3+EJDgKAADzD3+EJCgKAADzD3+EJBgKAADzD3+EJAgKAADzD3+EJPgJAADzD3+EJOgJAADzD3+EJNgJAADzD3+EJMgJAADzD3+EJLgJAADzD3+EJKgJAADzD3+EJJgJAADzD3+EJIgJAADzD3+EJHgJAADzD3+EJGgJAADzD3+EJFgJAADzD3+EJEgJAADzD3+EJDgJAADzD3+EJCgJAADzD3+EJBgJAADzD3+EJAgJAADzD3+EJPgIAADzD3+EJOgIAADzD3+EJNgIAADzD3+EJMgIAADzD3+EJLgIAADzD3+EJKgIAADzD3+EJJgIAADzD3+EJIgIAADzD3+EJHgIAADzD3+EJGgIAADzD3+EJFgIAADzD3+EJEgIAADzD3+EJDgIAADzD3+EJCgIAADzD3+EJBgIAADzD3+EJAgIAADzD3+EJPgHAADzD3+EJOgHAADzD3+EJNgHAADzD3+EJMgHAADzD3+EJLgHAADzD3+EJKgHAADzD3+EJJgHAADzD3+EJIgHAADzD3+EJHgHAADzD3+EJGgHAADzD3+EJFgHAADzD3+EJEgHAADzD3+EJDgHAADzD3+EJCgHAADzD3+EJBgHAADzD3+EJAgHAADzD3+EJPgGAADzD3+EJOgGAADzD3+EJNgGAADzD3+EJMgGAADzD3+EJLgGAADzD3+EJKgGAADzD3+EJJgGAADzD3+EJIgGAADzD3+EJHgGAADzD3+EJGgGAADzD3+EJFgGAADzD3+EJEgGAADzD3+EJDgGAADzD3+EJCgGAADzD3+EJBgGAADzD3+EJAgGAADzD3+EJPgFAADzD3+EJOgFAADzD3+EJNgFAADzD3+EJMgFAADzD3+EJLgFAADzD3+EJKgFAADzD3+EJJgFAADzD3+EJIgFAADzD3+EJHgFAADzD3+EJGgFAADzD3+EJFgFAADzD3+EJEgFAADzD3+EJDgFAADzD3+EJCgFAADzD3+EJBgFAADzD3+EJAgFAADzD3+EJPgEAADzD3+EJOgEAADzD3+EJNgEAADzD3+EJMgEAADzD3+EJLgEAADzD3+EJKgEAADzD3+EJJgEAADzD3+EJIgEAADzD3+EJHgEAADzD3+EJGgEAADzD3+EJFgEAADzD3+EJEgEAADzD3+EJDgEAADzD3+EJCgEAADzD3+EJBgEAADzD3+EJAgEAADzD3+EJPgDAADzD3+EJOgDAADzD3+EJNgDAADzD3+EJMgDAADzD3+EJLgDAADzD3+EJKgDAADzD3+EJJgDAADzD3+EJIgDAADzD3+EJHgDAADzD3+EJGgDAADzD3+EJFgDAADzD3+EJEgDAADzD3+EJDgDAADzD3+EJCgDAADzD3+EJBgDAADzD3+EJAgDAADzD3+EJPgCAADzD3+EJOgCAADzD3+EJNgCAADzD3+EJMgCAADzD3+EJLgCAADzD3+EJKgCAADzD3+EJJgCAADzD3+EJIgCAADzD3+EJHgCAADzD3+EJGgCAADzD3+EJFgCAADzD3+EJEgCAADzD3+EJDgCAADzD3+EJCgCAADzD3+EJBgCAADzD3+EJAgCAADzD3+EJPgBAADzD3+EJOgBAADzD3+EJNgBAADzD3+EJMgBAADzD3+EJLgBAADzD3+EJKgBAADzD3+EJJgBAADzD3+EJIgBAADzD3+EJHgBAADzD3+EJGgBAADzD3+EJFgBAADzD3+EJEgBAADzD3+EJDgBAADzD3+EJCgBAADzD3+EJBgBAADzD3+EJAgBAADzD3+EJPgAAADzD3+EJOgAAADzD3+EJNgAAADzD3+EJMgAAADzD3+EJLgAAADzD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJAgPAABIjWQkCInAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_aes_encrypt_blocks = sym super::aes::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
-        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
-        vg_aes_ctr32 = sym super::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_encrypt_blocks = sym super::aes_gcm_siv::vg_aes_encrypt_blocks::vg_aes_encrypt_blocks,
+        vg_aes_expand_key_scratch = sym super::aes_gcm_siv::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_aes_ctr32 = sym super::aes_gcm_siv::vg_aes_ctr32::vg_aes_ctr32,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
     )
 }
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32.rs"]
+pub(crate) mod vg_aes_ctr32;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_aesni.rs"]
+pub(crate) mod vg_aes_ctr32_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_vaes.rs"]
+pub(crate) mod vg_aes_ctr32_vaes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_encrypt_blocks.rs"]
+pub(crate) mod vg_aes_encrypt_blocks;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_encrypt_blocks_aesni.rs"]
+pub(crate) mod vg_aes_encrypt_blocks_aesni;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_encrypt_blocks_vaes.rs"]
+pub(crate) mod vg_aes_encrypt_blocks_vaes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_expand_key_scratch.rs"]
+pub(crate) mod vg_aes_expand_key_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_expand_key_scratch_aesni.rs"]
+pub(crate) mod vg_aes_expand_key_scratch_aesni;
 
 #[rustfmt::skip]
 #[path = "internal/vg_ghash.rs"]
