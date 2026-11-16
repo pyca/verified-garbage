@@ -298,6 +298,12 @@ round's (`roundPub`), and the candidate. -/
 def publicRoundPub (s t : State) : Prop :=
   VG.Proof.MillerRabin.AArch64.roundPub s t ∧ candidateOf s = candidateOf t
 
+/-- The shared round's contract, with the candidate public too. -/
+def publicRoundContract : Contract isa where
+  pre := VG.Proof.MillerRabin.AArch64.roundPre
+  post := VG.Proof.MillerRabin.AArch64.roundPost
+  pub := publicRoundPub
+
 private def coreSpace (s : State) : VG.Proof.Bignum.AArch64.Ws :=
   ⟨s.gpr .x0, (s.gpr .x1).toNat * 8, Proof.Rsa.Mont.wOf s.mem (s.gpr .x0)⟩
 
