@@ -18,6 +18,8 @@ namespace VG
 
 materialize_code Impl.Seed.AArch64.serialCrypt
 materialize_code Impl.Seed.AArch64.serialDecrypt
+materialize_code Impl.Seed.AArch64.ecbEncrypt
+materialize_code Impl.Seed.AArch64.ecbDecrypt
 materialize_code Impl.Seed.AArch64.cbcEncryptChained
 materialize_code Impl.Seed.AArch64.cbcDecryptChained
 materialize_code Impl.Seed.AArch64.ofb

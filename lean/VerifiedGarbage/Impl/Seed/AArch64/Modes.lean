@@ -4,9 +4,16 @@ public import VerifiedGarbage.Impl.Seed.AArch64.Ecb
 public import VerifiedGarbage.Impl.Seed.AArch64.Serial
 public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
 public import VerifiedGarbage.Impl.Modes.AArch64.CfbDec
+public import VerifiedGarbage.Impl.Modes.AArch64.Ecb
 
 /-!
-# SEED-CBC, -OFB and -CFB128 on AArch64
+# SEED-CBC, -OFB and -CFB128 on AArch64, and ECB's calls
+
+`ecbEncrypt` and `ecbDecrypt` (schedule = x0, data = x1, n = x2,
+scratch = x3) are `vg_seed_ecb_{en,de}crypt` within the frame of their
+working space: a call of the batch's code (`ecbCall`), or for fewer than
+seven blocks the modes' generic ECB over the one-block core
+(`ecbShort`, `Impl/Modes/AArch64/Ecb.lean`).
 
 `cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt` and
 `cfbDecrypt` (schedule = x0, iv = x1, data = x2, n = x3, scratch = x4): the
@@ -115,6 +122,24 @@ def serialDirCore (d : Direction) : Impl.Modes.AArch64.Core where
 /-- SEED encryption's core for the modes whose blocks each need the one
 before. -/
 abbrev serialCore : Impl.Modes.AArch64.Core := serialDirCore .encrypt
+
+/-- ECB of a few blocks, one at a time: the modes' generic ECB over the
+one-block core (schedule = x0, data = x1, n = x2, scratch = x3). -/
+def ecbShort (d : Direction) : Prog isa := (serialDirCore d).ecb .x1 .x2 .x3
+
+/-- `vg_seed_ecb_{en,de}crypt` within its frame, which allocates the working
+space at `x3`: fewer than seven blocks one at a time, which a batch does not
+beat (`(n + 1) / 8` is zero; `n + 1` wraps only for an `n` no buffer has,
+and either way is correct for any `n`); otherwise the batches' call. -/
+def ecbFew (d : Direction) : Prog isa :=
+  .seq (.block [.addImm .x .x13 .x2 1, .lsr .x .x13 .x13 3])
+    (.ite (.zero .x .x13) (ecbShort d) (ecbCall d))
+
+/-- `vg_seed_ecb_encrypt` within its frame. -/
+def ecbEncrypt : Prog isa := ecbFew .encrypt
+
+/-- `vg_seed_ecb_decrypt` within its frame. -/
+def ecbDecrypt : Prog isa := ecbFew .decrypt
 
 /-- SEED encryption's core for CBC encryption and the feedback modes. -/
 abbrev fbCore : Impl.Modes.AArch64.Core := serialCore

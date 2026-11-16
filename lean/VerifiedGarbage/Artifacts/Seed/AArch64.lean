@@ -17,10 +17,10 @@ def artifacts : List Artifact := [
     code := Impl.StackScratch.AArch64.withStackScratchWiped 976 .x2 122 Impl.Seed.AArch64.expandKey
     verified := Proof.Seed.AArch64.expandKey_framed },
   Spec.Seed.ecbEncryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1088 .x3 136 (Impl.Seed.AArch64.ecbCall .encrypt)
-    verified := Proof.Seed.AArch64.ecbCall_framed .encrypt },
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x3 182 Impl.Seed.AArch64.ecbEncrypt
+    verified := Proof.Seed.AArch64.ecbFew_framed .encrypt },
   Spec.Seed.ecbDecryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1088 .x3 136 (Impl.Seed.AArch64.ecbCall .decrypt)
-    verified := Proof.Seed.AArch64.ecbCall_framed .decrypt }]
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x3 182 Impl.Seed.AArch64.ecbDecrypt
+    verified := Proof.Seed.AArch64.ecbFew_framed .decrypt }]
 
 end VG.Artifacts.Seed.AArch64
