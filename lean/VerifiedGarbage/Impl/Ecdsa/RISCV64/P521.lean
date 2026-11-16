@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyComb
 public import VerifiedGarbage.Impl.Ecdh.P521.RISCV64
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.CombU
 public import VerifiedGarbage.Impl.Ecdh.RISCV64.Shr
@@ -23,8 +23,9 @@ them.
 `vg_ecdsa_p521_verify`: P-256's and P-384's (`Impl/Ecdsa/RISCV64/Verify.lean`)
 on P-521's slots and functions, with the key's coordinates, `r`, `s` and the
 digest's 66 bytes read by `loadLen`, `e` the digest's leftmost 521 bits,
-their number shifted right by 7 bits (`shrWords`), and `r mod n` by
-multiplications (`compareP521`).
+their number shifted right by 7 bits (`shrWords`), `[u]G + [v]Q` by the comb
+and windows (`VerifyComb.Cfg.joint`: `vg_p521_mul_g` and `vg_p521_mul`, then
+one complete addition), and `r mod n` by multiplications (`compareP521`).
 -/
 
 @[expose] public section
@@ -86,7 +87,7 @@ def verifyP521 : Prog isa :=
   .seq (Cfg.wsCall "vg_p521_check_point" checkP521) <|
   .seq (.block ((Sign.Cfg.nConsts p521).flatMap (fun (i, x) => setConst 9 (p521.sl i) x))) <|
   .seq (Verify.Cfg.uv p521 p521Order) <|
-  .seq (VerifyJ.Cfg.joint p521 Impl.Weierstrass.dblJ) <|
+  .seq (VerifyComb.Cfg.joint p521 "vg_p521_mul" mulP521 CombU.mulGP521Name CombU.mulGP521) <|
   .seq (chainPow (Cfg.chainP p521) (p521.sl ONEP) p521.FP) <|
   .seq (Cfg.affineCoord p521 XM XO RX) <|
   .seq compareP521 (.block (Verify.Cfg.finish p521))
