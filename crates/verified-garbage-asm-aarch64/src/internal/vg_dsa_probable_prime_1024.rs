@@ -516,7 +516,7 @@ cbnz x14, 270b
 cbnz x14, 271b
 .inst 0xf9403c02,0xf9401803,0xd37df063,0x8b030042,0xf9000053,0xf900045e,0x91000013,0xf9401801
 .inst 0x91000821,0xd2800384,0x9b047c21,0x91008021
-bl {vg_miller_rabin_round}
+bl {vg_dsa_miller_rabin_round}
 .inst 0x11000003,0x91000260,0xd2800004,0xcb030083,0xf9005c03,0xf9403c02,0xf9401803,0xd37df063
 .inst 0x8b030042,0xf940045e,0xf9400053,0xf9405c03
 cbz x3, 272f
@@ -537,6 +537,6 @@ cbz x3, 248b
 .inst 0xf9406c03,0xf94047e4,0xf9000083,0xf9407c00,0xd341fc03,0xcb030000,0x910443ff,0xd65f03c0
 .p2align 6",
         vg_rsa_square_4_4 = sym crate::rsa::vg_rsa_square_4_4::vg_rsa_square_4_4,
-        vg_miller_rabin_round = sym crate::dsa::vg_miller_rabin_round::vg_miller_rabin_round,
+        vg_dsa_miller_rabin_round = sym crate::dsa::vg_dsa_miller_rabin_round::vg_dsa_miller_rabin_round,
     )
 }

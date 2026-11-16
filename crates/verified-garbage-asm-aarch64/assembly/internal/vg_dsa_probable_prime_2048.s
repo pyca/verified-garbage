@@ -2636,7 +2636,7 @@ vg_dsa_probable_prime_2048:
 	movz x4, #28, lsl #0
 	mul x1, x1, x4
 	add x1, x1, #32
-	bl {vg_miller_rabin_round}
+	bl {vg_dsa_miller_rabin_round}
 	add w3, w0, #0
 	add x0, x19, #0
 	movz x4, #0, lsl #0

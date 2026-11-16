@@ -7473,6 +7473,10 @@ pub(crate) mod vg_dsa_generator_2048;
 pub(crate) mod vg_dsa_generator_3072;
 
 #[rustfmt::skip]
+#[path = "internal/vg_dsa_miller_rabin_round.rs"]
+pub(crate) mod vg_dsa_miller_rabin_round;
+
+#[rustfmt::skip]
 #[path = "internal/vg_dsa_probable_prime_1024.rs"]
 pub(crate) mod vg_dsa_probable_prime_1024;
 
@@ -7495,7 +7499,3 @@ pub(crate) mod vg_dsa_probable_prime_3072;
 #[rustfmt::skip]
 #[path = "internal/vg_dsa_sign_prevalidated.rs"]
 pub(crate) mod vg_dsa_sign_prevalidated;
-
-#[rustfmt::skip]
-#[path = "internal/vg_miller_rabin_round.rs"]
-pub(crate) mod vg_miller_rabin_round;

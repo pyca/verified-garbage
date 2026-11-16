@@ -618,6 +618,6 @@ b 22f
 .inst 0xd65f03c0
 .p2align 6",
         vg_rsa_square_4_4 = sym crate::rsa::vg_rsa_square_4_4::vg_rsa_square_4_4,
-        vg_miller_rabin_round = sym crate::dsa::vg_miller_rabin_round::vg_miller_rabin_round,
+        vg_miller_rabin_round = sym crate::ffdh::vg_miller_rabin_round::vg_miller_rabin_round,
     )
 }
