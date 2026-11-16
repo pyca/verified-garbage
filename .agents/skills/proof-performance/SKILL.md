@@ -105,7 +105,16 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   were most of the 0.8 ms a plain instruction took in the residue analysis.
   Give what several matches computed by one, with the patterns of all of
   them, and prove it equal to the function it replaces by cases
-  (`RTaint.stepFn1`, `stepFn1_eq`, `Proof/Framework/X86_64/`). So `spSafe`
+  (`RTaint.stepFn1`, `stepFn1_eq`, `Proof/Framework/X86_64/`). The one
+  match that is left still costs a third of a millisecond: Lean compiles
+  it to a matcher, a function of the instruction and of the alternatives,
+  and unfolding it builds a term of every case around the alternatives to
+  keep one. `inline_match% f g …` (`Proof/Framework/X86_64/Taint.lean`) is
+  `f` as a `casesOn` whose cases are closed terms, with the matches of `f`
+  and of the functions `g …` it applies to the instruction resolved in
+  each (`stepKeepFnK`, `RTaint.stepFn1K`; equal to `f` by cases and
+  `rfl`): the kernel evaluates such a function at every instruction it has
+  not met before. So `spSafe`
   on x86 and x86-64 is checked with the ISA's `keepsSp`
   (`Proof/Framework/<ISA>/Taint.lean`), one match that compares the
   constructor's index, and `Code.all_of_spTest` (`SpTest`,
@@ -113,6 +122,42 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   it: write `Code.all_of_spTest (by lit_decide)`, as `sp_safe` does, not
   `Code.all_of_allInstrs (by lit_decide)`, which tests `!isa.writesSp i`
   and takes twice as long for each instruction.
+* **An analysis the kernel finds again:** the kernel evaluates a term when
+  it is read, and remembers the value of every term it has evaluated, by
+  the term. An analysis whose states are terms yet to be evaluated
+  (`{ τ with regs := τ.regs.erase d }`, a term in the state before) never
+  meets the same state twice; one whose states are evaluated finds again
+  every step it has made from the same state, one lookup where a step is a
+  hundred unfoldings, and code repeats itself far more than it looks
+  (inlined field arithmetic: 85% of the steps of the residue analysis of
+  brainpoolP512r1's ECDH on x86-64, whose check went from 23.8 s to 4.9 s).
+  So a step function the kernel evaluates
+  (`Proof/Framework/X86_64/Taint.lean`, `ResidueTaint.lean`):
+  * gives a state that is evaluated: what it computed is forced before the
+    state is built, in control flow, and the state built of the values
+    (`Taint.forceT`: a set of registers by `forceRegs`, which hands on a
+    numeral, a `Bool` by `casesOn`; `forceList` for a list's first cell);
+  * hands on the fields it does not change as the terms they were:
+    destructure the state (`match τ with | ⟨rg, f, l, b, sl, lo, x⟩ =>`)
+    rather than project or update it (`{ τ with … }` makes every field a
+    term in `τ`), and decide whether a field changes before building the
+    state (`keepBases`, `storeR`), not in the field: a field that is a term
+    evaluating to the old field's term is unfolded again, with every such
+    term below it, at each later read through a state the kernel has not
+    read it through, since the kernel remembers the value of the term it
+    was asked for and not of those it passed through (37 unfoldings of the
+    slots for each store of that check);
+  * never rebuilds a list it does not change (`killK`, a filter of the
+    known bases at every instruction, cost 0.25 ms of CI for each base at
+    each instruction): test first (`noBase b d`, which the kernel
+    evaluates once for a list and a register);
+  * has the literal states of its hints written as its steps leave them
+    (`Taint.T`'s `ToExpr` writes the sets' bits as raw numerals), so that
+    the kernel finds again after a hint what it evaluated before it;
+  * is proven equal to the function it replaces (`stepKeep_eq`,
+    `stepF_eq`), which stays the one the soundness proofs are about.
+  What is left is the instructions the kernel meets for the first time:
+  see the next entry.
 * **Code the kernel evaluates:** code built by functions (unrolled
   compression functions, and the functions calling them) is rebuilt by the
   kernel in every check that evaluates it (constant time, `spSafe`, …), in

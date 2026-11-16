@@ -38,8 +38,8 @@ namespace Taint
 def AgreeS (L : List String) (τ : T) (s₁ s₂ : State) : Prop :=
   Agree τ s₁ s₂ ∧ ∀ n ∈ L, s₁.syms n = s₂.syms n
 
-/-- `stepKD`, with the address of a static of `L` public. -/
-def stepS (L : List String) (τ : T) (i : Instr) : Option T := stepKD τ (i.symMov L)
+/-- `stepKeep`, with the address of a static of `L` public. -/
+def stepS (L : List String) (τ : T) (i : Instr) : Option T := stepKeep τ (i.symMov L)
 
 theorem stepS_sound {L : List String} {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
     (ha : AgreeS L τ s₁ s₂) (hs : stepS L τ i = some τ') (e₁ : exec i s₁ = some s₁')

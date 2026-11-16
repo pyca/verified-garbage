@@ -432,7 +432,10 @@ lemmas and tactics to use; read it before writing a proof:
   (`NoSp.spSafe`): never evaluate a wrapper with the code it calls. A
   function evaluated at every instruction matches on the instruction once
   (`spSafe` on x86 and x86-64 by `Code.all_of_spTest`, not
-  `Code.all_of_allInstrs`).
+  `Code.all_of_allInstrs`), with its cases closed (`inline_match%`). An
+  analysis's step gives a state that is evaluated, whose fields it does
+  not change are the terms they were (`Taint.forceT`, `keepBases`): the
+  kernel then finds again a step it has made from the same state.
 * **Arithmetic side conditions:** finite facts by one `decide` on the
   bounded statement, not `interval_cases`; nested `if`s with
   `↓ite_eq_left`/`↓ite_eq_right`; ranges at offsets with `VG.Offset`, not
