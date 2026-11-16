@@ -34,7 +34,7 @@ group loop (`Group.lean`) do the rest.
 
 This is the bitsliced code, `ctr32Gen` (`correct`): the internal
 `vg_aes_ctr32_to`, and `vg_aes_ctr32` but for one block, which it encrypts
-by table lookups (`OneBlock.lean`).
+by vector permutations (`OneBlock.lean`).
 -/
 
 @[expose] public section

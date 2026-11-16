@@ -48,15 +48,15 @@ def decGroup : Prog isa :=
       (.seq encrypt8
         (.seq (xorFrom false 7 0) (.seq (.block [.strq .v31 .x2 0]) advance))))
 
-/-- One block: the block at `iv` enciphered by table lookups
-(`OneBlock.core`), XORed with the ciphertext block into the data, and the
+/-- One block: the block at `iv` enciphered by vector permutations
+(`Vperm.core`), XORed with the ciphertext block into the data, and the
 ciphertext block stored to `iv`. -/
 def decOne : Prog isa :=
   .seq (.block [.ldrq .v0 .x2 0])
-    (.seq Impl.Aes.AArch64.OneBlock.core
+    (.seq Impl.Aes.AArch64.Vperm.core
       (.block [.ldrq .v1 .x3 0, veor .v0 .v0 .v1, .strq .v0 .x3 0, .strq .v1 .x2 0]))
 
-/-- `vg_aes_cfb128_decrypt_neon`: one block by table lookups, as the generic
+/-- `vg_aes_cfb128_decrypt_neon`: one block by vector permutations, as the generic
 code decrypts it, any other number of blocks bitsliced. -/
 def decrypt : Prog isa :=
   .seq (.block [.subImm .x .x6 .x4 1])

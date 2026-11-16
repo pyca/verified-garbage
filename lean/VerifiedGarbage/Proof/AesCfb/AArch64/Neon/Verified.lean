@@ -456,14 +456,14 @@ theorem decOne_wp {s : State} (hp : UPre s) (hN : (s.gpr .x4).toNat = 1) :
     rw [v_setV_self, BitVec.add_zero]
     rfl
   -- The cipher.
-  refine WP.seq (WP.mono (Proof.Aes.AArch64.OneBlock.core_ok (s := a) (K := W s) (R := R s)
+  refine WP.seq (WP.mono (Proof.Aes.AArch64.Vperm.core_ok (s := a) (K := W s) (R := R s)
     (by show _ ∈ s.rd; rw [hp.rd]; simp) rfl (by
       show s.gpr .x1 = _
       rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]) hp.rounds) fun b ⟨bst, bg, bm, brd, bwr, _⟩ => ?_)
   have b2 : b.gpr .x2 + BitVec.ofNat 64 0 = Iv s := by
-    rw [BitVec.add_zero]; exact bg _ (by decide) (by decide) (by decide) (by decide)
+    rw [BitVec.add_zero]; exact bg _ (by decide) (by decide) (by decide)
   have b3 : b.gpr .x3 + BitVec.ofNat 64 0 = Dp s := by
-    rw [BitVec.add_zero]; exact bg _ (by decide) (by decide) (by decide) (by decide)
+    rw [BitVec.add_zero]; exact bg _ (by decide) (by decide) (by decide)
   have hm : b.mem = s.mem := bm
   have hinD : InRegions b.wr (b.gpr .x3 + BitVec.ofNat 64 0) 16 := by
     rw [b3, bwr]

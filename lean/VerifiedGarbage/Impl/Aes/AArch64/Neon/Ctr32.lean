@@ -73,7 +73,7 @@ def ctr32Gen (to : Bool) : Prog isa :=
         (.seq (.loop (.block keyBody) (.nonzero .x kp)) (.loop (ctrGroup to) (.nonzero .x .x4))))
       (.block ctrStore))
 
-/-- `vg_aes_ctr32_neon`: nothing for no block, one block by table lookups,
+/-- `vg_aes_ctr32_neon`: nothing for no block, one block by vector permutations,
 any other number of blocks bitsliced. -/
 def ctr32N : Prog isa :=
   .ite (.zero .x .x4) (.block [])

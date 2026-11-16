@@ -24,7 +24,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 # AES on whole blocks on AArch64: the whole functions
 
 `vg_aes_decrypt_blocks` and the bitsliced code of `vg_aes_encrypt_blocks`
-(which encrypts one block by table lookups: `OneBlock.lean`) are `blocks`
+(which encrypts one block by vector permutations: `OneBlock.lean`) are `blocks`
 around `decrypt4` and `encrypt4`, and are proven at once, for any
 transformation of four blocks with `CryptOk` (`correct_blocks`): the
 prologue moves the arguments where `vg_aes_ctr32` has them, saves the
