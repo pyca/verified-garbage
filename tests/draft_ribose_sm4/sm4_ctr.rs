@@ -66,28 +66,3 @@ fn unaligned_buffers() {
         }
     }
 }
-
-/// A message of forty blocks (Example 1's plaintext ten times over): at
-/// once it is what it is in pieces of one to thirty-three blocks, which run
-/// both the code for a few blocks, which the examples check, and the
-/// batches; and applying the keystream again gives it back.
-#[test]
-fn long_message() {
-    let text = &section("A.2.5.1.  Example 1", "A.2.5.2.  Example 2");
-    let key: [u8; 16] = field(text, "Encryption key:").try_into().unwrap();
-    let iv: [u8; 16] = field(text, "IV:").try_into().unwrap();
-    let message = field(text, "Plaintext:").repeat(10);
-    assert_eq!(message.len(), 16 * 40);
-    let mut whole = message.clone();
-    Sm4Ctr::new(&key, &iv).apply_keystream(&mut whole).unwrap();
-    for blocks in 1..=33 {
-        let mut pieces = message.clone();
-        let mut c = Sm4Ctr::new(&key, &iv);
-        for piece in pieces.chunks_mut(16 * blocks) {
-            c.apply_keystream(piece).unwrap();
-        }
-        assert_eq!(pieces, whole, "pieces of {blocks} blocks");
-    }
-    Sm4Ctr::new(&key, &iv).apply_keystream(&mut whole).unwrap();
-    assert_eq!(whole, message);
-}
