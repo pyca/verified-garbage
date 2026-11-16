@@ -907,7 +907,7 @@ others. -/
 def sealWReg (v : GcmVariant) : Registration Spec.Gcm.sealPreparedApi X86_64.target :=
   if v.impl.suffix = aesNiPclmulV.impl.suffix then sealWAesniPclmul else sealWPlain v
 
-/-! ## `vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul` -/
+/-! ## `vg_aes_gcm_stream_encrypt_prepared` and `_decrypt_prepared`, clearing by path -/
 
 /-- `vg_aes_gcm_stream_encrypt_prepared` of a variant whose loops read only
 the key context: for the variant on AES-NI and PCLMULQDQ, whose callees never
@@ -926,6 +926,51 @@ def streamEncryptWReg (v : GcmVariant) : Registration Spec.Gcm.streamEncryptPrep
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.impl.callees)
     verified := VG.Proof.AesGcm.Flag.streamEncrypt_keyed (Flag.streamEncrypt_of_base (streamEncrypt_framed v.impl))
     spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v.impl) }
+
+/-- `vg_aes_gcm_stream_decrypt_prepared` of a variant whose loops read only
+the key context, as `streamEncryptWReg`. -/
+def streamDecryptWReg (v : GcmVariant) : Registration Spec.Gcm.streamDecryptPreparedApi X86_64.target :=
+  if v.impl.suffix = aesNiPclmulV.impl.suffix then {
+    suffix := v.impl.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+      (Impl.AesGcm.X86_64.streamDecryptClr v.impl.callees .sse)
+    verified := VG.Proof.AesGcm.Flag.streamDecrypt_keyed
+      (Flag.streamDecrypt_of_base (streamDecryptClrB_framed .sse v.impl v.impl.blkB))
+    spSafe := streamDecryptClr_spSafe .sse v.impl v.impl.blkB }
+  else {
+    suffix := v.impl.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt v.impl.callees)
+    verified := VG.Proof.AesGcm.Flag.streamDecrypt_keyed (Flag.streamDecrypt_of_base (streamDecrypt_framed v.impl))
+    spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl) }
+
+/-- `vg_aes_gcm_stream_decrypt_prepared` of a variant whose loops read 16
+powers: by the count, its code on them or its code on the key context; where
+`GcmVariant.streamF16Clr` says so, both clearing the registers after each
+call (`streamDecryptClr`, at the level of 256-bit registers). -/
+def streamDecryptR16Reg (v : GcmVariant) : Registration Spec.Gcm.streamDecryptPreparedApi X86_64.target :=
+  if v.streamF16Clr then {
+    suffix := v.impl.suffix
+    code := Impl.Gcm.X86_64.Flag.onFlag 16
+      (Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+        (Impl.AesGcm.X86_64.streamDecryptClr (v.impl.withBlk (blkR16 v)) .avx))
+      (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr v.impl.callees .avx))
+    verified := VG.Proof.AesGcm.Flag.streamDecrypt_keyed (Flag.streamDecrypt_onFlag16
+      (streamDecryptClr16_framed .avx v.impl (blkR16 v))
+      (streamDecryptClrB_framed .avx v.impl v.impl.blkB))
+    spSafe := VG.X86_64.onFlag_spSafe (streamDecryptClr_spSafe .avx v.impl (blkR16 v))
+      (streamDecryptClr_spSafe .avx v.impl v.impl.blkB) }
+  else {
+    suffix := v.impl.suffix
+    code := Impl.Gcm.X86_64.Flag.onFlag 16
+      (Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+      (Impl.AesGcm.X86_64.streamDecrypt (v.impl.withBlk (blkR16 v))))
+      (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt v.impl.callees))
+    verified := VG.Proof.AesGcm.Flag.streamDecrypt_keyed (Flag.streamDecrypt_onFlag16
+      (streamDecryptPrepared16_framed v.impl (blkR16 v))
+      (streamDecrypt_framed v.impl))
+    spSafe := VG.X86_64.onFlag_spSafe
+      (X86_64.withStackArgScratch_spSafe (streamDecryptM_spSafe v.impl (blkR16 v)))
+      (X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl)) }
 
 /-! ## `vg_aes_gcm_open_prepared_aesni_pclmul` -/
 
