@@ -28,7 +28,4 @@ def lay1024 : Impl.MlKem.AArch64.KemLay where
   ddName := "vg_mlkem1024_decode_decompress"
   dd := decodeDecompress
 
-abbrev kgAWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay1024.kgAWith c
-abbrev kgCWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay1024.kgCWith c
-abbrev keyGenWith (c : Impl.Sha3.AArch64.Callee) : Prog isa := lay1024.keyGenWith c
 end VG.Impl.MlKem1024.AArch64

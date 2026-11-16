@@ -11,7 +11,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Syms
 
 `paired_step3`: a pair of the matrix of a function with the layout `L` that
 absorbs the next three blocks of a message into the third state
-(`Hybrid.pair3`) keeps the paired matrix's invariant (`Kem.BInv`, here from
+(`Hybrid.pair3`) keeps the paired matrix's invariant (`Kem.BInvW`, here from
 the memory each step starts in, with the writes since the matrix began framed
 by `bW3`), and the state the hash of the message `M` is squeezed from in
 `scratch`'s first 200 bytes (`HInv.hash`): `ek` for encapsulation's `H(ek)`,

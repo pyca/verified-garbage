@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashDecaps
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ops16
 public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
 public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
-import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
+import VerifiedGarbage.Impl.MlKem.AArch64.Kem
 
 /-! # AArch64 ML-KEM with 16-bit coefficients
 
@@ -30,7 +30,7 @@ rows (`kgTail`).
 @[expose] public section
 namespace VG.Impl.MlKem.AArch64.Kem16
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KEM
-open VG.Impl.MlKem.AArch64.Noise (noiseOff noiseAllWith)
+open VG.Impl.MlKem.AArch64.Noise (noiseOff)
 open VG.Impl.MlKem.AArch64.Ntt16.Readonly (nttAtWithW nttInvAtWithW)
 
 /-- Row `i` of `u`: `NTT⁻¹(Σⱼ Âⱼᵢ ∘ ŷⱼ) + e₁[i]`, widened, compressed and encoded. -/

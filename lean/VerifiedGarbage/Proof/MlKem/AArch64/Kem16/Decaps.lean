@@ -47,11 +47,11 @@ open VG.Spec.Sha3 (bytesAt)
 variable {P : KemLay}
 variable {prf : Nat→Nat→Prog isa}
 
-/-- `cpr` with `Â` stored with 16 bits. -/
+/-- `c'`, with `Â` stored with 16 bits. -/
 abbrev cprW (P : KemLay) (s₀ : State) (mB : Mem) : List Byte :=
   KPke.ct P.params (aMW true P (deL P) s₀ mB) (KPke.dkEk P.params (dkD P s₀)) (mD P s₀) (gD P s₀).2
 
-/-- `Done` with `Â` stored with 16 bits. -/
+/-- What the function leaves, with `Â` stored with 16 bits. -/
 structure DoneW (P : KemLay) (s₀ : State) (mB : Mem) (v : BitVec 64) (s : State) : Prop where
   abi : abiPreserved s₀ s
   x0 : s.gpr .x0 = v

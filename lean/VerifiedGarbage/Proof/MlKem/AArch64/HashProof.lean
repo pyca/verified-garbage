@@ -172,12 +172,6 @@ theorem mem6 {α : Type} {a b c d e f x : α} (h : x ∈ [a, b, c, d, e, f]) :
   · exact .inl h
   · exact .inr (mem5 h)
 
-theorem mem7 {α : Type} {a b c d e f g x : α} (h : x ∈ [a, b, c, d, e, f, g]) :
-    x = a ∨ x = b ∨ x = c ∨ x = d ∨ x = e ∨ x = f ∨ x = g := by
-  rcases List.mem_cons.mp h with h | h
-  · exact .inl h
-  · exact .inr (mem6 h)
-
 theorem covers_cons {R : Region} {rs xs : List Region} (h : Covers [R] xs) (h' : Covers rs xs) :
     Covers (R :: rs) xs := fun a n hi => by
   obtain ⟨r, hr, hc⟩ := hi

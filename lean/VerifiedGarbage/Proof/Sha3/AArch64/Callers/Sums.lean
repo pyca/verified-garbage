@@ -13,7 +13,7 @@ summaries of the sponge's functions over a backend's permutation
 (`sponge_taint_summaries`) and of ML-KEM's functions. `checkSum` looks
 neither at the code of a summarized call nor at the names of calls, so each
 caller is checked once for any backend `c` (`taint_decide_generic`,
-`Callers/MlKem.lean`, `Callers/MlDsa.lean`) from the summaries `sums c`, whose
+`Callers/MlDsa.lean`) from the summaries `sums c`, whose
 `pre`, `post` and frame are the same for every backend: each function of the
 sponge from each set of callee-saved registers public at some call, as
 `sponge_taint_summaries ns c saving` states them, ending with the registers
@@ -40,15 +40,12 @@ abbrev squeezeCall (c : Impl.Sha3.AArch64.Callee) : Prog isa :=
 
 /-- ML-KEM's functions' summaries (`MlKemSums`), the same for every backend. -/
 abbrev mlkem : List (Taint.Summary isa VectorTaint.taint.T) :=
-  [Taint.sumOf MlKemSums.ntt, Taint.sumOf MlKemSums.nttInv, Taint.sumOf MlKemSums.mul,
-    Taint.sumOf MlKemSums.add, Taint.sumOf MlKemSums.sub, Taint.sumOf MlKemSums.cbd2,
-    Taint.sumOf MlKemSums.encode12, Taint.sumOf MlKemSums.decode12, Taint.sumOf MlKemSums.ce,
+  [Taint.sumOf MlKemSums.add, Taint.sumOf MlKemSums.sub, Taint.sumOf MlKemSums.ce,
     Taint.sumOf MlKemSums.dd, Taint.sumOf MlKemSums.ce1024, Taint.sumOf MlKemSums.dd1024]
 
 theorem mlkem_ok : Taint.AllOk VectorTaint.taint mlkem :=
-  ⟨MlKemSums.ntt, MlKemSums.nttInv, MlKemSums.mul, MlKemSums.add, MlKemSums.sub, MlKemSums.cbd2,
-    MlKemSums.encode12, MlKemSums.decode12, MlKemSums.ce, MlKemSums.dd, MlKemSums.ce1024,
-    MlKemSums.dd1024, trivial⟩
+  ⟨MlKemSums.add, MlKemSums.sub, MlKemSums.ce, MlKemSums.dd, MlKemSums.ce1024, MlKemSums.dd1024,
+    trivial⟩
 
 /-- The summaries of the sponge's callers' checks, for the backend `c`, in
 `sponge_taint_decide`'s order: each function of the sponge from each set of

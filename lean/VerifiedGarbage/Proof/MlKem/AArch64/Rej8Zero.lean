@@ -8,7 +8,7 @@ import VerifiedGarbage.Proof.Rc4.AArch64.Vec
 
 namespace VG.Proof.MlKem.AArch64.Rej8
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
-open VG.Proof.MlKem.AArch64.Sample (cv cvW)
+open VG.Proof.MlKem.AArch64.Sample (cvW)
 
 def zeroBody (w16 : Bool := false) : List Instr := [.movz .x .x13 0 0,.str .w .x13 .x3 0,
   .addImm .x .x3 .x3 (if w16 then 2 else 4),.subImm .x .x4 .x4 1]

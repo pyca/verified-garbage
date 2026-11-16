@@ -26,8 +26,6 @@ structure PairPostW (w16 : Bool) (A B : Spec.Sha3.State) (p a b : Addr) (s t : S
   status : t.gpr .x24=s.gpr .x24 &&& BitVec.ofNat 64
     (if (accepted A 5).length=256 ∧ (accepted B 5).length=256 then 1 else 0)
 
-abbrev PairPost := PairPostW false
-
 theorem finish_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {initial s : State}
     (hk : Keep pairWorkingRegs initial s) (hm : Frame (stepWrites p a b) initial.mem s.mem)
     (sv : Noise.Saved p initial s.mem) (h : ProgressW w16 A B 3 p a b c s)

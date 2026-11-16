@@ -10,8 +10,10 @@ public import VerifiedGarbage.TCB.AArch64.Target
 
 /-! # The 16-bit key generation's invariants
 
-`CInvW`, `TLW`, `EndInvW` and `DoneW`: `CInv`, `TL`, `EndInv` and `Done` with
-`Â` and `ŝ` stored with 16 bits, over the first `n` entries of `Â`. -/
+With `Â` and `ŝ` stored with 16 bits, over the first `n` entries of `Â`: what
+the computation of `ŝ`, `ê` and `t̂` keeps (`CInvW`: `ρ`, `σ`, `x24`, and `Â` as
+the matrix left it), what holds after `t̂[i']` for `i' < i` (`TLW`) and from
+the copies of `ρ` on (`EndInvW`), and what the function leaves (`DoneW`). -/
 
 @[expose] public section
 

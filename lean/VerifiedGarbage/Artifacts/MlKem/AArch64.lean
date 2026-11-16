@@ -1,15 +1,9 @@
 module
 
 public import VerifiedGarbage.Proof.MlKem.AArch64.CheckEk
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Inv
 public import VerifiedGarbage.Proof.MlKem.AArch64.AddSub
-public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd2
 public import VerifiedGarbage.Proof.MlKem.AArch64.CompressEncode
-public import VerifiedGarbage.Proof.MlKem.AArch64.Decode12
 public import VerifiedGarbage.Proof.MlKem.AArch64.DecodeDecompress
-public import VerifiedGarbage.Proof.MlKem.AArch64.Encode12
-public import VerifiedGarbage.Proof.MlKem.AArch64.Mul
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Fwd
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.MlKem.AArch64.CallWipe
@@ -21,6 +15,17 @@ public import VerifiedGarbage.Proof.Framework.QualifiedName
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CompressEncode
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.DecodeDecompress
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.CheckEk
+public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
+public import VerifiedGarbage.Proof.MlKem.AArch64.NttCommon
+public import VerifiedGarbage.Impl.MlKem.AArch64.Encode
+public import VerifiedGarbage.Proof.MlKem.AArch64.Cbd16.Base
+public import VerifiedGarbage.TCB.AArch64.Target
+public import VerifiedGarbage.Proof.MlKem.AArch64.Codec16.DecBase
+public import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Proof.MlKem.AArch64.Common
+public import VerifiedGarbage.Proof.MlKem.AArch64.Vec
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Vec
 
 /-! # ML-KEM (FIPS 203) on AArch64 -/
 

@@ -63,14 +63,6 @@ theorem squeezeTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0,
   -- From the summary of a call of it.
   Taint.exists_check_of_sumOk_call RSums.squeeze (VG.AArch64.VectorTaint.le_refl _) rfl
 
-theorem sampleFullTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2])
-    (Impl.MlKem.AArch64.sampleSqueezeWith callee) h).isSome = true :=
-  Callers.sampleFullTaint _ callerSums
-
-theorem sampleFastTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2])
-    (Impl.MlKem.AArch64.sampleSqueezeNWith callee 504 (Impl.MlKem.AArch64.sampleRegs 168)) h).isSome = true :=
-  Callers.sampleFastTaint _ callerSums
-
 theorem mldsaNttTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
     (Impl.MlDsa.AArch64.Sample.spongeWith callee 168 1008) h).isSome = true :=
   Callers.mldsaNttTaint _ callerSums
@@ -86,54 +78,6 @@ theorem mldsaBallTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x
 theorem mldsaMaskTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
     (Impl.MlDsa.AArch64.Sample.expandMaskTailWith callee) h).isSome = true :=
   Callers.mldsaMaskTaint _ callerSums
-
-theorem mlkemKgATaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
-    (Impl.MlKem.AArch64.kgAWith callee) h).isSome = true :=
-  Callers.mlkemKgATaint _ callerSums
-
-theorem mlkemKgCTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
-    (Impl.MlKem.AArch64.kgCWith callee) h).isSome = true :=
-  Callers.mlkemKgCTaint _ callerSums
-
-theorem mlkemEnATaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-    (Impl.MlKem.AArch64.enAWith callee) h).isSome = true :=
-  Callers.mlkemEnATaint _ callerSums
-
-theorem mlkemEnCTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
-    (Impl.MlKem.AArch64.enCWith callee) h).isSome = true :=
-  Callers.mlkemEnCTaint _ callerSums
-
-theorem mlkemDeATaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
-    (Impl.MlKem.AArch64.deAWith callee) h).isSome = true :=
-  Callers.mlkemDeATaint _ callerSums
-
-theorem mlkemDeCTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
-    (Impl.MlKem.AArch64.deCWith callee) h).isSome = true :=
-  Callers.mlkemDeCTaint _ callerSums
-
-theorem mlkem1024KgATaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
-    (Impl.MlKem1024.AArch64.kgAWith callee) h).isSome = true :=
-  Callers.mlkem1024KgATaint _ callerSums
-
-theorem mlkem1024KgCTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
-    (Impl.MlKem1024.AArch64.kgCWith callee) h).isSome = true :=
-  Callers.mlkem1024KgCTaint _ callerSums
-
-theorem mlkem1024EnATaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4])
-    (Impl.MlKem1024.AArch64.enAWith callee) h).isSome = true :=
-  Callers.mlkem1024EnATaint _ callerSums
-
-theorem mlkem1024EnCTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
-    (Impl.MlKem1024.AArch64.enCWith callee) h).isSome = true :=
-  Callers.mlkem1024EnCTaint _ callerSums
-
-theorem mlkem1024DeATaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
-    (Impl.MlKem1024.AArch64.deAWith callee) h).isSome = true :=
-  Callers.mlkem1024DeATaint _ callerSums
-
-theorem mlkem1024DeCTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
-    (Impl.MlKem1024.AArch64.deCWith callee) h).isSome = true :=
-  Callers.mlkem1024DeCTaint _ callerSums
 
 theorem mldsaSeedsTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x28])
     (Impl.MlDsa.AArch64.KeyGen.shake256With callee [⟨.x25, 0, 32⟩, ⟨.x28, 896, 2⟩] [⟨.x28, 1024, 128⟩]) h).isSome = true :=
@@ -179,24 +123,10 @@ def backend : Permutation where
   absorbTaint := absorbTaint
   padTaint := padTaint
   squeezeTaint := squeezeTaint
-  sampleFullTaint := sampleFullTaint
-  sampleFastTaint := sampleFastTaint
   mldsaNttTaint := mldsaNttTaint
   mldsaBoundedTaint := mldsaBoundedTaint
   mldsaBallTaint := mldsaBallTaint
   mldsaMaskTaint := mldsaMaskTaint
-  mlkemKgATaint := mlkemKgATaint
-  mlkemKgCTaint := mlkemKgCTaint
-  mlkemEnATaint := mlkemEnATaint
-  mlkemEnCTaint := mlkemEnCTaint
-  mlkemDeATaint := mlkemDeATaint
-  mlkemDeCTaint := mlkemDeCTaint
-  mlkem1024KgATaint := mlkem1024KgATaint
-  mlkem1024KgCTaint := mlkem1024KgCTaint
-  mlkem1024EnATaint := mlkem1024EnATaint
-  mlkem1024EnCTaint := mlkem1024EnCTaint
-  mlkem1024DeATaint := mlkem1024DeATaint
-  mlkem1024DeCTaint := mlkem1024DeCTaint
 
   mldsaSeedsTaint := mldsaSeedsTaint
   mldsaTrHashTaint := mldsaTrHashTaint

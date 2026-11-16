@@ -19,7 +19,4 @@ def noisePairWith (sha3 : Bool) (nttAt : Nat→Nat→Prog isa) (L : KemLay) (kg 
    noiseOutWith nttAt L kg (n+1) 528,
    .block (Paired.saved.zipIdx.reverse.map fun (r,i)=>.ldr .x r .x19 (1800+8*i))]
 
-def noiseAllWith (sha3 : Bool) (nttAt : Nat→Nat→Prog isa) (L : KemLay) (kg : Bool) : Prog isa :=
- seqs ((List.range L.k).map fun i=>noisePairWith sha3 nttAt L kg (2*i))
-
 end VG.Impl.MlKem.AArch64.Noise

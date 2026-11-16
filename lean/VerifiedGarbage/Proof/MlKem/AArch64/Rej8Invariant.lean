@@ -132,7 +132,6 @@ end
 namespace VG.Proof.MlKem.AArch64.Rej8
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem
 open VG.Impl.MlKem.AArch64.Rej8
-open VG.Proof.MlKem.AArch64.Sample (cv)
 
 def acceptedValues (s : State) : List Zq :=
   (acceptedLanes (maskAt s)).map fun i => ofNat (vhalf (candidatesAt s) i).toNat

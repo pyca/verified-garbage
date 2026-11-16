@@ -33,15 +33,6 @@ theorem pairCode_relCT {w16 : Bool} {s u : State} {p seed outA outB table : Addr
     h.1.flag (by rw [seedA,seedB]; exact h.2.1.flag)
     (h.1.keep.sp.trans (sp.trans h.2.1.keep.sp.symm)) t v tr ur t' v' ⟨rfl,rfl⟩ et ev
 
-theorem block_split {l r : List Instr} {s t : State} {tr : List Leak}
-    (h : Exec isa (.block (l++r)) s tr t) : Exec isa (.seq (.block l) (.block r)) s tr t := by
-  rw [Exec.block_iff,execBlock_append] at h
-  obtain ⟨⟨u,ta⟩,ha,hb⟩ := Option.bind_eq_some_iff.mp h
-  obtain ⟨⟨v,tb⟩,hr,he⟩ := Option.map_eq_some_iff.mp hb
-  simp only [Prod.mk.injEq] at he
-  obtain ⟨rfl,rfl⟩ := he
-  exact .seq (.block ha) (.block hr)
-
 theorem seq_parts {a b : Prog isa} {s t : State} {tr : List Leak}
     (h : Exec isa (.seq a b) s tr t) :
     ∃u ta tb,tr=ta++tb ∧ Exec isa a s ta u ∧ Exec isa b u tb t := by

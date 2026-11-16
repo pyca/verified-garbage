@@ -43,7 +43,6 @@ import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 import VerifiedGarbage.Proof.MlDsa.Verify.Final
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 import VerifiedGarbage.Proof.MlKem.Compress
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.MlKem.KPke
@@ -83,7 +82,6 @@ meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
 meta import VerifiedGarbage.Proof.MlDsa.Verify.Bounds
 meta import VerifiedGarbage.Proof.MlDsa.Verify.Final
 meta import VerifiedGarbage.Proof.MlDsa.Verify.Mem
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Reduce
 meta import VerifiedGarbage.Proof.MlKem.Compress
 meta import VerifiedGarbage.Proof.MlKem.Encode
 meta import VerifiedGarbage.Proof.MlKem.KPke
@@ -94,6 +92,10 @@ meta import VerifiedGarbage.Proof.Sha3.Arith
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 meta import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Frag
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Base
+import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+import VerifiedGarbage.Proof.MlKem.Arith
+meta import VerifiedGarbage.Proof.MlKem.AArch64.Wp
+meta import VerifiedGarbage.Proof.MlKem.Arith
 
 /-!
 # ML-DSA verification on AArch64: the samplers

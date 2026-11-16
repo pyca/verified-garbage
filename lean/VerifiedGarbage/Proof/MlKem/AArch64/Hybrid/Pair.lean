@@ -23,7 +23,7 @@ variable {sha3 : Bool}
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Hybrid.X3 (stR)
 open VG.Proof.MlKem.AArch64.Paired (Context stepWrites accepted seedState seedBytes pairRegs
-  pairWorkingRegs finishCode finish_ok PairPost PairPostW)
+  pairWorkingRegs finishCode finish_ok PairPostW)
 open VG.Spec.Sha3 (stateAt bytesAt)
 open VG.Spec.MlKem
 open VG.Proof.MlKem

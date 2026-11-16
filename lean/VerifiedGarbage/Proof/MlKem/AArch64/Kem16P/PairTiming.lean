@@ -53,7 +53,7 @@ open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon (PairAt pairR)
 open VG.Proof.Sha3.AArch64.Hybrid.X3 (stR)
 open VG.Proof.MlKem.AArch64.Paired (Context stepWrites accepted seedState shakeStream BeginInput
-  InitialReadyW initialCode finishCode finish_relCT initial_relCT exec_post seq_parts block_split blockAt)
+  InitialReadyW initialCode finishCode finish_relCT initial_relCT exec_post seq_parts blockAt)
 open VG.Proof.MlKem.AArch64.Hybrid (Prepared3 prepareRegs3 plainStep_relCT startRegs3 frame)
 open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_taint)
 open VG.Spec.Sha3 (stateAt bytesAt)

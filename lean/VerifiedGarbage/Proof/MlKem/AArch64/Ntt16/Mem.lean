@@ -28,12 +28,6 @@ theorem vword_halves (x : BitVec 128) (k : Nat) : vword x k = vhalf x (2 * k + 1
     simp only [show i - 16 < 16 by omega_using [hi], decide_true, Bool.true_and]
     exact congrArg _ (by omega_using [h])
 
-/-- The low halfword of a coefficient less than `2¹⁵`, as a signed number. -/
-theorem toInt_lo {w : BitVec 32} (hw : w.toNat < 32768) : (w.extractLsb' 0 16).toInt = w.toNat := by
-  have : (w.extractLsb' 0 16).toNat = w.toNat := by
-    rw [BitVec.extractLsb'_toNat, Nat.shiftRight_zero, Nat.mod_eq_of_lt (by omega_using [hw])]
-  rw [BitVec.toInt_eq_toNat_of_lt (by omega_using [hw, this]), this]
-
 /-- `zip1` or `zip2` of `x` with zero: words `k` (or `4 + k`) of `x`'s halfwords, zero-extended. -/
 theorem vword_zip_zero {x z : BitVec 128} (hz : ∀ e < 8, vhalf z e = 0) {k : Nat} (hk : k < 4) :
     (vword (VPermOp.eval .zip1 .h8 x z) k).toNat = (vhalf x k).toNat ∧

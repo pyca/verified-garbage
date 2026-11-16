@@ -2,15 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintMono
-public import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
-meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
-public import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
-meta import VerifiedGarbage.Impl.MlKem1024.AArch64.Decaps
-meta import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
 meta import VerifiedGarbage.Impl.MlKem.AArch64.KeyGen
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
-meta import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.TCB.AArch64.Target
@@ -21,6 +14,11 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Encode
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Encode
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Ntt16
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem
+public import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
+meta import VerifiedGarbage.Impl.MlKem.AArch64.Kem
+meta import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
+public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
 
 /-!
 # Summaries for the constant-time checks of the sponge's callers
@@ -46,36 +44,12 @@ def callee : List Reg := [.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, 
 
 /-! ## ML-KEM's functions -/
 
-taint_summary ntt : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1])
-  (.call "vg_mlkem_ntt" Impl.MlKem.AArch64.Ntt16.ntt)
-  keeping (VectorTaint.ofRegs callee)
-
-taint_summary nttInv : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1])
-  (.call "vg_mlkem_inv_ntt" Impl.MlKem.AArch64.Ntt16.nttInv)
-  keeping (VectorTaint.ofRegs callee)
-
-taint_summary mul : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1, .x2, .x3])
-  (.call "vg_mlkem_multiply_ntts" Impl.MlKem.AArch64.multiplyNTTs)
-  keeping (VectorTaint.ofRegs callee)
-
 taint_summary add : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1])
   (.call "vg_mlkem_add" Impl.MlKem.AArch64.add)
   keeping (VectorTaint.ofRegs callee)
 
 taint_summary sub : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1])
   (.call "vg_mlkem_sub" Impl.MlKem.AArch64.sub)
-  keeping (VectorTaint.ofRegs callee)
-
-taint_summary cbd2 : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1])
-  (.call "vg_mlkem_cbd2" Impl.MlKem.AArch64.cbd2)
-  keeping (VectorTaint.ofRegs callee)
-
-taint_summary encode12 : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1])
-  (.call "vg_mlkem_encode12" Impl.MlKem.AArch64.encode12)
-  keeping (VectorTaint.ofRegs callee)
-
-taint_summary decode12 : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x1])
-  (.call "vg_mlkem_decode12" Impl.MlKem.AArch64.decode12)
   keeping (VectorTaint.ofRegs callee)
 
 taint_summary ce : VectorTaint.taint (VectorTaint.ofRegs [.x0, .x2, .x3])
@@ -115,8 +89,7 @@ meta def spongeSumNames : List String :=
 
 /-- The ML-KEM functions' summaries (`MlKemSums`). -/
 meta def mlkemSumNames : List String :=
-  ["ntt", "nttInv", "mul", "add", "sub", "cbd2", "encode12", "decode12", "ce", "dd", "ce1024",
-    "dd1024"].map ("VG.Proof.Sha3.AArch64.MlKemSums." ++ ·)
+  ["add", "sub", "ce", "dd", "ce1024", "dd1024"].map ("VG.Proof.Sha3.AArch64.MlKemSums." ++ ·)
 
 /-- The commands of `sponge_taint_summaries ns callee`, with the summaries of
 the permutation and of `pad` and `squeeze` those of `base`, if given (for a

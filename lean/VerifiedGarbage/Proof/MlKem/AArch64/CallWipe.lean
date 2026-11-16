@@ -9,7 +9,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Encaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.Decaps
 public import VerifiedGarbage.Proof.MlKem.Scrubbed
 public import VerifiedGarbage.Proof.MlKem1024.AArch64.Encaps
-public import VerifiedGarbage.Impl.MlKem1024.AArch64.Encaps
 public import VerifiedGarbage.Proof.MlKem.AArch64.Kem16P.EncapsFinal
 public import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ContractSat
 import VerifiedGarbage.Proof.MlKem.AArch64.Rej8Readonly
@@ -37,6 +36,8 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.ConstsSat
 meta import VerifiedGarbage.Proof.Framework.SigEval
 meta import VerifiedGarbage.Proof.Framework.Sig
 public meta import Lean.Elab.Tactic.ElabTerm
+public import VerifiedGarbage.Impl.MlKem.AArch64.Kem
+public import VerifiedGarbage.Impl.MlKem1024.AArch64.KeyGen
 
 /-! ### `MlKem.AArch64.EncapsH`, which only this module used -/
 
@@ -127,15 +128,6 @@ theorem ctH {c : Prog isa} {k : Contract isa} (hct : ConstantTime isa k.pre k.pu
 
 /-! ## ML-KEM-768, one Keccak state at a time -/
 
-theorem pre768 {s : State} (h : (Proof.MlKem.Scrubbed.encapsHBodyContract AArch64.abi 16).pre s) :
-    (afterH shiftH (encapsAArch64 lay768)).pre s := by
-  sig_pre [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
-    AArch64.argRegs] at h
-  obtain ⟨h0, rd, wr, d03, d04, d05, -, -, -, d23, d24, d25, d34, d35, d45, b0, -, b2, b3, b4, b5,
-    -, -, -, -, -, -, -⟩ := h
-  exact ⟨by show _ ∈ s.rd; rw [rd]; exact .head _, by show _ ∈ s.rd; rw [rd]; exact .tail _ (.tail _ (.head _)), wr, d03, d04, d05, d23, d24,
-    d25, d34, d35, d45, h0, b0, b2, b3, b4, b5⟩
-
 /-- A state satisfying `encaps_h`'s precondition, with `H(ek)` at `h` (`hMem`). -/
 def satH (ekLen ctLen scr : Nat) : State where
   gpr r := match r with
@@ -144,34 +136,6 @@ def satH (ekLen ctLen scr : Nat) : State where
   mem := VG.Proof.MlKem.hMem ekLen
   rd := [⟨0x1000, ekLen⟩, ⟨0x2000, 32⟩, ⟨0x3000, 32⟩]
   wr := [⟨0x4000, 32⟩, ⟨0x5000, ctLen⟩, ⟨0x10000, scr⟩]
-
-theorem implies768 : (afterH shiftH (encapsAArch64 lay768)).Implies (Proof.MlKem.Scrubbed.encapsHBodyContract AArch64.abi 16) where
-  pre _ h := pre768 h
-  post s s' _ h := by
-    sig_post [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
-      AArch64.argRegs]
-    exact h
-  pub s₁ s₂ _ _ h := by
-    sig_pub [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
-      AArch64.argRegs] at h
-    obtain ⟨hsp, hl, g0, -, g2, g3, g4, g5⟩ := h
-    exact ⟨g0, g2, g3, g4, g5, hsp, hl⟩
-  sat := by
-    refine ⟨satH 1184 1088 32768, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
-        AArch64.argRegs]
-      sig_and_intros
-      all_goals first
-        | (fail_if_success show Spec.Sha3.bytesAt _ _ _ = _
-           decide +kernel)
-        | exact VG.Proof.MlKem.hMem_h (n := 1184) (by decide)
-
-theorem encapsH_verifiedWith {keccak : VG.Proof.Sha3.AArch64.Permutation} :
-    Verified AArch64.target (encapsHWith keccak.callee) (Proof.MlKem.Scrubbed.encapsHBodyContract AArch64.abi 16) :=
-  Verified.of_correct (correctH (Encaps.encaps_correctWith (keccak := keccak)))
-    (ctH (Encaps.ct KeyGen.wf768 Encaps.taints768)) implies768
 
 
 /-! ## ML-KEM-768, the paired instances -/
@@ -299,47 +263,6 @@ theorem encapsHP768_verified (v : Proof.Sha3.AArch64.Permutation) :
       (Impl.MlKem.AArch64.Kem16P.encapsH sha3 (FixedHash.fixedHash v.callee) (FixedHash.prfW v.callee) lay768)
       (Proof.MlKem.Scrubbed.encapsHBodyContract (AArch64.abi.withConsts constants) 128) :=
   Verified.of_correct (correctH (Kem16P.encapsP768_correct (sha3 := sha3) v)) (ctH (Kem16P.encapsP768_ct (sha3 := sha3) v)) impliesP768
-
-
-/-! ## ML-KEM-1024, one Keccak state at a time -/
-
-theorem pre1024 {s : State} (h : (Proof.MlKem.Scrubbed.encapsH1024BodyContract AArch64.abi 16).pre s) :
-    (afterH shiftH (encapsAArch64 Impl.MlKem1024.AArch64.lay1024)).pre s := by
-  sig_pre [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
-    AArch64.argRegs] at h
-  obtain ⟨h0, rd, wr, d03, d04, d05, -, -, -, d23, d24, d25, d34, d35, d45, b0, -, b2, b3, b4, b5,
-    -, -, -, -, -, -, -⟩ := h
-  exact ⟨by show _ ∈ s.rd; rw [rd]; exact .head _, by show _ ∈ s.rd; rw [rd]; exact .tail _ (.tail _ (.head _)), wr, d03, d04, d05, d23, d24,
-    d25, d34, d35, d45, h0, b0, b2, b3, b4, b5⟩
-
-theorem implies1024 : (afterH shiftH (encapsAArch64 Impl.MlKem1024.AArch64.lay1024)).Implies (Proof.MlKem.Scrubbed.encapsH1024BodyContract AArch64.abi 16) where
-  pre _ h := pre1024 h
-  post s s' _ h := by
-    sig_post [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
-      AArch64.argRegs]
-    exact h
-  pub s₁ s₂ _ _ h := by
-    sig_pub [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
-      AArch64.argRegs] at h
-    obtain ⟨hsp, hl, g0, -, g2, g3, g4, g5⟩ := h
-    exact ⟨g0, g2, g3, g4, g5, hsp, hl⟩
-  sat := by
-    refine ⟨satH 1568 1568 49152, ?_⟩
-    sig_apply_check
-    · decide +kernel
-    · sig_reduce [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
-        AArch64.argRegs]
-      sig_and_intros
-      all_goals first
-        | (fail_if_success show Spec.Sha3.bytesAt _ _ _ = _
-           decide +kernel)
-        | exact VG.Proof.MlKem.hMem_h (n := 1568) (by decide)
-
-theorem encapsH1024_verifiedWith {keccak : VG.Proof.Sha3.AArch64.Permutation} :
-    Verified AArch64.target (Impl.MlKem1024.AArch64.encapsHWith keccak.callee) (Proof.MlKem.Scrubbed.encapsH1024BodyContract AArch64.abi 16) :=
-  Verified.of_correct (correctH (VG.Proof.MlKem1024.AArch64.Encaps.encaps_correctWith (keccak := keccak)))
-    (ctH (Encaps.ct VG.Proof.MlKem1024.AArch64.KeyGen.wf1024 VG.Proof.MlKem1024.AArch64.Encaps.taints1024)) implies1024
-
 
 
 /-! ## ML-KEM-1024, the paired instances -/
@@ -485,12 +408,6 @@ def CallWipeOk (A : Abi isa) : Prop :=
 
 theorem zeroize_depth : 16 * Impl.Zeroize.AArch64.zeroizeWide.aarch64Depth ≤ 0 := by
   rw [Proof.Sha3.AArch64.fdepth_of_noFrames (by decide)]
-
-/-- `Verified.callWipe'`, under `abi`. -/
-theorem callWipeOk_abi : CallWipeOk abi :=
-  fun h hk hl hps hi hn hn16 hd hpre hpost hpostOut hwiped hsat hleak =>
-    Verified.callWipe' h Proof.Zeroize.AArch64.wideVerified hk hl hps hi hn hn16 hd zeroize_depth
-      (Nat.zero_le _) hpre hpost hpostOut hwiped hsat hleak
 
 /-- `Verified.callWipeC'`, under `abi.withConsts`. -/
 theorem callWipeOk_consts {c₀ : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))} :
@@ -911,134 +828,12 @@ theorem decaps1024_wipe {A : Abi isa} (hA : CallWipeOk A) (sfx : String) {body :
 
 /-! ## The stack the functions use -/
 
-/-- Whether the calls and frames of `c` use at most `k` units of 16 bytes of stack. -/
-def adLe (k : Nat) (c : Prog isa) : Bool := Nat.ble c.aarch64Depth k
-
-theorem adLe_spec {k : Nat} {c : Prog isa} (h : adLe k c = true) : c.aarch64Depth ≤ k :=
-  Nat.le_of_ble_eq_true h
-
-theorem adLe_of_le {k : Nat} {c : Prog isa} (h : c.aarch64Depth ≤ k) : adLe k c = true :=
-  Nat.ble_eq_true_of_le h
-
-theorem adLe_block {k : Nat} (l : List Instr) : adLe k (.block l) = true := rfl
-
-theorem adLe_seq {k : Nat} {a b : Prog isa} (ha : adLe k a = true) (hb : adLe k b = true) :
-    adLe k (.seq a b) = true :=
-  adLe_of_le (Nat.max_le.2 ⟨adLe_spec ha, adLe_spec hb⟩)
-
-theorem adLe_ite {k : Nat} {f : Cond} {a b : Prog isa} (ha : adLe k a = true) (hb : adLe k b = true) :
-    adLe k (.ite f a b) = true :=
-  adLe_of_le (Nat.max_le.2 ⟨adLe_spec ha, adLe_spec hb⟩)
-
-theorem adLe_loop {k : Nat} {f : Cond} {a : Prog isa} (ha : adLe k a = true) :
-    adLe k (.loop a f) = true :=
-  adLe_of_le (adLe_spec ha)
-
-theorem adLe_call {k : Nat} {n : String} {a : Prog isa} (ha : adLe k a = true) :
-    adLe k (.call n a) = true :=
-  adLe_of_le (adLe_spec ha)
-
-/-- The permutation of `v`, which has no frames. -/
-theorem adLe_perm (v : Proof.Sha3.AArch64.Permutation) {k : Nat} : adLe k v.callee.code = true :=
-  adLe_of_le (by rw [Proof.Sha3.AArch64.fdepth_of_noFrames v.noFrames]; exact Nat.zero_le _)
-
-/-- A function of `v` with a frame of 16 bytes. -/
-theorem adLe_one {c : Prog isa} (h : c.aarch64Depth = 1) {k : Nat} (hk : 1 ≤ k) : adLe k c = true :=
-  adLe_of_le (by rw [h]; exact hk)
-
-open Lean Elab Tactic in
-/-- Fails if the goal mentions the variable `v`: the kernel evaluates only
-code that does not call the implementation `v`. -/
-elab "closed_in " v:ident : tactic => withMainContext do
-  let e ← elabTerm v none
-  if (← instantiateMVars (← getMainTarget)).containsFVar e.fvarId! then
-    throwError "the goal mentions {e}"
-
-open Lean Meta Elab Tactic in
-/-- Puts the code `X` of a goal `adLe k X = true` in weak head normal form, if
-that is a `block`, `seq`, `ite`, `loop` or `call`. -/
-elab "code_whnf" : tactic => withMainContext do
-  let g ← getMainGoal
-  let t := (← instantiateMVars (← g.getType)).consumeMData
-  let some (_, lhs, rhs) := t.eq? | throwError "not an equation"
-  let lhs := lhs.consumeMData
-  let .app f x := lhs | throwError "not an application"
-  let x' ← whnf x
-  unless [``Code.block, ``Code.seq, ``Code.ite, ``Code.loop, ``Code.call].contains x'.getAppFn.constName do
-    throwError "not a `block`, `seq`, `ite`, `loop` or `call`"
-  replaceMainGoal [← g.replaceTargetDefEq (← mkEq (.app f x') rhs)]
-
-open Lean Meta Elab Tactic in
-/-- Fails unless the code `X` of a goal `adLe k X = true` is an application of
-the constant `c`: a test that costs nothing, before a lemma about `c` is
-elaborated against the goal. -/
-elab "code_head " c:ident : tactic => withMainContext do
-  let n ← realizeGlobalConstNoOverloadWithInfo c
-  let t := (← instantiateMVars (← getMainTarget)).consumeMData
-  let some (_, lhs, _) := t.eq? | throwError "not an equation"
-  let .app _ x := lhs.consumeMData | throwError "not an application"
-  unless x.consumeMData.getAppFn.isConstOf n do
-    throwError "the code is not an application of {n}"
-
-/-- That code calling the sponge functions of the Keccak implementation `v`
-uses at most `k ≥ 1` units of stack (a goal `adLe k _ = true`): the kernel
-evaluates its parts that do not call `v`. A sponge function's lemma is tried
-only on that function (`code_head`), and the code is put in weak head normal
-form once for its five shapes. -/
-macro "sponge_depth " v:ident : tactic =>
-  `(tactic| repeat' (first
-    | (closed_in $v; decide +kernel)
-    | (code_head Impl.Sha3.AArch64.Stream.absorbWith
-       with_reducible exact adLe_one (Proof.Sha3.AArch64.Permutation.absorb_depth $v) (by decide))
-    | (code_head Impl.Sha3.AArch64.Stream.padWith
-       with_reducible exact adLe_one (Proof.Sha3.AArch64.Permutation.pad_depth $v) (by decide))
-    | (code_head Impl.Sha3.AArch64.Stream.squeezeWith
-       with_reducible exact adLe_one (Proof.Sha3.AArch64.Permutation.squeeze_depth $v) (by decide))
-    | (code_head Impl.MlKem.AArch64.sampleNTTWith
-       with_reducible exact adLe_one (Proof.MlKem.AArch64.sampleNTTWith_fdepth $v) (by decide))
-    | with_reducible exact adLe_perm $v
-    | (code_whnf
-       first
-       | with_reducible exact adLe_block _
-       | with_reducible apply adLe_seq | with_reducible apply adLe_ite
-       | with_reducible apply adLe_loop | with_reducible apply adLe_call)))
-
-/-- At most one unit of stack: `16 * depth ≤ 16`. -/
-theorem depth16 {c : Prog isa} (h : adLe 1 c = true) : 16 * c.aarch64Depth ≤ 16 := by
-  have := adLe_spec h; omega_using [this]
-
 /-- At most eight units of stack: `16 * depth ≤ 128`. -/
 theorem depth128 {c : Prog isa} (h : c.aarch64Depth ≤ 8) : 16 * c.aarch64Depth ≤ 128 := by
   omega_using [h]
 
 section
 variable (v : Proof.Sha3.AArch64.Permutation)
-
-/-! The instances over the sponge functions use at most 16 bytes of stack. -/
-
-theorem keyGenS768_depth : 16 * (Impl.MlKem.AArch64.keyGenWith v.callee).aarch64Depth ≤ 16 :=
-  depth16 (by sponge_depth v)
-
-theorem encapsS768_depth : 16 * (Impl.MlKem.AArch64.encapsWith v.callee).aarch64Depth ≤ 16 :=
-  depth16 (by sponge_depth v)
-
-theorem encapsHS768_depth : 16 * (Impl.MlKem.AArch64.encapsHWith v.callee).aarch64Depth ≤ 16 :=
-  depth16 (by sponge_depth v)
-
-theorem decapsS768_depth : 16 * (Impl.MlKem.AArch64.decapsWith v.callee).aarch64Depth ≤ 16 :=
-  depth16 (by sponge_depth v)
-
-theorem keyGenS1024_depth : 16 * (Impl.MlKem1024.AArch64.keyGenWith v.callee).aarch64Depth ≤ 16 :=
-  depth16 (by sponge_depth v)
-
-theorem encapsS1024_depth : 16 * (Impl.MlKem1024.AArch64.encapsWith v.callee).aarch64Depth ≤ 16 :=
-  depth16 (by sponge_depth v)
-
-theorem encapsHS1024_depth : 16 * (Impl.MlKem1024.AArch64.encapsHWith v.callee).aarch64Depth ≤ 16 :=
-  depth16 (by sponge_depth v)
-
-theorem decapsS1024_depth : 16 * (Impl.MlKem1024.AArch64.decapsWith v.callee).aarch64Depth ≤ 16 :=
-  depth16 (by sponge_depth v)
 
 /-! The paired instances use at most 128 bytes of stack: their code with the
 permutation's calls erased (`hole`) has that depth, and the permutation no
@@ -1136,12 +931,6 @@ macro "wipe_pre " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" : tactic => `(tactic
    and_intros
    all_goals first | rfl | decide | exact Region.disjoint_of_sep (by decide)))
 
-/-- A state satisfying the precondition of a contract under `abi`, built with
-`Sig.contract`. -/
-macro "wipe_sat " "[" ls:Lean.Parser.Tactic.simpLemma,* "]" " using " w:term : tactic => `(tactic|
-  (refine ⟨$w, ?_⟩
-   wipe_pre [$ls,*]))
-
 /-- A region apart from each of the concrete regions `l`, by evaluation. -/
 theorem disjoint_of_seps {t : Region} {l : List Region} (h : l.all (fun q => Region.sep t q) = true) :
     ∀ q ∈ l, t.Disjoint q :=
@@ -1167,54 +956,6 @@ macro "wipe_consts " wr:term " held " h:term : tactic => `(tactic|
      rw [Optimized.constants_regions] at hr
      rcases hr with _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | ⟨_, _ | h⟩⟩⟩⟩
      all_goals first | contradiction | decide))
-
-theorem keyGenS768_sat : ∃ s, (Proof.MlKem.Scrubbed.keyGenBodyContract abi 48).pre s := by
-  wipe_sat [Proof.MlKem.Scrubbed.keyGenBodyContract, Spec.MlKem.keyGenSig, AArch64.abi, AArch64.argRegs]
-    using Proof.MlKem.AArch64.KeyGen.sat
-
-theorem encapsS768_sat : ∃ s, (Proof.MlKem.Scrubbed.encapsBodyContract abi 48).pre s := by
-  wipe_sat [Proof.MlKem.Scrubbed.encapsBodyContract, Spec.MlKem.encapsSig, AArch64.abi, AArch64.argRegs]
-    using Proof.MlKem.AArch64.Encaps.sat
-
-theorem decapsS768_sat : ∃ s, (Proof.MlKem.Scrubbed.decapsBodyContract abi 48).pre s := by
-  wipe_sat [Proof.MlKem.Scrubbed.decapsBodyContract, Spec.MlKem.decapsSig, AArch64.abi, AArch64.argRegs]
-    using Proof.MlKem.AArch64.Decaps.sat
-
-theorem keyGenS1024_sat : ∃ s, (Proof.MlKem.Scrubbed.keyGen1024BodyContract abi 48).pre s := by
-  wipe_sat [Proof.MlKem.Scrubbed.keyGen1024BodyContract, Spec.MlKem1024.keyGenSig, AArch64.abi, AArch64.argRegs]
-    using Proof.MlKem1024.AArch64.KeyGen.sat
-
-theorem encapsS1024_sat : ∃ s, (Proof.MlKem.Scrubbed.encaps1024BodyContract abi 48).pre s := by
-  wipe_sat [Proof.MlKem.Scrubbed.encaps1024BodyContract, Spec.MlKem1024.encapsSig, AArch64.abi, AArch64.argRegs]
-    using Proof.MlKem1024.AArch64.Encaps.sat
-
-theorem decapsS1024_sat : ∃ s, (Proof.MlKem.Scrubbed.decaps1024BodyContract abi 48).pre s := by
-  wipe_sat [Proof.MlKem.Scrubbed.decaps1024BodyContract, Spec.MlKem1024.decapsSig, AArch64.abi, AArch64.argRegs]
-    using Proof.MlKem1024.AArch64.Decaps.sat
-
-theorem encapsHS768_sat : ∃ s, (Proof.MlKem.Scrubbed.encapsHBodyContract abi 48).pre s := by
-  refine ⟨Proof.MlKem.AArch64.EncapsH.satH 1184 1088 32768, ?_⟩
-  sig_apply_check
-  · decide +kernel
-  · sig_reduce [Proof.MlKem.Scrubbed.encapsHBodyContract, Spec.MlKem.encapsHSig, Spec.MlKem.encapsHSigOf, AArch64.abi,
-      AArch64.argRegs]
-    sig_and_intros
-    all_goals first
-      | (fail_if_success show Spec.Sha3.bytesAt _ _ _ = _
-         decide +kernel)
-      | exact VG.Proof.MlKem.hMem_h (n := 1184) (by decide)
-
-theorem encapsHS1024_sat : ∃ s, (Proof.MlKem.Scrubbed.encapsH1024BodyContract abi 48).pre s := by
-  refine ⟨Proof.MlKem.AArch64.EncapsH.satH 1568 1568 49152, ?_⟩
-  sig_apply_check
-  · decide +kernel
-  · sig_reduce [Proof.MlKem.Scrubbed.encapsH1024BodyContract, Spec.MlKem1024.encapsHSig, Spec.MlKem.encapsHSigOf,
-      AArch64.abi, AArch64.argRegs]
-    sig_and_intros
-    all_goals first
-      | (fail_if_success show Spec.Sha3.bytesAt _ _ _ = _
-         decide +kernel)
-      | exact VG.Proof.MlKem.hMem_h (n := 1568) (by decide)
 
 theorem keyGenP768_sat : ∃ s, (Proof.MlKem.Scrubbed.keyGenBodyContract (abi.withConsts Optimized.constants) 160).pre s := by
   refine ⟨Optimized.addTables Proof.MlKem.AArch64.KeyGen.sat, ?_⟩
@@ -1322,88 +1063,6 @@ theorem encapsHP1024_sat : ∃ s, (Proof.MlKem.Scrubbed.encapsH1024BodyContract 
 
 section
 variable (v : Proof.Sha3.AArch64.Permutation)
-
-/-! Over the sponge functions of `v`, with 48 bytes of stack. -/
-
-theorem keyGenS768_scrubbed :
-    Verified target (Impl.MlKem.AArch64.Wipe.keyGen v.callee.suffix (Impl.MlKem.AArch64.keyGenWith v.callee))
-      (Scrubbed.keyGenContract abi 48) :=
-  keyGen_wipe callWipeOk_abi _ (Proof.MlKem.AArch64.KeyGen.keyGen_verifiedWith (keccak := v)) (keyGenS768_depth v) keyGenS768_sat
-
-theorem keyGenS768_verified :
-    Verified target (Impl.MlKem.AArch64.Wipe.keyGen v.callee.suffix (Impl.MlKem.AArch64.keyGenWith v.callee))
-      (Spec.MlKem.keyGenContract abi 48) :=
-  keyGenS768_scrubbed v
-
-theorem encapsHS768_scrubbed :
-    Verified target (Impl.MlKem.AArch64.Wipe.encapsH v.callee.suffix (Impl.MlKem.AArch64.encapsHWith v.callee))
-      (Scrubbed.encapsHContract abi 48) :=
-  encapsH_wipe callWipeOk_abi _ (Proof.MlKem.AArch64.EncapsH.encapsH_verifiedWith (keccak := v)) (encapsHS768_depth v) encapsHS768_sat
-
-theorem encapsHS768_verified :
-    Verified target (Impl.MlKem.AArch64.Wipe.encapsH v.callee.suffix (Impl.MlKem.AArch64.encapsHWith v.callee))
-      (Spec.MlKem.encapsHContract abi 48) :=
-  encapsHS768_scrubbed v
-
-theorem encapsS768_scrubbed :
-    Verified target (Impl.MlKem.AArch64.Wipe.encaps v.callee.suffix (Impl.MlKem.AArch64.encapsWith v.callee))
-      (Scrubbed.encapsContract abi 48) :=
-  encaps_wipe callWipeOk_abi _ (Proof.MlKem.AArch64.Encaps.encaps_verifiedWith (keccak := v)) (encapsS768_depth v) encapsS768_sat
-
-theorem encapsS768_verified :
-    Verified target (Impl.MlKem.AArch64.Wipe.encaps v.callee.suffix (Impl.MlKem.AArch64.encapsWith v.callee))
-      (Spec.MlKem.encapsContract abi 48) :=
-  encapsS768_scrubbed v
-
-theorem decapsS768_scrubbed :
-    Verified target (Impl.MlKem.AArch64.Wipe.decaps v.callee.suffix (Impl.MlKem.AArch64.decapsWith v.callee))
-      (Scrubbed.decapsContract abi 48) :=
-  decaps_wipe callWipeOk_abi _ (Proof.MlKem.AArch64.Decaps.decaps_verifiedWith (keccak := v)) (decapsS768_depth v) decapsS768_sat
-
-theorem decapsS768_verified :
-    Verified target (Impl.MlKem.AArch64.Wipe.decaps v.callee.suffix (Impl.MlKem.AArch64.decapsWith v.callee))
-      (Spec.MlKem.decapsContract abi 48) :=
-  decapsS768_scrubbed v
-
-theorem keyGenS1024_scrubbed :
-    Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 v.callee.suffix (Impl.MlKem1024.AArch64.keyGenWith v.callee))
-      (Scrubbed.keyGen1024Contract abi 48) :=
-  keyGen1024_wipe callWipeOk_abi _ (Proof.MlKem1024.AArch64.KeyGen.keyGen_verifiedWith (keccak := v)) (keyGenS1024_depth v) keyGenS1024_sat
-
-theorem keyGenS1024_verified :
-    Verified target (Impl.MlKem.AArch64.Wipe.keyGen1024 v.callee.suffix (Impl.MlKem1024.AArch64.keyGenWith v.callee))
-      (Spec.MlKem1024.keyGenContract abi 48) :=
-  keyGenS1024_scrubbed v
-
-theorem encapsHS1024_scrubbed :
-    Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 v.callee.suffix (Impl.MlKem1024.AArch64.encapsHWith v.callee))
-      (Scrubbed.encapsH1024Contract abi 48) :=
-  encapsH1024_wipe callWipeOk_abi _ (Proof.MlKem.AArch64.EncapsH.encapsH1024_verifiedWith (keccak := v)) (encapsHS1024_depth v) encapsHS1024_sat
-
-theorem encapsHS1024_verified :
-    Verified target (Impl.MlKem.AArch64.Wipe.encapsH1024 v.callee.suffix (Impl.MlKem1024.AArch64.encapsHWith v.callee))
-      (Spec.MlKem1024.encapsHContract abi 48) :=
-  encapsHS1024_scrubbed v
-
-theorem encapsS1024_scrubbed :
-    Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 v.callee.suffix (Impl.MlKem1024.AArch64.encapsWith v.callee))
-      (Scrubbed.encaps1024Contract abi 48) :=
-  encaps1024_wipe callWipeOk_abi _ (Proof.MlKem1024.AArch64.Encaps.encaps_verifiedWith (keccak := v)) (encapsS1024_depth v) encapsS1024_sat
-
-theorem encapsS1024_verified :
-    Verified target (Impl.MlKem.AArch64.Wipe.encaps1024 v.callee.suffix (Impl.MlKem1024.AArch64.encapsWith v.callee))
-      (Spec.MlKem1024.encapsContract abi 48) :=
-  encapsS1024_scrubbed v
-
-theorem decapsS1024_scrubbed :
-    Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 v.callee.suffix (Impl.MlKem1024.AArch64.decapsWith v.callee))
-      (Scrubbed.decaps1024Contract abi 48) :=
-  decaps1024_wipe callWipeOk_abi _ (Proof.MlKem1024.AArch64.Decaps.decaps_verifiedWith (keccak := v)) (decapsS1024_depth v) decapsS1024_sat
-
-theorem decapsS1024_verified :
-    Verified target (Impl.MlKem.AArch64.Wipe.decaps1024 v.callee.suffix (Impl.MlKem1024.AArch64.decapsWith v.callee))
-      (Spec.MlKem1024.decapsContract abi 48) :=
-  decapsS1024_scrubbed v
 
 /-! The paired instances, named `sfx`, with 160 bytes of stack. -/
 

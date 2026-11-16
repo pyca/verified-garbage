@@ -50,7 +50,7 @@ variable {sha3 : Bool}
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Hybrid.X3 (stR)
 open VG.Proof.MlKem.AArch64.Paired (Context stepWrites accepted seedState shakeStream BeginInput
-  InitialReadyW initialCode finishCode finish_relCT initial_relCT exec_post seq_parts block_split)
+  InitialReadyW initialCode finishCode finish_relCT initial_relCT exec_post seq_parts)
 open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_taint)
 open VG.Spec.Sha3 (stateAt bytesAt)
 open VG.Proof.Sha3 (iterF)

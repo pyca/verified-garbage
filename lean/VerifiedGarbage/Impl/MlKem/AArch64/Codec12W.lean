@@ -5,8 +5,8 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.Codec16
 /-!
 # ByteEncode₁₂ and ByteDecode₁₂ of polynomials stored with 16 bits, on AArch64
 
-Eight coefficients per iteration, as `Codec16.enc` and `Codec16.dec` do with
-32-bit coefficients, whose arithmetic (`encMath`, `decMath`) they share:
+Eight coefficients per iteration, with the arithmetic of `Codec16.lean` on
+32-bit lanes (`encMath`, `decMath`):
 
 * `encW(f = x0, out = x1)`: eight halfwords of `f` widened to words by ZIP1
   and ZIP2 with zero (`v17`), then packed into twelve bytes by `encMath`.

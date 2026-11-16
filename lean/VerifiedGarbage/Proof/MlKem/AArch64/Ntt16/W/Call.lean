@@ -5,7 +5,6 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FastTable
 public import VerifiedGarbage.Proof.MlKem.Kpke16Contract
 public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
 public import VerifiedGarbage.Spec.MlKem
-import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Call
 import VerifiedGarbage.Proof.MlKem.AArch64.HashProof
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
@@ -34,6 +33,7 @@ public import VerifiedGarbage.TCB.AArch64.Target
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.MlKem.AArch64.NttR.LitFI
+import VerifiedGarbage.Proof.MlKem.Mem
 
 /-! ### `MlKem.AArch64.NttR.FwdF`, which only this module used -/
 
@@ -466,7 +466,6 @@ end
 namespace VG.Proof.MlKem.AArch64.Ntt16.W
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Ntt16
-open VG.Proof.MlKem.AArch64.Ntt16.Readonly (TableReady)
 open VG.Impl.MlKem.AArch64.Ntt16
 
 theorem nttAtWithW_ok {s : State} {off ns : Nat} {f w : Addr} {F : Poly}

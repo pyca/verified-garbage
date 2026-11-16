@@ -114,9 +114,8 @@ tactic_template "sha3_scalar_resident_taint_decide" : tactic => `(tactic|
     VectorSlots.VSums.squeeze28, VectorSlots.VSums.squeeze27, VectorSlots.VSums.squeeze26,
     VectorSlots.VSums.perm28s, VectorSlots.VSums.perm27s, VectorSlots.VSums.perm26s,
     VectorSlots.VSums.permS, VectorSlots.VSums.perm28, VectorSlots.VSums.perm27,
-    VectorSlots.VSums.perm26, VectorSlots.VSums.perm, VectorSlots.VSums.rounds, MlKemSums.ntt, MlKemSums.nttInv,
-    MlKemSums.mul, MlKemSums.add, MlKemSums.sub, MlKemSums.cbd2, MlKemSums.encode12,
-    MlKemSums.decode12, MlKemSums.ce, MlKemSums.dd, MlKemSums.ce1024, MlKemSums.dd1024])
+    VectorSlots.VSums.perm26, VectorSlots.VSums.perm, VectorSlots.VSums.rounds, MlKemSums.add, MlKemSums.sub,
+    MlKemSums.ce, MlKemSums.dd, MlKemSums.ce1024, MlKemSums.dd1024])
 
 theorem absorb_correct (a : State) (hp : Proof.Sha3.absorbAArch64.pre a) :
     ∃ t q, Exec isa (Impl.Sha3.AArch64.Sha3.Vector.Resident.absorbWith
