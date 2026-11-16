@@ -7,6 +7,7 @@
 vg_aes_ctr32_to_neon:
 	cbz x4, 20f
 	sub x7, x4, #1
+	lsr x7, x7, #2
 	cbz x7, 22f
 	add x14, x6, #0
 	ldr w10, [x2, #12]
@@ -733,6 +734,9 @@ vg_aes_ctr32_to_neon:
 	b 23f
 22:
 	add x8, x6, #0
+	add x9, x0, #0
+	add x10, x1, #0
+223:
 	ldr q0, [x2, #0]
 	ldr w6, [x2, #12]
 	rev w6, w6
@@ -770,7 +774,7 @@ vg_aes_ctr32_to_neon:
 	eor v5.16b, v5.16b, v6.16b
 	eor v0.16b, v0.16b, v5.16b
 	sub x1, x1, #1
-223:
+224:
 	add x0, x0, #16
 	ldr q5, [x0, #0]
 	and v6.16b, v5.16b, v16.16b
@@ -805,7 +809,7 @@ vg_aes_ctr32_to_neon:
 	eor v0.16b, v0.16b, v1.16b
 	eor v0.16b, v0.16b, v3.16b
 	sub x1, x1, #1
-	cbnz x1, 223b
+	cbnz x1, 224b
 	ldr q5, [x0, #16]
 	and v1.16b, v0.16b, v16.16b
 	ushr v0.16b, v0.16b, #4
@@ -828,6 +832,12 @@ vg_aes_ctr32_to_neon:
 	ldr q1, [x3, #0]
 	eor v0.16b, v0.16b, v1.16b
 	str q0, [x8, #0]
+	add x3, x3, #16
+	add x8, x8, #16
+	sub x4, x4, #1
+	add x0, x9, #0
+	add x1, x10, #0
+	cbnz x4, 223b
 23:
 	b 21f
 20:

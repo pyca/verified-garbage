@@ -5,7 +5,9 @@
 // gives.
 
 vg_aes_cbc_decrypt_unwiped_neon:
-	cbz x4, 20f
+	sub x6, x4, #1
+	cbz x6, 20f
+	cbz x4, 22f
 	movz w6, #1, lsl #0
 	dup v16.16b, w6
 	movz w6, #2, lsl #0
@@ -24,7 +26,7 @@ vg_aes_cbc_decrypt_unwiped_neon:
 	dup v23.16b, w6
 	add x7, x5, #128
 	add x8, x1, #1
-22:
+24:
 	ldr q0, [x0, #0]
 	and v1.16b, v0.16b, v16.16b
 	cmeq v1.16b, v1.16b, v16.16b
@@ -53,51 +55,51 @@ vg_aes_cbc_decrypt_unwiped_neon:
 	add x0, x0, #16
 	add x7, x7, #128
 	sub x8, x8, #1
-	cbnz x8, 22b
-23:
+	cbnz x8, 24b
+25:
 	ldr q0, [x3, #0]
 	sub x6, x4, #1
-	cbnz x6, 24f
-	b 25f
-24:
-	ldr q1, [x3, #16]
-	sub x6, x4, #2
 	cbnz x6, 26f
 	b 27f
 26:
-	ldr q2, [x3, #32]
-	sub x6, x4, #3
+	ldr q1, [x3, #16]
+	sub x6, x4, #2
 	cbnz x6, 28f
 	b 29f
 28:
-	ldr q3, [x3, #48]
-	sub x6, x4, #4
+	ldr q2, [x3, #32]
+	sub x6, x4, #3
 	cbnz x6, 210f
 	b 211f
 210:
-	ldr q4, [x3, #64]
-	sub x6, x4, #5
+	ldr q3, [x3, #48]
+	sub x6, x4, #4
 	cbnz x6, 212f
 	b 213f
 212:
-	ldr q5, [x3, #80]
-	sub x6, x4, #6
+	ldr q4, [x3, #64]
+	sub x6, x4, #5
 	cbnz x6, 214f
 	b 215f
 214:
-	ldr q6, [x3, #96]
-	sub x6, x4, #7
+	ldr q5, [x3, #80]
+	sub x6, x4, #6
 	cbnz x6, 216f
 	b 217f
 216:
+	ldr q6, [x3, #96]
+	sub x6, x4, #7
+	cbnz x6, 218f
+	b 219f
+218:
 	ldr q7, [x3, #112]
+219:
 217:
 215:
 213:
 211:
 29:
 27:
-25:
 	movz x6, #21845, lsl #0
 	movk x6, #21845, lsl #16
 	movk x6, #21845, lsl #32
@@ -205,7 +207,7 @@ vg_aes_cbc_decrypt_unwiped_neon:
 	eor v6.16b, v6.16b, v24.16b
 	ldr q24, [x8, #112]
 	eor v7.16b, v7.16b, v24.16b
-218:
+220:
 	sub x8, x8, #128
 	movz x6, #3328, lsl #0
 	movk x6, #1802, lsl #16
@@ -449,7 +451,7 @@ vg_aes_cbc_decrypt_unwiped_neon:
 	rev32 v24.8h, v23.8h
 	eor v7.16b, v7.16b, v24.16b
 	sub x9, x9, #1
-	cbnz x9, 218b
+	cbnz x9, 220b
 	sub x8, x8, #128
 	movz x6, #3328, lsl #0
 	movk x6, #1802, lsl #16
@@ -701,74 +703,201 @@ vg_aes_cbc_decrypt_unwiped_neon:
 	ldr q31, [x3, #0]
 	str q16, [x3, #0]
 	sub x6, x4, #1
-	cbnz x6, 219f
-	b 220f
-219:
+	cbnz x6, 221f
+	b 222f
+221:
 	eor v17.16b, v17.16b, v31.16b
 	ldr q31, [x3, #16]
 	str q17, [x3, #16]
 	sub x6, x4, #2
-	cbnz x6, 221f
-	b 222f
-221:
+	cbnz x6, 223f
+	b 224f
+223:
 	eor v18.16b, v18.16b, v31.16b
 	ldr q31, [x3, #32]
 	str q18, [x3, #32]
 	sub x6, x4, #3
-	cbnz x6, 223f
-	b 224f
-223:
+	cbnz x6, 225f
+	b 226f
+225:
 	eor v19.16b, v19.16b, v31.16b
 	ldr q31, [x3, #48]
 	str q19, [x3, #48]
 	sub x6, x4, #4
-	cbnz x6, 225f
-	b 226f
-225:
+	cbnz x6, 227f
+	b 228f
+227:
 	eor v20.16b, v20.16b, v31.16b
 	ldr q31, [x3, #64]
 	str q20, [x3, #64]
 	sub x6, x4, #5
-	cbnz x6, 227f
-	b 228f
-227:
+	cbnz x6, 229f
+	b 230f
+229:
 	eor v21.16b, v21.16b, v31.16b
 	ldr q31, [x3, #80]
 	str q21, [x3, #80]
 	sub x6, x4, #6
-	cbnz x6, 229f
-	b 230f
-229:
+	cbnz x6, 231f
+	b 232f
+231:
 	eor v22.16b, v22.16b, v31.16b
 	ldr q31, [x3, #96]
 	str q22, [x3, #96]
 	sub x6, x4, #7
-	cbnz x6, 231f
-	b 232f
-231:
+	cbnz x6, 233f
+	b 234f
+233:
 	eor v23.16b, v23.16b, v31.16b
 	ldr q31, [x3, #112]
 	str q23, [x3, #112]
+234:
 232:
 230:
 228:
 226:
 224:
 222:
-220:
 	str q31, [x2, #0]
 	sub x6, x4, #1
 	lsr x6, x6, #3
-	cbnz x6, 233f
+	cbnz x6, 235f
 	movz x4, #0, lsl #0
-	b 234f
-233:
+	b 236f
+235:
 	add x3, x3, #128
 	sub x4, x4, #8
-234:
-	cbnz x4, 23b
+236:
+	cbnz x4, 25b
+	b 23f
+22:
+23:
 	b 21f
 20:
+	ldr q0, [x3, #0]
+	lsl x6, x1, #4
+	add x0, x0, x6
+	adrp x6, {VG_AES_VPERM_DEC}
+	add x6, x6, {VG_AES_VPERM_DEC}
+	ldr q16, [x6, #0]
+	ldr q17, [x6, #16]
+	ldr q18, [x6, #32]
+	ldr q19, [x6, #48]
+	ldr q20, [x6, #64]
+	ldr q21, [x6, #80]
+	ldr q22, [x6, #96]
+	ldr q23, [x6, #112]
+	ldr q24, [x6, #128]
+	ldr q25, [x6, #144]
+	ldr q26, [x6, #160]
+	ldr q27, [x6, #176]
+	ldr q28, [x6, #192]
+	ldr q29, [x6, #208]
+	ldr q30, [x6, #224]
+	ldr q5, [x0, #0]
+	eor v0.16b, v0.16b, v5.16b
+	ldr q2, [x6, #416]
+	ldr q3, [x6, #432]
+	and v1.16b, v0.16b, v16.16b
+	ushr v0.16b, v0.16b, #4
+	tbl v1.16b, {v2.16b}, v1.16b
+	tbl v0.16b, {v3.16b}, v0.16b
+	eor v0.16b, v0.16b, v1.16b
+	sub x1, x1, #1
+237:
+	sub x0, x0, #16
+	ldr q5, [x0, #0]
+	and v6.16b, v5.16b, v16.16b
+	ushr v5.16b, v5.16b, #4
+	ldr q1, [x6, #240]
+	ldr q2, [x6, #256]
+	tbl v1.16b, {v1.16b}, v6.16b
+	tbl v2.16b, {v2.16b}, v5.16b
+	eor v7.16b, v1.16b, v2.16b
+	ldr q1, [x6, #272]
+	ldr q2, [x6, #288]
+	tbl v1.16b, {v1.16b}, v6.16b
+	tbl v2.16b, {v2.16b}, v5.16b
+	eor v1.16b, v1.16b, v2.16b
+	ldr q2, [x6, #368]
+	tbl v1.16b, {v1.16b}, v2.16b
+	eor v7.16b, v7.16b, v1.16b
+	ldr q1, [x6, #304]
+	ldr q2, [x6, #320]
+	tbl v1.16b, {v1.16b}, v6.16b
+	tbl v2.16b, {v2.16b}, v5.16b
+	eor v1.16b, v1.16b, v2.16b
+	ldr q2, [x6, #384]
+	tbl v1.16b, {v1.16b}, v2.16b
+	eor v7.16b, v7.16b, v1.16b
+	ldr q1, [x6, #336]
+	ldr q2, [x6, #352]
+	tbl v1.16b, {v1.16b}, v6.16b
+	tbl v2.16b, {v2.16b}, v5.16b
+	eor v1.16b, v1.16b, v2.16b
+	ldr q2, [x6, #400]
+	tbl v1.16b, {v1.16b}, v2.16b
+	eor v7.16b, v7.16b, v1.16b
+	and v1.16b, v0.16b, v16.16b
+	ushr v0.16b, v0.16b, #4
+	tbl v2.16b, {v18.16b}, v1.16b
+	eor v1.16b, v1.16b, v0.16b
+	tbl v3.16b, {v17.16b}, v0.16b
+	tbl v4.16b, {v17.16b}, v1.16b
+	eor v3.16b, v3.16b, v2.16b
+	eor v4.16b, v4.16b, v2.16b
+	tbl v2.16b, {v17.16b}, v3.16b
+	tbl v3.16b, {v17.16b}, v4.16b
+	eor v2.16b, v2.16b, v1.16b
+	eor v3.16b, v3.16b, v0.16b
+	tbl v0.16b, {v19.16b}, v2.16b
+	tbl v1.16b, {v20.16b}, v3.16b
+	eor v0.16b, v0.16b, v1.16b
+	tbl v0.16b, {v0.16b}, v27.16b
+	tbl v1.16b, {v21.16b}, v2.16b
+	tbl v4.16b, {v22.16b}, v3.16b
+	eor v1.16b, v1.16b, v4.16b
+	tbl v1.16b, {v1.16b}, v28.16b
+	tbl v4.16b, {v23.16b}, v2.16b
+	tbl v5.16b, {v24.16b}, v3.16b
+	eor v4.16b, v4.16b, v5.16b
+	tbl v4.16b, {v4.16b}, v29.16b
+	tbl v5.16b, {v25.16b}, v2.16b
+	tbl v6.16b, {v26.16b}, v3.16b
+	eor v5.16b, v5.16b, v6.16b
+	tbl v5.16b, {v5.16b}, v30.16b
+	eor v0.16b, v0.16b, v1.16b
+	eor v4.16b, v4.16b, v5.16b
+	eor v0.16b, v0.16b, v7.16b
+	eor v0.16b, v0.16b, v4.16b
+	sub x1, x1, #1
+	cbnz x1, 237b
+	sub x0, x0, #16
+	ldr q5, [x0, #0]
+	and v1.16b, v0.16b, v16.16b
+	ushr v0.16b, v0.16b, #4
+	tbl v2.16b, {v18.16b}, v1.16b
+	eor v1.16b, v1.16b, v0.16b
+	tbl v3.16b, {v17.16b}, v0.16b
+	tbl v4.16b, {v17.16b}, v1.16b
+	eor v3.16b, v3.16b, v2.16b
+	eor v4.16b, v4.16b, v2.16b
+	tbl v2.16b, {v17.16b}, v3.16b
+	tbl v3.16b, {v17.16b}, v4.16b
+	eor v2.16b, v2.16b, v1.16b
+	eor v3.16b, v3.16b, v0.16b
+	ldr q0, [x6, #448]
+	ldr q1, [x6, #464]
+	tbl v0.16b, {v0.16b}, v2.16b
+	tbl v1.16b, {v1.16b}, v3.16b
+	eor v0.16b, v0.16b, v1.16b
+	tbl v0.16b, {v0.16b}, v27.16b
+	eor v0.16b, v0.16b, v5.16b
+	ldr q1, [x2, #0]
+	eor v0.16b, v0.16b, v1.16b
+	ldr q1, [x3, #0]
+	str q0, [x3, #0]
+	str q1, [x2, #0]
 21:
 	ret
 	.p2align 6

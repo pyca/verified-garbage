@@ -6,6 +6,7 @@
 
 vg_aes_decrypt_blocks_neon:
 	sub x6, x3, #1
+	lsr x6, x6, #2
 	cbz x6, 20f
 	add x5, x4, #0
 	add x4, x3, #0
@@ -759,6 +760,9 @@ vg_aes_decrypt_blocks_neon:
 23:
 	b 21f
 20:
+	add x9, x0, #0
+	add x10, x1, #0
+237:
 	ldr q0, [x2, #0]
 	lsl x6, x1, #4
 	add x0, x0, x6
@@ -789,7 +793,7 @@ vg_aes_decrypt_blocks_neon:
 	tbl v0.16b, {v3.16b}, v0.16b
 	eor v0.16b, v0.16b, v1.16b
 	sub x1, x1, #1
-237:
+238:
 	sub x0, x0, #16
 	ldr q5, [x0, #0]
 	and v6.16b, v5.16b, v16.16b
@@ -856,7 +860,7 @@ vg_aes_decrypt_blocks_neon:
 	eor v0.16b, v0.16b, v7.16b
 	eor v0.16b, v0.16b, v4.16b
 	sub x1, x1, #1
-	cbnz x1, 237b
+	cbnz x1, 238b
 	sub x0, x0, #16
 	ldr q5, [x0, #0]
 	and v1.16b, v0.16b, v16.16b
@@ -879,6 +883,11 @@ vg_aes_decrypt_blocks_neon:
 	tbl v0.16b, {v0.16b}, v27.16b
 	eor v0.16b, v0.16b, v5.16b
 	str q0, [x2, #0]
+	add x2, x2, #16
+	sub x3, x3, #1
+	add x0, x9, #0
+	add x1, x10, #0
+	cbnz x3, 237b
 21:
 	ret
 	.p2align 6

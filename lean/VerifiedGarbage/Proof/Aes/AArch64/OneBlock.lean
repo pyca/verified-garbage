@@ -400,7 +400,7 @@ theorem fewOr_wp {core batch : Prog isa} {f : Nat → List Byte → Spec.Aes.Sta
     obtain ⟨a, b, c, d, e', f', g'⟩ := hp
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
       simp only [e .x0 (by decide), e .x1 (by decide), e .x2 (by decide), e .x3 (by decide),
-        e .x4 (by decide), rd₁, wr₁] <;> assumption
+        e .x4 (by decide), rd₁, wr₁] <;> with_reducible assumption
   have hpost : ∀ t, (Proof.Aes.blocksAArch64 f).post s₁ t = (Proof.Aes.blocksAArch64 f).post s₀ t :=
     fun t => by
       show (Spec.Aes.statesAt t.mem (s₁.gpr .x2) (s₁.gpr .x3).toNat = _) = _
