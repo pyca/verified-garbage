@@ -2399,6 +2399,71 @@ jmp 216f
 je 225f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
 call {vg_aes_gcm_encrypt_blocks_vaes_vpclmul_avx512}
+vpxor xmm0, xmm0, xmm0
+vmovdqu xmmword ptr [r15+512], xmm0
+vmovdqu xmmword ptr [r15+528], xmm0
+vmovdqu xmmword ptr [r15+544], xmm0
+vmovdqu xmmword ptr [r15+560], xmm0
+vmovdqu xmmword ptr [r15+576], xmm0
+vmovdqu xmmword ptr [r15+592], xmm0
+vmovdqu xmmword ptr [r15+608], xmm0
+vmovdqu xmmword ptr [r15+624], xmm0
+vmovdqu xmmword ptr [r15+640], xmm0
+vmovdqu xmmword ptr [r15+656], xmm0
+vmovdqu xmmword ptr [r15+672], xmm0
+vmovdqu xmmword ptr [r15+688], xmm0
+vmovdqu xmmword ptr [r15+704], xmm0
+vmovdqu xmmword ptr [r15+720], xmm0
+vmovdqu xmmword ptr [r15+736], xmm0
+vmovdqu xmmword ptr [r15+752], xmm0
+vmovdqu xmmword ptr [r15+768], xmm0
+vmovdqu xmmword ptr [r15+784], xmm0
+vmovdqu xmmword ptr [r15+800], xmm0
+vmovdqu xmmword ptr [r15+816], xmm0
+vmovdqu xmmword ptr [r15+832], xmm0
+vmovdqu xmmword ptr [r15+848], xmm0
+vmovdqu xmmword ptr [r15+864], xmm0
+vmovdqu xmmword ptr [r15+880], xmm0
+vmovdqu xmmword ptr [r15+896], xmm0
+vmovdqu xmmword ptr [r15+912], xmm0
+vmovdqu xmmword ptr [r15+928], xmm0
+vmovdqu xmmword ptr [r15+944], xmm0
+vmovdqu xmmword ptr [r15+960], xmm0
+vmovdqu xmmword ptr [r15+976], xmm0
+vmovdqu xmmword ptr [r15+992], xmm0
+vmovdqu xmmword ptr [r15+1008], xmm0
+vmovdqu xmmword ptr [r15+1024], xmm0
+vmovdqu xmmword ptr [r15+1040], xmm0
+vmovdqu xmmword ptr [r15+1056], xmm0
+vmovdqu xmmword ptr [r15+1072], xmm0
+vmovdqu xmmword ptr [r15+1088], xmm0
+vmovdqu xmmword ptr [r15+1104], xmm0
+vmovdqu xmmword ptr [r15+1120], xmm0
+vmovdqu xmmword ptr [r15+1136], xmm0
+vmovdqu xmmword ptr [r15+1152], xmm0
+vmovdqu xmmword ptr [r15+1168], xmm0
+vmovdqu xmmword ptr [r15+1184], xmm0
+vmovdqu xmmword ptr [r15+1200], xmm0
+vmovdqu xmmword ptr [r15+1216], xmm0
+vmovdqu xmmword ptr [r15+1232], xmm0
+vmovdqu xmmword ptr [r15+1248], xmm0
+vmovdqu xmmword ptr [r15+1264], xmm0
+vmovdqu xmmword ptr [r15+1280], xmm0
+vmovdqu xmmword ptr [r15+1296], xmm0
+vmovdqu xmmword ptr [r15+1312], xmm0
+vmovdqu xmmword ptr [r15+1328], xmm0
+vmovdqu xmmword ptr [r15+1344], xmm0
+vmovdqu xmmword ptr [r15+1360], xmm0
+vmovdqu xmmword ptr [r15+1376], xmm0
+vmovdqu xmmword ptr [r15+1392], xmm0
+vmovdqu xmmword ptr [r15+1408], xmm0
+vmovdqu xmmword ptr [r15+1424], xmm0
+vmovdqu xmmword ptr [r15+1440], xmm0
+vmovdqu xmmword ptr [r15+1456], xmm0
+vmovdqu xmmword ptr [r15+1472], xmm0
+vmovdqu xmmword ptr [r15+1488], xmm0
+vmovdqu xmmword ptr [r15+1504], xmm0
+vmovdqu xmmword ptr [r15+1520], xmm0
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
 jmp 226f
 225:
@@ -2564,6 +2629,71 @@ jmp 267f
 je 276f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
 call {vg_aes_gcm_encrypt_blocks_prepared_vaes_vpclmul_avx512}
+vpxor xmm0, xmm0, xmm0
+vmovdqu xmmword ptr [r15+512], xmm0
+vmovdqu xmmword ptr [r15+528], xmm0
+vmovdqu xmmword ptr [r15+544], xmm0
+vmovdqu xmmword ptr [r15+560], xmm0
+vmovdqu xmmword ptr [r15+576], xmm0
+vmovdqu xmmword ptr [r15+592], xmm0
+vmovdqu xmmword ptr [r15+608], xmm0
+vmovdqu xmmword ptr [r15+624], xmm0
+vmovdqu xmmword ptr [r15+640], xmm0
+vmovdqu xmmword ptr [r15+656], xmm0
+vmovdqu xmmword ptr [r15+672], xmm0
+vmovdqu xmmword ptr [r15+688], xmm0
+vmovdqu xmmword ptr [r15+704], xmm0
+vmovdqu xmmword ptr [r15+720], xmm0
+vmovdqu xmmword ptr [r15+736], xmm0
+vmovdqu xmmword ptr [r15+752], xmm0
+vmovdqu xmmword ptr [r15+768], xmm0
+vmovdqu xmmword ptr [r15+784], xmm0
+vmovdqu xmmword ptr [r15+800], xmm0
+vmovdqu xmmword ptr [r15+816], xmm0
+vmovdqu xmmword ptr [r15+832], xmm0
+vmovdqu xmmword ptr [r15+848], xmm0
+vmovdqu xmmword ptr [r15+864], xmm0
+vmovdqu xmmword ptr [r15+880], xmm0
+vmovdqu xmmword ptr [r15+896], xmm0
+vmovdqu xmmword ptr [r15+912], xmm0
+vmovdqu xmmword ptr [r15+928], xmm0
+vmovdqu xmmword ptr [r15+944], xmm0
+vmovdqu xmmword ptr [r15+960], xmm0
+vmovdqu xmmword ptr [r15+976], xmm0
+vmovdqu xmmword ptr [r15+992], xmm0
+vmovdqu xmmword ptr [r15+1008], xmm0
+vmovdqu xmmword ptr [r15+1024], xmm0
+vmovdqu xmmword ptr [r15+1040], xmm0
+vmovdqu xmmword ptr [r15+1056], xmm0
+vmovdqu xmmword ptr [r15+1072], xmm0
+vmovdqu xmmword ptr [r15+1088], xmm0
+vmovdqu xmmword ptr [r15+1104], xmm0
+vmovdqu xmmword ptr [r15+1120], xmm0
+vmovdqu xmmword ptr [r15+1136], xmm0
+vmovdqu xmmword ptr [r15+1152], xmm0
+vmovdqu xmmword ptr [r15+1168], xmm0
+vmovdqu xmmword ptr [r15+1184], xmm0
+vmovdqu xmmword ptr [r15+1200], xmm0
+vmovdqu xmmword ptr [r15+1216], xmm0
+vmovdqu xmmword ptr [r15+1232], xmm0
+vmovdqu xmmword ptr [r15+1248], xmm0
+vmovdqu xmmword ptr [r15+1264], xmm0
+vmovdqu xmmword ptr [r15+1280], xmm0
+vmovdqu xmmword ptr [r15+1296], xmm0
+vmovdqu xmmword ptr [r15+1312], xmm0
+vmovdqu xmmword ptr [r15+1328], xmm0
+vmovdqu xmmword ptr [r15+1344], xmm0
+vmovdqu xmmword ptr [r15+1360], xmm0
+vmovdqu xmmword ptr [r15+1376], xmm0
+vmovdqu xmmword ptr [r15+1392], xmm0
+vmovdqu xmmword ptr [r15+1408], xmm0
+vmovdqu xmmword ptr [r15+1424], xmm0
+vmovdqu xmmword ptr [r15+1440], xmm0
+vmovdqu xmmword ptr [r15+1456], xmm0
+vmovdqu xmmword ptr [r15+1472], xmm0
+vmovdqu xmmword ptr [r15+1488], xmm0
+vmovdqu xmmword ptr [r15+1504], xmm0
+vmovdqu xmmword ptr [r15+1520], xmm0
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
 jmp 277f
 276:
@@ -6661,6 +6791,71 @@ jmp 216f
 je 225f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
 call {vg_aes_gcm_encrypt_blocks_aesni_pclmul_avx}
+vpxor xmm0, xmm0, xmm0
+vmovdqu xmmword ptr [r15+512], xmm0
+vmovdqu xmmword ptr [r15+528], xmm0
+vmovdqu xmmword ptr [r15+544], xmm0
+vmovdqu xmmword ptr [r15+560], xmm0
+vmovdqu xmmword ptr [r15+576], xmm0
+vmovdqu xmmword ptr [r15+592], xmm0
+vmovdqu xmmword ptr [r15+608], xmm0
+vmovdqu xmmword ptr [r15+624], xmm0
+vmovdqu xmmword ptr [r15+640], xmm0
+vmovdqu xmmword ptr [r15+656], xmm0
+vmovdqu xmmword ptr [r15+672], xmm0
+vmovdqu xmmword ptr [r15+688], xmm0
+vmovdqu xmmword ptr [r15+704], xmm0
+vmovdqu xmmword ptr [r15+720], xmm0
+vmovdqu xmmword ptr [r15+736], xmm0
+vmovdqu xmmword ptr [r15+752], xmm0
+vmovdqu xmmword ptr [r15+768], xmm0
+vmovdqu xmmword ptr [r15+784], xmm0
+vmovdqu xmmword ptr [r15+800], xmm0
+vmovdqu xmmword ptr [r15+816], xmm0
+vmovdqu xmmword ptr [r15+832], xmm0
+vmovdqu xmmword ptr [r15+848], xmm0
+vmovdqu xmmword ptr [r15+864], xmm0
+vmovdqu xmmword ptr [r15+880], xmm0
+vmovdqu xmmword ptr [r15+896], xmm0
+vmovdqu xmmword ptr [r15+912], xmm0
+vmovdqu xmmword ptr [r15+928], xmm0
+vmovdqu xmmword ptr [r15+944], xmm0
+vmovdqu xmmword ptr [r15+960], xmm0
+vmovdqu xmmword ptr [r15+976], xmm0
+vmovdqu xmmword ptr [r15+992], xmm0
+vmovdqu xmmword ptr [r15+1008], xmm0
+vmovdqu xmmword ptr [r15+1024], xmm0
+vmovdqu xmmword ptr [r15+1040], xmm0
+vmovdqu xmmword ptr [r15+1056], xmm0
+vmovdqu xmmword ptr [r15+1072], xmm0
+vmovdqu xmmword ptr [r15+1088], xmm0
+vmovdqu xmmword ptr [r15+1104], xmm0
+vmovdqu xmmword ptr [r15+1120], xmm0
+vmovdqu xmmword ptr [r15+1136], xmm0
+vmovdqu xmmword ptr [r15+1152], xmm0
+vmovdqu xmmword ptr [r15+1168], xmm0
+vmovdqu xmmword ptr [r15+1184], xmm0
+vmovdqu xmmword ptr [r15+1200], xmm0
+vmovdqu xmmword ptr [r15+1216], xmm0
+vmovdqu xmmword ptr [r15+1232], xmm0
+vmovdqu xmmword ptr [r15+1248], xmm0
+vmovdqu xmmword ptr [r15+1264], xmm0
+vmovdqu xmmword ptr [r15+1280], xmm0
+vmovdqu xmmword ptr [r15+1296], xmm0
+vmovdqu xmmword ptr [r15+1312], xmm0
+vmovdqu xmmword ptr [r15+1328], xmm0
+vmovdqu xmmword ptr [r15+1344], xmm0
+vmovdqu xmmword ptr [r15+1360], xmm0
+vmovdqu xmmword ptr [r15+1376], xmm0
+vmovdqu xmmword ptr [r15+1392], xmm0
+vmovdqu xmmword ptr [r15+1408], xmm0
+vmovdqu xmmword ptr [r15+1424], xmm0
+vmovdqu xmmword ptr [r15+1440], xmm0
+vmovdqu xmmword ptr [r15+1456], xmm0
+vmovdqu xmmword ptr [r15+1472], xmm0
+vmovdqu xmmword ptr [r15+1488], xmm0
+vmovdqu xmmword ptr [r15+1504], xmm0
+vmovdqu xmmword ptr [r15+1520], xmm0
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
 jmp 226f
 225:
@@ -6826,6 +7021,71 @@ jmp 267f
 je 276f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
 call {vg_aes_gcm_encrypt_blocks_prepared16_aesni_pclmul_avx}
+vpxor xmm0, xmm0, xmm0
+vmovdqu xmmword ptr [r15+512], xmm0
+vmovdqu xmmword ptr [r15+528], xmm0
+vmovdqu xmmword ptr [r15+544], xmm0
+vmovdqu xmmword ptr [r15+560], xmm0
+vmovdqu xmmword ptr [r15+576], xmm0
+vmovdqu xmmword ptr [r15+592], xmm0
+vmovdqu xmmword ptr [r15+608], xmm0
+vmovdqu xmmword ptr [r15+624], xmm0
+vmovdqu xmmword ptr [r15+640], xmm0
+vmovdqu xmmword ptr [r15+656], xmm0
+vmovdqu xmmword ptr [r15+672], xmm0
+vmovdqu xmmword ptr [r15+688], xmm0
+vmovdqu xmmword ptr [r15+704], xmm0
+vmovdqu xmmword ptr [r15+720], xmm0
+vmovdqu xmmword ptr [r15+736], xmm0
+vmovdqu xmmword ptr [r15+752], xmm0
+vmovdqu xmmword ptr [r15+768], xmm0
+vmovdqu xmmword ptr [r15+784], xmm0
+vmovdqu xmmword ptr [r15+800], xmm0
+vmovdqu xmmword ptr [r15+816], xmm0
+vmovdqu xmmword ptr [r15+832], xmm0
+vmovdqu xmmword ptr [r15+848], xmm0
+vmovdqu xmmword ptr [r15+864], xmm0
+vmovdqu xmmword ptr [r15+880], xmm0
+vmovdqu xmmword ptr [r15+896], xmm0
+vmovdqu xmmword ptr [r15+912], xmm0
+vmovdqu xmmword ptr [r15+928], xmm0
+vmovdqu xmmword ptr [r15+944], xmm0
+vmovdqu xmmword ptr [r15+960], xmm0
+vmovdqu xmmword ptr [r15+976], xmm0
+vmovdqu xmmword ptr [r15+992], xmm0
+vmovdqu xmmword ptr [r15+1008], xmm0
+vmovdqu xmmword ptr [r15+1024], xmm0
+vmovdqu xmmword ptr [r15+1040], xmm0
+vmovdqu xmmword ptr [r15+1056], xmm0
+vmovdqu xmmword ptr [r15+1072], xmm0
+vmovdqu xmmword ptr [r15+1088], xmm0
+vmovdqu xmmword ptr [r15+1104], xmm0
+vmovdqu xmmword ptr [r15+1120], xmm0
+vmovdqu xmmword ptr [r15+1136], xmm0
+vmovdqu xmmword ptr [r15+1152], xmm0
+vmovdqu xmmword ptr [r15+1168], xmm0
+vmovdqu xmmword ptr [r15+1184], xmm0
+vmovdqu xmmword ptr [r15+1200], xmm0
+vmovdqu xmmword ptr [r15+1216], xmm0
+vmovdqu xmmword ptr [r15+1232], xmm0
+vmovdqu xmmword ptr [r15+1248], xmm0
+vmovdqu xmmword ptr [r15+1264], xmm0
+vmovdqu xmmword ptr [r15+1280], xmm0
+vmovdqu xmmword ptr [r15+1296], xmm0
+vmovdqu xmmword ptr [r15+1312], xmm0
+vmovdqu xmmword ptr [r15+1328], xmm0
+vmovdqu xmmword ptr [r15+1344], xmm0
+vmovdqu xmmword ptr [r15+1360], xmm0
+vmovdqu xmmword ptr [r15+1376], xmm0
+vmovdqu xmmword ptr [r15+1392], xmm0
+vmovdqu xmmword ptr [r15+1408], xmm0
+vmovdqu xmmword ptr [r15+1424], xmm0
+vmovdqu xmmword ptr [r15+1440], xmm0
+vmovdqu xmmword ptr [r15+1456], xmm0
+vmovdqu xmmword ptr [r15+1472], xmm0
+vmovdqu xmmword ptr [r15+1488], xmm0
+vmovdqu xmmword ptr [r15+1504], xmm0
+vmovdqu xmmword ptr [r15+1520], xmm0
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
 jmp 277f
 276:
@@ -9176,6 +9436,23 @@ je 24f
 jne 26b
 .base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
 call {vg_ghash}
+pxor xmm0, xmm0
+movdqu xmmword ptr [r15+512], xmm0
+movdqu xmmword ptr [r15+528], xmm0
+movdqu xmmword ptr [r15+544], xmm0
+movdqu xmmword ptr [r15+560], xmm0
+movdqu xmmword ptr [r15+576], xmm0
+movdqu xmmword ptr [r15+592], xmm0
+movdqu xmmword ptr [r15+608], xmm0
+movdqu xmmword ptr [r15+624], xmm0
+movdqu xmmword ptr [r15+640], xmm0
+movdqu xmmword ptr [r15+656], xmm0
+movdqu xmmword ptr [r15+672], xmm0
+movdqu xmmword ptr [r15+688], xmm0
+movdqu xmmword ptr [r15+704], xmm0
+movdqu xmmword ptr [r15+720], xmm0
+movdqu xmmword ptr [r15+736], xmm0
+movdqu xmmword ptr [r15+752], xmm0
 jmp 25f
 24:
 25:
@@ -9222,6 +9499,23 @@ jmp 222f
 221:
 .base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
 call {vg_ghash}
+pxor xmm0, xmm0
+movdqu xmmword ptr [r15+512], xmm0
+movdqu xmmword ptr [r15+528], xmm0
+movdqu xmmword ptr [r15+544], xmm0
+movdqu xmmword ptr [r15+560], xmm0
+movdqu xmmword ptr [r15+576], xmm0
+movdqu xmmword ptr [r15+592], xmm0
+movdqu xmmword ptr [r15+608], xmm0
+movdqu xmmword ptr [r15+624], xmm0
+movdqu xmmword ptr [r15+640], xmm0
+movdqu xmmword ptr [r15+656], xmm0
+movdqu xmmword ptr [r15+672], xmm0
+movdqu xmmword ptr [r15+688], xmm0
+movdqu xmmword ptr [r15+704], xmm0
+movdqu xmmword ptr [r15+720], xmm0
+movdqu xmmword ptr [r15+736], xmm0
+movdqu xmmword ptr [r15+752], xmm0
 222:
 jmp 214f
 213:
@@ -9230,6 +9524,23 @@ jmp 214f
 je 223f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
 call {vg_aes_gcm_encrypt_blocks_aesni}
+pxor xmm0, xmm0
+movdqu xmmword ptr [r15+512], xmm0
+movdqu xmmword ptr [r15+528], xmm0
+movdqu xmmword ptr [r15+544], xmm0
+movdqu xmmword ptr [r15+560], xmm0
+movdqu xmmword ptr [r15+576], xmm0
+movdqu xmmword ptr [r15+592], xmm0
+movdqu xmmword ptr [r15+608], xmm0
+movdqu xmmword ptr [r15+624], xmm0
+movdqu xmmword ptr [r15+640], xmm0
+movdqu xmmword ptr [r15+656], xmm0
+movdqu xmmword ptr [r15+672], xmm0
+movdqu xmmword ptr [r15+688], xmm0
+movdqu xmmword ptr [r15+704], xmm0
+movdqu xmmword ptr [r15+720], xmm0
+movdqu xmmword ptr [r15+736], xmm0
+movdqu xmmword ptr [r15+752], xmm0
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
 jmp 224f
 223:
@@ -9297,6 +9608,23 @@ jmp 245f
 244:
 .base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
 call {vg_ghash}
+pxor xmm0, xmm0
+movdqu xmmword ptr [r15+512], xmm0
+movdqu xmmword ptr [r15+528], xmm0
+movdqu xmmword ptr [r15+544], xmm0
+movdqu xmmword ptr [r15+560], xmm0
+movdqu xmmword ptr [r15+576], xmm0
+movdqu xmmword ptr [r15+592], xmm0
+movdqu xmmword ptr [r15+608], xmm0
+movdqu xmmword ptr [r15+624], xmm0
+movdqu xmmword ptr [r15+640], xmm0
+movdqu xmmword ptr [r15+656], xmm0
+movdqu xmmword ptr [r15+672], xmm0
+movdqu xmmword ptr [r15+688], xmm0
+movdqu xmmword ptr [r15+704], xmm0
+movdqu xmmword ptr [r15+720], xmm0
+movdqu xmmword ptr [r15+736], xmm0
+movdqu xmmword ptr [r15+752], xmm0
 245:
 jmp 240f
 239:
@@ -9305,6 +9633,23 @@ jmp 240f
 je 246f
 .base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
 call {vg_ghash}
+pxor xmm0, xmm0
+movdqu xmmword ptr [r15+512], xmm0
+movdqu xmmword ptr [r15+528], xmm0
+movdqu xmmword ptr [r15+544], xmm0
+movdqu xmmword ptr [r15+560], xmm0
+movdqu xmmword ptr [r15+576], xmm0
+movdqu xmmword ptr [r15+592], xmm0
+movdqu xmmword ptr [r15+608], xmm0
+movdqu xmmword ptr [r15+624], xmm0
+movdqu xmmword ptr [r15+640], xmm0
+movdqu xmmword ptr [r15+656], xmm0
+movdqu xmmword ptr [r15+672], xmm0
+movdqu xmmword ptr [r15+688], xmm0
+movdqu xmmword ptr [r15+704], xmm0
+movdqu xmmword ptr [r15+720], xmm0
+movdqu xmmword ptr [r15+736], xmm0
+movdqu xmmword ptr [r15+752], xmm0
 jmp 247f
 246:
 247:
@@ -10159,6 +10504,100 @@ jmp 214f
 je 223f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
 call {vg_aes_gcm_encrypt_blocks_pclmul}
+pxor xmm0, xmm0
+movdqu xmmword ptr [r15+512], xmm0
+movdqu xmmword ptr [r15+528], xmm0
+movdqu xmmword ptr [r15+544], xmm0
+movdqu xmmword ptr [r15+560], xmm0
+movdqu xmmword ptr [r15+576], xmm0
+movdqu xmmword ptr [r15+592], xmm0
+movdqu xmmword ptr [r15+608], xmm0
+movdqu xmmword ptr [r15+624], xmm0
+movdqu xmmword ptr [r15+640], xmm0
+movdqu xmmword ptr [r15+656], xmm0
+movdqu xmmword ptr [r15+672], xmm0
+movdqu xmmword ptr [r15+688], xmm0
+movdqu xmmword ptr [r15+704], xmm0
+movdqu xmmword ptr [r15+720], xmm0
+movdqu xmmword ptr [r15+736], xmm0
+movdqu xmmword ptr [r15+752], xmm0
+movdqu xmmword ptr [r15+768], xmm0
+movdqu xmmword ptr [r15+784], xmm0
+movdqu xmmword ptr [r15+800], xmm0
+movdqu xmmword ptr [r15+816], xmm0
+movdqu xmmword ptr [r15+832], xmm0
+movdqu xmmword ptr [r15+848], xmm0
+movdqu xmmword ptr [r15+864], xmm0
+movdqu xmmword ptr [r15+880], xmm0
+movdqu xmmword ptr [r15+896], xmm0
+movdqu xmmword ptr [r15+912], xmm0
+movdqu xmmword ptr [r15+928], xmm0
+movdqu xmmword ptr [r15+944], xmm0
+movdqu xmmword ptr [r15+960], xmm0
+movdqu xmmword ptr [r15+976], xmm0
+movdqu xmmword ptr [r15+992], xmm0
+movdqu xmmword ptr [r15+1008], xmm0
+movdqu xmmword ptr [r15+1024], xmm0
+movdqu xmmword ptr [r15+1040], xmm0
+movdqu xmmword ptr [r15+1056], xmm0
+movdqu xmmword ptr [r15+1072], xmm0
+movdqu xmmword ptr [r15+1088], xmm0
+movdqu xmmword ptr [r15+1104], xmm0
+movdqu xmmword ptr [r15+1120], xmm0
+movdqu xmmword ptr [r15+1136], xmm0
+movdqu xmmword ptr [r15+1152], xmm0
+movdqu xmmword ptr [r15+1168], xmm0
+movdqu xmmword ptr [r15+1184], xmm0
+movdqu xmmword ptr [r15+1200], xmm0
+movdqu xmmword ptr [r15+1216], xmm0
+movdqu xmmword ptr [r15+1232], xmm0
+movdqu xmmword ptr [r15+1248], xmm0
+movdqu xmmword ptr [r15+1264], xmm0
+movdqu xmmword ptr [r15+1280], xmm0
+movdqu xmmword ptr [r15+1296], xmm0
+movdqu xmmword ptr [r15+1312], xmm0
+movdqu xmmword ptr [r15+1328], xmm0
+movdqu xmmword ptr [r15+1344], xmm0
+movdqu xmmword ptr [r15+1360], xmm0
+movdqu xmmword ptr [r15+1376], xmm0
+movdqu xmmword ptr [r15+1392], xmm0
+movdqu xmmword ptr [r15+1408], xmm0
+movdqu xmmword ptr [r15+1424], xmm0
+movdqu xmmword ptr [r15+1440], xmm0
+movdqu xmmword ptr [r15+1456], xmm0
+movdqu xmmword ptr [r15+1472], xmm0
+movdqu xmmword ptr [r15+1488], xmm0
+movdqu xmmword ptr [r15+1504], xmm0
+movdqu xmmword ptr [r15+1520], xmm0
+movdqu xmmword ptr [r15+1536], xmm0
+movdqu xmmword ptr [r15+1552], xmm0
+movdqu xmmword ptr [r15+1568], xmm0
+movdqu xmmword ptr [r15+1584], xmm0
+movdqu xmmword ptr [r15+1600], xmm0
+movdqu xmmword ptr [r15+1616], xmm0
+movdqu xmmword ptr [r15+1632], xmm0
+movdqu xmmword ptr [r15+1648], xmm0
+movdqu xmmword ptr [r15+1664], xmm0
+movdqu xmmword ptr [r15+1680], xmm0
+movdqu xmmword ptr [r15+1696], xmm0
+movdqu xmmword ptr [r15+1712], xmm0
+movdqu xmmword ptr [r15+1728], xmm0
+movdqu xmmword ptr [r15+1744], xmm0
+movdqu xmmword ptr [r15+1760], xmm0
+movdqu xmmword ptr [r15+1776], xmm0
+movdqu xmmword ptr [r15+1792], xmm0
+movdqu xmmword ptr [r15+1808], xmm0
+movdqu xmmword ptr [r15+1824], xmm0
+movdqu xmmword ptr [r15+1840], xmm0
+movdqu xmmword ptr [r15+1856], xmm0
+movdqu xmmword ptr [r15+1872], xmm0
+movdqu xmmword ptr [r15+1888], xmm0
+movdqu xmmword ptr [r15+1904], xmm0
+movdqu xmmword ptr [r15+1920], xmm0
+movdqu xmmword ptr [r15+1936], xmm0
+movdqu xmmword ptr [r15+1952], xmm0
+movdqu xmmword ptr [r15+1968], xmm0
+movdqu xmmword ptr [r15+1984], xmm0
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
 jmp 224f
 223:
@@ -10189,6 +10628,100 @@ jmp 228f
 je 232f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
 call {vg_aes_ctr32}
+pxor xmm0, xmm0
+movdqu xmmword ptr [r15+512], xmm0
+movdqu xmmword ptr [r15+528], xmm0
+movdqu xmmword ptr [r15+544], xmm0
+movdqu xmmword ptr [r15+560], xmm0
+movdqu xmmword ptr [r15+576], xmm0
+movdqu xmmword ptr [r15+592], xmm0
+movdqu xmmword ptr [r15+608], xmm0
+movdqu xmmword ptr [r15+624], xmm0
+movdqu xmmword ptr [r15+640], xmm0
+movdqu xmmword ptr [r15+656], xmm0
+movdqu xmmword ptr [r15+672], xmm0
+movdqu xmmword ptr [r15+688], xmm0
+movdqu xmmword ptr [r15+704], xmm0
+movdqu xmmword ptr [r15+720], xmm0
+movdqu xmmword ptr [r15+736], xmm0
+movdqu xmmword ptr [r15+752], xmm0
+movdqu xmmword ptr [r15+768], xmm0
+movdqu xmmword ptr [r15+784], xmm0
+movdqu xmmword ptr [r15+800], xmm0
+movdqu xmmword ptr [r15+816], xmm0
+movdqu xmmword ptr [r15+832], xmm0
+movdqu xmmword ptr [r15+848], xmm0
+movdqu xmmword ptr [r15+864], xmm0
+movdqu xmmword ptr [r15+880], xmm0
+movdqu xmmword ptr [r15+896], xmm0
+movdqu xmmword ptr [r15+912], xmm0
+movdqu xmmword ptr [r15+928], xmm0
+movdqu xmmword ptr [r15+944], xmm0
+movdqu xmmword ptr [r15+960], xmm0
+movdqu xmmword ptr [r15+976], xmm0
+movdqu xmmword ptr [r15+992], xmm0
+movdqu xmmword ptr [r15+1008], xmm0
+movdqu xmmword ptr [r15+1024], xmm0
+movdqu xmmword ptr [r15+1040], xmm0
+movdqu xmmword ptr [r15+1056], xmm0
+movdqu xmmword ptr [r15+1072], xmm0
+movdqu xmmword ptr [r15+1088], xmm0
+movdqu xmmword ptr [r15+1104], xmm0
+movdqu xmmword ptr [r15+1120], xmm0
+movdqu xmmword ptr [r15+1136], xmm0
+movdqu xmmword ptr [r15+1152], xmm0
+movdqu xmmword ptr [r15+1168], xmm0
+movdqu xmmword ptr [r15+1184], xmm0
+movdqu xmmword ptr [r15+1200], xmm0
+movdqu xmmword ptr [r15+1216], xmm0
+movdqu xmmword ptr [r15+1232], xmm0
+movdqu xmmword ptr [r15+1248], xmm0
+movdqu xmmword ptr [r15+1264], xmm0
+movdqu xmmword ptr [r15+1280], xmm0
+movdqu xmmword ptr [r15+1296], xmm0
+movdqu xmmword ptr [r15+1312], xmm0
+movdqu xmmword ptr [r15+1328], xmm0
+movdqu xmmword ptr [r15+1344], xmm0
+movdqu xmmword ptr [r15+1360], xmm0
+movdqu xmmword ptr [r15+1376], xmm0
+movdqu xmmword ptr [r15+1392], xmm0
+movdqu xmmword ptr [r15+1408], xmm0
+movdqu xmmword ptr [r15+1424], xmm0
+movdqu xmmword ptr [r15+1440], xmm0
+movdqu xmmword ptr [r15+1456], xmm0
+movdqu xmmword ptr [r15+1472], xmm0
+movdqu xmmword ptr [r15+1488], xmm0
+movdqu xmmword ptr [r15+1504], xmm0
+movdqu xmmword ptr [r15+1520], xmm0
+movdqu xmmword ptr [r15+1536], xmm0
+movdqu xmmword ptr [r15+1552], xmm0
+movdqu xmmword ptr [r15+1568], xmm0
+movdqu xmmword ptr [r15+1584], xmm0
+movdqu xmmword ptr [r15+1600], xmm0
+movdqu xmmword ptr [r15+1616], xmm0
+movdqu xmmword ptr [r15+1632], xmm0
+movdqu xmmword ptr [r15+1648], xmm0
+movdqu xmmword ptr [r15+1664], xmm0
+movdqu xmmword ptr [r15+1680], xmm0
+movdqu xmmword ptr [r15+1696], xmm0
+movdqu xmmword ptr [r15+1712], xmm0
+movdqu xmmword ptr [r15+1728], xmm0
+movdqu xmmword ptr [r15+1744], xmm0
+movdqu xmmword ptr [r15+1760], xmm0
+movdqu xmmword ptr [r15+1776], xmm0
+movdqu xmmword ptr [r15+1792], xmm0
+movdqu xmmword ptr [r15+1808], xmm0
+movdqu xmmword ptr [r15+1824], xmm0
+movdqu xmmword ptr [r15+1840], xmm0
+movdqu xmmword ptr [r15+1856], xmm0
+movdqu xmmword ptr [r15+1872], xmm0
+movdqu xmmword ptr [r15+1888], xmm0
+movdqu xmmword ptr [r15+1904], xmm0
+movdqu xmmword ptr [r15+1920], xmm0
+movdqu xmmword ptr [r15+1936], xmm0
+movdqu xmmword ptr [r15+1952], xmm0
+movdqu xmmword ptr [r15+1968], xmm0
+movdqu xmmword ptr [r15+1984], xmm0
 jmp 233f
 232:
 233:
@@ -10196,6 +10729,100 @@ jmp 233f
 je 234f
 .base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
 call {vg_aes_ctr32}
+pxor xmm0, xmm0
+movdqu xmmword ptr [r15+512], xmm0
+movdqu xmmword ptr [r15+528], xmm0
+movdqu xmmword ptr [r15+544], xmm0
+movdqu xmmword ptr [r15+560], xmm0
+movdqu xmmword ptr [r15+576], xmm0
+movdqu xmmword ptr [r15+592], xmm0
+movdqu xmmword ptr [r15+608], xmm0
+movdqu xmmword ptr [r15+624], xmm0
+movdqu xmmword ptr [r15+640], xmm0
+movdqu xmmword ptr [r15+656], xmm0
+movdqu xmmword ptr [r15+672], xmm0
+movdqu xmmword ptr [r15+688], xmm0
+movdqu xmmword ptr [r15+704], xmm0
+movdqu xmmword ptr [r15+720], xmm0
+movdqu xmmword ptr [r15+736], xmm0
+movdqu xmmword ptr [r15+752], xmm0
+movdqu xmmword ptr [r15+768], xmm0
+movdqu xmmword ptr [r15+784], xmm0
+movdqu xmmword ptr [r15+800], xmm0
+movdqu xmmword ptr [r15+816], xmm0
+movdqu xmmword ptr [r15+832], xmm0
+movdqu xmmword ptr [r15+848], xmm0
+movdqu xmmword ptr [r15+864], xmm0
+movdqu xmmword ptr [r15+880], xmm0
+movdqu xmmword ptr [r15+896], xmm0
+movdqu xmmword ptr [r15+912], xmm0
+movdqu xmmword ptr [r15+928], xmm0
+movdqu xmmword ptr [r15+944], xmm0
+movdqu xmmword ptr [r15+960], xmm0
+movdqu xmmword ptr [r15+976], xmm0
+movdqu xmmword ptr [r15+992], xmm0
+movdqu xmmword ptr [r15+1008], xmm0
+movdqu xmmword ptr [r15+1024], xmm0
+movdqu xmmword ptr [r15+1040], xmm0
+movdqu xmmword ptr [r15+1056], xmm0
+movdqu xmmword ptr [r15+1072], xmm0
+movdqu xmmword ptr [r15+1088], xmm0
+movdqu xmmword ptr [r15+1104], xmm0
+movdqu xmmword ptr [r15+1120], xmm0
+movdqu xmmword ptr [r15+1136], xmm0
+movdqu xmmword ptr [r15+1152], xmm0
+movdqu xmmword ptr [r15+1168], xmm0
+movdqu xmmword ptr [r15+1184], xmm0
+movdqu xmmword ptr [r15+1200], xmm0
+movdqu xmmword ptr [r15+1216], xmm0
+movdqu xmmword ptr [r15+1232], xmm0
+movdqu xmmword ptr [r15+1248], xmm0
+movdqu xmmword ptr [r15+1264], xmm0
+movdqu xmmword ptr [r15+1280], xmm0
+movdqu xmmword ptr [r15+1296], xmm0
+movdqu xmmword ptr [r15+1312], xmm0
+movdqu xmmword ptr [r15+1328], xmm0
+movdqu xmmword ptr [r15+1344], xmm0
+movdqu xmmword ptr [r15+1360], xmm0
+movdqu xmmword ptr [r15+1376], xmm0
+movdqu xmmword ptr [r15+1392], xmm0
+movdqu xmmword ptr [r15+1408], xmm0
+movdqu xmmword ptr [r15+1424], xmm0
+movdqu xmmword ptr [r15+1440], xmm0
+movdqu xmmword ptr [r15+1456], xmm0
+movdqu xmmword ptr [r15+1472], xmm0
+movdqu xmmword ptr [r15+1488], xmm0
+movdqu xmmword ptr [r15+1504], xmm0
+movdqu xmmword ptr [r15+1520], xmm0
+movdqu xmmword ptr [r15+1536], xmm0
+movdqu xmmword ptr [r15+1552], xmm0
+movdqu xmmword ptr [r15+1568], xmm0
+movdqu xmmword ptr [r15+1584], xmm0
+movdqu xmmword ptr [r15+1600], xmm0
+movdqu xmmword ptr [r15+1616], xmm0
+movdqu xmmword ptr [r15+1632], xmm0
+movdqu xmmword ptr [r15+1648], xmm0
+movdqu xmmword ptr [r15+1664], xmm0
+movdqu xmmword ptr [r15+1680], xmm0
+movdqu xmmword ptr [r15+1696], xmm0
+movdqu xmmword ptr [r15+1712], xmm0
+movdqu xmmword ptr [r15+1728], xmm0
+movdqu xmmword ptr [r15+1744], xmm0
+movdqu xmmword ptr [r15+1760], xmm0
+movdqu xmmword ptr [r15+1776], xmm0
+movdqu xmmword ptr [r15+1792], xmm0
+movdqu xmmword ptr [r15+1808], xmm0
+movdqu xmmword ptr [r15+1824], xmm0
+movdqu xmmword ptr [r15+1840], xmm0
+movdqu xmmword ptr [r15+1856], xmm0
+movdqu xmmword ptr [r15+1872], xmm0
+movdqu xmmword ptr [r15+1888], xmm0
+movdqu xmmword ptr [r15+1904], xmm0
+movdqu xmmword ptr [r15+1920], xmm0
+movdqu xmmword ptr [r15+1936], xmm0
+movdqu xmmword ptr [r15+1952], xmm0
+movdqu xmmword ptr [r15+1968], xmm0
+movdqu xmmword ptr [r15+1984], xmm0
 .base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
 236:
 .base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
@@ -11018,6 +11645,23 @@ je 24f
 jne 26b
 .base64 "TInvSIHH8AAAAEyJ9kiDxhBMifpIg8JguQEAAABNifhJgcAAAgAA"
 call {vg_ghash}
+pxor xmm0, xmm0
+movdqu xmmword ptr [r15+512], xmm0
+movdqu xmmword ptr [r15+528], xmm0
+movdqu xmmword ptr [r15+544], xmm0
+movdqu xmmword ptr [r15+560], xmm0
+movdqu xmmword ptr [r15+576], xmm0
+movdqu xmmword ptr [r15+592], xmm0
+movdqu xmmword ptr [r15+608], xmm0
+movdqu xmmword ptr [r15+624], xmm0
+movdqu xmmword ptr [r15+640], xmm0
+movdqu xmmword ptr [r15+656], xmm0
+movdqu xmmword ptr [r15+672], xmm0
+movdqu xmmword ptr [r15+688], xmm0
+movdqu xmmword ptr [r15+704], xmm0
+movdqu xmmword ptr [r15+720], xmm0
+movdqu xmmword ptr [r15+736], xmm0
+movdqu xmmword ptr [r15+752], xmm0
 jmp 25f
 24:
 25:
@@ -11064,6 +11708,23 @@ jmp 222f
 221:
 .base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
 call {vg_ghash}
+pxor xmm0, xmm0
+movdqu xmmword ptr [r15+512], xmm0
+movdqu xmmword ptr [r15+528], xmm0
+movdqu xmmword ptr [r15+544], xmm0
+movdqu xmmword ptr [r15+560], xmm0
+movdqu xmmword ptr [r15+576], xmm0
+movdqu xmmword ptr [r15+592], xmm0
+movdqu xmmword ptr [r15+608], xmm0
+movdqu xmmword ptr [r15+624], xmm0
+movdqu xmmword ptr [r15+640], xmm0
+movdqu xmmword ptr [r15+656], xmm0
+movdqu xmmword ptr [r15+672], xmm0
+movdqu xmmword ptr [r15+688], xmm0
+movdqu xmmword ptr [r15+704], xmm0
+movdqu xmmword ptr [r15+720], xmm0
+movdqu xmmword ptr [r15+736], xmm0
+movdqu xmmword ptr [r15+752], xmm0
 222:
 jmp 214f
 213:
@@ -11072,6 +11733,100 @@ jmp 214f
 je 223f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBMifFIg8EQTYuHyAAAAEmJwUyJ+EgFwAEAAFA="
 call {vg_aes_gcm_encrypt_blocks}
+pxor xmm0, xmm0
+movdqu xmmword ptr [r15+512], xmm0
+movdqu xmmword ptr [r15+528], xmm0
+movdqu xmmword ptr [r15+544], xmm0
+movdqu xmmword ptr [r15+560], xmm0
+movdqu xmmword ptr [r15+576], xmm0
+movdqu xmmword ptr [r15+592], xmm0
+movdqu xmmword ptr [r15+608], xmm0
+movdqu xmmword ptr [r15+624], xmm0
+movdqu xmmword ptr [r15+640], xmm0
+movdqu xmmword ptr [r15+656], xmm0
+movdqu xmmword ptr [r15+672], xmm0
+movdqu xmmword ptr [r15+688], xmm0
+movdqu xmmword ptr [r15+704], xmm0
+movdqu xmmword ptr [r15+720], xmm0
+movdqu xmmword ptr [r15+736], xmm0
+movdqu xmmword ptr [r15+752], xmm0
+movdqu xmmword ptr [r15+768], xmm0
+movdqu xmmword ptr [r15+784], xmm0
+movdqu xmmword ptr [r15+800], xmm0
+movdqu xmmword ptr [r15+816], xmm0
+movdqu xmmword ptr [r15+832], xmm0
+movdqu xmmword ptr [r15+848], xmm0
+movdqu xmmword ptr [r15+864], xmm0
+movdqu xmmword ptr [r15+880], xmm0
+movdqu xmmword ptr [r15+896], xmm0
+movdqu xmmword ptr [r15+912], xmm0
+movdqu xmmword ptr [r15+928], xmm0
+movdqu xmmword ptr [r15+944], xmm0
+movdqu xmmword ptr [r15+960], xmm0
+movdqu xmmword ptr [r15+976], xmm0
+movdqu xmmword ptr [r15+992], xmm0
+movdqu xmmword ptr [r15+1008], xmm0
+movdqu xmmword ptr [r15+1024], xmm0
+movdqu xmmword ptr [r15+1040], xmm0
+movdqu xmmword ptr [r15+1056], xmm0
+movdqu xmmword ptr [r15+1072], xmm0
+movdqu xmmword ptr [r15+1088], xmm0
+movdqu xmmword ptr [r15+1104], xmm0
+movdqu xmmword ptr [r15+1120], xmm0
+movdqu xmmword ptr [r15+1136], xmm0
+movdqu xmmword ptr [r15+1152], xmm0
+movdqu xmmword ptr [r15+1168], xmm0
+movdqu xmmword ptr [r15+1184], xmm0
+movdqu xmmword ptr [r15+1200], xmm0
+movdqu xmmword ptr [r15+1216], xmm0
+movdqu xmmword ptr [r15+1232], xmm0
+movdqu xmmword ptr [r15+1248], xmm0
+movdqu xmmword ptr [r15+1264], xmm0
+movdqu xmmword ptr [r15+1280], xmm0
+movdqu xmmword ptr [r15+1296], xmm0
+movdqu xmmword ptr [r15+1312], xmm0
+movdqu xmmword ptr [r15+1328], xmm0
+movdqu xmmword ptr [r15+1344], xmm0
+movdqu xmmword ptr [r15+1360], xmm0
+movdqu xmmword ptr [r15+1376], xmm0
+movdqu xmmword ptr [r15+1392], xmm0
+movdqu xmmword ptr [r15+1408], xmm0
+movdqu xmmword ptr [r15+1424], xmm0
+movdqu xmmword ptr [r15+1440], xmm0
+movdqu xmmword ptr [r15+1456], xmm0
+movdqu xmmword ptr [r15+1472], xmm0
+movdqu xmmword ptr [r15+1488], xmm0
+movdqu xmmword ptr [r15+1504], xmm0
+movdqu xmmword ptr [r15+1520], xmm0
+movdqu xmmword ptr [r15+1536], xmm0
+movdqu xmmword ptr [r15+1552], xmm0
+movdqu xmmword ptr [r15+1568], xmm0
+movdqu xmmword ptr [r15+1584], xmm0
+movdqu xmmword ptr [r15+1600], xmm0
+movdqu xmmword ptr [r15+1616], xmm0
+movdqu xmmword ptr [r15+1632], xmm0
+movdqu xmmword ptr [r15+1648], xmm0
+movdqu xmmword ptr [r15+1664], xmm0
+movdqu xmmword ptr [r15+1680], xmm0
+movdqu xmmword ptr [r15+1696], xmm0
+movdqu xmmword ptr [r15+1712], xmm0
+movdqu xmmword ptr [r15+1728], xmm0
+movdqu xmmword ptr [r15+1744], xmm0
+movdqu xmmword ptr [r15+1760], xmm0
+movdqu xmmword ptr [r15+1776], xmm0
+movdqu xmmword ptr [r15+1792], xmm0
+movdqu xmmword ptr [r15+1808], xmm0
+movdqu xmmword ptr [r15+1824], xmm0
+movdqu xmmword ptr [r15+1840], xmm0
+movdqu xmmword ptr [r15+1856], xmm0
+movdqu xmmword ptr [r15+1872], xmm0
+movdqu xmmword ptr [r15+1888], xmm0
+movdqu xmmword ptr [r15+1904], xmm0
+movdqu xmmword ptr [r15+1920], xmm0
+movdqu xmmword ptr [r15+1936], xmm0
+movdqu xmmword ptr [r15+1952], xmm0
+movdqu xmmword ptr [r15+1968], xmm0
+movdqu xmmword ptr [r15+1984], xmm0
 .base64 "WEmLh9AAAABIicFIg+EPSYmP0AAAAEgpyEmLj8gAAABIAcFJiY/IAAAASYuPwAAAAEgBwUmJj8AAAAA="
 jmp 224f
 223:
@@ -11102,6 +11857,100 @@ jmp 228f
 je 232f
 .base64 "TInvSYu3sAAAAEyJ8kiDwjBNiflJgcEAAgAA"
 call {vg_aes_ctr32}
+pxor xmm0, xmm0
+movdqu xmmword ptr [r15+512], xmm0
+movdqu xmmword ptr [r15+528], xmm0
+movdqu xmmword ptr [r15+544], xmm0
+movdqu xmmword ptr [r15+560], xmm0
+movdqu xmmword ptr [r15+576], xmm0
+movdqu xmmword ptr [r15+592], xmm0
+movdqu xmmword ptr [r15+608], xmm0
+movdqu xmmword ptr [r15+624], xmm0
+movdqu xmmword ptr [r15+640], xmm0
+movdqu xmmword ptr [r15+656], xmm0
+movdqu xmmword ptr [r15+672], xmm0
+movdqu xmmword ptr [r15+688], xmm0
+movdqu xmmword ptr [r15+704], xmm0
+movdqu xmmword ptr [r15+720], xmm0
+movdqu xmmword ptr [r15+736], xmm0
+movdqu xmmword ptr [r15+752], xmm0
+movdqu xmmword ptr [r15+768], xmm0
+movdqu xmmword ptr [r15+784], xmm0
+movdqu xmmword ptr [r15+800], xmm0
+movdqu xmmword ptr [r15+816], xmm0
+movdqu xmmword ptr [r15+832], xmm0
+movdqu xmmword ptr [r15+848], xmm0
+movdqu xmmword ptr [r15+864], xmm0
+movdqu xmmword ptr [r15+880], xmm0
+movdqu xmmword ptr [r15+896], xmm0
+movdqu xmmword ptr [r15+912], xmm0
+movdqu xmmword ptr [r15+928], xmm0
+movdqu xmmword ptr [r15+944], xmm0
+movdqu xmmword ptr [r15+960], xmm0
+movdqu xmmword ptr [r15+976], xmm0
+movdqu xmmword ptr [r15+992], xmm0
+movdqu xmmword ptr [r15+1008], xmm0
+movdqu xmmword ptr [r15+1024], xmm0
+movdqu xmmword ptr [r15+1040], xmm0
+movdqu xmmword ptr [r15+1056], xmm0
+movdqu xmmword ptr [r15+1072], xmm0
+movdqu xmmword ptr [r15+1088], xmm0
+movdqu xmmword ptr [r15+1104], xmm0
+movdqu xmmword ptr [r15+1120], xmm0
+movdqu xmmword ptr [r15+1136], xmm0
+movdqu xmmword ptr [r15+1152], xmm0
+movdqu xmmword ptr [r15+1168], xmm0
+movdqu xmmword ptr [r15+1184], xmm0
+movdqu xmmword ptr [r15+1200], xmm0
+movdqu xmmword ptr [r15+1216], xmm0
+movdqu xmmword ptr [r15+1232], xmm0
+movdqu xmmword ptr [r15+1248], xmm0
+movdqu xmmword ptr [r15+1264], xmm0
+movdqu xmmword ptr [r15+1280], xmm0
+movdqu xmmword ptr [r15+1296], xmm0
+movdqu xmmword ptr [r15+1312], xmm0
+movdqu xmmword ptr [r15+1328], xmm0
+movdqu xmmword ptr [r15+1344], xmm0
+movdqu xmmword ptr [r15+1360], xmm0
+movdqu xmmword ptr [r15+1376], xmm0
+movdqu xmmword ptr [r15+1392], xmm0
+movdqu xmmword ptr [r15+1408], xmm0
+movdqu xmmword ptr [r15+1424], xmm0
+movdqu xmmword ptr [r15+1440], xmm0
+movdqu xmmword ptr [r15+1456], xmm0
+movdqu xmmword ptr [r15+1472], xmm0
+movdqu xmmword ptr [r15+1488], xmm0
+movdqu xmmword ptr [r15+1504], xmm0
+movdqu xmmword ptr [r15+1520], xmm0
+movdqu xmmword ptr [r15+1536], xmm0
+movdqu xmmword ptr [r15+1552], xmm0
+movdqu xmmword ptr [r15+1568], xmm0
+movdqu xmmword ptr [r15+1584], xmm0
+movdqu xmmword ptr [r15+1600], xmm0
+movdqu xmmword ptr [r15+1616], xmm0
+movdqu xmmword ptr [r15+1632], xmm0
+movdqu xmmword ptr [r15+1648], xmm0
+movdqu xmmword ptr [r15+1664], xmm0
+movdqu xmmword ptr [r15+1680], xmm0
+movdqu xmmword ptr [r15+1696], xmm0
+movdqu xmmword ptr [r15+1712], xmm0
+movdqu xmmword ptr [r15+1728], xmm0
+movdqu xmmword ptr [r15+1744], xmm0
+movdqu xmmword ptr [r15+1760], xmm0
+movdqu xmmword ptr [r15+1776], xmm0
+movdqu xmmword ptr [r15+1792], xmm0
+movdqu xmmword ptr [r15+1808], xmm0
+movdqu xmmword ptr [r15+1824], xmm0
+movdqu xmmword ptr [r15+1840], xmm0
+movdqu xmmword ptr [r15+1856], xmm0
+movdqu xmmword ptr [r15+1872], xmm0
+movdqu xmmword ptr [r15+1888], xmm0
+movdqu xmmword ptr [r15+1904], xmm0
+movdqu xmmword ptr [r15+1920], xmm0
+movdqu xmmword ptr [r15+1936], xmm0
+movdqu xmmword ptr [r15+1952], xmm0
+movdqu xmmword ptr [r15+1968], xmm0
+movdqu xmmword ptr [r15+1984], xmm0
 jmp 233f
 232:
 233:
@@ -11109,6 +11958,100 @@ jmp 233f
 je 234f
 .base64 "uAAAAABJiUZASYlGSEyJ70mLt7AAAABMifJIg8IwTInxSIPBQEG4AQAAAE2J+UmBwQACAAA="
 call {vg_aes_ctr32}
+pxor xmm0, xmm0
+movdqu xmmword ptr [r15+512], xmm0
+movdqu xmmword ptr [r15+528], xmm0
+movdqu xmmword ptr [r15+544], xmm0
+movdqu xmmword ptr [r15+560], xmm0
+movdqu xmmword ptr [r15+576], xmm0
+movdqu xmmword ptr [r15+592], xmm0
+movdqu xmmword ptr [r15+608], xmm0
+movdqu xmmword ptr [r15+624], xmm0
+movdqu xmmword ptr [r15+640], xmm0
+movdqu xmmword ptr [r15+656], xmm0
+movdqu xmmword ptr [r15+672], xmm0
+movdqu xmmword ptr [r15+688], xmm0
+movdqu xmmword ptr [r15+704], xmm0
+movdqu xmmword ptr [r15+720], xmm0
+movdqu xmmword ptr [r15+736], xmm0
+movdqu xmmword ptr [r15+752], xmm0
+movdqu xmmword ptr [r15+768], xmm0
+movdqu xmmword ptr [r15+784], xmm0
+movdqu xmmword ptr [r15+800], xmm0
+movdqu xmmword ptr [r15+816], xmm0
+movdqu xmmword ptr [r15+832], xmm0
+movdqu xmmword ptr [r15+848], xmm0
+movdqu xmmword ptr [r15+864], xmm0
+movdqu xmmword ptr [r15+880], xmm0
+movdqu xmmword ptr [r15+896], xmm0
+movdqu xmmword ptr [r15+912], xmm0
+movdqu xmmword ptr [r15+928], xmm0
+movdqu xmmword ptr [r15+944], xmm0
+movdqu xmmword ptr [r15+960], xmm0
+movdqu xmmword ptr [r15+976], xmm0
+movdqu xmmword ptr [r15+992], xmm0
+movdqu xmmword ptr [r15+1008], xmm0
+movdqu xmmword ptr [r15+1024], xmm0
+movdqu xmmword ptr [r15+1040], xmm0
+movdqu xmmword ptr [r15+1056], xmm0
+movdqu xmmword ptr [r15+1072], xmm0
+movdqu xmmword ptr [r15+1088], xmm0
+movdqu xmmword ptr [r15+1104], xmm0
+movdqu xmmword ptr [r15+1120], xmm0
+movdqu xmmword ptr [r15+1136], xmm0
+movdqu xmmword ptr [r15+1152], xmm0
+movdqu xmmword ptr [r15+1168], xmm0
+movdqu xmmword ptr [r15+1184], xmm0
+movdqu xmmword ptr [r15+1200], xmm0
+movdqu xmmword ptr [r15+1216], xmm0
+movdqu xmmword ptr [r15+1232], xmm0
+movdqu xmmword ptr [r15+1248], xmm0
+movdqu xmmword ptr [r15+1264], xmm0
+movdqu xmmword ptr [r15+1280], xmm0
+movdqu xmmword ptr [r15+1296], xmm0
+movdqu xmmword ptr [r15+1312], xmm0
+movdqu xmmword ptr [r15+1328], xmm0
+movdqu xmmword ptr [r15+1344], xmm0
+movdqu xmmword ptr [r15+1360], xmm0
+movdqu xmmword ptr [r15+1376], xmm0
+movdqu xmmword ptr [r15+1392], xmm0
+movdqu xmmword ptr [r15+1408], xmm0
+movdqu xmmword ptr [r15+1424], xmm0
+movdqu xmmword ptr [r15+1440], xmm0
+movdqu xmmword ptr [r15+1456], xmm0
+movdqu xmmword ptr [r15+1472], xmm0
+movdqu xmmword ptr [r15+1488], xmm0
+movdqu xmmword ptr [r15+1504], xmm0
+movdqu xmmword ptr [r15+1520], xmm0
+movdqu xmmword ptr [r15+1536], xmm0
+movdqu xmmword ptr [r15+1552], xmm0
+movdqu xmmword ptr [r15+1568], xmm0
+movdqu xmmword ptr [r15+1584], xmm0
+movdqu xmmword ptr [r15+1600], xmm0
+movdqu xmmword ptr [r15+1616], xmm0
+movdqu xmmword ptr [r15+1632], xmm0
+movdqu xmmword ptr [r15+1648], xmm0
+movdqu xmmword ptr [r15+1664], xmm0
+movdqu xmmword ptr [r15+1680], xmm0
+movdqu xmmword ptr [r15+1696], xmm0
+movdqu xmmword ptr [r15+1712], xmm0
+movdqu xmmword ptr [r15+1728], xmm0
+movdqu xmmword ptr [r15+1744], xmm0
+movdqu xmmword ptr [r15+1760], xmm0
+movdqu xmmword ptr [r15+1776], xmm0
+movdqu xmmword ptr [r15+1792], xmm0
+movdqu xmmword ptr [r15+1808], xmm0
+movdqu xmmword ptr [r15+1824], xmm0
+movdqu xmmword ptr [r15+1840], xmm0
+movdqu xmmword ptr [r15+1856], xmm0
+movdqu xmmword ptr [r15+1872], xmm0
+movdqu xmmword ptr [r15+1888], xmm0
+movdqu xmmword ptr [r15+1904], xmm0
+movdqu xmmword ptr [r15+1920], xmm0
+movdqu xmmword ptr [r15+1936], xmm0
+movdqu xmmword ptr [r15+1952], xmm0
+movdqu xmmword ptr [r15+1968], xmm0
+movdqu xmmword ptr [r15+1984], xmm0
 .base64 "TInnTIn2SIPGQEiJ6UG6AAAAAA=="
 236:
 .base64 "Qg+2BBdGD7YcFkwx2EKIBBdJg8IBSTnK"
@@ -11139,6 +12082,23 @@ jmp 245f
 244:
 .base64 "TInvSIHH8AAAAEyJ9kiDxhBMifJIg8IguQEAAABNifhJgcAAAgAA"
 call {vg_ghash}
+pxor xmm0, xmm0
+movdqu xmmword ptr [r15+512], xmm0
+movdqu xmmword ptr [r15+528], xmm0
+movdqu xmmword ptr [r15+544], xmm0
+movdqu xmmword ptr [r15+560], xmm0
+movdqu xmmword ptr [r15+576], xmm0
+movdqu xmmword ptr [r15+592], xmm0
+movdqu xmmword ptr [r15+608], xmm0
+movdqu xmmword ptr [r15+624], xmm0
+movdqu xmmword ptr [r15+640], xmm0
+movdqu xmmword ptr [r15+656], xmm0
+movdqu xmmword ptr [r15+672], xmm0
+movdqu xmmword ptr [r15+688], xmm0
+movdqu xmmword ptr [r15+704], xmm0
+movdqu xmmword ptr [r15+720], xmm0
+movdqu xmmword ptr [r15+736], xmm0
+movdqu xmmword ptr [r15+752], xmm0
 245:
 jmp 240f
 239:
@@ -11147,6 +12107,23 @@ jmp 240f
 je 246f
 .base64 "TInvSIHH8AAAAEyJ9kiDxhBNifhJgcAAAgAA"
 call {vg_ghash}
+pxor xmm0, xmm0
+movdqu xmmword ptr [r15+512], xmm0
+movdqu xmmword ptr [r15+528], xmm0
+movdqu xmmword ptr [r15+544], xmm0
+movdqu xmmword ptr [r15+560], xmm0
+movdqu xmmword ptr [r15+576], xmm0
+movdqu xmmword ptr [r15+592], xmm0
+movdqu xmmword ptr [r15+608], xmm0
+movdqu xmmword ptr [r15+624], xmm0
+movdqu xmmword ptr [r15+640], xmm0
+movdqu xmmword ptr [r15+656], xmm0
+movdqu xmmword ptr [r15+672], xmm0
+movdqu xmmword ptr [r15+688], xmm0
+movdqu xmmword ptr [r15+704], xmm0
+movdqu xmmword ptr [r15+720], xmm0
+movdqu xmmword ptr [r15+736], xmm0
+movdqu xmmword ptr [r15+752], xmm0
 jmp 247f
 246:
 247:
