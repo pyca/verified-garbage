@@ -1,10 +1,10 @@
-// The functions of `src/internal/vg_sm3_compress_sm4.rs` of `verified-garbage-asm-aarch64`, as text: generated from
+// The functions of `src/internal/vg_sm3_compress_sm3.rs` of `verified-garbage-asm-aarch64`, as text: generated from
 // Lean (`lean/VerifiedGarbage/TCB/Rust.lean`) with them, and not compiled.
 // Each instruction the printer encodes is here as its text, and in
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
-vg_sm3_compress_sm4:
+vg_sm3_compress_sm3:
 	cbz x2, 20f
 	ldr q5, [x0, #0]
 	ldr q6, [x0, #16]

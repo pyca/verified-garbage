@@ -22,8 +22,8 @@ pub(crate) unsafe extern "C" fn vg_sm3_init(state: *mut [u8; 96]) {
     )
 }
 
-/// The CPU features `vg_sm3_update_sm4` requires (`Artifact.features`).
-pub const VG_SM3_UPDATE_SM4_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SM4);
+/// The CPU features `vg_sm3_update_sm3` requires (`Artifact.features`).
+pub const VG_SM3_UPDATE_SM3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SM4);
 
 /// Absorbs data into an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
@@ -37,7 +37,7 @@ pub const VG_SM3_UPDATE_SM4_FEATURES: verified_garbage_cpu::Features = verified_
 /// * Neither `state` nor `data` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sm4` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm3_update_sm4(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+pub(crate) unsafe extern "C" fn vg_sm3_update_sm3(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
     core::arch::naked_asm!(
         r".inst 0xd101c3ff,0x910003e4,0xf81f0ffe,0xf9002093,0xf9002494,0xf9002895,0xf9002c96,0xf9003097
 .inst 0xf9003498,0x91000013,0x91000094,0x91000055,0x91000076,0xd28007e9,0x8a090037
@@ -120,7 +120,7 @@ b 230f
 24:
 cbz x10, 231f
 .inst 0x91000260,0x91000142,0x91000283
-bl {vg_sm3_compress_sm4}
+bl {vg_sm3_compress_sm3}
 b 232f
 231:
 232:
@@ -131,12 +131,12 @@ b 21f
 .inst 0xf9402293,0xf9402a95,0xf9402e96,0xf9403297,0xf9403698,0xf9402694,0xf84107fe,0x9101c3ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sm3_compress_sm4 = sym super::sm3::vg_sm3_compress_sm4::vg_sm3_compress_sm4,
+        vg_sm3_compress_sm3 = sym super::sm3::vg_sm3_compress_sm3::vg_sm3_compress_sm3,
     )
 }
 
-/// The CPU features `vg_sm3_finalize_sm4` requires (`Artifact.features`).
-pub const VG_SM3_FINALIZE_SM4_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SM4);
+/// The CPU features `vg_sm3_finalize_sm3` requires (`Artifact.features`).
+pub const VG_SM3_FINALIZE_SM3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SM4);
 
 /// Finishes an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SM3 hash value of that message (32 bytes) to `*out`.
 ///
@@ -151,7 +151,7 @@ pub const VG_SM3_FINALIZE_SM4_FEATURES: verified_garbage_cpu::Features = verifie
 /// * Neither `state` nor `out` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `sm4` target feature.
 #[unsafe(naked)]
-pub(crate) unsafe extern "C" fn vg_sm3_finalize_sm4(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+pub(crate) unsafe extern "C" fn vg_sm3_finalize_sm3(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
     core::arch::naked_asm!(
         r".inst 0xd101c3ff,0x910003e3,0xf81f0ffe,0xf9002073,0xf9002474,0xf9002875,0xf9002c76,0xf9003077
 .inst 0xf9003478,0x91000013,0x91000074,0x91000055,0x91000036,0xd28007e9,0x8a0902d7,0xd2801009
@@ -184,7 +184,7 @@ b 210f
 .inst 0x8b1602c9,0x8b090129,0x8b090129,0xdac00d29,0xf9002e69
 210:
 .inst 0x91008261,0x91000260,0xd2800022,0x91000283
-bl {vg_sm3_compress_sm4}
+bl {vg_sm3_compress_sm3}
 .inst 0xd2800017,0xd1000718
 cbz x24, 20b
 .inst 0xb9400269,0x5ac00929,0xb90002a9,0xb9400669,0x5ac00929,0xb90006a9,0xb9400a69,0x5ac00929
@@ -193,7 +193,7 @@ cbz x24, 20b
 .inst 0xf9402293,0xf9402a95,0xf9402e96,0xf9403297,0xf9403698,0xf9402694,0xf84107fe,0x9101c3ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_sm3_compress_sm4 = sym super::sm3::vg_sm3_compress_sm4::vg_sm3_compress_sm4,
+        vg_sm3_compress_sm3 = sym super::sm3::vg_sm3_compress_sm3::vg_sm3_compress_sm3,
     )
 }
 
@@ -369,5 +369,5 @@ cbz x24, 20b
 pub(crate) mod vg_sm3_compress;
 
 #[rustfmt::skip]
-#[path = "internal/vg_sm3_compress_sm4.rs"]
-pub(crate) mod vg_sm3_compress_sm4;
+#[path = "internal/vg_sm3_compress_sm3.rs"]
+pub(crate) mod vg_sm3_compress_sm3;

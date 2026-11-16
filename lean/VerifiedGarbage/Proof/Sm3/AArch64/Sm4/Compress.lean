@@ -32,7 +32,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # SM3 compression with the AArch64 SM3 instructions: correctness
 
-`compress_verified`: `Impl.Sm3.AArch64.Sm4.compress` (`vg_sm3_compress_sm4`)
+`compress_verified`: `Impl.Sm3.AArch64.Sm4.compress` (`vg_sm3_compress_sm3`)
 meets the contract of the compression function
 (`Proof.Sm3.compressAArch64`), so the streaming proofs apply to it as to
 `vg_sm3_compress`.

@@ -32,7 +32,7 @@ vg_sm3_init:
 	ret
 	.p2align 6
 
-vg_sm3_update_sm4:
+vg_sm3_update_sm3:
 	sub sp, sp, #112
 	add x4, sp, #0
 	str x30, [sp, #-16]!
@@ -167,7 +167,7 @@ vg_sm3_update_sm4:
 	add x0, x19, #0
 	add x2, x10, #0
 	add x3, x20, #0
-	bl {vg_sm3_compress_sm4}
+	bl {vg_sm3_compress_sm3}
 	b 232f
 231:
 232:
@@ -186,7 +186,7 @@ vg_sm3_update_sm4:
 	ret
 	.p2align 6
 
-vg_sm3_finalize_sm4:
+vg_sm3_finalize_sm3:
 	sub sp, sp, #112
 	add x3, sp, #0
 	str x30, [sp, #-16]!
@@ -252,7 +252,7 @@ vg_sm3_finalize_sm4:
 	add x0, x19, #0
 	movz x2, #1, lsl #0
 	add x3, x20, #0
-	bl {vg_sm3_compress_sm4}
+	bl {vg_sm3_compress_sm3}
 	movz x23, #0, lsl #0
 	sub x24, x24, #1
 	cbz x24, 20b

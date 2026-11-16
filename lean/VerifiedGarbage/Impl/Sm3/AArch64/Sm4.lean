@@ -6,7 +6,7 @@ public import VerifiedGarbage.TCB.AArch64.Isa
 /-!
 # SM3 compression with the AArch64 SM3 instructions
 
-`vg_sm3_compress_sm4(state = x0, blocks = x1, n = x2, scratch = x3)`, for
+`vg_sm3_compress_sm3(state = x0, blocks = x1, n = x2, scratch = x3)`, for
 CPUs with FEAT_SM3 (which Rust names `sm4`, with FEAT_SM4): the contract of
 `vg_sm3_compress`, whose `scratch` it does not use.
 

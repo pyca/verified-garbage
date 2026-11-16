@@ -26,12 +26,12 @@ open VG.AArch64
 /-- The compression function with the SM3 instructions, and the checked facts
 its streaming callers need. -/
 def backend : Compress where
-  name := "vg_sm3_compress_sm4"
+  name := "vg_sm3_compress_sm3"
   code := Impl.Sm3.AArch64.Sm4.compress
   verified := Proof.Sm3.AArch64.Sm4.compress_verified
   noFrames := by lit_decide
   keepsV := by lit_decide
-  suffix := "_sm4"
+  suffix := "_sm3"
   updateCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])
     (fun _ _ _ _ hp => MdStream.AArch64.Update.agree₀ hp) (by taint_decide))
   finalizeCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
