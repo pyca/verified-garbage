@@ -15,6 +15,14 @@ while at least `2 ^ lg` blocks are left; the second the steps of the mode
 both: a wide step takes `2 ^ lg` from it, and the first loop goes on while
 `s3 >> lg` is not zero (computed into `t0`), the second while `s3` is not
 zero. Both loops branch only on `s3`, as `seq`'s does, which is public.
+
+`seqLevels wide lgs narrow`: `seq2` with a wide loop for each `lg` of `lgs`
+in turn, of the mode `wide (2 ^ lg)` (`levels`), before the narrow steps:
+each takes the groups of `2 ^ lg` of the blocks the ones before it left,
+all on the same core (`2 ^ lg ≤ G`). A core whose code costs as much on one
+block as on its `G` then takes one call of its code for each power of two
+in the number of blocks a message leaves after its groups of `G`, rather
+than one a block. `seq2` is the case of one level.
 -/
 
 @[expose] public section
@@ -45,6 +53,16 @@ def loopWide (w : Bool) (m : Mode) (lg : Nat) : Prog isa :=
 /-- The whole function: the wide steps, then the narrow ones. -/
 def seq2 (wide narrow : Mode) (lg : Nat) : Prog isa :=
   c.seqWith (aligned narrow.step fun w => .seq (c.loopWide w wide lg) (c.steps w narrow)) narrow.ivOut
+
+/-- The wide loops of the modes `wide (2 ^ lg)` for each `lg` of `lgs` in
+turn, then `rest`. -/
+def levels (w : Bool) (wide : Nat → Mode) : List Nat → Prog isa → Prog isa
+  | [], rest => rest
+  | lg :: lgs, rest => .seq (c.loopWide w (wide (2 ^ lg)) lg) (levels w wide lgs rest)
+
+/-- `seq2`, with a wide loop for each of `lgs`. -/
+def seqLevels (wide : Nat → Mode) (lgs : List Nat) (narrow : Mode) : Prog isa :=
+  c.seqWith (aligned narrow.step fun w => c.levels w wide lgs (c.steps w narrow)) narrow.ivOut
 
 end Core
 

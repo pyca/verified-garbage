@@ -23,9 +23,11 @@ masks set) and builds the table of bitsliced subkeys once (`keys d`);
 entry for `R` rounds and transforms the eight blocks of the tail buffer
 (`crypt8`), the core's `G = 8` blocks. Both restore the registers after.
 CBC and CFB decryption and CTR take eight blocks a step while eight are
-left (`Core.seq2`, `Mode.cbcDecWide`, `Mode.cfbDecWide`, `Mode.ctrWide`),
-then one a step; the other modes, which cannot, take one a step, the
-core's first block.
+left, then four, two and one a step on the same core (`levels`,
+`Core.seqLevels`, `Mode.cbcDecWide`, `Mode.cfbDecWide`, `Mode.ctrWide`):
+the batch costs the same for any number of its blocks, so the fewer than
+eight blocks a message ends with take at most three batches, not one each.
+The other modes, which cannot, take one a step, the core's first block.
 
 The key setup and the rounds write neither `a2`, `a3`, `a5` nor `ra`, and
 memory is secret to the analysis of constant time, so the modes' state
@@ -112,12 +114,16 @@ def dirCore (d : Dir) (R : Nat) : Modes.RISCV64.Core :=
   (inlineCore d R).shared ("vg_camellia_modes_prepare_" ++ (if d = .encrypt then "encrypt" else "decrypt") ++ "_" ++ (if R = 18 then "18" else "24"))
     ("vg_camellia_modes_crypt_" ++ (if R = 18 then "18" else "24"))
 
+/-- The groups of CBC and CFB decryption and CTR, `2 ^ lg` blocks for each
+`lg` in turn. -/
+def levels : List Nat := [3, 2, 1]
+
 /-- `vg_camellia_cbc_encrypt_chained`. -/
 def cbcEncryptChained : Prog isa := modeFn fun R => (dirCore .encrypt R).seq (Modes.Mode.cbcEncChained 4)
 
-/-- `vg_camellia_cbc_decrypt_chained`: eight blocks a step, then one. -/
+/-- `vg_camellia_cbc_decrypt_chained`: eight blocks a step, then four, two and one. -/
 def cbcDecryptChained : Prog isa :=
-  modeFn fun R => (dirCore .decrypt R).seq2 (Modes.Mode.cbcDecWide 4 8) (Modes.Mode.cbcDecChained 4) 3
+  modeFn fun R => (dirCore .decrypt R).seqLevels (Modes.Mode.cbcDecWide 4) levels (Modes.Mode.cbcDecChained 4)
 
 /-- `vg_camellia_ofb`. -/
 def ofb : Prog isa := modeFn fun R => (dirCore .encrypt R).seq (Modes.Mode.ofb 4)
@@ -125,12 +131,12 @@ def ofb : Prog isa := modeFn fun R => (dirCore .encrypt R).seq (Modes.Mode.ofb 4
 /-- `vg_camellia_cfb128_encrypt`. -/
 def cfbEncrypt : Prog isa := modeFn fun R => (dirCore .encrypt R).seq (Modes.Mode.cfbEnc 4)
 
-/-- `vg_camellia_cfb128_decrypt`: eight blocks a step, then one. -/
+/-- `vg_camellia_cfb128_decrypt`: eight blocks a step, then four, two and one. -/
 def cfbDecrypt : Prog isa :=
-  modeFn fun R => (dirCore .encrypt R).seq2 (Modes.Mode.cfbDecWide 4 8) (Modes.Mode.cfbDecEarly 4) 3
+  modeFn fun R => (dirCore .encrypt R).seqLevels (Modes.Mode.cfbDecWide 4) levels (Modes.Mode.cfbDecEarly 4)
 
-/-- `vg_camellia_ctr`. -/
+/-- `vg_camellia_ctr`: eight blocks a step, then four, two and one. -/
 def ctr : Prog isa :=
-  modeFn fun R => (dirCore .encrypt R).seq2 (Modes.Mode.ctrWide 8) Modes.Mode.ctrEarly 3
+  modeFn fun R => (dirCore .encrypt R).seqLevels Modes.Mode.ctrWide levels Modes.Mode.ctrEarly
 
 end VG.Impl.Camellia.RISCV64

@@ -134,8 +134,7 @@ theorem cbcEncryptChained_correct (s : State) (hs : (modeContract 1 cbcEncPost).
 
 theorem cbcDecryptChained_correct (s : State) (hs : (modeContract 16 cbcDecPost).pre s) :
     ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract 16 cbcDecPost).post s s' :=
-  WP.mono (Proof.Modes.RISCV64.cbcDecWide_wp (lg := 4) (dirCoreSpec .decrypt 16 (by decide) (by decide)) (by decide)
-    (by exact (by decide : 2 ^ 4 ≤ 16)) (by exact (by decide : 2 ^ 4 * (4 * 4) ≤ 2032))
+  WP.mono (Proof.Modes.RISCV64.cbcDecLevels_wp (dirCoreSpec .decrypt 16 (by decide) (by decide)) (by decide)
     (seqPre_of .decrypt (by decide) (by decide) (M := Mode.cbcDecChained 4) rfl hs)
     (keyArgs_of .decrypt (M := Mode.cbcDecChained 4) rfl hs))
     fun _ ⟨h1, h2, h3, _⟩ => by simp only [cipher_dec] at h2 h3; exact ⟨h1, h2, h3⟩
@@ -156,8 +155,7 @@ theorem cfbEncrypt_correct (s : State) (hs : (modeContract 1 cfbEncPost).pre s) 
 
 theorem cfbDecrypt_correct (s : State) (hs : (modeContract 16 cfbDecPost).pre s) :
     ∃ t s', Exec isa cfbDecrypt s t s' ∧ abiPreserved s s' ∧ (modeContract 16 cfbDecPost).post s s' :=
-  WP.mono (Proof.Modes.RISCV64.cfbDecWide_wp (lg := 4) (dirCoreSpec .encrypt 16 (by decide) (by decide)) (by decide)
-    (by exact (by decide : 2 ^ 4 ≤ 16)) (by exact (by decide : 2 ^ 4 * (4 * 4) ≤ 2032))
+  WP.mono (Proof.Modes.RISCV64.cfbDecLevels_wp (dirCoreSpec .encrypt 16 (by decide) (by decide)) (by decide)
     (seqPre_of .encrypt (by decide) (by decide) (M := Mode.cfbDecEarly 4) rfl hs)
     (keyArgs_of .encrypt (M := Mode.cfbDecEarly 4) rfl hs))
     fun _ ⟨h1, h2, h3, _⟩ => by simp only [cipher_enc] at h2 h3; exact ⟨h1, h2, h3⟩

@@ -32,9 +32,11 @@ modes'.
 `cbcEncryptChained`, `ofb` and `cfbEncrypt` (schedule = a0, iv = a1,
 data = a2, n = a3), whose blocks each need the one before, are the modes over
 the core on one block. `cbcDecryptChained` and `cfbDecrypt` take sixteen
-blocks a step on the core on sixteen (`Core.seq2`, `Impl/Modes/RISCV64/Wide.lean`)
-while sixteen are left, then one a step on the same core: the rounds cost the
-same for any number of lanes.
+blocks a step on the core on sixteen while sixteen are left, then eight,
+four, two and one a step on the same core (`levels`, `Core.seqLevels`,
+`Impl/Modes/RISCV64/Wide.lean`): the rounds cost the same for any number of
+lanes, so the fewer than sixteen blocks a message ends with take at most
+four batches, not one each.
 
 `dirCore` wraps this body with named internal calls (`Core.shared`), so the
 key preparation and batch code are emitted once across modes, alignment
@@ -102,12 +104,16 @@ def dirCore (d : Direction) (g : Nat) : Modes.RISCV64.Core :=
   (inlineCore d g).shared "vg_legacy_modes_prepare_empty"
     ("vg_seed_modes_crypt_" ++ (if d = .encrypt then "encrypt" else "decrypt") ++ "_" ++ (if g = 1 then "1" else "16"))
 
+/-- The groups of CBC and CFB decryption, `2 ^ lg` blocks for each `lg` in
+turn: the batch costs the same for any number of its sixteen blocks. -/
+def levels : List Nat := [4, 3, 2, 1]
+
 /-- `vg_seed_cbc_encrypt_chained`. -/
 def cbcEncryptChained : Prog isa := (dirCore .encrypt 1).seq (Modes.Mode.cbcEncChained 4)
 
 /-- `vg_seed_cbc_decrypt_chained`. -/
 def cbcDecryptChained : Prog isa :=
-  (dirCore .decrypt 16).seq2 (Modes.Mode.cbcDecWide 4 16) (Modes.Mode.cbcDecChained 4) 4
+  (dirCore .decrypt 16).seqLevels (Modes.Mode.cbcDecWide 4) levels (Modes.Mode.cbcDecChained 4)
 
 /-- `vg_seed_ofb`. -/
 def ofb : Prog isa := (dirCore .encrypt 1).seq (Modes.Mode.ofb 4)
@@ -117,6 +123,6 @@ def cfbEncrypt : Prog isa := (dirCore .encrypt 1).seq (Modes.Mode.cfbEnc 4)
 
 /-- `vg_seed_cfb128_decrypt`. -/
 def cfbDecrypt : Prog isa :=
-  (dirCore .encrypt 16).seq2 (Modes.Mode.cfbDecWide 4 16) (Modes.Mode.cfbDecEarly 4) 4
+  (dirCore .encrypt 16).seqLevels (Modes.Mode.cfbDecWide 4) levels (Modes.Mode.cfbDecEarly 4)
 
 end VG.Impl.Seed.RISCV64

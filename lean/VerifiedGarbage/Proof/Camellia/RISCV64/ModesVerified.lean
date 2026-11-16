@@ -249,9 +249,8 @@ theorem cbcEncryptChained_correct (s : State) (hs : (modeContract cbcEncPost).pr
 
 theorem cbcDecryptChained_correct (s : State) (hs : (modeContract cbcDecPost).pre s) :
     ∃ t s', Exec isa cbcDecryptChained s t s' ∧ abiPreserved s s' ∧ (modeContract cbcDecPost).post s s' := by
-  refine modeFn_wp (rounds_of hs) fun s₁ h₁ => WP.mono (Proof.Modes.RISCV64.cbcDecWide_wp (lg := 3)
-    (dirCoreSpec .decrypt _ (rounds_of hs)) (by decide) (by exact (by decide : 2 ^ 3 ≤ 8))
-    (by exact (by decide : 2 ^ 3 * (4 * 4) ≤ 2032))
+  refine modeFn_wp (rounds_of hs) fun s₁ h₁ => WP.mono (Proof.Modes.RISCV64.cbcDecLevels_wp
+    (dirCoreSpec .decrypt _ (rounds_of hs)) (by exact (by decide : ∀ lg ∈ levels, lg ≤ 11 ∧ 2 ^ lg ≤ 8 ∧ 2 ^ lg * (4 * 4) ≤ 2032))
     (seqPre_of hs h₁ .decrypt _ (M := Mode.cbcDecChained 4) rfl)
     (keyArgs_of hs h₁ .decrypt _ (M := Mode.cbcDecChained 4) rfl)) fun s' ⟨h1, h2, h3, _⟩ =>
       ⟨h₁.abi h1, fun _ => ?_⟩
@@ -288,9 +287,8 @@ theorem cfbEncrypt_correct (s : State) (hs : (modeContract cfbEncPost).pre s) :
 
 theorem cfbDecrypt_correct (s : State) (hs : (modeContract cfbDecPost).pre s) :
     ∃ t s', Exec isa cfbDecrypt s t s' ∧ abiPreserved s s' ∧ (modeContract cfbDecPost).post s s' := by
-  refine modeFn_wp (rounds_of hs) fun s₁ h₁ => WP.mono (Proof.Modes.RISCV64.cfbDecWide_wp (lg := 3)
-    (dirCoreSpec .encrypt _ (rounds_of hs)) (by decide) (by exact (by decide : 2 ^ 3 ≤ 8))
-    (by exact (by decide : 2 ^ 3 * (4 * 4) ≤ 2032))
+  refine modeFn_wp (rounds_of hs) fun s₁ h₁ => WP.mono (Proof.Modes.RISCV64.cfbDecLevels_wp
+    (dirCoreSpec .encrypt _ (rounds_of hs)) (by exact (by decide : ∀ lg ∈ levels, lg ≤ 11 ∧ 2 ^ lg ≤ 8 ∧ 2 ^ lg * (4 * 4) ≤ 2032))
     (seqPre_of hs h₁ .encrypt _ (M := Mode.cfbDecEarly 4) rfl)
     (keyArgs_of hs h₁ .encrypt _ (M := Mode.cfbDecEarly 4) rfl)) fun s' ⟨h1, h2, h3, _⟩ =>
       ⟨h₁.abi h1, fun _ => ?_⟩
@@ -303,8 +301,8 @@ theorem cfbDecrypt_correct (s : State) (hs : (modeContract cfbDecPost).pre s) :
 
 theorem ctr_correct (s : State) (hs : (modeContract ctrPost).pre s) :
     ∃ t s', Exec isa ctr s t s' ∧ abiPreserved s s' ∧ (modeContract ctrPost).post s s' := by
-  refine modeFn_wp (rounds_of hs) fun s₁ h₁ => WP.mono (Proof.Modes.RISCV64.ctrWide_wp (lg := 3)
-    (dirCoreSpec .encrypt _ (rounds_of hs)) rfl (by decide) (by exact (by decide : 2 ^ 3 ≤ 8)) (by decide)
+  refine modeFn_wp (rounds_of hs) fun s₁ h₁ => WP.mono (Proof.Modes.RISCV64.ctrLevels_wp
+    (dirCoreSpec .encrypt _ (rounds_of hs)) rfl (by exact (by decide : ∀ lg ∈ levels, lg ≤ 11 ∧ 2 ^ lg ≤ 8 ∧ 2 ^ lg * (4 * 4) ≤ 2032))
     (seqPre_of hs h₁ .encrypt _ (M := Mode.ctrEarly) rfl)
     (keyArgs_of hs h₁ .encrypt _ (M := Mode.ctrEarly) rfl)) fun s' ⟨h1, h2, h3, _⟩ =>
       ⟨h₁.abi h1, fun _ => ?_⟩

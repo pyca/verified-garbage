@@ -17,7 +17,8 @@ meta import VerifiedGarbage.Spec.Sm4.Gcm
 # SM4's counter mode with GCM's `inc₃₂` on RISC-V meets its contract
 
 `ctr32_correct`: the counter mode of `Proof/Modes/RISCV64/WideCtr.lean`,
-sixteen blocks a step while sixteen are left (`ctr32Wide_wp`), over
+sixteen blocks a step while sixteen are left, then eight, four, two and one
+(`ctr32Levels_wp`), over
 SM4's core (`dirCoreSpec .encrypt`) is correct (`ctr32Post`) with the
 modes' frame of 3232 bytes below the stack pointer (`modeContract`). As on
 PPC64LE (`Proof/Sm4/PPC64LE/Ctr32Verified.lean`), whose working space is an
@@ -43,8 +44,7 @@ def ctr32Post (s s' : State) : Prop :=
 
 theorem ctr32_correct (s : State) (hs : (modeContract ctr32Post).pre s) :
     ∃ t s', Exec isa ctr32 s t s' ∧ abiPreserved s s' ∧ (modeContract ctr32Post).post s s' :=
-  WP.mono (Proof.Modes.RISCV64.ctr32Wide_wp (lg := 4) (dirCoreSpec .encrypt) rfl (by decide)
-    (by exact (by decide : 2 ^ 4 ≤ 16)) (by decide)
+  WP.mono (Proof.Modes.RISCV64.ctr32Levels_wp (dirCoreSpec .encrypt) rfl (by decide)
     (seqPre_of .encrypt (M := Mode.ctr32Early) rfl hs)
     (keyArgs_of .encrypt (M := Mode.ctr32Early) rfl hs))
     fun _ ⟨h1, h2, h3, _⟩ => by
