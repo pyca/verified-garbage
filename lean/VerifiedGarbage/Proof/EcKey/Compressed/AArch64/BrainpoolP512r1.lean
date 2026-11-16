@@ -4,6 +4,8 @@ import VerifiedGarbage.Proof.EcKey.Compressed.AArch64.Main
 public import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
 import VerifiedGarbage.Proof.Ecdsa.AArch64.BrainpoolP512r1.Config
 import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP512r1Literals
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.LitShare
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit

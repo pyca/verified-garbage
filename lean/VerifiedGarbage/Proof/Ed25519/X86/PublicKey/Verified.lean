@@ -24,6 +24,8 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86.Lit
+public import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
+meta import VerifiedGarbage.Proof.Ed25519.X86.ScalarBaseLit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86.Lit
 public import VerifiedGarbage.Proof.Framework.Contract

@@ -34,6 +34,13 @@ materialize_template addT := add
 materialize_template subT := sub
 materialize_template cswapT := cswap
 
+/- The ladder, which `x448` and `x448Base` both contain, checked once: its
+step is one block of twenty operations appended one after the other, nested
+to the left, which the kernel evaluates in time quadratic in their number
+(36,000 steps of `List.append` in each literal) unless they are flattened
+(`materialize_flat_code`). -/
+materialize_flat_code ladderB := ladder baseline
+
 end VG.Proof.X448.X86_64.Lit
 
 namespace VG
