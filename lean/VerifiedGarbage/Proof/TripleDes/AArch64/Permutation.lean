@@ -30,16 +30,6 @@ theorem finalPermutation_check :
       (linEnv (permutationInputs .x3)) (linPost 6 (permutationOutputs Spec.TripleDes.fp 64 .x10)) = true := by
   decide +kernel
 
-theorem keyPermutation1_check :
-    check (lanes 64 6) permutationCfg (linExt 1) (instrs keyPermutation1.lit)
-      (linEnv (permutationInputs .x4)) (linPost 6 (permutationOutputs Spec.TripleDes.pc1 64 .x5)) = true := by
-  decide +kernel
-
-theorem keyPermutation2_check :
-    check (lanes 64 6) permutationCfg (linExt 1) (instrs keyPermutation2.lit)
-      (linEnv (permutationInputs .x4)) (linPost 6 (permutationOutputs Spec.TripleDes.pc2 56 .x5)) = true := by
-  decide +kernel
-
 theorem permutationCfg_ok (s : State) : Ok permutationCfg s := by
   refine ⟨?_, ?_, by decide, ?_⟩
   · intro k hk; simp [permutationCfg] at hk

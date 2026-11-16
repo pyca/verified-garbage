@@ -20,7 +20,6 @@ public import VerifiedGarbage.Proof.Rc2.AArch64.MemOps
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.ConstantTime
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Box
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Correct
-public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Permutation
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Key.Verified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Permutation
 public import VerifiedGarbage.Proof.TripleDes.AArch64.RoundBody
@@ -36,8 +35,8 @@ namespace VG.Artifacts.TripleDes.AArch64
 
 def artifacts : List Artifact := [
   Spec.TripleDes.expandKeyApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 512 .x3 64 Impl.TripleDes.AArch64.Key.expandKey
-    verified := Proof.TripleDes.AArch64.expandKey_framed },
+    code := Impl.TripleDes.AArch64.Key.expandKey
+    verified := Proof.TripleDes.AArch64.Key.verified },
   Spec.TripleDes.ecbEncryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1024 .x3 128
       Impl.TripleDes.AArch64.BitsliceNeon.encrypt
