@@ -67,4 +67,19 @@ def body : Prog isa :=
 /-- `vg_mcdt_enter`. -/
 def enter : Prog isa := .frame (.push [.rax]) body (.pop .rcx 1)
 
+/-- What follows `enter` in the function its artifact emits: the clearing
+that its registration appends (`RScrub.withScrubAllR` in
+`Proof/Mcdt/X86_64.lean`): `xmm0`, `r11`, `rcx` and `rdx` zeroed, the
+upper half of `rax` cleared, and its 8 bytes of stack wiped. -/
+def scrubTail : Prog isa :=
+  .seq (.block [.xop (.bin .pxor .xmm0 .xmm0), .alu32 .xor .r11 (.reg .r11)])
+    (.seq (.block [])
+      (.seq (.frame (.alloc 8) (.seq (.block [.store slot .r11]) (.block [])) (.free 8))
+        (.block [.mov32 .rax (.reg .rax), .alu32 .xor .rcx (.reg .rcx), .alu32 .xor .rdx (.reg .rdx)])))
+
+/-- The code a call of `vg_mcdt_enter` runs: that of its artifact, `enter`
+and then `scrubTail` (which the emitter checks of every call of it:
+`Rust.checkCalls`). -/
+def enterCall : Prog isa := .seq enter scrubTail
+
 end VG.Impl.Mcdt.X86_64
