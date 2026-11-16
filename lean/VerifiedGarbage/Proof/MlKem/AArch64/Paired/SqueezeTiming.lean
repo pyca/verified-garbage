@@ -17,6 +17,8 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.RegSet
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-! # Public-address timing for paired and singleton SHAKE128 generation -/
@@ -50,8 +52,11 @@ theorem init_ct (sb ss a b k : Nat) : ConstantTime isa (fun _ => True)
 theorem nextBlock_ct : ConstantTime isa (fun _ => True)
     (VG.AArch64.Taint.Agree (Taint.ofRegs [.x19])) (nextBlock sha3) := by
   cases sha3
-  · exact VectorTaint.constantTime (Taint.ofRegs [.x19]) (fun _ _ _ _ h => h) (by taint_decide)
+  -- With the call written out, the checks read the literal of the paired Keccak's code
+  -- (`X2.code false`, `X2.code true`), which they do not look for behind `nextBlock`.
+  · exact VectorTaint.constantTime (Taint.ofRegs [.x19]) (fun _ _ _ _ h => h)
+      (by unfold nextBlock Impl.Sha3.AArch64.Neon.X2.call; taint_decide)
   · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x19])
-      (fun _ _ _ _ h => h) (by taint_decide)
+      (fun _ _ _ _ h => h) (by unfold nextBlock Impl.Sha3.AArch64.Neon.X2.call; taint_decide)
 
 end VG.Proof.MlKem.AArch64.Paired
