@@ -5,6 +5,14 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTPSub
 import VerifiedGarbage.Proof.Ffdh.X86_64.Ifma.Lit
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.TaintNorm
+import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ConvLit
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ConvLit
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.TaintNorm
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Ifma.Exp
 meta import VerifiedGarbage.Proof.Bignum.X86_64.CrtCTExp
 meta import VerifiedGarbage.Proof.Framework.Omega
@@ -87,10 +95,29 @@ structure LT (l : VG.Impl.Rsa.X86_64.CrtIfma.Lay) : Prop where
   r0 : TOk [.rdi] (.block (resLd l 0))
   mid : TOk [.rdi, .r11, .r8] (.block (resMid l))
 
+/-! The vector code with its instructions normalized (`Instr.norm`): a few
+instructions from a few taints, whose steps the kernel evaluates once
+(`Taint.exists_check_of_norm`). -/
+
+def vec2048N : Prog isa := Code.mapBlocks Instr.norm (Impl.Ffdh.X86_64.Ifma.vec PubIfma.pay2048)
+def vec3072N : Prog isa := Code.mapBlocks Instr.norm (Impl.Ffdh.X86_64.Ifma.vec PubIfma.pay3072)
+def vec4096N : Prog isa := Code.mapBlocks Instr.norm (Impl.Ffdh.X86_64.Ifma.vec PubIfma.pay4096)
+
+materialize_shared vec2048N
+materialize_shared vec3072N
+materialize_shared vec4096N
+
 theorem lT (hl : PubOk l) : LT l := by
-  rcases hl with rfl | rfl | rfl <;>
-    exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
-      ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  rcases hl with rfl | rfl | rfl
+  · exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+      Taint.exists_check_of_norm (c' := vec2048N) rfl ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+      ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  · exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+      Taint.exists_check_of_norm (c' := vec3072N) rfl ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+      ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
+  · exact ⟨⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+      Taint.exists_check_of_norm (c' := vec4096N) rfl ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩,
+      ⟨_, by taint_decide⟩, ⟨_, by taint_decide⟩⟩
 
 /-- Pins nothing. -/
 theorem pins_nil {α : Type} {Φ : α → State → Prop} : Pins Φ [] := fun _ _ _ _ _ _ hr => absurd hr (by simp)

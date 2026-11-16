@@ -44,26 +44,31 @@ abbrev code (_adx : Bool) : Prog isa := Impl.EcKey.Validate.X86_64.validate Inve
 
 materialize_shared baseline := code false
 
+/-! `code adx` is the same code for both `adx` (`code false`, whose literal
+is `baseline`): each fact is checked once, of that code. -/
+
 theorem inlineOk (adx : Bool) : (code adx).InlineOk = true := by
-  cases adx <;> lit_decide
+  show (code false).InlineOk = true
+  lit_decide
 
 theorem hmx (adx : Bool) : (code adx).allInstrs (fun i => !loadsMxcsr i) = true := by
-  cases adx <;> lit_decide
+  show (code false).allInstrs (fun i => !loadsMxcsr i) = true
+  lit_decide
 
 theorem ct (adx : Bool) : ConstantTime isa (keyContract Spec.BrainpoolP512r1.curve).pre
     (keyContract Spec.BrainpoolP512r1.curve).pub (code adx) := by
-  cases adx <;> apply VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsi, .rsp])
-  all_goals first
-    | (intro s₁ s₂ _ _ hp
-       obtain ⟨hsp, hpk, hws⟩ := hp
-       apply Taint.agree_ofRegs
-       intro r hr
-       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-       rcases hr with rfl | rfl | rfl
-       exact hpk
-       exact hws
-       exact hsp)
-    | taint_decide
+  show ConstantTime isa _ _ (code false)
+  apply VG.Taint.constantTime (A := X86_64.taint) (Taint.ofRegs [.rdi, .rsi, .rsp])
+  · intro s₁ s₂ _ _ hp
+    obtain ⟨hsp, hpk, hws⟩ := hp
+    apply Taint.agree_ofRegs
+    intro r hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact hpk
+    · exact hws
+    · exact hsp
+  · taint_decide
 
 theorem sat : ∃ s, (Spec.EcKey.BrainpoolP512r1.inst.validatePublicKeyContract abi 8).pre s := by
   sig_implies_sat [Spec.EcKey.BrainpoolP512r1.inst, Spec.EcKey.Instance.validatePublicKeyContract,

@@ -34,6 +34,7 @@ import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 
 /-! # brainpoolP384r1 signing on x86-64: correctness, memory safety and constant time
 
@@ -154,14 +155,21 @@ theorem pre_of {s : State} (h : signX86_64.pre s) : Pre brainpoolp384r1S s := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw ⊢
     rcases hw with h | h <;> simp [h])
 
+/-- The code's calls can be inlined, and no instruction of it or of what it
+calls writes `rsp` or touches MXCSR: one walk of the code, with one match for
+the tests of each instruction (`Code.InlineOkB`). -/
+theorem sign_inlineOkB : signBrainpoolP384r1.InlineOkB (bMx + bNs) = true := by lit_decide
+
 theorem sign_x86 (hL : Law Spec.BrainpoolP384r1.curve)
     (hI : InvSounds) (s : State)
     (hs : signX86_64.pre s) :
     ∃ t s', Exec isa signBrainpoolP384r1.inline s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' := by
   obtain ⟨t, s', he, hsv, hpost⟩ := signG_ok (brainpoolp384r1S_ok hI) hL brainpoolp384r1S_comb
     (Proof.BrainpoolP384r1.combOk7 hL) rfl (pre_of hs)
-  obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := signBrainpoolP384r1) (by lit_decide)
-  have F := (Exec.regions he (Code.noCalls_inline (by lit_decide))).2.2
+  obtain ⟨hsp, hmx⟩ := rsp_mxcsr (c := signBrainpoolP384r1) (Code.allInstrs_mono
+    (fun i h => by rw [noRsp_of_hasBits rfl h, noMx_of_hasBits rfl h]; rfl)
+    (Code.allInstrs_of_inlineOkB sign_inlineOkB))
+  have F := (Exec.regions he (Code.noCalls_inline (Code.inlineOk_of_B sign_inlineOkB))).2.2
   obtain ⟨-, hwr, -, -, -, -, -, -, -, hro, hrs, -, -, -⟩ := hs
   refine ⟨t, s', he, abiPreserved_of_exec hmx he
     ⟨fun r hr => ?_, ?_⟩, hpost⟩
@@ -217,7 +225,7 @@ buffers off the 8 bytes below `rsp`. -/
 theorem sign_call_x86 (hL : Law Spec.BrainpoolP384r1.curve) (hI : InvSounds) (s : State) (hs : signX86_64.pre s)
     (hc : Clear (hole (s.gpr .rsp)) s) :
     ∃ t s', Exec isa signBrainpoolP384r1 s t s' ∧ abiPreserved s s' ∧ signX86_64.post s s' :=
-  ok_of_inline (k := signX86_64) (by lit_decide) (sign_x86 hL hI)
+  ok_of_inline (k := signX86_64) (Code.inlineOk_of_B sign_inlineOkB) (sign_x86 hL hI)
     (fun s b hv u hs hc hp => post_patch s b hv u hs hc hp) s ⟨hs, hc⟩
 
 end VG.Proof.Ecdsa.X86_64.BrainpoolP384r1

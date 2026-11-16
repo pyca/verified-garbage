@@ -105,9 +105,10 @@ theorem inputStep_run {s : State} (h : Room s) {q : Reg} (hq : q ≠ .r15) (hc :
     simp only [s₂, gpr_setReg_self, r]
     exact sbb_self _ _
   · simp [s₃, s₂, s₁, gpr_setReg, h1, h2]
-  · simp [s₃, mem_setReg, mem_arithFlags, m₂]
-  · simp [s₃, rd_setReg, rd_arithFlags, rd₂]
-  · simp [s₃, wr_setReg, wr_arithFlags, wr₂]
+  -- (By the lemmas, with their arguments: `simp` leaves the kernel to compare `s₃` with `s₂`.)
+  · exact (mem_setReg (s := arithFlags s₂ x false false) q x).trans ((mem_arithFlags (s := s₂) x false false).trans m₂)
+  · exact (rd_setReg (s := arithFlags s₂ x false false) q x).trans ((rd_arithFlags (s := s₂) x false false).trans rd₂)
+  · exact (wr_setReg (s := arithFlags s₂ x false false) q x).trans ((wr_arithFlags (s := s₂) x false false).trans wr₂)
 
 def inputsN (ρ : Role) (j n : Nat) : List Instr :=
   (List.range n).flatMap fun m => inputStep ρ j (5 - m)

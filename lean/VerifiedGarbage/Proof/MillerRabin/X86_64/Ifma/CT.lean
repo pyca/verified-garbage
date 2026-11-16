@@ -6,7 +6,13 @@ public import VerifiedGarbage.Proof.Bignum.X86_64.Mont
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Context
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Ifma.Lit
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.TaintNorm
+import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.MillerRabin.X86_64.Ifma.Lit
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.TaintNorm
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.MillerRabin.X86_64.Ifma.Round
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTRegion
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Mont
@@ -36,10 +42,37 @@ open VG.Impl.MillerRabin.X86_64.Ifma
 
 variable {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay}
 
+/-! The frames' bodies with their instructions normalized (`Instr.norm`):
+the vector code, unrolled over the limbs, is then a few instructions from
+the same taint, and the limb arithmetic the same instructions at every
+limb, whose steps the kernel evaluates once (`Taint.check_of_norm`). -/
+
+def body1024N : Prog isa :=
+  Code.mapBlocks Instr.norm (VG.Impl.Bignum.X86_64.seqs (setup pay1024 ++ [vec pay1024, .block (finish pay1024)]))
+def body1536N : Prog isa :=
+  Code.mapBlocks Instr.norm (VG.Impl.Bignum.X86_64.seqs (setup pay1536 ++ [vec pay1536, .block (finish pay1536)]))
+def body2048N : Prog isa :=
+  Code.mapBlocks Instr.norm (VG.Impl.Bignum.X86_64.seqs (setup pay2048 ++ [vec pay2048, .block (finish pay2048)]))
+def body3072N : Prog isa :=
+  Code.mapBlocks Instr.norm (VG.Impl.Bignum.X86_64.seqs (setup pay3072 ++ [vec pay3072, .block (finish pay3072)]))
+def body4096N : Prog isa :=
+  Code.mapBlocks Instr.norm (VG.Impl.Bignum.X86_64.seqs (setup pay4096 ++ [vec pay4096, .block (finish pay4096)]))
+
+materialize_shared body1024N
+materialize_shared body1536N
+materialize_shared body2048N
+materialize_shared body3072N
+materialize_shared body4096N
+
 /-- The frame's body passes the taint analysis from `rdi` and `rsp`. -/
 theorem body_t (hl : MrOk l) :
     TOk [.rdi, .rsp] (VG.Impl.Bignum.X86_64.seqs (setup l ++ [vec l, .block (finish l)])) := by
-  rcases hl with rfl | rfl | rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  rcases hl with rfl | rfl | rfl | rfl | rfl
+  · exact ⟨_, Taint.check_of_norm ⟨rfl, rfl⟩ (c' := body1024N) rfl (by taint_decide)⟩
+  · exact ⟨_, Taint.check_of_norm ⟨rfl, rfl⟩ (c' := body1536N) rfl (by taint_decide)⟩
+  · exact ⟨_, Taint.check_of_norm ⟨rfl, rfl⟩ (c' := body2048N) rfl (by taint_decide)⟩
+  · exact ⟨_, Taint.check_of_norm ⟨rfl, rfl⟩ (c' := body3072N) rfl (by taint_decide)⟩
+  · exact ⟨_, Taint.check_of_norm ⟨rfl, rfl⟩ (c' := body4096N) rfl (by taint_decide)⟩
 
 /-- A layout's round leaks the same in runs with the same `rsp` and `rdi`. -/
 theorem ifma_ct (hl : MrOk l) :

@@ -20,6 +20,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.MillerRabin.X86_64.Ifma.Lit
+import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 
 /-!
 # The IFMA Miller–Rabin round: correctness
@@ -475,12 +476,16 @@ theorem code_wp (v : RoundArith) (s : State) (h : roundPre s) : WP isa (code v.m
 
 /-! ## The round's properties as a backend's -/
 
-/-- What the backend needs of a layout's code, checked together (the kernel
-builds the code once for both). -/
+/-- What the backend needs of a layout's code: from one walk of it, with
+one match for the tests of each instruction (`hasBits`); code that never
+touches MXCSR never loads it, which is `ctlOk`. -/
 theorem ifma_checks (hl : MrOk l) :
     ctlOk (ifma l) = true ∧ (ifma l).all (fun i => !isa.writesSp i) = true ∧
       (ifma l).allInstrs (fun i => !touchesMxcsr i) = true := by
-  rcases hl with rfl | rfl | rfl | rfl | rfl <;> lit_decide
+  have h : (ifma l).allInstrs (hasBits (bMx + bSp)) = true := by
+    rcases hl with rfl | rfl | rfl | rfl | rfl <;> lit_decide
+  have hm := Code.noTouchMx_of_bits rfl h
+  exact ⟨ctlOk_of_noLoad (noLoad_of_noTouch hm), Code.spSafe_of_bits rfl h, hm⟩
 
 theorem ifma_ctl (hl : MrOk l) : ctlOk (ifma l) = true := (ifma_checks hl).1
 

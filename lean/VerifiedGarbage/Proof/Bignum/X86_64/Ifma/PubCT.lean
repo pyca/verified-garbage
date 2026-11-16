@@ -14,6 +14,12 @@ import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubLit
+public import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.TaintNorm
+import VerifiedGarbage.Proof.Framework.LitShare
+import VerifiedGarbage.Proof.Framework.X86_64.Lit
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.TaintNorm
+meta import VerifiedGarbage.Proof.Framework.LitShare
+meta import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.CTRegion
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.PubVec
 meta import VerifiedGarbage.Proof.Bignum.X86_64.PdCT
@@ -46,9 +52,24 @@ open VG.Proof.Bignum.X86_64
 open VG.Proof.Bignum.X86_64.FoldedPublic
 open VG.Proof.MlKem.X86_64 (Keep)
 
+/-! The vector code with its instructions normalized (`Instr.norm`): a few
+instructions from a few taints, whose steps the kernel evaluates once
+(`Taint.exists_check_of_norm`). -/
+
+def exp2048N : Prog isa := Code.mapBlocks Instr.norm (PubIfma.exp65537 PubIfma.pay2048)
+def exp3072N : Prog isa := Code.mapBlocks Instr.norm (PubIfma.exp65537 PubIfma.pay3072)
+def exp4096N : Prog isa := Code.mapBlocks Instr.norm (PubIfma.exp65537 PubIfma.pay4096)
+
+materialize_shared exp2048N
+materialize_shared exp3072N
+materialize_shared exp4096N
+
 /-- The vector code's addresses and branches depend on `rdi` alone. -/
 theorem pubT {l : VG.Impl.Rsa.X86_64.CrtIfma.Lay} (hl : PubOk l) : TOk [.rdi] (PubIfma.exp65537 l) := by
-  rcases hl with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
+  rcases hl with rfl | rfl | rfl
+  · exact Taint.exists_check_of_norm (c' := exp2048N) rfl ⟨_, by taint_decide⟩
+  · exact Taint.exists_check_of_norm (c' := exp3072N) rfl ⟨_, by taint_decide⟩
+  · exact Taint.exists_check_of_norm (c' := exp4096N) rfl ⟨_, by taint_decide⟩
 
 theorem daw_rdi : Pins (fun (q : DPub × BitVec 64) t => DAw q t) [.rdi] := fun _ _ _ ⟨_, _, _, h₁, _⟩ ⟨_, _, _, h₂, _⟩ r hr => by
   simp only [List.mem_singleton] at hr; subst hr; rw [h₁.rdi, h₂.rdi]

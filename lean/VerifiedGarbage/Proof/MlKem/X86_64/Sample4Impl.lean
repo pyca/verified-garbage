@@ -31,6 +31,7 @@ public import VerifiedGarbage.Proof.Sha3.X86_64.Stream.Squeeze
 public import VerifiedGarbage.Proof.Framework.TacticTemplate
 public meta import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.MlKem.X86_64.S4Top
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 
 /-!
 # Implementations of `vg_mlkem_sample_ntt4` on x86-64
@@ -79,8 +80,25 @@ structure BatchHOk16 (b : Prog isa) : Prop where
 noncomputable def BatchHOk16.checks (b : Prog isa) : Bool :=
   b.noCalls && ctlOk b && b.allInstrs (fun i => !isa.writesSp i) && b.x86_64Depth == 0
 
+/-- `BatchHOk16.checks`, with the tests of an instruction in one match
+(`hasBits`, `Proof/Framework/X86_64/InstrBits.lean`) and one walk of the
+code for them: what the kernel evaluates, for every fragment of a kind in
+one declaration, so that it builds what they share once. -/
+noncomputable def BatchHOk16.checksB (b : Prog isa) : Bool :=
+  b.noCalls && b.allInstrs (hasBits (bMx + bSp)) && b.x86_64Depth == 0
+
+theorem BatchHOk16.checks_of_B {b : Prog isa} (h : BatchHOk16.checksB b = true) :
+    BatchHOk16.checks b = true ∧ b.allInstrs (fun i => !loadsMxcsr i) = true := by
+  simp only [BatchHOk16.checksB, Bool.and_eq_true] at h
+  obtain ⟨⟨hn, hb⟩, hd⟩ := h
+  have hm := Code.noMx_of_bits rfl hb
+  simp only [BatchHOk16.checks, Bool.and_eq_true]
+  exact ⟨⟨⟨⟨hn, ctlOk_of_noLoad hm⟩, Code.sp_of_bits rfl hb⟩, hd⟩, hm⟩
+
 theorem sampleH16_checks (fast : Bool) : BatchHOk16.checks (Impl.MlKem.X86_64.Sample4.sampleH fast true) = true := by
-  cases fast <;> decide +kernel
+  have h : ([false, true].all fun fast =>
+      BatchHOk16.checksB (Impl.MlKem.X86_64.Sample4.sampleH fast true)) = true := by decide +kernel
+  exact (BatchHOk16.checks_of_B (List.all_eq_true.mp h fast (by cases fast <;> decide))).1
 
 theorem sampleH16_ok (fast : Bool) : BatchHOk16 (Impl.MlKem.X86_64.Sample4.sampleH fast true) := by
   have h := sampleH16_checks fast
@@ -101,7 +119,10 @@ structure BatchHMOk16 (m : Nat) (b : Prog isa) : Prop where
 
 theorem sampleHM16_checks (fast : Bool) {m : Nat} (hm : m ≤ 3) :
     BatchHOk16.checks (Impl.MlKem.X86_64.Sample4.sampleHM fast m) = true := by
-  rcases (by omega_using [hm] : m = 0 ∨ m = 1 ∨ m = 2 ∨ m = 3) with rfl | rfl | rfl | rfl <;> cases fast <;> decide +kernel
+  have h : ((List.range 4).all fun m => [false, true].all fun fast =>
+      BatchHOk16.checksB (Impl.MlKem.X86_64.Sample4.sampleHM fast m)) = true := by decide +kernel
+  exact (BatchHOk16.checks_of_B (List.all_eq_true.mp (List.all_eq_true.mp h m
+    (List.mem_range.mpr (Nat.lt_succ_of_le hm))) fast (by cases fast <;> decide))).1
 
 theorem sampleHM16_ok (fast : Bool) {m : Nat} (hm : m ≤ 3) : BatchHMOk16 m (Impl.MlKem.X86_64.Sample4.sampleHM fast m) := by
   have h := sampleHM16_checks fast hm
@@ -127,8 +148,10 @@ noncomputable def BatchPOk16.checks (b : Prog isa) : Bool :=
 
 theorem samplePN16_checks (fast : Bool) {q : Nat × Nat} (hq : q ∈ Impl.MlKem.X86_64.Sample4.pnUses) :
     BatchPOk16.checks (Impl.MlKem.X86_64.Sample4.samplePN fast q.1 q.2) = true := by
-  simp only [Impl.MlKem.X86_64.Sample4.pnUses, List.mem_cons, List.not_mem_nil, or_false] at hq
-  rcases hq with rfl | rfl | rfl | rfl <;> cases fast <;> decide +kernel
+  have h : (Impl.MlKem.X86_64.Sample4.pnUses.all fun q => [false, true].all fun fast =>
+      BatchHOk16.checksB (Impl.MlKem.X86_64.Sample4.samplePN fast q.1 q.2)) = true := by decide +kernel
+  have hb := BatchHOk16.checks_of_B (List.all_eq_true.mp (List.all_eq_true.mp h q hq) fast (by cases fast <;> decide))
+  rw [BatchPOk16.checks, hb.1, hb.2]; rfl
 
 theorem pnUses_le {q : Nat × Nat} (hq : q ∈ Impl.MlKem.X86_64.Sample4.pnUses) : 0 < q.2 ∧ q.2 ≤ 3 ∧ q.1 + q.2 ≤ 256 := by
   simp only [Impl.MlKem.X86_64.Sample4.pnUses, List.mem_cons, List.not_mem_nil, or_false] at hq
@@ -214,7 +237,18 @@ theorem codeChecks_spec {c : Prog isa} (h : codeChecks c = true) :
   simp only [codeChecks, Bool.and_eq_true, decide_eq_true_eq] at h
   exact ⟨nosp_of h.1.1.1, h.1.1.2, h.1.2, Code.all_of_allInstrs h.2⟩
 
-theorem scalar_checks : codeChecks (Impl.MlKem.X86_64.Callee4.scalar).code = true := by decide +kernel
+/-- `codeChecks`, with the tests of an instruction in one match (`hasBits`)
+and one walk of the code for them: what the kernel evaluates. -/
+noncomputable def codeChecksB (c : Prog isa) : Bool :=
+  c.allInstrs (hasBits (bMx + bSp + bNs)) && decide (c.depth ≤ 3)
+
+theorem codeChecks_of_B {c : Prog isa} (h : codeChecksB c = true) : codeChecks c = true := by
+  simp only [codeChecksB, Bool.and_eq_true] at h
+  simp only [codeChecks, Bool.and_eq_true]
+  exact ⟨⟨⟨Code.noRsp_of_bits rfl h.1, h.2⟩, ctlOk_of_noLoad (Code.noMx_of_bits rfl h.1)⟩, Code.sp_of_bits rfl h.1⟩
+
+theorem scalar_checks : codeChecks (Impl.MlKem.X86_64.Callee4.scalar).code = true :=
+  codeChecks_of_B (by decide +kernel)
 
 /-- The baseline implementation, `vg_mlkem_sample_ntt4`, which calls `vg_mlkem_sample_ntt`. -/
 def scalar : Sample4Impl where
@@ -239,7 +273,13 @@ def scalar : Sample4Impl where
   prfsDoc := "one at a time"
   features := []
 
-theorem avx2_checks16 : codeChecks (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 false true) = true := by decide +kernel
+/-- The checks of the AVX2 and the AVX-512 code, which share most of it, at once. -/
+theorem avx_checks16 (fast : Bool) : codeChecks (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast true) = true := by
+  have h : ([false, true].all fun fast =>
+      codeChecksB (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 fast true)) = true := by decide +kernel
+  exact codeChecks_of_B (List.all_eq_true.mp h fast (by cases fast <;> decide))
+
+theorem avx2_checks16 : codeChecks (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 false true) = true := avx_checks16 false
 
 theorem avx2_s16 : S16Ok (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 false true) :=
   ⟨S4.correct (w16 := true) (fast := false), S4.ct (w16 := true) (fast := false), (codeChecks_spec avx2_checks16).1,
@@ -269,7 +309,7 @@ def avx2 : Sample4Impl where
   prfsDoc := "four at a time, with AVX2 (and the first one or two of `4k + 1` or `4k + 2` on their own)"
   features := ["avx", "avx2"]
 
-theorem avx512_checks16 : codeChecks (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 true true) = true := by decide +kernel
+theorem avx512_checks16 : codeChecks (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 true true) = true := avx_checks16 true
 
 theorem avx512_s16 : S16Ok (Impl.MlKem.X86_64.Sample4.sampleNTT4Avx2 true true) :=
   ⟨S4.correct (w16 := true) (fast := true), S4.ct (w16 := true) (fast := true), (codeChecks_spec avx512_checks16).1,

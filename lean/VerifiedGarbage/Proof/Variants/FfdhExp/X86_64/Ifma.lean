@@ -10,6 +10,8 @@ meta import VerifiedGarbage.Proof.Ffdh.X86_64.Ifma.CT
 meta import VerifiedGarbage.Proof.Bignum.X86_64.Template
 meta import VerifiedGarbage.Proof.Ffdh.X86_64.Ifma.Lit
 meta import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
+import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ConvLit
+meta import VerifiedGarbage.Proof.Bignum.X86_64.Ifma.ConvLit
 
 /-!
 # FFDH's exponentiation with AVX512_IFMA on x86-64

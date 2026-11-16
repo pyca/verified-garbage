@@ -18,23 +18,28 @@ import VerifiedGarbage.Proof.Mont.X86.Sse2.Shape
 namespace VG.Proof.Rsa.X86.RtShape
 open VG VG.X86 VG.Proof.Mont.X86.StaticSquare
 
+ /-! Each caller's code is tested in one evaluation by the kernel, which builds
+ and tests the Montgomery functions it calls once: the compositional
+ `rsa_stack_shape` took twice the time, most of it to elaborate, and then to
+ check, a proof for each of the hundreds of blocks. -/
+
  theorem recoverDet_all : Impl.Rsa.X86.RecoverDetRt.code.allInstrs noSp=true := by
-  rsa_stack_shape
+  decide +kernel
 
  theorem privateCrt_all : (Impl.Bignum.X86.CrtRt.code).allInstrs noSp=true := by
-  rsa_stack_shape
+  decide +kernel
 
  theorem privateCrtP_all : (Impl.Bignum.X86.CrtRt.code true).allInstrs noSp=true := by
-  rsa_stack_shape
+  decide +kernel
 
  theorem precomputed_all : (Impl.Bignum.X86.PrecomputedRt.code).allInstrs noSp=true := by
-  rsa_stack_shape
+  decide +kernel
 
  theorem crtValues_all : (Impl.Rsa.X86.CrtValuesRt.code).allInstrs noSp=true := by
-  rsa_stack_shape
+  decide +kernel
 
  theorem check_all (full : Bool) : (Impl.Rsa.X86.KeyCheckRt.code full).allInstrs noSp=true := by
-  cases full <;> rsa_stack_shape
+  cases full <;> decide +kernel
 
  theorem all_spSafe {c : Prog isa} (h : c.allInstrs noSp=true) : c.all (fun i => !isa.writesSp i)=true := by
   have e : (fun i : Instr => !isa.writesSp i)=noSp := by funext i; cases i <;> rfl
