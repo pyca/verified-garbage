@@ -56,7 +56,29 @@ structure T where
   bases : List (Reg × Nat × Nat) := []
   /-- `(i, o, n)`: the `n` bytes at offset `o` of writable region `i` are public. -/
   slots : List (Nat × Nat × Nat) := []
-  deriving DecidableEq, Lean.ToExpr
+  deriving DecidableEq
+
+/-- A taint as a term, for the hints of a check: the bits of its set of
+registers, and the numbers of its bases and slots, are numerals as the
+kernel's evaluation leaves them (`forceT`, `forceBases`, `forceSlots`), so
+that a taint of a hint and the same taint as a step gives it are the same
+term, and the kernel finds again after a hint the steps it made before it. -/
+instance : Lean.ToExpr T where
+  toExpr t :=
+    let nat := Lean.mkRawNatLit
+    let tN := Lean.toTypeExpr Nat
+    let tR := Lean.toTypeExpr Reg
+    let tNN := Lean.toTypeExpr (Nat × Nat)
+    let pair (ta tb a b : Lean.Expr) := Lean.mkApp4 (.const ``Prod.mk [.zero, .zero]) ta tb a b
+    let list (ty : Lean.Expr) (es : List Lean.Expr) :=
+      es.foldr (fun a e => Lean.mkApp3 (.const ``List.cons [.zero]) ty a e) (Lean.mkApp (.const ``List.nil [.zero]) ty)
+    Lean.mkAppN (.const ``T.mk []) #[
+      Lean.mkApp2 (.const ``RegSet.mk []) tR (nat t.regs.bits), Lean.toExpr t.lens,
+      list (Lean.toTypeExpr (Reg × Nat × Nat)) (t.bases.map fun p =>
+        pair tR tNN (Lean.toExpr p.1) (pair tN tN (nat p.2.1) (nat p.2.2))),
+      list (Lean.toTypeExpr (Nat × Nat × Nat)) (t.slots.map fun s =>
+        pair tN tNN (nat s.1) (pair tN tN (nat s.2.1) (nat s.2.2)))]
+  toTypeExpr := .const ``T []
 
 def pub (τ : T) (r : Reg) : Bool := τ.regs.mem r
 
@@ -939,6 +961,298 @@ theorem stepK_eq : stepK = step := by
   cases i <;> simp only [stepK, step, wrK_eq, addiBasesK_eq, subiBasesK_eq, movBasesK_eq, slotPubK_eq,
     storeStepK_eq, isMov_eq, cond_eq_ite, decide_eq_true_eq]
 
+/-! ### Steps the kernel finds again
+
+The kernel evaluates a taint's fields when they are read, and remembers the
+value of every term it has evaluated, by the term. `stepK` gives taints whose
+fields are terms yet to be evaluated, in the taint before
+(`{ τ with regs := set τ d p, bases := killK τ d }`): no two are the same
+term, every instruction of the code is evaluated, and a field no instruction
+changes (`lens`) is read through every taint since the one that set it.
+`stepKeep` gives taints whose set of registers is evaluated (`forceT`), and
+whose lists the instruction does not change are the terms they were: an
+instruction the kernel has evaluated from a taint is then found again
+wherever the code repeats it from the same taint.
+
+Most instructions write a register that holds no known address, and most
+stores of a secret overwrite no public slot. `stepK` filters the bases
+(`killK`) at every instruction that writes a register and the slots at every
+store to a known address: `stepKeepFn` decides first whether they change
+(`noBase`, `noSlot`, which the kernel evaluates once for a list and an
+instruction), and gives the taint the list it was given when they do not.
+When they do change, the new list is evaluated to its cells and numerals
+(`forceBases`, `forceSlots`), as `T`'s `ToExpr` writes those of a hint: a
+list that is not, a term in the taint before, would be another term than an
+equal list reached another way. See "An analysis the kernel finds again" in
+the `proof-performance` skill. -/
+
+section
+open VG.KList (all filter)
+
+/-- `k t`, with the set of registers of `t` evaluated. -/
+def forceT {α : Type} (t : T) (k : T → α) : α :=
+  match t with
+  | ⟨rg, l, b, sl⟩ => rg.force fun rg => k ⟨rg, l, b, sl⟩
+
+theorem forceT_eq {α : Type} (t : T) (k : T → α) : forceT t k = k t := by
+  obtain ⟨rg, l, b, sl⟩ := t
+  rfl
+
+/-- `k n`, with `n` evaluated: what `k` is given is a numeral (see `RegSet.force`). -/
+def forceNat {α : Type} (n : Nat) (k : Nat → α) : α :=
+  Nat.casesOn (motive := fun _ => α) (Nat.succ n) (k n) (fun m => k m)
+
+theorem forceNat_eq {α : Type} (n : Nat) (k : Nat → α) : forceNat n k = k n := rfl
+
+/-- `k r`, with `r` evaluated: what `k` is given is a constructor. -/
+def forceReg {α : Type} (r : Reg) (k : Reg → α) : α :=
+  match r with
+  | .r0 => k .r0 | .r2 => k .r2 | .r3 => k .r3 | .r4 => k .r4 | .r5 => k .r5 | .r6 => k .r6 | .r7 => k .r7
+  | .r8 => k .r8 | .r9 => k .r9 | .r10 => k .r10 | .r11 => k .r11 | .r12 => k .r12 | .r14 => k .r14
+  | .r15 => k .r15 | .r16 => k .r16 | .r17 => k .r17 | .r18 => k .r18 | .r19 => k .r19 | .r20 => k .r20
+  | .r21 => k .r21 | .r22 => k .r22 | .r23 => k .r23 | .r24 => k .r24 | .r25 => k .r25 | .r26 => k .r26
+  | .r27 => k .r27 | .r28 => k .r28 | .r29 => k .r29 | .r30 => k .r30 | .r31 => k .r31
+
+theorem forceReg_eq {α : Type} (r : Reg) (k : Reg → α) : forceReg r k = k r := by
+  cases r <;> rfl
+
+/-- `k (r, i, o)`, with the base evaluated: a constructor and two numerals. -/
+def forceBase {α : Type} (p : Reg × Nat × Nat) (k : Reg × Nat × Nat → α) : α :=
+  match p with
+  | (r, i, o) => forceReg r fun r => forceNat i fun i => forceNat o fun o => k (r, i, o)
+
+theorem forceBase_eq {α : Type} (p : Reg × Nat × Nat) (k : Reg × Nat × Nat → α) : forceBase p k = k p := by
+  obtain ⟨r, i, o⟩ := p
+  rw [forceBase, forceReg_eq]
+  rfl
+
+/-- `k b`, with the bases `b` evaluated. -/
+def forceBases {α : Type} : List (Reg × Nat × Nat) → (List (Reg × Nat × Nat) → α) → α
+  | [], k => k []
+  | p :: b, k => forceBase p fun p => forceBases b fun b => k (p :: b)
+
+theorem forceBases_eq {α : Type} :
+    ∀ (b : List (Reg × Nat × Nat)) (k : List (Reg × Nat × Nat) → α), forceBases b k = k b
+  | [], _ => rfl
+  | p :: b, k => by rw [forceBases, forceBase_eq, forceBases_eq b]
+
+/-- `k (i, o, n)`, with the slot evaluated: a triple of numerals. -/
+def forceSlot {α : Type} (s : Nat × Nat × Nat) (k : Nat × Nat × Nat → α) : α :=
+  match s with
+  | (i, o, n) => forceNat i fun i => forceNat o fun o => forceNat n fun n => k (i, o, n)
+
+theorem forceSlot_eq {α : Type} (s : Nat × Nat × Nat) (k : Nat × Nat × Nat → α) : forceSlot s k = k s := rfl
+
+/-- `k sl`, with the slots `sl` evaluated: a list of triples of numerals. -/
+def forceSlots {α : Type} : List (Nat × Nat × Nat) → (List (Nat × Nat × Nat) → α) → α
+  | [], k => k []
+  | s :: sl, k => forceSlot s fun s => forceSlots sl fun sl => k (s :: sl)
+
+theorem forceSlots_eq {α : Type} :
+    ∀ (sl : List (Nat × Nat × Nat)) (k : List (Nat × Nat × Nat) → α), forceSlots sl k = k sl
+  | [], _ => rfl
+  | s :: sl, k => by rw [forceSlots, forceSlot_eq, forceSlots_eq sl]
+
+/-- No base in `b` is of the register `d`. -/
+def noBase (b : List (Reg × Nat × Nat)) (d : Reg) : Bool := all b fun p => !regEq p.1 d
+
+/-- The taint `k` gives of the bases after an instruction: `b`, those before
+it, if `same`, and `slow`, evaluated, otherwise. -/
+def keepBases (same : Bool) (b slow : List (Reg × Nat × Nat)) (k : List (Reg × Nat × Nat) → T) : Option T :=
+  bif same then some (k b) else forceBases slow fun b' => some (k b')
+
+/-- `wrK`, giving the bases it was given when `d` has none. -/
+def wrKeep (τ : T) (d : Reg) (p : Bool) : Option T :=
+  match τ with
+  | ⟨_, l, b, sl⟩ => keepBases (noBase b d) b (killK τ d) fun b' => ⟨set τ d p, l, b', sl⟩
+
+/-- A store to the bytes `d` to `d + w` of region `i` overwrites no byte of the slots `sl`. -/
+def noSlot (sl : List (Nat × Nat × Nat)) (i d w : Nat) : Bool :=
+  all sl fun s => !Nat.beq s.1 i || Nat.ble (d + w) s.2.1 || Nat.ble (s.2.1 + s.2.2) d
+
+/-- The taint after a store that leaves the slots as they are (`τ` itself), or forgets them all. -/
+def storeSame (τ : T) (p : Bool) : Option T :=
+  bif p then some τ else
+    match τ with
+    | ⟨rg, l, b, _⟩ => some ⟨rg, l, b, []⟩
+
+/-- `storeStepK`, giving the slots it was given when the store does not change them. -/
+def storeKeep (τ : T) (n : Reg) (off w : Nat) (p : Bool) : Option T :=
+  bif pub τ n then
+    match τ with
+    | ⟨rg, l, b, sl⟩ =>
+      match addrOfK τ n off with
+      | some (i, d) =>
+        bif Nat.ble (d + w) (getDK l i) then
+          bif p then forceSlot (i, d, w) fun s => some ⟨rg, l, b, s :: sl⟩
+          else
+            bif noSlot sl i d w then some τ
+            else forceSlots (filter (fun s => !Nat.beq s.1 i || Nat.ble (d + w) s.2.1 ||
+              Nat.ble (s.2.1 + s.2.2) d) sl) fun sl' => some ⟨rg, l, b, sl'⟩
+        else storeSame τ p
+      | none => storeSame τ p
+  else none
+
+/-- `stepK`, as a function of the instruction first, giving the bases and the
+slots it was given when the instruction does not change them (`stepKeepFn_eq`). -/
+def stepKeepFn : Instr → T → Option T
+  | .add d n m | .sub d n m | .mul d n m | .mulhu d n m | .addc d n m | .subc d n m =>
+    fun τ => wrKeep τ d (pub τ n && pub τ m)
+  | .adde d .. | .addze d _ | .sube d .. => fun τ => wrKeep τ d false
+  | .logic op d n m => fun τ =>
+    bif isMov op n m then
+      match τ with
+      | ⟨_, l, b, sl⟩ =>
+        keepBases (noBase b d && noBase b n) b (movBasesK τ d n) fun b' => ⟨set τ d (pub τ n), l, b', sl⟩
+    else wrKeep τ d (pub τ n && pub τ m)
+  | .addi d n imm => fun τ =>
+    match τ with
+    | ⟨_, l, b, sl⟩ =>
+      keepBases (noBase b d && noBase b n) b (addiBasesK τ d n imm) fun b' => ⟨set τ d (pub τ n), l, b', sl⟩
+  | .subi d n imm => fun τ =>
+    match τ with
+    | ⟨_, l, b, sl⟩ =>
+      keepBases (noBase b d && noBase b n) b (subiBasesK τ d n imm) fun b' => ⟨set τ d (pub τ n), l, b', sl⟩
+  | .ori d n _ | .oris d n _ | .rotr _ d n _ | .lsr _ d n _ | .lsl d n _ => fun τ => wrKeep τ d (pub τ n)
+  | .li d _ | .lis d _ | .addSp d _ => fun τ => wrKeep τ d true
+  | .load sz t n off => fun τ => bif pub τ n then wrKeep τ t (slotPubK τ n off sz.bytes) else none
+  | .lbz t n off => fun τ => bif pub τ n then wrKeep τ t (slotPubK τ n off 1) else none
+  | .store sz t n off => fun τ => storeKeep τ n off sz.bytes (pub τ t)
+  | .stb t n off => fun τ => storeKeep τ n off 1 (pub τ t)
+  | .loadRev _ t a b => fun τ => bif pub τ a && pub τ b then wrKeep τ t false else none
+  | .storeRev _ t a b => fun τ => bif pub τ a && pub τ b then storeSame τ (pub τ t) else none
+  | .mflr d => fun τ => wrKeep τ d false
+  | .mfvsrd d _ => fun τ => wrKeep τ d false
+  | .adrSym d _ => fun τ => wrKeep τ d false
+  | i => fun τ => stepK τ i
+
+theorem keepBases_eq {same : Bool} {b slow : List (Reg × Nat × Nat)} (k : List (Reg × Nat × Nat) → T)
+    (h : same = true → slow = b) : keepBases same b slow k = some (k slow) := by
+  cases same
+  · exact forceBases_eq slow _
+  · rw [h rfl]; rfl
+
+theorem filter_noBase {b : List (Reg × Nat × Nat)} {d : Reg} (h : noBase b d = true) :
+    filter (fun p => !regEq p.1 d) b = b := by
+  rw [noBase, KList.all_eq, List.all_eq_true] at h
+  rw [KList.filter_eq]
+  exact List.filter_eq_self.mpr h
+
+theorem select_noBase {b : List (Reg × Nat × Nat)} {d : Reg} (q : Reg × Nat × Nat → Bool)
+    (h : noBase b d = true) : filter (fun p => regEq p.1 d && q p) b = [] := by
+  rw [noBase, KList.all_eq, List.all_eq_true] at h
+  rw [KList.filter_eq, List.filter_eq_nil_iff]
+  intro a ha
+  have := h a ha
+  cases hr : regEq a.1 d
+  · simp
+  · rw [hr] at this; cases this
+
+theorem killK_noBase {τ : T} {d : Reg} (h : noBase τ.bases d = true) : killK τ d = τ.bases :=
+  filter_noBase h
+
+theorem movBasesK_noBase {τ : T} {d n : Reg} (h : (noBase τ.bases d && noBase τ.bases n) = true) :
+    movBasesK τ d n = τ.bases := by
+  rw [Bool.and_eq_true] at h
+  have h2 := select_noBase (fun _ => true) h.2
+  simp only [Bool.and_true] at h2
+  simp only [movBasesK, killK_noBase h.1, h2, KList.map_eq, KList.append_eq, List.map_nil, List.append_nil]
+
+theorem addiBasesK_noBase {τ : T} {d n : Reg} {imm : Nat} (h : (noBase τ.bases d && noBase τ.bases n) = true) :
+    addiBasesK τ d n imm = τ.bases := by
+  rw [Bool.and_eq_true] at h
+  have h2 := select_noBase (fun _ => true) h.2
+  simp only [Bool.and_true] at h2
+  simp only [addiBasesK, killK_noBase h.1, h2, KList.map_eq, KList.append_eq, List.map_nil, List.append_nil]
+
+theorem subiBasesK_noBase {τ : T} {d n : Reg} {imm : Nat} (h : (noBase τ.bases d && noBase τ.bases n) = true) :
+    subiBasesK τ d n imm = τ.bases := by
+  rw [Bool.and_eq_true] at h
+  simp only [subiBasesK, killK_noBase h.1, select_noBase (fun p => Nat.ble imm p.2.2) h.2, KList.map_eq,
+    KList.append_eq, List.map_nil, List.append_nil]
+
+theorem wrKeep_eq (τ : T) (d : Reg) (p : Bool) : wrKeep τ d p = some (wrK τ d p) := by
+  obtain ⟨rg, l, b, sl⟩ := τ
+  exact keepBases_eq (same := noBase b d) (fun b' => ⟨set ⟨rg, l, b, sl⟩ d p, l, b', sl⟩)
+    fun h => killK_noBase (τ := ⟨rg, l, b, sl⟩) h
+
+theorem storeSame_eq (τ : T) (p : Bool) : storeSame τ p = some { τ with slots := bif p then τ.slots else [] } := by
+  obtain ⟨rg, l, b, sl⟩ := τ
+  cases p <;> rfl
+
+theorem storeKeep_eq (τ : T) (n : Reg) (off w : Nat) (p : Bool) :
+    storeKeep τ n off w p = storeStepK τ n off w p := by
+  obtain ⟨rg, l, b, sl⟩ := τ
+  unfold storeKeep storeStepK storeSlotsK
+  cases pub ⟨rg, l, b, sl⟩ n
+  · rfl
+  simp only [Bool.cond_true]
+  cases addrOfK ⟨rg, l, b, sl⟩ n off with
+  | none => exact storeSame_eq _ p
+  | some q =>
+    obtain ⟨i, d⟩ := q
+    simp only
+    cases Nat.ble (d + w) (getDK l i)
+    · exact storeSame_eq _ p
+    simp only [Bool.cond_true]
+    cases p
+    · simp only [Bool.cond_false, Bool.false_or]
+      cases h : noSlot sl i d w
+      · exact forceSlots_eq _ _
+      · rw [noSlot, KList.all_eq, List.all_eq_true] at h
+        simp only [Bool.cond_true, KList.filter_eq, List.filter_eq_self.mpr h]
+    · simp only [Bool.cond_true, Bool.true_or, KList.filter_eq, List.filter_eq_self.mpr fun _ _ => rfl]
+      rfl
+
+theorem stepKeepFn_eq (i : Instr) (τ : T) : stepKeepFn i τ = stepK τ i := by
+  cases i <;> try rfl
+  case logic op d n m =>
+    obtain ⟨rg, l, b, sl⟩ := τ
+    simp only [stepKeepFn, stepK, wrKeep_eq]
+    cases isMov op n m
+    · rfl
+    exact keepBases_eq (same := noBase b d && noBase b n)
+      (fun b' => ⟨set ⟨rg, l, b, sl⟩ d (pub ⟨rg, l, b, sl⟩ n), l, b', sl⟩)
+      fun h => movBasesK_noBase (τ := ⟨rg, l, b, sl⟩) h
+  case addi d n imm =>
+    obtain ⟨rg, l, b, sl⟩ := τ
+    exact keepBases_eq (same := noBase b d && noBase b n)
+      (fun b' => ⟨set ⟨rg, l, b, sl⟩ d (pub ⟨rg, l, b, sl⟩ n), l, b', sl⟩)
+      fun h => addiBasesK_noBase (τ := ⟨rg, l, b, sl⟩) h
+  case subi d n imm =>
+    obtain ⟨rg, l, b, sl⟩ := τ
+    exact keepBases_eq (same := noBase b d && noBase b n)
+      (fun b' => ⟨set ⟨rg, l, b, sl⟩ d (pub ⟨rg, l, b, sl⟩ n), l, b', sl⟩)
+      fun h => subiBasesK_noBase (τ := ⟨rg, l, b, sl⟩) h
+  case store sz t n off => exact storeKeep_eq τ n off _ _
+  case stb t n off => exact storeKeep_eq τ n off 1 _
+  case storeRev sz t a b =>
+    simp only [stepKeepFn, stepK, storeSame_eq]
+  all_goals simp only [stepKeepFn, stepK, wrKeep_eq]
+
+end
+
+/-- `stepKeepFn`, with its cases closed (`inline_match%`). -/
+def stepKeepFnK : Instr → T → Option T := inline_match% stepKeepFn stepK
+
+theorem stepKeepFnK_eq (i : Instr) : stepKeepFnK i = stepKeepFn i := by
+  cases i <;> rfl
+
+/-- `stepK`, giving a taint whose set of registers is evaluated, and whose
+bases and slots are those it was given when the instruction does not change
+them. -/
+def stepKeep (τ : T) (i : Instr) : Option T :=
+  match stepKeepFnK i τ with
+  | some τ' => forceT τ' some
+  | none => none
+
+theorem stepKeep_eq : stepKeep = step := by
+  funext τ i
+  rw [stepKeep, stepKeepFnK_eq, stepKeepFn_eq, stepK_eq]
+  cases step τ i with
+  | none => rfl
+  | some τ' => exact forceT_eq τ' some
+
 end VG.PPC64LE.SlotTaint
 
 namespace VG.PPC64LE
@@ -947,8 +1261,8 @@ namespace VG.PPC64LE
 def slotTaint : VG.Taint isa where
   T := SlotTaint.T
   Agree := SlotTaint.Agree
-  step := SlotTaint.stepK
-  step_sound ha hs := SlotTaint.step_sound ha (SlotTaint.stepK_eq ▸ hs)
+  step := SlotTaint.stepKeep
+  step_sound ha hs := SlotTaint.step_sound ha (SlotTaint.stepKeep_eq ▸ hs)
   condPub := SlotTaint.condPub
   cond_sound := SlotTaint.cond_sound
   meet := SlotTaint.meet
@@ -971,6 +1285,10 @@ def slotTaint : VG.Taint isa where
   push_sound _ h := by cases h
   pop _ _ := none
   pop_sound _ h := by cases h
+
+/-- `slotTaint`'s step is `SlotTaint.step`'s (`stepKeep_eq`). -/
+theorem slotTaint_step (τ : SlotTaint.T) (i : Instr) : slotTaint.step τ i = SlotTaint.step τ i :=
+  congrFun (congrFun SlotTaint.stepKeep_eq τ) i
 
 /-- The taint in which the registers `rs` are public, the writable regions
 are at least `lens` long, and each register of `bs` holds the base address of

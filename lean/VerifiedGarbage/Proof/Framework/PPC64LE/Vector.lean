@@ -395,11 +395,35 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
     exact ha
   | _ => exact Taint.step_sound ha hs e₁ e₂
 
+/-- `step`, as a function of the instruction first. -/
+def stepFn (i : Instr) : T → Option T := fun τ => step τ i
+
+/-- `stepFn`, with its cases closed (`inline_match%`). -/
+def stepFnK : Instr → T → Option T := inline_match% stepFn step Taint.step
+
+theorem stepFnK_eq (i : Instr) : stepFnK i = stepFn i := by cases i <;> rfl
+
+/-- `step`, giving a set that is evaluated (see `Taint.stepK`,
+`Proof/Framework/PPC64LE/Taint.lean`). -/
+def stepK (τ : T) (i : Instr) : Option T :=
+  match stepFnK i τ with
+  | some τ' => τ'.force some
+  | none => none
+
+theorem stepK_eq : stepK = step := by
+  funext τ i
+  rw [stepK, stepFnK_eq, stepFn]
+  cases step τ i <;> rfl
+
 end VectorTaint
 
 def vectorTaint : VG.Taint isa := { taint with
-  step := VectorTaint.step
-  step_sound := VectorTaint.step_sound }
+  step := VectorTaint.stepK
+  step_sound := fun h hs => VectorTaint.step_sound h (VectorTaint.stepK_eq ▸ hs) }
+
+/-- `vectorTaint`'s step is `VectorTaint.step`'s (`stepK_eq`). -/
+theorem vectorTaint_step (τ : Taint.T) (i : Instr) : vectorTaint.step τ i = VectorTaint.step τ i :=
+  congrFun (congrFun VectorTaint.stepK_eq τ) i
 
 end VG.PPC64LE
 

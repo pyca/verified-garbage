@@ -61,6 +61,34 @@ theorem stepS_sound {L : List String} {τ τ' : T} {i : Instr} {s₁ s₂ s₁' 
     rw [e] at hs
     exact ⟨(step_sound ha.1 hs e₁ e₂).1, (step_sound ha.1 hs e₁ e₂).2, hsy⟩
 
+/-- `stepS`, as a function of the instruction first: `step` on every
+instruction but `adrSym`, which is public for a static of `L` and is not
+analysed otherwise. -/
+def stepSFn : Instr → List String → T → Option T
+  | .adrSym d n => fun L τ => if n ∈ L then some (set τ d true) else none
+  | i => fun _ τ => step τ i
+
+theorem stepSFn_eq (L : List String) (τ : T) (i : Instr) : stepSFn i L τ = stepS L τ i := by
+  cases i <;> try rfl
+  simp only [stepSFn, stepS, Instr.symLi]
+  split <;> rfl
+
+/-- `stepSFn`, with its cases closed (`inline_match%`). -/
+def stepSFnK : Instr → List String → T → Option T := inline_match% stepSFn step
+
+theorem stepSFnK_eq (i : Instr) : stepSFnK i = stepSFn i := by cases i <;> rfl
+
+/-- `stepS`, giving a set that is evaluated (see `stepK`). -/
+def stepSK (L : List String) (τ : T) (i : Instr) : Option T :=
+  match stepSFnK i L τ with
+  | some τ' => τ'.force some
+  | none => none
+
+theorem stepSK_eq (L : List String) : stepSK L = stepS L := by
+  funext τ i
+  rw [stepSK, stepSFnK_eq, stepSFn_eq]
+  cases stepS L τ i <;> rfl
+
 end Taint
 
 /-- Taint tracking for PPC64LE code that addresses the statics `L`, whose
@@ -68,8 +96,8 @@ addresses are public. -/
 def taintSym (L : List String) : VG.Taint isa where
   T := Taint.T
   Agree := Taint.AgreeS L
-  step := Taint.stepS L
-  step_sound := Taint.stepS_sound
+  step := Taint.stepSK L
+  step_sound h hs := Taint.stepS_sound h (Taint.stepSK_eq L ▸ hs)
   condPub := taint.condPub
   cond_sound h := taint.cond_sound h.1
   meet := taint.meet
@@ -99,5 +127,10 @@ def taintSym (L : List String) : VG.Taint isa where
   pop_sound h hs e₁ e₂ := by
     obtain ⟨a, b⟩ := taint.pop_sound h.1 hs e₁ e₂
     exact ⟨a, b, fun n hn => by rw [pop_syms e₁, pop_syms e₂]; exact h.2 n hn⟩
+
+/-- `taintSym L`'s step is `Taint.stepS L`'s (`stepSK_eq`). -/
+theorem taintSym_step (L : List String) (τ : Taint.T) (i : Instr) :
+    (taintSym L).step τ i = Taint.stepS L τ i :=
+  congrFun (congrFun (Taint.stepSK_eq L) τ) i
 
 end VG.PPC64LE

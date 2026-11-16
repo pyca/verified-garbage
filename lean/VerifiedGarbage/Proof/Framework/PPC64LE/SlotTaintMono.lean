@@ -265,10 +265,10 @@ instance : VG.Taint.Frame slotTaint where
   R_right _ := leR_iff.mpr (LeR.refl _)
   le_R hm h := le_of_le_leR hm (leR_iff.mp h)
   step {τ σ τ'} i h hs := by
-    have hs : step τ i = some τ' := stepK_eq ▸ hs
+    have hs : step τ i = some τ' := (slotTaint_step τ i).symm.trans hs
     have h := leR_iff.mp h
-    show ∃ σ', stepK σ i = some σ' ∧ _
-    rw [stepK_eq, h.shape]
+    show ∃ σ', slotTaint.step σ i = some σ' ∧ _
+    rw [slotTaint_step σ i, h.shape]
     obtain ⟨σ', h₁, h₂⟩ := step_upd h.regs h.slots i hs
     exact ⟨σ', h₁, leR_iff.mpr h₂⟩
   condPub {τ σ} c h hc := by
