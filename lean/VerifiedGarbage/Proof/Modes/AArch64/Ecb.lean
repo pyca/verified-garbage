@@ -122,7 +122,7 @@ theorem ecbAdvance_ok (hdl : c.dataReg ≠ c.leftReg) (hd16 : c.dataReg ≠ .x16
     [movR c.dataReg .x14] ++ [.sub .x c.leftReg c.leftReg .x16] from rfl, runBlock_app, e₁, Option.bind_some, e₂]
 
 /-- The data loop, before group `g`, with the key `k`. -/
-structure EInv (cs : BlockSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.Key) (g : Nat) (s : State) :
+structure EcbInv (cs : BlockSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.Key) (g : Nat) (s : State) :
     Prop where
   base : s.gpr sb = B
   ready : cs.Ready s B k
@@ -136,7 +136,7 @@ structure EInv (cs : BlockSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.
   wr : s.wr = s₀.wr
 
 /-- The data loop, done. -/
-structure EDone (cs : BlockSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.Key) (s : State) : Prop where
+structure EcbDone (cs : BlockSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs.Key) (s : State) : Prop where
   base : s.gpr sb = B
   saved : ∀ i < 10, s.mem.readW (wordAddr B (c.slots + i)) 64 = s₀.mem.readW (wordAddr B (c.slots + i)) 64
   data : DInv (8 * c.bw) s₀.mem s.mem D n n (ecbOut (8 * c.bw) (cs.cipher k) s₀.mem D)
@@ -145,10 +145,10 @@ structure EDone (cs : BlockSpec c) (s₀ : State) (B D : Addr) (n : Nat) (k : cs
   wr : s.wr = s₀.wr
 
 theorem ecbGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k : cs.Key}
-    (hp : GPre c s₀ B D n (8 * c.bw)) {g : Nat} {s : State} (hi : EInv cs s₀ B D n k g s) :
+    (hp : GPre c s₀ B D n (8 * c.bw)) {g : Nat} {s : State} (hi : EcbInv cs s₀ B D n k g s) :
     WP isa c.ecbGroup s fun s' =>
-      (isa.eval (.nonzero .x c.leftReg) s' = some false ∧ EDone cs s₀ B D n k s') ∨
-      (isa.eval (.nonzero .x c.leftReg) s' = some true ∧ EInv cs s₀ B D n k (g + 1) s') := by
+      (isa.eval (.nonzero .x c.leftReg) s' = some false ∧ EcbDone cs s₀ B D n k s') ∨
+      (isa.eval (.nonzero .x c.leftReg) s' = some true ∧ EcbInv cs s₀ B D n k (g + 1) s') := by
   have hL := cs.layout
   have hsm := hL.small
   have hroom := hL.room
@@ -357,9 +357,9 @@ theorem ecbGroup_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k 
 
 /-- The data loop. -/
 theorem ecbLoop_wp (cs : BlockSpec c) {s₀ : State} {B D : Addr} {n : Nat} {k : cs.Key}
-    (hp : GPre c s₀ B D n (8 * c.bw)) {s : State} (hi : EInv cs s₀ B D n k 0 s) :
-    WP isa (.loop c.ecbGroup (.nonzero .x c.leftReg)) s (EDone cs s₀ B D n k) := by
-  refine WP.loop (M := isa) (fun m s => ∃ g, m = n - c.G * g ∧ EInv cs s₀ B D n k g s) (fun m s hs => ?_) n s
+    (hp : GPre c s₀ B D n (8 * c.bw)) {s : State} (hi : EcbInv cs s₀ B D n k 0 s) :
+    WP isa (.loop c.ecbGroup (.nonzero .x c.leftReg)) s (EcbDone cs s₀ B D n k) := by
+  refine WP.loop (M := isa) (fun m s => ∃ g, m = n - c.G * g ∧ EcbInv cs s₀ B D n k g s) (fun m s hs => ?_) n s
     ⟨0, by simp, hi⟩
   obtain ⟨g, rfl, hg⟩ := hs
   refine WP.mono (ecbGroup_wp cs hp hg) fun s' h => ?_
@@ -429,7 +429,7 @@ theorem ecb_wp (cs : BlockSpec c) {data nR scr : Reg} (hds : data ≠ sb) (hns :
     exact ⟨fun h => by rw [← hn, h]; rfl, fun h => BitVec.eq_of_toNat_eq (by rw [hn, h]; rfl)⟩
   have hp : GPre c s₂ B D n (8 * c.bw) := ⟨⟨by rw [wr₂']; exact hs.wr, hs.fit⟩, by rw [wr₂']; exact hwD, sDS, fitD⟩
   -- The groups.
-  refine WP.seq (WP.mono (M := isa) (Q := EDone cs s₂ B D n k)
+  refine WP.seq (WP.mono (M := isa) (Q := EcbDone cs s₂ B D n k)
     (WP.ite (decide (n = 0)) hz₂ (fun h0 => ?_) (fun h0 => ?_)) fun s₄ d₄ => ?_)
   · have hn0 : n = 0 := by simpa using h0
     exact WP.block_nil ⟨b₂, fun _ _ => rfl, fun i hi' => by rw [hn0, Nat.mul_zero] at hi'; omega_arith, Frame.refl _ _,
