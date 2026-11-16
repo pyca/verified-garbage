@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
-import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
@@ -22,6 +21,9 @@ import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedLoop
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
+import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
 
 /-!
 # ML-DSA key generation on AArch64, with this library's primitives
@@ -52,7 +54,6 @@ theorem prims_okWith : PrimsOk (primsWith keccak.callee) 16 where
   rejNtt := CalleeOk.of_verified (by decide) (Sample.rejNTT_verifiedWith keccak) (by decide) (by simp [primsWith, Sample.rejNTT_depth keccak])
   rej4 := CalleeOk.of_verified (by decide) (Optimized.ResidentRej.selected_verified keccak.callee.pairedSha3) (by decide)
     (by simp only [primsWith,Optimized.ResidentRej.selected_depth,Nat.mul_zero]; decide)
-  rejBounded := CalleeOk.of_verified (by decide) (Sample.rejBounded_verifiedWith keccak) (by decide) (by simp [primsWith, Sample.rejBounded_depth keccak])
   ball := CalleeOk.of_verified (by decide) (Optimized.Ball.selected_verified keccak) (by decide) (by simp [primsWith, Optimized.Ball.selected_depth keccak])
   power2Round := CalleeOk.of_verified (by decide) Optimized.KeygenRound.power2Round_verified (by decide) (by dsimp only [primsWith]; decide)
   normLt := CalleeOk.of_verified (by decide) Round.normLt_verified (by decide) (by dsimp only [primsWith]; decide)

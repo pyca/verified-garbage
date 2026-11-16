@@ -32,7 +32,6 @@ structure PrimsOk (P : Prims) (S : Nat) : Prop where
   add : CalleeOk S P.add (addContract AArch64.abi S)
   rejNtt : CalleeOk S P.rejNtt (rejNTTContract AArch64.abi S)
   rej4 : CalleeOk S P.rej4 (rejNTT4Contract AArch64.abi S)
-  rejBounded : CalleeOk S P.rejBounded (rejBoundedContract AArch64.abi S)
   ball : CalleeOk S P.ball (sampleInBallContract AArch64.abi S)
   power2Round : CalleeOk S P.power2Round (power2RoundContract AArch64.abi S)
   normLt : CalleeOk S P.normLt (normLtContract AArch64.abi S)

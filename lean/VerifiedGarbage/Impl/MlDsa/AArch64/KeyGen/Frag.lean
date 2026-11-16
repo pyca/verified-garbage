@@ -42,7 +42,6 @@ structure Prims where
   add : Prog isa
   rejNtt : Prog isa
   rej4 : Prog isa
-  rejBounded : Prog isa
   ball : Prog isa
   power2Round : Prog isa
   normLt : Prog isa

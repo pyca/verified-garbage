@@ -31,11 +31,6 @@ theorem mldsaNttTaint (c : Impl.Sha3.AArch64.Callee) (hS : Taint.AllOk VectorTai
       (Impl.MlDsa.AArch64.Sample.spongeWith c 168 1008) h).isSome = true := by
   taint_decide_generic c := Impl.Sha3.AArch64.Callee.scalar using hS
 
-theorem mldsaBoundedTaint (c : Impl.Sha3.AArch64.Callee) (hS : Taint.AllOk VectorTaint.taint (sums c)) :
-    ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
-      (Impl.MlDsa.AArch64.Sample.spongeWith c 136 544) h).isSome = true := by
-  taint_decide_generic c := Impl.Sha3.AArch64.Callee.scalar using hS
-
 theorem mldsaBallTaint (c : Impl.Sha3.AArch64.Callee) (hS : Taint.AllOk VectorTaint.taint (sums c)) :
     ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
       (Impl.MlDsa.AArch64.Sample.spongeWith c 136 272) h).isSome = true := by

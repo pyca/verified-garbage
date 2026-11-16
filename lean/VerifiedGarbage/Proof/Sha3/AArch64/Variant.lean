@@ -51,8 +51,6 @@ structure Permutation where
 
   mldsaNttTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
     (Impl.MlDsa.AArch64.Sample.spongeWith callee 168 1008) h).isSome = true
-  mldsaBoundedTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
-    (Impl.MlDsa.AArch64.Sample.spongeWith callee 136 544) h).isSome = true
   mldsaBallTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
     (Impl.MlDsa.AArch64.Sample.spongeWith callee 136 272) h).isSome = true
   mldsaMaskTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
@@ -152,7 +150,6 @@ def Permutation.scalar : Permutation where
   padTaint := Taint.exists_check_of_sumOk_call ScalarSums.pad (VG.AArch64.VectorTaint.le_refl _) rfl
   squeezeTaint := Taint.exists_check_of_sumOk_call ScalarSums.squeeze (VG.AArch64.VectorTaint.le_refl _) rfl
   mldsaNttTaint := Callers.mldsaNttTaint _ scalarSums
-  mldsaBoundedTaint := Callers.mldsaBoundedTaint _ scalarSums
   mldsaBallTaint := Callers.mldsaBallTaint _ scalarSums
   mldsaMaskTaint := Callers.mldsaMaskTaint _ scalarSums
 

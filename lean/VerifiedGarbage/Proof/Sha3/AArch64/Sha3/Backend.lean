@@ -69,10 +69,6 @@ theorem mldsaNttTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x2
     (Impl.MlDsa.AArch64.Sample.spongeWith callee 168 1008) h).isSome = true :=
   Callers.mldsaNttTaint _ callerSums
 
-theorem mldsaBoundedTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
-    (Impl.MlDsa.AArch64.Sample.spongeWith callee 136 544) h).isSome = true :=
-  Callers.mldsaBoundedTaint _ callerSums
-
 theorem mldsaBallTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x25, .x26, .x27, .x3, .x4])
     (Impl.MlDsa.AArch64.Sample.spongeWith callee 136 272) h).isSome = true :=
   Callers.mldsaBallTaint _ callerSums
@@ -120,7 +116,6 @@ def backend : Permutation where
   padTaint := padTaint
   squeezeTaint := squeezeTaint
   mldsaNttTaint := mldsaNttTaint
-  mldsaBoundedTaint := mldsaBoundedTaint
   mldsaBallTaint := mldsaBallTaint
   mldsaMaskTaint := mldsaMaskTaint
 

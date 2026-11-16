@@ -33,7 +33,6 @@ def primsWith (c : Impl.Sha3.AArch64.Callee) : Prims where
   add := Optimized.AddSub.code false
   rejNtt := Sample.rejNTTWith c
   rej4 := Optimized.ResidentRej.selected c.pairedSha3
-  rejBounded := Sample.rejBoundedWith c
   ball := Optimized.Ball.selected c
   power2Round := Optimized.KeygenRound.power2Round
   normLt := Round.normLt

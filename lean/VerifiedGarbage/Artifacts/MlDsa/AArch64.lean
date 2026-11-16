@@ -185,7 +185,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Squeeze
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Tail
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Zero
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
@@ -239,6 +238,9 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Power2Round
 public import VerifiedGarbage.Proof.MlDsa.Round.Ones
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
 
 /-! # ML-DSA (FIPS 204) on AArch64 -/
 
