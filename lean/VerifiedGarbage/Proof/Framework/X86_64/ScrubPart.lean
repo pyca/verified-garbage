@@ -4,6 +4,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubPaths
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.Framework.X86_64.Frame
+public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86_64.UpperLock
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
@@ -782,6 +783,105 @@ theorem push1 {S : Addr → Prop} {P : State → State → Prop} {r : Reg} {b : 
         · exact hb'.mem x ⟨hx, hsl⟩
 
 end RelS
+
+section
+open VG.Impl.StackScratch.X86_64
+variable {sig : Sig} {nm : String} {e : Elem} {n bytes stack : Nat}
+  {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
+  {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {c : Prog isa}
+
+/-- `narrowS` keeps the unknowns. -/
+theorem narrowS_unknowns (hk : 6 ≤ (sig.words abi.ptrBits).length) (hb : 16 + 8 * nStack sig + n * e.size ≤ bytes)
+    (hb1 : bytes < 4096) {s : State} (hs : (sig.contract abi pre post wa (stack + bytes) leak).pre s) :
+    (narrowS sig e n bytes s).unknowns = s.unknowns := by
+  obtain ⟨hr, -⟩ := argsState_run hs hk hb hb1
+  have k := execBlock_keep (M := isa) (fun s : State => s.unknowns) (ok := fun _ => True)
+    (fun _ he => RTaint.exec_unknowns he) (fun _ _ => trivial) hr
+  exact k
+
+/-- Two runs of `withStackArgScratch bytes` of code that keeps `Same` of the
+`stack` bytes below its stack pointer (`hsame`), from states `NoResidue`
+relates, end agreeing on the `stack` bytes below its frame: `narrowS`
+writes only in the frame, and the bytes below it are outside every buffer,
+so the same on entry. -/
+theorem framed_same
+    (hv : Verified X86_64.target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
+    (hsame : ∀ s₁ s₂ t₁ t₂ u₁ u₂, (Sig.scratchContract abi sig nm e n pre post wa stack leak).pre s₁ →
+      (Sig.scratchContract abi sig nm e n pre post wa stack leak).pre s₂ →
+      (Sig.scratchContract abi sig nm e n pre post wa stack leak).pub s₁ s₂ →
+      Same (fun x => (below (s₁.gpr .rsp) stack).Contains x 1) s₁ s₂ → Exec isa c s₁ t₁ u₁ → Exec isa c s₂ t₂ u₂ →
+      Same (fun x => (below (s₁.gpr .rsp) stack).Contains x 1) u₁ u₂)
+    (hk : 6 ≤ (sig.words abi.ptrBits).length)
+    (hb : 16 + 8 * nStack sig + n * e.size ≤ bytes ∧ bytes < 4096 ∧ bytes % 8 = 0)
+    (hst : stack + bytes + 8 ≤ 2 ^ 64) (hsp : c.all (fun i => !isa.writesSp i) = true)
+    (hd : c.x86_64Depth ≤ stack)
+    (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
+    (hleak : Sig.LeakLocalL abi.ptrBits sig leak)
+    {s₁ s₂ : State} (h₁ : (sig.contract abi pre post wa (stack + bytes) leak).pre s₁)
+    (h₂ : (sig.contract abi pre post wa (stack + bytes) leak).pre s₂)
+    (hp : (sig.contract abi pre post wa (stack + bytes) leak).pub s₁ s₂) (ho : Outside 0 s₁ s₂)
+    (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
+    (e₁ : Exec isa (withStackArgScratch bytes (nStack sig) c) s₁ t₁ u₁)
+    (e₂ : Exec isa (withStackArgScratch bytes (nStack sig) c) s₂ t₂ u₂) :
+    ∀ x, (below (s₁.gpr .rsp - BitVec.ofNat 64 bytes) stack).Contains x 1 → u₁.mem x = u₂.mem x := by
+  have hpreL : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
+      (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
+      (∀ r ∈ Sig.lists abi.ptrBits m₁ sig.params vs, ∀ a, r.Contains a 1 → m₁ a = m₂ a) →
+      Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂ :=
+    fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb
+  have hn₁ := narrowS_pre (nm := nm) hk hb.1 hb.2.1 hpreL h₁
+  have hn₂ := narrowS_pre (nm := nm) hk hb.1 hb.2.1 hpreL h₂
+  obtain ⟨t₃, s₃, he₃, ha₃, -⟩ := hv.1 _ hn₁
+  obtain ⟨t₄, s₄, he₄, ha₄, -⟩ := hv.1 _ hn₂
+  obtain ⟨hex₁, -, hm₁, -⟩ := withStackArgScratch_run hk hb hst (SpSafe.of_all hsp) hd h₁ he₃ ha₃
+  obtain ⟨hex₂, -, hm₂, -⟩ := withStackArgScratch_run hk hb hst (SpSafe.of_all hsp) hd h₂ he₄ ha₄
+  obtain ⟨-, rfl⟩ := Exec.det e₁ hex₁
+  obtain ⟨-, rfl⟩ := Exec.det e₂ hex₂
+  obtain ⟨sp₁, -, -, -, f₁⟩ := narrowS_facts (nm := nm) hk hb.1 hb.2.1 h₁
+  obtain ⟨sp₂, -, -, -, f₂⟩ := narrowS_facts (nm := nm) hk hb.1 hb.2.1 h₂
+  have hrsp : s₁.gpr .rsp = s₂.gpr .rsp := ho.2.2.1 .rsp (by decide)
+  obtain ⟨hst₁, hout₁⟩ := Scrub.contract_pre_scrub Scrub.ScrubAbi.plain h₁
+  have hin₁ := (Scrub.contract_pre_scrub Scrub.ScrubAbi.plain hn₁).2
+  have hin₂ := (Scrub.contract_pre_scrub Scrub.ScrubAbi.plain hn₂).2
+  -- The bytes below the frame are below `rsp` on entry, apart from the arguments' copies.
+  have hbelow : ∀ x, (below (s₁.gpr .rsp - BitVec.ofNat 64 bytes) stack).Contains x 1 →
+      (⟨s₁.gpr .rsp - BitVec.ofNat 64 (stack + bytes), stack + bytes⟩ : Region).Contains x 1 ∧
+      ¬ (⟨s₁.gpr .rsp - BitVec.ofNat 64 bytes + 8, 8 * (nStack sig + 1)⟩ : Region).Contains x 1 := by
+    intro x hx
+    have hle : stack + bytes ≤ (s₁.gpr .rsp).toNat := hst₁.resolve_left (by omega_using [hb.1])
+    have := x.isLt; have := (s₁.gpr .rsp).isLt
+    have h8 : (8 : Addr).toNat = 8 := rfl
+    simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_ofNat, h8] at hx ⊢
+    generalize (s₁.gpr .rsp).toNat = P at *
+    generalize x.toNat = X at *
+    have hb2 := hb.2.1
+    have hb0 := hb.1
+    constructor <;> omega_arith
+  have hS : Same (fun x => (below ((narrowS sig e n bytes s₁).gpr .rsp) stack).Contains x 1)
+      (narrowS sig e n bytes s₁) (narrowS sig e n bytes s₂) := by
+    refine ⟨by rw [sp₁, sp₂, hrsp], by rw [narrowS_unknowns hk hb.1 hb.2.1 h₁, narrowS_unknowns hk hb.1 hb.2.1 h₂, hu],
+      fun x hx r hr => ?_, fun x hx r hr => ?_, fun x hx => ?_⟩
+    · have hs0 : stack ≠ 0 := by rintro rfl; simp [Region.Contains] at hx
+      exact ((hin₁ r (List.mem_append_right _ hr)).2 hs0) x hx
+    · have hs0 : stack ≠ 0 := by rintro rfl; simp [Region.Contains] at hx
+      rw [sp₁, hrsp, ← sp₂] at hx
+      exact ((hin₂ r (List.mem_append_right _ hr)).2 hs0) x hx
+    · rw [sp₁] at hx
+      obtain ⟨hx₁, hx₂⟩ := hbelow x hx
+      have hx₂' : ¬ (⟨s₂.gpr .rsp - BitVec.ofNat 64 bytes + 8, 8 * (nStack sig + 1)⟩ : Region).Contains x 1 := by
+        rw [← hrsp]; exact hx₂
+      rw [f₁ x (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hx₂),
+        f₂ x (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hx₂')]
+      refine ho.2.2.2.2.2.2.2.2.2.2.2.2.2.2 x fun r hr => ?_
+      exact (hout₁ r hr).2 (by omega_using [hb.1]) x hx₁
+  have hz := hsame _ _ _ _ _ _ hn₁ hn₂ (narrowS_pub hk hb.1 hb.2.1 h₁ h₂ hp hleak) hS he₃ he₄
+  intro x hx
+  rw [hm₁, hm₂]
+  exact hz.mem x (by rw [sp₁]; exact hx)
+
+end
 
 end VG.X86_64.StackLock
 
