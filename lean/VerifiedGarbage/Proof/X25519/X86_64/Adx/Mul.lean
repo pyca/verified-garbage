@@ -114,64 +114,6 @@ theorem foldX_ok (s : State) (h12 : (s.gpr .r12).toNat < 79) (hd : (s.gpr .rdx).
   rw [e8, hax, k7.1 .r8 (by decide), k7.1 .r9 (by decide), k7.1 .r10 (by decide),
     k7.1 .r11 (by decide), fold256]
 
-/-- `adc a, a` of `a < 2⁶³` with the carry `c`: `2 a + c`. -/
-theorem adcSelf_toNat (a : BitVec 64) (c : Bool) (ha : a.toNat < 2 ^ 63) :
-    (a + a + (BitVec.ofBool c).setWidth 64).toNat = 2 * a.toNat + c.toNat := by
-  have hc : ((BitVec.ofBool c).setWidth 64).toNat = c.toNat := by cases c <;> rfl
-  have := Bool.toNat_le c
-  rw [BitVec.toNat_add, BitVec.toNat_add, hc,
-    Nat.mod_eq_of_lt (show a.toNat + a.toNat < 2 ^ 64 by omega_arith),
-    Nat.mod_eq_of_lt (show a.toNat + a.toNat + c.toNat < 2 ^ 64 by omega_arith)]
-  omega_arith
-
-/-- `imul r, q, 19` of a small `q`: `19 q`. -/
-theorem imul19_toNat (q : BitVec 64) (hq : q.toNat < 2 ^ 58) :
-    (BitVec.ofInt 64 (q.toInt * ((19 : BitVec 32).signExtend 64).toInt)).toNat = 19 * q.toNat := by
-  have hi : q.toInt = (q.toNat : Int) := by
-    rw [BitVec.toInt_eq_toNat_cond]; simp only [show 2 * q.toNat < 2 ^ 64 by omega_arith, ↓reduceIte]
-  rw [hi, show ((19 : BitVec 32).signExtend 64).toInt = ((19 : Nat) : Int) by decide,
-    ← Int.natCast_mul, BitVec.ofInt_natCast, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]
-  omega_arith
-
-open VG.Spec.X25519 (P) in
-/-- `fold19X`: `r8–r11 + 2²⁵⁶ r12` with `r12 < 79`, folded into `r8–r11` at bit 255, at
-most `2p`. -/
-theorem fold19X_ok (s : State) (h12 : (s.gpr .r12).toNat < 79) :
-    WP isa (.block fold19X) s fun s' =>
-      val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) % P =
-        (val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) + 2 ^ 256 * (s.gpr .r12).toNat) % P ∧
-      val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) ≤ 2 * P ∧
-      Keeps [.r8, .r9, .r10, .r11, .r12, .rax] s s' := by
-  apply WP.of_runBlock
-  simp only [fold19X, runBlock_cons, runStep_some, runBlock_nil, reduceExec, readSrc, execAlu,
-    execShift, execImul3, Option.map_some, Option.bind_some, RegUpd.gpr_setReg,
-    RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, RegUpd.cf_arithFlags, RegUpd.cf_setReg,
-    RegUpd.cf_setFlags, ite_true, ite_false, reduceCtorEq, Option.some.injEq, exists_eq_left', se0,
-    Nat.le_refl, and_self, Nat.reduceLeDiff]
-  obtain ⟨hsh, hu⟩ := shl_shr_one (s.gpr .r11)
-  generalize (s.gpr .r11).getLsbD (64 - 1) = c at hsh hu ⊢
-  have hq := adcSelf_toNat (s.gpr .r12) c (by omega_arith)
-  generalize s.gpr .r12 + s.gpr .r12 + (BitVec.ofBool c).setWidth 64 = q at hq ⊢
-  have hc := Bool.toNat_le c
-  have hr := imul19_toNat q (by omega_arith)
-  generalize BitVec.ofInt 64 (q.toInt * ((19 : BitVec 32).signExtend 64).toInt) = r at hr ⊢
-  generalize s.gpr .r11 <<< 1 >>> 1 = u at hsh hu ⊢
-  have e := chain_add (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) u r 0 0 0
-  simp only at e
-  generalize decide (2 ^ 64 ≤ u.toNat + BitVec.toNat 0 + _) = c3 at e
-  have hz : (0 : BitVec 64).toNat = 0 := rfl
-  have h3 := Bool.toNat_le c3
-  have := (s.gpr .r8).isLt; have := (s.gpr .r9).isLt; have := (s.gpr .r10).isLt
-  simp only [hz, val4] at e ⊢
-  refine ⟨?_, ?_, fun x hx => ?_, rfl, rfl, rfl⟩
-  · have key : ∀ A B k : Nat, A + P * k = B → A % P = B % P := fun A B k h => by
-      rw [← h, Nat.add_mul_mod_self_left]
-    exact key _ _ (q.toNat) (by simp only [P]; omega_arith)
-  · simp only [P]; omega_arith
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hx
-    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, RegUpd.gpr_setFlags, hx.1, hx.2.1,
-      hx.2.2.1, hx.2.2.2.1, hx.2.2.2.2.1, hx.2.2.2.2.2, ite_false]
-
 open VG.Spec.X25519 (P) in
 /-- `r8–r11 + 2²⁵⁶ r12–r15`, reduced into `r8–r11` (modulo `p`), at most `2p`. -/
 theorem reduceX_ok (s : State) :
@@ -186,38 +128,6 @@ theorem reduceX_ok (s : State) :
   refine WP.mono (fold19X_ok s6 (by omega_using [h12])) fun s8 ⟨e8, b8, k8⟩ => ?_
   refine ⟨?_, b8, k6.trans (k8.mono (by decide))⟩
   rw [e8, hv, fold256]
-
-/-- `r8–r12` doubled, for `r12 < 2⁶³`. -/
-theorem dbl5_ok (s : State) (h12 : (s.gpr .r12).toNat < 2 ^ 63) :
-    WP isa (.block dbl5) s fun s' =>
-      val4 (s'.gpr .r8) (s'.gpr .r9) (s'.gpr .r10) (s'.gpr .r11) + 2 ^ 256 * (s'.gpr .r12).toNat =
-        2 * (val4 (s.gpr .r8) (s.gpr .r9) (s.gpr .r10) (s.gpr .r11) +
-          2 ^ 256 * (s.gpr .r12).toNat) ∧
-      (s'.gpr .r12).toNat ≤ 2 * (s.gpr .r12).toNat + 1 ∧
-      Keeps [.r8, .r9, .r10, .r11, .r12] s s' := by
-  apply WP.of_runBlock
-  simp only [dbl5, runBlock_cons, runStep_some, runBlock_nil, exec, readSrc, execAlu,
-    Option.map_some, Option.bind_some, RegUpd.gpr_setReg, RegUpd.gpr_arithFlags,
-    RegUpd.cf_arithFlags, RegUpd.cf_setReg, ite_true, ite_false, reduceCtorEq, Option.some.injEq,
-    exists_eq_left']
-  have e8 := add_carry (s.gpr .r8) (s.gpr .r8)
-  generalize decide (2 ^ 64 ≤ (s.gpr .r8).toNat + (s.gpr .r8).toNat) = c8 at e8 ⊢
-  have e9 := adc_carry (s.gpr .r9) (s.gpr .r9) c8
-  generalize decide (2 ^ 64 ≤ (s.gpr .r9).toNat + (s.gpr .r9).toNat + c8.toNat) = c9 at e9 ⊢
-  have e10 := adc_carry (s.gpr .r10) (s.gpr .r10) c9
-  generalize decide (2 ^ 64 ≤ (s.gpr .r10).toNat + (s.gpr .r10).toNat + c9.toNat) = c10 at e10 ⊢
-  have e11 := adc_carry (s.gpr .r11) (s.gpr .r11) c10
-  generalize decide (2 ^ 64 ≤ (s.gpr .r11).toNat + (s.gpr .r11).toNat + c10.toNat) = c11 at e11 ⊢
-  have e12 := adc_carry (s.gpr .r12) (s.gpr .r12) c11
-  generalize decide (2 ^ 64 ≤ (s.gpr .r12).toNat + (s.gpr .r12).toNat + c11.toNat) = c12 at e12 ⊢
-  have := Bool.toNat_le c8; have := Bool.toNat_le c9; have := Bool.toNat_le c10
-  have := Bool.toNat_le c11; have := Bool.toNat_le c12
-  refine ⟨?_, ?_, fun r hr => ?_, by trivial, by trivial, by trivial⟩
-  · simp only [val4]; omega_using [h12, e8, e9, e10, e11, e12]
-  · omega_arith
-  · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
-    simp only [RegUpd.gpr_setReg, RegUpd.gpr_arithFlags, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1,
-      hr.2.2.2.2, ite_false]
 
 theorem reduceX2_eq : reduceX2 = reduceLo ++ (dbl5 ++
     (([.mulx .rcx .rax (.reg .r12)] : List Instr) ++ carry38)) := by
@@ -241,13 +151,6 @@ theorem reduceX2_ok (s : State) :
   rw [e8, e7, hv, Nat.mul_mod, Nat.mul_mod (2 : Nat) (_ + 2 ^ 256 * _), fold256]
 
 /-! ## The multiplication -/
-
-open VG.Spec.X25519 (P) in
-/-- Twice a product. -/
-theorem toFe_mul2 {a b c : Nat} (h : c % P = 2 * (a * b) % P) :
-    toFe c = toFe a * toFe b + toFe a * toFe b := by
-  rw [← toFe_mul (c := a * b) rfl]
-  exact toFe_add (by rw [h, Nat.two_mul])
 
 theorem mulX_eq (o a b : Nat) : mulX o a b = (rowX0 a b ++ (rowR' a b 1 .r9 .r10 .r11 .r12 .r13 ++
     (rowR' a b 2 .r10 .r11 .r12 .r13 .r14 ++ rowR' a b 3 .r11 .r12 .r13 .r14 .r15))) ++

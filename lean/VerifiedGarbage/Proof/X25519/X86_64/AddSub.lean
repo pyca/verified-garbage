@@ -203,11 +203,6 @@ operand of a sum, or the subtrahend of a difference, is at most `2p`, as every
 product is (`mulBnd_ok`): the sum is then below `2²⁵⁷ - 38`, and the
 difference above `-2p`. -/
 
-theorem val4_lt (a0 a1 a2 a3 : BitVec 64) : val4 a0 a1 a2 a3 < 2 ^ 256 := by
-  simp only [val4]
-  have := a0.isLt; have := a1.isLt; have := a2.isLt; have := a3.isLt
-  omega_arith
-
 theorem fe_lt4 (m : Mem) (base : Addr) (a : Nat) : fe m base a < 2 ^ 256 := val4_lt _ _ _ _
 
 /-- `r8–r11 + rax`, and its carry out. -/

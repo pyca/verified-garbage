@@ -39,9 +39,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation_ifma}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJEj////F/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJLgAAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
-        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch_shani = sym super::ed25519::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
+        vg_sha512_finalize_scratch_shani = sym super::ed25519::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_verify_equation_ifma = sym super::ed25519::vg_ed25519_verify_equation_ifma::vg_ed25519_verify_equation_ifma,
     )
@@ -98,9 +98,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk+P7//8X+f4Qk6AAAAMX+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
-        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch_shani = sym super::ed25519::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
+        vg_sha512_finalize_scratch_shani = sym super::ed25519::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_scalar_base_ifma = sym super::ed25519::vg_ed25519_scalar_base_ifma::vg_ed25519_scalar_base_ifma,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
@@ -135,7 +135,7 @@ call {vg_sha512_digest_shani_core}
 call {vg_ed25519_public_key_expanded_ifma}
 .base64 "WFhYxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKD5///F/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRgBgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
-        vg_sha512_digest_shani_core = sym super::sha512::vg_sha512_digest_shani_core::vg_sha512_digest_shani_core,
+        vg_sha512_digest_shani_core = sym super::ed25519::vg_sha512_digest_shani_core::vg_sha512_digest_shani_core,
         vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
     )
 }
@@ -176,9 +176,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation_adx}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJEj////F/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJLgAAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
-        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch_shani = sym super::ed25519::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
+        vg_sha512_finalize_scratch_shani = sym super::ed25519::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_verify_equation_adx = sym super::ed25519::vg_ed25519_verify_equation_adx::vg_ed25519_verify_equation_adx,
     )
@@ -235,9 +235,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk+P7//8X+f4Qk6AAAAMX+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
-        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch_shani = sym super::ed25519::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
+        vg_sha512_finalize_scratch_shani = sym super::ed25519::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_scalar_base_adx = sym super::ed25519::vg_ed25519_scalar_base_adx::vg_ed25519_scalar_base_adx,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
@@ -272,7 +272,7 @@ call {vg_sha512_digest_shani_core}
 call {vg_ed25519_public_key_expanded_adx}
 .base64 "WFhYxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKD5///F/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRgBgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
-        vg_sha512_digest_shani_core = sym super::sha512::vg_sha512_digest_shani_core::vg_sha512_digest_shani_core,
+        vg_sha512_digest_shani_core = sym super::ed25519::vg_sha512_digest_shani_core::vg_sha512_digest_shani_core,
         vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx::vg_ed25519_public_key_expanded_adx,
     )
 }
@@ -313,9 +313,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJEj////F/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJLgAAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
-        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch_shani = sym super::ed25519::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
+        vg_sha512_finalize_scratch_shani = sym super::ed25519::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation::vg_ed25519_verify_equation,
     )
@@ -372,9 +372,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk+P7//8X+f4Qk6AAAAMX+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch_shani = sym super::sha512::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
-        vg_sha512_finalize_scratch_shani = sym super::sha512::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch_shani = sym super::ed25519::vg_sha512_update_scratch_shani::vg_sha512_update_scratch_shani,
+        vg_sha512_finalize_scratch_shani = sym super::ed25519::vg_sha512_finalize_scratch_shani::vg_sha512_finalize_scratch_shani,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
@@ -409,7 +409,7 @@ call {vg_sha512_digest_shani_core}
 call {vg_ed25519_public_key_expanded}
 .base64 "WFhYxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKD5///F/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRgBgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
-        vg_sha512_digest_shani_core = sym super::sha512::vg_sha512_digest_shani_core::vg_sha512_digest_shani_core,
+        vg_sha512_digest_shani_core = sym super::ed25519::vg_sha512_digest_shani_core::vg_sha512_digest_shani_core,
         vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }
@@ -450,9 +450,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation_ifma}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJEj////F/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJLgAAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch_avx2 = sym super::ed25519::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
+        vg_sha512_finalize_scratch_avx2 = sym super::ed25519::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_verify_equation_ifma = sym super::ed25519::vg_ed25519_verify_equation_ifma::vg_ed25519_verify_equation_ifma,
     )
@@ -509,9 +509,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk+P7//8X+f4Qk6AAAAMX+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch_avx2 = sym super::ed25519::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
+        vg_sha512_finalize_scratch_avx2 = sym super::ed25519::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_scalar_base_ifma = sym super::ed25519::vg_ed25519_scalar_base_ifma::vg_ed25519_scalar_base_ifma,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
@@ -546,7 +546,7 @@ call {vg_sha512_digest_avx2_core}
 call {vg_ed25519_public_key_expanded_ifma}
 .base64 "WFhYxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKD5///F/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRgBgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
-        vg_sha512_digest_avx2_core = sym super::sha512::vg_sha512_digest_avx2_core::vg_sha512_digest_avx2_core,
+        vg_sha512_digest_avx2_core = sym super::ed25519::vg_sha512_digest_avx2_core::vg_sha512_digest_avx2_core,
         vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
     )
 }
@@ -587,9 +587,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation_adx}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJEj////F/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJLgAAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch_avx2 = sym super::ed25519::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
+        vg_sha512_finalize_scratch_avx2 = sym super::ed25519::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_verify_equation_adx = sym super::ed25519::vg_ed25519_verify_equation_adx::vg_ed25519_verify_equation_adx,
     )
@@ -646,9 +646,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk+P7//8X+f4Qk6AAAAMX+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch_avx2 = sym super::ed25519::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
+        vg_sha512_finalize_scratch_avx2 = sym super::ed25519::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_scalar_base_adx = sym super::ed25519::vg_ed25519_scalar_base_adx::vg_ed25519_scalar_base_adx,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
@@ -683,7 +683,7 @@ call {vg_sha512_digest_avx2_core}
 call {vg_ed25519_public_key_expanded_adx}
 .base64 "WFhYxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKD5///F/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRgBgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
-        vg_sha512_digest_avx2_core = sym super::sha512::vg_sha512_digest_avx2_core::vg_sha512_digest_avx2_core,
+        vg_sha512_digest_avx2_core = sym super::ed25519::vg_sha512_digest_avx2_core::vg_sha512_digest_avx2_core,
         vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx::vg_ed25519_public_key_expanded_adx,
     )
 }
@@ -724,9 +724,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJEj////F/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJLgAAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch_avx2 = sym super::ed25519::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
+        vg_sha512_finalize_scratch_avx2 = sym super::ed25519::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation::vg_ed25519_verify_equation,
     )
@@ -783,9 +783,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk+P7//8X+f4Qk6AAAAMX+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch_avx2 = sym super::sha512::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
-        vg_sha512_finalize_scratch_avx2 = sym super::sha512::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch_avx2 = sym super::ed25519::vg_sha512_update_scratch_avx2::vg_sha512_update_scratch_avx2,
+        vg_sha512_finalize_scratch_avx2 = sym super::ed25519::vg_sha512_finalize_scratch_avx2::vg_sha512_finalize_scratch_avx2,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
@@ -820,7 +820,7 @@ call {vg_sha512_digest_avx2_core}
 call {vg_ed25519_public_key_expanded}
 .base64 "WFhYxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKD5///F/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRgBgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
-        vg_sha512_digest_avx2_core = sym super::sha512::vg_sha512_digest_avx2_core::vg_sha512_digest_avx2_core,
+        vg_sha512_digest_avx2_core = sym super::ed25519::vg_sha512_digest_avx2_core::vg_sha512_digest_avx2_core,
         vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }
@@ -861,9 +861,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation_ifma}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJEj////F/n+EJJgAAADF/n9EJHjF/n9EJFjF/n9EJDjF/n9EJBjzD39EJAhMiRwkSI2kJLgAAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch = sym super::ed25519::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::ed25519::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_verify_equation_ifma = sym super::ed25519::vg_ed25519_verify_equation_ifma::vg_ed25519_verify_equation_ifma,
     )
@@ -920,9 +920,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk+P7//8X+f4Qk6AAAAMX+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch = sym super::ed25519::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::ed25519::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_scalar_base_ifma = sym super::ed25519::vg_ed25519_scalar_base_ifma::vg_ed25519_scalar_base_ifma,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
@@ -957,7 +957,7 @@ call {vg_sha512_digest_core}
 call {vg_ed25519_public_key_expanded_ifma}
 .base64 "WFhYxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKD5///F/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRgBgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
-        vg_sha512_digest_core = sym super::sha512::vg_sha512_digest_core::vg_sha512_digest_core,
+        vg_sha512_digest_core = sym super::ed25519::vg_sha512_digest_core::vg_sha512_digest_core,
         vg_ed25519_public_key_expanded_ifma = sym super::ed25519::vg_ed25519_public_key_expanded_ifma::vg_ed25519_public_key_expanded_ifma,
     )
 }
@@ -998,9 +998,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation_adx}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJEj////zD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJLgAAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch = sym super::ed25519::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::ed25519::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_verify_equation_adx = sym super::ed25519::vg_ed25519_verify_equation_adx::vg_ed25519_verify_equation_adx,
     )
@@ -1057,9 +1057,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFjF+e/AxfHvycXp79LF4e/bxdnv5MXR7+3Fye/2xcHv/8RBOe/AxEEx78nEQSnv0sRBIe/bxEEZ7+TEQRHv7cRBCe/2xEEB7/9FMdtIjaQk+P7//8X+f4Qk6AAAAMX+f4QkyAAAAMX+f4QkqAAAAMX+f4QkiAAAAMX+f0QkaMX+f0QkSMX+f0QkKMX+f0QkCEyJHCRIjaQkCAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch = sym super::ed25519::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::ed25519::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_scalar_base_adx = sym super::ed25519::vg_ed25519_scalar_base_adx::vg_ed25519_scalar_base_adx,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
@@ -1094,7 +1094,7 @@ call {vg_sha512_digest_core}
 call {vg_ed25519_public_key_expanded_adx}
 .base64 "WFhYxfnvwMXx78nF6e/SxeHv28XZ7+TF0e/txcnv9sXB7//EQTnvwMRBMe/JxEEp79LEQSHv28RBGe/kxEER7+3EQQnv9sRBAe//RTHbSI2kJKD5///F/n+EJEAGAADF/n+EJCAGAADF/n+EJAAGAADF/n+EJOAFAADF/n+EJMAFAADF/n+EJKAFAADF/n+EJIAFAADF/n+EJGAFAADF/n+EJEAFAADF/n+EJCAFAADF/n+EJAAFAADF/n+EJOAEAADF/n+EJMAEAADF/n+EJKAEAADF/n+EJIAEAADF/n+EJGAEAADF/n+EJEAEAADF/n+EJCAEAADF/n+EJAAEAADF/n+EJOADAADF/n+EJMADAADF/n+EJKADAADF/n+EJIADAADF/n+EJGADAADF/n+EJEADAADF/n+EJCADAADF/n+EJAADAADF/n+EJOACAADF/n+EJMACAADF/n+EJKACAADF/n+EJIACAADF/n+EJGACAADF/n+EJEACAADF/n+EJCACAADF/n+EJAACAADF/n+EJOABAADF/n+EJMABAADF/n+EJKABAADF/n+EJIABAADF/n+EJGABAADF/n+EJEABAADF/n+EJCABAADF/n+EJAABAADF/n+EJOAAAADF/n+EJMAAAADF/n+EJKAAAADF/n+EJIAAAADF/n9EJGDF/n9EJEDF/n9EJCDF/n8EJEiNpCRgBgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
-        vg_sha512_digest_core = sym super::sha512::vg_sha512_digest_core::vg_sha512_digest_core,
+        vg_sha512_digest_core = sym super::ed25519::vg_sha512_digest_core::vg_sha512_digest_core,
         vg_ed25519_public_key_expanded_adx = sym super::ed25519::vg_ed25519_public_key_expanded_adx::vg_ed25519_public_key_expanded_adx,
     )
 }
@@ -1131,9 +1131,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_verify_equation}
 .base64 "QVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbQVtBW0FbZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJEj////zD3+EJKgAAADzD3+EJJgAAADzD3+EJIgAAADzD39EJHjzD39EJGjzD39EJFjzD39EJEjzD39EJDjzD39EJCjzD39EJBjzD39EJAhMiRwkSI2kJLgAAACJwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch = sym super::ed25519::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::ed25519::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_verify_equation = sym super::ed25519::vg_ed25519_verify_equation::vg_ed25519_verify_equation,
     )
@@ -1186,9 +1186,9 @@ call {vg_ed25519_scalar_reduce}
 call {vg_ed25519_scalar_mul_add}
 .base64 "McBIiQQkSIlEJAhIiUQkEEiJRCQYSIlEJCBIiUQkKEiJRCQwSIlEJDhIiUQkQEiJRCRISIlEJFBIiUQkWEiJRCRgSIlEJGhIiUQkcEiJRCR4SImEJIAAAABIiYQkiAAAAEiJhCSQAAAASImEJJgAAABIiYQkoAAAAEiJhCSoAAAASImEJLAAAABIiYQkuAAAAFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhmD+/AZg/vyWYP79JmD+/bZg/v5GYP7+1mD+/2Zg/v/2ZFD+/AZkUP78lmRQ/v0mZFD+/bZkUP7+RmRQ/v7WZFD+/2ZkUP7/9FMdtIjaQk+P7///MPf4Qk+AAAAPMPf4Qk6AAAAPMPf4Qk2AAAAPMPf4QkyAAAAPMPf4QkuAAAAPMPf4QkqAAAAPMPf4QkmAAAAPMPf4QkiAAAAPMPf0QkePMPf0QkaPMPf0QkWPMPf0QkSPMPf0QkOPMPf0QkKPMPf0QkGPMPf0QkCEyJHCRIjaQkCAEAADHAMckx0jH2Mf9FMcBFMclFMdJFMdvD"
 .p2align 6"#,
-        vg_sha512_init_core = sym super::sha512::vg_sha512_init_core::vg_sha512_init_core,
-        vg_sha512_update_scratch = sym super::sha512::vg_sha512_update_scratch::vg_sha512_update_scratch,
-        vg_sha512_finalize_scratch = sym super::sha512::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
+        vg_sha512_init_core = sym super::ed25519::vg_sha512_init_core::vg_sha512_init_core,
+        vg_sha512_update_scratch = sym super::ed25519::vg_sha512_update_scratch::vg_sha512_update_scratch,
+        vg_sha512_finalize_scratch = sym super::ed25519::vg_sha512_finalize_scratch::vg_sha512_finalize_scratch,
         vg_ed25519_scalar_reduce = sym super::ed25519::vg_ed25519_scalar_reduce::vg_ed25519_scalar_reduce,
         vg_ed25519_scalar_base = sym super::ed25519::vg_ed25519_scalar_base::vg_ed25519_scalar_base,
         vg_ed25519_scalar_mul_add = sym super::ed25519::vg_ed25519_scalar_mul_add::vg_ed25519_scalar_mul_add,
@@ -1219,7 +1219,7 @@ call {vg_sha512_digest_core}
 call {vg_ed25519_public_key_expanded}
 .base64 "WFhYZg/vwGYP78lmD+/SZg/v22YP7+RmD+/tZg/v9mYP7/9mRQ/vwGZFD+/JZkUP79JmRQ/v22ZFD+/kZkUP7+1mRQ/v9mZFD+//RTHbSI2kJKD5///zD3+EJFAGAADzD3+EJEAGAADzD3+EJDAGAADzD3+EJCAGAADzD3+EJBAGAADzD3+EJAAGAADzD3+EJPAFAADzD3+EJOAFAADzD3+EJNAFAADzD3+EJMAFAADzD3+EJLAFAADzD3+EJKAFAADzD3+EJJAFAADzD3+EJIAFAADzD3+EJHAFAADzD3+EJGAFAADzD3+EJFAFAADzD3+EJEAFAADzD3+EJDAFAADzD3+EJCAFAADzD3+EJBAFAADzD3+EJAAFAADzD3+EJPAEAADzD3+EJOAEAADzD3+EJNAEAADzD3+EJMAEAADzD3+EJLAEAADzD3+EJKAEAADzD3+EJJAEAADzD3+EJIAEAADzD3+EJHAEAADzD3+EJGAEAADzD3+EJFAEAADzD3+EJEAEAADzD3+EJDAEAADzD3+EJCAEAADzD3+EJBAEAADzD3+EJAAEAADzD3+EJPADAADzD3+EJOADAADzD3+EJNADAADzD3+EJMADAADzD3+EJLADAADzD3+EJKADAADzD3+EJJADAADzD3+EJIADAADzD3+EJHADAADzD3+EJGADAADzD3+EJFADAADzD3+EJEADAADzD3+EJDADAADzD3+EJCADAADzD3+EJBADAADzD3+EJAADAADzD3+EJPACAADzD3+EJOACAADzD3+EJNACAADzD3+EJMACAADzD3+EJLACAADzD3+EJKACAADzD3+EJJACAADzD3+EJIACAADzD3+EJHACAADzD3+EJGACAADzD3+EJFACAADzD3+EJEACAADzD3+EJDACAADzD3+EJCACAADzD3+EJBACAADzD3+EJAACAADzD3+EJPABAADzD3+EJOABAADzD3+EJNABAADzD3+EJMABAADzD3+EJLABAADzD3+EJKABAADzD3+EJJABAADzD3+EJIABAADzD3+EJHABAADzD3+EJGABAADzD3+EJFABAADzD3+EJEABAADzD3+EJDABAADzD3+EJCABAADzD3+EJBABAADzD3+EJAABAADzD3+EJPAAAADzD3+EJOAAAADzD3+EJNAAAADzD3+EJMAAAADzD3+EJLAAAADzD3+EJKAAAADzD3+EJJAAAADzD3+EJIAAAADzD39EJHDzD39EJGDzD39EJFDzD39EJEDzD39EJDDzD39EJCDzD39EJBDzD38EJEiNpCRgBgAAMcAxyTHSMfYx/0UxwEUxyUUx0kUx28M="
 .p2align 6"#,
-        vg_sha512_digest_core = sym super::sha512::vg_sha512_digest_core::vg_sha512_digest_core,
+        vg_sha512_digest_core = sym super::ed25519::vg_sha512_digest_core::vg_sha512_digest_core,
         vg_ed25519_public_key_expanded = sym super::ed25519::vg_ed25519_public_key_expanded::vg_ed25519_public_key_expanded,
     )
 }
@@ -1319,3 +1319,55 @@ pub(crate) mod vg_ed25519_verify_equation_ifma;
 #[rustfmt::skip]
 #[path = "internal/vg_gf25519_r64_invert.rs"]
 pub(crate) mod vg_gf25519_r64_invert;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_compress.rs"]
+pub(crate) mod vg_sha512_compress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_compress_avx2.rs"]
+pub(crate) mod vg_sha512_compress_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_compress_shani.rs"]
+pub(crate) mod vg_sha512_compress_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_digest_avx2_core.rs"]
+pub(crate) mod vg_sha512_digest_avx2_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_digest_core.rs"]
+pub(crate) mod vg_sha512_digest_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_digest_shani_core.rs"]
+pub(crate) mod vg_sha512_digest_shani_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_finalize_scratch.rs"]
+pub(crate) mod vg_sha512_finalize_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_finalize_scratch_avx2.rs"]
+pub(crate) mod vg_sha512_finalize_scratch_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_finalize_scratch_shani.rs"]
+pub(crate) mod vg_sha512_finalize_scratch_shani;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_init_core.rs"]
+pub(crate) mod vg_sha512_init_core;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_update_scratch.rs"]
+pub(crate) mod vg_sha512_update_scratch;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_update_scratch_avx2.rs"]
+pub(crate) mod vg_sha512_update_scratch_avx2;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sha512_update_scratch_shani.rs"]
+pub(crate) mod vg_sha512_update_scratch_shani;
