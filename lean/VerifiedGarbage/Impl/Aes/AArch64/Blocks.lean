@@ -124,14 +124,14 @@ def few (core : Prog isa) : Prog isa :=
 costs more than five blocks do (measured). -/
 def isFew : List Instr := [.subImm .x .x6 .x3 1, .lsr .x .x6 .x6 2]
 
-/-- `vg_aes_encrypt_blocks`: one to four blocks by vector permutations, one
-at a time, any other number of blocks bitsliced. -/
+/-- `vg_aes_encrypt_blocks`: nothing for no block, else each block by
+vector permutations, one at a time. -/
 def encryptBlocksN : Prog isa :=
-  .seq (.block isFew) (.ite (.zero .x .x6) (few Vperm.core) encryptBlocks)
+  .ite (.zero .x .x3) (.block []) (few Vperm.core)
 
-/-- `vg_aes_decrypt_blocks`: one to four blocks by vector permutations, one
-at a time, any other number of blocks bitsliced. -/
+/-- `vg_aes_decrypt_blocks`: nothing for no block, else each block by
+vector permutations, one at a time. -/
 def decryptBlocksN : Prog isa :=
-  .seq (.block isFew) (.ite (.zero .x .x6) (few Vperm.Dec.core) decryptBlocks)
+  .ite (.zero .x .x3) (.block []) (few Vperm.Dec.core)
 
 end VG.Impl.Aes.AArch64

@@ -191,19 +191,13 @@ def ctrFew (to : Bool) : Prog isa :=
   .seq (.block [movR .x8 (cond to .x6 .x3), movR .x9 .x0, movR .x10 .x1])
     (.loop ctrFewBody (.nonzero .x .x4))
 
-/-- `vg_aes_ctr32`: nothing for no block (some callers have none, and the
-bitsliced code would bitslice the round keys first), one to four blocks by
-vector permutations, one at a time (a batch costs more than five blocks do,
-measured), any other number of blocks bitsliced. -/
+/-- `vg_aes_ctr32`: nothing for no block (some callers have none), else
+each block by vector permutations, one at a time. -/
 def ctr32N : Prog isa :=
-  .ite (.zero .x .x4) (.block [])
-    (.seq (.block [.subImm .x .x6 .x4 1, .lsr .x .x6 .x6 2])
-      (.ite (.zero .x .x6) (ctrFew false) ctr32))
+  .ite (.zero .x .x4) (.block []) (ctrFew false)
 
 /-- `vg_aes_ctr32_to`: as `ctr32N`, out of place. -/
 def ctr32ToN : Prog isa :=
-  .ite (.zero .x .x4) (.block [])
-    (.seq (.block [.subImm .x .x7 .x4 1, .lsr .x .x7 .x7 2])
-      (.ite (.zero .x .x7) (ctrFew true) ctr32To))
+  .ite (.zero .x .x4) (.block []) (ctrFew true)
 
 end VG.Impl.Aes.AArch64

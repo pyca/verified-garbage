@@ -412,16 +412,33 @@ theorem fewOr_wp {core batch : Prog isa} {f : Nat → List Byte → Spec.Aes.Sta
   rw [hk r hr]
   exact e r (by simp only [fewRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr; exact hr.2.2.2.2.1)
 
-/-- `encryptBlocksN`: one to four blocks one at a time (`few_wp`), any other
-number of blocks bitsliced. -/
+theorem toNat_of_beq_zero {x : BitVec 64} (h : (x == 0) = true) : x.toNat = 0 := by
+  rw [eq_of_beq h]; rfl
+
+/-- No block: nothing to do. -/
+theorem blocks_none {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State} {s : State}
+    (h3 : (s.gpr .x3).toNat = 0) : (Proof.Aes.blocksAArch64 f).post s s := by
+  show Spec.Aes.statesAt s.mem (s.gpr .x2) (s.gpr .x3).toNat = _
+  rw [h3]
+  rfl
+
+/-- Nothing for no block, else every block one at a time (`few_wp`). -/
+theorem fewAll_wp {core : Prog isa} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
+    (hc : CoreOk core f) {s₀ : State} (hp : (Proof.Aes.blocksAArch64 f).pre s₀) :
+    WP isa (.ite (.zero .x .x3) (.block []) (few core)) s₀ fun s' =>
+      (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ (Proof.Aes.blocksAArch64 f).post s₀ s' := by
+  refine WP.ite (s₀.gpr .x3 == 0) (by simp [AArch64.eval, State.read])
+    (fun hz => WP.block_nil ⟨fun _ _ => rfl, blocks_none (toNat_of_beq_zero hz)⟩) (fun hz => ?_)
+  have hn0 : (s₀.gpr .x3).toNat ≠ 0 := fun h => by
+    have : s₀.gpr .x3 = 0 := BitVec.eq_of_toNat_eq h
+    simp [this] at hz
+  exact WP.mono (few_wp hc hp hn0) fun s' ⟨hk, hq⟩ => ⟨fun i hi => hk _ (sreg_few i hi), hq⟩
+
+/-- `encryptBlocksN`: every block one at a time. -/
 theorem encryptBlocksN_wp {s₀ : State} (hp : (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre s₀) :
     WP isa encryptBlocksN s₀ fun s' =>
-      (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ (Proof.Aes.blocksAArch64 Spec.Aes.cipher).post s₀ s' := by
-  unfold encryptBlocksN
-  refine fewOr_wp enc_coreOk hp (fun s' hk hq => ⟨fun i hi => hk _ (sreg_few i hi), hq⟩)
-    fun s₁ hp₁ g₁ hpost => ?_
-  exact WP.mono (correct_blocks encrypt4_cryptOk hp₁) fun s' ⟨hsv, hq⟩ =>
-    ⟨fun i hi => (hsv i hi).trans (g₁ _ (sreg_ne i hi).2.2.1), by rw [← hpost s']; exact hq⟩
+      (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ (Proof.Aes.blocksAArch64 Spec.Aes.cipher).post s₀ s' :=
+  fewAll_wp enc_coreOk hp
 
 theorem encryptBlocksN_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre s) :
     ∃ t s', Exec isa encryptBlocksN s t s' ∧ abiPreserved s s' ∧
@@ -460,16 +477,11 @@ theorem encryptBlocksN_verified :
 
 /-! ## `vg_aes_decrypt_blocks` -/
 
-/-- `decryptBlocksN`: one to four blocks one at a time (`few_wp`), any other
-number of blocks bitsliced. -/
+/-- `decryptBlocksN`: every block one at a time. -/
 theorem decryptBlocksN_wp {s₀ : State} (hp : (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre s₀) :
     WP isa decryptBlocksN s₀ fun s' =>
-      (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).post s₀ s' := by
-  unfold decryptBlocksN
-  refine fewOr_wp dec_coreOk hp (fun s' hk hq => ⟨fun i hi => hk _ (sreg_few i hi), hq⟩)
-    fun s₁ hp₁ g₁ hpost => ?_
-  exact WP.mono (correct_blocks decrypt4_cryptOk hp₁) fun s' ⟨hsv, hq⟩ =>
-    ⟨fun i hi => (hsv i hi).trans (g₁ _ (sreg_ne i hi).2.2.1), by rw [← hpost s']; exact hq⟩
+      (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).post s₀ s' :=
+  fewAll_wp dec_coreOk hp
 
 theorem decryptBlocksN_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre s) :
     ∃ t s', Exec isa decryptBlocksN s t s' ∧ abiPreserved s s' ∧
@@ -547,9 +559,6 @@ theorem ctr32To_none {s : State} (h4 : (s.gpr .x4).toNat = 0) : Proof.Aes.ctr32T
   show Spec.Gcm.blocksAt s.mem (s.gpr .x6) (s.gpr .x4).toNat = _ ∧ Spec.Gcm.blockAt s.mem (s.gpr .x2) = _
   rw [h4]
   exact ⟨rfl, rfl⟩
-
-theorem toNat_of_beq_zero {x : BitVec 64} (h : (x == 0) = true) : x.toNat = 0 := by
-  rw [eq_of_beq h]; rfl
 
 /-! ## A few blocks of counter mode, one at a time -/
 
@@ -832,8 +841,7 @@ theorem ctrFew_wp {to : Bool} {s₀ : State} (hp : PreC to s₀) (hn : Aese.nb s
   · exact .inl ⟨hz, hd⟩
   · exact .inr ⟨hz, Aese.nb s₀ - (k + 1), by have := hi'.hk; omega_using [this], k + 1, rfl, hi'⟩
 
-/-- `ctr32N`: nothing for no block, one to four blocks one at a time by the
-tables, any other number of blocks by the batch. -/
+/-- `ctr32N`: nothing for no block, else every block one at a time. -/
 theorem ctr32N_wp {s₀ : State} (hp : Proof.Aes.ctr32AArch64.pre s₀) :
     WP isa ctr32N s₀ fun s' =>
       (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ Proof.Aes.ctr32AArch64.post s₀ s' := by
@@ -843,19 +851,8 @@ theorem ctr32N_wp {s₀ : State} (hp : Proof.Aes.ctr32AArch64.pre s₀) :
   have hn0 : (s₀.gpr .x4).toNat ≠ 0 := fun h => by
     have : s₀.gpr .x4 = 0 := BitVec.eq_of_toNat_eq h
     simp [this] at hz
-  let u := s₀.write .x .x6 (s₀.read .x .x4 - BitVec.ofNat 64 1)
-  let s₁ := u.write .x .x6 (u.read .x .x6 >>> 2)
-  refine WP.seq (WP.of_runBlock ⟨s₁, by
-    rw [runBlock_cons, exec_subImm_x (by decide), runStep_some, runBlock_cons,
-      exec_lsr_x (by decide), runStep_some, runBlock_nil], ?_⟩)
-  have hp₁ : Proof.Aes.ctr32AArch64.pre s₁ := hp
-  have g₁ : ∀ r, r ≠ .x6 → s₁.gpr r = s₀.gpr r := fun r hr => by simp [s₁, u, State.write, hr]
-  refine WP.ite ((s₀.gpr .x4 - BitVec.ofNat 64 1) >>> 2 == 0)
-    (by simp [AArch64.eval, State.read, s₁, u, State.write]) (fun _ => ?_) (fun _ => ?_)
-  · refine WP.mono (ctrFew_wp (prec_of hp₁) hn0) fun s' ⟨hg, hpost⟩ => ⟨fun i hi => ?_, hpost⟩
-    exact (hg _ (sreg_ctrFew i hi)).trans (g₁ _ (sreg_ne i hi).2.2.1)
-  · exact WP.mono (correct (cpre_of hp₁)) fun s' ⟨hsv, _, hpost⟩ =>
-      ⟨fun i hi => (hsv i hi).trans (g₁ _ (sreg_ne i hi).2.2.1), hpost⟩
+  exact WP.mono (ctrFew_wp (prec_of hp) hn0) fun s' ⟨hg, hpost⟩ =>
+    ⟨fun i hi => hg _ (sreg_ctrFew i hi), hpost⟩
 
 theorem ctr32N_correct (s : State) (hs : Proof.Aes.ctr32AArch64.pre s) :
     ∃ t s', Exec isa ctr32N s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32AArch64.post s s' := by
@@ -897,20 +894,8 @@ theorem ctr32ToN_wp {s₀ : State} (hp : Proof.Aes.ctr32ToAArch64.pre s₀) :
   have hn0 : (s₀.gpr .x4).toNat ≠ 0 := fun h => by
     have : s₀.gpr .x4 = 0 := BitVec.eq_of_toNat_eq h
     simp [this] at hz
-  let u := s₀.write .x .x7 (s₀.read .x .x4 - BitVec.ofNat 64 1)
-  let s₁ := u.write .x .x7 (u.read .x .x7 >>> 2)
-  refine WP.seq (WP.of_runBlock ⟨s₁, by
-    rw [runBlock_cons, exec_subImm_x (by decide), runStep_some, runBlock_cons,
-      exec_lsr_x (by decide), runStep_some, runBlock_nil], ?_⟩)
-  have hp₁ : Proof.Aes.ctr32ToAArch64.pre s₁ := hp
-  have g₁ : ∀ r, r ≠ .x7 → s₁.gpr r = s₀.gpr r := fun r hr => by simp [s₁, u, State.write, hr]
-  refine WP.ite ((s₀.gpr .x4 - BitVec.ofNat 64 1) >>> 2 == 0)
-    (by simp [AArch64.eval, State.read, s₁, u, State.write]) (fun _ => ?_) (fun _ => ?_)
-  · refine WP.mono (ctrFew_wp (precTo_of hp₁) hn0) fun s' ⟨hg, hpost⟩ => ⟨fun i hi => ?_, ?_, hpost⟩
-    · exact (hg _ (sreg_ctrFew i hi)).trans (g₁ _ (sreg_ne i hi).2.2.2)
-    · exact (hg _ (by decide)).trans (g₁ _ (by decide))
-  · exact WP.mono (correct (to := true) (cpreTo_of hp₁)) fun s' ⟨hsv, h30, hpost⟩ =>
-      ⟨fun i hi => (hsv i hi).trans (g₁ _ (sreg_ne i hi).2.2.2), (h30 rfl).trans (g₁ _ (by decide)), hpost⟩
+  exact WP.mono (ctrFew_wp (precTo_of hp) hn0) fun s' ⟨hg, hpost⟩ =>
+    ⟨fun i hi => hg _ (sreg_ctrFew i hi), hg _ (by decide), hpost⟩
 
 theorem ctr32ToN_correct (s : State) (hs : Proof.Aes.ctr32ToAArch64.pre s) :
     ∃ t s', Exec isa ctr32ToN s t s' ∧ abiPreserved s s' ∧ Proof.Aes.ctr32ToAArch64.post s s' := by
