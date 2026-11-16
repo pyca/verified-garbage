@@ -13,7 +13,7 @@ public import VerifiedGarbage.Proof.MlKem.AArch64.Paired.SqueezeBlock
 section
 
 /-!
-# Calls of `vg_keccak_f1600_x3_sha3` from ML-KEM's matrix
+# Calls of `vg_keccak_f1600_x3` from ML-KEM's matrix
 
 `x3call_ok`: the call (`Hybrid.x3call`) on the pair at `x19`, the third
 state at `x28` and the working space at `x19 + 1536` (with `x30` kept in the
@@ -26,6 +26,7 @@ function's own proof (`X3.correct`, by `WP.callFV`).
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Hybrid
+variable {sha3 : Bool}
 
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon (PairAt pairR pair_contains)
@@ -40,12 +41,13 @@ def clobbered : List Reg :=
 theorem clobbered_preserved (r : Reg) (h : r ∉ clobbered) : r ∈ preserved := by
   cases r <;> first | exact absurd (by decide) h | decide
 
-theorem depth : Impl.Sha3.AArch64.Hybrid.X3.code.aarch64Depth = 8 := by decide
+theorem depth (sha3 : Bool) : (Impl.Sha3.AArch64.Hybrid.X3.code sha3).aarch64Depth ≤ 8 := by
+  cases sha3 <;> decide
 
 /-- The function's frame. -/
 abbrev frame (sp : Addr) : Region := below sp 128
 
-/-- **A call** of `vg_keccak_f1600_x3_sha3` on the pair at `p` (`x19`) and
+/-- **A call** of `vg_keccak_f1600_x3` on the pair at `p` (`x19`) and
 the state at `st` (`x28`). -/
 theorem x3call_ok {s : State} {p q st : Addr} {A B S : Spec.Sha3.State}
     (hp : s.gpr .x19 = p) (hq : p + BitVec.ofNat 64 1536 = q) (hst : s.gpr .x28 = st)
@@ -56,7 +58,7 @@ theorem x3call_ok {s : State} {p q st : Addr} {A B S : Spec.Sha3.State}
     (f0 : (frame s.sp).Disjoint (pairR p)) (f1 : (frame s.sp).Disjoint (stR st))
     (f2 : (frame s.sp).Disjoint (callR q))
     (hcov : Covers [pairR p, stR st, callR q] s.wr) :
-    WP isa Impl.MlKem.AArch64.Hybrid.x3call s fun t =>
+    WP isa (Impl.MlKem.AArch64.Hybrid.x3call sha3) s fun t =>
       Keep clobbered s t ∧
       Frame [pairR p, stR st, callR q, frame s.sp] s.mem t.mem ∧
       PairAt t.mem p (keccakF A) (keccakF B) ∧ stateAt t.mem st = keccakF S := by
@@ -105,7 +107,7 @@ theorem x3call_ok {s : State} {p q st : Addr} {A B S : Spec.Sha3.State}
     simp only [State.withRegions_gpr]
     rcases hr with rfl | rfl | rfl <;> exact State.callEntry_gpr s₄ (by decide)
   refine WP.seq (WP.callFV (k := VG.Proof.Sha3.AArch64.Hybrid.X3.K) (rd := [])
-    (wr := [pairR p, stR st, scrR q]) VG.Proof.Sha3.AArch64.Hybrid.X3.correct
+    (wr := [pairR p, stR st, scrR q]) (VG.Proof.Sha3.AArch64.Hybrid.X3.correct sha3)
     ⟨rfl, by simp only [State.withRegions_wr, ent .x0 (by simp), ent .x1 (by simp), ent .x2 (by simp), h0, h1, h2'],
       by simpa only [ent .x0 (by simp), ent .x1 (by simp), h0, h1] using d01,
       by simpa only [ent .x0 (by simp), ent .x2 (by simp), h0, h2'] using d02.sub_right hscr,
@@ -116,9 +118,16 @@ theorem x3call_ok {s : State} {p q st : Addr} {A B S : Spec.Sha3.State}
       by simp only [State.withRegions_sp, State.callEntry_sp, hsp₄, ent .x2 (by simp), h2']
          exact f2.sub_right hscr⟩
     (by rw [hw]; exact Covers.right (hsub.trans hcov)) (by rw [hw]; exact hsub.trans hcov) ?_
-    (by rw [depth]; decide))
+    (by have hd := depth sha3; omega_using [hd]))
   intro t hr hwr hsp hf hk hv hpost
-  rw [depth, hsp₄] at hf
+  rw [hsp₄] at hf
+  have hf : Frame ([pairR p, stR st, scrR q] ++ [below s.sp (16 * 8)]) s₄.mem t.mem :=
+    hf.sub fun r hr => by
+      rw [List.mem_append, List.mem_singleton] at hr
+      rcases hr with hr | rfl
+      · exact ⟨r, List.mem_append_left _ hr, fun _ h => h⟩
+      · exact ⟨_, List.mem_append_right _ (List.mem_singleton_self _),
+          below_sub (by have hd := depth sha3; omega_using [hd]) (by decide)⟩
   have hf₄ : Frame [callR q] s.mem s₄.mem := by
     rw [hm]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hslotR
   have hpair₄ : PairAt s₄.mem p A B := fun i hi => by
@@ -179,13 +188,14 @@ end
 
 `step3_ok`: block `blk` of the message's padding XORed into the third state, the `x3`
 call, then both SHAKE128 states' 21 words to their stream buffers. `plainStep_ok`: the
-same squeeze absorbing no block, with `vg_keccak_f1600_x2_sha3`, which leaves the third
+same squeeze absorbing no block, with `vg_keccak_f1600_x2`, which leaves the third
 state as it was.
 -/
 
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Hybrid
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon (PairAt pairR wordAddr outAddr)
@@ -263,7 +273,7 @@ theorem step3_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p a b e st : 
     (hb : 136 * blk < S.len)
     (hE : bytesAt s.mem e S.len = E) (hst : stateAt s.mem st = hstate E blk (dB S))
     (pair : PairAt s.mem p A B) (hl : StepLay S p a b e st s) :
-    WP isa (Impl.MlKem.AArch64.Hybrid.step3 S blk) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Hybrid.step3 sha3 S blk) s fun t =>
       Keep stepRegs s t ∧
       Frame (step3Writes p a b st s.sp) s.mem t.mem ∧
       PairAt t.mem p (keccakF A) (keccakF B) ∧
@@ -276,7 +286,7 @@ theorem step3_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p a b e st : 
   have pu : PairAt u.mem p A B :=
     VG.Proof.Sha3.AArch64.Hybrid.X3.pairAt_frame pair fu (fun r hr => by
       rw [List.mem_singleton.mp hr]; exact hl.dPS)
-  refine WP.seq (WP.mono (x3call_ok (q := p + 1536) (S := stateAt u.mem st)
+  refine WP.seq (WP.mono (x3call_ok (sha3 := sha3) (q := p + 1536) (S := stateAt u.mem st)
     (by rw [ku.get .x19, h19]) rfl (by rw [ku.get .x28, h28]) pu rfl hl.dPS hl.dPC hl.dSC
     (by rw [ku.sp]; exact hl.sp) (by rw [ku.sp]; exact hl.fP) (by rw [ku.sp]; exact hl.fS)
     (by rw [ku.sp]; exact hl.fC) (by rw [ku.wr]; exact hl.cov)) fun v ⟨kv, fv, pv, sv⟩ => ?_)
@@ -304,14 +314,14 @@ theorem plainStep_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p a b e s
     {A B : Spec.Sha3.State}
     (h19 : s.gpr .x19 = p) (h20 : s.gpr .x20 = a) (h21 : s.gpr .x21 = b)
     (pair : PairAt s.mem p A B) (hl : StepLay S p a b e st s) :
-    WP isa Impl.MlKem.AArch64.Hybrid.plainStep s fun t =>
+    WP isa (Impl.MlKem.AArch64.Hybrid.plainStep sha3) s fun t =>
       Keep stepRegs s t ∧
       Frame (step3Writes p a b st s.sp) s.mem t.mem ∧
       PairAt t.mem p (keccakF A) (keccakF B) ∧
       Rate21 t.mem a (keccakF A) ∧ Rate21 t.mem b (keccakF B) ∧
       stateAt t.mem st = stateAt s.mem st ∧
       t.gpr .x20 = a + 168 ∧ t.gpr .x21 = b + 168 := by
-  have hc := Paired.squeezeBlock_ok (rp := .x19) (ra := .x20) (rb := .x21) h19 h20 h21 (by rw [h19]; rfl)
+  have hc := Paired.squeezeBlock_ok (sha3 := sha3) (rp := .x19) (ra := .x20) (rb := .x21) h19 h20 h21 (by rw [h19]; rfl)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) pair hl.hin hl.hwa hl.hwb hl.dAB hl.dPA hl.dPB hl.dPC
     (covers_mono hl.cov (by simp))
@@ -331,7 +341,7 @@ theorem plainStep_ok (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p a b e s
     · exact hl.dSA
     · exact hl.dSB
     · exact hl.dSC
-  refine ⟨(hv.trans ot.keep).mono (by simp [stepRegs, clobbered, Paired.blockRegs]), ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨(hv.trans ot.keep).mono (by simp [stepRegs, clobbered, Paired.blockRegs, VG.Proof.Sha3.AArch64.Neon.X2.volatile]), ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [hm]; exact fv.mono (by simp [step3Writes])
   · rw [hm]; exact pv
   · rw [hm]; exact av

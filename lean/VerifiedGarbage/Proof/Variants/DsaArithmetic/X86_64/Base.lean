@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Dsa.X86_64.Backend
+public import VerifiedGarbage.Proof.Variants.DsaArithmetic.X86_64.Checks
 import VerifiedGarbage.Proof.Dsa.X86_64.Calls
 import VerifiedGarbage.Proof.Dsa.X86_64.KeygenCalls
 public import VerifiedGarbage.Proof.Bignum.X86_64.MontSqFn
@@ -166,33 +167,38 @@ namespace VG.Proof.Variants.DsaArithmetic.X86_64.Base
 
 open VG VG.X86_64 VG.Proof.Dsa.X86_64 VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
+/-- The tests of the entry points, which the kernel evaluates in one
+declaration (`Checks`). -/
+theorem checks : Checks CallMont.lazyBase CallMont.base.mm MontS.fnLazy.mm Mont.fnBase.mm 8 :=
+  .of_eval (by decide +kernel)
+
 def variant : Backend where
   sq := CallMont.lazyBase
   mul := CallMont.base.mm
   stack := 8
   suffix := ""
   features := []
-  signVerified := signing_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
-  signSp := Code.all_of_spTest (by decide +kernel)
-  validateVerified := validating_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
-  prevalidatedVerified := prevalidated_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
-  validateSp := Code.all_of_spTest (by decide +kernel)
-  prevalidatedSp := Code.all_of_spTest (by decide +kernel)
-  signDepth := by decide +kernel
-  parametersVerified := parameters_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
-  deriveVerified := derive_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
-  parametersSp := Code.all_of_spTest (by decide +kernel)
-  deriveSp := Code.all_of_spTest (by decide +kernel)
-  parametersDepth := by decide +kernel
-  deriveDepth := by decide +kernel
-  prevalidatedSignVerified := prevalidated_sign_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
-  prevalidatedSignSp := Code.all_of_spTest (by decide +kernel)
-  prevalidatedSignDepth := by decide +kernel
-  validatePrivateVerified := validating_private_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
-  validatePrivateSp := Code.all_of_spTest (by decide +kernel)
-  deriveCheckedVerified := derive_checked_call_verified Mont.fnBase MontS.fnLazy (by decide +kernel) rfl (by decide +kernel)
-  deriveCheckedSp := Code.all_of_spTest (by decide +kernel)
-  deriveCheckedDepth := by decide +kernel
+  signVerified := signing_call_verified Mont.fnBase MontS.fnLazy checks.sign.inl rfl checks.sign.mx
+  signSp := checks.sign.sp
+  validateVerified := validating_call_verified Mont.fnBase MontS.fnLazy checks.validate.inl rfl checks.validate.mx
+  prevalidatedVerified := prevalidated_call_verified Mont.fnBase MontS.fnLazy checks.verify.inl rfl checks.verify.mx
+  validateSp := checks.validate.sp
+  prevalidatedSp := checks.verify.sp
+  signDepth := checks.sign.depth
+  parametersVerified := parameters_call_verified Mont.fnBase MontS.fnLazy checks.parameters.inl rfl checks.parameters.mx
+  deriveVerified := derive_call_verified Mont.fnBase MontS.fnLazy checks.derive.inl rfl checks.derive.mx
+  parametersSp := checks.parameters.sp
+  deriveSp := checks.derive.sp
+  parametersDepth := checks.parameters.depth
+  deriveDepth := checks.derive.depth
+  prevalidatedSignVerified := prevalidated_sign_call_verified Mont.fnBase MontS.fnLazy checks.prevalidatedSign.inl rfl checks.prevalidatedSign.mx
+  prevalidatedSignSp := checks.prevalidatedSign.sp
+  prevalidatedSignDepth := checks.prevalidatedSign.depth
+  validatePrivateVerified := validating_private_call_verified Mont.fnBase MontS.fnLazy checks.validatePrivate.inl rfl checks.validatePrivate.mx
+  validatePrivateSp := checks.validatePrivate.sp
+  deriveCheckedVerified := derive_checked_call_verified Mont.fnBase MontS.fnLazy checks.deriveChecked.inl rfl checks.deriveChecked.mx
+  deriveCheckedSp := checks.deriveChecked.sp
+  deriveCheckedDepth := checks.deriveChecked.depth
   stackBound := by decide
 
 end VG.Proof.Variants.DsaArithmetic.X86_64.Base

@@ -98,7 +98,8 @@ theorem checkBlock_noBase {τ τ' : T} (h : NoBase τ) {is : List Instr}
   induction is generalizing τ with
   | nil => cases hc; exact h
   | cons i is ih =>
-    have hc : (stepKM τ i).bind (taint.checkBlock · is) = some τ' := hc
+    have hc : (taint.step τ i).bind (taint.checkBlock · is) = some τ' := hc
+    rw [taint_step] at hc
     obtain ⟨σ, hσ, hc⟩ := Option.bind_eq_some_iff.mp hc
     exact ih (step_noBase h hσ) hc
 
@@ -107,8 +108,8 @@ theorem checkBlock_eraseOff {τ : T} (h : NoBase τ) (is : List Instr) :
   induction is generalizing τ with
   | nil => rfl
   | cons i is ih =>
-    show (stepKM τ i.eraseOff).bind (taint.checkBlock · _) = (stepKM τ i).bind (taint.checkBlock · _)
-    rw [step_eraseOff h]
+    show (taint.step τ i.eraseOff).bind (taint.checkBlock · _) = (taint.step τ i).bind (taint.checkBlock · _)
+    rw [taint_step, taint_step, step_eraseOff h]
     exact bind_congr fun σ hσ => ih (step_noBase h hσ)
 
 theorem checkChunks_noBase {chunkSize : Nat} {τ τ' : T} (h : NoBase τ) {is : List Instr} {ms : List T}

@@ -129,14 +129,17 @@ theorem verified_withSlice {sig : Sig} {nm ln : String} {e : Elem}
     fun _ _ _ _ => rfl
   have hpubA : ∀ (s₁ s₂ : State) r₁ w₁ r₂ w₂, abi.pub s₁ s₂ → abi.pub (s₁.withRegions r₁ w₁) (s₂.withRegions r₂ w₂) :=
     fun _ _ _ _ _ _ h => h
+  -- stated here: as an argument its type is compared with `abi_wf_append`'s before the words are known
+  have hwf : ∀ n (s : State) (r w : List Region),
+      abi.wf (((sig.withSlice nm e ln).words 32).map (·.bits 32)) n s →
+        abi.wf ((sig.words 32).map (·.bits 32)) n (s.withRegions r w) := fun n s r w h => by
+    rw [words_withSlice_map] at h; exact abi_wf_append h r w
   exact Verified.withSlice (T := target) regionModel (fun _ _ _ _ h => h) abi abi rfl (fun _ => rfl) (fun _ => rfl)
     (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) (fun _ => rfl) hret hpubA hres rfl
     (sig := sig) (nm := nm) (e := e) (ln := ln) (vals := wordVals (sig.words 32).length)
     (X := fun s => argVal s 32 (sig.words 32).length) (Y := fun s => argVal s 32 ((sig.words 32).length + 1))
     ha ha' (fun s => wordVals_length _ s) (fun _ _ _ => rfl)
-    (fun n s r w h => abi_wf_append (ws := (sig.words 32).map (·.bits 32))
-      (by have h' : abi.wf (((sig.withSlice nm e ln).words 32).map (·.bits 32)) n s := h
-          rw [words_withSlice_map] at h'; exact h') r w)
+    hwf
     (fun s => by
       have := abi_area_append hw (by rw [List.length_map]; exact hne) s
       rw [← words_withSlice_map sig nm e ln] at this

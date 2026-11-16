@@ -22,11 +22,13 @@ def VOp.dst : VOp → VReg
   | .dupE _ d .. | .insE _ d .. | .cmeq _ d .. | .bsel _ d .. | .tblN _ _ d .. => d
   | .umull _ d .. | .umlal _ d .. | .mul d .. | .mla d .. | .mls d .. => d
   | .umullH _ d .. | .umlalH _ d .. => d
-  | .sqdmulh d .. | .umin d .. | .mulH _ d .. | .mulHE _ d .. | .pmull _ d .. => d
+  | .sqdmulh d .. | .umin d .. | .mulH _ d .. | .mulHE _ d .. | .pmull _ d .. | .pmull8 _ d .. => d
   | .aese d .. | .aesd d .. | .aesmc d .. | .aesimc d .. => d
   | .sha1 _ d .. | .sha1h d .. | .sha1su0 d .. | .sha1su1 d .. => d
   | .sha256h d .. | .sha256h2 d .. | .sha256su0 d .. | .sha256su1 d .. => d
   | .sha512h d .. | .sha512h2 d .. | .sha512su0 d .. | .sha512su1 d .. => d
+  | .sm4e d .. | .sm4ekey d .. => d
+  | .sm3ss1 d .. | .sm3tt _ d .. | .sm3partw1 d .. | .sm3partw2 d .. => d
   | .eor3 d .. | .bcax d .. | .rax1 d .. | .xar d .. | .xarS d .. => d
 
 /-- The vector register an instruction writes, if any. -/
@@ -47,7 +49,7 @@ theorem VOp.eval_dst {op : VOp} {s : State} {d : VReg} {v : BitVec 128}
     simp only [reduceVOpEval] at h
     split at h <;> simp only [Option.some.injEq, Prod.mk.injEq, reduceCtorEq] at h
     exact h.1.symm
-  case dupS | dupE | insE | shift | ext | tblN | xar | xarS | mulH | mulHE | addv | uaddlv =>
+  case dupS | dupE | insE | shift | ext | tblN | xar | xarS | mulH | mulHE | addv | uaddlv | sm3tt =>
     exact (Prod.mk.inj (Option.some.inj (Option.ite_none_right_eq_some.mp h).2)).1.symm
   all_goals exact (Prod.mk.inj (Option.some.inj h)).1.symm
 
@@ -98,7 +100,7 @@ theorem exec_vec {i : Instr} {r : VReg} {s s' : State}
   | stp t1 t2 n off => obtain ⟨_, rfl⟩ := exec_stp_eq h; rfl
   | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
   | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
-  | umov _ _ _ _ =>
+  | umov _ _ _ _ | ldrTbl _ _ _ _ _ _ =>
     obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h; rfl
   | _ => obtain rfl := Option.some.inj h; rfl
 

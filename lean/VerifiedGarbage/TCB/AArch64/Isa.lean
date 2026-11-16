@@ -110,8 +110,8 @@ Modelling choices:
   `State.syms name`, where `name` is its name, which `adrSym` (`adrp` and
   `add`, resolved by the linker) puts in a register. No instruction changes
   `syms`: a static's address is fixed for the run of the program.
-* A table of constants an instruction carries (`ldrqTbl`, its name and its
-  words) is the `static` of that name the emitter writes from it
+* A table of constants an instruction carries (`ldrqTbl` and `ldrTbl`, its
+  name and its words) is the `static` of that name the emitter writes from it
   (`TCB/Rust.lean`), as x86-64's `aluTbl` and `vmovdquTbl` are
   (`TCB/X86_64/Isa.lean`): for the whole run of the program it is mapped
   readable at `State.syms name` and holds exactly those words, 8 bytes each,
@@ -124,7 +124,7 @@ Modelling choices:
   write through can reach. So the model reads the words from the
   instruction rather than from `State.mem`, whose writes never reach it,
   and no contract states any of this. Unlike x86-64's forms, whose operand
-  the printer writes with the symbol, the printed `ldr q` reads wherever its
+  the printer writes with the symbol, the printed `ldr` reads wherever its
   base register points, so the model faults unless that register holds
   `State.syms name`: an instruction that executes reads the static.
 * The stack pointer is always 16-byte aligned (AAPCS64 §6.4.5.1, "SP mod 16
@@ -169,11 +169,14 @@ Modelling choices:
   ZIP1, ZIP2, TRN1, TRN2, UZP1, UZP2, TBL, TBX, UMULL, UMLAL, PMULL, MUL, MLA, MLS, SQDMULH, UMIN), and the cryptographic ones
   (AESE, AESD, AESMC, AESIMC, SHA1C, SHA1P, SHA1M, SHA1H, SHA1SU0, SHA1SU1,
   SHA256H, SHA256H2, SHA256SU0, SHA256SU1, SHA512H, SHA512H2, SHA512SU0,
-  SHA512SU1, EOR3, BCAX, RAX1, XAR), and SVE2's XAR, are all among those whose
+  SHA512SU1, EOR3, BCAX, RAX1, XAR, SM4E, SM4EKEY, SM3SS1, SM3TT1A, SM3TT1B,
+  SM3TT2A, SM3TT2B, SM3PARTW1, SM3PARTW2), and SVE2's XAR, are all among those whose
   timing Arm specifies to be independent of their data when PSTATE.DIT is 1
   (DDI 0487, "About PSTATE.DIT"; the description of SVE2's XAR says "This
   instruction is a data-independent-time instruction as described in About
-  PSTATE.DIT"). CMHI, CMHS, ADDV and UADDLV are in the list of
+  PSTATE.DIT", and so do those of SM4E, SM4EKEY and the seven SM3
+  instructions in the A64 ISA XML 2025-12, and that of PMULL and PMULL2, for
+  every element size, in the A64 ISA XML 2026-03). CMHI, CMHS, ADDV and UADDLV are in the list of
   data-independent-time instructions of DDI 0487 M.b C5.2.4, "DIT, Data
   Independent Timing" (also DDI 0601 2026-09): "Advanced SIMD three same: ADD,
   ADDP, AND, …, CMEQ, CMGE, CMGT, CMHI, CMHS, …" and "Advanced SIMD across
@@ -306,6 +309,10 @@ inductive VSelOp | bsl | bit | bif
 inductive Sha1Op | c | p | m
   deriving DecidableEq, Repr
 
+/-- SM3TT1A, SM3TT1B, SM3TT2A and SM3TT2B. -/
+inductive Sm3TtOp | tt1a | tt1b | tt2a | tt2b
+  deriving DecidableEq, Repr
+
 /-- AdvSIMD and cryptographic instructions that write only a vector
 register (and access no memory). -/
 inductive VOp
@@ -388,6 +395,9 @@ inductive VOp
   | mulHE (op : VMulHOp) (d n m : VReg) (i : Nat)
   /-- `pmull vd.1q, vn.1d, vm.1d`, or `pmull2 vd.1q, vn.2d, vm.2d` if `hi` -/
   | pmull (hi : Bool) (d n m : VReg)
+  /-- `pmull vd.8h, vn.8b, vm.8b`, or `pmull2 vd.8h, vn.16b, vm.16b` if `hi`
+  (PMULL, PMULL2 with 8-bit source elements, `size = 00`) -/
+  | pmull8 (hi : Bool) (d n m : VReg)
   /-- `aese vd.16b, vn.16b` -/
   | aese (d n : VReg)
   /-- `aesd vd.16b, vn.16b` -/
@@ -420,6 +430,18 @@ inductive VOp
   | sha512su0 (d n : VReg)
   /-- `sha512su1 vd.2d, vn.2d, vm.2d` -/
   | sha512su1 (d n m : VReg)
+  /-- `sm4e vd.4s, vn.4s` -/
+  | sm4e (d n : VReg)
+  /-- `sm4ekey vd.4s, vn.4s, vm.4s` -/
+  | sm4ekey (d n m : VReg)
+  /-- `sm3ss1 vd.4s, vn.4s, vm.4s, va.4s` -/
+  | sm3ss1 (d n m a : VReg)
+  /-- `sm3tt1a`/`sm3tt1b`/`sm3tt2a`/`sm3tt2b vd.4s, vn.4s, vm.s[i]` -/
+  | sm3tt (op : Sm3TtOp) (d n m : VReg) (i : Nat)
+  /-- `sm3partw1 vd.4s, vn.4s, vm.4s` -/
+  | sm3partw1 (d n m : VReg)
+  /-- `sm3partw2 vd.4s, vn.4s, vm.4s` -/
+  | sm3partw2 (d n m : VReg)
   /-- `eor3 vd.16b, vn.16b, vm.16b, va.16b` -/
   | eor3 (d n m a : VReg)
   /-- `bcax vd.16b, vn.16b, vm.16b, va.16b` -/
@@ -602,6 +624,11 @@ inductive Instr
   static from this instruction (`TCB/Rust.lean`), as for x86-64's
   `vmovdquTbl`. -/
   | ldrqTbl (t : VReg) (n : Reg) (off : Nat) (name : String) (words : List (BitVec 64))
+  /-- `ldr xt, [n, #off]` / `ldr wt, [n, #off]` (as `ldr`: LDR (immediate),
+  unsigned offset), whose base register holds the address of the `static`
+  `name`, whose words are `words`: the emitter writes that static from this
+  instruction (`TCB/Rust.lean`), as for `ldrqTbl`. -/
+  | ldrTbl (sz : Size) (t n : Reg) (off : Nat) (name : String) (words : List (BitVec 64))
   /-- `umov wd, vn.s[i]` / `umov xd, vn.d[i]` (UMOV) -/
   | umov (sz : Size) (d : Reg) (n : VReg) (i : Nat)
   /-- `mrs xt, DIT` (MRS of the system register DIT): PSTATE.DIT, in bit 24
@@ -940,6 +967,12 @@ def Sha1Op.f : Sha1Op → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32
 * "UMIN" (`.4s`): `Elem[result, e] = Min(UInt(element1), UInt(element2))`;
 * "PMULL", "PMULL2" (`.1q`): `Elem[result, 0, 128] =
   PolynomialMult(Elem[operand1, part, 64], Elem[operand2, part, 64])`;
+* "PMULL", "PMULL2" (`.8h`, `size = 00`: `esize = 8 << UInt(size)`,
+  `datasize = 64`, `part = UInt(Q)`, `elements = 8`): `operand1 = Vpart[n,
+  part, 64]; operand2 = Vpart[m, part, 64]; for e = 0 to 7: Elem[result, e,
+  16] = PolynomialMult(Elem[operand1, e, 8], Elem[operand2, e, 8])`
+  (`polyMul8`), `V[d, 128] = result`: byte `e` of the lower (`pmull`) or
+  upper (`pmull2`) half of each source;
 * "AESE": `AESSubBytes(AESShiftRows(operand1 EOR operand2))`; "AESD":
   `AESInvSubBytes(AESInvShiftRows(operand1 EOR operand2))`, with `operand1
   = V[d]`, `operand2 = V[n]`; "AESMC": `AESMixColumns(V[n])`; "AESIMC":
@@ -951,6 +984,13 @@ def Sha1Op.f : Sha1Op → BitVec 32 → BitVec 32 → BitVec 32 → BitVec 32
   `sha256Su0`, `sha256Su1`;
 * "SHA512H", "SHA512H2", "SHA512SU0", "SHA512SU1": `sha512H`, `sha512H2`,
   `sha512Su0`, `sha512Su1`;
+* "SM4E", "SM4EKEY" (A64 ISA XML 2025-12): `sm4E`, `sm4EKey`, four rounds of
+  SM4's encryption of `V[d]` under the round keys `V[n]`, and of its key
+  expansion from `V[n]` with the constants `V[m]`;
+* "SM3SS1", "SM3TT1A", "SM3TT1B", "SM3TT2A", "SM3TT2B", "SM3PARTW1",
+  "SM3PARTW2" (A64 ISA XML 2025-12): `sm3Ss1`, `sm3Tt1`, `sm3Tt2`,
+  `sm3PartW1`, `sm3PartW2`, with `WjPrime`/`Wj = Vm[i*:32]` the word `i =
+  UInt(imm2)` of `V[m]`;
 * "EOR3": `Vn EOR Vm EOR Va`; "BCAX": `Vn EOR (Vm AND NOT(Va))`; "RAX1":
   `Elem[Vd, e, 64] = Elem[Vn, e, 64] EOR ROL(Elem[Vm, e, 64], 1)`; "XAR":
   `Elem[Vd, e, 64] = ROR(Elem[Vn, e, 64] EOR Elem[Vm, e, 64], imm6)`;
@@ -1060,6 +1100,9 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
   | .pmull hi d n m =>
     let p := if hi then 1 else 0
     some (d, polyMul (vdword (s.v n) p) (vdword (s.v m) p))
+  | .pmull8 hi d n m =>
+    let p := if hi then 8 else 0
+    some (d, ofVHalves fun e => polyMul8 (vbyte (s.v n) (p + e)) (vbyte (s.v m) (p + e)))
   | .aese d n => some (d, aesMapBytes aesSbox (aesShiftRows (s.v d ^^^ s.v n)))
   | .aesd d n => some (d, aesMapBytes aesInvSbox (aesInvShiftRows (s.v d ^^^ s.v n)))
   | .aesmc d n => some (d, aesMixColumns (s.v n))
@@ -1076,6 +1119,19 @@ def VOp.eval (s : State) : VOp → Option (VReg × BitVec 128)
   | .sha512h2 d n m => some (d, sha512H2 (s.v d) (s.v n) (s.v m))
   | .sha512su0 d n => some (d, sha512Su0 (s.v d) (s.v n))
   | .sha512su1 d n m => some (d, sha512Su1 (s.v d) (s.v n) (s.v m))
+  | .sm4e d n => some (d, sm4E (s.v d) (s.v n))
+  | .sm4ekey d n m => some (d, sm4EKey (s.v n) (s.v m))
+  | .sm3ss1 d n m a => some (d, sm3Ss1 (s.v n) (s.v m) (s.v a))
+  | .sm3tt op d n m i =>
+    if i < 4 then
+      some (d, match op with
+        | .tt1a => sm3Tt1 false (s.v d) (s.v n) (vword (s.v m) i)
+        | .tt1b => sm3Tt1 true (s.v d) (s.v n) (vword (s.v m) i)
+        | .tt2a => sm3Tt2 false (s.v d) (s.v n) (vword (s.v m) i)
+        | .tt2b => sm3Tt2 true (s.v d) (s.v n) (vword (s.v m) i))
+    else none
+  | .sm3partw1 d n m => some (d, sm3PartW1 (s.v d) (s.v n) (s.v m))
+  | .sm3partw2 d n m => some (d, sm3PartW2 (s.v d) (s.v n) (s.v m))
   | .eor3 d n m a => some (d, s.v n ^^^ s.v m ^^^ s.v a)
   | .bcax d n m a => some (d, s.v n ^^^ (s.v m &&& ~~~(s.v a)))
   | .rax1 d n m => some (d, VArr.d2.map2 (fun _ x y => x ^^^ y.rotateLeft 1) (s.v n) (s.v m))
@@ -1315,6 +1371,22 @@ def exec : Instr → State → Option State
     if s.gpr n = s.syms name ∧ off % 16 = 0 ∧ off < 65536 ∧ off / 8 + 2 ≤ ws.length then
       some (s.setV t (ws.getD (off / 8 + 1) 0 ++ ws.getD (off / 8) 0))
     else none
+  -- `ldrTbl`: as `ldr sz t n off`, its source the 8 (`.x`) or 4 (`.w`) bytes
+  -- at `n + off`, little-endian: when `n` holds the static's address and
+  -- `off` is an offset `ldr` encodes (a multiple of the access size, less
+  -- than 4096 times it: the scaled 12-bit immediate of LDR (immediate),
+  -- unsigned offset, DDI 0487 C6.2, as `addr` has it) in a word of the
+  -- table, the bytes `off % 8` and on of word `off / 8` of the static
+  -- `name`: all of it (`.x`), or its low (`off % 8 = 0`) or high
+  -- (`off % 8 = 4`) half, zero-extended into the 64-bit register, as LDR's
+  -- 32-bit form does (`X[t, regsize] = ZeroExtend(data, regsize)`, which
+  -- `write` is). Otherwise it faults. The static is the immutable object of
+  -- these words the emitter writes (see the module docs), so the bytes
+  -- there are always these.
+  | .ldrTbl sz t n off name ws, s =>
+    if s.gpr n = s.syms name ∧ off % sz.bytes = 0 ∧ off < 4096 * sz.bytes ∧ off / 8 < ws.length then
+      some (s.write sz t ((ws.getD (off / 8) 0).extractLsb' (8 * (off % 8)) sz.bits))
+    else none
   | .umov sz d n i, s =>
     if i * sz.bits < 128 then some (s.write sz d ((s.v n).extractLsb' (sz.bits * i) sz.bits))
     else none
@@ -1353,6 +1425,7 @@ def addrs : Instr → State → List Addr
   -- The offset in the table: the static's address does not depend on the
   -- data (see the module docs).
   | .ldrqTbl _ _ off .., _ => [BitVec.ofNat 64 off]
+  | .ldrTbl _ _ _ off .., _ => [BitVec.ofNat 64 off]
   | .ldrSp _ off, s | .strSp _ off, s => [s.sp + BitVec.ofNat 64 off]
   | .push _, s => [s.sp - 16]
   | .pop _, s => [s.sp]
@@ -1459,11 +1532,22 @@ requires), named as
 Rust's target features. DDI 0487 A2 ("Armv8-A architecture extensions") and
 the "Is FEAT_…" condition in each instruction's decode (C7.2): FEAT_AES for
 AESE, AESD, AESMC, AESIMC and FEAT_PMULL for PMULL/PMULL2 with 64-bit
-sources, which Rust's `aes` feature covers together; FEAT_SHA1 for SHA1C,
+sources, which Rust's `aes` feature covers together (PMULL/PMULL2 with 8-bit
+sources, `pmull8`, need AdvSIMD alone, the baseline: A64 ISA XML 2026-03,
+"PMULL, PMULL2", decodes `if size == '01' || size == '10' then
+EndOfDecode(Decode_UNDEF); end; if size == '11' &&
+!IsFeatureImplemented(FEAT_PMULL) then EndOfDecode(Decode_UNDEF); end;`, and
+says "The PMULL and PMULL2 variants that operate on 64-bit source elements
+are defined only when FEAT_PMULL is implemented"); FEAT_SHA1 for SHA1C,
 SHA1P, SHA1M, SHA1H, SHA1SU0, SHA1SU1 and FEAT_SHA256 for SHA256H,
 SHA256H2, SHA256SU0, SHA256SU1 (Rust's `sha2`); FEAT_SHA512 for SHA512H,
 SHA512H2, SHA512SU0, SHA512SU1 and FEAT_SHA3 for EOR3, BCAX, RAX1, XAR
-(Rust's `sha3`); FEAT_SVE2 for SVE2's XAR (DDI 0602, "XAR": `if
+(Rust's `sha3`); FEAT_SM4 for SM4E and SM4EKEY (A64 ISA XML 2025-12, "SM4E",
+"SM4EKEY": `if !IsFeatureImplemented(FEAT_SM4) then
+EndOfDecode(Decode_UNDEF); end;`), Rust's `sm4`, which stands for FEAT_SM4
+and FEAT_SM3 together, so that it is also what SM3SS1, SM3TT1A, SM3TT1B,
+SM3TT2A, SM3TT2B, SM3PARTW1 and SM3PARTW2 need (`if
+!IsFeatureImplemented(FEAT_SM3) then EndOfDecode(Decode_UNDEF); end;`); FEAT_SVE2 for SVE2's XAR (DDI 0602, "XAR": `if
 !IsFeatureImplemented(FEAT_SVE2) && !IsFeatureImplemented(FEAT_SME) then
 UNDEFINED`; Rust's `sve2`, which implies `sve`, since FEAT_SVE2 requires
 FEAT_SVE); FEAT_DIT for MRS of the system register DIT (DDI 0601 2026-03,
@@ -1485,6 +1569,8 @@ def Instr.requires : Instr → List String
     ["sha2"]
   | .vop (.sha512h ..) | .vop (.sha512h2 ..) | .vop (.sha512su0 ..) | .vop (.sha512su1 ..)
   | .vop (.eor3 ..) | .vop (.bcax ..) | .vop (.rax1 ..) | .vop (.xar ..) => ["sha3"]
+  | .vop (.sm4e ..) | .vop (.sm4ekey ..)
+  | .vop (.sm3ss1 ..) | .vop (.sm3tt ..) | .vop (.sm3partw1 ..) | .vop (.sm3partw2 ..) => ["sm4"]
   | .vop (.xarS ..) => ["sve2"]
   | .mrsDit _ | .msrDitImm _ => ["dit"]
   | .barrier .sb => ["sb"]

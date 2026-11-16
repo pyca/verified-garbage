@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Gcm.initContract`. The key context is `VG.Spec.Gcm.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_init_aes` if the CPU supports its features (`VG_AES_GCM_INIT_AES_FEATURES`); or else `vg_aes_gcm_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_init_aes` if the CPU supports its features (`VG_AES_GCM_INIT_AES_FEATURES`); `vg_aes_gcm_init_neon` if detection reports some CPU feature; or else `vg_aes_gcm_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -29,6 +29,11 @@ pub unsafe fn vg_aes_gcm_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
             || cpu.contains(crate::gcm::VG_AES_GCM_INIT_AES_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_init_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::gcm::vg_aes_gcm_init_neon;
         }
         crate::gcm::vg_aes_gcm_init
     }
@@ -57,7 +62,7 @@ pub unsafe fn vg_aes_gcm_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
 ///
 /// Contract: `VG.Spec.Gcm.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_aes` if the CPU supports its features (`VG_AES_GCM_SEAL_AES_FEATURES`); or else `vg_aes_gcm_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_aes` if the CPU supports its features (`VG_AES_GCM_SEAL_AES_FEATURES`); `vg_aes_gcm_seal_neon` if detection reports some CPU feature; or else `vg_aes_gcm_seal`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -83,6 +88,11 @@ pub unsafe fn vg_aes_gcm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
             || cpu.contains(crate::gcm::VG_AES_GCM_SEAL_AES_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_seal_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::gcm::vg_aes_gcm_seal_neon;
         }
         crate::gcm::vg_aes_gcm_seal
     }
@@ -111,7 +121,7 @@ pub unsafe fn vg_aes_gcm_seal_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
 ///
 /// Contract: `VG.Spec.Gcm.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_aes` if the CPU supports its features (`VG_AES_GCM_OPEN_AES_FEATURES`); or else `vg_aes_gcm_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_aes` if the CPU supports its features (`VG_AES_GCM_OPEN_AES_FEATURES`); `vg_aes_gcm_open_neon` if detection reports some CPU feature; or else `vg_aes_gcm_open`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -137,6 +147,11 @@ pub unsafe fn vg_aes_gcm_open_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
             || cpu.contains(crate::gcm::VG_AES_GCM_OPEN_AES_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_open_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::gcm::vg_aes_gcm_open_neon;
         }
         crate::gcm::vg_aes_gcm_open
     }
@@ -165,7 +180,7 @@ pub unsafe fn vg_aes_gcm_open_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *co
 ///
 /// Contract: `VG.Spec.Gcm.streamInitContract`. The streaming state is `J₀`, the GHASH accumulator, a partial block, the next counter block and a keystream block (`VG.Spec.Gcm.StreamRepr`). Constant time: only the pointers and `nonce_len` may affect timing, not the key context or the nonce.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_init_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_INIT_AES_FEATURES`); or else `vg_aes_gcm_stream_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_init_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_INIT_AES_FEATURES`); `vg_aes_gcm_stream_init_neon` if detection reports some CPU feature; or else `vg_aes_gcm_stream_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -188,6 +203,11 @@ pub unsafe fn vg_aes_gcm_stream_init_auto(_dit: verified_garbage_cpu::Dit<'_>, c
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_INIT_AES_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_stream_init_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::gcm::vg_aes_gcm_stream_init_neon;
         }
         crate::gcm::vg_aes_gcm_stream_init
     }
@@ -214,7 +234,7 @@ pub unsafe fn vg_aes_gcm_stream_init_auto(_dit: verified_garbage_cpu::Dit<'_>, c
 ///
 /// Contract: `VG.Spec.Gcm.streamAadContract`. Constant time: only the pointers, `aad_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_aad_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_AAD_AES_FEATURES`); or else `vg_aes_gcm_stream_aad`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_aad_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_AAD_AES_FEATURES`); `vg_aes_gcm_stream_aad_neon` if detection reports some CPU feature; or else `vg_aes_gcm_stream_aad`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -237,6 +257,11 @@ pub unsafe fn vg_aes_gcm_stream_aad_auto(_dit: verified_garbage_cpu::Dit<'_>, ct
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_AAD_AES_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_stream_aad_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::gcm::vg_aes_gcm_stream_aad_neon;
         }
         crate::gcm::vg_aes_gcm_stream_aad
     }
@@ -265,7 +290,7 @@ pub unsafe fn vg_aes_gcm_stream_aad_auto(_dit: verified_garbage_cpu::Dit<'_>, ct
 ///
 /// Contract: `VG.Spec.Gcm.streamEncryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_encrypt_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES`); or else `vg_aes_gcm_stream_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_encrypt_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES`); `vg_aes_gcm_stream_encrypt_neon` if detection reports some CPU feature; or else `vg_aes_gcm_stream_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -289,6 +314,11 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_ENCRYPT_AES_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_stream_encrypt_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::gcm::vg_aes_gcm_stream_encrypt_neon;
         }
         crate::gcm::vg_aes_gcm_stream_encrypt
     }
@@ -317,7 +347,7 @@ pub unsafe fn vg_aes_gcm_stream_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// Contract: `VG.Spec.Gcm.streamDecryptContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `len` may affect timing, not the key context, the state or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_decrypt_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES`); or else `vg_aes_gcm_stream_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_decrypt_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES`); `vg_aes_gcm_stream_decrypt_neon` if detection reports some CPU feature; or else `vg_aes_gcm_stream_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -341,6 +371,11 @@ pub unsafe fn vg_aes_gcm_stream_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_DECRYPT_AES_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_stream_decrypt_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::gcm::vg_aes_gcm_stream_decrypt_neon;
         }
         crate::gcm::vg_aes_gcm_stream_decrypt
     }
@@ -367,7 +402,7 @@ pub unsafe fn vg_aes_gcm_stream_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>
 ///
 /// Contract: `VG.Spec.Gcm.streamFinishContract`. Constant time: only the pointers, `rounds`, `aad_len` and `text_len` may affect timing, not the key context or the state.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_finish_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_AES_FEATURES`); or else `vg_aes_gcm_stream_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_finish_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_FINISH_AES_FEATURES`); `vg_aes_gcm_stream_finish_neon` if detection reports some CPU feature; or else `vg_aes_gcm_stream_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -392,6 +427,11 @@ pub unsafe fn vg_aes_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>,
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_FINISH_AES_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_stream_finish_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::gcm::vg_aes_gcm_stream_finish_neon;
         }
         crate::gcm::vg_aes_gcm_stream_finish
     }
@@ -418,7 +458,7 @@ pub unsafe fn vg_aes_gcm_stream_finish_auto(_dit: verified_garbage_cpu::Dit<'_>,
 ///
 /// Contract: `VG.Spec.Gcm.streamVerifyContract`. Constant time: only the pointers, `rounds`, `aad_len`, `text_len` and `tag_len` may affect timing, not the key context, the state or the tags.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_verify_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_AES_FEATURES`); or else `vg_aes_gcm_stream_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_stream_verify_aes` if the CPU supports its features (`VG_AES_GCM_STREAM_VERIFY_AES_FEATURES`); `vg_aes_gcm_stream_verify_neon` if detection reports some CPU feature; or else `vg_aes_gcm_stream_verify`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -443,6 +483,11 @@ pub unsafe fn vg_aes_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>,
             || cpu.contains(crate::gcm::VG_AES_GCM_STREAM_VERIFY_AES_FEATURES)
         {
             return crate::gcm::vg_aes_gcm_stream_verify_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::gcm::vg_aes_gcm_stream_verify_neon;
         }
         crate::gcm::vg_aes_gcm_stream_verify
     }
@@ -471,7 +516,7 @@ pub unsafe fn vg_aes_gcm_stream_verify_auto(_dit: verified_garbage_cpu::Dit<'_>,
 ///
 /// Contract: `VG.Spec.Gcm.sealGatherContract`. Constant time: only the pointers, `rounds`, the lengths, `src_count` and where the slices are (their addresses and lengths) may affect timing, not the key context, the nonce, the additional data or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_gather_aes` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_AES_FEATURES`); or else `vg_aes_gcm_seal_gather`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_gather_aes` if the CPU supports its features (`VG_AES_GCM_SEAL_GATHER_AES_FEATURES`); `vg_aes_gcm_seal_gather_neon` if detection reports some CPU feature; or else `vg_aes_gcm_seal_gather`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -500,6 +545,11 @@ pub unsafe fn vg_aes_gcm_seal_gather_auto(_dit: verified_garbage_cpu::Dit<'_>, c
         {
             return crate::gcm::vg_aes_gcm_seal_gather_aes;
         }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::gcm::vg_aes_gcm_seal_gather_neon;
+        }
         crate::gcm::vg_aes_gcm_seal_gather
     }
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
@@ -527,7 +577,7 @@ pub unsafe fn vg_aes_gcm_seal_gather_auto(_dit: verified_garbage_cpu::Dit<'_>, c
 ///
 /// Contract: `VG.Spec.Gcm.openToContract`. Constant time but for the result: only the pointers, `rounds`, the lengths, `tag_len` and whether the function returns 1 or 0 may affect timing, not the key context, the nonce, the additional data, the data or the tag.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_to_aes` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_AES_FEATURES`); or else `vg_aes_gcm_open_to`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_to_aes` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_AES_FEATURES`); `vg_aes_gcm_open_to_neon` if detection reports some CPU feature; or else `vg_aes_gcm_open_to`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -556,6 +606,11 @@ pub unsafe fn vg_aes_gcm_open_to_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: 
         {
             return crate::gcm::vg_aes_gcm_open_to_aes;
         }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::gcm::vg_aes_gcm_open_to_neon;
+        }
         crate::gcm::vg_aes_gcm_open_to
     }
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
@@ -579,7 +634,7 @@ pub unsafe fn vg_aes_gcm_open_to_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: 
 
 /// `vg_aes_gcm_seal` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_seal`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.sealWithPowersContract`.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_with_powers_aes_sha3` if the CPU supports its features (`VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES`); `vg_aes_gcm_seal_with_powers_aes` if the CPU supports its features (`VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES`); or else `vg_aes_gcm_seal_with_powers`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_seal_with_powers_aes_sha3` if the CPU supports its features (`VG_AES_GCM_SEAL_WITH_POWERS_AES_SHA3_FEATURES`); `vg_aes_gcm_seal_with_powers_aes` if the CPU supports its features (`VG_AES_GCM_SEAL_WITH_POWERS_AES_FEATURES`); `vg_aes_gcm_seal_with_powers_neon` if detection reports some CPU feature; or else `vg_aes_gcm_seal_with_powers`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -613,6 +668,11 @@ pub unsafe fn vg_aes_gcm_seal_with_powers_auto(_dit: verified_garbage_cpu::Dit<'
         {
             return crate::gcm::vg_aes_gcm_seal_with_powers_aes;
         }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::gcm::vg_aes_gcm_seal_with_powers_neon;
+        }
         crate::gcm::vg_aes_gcm_seal_with_powers
     }
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
@@ -636,7 +696,7 @@ pub unsafe fn vg_aes_gcm_seal_with_powers_auto(_dit: verified_garbage_cpu::Dit<'
 
 /// `vg_aes_gcm_open` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openWithPowersContract`.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_with_powers_aes_sha3` if the CPU supports its features (`VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES`); `vg_aes_gcm_open_with_powers_aes` if the CPU supports its features (`VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES`); or else `vg_aes_gcm_open_with_powers`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_with_powers_aes_sha3` if the CPU supports its features (`VG_AES_GCM_OPEN_WITH_POWERS_AES_SHA3_FEATURES`); `vg_aes_gcm_open_with_powers_aes` if the CPU supports its features (`VG_AES_GCM_OPEN_WITH_POWERS_AES_FEATURES`); `vg_aes_gcm_open_with_powers_neon` if detection reports some CPU feature; or else `vg_aes_gcm_open_with_powers`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -670,6 +730,11 @@ pub unsafe fn vg_aes_gcm_open_with_powers_auto(_dit: verified_garbage_cpu::Dit<'
         {
             return crate::gcm::vg_aes_gcm_open_with_powers_aes;
         }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::gcm::vg_aes_gcm_open_with_powers_neon;
+        }
         crate::gcm::vg_aes_gcm_open_with_powers
     }
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
@@ -693,7 +758,7 @@ pub unsafe fn vg_aes_gcm_open_with_powers_auto(_dit: verified_garbage_cpu::Dit<'
 
 /// `vg_aes_gcm_open_to` with the 8 prepared powers of the hash subkey of the key context at `*pw` (`VG.Spec.Gcm.Powers8Repr`), which it may read instead of computing them. Computes the same result as `vg_aes_gcm_open_to`. The powers are secret, as the key context is: they may not affect timing; all other memory, aliasing and constant-time requirements are unchanged. Contract: `VG.Spec.Gcm.openToWithPowersContract`.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_to_with_powers_aes_sha3` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES`); `vg_aes_gcm_open_to_with_powers_aes` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES`); or else `vg_aes_gcm_open_to_with_powers`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_gcm_open_to_with_powers_aes_sha3` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_SHA3_FEATURES`); `vg_aes_gcm_open_to_with_powers_aes` if the CPU supports its features (`VG_AES_GCM_OPEN_TO_WITH_POWERS_AES_FEATURES`); `vg_aes_gcm_open_to_with_powers_neon` if detection reports some CPU feature; or else `vg_aes_gcm_open_to_with_powers`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -729,6 +794,11 @@ pub unsafe fn vg_aes_gcm_open_to_with_powers_auto(_dit: verified_garbage_cpu::Di
         {
             return crate::gcm::vg_aes_gcm_open_to_with_powers_aes;
         }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::gcm::vg_aes_gcm_open_to_with_powers_neon;
+        }
         crate::gcm::vg_aes_gcm_open_to_with_powers
     }
     /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
@@ -761,7 +831,7 @@ pub unsafe fn vg_aes_gcm_open_to_with_powers_auto(_dit: verified_garbage_cpu::Di
 /// * `ctx` must be valid for reads of 256 bytes.
 /// * `pw` must be valid for reads and writes of 128 bytes.
 /// * `pw` must not overlap `ctx` (distinct Rust objects never do).
-/// * Neither `ctx` nor `pw` may wrap around the end of the address space (no Rust object does).
+/// * Neither `ctx` nor `pw` may overlap the 80 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_aes_gcm_store_powers_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: *const [u64; 32], pw: *mut [u64; 16]) {

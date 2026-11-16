@@ -82,7 +82,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.EcdsaBrainpoolP256r1.X86_64.Rfc6979
 
 open VG.Proof.BrainpoolP256r1.X86_64 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT stackT OK brainpoolp256r1 brainpoolp256r1T_verified signCode_sp)
+open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT OK brainpoolp256r1 brainpoolp256r1T_verified signCode_sp)
 open VG.Proof.HmacTable.X86_64 (tables names)
 
 def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
@@ -91,7 +91,6 @@ def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
       suffix := ""
       tables := [("hmac", tables vs)]
       code := signCodeT (brainpoolp256r1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.brainpoolp256r1.tries vs
-      stack := stackT
       verified := brainpoolp256r1T_verified hasLaw.law hasLaw.inv vs hv
       spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.brainpoolp256r1S.combConsts _ _))]
   else []
@@ -109,7 +108,6 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP256r1.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP256r1.inst.curve.len false
       Impl.Ecdsa.Verify.X86_64.verifyBrainpoolP256r1
-    stack := 96
     verified := Proof.Ecdsa.Verify.X86_64.BrainpoolP256r1.verifyHash_verified hasLaw.law hasLaw.inv }
     (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.BrainpoolP256r1.inst Impl.Ecdsa.X86_64.brainpoolp256r1S.combConsts))] ++
   Rfc6979.artifacts

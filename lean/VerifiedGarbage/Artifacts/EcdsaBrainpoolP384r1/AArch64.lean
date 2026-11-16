@@ -50,7 +50,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.AArch64
 namespace VG.Artifacts.EcdsaBrainpoolP384r1.AArch64.Rfc6979
 
 open VG.Proof.BrainpoolP384r1.AArch64 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.AArch64 (signCodeT stackT OK brainpoolp384r1 brainpoolp384r1T_verified)
+open VG.Proof.Ecdsa.Rfc6979.AArch64 (signCodeT OK brainpoolp384r1 brainpoolp384r1T_verified)
 open VG.Proof.HmacTable.AArch64 (tables names)
 
 def artifactsFor (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
@@ -59,7 +59,6 @@ def artifactsFor (vs : List Proof.Pbkdf2.Md.AArch64.MdHash) : List Artifact :=
       suffix := ""
       tables := [("hmac", tables vs)]
       code := signCodeT (brainpoolp384r1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.brainpoolp384r1.tries vs
-      stack := stackT
       verified := brainpoolp384r1T_verified hasLaw.law hasLaw.inv vs hv }]
   else []
 
@@ -76,7 +75,6 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.BrainpoolP384r1.verifyHashApi.artifact AArch64.target {
     code := Impl.Ecdsa.AArch64.VerifyHash.verifyHash Spec.Ecdsa.BrainpoolP384r1.inst.curve.len false
       Impl.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.verify
-    stack := 80
     verified := Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.verifyHash_verified hasLaw.law hasLaw.inv }] ++
   Rfc6979.artifacts
 

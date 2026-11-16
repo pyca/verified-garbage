@@ -1,6 +1,7 @@
 module
 
 import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerCall
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Contract
 public import VerifiedGarbage.Proof.MillerRabin.Keeps
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Round
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerSave
@@ -26,16 +27,17 @@ def callRanges (w : Nat) : List (Nat × Nat) := [(pad w, 16)] ++ mutRanges Proof
 private theorem preserved_of_not_mm (r : Reg) (h : r ∉ mmRegs) (h0 : r ≠ .x0) : r ∈ preserved := by
   cases r <;> simp_all [mmRegs, preserved]
 
-theorem call_frame_ok (M : Mont) (name : String) (hnf : (round M.mm).noFrames = true)
+theorem call_frame_ok {R : Prog isa} (hR : ∀ s, roundContract.pre s → ∃ tr t, Exec isa R s tr t ∧ abiPreserved s t ∧ roundContract.post s t)
+    (name : String) (hnf : R.noFrames = true)
     {s : State} {B : Addr} {Z w c bm b : Nat}
     (hc : MrCtx s B Z w c bm) (he : ECtx s.mem B w c)
     (h4 : 4 ≤ w) (h128 : w ≤ 128) (hEZ : slot w aE + 8 * (w + 2) ≤ Z)
     (ho : c % 2 = 1) (h3 : 3 ≤ c)
     (hx : wv s.mem B (slot w aXm) w = b % c * 2 ^ (64 * w) % c) :
-    WP isa (call name (round M.mm)) s fun t =>
+    WP isa (call name R) s fun t =>
       word t.mem B (8 * kFlag) = mask (Proof.MillerRabin.Round.round c b) ∧
       Frm B (callRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
-  obtain ⟨tr, t, hExec, hB, ha, hf, m, hk, hm⟩ := call_ok M name hnf hc he h4 h128 hEZ ho h3 hx
+  obtain ⟨tr, t, hExec, hB, ha, hf, m, hk, hm⟩ := call_ok hR name hnf hc he h4 h128 hEZ ho h3 hx
   have hn : 8 * (32 + 28 * (w + 2)) ≤ 2 ^ 64 := by omega_arith
   have hpad : pad w + 16 ≤ 2 ^ 64 := by
     simp only [pad, slot, hdrBytes, aOne]

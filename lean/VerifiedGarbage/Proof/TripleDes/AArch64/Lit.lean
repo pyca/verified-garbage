@@ -27,7 +27,5 @@ materialize_code sbox7
 
 materialize_code initialPermutation
 materialize_code finalPermutation
-materialize_code keyPermutation1
-materialize_code keyPermutation2
 
 end VG.Impl.TripleDes.AArch64

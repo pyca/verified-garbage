@@ -8307,13 +8307,6 @@ vg_miller_rabin_round_ifma:
 	and rax, r12
 	mov QWORD PTR [rbx+6424], rax
 	shr rdx, 52
-	stmxcsr DWORD PTR [rbx+6440]
-	mov ebp, DWORD PTR [rbx+6440]
-	and ebp, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+6444], eax
-	ldmxcsr DWORD PTR [rbx+6444]
-	lfence
 	mov r13d, 3
 231:
 	cmp r13, 3
@@ -16158,9 +16151,6 @@ vg_miller_rabin_round_ifma:
 	sub r15, 1
 	cmp r15, -1
 	jne 237b
-	lfence
-	mov DWORD PTR [rbx+6440], ebp
-	ldmxcsr DWORD PTR [rbx+6440]
 	vzeroupper
 	mov rax, QWORD PTR [rbx+6448]
 	and rax, 1
@@ -21655,13 +21645,6 @@ vg_miller_rabin_round_ifma:
 	and rax, r12
 	mov QWORD PTR [rbx+4824], rax
 	shr rdx, 52
-	stmxcsr DWORD PTR [rbx+4840]
-	mov ebp, DWORD PTR [rbx+4840]
-	and ebp, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+4844], eax
-	ldmxcsr DWORD PTR [rbx+4844]
-	lfence
 	mov r13d, 3
 257:
 	cmp r13, 3
@@ -27006,9 +26989,6 @@ vg_miller_rabin_round_ifma:
 	sub r15, 1
 	cmp r15, -1
 	jne 263b
-	lfence
-	mov DWORD PTR [rbx+4840], ebp
-	ldmxcsr DWORD PTR [rbx+4840]
 	vzeroupper
 	mov rax, QWORD PTR [rbx+4848]
 	and rax, 1
@@ -30687,13 +30667,6 @@ vg_miller_rabin_round_ifma:
 	and rax, r12
 	mov QWORD PTR [rbx+3224], rax
 	shr rdx, 52
-	stmxcsr DWORD PTR [rbx+3240]
-	mov ebp, DWORD PTR [rbx+3240]
-	and ebp, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+3244], eax
-	ldmxcsr DWORD PTR [rbx+3244]
-	lfence
 	mov r13d, 3
 283:
 	cmp r13, 3
@@ -37400,9 +37373,6 @@ vg_miller_rabin_round_ifma:
 	sub r15, 1
 	cmp r15, -1
 	jne 288b
-	lfence
-	mov DWORD PTR [rbx+3240], ebp
-	ldmxcsr DWORD PTR [rbx+3240]
 	vzeroupper
 	mov rax, QWORD PTR [rbx+3248]
 	and rax, 1
@@ -40321,13 +40291,6 @@ vg_miller_rabin_round_ifma:
 	and rax, r12
 	mov QWORD PTR [rbx+2584], rax
 	shr rdx, 52
-	stmxcsr DWORD PTR [rbx+2600]
-	mov ebp, DWORD PTR [rbx+2600]
-	and ebp, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+2604], eax
-	ldmxcsr DWORD PTR [rbx+2604]
-	lfence
 	mov r13d, 3
 2107:
 	cmp r13, 3
@@ -45226,9 +45189,6 @@ vg_miller_rabin_round_ifma:
 	sub r15, 1
 	cmp r15, -1
 	jne 2112b
-	lfence
-	mov DWORD PTR [rbx+2600], ebp
-	ldmxcsr DWORD PTR [rbx+2600]
 	vzeroupper
 	mov rax, QWORD PTR [rbx+2608]
 	and rax, 1
@@ -47091,13 +47051,6 @@ vg_miller_rabin_round_ifma:
 	and rax, r12
 	mov QWORD PTR [rbx+1624], rax
 	shr rdx, 52
-	stmxcsr DWORD PTR [rbx+1640]
-	mov ebp, DWORD PTR [rbx+1640]
-	and ebp, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+1644], eax
-	ldmxcsr DWORD PTR [rbx+1644]
-	lfence
 	mov r13d, 3
 2131:
 	cmp r13, 3
@@ -49764,9 +49717,6 @@ vg_miller_rabin_round_ifma:
 	sub r15, 1
 	cmp r15, -1
 	jne 2136b
-	lfence
-	mov DWORD PTR [rbx+1640], ebp
-	ldmxcsr DWORD PTR [rbx+1640]
 	vzeroupper
 	mov rax, QWORD PTR [rbx+1648]
 	and rax, 1

@@ -98,9 +98,10 @@ theorem r2_minv {B : Addr} {Z w : Nat} {N : Nat} {m₁ m₂ : BitVec 64} {s₁ s
   rw [e n₂] at i₂
   exact minv_unique (by rw [Nat.mod_mod_of_dvd _ (by decide)]; exact hodd) i₁ i₂
 
-/-- `n`'s setup leaks the same in runs that agree on the public data. -/
-theorem nSetup_ct (M : Mont) : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) fun _ _ => True := by
-  rw [nSetup_eq]
+/-- `nHead` leaks the same in runs that agree on the public data. -/
+theorem nHead_ct (M : Mont) :
+    RelCT isa (Two (Stage R0)) (seqs (nHead M.mm)) (Two fun (p : CrtPub) t => GoodW ⟨p.B, p.Z, p.w⟩ t) := by
+  rw [nHead_eq]
   refine RelCT.seqs_append (by simp [pcLoad, pcLoadWith]) (by simp [nInput]) (RelCT.seq (R := Two NS1) (two_post
     (two_map (fun p : CrtPub => (⟨p.B, p.Z, p.k, p.op, p.np, p.nb⟩ : PcPub)) (fun _ _ h => stage0_pcl h) pcLoad_ct)
     fun _ _ h => ns1_ok h) ?_)
@@ -108,14 +109,18 @@ theorem nSetup_ct (M : Mont) : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) f
     (two_map (fun p : CrtPub => (⟨p.B, p.Z, p.k, p.ip⟩ : NIPub))
       (fun _ _ ⟨minv, xb, hg, hZ, hk1, hk2, hK, hIn, hx, hxl, _⟩ => ⟨minv, xb, hg, hZ, hk1, hk2, hK, hIn, hx, hxl⟩)
       nInput_ct) fun _ _ h => ns2_ok h) ?_)
-  refine RelCT.seqs_append (by simp [r2StepsPub]) (by simp)
-    (RelCT.seq (R := Two fun (p : CrtPub) t => GoodW ⟨p.B, p.Z, p.w⟩ t) (two_post
-      ((r2Pub_ct M).mono (fun _ _ h => two_bind (fun (p : CrtPub) s₁ s₂ ⟨m₁, h₁⟩ ⟨m₂, h₂⟩ => by
-        obtain rfl := r2_minv h₁ h₂
-        exact ⟨_, h₁, h₂⟩) h) fun _ _ h => h)
-      fun p s hh => ?_) ?_)
-  · obtain ⟨minv, ⟨hg, hZ⟩, hw, hw30, hn, hinv, hodd, hlo⟩ := hh
-    exact WP.mono (r2Pub_ok M hg hZ hw hw30 hn hinv hodd hlo) fun t ⟨hg', _⟩ => ⟨minv, hg', hZ⟩
+  refine two_post
+    ((r2Pub_ct M).mono (fun _ _ h => two_bind (fun (p : CrtPub) s₁ s₂ ⟨m₁, h₁⟩ ⟨m₂, h₂⟩ => by
+      obtain rfl := r2_minv h₁ h₂
+      exact ⟨_, h₁, h₂⟩) h) fun _ _ h => h)
+    fun p s hh => ?_
+  obtain ⟨minv, ⟨hg, hZ⟩, hw, hw30, hn, hinv, hodd, hlo⟩ := hh
+  exact WP.mono (r2Pub_ok M hg hZ hw hw30 hn hinv hodd hlo) fun t ⟨hg', _⟩ => ⟨minv, hg', hZ⟩
+
+/-- `n`'s setup leaks the same in runs that agree on the public data. -/
+theorem nSetup_ct (M : Mont) : RelCT isa (Two (Stage R0)) (seqs (nSetup M.mm)) fun _ _ => True := by
+  rw [show nSetup M.mm = nHead M.mm ++ [M.mm Public.aXm Public.aX Public.aR2] from rfl]
+  refine RelCT.seqs_append (by simp [nHead]) (by simp) (RelCT.seq (nHead_ct M) ?_)
   simp only [seqs]
   exact two_map (fun p : CrtPub => (⟨p.B, p.Z, p.w⟩ : Ws)) (fun _ _ h => h) (M.ct (by unfold MmUse; decide))
 

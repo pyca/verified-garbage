@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Siv.initContract`. The key context is `VG.Spec.Siv.KeyRepr`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_siv_init_aes` if the CPU supports its features (`VG_AES_SIV_INIT_AES_FEATURES`); or else `vg_aes_siv_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_siv_init_aes` if the CPU supports its features (`VG_AES_SIV_INIT_AES_FEATURES`); `vg_aes_siv_init_neon` if detection reports some CPU feature; or else `vg_aes_siv_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -29,6 +29,11 @@ pub unsafe fn vg_aes_siv_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
             || cpu.contains(crate::aes_siv::VG_AES_SIV_INIT_AES_FEATURES)
         {
             return crate::aes_siv::vg_aes_siv_init_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::aes_siv::vg_aes_siv_init_neon;
         }
         crate::aes_siv::vg_aes_siv_init
     }
@@ -55,7 +60,7 @@ pub unsafe fn vg_aes_siv_init_auto(_dit: verified_garbage_cpu::Dit<'_>, key: *co
 ///
 /// Contract: `VG.Spec.Siv.encryptContract`. Constant time: only the pointers, `rounds`, `ads_count`, `len` and where the components are (their addresses and lengths) may affect timing, not the key context, the associated data or the plaintext.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_siv_encrypt_aes` if the CPU supports its features (`VG_AES_SIV_ENCRYPT_AES_FEATURES`); or else `vg_aes_siv_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_siv_encrypt_aes` if the CPU supports its features (`VG_AES_SIV_ENCRYPT_AES_FEATURES`); `vg_aes_siv_encrypt_neon` if detection reports some CPU feature; or else `vg_aes_siv_encrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -80,6 +85,11 @@ pub unsafe fn vg_aes_siv_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: 
             || cpu.contains(crate::aes_siv::VG_AES_SIV_ENCRYPT_AES_FEATURES)
         {
             return crate::aes_siv::vg_aes_siv_encrypt_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::aes_siv::vg_aes_siv_encrypt_neon;
         }
         crate::aes_siv::vg_aes_siv_encrypt
     }
@@ -106,7 +116,7 @@ pub unsafe fn vg_aes_siv_encrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: 
 ///
 /// Contract: `VG.Spec.Siv.decryptContract`. Constant time but for the result: only the pointers, `rounds`, `ads_count`, `len`, where the components are (their addresses and lengths) and whether the function returns 1 or 0 may affect timing, not the key context, the associated data, the data or `V`.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_siv_decrypt_aes` if the CPU supports its features (`VG_AES_SIV_DECRYPT_AES_FEATURES`); or else `vg_aes_siv_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_aes_siv_decrypt_aes` if the CPU supports its features (`VG_AES_SIV_DECRYPT_AES_FEATURES`); `vg_aes_siv_decrypt_neon` if detection reports some CPU feature; or else `vg_aes_siv_decrypt`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -131,6 +141,11 @@ pub unsafe fn vg_aes_siv_decrypt_auto(_dit: verified_garbage_cpu::Dit<'_>, ctx: 
             || cpu.contains(crate::aes_siv::VG_AES_SIV_DECRYPT_AES_FEATURES)
         {
             return crate::aes_siv::vg_aes_siv_decrypt_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::aes_siv::vg_aes_siv_decrypt_neon;
         }
         crate::aes_siv::vg_aes_siv_decrypt
     }

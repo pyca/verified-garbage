@@ -14,6 +14,7 @@ section
 /-! # Advance the encryption matrix invariant by pairs and the odd final entry -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Kem
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KEM VG.Spec.MlKem
 open VG.Spec.Sha3 (bytesAt)
 variable {P : KemLay} {L : Layout}
@@ -83,6 +84,7 @@ end
 /-! # Instantiate paired matrix calls at encryption scratch addresses -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Kem
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KEM VG.Spec.MlKem
 open VG.Proof.MlKem
 variable {P : KemLay} {L : Layout}
@@ -136,11 +138,11 @@ theorem singleton_context {s₀ s : State} (hp : Pre P L s₀) {e : Nat} (he : e
 
 theorem paired_step {w16 : Bool} {s₀ s : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte} {e : Nat}
     (he : e+1<P.k*P.k) (h : BInvW w16 P L s₀ mA ρ e s) (tb : MatrixTable P L s₀ s) :
-    WP isa (Impl.MlKem.AArch64.Paired.pair P false e w16) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Paired.pair sha3 P false e w16) s fun t =>
       BInvW w16 P L s₀ mA ρ (e+2) t ∧ MatrixTable P L s₀ t := by
   have hw := hp.wf
   rw [Paired.pair_iff]
-  refine WP.mono_syms (Paired.pairCode_ok (by decide) (by decide) (by decide)
+  refine WP.mono_syms (Paired.pairCode_ok (sha3 := sha3) (by decide) (by decide) (by decide)
     (by change AH+1024*e<65536; lom) (by change AH+1024*(e+1)<65536; lom) (e28 h.kb SS) (e28 h.kb SB) (e28 h.kb (AH+1024*e)) (e28 h.kb (AH+1024*(e+1)))
     (fun j hj => ?_) (sdisj hp (by lom) (by lom) (by decide)) (pair_context hp he h.kb tb) rfl
     (by
@@ -158,10 +160,10 @@ theorem paired_step {w16 : Bool} {s₀ s : State} (hp : Pre P L s₀) {mA : Mem}
 
 theorem singleton_step {w16 : Bool} {s₀ s : State} (hp : Pre P L s₀) {mA : Mem} {ρ : List Byte} {e : Nat}
     (he : e<P.k*P.k) (h : BInvW w16 P L s₀ mA ρ e s) (tb : MatrixTable P L s₀ s) :
-    WP isa (Paired.lastCode SB SS e P.k (AH+1024*e) w16) s fun t =>
+    WP isa (Paired.lastCode sha3 SB SS e P.k (AH+1024*e) w16) s fun t =>
       BInvW w16 P L s₀ mA ρ (e+1) t ∧ MatrixTable P L s₀ t := by
   have hw := hp.wf
-  refine WP.mono_syms (Paired.lastCode_ok (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
+  refine WP.mono_syms (Paired.lastCode_ok (sha3 := sha3) (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
     (e28 h.kb SS) (e28 h.kb SB) (e28 h.kb (AH+1024*e)) (fun j hj => ?_)
     (sdisj hp (by lom) (by lom) (by decide)) (sdisj hp (by lom) (by lom) (by lom))
     (singleton_context hp he h.kb tb) rfl (by

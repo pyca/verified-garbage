@@ -816,7 +816,7 @@ theorem messageSignSat_roots (p : Params) (hp : Ok3 p) (prepared : Bool) (m : Me
       Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords (messageSignSat p prepared m) := by
     refine ⟨hf, by dsimp [messageSignSat]; decide, ?_, ?_,
       by apply Region.disjoint_of_sep; dsimp [messageSignSat]; decide,
-      by dsimp [messageSignSat]⟩
+      by rw [show (messageSignSat p prepared m).syms "VG_MLDSA_NTT_EXPANDED" = 1048576 from by dsimp [messageSignSat]]; decide⟩
     · exact Covers.one ⟨⟨1048576,3904⟩, by simp [messageSignSat], Region.contains_self _ _⟩
     · rcases hp with rfl | rfl | rfl
       all_goals
@@ -826,7 +826,7 @@ theorem messageSignSat_roots (p : Params) (hp : Ok3 p) (prepared : Bool) (m : Me
       Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords (messageSignSat p prepared m) := by
     refine ⟨hi, by dsimp [messageSignSat]; decide, ?_, ?_,
       by apply Region.disjoint_of_sep; dsimp [messageSignSat]; decide,
-      by dsimp [messageSignSat]⟩
+      by rw [show (messageSignSat p prepared m).syms "VG_MLDSA_INV_FOLDED" = 1052480 from by dsimp [messageSignSat]]; decide⟩
     · exact Covers.one ⟨⟨1052480,3904⟩, by simp [messageSignSat], Region.contains_self _ _⟩
     · rcases hp with rfl | rfl | rfl
       all_goals
@@ -835,7 +835,7 @@ theorem messageSignSat_roots (p : Params) (hp : Ok3 p) (prepared : Bool) (m : Me
   have pair : PairedRoots 64 (messageSignSat p prepared m) := by
     refine ⟨hp', by dsimp [messageSignSat]; decide, ?_, ?_,
       by apply Region.disjoint_of_sep; dsimp [messageSignSat]; decide,
-      by dsimp [messageSignSat]⟩
+      by rw [show (messageSignSat p prepared m).syms "VG_MLDSA_INV_PAIR" = 1056384 from by dsimp [messageSignSat]]; decide⟩
     · exact Covers.one ⟨⟨1056384,4096⟩, by simp [messageSignSat], Region.contains_self _ _⟩
     · rcases hp with rfl | rfl | rfl
       all_goals
@@ -873,15 +873,16 @@ theorem messageSignSat_pre {p : Params} (hp : Ok3 p) (prepared : Bool) (m : Mem)
   apply message_sign_pre_extend ?_ roots.1 roots.2 rfl
   cases prepared
   all_goals
-    rcases hp with rfl | rfl | rfl
-    all_goals
-      simp only [messageSignK,Bool.false_eq_true,↓reduceIte]
-      sig_pre [signMessageContract,signMessageSig,preparedSignMessageContract,preparedSignMessageSig,
-        abi,VG.AArch64.argRegs]
-      simp only [messageSignRd,rawSignBytes,Bool.false_eq_true,↓reduceIte]
-      simp only [messageSignSat]
-      sig_and_intros
-      all_goals first | exact cache | exact Region.disjoint_of_sep (by decide) | decide +kernel
+    simp only [messageSignK,Bool.false_eq_true,↓reduceIte]
+    sig_pre [signMessageContract,signMessageSig,preparedSignMessageContract,preparedSignMessageSig,
+      abi,VG.AArch64.argRegs]
+    simp only [messageSignRd,rawSignBytes,Bool.false_eq_true,↓reduceIte]
+    simp only [messageSignSat]
+    sig_and_intros
+    all_goals first
+      | exact cache
+      | (rcases hp with rfl | rfl | rfl <;>
+          first | exact Region.disjoint_of_sep (by decide) | decide +kernel)
 
 theorem message_sign_sat {p : Params} (hp : Ok3 p) (prepared : Bool) :
     ∃ s,(messageSignK p prepared (abi.withConsts pairedSignRootConsts)).pre s := by
@@ -1108,58 +1109,35 @@ open VG.Proof.MlDsa.AArch64.Optimized
 open VG.Impl.MlDsa.AArch64.Message
 open VG.Spec.Sha3 (bytesAt)
 
-def messageVerifyRootRd (v : Proof.Sha3.AArch64.Permutation) (s : State) : List Region :=
-  if v.callee.pairedSha3 then verifyRootRd s else []
-
-theorem message_verify_resources (v : Proof.Sha3.AArch64.Permutation) {p : Params} {prepared : Bool} {s : State}
-    (pre : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre s) :
+theorem message_verify_resources {p : Params} {prepared : Bool} {s : State}
+    (pre : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre s) :
     (messageVerifyK p prepared abi).pre (s.withRegions (messageVerifyRd p prepared s) s.wr) ∧
-    (v.callee.pairedSha3 = true → StaticRoots 64 s) ∧
-    s.rd = messageVerifyRd p prepared s ++ messageVerifyRootRd v s := by
-  by_cases hv : v.callee.pairedSha3 = true
-  · simp only [Verify.OptimizedSelected.selectedAbi,Verify.OptimizedSelected.selectedConsts,hv,↓reduceIte] at pre
-    simp only [messageVerifyRootRd,hv,↓reduceIte]
-    cases prepared
-    all_goals
-      simp only [messageVerifyK,Bool.false_eq_true,↓reduceIte] at pre ⊢
-      sig_pre [verifyMessageCachedContract,verifyMessageCachedSig,preparedVerifyMessageContract,preparedVerifyMessageSig,
-        abi,VG.AArch64.argRegs,Abi.withConsts,signRootConsts_eq,Abi.constRegions,Abi.constsHeld,
-        TableConstants.staticNttWords_length,InverseTable.expandedWords_length,stackBelow] at pre
-      obtain ⟨sp,hd,hf,hi,hff,hfw,hfs,hif,hiw,his,hfa,hia,ht,wr,
-        d1,d2,d3,d4,d5,k1,k2,k3,k4,k5,k6,n1,n2,n3,n4,n5,n6,tail⟩ := pre
-      have rd := (List.take_append_drop (s.rd.length-2) s.rd).symm
-      rw [ht,hd] at rd
-      refine ⟨?_,fun _ => ⟨⟨hf,hff,?_,hfw,hfs,hfa⟩,⟨hi,hif,?_,hiw,his,hia⟩⟩,rd⟩
-      · sig_pre [verifyMessageCachedContract,verifyMessageCachedSig,preparedVerifyMessageContract,preparedVerifyMessageSig,
-          abi,VG.AArch64.argRegs]
-        exact ⟨sp,rfl,wr,d1,d2,d3,d4,d5,k1,k2,k3,k4,k5,k6,n1,n2,n3,n4,n5,n6,tail⟩
-      · exact Covers.one ⟨⟨s.syms "VG_MLDSA_NTT_EXPANDED",3904⟩,
-          List.mem_append_left _ (by rw [rd];simp),Region.contains_self _ _⟩
-      · exact Covers.one ⟨⟨s.syms "VG_MLDSA_INV_FOLDED",3904⟩,
-          List.mem_append_left _ (by rw [rd];simp),Region.contains_self _ _⟩
-  · have hf : v.callee.pairedSha3 = false := Bool.eq_false_iff.mpr hv
-    have ha : Verify.OptimizedSelected.selectedAbi v = abi := by
-      simp only [Verify.OptimizedSelected.selectedAbi,Verify.OptimizedSelected.selectedConsts,hf,
-        Bool.false_eq_true,↓reduceIte];rfl
-    rw [ha] at pre
-    refine ⟨?_,fun ht => False.elim (hv ht),?_⟩
-    · cases prepared
-      all_goals
-        simp only [messageVerifyK,Bool.false_eq_true,↓reduceIte] at pre ⊢
-        sig_pre [verifyMessageCachedContract,verifyMessageCachedSig,preparedVerifyMessageContract,preparedVerifyMessageSig,
-          abi,VG.AArch64.argRegs] at pre ⊢
-        exact ⟨pre.1,rfl,pre.2.2⟩
-    · cases prepared
-      all_goals
-        simp only [messageVerifyK,Bool.false_eq_true,↓reduceIte] at pre
-        sig_pre [verifyMessageCachedContract,verifyMessageCachedSig,preparedVerifyMessageContract,preparedVerifyMessageSig,
-          abi,VG.AArch64.argRegs] at pre
-        simpa only [messageVerifyRootRd,hf,Bool.false_eq_true,↓reduceIte,List.append_nil,messageVerifyRd,rawVerifyBytes] using pre.2.1
+    StaticRoots 64 s ∧
+    s.rd = messageVerifyRd p prepared s ++ verifyRootRd s := by
+  simp only [Verify.OptimizedSelected.selectedAbi] at pre
+  cases prepared
+  all_goals
+    simp only [messageVerifyK,Bool.false_eq_true,↓reduceIte] at pre ⊢
+    sig_pre [verifyMessageCachedContract,verifyMessageCachedSig,preparedVerifyMessageContract,preparedVerifyMessageSig,
+      abi,VG.AArch64.argRegs,Abi.withConsts,signRootConsts_eq,Abi.constRegions,Abi.constsHeld,
+      TableConstants.staticNttWords_length,InverseTable.expandedWords_length,stackBelow] at pre
+    obtain ⟨sp,hd,hf,hi,hff,hfw,hfs,hif,hiw,his,hfa,hia,ht,wr,
+      d1,d2,d3,d4,d5,k1,k2,k3,k4,k5,k6,n1,n2,n3,n4,n5,n6,tail⟩ := pre
+    have rd := (List.take_append_drop (s.rd.length-2) s.rd).symm
+    rw [ht,hd] at rd
+    refine ⟨?_,⟨⟨hf,hff,?_,hfw,hfs,hfa⟩,⟨hi,hif,?_,hiw,his,hia⟩⟩,rd⟩
+    · sig_pre [verifyMessageCachedContract,verifyMessageCachedSig,preparedVerifyMessageContract,preparedVerifyMessageSig,
+        abi,VG.AArch64.argRegs]
+      exact ⟨sp,rfl,wr,d1,d2,d3,d4,d5,k1,k2,k3,k4,k5,k6,n1,n2,n3,n4,n5,n6,tail⟩
+    · exact Covers.one ⟨⟨s.syms "VG_MLDSA_NTT_EXPANDED",3904⟩,
+        List.mem_append_left _ (by rw [rd];simp),Region.contains_self _ _⟩
+    · exact Covers.one ⟨⟨s.syms "VG_MLDSA_INV_FOLDED",3904⟩,
+        List.mem_append_left _ (by rw [rd];simp),Region.contains_self _ _⟩
 
-theorem message_verify_all_facts (v : Proof.Sha3.AArch64.Permutation) {p : Params} {prepared : Bool} {s : State}
-    (pre : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre s) :
+theorem message_verify_all_facts {p : Params} {prepared : Bool} {s : State}
+    (pre : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre s) :
     MessageVerifyFacts p prepared s := by
-  have r := message_verify_resources v pre
+  have r := message_verify_resources pre
   have h := message_verify_facts r.1
   exact { h with reads := fun R hR => by rw [r.2.2];exact List.mem_append_left _ hR }
 
@@ -1188,50 +1166,43 @@ theorem message_verify_write_cover {p : Params} {prepared : Bool} {s t u : State
   refine ⟨⟨s.gpr .x6,mScrLen p⟩,by rw [h.wr];simp,within_base _ ?_⟩
   rw [mScr_eq];simp only [sScr,oE];omega_using []
 
-theorem message_verify_call_pre (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p)
+theorem message_verify_call_pre {p : Params} (hp : Ok3 p)
     {prepared : Bool} {s t u : State} {g : Reg → BitVec 64} {vv : VReg → BitVec 128}
-    (pre : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre s)
+    (pre : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre s)
     (h8 : (s.gpr .x4).toNat < 256)
     (hc : Ctx (messageVerifyLay p prepared s) g vv s.mem t)
     (hm : (∀ da ∈ verifyArgs,u.gpr da.1 = da.2.val t) ∧
       VG.Proof.MlKem.AArch64.Only (verifyArgs.map (·.1)) t u)
-    (hy : u.syms = t.syms) (hr : v.callee.pairedSha3 = true → StaticRoots 64 t) :
-    (rawVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre
-      (u.callEntry.withRegions (messageVerifyCallRd p prepared s ++ messageVerifyRootRd v u) (messageVerifyCallWr p s)) := by
-  have resources := message_verify_resources v pre
-  have facts := message_verify_all_facts v pre
+    (hy : u.syms = t.syms) (hr : StaticRoots 64 t) :
+    (rawVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre
+      (u.callEntry.withRegions (messageVerifyCallRd p prepared s ++ verifyRootRd u) (messageVerifyCallWr p s)) := by
+  have resources := message_verify_resources pre
+  have facts := message_verify_all_facts pre
   have cache : prepared = true → PreparedPublicKey p s.mem (s.gpr .x0) := by
     intro flag
     subst prepared
     simpa only [State.withRegions_mem,State.withRegions_gpr] using message_verify_cache resources.1
   have base := message_verify_call_base_pre hp facts cache h8 hc hm
-  by_cases hv : v.callee.pairedSha3 = true
-  · have ha : Verify.OptimizedSelected.selectedAbi v = abi.withConsts signRootConsts := by
-      simp only [Verify.OptimizedSelected.selectedAbi,Verify.OptimizedSelected.selectedConsts,hv,↓reduceIte]
-    rw [ha]
-    simp only [messageVerifyRootRd,hv,↓reduceIte]
-    have pass {nm : String} {ws : List (BitVec 64)} (h : StaticTable 64 nm ws t) : StaticTable 64 nm ws u := by
-      apply staticTable_reframe h (W := []) ?_ (by simp) hm.2.rd hm.2.wr hy ?_
-      · rw [hm.2.mem];exact Frame.refl _ _
-      · rw [hm.2.sp];exact fun _ h => h
-    have root : StaticRoots 64 u := ⟨pass (hr hv).forward,pass (hr hv).inverse⟩
-    have cw := message_verify_write_cover facts hc hm.2
-    let rd := messageVerifyCallRd p prepared s ++ verifyRootRd u
-    let wr := messageVerifyCallWr p s
-    have rb : StaticRoots 64 (u.callEntry.withRegions rd wr) :=
-      ⟨operation_table_reborrow root.forward (by simp [rd,verifyRootRd]) cw,
-        operation_table_reborrow root.inverse (by simp [rd,verifyRootRd]) cw⟩
-    obtain ⟨e0,e1,e2,_⟩ := message_verify_regs hc hm.1
-    have er : rawVerifyRd p prepared (u.callEntry.withRegions rd wr) = messageVerifyCallRd p prepared s := by
-      simp only [rawVerifyRd,gpr_ce u (r := .x0),gpr_ce u (r := .x1),gpr_ce u (r := .x2),e0,e1,e2]
-      rfl
-    apply raw_verify_pre_extend ?_ rb ?_
-    · rw [er,State.withRegions_wr,State.withRegions_withRegions];exact base
-    · rw [er];rfl
-  · have hf : v.callee.pairedSha3 = false := Bool.eq_false_iff.mpr hv
-    have ha : Verify.OptimizedSelected.selectedAbi v = abi := by
-      simp only [Verify.OptimizedSelected.selectedAbi,Verify.OptimizedSelected.selectedConsts,hf,Bool.false_eq_true,↓reduceIte];rfl
-    simpa only [ha,messageVerifyRootRd,hf,Bool.false_eq_true,↓reduceIte,List.append_nil] using base
+  have ha : Verify.OptimizedSelected.selectedAbi = abi.withConsts signRootConsts := rfl
+  rw [ha]
+  have pass {nm : String} {ws : List (BitVec 64)} (h : StaticTable 64 nm ws t) : StaticTable 64 nm ws u := by
+    apply staticTable_reframe h (W := []) ?_ (by simp) hm.2.rd hm.2.wr hy ?_
+    · rw [hm.2.mem];exact Frame.refl _ _
+    · rw [hm.2.sp];exact fun _ h => h
+  have root : StaticRoots 64 u := ⟨pass hr.forward,pass hr.inverse⟩
+  have cw := message_verify_write_cover facts hc hm.2
+  let rd := messageVerifyCallRd p prepared s ++ verifyRootRd u
+  let wr := messageVerifyCallWr p s
+  have rb : StaticRoots 64 (u.callEntry.withRegions rd wr) :=
+    ⟨operation_table_reborrow root.forward (by simp [rd,verifyRootRd]) cw,
+      operation_table_reborrow root.inverse (by simp [rd,verifyRootRd]) cw⟩
+  obtain ⟨e0,e1,e2,_⟩ := message_verify_regs hc hm.1
+  have er : rawVerifyRd p prepared (u.callEntry.withRegions rd wr) = messageVerifyCallRd p prepared s := by
+    simp only [rawVerifyRd,gpr_ce u (r := .x0),gpr_ce u (r := .x1),gpr_ce u (r := .x2),e0,e1,e2]
+    rfl
+  apply raw_verify_pre_extend ?_ rb ?_
+  · rw [er,State.withRegions_wr,State.withRegions_withRegions];exact base
+  · rw [er];rfl
 
 end VG.Proof.MlDsa.AArch64.PreparedKey
 
@@ -1244,8 +1215,8 @@ open VG.Proof.MlDsa.AArch64.Optimized
 open VG.Impl.MlDsa.AArch64.Message
 open VG.Spec.Sha3 (bytesAt)
 
-structure MessageVerifyFn (v : Proof.Sha3.AArch64.Permutation) (p : Params) (prepared : Bool) (code : Prog isa) : Prop where
-  ver : Verified target code (rawVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v))
+structure MessageVerifyFn (p : Params) (prepared : Bool) (code : Prog isa) : Prop where
+  ver : Verified target code (rawVerifyK p prepared (Verify.OptimizedSelected.selectedAbi))
   dle : Message.DLe 4 code
 
 theorem message_verify_read_cover {p : Params} {prepared : Bool} {s t u : State}
@@ -1263,34 +1234,31 @@ theorem message_verify_read_cover {p : Params} {prepared : Bool} {s t u : State}
   · exact ⟨⟨s.gpr .x6,mScrLen p⟩,List.mem_append_right _ (by rw [h.wr];simp),Optimized.CachedVerify.mu_withinV p s⟩
   · exact ⟨_,List.mem_append_left _ (h.reads _ (by simp [messageVerifyRd])),within_self _⟩
 
-theorem message_verify_call_ok (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p)
+theorem message_verify_call_ok {p : Params} (hp : Ok3 p)
     {prepared : Bool} {s t : State} {g : Reg → BitVec 64} {vv : VReg → BitVec 128} {n : String} {code : Prog isa}
-    (hV : MessageVerifyFn v p prepared code)
-    (pre : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre s)
+    (hV : MessageVerifyFn p prepared code)
+    (pre : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre s)
     (h8 : (s.gpr .x4).toNat < 256) (hc : Ctx (messageVerifyLay p prepared s) g vv s.mem t)
-    (hr : v.callee.pairedSha3 = true → StaticRoots 64 t) :
+    (hr : StaticRoots 64 t) :
     WP isa (callA n code verifyArgs) t fun u => Fin (messageVerifyLay p prepared s) g vv u ∧
       (let w := fun b => verifyMu p b (bytesAt t.mem (s.gpr .x0) p.pkLen)
           (bytesAt t.mem (messageVerifyLay p prepared s).MU 64) (bytesAt t.mem (s.gpr .x5) p.sigLen);
         ((u.gpr .x0).setWidth 32 = 1 ∧ ∃ b,w b = some true) ∨
           ((u.gpr .x0).setWidth 32 = 0 ∧ w minBounds ≠ some true)) := by
-  have h := message_verify_all_facts v pre
+  have h := message_verify_all_facts pre
   have hL := message_verify_layout_ok hp h h8
   refine WP.seq (WP.mono_syms (setArgs_ok verifyArgs (by decide) t (hc.xOk hL)) fun t1 ⟨hA,o⟩ hsy => ?_)
   have c1 : Ctx (messageVerifyLay p prepared s) g vv s.mem t1 :=
     hc.regs o.rd o.wr o.sp o.mem o.vcs (fun r hr' _ => o.gpr r (by
       simp only [verifyArgs,List.map_cons,List.map_nil];exact not_pres hr' _))
   obtain ⟨e0,e1,e2,_⟩ := message_verify_regs hc hA
-  have hpre := message_verify_call_pre v hp pre h8 hc ⟨hA,o⟩ hsy hr
+  have hpre := message_verify_call_pre hp pre h8 hc ⟨hA,o⟩ hsy hr
   have cw := message_verify_write_cover h hc o
   have hd := hV.dle.le
   refine WP.callFV hV.ver.1 hpre ?_ cw (fun u rdu wru spu fu csu vsu post => ?_) (by omega_using [hd])
   · apply Covers.append_left (Covers.append_left (message_verify_read_cover h hc o) ?_) cw.right
-    by_cases hv : v.callee.pairedSha3 = true
-    · simp only [messageVerifyRootRd,hv,↓reduceIte,verifyRootRd,hsy,o.rd,o.wr]
-      exact Covers.pair (hr hv).forward.readable (hr hv).inverse.readable
-    · simp only [messageVerifyRootRd,Bool.eq_false_iff.mpr hv,Bool.false_eq_true,↓reduceIte]
-      exact Covers.nil
+    simp only [verifyRootRd,hsy,o.rd,o.wr]
+    exact Covers.pair hr.forward.readable hr.inverse.readable
   · have saved : ∀ d,d+8≤88 → u.mem.readW ((messageVerifyLay p prepared s).X + BitVec.ofNat 64 904 + BitVec.ofNat 64 d) 64 =
         t1.mem.readW ((messageVerifyLay p prepared s).X + BitVec.ofNat 64 904 + BitVec.ofNat 64 d) 64 := by
       intro d hD
@@ -1308,21 +1276,20 @@ theorem message_verify_call_ok (v : Proof.Sha3.AArch64.Permutation) {p : Params}
       (fun r hr' h28 h30 => (csu r hr' h30).trans (c1.cs r hr' h28 h30)),
       (fun r hr' => (vsu r hr').trans (c1.vs r hr')),
       (saved 0 (by decide)).trans c1.s28,(saved 8 (by decide)).trans c1.s30⟩,?_⟩
-    cases hmode : v.callee.pairedSha3 <;> cases prepared
+    cases prepared
     all_goals
-      simp only [rawVerifyK,Bool.false_eq_true,↓reduceIte,Verify.OptimizedSelected.selectedAbi,
-        Verify.OptimizedSelected.selectedConsts,hmode] at post
+      simp only [rawVerifyK,Bool.false_eq_true,↓reduceIte,Verify.OptimizedSelected.selectedAbi] at post
       sig_post [verifyContract,verifySig,preparedVerifyContract,preparedVerifySig,
         abi,VG.AArch64.argRegs,Verify.OptimizedSelected.selectedAbi,Abi.withConsts] at post
       simpa only [e0,e1,e2,o.mem,messageVerifyLay,Optimized.CachedVerify.cachedLay] using post
 
-theorem message_verify_roots_ctx (v : Proof.Sha3.AArch64.Permutation) {p : Params} {prepared : Bool} {s t : State}
+theorem message_verify_roots_ctx {p : Params} {prepared : Bool} {s t : State}
     {g : Reg → BitVec 64} {vv : VReg → BitVec 128}
-    (pre : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre s)
-    (hc : Ctx (messageVerifyLay p prepared s) g vv s.mem t) (hy : t.syms = s.syms)
-    (hv : v.callee.pairedSha3 = true) : StaticRoots 64 t := by
-  have resources := message_verify_resources v pre
-  have h := message_verify_all_facts v pre
+    (pre : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre s)
+    (hc : Ctx (messageVerifyLay p prepared s) g vv s.mem t) (hy : t.syms = s.syms) :
+    StaticRoots 64 t := by
+  have resources := message_verify_resources pre
+  have h := message_verify_all_facts pre
   have xs := (messageVerifyLay_X p prepared s).sub
   have stackSub : Region.Sub (below t.sp 64) (below s.sp 64) := by rw [hc.sp];exact fun _ h => h
   have pass {nm : String} {ws : List (BitVec 64)} (ht : StaticTable 64 nm ws s) : StaticTable 64 nm ws t := by
@@ -1332,7 +1299,7 @@ theorem message_verify_roots_ctx (v : Proof.Sha3.AArch64.Permutation) {p : Param
     rcases hR with rfl | rfl
     · exact (ht.writable _ (by rw [h.wr];simp)).sub_right xs
     · exact ht.stack.sub_right (below_sub (by decide) (by decide))
-  exact ⟨pass (resources.2.1 hv).forward,pass (resources.2.1 hv).inverse⟩
+  exact ⟨pass resources.2.1.forward,pass resources.2.1.inverse⟩
 
 end VG.Proof.MlDsa.AArch64.PreparedKey
 
@@ -1353,11 +1320,11 @@ theorem message_verify_saves {p : Params} {prepared : Bool} {s s1 : State}
   CachedVerify.cachedSaves_vals (p := p) o
 
 theorem message_verify_correct (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p)
-    {prepared : Bool} {n : String} {code : Prog isa} (hV : MessageVerifyFn v p prepared code)
-    {s : State} (pre : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre s) :
+    {prepared : Bool} {n : String} {code : Prog isa} (hV : MessageVerifyFn p prepared code)
+    {s : State} (pre : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre s) :
     WP isa (verifyMessageCached v.callee n code p) s fun u =>
-      abiPreserved s u ∧ (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).post s u := by
-  have h := message_verify_all_facts v pre
+      abiPreserved s u ∧ (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).post s u := by
+  have h := message_verify_all_facts pre
   unfold verifyMessageCached top
   refine WP.seq (WP.mono_syms (lsr_ok s) fun s1 ⟨o1,hc1⟩ hy1 => ?_)
   by_cases h8 : (s.gpr .x4).toNat < 256
@@ -1379,8 +1346,8 @@ theorem message_verify_correct (v : Proof.Sha3.AArch64.Permutation) {p : Params}
       (hXtr.symm.sub_right (within_off (messageVerifyLay p prepared s).X (d := 200) (n := 640) (k := 1024) (by decide)).sub)
       (h.stkTr.sub_left (below_sub (by decide) (by decide)))) fun t2 ⟨hc2,hmu⟩ hymu => ?_))
     have ctx : Ctx (messageVerifyLay p prepared s) s1.gpr s1.v s.mem t2 := by simpa only [o1.mem] using hc2
-    have roots := message_verify_roots_ctx v pre ctx (hymu.trans (hyt.trans hy1))
-    refine WP.mono (message_verify_call_ok v hp hV pre h8 ctx roots) fun u ⟨hf,hq⟩ => ?_
+    have roots := message_verify_roots_ctx pre ctx (hymu.trans (hyt.trans hy1))
+    refine WP.mono (message_verify_call_ok hp hV pre h8 ctx roots) fun u ⟨hf,hq⟩ => ?_
     refine WP.mono (leave_ok hL hf) fun z ⟨cs,sp,vs,mem,x0,_,_⟩ => ?_
     refine ⟨⟨(fun r hr => by rw [cs r hr];exact o1.get r (by
       simp only [List.mem_singleton];intro e;subst r;revert hr;decide)),sp,
@@ -1393,12 +1360,11 @@ theorem message_verify_correct (v : Proof.Sha3.AArch64.Permutation) {p : Params}
       ctx.bytesAt_eq (h.sigScr.symm.sub_left (messageVerifyLay_X p prepared s).sub)
         (h.stkSig.sub_left (below_sub (by decide) (by decide))) (by have := h.nSig;omega_using [this])
     rw [ek,es,hmu,htr,o1.mem] at hq
-    cases hmode : v.callee.pairedSha3 <;> cases prepared
+    cases prepared
     all_goals
-      simp only [messageVerifyK,Bool.false_eq_true,↓reduceIte,Verify.OptimizedSelected.selectedAbi,
-        Verify.OptimizedSelected.selectedConsts,hmode]
+      simp only [messageVerifyK,Bool.false_eq_true,↓reduceIte,Verify.OptimizedSelected.selectedAbi]
       sig_post [verifyMessageCachedContract,verifyMessageCachedSig,preparedVerifyMessageContract,preparedVerifyMessageSig,
-        abi,VG.AArch64.argRegs,Verify.OptimizedSelected.selectedAbi,Verify.OptimizedSelected.selectedConsts,hmode,Abi.withConsts]
+        abi,VG.AArch64.argRegs,Verify.OptimizedSelected.selectedAbi,Abi.withConsts]
       rw [formatMessage_some (by rw [Proof.MlKem.bytesAt_length];exact h8),x0]
       simpa only [verifyInternal,messageRep,pkTr,hdrBytes,Proof.MlKem.bytesAt_length,
         messageVerifyLay,CachedVerify.cachedLay,List.append_assoc] using hq
@@ -1408,12 +1374,11 @@ theorem message_verify_correct (v : Proof.Sha3.AArch64.Permutation) {p : Params}
     · have h0 : r ∉ [Reg.x0] := fun e => by simp only [List.mem_singleton] at e;subst r;revert hr;decide
       have h9 : r ∉ [Reg.x9] := fun e => by simp only [List.mem_singleton] at e;subst r;revert hr;decide
       rw [o2.get r h0,o1.get r h9]
-    · cases hmode : v.callee.pairedSha3 <;> cases prepared
+    · cases prepared
       all_goals
-        simp only [messageVerifyK,Bool.false_eq_true,↓reduceIte,Verify.OptimizedSelected.selectedAbi,
-          Verify.OptimizedSelected.selectedConsts,hmode]
+        simp only [messageVerifyK,Bool.false_eq_true,↓reduceIte,Verify.OptimizedSelected.selectedAbi]
         sig_post [verifyMessageCachedContract,verifyMessageCachedSig,preparedVerifyMessageContract,preparedVerifyMessageSig,
-          abi,VG.AArch64.argRegs,Verify.OptimizedSelected.selectedAbi,Verify.OptimizedSelected.selectedConsts,hmode,Abi.withConsts]
+          abi,VG.AArch64.argRegs,Verify.OptimizedSelected.selectedAbi,Abi.withConsts]
         rw [formatMessage_none (by rw [Proof.MlKem.bytesAt_length];omega_using [h8]),e2]
         rfl
 
@@ -1429,47 +1394,34 @@ open VG.Impl.MlDsa.AArch64.Message
 open VG.Impl.MlDsa.AArch64.Optimized
 open VG.Spec.Sha3 (bytesAt)
 
-def messageVerifyRootsAt (v : Proof.Sha3.AArch64.Permutation) (s : State) : Addr × Addr :=
-  if v.callee.pairedSha3 then Message.Optimized.rootsAt s else (0,0)
+theorem verifyRootRd_eq (s : State) :
+    verifyRootRd s = Message.Optimized.rootPairRegions (Message.Optimized.rootsAt s) := rfl
 
-def messageVerifyPairRegions (v : Proof.Sha3.AArch64.Permutation) (tab : Addr × Addr) : List Region :=
-  if v.callee.pairedSha3 then Message.Optimized.rootPairRegions tab else []
-
-theorem messageVerifyRootsAt_syms (v : Proof.Sha3.AArch64.Permutation) {s t : State} (hy : s.syms = t.syms) :
-    messageVerifyRootsAt v s = messageVerifyRootsAt v t := by
-  unfold messageVerifyRootsAt
-  rw [Message.Optimized.rootsAt_syms hy]
-
-theorem messageVerifyRootRd_eq (v : Proof.Sha3.AArch64.Permutation) (s : State) :
-    messageVerifyRootRd v s = messageVerifyPairRegions v (messageVerifyRootsAt v s) := by
-  cases hv : v.callee.pairedSha3 <;> simp only [messageVerifyRootRd,messageVerifyPairRegions,messageVerifyRootsAt,
-    hv,Bool.false_eq_true,↓reduceIte]; rfl
-
-def MessageVerifyOK (v : Proof.Sha3.AArch64.Permutation) (p : Params) (prepared : Bool)
+def MessageVerifyOK (p : Params) (prepared : Bool)
     (L : Message.Lay) (m : Mem) (t : State) : Prop :=
-  ∃ s,(messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre s ∧
+  ∃ s,(messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre s ∧
     (s.gpr .x4).toNat < 256 ∧ messageVerifyLay p prepared s = L ∧ s.mem = m ∧ t.syms = s.syms
 
-theorem message_verify_call_tr (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p)
-    {prepared : Bool} {n : String} {code : Prog isa} (hV : MessageVerifyFn v p prepared code) (tab : Addr × Addr) :
-    RelCT isa (Two (verifyI p) (fun L m t => MessageVerifyOK v p prepared L m t ∧
-      CachedVerify.VMuOk p L m t ∧ messageVerifyRootsAt v t = tab))
+theorem message_verify_call_tr {p : Params} (hp : Ok3 p)
+    {prepared : Bool} {n : String} {code : Prog isa} (hV : MessageVerifyFn p prepared code) (tab : Addr × Addr) :
+    RelCT isa (Two (verifyI p) (fun L m t => MessageVerifyOK p prepared L m t ∧
+      CachedVerify.VMuOk p L m t ∧ Message.Optimized.rootsAt t = tab))
       (callA n code verifyArgs) (fun _ _ => True) := by
   refine Message.Optimized.call_tr (by decide) hV.ver.1 hV.ver.2.1
-    (fun L => [⟨L.key,rawVerifyBytes p prepared⟩,⟨L.MU,64⟩,⟨L.sig,p.sigLen⟩] ++ messageVerifyPairRegions v tab)
+    (fun L => [⟨L.key,rawVerifyBytes p prepared⟩,⟨L.MU,64⟩,⟨L.sig,p.sigLen⟩] ++ Message.Optimized.rootPairRegions tab)
     (fun L => [⟨L.scr,sScr p⟩])
     (fun L g vv m t u hL hc phi hm => ?_)
     (fun L g1 g2 v1 v2 m1 m2 a b a1 b1 hL hi c1 c2 ph1 ph2 f1 f2 => ?_)
     (fun L g vv m t hL hc phi => ?_)
   · obtain ⟨⟨s,pre,h8,rfl,em,hy⟩,_,htab⟩ := phi
     have ctx : Ctx (messageVerifyLay p prepared s) g vv s.mem t := by rw [em];exact hc
-    have roots := message_verify_roots_ctx v pre ctx hy
-    have hpre := message_verify_call_pre v hp pre h8 ctx hm.1 hm.2 roots
-    have er : messageVerifyRootRd v u = messageVerifyPairRegions v tab := by
-      rw [messageVerifyRootRd_eq,messageVerifyRootsAt_syms v hm.2,htab]
+    have roots := message_verify_roots_ctx pre ctx hy
+    have hpre := message_verify_call_pre hp pre h8 ctx hm.1 hm.2 roots
+    have er : verifyRootRd u = Message.Optimized.rootPairRegions tab := by
+      rw [verifyRootRd_eq,Message.Optimized.rootsAt_syms hm.2,htab]
     simpa only [er,messageVerifyCallRd,messageVerifyCallWr,messageVerifyLay,CachedVerify.cachedLay] using hpre
   · obtain ⟨s,pre,h8,rfl,_,_⟩ := ph1.1
-    have facts := message_verify_all_facts v pre
+    have facts := message_verify_all_facts pre
     obtain ⟨x0,x1,x2,x3⟩ := message_verify_regs c1 f1.1.1
     obtain ⟨y0,y1,y2,y3⟩ := message_verify_regs c2 f2.1.1
     have kp : Region.Sub (⟨s.gpr .x0,p.pkLen⟩ : Region) (messageVerifyLay p prepared s).KEY :=
@@ -1498,35 +1450,27 @@ theorem message_verify_call_tr (v : Proof.Sha3.AArch64.Permutation) {p : Params}
       have is' : bytesAt m1 (s.gpr .x5) p.sigLen = bytesAt m2 (s.gpr .x5) p.sigLen := is
       rw [ik,im,ic,ik',is']
     have sp : a1.sp = b1.sp := by rw [f1.1.2.sp,f2.1.2.sp,c1.sp,c2.sp]
-    have tabs := (messageVerifyRootsAt_syms v f1.2).trans
-      (ph1.2.2.trans ((messageVerifyRootsAt_syms v f2.2).trans ph2.2.2).symm)
-    cases hmode : v.callee.pairedSha3 <;> cases prepared
+    have tabs := (Message.Optimized.rootsAt_syms f1.2).trans
+      (ph1.2.2.trans ((Message.Optimized.rootsAt_syms f2.2).trans ph2.2.2).symm)
+    have tf := congrArg Prod.fst tabs
+    have ti := congrArg Prod.snd tabs
+    cases prepared
     all_goals
-      simp only [rawVerifyK,Bool.false_eq_true,↓reduceIte,Verify.OptimizedSelected.selectedAbi,
-        Verify.OptimizedSelected.selectedConsts,hmode]
+      simp only [rawVerifyK,Bool.false_eq_true,↓reduceIte,Verify.OptimizedSelected.selectedAbi]
       sig_pub [verifyContract,verifySig,preparedVerifyContract,preparedVerifySig,abi,VG.AArch64.argRegs,
         Abi.withConsts,signRootConsts_eq]
       simp only [x0,x1,x2,x3,y0,y1,y2,y3,keys,sigs,and_true]
-      first
-      | exact ⟨sp,leak⟩
-      | have tf := congrArg Prod.fst tabs
-        have ti := congrArg Prod.snd tabs
-        simp only [messageVerifyRootsAt,hmode,↓reduceIte,Message.Optimized.rootsAt] at tf ti
-        exact ⟨sp,tf,ti,leak⟩
+      exact ⟨sp,tf,ti,leak⟩
   · obtain ⟨⟨s,pre,h8,rfl,em,hy⟩,_,htab⟩ := phi
     have ctx : Ctx (messageVerifyLay p prepared s) g vv s.mem t := by rw [em];exact hc
-    have roots := message_verify_roots_ctx v pre ctx hy
+    have roots := message_verify_roots_ctx pre ctx hy
     have identity := VG.Proof.MlKem.AArch64.Only.refl (verifyArgs.map (·.1)) t
-    have reads := message_verify_read_cover (message_verify_all_facts v pre) hc identity
-    have writes := message_verify_write_cover (message_verify_all_facts v pre) hc identity
-    have rt : messageVerifyRootRd v t = messageVerifyPairRegions v tab := by rw [messageVerifyRootRd_eq,htab]
-    have rcov : Covers (messageVerifyPairRegions v tab) (t.rd ++ t.wr) := by
+    have reads := message_verify_read_cover (message_verify_all_facts pre) hc identity
+    have writes := message_verify_write_cover (message_verify_all_facts pre) hc identity
+    have rt : verifyRootRd t = Message.Optimized.rootPairRegions tab := by rw [verifyRootRd_eq,htab]
+    have rcov : Covers (Message.Optimized.rootPairRegions tab) (t.rd ++ t.wr) := by
       rw [← rt]
-      by_cases hv : v.callee.pairedSha3 = true
-      · simp only [messageVerifyRootRd,hv,↓reduceIte,verifyRootRd]
-        exact Covers.append_left (roots hv).forward.readable (roots hv).inverse.readable
-      · simp only [messageVerifyRootRd,Bool.eq_false_iff.mpr hv,Bool.false_eq_true,↓reduceIte]
-        exact Covers.nil
+      exact Covers.pair roots.forward.readable roots.inverse.readable
     rw [hc.rd,hc.wr] at reads rcov
     rw [hc.wr] at writes
     exact ⟨Covers.append_left (Covers.append_left reads rcov) writes.right,writes⟩
@@ -1543,29 +1487,29 @@ open VG.Impl.MlDsa.AArch64.Message
 open VG.Impl.MlDsa.AArch64.Optimized
 open VG.Spec.Sha3 (bytesAt)
 
-theorem message_verify_tr_side (v : Proof.Sha3.AArch64.Permutation) {p : Params} {prepared : Bool}
-    {L : Message.Lay} {m : Mem} {t : State} (h : MessageVerifyOK v p prepared L m t) :
+theorem message_verify_tr_side {p : Params} {prepared : Bool}
+    {L : Message.Lay} {m : Mem} {t : State} (h : MessageVerifyOK p prepared L m t) :
     RootedCachedVerify.TrSide L := by
   obtain ⟨s,pre,_,rfl,_,_⟩ := h
-  have facts := message_verify_all_facts v pre
+  have facts := message_verify_all_facts pre
   exact ⟨⟨⟨s.gpr .x7,64⟩,List.mem_append_left _ (facts.reads _ (by simp [messageVerifyRd])),within_self _⟩,
     facts.trScr.symm.sub_left (messageVerifyLay_X p prepared s).sub,
     facts.stkTr.sub_left (below_sub (by decide) (by decide))⟩
 
-theorem message_verify_digest (v : Proof.Sha3.AArch64.Permutation) {p : Params} {prepared : Bool}
-    {L : Message.Lay} {g vv m} {t : State} (h : MessageVerifyOK v p prepared L m t)
+theorem message_verify_digest {p : Params} {prepared : Bool}
+    {L : Message.Lay} {g vv m} {t : State} (h : MessageVerifyOK p prepared L m t)
     (hc : Ctx L g vv m t) : bytesAt t.mem L.rnd 64 = H (bytesAt m L.key p.pkLen) 64 := by
-  rw [hc.bytesAt_eq (message_verify_tr_side v h).x (message_verify_tr_side v h).stack (by decide)]
+  rw [hc.bytesAt_eq (message_verify_tr_side h).x (message_verify_tr_side h).stack (by decide)]
   obtain ⟨s,pre,_,rfl,rfl,_⟩ := h
-  exact (message_verify_all_facts v pre).digest
+  exact (message_verify_all_facts pre).digest
 
 theorem message_verify_body_tr (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p)
-    {prepared : Bool} (tab : Addr × Addr) {n : String} {code : Prog isa} (hV : MessageVerifyFn v p prepared code) :
-    RelCT isa (Two (verifyI p) (fun L m t => MessageVerifyOK v p prepared L m t ∧ messageVerifyRootsAt v t = tab))
+    {prepared : Bool} (tab : Addr × Addr) {n : String} {code : Prog isa} (hV : MessageVerifyFn p prepared code) :
+    RelCT isa (Two (verifyI p) (fun L m t => MessageVerifyOK p prepared L m t ∧ Message.Optimized.rootsAt t = tab))
       (.seq (muHash v.callee (.slot fRnd)) (callA n code verifyArgs))
       (fun a b => a.gpr .x28 = b.gpr .x28 ∧ a.sp = b.sp) := by
-  let Phi := fun L m t => MessageVerifyOK v p prepared L m t ∧ messageVerifyRootsAt v t = tab
-  let Psi := fun L m t => MessageVerifyOK v p prepared L m t ∧ CachedVerify.VMuOk p L m t ∧ messageVerifyRootsAt v t = tab
+  let Phi := fun L m t => MessageVerifyOK p prepared L m t ∧ Message.Optimized.rootsAt t = tab
+  let Psi := fun L m t => MessageVerifyOK p prepared L m t ∧ CachedVerify.VMuOk p L m t ∧ Message.Optimized.rootsAt t = tab
   have hash := muHash_tr_of v (I := verifyI p) (Φ := Phi) (G := RootedCachedVerify.TrSide)
     (tr := .slot fRnd) (by decide) rfl (fun L => L.rnd)
     (fun L g vv m t c => RootedCachedVerify.cachedTr_val c) (fun _ _ h => h.parts)
@@ -1573,30 +1517,30 @@ theorem message_verify_body_tr (v : Proof.Sha3.AArch64.Permutation) {p : Params}
     RelCT.mono hash (fun _ _ h => by
       obtain ⟨L,g1,g2,v1,v2,m1,m2,hL,hi,c1,c2,ph1,ph2⟩ := h
       exact ⟨L,g1,g2,v1,v2,m1,m2,hL,hi,c1,c2,
-        ⟨message_verify_tr_side v ph1.1,ph1⟩,⟨message_verify_tr_side v ph2.1,ph2⟩⟩) (fun _ _ _ => trivial)
+        ⟨message_verify_tr_side ph1.1,ph1⟩,⟨message_verify_tr_side ph2.1,ph2⟩⟩) (fun _ _ _ => trivial)
   have hashed := two_wp (I := verifyI p) (Φ := Phi) (Ψ := Psi) hash'
     (fun L g vv m t hL c phi => by
-      obtain ⟨a,b,c',d⟩ := (message_verify_tr_side v phi.1).parts
+      obtain ⟨a,b,c',d⟩ := (message_verify_tr_side phi.1).parts
       refine WP.mono_syms (muHash_ok v hL c (tr := .slot fRnd) (by decide) rfl
         (fun t' hc => RootedCachedVerify.cachedTr_val hc) a b c' d) (fun t' ⟨ct,mu⟩ hy => ?_)
       obtain ⟨⟨s,pre,h8,eL,em,hs⟩,htab⟩ := phi
-      refine ⟨ct,⟨s,pre,h8,eL,em,hy.trans hs⟩,?_,(messageVerifyRootsAt_syms v hy).trans htab⟩
+      refine ⟨ct,⟨s,pre,h8,eL,em,hy.trans hs⟩,?_,(Message.Optimized.rootsAt_syms hy).trans htab⟩
       unfold CachedVerify.VMuOk
-      rw [mu,message_verify_digest v ⟨s,pre,h8,eL,em,hs⟩ c])
+      rw [mu,message_verify_digest ⟨s,pre,h8,eL,em,hs⟩ c])
   have run : ∀ {L : Message.Lay} {g vv m t},L.Ok → Ctx L g vv m t → Phi L m t →
       WP isa (.seq (muHash v.callee (.slot fRnd)) (callA n code verifyArgs)) t
         (fun u => u.gpr .x28 = t.gpr .x28 ∧ u.sp = t.sp) := by
     intro L g vv m t hL c phi
-    obtain ⟨a,b,c',d⟩ := (message_verify_tr_side v phi.1).parts
+    obtain ⟨a,b,c',d⟩ := (message_verify_tr_side phi.1).parts
     obtain ⟨⟨s,pre,h8,rfl,em,hy⟩,_⟩ := phi
     refine WP.seq (WP.mono_syms (muHash_ok v hL c (tr := .slot fRnd) (by decide) rfl
       (fun t' hc => RootedCachedVerify.cachedTr_val hc) a b c' d) (fun t' ⟨ct,_⟩ hsy => ?_))
     have ctx : Ctx (messageVerifyLay p prepared s) g vv s.mem t' := by rw [em];exact ct
-    have roots := message_verify_roots_ctx v pre ctx (hsy.trans hy)
-    exact WP.mono (message_verify_call_ok v hp hV pre h8 ctx roots) (fun u h =>
+    have roots := message_verify_roots_ctx pre ctx (hsy.trans hy)
+    exact WP.mono (message_verify_call_ok hp hV pre h8 ctx roots) (fun u h =>
       ⟨h.1.x28.trans c.x28.symm,h.1.sp.trans c.sp.symm⟩)
   refine RelCT.postDep (F := fun t u => u.gpr .x28 = t.gpr .x28 ∧ u.sp = t.sp)
-    (hashed.seq (message_verify_call_tr v hp hV tab)) ?_ ?_
+    (hashed.seq (message_verify_call_tr hp hV tab)) ?_ ?_
   · rintro x y ⟨L,g1,g2,v1,v2,m1,m2,hL,_,c1,c2,ph1,ph2⟩
     exact ⟨run hL c1 ph1,run hL c2 ph2⟩
   · rintro x y x' y' ⟨L,g1,g2,v1,v2,m1,m2,_,_,c1,c2,_,_⟩ fx fy
@@ -1613,45 +1557,39 @@ open VG.Proof.MlDsa.AArch64.Optimized
 open VG.Impl.MlDsa.AArch64.Message
 open VG.Impl.MlDsa.AArch64.Optimized
 
-structure MessageVerifyPub (v : Proof.Sha3.AArch64.Permutation) (p : Params) (s t : State)
+structure MessageVerifyPub (p : Params) (s t : State)
     extends CachedVerify.VPub p s t where
-  roots : messageVerifyRootsAt v s = messageVerifyRootsAt v t
+  roots : Message.Optimized.rootsAt s = Message.Optimized.rootsAt t
 
-theorem message_verify_pub (v : Proof.Sha3.AArch64.Permutation) {p : Params} {prepared : Bool} {s t : State}
-    (h : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pub s t) :
-    MessageVerifyPub v p s t := by
-  cases hmode : v.callee.pairedSha3 <;> cases prepared
+theorem message_verify_pub {p : Params} {prepared : Bool} {s t : State}
+    (h : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pub s t) :
+    MessageVerifyPub p s t := by
+  cases prepared
   all_goals
-    simp only [messageVerifyK,Bool.false_eq_true,↓reduceIte,Verify.OptimizedSelected.selectedAbi,
-      Verify.OptimizedSelected.selectedConsts,hmode] at h
+    simp only [messageVerifyK,Bool.false_eq_true,↓reduceIte,Verify.OptimizedSelected.selectedAbi] at h
     sig_pub [verifyMessageCachedContract,verifyMessageCachedSig,preparedVerifyMessageContract,preparedVerifyMessageSig,
       abi,VG.AArch64.argRegs,Abi.withConsts,signRootConsts_eq] at h
-    first
-    | obtain ⟨sp,leak,x0,x1,x2,x3,x4,x5,x6,x7⟩ := h
-      exact ⟨⟨sp,leak,x0,x1,x2,x3,x4,x5,x6,x7⟩,by simp only [messageVerifyRootsAt,hmode,Bool.false_eq_true,↓reduceIte]⟩
-    | obtain ⟨sp,hf,hi,leak,x0,x1,x2,x3,x4,x5,x6,x7⟩ := h
-      refine ⟨⟨sp,leak,x0,x1,x2,x3,x4,x5,x6,x7⟩,?_⟩
-      simp only [messageVerifyRootsAt,hmode,↓reduceIte,Message.Optimized.rootsAt]
-      exact Prod.ext hf hi
+    obtain ⟨sp,hf,hi,leak,x0,x1,x2,x3,x4,x5,x6,x7⟩ := h
+    exact ⟨⟨sp,leak,x0,x1,x2,x3,x4,x5,x6,x7⟩,Prod.ext hf hi⟩
 
-theorem message_verify_layout_eq (v : Proof.Sha3.AArch64.Permutation) {p : Params} {prepared : Bool} {s t : State}
-    (hs : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre s)
-    (ht : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre t)
-    (pub : MessageVerifyPub v p s t) : messageVerifyLay p prepared s = messageVerifyLay p prepared t := by
-  have fs := message_verify_all_facts v hs
-  have ft := message_verify_all_facts v ht
+theorem message_verify_layout_eq {p : Params} {prepared : Bool} {s t : State}
+    (hs : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre s)
+    (ht : (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre t)
+    (pub : MessageVerifyPub p s t) : messageVerifyLay p prepared s = messageVerifyLay p prepared t := by
+  have fs := message_verify_all_facts hs
+  have ft := message_verify_all_facts ht
   have rd : s.rd = t.rd := by
-    rw [(message_verify_resources v hs).2.2,(message_verify_resources v ht).2.2]
+    rw [(message_verify_resources hs).2.2,(message_verify_resources ht).2.2]
     simp only [messageVerifyRd,pub.x0,pub.x1,pub.x2,pub.x3,pub.x4,pub.x5,pub.x7,
-      messageVerifyRootRd_eq,pub.roots]
+      verifyRootRd_eq,pub.roots]
   have wr : s.wr = t.wr := by rw [fs.wr,ft.wr,pub.x6]
   simp only [messageVerifyLay,CachedVerify.cachedLay,pub.sp,pub.x0,pub.x1,pub.x2,pub.x3,
     pub.x4,pub.x5,pub.x6,pub.x7,rd,wr]
 
-abbrev MessageVerifyRel (v : Proof.Sha3.AArch64.Permutation) (p : Params) (prepared : Bool) (x y : State) : Prop :=
-  (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre x ∧
-  (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre y ∧
-  (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pub x y
+abbrev MessageVerifyRel (p : Params) (prepared : Bool) (x y : State) : Prop :=
+  (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre x ∧
+  (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre y ∧
+  (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pub x y
 
 end VG.Proof.MlDsa.AArch64.PreparedKey
 
@@ -1665,58 +1603,58 @@ open VG.Impl.MlDsa.AArch64.Message
 open VG.Impl.MlDsa.AArch64.Optimized
 variable {p : Params} {prepared : Bool}
 
-theorem message_verify_ct (v : Proof.Sha3.AArch64.Permutation) {n : String} {c : Prog isa} (hS : MessageVerifyFn v p prepared c)
+theorem message_verify_ct (v : Proof.Sha3.AArch64.Permutation) {n : String} {c : Prog isa} (hS : MessageVerifyFn p prepared c)
     (hp : Ok3 p) :
-    ConstantTime isa (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pub
+    ConstantTime isa (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pub
       (verifyMessageCached v.callee n c p) := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
-  have e0 : (fun s₁ s₂ => (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre s₁ ∧
-      (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre s₂ ∧ (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pub s₁ s₂) =
-      Ghost (MessageVerifyRel v p prepared) (fun x a => a = x) := by
+  have e0 : (fun s₁ s₂ => (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre s₁ ∧
+      (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre s₂ ∧ (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pub s₁ s₂) =
+      Ghost (MessageVerifyRel p prepared) (fun x a => a = x) := by
     funext a b; apply propext
     exact ⟨fun h => ⟨a, b, h, rfl, rfl⟩, fun ⟨_, _, h, e₁, e₂⟩ => e₁ ▸ e₂ ▸ h⟩
   rw [e0]
   unfold verifyMessageCached top
   -- `x9 ← ctx_len >> 8`.
-  have hlsr := ghost_step (P := MessageVerifyRel v p prepared) (A := fun x a => a = x) (B := fun x a => ALsr x a ∧ a.syms=x.syms) (c := .block [.lsr .x .x9 .x4 8])
+  have hlsr := ghost_step (P := MessageVerifyRel p prepared) (A := fun x a => a = x) (B := fun x a => ALsr x a ∧ a.syms=x.syms) (c := .block [.lsr .x .x9 .x4 8])
     (AArch64.taintRel [] (fun a b ⟨x, y, hxy, e₁, e₂⟩ => by
-      subst e₁ e₂; exact ⟨(message_verify_pub v hxy.2.2).sp, by simp⟩) lsr_taint)
+      subst e₁ e₂; exact ⟨(message_verify_pub hxy.2.2).sp, by simp⟩) lsr_taint)
     fun x y a b _ e₁ e₂ => by subst e₁ e₂; exact ⟨WP.mono_syms (lsr_ok _) (fun _ h hy=>⟨h,hy⟩), WP.mono_syms (lsr_ok _) (fun _ h hy=>⟨h,hy⟩)⟩
   refine RelCT.seq hlsr (RelCT.ite (fun a b ⟨x, y, hxy, f₁, f₂⟩ => by
-    rw [f₁.1.2, f₂.1.2, (message_verify_pub v hxy.2.2).x4]) ?_ ?_)
+    rw [f₁.1.2, f₂.1.2, (message_verify_pub hxy.2.2).x4]) ?_ ?_)
   · -- `ctx_len ≥ 256`: return 2.
     exact AArch64.taintRel [] (fun a b ⟨⟨x, y, hxy, f₁, f₂⟩, _⟩ =>
-      ⟨by rw [f₁.1.1.sp, f₂.1.1.sp]; exact (message_verify_pub v hxy.2.2).sp, by simp⟩) movz2_taint
+      ⟨by rw [f₁.1.1.sp, f₂.1.1.sp]; exact (message_verify_pub hxy.2.2).sp, by simp⟩) movz2_taint
   · -- The entry.
     let A : State → State → Prop := fun x a => (ALsr x a ∧ a.syms=x.syms) ∧ isa.eval (.nonzero .x .x9) a = some false
     let B : State → State → Prop := fun x t => (x.gpr .x4).toNat < 256 ∧
       ∃ a : State, a.mem = x.mem ∧ Ctx (messageVerifyLay p prepared x) a.gpr a.v a.mem t ∧ t.syms=x.syms
-    have hent := ghost_step (P := MessageVerifyRel v p prepared) (A := A) (B := B) (c := .block (enter .x6 p cachedVerifySaves))
-      (AArch64.taintRel [.x6] (fun a b ⟨x, y, hxy, f₁, f₂⟩ => ⟨by rw [f₁.1.1.1.sp, f₂.1.1.1.sp]; exact (message_verify_pub v hxy.2.2).sp,
+    have hent := ghost_step (P := MessageVerifyRel p prepared) (A := A) (B := B) (c := .block (enter .x6 p cachedVerifySaves))
+      (AArch64.taintRel [.x6] (fun a b ⟨x, y, hxy, f₁, f₂⟩ => ⟨by rw [f₁.1.1.1.sp, f₂.1.1.1.sp]; exact (message_verify_pub hxy.2.2).sp,
         fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr
-          rw [f₁.1.1.1.get .x6, f₂.1.1.1.get .x6]; exact (message_verify_pub v hxy.2.2).x6⟩) (RootedCachedVerify.enterV_taint p))
+          rw [f₁.1.1.1.get .x6, f₂.1.1.1.get .x6]; exact (message_verify_pub hxy.2.2).x6⟩) (RootedCachedVerify.enterV_taint p))
       fun x y a b hxy fa fb => by
-        have en : ∀ (x' a' : State), (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre x' → A x' a' →
+        have en : ∀ (x' a' : State), (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre x' → A x' a' →
             WP isa (.block (enter .x6 p cachedVerifySaves)) a' (B x') := fun x' a' hx ⟨⟨⟨o, e⟩, hy⟩, ef⟩ => by
           have h8 : (x'.gpr .x4).toNat < 256 := by
             rw [e] at ef; simpa using ef
-          have hL := message_verify_layout_ok hp (message_verify_all_facts v hx) h8
+          have hL := message_verify_layout_ok hp (message_verify_all_facts hx) h8
           exact WP.mono_syms (enter_ok hL rfl (by decide) rfl (o.get .x6) (by rw [o.sp]; rfl) (by rw [o.rd]; rfl)
             (by rw [o.wr]; rfl) (o.get .x4) (message_verify_saves (p := p) (prepared := prepared) o) (by decide)) fun t hc hyt => ⟨h8, a', o.mem, hc, hyt.trans hy⟩
         exact ⟨en x a hxy.1 fa, en y b hxy.2.1 fb⟩
     refine RelCT.seq (RelCT.mono hent (fun a b ⟨⟨x, y, hxy, f₁, f₂⟩, hc⟩ => ⟨x, y, hxy, ⟨f₁, hc⟩, ⟨f₂, by
-      rw [f₂.1.2, ← (message_verify_pub v hxy.2.2).x4, ← f₁.1.2]; exact hc⟩⟩) fun _ _ h => h) (RelCT.seq (RelCT.mono (RelCT.exists_ fun tab => message_verify_body_tr v hp tab hS) (fun a b ⟨x, y, hxy, ⟨h8x, a', ma, ca, sya⟩,
+      rw [f₂.1.2, ← (message_verify_pub hxy.2.2).x4, ← f₁.1.2]; exact hc⟩⟩) fun _ _ h => h) (RelCT.seq (RelCT.mono (RelCT.exists_ fun tab => message_verify_body_tr v hp tab hS) (fun a b ⟨x, y, hxy, ⟨h8x, a', ma, ca, sya⟩,
       ⟨h8y, b', mb, cb, syb⟩⟩ => ?_) fun _ _ h => h) (AArch64.taintRel [.x28] (fun a b h => ⟨h.2, fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact h.1⟩) leave_taint))
-    have hx := message_verify_all_facts v hxy.1
-    have hy := message_verify_all_facts v hxy.2.1
-    have hpub := message_verify_pub v hxy.2.2
-    have e := message_verify_layout_eq v hxy.1 hxy.2.1 hpub
-    refine ⟨messageVerifyRootsAt v x,messageVerifyLay p prepared x,a'.gpr,b'.gpr,a'.v,b'.v,a'.mem,b'.mem,
+    have hx := message_verify_all_facts hxy.1
+    have hy := message_verify_all_facts hxy.2.1
+    have hpub := message_verify_pub hxy.2.2
+    have e := message_verify_layout_eq hxy.1 hxy.2.1 hpub
+    refine ⟨Message.Optimized.rootsAt x,messageVerifyLay p prepared x,a'.gpr,b'.gpr,a'.v,b'.v,a'.mem,b'.mem,
       message_verify_layout_ok hp hx h8x,?_,ca,e ▸ cb,
-      ⟨⟨x,hxy.1,h8x,rfl,ma.symm,sya⟩,messageVerifyRootsAt_syms v sya⟩,
-      ⟨⟨y,hxy.2.1,h8y,e.symm,mb.symm,syb⟩,(messageVerifyRootsAt_syms v syb).trans hpub.roots.symm⟩⟩
+      ⟨⟨x,hxy.1,h8x,rfl,ma.symm,sya⟩,Message.Optimized.rootsAt_syms sya⟩,
+      ⟨⟨y,hxy.2.1,h8y,e.symm,mb.symm,syb⟩,(Message.Optimized.rootsAt_syms syb).trans hpub.roots.symm⟩⟩
     have lk := hpub.leak
     rw [← hpub.x0, ← hpub.x1, ← hpub.x2, ← hpub.x3, ← hpub.x4, ← hpub.x5] at lk
     unfold verifyI
@@ -1735,7 +1673,7 @@ open VG.Impl.MlDsa.AArch64.Message
 open VG.Impl.MlDsa.AArch64.Optimized
 open VG.Spec.Sha3 (bytesAt)
 
-def messageVerifySat (v : Proof.Sha3.AArch64.Permutation) (p : Params) (prepared : Bool) (m : Mem) : State where
+def messageVerifySat (p : Params) (prepared : Bool) (m : Mem) : State where
   gpr r := match r with
     | .x0 => 0x10000 | .x1 => 0x80000 | .x2 => 0 | .x3 => 0x90000
     | .x4 => 0 | .x5 => 0x30000 | .x6 => 0x400000 | .x7 => 0x8000 | _ => 0
@@ -1743,74 +1681,68 @@ def messageVerifySat (v : Proof.Sha3.AArch64.Permutation) (p : Params) (prepared
   mem := m
   syms name := if name = "VG_MLDSA_NTT_EXPANDED" then 1048576 else 1052480
   rd := [⟨0x10000,rawVerifyBytes p prepared⟩,⟨0x80000,0⟩,⟨0x90000,0⟩,⟨0x30000,p.sigLen⟩,⟨0x8000,64⟩] ++
-    (if v.callee.pairedSha3 then [⟨1048576,3904⟩,⟨1052480,3904⟩] else [])
+    [⟨1048576,3904⟩,⟨1052480,3904⟩]
   wr := [⟨0x400000,mScrLen p⟩]
 
-theorem message_verify_pre_extend (v : Proof.Sha3.AArch64.Permutation) {p : Params} {prepared : Bool} {s : State}
+theorem message_verify_pre_extend {p : Params} {prepared : Bool} {s : State}
     (h : (messageVerifyK p prepared abi).pre (s.withRegions (messageVerifyRd p prepared s) s.wr))
-    (hr : v.callee.pairedSha3 = true → StaticRoots 64 s)
-    (hd : s.rd = messageVerifyRd p prepared s ++ messageVerifyRootRd v s) :
-    (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre s := by
-  cases hmode : v.callee.pairedSha3 <;> cases prepared
+    (hr : StaticRoots 64 s)
+    (hd : s.rd = messageVerifyRd p prepared s ++ verifyRootRd s) :
+    (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre s := by
+  cases prepared
   all_goals
-    simp only [messageVerifyK,Bool.false_eq_true,↓reduceIte,Verify.OptimizedSelected.selectedAbi,
-      Verify.OptimizedSelected.selectedConsts,hmode,show abi.withConsts [] = abi by rfl] at h ⊢
+    simp only [messageVerifyK,Bool.false_eq_true,↓reduceIte,Verify.OptimizedSelected.selectedAbi] at h ⊢
     sig_pre [verifyMessageCachedContract,verifyMessageCachedSig,preparedVerifyMessageContract,preparedVerifyMessageSig,
       abi,VG.AArch64.argRegs] at h
     sig_pre [verifyMessageCachedContract,verifyMessageCachedSig,preparedVerifyMessageContract,preparedVerifyMessageSig,
       abi,VG.AArch64.argRegs,Abi.withConsts,signRootConsts_eq,Abi.constRegions,Abi.constsHeld,
       TableConstants.staticNttWords_length,InverseTable.expandedWords_length,stackBelow]
     obtain ⟨sp,_,wr,d1,d2,d3,d4,d5,k1,k2,k3,k4,k5,k6,n1,n2,n3,n4,n5,n6,tail⟩ := h
-    first
-    | have rd := hd
-      simp only [messageVerifyRootRd,hmode,Bool.false_eq_true,↓reduceIte,List.append_nil] at rd
-      exact ⟨sp,rd,wr,d1,d2,d3,d4,d5,k1,k2,k3,k4,k5,k6,n1,n2,n3,n4,n5,n6,tail⟩
-    | have roots := hr hmode
-      have rd := hd
-      simp only [messageVerifyRootRd,hmode,↓reduceIte] at rd
-      exact ⟨sp,by rw [rd];rfl,roots.forward.held,roots.inverse.held,roots.forward.fit,
-        roots.forward.writable,roots.forward.stack,roots.inverse.fit,roots.inverse.writable,roots.inverse.stack,
-        roots.forward.aligned,roots.inverse.aligned,by rw [rd];rfl,
+    exact ⟨sp,by rw [hd];rfl,hr.forward.held,hr.inverse.held,hr.forward.fit,
+        hr.forward.writable,hr.forward.stack,hr.inverse.fit,hr.inverse.writable,hr.inverse.stack,
+        hr.forward.aligned,hr.inverse.aligned,by rw [hd];rfl,
         wr,d1,d2,d3,d4,d5,k1,k2,k3,k4,k5,k6,n1,n2,n3,n4,n5,n6,tail⟩
 
-theorem messageVerifySat_bare (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p) (prepared : Bool) (m : Mem)
+theorem messageVerifySat_bare {p : Params} (hp : Ok3 p) (prepared : Bool) (m : Mem)
     (cache : PreparedPublicKey p m 0x10000)
     (digest : bytesAt m 0x8000 64 = pkTr (bytesAt m 0x10000 p.pkLen)) :
     (messageVerifyK p prepared abi).pre
-      ((messageVerifySat v p prepared m).withRegions
-        (messageVerifyRd p prepared (messageVerifySat v p prepared m)) (messageVerifySat v p prepared m).wr) := by
+      ((messageVerifySat p prepared m).withRegions
+        (messageVerifyRd p prepared (messageVerifySat p prepared m)) (messageVerifySat p prepared m).wr) := by
   cases prepared
   all_goals
-    rcases hp with rfl | rfl | rfl
-    all_goals
-      simp only [messageVerifyK,Bool.false_eq_true,↓reduceIte]
-      sig_pre [verifyMessageCachedContract,verifyMessageCachedSig,preparedVerifyMessageContract,preparedVerifyMessageSig,
-        abi,VG.AArch64.argRegs]
-      simp only [messageVerifyRd,messageVerifySat,rawVerifyBytes,Bool.false_eq_true,↓reduceIte]
-      sig_and_intros
-      all_goals first | exact cache | exact digest | exact Region.disjoint_of_sep (by decide) | decide +kernel
+    simp only [messageVerifyK,Bool.false_eq_true,↓reduceIte]
+    sig_pre [verifyMessageCachedContract,verifyMessageCachedSig,preparedVerifyMessageContract,preparedVerifyMessageSig,
+      abi,VG.AArch64.argRegs]
+    simp only [messageVerifyRd,messageVerifySat,rawVerifyBytes,Bool.false_eq_true,↓reduceIte]
+    sig_and_intros
+    all_goals first
+      | exact cache
+      | exact digest
+      | (rcases hp with rfl | rfl | rfl <;>
+          first | exact Region.disjoint_of_sep (by decide) | decide +kernel)
 
-theorem messageVerifySat_roots (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p) (prepared : Bool) (m : Mem)
+theorem messageVerifySat_roots (p : Params) (hp : Ok3 p) (prepared : Bool) (m : Mem)
     (hf : ∀ i < 488,m.readW (1048576 + BitVec.ofNat 64 (8*i)) 64 = Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords.getD i 0)
     (hi : ∀ i < 488,m.readW (1052480 + BitVec.ofNat 64 (8*i)) 64 = Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords.getD i 0)
-    (hmode : v.callee.pairedSha3 = true) : StaticRoots 64 (messageVerifySat v p prepared m) := by
+ : StaticRoots 64 (messageVerifySat p prepared m) := by
   have forward : StaticTable 64 "VG_MLDSA_NTT_EXPANDED" Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords
-      (messageVerifySat v p prepared m) := by
+      (messageVerifySat p prepared m) := by
     refine ⟨hf,by dsimp [messageVerifySat];decide,?_,?_,
       by apply Region.disjoint_of_sep;dsimp [messageVerifySat];decide,
-      by dsimp [messageVerifySat]⟩
-    · exact Covers.one ⟨⟨1048576,3904⟩,by simp [messageVerifySat,hmode],Region.contains_self _ _⟩
+      by rw [show (messageVerifySat p prepared m).syms "VG_MLDSA_NTT_EXPANDED" = 1048576 from by dsimp [messageVerifySat]]; decide⟩
+    · exact Covers.one ⟨⟨1048576,3904⟩,by simp [messageVerifySat],Region.contains_self _ _⟩
     · intro R hR
       simp only [messageVerifySat,List.mem_cons,List.not_mem_nil,or_false] at hR
       subst R
       simp only [messageVerifySat]
       rcases hp with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   have inverse : StaticTable 64 "VG_MLDSA_INV_FOLDED" Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords
-      (messageVerifySat v p prepared m) := by
+      (messageVerifySat p prepared m) := by
     refine ⟨hi,by dsimp [messageVerifySat];decide,?_,?_,
       by apply Region.disjoint_of_sep;dsimp [messageVerifySat];decide,
-      by dsimp [messageVerifySat]⟩
-    · exact Covers.one ⟨⟨1052480,3904⟩,by simp [messageVerifySat,hmode],Region.contains_self _ _⟩
+      by rw [show (messageVerifySat p prepared m).syms "VG_MLDSA_INV_FOLDED" = 1052480 from by dsimp [messageVerifySat]]; decide⟩
+    · exact Covers.one ⟨⟨1052480,3904⟩,by simp [messageVerifySat],Region.contains_self _ _⟩
     · intro R hR
       simp only [messageVerifySat,List.mem_cons,List.not_mem_nil,or_false] at hR
       subst R
@@ -1818,14 +1750,14 @@ theorem messageVerifySat_roots (v : Proof.Sha3.AArch64.Permutation) (p : Params)
       rcases hp with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
   exact ⟨forward,inverse⟩
 
-theorem messageVerifySat_pre (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p) (prepared : Bool) (m : Mem)
+theorem messageVerifySat_pre {p : Params} (hp : Ok3 p) (prepared : Bool) (m : Mem)
     (hf : ∀ i < 488,m.readW (1048576 + BitVec.ofNat 64 (8*i)) 64 = Impl.MlDsa.AArch64.Optimized.Ntt.staticNttWords.getD i 0)
     (hi : ∀ i < 488,m.readW (1052480 + BitVec.ofNat 64 (8*i)) 64 = Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords.getD i 0)
     (cache : PreparedPublicKey p m 0x10000)
     (digest : bytesAt m 0x8000 64 = pkTr (bytesAt m 0x10000 p.pkLen)) :
-    (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre (messageVerifySat v p prepared m) := by
-  apply message_verify_pre_extend v (messageVerifySat_bare v hp prepared m cache digest)
-    (messageVerifySat_roots v p hp prepared m hf hi)
+    (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre (messageVerifySat p prepared m) := by
+  apply message_verify_pre_extend (messageVerifySat_bare hp prepared m cache digest)
+    (messageVerifySat_roots p hp prepared m hf hi)
   rfl
 
 theorem public_preparation_preserves_digest {p : Params} (hp : Ok3 p) {m : Mem} {t : State} {tr : List Leak}
@@ -1840,8 +1772,8 @@ theorem public_preparation_preserves_digest {p : Params} (hp : Ok3 p) {m : Mem} 
   all_goals
     rcases hp with rfl | rfl | rfl <;> exact Region.disjoint_of_sep (by decide)
 
-theorem message_verify_sat (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p) (prepared : Bool) :
-    ∃ s,(messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)).pre s := by
+theorem message_verify_sat {p : Params} (hp : Ok3 p) (prepared : Bool) :
+    ∃ s,(messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)).pre s := by
   have src := RootedCachedVerify.cachedPre_of (RootedCachedVerify.verify_sat hp)
   let m := (RootedCachedVerify.verifySat p).mem
   obtain ⟨_,t,he,_,post⟩ := public_correct hp (prepWithTables p m) (prepWithTables_pre hp m)
@@ -1852,16 +1784,16 @@ theorem message_verify_sat (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp
     exact src.digest
   have forward := public_preparation_preserves_roots hp he (base := 1048576) (.inl rfl)
   have inverse := public_preparation_preserves_roots hp he (base := 1052480) (.inr rfl)
-  exact ⟨messageVerifySat v p prepared t.mem,messageVerifySat_pre v hp prepared t.mem
+  exact ⟨messageVerifySat p prepared t.mem,messageVerifySat_pre hp prepared t.mem
     (fun i hi' => (forward i hi').trans (src.roots.forward.held i hi'))
     (fun i hi' => (inverse i hi').trans (src.roots.inverse.held i hi')) post.2 digest⟩
 
 theorem message_verify_verified (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p)
-    {prepared : Bool} {n : String} {code : Prog isa} (hV : MessageVerifyFn v p prepared code) :
+    {prepared : Bool} {n : String} {code : Prog isa} (hV : MessageVerifyFn p prepared code) :
     Verified target (verifyMessageCached v.callee n code p)
-      (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi v)) :=
+      (messageVerifyK p prepared (Verify.OptimizedSelected.selectedAbi)) :=
   ⟨(fun _ h => let ⟨tr,t,he,ha,hq⟩ := message_verify_correct v hp hV h; ⟨tr,t,he,ha,hq⟩),
-    message_verify_ct v hV hp,message_verify_sat v hp prepared⟩
+    message_verify_ct v hV hp,message_verify_sat hp prepared⟩
 
 end VG.Proof.MlDsa.AArch64.PreparedKey
 
@@ -1875,7 +1807,7 @@ def verifyCode (v : Proof.Sha3.AArch64.Permutation) (p : Params) (name : String)
       (VG.Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) p) p prepared
 
 theorem message_verify_fn (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p)
-    (name : String) (prepared : Bool) : MessageVerifyFn v p prepared (verifyCode v p name prepared) := by
+    (name : String) (prepared : Bool) : MessageVerifyFn p prepared (verifyCode v p name prepared) := by
   refine ⟨verify_entry_verified v hp name prepared,⟨?_⟩⟩
   have hd := (verify_withCache_dle v p).le
   simpa only [verifyCode,Impl.MlDsa.AArch64.PreparedKey.Verify.entry,

@@ -7,13 +7,6 @@
 vg_mldsa_dot_inverse7_avx2:
 	mov r10, rsi
 	mov rsi, rcx
-	stmxcsr DWORD PTR [rsi+768]
-	mov r11d, DWORD PTR [rsi+768]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rsi+772], eax
-	ldmxcsr DWORD PTR [rsi+772]
-	lfence
 	mov eax, 8380417
 	vmovq xmm15, rax
 	vpbroadcastd ymm15, xmm15
@@ -513,8 +506,5 @@ vg_mldsa_dot_inverse7_avx2:
 	sub rcx, 1
 	jne 210b
 	vzeroupper
-	lfence
-	mov DWORD PTR [rsi+768], r11d
-	ldmxcsr DWORD PTR [rsi+768]
 	ret
 	.p2align 6

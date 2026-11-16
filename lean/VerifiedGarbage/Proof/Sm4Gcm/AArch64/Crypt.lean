@@ -344,14 +344,14 @@ theorem crSeg1_ok {k : Reg → BitVec 64} {P : Nat} {icb : Block} {D : Addr} {n 
       hdj.stk hdj.wr
 
 /-- The first call: the whole blocks. -/
-theorem ctrCall1_ok {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
+theorem ctrCall1_ok (v : GcmImpl) {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
     {m₀ : Mem} {j : Nat} {s : State} (h : Cr1 Ctx St W SP k icb P D n m₀ j s)
     (hc : ciphOf s.mem Ctx = ciphOf m₀ Ctx) :
-    WP isa ctrCall s fun s' =>
+    WP isa (ctrCall v.callees) s fun s' =>
       CrMid Ctx St W SP k icb P D n m₀ (j + 16 * ((n - j) / 16)) s' ∧ n - (j + 16 * ((n - j) / 16)) < 16 := by
   have hn' := h.data.ok.lt
   have hle := h.le
-  refine WP.mono (ctr_call h.call) fun s₃ g => ?_
+  refine WP.mono (ctr_call v.ctr h.call) fun s₃ g => ?_
   have gf := g.frame
   rw [h.env.sp] at gf
   generalize hnb : (n - j) / 16 = nb at *
@@ -561,13 +561,13 @@ theorem crSeg2_ok {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} {n 
       (L.stk_st (by omega_arith)) (he₂.perm.stC (by omega_arith))
 
 /-- The second call: a new keystream block, if there are bytes left. -/
-theorem ctrCall2_ok {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
+theorem ctrCall2_ok (v : GcmImpl) {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
     {m₀ : Mem} {j : Nat} {s : State} (h : Cr2 Ctx St W SP k icb P D n m₀ j s)
     (hc : ciphOf s.mem Ctx = ciphOf m₀ Ctx) :
-    WP isa ctrCall s (Cr3 Ctx St W SP k icb P D n m₀ j) := by
+    WP isa (ctrCall v.callees) s (Cr3 Ctx St W SP k icb P D n m₀ j) := by
   have hn' := h.data.ok.lt
   have hle := h.le
-  refine WP.mono (ctr_call h.call) fun s₃ g => ?_
+  refine WP.mono (ctr_call v.ctr h.call) fun s₃ g => ?_
   have gf := g.frame
   rw [h.env.sp] at gf
   have dD : ∀ r ∈ [⟨St + BitVec.ofNat 64 48, 16⟩, ⟨St + BitVec.ofNat 64 64, 16 * (if n - j = 0 then 0 else 1)⟩,
@@ -761,26 +761,26 @@ theorem crArgs_ok {k : Reg → BitVec 64} {icb : Block} {P : Nat} {D : Addr} {n 
     hdj.stk hdj.wr
 
 /-- `cryptAl`: `crypt` from the start of a keystream block. -/
-theorem cryptAl_ok {k : Reg → BitVec 64} {P : Nat} {icb : Block} {D : Addr} {n : Nat}
+theorem cryptAl_ok (v : GcmImpl) {k : Reg → BitVec 64} {P : Nat} {icb : Block} {D : Addr} {n : Nat}
     {s : State} (h : CrIn Ctx St W SP k P D n s) (hP : P % 16 = 0) :
-    WP isa cryptAl s (CrOut Ctx St W SP k icb P D n s.mem) := by
+    WP isa (cryptAl v.callees) s (CrOut Ctx St W SP k icb P D n s.mem) := by
   have hc : ∀ {m' : Mem}, Frame (crFrame St SP D n) s.mem m' → ciphOf m' Ctx = ciphOf s.mem Ctx :=
     fun hf => ciph_frame hf (ctx_crFrame L h.data)
   exact WP.seq (WP.mono (crArgs_ok L (h.mid (icb := icb) hP)) fun s₁ h₁ =>
-    WP.seq (WP.mono (ctrCall1_ok L h₁ (hc h₁.frame)) fun s₂ ⟨h₂, hlt⟩ =>
+    WP.seq (WP.mono (ctrCall1_ok L v h₁ (hc h₁.frame)) fun s₂ ⟨h₂, hlt⟩ =>
     WP.seq (WP.mono (crSeg2_ok L h₂ hlt) fun s₃ h₃ =>
-    WP.seq (WP.mono (ctrCall2_ok L h₃ (hc h₃.frame)) fun s₄ h₄ => crTail_ok h₄))))
+    WP.seq (WP.mono (ctrCall2_ok L v h₃ (hc h₃.frame)) fun s₄ h₄ => crTail_ok h₄))))
 
 /-- `crypt`. -/
-theorem crypt_ok {k : Reg → BitVec 64} {P : Nat} {icb : Block} {D : Addr} {n : Nat} {s : State}
+theorem crypt_ok (v : GcmImpl) {k : Reg → BitVec 64} {P : Nat} {icb : Block} {D : Addr} {n : Nat} {s : State}
     (h : CrIn Ctx St W SP k P D n s) :
-    WP isa crypt s (CrOut Ctx St W SP k icb P D n s.mem) := by
+    WP isa (crypt v.callees) s (CrOut Ctx St W SP k icb P D n s.mem) := by
   have hc : ∀ {m' : Mem}, Frame (crFrame St SP D n) s.mem m' → ciphOf m' Ctx = ciphOf s.mem Ctx :=
     fun hf => ciph_frame hf (ctx_crFrame L h.data)
   exact WP.seq (WP.mono (crSeg1_ok L (icb := icb) h) fun s₁ h₁ =>
-    WP.seq (WP.mono (ctrCall1_ok L h₁ (hc h₁.frame)) fun s₂ ⟨h₂, hlt⟩ =>
+    WP.seq (WP.mono (ctrCall1_ok L v h₁ (hc h₁.frame)) fun s₂ ⟨h₂, hlt⟩ =>
     WP.seq (WP.mono (crSeg2_ok L h₂ hlt) fun s₃ h₃ =>
-    WP.seq (WP.mono (ctrCall2_ok L h₃ (hc h₃.frame)) fun s₄ h₄ => crTail_ok h₄))))
+    WP.seq (WP.mono (ctrCall2_ok L v h₃ (hc h₃.frame)) fun s₄ h₄ => crTail_ok h₄))))
 
 end
 

@@ -9,6 +9,9 @@ import VerifiedGarbage.Proof.Framework.Offset
 `withMxcsr r 768 c` (see `Impl/MlKem/X86_64/Vec.lean`) runs `c` from a state
 that differs from its own only in `rax`, `r11` and the eight bytes `mxR` of
 `scratch`, and after it changes only those bytes and MXCSR (`withMxcsr_ok`).
+ML-KEM's own code no longer runs inside it (its dispatchers run
+`vg_mcdt_enter` first): `noMx_ok` states what its proofs need in the same
+shape.
 That it keeps MXCSR's control bits is `ctlOk`
 (`Proof/Framework/X86_64/Mxcsr.lean`).
 -/
@@ -88,6 +91,15 @@ theorem withMxcsr_ok {c : Prog isa} {r : Reg} (hr : r ≠ .r11 ∧ r ≠ .rax) (
     (hc : ∀ s1, Keep [.rax, .r11] s s1 → Frame [mxR sP] s.mem s1.mem → WP isa c s1 Q) :
     WP isa (withMxcsr r 768 c) s fun s' => ∃ s2, Q s2 ∧ Frame [mxR sP] s2.mem s'.mem ∧ Keep [] s2 s' :=
   withMxcsr_ok' hr rs hrs hsi (mx_in hw 768 (by decide)) (mx_in hw 772 (by decide)) hk hc
+
+/-- What `withMxcsr_ok` says, of code that runs without `withMxcsr`: ML-KEM's
+arithmetic sets no MXCSR of its own (its dispatchers run `vg_mcdt_enter`
+first), and its proofs keep the shape they had inside `withMxcsr`. `c` runs
+from `s` itself, which differs from `s` in no register and no byte. -/
+theorem noMx_ok {c : Prog isa} {sP : Addr} {s : State} {Q : State → Prop}
+    (hc : ∀ s1, Keep [.rax, .r11] s s1 → Frame [mxR sP] s.mem s1.mem → WP isa c s1 Q) :
+    WP isa c s fun s' => ∃ s2, Q s2 ∧ Frame [mxR sP] s2.mem s'.mem ∧ Keep [] s2 s' :=
+  WP.mono (hc s (Keep.refl _ _) (Frame.refl _ _)) fun s' h => ⟨s', h, Frame.refl _ _, Keep.refl _ _⟩
 
 /-! ## Regions of `scratch` -/
 

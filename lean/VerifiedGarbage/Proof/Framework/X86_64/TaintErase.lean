@@ -267,8 +267,8 @@ end Taint
 /-- `taint` does not read displacements and immediates, from a taint that
 knows no region bases. -/
 theorem taint_eraseInv : taint.MapInv Instr.erase (fun τ : Taint.T => τ.bases = []) where
-  step i h := Taint.stepKD_erase h i
-  step_P _ h hs := Taint.stepKD_nil h hs
+  step i h := (taint_step _ _).trans ((Taint.stepKD_erase h i).trans (taint_step _ _).symm)
+  step_P _ h hs := Taint.stepKD_nil h ((taint_step _ _).symm.trans hs)
   le_P h hl := Taint.leK_nil h hl
   meet_P h := Taint.meet_nil h
   call_P h hs := Taint.callStep_nil h hs
@@ -279,8 +279,8 @@ theorem taint_eraseInv : taint.MapInv Instr.erase (fun τ : Taint.T => τ.bases 
 /-- `taintS` does not read displacements and immediates, from a taint that
 knows no region bases. -/
 theorem taintS_eraseInv : taintS.MapInv Instr.erase (fun τ : Taint.T => τ.bases = []) where
-  step i h := Taint.stepKD_erase h i
-  step_P _ h hs := Taint.stepKD_nil h hs
+  step i h := (taint_step _ _).trans ((Taint.stepKD_erase h i).trans (taint_step _ _).symm)
+  step_P _ h hs := Taint.stepKD_nil h ((taint_step _ _).symm.trans hs)
   le_P h hl := Taint.leS_nil h hl
   meet_P h := Taint.meet_nil h
   call_P h hs := Taint.callStep_nil h hs
@@ -299,9 +299,9 @@ that knows no region bases. -/
 theorem taintSym_eraseInv (L : List String) :
     (taintSym L).MapInv Instr.erase (fun τ : Taint.T => τ.bases = []) where
   step i h := by
-    show Taint.stepKD _ (i.erase.symMov L) = Taint.stepKD _ (i.symMov L)
-    rw [Instr.symMov_erase]; exact Taint.stepKD_erase h _
-  step_P _ h hs := Taint.stepKD_nil h hs
+    show Taint.stepKeep _ (i.erase.symMov L) = Taint.stepKeep _ (i.symMov L)
+    rw [Instr.symMov_erase, Taint.stepKeep_eq]; exact Taint.stepKD_erase h _
+  step_P _ h hs := Taint.stepKD_nil h ((taint_step _ _).symm.trans hs)
   le_P h hl := Taint.leS_nil h hl
   meet_P h := Taint.meet_nil h
   call_P h hs := Taint.callStep_nil h hs

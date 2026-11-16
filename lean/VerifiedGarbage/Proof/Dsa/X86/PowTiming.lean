@@ -409,7 +409,8 @@ theorem wk_step {e j : Nat} (hn : 2 ≤ n) (he : 2 ≤ e) (hen : e ≤ 2 * n) (h
   · obtain ⟨size, m, s₀, S, e', c, B⟩ := W
     exact WP.mono (shiftSt_ok S he hen) fun v ⟨Sv, iv, _, V⟩ =>
       keep5 Sv iv (V 5 (by decide) (by decide)) ⟨size, m, s₀, S, e', c, B⟩ B e' c
-  refine wk_taint (cnt := some j) (hc := .block []) rfl fun u W => ?_
+  refine wk_taint (cnt := some j) (hc := .block [])
+    (show (VG.Taint.check taint (workspaceTaint true) _ _).isSome = true from rfl) fun u W => ?_
   obtain ⟨size, m, s₀, S, e', c, B⟩ := W
   have hc := c j rfl
   refine wp_subS rfl fun v uv _ => ?_

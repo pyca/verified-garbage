@@ -1,5 +1,9 @@
 module
 
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Md5.RISCV64.Compress
+meta import VerifiedGarbage.Proof.Md5.RISCV64.Compress
 import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Shared
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Shared
 public import VerifiedGarbage.Proof.Md5.RISCV64.Stream
@@ -76,13 +80,13 @@ def ok : HashOK hash where
 
 theorem init_ct : ConstantTime isa (initG ok.SH (hash.ibytes + hash.F)).pre
     (initG ok.SH (hash.ibytes + hash.F)).pub hash.init :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
-    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide_sum [VG.Proof.Md5.RISCV64.compressSum])
 
 theorem fin_ct : ConstantTime isa (finG ok.SH (hash.fbytes + hash.F)).pre
     (finG ok.SH (hash.fbytes + hash.F)).pub hash.finalize :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
-    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide_sum [VG.Proof.Md5.RISCV64.compressSum])
 
 /-! ## The shared contracts -/
 

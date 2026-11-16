@@ -460,7 +460,7 @@ theorem Ready.call : callPre (xS s c) ∧ Covers (rdC s ++ wrC s) ((qS c).rd ++ 
 end
 
 /-- After the call, and the pop of `tag`. -/
-structure Called (s z : State) : Prop where
+structure Called (F : SealFn) (s z : State) : Prop where
   out : gatherPost s z
   ret : z.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
   cs : ∀ r ∈ calleeSaved, r ≠ .rsp → z.gpr r = s.gpr r
@@ -468,16 +468,18 @@ structure Called (s z : State) : Prop where
   rd : z.rd = s.rd
   wr : z.wr = FR s :: s.wr
   mx : z.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
+  /-- What else the callee leaves (`SealFn.E`), from the state it was called in. -/
+  ext : ∃ c, Ready s c ∧ F.E (xS s c) z.mem
 
 theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
-    WP isa (.frame (.push [.rax]) (.call F.name F.code) (.pop .rax 1)) c (Called s) := by
+    WP isa (.frame (.push [.rax]) (.call F.name F.code) (.pop .rax 1)) c (Called F s) := by
   obtain ⟨-, -, kd, -, nd, -, ad, -, -, -, -, -, rdd, rt, bk, bn, ba, bd, -, -, -, ok, on, oa, od, -⟩ := h.pre
   obtain ⟨hcp, hcov, hw⟩ := hc.call h
   have hBn := h.hBn
   have hdep := F.depth
   have hx (r : Reg) (hr : r ≠ .rsp) : (xS s c).gpr r = c.gpr r := xgpr_eq hr
-  refine WP.frame (by simp) (by decide) (by decide) (hc.hn h) (WP.call_sp_mx F.verified.1 F.sp (by omega_arith)
-    (sealSpec_pre hcp) hcov hw fun s' rd' wr' cs' fr' _ ⟨s₂, m₂, _, post'⟩ mx' => ?_)
+  refine WP.frame (by simp) (by decide) (by decide) (hc.hn h) (WP.call_sp_mx (k := F.contractE) F.exec F.sp
+    (by omega_arith) (sealSpec_pre hcp) hcov hw fun s' rd' wr' cs' fr' _ ⟨s₂, m₂, _, post', hE⟩ mx' => ?_)
   have rsp' : s'.gpr .rsp = (qS c).gpr .rsp := cs' .rsp (by decide)
   refine ⟨rsp', wr', ?_⟩
   have hpost := sealSpec_post post'
@@ -514,7 +516,8 @@ theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
     rw [← h.hlen]
     exact bytesAt_writeBytes_self _ _ _ (by rw [h.hlen]; exact (stackArg s 1).isLt)
   rw [hd] at hpost
-  refine ⟨by simp only [gatherPost, popped_mem]; exact hpost, ?_, fun r hr hsp => ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨by simp only [gatherPost, popped_mem]; exact hpost, ?_, fun r hr hsp => ?_, ?_, ?_, ?_, ?_,
+    ⟨c, hc, by rw [popped_mem, ← m₂]; exact hE⟩⟩
   · -- The return address: neither the push, nor the copy, nor the call wrote it.
     have hsp' : (qS c).gpr .rsp = Bs s + BitVec.ofNat 64 1776 := hc.qsp
     have hbelow : below ((qS c).gpr .rsp) (F.code.x86_64Depth + 8) =
@@ -552,7 +555,7 @@ theorem called_wp (F : SealFn) {s c : State} (h : Lay s) (hc : Ready s c) :
 /-- The body of our frame. -/
 theorem frameBody_wp (w : Width) (F : SealFn) {s : State} (h : Lay s) :
     WP isa (.seq (.block entry) (.seq (gather w) (.seq (.block callArgsWhole)
-      (.frame (.push [.rax]) (.call F.name F.code) (.pop .rax 1))))) (pushed saved s) (Called s) := by
+      (.frame (.push [.rax]) (.call F.name F.code) (.pop .rax 1))))) (pushed saved s) (Called F s) := by
   refine WP.seq (WP.mono (entered_wp h) fun e he => ?_)
   refine WP.seq (WP.mono (gathered_wp w h he) fun g hg => ?_)
   refine WP.seq (WP.mono (ready_wp h hg) fun c hc => ?_)
@@ -574,5 +577,16 @@ theorem sealGather_wp (w : Width) (F : SealFn) {s : State} (hs : gatherPre s) :
   · have := hz.out
     simp only [gatherPost, popped_mem] at this ⊢
     exact this
+
+/-- What else the callee leaves (`SealFn.E`), from the state it was called
+in, in the memory `seal_gather` returns with. -/
+theorem sealGather_wpE (w : Width) (F : SealFn) {s : State} (hs : gatherPre s) :
+    WP isa (sealGatherWhole w F.name F.code) s fun z => ∃ c, Ready s c ∧ F.E (xS s c) z.mem := by
+  have h := lay hs
+  have hn : 8 * saved.length ≤ (s.gpr .rsp).toNat := by have := h.w₁; simp only [List.length_cons, List.length_nil]; omega_arith
+  refine WP.frame (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wp w F h) fun z hz =>
+    ⟨by rw [hz.rsp, hP s], by rw [hz.wr, hPwr s], ?_⟩)
+  simp only [popped_mem]
+  exact hz.ext
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Gather.Whole

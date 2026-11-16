@@ -18,11 +18,9 @@ def artifacts : List Artifact := [
     verified := Proof.Md5.AArch64.Shared.init },
   Spec.Md5.updateApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 112 .x4 Impl.Md5.AArch64.Stream.update
-    stack := 16 + 112
     verified := Proof.Md5.AArch64.Shared.update },
   Spec.Md5.finalizeApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratch 112 .x3 Impl.Md5.AArch64.Stream.finalize
-    stack := 16 + 112
     verified := Proof.Md5.AArch64.Shared.finalize }] ++
   (VG.Proof.Variants.MdHash.AArch64.md5Variants.flatMap fun (v : Proof.Pbkdf2.Md.AArch64.MdHash) =>
     v.stream.map fun f =>

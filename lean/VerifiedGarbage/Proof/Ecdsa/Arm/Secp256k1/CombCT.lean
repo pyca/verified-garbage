@@ -24,16 +24,16 @@ open VG VG.Arm VG.Impl.Ecdsa.Arm VG.Impl.Weierstrass.Arm
 def combSignPub (s t : State) : Prop := signArm.pub s t ∧ s.syms secp256k1Comb.tsym=t.syms secp256k1Comb.tsym
 
 theorem combSign_ct : ConstantTime isa (combSignPre false) combSignPub signSecp256k1Comb := by
-  refine VG.Taint.constantTime (A := taintSym [secp256k1Comb.tsym]) τ₀ ?_ (by native_taint_decide)
+  refine VG.Taint.constantTime (A := taintSym [secp256k1Comb.tsym]) τ₁ ?_ (by native_taint_decide)
   intro s t hs ht pub
-  exact ⟨agree₀ hs.1 ht.1 pub.1,fun n hn => by
+  exact ⟨agree₁ (agree₀ hs.1 ht.1 pub.1),fun n hn => by
     obtain rfl := List.mem_singleton.mp hn
     exact pub.2⟩
 
 theorem combSignU_ct : ConstantTime isa (combSignPre true) combSignPub signSecp256k1CombU := by
-  refine VG.Taint.constantTime (A := taintSymU [secp256k1Comb.tsym]) τ₀ ?_ (by taint_decide)
+  refine VG.Taint.constantTime (A := taintSymU [secp256k1Comb.tsym]) τ₁ ?_ (by taint_decide)
   intro s t hs ht pub
-  exact ⟨agree₀ hs.1 ht.1 pub.1,fun n hn => by
+  exact ⟨agree₁ (agree₀ hs.1 ht.1 pub.1),fun n hn => by
     obtain rfl := List.mem_singleton.mp hn
     exact pub.2⟩
 

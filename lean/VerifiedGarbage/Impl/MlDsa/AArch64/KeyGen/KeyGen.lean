@@ -117,28 +117,7 @@ def expAll (P : Prims) (p : Params) : Prog isa :=
 def copies : List Instr :=
   copy32 .x28 oHX .x26 0 ++ copy32 .x28 oHX .x27 0 ++ copy32 .x28 (oHX + 96) .x27 32
 
-/-- Entry `r` of `s₁ ‖ s₂`, packed to `sk`. -/
-def packS (P : Prims) (p : Params) (r : Nat) : Prog isa :=
-  bitPackAt P (sP p r) p.η p.η (.x27, 128 + lenS p * r) (lenS p)
-
-/-- `ŝ₁[j] = NTT(s₁[j])`. -/
-def nttS (P : Prims) (p : Params) (j : Nat) : Prog isa := nttAt P (sc oSS) (sP p j)
-
-/-- Row `i`: `t = NTT⁻¹(Σⱼ Â[i, j] ŝ₁[j]) + s₂[i]`, and its `t₁` to `pk` and `t₀` to `sk`. -/
-def row (P : Prims) (p : Params) (i : Nat) : Prog isa :=
-  .seq (mulAt P (tP p) (aP (p.ℓ * i)) (sP p 0))
-    (.seq (seqR (fun j => mulAddAt P (tP p) (aP (p.ℓ * i + j)) (sP p j)) 1 (p.ℓ - 1))
-    (.seq (invNttAt P (sc oSS) (tP p)) (.seq (addAt P (tP p) (sP p (p.ℓ + i)))
-    (.seq (power2RoundAt P (tP p) (t1P p) (t0P p))
-    (.seq (simpleBitPackAt P (t1P p) 1023 (.x26, 32 + 320 * i) 320)
-      (bitPackAt P (t0P p) 4095 4096 (.x27, oT0 p + 416 * i) 416))))))
-
 /-- `tr = H(pk, 64)` to `sk`. -/
 def trHashWith (p : Params) : Prog isa := (shake256With c) [⟨.x26, 0, p.pkLen⟩] [⟨.x27, 64, 64⟩]
-
-/-- Everything after the samplers. -/
-def restWith (P : Prims) (p : Params) : Prog isa :=
-  .seq (.block copies) (.seq (seqR (packS P p) 0 (p.ℓ + p.k)) (.seq (seqR (nttS P p) 0 p.ℓ)
-    (.seq (seqR (row P p) 0 p.k) ((trHashWith c) p))))
 
 end VG.Impl.MlDsa.AArch64.KeyGen

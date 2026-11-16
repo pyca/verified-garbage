@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.P224.Main
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
+public import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Spec.EcKey.P224
@@ -14,6 +15,7 @@ import VerifiedGarbage.Proof.Weierstrass.Words
 meta import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.P224.Main
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Spec.EcKey.P224
@@ -231,34 +233,45 @@ theorem front_rel : RelCT isa (Two Φ0) front224 (Two (Φd 0)) :=
     WP.mono (front_ok hs) fun s' F => ⟨s', by rw [F.s2, h0], by rw [← hA, ← h2]; exact F.fst,
       by rw [← hA, ← h2, ← hT]; exact F.dst⟩
 
+/-! The constant-time analyses of the calls of the field's product and difference from their
+arguments, each done once for the checks of the 24 digits (`taint_decide_sum`), every one of which
+calls the second and all but the first the first; they keep what is public of `s0` and
+`s4`–`s6`, which the functions do not write. -/
+taint_summary sqrtMulSum : (taintSym [sqrtSym]) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Ecdsa.RISCV64.p224Field.S.fn "mul") Impl.Ecdsa.RISCV64.p224Field.mulA)
+  keeping (Taint.ofRegs [.s0, .s4, .s5, .s6])
+taint_summary sqrtSubSum : (taintSym [sqrtSym]) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Ecdsa.RISCV64.p224Field.S.fn "sub") Impl.Ecdsa.RISCV64.p224Field.subA)
+  keeping (Taint.ofRegs [.s0, .s4, .s5, .s6])
+
 /-- Each digit is checked by the taint analysis from the registers of the digits. -/
 theorem digit_ct (j : Nat) (hj : j < 24) :
     ∃ hc, ((taintSym [sqrtSym]).check (Taint.ofRegs [.s0, .s4, .s5]) (digit j) hc).isSome = true := by
   match j, hj with
-  | 0, _ => exact ⟨_, by taint_decide⟩
-  | 1, _ => exact ⟨_, by taint_decide⟩
-  | 2, _ => exact ⟨_, by taint_decide⟩
-  | 3, _ => exact ⟨_, by taint_decide⟩
-  | 4, _ => exact ⟨_, by taint_decide⟩
-  | 5, _ => exact ⟨_, by taint_decide⟩
-  | 6, _ => exact ⟨_, by taint_decide⟩
-  | 7, _ => exact ⟨_, by taint_decide⟩
-  | 8, _ => exact ⟨_, by taint_decide⟩
-  | 9, _ => exact ⟨_, by taint_decide⟩
-  | 10, _ => exact ⟨_, by taint_decide⟩
-  | 11, _ => exact ⟨_, by taint_decide⟩
-  | 12, _ => exact ⟨_, by taint_decide⟩
-  | 13, _ => exact ⟨_, by taint_decide⟩
-  | 14, _ => exact ⟨_, by taint_decide⟩
-  | 15, _ => exact ⟨_, by taint_decide⟩
-  | 16, _ => exact ⟨_, by taint_decide⟩
-  | 17, _ => exact ⟨_, by taint_decide⟩
-  | 18, _ => exact ⟨_, by taint_decide⟩
-  | 19, _ => exact ⟨_, by taint_decide⟩
-  | 20, _ => exact ⟨_, by taint_decide⟩
-  | 21, _ => exact ⟨_, by taint_decide⟩
-  | 22, _ => exact ⟨_, by taint_decide⟩
-  | 23, _ => exact ⟨_, by taint_decide⟩
+  | 0, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 1, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 2, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 3, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 4, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 5, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 6, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 7, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 8, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 9, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 10, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 11, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 12, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 13, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 14, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 15, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 16, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 17, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 18, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 19, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 20, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 21, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 22, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
+  | 23, _ => show ∃ hc, _; taint_decide_sum [sqrtMulSum, sqrtSubSum]
   | _ + 24, h => exact absurd h (by omega_using [])
 
 theorem digits_rel : ∀ j, j ≤ 24 → RelCT isa (Two (Φd 0)) (digits j) (Two (Φd j))

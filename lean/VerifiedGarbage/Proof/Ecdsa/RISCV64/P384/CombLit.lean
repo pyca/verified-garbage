@@ -22,7 +22,9 @@ of frames its callers' calls need evaluate.
 
 namespace VG
 
-materialize_code Impl.Ecdsa.RISCV64.Comb.mulGP384
+-- The entry's selection is appends nested to the left (`Comb.Cfg.select`,
+-- `scanWord` and `tree`): flattened, the kernel checks it in half the time.
+materialize_flat_code Impl.Ecdsa.RISCV64.Comb.mulGP384
 
 /-- `vg_p384_mul_g`'s code has no frame, which its callers' calls need. -/
 theorem Impl.Ecdsa.RISCV64.Comb.mulGP384_noFrames : Impl.Ecdsa.RISCV64.Comb.mulGP384.noFrames = true := by

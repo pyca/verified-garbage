@@ -151,6 +151,8 @@ def VOp.asm : VOp → String
   | .mulHE op d n m i => s!"{op.name} {d.arr "8h"}, {n.arr "8h"}, v{m.index}.h[{i}]"
   | .pmull false d n m => s!"pmull {d.arr "1q"}, {n.arr "1d"}, {m.arr "1d"}"
   | .pmull true d n m => s!"pmull2 {d.arr "1q"}, {n.arr "2d"}, {m.arr "2d"}"
+  | .pmull8 false d n m => s!"pmull {d.arr "8h"}, {n.arr "8b"}, {m.arr "8b"}"
+  | .pmull8 true d n m => s!"pmull2 {d.arr "8h"}, {n.arr "16b"}, {m.arr "16b"}"
   | .aese d n => s!"aese {d.b}, {n.b}"
   | .aesd d n => s!"aesd {d.b}, {n.b}"
   | .aesmc d n => s!"aesmc {d.b}, {n.b}"
@@ -167,6 +169,15 @@ def VOp.asm : VOp → String
   | .sha512h2 d n m => s!"sha512h2 {d.q}, {n.q}, {m.arr "2d"}"
   | .sha512su0 d n => s!"sha512su0 {d.arr "2d"}, {n.arr "2d"}"
   | .sha512su1 d n m => s!"sha512su1 {d.arr "2d"}, {n.arr "2d"}, {m.arr "2d"}"
+  | .sm4e d n => s!"sm4e {d.arr "4s"}, {n.arr "4s"}"
+  | .sm4ekey d n m => s!"sm4ekey {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
+  | .sm3ss1 d n m a => s!"sm3ss1 {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}, {a.arr "4s"}"
+  | .sm3tt op d n m i =>
+    let name := match op with
+      | .tt1a => "sm3tt1a" | .tt1b => "sm3tt1b" | .tt2a => "sm3tt2a" | .tt2b => "sm3tt2b"
+    s!"{name} {d.arr "4s"}, {n.arr "4s"}, v{m.index}.s[{i}]"
+  | .sm3partw1 d n m => s!"sm3partw1 {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
+  | .sm3partw2 d n m => s!"sm3partw2 {d.arr "4s"}, {n.arr "4s"}, {m.arr "4s"}"
   | .eor3 d n m a => s!"eor3 {d.b}, {n.b}, {m.b}, {a.b}"
   | .bcax d n m a => s!"bcax {d.b}, {n.b}, {m.b}, {a.b}"
   | .rax1 d n m => s!"rax1 {d.arr "2d"}, {n.arr "2d"}, {m.arr "2d"}"
@@ -230,6 +241,7 @@ def Instr.asm : Instr → List String
   | .vop op => [op.asm]
   | .ldrq t n off => [s!"ldr {t.q}, [{n.name .x}, #{off}]"]
   | .ldrqTbl t n off .. => [s!"ldr {t.q}, [{n.name .x}, #{off}]"]
+  | .ldrTbl sz t n off .. => [s!"ldr {t.name sz}, [{n.name .x}, #{off}]"]
   | .strq t n off => [s!"str {t.q}, [{n.name .x}, #{off}]"]
   | .umov .w d n i => [s!"umov {d.name .w}, v{n.index}.s[{i}]"]
   | .umov .x d n i => [s!"umov {d.name .x}, v{n.index}.d[{i}]"]
@@ -265,6 +277,7 @@ def printer : Printer isa where
     | _ => none
   tables
     | .ldrqTbl _ _ _ name ws => [(name, ws)]
+    | .ldrTbl _ _ _ _ name ws => [(name, ws)]
     | _ => []
   /- Every function starts on a 64-byte boundary, a cache line, and so on
   the 32-byte boundaries the Arm Neoverse N1 Software Optimization Guide

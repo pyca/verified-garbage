@@ -27,12 +27,12 @@ structure Ctr32 where
   name : String
   code : Prog isa
 
-def Ctr32.scalar : Ctr32 := ⟨"vg_aes_ctr32", ctr32⟩
+def Ctr32.scalar : Ctr32 := ⟨"vg_aes_ctr32", ctr32N⟩
 def Ctr32.aese : Ctr32 := ⟨"vg_aes_ctr32_aes", Aese.ctr32⟩
 
 /-- Their out-of-place forms, internal functions (`ctr32Gen true`), which
 `vg_aes_gcm_open_to` calls to decrypt into `dst` as it reads `src`. -/
-def Ctr32.scalarTo : Ctr32 := ⟨"vg_aes_ctr32_to", ctr32To⟩
+def Ctr32.scalarTo : Ctr32 := ⟨"vg_aes_ctr32_to", ctr32ToN⟩
 def Ctr32.aeseTo : Ctr32 := ⟨"vg_aes_ctr32_to_aes", Aese.ctr32To⟩
 
 /-- An implementation of `vg_aes_expand_key_scratch` to call: its symbol and its code. -/
@@ -49,8 +49,8 @@ structure Blocks where
   name : String
   code : Prog isa
 
-def Blocks.encScalar : Blocks := ⟨"vg_aes_encrypt_blocks", encryptBlocks⟩
-def Blocks.decScalar : Blocks := ⟨"vg_aes_decrypt_blocks", decryptBlocks⟩
+def Blocks.encScalar : Blocks := ⟨"vg_aes_encrypt_blocks", encryptBlocksN⟩
+def Blocks.decScalar : Blocks := ⟨"vg_aes_decrypt_blocks", decryptBlocksN⟩
 def Blocks.encAese : Blocks := ⟨"vg_aes_encrypt_blocks_aes", Aese.encryptBlocks⟩
 def Blocks.decAese : Blocks := ⟨"vg_aes_decrypt_blocks_aes", Aese.decryptBlocks⟩
 

@@ -10,11 +10,17 @@ meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # The main squeezes of a hashing pair leak only public pointers
 
-The taint analysis does not follow `vg_keccak_f1600_x3_sha3`'s frame (its
+The taint analysis does not follow `vg_keccak_f1600_x3`'s frame (its
 pointers come back from the stack), so the squeezes are checked in pieces
 (`step3_relCT`): the XOR of a block of `ek` and the call's set-up by the taint
 analysis, from the pointers in `x19`, `x25` and `x28`; the call by its own
@@ -26,6 +32,7 @@ from `x19`, `x20`, `x21`, which the call keeps.
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Hybrid
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon (PairAt pairR wordAddr outAddr)
@@ -35,7 +42,7 @@ open VG.Proof.MlKem.AArch64.Paired (rateR21 Rate21 Blocks blockAt)
 open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_taint)
 open VG.Spec.Sha3 (stateAt bytesAt keccakF)
 
-/-- What the call of `vg_keccak_f1600_x3_sha3` needs of the memory. -/
+/-- What the call of `vg_keccak_f1600_x3` needs of the memory. -/
 structure CallLay (p q st : Addr) (s : State) : Prop where
   hq : p + BitVec.ofNat 64 1536 = q
   d01 : (pairR p).Disjoint (stR st)
@@ -56,9 +63,9 @@ theorem CallLay.frame {p q st : Addr} {s t : State} (h : CallLay p q st s) (hw :
 def preCode : List Instr :=
   [.addImm .x .x2 .x19 1536, .str .x .x30 .x2 128, .addImm .x .x0 .x19 0, .addImm .x .x1 .x28 0]
 
-theorem x3call_eq : Impl.MlKem.AArch64.Hybrid.x3call =
-    .seq (.block preCode) (.seq (.call Impl.Sha3.AArch64.Hybrid.X3.name Impl.Sha3.AArch64.Hybrid.X3.code)
-      (.block [.ldr .x .x30 .x19 1664])) := rfl
+theorem x3call_eq : (Impl.MlKem.AArch64.Hybrid.x3call sha3) =
+    .seq (.block preCode) (.seq (.call (Impl.Sha3.AArch64.Hybrid.X3.name sha3)
+      (Impl.Sha3.AArch64.Hybrid.X3.code sha3)) (.block [.ldr .x .x30 .x19 1664])) := rfl
 
 structure PreX3 (p q st : Addr) (s s₄ : State) : Prop where
   x0 : s₄.gpr .x0 = p
@@ -119,18 +126,19 @@ theorem call_covers {p q st : Addr} {X : List Region} (hcov : Covers [pairR p, s
     · exact ⟨callR q, by simp, 0, (BitVec.add_zero q).symm, by simp only [scrR, callR]; decide⟩).trans hcov
 
 theorem call_keeps {s s₄ : State} {p q st : Addr} (h : CallLay p q st s) (h₄ : PreX3 p q st s s₄) :
-    WP isa (.call Impl.Sha3.AArch64.Hybrid.X3.name Impl.Sha3.AArch64.Hybrid.X3.code) s₄ fun t =>
+    WP isa (.call (Impl.Sha3.AArch64.Hybrid.X3.name sha3) (Impl.Sha3.AArch64.Hybrid.X3.code sha3)) s₄ fun t =>
       t.gpr .x19 = s₄.gpr .x19 ∧ t.sp = s₄.sp := by
   have hc := call_covers (X := s₄.wr) (by rw [h₄.wr]; exact h.cov)
   exact WP.callFV (k := K) (rd := []) (wr := [pairR p, stR st, scrR q])
-    VG.Proof.Sha3.AArch64.Hybrid.X3.correct (kpre h h₄) (Covers.right hc) hc
-    (fun t _ _ hsp _ hk _ _ => ⟨hk .x19 (by decide) (by decide), hsp⟩) (by rw [depth]; decide)
+    (VG.Proof.Sha3.AArch64.Hybrid.X3.correct sha3) (kpre h h₄) (Covers.right hc) hc
+    (fun t _ _ hsp _ hk _ _ => ⟨hk .x19 (by decide) (by decide), hsp⟩)
+    (by have hd := depth sha3; omega_using [hd])
 
 /-- **The call** leaks only its public pointers. -/
 theorem x3call_relCT {σ₁ σ₂ : State} {p q st : Addr} (h₁ : CallLay p q st σ₁) (h₂ : CallLay p q st σ₂)
     (p₁ : σ₁.gpr .x19 = p) (p₂ : σ₂.gpr .x19 = p) (s₁ : σ₁.gpr .x28 = st) (s₂ : σ₂.gpr .x28 = st)
     (sp : σ₁.sp = σ₂.sp) :
-    RelCT isa (Eq2 σ₁ σ₂) Impl.MlKem.AArch64.Hybrid.x3call TT := by
+    RelCT isa (Eq2 σ₁ σ₂) (Impl.MlKem.AArch64.Hybrid.x3call sha3) TT := by
   rw [x3call_eq]
   refine rel_seq (rel_taint [.x19, .x28] sp (by
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -138,8 +146,8 @@ theorem x3call_relCT {σ₁ σ₂ : State} {p q st : Addr} (h₁ : CallLay p q s
       · rw [p₁, p₂]
       · rw [s₁, s₂]) ⟨_, by taint_decide⟩)
     (pre_ok p₁ s₁ h₁) (pre_ok p₂ s₂ h₂) fun v₁ v₂ hv₁ hv₂ => ?_
-  refine rel_seq ((RelCT.call (k := K) VG.Proof.Sha3.AArch64.Hybrid.X3.correct
-      VG.Proof.Sha3.AArch64.Hybrid.X3.ct [] [pairR p, stR st, scrR q] fun a b ⟨ha, hb⟩ => by
+  refine rel_seq ((RelCT.call (k := K) (VG.Proof.Sha3.AArch64.Hybrid.X3.correct sha3)
+      (VG.Proof.Sha3.AArch64.Hybrid.X3.ct sha3) [] [pairR p, stR st, scrR q] fun a b ⟨ha, hb⟩ => by
         subst ha hb
         refine ⟨kpre h₁ hv₁, kpre h₂ hv₂, ?_, ?_, ?_, ?_, ?_⟩
         · refine ⟨?_, ?_, ?_, ?_⟩
@@ -177,7 +185,7 @@ theorem step3_relCT (S : Impl.MlKem.AArch64.Hybrid.HSrc) (hS : SrcOk S) {σ₁ �
     (hl₁ : StepLay S p a b e st σ₁) (hl₂ : StepLay S p a b e st σ₂)
     (habs : ∃ h, (taint.check (Taint.ofRegs [S.r, .x28])
       (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock S blk)) h).isSome = true) :
-    RelCT isa (Eq2 σ₁ σ₂) (Impl.MlKem.AArch64.Hybrid.step3 S blk) TT := by
+    RelCT isa (Eq2 σ₁ σ₂) (Impl.MlKem.AArch64.Hybrid.step3 sha3 S blk) TT := by
   unfold Impl.MlKem.AArch64.Hybrid.step3
   refine rel_seq (rel_taint [S.r, .x28] sp (by
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -199,9 +207,9 @@ theorem step3_relCT (S : Impl.MlKem.AArch64.Hybrid.HSrc) (hS : SrcOk S) {σ₁ �
   have u19₂ : u₂.gpr .x19 = p := by rw [ku₂.get .x19, h19₂]
   have u28₁ : u₁.gpr .x28 = st := by rw [ku₁.get .x28, h28₁]
   have u28₂ : u₂.gpr .x28 = st := by rw [ku₂.get .x28, h28₂]
-  refine rel_seq (x3call_relCT c₁ c₂ u19₁ u19₂ u28₁ u28₂ (by rw [ku₁.sp, ku₂.sp, sp]))
-    (x3call_ok (S := stateAt u₁.mem st) u19₁ c₁.hq u28₁ pu₁ rfl c₁.d01 c₁.d02 c₁.d12 c₁.sp c₁.f0 c₁.f1 c₁.f2 c₁.cov)
-    (x3call_ok (S := stateAt u₂.mem st) u19₂ c₂.hq u28₂ pu₂ rfl c₂.d01 c₂.d02 c₂.d12 c₂.sp c₂.f0 c₂.f1 c₂.f2 c₂.cov)
+  refine rel_seq (x3call_relCT (sha3 := sha3) c₁ c₂ u19₁ u19₂ u28₁ u28₂ (by rw [ku₁.sp, ku₂.sp, sp]))
+    (x3call_ok (sha3 := sha3) (S := stateAt u₁.mem st) u19₁ c₁.hq u28₁ pu₁ rfl c₁.d01 c₁.d02 c₁.d12 c₁.sp c₁.f0 c₁.f1 c₁.f2 c₁.cov)
+    (x3call_ok (sha3 := sha3) (S := stateAt u₂.mem st) u19₂ c₂.hq u28₂ pu₂ rfl c₂.d01 c₂.d02 c₂.d12 c₂.sp c₂.f0 c₂.f1 c₂.f2 c₂.cov)
     fun v₁ v₂ ⟨kv₁, _⟩ ⟨kv₂, _⟩ => ?_
   have k₁ := ku₁.trans kv₁
   have k₂ := ku₂.trans kv₂
@@ -222,17 +230,27 @@ theorem sinvM_zero (S : Impl.MlKem.AArch64.Hybrid.HSrc) {s : State} {p e st : Ad
     fun j hj => absurd hj (Nat.not_lt_zero _), fun j hj => absurd hj (Nat.not_lt_zero _),
     by rw [hash, Nat.zero_min, Nat.add_zero], hE⟩
 
+/-- `rel_taint` by the vector-aware analysis. -/
+theorem rel_vtaint {c : Prog isa} {σ₁ σ₂ : State} (rs : List Reg) (hsp : σ₁.sp = σ₂.sp)
+    (hr : ∀ r ∈ rs, σ₁.gpr r = σ₂.gpr r)
+    (hc : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs rs) c h).isSome = true) :
+    RelCT isa (Eq2 σ₁ σ₂) c TT := by
+  obtain ⟨_, hc⟩ := hc
+  exact VectorTaint.relRegs rs (fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨hsp, hr⟩) hc
+
 /-- A main squeeze absorbing no block leaks only its public pointers. -/
 theorem plainStep_relCT {σ₁ σ₂ : State} (sp : σ₁.sp = σ₂.sp)
     (h19 : σ₁.gpr .x19 = σ₂.gpr .x19) (h20 : σ₁.gpr .x20 = σ₂.gpr .x20) (h21 : σ₁.gpr .x21 = σ₂.gpr .x21) :
-    RelCT isa (Eq2 σ₁ σ₂) Impl.MlKem.AArch64.Hybrid.plainStep TT :=
-  rel_taint [.x19, .x20, .x21] sp (by
-      intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact h19
-      · exact h20
-      · exact h21)
-    ⟨_, by taint_decide⟩
+    RelCT isa (Eq2 σ₁ σ₂) (Impl.MlKem.AArch64.Hybrid.plainStep sha3) TT := by
+  have hr : ∀ r ∈ [Reg.x19, .x20, .x21], σ₁.gpr r = σ₂.gpr r := by
+    intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
+    · exact h19
+    · exact h20
+    · exact h21
+  cases sha3
+  · exact rel_vtaint [.x19, .x20, .x21] sp hr ⟨_, by taint_decide⟩
+  · exact rel_taint [.x19, .x20, .x21] sp hr ⟨_, by taint_decide⟩
 
 theorem sstep_relCT (S : Impl.MlKem.AArch64.Hybrid.HSrc) (hS : SrcOk S) {init₁ init₂ s₁ s₂ : State}
     {p e st : Addr} {E₁ E₂ : List Byte} {A₁ B₁ A₂ B₂ : Spec.Sha3.State} {j m k : Nat} (hk : k < 3)
@@ -243,12 +261,12 @@ theorem sstep_relCT (S : Impl.MlKem.AArch64.Hybrid.HSrc) (hS : SrcOk S) {init₁
     (h₁ : SInvM S init₁ p e st E₁ A₁ B₁ j m k s₁) (h₂ : SInvM S init₂ p e st E₂ A₂ B₂ j m k s₂)
     (habs : k < m → ∃ h, (taint.check (Taint.ofRegs [S.r, .x28])
       (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock S (j + k))) h).isSome = true) :
-    RelCT isa (Eq2 s₁ s₂) (Impl.MlKem.AArch64.Hybrid.stepM S j m k) TT := by
+    RelCT isa (Eq2 s₁ s₂) (Impl.MlKem.AArch64.Hybrid.stepM sha3 S j m k) TT := by
   unfold Impl.MlKem.AArch64.Hybrid.stepM
   split
   · rename_i hkm
     have hm : min k m = k := Nat.min_eq_left (Nat.le_of_lt hkm)
-    exact step3_relCT S hS h₁.ptr h₁.pa h₁.pb (by rw [hS.keep h₁.keep (by decide) (by decide)]; exact e25₁)
+    exact step3_relCT (sha3 := sha3) S hS h₁.ptr h₁.pa h₁.pb (by rw [hS.keep h₁.keep (by decide) (by decide)]; exact e25₁)
       (by rw [h₁.keep.get .x28]; exact e28₁)
       h₂.ptr h₂.pa h₂.pb (by rw [hS.keep h₂.keep (by decide) (by decide)]; exact e25₂)
       (by rw [h₂.keep.get .x28]; exact e28₂)
@@ -256,7 +274,7 @@ theorem sstep_relCT (S : Impl.MlKem.AArch64.Hybrid.HSrc) (hS : SrcOk S) {init₁
       (by rw [h₂.hash, hm]) h₁.pair h₂.pair
       ((hl₁.frame h₁.keep.rd h₁.keep.wr h₁.keep.sp).stepLay hk)
       ((hl₂.frame h₂.keep.rd h₂.keep.wr h₂.keep.sp).stepLay hk) (habs hkm)
-  · exact plainStep_relCT (by rw [h₁.keep.sp, h₂.keep.sp, sp]) (by rw [h₁.ptr, h₂.ptr])
+  · exact plainStep_relCT (sha3 := sha3) (by rw [h₁.keep.sp, h₂.keep.sp, sp]) (by rw [h₁.ptr, h₂.ptr])
       (by rw [h₁.pa, h₂.pa]) (by rw [h₁.pb, h₂.pb])
 
 /-- **The three main squeezes** leak only public pointers. -/
@@ -269,18 +287,18 @@ theorem squeezeM_relCT (S : Impl.MlKem.AArch64.Hybrid.HSrc) (hS : SrcOk S) {s₁
     (h₁ : SInvM S s₁ p e st E₁ A₁ B₁ j m 0 s₁) (h₂ : SInvM S s₂ p e st E₂ A₂ B₂ j m 0 s₂)
     (habs : ∀ blk, 136 * blk < S.len → ∃ h, (taint.check (Taint.ofRegs [S.r, .x28])
       (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock S blk)) h).isSome = true) :
-    RelCT isa (Eq2 s₁ s₂) (Impl.MlKem.AArch64.Hybrid.squeezeM S j m) TT := by
+    RelCT isa (Eq2 s₁ s₂) (Impl.MlKem.AArch64.Hybrid.squeezeM sha3 S j m) TT := by
   unfold Impl.MlKem.AArch64.Hybrid.squeezeM
   have hb' : ∀ k, k < 3 → k < m → 136 * (j + k) < S.len := fun k hk hm => hb k hm hk
-  refine rel_seq (sstep_relCT S hS (k := 0) (by decide) (hb' 0 (by decide)) hl₁ hl₂ e25₁ e28₁ e25₂ e28₂ sp h₁ h₂
+  refine rel_seq (sstep_relCT (sha3 := sha3) S hS (k := 0) (by decide) (hb' 0 (by decide)) hl₁ hl₂ e25₁ e28₁ e25₂ e28₂ sp h₁ h₂
       (fun h => habs _ (hb' 0 (by decide) h)))
-    (sstep_ok S (k := 0) (by decide) hS (hb' 0 (by decide)) hl₁ e28₁ e25₁ h₁)
-    (sstep_ok S (k := 0) (by decide) hS (hb' 0 (by decide)) hl₂ e28₂ e25₂ h₂) fun t₁ t₂ ht₁ ht₂ => ?_
-  refine rel_seq (sstep_relCT S hS (k := 1) (by decide) (hb' 1 (by decide)) hl₁ hl₂ e25₁ e28₁ e25₂ e28₂ sp ht₁ ht₂
+    (sstep_ok (sha3 := sha3) S (k := 0) (by decide) hS (hb' 0 (by decide)) hl₁ e28₁ e25₁ h₁)
+    (sstep_ok (sha3 := sha3) S (k := 0) (by decide) hS (hb' 0 (by decide)) hl₂ e28₂ e25₂ h₂) fun t₁ t₂ ht₁ ht₂ => ?_
+  refine rel_seq (sstep_relCT (sha3 := sha3) S hS (k := 1) (by decide) (hb' 1 (by decide)) hl₁ hl₂ e25₁ e28₁ e25₂ e28₂ sp ht₁ ht₂
       (fun h => habs _ (hb' 1 (by decide) h)))
-    (sstep_ok S (k := 1) (by decide) hS (hb' 1 (by decide)) hl₁ e28₁ e25₁ ht₁)
-    (sstep_ok S (k := 1) (by decide) hS (hb' 1 (by decide)) hl₂ e28₂ e25₂ ht₂) fun u₁ u₂ hu₁ hu₂ => ?_
-  exact sstep_relCT S hS (k := 2) (by decide) (hb' 2 (by decide)) hl₁ hl₂ e25₁ e28₁ e25₂ e28₂ sp hu₁ hu₂
+    (sstep_ok (sha3 := sha3) S (k := 1) (by decide) hS (hb' 1 (by decide)) hl₁ e28₁ e25₁ ht₁)
+    (sstep_ok (sha3 := sha3) S (k := 1) (by decide) hS (hb' 1 (by decide)) hl₂ e28₂ e25₂ ht₂) fun u₁ u₂ hu₁ hu₂ => ?_
+  exact sstep_relCT (sha3 := sha3) S hS (k := 2) (by decide) (hb' 2 (by decide)) hl₁ hl₂ e25₁ e28₁ e25₂ e28₂ sp hu₁ hu₂
     (fun h => habs _ (hb' 2 (by decide) h))
 
 end VG.Proof.MlKem.AArch64.Hybrid

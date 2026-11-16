@@ -583,7 +583,7 @@ theorem initF_ok {s : State} (h : RtWs L s B Z len N) (room : 16 ≤ N) (hn2 : 2
     intro w hw
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_assoc] at hw
     simp only [bodyWrites, List.mem_cons, List.not_mem_nil, or_false, exists_eq_or_imp, exists_eq_left]
-    rw [hb0, r11, hde0, efs, eds, hAF, hAD, r2, r3, rv_a len 12] at *
+    simp only [hb0, r11, hde0, efs, eds, hAF, hAD, r2, r3, rv_a len 12] at hw ⊢
     rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp only <;> omega_arith
 
 end VG.Proof.Rsa.X86.InvBatchRt.F

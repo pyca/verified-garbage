@@ -849,13 +849,9 @@ def openSat : State where
   wr := [⟨0, 0⟩, ⟨0, 2560⟩]
 
 /-- `open`'s public data include its leak, from which `pub` has whether it
-succeeds. -/
-theorem openCode_verified {c : Prog isa}
-    (hc : ∀ s, Proof.AesGcm.openX86_64.pre s →
-      ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s')
-    (hct : ConstantTime isa Proof.AesGcm.openX86_64.pre Proof.AesGcm.openX86_64.pub c) :
-    Verified X86_64.target c (Proof.AesGcm.openScratchContract X86_64.abi 24) :=
-  Verified.of_correct hc hct
+succeeds: `openX86_64` from the scratch contract. -/
+theorem openCode_implies :
+    Proof.AesGcm.openX86_64.Implies (Proof.AesGcm.openScratchContract X86_64.abi 24) :=
     { pre := by sig_implies_pre [Proof.AesGcm.openScratchContract, Proof.AesGcm.openScratchSig, Spec.Gcm.openPre, Proof.AesGcm.openRoundsPost, Spec.Gcm.openLeak, Proof.AesGcm.openX86_64, Proof.AesGcm.openLeak, Proof.AesGcm.openPre, Proof.AesGcm.oneLay, Proof.AesGcm.onePub, X86_64.abi, Proof.AesGcm.arg, Proof.AesGcm.args, Proof.AesGcm.stk24,
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
@@ -886,6 +882,14 @@ theorem openCode_verified {c : Prog isa}
       Proof.AesGcm.ret, Proof.AesGcm.rounds, X86_64.stackArg, X86_64.stackArgAddr,
       List.getD, List.range, List.range.loop, VG.X86_64.below,
       X86_64.argRegs] [openSat] using openSat }
+
+/-- `vg_aes_gcm_open`'s contract, for any code that does what it says. -/
+theorem openCode_verified {c : Prog isa}
+    (hc : ∀ s, Proof.AesGcm.openX86_64.pre s →
+      ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ Proof.AesGcm.openX86_64.post s s')
+    (hct : ConstantTime isa Proof.AesGcm.openX86_64.pre Proof.AesGcm.openX86_64.pub c) :
+    Verified X86_64.target c (Proof.AesGcm.openScratchContract X86_64.abi 24) :=
+  Verified.of_correct hc hct openCode_implies
 
 theorem open_verified (v : GcmImpl) :
     Verified X86_64.target («open» v.callees) (Proof.AesGcm.openScratchContract X86_64.abi 24) :=

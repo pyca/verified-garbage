@@ -2,6 +2,7 @@ module
 
 import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.PublicKey
 import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Lit
+import VerifiedGarbage.Proof.X448.RISCV64.R64.Lit
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Ed448.WholeLocal
@@ -11,6 +12,7 @@ import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Ed448.RISCV64.Whole.PublicKey
 meta import VerifiedGarbage.Proof.Sha3.RISCV64.Stream.Lit
+meta import VerifiedGarbage.Proof.X448.RISCV64.R64.Lit
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Ed448.WholeLocal

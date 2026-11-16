@@ -144,8 +144,4 @@ def squeezeMainWith (c : Callee) : Prog isa :=
 
 def squeezeWith (c : Callee) : Prog isa := .frame (.push .x30) (squeezeMainWith c) (.pop .x30)
 
-def absorb : Prog isa := absorbWith .scalar
-def pad : Prog isa := padWith .scalar
-def squeeze : Prog isa := squeezeWith .scalar
-
 end VG.Impl.Sha3.AArch64.Stream

@@ -8,9 +8,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.KpkeAccY
 `vg_mlkem*_decrypt_mul(w = rdi, s = rsi, u = rdx, scratch = rcx)`
 (`Proof/MlKem/KpkeMulContract.lean`) computes `NTT⁻¹(ŝ^⊺ ∘ NTT(u'))` with the code
 of `vg_mlkem_ntt`, `vg_mlkem_multiply_ntts`, `vg_mlkem_add` and
-`vg_mlkem_inv_ntt` (or their AVX2 versions, `Bodies`) inlined, inside one
-MXCSR region (`withMxcsr`, at `scratch + 768`) rather than one per call,
-which is most of the cost of a call. It keeps `scratch` in `rbx`, `w` in
+`vg_mlkem_inv_ntt` (or their AVX2 versions, `Bodies`) inlined, rather than called, which is most of the cost of a call. It keeps `scratch` in `rbx`, `w` in
 `rbp`, `ŝ[j]` in `r12`, `u'[j]` in `r13` and the count of the `k` terms
 left in `r14`, and saves its caller's values of them (and of `r15`) at
 `scratch + 3072`.
@@ -304,9 +302,9 @@ products and `NTT⁻¹`. -/
 def encryptMulYg (term rowA : Prog isa) (k : Nat) : Prog isa :=
   .seq (.block (saveE ++ [.mov .rbx (.reg .r8), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rcx),
       .mov .r15 (.reg .rdx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
-    (.seq (withMxcsr .rbx oMx (.seq (.block startY) (.seq (.loop term .ne)
+    (.seq (.seq (.block startY) (.seq (.loop term .ne)
       (.seq (.block [.mov32 .r14 (.imm (BitVec.ofNat 32 k))]) (.seq (.loop rowA .ne)
-        (rowInvY [.mov .rsi (.reg .r15)] 1024 k))))))
+        (rowInvY [.mov .rsi (.reg .r15)] 1024 k)))))
     (.block restore))
 
 open KpkeMul in
@@ -320,7 +318,7 @@ open KpkeMul in
 def keygenMulg (term row : Prog isa) (B : Bodies) (k : Nat) : Prog isa :=
   .seq (.block (saveE ++ [.mov .rbx (.reg .r8), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rdx),
       .mov .r15 (.reg .rcx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
-    (.seq (withMxcsr .rbx oMx (.seq (.loop term .ne) (.seq (.block (midK B k)) (.loop row .ne))))
+    (.seq (.seq (.loop term .ne) (.seq (.block (midK B k)) (.loop row .ne)))
     (.block restore))
 
 open KpkeMul in
@@ -337,8 +335,8 @@ open KpkeMul in
 def decryptMul (B : Bodies) (k : Nat) : Prog isa :=
   .seq (.block (save ++ [.mov .rbx (.reg .rcx), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rdx),
       .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
-    (.seq (withMxcsr .rbx oMx (.seq (start B) (.seq (.loop (term B) .ne)
-      (.seq (.block [.mov .rdi (.reg .rbp), .mov .rsi (.reg .rbx)]) B.inv))))
+    (.seq (.seq (start B) (.seq (.loop (term B) .ne)
+      (.seq (.block [.mov .rdi (.reg .rbp), .mov .rsi (.reg .rbx)]) B.inv)))
     (.block restore))
 
 open KpkeMul in
@@ -346,8 +344,8 @@ open KpkeMul in
 def encryptMul (B : Bodies) (k : Nat) : Prog isa :=
   .seq (.block (saveE ++ [.mov .rbx (.reg .r8), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi), .mov .r13 (.reg .rcx),
       .mov .r15 (.reg .rdx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
-    (.seq (withMxcsr .rbx oMx (.seq (startE B k) (.seq (.loop (termE B k) .ne)
-      (.seq (.block [.mov32 .r15 (.imm (BitVec.ofNat 32 (k + 1)))]) (.loop (invE B) .ne)))))
+    (.seq (.seq (startE B k) (.seq (.loop (termE B k) .ne)
+      (.seq (.block [.mov32 .r15 (.imm (BitVec.ofNat 32 (k + 1)))]) (.loop (invE B) .ne))))
     (.block restore))
 
 end VG.Impl.MlKem.X86_64

@@ -9,6 +9,7 @@ public meta import VerifiedGarbage.TCB.AArch64.Print
 Each expected value was computed by the same instruction, in inline assembly
 exactly as the printer prints it (checked below), in a program
 cross-compiled with `aarch64-linux-gnu-gcc -march=armv8.4-a+crypto+sha3`
+(`+sm4` too, for SM4E, SM4EKEY and the SM3 instructions)
 and run under `qemu-aarch64 -cpu max`'s emulation of an AArch64 CPU with
 every feature, not on Arm hardware. Before each instruction the program
 loaded `v0`–`v3`, `x1` and `x0` from the inputs below (the pseudorandom
@@ -139,6 +140,11 @@ def xrun (k : Nat) (i : Instr) : Option (BitVec 64) := (exec i (s k)).map (·.gp
 #guard vrun 0 (.umullH false .v0 .v0 .v3) == some 0x08cb2caa1c980db20e77acac01eef4d4#128
 #guard vrun 0 (.pmull false .v0 .v1 .v2) == some 0x1741493c224e681a0d98ad159b352e7c#128
 #guard vrun 0 (.pmull true .v0 .v1 .v2) == some 0x0be6e7a8b9d9791a2b96e51a9bd89254#128
+#guard vrun 0 (.pmull8 false .v0 .v1 .v2) == some 0x1706553c20c207e60580099062701a7c#128
+#guard vrun 0 (.pmull8 true .v0 .v1 .v2) == some 0x0bf8191d52033ba445723b883ccc2a54#128
+#guard vrun 0 (.pmull8 false .v0 .v0 .v1) == some 0x61ec7c7c4b280665489031d00dc83bb3#128
+#guard vrun 0 (.pmull8 true .v0 .v1 .v0) == some 0x376b42e22f8518264a664e6012a8076c#128
+#guard vrun 0 (.pmull8 true .v0 .v0 .v0) == some 0x10154554111110055414401010140045#128
 #guard vrun 0 (.aese .v0 .v1) == some 0xcc5087fd6ed31c8ac0d7671b4f9c93b5#128
 #guard vrun 0 (.aesd .v0 .v1) == some 0xcbb8a37b74b7945f3df3bb8668c4887f#128
 #guard vrun 0 (.aesmc .v0 .v1) == some 0x35ea400a1afb2e1eb614224c1f261286#128
@@ -157,6 +163,42 @@ def xrun (k : Nat) (i : Instr) : Option (BitVec 64) := (exec i (s k)).map (·.gp
 #guard vrun 0 (.sha512h2 .v0 .v1 .v2) == some 0xfd4ab9e6b07a67152fcdcc94e07ca0f9#128
 #guard vrun 0 (.sha512su0 .v0 .v1) == some 0x9c7779b0e57cd56834c2e4b7e762c632#128
 #guard vrun 0 (.sha512su1 .v0 .v1 .v2) == some 0x074ce8dcceec869615fd4254e7abcb15#128
+#guard vrun 0 (.sm4e .v0 .v1) == some 0xb97c93e722dcdef27333ad3ce1637179#128
+#guard vrun 0 (.sm4e .v0 .v0) == some 0xe4419483c62ff8b7ed93cc0679795172#128
+#guard vrun 0 (.sm4ekey .v0 .v1 .v2) == some 0xb8418dc0821a81b6a76011928b2de305#128
+#guard vrun 0 (.sm4ekey .v0 .v0 .v1) == some 0xcd388321aa9203906c3d426283719754#128
+#guard vrun 0 (.sm4ekey .v0 .v1 .v0) == some 0x718bfdbf330ffedb4ae6e0f8b71cff06#128
+#guard vrun 0 (.sm4ekey .v0 .v0 .v0) == some 0x9a050672effaa43de7337b475b563816#128
+#guard vrun 0 (.sm3ss1 .v0 .v1 .v2 .v3) == some 0xb0710f37000000000000000000000000#128
+#guard vrun 0 (.sm3ss1 .v0 .v0 .v0 .v0) == some 0x686f80ba000000000000000000000000#128
+#guard vrun 0 (.sm3tt .tt1a .v0 .v1 .v2 0) == some 0x169f4ec947be5543088c17cd8caafc59#128
+#guard vrun 0 (.sm3tt .tt1a .v0 .v1 .v2 1) == some 0x453c1ddb47be5543088c17cd8caafc59#128
+#guard vrun 0 (.sm3tt .tt1a .v0 .v1 .v2 2) == some 0x00f18bf247be5543088c17cd8caafc59#128
+#guard vrun 0 (.sm3tt .tt1a .v0 .v1 .v2 3) == some 0x26ad5e3f47be5543088c17cd8caafc59#128
+#guard vrun 0 (.sm3tt .tt1a .v0 .v0 .v0 2) == some 0x66f8acb747be5543088c17cd8caafc59#128
+#guard vrun 0 (.sm3tt .tt1b .v0 .v1 .v2 0) == some 0xafbcb40347be5543088c17cd8caafc59#128
+#guard vrun 0 (.sm3tt .tt1b .v0 .v1 .v2 1) == some 0xde59831547be5543088c17cd8caafc59#128
+#guard vrun 0 (.sm3tt .tt1b .v0 .v1 .v2 2) == some 0x9a0ef12c47be5543088c17cd8caafc59#128
+#guard vrun 0 (.sm3tt .tt1b .v0 .v1 .v2 3) == some 0xbfcac37947be5543088c17cd8caafc59#128
+#guard vrun 0 (.sm3tt .tt1b .v0 .v0 .v0 2) == some 0x001611f147be5543088c17cd8caafc59#128
+#guard vrun 0 (.sm3tt .tt2a .v0 .v1 .v2 0) == some 0x1b3868b247be5543305f34228caafc59#128
+#guard vrun 0 (.sm3tt .tt2a .v0 .v1 .v2 1) == some 0xee5597e047be5543305f34228caafc59#128
+#guard vrun 0 (.sm3tt .tt2a .v0 .v1 .v2 2) == some 0x2f3a440a47be5543305f34228caafc59#128
+#guard vrun 0 (.sm3tt .tt2a .v0 .v1 .v2 3) == some 0xacfdcdec47be5543305f34228caafc59#128
+#guard vrun 0 (.sm3tt .tt2a .v0 .v0 .v0 2) == some 0xd309334c47be5543305f34228caafc59#128
+#guard vrun 0 (.sm3tt .tt2b .v0 .v1 .v2 0) == some 0x9217b81a47be5543305f34228caafc59#128
+#guard vrun 0 (.sm3tt .tt2b .v0 .v1 .v2 1) == some 0x7caf4fc347be5543305f34228caafc59#128
+#guard vrun 0 (.sm3tt .tt2b .v0 .v1 .v2 2) == some 0xced172aa47be5543305f34228caafc59#128
+#guard vrun 0 (.sm3tt .tt2b .v0 .v1 .v2 3) == some 0x39c6bb9047be5543305f34228caafc59#128
+#guard vrun 0 (.sm3tt .tt2b .v0 .v0 .v0 2) == some 0x16625d1447be5543305f34228caafc59#128
+#guard vrun 0 (.sm3partw1 .v0 .v1 .v2) == some 0x22f8a23514d31b3365b9eef9854665c8#128
+#guard vrun 0 (.sm3partw1 .v0 .v0 .v1) == some 0xc30c06fa1139d634701742cd6cc8d416#128
+#guard vrun 0 (.sm3partw1 .v0 .v1 .v0) == some 0xbf37f2a75133711a0dd9d6dab4765ed3#128
+#guard vrun 0 (.sm3partw1 .v0 .v0 .v0) == some 0x5425881914db665e7bb5603937b96f20#128
+#guard vrun 0 (.sm3partw2 .v0 .v1 .v2) == some 0x3796dba818ecb8362055855f097bf4d6#128
+#guard vrun 0 (.sm3partw2 .v0 .v0 .v1) == some 0x7ea70fe6cc266260e36f0ee4287e58d8#128
+#guard vrun 0 (.sm3partw2 .v0 .v1 .v0) == some 0x0e51e925653f0f3c10120e82e322db05#128
+#guard vrun 0 (.sm3partw2 .v0 .v0 .v0) == some 0x04a5ece3422305f3557e2cc6fc8b31d7#128
 #guard vrun 0 (.eor3 .v0 .v1 .v2 .v3) == some 0xd38723c13fe4abb8ef0db051ad714e91#128
 #guard vrun 0 (.bcax .v0 .v1 .v2 .v3) == some 0xd58323c033e4ada0ef0cbc51b8715c91#128
 #guard vrun 0 (.rax1 .v0 .v1 .v2) == some 0xe5c4f60725678e0ea4523881a00bb4c9#128
@@ -259,6 +301,11 @@ def xrun (k : Nat) (i : Instr) : Option (BitVec 64) := (exec i (s k)).map (·.gp
 #guard vrun 1 (.umullH false .v0 .v0 .v3) == some 0x0000000014377de014b2c2420b2cf79a#128
 #guard vrun 1 (.pmull false .v0 .v1 .v2) == some 0x7c193c7b7397c25d5a1bf2afa5a486b0#128
 #guard vrun 1 (.pmull true .v0 .v1 .v2) == some 0x103e08f3c079d0fc76eefe90abc383a2#128
+#guard vrun 1 (.pmull8 false .v0 .v1 .v2) == some 0x7c1a7f2e1720066e1af02aaa33b14eb0#128
+#guard vrun 1 (.pmull8 true .v0 .v1 .v2) == some 0x100808fc2a8e038807e93d100e2637a2#128
+#guard vrun 1 (.pmull8 false .v0 .v0 .v1) == some 0x23a7605c46d701b21a401a9939822dfc#128
+#guard vrun 1 (.pmull8 true .v0 .v1 .v0) == some 0x38c71f3c5f420140128e35335c1807ca#128
+#guard vrun 1 (.pmull8 true .v0 .v0 .v0) == some 0x11115444514501405514510151400114#128
 #guard vrun 1 (.aese .v0 .v1) == some 0x2e29c163f63459ff864b8296194f6f62#128
 #guard vrun 1 (.aesd .v0 .v1) == some 0x935de352e6eea5133327c9d94a742f0e#128
 #guard vrun 1 (.aesmc .v0 .v1) == some 0x6dec2e845d7b12e01f2f44c72959e15f#128
@@ -277,6 +324,42 @@ def xrun (k : Nat) (i : Instr) : Option (BitVec 64) := (exec i (s k)).map (·.gp
 #guard vrun 1 (.sha512h2 .v0 .v1 .v2) == some 0x379e146e30a774b6e2dcb854bd79d4ed#128
 #guard vrun 1 (.sha512su0 .v0 .v1) == some 0xe05ada678228565c85de122042e15cd2#128
 #guard vrun 1 (.sha512su1 .v0 .v1 .v2) == some 0x31accce537ca31778baf01787ecbbc7e#128
+#guard vrun 1 (.sm4e .v0 .v1) == some 0x28f25e04d1e0bae0300a27f870c0d9c9#128
+#guard vrun 1 (.sm4e .v0 .v0) == some 0xfab553693c111d40f95bb1973c4d2a29#128
+#guard vrun 1 (.sm4ekey .v0 .v1 .v2) == some 0x12d40a14cea5c3c25c4f4d1b503e5d7b#128
+#guard vrun 1 (.sm4ekey .v0 .v0 .v1) == some 0xbc932d434ef1b3c0b2f8911de7395f0c#128
+#guard vrun 1 (.sm4ekey .v0 .v1 .v0) == some 0x7638cf8adb64150d498dbb04a8584f8f#128
+#guard vrun 1 (.sm4ekey .v0 .v0 .v0) == some 0x2b2a45104166d56bb847796264825546#128
+#guard vrun 1 (.sm3ss1 .v0 .v1 .v2 .v3) == some 0x238670e0000000000000000000000000#128
+#guard vrun 1 (.sm3ss1 .v0 .v0 .v0 .v0) == some 0xc39dc72c000000000000000000000000#128
+#guard vrun 1 (.sm3tt .tt1a .v0 .v1 .v2 0) == some 0x469155d155eadb18a3b02ded49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt1a .v0 .v1 .v2 1) == some 0x40d7e6cf55eadb18a3b02ded49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt1a .v0 .v1 .v2 2) == some 0x7fdedc7355eadb18a3b02ded49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt1a .v0 .v1 .v2 3) == some 0x8a39271455eadb18a3b02ded49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt1a .v0 .v0 .v0 2) == some 0xca84b0fb55eadb18a3b02ded49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt1b .v0 .v1 .v2 0) == some 0xb17a74bf55eadb18a3b02ded49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt1b .v0 .v1 .v2 1) == some 0xabc105bd55eadb18a3b02ded49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt1b .v0 .v1 .v2 2) == some 0xeac7fb6155eadb18a3b02ded49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt1b .v0 .v1 .v2 3) == some 0xf522460255eadb18a3b02ded49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt1b .v0 .v0 .v0 2) == some 0x356dcfe955eadb18a3b02ded49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt2a .v0 .v1 .v2 0) == some 0x5bd6c9b455eadb18c0b7b68e49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt2a .v0 .v1 .v2 1) == some 0xb8f7602555eadb18c0b7b68e49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt2a .v0 .v1 .v2 2) == some 0x865b1c5155eadb18c0b7b68e49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt2a .v0 .v1 .v2 3) == some 0x2c56b9aa55eadb18c0b7b68e49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt2a .v0 .v0 .v0 2) == some 0x5bd5e7b555eadb18c0b7b68e49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt2b .v0 .v1 .v2 0) == some 0x3c6b708355eadb18c0b7b68e49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt2b .v0 .v1 .v2 1) == some 0xd953c91455eadb18c0b7b68e49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt2b .v0 .v1 .v2 2) == some 0xc3fda54c55eadb18c0b7b68e49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt2b .v0 .v1 .v2 3) == some 0xeca4f07255eadb18c0b7b68e49d2bf3e#128
+#guard vrun 1 (.sm3tt .tt2b .v0 .v0 .v0 2) == some 0xb487f91655eadb18c0b7b68e49d2bf3e#128
+#guard vrun 1 (.sm3partw1 .v0 .v1 .v2) == some 0x8db4ce9299d0761c33837bc0f6942224#128
+#guard vrun 1 (.sm3partw1 .v0 .v0 .v1) == some 0xb58efc2b98765823791732365ccc236a#128
+#guard vrun 1 (.sm3partw1 .v0 .v1 .v0) == some 0x57f4dae9778d639a2a74c3c0de576365#128
+#guard vrun 1 (.sm3partw1 .v0 .v0 .v0) == some 0x5d1a60a102405a26e5c908d0b94444b4#128
+#guard vrun 1 (.sm3partw2 .v0 .v1 .v2) == some 0x3ec676ed3b99566ba2dc73428d6f2bd1#128
+#guard vrun 1 (.sm3partw2 .v0 .v0 .v1) == some 0x7efbec69a1e4b59acf5c85cf22b1e216#128
+#guard vrun 1 (.sm3partw2 .v0 .v1 .v0) == some 0xf18c0e6eab7e1a063f139911eaf7ea53#128
+#guard vrun 1 (.sm3partw2 .v0 .v0 .v0) == some 0xeca8a8e768ec0b7be95f9f2436df37f8#128
 #guard vrun 1 (.eor3 .v0 .v1 .v2 .v3) == some 0xf877b13717bddcf3717782f1ceede32e#128
 #guard vrun 1 (.bcax .v0 .v1 .v2 .v3) == some 0xfb66af3715b3dde3717799e1cce5e32c#128
 #guard vrun 1 (.rax1 .v0 .v1 .v2) == some 0xabb20c466ea3e477424cf8dec5007c1d#128
@@ -436,6 +519,11 @@ def bytesAt (o : Nat) : BitVec 128 :=
 #guard Instr.asm (.vop (.umlalH true .v0 .v0 .v0)) == ["umlal2 v0.4s, v0.8h, v0.8h"]
 #guard Instr.asm (.vop (.pmull false .v0 .v1 .v2)) == ["pmull v0.1q, v1.1d, v2.1d"]
 #guard Instr.asm (.vop (.pmull true .v0 .v1 .v2)) == ["pmull2 v0.1q, v1.2d, v2.2d"]
+#guard Instr.asm (.vop (.pmull8 false .v0 .v1 .v2)) == ["pmull v0.8h, v1.8b, v2.8b"]
+#guard Instr.asm (.vop (.pmull8 true .v0 .v1 .v2)) == ["pmull2 v0.8h, v1.16b, v2.16b"]
+#guard Instr.asm (.vop (.pmull8 false .v0 .v0 .v1)) == ["pmull v0.8h, v0.8b, v1.8b"]
+#guard Instr.asm (.vop (.pmull8 true .v0 .v1 .v0)) == ["pmull2 v0.8h, v1.16b, v0.16b"]
+#guard Instr.asm (.vop (.pmull8 true .v0 .v0 .v0)) == ["pmull2 v0.8h, v0.16b, v0.16b"]
 #guard Instr.asm (.vop (.aese .v0 .v1)) == ["aese v0.16b, v1.16b"]
 #guard Instr.asm (.vop (.aesd .v0 .v1)) == ["aesd v0.16b, v1.16b"]
 #guard Instr.asm (.vop (.aesmc .v0 .v1)) == ["aesmc v0.16b, v1.16b"]
@@ -454,6 +542,42 @@ def bytesAt (o : Nat) : BitVec 128 :=
 #guard Instr.asm (.vop (.sha512h2 .v0 .v1 .v2)) == ["sha512h2 q0, q1, v2.2d"]
 #guard Instr.asm (.vop (.sha512su0 .v0 .v1)) == ["sha512su0 v0.2d, v1.2d"]
 #guard Instr.asm (.vop (.sha512su1 .v0 .v1 .v2)) == ["sha512su1 v0.2d, v1.2d, v2.2d"]
+#guard Instr.asm (.vop (.sm4e .v0 .v1)) == ["sm4e v0.4s, v1.4s"]
+#guard Instr.asm (.vop (.sm4e .v0 .v0)) == ["sm4e v0.4s, v0.4s"]
+#guard Instr.asm (.vop (.sm4ekey .v0 .v1 .v2)) == ["sm4ekey v0.4s, v1.4s, v2.4s"]
+#guard Instr.asm (.vop (.sm4ekey .v0 .v0 .v1)) == ["sm4ekey v0.4s, v0.4s, v1.4s"]
+#guard Instr.asm (.vop (.sm4ekey .v0 .v1 .v0)) == ["sm4ekey v0.4s, v1.4s, v0.4s"]
+#guard Instr.asm (.vop (.sm4ekey .v0 .v0 .v0)) == ["sm4ekey v0.4s, v0.4s, v0.4s"]
+#guard Instr.asm (.vop (.sm3ss1 .v0 .v1 .v2 .v3)) == ["sm3ss1 v0.4s, v1.4s, v2.4s, v3.4s"]
+#guard Instr.asm (.vop (.sm3ss1 .v0 .v0 .v0 .v0)) == ["sm3ss1 v0.4s, v0.4s, v0.4s, v0.4s"]
+#guard Instr.asm (.vop (.sm3tt .tt1a .v0 .v1 .v2 0)) == ["sm3tt1a v0.4s, v1.4s, v2.s[0]"]
+#guard Instr.asm (.vop (.sm3tt .tt1a .v0 .v1 .v2 1)) == ["sm3tt1a v0.4s, v1.4s, v2.s[1]"]
+#guard Instr.asm (.vop (.sm3tt .tt1a .v0 .v1 .v2 2)) == ["sm3tt1a v0.4s, v1.4s, v2.s[2]"]
+#guard Instr.asm (.vop (.sm3tt .tt1a .v0 .v1 .v2 3)) == ["sm3tt1a v0.4s, v1.4s, v2.s[3]"]
+#guard Instr.asm (.vop (.sm3tt .tt1a .v0 .v0 .v0 2)) == ["sm3tt1a v0.4s, v0.4s, v0.s[2]"]
+#guard Instr.asm (.vop (.sm3tt .tt1b .v0 .v1 .v2 0)) == ["sm3tt1b v0.4s, v1.4s, v2.s[0]"]
+#guard Instr.asm (.vop (.sm3tt .tt1b .v0 .v1 .v2 1)) == ["sm3tt1b v0.4s, v1.4s, v2.s[1]"]
+#guard Instr.asm (.vop (.sm3tt .tt1b .v0 .v1 .v2 2)) == ["sm3tt1b v0.4s, v1.4s, v2.s[2]"]
+#guard Instr.asm (.vop (.sm3tt .tt1b .v0 .v1 .v2 3)) == ["sm3tt1b v0.4s, v1.4s, v2.s[3]"]
+#guard Instr.asm (.vop (.sm3tt .tt1b .v0 .v0 .v0 2)) == ["sm3tt1b v0.4s, v0.4s, v0.s[2]"]
+#guard Instr.asm (.vop (.sm3tt .tt2a .v0 .v1 .v2 0)) == ["sm3tt2a v0.4s, v1.4s, v2.s[0]"]
+#guard Instr.asm (.vop (.sm3tt .tt2a .v0 .v1 .v2 1)) == ["sm3tt2a v0.4s, v1.4s, v2.s[1]"]
+#guard Instr.asm (.vop (.sm3tt .tt2a .v0 .v1 .v2 2)) == ["sm3tt2a v0.4s, v1.4s, v2.s[2]"]
+#guard Instr.asm (.vop (.sm3tt .tt2a .v0 .v1 .v2 3)) == ["sm3tt2a v0.4s, v1.4s, v2.s[3]"]
+#guard Instr.asm (.vop (.sm3tt .tt2a .v0 .v0 .v0 2)) == ["sm3tt2a v0.4s, v0.4s, v0.s[2]"]
+#guard Instr.asm (.vop (.sm3tt .tt2b .v0 .v1 .v2 0)) == ["sm3tt2b v0.4s, v1.4s, v2.s[0]"]
+#guard Instr.asm (.vop (.sm3tt .tt2b .v0 .v1 .v2 1)) == ["sm3tt2b v0.4s, v1.4s, v2.s[1]"]
+#guard Instr.asm (.vop (.sm3tt .tt2b .v0 .v1 .v2 2)) == ["sm3tt2b v0.4s, v1.4s, v2.s[2]"]
+#guard Instr.asm (.vop (.sm3tt .tt2b .v0 .v1 .v2 3)) == ["sm3tt2b v0.4s, v1.4s, v2.s[3]"]
+#guard Instr.asm (.vop (.sm3tt .tt2b .v0 .v0 .v0 2)) == ["sm3tt2b v0.4s, v0.4s, v0.s[2]"]
+#guard Instr.asm (.vop (.sm3partw1 .v0 .v1 .v2)) == ["sm3partw1 v0.4s, v1.4s, v2.4s"]
+#guard Instr.asm (.vop (.sm3partw1 .v0 .v0 .v1)) == ["sm3partw1 v0.4s, v0.4s, v1.4s"]
+#guard Instr.asm (.vop (.sm3partw1 .v0 .v1 .v0)) == ["sm3partw1 v0.4s, v1.4s, v0.4s"]
+#guard Instr.asm (.vop (.sm3partw1 .v0 .v0 .v0)) == ["sm3partw1 v0.4s, v0.4s, v0.4s"]
+#guard Instr.asm (.vop (.sm3partw2 .v0 .v1 .v2)) == ["sm3partw2 v0.4s, v1.4s, v2.4s"]
+#guard Instr.asm (.vop (.sm3partw2 .v0 .v0 .v1)) == ["sm3partw2 v0.4s, v0.4s, v1.4s"]
+#guard Instr.asm (.vop (.sm3partw2 .v0 .v1 .v0)) == ["sm3partw2 v0.4s, v1.4s, v0.4s"]
+#guard Instr.asm (.vop (.sm3partw2 .v0 .v0 .v0)) == ["sm3partw2 v0.4s, v0.4s, v0.4s"]
 #guard Instr.asm (.vop (.eor3 .v0 .v1 .v2 .v3)) == ["eor3 v0.16b, v1.16b, v2.16b, v3.16b"]
 #guard Instr.asm (.vop (.bcax .v0 .v1 .v2 .v3)) == ["bcax v0.16b, v1.16b, v2.16b, v3.16b"]
 #guard Instr.asm (.vop (.rax1 .v0 .v1 .v2)) == ["rax1 v0.2d, v1.2d, v2.2d"]
@@ -478,17 +602,76 @@ def bytesAt (o : Nat) : BitVec 128 :=
 #guard Instr.asm (.ldrq .v31 .x2 16) == ["ldr q31, [x2, #16]"]
 #guard Instr.asm (.strq .v16 .x30 65520) == ["str q16, [x30, #65520]"]
 
+/-! ## SM4E and SM4EKEY: the machine code
+
+The words `aarch64-linux-gnu-as -march=armv8.4-a+sm4` (GNU Binutils 2.42)
+assembles the printed text to. -/
+
+#guard Instr.encode (.vop (.sm4e .v0 .v1)) == some [0xCEC08420]
+#guard Instr.encode (.vop (.sm4e .v31 .v9)) == some [0xCEC0853F]
+#guard Instr.encode (.vop (.sm4ekey .v0 .v1 .v2)) == some [0xCE62C820]
+#guard Instr.encode (.vop (.sm4ekey .v7 .v30 .v18)) == some [0xCE72CBC7]
+#guard Instr.asm (.vop (.sm4e .v31 .v9)) == ["sm4e v31.4s, v9.4s"]
+#guard Instr.asm (.vop (.sm4ekey .v7 .v30 .v18)) == ["sm4ekey v7.4s, v30.4s, v18.4s"]
+
+/-! ## The SM3 instructions: the machine code, as above
+
+An index past 3 is no lane of `.4s`: the instruction faults, and has no
+machine code. -/
+
+#guard Instr.encode (.vop (.sm3ss1 .v0 .v1 .v2 .v3)) == some [0xCE420C20]
+#guard Instr.encode (.vop (.sm3ss1 .v31 .v9 .v17 .v26)) == some [0xCE51693F]
+#guard Instr.encode (.vop (.sm3tt .tt1a .v0 .v1 .v2 0)) == some [0xCE428020]
+#guard Instr.encode (.vop (.sm3tt .tt1a .v7 .v30 .v18 3)) == some [0xCE52B3C7]
+#guard Instr.encode (.vop (.sm3tt .tt1b .v7 .v30 .v18 1)) == some [0xCE5297C7]
+#guard Instr.encode (.vop (.sm3tt .tt2a .v7 .v30 .v18 2)) == some [0xCE52ABC7]
+#guard Instr.encode (.vop (.sm3tt .tt2b .v7 .v30 .v18 3)) == some [0xCE52BFC7]
+#guard Instr.encode (.vop (.sm3partw1 .v7 .v30 .v18)) == some [0xCE72C3C7]
+#guard Instr.encode (.vop (.sm3partw2 .v7 .v30 .v18)) == some [0xCE72C7C7]
+#guard Instr.asm (.vop (.sm3ss1 .v31 .v9 .v17 .v26)) == ["sm3ss1 v31.4s, v9.4s, v17.4s, v26.4s"]
+#guard Instr.asm (.vop (.sm3tt .tt1a .v7 .v30 .v18 3)) == ["sm3tt1a v7.4s, v30.4s, v18.s[3]"]
+#guard Instr.asm (.vop (.sm3tt .tt1b .v7 .v30 .v18 1)) == ["sm3tt1b v7.4s, v30.4s, v18.s[1]"]
+#guard Instr.asm (.vop (.sm3tt .tt2a .v7 .v30 .v18 2)) == ["sm3tt2a v7.4s, v30.4s, v18.s[2]"]
+#guard Instr.asm (.vop (.sm3tt .tt2b .v7 .v30 .v18 3)) == ["sm3tt2b v7.4s, v30.4s, v18.s[3]"]
+#guard Instr.asm (.vop (.sm3partw1 .v7 .v30 .v18)) == ["sm3partw1 v7.4s, v30.4s, v18.4s"]
+#guard Instr.asm (.vop (.sm3partw2 .v7 .v30 .v18)) == ["sm3partw2 v7.4s, v30.4s, v18.4s"]
+#guard vrun 0 (.sm3tt .tt1a .v0 .v1 .v2 4) == none
+#guard vrun 0 (.sm3tt .tt2b .v0 .v1 .v2 4) == none
+#guard Instr.encode (.vop (.sm3tt .tt1a .v0 .v1 .v2 4)) == none
+#guard Instr.encode (.vop (.sm3tt .tt2b .v0 .v1 .v2 4)) == none
+
+/-! ## PMULL and PMULL2 with 8-bit source elements: the machine code
+
+The words `aarch64-linux-gnu-as` (GNU Binutils 2.42), with no `-march` (the
+baseline), assembles the printed text to. -/
+
+#guard Instr.encode (.vop (.pmull8 false .v0 .v1 .v2)) == some [0x0E22E020]
+#guard Instr.encode (.vop (.pmull8 true .v0 .v1 .v2)) == some [0x4E22E020]
+#guard Instr.encode (.vop (.pmull8 false .v7 .v30 .v18)) == some [0x0E32E3C7]
+#guard Instr.encode (.vop (.pmull8 true .v31 .v9 .v0)) == some [0x4E20E13F]
+#guard Instr.asm (.vop (.pmull8 false .v7 .v30 .v18)) == ["pmull v7.8h, v30.8b, v18.8b"]
+#guard Instr.asm (.vop (.pmull8 true .v31 .v9 .v0)) == ["pmull2 v31.8h, v9.16b, v0.16b"]
+
 /-! ## CPU features -/
 
 #guard isa.requires (.vop (.aese .v0 .v1)) == ["aes"]
 #guard isa.requires (.vop (.aesimc .v0 .v1)) == ["aes"]
 #guard isa.requires (.vop (.pmull true .v0 .v1 .v2)) == ["aes"]
+#guard isa.requires (.vop (.pmull8 false .v0 .v1 .v2)) == []
+#guard isa.requires (.vop (.pmull8 true .v0 .v1 .v2)) == []
 #guard isa.requires (.vop (.sha1 .m .v0 .v1 .v2)) == ["sha2"]
 #guard isa.requires (.vop (.sha1h .v0 .v1)) == ["sha2"]
 #guard isa.requires (.vop (.sha256su1 .v0 .v1 .v2)) == ["sha2"]
 #guard isa.requires (.vop (.sha512h2 .v0 .v1 .v2)) == ["sha3"]
 #guard isa.requires (.vop (.eor3 .v0 .v1 .v2 .v3)) == ["sha3"]
 #guard isa.requires (.vop (.xar .v0 .v1 .v2 3)) == ["sha3"]
+#guard isa.requires (.vop (.sm4e .v0 .v1)) == ["sm4"]
+#guard isa.requires (.vop (.sm4ekey .v0 .v1 .v2)) == ["sm4"]
+#guard isa.requires (.vop (.sm3ss1 .v0 .v1 .v2 .v3)) == ["sm4"]
+#guard isa.requires (.vop (.sm3tt .tt1a .v0 .v1 .v2 0)) == ["sm4"]
+#guard isa.requires (.vop (.sm3tt .tt2b .v0 .v1 .v2 3)) == ["sm4"]
+#guard isa.requires (.vop (.sm3partw1 .v0 .v1 .v2)) == ["sm4"]
+#guard isa.requires (.vop (.sm3partw2 .v0 .v1 .v2)) == ["sm4"]
 #guard isa.requires (.vop (.tbl .v0 .v1 .v2)) == []
 #guard isa.requires (.vop (.umullH true .v0 .v1 .v2)) == []
 #guard isa.requires (.vop (.umlalH false .v0 .v1 .v2)) == []

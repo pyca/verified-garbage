@@ -33,23 +33,13 @@ open VG.AArch64 VG.Impl.MlDsa.AArch64.Call
 structure Prims where
   suffix : String := ""
   ntt : Prog isa
-  invNtt : Prog isa
-  mul : Prog isa
-  mulAdd : Prog isa
-  add : Prog isa
-  sub : Prog isa
   rej4 : Prog isa
   rejNTT : Prog isa
   expandMask : Prog isa
   pairedMask : Bool := false
   expandMaskPair : Prog isa := .block []
   ball : Prog isa
-  highBits : Prog isa
   highPack : Nat → Prog isa
-  lowBits : Prog isa
-  normLt : Prog isa
-  makeHint : Prog isa
-  simpleBitPack : Prog isa
   bitPack : Prog isa
   bitUnpack : Prog isa
   hintBitPack : Prog isa

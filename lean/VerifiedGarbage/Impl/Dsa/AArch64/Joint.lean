@@ -8,8 +8,8 @@ public import VerifiedGarbage.Impl.Dsa.Layout
 As x86-64's (`Impl/Dsa/X86_64/Joint.lean`): a sixteen-entry table holds
 `g^i y^j R` for `i, j < 4`, in the place of RSA's CRT table. Each window
 squares the accumulator twice and multiplies it by the entry of the next
-two-bit digit of each exponent, read by RSA's masked selection from every
-entry (`Crt.tabSelect`). Verification's two scalars `u` and `v` share their
+two-bit digit of each exponent, read from every entry by RSA's selection
+(`Crt.select`). Verification's two scalars `u` and `v` share their
 squarings: half as many as two separate exponentiations.
 -/
 
@@ -33,8 +33,8 @@ def windowIndex : List Instr :=
 
 /-- One window: `Y := Y⁴ T_v R⁻³`, the window count down into `x3`. -/
 def window (mul : Nat → Nat → Nat → Prog isa) : List (Prog isa) :=
-  [mul aY aY aY, mul aY aY aY, .block windowIndex] ++ Crt.tabSelect ++
-  [mul aY aY Crt.aT, .block [ldh .x3 Crt.sBit, .subImm .x .x3 .x3 1, sth .x3 Crt.sBit]]
+  [mul aY aY aY, mul aY aY aY, .block windowIndex, Crt.select,
+    mul aY aY Crt.aT, .block [ldh .x3 Crt.sBit, .subImm .x .x3 .x3 1, sth .x3 Crt.sBit]]
 
 /-- Both bytes at index `sI` into `sV`, and the window count 4. -/
 def byteHead : List Instr :=

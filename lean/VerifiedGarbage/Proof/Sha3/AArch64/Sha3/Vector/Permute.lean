@@ -104,17 +104,4 @@ theorem permute_correct (s : VG.AArch64.State) (hs : VG.Proof.Sha3.permuteAArch6
   obtain ⟨t,s',he,hsp,hv,hpost⟩ := correct s (pre_of s hs)
   exact ⟨t,s',he,⟨fun r hr => Exec.gpr (permute_preserved r hr) he (.inl permute_noCalls),hsp,hv⟩,hpost⟩
 
-theorem permute_ct : ConstantTime isa VG.Proof.Sha3.permuteAArch64.pre VG.Proof.Sha3.permuteAArch64.pub permute := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0,.x1]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ ⟨h1,h2,hsp⟩
-  refine ⟨hsp,fun r hr => ?_⟩
-  simp only [Taint.mem_ofRegs,List.mem_cons,List.not_mem_nil,or_false] at hr
-  rcases hr with rfl | rfl <;> with_reducible assumption
-
-theorem permute_verified :
-    Verified AArch64.target permute (Proof.Sha3.permuteContract AArch64.abi) :=
-  Verified.of_correct permute_correct permute_ct (by
-    sig_implies [Proof.Sha3.permuteContract,Proof.Sha3.permuteSig,VG.Proof.Sha3.permuteAArch64,
-      AArch64.abi,AArch64.argRegs] [VG.Proof.Sha3.AArch64.satState] using VG.Proof.Sha3.AArch64.satState)
-
 end VG.Proof.Sha3.AArch64.Sha3.Vector

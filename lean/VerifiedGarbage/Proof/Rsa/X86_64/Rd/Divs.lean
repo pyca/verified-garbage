@@ -40,7 +40,7 @@ def DaP (w y : Nat) : Prop :=
     (slot w 6 ≤ y ∧ y < slot w 16)
 
 macro "da_omega" : tactic =>
-  `(tactic| (simp only [DaP, DOk, Bignum.slot, hdrBytes, Impl.Bignum.X86_64.Public.sMask,
+  `(tactic| (dsimp only [DaP, DOk, Bignum.slot, hdrBytes, Impl.Bignum.X86_64.Public.sMask,
     Impl.Bignum.X86_64.Public.sElen, sFn, sC, sCt, qQ, qR, qT, qV, qA, qD]; omega_arith))
 
 /-- `divA`'s first part (wide): `a = g x` into wide arrays 10 and 11. -/
@@ -84,7 +84,7 @@ theorem divA1_ok {s : State} {B : Addr} {Z w v : Nat} (h : Ws s B Z w) (hwv : w 
       o2.word (by da_omega) (by da_omega), o1.word (by da_omega) (by da_omega)],
     (((fr o1 fun y => by da_omega).trans (fr o2 fun y => by da_omega)).trans (fr o3 fun y => by da_omega)).trans
       (fr o4 fun y => by da_omega),
-    (((k1.trans k2).trans k3).trans k4).mono (by simp [mmRegs]), h₃.congrO o4 (by da_omega) k4 (by simp)⟩
+    (((k1.trans k2).trans k3).trans k4).mono (by decide), h₃.congrO o4 (by da_omega) k4 (by simp)⟩
 
 /-- A number below `2^(64 (k + 1))`: its word `k` is its top. -/
 theorem word_top {m : Mem} {B : Addr} {d n k : Nat} (hk : k < n) (h : wv m B d n < 2 ^ (64 * (k + 1))) :
@@ -139,7 +139,7 @@ theorem divA2_ok {s : State} {B : Addr} {Z w h : Nat} (hw : Ws s B Z w) (hwh : w
   simp only [shlN, Bool.false_eq_true, ↓reduceIte] at v5 o5
   have fr : ∀ {o n : Nat} {m m' : Mem}, Outside B o n m m' → (∀ y, o ≤ y → y < o + n → DaP w y) →
       FrmP B (DaP w) m m' := fun ho hP => FrmP.of_out ho hP
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ((((k1.trans k2).trans k3).trans k4).trans k5).mono (by simp [mmRegs]),
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ((((k1.trans k2).trans k3).trans k4).trans k5).mono (by decide),
     h₄.congrO o5 (by da_omega) k5 (by simp)⟩
   · rw [o5.wv (by da_omega) (by da_omega), o4.wv (by da_omega) (by da_omega), v3,
       o2.wv (by da_omega) (by da_omega), o1.wv (by da_omega) (by da_omega), hN]
@@ -243,7 +243,7 @@ theorem divA3_ok {s : State} {B : Addr} {Z w h : Nat} (hw : Ws s B Z w) (hwh : w
   refine WP.mono (copyA_ok h₅ (o := 7) (a := 11) (by decide) (by decide) (by decide)) fun t ⟨v6, o6, k6⟩ => ?_
   have fr : ∀ {o n : Nat} {m m' : Mem}, Outside B o n m m' → (∀ y, o ≤ y → y < o + n → DaP w y) →
       FrmP B (DaP w) m m' := fun ho hP => FrmP.of_out ho hP
-  refine ⟨?_, ?_, ?_, ?_, ?_, (((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).mono (by simp [mmRegs]),
+  refine ⟨?_, ?_, ?_, ?_, ?_, (((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).mono (by decide),
     h₅.congrO o6 (by da_omega) k6 (by simp)⟩
   · rw [v6, o5.wv (by da_omega) (by da_omega), o4.wv (by da_omega) (by da_omega), o3.wv (by da_omega) (by da_omega),
       o2.wv (by da_omega) (by da_omega), Q1]
@@ -285,7 +285,7 @@ theorem divA12_ok {s : State} {B : Addr} {Z w h : Nat} (hw : Ws s B Z w) (hwh : 
   have hPh : 2 ^ (64 * (h - 1)) * 2 ^ 64 = 2 ^ (64 * h) := by rw [← Nat.pow_add]; congr 1; omega_arith
   have hNz : N * 2 ^ z < 2 ^ (64 * h) := hPh ▸ nb.2
   rw [Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le hNz (Nat.pow_le_pow_right (by decide) (by omega_arith)))] at d2
-  refine ⟨?_, ⟨z, hz64, z2⟩, el2.trans el1, mm2.trans mm1, f1.trans f2, (k1.trans k2).mono (by simp [mmRegs]), h₂⟩
+  refine ⟨?_, ⟨z, hz64, z2⟩, el2.trans el1, mm2.trans mm1, f1.trans f2, (k1.trans k2).mono (by decide), h₂⟩
   rw [show qD = 8 from rfl, word_top (n := w) (by omega_arith) (by
     rw [d2, show h - 1 + 1 = h by omega_arith]; exact hNz), d2]
   exact (Nat.le_div_iff_mul_le (Nat.two_pow_pos _)).mpr (by rw [Nat.mul_comm]; exact nb.1)
@@ -359,7 +359,7 @@ theorem divA_ok {s : State} {B : Addr} {Z w h : Nat} (hw : Ws s B Z w) (hwh : w 
         _ ≤ 2 ^ (64 * (2 * h + 2)) := Nat.pow_le_pow_right (by decide) (by omega_arith)
     rw [Nat.mod_eq_of_lt (Nat.lt_of_lt_of_le h1 (Nat.pow_le_pow_right (by decide) (by omega_arith))),
       Nat.mod_eq_of_lt h1]
-  refine ⟨?_, fun hc => ?_, ?_, (f1.trans f2).trans f3, ((k1.trans k2).trans k3).mono (by simp [mmRegs]), h₃⟩
+  refine ⟨?_, fun hc => ?_, ?_, (f1.trans f2).trans f3, ((k1.trans k2).trans k3).mono (by decide), h₃⟩
   · rw [m3]
     cases c
     · rfl
@@ -495,7 +495,7 @@ theorem selShlD_ok {s : State} {B : Addr} {Z w : Nat} (h : Ws s B Z w) {j t c : 
     fun u ⟨v2, o2, k2⟩ => ?_
   simp only [shlN, Bool.false_eq_true, ↓reduceIte] at v2 o2
   have Jv : wv s₁.mem B (slot w j) w = wv s.mem B (slot w j) w := o1.wv (by omega_arith) (by omega_arith)
-  refine ⟨by rw [v2, Jv, v1], frm2 o1 o2, (k1.trans k2).mono (by simp [mmRegs]),
+  refine ⟨by rw [v2, Jv, v1], frm2 o1 o2, (k1.trans k2).mono (by decide),
     h₁.congrO o2 (slot_256 _ _) k2 (by simp)⟩
 
 /-- What `normDN`'s stages change: arrays 2 to 5 and `sB2`. -/
@@ -503,7 +503,7 @@ def dnRs (w : Nat) : List (Nat × Nat) := [(slot w 2, 32 * (w + 2)), (8 * sB2, 8
 
 theorem dnR_trans {B : Addr} {w : Nat} {a b c : State} (h₁ : Frm B (dnRs w) a.mem b.mem ∧ Keep mmRegs a b)
     (h₂ : Frm B (dnRs w) b.mem c.mem ∧ Keep mmRegs b c) : Frm B (dnRs w) a.mem c.mem ∧ Keep mmRegs a c :=
-  ⟨h₁.1.trans h₂.1, (h₁.2.trans h₂.2).mono (by simp [mmRegs])⟩
+  ⟨h₁.1.trans h₂.1, (h₁.2.trans h₂.2).mono (by decide)⟩
 
 /-- A stage's guard: `CF` of `h < c + 1`. -/
 theorem stageDHd_ok {s : State} {B : Addr} {Z w h : Nat} (hw : Ws s B Z w) (hwh : w = 2 * h + 4) {c : Nat}
@@ -544,7 +544,7 @@ theorem stageD_ok {s : State} {B : Addr} {Z w h : Nat} (hw : Ws s B Z w) (hwh : 
   have h₁ : Ws s₁ B Z w := hw.congrP (P := fun _ => False) (fun _ _ => by rw [m₁]) (fun _ f => f.elim) k₁ (by simp)
   refine WP.ite (decide (h < c + 1)) (by simp only [eval, hcf]) (fun hb => ?_) (fun hb => ?_)
   · have hg : ¬ (c + 1 ≤ h) := by simp only [decide_eq_true_eq] at hb; omega_arith
-    refine WP.block_nil_iff.mpr ⟨?_, ?_, ?_, k₁.mono (by simp [mmRegs]), h₁⟩
+    refine WP.block_nil_iff.mpr ⟨?_, ?_, ?_, k₁.mono (by decide), h₁⟩
     · simp only [hg, false_and, ↓reduceIte]; rw [m₁, hD]
     · simp only [hg, false_and, ↓reduceIte]; rw [m₁, hN]
     · rw [m₁]; exact Frm.refl _ _ _
@@ -570,7 +570,7 @@ theorem stageD_ok {s : State} {B : Addr} {Z w h : Nat} (hw : Ws s B Z w) (hwh : 
     refine WP.mono (selShlD_ok h₃ (j := 5) (t := 3) (by decide) (by decide) (by decide) hc (by omega_arith) (by omega_arith) hk₃)
       fun t ⟨v4, f4, k4, ht⟩ => ?_
     rw [if_not_decide, f3.wv_eq (by tw_sep) (by omega_arith), N₂] at v4
-    refine ⟨?_, ?_, ?_, (((k₁.trans k₂).trans k3).trans k4).mono (by simp [mmRegs]), ht⟩
+    refine ⟨?_, ?_, ?_, (((k₁.trans k₂).trans k3).trans k4).mono (by decide), ht⟩
     · rw [f4.wv_eq (by tw_sep) (by omega_arith), v3]; simp only [hg, true_and]
     · rw [v4]; simp only [hg, true_and]
     · rw [← m₁]
@@ -707,7 +707,7 @@ def DbP (w y : Nat) : Prop :=
     (slot w 2 ≤ y ∧ y < slot w 6) ∨ (slot w 8 ≤ y ∧ y < slot w 16)
 
 macro "db_omega" : tactic =>
-  `(tactic| (simp only [DbP, DOk, Bignum.slot, hdrBytes, Impl.Bignum.X86_64.Public.sMask, sFn, sC, sCt, sB2,
+  `(tactic| (dsimp only [DbP, DOk, Bignum.slot, hdrBytes, Impl.Bignum.X86_64.Public.sMask, sFn, sC, sCt, sB2,
     qQ, qR, qT, qV, qA, qD, dnRs]; omega_arith))
 
 theorem pows6 : wordStages = VG.Proof.Bignum.ShiftStages.pows 6 := by decide
@@ -791,7 +791,7 @@ theorem normDN_ok {s : State} {B : Addr} {Z w h : Nat} (hw : Ws s B Z w) (hwh : 
     rw [m7, word_writeW_self]
   have fr : ∀ {o n : Nat} {m m' : Mem}, Outside B o n m m' → (∀ y, o ≤ y → y < o + n → DbP w y) →
       FrmP B (DbP w) m m' := fun ho hP => FrmP.of_out ho hP
-  refine ⟨?_, ?_, ?_, ?_, ((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).mono (by simp [mmRegs]),
+  refine ⟨?_, ?_, ?_, ?_, ((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).mono (by decide),
     h₆.congrO o7 (by db_omega) k7 (by simp)⟩
   · rw [show qD = 8 from rfl, top7]; exact top_or _
   · intro hD1 hDh hNh
@@ -880,7 +880,7 @@ theorem divB1_ok {s : State} {B : Addr} {Z w : Nat} (hw : Ws s B Z w) {N M R : N
       FrmP B (DbP w) m m' := fun ho hP => FrmP.of_out ho hP
   refine ⟨fun hle => ?_, ?_, ?_, ?_, ?_, (((fr o1 fun y => by db_omega).trans (fr o2 fun y => by db_omega)).trans
     (fr o3 fun y => by db_omega)).trans (fr o4 fun y => by db_omega),
-    (((k1.trans k2).trans k3).trans k4).mono (by simp [mmRegs]), h₃.congrO o4 (by db_omega) k4 (by simp)⟩
+    (((k1.trans k2).trans k3).trans k4).mono (by decide), h₃.congrO o4 (by db_omega) k4 (by simp)⟩
   · rw [o4.wv (by db_omega) (by db_omega), o3.wv (by db_omega) (by db_omega)]
     have : decide (N < R) = false := by simp only [decide_eq_false_iff_not]; omega_arith
     rw [this] at e2
@@ -974,7 +974,7 @@ theorem divB3_ok {s : State} {B : Addr} {Z w h : Nat} (hw : Ws s B Z w) (hwh : w
     (by decide)) fun t ⟨v6, o6, k6⟩ => ?_
   have fr : ∀ {o n : Nat} {m m' : Mem}, Outside B o n m m' → (∀ y, o ≤ y → y < o + n → DbP w y) →
       FrmP B (DbP w) m m' := fun ho hP => FrmP.of_out ho hP
-  refine ⟨?_, ?_, ?_, (((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).mono (by simp [mmRegs]),
+  refine ⟨?_, ?_, ?_, (((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).mono (by decide),
     h₅.congrO o6 (by db_omega) k6 (by simp)⟩
   · rw [v6, o5.wv (by db_omega) (by db_omega), o4.wv (by db_omega) (by db_omega), m3,
       o2.wv (by db_omega) (by db_omega), Q1, o5.wv (by db_omega) (by db_omega), o4.wv (by db_omega) (by db_omega), m3,
@@ -1009,7 +1009,7 @@ theorem divB_ok {s : State} {B : Addr} {Z w h : Nat} (hw : Ws s B Z w) (hwh : w 
   have one₂ : wv t₂.mem B (slot w 1) w = 1 := by rw [f2.wv_eq (fun y => by db_omega) (by db_omega), one1]
   refine WP.mono (divB3_ok h₂ hwh h8 (c := c) one₂ (by rw [mm2, mm1, hm]) top2) fun t ⟨v3, m3, f3, k3, h₃⟩ => ?_
   refine ⟨wv t₂.mem B (slot w 9) (2 * h) / wv t₂.mem B (slot w 8) h, fun hc' => ?_, v3, ?_, (f1.trans f2).trans f3,
-    ((k1.trans k2).trans k3).mono (by simp [mmRegs]), h₃⟩
+    ((k1.trans k2).trans k3).mono (by decide), h₃⟩
   · obtain ⟨hMN, hRN⟩ := hc hc'
     have hDw : M + 1 < 2 ^ (64 * w) :=
       Nat.lt_of_le_of_lt (by omega_arith) (Nat.lt_of_lt_of_le hNh (Nat.pow_le_pow_right (by decide) (by omega_arith)))
@@ -1098,7 +1098,7 @@ theorem prodB_ok {s : State} {B : Addr} {Z w u : Nat} (h : Ws s B Z w) (hwu : w 
   have hEs : wv s₄.mem B (slot w Recover.aE) u = wv s.mem B (slot w Recover.aE) u := by
     rw [m₄, m₃]; exact o12.wv (Or.inl (by omega_arith)) (by omega_arith)
   refine ⟨by rw [hI.val, hDs, hEs], fun x hx => by rw [hI.out x hx, m₄, m₃]; exact o12 x hx,
-    k04.mono (by simp [mmRegs])⟩
+    k04.mono (by decide)⟩
 
 /-! ## `b² - 4 n` (wide) -/
 
@@ -1106,7 +1106,7 @@ theorem prodB_ok {s : State} {B : Addr} {Z w u : Nat} (h : Ws s B Z w) (hwu : w 
 def MnP (w y : Nat) : Prop := (slot w 0 ≤ y ∧ y < slot w 1) ∨ (slot w 7 ≤ y ∧ y < slot w 16) ∨ (176 ≤ y ∧ y < 184)
 
 macro "mn_omega" : tactic =>
-  `(tactic| (simp only [MnP, DOk, Bignum.slot, hdrBytes, Impl.Bignum.X86_64.Public.sMask,
+  `(tactic| (dsimp only [MnP, DOk, Bignum.slot, hdrBytes, Impl.Bignum.X86_64.Public.sMask,
     Impl.Bignum.X86_64.Public.sElen, sFn, ar]; omega_arith))
 
 /-- `minus4n` (wide, `w = 2 v + 2`): `b²` (`b` in wide array 4, below
@@ -1144,7 +1144,7 @@ theorem minus4n_ok {s : State} {B : Addr} {Z w v : Nat} (h : Ws s B Z w) (hwv : 
   simp only [Recover.aE, Recover.aD, Recover.aM] at v3 o3
   rw [← wv_mod_low t₂.mem B (slot w 8) (c := v) (n := w) (by omega_arith), E₂, hb,
     ← wv_mod_low t₂.mem B (slot w 9) (c := v) (n := w) (by omega_arith), D₂, hb] at v3
-  have h₃ := h₂.congrO o3 (by mn_omega) k3 (by simp [mmRegs])
+  have h₃ := h₂.congrO o3 (by mn_omega) k3 (by decide)
   have S₃ : wv t₃.mem B (slot w 10) w = b * b % 2 ^ (64 * w) := by
     rw [← v3, show 2 * (w + 2) = w + (w + 4) by omega_arith]; exact wv_low_mod
   -- `4 n`.
@@ -1214,6 +1214,6 @@ theorem minus4n_ok {s : State} {B : Addr} {Z w v : Nat} (h : Ws s B Z w) (hwv : 
       (fr o7 fun y => by mn_omega)).trans (fr o8 fun y => by mn_omega)).trans (fr o9 fun y => by mn_omega)).trans
       (fr o10 fun y => by mn_omega)
   · exact (((((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).trans k8).trans k9).trans k10).mono
-      (by simp [mmRegs])
+      (by decide)
 
 end VG.Proof.Rsa.X86_64.Rd

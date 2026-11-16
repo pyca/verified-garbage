@@ -138,38 +138,4 @@ structure AfterA (P : KemLay) (s₀ s : State) : Prop where
   rho : bytesAt s.mem (kA s₀ 3 + BitVec.ofNat 64 SB) 32 = KPke.kgRho P.params (dB s₀)
   sig : bytesAt s.mem (kA s₀ 3 + BitVec.ofNat 64 SG) 32 = KPke.kgSigma P.params (dB s₀)
 
-theorem g_ok {s₀ : State} (hp : Pre P s₀) {s : State} (h : AfterPro P s₀ s) :
-    WP isa (KemLay.kgGWith keccak.callee) s (AfterA P s₀) := by
-  have hw := hp.wf
-  have f : ∀ {o l : Nat}, o + l ≤ 960 → o + l ≤ kL P 3 := fun h => by simp only [kL]; lom
-  have e : ∀ o, s.gpr .x28 + BitVec.ofNat 64 o = kA s₀ 3 + BitVec.ofNat 64 o := fun o => by
-    rw [h.kb.x28]
-  refine WP.mono (hashWith_ok keccak (hsetup hp h.kb (by decide : 72 ∈ Spec.Sha3.rates)) (sfx := 6) (by decide)
-    (ins := [⟨.x25, 0, 32⟩, ⟨.x28, BK, 1⟩]) (outs := [⟨.x28, SB, 32⟩, ⟨.x28, SG, 32⟩]) (by simp)
-    (fun p hp' => ?_) (fun p hp' => ?_) ?_) fun s' ⟨k', o'⟩ => ?_
-  · rcases mem2' hp' with rfl | rfl
-    · exact pieceOk (b := 0) hp h.kb (by decide) (by kl) (by decide) (by decide) (by decide)
-    · exact pieceOk (b := 3) hp h.kb (by decide) (f (by decide)) (by decide) (by decide) (by decide)
-  · rcases mem2' hp' with rfl | rfl
-    · exact pieceOk (b := 3) hp h.kb (by decide) (f (by decide)) (by decide) (by decide) (by decide)
-    · exact pieceOk (b := 3) hp h.kb (by decide) (f (by decide)) (by decide) (by decide) (by decide)
-  · refine List.pairwise_pair.mpr ?_
-    simp only [preg, e]
-    exact hp.args.rdisj (by decide) (by decide) (f (by decide)) (f (by decide)) (by decide)
-  have kb' := h.kb.hash hp k' fun p hp' => by
-    rcases mem2' hp' with rfl | rfl
-    · exact ⟨3, SB, 32, rfl, by decide, by decide, f (by decide), .inr (.inr (by lom))⟩
-    · exact ⟨3, SG, 32, rfl, by decide, by decide, f (by decide), .inr (.inr (by lom))⟩
-  have msg : (List.map (pbytes s) [⟨.x25, 0, 32⟩, ⟨.x28, BK, 1⟩]).flatten =
-      dB s₀ ++ [BitVec.ofNat 8 P.k] := by
-    simp only [List.map_cons, List.map_nil, List.flatten_cons, List.flatten_nil, List.append_nil, pbytes,
-      h.kb.x25, e]
-    rw [show kA s₀ 0 = kA s₀ 0 from rfl, KB.d h.kb, h.bk]
-  obtain ⟨o₁, o₂, -⟩ := o'
-  rw [msg, e] at o₁ o₂
-  have hG := G_eq (dB s₀ ++ [BitVec.ofNat 8 P.params.k])
-  refine ⟨kb', by rw [k'.cs _ (by decide) (by decide), h.x24], ?_, ?_⟩
-  · rw [o₁, KPke.kgRho, hG]; rfl
-  · rw [o₂, KPke.kgSigma, hG]; rfl
-
 end VG.Proof.MlKem.AArch64.KeyGen

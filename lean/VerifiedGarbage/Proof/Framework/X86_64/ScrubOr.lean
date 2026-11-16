@@ -618,4 +618,31 @@ def withScrubM {api : Api} (r : Registration api target)
           (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r₂ else r
     else r else r else r else r else r else r else r else r else r
 
+/-- `withScrubRes`, from the granules `ks` a proof of the code gives (`hres`),
+where its side conditions hold; otherwise, for code whose every `ldmxcsr`
+loads what `Mx.mx` follows, the same clearing without `mxFix` (`scrubRegF`,
+as `withScrubM` does) at the level `levelForE` of its code, if the clearing
+needs no CPU feature the code does not; otherwise `r` itself. -/
+def withScrubResM {api : Api} (r : Registration api target)
+    (hpost : PostOut r.contract (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits))
+    (ks : List Nat) (hres : ResOk r.code r.contract r.stack ks (chunks r.stack)) : Registration api target :=
+  let r₁ := withScrubRes r hpost ks hres
+  if r₁.residue.isSome then r₁ else
+  let v := levelForE r.code
+  if hmx : (Mx.mxOnce r.code []).isSome = true then
+  if hd : r.code.x86_64Depth ≤ r.stack then
+  if hst : r.stack + 8 < 2 ^ 64 then
+  if h8 : r.stack % 8 = 0 then
+  if hlv : levelLeROnce v.level r.code = true then
+  if hrb : api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits ≤ 32 ∨
+      api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits = 64 then
+  if hw : r.written = [] then
+  if hx : v = .evex → noVec r.code = false then
+    let r₂ := scrubRegF r v ks hd hst h8 ((Code.allOnce_eq _ r.code).symm.trans hlv)
+      (Mx.mxSame_of (Mx.mxOnce_eq r.code [] ▸ hmx)) hrb hpost hres hw
+      (fun e x => by unfold xsOf; rw [show r.code.all (fun i => !writesVec i) = false from hx e]; exact mem_xregs x)
+    if (Code.requiresDedup isa.requires r₂.code).all
+        (fun f => (Code.requiresDedup isa.requires r.code).contains f) then r₂ else r
+  else r else r else r else r else r else r else r else r
+
 end VG.X86_64.RScrub

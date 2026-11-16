@@ -25,6 +25,7 @@ rest by the taint analyses, the matrix around `G` by `matrixP_relCT`. -/
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem16P
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KEM VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Kem
@@ -66,7 +67,7 @@ theorem encapsP_ct (hash : FixedHash.HashFn) (prf : Nat → Nat → Prog isa) (h
         (Impl.MlKem.AArch64.Kem16P.placed P (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Hybrid.ekSrc P)))
         .x25 0 .x28 MB .x27 0) (.block P.kemEpilogue)) h).isSome = true) :
     ConstantTime isa (entryContractS (encapsAArch64S P)).pre (entryContractS (encapsAArch64S P)).pub
-      (Impl.MlKem.AArch64.Kem16P.encaps hash prf P) := by
+      (Impl.MlKem.AArch64.Kem16P.encaps sha3 hash prf P) := by
   intro s u tr ur t v hs hu hpub et eu
   have ss := preS hs.1
   have su := preS hu.1
@@ -130,7 +131,7 @@ theorem encapsP_ct (hash : FixedHash.HashFn) (prf : Nat → Nat → Prog isa) (h
   -- The matrix.
   obtain ⟨sB, tc, td, rfl, ec, ed⟩ := Paired.seq_parts eb
   obtain ⟨uB, uc, ud, rfl, fc, fd⟩ := Paired.seq_parts fb
-  have bm := matrixP_relCT ps pu ks ku (ekM_ok ps ks hsrc) (ekM_ok pu ku hsrc) sm ho habs between
+  have bm := matrixP_relCT (sha3 := sha3) ps pu ks ku (ekM_ok ps ks hsrc) (ekM_ok pu ku hsrc) sm ho habs between
     _ _ _ _ _ _ ⟨⟨hsA.1, huA.1, hsA.2.1, huA.2.1, by rw [Exec.syms ea, Exec.syms fa]; exact sym.1⟩, rfl, rfl⟩ ec fc
   obtain ⟨⟨_, bs⟩, ⟨_, bu⟩, _⟩ := bm.2
   -- The rest.

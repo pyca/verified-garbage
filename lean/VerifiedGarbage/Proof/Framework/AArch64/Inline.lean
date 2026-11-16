@@ -39,6 +39,7 @@ def dstOf : Instr → Option Reg
   | .add _ d .. | .sub _ d .. | .addImm _ d .. | .subImm _ d .. | .logic _ _ d .. | .logicRor _ _ d .. | .bicRor _ d .. | .ror _ d .. | .extr _ d ..
   | .lsr _ d .. | .lsl _ d .. | .madd _ d .. | .mul _ d .. | .rev32 d _ | .rev d _ | .clz _ d _ | .rbit _ d _ | .movz _ d ..
   | .addSp d _ | .movk _ d .. | .ldr _ d .. | .ldrb d .. | .ldrSp d _ | .pop d | .umov _ d .. | .mrsDit d => some d
+  | .ldrTbl _ d .. => some d
   | .cselc _ d .. | .csneg _ d .. => some d
   | .str .. | .strb .. | .strSp .. | .alloc _ | .free _ | .push _ | .vop _ | .ldrq .. | .ldrqTbl .. | .strq .. | .tst .. | .ccmp ..
   | .ldp .. | .stp .. | .align _ | .blr _ | .msrDitImm _ | .barrier _ => none
@@ -186,7 +187,7 @@ theorem exec_widen (hc : Covers (s.rd ++ s.wr) (rd ++ wr)) (hw : Covers s.wr wr)
   | push _ | pop _ | alloc _ | free _ | blr _ => simp only [exec, reduceCtorEq] at h
   | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
   | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
-  | umov _ _ _ _ =>
+  | umov _ _ _ _ | ldrTbl _ _ _ _ _ _ =>
     obtain ⟨hh, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h
     exact ite_eq_left hh
   | _ => obtain rfl := Option.some.inj h; rfl
@@ -268,7 +269,7 @@ theorem exec_regions {i : Instr} (h : exec i s = some s') :
   | push _ | pop _ | alloc _ | free _ | blr _ => simp only [exec, reduceCtorEq] at h
   | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
   | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
-  | umov _ _ _ _ =>
+  | umov _ _ _ _ | ldrTbl _ _ _ _ _ _ =>
     obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h
     exact ⟨rfl, rfl, rfl, Frame.refl s.wr s.mem⟩
   | _ => obtain rfl := Option.some.inj h; exact ⟨rfl, rfl, rfl, Frame.refl s.wr s.mem⟩
@@ -342,7 +343,7 @@ theorem exec_gpr {i : Instr} {r : Reg} (hi : clobbers i r = false) (h : exec i s
   | push _ | pop _ | alloc _ | free _ | blr _ => simp only [exec, reduceCtorEq] at h
   | logicRor _ _ _ _ _ _ | bicRor _ _ _ _ _ | extr _ _ _ _ _ | addSp _ _ | addImm _ _ _ _
   | subImm _ _ _ _ | ror _ _ _ _ | lsr _ _ _ _ | lsl _ _ _ _ | movz _ _ _ _ | movk _ _ _ _
-  | umov _ _ _ _ =>
+  | umov _ _ _ _ | ldrTbl _ _ _ _ _ _ =>
     obtain ⟨-, h⟩ := Option.ite_none_right_eq_some.mp h; obtain rfl := Option.some.inj h
     exact hw _ _ _ _ fun e => hi (by simp [dstOf, e])
   | align _ => obtain rfl := Option.some.inj h; rfl

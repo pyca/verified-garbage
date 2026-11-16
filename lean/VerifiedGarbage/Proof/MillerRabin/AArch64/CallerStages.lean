@@ -123,13 +123,14 @@ theorem ready_covers {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Ready L s
   obtain ⟨⟨_, _, hEZ, c, bm, b, hc, _⟩, _⟩ := h
   exact narrow_covers hc.ws.scr hEZ
 
-theorem call_restore_pre (M : Mont) (name : String) (hnf : (round M.mm).noFrames = true)
+theorem call_restore_pre {R : Prog isa} (hR : ∀ s, roundContract.pre s → ∃ tr t, Exec isa R s tr t ∧ abiPreserved s t ∧ roundContract.post s t)
+    (name : String) (hnf : R.noFrames = true)
     {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Ready L s) :
-    WP isa (.call name (round M.mm)) s (RestorePre L) := by
+    WP isa (.call name R) s (RestorePre L) := by
   have hp := ready_pre h
   have hw := ready_covers h
   obtain ⟨⟨h4, h128, hEZ, c, bm, b, hc, he, ho, h3, hx⟩, h19, h1⟩ := h
-  refine WP.callV (round_correct M) hp (Covers.right hw) hw ?_ hnf
+  refine WP.callV hR hp (Covers.right hw) hw ?_ hnf
   intro t hrd hwr hsp hf hregs hnever hvcs hpost
   change roundPost (narrowed s L.B L.w) (t.withRegions [] [⟨L.B, 8 * callWords L.w⟩]) at hpost
   unfold roundPost at hpost

@@ -19,13 +19,11 @@ def artifacts : List Artifact :=
     Spec.Ctr.aesApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.AesCtr.X86.crypt v.enc
-      stack := 24
       verified := Proof.AesCtr.keyed (crypt_verified v)
       spSafe := crypt_spSafe v },
     Spec.Ctr.aesFinalApi.artifact X86.target {
       suffix := v.suffix
       code := Impl.StackScratch.X86.withStackScratchWiped 64 6 8 (Impl.AesCtr.X86.cryptFinal v.enc v.suffix)
-      stack := 116
       verified := Proof.AesCtr.final_keyed (cryptFinal_framed v)
       spSafe := cryptFinal_framed_spSafe v }]
 

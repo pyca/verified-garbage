@@ -1,9 +1,10 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.AArch64.EcbVerified
-public import VerifiedGarbage.Proof.Cast5.AArch64.KeyVerified
+public import VerifiedGarbage.Proof.Cast5.AArch64.TblEcbVerified
+public import VerifiedGarbage.Proof.Cast5.AArch64.TblKey
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
+import VerifiedGarbage.Proof.Cast5.AArch64.TblLit
 
 /-! # CAST5 (RFC 2144) on AArch64 -/
 
@@ -13,16 +14,13 @@ namespace VG.Artifacts.Cast5.AArch64
 
 def artifacts : List Artifact := [
   Spec.Cast5.expandKeyApi.artifact AArch64.target {
-    code := Impl.Cast5.AArch64.expandKey
-    stack := 0
-    verified := Proof.Cast5.AArch64.expandKey_verified },
+    code := Impl.Cast5.AArch64.Tbl.expandKey
+    verified := Proof.Cast5.AArch64.Tbl.expandKey_verified },
   Spec.Cast5.ecbEncryptApi.artifact AArch64.target {
-    code := Impl.Cast5.AArch64.ecbEncrypt
-    stack := 0
-    verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.AArch64.ecbEncrypt_verified },
+    code := Impl.Cast5.AArch64.Tbl.ecbEncrypt
+    verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.AArch64.Tbl.ecbEncrypt_verified },
   Spec.Cast5.ecbDecryptApi.artifact AArch64.target {
-    code := Impl.Cast5.AArch64.ecbDecrypt
-    stack := 0
-    verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.AArch64.ecbDecrypt_verified }]
+    code := Impl.Cast5.AArch64.Tbl.ecbDecrypt
+    verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.AArch64.Tbl.ecbDecrypt_verified }]
 
 end VG.Artifacts.Cast5.AArch64

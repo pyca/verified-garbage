@@ -10,6 +10,10 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Spec.EcKey.BrainpoolP512r1
 meta import VerifiedGarbage.Proof.EcKey.Compressed.RISCV64.BrainpoolP512r1.Lit
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP512r1.MulFn
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP512r1.MulFn
 
 /-!
 # SEC 1 point conversion over brainpoolP512r1 on RISC-V: `Verified`
@@ -36,13 +40,15 @@ theorem compress_rv (s : State) (hs : compRV.pre s) :
   exact ⟨t, s', he, h⟩
 
 theorem compress_ct : ConstantTime isa compRV.pre compRV.pub compressBrainpoolP512r1 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
     (fun _ _ _ _ ⟨hsp, h0, h1, h2⟩ => ⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact h0
       · exact h1
-      · exact h2⟩) (by taint_decide)
+      · exact h2⟩)
+    (by taint_decide_sum [VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1.pMulSum,
+      VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1.pAddSum, VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1.pSubSum])
 
 /-- A state satisfying the preconditions, for an output of `n` bytes and an
 input of `m`. -/
@@ -97,13 +103,15 @@ theorem decompress_rv (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP512r1.curve)
   exact ⟨t, s', he, h⟩
 
 theorem decompress_ct : ConstantTime isa decRV.pre decRV.pub decompressBrainpoolP512r1 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
     (fun _ _ _ _ ⟨hsp, h0, h1, h2⟩ => ⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact h0
       · exact h1
-      · exact h2⟩) (by taint_decide)
+      · exact h2⟩)
+    (by taint_decide_sum [VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1.pMulSum,
+      VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1.pAddSum, VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1.pSubSum])
 
 theorem decompress_verified (hL : VG.Proof.Weierstrass.Law Spec.BrainpoolP512r1.curve) :
     Verified RISCV64.target decompressBrainpoolP512r1 (Spec.EcKey.BrainpoolP512r1.inst.decompressPublicKeyContract RISCV64.abi) :=

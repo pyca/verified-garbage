@@ -7,6 +7,18 @@
 pub struct Table<const N: usize>(pub [u8; N]);
 
 #[rustfmt::skip]
+mod vg_aes_sbox;
+pub use vg_aes_sbox::VG_AES_SBOX;
+
+#[rustfmt::skip]
+mod vg_aes_vperm;
+pub use vg_aes_vperm::VG_AES_VPERM;
+
+#[rustfmt::skip]
+mod vg_aes_vperm_dec;
+pub use vg_aes_vperm_dec::VG_AES_VPERM_DEC;
+
+#[rustfmt::skip]
 mod vg_blowfish_init;
 pub use vg_blowfish_init::VG_BLOWFISH_INIT;
 
@@ -23,12 +35,12 @@ mod vg_brainpoolp512r1_comb7;
 pub use vg_brainpoolp512r1_comb7::VG_BRAINPOOLP512R1_COMB7;
 
 #[rustfmt::skip]
-mod vg_cast5_s1234;
-pub use vg_cast5_s1234::VG_CAST5_S1234;
+mod vg_cast5_planes;
+pub use vg_cast5_planes::VG_CAST5_PLANES;
 
 #[rustfmt::skip]
-mod vg_cast5_s5678;
-pub use vg_cast5_s5678::VG_CAST5_S5678;
+mod vg_cast5_s1234;
+pub use vg_cast5_s1234::VG_CAST5_S1234;
 
 #[rustfmt::skip]
 mod vg_ed25519_comb;
@@ -121,6 +133,14 @@ pub use vg_sha256_k::VG_SHA256_K;
 #[rustfmt::skip]
 mod vg_sha512_k;
 pub use vg_sha512_k::VG_SHA512_K;
+
+#[rustfmt::skip]
+mod vg_sm4_fk_ck;
+pub use vg_sm4_fk_ck::VG_SM4_FK_CK;
+
+#[rustfmt::skip]
+mod vg_triple_des_key_select;
+pub use vg_triple_des_key_select::VG_TRIPLE_DES_KEY_SELECT;
 
 #[rustfmt::skip]
 mod vg_x448_comb;

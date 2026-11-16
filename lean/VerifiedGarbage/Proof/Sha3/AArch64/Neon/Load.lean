@@ -1,7 +1,7 @@
 module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Neon.Pair
-public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Theta
+public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Parity
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Block

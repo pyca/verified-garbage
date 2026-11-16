@@ -15,8 +15,7 @@ public import VerifiedGarbage.TCB.X86_64.Isa
 # Poly1305 on x86-64 with AVX2: the integer instructions
 
 The short blocks of integer instructions between the vector ones: constants,
-the MXCSR prologue and epilogue, loading `r` and the accumulator's words, and
-the counters.
+loading `r` and the accumulator's words, and the counters.
 -/
 
 @[expose] public section
@@ -77,30 +76,10 @@ macro "finish_gpr" : tactic => `(tactic| plain_simp_names (
 
 theorem ea_at (s : State) (b : Reg) (d : Nat) : s.ea (at_ b d) = off (s.gpr b) d := rfl
 
-/-- The memory `mxcsrIn` leaves: MXCSR with bits 31:16 cleared at byte 120,
-and `0x1FBF` at byte 124. -/
-def mxMem (m : Mem) (st : Addr) (x : BitVec 32) : Mem :=
-  ((m.writeW (off st 120) x).writeW (off st 120) (x &&& 0xffff)).writeW (off st 124) (0x1FBF : BitVec 32)
-
-set_option simprocs false in
-theorem mxcsrIn_ok (s : State) (w₁ : InRegions s.wr (off (s.gpr .rdi) 120) 4)
-    (w₂ : InRegions s.wr (off (s.gpr .rdi) 124) 4) (r₁ : InRegions (s.rd ++ s.wr) (off (s.gpr .rdi) 120) 4)
-    (r₂ : InRegions (s.rd ++ s.wr) (off (s.gpr .rdi) 124) 4) :
-    WP isa (.block mxcsrIn) s fun s' =>
-      (∀ r, r ≠ .rax → s'.gpr r = s.gpr r) ∧ s'.mem = mxMem s.mem (s.gpr .rdi) s.mxcsr ∧
-      s'.mxcsr = 0x1FBF ∧ s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  apply WP.of_runBlock
-  simp (config := {decide := true}) only [mxcsrIn, runBlock_cons, runStep_some, runBlock_nil, exec,
-    ea_at, readSrc32, execAlu32, arithFlags, State.load32, State.store32, State.setReg32, State.setReg,
-    State.setFlags, w₁, w₂, r₁, r₂, ite_true, ite_false, Option.map_some, Option.bind_some,
-    Option.some.injEq, exists_eq_left', Mem.readW_writeW_self32, RegUpd.setWidth_setWidth_32]
-  refine ⟨fun r h => by simp [h], ?_, trivial⟩
-  rfl
-
-theorem powers_split : consts ++ mxcsrIn ++ powers ++ loadHw ++ loadH ++
+theorem powers_split : consts ++ powers ++ loadHw ++ loadH ++
     ([.mov .rcx (.reg .rdx), .shift .shr .rcx 2, .alu .sub .rcx (.imm 1)] : List Instr) =
-    consts ++ (mxcsrIn ++ (loadRg ++ (powersV ++ (loadHw ++ (loadH ++
-      ([.mov .rcx (.reg .rdx), .shift .shr .rcx 2, .alu .sub .rcx (.imm 1)] : List Instr)))))) := by
+    consts ++ (loadRg ++ (powersV ++ (loadHw ++ (loadH ++
+      ([.mov .rcx (.reg .rdx), .shift .shr .rcx 2, .alu .sub .rcx (.imm 1)] : List Instr))))) := by
   simp only [powers_eq, List.append_assoc]
 
 set_option simprocs false in
@@ -163,17 +142,6 @@ theorem consts2_ok (s : State) :
   simp only [consts2, runBlock_cons, runStep_some, runBlock_nil, exec,
     readSrc32, State.setReg32, State.setReg, ite_true, Option.map_some, Option.some.injEq,
     exists_eq_left']
-  finish_gpr
-
-set_option simprocs false in
-theorem mxcsrOut_ok (s : State) (r₁ : InRegions (s.rd ++ s.wr) (off (s.gpr .rdi) 120) 4)
-    (hz : (s.mem.readW (off (s.gpr .rdi) 120) 32).extractLsb' 16 16 = 0) :
-    WP isa (.block mxcsrOut) s fun s' =>
-      s'.gpr = s.gpr ∧ s'.mem = s.mem ∧ s'.mxcsr = s.mem.readW (off (s.gpr .rdi) 120) 32 ∧
-      s'.xmm = s.xmm ∧ s'.ymmHi = s.ymmHi ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  apply WP.of_runBlock
-  simp only [mxcsrOut, runBlock_cons, runStep_some, runBlock_nil, exec, ea_at, State.load32, r₁, hz,
-    ite_true, Option.bind_some, Option.some.injEq, exists_eq_left']
   finish_gpr
 
 set_option simprocs false in

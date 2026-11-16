@@ -43,11 +43,6 @@ structure PrimsOk (P : Prims) (S : Nat) : Prop where
   s16 : 16 ≤ S
   sl : S < 2 ^ 16
   ntt : CalleeOk S P.ntt (nttContract AArch64.abi S)
-  invNtt : CalleeOk S P.invNtt (nttInvContract AArch64.abi S)
-  mul : CalleeOk S P.mul (mulContract AArch64.abi S)
-  mulAdd : CalleeOk S P.mulAdd (mulAddContract AArch64.abi S)
-  add : CalleeOk S P.add (addContract AArch64.abi S)
-  sub : CalleeOk S P.sub (subContract AArch64.abi S)
   rej4 : CalleeOk S P.rej4 (rejNTT4Contract AArch64.abi S)
   rej4Ret : RetPub (rejNTT4Contract AArch64.abi S) P.rej4
   rej4Max : ∀ s t s', (rejNTT4Contract AArch64.abi S).pre s → Exec isa P.rej4 s t s' →
@@ -56,12 +51,7 @@ structure PrimsOk (P : Prims) (S : Nat) : Prop where
   expandMask : CalleeOk S P.expandMask (expandMaskContract AArch64.abi S)
   expandMaskPair : CalleeOk S P.expandMaskPair (expandMaskPairContract AArch64.abi S)
   ball : CalleeOk S P.ball (sampleInBallContract AArch64.abi S)
-  highBits : CalleeOk S P.highBits (highBitsContract AArch64.abi S)
   highPack : ∀ g, g ∈ gamma2s → CalleeOk S (P.highPack g) (highPackContract g AArch64.abi S)
-  lowBits : CalleeOk S P.lowBits (lowBitsContract AArch64.abi S)
-  normLt : CalleeOk S P.normLt (normLtContract AArch64.abi S)
-  makeHint : CalleeOk S P.makeHint (makeHintContract AArch64.abi S)
-  simpleBitPack : CalleeOk S P.simpleBitPack (simpleBitPackContract AArch64.abi S)
   bitPack : CalleeOk S P.bitPack (bitPackContract AArch64.abi S)
   bitUnpack : CalleeOk S P.bitUnpack (bitUnpackContract AArch64.abi S)
   hintBitPack : CalleeOk S P.hintBitPack (hintBitPackContract AArch64.abi S)

@@ -67,6 +67,6 @@ theorem kpkeEnc1024Y_correct : ∀ s, (kpkeEncK kem1024).pre s →
     ∃ t s', Exec isa (kpkeEnc kem1024 .avx2 encryptMul16Y) s t s' ∧ abiPreserved s s' ∧
       (kpkeEncK kem1024).post s s' :=
   KpkeEnc.kpkeEnc_correct PrimsOk.avx2 encCE1024 keWf1024 encMul16Y4_correct (by lit_decide) (by lit_decide)
-    (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)
+    (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)
 
 end VG.Proof.MlKem1024.X86_64

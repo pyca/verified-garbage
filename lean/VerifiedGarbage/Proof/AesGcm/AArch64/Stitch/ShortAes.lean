@@ -201,12 +201,9 @@ theorem lensB_ok {W : Addr} {al n : Nat} (s : State) (h19 : s.gpr .x19 = W) (hr 
 /-! ## The tag -/
 
 theorem byteRev64_xor (a b : BitVec 64) : byteRev64 (a ^^^ b) = byteRev64 a ^^^ byteRev64 b := by
-  apply BitVec.eq_of_getLsbD_eq
-  intro i hi
-  simp only [byteRev64, BitVec.getLsbD_xor, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
-  repeat (split; · simp [*])
-  have : i - 8 - 8 - 8 - 8 - 8 - 8 - 8 < 8 := by omega_using [hi]
-  simp [this]
+  -- byte by byte; the outer `^^^` is of `BitVec 64`, whose two widths `simp` does not find
+  simp only [byteRev64, BitVec.extractLsb'_xor, BitVec.xor_append (w := 8 + 8 + 8 + 8 + 8 + 8 + 8) (v := 8),
+    BitVec.xor_append]
 
 open VG.Proof.Gcm.AArch64.Pmull (vdwords vdword_xor vdword_rev64b) in
 theorem rev64b_xor (a b : BitVec 128) :

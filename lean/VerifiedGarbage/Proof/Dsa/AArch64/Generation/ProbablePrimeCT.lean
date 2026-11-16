@@ -6,6 +6,7 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeInput
 public import VerifiedGarbage.Spec.Dsa
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyCT
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicKernel
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeR2CT
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
 
@@ -22,6 +23,7 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeInput
 meta import VerifiedGarbage.Spec.Dsa
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyCT
 meta import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicKernel
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeR2CT
 meta import VerifiedGarbage.Proof.RsaKeyGen.AArch64.CTBase
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TrialCT
@@ -56,15 +58,16 @@ def PrimeCallBefore (len drawBytes : Nat) (p : PrimeCallPublic) (s : State) : Pr
 def PrimeParams.trialPublic (p : PrimeParams) : VG.Proof.RsaKeyGen.AArch64.FPub :=
   ⟨p.B, p.Z, p.w, [], 0, 0, 0, [], 0, 0, 0, 0, ⟨false, false, false, none⟩⟩
 
-theorem primeTrial_ct (len drawBytes : Nat) : RelCT isa (Two (PrimeCallBefore len drawBytes)) (seqs VG.Impl.RsaKeyGen.AArch64.Candidate.trial) (fun _ _ => True) :=
-  two_map (fun p : PrimeCallPublic => p.draw.prime.trialPublic) (fun p _ h => ⟨h.1.ws, p.tab⟩) trial_ws_ct
+theorem primeTrial_ct (len drawBytes : Nat) : RelCT isa (Two (PrimeCallBefore len drawBytes)) (seqs Impl.Dsa.AArch64.Generation.trialEarly) (fun _ _ => True) :=
+  two_map (fun p : PrimeCallPublic => (p.draw.prime.trialPublic, p.draw.prime.N))
+    (fun p _ h => ⟨h.1.ws, p.tab, h.1.n⟩) trialEarly_ct
 
 def PrimeCallTested (len drawBytes : Nat) (p : PrimeCallPublic) (s : State) : Prop :=
   PrimeCallBefore len drawBytes p s ∧
     isa.eval (.zero .x .x1) s = some (!Spec.RsaKeyGen.obviouslyComposite (Spec.Dsa.bitLength p.draw.prime.N) p.draw.prime.N)
 
 theorem primeTrial_tested {len drawBytes : Nat} {p : PrimeCallPublic} {s : State} (h : PrimeCallBefore len drawBytes p s) :
-    WP isa (seqs VG.Impl.RsaKeyGen.AArch64.Candidate.trial) s (PrimeCallTested len drawBytes p) :=
+    WP isa (seqs Impl.Dsa.AArch64.Generation.trialEarly) s (PrimeCallTested len drawBytes p) :=
   WP.mono (primeTrial_ok h.1 p.width p.tab p.large p.policy) fun _ ⟨hz, ht, _, _⟩ => ⟨⟨ht, h.2⟩, hz⟩
 
 theorem primeCall_setup {len drawBytes : Nat} {p : PrimeCallPublic} {s : State} (h : PrimeCallBefore len drawBytes p s) :
@@ -75,7 +78,7 @@ theorem primeCall_ready (M : Mont) {len drawBytes : Nat} {p : PrimeCallPublic} {
       (fun t => DrawBefore len drawBytes p.draw t ∧ p.draw.used ≤ p.draw.prime.rand.length) :=
   WP.mono (primeInputSetup_ok M h.1 p.width) fun _ ⟨ht, _, _⟩ => ⟨⟨ht, h.2.2⟩, h.2.1⟩
 
-theorem probablePrime_ct (M : Mont) (K : Kernel) (len drawBytes : Nat) {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
+theorem probablePrime_ct (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) (len drawBytes : Nat) {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht₁ : (taint.check (Taint.ofRegs [.x0])
       (.block (Impl.Dsa.AArch64.Generation.drawCopyArgs len drawBytes)) hc₁).isSome = true)
     (ht₂ : (taint.check (Taint.ofRegs [.x1])

@@ -291,14 +291,10 @@ def scalarRange : List (Prog isa) :=
       (seqs ([.block [enter]] ++ loadArr aY sQ sK ++ ltArr aXm aY)),
     .block andF]
 
-/-- With y valid: with q, `y^q mod p = 1`; then `g^x mod p = y`. -/
+/-- With y in range: `g^x mod p = y`. With q, `y^q mod p = 1` follows: a
+power of the checked generator is in its subgroup. -/
 def tail : List (Prog isa) :=
-  r2Steps mul ++
-  [.block [leave], .block qTest,
-    .ite (.zero .x .x3) (.block [enter, movi .x9 1])
-      (seqs (scan sQ ++ [.block [enter]] ++ pow window select mul sY sK sEp sEl ++ isOne aY)),
-    .ite (.zero .x .x9) (ret 0)
-      (seqs (pow window select mul sG sK sX sXl ++ loadArr aXm sY sK ++ eqArr aY aXm ++ [.block [mov .x0 .x9]]))]
+  r2Steps mul ++ pow window select mul sG sK sX sXl ++ loadArr aXm sY sK ++ eqArr aY aXm ++ [.block [mov .x0 .x9]]
 
 def main : Prog isa :=
   seqs ([.block head] ++ pSetup ++ loadArr aXm sX sXl ++ scalarRange ++

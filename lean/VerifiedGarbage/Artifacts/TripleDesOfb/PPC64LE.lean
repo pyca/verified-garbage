@@ -18,11 +18,9 @@ namespace VG.Artifacts.TripleDesOfb.PPC64LE
 def artifacts : List Artifact := [
   Spec.TripleDes.ofbApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 608 .r7 72 Impl.TripleDes.PPC64LE.ofb
-    stack := 608
     verified := Proof.TripleDes.PPC64LE.ofb_framed Proof.TripleDes.PPC64LE.Modes.ofb_verified },
   Spec.TripleDes.ofbFinalApi.artifact PPC64LE.target {
     code := Impl.StackScratch.PPC64LE.withStackScratchWiped 608 .r7 72 Impl.TripleDes.PPC64LE.ofbFinal
-    stack := 608
     verified := Proof.TripleDes.PPC64LE.FbFinal.ofbFinal_framed }]
 
 end VG.Artifacts.TripleDesOfb.PPC64LE

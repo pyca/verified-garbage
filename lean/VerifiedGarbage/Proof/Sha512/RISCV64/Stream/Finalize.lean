@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 public import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Common
 meta import VerifiedGarbage.Proof.Sha512.RISCV64.Stream.Common
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
@@ -947,8 +949,8 @@ theorem finalizeD_verified {o : List Instr}
 theorem finalize64_verified : Verified RISCV64.target finalize (Proof.Sha512.finalizeDRISCV64 64) :=
   finalizeD_verified (keepsU_all _ (by rw [all_finalizeMainWith, untouched_fixed]; decide +kernel))
     (keepsN_all _ (by decide +kernel)) (fun _ hp _ hD => words_ok hp (by decide) (n := 8) rfl hD)
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
-      (fun _ _ _ _ hp => agree₀ hp) (by taint_decide))
+    (VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
+      (fun _ _ _ _ hp => agree₀ hp) (by taint_decide_sum [VG.Proof.Sha512.RISCV64.compressSum]))
     ⟨sat 64, rfl, rfl, Region.disjoint_of_sep (by decide), by decide, by decide,
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩
 
@@ -956,8 +958,8 @@ theorem finalize64_verified : Verified RISCV64.target finalize (Proof.Sha512.fin
 theorem finalize384_verified : Verified RISCV64.target finalize384 (Proof.Sha512.finalizeDRISCV64 48) :=
   finalizeD_verified (keepsU_all _ (by rw [all_finalizeMainWith, untouched_fixed]; decide +kernel))
     (keepsN_all _ (by decide +kernel)) (fun _ hp _ hD => words_ok hp (by decide) (n := 6) rfl hD)
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
-      (fun _ _ _ _ hp => agree₀ hp) (by taint_decide))
+    (VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
+      (fun _ _ _ _ hp => agree₀ hp) (by taint_decide_sum [VG.Proof.Sha512.RISCV64.compressSum]))
     ⟨sat 48, rfl, rfl, Region.disjoint_of_sep (by decide), by decide, by decide,
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩
 
@@ -966,8 +968,8 @@ theorem finalize512_256_verified :
     Verified RISCV64.target finalize512_256 (Proof.Sha512.finalizeDRISCV64 32) :=
   finalizeD_verified (keepsU_all _ (by rw [all_finalizeMainWith, untouched_fixed]; decide +kernel))
     (keepsN_all _ (by decide +kernel)) (fun _ hp _ hD => words_ok hp (by decide) (n := 4) rfl hD)
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
-      (fun _ _ _ _ hp => agree₀ hp) (by taint_decide))
+    (VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
+      (fun _ _ _ _ hp => agree₀ hp) (by taint_decide_sum [VG.Proof.Sha512.RISCV64.compressSum]))
     ⟨sat 32, rfl, rfl, Region.disjoint_of_sep (by decide), by decide, by decide,
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩
 
@@ -976,8 +978,8 @@ theorem finalize512_224_verified :
     Verified RISCV64.target finalize512_224 (Proof.Sha512.finalizeDRISCV64 28) :=
   finalizeD_verified (keepsU_all _ (by rw [all_finalizeMainWith, untouched_fixed]; decide +kernel))
     (keepsN_all _ (by decide +kernel)) (fun _ hp _ hD => out224_ok hp hD)
-    (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
-      (fun _ _ _ _ hp => agree₀ hp) (by taint_decide))
+    (VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
+      (fun _ _ _ _ hp => agree₀ hp) (by taint_decide_sum [VG.Proof.Sha512.RISCV64.compressSum]))
     ⟨sat 28, rfl, rfl, Region.disjoint_of_sep (by decide), by decide, by decide,
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide)⟩
 

@@ -7,8 +7,8 @@ import VerifiedGarbage.Proof.MlKem.Arith
 /-!
 # ML-KEM's 16-bit inverse NTT on AArch64: lanes
 
-The inverse butterfly `gs x y z t` (`Impl/MlKem/AArch64/Ntt16.lean`) on one
-lane: `x ← x + y`, `y ← (y - x) · z mod q` (`gs_lane`).
+The inverse butterfly on one lane: `x ← x + y`, `y ← (y - x) · z mod q`
+(`gs_lane`).
 -/
 
 @[expose] public section

@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Proof.AesCfb.Rounds
 import VerifiedGarbage.Proof.AesCfb.AArch64.Decrypt.Verified
+import VerifiedGarbage.Proof.AesCfb.AArch64.Neon.Verified
+public import VerifiedGarbage.Impl.AesCfb.AArch64.Neon
 import VerifiedGarbage.Proof.AesCfb.AArch64.Verified
 public import VerifiedGarbage.Impl.AesCfb.AArch64
 public import VerifiedGarbage.Impl.AesCfb.AArch64.Decrypt
@@ -15,9 +17,12 @@ public import VerifiedGarbage.Spec.Cfb.Contract
 namespace VG.Proof.AesCfb.AArch64.Caller
 open VG VG.AArch64 VG.Proof.Aes.AArch64
 
-/-- Other block variants continue through their generic verified caller. -/
+/-- The decryptions with the Cryptographic Extension and in AdvSIMD
+registers are their own code; other block variants continue through their
+generic verified caller. -/
 def decrypt (v : BlocksImpl) : Prog isa :=
   if v.enc.name="vg_aes_encrypt_blocks_aes" then Impl.AesCfb.AArch64.Decrypt.code
+  else if v.enc.name="vg_aes_encrypt_blocks_neon" then Impl.AesCfb.AArch64.Neon.decrypt
   else Impl.AesCfb.AArch64.decrypt v.enc
 
 def written (v : BlocksImpl) : List (String × Nat) :=
@@ -28,7 +33,9 @@ theorem verified (v : BlocksImpl) :
   unfold decrypt
   split
   · exact Decrypt.verified
-  · exact decrypt_verified v
+  · split
+    · exact Neon.verified
+    · exact decrypt_verified v
 
 theorem written_ok (v : BlocksImpl) (s : State) (tr : List Leak) (t : State)
     (hp : (Proof.AesCfb.decryptRoundsContract AArch64.abi).pre s) (he : Exec isa (decrypt v) s tr t) :

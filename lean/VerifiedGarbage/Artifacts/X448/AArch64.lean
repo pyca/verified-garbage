@@ -22,7 +22,6 @@ namespace VG.Artifacts.X448.AArch64
 def artifacts : List Artifact := [
   Spec.X448.exchangeApi.artifact AArch64.target {
     code := Impl.Xdh.AArch64.exchange "vg_x448" Impl.X448.AArch64.Fast.x448 56
-    stack := 16
     verified := Proof.X448.AArch64.Exchange.exchange_verified },
   Spec.X448.x448BaseApi.artifact AArch64.target {
     code := Impl.X448.AArch64.Base.x448Base

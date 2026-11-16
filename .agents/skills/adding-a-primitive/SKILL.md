@@ -53,7 +53,6 @@ instructions in an ISA model) go in their own PR before either.
 
    ```lean
      Spec.<Alg>.fooApi.artifact X86_64.target {
-       stack := 8
        code := Impl.<Alg>.X86_64.foo
        verified := Proof.<Alg>.X86_64.foo_verified },
    ```
@@ -61,22 +60,29 @@ instructions in an ISA model) go in their own PR before either.
    A registration states only what the implementation chooses: the Rust
    module, name, signature, `writeArgs`, documentation and contract come
    from the `Api`, so never restate them. Give a variant's name its
-   `suffix` (`suffix := "_avx2"`), the stack its calls and frames use in
-   `stack`, and, where a caller wipes a
+   `suffix` (`suffix := "_avx2"`), and, where a caller wipes a
    writable array the function uses as working space, how much of it the
    function writes in `written` (`written := [("scratch", 1024)]`, proven by
    `writtenOk`), which the emitter exports as `<NAME>_<PARAM>_WRITTEN` for
    the caller to wipe only that much. Its contract is found
    from `verified`'s type, and must be the `Api`'s on the target for
    its tables of constants and `stack` (`ofApi`, by `rfl`): give `contract` only when
-   `verified`'s type does not determine it. The tables of constants the
+   `verified`'s type does not determine it (its default is the `Api`'s for
+   no tables and no stack), and where it is not yet known when the
+   registration is elaborated, make it known: give the `v` of a
+   `variants.map fun v =>` its type (`fun (v : Variant) =>`), for
+   `v.verified`. The tables of constants the
    code reads are an implementation detail, never stated in a registration
    (`ci/check_registrations.py` refuses `consts :=`): the default of
    `consts`, `consts_of`, takes them from the contract `verified` proves,
    the first `Abi.withConsts A cs` in it or in the calling convention of the
    `Sig.contract` it unfolds to, so state the proof's contract on
    `T.abi.withConsts cs` (`fooContract (AArch64.abi.withConsts initConsts)`),
-   and a proof that adds or changes a table changes no registration file. `of_sig` proves `ofSig`, and
+   and a proof that adds or changes a table changes no registration file.
+   So is the stack the code's calls and frames use (it refuses `stack :=`
+   too): the default of `stack`, `stack_of`, is the `stack` of that
+   `Sig.contract` (`fooContract X86_64.abi 8`), and code that uses more or
+   less stack changes its proof and no registration file. `of_sig` proves `ofSig`, and
    `sp_safe` proves `spSafe`: by `Code.all_of_forall` on ARMv7, AArch64 and
    PPC64LE,
    which evaluates nothing, and by `Code.all_of_spTest (by lit_decide)`

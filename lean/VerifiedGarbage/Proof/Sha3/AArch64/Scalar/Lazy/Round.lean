@@ -1,7 +1,6 @@
 module
 
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy
-import Mathlib.Tactic.IntervalCases
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
 import VerifiedGarbage.Proof.Framework.Bitslice.Anf
 import VerifiedGarbage.Proof.Framework.Omega
@@ -57,7 +56,8 @@ def logicalState (A : Spec.Sha3.State) : File :=
 
 theorem logicalState_lane (A : Spec.Sha3.State) (i : Nat) (hi : i < 25) :
     (logicalState A).regs (laneReg i) = A[i] := by
-  interval_cases i <;> rfl
+  iterate 25 (rcases i with _ | i; rfl)
+  exact absurd hi (by omega_arith)
 
 /-- A round's scalar operations compute chi/pi/rho/theta in the declared layout. -/
 theorem plan_core_state (r : Fin 24) (A : Spec.Sha3.State) (f : File)
@@ -123,7 +123,7 @@ theorem plan_iota_state (r : Fin 24) (A : Spec.Sha3.State) (f : File)
   · subst i
     simp only [ite_true, ite_eq_right (hc _ mem0), hval0, Spec.Sha3.iota,
       Vector.getElem_set_self, VG.Bitslice.Anf.rotateRight_xor]
-  · have hn := (plans_lane_zero r i hi25).not.mpr hz
+  · have hn := (not_congr (plans_lane_zero r i hi25)).mpr hz
     simp only [ite_eq_right hn, ite_eq_right (hc _ memi), hval,
       Spec.Sha3.iota, Vector.getElem_set, Ne.symm hz, ite_false]
 

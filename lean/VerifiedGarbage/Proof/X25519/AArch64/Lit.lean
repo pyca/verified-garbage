@@ -35,6 +35,6 @@ end VG.Proof.X25519.AArch64.Lit
 
 namespace VG
 
-materialize_code Impl.X25519.AArch64.x25519
+materialize_flat_code Impl.X25519.AArch64.x25519
 
 end VG

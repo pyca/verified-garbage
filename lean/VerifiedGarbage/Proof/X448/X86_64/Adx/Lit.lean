@@ -31,6 +31,10 @@ materialize_template mulXT := mulX
 materialize_template sqrXT := sqrX
 materialize_template a24XT := Field.a24 adx
 
+/- The ladder, which `x448Adx` and `x448BaseAdx` both contain, checked once,
+its step's appends flattened, as the baseline's (`Proof/X448/X86_64/Lit.lean`). -/
+materialize_flat_code ladderX := ladder adx
+
 end VG.Proof.X448.X86_64.Adx.Lit
 
 namespace VG

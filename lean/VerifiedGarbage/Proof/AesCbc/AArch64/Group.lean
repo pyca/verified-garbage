@@ -9,14 +9,13 @@ meta import VerifiedGarbage.Proof.AesCbc.AArch64.Body
 meta import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 meta import VerifiedGarbage.Proof.Framework.Contract
 
--- separate module: the groups of four blocks, which only CBC decryption takes, out of the modules the other modes import.
-
 /-!
 # AES-CBC on AArch64: groups of four blocks
 
-The decryption, whose blocks can be deciphered independently, takes four
-blocks at a time while at least four are left, by one call of the block
-function each, and the rest one at a time (`Impl.AesCbc.AArch64.groups`).
+The decryptions whose blocks can be deciphered independently (CBC's and
+CFB128's) take four blocks at a time while at least four are left, by one
+call of the block function each, and the rest one at a time
+(`Impl.AesCbc.AArch64.groups`).
 
 * `blk_call4`, `blk_rel4`: a call of a block function on four blocks `D` in
   place, with working space `S`, as `blk_call` and `blk_rel` on one.
@@ -27,6 +26,8 @@ function each, and the rest one at a time (`Impl.AesCbc.AArch64.groups`).
 * `groups_rel`, `batched_ct`: the same for constant time, from `GroupCt` and
   `BodyCt`; `group_ct`, for a group of code before the call, the call, and
   code after it.
+* `decSave_wp`: the four ciphertext blocks of a group saved, as both
+  decryptions save them.
 * `decGroup_ok`: one run of `decGroup` takes the loop invariant from `k`
   blocks to `k + 4`, for any implementation of the block functions
   (`BlocksImpl`): the four ciphertext blocks `Cⱼ` are saved (the first three
@@ -441,6 +442,10 @@ theorem xorMem_frameB {s₀ : State} {k : Nat} (m : Mem) {j : Nat} (hj : j < 4) 
     Frame [⟨blk s₀ k, 64⟩] m (xorMem m (blk s₀ (k + j)) Q) :=
   (xorMem_frame m _ Q).sub (all_cons ⟨_, by simp, blk_sub64 hj⟩ all_nil)
 
+theorem copyMem_frameB {s₀ : State} {k : Nat} (m : Mem) {j : Nat} (hj : j < 4) (Q : Addr) :
+    Frame [⟨blk s₀ k, 64⟩] m (copyMem m (blk s₀ (k + j)) Q) :=
+  (copyMem_frame m _ Q).sub (all_cons ⟨_, by simp, blk_sub64 hj⟩ all_nil)
+
 /-- The blocks after four of them changed. -/
 theorem blocksAt_set4 {m m' : Mem} {p : Addr} {n k : Nat}
     (h : ∀ j < n, (j < k ∨ k + 4 ≤ j) →
@@ -842,6 +847,46 @@ theorem UPre.last_ok {t : State} (x21 : t.gpr .x21 = Iv s₀) (x24 : t.gpr .x24 
 
 end
 
+/-! ## The four blocks of a group saved -/
+
+/-- What `decSave` leaves: the four blocks of the group in the slots. -/
+structure Saved4 (s₀ : State) (k : Nat) (s t : State) : Prop where
+  g : ∀ r, r ≠ .x9 → t.gpr r = s.gpr r
+  sp : t.sp = s.sp
+  rd : t.rd = s.rd
+  wr : t.wr = s.wr
+  frame : Frame [⟨S s₀, 2064⟩, gR s₀] s.mem t.mem
+  slot : ∀ j < 3, bytesAt t.mem (sl s₀ j) 16 = bytesAt s.mem (blk s₀ (k + j)) 16
+  last : bytesAt t.mem (Sv s₀) 16 = bytesAt s.mem (blk s₀ (k + 3)) 16
+
+theorem decSave_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 4 ≤ N s₀) {s : State}
+    (x22 : s.gpr .x22 = blk s₀ k) (x24 : s.gpr .x24 = S s₀) (rd : s.rd = s₀.rd) (wr : s.wr = s₀.wr) :
+    WP isa (.block decSave) s (Saved4 s₀ k s) := by
+  obtain ⟨t₁, run₁, g₁, sp₁, m₁, rd₁, wr₁⟩ := hp.saveAt_ok hk (j := 0) (by decide) x22 x24 rd wr
+  obtain ⟨t₂, run₂, g₂, sp₂, m₂, rd₂, wr₂⟩ := hp.saveAt_ok hk (j := 1) (by decide)
+    (by rw [g₁ _ (by decide), x22]) (by rw [g₁ _ (by decide), x24]) (by rw [rd₁, rd]) (by rw [wr₁, wr])
+  obtain ⟨t₃, run₃, g₃, sp₃, m₃, rd₃, wr₃⟩ := hp.saveAt_ok hk (j := 2) (by decide)
+    (by rw [g₂ _ (by decide), g₁ _ (by decide), x22]) (by rw [g₂ _ (by decide), g₁ _ (by decide), x24])
+    (by rw [rd₂, rd₁, rd]) (by rw [wr₂, wr₁, wr])
+  obtain ⟨t₄, run₄, g₄, sp₄, m₄, rd₄, wr₄⟩ := hp.saveLast_ok hk
+    (by rw [g₃ _ (by decide), g₂ _ (by decide), g₁ _ (by decide), x22])
+    (by rw [g₃ _ (by decide), g₂ _ (by decide), g₁ _ (by decide), x24])
+    (by rw [rd₃, rd₂, rd₁, rd]) (by rw [wr₃, wr₂, wr₁, wr])
+  show WP isa (.block (saveAt 0 ++ saveAt 1 ++ saveAt 2 ++ copy .x24 cOff .x22 48)) s _
+  rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
+  refine WP.of_runBlock ⟨t₁, run₁, WP.of_runBlock ⟨t₂, run₂, WP.of_runBlock ⟨t₃, run₃,
+    WP.of_runBlock ⟨t₄, run₄, ?_⟩⟩⟩⟩
+  refine ⟨fun r hr => by rw [g₄ r hr, g₃ r hr, g₂ r hr, g₁ r hr], by rw [sp₄, sp₃, sp₂, sp₁],
+    by rw [rd₄, rd₃, rd₂, rd₁], by rw [wr₄, wr₃, wr₂, wr₁], ?_, fun j hj => ?_, ?_⟩
+  · rw [m₄, m₃, m₂, m₁]
+    exact (copyMem_frameG _ (j := 0) (by decide) _).trans ((copyMem_frameG _ (j := 1) (by decide) _).trans
+      ((copyMem_frameG _ (j := 2) (by decide) _).trans (copyMem_frameV _ _)))
+  · rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl
+    · rw [m₄, copyMem_other, m₃, copyMem_other, m₂, copyMem_other, m₁, copyMem_bytes] <;> cbc_gd
+    · rw [m₄, copyMem_other, m₃, copyMem_other, m₂, copyMem_bytes, m₁, copyMem_other] <;> cbc_gd
+    · rw [m₄, copyMem_other, m₃, copyMem_bytes, m₂, copyMem_other, m₁, copyMem_other] <;> cbc_gd
+  · rw [m₄, copyMem_bytes, m₃, copyMem_other, m₂, copyMem_other, m₁, copyMem_other] <;> cbc_gd
+
 /-! ## CBC decryption: before the call -/
 
 /-- What the code before the call leaves. -/
@@ -858,40 +903,17 @@ structure DecA4 (s₀ : State) (k : Nat) (s t : State) : Prop where
 theorem decA4_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 4 ≤ N s₀)
     {s : State} (h : LInv M s₀ k s) :
     WP isa (.block (decSave ++ callArgs4)) s (DecA4 s₀ k s) := by
-  obtain ⟨t₁, run₁, g₁, sp₁, m₁, rd₁, wr₁⟩ := hp.saveAt_ok hk (j := 0) (by decide) h.x22 h.x24 h.rd h.wr
-  obtain ⟨t₂, run₂, g₂, sp₂, m₂, rd₂, wr₂⟩ := hp.saveAt_ok hk (j := 1) (by decide)
-    (by rw [g₁ _ (by decide), h.x22]) (by rw [g₁ _ (by decide), h.x24]) (by rw [rd₁, h.rd]) (by rw [wr₁, h.wr])
-  obtain ⟨t₃, run₃, g₃, sp₃, m₃, rd₃, wr₃⟩ := hp.saveAt_ok hk (j := 2) (by decide)
-    (by rw [g₂ _ (by decide), g₁ _ (by decide), h.x22]) (by rw [g₂ _ (by decide), g₁ _ (by decide), h.x24])
-    (by rw [rd₂, rd₁, h.rd]) (by rw [wr₂, wr₁, h.wr])
-  obtain ⟨t₄, run₄, g₄, sp₄, m₄, rd₄, wr₄⟩ := hp.saveLast_ok hk
-    (by rw [g₃ _ (by decide), g₂ _ (by decide), g₁ _ (by decide), h.x22])
-    (by rw [g₃ _ (by decide), g₂ _ (by decide), g₁ _ (by decide), h.x24])
-    (by rw [rd₃, rd₂, rd₁, h.rd]) (by rw [wr₃, wr₂, wr₁, h.wr])
+  rw [WP.block_append_iff]
+  refine WP.mono (decSave_wp hp hk h.x22 h.x24 h.rd h.wr) fun t₄ sv => ?_
   obtain ⟨t₅, run₅, x0₅, x1₅, x2₅, x3₅, x4₅, cs₅, sp₅, mem₅, rd₅, wr₅⟩ := callArgs4_ok t₄
-  have g (r : Reg) (hr : r ≠ .x9) : t₄.gpr r = s.gpr r := by
-    rw [g₄ r hr, g₃ r hr, g₂ r hr, g₁ r hr]
-  have rd₄' : t₄.rd = s.rd := by rw [rd₄, rd₃, rd₂, rd₁]
-  have wr₄' : t₄.wr = s.wr := by rw [wr₄, wr₃, wr₂, wr₁]
-  show WP isa (.block (saveAt 0 ++ saveAt 1 ++ saveAt 2 ++ copy .x24 cOff .x22 48 ++ callArgs4)) s _
-  rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.of_runBlock ⟨t₁, run₁, WP.of_runBlock ⟨t₂, run₂, WP.of_runBlock ⟨t₃, run₃,
-    WP.of_runBlock ⟨t₄, run₄, WP.of_runBlock ⟨t₅, run₅, ?_⟩⟩⟩⟩⟩
+  refine WP.of_runBlock ⟨t₅, run₅, ?_⟩
   have keep (r : Reg) (hr : r ∈ preserved) : t₅.gpr r = s.gpr r := by
-    rw [cs₅ r hr, g r (preserved_ne hr).1]
-  refine ⟨hp.callPre4 hk (by rw [x0₅, g _ (by decide), h.x19]) (by rw [x1₅, g _ (by decide), h.x20])
-    (by rw [x2₅, g _ (by decide), h.x22]) x3₅ (by rw [x4₅, g _ (by decide), h.x24])
-    (by rw [rd₅, rd₄', h.rd]) (by rw [wr₅, wr₄', h.wr]),
-    keep, by rw [sp₅, sp₄, sp₃, sp₂, sp₁], by rw [rd₅, rd₄'], by rw [wr₅, wr₄'], ?_, fun j hj => ?_, ?_⟩
-  · rw [mem₅, m₄, m₃, m₂, m₁]
-    exact (copyMem_frameG _ (j := 0) (by decide) _).trans ((copyMem_frameG _ (j := 1) (by decide) _).trans
-      ((copyMem_frameG _ (j := 2) (by decide) _).trans (copyMem_frameV _ _)))
-  · rw [mem₅]
-    rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl
-    · rw [m₄, copyMem_other, m₃, copyMem_other, m₂, copyMem_other, m₁, copyMem_bytes] <;> cbc_gd
-    · rw [m₄, copyMem_other, m₃, copyMem_other, m₂, copyMem_bytes, m₁, copyMem_other] <;> cbc_gd
-    · rw [m₄, copyMem_other, m₃, copyMem_bytes, m₂, copyMem_other, m₁, copyMem_other] <;> cbc_gd
-  · rw [mem₅, m₄, copyMem_bytes, m₃, copyMem_other, m₂, copyMem_other, m₁, copyMem_other] <;> cbc_gd
+    rw [cs₅ r hr, sv.g r (preserved_ne hr).1]
+  exact ⟨hp.callPre4 hk (by rw [x0₅, sv.g _ (by decide), h.x19]) (by rw [x1₅, sv.g _ (by decide), h.x20])
+    (by rw [x2₅, sv.g _ (by decide), h.x22]) x3₅ (by rw [x4₅, sv.g _ (by decide), h.x24])
+    (by rw [rd₅, sv.rd, h.rd]) (by rw [wr₅, sv.wr, h.wr]),
+    keep, by rw [sp₅, sv.sp], by rw [rd₅, sv.rd], by rw [wr₅, sv.wr], by rw [mem₅]; exact sv.frame,
+    fun j hj => by rw [mem₅]; exact sv.slot j hj, by rw [mem₅]; exact sv.last⟩
 
 /-! ## CBC decryption: the group -/
 

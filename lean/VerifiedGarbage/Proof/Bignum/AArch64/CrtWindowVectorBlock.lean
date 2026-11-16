@@ -12,12 +12,12 @@ open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
 open VG.Proof.MlKem.AArch64 (Keep)
 open VG.Impl.Rsa.AArch64.WindowSelectVector (inner)
 
-theorem scan_store_ok {s : State} {B : Addr} {base stride dst v : Nat}
-    (hv : v < 32) (hs : s.gpr .x6 = BitVec.ofNat 64 stride)
-    (hc : s.gpr .x14 = BitVec.ofNat 64 32)
+theorem scan_store_ok {s : State} {B : Addr} {base stride dst v n : Nat} (hn : n ≤ 32)
+    (hv : v < n) (hs : s.gpr .x6 = BitVec.ofNat 64 stride)
+    (hc : s.gpr .x14 = BitVec.ofNat 64 n)
     (h0 : ScanInv s (off B base) stride v 0 s)
     (hp : s.gpr .x17 = off B dst) (hd : dst + 64 ≤ 2 ^ 64)
-    (hld : ∀ j < 32, ∀ i < 4,
+    (hld : ∀ j < n, ∀ i < 4,
       InRegions (s.rd ++ s.wr) (off B (base + stride * j + 16 * i)) 16)
     (hw : ∀ i < 4, InRegions s.wr (off B (dst + 16 * i)) 16) :
     WP isa (.seq (countLoop .x14 inner) (.block (stores 4))) s fun t =>
@@ -26,7 +26,7 @@ theorem scan_store_ok {s : State} {B : Addr} {base stride dst v : Nat}
       ∀ j < 64, t.mem (off B (dst + j)) =
         s.mem (off B (base + stride * v + j)) := by
   apply WP.seq
-  refine WP.mono (scan_ok hv hs hc h0 (fun j hj i hi => by
+  refine WP.mono (scan_ok hn (Nat.zero_lt_of_lt hv) (Nat.lt_of_lt_of_le hv hn) hs hc h0 (fun j hj i hi => by
     simpa only [off, BitVec.add_assoc, ← BitVec.ofNat_add, Nat.add_assoc] using hld j hj i hi))
     fun u hu => ?_
   refine WP.mono (stores_ok 4 (src := base + stride * v) (by decide)

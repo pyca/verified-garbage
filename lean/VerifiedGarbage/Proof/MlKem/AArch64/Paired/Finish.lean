@@ -8,10 +8,11 @@ import VerifiedGarbage.Proof.MlKem.AArch64.Paired.FastFinish
 /-! # Complete paired samples and restore the enclosing matrix loop -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
-def finishCode (w16 : Bool := false) : Prog isa := .seq
-  (.ite (.zero .x .x6) (Impl.MlKem.AArch64.Paired.extraPair w16) (.block []))
+def finishCode (sha3 : Bool) (w16 : Bool := false) : Prog isa := .seq
+  (.ite (.zero .x .x6) (Impl.MlKem.AArch64.Paired.extraPair sha3 w16) (.block []))
   (.block (Impl.MlKem.AArch64.Paired.saved.zipIdx.reverse.map fun (r,i)=>
     .ldr .x r .x19 (1800+8*i)))
 
@@ -25,16 +26,14 @@ structure PairPostW (w16 : Bool) (A B : Spec.Sha3.State) (p a b : Addr) (s t : S
   status : t.gpr .x24=s.gpr .x24 &&& BitVec.ofNat 64
     (if (accepted A 5).length=256 ∧ (accepted B 5).length=256 then 1 else 0)
 
-abbrev PairPost := PairPostW false
-
 theorem finish_ok {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {initial s : State}
     (hk : Keep pairWorkingRegs initial s) (hm : Frame (stepWrites p a b) initial.mem s.mem)
     (sv : Noise.Saved p initial s.mem) (h : ProgressW w16 A B 3 p a b c s)
     (sy : s.syms "VG_MLKEM_REJ_SHUFFLE"=c)
     (hf : (s.gpr .x6).toNat=if (accepted A 3).length=256 ∧ (accepted B 3).length=256 then 1 else 0)
     (hs : s.gpr .x24=initial.gpr .x24) (hb : initial.gpr .x24=0 ∨ initial.gpr .x24=1) :
-    WP isa (finishCode w16) s (PairPostW w16 A B p a b initial) := by
-  refine WP.seq (WP.mono (finish_branch (fun _ ht st=>advance_ok ht st) h sy hf (by rw [hs]; exact hb))
+    WP isa (finishCode sha3 w16) s (PairPostW w16 A B p a b initial) := by
+  refine WP.seq (WP.mono (finish_branch (sha3 := sha3) (fun _ ht st=>advance_ok (sha3 := sha3) ht st) h sy hf (by rw [hs]; exact hb))
     fun t ht=>?_)
   have kt : Keep pairWorkingRegs initial t := (hk.trans ht.keep).mono (by decide)
   have fine : Frame (stepWrites p a b) s.mem t.mem := ht.frame.sub (by

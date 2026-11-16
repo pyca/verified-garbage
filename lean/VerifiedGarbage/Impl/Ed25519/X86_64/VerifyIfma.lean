@@ -19,9 +19,7 @@ each position, from the top) with the accumulated point `(X, Y, Z, T)` in the fo
 * the digits, the counter and the branches are `windows'`.
 
 The point goes into the lanes once, before the windows (`vload`, which also
-stores the constants), and back into slots 0–3 once, after them (`vstore`);
-the windows and `vstore` run between Intel's MXCSR prologue and epilogue
-(`withMx`), and nothing in them writes `r11`, which holds the saved MXCSR.
+stores the constants), and back into slots 0–3 once, after them (`vstore`).
 -/
 
 @[expose] public section
@@ -60,7 +58,7 @@ def vstepAt : Prog isa :=
 /-- Verification's windows with the point in the lanes, from slots 0–3 back to them. -/
 def windows : Prog isa :=
   .seq (.block (VG.Impl.X25519.X86_64.Ifma.consts ++ vload))
-    (withMx (.seq (.loop skipTop .ne) (.seq vaddsAt (.seq (.block batchTest)
-      (.seq (.ite .ne (.loop vstepAt .ne) (.block [])) (.block vstore))))))
+    (.seq (.loop skipTop .ne) (.seq vaddsAt (.seq (.block batchTest)
+      (.seq (.ite .ne (.loop vstepAt .ne) (.block [])) (.block vstore)))))
 
 end VG.Impl.Ed25519.X86_64.Ifma

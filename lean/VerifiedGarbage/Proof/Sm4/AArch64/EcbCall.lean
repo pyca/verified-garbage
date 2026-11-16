@@ -4,6 +4,19 @@ public import VerifiedGarbage.Impl.StackScratch.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 
 import VerifiedGarbage.Proof.Sm4.AArch64.Verified
+public import VerifiedGarbage.Proof.Sm4.AArch64.CbcVerified
+public import VerifiedGarbage.Impl.Sm4.AArch64.EcbFew
+public import VerifiedGarbage.Proof.Modes.Ctr
+public import VerifiedGarbage.Proof.Sm4.CtrCipher
+public import VerifiedGarbage.Proof.Sm4.Scratch
+meta import VerifiedGarbage.Impl.Sm4.AArch64.EcbFew
+meta import VerifiedGarbage.Proof.Sm4.AArch64.CbcVerified
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Link
+meta import VerifiedGarbage.Proof.Modes.AArch64.Ecb
+import VerifiedGarbage.Proof.Sm4.AArch64.Link
+import VerifiedGarbage.Proof.Modes.AArch64.Ecb
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
+import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -33,10 +46,14 @@ public import VerifiedGarbage.Proof.Sm4.Contract
 /-!
 # SM4 ECB on AArch64: the functions of one direction
 
-`vg_sm4_ecb_encrypt` and `vg_sm4_ecb_decrypt` (`ecbCall`) set `decrypt` and
-call `vg_sm4_ecb` (`ecbAny_framed`), in a frame saving `x30`: 16 bytes of
-stack below the callee's 3168. `ecbCall_verified` proves them against the
-ECB contracts with `stack = 3184`.
+`vg_sm4_ecb_encrypt` and `vg_sm4_ecb_decrypt` (`ecbFew`) take fewer than
+seven blocks one at a time: the modes' generic ECB over the one-block core
+of the direction (`ecbShort_wp`, from `Proof.Modes.AArch64.ecb_wp`), in a
+frame of its 408 words of working space (`ecbShortFramed_verified`).
+Otherwise (`ecbCall`) they set `decrypt` and call `vg_sm4_ecb`
+(`ecbAny_framed`), in a frame saving `x30`: 16 bytes of stack below the
+callee's 3168 (`ecbCall_correct`). `ecbFew_verified` proves the two
+together against the ECB contracts with `stack = 3264`.
 -/
 
 @[expose] public section
@@ -155,22 +172,6 @@ theorem ecbCall_correct (dir : Dir) (s₀ : State) (hs : (ecbCallAArch64 dir).pr
       rw [hpost, hsch, hblk, specDirA_dirFlag]
 
 
-theorem ecbCallTaint_agree (dir : Dir) (s₁ s₂ : State) (_ : (ecbCallAArch64 dir).pre s₁)
-    (_ : (ecbCallAArch64 dir).pre s₂) (hp : (ecbCallAArch64 dir).pub s₁ s₂) :
-    VG.AArch64.Taint.Agree (Taint.ofRegs [.x0, .x1, .x2]) s₁ s₂ := by
-  obtain ⟨hsp, h1, h2, h3⟩ := hp
-  refine ⟨hsp, fun r hr => ?_⟩
-  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
-  rcases hr with rfl | rfl | rfl <;> with_reducible assumption
-
-theorem ecbCall_ct (dir : Dir) :
-    ConstantTime isa (ecbCallAArch64 dir).pre (ecbCallAArch64 dir).pub (ecbCall dir ecbAnyFramed) := by
-  cases dir
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2]) (ecbCallTaint_agree .encrypt)
-      (by taint_decide)
-  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2]) (ecbCallTaint_agree .decrypt)
-      (by taint_decide)
-
 /-- A state satisfying the ECB functions' precondition with `stack = 3184`:
 the schedule at `0x1000`, one block at `0x3000`. -/
 def ecbCallSat : State where
@@ -181,12 +182,207 @@ def ecbCallSat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x3000, 16⟩]
 
-/-- `vg_sm4_ecb_encrypt` and `vg_sm4_ecb_decrypt`: a call of `vg_sm4_ecb`. -/
-theorem ecbCall_verified (dir : Dir) :
-    Verified AArch64.target (ecbCall dir ecbAnyFramed) (Spec.Sm4.ecbContract AArch64.abi (specDirA dir) 3184) :=
-  Verified.of_correct (ecbCall_correct dir) (ecbCall_ct dir) (by
-    cases dir <;>
-    sig_implies [Spec.Sm4.ecbContract, Spec.Sm4.ecbSig, Spec.Sm4.ecbPost, ecbCallAArch64, specDirA,
+/-! ## A few blocks, one at a time -/
+
+open VG.Proof.Modes.AArch64 (KeepsReg)
+
+/-- The ECB contracts with `scratch: *mut [u64; 408]`, as `sig_pre` evaluates
+them. -/
+def ecbShortAArch64 (d : Spec.Sm4.Direction) : Contract AArch64.isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .x0, 128⟩
+    let data : Region := ⟨s.gpr .x1, (s.gpr .x2).toNat * 16⟩
+    let scr : Region := ⟨s.gpr .x3, 3264⟩
+    s.rd = [sched] ∧ s.wr = [data, scr] ∧ sched.Disjoint data ∧ sched.Disjoint scr ∧ data.Disjoint scr ∧
+      (s.gpr .x0).toNat + 128 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + (s.gpr .x2).toNat * 16 ≤ 2 ^ 64 ∧
+      (s.gpr .x3).toNat + 3264 ≤ 2 ^ 64
+  post s s' :=
+    Spec.Sm4.blocksAt s'.mem (s.gpr .x1) (s.gpr .x2).toNat =
+      Spec.Sm4.ecb (Spec.Sm4.scheduleAt s.mem (s.gpr .x0)) d
+        (Spec.Sm4.blocksAt s.mem (s.gpr .x1) (s.gpr .x2).toNat)
+  pub s₁ s₂ :=
+    s₁.sp = s₂.sp ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
+      s₁.gpr .x3 = s₂.gpr .x3
+
+/-- The modes' ECB of the blocks' bytes is the contract's of the blocks. -/
+theorem ecb_of_blocks {K : Spec.Sm4.Schedule} {d : Spec.Sm4.Direction} {m m' : Mem} {D : Addr} {n : Nat}
+    (h : Proof.Modes.blocksOf 16 m' D n = (Proof.Modes.blocksOf 16 m D n).map (Serial.dirCipher d K)) :
+    Spec.Sm4.blocksAt m' D n = Spec.Sm4.ecb K d (Spec.Sm4.blocksAt m D n) := by
+  have hb : ∀ j < n, Spec.Sm4.blockAt m' (D + BitVec.ofNat 64 (16 * j)) =
+      (match d with | .encrypt => Spec.Sm4.encryptBlock K | .decrypt => Spec.Sm4.decryptBlock K)
+        (Spec.Sm4.blockAt m (D + BitVec.ofNat 64 (16 * j))) := fun j hj => by
+    have e := congrArg (fun l => l[j]?) h
+    simp only [Proof.Modes.blocksOf, List.map_map, List.getElem?_map, List.getElem?_range hj, Option.map_some,
+      Function.comp_apply, Option.some.injEq] at e
+    rw [Proof.Sm4.bytesAt_eq_blockAt, Proof.Sm4.bytesAt_eq_blockAt] at e
+    cases d
+    · simp only [Serial.dirCipher, Spec.Sm4.cipher, Proof.Sm4.ofFn_toList] at e
+      exact Vector.toList_inj.mp e
+    · simp only [Serial.dirCipher, Spec.Sm4.invCipher, Proof.Sm4.ofFn_toList] at e
+      exact Vector.toList_inj.mp e
+  simp only [Spec.Sm4.blocksAt, Spec.Sm4.ecb, List.map_map]
+  refine List.map_congr_left fun j hj => ?_
+  rw [Function.comp_apply, hb j (List.mem_range.mp hj)]
+  cases d <;> rfl
+
+/-- The one-block core of each direction, and what it computes. -/
+theorem ecbShort_wp (d : Spec.Sm4.Direction) {s₀ : State} (hs : (ecbShortAArch64 d).pre s₀) :
+    WP isa (ecbShort d) s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+      s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ (ecbShortAArch64 d).post s₀ s' := by
+  obtain ⟨hrd, hwr, dKD, dKS, dDS, fitK, fitD, fitS⟩ := hs
+  have hwS : (⟨s₀.gpr .x3, 8 * 408⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  have e16 : 8 * 2 * (s₀.gpr .x2).toNat = (s₀.gpr .x2).toNat * 16 := by omega_using []
+  cases d
+  · refine WP.mono (Proof.Modes.AArch64.ecb_wp Serial.blockSpec (data := .x1) (nR := .x2) (scr := .x3)
+      (by decide) (by decide) (by decide)
+      (B := s₀.gpr .x3) (D := s₀.gpr .x1) (n := (s₀.gpr .x2).toNat)
+      (k := Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .x0)) rfl rfl rfl ⟨hwS, fitS⟩
+      (by rw [hwr, Serial.core_bw, e16]; exact List.mem_cons_self) (by rw [Serial.core_bw, e16]; exact dDS)
+      (by rw [Serial.core_bw, e16]; exact fitD)
+      ⟨s₀.gpr .x0, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact dKS⟩) fun s' ⟨hcs, hdata, _, _, _⟩ => ⟨hcs, ?_⟩
+    rw [Serial.core_bw, show 8 * 2 = 16 from rfl] at hdata
+    exact ecb_of_blocks (d := .encrypt) (by
+      rw [hdata]; exact congrArg (fun f => List.map f _) (funext fun b => Serial.cipher_eq _ ▸ rfl))
+  · refine WP.mono (Proof.Modes.AArch64.ecb_wp Serial.decBlockSpec (data := .x1) (nR := .x2) (scr := .x3)
+      (by decide) (by decide) (by decide)
+      (B := s₀.gpr .x3) (D := s₀.gpr .x1) (n := (s₀.gpr .x2).toNat)
+      (k := Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .x0)) rfl rfl rfl ⟨hwS, fitS⟩
+      (by rw [hwr, Serial.decCore_bw, e16]; exact List.mem_cons_self) (by rw [Serial.decCore_bw, e16]; exact dDS)
+      (by rw [Serial.decCore_bw, e16]; exact fitD)
+      ⟨s₀.gpr .x0, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact dKS⟩) fun s' ⟨hcs, hdata, _, _, _⟩ => ⟨hcs, ?_⟩
+    rw [Serial.decCore_bw, show 8 * 2 = 16 from rfl] at hdata
+    exact ecb_of_blocks (d := .decrypt) (by
+      rw [hdata]; exact congrArg (fun f => List.map f _) (funext fun b => Serial.invCipher_eq _ ▸ rfl))
+
+theorem ecbShort_keeps_x30 (d : Spec.Sm4.Direction) : KeepsReg .x30 (ecbShort d) := by
+  cases d
+  · show KeepsReg .x30 (Serial.core.ecb .x1 .x2 .x3)
+    unfold Impl.Modes.AArch64.Core.ecb Impl.Modes.AArch64.Core.ecbGroup Impl.Modes.AArch64.Core.copyBlocks
+      Impl.Modes.AArch64.Core.groupCount
+    sm4_keeps_x30
+  · show KeepsReg .x30 (Serial.decCore.ecb .x1 .x2 .x3)
+    unfold Impl.Modes.AArch64.Core.ecb Impl.Modes.AArch64.Core.ecbGroup Impl.Modes.AArch64.Core.copyBlocks
+      Impl.Modes.AArch64.Core.groupCount
+    sm4_keeps_x30
+
+theorem ecbShort_keepsV (d : Spec.Sm4.Direction) : (ecbShort d).allInstrs keepsV = true := by
+  cases d
+  · exact (by lit_decide : ecbShortEncrypt.allInstrs keepsV = true)
+  · exact (by lit_decide : ecbShortDecrypt.allInstrs keepsV = true)
+
+theorem ecbShortTaint_agree (d : Spec.Sm4.Direction) (s₁ s₂ : State) (_ : (ecbShortAArch64 d).pre s₁)
+    (_ : (ecbShortAArch64 d).pre s₂) (hp : (ecbShortAArch64 d).pub s₁ s₂) :
+    VG.AArch64.Taint.Agree (Taint.ofRegs [.x0, .x1, .x2, .x3]) s₁ s₂ := by
+  obtain ⟨hsp, h1, h2, h3, h4⟩ := hp
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
+
+theorem ecbShort_ct (d : Spec.Sm4.Direction) :
+    ConstantTime isa (ecbShortAArch64 d).pre (ecbShortAArch64 d).pub (ecbShort d) := by
+  cases d
+  · exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3]) (ecbShortTaint_agree .encrypt)
+      (by taint_decide) : ConstantTime isa _ _ ecbShortEncrypt)
+  · exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3]) (ecbShortTaint_agree .decrypt)
+      (by taint_decide) : ConstantTime isa _ _ ecbShortDecrypt)
+
+/-- A state satisfying `ecbShortAArch64`'s precondition. -/
+def ecbShortSat : State where
+  gpr r := match r with
+    | .x0 => 0x1000 | .x1 => 0x3000 | .x2 => 1 | .x3 => 0x4000 | _ => 0
+  sp := 0x8000
+  mem _ := 0
+  rd := [⟨0x1000, 128⟩]
+  wr := [⟨0x3000, 16⟩, ⟨0x4000, 3264⟩]
+
+theorem ecbShort_verified (d : Spec.Sm4.Direction) :
+    Verified AArch64.target (ecbShort d) (Proof.Sm4.ecbScratchContract AArch64.abi d 408) :=
+  Verified.of_correct (fun s hs => by
+      obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs' (ecbShort_keeps_x30 d) (ecbShort_wp d hs)
+      exact ⟨t, s', he, modeAbi_of he h₁ h₃ (ecbShort_keepsV d), h₂⟩)
+    (ecbShort_ct d) (by
+    sig_implies [Proof.Sm4.ecbScratchContract, Proof.Sm4.ecbScratchSig, Spec.Sm4.ecbPost, ecbShortAArch64,
+      AArch64.abi, AArch64.argRegs] [ecbShortSat] using ecbShortSat)
+
+/-- A few blocks, with the working space on the stack: 3264 bytes. -/
+theorem ecbShortFramed_verified (d : Spec.Sm4.Direction) :
+    Verified AArch64.target (ecbShortFramed d) (Spec.Sm4.ecbContract AArch64.abi d 3264) :=
+  AArch64.Verified.stackScratchWiped (sig := Spec.Sm4.ecbSig) (nm := "scratch") (e := .u64)
+    (n := 408) (post := Spec.Sm4.ecbPost d AArch64.abi.ptrBits) (wa := true) (stack := 0)
+    (bytes := 3264) (ecbShort_verified d) (by decide) (by decide) (by decide) (Proof.Sm4.ecbPostOut_local _ d)
+    (AArch64.sat_regs (by decide) (by decide) (by decide +kernel) (by rw [Curry.apply_const]; trivial))
+
+/-! ## The two together -/
+
+/-- The ECB contracts with `stack = 3264`, as `sig_pre` evaluates them. -/
+def ecbFewAArch64 (d : Spec.Sm4.Direction) : Contract AArch64.isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .x0, 128⟩
+    let data : Region := ⟨s.gpr .x1, (s.gpr .x2).toNat * 16⟩
+    let stk : Region := ⟨s.sp - BitVec.ofNat 64 3264, 3264⟩
+    3264 ≤ s.sp.toNat ∧ s.rd = [sched] ∧ s.wr = [data] ∧ sched.Disjoint data ∧ stk.Disjoint sched ∧
+      stk.Disjoint data ∧ (s.gpr .x0).toNat + 128 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + (s.gpr .x2).toNat * 16 ≤ 2 ^ 64
+  post s s' :=
+    Spec.Sm4.blocksAt s'.mem (s.gpr .x1) (s.gpr .x2).toNat =
+      Spec.Sm4.ecb (Spec.Sm4.scheduleAt s.mem (s.gpr .x0)) d
+        (Spec.Sm4.blocksAt s.mem (s.gpr .x1) (s.gpr .x2).toNat)
+  pub s₁ s₂ :=
+    s₁.sp = s₂.sp ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2
+
+theorem specDirA_callDir (d : Spec.Sm4.Direction) : specDirA (callDir d) = d := by cases d <;> rfl
+
+theorem ecbFew_correct (d : Spec.Sm4.Direction) (s₀ : State) (hs : (ecbFewAArch64 d).pre s₀) :
+    ∃ t s', Exec isa (ecbFew d ecbAnyFramed) s₀ t s' ∧ abiPreserved s₀ s' ∧ (ecbFewAArch64 d).post s₀ s' := by
+  have hpres : ∀ r ∈ preserved, r ≠ .x13 := by decide
+  refine few7_wp (Q := fun s' => abiPreserved s₀ s' ∧ (ecbFewAArch64 d).post s₀ s')
+    fun s₁ g₁ m₁ rd₁ wr₁ sp₁ v₁ => ?_
+  obtain ⟨hsp, hrd, hwr, dKD, dSK, dSD, fitK, fitD⟩ := hs
+  have e0 : s₁.gpr .x0 = s₀.gpr .x0 := g₁ _ (by decide)
+  have e1 : s₁.gpr .x1 = s₀.gpr .x1 := g₁ _ (by decide)
+  have e2 : s₁.gpr .x2 = s₀.gpr .x2 := g₁ _ (by decide)
+  have back {s' : State} (ha : abiPreserved s₁ s') : abiPreserved s₀ s' :=
+    ⟨fun r hr => (ha.1 r hr).trans (g₁ r (hpres r hr)), ha.2.1.trans sp₁, fun r hr => (ha.2.2 r hr).trans (v₁ r hr)⟩
+  constructor
+  · obtain ⟨t, s', he, ha, hq⟩ := (ecbShortFramed_verified d).1 s₁ (by
+      sig_pre [Spec.Sm4.ecbContract, Spec.Sm4.ecbSig, AArch64.abi, AArch64.argRegs]
+      simp only [e0, e1, e2, sp₁, rd₁, wr₁]
+      exact ⟨hsp, hrd, hwr, dKD, dSK, dSD, fitK, fitD⟩)
+    refine ⟨t, s', he, back ha, ?_⟩
+    sig_reduce [Spec.Sm4.ecbContract, Spec.Sm4.ecbSig, Spec.Sm4.ecbPost, AArch64.abi, AArch64.argRegs] at hq
+    simpa only [ecbFewAArch64, e0, e1, e2, m₁, BitVec.setWidth_eq] using hq
+  · have sub : Region.Sub ⟨s₀.sp - BitVec.ofNat 64 3184, 3184⟩ ⟨s₀.sp - BitVec.ofNat 64 3264, 3264⟩ :=
+      fun x hx => Offset.below_mono s₀.sp (by decide) (by decide) x hx
+    obtain ⟨t, s', he, ha, hq⟩ := ecbCall_correct (callDir d) s₁ (by
+      simp only [ecbCallAArch64, e0, e1, e2, sp₁, rd₁, wr₁]
+      exact ⟨by omega_using [hsp], hrd, hwr, dKD, dSK.sub_left sub, dSD.sub_left sub, fitK, fitD⟩)
+    refine ⟨t, s', he, back ha, ?_⟩
+    simpa only [ecbCallAArch64, ecbFewAArch64, e0, e1, e2, m₁, specDirA_callDir] using hq
+
+theorem ecbFewTaint_agree (d : Spec.Sm4.Direction) (s₁ s₂ : State) (_ : (ecbFewAArch64 d).pre s₁)
+    (_ : (ecbFewAArch64 d).pre s₂) (hp : (ecbFewAArch64 d).pub s₁ s₂) :
+    VG.AArch64.Taint.Agree (Taint.ofRegs [.x0, .x1, .x2]) s₁ s₂ := by
+  obtain ⟨hsp, h1, h2, h3⟩ := hp
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl <;> with_reducible assumption
+
+theorem ecbFew_ct (d : Spec.Sm4.Direction) :
+    ConstantTime isa (ecbFewAArch64 d).pre (ecbFewAArch64 d).pub (ecbFew d ecbAnyFramed) := by
+  cases d
+  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2]) (ecbFewTaint_agree .encrypt)
+      (by taint_decide)
+  · exact VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2]) (ecbFewTaint_agree .decrypt)
+      (by taint_decide)
+
+/-- `vg_sm4_ecb_encrypt` and `vg_sm4_ecb_decrypt`: a few blocks one at a
+time, or a call of `vg_sm4_ecb`; 3264 bytes of stack. -/
+theorem ecbFew_verified (d : Spec.Sm4.Direction) :
+    Verified AArch64.target (ecbFew d ecbAnyFramed) (Spec.Sm4.ecbContract AArch64.abi d 3264) :=
+  Verified.of_correct (ecbFew_correct d) (ecbFew_ct d) (by
+    cases d <;>
+    sig_implies [Spec.Sm4.ecbContract, Spec.Sm4.ecbSig, Spec.Sm4.ecbPost, ecbFewAArch64,
       AArch64.abi, AArch64.argRegs] [ecbCallSat] using ecbCallSat)
 
 end VG.Proof.Sm4.AArch64

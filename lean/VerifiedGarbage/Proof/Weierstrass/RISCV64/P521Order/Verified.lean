@@ -7,10 +7,16 @@ public import VerifiedGarbage.TCB.RISCV64.Target
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Mont.Read
 meta import VerifiedGarbage.Impl.Weierstrass.RISCV64.P521Order
-meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Ed25519.RISCV64.FieldCT
 meta import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Order.Lit
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.P521Order.Lit
+meta import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
 
 /-!
 # Arithmetic modulo P-521's order on RISC-V: verified
@@ -58,5 +64,17 @@ theorem subA_rv (s : State) (hs : (VG.Proof.Weierstrass.RISCV64.alignedC (subRV 
     ∃ t s', Exec isa subFnA s t s' ∧ abiPreserved s s' ∧ (subRV p521n).post s s' :=
   GenWide.subA_rv wide s hs
 
+/-! The constant-time analyses of the calls of the functions from their arguments, each done once
+for every check of code that calls it (`taint_decide_sum`), which keep what is public of
+`s0`–`s11`: the functions write none of them. -/
+taint_summary mulASum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Weierstrass.Mont.p521n.fn "mul") mulFnA)
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+taint_summary addASum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Weierstrass.Mont.p521n.fn "add") addFnA)
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+taint_summary subASum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Weierstrass.Mont.p521n.fn "sub") subFnA)
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
 
 end VG.Proof.Weierstrass.RISCV64.P521Order

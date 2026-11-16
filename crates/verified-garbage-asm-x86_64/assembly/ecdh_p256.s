@@ -3073,13 +3073,6 @@ vg_ecdh_p256_ifma:
 	mov QWORD PTR [rdx+152], rax
 	cmp rbx, 16
 	jne 24b
-	stmxcsr DWORD PTR [rdi+5472]
-	mov r12d, DWORD PTR [rdi+5472]
-	and r12d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rdi+5476], eax
-	ldmxcsr DWORD PTR [rdi+5476]
-	lfence
 	movabs rax, 0
 	mov QWORD PTR [rdi+6400], rax
 	movabs rax, -1
@@ -6334,9 +6327,6 @@ vg_ecdh_p256_ifma:
 	vmovdqu64 YMMWORD PTR [rdi+5184], ymm4
 	sub rdi, 448
 	vzeroupper
-	lfence
-	mov DWORD PTR [rdi+5472], r12d
-	ldmxcsr DWORD PTR [rdi+5472]
 	mov r8, QWORD PTR [rdi+5528]
 	mov rax, QWORD PTR [rdi+5560]
 	mov r9, rax
@@ -7235,20 +7225,6 @@ vg_ecdh_p256_ifma:
 	vpxorq zmm30, zmm30, zmm30
 	vpxorq zmm31, zmm31, zmm31
 	xor r11d, r11d
-	lea rsp, [rsp-16]
-	stmxcsr DWORD PTR [rsp]
-	mov r11d, DWORD PTR [rsp]
-	and r11d, 65472
-	or r11d, 63
-	mov DWORD PTR [rsp], r11d
-	mov r11d, 8127
-	mov DWORD PTR [rsp+4], r11d
-	ldmxcsr DWORD PTR [rsp+4]
-	lfence
-	lfence
-	ldmxcsr DWORD PTR [rsp]
-	xor r11d, r11d
-	lea rsp, [rsp+16]
 	lea rsp, [rsp-16]
 	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+16]

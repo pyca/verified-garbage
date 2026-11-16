@@ -20,7 +20,7 @@ open VG.Impl.RsaKeyGen.AArch64.Candidate
 open VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64 VG.Proof.RsaKeyGen.AArch64
 open VG.Proof.MillerRabin.AArch64
 
-theorem loopRound_ok (M : Mont) (K : Kernel) {P : PrimeParams} {s₀ s : State}
+theorem loopRound_ok (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {P : PrimeParams} {s₀ s : State}
     {res : Option (Bool × List Byte)} {i uni used : Nat}
     (h : PrimeLoopState P s₀ res i uni used s) (hroom : used + P.drawBytes ≤ P.rand.length) :
     WP isa (.seq (Impl.Dsa.AArch64.Generation.drawRound M.mm K.run P.len P.drawBytes)
@@ -89,7 +89,7 @@ namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Impl.Bignum.AArch64 VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch64
 open VG.Proof.MillerRabin.AArch64
 
-theorem primeIteration_ok (M : Mont) (K : Kernel) {P : PrimeParams} {s₀ s : State}
+theorem primeIteration_ok (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {P : PrimeParams} {s₀ s : State}
     {res : Option (Bool × List Byte)} {i uni used : Nat}
     (h : PrimeLoopState P s₀ res i uni used s) :
     WP isa (Impl.Dsa.AArch64.Generation.primeIteration

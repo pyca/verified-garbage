@@ -15,18 +15,15 @@ namespace VG.Artifacts.Camellia.AArch64
 
 def artifacts : List Artifact := [
   Spec.Camellia.expandKeyApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 3248 .x3 406 Impl.Camellia.AArch64.expandKey
-    stack := 3248
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 160 .x3 20 Impl.Camellia.AArch64.expandKey
     verified := Proof.Camellia.AArch64.expandKey_framed },
   Spec.Camellia.ecbEncryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 3248 .x4 406
       (Impl.Camellia.AArch64.ecb .encrypt)
-    stack := 3248
     verified := Proof.Camellia.AArch64.ecb_framed .encrypt },
   Spec.Camellia.ecbDecryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 3248 .x4 406
       (Impl.Camellia.AArch64.ecb .decrypt)
-    stack := 3248
     verified := Proof.Camellia.AArch64.ecb_framed .decrypt }]
 
 end VG.Artifacts.Camellia.AArch64

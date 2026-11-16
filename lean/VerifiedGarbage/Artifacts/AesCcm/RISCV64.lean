@@ -15,11 +15,9 @@ open VG.Proof.AesCcm.RISCV64
 def artifacts : List Artifact := [
   Spec.Ccm.sealApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesCcm.RISCV64.«seal»
-    stack := 2592
     verified := Proof.AesCcm.seal_keyed seal_framed },
   Spec.Ccm.openApi.artifact RISCV64.target {
     code := Impl.StackScratch.RISCV64.withStackScratchArgs 2592 2 Impl.AesCcm.RISCV64.«open»
-    stack := 2592
     verified := Proof.AesCcm.open_keyed open_framed }]
 
 end VG.Artifacts.AesCcm.RISCV64

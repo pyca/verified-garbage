@@ -15,9 +15,8 @@ import VerifiedGarbage.Proof.MlKem.X86_64.NttR.RunR100
 # ML-KEM on x86-64: the AVX2 arithmetic without its MXCSR region
 
 As `KpkeBodies.lean` and `KpkeAcc.lean`, for `Bodies.avx2`:
-`vg_mlkem_ntt_avx2`'s code storing through `r10` (`nttOBY`), without
-`withMxcsr`, meets the contract of the function (the proof is that of
-`NttAvx2.lean` without `withMxcsr_ok`), and the pieces around the
+`vg_mlkem_ntt_avx2`'s code storing through `r10` (`nttOBY`) meets the
+contract of the function (the proof is that of `NttAvx2.lean`), and the pieces around the
 accumulator in words (`AccY.lean`, `AccInvY.lean`, `FinY.lean`) meet theirs.
 The same code reading its input as `u16`s (`nttR16`) meets `nttO16K`.
 -/

@@ -79,6 +79,9 @@ def stepFn : Instr → Step
   -- Words of a table of constants, into a vector register, which this
   -- domain does not track; its offset in the table, an immediate, is observed.
   | .ldrqTbl .. => ⟨fun τ => some τ⟩
+  -- A word of a table of constants: public, as an immediate is (`movz`),
+  -- and so is its offset in the table, which is observed.
+  | .ldrTbl _ t .. => ⟨fun τ => some (set τ t true)⟩
   | .umov _ d _ _ => ⟨fun τ => some (set τ d false)⟩
   | .align _ => ⟨fun τ => some τ⟩
   -- PSTATE.DIT is not tracked, as the flags are not: a value read from it is
@@ -374,6 +377,12 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State} (ha 
     split at e₂ <;> [skip; cases e₂]
     cases e₁; cases e₂
     exact ⟨ha.1, ha.2⟩
+  | ldrTbl sz t n off name ws =>
+    obtain rfl := Option.some.inj hs
+    obtain ⟨-, e₁⟩ := Option.ite_none_right_eq_some.mp e₁
+    obtain ⟨-, e₂⟩ := Option.ite_none_right_eq_some.mp e₂
+    obtain rfl := Option.some.inj e₁; obtain rfl := Option.some.inj e₂
+    exact ⟨rfl, ha.write sz t fun _ => rfl⟩
   | strq t n off =>
     simp only [step, stepFn] at hs
     split at hs <;> [skip; cases hs]

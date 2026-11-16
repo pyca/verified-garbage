@@ -10,9 +10,9 @@ public import VerifiedGarbage.Spec.MlKem
 on eight coefficients at a time, as words of SSE registers (see
 `Vec.lean`). `scratch` holds the 128 words `ζ^BitRev7(k) · 2¹⁶ mod q` at 0
 (`zmTab`, stored with immediates: the code has no other memory), the
-polynomial as 256 words at 256 (`S`), and MXCSR's at 768 (`withMxcsr`).
+polynomial as 256 words at 256 (`S`).
 
-Within `withMxcsr`, the prologue stores the table and the constants, and
+The prologue stores the table and the constants, and
 packs `f` into `S` (`vpack`); the epilogue unpacks `S` into `f`
 (`vunpack`). In between, the layers, each a pass over `S` with `rdx`
 pointing at the words it loads, `r8` at the zetas of the table:
@@ -103,12 +103,12 @@ def vpro : Prog isa :=
 def vepi : Prog isa :=
   .seq (.block ([.mov .r9 (.reg .rdi)] ++ leaR .rdx .rsi oS)) vunpack
 
-def ntt : Prog isa := withMxcsr .rsi oMx <|
+def ntt : Prog isa :=
   .seq vpro (.seq (vlay vbfly 128 1 2) (.seq (vlay vbfly 64 2 2) (.seq (vlay vbfly 32 4 2)
     (.seq (vlay vbfly 16 8 2) (.seq (vlay vbfly 8 16 2) (.seq (vlay4 vbfly 32 0x50 4)
       (.seq (vlay2 vbfly 64 0xE4 8) vepi)))))))
 
-def nttInv : Prog isa := withMxcsr .rsi oMx <|
+def nttInv : Prog isa :=
   .seq vpro (.seq (vlay2 vibfly 124 0x1B (-8)) (.seq (vlay4 vibfly 62 0x05 (-4))
     (.seq (vlay vibfly 8 31 (-2)) (.seq (vlay vibfly 16 15 (-2)) (.seq (vlay vibfly 32 7 (-2))
       (.seq (vlay vibfly 64 3 (-2)) (.seq (vlay vibfly 128 1 (-2)) (.seq vscale vepi))))))))

@@ -3,12 +3,14 @@ module
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Impl.Aes.AArch64.ExpandKey
 public import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
+public import VerifiedGarbage.Proof.Aes.AArch64.OneBlock
 public import VerifiedGarbage.Proof.Aes.KeyExp
 public import VerifiedGarbage.Spec.Aes.Contract
 public import VerifiedGarbage.Proof.Aes.Contract
 meta import VerifiedGarbage.Proof.Aes.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
+import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
 import VerifiedGarbage.Proof.Framework.Contract
@@ -16,6 +18,7 @@ import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Impl.Aes.AArch64.ExpandKey
 meta import VerifiedGarbage.Proof.Aes.AArch64.Ctr32
+meta import VerifiedGarbage.Proof.Aes.AArch64.OneBlock
 meta import VerifiedGarbage.Proof.Aes.KeyExp
 meta import VerifiedGarbage.Spec.Aes.Contract
 meta import VerifiedGarbage.Proof.Framework.Offset
@@ -28,8 +31,9 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # The AES key expansion on AArch64
 
-`subAll` (`toBs`, the S-box, `fromBs`) applies the S-box to every byte of
-the eight words (`subAll_wp`, from the bitsliced layers' lemmas); each
+`subAll` applies the S-box to every byte of `q 0` (`subAll_wp`, by
+`select_full_run` on the S-box that `OneBlock.setup` leaves in the table
+registers, which nothing else writes: `WP.keepsT`); each
 word of the schedule is then a few scalar instructions around it
 (`word_ok`), and the loop over the words keeps the schedule's bytes so far
 equal to the specification's (`WInv`).
@@ -39,55 +43,88 @@ equal to the specification's (`WInv`).
 
 namespace VG.Proof.Aes.AArch64
 
-open VG VG.AArch64 VG.AArch64.Straight VG.Bitslice VG.Impl.Aes.AArch64 VG.Proof.Aes
+open VG VG.AArch64 VG.AArch64.Straight VG.AArch64.RegUpd VG.AArch64.Tbl VG.Bitslice VG.Impl.Aes.AArch64
+open VG.Impl.Tbl.AArch64 VG.Proof.Aes
 open VG.Spec.Aes (sbox xtimes subBytes subWord rotWord rcon xorWord)
 
 /-! ## The S-box on every byte -/
 
-/-- The four states that the words hold, as `InRel` relates them. -/
-def stOf (Q : Nat → BitVec 64) (b : Nat) : Spec.Aes.State :=
-  Vector.ofFn fun i => (Q (b + 4 * (i.1 / 8))).extractLsb' (8 * (i.1 % 8)) 8
+/-- The instruction writes no vector register but `v0`–`v3`. -/
+def tabKept (i : Instr) : Bool :=
+  match vdstOf i with
+  | none | some .v0 | some .v1 | some .v2 | some .v3 => true
+  | _ => false
 
-theorem inRel_stOf (Q : Nat → BitVec 64) : InRel Q (stOf Q) := by
-  intro b hb i hi j hj
-  rw [getD_eq _ hi, stOf, Vector.getElem_ofFn, BitVec.getLsbD_extractLsb']
-  simp [hj]
+/-- Code that writes no vector register but `v0`–`v3` keeps the others,
+the tables and constants of `OneBlock.Consts` among them. -/
+theorem _root_.VG.WP.keepsT {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s Q)
+    (hc : c.allInstrs tabKept = true) :
+    WP isa c s fun s' => Q s' ∧ ∀ r, r ∉ [VReg.v0, .v1, .v2, .v3] → s'.v r = s.v r := by
+  obtain ⟨t, s', he, hq⟩ := h
+  refine ⟨t, s', he, hq, fun r hr => Exec.vec (fun i hi e => ?_) he⟩
+  have := List.all_eq_true.mp ((Code.allInstrs_eq tabKept c) ▸ hc) i hi
+  unfold tabKept at this
+  rw [e] at this
+  simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
+  cases r <;> simp_all
 
-theorem subAll_wp {s : State} (hok : Ok linCfg s) {P : State → Prop}
-    (h : ∀ s', (∀ k < 8, ∀ t < 8, (Q s' k).extractLsb' (8 * t) 8 = sbox ((Q s k).extractLsb' (8 * t) 8)) →
-      s'.rd = s.rd → s'.wr = s.wr → (∀ r, r ∉ layerWrites → s'.gpr r = s.gpr r) →
-      Frame [⟨s.gpr sb, 8 * 48⟩] s.mem s'.mem → P s') :
+/-- A byte of the low doubleword of a vector. -/
+theorem lo64_byte (x : BitVec 128) {t : Nat} (ht : t < 8) :
+    (x.extractLsb' 0 64).extractLsb' (8 * t) 8 = vbyte x t := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  simp only [vbyte, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and, Nat.zero_add]
+  rw [decide_eq_true (by omega_arith), Bool.true_and]
+
+/-- A byte of the low doubleword of a vector whose lane 0 was set. -/
+theorem vbyte_setLane0 (x : BitVec 128) (y : BitVec 64) {t : Nat} (ht : t < 8) :
+    vbyte (setLane x 64 0 y) t = y.extractLsb' (8 * t) 8 := by
+  apply BitVec.eq_of_getLsbD_eq
+  intro j hj
+  simp only [vbyte, setLane, BitVec.getLsbD_extractLsb', hj, decide_true, Bool.true_and,
+    BitVec.getLsbD_or, BitVec.getLsbD_and, BitVec.getLsbD_not, BitVec.getLsbD_shiftLeft,
+    BitVec.getLsbD_setWidth, BitVec.getLsbD_allOnes, Nat.mul_zero, Nat.sub_zero, Nat.not_lt_zero,
+    decide_false, Bool.not_false]
+  have h1 : 8 * t + j < 64 := by omega_arith
+  have h2 : 8 * t + j < 128 := by omega_arith
+  simp [h1, h2]
+
+theorem subAll_wp {s : State} (hc : OneBlock.Consts s) {P : State → Prop}
+    (h : ∀ s', (∀ t < 8, (s'.gpr (q 0)).extractLsb' (8 * t) 8 = sbox ((s.gpr (q 0)).extractLsb' (8 * t) 8)) →
+      s'.rd = s.rd → s'.wr = s.wr → (∀ r, r ≠ q 0 → s'.gpr r = s.gpr r) → s'.mem = s.mem → P s') :
     WP isa (.block subAll) s P := by
+  let a := s.setV .v0 (setLane (s.v .v0) 64 0 (s.gpr (q 0)))
+  let b := a.setV .v1 (a.v .v0 ^^^ a.v .v6)
+  let c := b.setV .v2 (b.v .v0 ^^^ b.v .v5)
+  let d := c.setV .v3 (c.v .v1 ^^^ c.v .v5)
+  have od : VOnly [.v0, .v1, .v2, .v3] s d :=
+    (((VOnly.setV s (by simp) _).trans (VOnly.setV a (by simp) _)).trans (VOnly.setV b (by simp) _)).trans
+      (VOnly.setV c (by simp) _)
+  have h0 : d.v .v0 = setLane (s.v .v0) 64 0 (s.gpr (q 0)) := by
+    simp only [d, c, b, a, v_setV_of_ne _ _ (by decide : VReg.v0 ≠ .v3),
+      v_setV_of_ne _ _ (by decide : VReg.v0 ≠ .v2), v_setV_of_ne _ _ (by decide : VReg.v0 ≠ .v1), v_setV_self]
+  have h1 : d.v .v1 = d.v .v0 ^^^ bc 0x40 := by simp [d, c, b, a, State.setV, hc.v6]
+  have h2 : d.v .v2 = d.v .v0 ^^^ bc 0x80 := by simp [d, c, b, a, State.setV, hc.v5]
+  have h3 : d.v .v3 = d.v .v0 ^^^ bc 0x40 ^^^ bc 0x80 := by simp [d, c, b, a, State.setV, hc.v5, hc.v6]
+  have hd : runBlock isa [.vop (.ins .d2 .v0 0 (q 0)), .vop (.logic .eor .v1 .v0 .v6),
+      .vop (.logic .eor .v2 .v0 .v5), .vop (.logic .eor .v3 .v1 .v5)] s = some d := rfl
+  obtain ⟨t, ht, hb, ot⟩ := select_full_run (s := d) (fun e => vbyte (d.v .v0) e) (fun _ _ => rfl)
+    (fun e he => by rw [h1, vbyte_xor, vbyte_bc _ he])
+    (fun e he => by rw [h2, vbyte_xor, vbyte_bc _ he])
+    (fun e he => by rw [h3, vbyte_xor, vbyte_xor, vbyte_bc _ he, vbyte_bc _ he, BitVec.xor_assoc]; rfl)
+  let u := t.write .x (q 0) ((t.v .v0).extractLsb' 0 64)
+  have hu : runBlock isa [.umov .x (q 0) .v0 0] t = some u := rfl
+  have ou := od.trans ot
   simp only [subAll]
-  repeat rw [WP.block_append_iff (M := isa)]
-  obtain ⟨s₁, hs₁, h₁, rd₁, wr₁, -, o₁, f₁⟩ := toBs_ok hok
-  refine WP.of_runBlock ⟨s₁, hs₁, ?_⟩
-  have hb₁ : s₁.gpr sb = s.gpr sb := o₁ sb (by decide)
-  have ok₁ : Ok linCfg s₁ := hok.congr hb₁ hb₁ rd₁ wr₁
-  obtain ⟨s₂, hs₂, h₂, rd₂, wr₂, -, o₂, f₂⟩ := sbox_ok (s := s₁) ok₁
-  refine WP.of_runBlock ⟨s₂, hs₂, ?_⟩
-  have hb₂ : s₂.gpr sb = s.gpr sb := (o₂ sb (by decide)).trans hb₁
-  have ok₂ : Ok linCfg s₂ := hok.congr hb₂ hb₂ (rd₂.trans rd₁) (wr₂.trans wr₁)
-  obtain ⟨s₃, hs₃, h₃, rd₃, wr₃, -, o₃, f₃⟩ := fromBs_ok ok₂
-  refine WP.of_runBlock ⟨s₃, hs₃, ?_⟩
-  have hin := in_of_bs h₃ (bs_subBytes h₂ (bs_of_in h₁ (inRel_stOf (Q s))))
-  refine h s₃ (fun k hk t ht => ?_) (rd₃.trans (rd₂.trans rd₁)) (wr₃.trans (wr₂.trans wr₁))
-    (fun r hr => (o₃ r hr).trans ((o₂ r hr).trans (o₁ r hr))) ?_
-  · refine byte_ext fun j hj => ?_
-    have := hin (k % 4) (by omega_arith) (t + 8 * (k / 4)) (by omega_arith) j hj
-    rw [show k % 4 + 4 * ((t + 8 * (k / 4)) / 8) = k by omega_arith,
-      show 8 * ((t + 8 * (k / 4)) % 8) + j = 8 * t + j by omega_arith] at this
-    rw [BitVec.getLsbD_extractLsb', decide_eq_true hj, Bool.true_and, this, getD_eq _ (by omega_arith)]
-    simp only [subBytes, Vector.getElem_map, stOf, Vector.getElem_ofFn]
-    rw [show k % 4 + 4 * ((t + 8 * (k / 4)) / 8) = k by omega_arith,
-      show (t + 8 * (k / 4)) % 8 = t by omega_arith]
-  · have e₁ : slotRegion linCfg s = ⟨s.gpr sb, 8 * 48⟩ := rfl
-    have e₂ : slotRegion sboxCfg s₁ = ⟨s.gpr sb, 8 * 48⟩ := by
-      simp only [slotRegion, sboxCfg, hb₁]
-    have e₃ : slotRegion linCfg s₂ = ⟨s.gpr sb, 8 * 48⟩ := by
-      simp only [slotRegion, linCfg, hb₂]
-    rw [e₁] at f₁; rw [e₂] at f₂; rw [e₃] at f₃
-    exact (f₁.trans f₂).trans f₃
+  refine WP.of_runBlock ⟨u, runBlock_cat_some hd (runBlock_cat_some ht hu), ?_⟩
+  refine h u (fun k hk => ?_) ou.rd ou.wr (fun r hr => ?_) ou.mem
+  · have hlt : (vbyte (d.v .v0) k).toNat < 256 := (vbyte (d.v .v0) k).isLt
+    simp only [u, gpr_write_self]
+    rw [BitVec.setWidth_eq, lo64_byte _ hk, hb k (by omega_arith),
+      tbyte_congr (fun r a b c dd _ _ => od.2 r (by simp [a, b, c, dd])) _ hlt, hc.tab _ hlt,
+      BitVec.ofNat_toNat, BitVec.setWidth_eq, h0, vbyte_setLane0 _ _ hk, Vector.sbox_eq]
+  · simp only [u, gpr_write_of_ne _ _ _ hr]
+    rw [ou.gpr]
 
 /-! ## The scalar blocks -/
 
@@ -383,14 +420,9 @@ theorem slot_disj (B : Addr) : Region.Disjoint ⟨B + BitVec.ofNat 64 (8 * 59), 
 theorem q_lw (r : Reg) (hr : r ∉ layerWrites) : r ≠ q 0 ∧ r ≠ q 1 ∧ r ≠ q 2 ∧ r ≠ q 3 := by
   refine ⟨?_, ?_, ?_, ?_⟩ <;> (rintro rfl; exact hr (by decide))
 
-theorem WInv.ok {s₀ : State} {S B : Addr} {kl : List Byte} {nk i : Nat} (hs : WSetup s₀ S B kl nk)
-    {s : State} (hi : WInv s₀ S B kl nk i s) : Ok linCfg s :=
-  Ok.of_region (r := ⟨B, 512⟩) (by rw [hi.wr]; exact hs.scr) hi.x5.symm (by simp [linCfg])
-    (by simp [linCfg]) rfl
-
 /-- `SUBWORD(ROTWORD(temp)) ⊕ Rcon`, and the next round constant. -/
 theorem rot_wp {s₀ : State} {S B : Addr} {kl : List Byte} {nk i : Nat} (hs : WSetup s₀ S B kl nk)
-    {s : State} (hi : WInv s₀ S B kl nk i s) (h0 : i % nk = 0) :
+    {s : State} (hi : WInv s₀ S B kl nk i s) (hc : OneBlock.Consts s) (h0 : i % nk = 0) :
     WP isa (.block rotWordStep) s (Mid B kl nk i s) := by
   have h3 := hs.nk3
   have hi1 := hi.hi
@@ -398,7 +430,7 @@ theorem rot_wp {s₀ : State} {S B : Addr} {kl : List Byte} {nk i : Nat} (hs : W
   have hlen := kw_length hs.len (by omega_arith) (i - 1)
   simp only [rotWordStep]
   rw [WP.block_append_iff (M := isa)]
-  refine subAll_wp (hi.ok hs) fun s₂ h₂ rd₂ wr₂ o₂ f₂ => ?_
+  refine subAll_wp hc fun s₂ h₂ rd₂ wr₂ o₂ m₂ => ?_
   have hb₂ : s₂.gpr .x5 = B := (o₂ .x5 (by decide)).trans hi.x5
   have i59 : InRegions s₂.wr (B + BitVec.ofNat 64 (8 * 59)) 8 :=
     in_off (by rw [wr₂, hi.wr]; exact hs.scr) (by omega_arith) (by omega_arith)
@@ -406,26 +438,25 @@ theorem rot_wp {s₀ : State} {S B : Addr} {kl : List Byte} {nk i : Nat} (hs : W
     obtain ⟨r, hr, hc⟩ := i59; exact ⟨r, List.mem_append_right _ hr, hc⟩
   obtain ⟨s₃, hs₃, q₃, m₃, o₃, rd₃, wr₃⟩ := rotTail_ok hb₂ r59 i59
   refine WP.of_runBlock ⟨s₃, hs₃, ?_⟩
-  have f₂' : Frame [⟨B, 8 * 48⟩] s.mem s₂.mem := by rw [← hi.x5]; exact f₂
+  have f₂' : Frame [⟨B, 8 * 48⟩] s.mem s₂.mem := by rw [m₂]; exact Frame.refl _ _
   have rc₂ : s₂.mem.readW (B + BitVec.ofNat 64 (8 * 59)) 64 = rcW ((i - 1) / nk) := by
     rw [f₂'.readW (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact slot_disj B) (by decide), hi.rc]
   refine ⟨fun t ht => ?_, fun r hr => ?_, rd₃.trans rd₂, wr₃.trans wr₂, ?_, ?_⟩
-  · rw [q₃, rot_byte _ _ ht, show s₂.gpr (q 0) = Q s₂ 0 from rfl, h₂ 0 (by omega_arith) _ (by omega_arith),
-      show Q s 0 = s.gpr (q 0) from rfl, hi.temp _ (by omega_arith), rc₂, rcW_byte _ ht]
+  · rw [q₃, rot_byte _ _ ht, h₂ _ (by omega_arith), hi.temp _ (by omega_arith), rc₂, rcW_byte _ ht]
     simp only [kTemp, h0, ite_true]
     rw [xorWord_getD (by simp [subWord, rotWord_length hlen]) (by rfl) ht,
       subWord_getD (by rw [rotWord_length hlen]; exact ht), rotWord_getD hlen ht, rcon_getD _ ht,
       ← div_pred_zero h3 hi1 h0, Nat.add_sub_cancel]
   · obtain ⟨a1, a2, a3, a4⟩ := q_lw r hr
-    rw [o₃ r a1 a2 a3 a4, o₂ r hr]
+    rw [o₃ r a1 a2 a3 a4, o₂ r a1]
   · rw [m₃]
     refine Frame.writeW (r := ⟨B + BitVec.ofNat 64 (8 * 59), 8⟩) ?_ (by simp) _ (Region.contains_self _ _)
     exact f₂'.mono (by simp)
   · rw [m₃, Mem.readW_writeW_self64, rc₂, rcNext_rcW _ (rot_lt h3 hn h0), div_pred_zero h3 hi1 h0]
 
 theorem temp_wp {s₀ : State} {S B : Addr} {kl : List Byte} {nk i : Nat} (hs : WSetup s₀ S B kl nk)
-    {s : State} (hi : WInv s₀ S B kl nk i s) :
+    {s : State} (hi : WInv s₀ S B kl nk i s) (hc : OneBlock.Consts s) :
     WP isa (.ite (.zero .x .x1) (.block rotWordStep)
       (.seq (.block [.subImm .x (q 1) .x1 4, .subImm .x (q 2) .x3 8, orrR (q 1) (q 1) (q 2)])
         (.ite (.zero .x (q 1)) (.block subAll) (.block [])))) s (Mid B kl nk i s) := by
@@ -436,7 +467,7 @@ theorem temp_wp {s₀ : State} {S B : Addr} {kl : List Byte} {nk i : Nat} (hs : 
   have hev : AArch64.eval (.zero .x .x1) s = some (decide (i % nk = 0)) := by
     simp only [AArch64.eval, State.read, Size.bits, BitVec.setWidth_eq, hi.x1,
       ofNat_beq_zero (x := i % nk) (by omega_arith)]
-  refine WP.ite _ hev (fun hb => rot_wp hs hi (by simpa using hb)) (fun hb => ?_)
+  refine WP.ite _ hev (fun hb => rot_wp hs hi hc (by simpa using hb)) (fun hb => ?_)
   have h0 : i % nk ≠ 0 := by simpa using hb
   obtain ⟨s₁, hs₁, q₁, o₁, m₁, rd₁, wr₁⟩ := chk_ok s
   refine WP.seq (WP.of_runBlock ⟨s₁, hs₁, ?_⟩)
@@ -449,16 +480,12 @@ theorem temp_wp {s₀ : State} {S B : Addr} {kl : List Byte} {nk i : Nat} (hs : 
   refine WP.ite _ hev₁ (fun hb₁ => ?_) (fun hb₁ => ?_)
   · -- `SUBWORD(temp)`.
     have h8 : nk = 8 ∧ i % nk = 4 := by simp at hb₁; omega_arith
-    have ok₁ : Ok linCfg s₁ := Ok.of_region (r := ⟨B, 512⟩) (by rw [wr₁, hi.wr]; exact hs.scr)
-      (by rw [show linCfg.base = .x5 from rfl, o₁ _ (by decide) (by decide), hi.x5]) (by simp [linCfg])
-      (by simp [linCfg]) rfl
-    refine subAll_wp ok₁ fun s₂ h₂ rd₂ wr₂ o₂ f₂ => ?_
-    have f₂' : Frame [⟨B, 8 * 48⟩] s.mem s₂.mem := by
-      rw [← m₁, ← hi.x5, ← o₁ .x5 (by decide) (by decide)]; exact f₂
-    refine ⟨fun t ht => ?_, fun r hr => (o₂ r hr).trans (g₁ r hr), rd₂.trans rd₁, wr₂.trans wr₁,
+    have hc₁ : OneBlock.Consts s₁ := hc.of_v fun r _ => by rw [runBlock_v (by decide) hs₁]
+    refine subAll_wp hc₁ fun s₂ h₂ rd₂ wr₂ o₂ m₂ => ?_
+    have f₂' : Frame [⟨B, 8 * 48⟩] s.mem s₂.mem := by rw [m₂, m₁]; exact Frame.refl _ _
+    refine ⟨fun t ht => ?_, fun r hr => (o₂ r (q_lw r hr).1).trans (g₁ r hr), rd₂.trans rd₁, wr₂.trans wr₁,
       f₂'.mono (by simp), ?_⟩
-    · rw [show s₂.gpr (q 0) = Q s₂ 0 from rfl, h₂ 0 (by omega_arith) _ (by omega_arith),
-        show Q s₁ 0 = s.gpr (q 0) from hq0, hi.temp _ ht]
+    · rw [h₂ _ (by omega_arith), hq0, hi.temp _ ht]
       rw [kTemp, ite_eq_right h0, ite_eq_left (show nk > 6 ∧ i % nk = 4 by omega_arith),
         subWord_getD (by rw [hlen]; exact ht)]
     · rw [f₂'.readW (Region.contains_self _ _) (fun r hr => by
@@ -541,7 +568,7 @@ theorem ofNat_bne_zero {x : Nat} (hx : x < 2 ^ 64) : (BitVec.ofNat 64 x != 0) = 
   rw [bne, ofNat_beq_zero hx]
 
 theorem word_ok {s₀ : State} {S B : Addr} {kl : List Byte} {nk i : Nat} (hs : WSetup s₀ S B kl nk)
-    {s : State} (hi : WInv s₀ S B kl nk i s) :
+    {s : State} (hi : WInv s₀ S B kl nk i s) (hc : OneBlock.Consts s) :
     WP isa wordBody s fun s' =>
       (AArch64.eval (.nonzero .x .x4) s' = some false ∧ WDone s₀ S B kl nk s') ∨
       (AArch64.eval (.nonzero .x .x4) s' = some true ∧ WInv s₀ S B kl nk (i + 1) s') := by
@@ -551,7 +578,7 @@ theorem word_ok {s₀ : State} {S B : Addr} {kl : List Byte} {nk i : Nat} (hs : 
   have hn := hi.hn
   have hmod := Nat.mod_lt i hnk
   unfold wordBody
-  refine WP.seq (WP.mono (temp_wp hs hi) fun s₂ hm => ?_)
+  refine WP.seq (WP.mono (temp_wp hs hi hc) fun s₂ hm => ?_)
   have k₂ : ∀ r ∈ [Reg.x0, .x1, .x2, .x3, .x4, .x5], s₂.gpr r = s.gpr r := fun r hr =>
     hm.keep r (fun h => by revert hr; revert h; revert r; decide)
   have x0₂ := (k₂ .x0 (by simp)).trans hi.x0
@@ -625,13 +652,15 @@ theorem word_ok {s₀ : State} {S B : Addr} {kl : List Byte} {nk i : Nat} (hs : 
 /-! ## The loop over the words -/
 
 theorem words_ok {s₀ : State} {S B : Addr} {kl : List Byte} {nk : Nat} (hs : WSetup s₀ S B kl nk)
-    {s : State} (hi : WInv s₀ S B kl nk nk s) :
+    {s : State} (hi : WInv s₀ S B kl nk nk s) (hc : OneBlock.Consts s) :
     WP isa (.loop wordBody (.nonzero .x .x4)) s (WDone s₀ S B kl nk) := by
-  refine WP.loop (M := isa) (fun k s => ∃ i, k = 4 * (nk + 7) - i ∧ WInv s₀ S B kl nk i s)
-    (fun k s ⟨i, hk, hi⟩ => WP.mono (word_ok hs hi) fun s' h => ?_) _ s ⟨nk, rfl, hi⟩
+  refine WP.loop (M := isa)
+    (fun k s => ∃ i, k = 4 * (nk + 7) - i ∧ WInv s₀ S B kl nk i s ∧ OneBlock.Consts s)
+    (fun k s ⟨i, hk, hi, hc⟩ => WP.mono ((word_ok hs hi hc).keepsT (by decide +kernel))
+      fun s' ⟨h, hv⟩ => ?_) _ s ⟨nk, rfl, hi, hc⟩
   rcases h with ⟨z, d⟩ | ⟨z, d⟩
   · exact .inl ⟨z, d⟩
-  · exact .inr ⟨z, _, by have := hi.hn; omega_arith, i + 1, rfl, d⟩
+  · exact .inr ⟨z, _, by have := hi.hn; omega_arith, i + 1, rfl, d, hc.of_v hv⟩
 
 /-! ## Copying the key -/
 
@@ -814,8 +843,9 @@ theorem prologue_wp {s₀ : State} {S B P : Addr} {K : Nat} (hs : CSetup s₀ S 
 
 /-! ## The whole function -/
 
-theorem ek_correct {s₀ : State} (hp : Proof.Aes.expandKeyAArch64.pre s₀) :
-    WP isa Impl.Aes.AArch64.expandKey s₀ fun s' =>
+theorem ew_correct {s₀ : State} (hp : Proof.Aes.expandKeyAArch64.pre s₀)
+    (hc : OneBlock.Consts s₀) :
+    WP isa Impl.Aes.AArch64.expandWords s₀ fun s' =>
       (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ Proof.Aes.expandKeyAArch64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKS, dKB, dSB, hK⟩ := hp
   have hs : CSetup s₀ (s₀.gpr .x2) (s₀.gpr .x3) (s₀.gpr .x0) (s₀.gpr .x1).toNat :=
@@ -826,9 +856,10 @@ theorem ek_correct {s₀ : State} (hp : Proof.Aes.expandKeyAArch64.pre s₀) :
   generalize hK' : (s₀.gpr .x1).toNat = K at hs hK dKS dKB
   have hKr : s₀.gpr .x1 = BitVec.ofNat 64 K := by rw [← hK']; simp
   have hK4 : K = 4 * (K / 4) := by omega_arith
-  unfold Impl.Aes.AArch64.expandKey
-  refine WP.seq (WP.mono (prologue_wp hs hS hB hP hKr) fun s₁ h₁ => ?_)
-  refine WP.seq (WP.mono (copyLoop_ok hs h₁) fun s₂ h₂ => ?_)
+  unfold Impl.Aes.AArch64.expandWords
+  refine WP.seq (WP.mono ((prologue_wp hs hS hB hP hKr).keepsT (by decide +kernel))
+    fun s₁ ⟨h₁, v₁⟩ => ?_)
+  refine WP.seq (WP.mono ((copyLoop_ok hs h₁).keepsT (by decide +kernel)) fun s₂ ⟨h₂, v₂⟩ => ?_)
   refine WP.seq ?_
   obtain ⟨s₃, hs₃, q0₃, x0₃, x3₃, x1₃, x4₃, m₃, o₃, rd₃, wr₃⟩ := wordSetup_ok (s := s₂) (b := B)
     h₂.x5 (in_off (by rw [h₂.wr]; exact hs.scr) (by omega_arith) (by omega_arith))
@@ -870,7 +901,9 @@ theorem ek_correct {s₀ : State} (hp : Proof.Aes.expandKeyAArch64.pre s₀) :
       frame := by
         rw [m₃]
         exact Frame.writeW h₂.frame (r := ⟨B, 512⟩) (by simp) _ (c_off B (by omega_arith) (by omega_arith)) }
-  refine WP.seq (WP.mono (words_ok ws wi) fun s₄ h₄ => ?_)
+  have hc₃ : OneBlock.Consts s₃ :=
+    ((hc.of_v v₁).of_v v₂).of_v fun r _ => by rw [runBlock_v (by decide) hs₃]
+  refine WP.seq (WP.mono (words_ok ws wi hc₃) fun s₄ h₄ => ?_)
   refine WP.mono (restore_ok (s := s₄) (b := B) (n := 512)
     (by rw [h₄.wr]; exact hs.scr) h₄.x5 (by decide) h₄.saved) fun s₅ ⟨rg₅, m₅, _⟩ => ⟨rg₅, ?_⟩
   show Spec.Aes.bytesAt s₅.mem (s₀.gpr .x2) (16 * (Spec.Aes.rounds ((s₀.gpr .x1).toNat / 4) + 1)) =
@@ -883,6 +916,25 @@ theorem ek_correct {s₀ : State} (hp : Proof.Aes.expandKeyAArch64.pre s₀) :
   refine flatten_expandWords ws.len (by omega_arith) _ _ fun k hk => ?_
   rw [m₅]
   exact h₄.sched k (by omega_arith)
+
+/-- The S-box loaded, then the words. -/
+theorem ek_correct {s₀ : State} (hp : Proof.Aes.expandKeyAArch64.pre s₀) :
+    WP isa Impl.Aes.AArch64.expandKey s₀ fun s' =>
+      (∀ i < 10, s'.gpr (sreg i) = s₀.gpr (sreg i)) ∧ Proof.Aes.expandKeyAArch64.post s₀ s' := by
+  unfold Impl.Aes.AArch64.expandKey
+  refine WP.seq (WP.mono (OneBlock.setup_ok s₀) fun t ⟨hc, _, tg, tm, trd, twr, _⟩ => ?_)
+  have g0 := tg .x0 (by decide) (by decide)
+  have g1 := tg .x1 (by decide) (by decide)
+  have g2 := tg .x2 (by decide) (by decide)
+  have g3 := tg .x3 (by decide) (by decide)
+  have hp' : Proof.Aes.expandKeyAArch64.pre t := by
+    simp only [Proof.Aes.expandKeyAArch64, g0, g1, g2, g3, trd, twr]
+    exact hp
+  refine WP.mono (ew_correct hp' hc) fun s' ⟨h₁, h₂⟩ => ⟨fun i hi => ?_, ?_⟩
+  · have hn := OneBlock.sreg_ne i hi
+    rw [h₁ i hi, tg _ hn.2.2.1 hn.2.2.2]
+  · simp only [Proof.Aes.expandKeyAArch64, g0, g1, g2, tm] at h₂ ⊢
+    exact h₂
 
 /-- A state satisfying the precondition. -/
 def ekSatState : State where

@@ -1,7 +1,6 @@
 module
 
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Loop
-import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.ConstantTime
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ConstantTime
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
@@ -78,27 +77,5 @@ theorem ecb_contract (d : Direction) (s : State) (hs : (contract d).pre s) :
   obtain ⟨hrd, hwr, keyData, keyBuf, dataBuf, fit⟩ := hs
   exact WP.mono (ecb_correct d ⟨hrd, hwr, keyData, keyBuf, dataBuf, fit⟩) fun s' h =>
     ecb_blocks _ _ _ _ _ _ h
-
-theorem encrypt_correct (s : State) (hs : (contract .encrypt).pre s) :
-    ∃ t s', Exec isa encrypt s t s' ∧ abiPreserved s s' ∧ (contract .encrypt).post s s' := by
-  obtain ⟨t, s', he, hp, hg⟩ := WP.gprs (c := encrypt) (ecb_contract .encrypt s hs) (rs := preserved)
-    (by lit_decide) (by lit_decide)
-  exact ⟨t, s', he, ⟨hg, VG.AArch64.Exec.sp he, VG.AArch64.Exec.preservedV he (by lit_decide)⟩, hp⟩
-
-theorem decrypt_correct (s : State) (hs : (contract .decrypt).pre s) :
-    ∃ t s', Exec isa decrypt s t s' ∧ abiPreserved s s' ∧ (contract .decrypt).post s s' := by
-  obtain ⟨t, s', he, hp, hg⟩ := WP.gprs (c := decrypt) (ecb_contract .decrypt s hs) (rs := preserved)
-    (by lit_decide) (by lit_decide)
-  exact ⟨t, s', he, ⟨hg, VG.AArch64.Exec.sp he, VG.AArch64.Exec.preservedV he (by lit_decide)⟩, hp⟩
-
-theorem encrypt_verified : Verified target encrypt (Proof.TripleDes.ecbEncryptScratchContract abi 0) := by
-  refine Verified.of_correct encrypt_correct (encrypt_constantTime _) ?_
-  sig_implies [Proof.TripleDes.ecbEncryptScratchContract, Proof.TripleDes.ecbScratchContract,
-    Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argRegs, contract, publicRegs_four] [satState] using satState
-
-theorem decrypt_verified : Verified target decrypt (Proof.TripleDes.ecbDecryptScratchContract abi 0) := by
-  refine Verified.of_correct decrypt_correct (decrypt_constantTime _) ?_
-  sig_implies [Proof.TripleDes.ecbDecryptScratchContract, Proof.TripleDes.ecbScratchContract,
-    Proof.TripleDes.ecbScratchSig, Spec.TripleDes.ecbPost, abi, argRegs, contract, publicRegs_four] [satState] using satState
 
 end VG.Proof.TripleDes.AArch64.BitslicedNeon

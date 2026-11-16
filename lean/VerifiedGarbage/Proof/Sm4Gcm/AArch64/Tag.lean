@@ -130,10 +130,10 @@ theorem tagSeg_ok {k : Reg → BitVec 64} {o : Nat} (ho : o = 0 ∨ o = 112) {s 
   · exact blockAt_frame f₁ fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dJo
 
 /-- The call of `tag o`: `CIPH_K(J)` XORed into the copy. -/
-theorem tagCall_ok {k : Reg → BitVec 64} {o : Nat} (ho : o = 0 ∨ o = 112) {Y J : Block}
+theorem tagCall_ok (v : GcmImpl) {k : Reg → BitVec 64} {o : Nat} (ho : o = 0 ∨ o = 112) {Y J : Block}
     {m₀ : Mem} {s : State} (h : Tag1 Ctx St W SP k o Y J m₀ s) :
-    WP isa ctrCall s (TagOut Ctx St W SP k o Y J m₀) := by
-  refine WP.mono (ctr_call h.call) fun s₃ g => ?_
+    WP isa (ctrCall v.callees) s (TagOut Ctx St W SP k o Y J m₀) := by
+  refine WP.mono (ctr_call v.ctr h.call) fun s₃ g => ?_
   have gf := g.frame
   rw [h.env.sp] at gf
   have gout := g.out
@@ -177,7 +177,7 @@ theorem tag_ok (v : GcmImpl) {k : Reg → BitVec 64} {o o' : Nat} (ho : o = 0 �
     · exact L.cw'.sub_right (Lay.wSub (by decide)))
   have hk₂ := h₂.kept
   refine WP.seq (WP.mono (tagSeg_ok L ho h₂.env h₂.kept)
-    fun s₃ h₃ => WP.mono (tagCall_ok L ho h₃) fun s₄ h₄ => ?_)
+    fun s₃ h₃ => WP.mono (tagCall_ok L v ho h₃) fun s₄ h₄ => ?_)
   refine ⟨h₄.env, h₄.kept, ?_, ?_⟩
   · rw [h₄.out, hc₂, hJ₂, h₂.out]
   · refine (h₂.frame.sub fun r hr => ?_).trans (h₄.frame.sub fun r hr => ⟨r, hr, fun _ h => h⟩)

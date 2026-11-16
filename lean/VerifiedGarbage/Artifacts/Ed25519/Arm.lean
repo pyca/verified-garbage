@@ -17,15 +17,12 @@ def artifacts : List Artifact := [
     code := Impl.Ed25519.Arm.KeyPair.keyPair Spec.Sha512.digest512Api.name
       Proof.Ed25519.Arm.KeyPair.dgCode "vg_ed25519_public_key_expanded"
       Impl.Ed25519.Arm.PublicKey.codeExpanded
-    stack := 600
     verified := Proof.Ed25519.Arm.KeyPair.verified },
   Spec.Ed25519.signExpandedApi.artifact Arm.target {
     code := Impl.Ed25519.Arm.SignCached.codeExpanded
-    stack := 280
     verified := Proof.Ed25519.Arm.SignCached.signExpanded_verified },
   Spec.Ed25519.verifyApi.artifact Arm.target {
     code := Impl.Ed25519.Arm.VerifyMessage.code
-    stack := 280
     verified := Proof.Ed25519.Arm.VerifyMessage.verifyMessage_verified }]
 
 end VG.Artifacts.Ed25519.Arm

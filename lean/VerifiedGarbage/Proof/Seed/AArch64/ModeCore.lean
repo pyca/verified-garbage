@@ -11,6 +11,7 @@ import VerifiedGarbage.Proof.Modes.AArch64.Words
 import VerifiedGarbage.Proof.Framework.AArch64.Call
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Seed.AArch64.Lit
+import VerifiedGarbage.Proof.Seed.AArch64.Serial
 
 /-!
 # SEED's core for the modes on AArch64
@@ -321,5 +322,83 @@ def dirCoreSpec (d : Direction) : BlockSpec (dirCore d) where
   ready_frame h hf hd _ _ := readyAt_frame h hf hd
   prepare_wp := prepare_wp d
   crypt_wp := crypt_wp d
+
+/-! ## The one-block core -/
+
+/-- The one-block core's blocks are two words. -/
+@[simp] theorem serialCore_bw (d : Direction) : (serialDirCore d).bw = 2 := rfl
+
+/-- `Serial.crypt`'s block is the direction's cipher's. -/
+theorem serialCipher_eq (d : Direction) (k : Spec.Seed.Schedule) (b : Spec.Seed.Block) :
+    Spec.Seed.crypt (fun j => Spec.Seed.roundKey k (Serial.keyIdx d j)) b = cipher d k b := by
+  cases d <;> rfl
+
+theorem serialDirCore_crypt (d : Direction) :
+    (serialDirCore d).crypt = .block (Serial.crypt d (8 * bufSlot) (8 * schedSlot)) := by
+  cases d <;> rfl
+
+/-- The one-block core enciphers or deciphers the buffer's block under the
+schedule's copy (`Serial.crypt_wp`). -/
+theorem serialCrypt_wp (d : Direction) {s : State} {B : Addr} {k : Spec.Seed.Schedule} (hB : s.gpr sb = B)
+    (hs : ScrIn s B (serialDirCore d).total) (hr : ReadyAt s.mem B k) :
+    WP isa (serialDirCore d).crypt s fun s' => s'.gpr sb = B ∧
+      s'.gpr (serialDirCore d).dataReg = s.gpr (serialDirCore d).dataReg ∧
+      s'.gpr (serialDirCore d).leftReg = s.gpr (serialDirCore d).leftReg ∧ ReadyAt s'.mem B k ∧
+      Frame [coreRegion (serialDirCore d) B] s.mem s'.mem ∧
+      (∀ j < (serialDirCore d).G, Spec.Aes.bytesAt s'.mem (blkAddr (serialDirCore d) B j) (8 * (serialDirCore d).bw) =
+        dirCipher d k (Spec.Aes.bytesAt s.mem (blkAddr (serialDirCore d) B j) (8 * (serialDirCore d).bw))) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have hB5 : s.gpr .x5 = B := hB
+  have hwr : (⟨B, 1456⟩ : Region) ∈ s.wr := hs.wr
+  have hrk : ∀ i < 32, InRegions (s.rd ++ s.wr) (s.gpr .x5 + BitVec.ofNat 64 (1232 + 4 * i)) 4 := fun i hi =>
+    ⟨_, List.mem_append_right _ hwr, by
+      rw [hB5]; exact Offset.contains_base B (by omega_using [hi]) (by omega_using [hi])⟩
+  have hwb : ∀ i < 4, InRegions s.wr (s.gpr .x5 + BitVec.ofNat 64 (976 + 4 * i)) 4 := fun i hi =>
+    ⟨_, hwr, by rw [hB5]; exact Offset.contains_base B (by omega_using [hi]) (by omega_using [hi])⟩
+  rw [serialDirCore_crypt]
+  refine WP.mono (Serial.crypt_wp d (s := s) (bufOff := 976) (keyOff := 1232) (by decide) (by decide) hrk hwb)
+    fun t ⟨tg, tf, tb, trd, twr, _⟩ => ?_
+  rw [hB5] at tf tb
+  have ready : ReadyAt t.mem B k := readyAt_frame (d := .encrypt) hr tf (fun r hr' => by
+    simp only [List.mem_singleton] at hr'; subst r
+    rw [blk_eq]
+    exact .inr (Region.sub_prefix (by decide)))
+  refine ⟨(tg _ (by decide)).trans hB5, tg _ (by cases d <;> decide), tg _ (by cases d <;> decide), ready, ?_, ?_, trd, twr⟩
+  · exact tf.sub (fun r hr' => by
+      simp only [List.mem_singleton] at hr'; subst r
+      exact ⟨_, List.mem_cons_self, Offset.sub_base B (by decide : 976 + 16 ≤ 1360)⟩)
+  · intro j hj
+    have hj0 : j = 0 := by
+      have : j < 1 := hj
+      omega_using [this]
+    subst j
+    change Spec.Aes.bytesAt t.mem (B + BitVec.ofNat 64 976) 16 =
+      dirCipher d k (Spec.Aes.bytesAt s.mem (B + BitVec.ofNat 64 976) 16)
+    rw [tb, dirCipher_bytes]
+    have hk : Spec.Seed.scheduleAt s.mem (B + BitVec.ofNat 64 1232) = k := hr
+    rw [hk, serialCipher_eq]
+
+/-- SEED's one-block core for the direction `d` meets what the modes need. -/
+def serialDirCoreSpec (d : Direction) : BlockSpec (serialDirCore d) where
+  Key := Spec.Seed.Schedule
+  cipher := dirCipher d
+  KeyArgs := ModeKeyArgs
+  Ready s B k := ReadyAt s.mem B k
+  cipher_len _ _ := by cases d <;> simp [dirCipher, Spec.Seed.cipher, Spec.Seed.invCipher]
+  layout := by cases d <;> exact ⟨by decide, by decide, by decide, by decide, by decide, by decide, by decide⟩
+  keyRegs_ok := by cases d <;> decide
+  regs_ok := by cases d <;> decide
+  keyArgs_congr h hr hrd hwr _ hf := keyArgs_congr h hr hrd hwr hf
+  ready_frame h hf hd _ _ := readyAt_frame (d := .encrypt) h hf (fun r hr => by
+    rcases hd r hr with h' | h'
+    · exact .inl h'
+    · refine .inr (fun a ha => ?_)
+      rw [blk_eq]
+      exact (Region.sub_prefix (by decide : 16 ≤ 256)) a (h' a ha))
+  prepare_wp := prepare_wp .encrypt
+  crypt_wp := serialCrypt_wp d
+
+/-- SEED's one-block encryption core meets what the modes need. -/
+abbrev serialCoreSpec : BlockSpec serialCore := serialDirCoreSpec .encrypt
 
 end VG.Proof.Seed.AArch64

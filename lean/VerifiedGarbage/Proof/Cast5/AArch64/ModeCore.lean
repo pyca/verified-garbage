@@ -12,15 +12,15 @@ import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
 /-!
 # CAST5's core for the modes on AArch64
 
-`dirCoreSpec up`: CAST5's core (`Impl.Cast5.AArch64.dirCore up`) meets what
-the modes need of a core of one-word blocks (`Proof.Modes.AArch64.BlockSpec`),
-with the key the subkeys and the number of rounds, its cipher encryption
-(`up`) or decryption (`Proof.Cast5.dirCipher`), and the key ready (`Ready`)
+`dirCoreSpec`: CAST5's encrypting core (`Impl.Cast5.AArch64.dirCore`) meets
+what the modes need of a core of one-word blocks
+(`Proof.Modes.AArch64.BlockSpec`), with the key the subkeys and the number of
+rounds, its cipher encryption, and the key ready (`Ready`)
 when the subkeys are at `x0`, readable and outside every writable region
 (`SchedAt`), `x1` holds the number of rounds, and the table of S-boxes is
 where the static `VG_CAST5_S1234` puts it, readable and apart from every
 writable region (`TabAt`): nothing the modes or the core write can reach
-either. `crypt` is ECB's block code (`encryptBlock_ok`, `decryptBlock_ok`)
+either. `crypt` is the block code (`encryptBlock_ok`)
 on the buffer, between its own setup and finish. `crypt_keeps`: the core
 keeps `x25`, where the feedback modes keep the IV's address.
 -/
@@ -100,22 +100,22 @@ def Ready (s : State) (kn : Spec.Cast5.Schedule × Nat) : Prop :=
     s.gpr .x1 = BitVec.ofNat 64 kn.2 ∧ (kn.2 = 12 ∨ kn.2 = 16) ∧ TabAt s
 
 /-- The core's blocks are one word. -/
-@[simp] theorem dirCore_bw (up : Bool) : (dirCore up).bw = 1 := rfl
+@[simp] theorem dirCore_bw : dirCore.bw = 1 := rfl
 
-theorem core_eq (up : Bool) (B : Addr) : coreRegion (dirCore up) B = ⟨B, 8⟩ := rfl
-theorem total_eq (up : Bool) : (dirCore up).total = 13 := rfl
+theorem core_eq (B : Addr) : coreRegion dirCore B = ⟨B, 8⟩ := rfl
+theorem total_eq : dirCore.total = 13 := rfl
 
-theorem x0_not_mode (up : Bool) : Reg.x0 ∉ Modes.AArch64.modeRegs (dirCore up) := by
+theorem x0_not_mode : Reg.x0 ∉ Modes.AArch64.modeRegs dirCore := by
   simp only [Modes.AArch64.modeRegs, dirCore]; decide
 
-theorem x1_not_mode (up : Bool) : Reg.x1 ∉ Modes.AArch64.modeRegs (dirCore up) := by
+theorem x1_not_mode : Reg.x1 ∉ Modes.AArch64.modeRegs dirCore := by
   simp only [Modes.AArch64.modeRegs, dirCore]; decide
 
-theorem ready_frame {up : Bool} {s s' : State} {kn : Spec.Cast5.Schedule × Nat} {rs : List Region}
+theorem ready_frame {s s' : State} {kn : Spec.Cast5.Schedule × Nat} {rs : List Region}
     (h : Ready s kn) (hf : Frame rs s.mem s'.mem) (hw : WrIn rs s s')
-    (hg : ∀ r, r ∉ Modes.AArch64.modeRegs (dirCore up) → s'.gpr r = s.gpr r) : Ready s' kn := by
+    (hg : ∀ r, r ∉ Modes.AArch64.modeRegs dirCore → s'.gpr r = s.gpr r) : Ready s' kn := by
   obtain ⟨⟨p, hp, hk, hS⟩, h1, hn, hT⟩ := h
-  refine ⟨⟨p, by rw [hg _ (x0_not_mode up), hp], ?_, hS.congr hw.rd hw.wr⟩, by rw [hg _ (x1_not_mode up), h1],
+  refine ⟨⟨p, by rw [hg _ x0_not_mode, hp], ?_, hS.congr hw.rd hw.wr⟩, by rw [hg _ x1_not_mode, h1],
     hn, hT.frame hw.rd hw.wr hw.syms hf fun r hr => ?_⟩
   · rw [scheduleAt_frame hf fun r hr => ?_, hk]
     obtain ⟨w, hw', hsub⟩ := hw.sub r hr
@@ -132,12 +132,12 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {kn : Spec.Cast5.Schedul
   rw [hk]
   exact (scheduleAt_frame hf hdis).symm
 
-theorem prepare_wp {up : Bool} {s : State} {B : Addr} {rs : List Region} {kn : Spec.Cast5.Schedule × Nat}
-    (hB : s.gpr sb = B) (_ : ScrIn s B (dirCore up).total) (_ : (⟨B, 8 * (dirCore up).total⟩ : Region) ∈ rs)
+theorem prepare_wp {s : State} {B : Addr} {rs : List Region} {kn : Spec.Cast5.Schedule × Nat}
+    (hB : s.gpr sb = B) (_ : ScrIn s B dirCore.total) (_ : (⟨B, 8 * dirCore.total⟩ : Region) ∈ rs)
     (hk : ModeKeyArgs s rs kn) :
-    WP isa (dirCore up).prepare s fun s' => Ready s' kn ∧ s'.gpr sb = B ∧
+    WP isa dirCore.prepare s fun s' => Ready s' kn ∧ s'.gpr sb = B ∧
       s'.gpr .x23 = s.gpr .x23 ∧ s'.gpr .x24 = s.gpr .x24 ∧
-      Frame [coreRegion (dirCore up) B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
+      Frame [coreRegion dirCore B] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨⟨p, hp, hk, hS, -⟩, h1, hn, hT, -⟩ := hk
   exact WP.block_nil ⟨⟨⟨p, hp, hk.symm, hS⟩, h1, hn, hT⟩, hB, rfl, rfl, Frame.refl _ _, rfl, rfl⟩
 
@@ -152,13 +152,6 @@ theorem dirCipher_bytes (up : Bool) (k : Spec.Cast5.Schedule) (n : Nat) (m : Mem
   cases up <;> simp only [dirCipher, dirBlock, Spec.Cast5.cipher, Spec.Cast5.invCipher, ofFn_bytesAt,
     Bool.false_eq_true, ite_true, ite_false]
 
-theorem block_ok (up : Bool) {u : State} {k : Spec.Cast5.Schedule} {n : Nat} (h : BPre u k n) :
-    WP isa (if up then encryptBlock else decryptBlock) u
-      (BPost u (dirBlock up k n (Spec.Cast5.blockAt u.mem (u.gpr .x2)))) := by
-  cases up
-  · exact decryptBlock_ok h
-  · exact encryptBlock_ok h
-
 /-- What `modeSetup` does. -/
 theorem setup_run (s : State) :
     ∃ u, runBlock isa modeSetup s = some u ∧ u.gpr .x16 = s.gpr sb ∧ u.gpr .x2 = s.gpr sb ∧
@@ -170,13 +163,13 @@ theorem setup_run (s : State) :
   show runBlock isa ([movR .x16 sb] ++ ([movR .x2 sb] : List Instr)) s = some s₂
   rw [runBlock_app, e₁, Option.bind_some, e₂]
 
-theorem crypt_wp {up : Bool} {s : State} {B : Addr} {kn : Spec.Cast5.Schedule × Nat} (hB : s.gpr sb = B)
-    (hs : ScrIn s B (dirCore up).total) (hr : Ready s kn) :
-    WP isa (dirCore up).crypt s fun s' => s'.gpr sb = B ∧
+theorem crypt_wp {s : State} {B : Addr} {kn : Spec.Cast5.Schedule × Nat} (hB : s.gpr sb = B)
+    (hs : ScrIn s B dirCore.total) (hr : Ready s kn) :
+    WP isa dirCore.crypt s fun s' => s'.gpr sb = B ∧
       s'.gpr .x23 = s.gpr .x23 ∧ s'.gpr .x24 = s.gpr .x24 ∧ Ready s' kn ∧
-      Frame [coreRegion (dirCore up) B] s.mem s'.mem ∧
-      (∀ j < (dirCore up).G, Spec.Aes.bytesAt s'.mem (blkAddr (dirCore up) B j) (8 * (dirCore up).bw) =
-        dirCipher up kn.1 kn.2 (Spec.Aes.bytesAt s.mem (blkAddr (dirCore up) B j) (8 * (dirCore up).bw))) ∧
+      Frame [coreRegion dirCore B] s.mem s'.mem ∧
+      (∀ j < dirCore.G, Spec.Aes.bytesAt s'.mem (blkAddr dirCore B j) (8 * dirCore.bw) =
+        dirCipher true kn.1 kn.2 (Spec.Aes.bytesAt s.mem (blkAddr dirCore B j) (8 * dirCore.bw))) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨k, n⟩ := kn
   obtain ⟨⟨p, hp, hK, hS⟩, h1, hn, hT⟩ := hr
@@ -200,9 +193,9 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {kn : Spec.Cast5.Schedule ×
     · rw [um, usy]; exact hT.held
     · rw [u2, hB, uwr]
       exact ⟨_, hw, by simp only [Region.Contains, BitVec.sub_self, BitVec.toNat_zero]; omega_using []⟩
-  show WP isa (cryptCode up) s _
+  show WP isa (cryptCode) s _
   refine WP.seq (WP.of_runBlock ⟨u, eu, ?_⟩)
-  refine WP.seq (WP.mono (block_ok up hpre) fun v ⟨vout, vf, _, _, vrd, vwr, vsy, vg⟩ => ?_)
+  refine WP.seq (WP.mono (encryptBlock_ok hpre) fun v ⟨vout, vf, _, _, vrd, vwr, vsy, vg⟩ => ?_)
   rw [u2, hB] at vf vout
   obtain ⟨s', es, r', o', m', rd', wr'⟩ := movR_ok v sb .x16
   refine WP.of_runBlock ⟨s', es, ?_⟩
@@ -224,16 +217,17 @@ theorem crypt_wp {up : Bool} {s : State} {B : Addr} {kn : Spec.Cast5.Schedule ×
   · simp only [List.mem_singleton] at hr; subst hr; exact dTB
   · have hj0 : j = 0 := by simp only [dirCore, Impl.Modes.AArch64.Core.G] at hj; omega_using [hj]
     subst hj0
-    have ea : blkAddr (dirCore up) B 0 = B := by simp [dirCore]
+    have ea : blkAddr dirCore B 0 = B := by simp [dirCore]
     rw [dirCore_bw, ea, Nat.mul_one, dirCipher_bytes, bytesAt_eq, m', vout, um]
+    rfl
 
-/-- CAST5's core, encrypting (`up`) or decrypting, meets what the modes need. -/
-def dirCoreSpec (up : Bool) : BlockSpec (dirCore up) where
+/-- CAST5's encrypting core meets what the modes need. -/
+def dirCoreSpec : BlockSpec dirCore where
   Key := Spec.Cast5.Schedule × Nat
-  cipher kn := dirCipher up kn.1 kn.2
+  cipher kn := dirCipher true kn.1 kn.2
   KeyArgs := ModeKeyArgs
   Ready s _ kn := Ready s kn
-  cipher_len kn b := by rw [dirCore_bw]; exact dirCipher_length up kn.1 kn.2 b
+  cipher_len kn b := by rw [dirCore_bw]; exact dirCipher_length true kn.1 kn.2 b
   layout := ⟨by simp only [dirCore]; decide, by simp only [dirCore]; decide, by simp only [dirCore]; decide,
     by simp only [dirCore, Impl.Modes.AArch64.Core.G]; decide, by simp only [dirCore]; decide,
     by simp only [dirCore]; decide, by simp only [dirCore]; decide⟩
@@ -245,9 +239,9 @@ def dirCoreSpec (up : Bool) : BlockSpec (dirCore up) where
   crypt_wp := crypt_wp
 
 /-- The core keeps `x25`, where the feedback modes keep the IV's address. -/
-theorem crypt_keeps : KeepsReg .x25 (dirCore true).prepare ∧ KeepsReg .x25 (dirCore true).crypt := by
+theorem crypt_keeps : KeepsReg .x25 dirCore.prepare ∧ KeepsReg .x25 dirCore.crypt := by
   refine ⟨keepsReg_of_regSafe (by decide), keepsReg_of_regSafe ?_⟩
-  show regSafe .x25 (cryptCode true) = true
+  show regSafe .x25 (cryptCode) = true
   lit_decide
 
 end VG.Proof.Cast5.AArch64.Mode

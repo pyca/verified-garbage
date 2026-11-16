@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Sha512.X86_64.OneShot
 import VerifiedGarbage.Proof.Hmac.Generic.Implies
 import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 meta import VerifiedGarbage.Proof.Pbkdf2.Md.X86_64.Variant
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Shared
 meta import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
@@ -15,6 +16,7 @@ meta import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 meta import VerifiedGarbage.Proof.Hmac.Generic.Implies
 meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.KernelRfl
+meta import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 public import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Sha512.X86_64.Shared
 public import VerifiedGarbage.Proof.Sha512.X86_64.Stream.Init
@@ -103,28 +105,28 @@ theorem coreOKS (so : Nat) (hso : SoOk so) (D : Nat) (hD : DOk D) : CoreOK (core
         mid := ⟨?_, ?_⟩
         restore := ⟨?_, ?_⟩ }
       hfin := ⟨⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩, ⟨?_, ?_⟩⟩
-      pbkMx := ?_
-      pbkSp := ?_
-      hinitMx := ?_
-      hinitSp := ?_
-      hinitNs := ?_
+      pbkMx := Code.noMx_of_bits (m := bMx + bSp) rfl ?_
+      pbkSp := Code.sp_of_bits (m := bMx + bSp) rfl ?_
+      hinitMx := Code.noMx_of_bits (m := bMx + bSp + bNs) rfl ?_
+      hinitSp := Code.sp_of_bits (m := bMx + bSp + bNs) rfl ?_
+      hinitNs := Code.noRsp_of_bits (m := bMx + bSp + bNs) rfl ?_
       hinitD := ?_
-      hfinMx := ?_
-      hfinSp := ?_
-      hfinNs := ?_
+      hfinMx := Code.noMx_of_bits (m := bMx + bSp + bNs) rfl ?_
+      hfinSp := Code.sp_of_bits (m := bMx + bSp + bNs) rfl ?_
+      hfinNs := Code.noRsp_of_bits (m := bMx + bSp + bNs) rfl ?_
       hfinD := ?_
       hinitXD := ?_
       hfinXD := ?_
       pbkXD := ?_
-      iterMx := ?_
-      iterSp := ?_
-      iterNs := ?_
+      iterMx := Code.noMx_of_bits (m := bMx + bSp + bNs) rfl ?_
+      iterSp := Code.sp_of_bits (m := bMx + bSp + bNs) rfl ?_
+      iterNs := Code.noRsp_of_bits (m := bMx + bSp + bNs) rfl ?_
       iterD := ?_
-      updMx := ?_
-      updNs := ?_
+      updMx := Code.noMx_of_bits (m := bMx + bNs) rfl ?_
+      updNs := Code.noRsp_of_bits (m := bMx + bNs) rfl ?_
       updD := ?_
-      finMx := ?_
-      finNs := ?_
+      finMx := Code.noMx_of_bits (m := bMx + bNs) rfl ?_
+      finNs := Code.noRsp_of_bits (m := bMx + bNs) rfl ?_
       finD := ?_
       fitI := ?_
       fitF := ?_

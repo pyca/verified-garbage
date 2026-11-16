@@ -29,7 +29,7 @@ theorem candidateArithmetic_storeState {p : CandidateBuildPublic} {s : State} (h
   have hw : Ws s p.input.B p.input.Z p.input.w := h.1.1.ws
   refine WP.mono (candidateArithmetic_ok hw h.1.1.pointer h.1.1.length h.1.2.pointer h.1.2.length
     h.1.1.source h.1.2.source h.1.1.positive h.1.1.fits h.1.2.positive h.1.2.fits
-    h.2.2.1 h.2.2.2) fun t ⟨ht, _, _, f, hk⟩ => ?_
+    h.2.2.1 h.2.2.2 p.input.wide p.input.narrow) fun t ⟨ht, _, _, f, hk⟩ => ?_
   have header (d : Nat) (hd : d + 8 ≤ 256) : word t.mem p.input.B d = word s.mem p.input.B d := by
     apply f.word_eq
     · simp only [List.mem_cons, List.not_mem_nil, or_false]

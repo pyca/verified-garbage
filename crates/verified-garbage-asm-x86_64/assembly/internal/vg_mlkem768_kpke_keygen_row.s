@@ -83,13 +83,6 @@ vg_mlkem768_kpke_keygen_row:
 	mov QWORD PTR [r10+240], r9
 	movabs r9, 478795927687268173
 	mov QWORD PTR [r10+248], r9
-	stmxcsr DWORD PTR [rbx+768]
-	mov r11d, DWORD PTR [rbx+768]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+772], eax
-	ldmxcsr DWORD PTR [rbx+772]
-	lfence
 	mov rdi, r13
 	mov rsi, rbp
 	mov rdx, r15
@@ -298,9 +291,6 @@ vg_mlkem768_kpke_keygen_row:
 	sub rcx, 1
 	jne 20b
 	vzeroupper
-	lfence
-	mov DWORD PTR [rbx+768], r11d
-	ldmxcsr DWORD PTR [rbx+768]
 	mov rdi, r13
 	add rdi, 0
 	mov rsi, r12

@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsEntry
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedPrims
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
@@ -50,6 +49,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestPack
 import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRest
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPackSecret
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+public import VerifiedGarbage.Spec.MlDsa
 
 /-! ### `MlDsa.AArch64.KeyGen.OptimizedCorrect`, which only this module used -/
 
@@ -376,11 +377,11 @@ theorem matrixTwoPhase_piece {S : Nat} (hS : S<2^64) {cd : Prog isa}
       (VG.Impl.MlDsa.AArch64.KeyGen.Optimized.matrixTwo cd p e) :=
   Piece.seq (matrixNonces_piece hF he (by decide)) (matrixTwo_piece hS C hF he)
 
-theorem matrixWith_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa}
+theorem matrixWith_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {paired : Bool} {cd : Prog isa}
     (C : CalleeOk S cd (Proof.MlDsa.rejNTT2Contract AArch64.abi S))
-    {p : Params} (hF : PFacts p) (hm : p.k*p.ℓ%4=0 ∨ p.k*p.ℓ%4=2) :
+    {p : Params} (hF : PFacts p) :
     Piece p S (fun σ s => K1 p σ s ∧ s.gpr .x24=1) (KSamp p · (p.k*p.ℓ) 0)
-      (VG.Impl.MlDsa.AArch64.KeyGen.Optimized.matrixWith cd P p) := by
+      (VG.Impl.MlDsa.AArch64.KeyGen.Optimized.matrixWith paired cd P p) := by
   have groups : Piece p S (fun σ s => KSamp p σ 0 0 s ∧ MatrixPrefixes p σ 4 s)
       (fun σ s => KSamp p σ (4*(p.k*p.ℓ/4)) 0 s ∧ MatrixPrefixes p σ 4 s)
       (seqR (VG.Impl.MlDsa.AArch64.KeyGen.Optimized.matrixGroup P p) 0 (p.k*p.ℓ/4)) := by
@@ -390,16 +391,20 @@ theorem matrixWith_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa
   have tail : Piece p S
       (fun σ s => KSamp p σ (4*(p.k*p.ℓ/4)) 0 s ∧ MatrixPrefixes p σ 4 s)
       (KSamp p · (p.k*p.ℓ) 0)
-      (if p.k*p.ℓ%4=2 then VG.Impl.MlDsa.AArch64.KeyGen.Optimized.matrixTwo cd p (4*(p.k*p.ℓ/4))
+      (if paired = true ∧ p.k*p.ℓ%4=2 then
+          VG.Impl.MlDsa.AArch64.KeyGen.Optimized.matrixTwo cd p (4*(p.k*p.ℓ/4))
         else seqR (expA P p) (4*(p.k*p.ℓ/4)) (p.k*p.ℓ%4)) := by
-    rcases hm with hm | hm
-    · rw [VG.Proof.MlDsa.KeyGen.ifn (by omega_using [hm]),hm]
-      refine ⟨fun _ _ _ h => WP.block_nil ?_,RelCT.block_nil (fun _ _ _ => True.intro)⟩
-      simpa only [show 4*(p.k*p.ℓ/4)=p.k*p.ℓ by omega_using [hm]] using h.1
-    · rw [VG.Proof.MlDsa.KeyGen.ifp hm]
+    by_cases hc : paired = true ∧ p.k*p.ℓ%4=2
+    · have hm := hc.2
+      rw [VG.Proof.MlDsa.KeyGen.ifp hc]
       exact Piece.mono (matrixTwoPhase_piece hP.s64 C hF (by omega_using [hm]))
         (fun _ _ _ h => h) (fun _ _ _ h => by
           simpa only [show 4*(p.k*p.ℓ/4)+2=p.k*p.ℓ by omega_using [hm]] using h.1)
+    · rw [VG.Proof.MlDsa.KeyGen.ifn hc]
+      refine Piece.mono (Piece.seqR (I := fun e σ s => KSamp p σ e 0 s) (p.k*p.ℓ%4) (4*(p.k*p.ℓ/4))
+        (fun e _ he => expA_piece hP hF (by omega_using [he]))) (fun _ _ _ h => h.1) (fun _ _ _ h => ?_)
+      have he : 4*(p.k*p.ℓ/4)+p.k*p.ℓ%4 = p.k*p.ℓ := by omega_using []
+      simpa only [he] using h
   exact Piece.mono (Piece.seq (matrixPrefixes_piece hF) (Piece.seq groups tail))
     (fun _ _ _ h => KSamp.zero h.1 h.2) (fun _ _ _ h => h)
 
@@ -420,18 +425,18 @@ variable {keccak : VG.Proof.Sha3.AArch64.Permutation}
 
 theorem prefix_piece {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa}
     (C : CalleeOk S cd (Proof.MlDsa.rejNTT2Contract AArch64.abi S))
-    {p : Params} (hF : PFacts p) (hm : p.k*p.ℓ%4=0 ∨ p.k*p.ℓ%4=2)
+    {p : Params} (hF : PFacts p)
     (hs : (p.ℓ+p.k)%4=0 ∨ (p.ℓ+p.k)%4=3) :
     Piece p S (fun σ s => s=σ) (KSamp p · (p.k*p.ℓ) (p.ℓ+p.k))
       (prefixWith keccak.callee P cd p) :=
   Piece.seq (pro_piece hF) (Piece.seq (seeds_piece hF hP.s16 hP.s64)
-    (Piece.seq (matrixWith_piece hP C hF hm) (secrets_piece keccak.callee hF hs S)))
+    (Piece.seq (matrixWith_piece hP C hF) (secrets_piece keccak.callee hF hs S)))
 
 /-- The selected key-generation computation retains the original outcome and
 ABI. Immutable tables are the only additional entry resources. -/
 theorem codeWith_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa}
     (C : CalleeOk S cd (Proof.MlDsa.rejNTT2Contract AArch64.abi S))
-    {p : Params} (hF : PFacts p) (hm : p.k*p.ℓ%4=0 ∨ p.k*p.ℓ%4=2)
+    {p : Params} (hF : PFacts p)
     (hs : (p.ℓ+p.k)%4=0 ∨ (p.ℓ+p.k)%4=3)
     {s : State} (hp : kgPre p S s) (roots : Sign.StaticRoots S s)
     (hdprefix : 16*(prefixWith keccak.callee P cd p).aarch64Depth≤S)
@@ -441,7 +446,7 @@ theorem codeWith_ok {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa}
       abiPreserved s t ∧ (Spec.MlDsa.keyGenContract p AArch64.abi S).post s t := by
   unfold codeWith
   apply WP.seq
-  refine WP.mono (roots.phase hdprefix hP.s64 ((prefix_piece hP C hF hm hs).ok s s hp rfl))
+  refine WP.mono (roots.phase hdprefix hP.s64 ((prefix_piece hP C hF hs).ok s s hp rfl))
     fun u ⟨hu,ru⟩ => ?_
   apply WP.seq
   refine WP.mono (rest_ok hP hF hp hu ru hdpack hdrow) fun v hv => ?_
@@ -827,7 +832,7 @@ variable {keccak : Proof.Sha3.AArch64.Permutation}
 
 theorem codeWith_ct {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa}
     (C : CalleeOk S cd (Proof.MlDsa.rejNTT2Contract AArch64.abi S))
-    {p : Params} (hF : PFacts p) (hm : p.k*p.ℓ%4=0∨p.k*p.ℓ%4=2)
+    {p : Params} (hF : PFacts p)
     (hs : (p.ℓ+p.k)%4=0∨(p.ℓ+p.k)%4=3)
     (hdprefix : 16*(prefixWith keccak.callee P cd p).aarch64Depth≤S)
     (hdpack : ∀j<p.ℓ+p.k,16*(packSecret P p j).aarch64Depth≤S)
@@ -836,7 +841,7 @@ theorem codeWith_ct {P : Prims} {S : Nat} (hP : PrimsOk P S) {cd : Prog isa}
       (fun s t => kgPub p S s t ∧ TableEq s t) (codeWith keccak.callee P cd p) := by
   have ht : RelCT isa (RootPair p S (fun σ s => s=σ))
       (codeWith keccak.callee P cd p) (fun _ _ => True) :=
-    RelCT.seq (piece_rooted (prefix_piece hP C hF hm hs) hdprefix hP.s64)
+    RelCT.seq (piece_rooted (prefix_piece hP C hF hs) hdprefix hP.s64)
       (RelCT.seq (rest_relCT hP hF hdpack hdrow) (epi_piece hF).tr)
   intro s t tr ur s' t' hs ht' pub es et
   exact (ht _ _ _ _ _ _ ⟨⟨s,t,hs.1,ht'.1,pub.1,⟨rfl,hs.2⟩,⟨rfl,ht'.2⟩⟩,pub.2⟩ es et).1
@@ -857,7 +862,6 @@ theorem keyGen_verified (v : Proof.Sha3.AArch64.Permutation) {p : Params}
     (hp : p=mlDsa44∨p=mlDsa65∨p=mlDsa87) :
     Verified target (keyGenWith v.callee p) (keyGenContract p (abi.withConsts signRootConsts) 16) := by
   have hF := pfacts hp
-  have hm : p.k*p.ℓ%4=0∨p.k*p.ℓ%4=2 := by rcases hp with rfl|rfl|rfl <;> decide
   have hs : (p.ℓ+p.k)%4=0∨(p.ℓ+p.k)%4=3 := by rcases hp with rfl|rfl|rfl <;> decide
   have hP := primitives_ok (keccak := v)
   have hdpre : 16*(prefixWith v.callee (primitives v.callee)
@@ -870,7 +874,7 @@ theorem keyGen_verified (v : Proof.Sha3.AArch64.Permutation) {p : Params}
   refine ⟨?_,?_,⟨keyGenSat p,keyGen_sat hp⟩⟩
   · intro s h
     obtain ⟨pre,roots⟩ := staticRoots_entry (by decide) h
-    exact codeWith_ok hP two_callee hF hm hs pre roots hdpre hdpack hdrow
+    exact codeWith_ok hP two_callee hF hs pre roots hdpre hdpack hdrow
   · intro s t tr ur s' t' hσ hτ pub es et
     have preσ := staticRoots_entry (by decide) hσ
     have preτ := staticRoots_entry (by decide) hτ
@@ -881,7 +885,7 @@ theorem keyGen_verified (v : Proof.Sha3.AArch64.Permutation) {p : Params}
       dsimp only [kgPub]
       sig_pub [keyGenContract,keyGenSig,abi,argRegs]
       exact ⟨hsp,hb,h0,h1,h2,h3⟩
-    exact codeWith_ct hP two_callee hF hm hs hdpre hdpack hdrow
+    exact codeWith_ct hP two_callee hF hs hdpre hdpack hdrow
       s t tr ur s' t' preσ preτ pb es et
 
 end VG.Proof.MlDsa.AArch64.KeyGen.Optimized

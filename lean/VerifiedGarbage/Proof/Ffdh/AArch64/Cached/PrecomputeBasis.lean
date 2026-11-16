@@ -235,7 +235,7 @@ theorem precomputeBasis_ok (M : Mont) {s : State} {p : Parameters} {b : Nat}
  have frames : BuildFrame p s.mem t.mem :=
   ((((BuildFrame.of_inscr inA).trans (BuildFrame.of_entry (by omega_using [toothBound] : 2^b<32) frameC)).trans
     (BuildFrame.of_inscr inD)).trans frameE).trans (BuildFrame.of_inscr inT)
- refine ⟨stateT,?_,frames,((((restA.trans restC).trans restD).trans restE).trans restT).mono (by simp [mmRegs])⟩
+ refine ⟨stateT,?_,frames,((((restA.trans restC).trans restD).trans restE).trans restT).mono (by decide)⟩
  simpa only [nextPower] using testT
 
 end VG.Proof.Ffdh.AArch64.Cached

@@ -45,17 +45,18 @@ parse (`Paired.initial_relCT`) and the rest (`Paired.finish_relCT`).
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Hybrid
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Hybrid.X3 (stR)
 open VG.Proof.MlKem.AArch64.Paired (Context stepWrites accepted seedState shakeStream BeginInput
-  InitialReadyW initialCode finishCode finish_relCT initial_relCT exec_post seq_parts block_split)
+  InitialReadyW initialCode finishCode finish_relCT initial_relCT exec_post seq_parts)
 open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_taint)
 open VG.Spec.Sha3 (stateAt bytesAt)
 open VG.Proof.Sha3 (iterF)
 
-def prepareMCode (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (sb ss a b j m : Nat) : Prog isa :=
-  .seq (.seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b L.k)) (Impl.MlKem.AArch64.Hybrid.squeezeM S j m))
+def prepareMCode (sha3 : Bool) (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (sb ss a b j m : Nat) : Prog isa :=
+  .seq (.seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b L.k)) (Impl.MlKem.AArch64.Hybrid.squeezeM sha3 S j m))
     (.block Impl.MlKem.AArch64.Rej8.rejConsts)
 
 def prepareRegs3 : List Reg := startRegs3 ++ [.x9, .x16]
@@ -72,9 +73,9 @@ theorem prepareM_ok {w16 : Bool} (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSr
     (h : BeginInput sb ss oa ob p seed outA outB table s) (hh : HashInput S p outA outB table e st s)
     (hb : ∀ k < m, k < 3 → 136 * (j + k) < S.len)
     (hash : stateAt s.mem st = hstate E j (dB S)) (hE : bytesAt s.mem e S.len = E) :
-    WP isa (prepareMCode L S sb ss a b j m) s
+    WP isa (prepareMCode sha3 L S sb ss a b j m) s
       (Prepared3 w16 (seedState s.mem seed a L.k) (seedState s.mem seed b L.k) oa ob p table s) := by
-  refine WP.seq (WP.mono_syms (startM_ok (a := a) (b := b) L S hS hss hsb h8b h.ptr h.seedPtr h.readable h.separate
+  refine WP.seq (WP.mono_syms (startM_ok (sha3 := sha3) (a := a) (b := b) L S hS hss hsb h8b h.ptr h.seedPtr h.readable h.separate
     hh.lay hh.h25 hh.h28 hb hash hE) fun u ⟨ku, fu, _, u19, _, buA, buB, _, _⟩ sy => ?_)
   have cu : Context p outA outB table u := Context.frame3 h.context ku.rd ku.wr fu hh.tS hh.tF
   refine WP.mono_syms (Rej8.constants_ok u (by
@@ -128,7 +129,7 @@ theorem prepareM_relCT (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (hS : S
     (sp : σ₁.sp = σ₂.sp)
     (habs : ∀ blk, 136 * blk < S.len → ∃ h, (taint.check (Taint.ofRegs [S.r, .x28])
       (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock S blk)) h).isSome = true) :
-    RelCT isa (Eq2 σ₁ σ₂) (prepareMCode L S sb ss a b j m) TT := by
+    RelCT isa (Eq2 σ₁ σ₂) (prepareMCode sha3 L S sb ss a b j m) TT := by
   have b28 : σ₁.gpr .x28 = σ₂.gpr .x28 := by rw [hh₁.h28, hh₂.h28]
   have initCT : RelCT isa (Eq2 σ₁ σ₂) (.block (Impl.MlKem.AArch64.Paired.init sb ss a b L.k)) TT := by
     intro t v tr ur t' v' hh et ev
@@ -149,9 +150,9 @@ theorem prepareM_relCT (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (hS : S
       (h₂.separate.sub_right (Region.sub_prefix (by decide : 400 ≤ 2048)))
       (Offset.disjoint_base p (by decide) (by decide)))
     fun u₁ u₂ ⟨ku₁, fu₁, _, h19₁, h20₁, h21₁, _, pair₁⟩ ⟨ku₂, fu₂, _, h19₂, h20₂, h21₂, _, pair₂⟩ => ?_)
-    (startM_ok (a := a) (b := b) L S hS hss hsb h8b h₁.ptr h₁.seedPtr h₁.readable h₁.separate
+    (startM_ok (sha3 := sha3) (a := a) (b := b) L S hS hss hsb h8b h₁.ptr h₁.seedPtr h₁.readable h₁.separate
       hh₁.lay hh₁.h25 hh₁.h28 hb hash₁ hE₁)
-    (startM_ok (a := a) (b := b) L S hS hss hsb h8b h₂.ptr h₂.seedPtr h₂.readable h₂.separate
+    (startM_ok (sha3 := sha3) (a := a) (b := b) L S hS hss hsb h8b h₂.ptr h₂.seedPtr h₂.readable h₂.separate
       hh₂.lay hh₂.h25 hh₂.h28 hb hash₂ hE₂) fun w₁ w₂ hw₁ hw₂ => ?_
   · have fi₁ : Frame [⟨p, 2048⟩] σ₁.mem u₁.mem := fu₁.sub (by
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -175,7 +176,7 @@ theorem prepareM_relCT (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (hS : S
     have he₂ : bytesAt u₂.mem e S.len = E₂ := by
       rw [VG.Proof.MlKem.bytesAt_frame fi₂ (fun r hr => by
         rw [List.mem_singleton.mp hr]; exact hh₂.lay.dEP) (by have := hS.lim; omega_using [this]), hE₂]
-    exact squeezeM_relCT S hS hb (hh₁.lay.frame ku₁.rd ku₁.wr ku₁.sp) (hh₂.lay.frame ku₂.rd ku₂.wr ku₂.sp)
+    exact squeezeM_relCT (sha3 := sha3) S hS hb (hh₁.lay.frame ku₁.rd ku₁.wr ku₁.sp) (hh₂.lay.frame ku₂.rd ku₂.wr ku₂.sp)
       (by rw [hS.keep ku₁ (by decide) (by decide)]; exact hh₁.h25) (by rw [ku₁.get .x28]; exact hh₁.h28)
       (by rw [hS.keep ku₂ (by decide) (by decide)]; exact hh₂.h25) (by rw [ku₂.get .x28]; exact hh₂.h28)
       (by rw [ku₁.sp, ku₂.sp, sp])
@@ -201,20 +202,20 @@ theorem beginM_relCT {w16 : Bool} (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HS
     (seedB : seedState σ₁.mem seed b L.k = seedState σ₂.mem seed b L.k)
     (habs : ∀ blk, 136 * blk < S.len → ∃ h, (taint.check (Taint.ofRegs [S.r, .x28])
       (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock S blk)) h).isSome = true) :
-    RelCT isa (fun t v => t = σ₁ ∧ v = σ₂) (beginMCode L S sb ss a b j m oa ob w16)
+    RelCT isa (fun t v => t = σ₁ ∧ v = σ₂) (beginMCode sha3 L S sb ss a b j m oa ob w16)
       (fun t v => BeginMPostW w16 S (seedState σ₁.mem seed a L.k) (seedState σ₁.mem seed b L.k) p outA outB table e st E₁ j m σ₁ t ∧
         BeginMPostW w16 S (seedState σ₂.mem seed a L.k) (seedState σ₂.mem seed b L.k) p outA outB table e st E₂ j m σ₂ v) := by
   let R := fun t v : State => Prepared3 w16 (seedState σ₁.mem seed a L.k) (seedState σ₁.mem seed b L.k) oa ob p table σ₁ t ∧
     Prepared3 w16 (seedState σ₂.mem seed a L.k) (seedState σ₂.mem seed b L.k) oa ob p table σ₂ v
-  have start : RelCT isa (fun t v => t = σ₁ ∧ v = σ₂) (prepareMCode L S sb ss a b j m) R := by
+  have start : RelCT isa (fun t v => t = σ₁ ∧ v = σ₂) (prepareMCode sha3 L S sb ss a b j m) R := by
     intro t v tr ur t' v' h et ev
     rcases h with ⟨ht, hv⟩; subst t; subst v
-    exact ⟨(prepareM_relCT L S hS hss hsb h8b h₁ hh₁ h₂ hh₂ hb hash₁ hE₁ hash₂ hE₂ sp habs
+    exact ⟨(prepareM_relCT (sha3 := sha3) L S hS hss hsb h8b h₁ hh₁ h₂ hh₂ hb hash₁ hE₁ hash₂ hE₂ sp habs
         _ _ _ _ _ _ ⟨rfl, rfl⟩ et ev).1,
-      exec_post (prepareM_ok L S hS hss hsb h8b h₁ hh₁ hb hash₁ hE₁) et,
-      exec_post (prepareM_ok L S hS hss hsb h8b h₂ hh₂ hb hash₂ hE₂) ev⟩
+      exec_post (prepareM_ok (sha3 := sha3) L S hS hss hsb h8b h₁ hh₁ hb hash₁ hE₁) et,
+      exec_post (prepareM_ok (sha3 := sha3) L S hS hss hsb h8b h₂ hh₂ hb hash₂ hE₂) ev⟩
   have grouped : RelCT isa (fun t v => t = σ₁ ∧ v = σ₂)
-      (.seq (prepareMCode L S sb ss a b j m) (initialCode oa ob w16)) (fun _ _ => True) := by
+      (.seq (prepareMCode sha3 L S sb ss a b j m) (initialCode oa ob w16)) (fun _ _ => True) := by
     refine RelCT.seq start ?_
     intro t v tr ur t' v' h et ev
     exact initial_relCT hoa hob h.1.ready (by rw [seedA, seedB]; exact h.2.ready)
@@ -222,13 +223,13 @@ theorem beginM_relCT {w16 : Bool} (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HS
       (h.1.pointer.trans h.2.pointer.symm)
       (by rw [h.1.keep.get .x28 (by decide), h.2.keep.get .x28 (by decide), hh₁.h28, hh₂.h28])
       (h.1.tablePtr.trans h.2.tablePtr.symm) t v tr ur t' v' ⟨rfl, rfl⟩ et ev
-  have trace : RelCT isa (fun t v => t = σ₁ ∧ v = σ₂) (beginMCode L S sb ss a b j m oa ob w16) (fun _ _ => True) :=
+  have trace : RelCT isa (fun t v => t = σ₁ ∧ v = σ₂) (beginMCode sha3 L S sb ss a b j m oa ob w16) (fun _ _ => True) :=
     RelCT.assoc (RelCT.assoc grouped)
   intro t v tr ur t' v' h et ev
   rcases h with ⟨ht, hv⟩; subst t; subst v
   exact ⟨(trace σ₁ σ₂ tr ur t' v' ⟨rfl, rfl⟩ et ev).1,
-    exec_post (beginM_ok L S hS hss hsb h8b hoa hob h₁ hh₁ hb hash₁ hE₁) et,
-    exec_post (beginM_ok L S hS hss hsb h8b hoa hob h₂ hh₂ hb hash₂ hE₂) ev⟩
+    exec_post (beginM_ok (sha3 := sha3) L S hS hss hsb h8b hoa hob h₁ hh₁ hb hash₁ hE₁) et,
+    exec_post (beginM_ok (sha3 := sha3) L S hS hss hsb h8b hoa hob h₂ hh₂ hb hash₂ hE₂) ev⟩
 
 theorem pairMCode_relCT {w16 : Bool} (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid.HSrc) (hS : SrcOk S) {σ₁ σ₂ : State} {p seed outA outB table e st : Addr}
     {E₁ E₂ : List Byte} {sb ss a j m oa ob : Nat}
@@ -246,30 +247,30 @@ theorem pairMCode_relCT {w16 : Bool} (L : KemLay) (S : Impl.MlKem.AArch64.Hybrid
     (habs : ∀ blk, 136 * blk < S.len → ∃ h, (taint.check (Taint.ofRegs [S.r, .x28])
       (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock S blk)) h).isSome = true) :
     RelCT isa (fun t v => t = σ₁ ∧ v = σ₂)
-      (.seq (beginMCode L S sb ss a (a+1) j m oa ob w16) (finishCode w16))
+      (.seq (beginMCode sha3 L S sb ss a (a+1) j m oa ob w16) (finishCode sha3 w16))
       (fun _ _ => True) := by
   let R := fun t v : State =>
     BeginMPostW w16 S (seedState σ₁.mem seed a L.k) (seedState σ₁.mem seed (a+1) L.k) p outA outB table e st E₁ j m σ₁ t ∧
     BeginMPostW w16 S (seedState σ₂.mem seed a L.k) (seedState σ₂.mem seed (a+1) L.k) p outA outB table e st E₂ j m σ₂ v ∧
     t.syms = σ₁.syms ∧ v.syms = σ₂.syms
   have start : RelCT isa (fun t v => t = σ₁ ∧ v = σ₂)
-      (beginMCode L S sb ss a (a+1) j m oa ob w16) R := by
+      (beginMCode sha3 L S sb ss a (a+1) j m oa ob w16) R := by
     intro t v tr ur t' v' h et ev
     rcases h with ⟨ht, hv⟩; subst t; subst v
-    have hh := beginM_relCT L S hS hss hsb h8b hoa hob h₁ hh₁ h₂ hh₂ hb hash₁ hE₁ hash₂ hE₂
+    have hh := beginM_relCT (sha3 := sha3) L S hS hss hsb h8b hoa hob h₁ hh₁ h₂ hh₂ hb hash₁ hE₁ hash₂ hE₂
       sp seedA seedB habs σ₁ σ₂ tr ur t' v' ⟨rfl, rfl⟩ et ev
     exact ⟨hh.1, hh.2.1, hh.2.2, Exec.syms et, Exec.syms ev⟩
   refine RelCT.seq start ?_
   intro t v tr ur t' v' h et ev
-  exact finish_relCT h.1.progress (by rw [seedA, seedB]; exact h.2.1.progress)
+  exact finish_relCT (sha3 := sha3) h.1.progress (by rw [seedA, seedB]; exact h.2.1.progress)
     (by rw [h.2.2.1]; exact h₁.symbol) (by rw [h.2.2.2]; exact h₂.symbol)
     h.1.flag (by rw [seedA, seedB]; exact h.2.1.flag)
     (h.1.keep.sp.trans (sp.trans h.2.1.keep.sp.symm)) t v tr ur t' v' ⟨rfl, rfl⟩ et ev
 
 theorem pairM_exec {w16 : Bool} {sb ss off : Nat} {L : KemLay} {S : Impl.MlKem.AArch64.Hybrid.HSrc} {a j m : Nat}
     {s t : State} {tr : List Leak}
-    (h : Exec isa (Impl.MlKem.AArch64.Hybrid.pairM sb ss off L S a j m w16) s tr t) :
-    Exec isa (.seq (beginMCode L S sb ss a (a+1) j m (off+1024*a) (off+1024*(a+1)) w16) (finishCode w16))
+    (h : Exec isa (Impl.MlKem.AArch64.Hybrid.pairM sha3 sb ss off L S a j m w16) s tr t) :
+    Exec isa (.seq (beginMCode sha3 L S sb ss a (a+1) j m (off+1024*a) (off+1024*(a+1)) w16) (finishCode sha3 w16))
       s tr t := by
   simp only [Impl.MlKem.AArch64.Hybrid.pairM, seqs] at h
   obtain ⟨_,_,_,rfl,ei,h⟩ := seq_parts h

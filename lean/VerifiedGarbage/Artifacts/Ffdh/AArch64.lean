@@ -30,7 +30,6 @@ def direct : List Artifact := [
     code := Impl.Ffdh.AArch64.Cached.Precompute.code Proof.Bignum.AArch64.Mont.productEight.mm
     verified := Proof.Ffdh.AArch64.Cached.precompute_verified _ },
   Spec.Ffdh.cachedKeySearchApi.artifact target {
-    stack := 64
     code := Proof.Ffdh.AArch64.Cached.cachedSearch
     verified := Proof.Ffdh.AArch64.Cached.cachedSearch_verified },
   Spec.Ffdh.checkPublicApi.artifact target {
@@ -65,7 +64,6 @@ def artifacts : List Artifact :=
   (VG.Proof.Variants.MillerRabin.AArch64.variants.flatMap fun (v : Proof.MillerRabin.AArch64.RoundImpl) => [
     Spec.Ffdh.sievedParameterSearchApi.artifact AArch64.target {
       suffix := v.suffix
-      stack := 32
       code := Proof.Ffdh.AArch64.Generation.searchCode v
       verified := Proof.Ffdh.AArch64.Generation.search_verified v }])
 

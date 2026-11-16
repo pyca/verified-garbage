@@ -29,6 +29,7 @@ block of `ek` absorbed and permuted by `v`'s single-state permutation
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.KeyGen
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KG VG.Proof.MlKem.AArch64
 open VG.Spec.MlKem
@@ -244,6 +245,7 @@ between its pairs (`matrixRows_ok`), and the tail (`tail_ok`). -/
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.KeyGen
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KG VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Optimized
@@ -251,7 +253,7 @@ open VG.Proof.MlKem.AArch64.Hybrid (TStk)
 
 variable {P : KemLay}
 
-theorem matrixRows_ne_nil (P : KemLay) (hk3 : 3 ≤ P.k) : Impl.MlKem.AArch64.Kem16P.kgMatrixRows P ≠ [] := by
+theorem matrixRows_ne_nil (P : KemLay) (hk3 : 3 ≤ P.k) : Impl.MlKem.AArch64.Kem16P.kgMatrixRows sha3 P ≠ [] := by
   intro h
   unfold Impl.MlKem.AArch64.Kem16P.kgMatrixRows Impl.MlKem.AArch64.Kem16P.pairs at h
   have h2 := (List.append_eq_nil_iff.mp (List.append_eq_nil_iff.mp h).1).2
@@ -266,17 +268,17 @@ theorem using_correctP (v : Proof.Sha3.AArch64.Permutation) (hash : FixedHash.Ha
       [⟨.x25,0,32⟩,⟨.x28,BK,1⟩] [⟨.x28,SB,32⟩,⟨.x28,SG,32⟩])
     {s₀ : State} (hp : Pre P s₀) (hk : Stk128K P s₀) (hr : Noise.Room P) (hk3 : 3 ≤ P.k) (tables : Tables s₀)
     (ts : TStk s₀) (depthA : (FixedHashCallers.kgAUsing hash P).aarch64Depth ≤ 1)
-    (depthP : (Impl.MlKem.AArch64.Kem16P.kgPre P).aarch64Depth ≤ 1) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.keyGen hash v.callee P) s₀ fun t =>
+    (depthP : (Impl.MlKem.AArch64.Kem16P.kgPre sha3 P).aarch64Depth ≤ 1) :
+    WP isa (Impl.MlKem.AArch64.Kem16P.keyGen sha3 hash v.callee P) s₀ fun t =>
       abiPreserved s₀ t ∧ (keyGenAArch64 P).post s₀ t := by
   unfold Impl.MlKem.AArch64.Kem16P.keyGen
   refine WPs.seqs (by simp) ?_
   refine WPs.cons (WP.mono_syms (WP.tablesDepth (a_using_ok hash hG hp) tables depthA) fun sA ⟨hA, ta⟩ hs => ?_)
-  refine WPs.cons (WP.mono (first_step hp hk (p := 0) (by decide) hk3
+  refine WPs.cons (WP.mono (first_step (sha3 := sha3) hp hk (p := 0) (by decide) hk3
     (FInv.zero hA ta (ts.of hs hA.kb.sp))) fun s₁ h₁ => ?_)
-  refine WPs.cons (WP.mono (first_step hp hk (p := 1) (by decide) hk3 h₁) fun s₂ h₂ => ?_)
-  refine WPs.cons (WP.mono (pre_ok hp hr hk3 h₂ depthP) fun s₃ h₃ => ?_)
-  refine WPs.cons (WP.mono (WPs.seqs (matrixRows_ne_nil P hk3) (matrixRows_ok hp hk hr hk3 h₃))
+  refine WPs.cons (WP.mono (first_step (sha3 := sha3) hp hk (p := 1) (by decide) hk3 h₁) fun s₂ h₂ => ?_)
+  refine WPs.cons (WP.mono (pre_ok (sha3 := sha3) hp hr hk3 h₂ depthP) fun s₃ h₃ => ?_)
+  refine WPs.cons (WP.mono (WPs.seqs (matrixRows_ne_nil (sha3 := sha3) P hk3) (matrixRows_ok (sha3 := sha3) hp hk hr hk3 h₃))
     fun s₄ h₄ => ?_)
   exact WPs.single (WP.mono (tail_ok v hp h₄) fun t ht => ⟨ht.abi, post_ofW h₄.b ht⟩)
 

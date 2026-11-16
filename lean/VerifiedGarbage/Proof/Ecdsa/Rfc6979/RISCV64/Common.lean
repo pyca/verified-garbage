@@ -530,7 +530,9 @@ variable (P : Rfc)
 theorem hi_sdepth : sdepth P.H.init ≤ P.H.ibytes + P.H.F := by
   have := P.hH.initSd; have := P.hH.updSd; have := P.hH.finSd
   simp only [Hash.init, Hash.initMain, Hash.longKey, Hash.padKey, Hash.updBlock, Hash.callInit, Hash.callUpd,
-    Hash.callFin, Hash.keyLoop, Hash.padLoop, sdepth, Instr.frameBytes]
+    Hash.callFin, Hash.keyLoop, Hash.padLoop, sdepth, Instr.frameBytes, Nat.zero_max, Nat.max_zero,
+    Nat.max_self, Nat.add_le_add_iff_left, Nat.max_le]
+  -- the bound of each call, which `omega` otherwise finds by splitting every `max`
   omega_arith
 
 theorem hf_sdepth : sdepth P.H.finalize ≤ P.H.fbytes + P.H.F := by

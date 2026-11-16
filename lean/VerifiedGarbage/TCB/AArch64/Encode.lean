@@ -207,6 +207,9 @@ def VOp.encode : VOp → Option Nat
     else none
   -- "PMULL, PMULL2", `size = 11` (`.1q` from `.1d`/`.2d`).
   | .pmull hi d n m => some (v3 (if hi then 0x4EE0E000 else 0x0EE0E000) d n m)
+  -- "PMULL, PMULL2", `size = 00` (`.8h` from `.8b`/`.16b`): `0 Q 0 01110 size
+  -- 1 Rm 1110 00 Rn Rd`.
+  | .pmull8 hi d n m => some (v3 (if hi then 0x4E20E000 else 0x0E20E000) d n m)
   -- "AESE", "AESD", "AESMC", "AESIMC".
   | .aese d n => some (v2 0x4E284800 d n)
   | .aesd d n => some (v2 0x4E285800 d n)
@@ -229,6 +232,22 @@ def VOp.encode : VOp → Option Nat
   | .sha512h2 d n m => some (v3 0xCE608400 d n m)
   | .sha512su0 d n => some (v2 0xCEC08000 d n)
   | .sha512su1 d n m => some (v3 0xCE608800 d n m)
+  -- "SM4E": `11001110 11000000 100001 Rn Rd`; "SM4EKEY": `11001110 011 Rm
+  -- 110010 Rn Rd`.
+  | .sm4e d n => some (v2 0xCEC08400 d n)
+  | .sm4ekey d n m => some (v3 0xCE60C800 d n m)
+  -- "SM3SS1": `11001110 010 Rm 0 Ra Rn Rd`; "SM3TT1A", "SM3TT1B", "SM3TT2A",
+  -- "SM3TT2B": `11001110 010 Rm 10 imm2 opcode Rn Rd`, `opcode` 00, 01, 10,
+  -- 11; "SM3PARTW1", "SM3PARTW2": `11001110 011 Rm 1100 opcode Rn Rd`,
+  -- `opcode` 00, 01.
+  | .sm3ss1 d n m a => some (v3 (0xCE400000 ||| a.index <<< 10) d n m)
+  | .sm3tt op d n m i =>
+    if i < 4 then
+      let opcode := match op with | .tt1a => 0 | .tt1b => 1 | .tt2a => 2 | .tt2b => 3
+      some (v3 (0xCE408000 ||| i <<< 12 ||| opcode <<< 10) d n m)
+    else none
+  | .sm3partw1 d n m => some (v3 0xCE60C000 d n m)
+  | .sm3partw2 d n m => some (v3 0xCE60C400 d n m)
   -- "EOR3", "BCAX": `Ra` at bits 14–10; "RAX1"; "XAR": `imm6` at 15–10.
   | .eor3 d n m a => some (v3 (0xCE000000 ||| a.index <<< 10) d n m)
   | .bcax d n m a => some (v3 (0xCE200000 ||| a.index <<< 10) d n m)
@@ -367,6 +386,8 @@ def Instr.encode : Instr → Option (List Nat)
   -- unsigned offset: `00 111 1 01 opc imm12 Rn Rt`, `imm12 = off / 16`.
   | .ldrq t n off => ldst 0x3DC00000 16 t.index n.index off
   | .ldrqTbl t n off .. => ldst 0x3DC00000 16 t.index n.index off
+  -- As `ldr`: "LDR (immediate)", unsigned offset.
+  | .ldrTbl sz t n off .. => ldst (if sz == .x then 0xF9400000 else 0xB9400000) sz.bytes t.index n.index off
   | .strq t n off => ldst 0x3D800000 16 t.index n.index off
   -- "UMOV": `0 Q 0 01110000 imm5 0 0111 1 Rn Rd`, `.s` (`Q = 0`) or `.d`
   -- (`Q = 1`).

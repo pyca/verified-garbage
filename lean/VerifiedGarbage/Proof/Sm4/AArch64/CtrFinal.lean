@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Framework.Scratch
 public import VerifiedGarbage.Proof.Framework.AArch64.Spill
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.AesCtr.AArch64.Final
+import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Modes
 import VerifiedGarbage.Proof.AesCtr.AArch64.CT
 import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 import VerifiedGarbage.Proof.Modes.CtrFinal
@@ -41,6 +42,7 @@ meta import VerifiedGarbage.Proof.Framework.Scratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.Spill
 meta import VerifiedGarbage.Impl.StackScratch.AArch64
 meta import VerifiedGarbage.Proof.AesCtr.AArch64.Final
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Modes
 meta import VerifiedGarbage.Proof.AesCtr.AArch64.CT
 meta import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 meta import VerifiedGarbage.Proof.Modes.CtrFinal
@@ -69,17 +71,21 @@ meta import VerifiedGarbage.Proof.Framework.AddrArith
 /-!
 # SM4-CTR of a message's last piece on AArch64
 
-`ctrFinal_framed`: `vg_sm4_ctr_final` (`Impl/Sm4/AArch64/CtrFinal.lean`) meets
-`Spec.Sm4.ctrFinalContract`.
+`ctrFinal_framed c`: `vg_sm4_ctr_final` (`Impl/Sm4/AArch64/CtrFinal.lean`)
+meets `Spec.Sm4.ctrFinalContract`, for any implementation `c` of the
+`vg_sm4_ctr` it calls (`CtrImpl`): the bitsliced one of the baseline ISA
+(`CtrImpl.scalar`), whose frame is the 3264 bytes below the stack pointer,
+and the one with the Armv8 SM4 instructions (`CtrImpl.sm4`,
+`vg_sm4_ctr_sm4`), whose frame of 224 bytes is within them.
 
 The code is proven against `ctrFinalAArch64`, with the arguments
 `(schedule = x0, ctr = x1, data = x2, len = x3, save = x4)`, a fifth argument `save` (`x4`) of 80 bytes for its caller's registers and
 return address and a block of its own, and 3264 bytes of stack for its
 calls (`ctrFinal_implies`: the shared contract with it), as a caller of
-`vg_sm4_ctr`, framed by its own working space on the stack (`ctrFramed`),
+`vg_sm4_ctr`, framed by its own working space on the stack,
 through a contract of its own, `ctrF`, which the callee's shared contract
-implies (`ctrF_implies`), with `WP.callF` (the callee's frames lie within the
-stack, `ctr_depth`). It is AES-CTR's final function's proof
+implies (`ctrF_implies`, `ctrF_implies_sm4`), with `WP.callF` (the callee's
+frames lie within the stack, `CtrImpl.depth`). It is AES-CTR's final function's proof
 (`Proof/AesCtr/AArch64/Final.lean`) with SM4's arguments:
 
 * `setup_wp`, `whole_wp`: the registers saved in `save`, whose address is
@@ -104,7 +110,7 @@ namespace VG.Proof.Sm4.AArch64.CtrFinal
 open VG VG.AArch64
 open VG.Spec.Aes (bytesAt)
 open VG.AArch64.RegUpd
-open VG.Impl.Sm4.AArch64 (ctrFramed ctrFinalSave ctrFinalMoves ctrFinalSetup ctrFinalTailMoves
+open VG.Impl.Sm4.AArch64 (ctrFramed ctrFramedSm4 ctrFinalSave ctrFinalMoves ctrFinalSetup ctrFinalTailMoves
   ctrFinalTailArgs ctrFinalTail ctrFinal)
 open VG.Impl.AesCfb.AArch64 (finalSaved finalRestore)
 open VG.Impl.AesCtr.AArch64 (zeroSlots tailKey)
@@ -157,6 +163,73 @@ theorem ctr_ok : ∀ s, ctrF.pre s → ∃ t s', Exec isa ctrFramed s t s' ∧ a
 
 theorem ctr_ct : ConstantTime isa ctrF.pre ctrF.pub ctrFramed :=
   (Sm4.AArch64.ctr_framed.of_implies ctrF_implies).2.1
+
+/-- `ctrF` from the contract with a frame of 224 bytes, which is within the
+3264 below the stack pointer. -/
+theorem ctrF_implies_sm4 : (Spec.Sm4.ctrContract AArch64.abi 224).Implies ctrF where
+  pre s hs := by
+    obtain ⟨hsp, hrd, hwr, d1, d2, d3, k1, k2, k3, f1, f2, f3⟩ := hs
+    have sub : Region.Sub (below s.sp 224) (below s.sp 3264) := Offset.sub_below s.sp (by decide) (by decide)
+    sig_pre [Spec.Sm4.ctrContract, Spec.Sm4.ctrSig, AArch64.abi, AArch64.argRegs]
+    simp only [Nat.mul_comm (s.gpr .x3).toNat 16]
+    exact ⟨by omega_using [hsp], hrd, hwr, d1, d2, d3, k1.sub_left sub, k2.sub_left sub, k3.sub_left sub, f1, f2, f3⟩
+  post s s' _ h := by
+    sig_reduce [Spec.Sm4.ctrContract, Spec.Sm4.ctrSig, AArch64.abi, AArch64.argRegs] at h
+    simp only [BitVec.setWidth_eq] at h
+    exact h
+  pub s₁ s₂ _ _ h := by
+    sig_reduce [Spec.Sm4.ctrContract, Spec.Sm4.ctrSig, AArch64.abi, AArch64.argRegs]
+    obtain ⟨hsp, h0, h1, h2, h3⟩ := h
+    exact ⟨hsp, fun _ _ => by rw [h0, h1, h2, h3], fun _ hr => absurd hr List.not_mem_nil⟩
+  sat := ctrF_implies.sat
+
+theorem ctrSm4_ok : ∀ s, ctrF.pre s → ∃ t s', Exec isa ctrFramedSm4 s t s' ∧ abiPreserved s s' ∧ ctrF.post s s' :=
+  (Sm4.AArch64.Sm4e.ctr_framed.of_implies ctrF_implies_sm4).1
+
+theorem ctrSm4_ct : ConstantTime isa ctrF.pre ctrF.pub ctrFramedSm4 :=
+  (Sm4.AArch64.Sm4e.ctr_framed.of_implies ctrF_implies_sm4).2.1
+
+theorem ctrSm4_depth : 16 * ctrFramedSm4.aarch64Depth ≤ 3264 := by lit_decide
+
+/-- The implementations keep the low halves of `v8`–`v15`. -/
+theorem ctrFramed_keepsV : ctrFramed.allInstrs keepsV = true := by lit_decide
+
+theorem ctrFramedSm4_keepsV : ctrFramedSm4.allInstrs keepsV = true := by lit_decide
+
+/-- An implementation of `vg_sm4_ctr` on AArch64, whose frames are within
+the 3264 bytes below the stack pointer. -/
+structure CtrImpl where
+  name : String
+  code : Prog isa
+  ok : ∀ s, ctrF.pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ ctrF.post s s'
+  ct : ConstantTime isa ctrF.pre ctrF.pub code
+  depth : 16 * code.aarch64Depth ≤ 3264
+  keepsV : code.allInstrs keepsV = true
+  suffix : String
+
+namespace CtrImpl
+
+/-- `vg_sm4_ctr`, bitsliced, in the baseline ISA. -/
+def scalar : CtrImpl where
+  name := "vg_sm4_ctr"
+  code := ctrFramed
+  ok := ctr_ok
+  ct := ctr_ct
+  depth := ctr_depth
+  keepsV := ctrFramed_keepsV
+  suffix := ""
+
+/-- `vg_sm4_ctr_sm4`, with the Armv8 SM4 instructions. -/
+def sm4 : CtrImpl where
+  name := "vg_sm4_ctr_sm4"
+  code := ctrFramedSm4
+  ok := ctrSm4_ok
+  ct := ctrSm4_ct
+  depth := ctrSm4_depth
+  keepsV := ctrFramedSm4_keepsV
+  suffix := "_sm4"
+
+end CtrImpl
 
 /-! ## The contract -/
 
@@ -362,8 +435,8 @@ theorem sched_of {s₀ : State} {rs : List Region} {m₀ m : Mem} (hf : Frame rs
   Proof.Sm4.scheduleAt_frame hf hd
 
 /-- The stack a call of `vg_sm4_ctr` uses lies within the stack. -/
-theorem stk_sub (s₀ : State) : Region.Sub (below s₀.sp (16 * ctrFramed.aarch64Depth)) (kStk s₀) :=
-  fun x hx => Offset.below_mono s₀.sp ctr_depth (by decide) x hx
+theorem stk_sub (c : CtrImpl) (s₀ : State) : Region.Sub (below s₀.sp (16 * c.code.aarch64Depth)) (kStk s₀) :=
+  fun x hx => Offset.below_mono s₀.sp c.depth (by decide) x hx
 
 /-! ## Saving the registers -/
 
@@ -475,23 +548,23 @@ structure KWhole (s₀ s : State) : Prop where
   ctr : bytesAt s.mem (fIv s₀) 16 = Spec.Ctr.next (fIv0 s₀) (fN s₀)
 
 /-- A call's frame, within the regions it was given and the stack. -/
-theorem call_frame {s₀ s s' : State} (hsp : s.sp = s₀.sp) {wr : List Region}
-    (hf : Frame (wr ++ [below s.sp (16 * ctrFramed.aarch64Depth)]) s.mem s'.mem) :
+theorem call_frame (c : CtrImpl) {s₀ s s' : State} (hsp : s.sp = s₀.sp) {wr : List Region}
+    (hf : Frame (wr ++ [below s.sp (16 * c.code.aarch64Depth)]) s.mem s'.mem) :
     Frame (wr ++ [kStk s₀]) s.mem s'.mem :=
   hf.sub fun r hr => by
     rcases List.mem_append.mp hr with h | h
     · exact ⟨r, List.mem_append_left _ h, fun _ h => h⟩
     · simp only [List.mem_singleton] at h; subst h
-      exact ⟨kStk s₀, by simp, by rw [hsp]; exact stk_sub s₀⟩
+      exact ⟨kStk s₀, by simp, by rw [hsp]; exact stk_sub c s₀⟩
 
-theorem whole_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KSetup s₀ s) :
-    WP isa (.call "vg_sm4_ctr" ctrFramed) s (KWhole s₀) := by
+theorem whole_wp (c : CtrImpl) {s₀ : State} (hp : KPre s₀) {s : State} (h : KSetup s₀ s) :
+    WP isa (.call c.name c.code) s (KWhole s₀) := by
   obtain ⟨eK, eIv, eB⟩ := sv_bytes hp
   obtain ⟨hpre, hc, hw⟩ := whole_pre hp h
-  refine WP.callF (k := ctrF) ctr_ok (rd := [kSch s₀]) (wr := [kIv s₀, fBlk s₀]) hpre hc hw ?_
-    (by have := ctr_depth; omega_using [this])
+  refine WP.callF (k := ctrF) c.ok (rd := [kSch s₀]) (wr := [kIv s₀, fBlk s₀]) hpre hc hw ?_
+    (by have := c.depth; omega_using [this])
   intro s' rd' wr' sp' fr' cs' post₂
-  have fr := call_frame h.sp fr'
+  have fr := call_frame c h.sp fr'
   rw [h.mem] at fr
   simp only [ctrF, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
     AesCbc.AArch64.callEntry_x0, AesCbc.AArch64.callEntry_x1, AesCbc.AArch64.callEntry_x2,
@@ -632,15 +705,15 @@ structure KCall (s₀ s : State) : Prop where
 theorem cipher_length (k : Spec.Sm4.Schedule) (b : List Byte) : (Spec.Sm4.cipher k b).length = 16 := by
   simp [Spec.Sm4.cipher]
 
-theorem tail_call_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KArgs s₀ s) :
-    WP isa (.call "vg_sm4_ctr" ctrFramed) s (KCall s₀) := by
+theorem tail_call_wp (c : CtrImpl) {s₀ : State} (hp : KPre s₀) {s : State} (h : KArgs s₀ s) :
+    WP isa (.call c.name c.code) s (KCall s₀) := by
   obtain ⟨hpre, hc, hw⟩ := tail_pre hp h
   have big := big_of (kW1_kW h.frame)
   have eK := sched_of big hp.sch_big
-  refine WP.callF (k := ctrF) ctr_ok (rd := [kSch s₀]) (wr := [kIv s₀, kBlk s₀]) hpre hc hw ?_
-    (by have := ctr_depth; omega_using [this])
+  refine WP.callF (k := ctrF) c.ok (rd := [kSch s₀]) (wr := [kIv s₀, kBlk s₀]) hpre hc hw ?_
+    (by have := c.depth; omega_using [this])
   intro s' rd' wr' sp' fr' cs' post₂
-  have fr := call_frame h.sp fr'
+  have fr := call_frame c h.sp fr'
   simp only [ctrF, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
     AesCbc.AArch64.callEntry_x0, AesCbc.AArch64.callEntry_x1, AesCbc.AArch64.callEntry_x2,
     AesCbc.AArch64.callEntry_x3, h.x0, h.x1, h.x2, h.x3, one_toNat, h.ctr] at post₂
@@ -763,14 +836,14 @@ theorem tail_xor_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KCall s₀ 
       ← bytesAt_getD s.mem (kBk s₀) (show q < 16 by omega_using [hU, hq]), h.out]
   · rw [ite_eq_right hu, Proof.Cmac.bytesAt_frame d.frame ivT (by decide), mem₁, h.ctr, ← AesCtr.next_add]
 
-theorem mid_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KWhole s₀ s) :
-    WP isa (.ite (.zero .x .x23) (.block []) ctrFinalTail) s (KDone s₀) := by
+theorem mid_wp (c : CtrImpl) {s₀ : State} (hp : KPre s₀) {s : State} (h : KWhole s₀ s) :
+    WP isa (.ite (.zero .x .x23) (.block []) (ctrFinalTail c.name c.code)) s (KDone s₀) := by
   by_cases hu : fU s₀ = 0
   · exact WP.ite true (by rw [eval_u h, decide_eq_true hu]) (fun _ => WP.block_nil (done_of_zero h hu))
       (fun h => by cases h)
   · refine WP.ite false (by rw [eval_u h, decide_eq_false hu]) (fun h => by cases h) fun _ => ?_
     exact WP.seq (WP.mono (tail_args_wp hp h) fun _ h₁ =>
-      WP.seq (WP.mono (tail_call_wp hp h₁) fun _ h₂ => tail_xor_wp hp h₂ hu))
+      WP.seq (WP.mono (tail_call_wp c hp h₁) fun _ h₂ => tail_xor_wp hp h₂ hu))
 
 /-! ## Restoring the registers -/
 
@@ -800,11 +873,12 @@ theorem end_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KDone s₀ s) :
 
 /-! ## The whole function -/
 
-theorem final_wp {s₀ : State} (hp : KPre s₀) :
-    WP isa ctrFinal s₀ fun s' => (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ ∃ s₁, KDone s₀ s₁ ∧ s'.mem = s₁.mem := by
+theorem final_wp (c : CtrImpl) {s₀ : State} (hp : KPre s₀) :
+    WP isa (ctrFinal c.name c.code) s₀ fun s' =>
+      (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ ∃ s₁, KDone s₀ s₁ ∧ s'.mem = s₁.mem := by
   refine WP.seq (WP.mono (setup_wp hp) fun s₁ h₁ => ?_)
-  refine WP.seq (WP.mono (whole_wp hp h₁) fun s₂ h₂ => ?_)
-  refine WP.seq (WP.mono (mid_wp hp h₂) fun s₃ h₃ => ?_)
+  refine WP.seq (WP.mono (whole_wp c hp h₁) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (mid_wp c hp h₂) fun s₃ h₃ => ?_)
   exact WP.mono (end_wp hp h₃) fun _ ⟨g, m⟩ => ⟨g, s₃, h₃, m⟩
 
 /-- `Spec.Ctr.CryptFinal`, from what the function leaves. -/
@@ -813,12 +887,13 @@ theorem final_post {s₀ s₁ s' : State} (h : KDone s₀ s₁) (hm : s'.mem = s
   exact Modes.CtrFinal.cryptFinal_of (cipher_length _) (by rw [hm]; exact h.blocks)
     (fun q hq => by rw [hm]; exact h.tail q hq) (by rw [hm]; exact h.ctr)
 
-theorem ctrFinal_keepsV : ctrFinal.allInstrs keepsV = true := by lit_decide
+theorem ctrFinal_keepsV (c : CtrImpl) : (ctrFinal c.name c.code).allInstrs keepsV = true := by
+  simp only [ctrFinal, ctrFinalTail, Code.allInstrs, c.keepsV]; lit_decide
 
-theorem final_correct (s : State) (hs : ctrFinalAArch64.pre s) :
-    ∃ t s', Exec isa ctrFinal s t s' ∧ abiPreserved s s' ∧ ctrFinalAArch64.post s s' := by
-  obtain ⟨t, s', he, hg, s₁, h₁, hm⟩ := final_wp (KPre.of hs)
-  exact ⟨t, s', he, ⟨hg, AArch64.Exec.sp he, Exec.preservedV he ctrFinal_keepsV⟩, final_post h₁ hm⟩
+theorem final_correct (c : CtrImpl) (s : State) (hs : ctrFinalAArch64.pre s) :
+    ∃ t s', Exec isa (ctrFinal c.name c.code) s t s' ∧ abiPreserved s s' ∧ ctrFinalAArch64.post s s' := by
+  obtain ⟨t, s', he, hg, s₁, h₁, hm⟩ := final_wp c (KPre.of hs)
+  exact ⟨t, s', he, ⟨hg, AArch64.Exec.sp he, Exec.preservedV he (ctrFinal_keepsV c)⟩, final_post h₁ hm⟩
 
 /-! ## Constant time -/
 
@@ -835,9 +910,9 @@ theorem xor_taint : ∃ h, (taint.check (Taint.ofRegs [.x25, .x22, .x23])
 theorem restore_taint : ∃ h, (taint.check (Taint.ofRegs [.x25]) (.block finalRestore) h).isSome = true :=
   ⟨_, by taint_decide⟩
 
-theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s₀) (h0' : ctrFinalAArch64.pre s₀')
+theorem final_rel (c : CtrImpl) {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s₀) (h0' : ctrFinalAArch64.pre s₀')
     (hq : ctrFinalAArch64.pub s₀ s₀') :
-    RelCT isa (fun a b => a = s₀ ∧ b = s₀') ctrFinal fun _ _ => True := by
+    RelCT isa (fun a b => a = s₀ ∧ b = s₀') (ctrFinal c.name c.code) fun _ _ => True := by
   have hp := KPre.of h0
   have hp' := KPre.of h0'
   obtain ⟨qW, qIv, qD, qL, qV, qSp⟩ := hq
@@ -854,7 +929,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s₀) (h0' : ct
       rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption)
     fun a b h => by obtain ⟨rfl, rfl⟩ := h; exact ⟨setup_wp hp, setup_wp hp'⟩
   -- The whole blocks.
-  have r₂ := (RelCT.callEx (k := ctrF) (n := "vg_sm4_ctr") ctr_ok ctr_ct
+  have r₂ := (RelCT.callEx (k := ctrF) (n := c.name) c.ok c.ct
     (P := fun a b => KSetup s₀ a ∧ KSetup s₀' b) fun a b ⟨ha, hb⟩ => by
       obtain ⟨pa, ca, wa⟩ := whole_pre hp ha
       obtain ⟨pb, cb, wb⟩ := whole_pre hp' hb
@@ -864,10 +939,11 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s₀) (h0' : ct
         AesCbc.AArch64.callEntry_x3, ha.x0, ha.x1, ha.x2, ha.x3, ha.sp, hb.x0, hb.x1, hb.x2, hb.x3, hb.sp]
       rw [fW, fW, fIv, fIv, fD, fD, qW, qIv, qD, qSp, qN]
       refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> first | rfl | trivial).wp
-    (F₁ := KWhole s₀) (F₂ := KWhole s₀') fun a b h => ⟨whole_wp hp h.1, whole_wp hp' h.2⟩
+    (F₁ := KWhole s₀) (F₂ := KWhole s₀') fun a b h => ⟨whole_wp c hp h.1, whole_wp c hp' h.2⟩
   -- The partial last block.
-  have tail (hu : fU s₀ ≠ 0) : RelCT isa (fun a b => KWhole s₀ a ∧ KWhole s₀' b) ctrFinalTail
-      fun a b => KDone s₀ a ∧ KDone s₀' b := by
+  have tail (hu : fU s₀ ≠ 0) :
+      RelCT isa (fun a b => KWhole s₀ a ∧ KWhole s₀' b) (ctrFinalTail c.name c.code)
+        fun a b => KDone s₀ a ∧ KDone s₀' b := by
     have hu' : fU s₀' ≠ 0 := qU ▸ hu
     have a₁ := AesCtr.AArch64.taint_rel (P := fun a b => KWhole s₀ a ∧ KWhole s₀' b)
       (F₁ := KArgs s₀) (F₂ := KArgs s₀') [.x19, .x21, .x25] tailArgs_taint
@@ -879,7 +955,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s₀) (h0' : ct
         · rw [h.1.x21, h.2.x21, fIv, fIv, qIv]
         · rw [h.1.x25, h.2.x25, kV, kV, qV])
       fun a b h => ⟨tail_args_wp hp h.1, tail_args_wp hp' h.2⟩
-    have a₂ := (RelCT.callEx (k := ctrF) (n := "vg_sm4_ctr") ctr_ok ctr_ct
+    have a₂ := (RelCT.callEx (k := ctrF) (n := c.name) c.ok c.ct
       (P := fun a b => KArgs s₀ a ∧ KArgs s₀' b) fun a b ⟨ha, hb⟩ => by
         obtain ⟨pa, ca, wa⟩ := tail_pre hp ha
         obtain ⟨pb, cb, wb⟩ := tail_pre hp' hb
@@ -889,7 +965,7 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s₀) (h0' : ct
           AesCbc.AArch64.callEntry_x3, ha.x0, ha.x1, ha.x2, ha.x3, ha.sp, hb.x0, hb.x1, hb.x2, hb.x3, hb.sp]
         rw [fW, fW, fIv, fIv, kBk, kBk, kV, kV, qW, qIv, qV, qSp]
         refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> first | rfl | trivial).wp
-      (F₁ := KCall s₀) (F₂ := KCall s₀') fun a b h => ⟨tail_call_wp hp h.1, tail_call_wp hp' h.2⟩
+      (F₁ := KCall s₀) (F₂ := KCall s₀') fun a b h => ⟨tail_call_wp c hp h.1, tail_call_wp c hp' h.2⟩
     have a₃ := AesCtr.AArch64.taint_rel (P := fun a b => KCall s₀ a ∧ KCall s₀' b)
       (F₁ := KDone s₀) (F₂ := KDone s₀') [.x25, .x22, .x23] xor_taint
       (fun a b h => by rw [h.1.sp, h.2.sp, qSp])
@@ -901,7 +977,8 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s₀) (h0' : ct
         · rw [h.1.x23, h.2.x23, qU])
       fun a b h => ⟨tail_xor_wp hp h.1 hu, tail_xor_wp hp' h.2 hu'⟩
     exact a₁.seq ((a₂.mono (fun _ _ h => h) fun _ _ h => h.2).seq a₃)
-  have r₃ : RelCT isa (fun a b => KWhole s₀ a ∧ KWhole s₀' b) (.ite (.zero .x .x23) (.block []) ctrFinalTail)
+  have r₃ : RelCT isa (fun a b => KWhole s₀ a ∧ KWhole s₀' b)
+      (.ite (.zero .x .x23) (.block []) (ctrFinalTail c.name c.code))
       (fun a b => KDone s₀ a ∧ KDone s₀' b) := by
     refine RelCT.ite (fun a b h => by rw [eval_u h.1, eval_u h.2, qU]) ?_ ?_
     · refine RelCT.block_nil fun a b h => ?_
@@ -913,8 +990,8 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s₀) (h0' : ct
       have := h.2; rw [eval_u h.1.1] at this; simpa using this
   have r₃' := r₃.wp (F₁ := fun (s : State) => s.sp = s₀.sp) (F₂ := fun (s : State) => s.sp = s₀'.sp)
     fun a b h =>
-      ⟨WP.mono (WP.sp_eq (mid_wp hp h.1)) fun _ x => x.2.trans h.1.sp,
-        WP.mono (WP.sp_eq (mid_wp hp' h.2)) fun _ x => x.2.trans h.2.sp⟩
+      ⟨WP.mono (WP.sp_eq (mid_wp c hp h.1)) fun _ x => x.2.trans h.1.sp,
+        WP.mono (WP.sp_eq (mid_wp c hp' h.2)) fun _ x => x.2.trans h.2.sp⟩
   -- The registers restored.
   obtain ⟨_, t₅⟩ := restore_taint
   have r₄ := RelCT.taint (A := taint) (P := fun a b => (KDone s₀ a ∧ KDone s₀' b) ∧
@@ -923,13 +1000,15 @@ theorem final_rel {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s₀) (h0' : ct
       simp only [List.mem_singleton] at hr; subst hr; rw [h.1.1.x25, h.1.2.x25, kV, kV, qV]) t₅
   exact r₁.seq ((r₂.mono (fun _ _ h => h) fun _ _ h => h.2).seq (r₃'.seq r₄))
 
-theorem final_ct : ConstantTime isa ctrFinalAArch64.pre ctrFinalAArch64.pub ctrFinal :=
-  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (final_rel h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+theorem final_ct (c : CtrImpl) :
+    ConstantTime isa ctrFinalAArch64.pre ctrFinalAArch64.pub (ctrFinal c.name c.code) :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (final_rel c h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 /-! ## Verified -/
 
-theorem ctrFinal_verified : Verified AArch64.target ctrFinal ctrFinalScratchContract :=
-  Verified.of_correct final_correct final_ct ctrFinal_implies
+theorem ctrFinal_verified (c : CtrImpl) :
+    Verified AArch64.target (ctrFinal c.name c.code) ctrFinalScratchContract :=
+  Verified.of_correct (final_correct c) (final_ct c) ctrFinal_implies
 
 /-! ## With `save` on the stack
 
@@ -946,12 +1025,12 @@ theorem ctrFinalFrameSat_pre : ∃ s, (Spec.Sm4.ctrFinalContract AArch64.abi 334
   implies_sat [Spec.Sm4.ctrFinalContract, Spec.Sm4.ctrFinalSig, AArch64.abi, AArch64.argRegs]
     [ctrFinalFrameSat, ctrFinalSat] using ctrFinalFrameSat
 
-theorem ctrFinal_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x4 10 ctrFinal)
+theorem ctrFinal_framed (c : CtrImpl) :
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratchWiped 80 .x4 10 (ctrFinal c.name c.code))
       (Spec.Sm4.ctrFinalContract AArch64.abi 3344) := by
   rw [Proof.Sm4.ctrFinalContract_eq]
   exact AArch64.Verified.stackScratchWiped (sig := Spec.Sm4.ctrFinalSig) (nm := "save") (e := .u64) (n := 10)
     (post := Proof.Sm4.ctrFinalPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 80) (words := 10)
-    ctrFinal_verified (by decide) (by decide) (by decide) (Proof.Sm4.ctrFinalPostOut_local _) ctrFinalFrameSat_pre
+    (ctrFinal_verified c) (by decide) (by decide) (by decide) (Proof.Sm4.ctrFinalPostOut_local _) ctrFinalFrameSat_pre
 
 end VG.Proof.Sm4.AArch64.CtrFinal

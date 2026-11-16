@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.JointWindows
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 import VerifiedGarbage.Proof.Dsa.Joint
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -12,6 +14,10 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.JointWindows
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTExp
 meta import VerifiedGarbage.Proof.Dsa.Joint
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CTR2
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -20,8 +26,8 @@ meta import VerifiedGarbage.Proof.Framework.TaintBatch
 /-! # Constant time of a joint exponentiation window
 
 As RSA's window (`crtWin_ct`, `Proof/Bignum/AArch64/CrtCTExp.lean`): the
-digits flow only into data, the table is read by a masked selection from
-every entry, and the header's addresses and counts are pinned in both runs
+digits flow only into data, the table is read by a selection from
+every entry (`Crt.select`), and the header's addresses and counts are pinned in both runs
 by the window's correctness. -/
 
 @[expose] public section
@@ -69,8 +75,7 @@ the digits. -/
 theorem jointWindow_ct (M : Mont) :
     RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 4 ∧ JointWinI q.1 q.2 s) (seqs (Joint.window M.mm))
       fun _ _ => True := by
-  rw [window_eq]
-  refine RelCT.seqs_append (by simp) (by simp [tabSelect_eq]) ?_
+  simp only [Joint.window, VG.Impl.Rsa.AArch64.Crt.select, seqs]
   have sq : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s) (M.mm aY aY aY)
       (Two fun (q : XPub × Nat) s => WinQ q.1 s) :=
     two_post (two_map (fun q : XPub × Nat => q.1.ws) (fun _ _ h => h.goodW) (M.ct (by unfold MmUse; decide)))
@@ -88,18 +93,16 @@ theorem jointWindow_ct (M : Mont) :
         have tab : CTab s.mem (off q.1.B q.1.o) q.1.wx n False 0 :=
           ⟨hI.tab.tab, hI.tab.lt, fun h _ _ => False.elim h⟩
         exact winSq_q M ⟨minv, n, xc, _, hI.ctx, tab, hI.ylt, hI.bytes, hp, hw, hw', hR⟩
-  refine RelCT.seq (R := Two fun (q : XPub × Nat) s => WinS q.1 s) ?_ ?_
-  · simp only [seqs]
-    exact RelCT.seq sq0 (RelCT.seq sq jointMid_ct)
+  refine RelCT.seq sq0 (RelCT.seq sq (RelCT.seq jointMid_ct ?_))
   -- The selection, `Y := Y T` and the count.
-  refine RelCT.seqs_append (by simp [tabSelect_eq]) (by simp) ?_
   refine RelCT.seq (two_post (Ψ := fun (q : XPub × Nat) s => WinT q.1 s)
-    (two_map (fun q : XPub × Nat => q.1) (fun _ _ h => h.1) tabSel_ct) fun q s h => ?_) ?_
+    (two_map (fun q : XPub × Nat => q.1) (fun _ _ h => h.1)
+      (WindowVector.select_ct (Or.inl rfl) tabSel_ct)) fun q s h => ?_) ?_
   · obtain ⟨⟨minv, X, Xc, v, hc, hw, hw', hv, ht, hN⟩, minv', X', Xc', hc₂, htab, -, -⟩ := h
-    refine WP.mono (tabSel_ok hc hw hw' hv ht hN) fun t ⟨hc', hT, _, _⟩ => ⟨minv, X, Xc, hc', ?_, hw, hw'⟩
+    refine WP.mono (WindowVector.select_ok (Or.inl rfl) (fun hu tab nib => tabSel_ok hu hw hw' hv tab nib)
+      hc hw' hv ht hN) fun t ⟨hc', hT, _, _⟩ => ⟨minv, X, Xc, hc', ?_, hw, hw'⟩
     have hX : X' = X := hc₂.n.symm.trans hc.n
     rw [hT, ← hX]; exact htab.lt _ hv
-  simp only [seqs]
   refine RelCT.seq (two_post (Ψ := fun (q : XPub × Nat) t => t.gpr .x0 = off q.1.B q.1.o)
     (two_map (fun q : XPub × Nat => q.1.ws) (fun _ _ ⟨minv, _, _, hc, _⟩ => ⟨minv, hc.good, Nat.le_refl _⟩)
       (M.ct (o := aY) (a := aY) (b := Crt.aT) (by unfold MmUse; decide)))

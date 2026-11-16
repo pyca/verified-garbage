@@ -2056,7 +2056,7 @@ theorem isqTop_vp {L LW LS : List Nat} {E : State → Prop} {A AW V : State → 
     rw [u9'.gpr, dpVal, u8'.gpr, dpVal, p7, hv7.r9, VG.Proof.Rsa.Arm.KeyDiv.shl1_val (by omega_using [Wl]),
       VG.Proof.Rsa.Arm.KeyDiv.add_ofNat_assoc, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl,
       sub_ofNat_eq _ (by omega_using [W4]) (by decide)]
-    congr 2; omega_using [W4, hW2]
+    refine congrArg (fun k => P.B + BitVec.ofNat 32 k) ?_; omega_using [W4, hW2]
   have r3_9 : t9.gpr .r3 = t.gpr .r3 := by
     rw [u9'.other _ (by decide), u8'.other _ (by decide), r7'.gpr _ (by decide), e6, e5, e4, g3 _ (by decide)]
   refine wp_dp (op2_reg _ _) fun t10 u10 => ?_
@@ -2065,7 +2065,7 @@ theorem isqTop_vp {L LW LS : List Nat} {E : State → Prop} {A AW V : State → 
   obtain ⟨ht11, hv11⟩ := ht10.reg hv10 (u11.rest (ws := [.r2]) (by simp)) u11.mem
   have va : (t11.gpr .r1).toNat = 2 * isqrt T % 2 ^ 32 := by
     rw [u11.other _ (by decide), u10.gpr, dpVal, r3_9, BitVec.toNat_add, q3]
-    congr 1; omega_using []
+    rw [← Nat.two_mul]
   have vb : (t11.gpr .r2).toNat = isqrt T / 2 ^ 31 := by
     rw [u11.gpr, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, u10.other _ (by decide), r3_9, q3]
   refine ht11.strWo hv11.m (List.mem_cons_of_mem _ (List.mem_cons_of_mem _ hD)) (i := P.W / 2 - 1) (i0 := P.W / 2 - 1) (by omega_using [W4])
@@ -2087,7 +2087,7 @@ theorem isqTop_vp {L LW LS : List Nat} {E : State → Prop} {A AW V : State → 
     rw [u16.gpr, dpVal, u15.gpr, dpVal, p14, hv14.r9, VG.Proof.Rsa.Arm.KeyDiv.shl1_val (by omega_using [Wl]),
       VG.Proof.Rsa.Arm.KeyDiv.add_ofNat_assoc, show (4 : BitVec 32) = BitVec.ofNat 32 4 from rfl,
       sub_ofNat_eq _ (by omega_using [W4]) (by decide)]
-    congr 2; omega_using [W4, hW2]
+    refine congrArg (fun k => P.B + BitVec.ofNat 32 k) ?_; omega_using [W4, hW2]
   have r12_16 : ∀ r, r = .r1 ∨ r = .r2 → t16.gpr r = t11.gpr r := fun r hr => by
     rcases hr with rfl | rfl <;>
       rw [u16.other _ (by decide), u15.other _ (by decide), r14.gpr _ (by decide), e13, e12]

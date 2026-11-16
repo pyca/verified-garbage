@@ -2,6 +2,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyCT
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PrimeLoop
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicKernel
 
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawRoundCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ControlCT
@@ -13,6 +14,7 @@ import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyCT
 meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PrimeLoop
 meta import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicKernel
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawRoundCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.ControlCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeTapeCheck
@@ -53,7 +55,7 @@ theorem iterationCheck_state {len drawBytes : Nat} {p : PrimeIterationPublic} {s
   exact ⟨⟨⟨hs.of_mem hm (hk.mono (by decide)), h.1.2⟩, h.2.1,
     by rw [hm]; exact h.2.2.1, by rw [hm]; exact h.2.2.2.1, h.2.2.2.2⟩, hcf⟩
 
-theorem iterationDraw_state (M : Mont) (K : Kernel) {len drawBytes : Nat}
+theorem iterationDraw_state (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {len drawBytes : Nat}
     {p : PrimeIterationPublic} {s : State} (h : IterationBefore len drawBytes p s)
     (hr : p.draw.used + p.draw.prime.drawBytes ≤ p.draw.prime.rand.length) :
     WP isa (Impl.Dsa.AArch64.Generation.drawRound M.mm K.run len drawBytes) s
@@ -63,7 +65,7 @@ theorem iterationDraw_state (M : Mont) (K : Kernel) {len drawBytes : Nat}
   rw [h.1.2.1, h.1.2.2] at hw
   exact WP.mono hw fun _ ht => ht.1.ready.ws.x0
 
-theorem primeIteration_ct (M : Mont) (K : Kernel) (len drawBytes : Nat)
+theorem primeIteration_ct (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) (len drawBytes : Nat)
     {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht₁ : (taint.check (Taint.ofRegs [.x0])
       (.block (Impl.Dsa.AArch64.Generation.drawCopyArgs len drawBytes)) hc₁).isSome = true)

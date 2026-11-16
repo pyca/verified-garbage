@@ -17,6 +17,10 @@ meta import VerifiedGarbage.Proof.Framework.NativeTaintCore
 import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Block
 meta import VerifiedGarbage.Proof.Framework.Arm.NativeHintData
+import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+meta import VerifiedGarbage.Proof.Framework.Arm.TaintMono
+import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
+meta import VerifiedGarbage.Proof.Ed25519.Arm.ScalarBaseCTSupport
 
 /-! Merged from `Proof.Ed25519.Arm.PointEqualCT`. -/
 
@@ -246,7 +250,7 @@ theorem verifyCombine_ct (b : BitVec 32) (ka r lhs : Spec.Ed25519.Point) :
       verifyCombine (fun s t => EqualCTPre b lhs (Spec.Ed25519.pointAdd r ka) s ∧
         EqualCTPre b lhs (Spec.Ed25519.pointAdd r ka) t) := by
   apply ctBoth
-  · apply ctRegs [.r0] _ (by native_taint_decide)
+  · apply ctRegsS [.r0] _ (by taint_decide_sum [addSum])
     intro s t h reg hr
     rw [List.mem_singleton] at hr
     subst reg

@@ -76,8 +76,8 @@ theorem k1_lpre' (p : KpP) (xb : List Byte) (t : State) (h : K1 p xb t) :
 abbrev KpP.pwG (p : KpP) : PowPub :=
   ⟨⟨p.B, p.Z, inner ((p.k + 7) / 8), (p.k + 7) / 8, (p.k + 7) / 8⟩, p.dp + BitVec.ofNat 64 p.k, p.k, p.xp, p.xl⟩
 
-theorem k13_pre (p : KpP) (xb : List Byte) (t : State) (h : K13 p xb t) : PS0 sG sK sX sXl p.pwG t := by
-  obtain ⟨⟨mi, hM, -⟩, ho, -⟩ := h
+theorem k10_pre (p : KpP) (xb : List Byte) (t : State) (h : K10 p xb t) : PS0 sG sK sX sXl p.pwG t := by
+  obtain ⟨⟨mi, hM⟩, ho, -⟩ := h
   have hb := hM.1
   have hs := hM.2.2.2.1
   have hx : Src t p.B p.Z p.xp xb := hb.srcs (p.xp, xb) (by simp [KpP.D])
@@ -92,24 +92,12 @@ theorem k13_pre (p : KpP) (xb : List Byte) (t : State) (h : K13 p xb t) : PS0 sG
   rw [hb.glen, ho.1] at this
   exact this
 
-/-- y's square-and-multiply's public data. -/
-abbrev KpP.pwY (p : KpP) (lq : Nat) : PowPub :=
-  ⟨⟨p.B, p.Z, inner ((p.k + 7) / 8), (p.k + 7) / 8, (p.k + 7) / 8⟩, p.yp, p.k,
-    off (p.dp + BitVec.ofNat 64 (2 * p.k)) lq, p.k - lq⟩
-
-/-- q's leading zero octets. -/
-abbrev KpP.lq (p : KpP) : Nat := lead ((p.dom.drop (2 * p.k)).take p.k)
-
-theorem k12_q {p : KpP} {xb : List Byte} {s : State} (h : K12 p xb s)
-    (he : isa.eval (.zero .x .x3) s = some false) : p.dl = 3 * p.k :=
-  h.1.choose_spec.1.1.q (by rw [k12_eval h] at he; simpa using he)
-
 /-- The tail. -/
 theorem tail_ct (W : Window) (M : Mont) (S : Selector) :
     RelCT isa (Two fun p s => Ex K9 p s ∧ isa.eval (.zero .x .x9) s = some false)
       (seqs (CheckPrivate.tail W.code S.code M.mm)) fun _ _ => True := by
   rw [tail_eq]
-  refine RelCT.seqs_append (by simp [r2Steps]) (by simp) (RelCT.seq (R := Two (Ex K10))
+  refine RelCT.seqs_append (by simp [r2Steps]) (by simp [fin, pow]) (RelCT.seq (R := Two (Ex K10))
     (ex_post' ((r2_ct M).mono (fun _ _ h => two_bind (fun p s₁ s₂ ⟨⟨xb₁, ⟨mi₁, hI₁, _⟩, _⟩, _⟩
         ⟨⟨xb₂, ⟨mi₂, hI₂, _⟩, _⟩, _⟩ => by
       have hb := hI₁.1
@@ -118,41 +106,12 @@ theorem tail_ct (W : Window) (M : Mont) (S : Selector) :
       obtain ⟨hodd, -⟩ := valid_facts hI₁.2.2.2.2.2 hb.k1
       obtain rfl : mi₁ = mi₂ := xvals_minv (show 1 ≤ (p.D xb₁).w by omega_using [ew, this]) hodd hI₁.2.2.1 hI₂.2.2.1
       exact ⟨_, hI₁.r2pre, hI₂.r2pre⟩) h) fun _ _ h => h) fun p xb s h he => k9_k10 M p xb s h he) ?_)
-  refine seqs_cons_ct (by simp) (RelCT.seq (R := Two (Ex K11)) (ex_post (two_taint [.x0]
-    (pins_x0B KpP.g fun (p : KpP) s (h : Ex K10 p s) => by
-      obtain ⟨_, ⟨_, hM⟩, _⟩ := h; exact hM.2.1.sub.x0) (by taint_decide)) k10_k11) ?_)
-  refine seqs_cons_ct (by simp) (RelCT.seq (R := Two (Ex K12)) (ex_post (two_taint [.x0]
-    (pins_x0B KpP.B fun (p : KpP) s (h : Ex K11 p s) => by
-      obtain ⟨_, ⟨_, hP, _⟩, _⟩ := h; exact hP.2.2.2.2.2.2) (by taint_decide)) k11_k12) ?_)
-  refine seqs_cons_ct (by simp) (RelCT.seq (R := Two (Ex K13)) (two_ite
-    (fun p s₁ s₂ ⟨_, h₁⟩ ⟨_, h₂⟩ => by rw [k12_eval h₁, k12_eval h₂])
-    (ex_post' (two_taint [.x0] (pins_x0B KpP.B fun (p : KpP) s (h : Ex K12 p s ∧ _) => by
-        obtain ⟨⟨_, ⟨_, hP, _⟩, _⟩, _⟩ := h; exact hP.2.2.2.2.2.2) (by taint_decide))
-      fun p xb s h he => k12_k13n p xb s h he) ?_) ?_)
-  · simp only [List.append_assoc, List.cons_append, List.nil_append]
-    refine RelCT.seqs_append (by simp [scan]) (by simp) (RelCT.seq (R := Two (Ex K12s))
-      (ex_post' (two_map (fun p : KpP => (⟨p.B, p.Z, (p.k + 7) / 8, p.dp + BitVec.ofNat 64 (2 * p.k),
-          (p.dom.drop (2 * p.k)).take p.k⟩ : ScanPub))
-        (fun p s ⟨⟨xb, h⟩, he⟩ => h.1.choose_spec.1.scanPre (k12_q h he))
-        (scan_ct (by taint_decide) (by taint_decide))) fun p xb s h he => k12_s p xb s h (k12_q h he)) ?_)
-    refine seqs_cons_ct (by simp [pow]) (RelCT.seq (R := Two (Ex K12e)) (ex_post (two_taint [.x0]
-      (pins_x0B KpP.B fun (p : KpP) s (h : Ex K12s p s) => by
-        obtain ⟨_, ⟨_, hP, _⟩, _⟩ := h; exact hP.2.2.2.2.2.2) (by taint_decide)) s_e) ?_)
-    refine RelCT.seqs_append (by simp [pow]) (by simp [isOne, eqArr]) (RelCT.seq (R := Two (Ex K12p))
-      (ex_post (two_map (fun p : KpP => p.pwY p.lq) (fun p s ⟨xb, h⟩ => e_pre p xb s h)
-        (pow_ct W M S (loadArr_ct (by decide) (by taint_decide) (by taint_decide))
-          (expLoop_ct W M S (by taint_decide)) (by taint_decide) (by taint_decide) (by taint_decide))) (e_p W M S)) ?_)
-    exact ex_post (two_map KpP.ws (fun p s ⟨xb, ⟨mi, hM, _⟩, _⟩ => hM.inn.goodW1.1)
-      (eqArr_ct (by decide) (by decide) (by taint_decide))) p_k13
-  rw [seqs_one]
-  refine two_ite (fun p s₁ s₂ ⟨_, h₁⟩ ⟨_, h₂⟩ => by rw [k13_eval h₁, k13_eval h₂]; rfl)
-    (two_taint [] (pins_nil _) (by taint_decide)) ?_
   simp only [fin, List.append_assoc]
   refine RelCT.seqs_append (by simp [pow]) (by simp [Crt.loadArr]) (RelCT.seq (R := Two (Ex K14))
-    (ex_post' (two_map KpP.pwG (fun p s ⟨⟨xb, h⟩, _⟩ => k13_pre p xb s h)
+    (ex_post (two_map KpP.pwG (fun p s ⟨xb, h⟩ => k10_pre p xb s h)
       (pow_ct W M S (loadArr_ct (by decide) (by taint_decide) (by taint_decide))
         (expLoop_ct W M S (by taint_decide)) (by taint_decide) (by taint_decide) (by taint_decide)))
-      fun p xb s h he => k13_k14 W M S p xb s h he) ?_)
+      (k10_k14 W M S)) ?_)
   refine RelCT.seqs_append (by simp [Crt.loadArr]) (by simp [eqArr]) (RelCT.seq (R := Two (Ex K15))
     (ex_post (two_map (fun p : KpP => (⟨⟨p.B, p.Z, inner ((p.k + 7) / 8), (p.k + 7) / 8, (p.k + 7) / 8⟩, p.yp,
         p.yb.length⟩ : BPub)) (fun p s ⟨xb, ⟨mi, hM, _⟩, ho, _⟩ => hM.inn.lpreY ho)

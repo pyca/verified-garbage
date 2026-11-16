@@ -215,8 +215,8 @@ def omA (c : Callees) : Prog isa :=
       (.block [imm .x27 1, .sub .x .x27 .x27 .x10]))))))))
 
 /-- The rest: the branch on the tag, and the result. -/
-def omB : Prog isa :=
-  .seq (.ite (.zero .x .x27) (.block []) oneCrypt) (.block [mov .x0 .x27])
+def omB (c : Callees) : Prog isa :=
+  .seq (.ite (.zero .x .x27) (.block []) (oneCrypt c)) (.block [mov .x0 .x27])
 
 theorem Exec.seq_assoc {a b c : Prog isa} {s s' : State} {t : List Leak} (h : Exec isa (.seq a (.seq b c)) s t s') :
     Exec isa (.seq (.seq a b) c) s t s' := by
@@ -254,7 +254,7 @@ theorem PEq.rel {a b : Prog isa} (h : PEq a b) {P Q : State → State → Prop} 
     RelCT isa P a Q := fun _ _ _ _ _ _ hp e₁ e₂ => r _ _ _ _ _ _ hp ((h _ _ _).mp e₁) ((h _ _ _).mp e₂)
 
 /-- `openMain` is `omA` then `omB`. -/
-theorem openMain_split (c : Callees) : PEq (.seq (omA c) omB) (openMain c) := by
+theorem openMain_split (c : Callees) : PEq (.seq (omA c) (omB c)) (openMain c) := by
   unfold omA omB openMain
   refine (PEq.assoc _ _ _).trans (PEq.seq_right _ ?_)
   refine (PEq.assoc _ _ _).trans (PEq.seq_right _ ?_)
@@ -460,11 +460,11 @@ theorem oc_in {Ctx W SP D Np A : Addr} {nl al n tl : Nat}
   ⟨mo.env.of_regs h.2.2.2, fun _ _ => rfl, h.1, h.2.1, h.2.2.1,
     mo.data.of_eq h.2.2.2.rd h.2.2.2.wr⟩
 
-theorem omIte_ok {Ctx W SP D Np A : Addr} {nl al n tl : Nat}
+theorem omIte_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {nl al n tl : Nat}
     (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP) {fr : List Region} {s s₇ : State}
     (mo : MidO fr Ctx W SP D Np A nl al n tl s s₇) (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r)
     (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r) :
-    WP isa (.ite (.zero .x .x27) (.block []) oneCrypt) s₇ fun s₈ =>
+    WP isa (.ite (.zero .x .x27) (.block []) (oneCrypt v.callees)) s₇ fun s₈ =>
       Env Ctx (W + BitVec.ofNat 64 16) W SP s₈ ∧ s₈.gpr .x27 = s₇.gpr .x27 ∧
       Frame (crFrame (W + BitVec.ofNat 64 16) SP D n) s₇.mem s₈.mem ∧
       bytesAt s₈.mem D n = if decide ((Spec.Gcm.fullTag (ciphOf s.mem Ctx)
@@ -493,18 +493,18 @@ theorem omIte_ok {Ctx W SP D Np A : Addr} {nl al n tl : Nat}
       rw [r₈.mem, mo.cb]
     have hc₈ : ciphOf s₈.mem Ctx = ciphOf s.mem Ctx := ciph_frame F₈ dC
     have hD₈ : bytesAt s₈.mem D n = bytesAt s.mem D n := bytesAt_frame F₈ dD (by omega_arith)
-    refine WP.mono (cryptAl_ok L (oc_in mo h₈) rfl
+    refine WP.mono (cryptAl_ok L v (oc_in mo h₈) rfl
       (icb := inc32 (Spec.Gcm.j0 (blockAt s.mem (Ctx + BitVec.ofNat 64 240)) (bytesAt s.mem Np nl))))
       fun s₉ h₉ => ⟨h₉.env, ?_, by rw [← r₈.mem]; exact h₉.frame, ?_⟩
     · rw [h₉.kept .x27 (by decide), r₈.others _ (by decide)]
     · rw [h₉.out (Proof.Gcm.ctr_zero _ _ _ _ hcb₈), hc₈, hD₈, Proof.Gcm.gctr_eq]
       rfl
 
-theorem omB_ok {Ctx W SP D Np A : Addr} {nl al n tl : Nat}
+theorem omB_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {nl al n tl : Nat}
     (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP) {fr : List Region} {s s₇ : State}
     (mo : MidO fr Ctx W SP D Np A nl al n tl s s₇) (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r)
     (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r) :
-    WP isa omB s₇ fun s' =>
+    WP isa (omB v.callees) s₇ fun s' =>
       let ciph := ciphOf s.mem Ctx
       let H := blockAt s.mem (Ctx + BitVec.ofNat 64 240)
       let T := Spec.Gcm.fullTag ciph H (bytesAt s.mem Np nl) (bytesAt s.mem A al) (bytesAt s.mem D n)
@@ -514,7 +514,7 @@ theorem omB_ok {Ctx W SP D Np A : Addr} {nl al n tl : Nat}
       bytesAt s'.mem D n = if b then gctr ciph (inc32 (Spec.Gcm.j0 H (bytesAt s.mem Np nl))) (bytesAt s.mem D n)
         else bytesAt s.mem D n := by
   unfold omB
-  refine WP.seq (WP.mono (omIte_ok L mo dD dC) fun s₈ ⟨he₈, x27₈, f₈, d₈⟩ => ?_)
+  refine WP.seq (WP.mono (omIte_ok v L mo dD dC) fun s₈ ⟨he₈, x27₈, f₈, d₈⟩ => ?_)
   refine WP.run ⟨_, by arun [], rfl⟩ fun s' hs' => ?_
   subst hs'
   refine ⟨he₈.keep (fun r hr => by
@@ -546,7 +546,7 @@ theorem openMain_ok (v : GcmImpl) {Ctx W SP D Np A : Addr} {nl al n tl : Nat}
       bytesAt s'.mem D n = if b then gctr ciph (inc32 (Spec.Gcm.j0 H (bytesAt s.mem Np nl))) (bytesAt s.mem D n)
         else bytesAt s.mem D n :=
   (openMain_split v.callees).symm.wp (WP.seq (c₁ := omA v.callees) (WP.mono (openMainA_ok v L he h23 h24 h26 h27 hnon haad hdat ddW dcW
-    sA sL sD sN sT hok) fun _ mo => omB_ok L mo (keep_om ddW hdat.stk.symm) (keep_om dcW L.kc.symm)))
+    sA sL sD sN sT hok) fun _ mo => omB_ok v L mo (keep_om ddW hdat.stk.symm) (keep_om dcW L.kc.symm)))
 
 end VG.Proof.Sm4Gcm.AArch64
 

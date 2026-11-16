@@ -83,16 +83,13 @@ open VG.Proof.P256.X86 (hasLaw)
 
 def artifacts : List Artifact := [
   Spec.EcKey.P256.inst.compressPublicKeyApi.artifact X86.target {
-    stack := 28
     code := Proof.EcKey.Compressed.X86.P256.code
     verified := Proof.EcKey.Compressed.X86.P256.verified hasLaw.inv },
   Spec.EcKey.P256.inst.decompressPublicKeyApi.artifact X86.target {
-    stack := 28
     code := Proof.EcKey.Compressed.X86.P256Decompress.code
     verified := Proof.EcKey.Compressed.X86.P256Decompress.verified hasLaw.law hasLaw.inv },
   Spec.EcKey.P256.publicKeyApi.artifact X86.target {
     code := Proof.EcKey.X86.pkCombCode
-    stack := 20
     verified := Proof.EcKey.X86.pkComb_verified hasLaw.law hasLaw.inv }]
 
 end VG.Artifacts.EcP256.X86

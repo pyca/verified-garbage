@@ -8,13 +8,14 @@ import VerifiedGarbage.Proof.Framework.Block
 /-! # The complete paired matrix sampler -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 
 theorem pair_iff {w16 : Bool} (L : KemLay) (kg : Bool) (a : Nat) (s : State) (Q : State→Prop) :
-    WP isa (Impl.MlKem.AArch64.Paired.pair L kg a w16) s Q ↔
-    WP isa (.seq (beginCode (if kg then KG.SB else KEM.SB) (if kg then KG.SS else KEM.SS)
+    WP isa (Impl.MlKem.AArch64.Paired.pair sha3 L kg a w16) s Q ↔
+    WP isa (.seq (beginCode sha3 (if kg then KG.SB else KEM.SB) (if kg then KG.SS else KEM.SS)
       a (a+1) L.k ((if kg then KG.AH else KEM.AH)+1024*a)
-      ((if kg then KG.AH else KEM.AH)+1024*(a+1)) w16) (finishCode w16)) s Q := by
+      ((if kg then KG.AH else KEM.AH)+1024*(a+1)) w16) (finishCode sha3 w16)) s Q := by
   simp only [Impl.MlKem.AArch64.Paired.pair,beginCode,initialCode,finishCode,seqs]
   simp only [WP.seq_iff (M := isa)]
 
@@ -27,11 +28,11 @@ theorem pairCode_ok {w16 : Bool} {s : State} {p seed outA outB table : Addr} {sb
     (hsep : (Region.mk seed 32).Disjoint ⟨p,2048⟩)
     (ctx : Context p outA outB table s) (ht : s.syms "VG_MLKEM_REJ_SHUFFLE"=table)
     (hb : s.gpr .x24=0 ∨ s.gpr .x24=1) :
-    WP isa (.seq (beginCode sb ss a b k oa ob w16) (finishCode w16)) s
+    WP isa (.seq (beginCode sha3 sb ss a b k oa ob w16) (finishCode sha3 w16)) s
       (PairPostW w16 (seedState s.mem seed a k) (seedState s.mem seed b k) p outA outB s) := by
-  refine WP.seq (WP.mono_syms (begin_ok hss hsb h8 hoa hob hp hseed houtA houtB hin hsep ctx ht)
+  refine WP.seq (WP.mono_syms (begin_ok (sha3 := sha3) hss hsb h8 hoa hob hp hseed houtA houtB hin hsep ctx ht)
     fun t h sy=>?_)
-  exact finish_ok (h.keep.mono (by decide)) h.frame h.saved h.progress (by rw [sy]; exact ht)
+  exact finish_ok (sha3 := sha3) (h.keep.mono (by decide)) h.frame h.saved h.progress (by rw [sy]; exact ht)
     h.flag (h.keep.get .x24 (by decide)) hb
 
 end VG.Proof.MlKem.AArch64.Paired

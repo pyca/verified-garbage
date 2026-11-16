@@ -1,7 +1,9 @@
 module
 
+import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP384r1Literals
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.BrainpoolP384r1.Joint.Main
 import VerifiedGarbage.Proof.Ecdsa.Verify.AArch64.JacPrefix
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.BrainpoolP384r1Literals
 meta import VerifiedGarbage.Impl.Ecdsa.Verify.BrainpoolP384r1.AArch64.Joint
 import VerifiedGarbage.Proof.Framework.Block
 import VerifiedGarbage.Proof.Framework.Taint
@@ -36,6 +38,14 @@ def beforeCode : Prog isa :=
   .seq (Impl.Ecdsa.Verify.AArch64.Cfg.uv cfg) (.block [])
 
 def afterCode : Prog isa := Impl.Ecdsa.Verify.AArch64.Cfg.tail cfg
+
+/-- The literals of `BrainpoolP384r1Literals`, under the terms this code has: `cfg`
+is an abbreviation, and `materialize_code` finds a literal by its term. -/
+private noncomputable abbrev validateCode.lit := BrainpoolP384r1Literals.validate.lit
+private theorem validateCode.lit_eq : Impl.Ecdh.AArch64.Cfg.validate cfg = validateCode.lit :=
+  BrainpoolP384r1Literals.validate.lit_eq
+private noncomputable abbrev nPowCode.lit := BrainpoolP384r1Literals.nPow.lit
+private theorem nPowCode.lit_eq : cfg.nPow = nPowCode.lit := BrainpoolP384r1Literals.nPow.lit_eq
 
 materialize_code beforeCode
 materialize_code afterCode

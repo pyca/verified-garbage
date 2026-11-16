@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
+import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
 public import VerifiedGarbage.Proof.Bignum.AArch64.CrtBuild
@@ -17,6 +19,8 @@ import Mathlib.Tactic.Finiteness.Attr
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorCT
+meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtWindowVectorBody
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtCTGPow
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtExp
 meta import VerifiedGarbage.Proof.Bignum.AArch64.CrtBuild
@@ -58,12 +62,6 @@ namespace VG.Proof.Bignum.AArch64
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Impl.Bignum.Public VG.Impl.Rsa.AArch64.Crt
 open VG.Proof.Bignum
 open VG.Proof.MlKem.AArch64 (Keep)
-
-/-- A piece whose only public input is `x0`. -/
-theorem x0_ct {α : Type} {Φ : α → State → Prop} (f : α → Addr) (h : ∀ a s, Φ a s → s.gpr .x0 = f a)
-    {c : Prog isa} {hc : VG.Taint.Hint VG.AArch64.Taint.T}
-    (hT : (taint.check (Taint.ofRegs [.x0]) c hc).isSome = true) : RelCT isa (Two Φ) c fun _ _ => True :=
-  two_taint [.x0] (pins_x0B f h) hT
 
 /-- The prime's workspace of `p` and its context, as the steps' bounds need it. -/
 def XCtx (p : XPub) (s : State) : Prop :=
@@ -227,7 +225,7 @@ theorem crtWin_ct (M : Mont) :
     RelCT isa (Two fun (q : XPub × Nat) s => q.2 < 2 ∧ WinI q.1 q.2 s) (seqs (expWin M.mm))
       fun _ _ => True := by
   rw [expWin_eq]
-  refine RelCT.seqs_append (by simp) (by simp [tabSelect_eq]) ?_
+  refine RelCT.seqs_append (by simp) (by simp) ?_
   have sq : RelCT isa (Two fun (q : XPub × Nat) s => WinQ q.1 s) (M.mm aY aY aY)
       (Two fun (q : XPub × Nat) s => WinQ q.1 s) :=
     two_post (two_map (fun q : XPub × Nat => q.1.ws) (fun _ _ h => h.goodW) (M.ct (by unfold MmUse; decide)))
@@ -246,11 +244,13 @@ theorem crtWin_ct (M : Mont) :
   · simp only [seqs]
     exact RelCT.seq sq0 (RelCT.seq sq (RelCT.seq sq (RelCT.seq sq winMid_ct)))
   -- The selection, `Y := Y T` and the count.
-  refine RelCT.seqs_append (by simp [tabSelect_eq]) (by simp) ?_
+  refine RelCT.seqs_append (by simp) (by simp) ?_
   refine RelCT.seq (two_post (Ψ := fun (q : XPub × Nat) s => WinT q.1 s)
-    (two_map (fun q : XPub × Nat => q.1) (fun _ _ h => h.1) tabSel_ct) fun q s h => ?_) ?_
+    (two_map (fun q : XPub × Nat => q.1) (fun _ _ h => h.1)
+      (WindowVector.select_ct (Or.inl rfl) tabSel_ct)) fun q s h => ?_) ?_
   · obtain ⟨⟨minv, X, Xc, v, hc, hw, hw', hv, ht, hN⟩, minv', X', Xc', hc₂, htab, -, -⟩ := h
-    refine WP.mono (tabSel_ok hc hw hw' hv ht hN) fun t ⟨hc', hT, _, _⟩ => ⟨minv, X, Xc, hc', ?_, hw, hw'⟩
+    refine WP.mono (WindowVector.select_ok (Or.inl rfl) (fun hu tab nib => tabSel_ok hu hw hw' hv tab nib)
+      hc hw' hv ht hN) fun t ⟨hc', hT, _, _⟩ => ⟨minv, X, Xc, hc', ?_, hw, hw'⟩
     have hX : X' = X := hc₂.n.symm.trans hc.n
     rw [hT, ← hX]; exact htab.lt _ hv
   simp only [seqs]

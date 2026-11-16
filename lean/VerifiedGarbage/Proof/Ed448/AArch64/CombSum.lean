@@ -6,6 +6,8 @@ meta import VerifiedGarbage.Impl.Ed448.AArch64.CombBase
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSymMono
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
+meta import VerifiedGarbage.Proof.X448.AArch64.Fast.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSplit
@@ -17,14 +19,17 @@ The comb (`vg_ed448_r56_comb_base`) is called by the base-point multiplications 
 X448 and Ed448 and by the verifier's `[S]B`. `combSum` analyses it once, without
 what the analysis does not read, for all of them (`taint_decide_sum [combSum]`); `x20`,
 which the comb does not write, stays as public as it was. The comb's step is built once, as a literal, which
-the summary and the check of the step's stores read.
+the summary and the check of the step's stores read: its field operations are
+the templates of `Proof/X448/AArch64/Fast/Lit.lean`, and its block, the
+negations and additions appended one after the other, is flattened
+(`materialize_flat_code`).
 -/
 
 @[expose] public section
 
 namespace VG
 
-materialize_code Impl.X448.AArch64.Base.stepR
+materialize_flat_code Impl.X448.AArch64.Base.stepR
 
 end VG
 

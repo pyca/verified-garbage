@@ -122,7 +122,6 @@ theorem updateState_gpr (rate : Nat) (s : State) (r : Reg) :
 @[simp] theorem updateState_rd (rate : Nat) (s : State) : (updateState rate s).rd = s.rd := rfl
 @[simp] theorem updateState_wr (rate : Nat) (s : State) : (updateState rate s).wr = s.wr := rfl
 @[simp] theorem updateState_sp (rate : Nat) (s : State) : (updateState rate s).sp = s.sp := rfl
-@[simp] theorem updateState_v (rate : Nat) (s : State) : (updateState rate s).v = s.v := rfl
 
 theorem preserved_ne : ∀ r ∈ preserved, r ≠ .x1 ∧ r ≠ .x2 ∧ r ≠ .x3 ∧ r ≠ .x4 ∧ r ≠ .x5 := by decide
 
@@ -226,7 +225,6 @@ theorem xofPadState_gpr (rate : Nat) (s : State) (r : Reg) :
 @[simp] theorem xofPadState_rd (rate : Nat) (s : State) : (xofPadState rate s).rd = s.rd := rfl
 @[simp] theorem xofPadState_wr (rate : Nat) (s : State) : (xofPadState rate s).wr = s.wr := rfl
 @[simp] theorem xofPadState_sp (rate : Nat) (s : State) : (xofPadState rate s).sp = s.sp := rfl
-@[simp] theorem xofPadState_v (rate : Nat) (s : State) : (xofPadState rate s).v = s.v := rfl
 
 theorem pad_sat : ∃ s, Proof.Sha3.padAArch64.pre s := by
   implies_sat [Proof.Sha3.padAArch64, rates] [Stream.Pad.sat] using Stream.Pad.sat

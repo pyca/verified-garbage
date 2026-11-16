@@ -51,7 +51,6 @@ open VG.Proof.BrainpoolP384r1.X86 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.BrainpoolP384r1.exchangeApi.artifact X86.target {
     code := Impl.Ecdh.X86.exchangeBrainpoolP384r1
-    stack := 28
     verified := Proof.Ecdh.X86.BrainpoolP384r1.ecdh_verified hasLaw.law }]
 
 end VG.Artifacts.EcdhBrainpoolP384r1.X86

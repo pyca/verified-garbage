@@ -1027,7 +1027,7 @@ analysis, for checks with summaries (`taint_summary`, `taint_decide_sum`). -/
 def taintS : VG.Taint isa where
   T := Taint.T
   Agree := Taint.Agree
-  step := Taint.stepKD
+  step := Taint.stepKeep
   step_sound := taint.step_sound
   condPub τ _ := τ.flags
   cond_sound := Taint.cond_sound
@@ -1050,7 +1050,7 @@ instance : VG.Taint.LeFrame taintS where
   le_trans h₁ h₂ := leS_iff.mpr ((leS_iff.mp h₁).trans (leS_iff.mp h₂))
   le_right h := leS_iff.mpr (leS_iff.mp h).right
   step {τ σ τ'} i h hs := by
-    have hs : stepKD τ i = some τ' := hs
+    have hs : stepKD τ i = some τ' := (taint_step τ i).symm.trans hs
     rcases stepKD_spec τ i with ⟨h', -⟩ | ⟨a, b, h₁, h₂, hab⟩
     · rw [h'] at hs; cases hs
     rw [h₁] at hs; cases hs
@@ -1058,7 +1058,7 @@ instance : VG.Taint.LeFrame taintS where
     rcases stepKD_spec σ i with ⟨-, h'⟩ | ⟨c, d, h₅, h₆, hcd⟩
     · rw [h'] at h₃; cases h₃
     rw [h₆] at h₃; cases h₃
-    exact ⟨c, h₅, leS_iff.mpr (h₄.sim hab hcd)⟩
+    exact ⟨c, (taint_step σ i).trans h₅, leS_iff.mpr (h₄.sim hab hcd)⟩
   condPub _ h hc := (leS_iff.mp h).flags hc
   meet h₁ h₂ := leS_iff.mpr ((leS_iff.mp h₁).meetM (leS_iff.mp h₂).toLeW)
   call h hs := by
@@ -1088,7 +1088,7 @@ instance : VG.Taint.LeFrame taintS where
   keeps_bot _ := rfl
   keepsCall_bot := rfl
   step_keeps {F Φ σ σ'} i hk hΦF hΦ hs := by
-    have hs : stepKD σ i = some σ' := hs
+    have hs : stepKD σ i = some σ' := (taint_step σ i).symm.trans hs
     rcases stepKD_spec σ i with ⟨h', -⟩ | ⟨a, b, h₁, h₂, hab⟩
     · rw [h'] at hs; cases hs
     rw [h₁] at hs; cases hs

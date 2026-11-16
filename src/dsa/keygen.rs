@@ -17,13 +17,11 @@ use super::{Error, PrivateKey, PublicKey, Secret};
 use crate::arch::dispatch::dsa::{vg_dsa_derive_key_auto, vg_dsa_generate_key_auto};
 use crate::entropy::{self, Step, Stop};
 
-// On x86, give one call of the verified sampler eight draws, so that a
-// common rejection does not repeat its check of the domain. Eight draws use
+// Give one call of the verified sampler eight draws, so that a common
+// rejection (up to half of all draws, by `q`'s leading bits) does not repeat
+// the call, whose check of the domain is an exponentiation. Eight draws use
 // at most 256 random bytes; the sampler still enforces its 128-draw limit.
-#[cfg(target_arch = "x86")]
 const DRAW_BATCH: usize = 8;
-#[cfg(not(target_arch = "x86"))]
-const DRAW_BATCH: usize = 1;
 
 impl PrivateKey {
     /// Import big-endian `p`, `q`, `g` and `x`, deriving `y = g^x mod p`.

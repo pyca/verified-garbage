@@ -25,12 +25,37 @@ open VG.Proof.MlKem.AArch64 (Keep)
 def coreRanges (w : Nat) : List (Nat × Nat) :=
   tabRanges w ++ VG.Proof.RsaKeyGen.AArch64.expRanges w
 
-private theorem tab_below_exp (w : Nat) :
+theorem tab_below_exp (w : Nat) :
     ∀ r ∈ tabRanges w, r.1 + r.2 ≤ slot w aE := by
   intro r hr
   simp only [tabRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   all_goals simp only [slot, hdrBytes, aT0, aE, aAcc, aTmp, aY, kV, kT0, kBits, kT2, sCnt, sFn]; omega_arith
+
+theorem coreW_ok {win : List (Prog isa)} (hwin : WinOK win) (M : Mont) {s : State} {B : Addr} {Z w c bm b : Nat}
+    (hw : w ≤ 128) (hEZ : slot w aE + 8 * (w + 2) ≤ Z)
+    (hc : MrCtx s B Z w c bm) (hE : ECtx s.mem B w c)
+    (hodd : c % 2 = 1) (hc3 : 3 ≤ c) (hfit : mrE c < 16 ^ (16 * w))
+    (hX : wv s.mem B (slot w aXm) w = Spec.Rsa.powMod b 1 c * 2 ^ (64 * w) % c) :
+    WP isa (seqs (preparedRoundW win M.mm)) s fun t =>
+      MrCtx t B Z w c bm ∧ ECtx t.mem B w c ∧
+      word t.mem B (8 * kFlag) = mask (Proof.MillerRabin.Round.round c b) ∧
+      Frm B (coreRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
+  have hc1 : 1 < c := by omega_arith
+  have hEn : B.toNat + slot w aE + 8 * (w + 1) ≤ 2 ^ 64 := by
+    have := hc.ws.scr.nowrap
+    omega_arith
+  unfold preparedRoundW
+  refine wp_seqs_append (by simp [tabBuild]) (by simp [mrExpLoopW])
+    (WP.mono (tabBuild_ok M hw hEZ hc hodd hc1 hX) fun u ⟨hu, ht, hy, hf, hk⟩ => ?_)
+  have hEu : ECtx u.mem B w c := hE.of_frm hf
+    (fun r hr => Or.inr (tab_below_exp w r hr)) hEn
+  refine WP.mono (mrExpLoopW_ok M hwin hw hEZ hu ht hEu hodd hc1 hy) fun t ⟨hc', hE', hp, hf', hk'⟩ =>
+    ⟨hc', hE', ?_, ?_, (hk.trans hk').mono (by decide)⟩
+  · rw [hp, VG.Proof.Ffdh.window_round_eq b hc3 hodd hfit, ← VG.Proof.Ffdh.rsa_round_eq b hc3 hodd]
+    rfl
+  · exact (hf.mono (fun r hr => List.mem_append_left _ hr)).trans
+      (hf'.mono (fun r hr => List.mem_append_right _ hr))
 
 theorem core_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b : Nat}
     (hw : w ≤ 128) (hEZ : slot w aE + 8 * (w + 2) ≤ Z)
@@ -40,22 +65,8 @@ theorem core_ok (M : Mont) {s : State} {B : Addr} {Z w c bm b : Nat}
     WP isa (seqs (preparedRound M.mm)) s fun t =>
       MrCtx t B Z w c bm ∧ ECtx t.mem B w c ∧
       word t.mem B (8 * kFlag) = mask (Proof.MillerRabin.Round.round c b) ∧
-      Frm B (coreRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
-  have hc1 : 1 < c := by omega_arith
-  have hEn : B.toNat + slot w aE + 8 * (w + 1) ≤ 2 ^ 64 := by
-    have := hc.ws.scr.nowrap
-    omega_arith
-  unfold preparedRound
-  refine wp_seqs_append (by simp [tabBuild]) (by simp [mrExpLoop])
-    (WP.mono (tabBuild_ok M hw hEZ hc hodd hc1 hX) fun u ⟨hu, ht, hy, hf, hk⟩ => ?_)
-  have hEu : ECtx u.mem B w c := hE.of_frm hf
-    (fun r hr => Or.inr (tab_below_exp w r hr)) hEn
-  refine WP.mono (mrExpLoop_ok M hw hEZ hu ht hEu hodd hc1 hy) fun t ⟨hc', hE', hp, hf', hk'⟩ =>
-    ⟨hc', hE', ?_, ?_, (hk.trans hk').mono (by decide)⟩
-  · rw [hp, VG.Proof.Ffdh.window_round_eq b hc3 hodd hfit, ← VG.Proof.Ffdh.rsa_round_eq b hc3 hodd]
-    rfl
-  · exact (hf.mono (fun r hr => List.mem_append_left _ hr)).trans
-      (hf'.mono (fun r hr => List.mem_append_right _ hr))
+      Frm B (coreRanges w) s.mem t.mem ∧ Keep mmRegs s t :=
+  coreW_ok (mrWin_winOK M) M hw hEZ hc hE hodd hc3 hfit hX
 
 /-- A prepared input, with only the layout and limb count shared by runs. -/
 def CorePre (L : VG.Proof.Bignum.AArch64.Ws) (s : State) : Prop :=
@@ -66,8 +77,8 @@ def CorePre (L : VG.Proof.Bignum.AArch64.Ws) (s : State) : Prop :=
 
 theorem core_ct (M : Mont) :
     RelCT isa (Two CorePre) (seqs (preparedRound M.mm)) fun _ _ => True := by
-  unfold preparedRound
-  refine ct_app' (by simp [tabBuild]) (by simp [mrExpLoop]) (Ψ := E0) ?_ (mrExpLoop_ct M)
+  unfold preparedRound preparedRoundW
+  refine ct_app' (by simp [tabBuild]) (by simp [mrExpLoopW]) (Ψ := E0) ?_ (mrExpLoop_ct M)
   refine two_post ((tabBuild_ct M).mono (fun _ _ h => two_mono (fun _ _ h => ?_) h) (fun _ _ _ => trivial)) ?_
   · obtain ⟨h4, hw, hEZ, c, bm, b, hc, hE, hodd, hc1, hX⟩ := h
     exact ⟨h4, hw, hEZ, c, bm, b, hc, hodd, hc1, hX⟩

@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.MlDsa.Round.Mem
 
 /-!
-# ML-DSA on AArch64: symbolic execution, and reduction modulo `q`
+# ML-DSA on AArch64: symbolic execution
 
 It uses the weakest preconditions and loops of ML-KEM's AArch64 proofs
 (`Keep`, `count_loop`, `Proof/MlKem/AArch64/Wp.lean`), which are about the
@@ -29,10 +29,6 @@ ISA, not ML-KEM.
 * `WP.keep`: the registers no instruction of the code writes are kept
   (`writesOnly`, checked by evaluation).
 * `wp_countdown`: a loop on `cbnz` of a counter that its body decrements.
-* `csub` leaves `csubX v` of `v`, which is `v mod q` for `v < 2q`
-  (`csubX_toNat`); `reduce` leaves `redX x` of any `x`, which is `x mod q`
-  for `x < q²` (`redX_toNat`): a Barrett reduction with 64-bit products
-  (`barrett64_bounds`), then `csub`.
 -/
 
 @[expose] public section
@@ -140,76 +136,8 @@ theorem wp_countdown {body : Prog isa} {cnt : Reg} {N : Nat} (hN : N < 2 ^ 64) (
 /-- `q`, as a 64-bit value. -/
 abbrev Qv : BitVec 64 := BitVec.ofNat 64 8380417
 
-/-- What `csub` leaves of `v`, with `q` in the register of `q`. -/
-def csubX (v : BitVec 64) : BitVec 64 := v - Qv + ((v - Qv) >>> 63) * Qv
-
-theorem csubX_toNat {v : BitVec 64} (h : v.toNat < 2 * q) : (csubX v).toNat = condSub v.toNat := by
-  unfold csubX condSub
-  rw [q_eq] at *
-  rw [BitVec.toNat_add, BitVec.toNat_mul, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow,
-    BitVec.toNat_sub]
-  simp only [BitVec.toNat_ofNat]
-  split <;> omega_arith
-
-/-- The low word of a 64-bit value less than `2³²`. -/
-theorem toNat_setWidth32 {v : BitVec 64} (h : v.toNat < 2 ^ 32) : (v.setWidth 32).toNat = v.toNat := by
-  rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt h]
-
 theorem toNat_setWidth64 (v : BitVec 32) : (v.setWidth 64).toNat = v.toNat := by
   rw [BitVec.toNat_setWidth, Nat.mod_eq_of_lt (by have := v.isLt; omega_using [])]
-
-/-! ## `reduce` -/
-
-/-- `M`, as a 64-bit value. -/
-abbrev Mv : BitVec 64 := BitVec.ofNat 64 550293143936
-
-theorem Mv_toNat : Mv.toNat = 550293143936 := rfl
-
-theorem negQ_toNat : negQ.toNat = 2 ^ 64 - 8380417 := rfl
-
-/-- The quotient estimate of `reduce`: `⌊⌊x / 2²²⌋ · M / 2⁴⁰⌋`. -/
-def barrett64 (x : Nat) : Nat := x / 2 ^ 22 * 550293143936 / 2 ^ 40
-
-/-- For `x < q²`, the estimate is `⌊x / q⌋` or one less. -/
-theorem barrett64_bounds {x : Nat} (hx : x < q * q) :
-    barrett64 x * q ≤ x ∧ x < barrett64 x * q + 2 * q := by
-  unfold barrett64
-  rw [q_eq] at *
-  constructor <;> omega_arith
-
-/-- What `reduce` leaves of `x`. -/
-def redX (x : BitVec 64) : BitVec 64 := csubX (x + (((x >>> 22) * Mv) >>> 40) * negQ)
-
-/-- The arithmetic of `reduce`, on natural numbers. -/
-theorem barrett64_nat {x : Nat} (hx : x < q * q) :
-    x / 2 ^ 22 * 550293143936 < 2 ^ 64 ∧
-      (x + barrett64 x * (2 ^ 64 - 8380417)) % 2 ^ 64 = x - barrett64 x * q ∧
-      x - barrett64 x * q < 2 * q ∧ (x - barrett64 x * q) % q = x % q := by
-  have hb := barrett64_bounds hx
-  refine ⟨?_, ?_, by omega_using [hb], by rw [Nat.mul_comm, Nat.sub_mul_mod (by rw [Nat.mul_comm]; exact hb.1)]⟩
-  · rw [q_eq] at hx; omega_using [hx]
-  rw [q_eq] at hb hx ⊢
-  generalize barrett64 x = B at hb
-  rw [show x + B * (2 ^ 64 - 8380417) = (x - B * 8380417) + B * 2 ^ 64 by omega_using [hb],
-    Nat.add_mul_mod_self_right, Nat.mod_eq_of_lt (by omega_using [hx])]
-
-theorem redX_toNat {x : BitVec 64} (hx : x.toNat < q * q) : (redX x).toNat = x.toNat % q := by
-  obtain ⟨hm, h2, hl, h4⟩ := barrett64_nat hx
-  have e1 : (((x >>> 22) * Mv) >>> 40).toNat = barrett64 x.toNat := by
-    rw [BitVec.toNat_ushiftRight, BitVec.toNat_mul, BitVec.toNat_ushiftRight, Mv_toNat,
-      Nat.shiftRight_eq_div_pow, Nat.shiftRight_eq_div_pow, Nat.mod_eq_of_lt hm]
-    rfl
-  have e2 : (x + (((x >>> 22) * Mv) >>> 40) * negQ).toNat = x.toNat - barrett64 x.toNat * q := by
-    rw [BitVec.toNat_add, BitVec.toNat_mul, e1, negQ_toNat,
-      Nat.add_mod_mod, h2]
-  unfold redX
-  rw [csubX_toNat (by rw [e2]; exact hl), e2, condSub_eq hl, h4]
-
-/-- `redX x` stored as a word: `x mod q`. -/
-theorem redX32 {x : BitVec 64} (hx : x.toNat < q * q) : ((redX x).setWidth 32).toNat = x.toNat % q := by
-  have h := redX_toNat hx
-  have : x.toNat % q < q := Nat.mod_lt _ (by decide)
-  rw [toNat_setWidth32 (by rw [h]; exact Nat.lt_of_lt_of_le this (by decide)), h]
 
 /-! ## Constants -/
 
@@ -229,23 +157,12 @@ theorem movW_ok (d : Reg) (v : BitVec 32) (s : State) :
   arun
   exact congrArg (BitVec.setWidth 64) (movz_movk v)
 
-/-- `movImm d v`: `d ← v`. -/
-theorem movImm_ok (d : Reg) (v : BitVec 64) (s : State) :
-    WP isa (.block (Impl.MlKem.AArch64.movImm d v)) s fun s' => (s'.gpr d = v ∧ s'.mem = s.mem) ∧
-      Keep [d] s s' := by
-  refine WP.keep _ ?_ (by simp [writesOnly, Code.allInstrs, Impl.MlKem.AArch64.movImm, dsts, dstOf, Option.toList]) (hv := by rfl)
-  unfold Impl.MlKem.AArch64.movImm
-  arun
-  have := movz_movk64' v
-  rw [BitVec.shiftLeft_zero] at this
-  exact this
-
 /-! ## The contracts -/
 
 /-- A polynomial, at `p`. -/
 abbrev pR (p : Addr) : Region := ⟨p, 1024⟩
 
-/-- `vg_mldsa_ntt(f = x0, scratch = x1)` and `vg_mldsa_inv_ntt`: `f`
+/-- An in-place transform, as `vg_mldsa_ntt(f = x0, scratch = x1)`: `f`
 becomes `t f`. -/
 def inPlaceK (t : Poly → Poly) : Contract isa where
   pre s :=
@@ -262,19 +179,6 @@ def accK (t : Poly → Poly → Poly) : Contract isa where
     Reduced s.mem (s.gpr .x0) ∧ Reduced s.mem (s.gpr .x1)
   post s s' := PolyIs s'.mem (s.gpr .x0) (t (polyAt s.mem (s.gpr .x0)) (polyAt s.mem (s.gpr .x1)))
   pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.sp = s₂.sp
-
-/-- `vg_mldsa_multiply_ntt(h = x0, f = x1, g = x2)` and
-`vg_mldsa_multiply_add_ntt`: `h` becomes `t h f g`, if `hPre` of `h` (for
-`vg_mldsa_multiply_add_ntt`, that it is reduced). -/
-def mulK (t : Poly → Poly → Poly → Poly) (hPre : Mem → Addr → Prop) : Contract isa where
-  pre s :=
-    s.rd = [pR (s.gpr .x1), pR (s.gpr .x2)] ∧ s.wr = [pR (s.gpr .x0)] ∧
-    (pR (s.gpr .x0)).Disjoint (pR (s.gpr .x1)) ∧ (pR (s.gpr .x0)).Disjoint (pR (s.gpr .x2)) ∧
-    hPre s.mem (s.gpr .x0) ∧ Reduced s.mem (s.gpr .x1) ∧ Reduced s.mem (s.gpr .x2)
-  post s s' := PolyIs s'.mem (s.gpr .x0)
-    (t (polyAt s.mem (s.gpr .x0)) (polyAt s.mem (s.gpr .x1)) (polyAt s.mem (s.gpr .x2)))
-  pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
-    s₁.sp = s₂.sp
 
 /-- The pointers `rs` and the stack pointer are public. -/
 theorem agree_regs {rs : List Reg} {s₁ s₂ : State} (hsp : s₁.sp = s₂.sp)

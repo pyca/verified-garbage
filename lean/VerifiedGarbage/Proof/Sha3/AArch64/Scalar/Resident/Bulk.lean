@@ -18,13 +18,12 @@ import Mathlib.Data.Finset.Attr
 import VerifiedGarbage.Proof.Framework.Contract
 
 /-!
-# The scalar resident absorber: whole blocks
+# The scalar resident absorber: before and after its loop
 
-`bulk_correct`: from where the resident absorber of `Sha3.Vector.Resident`
-runs its bulk (`BulkPre`), `bulk` consumes the whole blocks and leaves the
-state in memory and the arguments as that absorber's contract for it says
-(`BulkPost`), which `Sha3.Vector.Resident.correct` completes with the
-ordinary streaming absorb.
+From where the resident absorber of `Sha3.Vector.Resident` runs its bulk
+(`BulkPre`), `setup` establishes the loop's invariant (`setup_ok`), and from
+it `finish` leaves the state in memory and the arguments as that absorber's
+contract for the bulk says (`finish_ok`: `BulkPost`).
 -/
 
 @[expose] public section
@@ -149,14 +148,6 @@ theorem finish_ok (b : State) (hp : BulkPre b) (c : Nat) (A : Spec.Sha3.State) (
     simp only [RegUpd.mem_write, hmu]
     rw [hat]
     exact h.repr msg hm hal
-
-theorem functional (b : State) (hp : BulkPre b) : WP isa bulk b (BulkPost b) := by
-  unfold bulk
-  rw [WP.seq_iff]
-  refine (setup_ok b hp).mono fun s₀ h₀ => ?_
-  rw [WP.seq_iff]
-  refine (loop_ok b hp _ s₀ h₀).mono fun s ⟨c, A, h⟩ => ?_
-  exact finish_ok b hp c A s h
 
 
 end VG.Proof.Sha3.AArch64.Scalar.Resident

@@ -39,17 +39,11 @@ verification call. -/
 structure Prims where
   suffix : String := ""
   ntt : Prog isa
-  invNtt : Prog isa
-  mul : Prog isa
-  mulAdd : Prog isa
   add : Prog isa
-  sub : Prog isa
   rejNtt : Prog isa
   rej4 : Prog isa
-  rejBounded : Prog isa
   ball : Prog isa
   power2Round : Prog isa
-  useHint : Prog isa
   normLt : Prog isa
   simpleBitPack : Prog isa
   bitPack : Prog isa
@@ -59,21 +53,6 @@ structure Prims where
 
 section
 variable (P : Prims) (ss : Ptr)
-
-/-- `NTT(f)` in place, with the working space `ss`. -/
-def nttAt (f : Ptr) : Prog isa := callAt "vg_mldsa_ntt" P.ntt [(.x0, .ptr f), (.x1, .ptr ss)]
-
-def invNttAt (f : Ptr) : Prog isa := callAt "vg_mldsa_inv_ntt" P.invNtt [(.x0, .ptr f), (.x1, .ptr ss)]
-
-def mulAt (h f g : Ptr) : Prog isa :=
-  callAt "vg_mldsa_multiply_ntt" P.mul [(.x0, .ptr h), (.x1, .ptr f), (.x2, .ptr g)]
-
-def mulAddAt (h f g : Ptr) : Prog isa :=
-  callAt "vg_mldsa_multiply_add_ntt" P.mulAdd [(.x0, .ptr h), (.x1, .ptr f), (.x2, .ptr g)]
-
-def addAt (f g : Ptr) : Prog isa := callAt "vg_mldsa_add" P.add [(.x0, .ptr f), (.x1, .ptr g)]
-
-def subAt (f g : Ptr) : Prog isa := callAt "vg_mldsa_sub" P.sub [(.x0, .ptr f), (.x1, .ptr g)]
 
 def rejNttAt (seed a : Ptr) : Prog isa :=
   .seq (.block (glue [(.x0, .ptr seed), (.x1, .ptr a), (.x2, .ptr ss)])) P.rejNtt
@@ -86,22 +65,8 @@ def ballAt (ct : Ptr) (len tau : Nat) (c : Ptr) : Prog isa :=
   callAt ("vg_mldsa_sample_in_ball" ++ P.suffix) P.ball
     [(.x0, .ptr ct), (.x1, .imm len), (.x2, .imm tau), (.x3, .ptr c), (.x4, .ptr ss)]
 
-def power2RoundAt (t t1 t0 : Ptr) : Prog isa :=
-  callAt "vg_mldsa_power2round" P.power2Round [(.x0, .ptr t), (.x1, .ptr t1), (.x2, .ptr t0)]
-
-def useHintAt (h r : Ptr) (g2 : Nat) (out : Ptr) : Prog isa :=
-  callAt "vg_mldsa_use_hint" P.useHint [(.x0, .ptr h), (.x1, .ptr r), (.x2, .imm g2), (.x3, .ptr out)]
-
 def normLtAt (f : Ptr) (bound : Nat) : Prog isa :=
   callAt "vg_mldsa_norm_lt" P.normLt [(.x0, .ptr f), (.x1, .imm bound)]
-
-def simpleBitPackAt (f : Ptr) (b : Nat) (out : Ptr) (len : Nat) : Prog isa :=
-  callAt "vg_mldsa_simple_bit_pack" P.simpleBitPack
-    [(.x0, .ptr f), (.x1, .imm b), (.x2, .ptr out), (.x3, .imm len)]
-
-def bitPackAt (f : Ptr) (a b : Nat) (out : Ptr) (len : Nat) : Prog isa :=
-  callAt "vg_mldsa_bit_pack" P.bitPack
-    [(.x0, .ptr f), (.x1, .imm a), (.x2, .imm b), (.x3, .ptr out), (.x4, .imm len)]
 
 def bitUnpackAt (v : Ptr) (len a b : Nat) (f : Ptr) : Prog isa :=
   callAt "vg_mldsa_bit_unpack" P.bitUnpack

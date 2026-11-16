@@ -352,11 +352,10 @@ abbrev innerY (k : Nat) : Prog isa :=
 
 /-- The function but for the restore of the callee-saved registers, inline. -/
 theorem body_ok (hk0 : 0 < k)
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14] (innerY k) = true)
     (hrw : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8] (rowEY 1024 k) = true) :
     WP isa (.seq (.block (KpkeMul.save ++ ([.mov .rbx (.reg .rcx), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi),
       .mov .r13 (.reg .rdx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))] : List Instr)))
-      (withMxcsr .rbx oMx (innerY k))) s₀ fun s5 => s5.gpr .rbx = cP s₀ ∧ s5.gpr .rsp = s₀.gpr .rsp ∧
+      (innerY k)) s₀ fun s5 => s5.gpr .rbx = cP s₀ ∧ s5.gpr .rsp = s₀.gpr .rsp ∧
       s5.rd = s₀.rd ∧ s5.wr = s₀.wr ∧ Frame [pR (wP s₀), cR (cP s₀)] s₀.mem s5.mem ∧
       PolyIs s5.mem (wP s₀) (nttInv (dot (sv k s₀) (uv k s₀))) := by
   have hcw : cR (cP s₀) ∈ s₀.wr := by rw [hp.2.1]; simp
@@ -370,9 +369,7 @@ theorem body_ok (hk0 : 0 < k)
         apply BitVec.eq_of_toNat_eq
         rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
         omega_arith) fun s1 ⟨h1bx, h1bp, h112, h113, h114, h1sp, h1rd, h1wr, hm1⟩ => ?_
-  have h0 : InRegions s1.wr (cP s₀ + BitVec.ofNat 64 768) 4 := by rw [h1wr]; exact ⟨_, hcw, in_c (by decide)⟩
-  have h4 : InRegions s1.wr (cP s₀ + BitVec.ofNat 64 772) 4 := by rw [h1wr]; exact ⟨_, hcw, in_c (by decide)⟩
-  refine WP.mono (withMxcsr_ok' (r := .rbx) (by decide) _ (by decide) h1bx h0 h4 hwo
+  refine WP.mono (noMx_ok (sP := cP s₀)
     (Q := fun s' => s'.gpr .rbx = cP s₀ ∧ s'.gpr .rsp = s₀.gpr .rsp ∧ s'.rd = s₀.rd ∧ s'.wr = s₀.wr ∧
       Frame [pR (wP s₀), cR (cP s₀)] s₀.mem s'.mem ∧ Spill.Saved s'.mem (cP s₀) s₀.gpr KpkeMul.slots ∧
       PolyIs s'.mem (wP s₀) (nttInv (dot (sv k s₀) (uv k s₀))))

@@ -4,7 +4,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Message.OptimizedRel
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRoots
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.SignCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsEntry
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Pre
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
@@ -21,6 +20,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsFrame
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Hash
 import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+public import VerifiedGarbage.Spec.MlDsa
 
 @[expose] public section
 

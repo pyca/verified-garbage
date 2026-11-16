@@ -28,6 +28,7 @@ their pointers are public. -/
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem16P
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KEM VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Kem
@@ -86,7 +87,7 @@ theorem decapsP_ct (hash : FixedHash.HashFn) (prf : Nat → Nat → Prog isa) (h
       (Impl.MlKem.AArch64.Kem16P.deRestP prf P (Impl.MlKem.AArch64.Kem16P.placed P
         (Impl.MlKem.AArch64.Hybrid.hashPairs (Impl.MlKem.AArch64.Kem16.jSrc P)))) h).isSome = true) :
     ConstantTime isa (entryContractS (decapsAArch64S P)).pre (entryContractS (decapsAArch64S P)).pub
-      (Impl.MlKem.AArch64.Kem16P.decaps hash prf P) := by
+      (Impl.MlKem.AArch64.Kem16P.decaps sha3 hash prf P) := by
   intro s u tr ur t v hs hu hpub et eu
   have ss := preSD hs.1
   have su := preSD hu.1
@@ -148,7 +149,7 @@ theorem decapsP_ct (hash : FixedHash.HashFn) (prf : Nat → Nat → Prog isa) (h
   -- The matrix.
   obtain ⟨sB, te, tf, rfl, ee, ef⟩ := Paired.seq_parts ed
   obtain ⟨uB, ue, uf, rfl, fe, ff⟩ := Paired.seq_parts fd
-  have bm := matrixP_relCT ps pu ks ku (jM_ok ps ks hsrc) (jM_ok pu ku hsrc) sm ho habs between
+  have bm := matrixP_relCT (sha3 := sha3) ps pu ks ku (jM_ok ps ks hsrc) (jM_ok pu ku hsrc) sm ho habs between
     _ _ _ _ _ _ ⟨⟨hsA.1, huA.1, hsA.2.1, huA.2.1, by rw [syA, uyA]; exact sym.1⟩, rfl, rfl⟩ ee fe
   obtain ⟨⟨_, bs⟩, ⟨_, bu⟩, _⟩ := bm.2
   -- The rest.

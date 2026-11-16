@@ -17,7 +17,7 @@ accumulator is put back in the words of `R` (`outPieces`, `packLaneAt`).
 The selection uses `ymm0`–`ymm15` and leaves their upper halves zero, so the
 accumulator is kept in the vectors' slots across it (`saveAcc`, `loadAcc`).
 The window method's working space has its slots, tables and the selected
-entry below `5472`; the vectors' code has what is above: MXCSR at `MX`, its
+entry below `5472`; the vectors' code has what is above: its
 slots from `SL + EO` (it addresses them from `rdi`, which is moved by `EO`
 while it runs: `adjUp`, `adjDn`), and its constants at `EKB`.
 
@@ -77,7 +77,7 @@ def vloopO (K : JacWinCfg) : Prog isa :=
 
 /-- `[k]P` into `R`, in projective coordinates, as `windowO`, with the loop in vectors. -/
 def vwindowO (K : JacWinCfg) : Prog isa :=
-  .seq K.buildO <| .seq (region (vloopO K)) <|
+  .seq K.buildO <| .seq (vloopO K) <|
   .seq (.block (packLaneAt (SL + EO) K.M 3 K.R.x ++ (packLaneAt (SL + EO) K.M 0 K.R.y ++
     packLaneAt (SL + EO) K.M 1 K.R.z))) <|
   .seq (.block K.tc.outFix) (ForwardField.programB K.M K.tc.outOps)

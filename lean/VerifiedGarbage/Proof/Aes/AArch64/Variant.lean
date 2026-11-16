@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Aes.AArch64.ExpandKey
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.ExpandKey
+public import VerifiedGarbage.Proof.Aes.AArch64.OneBlock
 public import VerifiedGarbage.Impl.Aes.AArch64.Callee
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Aes.AArch64.CodeLit
@@ -65,17 +66,18 @@ structure Ctr32Impl where
 
 namespace Ctr32Impl
 
-/-- The bitsliced implementation, `vg_aes_ctr32`, in the baseline ISA. -/
+/-- The implementation in the baseline ISA, `vg_aes_ctr32`: each
+block encrypted by vector permutations (`OneBlock.lean`). -/
 def scalar : Ctr32Impl where
   callee := .scalar
   noFrames := by lit_decide
-  ok := ctr32_correct
-  ct := ctr32_ct
+  ok := OneBlock.ctr32N_correct
+  ct := OneBlock.ctr32N_ct
   keepsV := by lit_decide
   to := .scalarTo
   toNoFrames := by lit_decide
-  toOk := ctr32To_correct
-  toCt := ctr32To_ct
+  toOk := OneBlock.ctr32ToN_correct
+  toCt := OneBlock.ctr32ToN_ct
   toKeepsV := by lit_decide
   suffix := ""
   features := []

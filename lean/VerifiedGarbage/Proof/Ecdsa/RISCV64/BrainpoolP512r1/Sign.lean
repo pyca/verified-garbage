@@ -13,6 +13,13 @@ import VerifiedGarbage.Proof.Ecdh.RISCV64.Bytes
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
 import VerifiedGarbage.Proof.Weierstrass.Words
 import VerifiedGarbage.Proof.BrainpoolP512r1.Point
+public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.BrainpoolP512r1Order.Lit
+meta import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
+meta import VerifiedGarbage.Impl.Weierstrass.RISCV64.BrainpoolP512r1Order
 
 /-!
 # ECDSA signatures over brainpoolp512r1 on RISC-V: correctness
@@ -753,5 +760,18 @@ theorem sign_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : signRV.pre s
     ∃ t s', Exec isa signBrainpoolP512r1 s t s' ∧ abiPreserved s s' ∧ signRV.post s s' := by
   obtain ⟨t, s', he, h⟩ := sign_ok hL hs
   exact ⟨t, s', he, h⟩
+
+/-! The constant-time analyses of the calls of the functions of brainpoolP512r1's `n` from their
+arguments, each done once for every check of code that calls it (`taint_decide_sum`), which keep
+what is public of `s0`–`s11`: the functions write none of them. -/
+taint_summary nMulSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Weierstrass.Mont.brainpoolp512r1n.fn "mul") Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.mulFnA)
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+taint_summary nAddSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Weierstrass.Mont.brainpoolp512r1n.fn "add") Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.addFnA)
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+taint_summary nSubSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Weierstrass.Mont.brainpoolp512r1n.fn "sub") Impl.Weierstrass.RISCV64.BrainpoolP512r1Order.subFnA)
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
 
 end VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1

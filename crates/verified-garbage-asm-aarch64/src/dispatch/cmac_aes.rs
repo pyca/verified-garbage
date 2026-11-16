@@ -6,7 +6,7 @@
 ///
 /// Contract: `VG.Spec.Cmac.aesAbsorbContract`. Constant time: only the pointers, `rounds`, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_cmac_aes_absorb_aes` if the CPU supports its features (`VG_CMAC_AES_ABSORB_AES_FEATURES`); or else `vg_cmac_aes_absorb`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_cmac_aes_absorb_aes` if the CPU supports its features (`VG_CMAC_AES_ABSORB_AES_FEATURES`); `vg_cmac_aes_absorb_neon` if detection reports some CPU feature; or else `vg_cmac_aes_absorb`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -29,6 +29,11 @@ pub unsafe fn vg_cmac_aes_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state
             || cpu.contains(crate::cmac_aes::VG_CMAC_AES_ABSORB_AES_FEATURES)
         {
             return crate::cmac_aes::vg_cmac_aes_absorb_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::cmac_aes::vg_cmac_aes_absorb_neon;
         }
         crate::cmac_aes::vg_cmac_aes_absorb
     }
@@ -55,7 +60,7 @@ pub unsafe fn vg_cmac_aes_absorb_auto(_dit: verified_garbage_cpu::Dit<'_>, state
 ///
 /// Contract: `VG.Spec.Cmac.aesInitContract`. Constant time: only the pointers and `key_len` may affect timing, not the key.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_cmac_aes_init_aes` if the CPU supports its features (`VG_CMAC_AES_INIT_AES_FEATURES`); or else `vg_cmac_aes_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_cmac_aes_init_aes` if the CPU supports its features (`VG_CMAC_AES_INIT_AES_FEATURES`); `vg_cmac_aes_init_neon` if detection reports some CPU feature; or else `vg_cmac_aes_init`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -78,6 +83,11 @@ pub unsafe fn vg_cmac_aes_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
             || cpu.contains(crate::cmac_aes::VG_CMAC_AES_INIT_AES_FEATURES)
         {
             return crate::cmac_aes::vg_cmac_aes_init_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::cmac_aes::vg_cmac_aes_init_neon;
         }
         crate::cmac_aes::vg_cmac_aes_init
     }
@@ -104,7 +114,7 @@ pub unsafe fn vg_cmac_aes_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: 
 ///
 /// Contract: `VG.Spec.Cmac.aesFinishContract`. Constant time: only the pointers, `rounds` and `count` may affect timing, not the state.
 ///
-/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_cmac_aes_finish_aes` if the CPU supports its features (`VG_CMAC_AES_FINISH_AES_FEATURES`); or else `vg_cmac_aes_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_cmac_aes_finish_aes` if the CPU supports its features (`VG_CMAC_AES_FINISH_AES_FEATURES`); `vg_cmac_aes_finish_neon` if detection reports some CPU feature; or else `vg_cmac_aes_finish`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -128,6 +138,11 @@ pub unsafe fn vg_cmac_aes_finish_auto(_dit: verified_garbage_cpu::Dit<'_>, state
             || cpu.contains(crate::cmac_aes::VG_CMAC_AES_FINISH_AES_FEATURES)
         {
             return crate::cmac_aes::vg_cmac_aes_finish_aes;
+        }
+        if const { verified_garbage_cpu::COMPILED.0 != 0 }
+            || cpu.0 != 0
+        {
+            return crate::cmac_aes::vg_cmac_aes_finish_neon;
         }
         crate::cmac_aes::vg_cmac_aes_finish
     }

@@ -17,11 +17,9 @@ def artifacts : List Artifact := [
     verified := Proof.Sm3.RISCV64.Shared.init },
   Spec.Sm3.updateApi.artifact RISCV64.target {
     code := Impl.Sm3.RISCV64.Stream.update
-    stack := 144
     verified := Proof.Sm3.RISCV64.Shared.update },
   Spec.Sm3.finalizeApi.artifact RISCV64.target {
     code := Impl.Sm3.RISCV64.Stream.finalize
-    stack := 144
     verified := Proof.Sm3.RISCV64.Shared.finalize }]
 
 end VG.Artifacts.Sm3.RISCV64

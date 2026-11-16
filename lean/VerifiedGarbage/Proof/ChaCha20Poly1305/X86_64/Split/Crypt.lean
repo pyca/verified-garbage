@@ -391,8 +391,9 @@ theorem cryptSplit_ok {s₀ : State} (hT : SPre s₀) {s : State} (h : Inv s₀ 
     (hS2 : s.mem.readW (stackArgAddr s₀ 2) 64 = stackArg s₀ 2)
     (hS3 : s.mem.readW (stackArgAddr s₀ 3) 64 = stackArg s₀ 3) :
     WP isa cryptSplit s fun s' => Inv s₀ s' ∧ (∀ r ∈ calleeSaved, s'.gpr r = s.gpr r) ∧
-      Frame [sub s₀ 64 384, sub s₀ 672 1024, dR s₀, stkR s₀] s.mem s'.mem ∧
-      bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (PTs s₀ s.mem) := by
+      Frame [sub s₀ 64 384, sub s₀ 672 (zeroLen 6 (64 + mm s₀)), dR s₀, stkR s₀] s.mem s'.mem ∧
+      bytesAt s'.mem (dp s₀) (L s₀) = Spec.ChaCha20.encrypt (K s₀) 1 (N s₀) (PTs s₀ s.mem) ∧
+      ∀ k < zeroLen 6 (64 + mm s₀), s'.mem (off (cx s₀) (672 + k)) = 0 := by
   have hp := hT.hp
   have hL9 := (s₀.gpr .r9).isLt
   have hm : mm s₀ ≤ 960 := mOf_le 960 1024 (L s₀)
@@ -431,9 +432,13 @@ theorem cryptSplit_ok {s₀ : State} (hT : SPre s₀) {s : State} (h : Inv s₀ 
   refine WP.seq (WP.mono (foldM_ok (fold := 960) (pass := 1024) (len := L s₀) (by lit_omega) (.inr (.inl rfl)) hL9
     (by rw [i₃.r13]; exact hL s₀)) fun s₄ ⟨d₄, g₄, rd₄, wr₄, m₄⟩ => ?_)
   refine WP.seq (WP.mono (add64_ok (n := mm s₀) d₄) fun s₅ ⟨d₅, g₅, rd₅, wr₅, m₅⟩ => ?_)
-  refine WP.mono (zeroKs_ok (w := 6) (.inr (.inr rfl)) hp (n := 64 + mm s₀) (by omega_using []) (by lit_omega) d₅
+  refine WP.mono (zeroKs_okZ (w := 6) (.inr (.inr rfl)) hp (n := 64 + mm s₀) (by omega_using []) (by lit_omega) d₅
     (by rw [g₅ _ (by decide), g₄ _ (by decide), i₃.r15]) (by rw [wr₅, wr₄, i₃.wr]))
-    fun s₆ ⟨g₆, rd₆, wr₆, f₆, _⟩ => ?_
+    fun s₆ ⟨g₆, rd₆, wr₆, f₆Z, zl₆, z₆⟩ => ?_
+  have f₃₆Z : Frame [sub s₀ 672 (zeroLen 6 (64 + mm s₀))] s₃.mem s₆.mem := by rw [← m₄, ← m₅]; exact f₆Z
+  have f₆ : Frame [sub s₀ 672 1024] s₅.mem s₆.mem := f₆Z.sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨_, List.mem_singleton_self _, sub_sub s₀ (Nat.le_refl _) (by omega_using [zl₆]) (by omega_using [zl₆])⟩
   have cs₆ : ∀ r ∈ calleeSaved, s₆.gpr r = s₃.gpr r := fun r hr => by
     have h' := calleeSaved_ne hr
     rw [g₆ r h'.1 h'.2.1, g₅ r h'.2.2.1, g₄ r h'.2.2.1]
@@ -442,9 +447,9 @@ theorem cryptSplit_ok {s₀ : State} (hT : SPre s₀) {s : State} (h : Inv s₀ 
     (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact sub_work s₀ (by lit_omega) (by lit_omega))
     (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact sub_disj s₀ (by lit_omega) (by lit_omega) (by lit_omega)),
-    fun r hr => by rw [cs₆ r hr, cs₃ r hr], ?_, ?_⟩
+    fun r hr => by rw [cs₆ r hr, cs₃ r hr], ?_, ?_, z₆⟩
   · have fc : Frame [sub s₀ 64 384, dR s₀, stkR s₀] s.mem s₃.mem := by rw [m₃, ← m₁]; exact c₂.frame
-    refine (fc.sub fun r hr => ?_).trans (f₅₆.sub fun r hr => ?_)
+    refine (fc.sub fun r hr => ?_).trans (f₃₆Z.sub fun r hr => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       · exact ⟨_, by simp, fun _ h => h⟩

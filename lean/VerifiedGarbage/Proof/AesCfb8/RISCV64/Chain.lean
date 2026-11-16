@@ -519,10 +519,10 @@ theorem body8_ok (enc : Bool) (hs : B8Setup s₂ X b D n R w) (hiv : iv ≠ []) 
       exact Offset.contains_base D (by omega_using [hkn]) (by omega_using [hkn, hn])
     exact f₆.trans (fr₇.mono fun r hr => by simp at hr; rcases hr with rfl | rfl <;> simp)
   · rw [inb₇, sl₆, hi.inb, x₀, inK_snoc enc ciph hiv]
-    congr 2
+    refine congrArg (fun x => (inK enc ciph iv xs).tail ++ [x]) ?_
     rw [t2₆, x₅, c₅]
   · rw [bytesAt_succ, x₀, cfb8_snoc enc ciph hiv, ← hi.done, self₇]
-    congr 1
+    refine congrArg (· ++ [m₀ P ^^^ (ciph (inK enc ciph iv xs)).headD 0]) ?_
     simp only [bytesAt]
     refine List.map_congr_left fun j hj => other j (by simp at hj; omega_using [hkn, hj]) (by simp at hj; omega_using [hj])
   · intro j hj hjn

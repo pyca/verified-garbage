@@ -105,7 +105,16 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   were most of the 0.8 ms a plain instruction took in the residue analysis.
   Give what several matches computed by one, with the patterns of all of
   them, and prove it equal to the function it replaces by cases
-  (`RTaint.stepFn1`, `stepFn1_eq`, `Proof/Framework/X86_64/`). So `spSafe`
+  (`RTaint.stepFn1`, `stepFn1_eq`, `Proof/Framework/X86_64/`). The one
+  match that is left still costs a third of a millisecond: Lean compiles
+  it to a matcher, a function of the instruction and of the alternatives,
+  and unfolding it builds a term of every case around the alternatives to
+  keep one. `inline_match% f g …` (`Proof/Framework/Taint.lean`) is
+  `f` as a `casesOn` whose cases are closed terms, with the matches of `f`
+  and of the functions `g …` it applies to the instruction resolved in
+  each (`stepKeepFnK`, `RTaint.stepFn1K`; equal to `f` by cases and
+  `rfl`): the kernel evaluates such a function at every instruction it has
+  not met before. So `spSafe`
   on x86 and x86-64 is checked with the ISA's `keepsSp`
   (`Proof/Framework/<ISA>/Taint.lean`), one match that compares the
   constructor's index, and `Code.all_of_spTest` (`SpTest`,
@@ -113,6 +122,53 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   it: write `Code.all_of_spTest (by lit_decide)`, as `sp_safe` does, not
   `Code.all_of_allInstrs (by lit_decide)`, which tests `!isa.writesSp i`
   and takes twice as long for each instruction.
+* **An analysis the kernel finds again:** the kernel evaluates a term when
+  it is read, and remembers the value of every term it has evaluated, by
+  the term. An analysis whose states are terms yet to be evaluated
+  (`{ τ with regs := τ.regs.erase d }`, a term in the state before) never
+  meets the same state twice; one whose states are evaluated finds again
+  every step it has made from the same state, one lookup where a step is a
+  hundred unfoldings, and code repeats itself far more than it looks
+  (inlined field arithmetic: 85% of the steps of the residue analysis of
+  brainpoolP512r1's ECDH on x86-64, whose check went from 23.8 s to 4.9 s).
+  So a step function the kernel evaluates
+  (`Proof/Framework/X86_64/Taint.lean` and `ResidueTaint.lean`,
+  `Proof/Framework/Arm/Taint.lean`, `Proof/Framework/X86/Taint.lean` and
+  `SseTaint.lean`):
+  * gives a state that is evaluated: what it computed is forced before the
+    state is built, in control flow, and the state built of the values
+    (`Taint.forceT`: a set of registers by `RegSet.force`, which hands on
+    a numeral, a `Bool` by `casesOn`; `forceList` for a list's first cell;
+    on Arm a list that changed is evaluated through, `forceBases` and
+    `forceSlots`, since it is a term in the whole taint before);
+  * hands on the fields it does not change as the terms they were:
+    destructure the state (`match τ with | ⟨rg, f, l, b, sl, lo, x⟩ =>`)
+    rather than project or update it (`{ τ with … }` makes every field a
+    term in `τ`), and decide whether a field changes before building the
+    state (`keepBases`, `storeR`), not in the field: a field that is a term
+    evaluating to the old field's term is unfolded again, with every such
+    term below it, at each later read through a state the kernel has not
+    read it through, since the kernel remembers the value of the term it
+    was asked for and not of those it passed through (37 unfoldings of the
+    slots for each store of that check);
+  * never rebuilds a list it does not change (`killK`, a filter of the
+    known bases at every instruction, cost 0.25 ms of CI for each base at
+    each instruction): test first (`noBase b d`, which the kernel
+    evaluates once for a list and a register);
+  * leaves a numeral wider than 64 bits it changed as a term (x86's
+    `Slots` masks, a bit for each byte of a region): the kernel's hash of
+    a numeral is of its low 64 bits, so states that differ only above
+    them have one hash, and a term looked up is compared with every term
+    of its hash (with the masks evaluated, a check over an 8192-byte
+    working space took 3.9 s for 3.4 s before and 1.2 s with them left as
+    terms); only "unchanged" hands on the old term (`keepSlots`);
+  * has the literal states of its hints written as its steps leave them
+    (`Taint.T`'s `ToExpr` writes the sets' bits as raw numerals), so that
+    the kernel finds again after a hint what it evaluated before it;
+  * is proven equal to the function it replaces (`stepKeep_eq`,
+    `stepF_eq`), which stays the one the soundness proofs are about.
+  What is left is the instructions the kernel meets for the first time:
+  see the next entry.
 * **Code the kernel evaluates:** code built by functions (unrolled
   compression functions, and the functions calling them) is rebuilt by the
   kernel in every check that evaluates it (constant time, `spSafe`, …), in
@@ -134,8 +190,20 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   callee's taint once as a summary (`taint_summary`, `taint_decide_sum`,
   `Proof/Framework/TaintSum.lean`) rather than analysing its body in every
   caller's `taint_decide`; this needs a `Taint.Frame` instance for the ISA's
-  taint domain (so far `AArch64.VectorTaint`, `Framework/AArch64/TaintMono.lean`).
-  A summary pays when declarations or modules share it: within one
+  taint domain (`Proof/Framework/<ISA>/TaintMono.lean`, `TaintSymMono.lean`,
+  `SlotTaintMono.lean`, `SseTaintMono.lean`: each says which domains it is for).
+  A summary costs one analysis of the callee, and a second pass over its
+  instructions with `keeping` (the registers it does not write, which its
+  callers still know after the call), so it pays from the third check that
+  would analyse the callee: a hash's compression function, which `update`,
+  `finalize`, HMAC and PBKDF2 all call, not a function with one or two
+  callers. The callee's own constant time is the summary's
+  (`Taint.exists_check_of_sumOk`). For a function its callers call
+  (`.call name body`), summarize the call, named as they name it, not the
+  body, which the hints would compare with the code at every call; a callee
+  of a few hundred instructions does not pay, since what is left is a cost
+  per call site (the four-word curves' field functions on RISC-V, measured
+  and left). Within one
   `taint_decide`, the kernel already analyses identical code from the same
   taint once, so splitting one check into summaries makes it slower. Give a
   summary the smallest taint its callers need (public slots that are never
@@ -239,14 +307,77 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   * *An implicit argument left to unification.* `rw [wa_shift h]`, where `h`
     determines a structure only through one of its fields, took 11.6 s to
     find it: give it, even in part (`(τ' := ⟨_, _, _, _, τ.room - 8, _, …⟩)`).
+  * *A term elaborated before its implicit arguments are known.* `exact
+    lemma h₁ h₂`, `cutThen_trace check …` or `bytesAt_frame …` whose implicit
+    region or state appears in the goal only under a projection is unified
+    by unfolding (`bytesAt`, `taint.check`, a key's status): name the
+    arguments (`(r := ⟨addr, len⟩)`, `(s := s₂)`), or state the fact with
+    `have` and `exact` it. The same for `h ▸ e`, `congr n` and
+    `show a = b from rfl` between two states' memories or two programs:
+    `rw [h]`, `congrArg` with the function written out, `kernel_rfl`.
+  * *Small goals by a large tactic.* An inclusion of literal register lists
+    by `simp [regs]` (3.5 s), a propositional case analysis by `omega`,
+    fifty side goals over literal lists by default `simp`: `decide`. Thirty
+    nested `max` by `omega_arith` (3.7 s): `Nat.max_le` in a `simp only`. A
+    `fun | [x₁, …, x₁₈], h => …` on a computed list refutes every other
+    length once per pattern: take the length as a numeral in a lemma.
   * *Reads through writes after the fact.* With `RegUpd.gpr_write` and
     `ite_true, ite_false` as ordinary rewrites, `simp` simplifies the value
     of every write a read passes: `↓RegUpd.gpr_write` and `↓reduceIte`
-    rewrite the read first and never visit the discarded branch.
+    rewrite the read first and never visit the discarded branch. A shared
+    run tactic without `↓reduceIte` pays this in every block: `ffrun`'s time
+    doubled with each instruction that has an operand to evaluate (3.6 s for
+    ten), and its 125 modules took 141 s; with it, 98 s. A run tactic that
+    unfolds the writes themselves (`State.write`) re-simplifies every
+    earlier register function at each instruction: keep them folded and
+    read through them (`crunw`, `MlKem1024/RISCV64/`).
   * *Interpreted arithmetic.* Mathlib's `nlinarith` multiplies every pair of
     facts, in the interpreter: 5 to 11 s for `2 * x ≤ x * 2 ^ 63`. State the
     products as facts and use `omega_using` (which takes `2 ^ k` for an
     atom), or `linarith` where the products are hypotheses already.
+* **A module slow in many small places:** when no declaration stands out,
+  one idiom is usually repeated through the file. The ones found so far:
+  * *Facts `omega_arith` collects that no goal needs.* One alignment fact
+    (`x % 8 = 0`) among the hypotheses made each call three to four times
+    slower (`TComb`): state the conjuncts the goals use (`lay_lin`), not the
+    whole layout. An `omega_using` list that carries six separation
+    disjunctions where one is needed has `omega` split on each (`RdDiv`:
+    479 facts removed from 86 calls).
+  * *Multi-word values unfolded into their words.* `omega` over 8 to 14
+    atoms with coefficients up to `2 ^ 256`: keep each value one atom and
+    state the arithmetic about the values (`P256Field/Fn`), or state each
+    word's sum and carry once and close with one `omega` (`sub3w_ok`).
+  * *`grind` on a ring identity among a hundred hypotheses.* Move the
+    identity to a private lemma whose only hypotheses are the equations it
+    uses, and `exact` it (`GenWide/Sqr`, `SqrtLoop`).
+  * *An alignment closed by `dsimp`.* `(… .syms name).toNat % 64 = 0` on a
+    term with free variables has the kernel take the remainder in unary:
+    `rw [show … .syms name = <address> from rfl]; decide` (`SignEntryTiming`,
+    `Message`: 3 s to 0.2 s each).
+  * *A pattern-matching `fun` on a hypothesis with a very large type*
+    (`fun σ s ⟨⟨⟨h, x⟩, _⟩, z⟩ => …`) compiles a matcher each time, up to
+    1 s: take the hypothesis and project, or `obtain` on the next line.
+  * *A macro every proof calls.* `oomega` took a 23-fact conjunction apart
+    with `obtain` at each of its 225 uses: `have := offsO; omega_arith`
+    reads it as it is.
+  * *Alternatives that fail at every node.* A `repeat' (first | …)` over a
+    tree of code that begins with the callees' lemmas, each by `exact`,
+    elaborates every one that does not fit at every node, and an `exact`
+    that does not fit looks for a coercion first (about 1,300 in one
+    theorem): closed code and code that is a `seq`, `ite` or `call` as it
+    stands come first, and the lemmas are applied (`s16_xd`), or each is
+    tried only where the code's head is its function (`code_head`,
+    `MlKem/AArch64/CallWipe`).
+  * *Every hypothesis simplified once per goal.* `sig_and_intros` and then
+    `all_goals simp only […] at *`: simplify once, before the goals are
+    split. `split <;> split <;> omega_arith` among a hundred hypotheses,
+    whose discharger scans them for every `if`: a lemma about the `if`s
+    (`ite3_lt`), applied.
+  * *Two postconditions that match on the same computation.* Where the
+    kernel compares a `match decrypt … with` with a term that only unfolds
+    to it, it evaluates `decrypt` on symbolic bytes (52,000 unfolds each
+    time): match on a variable (`CorePostOf`) and unfold the contract's
+    postcondition by `rw`.
 * **Numeral exponents:** `2 ^ 64` elaborates in time quadratic in the number
   of numeral exponents in a statement; `Proof/Framework/PowLit.lean`'s macro
   elaborates it as `2 ^ (64 : Nat)` (the same term). A module with numeral

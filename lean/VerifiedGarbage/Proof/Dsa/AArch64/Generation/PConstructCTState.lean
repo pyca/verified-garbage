@@ -65,6 +65,9 @@ def PConstructPublic.workspace (p : PConstructPublic) (H : Spec.Mgf1.Hash) : Can
     qNonempty := by rw [p.plan.qLength]; rcases p.plan.hash.width with h | h <;> omega_using [h]
     qPositive := p.plan.qPositive
     qFits := p.plan.qFits
+    wide := by
+      rcases p.plan.width with h | h | h <;> rw [h] <;> decide
+    narrow := by rw [p.plan.qLength]; rcases p.plan.hash.width with h | h <;> omega_using [h]
     separate := p.plan.frameHeaders
     pOutside := by
       have he : 8 * (p.plan.len / 8) = p.plan.len := by rcases p.plan.width with h | h | h <;> omega_using [h]

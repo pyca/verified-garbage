@@ -26,7 +26,8 @@ theorem derivingPublicParams {s t : State} (H : (Spec.Dsa.deriveKeyContract abi 
   have Bytes : (Spec.Rsa.bytesAt s.mem (argumentPointer s 2) (arg s 3).toNat).map (·.toNat) =
       (Spec.Rsa.bytesAt t.mem (argumentPointer t 2) (arg t 3).toNat).map (·.toNat) := by
     sig_pub [Spec.Dsa.deriveKeyContract, Spec.Dsa.deriveKeySig, abi, argSlots, argVal, argBytes] at H
-    exact List.append_inj_left' H.2.1 rfl
+    -- the lengths of the two statuses, as numerals: `rfl` would first compare the statuses
+    exact List.append_inj_left' H.2.1 (Eq.refl 1)
   have Eq := (List.map_inj_right (fun _ _ h => BitVec.toNat_inj.1 h)).1 Bytes
   simp only [derivingParams, Args 4 (by decide), Args 6 (by decide), Eq]
 

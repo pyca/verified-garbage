@@ -15,17 +15,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 import VerifiedGarbage.Proof.MlKem.Compress
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
@@ -34,19 +24,20 @@ import VerifiedGarbage.Proof.Framework.Block
 /-! # Complete singleton matrix sampling and restoration of its caller -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Proof.MlKem VG.Spec.MlKem VG.Impl.MlKem.AArch64
 
-def lastCode (sb ss a k off : Nat) (w16 : Bool := false) : Prog isa :=
+def lastCode (sha3 : Bool) (sb ss a k off : Nat) (w16 : Bool := false) : Prog isa :=
  .seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a a k))
-  (.seq Impl.MlKem.AArch64.Paired.squeeze
+  (.seq (Impl.MlKem.AArch64.Paired.squeeze sha3)
    (.seq (.block Impl.MlKem.AArch64.Rej8.rejConsts)
     (.seq (Impl.MlKem.AArch64.Paired.reject 400 off .x22 w16)
-     (.seq (.ite (.zero .x .x22) (fullSampleCode sb ss off a k w16) (.block []))
+     (.seq (.ite (.zero .x .x22) (fullSampleCode sha3 sb ss off a k w16) (.block []))
       (.block (Impl.MlKem.AArch64.Paired.saved.zipIdx.reverse.map fun (r,i)=>.ldr .x r .x19 (1800+8*i)))))))
 
 theorem lastSample_eq (L : KemLay) (kg : Bool) (w16 : Bool) :
-    Impl.MlKem.AArch64.Paired.lastSample L kg w16 =
-      lastCode (if kg then KG.SB else KEM.SB) (if kg then KG.SS else KEM.SS)
+    Impl.MlKem.AArch64.Paired.lastSample sha3 L kg w16 =
+      lastCode sha3 (if kg then KG.SB else KEM.SB) (if kg then KG.SS else KEM.SS)
         (L.k*L.k-1) L.k ((if kg then KG.AH else KEM.AH)+1024*(L.k*L.k-1)) w16 := by
   simp only [Impl.MlKem.AArch64.Paired.lastSample,fullSample_eq,lastCode,seqs]
 
@@ -78,9 +69,9 @@ theorem lastCode_ok {w16 : Bool} {s : State} {p seed out table : Addr} {sb ss a 
     (hseedOut : (Region.mk seed 32).Disjoint (polyRegion out))
     (ctx : SingleContext p out table s) (ht : s.syms "VG_MLKEM_REJ_SHUFFLE"=table)
     (hstatus : s.gpr .x24=0 ∨ s.gpr .x24=1) :
-    WP isa (lastCode sb ss a k off w16) s (LastPostW w16 (seedBytes s.mem seed a k) p out s) := by
-  have combined := WP.mono_syms (lastStart_ok (w16 := w16) (a := a) (k := k) (by omega_using [hss]) hsb h8 hoff hk hk256 hp hseed hout hin hsep ctx ht)
-    (R := fun u => WP isa (.seq (.ite (.zero .x .x22) (fullSampleCode sb ss off a k w16) (.block []))
+    WP isa (lastCode sha3 sb ss a k off w16) s (LastPostW w16 (seedBytes s.mem seed a k) p out s) := by
+  have combined := WP.mono_syms (lastStart_ok (sha3 := sha3) (w16 := w16) (a := a) (k := k) (by omega_using [hss]) hsb h8 hoff hk hk256 hp hseed hout hin hsep ctx ht)
+    (R := fun u => WP isa (.seq (.ite (.zero .x .x22) (fullSampleCode sha3 sb ss off a k w16) (.block []))
       (.block (Impl.MlKem.AArch64.Paired.saved.zipIdx.reverse.map fun (r,i)=>.ldr .x r .x19 (1800+8*i)))) u
       (LastPostW w16 (seedBytes s.mem seed a k) p out s))
     (fun u hu sy => by
@@ -89,10 +80,10 @@ theorem lastCode_ok {w16 : Bool} {s : State} {p seed out table : Addr} {sb ss a 
         rw [bytesAt_frame hu.frame (by
           intro r hr; simp only [fullWrites,List.mem_cons,List.not_mem_nil,or_false] at hr
           rcases hr with rfl | rfl; exact hsep; exact hseedOut) (by decide : 32≤2^64)]
-      have branch : WP isa (.ite (.zero .x .x22) (fullSampleCode sb ss off a k w16) (.block [])) u
+      have branch : WP isa (.ite (.zero .x .x22) (fullSampleCode sha3 sb ss off a k w16) (.block [])) u
           (LastReadyW w16 (seedBytes s.mem seed a k) p out s) := by
         refine WP.ite (u.gpr .x22 == 0) (eval_zero _ _) (fun _ => ?_) (fun hz => ?_)
-        · refine WP.mono (fullSampleCode_ok hss hsb h8 hoff hk hk256 hu.ptr
+        · refine WP.mono (fullSampleCode_ok (sha3 := sha3) hss hsb h8 hoff hk hk256 hu.ptr
             (by rw [hu.keep.get .x28]; exact hp) (by rw [hu.keep.get .x28]; exact hseed)
             (by rw [hu.keep.get .x28]; exact hout)
             (by rw [hu.keep.rd,hu.keep.wr]; exact hin) hu.context.scratch hu.context.output

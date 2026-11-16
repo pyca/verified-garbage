@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Advance
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSqueezeSetup
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejDone
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejBatch
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
 
 /-! ### `MlDsa.AArch64.Optimized.ResidentRejLastProgress`, which only this module used -/
 
@@ -59,7 +58,7 @@ theorem pair_ok {s : State} {p a b w : Addr} {rp ra rb : Reg} {A B : Spec.Sha3.S
       RateBlock t.mem b 10 (Spec.Sha3.keccakF B) ∧
       Frame [pairR p,⟨a,168⟩,⟨b,168⟩,X2.callR w] s.mem t.mem := by
   unfold Impl.MlDsa.AArch64.Optimized.ResidentRej.pair
-  refine WP.seq (WP.mono (X2.call_ok true (by decide) hp1 hp hw hpw hpair hcov) fun t ⟨hk,hf,hpt⟩ => ?_)
+  refine WP.seq (WP.mono (X2.call_ok (by decide) hp1 hp hw hpw hpair hcov) fun t ⟨hk,hf,hpt⟩ => ?_)
   have hkt : RegKeep X2.clobbered s t := ⟨hk.gpr,hk.rd,hk.wr,hk.sp⟩
   rw [WP.block_append_iff]
   refine WP.mono (load_ok ((hkt.gpr _ hpc).trans hp) hpt (fun i hi => by rw [hk.rd,hk.wr]; exact hin i hi))

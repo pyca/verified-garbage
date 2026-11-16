@@ -46,9 +46,8 @@ open VG.Impl.Poly1305.X86_64 (at_ save restore reduce)
 open VG.Proof.Poly1305.X86_64 (off off_eq st nb bp R0 R1 Rn A0 H2 blks blkAddr hR wR sR sub_sR Saved save_ok
   reduce_ok storeRestore_ok storeH_frame storeH_saved storeH_acc key_frame clamp_key leNum_acc off_24
   toNat_ofNat_lt blks_zero)
-open VG.Proof.Poly1305.X86_64.Avx2 (guard Post TailPre tail_ok done_ok cs_ne mxMem mxMem_read mxMem_frame
-  mxMem_mx mx_hi mx_bits H2_lt bytesAt_frame vec vec_trans vec_gpr vec_mem vec_rd vec_wr vec_keep
-  mxcsrIn_ok mxcsrOut_ok xi xr_xi)
+open VG.Proof.Poly1305.X86_64.Avx2 (guard Post TailPre tail_ok done_ok cs_ne
+  H2_lt bytesAt_frame vec vec_trans vec_gpr vec_mem vec_rd vec_wr vec_keep xi xr_xi)
 open VG.Proof.Poly1305.X86_64.Avx512 (APre qz VKeep MemOK rcx_val and7_toNat grp_sub ctx_of grp_bytes
   absorb_grp add128 rcx_ok adv_ok)
 open VG.Spec.Poly1305 (P leNum bytesAt accumulate Repr clamp)
@@ -165,8 +164,7 @@ theorem loadH_ok {s : State} (r₀ : InRegions (s.rd ++ s.wr) (off (s.gpr .rdi) 
 /-! ## The prologue -/
 
 /-- What the prologue leaves in memory for the rest: nothing written outside
-the working space, MXCSR (bits 31:16 cleared) at byte 120, and `r²`, `r⁴`,
-the mask and the pad bit. -/
+the working space, and `r²`, `r⁴`, the mask and the pad bit. -/
 structure IMem (s₀ : State) (m₁ : Mem) : Prop where
   ok : MemOK s₀ m₁
   r : MemR (st s₀) (Rn s₀) m₁
@@ -186,6 +184,7 @@ structure LInv (s₀ : State) (m₁ : Mem) (j : Nat) (s : State) : Prop where
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   mem : s.mem = m₁
+  mxcsr : s.mxcsr = s₀.mxcsr
   acc : H2 s₀ < 4 → LaneInv (Rn s₀) (absorbAll (Rn s₀) (A0 s₀) (blks s₀ (8 * j))) s
 
 theorem cs_ne' {r : Reg} (hr : r ∈ calleeSaved) : r ≠ .rax ∧ r ≠ .rcx ∧ r ≠ .rdx ∧ r ≠ .rsi ∧ r ≠ .r8 ∧
@@ -195,32 +194,25 @@ theorem cs_ne' {r : Reg} (hr : r ∈ calleeSaved) : r ≠ .rax ∧ r ≠ .rcx �
 
 theorem pro_ok {s₀ : State} (hp : APre s₀) (hbig : 28 ≤ nb s₀) {s : State} (hg : s.gpr = s₀.gpr)
     (hm : s.mem = s₀.mem) (hk : VKeep s₀ s) :
-    WP isa (.block (Impl.Poly1305.X86_64.Avx2.mxcsrIn ++ powers ++ loadH ++
+    WP isa (.block (powers ++ loadH ++
       ([.mov .rcx (.reg .rdx), .shift .shr .rcx 3, .alu .sub .rcx (.imm 1)] : List Instr))) s
       (fun s' => IMem s₀ s'.mem ∧ LInv s₀ s'.mem 0 s') := by
   have hp2 := hp.avx2
   have hb := hp2.bpre.nb_lt
-  rw [List.append_assoc, List.append_assoc]
-  have rdi₀ : s.gpr .rdi = st s₀ := by rw [hg]
-  have wr₀ : s.wr = s₀.wr := hk.wr
-  refine WP.block_append (WP.mono (mxcsrIn_ok s (hp2.inW wr₀ rdi₀ (by omega_arith)) (hp2.inW wr₀ rdi₀ (by omega_arith))
-    (hp2.inRW wr₀ rdi₀ (by omega_arith)) (hp2.inRW wr₀ rdi₀ (by omega_arith)))
-    fun s₁ ⟨g₁, m₁, _, _, _, rd₁, wr₁⟩ => ?_)
-  have rdi₁ : s₁.gpr .rdi = st s₀ := by rw [g₁ _ (by decide), rdi₀]
-  have rsi₁ : s₁.gpr .rsi = blkAddr s₀ (8 * 0) := by rw [g₁ _ (by decide), hg]; simp [blkAddr]
-  have wr₁' : s₁.wr = s₀.wr := by rw [wr₁, wr₀]
-  have rd₁' : s₁.rd = s₀.rd := by rw [rd₁, hk.rd]
-  have mm₁ : s₁.mem = mxMem s₀.mem (st s₀) s₀.mxcsr := by rw [m₁, hm, rdi₀, hk.mxcsr]
-  have hc₁ : Ctx s₁ := ctx_of hp rd₁' wr₁' rdi₁ rsi₁ (by omega_arith)
+  rw [List.append_assoc]
+  have rdi₁ : s.gpr .rdi = st s₀ := by rw [hg]
+  have rsi₁ : s.gpr .rsi = blkAddr s₀ (8 * 0) := by rw [hg]; simp [blkAddr]
+  have wr₁' : s.wr = s₀.wr := hk.wr
+  have rd₁' : s.rd = s₀.rd := hk.rd
+  have hc₁ : Ctx s := ctx_of hp rd₁' wr₁' rdi₁ rsi₁ (by omega_arith)
   refine WP.block_append (WP.mono (powers_ok hc₁ (by rw [wr₁', hp.wr, rdi₁]; exact List.mem_singleton_self _))
     fun s₂ P₂ => ?_)
   have rdi₂ : s₂.gpr .rdi = st s₀ := by
     rw [P₂.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), rdi₁]
   have wr₂ : s₂.wr = s₀.wr := by rw [P₂.wr, wr₁']
-  have r10₂ : s₂.gpr .r10 = R0 s₀ := by rw [P₂.r10, rdi₁, mm₁, mxMem_read _ _ _ (by omega_arith)]
-  have r11₂ : s₂.gpr .r11 = R1 s₀ := by rw [P₂.r11, rdi₁, mm₁, mxMem_read _ _ _ (by omega_arith)]
-  have F₂ : Frame [wR (st s₀)] s₀.mem s₂.mem :=
-    (mxMem_frame s₀.mem (st s₀) s₀.mxcsr).trans (by rw [← mm₁, ← rdi₁]; exact P₂.frame)
+  have r10₂ : s₂.gpr .r10 = R0 s₀ := by rw [P₂.r10, rdi₁, hm]
+  have r11₂ : s₂.gpr .r11 = R1 s₀ := by rw [P₂.r11, rdi₁, hm]
+  have F₂ : Frame [wR (st s₀)] s₀.mem s₂.mem := by rw [← hm, ← rdi₁]; exact P₂.frame
   have acc₂ : bytesAt s₂.mem (st s₀) 24 = bytesAt s₀.mem (st s₀) 24 :=
     bytesAt_frame F₂ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -233,19 +225,19 @@ theorem pro_ok {s₀ : State} (hp : APre s₀) (hbig : 28 ≤ nb s₀) {s : Stat
   refine WP.mono (rcx_ok s₃) fun s₄ ⟨c₄, g₄, m₄, k₄⟩ => ?_
   have gk : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → r ≠ .r11 → s₄.gpr r = s₀.gpr r := by
     intro r a c e f g h
-    rw [g₄ r c, G₃.gpr r a c f, P₂.gpr r a c e f g h, g₁ r a, hg]
+    rw [g₄ r c, G₃.gpr r a c f, P₂.gpr r a c e f g h, hg]
   have gk' : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r9 → s₄.gpr r = s₂.gpr r := fun r a c f => by
     rw [g₄ r c, G₃.gpr r a c f]
   have mm₄ : s₄.mem = s₂.mem := by rw [m₄, G₃.mem]
   have rdx₃ : s₃.gpr .rdx = s₀.gpr .rdx := by
     rw [G₃.gpr _ (by decide) (by decide) (by decide),
-      P₂.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), g₁ _ (by decide), hg]
+      P₂.gpr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), hg]
   have hM := P₂.m
   rw [r10₂, r11₂, rdi₁] at hM
-  refine ⟨⟨⟨by rw [mm₄]; exact F₂, by rw [mm₄, ← rdi₁, P₂.mx, mm₁, rdi₁, mxMem_mx]⟩, by rw [mm₄]; exact hM⟩,
+  refine ⟨⟨⟨by rw [mm₄]; exact F₂⟩, by rw [mm₄]; exact hM⟩,
     by omega_arith, gk _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), ?_, ?_,
     gk _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), ?_, ?_, ?_,
-    fun r hr => ?_, ?_, ?_, rfl, fun hA => ?_⟩
+    fun r hr => ?_, ?_, ?_, rfl, ?_, fun hA => ?_⟩
   · rw [gk _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]; simp [blkAddr]
   · rw [c₄, rdx₃, rcx_val _ (by have := hbig; simp only [nb] at this; omega_arith), Nat.sub_zero]
   · rw [g₄ _ (by decide), G₃.gpr _ (by decide) (by decide) (by decide), P₂.r8]
@@ -255,6 +247,7 @@ theorem pro_ok {s₀ : State} (hp : APre s₀) (hbig : 28 ≤ nb s₀) {s : Stat
     exact gk r a c e f g h
   · rw [k₄.rd, G₃.rd, P₂.rd, rd₁']
   · rw [k₄.wr, G₃.wr, wr₂]
+  · rw [k₄.mxcsr, G₃.mxcsr, P₂.mxcsr, hk.mxcsr]
   · -- The accumulator in quadword 0 of `H`, zeros elsewhere, and `Y` from `powers`.
     have w2 : (s₂.mem.readW (off (s₂.gpr .rdi) 16) 64).toNat < 4 := by
       have e := congrArg leNum acc₂
@@ -298,11 +291,11 @@ theorem group_body_ok {s₀ : State} (hp : APre s₀) {m₁ : Mem} (hm : IMem s�
     fun hA => group_ok hc (hm.consts h.rdi h.mem) (h.acc hA)) fun s₁ ⟨v₁, G₁⟩ => ?_)
   · exact WP.block_append (WP.mono (run_ok (fun _ => hc) addS_eq) fun s₁ h₁ =>
       WP.mono (run_ok (fun _ => Ctx.of_vec hc h₁.eq) mulS_eq) fun s₂ h₂ => vec_trans h₁.eq h₂.eq)
-  obtain ⟨vg₁, vm₁, vrd₁, vwr₁, -⟩ := vec_keep v₁
+  obtain ⟨vg₁, vm₁, vrd₁, vwr₁, vx₁⟩ := vec_keep v₁
   refine WP.mono (adv_ok s₁) fun s₂ ⟨si₂, cx₂, zf₂, g₂, m₂, k₂⟩ => ?_
   have gk : ∀ r, r ≠ .rsi → r ≠ .rcx → s₂.gpr r = s.gpr r := fun r a b => by rw [g₂ r a b, vg₁]
   have hcx : s₁.gpr .rcx = BitVec.ofNat 64 (nb s₀ / 8 - 1 - j) := by rw [vg₁, h.rcx]
-  refine ⟨⟨hj, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_, fun hA => ?_⟩, ?_⟩
+  refine ⟨⟨hj, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_, ?_, fun hA => ?_⟩, ?_⟩
   · rw [gk _ (by decide) (by decide), h.rdi]
   · rw [si₂, vg₁, h.rsi, add128]
   · rw [cx₂, hcx, show (1 : BitVec 64) = BitVec.ofNat 64 1 from rfl, Offset.ofNat_sub_ofNat (by omega_arith),
@@ -316,6 +309,7 @@ theorem group_body_ok {s₀ : State} (hp : APre s₀) {m₁ : Mem} (hm : IMem s�
   · rw [k₂.rd, vrd₁, h.rd]
   · rw [k₂.wr, vwr₁, h.wr]
   · rw [m₂, vm₁, h.mem]
+  · rw [k₂.mxcsr, vx₁, h.mxcsr]
   · have G := (G₁ hA).2
     rw [h.mem, h.rsi, grp_bytes hp hm.ok (by omega_arith), absorb_grp] at G
     exact G.of_vk k₂
@@ -395,20 +389,20 @@ theorem storeRestoreX_ok (s : State) (hw : sR (s.gpr .rdi) ∈ s.wr) :
 
 theorem reduce_mx : ∀ i ∈ instrs (.block reduce : Prog isa), loadsMxcsr i = false := by decide
 
-theorem epi_eq : addGroup ++ step1 ++ step2 ++ step3 ++ Impl.Poly1305.X86_64.Avx2.mxcsrOut ++
+theorem epi_eq : addGroup ++ step1 ++ step2 ++ step3 ++
     ([.vop .vzeroupper] : List Instr) ++ save ++ toWords ++ ([.mov .r9 (.reg .rdx)] : List Instr) ++ reduce ++
     ([.store (at_ .rdi 0) .r11, .store (at_ .rdi 8) .rbx, .store (at_ .rdi 16) .rbp] : List Instr) ++
     restore ++ ([.mov .rdx (.reg .r9), .alu .add .rsi (.imm 128), .alu .and .rdx (.imm 7)] : List Instr) =
-    (addGroup ++ step1 ++ step2 ++ step3) ++ (Impl.Poly1305.X86_64.Avx2.mxcsrOut ++
+    (addGroup ++ step1 ++ step2 ++ step3) ++
       (([.vop .vzeroupper] : List Instr) ++ (save ++ (toWords ++ (([.mov .r9 (.reg .rdx)] : List Instr) ++
       (reduce ++ ((([.store (at_ .rdi 0) .r11, .store (at_ .rdi 8) .rbx, .store (at_ .rdi 16) .rbp] :
         List Instr) ++ restore) ++
-      ([.mov .rdx (.reg .r9), .alu .add .rsi (.imm 128), .alu .and .rdx (.imm 7)] : List Instr)))))))) := by
+      ([.mov .rdx (.reg .r9), .alu .add .rsi (.imm 128), .alu .and .rdx (.imm 7)] : List Instr))))))) := by
   simp only [List.append_assoc]
 
 theorem epi_ok {s₀ : State} (hp : APre s₀) {m₁ : Mem} (hm : IMem s₀ m₁) {s : State}
     (h : LInv s₀ m₁ (nb s₀ / 8 - 1) s) :
-    WP isa (.block (addGroup ++ step1 ++ step2 ++ step3 ++ Impl.Poly1305.X86_64.Avx2.mxcsrOut ++
+    WP isa (.block (addGroup ++ step1 ++ step2 ++ step3 ++
       ([.vop .vzeroupper] : List Instr) ++ save ++ toWords ++ ([.mov .r9 (.reg .rdx)] : List Instr) ++ reduce ++
       ([.store (at_ .rdi 0) .r11, .store (at_ .rdi 8) .rbx, .store (at_ .rdi 16) .rbp] : List Instr) ++
       restore ++ ([.mov .rdx (.reg .r9), .alu .add .rsi (.imm 128), .alu .and .rdx (.imm 7)] : List Instr)))
@@ -427,12 +421,9 @@ theorem epi_ok {s₀ : State} (hp : APre s₀) {m₁ : Mem} (hm : IMem s₀ m₁
   have rdi₁ : s₁.gpr .rdi = st s₀ := by rw [G₁.gpr _ (by decide) (by decide) (by decide), h.rdi]
   have wr₁ : s₁.wr = s₀.wr := by rw [G₁.wr, h.wr]
   have mm₁ : s₁.mem = m₁ := by rw [G₁.mem, h.mem]
-  -- MXCSR restored.
-  refine WP.block_append (WP.mono (mxcsrOut_ok s₁ (hp2.inRW wr₁ rdi₁ (by omega_arith))
-    (by rw [mm₁, rdi₁, hm.ok.mx]; exact mx_hi _)) fun s₂ ⟨g₂, m₂, mx₂, x₂, _, rd₂, wr₂⟩ => ?_)
-  refine WP.block_append (WP.mono (vzu_ok s₂) fun s₃ ⟨g₃, m₃, x₃, mx₃, rd₃, wr₃⟩ => ?_)
-  have rdi₃ : s₃.gpr .rdi = st s₀ := by rw [g₃, g₂, rdi₁]
-  have wr₃ : s₃.wr = s₀.wr := by rw [wr₃, wr₂, wr₁]
+  refine WP.block_append (WP.mono (vzu_ok s₁) fun s₃ ⟨g₃, m₃, x₃, mx₃, rd₃, wr₃⟩ => ?_)
+  have rdi₃ : s₃.gpr .rdi = st s₀ := by rw [g₃, rdi₁]
+  have wr₃ : s₃.wr = s₀.wr := by rw [wr₃, wr₁]
   -- The callee-saved registers saved, and the accumulator to words.
   refine WP.block_append (WP.mono (saveX_ok s₃ (by rw [wr₃, hp.wr, rdi₃]; exact List.mem_singleton_self _))
     fun s₄ ⟨g₄, rd₄, wr₄, x₄, mx₄, F₄, S₄⟩ => ?_)
@@ -450,7 +441,7 @@ theorem epi_ok {s₀ : State} (hp : APre s₀) {m₁ : Mem} (hm : IMem s₀ m₁
   have k₇ : ∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .r11 → r ≠ .rbx → r ≠ .rbp → r ≠ .r12 → r ≠ .r13 → r ≠ .r14 →
       s₇.gpr r = s₆.gpr r := fun r a b c d e f g i => K₇.1 r (by simp [a, b, c, d, e, f, g, i])
   have gs : ∀ r, r ≠ .rax → r ≠ .rcx → r ≠ .r9 → s₃.gpr r = s.gpr r := fun r a c n => by
-    rw [g₃, g₂, G₁.gpr r a c n]
+    rw [g₃, G₁.gpr r a c n]
   have rsi₈ : s₈.gpr .rsi = s.gpr .rsi := by
     rw [g₈ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
       k₇ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
@@ -461,19 +452,19 @@ theorem epi_ok {s₀ : State} (hp : APre s₀) {m₁ : Mem} (hm : IMem s₀ m₁
       r9₆, K₅.gpr _ (by decide), g₄, gs _ (by decide) (by decide) (by decide), h.rdx]
   have mm₇ : s₇.mem = s₄.mem := by rw [K₇.2.1, m₆, K₅.mem]
   have rdi₇' : s₇.gpr .rdi = s₃.gpr .rdi := by rw [rdi₇, rdi₃]
-  have mmx : s₉.mxcsr = s₀.mxcsr &&& 0xffff := by
-    rw [mx₉, mx₈, mx₇, mx₆, K₅.mxcsr, mx₄, mx₃, mx₂, mm₁, rdi₁, hm.ok.mx]
+  have mmx : s₉.mxcsr = s₀.mxcsr := by
+    rw [mx₉, mx₈, mx₇, mx₆, K₅.mxcsr, mx₄, mx₃, G₁.mxcsr, h.mxcsr]
   have hframe : Frame [hR (st s₀), wR (st s₀)] s₀.mem s₉.mem := by
     rw [m₉, m₈, rdi₇]
     refine storeH_frame ?_ _ _ _
     rw [mm₇]
     refine (hm.ok.frame.mono (by simp)).trans ?_
-    have e : s₃.mem = m₁ := by rw [m₃, m₂, mm₁]
+    have e : s₃.mem = m₁ := by rw [m₃, mm₁]
     rw [← e]
     exact F₄.sub fun r hr => ⟨wR (st s₀), by simp, by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rw [hr, rdi₃]; exact Proof.Poly1305.X86_64.svR_sub_wR _⟩
-  refine ⟨by omega_arith, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, hframe, by rw [mmx, mx_bits], fun key msg hr => ?_⟩
+  refine ⟨by omega_arith, ?_, ?_, ?_, fun r hr => ?_, ?_, ?_, hframe, by rw [mmx], fun key msg hr => ?_⟩
   · rw [g₉ _ (by decide) (by decide), g₈ _ (by decide) (by decide) (by decide) (by decide) (by decide)
       (by decide), rdi₇]
   · rw [si₉, rsi₈, h.rsi, add128, Nat.sub_add_cancel h1]
@@ -506,7 +497,7 @@ theorem epi_ok {s₀ : State} (hp : APre s₀) {m₁ : Mem} (hm : IMem s₀ m₁
         gs _ (by decide) (by decide) (by decide), h.keep _ (by decide)]
     · rw [g₉ _ (by decide) (by decide), r15₈, sv _ (by decide) (by decide), sv6,
         gs _ (by decide) (by decide) (by decide), h.keep _ (by decide)]
-  · rw [rd₉, rd₈, K₇.2.2.1, rd₆, K₅.rd, rd₄, rd₃, rd₂, G₁.rd, h.rd]
+  · rw [rd₉, rd₈, K₇.2.2.1, rd₆, K₅.rd, rd₄, rd₃, G₁.rd, h.rd]
   · rw [wr₉, wr₈, wr₇]
   · -- The accumulator represents the blocks absorbed.
     have hA := H2_lt hr
@@ -517,7 +508,7 @@ theorem epi_ok {s₀ : State} (hp : APre s₀) {m₁ : Mem} (hm : IMem s₀ m₁
     obtain ⟨-, Lb, L⟩ := L₁ hA
     rw [h.mem, h.rsi, grp_bytes hp hm.ok (by omega_arith), absorb_grp, Nat.sub_add_cancel h1] at L
     have ex : ∀ i < 3, (h0w s₄ i).toNat = hv s₁ 0 i := fun i _ => by
-      simp only [h0w, x₄, x₃, x₂]; rfl
+      simp only [h0w, x₄, x₃]; rfl
     obtain ⟨T, T4⟩ := T₅ fun i hi => by rw [ex i hi]; exact Nat.le_trans (Lb i hi) (by decide)
     have e₆ : Proof.Poly1305.X86_64.hval s₆ = Proof.Poly1305.X86_64.hval s₅ := by
       simp only [Proof.Poly1305.X86_64.hval, g₆ .r11 (by decide), g₆ .rbx (by decide), g₆ .rbp (by decide)]

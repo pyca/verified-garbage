@@ -48,6 +48,12 @@ theorem tablePointer_ok (s : State) (base : BitVec 32) (n : Nat) (bound : n ≤ 
   refine withRest_all [.r0, .r7, .r11] ?_ (by rfl) (by rfl)
   have enc256 : encodable (256 : BitVec 32) = true := by decide
   unfold VG.Impl.Ffdh.Arm.ParameterCandidate.tablePointer
-  ffrun [BitVec.add_zero, readBase, readWidth, savedBase, savedWidth, enc256, tableStride n bound, tableAddress base n]
+  apply WP.of_runBlock
+  simp only [runBlock_cons, runStep_some, runBlock_nil, mov_exec, mul_exec, logic_exec, ldrSp_exec, Op2.eval,
+    RegUpd.gpr_setReg, RegUpd.mem_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.sp_setReg, Option.map_some,
+    Option.some.injEq, exists_eq_left', ite_true, ite_false, reduceCtorEq, and_true, Nat.reduceLT, Nat.reduceLeDiff,
+    (by decide : encodable (7 : BitVec 32) = true), (by decide : encodable (2 : BitVec 32) = true),
+    (by decide : encodable (34 : BitVec 32) = true), BitVec.add_zero, readBase, readWidth, savedBase, savedWidth,
+    enc256, tableStride n bound, tableAddress base n]
 
 end VG.Proof.Ffdh.Arm.ParameterCandidate

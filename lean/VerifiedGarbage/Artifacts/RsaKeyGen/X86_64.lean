@@ -105,7 +105,6 @@ def artifacts : List Artifact :=
     Spec.RsaKeyGen.keySearchApi.artifact X86_64.target (X86_64.RScrub.withScrubAllM {
       suffix := v.suffix
       code := Proof.RsaKeyGen.X86_64.Generate.genCode v
-      stack := 552
       verified := Proof.RsaKeyGen.X86_64.Generate.gen_verified v
       spSafe := Proof.RsaKeyGen.X86_64.Generate.genCode_sp v } (VG.Proof.Rsa.X86_64.Scrub.keySearchOut 552))])
 

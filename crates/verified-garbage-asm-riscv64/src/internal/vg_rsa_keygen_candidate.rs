@@ -494,7 +494,7 @@ j 22f
 22:
 .base64 "ioODsAMGA7QDAIO0gwADuQMBg7mDAQO6AwKDuoMCA7sDA4O7gwMDvAMEg7yDBAO9AwWDvYMFKWGCgA=="
 .option pop"#,
-        vg_miller_rabin_round = sym crate::rsa_keygen::vg_miller_rabin_round::vg_miller_rabin_round,
+        vg_miller_rabin_round = sym crate::dsa::vg_miller_rabin_round::vg_miller_rabin_round,
         VG_RSA_KEYGEN_TRIAL32 = sym crate::consts::VG_RSA_KEYGEN_TRIAL32,
     )
 }

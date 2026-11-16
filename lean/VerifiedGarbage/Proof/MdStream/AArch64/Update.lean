@@ -197,7 +197,7 @@ theorem Pending.k_lt (hd : Dims P) {s₀ : State} {c k : Nat} {s : State} (h : P
 
 theorem Pending.compress_ok (hd : Dims P) {name : String} {code : Prog isa} (hf : CalleeOk H code)
     {s₀ : State} (hp : Pre P s₀) {c k : Nat} {s : State} (h : Pending H s₀ c k s) :
-    WP isa (compressN name code) s (Inv H s₀ c) := by
+    WP isa (compressN name code) s fun s' => Inv H s₀ c s' ∧ ∀ r ∈ untouched, s'.gpr r = s.gpr r := by
   have hd_N := hd.N; have hd_so := hd.so; have hd_B := hd.B; have := len_lt s₀
   have eN : Region.Sub ⟨st s₀, P.N⟩ (stR P s₀) := Region.sub_prefix (by omega_arith)
   have eso : Region.Sub ⟨scr s₀, P.so⟩ (scR P s₀) := Region.sub_prefix (by omega_arith)
@@ -233,11 +233,12 @@ theorem Pending.compress_ok (hd : Dims P) {name : String} {code : Prog isa} (hf 
     · exact ⟨scR P s₀, by simp, 0, by simp, by simp⟩
   · intro s' hrd hwr hcs hsp hf' hstate
     have cs : ∀ r, r ∈ preserved → r ≠ .x30 → s'.gpr r = s.gpr r := hcs
-    refine ⟨⟨h.c_le, hrd.trans h.rd, hwr.trans h.wr, by rw [cs _ (by decide) (by decide)]; exact h.x19,
+    refine ⟨⟨⟨h.c_le, hrd.trans h.rd, hwr.trans h.wr, by rw [cs _ (by decide) (by decide)]; exact h.x19,
       by rw [cs _ (by decide) (by decide)]; exact h.x20, hsp.trans h.sp,
       by rw [cs _ (by decide) (by decide)]; exact h.x21,
       by rw [cs _ (by decide) (by decide)]; exact h.x22,
-      h.frame.trans (hf'.sub ?_), fun p hp' => ?_⟩, ?_, fun iv m hm => h.repr iv m hm _ hstate⟩
+      h.frame.trans (hf'.sub ?_), fun p hp' => ?_⟩, ?_, fun iv m hm => h.repr iv m hm _ hstate⟩,
+      fun r hr => cs r (untouched_callee r hr).1 (untouched_callee r hr).2⟩
     · intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -742,9 +743,24 @@ theorem fill_ok (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {c : Nat} {s : St
 
 /-! ## One iteration -/
 
+/-- What an iteration runs before it compresses writes none of `untouched`. -/
+theorem choose_untouched (P : Params) : ∀ r ∈ untouched, ∀ i ∈ instrs (.ite (.zero .x .x23)
+      (.seq (.block [.lsr .x .x9 .x22 (lg P)]) (.ite (.zero .x .x9) (fill P) (.block (direct P))))
+      (fill P) : Prog isa), clobbers i r = false :=
+  untouched_ofAll (by
+    have h := storeWord_untouched P
+    simp only [instrs, fill, copy, direct, copyWordBody, copyBody, List.all_append, h, Bool.and_true]
+    rfl)
+
+theorem updateStart_untouched (P : Params) : ∀ r ∈ untouched, ∀ i ∈ updateStart P, clobbers i r = false :=
+  untouched_ofAll rfl
+
+/-- One iteration: the compression function, which may write `untouched`,
+keeps them, and nothing else writes them. -/
 theorem body_ok (hd : Dims P) {name : String} {code : Prog isa} (hf : CalleeOk H code) {s₀ : State}
     (hp : Pre P s₀) {c : Nat} {s : State} (hI : Inv H s₀ c s) (hcl : c < len s₀) :
-    WP isa (updateBody P name code) s fun s' => ∃ c', c < c' ∧ Inv H s₀ c' s' := by
+    WP isa (updateBody P name code) s fun s' => (∃ c', c < c' ∧ Inv H s₀ c' s') ∧
+      ∀ r ∈ untouched, s'.gpr r = s.gpr r := by
   have hlen := len_lt s₀; have hr := rr_lt hd s₀ c; have hB := hd.B
   have h63 : lg P < 64 := by have hd_log := hd.log; omega_arith
   have ne : ∀ r ∈ [Reg.x19, .x20, .x21, .x22, .x23], r ≠ .x10 ∧ r ≠ .x9 := by decide
@@ -752,8 +768,9 @@ theorem body_ok (hd : Dims P) {name : String} {code : Prog isa} (hf : CalleeOk H
   refine WP.seq (wp_movz fun s₁ u₁ => WP.block_nil ?_)
   have hI₁ : Inv H s₀ c s₁ := hI.of_gpr (fun r hr => u₁.other r (ne r hr).1) u₁.mem u₁.rd u₁.wr u₁.sp
   have h10₁ : s₁.gpr .x10 = 0 := by rw [u₁.gpr]; rfl
-  refine WP.seq (WP.mono (Q := fun s' => (∃ c' k, c < c' ∧ Pending H s₀ c' k s') ∨ Done H s₀ s') ?_
-    fun s' h => ?_)
+  have hu₁ : ∀ r ∈ untouched, s₁.gpr r = s.gpr r := fun r hr => u₁.other r (untouched_notOurs r hr).2.2.1
+  refine WP.seq (WP.mono (WP.gprs (Q := fun s' => (∃ c' k, c < c' ∧ Pending H s₀ c' k s') ∨ Done H s₀ s') ?_
+    (choose_untouched P)) fun s' ⟨h, hu₂⟩ => ?_)
   · refine WP.ite (decide (rr P s₀ c = 0))
       (by show VG.AArch64.eval (.zero .x .x23) s₁ = _; rw [eval_zero, hI₁.x23, ofNat_beq_zero (by have := rr_eq (P := P) s₀ c; omega_arith)])
       (fun hb => ?_) (fun _ => fill_ok hd hp hI₁ hcl h10₁)
@@ -773,9 +790,10 @@ theorem body_ok (hd : Dims P) {name : String} {code : Prog isa} (hf : CalleeOk H
     · refine WP.ite false (by
         show VG.AArch64.eval (.zero .x .x10) s' = _
         rw [eval_zero, hP.x10, ofNat_beq_zero (hP.k_lt hd), decide_eq_false (Nat.pos_iff_ne_zero.mp hP.k_pos)])
-        (fun h => by cases h) fun _ => WP.mono (hP.compress_ok hd hf hp) fun s'' h => ⟨c', hc', h⟩
+        (fun h => by cases h) fun _ => WP.mono (hP.compress_ok hd hf hp) fun s'' ⟨h, hu₃⟩ =>
+          ⟨⟨c', hc', h⟩, fun r hr => by rw [hu₃ r hr, hu₂ r hr, hu₁ r hr]⟩
     · refine WP.ite true (by show VG.AArch64.eval (.zero .x .x10) s' = _; rw [eval_zero, h10]; rfl)
-        (fun _ => WP.block_nil ⟨len s₀, hcl, hD⟩) fun h => by cases h
+        (fun _ => WP.block_nil ⟨⟨len s₀, hcl, hD⟩, fun r hr => by rw [hu₂ r hr, hu₁ r hr]⟩) fun h => by cases h
 
 /-! ## Prologue and epilogue -/
 
@@ -823,51 +841,53 @@ theorem epilogue_ok (hd : Dims P) {s₀ : State} (hp : Pre P s₀) {s : State} (
   have := hI.repr iv m ⟨hr, hc⟩
   rwa [List.take_of_length_le (Nat.le_of_eq (D_length _)), ← hmem] at this
 
-/-- `update` without its frame: the callee-saved registers but `x30` are kept. -/
-theorem correctMain (hd : Dims P) {name : String} {code : Prog isa} (hf : CalleeOk H code)
-    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (updateMain P name code), clobbers i r = false) {s₀ : State}
+/-- `update` without its frame: the callee-saved registers but `x30` are
+kept. Those we use are restored; of the others (`untouched`), our own code
+writes none and the compression function keeps them. -/
+theorem correctMain (hd : Dims P) {name : String} {code : Prog isa} (hf : CalleeOk H code) {s₀ : State}
     (hp : Pre P s₀) :
     WP isa (updateMain P name code) s₀ fun s' => (∀ r ∈ preserved, r ≠ .x30 → s'.gpr r = s₀.gpr r) ∧
       s'.sp = s₀.sp ∧ (updK H).post s₀ s' := by
   have hlen := len_lt s₀
-  refine WP.mono (WP.gprs (Q := Post P H s₀) ?_ hu) fun s' ⟨⟨hsv, hsp, hpost⟩, hu⟩ =>
-    ⟨preserved_of hsv hu, hsp, hpost⟩
   unfold updateMain
-  refine WP.seq (WP.mono (prologue_ok (H := H) hd hp) fun s₁ hI => ?_)
-  refine WP.seq (WP.mono (Q := Inv H s₀ (len s₀)) ?_ fun s₂ hI₂ => epilogue_ok hd hp hI₂)
+  refine WP.seq (WP.mono (WP.gprs (prologue_ok (H := H) hd hp) (updateStart_untouched P)) fun s₁ ⟨hI, hu₁⟩ => ?_)
+  refine WP.seq (WP.mono (Q := fun (s : State) => Inv H s₀ (len s₀) s ∧ ∀ r ∈ untouched, s.gpr r = s₀.gpr r) ?_
+    fun s₂ ⟨hI₂, hu₂⟩ => WP.mono (WP.gprs (epilogue_ok hd hp hI₂) (restore_untouched P))
+      fun s' ⟨⟨hsv, hsp, hpost⟩, hu₃⟩ =>
+        ⟨preserved_of hsv fun r hr => (hu₃ r hr).trans (hu₂ r hr), hsp, hpost⟩)
   refine WP.ite (decide (len s₀ = 0))
     (by show VG.AArch64.eval (.zero .x .x22) s₁ = _
         rw [eval_zero, hI.x22, Nat.sub_zero, ofNat_beq_zero (by omega_arith)])
     (fun hb => ?_) (fun hb => ?_)
   · simp only [decide_eq_true_eq] at hb
-    exact WP.block_nil (hb ▸ hI)
+    exact WP.block_nil ⟨hb ▸ hI, hu₁⟩
   · simp only [decide_eq_false_iff_not] at hb
-    refine WP.loop (M := isa) (fun n s => ∃ c, n = len s₀ - c ∧ c < len s₀ ∧ Inv H s₀ c s) ?_ (len s₀) s₁
-      ⟨0, rfl, by omega_arith, hI⟩
-    rintro n s ⟨c, rfl, hcl, hI⟩
-    refine WP.mono (body_ok hd hf hp hI hcl) fun s' ⟨c', hc, hI'⟩ => ?_
+    refine WP.loop (M := isa) (fun n s => ∃ c, n = len s₀ - c ∧ c < len s₀ ∧ Inv H s₀ c s ∧
+      ∀ r ∈ untouched, s.gpr r = s₀.gpr r) ?_ (len s₀) s₁ ⟨0, rfl, by omega_arith, hI, hu₁⟩
+    rintro n s ⟨c, rfl, hcl, hI, hu⟩
+    refine WP.mono (body_ok hd hf hp hI hcl) fun s' ⟨⟨c', hc, hI'⟩, hu'⟩ => ?_
+    have hu'' : ∀ r ∈ untouched, s'.gpr r = s₀.gpr r := fun r hr => (hu' r hr).trans (hu r hr)
     have hc' := hI'.c_le
     have hz : isa.eval (.nonzero .x .x22) s' = some (decide (len s₀ - c' ≠ 0)) := by
       show VG.AArch64.eval (.nonzero .x .x22) s' = _
       rw [eval_nonzero, hI'.x22, bne, ofNat_beq_zero (by omega_using [hlen])]
       simp
     by_cases hl : len s₀ - c' = 0
-    · refine .inl ⟨by rw [hz]; simp [hl], ?_⟩
+    · refine .inl ⟨by rw [hz]; simp [hl], ?_, hu''⟩
       rwa [show c' = len s₀ by omega_arith] at hI'
-    · exact .inr ⟨by rw [hz]; simp [hl], len s₀ - c', by omega_arith, c', rfl, by omega_arith, hI'⟩
+    · exact .inr ⟨by rw [hz]; simp [hl], len s₀ - c', by omega_arith, c', rfl, by omega_arith, hI', hu''⟩
 
 /-- The state `updateMain` starts in, inside the frame. -/
 abbrev inner (s₀ : State) : State :=
   { s₀ with sp := s₀.sp - 16, mem := s₀.mem.write (s₀.sp - 16) 8 (s₀.gpr .x30) }
 
 theorem correct (hd : Dims P) {name : String} {code : Prog isa} (hf : CalleeOk H code)
-    (hu : ∀ r ∈ untouched, ∀ i ∈ instrs (updateMain P name code), clobbers i r = false)
     (hn : 16 * (updateMain P name code).aarch64Depth + 16 < 2 ^ 64) {s₀ : State} (hp : Pre P s₀)
     (hs : Stack P s₀) :
     WP isa (update P name code) s₀ fun s' => abiPreserved s₀ s' ∧ (updK H).post s₀ s' := by
   apply WP.withPreservedV (hc := update_keepsV hf.keepsV)
   have hpi : Pre P (inner s₀) := ⟨hp.rd, hp.wr, hp.st_scr, hp.d_st, hp.d_scr⟩
-  refine WP.frameReg hs.sp16 (fun R hR => ?_) (WP.mono (correctMain hd hf hu hpi) fun s' ⟨hk, hsp, hpost⟩ => ?_)
+  refine WP.frameReg hs.sp16 (fun R hR => ?_) (WP.mono (correctMain hd hf hpi) fun s' ⟨hk, hsp, hpost⟩ => ?_)
     hn
   · rw [hp.wr] at hR
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
@@ -896,20 +916,15 @@ def sat (P : Params) : State where
   wr := [⟨0x1000, P.N + P.B⟩, ⟨0x3000, P.so + 48⟩]
 
 /-- `update` is verified, given that it is constant time (which the taint
-analysis proves of each hash function's code), never writes `untouched`, and
-fits its frames in the address space. -/
+analysis proves of each hash function's code) and fits its frames in the
+address space. -/
 theorem verified (hd : Dims P) {name : String} {code : Prog isa} (hf : CalleeOk H code)
     (hct : ConstantTime isa (updK H).pre (updK H).pub (update P name code))
-    (hu : ((instrs (updateMain P name code)).all fun i => untouched.all fun r => !clobbers i r) = true)
     (hn : 16 * (updateMain P name code).aarch64Depth + 16 < 2 ^ 64) :
     Verified AArch64.target (update P name code) (updK H) := by
   have hd_N := hd.N; have hd_B := hd.B; have hd_so := hd.so
-  have hu' : ∀ r ∈ untouched, ∀ i ∈ instrs (updateMain P name code), clobbers i r = false := by
-    intro r hr i hi
-    have := List.all_eq_true.mp (List.all_eq_true.mp hu i hi) r hr
-    simpa using this
   refine ⟨fun s hs' => ?_, hct, ?_⟩
-  · obtain ⟨t, s', he, h⟩ := correct hd hf hu' hn (pre_of hs').1 (pre_of hs').2
+  · obtain ⟨t, s', he, h⟩ := correct hd hf hn (pre_of hs').1 (pre_of hs').2
     exact ⟨t, s', he, h⟩
   · refine ⟨sat P, rfl, rfl, ?_, ?_, ?_, by simp only [sat]; decide, ?_, ?_, ?_⟩
     all_goals try simp only [sat]

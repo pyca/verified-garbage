@@ -36,6 +36,7 @@ section
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
 structure ZeroReadyW (w16 : Bool) (L : List Zq) (slot : Nat) (aP : Addr) (s : State) : Prop where
@@ -99,6 +100,7 @@ section
 /-! # The paired failure cleanup depends only on the public accepted lengths -/
 section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
 theorem ZeroReadyW.frame {w16 : Bool} {s u : State} {L : List Zq} {p : Addr} {slot : Nat} {rs : List Region}
@@ -148,12 +150,13 @@ end
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
-def StepTimingW (w16 : Bool) (A B : Spec.Sha3.State) (p a b c : Addr) : Prop :=
+def StepTimingW (sha3 : Bool) (w16 : Bool) (A B : Spec.Sha3.State) (p a b c : Addr) : Prop :=
   ∀{s u : State}{n : Nat}, n=3 ∨ n=4 → ProgressW w16 A B n p a b c s → ProgressW w16 A B n p a b c u →
     s.syms "VG_MLKEM_REJ_SHUFFLE"=c → u.syms "VG_MLKEM_REJ_SHUFFLE"=c → s.sp=u.sp →
-    RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.extraStep w16) (fun _ _=>True)
+    RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.extraStep sha3 w16) (fun _ _=>True)
 
 theorem retryInit_ct : ConstantTime isa (fun _=>True) (VG.AArch64.Taint.Agree (Taint.ofRegs []))
     (.block [.movz .x .x30 1 0]) :=
@@ -165,27 +168,27 @@ theorem retryCond_ct : ConstantTime isa (fun _=>True) (VG.AArch64.Taint.Agree (T
 
 /-- An iteration of `Paired.retry` from the same count in both runs. -/
 theorem retryBody_relCT {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u t v : State} {n : Nat}
-    (step : StepTimingW w16 A B p a b c) (it : RetryInv w16 A B p a b c s n t)
+    (step : StepTimingW sha3 w16 A B p a b c) (it : RetryInv w16 A B p a b c s n t)
     (iv : RetryInv w16 A B p a b c u n v) (sp : t.sp=v.sp) :
-    RelCT isa (fun t' v'=>t'=t ∧ v'=v) (.seq (Impl.MlKem.AArch64.Paired.extraStep w16)
+    RelCT isa (fun t' v'=>t'=t ∧ v'=v) (.seq (Impl.MlKem.AArch64.Paired.extraStep sha3 w16)
       (.block [.sub .x .x7 .x6 .x30,.lsr .x .x7 .x7 63,.movz .x .x30 0 0])) (fun _ _=>True) := by
   refine RelCT.seq (R:=fun t' v' : State=>t'.sp=v'.sp) ?_ ?_
   · intro t₀ v₀ tr ur t' v' h et ev
     rcases h with ⟨rfl,rfl⟩
     have n34 : 4-n=3 ∨ 4-n=4 := by have := it.le; omega_using [this]
     exact ⟨(step n34 it.progress iv.progress it.syms iv.syms sp t₀ v₀ tr ur t' v' ⟨rfl,rfl⟩ et ev).1,
-      (exec_post (advance_ok it.progress it.syms) et).keep.sp.trans
-        (sp.trans (exec_post (advance_ok iv.progress iv.syms) ev).keep.sp.symm)⟩
+      (exec_post (advance_ok (sha3 := sha3) it.progress it.syms) et).keep.sp.trans
+        (sp.trans (exec_post (advance_ok (sha3 := sha3) iv.progress iv.syms) ev).keep.sp.symm)⟩
   · intro t₀ v₀ tr ur t' v' h et ev
     exact ⟨retryCond_ct t₀ v₀ tr ur t' v' trivial trivial (agree_of h (by simp)) et ev,trivial⟩
 
 theorem bounded_relCT {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
-    (step : StepTimingW w16 A B p a b c) (ps : ProgressW w16 A B 3 p a b c s) (pu : ProgressW w16 A B 3 p a b c u)
+    (step : StepTimingW sha3 w16 A B p a b c) (ps : ProgressW w16 A B 3 p a b c s) (pu : ProgressW w16 A B 3 p a b c u)
     (ss : s.syms "VG_MLKEM_REJ_SHUFFLE"=c) (us : u.syms "VG_MLKEM_REJ_SHUFFLE"=c) (sp : s.sp=u.sp) :
-    RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.retry w16)
+    RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.retry sha3 w16)
       (fun t v=>BoundedW w16 A B p a b c s t ∧ BoundedW w16 A B p a b c u v) := by
   let I := fun n t v=>RetryInv w16 A B p a b c s n t ∧ RetryInv w16 A B p a b c u n v
-  have trace : RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.retry w16) (fun _ _=>True) := by
+  have trace : RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.retry sha3 w16) (fun _ _=>True) := by
     refine RelCT.seq (R:=I 1) ?_ (RelCT.loop (M:=isa) (Q:=fun _ _=>True) I (fun n => ?_) 1)
     · intro t v tr ur t' v' h et ev
       rcases h with ⟨rfl,rfl⟩
@@ -194,9 +197,9 @@ theorem bounded_relCT {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u
     · intro t v tr ur t' v' h et ev
       rcases h with ⟨it,iv⟩
       have sp' : t.sp=v.sp := it.keep.sp.trans (sp.trans iv.keep.sp.symm)
-      have tq := (retryBody_relCT step it iv sp' t v tr ur t' v' ⟨rfl,rfl⟩ et ev).1
-      obtain ⟨et',-,it'⟩ := exec_post (retryStep_ok (fun _ ht hs=>advance_ok ht hs) it) et
-      obtain ⟨ev',-,iv'⟩ := exec_post (retryStep_ok (fun _ ht hs=>advance_ok ht hs) iv) ev
+      have tq := (retryBody_relCT (sha3 := sha3) step it iv sp' t v tr ur t' v' ⟨rfl,rfl⟩ et ev).1
+      obtain ⟨et',-,it'⟩ := exec_post (retryStep_ok (sha3 := sha3) (fun _ ht hs=>advance_ok (sha3 := sha3) ht hs) it) et
+      obtain ⟨ev',-,iv'⟩ := exec_post (retryStep_ok (sha3 := sha3) (fun _ ht hs=>advance_ok (sha3 := sha3) ht hs) iv) ev
       refine ⟨tq,by rw [et',ev'],fun _=>trivial,fun h=>?_⟩
       have hr : retryAgain A B n=true := by rw [et'] at h; exact Option.some.inj h
       have hn : n=1 := by simp only [retryAgain,decide_eq_true_eq] at hr; exact hr.1
@@ -204,8 +207,8 @@ theorem bounded_relCT {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u
   intro t v tr ur t' v' h et ev
   rcases h with ⟨ht,hv⟩; subst t; subst v
   exact ⟨(trace s u tr ur t' v' ⟨rfl,rfl⟩ et ev).1,
-    exec_post (bounded_ok (fun _ ht hs=>advance_ok ht hs) ps ss) et,
-    exec_post (bounded_ok (fun _ ht hs=>advance_ok ht hs) pu us) ev⟩
+    exec_post (bounded_ok (sha3 := sha3) (fun _ ht hs=>advance_ok (sha3 := sha3) ht hs) ps ss) et,
+    exec_post (bounded_ok (sha3 := sha3) (fun _ ht hs=>advance_ok (sha3 := sha3) ht hs) pu us) ev⟩
 
 structure CleanupW (w16 : Bool) (A B : Spec.Sha3.State) (p a b c : Addr) (s : State) : Prop where
   context : Context p a b c s
@@ -250,13 +253,13 @@ theorem mask_ct : ConstantTime isa (fun _=>True) (VG.AArch64.Taint.Agree (Taint.
   VG.Taint.constantTime (A:=taint) (Taint.ofRegs []) (fun _ _ _ _ h=>h) (hc:=.block []) rfl
 
 theorem resume_relCT {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
-    (step : StepTimingW w16 A B p a b c) (ps : ProgressW w16 A B 3 p a b c s) (pu : ProgressW w16 A B 3 p a b c u)
+    (step : StepTimingW sha3 w16 A B p a b c) (ps : ProgressW w16 A B 3 p a b c s) (pu : ProgressW w16 A B 3 p a b c u)
     (ss : s.syms "VG_MLKEM_REJ_SHUFFLE"=c) (us : u.syms "VG_MLKEM_REJ_SHUFFLE"=c) (sp : s.sp=u.sp) :
-    RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.extraPair w16)
+    RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.extraPair sha3 w16)
       (fun t v=>ResumePostW w16 A B p a b s t ∧ ResumePostW w16 A B p a b u v) := by
-  have trace : RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.extraPair w16) (fun _ _=>True) := by
-    change RelCT isa _ (.seq (Impl.MlKem.AArch64.Paired.retry w16) (.seq (.block _) _)) _
-    refine RelCT.seq (bounded_relCT step ps pu ss us sp) ?_
+  have trace : RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.extraPair sha3 w16) (fun _ _=>True) := by
+    change RelCT isa _ (.seq (Impl.MlKem.AArch64.Paired.retry sha3 w16) (.seq (.block _) _)) _
+    refine RelCT.seq (bounded_relCT (sha3 := sha3) step ps pu ss us sp) ?_
     refine RelCT.seq (R:=fun t v : State=>CleanupW w16 A B p a b c t ∧ CleanupW w16 A B p a b c v ∧ t.sp=v.sp) ?_ ?_
     · intro t v tr ur t' v' h et ev
       have mt : Only [.x24] t t' := (exec_post (wp_and (fun w kw ew=>wp_nil (show Only [.x24] t w from kw))) et)
@@ -271,7 +274,7 @@ theorem resume_relCT {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u 
   intro t v tr ur t' v' h et ev
   rcases h with ⟨ht,hv⟩; subst t; subst v
   exact ⟨(trace s u tr ur t' v' ⟨rfl,rfl⟩ et ev).1,
-    exec_post (extraPair_ok ps ss) et,exec_post (extraPair_ok pu us) ev⟩
+    exec_post (extraPair_ok (sha3 := sha3) ps ss) et,exec_post (extraPair_ok (sha3 := sha3) pu us) ev⟩
 
 end VG.Proof.MlKem.AArch64.Paired
 
@@ -288,6 +291,7 @@ section
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
 structure ResumeW (w16 : Bool) (L : List Zq) (B : Nat→Byte) (aP : Addr) (s : State) : Prop where
@@ -336,6 +340,7 @@ section
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
 theorem load_resume {w16 : Bool} {s : State} {L : List Zq} {B : Nat→Byte} {aP : Addr}
@@ -412,6 +417,7 @@ section
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 
 theorem bothStart_ct : ConstantTime isa (fun _=>True) (VG.AArch64.Taint.Agree (Taint.ofRegs []))
@@ -489,6 +495,7 @@ end
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Proof.MlKem VG.Spec.MlKem VG.Proof.Sha3.AArch64.Neon
 
 structure StepReadyW (w16 : Bool) (A B : Spec.Sha3.State) (L M : List Zq) (p a b c : Addr) (s : State) : Prop where
@@ -505,11 +512,11 @@ structure StepReadyW (w16 : Bool) (A B : Spec.Sha3.State) (L M : List Zq) (p a b
 
 theorem nextBlock_ready {w16 : Bool} {s : State} {A B : Spec.Sha3.State} {L M : List Zq} {p a b c : Addr}
  (h : StepReadyW w16 A B L M p a b c s) :
- WP isa nextBlock s fun u=> Keep nextRegs s u ∧ u.gpr .x16=c ∧
+ WP isa (nextBlock sha3) s fun u=> Keep nextRegs s u ∧ u.gpr .x16=c ∧
    BothReadyW w16 L M (Proof.Sha3.byteOf (Spec.Sha3.keccakF A))
      (Proof.Sha3.byteOf (Spec.Sha3.keccakF B)) p a b u := by
  rcases h with ⟨ctx,hp,sym,pair,hl,hm,ca,cb,sa,sb⟩
- refine WP.mono_syms (nextBlock_ok hp ctx.scratch pair) fun u h hsym => ?_
+ refine WP.mono_syms (nextBlock_ok (sha3 := sha3) hp ctx.scratch pair) fun u h hsym => ?_
  rcases h with ⟨ku,fu,precise,up,pu,ra,rb,cs,ut⟩
  have fu' : Frame (stepWrites p a b) s.mem u.mem := fu.mono (by simp [stepWrites])
  have cu := ctx.frame ku.rd ku.wr fu'
@@ -542,8 +549,8 @@ theorem nextBlock_ready {w16 : Bool} {s : State} {A B : Spec.Sha3.State} {L M : 
 theorem extraStep_relCT {w16 : Bool} {s u : State} {A B : Spec.Sha3.State} {L M : List Zq} {p a b c : Addr}
  (hs : StepReadyW w16 A B L M p a b c s) (hu : StepReadyW w16 A B L M p a b c u)
  (sp : s.sp=u.sp) :
- RelCT isa (fun x y=>x=s ∧ y=u) (Impl.MlKem.AArch64.Paired.extraStep w16) (fun _ _=>True) := by
- have first : RelCT isa (fun x y=>x=s ∧ y=u) nextBlock
+ RelCT isa (fun x y=>x=s ∧ y=u) (Impl.MlKem.AArch64.Paired.extraStep sha3 w16) (fun _ _=>True) := by
+ have first : RelCT isa (fun x y=>x=s ∧ y=u) (nextBlock sha3)
      (fun x y=>BothReadyW w16 L M (Proof.Sha3.byteOf (Spec.Sha3.keccakF A))
          (Proof.Sha3.byteOf (Spec.Sha3.keccakF B)) p a b x ∧
        BothReadyW w16 L M (Proof.Sha3.byteOf (Spec.Sha3.keccakF A))
@@ -551,12 +558,12 @@ theorem extraStep_relCT {w16 : Bool} {s u : State} {A B : Spec.Sha3.State} {L M 
   intro x y tx ty x' y' h ex ey
   rcases h with ⟨hx,hy⟩
   subst x; subst y
-  obtain ⟨kx,tx16,px⟩ := exec_post (nextBlock_ready hs) ex
-  obtain ⟨ky,ty16,py⟩ := exec_post (nextBlock_ready hu) ey
-  exact ⟨nextBlock_ct s u tx ty x' y' trivial trivial
+  obtain ⟨kx,tx16,px⟩ := exec_post (nextBlock_ready (sha3 := sha3) hs) ex
+  obtain ⟨ky,ty16,py⟩ := exec_post (nextBlock_ready (sha3 := sha3) hu) ey
+  exact ⟨nextBlock_ct (sha3 := sha3) s u tx ty x' y' trivial trivial
     (agree_of sp (by intro r hr; rw [List.mem_singleton.mp hr]; exact hs.pointer.trans hu.pointer.symm)) ex ey,
     px,py,kx.sp.trans (sp.trans ky.sp.symm),tx16.trans ty16.symm⟩
- have grouped : RelCT isa (fun x y=>x=s ∧ y=u) (.seq nextBlock (Impl.MlKem.AArch64.Paired.extraBoth w16)) (fun _ _=>True) := by
+ have grouped : RelCT isa (fun x y=>x=s ∧ y=u) (.seq (nextBlock sha3) (Impl.MlKem.AArch64.Paired.extraBoth w16)) (fun _ _=>True) := by
   refine RelCT.seq first ?_
   intro x y tx ty x' y' h ex ey
   exact extraBoth_relCT h.1 h.2.1 h.2.2.1 h.2.2.2 x y tx ty x' y' ⟨rfl,rfl⟩ ex ey
@@ -586,19 +593,20 @@ end
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64
 
-theorem stepTiming {w16 : Bool} (A B : Spec.Sha3.State) (p a b c : Addr) : StepTimingW w16 A B p a b c := by
+theorem stepTiming {w16 : Bool} (A B : Spec.Sha3.State) (p a b c : Addr) : StepTimingW sha3 w16 A B p a b c := by
   intro s u n _ hs hu ss us sp
-  exact extraStep_relCT
+  exact extraStep_relCT (sha3 := sha3)
     ⟨hs.context,hs.ptr,ss,hs.pair,accepted_length A n,accepted_length B n,hs.left,hs.right,hs.saveLeft,hs.saveRight⟩
     ⟨hu.context,hu.ptr,us,hu.pair,accepted_length A n,accepted_length B n,hu.left,hu.right,hu.saveLeft,hu.saveRight⟩ sp
 
 theorem extraPair_relCT {w16 : Bool} {A B : Spec.Sha3.State} {p a b c : Addr} {s u : State}
     (ps : ProgressW w16 A B 3 p a b c s) (pu : ProgressW w16 A B 3 p a b c u)
     (ss : s.syms "VG_MLKEM_REJ_SHUFFLE"=c) (us : u.syms "VG_MLKEM_REJ_SHUFFLE"=c) (sp : s.sp=u.sp) :
-    RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.extraPair w16)
+    RelCT isa (fun t v=>t=s ∧ v=u) (Impl.MlKem.AArch64.Paired.extraPair sha3 w16)
       (fun t v=>ResumePostW w16 A B p a b s t ∧ ResumePostW w16 A B p a b u v) :=
-  resume_relCT (stepTiming A B p a b c) ps pu ss us sp
+  resume_relCT (sha3 := sha3) (stepTiming (sha3 := sha3) A B p a b c) ps pu ss us sp
 
 end VG.Proof.MlKem.AArch64.Paired

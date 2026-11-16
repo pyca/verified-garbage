@@ -249,6 +249,23 @@ theorem enc_okL {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
     ⟨h', f.trans (f'.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp), fun i hi => by
       exact z i hi⟩
 
+/-- `dec_ok`, and what the decryption leaves in its working space: the
+256 bytes of the copy of the powers cleared, the rest as it was. -/
+theorem dec_okL {s₀ : State} (hp : SPre s₀) (hm : nb s₀ % 16 = 0) :
+    WP isa dec s₀ fun s => DPost s₀ s ∧ PieceL 256 (fun _ _ => true) s₀ s := by
+  have hL : WP isa Impl.Gcm.X86_64.Stitch.decLoops s₀ fun s =>
+      DPost s₀ s ∧ Frame [cR s₀, yR s₀, dR s₀, ⟨pp s₀, 256⟩] s₀.mem s.mem :=
+    WP.seq (WP.mono (setup_okF hp) fun _ ⟨_, hR, hpw, f₁⟩ =>
+      WP.mono (decTail_okF hp hm (finD hpw) hR) fun s₂ ⟨h, f₂⟩ => ⟨h,
+        (f₁.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp).trans
+          (f₂.mono fun r hr => by
+            simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> simp)⟩)
+  refine WP.seq (WP.mono hL fun s ⟨h, f⟩ => ?_)
+  refine WP.mono (wp_and (zeroPowD_ok hp h)
+    (zeroPow_zero hp (h.gpr _ (by decide) (by decide) (by decide) (by decide)) h.wr)) fun s' ⟨h', f', z⟩ =>
+    ⟨h', f.trans (f'.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp), fun i hi => by
+      exact z i hi⟩
+
 /-- Both interleaved loops meet their contracts. -/
 theorem stitch_ok : StitchOk Impl.Gcm.X86_64.Stitch.enc Impl.Gcm.X86_64.Stitch.dec := ⟨fun _ hp hm => enc_ok hp hm, fun _ hp hm => dec_ok hp hm⟩
 

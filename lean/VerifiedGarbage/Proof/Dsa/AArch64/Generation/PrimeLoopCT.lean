@@ -21,7 +21,7 @@ private def loopInv (len drawBytes n : Nat) : State → State → Prop :=
   Two fun p s => p.draw.prime.rand.length - p.draw.used = n ∧ LoopBefore len drawBytes p s
 
 section
-variable (M : Mont) (K : Kernel) (len drawBytes : Nat)
+variable (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) (len drawBytes : Nat)
 variable {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
 variable (ht₁ : (taint.check (Taint.ofRegs [.x0])
   (.block (Impl.Dsa.AArch64.Generation.drawCopyArgs len drawBytes)) hc₁).isSome = true)

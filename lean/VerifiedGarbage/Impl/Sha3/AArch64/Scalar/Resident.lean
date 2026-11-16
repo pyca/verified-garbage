@@ -1,20 +1,24 @@
 module
 
-public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Unrolled
 public import VerifiedGarbage.Impl.Sha3.AArch64
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Boundary
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Control
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.VectorLower
 
 /-!
-# The scalar sponge absorbing whole blocks with the state in registers
+# The scalar sponge absorbing whole blocks with the state in registers: its steps
 
-`bulk` runs where the SHA-3 resident absorber's does (`Sha3.Vector.Resident`:
-at an aligned position, with at least one whole block of data; `x0` =
-state, `x1` = `x5` = scratch, `x3` = data, `x4` = its length, `x6` = the
-rate). It loads the 25 lanes into general registers once, and for each
-whole block XORs the block's words into them and runs the unrolled rounds
-of `unrolledPermute`, then stores them once. The callee-saved registers and
-the pointers are kept in AdvSIMD registers, as by the permutation's
-boundary (`Boundary.save`), and the data pointer, the length left and the
-rate in v19–v21; nothing is written to memory but the state at the end.
+The steps of `Lazy.bulk` (`Lazy.lean`), which runs where the SHA-3 resident
+absorber's does (`Sha3.Vector.Resident`: at an aligned position, with at
+least one whole block of data; `x0` = state, `x1` = `x5` = scratch, `x3` =
+data, `x4` = its length, `x6` = the rate). It loads the 25 lanes into
+general registers once (`setup`), for each whole block XORs the block's
+words into them (`xorBlock`), runs the rounds and moves on to the next
+block (`advance`), then stores them once (`finish`). The callee-saved
+registers and the pointers are kept in AdvSIMD registers, as by the
+permutation's boundary (`Boundary.save`), and the data pointer, the length
+left and the rate in v19–v21; nothing is written to memory but the state at
+the end.
 -/
 
 @[expose] public section
@@ -55,15 +59,11 @@ def advance : List Instr :=
    .umov .x .x27 .v20 0, .umov .x .x28 .v21 0,
    .sub .x .x26 .x27 .x28, .lsr .x .x26 .x26 63]
 
-def body : Prog isa := .seq xorBlock (.seq (.block unrolledRounds) (.block advance))
-
 /-- Store the lanes, restore the callee-saved registers, and the arguments
 `Sha3.Vector.Resident`'s caller expects (`x2 = 0`, `x5 = x1`). -/
 def finish : List Instr :=
   Boundary.store ++ Boundary.restore ++
   ([.umov .x .x0 .v30 0, .umov .x .x1 .v31 0, .umov .x .x3 .v19 0, .umov .x .x4 .v20 0,
    .umov .x .x6 .v21 0, mov .x5 .x1, .movz .x .x2 0 0] : List Instr)
-
-def bulk : Prog isa := .seq (.block setup) (.seq (.loop body (.zero .x .x26)) (.block finish))
 
 end VG.Impl.Sha3.AArch64.Scalar.Resident

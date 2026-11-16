@@ -7,9 +7,11 @@ public import VerifiedGarbage.Impl.Dsa.AArch64.Generate
 
 `validate` is `vg_dsa_validate_private_key` (Spec/Dsa/PrevalidatedSign.lean):
 the domain check's register entry (`Generate.checkFields`), with the nonce
-field pointing at x, so that the signer's key checks (`Checks.signingKey`
-and `Checks.privateKey`, whose nonce range check is then x's) are every
-check signing makes of the key. `sign` is one signing attempt of
+field pointing at x, so that the signer's key checks (those of
+`Checks.signingKey` and `Checks.privateKey`, whose nonce range check is
+then x's) are every check signing makes of the key; their two
+exponentiations, y = g^x and the domain's g^q = 1, are one pass over both
+exponents (`SharedPower.pow`). `sign` is one signing attempt of
 `vg_dsa_sign_random_prevalidated`: the signer's program with those two
 checks, and their two exponentiations, replaced by rebuilding q−2 and the
 nonce's range check; the precondition that the exact key bytes validate
@@ -33,7 +35,10 @@ def validateEntry : List Instr :=
 def validate (mul : Nat → Nat → Nat → Prog isa) : Prog isa := seqs [
   .block validateEntry, Checks.domainShape,
   .ite (.zero .x .x3) (.block [movi .x0 0])
-    (seqs [workspaces, Checks.signingKey mul, Checks.privateKey mul, .block result])]
+    (seqs [workspaces, seqs (Checks.publicPrefix mul),
+      Checks.range qWorkspace Core.privateScalar, Checks.range qWorkspace Core.nonce,
+      SharedPower.pow mul Core.generator Core.privateScalar (Core.element t),
+      Checks.equal (Core.element t) Core.publicValue, .block result])]
 
 /-- Rebuild q−2 in this call's workspace and check the nonce's range;
 validation is a precondition on the immutable key bytes, never a flag

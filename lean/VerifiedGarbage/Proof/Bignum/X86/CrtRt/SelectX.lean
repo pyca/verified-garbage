@@ -5,6 +5,7 @@ public import VerifiedGarbage.Impl.Bignum.X86.CrtRt
 import VerifiedGarbage.Proof.Bignum.X86.PublicRt.Ptr
 import VerifiedGarbage.Proof.Framework.X86.Sse
 import VerifiedGarbage.Proof.Framework.X86.SseDword
+import VerifiedGarbage.Proof.Framework.X86.SseRegUpd
 import VerifiedGarbage.Proof.Framework.X86.SseLanes
 import VerifiedGarbage.Proof.Mont.X86.Sse2.Lanes
 import VerifiedGarbage.Proof.Mont.Words128
@@ -90,17 +91,29 @@ theorem chunk_ok {t : State} {W : Addr} {L x d : Nat} (hw : Ws t W L) (hx : x + 
   let s₅ := s₄.setXmm .xmm0 (sel128 t.mem W x d (t.xmm .xmm7))
   let s₆ : State := { s₅ with mem := t.mem.writeW (off W d) (sel128 t.mem W x d (t.xmm .xmm7)) }
   have x7 : s₄.xmm .xmm7 = t.xmm .xmm7 := rfl
+  -- The frame of the vector writes by their lemmas: unifying the states would unfold them.
+  have g₁ : s₁.gpr = t.gpr := RegUpd.gpr_setXmm _ _ _
+  have r₁ : s₁.rd = t.rd := RegUpd.rd_setXmm _ _ _
+  have w₁ : s₁.wr = t.wr := RegUpd.wr_setXmm _ _ _
+  have g₅ : s₅.gpr = t.gpr := by simp only [s₅, s₄, s₃, s₂, s₁, RegUpd.gpr_setXmm]
+  have w₅ : s₅.wr = t.wr := by simp only [s₅, s₄, s₃, s₂, s₁, RegUpd.wr_setXmm]
+  have m₅ : s₅.mem = t.mem := by simp only [s₅, s₄, s₃, s₂, s₁, RegUpd.mem_setXmm]
+  have x₅ : s₅.xmm .xmm0 = sel128 t.mem W x d (t.xmm .xmm7) := RegUpd.xmm_setXmm_self _ _ _
+  have r₆ : s₆.rd = t.rd := by simp only [s₆, s₅, s₄, s₃, s₂, s₁, RegUpd.rd_setXmm]
+  have w₆ : s₆.wr = t.wr := by simp only [s₆, s₅, s₄, s₃, s₂, s₁, RegUpd.wr_setXmm]
+  have ep₁ : s₁.ea (at_ .ebp 0) = off W x := by rw [State.ea, g₁]; exact ep
+  have rp₁ : InRegions (s₁.rd ++ s₁.wr) (off W x) 16 := by rw [r₁, w₁]; exact rp
+  have eb₅ : s₅.ea (at_ .ebx 0) = off W d := by rw [State.ea, g₅]; exact eb
+  have wb₅ : InRegions s₅.wr (off W d) 16 := by rw [w₅]; exact wb
   simp only [List.cons_append]
   refine cons (s' := s₁) (by simp only [exec, eb, State.load128, rb, ite_true, Option.map_some]; rfl) ?_
   refine cons (s' := s₂) (by
-    simp only [exec, show s₁.ea (at_ .ebp 0) = off W x from ep, State.load128,
-      (show InRegions (s₁.rd ++ s₁.wr) (off W x) 16 from rp), ite_true, Option.map_some]; rfl) ?_
+    simp only [exec, ep₁, State.load128, rp₁, ite_true, Option.map_some]; rfl) ?_
   refine cons (s' := s₃) rfl ?_
   refine cons (s' := s₄) rfl ?_
   refine cons (s' := s₅) rfl ?_
   refine cons (s' := s₆) (by
-    simp only [exec, show s₅.ea (at_ .ebx 0) = off W d from eb, State.store128,
-      (show InRegions s₅.wr (off W d) 16 from wb), ite_true]; rfl) ?_
+    simp only [exec, eb₅, State.store128, wb₅, ite_true, m₅, x₅]; rfl) ?_
   refine wp_addXm rfl fun u₁ a₁ x₁ => wp_addXm rfl fun u₂ a₂ x₂ => wp_subXm rfl fun u₃ a₃ z₃ x₃ => ?_
   refine k u₃ (by rw [a₃.mem, a₂.mem, a₁.mem]) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
   · rw [a₃.other _ (by decide), a₂.other _ (by decide), a₁.gpr]; rfl
@@ -108,8 +121,8 @@ theorem chunk_ok {t : State} {W : Addr} {L x d : Nat} (hw : Ws t W L) (hx : x + 
   · rw [a₃.gpr, a₂.other _ (by decide), a₁.other _ (by decide)]; rfl
   · rw [z₃, a₂.other _ (by decide), a₁.other _ (by decide)]; rfl
   · intro r h1 h2 h3; rw [a₃.other _ h1, a₂.other _ h2, a₁.other _ h3]; rfl
-  · rw [a₃.rd, a₂.rd, a₁.rd]; rfl
-  · rw [a₃.wr, a₂.wr, a₁.wr]; rfl
+  · rw [a₃.rd, a₂.rd, a₁.rd]; exact r₆
+  · rw [a₃.wr, a₂.wr, a₁.wr]; exact w₆
   · rw [x₃, x₂, x₁]; rfl
 
 /-- The block's doublewords are the selected words. -/

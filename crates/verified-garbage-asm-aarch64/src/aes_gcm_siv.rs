@@ -1734,6 +1734,372 @@ b 253f
 /// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
 /// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3824 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
 #[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal_neon(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
+    core::arch::naked_asm!(
+        r".inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
+.inst 0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133
+.inst 0x91000133,0x91000054,0x91000015,0x91000036,0x91000077,0x91000098,0x910000b9,0x910000da
+.inst 0xf9006e67,0xd280001b
+20:
+.inst 0xb9400289,0xb940068a,0xb9400a8b,0xb900727b,0xb9007669,0xb9007a6a,0xb9007e6b,0xd2800009
+.inst 0xf9007269,0xf9007669,0x910002a0,0x910002c1,0x9101c262,0x91038263,0xd2800024,0x911b8265
+bl {vg_aes_ctr32_neon}
+.inst 0xf9407269,0xd37df36a,0x8b0a026a,0xf9000949,0x9100077b,0xd341feca,0xd100054a,0xcb1b014a
+cbnz x10, 20b
+.inst 0x91008260,0xd1001ac1,0xd37ef421,0x9103c262,0x911b8263
+bl {vg_aes_expand_key_scratch}
+.inst 0xf9400a69,0xf9400e6a,0xd280002b,0x8a0b012c,0xd280000d,0xcb0c01ac,0xd341fd29,0x8a0b014d
+.inst 0x93cd05ad,0xaa0d0129,0xd341fd4a,0xd2fc200b,0x8a0c016b,0xca0b014a,0xdac00d4a,0xdac00d29
+.inst 0xf900226a,0xf9002669,0xd2800009,0xf9002a69,0xf9002e69,0x910002fb,0x9100031c,0xd344ff89
+cbz x9, 21f
+23:
+.inst 0xd34aff8a
+cbz x10, 24f
+.inst 0xd280080a
+b 25f
+24:
+.inst 0xd344ff8a
+25:
+.inst 0x9100036b,0x9107826e,0x9100014f
+26:
+.inst 0xf940016c,0xf940056d,0xdac00d8c,0xdac00dad,0xf90001cd,0xf90005cc,0x9100416b,0x910041ce
+.inst 0xd10005ef
+cbnz x15, 26b
+.inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
+bl {vg_ghash_neon}
+.inst 0xd344ff89
+cbnz x9, 23b
+b 22f
+21:
+22:
+cbz x28, 27f
+.inst 0xd2800009,0xf9007269,0xf9007669,0x9103826b,0x9100036c,0x9100038d
+29:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 29b
+.inst 0x9103827b,0xd280021c,0xd34aff8a
+cbz x10, 210f
+.inst 0xd280080a
+b 211f
+210:
+.inst 0xd344ff8a
+211:
+.inst 0x9100036b,0x9107826e,0x9100014f
+212:
+.inst 0xf940016c,0xf940056d,0xdac00d8c,0xdac00dad,0xf90001cd,0xf90005cc,0x9100416b,0x910041ce
+.inst 0xd10005ef
+cbnz x15, 212b
+.inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
+bl {vg_ghash_neon}
+.inst 0xd344ff89
+b 28f
+27:
+28:
+.inst 0x9100033b,0x9100035c,0xd344ff89
+cbz x9, 213f
+215:
+.inst 0xd34aff8a
+cbz x10, 216f
+.inst 0xd280080a
+b 217f
+216:
+.inst 0xd344ff8a
+217:
+.inst 0x9100036b,0x9107826e,0x9100014f
+218:
+.inst 0xf940016c,0xf940056d,0xdac00d8c,0xdac00dad,0xf90001cd,0xf90005cc,0x9100416b,0x910041ce
+.inst 0xd10005ef
+cbnz x15, 218b
+.inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
+bl {vg_ghash_neon}
+.inst 0xd344ff89
+cbnz x9, 215b
+b 214f
+213:
+214:
+cbz x28, 219f
+.inst 0xd2800009,0xf9007269,0xf9007669,0x9103826b,0x9100036c,0x9100038d
+221:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 221b
+.inst 0x9103827b,0xd280021c,0xd34aff8a
+cbz x10, 222f
+.inst 0xd280080a
+b 223f
+222:
+.inst 0xd344ff8a
+223:
+.inst 0x9100036b,0x9107826e,0x9100014f
+224:
+.inst 0xf940016c,0xf940056d,0xdac00d8c,0xdac00dad,0xf90001cd,0xf90005cc,0x9100416b,0x910041ce
+.inst 0xd10005ef
+cbnz x15, 224b
+.inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
+bl {vg_ghash_neon}
+.inst 0xd344ff89
+b 220f
+219:
+220:
+.inst 0xd37df309,0xf9007269,0xd37df349,0xf9007669,0x9103827b,0xd280021c,0xd34aff8a
+cbz x10, 225f
+.inst 0xd280080a
+b 226f
+225:
+.inst 0xd344ff8a
+226:
+.inst 0x9100036b,0x9107826e,0x9100014f
+227:
+.inst 0xf940016c,0xf940056d,0xdac00d8c,0xdac00dad,0xf90001cd,0xf90005cc,0x9100416b,0x910041ce
+.inst 0xd10005ef
+cbnz x15, 227b
+.inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
+bl {vg_ghash_neon}
+.inst 0xd344ff89,0xf9402e69,0xdac00d29,0xf9402a6a,0xdac00d4a,0xf940028b,0xca0b0129,0xb9400a8b
+.inst 0xca0b014a,0xd37ff94a,0xd341fd4a,0xf9003269,0xf900366a,0xf9403269,0xf9003a69,0xf9403669
+.inst 0xf9003e69,0xd2800009,0xf9000269,0xf9000669,0x9103c260,0x910002c1,0x9101c262,0xd2800024
+.inst 0x911b8265,0x91000263
+bl {vg_aes_ctr32_neon}
+.inst 0xf9400269,0xf9003269,0xf9400669,0xd2f0000a,0xaa0a0129,0xf9003669,0x9100033b,0x9100035c
+.inst 0xd344ff89
+cbz x9, 228f
+230:
+.inst 0xf9403269,0xf9003a69,0xf9403669,0xf9003e69,0x9103c260,0x910002c1,0x9101c262,0xd2800024
+.inst 0x911b8265,0x91000363
+bl {vg_aes_ctr32_neon}
+.inst 0xb9406269,0x11000529,0xb9006269,0x9100437b,0xd100439c,0xd344ff89
+cbnz x9, 230b
+b 229f
+228:
+229:
+cbz x28, 231f
+.inst 0xf9403269,0xf9003a69,0xf9403669,0xf9003e69,0xd2800009,0xf9007269,0xf9007669,0x9103c260
+.inst 0x910002c1,0x9101c262,0xd2800024,0x911b8265,0x91038263
+bl {vg_aes_ctr32_neon}
+.inst 0x9103826b,0x9100036c,0x9100038d
+233:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 233b
+b 232f
+231:
+232:
+.inst 0xf9406e69,0xf940026a,0xf900012a,0xf940066a,0xf900052a,0xf9404674,0xf9404a75,0xf9404e76
+.inst 0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273
+.inst 0x913bc3ff,0xd65f03c0
+.p2align 6",
+        vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
+    )
+}
+
+/// AES-GCM-SIV authenticated decryption (RFC 8452 §5): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), and the received 16-byte tag `*tag`, decrypts the `len` bytes of encrypted plaintext at `data` in place, under the 12-byte nonce `*nonce`, and returns 1 if the tag is that of the plaintext and the `aad_len` bytes of additional data at `aad`; otherwise returns 0 and overwrites the `len` bytes at `data` with zeros. The tags are compared without a branch.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must check.
+///
+/// Contract: `VG.Spec.GcmSiv.openContract`. Constant time but for the result: only the pointers, `rounds`, the lengths and whether the function returns 1 or 0 may affect timing, not the key schedule, the nonce, the additional data, the data or the tag.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` must not overlap `schedule`, `nonce`, `aad` or `tag` (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3824 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_open_neon(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *const [u8; 16]) -> u32 {
+    core::arch::naked_asm!(
+        r".inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
+.inst 0xf9005137,0xf9005538,0xf9005939,0xf9005d3a,0xf900613b,0xf900653c,0xf900693e,0xf9004133
+.inst 0x91000133,0x91000054,0x91000015,0x91000036,0x91000077,0x91000098,0x910000b9,0x910000da
+.inst 0xf9006e67,0xf9406e69,0xf940012a,0xf900026a,0xf940052a,0xf900066a,0xd280001b
+20:
+.inst 0xb9400289,0xb940068a,0xb9400a8b,0xb900727b,0xb9007669,0xb9007a6a,0xb9007e6b,0xd2800009
+.inst 0xf9007269,0xf9007669,0x910002a0,0x910002c1,0x9101c262,0x91038263,0xd2800024,0x911b8265
+bl {vg_aes_ctr32_neon}
+.inst 0xf9407269,0xd37df36a,0x8b0a026a,0xf9000949,0x9100077b,0xd341feca,0xd100054a,0xcb1b014a
+cbnz x10, 20b
+.inst 0x91008260,0xd1001ac1,0xd37ef421,0x9103c262,0x911b8263
+bl {vg_aes_expand_key_scratch}
+.inst 0xf9400a69,0xf9400e6a,0xd280002b,0x8a0b012c,0xd280000d,0xcb0c01ac,0xd341fd29,0x8a0b014d
+.inst 0x93cd05ad,0xaa0d0129,0xd341fd4a,0xd2fc200b,0x8a0c016b,0xca0b014a,0xdac00d4a,0xdac00d29
+.inst 0xf900226a,0xf9002669,0xd2800009,0xf9002a69,0xf9002e69,0xf9400269,0xf9003269,0xf9400669
+.inst 0xd2f0000a,0xaa0a0129,0xf9003669,0x9100033b,0x9100035c,0xd344ff89
+cbz x9, 21f
+23:
+.inst 0xf9403269,0xf9003a69,0xf9403669,0xf9003e69,0x9103c260,0x910002c1,0x9101c262,0xd2800024
+.inst 0x911b8265,0x91000363
+bl {vg_aes_ctr32_neon}
+.inst 0xb9406269,0x11000529,0xb9006269,0x9100437b,0xd100439c,0xd344ff89
+cbnz x9, 23b
+b 22f
+21:
+22:
+cbz x28, 24f
+.inst 0xf9403269,0xf9003a69,0xf9403669,0xf9003e69,0xd2800009,0xf9007269,0xf9007669,0x9103c260
+.inst 0x910002c1,0x9101c262,0xd2800024,0x911b8265,0x91038263
+bl {vg_aes_ctr32_neon}
+.inst 0x9103826b,0x9100036c,0x9100038d
+26:
+.inst 0x3940018e,0x3940016f,0x4a0f01ce,0x3900018e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 26b
+b 25f
+24:
+25:
+.inst 0x910002fb,0x9100031c,0xd344ff89
+cbz x9, 27f
+29:
+.inst 0xd34aff8a
+cbz x10, 210f
+.inst 0xd280080a
+b 211f
+210:
+.inst 0xd344ff8a
+211:
+.inst 0x9100036b,0x9107826e,0x9100014f
+212:
+.inst 0xf940016c,0xf940056d,0xdac00d8c,0xdac00dad,0xf90001cd,0xf90005cc,0x9100416b,0x910041ce
+.inst 0xd10005ef
+cbnz x15, 212b
+.inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
+bl {vg_ghash_neon}
+.inst 0xd344ff89
+cbnz x9, 29b
+b 28f
+27:
+28:
+cbz x28, 213f
+.inst 0xd2800009,0xf9007269,0xf9007669,0x9103826b,0x9100036c,0x9100038d
+215:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 215b
+.inst 0x9103827b,0xd280021c,0xd34aff8a
+cbz x10, 216f
+.inst 0xd280080a
+b 217f
+216:
+.inst 0xd344ff8a
+217:
+.inst 0x9100036b,0x9107826e,0x9100014f
+218:
+.inst 0xf940016c,0xf940056d,0xdac00d8c,0xdac00dad,0xf90001cd,0xf90005cc,0x9100416b,0x910041ce
+.inst 0xd10005ef
+cbnz x15, 218b
+.inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
+bl {vg_ghash_neon}
+.inst 0xd344ff89
+b 214f
+213:
+214:
+.inst 0x9100033b,0x9100035c,0xd344ff89
+cbz x9, 219f
+221:
+.inst 0xd34aff8a
+cbz x10, 222f
+.inst 0xd280080a
+b 223f
+222:
+.inst 0xd344ff8a
+223:
+.inst 0x9100036b,0x9107826e,0x9100014f
+224:
+.inst 0xf940016c,0xf940056d,0xdac00d8c,0xdac00dad,0xf90001cd,0xf90005cc,0x9100416b,0x910041ce
+.inst 0xd10005ef
+cbnz x15, 224b
+.inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
+bl {vg_ghash_neon}
+.inst 0xd344ff89
+cbnz x9, 221b
+b 220f
+219:
+220:
+cbz x28, 225f
+.inst 0xd2800009,0xf9007269,0xf9007669,0x9103826b,0x9100036c,0x9100038d
+227:
+.inst 0x3940018e,0x3900016e,0x9100058c,0x9100056b,0xd10005ad
+cbnz x13, 227b
+.inst 0x9103827b,0xd280021c,0xd34aff8a
+cbz x10, 228f
+.inst 0xd280080a
+b 229f
+228:
+.inst 0xd344ff8a
+229:
+.inst 0x9100036b,0x9107826e,0x9100014f
+230:
+.inst 0xf940016c,0xf940056d,0xdac00d8c,0xdac00dad,0xf90001cd,0xf90005cc,0x9100416b,0x910041ce
+.inst 0xd10005ef
+cbnz x15, 230b
+.inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
+bl {vg_ghash_neon}
+.inst 0xd344ff89
+b 226f
+225:
+226:
+.inst 0xd37df309,0xf9007269,0xd37df349,0xf9007669,0x9103827b,0xd280021c,0xd34aff8a
+cbz x10, 231f
+.inst 0xd280080a
+b 232f
+231:
+.inst 0xd344ff8a
+232:
+.inst 0x9100036b,0x9107826e,0x9100014f
+233:
+.inst 0xf940016c,0xf940056d,0xdac00d8c,0xdac00dad,0xf90001cd,0xf90005cc,0x9100416b,0x910041ce
+.inst 0xd10005ef
+cbnz x15, 233b
+.inst 0xd37ced49,0x8b09037b,0xcb09039c,0x91010260,0x91014261,0x91178264,0x91078262,0x91000143
+bl {vg_ghash_neon}
+.inst 0xd344ff89,0xf9402e69,0xdac00d29,0xf9402a6a,0xdac00d4a,0xf940028b,0xca0b0129,0xb9400a8b
+.inst 0xca0b014a,0xd37ff94a,0xd341fd4a,0xf9003269,0xf900366a,0xf9403269,0xf9003a69,0xf9403669
+.inst 0xf9003e69,0xd2800009,0xf9007269,0xf9007669,0x9103c260,0x910002c1,0x9101c262,0xd2800024
+.inst 0x911b8265,0x91038263
+bl {vg_aes_ctr32_neon}
+.inst 0xf9400269,0xf940726a,0xca0a0129,0xf940066a,0xf940766b,0xca0b014a,0xaa0a0129,0xd280000b
+.inst 0xd100056c,0xab0c0129,0xba0b016a,0xd280003b,0xcb0a037b,0xd2800009,0xcb1b012b,0x9100032c
+.inst 0x4e010d70,0xd344ff4e,0xd37cedc9,0xcb09034d
+cbz x14, 234f
+236:
+.inst 0x3dc00191,0x4e301e31,0x3d800191,0x9100418c,0xd10005ce
+cbnz x14, 236b
+b 235f
+234:
+235:
+cbz x13, 237f
+239:
+.inst 0x3940018e,0x0a0b01ce,0x3900018e,0x9100058c,0xd10005ad
+cbnz x13, 239b
+b 238f
+237:
+238:
+.inst 0x91000360,0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a
+.inst 0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x913bc3ff,0xd65f03c0
+.p2align 6",
+        vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
+        vg_aes_expand_key_scratch = sym super::aes::vg_aes_expand_key_scratch::vg_aes_expand_key_scratch,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
+    )
+}
+
+/// AES-GCM-SIV authenticated encryption (RFC 8452 §4): with the key schedule of the key-generating key in the first `16 * (rounds + 1)` bytes of `*schedule`, as `vg_aes_expand_key` writes it (`rounds` is 10 for a 16-byte key, 14 for a 32-byte key), encrypts the `len` bytes at `data` in place, under the 12-byte nonce `*nonce`, and writes the 16-byte tag of the plaintext and the `aad_len` bytes of additional data at `aad` to `*tag`. The RFC's ciphertext is the encrypted data followed by the tag.
+///
+/// The function checks no length. AES-GCM-SIV is defined for at most `2^36` bytes of data and at most `2^36` bytes of additional data (§6), which the caller must ensure.
+///
+/// Contract: `VG.Spec.GcmSiv.sealContract`. Constant time: only the pointers, `rounds` and the lengths may affect timing, not the key schedule, the nonce, the additional data or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 240 bytes.
+/// * `nonce` must be valid for reads of 12 bytes.
+/// * `aad` must be valid for reads of `aad_len` bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `tag` must be valid for reads and writes of 16 bytes.
+/// * `rounds` must be 10 or 14.
+/// * `data` and `tag` must not overlap each other, `schedule`, `nonce` or `aad` (distinct Rust objects never do).
+/// * None of `schedule`, `nonce`, `aad`, `data` and `tag` may overlap the 3824 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+#[unsafe(naked)]
 pub(crate) unsafe extern "C" fn vg_aes_gcm_siv_seal(schedule: *const [u8; 240], rounds: usize, nonce: *const [u8; 12], aad: *const u8, aad_len: usize, data: *mut u8, len: usize, tag: *mut [u8; 16]) {
     core::arch::naked_asm!(
         r".inst 0xd13bc3ff,0x910003f0,0x910043f1,0xf9000211,0xf94003e9,0xf9004534,0xf9004935,0xf9004d36
@@ -2090,3 +2456,7 @@ pub(crate) mod vg_ghash;
 #[rustfmt::skip]
 #[path = "internal/vg_ghash_aes.rs"]
 pub(crate) mod vg_ghash_aes;
+
+#[rustfmt::skip]
+#[path = "internal/vg_ghash_neon.rs"]
+pub(crate) mod vg_ghash_neon;

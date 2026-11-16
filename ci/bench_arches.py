@@ -238,7 +238,8 @@ MANUAL_PLATFORMS = {
 # RSAES-PKCS1-v1_5
 # decryption with SHA-256's SHA extensions and RSA's baseline code, which a
 # runner with ADX never chooses; on AArch64,
-# ChaCha20's `_neon` instances, which the SVE2 runner never chooses; no
+# ChaCha20's `_neon` instances, which the SVE2 runner never chooses, and
+# AES's, which a runner with the AES extension never chooses; no
 # runner has the SHA512 extension, whose variants only ci.yml tests, under
 # SDE).
 CPU_FEATURES = {

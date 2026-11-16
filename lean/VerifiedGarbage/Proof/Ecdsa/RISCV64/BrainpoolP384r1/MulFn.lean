@@ -7,6 +7,13 @@ public import VerifiedGarbage.Proof.Weierstrass.MulContract
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.Gen6
 import VerifiedGarbage.Proof.Weierstrass.RISCV64.BrainpoolP384r1Field.Lit
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Weierstrass.RISCV64.BrainpoolP384r1Field.Lit
+meta import VerifiedGarbage.Impl.Weierstrass.Layout.Mont
+meta import VerifiedGarbage.Impl.Weierstrass.RISCV64.BrainpoolP384r1Field
 
 /-!
 # brainpoolP384r1's field on RISC-V, for `vg_brainpoolp384r1_mul` and its callers
@@ -49,5 +56,18 @@ theorem unit : UnitMod W.p (2 ^ (64 * 6)) := unitMod_pow_two p_odd _
 
 /-- The number at slot `i`. -/
 abbrev sv (base : Addr) (s : State) (i : Nat) : Nat := wordsVal s.mem base (brainpoolp384r1.sl i) 6
+
+/-! The constant-time analyses of the calls of the functions of brainpoolP384r1's `p` from their
+arguments, each done once for every check of code that calls it (`taint_decide_sum`), which keep
+what is public of `s0`–`s5`: the functions write none of them. -/
+taint_summary pMulSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Weierstrass.Mont.brainpoolp384r1p.fn "mul") Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.mulFnA)
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5])
+taint_summary pAddSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Weierstrass.Mont.brainpoolp384r1p.fn "add") Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.addFnA)
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5])
+taint_summary pSubSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  (.call (Impl.Weierstrass.Mont.brainpoolp384r1p.fn "sub") Impl.Weierstrass.RISCV64.BrainpoolP384r1Field.subFnA)
+  keeping (Taint.ofRegs [.s0, .s1, .s2, .s3, .s4, .s5])
 
 end VG.Proof.Ecdsa.RISCV64.BrainpoolP384r1

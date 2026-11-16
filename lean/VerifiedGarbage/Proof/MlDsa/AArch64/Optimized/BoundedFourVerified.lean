@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.MlDsa.BoundedFourContract
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatch
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourOuterTaint
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 import VerifiedGarbage.Proof.MlKem.AArch64.Common
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitialized
 import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
@@ -26,6 +27,7 @@ meta import VerifiedGarbage.Proof.MlDsa.BoundedFourContract
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourParseTiming
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourBatch
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourOuterTaint
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Common
 meta import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BoundedFourInitialized
 meta import VerifiedGarbage.Proof.MlDsa.KeyGen.Poly
@@ -218,8 +220,8 @@ theorem sampleRound_relCT (sha3 : Bool) {η off : Nat} (hη : η=2∨η=4) (ho :
   obtain ⟨_,hc⟩:=squeezeTwo_taint sha3 ho
   have cs : RelCT isa (fun (s t : State)=>s.sp=t.sp ∧ s.gpr .x19=t.gpr .x19)
       (squeezeTwo sha3 off) (fun _ _=>True) :=
-    RelCT.taint (A := taint) _ (fun _ _ h=>VG.Proof.MlKem.AArch64.agree_of h.1 (fun r hr=>by
-      rw [List.mem_singleton.mp hr]; exact h.2)) hc
+    VectorTaint.relRegs [.x19] (fun _ _ h=>⟨h.1,fun r hr=>by
+      rw [List.mem_singleton.mp hr]; exact h.2⟩) hc
   have ct : RelCT isa (fun s t=>SamplerRun σ s A L ∧ SamplerRun τ t B M)
       (.seq (squeezeTwo sha3 off) (batch true η off)) (fun _ _=>True) := by
     intro s t tr ur u v h es et

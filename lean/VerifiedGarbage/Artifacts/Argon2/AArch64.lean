@@ -20,7 +20,6 @@ def artifacts : List Artifact :=
       suffix := v.suffix
       code := Impl.Argon2.AArch64.Derive.code ("vg_argon2_hprime" ++ v.suffix)
         v.hash
-      stack := 400
       verified := Proof.Argon2.AArch64.Derive.verified v _
       spSafe := Proof.Argon2.AArch64.Derive.code_spSafe v _ }]
 

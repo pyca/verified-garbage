@@ -764,7 +764,7 @@ theorem Ready.call : callPre (xS s c) ∧ Covers (rdC s ++ wrC s) ((qS c).rd ++ 
 end
 
 /-- After the call, and the pop of `dst`, `len` and `tag`. -/
-structure Called (s z : State) : Prop where
+structure Called (F : SealSplitFn) (s z : State) : Prop where
   out : gatherPost s z
   ret : z.mem.readW (s.gpr .rsp) 64 = s.mem.readW (s.gpr .rsp) 64
   cs : ∀ r ∈ calleeSaved, r ≠ .rsp → z.gpr r = s.gpr r
@@ -772,9 +772,11 @@ structure Called (s z : State) : Prop where
   rd : z.rd = s.rd
   wr : z.wr = FR s :: s.wr
   mx : z.mxcsr.extractLsb' 6 10 = s.mxcsr.extractLsb' 6 10
+  /-- What else the callee leaves (`SealSplitFn.E`), from the state it was called in. -/
+  ext : ∃ c, Ready s c ∧ F.E (xS s c) z.mem
 
 theorem called_wp (F : SealSplitFn) {s c : State} (h : Lay s) (hc : Ready s c) :
-    WP isa (.frame (.push [.rax, .r10, .r11]) (.call F.name F.code) (.pop .rax 3)) c (Called s) := by
+    WP isa (.frame (.push [.rax, .r10, .r11]) (.call F.name F.code) (.pop .rax 3)) c (Called F s) := by
   obtain ⟨-, -, kd, -, nd, -, ad, -, -, -, -, -, rdd, rt, bk, bn, ba, bd, -, -, -, ok, on, oa, od, -⟩ := h.pre
   obtain ⟨hcp, hcov, hw⟩ := hc.call h
   have hBn := h.hBn
@@ -784,8 +786,8 @@ theorem called_wp (F : SealSplitFn) {s c : State} (h : Lay s) (hc : Ready s c) :
   have hx (r : Reg) (hr : r ≠ .rsp) : (xS s c).gpr r = c.gpr r := xgpr_eq hr
   have hl : ((xS s c).gpr .r9).toNat ≤ (stackArg (xS s c) 1).toNat := by
     rw [hx _ (by decide), hc.r9, hc.xa1 h]; show L0 s ≤ L s; omega_arith
-  refine WP.frame (by simp) (by decide) (by decide) (hc.hn h) (WP.call_sp_mx F.verified.1 F.sp (by omega_arith)
-    (sealSplitSpec_pre hcp) hcov hw fun s' rd' wr' cs' fr' _ ⟨s₂, m₂, _, post'⟩ mx' => ?_)
+  refine WP.frame (by simp) (by decide) (by decide) (hc.hn h) (WP.call_sp_mx (k := F.contractE) F.exec F.sp
+    (by omega_arith) (sealSplitSpec_pre hcp) hcov hw fun s' rd' wr' cs' fr' _ ⟨s₂, m₂, _, post', hE⟩ mx' => ?_)
   have rsp' : s'.gpr .rsp = (qS c).gpr .rsp := cs' .rsp (by decide)
   refine ⟨rsp', wr', ?_⟩
   have hpost := sealSplitSpec_post post' hl
@@ -830,7 +832,8 @@ theorem called_wp (F : SealSplitFn) {s c : State} (h : Lay s) (hc : Ready s c) :
     rw [← h.hpt, (split_eM s).1, bytesAt_frame h.frame_eM (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact h.sR_stk.symm.sub_right (fr_sub s)) (by omega_arith)]
   rw [hd, ← hpt] at hpost
-  refine ⟨by simp only [gatherPost, popped_mem]; exact hpost, ?_, fun r hr hsp => ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨by simp only [gatherPost, popped_mem]; exact hpost, ?_, fun r hr hsp => ?_, ?_, ?_, ?_, ?_,
+    ⟨c, hc, by rw [popped_mem, ← m₂]; exact hE⟩⟩
   · -- The return address: neither the pushes, nor the copy, nor the call wrote it.
     have hsp' : (qS c).gpr .rsp = Bs s + BitVec.ofNat 64 1808 := hc.qsp
     have hbelow : below ((qS c).gpr .rsp) (F.code.x86_64Depth + 8) =
@@ -869,7 +872,7 @@ theorem called_wp (F : SealSplitFn) {s c : State} (h : Lay s) (hc : Ready s c) :
 theorem frameBody_wp (w : Width) (F : SealSplitFn) {s : State} (h : Lay s) :
     WP isa (.seq (.block entry) (.seq skipFirst (.seq (gather w) (.seq (.block callArgs) (.seq firstArgs
       (.frame (.push [.rax, .r10, .r11]) (.call F.name F.code) (.pop .rax 3)))))))
-      (pushed saved s) (Called s) := by
+      (pushed saved s) (Called F s) := by
   refine WP.seq (WP.mono (entered_wp h) fun e he => ?_)
   refine WP.seq (WP.mono (skipped_wp h he) fun f hf => ?_)
   refine WP.seq (WP.mono (gathered_wp w h hf) fun g hg => ?_)
@@ -893,5 +896,16 @@ theorem sealGather_wp (w : Width) (F : SealSplitFn) {s : State} (hs : gatherPre 
   · have := hz.out
     simp only [gatherPost, popped_mem] at this ⊢
     exact this
+
+/-- What else the callee leaves (`SealSplitFn.E`), from the state it was
+called in, in the memory `seal_gather` returns with. -/
+theorem sealGather_wpE (w : Width) (F : SealSplitFn) {s : State} (hs : gatherPre s) :
+    WP isa (sealGather w F.name F.code) s fun z => ∃ c, Ready s c ∧ F.E (xS s c) z.mem := by
+  have h := lay hs
+  have hn : 8 * saved.length ≤ (s.gpr .rsp).toNat := by have := h.w₁; simp only [List.length_cons, List.length_nil]; omega_arith
+  refine WP.frame (by simp) (by decide) (by decide) hn (WP.mono (frameBody_wp w F h) fun z hz =>
+    ⟨by rw [hz.rsp, hP s], by rw [hz.wr, hPwr s], ?_⟩)
+  simp only [popped_mem]
+  exact hz.ext
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Gather

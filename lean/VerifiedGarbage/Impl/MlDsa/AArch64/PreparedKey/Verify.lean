@@ -13,32 +13,26 @@ namespace VG.Impl.MlDsa.AArch64.PreparedKey.Verify
 open VG VG.AArch64 VG.Spec.MlDsa VG.Impl.MlDsa.AArch64.Call
 open VG.Impl.MlDsa.AArch64.KeyGen VG.Impl.MlDsa.AArch64.Verify
 
-def forward (c : Impl.Sha3.AArch64.Callee) (P : Prims) (_p : Params) (a : Ptr) : Prog isa :=
-  if c.pairedSha3 then Optimized.forward a else nttAt P (sc oSS) a
-
-def keyRow (c : Impl.Sha3.AArch64.Callee) (P : Prims) (p : Params) (r : Nat) : Prog isa :=
+/-- The public key's row `r`: from the prepared key, or unpacked and transformed. -/
+def keyRow (P : Prims) (p : Params) (r : Nat) : Prog isa :=
   .ite (.nonzero .x .x22) (PreparedKey.copy (tmP p) (.x21, 1024 * r) 1024)
-    (.seq (unpackT1At P (.x25, 32 + 320 * r) (tmP p)) (forward c P p (tmP p)))
+    (.seq (unpackT1At P (.x25, 32 + 320 * r) (tmP p)) (Optimized.forward (tmP p)))
 
-def row (c : Impl.Sha3.AArch64.Callee) (P : Prims) (p : Params) (r : Nat) : Prog isa :=
-  if c.pairedSha3 then
-    .seq (Optimized.dot p r) (.seq (keyRow c P p r)
-      (.seq (Optimized.product p) (.seq (Optimized.subtract p)
-        (.seq (Optimized.inverse (wP p)) (Optimized.hintPack p r)))))
-  else
-    .seq (VG.Impl.MlDsa.AArch64.Verify.dot P p r) (.seq (keyRow c P p r)
-      (.seq (mulAt P (tm2P p) (cP p) (tmP p)) (.seq (subAt P (wP p) (tm2P p))
-        (.seq (invNttAt P (sc oSS) (wP p))
-          (.seq (useHintAt P (hP p r) (wP p) p.γ₂ (w1P p))
-            (simpleBitPackAt P (w1P p) (w1Max p)
-              ((bP p).1, (bP p).2 + w1Len p * r) (w1Len p)))))))
+/-- Row `r` of `w'₁`, with the positive transform arithmetic, which needs no
+CPU feature. -/
+def row (P : Prims) (p : Params) (r : Nat) : Prog isa :=
+  .seq (Optimized.dot p r) (.seq (keyRow P p r)
+    (.seq (Optimized.product p) (.seq (Optimized.subtract p)
+      (.seq (Optimized.inverse (wP p)) (Optimized.hintPack p r)))))
 
 def compute (c : Impl.Sha3.AArch64.Callee) (P : Prims) (p : Params) : Prog isa :=
-  .seq (seqR (fun i => forward c P p (zP p i)) 0 p.ℓ)
-    (.seq (forward c P p (cP p)) (.seq (seqR (row c P p) 0 p.k)
+  .seq (seqR (fun i => Optimized.forward (zP p i)) 0 p.ℓ)
+    (.seq (Optimized.forward (cP p)) (.seq (seqR (row P p) 0 p.k)
       (.seq (shake256With c [⟨.x26, 0, 64⟩, ⟨.x28, (bP p).2, p.k * w1Len p⟩]
         [⟨.x28, oCT, p.ctildeLen⟩]) (cmpAnd (sc oCT) (.x27, 0) p.ctildeLen))))
 
+/-- The samplers are the permutation's: the paired ones where its kernels
+may use the SHA3 instructions. -/
 def body (c : Impl.Sha3.AArch64.Callee) (P : Prims) (p : Params) : Prog isa :=
   .seq (hint P p) (ifOk (.seq (seqR (zOne P p) 0 p.ℓ)
     (ifOk (.seq (if c.pairedSha3 then OptimizedSamples.samples P p else samples P p)

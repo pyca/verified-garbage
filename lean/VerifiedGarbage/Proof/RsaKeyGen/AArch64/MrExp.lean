@@ -69,29 +69,35 @@ theorem mrLast_wsq (M : Mont) {s : State} {B : Addr} {Z w c bm : Nat} {st : Nat 
     ⟨hct, hE.of_low hfr (fun r hr => winRanges_low w r (sqRanges_win w r hr)) hEZ hn,
       hyt, by rw [hft, Bool.and_comm]; rfl, hfr, kt⟩
 
+theorem mrExpLoopW_eq (win : List (Prog isa)) (mul : Nat → Nat → Nat → Prog isa) : mrExpLoopW win mul =
+    ([.block [ldh .x3 sW, sth .x3 kWords, movi .x3 0, sth .x3 kFlag],
+      .loop (seqs [.block (ws ++ base aE .x16 ++ wordHead), .loop (seqs win) (.nonzero .x .x3),
+        .block [ldh .x3 kWords]]) (.nonzero .x .x3)] : List (Prog isa)) ++
+    (mrLast mul 1 ++ (mrLast mul 2 ++ mrLast mul 3)) := by
+  simp only [mrExpLoopW, wordHead, List.append_assoc]
+
 theorem mrExpLoop_eq (mul : Nat → Nat → Nat → Prog isa) : mrExpLoop mul =
     ([.block [ldh .x3 sW, sth .x3 kWords, movi .x3 0, sth .x3 kFlag],
       .loop (seqs [.block (ws ++ base aE .x16 ++ wordHead), .loop (seqs (mrWin mul)) (.nonzero .x .x3),
         .block [ldh .x3 kWords]]) (.nonzero .x .x3)] : List (Prog isa)) ++
-    (mrLast mul 1 ++ (mrLast mul 2 ++ mrLast mul 3)) := by
-  simp only [mrExpLoop, wordHead, List.append_assoc]
+    (mrLast mul 1 ++ (mrLast mul 2 ++ mrLast mul 3)) := mrExpLoopW_eq (mrWin mul) mul
 
 /-- The exponentiation: from `y = 1` (`R mod c` in `aY`) and the table, the
 flag of `wEnd` over the windows of `E`. -/
-theorem mrExpLoop_ok (M : Mont) {B : Addr} {Z w c bm b : Nat} {s : State} (hw128 : w ≤ 128)
+theorem mrExpLoopW_ok {win : List (Prog isa)} (M : Mont) (hwin : WinOK win) {B : Addr} {Z w c bm b : Nat} {s : State} (hw128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc : MrCtx s B Z w c bm) (hT : TabOK s.mem B w c b)
     (hE : ECtx s.mem B w c) (hodd : c % 2 = 1) (hc1 : 1 < c) (hY : wv s.mem B (slot w aY) w = 2 ^ (64 * w) % c) :
-    WP isa (seqs (mrExpLoop M.mm)) s fun t => MrCtx t B Z w c bm ∧ ECtx t.mem B w c ∧
+    WP isa (seqs (mrExpLoopW win M.mm)) s fun t => MrCtx t B Z w c bm ∧ ECtx t.mem B w c ∧
       word t.mem B (8 * kFlag) = mask (wEnd c (wRun c b (mrE c) (16 * w) (16 * w))).2 ∧
       Frm B (expRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
   have hn := hc.ws.scr.nowrap
   have hw2 := hc.ws.w1
-  rw [mrExpLoop_eq]
+  rw [mrExpLoopW_eq]
   refine wp_seqs_append (by simp) (by simp [mrLast]) ?_
   simp only [seqs]
   refine WP.seq (WP.mono (expStart_ok hEZ hc hT hY) fun s₁ hI0 => ?_)
   refine WP.mono (count_loop (cr := .x3) (n := w) (by omega_arith) (WordInv B Z w c bm b s)
-    (fun j hj t hI => mrWord_ok M hw128 hEZ (hE.of_low hI.frm (expRanges_low w) hEZ hn) hodd hc1 hj hI) hI0)
+    (fun j hj t hI => mrWordW_ok hwin hw128 hEZ (hE.of_low hI.frm (expRanges_low w) hEZ hn) hodd hc1 hj hI) hI0)
     fun s₂ hI => ?_
   have hE₂ : ECtx s₂.mem B w c := hE.of_low hI.frm (expRanges_low w) hEZ hn
   generalize hst : wRun c b (mrE c) (16 * w) (16 * w) = st
@@ -106,5 +112,15 @@ theorem mrExpLoop_ok (M : Mont) {B : Addr} {Z w c bm b : Nat} {s : State} (hw128
   · exact ((hI.frm.trans (hf₃.mono (sqRanges_sub w))).trans (hf₄.mono (sqRanges_sub w))).trans
       (hft.mono (sqRanges_sub w))
   · exact (((hI.keep.trans k₃).trans k₄).trans kt).mono (by decide)
+
+/-- The exponentiation: from `y = 1` (`R mod c` in `aY`) and the table, the
+flag of `wEnd` over the windows of `E`. -/
+theorem mrExpLoop_ok (M : Mont) {B : Addr} {Z w c bm b : Nat} {s : State} (hw128 : w ≤ 128)
+    (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hc : MrCtx s B Z w c bm) (hT : TabOK s.mem B w c b)
+    (hE : ECtx s.mem B w c) (hodd : c % 2 = 1) (hc1 : 1 < c) (hY : wv s.mem B (slot w aY) w = 2 ^ (64 * w) % c) :
+    WP isa (seqs (mrExpLoop M.mm)) s fun t => MrCtx t B Z w c bm ∧ ECtx t.mem B w c ∧
+      word t.mem B (8 * kFlag) = mask (wEnd c (wRun c b (mrE c) (16 * w) (16 * w))).2 ∧
+      Frm B (expRanges w) s.mem t.mem ∧ Keep mmRegs s t :=
+  mrExpLoopW_ok M (mrWin_winOK M) hw128 hEZ hc hT hE hodd hc1 hY
 
 end VG.Proof.RsaKeyGen.AArch64

@@ -56,7 +56,7 @@ private theorem core_base (M : Mont) (L : VG.Proof.Bignum.AArch64.Ws) (s : State
 
 private theorem round_rel (M : Mont) :
     RelCT isa (Two CorePre) (round M.mm) fun _ _ => True := by
-  unfold VG.Impl.MillerRabin.AArch64.round
+  change RelCT isa _ (.seq (seqs (preparedRound M.mm)) (.block returnFlag)) _
   refine RelCT.seq (two_post (Ψ := fun L s => s.gpr .x0 = L.B) (core_ct M) (core_base M)) ?_
   exact two_taint [.x0] (fun L s t hs ht r hr => by
     simp only [List.mem_singleton] at hr

@@ -12,6 +12,8 @@ public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.State
 public import VerifiedGarbage.Proof.Camellia.AArch64.Serial.Lookup
 import VerifiedGarbage.Proof.Sm4.AArch64.Serial.Lookup
 import VerifiedGarbage.Proof.Sm4.AArch64.Serial.Load
+import VerifiedGarbage.Proof.Sm4.AArch64.Imm
+import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Framework.AArch64.SimdMem
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -158,10 +160,8 @@ theorem body_wp {s : State} {R : Nat} (hR : R = 18 ∨ R = 24)
     exact fun h => hr (h ▸ (by decide : Reg.x8 ∈ written))
   have sz := as.trans az
   have zc : Context z := by
-    refine ⟨ac.constants,?_,ac.table,ac.read_stable az⟩
-    refine ⟨ac.masks.1,?_,?_⟩
-    · rw [az.regs .x13 (by decide)]; exact ac.masks.2.1
-    · rw [az.regs .x14 (by decide)]; exact ac.masks.2.2
+    exact ⟨ac.constants,ac.masks.of_regs fun r hr => az.regs r (by revert r; decide),ac.table,
+      ac.read_stable az⟩
   have zh : halves z = partialRounds (keyWord s) (halves s) := by
     rw [halves,show z.gpr .x6 = a.gpr .x6 from gpr_write_of_ne _ _ _ (by decide),
       show z.gpr .x7 = a.gpr .x7 from gpr_write_of_ne _ _ _ (by decide)]
@@ -257,48 +257,43 @@ theorem loadSbox_ok (s : State)
 
 theorem maskConstants_run (s : State) :
     ∃ t, runBlock isa maskConstants s = some t ∧ Masks t ∧
-      (∀ r, r ≠ .x13 → r ≠ .x14 → r ≠ .x15 → t.gpr r = s.gpr r) ∧
-      t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧
-      (∀ v, v ≠ .v7 → t.v v = s.v v) := by
-  let a := s.write .x .x15 0xff00
-  let b := a.write .x .x15
-    ((a.read .x .x15 &&& ~~~((0xffff : BitVec 64) <<< 32)) ||| (0xff : BitVec 64) <<< 32)
-  let c := b.setV .v7 (ofVDwords (b.gpr .x15) (b.gpr .x15))
-  let d := c.write .x .x13 0
-  let e := d.write .x .x13
-    ((d.read .x .x13 &&& ~~~((0xffff : BitVec 64) <<< 16)) ||| (0xff00 : BitVec 64) <<< 16)
-  let f := e.write .x .x13
-    ((e.read .x .x13 &&& ~~~((0xffff : BitVec 64) <<< 48)) ||| (0xff : BitVec 64) <<< 48)
-  let g := f.write .x .x14 0
-  let h := g.write .x .x14
-    ((g.read .x .x14 &&& ~~~((0xffff : BitVec 64) <<< 16)) ||| (0xff : BitVec 64) <<< 16)
-  let t := h.write .x .x14
-    ((h.read .x .x14 &&& ~~~((0xffff : BitVec 64) <<< 32)) ||| (0xff00 : BitVec 64) <<< 32)
-  refine ⟨t,?_,?_,?_,rfl,rfl,rfl,rfl,?_⟩
-  · have eq : maskConstants = [
-        .movz .x .x15 0xff00 0, .movk .x .x15 0xff 2,
-        .vop (.dup .d2 .v7 .x15), .movz .x .x13 0 0,
-        .movk .x .x13 0xff00 1, .movk .x .x13 0xff 3,
-        .movz .x .x14 0 0, .movk .x .x14 0xff 1, .movk .x .x14 0xff00 2] := by
-      decide +kernel
-    rw [eq]
-    rfl
-  · simp only [Masks,t,h,g,f,e,d,c,b,a,gpr_write,State.read,Size.bits,
-      BitVec.setWidth_eq,↓reduceIte,reduceCtorEq,v_write,v_setV_self]
-    constructor
-    · congr 1 <;> decide +kernel
-    constructor <;> decide +kernel
-  · intro r h13 h14 h15
-    simp only [t,h,g,f,e,d,c,b,a,gpr_write_of_ne _ _ _ h13,
-      gpr_write_of_ne _ _ _ h14,gpr_write_of_ne _ _ _ h15,gpr_setV]
-  · intro v hv
-    simp only [t,h,g,f,e,d,c,b,a,v_write,v_setV_of_ne _ _ hv]
+      (∀ r, r ∉ maskRegs → t.gpr r = s.gpr r) ∧
+      t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.v = s.v := by
+  obtain ⟨a,ae,av,ag,am,ard,awr⟩ := VG.Proof.Sm4.AArch64.imm_ok s .x0 keepIn
+  obtain ⟨b,be,bv,bg,bm,brd,bwr⟩ := VG.Proof.Sm4.AArch64.imm_ok a .x3 inHigh
+  obtain ⟨c,ce,cv,cg,cm,crd,cwr⟩ := VG.Proof.Sm4.AArch64.imm_ok b .x4 inLow
+  obtain ⟨d,de,dv,dg,dm,drd,dwr⟩ := VG.Proof.Sm4.AArch64.imm_ok c .x9 keepOut
+  obtain ⟨e,ee,ev,eg,em,erd,ewr⟩ := VG.Proof.Sm4.AArch64.imm_ok d .x13 outHigh
+  obtain ⟨f,fe,fv,fg,fm,frd,fwr⟩ := VG.Proof.Sm4.AArch64.imm_ok e .x14 outLow
+  obtain ⟨t,te,tv,tg,tm,trd,twr⟩ := VG.Proof.Sm4.AArch64.imm_ok f .x15 downLow
+  have run : runBlock isa maskConstants s = some t := by
+    rw [maskConstants,VG.Interleave.runBlock_append,VG.Interleave.runBlock_append,
+      VG.Interleave.runBlock_append,VG.Interleave.runBlock_append,VG.Interleave.runBlock_append,
+      VG.Interleave.runBlock_append,ae,Option.bind_some,be,Option.bind_some,ce,Option.bind_some,
+      de,Option.bind_some,ee,Option.bind_some,fe,Option.bind_some,te]
+  have hsp : t.sp = s.sp := by
+    obtain ⟨_,t',hex,rfl⟩ := (WP.of_runBlock ⟨t,run,rfl⟩ : WP isa (.block maskConstants) s (· = t))
+    exact Exec.sp hex
+  refine ⟨t,run,?_,?_,by rw [tm,fm,em,dm,cm,bm,am],by rw [trd,frd,erd,drd,crd,brd,ard],
+    by rw [twr,fwr,ewr,dwr,cwr,bwr,awr],hsp,VG.AArch64.Tbl.runBlock_v (by decide) run⟩
+  · refine ⟨?_,?_,?_,?_,?_,?_,tv⟩
+    · rw [tg _ (by decide),fg _ (by decide),eg _ (by decide),dg _ (by decide),cg _ (by decide),
+        bg _ (by decide),av]
+    · rw [tg _ (by decide),fg _ (by decide),eg _ (by decide),dg _ (by decide),cg _ (by decide),bv]
+    · rw [tg _ (by decide),fg _ (by decide),eg _ (by decide),dg _ (by decide),cv]
+    · rw [tg _ (by decide),fg _ (by decide),eg _ (by decide),dv]
+    · rw [tg _ (by decide),fg _ (by decide),ev]
+    · rw [tg _ (by decide),fv]
+  · intro r hr
+    simp only [maskRegs,List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
+    rw [tg r hr.2.2.2.2.2.2,fg r hr.2.2.2.2.2.1,eg r hr.2.2.2.2.1,dg r hr.2.2.2.1,cg r hr.2.2.1,
+      bg r hr.2.1,ag r hr.1]
 
 theorem constants_wp (s : State)
     (readable : InRegions (s.rd ++ s.wr) (s.gpr .x5) 256)
     (bytes : ∀ k < 256, s.mem (s.gpr .x5+BitVec.ofNat 64 k) = Spec.Camellia.sbox1Table.getD k 0) :
     WP isa (.block constants) s fun t => Constants t ∧ Masks t ∧ Table t ∧
-      (∀ r, r ∉ [.x13,.x14,.x15] → t.gpr r = s.gpr r) ∧
+      (∀ r, r ∉ maskRegs → t.gpr r = s.gpr r) ∧
       t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
   rw [constants,WP.block_append_iff,WP.block_append_iff]
   refine WP.mono (loadSbox_ok s readable bytes) fun a ⟨atab,ae⟩ => ?_
@@ -306,17 +301,14 @@ theorem constants_wp (s : State)
   refine WP.of_runBlock ⟨b,be,?_⟩
   obtain ⟨c,ce,cmask,cg,cm,crd,cwr,csp,cvec⟩ := maskConstants_run b
   refine WP.of_runBlock ⟨c,ce,?_,cmask,?_,?_,?_,?_,?_,?_⟩
-  · exact ⟨(cvec _ (by decide)).trans bc.1,(cvec _ (by decide)).trans bc.2.1,
-      (cvec _ (by decide)).trans bc.2.2⟩
+  · simpa only [Constants,cvec] using bc
   · intro j hj
-    rw [tbyte_congr' (fun i hi => by
+    rw [cvec,tbyte_congr' (fun i hi => by
       have hn := VG.AArch64.Tbl.treg_ne8 i hi
-      exact (cvec _ hn.2.2.2.2.2.2.2).trans
-        (bvec _ hn.2.2.2.2.1 hn.2.2.2.2.2.1 hn.2.2.2.2.2.2.1)) j hj]
+      exact bvec _ hn.2.2.2.2.1 hn.2.2.2.2.2.1 hn.2.2.2.2.2.2.1) j hj]
     exact atab j hj
   · intro r hr
-    simp only [List.mem_cons,List.not_mem_nil,or_false,not_or] at hr
-    rw [cg _ hr.1 hr.2.1 hr.2.2,bg _ hr.2.2,ae]
+    rw [cg _ hr,bg _ (fun h => hr (by rw [h]; decide)),ae]
   · rw [cm,bm,ae]
   · rw [crd,brd,ae]
   · rw [cwr,bwr,ae]
@@ -373,9 +365,7 @@ theorem crypt_wp {s : State} {B : Addr} {k : Nat × List (BitVec 64)}
   have cctx : Context c := by
     refine ⟨?_,?_,?_,?_⟩
     · simpa only [Constants,cvec] using ac
-    · refine ⟨by rw [cvec]; exact amask.1,?_,?_⟩
-      · rw [cg _ (by decide)]; exact amask.2.1
-      · rw [cg _ (by decide)]; exact amask.2.2
+    · exact amask.of_regs fun r hr => cg r (by revert r; decide)
     · simpa only [Table,cvec] using atab
     · intro j hj
       rw [crd',cwr',cbase]

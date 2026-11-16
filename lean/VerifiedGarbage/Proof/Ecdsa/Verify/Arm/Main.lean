@@ -114,9 +114,9 @@ theorem verifyWith_ok (hc : CfgOk c) (hC : Law c.C) {s₀ : State} {extra : List
       (Q₁ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ .r3) s₂ U >>> j) (G c.C)))
       (Q₂ := fun j X Y Z => Rep c.C X Y Z (mul (sv c (ptr s₀ .r3) s₂ V >>> j) P))
       (hMul s₂ hM syms₂)
-      (step_rep' hC hc.onG ha hb hG fun h => h0 (ha₁ h))
+      (step_rep' (L := c.ladderCfg) (base := ptr s₀ .r3) (s := s₂) hC hc.onG ha hb hG fun h => h0 (ha₁ h))
       (by rw [shiftRight_eq_zero hu, mul_zero_pt]; exact rep_infinity' hC)
-      (step_rep' hC hPc ha hb hQ h0)
+      (step_rep' (L := Impl.Ecdh.Arm.Cfg.ladderQ c) (base := ptr s₀ .r3) (s := s₂) hC hPc ha hb hQ h0)
       (by rw [shiftRight_eq_zero hv, mul_zero_pt]; exact rep_infinity' hC)
       fun s₃ hP => ?_
     refine WP.mono (vtail_ok hc hP) fun s' ⟨saved, sp, frame, xo, hxo, hx, ret⟩ =>

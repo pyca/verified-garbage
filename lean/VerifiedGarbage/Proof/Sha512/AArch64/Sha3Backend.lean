@@ -33,19 +33,14 @@ def backend : Compress where
     (fun _ _ _ _ hp => MdStream.AArch64.Update.agree₀ hp) (by taint_decide))
   finalizeCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
     (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀ hp) (by taint_decide))
-  updateKeeps := instrs_keeps (by lit_decide)
-  finalizeKeeps := instrs_keeps (by lit_decide)
   updateDepth := by lit_decide
   finalizeDepth := by lit_decide
   digest384 := by exact (⟨VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
-      (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀D hp) (by taint_decide),
-    instrs_keeps (by lit_decide), by lit_decide⟩)
+      (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀D hp) (by taint_decide), by lit_decide⟩)
   digest512_256 := by exact (⟨VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
-      (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀D hp) (by taint_decide),
-    instrs_keeps (by lit_decide), by lit_decide⟩)
+      (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀D hp) (by taint_decide), by lit_decide⟩)
   digest512_224 := by exact (⟨VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3])
-      (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀D hp) (by taint_decide),
-    instrs_keeps (by lit_decide), by lit_decide⟩)
+      (fun _ _ _ _ hp => MdStream.AArch64.Finalize.agree₀D hp) (by taint_decide), by lit_decide⟩)
   oneShot512 := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2])
     (fun _ _ _ _ hp => MdStream.AArch64.OneShot.agree₀ hp) (by taint_decide))
   oneShot384 := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2])

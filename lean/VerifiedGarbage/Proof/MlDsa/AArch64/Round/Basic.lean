@@ -55,52 +55,12 @@ def power2RoundK : Contract isa where
       PolyIs s'.mem (s.gpr .x2) ((polyAt s.mem (s.gpr .x0)).map fun c => ofInt (power2Round c).2)
   pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.sp = s₂.sp
 
-/-- `r = x0, gamma2 = w1, out = x2`, with the postcondition `post`. -/
-def bitsK (post : State → State → Prop) : Contract isa where
-  pre s :=
-    s.rd = [pR (s.gpr .x0)] ∧ s.wr = [pR (s.gpr .x2)] ∧ (pR (s.gpr .x0)).Disjoint (pR (s.gpr .x2)) ∧
-    arg32 s .x1 ∈ gamma2s ∧ Reduced s.mem (s.gpr .x0)
-  post := post
-  pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ (s₁.gpr .x1).setWidth 32 = (s₂.gpr .x1).setWidth 32 ∧
-    s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.sp = s₂.sp
-
-/-- `vg_mldsa_high_bits(r = x0, gamma2 = w1, out = x2)`. -/
-def highBitsK : Contract isa := bitsK fun s s' =>
-  NatPolyIs s'.mem (s.gpr .x2) ((polyAt s.mem (s.gpr .x0)).map fun c => (highBits (arg32 s .x1) c).toNat)
-
-/-- `vg_mldsa_low_bits(r = x0, gamma2 = w1, out = x2)`. -/
-def lowBitsK : Contract isa := bitsK fun s s' =>
-  PolyIs s'.mem (s.gpr .x2) ((polyAt s.mem (s.gpr .x0)).map fun c => ofInt (lowBits (arg32 s .x1) c))
-
 /-- `vg_mldsa_norm_lt(f = x0, bound = w1)`. -/
 def normLtK : Contract isa where
   pre s := s.rd = [pR (s.gpr .x0)] ∧ s.wr = [] ∧ Reduced s.mem (s.gpr .x0)
   post s s' := (s'.gpr .x0).setWidth 32 = if normRq [polyAt s.mem (s.gpr .x0)] < arg32 s .x1 then 1 else 0
   pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ (s₁.gpr .x1).setWidth 32 = (s₂.gpr .x1).setWidth 32 ∧
     s₁.sp = s₂.sp
-
-/-- `a = x0, b = x1, gamma2 = w2, out = x3`, with the precondition `pre'` on
-the memory and the postcondition `post`. -/
-def hintK (pre' : State → Prop) (post : State → State → Prop) : Contract isa where
-  pre s :=
-    s.rd = [pR (s.gpr .x0), pR (s.gpr .x1)] ∧ s.wr = [pR (s.gpr .x3)] ∧
-    (pR (s.gpr .x0)).Disjoint (pR (s.gpr .x3)) ∧ (pR (s.gpr .x1)).Disjoint (pR (s.gpr .x3)) ∧
-    arg32 s .x2 ∈ gamma2s ∧ pre' s
-  post := post
-  pub s₁ s₂ := s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧
-    (s₁.gpr .x2).setWidth 32 = (s₂.gpr .x2).setWidth 32 ∧ s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.sp = s₂.sp
-
-/-- `vg_mldsa_make_hint(z = x0, r = x1, gamma2 = w2, h = x3)`. -/
-def makeHintK : Contract isa :=
-  hintK (fun s => Reduced s.mem (s.gpr .x0) ∧ Reduced s.mem (s.gpr .x1)) fun s s' =>
-    let hint := Vector.zipWith (makeHint (arg32 s .x2)) (polyAt s.mem (s.gpr .x0)) (polyAt s.mem (s.gpr .x1))
-    HintIs s'.mem (s.gpr .x3) 1 [hint] ∧ ((s'.gpr .x0).setWidth 32).toNat = hintOnes [hint]
-
-/-- `vg_mldsa_use_hint(h = x0, r = x1, gamma2 = w2, out = x3)`. -/
-def useHintK : Contract isa :=
-  hintK (fun s => Reduced s.mem (s.gpr .x1)) fun s s' =>
-    NatPolyIs s'.mem (s.gpr .x3) (Vector.zipWith (fun hj rj => (useHint (arg32 s .x2) hj rj).toNat)
-      ((hintAt s.mem (s.gpr .x0) 1).headD (Vector.replicate n false)) (polyAt s.mem (s.gpr .x1)))
 
 /-! ## Zero-extending `γ₂` -/
 
@@ -257,17 +217,6 @@ structure Layout (s₀ : State) (ins outs : List Reg) : Prop where
   dis : ∀ p ∈ ins, ∀ o ∈ outs, (pR (s₀.gpr p)).Disjoint (pR (s₀.gpr o))
   pw : outs.Pairwise fun a b => (pR (s₀.gpr a)).Disjoint (pR (s₀.gpr b))
 
-/-- The layout, in a state with the same pointers and permissions. -/
-theorem Layout.congr {s₀ s : State} {ins outs : List Reg} (h : Layout s₀ ins outs)
-    (e : ∀ r ∈ ins ++ outs, s.gpr r = s₀.gpr r) (hrd : s.rd = s₀.rd) (hwr : s.wr = s₀.wr) :
-    Layout s ins outs where
-  rd p hp := by rw [e p (List.mem_append_left _ hp), hrd, hwr]; exact h.rd p hp
-  wr o ho := by rw [e o (List.mem_append_right _ ho), hwr]; exact h.wr o ho
-  dis p hp o ho := by
-    rw [e p (List.mem_append_left _ hp), e o (List.mem_append_right _ ho)]; exact h.dis p hp o ho
-  pw := h.pw.imp_of_mem fun ha hb hd => by
-    rw [e _ (List.mem_append_right _ ha), e _ (List.mem_append_right _ hb)]; exact hd
-
 /-- After `i` iterations: the pointers `ptrs` at coefficient `i`, the
 registers `fixed` unchanged, the outputs hold their values below
 coefficient `i`, and `J i`. -/
@@ -289,11 +238,6 @@ theorem Inv.inR (hL : Layout s₀ ins outs) (hI : Inv s₀ ptrs fixed outs V J i
     (hpp : p ∈ ptrs) (hi : i < 256) : InRegions (s.rd ++ s.wr) (s.gpr p) 4 := by
   rw [hI.rd, hI.wr, hI.ptr p hpp]
   exact ⟨_, hL.rd p hp, coeff_contains _ hi⟩
-
-theorem Inv.inW (hL : Layout s₀ ins outs) (hI : Inv s₀ ptrs fixed outs V J i s) {o : Reg} (ho : o ∈ outs)
-    (hpo : o ∈ ptrs) (hi : i < 256) : InRegions s.wr (s.gpr o) 4 := by
-  rw [hI.wr, hI.ptr o hpo]
-  exact ⟨_, hL.wr o ho, coeff_contains _ hi⟩
 
 /-- The inputs are those of the initial memory. -/
 theorem Inv.read (hL : Layout s₀ ins outs) (hI : Inv s₀ ptrs fixed outs V J i s) {p : Reg} (hp : p ∈ ins)

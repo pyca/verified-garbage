@@ -530,9 +530,9 @@ theorem pack_spec : CoreSpec 9 packC (fun A _ => Tight A) (fun A _ r => r = uv A
   · refine WP.mono (packStep_ok hC hj h.kept) fun t' ⟨K', hm⟩ => ⟨K', fun k hk => ?_, fun i hi => ?_⟩
     · rw [← h.zs k hk, hm]; exact dw_own_sdO hC hj (by rw [Z_eq]; omega_using []) (by rw [Z_eq]; omega_using [hk]) _
     · have hpw : pw (zl t.mem b) j = pw (zl s₂.mem b) j := by
-        unfold pw; congr 1; unfold tsum; congr 1
-        exact List.map_congr_left fun k hk => by
-          unfold shv; rw [h.zs k (packLimbs_ok j k hk).1]
+        unfold pw tsum
+        refine congrArg (fun l : List Nat => l.sum % 2 ^ 64) (List.map_congr_left fun k hk => ?_)
+        unfold shv; rw [h.zs k (packLimbs_ok j k hk).1]
       rw [hm]
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi with hi | rfl
       · rw [dw_write_other _ _ _ (by omega_using [hi]) (by have := hC.onw; omega_arith) (by have := hC.onw; omega_using [hj])]

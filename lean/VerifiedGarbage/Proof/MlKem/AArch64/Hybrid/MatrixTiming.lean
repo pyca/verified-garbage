@@ -18,6 +18,7 @@ is public.
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Hybrid
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KEM VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Kem
@@ -44,7 +45,7 @@ theorem hashPair_relCT {w16 : Bool} {M : Msg} {σ τ : State} (hp : Pre P L σ) 
     (he : 2*i+1<P.k*P.k) (hb : 136 * (3 * i + 2) < M.S.len)
     (habs : ∀ blk, 136 * blk < M.S.len → ∃ h, (taint.check (Taint.ofRegs [M.S.r, .x28])
       (.block (Impl.MlKem.AArch64.Hybrid.absorbBlock M.S blk)) h).isSome = true) :
-    RelCT isa (HRel w16 P L M σ τ m n ρ Eσ Eτ (2*i) i) (Impl.MlKem.AArch64.Hybrid.pair3 P M.S (2*i) i w16)
+    RelCT isa (HRel w16 P L M σ τ m n ρ Eσ Eτ (2*i) i) (Impl.MlKem.AArch64.Hybrid.pair3 sha3 P M.S (2*i) i w16)
       (HRel w16 P L M σ τ m n ρ Eσ Eτ (2*i+2) (i+1)) := by
   intro s u tr ur t v h et eu
   have hw := hp.wf
@@ -69,12 +70,12 @@ theorem hashPair_relCT {w16 : Bool} {M : Msg} {σ τ : State} (hp : Pre P L σ) 
   rw [← sm.base] at hash₂
   have ek₂ := h.2.1.ek
   rw [← sm.ek] at ek₂
-  have ct := pairMCode_relCT (w16 := w16) (j := 3*i) (m := 3) P M.S hM.src (by decide) (by decide) (by decide)
+  have ct := pairMCode_relCT (sha3 := sha3) (w16 := w16) (j := 3*i) (m := 3) P M.S hM.src (by decide) (by decide) (by decide)
     hoa hob ps hs pu hu (fun k hk _ => by omega_using [hb, hk]) h.1.hash h.1.ek hash₂ ek₂
     (by rw [h.1.b.kb.sp, h.2.1.b.kb.sp, sm.sp]) (seeds (2*i)) (seeds (2*i+1)) habs
-  have ht := exec_post (paired_step3 hp hk hM he hb h.1 h.2.2.1) et
-  have hv := exec_post (paired_step3 hq hk' hM' he hb h.2.1 h.2.2.2.1) eu
-  exact ⟨(ct _ _ _ _ _ _ ⟨rfl,rfl⟩ (pairM_exec et) (pairM_exec eu)).1,ht.1,hv.1,ht.2,hv.2,
+  have ht := exec_post (paired_step3 (sha3 := sha3) hp hk hM he hb h.1 h.2.2.1) et
+  have hv := exec_post (paired_step3 (sha3 := sha3) hq hk' hM' he hb h.2.1 h.2.2.2.1) eu
+  exact ⟨(ct _ _ _ _ _ _ ⟨rfl,rfl⟩ (pairM_exec (sha3 := sha3) et) (pairM_exec (sha3 := sha3) eu)).1,ht.1,hv.1,ht.2,hv.2,
     by rw [Exec.syms et,Exec.syms eu]; exact h.2.2.2.2⟩
 
 end VG.Proof.MlKem.AArch64.Hybrid

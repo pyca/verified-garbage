@@ -14,16 +14,6 @@ public import VerifiedGarbage.Proof.Variants.Sm4Gcm.AArch64
 
 @[expose] public section
 
-namespace VG.Artifacts.Sm4Gcm.AArch64
-
-def direct : List Artifact := [
-  Spec.Sm4.Gcm.initApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratch 768 .x2 Impl.Sm4Gcm.AArch64.init
-    stack := 4032
-    verified := Proof.Sm4Gcm.AArch64.init_framed }]
-
-end VG.Artifacts.Sm4Gcm.AArch64
-
 -- SM4-GCM (NIST SP 800-38D with SM4, RFC 8998) on AArch64
 namespace VG.Artifacts.Sm4Gcm.AArch64.Sm4Gcm
 
@@ -34,37 +24,38 @@ def artifactsOf (v : GcmImpl) : List Artifact := [
   Spec.Sm4.Gcm.sealApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 784 0 (Impl.Sm4Gcm.AArch64.«seal» v.callees)
-    stack := 4048
     verified := seal_framed v },
   Spec.Sm4.Gcm.openApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackArgScratch 784 1 (Impl.Sm4Gcm.AArch64.«open» v.callees)
-    stack := 4048
     verified := open_framed v },
   Spec.Sm4.Gcm.streamEncryptApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x6
       (Impl.Sm4Gcm.AArch64.streamEncrypt v.callees)
-    stack := 4032
     verified := streamEncrypt_framed v },
   Spec.Sm4.Gcm.streamDecryptApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x6
       (Impl.Sm4Gcm.AArch64.streamDecrypt v.callees)
-    stack := 4032
     verified := streamDecrypt_framed v },
   Spec.Sm4.Gcm.streamFinishApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x5
       (Impl.Sm4Gcm.AArch64.streamFinish v.callees)
-    stack := 4032
     verified := streamFinish_framed v },
   Spec.Sm4.Gcm.streamVerifyApi.artifact AArch64.target {
     suffix := v.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 768 .x6
       (Impl.Sm4Gcm.AArch64.streamVerify v.callees)
-    stack := 4032
     verified := streamVerify_framed v }]
+
+/-- `vg_sm4_gcm_init`, which calls only the implementation of `vg_sm4_ctr32`. -/
+def artifactsInit (v : GcmImpl) : List Artifact := [
+  Spec.Sm4.Gcm.initApi.artifact AArch64.target {
+    suffix := v.ctrSuffix
+    code := Impl.StackScratch.AArch64.withStackScratch 768 .x2 (Impl.Sm4Gcm.AArch64.init v.callees)
+    verified := init_framed v }]
 
 /-- `vg_sm4_gcm_stream_init` and `vg_sm4_gcm_stream_aad`: AES-GCM's code and
 proofs, calling the implementation of `vg_ghash` the variant `v` names (and no
@@ -74,26 +65,32 @@ def artifactsAes (v : GcmVariant) : List Artifact := [
     suffix := v.gh.impl.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x4
       (Impl.AesGcm.AArch64.streamInit (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false⟩).callees)
-    stack := 2560
     verified := Proof.AesGcm.AArch64.streamInit_framed
       (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false⟩) },
   Spec.Sm4.Gcm.streamAadApi.artifact AArch64.target {
     suffix := v.gh.impl.suffix
     code := Impl.StackScratch.AArch64.withStackScratch 2560 .x5
       (Impl.AesGcm.AArch64.streamAad (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false⟩).callees)
-    stack := 2560
     verified := Proof.AesGcm.AArch64.streamAad_framed
       (Proof.AesGcm.AArch64.GcmVariant.impl ⟨.scalar, .scalar, v.gh, false⟩) }]
 
-/-- The artifacts calling the implementation of `vg_ghash` the variant `v` names. -/
-def artifacts (v : GcmVariant) : List Artifact := artifactsOf ⟨v.gh.impl⟩ ++ artifactsAes v
+/-- The artifacts calling the implementations the variant `v` names: those
+that call only one of the two with the baseline implementation of the other,
+of which the other variants would be the same functions. -/
+def artifacts (v : GcmVariant) : List Artifact :=
+  (match v.gh with
+    | .scalar => artifactsInit ⟨v.gh.impl, v.ctr.impl⟩
+    | .aes | .neon => []) ++
+  artifactsOf ⟨v.gh.impl, v.ctr.impl⟩ ++
+  (match v.ctr with
+    | .scalar => artifactsAes v
+    | .sm4 => [])
 
 end VG.Artifacts.Sm4Gcm.AArch64.Sm4Gcm
 
 namespace VG.Artifacts.Sm4Gcm.AArch64
 
 def artifacts : List Artifact :=
-  direct ++
-  (VG.Proof.Variants.Sm4Gcm.AArch64.variants.flatMap fun v => Sm4Gcm.artifacts v)
+  VG.Proof.Variants.Sm4Gcm.AArch64.variants.flatMap fun v => Sm4Gcm.artifacts v
 
 end VG.Artifacts.Sm4Gcm.AArch64

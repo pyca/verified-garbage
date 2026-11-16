@@ -188,10 +188,23 @@ theorem cols_halves (P : Params w) (x y : Nat → BitVec w) (v : Work w) :
   simp only [G_halves, quadH, colsF]
   apply Vector.ext
   intro j hj
+  -- `halfG_getP` for each of the four index sets, its side conditions decided once.
+  have h0 := fun (n1 n2 : Nat) (v : Work w) (x : BitVec w) (k : Nat) (hk : k < 16) =>
+    halfG_getP n1 n2 v (a := 0) (b := 4) (c := 8) (d := 12) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) x k hk
+  have h1 := fun (n1 n2 : Nat) (v : Work w) (x : BitVec w) (k : Nat) (hk : k < 16) =>
+    halfG_getP n1 n2 v (a := 1) (b := 5) (c := 9) (d := 13) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) x k hk
+  have h2 := fun (n1 n2 : Nat) (v : Work w) (x : BitVec w) (k : Nat) (hk : k < 16) =>
+    halfG_getP n1 n2 v (a := 2) (b := 6) (c := 10) (d := 14) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) x k hk
+  have h3 := fun (n1 n2 : Nat) (v : Work w) (x : BitVec w) (k : Nat) (hk : k < 16) =>
+    halfG_getP n1 n2 v (a := 3) (b := 7) (c := 11) (d := 15) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) x k hk
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl := cases16 hj
   all_goals
-    simp (disch := decide) only [halfG_getP, val_lit, Nat.reduceMod, Nat.reduceEqDiff, ↓reduceIte]
+    simp only [h0, h1, h2, h3, val_lit, Nat.reduceMod, Nat.reduceEqDiff, ↓reduceIte]
 
 theorem diags_halves (P : Params w) (x y : Nat → BitVec w) (v : Work w) :
     G P (G P (G P (G P v 0 5 10 15 (x 0) (y 0)) 1 6 11 12 (x 1) (y 1)) 2 7 8 13 (x 2) (y 2))
@@ -199,10 +212,23 @@ theorem diags_halves (P : Params w) (x y : Nat → BitVec w) (v : Work w) :
   simp only [G_halves, quadH, diagsF]
   apply Vector.ext
   intro j hj
+  -- `halfG_getP` for each of the four index sets, its side conditions decided once.
+  have h0 := fun (n1 n2 : Nat) (v : Work w) (x : BitVec w) (k : Nat) (hk : k < 16) =>
+    halfG_getP n1 n2 v (a := 0) (b := 5) (c := 10) (d := 15) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) x k hk
+  have h1 := fun (n1 n2 : Nat) (v : Work w) (x : BitVec w) (k : Nat) (hk : k < 16) =>
+    halfG_getP n1 n2 v (a := 1) (b := 6) (c := 11) (d := 12) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) x k hk
+  have h2 := fun (n1 n2 : Nat) (v : Work w) (x : BitVec w) (k : Nat) (hk : k < 16) =>
+    halfG_getP n1 n2 v (a := 2) (b := 7) (c := 8) (d := 13) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) x k hk
+  have h3 := fun (n1 n2 : Nat) (v : Work w) (x : BitVec w) (k : Nat) (hk : k < 16) =>
+    halfG_getP n1 n2 v (a := 3) (b := 4) (c := 9) (d := 14) (by decide) (by decide) (by decide) (by decide)
+      (by decide) (by decide) x k hk
   obtain rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl |
     rfl := cases16 hj
   all_goals
-    simp (disch := decide) only [halfG_getP, val_lit, Nat.reduceMod, Nat.reduceEqDiff, ↓reduceIte]
+    simp only [h0, h1, h2, h3, val_lit, Nat.reduceMod, Nat.reduceEqDiff, ↓reduceIte]
 
 /-- Round `r` as the code runs it. -/
 theorem round_halves (P : Params w) (m : Block w) (v : Work w) (r : Nat) :

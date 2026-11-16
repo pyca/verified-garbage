@@ -69,13 +69,6 @@ vg_mlkem768_kpke_keygen_ntt:
 	jne 22b
 	add r15, 1536
 	mov r14d, 3
-	stmxcsr DWORD PTR [rbx+768]
-	mov r11d, DWORD PTR [rbx+768]
-	and r11d, 65535
-	mov eax, 8127
-	mov DWORD PTR [rbx+772], eax
-	ldmxcsr DWORD PTR [rbx+772]
-	lfence
 23:
 	mov rdi, r12
 	mov rsi, rbx
@@ -1634,9 +1627,6 @@ vg_mlkem768_kpke_keygen_ntt:
 	add rbp, 1024
 	sub r14, 1
 	jne 23b
-	lfence
-	mov DWORD PTR [rbx+768], r11d
-	ldmxcsr DWORD PTR [rbx+768]
 	sub r12, 3072
 	mov rdi, r12
 	add rdi, 0

@@ -351,8 +351,8 @@ theorem redS_ok {s : State} {base : Addr} (hZ : 4096 ≤ Z) (hs : Scr s base Z) 
     rw [hval_succ_last (xg s) 9 7] at hB ⊢
     simp only [tsum, Nat.reduceAdd, Nat.mul_zero, Nat.add_zero] at hB ⊢
     generalize hval (xg s) 9 7 = H at *
-    have := Bool.toNat_le c₆; have := Bool.toNat_le c₅
-    omega
+    have b₆ := Bool.toNat_le c₆; have b₅ := Bool.toNat_le c₅
+    omega_using [e₅, e₆, hB, b₅, b₆]
   · refine ⟨fun r hr => ?_, ?_, ?_⟩
     · simp only [List.mem_cons, not_or] at hr
       obtain ⟨hra, hrc, hrd, hrx⟩ := hr

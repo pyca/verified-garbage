@@ -35,7 +35,7 @@ def PrimeIterationPublic.continues (p : PrimeIterationPublic) : Bool :=
     Proof.MillerRabin.Round.round p.draw.prime.N p.witness.1 &&
     decide (p.i + 1 < 17 ∨ p.nextUniform < p.draw.prime.checks)
 
-theorem iteration_public (M : Mont) (K : Kernel) {p : PrimeIterationPublic} 
+theorem iteration_public (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {p : PrimeIterationPublic} 
     {s₀ s : State} {res : Option (Bool × List Byte)}
     (h : PrimeLoopState p.draw.prime s₀ res p.i p.uni p.draw.used s) :
     WP isa (Impl.Dsa.AArch64.Generation.primeIteration
@@ -101,7 +101,7 @@ theorem LoopBefore.iteration {len drawBytes : Nat} {p : PrimeIterationPublic} {s
 def LoopAfter (len drawBytes : Nat) (p : PrimeIterationPublic) (s : State) : Prop :=
   isa.eval (.zero .x .x3) s = some p.continues ∧ (p.continues = true → LoopBefore len drawBytes p.next s)
 
-theorem primeIteration_transition (M : Mont) (K : Kernel) {len drawBytes : Nat}
+theorem primeIteration_transition (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {len drawBytes : Nat}
     {p : PrimeIterationPublic} {s : State} (h : LoopBefore len drawBytes p s) :
     WP isa (Impl.Dsa.AArch64.Generation.primeIteration
       (Impl.Dsa.AArch64.Generation.drawRound M.mm K.run len drawBytes)) s (LoopAfter len drawBytes p) := by

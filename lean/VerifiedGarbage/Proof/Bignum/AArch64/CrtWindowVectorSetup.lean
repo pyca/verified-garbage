@@ -14,7 +14,6 @@ namespace VG.Proof.Bignum.AArch64.WindowVector
 open VG VG.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum
 open VG.Impl.Rsa.AArch64.Crt
 open VG.Proof.MlKem.AArch64 (Keep)
-open VG.Proof.Bignum.AArch64.WindowFive (TableCtx)
 
 theorem exec_dup2 (s : State) (d : VReg) (n : Reg) :
     exec (.vop (.dup .d2 d n)) s = some (s.setV d (dup2 (s.gpr n))) := rfl
@@ -24,8 +23,8 @@ def setup : List Instr :=
    .lsr .x .x13 .x12 3, ldh .x5 Crt.sNib, .vop (.dup .d2 .v22 .x5),
    movi .x2 1, .vop (.dup .d2 .v24 .x2), ldh .x17 (sArr Crt.aT)]
 
-theorem setup_ok {s : State} {P : Addr} {w : Nat} {mi : BitVec 64} {X Xc v : Nat}
-    (hc : TableCtx s P w mi X Xc) (hw : w < 2 ^ 30)
+theorem setup_ok {s : State} {P : Addr} {w n : Nat} {mi : BitVec 64} {X Xc v : Nat}
+    (hc : CExpCtx s P w mi X Xc n) (hw : w < 2 ^ 30)
     (hv : word s.mem P (8 * Crt.sNib) = BitVec.ofNat 64 v) :
     WP isa (.block setup) s fun t =>
       (t.gpr .x6 = BitVec.ofNat 64 (8 * (w + 2)) ∧

@@ -54,7 +54,6 @@ open VG.Proof.Secp256k1.X86 (hasLaw)
 def artifacts : List Artifact := [
   Spec.Ecdh.Secp256k1.exchangeApi.artifact X86.target {
     code := Impl.Ecdh.X86.exchangeSecp256k1
-    stack := 28
     verified := Proof.Ecdh.X86.Secp256k1.ecdh_verified hasLaw.law hasLaw.inv }]
 
 end VG.Artifacts.EcdhSecp256k1.X86

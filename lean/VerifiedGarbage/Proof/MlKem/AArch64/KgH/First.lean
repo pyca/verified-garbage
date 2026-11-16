@@ -24,6 +24,7 @@ first `c` PRF outputs in their buffers. `first_step`: a pair keeps it. -/
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.KeyGen
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KG VG.Proof.MlKem.AArch64
 open VG.Spec.MlKem
@@ -172,7 +173,7 @@ theorem BInvW.pairedK {s₀ s t : State} (hp : Pre P s₀) (hk : Stk128K P s₀)
 /-- **Pair `p < 2`** of key generation's matrix, computing `PRF₂(σ, 3p)`, …, `PRF₂(σ, 3p + 2)`. -/
 theorem first_step {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) {p : Nat} (hp2 : p < 2)
     (hk3 : 3 ≤ P.k) (H : FInv P s₀ (2 * p) (3 * p) s) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.kgPairP P p) s (FInv P s₀ (2 * p + 2) (3 * p + 3)) := by
+    WP isa (Impl.MlKem.AArch64.Kem16P.kgPairP sha3 P p) s (FInv P s₀ (2 * p + 2) (3 * p + 3)) := by
   have hw := hp.wf
   have kb := H.b.kb
   have hf := hw.facts
@@ -194,7 +195,7 @@ theorem first_step {s₀ s : State} (hp : Pre P s₀) (hk : Stk128K P s₀) {p :
   have hin := prf_inputK hp hk he hN kb H.tstk mt
   unfold Impl.MlKem.AArch64.Kem16P.kgPairP
   rw [Kem16P.pairP_iff]
-  refine WP.mono_syms (Kem16P.pairPCode_ok P SG (TP P) (a := 2 * p) (N₀ := 3 * p) (m := 3) (by omega_arith) hbo
+  refine WP.mono_syms (Kem16P.pairPCode_ok (sha3 := sha3) P SG (TP P) (a := 2 * p) (N₀ := 3 * p) (m := 3) (by omega_arith) hbo
     (by decide) (by decide) (by decide) hoa hob pin hin rfl (by decide) (by decide) rfl
     (by rw [H.b.acc]; split; exacts [Or.inr rfl, Or.inl rfl])) fun t ht sy => ?_
   have post := ht.outcome hk1 hk2

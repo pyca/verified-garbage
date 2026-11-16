@@ -63,15 +63,14 @@ def epi : List Instr :=
     .mov .r13 (.mem (at_ .rbx (oKS + 24))), .mov .r12 (.mem (at_ .rbx (oKS + 16))),
     .mov .rbp (.mem (at_ .rbx (oKS + 8))), .mov .rbx (.mem (at_ .rbx oKS))]
 
-/-- The code of `vg_mlkem*_decrypt_mul` of rank `k`, with `inner` in its
-MXCSR region, but for the restore of the
-registers it saves. -/
+/-- The code of `vg_mlkem*_decrypt_mul` of rank `k`, with `inner`, but for
+the restore of the registers it saves. -/
 def dmBody (inner : Nat → Prog isa) (k : Nat) : Prog isa :=
   .seq (.block (KpkeMul.save ++ [.mov .rbx (.reg .rcx), .mov .rbp (.reg .rdi), .mov .r12 (.reg .rsi),
       .mov .r13 (.reg .rdx), .mov32 .r14 (.imm (BitVec.ofNat 32 k))]))
-    (withMxcsr .rbx oMx (inner k))
+    (inner k)
 
-/-- `ŝᵀ ∘ NTT(u)` with AVX2, in the MXCSR region: each `NTT(u[j])` to an
+/-- `ŝᵀ ∘ NTT(u)` with AVX2: each `NTT(u[j])` to an
 accumulator, then the row of products and `NTT⁻¹`. -/
 def dmInnerY (k : Nat) : Prog isa :=
   .seq (.block KpkeMul.startY) (.seq (.loop KpkeMul.nttTermY .ne) (KpkeMul.rowInvY [.mov .rsi (.reg .r12)] 1024 k))
@@ -177,11 +176,10 @@ def vE : Prog isa :=
 def kpkeEncPre (mul : Nat → Prog isa) : Prog isa :=
   .seq (.block proE) (.seq (seqR (tHatE L A) 0 L.k) (prodE L mul))
 
-/-- `u` and `v`, in an MXCSR region (`withMxcsr`, at `scratch + 768` again)
-for the multiplications of their compressions (`L.ceU`, `L.ceV`), and the
-epilogue. -/
+/-- `u` and `v`, with the multiplications of their compressions (`L.ceU`,
+`L.ceV`), and the epilogue. -/
 def kpkeEncPost : Prog isa :=
-  .seq (withMxcsr .rbx oMx (.seq (seqR (uE L) 0 L.k) (vE L A))) (.block epiE)
+  .seq (.seq (seqR (uE L) 0 L.k) (vE L A)) (.block epiE)
 
 /-! ## `vg_mlkem*_kpke_keygen` -/
 

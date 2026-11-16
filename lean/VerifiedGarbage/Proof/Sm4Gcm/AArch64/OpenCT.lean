@@ -134,16 +134,16 @@ theorem omA_rel (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat} {s�
     ⟨_, by taint_decide⟩
 
 /-- The rest of `openMain`, in two runs that agree on the tag. -/
-theorem omB_rel {Ctx W SP D Np A : Addr} {nl al n tl : Nat}
+theorem omB_rel (v : GcmImpl) {Ctx W SP D Np A : Addr} {nl al n tl : Nat}
     (L : Lay Ctx (W + BitVec.ofNat 64 16) W SP) {fr : List Region} {s s' m₁ m₂ : State}
     (mo₁ : MidO fr Ctx W SP D Np A nl al n tl s m₁) (mo₂ : MidO fr Ctx W SP D Np A nl al n tl s' m₂)
     (dD : ∀ r ∈ fr, (⟨D, n⟩ : Region).Disjoint r) (dC : ∀ r ∈ fr, (⟨Ctx, 256⟩ : Region).Disjoint r)
     (hx : m₁.gpr .x27 = m₂.gpr .x27) :
-    RelCT isa (Eq2 m₁ m₂) omB TT := by
+    RelCT isa (Eq2 m₁ m₂) (omB v.callees) TT := by
   unfold omB
   have tm : ∃ h, (taint.check (Taint.ofRegs [.x27]) (.block [mov .x0 .x27]) h).isSome = true :=
     ⟨_, by taint_decide⟩
-  refine rel_seq ?_ (omIte_ok L mo₁ dD dC) (omIte_ok L mo₂ dD dC)
+  refine rel_seq ?_ (omIte_ok v L mo₁ dD dC) (omIte_ok v L mo₂ dD dC)
     fun a b ⟨ea, xa, _, _⟩ ⟨eb, xb, _, _⟩ =>
       rel_taint [.x27] (by rw [ea.sp, eb.sp]) (by agree_tac [xa, xb, hx]) tm
   have x27₁ := mo₁.x27
@@ -154,7 +154,7 @@ theorem omB_rel {Ctx W SP D Np A : Addr} {nl al n tl : Nat}
   · refine rel_seq (rel_taint [.x19] (by rw [mo₁.env.sp, mo₂.env.sp]) (by agree_tac [mo₁.env.x19, mo₂.env.x19])
       ⟨_, by taint_decide⟩) (ocLdr_ok mo₁.env mo₁.sD mo₁.sN) (ocLdr_ok mo₂.env mo₂.sD mo₂.sN)
       fun c₁ c₂ h₁ h₂ => ?_
-    exact cryptAl_rel L (oc_in mo₁ h₁) (oc_in mo₂ h₂) rfl
+    exact cryptAl_rel L v (oc_in mo₁ h₁) (oc_in mo₂ h₂) rfl
 
 /-- `openMain` in two runs, after `tagIn`, whose tags compare alike. -/
 theorem openMain_rel (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat} {σ₁ σ₂ t₁ t₂ : State}
@@ -172,7 +172,7 @@ theorem openMain_rel (v : GcmImpl) {Ctx W SP Np A D Tg : Addr} {nl al n tl : Nat
       p₁.dcW p₁.sA p₁.sL p₁.sD p₁.sN p₁.sT hok)
     (openMainA_ok v L p₂.env p₂.x23 p₂.x24 p₂.x26 p₂.x27 p₂.non p₂.aad p₂.dat p₂.ddW
       p₂.dcW p₂.sA p₂.sL p₂.sD p₂.sN p₂.sT hok) fun m₁ m₂ mo₁ mo₂ => ?_)
-  refine omB_rel L mo₁ mo₂ (keep_om p₁.ddW p₁.dat.stk.symm) (keep_om p₁.dcW L.kc.symm) ?_
+  refine omB_rel v L mo₁ mo₂ (keep_om p₁.ddW p₁.dat.stk.symm) (keep_om p₁.dcW L.kc.symm) ?_
   rw [mo₁.x27, mo₂.x27, tagBit p₁ rt₁ hok, tagBit p₂ rt₂ hok, hb]
 
 /-- `open` after its entry, in two runs from the same public arguments. -/

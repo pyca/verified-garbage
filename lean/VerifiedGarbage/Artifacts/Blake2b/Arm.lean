@@ -17,11 +17,9 @@ def artifacts : List Artifact := [
     verified := Proof.Blake2.ArmB.initB_verified },
   Spec.Blake2.updateBApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 592 2 (Impl.Blake2.Arm.Stream.update (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress)
-    stack := 16 + 592
     verified := Proof.Blake2.ArmB.updateB_framed },
   Spec.Blake2.finalizeBApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratch 592 1 (Impl.Blake2.Arm.Stream.finalize (w := 64) "vg_blake2b_compress" Impl.Blake2.Arm.B.compress)
-    stack := 16 + 592
     verified := Proof.Blake2.ArmB.finalizeB_framed }]
 
 end VG.Artifacts.Blake2b.Arm

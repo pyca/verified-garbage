@@ -72,8 +72,8 @@ theorem sm4BlockAt_eq (m : Mem) (p : Addr) :
   simp [bytesAt, i.isLt]
 
 /-- `vg_sm4_gcm_init`. -/
-theorem init_wp {s : State} (hp : initAArch64.pre s) :
-    WP isa init s fun s' => GprAbi s s' ∧ initAArch64.post s s' := by
+theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
+    WP isa (init v.callees) s fun s' => GprAbi s s' ∧ initAArch64.post s s' := by
   simp only [initAArch64] at hp ⊢
   obtain ⟨hsp, hrd, hwr, d_kc, d_ks, d_cs, sK, sC, sW, fK, fC, fW⟩ := hp
   generalize hK : s.gpr .x0 = K at *
@@ -105,7 +105,7 @@ theorem init_wp {s : State} (hp : initAArch64.pre s) :
     · rw [rd₂', wr₂']
       exact covers_cons pK (covers_left (covers_prefix pC (by decide)))
     · rw [wr₂']; exact covers_prefix pC (by decide)
-  refine WP.seq (WP.mono (key_call kc) fun s₃ g => ?_)
+  refine WP.seq (WP.mono (key_call v.ctr.key kc) fun s₃ g => ?_)
   have g19 : s₃.gpr .x19 = W := by rw [g.saved .x19 (by decide) (by decide), x19₂]
   have g21 : s₃.gpr .x21 = Ctx := by rw [g.saved .x21 (by decide) (by decide), x21₂]
   have rd₃ : s₃.rd = s.rd := g.rd.trans rd₂'
@@ -188,7 +188,7 @@ theorem init_wp {s : State} (hp : initAArch64.pre s) :
         (covers_left (covers_off pW' (by decide) (by decide)))
         (covers_left (covers_off pC' (by decide) (by decide))))
     · exact covers_cons (covers_off pW' (by decide) (by decide)) (covers_off pC' (by decide) (by decide))
-  refine WP.seq (WP.mono (ctr_call cc) fun s₅ c => ?_)
+  refine WP.seq (WP.mono (ctr_call v.ctr cc) fun s₅ c => ?_)
   have cf := c.frame
   rw [sp₄'] at cf
   have gout := c.out
@@ -241,7 +241,7 @@ end
 # SM4-GCM on AArch64: `Verified`
 
 Untrusted: everything here is checked by Lean. Correctness and constant time
-(for any implementation `v` of `vg_ghash`), a state satisfying each
+(for any implementations `v` of `vg_ghash` and `vg_sm4_ctr32`), a state satisfying each
 precondition, and the shared contracts of `Spec/Sm4/Gcm/Contract.lean` with
 the working space as a last argument (`Sig.scratchContract`) and the 3264
 bytes of stack `vg_sm4_ctr32` and `vg_sm4_expand_key` use below the stack
@@ -262,46 +262,46 @@ def GcmImpl.features (v : GcmImpl) : List String := v.gh.features
 
 /-! ## v8–v15 -/
 
-theorem init_keepsV : init.allInstrs keepsV = true := by
-  simp only [init, ctrCall, Code.allInstrs, ctrCode_keepsV, keyCode_keepsV]; lit_decide
+theorem init_keepsV (v : GcmImpl) : (init v.callees).allInstrs keepsV = true := by
+  simp only [init, ctrCall, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.ctr.key.keepsV]; lit_decide
 
 theorem streamEncrypt_keepsV (v : GcmImpl) : (streamEncrypt v.callees).allInstrs keepsV = true := by
   simp only [streamEncrypt, encBody, fo, textAbs, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall, absorb,
     absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees,
-    Code.allInstrs, ctrCode_keepsV, v.gh.keepsV]; lit_decide
+    Code.allInstrs, v.ctr.keepsV, v.gh.keepsV]; lit_decide
 
 theorem streamDecrypt_keepsV (v : GcmImpl) : (streamDecrypt v.callees).allInstrs keepsV = true := by
   simp only [streamDecrypt, decBody, decAbs, fo, textAbs, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall,
     absorb, absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor, padSeg, flush, lens,
-    GcmImpl.callees, Code.allInstrs, ctrCode_keepsV, v.gh.keepsV]; lit_decide
+    GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.gh.keepsV]; lit_decide
 
 theorem streamFinish_keepsV (v : GcmImpl) : (streamFinish v.callees).allInstrs keepsV = true := by
   simp only [streamFinish, finBody, tag, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, xorB,
-    Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, ctrCode_keepsV,
+    Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV,
     v.gh.keepsV]; lit_decide
 
 theorem streamVerify_keepsV (v : GcmImpl) : (streamVerify v.callees).allInstrs keepsV = true := by
   simp only [streamVerify, tagLenOk, tagIn, cmpSeg, cmp, cmp16, finBody, tag, ctrCall, ghCall, absorb,
     absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor, padSeg, flush, lens, GcmImpl.callees,
-    Code.allInstrs, ctrCode_keepsV, v.gh.keepsV]; lit_decide
+    Code.allInstrs, v.ctr.keepsV, v.gh.keepsV]; lit_decide
 
 theorem seal_keepsV (v : GcmImpl) : («seal» v.callees).allInstrs keepsV = true := by
   simp only [«seal», sealRest, j0, j0hash, oneAad, absorbAl, encBody, fo, textAbs, finBody, tag, crypt, crSeg1,
     crSeg2, crTail, ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor,
-    padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, ctrCode_keepsV, v.gh.keepsV]; lit_decide
+    padSeg, flush, lens, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.gh.keepsV]; lit_decide
 
 theorem open_keepsV (v : GcmImpl) : («open» v.callees).allInstrs keepsV = true := by
   simp only [«open», openEntry, openRest, openMain, oneCrypt, cryptAl, crArgs, tagLenOk, tagIn, cmpSeg, cmp,
     cmp16, j0, j0hash, oneAad, absorbAl, decAbs, fo, textAbs, finBody, tag, crypt, crSeg1, crSeg2, crTail,
     ctrCall, ghCall, absorb, absSeg1, absTail, minK, copy, copyB, xorB, Impl.AesGcm.AArch64.xor, padSeg, flush,
-    lens, GcmImpl.callees, Code.allInstrs, ctrCode_keepsV, v.gh.keepsV]
+    lens, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.gh.keepsV]
   lit_decide
 
 /-! ## Correctness -/
 
-theorem init_correct (s : State) (hs : initAArch64.pre s) :
-    ∃ t s', Exec isa init s t s' ∧ abiPreserved s s' ∧ initAArch64.post s s' :=
-  WP.withPreservedV (init_wp hs) init_keepsV
+theorem init_correct (v : GcmImpl) (s : State) (hs : initAArch64.pre s) :
+    ∃ t s', Exec isa (init v.callees) s t s' ∧ abiPreserved s s' ∧ initAArch64.post s s' :=
+  WP.withPreservedV (init_wp v hs) (init_keepsV v)
 
 theorem streamEncrypt_correct (v : GcmImpl) (s : State) (hs : streamEncryptAArch64.pre s) :
     ∃ t s', Exec isa (streamEncrypt v.callees) s t s' ∧ abiPreserved s s' ∧ streamEncryptAArch64.post s s' :=
@@ -384,10 +384,10 @@ def openSat : State where
 
 /-! ## The shared contracts -/
 
-theorem init_verified :
-    Verified AArch64.target init (Sig.scratchContract AArch64.abi Spec.Sm4.Gcm.initSig "scratch" .u64 96
+theorem init_verified (v : GcmImpl) :
+    Verified AArch64.target (init v.callees) (Sig.scratchContract AArch64.abi Spec.Sm4.Gcm.initSig "scratch" .u64 96
       (Curry.const (fun _ => True) _) (Spec.Sm4.Gcm.initPost AArch64.abi.ptrBits) true 3264) :=
-  Verified.of_correct init_correct init_ct (by
+  Verified.of_correct (init_correct v) (init_ct v) (by
     sig_implies [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Spec.Sm4.Gcm.initSig,
       Spec.Sm4.Gcm.initPost, initAArch64, args, AArch64.abi, AArch64.argRegs, AArch64.stackArg,
       AArch64.stackArgAddr, List.getD, List.range, List.range.loop, stackBelow]
@@ -480,12 +480,12 @@ theorem initFrameSat_pre : ∃ s, (Spec.Sm4.Gcm.initContract AArch64.abi 4032).p
   implies_sat [Spec.Sm4.Gcm.initContract, Spec.Sm4.Gcm.initSig, Spec.Sm4.Gcm.initPost, AArch64.abi,
     AArch64.argRegs, stackBelow] [initFrameSat, initSat] using initFrameSat
 
-theorem init_framed :
-    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 768 .x2 (init))
+theorem init_framed (v : GcmImpl) :
+    Verified AArch64.target (Impl.StackScratch.AArch64.withStackScratch 768 .x2 (init v.callees))
       (Spec.Sm4.Gcm.initContract AArch64.abi 4032) :=
   AArch64.Verified.stackScratch (sig := Spec.Sm4.Gcm.initSig) (nm := "scratch") (e := .u64) (n := 96)
     (post := Spec.Sm4.Gcm.initPost AArch64.abi.ptrBits) (wa := true) (stack := 3264) (bytes := 768)
-    (init_verified) (by decide) (by decide) initFrameSat_pre
+    (init_verified v) (by decide) (by decide) initFrameSat_pre
 
 /-- A state satisfying `vg_sm4_gcm_stream_encrypt`'s precondition, without the working
 space. -/

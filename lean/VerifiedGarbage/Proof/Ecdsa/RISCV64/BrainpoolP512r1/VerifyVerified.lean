@@ -17,6 +17,12 @@ meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Spec.Ecdsa.Verify.BrainpoolP512r1
 meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP512r1.VerifyLit
 meta import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP512r1.MulFn
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP512r1.MulFn
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP512r1.Sign
+meta import VerifiedGarbage.Proof.Ecdsa.RISCV64.BrainpoolP512r1.Sign
 
 /-!
 # ECDSA verification over brainpoolp512r1 on RISC-V: `Verified`
@@ -33,14 +39,18 @@ namespace VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1
 open VG VG.RISCV64 VG.Impl.Ecdsa.RISCV64 VG.Impl.Ecdsa.RISCV64.Verify
 
 theorem verify_ct : ConstantTime isa verifyRV.pre verifyRV.pub verifyBrainpoolP512r1 :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
     (fun _ _ _ _ ⟨hsp, h0, h1, h2, h3⟩ => ⟨hsp, fun r hr => by
       simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl
       · exact h0
       · exact h1
       · exact h2
-      · exact h3⟩) (by taint_decide)
+      · exact h3⟩)
+    (by taint_decide_sum [VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1.pMulSum,
+      VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1.pAddSum, VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1.pSubSum,
+      VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1.nMulSum, VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1.nAddSum,
+      VG.Proof.Ecdsa.RISCV64.BrainpoolP512r1.nSubSum])
 
 /-- A state satisfying the precondition. -/
 def verifySat : State where

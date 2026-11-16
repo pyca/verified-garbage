@@ -9,6 +9,7 @@ public import VerifiedGarbage.Proof.Ffdh.AArch64.Stage
 public import VerifiedGarbage.Proof.Ffdh.AArch64.ScalarRange
 import VerifiedGarbage.Proof.Ffdh.AArch64.CheckDomain.Pieces
 import VerifiedGarbage.Proof.Ffdh.Domain
+import VerifiedGarbage.Proof.Ffdh.Power
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.PowLit
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
@@ -426,176 +427,14 @@ theorem k9_k10 (M : Mont) (p : KpP) (xb : List Byte) (t : State) (h : K9 p xb t)
   obtain ⟨⟨mi, hI, -⟩, ho, hpv⟩ := h
   exact WP.mono (hI.r2 M) fun u ⟨⟨hu, _⟩, k⟩ => ⟨⟨⟨mi, hu⟩, ho, hpv, hr⟩, k⟩
 
-/-- Back in the outer workspace, with `R² mod p`. -/
-def K11 (p : KpP) (xb : List Byte) (t : State) : Prop :=
-  (∃ mi, Pa (p.D xb) mi t ∧ R2f (p.D xb) t) ∧ Ok p xb ∧ p.pv = true ∧ p.rg xb
-
-theorem k10_k11 (p : KpP) (xb : List Byte) (t : State) (h : K10 p xb t) :
-    WP isa (.block [leave]) t fun u => K11 p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hM⟩, ho, hpv, hr⟩ := h
-  exact WP.mono (leave_ok hM.2.1.sub) fun u ⟨⟨h0, hm⟩, k⟩ =>
-    ⟨⟨⟨mi, hM.inn.pa hm k h0, hM.r2f.mem hm⟩, ho, hpv, hr⟩, k.mono (by decide)⟩
-
-/-- After the test of the domain's length. -/
-def K12 (p : KpP) (xb : List Byte) (t : State) : Prop :=
-  (∃ mi, Pa (p.D xb) mi t ∧ R2f (p.D xb) t ∧ t.gpr .x3 = BitVec.ofNat 64 (p.dl - 2 * p.k)) ∧ Ok p xb ∧
-    p.pv = true ∧ p.rg xb
-
-theorem k11_k12 (p : KpP) (xb : List Byte) (t : State) (h : K11 p xb t) :
-    WP isa (.block qTest) t fun u => K12 p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hP, hR⟩, ho, hpv, hr⟩ := h
-  exact WP.mono hP.qtest fun u ⟨⟨h3, hm⟩, k⟩ => ⟨⟨⟨mi, hP.outside (o := 256) (n := 0) (by decide)
-    (by simp only [inner, slot, hdrBytes]; omega_arith) (fun x _ => by rw [hm]) k.rd k.wr ((k.gpr .x0 (by decide)).trans
-      hP.2.2.2.2.2.2), hR.mem hm, h3⟩, ho, hpv, hr⟩, k.mono (by decide)⟩
-
-theorem k12_eval {p : KpP} {xb : List Byte} {t : State} (h : K12 p xb t) :
-    isa.eval (.zero .x .x3) t = some (BitVec.ofNat 64 (p.dl - 2 * p.k) == 0) := by
-  obtain ⟨⟨_, _, _, h3⟩, _⟩ := h
-  rw [eval_zero, h3]
-
-/-- y's subgroup check, as the code computes it. -/
-abbrev KpP.qc (p : KpP) (xb : List Byte) : Prop :=
-  p.dl = 3 * p.k → p.Y ^ Spec.Rsa.os2ip (p.D xb).qb % (p.D xb).P = 1
-
-/-- After y's subgroup check. -/
-def K13 (p : KpP) (xb : List Byte) (t : State) : Prop :=
-  (∃ mi, Md (p.D xb) mi t ∧ t.gpr .x9 = bit (p.qc xb)) ∧ Ok p xb ∧ p.pv = true ∧ p.rg xb
-
-theorem enterOne_eq : [enter, movi .x9 1] = [enter] ++ [movi .x9 1] := rfl
-
-theorem k12_k13n (p : KpP) (xb : List Byte) (t : State) (h : K12 p xb t)
-    (he : isa.eval (.zero .x .x3) t = some true) :
-    WP isa (.block [enter, movi .x9 1]) t fun u => K13 p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hP, hR, h3⟩, ho, hpv, hr⟩ := h
-  have h2 := hP.1.noq (by rw [eval_zero, h3] at he; simpa using he)
-  have hk1 := hP.1.k1
-  rw [enterOne_eq, WP.block_append_iff]
-  refine WP.mono hP.enterM fun u ⟨⟨hI, hm⟩, k⟩ => WP.mono (WP.keep [.x9] (Q := fun v => v.gpr .x9 = 1 ∧
-    v.mem = u.mem) (by brun) (by decide) (by decide) (by decide +kernel)) fun v ⟨⟨h9, hmv⟩, k'⟩ =>
-      ⟨⟨⟨mi, (hI.md (hR.mem hm)).keep hmv k' (by decide), ?_⟩, ho, hpv, hr⟩, keep_trans k (k'.mono (by decide))⟩
-  rw [h9]
-  unfold bit
-  rw [ite_eq_left (fun e => absurd (e.symm.trans h2) (by simp at hk1 ⊢; omega_arith))]
-
-/-- q's octets from its first nonzero one. -/
-abbrev KpP.qe (p : KpP) (xb : List Byte) : List Byte := (p.D xb).qb.drop (lead (p.D xb).qb)
-
-theorem qe_facts {p : KpP} {xb : List Byte} {t : State} (hb : Base (p.D xb) t) (hq : p.dl = 3 * p.k) :
-    (p.qe xb).length = p.k - lead (p.D xb).qb ∧ 1 ≤ (p.qe xb).length ∧ (p.qe xb).length ≤ p.k ∧
-      Spec.Rsa.os2ip (p.qe xb) = Spec.Rsa.os2ip (p.D xb).qb ∧
-      Src t p.B p.Z (off (p.dp + BitVec.ofNat 64 (2 * p.k)) (lead (p.D xb).qb)) (p.qe xb) := by
-  have hl := hb.qlen hq
-  have := hb.k1
-  simp only [KpP.D_k] at hl this
-  have hne : (p.D xb).qb ≠ [] := fun he => by rw [he] at hl; simp at hl; omega_arith
-  have hlead := lead_lt hne
-  refine ⟨by rw [List.length_drop, hl], by rw [List.length_drop]; omega_arith, by rw [List.length_drop]; omega_arith,
-    os2ip_drop_lead _, hb.qsrc.drop _⟩
-
-/-- The exponent slots: q from its first nonzero octet. -/
-def EpS (p : KpP) (xb : List Byte) (m : Mem) : Prop :=
-  word m p.B (8 * sEp) = off (p.dp + BitVec.ofNat 64 (2 * p.k)) (lead (p.D xb).qb) ∧
-    word m p.B (8 * sEl) = BitVec.ofNat 64 (p.k - lead (p.D xb).qb)
-
-/-- After q's scan. -/
-def K12s (p : KpP) (xb : List Byte) (t : State) : Prop :=
-  (∃ mi, Pa (p.D xb) mi t ∧ R2f (p.D xb) t ∧ EpS p xb t.mem) ∧ Ok p xb ∧ p.pv = true ∧ p.rg xb ∧ p.dl = 3 * p.k
-
-theorem k12_s (p : KpP) (xb : List Byte) (t : State) (h : K12 p xb t) (hq : p.dl = 3 * p.k) :
-    WP isa (seqs (scan sQ)) t fun u => K12s p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hP, hR, -⟩, ho, hpv, hr⟩ := h
-  have hb := hP.1
-  refine WP.mono (hP.scan hq) fun u ⟨⟨⟨hP', hEp, hEl⟩, f⟩, k₁⟩ => ⟨⟨⟨mi, hP', hR.hdr hb f (fun r hr' => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr'
-    rcases hr' with rfl | rfl <;> simp only [sEp, sEl, sFn] <;> omega_arith), hEp, hEl⟩, ho, hpv, hr, hq⟩, k₁⟩
-
-/-- In the inner workspace again, with `R² mod p`. -/
-def K12e (p : KpP) (xb : List Byte) (t : State) : Prop :=
-  (∃ mi, Md (p.D xb) mi t ∧ EpS p xb t.mem) ∧ Ok p xb ∧ p.pv = true ∧ p.rg xb ∧ p.dl = 3 * p.k
-
-theorem s_e (p : KpP) (xb : List Byte) (t : State) (h : K12s p xb t) :
-    WP isa (.block [enter]) t fun u => K12e p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hP, hR, hE⟩, rest⟩ := h
-  exact WP.mono hP.enterM fun v ⟨⟨hI, hm⟩, k₂⟩ => ⟨⟨⟨mi, hI.md (hR.mem hm), by unfold EpS; rw [hm]; exact hE⟩, rest⟩, k₂⟩
-
-/-- `y^q mod p` in `aY`. -/
-def K12p (p : KpP) (xb : List Byte) (t : State) : Prop :=
-  (∃ mi, Md (p.D xb) mi t ∧ wv t.mem (p.G xb) (slot (p.D xb).w aY) (p.D xb).w =
-    p.Y ^ Spec.Rsa.os2ip (p.D xb).qb % (p.D xb).P) ∧ Ok p xb ∧ p.pv = true ∧ p.rg xb ∧ p.dl = 3 * p.k
-
-theorem e_pre (p : KpP) (xb : List Byte) (t : State) (h : K12e p xb t) :
-    PS0 sY sK sEp sEl ((p.D xb).pw p.yp p.k (off (p.dp + BitVec.ofNat 64 (2 * p.k)) (lead (p.D xb).qb))
-      (p.k - lead (p.D xb).qb)) t := by
-  obtain ⟨⟨mi, hM, hEp, hEl⟩, ho, -, -, hq⟩ := h
-  have hb := hM.1
-  have hs := hM.2.2.2.1
-  have hy : Src t p.B p.Z p.yp p.yb := hb.srcs (p.yp, p.yb) (by simp [KpP.D])
-  obtain ⟨hl, h1, hk, hQ, hsrc⟩ := qe_facts hb hq
-  have hk1 : 64 ≤ p.k := hb.k1
-  have hk2 : p.k ≤ 1024 := hb.k2
-  have := hM.ps0 (bp := sY) (bl := sK) (ep := sEp) (el := sEl) (by decide) (by decide) (by decide) (by decide)
-    (hs.get (i := sY) (v := p.yp) (by simp [KpP.D])) (by rw [ho.2.2.2.1]; exact hs.get (i := sK) (by simp)) hy
-    (by rw [ho.2.2.2.1]; omega_arith) (by rw [ho.2.2.2.1]; simp) hEp (by rw [hl]; exact hEl) hsrc h1 (by omega_arith)
-  rw [ho.2.2.2.1, hl] at this
-  exact this
-
-theorem e_p (W : Window) (M : Mont) (S : Selector) (p : KpP) (xb : List Byte) (t : State) (h : K12e p xb t) :
-    WP isa (seqs (pow W.code S.code M.mm sY sK sEp sEl)) t fun u => K12p p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hM, hEp, hEl⟩, ho, hpv, hr, hq⟩ := h
-  have hb := hM.1
-  have hs := hM.2.2.2.1
-  have hy : Src t p.B p.Z p.yp p.yb := hb.srcs (p.yp, p.yb) (by simp [KpP.D])
-  obtain ⟨hl, h1, hk, hQ, hsrc⟩ := qe_facts hb hq
-  have hk1 : 64 ≤ p.k := hb.k1
-  have hk2 : p.k ≤ 1024 := hb.k2
-  exact WP.mono (hM.pow W M S (by decide) (by decide) (by decide) (by decide)
-    (hs.get (i := sY) (v := p.yp) (by simp [KpP.D])) (by rw [ho.2.2.2.1]; exact hs.get (i := sK) (by simp)) hy
-    (by rw [ho.2.2.2.1]; omega_arith) (by rw [ho.2.2.2.1]; simp) hEp (by rw [hl]; exact hEl) hsrc h1 (by omega_arith))
-    fun w' ⟨hM', hY, _, k₃⟩ => ⟨⟨⟨mi, hM', by rw [hY, hQ]⟩, ho, hpv, hr, hq⟩, k₃⟩
-
-theorem p_k13 (p : KpP) (xb : List Byte) (t : State) (h : K12p p xb t) :
-    WP isa (seqs (isOne aY)) t fun u => K13 p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hM', hY⟩, ho, hpv, hr, hq⟩ := h
-  have hI' := hM'.inn
-  have ew := hI'.1.ew
-  have hk1 : 64 ≤ p.k := hI'.1.k1
-  have hk2 : p.k ≤ 1024 := hI'.1.k2
-  have ek : (p.D xb).k = p.k := rfl
-  refine WP.mono (eqArr_ok hI'.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D xb).w by omega_arith)
-    (show (p.D xb).w < 2 ^ 31 by omega_arith) (show aY < 8 by decide) (show aOne < 8 by decide))
-    fun x ⟨h9, hmx, k₄⟩ => ⟨⟨⟨mi, hM'.keep hmx k₄ (by decide), ?_⟩, ho, hpv, hr⟩, k₄.mono (by decide)⟩
-  rw [h9, hY, hI'.2.2.1.one]
-  exact bit_iff ⟨fun e _ => e, fun e => e hq⟩
-
-theorem k12_k13q (W : Window) (M : Mont) (S : Selector) (p : KpP) (xb : List Byte) (t : State) (h : K12 p xb t)
-    (he : isa.eval (.zero .x .x3) t = some false) :
-    WP isa (seqs (scan sQ ++ ([.block [enter]] : List (Prog isa)) ++ pow W.code S.code M.mm sY sK sEp sEl ++ isOne aY)) t
-      fun u => K13 p xb u ∧ KX t u := by
-  have hq := h.1.choose_spec.1.1.q (by rw [k12_eval h] at he; simpa using he)
-  simp only [List.append_assoc, List.cons_append, List.nil_append]
-  refine wp_seqs_append (by simp [scan]) (by simp) (WP.mono (k12_s p xb t h hq) fun u ⟨hu, k₁⟩ =>
-    wp_seqs_cons (by simp [pow]) (WP.mono (s_e p xb u hu) fun v ⟨hv, k₂⟩ =>
-      wp_seqs_append (by simp [pow]) (by simp [isOne, eqArr]) (WP.mono (e_p W M S p xb v hv) fun w' ⟨hw, k₃⟩ =>
-        WP.mono (p_k13 p xb w' hw) fun x ⟨hx, k₄⟩ => ⟨hx, keep_trans (keep_trans k₁ k₂) (keep_trans k₃ k₄)⟩)))
-
-theorem k13_eval {p : KpP} {xb : List Byte} {t : State} (h : K13 p xb t) :
-    isa.eval (.zero .x .x9) t = some (bit (p.qc xb) == 0) := by
-  obtain ⟨⟨_, _, h9⟩, _⟩ := h
-  rw [eval_zero, h9]
-
 /-- `g^x mod p` in `aY`. -/
 def K14 (p : KpP) (xb : List Byte) (t : State) : Prop :=
   (∃ mi, Md (p.D xb) mi t ∧ wv t.mem (p.G xb) (slot (p.D xb).w aY) (p.D xb).w = (p.D xb).G ^ X xb % (p.D xb).P) ∧
-    Ok p xb ∧ p.pv = true ∧ p.rg xb ∧ p.qc xb
+    Ok p xb ∧ p.pv = true ∧ p.rg xb
 
-theorem k13_k14 (W : Window) (M : Mont) (S : Selector) (p : KpP) (xb : List Byte) (t : State) (h : K13 p xb t)
-    (he : isa.eval (.zero .x .x9) t = some false) :
+theorem k10_k14 (W : Window) (M : Mont) (S : Selector) (p : KpP) (xb : List Byte) (t : State) (h : K10 p xb t) :
     WP isa (seqs (pow W.code S.code M.mm sG sK sX sXl)) t fun u => K14 p xb u ∧ KX t u := by
-  have hqc : p.qc xb := by
-    rw [k13_eval h] at he
-    by_contra hc
-    simp [bit, hc] at he
-  obtain ⟨⟨mi, hM, -⟩, ho, hpv, hr⟩ := h
+  obtain ⟨⟨mi, hM⟩, ho, hpv, hr⟩ := h
   have hb := hM.1
   have hs := hM.2.2.2.1
   have hx : Src t p.B p.Z p.xp xb := hb.srcs (p.xp, xb) (by simp [KpP.D])
@@ -606,37 +445,37 @@ theorem k13_k14 (W : Window) (M : Mont) (S : Selector) (p : KpP) (xb : List Byte
     (by rw [hb.glen]; exact hs.get (i := sK) (by simp)) hb.gsrc (by rw [hb.glen]; simp; omega_arith)
     (by rw [hb.glen]) (hs.get (i := sX) (v := p.xp) (by simp [KpP.D]))
     (by rw [ho.1]; exact hs.get (i := sXl) (by simp [KpP.D])) hx (by rw [ho.1]; exact ho.2.1)
-    (by rw [ho.1]; have := ho.2.2.1; omega_arith)) fun u ⟨hu, hY, _, k⟩ => ⟨⟨⟨mi, hu, hY⟩, ho, hpv, hr, hqc⟩, k⟩
+    (by rw [ho.1]; have := ho.2.2.1; omega_arith)) fun u ⟨hu, hY, _, k⟩ => ⟨⟨⟨mi, hu, hY⟩, ho, hpv, hr⟩, k⟩
 
 /-- With y in `aXm`. -/
 def K15 (p : KpP) (xb : List Byte) (t : State) : Prop :=
   (∃ mi, In (p.D xb) mi t ∧ wv t.mem (p.G xb) (slot (p.D xb).w aY) (p.D xb).w = (p.D xb).G ^ X xb % (p.D xb).P ∧
-    wv t.mem (p.G xb) (slot (p.D xb).w aXm) (p.D xb).w = p.Y) ∧ Ok p xb ∧ p.pv = true ∧ p.rg xb ∧ p.qc xb
+    wv t.mem (p.G xb) (slot (p.D xb).w aXm) (p.D xb).w = p.Y) ∧ Ok p xb ∧ p.pv = true ∧ p.rg xb
 
 theorem k14_k15 (p : KpP) (xb : List Byte) (t : State) (h : K14 p xb t) :
     WP isa (seqs (Crt.loadArr aXm sY sK)) t fun u => K15 p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hM, hY⟩, ho, hpv, hr, hqc⟩ := h
+  obtain ⟨⟨mi, hM, hY⟩, ho, hpv, hr⟩ := h
   have hI := hM.inn
   have hG := hI.2.1.good.scr.nowrap
   have sY := slot_le (w := (p.D xb).w) (show aY < 8 by decide)
   have sYX := slot_sep (w := (p.D xb).w) (show aY ≠ aXm by decide)
   exact WP.mono (hI.loadY ho) fun u ⟨⟨hu, hv, o⟩, k⟩ => ⟨⟨⟨mi, hu, by rw [o.wv (by omega_arith) (by omega_arith)]; exact hY, hv⟩,
-    ho, hpv, hr, hqc⟩, k⟩
+    ho, hpv, hr⟩, k⟩
 
 /-- After the comparison of `g^x mod p` with y. -/
 def K16 (p : KpP) (xb : List Byte) (t : State) : Prop :=
-  t.gpr .x9 = bit ((p.D xb).G ^ X xb % (p.D xb).P = p.Y) ∧ Ok p xb ∧ p.pv = true ∧ p.rg xb ∧ p.qc xb
+  t.gpr .x9 = bit ((p.D xb).G ^ X xb % (p.D xb).P = p.Y) ∧ Ok p xb ∧ p.pv = true ∧ p.rg xb
 
 theorem k15_k16 (p : KpP) (xb : List Byte) (t : State) (h : K15 p xb t) :
     WP isa (seqs (eqArr aY aXm)) t fun u => K16 p xb u ∧ KX t u := by
-  obtain ⟨⟨mi, hI, hY, hy⟩, ho, hpv, hr, hqc⟩ := h
+  obtain ⟨⟨mi, hI, hY, hy⟩, ho, hpv, hr⟩ := h
   have hb := hI.1
   have ew := hb.ew
   have := hb.k1
   have := hb.k2
   exact WP.mono (eqArr_ok hI.2.1.good (Nat.le_refl _) (show 1 ≤ (p.D xb).w by omega_arith)
     (show (p.D xb).w < 2 ^ 31 by omega_arith) (show aY < 8 by decide) (show aXm < 8 by decide))
-    fun u ⟨h9, _, k⟩ => ⟨⟨by rw [h9, hY, hy], ho, hpv, hr, hqc⟩, k.mono (by decide)⟩
+    fun u ⟨h9, _, k⟩ => ⟨⟨by rw [h9, hY, hy], ho, hpv, hr⟩, k.mono (by decide)⟩
 
 end VG.Proof.Ffdh.AArch64.CheckPrivate
 
@@ -673,10 +512,7 @@ abbrev fin (W : Window) (M : Mont) (S : Selector) : List (Prog isa) :=
   pow W.code S.code M.mm sG sK sX sXl ++ Crt.loadArr aXm sY sK ++ eqArr aY aXm ++ [.block [mov .x0 .x9]]
 
 theorem tail_eq (W : Window) (M : Mont) (S : Selector) :
-    CheckPrivate.tail W.code S.code M.mm = r2Steps M.mm ++ (.block [leave] :: .block qTest ::
-      [.ite (.zero .x .x3) (.block [enter, movi .x9 1])
-        (seqs (scan sQ ++ ([.block [enter]] : List (Prog isa)) ++ pow W.code S.code M.mm sY sK sEp sEl ++ isOne aY)),
-       .ite (.zero .x .x9) (ret 0) (seqs (fin W M S))]) := rfl
+    CheckPrivate.tail W.code S.code M.mm = r2Steps M.mm ++ fin W M S := rfl
 
 theorem main_eq (W : Window) (M : Mont) (S : Selector) :
     CheckPrivate.main W.code S.code M.mm = seqs ((([.block head] : List (Prog isa)) ++ pSetup) ++ (Crt.loadArr aXm sX sXl ++
@@ -707,14 +543,6 @@ theorem bit_false' {t : State} {P : Prop} [Decidable P] (h : isa.eval (.zero .x 
   rw [h] at he
   intro hp
   simp [bit, hp] at he
-
-/-- y's subgroup. -/
-theorem k12_k13 (W : Window) (M : Mont) (S : Selector) (p : KpP) (xb : List Byte) (t : State) (h : K12 p xb t) :
-    WP isa (.ite (.zero .x .x3) (.block [enter, movi .x9 1])
-      (seqs (scan sQ ++ ([.block [enter]] : List (Prog isa)) ++ pow W.code S.code M.mm sY sK sEp sEl ++ isOne aY))) t
-      fun u => K13 p xb u ∧ KX t u :=
-  WP.ite (BitVec.ofNat 64 (p.dl - 2 * p.k) == 0) (k12_eval h) (fun hb => k12_k13n p xb t h (by rw [k12_eval h, hb]))
-    (fun hb => k12_k13q W M S p xb t h (by rw [k12_eval h, hb]))
 
 /-- `vg_ffdh_check_private`. -/
 theorem kp_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : kpContract.pre s) :
@@ -779,21 +607,10 @@ theorem kp_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : kpCon
       (lt_pm1 hodd _).mpr ((publicValid_eq _ _).mp hv).1.2⟩]
   have he₁₁ : isa.eval (.zero .x .x9) t₁₁ = some false := by rw [k9_eval h₁₁, hb]
   rw [tail_eq]
-  refine wp_seqs_append (by simp [r2Steps]) (by simp) (kstep k₁₁ (k9_k10 M p xb t₁₁ h₁₁ he₁₁) fun t₁₂ h₁₂ k₁₂ => ?_)
-  refine wp_seqs_cons (by simp) (kstep k₁₂ (k10_k11 p xb t₁₂ h₁₂) fun t₁₃ h₁₃ k₁₃ => ?_)
-  refine wp_seqs_cons (by simp) (kstep k₁₃ (k11_k12 p xb t₁₃ h₁₃) fun t₁₄ h₁₄ k₁₄ => ?_)
-  refine wp_seqs_cons (by simp) (kstep k₁₄ (k12_k13 W M S p xb t₁₄ h₁₄) fun t₁₅ h₁₅ k₁₅ => ?_)
-  rw [seqs_one]
-  refine WP.ite (bit (p.qc xb) == 0) (k13_eval h₁₅) (fun hb => ?_) (fun hb => ?_)
-  · -- y not in the subgroup.
-    refine ret_post (by decide) k₁₅ ((hst 0).mpr fun hd => ?_)
-    have hn := bit_false' (k13_eval h₁₅) (by rw [k13_eval h₁₅, hb])
-    have hdl : p.dom.length = p.dl := hb₀.doml
-    rw [hxb, hpf hd, ite_eq_right fun ⟨hv, _⟩ => hn fun hq => ((publicValid_eq _ _).mp hv).2 _ (by
-      simp only [KpP.a, domainOf, hdl]; rw [ite_eq_left hq]; rfl)]
-  have he₁₅ : isa.eval (.zero .x .x9) t₁₅ = some false := by rw [k13_eval h₁₅, hb]
+  refine wp_seqs_append (by simp [r2Steps]) (by simp [fin, pow]) (kstep k₁₁ (k9_k10 M p xb t₁₁ h₁₁ he₁₁)
+    fun t₁₅ h₁₅ k₁₅ => ?_)
   simp only [fin, List.append_assoc]
-  refine wp_seqs_append (by simp [pow]) (by simp [Crt.loadArr]) (kstep k₁₅ (k13_k14 W M S p xb t₁₅ h₁₅ he₁₅)
+  refine wp_seqs_append (by simp [pow]) (by simp [Crt.loadArr]) (kstep k₁₅ (k10_k14 W M S p xb t₁₅ h₁₅)
     fun t₁₆ h₁₆ k₁₆ => ?_)
   refine wp_seqs_append (by simp [Crt.loadArr]) (by simp [eqArr]) (kstep k₁₆ (k14_k15 p xb t₁₆ h₁₆)
     fun t₁₇ h₁₇ k₁₇ => ?_)
@@ -803,20 +620,18 @@ theorem kp_correct (W : Window) (M : Mont) (S : Selector) (s : State) (h : kpCon
     (by decide) (by decide) (by decide +kernel)) fun t ⟨h0, k⟩ =>
       ⟨abiPreserved_of_keep (keep_trans k₁₈ (k.mono (by decide))), fun hd => ?_⟩
   show ((t.gpr .x0).setWidth 32).toNat = _
-  obtain ⟨h9, -, -, hr, hqc⟩ := h₁₈
+  obtain ⟨h9, -, -, hr⟩ := h₁₈
   refine (hst _).mpr (fun hd' => ?_) hd
-  have hpub : publicValid ⟨p.a, p.Y⟩ = true := (publicValid_eq _ _).mpr ⟨⟨hr.1, (lt_pm1 hodd _).mp hr.2⟩,
-    fun q hq => by
-      have hdl : p.dom.length = p.dl := hb₀.doml
-      simp only [KpP.a, domainOf, hdl] at hq
-      by_cases e : p.dl = 3 * p.k
-      · rw [ite_eq_left e, Option.some.injEq] at hq
-        subst hq
-        exact hqc e
-      · rw [ite_eq_right e] at hq; exact absurd hq (by simp)⟩
+  have hpa : parametersValid p.a = true := by
+    unfold domainValid at hd'; simp only [Bool.and_eq_true] at hd'; exact hd'.1
   rw [h0, h9, setWidth32_bit, hxb, hpf hd']
   by_cases hc : (p.D xb).G ^ X xb % (p.D xb).P = p.Y
-  · rw [ite_eq_left hc, ite_eq_left ⟨hpub, hc⟩]
+  · -- A power of the checked generator is in its subgroup.
+    have hG : p.a.g ^ X xb % p.a.p = p.Y := hc
+    have hpub : publicValid ⟨p.a, p.Y⟩ = true := by
+      rw [← hG]
+      exact (publicValid_power hpa (X xb)).mpr ⟨by rw [hG]; exact hr.1, by rw [hG]; exact (lt_pm1 hodd _).mp hr.2⟩
+    rw [ite_eq_left hc, ite_eq_left ⟨hpub, hc⟩]
   · rw [ite_eq_right hc, ite_eq_right fun ⟨_, h'⟩ => hc h']
 
 end VG.Proof.Ffdh.AArch64.CheckPrivate

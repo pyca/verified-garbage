@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 import VerifiedGarbage.Proof.MlKem.X86_64.SHCT
 meta import VerifiedGarbage.Proof.MlKem.X86_64.SHCT
 meta import VerifiedGarbage.Proof.Framework.X86_64.RelCT
@@ -94,6 +96,7 @@ theorem ctPN_uses {fast : Bool} {q : Nat × Nat} (hq : q ∈ pnUses) :
     ConstantTime isa (samplePNKW q.1 q.2).pre (samplePNKW q.1 q.2).pub (samplePN fast q.1 q.2) := by
   simp only [pnUses, List.mem_cons, List.not_mem_nil, or_false] at hq
   rcases hq with rfl | rfl | rfl | rfl <;> cases fast <;>
-    exact ctPN (by decide) (by decide) (by decide) (by taint_decide) (by taint_decide) (by taint_decide)
+    refine ctPN (by decide) (by decide) (by decide) (h₁ := ?_) ?_ (h₂ := ?_) ?_ (h₃ := ?_) ?_
+  taint_decide_all
 
 end VG.Proof.MlKem.X86_64.SH

@@ -5,6 +5,7 @@ meta import VerifiedGarbage.Impl.Dsa.AArch64.Generation.PrimeLoop
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyCT
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleCT
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicKernel
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.TapeSlice
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.DrawCopyCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.SampleRoundCT
@@ -29,7 +30,7 @@ theorem drawSample_state {len drawBytes : Nat} {p : DrawPublic} {s : State} (h :
   rw [h.1.2.1, h.1.2.2] at hw
   exact WP.mono hw fun _ ⟨_, ht, _, _⟩ => ⟨ht, (p.prime.slice_length h.2).trans h.1.2.1⟩
 
-theorem drawRound_ct (M : Mont) (K : Kernel) (len drawBytes : Nat) {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
+theorem drawRound_ct (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) (len drawBytes : Nat) {hc₁ hc₂ : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht₁ : (taint.check (Taint.ofRegs [.x0])
       (.block (Impl.Dsa.AArch64.Generation.drawCopyArgs len drawBytes)) hc₁).isSome = true)
     (ht₂ : (taint.check (Taint.ofRegs [.x1])

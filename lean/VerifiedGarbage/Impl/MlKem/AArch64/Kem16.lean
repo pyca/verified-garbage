@@ -5,7 +5,7 @@ public import VerifiedGarbage.Impl.MlKem.AArch64.FixedHashDecaps
 public import VerifiedGarbage.Impl.MlKem.AArch64.Ops16
 public import VerifiedGarbage.Impl.MlKem.AArch64.Decaps
 public import VerifiedGarbage.Impl.MlKem.AArch64.NoiseWith
-import VerifiedGarbage.Impl.MlKem.AArch64.Encaps
+import VerifiedGarbage.Impl.MlKem.AArch64.Kem
 
 /-! # AArch64 ML-KEM with 16-bit coefficients
 
@@ -22,7 +22,7 @@ message there with `vg_mlkem_add`. Decapsulation's decryption (`Optimized.decryp
 16-bit too.
 The pieces of key generation (`Kem16P.keyGen`): each row of `t̂` (`kgRow`)
 as soon as the matrix has sampled it, the pairs absorbing `ek` into the third
-state of the matrix's `vg_keccak_f1600_x3_sha3` calls as the rows encode it
+state of the matrix's `vg_keccak_f1600_x3` calls as the rows encode it
 (`kgPair`), and the single-state permutations for the blocks of the last
 rows (`kgTail`).
 -/
@@ -30,7 +30,7 @@ rows (`kgTail`).
 @[expose] public section
 namespace VG.Impl.MlKem.AArch64.Kem16
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KEM
-open VG.Impl.MlKem.AArch64.Noise (noiseOff noiseAllWith)
+open VG.Impl.MlKem.AArch64.Noise (noiseOff)
 open VG.Impl.MlKem.AArch64.Ntt16.Readonly (nttAtWithW nttInvAtWithW)
 
 /-- Row `i` of `u`: `NTT⁻¹(Σⱼ Âⱼᵢ ∘ ŷⱼ) + e₁[i]`, widened, compressed and encoded. -/
@@ -83,8 +83,8 @@ def hashedBy (L : KemLay) : Nat → Nat
   | p + 1 => hashedBy L p + min 3 (384 * rowsBy L p / 136 - hashedBy L p)
 
 /-- Pair `p` of the matrix, absorbing the blocks of `ek` it can. -/
-def kgPair (L : KemLay) (p : Nat) : Prog isa :=
-  Hybrid.pairM KG.SB KG.SS KG.AH L (kgSrc L) (2 * p) (hashedBy L p)
+def kgPair (sha3 : Bool) (L : KemLay) (p : Nat) : Prog isa :=
+  Hybrid.pairM sha3 KG.SB KG.SS KG.AH L (kgSrc L) (2 * p) (hashedBy L p)
     (hashedBy L (p + 1) - hashedBy L p) true
 
 /-- Rows `a` to `b - 1` of `t̂`. -/

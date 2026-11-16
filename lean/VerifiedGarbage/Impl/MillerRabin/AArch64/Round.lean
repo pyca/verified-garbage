@@ -16,8 +16,12 @@ open VG.Impl.RsaKeyGen.AArch64.Candidate
 def returnFlag : List Instr :=
   [ldh .x3 kFlag, movi .x4 1, .logic .and .x .x0 .x3 .x4]
 
+/-- `(ws = x0, ws_len = x1)`: one round from the prepared workspace, with the
+window `win`. -/
+def roundW (win : List (Prog isa)) (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
+  .seq (seqs (preparedRoundW win mul)) (.block returnFlag)
+
 /-- `(ws = x0, ws_len = x1)`: one round from the prepared workspace. -/
-def round (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
-  .seq (seqs (preparedRound mul)) (.block returnFlag)
+def round (mul : Nat → Nat → Nat → Prog isa) : Prog isa := roundW (mrWin mul) mul
 
 end VG.Impl.MillerRabin.AArch64

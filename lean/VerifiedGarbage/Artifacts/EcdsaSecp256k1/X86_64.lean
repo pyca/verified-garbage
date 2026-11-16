@@ -84,7 +84,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.X86_64
 namespace VG.Artifacts.EcdsaSecp256k1.X86_64.Rfc6979
 
 open VG.Proof.Secp256k1.X86_64 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT stackT OK secp256k1 secp256k1T_verified signCode_sp)
+open VG.Proof.Ecdsa.Rfc6979.X86_64 (signCodeT OK secp256k1 secp256k1T_verified signCode_sp)
 open VG.Proof.HmacTable.X86_64 (tables names)
 
 def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
@@ -93,7 +93,6 @@ def artifactsFor (vs : List Proof.Pbkdf2.Md.X86_64.MdHash) : List Artifact :=
       suffix := ""
       tables := [("hmac", tables vs)]
       code := signCodeT (secp256k1 hasLaw.law hasLaw.inv) Spec.Ecdsa.Rfc6979.Curves.secp256k1.tries vs
-      stack := stackT
       verified := secp256k1T_verified hasLaw.law hasLaw.inv vs hv
       spSafe := signCode_sp _ _ _ } (Proof.Ecdsa.Rfc6979.X86_64.signOut _ Impl.Ecdsa.X86_64.secp256k1.combConsts _ _))]
   else []
@@ -111,7 +110,6 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.Secp256k1.verifyHashApi.artifact X86_64.target (X86_64.Scrub.withScrubAll {
     code := Impl.Ecdsa.X86_64.VerifyHash.verifyHash Spec.Ecdsa.Secp256k1.inst.curve.len false
       Impl.Ecdsa.Verify.X86_64.verifySecp256k1
-    stack := 96
     verified := Proof.Ecdsa.Verify.X86_64.Secp256k1.verifyHash_verified hasLaw.law
       (Proof.Secp256k1.gtabOk9 hasLaw.law) hasLaw.inv }
     (Proof.EcKey.X86_64.Scrub.verifyHashOut_consts 96 Spec.Ecdsa.Secp256k1.inst Impl.Secp256k1.X86_64.secp256k1v.combConsts))] ++

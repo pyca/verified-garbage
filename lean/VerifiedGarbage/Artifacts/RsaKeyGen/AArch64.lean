@@ -202,7 +202,6 @@ def artifacts : List Artifact :=
   (VG.Proof.Variants.MillerRabin.AArch64.variants.flatMap fun (v : Proof.MillerRabin.AArch64.RoundImpl) => [
     Spec.RsaKeyGen.keySearchApi.artifact AArch64.target {
       suffix := v.suffix
-      stack := 416
       code := Proof.RsaKeyGen.AArch64.Generate.genCode v
       verified := Proof.RsaKeyGen.AArch64.Generate.gen_verified v }])
 

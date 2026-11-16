@@ -1,5 +1,9 @@
 module
 
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+import VerifiedGarbage.Proof.Sha512.RISCV64.Compress
+meta import VerifiedGarbage.Proof.Sha512.RISCV64.Compress
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512Family
 meta import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Sha512Family
 public import VerifiedGarbage.Proof.Hmac.Stream.RISCV64.Shared
@@ -43,13 +47,13 @@ def ok : HashOK hash :=
 
 theorem init_ct : ConstantTime isa (initG ok.SH (hash.ibytes + hash.F)).pre
     (initG ok.SH (hash.ibytes + hash.F)).pub hash.init :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
-    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide_sum [VG.Proof.Sha512.RISCV64.compressSum])
 
 theorem fin_ct : ConstantTime isa (finG ok.SH (hash.fbytes + hash.F)).pre
     (finG ok.SH (hash.fbytes + hash.F)).pub hash.finalize :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
-    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3])
+    (fun _ _ _ _ hp => Shared.agree hp) (by taint_decide_sum [VG.Proof.Sha512.RISCV64.compressSum])
 
 /-! ## The shared contracts -/
 
@@ -78,8 +82,8 @@ constant time, which the kernel checks, and its contract. -/
 
 theorem digest_ct : ConstantTime isa (MdStream.RISCV64.Digest.digestG ok.SH (Impl.MdStream.RISCV64.Digest.dbytes hash + hash.F)).pre
     (MdStream.RISCV64.Digest.digestG ok.SH (Impl.MdStream.RISCV64.Digest.dbytes hash + hash.F)).pub (Impl.MdStream.RISCV64.Digest.digest hash) :=
-  VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
-    (fun _ _ _ _ hp => MdStream.RISCV64.Digest.agree hp) (by taint_decide)
+  VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2])
+    (fun _ _ _ _ hp => MdStream.RISCV64.Digest.agree hp) (by taint_decide_sum [VG.Proof.Sha512.RISCV64.compressSum])
 
 theorem digest : Verified RISCV64.target (Impl.MdStream.RISCV64.Digest.digest hash) (Spec.Sha512.digestContract RISCV64.abi 28 Spec.Sha512.sha512_224 (Impl.MdStream.RISCV64.Digest.dbytes hash + hash.F)) :=
   MdStream.RISCV64.Digest.verified ok digest_ct (by

@@ -7,6 +7,7 @@ meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.WitnessRound
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundTailCT
 public import VerifiedGarbage.Impl.Dsa.AArch64.Generation.SampleRound
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicKernel
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.RoundTailCT
 import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrame
 meta import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PrimeFrame
@@ -43,33 +44,33 @@ theorem sampleRound_ready {len : Nat} {p : SamplePublic} {s : State} (h : Sample
     (fun _ ⟨hr, hx, _, _, _⟩ => ⟨hr, hx⟩)
 
 theorem witnessMont_ready (M : Mont) {p : RoundPublic} {s : State} (h : BeforeRound p s) :
-    WP isa (M.mm aXm aX aR2) s (Caller.Before ⟨p.prime.B, p.prime.Z, p.prime.w⟩) := by
+    WP isa (M.mm aXm aX aR2) s (BeforeC (⟨p.prime.B, p.prime.Z, p.prime.w⟩, p.prime.N)) := by
   refine WP.mono (witnessMont_ok M h.1 p.prime.exponentRoom p.prime.odd (by have := p.prime.n3; omega_using [this]) h.2)
     fun t ⟨ht, hx, _, _⟩ => ?_
-  refine ⟨p.prime.w4, p.prime.w128, p.prime.exponentRoom, p.prime.N,
+  refine ⟨p.prime.w4, p.prime.w128, p.prime.exponentRoom,
     wv t.mem p.prime.B (slot p.prime.w aB) p.prime.w, p.witness,
     ⟨ht.ws, ht.inverse, ht.modulus, rfl, ht.r1, ht.rm1⟩, ht.exponent, p.prime.odd, p.prime.n3, ?_⟩
   simpa only [Nat.mod_mul_mod] using hx
 
-theorem witnessRound_ct (M : Mont) (K : Kernel) :
+theorem witnessRound_ct (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) :
     RelCT isa (Two BeforeRound) (Impl.Dsa.AArch64.Generation.witnessRound M.mm K.run) (fun _ _ => True) := by
   unfold Impl.Dsa.AArch64.Generation.witnessRound
   exact RelCT.seq (two_post
     (two_map (fun p : RoundPublic => (⟨p.prime.B, p.prime.Z, p.prime.w⟩ : VG.Proof.Bignum.AArch64.Ws))
       (fun _ _ h => ⟨_, h.1.ws.good⟩) (M.ct (o := aXm) (a := aX) (b := aR2) (by unfold MmUse; decide)))
     (fun _ _ h => witnessMont_ready M h))
-    (two_map (fun p : RoundPublic => (⟨p.prime.B, p.prime.Z, p.prime.w⟩ : VG.Proof.Bignum.AArch64.Ws))
+    (two_map (fun p : RoundPublic => ((⟨p.prime.B, p.prime.Z, p.prime.w⟩, p.prime.N) : CPub))
       (fun _ _ h => h) K.ct)
 
 def roundTailPublic (p : RoundPublic) : RoundTailPublic :=
   ⟨p.prime, Proof.MillerRabin.Round.round p.prime.N p.witness⟩
 
-theorem roundTail_ready (M : Mont) (K : Kernel) {p : RoundPublic} {s : State} (h : BeforeRound p s) :
+theorem roundTail_ready (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {p : RoundPublic} {s : State} (h : BeforeRound p s) :
     WP isa (Impl.Dsa.AArch64.Generation.witnessRound M.mm K.run) s (RoundTailState (roundTailPublic p)) :=
   WP.mono (witnessRound_ok M K h.1 p.prime.w4 p.prime.w128 p.prime.exponentRoom p.prime.odd p.prime.n3 h.2)
     (fun _ ⟨ht, flag, _, _⟩ => ⟨ht.ws, flag⟩)
 
-theorem sampleRound_ct (M : Mont) (K : Kernel) (len : Nat) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+theorem sampleRound_ct (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) (len : Nat) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
     (ht : (taint.check (Taint.ofRegs [.x1])
       (.block (Impl.Dsa.AArch64.Generation.forceWitness len)) hc).isSome = true) :
     RelCT isa (Two (SampleSized len)) (Impl.Dsa.AArch64.Generation.sampleRound M.mm K.run len) (fun _ _ => True) := by

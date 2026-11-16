@@ -8,7 +8,7 @@ public import VerifiedGarbage.Impl.Argon2.X86_64.Compress
 `vg_argon2_compress_avx2(x = rdi, y = rsi, out = rdx, scratch = rcx)`, with
 the contract of `vg_argon2_compress`, for CPUs with AVX and AVX2. As in the
 scalar code, `[0, 1024)` of scratch holds R = X XOR Y and `[1024, 2048)` the
-block P permutes; `[2048, 2056)` holds the caller's MXCSR and `0x1FBF`.
+block P permutes.
 
 * P works on the sixteen words of a row or a column in four AVX registers:
   `ymm0`–`ymm3` hold its words `0–3`, `4–7`, `8–11` and `12–15`, quadword
@@ -28,10 +28,10 @@ block P permutes; `[2048, 2056)` holds the caller's MXCSR and `0x1FBF`.
   `2k` and `2k + 1`, two 16-byte loads joined by `vinserti128` (and split
   by `vextracti128` to store them back).
 * `vpmuludq` has MXCSR-dependent timing on some processors (see "MCDT" in
-  `TCB/X86_64/Isa.lean`), so the whole computation runs with MXCSR
-  `0x1FBF`, between Intel's prologue and epilogue, with the caller's value
-  saved in `r11`. Only `rax` and `r11` of the general-purpose registers are
-  written. `vzeroupper` precedes the epilogue.
+  `TCB/X86_64/Isa.lean`): the dispatcher runs `vg_mcdt_enter` first, which
+  leaves MXCSR `0x1FBF` for the whole call, so the code sets none of its
+  own. Only `rax` of the general-purpose registers is written. It ends
+  with `vzeroupper`.
 
 Every address is a pointer plus a constant, and there are no branches.
 -/
@@ -144,22 +144,15 @@ def rows : Prog isa := (List.range 8).foldr (fun i rest => .seq (row i) rest) (.
 
 def cols : Prog isa := (List.range 8).foldr (fun j rest => .seq (col j) rest) (.block [])
 
-/-- G with MXCSR `0x1FBF`. -/
+/-- G. -/
 def body : Prog isa :=
   .seq (.block (masks ++ (List.range 32).flatMap initChunk)) <|
   .seq rows <| .seq cols <|
   .block ((List.range 32).flatMap finishChunk ++ ([.vop .vzeroupper] : List Instr))
 
-/-- The offset in scratch of the caller's MXCSR; `0x1FBF` is 4 bytes above. -/
-def mxcsrOff : Nat := 2048
-
-/-- `body` between Intel's MXCSR prologue and epilogue, the caller's MXCSR
-saved in `r11` (with its reserved bits 31:16, which are 0, cleared). -/
-def compress : Prog isa :=
-  .seq (.block [.stmxcsr (at_ .rcx mxcsrOff), .mov32 .r11 (.mem (at_ .rcx mxcsrOff)),
-      .alu32 .and .r11 (.imm 0xFFFF)])
-    (.seq (.seq (.block [.mov32 .rax (.imm 0x1FBF), .store32 (at_ .rcx (mxcsrOff + 4)) .rax,
-        .ldmxcsr (at_ .rcx (mxcsrOff + 4)), .lfence]) (.seq body (.block [.lfence])))
-      (.block [.store32 (at_ .rcx mxcsrOff) .r11, .ldmxcsr (at_ .rcx mxcsrOff)]))
+/-- `body`: its multiplies run under the dispatcher's `vg_mcdt_enter`,
+which leaves MXCSR `0x1FBF` for the whole call ("Dispatchers" in
+`TCB/Rust.lean`), so it sets no MXCSR of its own. -/
+def compress : Prog isa := body
 
 end VG.Impl.Argon2.X86_64.Avx2

@@ -83,20 +83,6 @@ structure KeyImpl where
   ct : ConstantTime isa Proof.Aes.expandKeyAArch64.pre Proof.Aes.expandKeyAArch64.pub fn.code
   keepsV : fn.code.allInstrs keepsV = true
 
-namespace GhashImpl
-
-/-- `vg_ghash`, in the baseline ISA. -/
-def scalar : GhashImpl where
-  fn := ⟨"vg_ghash", Impl.Gcm.AArch64.ghash⟩
-  noFrames := by lit_decide
-  ok := Proof.Gcm.AArch64.ghash_correct
-  ct := Proof.Gcm.AArch64.ghash_ct
-  keepsV := by lit_decide
-  suffix := ""
-  features := []
-
-end GhashImpl
-
 namespace KeyImpl
 
 /-- `vg_aes_expand_key_scratch`, in the baseline ISA. -/
@@ -455,6 +441,7 @@ which the variants then need not import. -/
 inductive GhashName where
   | scalar
   | aes
+  | neon
 
 /-- A variant of `AesGcm` (see `TCB/Emit.lean`): a `GcmImpl` with its
 implementation of `vg_ghash` named (`GhashName`), which `GcmVariant.impl`

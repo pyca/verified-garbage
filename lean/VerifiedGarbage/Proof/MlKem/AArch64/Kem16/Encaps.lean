@@ -33,7 +33,7 @@ open VG.Spec.Sha3 (bytesAt)
 open VG.Proof.MlKem
 variable {P : KemLay}
 
-/-- `Done` with `Â` stored with 16 bits. -/
+/-- What the function leaves, with `Â` stored with 16 bits. -/
 structure DoneW (P : KemLay) (s₀ : State) (mB : Mem) (v : BitVec 64) (s : State) : Prop where
   abi : abiPreserved s₀ s
   x0 : s.gpr .x0 = v

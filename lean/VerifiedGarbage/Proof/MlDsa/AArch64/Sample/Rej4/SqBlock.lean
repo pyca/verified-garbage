@@ -23,8 +23,8 @@ def bReg (k : Nat) : Reg := [.x24,.x25,.x26,.x27][k]!
 
 theorem pair_regs : ∀ p < 2,
     pReg p ≠ .x1 ∧ pReg p ≠ .x6 ∧ pReg p ≠ .x7 ∧ bReg (2*p) ≠ .x6 ∧ bReg (2*p) ≠ .x7 ∧
-      bReg (2*p+1) ≠ .x6 ∧ bReg (2*p+1) ≠ .x7 ∧ pReg p ∉ X2.clobbered ∧
-      bReg (2*p) ∉ X2.clobbered ∧ bReg (2*p+1) ∉ X2.clobbered := by decide
+      bReg (2*p+1) ≠ .x6 ∧ bReg (2*p+1) ≠ .x7 ∧ pReg p ∉ X2.volatile ∧
+      bReg (2*p) ∉ X2.volatile ∧ bReg (2*p+1) ∉ X2.volatile := by decide
 
 /-- `vg_keccak_f1600_x2`'s working space, and the return address during its calls. -/
 def x2R (σ : State) : Region := X2.callR (at' σ oX2)
@@ -34,7 +34,7 @@ def blockW (σ : State) (p n : Nat) : List Region :=
   [pairR (stateP σ p),outR (bufAt σ (2*p) n),outR (bufAt σ (2*p+1) n),x2R σ]
 
 /-- The registers a pair's block changes. -/
-def blockRegs : List Reg := [.x0,.x1,.x16,.x17,.x6,.x7]
+def blockRegs : List Reg := X2.volatile
 
 theorem buf_word (σ : State) (k n i : Nat) : outAddr (bufAt σ k n) i = at' σ (oBuf+1008*k+168*n+8*i) := by
   unfold outAddr bufAt at'
@@ -73,7 +73,8 @@ theorem pairBlock_ok (sha3 : Bool) {σ s : State} (hp : Pre σ) (he : Env σ s) 
   obtain ⟨hp1,hp6,hp7,ha6,ha7,hb6,hb7,hpc,hac,hbc⟩ := pair_regs p hpn
   have hsw : s.wr = [aR σ,scrR σ] := he.wr.trans hp.wr
   unfold Impl.MlDsa.AArch64.Sample.Rej4.pairStep
-  refine WP.seq (WP.mono (X2.call_ok sha3 (q := at' σ oX2) (by decide) hp1 hx
+  refine WP.seq (WP.mono (X2.callAny_ok sha3 (q := at' σ oX2) (by decide) (by decide) hp1
+    (by decide) (by decide) hx
     (by rw [he.x19]; rfl)
     (Offset.disjoint (scr σ) (d := 400*p) (n := 400) (e := oX2) (k := 136)
       (by dsimp only [oX2]; omega_using [hpn]) (by omega_using [hpn]) (by decide)) hpair
@@ -84,15 +85,14 @@ theorem pairBlock_ok (sha3 : Bool) {σ s : State} (hp : Pre σ) (he : Env σ s) 
       rcases hr with rfl | rfl
       · exact ⟨400*p,rfl,by dsimp only [pairR,scrR]; omega_using [hpn]⟩
       · exact ⟨oX2,rfl,by dsimp only [X2.callR,scrR,oX2]; omega_using []⟩))
-    fun t ⟨hk,hf,hpt⟩ => ?_)
-  have hkt : RegKeep X2.clobbered s t := ⟨hk.gpr,hk.rd,hk.wr,hk.sp⟩
+    fun t ⟨hkt,_,hf,hpt⟩ => ?_)
   have het : Env σ t := he.lowStep hf (fun r hr => block_regions_low hpn hn r (by
       simp only [List.mem_cons,List.not_mem_nil,or_false] at hr
       simp only [blockW,List.mem_cons,List.not_mem_nil,or_false]
       rcases hr with rfl | rfl
       · exact .inl rfl
       · exact .inr (.inr (.inr rfl))))
-    hk.rd hk.wr hk.sp (env_regs hkt (by decide))
+    hkt.rd hkt.wr hkt.sp (env_regs hkt (by decide))
   refine WP.mono (X2.squeeze_ok (n := 21) (by decide) ((hkt.gpr _ hpc).trans hx)
     ((hkt.gpr _ hac).trans ha) ((hkt.gpr _ hbc).trans hb)
     hp6 hp7 ha6 ha7 hb6 hb7 hpt

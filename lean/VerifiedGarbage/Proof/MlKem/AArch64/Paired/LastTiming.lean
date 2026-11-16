@@ -23,6 +23,7 @@ section
 /-! # Shared-seed timing for the first singleton rejection pass -/
 section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Proof.MlKem
 
 structure LastPreparedW (w16 : Bool) (B : Nat→Byte) (p out table : Addr) (s t : State) : Prop where
@@ -35,8 +36,8 @@ structure LastPreparedW (w16 : Bool) (B : Nat→Byte) (p out table : Addr) (s t 
 theorem lastPrepare_ok {w16 : Bool} {s : State} {p seed out table : Addr} {sb ss off a k : Nat}
     (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0) (hk : 0<k) (hk256 : k≤256)
     (h : LastInput sb ss off p seed out table s) :
-    WP isa (prepareCode sb ss a a k) s (LastPreparedW w16 (xofByte (seedBytes s.mem seed a k)) p out table s) := by
-  refine WP.seq (WP.mono_syms (start_ok (a:=a) (b:=a) (k:=k) hss hsb h8
+    WP isa (prepareCode sha3 sb ss a a k) s (LastPreparedW w16 (xofByte (seedBytes s.mem seed a k)) p out table s) := by
+  refine WP.seq (WP.mono_syms (start_ok (sha3 := sha3) (a:=a) (b:=a) (k:=k) hss hsb h8
     h.ptr h.seedPtr h.readable h.context.scratch h.separate)
     fun u ⟨ku,fu,_,u19,_,_,bu,_⟩ sy => ?_)
   have cu := h.context.frame ku.rd ku.wr (fu.mono (by simp [fullWrites]))
@@ -76,6 +77,7 @@ section
 
 section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Proof.MlKem
 
 theorem lastStart_relCT {w16 : Bool} {s u : State} {p seed out table : Addr} {sb ss off a k : Nat}
@@ -84,20 +86,20 @@ theorem lastStart_relCT {w16 : Bool} {s u : State} {p seed out table : Addr} {sb
     (ps : LastInput sb ss off p seed out table s) (pu : LastInput sb ss off p seed out table u)
     (sp : s.sp=u.sp) (base : s.gpr .x28=u.gpr .x28)
     (seedEq : seedBytes s.mem seed a k=seedBytes u.mem seed a k) :
-    RelCT isa (fun t v=>t=s ∧ v=u) (lastStartCode sb ss a k off w16)
+    RelCT isa (fun t v=>t=s ∧ v=u) (lastStartCode sha3 sb ss a k off w16)
       (fun t v=>LastStartPostW w16 (xofByte (seedBytes s.mem seed a k)) p out table s t ∧
         LastStartPostW w16 (xofByte (seedBytes u.mem seed a k)) p out table u v) := by
   let R := fun t v : State=>LastPreparedW w16 (xofByte (seedBytes s.mem seed a k)) p out table s t ∧
     LastPreparedW w16 (xofByte (seedBytes u.mem seed a k)) p out table u v
-  have start : RelCT isa (fun t v=>t=s ∧ v=u) (prepareCode sb ss a a k) R := by
+  have start : RelCT isa (fun t v=>t=s ∧ v=u) (prepareCode sha3 sb ss a a k) R := by
     intro t v tr ur t' v' h et ev
     rcases h with ⟨ht,hv⟩; subst t; subst v
-    exact ⟨prepare_ct sb ss a a k s u tr ur t' v' trivial trivial
+    exact ⟨prepare_ct (sha3 := sha3) sb ss a a k s u tr ur t' v' trivial trivial
       (agree_of sp (by intro r hr; rw [List.mem_singleton.mp hr]; exact base)) et ev,
-      exec_post (lastPrepare_ok hss hsb h8 hk hk256 ps) et,
-      exec_post (lastPrepare_ok hss hsb h8 hk hk256 pu) ev⟩
+      exec_post (lastPrepare_ok (sha3 := sha3) hss hsb h8 hk hk256 ps) et,
+      exec_post (lastPrepare_ok (sha3 := sha3) hss hsb h8 hk hk256 pu) ev⟩
   have grouped : RelCT isa (fun t v=>t=s ∧ v=u)
-      (.seq (prepareCode sb ss a a k) (Impl.MlKem.AArch64.Paired.reject 400 off .x22 w16)) (fun _ _=>True) := by
+      (.seq (prepareCode sha3 sb ss a a k) (Impl.MlKem.AArch64.Paired.reject 400 off .x22 w16)) (fun _ _=>True) := by
     refine RelCT.seq start ?_
     intro t v tr ur t' v' h et ev
     have ht28 := h.1.keep.get .x28
@@ -110,13 +112,13 @@ theorem lastStart_relCT {w16 : Bool} {s u : State} {p seed out table : Addr} {sb
       (by rw [ht28,hv28,base]) (h.1.tablePtr.trans h.2.tablePtr.symm)
       t v tr ur t' v' ⟨rfl,rfl⟩ et ev
     exact ⟨rr.1,trivial⟩
-  have trace : RelCT isa (fun t v=>t=s ∧ v=u) (lastStartCode sb ss a k off w16) (fun _ _=>True) :=
+  have trace : RelCT isa (fun t v=>t=s ∧ v=u) (lastStartCode sha3 sb ss a k off w16) (fun _ _=>True) :=
     RelCT.assoc (RelCT.assoc grouped)
   intro t v tr ur t' v' h et ev
   rcases h with ⟨ht,hv⟩; subst t; subst v
   exact ⟨(trace s u tr ur t' v' ⟨rfl,rfl⟩ et ev).1,
-    exec_post (lastStart_ok hss hsb h8 hoff hk hk256 ps.ptr ps.seedPtr ps.outPtr ps.readable ps.separate ps.context ps.symbol) et,
-    exec_post (lastStart_ok hss hsb h8 hoff hk hk256 pu.ptr pu.seedPtr pu.outPtr pu.readable pu.separate pu.context pu.symbol) ev⟩
+    exec_post (lastStart_ok (sha3 := sha3) hss hsb h8 hoff hk hk256 ps.ptr ps.seedPtr ps.outPtr ps.readable ps.separate ps.context ps.symbol) et,
+    exec_post (lastStart_ok (sha3 := sha3) hss hsb h8 hoff hk hk256 pu.ptr pu.seedPtr pu.outPtr pu.readable pu.separate pu.context pu.symbol) ev⟩
 
 end VG.Proof.MlKem.AArch64.Paired
 end
@@ -125,10 +127,11 @@ end
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Proof.MlKem
 
-def lastTail (sb ss a k off : Nat) (w16 : Bool := false) : Prog isa :=
- .seq (.ite (.zero .x .x22) (fullSampleCode sb ss off a k w16) (.block []))
+def lastTail (sha3 : Bool) (sb ss a k off : Nat) (w16 : Bool := false) : Prog isa :=
+ .seq (.ite (.zero .x .x22) (fullSampleCode sha3 sb ss off a k w16) (.block []))
   (.block (Impl.MlKem.AArch64.Paired.saved.zipIdx.reverse.map fun (r,i)=>.ldr .x r .x19 (1800+8*i)))
 
 theorem LastInput.afterStart {w16 : Bool} {s t : State} {p seed out table : Addr} {sb ss off a k : Nat}
@@ -150,8 +153,8 @@ theorem LastStartPostW.seed {w16 : Bool} {s t : State} {p seed out table : Addr}
     rcases hr with rfl | rfl; exact hs; exact ho) (by decide : 32≤2^64)]
 
 theorem last_exec {w16 : Bool} {sb ss a k off : Nat} {s t : State} {tr : List Leak}
-    (h : Exec isa (lastCode sb ss a k off w16) s tr t) :
-    Exec isa (.seq (lastStartCode sb ss a k off w16) (lastTail sb ss a k off w16)) s tr t := by
+    (h : Exec isa (lastCode sha3 sb ss a k off w16) s tr t) :
+    Exec isa (.seq (lastStartCode sha3 sb ss a k off w16) (lastTail sha3 sb ss a k off w16)) s tr t := by
   obtain ⟨_,_,_,rfl,ei,h⟩ := seq_parts h
   obtain ⟨_,_,_,rfl,es,h⟩ := seq_parts h
   obtain ⟨_,_,_,rfl,ec,h⟩ := seq_parts h
@@ -166,16 +169,16 @@ theorem lastCode_relCT {w16 : Bool} {s u : State} {p seed out table : Addr} {sb 
     (ho : (Region.mk seed 32).Disjoint (polyRegion out))
     (sp : s.sp=u.sp) (base : s.gpr .x28=u.gpr .x28)
     (seedEq : seedBytes s.mem seed a k=seedBytes u.mem seed a k) :
-    RelCT isa (fun t v=>t=s ∧ v=u) (lastCode sb ss a k off w16) (fun _ _=>True) := by
+    RelCT isa (fun t v=>t=s ∧ v=u) (lastCode sha3 sb ss a k off w16) (fun _ _=>True) := by
   let R := fun t v : State=>LastStartPostW w16 (xofByte (seedBytes s.mem seed a k)) p out table s t ∧
     LastStartPostW w16 (xofByte (seedBytes u.mem seed a k)) p out table u v ∧ t.syms=s.syms ∧ v.syms=u.syms
-  have start : RelCT isa (fun t v=>t=s ∧ v=u) (lastStartCode sb ss a k off w16) R := by
+  have start : RelCT isa (fun t v=>t=s ∧ v=u) (lastStartCode sha3 sb ss a k off w16) R := by
     intro t v tr ur t' v' h et ev
-    have hh := lastStart_relCT (by omega_using [hss]) hsb h8 hoff hk hk256 ps pu sp base seedEq
+    have hh := lastStart_relCT (sha3 := sha3) (by omega_using [hss]) hsb h8 hoff hk hk256 ps pu sp base seedEq
       t v tr ur t' v' h et ev
     rcases h with ⟨ht,hv⟩; subst t; subst v
     exact ⟨hh.1,hh.2.1,hh.2.2,Exec.syms et,Exec.syms ev⟩
-  have branch : RelCT isa R (.ite (.zero .x .x22) (fullSampleCode sb ss off a k w16) (.block []))
+  have branch : RelCT isa R (.ite (.zero .x .x22) (fullSampleCode sha3 sb ss off a k w16) (.block []))
       (fun t v=>t.sp=v.sp ∧ t.gpr .x19=v.gpr .x19) := by
     refine RelCT.ite ?_ ?_ (RelCT.block_nil ?_)
     · intro t v h
@@ -188,7 +191,7 @@ theorem lastCode_relCT {w16 : Bool} {s u : State} {p seed out table : Addr} {sb 
     · intro t v tr ur t' v' h et ev
       have ht := h.1.1
       have hv := h.1.2.1
-      have hh := fullSampleCode_relCT hss hsb h8 hoff hk hk256
+      have hh := fullSampleCode_relCT (sha3 := sha3) hss hsb h8 hoff hk hk256
         (ps.afterStart ht h.1.2.2.1) (pu.afterStart hv h.1.2.2.2) ht.ptr hv.ptr ht.saved hv.saved
         (ht.keep.sp.trans (sp.trans hv.keep.sp.symm))
         (by rw [ht.keep.get .x28,hv.keep.get .x28,base])
@@ -199,12 +202,12 @@ theorem lastCode_relCT {w16 : Bool} {s u : State} {p seed out table : Addr} {sb 
     · intro t v h
       exact ⟨h.1.1.keep.sp.trans (sp.trans h.1.2.1.keep.sp.symm),h.1.1.ptr.trans h.1.2.1.ptr.symm⟩
   have grouped : RelCT isa (fun t v=>t=s ∧ v=u)
-      (.seq (lastStartCode sb ss a k off w16) (lastTail sb ss a k off w16)) (fun _ _=>True) := by
+      (.seq (lastStartCode sha3 sb ss a k off w16) (lastTail sha3 sb ss a k off w16)) (fun _ _=>True) := by
     refine RelCT.seq start (RelCT.seq branch ?_)
     intro t v tr ur t' v' h et ev
     exact ⟨restore_ct t v tr ur t' v' trivial trivial
       (agree_of h.1 (by intro r hr; rw [List.mem_singleton.mp hr]; exact h.2)) et ev,trivial⟩
   intro t v tr ur t' v' h et ev
-  exact grouped t v tr ur t' v' h (last_exec et) (last_exec ev)
+  exact grouped t v tr ur t' v' h (last_exec (sha3 := sha3) et) (last_exec (sha3 := sha3) ev)
 
 end VG.Proof.MlKem.AArch64.Paired

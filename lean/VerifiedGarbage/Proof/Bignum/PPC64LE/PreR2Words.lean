@@ -1214,9 +1214,23 @@ theorem sub3w_ok (s : State) : WP isa (.block quot3Sub) s fun t => ((∃ b < 2,
   generalize 18446744073709551616 - 1 - h = hc at *
   generalize 18446744073709551616 - 1 - m = mc at *
   generalize 18446744073709551616 - 1 - l = lc at *
-  rcases (show a2 + hc + 2 ≤ 18446744073709551616 ∨ 18446744073709551616 ≤ a2 + hc ∨
-      a2 + hc = 18446744073709551615 by omega_using []) with hg | hg | hg <;>
-    (repeat' split) <;> first | exact ⟨0, by decide, by omega⟩ | exact ⟨1, by decide, by omega_arith⟩
+  -- The words and their carries, one at a time: the borrow is the last carry's complement.
+  generalize hc0 : (if 18446744073709551615 ≤ a0 + lc then 1 else 0) = c0
+  generalize hc1 : (if 18446744073709551616 ≤ a1 + mc + c0 then 1 else 0) = c1
+  have F0 : a0 + lc + 1 = (a0 + lc + 1) % 2 ^ 64 + 18446744073709551616 * c0 := by
+    rw [← hc0]; split <;> omega
+  have b0 : c0 ≤ 1 := by rw [← hc0]; split <;> omega
+  have F1 : a1 + mc + c0 = (a1 + mc + c0) % 2 ^ 64 + 18446744073709551616 * c1 := by
+    rw [← hc1]; split <;> omega
+  have b1 : c1 ≤ 1 := by rw [← hc1]; split <;> omega
+  have F2 := Nat.div_add_mod (a2 + hc + c1) (2 ^ 64)
+  have b2 : (a2 + hc + c1) / 2 ^ 64 ≤ 1 := by omega
+  refine ⟨1 - (a2 + hc + c1) / 2 ^ 64, by omega, ?_⟩
+  generalize (a2 + hc + c1) / 2 ^ 64 = c2 at F2 b2 ⊢
+  generalize (a2 + hc + c1) % 2 ^ 64 = w2 at F2 ⊢
+  generalize (a1 + mc + c0) % 2 ^ 64 = w1 at F1 ⊢
+  generalize (a0 + lc + 1) % 2 ^ 64 = w0 at F0 ⊢
+  omega
 
 /-- `quot3Fix`, zero in `r20`: `q̂ := q̂ - 1` and `t := t + D` (`D = (d', d'ₗ)`
 in `r7`, `r22`), with its carry `c`, if `t` (`r15`, `r16`, `r0`) is negative. -/
@@ -1237,8 +1251,30 @@ theorem fix3w_ok (s : State) (h20 : s.gpr .r20 = BitVec.ofNat 64 0) : WP isa (.b
   generalize (s.gpr .r0).toNat = a0 at *
   generalize (s.gpr .r7).toNat = d1 at *
   generalize (s.gpr .r22).toNat = d0 at *
-  rcases (show a2 + 1 < 18446744073709551616 ∨ a2 = 18446744073709551615 by omega_arith) with hg | hg <;>
-    (repeat' split) <;> first | exact ⟨0, by decide, by omega⟩ | exact ⟨1, by decide, by omega_arith⟩
+  -- What is added, then the words and their carries, one at a time.
+  generalize he0 : (if 9223372036854775808 ≤ a2 then d0 else 0) = e0
+  generalize he1 : (if 9223372036854775808 ≤ a2 then d1 else 0) = e1
+  have E : (if 9223372036854775808 ≤ a2 then d1 * 18446744073709551616 + d0 else 0) =
+      e1 * 18446744073709551616 + e0 := by
+    rw [← he0, ← he1]
+    by_cases h : 9223372036854775808 ≤ a2 <;> simp only [h, ↓reduceIte, Nat.zero_mul, Nat.add_zero]
+  have be0 : e0 < 2 ^ 64 := by rw [← he0]; split <;> omega
+  have be1 : e1 < 2 ^ 64 := by rw [← he1]; split <;> omega
+  rw [E]
+  generalize hc0 : (if 18446744073709551616 ≤ a0 + e0 then 1 else 0) = c0
+  generalize hc1 : (if 18446744073709551616 ≤ a1 + e1 + c0 then 1 else 0) = c1
+  have F0 : a0 + e0 = (a0 + e0) % 2 ^ 64 + 18446744073709551616 * c0 := by rw [← hc0]; split <;> omega
+  have b0 : c0 ≤ 1 := by rw [← hc0]; split <;> omega
+  have F1 : a1 + e1 + c0 = (a1 + e1 + c0) % 2 ^ 64 + 18446744073709551616 * c1 := by
+    rw [← hc1]; split <;> omega
+  have b1 : c1 ≤ 1 := by rw [← hc1]; split <;> omega
+  have F2 := Nat.div_add_mod (a2 + c1) (2 ^ 64)
+  refine ⟨(a2 + c1) / 2 ^ 64, by omega, ?_⟩
+  generalize (a2 + c1) / 2 ^ 64 = c2 at F2 ⊢
+  generalize (a2 + c1) % 2 ^ 64 = w2 at F2 ⊢
+  generalize (a1 + e1 + c0) % 2 ^ 64 = w1 at F1 ⊢
+  generalize (a0 + e0) % 2 ^ 64 = w0 at F0 ⊢
+  omega
 
 /-- `quot3Mul`, `x`'s word `w - 3` at `r14` and the temporary at `r9`: `u₀ =
 x₀ P + ⌊x₋₁ P / 2^64⌋` (`r0`) for `P` in `r6`, `d'ₗ` (`r22`), and `q̂ D` over

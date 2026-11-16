@@ -15,7 +15,7 @@ import VerifiedGarbage.Proof.Framework.Omega
 # ML-KEM on AArch64: the runs of the 16-bit NTTs of a polynomial stored with 16 bits
 
 The terms a transform of a polynomial stored with 16 bits starts from (`fInW`:
-coefficient `p` of the input in halfword `p`; `tabT`'s halfwords as constants),
+coefficient `p` of the input in halfword `p`),
 and what its run leaves in the polynomial (`outW`: the reduced coefficients).
 -/
 
@@ -37,13 +37,5 @@ materialize_value fInW
 /-- The polynomial's halfwords are the reduced coefficients of `NTT`. -/
 def outW (σ : St) : Bool :=
   (List.range 32).all fun j => (List.range 8).all fun e => Nat.beq ((σ.chunk 0 j).get e) (outT (8 * j + e))
-
-/-- Lane `e` of chunk `j` of the table. -/
-theorem tabT_get {j e : Nat} (hj : j < 32) (he : e < 8) :
-    Y.get (slot yw tabT j) e = cT (Impl.MlKem.AArch64.Ntt16.tableHalves.getD (8 * j + e) 0) := by
-  have hl : Impl.MlKem.AArch64.Ntt16.tableHalves.length = 256 := by
-    rw [Impl.MlKem.AArch64.Ntt16.tableHalves.lit_eq]; decide +kernel
-  show slot tw (slot (tw * 8) tabT j) e = _
-  rw [slot_slot _ _ _ _ _ he, tabT, slot_foldr cT (fun h => Nat.lt_trans (mk_lt _ _ _ _ _) (by decide)) _ _ (by omega_using [hj, he, hl])]
 
 end VG.Proof.MlKem.AArch64.NttR

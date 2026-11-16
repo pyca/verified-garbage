@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.TripleDes.AArch64.FbFinal
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
+meta import VerifiedGarbage.Proof.CmacTripleDes.IndexLit
 import VerifiedGarbage.Proof.TripleDes.AArch64.FbLit
 meta import VerifiedGarbage.Impl.TripleDes.AArch64.FbFinal
 meta import VerifiedGarbage.Proof.Framework.Lit

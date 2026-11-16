@@ -1,5 +1,7 @@
 module
 
+import VerifiedGarbage.Proof.Framework.KernelRfl
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 public import VerifiedGarbage.Proof.Variants.RsaPublicPrecomputed.X86_64.Ifma
 public import VerifiedGarbage.Proof.Rsa.X86_64.PrivImpl
 public import VerifiedGarbage.Proof.Rsa.X86_64.IfmaLit
@@ -273,15 +275,54 @@ namespace VG.Proof.Variants.RsaPrivateCrt.X86_64.Ifma
 
 open VG.X86_64 VG.Proof.Bignum VG.Proof.Bignum.X86_64 VG.Proof.Rsa.X86_64
 
+open VG.Impl.Rsa.X86_64 VG.Impl.Rsa.X86_64.Crt VG.Impl.Bignum.X86_64 VG.Proof.Bignum.X86_64.Ifma
+
+/-- The tests of the instructions of the two instances' code, which the
+kernel evaluates in one declaration, with one match for each instruction
+(`Proof/Framework/X86_64/InstrBits.lean`): their calls can be inlined, and no
+instruction writes `rsp`. -/
+theorem codeP_bits :
+    (CrtIfma.codeP CrtIfma.lay2048 CallMont.adx.mm).InlineOkB (bSp + bNs) = true ∧
+    (CrtIfma.codeP CrtIfma.lay2048z CallMont.adx.mm).InlineOkB (bSp + bNs) = true := by
+  lit_decide
+
+/-- No instruction of the code that `Mont.fnAdx`'s is inlined in loads MXCSR:
+the parts of it that `Ifma.codeP_correct` and `Ifma.codeP_constantTime` ask
+this of, in one declaration. -/
+theorem codeP_noMx :
+    (seqs (nSetupP Mont.fnAdx.mm ++ primesSetup ++ checksP)).allInstrs (fun i => !loadsMxcsr i) = true ∧
+    (seqs (CrtIfma.preP Mont.fnAdx.mm)).allInstrs (fun i => !loadsMxcsr i) = true ∧
+    (seqs (CrtIfma.postP Mont.fnAdx.mm)).allInstrs (fun i => !loadsMxcsr i) = true ∧
+    (seqs (qPhase Mont.fnAdx.mm (CrtExpL.w4 Mont.fnAdx).code ++
+      pPhase Mont.fnAdx.mm (CrtExpL.w4 Mont.fnAdx).code)).allInstrs (fun i => !loadsMxcsr i) = true := by
+  decide +kernel
+
+/-- What `l2`'s instance needs of its code with the calls inlined. -/
+theorem codeP_inlined {l2 : CrtIfma.Lay} (h2 : Lay2 l2) :
+    (∀ s, crtContractP.pre s → ∃ t s', Exec isa (CrtIfma.codeP l2 Mont.fnAdx.mm) s t s' ∧ abiPreserved s s' ∧
+      crtContractP.post s s') ∧
+    ConstantTime isa crtContractP.pre crtContractP.pub (CrtIfma.codeP l2 Mont.fnAdx.mm) :=
+  ⟨Ifma.codeP_correct h2 Mont.fnAdx codeP_noMx.1 codeP_noMx.2.1 codeP_noMx.2.2.1 codeP_noMx.2.2.2,
+    Ifma.codeP_constantTime Mont.fnAdx h2 codeP_noMx.2.1 codeP_noMx.2.2.1⟩
+
+theorem inline2048 :
+    (CrtIfma.codeP CrtIfma.lay2048 CallMont.adx.mm).inline = CrtIfma.codeP CrtIfma.lay2048 Mont.fnAdx.mm := by
+  kernel_rfl
+
+theorem inline2048z :
+    (CrtIfma.codeP CrtIfma.lay2048z CallMont.adx.mm).inline = CrtIfma.codeP CrtIfma.lay2048z Mont.fnAdx.mm := by
+  kernel_rfl
+
 def variant : CrtImpl where
   pubOp := VG.Proof.Variants.RsaPublicPrecomputed.X86_64.Ifma.variant
   nameP := "vg_rsa_private_crt_precomputed" ++ "_ifma"
   codeP := Impl.Rsa.X86_64.CrtIfma.codeP Impl.Rsa.X86_64.CrtIfma.lay2048 CallMont.adx.mm
   depthP := by lit_decide
-  okP := crtP_call_ok (by lit_decide) (Ifma.codeP_correct (.inl rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))
-  ctP := crtP_call_ct (by lit_decide) (Ifma.codeP_correct (.inl rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) (Ifma.codeP_constantTime Mont.fnAdx (.inl rfl) (by decide +kernel) (by decide +kernel))
-  nospP := noSp_of (by lit_decide)
-  spSafeP := Code.all_of_spTest (by lit_decide)
+  okP := crtP_call_ok (Code.inlineOk_of_B codeP_bits.1) (inline2048 ▸ (codeP_inlined (.inl rfl)).1)
+  ctP := crtP_call_ct (Code.inlineOk_of_B codeP_bits.1) (inline2048 ▸ (codeP_inlined (.inl rfl)).1)
+    (inline2048 ▸ (codeP_inlined (.inl rfl)).2)
+  nospP := noSp_of (Code.noRsp_of_bits rfl (Code.allInstrs_of_inlineOkB codeP_bits.1))
+  spSafeP := Code.spSafe_of_bits rfl (Code.allInstrs_of_inlineOkB codeP_bits.1)
   suffix := "_ifma"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
 
@@ -293,10 +334,11 @@ def variant512 : CrtImpl where
   nameP := "vg_rsa_private_crt_precomputed" ++ "_ifma512"
   codeP := Impl.Rsa.X86_64.CrtIfma.codeP Impl.Rsa.X86_64.CrtIfma.lay2048z CallMont.adx.mm
   depthP := by lit_decide
-  okP := crtP_call_ok (by lit_decide) (Ifma.codeP_correct (.inr rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel))
-  ctP := crtP_call_ct (by lit_decide) (Ifma.codeP_correct (.inr rfl) Mont.fnAdx (by decide +kernel) (by decide +kernel) (by decide +kernel) (by decide +kernel)) (Ifma.codeP_constantTime Mont.fnAdx (.inr rfl) (by decide +kernel) (by decide +kernel))
-  nospP := noSp_of (by lit_decide)
-  spSafeP := Code.all_of_spTest (by lit_decide)
+  okP := crtP_call_ok (Code.inlineOk_of_B codeP_bits.2) (inline2048z ▸ (codeP_inlined (.inr rfl)).1)
+  ctP := crtP_call_ct (Code.inlineOk_of_B codeP_bits.2) (inline2048z ▸ (codeP_inlined (.inr rfl)).1)
+    (inline2048z ▸ (codeP_inlined (.inr rfl)).2)
+  nospP := noSp_of (Code.noRsp_of_bits rfl (Code.allInstrs_of_inlineOkB codeP_bits.2))
+  spSafeP := Code.spSafe_of_bits rfl (Code.allInstrs_of_inlineOkB codeP_bits.2)
   suffix := "_ifma512"
   features := ["avx", "avx512f", "avx512ifma", "avx512vl", "bmi2", "adx"]
   extra := ["avx512fp16"]

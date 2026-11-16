@@ -37,11 +37,6 @@ open VG.Proof.MlKem.AArch64 (Keep)
 open VG.Spec.MlDsa (q n Poly Zq)
 open VG.Proof.MlDsa (coeffAt polyAt Reduced PolyIs)
 
-/-! ## One coefficient -/
-
-/-- A word, zero-extended. -/
-abbrev w64 (v : BitVec 32) : BitVec 64 := v.setWidth 64
-
 /-! ## The loop -/
 
 theorem coeffAddr_next (p : Addr) (j : Nat) : coeffAddr p j + BitVec.ofNat 64 4 = coeffAddr p (j + 1) :=

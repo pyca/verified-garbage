@@ -1955,6 +1955,36 @@ vg_aes_cbc_encrypt_aes:
 	ret
 	.p2align 6
 
+vg_aes_cbc_encrypt_neon:
+	sub sp, sp, #32
+	str x30, [sp, #0]
+	str x5, [sp, #8]
+	bl {vg_aes_cbc_encrypt_unwiped_neon}
+	str x0, [sp, #16]
+	ldr x0, [sp, #8]
+	movz x1, #2176, lsl #0
+	bl {vg_zeroize}
+	ldr x0, [sp, #16]
+	ldr x30, [sp, #0]
+	add sp, sp, #32
+	ret
+	.p2align 6
+
+vg_aes_cbc_decrypt_neon:
+	sub sp, sp, #32
+	str x30, [sp, #0]
+	str x5, [sp, #8]
+	bl {vg_aes_cbc_decrypt_unwiped_neon}
+	str x0, [sp, #16]
+	ldr x0, [sp, #8]
+	movz x1, #2176, lsl #0
+	bl {vg_zeroize}
+	ldr x0, [sp, #16]
+	ldr x30, [sp, #0]
+	add sp, sp, #32
+	ret
+	.p2align 6
+
 vg_aes_cbc_encrypt:
 	sub sp, sp, #32
 	str x30, [sp, #0]

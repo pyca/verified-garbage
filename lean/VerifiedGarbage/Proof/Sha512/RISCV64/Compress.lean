@@ -4,6 +4,8 @@ public import VerifiedGarbage.Proof.Sha512.RISCV64.Rounds
 public meta import VerifiedGarbage.Proof.Sha512.RISCV64.Rounds
 public import VerifiedGarbage.Proof.Sha512.RISCV64.Contract
 public meta import VerifiedGarbage.Proof.Sha512.RISCV64.Contract
+public import VerifiedGarbage.Proof.Sha512.RISCV64.Lit
+public meta import VerifiedGarbage.Proof.Sha512.RISCV64.Lit
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.RISCV64.Words64
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Words64
@@ -15,6 +17,8 @@ public import VerifiedGarbage.Proof.Framework.Contract
 public meta import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 public meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+public import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+public meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
 public import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 public meta import VerifiedGarbage.Proof.Framework.RISCV64.Inline
 import VerifiedGarbage.Proof.Framework.RISCV64.Exec
@@ -752,12 +756,19 @@ def satState : State where
   rd := [⟨0x2000, 0⟩]
   wr := [⟨0x1000, 64⟩, ⟨0x3000, 144⟩]
 
+/-! The constant-time analysis of the compression function from its arguments, done once for
+every check of code that calls it (`taint_decide_sum [compressSum]`), which keeps what is public
+of `s1`–`s11`: it writes none of them. -/
+taint_summary compressSum : taint (Taint.ofRegs [.a0, .a1, .a2, .a3]) Impl.Sha512.RISCV64.compress
+  keeping (Taint.ofRegs [.s1, .s2, .s3, .s4, .s5, .s6, .s7, .s8, .s9, .s10, .s11])
+
 theorem compress_verified :
     Verified RISCV64.target Impl.Sha512.RISCV64.compress Proof.Sha512.compressRISCV64 := by
   refine ⟨fun s hs => ?_, ?_, ?_⟩
   · obtain ⟨t, s', he, h₁, hra, h₂⟩ := correct (pre_of s hs)
     exact ⟨t, s', he, ⟨h₁, Exec.sp he, hra⟩, h₂⟩
-  · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3]) ?_ (by taint_decide)
+  · refine VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.a0, .a1, .a2, .a3]) ?_
+      (VG.Taint.exists_check_of_sumOk compressSum (RegSet.subset_refl _))
     intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, hsp⟩
     refine ⟨hsp, fun r hr => ?_⟩
     simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr

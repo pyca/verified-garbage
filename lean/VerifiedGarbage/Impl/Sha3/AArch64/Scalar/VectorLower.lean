@@ -1,7 +1,7 @@
 module
 
-public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Scheduled
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Lower
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Core
 
 @[expose] public section
 
@@ -16,7 +16,5 @@ def lowerVector : ScalarOp → List Instr
   | .spill k a => [.vop (.dup .d2 (slotV k) a)]
   | .reload d k => [.umov .x d (slotV k) 0]
   | op => lower op
-
-def vectorCoreInstrs : List Instr := scheduledOps.flatMap lowerVector
 
 end VG.Impl.Sha3.AArch64.Scalar

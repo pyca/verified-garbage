@@ -32,7 +32,7 @@ section
 
 `lowerMem off` (`Impl/Sha3/AArch64/Scalar/MemLower.lean`) realizes each
 abstract operation with the temporary lanes in the words at `[sp, #off]`
-and `[sp, #off + 8]`: the round computes what `vectorCoreInstrs` does on
+and `[sp, #off + 8]`: the round computes `χ ∘ π ∘ ρ ∘ θ` on
 the lanes in general registers (`mem_core_ok`), writes only those two
 words of memory, and leaves every vector register as it was.
 -/

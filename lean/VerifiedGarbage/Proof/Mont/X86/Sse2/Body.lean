@@ -769,6 +769,13 @@ theorem params_pushed {t : State} {W : Addr} {L : Nat} {sp : BitVec 32} (hlo : 5
       omega_arith
   · rw [ea i hi, add_ofNat64]; exact far _ (by omega_arith)
 
+/-- The address `n` bytes below `e - c`, as a number: `(e - c - n).toNat` for 32-bit `e`, as
+`BitVec.toNat_sub` states it. (`omega` takes long over the nest of remainders where it is one of
+several in a goal.) -/
+theorem below_base_toNat {e c n : Nat} (he : e < 2 ^ 32) (hlo : 56 ≤ e) (hc : c + n ≤ 56) :
+    (2 ^ 32 - n % 2 ^ 32 + (2 ^ 32 - c % 2 ^ 32 + e) % 2 ^ 32) % 2 ^ 32 = e - c - n := by
+  omega_using [he, hlo, hc]
+
 /-- A byte of a frame within the 56 bytes below the entry's `esp` lies past the working space. -/
 theorem below_far {s : State} {W : Addr} {L : Nat} (E : Entry s W L) {c n : Nat} (hc : c + n ≤ 56) (hn : 0 < n)
     {x : Addr} (hx : (below (s.gpr .esp - BitVec.ofNat 32 c) n).Contains x 1) : L ≤ ofs W x := by
@@ -776,11 +783,12 @@ theorem below_far {s : State} {W : Addr} {L : Nat} (E : Entry s W L) {c n : Nat}
   have hhi := E.hi
   have e : x = (s.gpr .esp).setWidth 64 - 56 + BitVec.ofNat 64 (56 - c - n + (x - (s.gpr .esp - BitVec.ofNat 32 c -
       BitVec.ofNat 32 n).setWidth 64).toNat) := by
-    have := (s.gpr .esp).isLt
+    have he := (s.gpr .esp).isLt
     simp only [Region.Contains] at hx
     apply BitVec.eq_of_toNat_eq
     simp only [BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat] at hx ⊢
     rw [show (56 : BitVec 64).toNat = 56 from rfl]
+    rw [below_base_toNat he hlo hc] at hx ⊢
     have := x.isLt
     omega_arith
   rw [e]
@@ -809,10 +817,10 @@ theorem below_contains {sp base : BitVec 32} (hlo : 56 ≤ sp.toNat) (hhi : sp.t
     (hb : base = sp - BitVec.ofNat 32 c) (hc : c + n ≤ 56) (hd : d < 60) :
     (below base n).Contains (stk sp d) 1 ↔ (56 - c - n ≤ d ∧ d < 56 - c) := by
   subst hb
-  have := sp.isLt
+  have he := sp.isLt
   simp only [Region.Contains, stk, BitVec.toNat_sub, BitVec.toNat_add, BitVec.toNat_setWidth,
     BitVec.toNat_ofNat]
-  rw [show (56 : BitVec 64).toNat = 56 from rfl]
+  rw [show (56 : BitVec 64).toNat = 56 from rfl, below_base_toNat he hlo hc]
   omega_arith
 
 theorem stk_inj {sp : BitVec 32} {d e : Nat} (hd : d < 60) (he : e < 60)
@@ -828,9 +836,10 @@ theorem stk_inj {sp : BitVec 32} {d e : Nat} (hd : d < 60) (he : e < 60)
 theorem below_sub {sp base : BitVec 32} (hlo : 56 ≤ sp.toNat) {c n : Nat} (hb : base = sp - BitVec.ofNat 32 c)
     (hc : c + n ≤ 56) {x : Addr} (h : (below base n).Contains x 1) : (below sp 56).Contains x 1 := by
   subst hb
-  have := sp.isLt
+  have he := sp.isLt
   have := x.isLt
   simp only [Region.Contains, BitVec.toNat_sub, BitVec.toNat_setWidth, BitVec.toNat_ofNat] at h ⊢
+  rw [below_base_toNat he hlo hc] at h
   omega_arith
 
 /-- `pop r` `k + 1` times leaves in `r` the frame's last word. -/
@@ -974,7 +983,7 @@ theorem body_ok {s : State} {params : List Instr} {W : Addr} {L N S mo inv o a b
         simp only [List.mem_singleton] at hr; subst hr
         rw [below_contains hlo hhi (c := 16) (n := 28) esp1 (by decide) (by omega_arith)] at h
         omega_arith), m1]
-  have saved : ∀ i < 4, readSrc (popped .eax 7 v) (.mem (at_ .esp (4 * i))) = some (s.gpr rs4[rs4.length - 1 - i]) := by
+  have saved : ∀ i < 4, readSrc (popped .eax 7 v) (.mem (at_ .esp (4 * i))) = some (s.gpr (rs4[rs4.length - 1 - i]'(Nat.lt_of_le_of_lt (Nat.sub_le _ _) (by decide)))) := by
     intro i hi
     have ea : (popped .eax 7 v).ea (at_ .esp (4 * i)) = stk (s.gpr .esp) (40 + 4 * i) := by
       simp only [State.ea, at_, espw]

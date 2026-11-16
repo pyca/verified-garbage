@@ -167,9 +167,9 @@ theorem checkBlock_erase (is : List Instr) :
   | cons i is ih =>
     intro τ hn
     obtain ⟨h, ha⟩ := noBases_iff.mp hn
-    show (stepKD τ i.erase).bind (taint.checkBlock · (KList.map Instr.erase is)) =
-      (stepKD τ i).bind (taint.checkBlock · is)
-    rw [stepKD_erase h ha]
+    show (taint.step τ i.erase).bind (taint.checkBlock · (KList.map Instr.erase is)) =
+      (taint.step τ i).bind (taint.checkBlock · is)
+    rw [taint_step, taint_step, stepKD_erase h ha]
     cases e : stepKD τ i with
     | none => rfl
     | some τ' => exact ih τ' (stepKD_noBases hn e)

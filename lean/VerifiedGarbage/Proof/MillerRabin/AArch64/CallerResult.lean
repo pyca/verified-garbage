@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Contract
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.CallerFrame
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Bignum.CrtExp
@@ -46,17 +47,18 @@ private theorem call_array (w j : Nat) (hj : j ∈ [0, 4, 9, 10, 27]) :
       Proof.Rsa.Mont.arrAt, Proof.Rsa.Mont.hdrBytes]
     and_intros <;> omega_arith
 
-theorem call_result_ok (M : Mont) (name : String) (hnf : (round M.mm).noFrames = true)
+theorem call_result_ok {R : Prog isa} (hR : ∀ s, roundContract.pre s → ∃ tr t, Exec isa R s tr t ∧ abiPreserved s t ∧ roundContract.post s t)
+    (name : String) (hnf : R.noFrames = true)
     {s : State} {B : Addr} {Z w c bm b : Nat}
     (hc : MrCtx s B Z w c bm) (he : ECtx s.mem B w c)
     (h4 : 4 ≤ w) (h128 : w ≤ 128) (hEZ : slot w aE + 8 * (w + 2) ≤ Z)
     (ho : c % 2 = 1) (h3 : 3 ≤ c)
     (hx : wv s.mem B (slot w aXm) w = b % c * 2 ^ (64 * w) % c) :
-    WP isa (call name (round M.mm)) s fun t =>
+    WP isa (call name R) s fun t =>
       (∃ bm', MrCtx t B Z w c bm') ∧ ECtx t.mem B w c ∧
       word t.mem B (8 * kFlag) = mask (Proof.MillerRabin.Round.round c b) ∧
       Frm B (callRanges w) s.mem t.mem ∧ Keep mmRegs s t := by
-  refine WP.mono (call_frame_ok M name hnf hc he h4 h128 hEZ ho h3 hx) ?_
+  refine WP.mono (call_frame_ok hR name hnf hc he h4 h128 hEZ ho h3 hx) ?_
   rintro t ⟨hflag, hf, hk⟩
   have htws := hc.ws.congr' hf (call_mut w) hk (by decide)
   have hnword : word t.mem B (slot w aN) = word s.mem B (slot w aN) :=

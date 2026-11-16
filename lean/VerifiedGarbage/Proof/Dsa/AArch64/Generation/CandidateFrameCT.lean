@@ -28,12 +28,14 @@ structure CandidateFramePublic where
   qNonempty : 1 ≤ qb.length
   qPositive : 0 < Spec.Rsa.os2ip qb
   qFits : 2 * Spec.Rsa.os2ip qb < 2 ^ (64 * w)
+  wide : reduceWords ≤ w
+  narrow : qb.length ≤ 32
   separate : ∀ k < 34, ∀ j < 32, Mem.Sep (off F (8 * k)) 8 (off B (8 * j)) 8
   pOutside : ∀ i < 8 * w, Z ≤ ofs B (off (off arena p) i)
   eOutside : ∀ i < 8 * w, Z ≤ ofs B (off (off arena exponent) i)
 
 def CandidateFramePublic.build (c : CandidateFramePublic) : CandidateBuildPublic :=
-  ⟨⟨c.B, c.Z, c.w, off c.arena shaped, off c.arena q, c.xb, c.qb⟩,
+  ⟨⟨c.B, c.Z, c.w, off c.arena shaped, off c.arena q, c.xb, c.qb, c.wide, c.narrow⟩,
     off c.arena p, off c.arena exponent⟩
 
 structure CandidateFrameInputs (c : CandidateFramePublic) (s : State) : Prop where

@@ -17,11 +17,9 @@ def artifacts : List Artifact := [
     verified := Proof.Md5.RISCV64.Shared.init },
   Spec.Md5.updateApi.artifact RISCV64.target {
     code := Impl.Md5.RISCV64.Stream.update
-    stack := 144
     verified := Proof.Md5.RISCV64.Shared.update },
   Spec.Md5.finalizeApi.artifact RISCV64.target {
     code := Impl.Md5.RISCV64.Stream.finalize
-    stack := 144
     verified := Proof.Md5.RISCV64.Shared.finalize }]
 
 end VG.Artifacts.Md5.RISCV64

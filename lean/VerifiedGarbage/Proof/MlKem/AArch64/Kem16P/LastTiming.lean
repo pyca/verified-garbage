@@ -38,6 +38,12 @@ meta import VerifiedGarbage.Proof.MlKem.AArch64.Shared
 meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Impl.MlKem.AArch64.Kem16P
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
 # The singleton computing PRF outputs leaks only public pointers and the public seed
@@ -51,20 +57,21 @@ the restore as there.
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Kem16P
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Proof.MlKem VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Paired (LastInput seedBytes fullWrites exec_post seq_parts
   fullSampleCode_relCT restore_ct reject_relCT ct_eraseOff_eq)
 
 /-- The singleton's start, three main squeezes and constants. -/
-def lastPrep (sb ss a k bo N₀ : Nat) : Prog isa :=
+def lastPrep (sha3 : Bool) (sb ss a k bo N₀ : Nat) : Prog isa :=
   .seq (.seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a a k ++ Impl.MlKem.AArch64.ptrTo .x21 .x28 bo))
-    (.seq (Impl.MlKem.AArch64.Kem16P.stepB Impl.MlKem.AArch64.KEM.RB N₀) (.seq (Impl.MlKem.AArch64.Kem16P.stepB Impl.MlKem.AArch64.KEM.RB (N₀ + 1))
-      (Impl.MlKem.AArch64.Kem16P.stepB Impl.MlKem.AArch64.KEM.RB (N₀ + 2)))))
+    (.seq (Impl.MlKem.AArch64.Kem16P.stepB sha3 Impl.MlKem.AArch64.KEM.RB N₀) (.seq (Impl.MlKem.AArch64.Kem16P.stepB sha3 Impl.MlKem.AArch64.KEM.RB (N₀ + 1))
+      (Impl.MlKem.AArch64.Kem16P.stepB sha3 Impl.MlKem.AArch64.KEM.RB (N₀ + 2)))))
     (.block Impl.MlKem.AArch64.Rej8.rejConsts)
 
 theorem lastPrep_erase {sb ss a k bo N₀ : Nat} (hss : ss < 4096) (hbo : 4096 ≤ bo) :
-    Code.eraseOff (lastPrep sb ss a k bo N₀) = Code.eraseOff (lastPrep 0 0 0 1 4096 0) := by
+    Code.eraseOff (lastPrep sha3 sb ss a k bo N₀) = Code.eraseOff (lastPrep sha3 0 0 0 1 4096 0) := by
   simp only [lastPrep, Code.eraseOff, List.map_append, Impl.MlKem.AArch64.Kem16P.stepB,
     Impl.MlKem.AArch64.Kem16P.reinitB, prfWords_eraseOff, Impl.MlKem.AArch64.Paired.init,
     Impl.MlKem.AArch64.ptrTo, ite_eq_left hss, ite_eq_right (show ¬ bo < 4096 by omega_using [hbo]),
@@ -73,9 +80,12 @@ theorem lastPrep_erase {sb ss a k bo N₀ : Nat} (hss : ss < 4096) (hbo : 4096 �
 
 theorem lastPrep_ct {sb ss a k bo N₀ : Nat} (hss : ss < 4096) (hbo : 4096 ≤ bo) :
     ConstantTime isa (fun _ => True) (VG.AArch64.Taint.Agree (Taint.ofRegs [.x28]))
-      (lastPrep sb ss a k bo N₀) := by
-  apply ct_eraseOff_eq [.x28] (d := Code.eraseOff (lastPrep 0 0 0 1 4096 0)) (lastPrep_erase hss hbo)
-  taint_decide
+      (lastPrep sha3 sb ss a k bo N₀) := by
+  cases sha3
+  · apply Paired.vct_eraseOff_eq [.x28] (d := Code.eraseOff (lastPrep false 0 0 0 1 4096 0)) (lastPrep_erase (sha3 := false) hss hbo)
+    taint_decide
+  · apply ct_eraseOff_eq [.x28] (d := Code.eraseOff (lastPrep true 0 0 0 1 4096 0)) (lastPrep_erase (sha3 := true) hss hbo)
+    taint_decide
 
 /-- After `lastPrep`: what the rejection needs. -/
 structure LastPreparedP (w16 : Bool) (B : Nat → Byte) (p out table : Addr) (s t : State) : Prop where
@@ -94,9 +104,9 @@ theorem lastPrepP_ok (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s : State}
     (hl : LayB p R B₀ s) (ap : BufApart p seed out table R B₀)
     (hR : s.gpr .x28 + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R)
     (hB : s.gpr .x28 + BitVec.ofNat 64 (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) = B₀) :
-    WP isa (lastPrep sb ss a L.k (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀) s
+    WP isa (lastPrep sha3 sb ss a L.k (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀) s
       (LastPreparedP w16 (xofByte (seedBytes s.mem seed a L.k)) p out table s) := by
-  refine WP.seq (WP.mono_syms (startB_ok L (a := a) hN hbo hss hsb h8 ps.ptr ps.seedPtr ps.readable
+  refine WP.seq (WP.mono_syms (startB_ok (sha3 := sha3) L (a := a) hN hbo hss hsb h8 ps.ptr ps.seedPtr ps.readable
     ps.separate hl hR hB) fun u ⟨ku, fu, _, u19, bu, _⟩ sy => ?_)
   have fuP : Frame (fullWritesP p out B₀) s.mem u.mem :=
     fu.mono (by simp [fullWritesP, fullWrites])
@@ -141,7 +151,7 @@ theorem lastStartP_relCT (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s u : Sta
     (sp : s.sp = u.sp) (base : s.gpr .x28 = u.gpr .x28)
     (seedEq : seedBytes s.mem seed a L.k = seedBytes u.mem seed a L.k) :
     RelCT isa (fun t v => t = s ∧ v = u)
-      (lastStartP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16)
+      (lastStartP sha3 sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16)
       (fun t v => LastStartPostP w16 (xofByte (seedBytes s.mem seed a L.k)) p out table R B₀ N₀ s t ∧
         LastStartPostP w16 (xofByte (seedBytes u.mem seed a L.k)) p out table R B₀ N₀ u v) := by
   have hRu : u.gpr .x28 + BitVec.ofNat 64 Impl.MlKem.AArch64.KEM.RB = R := by rw [← base]; exact hR
@@ -150,15 +160,15 @@ theorem lastStartP_relCT (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s u : Sta
   let Rr := fun t v : State => LastPreparedP w16 (xofByte (seedBytes s.mem seed a L.k)) p out table s t ∧
     LastPreparedP w16 (xofByte (seedBytes u.mem seed a L.k)) p out table u v
   have start : RelCT isa (fun t v => t = s ∧ v = u)
-      (lastPrep sb ss a L.k (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀) Rr := by
+      (lastPrep sha3 sb ss a L.k (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀) Rr := by
     intro t v tr ur t' v' h et ev
     rcases h with ⟨ht, hv⟩; subst t; subst v
-    exact ⟨lastPrep_ct hss h4 s u tr ur t' v' trivial trivial
+    exact ⟨lastPrep_ct (sha3 := sha3) hss h4 s u tr ur t' v' trivial trivial
       (agree_of sp (by intro r hr; rw [List.mem_singleton.mp hr]; exact base)) et ev,
-      exec_post (lastPrepP_ok L hN hbo (by omega_using [hss]) hsb h8 hk hk256 ps hls ap hR hB) et,
-      exec_post (lastPrepP_ok L hN hbo (by omega_using [hss]) hsb h8 hk hk256 pu hlu ap hRu hBu) ev⟩
+      exec_post (lastPrepP_ok (sha3 := sha3) L hN hbo (by omega_using [hss]) hsb h8 hk hk256 ps hls ap hR hB) et,
+      exec_post (lastPrepP_ok (sha3 := sha3) L hN hbo (by omega_using [hss]) hsb h8 hk hk256 pu hlu ap hRu hBu) ev⟩
   have grouped : RelCT isa (fun t v => t = s ∧ v = u)
-      (.seq (lastPrep sb ss a L.k (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀)
+      (.seq (lastPrep sha3 sb ss a L.k (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀)
         (Impl.MlKem.AArch64.Paired.reject 400 off .x22 w16)) (fun _ _ => True) := by
     refine RelCT.seq start ?_
     intro t v tr ur t' v' h et ev
@@ -173,14 +183,14 @@ theorem lastStartP_relCT (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s u : Sta
       t v tr ur t' v' ⟨rfl, rfl⟩ et ev
     exact ⟨rr.1, trivial⟩
   have trace : RelCT isa (fun t v => t = s ∧ v = u)
-      (lastStartP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16) (fun _ _ => True) :=
+      (lastStartP sha3 sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16) (fun _ _ => True) :=
     RelCT.assoc (RelCT.assoc grouped)
   intro t v tr ur t' v' h et ev
   rcases h with ⟨ht, hv⟩; subst t; subst v
   exact ⟨(trace s u tr ur t' v' ⟨rfl, rfl⟩ et ev).1,
-    exec_post (lastStartP_ok L hN hbo (by omega_using [hss]) hsb h8 hoff hk hk256 ps.ptr ps.seedPtr ps.outPtr
+    exec_post (lastStartP_ok (sha3 := sha3) L hN hbo (by omega_using [hss]) hsb h8 hoff hk hk256 ps.ptr ps.seedPtr ps.outPtr
       ps.readable ps.separate ps.context ps.symbol hls ap hR hB) et,
-    exec_post (lastStartP_ok L hN hbo (by omega_using [hss]) hsb h8 hoff hk hk256 pu.ptr pu.seedPtr pu.outPtr
+    exec_post (lastStartP_ok (sha3 := sha3) L hN hbo (by omega_using [hss]) hsb h8 hoff hk hk256 pu.ptr pu.seedPtr pu.outPtr
       pu.readable pu.separate pu.context pu.symbol hlu ap hRu hBu) ev⟩
 
 theorem afterStartP {w16 : Bool} {s t : State} {p seed out table R B₀ : Addr}
@@ -208,8 +218,8 @@ theorem LastStartPostP.seed {w16 : Bool} {s t : State} {p seed out table R B₀ 
     · exact hb) (by decide : 32 ≤ 2 ^ 64)]
 
 theorem lastP_exec {w16 : Bool} {sb ss a k off bo N₀ : Nat} {s t : State} {tr : List Leak}
-    (h : Exec isa (lastCodeP sb ss a k off bo N₀ w16) s tr t) :
-    Exec isa (.seq (lastStartP sb ss a k off bo N₀ w16) (Paired.lastTail sb ss a k off w16)) s tr t := by
+    (h : Exec isa (lastCodeP sha3 sb ss a k off bo N₀ w16) s tr t) :
+    Exec isa (.seq (lastStartP sha3 sb ss a k off bo N₀ w16) (Paired.lastTail sha3 sb ss a k off w16)) s tr t := by
   obtain ⟨_, _, _, rfl, ei, h⟩ := seq_parts h
   obtain ⟨_, _, _, rfl, es, h⟩ := seq_parts h
   obtain ⟨_, _, _, rfl, ec, h⟩ := seq_parts h
@@ -232,18 +242,18 @@ theorem lastCodeP_relCT (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s u : Stat
     (sp : s.sp = u.sp) (base : s.gpr .x28 = u.gpr .x28)
     (seedEq : seedBytes s.mem seed a L.k = seedBytes u.mem seed a L.k) :
     RelCT isa (fun t v => t = s ∧ v = u)
-      (lastCodeP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16) (fun _ _ => True) := by
+      (lastCodeP sha3 sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16) (fun _ _ => True) := by
   let Rr := fun t v : State => LastStartPostP w16 (xofByte (seedBytes s.mem seed a L.k)) p out table R B₀ N₀ s t ∧
     LastStartPostP w16 (xofByte (seedBytes u.mem seed a L.k)) p out table R B₀ N₀ u v ∧
     t.syms = s.syms ∧ v.syms = u.syms
   have start : RelCT isa (fun t v => t = s ∧ v = u)
-      (lastStartP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16) Rr := by
+      (lastStartP sha3 sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16) Rr := by
     intro t v tr ur t' v' h et ev
-    have hh := lastStartP_relCT L hN hbo h4 hss hsb h8 hoff hk hk256 ps pu hls hlu ap hR hB sp base seedEq
+    have hh := lastStartP_relCT (sha3 := sha3) L hN hbo h4 hss hsb h8 hoff hk hk256 ps pu hls hlu ap hR hB sp base seedEq
       t v tr ur t' v' h et ev
     rcases h with ⟨ht, hv⟩; subst t; subst v
     exact ⟨hh.1, hh.2.1, hh.2.2, Exec.syms et, Exec.syms ev⟩
-  have branch : RelCT isa Rr (.ite (.zero .x .x22) (Paired.fullSampleCode sb ss off a L.k w16) (.block []))
+  have branch : RelCT isa Rr (.ite (.zero .x .x22) (Paired.fullSampleCode sha3 sb ss off a L.k w16) (.block []))
       (fun t v => t.sp = v.sp ∧ t.gpr .x19 = v.gpr .x19) := by
     refine RelCT.ite ?_ ?_ (RelCT.block_nil ?_)
     · intro t v h
@@ -256,7 +266,7 @@ theorem lastCodeP_relCT (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s u : Stat
     · intro t v tr ur t' v' h et ev
       have ht := h.1.1
       have hv := h.1.2.1
-      have hh := fullSampleCode_relCT hss hsb h8 hoff hk hk256
+      have hh := fullSampleCode_relCT (sha3 := sha3) hss hsb h8 hoff hk hk256
         (afterStartP ps ht h.1.2.2.1) (afterStartP pu hv h.1.2.2.2) ht.ptr hv.ptr ht.saved hv.saved
         (ht.keep.sp.trans (sp.trans hv.keep.sp.symm))
         (by rw [ht.keep.get .x28, hv.keep.get .x28, base])
@@ -267,13 +277,13 @@ theorem lastCodeP_relCT (L : Impl.MlKem.AArch64.KemLay) {w16 : Bool} {s u : Stat
     · intro t v h
       exact ⟨h.1.1.keep.sp.trans (sp.trans h.1.2.1.keep.sp.symm), h.1.1.ptr.trans h.1.2.1.ptr.symm⟩
   have grouped : RelCT isa (fun t v => t = s ∧ v = u)
-      (.seq (lastStartP sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16)
-        (Paired.lastTail sb ss a L.k off w16)) (fun _ _ => True) := by
+      (.seq (lastStartP sha3 sb ss a L.k off (Impl.MlKem.AArch64.Kem16P.bufOff (Impl.MlKem.AArch64.KEM.TP L) N₀) N₀ w16)
+        (Paired.lastTail sha3 sb ss a L.k off w16)) (fun _ _ => True) := by
     refine RelCT.seq start (RelCT.seq branch ?_)
     intro t v tr ur t' v' h et ev
     exact ⟨restore_ct t v tr ur t' v' trivial trivial
       (agree_of h.1 (by intro r hr; rw [List.mem_singleton.mp hr]; exact h.2)) et ev, trivial⟩
   intro t v tr ur t' v' h et ev
-  exact grouped t v tr ur t' v' h (lastP_exec et) (lastP_exec ev)
+  exact grouped t v tr ur t' v' h (lastP_exec (sha3 := sha3) et) (lastP_exec (sha3 := sha3) ev)
 
 end VG.Proof.MlKem.AArch64.Kem16P

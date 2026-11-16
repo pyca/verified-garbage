@@ -2,6 +2,8 @@ module
 
 import VerifiedGarbage.Proof.Sm4.AArch64.Link
 import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+import VerifiedGarbage.Proof.Modes.AArch64.Steps
+public import VerifiedGarbage.Proof.Sm4.AArch64.Serial.ModeCore
 public import VerifiedGarbage.Proof.Sm4.Scratch
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 public import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
@@ -10,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sm4.AArch64.Link
 meta import VerifiedGarbage.Proof.Modes.AArch64.Ctr
+meta import VerifiedGarbage.Proof.Modes.AArch64.Steps
+meta import VerifiedGarbage.Proof.Sm4.AArch64.Serial.ModeCore
 meta import VerifiedGarbage.Proof.Sm4.Scratch
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchWipe
 meta import VerifiedGarbage.Proof.Sm4.AArch64.ModeCore
@@ -24,7 +28,9 @@ meta import VerifiedGarbage.Proof.Framework.RegSet
 # SM4-CTR on AArch64 meets its contracts
 
 `ctr_wp`: the modes' CTR over SM4's core (`Proof.Modes.AArch64.ctr_wp` with
-`modeCoreSpec`). `ctr_verified`: `ctr` is correct and constant time, by
+`modeCoreSpec`, `ctrBatch_wp`) or, for fewer than six blocks, over the
+single-block core (with `Serial.coreSpec`, `ctrSerial_wp`), whichever
+`few` runs (`few_wp`). `ctr_verified`: `ctr` is correct and constant time, by
 the taint analysis: the pointers, `n` and the stack pointer are public, and
 so is everything the code computes from them, which it keeps in registers;
 the counter block is secret. `ctr_framed` runs it with its working space on
@@ -69,9 +75,30 @@ attribute [local irreducible] Spec.Sm4.cipher in
 /-- The core's cipher is SM4's, without unfolding it. -/
 theorem cipher_eq (k : Spec.Sm4.Schedule) : modeCoreSpec.cipher k = Spec.Sm4.cipher k := rfl
 
-theorem ctr_wp {s₀ : State} (hp : ctrAArch64.pre s₀) :
-    WP isa ctr s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
-      s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ ctrAArch64.post s₀ s' := by
+/-- `few` runs one of its two programs, from a state that differs in `x13`. -/
+theorem few_wp {short long : Prog isa} {s₀ : State} {Q : State → Prop}
+    (h : ∀ s₁, (∀ r, r ≠ .x13 → s₁.gpr r = s₀.gpr r) → s₁.mem = s₀.mem → s₁.rd = s₀.rd → s₁.wr = s₀.wr →
+      WP isa short s₁ Q ∧ WP isa long s₁ Q) : WP isa (few short long) s₀ Q := by
+  obtain ⟨sₐ, eₐ, _, gₐ, mₐ, rdₐ, wrₐ⟩ := Modes.AArch64.addImm_ok s₀ .x13 .x3 (v := 2) (by decide)
+  obtain ⟨s₁, e', _, g', m', rd', wr'⟩ := Modes.AArch64.lsr_ok sₐ .x13 .x13 (sh := 3) (by decide)
+  have e₁ : runBlock isa [.addImm .x .x13 .x3 2, .lsr .x .x13 .x13 3] s₀ = some s₁ := by
+    rw [show ([.addImm .x .x13 .x3 2, .lsr .x .x13 .x13 3] : List Instr) =
+      [.addImm .x .x13 .x3 2] ++ [.lsr .x .x13 .x13 3] from rfl, Modes.AArch64.runBlock_app, eₐ,
+      Option.bind_some, e']
+  obtain ⟨hs, hl⟩ := h s₁ (fun r hr => (g' r hr).trans (gₐ r hr)) (m'.trans mₐ) (rd'.trans rdₐ)
+    (wr'.trans wrₐ)
+  unfold few
+  exact WP.seq (WP.of_runBlock ⟨s₁, e₁, WP.ite _ rfl (fun _ => hs) (fun _ => hl)⟩)
+
+attribute [local irreducible] Spec.Sm4.cipher in
+/-- The single-block core's cipher is SM4's, without unfolding it. -/
+theorem serialCipher_eq (k : Spec.Sm4.Schedule) : Serial.coreSpec.cipher k = Spec.Sm4.cipher k := rfl
+
+/-- Six blocks or more: the modes' CTR over the bitsliced core. -/
+theorem ctrBatch_wp {s₀ : State} (hp : ctrAArch64.pre s₀) :
+    WP isa (modeCore.ctr ⟨.x1, .x2, .x3, .x4⟩) s₀ fun s' =>
+      (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+        s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ ctrAArch64.post s₀ s' := by
   obtain ⟨hrd, hwr, dKC, dKD, dKS, dCD, dCS, dDS, fitK, fitC, fitD, fitB⟩ := hp
   have hwS : (⟨s₀.gpr .x4, 8 * (slots + 12)⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
   refine WP.mono (Proof.Modes.AArch64.ctr_wp modeCoreSpec (r := ⟨.x1, .x2, .x3, .x4⟩)
@@ -86,6 +113,45 @@ theorem ctr_wp {s₀ : State} (hp : ctrAArch64.pre s₀) :
       · exact dKC⟩) fun s' ⟨hcs, hdata, hctr, _, _, _⟩ => ⟨hcs, ?_, hctr⟩
   rw [cipher_eq] at hdata
   exact hdata
+
+/-- Fewer than six blocks: the modes' CTR over the single-block core. -/
+theorem ctrSerial_wp {s₀ : State} (hp : ctrAArch64.pre s₀) :
+    WP isa (Impl.Sm4.AArch64.Serial.core.ctr ⟨.x1, .x2, .x3, .x4⟩) s₀ fun s' =>
+      (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+        s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ ctrAArch64.post s₀ s' := by
+  obtain ⟨hrd, hwr, dKC, dKD, dKS, dCD, dCS, dDS, fitK, fitC, fitD, fitB⟩ := hp
+  have hwS : (⟨s₀.gpr .x4, 8 * (slots + 12)⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  refine WP.mono (Proof.Modes.AArch64.ctr_wp Serial.coreSpec (r := ⟨.x1, .x2, .x3, .x4⟩)
+    ⟨by decide, by decide, by decide⟩ (by decide)
+    (B := s₀.gpr .x4) (P := s₀.gpr .x1) (D := s₀.gpr .x2) (n := (s₀.gpr .x3).toNat)
+    (k := Spec.Sm4.scheduleAt s₀.mem (s₀.gpr .x0)) rfl rfl rfl rfl ⟨hwS, fitB⟩
+    (by rw [hwr]; simp) (by rw [hwr]; simp) dCS dDS dCD fitD
+    ⟨s₀.gpr .x0, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · exact dKS
+      · exact dKC⟩) fun s' ⟨hcs, hdata, hctr, _, _, _⟩ => ⟨hcs, ?_, hctr⟩
+  rw [serialCipher_eq] at hdata
+  exact hdata
+
+theorem ctr_wp {s₀ : State} (hp : ctrAArch64.pre s₀) :
+    WP isa ctr s₀ fun s' => (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+      s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ ctrAArch64.post s₀ s' := by
+  refine few_wp fun s₁ g₁ m₁ rd₁ wr₁ => ?_
+  have hp₁ : ctrAArch64.pre s₁ := by
+    simpa only [ctrAArch64, m₁, rd₁, wr₁, g₁ .x0 (by decide), g₁ .x1 (by decide), g₁ .x2 (by decide),
+      g₁ .x3 (by decide), g₁ .x4 (by decide)] using hp
+  have transfer {s' : State}
+      (h : (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+        s₁.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ ctrAArch64.post s₁ s') :
+      (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
+        s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ ctrAArch64.post s₀ s' := by
+    refine ⟨fun i hi => (h.1 i hi).trans (g₁ _ ?_), ?_⟩
+    · have : ∀ i < 10, Impl.Modes.AArch64.Core.savedRegs.getD i .x19 ≠ .x13 := by decide
+      exact this i hi
+    · simpa only [ctrAArch64, m₁, g₁ .x0 (by decide), g₁ .x1 (by decide), g₁ .x2 (by decide),
+        g₁ .x3 (by decide), g₁ .x4 (by decide)] using h.2
+  exact ⟨WP.mono (ctrSerial_wp hp₁) fun _ h => transfer h, WP.mono (ctrBatch_wp hp₁) fun _ h => transfer h⟩
 
 theorem ctrTaint_agree (s₁ s₂ : State) (_ : ctrAArch64.pre s₁) (_ : ctrAArch64.pre s₂)
     (hp : ctrAArch64.pub s₁ s₂) : VG.AArch64.Taint.Agree (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) s₁ s₂ := by

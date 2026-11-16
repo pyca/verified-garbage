@@ -15,15 +15,12 @@ namespace VG.Artifacts.Seed.AArch64
 def artifacts : List Artifact := [
   Spec.Seed.expandKeyApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 976 .x2 122 Impl.Seed.AArch64.expandKey
-    stack := 976
     verified := Proof.Seed.AArch64.expandKey_framed },
   Spec.Seed.ecbEncryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1088 .x3 136 (Impl.Seed.AArch64.ecbCall .encrypt)
-    stack := 1104
-    verified := Proof.Seed.AArch64.ecbCall_framed .encrypt },
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x3 182 Impl.Seed.AArch64.ecbEncrypt
+    verified := Proof.Seed.AArch64.ecbFew_framed .encrypt },
   Spec.Seed.ecbDecryptApi.artifact AArch64.target {
-    code := Impl.StackScratch.AArch64.withStackScratchWiped 1088 .x3 136 (Impl.Seed.AArch64.ecbCall .decrypt)
-    stack := 1104
-    verified := Proof.Seed.AArch64.ecbCall_framed .decrypt }]
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 1456 .x3 182 Impl.Seed.AArch64.ecbDecrypt
+    verified := Proof.Seed.AArch64.ecbFew_framed .decrypt }]
 
 end VG.Artifacts.Seed.AArch64

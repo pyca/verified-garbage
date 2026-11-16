@@ -2,8 +2,10 @@ module
 
 public import VerifiedGarbage.Impl.X448.RISCV64.R64
 public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+import VerifiedGarbage.Proof.X448.RISCV64.R64.Lit
 meta import VerifiedGarbage.Impl.X448.RISCV64.R64
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+meta import VerifiedGarbage.Proof.X448.RISCV64.R64.Lit
 
 /-!
 # X448 on RISC-V, 64-bit limbs: constant time

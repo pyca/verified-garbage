@@ -32,7 +32,26 @@ structure T where
   slots : List (Nat × Nat × Nat) := []
   argLen : Nat := 0
   argBases : List (Nat × Nat) := []
-  deriving DecidableEq, Lean.ToExpr
+  deriving DecidableEq
+
+/-- A taint as a term, as `Arm.Taint.T`'s: the bits of its set of registers,
+and the numbers of its bases and slots, are numerals as the checked domain's
+steps leave them. -/
+instance instToExprTRaw : Lean.ToExpr T where
+  toExpr t :=
+    let nat := Lean.mkRawNatLit
+    let tN := Lean.toTypeExpr Nat
+    let tR := Lean.toTypeExpr Reg
+    let pair (ta tb a b : Lean.Expr) := Lean.mkApp4 (.const ``Prod.mk [.zero, .zero]) ta tb a b
+    let list (ty : Lean.Expr) (es : List Lean.Expr) :=
+      es.foldr (fun a e => Lean.mkApp3 (.const ``List.cons [.zero]) ty a e) (Lean.mkApp (.const ``List.nil [.zero]) ty)
+    Lean.mkAppN (.const ``T.mk []) #[
+      Lean.mkApp2 (.const ``RegSet.mk []) tR (nat t.regs.bits), Lean.toExpr t.flags, Lean.toExpr t.lens,
+      list (Lean.toTypeExpr (Reg × Nat)) (t.bases.map fun p => pair tR tN (Lean.toExpr p.1) (nat p.2)),
+      list (Lean.toTypeExpr (Nat × Nat × Nat)) (t.slots.map fun s =>
+        pair tN (Lean.toTypeExpr (Nat × Nat)) (nat s.1) (pair tN tN (nat s.2.1) (nat s.2.2))),
+      Lean.toExpr t.argLen, Lean.toExpr t.argBases]
+  toTypeExpr := .const ``T []
 
 def pub (τ : T) (r : Reg) : Bool := τ.regs.mem r
 

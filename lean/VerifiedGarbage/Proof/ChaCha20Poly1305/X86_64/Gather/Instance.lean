@@ -334,13 +334,17 @@ open VG VG.X86_64 VG.Impl.ChaCha20Poly1305.X86_64.SealGather
 
 open VG.Proof.ChaCha20.X86_64 VG.Impl.StackScratch.X86_64 in
 /-- The instance of `vg_chacha20_poly1305_seal` calling the implementation
-`v` of `vg_chacha20_xor`, with its working space in a frame of its own. -/
+`v` of `vg_chacha20_xor`, with its working space in a frame of its own: its
+code as it is without the clearing after it (`Scrub.sealReg`), `…_core`, as
+`seal_gather` clears its own stack. -/
 def sealFn (v : XorImpl) : SealFn where
-  name := Spec.ChaCha20Poly1305.sealApi.name ++ v.suffix
+  name := Spec.ChaCha20Poly1305.sealApi.name ++ v.suffix ++ "_core"
   code := Impl.ChaCha20Poly1305.X86_64.Shared.sealCode v.callee v.poly
   verified := Shared.seal_verified v
   sp := SpSafe.of_all (Shared.seal_sp v)
   depth := Shared.seal_depth v
+  E _ _ := True
+  exec s h := let ⟨t, s', e, a, p⟩ := (Shared.seal_verified v).1 s h; ⟨t, s', e, a, p, trivial⟩
 
 open VG.Proof.ChaCha20.X86_64 in
 /-- How many bytes at a time the instance for `v` copies: as many as the
@@ -396,6 +400,8 @@ def sealSplitFn (v : XorImpl) : SealSplitFn where
   code := withStackArgScratchWipedX 1736 3 42
     (Impl.ChaCha20Poly1305.X86_64.SealSplit.sealSplitFor v.callee v.poly)
   verified := Split.sealSplit_framed v
+  E _ _ := True
+  exec s h := let ⟨t, s', e, a, p⟩ := (Split.sealSplit_framed v).1 s h; ⟨t, s', e, a, p, trivial⟩
   sp := SpSafe.of_all (X86_64.withStackArgScratchWipedX_spSafe (Split.sealSplitFor_spSafe v))
   depth := by
     have := Split.sealSplitFor_xdepth v

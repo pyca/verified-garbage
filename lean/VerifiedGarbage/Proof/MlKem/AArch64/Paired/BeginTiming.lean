@@ -24,14 +24,21 @@ meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
+meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-! # The initial paired matrix parse observes only the public seed -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Proof.MlKem
 
-def prepareCode (sb ss a b k : Nat) : Prog isa :=
- .seq (.seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b k)) Impl.MlKem.AArch64.Paired.squeeze)
+def prepareCode (sha3 : Bool) (sb ss a b k : Nat) : Prog isa :=
+ .seq (.seq (.block (Impl.MlKem.AArch64.Paired.init sb ss a b k)) (Impl.MlKem.AArch64.Paired.squeeze sha3))
    (.block Impl.MlKem.AArch64.Rej8.rejConsts)
 def prepareRegs : List Reg := startRegs++[.x9,.x16]
 
@@ -54,9 +61,9 @@ structure PreparedW (w16 : Bool) (A B : Spec.Sha3.State) (oa ob : Nat) (p table 
 theorem prepare_ok {w16 : Bool} {s : State} {p seed outA outB table : Addr} {sb ss a b k oa ob : Nat}
     (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0)
     (h : BeginInput sb ss oa ob p seed outA outB table s) :
-    WP isa (prepareCode sb ss a b k) s
+    WP isa (prepareCode sha3 sb ss a b k) s
       (PreparedW w16 (seedState s.mem seed a k) (seedState s.mem seed b k) oa ob p table s) := by
-  refine WP.seq (WP.mono_syms (start_ok (a:=a) (b:=b) (k:=k) hss hsb h8
+  refine WP.seq (WP.mono_syms (start_ok (sha3 := sha3) (a:=a) (b:=b) (k:=k) hss hsb h8
     h.ptr h.seedPtr h.readable h.context.scratch h.separate) fun u ⟨ku,fu,_,u19,_,_,buA,buB⟩ sy => ?_)
   have cu : Context p outA outB table u := h.context.frame ku.rd ku.wr (fu.mono (by simp [stepWrites]))
   refine WP.mono_syms (Rej8.constants_ok u (by
@@ -99,36 +106,45 @@ theorem prepare_ok {w16 : Bool} {s : State} {p seed outA outB table : Addr} {sb 
   · intro mask hm; rw [v19,v16]; exact ctv.tableScratch.sub_left (Rej8.table_sub table hm)
 
 theorem prepare_ct (sb ss a b k : Nat) : ConstantTime isa (fun _=>True)
-    (VG.AArch64.Taint.Agree (Taint.ofRegs [.x28])) (prepareCode sb ss a b k) := by
-  by_cases hs : ss<4096
-  · apply ct_eraseOff_eq [.x28]
-      (d:=Code.eraseOff (prepareCode 0 0 0 0 1))
-      (by simp only [prepareCode,Impl.MlKem.AArch64.Paired.init,Impl.MlKem.AArch64.ptrTo,ite_eq_left hs]; rfl)
-    taint_decide
-  · apply ct_eraseOff_eq [.x28]
-      (d:=Code.eraseOff (prepareCode 0 4096 0 0 1))
-      (by simp only [prepareCode,Impl.MlKem.AArch64.Paired.init,Impl.MlKem.AArch64.ptrTo,ite_eq_right hs]; rfl)
-    taint_decide
-
+    (VG.AArch64.Taint.Agree (Taint.ofRegs [.x28])) (prepareCode sha3 sb ss a b k) := by
+  cases sha3
+  · by_cases hs : ss<4096
+    · apply vct_eraseOff_eq [.x28]
+        (d:=Code.eraseOff (prepareCode false 0 0 0 0 1))
+        (by simp only [prepareCode,Impl.MlKem.AArch64.Paired.init,Impl.MlKem.AArch64.ptrTo,ite_eq_left hs]; rfl)
+      taint_decide
+    · apply vct_eraseOff_eq [.x28]
+        (d:=Code.eraseOff (prepareCode false 0 4096 0 0 1))
+        (by simp only [prepareCode,Impl.MlKem.AArch64.Paired.init,Impl.MlKem.AArch64.ptrTo,ite_eq_right hs]; rfl)
+      taint_decide
+  · by_cases hs : ss<4096
+    · apply ct_eraseOff_eq [.x28]
+        (d:=Code.eraseOff (prepareCode true 0 0 0 0 1))
+        (by simp only [prepareCode,Impl.MlKem.AArch64.Paired.init,Impl.MlKem.AArch64.ptrTo,ite_eq_left hs]; rfl)
+      taint_decide
+    · apply ct_eraseOff_eq [.x28]
+        (d:=Code.eraseOff (prepareCode true 0 4096 0 0 1))
+        (by simp only [prepareCode,Impl.MlKem.AArch64.Paired.init,Impl.MlKem.AArch64.ptrTo,ite_eq_right hs]; rfl)
+      taint_decide
 theorem begin_relCT {w16 : Bool} {s u : State} {p seed outA outB table : Addr} {sb ss a b k oa ob : Nat}
     (hss : ss<65536) (hsb : sb+32≤32768) (h8 : sb%8=0) (hoa : oa<65536) (hob : ob<65536)
     (ps : BeginInput sb ss oa ob p seed outA outB table s) (pu : BeginInput sb ss oa ob p seed outA outB table u)
     (sp : s.sp=u.sp) (base : s.gpr .x28=u.gpr .x28)
     (seedA : seedState s.mem seed a k=seedState u.mem seed a k)
     (seedB : seedState s.mem seed b k=seedState u.mem seed b k) :
-    RelCT isa (fun t v=>t=s ∧ v=u) (beginCode sb ss a b k oa ob w16)
+    RelCT isa (fun t v=>t=s ∧ v=u) (beginCode sha3 sb ss a b k oa ob w16)
       (fun t v=>BeginPostW w16 (seedState s.mem seed a k) (seedState s.mem seed b k) p outA outB table s t ∧
         BeginPostW w16 (seedState u.mem seed a k) (seedState u.mem seed b k) p outA outB table u v) := by
   let R := fun t v : State=>PreparedW w16 (seedState s.mem seed a k) (seedState s.mem seed b k) oa ob p table s t ∧
     PreparedW w16 (seedState u.mem seed a k) (seedState u.mem seed b k) oa ob p table u v
-  have start : RelCT isa (fun t v=>t=s ∧ v=u) (prepareCode sb ss a b k) R := by
+  have start : RelCT isa (fun t v=>t=s ∧ v=u) (prepareCode sha3 sb ss a b k) R := by
     intro t v tr ur t' v' h et ev
     rcases h with ⟨ht,hv⟩; subst t; subst v
-    exact ⟨prepare_ct sb ss a b k s u tr ur t' v' trivial trivial
+    exact ⟨prepare_ct (sha3 := sha3) sb ss a b k s u tr ur t' v' trivial trivial
       (agree_of sp (by intro r hr; rw [List.mem_singleton.mp hr]; exact base)) et ev,
-      exec_post (prepare_ok hss hsb h8 ps) et,exec_post (prepare_ok hss hsb h8 pu) ev⟩
+      exec_post (prepare_ok (sha3 := sha3) hss hsb h8 ps) et,exec_post (prepare_ok (sha3 := sha3) hss hsb h8 pu) ev⟩
   have grouped : RelCT isa (fun t v=>t=s ∧ v=u)
-      (.seq (prepareCode sb ss a b k) (initialCode oa ob w16)) (fun _ _=>True) := by
+      (.seq (prepareCode sha3 sb ss a b k) (initialCode oa ob w16)) (fun _ _=>True) := by
     refine RelCT.seq start ?_
     intro t v tr ur t' v' h et ev
     exact initial_relCT hoa hob h.1.ready (by rw [seedA,seedB]; exact h.2.ready)
@@ -136,12 +152,12 @@ theorem begin_relCT {w16 : Bool} {s u : State} {p seed outA outB table : Addr} {
       (h.1.pointer.trans h.2.pointer.symm)
       (by rw [h.1.keep.get .x28,h.2.keep.get .x28,base])
       (h.1.tablePtr.trans h.2.tablePtr.symm) t v tr ur t' v' ⟨rfl,rfl⟩ et ev
-  have trace : RelCT isa (fun t v=>t=s ∧ v=u) (beginCode sb ss a b k oa ob w16) (fun _ _=>True) :=
+  have trace : RelCT isa (fun t v=>t=s ∧ v=u) (beginCode sha3 sb ss a b k oa ob w16) (fun _ _=>True) :=
     RelCT.assoc (RelCT.assoc grouped)
   intro t v tr ur t' v' h et ev
   rcases h with ⟨ht,hv⟩; subst t; subst v
   exact ⟨(trace s u tr ur t' v' ⟨rfl,rfl⟩ et ev).1,
-    exec_post (begin_ok hss hsb h8 hoa hob ps.ptr ps.seedPtr ps.outLeft ps.outRight ps.readable ps.separate ps.context ps.symbol) et,
-    exec_post (begin_ok hss hsb h8 hoa hob pu.ptr pu.seedPtr pu.outLeft pu.outRight pu.readable pu.separate pu.context pu.symbol) ev⟩
+    exec_post (begin_ok (sha3 := sha3) hss hsb h8 hoa hob ps.ptr ps.seedPtr ps.outLeft ps.outRight ps.readable ps.separate ps.context ps.symbol) et,
+    exec_post (begin_ok (sha3 := sha3) hss hsb h8 hoa hob pu.ptr pu.seedPtr pu.outLeft pu.outRight pu.readable pu.separate pu.context pu.symbol) ev⟩
 
 end VG.Proof.MlKem.AArch64.Paired

@@ -14,6 +14,8 @@ import VerifiedGarbage.Spec.RsaKeyGen
 import VerifiedGarbage.Impl.RsaKeyGen.AArch64.Candidate
 import VerifiedGarbage.Proof.RsaKeyGen.AArch64.Close
 import VerifiedGarbage.Proof.Rsa.AArch64.Div
+import VerifiedGarbage.Proof.Dsa.AArch64.Generation.NarrowDivision
+import VerifiedGarbage.Proof.Bignum.Octets
 import VerifiedGarbage.Proof.Dsa.Generation.QCandidate
 
 /-! ### `Dsa.AArch64.Generation.Double`, which only this module used -/
@@ -222,7 +224,9 @@ open VG.Impl.Rsa.AArch64.Keys VG.Proof.Dsa.Generation VG.Proof.Rsa
 
 theorem reduceCandidate_ok {s : State} {B : Addr} {Z w x q : Nat}
     (h : Ws s B Z w) (hx : wv s.mem B (slot w 0) w = x)
-    (hq : wv s.mem B (slot w 2) w = 2 * q) (hqpos : 0 < q) :
+    (hq : wv s.mem B (slot w 2) w = 2 * q) (hqpos : 0 < q)
+    (hwide : Impl.Dsa.AArch64.Generation.reduceWords ≤ w)
+    (hnarrow : 2 * (2 * q) ≤ 2 ^ (64 * Impl.Dsa.AArch64.Generation.reduceWords)) :
     WP isa Impl.Dsa.AArch64.Generation.reduceCandidate s fun t =>
       Ws t B Z w ∧ wv t.mem B (slot w 5) w = x + 1 - x % (2 * q) ∧
       wv t.mem B (slot w 0) w = x / (2 * q) ∧
@@ -240,10 +244,10 @@ theorem reduceCandidate_ok {s : State} {B : Addr} {Z w x q : Nat}
     rcases List.mem_singleton.mp hr with rfl; exact Mut.ofSlot w 4 _) ku (by decide)
   have ux : wv u.mem B (slot w 0) w = x := by rw [fu.wv_eq (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r hr; rcases hr with rfl <;> simp only [slot, hdrBytes] <;> omega_using []) (hr 0 (by decide))]; exact hx
   have uq : wv u.mem B (slot w 2) w = 2 * q := by rw [fu.wv_eq (by simp only [List.mem_cons, List.not_mem_nil, or_false]; rintro r hr; rcases hr with rfl <;> simp only [slot, hdrBytes] <;> omega_using []) (hr 2 (by decide))]; exact hq
-  refine WP.seq (WP.mono (divmod_ok wu (iQ := 0) (iR := 1) (iD := 2) (iT := 3)
+  refine WP.seq (WP.mono (divNarrow_ok wu hwide (by decide) (iQ := 0) (iR := 1) (iD := 2) (iT := 3)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)) fun v ⟨_, fv, kv, hmath⟩ => ?_)
-  obtain ⟨vr, vq⟩ := hmath (by rw [uq]; omega_using [hqpos])
+  obtain ⟨vr, vq⟩ := hmath (by rw [uq]; omega_using [hqpos]) (by rw [uq]; exact hnarrow)
   rw [ux, uq] at vr vq
   have wv' := wu.congr fv (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -280,7 +284,9 @@ open VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Bignum.AArch64 VG.Proof.Rsa 
 
 theorem reduceExponent_ok {s : State} {B : Addr} {Z w x q : Nat}
     (h : Ws s B Z w) (hx : wv s.mem B (slot w 0) w = x)
-    (hq : wv s.mem B (slot w 2) w = 2 * q) (hqpos : 0 < q) :
+    (hq : wv s.mem B (slot w 2) w = 2 * q) (hqpos : 0 < q)
+    (hwide : Impl.Dsa.AArch64.Generation.reduceWords ≤ w)
+    (hnarrow : 2 * (2 * q) ≤ 2 ^ (64 * Impl.Dsa.AArch64.Generation.reduceWords)) :
     WP isa (.seq Impl.Dsa.AArch64.Generation.reduceCandidate
       (Impl.Dsa.AArch64.Generation.doubleArray 0)) s fun t =>
       Ws t B Z w ∧ wv t.mem B (slot w 5) w = x + 1 - x % (2 * q) ∧
@@ -293,7 +299,7 @@ theorem reduceExponent_ok {s : State} {B : Addr} {Z w x q : Nat}
       2 * (x / (2 * q)) ≤ q * (2 * (x / (2 * q))) := Nat.le_mul_of_pos_left _ hqpos
       _ = 2 * q * (x / (2 * q)) := by ac_rfl
       _ ≤ x := Nat.mul_div_le x (2 * q)
-  refine WP.seq (WP.mono (reduceCandidate_ok h hx hq hqpos) fun u ⟨hu, hp, hquot, hf, hk⟩ => ?_)
+  refine WP.seq (WP.mono (reduceCandidate_ok h hx hq hqpos hwide hnarrow) fun u ⟨hu, hp, hquot, hf, hk⟩ => ?_)
   refine WP.mono (doubleArray_ok hu (by decide : 0 < 16) (by rw [hquot]; omega))
     fun t ⟨ht, ho, kt⟩ => ?_
   have ft : Frm B [ar w 0] u.mem t.mem :=
@@ -317,6 +323,19 @@ namespace VG.Proof.Dsa.AArch64.Generation
 open VG VG.AArch64 VG.Proof.Rsa.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
 open VG.Proof.MlKem.AArch64 VG.Impl.Bignum VG.Impl.Bignum.AArch64 VG.Proof.Rsa
 
+private theorem pow_mul_pow_le {a b c : Nat} (h : a + b ≤ c) : 2 ^ a * 2 ^ b ≤ 2 ^ c := by
+  rw [← Nat.pow_add]; exact Nat.pow_le_pow_right (by decide) h
+
+/-- A `q` of at most 32 bytes: `2 q` fits the narrow division's remainder. -/
+theorem narrow_of_length {qb : List Byte} (h : qb.length ≤ 32) :
+    2 * (2 * Spec.Rsa.os2ip qb) ≤ 2 ^ (64 * Impl.Dsa.AArch64.Generation.reduceWords) := by
+  have h₁ := VG.Proof.Bignum.os2ip_lt qb
+  have h₂ : 256 ^ qb.length ≤ 256 ^ 32 := Nat.pow_le_pow_right (by decide) h
+  have h₃ : (256 : Nat) ^ 32 = 2 ^ 256 := by rw [show (256 : Nat) = 2 ^ 8 by decide, ← Nat.pow_mul]
+  have h₄ : 2 ^ 256 * 2 ^ 2 ≤ 2 ^ (64 * Impl.Dsa.AArch64.Generation.reduceWords) :=
+    pow_mul_pow_le (by decide)
+  omega_using [h₁, h₂, h₃, h₄]
+
 /-- Padded loads preserve the arithmetic header and every other array. -/
 theorem loadCandidateArray_ok {s : State} {B p : Addr} {Z w a ptr len : Nat} {bs : List Byte}
     (h : Ws s B Z w) (ha : a < 16) (hptr : ptr < 32) (hlen : len < 32)
@@ -338,7 +357,8 @@ theorem candidateArithmetic_ok {s : State} {B xp qp : Addr} {Z w : Nat} {xb qb :
     (sx : Src s B Z xp xb) (sq : Src s B Z qp qb)
     (hxpos : 1 ≤ xb.length) (hxf : xb.length ≤ 8 * w)
     (hqposlen : 1 ≤ qb.length) (hqf : qb.length ≤ 8 * w)
-    (hqpos : 0 < Spec.Rsa.os2ip qb) (hqfit : 2 * Spec.Rsa.os2ip qb < 2 ^ (64 * w)) :
+    (hqpos : 0 < Spec.Rsa.os2ip qb) (hqfit : 2 * Spec.Rsa.os2ip qb < 2 ^ (64 * w))
+    (hwide : Impl.Dsa.AArch64.Generation.reduceWords ≤ w) (hnarrow : qb.length ≤ 32) :
     WP isa Impl.Dsa.AArch64.Generation.candidateArithmetic s fun t =>
       Ws t B Z w ∧
       wv t.mem B (slot w 5) w = Spec.Rsa.os2ip xb + 1 - Spec.Rsa.os2ip xb % (2 * Spec.Rsa.os2ip qb) ∧
@@ -377,7 +397,8 @@ theorem candidateArithmetic_ok {s : State} {B xp qp : Addr} {Z w : Nat} {xb qb :
     rw [fz.wv_eq sep room, fv.wv_eq sep room, ux]
   change WP isa (.seq Impl.Dsa.AArch64.Generation.reduceCandidate
     (Impl.Dsa.AArch64.Generation.doubleArray 0)) z _
-  refine WP.mono (reduceExponent_ok hz zx (by rw [zq, vq]) hqpos) fun t ⟨ht, tp, te, ft, kt⟩ => ?_
+  refine WP.mono (reduceExponent_ok hz zx (by rw [zq, vq]) hqpos hwide (narrow_of_length hnarrow))
+    fun t ⟨ht, tp, te, ft, kt⟩ => ?_
   exact ⟨ht, tp, te, (fu.append (fv.append (fz.append ft))).mono (by simp),
     (((ku.trans kv).trans kz).trans kt).mono (by decide)⟩
 

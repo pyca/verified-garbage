@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedPrims
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsEntry
@@ -28,12 +27,10 @@ public import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Layers
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Ntt
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedLayer
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedSpec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedStep
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Scale
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Step
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Ntt
@@ -156,10 +153,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintPack
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Absorb
@@ -191,7 +185,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Squeeze
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Tail
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Verified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Zero
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Zero
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4CT
@@ -235,6 +228,19 @@ public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PkTr
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Verified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Message
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lanes
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Power2Round
+public import VerifiedGarbage.Proof.MlDsa.Round.Ones
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedLoop
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
 
 /-! # ML-DSA (FIPS 204) on AArch64 -/
 
@@ -243,49 +249,24 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Message
 -- ML-DSA (FIPS 204) key generation on AArch64
 namespace VG.Artifacts.MlDsa.AArch64.KeyGen
 
-def legacyArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
-  Spec.MlDsa.keyGen44Api.artifact AArch64.target {
-    suffix := v.callee.suffix
-    code := Impl.MlDsa.AArch64.KeyGen.keyGen44With v.callee
-    stack := 16
-    verified := Proof.MlDsa.AArch64.KeyGen.keyGen44_verifiedWith (keccak := v) },
-  Spec.MlDsa.keyGen65Api.artifact AArch64.target {
-    suffix := v.callee.suffix
-    code := Impl.MlDsa.AArch64.KeyGen.keyGen65With v.callee
-    stack := 16
-    verified := Proof.MlDsa.AArch64.KeyGen.keyGen65_verifiedWith (keccak := v) },
-  Spec.MlDsa.keyGen87Api.artifact AArch64.target {
-    suffix := v.callee.suffix
-    code := Impl.MlDsa.AArch64.KeyGen.keyGen87With v.callee
-    stack := 16
-    verified := Proof.MlDsa.AArch64.KeyGen.keyGen87_verifiedWith (keccak := v) }]
-
-/-- SHA3 key generation uses hoisted matrix seeds, grouped secret sampling, and
-positive transform arithmetic. The scalar fallback shares its grouped secret
-sampling (`Optimized.secretsWith`), with the four-way samplers of its own
-permutation. -/
-def optimizedArtifacts (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
+/-- Key generation over the permutation `v`: hoisted matrix seeds, grouped
+secret sampling with the four-way samplers of `v`, and positive transform
+arithmetic, which needs no CPU feature. Where the paired-state kernels may
+use the SHA3 instructions (`pairedSha3`), the matrix entries left after the
+groups of four are sampled as a pair; otherwise one at a time. -/
+def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
   Spec.MlDsa.keyGen44Api.artifact AArch64.target {
     suffix := v.callee.suffix
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa44
-    stack := 16
     verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inl rfl) },
   Spec.MlDsa.keyGen65Api.artifact AArch64.target {
     suffix := v.callee.suffix
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa65
-    stack := 16
     verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inl rfl)) },
   Spec.MlDsa.keyGen87Api.artifact AArch64.target {
     suffix := v.callee.suffix
     code := Impl.MlDsa.AArch64.KeyGen.Optimized.keyGenWith v.callee Spec.MlDsa.mlDsa87
-    stack := 16
     verified := Proof.MlDsa.AArch64.KeyGen.Optimized.keyGen_verified v (.inr (.inr rfl)) }]
-
-/-- The functions over the permutation `v`: the optimized ones where its
-paired-state kernels may use the SHA3 instructions (`pairedSha3`), the
-others otherwise. -/
-def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
-  if v.callee.pairedSha3 then optimizedArtifacts v else legacyArtifacts v
 
 def artifacts : List Artifact :=
   VG.Proof.Variants.Keccak.AArch64.variants.flatMap fun v => artifactsFor v
@@ -300,19 +281,16 @@ def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact := [
     suffix := v.callee.suffix
     vendor := v.vendor
     code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee Spec.MlDsa.mlDsa44
-    stack := 16
     verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inl rfl) },
   Spec.MlDsa.pkTr65Api.artifact AArch64.target {
     suffix := v.callee.suffix
     vendor := v.vendor
     code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee Spec.MlDsa.mlDsa65
-    stack := 16
     verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inl rfl)) },
   Spec.MlDsa.pkTr87Api.artifact AArch64.target {
     suffix := v.callee.suffix
     vendor := v.vendor
     code := Impl.MlDsa.AArch64.PkTr.pkTrWith v.callee Spec.MlDsa.mlDsa87
-    stack := 16
     verified := Proof.MlDsa.AArch64.PkTr.pkTr_verified v _ (.inr (.inr rfl)) }]
 
 def artifacts : List Artifact :=
@@ -332,12 +310,10 @@ def entries (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
   (signApi p module label).artifact AArch64.target {
     suffix := v.callee.suffix
     code := signCode v p (signWithCacheName module ++ v.callee.suffix) false
-    stack := 64
     verified := sign_entry_verified v hp _ false },
   (preparedSignApi p module label).artifact AArch64.target {
     suffix := v.callee.suffix
     code := signCode v p (signWithCacheName module ++ v.callee.suffix) true
-    stack := 64
     verified := sign_entry_verified v hp _ true }]
 
 def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
@@ -367,7 +343,6 @@ def entry (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
       code := Impl.MlDsa.AArch64.Message.signMessage v.callee
         (preparedSignName module ++ v.callee.suffix)
         (signCode v p (signWithCacheName module ++ v.callee.suffix) true) p
-      stack := 64
       verified := message_sign_verified v hp (message_sign_fn v hp _ true) }
   else
     (signMessageApi p module label).artifact AArch64.target {
@@ -375,7 +350,6 @@ def entry (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
       code := Impl.MlDsa.AArch64.Message.signMessage v.callee
         ((signApi p module label).name ++ v.callee.suffix)
         (signCode v p (signWithCacheName module ++ v.callee.suffix) false) p
-      stack := 64
       verified := message_sign_verified v hp (message_sign_fn v hp _ false) }
 
 def entries (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
@@ -404,12 +378,10 @@ def entries (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
   (verifyApi p module label).artifact AArch64.target {
     suffix := v.callee.suffix
     code := verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) false
-    stack := 64
     verified := verify_entry_verified v hp _ false },
   (preparedVerifyApi p module label).artifact AArch64.target {
     suffix := v.callee.suffix
     code := verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) true
-    stack := 64
     verified := verify_entry_verified v hp _ true }]
 
 def artifactsFor (v : Proof.Sha3.AArch64.Permutation) : List Artifact :=
@@ -440,7 +412,6 @@ def entry (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
       code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee
         (preparedVerifyName module ++ v.callee.suffix)
         (verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) true) p
-      stack := 64
       verified := message_verify_verified v hp (message_verify_fn v hp _ true) }
   else
     (verifyMessageCachedApi p module label).artifact AArch64.target {
@@ -448,7 +419,6 @@ def entry (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
       code := Impl.MlDsa.AArch64.Optimized.verifyMessageCached v.callee
         ((verifyApi p module label).name ++ v.callee.suffix)
         (verifyCode v p (verifyWithCacheName module ++ v.callee.suffix) false) p
-      stack := 64
       verified := message_verify_verified v hp (message_verify_fn v hp _ false) }
 
 def entries (v : Proof.Sha3.AArch64.Permutation) (p : Params) (hp : Ok3 p)
@@ -472,27 +442,21 @@ def artifacts : List Artifact :=
   [
     (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
       code := Impl.MlDsa.AArch64.PreparedKey.preparePublic Spec.MlDsa.mlDsa44
-      stack := 80
       verified := Proof.MlDsa.AArch64.PreparedKey.preparePublic_verified _ (.inl rfl) },
     (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa44 "mldsa44" "ML-DSA-44").artifact AArch64.target {
       code := Impl.MlDsa.AArch64.PreparedKey.prepareSecret Spec.MlDsa.mlDsa44
-      stack := 80
       verified := Proof.MlDsa.AArch64.PreparedKey.prepareSecret_verified _ (.inl rfl) },
     (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target {
       code := Impl.MlDsa.AArch64.PreparedKey.preparePublic Spec.MlDsa.mlDsa65
-      stack := 80
       verified := Proof.MlDsa.AArch64.PreparedKey.preparePublic_verified _ (.inr (.inl rfl)) },
     (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa65 "mldsa65" "ML-DSA-65").artifact AArch64.target {
       code := Impl.MlDsa.AArch64.PreparedKey.prepareSecret Spec.MlDsa.mlDsa65
-      stack := 80
       verified := Proof.MlDsa.AArch64.PreparedKey.prepareSecret_verified _ (.inr (.inl rfl)) },
     (Spec.MlDsa.preparePublicKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target {
       code := Impl.MlDsa.AArch64.PreparedKey.preparePublic Spec.MlDsa.mlDsa87
-      stack := 80
       verified := Proof.MlDsa.AArch64.PreparedKey.preparePublic_verified _ (.inr (.inr rfl)) },
     (Spec.MlDsa.prepareSecretKeyApi Spec.MlDsa.mlDsa87 "mldsa87" "ML-DSA-87").artifact AArch64.target {
       code := Impl.MlDsa.AArch64.PreparedKey.prepareSecret Spec.MlDsa.mlDsa87
-      stack := 80
       verified := Proof.MlDsa.AArch64.PreparedKey.prepareSecret_verified _ (.inr (.inr rfl)) }] ++
   Sign.artifacts ++
   SignMessage.artifacts ++

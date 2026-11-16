@@ -147,7 +147,7 @@ theorem blocksAt_nMem {s₀ : State} {N : Nat} (hw : (op s₀).toNat + 16 * nb s
     (hwN : (op s₀).toNat + 16 * N ≤ 2 ^ 64) (hle : nb s₀ ≤ N) : blocksAt (nMem s₀) (op s₀) N =
       blocksAt s₀.mem (sp s₀) (nb s₀) ++ blocksAt s₀.mem (oAddr s₀ (nb s₀)) (N - nb s₀) := by
   rw [show N = nb s₀ + (N - nb s₀) by omega_using [hle], Proof.Gcm.blocksAt_add, Nat.add_sub_cancel_left]
-  congr 1
+  refine (congrArg (· ++ _) ?_).trans (congrArg (_ ++ ·) ?_)
   · simp only [blocksAt]
     exact List.map_congr_left fun i hi => blockAt_nMem_lo hw (List.mem_range.mp hi)
   · simp only [blocksAt]

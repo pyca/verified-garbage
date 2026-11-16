@@ -1,21 +1,33 @@
 module
 
 public import VerifiedGarbage.Impl.Seed.AArch64.Ecb
+public import VerifiedGarbage.Impl.Seed.AArch64.Serial
 public import VerifiedGarbage.Impl.Modes.AArch64.CbcChained
 public import VerifiedGarbage.Impl.Modes.AArch64.CfbDec
+public import VerifiedGarbage.Impl.Modes.AArch64.Ecb
 
 /-!
-# SEED-CBC, -OFB and -CFB128 on AArch64
+# SEED-CBC, -OFB and -CFB128 on AArch64, and ECB's calls
+
+`ecbEncrypt` and `ecbDecrypt` (schedule = x0, data = x1, n = x2,
+scratch = x3) are `vg_seed_ecb_{en,de}crypt` within the frame of their
+working space: a call of the batch's code (`ecbCall`), or for fewer than
+seven blocks the modes' generic ECB over the one-block core
+(`ecbShort`, `Impl/Modes/AArch64/Ecb.lean`).
 
 `cbcEncryptChained`, `cbcDecryptChained`, `ofb`, `cfbEncrypt` and
 `cfbDecrypt` (schedule = x0, iv = x1, data = x2, n = x3, scratch = x4): the
 modes' generic CBC that updates the chaining value, OFB and CFB
 (`Impl/Modes/AArch64/CbcChained.lean`, `Fb.lean`) over `vg_seed_ecb_{en,de}crypt`'s batch of sixteen blocks
 (`batch`), with the working space in the scratch buffer, which the artifact
-allocates on the stack. CBC decryption deciphers sixteen blocks at a time;
+allocates on the stack. CBC decryption deciphers sixteen blocks at a time,
+from seven blocks on, and fewer one at a time (`serialDirCore .decrypt`);
 CFB decryption gathers the preceding ciphertexts and enciphers sixteen
-independent blocks at a time. The dependent modes encipher one block per
-batch, of which the other fifteen lanes are unused.
+independent blocks at a time, from six blocks on; fewer go one at a time,
+as CFB encryption's do. The modes whose blocks each need the one
+before (CBC encryption, OFB and CFB encryption) encipher one block at a
+time by table lookups in vector registers (`serialDirCore`, `Serial.lean`),
+which a batch does in the time of about seven.
 
 The core's slots: the batch's 122 (its working area, at `sb` = `x5` as the
 batch needs), the buffer's sixteen blocks, and a copy of the 128-byte
@@ -25,8 +37,10 @@ no vector register: `crypt` keeps the data's address and the blocks left
 (`x23`, `x24`) in `v29` and `v30` (`dup`, back by `umov`), which the taint
 analysis keeps public across the batch, points `x1`, `x2` and `x0` at the
 buffer, its sixteen blocks and the copy's first round key, and runs the
-batch. CBC encryption and the feedback modes keep the IV's address in
-`x25`, which `fbCore` keeps in `v31` (`Core.viaV`).
+batch. `serialDirCore` has the same slots (its block is the buffer's first, and
+the batch's working area is unused), so that the functions' frames are the
+same size; it writes none of `x23`, `x24` and `x25`, where CBC encryption
+and the feedback modes keep the IV's address.
 -/
 
 @[expose] public section
@@ -83,15 +97,64 @@ def dirCore (d : Direction) : Impl.Modes.AArch64.Core where
 /-- The registers of the arguments. -/
 def modeRegs : Impl.Modes.AArch64.CtrRegs := ⟨.x1, .x2, .x3, .x4⟩
 
-/-- SEED encryption's core for CBC encryption and the feedback modes: `x25` kept in `v31`
-around its code. -/
-abbrev fbCore : Impl.Modes.AArch64.Core := (dirCore .encrypt).viaV .x25 .v31
+/-- The buffer's first block enciphered under the schedule's copy
+(`Serial.crypt`). -/
+def serialCrypt : Prog isa := .block (Serial.crypt .encrypt (8 * bufSlot) (8 * schedSlot))
+
+/-- The buffer's first block deciphered under the schedule's copy. -/
+def serialDecrypt : Prog isa := .block (Serial.crypt .decrypt (8 * bufSlot) (8 * schedSlot))
+
+/-- SEED's one-block core in the direction `d`: the buffer's first block,
+by table lookups in vector registers. -/
+def serialDirCore (d : Direction) : Impl.Modes.AArch64.Core where
+  prepare := (dirCore .encrypt).prepare
+  crypt := match d with
+    | .encrypt => serialCrypt
+    | .decrypt => serialDecrypt
+  slots := schedSlot + 16
+  total := schedSlot + 28
+  buf := bufSlot
+  lgG := 0
+  keyRegs := [.x0]
+  dataReg := .x23
+  leftReg := .x24
+
+/-- SEED encryption's core for the modes whose blocks each need the one
+before. -/
+abbrev serialCore : Impl.Modes.AArch64.Core := serialDirCore .encrypt
+
+/-- ECB of a few blocks, one at a time: the modes' generic ECB over the
+one-block core (schedule = x0, data = x1, n = x2, scratch = x3). -/
+def ecbShort (d : Direction) : Prog isa := (serialDirCore d).ecb .x1 .x2 .x3
+
+/-- `vg_seed_ecb_{en,de}crypt` within its frame, which allocates the working
+space at `x3`: fewer than seven blocks one at a time, which a batch does not
+beat (`(n + 1) / 8` is zero; `n + 1` wraps only for an `n` no buffer has,
+and either way is correct for any `n`); otherwise the batches' call. -/
+def ecbFew (d : Direction) : Prog isa :=
+  .seq (.block [.addImm .x .x13 .x2 1, .lsr .x .x13 .x13 3])
+    (.ite (.zero .x .x13) (ecbShort d) (ecbCall d))
+
+/-- `vg_seed_ecb_encrypt` within its frame. -/
+def ecbEncrypt : Prog isa := ecbFew .encrypt
+
+/-- `vg_seed_ecb_decrypt` within its frame. -/
+def ecbDecrypt : Prog isa := ecbFew .decrypt
+
+/-- SEED encryption's core for CBC encryption and the feedback modes. -/
+abbrev fbCore : Impl.Modes.AArch64.Core := serialCore
 
 /-- `vg_seed_cbc_encrypt_chained`. -/
 def cbcEncryptChained : Prog isa := fbCore.cbcEncryptChained modeRegs .x25
 
-/-- `vg_seed_cbc_decrypt_chained`. -/
-def cbcDecryptChained : Prog isa := (dirCore .decrypt).cbcDecryptChained modeRegs
+/-- `vg_seed_cbc_decrypt_chained`: fewer than seven blocks one at a time,
+which a batch does not beat (`(n + 1) / 8` is zero; `n + 1` wraps only for
+an `n` no buffer has, and either way is correct for any `n`); otherwise by
+batches. -/
+def cbcDecryptChained : Prog isa :=
+  .seq (.block [.addImm .x .x13 .x3 1, .lsr .x .x13 .x13 3])
+    (.ite (.zero .x .x13) ((serialDirCore .decrypt).cbcDecryptChained modeRegs)
+      ((dirCore .decrypt).cbcDecryptChained modeRegs))
 
 /-- `vg_seed_ofb`. -/
 def ofb : Prog isa := fbCore.fb .ofb modeRegs .x25
@@ -99,7 +162,13 @@ def ofb : Prog isa := fbCore.fb .ofb modeRegs .x25
 /-- `vg_seed_cfb128_encrypt`. -/
 def cfbEncrypt : Prog isa := fbCore.fb .cfbEnc modeRegs .x25
 
-/-- `vg_seed_cfb128_decrypt`. -/
-def cfbDecrypt : Prog isa := (dirCore .encrypt).cfbDecryptBatched modeRegs
+/-- `vg_seed_cfb128_decrypt`: fewer than six blocks one at a time, which a
+batch does not beat (`(n + 2) / 8` is zero; `n + 2` wraps only for an `n`
+no buffer has, and either way is correct for any `n`); otherwise by
+batches. -/
+def cfbDecrypt : Prog isa :=
+  .seq (.block [.addImm .x .x13 .x3 2, .lsr .x .x13 .x13 3])
+    (.ite (.zero .x .x13) (fbCore.fb .cfbDec modeRegs .x25)
+      ((dirCore .encrypt).cfbDecryptBatched modeRegs))
 
 end VG.Impl.Seed.AArch64

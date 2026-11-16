@@ -44,6 +44,7 @@ computing PRF outputs, by `Kem16P.pairPCode_relCT`. -/
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.KeyGen
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KG VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Optimized
@@ -101,7 +102,7 @@ theorem pairH_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hk : Stk128
     (he : 2*p+1 < P.k*P.k) (hm : m ≤ 3) (hb : ∀ k < m, 136*(h+k) < P.ekLen) (hhr : 136*(h+m) ≤ 384*r)
     (habs : ∀ blk, 136 * blk < (Kem16.kgSrc P).len → ∃ h, (taint.check (Taint.ofRegs [(Kem16.kgSrc P).r, .x28])
       (.block (Hybrid.absorbBlock (Kem16.kgSrc P) blk)) h).isSome = true) :
-    RelCT isa (KR P σ τ (2*p) r h) (Hybrid.pairM SB SS AH P (Kem16.kgSrc P) (2*p) h m true)
+    RelCT isa (KR P σ τ (2*p) r h) (Hybrid.pairM sha3 SB SS AH P (Kem16.kgSrc P) (2*p) h m true)
       (KR P σ τ (2*p+2) r (h+m)) := by
   intro s u tr ur t v H et eu
   have hw := hp.wf
@@ -121,17 +122,17 @@ theorem pairH_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hk : Stk128
   rw [← sm.ptr 3, ← sm.ptr 1, ← H.2.2.1] at hu
   have hash₂ := H.2.1.hash
   rw [← sm.ptr 3, ← sm.ptr 1] at hash₂
-  have ct := Hybrid.pairMCode_relCT (w16 := true) (a := 2*p) (j := h) (m := m) P (Kem16.kgSrc P) (srcOkK hw)
+  have ct := Hybrid.pairMCode_relCT (sha3 := sha3) (w16 := true) (a := 2*p) (j := h) (m := m) P (Kem16.kgSrc P) (srcOkK hw)
     (by decide) (by decide) (by decide) hoa hob ps hs pu hu (fun k hk _ => hb k hk) H.1.hash rfl hash₂ rfl
     (by rw [ks.sp, ku.sp, sm.sp]) (seeds_eq hw sm H.1 H.2.1 (2*p)) (seeds_eq hw sm H.1 H.2.1 (2*p+1)) habs
-  exact ⟨(ct _ _ _ _ _ _ ⟨rfl, rfl⟩ (Hybrid.pairM_exec et) (Hybrid.pairM_exec eu)).1,
-    H.syms et eu (Paired.exec_post (pair_step hp hk hr he hm hb hhr H.1) et)
-      (Paired.exec_post (pair_step hq hk' hr he hm hb hhr H.2.1) eu)⟩
+  exact ⟨(ct _ _ _ _ _ _ ⟨rfl, rfl⟩ (Hybrid.pairM_exec (sha3 := sha3) et) (Hybrid.pairM_exec (sha3 := sha3) eu)).1,
+    H.syms et eu (Paired.exec_post (pair_step (sha3 := sha3) hp hk hr he hm hb hhr H.1) et)
+      (Paired.exec_post (pair_step (sha3 := sha3) hq hk' hr he hm hb hhr H.2.1) eu)⟩
 
 /-- **The final entry** of an odd matrix leaks only the pointers and `ρ`. -/
 theorem lastH_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hr : Noise.Room P) (sm : SameK P σ τ)
     {r h : Nat} (hodd : P.k * P.k % 2 = 1) :
-    RelCT isa (KR P σ τ (P.k*P.k-1) r h) (Paired.lastSample P true true) (KR P σ τ (P.k*P.k) r h) := by
+    RelCT isa (KR P σ τ (P.k*P.k-1) r h) (Paired.lastSample sha3 P true true) (KR P σ τ (P.k*P.k) r h) := by
   intro s u tr ur t v H et eu
   have hw := hp.wf
   have he : P.k * P.k - 1 < P.k * P.k := by omega_arith
@@ -144,12 +145,12 @@ theorem lastH_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hr : Noise.
       Paired.seedBytes u.mem (kA σ 3+BitVec.ofNat 64 SB) (P.k*P.k-1) P.k := by
     unfold Paired.seedBytes
     rw [H.1.b.rho, sm.ptr 3, H.2.1.b.rho, sm.rho]
-  have ct := Paired.lastCode_relCT (w16 := true) (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
+  have ct := Paired.lastCode_relCT (sha3 := sha3) (w16 := true) (by decide) (by decide) (by decide) (by lom) (by lom) (by lom)
     ps pu (hp.args.rdisj (b₁:=3) (b₂:=3) (o₁:=SB) (l₁:=32) (o₂:=AH+1024*(P.k*P.k-1)) (l₂:=1024)
       (by decide) (by decide) (by kl) (matrixEntry_fit hw he) (by lom))
     (by rw [ks.sp, ku.sp, sm.sp]) (by rw [ks.x28, ku.x28, sm.ptr 3]) seed
-  have ht := Paired.exec_post (last_step hp hr hodd H.1) et
-  have hv := Paired.exec_post (last_step hq hr hodd H.2.1) eu
+  have ht := Paired.exec_post (last_step (sha3 := sha3) hp hr hodd H.1) et
+  have hv := Paired.exec_post (last_step (sha3 := sha3) hq hr hodd H.2.1) eu
   have hsy := H.syms et eu ht hv
   rw [Paired.lastSample_eq] at et eu
   simp only [ite_true] at et eu
@@ -190,7 +191,7 @@ theorem pairRows_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hk : Stk
     (hrow : ∀ i < P.k, ∃ h, ((VectorSymbols.analysis restSymbols).check
       (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) (Kem16.kgRow P i) h).isSome = true)
     {p : Nat} (hp' : p < P.k * P.k / 2) :
-    RelCTs (KR P σ τ (2 * p) (rowsBy P p) (hashedBy P p)) (kgPair P p :: kgRows P (rowsBy P p) (rowsBy P (p + 1)))
+    RelCTs (KR P σ τ (2 * p) (rowsBy P p) (hashedBy P p)) (kgPair sha3 P p :: kgRows P (rowsBy P p) (rowsBy P (p + 1)))
       (KR P σ τ (2 * (p + 1)) (rowsBy P (p + 1)) (hashedBy P (p + 1))) := by
   have hw := hp.wf
   have hf := hw.facts
@@ -198,7 +199,7 @@ theorem pairRows_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hk : Stk
   have hmono := rowsBy_mono P p
   have hle := rowsBy_le P (p + 1)
   have hrk := rowsBy_le P p
-  have pc := pairH_relCT hp hq hk hk' hr sm (p := p) (r := rowsBy P p) (h := hashedBy P p)
+  have pc := pairH_relCT (sha3 := sha3) hp hq hk hk' hr sm (p := p) (r := rowsBy P p) (h := hashedBy P p)
     (m := hashedBy P (p + 1) - hashedBy P p) (by omega_arith)
     (by simp only [hashedBy]; omega_arith) (fun k hk' => by
       have := Nat.mul_le_mul_left 384 hrk
@@ -224,7 +225,7 @@ theorem matrixRows_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hk : S
       (.block (Hybrid.absorbBlock (Kem16.kgSrc P) blk)) h).isSome = true)
     (hrow : ∀ i < P.k, ∃ h, ((VectorSymbols.analysis restSymbols).check
       (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) (Kem16.kgRow P i) h).isSome = true) :
-    RelCTs (KR P σ τ 4 0 0) (Impl.MlKem.AArch64.Kem16P.kgMatrixRows P)
+    RelCTs (KR P σ τ 4 0 0) (Impl.MlKem.AArch64.Kem16P.kgMatrixRows sha3 P)
       (KR P σ τ (P.k * P.k) P.k (hashedBy P (P.k * P.k / 2))) := by
   have hw := hp.wf
   have hf := hw.facts
@@ -234,7 +235,7 @@ theorem matrixRows_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hk : S
     (Nat.zero_le _) (rowsBy_le P 2) (rowsBy_mul P 2)
   have pairs := relcts_flatMap_range (n := P.k * P.k / 2 - 2)
     (I := fun q => KR P σ τ (2 * (q + 2)) (rowsBy P (q + 2)) (hashedBy P (q + 2)))
-    (f := fun q => kgPair P (q + 2) :: kgRows P (rowsBy P (q + 2)) (rowsBy P (q + 3)))
+    (f := fun q => kgPair sha3 P (q + 2) :: kgRows P (rowsBy P (q + 2)) (rowsBy P (q + 3)))
     (fun q hq' => pairRows_relCT hp hq hk hk' hr sm habs hrow (p := q + 2) (by omega_arith))
   have e2 : P.k * P.k / 2 - 2 + 2 = P.k * P.k / 2 := by omega_arith
   simp only [e2] at pairs
@@ -249,7 +250,7 @@ theorem matrixRows_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hk : S
     refine ⟨KR P σ τ (P.k * P.k) (rowsBy P (P.k * P.k / 2)) (hashedBy P (P.k * P.k / 2)), ?_,
       rows_relCT hp hq hr sm hrow _ _ P.k rfl hle (Nat.le_refl _) (Nat.le_refl _)⟩
     rw [e]
-    exact lastH_relCT hp hq hr sm ho
+    exact lastH_relCT (sha3 := sha3) hp hq hr sm ho
   · rw [show decide (P.k * P.k % 2 = 1) = false from decide_eq_false ho, ite_eq_right Bool.false_ne_true]
     have e : 2 * (P.k * P.k / 2) = P.k * P.k := by omega_arith
     have er : rowsBy P (P.k * P.k / 2) = P.k := by
@@ -267,7 +268,7 @@ def KF (P : KemLay) (σ τ : State) (n c : Nat) (s u : State) : Prop :=
 /-- **Pair `p < 2`** computing PRF outputs leaks only the pointers and `ρ`. -/
 theorem firstK_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hk : Stk128K P σ) (hk' : Stk128K P τ)
     (sm : SameK P σ τ) (hk3 : 3 ≤ P.k) {p : Nat} (hp2 : p < 2) :
-    RelCT isa (KF P σ τ (2 * p) (3 * p)) (Impl.MlKem.AArch64.Kem16P.kgPairP P p)
+    RelCT isa (KF P σ τ (2 * p) (3 * p)) (Impl.MlKem.AArch64.Kem16P.kgPairP sha3 P p)
       (KF P σ τ (2 * p + 2) (3 * p + 3)) := by
   intro s u tr ur t v H et eu
   have hw := hp.wf
@@ -302,13 +303,13 @@ theorem firstK_relCT {σ τ : State} (hp : Pre P σ) (hq : Pre P τ) (hk : Stk12
     rw [Paired.seedState_eq _ _ (by lom) (by lom), Paired.seedState_eq _ _ (by lom) (by lom)]
     unfold Paired.seedBytes
     rw [H.1.b.rho, sm.ptr 3, H.2.1.b.rho, sm.rho]
-  have ct := Kem16P.pairPCode_relCT (w16 := true) P SG (TP P) (a := 2 * p) (N₀ := 3 * p) (m := 3) (by omega_arith)
+  have ct := Kem16P.pairPCode_relCT (sha3 := sha3) (w16 := true) P SG (TP P) (a := 2 * p) (N₀ := 3 * p) (m := 3) (by omega_arith)
     hbo h4 (by decide) (by decide) (by decide) hoa hob ps hs pu hu rfl (by decide) (by decide) rfl
     (by rw [ks.sp, ku.sp, sm.sp]) (seeds _) (seeds _)
-  have ht := Paired.exec_post (first_step hp hk hp2 hk3 H.1) et
-  have hv := Paired.exec_post (first_step hq hk' hp2 hk3 H.2.1) eu
+  have ht := Paired.exec_post (first_step (sha3 := sha3) hp hk hp2 hk3 H.1) et
+  have hv := Paired.exec_post (first_step (sha3 := sha3) hq hk' hp2 hk3 H.2.1) eu
   unfold Impl.MlKem.AArch64.Kem16P.kgPairP at et eu
-  exact ⟨(ct _ _ _ _ _ _ ⟨rfl, rfl⟩ (Kem16P.pairP_exec et) (Kem16P.pairP_exec eu)).1, ht, hv,
+  exact ⟨(ct _ _ _ _ _ _ ⟨rfl, rfl⟩ (Kem16P.pairP_exec (sha3 := sha3) et) (Kem16P.pairP_exec (sha3 := sha3) eu)).1, ht, hv,
     by rw [Exec.syms et, Exec.syms eu]; exact H.2.2.1,
     fun name hn => by rw [Exec.syms et, Exec.syms eu]; exact H.2.2.2 name hn⟩
 
@@ -332,6 +333,7 @@ constant time. -/
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.KeyGen
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KG VG.Proof.MlKem.AArch64
 open VG.Proof.MlKem.AArch64.Optimized
@@ -378,26 +380,26 @@ theorem keyGenP_relCT (v : Proof.Sha3.AArch64.Permutation) (hash : FixedHash.Has
     (shuffle : σ.syms "VG_MLKEM_REJ_SHUFFLE" = τ.syms "VG_MLKEM_REJ_SHUFFLE")
     (symbols : ∀ name ∈ restSymbols, σ.syms name = τ.syms name)
     (depthA : (FixedHashCallers.kgAUsing hash P).aarch64Depth ≤ 1)
-    (depthP : (Kem16P.kgPre P).aarch64Depth ≤ 1)
+    (depthP : (Kem16P.kgPre sha3 P).aarch64Depth ≤ 1)
     (ha : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3])
       (FixedHashCallers.kgAUsing hash P) h).isSome = true)
     (hpre : ∃ h, ((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (Kem16P.kgPre P) h).isSome = true)
+      (Kem16P.kgPre sha3 P) h).isSome = true)
     (hrow : ∀ i < P.k, ∃ h, ((VectorSymbols.analysis restSymbols).check
       (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) (Kem16.kgRow P i) h).isSome = true)
     (habs : ∀ blk, 136 * blk < (Kem16.kgSrc P).len → ∃ h, (taint.check (Taint.ofRegs [(Kem16.kgSrc P).r, .x28])
       (.block (Hybrid.absorbBlock (Kem16.kgSrc P) blk)) h).isSome = true)
     (htail : ∃ h, ((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
       (Kem16.kgTail v.callee P) h).isSome = true) :
-    RelCT isa (fun s u => s = σ ∧ u = τ) (Kem16P.keyGen hash v.callee P) (fun _ _ => True) := by
+    RelCT isa (fun s u => s = σ ∧ u = τ) (Kem16P.keyGen sha3 hash v.callee P) (fun _ _ => True) := by
   intro s u tr ur t w h et eu
   rcases h with ⟨hs, hu⟩; subst s; subst u
-  have et' : Exec isa (.seq (FixedHashCallers.kgAUsing hash P) (.seq (Kem16P.kgPairP P 0)
-      (.seq (Kem16P.kgPairP P 1) (.seq (Kem16P.kgPre P)
-      (.seq (seqs (Kem16P.kgMatrixRows P)) (Kem16.kgTail v.callee P)))))) σ tr t := et
-  have eu' : Exec isa (.seq (FixedHashCallers.kgAUsing hash P) (.seq (Kem16P.kgPairP P 0)
-      (.seq (Kem16P.kgPairP P 1) (.seq (Kem16P.kgPre P)
-      (.seq (seqs (Kem16P.kgMatrixRows P)) (Kem16.kgTail v.callee P)))))) τ ur w := eu
+  have et' : Exec isa (.seq (FixedHashCallers.kgAUsing hash P) (.seq (Kem16P.kgPairP sha3 P 0)
+      (.seq (Kem16P.kgPairP sha3 P 1) (.seq (Kem16P.kgPre sha3 P)
+      (.seq (seqs (Kem16P.kgMatrixRows sha3 P)) (Kem16.kgTail v.callee P)))))) σ tr t := et
+  have eu' : Exec isa (.seq (FixedHashCallers.kgAUsing hash P) (.seq (Kem16P.kgPairP sha3 P 0)
+      (.seq (Kem16P.kgPairP sha3 P 1) (.seq (Kem16P.kgPre sha3 P)
+      (.seq (seqs (Kem16P.kgMatrixRows sha3 P)) (Kem16.kgTail v.callee P)))))) τ ur w := eu
   obtain ⟨sA, ta, tb, rfl, ea, eb⟩ := Paired.seq_parts et'
   obtain ⟨uA, ua, ub, rfl, fa, fb⟩ := Paired.seq_parts eu'
   have aeq := (VectorTaint.relRegs [.x0,.x1,.x2,.x3]
@@ -419,10 +421,10 @@ theorem keyGenP_relCT (v : Proof.Sha3.AArch64.Permutation) (hash : FixedHash.Has
       fun name hn => by rw [Exec.syms ea, Exec.syms fa]; exact symbols name hn⟩
   obtain ⟨s₁, tc, td, rfl, ec, ed⟩ := Paired.seq_parts eb
   obtain ⟨u₁, uc, ud, rfl, fc, fd⟩ := Paired.seq_parts fb
-  have r0 := firstK_relCT hp hq hk hk' sm hk3 (p := 0) (by decide) sA uA tc uc s₁ u₁ k0 ec fc
+  have r0 := firstK_relCT (sha3 := sha3) hp hq hk hk' sm hk3 (p := 0) (by decide) sA uA tc uc s₁ u₁ k0 ec fc
   obtain ⟨s₂, te, tf, rfl, ee, ef⟩ := Paired.seq_parts ed
   obtain ⟨u₂, ue, uf, rfl, fe, ff⟩ := Paired.seq_parts fd
-  have r1 := firstK_relCT hp hq hk hk' sm hk3 (p := 1) (by decide) s₁ u₁ te ue s₂ u₂ r0.2 ee fe
+  have r1 := firstK_relCT (sha3 := sha3) hp hq hk hk' sm hk3 (p := 1) (by decide) s₁ u₁ te ue s₂ u₂ r0.2 ee fe
   have k2 : KF P σ τ 4 6 s₂ u₂ := r1.2
   obtain ⟨sB, tg, th, rfl, eg, eh⟩ := Paired.seq_parts ef
   obtain ⟨uB, ug, uh, rfl, fg, fh⟩ := Paired.seq_parts ff
@@ -434,12 +436,12 @@ theorem keyGenP_relCT (v : Proof.Sha3.AArch64.Permutation) (hash : FixedHash.Has
       · rw [ks.x26, ku.x26, sm.ptr 1]
       · rw [ks.x27, ku.x27, sm.ptr 2]
       · rw [ks.x28, ku.x28, sm.ptr 3]) k2.2.2.2 hpre eg fg
-  have hsB := Paired.exec_post (pre_ok hp hr hk3 k2.1 depthP) eg
-  have huB := Paired.exec_post (pre_ok hq hr hk3 k2.2.1 depthP) fg
+  have hsB := Paired.exec_post (pre_ok (sha3 := sha3) hp hr hk3 k2.1 depthP) eg
+  have huB := Paired.exec_post (pre_ok (sha3 := sha3) hq hr hk3 k2.2.1 depthP) fg
   obtain ⟨sC, ti, tj, rfl, ei, ej⟩ := Paired.seq_parts eh
   obtain ⟨uC, ui, uj, rfl, fi, fj⟩ := Paired.seq_parts fh
-  have mr := RelCTs.seqs (matrixRows_ne_nil P hk3)
-    (matrixRows_relCT hp hq hk hk' hr sm hk3 habs hrow) sB uB ti ui sC uC
+  have mr := RelCTs.seqs (matrixRows_ne_nil (sha3 := sha3) P hk3)
+    (matrixRows_relCT (sha3 := sha3) hp hq hk hk' hr sm hk3 habs hrow) sB uB ti ui sC uC
     ⟨hsB, huB, by rw [Exec.syms eg, Exec.syms fg]; exact k2.2.2.1,
       fun name hn => by rw [Exec.syms eg, Exec.syms fg]; exact k2.2.2.2 name hn⟩ ei fi
   have hsC := mr.2.1.b.kb
@@ -457,11 +459,11 @@ theorem keyGenP_ct (v : Proof.Sha3.AArch64.Permutation) (hash : FixedHash.HashFn
       [⟨.x25,0,32⟩,⟨.x28,BK,1⟩] [⟨.x28,SB,32⟩,⟨.x28,SG,32⟩])
     (hw : P.Wf) (hr : Noise.Room P) (hk3 : 3 ≤ P.k)
     (depthA : (FixedHashCallers.kgAUsing hash P).aarch64Depth ≤ 1)
-    (depthP : (Kem16P.kgPre P).aarch64Depth ≤ 1)
+    (depthP : (Kem16P.kgPre sha3 P).aarch64Depth ≤ 1)
     (ha : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0,.x1,.x2,.x3])
       (FixedHashCallers.kgAUsing hash P) h).isSome = true)
     (hpre : ∃ h, ((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
-      (Kem16P.kgPre P) h).isSome = true)
+      (Kem16P.kgPre sha3 P) h).isSome = true)
     (hrow : ∀ i < P.k, ∃ h, ((VectorSymbols.analysis restSymbols).check
       (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) (Kem16.kgRow P i) h).isSome = true)
     (habs : ∀ blk, 136 * blk < (Kem16.kgSrc P).len → ∃ h, (taint.check (Taint.ofRegs [(Kem16.kgSrc P).r, .x28])
@@ -469,7 +471,7 @@ theorem keyGenP_ct (v : Proof.Sha3.AArch64.Permutation) (hash : FixedHash.HashFn
     (htail : ∃ h, ((VectorSymbols.analysis restSymbols).check (VectorTaint.ofRegs [.x25,.x26,.x27,.x28])
       (Kem16.kgTail v.callee P) h).isSome = true) :
     ConstantTime isa (entryContractS (keyGenAArch64S P)).pre (entryContractS (keyGenAArch64S P)).pub
-      (Kem16P.keyGen hash v.callee P) := by
+      (Kem16P.keyGen sha3 hash v.callee P) := by
   intro s u tr ur t w hs hu hpub et eu
   have ss := preKS hs.1
   have su := preKS hu.1
@@ -489,7 +491,7 @@ theorem keyGenP_ct (v : Proof.Sha3.AArch64.Permutation) (hash : FixedHash.HashFn
     rw [ptr_zero, ptr_zero]
     exact hh
   have sym := entryS_symbols hpub
-  exact (keyGenP_relCT v hash hG ps pu ⟨ss.2.1, ss.2.2⟩ ⟨su.2.1, su.2.2⟩ hr hk3 ts.1 tu.1 ts.2 tu.2
+  exact (keyGenP_relCT (sha3 := sha3) v hash hG ps pu ⟨ss.2.1, ss.2.2⟩ ⟨su.2.1, su.2.2⟩ hr hk3 ts.1 tu.1 ts.2 tu.2
     ⟨ptr, sp, rho⟩ sym.1 sym.2 depthA depthP ha hpre hrow habs htail _ _ _ _ _ _ ⟨rfl, rfl⟩ et eu).1
 
 end VG.Proof.MlKem.AArch64.KeyGen

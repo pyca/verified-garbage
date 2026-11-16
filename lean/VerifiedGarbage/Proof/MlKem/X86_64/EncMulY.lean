@@ -195,9 +195,7 @@ theorem wp_allg (hk3 : k = 3 ∨ k = 4) {term rowA : Prog isa} {sy : Nat} {aCol 
     (hcol : ∀ i < k, aCol i = (aMat s₀.mem (aP s₀)).map fun row => row.getD i zero)
     (hrowA : ∀ i < k, ∀ s, RInv k s₀ ((yVec s₀.mem (yP s₀)).map ntt) aCol sa i s → WP isa rowA s fun s' =>
       RInv k s₀ ((yVec s₀.mem (yP s₀)).map ntt) aCol sa (i + 1) s' ∧
-      s'.gpr .r14 = s.gpr .r14 - 1 ∧ s'.zf = some (s.gpr .r14 - 1 == 0))
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp]
-      (innerYg term rowA k) = true) :
+      s'.gpr .r14 = s.gpr .r14 - 1 ∧ s'.zf = some (s.gpr .r14 - 1 == 0)) :
     WP isa (encryptMulYg term rowA k) s₀ fun s' => gprPreserved s₀ s' ∧
       (encMulKG k aR aRed aMat yR yRed yVec).post s₀ s' := by
   have hk0 : 0 < k := by omega_arith
@@ -214,8 +212,6 @@ theorem wp_allg (hk3 : k = 3 ∨ k = 4) {term rowA : Prog isa} {sy : Nat} {aCol 
         apply BitVec.eq_of_toNat_eq
         rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat, BitVec.toNat_ofNat]
         omega_arith) fun s1 ⟨h1bx, h1bp, h112, h113, h115, h114, h1sp, h1rd, h1wr, hm1⟩ => ?_
-  have h0 : InRegions s1.wr (cP s₀ + BitVec.ofNat 64 768) 4 := by rw [h1wr]; exact ⟨_, hcw, in_c (by decide)⟩
-  have h4 : InRegions s1.wr (cP s₀ + BitVec.ofNat 64 772) 4 := by rw [h1wr]; exact ⟨_, hcw, in_c (by decide)⟩
   -- the memory after the prologue
   have hsv : Spill.Saved s1.mem (cP s₀) s₀.gpr KpkeMul.slots := by
     rw [hm1]; exact Spill.saveMem_saved _ _ _ _ (by decide)
@@ -227,7 +223,7 @@ theorem wp_allg (hk3 : k = 3 ∨ k = 4) {term rowA : Prog isa} {sy : Nat} {aCol 
   have hmx : ∀ r ∈ [mxR (cP s₀)], (hiR (cP s₀)).Disjoint r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact Offset.disjoint _ (.inr (by decide)) (by decide) (by decide)
-  refine WP.seq (WP.mono (withMxcsr_ok' (r := .rbx) (by decide) _ (by decide) h1bx h0 h4 hwo
+  refine WP.seq (WP.mono (noMx_ok (sP := cP s₀)
     (Q := fun s' => Base k s₀ s' ∧ ∀ i < k + 1, PolyIs s'.mem (uP s₀ + BitVec.ofNat 64 (1024 * i))
       (nttInv (accF ((yVec s₀.mem (yP s₀)).map ntt) aCol k s₀ i)))
     (fun s2 k2 f2 => ?_)) fun s5 ⟨s4, ⟨hb4, hacc4⟩, hf5, k5⟩ => ?_)
@@ -538,11 +534,10 @@ theorem rowA16_ok (hk3 : k = 3 ∨ k = 4) {i : Nat} (hi : i < k) {s : State}
 /-- The code inside the MXCSR region, with `Â` of `u16`s. -/
 abbrev innerY16 (k : Nat) : Prog isa := innerYg KpkeMul.nttTermY16 (KpkeMul.rowAY16 k) k
 
-theorem wp_all16 (hk3 : k = 3 ∨ k = 4)
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8, .r9, .r10, .r12, .r13, .r14, .r15, .rbp] (innerY16 k) = true) :
+theorem wp_all16 (hk3 : k = 3 ∨ k = 4) :
     WP isa (encryptMul16Y k) s₀ fun s' => gprPreserved s₀ s' ∧ (encMulK16 k).post s₀ s' :=
   wp_allg hp hk hk3 (aCol := colW s₀.mem (aP s₀) k) (sa := 512) (vecAtW_length _ _ _ _)
-    (fun _ hj _ hI => term16_ok hp hk hj hI) (fun _ _ => rfl) (fun _ hi _ hR => rowA16_ok hp hk hk3 hi hR) hwo
+    (fun _ hj _ hI => term16_ok hp hk hj hI) (fun _ _ => rfl) (fun _ hi _ hR => rowA16_ok hp hk hk3 hi hR)
 
 end
 

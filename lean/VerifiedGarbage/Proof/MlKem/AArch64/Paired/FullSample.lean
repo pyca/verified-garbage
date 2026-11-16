@@ -21,17 +21,7 @@ import VerifiedGarbage.Proof.MlKem.AArch64.NttVec
 import VerifiedGarbage.Proof.MlKem.Compress
 import VerifiedGarbage.Proof.MlKem.Encode
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Chi
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.ChiWord
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Correction
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Cycle
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Pair
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rho
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.RhoStep
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Rotate
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Round
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Row
-import VerifiedGarbage.Proof.Sha3.AArch64.Neon.SaveRow
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.Store
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Common
@@ -50,6 +40,7 @@ section
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Proof.MlKem.AArch64 VG.Spec.MlKem VG.Proof.MlKem
 open VG.Impl.MlKem.AArch64
 
@@ -154,6 +145,7 @@ section
 /-! # Five complete SHAKE128 blocks in the singleton fallback -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 open VG.Proof.Sha3 (iterF iterF_succ)
@@ -181,10 +173,10 @@ theorem single_ok {s : State} {p a : Addr} {A B : Spec.Sha3.State}
     (hwa : (X2.callR (p+1536)).Disjoint (fullR a))
     (hpw : (pairR p).Disjoint (X2.callR (p+1536)))
     (hcov : Covers [pairR p,X2.callR (p+1536)] s.wr) :
-    WP isa (.loop singleBody (.nonzero .x .x22)) s (SingleInv s p a A B 5) := by
+    WP isa (.loop (singleBody sha3) (.nonzero .x .x22)) s (SingleInv s p a A B 5) := by
   apply count_loop (by decide : 0<5) (SingleInv s p a A B)
   · intro k hk t h
-    refine WP.mono (singleStep_ok h.ptr h.pa h.pair
+    refine WP.mono (singleStep_ok (sha3 := sha3) h.ptr h.pa h.pair
       (fun i hi => by rw [h.keep.rd,h.keep.wr]; exact hin i hi)
       (fun i hi => by rw [h.keep.wr]; exact hout k hk i hi)
       (hpa.sub_right (single_block_sub a hk)) hpw
@@ -234,6 +226,7 @@ section
 /-! # Constants and complete-stream rejection entry for the singleton fallback -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 
 def fullPrep (out : Nat) : List Instr := Rej8.rejConsts ++
@@ -311,6 +304,7 @@ section
 /-! # Singleton fallback through all five SHAKE128 blocks -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 open VG.Proof.Sha3 (iterF)
@@ -325,7 +319,7 @@ theorem fullStart_ok {s initial : State} {p seed : Addr} {sb ss a k : Nat}
     (hc : Covers [⟨p,2048⟩] s.wr) (hsep : (Region.mk seed 32).Disjoint ⟨p,2048⟩)
     (sv : Noise.Saved p initial s.mem) :
     WP isa (.seq (.block (Impl.MlKem.AArch64.Paired.fullInit sb ss a k))
-      (.loop singleBody (.nonzero .x .x22))) s fun t =>
+      (.loop (singleBody sha3) (.nonzero .x .x22))) s fun t =>
       Keep fullStartRegs s t ∧ Frame [⟨p,2048⟩] s.mem t.mem ∧ Noise.Saved p initial t.mem ∧ Flags p s t.mem ∧
       t.gpr .x19=p ∧ t.gpr .x22=0 ∧
       PairAt t.mem p (iterF 5 (seedState s.mem seed a k)) (iterF 5 (seedState s.mem seed a k)) ∧
@@ -338,7 +332,7 @@ theorem fullStart_ok {s initial : State} {p seed : Addr} {sb ss a k : Nat}
     rcases hr with rfl | rfl
     · exact Offset.disjoint p (by decide) (by decide) (by decide)
     · exact Offset.disjoint_base p (by decide) (by decide))
-  refine WP.mono (single_ok h19 h20 (by rw [h22]; rfl) pair
+  refine WP.mono (single_ok (sha3 := sha3) h19 h20 (by rw [h22]; rfl) pair
     (fun i hi => by
       rw [ku.rd,ku.wr]; obtain ⟨r,hr,hh⟩ := iw (by omega_using [hi] : 16*i+8≤2048)
       exact ⟨r,List.mem_append_right _ hr,hh⟩)
@@ -387,16 +381,17 @@ end
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Paired
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.MlKem VG.Spec.MlKem
 
-def fullSampleCode (sb ss off a k : Nat) (w16 : Bool := false) : Prog isa :=
+def fullSampleCode (sha3 : Bool) (sb ss off a k : Nat) (w16 : Bool := false) : Prog isa :=
   .seq (.block (Impl.MlKem.AArch64.Paired.fullInit sb ss a k))
-    (.seq (.loop singleBody (.nonzero .x .x22)) (.seq (.block (fullPrep off)) (fullFinish w16)))
+    (.seq (.loop (singleBody sha3) (.nonzero .x .x22)) (.seq (.block (fullPrep off)) (fullFinish w16)))
 
 theorem fullSample_eq (L : KemLay) (kg : Bool) (a : Nat) (w16 : Bool) :
-    Impl.MlKem.AArch64.Paired.fullSample L kg a w16 =
-      fullSampleCode (if kg then KG.SB else KEM.SB) (if kg then KG.SS else KEM.SS)
+    Impl.MlKem.AArch64.Paired.fullSample sha3 L kg a w16 =
+      fullSampleCode sha3 (if kg then KG.SB else KEM.SB) (if kg then KG.SS else KEM.SS)
         ((if kg then KG.AH else KEM.AH)+1024*a) a L.k w16 := by
   simp only [Impl.MlKem.AArch64.Paired.fullSample,fullSampleCode,fullPrep,fullEntry,
     fullFinish,singleBody,singleWords,Rej8.zeroSuffix,Rej8.zeroBody,seqs,List.append_assoc]
@@ -430,9 +425,9 @@ theorem fullSampleCode_ok {w16 : Bool} {s initial : State} {p seed out : Addr} {
     (tr : Covers [⟨s.syms "VG_MLKEM_REJ_SHUFFLE",4096⟩] (s.rd++s.wr))
     (ts : (Region.mk (s.syms "VG_MLKEM_REJ_SHUFFLE") 4096).Disjoint ⟨p,2048⟩)
     (to : (Region.mk (s.syms "VG_MLKEM_REJ_SHUFFLE") 4096).Disjoint ⟨out,1024⟩) :
-    WP isa (fullSampleCode sb ss off a k w16) s
+    WP isa (fullSampleCode sha3 sb ss off a k w16) s
       (FullPostW w16 (xofByte (seedBytes s.mem seed a k)) p out initial s) := by
-  have combined := WP.mono_syms (fullStart_ok (a := a) (k := k) hss hsb h8 hp hbase hseed hin hc hsep sv)
+  have combined := WP.mono_syms (fullStart_ok (sha3 := sha3) (a := a) (k := k) hss hsb h8 hp hbase hseed hin hc hsep sv)
     (R := fun b => WP isa (.seq (.block (fullPrep off)) (fullFinish w16)) b
       (FullPostW w16 (xofByte (seedBytes s.mem seed a k)) p out initial s))
     (fun b ⟨kb,fb,svb,flagsb,b19,_,_,blocks⟩ sy => by

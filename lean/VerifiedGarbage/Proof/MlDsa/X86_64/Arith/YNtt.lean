@@ -1,4 +1,5 @@
 module
+import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.Mxcsr
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Arith.YLay
 public import VerifiedGarbage.Proof.MlKem.X86_64.VMxcsr
@@ -25,9 +26,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 /-!
 # ML-DSA on x86-64: the frame of the NTT and its inverse on AVX2 registers
 
-What the NTT and its inverse on AVX2 registers (`LazyNtt.lean`) share: ML-KEM's
-`withMxcsr` runs the code from any MXCSR and keeps what it does
-(`ymx_correct`); the prologue leaves the table of zetas in `scratch` and the
+What the NTT and its inverse on AVX2 registers (`LazyNtt.lean`) share: the
+code sets no MXCSR of its own (`ymx_correct`); the prologue leaves the table of zetas in `scratch` and the
 constants in both lanes (`ypro_ok`), with which the layers start (`LIY`,
 `ynttBody_ok`).
 -/
@@ -39,7 +39,7 @@ namespace VG.Proof.MlDsa.X86_64.Arith
 open VG VG.X86_64 VG.Impl.MlDsa.X86_64.Arith
 open VG.Proof.MlDsa.Arith
 open VG.Proof.MlKem.X86_64 (writesIn writesOnly_of Keep XOnly YOnly ylanes yld_ok yconst_ok ifp ifn sel GOnly WP.keep writesOnly
-  gprPreserved_of withMxcsr_ok mxR add_ofNat_zero wp_rcxLoopY lane_setReg lane_setFlags State.setMem_ymm sx32)
+  gprPreserved_of mxR add_ofNat_zero wp_rcxLoopY lane_setReg lane_setFlags State.setMem_ymm sx32)
 open VG.Impl.MlKem.X86_64 (xb xmov toY rcxLoop yconst)
 open VG.Spec.MlDsa (q n Poly Zq zetas ntt nttInv)
 open VG.Proof.MlDsa (coeffAt polyAt PolyIs)
@@ -66,7 +66,7 @@ structure LIY (fP sP : Addr) (s₀ : State) (F : Poly) (s : State) : Prop where
 
 /-! ## The functions -/
 
-/-- The code in `withMxcsr`, from its state `s1`: the prologue, then the
+/-- The code, from its state `s1`: the prologue, then the
 layers `l`, which leave `G`. -/
 theorem ynttBody_ok {t : Poly → Poly} {s s1 : State} (hs : (inPlaceK t).pre s) {l : Prog isa} {G : Poly}
     (k1 : Keep [.rax, .r11] s s1) (f1 : Frame [mxR (s.gpr .rsi)] s.mem s1.mem)
@@ -93,21 +93,18 @@ theorem ynttBody_ok {t : Poly → Poly} {s s1 : State} (hs : (inPlaceK t).pre s)
     intro r hr <;> simp only [List.mem_singleton] at hr <;> subst hr
   exacts [.inr (mx_sub' _), .inr fun _ h => h, .inl fun _ h => h]
 
-/-- `withMxcsr` around the body, and the ABI. -/
+/-- The body, and the ABI. -/
 theorem ymx_correct {t : Poly → Poly} {l : Prog isa} (s : State) (hs : (inPlaceK t).pre s)
-    (hk : Code.allInstrs (writesIn [.rax, .rcx, .rdx, .r8, .r9]) (.seq (.block ypro) l) = true)
-    (hctl : ctlOk (VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 (.seq (.block ypro) l)) = true)
+    (hctl : ctlOk (.seq (.block ypro) l : Prog isa) = true)
     (hk' : Code.allInstrs (writesIn [.rax, .rcx, .rdx, .r8, .r9, .r11])
-      (VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 (.seq (.block ypro) l)) = true)
+      (.seq (.block ypro) l : Prog isa) = true)
     (hl : ∀ s1, Keep [.rax, .r11] s s1 → Frame [mxR (s.gpr .rsi)] s.mem s1.mem →
       WP isa (.seq (.block ypro) l) s1 fun s' => PolyIs s'.mem (s.gpr .rdi) (t (polyAt s.mem (s.gpr .rdi))) ∧
         Frame [pR (s.gpr .rdi), pR (s.gpr .rsi)] s.mem s'.mem) :
-    ∃ tr s', Exec isa (VG.Impl.MlKem.X86_64.withMxcsr .rsi 768 (.seq (.block ypro) l)) s tr s' ∧
+    ∃ tr s', Exec isa (.seq (.block ypro) l : Prog isa) s tr s' ∧
       abiPreserved s s' ∧ (inPlaceK t).post s s' := by
-  have hw : pR (s.gpr .rsi) ∈ s.wr := by rw [hs.2.1]; simp
   have hd : (pR (s.gpr .rdi)).Disjoint (pR (s.gpr .rsi)) := hs.2.2.1
-  have hW := withMxcsr_ok (c := .seq (.block ypro) l) (by decide) [.rax, .rcx, .rdx, .r8, .r9] (by decide) rfl hw
-    (writesOnly_of hk) (hl)
+  have hW := noMx_ok (c := .seq (.block ypro) l) hl
   obtain ⟨tr, s', he, ⟨s2, ⟨hP, hf⟩, hf', -⟩, hk⟩ := WP.keep [.rax, .rcx, .rdx, .r8, .r9, .r11] hW (writesOnly_of hk')
   refine ⟨tr, s', he, abiPreserved_of_ctl hctl he (gprPreserved_of hk (by decide)
     (hf.trans (hf'.sub fun r hr => ⟨_, List.mem_cons_of_mem _ (List.mem_singleton_self _), ?_⟩))

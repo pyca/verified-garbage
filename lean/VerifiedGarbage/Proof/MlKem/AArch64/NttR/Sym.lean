@@ -148,9 +148,6 @@ def invRed (st : Nat) : Bool := Nat.beq st 3 || Nat.beq st 7
 /-- The level of `NTT⁻¹`'s multiplication by 3303. -/
 def invScale : Nat := 9
 
-/-- `NTT⁻¹`: ten levels. -/
-def invRules : Rules := { layers := 10, zeta := zetaN, inv := true }
-
 /-- The Gentleman–Sande pair `p`, `p'` of `NTT⁻¹`'s level `st`. -/
 def gsPair (st p p' : Nat) : Bool :=
   let len := invLen st

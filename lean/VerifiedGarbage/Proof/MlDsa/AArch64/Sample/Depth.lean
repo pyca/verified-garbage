@@ -22,10 +22,6 @@ theorem rejNTT_depth : (rejNTTWith v.callee).aarch64Depth = 1 := by
   simp only [rejNTTWith, zeroPoly, rnLoop, rnBody, Code.aarch64Depth, sponge_depth v,
     Nat.max_self, Nat.max_zero, Nat.zero_max]
 
-theorem rejBounded_depth : (rejBoundedWith v.callee).aarch64Depth = 1 := by
-  simp only [rejBoundedWith, rbLoop, rbBody, Code.aarch64Depth, sponge_depth v,
-    Nat.max_self, Nat.max_zero, Nat.zero_max]
-
 theorem ball_depth : (sampleInBallWith v.callee).aarch64Depth = 1 := by
   simp only [sampleInBallWith, zeroPoly, bLoop, bBody, bTry, Code.aarch64Depth, sponge_depth v,
     Nat.max_self, Nat.max_zero, Nat.zero_max]

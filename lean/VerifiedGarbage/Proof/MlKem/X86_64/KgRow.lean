@@ -141,9 +141,9 @@ section
 variable {k : Nat} {σ : State} (E : EP k σ)
 include E
 
-theorem row_ok (hk : k = 3 ∨ k = 4) (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8] (rowIn k) = true)
+theorem row_ok (hk : k = 3 ∨ k = 4)
     {s : State} (h : P1 k σ s) : WP isa (.seq (.block (([.mov .rcx (.reg .rbx)] : List Instr) ++ Bodies.avx2.tab))
-      (withMxcsr .rbx oMx (rowIn k))) s (P2 k σ) := by
+      (rowIn k)) s (P2 k σ) := by
   have hk4 : k ≤ 4 := by omega_arith
   have nC := E.nC
   have nA := E.nA
@@ -178,17 +178,11 @@ theorem row_ok (hk : k = 3 ∨ k = 4) (hwo : writesOnly [.rax, .rcx, .rdx, .rsi,
       simp only [List.mem_singleton] at hr; subst hr
       exact (EncMul.hi_dis_tab _).sub_left (sub_hi (DecMul.slots_bound p hp').1 (by
         have := (DecMul.slots_bound p hp').2; omega_arith))
-  have h0 : InRegions s2.wr ((σ.gpr .r8) + BitVec.ofNat 64 768) 4 := by
-    rw [k12.2.2, h.wr]; exact ⟨_, hcw, in_c (by decide)⟩
-  have h4 : InRegions s2.wr ((σ.gpr .r8) + BitVec.ofNat 64 772) 4 := by
-    rw [k12.2.2, h.wr]; exact ⟨_, hcw, in_c (by decide)⟩
   have hfa : ∀ {o n : Nat}, o + n ≤ 512 * k → Region.Disjoint ⟨σ.gpr .rsi + BitVec.ofNat 64 o, n⟩ (cR (σ.gpr .r8)) :=
     fun h => E.aC.sub_left (Offset.sub_base _ h)
   have hfs : ∀ {o n : Nat}, o + n ≤ 1024 * k → Region.Disjoint ⟨σ.gpr .rdx + BitVec.ofNat 64 o, n⟩ (cR (σ.gpr .r8)) :=
     fun h => E.sC.sub_left (Offset.sub_base _ h)
-  show WP isa (withMxcsr .rbx 768 (rowIn k)) s2 (P2 k σ)
-  refine WP.mono (withMxcsr_ok' (r := .rbx) ⟨by decide, by decide⟩ [.rax, .rcx, .rdx, .rsi, .rdi, .r8]
-    ⟨by decide, by decide⟩ h2bx h0 h4 hwo (Q := P2 k σ) (fun s3 k3 f3 => ?_)) fun s5 ⟨s4, hq4, hf5, k5⟩ => ?_
+  refine WP.mono (noMx_ok (sP := σ.gpr .r8) (Q := P2 k σ) (fun s3 k3 f3 => ?_)) fun s5 ⟨s4, hq4, hf5, k5⟩ => ?_
   · -- the row
     have hmx : Region.Sub (mxR (σ.gpr .r8)) (cR (σ.gpr .r8)) := DecMul.sub_c (by decide)
     have hf3 : Frame [cR (σ.gpr .r8)] σ.mem s3.mem :=
@@ -279,14 +273,14 @@ theorem row_ok (hk : k = 3 ∨ k = 4) (hwo : writesOnly [.rax, .rcx, .rdx, .rsi,
 end
 
 theorem kgRow_wp {A : Prims} (hA : PrimsOk A) (hn : A.enc12.noCalls = true) {L : Kem} (hk : L.k = 3 ∨ L.k = 4)
-    (hwo : writesOnly [.rax, .rcx, .rdx, .rsi, .rdi, .r8] (rowIn L.k) = true) {σ : State} (hp : (kgRowK L.k).pre σ) :
+    {σ : State} (hp : (kgRowK L.k).pre σ) :
     WP isa (KpkeKgRows.kgRow L A) σ fun s' => gprPreserved σ s' ∧ (kgRowK L.k).post σ s' := by
   have E := ep hp
   have nE := E.nE
   have nK := E.nK
   unfold KpkeKgRows.kgRow
   refine pro_ok E fun s1 h1 => ?_
-  refine WP.seq (WP.mono (row_ok E hk hwo h1) fun s2 h2 => ?_)
+  refine WP.seq (WP.mono (row_ok E hk h1) fun s2 h2 => ?_)
   have e13 : pa s2 ((.r13, 0) : Ptr) = σ.gpr .rcx := by simp only [pa, h2.r13, add_ofNat_zero]
   have e12 : pa s2 ((.r12, 0) : Ptr) = σ.gpr .rdi := by simp only [pa, h2.r12, add_ofNat_zero]
   have hT : TwoHi (.r13, 0) (.r12, 0) 1024 384 s2 :=

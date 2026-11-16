@@ -33,9 +33,4 @@ def bfly : List Instr :=
   ([.vop (.mov .v5 .v0), .vop (.add .s4 .v0 .v0 .v1)] : List Instr) ++ csub .v0 .v4 ++
   ([.vop (.add .s4 .v5 .v5 .v16), .vop (.sub .s4 .v5 .v5 .v1)] : List Instr) ++ csub .v5 .v4
 
-/-- Inverse butterflies with the negated zeta in Montgomery form. -/
-def bflyInv : List Instr :=
-  ([.vop (.add .s4 .v5 .v0 .v16), .vop (.sub .s4 .v5 .v5 .v1),
-   .vop (.add .s4 .v0 .v0 .v1)] : List Instr) ++ csub .v0 .v4 ++
-  mont .v5 .v18 ++ csub .v5 .v4
 end VG.Impl.MlDsa.AArch64.Arith.Neon

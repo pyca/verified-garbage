@@ -9,7 +9,9 @@ meta import VerifiedGarbage.Proof.Sm3.StateMem
 public import VerifiedGarbage.TCB.PPC64LE.Target
 meta import VerifiedGarbage.TCB.PPC64LE.Target
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public import VerifiedGarbage.Proof.Framework.PPC64LE.TaintMono
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
+public meta import VerifiedGarbage.Proof.Framework.PPC64LE.TaintMono
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -495,13 +497,21 @@ def satState : State where
   rd := [⟨0x2000, 0⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x3000, 112⟩]
 
+/-! The constant-time analysis of the compression function from its arguments, done once for
+every check of code that calls it (`taint_decide_sum [compressSum]`), which keeps what is public
+of `r20`–`r31`: it writes none of them. -/
+taint_summary compressSum : taint (Taint.ofRegs [.r3, .r4, .r5, .r6]) Impl.Sm3.PPC64LE.compress
+  keeping (Taint.ofRegs [.r20, .r21, .r22, .r23, .r24, .r25,
+    .r26, .r27, .r28, .r29, .r30, .r31])
+
 theorem compress_verified :
     Verified PPC64LE.target Impl.Sm3.PPC64LE.compress Proof.Sm3.compressPPC64LE := by
   refine ⟨fun s hs => ?_, ?_, ?_⟩
   · obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
     exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.lr he (by decide +kernel)
       (by rw [← Code.allInstrs_eq]; decide +kernel)⟩, h₂⟩
-  · refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) ?_ (by taint_decide)
+  · refine VG.Taint.constantTime_of_exists (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6]) ?_
+      (VG.Taint.exists_check_of_sumOk compressSum (RegSet.subset_refl _))
     intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, hsp⟩
     refine ⟨hsp, fun r hr => ?_⟩
     simp only [VG.PPC64LE.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr

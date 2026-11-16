@@ -138,4 +138,49 @@ theorem passKeys_eq (S : Schedule) {p j : Nat} (hj : j < 16) :
   simp only [passKeys, keyOrder, componentSchedule]
   split <;> split <;> simp_all <;> rw [vgetD _ (by omega_arith), Vector.getElem_ofFn]
 
+/-! ## TDEA decryption -/
+
+/-- The schedule with its 48 slots in reverse, if `rv`. -/
+def revIf (rv : Bool) (S : Schedule) : Schedule :=
+  if rv then Vector.ofFn (fun i : Fin 48 => S.getD (47 - i.val) 0) else S
+
+theorem revIf_getD (S : Schedule) {i : Nat} (hi : i < 48) :
+    (revIf true S).getD i 0 = S.getD (47 - i) 0 := by
+  rw [vgetD _ hi]
+  simp only [revIf, ↓reduceIte, Vector.getElem_ofFn]
+
+/-- TDEA decryption (`D_K1(E_K2(D_K3(x)))`) of a 64-bit block. -/
+def tdesDec (S : Schedule) (x : BitVec 64) : BitVec 64 :=
+  des (componentSchedule S 0) .decrypt (des (componentSchedule S 1) .encrypt
+    (des (componentSchedule S 2) .decrypt x))
+
+theorem rounds_congr {ks ks' : Nat → BitVec 48} {n : Nat} (h : ∀ j < n, ks j = ks' j)
+    (lr : BitVec 32 × BitVec 32) : rounds ks n lr = rounds ks' n lr := by
+  induction n with
+  | zero => rfl
+  | succ n ih =>
+    rw [rounds_succ, rounds_succ, ih fun j hj => h j (by omega_arith), h n (by omega_arith)]
+
+/-- A component of the reversed schedule, in one direction, is the opposite
+component in the other. -/
+theorem des_revIf (S : Schedule) {p : Nat} (hp : p < 3) (dir : Direction) (x : BitVec 64) :
+    des (componentSchedule (revIf true S) p) dir x =
+      des (componentSchedule S (2 - p)) (if dir = .encrypt then .decrypt else .encrypt) x := by
+  rw [des_eq, des_eq]
+  have h : ∀ j < 16, keyOrder (componentSchedule (revIf true S) p) dir j =
+      keyOrder (componentSchedule S (2 - p)) (if dir = .encrypt then .decrypt else .encrypt) j := by
+    intro j hj
+    cases dir <;>
+      simp only [keyOrder, componentSchedule, ↓reduceIte, reduceCtorEq] <;>
+      rw [vgetD _ (by omega_arith), vgetD _ (by omega_arith), Vector.getElem_ofFn, Vector.getElem_ofFn,
+        revIf_getD _ (by omega_arith)] <;>
+      exact congrArg (fun k => (S.getD k 0).setWidth 48) (by dsimp only; omega_arith)
+  rw [rounds_congr h]
+
+/-- Encryption with the schedule in reverse is decryption. -/
+theorem tdes_revIf (S : Schedule) (x : BitVec 64) : tdes (revIf true S) x = tdesDec S x := by
+  simp only [tdes, tdesDec, des_revIf S (by decide : 0 < 3), des_revIf S (by decide : 1 < 3),
+    des_revIf S (by decide : 2 < 3), ↓reduceIte, reduceCtorEq, Nat.sub_zero, Nat.reduceSub,
+    Nat.sub_self]
+
 end VG.Proof.CmacTripleDes

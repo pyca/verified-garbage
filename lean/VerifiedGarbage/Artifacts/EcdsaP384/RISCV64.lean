@@ -25,7 +25,7 @@ public import VerifiedGarbage.Proof.Variants.MdHash.RISCV64
 namespace VG.Artifacts.EcdsaP384.RISCV64.Rfc6979
 
 open VG.Proof.P384.RISCV64 (hasLaw)
-open VG.Proof.Ecdsa.Rfc6979.RISCV64 (signCodeT stackT OK)
+open VG.Proof.Ecdsa.Rfc6979.RISCV64 (signCodeT OK)
 open VG.Proof.Ecdsa.Rfc6979.RISCV64.P384 (curveT verifiedT)
 open VG.Proof.HmacTable.RISCV64 (tables names)
 
@@ -34,7 +34,6 @@ def artifactsFor (vs : List Proof.HmacTable.RISCV64.HVar) : List Artifact :=
     Spec.Ecdsa.Rfc6979.Curves.p384SignApi.artifact RISCV64.target {
       tables := [("hmac", tables vs)]
       code := signCodeT (curveT hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p384.tries vs
-      stack := stackT
       verified := verifiedT hasLaw.law vs hv }]
   else []
 
@@ -51,7 +50,6 @@ def artifacts : List Artifact := [
   Spec.Ecdsa.P384.verifyHashApi.artifact RISCV64.target {
     code := Impl.Ecdsa.RISCV64.VerifyHash.verifyHash Spec.Ecdsa.P384.inst.curve.len false
       Impl.Ecdsa.RISCV64.VerifyComb.verifyP384
-    stack := 80
     verified := Proof.Ecdsa.RISCV64.P384.verifyHash_verified hasLaw.law }] ++
   Rfc6979.artifacts
 

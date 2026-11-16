@@ -5,6 +5,11 @@ public import VerifiedGarbage.Impl.Sha3.AArch64.Hybrid.X3
 public import VerifiedGarbage.Proof.Sha3.X2Contract
 public import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
 import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Restore
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Permute
+import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Framework.RegSet
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
@@ -26,6 +31,11 @@ meta import VerifiedGarbage.Impl.Sha3.AArch64.Hybrid.X3
 meta import VerifiedGarbage.Proof.Sha3.X2Contract
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Store
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Restore
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Permute
+meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Framework.RegSet
 meta import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 meta import VerifiedGarbage.Proof.AesGcm.AArch64.RelBase
@@ -79,7 +89,7 @@ open VG.Proof.AesGcm.AArch64 (Eq2 TT rel_seq rel_taint ct_of RelCT.block_split)
 open VG.Spec.Sha3 (stateAt keccakF)
 open VG.Proof.Sha3 (stateX2At)
 
-abbrev X3code := VG.Impl.Sha3.AArch64.Hybrid.X3.code
+abbrev X3code := VG.Impl.Sha3.AArch64.Hybrid.X3.vector
 
 /-- The working space. -/
 abbrev scrR (q : Addr) : Region := Neon.X2.scrR q
@@ -555,13 +565,13 @@ theorem body_ok {s : State} (h : Lay s) :
     rw [mt]
     exact ⟨e0, e1, m₃.st⟩
 
-theorem correct (s : State) (hs : K.pre s) :
+theorem vector_correct (s : State) (hs : K.pre s) :
     ∃ tr t, Exec isa X3code s tr t ∧ abiPreserved s t ∧ K.post s t :=
   WP.alloc ⟨by decide, by decide, by decide⟩ (lay hs).sp (body_ok (lay hs))
 
 theorem allocated_gpr (n : Nat) (s : State) : (allocated n s).gpr = s.gpr := rfl
 
-theorem ct : ConstantTime isa K.pre K.pub X3code := by
+theorem vector_ct : ConstantTime isa K.pre K.pub X3code := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ ⟨q0, q1, q2, qsp⟩ => ?_
   have h₁ := lay p₁
   have h₂ := lay p₂
@@ -592,5 +602,155 @@ theorem ct : ConstantTime isa K.pre K.pub X3code := by
     fun z₁ z₂ ⟨l₁, d₁⟩ ⟨l₂, d₂⟩ => ?_)
   -- The restores.
   exact rel_taint [.x2] (by rw [l₁.sp, l₂.sp, hS]) (by agree_tac [d₁, d₂, q2]) ⟨_, by taint_decide⟩
+
+/-! ## Without a CPU feature: the scalar rounds on each state in turn -/
+
+section Scalar
+open VG.Impl.Sha3.AArch64.Hybrid.X3 (loadThird storeThird scalar code)
+open VG.Impl.Sha3.AArch64.Scalar (laneReg)
+open VG.Impl.Sha3.AArch64.Neon.X2 (loadLanes storeLanes)
+open VG.Proof.Sha3.AArch64.Neon.X2 (scalarFirst_ok scalarNext_ok storeLanes_ok stateX2At_frame)
+
+/-- The lanes of the state at `q` (the pointer kept in `v31`), to their registers. -/
+theorem loadThird_ok (s₀ : State) {q : Addr} (hptr : vdword (s₀.v .v31) 0 = q)
+    (hin : ∀ i < 25, InRegions (s₀.rd ++ s₀.wr) (q + BitVec.ofNat 64 (8 * i)) 8) :
+    WP isa (.block loadThird) s₀ fun s' => Scalar.Boundary.Keep s₀ s' ∧ s'.mem = s₀.mem ∧
+      s'.v = s₀.v ∧ Lanes s' (stateAt s₀.mem q) := by
+  change (s₀.v .v31).extractLsb' (64*0) 64 = q at hptr
+  unfold loadThird
+  rw [List.singleton_append]
+  refine WP.cons rfl ?_
+  rw [List.map_eq_flatMap]
+  refine (wp_range_flatMap (M := isa)
+    (fun j s => Scalar.Boundary.Keep s₀ s ∧ s.mem = s₀.mem ∧ s.v = s₀.v ∧ s.gpr .x30 = q ∧
+      ∀ i < j, s.gpr (laneReg i) = s₀.mem.readW (q + BitVec.ofNat 64 (8 * i)) 64)
+    (fun i s hi ⟨hkeep,hm,hv,hx,hl⟩ => ?_) 25 (Nat.le_refl _)
+    (s₀.write .x .x30 ((s₀.v .v31).extractLsb' (64*0) 64))
+    ⟨⟨rfl,rfl,rfl⟩,rfl,rfl,
+      by simpa only [RegUpd.gpr_write_self,Size.bits,BitVec.setWidth_eq,vdword] using hptr,
+      fun _ h => absurd h (by omega_using [])⟩).mono
+    fun s ⟨hkeep,hm,hv,_,hl⟩ => ⟨hkeep,hm,hv,fun i hi => by
+      simpa only [stateAt,Vector.getElem_ofFn,VG.Proof.Sha3.laneAddr] using hl i hi⟩
+  refine WP.cons (exec_ldr_x ⟨by omega_using [],by omega_using [hi]⟩ ?_) (WP.block_nil ?_)
+  · rw [hkeep.rd,hkeep.wr,hx]
+    exact hin i hi
+  · refine ⟨⟨hkeep.rd,hkeep.wr,hkeep.sp⟩,hm,hv,?_,fun j hj => ?_⟩
+    · simp only [RegUpd.gpr_write,Size.bits,BitVec.setWidth_eq,
+        Ne.symm (laneReg_ne_x30 i hi),ite_false,hx]
+    · simp only [RegUpd.gpr_write,Size.bits,BitVec.setWidth_eq,
+        laneReg_inj j (by omega_using [hi, hj]) i hi]
+      split
+      · rename_i he; subst j
+        rw [hm,hx]
+      · exact hl j (by omega_arith)
+
+/-- The lanes, from their registers to the state at `q` (the pointer kept in `v31`). -/
+theorem storeThird_ok (s₀ : State) {q : Addr} (A : Spec.Sha3.State) (hA : Lanes s₀ A)
+    (hptr : vdword (s₀.v .v31) 0 = q)
+    (hin : ∀ i < 25, InRegions s₀.wr (q + BitVec.ofNat 64 (8 * i)) 8) :
+    WP isa (.block storeThird) s₀ fun s' => Scalar.Boundary.Keep s₀ s' ∧ s'.v = s₀.v ∧
+      Frame [stR q] s₀.mem s'.mem ∧ stateAt s'.mem q = A := by
+  change (s₀.v .v31).extractLsb' (64*0) 64 = q at hptr
+  unfold storeThird
+  refine WP.cons rfl ?_
+  refine (store_words_ok _ A ?_ ?_).mono fun s hs => ?_
+  · intro i hi
+    simpa only [RegUpd.gpr_write,Size.bits,BitVec.setWidth_eq,laneReg_ne_x30 i hi,ite_false]
+      using hA i hi
+  · intro i hi
+    simpa only [RegUpd.gpr_write_self,Size.bits,BitVec.setWidth_eq,RegUpd.wr_write,hptr] using hin i hi
+  · have hb : (s₀.write .x .x30 ((s₀.v .v31).extractLsb' (64*0) 64)).gpr .x30 = q := by
+      simpa only [RegUpd.gpr_write_self,Size.bits,BitVec.setWidth_eq,vdword] using hptr
+    refine ⟨⟨hs.keep.rd,hs.keep.wr,hs.keep.sp⟩,hs.vec,?_,?_⟩
+    · simpa only [hb,RegUpd.mem_write,stR] using hs.frame
+    · apply Vector.ext
+      intro i hi
+      simpa only [stateAt,Vector.getElem_ofFn,VG.Proof.Sha3.laneAddr,hb] using hs.vals i hi hi
+
+/-- `vg_keccak_f1600_x3`, from the states at `p` (`x0`) and `st` (`x1`): it writes only them. -/
+theorem scalar_ok {s : State} {p st : Addr} (hp : s.gpr .x0 = p) (hst : s.gpr .x1 = st)
+    (hd : (pairR p).Disjoint (stR st))
+    (hwp : ∀ i < 25, ∀ k < 2, InRegions s.wr (p + BitVec.ofNat 64 (16 * i + 8 * k)) 8)
+    (hws : ∀ i < 25, InRegions s.wr (st + BitVec.ofNat 64 (8 * i)) 8) :
+    WP isa scalar s fun t => abiPreserved s t ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+      Frame [pairR p, stR st] s.mem t.mem ∧
+      stateX2At t.mem p 0 = keccakF (stateX2At s.mem p 0) ∧
+      stateX2At t.mem p 1 = keccakF (stateX2At s.mem p 1) ∧
+      stateAt t.mem st = keccakF (stateAt s.mem st) := by
+  have hall : ∀ {a : Addr} {n : Nat}, InRegions s.wr a n → InRegions (s.rd ++ s.wr) a n :=
+    fun ⟨r,hr,hc⟩ => ⟨r,List.mem_append.mpr (.inr hr),hc⟩
+  have dps : ∀ r ∈ [pairR p], (stR st).Disjoint r := by simpa using hd.symm
+  have dsp : ∀ r ∈ [stR st], (pairR p).Disjoint r := by simpa using hd
+  unfold scalar
+  rw [WP.seq_iff]
+  refine (scalarFirst_ok hp fun i hi => hall (hwp i hi 0 (by decide))).mono fun s₂ ⟨c₂,m₂⟩ => ?_
+  refine WP.seq (WP.mono (Scalar.Lazy.core_state_keep s _ s₂ c₂) fun s₃ ⟨c₃,r₃⟩ => ?_)
+  have m₃ : s₃.mem = s.mem := r₃.mem.trans m₂
+  rw [WP.seq_iff]
+  refine (scalarNext_ok hp c₃ (fun i hi => hwp i hi 0 (by decide))
+    fun i hi => hall (hwp i hi 1 (by decide))).mono fun s₅ ⟨c₅,f₅,a₅⟩ => ?_
+  rw [m₃] at c₅ f₅
+  refine WP.seq (WP.mono (Scalar.Lazy.core_state_keep s _ s₅ c₅) fun s₆ ⟨c₆,r₆⟩ => ?_)
+  rw [WP.seq_iff,WP.block_append_iff]
+  refine (storeLanes_ok (k := 1) (by decide) s₆ (p := p) _ c₆.lanes (c₆.ptrs.1.trans hp)
+    (fun i hi => by rw [c₆.keep.wr]; exact hwp i hi 1 (by decide))).mono
+    fun s₇ ⟨k₇,v₇,_,f₇,a₇,b₇⟩ => ?_
+  have b₇' : stateX2At s₇.mem p 0 = keccakF (stateX2At s.mem p 0) := by rw [← a₅,← r₆.mem]; exact b₇
+  have fp : Frame [pairR p] s.mem s₇.mem := f₅.trans (by rw [← r₆.mem]; exact f₇)
+  have e₇ : stateAt s₇.mem st = stateAt s.mem st := stateAt_frame fp dps
+  refine (loadThird_ok s₇ (q := st) (by rw [v₇]; exact c₆.ptrs.2.trans hst) (fun i hi => by
+    rw [k₇.rd,k₇.wr,c₆.keep.rd,c₆.keep.wr]; exact hall (hws i hi))).mono
+    fun s₈ ⟨k₈,m₈,v₈,l₈⟩ => ?_
+  have c₈ : Scalar.Boundary.CoreState s (stateAt s.mem st) s₈ :=
+    ⟨⟨k₈.rd.trans (k₇.rd.trans c₆.keep.rd),k₈.wr.trans (k₇.wr.trans c₆.keep.wr),
+        k₈.sp.trans (k₇.sp.trans c₆.keep.sp)⟩,
+      by simpa only [Scalar.Boundary.Ptrs,v₈,v₇] using c₆.ptrs,
+      fun i hi => by rw [v₈,v₇]; exact c₆.saved i hi,fun r hr => by rw [v₈,v₇]; exact c₆.vec r hr,
+      by rw [← e₇]; exact l₈⟩
+  refine WP.seq (WP.mono (Scalar.Lazy.core_state_keep s _ s₈ c₈) fun s₉ ⟨c₉,r₉⟩ => ?_)
+  have m₉ : s₉.mem = s₇.mem := r₉.mem.trans m₈
+  rw [WP.block_append_iff]
+  refine (storeThird_ok s₉ (q := st) _ c₉.lanes (c₉.ptrs.2.trans hst)
+    (fun i hi => by rw [c₉.keep.wr]; exact hws i hi)).mono fun s₁₀ ⟨k₁₀,v₁₀,f₁₀,a₁₀⟩ => ?_
+  rw [m₉] at f₁₀
+  refine (Scalar.Boundary.restore_ok s s₁₀ (fun i hi => by rw [v₁₀]; exact c₉.saved i hi)).mono
+    fun t ⟨k₁₁,m₁₁,v₁₁,g₁₁⟩ => ⟨⟨g₁₁,k₁₁.sp.trans (k₁₀.sp.trans c₉.keep.sp),fun r hr => by
+      rw [v₁₁,v₁₀,c₉.vec r hr]⟩,k₁₁.rd.trans (k₁₀.rd.trans c₉.keep.rd),
+      k₁₁.wr.trans (k₁₀.wr.trans c₉.keep.wr),?_,?_,?_,by rw [m₁₁]; exact a₁₀⟩
+  · rw [m₁₁]
+    exact (fp.mono fun r hr => by simp only [List.mem_singleton] at hr; subst r; simp).trans
+      (f₁₀.mono fun r hr => by simp only [List.mem_singleton] at hr; subst r; simp)
+  · rw [m₁₁,stateX2At_frame f₁₀ dsp (by decide)]
+    exact b₇'
+  · rw [m₁₁,stateX2At_frame f₁₀ dsp (by decide)]
+    exact a₇
+
+theorem code_true : code true = X3code := rfl
+theorem code_false : code false = scalar := rfl
+
+theorem correct (sha3 : Bool) (s : State) (hs : K.pre s) :
+    ∃ tr t, Exec isa (code sha3) s tr t ∧ abiPreserved s t ∧ K.post s t := by
+  cases sha3
+  · rw [code_false]
+    obtain ⟨_,hw,hd,_⟩ := hs
+    obtain ⟨tr,t,he,habi,_,_,_,h0,h1,h2⟩ := scalar_ok (s := s) rfl rfl hd
+      (fun i hi k hk => ⟨_,by rw [hw]; simp,Neon.X2.lane_contains _ hi hk⟩)
+      (fun i hi => ⟨stR (s.gpr .x1),by rw [hw]; simp,
+        Offset.contains_base _ (by omega_using [hi]) (by omega_using [hi])⟩)
+    exact ⟨tr,t,he,habi,h0,h1,h2⟩
+  · rw [code_true]
+    exact vector_correct s hs
+
+theorem ct (sha3 : Bool) : ConstantTime isa K.pre K.pub (code sha3) := by
+  cases sha3
+  · refine VectorTaint.constantTime (AArch64.Taint.ofRegs [.x0,.x1,.x2]) ?_ (by taint_decide)
+    intro s₁ s₂ _ _ ⟨h0,h1,h2,hsp⟩
+    refine ⟨hsp,fun r hr => ?_⟩
+    simp only [AArch64.Taint.mem_ofRegs,List.mem_cons,List.not_mem_nil,or_false] at hr
+    rcases hr with rfl | rfl | rfl <;> with_reducible assumption
+  · rw [code_true]
+    exact vector_ct
+
+end Scalar
 
 end VG.Proof.Sha3.AArch64.Hybrid.X3

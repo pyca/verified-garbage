@@ -3,7 +3,6 @@ public import VerifiedGarbage.Proof.Bignum.Words
 
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Mem
-public import Mathlib.Algebra.Group.Nat.Defs
 import Mathlib.Order.RelClasses
 import Mathlib.Tactic.Finiteness.Attr
 import Mathlib.Tactic.Attr.Core

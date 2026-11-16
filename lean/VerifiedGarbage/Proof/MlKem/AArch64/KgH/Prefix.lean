@@ -39,6 +39,7 @@ section
 /-! # Exact paired-noise footprints and separated retained outputs -/
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Noise
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 
@@ -113,6 +114,7 @@ section
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Noise
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Spec.MlKem
 open VG.Spec.Sha3 (bytesAt)
 
@@ -164,6 +166,7 @@ section
 
 section
 namespace VG.Proof.MlKem.AArch64.Noise
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Spec.MlKem
 open VG.Spec.Sha3 (bytesAt)
 
@@ -209,6 +212,7 @@ end
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Noise
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 open VG.Spec.MlKem
@@ -226,13 +230,13 @@ theorem readonly_pair_tail_ok {initial s : State} {p a f g w : Addr} {off0 off1 
     (ht0 : NttR.FastReady s f w)
     (ht1 : NttR.FastReady s g w)
     (hfar : ∀r∈pairWrites p f g w,(NttR.fastRegion s).Disjoint r) :
-    WP isa (seqs [Impl.MlKem.AArch64.Noise.squeezePair,outCodeWith Ntt16.Readonly.nttAtWithW off0 ns 400 tr0,outCodeWith Ntt16.Readonly.nttAtWithW off1 ns 528 tr1,
+    WP isa (seqs [Impl.MlKem.AArch64.Noise.squeezePair sha3,outCodeWith Ntt16.Readonly.nttAtWithW off0 ns 400 tr0,outCodeWith Ntt16.Readonly.nttAtWithW off1 ns 528 tr1,
       .block (Paired.saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i))]) s fun t =>
       Kept (pairWrites p f g w) initial t ∧
       PolyIsW (cw true) t.mem f (sampled initial.mem a n tr0) ∧
       PolyIsW (cw true) t.mem g (sampled initial.mem a (n+1) tr1) := by
   simp only [seqs]
-  refine WP.seq (WP.mono_syms (squeezePair_ok hp ha hb (by rw [hp])
+  refine WP.seq (WP.mono_syms (squeezePair_ok (sha3 := sha3) hp ha hb (by rw [hp])
     (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) hpair hs.pair hs.rateA hs.rateB
     (Offset.disjoint p (by decide) (by decide) (by decide))
@@ -305,6 +309,7 @@ section
 /-! # Complete paired-noise operation -/
 section
 namespace VG.Proof.MlKem.AArch64.Noise
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.Sha3.AArch64.Neon
 open VG.Proof.MlKem (PolyIsW)
@@ -327,12 +332,12 @@ theorem readonly_noisePair_ok {s : State} {L : KemLay} (kg : Bool) {n : Nat} {p 
     (ht0 : NttR.FastReady s f w)
     (ht1 : NttR.FastReady s g w)
     (hfar : ∀r∈pairWrites p f g w,(NttR.fastRegion s).Disjoint r) :
-    WP isa (Impl.MlKem.AArch64.Noise.noisePairWith Ntt16.Readonly.nttAtWithW L kg n) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Noise.noisePairWith sha3 Ntt16.Readonly.nttAtWithW L kg n) s fun t =>
       Kept (pairWrites p f g w) s t ∧
       PolyIsW (cw true) t.mem f (sampled s.mem a n (transformed L kg n)) ∧
       PolyIsW (cw true) t.mem g (sampled s.mem a (n+1) (transformed L kg (n+1))) := by
   change WP isa (.seq (.block (Impl.MlKem.AArch64.Noise.noiseInit L kg n))
-    (seqs [Impl.MlKem.AArch64.Noise.squeezePair,
+    (seqs [Impl.MlKem.AArch64.Noise.squeezePair sha3,
       outCodeWith Ntt16.Readonly.nttAtWithW (outOff L kg n) (if kg then KG.NS else KEM.NS) 400 (transformed L kg n),
       outCodeWith Ntt16.Readonly.nttAtWithW (outOff L kg (n+1)) (if kg then KG.NS else KEM.NS) 528 (transformed L kg (n+1)),
       .block (Paired.saved.zipIdx.reverse.map fun (r,i) => .ldr .x r .x19 (1800+8*i))])) s _
@@ -360,6 +365,7 @@ end
 
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Noise
+variable {sha3 : Bool}
 open VG VG.AArch64 VG.Impl.MlKem.AArch64
 open VG.Proof.MlKem (PolyIsW)
 open VG.Proof.MlKem (cw)
@@ -376,7 +382,7 @@ theorem readonly_noisePair_layout {s : State} {L : KemLay} (wf : L.Wf) (room : R
     (hfar : ∀r∈pairWrites (B+BitVec.ofNat 64 (scratchOff kg))
       (B+BitVec.ofNat 64 (outOff L kg n)) (B+BitVec.ofNat 64 (outOff L kg (n+1)))
       (B+BitVec.ofNat 64 (nttOff kg)), (NttR.fastRegion s).Disjoint r) :
-    WP isa (Impl.MlKem.AArch64.Noise.noisePairWith Ntt16.Readonly.nttAtWithW L kg n) s fun t =>
+    WP isa (Impl.MlKem.AArch64.Noise.noisePairWith sha3 Ntt16.Readonly.nttAtWithW L kg n) s fun t =>
       Kept (pairWrites (B+BitVec.ofNat 64 (scratchOff kg))
         (B+BitVec.ofNat 64 (outOff L kg n)) (B+BitVec.ofNat 64 (outOff L kg (n+1)))
         (B+BitVec.ofNat 64 (nttOff kg))) s t ∧
@@ -401,7 +407,7 @@ theorem readonly_noisePair_layout {s : State} {L : KemLay} (wf : L.Wf) (room : R
     Offset.disjoint B h (by omega_using [lim, ho] : o+l≤2^64) (by omega_using [lim, hd] : d+k≤2^64)
   have snorm (k : Nat) : B+BitVec.ofNat 64 (scratchOff kg)+BitVec.ofNat 64 k =
       B+BitVec.ofNat 64 (scratchOff kg+k) := by rw [BitVec.add_assoc,← BitVec.ofNat_add]
-  refine readonly_noisePair_ok kg (by have := wf.facts; omega_using [hn, this]) (by omega_using [lim, fit0]) (by omega_using [lim, fit1])
+  refine readonly_noisePair_ok (sha3 := sha3) kg (by have := wf.facts; omega_using [hn, this]) (by omega_using [lim, fit0]) (by omega_using [lim, fit1])
     (by rw [hB]; rfl) (by rw [hB]; rfl) (by rw [hB]) (by rw [hB]) (by rw [hB]; rfl)
     (fun j hj => ?_) (fun j hj => ?_) (fun j hj => ?_) ?_ ?_ ?_ ht0 ht1 hfar
   · rw [BitVec.add_assoc,← BitVec.ofNat_add]
@@ -473,6 +479,7 @@ pairs filled, then paired `PRF₂` for the rest of the noise, leave `ŝ` and `ê
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.KeyGen
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KG VG.Proof.MlKem.AArch64
 open VG.Spec.MlKem
@@ -691,7 +698,7 @@ theorem writes_apartK {B : Addr} {n : Nat} {r : Region}
 /-- A noise pair (`Noise.noisePairWith`) for outputs `n` and `n + 1` keeps `NK`. -/
 theorem pairK_step {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P) {n : Nat} (hn : n + 1 < 2 * P.k)
     (H : NK P s₀ s n t) :
-    WP isa (Impl.MlKem.AArch64.Noise.noisePairWith Ntt16.Readonly.nttAtWithW P true n) t (NK P s₀ s (n + 2)) := by
+    WP isa (Impl.MlKem.AArch64.Noise.noisePairWith sha3 Ntt16.Readonly.nttAtWithW P true n) t (NK P s₀ s (n + 2)) := by
   have hw := hp.wf
   have kb := H.c.kb
   have kl3 : kL P 3 = P.scl := rfl
@@ -734,7 +741,7 @@ theorem pairK_step {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P) {n :
       ∀ q ∈ Noise.writes P true (kA s₀ 3) n, (R (kA s₀) 3 o l).Disjoint q :=
     away (sdisjK hp hf fS (.inr (by omega_using [h1, lim]))) (sdisjK hp hf fN (.inr h1))
       (sdisjK hp hf fO h2) (sdisjK hp hf fO' h3)
-  refine WP.mono_syms (Noise.readonly_noisePair_layout (B := kA s₀ 3) hw hr true hn kb.x28 hc
+  refine WP.mono_syms (Noise.readonly_noisePair_layout (sha3 := sha3) (B := kA s₀ 3) hw hr true hn kb.x28 hc
     (rdy n (by omega_arith)) (rdy (n + 1) hn) ffar) fun u ⟨ku, pu, qu⟩ sy => ?_
   have sv : SV P = TP P + 2048 := rfl
   have tp : TP P = SH P + 1024 * P.k + 1024 := rfl
@@ -772,13 +779,13 @@ theorem pairK_step {s₀ s t : State} (hp : Pre P s₀) (hr : Noise.Room P) {n :
 theorem noiseK_ok {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) (hk3 : 3 ≤ P.k) (H : FInv P s₀ 4 6 s) :
     WPs (((List.range 6).map (Impl.MlKem.AArch64.Kem16P.kgOut P)) ++
       ((List.range (P.k - 3)).map fun i =>
-        Impl.MlKem.AArch64.Noise.noisePairWith Ntt16.Readonly.nttAtWithW P true (6 + 2 * i))) s
+        Impl.MlKem.AArch64.Noise.noisePairWith sha3 Ntt16.Readonly.nttAtWithW P true (6 + 2 * i))) s
       (NK P s₀ s (2 * P.k)) := by
   refine WPs.append (WPs.mono (WPs.range (I := NK P s₀ s) (fun j hj t ht =>
     kgOut_step hp hr hj (by omega_arith) (H.prf j hj) ht) (NK.zero hk3 H)) fun t ht => ?_)
-  have r := WPs.range (f := fun i => Impl.MlKem.AArch64.Noise.noisePairWith Ntt16.Readonly.nttAtWithW P true (6 + 2 * i))
+  have r := WPs.range (f := fun i => Impl.MlKem.AArch64.Noise.noisePairWith sha3 Ntt16.Readonly.nttAtWithW P true (6 + 2 * i))
     (I := fun i => NK P s₀ s (6 + 2 * i)) (n := P.k - 3) (fun i hi u hu => by
-      have st := pairK_step hp hr (n := 6 + 2 * i) (by omega_arith) hu
+      have st := pairK_step (sha3 := sha3) hp hr (n := 6 + 2 * i) (by omega_arith) hu
       rwa [show 6 + 2 * i + 2 = 6 + 2 * (i + 1) by omega_arith] at st) ht
   rwa [show 6 + 2 * (P.k - 3) = 2 * P.k by omega_arith] at r
 
@@ -809,6 +816,7 @@ of the matrix and nothing of the rows or the hash done. -/
 @[expose] public section
 
 namespace VG.Proof.MlKem.AArch64.KeyGen
+variable {sha3 : Bool}
 
 open VG VG.AArch64 VG.Impl.MlKem.AArch64 VG.Impl.MlKem.AArch64.KG VG.Proof.MlKem.AArch64
 open VG.Spec.MlKem
@@ -855,13 +863,13 @@ theorem zero_ok {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) {mB mN : 
 /-- **The noise, `ŝ` into `dk` and the all-zero third state**, after `G` and the first two
 pairs of the matrix (`Kem16P.kgPre`). -/
 theorem pre_ok {s₀ s : State} (hp : Pre P s₀) (hr : Noise.Room P) (hk3 : 3 ≤ P.k) (H : FInv P s₀ 4 6 s)
-    (depth : (Impl.MlKem.AArch64.Kem16P.kgPre P).aarch64Depth ≤ 1) :
-    WP isa (Impl.MlKem.AArch64.Kem16P.kgPre P) s (IL P s₀ 4 0 0) := by
+    (depth : (Impl.MlKem.AArch64.Kem16P.kgPre sha3 P).aarch64Depth ≤ 1) :
+    WP isa (Impl.MlKem.AArch64.Kem16P.kgPre sha3 P) s (IL P s₀ 4 0 0) := by
   have hw := hp.wf
-  have body : WP isa (Impl.MlKem.AArch64.Kem16P.kgPre P) s fun v => ∃ mN,
+  have body : WP isa (Impl.MlKem.AArch64.Kem16P.kgPre sha3 P) s fun v => ∃ mN,
       EncodeInvW P s₀ s.mem mN (s.gpr .x24) 4 P.k v ∧ stateAt v.mem (kA s₀ 3) = Spec.Sha3.zero := by
     unfold Impl.MlKem.AArch64.Kem16P.kgPre
-    refine WPs.seqs (by simp) (WPs.append (WPs.append (WPs.mono (noiseK_ok hp hr hk3 H) fun t ht => ?_)))
+    refine WPs.seqs (by simp) (WPs.append (WPs.append (WPs.mono (noiseK_ok (sha3 := sha3) hp hr hk3 H) fun t ht => ?_)))
     exact WPs.mono (encode_okW hp hr ht.encode) fun u eu =>
       WPs.single (WP.mono (zero_ok hp hr eu) fun v ⟨ev, zv⟩ => ⟨_, ev, zv⟩)
   refine WP.mono_syms (WP.tablesDepth body H.tables depth) fun v ⟨⟨mN, ev, zv⟩, tv⟩ hs => ?_

@@ -1,9 +1,12 @@
 module
-public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Readonly.Call
 public import VerifiedGarbage.Proof.MlKem.AArch64.NttR.FastTable
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Rc4.AArch64.Vec
+public import VerifiedGarbage.Proof.MlKem.AArch64.KeccakCall
+public import VerifiedGarbage.Proof.Framework.Covers
+public import VerifiedGarbage.Proof.MlKem.AArch64.Ntt16.Table
+public import VerifiedGarbage.Proof.MlKem.Mem
 @[expose] public section
 namespace VG.Proof.MlKem.AArch64.Optimized
 open VG VG.AArch64 VG.Proof.MlKem VG.Proof.MlKem.AArch64

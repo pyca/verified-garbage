@@ -16,15 +16,12 @@ namespace VG.Artifacts.RsaPkcs1Sig.PPC64LE
 def artifacts : List Artifact := [
   Spec.RsaPkcs1Sig.verifyPrecomputedApi.artifact PPC64LE.target {
     code := Impl.RsaPkcs1Sig.PPC64LE.Precomputed.code
-    stack := 2224
     verified := Proof.RsaPkcs1Sig.PPC64LE.Ver.code_verified },
   Spec.RsaPkcs1Sig.recoverPrecomputedApi.artifact PPC64LE.target {
     code := Impl.RsaPkcs1Sig.PPC64LE.RecoverPrecomputed.code
-    stack := 2224
     verified := Proof.RsaPkcs1Sig.PPC64LE.Rec.code_verified },
   Spec.RsaPkcs1Sig.signPrecomputedApi.artifact PPC64LE.target {
     code := Impl.RsaPkcs1Sig.PPC64LE.Sign.codeP
-    stack := Proof.RsaPkcs1Sig.PPC64LE.Sign.stackBytes
     verified := Proof.RsaPkcs1Sig.PPC64LE.Sign.codeP_verified }]
 
 end VG.Artifacts.RsaPkcs1Sig.PPC64LE

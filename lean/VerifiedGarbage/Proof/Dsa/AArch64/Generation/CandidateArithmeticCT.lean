@@ -33,10 +33,12 @@ structure CandidatePublic where
   qp : Addr
   xb : List Byte
   qb : List Byte
+  wide : Impl.Dsa.AArch64.Generation.reduceWords ≤ w
+  narrow : qb.length ≤ 32
 
 def CandidatePublic.xLoad (p : CandidatePublic) : LoadPublic := ⟨p.B, p.Z, p.w, p.xp, p.xb⟩
 def CandidatePublic.qLoad (p : CandidatePublic) : LoadPublic := ⟨p.B, p.Z, p.w, p.qp, p.qb⟩
-def CandidatePublic.workspace (p : CandidatePublic) : ArithmeticPublic := ⟨p.B, p.Z, p.w⟩
+def CandidatePublic.workspace (p : CandidatePublic) : ArithmeticPublic := ⟨p.B, p.Z, p.w, p.wide⟩
 
 def CandidateInput (p : CandidatePublic) (s : State) : Prop :=
   LoadState 16 17 p.xLoad s ∧ LoadState 18 19 p.qLoad s

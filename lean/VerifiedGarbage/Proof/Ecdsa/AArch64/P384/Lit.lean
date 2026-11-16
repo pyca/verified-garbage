@@ -21,12 +21,17 @@ The field arithmetic is unrolled, so the kernel would build the instructions
 again in every check that evaluates the code (constant time, properties of
 every instruction): the literal of the code (`materialize_code`,
 `Proof/Framework/Lit.lean`) is checked once here instead.
+
+The comb (`Impl.P384.CombArithmetic.comb`), which the code of public keys
+contains too, has a literal of its own, which both literals read
+(`Proof/EcKey/AArch64/P384/Lit.lean` imports this module for it).
 -/
 
 @[expose] public section
 
 namespace VG
 
+materialize_code Impl.P384.CombArithmetic.comb
 materialize_code Impl.Ecdsa.AArch64.signP384
 
 end VG

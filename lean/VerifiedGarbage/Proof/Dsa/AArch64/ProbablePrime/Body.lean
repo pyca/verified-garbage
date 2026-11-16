@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.AArch64.ProbablePrime.Params
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.EntryAllocated
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
+public import VerifiedGarbage.Proof.Dsa.AArch64.Generation.PublicKernel
 public import VerifiedGarbage.Impl.Dsa.AArch64.ProbablePrime
 public import VerifiedGarbage.Proof.MlKem.AArch64.Wp
 public import VerifiedGarbage.Proof.Bignum.Words
@@ -203,7 +204,7 @@ open VG.Proof.MillerRabin.AArch64 VG.Impl.Bignum.AArch64
 
 /-- Candidate setup, padded loading, trial division and the shared RSA
 Miller–Rabin loop implement the exact DSA probable-prime operation. -/
-theorem primeFromFrame_ok (M : Mont) (K : Kernel) {P : PrimeParams} {s : State} 
+theorem primeFromFrame_ok (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {P : PrimeParams} {s : State} 
     {used candidate : Nat} {W : Nat → BitVec 64} {bs : List Byte}
     (hg : VG.Proof.Rsa.AArch64.Ws s P.B P.Z P.w) (hc : candidate < 2 ^ 16) (hk : P.checks < 2 ^ 16)
     {F : Addr} (hsp : s.sp = F)
@@ -256,7 +257,7 @@ open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64 VG.Proof.MlKem.AArch6
 open VG.Impl.Dsa.AArch64.Generation VG.Impl.RsaKeyGen.AArch64.Candidate
 open VG.Proof.MillerRabin.AArch64 VG.Impl.Bignum.AArch64
 
-theorem checkPrime_ok (M : Mont) (K : Kernel) {P : PrimeParams} {s : State}
+theorem checkPrime_ok (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {P : PrimeParams} {s : State}
     {used candidate : Nat} {W : Nat → BitVec 64} {bs : List Byte}
     (hS : Scr s P.B P.Z) (hdi : s.gpr .x0 = P.B)
     (hc : candidate < 2 ^ 16) (hk : P.checks < 2 ^ 16) {F : Addr} (hsp : s.sp = F)
@@ -486,7 +487,7 @@ structure Tested {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bi
   vectors : ∀ r ∈ preservedV, (u.v r).extractLsb' 0 64 = (s.v r).extractLsb' 0 64
   usedPtr : word u.mem (frameBase s) usedSlot = s.gpr .x4
 
-theorem test_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s)
+theorem test_ok (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI bits s)
     {u2 : State} (P : Prepared hb A u2) :
     WP isa (test bits M.mm K.run) u2 (Tested hb A) := by
   have hFn := frame_toNat A
@@ -645,7 +646,7 @@ theorem finish_ok {bits : Nat} (hb : Supported bits) {s : State} (A : PrimeABI b
   · have h4 : r ∉ [Reg.x0, .x3, .x4] := by revert r; decide
     exact (k4.gpr r h4).trans (g3 r hr)
 
-theorem body_ok (M : Mont) (K : Kernel) {bits : Nat} (hb : Supported bits) {s : State}
+theorem body_ok (M : Mont) (K : VG.Proof.Dsa.AArch64.Generation.PublicKernel) {bits : Nat} (hb : Supported bits) {s : State}
     (A : PrimeABI bits s) :
     WP isa (body bits M.mm K.run) (allocState 272 s) fun t =>
       t.sp = (allocState 272 s).sp ∧ t.wr = (allocState 272 s).wr ∧ t.rd = s.rd ∧

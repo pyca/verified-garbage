@@ -1,11 +1,15 @@
 module
 
 public import VerifiedGarbage.Impl.Cast5.Tables
-public import VerifiedGarbage.Impl.Cast5.Lines
 public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
-# CAST5 on baseline AArch64
+# CAST5 on baseline AArch64: one block at a time
+
+The block code of the modes that encipher one block at a time
+(`Impl/Cast5/AArch64/Modes.lean`); the ECB functions, CBC and CFB64
+decryption work on sixteen blocks at once (`Impl/Cast5/AArch64/Tbl.lean`),
+and key expansion looks its S-boxes up as they do (`AArch64/TblKey.lean`).
 
 As on x86-64 (`Impl/Cast5/X86_64.lean`), a lookup in an S-box never uses a
 secret as an address: the four lookups a round function makes, `S1[Ia]`,
@@ -15,15 +19,13 @@ secret as an address: the four lookups a round function makes, `S1[Ia]`,
 `v0`. Their low two bits select within four adjacent entries with BIT;
 `cmeq` compares their remaining bits with the public group number, and the
 selected words are ANDed with that mask and ORed into `v1`. Every entry is
-loaded, in order. Key expansion
-scans `VG_CAST5_S5678` the same way, entry `i` the words `S8[i], S7[i], S6[i],
-S5[i]`.
+loaded, in order.
 
 The rotation by the secret amount `Kr` (§2.2) is five rotations by 1, 2, 4, 8
 and 16, each selected or not (`csel`) by a bit of `Kr` (`rotate`).
 
 Only the caller-saved registers `x0`–`x15`, `v0`–`v6` and `v16`–`v19` are used (the
-round function's `I` in `w4`, whose argument, `scratch`, ECB does not use). Registers
+round function's `I` in `w4`). Registers
 of the scan: the table in `x10`, the count of groups of four entries left in
 `x11`, `v0`–`v5` and `v16`–`v19`.
 -/
@@ -140,88 +142,5 @@ def encryptBlock : Prog isa :=
   .seq (.block (load ++ ([.addImm .x .x12 .x0 0] : List Instr) ++ groups))
     (.seq (.loop (group true) (.nonzero .x .x7))
       (.seq (.ite (.zero .x .x8) (round 1 true) (.block [])) (.block store)))
-
-/-- Decrypting a block: round 16 if there are 16, then the rest in groups of
-three, down from the last; `x12` starts at `Kmₙ`, `x0 + 4 (rounds - 1)`. -/
-def decryptBlock : Prog isa :=
-  .seq (.block (load ++ ([.lsl .x .x12 .x1 2, .add .x .x12 .x12 .x0, .subImm .x .x12 .x12 4] :
-      List Instr) ++ groups))
-    (.seq (.ite (.zero .x .x8) (round 1 false) (.block []))
-      (.seq (.loop (group false) (.nonzero .x .x7)) (.block store)))
-
-/-- `vg_cast5_ecb_encrypt(schedule = x0, rounds = x1, data = x2, n = x3,
-scratch = x4)`, or decrypt: each block in turn. -/
-def ecb (block : Prog isa) : Prog isa :=
-  .ite (.zero .x .x3) (.block []) (.loop block (.nonzero .x .x3))
-
-def ecbEncrypt : Prog isa := ecb encryptBlock
-def ecbDecrypt : Prog isa := ecb decryptBlock
-
-/-! ## Key expansion
-
-`x0 … xF` and `z0 … zF` are kept in the working space at `x3 + 16` and
-`x3 + 32` (`Impl.Cast5.off`), a byte each, in order; a group's extra lookups
-in `v6`; the subkeys are written to `x2`, which moves on 64 bytes after each
-half. -/
-
-/-- The lanes `S8[d], S7[c], S6[b], S5[a]` of a scan of `VG_CAST5_S5678`, for
-the bytes `a, b, c, d`, into `v0`. Clobbers `x9`. -/
-def gather (a b c d : Pos) : List Instr :=
-  [.ldrb .x9 .x3 (srcOff d), .vop (.ins .s4 .v0 0 .x9), .ldrb .x9 .x3 (srcOff c), .vop (.ins .s4 .v0 1 .x9),
-   .ldrb .x9 .x3 (srcOff b), .vop (.ins .s4 .v0 2 .x9), .ldrb .x9 .x3 (srcOff a), .vop (.ins .s4 .v0 3 .x9)]
-
-/-- A line `S5[a] ^ S6[b] ^ S7[c] ^ S8[d] ^ Sₑ[f] ^ w`, into `w0`: `Sₑ[f]` from
-the group's extra lookups (lane `8 - e` of `v6`), `w` the quadruple of an
-array, big-endian, if any. -/
-def line (l : Line) : Prog isa :=
-  .seq (.block (gather l.main.1 l.main.2.1 l.main.2.2.1 l.main.2.2.2)) (.seq (scan s5678Sym)
-    (.block (([.umov .w .x0 .v1 0, .umov .w .x9 .v1 1, .logic .eor .w .x0 .x0 .x9, .umov .w .x9 .v1 2,
-      .logic .eor .w .x0 .x0 .x9, .umov .w .x9 .v1 3, .logic .eor .w .x0 .x0 .x9,
-      .umov .w .x9 .v6 (8 - l.extra.1), .logic .eor .w .x0 .x0 .x9] : List Instr) ++
-      (match l.word with
-        | some (a, q) => [.ldr .w .x9 .x3 (off a + 4 * q), .rev32 .x9 .x9, .logic .eor .w .x0 .x0 .x9]
-        | none => []))))
-
-/-- The extra lookups of a group: `S5[a], S6[b], S7[c], S8[d]`, to the lanes
-3, 2, 1, 0 of `v6`. -/
-def extras (a b c d : Pos) : Prog isa :=
-  .seq (.block (gather a b c d)) (.seq (scan s5678Sym) (.block [.vop (.mov .v6 .v1)]))
-
-/-- Four lines, after their extra lookups, each followed by its store `st k`. -/
-def lines4 (ls : List Line) (st : Nat → List Instr) : Prog isa :=
-  .seq (extras (extraOf ls 5) (extraOf ls 6) (extraOf ls 7) (extraOf ls 8))
-    ((List.range 4).foldr (fun k rest =>
-      .seq (line (ls.getD k default))
-        (.seq (.block (st k)) rest)) (.block []))
-
-/-- Store `w0` as quadruple `q` of the array `a`, big-endian. -/
-def storeQuad (a : Arr) (q : Nat) : List Instr := [.rev32 .x9 .x0, .str .w .x9 .x3 (off a + 4 * q)]
-
-/-- Store `w0` as subkey `k` at `x2`. -/
-def storeKey (k : Nat) : List Instr := [.str .w .x0 .x2 (4 * k)]
-
-/-- One half of §2.4 (`Spec.Cast5.half`), with sixteen subkeys to `x2`, then
-`x2` on 64 bytes and the count of halves left (`x1`) down. -/
-def half : Prog isa :=
-  .seq (lines4 zLines (storeQuad .z)) (.seq (lines4 aLines storeKey)
-    (.seq (lines4 xLines (storeQuad .x))
-      (.seq (lines4 bLines fun k => storeKey (4 + k))
-        (.seq (lines4 zLines (storeQuad .z)) (.seq (lines4 cLines fun k => storeKey (8 + k))
-          (.seq (lines4 xLines (storeQuad .x))
-            (.seq (lines4 dLines fun k => storeKey (12 + k))
-              (.block [.addImm .x .x2 .x2 64, .subImm .x .x1 .x1 1]))))))))
-
-/-- Copy a key byte to `x`: `x0` at the next key byte, `x4` at its place in
-`x`, `x1` the count left. -/
-def copyStep : List Instr :=
-  [.ldrb .x9 .x0 0, .strb .x9 .x4 0, .addImm .x .x0 .x0 1, .addImm .x .x4 .x4 1, .subImm .x .x1 .x1 1]
-
-/-- `vg_cast5_expand_key(key = x0, key_len = x1, schedule = x2, scratch =
-x3)`: `x` := the key padded with zeros (§2.5), then both halves. -/
-def expandKey : Prog isa :=
-  .seq (.block [.movz .x .x9 0 0, .str .x .x9 .x3 xOff, .str .x .x9 .x3 (xOff + 8),
-      .addImm .x .x4 .x3 xOff])
-    (.seq (.loop (.block copyStep) (.nonzero .x .x1))
-      (.seq (.block [.movz .x .x1 2 0]) (.loop half (.nonzero .x .x1))))
 
 end VG.Impl.Cast5.AArch64

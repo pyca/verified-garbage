@@ -33,6 +33,19 @@ materialize_template mulNT := mulG brainpoolp512r1.MN'
 materialize_template addNT := addR brainpoolp512r1.MN'
 materialize_template subNT := subR brainpoolp512r1.MN'
 
+materialize_template mulFPT := mulF brainpoolp512r1.MP'
+materialize_template addWPT := addW brainpoolp512r1.MP'
+materialize_template subWPT := subW brainpoolp512r1.MP'
+materialize_template mulFNT := mulF brainpoolp512r1.MN'
+materialize_template addWNT := addW brainpoolp512r1.MN'
+materialize_template subWNT := subW brainpoolp512r1.MN'
+materialize_template mulFPST := mulF brainpoolp512r1.MPS
+materialize_template addWPST := addW brainpoolp512r1.MPS
+materialize_template subWPST := subW brainpoolp512r1.MPS
+materialize_template mulFNST := mulF brainpoolp512r1.MNS
+materialize_template addWNST := addW brainpoolp512r1.MNS
+materialize_template subWNST := subW brainpoolp512r1.MNS
+
 materialize_code pPow := Cfg.pPow brainpoolp512r1
 materialize_code nPow := Cfg.nPow brainpoolp512r1
 materialize_code gMulK := Cfg.gMulK brainpoolp512r1

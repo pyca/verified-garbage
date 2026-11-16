@@ -30,9 +30,9 @@ public import VerifiedGarbage.Proof.Argon2.Contract
 `vg_argon2_compress_avx2` meets `compressContract`, as `vg_argon2_compress`
 does: the masks, the initial XOR (`init_prefix`), the eight rows and eight
 columns (`row_ok`, `col_ok`) and the final XOR (`finish_prefix`) compose to
-`Spec.Argon2.compress`, between Intel's MXCSR prologue and epilogue, which
-keep MXCSR's control bits (`ctlOk`). Constant time is checked by evaluation,
-as for the scalar code.
+`Spec.Argon2.compress`. The code loads no MXCSR (`ctlOk`): it runs under the
+dispatcher's `vg_mcdt_enter`. Constant time is checked by evaluation, as for
+the scalar code.
 -/
 
 @[expose] public section
@@ -244,89 +244,6 @@ theorem body_ok {s : State} {p x y out : Addr} (hs : Scratch s p) (hin : Inputs 
   · rw [hwt, hk4.wr, hk13.wr, hw0]
   · rw [hxt, hk4.mxcsr, hk13.mxcsr, hx0]
 
-/-! ## MXCSR -/
-
-/-- The eight bytes of scratch through which MXCSR is saved and loaded. -/
-abbrev mxR (p : Addr) : Region := ⟨off p 2048, 8⟩
-
-theorem mx_write {s : State} {p : Addr} (hs : Scratch s p) {d : Nat} (hd : 2048 ≤ d ∧ d ≤ 2052) :
-    InRegions s.wr (off p d) 4 :=
-  hs.write (by omega_using [hd])
-
-theorem mx_read {s : State} {p : Addr} (hs : Scratch s p) {d : Nat} (hd : 2048 ≤ d ∧ d ≤ 2052) :
-    InRegions (s.rd ++ s.wr) (off p d) 4 :=
-  hs.read (by omega_using [hd])
-
-theorem mx_contains (p : Addr) {d : Nat} (hd : 2048 ≤ d ∧ d ≤ 2052) : (mxR p).Contains (off p d) 4 :=
-  Offset.contains p (by omega_using [hd]) (by omega_using [hd]) (by omega_using [])
-
-theorem save_ok {s : State} {p : Addr} (hs : Scratch s p) :
-    WP isa (.block [.stmxcsr (at_ .rcx mxcsrOff), .mov32 .r11 (.mem (at_ .rcx mxcsrOff)),
-      .alu32 .and .r11 (.imm 0xFFFF)]) s fun t =>
-      t.gpr .r11 = (s.mxcsr &&& 0xFFFF).setWidth 64 ∧ (∀ r, r ≠ .r11 → t.gpr r = s.gpr r) ∧
-      t.rd = s.rd ∧ t.wr = s.wr ∧ t.mxcsr = s.mxcsr ∧ Frame [mxR p] s.mem t.mem := by
-  apply WP.of_runBlock
-  have hr := mx_read hs (d := 2048) (by decide)
-  simp only [mxcsrOff, runBlock_cons, runStep_some, runBlock_nil, exec, State.store32, ea_at, hs.reg,
-    mx_write hs (d := 2048) (by decide), ite_true, readSrc32, State.load32, hr, Option.map_some,
-    Mem.readW_writeW_self32, execAlu32, Option.bind_some, State.setReg32, RegUpd.gpr_setReg,
-    RegUpd.gpr_arithFlags, RegUpd.rd_setReg, RegUpd.wr_setReg, RegUpd.rd_arithFlags,
-    RegUpd.wr_arithFlags, RegUpd.mem_setReg, RegUpd.mem_arithFlags, RegUpd.mxcsr_setReg,
-    Option.some.injEq, exists_eq_left', ite_true, RegUpd.setWidth_setWidth_32]
-  refine ⟨trivial, fun r hr => by simp only [hr, ite_false], trivial, trivial, rfl,
-    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (mx_contains p (by decide))⟩
-
-theorem set_ok {s : State} {p : Addr} (hs : Scratch s p) :
-    WP isa (.block [.mov32 .rax (.imm 0x1FBF), .store32 (at_ .rcx (mxcsrOff + 4)) .rax,
-      .ldmxcsr (at_ .rcx (mxcsrOff + 4)), .lfence]) s fun t =>
-      t.mxcsr = 0x1FBF ∧ (∀ r, r ≠ .rax → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Frame [mxR p] s.mem t.mem := by
-  have hr := mx_read hs (d := 2052) (by decide)
-  have hz : BitVec.extractLsb' 16 16 (8127 : BitVec 32) = 0 := by decide
-  apply WP.of_runBlock
-  simp only [mxcsrOff, runBlock_cons, runStep_some, runBlock_nil, exec, State.store32, ea_at,
-    readSrc32, State.setReg32, RegUpd.gpr_setReg, RegUpd.rd_setReg, RegUpd.wr_setReg,
-    RegUpd.mem_setReg, hs.reg, Option.map_some, Option.bind_some, State.load32,
-    Mem.readW_writeW_self32, mx_write hs (d := 2052) (by decide), hr, RegUpd.setWidth_setWidth_32,
-    reduceCtorEq, ↓reduceIte, Nat.reduceAdd, hz, Option.some.injEq, exists_eq_left']
-  refine ⟨trivial, fun r hr => by simp only [hr, ite_false], trivial, trivial,
-    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (mx_contains p (by decide))⟩
-
-theorem restore_ok {s : State} {p : Addr} (hs : Scratch s p)
-    (hz : BitVec.extractLsb' 16 16 ((s.gpr .r11).setWidth 32) = 0) :
-    WP isa (.block [.store32 (at_ .rcx mxcsrOff) .r11, .ldmxcsr (at_ .rcx mxcsrOff)]) s fun t =>
-      t.mxcsr = (s.gpr .r11).setWidth 32 ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
-      Frame [mxR p] s.mem t.mem := by
-  have hr := mx_read hs (d := 2048) (by decide)
-  apply WP.of_runBlock
-  simp only [mxcsrOff, runBlock_cons, runStep_some, runBlock_nil, exec, State.store32, ea_at,
-    hs.reg, State.load32, Mem.readW_writeW_self32, mx_write hs (d := 2048) (by decide), hr,
-    ↓reduceIte, Option.bind_some, hz, Option.some.injEq, exists_eq_left']
-  exact ⟨trivial, trivial, trivial, trivial,
-    (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (mx_contains p (by decide))⟩
-
-theorem mxR_sub (p : Addr) : Region.Sub (mxR p) ⟨p, 4096⟩ := Offset.sub_base p (by decide)
-
-/-- A block outside scratch is unchanged by writes to `mxR`. -/
-theorem blockAt_mx {m m' : Mem} {p q : Addr} (hf : Frame [mxR p] m m')
-    (hd : (⟨q, 1024⟩ : Region).Disjoint ⟨p, 4096⟩) : blockAt m' q = blockAt m q := by
-  have d1 : (⟨q, 1024⟩ : Region).Disjoint ⟨off p 2048, 8⟩ := hd.sub_right (mxR_sub p)
-  apply Vector.ext
-  intro i hi
-  have he : m'.readW (off q (8 * i)) 64 = m.readW (off q (8 * i)) 64 :=
-    hf.readW (r := ⟨q, 1024⟩) (Offset.contains_base q (by omega_using [hi]) (by omega_using [hi]))
-      (fun r hr => (List.mem_singleton.mp hr) ▸ d1) (by decide)
-  rw [← blockAt_get m' q ⟨i, hi⟩, ← blockAt_get m q ⟨i, hi⟩] at he
-  exact he
-
-theorem ldmxcsr_ok (v : BitVec 32) :
-    BitVec.extractLsb' 16 16 (BitVec.setWidth 32 (BitVec.setWidth 64 (v &&& 0xFFFF))) = 0 := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_setWidth, BitVec.getLsbD_and, hi, decide_true,
-    Bool.true_and]
-  rw [show (0xFFFF : BitVec 32).getLsbD (16 + i) = false by revert i; decide]
-  simp
-
 /-! ## G -/
 
 theorem compress_wp (s : State) (hs : compressLocal.pre s) :
@@ -336,50 +253,13 @@ theorem compress_wp (s : State) (hs : compressLocal.pre s) :
   obtain ⟨hrd, hwr, hout, hx, hy, _, _⟩ := hs
   have scr : Scratch s (s.gpr .rcx) := ⟨rfl, by simp [hwr]⟩
   unfold Impl.Argon2.X86_64.Avx2.compress
-  apply WP.seq
-  refine (save_ok scr).mono ?_
-  rintro s1 ⟨h11, hg1, hr1, hw1, -, hf1⟩
-  have scr1 : Scratch s1 (s.gpr .rcx) := ⟨hg1 .rcx (by decide), hw1 ▸ scr.wr⟩
-  apply WP.seq
-  apply WP.seq
-  refine (set_ok scr1).mono ?_
-  rintro s2 ⟨-, hg2, hr2, hw2, hf2⟩
-  have hg12 : ∀ r, r ≠ .rax → r ≠ .r11 → s2.gpr r = s.gpr r :=
-    fun r h0 h11 => (hg2 r h0).trans (hg1 r h11)
-  have scr2 : Scratch s2 (s.gpr .rcx) := ⟨hg12 .rcx (by decide) (by decide), hw2 ▸ scr1.wr⟩
-  have hf12 := hf1.trans hf2
-  have inputs : Inputs s2 (s.gpr .rdi) (s.gpr .rsi) (s.gpr .rcx) :=
-    ⟨hg12 .rdi (by decide) (by decide), hg12 .rsi (by decide) (by decide),
-      by rw [hr2, hw2, hr1, hw1]; simp [hrd], by rw [hr2, hw2, hr1, hw1]; simp [hrd], hx, hy⟩
-  apply WP.seq
-  refine (body_ok scr2 inputs (out := s.gpr .rdx) (hg12 .rdx (by decide) (by decide))
-    (by rw [hw2, hw1, hwr]; simp) hout.symm).mono ?_
-  rintro s3 ⟨hpost, hf3, hg3, hr3, hw3, -⟩
-  refine WP.of_runBlock ⟨s3, by
-    simp only [runBlock_cons, runStep_some, runBlock_nil, exec], ?_⟩
-  have scr3 : Scratch s3 (s.gpr .rcx) := ⟨(hg3 .rcx (by decide)).trans scr2.reg, hw3 ▸ scr2.wr⟩
-  have h113 : s3.gpr .r11 = (s.mxcsr &&& 0xFFFF).setWidth 64 := by
-    rw [hg3 .r11 (by decide), hg2 .r11 (by decide), h11]
-  refine (restore_ok scr3 (by rw [h113]; exact ldmxcsr_ok _)).mono ?_
-  rintro t ⟨-, hgt, -, -, hft⟩
-  refine ⟨?_, fun r hr => ?_, ?_⟩
-  · change blockAt t.mem (s.gpr .rdx) = Spec.Argon2.compress (blockAt s.mem (s.gpr .rdi)) (blockAt s.mem (s.gpr .rsi))
-    rw [blockAt_mx hft hout, hpost, blockAt_mx hf12 hx, blockAt_mx hf12 hy]
-  · have h0 : r ≠ .rax := by
-      simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-    have h1 : r ≠ .r11 := by
-      simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
-    rw [hgt, hg3 r h0, hg12 r h0 h1]
-  · have hmx : ∀ {m m' : Mem}, Frame [mxR (s.gpr .rcx)] m m' →
-        Frame [⟨s.gpr .rdx, 1024⟩, ⟨s.gpr .rcx, 4096⟩] m m' := fun h =>
-      h.sub fun r hr => by
-        simp only [List.mem_singleton] at hr
-        subst r
-        exact ⟨_, by simp, mxR_sub _⟩
-    rw [hwr]
-    exact ((hmx hf12).trans hf3).trans (hmx hft)
+  have inputs : Inputs s (s.gpr .rdi) (s.gpr .rsi) (s.gpr .rcx) :=
+    ⟨rfl, rfl, by simp [hrd], by simp [hrd], hx, hy⟩
+  refine (body_ok scr inputs (out := s.gpr .rdx) rfl (by rw [hwr]; simp) hout.symm).mono ?_
+  rintro t ⟨hpost, hft, hgt, -, -, -⟩
+  refine ⟨hpost, fun r hr => hgt r ?_, by rw [hwr]; exact hft⟩
+  simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem compress_ctl : ctlOk Impl.Argon2.X86_64.Avx2.compress = true := by lit_decide
 

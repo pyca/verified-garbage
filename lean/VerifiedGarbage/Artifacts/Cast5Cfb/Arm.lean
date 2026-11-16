@@ -15,19 +15,15 @@ namespace VG.Artifacts.Cast5Cfb.Arm
 def artifacts : List Artifact := [
   Spec.Cast5.cfbEncryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cfbEncrypt
-    stack := 336
     verified := Proof.Cast5.cfbEncrypt_keyed Proof.Cast5.Arm.cfbEncrypt_framed },
   Spec.Cast5.cfbDecryptApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cfbDecrypt
-    stack := 336
     verified := Proof.Cast5.cfbDecrypt_keyed Proof.Cast5.Arm.cfbDecrypt_framed },
   Spec.Cast5.cfbEncryptFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cfbEncryptFinal
-    stack := 336
     verified := Proof.Cast5.cfbEncryptFinal_keyed Proof.Cast5.Arm.cfbEncryptFinal_framed },
   Spec.Cast5.cfbDecryptFinalApi.artifact Arm.target {
     code := Impl.StackScratch.Arm.withStackScratchWiped 328 1 78 Impl.Cast5.Arm.cfbDecryptFinal
-    stack := 336
     verified := Proof.Cast5.cfbDecryptFinal_keyed Proof.Cast5.Arm.cfbDecryptFinal_framed }]
 
 end VG.Artifacts.Cast5Cfb.Arm

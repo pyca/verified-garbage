@@ -25,17 +25,17 @@ namespace VG.Proof.MillerRabin.AArch64.Caller
 open VG VG.AArch64 VG.Proof.Bignum VG.Proof.Bignum.AArch64
 open VG.Impl.MillerRabin.AArch64 VG.Impl.MillerRabin.AArch64.Caller
 
-private theorem ready_base {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Ready L s) :
+theorem ready_base {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Ready L s) :
     s.gpr .x0 = L.B := by
   obtain ⟨⟨_, _, _, c, bm, b, hc, _⟩, _⟩ := h
   exact hc.ws.x0
 
-private theorem ready_width {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Ready L s) :
+theorem ready_width {L : VG.Proof.Bignum.AArch64.Ws} {s : State} (h : Ready L s) :
     Proof.Rsa.Mont.wOf s.mem L.B = L.w := by
   obtain ⟨⟨_, _, _, c, bm, b, hc, _⟩, _⟩ := h
   exact ctx_width hc
 
-private theorem ready_pub {s t : State} {L : VG.Proof.Bignum.AArch64.Ws}
+theorem ready_pub {s t : State} {L : VG.Proof.Bignum.AArch64.Ws}
     (hs : Ready L s) (ht : Ready L t) (hsp : s.sp = t.sp) :
     roundPub (narrowed s L.B L.w) (narrowed t L.B L.w) := by
   have h0s : (narrowed s L.B L.w).gpr .x0 = L.B := (s.callEntry_gpr (by decide)).trans (ready_base hs)
@@ -66,7 +66,7 @@ theorem call_ct (M : Mont) (name : String) (hnf : (round M.mm).noFrames = true) 
       obtain ⟨L, hs, ht, hsp⟩ := h
       exact ⟨L, before_good hs, before_good ht, hsp⟩) (fun _ _ h => h)
   · exact RelCT.seq (two_post (prepared_call_ct M name)
-      (fun _ _ h => call_restore_pre M name hnf h)) restore_ct
+      (fun _ _ h => call_restore_pre (round_correct M) name hnf h)) restore_ct
 
 end VG.Proof.MillerRabin.AArch64.Caller
 
@@ -103,7 +103,7 @@ structure Kernel where
 def Kernel.called (M : Mont) (name : String) (hnf : (VG.Impl.MillerRabin.AArch64.round M.mm).noFrames = true) : Kernel where
   run := [VG.Impl.MillerRabin.AArch64.Caller.call name (VG.Impl.MillerRabin.AArch64.round M.mm)]
   nonempty := by simp
-  ok := by exact Caller.call_result_ok M name hnf
+  ok := by exact Caller.call_result_ok (round_correct M) name hnf
   ct := by exact Caller.call_ct M name hnf
 
 end VG.Proof.MillerRabin.AArch64

@@ -27,18 +27,13 @@ def jacAddF (X1 Y1 Z1 X2 Y2 Z2 : F) : F × F × F :=
   let y := r*(v-x)-s1*hhh
   (x,y,Z1*Z2*h)
 
-/-- The Jacobian and complete projective formulas give proportional coordinates. -/
-theorem jacAddF_cross (b X1 Y1 Z1 X2 Y2 Z2 : F)
-    (h1 : Y1*Y1 = X1*X1*X1-3*X1*Z1*Z1*Z1*Z1+b*Z1*Z1*Z1*Z1*Z1*Z1)
-    (h2 : Y2*Y2 = X2*X2*X2-3*X2*Z2*Z2*Z2*Z2+b*Z2*Z2*Z2*Z2*Z2*Z2) :
-    let j := jacAddF X1 Y1 Z1 X2 Y2 Z2
-    let p := rcbAdd3 b (X1*Z1) Y1 (Z1*Z1*Z1) (X2*Z2) Y2 (Z2*Z2*Z2)
-    (j.1*j.2.2)*p.2.2 = p.1*(j.2.2*j.2.2*j.2.2) ∧
-      j.2.1*p.2.2 = p.2.1*(j.2.2*j.2.2*j.2.2) := by
-  dsimp only [jacAddF,rcbAdd3]
-  constructor <;> grind
+/-- The first of `jacAddF_cross'`'s equations, from the equation without the
+factor `z` the two sides share, whose terms are of a lower degree. -/
+theorem cross_of_mul {x z p₁ p₃ : F} (h : x * p₃ = p₁ * (z * z)) : x * z * p₃ = p₁ * (z * z * z) := by
+  grind
 
-/-- `jacAddF_cross` for any `a`: against Algorithm 1, with `b3 = 3b`. -/
+/-- The Jacobian and complete projective formulas give proportional
+coordinates, for any `a`: against Algorithm 1, with `b3 = 3b`. -/
 theorem jacAddF_cross' (a b b3 X1 Y1 Z1 X2 Y2 Z2 : F) (hb : b3 = 3*b)
     (h1 : Y1*Y1 = X1*X1*X1+a*X1*Z1*Z1*Z1*Z1+b*Z1*Z1*Z1*Z1*Z1*Z1)
     (h2 : Y2*Y2 = X2*X2*X2+a*X2*Z2*Z2*Z2*Z2+b*Z2*Z2*Z2*Z2*Z2*Z2) :
@@ -48,7 +43,21 @@ theorem jacAddF_cross' (a b b3 X1 Y1 Z1 X2 Y2 Z2 : F) (hb : b3 = 3*b)
       j.2.1*p.2.2 = p.2.1*(j.2.2*j.2.2*j.2.2) := by
   subst hb
   dsimp only [jacAddF,rcbAdd]
-  constructor <;> grind
+  constructor
+  · exact cross_of_mul (by grind)
+  · grind
+
+/-- `jacAddF_cross'` for `a = -3`, against Algorithm 4: the kernel checks one
+of the two, whose certificates are polynomials of thousands of terms. -/
+theorem jacAddF_cross (b X1 Y1 Z1 X2 Y2 Z2 : F)
+    (h1 : Y1*Y1 = X1*X1*X1-3*X1*Z1*Z1*Z1*Z1+b*Z1*Z1*Z1*Z1*Z1*Z1)
+    (h2 : Y2*Y2 = X2*X2*X2-3*X2*Z2*Z2*Z2*Z2+b*Z2*Z2*Z2*Z2*Z2*Z2) :
+    let j := jacAddF X1 Y1 Z1 X2 Y2 Z2
+    let p := rcbAdd3 b (X1*Z1) Y1 (Z1*Z1*Z1) (X2*Z2) Y2 (Z2*Z2*Z2)
+    (j.1*j.2.2)*p.2.2 = p.1*(j.2.2*j.2.2*j.2.2) ∧
+      j.2.1*p.2.2 = p.2.1*(j.2.2*j.2.2*j.2.2) := by
+  rw [rcbAdd3_eq]
+  exact jacAddF_cross' (-3) b (3*b) X1 Y1 Z1 X2 Y2 Z2 rfl (by grind) (by grind)
 
 end
 
