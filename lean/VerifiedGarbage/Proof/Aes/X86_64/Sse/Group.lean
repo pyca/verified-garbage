@@ -293,7 +293,7 @@ theorem ark_step {s : State} {j : Nat} {T : Nat → Nat → Spec.Aes.State}
     intro i hi
     refine ⟨scr s₀, List.mem_append_right _ (hc.scr hp), ?_⟩
     rw [hk, kp_off _ _ hp.k0, Offset.add_add]
-    exact Offset.contains_base _ (by omega_arith) (by omega_arith)
+    exact Offset.contains_base _ (by (simp only [lastKey]; omega_arith)) (by (simp only [lastKey]; omega_arith))
   have hkey : VG.Proof.Aes.KeyRel (keyWord s) (Spec.Aes.roundKey w j) := by
     have := keysAt hp hc j hj
     unfold keyWord; rw [hk]; exact this
