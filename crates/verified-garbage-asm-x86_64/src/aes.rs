@@ -488,6 +488,10 @@ pub(crate) mod vg_aes_gcm_stream_encrypt_aesni_pclmul_avx;
 pub(crate) mod vg_aes_gcm_stream_encrypt_pclmul;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_core.rs"]
+pub(crate) mod vg_aes_gcm_stream_encrypt_prepared_vaes_vpclmul_core;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_gcm_stream_encrypt_to.rs"]
 pub(crate) mod vg_aes_gcm_stream_encrypt_to;
 
