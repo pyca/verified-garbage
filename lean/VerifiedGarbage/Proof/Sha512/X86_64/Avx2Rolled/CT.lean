@@ -112,8 +112,7 @@ theorem rel_nil {P : State → State → Prop} : RelCT isa P (.block []) fun s�
 /-- What the prologue leaves (`prologue_ok`). -/
 def ProPost (s₀ s₁ : State) : Prop :=
   (∀ r, r ≠ .rax → s₁.gpr r = s₀.gpr r) ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr ∧ s₁.mem = saveMem s₀ ∧
-    s₁.syms = s₀.syms ∧ s₁.zf = some (s₀.gpr .rdx &&& s₀.gpr .rdx == 0) ∧ Masks s₁ ∧
-    (s₁.xmm .xmm14).extractLsb' 0 64 = s₀.gpr .r14 ∧ (s₁.xmm .xmm15).extractLsb' 0 64 = s₀.gpr .r15
+    s₁.syms = s₀.syms ∧ s₁.zf = some (s₀.gpr .rdx &&& s₀.gpr .rdx == 0) ∧ Masks s₁
 
 theorem wr_eq {s₀ s : State} (hp : Pre s₀) (hw : s.wr = s₀.wr) (hrdi : s.gpr .rdi = st s₀)
     (hrcx : s.gpr .rcx = scr s₀) : s.wr = [⟨s.gpr .rdi, 64⟩, ⟨s.gpr .rcx, 1328⟩] := by
@@ -141,14 +140,14 @@ theorem compress_rel {σ₁ σ₂ : State} (h₁ : Pre σ₁) (h₂ : Pre σ₂)
       show a.zf = b.zf
       rw [p₁.2.2.2.2.2.1, p₂.2.2.2.2.2.1, e_rdx]) ?_ ?_
     · refine (rel_nil).mono (fun _ _ h => h) fun a b ⟨⟨_, p₁, p₂⟩, he⟩ => ?_
-      obtain ⟨hg₁, hrd₁, hwr₁, hm₁, hsy₁, hz₁, hk₁, x₁, y₁⟩ := p₁
-      obtain ⟨hg₂, hrd₂, hwr₂, hm₂, hsy₂, hz₂, hk₂, x₂, y₂⟩ := p₂
+      obtain ⟨hg₁, hrd₁, hwr₁, hm₁, hsy₁, hz₁, hk₁⟩ := p₁
+      obtain ⟨hg₂, hrd₂, hwr₂, hm₂, hsy₂, hz₂, hk₂⟩ := p₂
       have he₂ : b.zf = some true := by rw [hz₂, ← e_rdx, ← hz₁]; exact he
       have z₁ : nb σ₁ = 0 := by
         have := he; simp only [eval, hz₁, Option.some.injEq] at this; simp at this; simp [nb, this]
       have z₂ : nb σ₂ = 0 := by rw [hnb]; exact z₁
-      exact ⟨z₁ ▸ common_zero h₁ hg₁ hrd₁ hwr₁ hm₁ hsy₁ hk₁ x₁ y₁,
-        z₂ ▸ common_zero h₂ hg₂ hrd₂ hwr₂ hm₂ hsy₂ hk₂ x₂ y₂⟩
+      exact ⟨z₁ ▸ common_zero h₁ hg₁ hrd₁ hwr₁ hm₁ hsy₁ hk₁,
+        z₂ ▸ common_zero h₂ hg₂ hrd₂ hwr₂ hm₂ hsy₂ hk₂⟩
     · let I : Nat → State → State → Prop := fun n a b =>
         ∃ i, n = nb σ₁ - i ∧ i < nb σ₁ ∧ LInv σ₁ i a ∧ LInv σ₂ i b
       have agL : ∀ {i a b}, LInv σ₁ i a → LInv σ₂ i b → A.Agree τA a b := fun {i a b} l₁ l₂ =>
@@ -201,14 +200,14 @@ theorem compress_rel {σ₁ σ₂ : State} (h₁ : Pre σ₁) (h₂ : Pre σ₂)
             have : i < nxtI σ₁ i := by simp only [nxtI]; split <;> omega_using []
             omega_using [hi, hn, this]
       refine (RelCT.loop I hstep (nb σ₁)).mono (fun a b ⟨⟨_, p₁, p₂⟩, he⟩ => ?_) fun _ _ h => h
-      obtain ⟨hg₁, hrd₁, hwr₁, hm₁, hsy₁, hz₁, hk₁, x₁, y₁⟩ := p₁
-      obtain ⟨hg₂, hrd₂, hwr₂, hm₂, hsy₂, hz₂, hk₂, x₂, y₂⟩ := p₂
+      obtain ⟨hg₁, hrd₁, hwr₁, hm₁, hsy₁, hz₁, hk₁⟩ := p₁
+      obtain ⟨hg₂, hrd₂, hwr₂, hm₂, hsy₂, hz₂, hk₂⟩ := p₂
       have hpos : 0 < nb σ₁ := by
         have := he; simp only [eval, hz₁, Option.some.injEq] at this
         simp only [BitVec.and_self, beq_eq_false_iff_ne, ne_eq] at this
         exact Nat.pos_of_ne_zero fun h' => this (BitVec.eq_of_toNat_eq (by simpa using h'))
-      have c₁ := common_zero h₁ hg₁ hrd₁ hwr₁ hm₁ hsy₁ hk₁ x₁ y₁
-      have c₂ := common_zero h₂ hg₂ hrd₂ hwr₂ hm₂ hsy₂ hk₂ x₂ y₂
+      have c₁ := common_zero h₁ hg₁ hrd₁ hwr₁ hm₁ hsy₁ hk₁
+      have c₂ := common_zero h₂ hg₂ hrd₂ hwr₂ hm₂ hsy₂ hk₂
       exact ⟨0, rfl, hpos,
         { c₁ with rsi := by rw [hg₁ _ (by decide)]; simp [blkAddr], rdx := by rw [hg₁ _ (by decide)]; simp [nb] },
         { c₂ with rsi := by rw [hg₂ _ (by decide)]; simp [blkAddr], rdx := by rw [hg₂ _ (by decide)]; simp [nb] }⟩
