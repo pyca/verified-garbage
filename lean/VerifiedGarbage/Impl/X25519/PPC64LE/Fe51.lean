@@ -277,7 +277,9 @@ def lastSwap : List Instr := Impl.X25519.PPC64LE.mask ++ cswap X2 X3 ++ cswap Z2
 
 /-! ## Inversion
 
-`[R] = [Z2]^(p-2)` by ref10's addition chain, as `Impl.X25519.PPC64LE`'s. -/
+`[R] = [Z2]^(p-2)` by ref10's addition chain (254 squarings and 11
+multiplications; `Proof/X25519/Chain250.lean`'s `chainF`, then five squarings
+and `z^11`). -/
 
 /-- `[a]` squared `n` times into `[o]`, the squarings after the first in a
 loop counted by `r12`, each of what the one before left in `lo`. -/

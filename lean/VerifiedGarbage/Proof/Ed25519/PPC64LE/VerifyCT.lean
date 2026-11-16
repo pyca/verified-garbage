@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Ed25519.PPC64LE.FieldTest
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointScalar
 import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
-import VerifiedGarbage.Proof.X25519.PPC64LE.Invert
+import VerifiedGarbage.Proof.X25519.PPC64LE.Field
 import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
@@ -107,9 +107,9 @@ theorem decodeBody_ct {k : Nat} :
         (⟨inPtr pk sig k, 32⟩ : Region).Disjoint ⟨b, 8192⟩ ∧ bytesAt s0.mem (inPtr pk sig k) 32 = inBytes PK RS k := by
       unfold inPtr inBytes
       by_cases h0 : k = 0
-      · rw [iteT h0, iteT h0]
+      · rw [ite_eq_left h0, ite_eq_left h0]
         exact ⟨fun j hj => in_base (List.mem_append_left _ hv1.pkR) (by omega_using [hj]) (by omega_using [hj]), hv1.pkD, hpk⟩
-      · rw [iteF h0, iteF h0]
+      · rw [ite_eq_right h0, ite_eq_right h0]
         exact ⟨fun j hj => in_base (List.mem_append_left _ hv1.sigR) (by omega_using [hj]) (by omega_using [hj]),
           hv1.sigD.sub_left (Region.sub_prefix (by decide)), hrs⟩
     obtain ⟨hr4, hdq, hbs⟩ := hq
@@ -199,7 +199,7 @@ theorem D2.r18 {t : State} (h : D2 b sp pk sig ch T PK SG CH t) :
       (Spec.Ed25519.decodePoint (bytesAt s0.mem sig 32)).isSome) := by
     show (true && (Spec.Ed25519.decodePoint (bytesAt s0.mem (if 0 = 0 then pk else sig) 32)).isSome &&
       (Spec.Ed25519.decodePoint (bytesAt s0.mem (if 1 = 0 then pk else sig) 32)).isSome) = _
-    rw [iteT rfl, iteF (by decide), Bool.true_and]
+    rw [ite_eq_left rfl, ite_eq_right (by decide), Bool.true_and]
   rw [d.r18, e, v.2.2.1, ← Proof.Ed25519.signatureBytes_take, v.2.2.2.1]
 
 theorem decodeBoth_ct :

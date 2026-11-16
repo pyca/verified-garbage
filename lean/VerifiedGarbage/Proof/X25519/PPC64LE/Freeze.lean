@@ -1,8 +1,7 @@
 module
 
-import VerifiedGarbage.Proof.X25519.PPC64LE.Invert
 public import VerifiedGarbage.Proof.X25519.Bytes
-public import VerifiedGarbage.Proof.X25519.PPC64LE.Slots
+public import VerifiedGarbage.Proof.X25519.PPC64LE.Field
 import VerifiedGarbage.Proof.X25519.PPC64LE.Setup
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X25519.PPC64LE.Mul
@@ -24,6 +23,10 @@ namespace VG.Proof.X25519.PPC64LE
 open VG VG.PPC64LE VG.Impl.X25519.PPC64LE
 open VG.Spec.X25519 (P Fe bytesAt)
 open VG.Proof.X25519 (leBytes)
+
+/-- The field area `[0, ACC + 64)` of the working space: the elements and
+the product at `ACC`. -/
+abbrev FA (b : Addr) : Region := ⟨b, ACC + 64⟩
 
 theorem sel0r (a c : BitVec 64) : a ^^^ ((c ^^^ a) &&& (0 - BitVec.ofNat 64 0)) = a := by simp
 

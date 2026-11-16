@@ -3,7 +3,7 @@ module
 
 public import VerifiedGarbage.Proof.X25519.PPC64LE.Fe51.Ops
 public import VerifiedGarbage.Proof.X25519.Ladder
-public import VerifiedGarbage.Proof.X25519.PPC64LE.Ladder
+public import VerifiedGarbage.Proof.X25519.PPC64LE.Bits
 public import VerifiedGarbage.Proof.X25519.Chain250
 import VerifiedGarbage.Proof.X25519.Invert
 import VerifiedGarbage.Proof.X25519.PPC64LE.Cswap

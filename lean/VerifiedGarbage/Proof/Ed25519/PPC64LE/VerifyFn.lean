@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarBit
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarReduce
 import VerifiedGarbage.Proof.Ed25519.VerifyBytes
 import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
-import VerifiedGarbage.Proof.X25519.PPC64LE.Invert
+import VerifiedGarbage.Proof.X25519.PPC64LE.Field
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.Decode
@@ -102,8 +102,8 @@ theorem verifyScalar_ok {s : State} (h : VCtx b pk sig ch s) :
     have hv3 : V s3.mem b SR = V s2.mem b SR := by rw [u3.mem]
     rw [hz, e8, hv, ← hv3]
     by_cases hL : Spec.Ed25519.L ≤ V s3.mem b SR
-    · rw [iteT hL]; exact ⟨fun h => absurd h (by decide), fun h => absurd hL (by omega_arith)⟩
-    · rw [iteF hL]; exact ⟨fun _ => by omega_arith, fun _ => rfl⟩
+    · rw [ite_eq_left hL]; exact ⟨fun h => absurd h (by decide), fun h => absurd hL (by omega_arith)⟩
+    · rw [ite_eq_right hL]; exact ⟨fun _ => by omega_arith, fun _ => rfl⟩
 
 /-! ## Decoding `A` and `R` -/
 
@@ -180,7 +180,7 @@ theorem decodeNext_ok {s0 t u : State} {k : Nat} (hk : k < 2) (h : DecInv s0 b p
       exact h.frame.trans (f1.trans f2)
     · rw [x3.other _ (by decide), x2.other _ (by decide), x1.gpr, BitVec.add_zero, rw'.gpr _ (by decide),
         hR2.gpr _ (by decide), hvu.r30]
-      unfold inPtr; rw [iteF (by omega_arith)]
+      unfold inPtr; rw [ite_eq_right (by omega_arith)]
     · rw [x3.other _ (by decide), x2.gpr, e28, BitVec.ofNat_add_ofNat]
       congr 1
     · rw [x3.other _ (by decide), x2.other _ (by decide), x1.other _ (by decide), rw'.gpr _ (by decide),
@@ -223,9 +223,9 @@ theorem decodeBody_ok {s0 t : State} {k : Nat} (hk : k < 2) (h : DecInv s0 b pk 
       (⟨q, 32⟩ : Region).Disjoint ⟨b, 8192⟩ := by
     rw [hq]; unfold inPtr
     by_cases h0 : k = 0
-    · rw [iteT h0]
+    · rw [ite_eq_left h0]
       exact ⟨fun j hj => in_base (List.mem_append_left _ hv1.pkR) (by omega_arith) (by omega_arith), hv1.pkD⟩
-    · rw [iteF h0]
+    · rw [ite_eq_right h0]
       exact ⟨fun j hj => in_base (List.mem_append_left _ hv1.sigR) (by omega_arith) (by omega_arith),
         hv1.sigD.sub_left (Region.sub_prefix (by decide))⟩
   obtain ⟨hr4, hdq⟩ := hqR
@@ -303,7 +303,7 @@ theorem verifyDecode_ok (hR : RhsOk) {s : State} (h : VCtx b pk sig ch s) (hB : 
         bytesAt_ws h1.frame decW_sub (h.sigD.sub_left (Offset.sub_base sig (d := 32) (n := 32) (by decide)))
           (by decide)]
       unfold eqResult
-      simp only [inPtr, iteT] at ea er
+      simp only [inPtr, ite_eq_left] at ea er
       rw [show (if (1 : Nat) = 0 then pk else sig) = sig from rfl] at er
       rw [ea, er]
   · have hno : decOk s.mem pk sig 2 = false := by

@@ -9,7 +9,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 # X25519 on PPC64LE: the conditional swap
 
 `cswap x y` swaps the elements at `x` and `y` if the mask in `r11` is `-1`
-and leaves them if it is `0` (`cswap_ok`).
+and leaves them if it is `0` (`cswap_ok`). The mask is `-swap` for a swap
+bit, the exclusive or of two bits of the scalar (`ofNat_xor`, `xor_le_one`).
 -/
 
 @[expose] public section
@@ -29,6 +30,18 @@ theorem sel1 (a c : BitVec 64) : a ^^^ ((a ^^^ c) &&& (0 - BitVec.ofNat 64 1)) =
 theorem sel1' (a c : BitVec 64) : c ^^^ ((a ^^^ c) &&& (0 - BitVec.ofNat 64 1)) = a := by
   have : (0 : BitVec 64) - BitVec.ofNat 64 1 = BitVec.allOnes 64 := by decide
   rw [this, BitVec.and_allOnes, BitVec.xor_comm a, ← BitVec.xor_assoc, BitVec.xor_self, BitVec.zero_xor]
+
+theorem cswap_fst (sw : Nat) (x y : Spec.X25519.Fe) : (Spec.X25519.cswap sw x y).1 = sel sw x y := by
+  unfold Spec.X25519.cswap sel; split <;> rfl
+
+theorem ofNat_xor {x y : Nat} (hx : x < 2 ^ 64) (hy : y < 2 ^ 64) :
+    BitVec.ofNat 64 x ^^^ BitVec.ofNat 64 y = BitVec.ofNat 64 (x ^^^ y) := by
+  apply BitVec.eq_of_toNat_eq
+  rw [BitVec.toNat_xor, toNat_imm hx, toNat_imm hy, toNat_imm (Nat.xor_lt_two_pow hx hy)]
+
+theorem xor_le_one {x y : Nat} (hx : x ≤ 1) (hy : y ≤ 1) : x ^^^ y ≤ 1 := by
+  rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hx with rfl | rfl <;>
+  rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hy with rfl | rfl <;> decide
 
 section
 variable {b : Addr}

@@ -1,10 +1,9 @@
 module
-public import VerifiedGarbage.Proof.X25519.PPC64LE.Ladder
+public import VerifiedGarbage.Proof.X25519.PPC64LE.Field
 public import VerifiedGarbage.Proof.X25519.Bytes
 
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.X25519.PPC64LE.Mul
-import VerifiedGarbage.Proof.X25519.PPC64LE.Invert
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 
@@ -12,8 +11,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 # X25519 on PPC64LE: the setup
 
 The u-coordinate as 32-bit limbs (`decode_val`: the number of its 32 bytes
-modulo `2²⁵⁵`), and the setup of the working space: `x1 = x3 = u`, `x2 = z3 =
-1` and `z2 = 0` (`setup_ok`).
+modulo `2²⁵⁵`), and the two halves of `setup`: `x1 = x3 = u` (`decode_ok`),
+then `x2 = z3 = 1` and `z2 = 0` (`consts_ok`).
 -/
 
 @[expose] public section
@@ -243,7 +242,7 @@ theorem consts_ok {s : State} (hc : Ctx b s) :
 
 end
 
-/-! ## The whole setup -/
+/-! ## The precondition -/
 
 /-- The precondition of `vg_x25519(out = r3, scalar = r4, point = r5, scratch = r6)`, by field. -/
 structure XPre (s : State) : Prop where
@@ -254,68 +253,5 @@ structure XPre (s : State) : Prop where
   out_ws : Region.Disjoint ⟨s.gpr .r3, 32⟩ ⟨s.gpr .r6, 4096⟩
   sc_ws : Region.Disjoint ⟨s.gpr .r4, 32⟩ ⟨s.gpr .r6, 4096⟩
   pt_ws : Region.Disjoint ⟨s.gpr .r5, 32⟩ ⟨s.gpr .r6, 4096⟩
-
-/-- The u-coordinate, decoded. -/
-def uOf (s : State) : Fe :=
-  toFe (VG.Spec.X25519.decodeUCoordinate (bytesAt s.mem (s.gpr .r5) 32))
-
-theorem val32_one : val32 (fun k => if k = 0 then 1 else 0) 8 = 1 := by decide
-theorem val32_zero8 : val32 (fun _ => 0) 8 = 0 := by decide
-
-theorem slot_of {m : Mem} {B : Addr} {o : Nat} {f : Nat → Nat} (h : ∀ k < 8, limb m B o k = f k) :
-    FS m B o = toFe (val32 f 8) := by rw [FS, V, val32_congr h]
-
-theorem setup_ok {s : State} (hp : XPre s) :
-    WP isa (.block setup) s fun s' =>
-      Ctx (s.gpr .r6) s' ∧ Frame [⟨s.gpr .r6, 4096⟩] s.mem s'.mem ∧
-      SlotsOk s'.mem (s.gpr .r6) LQ (ladV (uOf s) (VG.Proof.X25519.init (uOf s))) ∧
-      Rest [.r5, .r7, .r8] s s' := by
-  have hX1 : X1 = 0 := rfl
-  have hX2 : X2 = 32 := rfl
-  have hZ2 : Z2 = 64 := rfl
-  have hX3 : X3 = 96 := rfl
-  have hZ3 : Z3 = 128 := rfl
-  have hws : (⟨s.gpr .r6, 4096⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
-  have hc : Ctx (s.gpr .r6) s := ⟨rfl, 4096, Nat.le_refl _, hws⟩
-  unfold setup
-  refine WP.append (decode_ok hc (pt := s.gpr .r5) rfl (by rw [hp.rd]; simp) hp.pt_ws)
-    fun s4 ⟨hl4, hf4, hr4⟩ => ?_
-  have hc4 : Ctx (s.gpr .r6) s4 := hc.of_rest hr4 (by decide)
-  refine WP.mono (consts_ok hc4) fun s5 ⟨hx2, hz2, hz3, hf5, hr5⟩ => ?_
-  -- `x1` and `x3` through the constants.
-  have hkeep : ∀ o, (o = X1 ∨ o = X3) → ∀ k < 8,
-      limb s5.mem (s.gpr .r6) o k = uLimb s.mem (s.gpr .r5) k := by
-    intro o ho k hk
-    have e := limb_frame (o := o) hf5 fun r hr j hj => by
-      simp only [constsR, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> exact Offset.disjoint _ (by omega_arith) (by omega_arith) (by omega_arith)
-    rw [e k hk]
-    rcases ho with rfl | rfl
-    · exact (hl4 k hk).1
-    · exact (hl4 k hk).2
-  refine ⟨hc4.of_rest hr5 (by decide), ?_, ?_, ?_⟩
-  · have hsub : ∀ o n, o + n ≤ 4096 → Region.Sub ⟨s.gpr .r6 + BitVec.ofNat 64 o, n⟩
-        ⟨s.gpr .r6, 4096⟩ := fun o n h => Offset.sub_base _ h
-    refine (hf4.sub fun r hr => ⟨_, List.mem_singleton_self _, by
-      rw [List.mem_singleton.mp hr]; exact hsub _ _ (by omega_arith)⟩).trans ?_
-    refine hf5.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
-    simp only [constsR, List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl <;> exact hsub _ _ (by omega_arith)
-  · intro q hq
-    simp only [LQ, List.mem_cons, List.not_mem_nil, or_false] at hq
-    rcases hq with rfl | rfl | rfl | rfl | rfl
-    · rw [slot_of (hkeep _ (.inl rfl)), decode_val]; simp only [ladV, ite_true]; rfl
-    · rw [slot_of hx2, val32_one]
-      simp only [ladV, VG.Proof.X25519.init, iteF (show X2 ≠ X1 by decide), ite_true]; rfl
-    · rw [slot_of hz2, val32_zero8]
-      simp only [ladV, VG.Proof.X25519.init, iteF (show Z2 ≠ X1 by decide), iteF (show Z2 ≠ X2 by decide),
-        ite_true]; rfl
-    · rw [slot_of (hkeep _ (.inr rfl)), decode_val]
-      simp only [ladV, VG.Proof.X25519.init, iteF (show X3 ≠ X1 by decide), iteF (show X3 ≠ X2 by decide),
-        iteF (show X3 ≠ Z2 by decide), ite_true]; rfl
-    · rw [slot_of hz3, val32_one]
-      simp only [ladV, VG.Proof.X25519.init, iteF (show Z3 ≠ X1 by decide), iteF (show Z3 ≠ X2 by decide),
-        iteF (show Z3 ≠ Z2 by decide), iteF (show Z3 ≠ X3 by decide)]; rfl
-  · exact (hr4.mono (by decide)).trans (hr5.mono (by decide))
 
 end VG.Proof.X25519.PPC64LE

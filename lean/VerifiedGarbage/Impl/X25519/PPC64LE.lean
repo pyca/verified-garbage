@@ -3,35 +3,42 @@ module
 public import VerifiedGarbage.TCB.PPC64LE.Isa
 
 /-!
-# X25519: PPC64LE implementation
+# X25519 on PPC64LE: elements of four words
 
-`vg_x25519(out = r3, scalar = r4, point = r5, scratch = r6)`.
+The arithmetic on field elements of four 64-bit words, and the parts of
+`vg_x25519(out = r3, scalar = r4, point = r5, scratch = r6)` that work on
+them: the function itself, `Fe51.x25519` (`Impl/X25519/PPC64LE/Fe51.lean`),
+runs its ladder and its inversion on five 51-bit limbs, between this file's
+`setup` and `bits` and its `freeze`. Ed25519's PPC64LE code
+(`Impl/Ed25519/PPC64LE/Word.lean`) computes with the field operations here.
 
-The ARMv7 implementation's algorithm (`Impl/X25519/Arm.lean`), in 64-bit
+The ARMv7 implementation's arithmetic (`Impl/X25519/Arm.lean`), in 64-bit
 registers. A field element is 32 bytes in the working space: eight 32-bit
-limbs `x0 + 2³² x1 + … + 2²²⁴ x7`, which the additions, subtractions, swaps
-and final reduction use (a product of two limbs and two more limbs fits in
-64 bits), and, the same number, four 64-bit words
-`w0 + 2⁶⁴ w1 + 2¹²⁸ w2 + 2¹⁹² w3`, which the multiplication uses (`mulld`
-and `mulhdu` give the low and high words of a product of words, and `addc`,
-`adde` and `addze` add with XER's carry CA). Every element is any number
-below `2²⁵⁶`, standing for its residue modulo `p = 2²⁵⁵ - 19`; only the
-result is reduced fully. A limb is stored with `stw`, which keeps the low
-32 bits of a sum, and the carry is the sum shifted right by 32. Every element
-lives in the working space, at a constant offset from its base, which stays
-in `r6` (`out` stays in `r3`):
+limbs `x0 + 2³² x1 + … + 2²²⁴ x7`, which the swaps and the final reduction
+use (a product of two limbs and two more limbs fits in 64 bits), and, the
+same number, four 64-bit words `w0 + 2⁶⁴ w1 + 2¹²⁸ w2 + 2¹⁹² w3`, which the
+multiplication, the additions and the subtractions use (`mulld` and `mulhdu`
+give the low and high words of a product of words, and `addc`, `adde` and
+`addze` add with XER's carry CA). Every element is any number below `2²⁵⁶`,
+standing for its residue modulo `p = 2²⁵⁵ - 19`; only the result is reduced
+fully. A limb is stored with `stw`, which keeps the low 32 bits of a sum, and
+the carry is the sum shifted right by 32. Every element lives in the working
+space, at a constant offset from its base, which stays in `r6` (`out` stays
+in `r3`):
 
-* `x1, x2, z2, x3, z3`, the ladder's temporaries, the inversion's result
-  and the final reduction's temporary, 32 bytes each (`X1`, …);
-* the 8 words of a product (`ACC`, 64 bytes) and the bits of the scalar
-  (`BITS`, byte `t` is bit `t` of the clamped scalar).
+* `x1, x2, z2, x3, z3`, which `setup` writes, and the final reduction's
+  temporary, 32 bytes each (`X1`, …, `Y`): `Fe51.x25519` reads the decoded
+  u-coordinate from `X1` and leaves its result in `X2`;
+* the 8 words of a product (`ACC`, 64 bytes), the bits of the scalar
+  (`BITS`, byte `t` is bit `t` of the clamped scalar) and the registers
+  `Fe51.x25519` saves (`SAVE`).
 
 The arithmetic (registers `r4`, `r5`, `r7`–`r11`):
 
 * `pass`: the limbs of a number from eight sums `c_k` (below `2⁶⁴` less a
   carry), limb `k` being `c_k` plus the carry from limb `k - 1`, modulo
   `2³²`, and the carry out in `r8`;
-* `mul`: the eight words of the product by columns (product scanning: the
+* `mulAt`: the eight words of the product by columns (product scanning: the
   terms `a_i b_j` of column `k = i + j` added into a three-word accumulator,
   `r8`–`r10` in turn, whose low word is stored when the column ends), then
   `L + 38 H` for its halves `L` and `H` in four words `r8`–`r11` and a top
@@ -43,20 +50,15 @@ The arithmetic (registers `r4`, `r5`, `r7`–`r11`):
   (`subc`, `sube`: CA is set if there is no borrow), and 38 subtracted if it
   borrowed (`borrowFold`, by a mask from CA), twice: the second does not
   borrow;
-* `cswap`: with the mask `-swap` (in `r11`), as RFC 7748 §5 describes;
+* `cswap`: with the mask `-swap` (in `r11`, `mask`), as RFC 7748 §5
+  describes;
 * `freeze`: the full reduction of the result: bit 255 folded in as 19
   (`x < 2²⁵⁵ + 19`), then `x + 19 - 2²⁵⁵` selected with a mask if it is not
   negative.
 
-The ladder follows RFC 7748 §5 operation by operation (with `a24 · E` a
-multiplication by the word `121665`, `mulA24`), over the bits of the scalar
-from 254 down to 0 (the counter `r12`, which indexes `BITS`; `swap` in `r0`).
-The inversion `z2^(p-2)` is ref10's addition chain (254 squarings and 11
-multiplications), its runs of squarings counted by `r12`.
-
-The function uses only volatile registers. The only branches are on the loop
-counters, and every address is a pointer plus a constant or a counter, so
-only the pointers can affect timing.
+The code here uses only volatile registers. The only branch is on the
+counter of `bits`' loop, and every address is a pointer plus a constant or a
+counter, so only the pointers can affect timing.
 -/
 
 @[expose] public section
@@ -72,17 +74,6 @@ def X2 : Nat := 32
 def Z2 : Nat := 64
 def X3 : Nat := 96
 def Z3 : Nat := 128
-def A : Nat := 160
-def B : Nat := 192
-def C : Nat := 224
-def D : Nat := 256
-def AA : Nat := 288
-def BB : Nat := 320
-def E : Nat := 352
-def DA : Nat := 384
-def CB : Nat := 416
--- 448 to 480 is unused.
-def R : Nat := 480
 def Y : Nat := 512
 def ACC : Nat := 544
 def BITS : Nat := 608
@@ -132,10 +123,9 @@ def row (acc a b : Nat) : List Instr :=
     [.store .w .r8 .r9 (acc + 32), .addi .r9 .r9 4, .subi .r11 .r11 1]
 
 /-! The product is eight doublewords at an offset `acc` of the working space
-(X25519's `ACC`; Ed25519 on PPC64LE uses the same code with its own): a
-field element's 32 bytes, eight 32-bit limbs, are also four 64-bit words
-`x₀ + 2⁶⁴ x₁ + 2¹²⁸ x₂ + 2¹⁹² x₃`, which the multiplication loads with `ld`
-(so every offset is a multiple of 4). -/
+(Ed25519 on PPC64LE gives its own): a field element's 32 bytes, eight 32-bit
+limbs, are also four 64-bit words `x₀ + 2⁶⁴ x₁ + 2¹²⁸ x₂ + 2¹⁹² x₃`, which the
+multiplication loads with `ld` (so every offset is a multiple of 4). -/
 
 /-- The accumulator of column `k` of a product is `rr k, rr (k + 1),
 rr (k + 2)`: `r8`, `r9` and `r10` in turn. -/
@@ -227,92 +217,11 @@ borrow). -/
 def sub (o a b : Nat) : List Instr :=
   (List.range 4).flatMap (subW a b) ++ [.li .r5 38] ++ borrowFold ++ borrowFold ++ stores4 o
 
-/-- `121665 = 2¹⁶ + 0xdb41` (`a24`) into `r5`. -/
-def a24Const : List Instr := [.lis .r5 1, .ori .r5 .r5 0xdb41]
-
-/-- `[o] = 121665 · [a]` (`a24 · [a]`; `o` may be `a`): the words of the
-product, each `mulld` plus the previous `mulhdu` by the carry chain, and its
-top word `t < 2¹⁷` (in `r7`), folded in as `38 t` twice. -/
-def mulA24 (o a : Nat) : List Instr :=
-  a24Const ++
-  [.load .d .r8 .r6 a, .mulhu .r7 .r8 .r5, .mul .r8 .r8 .r5,
-    .load .d .r9 .r6 (a + 8), .mulhu .r4 .r9 .r5, .mul .r9 .r9 .r5, .addc .r9 .r9 .r7,
-    .load .d .r10 .r6 (a + 16), .mulhu .r7 .r10 .r5, .mul .r10 .r10 .r5, .adde .r10 .r10 .r4,
-    .load .d .r11 .r6 (a + 24), .mulhu .r4 .r11 .r5, .mul .r11 .r11 .r5, .adde .r11 .r11 .r7,
-    .addze .r7 .r4, .li .r5 38] ++ foldTop ++ foldTop ++ stores4 o
-
 /-- `[o] = [a] · [b]` (`o` may be `a` or `b`), with the product at `acc`. -/
 def mulAt (acc o a b : Nat) : Prog isa := .block (product acc a b ++ reduce38 acc o)
 
-/-! ### The multiplication in registers
-
-X25519's multiplication keeps its operands and its product in the
-nonvolatile registers `r14`–`r30`, which `x25519` saves once, around the
-ladder and the inversion (`saveNV`, `restoreNV`); Ed25519 uses `mulAt`. -/
-
-/-- Word `i` of the first operand, `r14`–`r17`. -/
-def opA (i : Nat) : Reg := if i = 0 then .r14 else if i = 1 then .r15 else if i = 2 then .r16 else .r17
-
-/-- Word `j` of the second operand, `r18`–`r21`. -/
-def opB (j : Nat) : Reg := if j = 0 then .r18 else if j = 1 then .r19 else if j = 2 then .r20 else .r21
-
-/-- Word `k` of the product, `r22`–`r30`: with the next two, column `k`'s
-accumulator. -/
-def pw (k : Nat) : Reg :=
-  [Reg.r22, .r23, .r24, .r25, .r26, .r27, .r28, .r29].getD k .r30
-
-/-- The operands' words into `opA` and `opB`. -/
-def loadOps (a b : Nat) : List Instr :=
-  (List.range 4).map (fun i => .load .d (opA i) .r6 (a + 8 * i)) ++
-    (List.range 4).map fun j => .load .d (opB j) .r6 (b + 8 * j)
-
-/-- A term `a_i b_j` of column `k` added to `pw k, pw (k + 1), pw (k + 2)`. -/
-def termR (k : Nat) (p : Nat × Nat) : List Instr :=
-  [.mul .r7 (opA p.1) (opB p.2), .mulhu .r4 (opA p.1) (opB p.2), .addc (pw k) (pw k) .r7,
-    .adde (pw (k + 1)) (pw (k + 1)) .r4, .addze (pw (k + 2)) (pw (k + 2))]
-
-/-- Column `k`: its accumulator's top word cleared, then its terms. -/
-def colR (k : Nat) : List Instr := .li (pw (k + 2)) 0 :: (colPairs k).flatMap (termR k)
-
-/-- The words of `[a] · [b]` in `pw 0`, …, `pw 7`, by columns. -/
-def productR (a b : Nat) : List Instr :=
-  loadOps a b ++ [.li (pw 0) 0, .li (pw 1) 0] ++ (List.range 7).flatMap colR
-
-/-- `d = n + part of 38 src`: the low word of `38 src` (`mulld`), or with `hi`
-the high word (`mulhdu`), added with the carry in if `e` (38 in `r5`). -/
-def opR (d n src : Reg) (hi e : Bool) : List Instr :=
-  [if hi then .mulhu .r4 src .r5 else .mul .r4 src .r5, if e then .adde d n .r4 else .addc d n .r4]
-
-/-- Word `k` of `L + lo(38 H)` into `wreg k`, with the carry chain. -/
-def redLoR (k : Nat) : List Instr := opR (wreg k) (pw k) (pw (4 + k)) false (k != 0)
-
-/-- The high word of `38 H_k` added into word `k + 1` (into `r7`, the top
-word, for `k = 3`), with the carry chain. -/
-def redHiR (k : Nat) : List Instr :=
-  opR (if k = 3 then .r7 else wreg (k + 1)) (if k = 3 then .r7 else wreg (k + 1)) (pw (4 + k)) true (k != 0)
-
-/-- The product in `pw` reduced into `[o]`, as `reduce38` does. -/
-def reduceR (o : Nat) : List Instr :=
-  .li .r5 38 :: (List.range 4).flatMap redLoR ++ [.li .r7 0, .addze .r7 .r7] ++
-    (List.range 4).flatMap redHiR ++ foldTop ++ foldTop ++ stores4 o
-
-/-- `[o] = [a] · [b]` (`o` may be `a` or `b`), in registers. -/
-def mulR (o a b : Nat) : List Instr := productR a b ++ reduceR o
-
-/-- `[o] = [a] · [b]`. -/
-abbrev mul (o a b : Nat) : Prog isa := .block (mulR o a b)
-
-/-- Where `x25519` saves `r14`–`r30`. -/
+/-- Where `Fe51.x25519` saves the nonvolatile registers it uses. -/
 def SAVE : Nat := 896
-
-/-- Nonvolatile register `k` of those `mulR` uses, `r14`–`r30`. -/
-def nvR (k : Nat) : Reg := if k < 4 then opA k else if k < 8 then opB (k - 4) else pw (k - 8)
-
-/-- `r14`–`r30` saved at `SAVE`. -/
-def saveNV : List Instr := (List.range 17).map fun k => .store .d (nvR k) .r6 (SAVE + 8 * k)
-
-/-- … and restored. -/
-def restoreNV : List Instr := (List.range 17).map fun k => .load .d (nvR k) .r6 (SAVE + 8 * k)
 
 /-- Swaps limb `k` of `[x]` and `[y]` if the mask `r11` is all ones (and not
 if it is zero): `d = r11 ∧ (x ⊕ y)`, `x ⊕= d`, `y ⊕= d`. -/
@@ -323,59 +232,8 @@ def cswapStep (x y k : Nat) : List Instr :=
 
 def cswap (x y : Nat) : List Instr := (List.range 8).flatMap (cswapStep x y)
 
-/-! ## The ladder -/
-
 /-- The mask `-swap` into `r11`. -/
 def mask : List Instr := [.li .r11 0, .sub .r11 .r11 .r0]
-
-/-- The start of an iteration of the ladder, for the bit `t = r12 - 1`: `k_t`
-from `BITS`, `swap ^= k_t`, the swaps by the mask `-swap`, and `swap = k_t`. -/
-def stepHead : List Instr :=
-  [.subi .r12 .r12 1, .add .r4 .r6 .r12, .lbz .r4 .r4 BITS, .logic .xor .r0 .r0 .r4] ++ mask ++
-    cswap X2 X3 ++ cswap Z2 Z3 ++ [.addi .r0 .r4 0]
-
-/-- One iteration of the ladder: `stepHead`, then the formulas of RFC 7748 §5
-in order. -/
-def step : Prog isa :=
-  .seq (.block stepHead) <|
-  .seq (.block (add A X2 Z2)) <| .seq (mul AA A A) <| .seq (.block (sub B X2 Z2)) <|
-  .seq (mul BB B B) <| .seq (.block (sub E AA BB)) <| .seq (.block (add C X3 Z3)) <|
-  .seq (.block (sub D X3 Z3)) <| .seq (mul DA D A) <| .seq (mul CB C B) <|
-  .seq (.block (add X3 DA CB)) <| .seq (mul X3 X3 X3) <| .seq (.block (sub Z3 DA CB)) <|
-  .seq (mul Z3 Z3 Z3) <| .seq (mul Z3 X1 Z3) <| .seq (mul X2 AA BB) <| .seq (.block (mulA24 Z2 E)) <|
-  .seq (.block (add Z2 AA Z2)) <| .seq (mul Z2 E Z2) (.block [])
-
-/-- The 255 iterations, for `t` from 254 down to 0, with `swap = 0`. -/
-def ladder : Prog isa :=
-  .seq (.block [.li .r12 255, .li .r0 0]) (.loop step (.nonzero .d .r12))
-
-/-- The swap after the loop. -/
-def lastSwap : List Instr := mask ++ cswap X2 X3 ++ cswap Z2 Z3
-
-/-! ## Inversion
-
-`[R] = [Z2]^(p-2)` by ref10's addition chain (254 squarings and 11
-multiplications; `Proof/X25519/Chain250.lean`'s `chainF`, then five squarings
-and `z^11`), in the ladder's temporaries `A`–`D`, free after it; each run of
-squarings after the first is a loop counted by `r12`, the ladder's counter. -/
-
-/-- `[a]` squared `n` times into `[o]`, the squarings after the first in a
-loop counted by `r12`. -/
-def sqn (o a n : Nat) : Prog isa :=
-  .seq (mul o a a) <| .seq (.block [.li .r12 (n - 1)]) <|
-    .loop (.seq (mul o o o) (.block [.subi .r12 .r12 1])) (.nonzero .d .r12)
-
-def invert : Prog isa :=
-  .seq (mul A Z2 Z2) <| .seq (mul B A A) <| .seq (mul B B B) <| .seq (mul B Z2 B) <|
-  .seq (mul A A B) <| .seq (mul C A A) <| .seq (mul B B C) <|
-  .seq (sqn C B 5) <| .seq (mul B C B) <|
-  .seq (sqn C B 10) <| .seq (mul C C B) <|
-  .seq (sqn D C 20) <| .seq (mul C D C) <|
-  .seq (sqn C C 10) <| .seq (mul B C B) <|
-  .seq (sqn C B 50) <| .seq (mul C C B) <|
-  .seq (sqn D C 100) <| .seq (mul C D C) <|
-  .seq (sqn C C 50) <| .seq (mul B C B) <|
-  .seq (sqn B B 5) (mul R B A)
 
 /-! ## Encoding and decoding -/
 
@@ -435,9 +293,5 @@ def bits : Prog isa :=
     (.seq (.loop (.block bitsBody) (.nonzero .d .r11))
       (.block [.li .r7 0, .stb .r7 .r6 BITS, .stb .r7 .r6 (BITS + 1), .stb .r7 .r6 (BITS + 2),
         .li .r7 1, .stb .r7 .r6 (BITS + 254)]))
-
-def x25519 : Prog isa :=
-  .seq (.block setup) <| .seq bits <| .seq (.block saveNV) <| .seq ladder <| .seq (.block lastSwap) <|
-    .seq invert <| .seq (mul X2 X2 R) (.block (restoreNV ++ freeze))
 
 end VG.Impl.X25519.PPC64LE

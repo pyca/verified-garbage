@@ -23,7 +23,7 @@ import VerifiedGarbage.Proof.X25519.PPC64LE.Pass
 namespace VG.Proof.Ed448.PPC64LE
 
 open VG VG.PPC64LE VG.Impl.Ed448.PPC64LE VG.Proof.X448.PPC64LE
-open VG.Proof.X25519.PPC64LE hiding V FS V_lt pass_ok limb_frame ACC_eq upd upd_self upd_of_ne
+open VG.Proof.X25519.PPC64LE hiding V FS V_lt pass_ok limb_frame ACC_eq
 open VG.Impl.X448.PPC64LE (ACC)
 open VG.Spec.X448 (Fe)
 

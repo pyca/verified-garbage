@@ -1,11 +1,11 @@
 module
-public import VerifiedGarbage.Proof.X25519.PPC64LE.Ladder
+public import VerifiedGarbage.Proof.X25519.PPC64LE.Field
+public import VerifiedGarbage.Proof.X25519.Ladder
 public import VerifiedGarbage.Spec.X25519.Contract
 
 import VerifiedGarbage.Proof.X25519.Bytes
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.WriteBytes
-import VerifiedGarbage.Proof.X25519.PPC64LE.Invert
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -14,7 +14,7 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 # X25519 on PPC64LE: the bits of the scalar
 
 `bits` stores bit `t` of the decoded (clamped) scalar at byte `BITS + t` of
-the working space, for `t < 255` (`bits_ok`).
+the working space, for `t < 255` (`Bits`, `bits_ok`).
 -/
 
 @[expose] public section
@@ -24,6 +24,10 @@ namespace VG.Proof.X25519.PPC64LE
 open VG VG.PPC64LE VG.Impl.X25519.PPC64LE
 open VG.Spec.X25519 (P Fe bytesAt)
 open VG.Proof.X25519 (bit)
+
+/-- The bits of the scalar in `BITS`. -/
+def Bits (b : Addr) (k : Nat) (m : Mem) : Prop :=
+  ∀ t < 255, m (b + BitVec.ofNat 64 (BITS + t)) = BitVec.ofNat 8 (bit k t)
 
 /-- Bit `t` of the scalar's bytes at `SC`, unclamped. -/
 def rawBit (m : Mem) (SC : Addr) (t : Nat) : Nat := ((m (SC + BitVec.ofNat 64 (t / 8))).toNat >>> (t % 8)) &&& 1
@@ -77,8 +81,8 @@ theorem bitStep_ok {i j : Nat} (hi : i < 32) (hj : j < 8) {x : Nat} {s1 s : Stat
       (List.mem_singleton_self _) _ (Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [hi, hj, hB]))
   · rw [u4.mem, VG.WriteBytes.writeW8_apply, u3.mem, u2.mem]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj' with hj' | rfl
-    · rw [iteF (Offset.add_ofNat_ne _ (by omega_arith) (by omega_using [hi, hj, hB]) (by omega_using [hj']))]; exact h.bits j' hj'
-    · rw [iteT rfl]; exact stb_byte e8
+    · rw [ite_eq_right (Offset.add_ofNat_ne _ (by omega_arith) (by omega_using [hi, hj, hB]) (by omega_using [hj']))]; exact h.bits j' hj'
+    · rw [ite_eq_left rfl]; exact stb_byte e8
 
 /-- The loop invariant of `bits` from `s0`, before byte `i`. -/
 structure BInv (b : Addr) (sc : Addr) (s0 : State) (i : Nat) (s : State) : Prop where
@@ -215,19 +219,19 @@ theorem bits_ok {sc : Addr} {s : State} (hc : Ctx b s) (h4 : s.gpr .r4 = sc)
     rw [hbit, hm9]
     simp only [VG.WriteBytes.writeW8_apply]
     by_cases t254 : t = 254
-    · subst t254; rw [iteT rfl]; rfl
-    rw [iteF (ne _ _ (by omega_using [ht]) (by omega_using []) t254)]
+    · subst t254; rw [ite_eq_left rfl]; rfl
+    rw [ite_eq_right (ne _ _ (by omega_using [ht]) (by omega_using []) t254)]
     by_cases t2 : t = 2
-    · subst t2; rw [iteT rfl]; rfl
-    rw [iteF (ne _ _ (by omega_using [ht]) (by omega_using []) t2)]
+    · subst t2; rw [ite_eq_left rfl]; rfl
+    rw [ite_eq_right (ne _ _ (by omega_using [ht]) (by omega_using []) t2)]
     by_cases t1 : t = 1
-    · subst t1; rw [iteT rfl]; rfl
-    rw [iteF (ne _ _ (by omega_using [ht]) (by omega_using []) t1)]
+    · subst t1; rw [ite_eq_left rfl]; rfl
+    rw [ite_eq_right (ne _ _ (by omega_using [ht]) (by omega_using []) t1)]
     by_cases t0 : t = 0
-    · subst t0; rw [iteT (by rfl)]; rfl
-    rw [iteF (show b + BitVec.ofNat 64 (BITS + t) ≠ b + BitVec.ofNat 64 BITS from
+    · subst t0; rw [ite_eq_left (by rfl)]; rfl
+    rw [ite_eq_right (show b + BitVec.ofNat 64 (BITS + t) ≠ b + BitVec.ofNat 64 BITS from
       fun e => ne t 0 (by omega_using [ht]) (by omega_using []) t0 (by rw [e]; rfl)), h3.bits t (by omega_using [ht]), hm2,
-      iteF (show ¬ t < 3 by omega_using [t2, t1, t0]), iteF t254]
+      ite_eq_right (show ¬ t < 3 by omega_using [t2, t1, t0]), ite_eq_right t254]
     rfl
 
 end

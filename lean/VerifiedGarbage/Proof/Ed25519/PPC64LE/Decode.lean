@@ -9,7 +9,7 @@ import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.ScalarReduce
 import VerifiedGarbage.Proof.Ed25519.Decode
 import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
-import VerifiedGarbage.Proof.X25519.PPC64LE.Invert
+import VerifiedGarbage.Proof.X25519.PPC64LE.Field
 import VerifiedGarbage.Proof.X25519.PPC64LE.Limbs
 import VerifiedGarbage.Proof.X25519.PPC64LE.Setup
 import VerifiedGarbage.Proof.X25519.Field
@@ -172,11 +172,11 @@ theorem pointDecode_ok {s : State} (hc : Ctx8 b s) {q : Addr} (h14 : s.gpr .r14 
   refine WP.ite (s1.gpr .r5 == 0) (eval_zero s1 .r5) (fun h => ?_) (fun h => ?_)
   · have hy := h5.mp (beq_iff_eq.mp h)
     refine WP.mono (recoverPoint_ok hc1 sg1) fun t ⟨kt, dt⟩ => ⟨k1.trans (DecKeep.of_dkeep kt), _, ?_, dt⟩
-    rw [iteT hy, Proof.Ed25519.recoverResult_spec, y1]; rfl
+    rw [ite_eq_left hy, Proof.Ed25519.recoverResult_spec, y1]; rfl
   · have hy : ¬ decodeLE (bytesAt s.mem q 32) % 2 ^ 255 < P := fun hy =>
       absurd (beq_iff_eq.mpr (h5.mpr hy)) (by simpa using h)
     refine WP.mono (recoverInvalid_ok s1) fun t ⟨kt, _, dt⟩ => ⟨k1.trans (DecKeep.of_dkeep kt), none, ?_, dt⟩
-    rw [iteF hy]
+    rw [ite_eq_right hy]
 
 end
 

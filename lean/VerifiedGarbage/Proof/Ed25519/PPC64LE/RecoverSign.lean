@@ -10,7 +10,7 @@ import VerifiedGarbage.Proof.X25519.PPC64LE.Instr
 import VerifiedGarbage.Proof.X25519.PPC64LE.Bits
 import VerifiedGarbage.Proof.X25519.PPC64LE.Limbs
 import VerifiedGarbage.Proof.Framework.PPC64LE.Exec
-import VerifiedGarbage.Proof.X25519.PPC64LE.Invert
+import VerifiedGarbage.Proof.X25519.PPC64LE.Field
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.Recover
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointOps
@@ -156,13 +156,13 @@ theorem recoverAdjust_ok {s : State} (hc : Ctx8 b s) {sg : Bool} (hs : SignAt b 
   refine WP.seq (WP.ite (s2.gpr .r5 == 0) (eval_zero s2 .r5) (fun h => ?_) (fun h => ?_))
   · refine WP.block_nil (WP.mono (recoverSuccess_ok hc2) fun t ⟨kt, dt⟩ => ⟨hk2.trans kt, ?_⟩)
     have hsg : signedX (env s.mem b 0) sg = env s.mem b 0 := by
-      unfold signedX; rw [iteT (h2.mp (beq_iff_eq.mp h))]
+      unfold signedX; rw [ite_eq_left (h2.mp (beq_iff_eq.mp h))]
     rw [hsg, ← he2]; exact dt
   · refine WP.mono (fieldCode_ok _ hc2.ctx) fun s3 ⟨k3, e3⟩ => ?_
     refine WP.mono (recoverSuccess_ok (hc2.of_keep k3)) fun t ⟨kt, dt⟩ => ⟨hk2.trans ((DKeep.of_keep k3).trans kt), ?_⟩
     have hsg : signedX (env s.mem b 0) sg = 0 - env s.mem b 0 := by
       unfold signedX
-      exact iteF fun hq => absurd (beq_iff_eq.mpr (h2.mpr hq)) (by simpa using h)
+      exact ite_eq_right fun hq => absurd (beq_iff_eq.mpr (h2.mpr hq)) (by simpa using h)
     have hx : env s3.mem b 0 = 0 - env s.mem b 0 := by rw [e3, he2]; rfl
     have hy : env s3.mem b 1 = env s.mem b 1 := by rw [e3, he2]; rfl
     rw [hsg]; rw [hx, hy] at dt; exact dt
@@ -207,10 +207,10 @@ theorem recoverSign_ok {s : State} (hc : Ctx8 b s) {sg : Bool} (hs : SignAt b sg
       have e2 : env s2.mem b = env s.mem b := by rw [u2.mem, he1]
       rw [e2] at dt
       subst hsg
-      unfold signResult; rw [iteF (by simp)]; exact dt
+      unfold signResult; rw [ite_eq_right (by simp)]; exact dt
   · refine WP.mono adj fun t ⟨kt, dt⟩ => ⟨kt, ?_⟩
     have hx : ¬ env s.mem b 0 = 0 := fun hx => absurd (beq_iff_eq.mpr (h1.mpr hx)) (by simpa using h)
-    unfold signResult; rw [iteF (by simp [hx])]; exact dt
+    unfold signResult; rw [ite_eq_right (by simp [hx])]; exact dt
 
 /-- **A candidate checked**, for `y` in slot 1: `recoverResult`. -/
 theorem recoverPoint_ok {s : State} (hc : Ctx8 b s) {sg : Bool} (hs : SignAt b sg s.mem) :
@@ -227,7 +227,7 @@ theorem recoverPoint_ok {s : State} (hc : Ctx8 b s) {sg : Bool} (hs : SignAt b s
   rw [avx, au] at hc5
   refine WP.ite (c.gpr .r5 == 0) (eval_zero c .r5) (fun h => ?_) (fun h => ?_)
   · refine WP.mono (recoverSign_ok hcc hsc) fun t ⟨kt, dt⟩ => ⟨hkc.trans kt, ?_⟩
-    unfold recoverResult; rw [iteT (hc5.mp (beq_iff_eq.mp h))]
+    unfold recoverResult; rw [ite_eq_left (hc5.mp (beq_iff_eq.mp h))]
     rw [cx, cy] at dt; exact dt
   · have hne : ¬ rootV (env s.mem b 1) * rootX (env s.mem b 1) * rootX (env s.mem b 1) = rootU (env s.mem b 1) :=
       fun he => absurd (beq_iff_eq.mpr (hc5.mpr he)) (by simpa using h)
@@ -246,13 +246,13 @@ theorem recoverPoint_ok {s : State} (hc : Ctx8 b s) {sg : Bool} (hs : SignAt b s
         rw [ef, ← cx, show env c.mem b 0 = env d.mem b 0 by rw [ed]; rfl]; rfl
       have fy : env f.mem b 1 = env s.mem b 1 := by
         rw [ef, ← cy, show env c.mem b 1 = env d.mem b 1 by rw [ed]; rfl]; rfl
-      unfold recoverResult; rw [iteF hne, iteT (hd5.mp (beq_iff_eq.mp h'))]
+      unfold recoverResult; rw [ite_eq_right hne, ite_eq_left (hd5.mp (beq_iff_eq.mp h'))]
       rw [fx, fy] at dt; exact dt
     · have hne' : ¬ rootV (env s.mem b 1) * rootX (env s.mem b 1) * rootX (env s.mem b 1) =
           0 - rootU (env s.mem b 1) :=
         fun he => absurd (beq_iff_eq.mpr (hd5.mpr he)) (by simpa using h')
       refine WP.mono (recoverInvalid_ok d) fun t ⟨kt, _, dt⟩ => ⟨hkd.trans kt, ?_⟩
-      unfold recoverResult; rw [iteF hne, iteF hne']; exact dt
+      unfold recoverResult; rw [ite_eq_right hne, ite_eq_right hne']; exact dt
 
 end
 

@@ -6,7 +6,7 @@ import VerifiedGarbage.Proof.Ed25519.PPC64LE.Freeze
 public import VerifiedGarbage.Proof.Ed25519.PPC64LE.Power
 public import VerifiedGarbage.Proof.X25519.Invert
 import VerifiedGarbage.Proof.Framework.PPC64LE.Call
-import VerifiedGarbage.Proof.X25519.PPC64LE.Invert
+import VerifiedGarbage.Proof.X25519.PPC64LE.Field
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointPowers
 import VerifiedGarbage.Proof.Framework.PPC64LE.Inline
@@ -236,8 +236,8 @@ theorem encodeSign_ok {s : State} (hc : Ctx b s) {y x : Nat} (hy : y < 2 ^ 255) 
       by_cases h : k = 7
       · subst h
         have hx := Nat.mod_lt x (show 0 < 2 by decide)
-        rw [iteT rfl, wd_write_self, toNat_lo32, e2, Nat.mod_eq_of_lt (by omega_arith)]
-      · rw [iteF h, wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]; rfl
+        rw [ite_eq_left rfl, wd_write_self, toNat_lo32, e2, Nat.mod_eq_of_lt (by omega_arith)]
+      · rw [ite_eq_right h, wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_arith)]; rfl
     rw [V, val32_congr hl, ← hv, V]
     simp only [val32, ite_true, show (0 : Nat) ≠ 7 by decide, show (1 : Nat) ≠ 7 by decide,
       show (2 : Nat) ≠ 7 by decide, show (3 : Nat) ≠ 7 by decide, show (4 : Nat) ≠ 7 by decide,

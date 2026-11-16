@@ -4,7 +4,7 @@ public import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointAccumulate
 import VerifiedGarbage.Proof.Ed25519.PPC64LE.PointTable
 public import VerifiedGarbage.Impl.Ed25519.PPC64LE.PointMul
 import VerifiedGarbage.Proof.X25519.PPC64LE.Bits
-import VerifiedGarbage.Proof.X25519.PPC64LE.Invert
+import VerifiedGarbage.Proof.X25519.PPC64LE.Field
 import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Framework.Offset
@@ -66,8 +66,8 @@ theorem expandBits_ok {s1 : State} (hc : Ctx8 b s1) {x : Nat} (h7 : (s1.gpr .r7)
       (List.mem_singleton_self _) _ (by rw [hB]; exact Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [hk]))
   · rw [u4.mem, VG.WriteBytes.writeW8_apply, u3.mem, u2.mem]
     rcases Nat.lt_succ_iff_lt_or_eq.mp hj with hj | rfl
-    · rw [iteF (Offset.add_ofNat_ne _ (by omega_arith) (by omega_using [hB, hk]) (by omega_using [hj]))]; exact h.bits j hj
-    · rw [iteT rfl]; exact stb_byte e8
+    · rw [ite_eq_right (Offset.add_ofNat_ne _ (by omega_arith) (by omega_using [hB, hk]) (by omega_using [hj]))]; exact h.bits j hj
+    · rw [ite_eq_left rfl]; exact stb_byte e8
 
 /-- The digit of batch `c`: bytes `2c` and `2c + 1` of the scalar at `r19`. -/
 def digitAt (m : Mem) (p : Addr) (c : Nat) : Nat :=
@@ -148,8 +148,8 @@ theorem accum_after (S : Nat) (P : Spec.Ed25519.Point) (c : Nat) :
     congr 1
     rw [Proof.Ed25519.after_step S P (16 * c + m)]
     by_cases h : S / 2 ^ (16 * c + m) % 2 = 0
-    · rw [iteT h, iteF (by omega_arith)]; rfl
-    · rw [iteF h, iteT (by omega_arith)]; rfl
+    · rw [ite_eq_left h, ite_eq_right (by omega_arith)]; rfl
+    · rw [ite_eq_right h, ite_eq_left (by omega_arith)]; rfl
 
 theorem accum_congr {T T' : Nat → Spec.Ed25519.Point} {W W' : Nat → Nat} :
     ∀ m, (∀ i < m, T i = T' i) → (∀ i < m, W i = W' i) → ∀ A, accum T W m A = accum T' W' m A

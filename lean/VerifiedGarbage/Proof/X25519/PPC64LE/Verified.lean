@@ -9,7 +9,8 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.PPC64LE.RunR
 import VerifiedGarbage.Proof.X25519.PPC64LE.Mul
 import VerifiedGarbage.Proof.X25519.PPC64LE.Freeze
-import VerifiedGarbage.Proof.X25519.PPC64LE.Invert
+import VerifiedGarbage.Proof.X25519.PPC64LE.Cswap
+import VerifiedGarbage.Proof.X25519.PPC64LE.Reduce
 import VerifiedGarbage.Proof.Framework.Offset
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Spill
 public import VerifiedGarbage.Spec.X25519.Contract
