@@ -17,6 +17,12 @@ meta import VerifiedGarbage.Proof.Weierstrass.AArch64.JacMixedTiming
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 meta import VerifiedGarbage.Proof.Framework.AArch64.LaneCaller
 meta import VerifiedGarbage.Proof.Weierstrass.AArch64.Forward.Snapshot
+import VerifiedGarbage.Proof.Weierstrass.AArch64.P384Literals
+import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.AArch64.Lit
+meta import VerifiedGarbage.Proof.Weierstrass.AArch64.P384Literals
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 
 /-! Concrete timing certificates for the joint P-384 verifier. -/
 @[expose] public section
@@ -36,6 +42,13 @@ theorem window_checks : PubNaf.WindowChecks P384Joint.K := P384.window_checks
 theorem double_ct : ConstantTime isa (fun _ => True) (AArch64.Taint.Agree (Taint.ofRegs [.x0]))
     P384Joint.double :=
   P384.EcdhDouble.Certificate.ctRD
+
+/-! The code before the joint loop, as a literal: its check (`taint_decide`) reads the literals
+of the field's functions (`P384Literals`) only through it, since those are literals of
+applications (`mul p384.MP'`), which a check finds only where its goal names them. -/
+private def beforeCode : Prog isa := jointPrefix p384
+
+materialize_code beforeCode
 
 theorem before_ct : ConstantTime isa (fun _=>True)
     (AArch64.Taint.Agree (Taint.ofRegs [.x0,.x1,.x2,.x3])) (jointPrefix p384) :=

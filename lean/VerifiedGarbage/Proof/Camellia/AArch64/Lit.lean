@@ -30,12 +30,6 @@ the code again (seconds for the key expansion's).
 
 namespace VG.Proof.Camellia.AArch64
 
-materialize_flat_code expandKeyCode := Impl.Camellia.AArch64.expandKey
-materialize_flat_code ecbEncrypt := Impl.Camellia.AArch64.ecb .encrypt
-materialize_flat_code ecbDecrypt := Impl.Camellia.AArch64.ecb .decrypt
-materialize_flat_code prepareKeysCode := Impl.Camellia.AArch64.prepareKeys
-materialize_flat_code cryptPreparedCode := Impl.Camellia.AArch64.cryptPrepared
-materialize_flat_code ctrCode := Impl.Camellia.AArch64.ctr
 /-- A number below 256 is the sum of its bits. -/
 theorem byte_bits : ∀ n < 256, (List.range 8).foldl (fun b k => b + (n.testBit k).toNat * 2 ^ k) 0 = n := by
   decide +kernel
@@ -56,6 +50,31 @@ theorem sbox1Table_toNat (i : Nat) : (Spec.Camellia.sbox1Table.getD i 0).toNat =
     rw [Vector.getD, Array.getD, dite_eq_right (by simpa using hi)]
     rfl
 
+/-- The code that loads `SBOX1` by immediates, its bytes read from the truth
+tables of their bits. -/
+private def sbox1Load : List VG.AArch64.Instr :=
+  Impl.Tbl.AArch64.loadTable fun i => BitVec.ofNat 8 (if i < 256 then
+    (List.range 8).foldl (fun b k => b + ((Proof.Camellia.sbox1T k).testBit i).toNat * 2 ^ k) 0 else 0)
+
+materialize_value sbox1Load
+
+/-- The literal of the code that loads `SBOX1` as the key expansion has it,
+looking each byte up in the specification's vector, which flattens its rows
+and walks to the entry at every lookup (private: only this module's
+literals contain that code outside a literal). -/
+private noncomputable abbrev sbox1Code.lit : List VG.AArch64.Instr := sbox1Load.lit
+
+private theorem sbox1Code.lit_eq :
+    Impl.Tbl.AArch64.loadTable (fun k => Spec.Camellia.sbox1Table.getD k 0) = sbox1Code.lit :=
+  (congrArg Impl.Tbl.AArch64.loadTable (funext fun i => by
+    rw [← sbox1Table_toNat, BitVec.ofNat_toNat, BitVec.setWidth_eq])).trans sbox1Load.lit_eq
+
+materialize_flat_code expandKeyCode := Impl.Camellia.AArch64.expandKey
+materialize_flat_code ecbEncrypt := Impl.Camellia.AArch64.ecb .encrypt
+materialize_flat_code ecbDecrypt := Impl.Camellia.AArch64.ecb .decrypt
+materialize_flat_code prepareKeysCode := Impl.Camellia.AArch64.prepareKeys
+materialize_flat_code cryptPreparedCode := Impl.Camellia.AArch64.cryptPrepared
+materialize_flat_code ctrCode := Impl.Camellia.AArch64.ctr
 /-- `tableWord`, `SBOX1`'s entries read from the truth tables of their bits,
 which the kernel has evaluated in one pass over the specification's table
 (`sbox1T`): the table's literal below reads its 256 bytes through this

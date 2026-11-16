@@ -25,6 +25,7 @@ import VerifiedGarbage.Proof.Framework.Offset
 import Std.Tactic.BVDecide.Normalize.Prop
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Lit
 import VerifiedGarbage.TCB.Axioms
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Hybrid.Round
 meta import VerifiedGarbage.Impl.Sha3.AArch64.Hybrid.X3
@@ -51,6 +52,7 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 meta import Std.Tactic.BVDecide.Normalize.Prop
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.Lazy.Lit
 meta import VerifiedGarbage.TCB.Axioms
 
 /-!
@@ -743,7 +745,11 @@ theorem correct (sha3 : Bool) (s : State) (hs : K.pre s) :
 
 theorem ct (sha3 : Bool) : ConstantTime isa K.pre K.pub (code sha3) := by
   cases sha3
-  · refine VectorTaint.constantTime (AArch64.Taint.ofRegs [.x0,.x1,.x2]) ?_ (by taint_decide)
+  · -- Unfolded as far as the rounds, whose code has a literal (`.block Scalar.Lazy.permutationCore`)
+    -- that `taint_decide` finds only where the goal names it.
+    refine VectorTaint.constantTime (AArch64.Taint.ofRegs [.x0,.x1,.x2]) ?_ (by
+      unfold code Impl.Sha3.AArch64.Hybrid.X3.scalar
+      taint_decide)
     intro s₁ s₂ _ _ ⟨h0,h1,h2,hsp⟩
     refine ⟨hsp,fun r hr => ?_⟩
     simp only [AArch64.Taint.mem_ofRegs,List.mem_cons,List.not_mem_nil,or_false] at hr
