@@ -201,7 +201,7 @@ namespace VG.Proof.Sm4.AArch64.Serial
 open VG VG.AArch64 VG.Impl.Sm4.AArch64.Serial
 open VG.Proof.Sm4 (sround quad quads)
 
-def written : List Reg := [.x6,.x7,.x8,.x9,.x10,.x11]
+def written : List Reg := [.x6,.x7,.x8,.x9,.x10,.x11,.x12,.x13]
 
 def steps (K : Nat → BitVec 32) (n : Nat) (x : Nat → BitVec 32) : Nat → BitVec 32 :=
   (List.range n).foldl (fun z i => sround .enc (K i) (i%4) z) x
@@ -258,7 +258,9 @@ theorem rounds_run (s : State) (n : Nat) (hn : n ≤ 32)
     · intro r hr
       have hreg : r ≠ wordReg (n%4) := fun he => hr (he ▸ wordReg_mem _ (Nat.mod_lt _ (by decide)))
       have h10 : r ≠ .x10 := fun he => hr (by simp [written,he])
-      have h11 : r ≠ .x11 := fun he => hr (by simp [written,he])
+      have h11 : r ∉ [.x11,.x12,.x13] := fun he => hr (by
+        simp only [List.mem_cons,List.not_mem_nil,or_false] at he
+        rcases he with he | he | he <;> simp [written,he])
       exact (bg r hreg h10 h11).trans (ag r hr)
 
 theorem steps_quads (K : Nat → BitVec 32) (x : Nat → BitVec 32) (n : Nat) :

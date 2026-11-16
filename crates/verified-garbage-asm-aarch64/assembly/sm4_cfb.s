@@ -246,9 +246,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #260]
 	eor w10, w10, w8
@@ -267,9 +268,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #264]
 	eor w10, w10, w9
@@ -288,9 +290,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #268]
 	eor w10, w10, w6
@@ -309,9 +312,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #272]
 	eor w10, w10, w7
@@ -330,9 +334,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #276]
 	eor w10, w10, w8
@@ -351,9 +356,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #280]
 	eor w10, w10, w9
@@ -372,9 +378,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #284]
 	eor w10, w10, w6
@@ -393,9 +400,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #288]
 	eor w10, w10, w7
@@ -414,9 +422,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #292]
 	eor w10, w10, w8
@@ -435,9 +444,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #296]
 	eor w10, w10, w9
@@ -456,9 +466,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #300]
 	eor w10, w10, w6
@@ -477,9 +488,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #304]
 	eor w10, w10, w7
@@ -498,9 +510,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #308]
 	eor w10, w10, w8
@@ -519,9 +532,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #312]
 	eor w10, w10, w9
@@ -540,9 +554,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #316]
 	eor w10, w10, w6
@@ -561,9 +576,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #320]
 	eor w10, w10, w7
@@ -582,9 +598,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #324]
 	eor w10, w10, w8
@@ -603,9 +620,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #328]
 	eor w10, w10, w9
@@ -624,9 +642,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #332]
 	eor w10, w10, w6
@@ -645,9 +664,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #336]
 	eor w10, w10, w7
@@ -666,9 +686,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #340]
 	eor w10, w10, w8
@@ -687,9 +708,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #344]
 	eor w10, w10, w9
@@ -708,9 +730,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #348]
 	eor w10, w10, w6
@@ -729,9 +752,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #352]
 	eor w10, w10, w7
@@ -750,9 +774,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #356]
 	eor w10, w10, w8
@@ -771,9 +796,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #360]
 	eor w10, w10, w9
@@ -792,9 +818,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #364]
 	eor w10, w10, w6
@@ -813,9 +840,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #368]
 	eor w10, w10, w7
@@ -834,9 +862,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #372]
 	eor w10, w10, w8
@@ -855,9 +884,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #376]
 	eor w10, w10, w9
@@ -876,9 +906,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #380]
 	eor w10, w10, w6
@@ -897,9 +928,10 @@ vg_sm4_cfb128_encrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	rev w9, w9
 	str w9, [x5, #768]
@@ -1528,9 +1560,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #260]
 	eor w10, w10, w8
@@ -1549,9 +1582,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #264]
 	eor w10, w10, w9
@@ -1570,9 +1604,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #268]
 	eor w10, w10, w6
@@ -1591,9 +1626,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #272]
 	eor w10, w10, w7
@@ -1612,9 +1648,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #276]
 	eor w10, w10, w8
@@ -1633,9 +1670,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #280]
 	eor w10, w10, w9
@@ -1654,9 +1692,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #284]
 	eor w10, w10, w6
@@ -1675,9 +1714,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #288]
 	eor w10, w10, w7
@@ -1696,9 +1736,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #292]
 	eor w10, w10, w8
@@ -1717,9 +1758,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #296]
 	eor w10, w10, w9
@@ -1738,9 +1780,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #300]
 	eor w10, w10, w6
@@ -1759,9 +1802,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #304]
 	eor w10, w10, w7
@@ -1780,9 +1824,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #308]
 	eor w10, w10, w8
@@ -1801,9 +1846,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #312]
 	eor w10, w10, w9
@@ -1822,9 +1868,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #316]
 	eor w10, w10, w6
@@ -1843,9 +1890,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #320]
 	eor w10, w10, w7
@@ -1864,9 +1912,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #324]
 	eor w10, w10, w8
@@ -1885,9 +1934,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #328]
 	eor w10, w10, w9
@@ -1906,9 +1956,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #332]
 	eor w10, w10, w6
@@ -1927,9 +1978,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #336]
 	eor w10, w10, w7
@@ -1948,9 +2000,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #340]
 	eor w10, w10, w8
@@ -1969,9 +2022,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #344]
 	eor w10, w10, w9
@@ -1990,9 +2044,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #348]
 	eor w10, w10, w6
@@ -2011,9 +2066,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #352]
 	eor w10, w10, w7
@@ -2032,9 +2088,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #356]
 	eor w10, w10, w8
@@ -2053,9 +2110,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #360]
 	eor w10, w10, w9
@@ -2074,9 +2132,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #364]
 	eor w10, w10, w6
@@ -2095,9 +2154,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #368]
 	eor w10, w10, w7
@@ -2116,9 +2176,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #372]
 	eor w10, w10, w8
@@ -2137,9 +2198,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #376]
 	eor w10, w10, w9
@@ -2158,9 +2220,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #380]
 	eor w10, w10, w6
@@ -2179,9 +2242,10 @@ vg_sm4_cfb128_decrypt:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	rev w9, w9
 	str w9, [x5, #768]
@@ -2686,9 +2750,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #260]
 	eor w10, w10, w8
@@ -2707,9 +2772,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #264]
 	eor w10, w10, w9
@@ -2728,9 +2794,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #268]
 	eor w10, w10, w6
@@ -2749,9 +2816,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #272]
 	eor w10, w10, w7
@@ -2770,9 +2838,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #276]
 	eor w10, w10, w8
@@ -2791,9 +2860,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #280]
 	eor w10, w10, w9
@@ -2812,9 +2882,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #284]
 	eor w10, w10, w6
@@ -2833,9 +2904,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #288]
 	eor w10, w10, w7
@@ -2854,9 +2926,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #292]
 	eor w10, w10, w8
@@ -2875,9 +2948,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #296]
 	eor w10, w10, w9
@@ -2896,9 +2970,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #300]
 	eor w10, w10, w6
@@ -2917,9 +2992,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #304]
 	eor w10, w10, w7
@@ -2938,9 +3014,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #308]
 	eor w10, w10, w8
@@ -2959,9 +3036,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #312]
 	eor w10, w10, w9
@@ -2980,9 +3058,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #316]
 	eor w10, w10, w6
@@ -3001,9 +3080,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #320]
 	eor w10, w10, w7
@@ -3022,9 +3102,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #324]
 	eor w10, w10, w8
@@ -3043,9 +3124,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #328]
 	eor w10, w10, w9
@@ -3064,9 +3146,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #332]
 	eor w10, w10, w6
@@ -3085,9 +3168,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #336]
 	eor w10, w10, w7
@@ -3106,9 +3190,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #340]
 	eor w10, w10, w8
@@ -3127,9 +3212,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #344]
 	eor w10, w10, w9
@@ -3148,9 +3234,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #348]
 	eor w10, w10, w6
@@ -3169,9 +3256,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #352]
 	eor w10, w10, w7
@@ -3190,9 +3278,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #356]
 	eor w10, w10, w8
@@ -3211,9 +3300,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #360]
 	eor w10, w10, w9
@@ -3232,9 +3322,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #364]
 	eor w10, w10, w6
@@ -3253,9 +3344,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #368]
 	eor w10, w10, w7
@@ -3274,9 +3366,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #372]
 	eor w10, w10, w8
@@ -3295,9 +3388,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #376]
 	eor w10, w10, w9
@@ -3316,9 +3410,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #380]
 	eor w10, w10, w6
@@ -3337,9 +3432,10 @@ vg_sm4_cfb128_encrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	rev w9, w9
 	str w9, [x5, #768]
@@ -3854,9 +3950,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #260]
 	eor w10, w10, w8
@@ -3875,9 +3972,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #264]
 	eor w10, w10, w9
@@ -3896,9 +3994,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #268]
 	eor w10, w10, w6
@@ -3917,9 +4016,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #272]
 	eor w10, w10, w7
@@ -3938,9 +4038,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #276]
 	eor w10, w10, w8
@@ -3959,9 +4060,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #280]
 	eor w10, w10, w9
@@ -3980,9 +4082,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #284]
 	eor w10, w10, w6
@@ -4001,9 +4104,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #288]
 	eor w10, w10, w7
@@ -4022,9 +4126,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #292]
 	eor w10, w10, w8
@@ -4043,9 +4148,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #296]
 	eor w10, w10, w9
@@ -4064,9 +4170,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #300]
 	eor w10, w10, w6
@@ -4085,9 +4192,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #304]
 	eor w10, w10, w7
@@ -4106,9 +4214,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #308]
 	eor w10, w10, w8
@@ -4127,9 +4236,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #312]
 	eor w10, w10, w9
@@ -4148,9 +4258,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #316]
 	eor w10, w10, w6
@@ -4169,9 +4280,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #320]
 	eor w10, w10, w7
@@ -4190,9 +4302,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #324]
 	eor w10, w10, w8
@@ -4211,9 +4324,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #328]
 	eor w10, w10, w9
@@ -4232,9 +4346,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #332]
 	eor w10, w10, w6
@@ -4253,9 +4368,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #336]
 	eor w10, w10, w7
@@ -4274,9 +4390,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #340]
 	eor w10, w10, w8
@@ -4295,9 +4412,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #344]
 	eor w10, w10, w9
@@ -4316,9 +4434,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #348]
 	eor w10, w10, w6
@@ -4337,9 +4456,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #352]
 	eor w10, w10, w7
@@ -4358,9 +4478,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #356]
 	eor w10, w10, w8
@@ -4379,9 +4500,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #360]
 	eor w10, w10, w9
@@ -4400,9 +4522,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #364]
 	eor w10, w10, w6
@@ -4421,9 +4544,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	ldr w10, [x5, #368]
 	eor w10, w10, w7
@@ -4442,9 +4566,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w6, w6, w11
 	ldr w10, [x5, #372]
 	eor w10, w10, w8
@@ -4463,9 +4588,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w7, w7, w11
 	ldr w10, [x5, #376]
 	eor w10, w10, w9
@@ -4484,9 +4610,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w8, w8, w11
 	ldr w10, [x5, #380]
 	eor w10, w10, w6
@@ -4505,9 +4632,10 @@ vg_sm4_cfb128_decrypt_final:
 	orr v0.16b, v0.16b, v2.16b
 	umov w10, v0.s[0]
 	eor w11, w10, w10, ror #30
-	eor w11, w11, w10, ror #22
-	eor w11, w11, w10, ror #14
-	eor w11, w11, w10, ror #8
+	eor w12, w10, w10, ror #8
+	ror w13, w10, #8
+	eor w12, w13, w12, ror #14
+	eor w11, w11, w12
 	eor w9, w9, w11
 	rev w9, w9
 	str w9, [x5, #768]

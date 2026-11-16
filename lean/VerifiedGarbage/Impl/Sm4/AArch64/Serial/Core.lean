@@ -42,9 +42,13 @@ def wordReg (i : Nat) : Reg := (#[.x6,.x7,.x8,.x9] : Array Reg)[i]!
 def roundInput (i : Nat) : List Instr :=
   mixKey (wordReg ((i+1)%4)) (wordReg ((i+2)%4)) (wordReg ((i+3)%4)) i
 
+/-- `x11 := L(x10)`, `L(B) = B ⊕ (B ⋘ 2) ⊕ (B ⋘ 10) ⊕ (B ⋘ 18) ⊕ (B ⋘ 24)`, as
+`(B ⊕ (B ⋙ 30)) ⊕ ((B ⋙ 8) ⊕ ((B ⊕ (B ⋙ 8)) ⋙ 14))` (rotations): the two
+halves do not wait for each other, where a chain of four XORs each waits for
+the one before. Through `x12` and `x13`. -/
 def linear : List Instr :=
-  [.logicRor .eor .w .x11 .x10 .x10 30, .logicRor .eor .w .x11 .x11 .x10 22,
-   .logicRor .eor .w .x11 .x11 .x10 14, .logicRor .eor .w .x11 .x11 .x10 8]
+  [.logicRor .eor .w .x11 .x10 .x10 30, .logicRor .eor .w .x12 .x10 .x10 8, .ror .w .x13 .x10 8,
+   .logicRor .eor .w .x12 .x13 .x12 14, .logic .eor .w .x11 .x11 .x12]
 
 def roundOutput (i : Nat) : List Instr :=
   [.logic .eor .w (wordReg (i%4))
