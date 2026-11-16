@@ -19,6 +19,11 @@ vg_cmac_aes_update:
 	mov r15, r9
 	test r14, r14
 	je 20f
+	mov rdi, rbx
+	mov rsi, rbp
+	mov r9, r15
+	add r9, 512
+	call {vg_aes_ctr32_keys}
 22:
 	mov rax, QWORD PTR [r12]
 	xor rax, QWORD PTR [r13]
@@ -37,7 +42,7 @@ vg_cmac_aes_update:
 	mov rcx, r12
 	mov r8d, 1
 	add r9, 512
-	call {vg_aes_ctr32}
+	call {vg_aes_ctr32_keyed}
 	add r13, 16
 	sub r14, 1
 	jne 22b

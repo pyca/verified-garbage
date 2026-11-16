@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.CmacAes.X86_64.Variant
+public import VerifiedGarbage.Proof.CmacAes.X86_64.UpdateKeyed
 
 /-! # The implementations of `CmacAesUpdate` on x86-64 -/
 
@@ -10,7 +11,9 @@ namespace VG.Proof.Variants.CmacAesUpdate.X86_64
 
 def aesNi : Proof.CmacAes.X86_64.UpdateImpl := .aesniCbc
 
-def scalar : Proof.CmacAes.X86_64.UpdateImpl := .ctr32 .scalar
+/-- Over the bitsliced AES, its round keys bitsliced once for all the blocks
+(`Proof/CmacAes/X86_64/UpdateKeyed.lean`). -/
+def scalar : Proof.CmacAes.X86_64.UpdateImpl := .keyed
 
 /-- Every implementation, best first: each function generic over them is
 emitted with each (the registration files that import this), and its

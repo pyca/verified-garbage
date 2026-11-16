@@ -128,6 +128,14 @@ pub(crate) mod vg_aes_ctr32;
 pub(crate) mod vg_aes_ctr32_aesni;
 
 #[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_keyed.rs"]
+pub(crate) mod vg_aes_ctr32_keyed;
+
+#[rustfmt::skip]
+#[path = "internal/vg_aes_ctr32_keys.rs"]
+pub(crate) mod vg_aes_ctr32_keys;
+
+#[rustfmt::skip]
 #[path = "internal/vg_aes_ctr32_to.rs"]
 pub(crate) mod vg_aes_ctr32_to;
 

@@ -13,9 +13,11 @@ pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_update() {
     core::arch::naked_asm!(
         r#".base64 "SYmZEAgAAEmJqRgIAABNiaEgCAAATYmpKAgAAE2JsTAIAABNibk4CAAASIn7SIn1SYnUSYnNTYnGTYnPTYX2"
 je 20f
+.base64 "SInfSInuTYn5SYHBAAIAAA=="
+call {vg_aes_ctr32_keys}
 22:
 .base64 "SYsEJEkzRQBJiYcACAAASYtEJAhJM0UISYmHCAgAALgAAAAASYkEJEmJRCQISInfSInuTYn5TIn6SIHCAAgAAEyJ4UG4AQAAAEmBwQACAAA="
-call {vg_aes_ctr32}
+call {vg_aes_ctr32_keyed}
 .base64 "SYPFEEmD7gE="
 jne 22b
 jmp 21f
@@ -23,6 +25,7 @@ jmp 21f
 21:
 .base64 "SYufEAgAAEmLrxgIAABNi6cgCAAATYuvKAgAAE2LtzAIAABNi784CAAAww=="
 .p2align 6"#,
-        vg_aes_ctr32 = sym crate::aes::vg_aes_ctr32::vg_aes_ctr32,
+        vg_aes_ctr32_keys = sym crate::aes::vg_aes_ctr32_keys::vg_aes_ctr32_keys,
+        vg_aes_ctr32_keyed = sym crate::aes::vg_aes_ctr32_keyed::vg_aes_ctr32_keyed,
     )
 }
