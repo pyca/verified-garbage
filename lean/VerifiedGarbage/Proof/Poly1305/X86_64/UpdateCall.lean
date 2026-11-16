@@ -7,6 +7,8 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Poly1305.X86_64.Lit
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 
 /-!
@@ -106,12 +108,16 @@ theorem call_pre :
     refine ⟨trivial, trivial, (hp.d_st.sub_left (blk_dR h.c_le)).symm,
       hp.stk_st.sub_left (fun x hx => hstk x (ret8_stk _ x hx)),
       hp.stk_st.sub_left (fun x hx => hstk x (callee_stk _ v.stack_le x hx)),
-      (hp.stk_d.sub_left (fun x hx => hstk x (callee_stk _ v.stack_le x hx))).sub_right (blk_dR h.c_le), ?_⟩
+      (hp.stk_d.sub_left (fun x hx => hstk x (callee_stk _ v.stack_le x hx))).sub_right (blk_dR h.c_le), ?_, ?_⟩
     · have e := BitVec.toNat_add (dp s₀) (BitVec.ofNat 64 c)
       have e' : (dp s₀ + BitVec.ofNat 64 c).toNat ≤ (dp s₀).toNat + c := by
         rw [e, toNat_ofNat_lt (by omega_using [hdl, h.c_le])]; exact Nat.mod_le _ _
       have := hp.nowrap
       omega_using [e', this, hle]
+    · have h24 := hp.sp
+      have hs := v.stack_le
+      rw [hsp, show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, toNat_sub_ofNat (by omega_using [h24])]
+      omega_using [h24, hs]
   · refine Covers.of_sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -131,8 +137,9 @@ theorem call_ok (hge : 16 ≤ dl s₀ - c) :
   obtain ⟨hpre, hc, hw⟩ := call_pre v hp h
   have hle := blk_le h.c_le
   have hsp : s.gpr .rsp = s₀.gpr .rsp := h.rsp
-  have hd := v.depth_le
-  refine WP.call_mx (k := blocksStack v.stack) v.ok v.nosp (by omega_using [hd]) hpre hc hw ?_
+  have hd := v.xdepth
+  have hs16 := v.stack_le
+  refine X86_64.WP.call_sp_mx (k := blocksStack v.stack) v.ok (SpSafe.of_all v.spSafe) (by omega_using [hd, hs16]) hpre hc hw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩ hmx'
   have cs : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r := hcs
   have hf' : Frame [sR (st s₀), stkR s₀] s.mem s'.mem := hf.sub fun r hr => by
@@ -141,7 +148,7 @@ theorem call_ok (hge : 16 ≤ dl s₀ - c) :
     · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
     · refine ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, fun x hx => ?_⟩
       rw [hsp] at hx
-      exact below_sub (a := 8 * (v.code.depth + 1)) (b := 24) (by omega_using [hd]) (by decide) x hx
+      exact below_sub (a := v.code.x86_64Depth + 8) (b := 24) (by omega_using [hd, hs16]) (by decide) x hx
   -- The data absorbed, as on entry.
   have hblk : bytesAt s.callEntry.mem (dp s₀ + BitVec.ofNat 64 c) (16 * ((dl s₀ - c) / 16)) =
       bytesAt s₀.mem (dp s₀ + BitVec.ofNat 64 c) (16 * ((dl s₀ - c) / 16)) := by

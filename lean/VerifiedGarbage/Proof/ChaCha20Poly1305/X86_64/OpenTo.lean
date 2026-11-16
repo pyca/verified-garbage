@@ -160,7 +160,8 @@ def toPub (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧
     s₁.gpr .rsp = s₂.gpr .rsp ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1 ∧
-    stackArg s₁ 2 = stackArg s₂ 2 ∧ stackArg s₁ 3 = stackArg s₂ 3 ∧ toLeak s₁ = toLeak s₂
+    stackArg s₁ 2 = stackArg s₂ 2 ∧ stackArg s₁ 3 = stackArg s₂ 3 ∧ toLeak s₁ = toLeak s₂ ∧
+    s₁.mxcsr = s₂.mxcsr
 
 /-- `vg_chacha20_poly1305_open_to(key, nonce, aad, aad_len, src, len, dst,
 dst_len, tag, work) -> u32`, as the proofs state it. -/
@@ -325,13 +326,14 @@ theorem body_ct (v : XorImpl) : ConstantTime isa toK.pre toK.pub (body v.callee 
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
   have p₁ : TPre σ₁ := p₁
   have p₂ : TPre σ₂ := p₂
-  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, qsp, a₀, a₁, a₂, a₃, ql⟩ := hq
+  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, qsp, a₀, a₁, a₂, a₃, ql, qm⟩ := hq
   refine rel_seq (rel_regs [.rsp] (by simp [qsp]) ⟨_, by taint_decide⟩) (toArgs_ok p₁) (toArgs_ok p₂)
     fun h₁ h₂ hh₁ hh₂ => CallOpen.callOpen_rel v (cpre_of p₁ hh₁) (cpre_of p₂ hh₂)
       ⟨by rw [hh₁.rdi, hh₂.rdi, q₁], by rw [hh₁.rsi, hh₂.rsi, q₂], by rw [hh₁.rdx, hh₂.rdx, q₃],
         by rw [hh₁.rcx, hh₂.rcx, q₄], by rw [hh₁.r8, hh₂.r8, eDst, eDst, a₀], by rw [hh₁.r9, hh₂.r9, q₆],
         by rw [hh₁.r10, hh₂.r10, eTg, eTg, a₂], by rw [hh₁.r11, hh₂.r11, eSrc, eSrc, q₅],
-        by rw [hh₁.rax, hh₂.rax, eW, eW, a₃], by rw [hh₁.rsp, hh₂.rsp, qsp], ?_⟩
+        by rw [hh₁.rax, hh₂.rax, eW, eW, a₃], by rw [hh₁.rsp, hh₂.rsp, qsp], ?_,
+        by rw [hh₁.mx, hh₂.mx, qm]⟩
   have leak : ∀ {σ h : State}, Loaded σ h → CallOpen.hLeak h = toLeak σ := fun {σ h} hh => by
     unfold CallOpen.hLeak toLeak
     rw [hh.mem, hh.rdi, hh.rsi, hh.rdx, hh.rcx, CallOpen.hS, CallOpen.hT, CallOpen.hL, hh.r11, hh.r10, hh.r9]
@@ -369,11 +371,11 @@ theorem tpre_of_spec {s : State} (h : (openToScratchContract X86_64.abi 212 56).
     bk, bn, ba, bs, bd, bt, bw, bg, ok, on, oa, os, od, ot, ow, dl⟩
 
 theorem pub_of {s₁ s₂ : State} (hp : (openToScratchContract X86_64.abi 212 56).pub s₁ s₂) : toPub s₁ s₂ := by
-  sig_pub [openToScratchContract, openToScratchSig, Spec.ChaCha20Poly1305.openToPre,
+  sig_pub_keep [openToScratchContract, openToScratchSig, Spec.ChaCha20Poly1305.openToPre,
     Spec.ChaCha20Poly1305.openToLeak, X86_64.abi, X86_64.argRegs, stackArgs_four, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero] at hp
-  obtain ⟨qsp, ql, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃⟩ := hp
-  exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, qsp, a₀, a₁, a₂, a₃, ql⟩
+  obtain ⟨qsp, qm, ql, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃⟩ := hp
+  exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, qsp, a₀, a₁, a₂, a₃, ql, qm⟩
 
 /-- A state satisfying the precondition, with its working space: no
 additional data or data, `dst` at `0x3000`, `tag` at `0x4000` and `work`

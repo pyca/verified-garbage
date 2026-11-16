@@ -9,6 +9,8 @@ import VerifiedGarbage.Proof.Framework.X86_64.Exec
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Lit
 import VerifiedGarbage.Proof.Framework.RegionsSub
+import VerifiedGarbage.Proof.Mcdt.X86_64.Op
+meta import VerifiedGarbage.Proof.Mcdt.X86_64.Op
 import VerifiedGarbage.Proof.Poly1305.X86_64.Avx2.Lit
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Ifma.Final
 meta import VerifiedGarbage.Proof.Poly1305.X86_64.Avx512.Blocks
@@ -25,8 +27,9 @@ public import VerifiedGarbage.Proof.Poly1305.Contract
 /-!
 # Poly1305 on x86-64 with AVX-512 IFMA: `vg_poly1305_blocks_ifma`
 
-The whole function: with fewer than 16 blocks it calls
-`vg_poly1305_blocks_avx2`; otherwise it absorbs the blocks eight at a time
+The whole function: with fewer than 32 blocks it calls
+`vg_poly1305_blocks`; otherwise, once its call of `vg_mcdt_enter` has
+returned 1 (`Avx2.guard`), it absorbs the blocks eight at a time
 (see `Impl/Poly1305/X86_64/Ifma.lean`), reduces the accumulator with
 `vg_poly1305_blocks`'s code, and calls `vg_poly1305_blocks` for the last
 `n mod 8`.
@@ -530,42 +533,50 @@ theorem body_ok {s₀ : State} (hp : APre s₀) (hbig : 28 ≤ nb s₀) {s : Sta
   WP.seq (WP.mono (pro_ok hp hbig hg hm hk) fun _ h₁ =>
     WP.seq (WP.mono (loop_ok hp h₁.1 (by omega_arith) h₁.2) fun _ h₂ => epi_ok hp h₁.1 h₂))
 
-theorem correct {s₀ : State} (hp : APre s₀) : WP isa blocksIfma s₀ (Post s₀) := by
+/-- The vector code, from at least 32 blocks. -/
+theorem big_ok {s₀ : State} (hp : APre s₀) (hge : 32 ≤ nb s₀) : WP isa big s₀ (Post s₀) := by
+  have hb := hp.avx2.bpre.nb_lt
+  refine WP.seq (WP.mono (body_ok hp (by omega_arith) rfl rfl ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (Avx2.test_ok s₂) fun s₃ ⟨z₃, g₃, m₃, mx₃, rd₃, wr₃⟩ => ?_)
+  have h₃ := h₂.congr g₃ m₃ mx₃ rd₃ wr₃
+  refine WP.ite (s₃.gpr .rdx &&& s₃.gpr .rdx == 0) (by simp [eval, z₃, g₃]) (fun h => ?_)
+    (fun _ => tail_ok hp.avx2 h₃)
+  have e : 8 * (nb s₀ / 8) = nb s₀ := by
+    have := h₃.rdx
+    simp only [BitVec.and_self, beq_iff_eq] at h
+    rw [h] at this
+    have := congrArg BitVec.toNat this
+    rw [toNat_ofNat_lt (by omega_arith)] at this
+    rw [show (0 : BitVec 64).toNat = 0 from rfl] at this
+    simp only [nb] at this ⊢
+    omega_arith
+  exact WP.block_nil (M := isa) (done_ok hp.avx2 (e ▸ h₃))
+
+theorem correct {s₀ : State} (hp : APre s₀) (hS : 16 ≤ (s₀.gpr .rsp).toNat) :
+    WP isa blocksIfma s₀ (Post s₀) := by
   have hb := hp.avx2.bpre.nb_lt
   refine WP.seq (WP.mono (cmp_ok s₀) fun s₁ ⟨g₁, m₁, k₁, cf₁⟩ => ?_)
+  have k₁' : Avx2.VKeep s₀ s₁ := ⟨k₁.xmm, k₁.ymmHi, k₁.mxcsr, k₁.rd, k₁.wr⟩
   refine WP.ite (decide (nb s₀ < 32)) (by simp [eval, cf₁]) (fun hlt => ?_) (fun hge => ?_)
-  · refine Avx512.avx2_ok hp ⟨by omega_arith, by rw [g₁], by rw [g₁]; simp [blkAddr], ?_,
+  · refine tail_ok hp.avx2 (i := 0) ⟨by omega_arith, by rw [g₁], by rw [g₁]; simp [blkAddr], ?_,
       fun r _ => by rw [g₁], k₁.rd, k₁.wr, by rw [m₁]; exact Frame.refl _ _, by rw [k₁.mxcsr],
       fun key msg hr => by rw [m₁, blks_zero, List.append_nil]; exact hr⟩
     rw [g₁, Nat.sub_zero, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   · simp only [decide_eq_false_iff_not, Nat.not_lt] at hge
-    refine WP.seq (WP.mono (body_ok hp (by omega_arith) g₁ m₁ k₁) fun s₂ h₂ => ?_)
-    refine WP.seq (WP.mono (Avx2.test_ok s₂) fun s₃ ⟨z₃, g₃, m₃, mx₃, rd₃, wr₃⟩ => ?_)
-    obtain h₃ := h₂.congr g₃ m₃ mx₃ rd₃ wr₃
-    refine WP.ite (s₃.gpr .rdx &&& s₃.gpr .rdx == 0) (by simp [eval, z₃, g₃]) (fun h => ?_)
-      (fun _ => tail_ok hp.avx2 h₃)
-    obtain e : 8 * (nb s₀ / 8) = nb s₀ := by
-      have := h₃.rdx
-      simp only [BitVec.and_self, beq_iff_eq] at h
-      rw [h] at this
-      have := congrArg BitVec.toNat this
-      rw [toNat_ofNat_lt (by omega_arith)] at this
-      rw [show (0 : BitVec 64).toNat = 0 from rfl] at this
-      simp only [nb] at this ⊢
-      omega_arith
-    exact WP.block_nil (M := isa) (done_ok hp.avx2 (e ▸ h₃))
+    exact Avx2.guard_ok hp.avx2 (hp.g16 hS) g₁ m₁ k₁' fun u hu =>
+      big_ok (hp.congr hu) (by simp only [nb, hu.rdx]; omega_arith)
 
 theorem blocksIfma_ok (s : State) (hs : Avx512.blocksAvx512X86_64.pre s) :
-    ∃ t s', Exec isa blocksIfma s t s' ∧ abiPreserved s s' ∧ Avx512.blocksAvx512X86_64.post s s' :=
-  correct (APre.of s hs)
-
-/-! ## Constant time -/
+    ∃ t s', Exec isa blocksIfma s t s' ∧ abiPreserved s s' ∧ Avx512.blocksAvx512X86_64.post s s' := by
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8⟩ := hs
+  exact correct ⟨h1, h2, h3, h4, h5, h6, h7⟩ h8
 
 theorem blocksIfma_ct :
     ConstantTime isa Avx512.blocksAvx512X86_64.pre Avx512.blocksAvx512X86_64.pub blocksIfma := by
-  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp]) ?_ (by taint_decide)
-  intro s₁ s₂ _ _ ⟨⟨h1, h2, h3⟩, h4⟩
-  refine Taint.agree_ofRegs fun r hr => ?_
+  refine VG.Taint.constantTime_of_sem (A := taintMx) (Taint.ofRegs [.rdi, .rsi, .rdx, .rsp]) ?_
+    (by taint_decide_ops [Mcdt.X86_64.enterOpMx_ok])
+  intro s₁ s₂ _ _ ⟨⟨h1, h2, h3⟩, h4, h5⟩
+  refine ⟨Taint.agree_ofRegs fun r hr => ?_, h5⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
 

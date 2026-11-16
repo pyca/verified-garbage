@@ -4,6 +4,7 @@ public import VerifiedGarbage.Spec.Poly1305.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubOr
+public import VerifiedGarbage.Proof.Framework.X86_64.ResidueMx
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Init
 public import VerifiedGarbage.Proof.Poly1305.X86_64.Frame
@@ -128,18 +129,26 @@ def finalizeReg : Registration Spec.Poly1305.finalizeApi X86_64.target :=
     verified := finalize_framed } (finalizeOut _) [] (pubOk_nil _) (some ⟨finalizeKs, finalizeOk⟩)
 
 open VG.X86_64.RScrub in
+/-- `vg_poly1305_update` over the implementation `v` of `vg_poly1305_blocks`,
+as a registration before its clearing. -/
+def updatePlain (v : BlocksImpl) : Registration Spec.Poly1305.updateApi X86_64.target where
+  suffix := v.suffix
+  code := updateCode v.name v.code
+  stack := 160
+  verified := update_framed v
+  spSafe := X86_64.withStackScratch_spSafe_of (update_spSafe v)
+
+open VG.X86_64.RScrub in
 /-- `vg_poly1305_update` over the implementation `v` of `vg_poly1305_blocks`:
-without secret residue where `v` gives its analysis (`BlocksImpl.update`),
-at the level of the registers its code writes, and without writing MXCSR,
-which none of the implementations loads: the vector ones run under the
-dispatcher's `vg_mcdt_enter` (`RScrub.withScrubM`). -/
+without secret residue where `v` gives its analysis (`BlocksImpl.update`, by
+`rtaintMx`, which takes its calls of `vg_mcdt_enter` as an operation), at
+the level of the registers its code writes. Where `v` loads MXCSR (in
+`vg_mcdt_enter`, on the path of many blocks only), two runs along the same
+path leave the same MXCSR (`Mx.mx`), so the clearing writes none
+(`RScrub.withScrubResM`). -/
 def updateReg (v : BlocksImpl) : Registration Spec.Poly1305.updateApi X86_64.target :=
-  withScrubM {
-    suffix := v.suffix
-    code := updateCode v.name v.code
-    stack := 160
-    verified := update_framed v
-    spSafe := X86_64.withStackScratch_spSafe_of (update_spSafe v)
-    } (updateOut _) [] (pubOk_nil _) v.update
+  match v.update with
+  | some a => withScrubResM (updatePlain v) (updateOut _) a.ks (resOk_regOps (updatePlain v) rfl (pubOk_nil _) a)
+  | none => updatePlain v
 
 end VG.Proof.Poly1305.X86_64

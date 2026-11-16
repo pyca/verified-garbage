@@ -1690,7 +1690,9 @@ On x86-64, the dispatcher of a function any of whose implementations has, in
 its code or the code of a function it calls (`Code.all`: those of the tables
 of functions it takes too), an instruction that MXCSR-configuration-dependent
 timing (MCDT) affects (`Printer.mcdt`, Intel's list: see "MCDT" in
-`TCB/X86_64/Isa.lean`) first runs Intel's mitigation, the verified
+`TCB/X86_64/Isa.lean`), but for those its code runs only after calling
+`vg_mcdt_enter` itself and testing that it returned 1 (`mcdtOpen`,
+`needsMcdt`), first runs Intel's mitigation, the verified
 `vg_mcdt_enter` (`Spec/Mcdt.lean`), and panics unless it returns 1, MXCSR
 then holding `0x1FBF` (`verified_garbage_cpu::mcdt_entered`):
 
@@ -1705,7 +1707,12 @@ pub unsafe fn <base>_auto(_dit: verified_garbage_cpu::Dit<'_>, <the signature>) 
 `vg_mcdt_enter` sets MXCSR's status flags, which nothing but a load of
 MXCSR clears, and the verified code loads it only as Intel's prologue and
 epilogue do, which restore what they found: so MXCSR holds `0x1FBF` from
-there until the implementation returns. Every call of an implementation
+there until the implementation returns. The same holds from a call of
+`vg_mcdt_enter` in verified code that returned 1 until that code returns,
+so a function whose affected instructions all run only after such a call
+(`mcdtOpen`; for instance only on the path of large inputs) needs
+no line in its dispatcher, and the inputs that never reach them never pay
+for it. Every call of an implementation
 from Rust is through its dispatcher (the implementations are `pub(crate)`,
 and only the dispatchers and the tables of functions name them; a table's
 functions are run by the verified code that takes it, whose dispatcher
@@ -1770,15 +1777,47 @@ def checkGroups (as : List Artifact) : Except String Unit :=
       throw s!"{a.target.name}: {a.name}, an implementation of {g.base.name}, has another \
         signature or documentation"
 
-/-- Whether the code of `a`, or of a function it calls (`Code.all`, the
-functions of the tables it takes among them), has an instruction that
-MXCSR-configuration-dependent timing affects (`Printer.mcdt`): its
-dispatcher then runs `vg_mcdt_enter` first (see "Dispatchers"). -/
-def needsMcdt (a : Artifact) : Bool := !a.code.all fun i => !a.target.printer.mcdt i
-
 /-- The name of the function that runs Intel's mitigation of MCDT
 (`Spec/Mcdt.lean`), in the module `mcdt`. -/
 def mcdtEnter : String := "vg_mcdt_enter"
+
+/-- Whether `c`, or a function it calls (as `Code.all` goes through them, the
+functions of the tables it takes among them), has an instruction that
+MXCSR-configuration-dependent timing affects (`Printer.mcdt`) that may run
+without a successful call of `vg_mcdt_enter` before it in the same
+function: all of them but those of the code `rest` in
+
+```
+.seq (.call "vg_mcdt_enter" e) (.seq (.block [i]) (.ite c fb rest))
+```
+
+with `i` and `c` testing its result (`Printer.mcdtGuard`: on x86-64,
+`test eax, eax` and `je`), and of the functions `rest` calls. The printer
+lays that out as the call, `i`, the branch on `c` to `fb`, and `rest` right
+after it (`Printer.lower`), so `rest` is entered only there, when the call
+returned 1: structured code jumps into `rest` from nowhere outside it. MXCSR
+then holds `0x1FBF` (`VG.Proof.Mcdt.X86_64.enter_mxcsr`; the emitter emits
+the call only of the function `vg_mcdt_enter` is, `files`), and keeps it
+until the function returns (see "Dispatchers"). `fb`, run when it returned
+0, counts as any other code. `ci/check_mcdt.py` checks the generated code
+for the same (`guarded`). -/
+def mcdtOpen {M : ISA} (P : Printer M) : Code M.Instr M.Cond → Bool
+  | .block is => is.any P.mcdt
+  | .seq (.call n e) (.seq (.block [i]) (.ite c fb rest)) =>
+    if n == mcdtEnter && P.mcdtGuard i c then mcdtOpen P e || mcdtOpen P fb
+    else mcdtOpen P e || P.mcdt i || mcdtOpen P fb || mcdtOpen P rest
+  | .seq a b => mcdtOpen P a || mcdtOpen P b
+  | .ite _ t e => mcdtOpen P t || mcdtOpen P e
+  | .loop b _ => mcdtOpen P b
+  | .call _ b => mcdtOpen P b
+  | .frame i b j => P.mcdt i || mcdtOpen P b || P.mcdt j
+  | .icall i _ b n => P.mcdt i || mcdtOpen P b || mcdtOpen P n
+
+/-- Whether the code of `a`, or of a function it calls, has an instruction
+that MXCSR-configuration-dependent timing affects (`Printer.mcdt`) that may
+run without its own code calling `vg_mcdt_enter` first (`mcdtOpen`):
+its dispatcher then runs `vg_mcdt_enter` first (see "Dispatchers"). -/
+def needsMcdt (a : Artifact) : Bool := mcdtOpen a.target.printer a.code
 
 /-- The first lines of the dispatcher of a function some of whose
 implementations need Intel's mitigation of MCDT (`needsMcdt`), or

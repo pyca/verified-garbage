@@ -8,6 +8,7 @@ import VerifiedGarbage.Proof.Aes.X86_64.CodeLit
 import VerifiedGarbage.Proof.Aes.X86_64.Lit
 import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.LitSplit
 import VerifiedGarbage.Proof.Framework.TaintBatch
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Crypt
 meta import VerifiedGarbage.Proof.ChaCha20Poly1305.X86_64.Split.Correct
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx512.XorSplitVerified
@@ -185,7 +186,7 @@ theorem inline_rel :
     RelCT isa (fun s₁ s₂ => ArgsS s₀ s₁ ∧ ArgsS s₀' s₂) Impl.ChaCha20.X86_64.Avx512.xorSplit
       fun s₁ s₂ => InlS s₀ s₁ ∧ InlS s₀' s₂ := by
   obtain ⟨eL, eSL, emm, esp⟩ := hq.eqs
-  obtain ⟨⟨-, -, -, -, p5, -, p7, -, p9⟩, -, -⟩ := hq
+  obtain ⟨⟨-, -, -, -, p5, -, p7, -, p9, -⟩, -, -⟩ := hq
   have hm := mOf_le_len 960 1024 (L s₀)
   have hm' := mOf_le_len 960 1024 (L s₀')
   have ct := regionModel.relCT_inline (c := Impl.ChaCha20.X86_64.Avx512.xorSplit)
@@ -212,7 +213,7 @@ theorem big_rel :
   obtain ⟨-, -, -, -⟩ := hq.eqs
   have hq₀ := hq.1
   have hqi := hq
-  obtain ⟨⟨-, -, -, -, -, -, p7, -, p9⟩, -, -⟩ := hq
+  obtain ⟨⟨-, -, -, -, -, -, p7, -, p9, -⟩, -, -⟩ := hq
   have hfp : FoldPoly 960 1024 6 .avx512 := .inr (.inr ⟨rfl, rfl, rfl, .inl rfl⟩)
   obtain ⟨_, hX⟩ := cryptPre_taint true false hfp
   obtain ⟨_, hA⟩ := splitArgs_taint
@@ -273,11 +274,13 @@ theorem sealSplitBody_rel {s₀ s₀' : State} (hT : SPre s₀) (hT' : SPre s₀
     ⟨by rw [h.1]; exact prologueA_ok (by lit_omega) (.inr (.inl rfl)) (.inr (.inr rfl)) hp,
       by rw [h.2]; exact prologueA_ok (by lit_omega) (.inr (.inl rfl)) (.inr (.inr rfl)) hp'⟩).mono
     (fun _ _ h => h) fun _ _ h => h.2
-  obtain ⟨_, hmid⟩ := sealMid_taint hfp
-  have mid := ((RelCT.taint (A := taintS)
+  have hmid := sealMid_taint hfp
+  have mid := ((relTaintMx
     (P := fun s₁ s₂ => AfterF 960 1024 s₀ s₁ ∧ AfterF 960 1024 s₀' s₂) (τA true)
     (fun _ _ h => agreeA hp hp' hq₀ (tp_pub hq₀) h.1 h.2) hmid).wp (F₁ := AtIteS s₀) (F₂ := AtIteS s₀') fun _ _ h =>
-      ⟨sealMidS_ok b hT h.1, sealMidS_ok b hT' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+      ⟨sealMidS_ok b hT h.1.1, sealMidS_ok b hT' h.1.2⟩).mono
+      (Q' := fun (s₁ s₂ : State) => (AtIteS s₀ s₁ ∧ AtIteS s₀' s₂) ∧ s₁.mxcsr = s₂.mxcsr) (fun _ _ h => h)
+      fun _ _ h => ⟨h.2, h.1⟩
   have hc : ∀ s₁ s₂, (AtIteS s₀ s₁ ∧ AtIteS s₀' s₂) → isa.eval .b s₁ = isa.eval .b s₂ := fun s₁ s₂ h => by
     simp [eval, h.1.at_.cf, h.2.at_.cf, eL]
   obtain ⟨_, hS⟩ := cryptSmall_taint true false hfp
@@ -290,11 +293,17 @@ theorem sealSplitBody_rel {s₀ s₀' : State} (hT : SPre s₀) (hT' : SPre s₀
       simp only [eval, h.1.1.at_.cf, h.1.2.at_.cf, Option.some.injEq, decide_eq_true_eq] at e₁ e₂
       exact ⟨small_ok hp (by lit_omega) (.inr (.inr rfl)) h.1.1.at_ (fun h => nomatch h) (by omega_using [e₁]),
         small_ok hp' (by lit_omega) (.inr (.inr rfl)) h.1.2.at_ (fun h => nomatch h) (by omega_using [e₂])⟩
-  have ite := RelCT.ite hc (small.mono (fun _ _ h => h) fun _ _ h => h.2) (big_rel hT hT' hq)
-  obtain ⟨_, hpost⟩ := sealPost_taint hfp
-  have post := RelCT.taint (A := taintS) (P := fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂) (τ₁ true)
-    (fun _ _ h => agree₁ hp hp' hq₀ (tp_pub hq₀) h.1 h.2) hpost
-  have all := (entry_rel hp hp' hq₀).seq (pA.seq (c1.seq (mid.seq (ite.seq post))))
+  have ite := relMx (MxDet.of_noLoad (by lit_decide))
+    (RelCT.ite hc (small.mono (fun _ _ h => h) fun _ _ h => h.2) (big_rel hT hT' hq))
+  have hpost := sealPost_taint hfp
+  have post := (relTaintMx (P := fun s₁ s₂ => After s₀ s₁ ∧ After s₀' s₂) (τ₁ true)
+    (fun _ _ h => agree₁ hp hp' hq₀ (tp_pub hq₀) h.1 h.2) hpost).mono (Q' := fun _ _ => True) (fun _ _ h => h)
+    fun _ _ _ => trivial
+  have hm : s₀.mxcsr = s₀'.mxcsr := hq₀.2.2.2.2.2.2.2.2.2
+  have c1m := relMx (MxDet.of_noLoad (inPlace_mx v)) c1
+  have all := ((relMx (MxDet.of_noLoad (by lit_decide)) (entry_rel hp hp' hq₀)).mono
+    (fun _ _ h => ⟨h, by rw [h.1, h.2]; exact hm⟩) fun _ _ h => h).seq
+    ((relMx (MxDet.of_noLoad (by lit_decide)) pA).seq (c1m.seq (mid.seq (ite.seq post))))
   exact RelCT.of_exec sealSplitBody_exec all
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Split

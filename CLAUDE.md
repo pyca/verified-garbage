@@ -225,6 +225,11 @@ own changes are rebuilt either way, on top of the restored build.
   (`Spec/Mcdt.lean`): the dispatcher of every function whose code has such
   an instruction runs it first (`Printer.mcdt`, "Dispatchers" in
   `TCB/Rust.lean`), so a new x86-64 function needs no sequence of its own.
+  Code that reaches such instructions only on some paths (large inputs) may
+  call `vg_mcdt_enter` itself on those paths instead, and run them only
+  where it returned 1 (`Rust.mcdtOpen`: the `else` of an `ite .e` right
+  after the call and `test eax, eax`, and the functions called there); its
+  dispatcher then does not, and the other paths pay nothing.
 * `TCB/` holds definitions only and imports only Lean core; lemmas go in
   `Proof/`. `Spec/` and `Impl/` never import `Proof/`.
   `ci/check_lean_imports.py` checks both.

@@ -41,7 +41,19 @@ function whose code has such an instruction (`lean/VerifiedGarbage/TCB/Rust.lean
 "Dispatchers"), and Rust reaches the verified functions only through them:
 so such a function is `pub(crate)`, the crate's Rust names it only in
 dispatchers whose first line runs `vg_mcdt_enter`, never in a table of
-functions, and every function that calls it is one too.
+functions, and every function that calls it is one too, or calls it after
+its own call of `vg_mcdt_enter` returned 1 (below).
+
+On x86-64, the verified code may also call `vg_mcdt_enter` itself, only on
+the paths that reach affected instructions, so that the others (short
+inputs) do not pay for it (`Rust.mcdtOpen`, whose dispatchers then do not
+run it): an affected instruction may be outside any region where every path
+to it from its function's entry passes `call {vg_mcdt_enter}`, `test eax,
+eax` and the fall-through of a `je` (taken when it returned 0), neither of
+the last two labelled (`guarded`); and so may a function every call of which
+is on such a path, or from a function that is `entered`. `vg_mcdt_enter`
+returns 1 only with MXCSR `0x1FBF` (`VG.Proof.Mcdt.X86_64.enter_mxcsr`),
+which it keeps until the function returns, as above.
 
 A region is only entered through its prologue: no jump from outside it may
 land inside it, and it may not contain a `call` or `ret`. So a cold branch
@@ -203,11 +215,67 @@ def flags_kept(instrs, i, fence, end, saved):
     return slot in ("saved", "set")
 
 
-def check_function(name, instrs, lines, labels, entered=False):
+# The test of `vg_mcdt_enter`'s result after a call of it (`Rust.mcdtOpen`), and
+# the branches taken when it returned 0.
+GUARD_TEST = "test eax, eax"
+GUARD_JUMPS = ("je", "jz")
+
+
+def guarded(instrs, labels):
+    """For each instruction of a function, whether every path to it from the
+    function's entry passes a call of `vg_mcdt_enter` that returned 1 (the
+    code `Rust.mcdtOpen` lets run without the dispatcher's): it falls through
+    a `je` (taken when `eax` is 0) right after `test eax, eax` right after
+    `call {vg_mcdt_enter}`, with no label on the test or the `je`, which
+    nothing but that call then reaches. MXCSR then holds `0x1FBF` until the
+    function returns (`vg_mcdt_enter` returns 1 only then, and the regions
+    restore the value they saved, with its flags). All `False` if the target
+    of a jump is unknown. Paths follow the fall-through of every instruction
+    but `jmp` and `ret`, a call returning to the next, and the target of each
+    jump; an instruction no path reaches is `True`."""
+    n = len(instrs)
+    labelled = {d for defs in labels.values() for d in defs}
+    preds = [[] for _ in range(n)]  # (predecessor, whether the edge passes a guard)
+    for k, x in enumerate(instrs):
+        op = mnemonic(x)
+        if op == "ret":
+            continue
+        if op.startswith("j"):
+            t = target(x, k, labels)
+            if t is None:
+                return [False] * n
+            if t < n:
+                preds[t].append((k, False))
+            if op == "jmp":
+                continue
+        if k + 1 < n:
+            guard = (op in GUARD_JUMPS and k >= 2 and instrs[k - 1] == GUARD_TEST and
+                     instrs[k - 2] == f"call {{{ENTER[2]}}}" and k - 1 not in labelled and
+                     k not in labelled)
+            preds[k + 1].append((k, guard))
+    state = [k != 0 for k in range(n)]
+    work = list(range(n))
+    succs = [[] for _ in range(n)]
+    for k, ps in enumerate(preds):
+        for p, _ in ps:
+            succs[p].append(k)
+    while work:
+        k = work.pop()
+        new = k != 0 and all(state[p] or g for p, g in preds[k])
+        if new != state[k]:
+            state[k] = new
+            work.extend(succs[k])
+    return state
+
+
+def check_function(name, instrs, lines, labels, entered=False, guard=None):
     """The errors of a function and its number of regions. `entered`: every
     run of it is under `vg_mcdt_enter` (`entered`), so its affected
-    instructions need no region."""
+    instructions need no region; `guard`: which of its instructions run only
+    after its own call of `vg_mcdt_enter` returned 1 (`guarded`), which need
+    none either."""
     errors = []
+    guard = guard or [False] * len(instrs)
 
     def at(k):
         return f"{name}:{lines[k]}"
@@ -262,7 +330,7 @@ def check_function(name, instrs, lines, labels, entered=False):
         region_at[r[0] : r[1]] = [r] * (r[1] - r[0])
     for k, (instr, op) in enumerate(zip(instrs, mnemonics)):
         r = region_at[k]
-        if op in AFFECTED and r is None and not entered:
+        if op in AFFECTED and r is None and not entered and not guard[k]:
             errors.append(
                 f"{at(k)}: `{instr}` is outside Intel's MXCSR prologue and "
                 "epilogue (MCDT, see lean/VerifiedGarbage/TCB/X86_64/Isa.lean)"
@@ -303,13 +371,14 @@ PUBLIC = re.compile(r"^pub unsafe extern \"[\w-]+\" fn (vg_\w+)", re.M)
 
 
 def entered(fns, crate):
-    """Of the functions `fns` of a target (each name with its instructions),
-    the names of those that only run under `vg_mcdt_enter`: no Rust outside
-    the crate `crate` may name it (it is `pub(crate)`); the crate's Rust
-    names it only in dispatchers that run `vg_mcdt_enter` first
+    """Of the functions `fns` of a target (each name with its instructions and
+    labels), the names of those that only run under `vg_mcdt_enter`: no Rust
+    outside the crate `crate` may name it (it is `pub(crate)`); the crate's
+    Rust names it only in dispatchers that run `vg_mcdt_enter` first
     (`ENTER_LINE`, their first lines), never in a table of functions, and
-    names it there or calls it from another function; and every function
-    that calls it is one too. (The functions of the crate's
+    names it there or calls it from another function; and every call of it is
+    from a function that is one too, or after that function's own call of
+    `vg_mcdt_enter` returned 1 (`guarded`). (The functions of the crate's
     modules name the functions they call only as the `sym` operands of those
     calls, which are the `call`s of their assembly.)"""
     src = crate / "src"
@@ -324,21 +393,24 @@ def entered(fns, crate):
                 direct |= names
     for path in sorted((src / "fn_tables").glob("*.rs")):
         direct |= set(NAMED.findall(path.read_text()))
-    callers = {}
-    for name, instrs in fns:
-        for x in instrs:
+    callers = {}  # callee: {(caller, whether the call is guarded)}
+    for name, instrs, labels in fns:
+        guard = None
+        for k, x in enumerate(instrs):
             if m := CALL.fullmatch(x):
-                callers.setdefault(m.group(1), set()).add(name)
+                if guard is None:
+                    guard = guarded(instrs, labels)
+                callers.setdefault(m.group(1), set()).add((name, guard[k]))
     out = {}
 
     def ok(f, seen):
         if f not in out:
             out[f] = (f not in public and f not in direct and f != ENTER[2] and
                       (f in wrapped or f in callers) and
-                      all(g not in seen and ok(g, seen | {g}) for g in callers.get(f, ())))
+                      all(g or (c not in seen and ok(c, seen | {c})) for c, g in callers.get(f, ())))
         return out[f]
 
-    return {name for name, _ in fns if ok(name, {name})}
+    return {name for name, _, _ in fns if ok(name, {name})}
 
 
 def check_enter(name, instrs, lines):
@@ -376,13 +448,14 @@ def main():
                 errors.append(f"{where}: lists {len(fns)} of the {naked} naked functions of "
                               f"{path.relative_to(ROOT)}")
         # Only x86-64 has `vg_mcdt_enter`, which its dispatchers run.
-        under = (entered([(fn[0], fn[1]) for _, _, fn in read], src.parent)
-                 if target_name == ENTER[0] else set())
+        x86_64 = target_name == ENTER[0]
+        under = entered([(fn[0], fn[1], fn[3]) for _, _, fn in read], src.parent) if x86_64 else set()
         for where, file, (name, instrs, lines, labels) in read:
             if (target_name, file, name) == ENTER:
                 errors += check_enter(f"{where} ({name})", instrs, lines)
                 continue
-            errs, n = check_function(f"{where} ({name})", instrs, lines, labels, name in under)
+            guard = guarded(instrs, labels) if x86_64 and f"call {{{ENTER[2]}}}" in instrs else None
+            errs, n = check_function(f"{where} ({name})", instrs, lines, labels, name in under, guard)
             errors += errs
             regions += n
     for e in errors:
