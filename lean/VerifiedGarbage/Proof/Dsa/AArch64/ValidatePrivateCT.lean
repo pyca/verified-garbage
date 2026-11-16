@@ -10,6 +10,11 @@ import VerifiedGarbage.Proof.Framework.RelCTAssoc
 import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
 import VerifiedGarbage.Proof.Dsa.AArch64.PrivateKeyCT
 import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
+import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCallCT
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
+import VerifiedGarbage.Proof.Dsa.AArch64.SharedCall
+import VerifiedGarbage.Proof.Dsa.AArch64.SharedCallCT
 import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -26,6 +31,11 @@ meta import VerifiedGarbage.Proof.Framework.RelCTAssoc
 meta import VerifiedGarbage.Proof.Dsa.AArch64.PublicKeyCT
 import VerifiedGarbage.Proof.Dsa.AArch64.PrivateKeyCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.DomainShapeCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCallCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleCheckCT
+meta import VerifiedGarbage.Proof.Dsa.AArch64.SharedCall
+meta import VerifiedGarbage.Proof.Dsa.AArch64.SharedCallCT
 meta import VerifiedGarbage.Proof.Dsa.AArch64.BoundaryCT
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.RegionsSub
@@ -267,23 +277,103 @@ theorem privateReady_related {s₁ s₂ : State}
     (reference.val.input.shapeFacts reference.property).2.2
   exact ⟨_, h₁, h₂, hsp⟩
 
+/-- A range check keeps the subgroup order's bytes. -/
+theorem privateRange_ct (a : Operand) (ha : pointerFits a.pointer) (hp : stablePointer a.pointer)
+    (hmem : ∀ p, (a, p.layout.qLen) ∈ privateInputs p)
+    {hc : VG.Taint.Hint VG.AArch64.Taint.T}
+    (hT : (taint.check (Taint.ofRegs [.x0]) (.block (Core.operand arg argLen a ++
+      Core.enter ModulusSide.q.offset)) hc).isSome = true) :
+    RelCT isa (Two (PublicKeyPre privateInputs)) (Checks.range qWorkspace a)
+      (Two (PublicKeyPre privateInputs)) := by
+  have ct := scheduleRange_ct privateInputs (fun p => privateInputs_stable p) .q a
+    (fun p => p.layout.qLen) false ha hp (fun p => p.layout.widths.1) (fun _ => Nat.le_refl _) hT
+  refine two_post ((two_map (fun p => p) (fun p s h => ⟨h.1, (h.1.2.1 _ (hmem p)).active⟩) ct).mono
+    (fun _ _ h => h) (fun _ _ _ => trivial)) ?_
+  intro p s ⟨hs, qb, hqb, hql, hqv⟩
+  obtain ⟨bs, hbs, hlen⟩ := hs.2.1 _ (hmem p)
+  obtain ⟨valid, hm⟩ := hs.2.2
+  refine WP.mono (readyRange_ok hs.1 .q a ha hbs.active (by rw [hlen]; exact p.layout.widths.1)
+    (by rw [hlen]; exact Nat.le_refl _) false hm) fun t h => ?_
+  exact ⟨h.schedule hs (fun a ha => privateInputs_stable p a ha), qb,
+    h.preserve hs.1 (by decide) (by decide) (by change Field.q ≠ .mask; decide) hqb, hql, hqv⟩
+
+/-- y = g^x and whether `g^q = 1`, in one pass: q's bytes are the public
+subgroup order's. -/
+theorem privatePow_ct (M : Mont) : RelCT isa (Two (PublicKeyPre privateInputs))
+    (SharedPower.pow M.mm Core.generator Core.privateScalar (Core.element t))
+    (Two (ScheduleState privateInputs)) := by
+  have hend (p : SchedulePublic) : t + ModulusSide.p.length p.layout ≤ usedBytes := element_space (by decide) p
+  have qsrc {p : SchedulePublic} {s : State} (h : PublicKeyPre privateInputs p s) :
+      Src s p.layout.base activeBytes (p.layout.fields .q)
+        (Spec.Dsa.encodeBE p.layout.qLen p.layout.subgroup) := by
+    obtain ⟨hs, qb, hqb, hql, hqv⟩ := h
+    rw [← hs.1.fields .q (by decide), ← hql, ← hqv, VG.Proof.Dsa.encodeBE_decodeBE]
+    exact hqb.active.source
+  refine two_post (two_map (fun p : SchedulePublic => (⟨⟨p.layout, p.layout.pLen, p.layout.qLen, p.greater .p,
+      p.odd .p, by have := p.layout.widths; omega_using [this], Nat.le_refl _, p.layout.widths.1,
+      by have := p.layout.widths; omega_using [this], by decide, hend p⟩,
+      Spec.Dsa.encodeBE p.layout.qLen p.layout.subgroup, VG.Proof.Dsa.encodeBE_length _ _⟩ :
+        SharedPower.ReadySharedPublic t)) (fun p s h => ?_)
+    (SharedPower.readySharedPow_ct M t Core.generator Core.privateScalar (by trivial) (by trivial)
+      (by simp [stablePointer, Core.generator]) (by simp [stablePointer, Core.privateScalar]) (by decide)
+      (by taint_decide))) ?_
+  · obtain ⟨ga, hga, hgl⟩ := h.1.2.1 _ (show (Core.generator, p.layout.pLen) ∈ privateInputs p by
+      simp [privateInputs])
+    obtain ⟨xa, hxa, hxl⟩ := h.1.2.1 _ (show (Core.privateScalar, p.layout.qLen) ∈ privateInputs p by
+      simp [privateInputs])
+    exact ⟨⟨h.1.1, ga, xa, hga.active, hxa.active, hgl, hxl⟩, qsrc h⟩
+  intro p s h
+  have hq := qsrc h
+  obtain ⟨hs, qb, hqb, hql, hqv⟩ := h
+  obtain ⟨ga, hga, hgl⟩ := hs.2.1 _ (show (Core.generator, p.layout.pLen) ∈ privateInputs p by
+    simp [privateInputs])
+  obtain ⟨xa, hxa, hxl⟩ := hs.2.1 _ (show (Core.privateScalar, p.layout.qLen) ∈ privateInputs p by
+    simp [privateInputs])
+  obtain ⟨valid, hm⟩ := hs.2.2
+  have hq' : Src s p.layout.base activeBytes (word s.mem p.layout.base Field.q.offset)
+      (Spec.Dsa.encodeBE p.layout.qLen p.layout.subgroup) := by
+    rw [hs.1.fields .q (by decide)]; exact hq
+  refine WP.mono (SharedPower.readySharedPow_ok M hs.1 (p.greater .p) (p.odd .p) Core.generator
+    Core.privateScalar (by trivial) (by trivial) hga.active hxa.active
+    hq' ((VG.Proof.Dsa.encodeBE_length _ _).trans hxl.symm)
+    (by rw [hgl]; have := p.layout.widths; omega_using [this]) (by rw [hgl])
+    (by rw [hxl]; exact p.layout.widths.1) (by rw [hxl]; have := p.layout.widths; omega_using [this])
+    t (by decide) (hend p) hm) fun u ⟨v, h2, h2c⟩ => ?_
+  have stable := fun a ha => privateInputs_stable p a ha
+  exact h2c.schedule (h2.schedule hs (by decide) (hend p) stable) stable
+
 theorem privateBody_ct (M : Mont) : RelCT isa (Two (PublicKeyPre privateInputs))
-    (seqs [Checks.signingKey M.mm, Checks.privateKey M.mm, .block SignVerify.result])
+    (seqs [seqs (Checks.publicPrefix M.mm), Checks.range qWorkspace Core.privateScalar,
+      Checks.range qWorkspace Core.nonce,
+      SharedPower.pow M.mm Core.generator Core.privateScalar (Core.element t),
+      Checks.equal (Core.element t) Core.publicValue, .block SignVerify.result])
     (fun _ _ => True) := by
-  have h1 := signingKey_ct M privateInputs (fun p => privateInputs_stable p)
+  have h0 := publicPrefix_known_ct M privateInputs (fun p => privateInputs_stable p)
     (by intro p; simp [privateInputs]) (by intro p; simp [privateInputs])
-    (by intro p; simp [privateInputs])
-  have h2 := privateKey_ct M privateInputs (fun p => privateInputs_stable p)
-    (by intro p; simp [privateInputs]) (by intro p; simp [privateInputs])
-    (by intro p; simp [privateInputs]) (by intro p; simp [privateInputs])
+  have h1 := privateRange_ct Core.privateScalar (by simp [pointerFits, Core.privateScalar])
+    (by simp [stablePointer, Core.privateScalar]) (by intro p; simp [privateInputs]) (by taint_decide)
+  have h2 := privateRange_ct Core.nonce (by simp [pointerFits, Core.nonce])
+    (by simp [stablePointer, Core.nonce]) (by intro p; simp [privateInputs]) (by taint_decide)
+  have h4 := scheduleEqual_ct privateInputs (fun p => privateInputs_stable p) (Core.element t) Core.publicValue
+    (fun p => p.layout.pLen) false
+    (by change t < 2 ^ 16; decide) (by simp [pointerFits, Core.publicValue])
+    (by simp [stablePointer, Core.element]) (by simp [stablePointer, Core.publicValue]) (by decide)
+    (by intro p; have := p.layout.widths; omega_using [this])
+    (by intro p; have := p.layout.widths; omega_using [this]) (by taint_decide)
   unfold seqs
-  refine RelCT.seq h1 (RelCT.seq h2 ?_)
+  refine RelCT.seq h0 (RelCT.seq h1 (RelCT.seq h2 (RelCT.seq (privatePow_ct M) (RelCT.seq
+    (two_map (fun p => p) (fun p st h =>
+      ⟨h, h.1.availableLocal .p t (by decide) (element_space (by decide) p),
+        (h.2.1 _ (show (Core.publicValue, p.layout.pLen) ∈ privateInputs p by simp [privateInputs])).active⟩) h4)
+    ?_))))
   exact two_map (fun p => p.layout.base) (fun _ _ h => h.1.parent.x0) result_ct
 
 theorem privateSuccess_ct (M : Mont) :
     RelCT isa (Two (fun c : AcceptedPrivateCall => PrivateShaped c.val))
-      (seqs [SignVerify.workspaces, Checks.signingKey M.mm, Checks.privateKey M.mm,
-        .block SignVerify.result])
+      (seqs [SignVerify.workspaces, seqs (Checks.publicPrefix M.mm),
+        Checks.range qWorkspace Core.privateScalar, Checks.range qWorkspace Core.nonce,
+        SharedPower.pow M.mm Core.generator Core.privateScalar (Core.element t),
+        Checks.equal (Core.element t) Core.publicValue, .block SignVerify.result])
       (fun _ _ => True) := by
   refine RelCT.seq privateWorkspaces_ct ?_
   exact (privateBody_ct M).mono (fun _ _ h => privateReady_related h) (fun _ _ h => h)

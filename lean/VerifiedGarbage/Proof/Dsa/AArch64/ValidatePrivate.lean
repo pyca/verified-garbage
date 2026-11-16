@@ -9,6 +9,14 @@ public import VerifiedGarbage.Proof.Dsa.AArch64.InitializedLayout
 public import VerifiedGarbage.Proof.Dsa.AArch64.SignCompute
 public import VerifiedGarbage.Impl.Dsa.AArch64.PrevalidatedSign
 public import VerifiedGarbage.Spec.Dsa.PrevalidatedSign
+import VerifiedGarbage.Proof.Dsa.AArch64.DeriveChecked
+import VerifiedGarbage.Proof.Dsa.AArch64.SharedCall
+import VerifiedGarbage.Proof.Dsa.AArch64.Sequences
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleState
+import VerifiedGarbage.Proof.Dsa.AArch64.ScheduleOperands
+import VerifiedGarbage.Proof.Dsa.AArch64.CallOperands
+import VerifiedGarbage.Proof.Dsa.AArch64.CheckOperands
+import VerifiedGarbage.Proof.Dsa.Encoding
 import VerifiedGarbage.Proof.Dsa.AArch64.Parameters
 import VerifiedGarbage.Proof.Dsa.AArch64.PrivateKey
 import VerifiedGarbage.Proof.Dsa.AArch64.AcceptedSpec
@@ -28,10 +36,11 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 
 /-! # Functional correctness of the AArch64 DSA private-key validator
 
-The validator is the signer's checks of the key (`Checks.signingKey` and
-`Checks.privateKey`) after the domain check's register entry, with the
-nonce field pointing at x: its range check is then x's, which the key's
-consistency already includes. -/
+The validator is the signer's checks of the key after the domain check's
+register entry, with the nonce field pointing at x: its range check is then
+x's, which the key's consistency already includes. The two exponentiations
+of those checks, y = g^x and the domain's `g^q = 1`, are one pass over both
+exponents (`SharedPower.pow`). -/
 
 @[expose] public section
 
@@ -309,32 +318,102 @@ theorem PrivateInput.validate_eq (p : PrivateInput) {pi qi : BitVec 64} {origina
   · simp only [Spec.Dsa.keyValid, Bool.and_eq_true, decide_eq_true_eq] at hkv
     exact decide_eq_true ⟨hkv.2.1.1, hkv.2.1.2⟩
 
+/-- The private key's checks: x's and the nonce's ranges, `g^x = y`, and
+`g^q = 1` with it. -/
+theorem privateChecks_ok (M : Mont) {L : ExecutionLayout} {s0 : State} (h0 : Ready L s0)
+    (hp : 1 < L.modulus) (hop : L.modulus % 2 = 1)
+    {gb yb xb nb qb : List Byte}
+    (hg : OperandBytes s0 L.base usedBytes Core.generator gb)
+    (hy : OperandBytes s0 L.base usedBytes Core.publicValue yb)
+    (hx : OperandBytes s0 L.base usedBytes Core.privateScalar xb)
+    (hn : OperandBytes s0 L.base usedBytes Core.nonce nb)
+    (hqb : OperandBytes s0 L.base usedBytes ⟨.input .q, .qLen⟩ qb)
+    (hgl : gb.length = L.pLen) (hyl : yb.length = L.pLen)
+    (hxl : xb.length = L.qLen) (hnl : nb.length = L.qLen) (hqbl : qb.length = L.qLen)
+    {valid : Bool} (hm : word s0.mem L.base Field.mask.offset = mask valid) :
+    WP isa (seqs [Checks.range qWorkspace Core.privateScalar, Checks.range qWorkspace Core.nonce,
+        SharedPower.pow M.mm Core.generator Core.privateScalar (Core.element t),
+        Checks.equal (Core.element t) Core.publicValue]) s0 fun s4 =>
+      Ready L s4 ∧
+      word s4.mem L.base Field.mask.offset =
+        mask (decide (Spec.Dsa.encodeBE L.pLen (Spec.Dsa.powMod (Spec.Dsa.decodeBE gb) (Spec.Dsa.decodeBE xb) L.modulus) = yb) &&
+          (decide (Spec.Dsa.powMod (Spec.Dsa.decodeBE gb) (Spec.Dsa.decodeBE qb) L.modulus = 1) &&
+          (decide (0 < Spec.Dsa.decodeBE nb ∧ Spec.Dsa.decodeBE nb < L.subgroup) &&
+          (decide (0 < Spec.Dsa.decodeBE xb ∧ Spec.Dsa.decodeBE xb < L.subgroup) && valid)))) ∧
+      Outside L.base 128 (usedBytes - 128) s0.mem s4.mem ∧ Keep coreRegs s0 s4 := by
+  obtain ⟨hql, hqu, hqp, hpu⟩ := L.widths
+  have ht : t + L.pLen ≤ usedBytes := by unfold t usedBytes; omega_using [hpu]
+  unfold seqs
+  refine WP.seq (WP.mono (readyRange_ok h0 .q Core.privateScalar (by trivial) hx.active
+    (by rw [hxl]; omega_using [hql]) (by simp only [hxl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    false hm) fun s1 h1 => ?_)
+  have hg1 := h1.preserve h0 (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg
+  have hy1 := h1.preserve h0 (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy
+  have hx1 := h1.preserve h0 (by decide) (by decide) (by simp [stablePointer, Core.privateScalar]) hx
+  have hn1 := h1.preserve h0 (by decide) (by decide) (by simp [stablePointer, Core.nonce]) hn
+  have hq1 := h1.preserve h0 (by decide) (by decide) (by change Field.q ≠ .mask; decide) hqb
+  refine WP.seq (WP.mono (readyRange_ok h1.ready .q Core.nonce (by trivial) hn1.active
+    (by rw [hnl]; omega_using [hql]) (by simp only [hnl, ModulusSide.words, ModulusSide.length]; exact Nat.le_refl _)
+    false h1.mask) fun s2 h2 => ?_)
+  have hg2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.generator]) hg1
+  have hy2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.publicValue]) hy1
+  have hx2 := h2.preserve h1.ready (by decide) (by decide) (by simp [stablePointer, Core.privateScalar]) hx1
+  have hq2 := h2.preserve h1.ready (by decide) (by decide) (by change Field.q ≠ .mask; decide) hq1
+  refine WP.seq (WP.mono (SharedPower.readySharedPow_ok M h2.ready hp hop Core.generator Core.privateScalar
+    (by trivial) (by trivial) hg2.active hx2.active hq2.active.source (hqbl.trans hxl.symm)
+    (by rw [hgl]; omega_using [hql, hqp]) (by rw [hgl]) (by rw [hxl]; omega_using [hql])
+    (by rw [hxl]; omega_using [hqu]) t (by decide) ht h2.mask) fun s3 ⟨u, h3, h3c⟩ => ?_)
+  have hy3 := h3c.preserve h3.ready (by decide) (by decide) (by simp [stablePointer, Core.publicValue])
+    (h3.external (by decide) ht hy2)
+  have hout := h3c.preserve h3.ready (Nat.le_refl _) (by change Field.pLen ≠ .mask; decide) (by trivial)
+    (h3.output (by decide) ht)
+  refine WP.mono (readyEqual_ok h3c.ready (Core.element t) Core.publicValue
+    (by change t < 2 ^ 16; decide) (by trivial) hout hy3.active
+    (by simp only [encodeBE_length, ModulusSide.length, hyl])
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hql, hqp])
+    (by simp only [encodeBE_length, ModulusSide.length]; omega_using [hpu]) false h3c.mask) fun s4 h4 => ?_
+  refine ⟨h4.ready, ?_,
+    (((h1.scheduleFrame.trans h2.scheduleFrame).trans (h3.scheduleFrame (by decide) ht)).trans
+      h3c.scheduleFrame).trans h4.scheduleFrame,
+    ((((h1.keep.trans h2.keep).trans h3.keep).trans h3c.keep).trans h4.keep).mono (by decide)⟩
+  have hm4 := h4.mask
+  simp only [Bool.false_eq_true, ↓reduceIte, ModulusSide.length, ModulusSide.value] at hm4
+  exact hm4
+
+theorem and_swap (e g n x v : Bool) : (e && (g && (n && (x && v)))) = (e && (n && (x && (g && v)))) := by
+  cases e <;> cases g <;> cases n <;> cases x <;> rfl
+
 theorem privateSuccess_ok (M : Mont) {p : PrivateInput} {original st : State}
     (h : PrivatePre p original)
     (hs : PrivateShapePost p original h.pLength h.qLength st) (ha : p.accepted = true) :
-    WP isa (seqs [SignVerify.workspaces, Checks.signingKey M.mm, Checks.privateKey M.mm,
-      .block SignVerify.result]) st (PrivatePost p original) := by
+    WP isa (seqs [SignVerify.workspaces, seqs (Checks.publicPrefix M.mm),
+      Checks.range qWorkspace Core.privateScalar, Checks.range qWorkspace Core.nonce,
+      SharedPower.pow M.mm Core.generator Core.privateScalar (Core.element t),
+      Checks.equal (Core.element t) Core.publicValue, .block SignVerify.result]) st (PrivatePost p original) := by
   obtain ⟨hsize, hpo, hqo⟩ := p.shapeFacts ha
   obtain ⟨hp1, hq255, _⟩ := VG.Proof.Dsa.supported_bounds hsize
-  refine WP.seq (WP.mono (privateInitialize_ok h hs ha) fun t ⟨pi, qi, hr, ho, hm, hframe, hkeep⟩ => ?_)
+  refine WP.seq (WP.mono (privateInitialize_ok h hs ha) fun s1 ⟨pi, qi, hr, ho, hm, hframe, hkeep⟩ => ?_)
   let L := (p.layout original h.pLength h.qLength).withInverses pi qi
   have hpf : L.modulus ≤ 256 ^ L.pLen := by
     have hh := VG.Proof.Dsa.decodeBE_lt p.components.p; rw [p.components.pLength] at hh; exact Nat.le_of_lt hh
   have hqf : L.subgroup ≤ 256 ^ L.qLen := by
     have hh := VG.Proof.Dsa.decodeBE_lt p.components.q; rw [p.components.qLength] at hh; exact Nat.le_of_lt hh
-  refine WP.seq (WP.mono (signingKey_ok M hr hp1 hq255 hpo hqo hpf hqf ho.generator ho.publicValue
-    ho.subgroup p.components.gLength p.components.yLength p.components.qLength rfl hm)
-    fun u ⟨hu, hmu, _, hfu, hku⟩ => ?_)
+  refine WP.seq (WP.mono (keyPrefix_ok M hr hp1 hq255 hpo hqo hpf hqf ho.generator ho.publicValue
+    ho.subgroup p.components.gLength p.components.yLength hm) fun u ⟨hu, hmu, hfu, hku⟩ => ?_)
   have hg1 := hr.preserveExternal hu hfu hku (by decide) (by simp [stablePointer, Core.generator]) ho.generator
   have hy1 := hr.preserveExternal hu hfu hku (by decide) (by simp [stablePointer, Core.publicValue]) ho.publicValue
   have hx1 := hr.preserveExternal hu hfu hku (by decide) (by simp [stablePointer, Core.privateScalar]) ho.privateScalar
   have hn1 := hr.preserveExternal hu hfu hku (by decide) (by simp [stablePointer, Core.nonce]) ho.nonce
-  refine WP.seq (WP.mono (privateKey_ok M hu hp1 hpo hg1 hy1 hx1 hn1 p.components.gLength
-    p.components.yLength p.xLength p.xLength hmu) fun w ⟨hw, hmw, _, hfw, hkw⟩ => ?_)
+  have hq1 := hr.preserveExternal hu hfu hku (by decide) (by change Field.q ≠ .mask; decide) ho.subgroup
+  apply wpAppendSequences (a := [Checks.range qWorkspace Core.privateScalar, Checks.range qWorkspace Core.nonce,
+    SharedPower.pow M.mm Core.generator Core.privateScalar (Core.element t),
+    Checks.equal (Core.element t) Core.publicValue]) (b := [.block SignVerify.result]) (by simp) (by simp)
+  refine WP.mono (privateChecks_ok M hu hp1 hpo hg1 hy1 hx1 hn1 hq1 p.components.gLength
+    p.components.yLength p.xLength p.xLength p.components.qLength hmu) fun w ⟨hw, hmw, hfw, hkw⟩ => ?_
   have hmv : word w.mem L.base Field.mask.offset =
       mask (Spec.Dsa.validatePrivateKeyBytes p.pLen p.qLen p.key) :=
-    hmw.trans (congrArg mask ((privateAccepted_signingKey L p.values p.components.y true hp1 hpf).trans
-      (p.validate_eq ha)))
+    hmw.trans (congrArg mask ((and_swap _ _ _ _ _).trans
+      ((privateAccepted_signingKey L p.values p.components.y true hp1 hpf).trans (p.validate_eq ha))))
   refine WP.mono (result_ok hw.scratch hw.parent.x0 (by decide) hmv) fun v ⟨hret, hmem, hkv⟩ => ?_
   refine ⟨?_, ?_, (((hkeep.trans hku).trans hkw).trans hkv).mono (by decide)⟩
   · rw [hret]; exact toNat_ofNat_if _
