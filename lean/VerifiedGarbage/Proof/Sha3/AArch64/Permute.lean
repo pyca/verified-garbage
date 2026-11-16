@@ -962,15 +962,6 @@ theorem permute_preserved : ∀ r ∈ preserved, ∀ i ∈ instrs permute, clobb
 
 theorem permute_noCalls : permute.noCalls = true := by decide +kernel
 
-/-- A state satisfying the precondition. -/
-def satState : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x2000 | _ => 0
-  sp := 0x4000
-  mem _ := 0
-  rd := []
-  wr := [⟨0x1000, 200⟩, ⟨0x2000, 512⟩]
-
 theorem permute_correct (s : State) (hs : Proof.Sha3.permuteAArch64.pre s) :
     ∃ t s', Exec isa Impl.Sha3.AArch64.permute s t s' ∧ abiPreserved s s' ∧
       Proof.Sha3.permuteAArch64.post s s' := by

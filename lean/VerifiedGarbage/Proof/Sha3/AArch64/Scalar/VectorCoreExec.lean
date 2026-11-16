@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.VectorLower
 public import VerifiedGarbage.Proof.Framework.Block
-public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Scheduled
 public import VerifiedGarbage.Proof.Sha3.AArch64.Scalar.CoreExec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Simd64
@@ -14,32 +13,13 @@ import Mathlib.Tactic.ToDual
 import Mathlib.Tactic.ToAdditive
 public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Lower
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce
+public import VerifiedGarbage.Impl.Sha3.AArch64.Scalar.Core
 
 /-! ### `Sha3.AArch64.Scalar.Scheduled`, which only this module used -/
 
 section
 
 @[expose] public section
-namespace VG.Proof.Sha3.AArch64.Scalar
-open VG VG.AArch64 VG.Impl.Sha3.AArch64.Scalar
-
-theorem scheduled_good : ∀ op ∈ scheduledOps, Good op := by decide +kernel
-
-/-- Structural expression equality checks data dependencies, including the
-original values preserved by both temporary slots. -/
-theorem scheduled_symbolic : ∀ i < 25,
-    (symRun scheduledOps symInitial).regs (laneReg i) =
-    (symRun coreOps symInitial).regs (laneReg i) := by
-  intro i hi
-  rw [symRun_regs, symRun_regs]
-  exact (by decide +kernel : ∀ i < 25,
-    (kRun scheduledOps kInitial).get (laneReg i) = (kRun coreOps kInitial).get (laneReg i)) i hi
-
-theorem scheduled_matches (f : File) (i : Nat) (hi : i < 25) :
-    (run scheduledOps f).regs (laneReg i) = (run coreOps f).regs (laneReg i) := by
-  rw [run_regs, run_regs, scheduled_symbolic i hi]
-
-end VG.Proof.Sha3.AArch64.Scalar
 
 end
 
@@ -131,19 +111,5 @@ theorem vector_list_ok (ops : List ScalarOp) (hg : ∀ op ∈ ops, Good op)
     refine ⟨s₂, ?_, hr₂, hm₂.trans hm₁, hrd₂.trans hrd₁, hwr₂.trans hwr₁, hsp₂.trans hsp₁,
       fun v h24 h25 h28 h29 => (hv₂ v h24 h25 h28 h29).trans (hv₁ v h24 h25 h28 h29)⟩
     simp only [List.flatMap_cons, block_append, hs₁, Option.bind_some, hs₂]
-
-/-- The vector-slot core has the same lane semantics and writes no memory. -/
-theorem vector_core_ok (A : Spec.Sha3.State) (s : VG.AArch64.State)
-    (hl : ∀ i : Nat, (hi : i < 25) → s.gpr (laneReg i) = A[i]) :
-    ∃ s', runBlock isa vectorCoreInstrs s = some s' ∧
-      (∀ i : Nat, (hi : i < 25) → s'.gpr (laneReg i) =
-        (Spec.Sha3.chi (Spec.Sha3.pi (Spec.Sha3.rho (Spec.Sha3.theta A))))[i]) ∧
-      s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ s'.sp = s.sp ∧
-      (∀ v, v ≠ .v24 → v ≠ .v25 → v ≠ .v28 → v ≠ .v29 → s'.v v = s.v v) := by
-  let f : File := ⟨s.gpr, fun k => vdword (s.v (slotV k)) 0⟩
-  have hr : VectorFileRel f s := ⟨fun _ => rfl, fun _ _ => rfl⟩
-  have hmath := core_math A f hl
-  obtain ⟨s', hs, hr', hm, hrd, hwr, hsp, hv⟩ := vector_list_ok scheduledOps scheduled_good f s hr
-  exact ⟨s', hs, fun i hi => (hr'.regs (laneReg i)).trans ((scheduled_matches f i hi).trans (hmath i hi)), hm, hrd, hwr, hsp, hv⟩
 
 end VG.Proof.Sha3.AArch64.Scalar
