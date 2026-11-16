@@ -9,10 +9,11 @@ import VerifiedGarbage.Proof.Framework.Omega
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ops
 
 /-!
-# AES-GCM on AArch64: `vg_ghash`, `vg_ghash_aes`, `vg_ghash_prepared8_aes` and `vg_ghash_with_powers_aes`
+# AES-GCM on AArch64: `vg_ghash`, `vg_ghash_neon`, `vg_ghash_aes`, `vg_ghash_prepared8_aes` and `vg_ghash_with_powers_aes`
 
 Untrusted: everything here is checked by Lean. The `GhashImpl`s of
-`vg_ghash` and `vg_ghash_aes` and the `GhashPreparedImpl` of
+`vg_ghash`, `vg_ghash_neon` (with the arithmetic its proof takes as a
+hypothesis, `Neon.arith`) and `vg_ghash_aes` and the `GhashPreparedImpl` of
 `vg_ghash_prepared8_aes`, from their proofs, apart from `Callee.lean`: only
 the variants need them, and their proofs import the algebra of
 `Proof/Gcm/Poly.lean`, which the rest of the AES-GCM proofs then need not
