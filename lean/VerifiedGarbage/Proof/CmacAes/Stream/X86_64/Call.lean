@@ -139,9 +139,11 @@ namespace VG.Proof.CmacAes.Stream.X86_64
 
 open VG VG.X86_64
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
-open VG.Proof.CmacAes.X86_64 (UpdateImpl UpdateFree updateX86_64 updateX86_64F subkeysX86_64 subkeysX86_64F subkeysF_correct subkeysF_ct
-  finalizeX86_64 finalizeX86_64F finalizeF_correct finalizeF_ct subkeys_correct
-  finalize_correct subkeys_ct finalize_ct callEntry_frame bytesAt_frame toNat_rounds)
+open VG.Proof.CmacAes.X86_64 (UpdateImpl UpdateFree UpdateSmall updateX86_64 updateX86_64F updateX86_64S
+  subkeysX86_64 subkeysX86_64F subkeysX86_64S subkeysF_correct subkeysF_ct subkeysS_correct subkeysS_ct
+  finalizeX86_64 finalizeX86_64F finalizeX86_64S finalizeF_correct finalizeF_ct finalizeS_correct finalizeS_ct
+  subkeys_correct finalize_correct subkeys_ct finalize_ct callEntry_frame bytesAt_frame toNat_rounds
+  ctrCall_allInstrs ctrCall_depth)
 
 /-! ## The stack -/
 
@@ -274,7 +276,9 @@ working space: its writable part `Z` (in the writable regions), and the part
 `X` of it a call may write. Over an implementation that needs working space,
 `Z` is the whole of it and `X` the call's (`ACall.base`); over one that needs
 none (`UpdateFree`), `Z` is only what the caller writes itself and `X` is
-empty (`ACall.free`). -/
+empty (`ACall.free`); over one that never touches the first 512 bytes of its
+scratch buffer (`UpdateSmall`), `Z` is the working space but its first 512
+bytes (`ACall.small`). -/
 
 /-- What a call of `vg_cmac_aes_update` needs, with `S` its scratch pointer
 and `Z` the caller's writable working space. -/
@@ -397,15 +401,84 @@ theorem ACall.free (v : UpdateImpl) (f : UpdateFree v.callee) :
       h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₁.r9, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8, h₂.r9, hsp]
     exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
 
+theorem UArgsZ.preS {s : State} {W C D S : Addr} {R n : Nat}
+    (h : UArgsZ s W C D S ⟨S + BitVec.ofNat 64 512, 1792⟩ R n) :
+    updateX86_64S.pre (s.callEntry.withRegions [⟨W, 240⟩, ⟨D, 16 * n⟩]
+      [⟨C, 16⟩, ⟨S + BitVec.ofNat 64 512, 1664⟩]) := by
+  have sb : Region.Sub ⟨S + BitVec.ofNat 64 512, 1664⟩ ⟨S + BitVec.ofNat 64 512, 1792⟩ :=
+    Region.sub_prefix (by decide)
+  have hR := toNat_rounds h.rounds
+  have hN := toNat_ofNat (n := n) (by have := h.hn; omega_arith)
+  simp only [updateX86_64S, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.r9 ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, hR, hN]
+  exact ⟨trivial, trivial, h.wc, h.wz.sub_right sb, h.dc, h.dz.sub_right sb, h.cz.sub_right sb,
+    h.stkC.sub_left (ret_sub _), (h.stkZ.sub_right sb).sub_left (ret_sub _), h.stkW.sub_left (stk_sub _),
+    h.stkD.sub_left (stk_sub _), h.stkC.sub_left (stk_sub _), (h.stkZ.sub_right sb).sub_left (stk_sub _),
+    h.wrapC, h.wrapD, by have := h.wrapZ; simp only at this; omega_arith, h.rounds⟩
+
+/-- All but the first 512 bytes of the 2176 a call may write, within the
+working space but its first 512 bytes. -/
+theorem covers_small {S : Addr} {wr : List Region} (h : Covers [⟨S + BitVec.ofNat 64 512, 1792⟩] wr) :
+    Covers [⟨S + BitVec.ofNat 64 512, 1664⟩] wr :=
+  Covers.trans (Covers.of_sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨⟨S + BitVec.ofNat 64 512, 1792⟩, List.mem_singleton_self _, 0, by simp, by simp⟩) h
+
+/-- Over an implementation that never touches the first 512 bytes of its
+scratch buffer, with the working space but its first 512 bytes. -/
+theorem ACall.small (v : UpdateImpl) (f : UpdateSmall v.callee) :
+    ACall v.callee (fun S => ⟨S + BitVec.ofNat 64 512, 1792⟩) (fun S => ⟨S + BitVec.ofNat 64 512, 1664⟩) where
+  sub _ := Region.sub_prefix (by decide)
+  slotX S := Offset.disjoint S (by decide) (by decide) (by decide)
+  call {s W C D S R n} h := by
+    have hR := toNat_rounds h.rounds
+    have hN := toNat_ofNat (n := n) (by have := h.hn; omega_arith)
+    have hd := v.depth
+    have zc := covers_small h.zw
+    refine WP.call (k := updateX86_64S) f.ok v.nosp (by omega_arith) h.preS
+      ((Covers.append h.reads (Covers.right (rd := s.rd) zc)).trans
+        (Covers.append_left (Covers.refl _) (Covers.refl _))) (Covers.cons h.writes zc) ?_
+    intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
+    refine ⟨hrd, hwr, hcs, by simpa using Frame.below_mono hf (b := 16) (by omega_arith) (by decide), ?_⟩
+    simp only [updateX86_64S, updateX86_64, State.withRegions_gpr, State.withRegions_mem,
+      State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
+      State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp),
+      State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx, h.r8, hR, hN] at hpost
+    have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_arith
+    rw [← hm₂, hpost, X86_64.ciphAt, Proof.Cmac.Stream.blocksAt_eq, Proof.Cmac.Stream.blocksAt_eq,
+      callEntry_bytes s (h.stkW.sub_right (Region.sub_prefix hRb)) (by omega_arith),
+      callEntry_bytes s h.stkC (by decide), callEntry_bytes s h.stkD (by have := h.hn; omega_arith)]
+  rel {P} h := by
+    refine RelCT.callEx f.ok f.ct fun s₁ s₂ hp => ?_
+    obtain ⟨W, C, D, S, R, n, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+    have z₁ := covers_small h₁.zw
+    have z₂ := covers_small h₂.zw
+    refine ⟨_, _, _, _, h₁.preS, h₂.preS, ?_,
+      (Covers.append h₁.reads (Covers.right (rd := s₁.rd) z₁)).trans
+        (Covers.append_left (Covers.refl _) (Covers.refl _)), Covers.cons h₁.writes z₁,
+      (Covers.append h₂.reads (Covers.right (rd := s₂.rd) z₂)).trans
+        (Covers.append_left (Covers.refl _) (Covers.refl _)), Covers.cons h₂.writes z₂, hsp⟩
+    simp only [updateX86_64S, updateX86_64, State.withRegions_gpr, State.callEntry_rsp,
+      State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
+      State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
+      State.callEntry_gpr _ (by decide : Reg.r8 ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.r9 ≠ .rsp),
+      h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₁.r9, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8, h₂.r9, hsp]
+    exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+
 /-! ## `vg_cmac_aes_subkeys` -/
 
 theorem subkeys_nosp (v : Ctr32Impl) : NoSp (Impl.CmacAes.X86_64.subkeys v.callee) :=
   nosp_of_all (by
-    simp only [Impl.CmacAes.X86_64.subkeys, Code.allInstrs, all_of_nosp v.nosp]
+    simp only [Impl.CmacAes.X86_64.subkeys, Code.allInstrs,
+      ctrCall_allInstrs (p := fun i => !Taint.clobbers i .rsp) (fun _ => rfl) (all_of_nosp v.nosp)]
     decide +kernel)
 
 theorem subkeys_depth (v : Ctr32Impl) : (Impl.CmacAes.X86_64.subkeys v.callee).depth = 1 := by
-  simp [Impl.CmacAes.X86_64.subkeys, Code.depth, v.depth]
+  show max 0 (max (Impl.CmacAes.X86_64.ctrCall v.callee).depth 0) = 1
+  rw [ctrCall_depth, v.depth]; rfl
 
 /-- What a call of `vg_cmac_aes_subkeys` needs: the key schedule `W`, the
 subkeys `K`, the working space `S` and the rounds `R`. -/
@@ -480,12 +553,14 @@ theorem sub_rel (v : Ctr32Impl) (nm : String) {P : State → State → Prop}
 theorem finalize_nosp (v : Ctr32Impl) : NoSp (Impl.CmacAes.X86_64.finalize v.callee) :=
   nosp_of_all (by
     simp only [Impl.CmacAes.X86_64.finalize, Impl.CmacAes.X86_64.finPre, Impl.CmacAes.X86_64.partialBlock,
-      Impl.CmacAes.X86_64.copy, Code.allInstrs, all_of_nosp v.nosp]
+      Impl.CmacAes.X86_64.copy, Code.allInstrs,
+      ctrCall_allInstrs (p := fun i => !Taint.clobbers i .rsp) (fun _ => rfl) (all_of_nosp v.nosp)]
     decide +kernel)
 
 theorem finalize_depth (v : Ctr32Impl) : (Impl.CmacAes.X86_64.finalize v.callee).depth = 1 := by
-  simp [Impl.CmacAes.X86_64.finalize, Impl.CmacAes.X86_64.finPre, Impl.CmacAes.X86_64.partialBlock,
-    Impl.CmacAes.X86_64.copy, Code.depth, v.depth]
+  have h : (Impl.CmacAes.X86_64.ctrCall v.callee).depth = 1 := by rw [ctrCall_depth, v.depth]
+  show max (Code.depth Impl.CmacAes.X86_64.finPre) (Impl.CmacAes.X86_64.ctrCall v.callee).depth = 1
+  rw [h]; decide +kernel
 
 /-- What a call of `vg_cmac_aes_finalize` needs: the key schedule and
 subkeys `K`, the state `St`, the `L` last bytes at `P`, the working space
@@ -677,6 +752,157 @@ theorem fin_relF (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) (nm :
     State.callEntry_gpr _ (by decide : Reg.r8 ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.r9 ≠ .rsp),
     h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₁.r9, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8, h₂.r9, hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
+
+/-! ## `vg_cmac_aes_finalize`, for any working space
+
+As for `vg_cmac_aes_update` (`ACall`): what a call needs but its working
+space (`FArgsZ`), within the caller's writable working space `Z`, and what it
+leaves, having written at most `X` of it (`FPostX`). -/
+
+/-- What a call of `vg_cmac_aes_finalize` needs, with `S` its scratch
+pointer and `Z` the caller's writable working space. -/
+structure FArgsZ (s : State) (K St P S : Addr) (Z : Region) (L R : Nat) : Prop where
+  rdi : s.gpr .rdi = K
+  rsi : s.gpr .rsi = BitVec.ofNat 64 R
+  rdx : s.gpr .rdx = St
+  rcx : s.gpr .rcx = P
+  r8 : s.gpr .r8 = BitVec.ofNat 64 L
+  r9 : s.gpr .r9 = S
+  rounds : R = 10 ∨ R = 12 ∨ R = 14
+  len : L ≤ 16
+  kst : (⟨K, 272⟩ : Region).Disjoint ⟨St, 16⟩
+  kz : (⟨K, 272⟩ : Region).Disjoint Z
+  pst : (⟨P, L⟩ : Region).Disjoint ⟨St, 16⟩
+  pz : (⟨P, L⟩ : Region).Disjoint Z
+  stz : (⟨St, 16⟩ : Region).Disjoint Z
+  stkK : (below (s.gpr .rsp) 16).Disjoint ⟨K, 272⟩
+  stkP : (below (s.gpr .rsp) 16).Disjoint ⟨P, L⟩
+  stkSt : (below (s.gpr .rsp) 16).Disjoint ⟨St, 16⟩
+  stkZ : (below (s.gpr .rsp) 16).Disjoint Z
+  wrapK : K.toNat + 272 ≤ 2 ^ 64
+  wrapSt : St.toNat + 16 ≤ 2 ^ 64
+  wrapP : P.toNat + L ≤ 2 ^ 64
+  wrapZ : Z.base.toNat + Z.len ≤ 2 ^ 64
+  reads : Covers ([⟨K, 272⟩, ⟨P, L⟩] ++ [⟨St, 16⟩]) (s.rd ++ s.wr)
+  writes : Covers [⟨St, 16⟩] s.wr
+  zw : Covers [Z] s.wr
+
+/-- What a call of `vg_cmac_aes_finalize` leaves, having written at most `X`
+of the working space. -/
+structure FPostX (s : State) (K St P : Addr) (X : Region) (L R : Nat) (s' : State) : Prop where
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
+  frame : Frame [⟨St, 16⟩, X, below (s.gpr .rsp) 16] s.mem s'.mem
+  out : let ciph := Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem K (16 * (R + 1)))
+    let ks := Spec.Cmac.subkeys ciph 16
+    Spec.Aes.bytesAt s.mem (K + 240) 32 = ks.1 ++ ks.2 →
+    ∀ msg : List Byte, msg.length % 16 = 0 → (msg = [] ∨ 0 < L) →
+      Spec.Aes.bytesAt s.mem St 16 = Spec.Cmac.chain ciph (Spec.Cmac.zeros 16) (Spec.Cmac.blocks 16 msg) →
+      Spec.Aes.bytesAt s'.mem St 16 = Spec.Cmac.macFull ciph 16 (msg ++ Spec.Aes.bytesAt s.mem P L)
+
+/-- The calls of `vg_cmac_aes_finalize` (made with `c`, named with `sfx`)
+from a caller whose writable working space is `Z S`, for a scratch pointer
+`S`: each writes at most `X S` of it. -/
+structure HCall (c : Impl.Aes.X86_64.Ctr32) (sfx : String) (Z X : Addr → Region) : Prop where
+  sub : ∀ S, Region.Sub (X S) (Z S)
+  call : ∀ {s : State} {K St P S : Addr} {L R : Nat}, FArgsZ s K St P S (Z S) L R →
+    WP isa (.call ("vg_cmac_aes_finalize" ++ sfx) (Impl.CmacAes.X86_64.finalize c)) s
+      (FPostX s K St P (X S) L R)
+  rel : ∀ {P : State → State → Prop}, (∀ s₁ s₂, P s₁ s₂ → ∃ K St Q S : Addr, ∃ L R : Nat,
+      FArgsZ s₁ K St Q S (Z S) L R ∧ FArgsZ s₂ K St Q S (Z S) L R ∧ s₁.gpr .rsp = s₂.gpr .rsp) →
+    RelCT isa P (.call ("vg_cmac_aes_finalize" ++ sfx) (Impl.CmacAes.X86_64.finalize c)) fun _ _ => True
+
+theorem FArgsZ.base {s : State} {K St P S : Addr} {L R : Nat} (h : FArgsZ s K St P S ⟨S, 2304⟩ L R) :
+    FArgs s K St P S L R :=
+  have sb : Region.Sub ⟨S, 2176⟩ ⟨S, 2304⟩ := Region.sub_prefix (by decide)
+  have zc : Covers [⟨S, 2176⟩] s.wr := Covers.trans (Covers.of_sub fun r hr => by
+    simp only [List.mem_singleton] at hr; subst hr
+    exact ⟨⟨S, 2304⟩, List.mem_singleton_self _, 0, by simp, by simp⟩) h.zw
+  { rdi := h.rdi, rsi := h.rsi, rdx := h.rdx, rcx := h.rcx, r8 := h.r8, r9 := h.r9, rounds := h.rounds,
+    len := h.len, kst := h.kst, ks := h.kz.sub_right sb, pst := h.pst, ps := h.pz.sub_right sb,
+    sts := h.stz.sub_right sb, stkK := h.stkK, stkP := h.stkP, stkSt := h.stkSt,
+    stkS := h.stkZ.sub_right sb, wrapK := h.wrapK, wrapSt := h.wrapSt, wrapP := h.wrapP,
+    wrapS := by have := h.wrapZ; simp only at this; omega_arith
+    reads := by
+      have := Covers.append h.reads (Covers.right (rd := s.rd) zc)
+      exact this.trans (Covers.append_left (Covers.refl _) (Covers.refl _))
+    writes := Covers.cons h.writes zc }
+
+/-- Over any implementation, with the whole working space. -/
+theorem HCall.base (v : Ctr32Impl) : HCall v.callee v.suffix (fun S => ⟨S, 2304⟩) (fun S => ⟨S, 2176⟩) where
+  sub _ := Region.sub_prefix (by decide)
+  call h := WP.mono (fin_call v _ h.base) fun _ h' => ⟨h'.rd, h'.wr, h'.saved, h'.frame, h'.out⟩
+  rel h := fin_rel v _ fun a b hab =>
+    let ⟨K, St, Q, S, L, R, h₁, h₂, hsp⟩ := h a b hab
+    ⟨K, St, Q, S, L, R, h₁.base, h₂.base, hsp⟩
+
+theorem FArgsZ.preS {s : State} {K St P S : Addr} {L R : Nat}
+    (h : FArgsZ s K St P S ⟨S + BitVec.ofNat 64 512, 1792⟩ L R) :
+    finalizeX86_64S.pre (s.callEntry.withRegions [⟨K, 272⟩, ⟨P, L⟩]
+      [⟨St, 16⟩, ⟨S + BitVec.ofNat 64 512, 1664⟩]) := by
+  have sb : Region.Sub ⟨S + BitVec.ofNat 64 512, 1664⟩ ⟨S + BitVec.ofNat 64 512, 1792⟩ :=
+    Region.sub_prefix (by decide)
+  have hR := toNat_rounds h.rounds
+  have hL := toNat_ofNat (n := L) (by have := h.len; omega_arith)
+  simp only [finalizeX86_64S, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.r9 ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx, h.r8, h.r9, hR, hL]
+  exact ⟨trivial, trivial, h.kst, h.kz.sub_right sb, h.pst, h.pz.sub_right sb, h.stz.sub_right sb,
+    h.stkSt.sub_left (ret_sub _), (h.stkZ.sub_right sb).sub_left (ret_sub _), h.stkK.sub_left (stk_sub _),
+    h.stkP.sub_left (stk_sub _), h.stkSt.sub_left (stk_sub _), (h.stkZ.sub_right sb).sub_left (stk_sub _),
+    h.wrapK, h.wrapSt, h.wrapP, by have := h.wrapZ; simp only at this; omega_arith, h.rounds, h.len⟩
+
+/-- Over an implementation of `vg_aes_ctr32` that uses 1480 bytes of working
+space, with the working space but its first 512 bytes. -/
+theorem HCall.small (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Small v.callee) :
+    HCall v.callee v.suffix (fun S => ⟨S + BitVec.ofNat 64 512, 1792⟩)
+      (fun S => ⟨S + BitVec.ofNat 64 512, 1664⟩) where
+  sub _ := Region.sub_prefix (by decide)
+  call {s K St P S L R} h := by
+    have hR := toNat_rounds h.rounds
+    have hL := toNat_ofNat (n := L) (by have := h.len; omega_arith)
+    have zc := covers_small h.zw
+    refine WP.call (k := finalizeX86_64S) (finalizeS_correct v f) (finalize_nosp v)
+      (by rw [finalize_depth]; decide) h.preS
+      ((Covers.append h.reads (Covers.right (rd := s.rd) zc)).trans
+        (Covers.append_left (Covers.refl _) (Covers.refl _))) (Covers.cons h.writes zc) ?_
+    intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
+    rw [finalize_depth] at hf
+    refine ⟨hrd, hwr, hcs, by simpa using hf, ?_⟩
+    simp only [finalizeX86_64S, finalizeX86_64, State.withRegions_gpr, State.withRegions_mem,
+      State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
+      State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp),
+      State.callEntry_gpr s (by decide : Reg.r8 ≠ .rsp), h.rdi, h.rsi, h.rdx, h.rcx, h.r8, hR, hL] at hpost
+    have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_arith
+    have eK : Spec.Aes.bytesAt s.callEntry.mem K (16 * (R + 1)) = Spec.Aes.bytesAt s.mem K (16 * (R + 1)) :=
+      callEntry_bytes s (h.stkK.sub_right (Region.sub_prefix (by omega_arith))) (by omega_arith)
+    have eK2 : Spec.Aes.bytesAt s.callEntry.mem (K + 240) 32 = Spec.Aes.bytesAt s.mem (K + 240) 32 :=
+      callEntry_bytes s (h.stkK.sub_right (Offset.sub_base K (d := 240) (n := 32) (by decide))) (by decide)
+    have eSt := callEntry_bytes s h.stkSt (by decide)
+    have eP := callEntry_bytes s h.stkP (by omega_arith)
+    intro _ _ hk msg hm hne hst
+    simp only [X86_64.ciphAt, eK, eK2, eSt, eP] at hpost
+    rw [← hm₂]
+    exact hpost hk msg hm hne hst
+  rel {P} h := by
+    refine RelCT.callEx (finalizeS_correct v f) (finalizeS_ct v f) fun s₁ s₂ hp => ?_
+    obtain ⟨K, St, Q, S, L, R, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+    have z₁ := covers_small h₁.zw
+    have z₂ := covers_small h₂.zw
+    refine ⟨_, _, _, _, h₁.preS, h₂.preS, ?_,
+      (Covers.append h₁.reads (Covers.right (rd := s₁.rd) z₁)).trans
+        (Covers.append_left (Covers.refl _) (Covers.refl _)), Covers.cons h₁.writes z₁,
+      (Covers.append h₂.reads (Covers.right (rd := s₂.rd) z₂)).trans
+        (Covers.append_left (Covers.refl _) (Covers.refl _)), Covers.cons h₂.writes z₂, hsp⟩
+    simp only [finalizeX86_64S, finalizeX86_64, State.withRegions_gpr, State.callEntry_rsp,
+      State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
+      State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
+      State.callEntry_gpr _ (by decide : Reg.r8 ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.r9 ≠ .rsp),
+      h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₁.r8, h₁.r9, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, h₂.r8, h₂.r9, hsp]
+    exact ⟨trivial, trivial, trivial, trivial, trivial, trivial, trivial⟩
 
 /-! ## `vg_aes_expand_key_scratch` -/
 
@@ -946,6 +1172,192 @@ theorem sub_relF (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) (nm :
     State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
     h₁.rdi, h₁.rsi, h₁.rdx, h₁.rcx, h₂.rdi, h₂.rsi, h₂.rdx, h₂.rcx, hsp]
+  exact ⟨trivial, trivial, trivial, trivial, trivial⟩
+
+/-! ## With the working space 512 bytes into the scratch buffer
+
+Over an implementation of `vg_aes_ctr32` that is given its working space 512
+bytes into the scratch buffer `S` (`Aes.X86_64.Ctr32Small`),
+`vg_aes_expand_key_scratch` is given its own there too (`ekCall`), and
+`vg_cmac_aes_subkeys` never touches the first 512 bytes
+(`subkeysX86_64S`). -/
+
+open VG.Impl.CmacAes.Stream.X86_64 (ekCall)
+open VG.Proof.CmacAes.X86_64 (ScrAdd scrAdd_ok scrAdd_rel)
+
+theorem ekCall_zero {e : Impl.Aes.X86_64.ExpandKey} {c : Impl.Aes.X86_64.Ctr32} (h : c.scrOff = 0) :
+    ekCall e c = .call e.name e.code := by
+  unfold ekCall; rw [h]; rfl
+
+theorem ekCall_512 {e : Impl.Aes.X86_64.ExpandKey} {c : Impl.Aes.X86_64.Ctr32} (h : c.scrOff = 512) :
+    ekCall e c = .seq (.block [.alu .add .rcx (.imm (BitVec.ofNat 32 512))]) (.call e.name e.code) := by
+  unfold ekCall; rw [h]; rfl
+
+/-- A property of every instruction of the callee that an `add` to `rcx` has. -/
+theorem ekCall_allInstrs {e : Impl.Aes.X86_64.ExpandKey} {c : Impl.Aes.X86_64.Ctr32} {p : Instr → Bool}
+    (hp : ∀ x, p (.alu .add .rcx (.imm x)) = true) (hc : e.code.allInstrs p = true) :
+    (ekCall e c).allInstrs p = true := by
+  unfold ekCall
+  split
+  · exact hc
+  · show (p _ && true && e.code.allInstrs p) = true
+    rw [hp, hc]; rfl
+
+theorem ekCall_all {e : Impl.Aes.X86_64.ExpandKey} {c : Impl.Aes.X86_64.Ctr32} {p : Instr → Bool}
+    (hp : ∀ x, p (.alu .add .rcx (.imm x)) = true) (hc : e.code.all p = true) :
+    (ekCall e c).all p = true := by
+  unfold ekCall
+  split
+  · exact hc
+  · show ([_].all p && e.code.all p) = true
+    rw [hc, List.all_cons, hp]; rfl
+
+theorem ekCall_xdepth (e : Impl.Aes.X86_64.ExpandKey) (c : Impl.Aes.X86_64.Ctr32) :
+    (ekCall e c).x86_64Depth = e.code.x86_64Depth + 8 := by
+  unfold ekCall
+  split
+  · rfl
+  · exact Nat.zero_max _
+
+theorem EArgsF.scrAdd {s s₁ : State} {Kp W : Addr} {KL : Nat} (h : EArgsF s Kp W KL)
+    (a : ScrAdd .rcx s s₁) : EArgsF s₁ Kp W KL := by
+  obtain ⟨-, g, -, rd, wr⟩ := a
+  have sp := g .rsp (by decide)
+  exact ⟨by rw [g _ (by decide), h.rdi], by rw [g _ (by decide), h.rsi], by rw [g _ (by decide), h.rdx],
+    h.klen, h.kw, by rw [sp]; exact h.stkK, by rw [sp]; exact h.stkW, by rw [rd, wr]; exact h.reads,
+    by rw [wr]; exact h.writes⟩
+
+theorem EPostX.scrAdd {s s₁ s' : State} {Kp W : Addr} {KL : Nat} {X : Region} (a : ScrAdd .rcx s s₁)
+    (h : EPostX s₁ Kp W KL X s') : EPostX s Kp W KL X s' := by
+  obtain ⟨-, g, m, rd, wr⟩ := a
+  exact ⟨by rw [h.rd, rd], by rw [h.wr, wr],
+    fun r hr => by rw [h.saved r hr, g r (by rintro rfl; simp [calleeSaved] at hr)],
+    by rw [← m, ← g .rsp (by decide)]; exact h.frame, by rw [h.out, m]⟩
+
+/-- What a call of `vg_aes_expand_key_scratch` needs, with its working space
+512 bytes into the scratch buffer `S`. -/
+structure EArgsS (s : State) (Kp W S : Addr) (KL : Nat) : Prop where
+  args : EArgsF s Kp W KL
+  rcx : s.gpr .rcx = S
+  ks : (⟨Kp, KL⟩ : Region).Disjoint ⟨S + BitVec.ofNat 64 512, 512⟩
+  ws : (⟨W, 240⟩ : Region).Disjoint ⟨S + BitVec.ofNat 64 512, 512⟩
+  stkS : (below (s.gpr .rsp) 16).Disjoint ⟨S + BitVec.ofNat 64 512, 512⟩
+  cs : Covers [⟨S + BitVec.ofNat 64 512, 512⟩] s.wr
+
+theorem EArgsS.scrAdd {s s₁ : State} {Kp W S : Addr} {KL : Nat} (h : EArgsS s Kp W S KL)
+    (a : ScrAdd .rcx s s₁) : EArgs s₁ Kp W (S + BitVec.ofNat 64 512) KL :=
+  (h.args.scrAdd a).full (by rw [a.1, h.rcx]) h.ks h.ws (by rw [a.2.1 _ (by decide)]; exact h.stkS)
+    (by rw [a.2.2.2.2]; exact h.cs)
+
+/-- The call of `v`'s `vg_aes_expand_key_scratch`, with its working space 512
+bytes into the scratch buffer. -/
+theorem ek_callS (v : Ctr32Impl) (g : Proof.Aes.X86_64.Ctr32Small v.callee) {s : State} {Kp W S : Addr}
+    {KL : Nat} {X : Region} (h : EArgsS s Kp W S KL) (hX : Region.Sub ⟨S + BitVec.ofNat 64 512, 512⟩ X) :
+    WP isa (ekCall v.expand v.callee) s (EPostX s Kp W KL X) := by
+  rw [ekCall_512 g.off]
+  obtain ⟨s₁, run₁, a⟩ := scrAdd_ok .rcx s
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  exact WP.mono (ek_call v (h.scrAdd a)) fun _ h' => (h'.x hX).scrAdd a
+
+theorem ek_relS (v : Ctr32Impl) (g : Proof.Aes.X86_64.Ctr32Small v.callee) {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ Kp W S : Addr, ∃ KL : Nat,
+      EArgsS s₁ Kp W S KL ∧ EArgsS s₂ Kp W S KL ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+    RelCT isa P (ekCall v.expand v.callee) fun _ _ => True := by
+  rw [ekCall_512 g.off]
+  refine (scrAdd_rel .rcx).seq (ek_rel v fun t₁ t₂ ⟨s₁, s₂, hp, a₁, a₂⟩ => ?_)
+  obtain ⟨Kp, W, S, KL, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+  exact ⟨Kp, W, _, KL, h₁.scrAdd a₁, h₂.scrAdd a₂, by rw [a₁.2.1 _ (by decide), a₂.2.1 _ (by decide), hsp]⟩
+
+/-- The call of `vg_aes_expand_key_scratch_aesni`, which writes none of its
+working space, wherever `c` puts it. -/
+theorem ekCall_okF (v : Ctr32Impl) {s : State} {Kp W : Addr} {KL : Nat} {X : Region}
+    (h : EArgsF s Kp W KL) : WP isa (ekCall ekF v.callee) s (EPostX s Kp W KL X) := by
+  rcases hs : v.small with _ | g
+  · rw [ekCall_zero (v.scr hs)]; exact ek_callF h
+  · rw [ekCall_512 g.off]
+    obtain ⟨s₁, run₁, a⟩ := scrAdd_ok .rcx s
+    refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+    exact WP.mono (ek_callF (h.scrAdd a)) fun _ h' => h'.scrAdd a
+
+theorem ekCall_relF (v : Ctr32Impl) {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ Kp W : Addr, ∃ KL : Nat,
+      EArgsF s₁ Kp W KL ∧ EArgsF s₂ Kp W KL ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+    RelCT isa P (ekCall ekF v.callee) fun _ _ => True := by
+  rcases hs : v.small with _ | g
+  · rw [ekCall_zero (v.scr hs)]; exact ek_relF h
+  · rw [ekCall_512 g.off]
+    refine (scrAdd_rel .rcx).seq (ek_relF fun t₁ t₂ ⟨s₁, s₂, hp, a₁, a₂⟩ => ?_)
+    obtain ⟨Kp, W, KL, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+    exact ⟨Kp, W, KL, h₁.scrAdd a₁, h₂.scrAdd a₂, by rw [a₁.2.1 _ (by decide), a₂.2.1 _ (by decide), hsp]⟩
+
+/-- What a call of `vg_cmac_aes_subkeys` needs, with all of its working space
+but the first 512 bytes. -/
+structure SArgsS (s : State) (W K S : Addr) (R : Nat) : Prop where
+  args : SArgsF s W K S R
+  ws : (⟨W, 240⟩ : Region).Disjoint ⟨S + BitVec.ofNat 64 512, 1664⟩
+  ks : (⟨K, 32⟩ : Region).Disjoint ⟨S + BitVec.ofNat 64 512, 1664⟩
+  stkS : (below (s.gpr .rsp) 16).Disjoint ⟨S + BitVec.ofNat 64 512, 1664⟩
+  wrapS : (S + BitVec.ofNat 64 512).toNat + 1664 ≤ 2 ^ 64
+  cs : Covers [⟨S + BitVec.ofNat 64 512, 1664⟩] s.wr
+
+theorem SArgsS.reads {s : State} {W K S : Addr} {R : Nat} (h : SArgsS s W K S R) :
+    Covers ([⟨W, 240⟩] ++ [⟨K, 32⟩, ⟨S + BitVec.ofNat 64 512, 1664⟩]) (s.rd ++ s.wr) := by
+  intro a n ⟨r, hr, hc⟩
+  simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl
+  · exact h.args.reads a n ⟨_, by simp, hc⟩
+  · exact h.args.reads a n ⟨_, by simp, hc⟩
+  · exact Covers.right h.cs a n ⟨_, by simp, hc⟩
+
+theorem SArgsS.writes {s : State} {W K S : Addr} {R : Nat} (h : SArgsS s W K S R) :
+    Covers [⟨K, 32⟩, ⟨S + BitVec.ofNat 64 512, 1664⟩] s.wr := by
+  intro a n ⟨r, hr, hc⟩
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl
+  · exact h.args.writes a n ⟨_, by simp, hc⟩
+  · exact h.cs a n ⟨_, by simp, hc⟩
+
+theorem SArgsS.pre {s : State} {W K S : Addr} {R : Nat} (h : SArgsS s W K S R) :
+    subkeysX86_64S.pre (s.callEntry.withRegions [⟨W, 240⟩] [⟨K, 32⟩, ⟨S + BitVec.ofNat 64 512, 1664⟩]) := by
+  have hR := toNat_rounds h.args.rounds
+  simp only [subkeysX86_64S, State.withRegions_gpr, State.withRegions_rd,
+    State.withRegions_wr, State.callEntry_rsp, State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rcx ≠ .rsp), h.args.rdi, h.args.rsi, h.args.rdx, h.args.rcx, hR]
+  exact ⟨trivial, trivial, h.args.wk, h.ws, h.ks, h.args.stkK.sub_left (ret_sub _),
+    h.stkS.sub_left (ret_sub _), h.args.stkW.sub_left (stk_sub _), h.args.stkK.sub_left (stk_sub _),
+    h.stkS.sub_left (stk_sub _), h.args.wrapK, h.wrapS, h.args.rounds⟩
+
+theorem sub_callS (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Small v.callee) (nm : String) {s : State}
+    {W K S : Addr} {R : Nat} (h : SArgsS s W K S R) :
+    WP isa (.call nm (Impl.CmacAes.X86_64.subkeys v.callee)) s
+      (SPostX s W K R ⟨S + BitVec.ofNat 64 512, 1664⟩) := by
+  have hR := toNat_rounds h.args.rounds
+  refine WP.call (k := subkeysX86_64S) (subkeysS_correct v f) (subkeys_nosp v) (by rw [subkeys_depth]; decide)
+    h.pre h.reads h.writes ?_
+  intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩
+  rw [subkeys_depth] at hf
+  refine ⟨hrd, hwr, hcs, by simpa using hf, ?_⟩
+  simp only [subkeysX86_64S, subkeysX86_64, State.withRegions_gpr, State.withRegions_mem,
+    State.callEntry_gpr s (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr s (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr s (by decide : Reg.rdx ≠ .rsp), h.args.rdi, h.args.rsi, h.args.rdx, hR] at hpost
+  have hRb : 16 * (R + 1) ≤ 240 := by rcases h.args.rounds with h | h | h <;> omega_arith
+  rw [← hm₂, hpost, X86_64.ciphAt,
+    callEntry_bytes s (h.args.stkW.sub_right (Region.sub_prefix hRb)) (by omega_arith)]
+
+theorem sub_relS (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Small v.callee) (nm : String)
+    {P : State → State → Prop}
+    (h : ∀ s₁ s₂, P s₁ s₂ → ∃ W K S : Addr, ∃ R : Nat,
+      SArgsS s₁ W K S R ∧ SArgsS s₂ W K S R ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
+    RelCT isa P (.call nm (Impl.CmacAes.X86_64.subkeys v.callee)) fun _ _ => True := by
+  refine RelCT.callEx (subkeysS_correct v f) (subkeysS_ct v f) fun s₁ s₂ hp => ?_
+  obtain ⟨W, K, S, R, h₁, h₂, hsp⟩ := h s₁ s₂ hp
+  refine ⟨_, _, _, _, h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes, hsp⟩
+  simp only [subkeysX86_64S, subkeysX86_64, State.withRegions_gpr, State.callEntry_rsp,
+    State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
+    State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rcx ≠ .rsp),
+    h₁.args.rdi, h₁.args.rsi, h₁.args.rdx, h₁.args.rcx, h₂.args.rdi, h₂.args.rsi, h₂.args.rdx, h₂.args.rcx,
+    hsp]
   exact ⟨trivial, trivial, trivial, trivial, trivial⟩
 
 end VG.Proof.CmacAes.Stream.X86_64

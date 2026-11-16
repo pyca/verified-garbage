@@ -11,7 +11,7 @@
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_cmac_aes_subkeys() {
     core::arch::naked_asm!(
-        r#".base64 "SImZEAgAAEiJqRgIAABIidNIic24AAAAAEiJgQAIAABIiYEICAAASIkCSIlCCEmJ6UiJ6kiBwgAIAABIidlBuAEAAAA="
+        r#".base64 "SImZEAgAAEiJqRgIAABIidNIic24AAAAAEiJgQAIAABIiYEICAAASIkCSIlCCEmJ6UiJ6kiBwgAIAABIidlBuAEAAABJgcEAAgAA"
 call {vg_aes_ctr32}
 .base64 "SIsDSA/ISItTCEgPykiJwUjB6T9BuAAAAABJKchJgeCHAAAASInRSMHpP0gBwEgJyEgB0kwxwkgPyEgPykiJA0iJUwhIiwNID8hIi1MISA/KSInBSMHpP0G4AAAAAEkpyEmB4IcAAABIidFIwek/SAHASAnISAHSTDHCSA/ISA/KSIlDEEiJUxhIi50QCAAASIutGAgAAMM="
 .p2align 6"#,

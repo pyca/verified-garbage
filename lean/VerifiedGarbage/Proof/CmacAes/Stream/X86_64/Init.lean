@@ -42,7 +42,9 @@ the part `X` of it its calls write (`ICall`): all of it, with any
 implementation of AES (`ICall.base`), or, over one that needs no working
 space, only the 152 bytes from `vg_cmac_aes_subkeys`'s counter block, at
 `scratch + 2048`, to the end of our saved registers (`ICall.free`), which
-`initF`, given `scratch - 2048`, writes (`initF_wp`).
+`initF`, given `scratch - 2048`, writes (`initF_wp`); or, over one that uses
+1480 bytes of working space, all but its first 512 bytes (`ICall.small`),
+which `initS`, given `scratch - 512`, writes (`initS_wp`).
 -/
 
 @[expose] public section
@@ -302,11 +304,11 @@ structure ICall (e : Impl.Aes.X86_64.ExpandKey) (c : Impl.Aes.X86_64.Ctr32) (sfx
   sub : ∀ S, Region.Sub (X S) (Z S)
   slots : ∀ S, (⟨S + BitVec.ofNat 64 2176, 24⟩ : Region).Disjoint (X S)
   ek : ∀ {s₀ s : State} {St Kp S : Addr} {KL : Nat}, IPre s₀ St Kp S KL (Z S) → IMid₁ s₀ St Kp S KL s →
-    WP isa (.call e.name e.code) s (EPostX s Kp St KL (X S))
+    WP isa (ekCall e c) s (EPostX s Kp St KL (X S))
   ekRel : ∀ {s₀ s₀' : State} {St Kp S : Addr} {KL : Nat} {P : State → State → Prop},
     IPre s₀ St Kp S KL (Z S) → IPre s₀' St Kp S KL (Z S) → s₀.gpr .rsp = s₀'.gpr .rsp →
     (∀ a b, P a b → IMid₁ s₀ St Kp S KL a ∧ IMid₁ s₀' St Kp S KL b) →
-    RelCT isa P (.call e.name e.code) fun _ _ => True
+    RelCT isa P (ekCall e c) fun _ _ => True
   sk : ∀ {s₀ s : State} {St Kp S : Addr} {KL : Nat} {m : Mem}, IPre s₀ St Kp S KL (Z S) →
     IMid₂ s₀ St S KL m s →
     WP isa (.call ("vg_cmac_aes_subkeys" ++ sfx) (Impl.CmacAes.X86_64.subkeys c)) s
@@ -479,7 +481,7 @@ theorem init_relG {e : Impl.Aes.X86_64.ExpandKey} {c : Impl.Aes.X86_64.Ctr32} {s
     (F₁ := IMid₁ s₀ St Kp S KL) (F₂ := IMid₁ s₀' St Kp S KL) fun a b h => by
       obtain ⟨rfl, rfl⟩ := h; exact ⟨initPre_wp hp, initPre_wp hp'⟩
   have after {t₀ s : State} (hq : IPre t₀ St Kp S KL (Z S)) (h : IMid₁ t₀ St Kp S KL s) :
-      WP isa (.call e.name e.code) s (IAfter t₀ St S KL) :=
+      WP isa (ekCall e c) s (IAfter t₀ St S KL) :=
     WP.mono (T.ek hq h) fun _ h₂ =>
       ⟨by rw [h₂.saved _ (by simp [calleeSaved]), h.rbx], by rw [h₂.saved _ (by simp [calleeSaved]), h.rbp],
         by rw [h₂.saved _ (by simp [calleeSaved]), h.r12], by rw [h₂.saved _ (by simp [calleeSaved]), h.rsp],
@@ -534,6 +536,14 @@ theorem ICall.base (v : Ctr32Impl) :
         rw [h.wr, hp.wr]
         exact Covers.of_sub fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact ⟨⟨S, 2304⟩, by simp, 0, by simp, by simp⟩)
+  have eargsS {s₀ s : State} {St Kp S : Addr} {KL : Nat} (hp : IPre s₀ St Kp S KL ⟨S, 2304⟩)
+      (h : IMid₁ s₀ St Kp S KL s) : EArgsS s Kp St S KL :=
+    have sb : Region.Sub ⟨S + BitVec.ofNat 64 512, 512⟩ ⟨S, 2304⟩ := Offset.sub_base _ (by decide)
+    ⟨h.args, h.rcx, hp.k_s.sub_right sb, (hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right sb,
+      by rw [h.rsp]; exact hp.stk_s.sub_right sb, by
+        rw [h.wr, hp.wr]
+        exact Covers.of_sub fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact ⟨⟨S, 2304⟩, by simp, 512, rfl, by simp⟩⟩
   have sargs {s₀ s : State} {St Kp S : Addr} {KL : Nat} {m : Mem} (hp : IPre s₀ St Kp S KL ⟨S, 2304⟩)
       (h : IMid₂ s₀ St S KL m s) : SArgs s St (St + BitVec.ofNat 64 240) S (KL / 4 + 6) :=
     h.args.full ((hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right (Region.sub_prefix (by decide)))
@@ -547,10 +557,20 @@ theorem ICall.base (v : Ctr32Impl) :
   exact
   { sub := fun _ => Region.sub_prefix (by decide)
     slots := fun _ => Offset.disjoint_base _ (by decide) (by decide)
-    ek := fun hp h => WP.mono (ek_call v (eargs hp h)) fun _ h' => h'.x (Region.sub_prefix (by decide))
-    ekRel := fun hp hp' q h => ek_rel v fun a b hab =>
-      ⟨_, _, _, _, eargs hp (h a b hab).1, eargs hp' (h a b hab).2, by
-        rw [(h a b hab).1.rsp, (h a b hab).2.rsp, q]⟩
+    ek := fun hp h => by
+      rcases hs : v.small with _ | g
+      · rw [ekCall_zero (v.scr hs)]
+        exact WP.mono (ek_call v (eargs hp h)) fun _ h' => h'.x (Region.sub_prefix (by decide))
+      · exact ek_callS v g (eargsS hp h) (Offset.sub_base _ (by decide))
+    ekRel := fun hp hp' q h => by
+      rcases hs : v.small with _ | g
+      · rw [ekCall_zero (v.scr hs)]
+        exact ek_rel v fun a b hab =>
+          ⟨_, _, _, _, eargs hp (h a b hab).1, eargs hp' (h a b hab).2, by
+            rw [(h a b hab).1.rsp, (h a b hab).2.rsp, q]⟩
+      · exact ek_relS v g fun a b hab =>
+          ⟨_, _, _, _, eargsS hp (h a b hab).1, eargsS hp' (h a b hab).2, by
+            rw [(h a b hab).1.rsp, (h a b hab).2.rsp, q]⟩
     sk := fun hp h => WP.mono (sub_call v _ (sargs hp h)) fun _ h' => h'.x fun _ h => h
     skRel := fun hp hp' q h => sub_rel v _ fun a b hab =>
       ⟨_, _, _, _, sargs hp (h a b hab).1.choose_spec, sargs hp' (h a b hab).2.choose_spec, by
@@ -564,13 +584,54 @@ theorem ICall.free (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) :
       (fun S => ⟨S + BitVec.ofNat 64 2048, 32⟩) where
   sub S := Offset.sub S (by decide) (by decide)
   slots S := Offset.disjoint S (by decide) (by decide) (by decide)
-  ek _ h := ek_callF h.args
-  ekRel _ _ q h := ek_relF fun a b hab =>
+  ek _ h := ekCall_okF v h.args
+  ekRel _ _ q h := ekCall_relF v fun a b hab =>
     ⟨_, _, _, (h a b hab).1.args, (h a b hab).2.args, by rw [(h a b hab).1.rsp, (h a b hab).2.rsp, q]⟩
   sk _ h := sub_callF v f _ h.args
   skRel _ _ q h := sub_relF v f _ fun a b hab =>
     ⟨_, _, _, _, (h a b hab).1.choose_spec.args, (h a b hab).2.choose_spec.args, by
       rw [(h a b hab).1.choose_spec.rsp, (h a b hab).2.choose_spec.rsp, q]⟩
+
+/-- Over an implementation of `vg_aes_ctr32` that uses 1480 bytes of working
+space, 512 bytes into the scratch buffer, where `vg_aes_expand_key_scratch`
+is given its own too: all of the scratch buffer but its first 512 bytes. -/
+theorem ICall.small (v : Ctr32Impl) (g : Proof.Aes.X86_64.Ctr32Small v.callee) :
+    ICall v.expand v.callee v.suffix (fun S => ⟨S + BitVec.ofNat 64 512, 1792⟩)
+      (fun S => ⟨S + BitVec.ofNat 64 512, 1664⟩) := by
+  have eargs {s₀ s : State} {St Kp S : Addr} {KL : Nat}
+      (hp : IPre s₀ St Kp S KL ⟨S + BitVec.ofNat 64 512, 1792⟩) (h : IMid₁ s₀ St Kp S KL s) :
+      EArgsS s Kp St S KL :=
+    have sb : Region.Sub ⟨S + BitVec.ofNat 64 512, 512⟩ ⟨S + BitVec.ofNat 64 512, 1792⟩ :=
+      Region.sub_prefix (by decide)
+    ⟨h.args, h.rcx, hp.k_s.sub_right sb, (hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right sb,
+      by rw [h.rsp]; exact hp.stk_s.sub_right sb, by
+        rw [h.wr, hp.wr]
+        exact Covers.of_sub fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr
+          exact ⟨⟨S + BitVec.ofNat 64 512, 1792⟩, by simp, 0, by simp, by simp⟩⟩
+  have sargs {s₀ s : State} {St Kp S : Addr} {KL : Nat} {m : Mem}
+      (hp : IPre s₀ St Kp S KL ⟨S + BitVec.ofNat 64 512, 1792⟩) (h : IMid₂ s₀ St S KL m s) :
+      SArgsS s St (St + BitVec.ofNat 64 240) S (KL / 4 + 6) :=
+    have sb : Region.Sub ⟨S + BitVec.ofNat 64 512, 1664⟩ ⟨S + BitVec.ofNat 64 512, 1792⟩ :=
+      Region.sub_prefix (by decide)
+    ⟨h.args, (hp.st_s.sub_left (Region.sub_prefix (by decide))).sub_right sb,
+      (hp.st_s.sub_left (Offset.sub_base St (by decide))).sub_right sb,
+      by rw [h.rsp]; exact hp.stk_s.sub_right sb,
+      by have := hp.wZ; simp only at this; omega_using [this],
+      covers_small (by
+        rw [h.wr, hp.wr]
+        exact Covers.of_mem fun r hr => by simp only [List.mem_singleton] at hr; simp [hr])⟩
+  exact
+  { sub := fun _ => Region.sub_prefix (by decide)
+    slots := fun S => Offset.disjoint S (by decide) (by decide) (by decide)
+    ek := fun hp h => ek_callS v g (eargs hp h) (Region.sub_prefix (by decide))
+    ekRel := fun hp hp' q h => ek_relS v g fun a b hab =>
+      ⟨_, _, _, _, eargs hp (h a b hab).1, eargs hp' (h a b hab).2, by
+        rw [(h a b hab).1.rsp, (h a b hab).2.rsp, q]⟩
+    sk := fun hp h => sub_callS v g _ (sargs hp h)
+    skRel := fun hp hp' q h => sub_relS v g _ fun a b hab =>
+      ⟨_, _, _, _, sargs hp (h a b hab).1.choose_spec, sargs hp' (h a b hab).2.choose_spec, by
+        rw [(h a b hab).1.choose_spec.rsp, (h a b hab).2.choose_spec.rsp, q]⟩ }
 
 theorem init_wp (v : Ctr32Impl) {s₀ : State} (h0 : initX86_64.pre s₀) :
     WP isa (init v.expand v.callee v.suffix) s₀ fun s' => gprPreserved s₀ s' ∧ initX86_64.post s₀ s' :=
@@ -670,5 +731,71 @@ theorem initF_ct (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) :
     exact init_relG (ICall.free v f) hp hp' (by rw [g₁ _ (by decide), g₂ _ (by decide), q1])
       _ _ _ _ _ _ ⟨rfl, rfl⟩ ex ey
   exact ((a.mono (fun _ _ h => h) fun _ _ h => h.2).seq r _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+
+/-! ## Without the first 512 bytes of the working space (`initS`) -/
+
+open VG.Proof.CmacAes.X86_64 (ScrSub scrSub_ok scrSub_rel)
+
+/-- `initX86_64` with a scratch buffer of 1792 bytes, for `initS`. -/
+def initX86_64S : Contract isa where
+  pre s :=
+    let state : Region := ⟨s.gpr .rdi, 304⟩
+    let key : Region := ⟨s.gpr .rsi, (s.gpr .rdx).toNat⟩
+    let scr : Region := ⟨s.gpr .rcx, 1792⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stack := below (s.gpr .rsp) 16
+    16 ≤ (s.gpr .rsp).toNat ∧ s.rd = [key] ∧ s.wr = [state, scr] ∧
+      state.Disjoint key ∧ state.Disjoint scr ∧ key.Disjoint scr ∧
+      ret.Disjoint state ∧ ret.Disjoint key ∧ ret.Disjoint scr ∧
+      stack.Disjoint state ∧ stack.Disjoint key ∧ stack.Disjoint scr ∧
+      (s.gpr .rdi).toNat + 304 ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + (s.gpr .rdx).toNat ≤ 2 ^ 64 ∧
+      (s.gpr .rcx).toNat + 1792 ≤ 2 ^ 64 ∧
+      ((s.gpr .rdx).toNat = 16 ∨ (s.gpr .rdx).toNat = 24 ∨ (s.gpr .rdx).toNat = 32)
+  post := initX86_64.post
+  pub := initX86_64.pub
+
+/-- `IPre` after the `sub`, with the 1792 bytes of the scratch buffer as all
+of the working space but its first 512 bytes. -/
+theorem IPre.ofS {s₀ s₁ : State} (h : initX86_64S.pre s₀) (a : ScrSub .rcx s₀ s₁) :
+    IPre s₁ (s₀.gpr .rdi) (s₀.gpr .rsi) (s₀.gpr .rcx - BitVec.ofNat 64 512) (s₀.gpr .rdx).toNat
+      ⟨s₀.gpr .rcx - BitVec.ofNat 64 512 + BitVec.ofNat 64 512, 1792⟩ := by
+  obtain ⟨rcx, g, -, rd, wr⟩ := a
+  obtain ⟨a, b, c, d, e, f, g', h, i, j, k, l, m, n, o, p⟩ := h
+  have e0 : s₀.gpr .rcx - BitVec.ofNat 64 512 + BitVec.ofNat 64 512 = s₀.gpr .rcx := BitVec.sub_add_cancel _ _
+  have sp := g .rsp (by decide)
+  rw [e0]
+  refine ⟨g _ (by decide), g _ (by decide), by rw [g _ (by decide)], rcx, by rw [sp]; exact a,
+    by rw [rd]; exact b, by rw [wr]; exact c, d, e, f, by rw [sp]; exact g', by rw [sp]; exact h,
+    by rw [sp]; exact i, by rw [sp]; exact j, by rw [sp]; exact k, by rw [sp]; exact l, m, n, o, p,
+    fun h₁ h₂ => ?_, ?_⟩
+  · rw [sub_add_ofNat _ (by omega_using [h₁])]
+    exact Offset.contains_base _ (by omega_using [h₁, h₂]) (by omega_using [h₂])
+  · rw [sub_add_ofNat _ (by decide), toNat_add_lt _ o (by decide)]; omega_using [o]
+
+theorem initS_wp (v : Ctr32Impl) (g : Proof.Aes.X86_64.Ctr32Small v.callee) {s₀ : State}
+    (h0 : initX86_64S.pre s₀) :
+    WP isa (initS v.expand v.callee v.suffix) s₀ fun s' => gprPreserved s₀ s' ∧ initX86_64S.post s₀ s' := by
+  obtain ⟨s₁, run₁, a⟩ := scrSub_ok .rcx s₀
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  have hp := IPre.ofS h0 a
+  obtain ⟨-, g₁, m₁, -, -⟩ := a
+  refine WP.mono (init_wpG (ICall.small v g) hp) fun s' ⟨⟨hs, hr⟩, hpost⟩ => ⟨⟨fun r hr' => ?_, ?_⟩, ?_⟩
+  · rw [hs r hr', g₁ r (by rintro rfl; simp [calleeSaved] at hr')]
+  · rw [← g₁ .rsp (by decide), hr, m₁]
+  · rw [m₁] at hpost; exact hpost
+
+theorem initS_ct (v : Ctr32Impl) (g : Proof.Aes.X86_64.Ctr32Small v.callee) :
+    ConstantTime isa initX86_64S.pre initX86_64S.pub (initS v.expand v.callee v.suffix) := by
+  intro s₀ s₀' _ _ _ _ h₁ h₂ hq e₁ e₂
+  obtain ⟨q1, q2, q3, q4, q5⟩ := hq
+  have r : RelCT isa (fun t₁ t₂ => ∃ a b, (a = s₀ ∧ b = s₀') ∧ ScrSub .rcx a t₁ ∧ ScrSub .rcx b t₂)
+      (init v.expand v.callee v.suffix) fun _ _ => True := by
+    rintro x y t t' x' y' ⟨_, _, ⟨rfl, rfl⟩, a₁, a₂⟩ ex ey
+    have hp := IPre.ofS h₁ a₁
+    have hp' := IPre.ofS h₂ a₂
+    rw [← q2, ← q3, ← q4, ← q5] at hp'
+    exact init_relG (ICall.small v g) hp hp' (by rw [a₁.2.1 _ (by decide), a₂.2.1 _ (by decide), q1])
+      _ _ _ _ _ _ ⟨rfl, rfl⟩ ex ey
+  exact (((scrSub_rel .rcx).seq r) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.CmacAes.Stream.X86_64

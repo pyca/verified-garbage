@@ -46,7 +46,8 @@ namespace VG.Proof.AesSiv.X86_64
 
 open VG VG.X86_64
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
-open VG.Proof.CmacAes.X86_64 (FPre finPre_wp finPreF_wp ctr_call ctr_callF ctr_rel ctr_relF bytesAt_frame
+open VG.Proof.CmacAes.X86_64 (FPre finPre_wp finPreF_wp ctr_call ctr_callF ctr_rel ctr_relF ctrCall_ok
+  ctrCall_okF bytesAt_frame
   finalizeX86_64 finalizeX86_64F finalize_mx mn CallPre CallPreF CallPostX UpdateImpl UpdateFree updateX86_64
   updateX86_64F toNat_rounds)
 open VG.Proof.CmacAes.Stream.X86_64 (FArgs FArgsF UArgs UPostZ finalize_nosp finalize_depth callEntry_bytes
@@ -78,7 +79,7 @@ theorem finalize_raw_wp (v : Ctr32Impl) {s₀ : State} (h0 : finalizeX86_64.pre 
   have hR := hp.rounds
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> omega_using [h]
   refine WP.seq (WP.mono (finPre_wp hp sw) fun s₁ h₁ => ?_)
-  refine WP.mono (ctr_call v h₁.pre) fun s₂ h₂ => ?_
+  refine WP.mono (ctrCall_ok v h₁.pre) fun s₂ h₂ => ?_
   have rsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := h₁.saved _ (by simp [calleeSaved])
   have big : Frame [⟨St, 16⟩, ⟨S, 2176⟩, below (s₀.gpr .rsp) 8] s₀.mem s₂.mem := by
     refine (h₁.frame.sub fun r hr => ?_).trans (h₂.frame.sub fun r hr => ?_)
@@ -176,7 +177,7 @@ theorem finalizeF_raw_wp (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.calle
   have hR := hp.rounds
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> omega_using [h]
   refine WP.seq (WP.mono (finPreF_wp hp) fun s₁ h₁ => ?_)
-  refine WP.mono (ctr_callF v f h₁.pre) fun s₂ h₂ => ?_
+  refine WP.mono (ctrCall_okF v f h₁.pre) fun s₂ h₂ => ?_
   have rsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := h₁.saved _ (by simp [calleeSaved])
   have big : Frame [⟨St, 16⟩, ⟨S + BitVec.ofNat 64 2048, 16⟩, below (s₀.gpr .rsp) 8] s₀.mem s₂.mem := by
     refine (h₁.frame.mono fun r hr => ?_).trans (h₂.frame.sub fun r hr => ?_)

@@ -18,24 +18,32 @@ working space (`Aes.X86_64.Ctr32Impl.free`), in a frame of only the 16
 bytes of `vg_cmac_aes_finalize`'s counter block (`finishF_framed`), followed
 by `Impl.Scrub.X86_64.scrubTail` (`X86_64.Scrub.withScrub`) where the
 implementation gives the residue analysis of the instance
-(`Aes.X86_64.Ctr32Impl.cmacFinishRes`). Over the bitsliced AES, its frame of
-2.3 KB, the working space it writes, is wiped whole on return, in the chunks
-`[8, 2320]`, whose 16-byte stores are aligned
-(`X86_64.RScrub.withScrubAllC`). Its postcondition reads the memory on return
-only within the MAC (`X86_64.Scrub.PostOut`).
+(`Aes.X86_64.Ctr32Impl.cmacFinishRes`). Over an implementation that needs
+working space, its frame, the working space it writes, is wiped whole on
+return, in chunks whose 16-byte stores are aligned
+(`X86_64.RScrub.withScrubAllC`): over the bitsliced AES, which uses 1480
+bytes of working space and is given them 512 bytes into the scratch buffer
+(`Aes.X86_64.Ctr32Impl.small`), a frame of 1800 bytes for the working space
+without its first 512 bytes (`finishS_framed`), wiped in the chunks
+`[8, 1808]`; over any other, the frame of 2312 bytes for all of it
+(`finish_framed`), wiped in the chunks `[8, 2320]`. Its postcondition reads
+the memory on return only within the MAC (`X86_64.Scrub.PostOut`).
 
-`vg_cmac_aes_init` over such an implementation, in a frame of only the 152
-bytes it and its calls write (`initF_framed`), which `X86_64.Scrub.withScrubAll`
-wipes whole on return; over the bitsliced AES, its frame of 2.3 KB, wiped
-whole as `finish`'s. Its postcondition reads the memory on return only within
-the state (`initOut`).
+`vg_cmac_aes_init` over an implementation that needs no working space, in a
+frame of only the 152 bytes it and its calls write (`initF_framed`), which
+`X86_64.Scrub.withScrubAll` wipes whole on return; over the others, its
+frame of 1800 bytes (`initS_framed`) or 2312 (`init_framed`), wiped whole as
+`finish`'s. Its postcondition reads the memory on return only within the
+state (`initOut`).
 
 `vg_cmac_aes_absorb` over an implementation of `vg_cmac_aes_update` that
 needs no working space (`UpdateFree`), in a frame of only the 48 bytes of
 the registers it saves (`absorbF_framed`), which `X86_64.Scrub.withScrubAll`
-wipes whole on return; over the bitsliced AES, its frame of 2.3 KB, wiped
-whole as `finish`'s. Its postcondition reads the memory on return only within
-the state (`absorbOut`).
+wipes whole on return; over one that never touches the first 512 bytes of
+its scratch buffer (`UpdateSmall`: the chaining by calls of the bitsliced
+AES), its frame of 1800 bytes (`absorbS_framed`), and over any other, of
+2312 (`absorb_framed`), wiped whole as `finish`'s. Its postcondition reads
+the memory on return only within the state (`absorbOut`).
 -/
 
 @[expose] public section
@@ -117,8 +125,9 @@ open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
 /-- `vg_cmac_aes_finish` over `v`: with no working space for an
 implementation that needs none, and then without secret residue where the
-analysis handles it; over the others, its frame of 2.3 KB wiped whole
-(`withScrubAllC`). -/
+analysis handles it; over the others, its frame wiped whole
+(`withScrubAllC`): 1800 bytes over one that leaves the first 512 bytes of the
+working space untouched (`v.small`), else 2312. -/
 def finishReg (v : Ctr32Impl) : Registration Spec.Cmac.aesFinishApi X86_64.target :=
   match v.free with
   | some f =>
@@ -130,18 +139,31 @@ def finishReg (v : Ctr32Impl) : Registration Spec.Cmac.aesFinishApi X86_64.targe
       spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.finishF_spSafe v) }
       (finishOut _) [] (pubOk_nil _) v.cmacFinishRes
   | none =>
-    withScrubAllC {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackScratch 2312 .r8 (Impl.CmacAes.Stream.X86_64.finish v.callee v.suffix)
-      stack := 2328
-      verified := Proof.CmacAes.Stream.X86_64.finish_framed v
-      spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.finish_spSafe v) }
-      (finishOut _) [8, 2320]
+    match v.small with
+    | some g =>
+      withScrubAllC {
+        suffix := v.suffix
+        code := Impl.StackScratch.X86_64.withStackScratch 1800 .r8
+          (Impl.CmacAes.Stream.X86_64.finishS v.callee v.suffix)
+        stack := 1816
+        verified := Proof.CmacAes.Stream.X86_64.finishS_framed v g
+        spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.finishS_spSafe v) }
+        (finishOut _) [8, 1808]
+    | none =>
+      withScrubAllC {
+        suffix := v.suffix
+        code := Impl.StackScratch.X86_64.withStackScratch 2312 .r8
+          (Impl.CmacAes.Stream.X86_64.finish v.callee v.suffix)
+        stack := 2328
+        verified := Proof.CmacAes.Stream.X86_64.finish_framed v
+        spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.finish_spSafe v) }
+        (finishOut _) [8, 2320]
 
 /-- `vg_cmac_aes_init` over `v`: with no working space for an implementation
 that needs none, then without secret residue, its frame of 184 bytes wiped
-whole (`withScrubAll`); over the others, its frame of 2.3 KB wiped whole
-(`withScrubAllC`). -/
+whole (`withScrubAll`); over the others, its frame wiped whole
+(`withScrubAllC`): 1800 bytes over one that leaves the first 512 bytes of the
+working space untouched (`v.small`), else 2312. -/
 def initReg (v : Ctr32Impl) : Registration Spec.Cmac.aesInitApi X86_64.target :=
   match v.free with
   | some f =>
@@ -154,20 +176,32 @@ def initReg (v : Ctr32Impl) : Registration Spec.Cmac.aesInitApi X86_64.target :=
       spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.initF_spSafe v) }
       (initOut _)
   | none =>
-    withScrubAllC {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackScratch 2312 .rcx
-        (Impl.CmacAes.Stream.X86_64.init v.expand v.callee v.suffix)
-      stack := 2328
-      verified := Proof.CmacAes.Stream.X86_64.init_framed v
-      spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.init_spSafe v) }
-      (initOut _) [8, 2320]
+    match v.small with
+    | some g =>
+      withScrubAllC {
+        suffix := v.suffix
+        code := Impl.StackScratch.X86_64.withStackScratch 1800 .rcx
+          (Impl.CmacAes.Stream.X86_64.initS v.expand v.callee v.suffix)
+        stack := 1816
+        verified := Proof.CmacAes.Stream.X86_64.initS_framed v g
+        spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.initS_spSafe v) }
+        (initOut _) [8, 1808]
+    | none =>
+      withScrubAllC {
+        suffix := v.suffix
+        code := Impl.StackScratch.X86_64.withStackScratch 2312 .rcx
+          (Impl.CmacAes.Stream.X86_64.init v.expand v.callee v.suffix)
+        stack := 2328
+        verified := Proof.CmacAes.Stream.X86_64.init_framed v
+        spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.init_spSafe v) }
+        (initOut _) [8, 2320]
 
 /-- `vg_cmac_aes_absorb` over `v`. Over an implementation that needs no
 working space (`v.free`), in a frame of only the 48 bytes of the registers
 it saves (`absorbF_framed`), wiped whole on return (`withScrubAll`, 72
-bytes). Over the others, in its frame of 2.3 KB, wiped whole in aligned
-stores (`withScrubAllC`). -/
+bytes). Over the others, in its frame, wiped whole in aligned stores
+(`withScrubAllC`): 1800 bytes over one that never touches the first 512
+bytes of its scratch buffer (`v.small`), else 2312. -/
 def absorbReg (v : UpdateImpl) : Registration Spec.Cmac.aesAbsorbApi X86_64.target :=
   match v.free with
   | some f =>
@@ -179,12 +213,23 @@ def absorbReg (v : UpdateImpl) : Registration Spec.Cmac.aesAbsorbApi X86_64.targ
       spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.absorbF_spSafe v) }
       (absorbOut _)
   | none =>
-    withScrubAllC {
-      suffix := v.suffix
-      code := Impl.StackScratch.X86_64.withStackScratch 2312 .r9 (Impl.CmacAes.Stream.X86_64.absorb v.callee)
-      stack := 2328
-      verified := Proof.CmacAes.Stream.X86_64.absorb_framed v
-      spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.absorb_spSafe v) }
-      (absorbOut _) [8, 2320]
+    match v.small with
+    | some g =>
+      withScrubAllC {
+        suffix := v.suffix
+        code := Impl.StackScratch.X86_64.withStackScratch 1800 .r9
+          (Impl.CmacAes.Stream.X86_64.absorbS v.callee)
+        stack := 1816
+        verified := Proof.CmacAes.Stream.X86_64.absorbS_framed v g
+        spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.absorbS_spSafe v) }
+        (absorbOut _) [8, 1808]
+    | none =>
+      withScrubAllC {
+        suffix := v.suffix
+        code := Impl.StackScratch.X86_64.withStackScratch 2312 .r9 (Impl.CmacAes.Stream.X86_64.absorb v.callee)
+        stack := 2328
+        verified := Proof.CmacAes.Stream.X86_64.absorb_framed v
+        spSafe := VG.X86_64.withStackScratch_spSafe_of (Proof.CmacAes.Stream.X86_64.absorb_spSafe v) }
+        (absorbOut _) [8, 2320]
 
 end VG.Proof.CmacAes.Stream.X86_64.Scrub

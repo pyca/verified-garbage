@@ -36,6 +36,7 @@ vg_cmac_aes_update:
 	add rdx, 2048
 	mov rcx, r12
 	mov r8d, 1
+	add r9, 512
 	call {vg_aes_ctr32}
 	add r13, 16
 	sub r14, 1

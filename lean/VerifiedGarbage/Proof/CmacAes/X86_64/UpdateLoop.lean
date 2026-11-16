@@ -302,35 +302,62 @@ theorem ctrCall_xdepth (c : Impl.Aes.X86_64.Ctr32) : (ctrCall c).x86_64Depth = c
   · rfl
   · exact Nat.zero_max _
 
-/-- The `add` before the call. -/
-theorem scrAdd_ok (s : State) :
-    ∃ s₁, runBlock isa [.alu .add .r9 (.imm (BitVec.ofNat 32 512))] s = some s₁ ∧
-      s₁.gpr .r9 = s.gpr .r9 + BitVec.ofNat 64 512 ∧ (∀ r, r ≠ .r9 → s₁.gpr r = s.gpr r) ∧
-      s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr := by
+/-- What an `add` of 512 to the register `x` leaves. -/
+def ScrAdd (x : Reg) (s s₁ : State) : Prop :=
+  s₁.gpr x = s.gpr x + BitVec.ofNat 64 512 ∧ (∀ r, r ≠ x → s₁.gpr r = s.gpr r) ∧
+    s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr
+
+/-- The `add` before a call. -/
+theorem scrAdd_ok (x : Reg) (s : State) :
+    ∃ s₁, runBlock isa [.alu .add x (.imm (BitVec.ofNat 32 512))] s = some s₁ ∧ ScrAdd x s s₁ := by
   refine ⟨_, by simp only [runBlock_cons, exec, readSrc, execAlu]; rfl, ?_⟩
-  simp only [gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags,
+  simp only [ScrAdd, gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags,
     rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, ↓reduceIte]
   exact ⟨by rw [show BitVec.signExtend 64 (BitVec.ofNat 32 512) = BitVec.ofNat 64 512 by decide],
     fun r h => by simp [h], trivial, trivial, trivial⟩
 
-/-- What the `add` before the call leaves. -/
-def ScrAdd (s s₁ : State) : Prop :=
-  s₁.gpr .r9 = s.gpr .r9 + BitVec.ofNat 64 512 ∧ (∀ r, r ≠ .r9 → s₁.gpr r = s.gpr r) ∧
-    s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr
-
 /-- The `add` leaks nothing. -/
-theorem scrAdd_rel {P : State → State → Prop} :
-    RelCT isa P (.block [.alu .add .r9 (.imm (BitVec.ofNat 32 512))])
-      fun t₁ t₂ => ∃ s₁ s₂, P s₁ s₂ ∧ ScrAdd s₁ t₁ ∧ ScrAdd s₂ t₂ := by
-  have nil : ∀ i ∈ [Instr.alu .add .r9 (.imm (BitVec.ofNat 32 512))], ∀ s : State, isa.addrs i s = [] := by
+theorem scrAdd_rel (x : Reg) {P : State → State → Prop} :
+    RelCT isa P (.block [.alu .add x (.imm (BitVec.ofNat 32 512))])
+      fun t₁ t₂ => ∃ s₁ s₂, P s₁ s₂ ∧ ScrAdd x s₁ t₁ ∧ ScrAdd x s₂ t₂ := by
+  have nil : ∀ i ∈ [Instr.alu .add x (.imm (BitVec.ofNat 32 512))], ∀ s : State, isa.addrs i s = [] := by
     intro i hi s; simp only [List.mem_singleton] at hi; subst hi; rfl
-  have a : RelCT isa P (.block [.alu .add .r9 (.imm (BitVec.ofNat 32 512))]) fun _ _ => True :=
+  have a : RelCT isa P (.block [.alu .add x (.imm (BitVec.ofNat 32 512))]) fun _ _ => True :=
     fun _ _ _ _ _ _ _ e₁ e₂ =>
       ⟨by rw [execBlock_trace_nil nil (Exec.block_iff.mp e₁), execBlock_trace_nil nil (Exec.block_iff.mp e₂)],
         trivial⟩
-  refine (a.wpDep (F := ScrAdd) fun s₁ s₂ _ => ?_).mono (fun _ _ h => h) fun _ _ h => h.2
-  obtain ⟨_, r₁, h₁⟩ := scrAdd_ok s₁
-  obtain ⟨_, r₂, h₂⟩ := scrAdd_ok s₂
+  refine (a.wpDep (F := ScrAdd x) fun s₁ s₂ _ => ?_).mono (fun _ _ h => h) fun _ _ h => h.2
+  obtain ⟨_, r₁, h₁⟩ := scrAdd_ok x s₁
+  obtain ⟨_, r₂, h₂⟩ := scrAdd_ok x s₂
+  exact ⟨WP.of_runBlock ⟨_, r₁, h₁⟩, WP.of_runBlock ⟨_, r₂, h₂⟩⟩
+
+/-- What a `sub` of 512 from the register `x` leaves: the scratch pointer
+of a function given a scratch buffer without its first 512 bytes. -/
+def ScrSub (x : Reg) (s s₁ : State) : Prop :=
+  s₁.gpr x = s.gpr x - BitVec.ofNat 64 512 ∧ (∀ r, r ≠ x → s₁.gpr r = s.gpr r) ∧
+    s₁.mem = s.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr
+
+theorem scrSub_ok (x : Reg) (s : State) :
+    ∃ s₁, runBlock isa [.alu .sub x (.imm (BitVec.ofNat 32 512))] s = some s₁ ∧ ScrSub x s s₁ := by
+  refine ⟨_, by simp only [runBlock_cons, exec, readSrc, execAlu]; rfl, ?_⟩
+  simp only [ScrSub, gpr_setReg, gpr_arithFlags, mem_setReg, mem_arithFlags,
+    rd_setReg, rd_arithFlags, wr_setReg, wr_arithFlags, ↓reduceIte]
+  exact ⟨by rw [show BitVec.signExtend 64 (BitVec.ofNat 32 512) = BitVec.ofNat 64 512 by decide],
+    fun r h => by simp [h], trivial, trivial, trivial⟩
+
+/-- The `sub` leaks nothing. -/
+theorem scrSub_rel (x : Reg) {P : State → State → Prop} :
+    RelCT isa P (.block [.alu .sub x (.imm (BitVec.ofNat 32 512))])
+      fun t₁ t₂ => ∃ s₁ s₂, P s₁ s₂ ∧ ScrSub x s₁ t₁ ∧ ScrSub x s₂ t₂ := by
+  have nil : ∀ i ∈ [Instr.alu .sub x (.imm (BitVec.ofNat 32 512))], ∀ s : State, isa.addrs i s = [] := by
+    intro i hi s; simp only [List.mem_singleton] at hi; subst hi; rfl
+  have a : RelCT isa P (.block [.alu .sub x (.imm (BitVec.ofNat 32 512))]) fun _ _ => True :=
+    fun _ _ _ _ _ _ _ e₁ e₂ =>
+      ⟨by rw [execBlock_trace_nil nil (Exec.block_iff.mp e₁), execBlock_trace_nil nil (Exec.block_iff.mp e₂)],
+        trivial⟩
+  refine (a.wpDep (F := ScrSub x) fun s₁ s₂ _ => ?_).mono (fun _ _ h => h) fun _ _ h => h.2
+  obtain ⟨_, r₁, h₁⟩ := scrSub_ok x s₁
+  obtain ⟨_, r₂, h₂⟩ := scrSub_ok x s₂
   exact ⟨WP.of_runBlock ⟨_, r₁, h₁⟩, WP.of_runBlock ⟨_, r₂, h₂⟩⟩
 
 /-- What a call of `vg_aes_ctr32` on one block leaves, writing no more than
@@ -356,7 +383,7 @@ theorem CallPostF.x {s s' : State} {W C D : Addr} {R : Nat} {X : Region} (h : Ca
 /-- What the `add` leaves, of the arguments of a call without a scratch
 buffer. -/
 theorem CallPreF.scrAdd {s s₁ : State} {W C D S : Addr} {R : Nat} (h : CallPreF s W C D S R)
-    (a : ScrAdd s s₁) : CallPreF s₁ W C D (S + BitVec.ofNat 64 512) R := by
+    (a : ScrAdd .r9 s s₁) : CallPreF s₁ W C D (S + BitVec.ofNat 64 512) R := by
   obtain ⟨r9₁, g, m, rd, wr⟩ := a
   have sp := g .rsp (by decide)
   exact
@@ -369,7 +396,7 @@ theorem CallPreF.scrAdd {s s₁ : State} {W C D S : Addr} {R : Nat} (h : CallPre
       zero := by rw [m]; exact h.zero }
 
 /-- What a call after the `add` leaves, from the state before it. -/
-theorem CallPostX.scrAdd {s s₁ s' : State} {W C D : Addr} {R : Nat} {X : Region} (a : ScrAdd s s₁)
+theorem CallPostX.scrAdd {s s₁ s' : State} {W C D : Addr} {R : Nat} {X : Region} (a : ScrAdd .r9 s s₁)
     (h : CallPostX s₁ W C D R X s') : CallPostX s W C D R X s' := by
   obtain ⟨-, g, m, rd, wr⟩ := a
   exact ⟨by rw [h.rd, rd], by rw [h.wr, wr],
@@ -381,7 +408,7 @@ theorem ctrCall_okF (v : Ctr32Impl) (f : Ctr32Free v.callee) {s : State} {W C D 
   rcases hs : v.small with _ | g
   · rw [ctrCall_zero (v.scr hs)]; exact ctr_callF v f h
   · rw [ctrCall_512 g.off]
-    obtain ⟨s₁, run₁, a⟩ := scrAdd_ok s
+    obtain ⟨s₁, run₁, a⟩ := scrAdd_ok .r9 s
     refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
     refine WP.mono (ctr_callF v f (h.scrAdd a)) fun s₂ h₂ => ?_
     obtain ⟨-, g₁, m, rd, wr⟩ := a
@@ -396,7 +423,7 @@ theorem ctrCall_relF (v : Ctr32Impl) (f : Ctr32Free v.callee) {P : State → Sta
   rcases hs : v.small with _ | g
   · rw [ctrCall_zero (v.scr hs)]; exact ctr_relF v f h
   · rw [ctrCall_512 g.off]
-    refine scrAdd_rel.seq (ctr_relF v f fun t₁ t₂ ⟨s₁, s₂, hp, a₁, a₂⟩ => ?_)
+    refine (scrAdd_rel .r9).seq (ctr_relF v f fun t₁ t₂ ⟨s₁, s₂, hp, a₁, a₂⟩ => ?_)
     obtain ⟨W, C, D, S, R, h₁, h₂, hsp⟩ := h s₁ s₂ hp
     exact ⟨W, C, D, _, R, h₁.scrAdd a₁, h₂.scrAdd a₂, by rw [a₁.2.1 _ (by decide), a₂.2.1 _ (by decide), hsp]⟩
 
@@ -466,7 +493,7 @@ theorem CallPreF.small {s : State} {W C D S A : Addr} {R : Nat} (h : CallPreF s 
     zero := h.zero }
 
 theorem CallPreS.scrAdd {s s₁ : State} {W C D A : Addr} {R : Nat} (h : CallPreS s W C D A R)
-    (a : ScrAdd s s₁) : CallPreS s₁ W C D A R := by
+    (a : ScrAdd .r9 s s₁) : CallPreS s₁ W C D A R := by
   have p := h.toF.scrAdd a
   obtain ⟨-, g, -, -, wr⟩ := a
   have sp := g .rsp (by decide)
@@ -521,7 +548,7 @@ theorem ctrCall_okS (v : Ctr32Impl) (f : Ctr32Small v.callee) {s : State} {W C D
     (h : CallPreS s W C D (S + BitVec.ofNat 64 512) R) (h9 : s.gpr .r9 = S) :
     WP isa (ctrCall v.callee) s (CallPostX s W C D R ⟨S + BitVec.ofNat 64 512, 1480⟩) := by
   rw [ctrCall_512 f.off]
-  obtain ⟨s₁, run₁, a⟩ := scrAdd_ok s
+  obtain ⟨s₁, run₁, a⟩ := scrAdd_ok .r9 s
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
   exact WP.mono (ctr_callS v f (h.scrAdd a) (by rw [a.1, h9])) fun _ h₂ => h₂.scrAdd a
 
@@ -531,7 +558,7 @@ theorem ctrCall_relS (v : Ctr32Impl) (f : Ctr32Small v.callee) {P : State → St
       s₁.gpr .r9 = S ∧ s₂.gpr .r9 = S ∧ s₁.gpr .rsp = s₂.gpr .rsp) :
     RelCT isa P (ctrCall v.callee) fun _ _ => True := by
   rw [ctrCall_512 f.off]
-  refine scrAdd_rel.seq (ctr_relS v f fun t₁ t₂ ⟨s₁, s₂, hp, a₁, a₂⟩ => ?_)
+  refine (scrAdd_rel .r9).seq (ctr_relS v f fun t₁ t₂ ⟨s₁, s₂, hp, a₁, a₂⟩ => ?_)
   obtain ⟨W, C, D, S, R, h₁, h₂, e₁, e₂, hsp⟩ := h s₁ s₂ hp
   exact ⟨W, C, D, _, R, h₁.scrAdd a₁, h₂.scrAdd a₂, by rw [a₁.1, e₁], by rw [a₂.1, e₂],
     by rw [a₁.2.1 _ (by decide), a₂.2.1 _ (by decide), hsp]⟩

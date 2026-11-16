@@ -59,12 +59,14 @@ open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 open VG.Proof.CmacAes.Stream.X86_64 (ekF)
 
 theorem init_xdepth (v : Ctr32Impl) : (init v.expand v.callee v.suffix).x86_64Depth ≤ 16 := by
-  simp only [init, initAt, Impl.CmacAes.X86_64.subkeys, Code.x86_64Depth, v.noStack, v.expandNoStack]
+  simp only [init, initAt, Impl.CmacAes.X86_64.subkeys, Code.x86_64Depth,
+    Proof.CmacAes.X86_64.ctrCall_xdepth, v.noStack, v.expandNoStack]
   decide +kernel
 
 theorem initF_xdepth (v : Ctr32Impl) : (initF ekF v.callee v.suffix).x86_64Depth ≤ 16 := by
   have h : ekF.code.x86_64Depth = 0 := Ctr32Impl.aesni.expandNoStack
-  simp only [initF, initAt, Impl.CmacAes.X86_64.subkeys, Code.x86_64Depth, v.noStack, h]
+  simp only [initF, initAt, Impl.CmacAes.X86_64.subkeys, Code.x86_64Depth,
+    Proof.CmacAes.X86_64.ctrCall_xdepth, v.noStack, h]
   decide +kernel
 
 /-- A state satisfying `vg_aes_siv_init`'s precondition, without the working
@@ -108,7 +110,7 @@ theorem encrypt_xdepth {g : Lay} (hg : g.Ok) (v : UpdateImpl) :
   simp only [encrypt, encryptCore, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac,
     copy, ctr, ctrWhole, ctrBody, ctrMin, xorBytes, callUpdate, callFinalize,
     Impl.CmacAes.X86_64.finalize, Impl.CmacAes.X86_64.finPre,
-    Impl.CmacAes.Stream.X86_64.copy, Code.x86_64Depth, v.ctr.noStack]
+    Impl.CmacAes.Stream.X86_64.copy, Code.x86_64Depth, Proof.CmacAes.X86_64.ctrCall_xdepth, v.ctr.noStack]
   generalize v.callee.code.x86_64Depth = d at this ⊢
   revert d
   decide +kernel
@@ -121,7 +123,7 @@ theorem decrypt_xdepth {g : Lay} (hg : g.Ok) (v : UpdateImpl) :
   simp only [decrypt, openTail, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac,
     copy, ctr, ctrWhole, ctrBody, ctrMin, xorBytes, maskData, callUpdate, callFinalize,
     Impl.CmacAes.X86_64.finalize, Impl.CmacAes.X86_64.finPre,
-    Impl.CmacAes.Stream.X86_64.copy, Code.x86_64Depth, v.ctr.noStack]
+    Impl.CmacAes.Stream.X86_64.copy, Code.x86_64Depth, Proof.CmacAes.X86_64.ctrCall_xdepth, v.ctr.noStack]
   generalize v.callee.code.x86_64Depth = d at this ⊢
   revert d
   decide +kernel
