@@ -14,6 +14,7 @@ meta import VerifiedGarbage.Proof.AesGcm.X86_64.Ghash1
 import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.CT
 import VerifiedGarbage.Proof.AesGcm.X86_64.OneBlocks.Piece
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.UpperLock
 import VerifiedGarbage.Proof.AesGcm.X86_64.AbsorbCT
 import VerifiedGarbage.Proof.AesGcm.X86_64.StreamText
 import VerifiedGarbage.Proof.AesGcm.X86_64.Blocks
@@ -662,6 +663,48 @@ theorem streamS_rel (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) 
     [.rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp] (k := 16) (by simp) ⟨_, by taint_decide⟩ (stream_pub hq) q₉
     (CryptCtx.of hp M.ge).args.2 (CryptCtx.of hp' M.ge).args.2 ⟨_, by taint_decide⟩ hE₁ hE₂
     ((streamTextS_rel v B L enc (s₀.gpr .r8).isLt).mono (fun _ _ h => ⟨h.2.1, h.2.2⟩) fun _ _ h => h)
+
+open StackLock in
+/-- `streamS_rel`, keeping `Same` below the stack pointer: two runs of
+`stream_encrypt` (`enc`) or `stream_decrypt` with the same public values,
+from states agreeing on the 24 bytes below it, end agreeing on them. -/
+theorem streamS_same (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) (enc : Bool) {s₀ s₀' : State}
+    (hp : Proof.AesGcm.streamCryptPre M.len s₀) (hok : M.ok s₀.mem (s₀.gpr .rdi))
+    (hp' : Proof.AesGcm.streamCryptPre M.len s₀') (hok' : M.ok s₀'.mem (s₀'.gpr .rdi))
+    (hq : Proof.AesGcm.streamCryptPub s₀ s₀') (hct : Plain v.callees.ctr.code) (hgh : Plain v.callees.gh.code)
+    (hn : UpperLock.inames (if enc then B.enc else B.dec).code = [])
+    (hs : Same (Below24 (s₀.gpr .rsp)) s₀ s₀') {t₁ t₂ : List Leak} {u₁ u₂ : State}
+    (e₁ : Exec isa (.seq (.block cryptEntry) (.seq (streamTextS (v.withBlk B) enc) (.block restore))) s₀ t₁ u₁)
+    (e₂ : Exec isa (.seq (.block cryptEntry) (.seq (streamTextS (v.withBlk B) enc) (.block restore))) s₀' t₂ u₂) :
+    Same (Below24 (s₀.gpr .rsp)) u₁ u₂ := by
+  obtain ⟨ht, -⟩ := streamS_rel v B enc hp hok hp' hok' hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
+  have L := (CryptCtx.of hp M.ge).lay
+  have hE₂ := cryptEntry_tpre hp' hok'
+  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, q₈, q₉⟩ := hq
+  simp only [Proof.AesGcm.arg] at q₈ q₉
+  rw [← q₁, ← q₂, ← q₃, ← q₄, ← q₅, ← q₆, ← q₇, ← q₈, ← q₉] at hE₂
+  have hE₁ := cryptEntry_tpre hp hok
+  have pE : Plain (.block cryptEntry) := Plain.block (by decide)
+  have pR : Plain (.block restore) := Plain.block (by decide)
+  cases e₁ with
+  | seq x₁ y₁ =>
+    cases y₁ with
+    | seq z₁ w₁ =>
+      cases e₂ with
+      | seq x₂ y₂ =>
+        cases y₂ with
+        | seq z₂ w₂ =>
+          obtain ⟨rfl, -⟩ := UpperLock.lock x₁ x₂ ht (by rw [pE.2]; nofun)
+          have ht' := List.append_cancel_left ht
+          obtain ⟨_, _, ex₁, T₁⟩ := hE₁
+          obtain ⟨_, _, ex₂, T₂⟩ := hE₂
+          obtain ⟨-, rfl⟩ := Exec.det x₁ ex₁
+          obtain ⟨-, rfl⟩ := Exec.det x₂ ex₂
+          have hx := lock_eq pE.1 x₁ x₂ (by rw [pE.2]; nofun) hs
+          obtain ⟨rfl, -, hz⟩ := streamTextS_relS v B L enc (s₀.gpr .r8).isLt hct hgh hn _ _ _ _ _ _
+            ⟨⟨T₁, T₂⟩, hx⟩ z₁ z₂
+          obtain rfl := List.append_cancel_left ht'
+          exact lock_eq pR.1 w₁ w₂ (by rw [pR.2]; nofun) hz
 
 theorem streamEncryptSM_ct (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} (B : BlkFn M) :
     ConstantTime isa (Proof.AesGcm.streamEncryptX86_64M M).pre Proof.AesGcm.streamEncryptX86_64.pub
