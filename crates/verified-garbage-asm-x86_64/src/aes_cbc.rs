@@ -131,35 +131,127 @@ pub const VG_AES_CBC_ENCRYPT_AESNI_SCRATCH_WRITTEN: usize = 0;
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_encrypt_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
-        r#".base64 "TYXA"
+        r#"test r8, r8
 je 20f
-.base64 "8w9vD/MPbwJmD+/B8w9vVxDzD29fIPMPb2cw8w9vb0DzD293UPMPb39g80QPb0dw80QPb4+AAAAA80QPb5eQAAAA80QPb5+gAAAA80QPb6ewAAAA80QPb6/AAAAA80QPb7fQAAAASIP+Cg=="
+movdqu xmm0, [rdx]
+cmp rsi, 10
 je 22f
-.base64 "SIP+DA=="
+cmp rsi, 12
 je 24f
-.base64 "80QPb7/gAAAAZkQP7/k="
 26:
-.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843MNmQQ843MRmQQ843MVmQQ843MZmQQ843cdIg8EQSYPoAfMPbw9mD+/I8w9/SfA="
+movdqu xmm1, [rcx]
+movdqu xmm2, [rdi]
+pxor xmm1, xmm2
+pxor xmm0, xmm1
+movdqu xmm1, [rdi+16]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+32]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+48]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+64]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+80]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+96]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+112]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+128]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+144]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+160]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+176]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+192]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+208]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+224]
+aesenclast xmm0, xmm1
+movdqu [rcx], xmm0
+add rcx, 16
+sub r8, 1
 jne 26b
-jmp 25f
+jmp 23f
 24:
-.base64 "80QPb7/AAAAAZkQP7/k="
 27:
-.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843MNmQQ843MRmQQ843cdIg8EQSYPoAfMPbw9mD+/I8w9/SfA="
+movdqu xmm1, [rcx]
+movdqu xmm2, [rdi]
+pxor xmm1, xmm2
+pxor xmm0, xmm1
+movdqu xmm1, [rdi+16]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+32]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+48]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+64]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+80]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+96]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+112]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+128]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+144]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+160]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+176]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+192]
+aesenclast xmm0, xmm1
+movdqu [rcx], xmm0
+add rcx, 16
+sub r8, 1
 jne 27b
-25:
 jmp 23f
 22:
-.base64 "80QPb7+gAAAAZkQP7/k="
 28:
-.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843cdIg8EQSYPoAfMPbw9mD+/I8w9/SfA="
+movdqu xmm1, [rcx]
+movdqu xmm2, [rdi]
+pxor xmm1, xmm2
+pxor xmm0, xmm1
+movdqu xmm1, [rdi+16]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+32]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+48]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+64]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+80]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+96]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+112]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+128]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+144]
+aesenc xmm0, xmm1
+movdqu xmm1, [rdi+160]
+aesenclast xmm0, xmm1
+movdqu [rcx], xmm0
+add rcx, 16
+sub r8, 1
 jne 28b
 23:
-.base64 "8w9vD2YP78HzD38C"
-jmp 21f
+movdqu [rdx], xmm0
 20:
-21:
-.base64 "ww=="
+pxor xmm0, xmm0
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+xor eax, eax
+xor ecx, ecx
+xor esi, esi
+xor r8d, r8d
+ret
 .p2align 6"#,
     )
 }
