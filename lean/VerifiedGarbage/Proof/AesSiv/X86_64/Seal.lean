@@ -28,7 +28,7 @@ open VG.Proof.CmacAes.X86_64 (bytesAt_frame k0)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
-variable {s₀ : State} {C D P W : Addr} {R L : Nat}
+variable {g : Lay} {s₀ : State} {C D P W : Addr} {R L : Nat}
 
 /-! ## What each step writes -/
 
@@ -44,10 +44,10 @@ theorem counter_frame (m : Mem) (W : Addr) (a b : BitVec 64) :
 /-! ## Ranges outside them -/
 
 /-- A range of the working space outside what `finish` writes. -/
-theorem fin_dis (h : Env s₀ C D P W R L) {out d n : Nat} (hout : out + 16 ≤ 256) (hd : d + n ≤ 2560)
+theorem fin_dis (h : Env g s₀ C D P W R L) {out d n : Nat} (hout : out + 16 ≤ 256) (hd : d + n ≤ 2560)
     (h1 : out + 16 ≤ d ∨ d + n ≤ out) (h2 : d + n ≤ 32 ∨ 64 ≤ d) (h3 : d + n ≤ 144 ∨ 160 ≤ d)
     (h4 : d + n ≤ 224 ∨ 232 ≤ d) (h5 : d + n ≤ 256) :
-    ∀ r ∈ finRegions W out (s₀.gpr .rsp), Region.Disjoint ⟨W + BitVec.ofNat 64 d, n⟩ r := by
+    ∀ r ∈ finRegions g W out (s₀.gpr .rsp), Region.Disjoint ⟨W + BitVec.ofNat 64 d, n⟩ r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -55,42 +55,42 @@ theorem fin_dis (h : Env s₀ C D P W R L) {out d n : Nat} (hout : out + 16 ≤ 
   · exact Offset.disjoint W (by omega_using [h2]) (by omega_using [hd]) (by omega_using [])
   · exact Offset.disjoint W (by omega_using [h3]) (by omega_using [hd]) (by omega_using [])
   · exact Offset.disjoint W (by omega_using [h4]) (by omega_using [hd]) (by omega_using [])
-  · exact Offset.disjoint W (by omega_using [h5]) (by omega_using [hd]) (by omega_using [])
-  · exact (h.stk_w.sub_right (h.sW hd)).symm
+  · exact h.dX h5
+  · exact (h.stk_w.sub_right (h.sW h5)).symm
 
 /-- A region outside the working space and the stack, outside what `finish` writes. -/
-theorem fin_out {X : Region} {out : Nat} (hout : out + 16 ≤ 256) (hw : X.Disjoint ⟨W, 2560⟩)
-    (hs : (below (s₀.gpr .rsp) 16).Disjoint X) : ∀ r ∈ finRegions W out (s₀.gpr .rsp), X.Disjoint r := by
+theorem fin_out (h : Env g s₀ C D P W R L) {X : Region} {out : Nat} (hout : out + 16 ≤ 256) (hw : X.Disjoint ⟨W, g.n⟩)
+    (hs : (below (s₀.gpr .rsp) 16).Disjoint X) : ∀ r ∈ finRegions g W out (s₀.gpr .rsp), X.Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
-  · exact hw.sub_right (Offset.sub_base W (by omega_using [hout]))
-  · exact hw.sub_right (Offset.sub_base W (by decide))
-  · exact hw.sub_right (Offset.sub_base W (by decide))
-  · exact hw.sub_right (Offset.sub_base W (by decide))
-  · exact hw.sub_right (Offset.sub_base W (by decide))
+  · exact hw.sub_right (h.sW hout)
+  · exact hw.sub_right (h.sW (by decide))
+  · exact hw.sub_right (h.sW (by decide))
+  · exact hw.sub_right (h.sW (by decide))
+  · exact hw.sub_right h.sX
   · exact hs.symm
 
 /-- A range of the working space outside what CTR writes. -/
-theorem ctr_dis (h : Env s₀ C D P W R L) {d n : Nat} (hd : d + n ≤ 256) (h1 : d + n ≤ 64 ∨ 112 ≤ d) :
-    ∀ r ∈ ctrRegions W P L (s₀.gpr .rsp), Region.Disjoint ⟨W + BitVec.ofNat 64 d, n⟩ r := by
+theorem ctr_dis (h : Env g s₀ C D P W R L) {d n : Nat} (hd : d + n ≤ 256) (h1 : d + n ≤ 64 ∨ 112 ≤ d) :
+    ∀ r ∈ ctrRegions g W P L (s₀.gpr .rsp), Region.Disjoint ⟨W + BitVec.ofNat 64 d, n⟩ r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact h.p_w.symm.sub_left (h.sW (by omega_using [hd]))
   · exact Offset.disjoint W (by omega_using [h1]) (by omega_using [hd]) (by omega_using [])
-  · exact Offset.disjoint W (by omega_using [hd]) (by omega_using [hd]) (by omega_using [])
+  · exact h.dX hd
   · exact (h.stk_w.sub_right (h.sW (by omega_using [hd]))).symm
 
 /-- A region outside the data, the working space and the stack, outside what CTR writes. -/
-theorem ctr_out {X : Region} (hp : X.Disjoint ⟨P, L⟩) (hw : X.Disjoint ⟨W, 2560⟩)
-    (hs : (below (s₀.gpr .rsp) 16).Disjoint X) : ∀ r ∈ ctrRegions W P L (s₀.gpr .rsp), X.Disjoint r := by
+theorem ctr_out (h : Env g s₀ C D P W R L) {X : Region} (hp : X.Disjoint ⟨P, L⟩) (hw : X.Disjoint ⟨W, g.n⟩)
+    (hs : (below (s₀.gpr .rsp) 16).Disjoint X) : ∀ r ∈ ctrRegions g W P L (s₀.gpr .rsp), X.Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact hp
-  · exact hw.sub_right (Offset.sub_base W (by decide))
-  · exact hw.sub_right (Offset.sub_base W (by decide))
+  · exact hw.sub_right (h.sW (by decide))
+  · exact hw.sub_right h.sX
   · exact hs.symm
 
 /-- A range of the working space outside the counter. -/
@@ -103,12 +103,13 @@ theorem cnt_dis {d n : Nat} (hd : d + n ≤ 2560) (h1 : d + n ≤ 64 ∨ 80 ≤ 
   · exact Offset.disjoint W (by omega_using [h1]) (by omega_using [hd]) (by omega_using [])
 
 /-- A region outside the working space, outside the counter. -/
-theorem cnt_out {X : Region} (hw : X.Disjoint ⟨W, 2560⟩) : ∀ r ∈ cntRegions W, X.Disjoint r := by
+theorem cnt_out (h : Env g s₀ C D P W R L) {X : Region} (hw : X.Disjoint ⟨W, g.n⟩) :
+    ∀ r ∈ cntRegions W, X.Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
-  · exact hw.sub_right (Offset.sub_base W (by decide))
-  · exact hw.sub_right (Offset.sub_base W (by decide))
+  · exact hw.sub_right (h.sW (by decide))
+  · exact hw.sub_right (h.sW (by decide))
 
 theorem one_out {X Y : Region} (hw : X.Disjoint Y) : ∀ r ∈ [Y], X.Disjoint r := by
   intro r hr
@@ -126,10 +127,10 @@ structure SPre (s₀ : State) (C D P W : Addr) (R L : Nat) (s : State) : Prop wh
 
 /-- What `encrypt`'s and `decrypt`'s ends write: the data, the working space
 and the stack. -/
-abbrev endRegions (W P : Addr) (L : Nat) (sp : Addr) : List Region := [⟨P, L⟩, ⟨W, 2560⟩, below sp 16]
+abbrev endRegions (g : Lay) (W P : Addr) (L : Nat) (sp : Addr) : List Region := [⟨P, L⟩, ⟨W, g.n⟩, below sp 16]
 
-theorem fin_sub (h : Env s₀ C D P W R L) {out : Nat} (hout : out + 16 ≤ 256) :
-    ∀ r ∈ finRegions W out (s₀.gpr .rsp), ∃ r' ∈ endRegions W P L (s₀.gpr .rsp), Region.Sub r r' := by
+theorem fin_sub (h : Env g s₀ C D P W R L) {out : Nat} (hout : out + 16 ≤ 256) :
+    ∀ r ∈ finRegions g W out (s₀.gpr .rsp), ∃ r' ∈ endRegions g W P L (s₀.gpr .rsp), Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -137,42 +138,42 @@ theorem fin_sub (h : Env s₀ C D P W R L) {out : Nat} (hout : out + 16 ≤ 256)
   · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
   · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
   · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
-  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
+  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sX⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), fun _ h => h⟩
 
-theorem cnt_sub (h : Env s₀ C D P W R L) :
-    ∀ r ∈ cntRegions W, ∃ r' ∈ endRegions W P L (s₀.gpr .rsp), Region.Sub r r' := by
+theorem cnt_sub (h : Env g s₀ C D P W R L) :
+    ∀ r ∈ cntRegions W, ∃ r' ∈ endRegions g W P L (s₀.gpr .rsp), Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl
   · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
   · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
 
-theorem ctr_sub (h : Env s₀ C D P W R L) :
-    ∀ r ∈ ctrRegions W P L (s₀.gpr .rsp), ∃ r' ∈ endRegions W P L (s₀.gpr .rsp), Region.Sub r r' := by
+theorem ctr_sub (h : Env g s₀ C D P W R L) :
+    ∀ r ∈ ctrRegions g W P L (s₀.gpr .rsp), ∃ r' ∈ endRegions g W P L (s₀.gpr .rsp), Region.Sub r r' := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl
   · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
   · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
-  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sW (by decide)⟩
+  · exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, h.sX⟩
   · exact ⟨_, List.mem_cons_of_mem _ (List.mem_cons_of_mem _ List.mem_cons_self), fun _ h => h⟩
 
 /-- `encrypt` from S2V's state of the associated data at `D` on: S2V's end
 with the plaintext into the first 16 bytes of the working space
 (`finish_wp`), the counter from that IV (`counter_ok`), CTR over the data in
 place (`ctr_wp`) and the restore of the registers saved in the working space. -/
-theorem sealTail_wp (v : UpdateImpl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩)
-    (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) {s : State} (hs : SPre s₀ C D P W R L s) {g : Reg → BitVec 64}
-    (hsv : Spill.Saved s.mem W g saved) :
-    WP isa (.seq (finish v.callee v.ctr.callee v.ctr.suffix 0) (.seq (.block (counter 0)) (.seq (ctr v.ctr.callee) (.block restore)))) s
-      fun s' => (∀ r ∈ saved.map Prod.fst, s'.gpr r = g r) ∧ s'.gpr .rsp = s₀.gpr .rsp ∧
-        Frame (endRegions W P L (s₀.gpr .rsp)) s.mem s'.mem ∧
+theorem sealTail_wp (v : UpdateImpl) (K : Calls v g) (h : Env g s₀ C D P W R L) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩)
+    (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) {s : State} (hs : SPre s₀ C D P W R L s) {gs : Reg → BitVec 64}
+    (hsv : Spill.Saved s.mem W gs saved) :
+    WP isa (.seq (finish g.x v.callee v.ctr.callee v.ctr.suffix 0) (.seq (.block (counter 0)) (.seq (ctr g.x v.ctr.callee) (.block restore)))) s
+      fun s' => (∀ r ∈ saved.map Prod.fst, s'.gpr r = gs r) ∧ s'.gpr .rsp = s₀.gpr .rsp ∧
+        Frame (endRegions g W P L (s₀.gpr .rsp)) s.mem s'.mem ∧
         Spec.Siv.sealWith (Spec.Siv.ctxMac s.mem C R) (Spec.Siv.ctxCiph s.mem C R) (Spec.Aes.bytesAt s.mem D 16)
           (Spec.Aes.bytesAt s.mem P L) = (Spec.Aes.bytesAt s'.mem W 16, Spec.Aes.bytesAt s'.mem P L) := by
   have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_using [h]
   have hL : L ≤ 2 ^ 64 := by have := h.lt; omega_using [this]
-  refine WP.seq (WP.mono (finish_wp v h hs.regs (Or.inl rfl)) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (finish_wp v K h hs.regs (Or.inl rfl)) fun s₂ h₂ => ?_)
   have f₂ := h₂.frame
   obtain ⟨s₃, run₃, m₃, g₃, rd₃, wr₃⟩ := counter_ok h h₂.regs.r15 h₂.regs.rd h₂.regs.wr
   have f₃ : Frame (cntRegions W) s₂.mem s₃.mem := m₃ ▸ counter_frame _ _ _ _
@@ -193,18 +194,18 @@ theorem sealTail_wp (v : UpdateImpl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 51
       s₃.mem.readW (W + BitVec.ofNat 64 (cntOff + 8)) 64 = bswap64 lo ∧
       (hi ++ lo : BitVec 128) = Spec.Gcm.ofBytes (Spec.Siv.counter (Spec.Aes.bytesAt s₂.mem W 16)) := by
     rw [m₃]; exact counter_cnt s₂.mem W
-  refine WP.seq (WP.mono (ctr_wp v.ctr h hcp hPw hr₃ (length_counter _) (counter_low _) hcnt h208 h216)
+  refine WP.seq (WP.mono (ctr_wp v.ctr K.toCCalls h hcp hPw hr₃ (length_counter _) (counter_low _) hcnt h208 h216)
     fun s₄ h₄ => ?_)
   have f₄ := h₄.frame
   -- The saved registers.
-  have hsv₄ : Spill.Saved s₄.mem W g saved := by
+  have hsv₄ : Spill.Saved s₄.mem W gs saved := by
     have hb (p : Reg × Nat) (hp : p ∈ saved) : 160 ≤ p.2 ∧ p.2 + 8 ≤ 208 := ⟨saved_ge p hp, saved_le p hp⟩
     refine (((hsv.frame f₂ fun p hp => ?_).frame f₃ fun p hp => ?_).frame f₄ fun p hp => ?_)
     · have := hb p hp
       exact fin_dis h (by decide) (by omega_using [this]) (by omega_using [this]) (by omega_using [this]) (by omega_using [this]) (by omega_using [this]) (by omega_using [this])
     · have := hb p hp; exact cnt_dis (by omega_using [this]) (by omega_using [this])
     · have := hb p hp; exact ctr_dis h (by omega_using [this]) (by omega_using [this])
-  refine WP.mono (Spill.restore_ok .r15 saved g s₄ (by decide) (fun p hp => by
+  refine WP.mono (Spill.restore_ok .r15 saved gs s₄ (by decide) (fun p hp => by
       rw [h₄.regs.r15, h₄.regs.rd, h₄.regs.wr]; exact h.inRW rfl rfl (by have := saved_le p hp; omega_using [this]))
     (by rw [h₄.regs.r15]; exact hsv₄)) fun s₅ ⟨h₅a, h₅b, m₅, _, _⟩ => ?_
   have c₀ := ctr_dis h (d := 0) (n := 16) (by decide) (by decide)
@@ -221,8 +222,8 @@ theorem sealTail_wp (v : UpdateImpl) (h : Env s₀ C D P W R L) (hcp : (⟨C, 51
       Spec.Siv.ctr (Spec.Siv.ctxCiph s.mem C R) (Spec.Siv.counter (Spec.Aes.bytesAt s₅.mem W 16))
         (Spec.Aes.bytesAt s.mem P L) := by
     rw [m₅, h₄.data, bytesAt_frame f₄ c₀ (by decide), bytesAt_frame f₃ d₀ (by decide),
-      ctxCiph_frame f₃ (cnt_out h.c_w) hRb, ctxCiph_frame f₂ (fin_out (by decide) h.c_w h.stk_c) hRb,
-      bytesAt_frame f₃ (cnt_out h.p_w) hL, bytesAt_frame f₂ (fin_out (by decide) h.p_w h.stk_p) hL]
+      ctxCiph_frame f₃ (cnt_out h h.c_w) hRb, ctxCiph_frame f₂ (fin_out h (by decide) h.c_w h.stk_c) hRb,
+      bytesAt_frame f₃ (cnt_out h h.p_w) hL, bytesAt_frame f₂ (fin_out h (by decide) h.p_w h.stk_p) hL]
   refine ⟨h₅a, by rw [h₅b _ (by decide), h₄.regs.rsp], ?_, by rw [hc, hv]; rfl⟩
   rw [m₅]
   exact ((f₂.sub (fin_sub h (by decide))).trans (f₃.sub (cnt_sub h))).trans (f₄.sub (ctr_sub h))

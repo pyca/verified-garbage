@@ -39,17 +39,17 @@ open VG.Impl.CmacAes.X86_64 (at_)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 open VG.Proof.CmacAes.X86_64 (UpdateImpl)
 
-variable {s₀ : State} {C D P W : Addr} {R L : Nat}
+variable {g : Lay} {s₀ : State} {C D P W : Addr} {R L : Nat}
 
-theorem finish_spre (v : UpdateImpl) (h : Env s₀ C D P W R L) {s : State} (hs : SPre s₀ C D P W R L s) :
-    WP isa (finish v.callee v.ctr.callee v.ctr.suffix 0) s (SPre s₀ C D P W R L) := by
-  refine WP.mono (finish_wp v h hs.regs (Or.inl rfl)) fun t ht => ⟨ht.regs, ?_, ?_⟩
+theorem finish_spre (v : UpdateImpl) (K : Calls v g) (h : Env g s₀ C D P W R L) {s : State} (hs : SPre s₀ C D P W R L s) :
+    WP isa (finish g.x v.callee v.ctr.callee v.ctr.suffix 0) s (SPre s₀ C D P W R L) := by
+  refine WP.mono (finish_wp v K h hs.regs (Or.inl rfl)) fun t ht => ⟨ht.regs, ?_, ?_⟩
   · rw [ht.frame.readW (Region.contains_self _ _) (fin_dis h (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide)) (by decide), hs.d208]
   · rw [ht.frame.readW (Region.contains_self _ _) (fin_dis h (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide) (by decide)) (by decide), hs.d216]
 
-theorem counter_ctrPre (h : Env s₀ C D P W R L) {s : State} (hs : SPre s₀ C D P W R L s) :
+theorem counter_ctrPre (h : Env g s₀ C D P W R L) {s : State} (hs : SPre s₀ C D P W R L s) :
     WP isa (.block (counter 0)) s (CtrPre s₀ C D P W R L) := by
   obtain ⟨s₁, run₁, m₁, g₁, rd₁, wr₁⟩ := counter_ok h hs.regs.r15 hs.regs.rd hs.regs.wr
   have fc : Frame (cntRegions W) s.mem s₁.mem := m₁ ▸ counter_frame _ _ _ _
@@ -61,20 +61,20 @@ theorem counter_ctrPre (h : Env s₀ C D P W R L) {s : State} (hs : SPre s₀ C 
   · rw [fc.readW (Region.contains_self _ _) (cnt_dis (by decide) (by decide)) (by decide), hs.d216]
 
 /-- `encrypt`'s end, from the registers and slots in both runs. -/
-theorem sealTail_rel (v : UpdateImpl) {s₀' : State} (h : Env s₀ C D P W R L) (h' : Env s₀' C D P W R L)
+theorem sealTail_rel (v : UpdateImpl) (K : Calls v g) {s₀' : State} (h : Env g s₀ C D P W R L) (h' : Env g s₀' C D P W R L)
     (q1 : s₀.gpr .rsp = s₀'.gpr .rsp) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩)
     (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) (hPw' : (⟨P, L⟩ : Region) ∈ s₀'.wr) :
     RelCT isa (fun a b => SPre s₀ C D P W R L a ∧ SPre s₀' C D P W R L b)
-      (.seq (finish v.callee v.ctr.callee v.ctr.suffix 0) (.seq (.block (counter 0)) (.seq (ctr v.ctr.callee) (.block restore))))
+      (.seq (finish g.x v.callee v.ctr.callee v.ctr.suffix 0) (.seq (.block (counter 0)) (.seq (ctr g.x v.ctr.callee) (.block restore))))
       fun _ _ => True := by
   obtain ⟨_, hB⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp])
       (.block (counter 0)) hc).isSome = true := ⟨_, by taint_decide⟩
   obtain ⟨_, hC⟩ : ∃ hc, (taint.check (Taint.ofRegs [.r15]) (.block restore) hc).isSome = true :=
     ⟨_, by taint_decide⟩
-  have f := ((finish_rel v h h' q1 (Or.inl rfl)).mono (P' := fun a b => SPre s₀ C D P W R L a ∧
+  have f := ((finish_rel v K h h' q1 (Or.inl rfl)).mono (P' := fun a b => SPre s₀ C D P W R L a ∧
       SPre s₀' C D P W R L b) (fun _ _ p => ⟨p.1.regs, p.2.regs⟩) fun _ _ p => p).wp
     (F₁ := SPre s₀ C D P W R L) (F₂ := SPre s₀' C D P W R L) fun a b hab =>
-      ⟨finish_spre v h hab.1, finish_spre v h' hab.2⟩
+      ⟨finish_spre v K h hab.1, finish_spre v K h' hab.2⟩
   have c := (RelCT.taint (A := taint) (P := fun a b => SPre s₀ C D P W R L a ∧ SPre s₀' C D P W R L b) _
     (fun a b hab => regs_agree q1 hab.1.regs hab.2.regs) hB).wp
     (F₁ := CtrPre s₀ C D P W R L) (F₂ := CtrPre s₀' C D P W R L) fun a b hab =>
@@ -83,16 +83,16 @@ theorem sealTail_rel (v : UpdateImpl) {s₀' : State} (h : Env s₀ C D P W R L)
     (fun a b hab => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [hab.1.r15, hab.2.r15]) hC
   exact (f.mono (fun _ _ p => p) fun _ _ p => p.2).seq ((c.mono (fun _ _ p => p) fun _ _ p => p.2).seq
-    ((ctr_rel' v.ctr h h' q1 hcp hPw hPw').seq r))
+    ((ctr_rel' v.ctr K.toCCalls h h' q1 hcp hPw hPw').seq r))
 
 /-- `decrypt`'s end, from the registers and slots in both runs: it compares
 the IVs and masks the data without a branch, so nothing it does depends on
 the result. -/
-theorem openTail_rel (v : UpdateImpl) {s₀' : State} (h : Env s₀ C D P W R L) (h' : Env s₀' C D P W R L)
+theorem openTail_rel (v : UpdateImpl) (K : Calls v g) {s₀' : State} (h : Env g s₀ C D P W R L) (h' : Env g s₀' C D P W R L)
     (q1 : s₀.gpr .rsp = s₀'.gpr .rsp) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩)
     (hPw : (⟨P, L⟩ : Region) ∈ s₀.wr) (hPw' : (⟨P, L⟩ : Region) ∈ s₀'.wr) :
     RelCT isa (fun a b => SPre s₀ C D P W R L a ∧ SPre s₀' C D P W R L b)
-      (.seq (.block (counter 0)) (.seq (ctr v.ctr.callee) (.seq (finish v.callee v.ctr.callee v.ctr.suffix tOff)
+      (.seq (.block (counter 0)) (.seq (ctr g.x v.ctr.callee) (.seq (finish g.x v.callee v.ctr.callee v.ctr.suffix tOff)
         (.seq (.block Impl.AesSiv.X86_64.compare)
           (.seq maskData (.block (([.mov .rax (.mem (at_ .r15 dbOff))] : List Instr) ++ restore)))))))
       fun _ _ => True := by
@@ -108,7 +108,7 @@ theorem openTail_rel (v : UpdateImpl) {s₀' : State} (h : Env s₀ C D P W R L)
       ⟨counter_ctrPre h hab.1, counter_ctrPre h' hab.2⟩
   have t := RelCT.taint (A := taint) (P := RR s₀ s₀' C D P W R L) _
     (fun a b hab => regs_agree q1 hab.1 hab.2) hB
-  exact (c.mono (fun _ _ p => p) fun _ _ p => p.2).seq ((ctr_rel' v.ctr h h' q1 hcp hPw hPw').seq
-    ((finish_rel v h h' q1 (Or.inr rfl)).seq t))
+  exact (c.mono (fun _ _ p => p) fun _ _ p => p.2).seq ((ctr_rel' v.ctr K.toCCalls h h' q1 hcp hPw hPw').seq
+    ((finish_rel v K h h' q1 (Or.inr rfl)).seq t))
 
 end VG.Proof.AesSiv.X86_64

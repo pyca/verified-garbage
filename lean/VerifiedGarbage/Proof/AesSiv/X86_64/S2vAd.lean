@@ -109,8 +109,8 @@ context kept at `W + 224` while `rbx` holds `D`), then the descriptor pointer
 at `W + 112` advanced by 16 and the count at `W + 120` decremented, ZF set
 when it reaches 0. -/
 theorem adStep_wp {s : State} (h12 : s.gpr .r12 = D) (h15 : s.gpr .r15 = W)
-    (hDw : (⟨D, 16⟩ : Region) ∈ s.wr) (hWw : (⟨W, 2560⟩ : Region) ∈ s.wr)
-    (hDW : (⟨D, 16⟩ : Region).Disjoint ⟨W, 2560⟩) (_wD : D.toNat + 16 ≤ 2 ^ 64) (_wW : W.toNat + 2560 ≤ 2 ^ 64) :
+    {nW : Nat} (hnW : 256 ≤ nW) (hDw : (⟨D, 16⟩ : Region) ∈ s.wr) (hWw : (⟨W, nW⟩ : Region) ∈ s.wr)
+    (hDW : (⟨D, 16⟩ : Region).Disjoint ⟨W, nW⟩) (_wD : D.toNat + 16 ≤ 2 ^ 64) (_wW : W.toNat + nW ≤ 2 ^ 64) :
     WP isa (.block adStep) s fun s' => s'.gpr .rbx = s.gpr .rbx ∧
       (∀ r, r ≠ .rax → r ≠ .rdx → r ≠ .rcx → r ≠ .r8 → r ≠ .rbx → s'.gpr r = s.gpr r) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr ∧
@@ -122,15 +122,15 @@ theorem adStep_wp {s : State} (h12 : s.gpr .r12 = D) (h15 : s.gpr .r15 = W)
       Frame [⟨D, 16⟩, ⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 224, 8⟩] s.mem s'.mem := by
   have inD (d : Nat) (hd : d + 8 ≤ 16) : InRegions s.wr (D + BitVec.ofNat 64 d) 8 :=
     ⟨_, hDw, Offset.contains_base D hd (by omega_arith)⟩
-  have inW (d : Nat) (hd : d + 8 ≤ 2560) : InRegions s.wr (W + BitVec.ofNat 64 d) 8 :=
-    ⟨_, hWw, Offset.contains_base W hd (by omega_arith)⟩
+  have inW (d : Nat) (hd : d + 8 ≤ 256) : InRegions s.wr (W + BitVec.ofNat 64 d) 8 :=
+    ⟨_, hWw, Offset.contains_base W (by omega_using [hd, hnW]) (by omega_using [hd])⟩
   have rr {a : Addr} (h : InRegions s.wr a 8) : InRegions (s.rd ++ s.wr) a 8 :=
     let ⟨r, hr, hc⟩ := h; ⟨r, List.mem_append_right _ hr, hc⟩
   have cD (d : Nat) (hd : d + 8 ≤ 16) : (⟨D, 16⟩ : Region).Contains (D + BitVec.ofNat 64 d) 8 :=
     Offset.contains_base D hd (by omega_arith)
-  have dW {d n : Nat} (hd : d + n ≤ 2560) (r : Region) (hr : r ∈ [(⟨D, 16⟩ : Region)]) :
+  have dW {d n : Nat} (hd : d + n ≤ 256) (r : Region) (hr : r ∈ [(⟨D, 16⟩ : Region)]) :
       (⟨W + BitVec.ofNat 64 d, n⟩ : Region).Disjoint r := by
-    simp only [List.mem_singleton] at hr; subst hr; exact hDW.symm.sub_left (Offset.sub_base W hd)
+    simp only [List.mem_singleton] at hr; subst hr; exact hDW.symm.sub_left (Offset.sub_base W (by omega_using [hd, hnW]))
   -- The context saved, and `rbx` holding `D`.
   obtain ⟨s₁, run₁, m₁, b₁, g₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa [.store (at_ .r15 ctxOff) .rbx,
       .mov .rbx (.reg .r12)] s = some s₁ ∧ s₁.mem = s.mem.writeW (W + BitVec.ofNat 64 224) (s.gpr .rbx) ∧
@@ -218,14 +218,14 @@ theorem adStep_wp {s : State} (h12 : s.gpr .r12 = D) (h15 : s.gpr .r15 = W)
     have e136 : W + BitVec.ofNat 64 136 = W + BitVec.ofNat 64 128 + BitVec.ofNat 64 8 := by
       rw [Offset.add_add]
     have d₄ : ∀ r ∈ [(⟨W + BitVec.ofNat 64 112, 16⟩ : Region)], (⟨D, 16⟩ : Region).Disjoint r :=
-      one_out' (hDW.sub_right (Offset.sub_base W (by decide)))
+      one_out' (hDW.sub_right (Offset.sub_base W (by omega_using [hnW])))
     rw [bytesAt_frame f₄ d₄ (by decide), m₃, Proof.Cmac.bytesAt_store2, Mem.readW_writeW_sep sepD (by decide),
       fw.readW (Region.contains_self _ _) (fun r hr => dW (d := 136) (n := 8) (by decide) r hr) (by decide), e136,
       Proof.Cmac.xor_words]
     have hd := dblMem_bytes s₁.mem D 0 0
     rw [k0] at hd
     have dD : ∀ r ∈ [(⟨W + BitVec.ofNat 64 224, 8⟩ : Region)], (⟨D, 16⟩ : Region).Disjoint r :=
-      one_out' (hDW.sub_right (Offset.sub_base W (by decide)))
+      one_out' (hDW.sub_right (Offset.sub_base W (by omega_using [hnW])))
     have d128 : ∀ r ∈ [(⟨W + BitVec.ofNat 64 224, 8⟩ : Region)],
         (⟨W + BitVec.ofNat 64 128, 16⟩ : Region).Disjoint r :=
       one_out' (Offset.disjoint W (by decide) (by omega_arith) (by omega_arith))

@@ -29,7 +29,10 @@ many are left while S2V absorbs the associated data, then the IV `decrypt`
 computes, `[128, 144)` a CMAC state, `[144, 160)` `dbl(D)`, `[160, 208)` our
 caller's callee-saved registers, `[208, 232)` the data, its length and the
 key context, `[256, 2432)` the working space of the functions called, and
-`[2560, 2576)` S2V's state `D`.
+`[2560, 2576)` S2V's state `D`. Over implementations of `vg_aes_ctr32` and
+`vg_cmac_aes_update` that need no working space, the functions called write
+only `vg_cmac_aes_finalize`'s counter block, which is then `[256, 272)`
+(`csImmF`), and `D` is `[272, 288)` (`dOffF`): a working space of 288 bytes.
 
 * `init` expands `K1` into the context, derives its subkeys after it and
   expands `K2` after them. Over implementations of AES that need no working
@@ -88,6 +91,16 @@ open VG.Impl.CmacAes.X86_64 (at_)
 
 /-- The offset of the working space of the functions called. -/
 def csOff : Nat := 256
+
+/-- What `encrypt` and `decrypt` add to the working space's address for the
+scratch pointer of the functions they call: `csOff`. -/
+def csImm : BitVec 32 := BitVec.ofNat 32 csOff
+
+/-- … over implementations of `vg_aes_ctr32` and `vg_cmac_aes_update` that need
+no working space: `2048` before `csOff`, so that the counter block of
+`vg_cmac_aes_finalize`, at `2048` from its scratch pointer and all it then
+writes of it, is the 16 bytes at `csOff` (compare `initFOff`). -/
+def csImmF : BitVec 32 := BitVec.ofInt 32 ((csOff : Int) - 2048)
 def zOff : Nat := 16
 def tailOff : Nat := 32
 def cntOff : Nat := 64
@@ -423,8 +436,10 @@ def maskData : Prog isa :=
 
 /-! ## `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`
 
-The whole of `SIV-ENCRYPT` and `SIV-DECRYPT`: S2V's state `D` is in the
-working space, at `W + 2560`, after the 2560 bytes the rest uses; the
+The whole of `SIV-ENCRYPT` and `SIV-DECRYPT`, for the functions called given
+a scratch pointer at `x` (sign-extended) from the working space `W`, and
+S2V's state `D` at `W + dO`: `csImm` and `dOff`, after the 2560 bytes the
+rest uses, or `csImmF` and `dOffF`, after the 272 it then uses; the
 descriptor of the next component of associated data and the number left
 are at `W + 112` and `W + 120` while S2V absorbs them (`T`'s place, which
 `decrypt` fills only after). -/
@@ -432,6 +447,9 @@ are at `W + 112` and `W + 120` while S2V absorbs them (`T`'s place, which
 def adsOff : Nat := tOff
 def leftOff : Nat := tOff + 8
 def dOff : Nat := 2560
+
+/-- Where `D` is when the functions called need no working space. -/
+def dOffF : Nat := 272
 
 /-- Saves the registers in the working space (whose address, the eighth
 argument, is on the stack above the return address and `siv`) and keeps the

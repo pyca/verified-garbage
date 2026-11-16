@@ -394,8 +394,8 @@ vg_aes_siv_init:
 	.p2align 6
 
 vg_aes_siv_encrypt_aesni:
-	lea rsp, [rsp-2600]
-	mov rax, QWORD PTR [rsp+2608]
+	lea rsp, [rsp-312]
+	mov rax, QWORD PTR [rsp+320]
 	mov QWORD PTR [rsp+8], rax
 	mov rax, rsp
 	add rax, 24
@@ -411,7 +411,7 @@ vg_aes_siv_encrypt_aesni:
 	mov rbp, rsi
 	mov r15, rax
 	mov r12, rax
-	add r12, 2560
+	add r12, 272
 	mov r13, r8
 	mov r14, r9
 	mov QWORD PTR [r15+208], r13
@@ -426,7 +426,7 @@ vg_aes_siv_encrypt_aesni:
 	mov QWORD PTR [rdx], rax
 	mov QWORD PTR [rdx+8], rax
 	mov r9, rcx
-	add r9, 256
+	add r9, -1792
 	add rcx, 16
 	mov r8d, 16
 	call {vg_cmac_aes_finalize_aesni}
@@ -460,7 +460,7 @@ vg_aes_siv_encrypt_aesni:
 	add rdx, 128
 	mov rcx, r13
 	mov r9, r15
-	add r9, 256
+	add r9, -1792
 	call {vg_cmac_aes_update_aesni}
 	mov rax, QWORD PTR [r15+144]
 	mov rcx, r13
@@ -472,7 +472,7 @@ vg_aes_siv_encrypt_aesni:
 	mov rdx, r15
 	add rdx, 128
 	mov r9, r15
-	add r9, 256
+	add r9, -1792
 	call {vg_cmac_aes_finalize_aesni}
 	mov QWORD PTR [r15+224], rbx
 	mov rbx, r12
@@ -571,7 +571,7 @@ vg_aes_siv_encrypt_aesni:
 	add rdx, 0
 	mov rcx, r13
 	mov r9, r15
-	add r9, 256
+	add r9, -1792
 	call {vg_cmac_aes_update_aesni}
 	mov r8d, 0
 	cmp r14, 17
@@ -587,7 +587,7 @@ vg_aes_siv_encrypt_aesni:
 	mov rcx, r15
 	add rcx, 32
 	mov r9, r15
-	add r9, 256
+	add r9, -1792
 	mov QWORD PTR [r15+152], r8
 	call {vg_cmac_aes_update_aesni}
 	mov rax, QWORD PTR [r15+152]
@@ -606,7 +606,7 @@ vg_aes_siv_encrypt_aesni:
 	mov rdx, r15
 	add rdx, 0
 	mov r9, r15
-	add r9, 256
+	add r9, -1792
 	call {vg_cmac_aes_finalize_aesni}
 	jmp 26f
 25:
@@ -673,7 +673,7 @@ vg_aes_siv_encrypt_aesni:
 	add rcx, 32
 	mov r8d, 16
 	mov r9, r15
-	add r9, 256
+	add r9, -1792
 	call {vg_cmac_aes_finalize_aesni}
 26:
 	mov rax, QWORD PTR [r15]
@@ -697,7 +697,7 @@ vg_aes_siv_encrypt_aesni:
 	add rdx, 96
 	mov rcx, r13
 	mov r9, r15
-	add r9, 256
+	add r9, -1792
 	call {vg_aes_ctr32_aesni}
 	mov rcx, r14
 	shr rcx, 4
@@ -736,7 +736,7 @@ vg_aes_siv_encrypt_aesni:
 	add rcx, 80
 	mov r8d, 1
 	mov r9, r15
-	add r9, 256
+	add r9, -1792
 	call {vg_aes_ctr32_aesni}
 	mov ecx, 16
 	cmp r14, rcx
@@ -784,13 +784,13 @@ vg_aes_siv_encrypt_aesni:
 	mov QWORD PTR [rax], r11
 	mov r11, QWORD PTR [r10+8]
 	mov QWORD PTR [rax+8], r11
-	lea rsp, [rsp+2600]
+	lea rsp, [rsp+312]
 	ret
 	.p2align 6
 
 vg_aes_siv_decrypt_aesni:
-	lea rsp, [rsp-2600]
-	mov rax, QWORD PTR [rsp+2608]
+	lea rsp, [rsp-312]
+	mov rax, QWORD PTR [rsp+320]
 	mov QWORD PTR [rsp+8], rax
 	mov rax, rsp
 	add rax, 24
@@ -806,7 +806,7 @@ vg_aes_siv_decrypt_aesni:
 	mov rbp, rsi
 	mov r15, rax
 	mov r12, rax
-	add r12, 2560
+	add r12, 272
 	mov r13, r8
 	mov r14, r9
 	mov QWORD PTR [r15+208], r13
@@ -821,7 +821,7 @@ vg_aes_siv_decrypt_aesni:
 	mov QWORD PTR [rdx], rax
 	mov QWORD PTR [rdx+8], rax
 	mov r9, rcx
-	add r9, 256
+	add r9, -1792
 	add rcx, 16
 	mov r8d, 16
 	call {vg_cmac_aes_finalize_aesni}
@@ -855,7 +855,7 @@ vg_aes_siv_decrypt_aesni:
 	add rdx, 128
 	mov rcx, r13
 	mov r9, r15
-	add r9, 256
+	add r9, -1792
 	call {vg_cmac_aes_update_aesni}
 	mov rax, QWORD PTR [r15+144]
 	mov rcx, r13
@@ -867,7 +867,7 @@ vg_aes_siv_decrypt_aesni:
 	mov rdx, r15
 	add rdx, 128
 	mov r9, r15
-	add r9, 256
+	add r9, -1792
 	call {vg_cmac_aes_finalize_aesni}
 	mov QWORD PTR [r15+224], rbx
 	mov rbx, r12
@@ -935,7 +935,7 @@ vg_aes_siv_decrypt_aesni:
 	add rdx, 96
 	mov rcx, r13
 	mov r9, r15
-	add r9, 256
+	add r9, -1792
 	call {vg_aes_ctr32_aesni}
 	mov rcx, r14
 	shr rcx, 4
@@ -974,7 +974,7 @@ vg_aes_siv_decrypt_aesni:
 	add rcx, 80
 	mov r8d, 1
 	mov r9, r15
-	add r9, 256
+	add r9, -1792
 	call {vg_aes_ctr32_aesni}
 	mov ecx, 16
 	cmp r14, rcx
@@ -1067,7 +1067,7 @@ vg_aes_siv_decrypt_aesni:
 	add rdx, 112
 	mov rcx, r13
 	mov r9, r15
-	add r9, 256
+	add r9, -1792
 	call {vg_cmac_aes_update_aesni}
 	mov r8d, 0
 	cmp r14, 17
@@ -1083,7 +1083,7 @@ vg_aes_siv_decrypt_aesni:
 	mov rcx, r15
 	add rcx, 32
 	mov r9, r15
-	add r9, 256
+	add r9, -1792
 	mov QWORD PTR [r15+152], r8
 	call {vg_cmac_aes_update_aesni}
 	mov rax, QWORD PTR [r15+152]
@@ -1102,7 +1102,7 @@ vg_aes_siv_decrypt_aesni:
 	mov rdx, r15
 	add rdx, 112
 	mov r9, r15
-	add r9, 256
+	add r9, -1792
 	call {vg_cmac_aes_finalize_aesni}
 	jmp 212f
 211:
@@ -1169,7 +1169,7 @@ vg_aes_siv_decrypt_aesni:
 	add rcx, 32
 	mov r8d, 16
 	mov r9, r15
-	add r9, 256
+	add r9, -1792
 	call {vg_cmac_aes_finalize_aesni}
 212:
 	mov rax, QWORD PTR [r15]
@@ -1221,7 +1221,7 @@ vg_aes_siv_decrypt_aesni:
 	mov r13, QWORD PTR [r15+184]
 	mov r14, QWORD PTR [r15+192]
 	mov r15, QWORD PTR [r15+200]
-	lea rsp, [rsp+2600]
+	lea rsp, [rsp+312]
 	ret
 	.p2align 6
 

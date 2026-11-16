@@ -30,9 +30,9 @@ open VG.Proof.CmacAes.X86_64 (offset_nat bytesAt_frame k0)
 open VG.Proof.CmacAes.Stream.X86_64 (toNat_ofNat)
 open VG.Proof.Aes.X86_64 (Ctr32Impl)
 
-variable {s₀ : State} {C D P W : Addr} {R L : Nat}
+variable {g : Lay} {s₀ : State} {C D P W : Addr} {R L : Nat}
 
-theorem counter_ok (h : Env s₀ C D P W R L) {s : State} (h15 : s.gpr .r15 = W) (hrd : s.rd = s₀.rd)
+theorem counter_ok (h : Env g s₀ C D P W R L) {s : State} (h15 : s.gpr .r15 = W) (hrd : s.rd = s₀.rd)
     (hwr : s.wr = s₀.wr) :
     ∃ s', runBlock isa (counter 0) s = some s' ∧
       s'.mem = (s.mem.writeW (W + BitVec.ofNat 64 cntOff) (s.mem.readW (W + BitVec.ofNat 64 0) 64)).writeW

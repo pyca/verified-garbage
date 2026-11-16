@@ -31,11 +31,17 @@ address of the working space. The code's own calls use 16 bytes below it.
 The frame copies `siv`, so the postconditions and `decrypt`'s leak must read
 the memory on entry only within the buffers and the list of slices
 (`encryptPost_local`, `decryptPost_local`, `decryptLeak_local`).
+Over implementations of `vg_cmac_aes_update` and `vg_aes_ctr32` that never
+touch their scratch buffers (`UpdateImpl.free` and `Ctr32Impl.free`), the
+working space is 288 bytes (`Lay.free`: the code's own 256, the counter block
+of `vg_cmac_aes_finalize` and S2V's state), in a frame of 312
+(`encryptF_framed`, `decryptF_framed`).
 
 Over the bitsliced AES (`Ctr32Impl.free` is `none`), the frames of `init`,
 `encrypt` and `decrypt` are mostly the working space of the functions they
 call, which AES writes, and are wiped whole on return
-(`X86_64.Scrub.withScrubAll`: `initReg`, `encryptReg`, `decryptReg`); their
+(`X86_64.Scrub.withScrubAll`: `initReg`, `encryptReg`, `decryptReg`); the
+frames of 312 bytes (`encryptRegF`, `decryptRegF`) are not wiped yet; their
 postconditions read the memory on return only within the key context, or
 the data and the synthetic IV (`initOut`, `encryptOut`, `decryptOut`).
 -/
@@ -91,8 +97,11 @@ theorem initF_framed (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) :
     (wa := true) (stack := 16) (bytes := 88) (initF_verified v f) (by decide) (by decide) (by decide)
     (initF_spSafe v) (initF_xdepth v) initFrameSatF_pre
 
-theorem encrypt_xdepth (v : UpdateImpl) : (encrypt v.callee v.ctr.callee v.ctr.suffix).x86_64Depth ≤ 16 := by
+theorem encrypt_xdepth {g : Lay} (hg : g.Ok) (v : UpdateImpl) :
+    (encrypt g.x g.n v.callee v.ctr.callee v.ctr.suffix).x86_64Depth ≤ 16 := by
   have := v.xdepth
+  rcases hg with rfl | rfl
+  all_goals
   simp only [encrypt, encryptCore, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac,
     copy, ctr, ctrWhole, ctrBody, ctrMin, xorBytes, callUpdate, callFinalize,
     Impl.CmacAes.X86_64.finalize, Impl.CmacAes.X86_64.finPre,
@@ -101,8 +110,11 @@ theorem encrypt_xdepth (v : UpdateImpl) : (encrypt v.callee v.ctr.callee v.ctr.s
   revert d
   decide +kernel
 
-theorem decrypt_xdepth (v : UpdateImpl) : (decrypt v.callee v.ctr.callee v.ctr.suffix).x86_64Depth ≤ 16 := by
+theorem decrypt_xdepth {g : Lay} (hg : g.Ok) (v : UpdateImpl) :
+    (decrypt g.x g.n v.callee v.ctr.callee v.ctr.suffix).x86_64Depth ≤ 16 := by
   have := v.xdepth
+  rcases hg with rfl | rfl
+  all_goals
   simp only [decrypt, openTail, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac,
     copy, ctr, ctrWhole, ctrBody, ctrMin, xorBytes, maskData, callUpdate, callFinalize,
     Impl.CmacAes.X86_64.finalize, Impl.CmacAes.X86_64.finPre,
@@ -123,13 +135,33 @@ theorem encFrameSat_pre : ∃ s, (Proof.AesSiv.encryptRoundsContract X86_64.abi 
 
 theorem encrypt_framed (v : UpdateImpl) :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (encrypt v.callee v.ctr.callee v.ctr.suffix))
+      (Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (encrypt csImm dOff v.callee v.ctr.callee v.ctr.suffix))
       (Proof.AesSiv.encryptRoundsContract X86_64.abi 2616) :=
   X86_64.Verified.stackArgScratchL (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.encryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 2600) (encrypt_verified v) (by decide) (by decide) (by decide)
-    (encrypt_spSafe v) (encrypt_xdepth v) (Proof.AesSiv.encryptPre_local _) (Proof.AesSiv.encryptPost_local _)
-    encFrameSat_pre
+    (encrypt_spSafe (.inl rfl) v) (encrypt_xdepth (.inl rfl) v) (Proof.AesSiv.encryptPre_local _)
+    (Proof.AesSiv.encryptPost_local _) encFrameSat_pre
+
+theorem encFrameSatF_pre : ∃ s, (Proof.AesSiv.encryptRoundsContract X86_64.abi 328).pre s := by
+  implies_sat [Proof.AesSiv.encryptRoundsContract, Spec.Siv.encryptSig, Spec.Siv.encryptPre, X86_64.abi, X86_64.argRegs,
+    X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range, List.range.loop]
+    [encFrameSat, encSat, Mem.readW, Mem.read] using encFrameSat
+
+/-- `encrypt_framed`, over implementations of `vg_cmac_aes_update` and
+`vg_aes_ctr32` that never touch their scratch buffers: a frame of 312 bytes,
+the 288 of working space, a copy of `siv`, the word that stands for the
+return address and the address of the working space. -/
+theorem encryptF_framed (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.callee)
+    (fc : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratch 312 1 (encrypt csImmF dOffF v.callee v.ctr.callee v.ctr.suffix))
+      (Proof.AesSiv.encryptRoundsContract X86_64.abi 328) :=
+  X86_64.Verified.stackArgScratchL (sig := Spec.Siv.encryptSig) (nm := "work") (e := .u64) (n := 36)
+    (pre := Spec.Siv.encryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.encryptRoundsPost X86_64.abi.ptrBits)
+    (wa := true) (stack := 16) (bytes := 312) (encryptF_verified v f fc) (by decide) (by decide) (by decide)
+    (encrypt_spSafe (.inr rfl) v) (encrypt_xdepth (.inr rfl) v) (Proof.AesSiv.encryptPre_local _)
+    (Proof.AesSiv.encryptPost_local _) encFrameSatF_pre
 
 /-- A state satisfying `vg_aes_siv_decrypt`'s precondition, without the
 working space. -/
@@ -143,14 +175,32 @@ theorem decFrameSat_pre : ∃ s, (Proof.AesSiv.decryptRoundsContract X86_64.abi 
 
 theorem decrypt_framed (v : UpdateImpl) :
     Verified X86_64.target
-      (Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (decrypt v.callee v.ctr.callee v.ctr.suffix))
+      (Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (decrypt csImm dOff v.callee v.ctr.callee v.ctr.suffix))
       (Proof.AesSiv.decryptRoundsContract X86_64.abi 2616) :=
   X86_64.Verified.stackArgScratchL (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 322)
     (pre := Spec.Siv.decryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost X86_64.abi.ptrBits)
     (wa := true) (stack := 16) (bytes := 2600) (leak := some (Spec.Siv.decryptLeak X86_64.abi.ptrBits))
-    (decrypt_verified v) (by decide) (by decide) (by decide) (decrypt_spSafe v) (decrypt_xdepth v)
-    (Proof.AesSiv.decryptPre_local _) (Proof.AesSiv.decryptPost_local _) decFrameSat_pre
-    (hleak := Proof.AesSiv.decryptLeak_local _)
+    (decrypt_verified v) (by decide) (by decide) (by decide) (decrypt_spSafe (.inl rfl) v)
+    (decrypt_xdepth (.inl rfl) v) (Proof.AesSiv.decryptPre_local _) (Proof.AesSiv.decryptPost_local _)
+    decFrameSat_pre (hleak := Proof.AesSiv.decryptLeak_local _)
+
+theorem decFrameSatF_pre : ∃ s, (Proof.AesSiv.decryptRoundsContract X86_64.abi 328).pre s := by
+  implies_sat [Proof.AesSiv.decryptRoundsContract, Spec.Siv.decryptSig, Spec.Siv.decryptPre, Proof.AesSiv.decryptRoundsPost,
+    Spec.Siv.decryptLeak, X86_64.abi, X86_64.argRegs, X86_64.stackArg, X86_64.stackArgAddr, List.getD, List.range,
+    List.range.loop] [decFrameSat, encSat, Mem.readW, Mem.read] using decFrameSat
+
+/-- `decrypt_framed`, in a frame of 312 bytes, as `encryptF_framed`. -/
+theorem decryptF_framed (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.callee)
+    (fc : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
+    Verified X86_64.target
+      (Impl.StackScratch.X86_64.withStackArgScratch 312 1 (decrypt csImmF dOffF v.callee v.ctr.callee v.ctr.suffix))
+      (Proof.AesSiv.decryptRoundsContract X86_64.abi 328) :=
+  X86_64.Verified.stackArgScratchL (sig := Spec.Siv.decryptSig) (nm := "work") (e := .u64) (n := 36)
+    (pre := Spec.Siv.decryptPre X86_64.abi.ptrBits) (post := Proof.AesSiv.decryptRoundsPost X86_64.abi.ptrBits)
+    (wa := true) (stack := 16) (bytes := 312) (leak := some (Spec.Siv.decryptLeak X86_64.abi.ptrBits))
+    (decryptF_verified v f fc) (by decide) (by decide) (by decide) (decrypt_spSafe (.inr rfl) v)
+    (decrypt_xdepth (.inr rfl) v) (Proof.AesSiv.decryptPre_local _) (Proof.AesSiv.decryptPost_local _)
+    decFrameSatF_pre (hleak := Proof.AesSiv.decryptLeak_local _)
 
 /-! ## Without secret residue -/
 
@@ -243,32 +293,63 @@ theorem decryptOut (stack : Nat) :
       rw [e]
       exact h key hk
 
-/-- `vg_aes_siv_encrypt` over `v`. Over an implementation of AES that needs
-working space (`v.ctr.free` is `none`), its frame of 2.6 KB is mostly that
-working space, wiped whole on return (`withScrubAll`); over the others, as
-before. -/
+/-- `vg_aes_siv_encrypt` over implementations of `vg_cmac_aes_update` and
+`vg_aes_ctr32` that never touch their scratch buffers: in a frame of 312
+bytes, its working space the 288 of `Lay.free`. -/
+def encryptRegF (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.callee)
+    (fc : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) : Registration Spec.Siv.encryptApi X86_64.target :=
+  let r : Registration Spec.Siv.encryptApi X86_64.target := {
+    suffix := v.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 312 1
+      (encrypt csImmF dOffF v.callee v.ctr.callee v.ctr.suffix)
+    stack := 328
+    verified := Proof.AesSiv.encrypt_keyed (encryptF_framed v f fc)
+    spSafe := X86_64.withStackArgScratch_spSafe (encrypt_spSafe (.inr rfl) v) }
+  r
+
+/-- `vg_aes_siv_encrypt` over `v`. Over implementations that need no working
+space (`v.free` and `v.ctr.free`), in the frame of 312 bytes of `encryptRegF`.
+Otherwise in a frame of 2.6 KB, mostly the working space of the functions it
+calls: over an implementation of AES that needs it (`v.ctr.free` is `none`),
+wiped whole on return (`withScrubAll`); over the others, as before. -/
 def encryptReg (v : UpdateImpl) : Registration Spec.Siv.encryptApi X86_64.target :=
   let r : Registration Spec.Siv.encryptApi X86_64.target := {
     suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (encrypt v.callee v.ctr.callee v.ctr.suffix)
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 1
+      (encrypt csImm dOff v.callee v.ctr.callee v.ctr.suffix)
     stack := 2616
     verified := Proof.AesSiv.encrypt_keyed (encrypt_framed v)
-    spSafe := X86_64.withStackArgScratch_spSafe (encrypt_spSafe v) }
-  match v.ctr.free with
-  | some _ => r
-  | none => withScrubAll r (encryptOut _)
+    spSafe := X86_64.withStackArgScratch_spSafe (encrypt_spSafe (.inl rfl) v) }
+  match v.free, v.ctr.free with
+  | some f, some fc => encryptRegF v f fc
+  | none, some _ => r
+  | _, none => withScrubAll r (encryptOut _)
+
+/-- `vg_aes_siv_decrypt` in a frame of 312 bytes, as `encryptRegF`. -/
+def decryptRegF (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.callee)
+    (fc : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) : Registration Spec.Siv.decryptApi X86_64.target :=
+  let r : Registration Spec.Siv.decryptApi X86_64.target := {
+    suffix := v.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 312 1
+      (decrypt csImmF dOffF v.callee v.ctr.callee v.ctr.suffix)
+    stack := 328
+    verified := Proof.AesSiv.decrypt_keyed (decryptF_framed v f fc)
+    spSafe := X86_64.withStackArgScratch_spSafe (decrypt_spSafe (.inr rfl) v) }
+  r
 
 /-- `vg_aes_siv_decrypt` over `v`, as `encryptReg`. -/
 def decryptReg (v : UpdateImpl) : Registration Spec.Siv.decryptApi X86_64.target :=
   let r : Registration Spec.Siv.decryptApi X86_64.target := {
     suffix := v.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 1 (decrypt v.callee v.ctr.callee v.ctr.suffix)
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2600 1
+      (decrypt csImm dOff v.callee v.ctr.callee v.ctr.suffix)
     stack := 2616
     verified := Proof.AesSiv.decrypt_keyed (decrypt_framed v)
-    spSafe := X86_64.withStackArgScratch_spSafe (decrypt_spSafe v) }
-  match v.ctr.free with
-  | some _ => r
-  | none => withScrubAll r (decryptOut _)
+    spSafe := X86_64.withStackArgScratch_spSafe (decrypt_spSafe (.inl rfl) v) }
+  match v.free, v.ctr.free with
+  | some f, some fc => decryptRegF v f fc
+  | none, some _ => r
+  | _, none => withScrubAll r (decryptOut _)
 
 end
 
