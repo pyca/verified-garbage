@@ -34,7 +34,7 @@ theorem scratchArgument_relCT (i : Nat) :
       rw [VG.X86.Taint.loadPubK_eq]
       change VG.X86.Taint.argPub stackTaint (Entry.argument i) 4 = false
       simp [VG.X86.Taint.argPub, stackTaint, Entry.argument, at_, VG.X86.Taint.depth]
-    simp only [VG.Taint.checkBlock, taint, VG.X86.Taint.stepKD, VG.X86.Taint.stepKDFn]
+    simp only [VG.Taint.checkBlock, taint, VG.X86.Taint.stepKeep_eq, VG.X86.Taint.stepKD, VG.X86.Taint.stepKDFn]
     have MB : VG.X86.Taint.movBasesK stackTaint .eax (.mem (Entry.argument i)) = [] := by
       rw [VG.X86.Taint.movBasesK_eq]
       simp [VG.X86.Taint.movBases, VG.X86.Taint.loadBases, VG.X86.Taint.addrOf, VG.X86.Taint.kill, stackTaint]
@@ -75,7 +75,7 @@ theorem saveArgument_relCT (i : Nat) (f : VG.Impl.Dsa.Layout.Field) :
     rw [VG.X86.Taint.loadPubK_eq]
     change VG.X86.Taint.argPub entryTaint (Entry.argument i) 4 = false
     simp [VG.X86.Taint.argPub, entryTaint, Entry.argument, at_, VG.X86.Taint.depth]
-  simp only [VG.Taint.checkBlock, taint, VG.X86.Taint.stepKD, VG.X86.Taint.stepKDFn]
+  simp only [VG.Taint.checkBlock, taint, VG.X86.Taint.stepKeep_eq, VG.X86.Taint.stepKD, VG.X86.Taint.stepKDFn]
   have MB : VG.X86.Taint.movBasesK entryTaint .eax (.mem (Entry.argument i)) = [] := by
     rw [VG.X86.Taint.movBasesK_eq]
     simp [VG.X86.Taint.movBases, VG.X86.Taint.loadBases, VG.X86.Taint.addrOf, VG.X86.Taint.kill, entryTaint]

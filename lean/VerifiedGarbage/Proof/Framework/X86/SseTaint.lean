@@ -140,13 +140,96 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
     rw [XOp.exec_eq op s₁, XOp.exec_eq op s₂]
     exact ⟨rfl, agree_withXmm ha _ _⟩
 
+/-! ### Steps the kernel finds again
+
+`stepKeep` is `step` as the kernel evaluates it (`Taint.stepKeep`): its
+taints are evaluated, and their bases, slots and base-address words are the
+terms they were when the instruction does not change them. Its stores keep
+the slots that already say what the store makes of them
+(`Taint.storeStepKD`): the same public bytes and the same taint otherwise
+(`stepKeep_spec`). -/
+
+/-- `step`, classifying the instruction before the taint it is given
+(`Taint.stepKDFn`), with `Taint.stepKeepFn` for the scalar instructions. -/
+def stepKeepFn : Instr → Taint.Step
+  | .movdquLoad _ m | .movqLoad _ m => ⟨fun τ => bif pub τ m.base then some τ else none⟩
+  | .movdquStore m _ => ⟨fun τ => storeKeep τ m 16 false []⟩
+  | .movqStore m _ | .mmxStore m _ => ⟨fun τ => storeKeep τ m 8 false []⟩
+  | .xop _ | .pmuludq .. => ⟨some⟩
+  | .mop op => ⟨fun τ => bif mopOk τ op then some τ else none⟩
+  | i => Taint.stepKeepFn i
+
+/-- `stepKeepFn`, with its cases closed (`inline_match%`). -/
+def stepKeepFnK : Instr → Taint.Step :=
+  inline_match% VG.X86.SseTaint.stepKeepFn VG.X86.Taint.stepKeepFn VG.X86.Taint.stepKDFn
+
+theorem stepKeepFnK_eq (i : Instr) : stepKeepFnK i = stepKeepFn i := by
+  cases i <;> rfl
+
+/-- `step`, as the kernel evaluates it (`stepKeep_spec`). -/
+def stepKeep (τ : T) (i : Instr) : Option T :=
+  match (stepKeepFnK i).run τ with
+  | some τ' => forceT τ' some
+  | none => none
+
+theorem stepKeep_run (τ : T) (i : Instr) : stepKeep τ i = (stepKeepFn i).run τ := by
+  unfold stepKeep
+  rw [stepKeepFnK_eq]
+  cases (stepKeepFn i).run τ with
+  | none => rfl
+  | some τ' => exact forceT_eq τ' some
+
+theorem stepKeep_spec (τ : T) (i : Instr) :
+    (stepKeep τ i = none ∧ step τ i = none) ∨ ∃ a b, stepKeep τ i = some a ∧ step τ i = some b ∧ Sim a b := by
+  rw [stepKeep_run]
+  have same : ∀ {o : Option T}, (stepKeepFn i).run τ = o → step τ i = o →
+      ((stepKeepFn i).run τ = none ∧ step τ i = none) ∨
+        ∃ a b, (stepKeepFn i).run τ = some a ∧ step τ i = some b ∧ Sim a b := by
+    intro o h₁ h₂
+    rw [h₁, h₂]
+    cases o with
+    | none => exact .inl ⟨rfl, rfl⟩
+    | some t => exact .inr ⟨t, t, rfl, rfl, Sim.refl t⟩
+  have st : ∀ m w, (storeKeep τ m w false [] = none ∧ storeStepK τ m w false [] = none) ∨
+      ∃ a b, storeKeep τ m w false [] = some a ∧ storeStepK τ m w false [] = some b ∧ Sim a b := by
+    intro m w
+    rw [storeKeep_eq, storeStepK_eq]
+    exact storeStepKD_spec τ m w false []
+  cases i with
+  | movdquLoad _ m | movqLoad _ m =>
+    refine same (o := bif pub τ m.base then some τ else none) rfl ?_
+    show (if memPub τ m = true then some τ else none) = bif pub τ m.base then some τ else none
+    cases h : pub τ m.base
+    · simp only [memPub, h, Bool.false_eq_true, ↓reduceIte, Bool.cond_false]
+    · simp only [memPub, h, ↓reduceIte, Bool.cond_true]
+  | movdquStore m _ => exact st m 16
+  | movqStore m _ | mmxStore m _ => exact st m 8
+  | xop _ | pmuludq _ _ => exact same (o := some τ) rfl rfl
+  | mop op =>
+    refine same (o := bif mopOk τ op then some τ else none) rfl ?_
+    simp only [step, Bool.cond_eq_ite]
+  | _ =>
+    simp only [stepKeepFn, step]
+    rw [Taint.stepKeepFn_run, Taint.stepK_eq]
+    exact Taint.stepKD_spec τ _
+
+theorem stepKeep_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
+    (ha : Agree τ s₁ s₂) (hs : stepKeep τ i = some τ')
+    (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
+    addrs i s₁ = addrs i s₂ ∧ Agree τ' s₁' s₂' := by
+  rcases stepKeep_spec τ i with ⟨h, -⟩ | ⟨a, b, h₁, h₂, hab⟩
+  · rw [h] at hs; cases hs
+  · rw [h₁] at hs; cases hs
+    obtain ⟨h₃, h₄⟩ := step_sound ha h₂ e₁ e₂
+    exact ⟨h₃, hab.agree h₄⟩
+
 end VG.X86.SseTaint
 
 namespace VG.X86
 
 /-- Checked scalar and SIMD analysis, sharing the scalar domain and all call rules. -/
 def sseTaint : VG.Taint isa := { taint with
-  step := SseTaint.step
-  step_sound := SseTaint.step_sound }
+  step := SseTaint.stepKeep
+  step_sound := SseTaint.stepKeep_sound }
 
 end VG.X86

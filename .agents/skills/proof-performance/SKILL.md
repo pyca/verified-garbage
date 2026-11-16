@@ -133,7 +133,8 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   brainpoolP512r1's ECDH on x86-64, whose check went from 23.8 s to 4.9 s).
   So a step function the kernel evaluates
   (`Proof/Framework/X86_64/Taint.lean` and `ResidueTaint.lean`,
-  `Proof/Framework/Arm/Taint.lean`):
+  `Proof/Framework/Arm/Taint.lean`, `Proof/Framework/X86/Taint.lean` and
+  `SseTaint.lean`):
   * gives a state that is evaluated: what it computed is forced before the
     state is built, in control flow, and the state built of the values
     (`Taint.forceT`: a set of registers by `RegSet.force`, which hands on
@@ -154,6 +155,13 @@ Avoid these patterns (each has cost tens of seconds in one proof):
     known bases at every instruction, cost 0.25 ms of CI for each base at
     each instruction): test first (`noBase b d`, which the kernel
     evaluates once for a list and a register);
+  * leaves a numeral wider than 64 bits it changed as a term (x86's
+    `Slots` masks, a bit for each byte of a region): the kernel's hash of
+    a numeral is of its low 64 bits, so states that differ only above
+    them have one hash, and a term looked up is compared with every term
+    of its hash (with the masks evaluated, a check over an 8192-byte
+    working space took 3.9 s for 3.4 s before and 1.2 s with them left as
+    terms); only "unchanged" hands on the old term (`keepSlots`);
   * has the literal states of its hints written as its steps leave them
     (`Taint.T`'s `ToExpr` writes the sets' bits as raw numerals), so that
     the kernel finds again after a hint what it evaluated before it;

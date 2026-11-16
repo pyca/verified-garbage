@@ -599,7 +599,7 @@ instance : VG.Taint.Frame taint where
     show leK _ _ = true
     rw [leK_eq]; exact le_of_le_leR (by rw [← leK_eq]; exact hm) (leR_iff.mp h)
   step {τ σ τ'} i h hs := by
-    have hs : stepKD τ i = some τ' := hs
+    have hs : stepKD τ i = some τ' := (taint_step τ i).symm.trans hs
     rcases stepKD_spec τ i with ⟨h', -⟩ | ⟨a, b, h₁, h₂, hab⟩
     · rw [h'] at hs; cases hs
     rw [h₁] at hs; cases hs
@@ -607,7 +607,7 @@ instance : VG.Taint.Frame taint where
     rcases stepKD_spec σ i with ⟨-, h'⟩ | ⟨c, d, h₅, h₆, hcd⟩
     · rw [h'] at h₃; cases h₃
     rw [h₆] at h₃; cases h₃
-    exact ⟨c, h₅, leR_iff.mpr (h₄.sim hab hcd)⟩
+    exact ⟨c, (taint_step σ i).trans h₅, leR_iff.mpr (h₄.sim hab hcd)⟩
   condPub _ h hc := (leR_iff.mp h).flags hc
   meet h₁ h₂ := leR_iff.mpr (meet_upd (leR_iff.mp h₁) (leR_iff.mp h₂))
   call {τ σ τ'} h hs := by
@@ -683,7 +683,7 @@ instance : VG.Taint.Frame taint where
     left; simp [RegSet.mem, RegSet.empty]
   keepsCall_bot := rfl
   step_keeps {F Φ σ σ'} i hk hΦF hΦ hs := by
-    have hs : stepKD σ i = some σ' := hs
+    have hs : stepKD σ i = some σ' := (taint_step σ i).symm.trans hs
     rcases stepKD_spec σ i with ⟨h', -⟩ | ⟨a, b, h₁, h₂, hab⟩
     · rw [h'] at hs; cases hs
     rw [h₁] at hs; cases hs

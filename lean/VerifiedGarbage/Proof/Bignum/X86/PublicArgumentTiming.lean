@@ -26,7 +26,7 @@ theorem argumentLoad_check (d : Reg) (i : Nat) (de : d ≠ .esp) :
     rw [VG.X86.Taint.movBasesK_eq]
     simp [VG.X86.Taint.movBases, VG.X86.Taint.loadBases, VG.X86.Taint.addrOf,
       VG.X86.Taint.kill, stackTaint]
-  simp only [VG.Taint.checkBlock, taint, VG.X86.Taint.stepKD, VG.X86.Taint.stepKDFn]
+  simp only [VG.Taint.checkBlock, taint, VG.X86.Taint.stepKeep_eq, VG.X86.Taint.stepKD, VG.X86.Taint.stepKDFn]
   rw [H, MB]
   simp only [VG.X86.Taint.srcOkK, VG.X86.Taint.srcPub, PublicFn.argument, at_]
   cases d <;> first | contradiction | rfl
