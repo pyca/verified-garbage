@@ -466,7 +466,61 @@ jmp 2132f
 2131:
 2132:
 292:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vpxord xmm16, xmm16, xmm16
+vpxord xmm17, xmm17, xmm17
+vpxord xmm18, xmm18, xmm18
+vpxord xmm19, xmm19, xmm19
+vpxord xmm20, xmm20, xmm20
+vpxord xmm21, xmm21, xmm21
+vpxord xmm22, xmm22, xmm22
+vpxord xmm23, xmm23, xmm23
+vpxord xmm24, xmm24, xmm24
+vpxord xmm25, xmm25, xmm25
+vpxord xmm26, xmm26, xmm26
+vpxord xmm27, xmm27, xmm27
+vpxord xmm28, xmm28, xmm28
+vpxord xmm29, xmm29, xmm29
+vpxord xmm30, xmm30, xmm30
+vpxord xmm31, xmm31, xmm31
+vmovdqu ymmword ptr [rsp-3816], ymm0
+vmovdqu ymmword ptr [rsp-3784], ymm0
+vmovdqu ymmword ptr [rsp-3752], ymm0
+vmovdqu ymmword ptr [rsp-3720], ymm0
+vmovdqu ymmword ptr [rsp-3688], ymm0
+vmovdqu ymmword ptr [rsp-3576], ymm0
+vmovdqu ymmword ptr [rsp-3544], ymm0
+vmovdqu ymmword ptr [rsp-3512], ymm0
+vmovdqu ymmword ptr [rsp-3480], ymm0
+vmovdqu ymmword ptr [rsp-3448], ymm0
+vmovdqu ymmword ptr [rsp-3416], ymm0
+vmovdqu ymmword ptr [rsp-3384], ymm0
+vmovdqu ymmword ptr [rsp-3352], ymm0
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
         vg_ghash_vpclmul = sym super::aes_gcm_siv::vg_ghash_vpclmul::vg_ghash_vpclmul,
@@ -971,7 +1025,61 @@ jne 2146b
 jmp 2145f
 2144:
 2145:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vpxord xmm16, xmm16, xmm16
+vpxord xmm17, xmm17, xmm17
+vpxord xmm18, xmm18, xmm18
+vpxord xmm19, xmm19, xmm19
+vpxord xmm20, xmm20, xmm20
+vpxord xmm21, xmm21, xmm21
+vpxord xmm22, xmm22, xmm22
+vpxord xmm23, xmm23, xmm23
+vpxord xmm24, xmm24, xmm24
+vpxord xmm25, xmm25, xmm25
+vpxord xmm26, xmm26, xmm26
+vpxord xmm27, xmm27, xmm27
+vpxord xmm28, xmm28, xmm28
+vpxord xmm29, xmm29, xmm29
+vpxord xmm30, xmm30, xmm30
+vpxord xmm31, xmm31, xmm31
+vmovdqu ymmword ptr [rsp-3816], ymm0
+vmovdqu ymmword ptr [rsp-3784], ymm0
+vmovdqu ymmword ptr [rsp-3752], ymm0
+vmovdqu ymmword ptr [rsp-3720], ymm0
+vmovdqu ymmword ptr [rsp-3688], ymm0
+vmovdqu ymmword ptr [rsp-3576], ymm0
+vmovdqu ymmword ptr [rsp-3544], ymm0
+vmovdqu ymmword ptr [rsp-3512], ymm0
+vmovdqu ymmword ptr [rsp-3480], ymm0
+vmovdqu ymmword ptr [rsp-3448], ymm0
+vmovdqu ymmword ptr [rsp-3416], ymm0
+vmovdqu ymmword ptr [rsp-3384], ymm0
+vmovdqu ymmword ptr [rsp-3352], ymm0
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_aes_encrypt_blocks_vaes = sym super::aes::vg_aes_encrypt_blocks_vaes::vg_aes_encrypt_blocks_vaes,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
@@ -1308,7 +1416,44 @@ jmp 286f
 258:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
 21:
-.base64 "ww=="
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu ymmword ptr [rsp-3816], ymm0
+vmovdqu ymmword ptr [rsp-3784], ymm0
+vmovdqu ymmword ptr [rsp-3752], ymm0
+vmovdqu ymmword ptr [rsp-3720], ymm0
+vmovdqu ymmword ptr [rsp-3688], ymm0
+vmovdqu ymmword ptr [rsp-3576], ymm0
+vmovdqu ymmword ptr [rsp-3544], ymm0
+vmovdqu ymmword ptr [rsp-3512], ymm0
+vmovdqu ymmword ptr [rsp-3480], ymm0
+vmovdqu ymmword ptr [rsp-3448], ymm0
+vmovdqu ymmword ptr [rsp-3416], ymm0
+vmovdqu ymmword ptr [rsp-3384], ymm0
+vmovdqu ymmword ptr [rsp-3352], ymm0
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 20:
 .base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 288:
@@ -2114,7 +2259,44 @@ jmp 299f
 299:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
 21:
-.base64 "ww=="
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqu ymmword ptr [rsp-3816], ymm0
+vmovdqu ymmword ptr [rsp-3784], ymm0
+vmovdqu ymmword ptr [rsp-3752], ymm0
+vmovdqu ymmword ptr [rsp-3720], ymm0
+vmovdqu ymmword ptr [rsp-3688], ymm0
+vmovdqu ymmword ptr [rsp-3576], ymm0
+vmovdqu ymmword ptr [rsp-3544], ymm0
+vmovdqu ymmword ptr [rsp-3512], ymm0
+vmovdqu ymmword ptr [rsp-3480], ymm0
+vmovdqu ymmword ptr [rsp-3448], ymm0
+vmovdqu ymmword ptr [rsp-3416], ymm0
+vmovdqu ymmword ptr [rsp-3384], ymm0
+vmovdqu ymmword ptr [rsp-3352], ymm0
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 20:
 .base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 2101:
@@ -2916,7 +3098,57 @@ jmp 284f
 283:
 284:
 256:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqa xmmword ptr [rsp-3816], xmm0
+vmovdqa xmmword ptr [rsp-3800], xmm0
+vmovdqa xmmword ptr [rsp-3784], xmm0
+vmovdqa xmmword ptr [rsp-3768], xmm0
+vmovdqa xmmword ptr [rsp-3752], xmm0
+vmovdqa xmmword ptr [rsp-3736], xmm0
+vmovdqa xmmword ptr [rsp-3720], xmm0
+vmovdqa xmmword ptr [rsp-3704], xmm0
+vmovdqa xmmword ptr [rsp-3688], xmm0
+vmovdqa xmmword ptr [rsp-3576], xmm0
+vmovdqa xmmword ptr [rsp-3560], xmm0
+vmovdqa xmmword ptr [rsp-3544], xmm0
+vmovdqa xmmword ptr [rsp-3528], xmm0
+vmovdqa xmmword ptr [rsp-3512], xmm0
+vmovdqa xmmword ptr [rsp-3496], xmm0
+vmovdqa xmmword ptr [rsp-3480], xmm0
+vmovdqa xmmword ptr [rsp-3464], xmm0
+vmovdqa xmmword ptr [rsp-3448], xmm0
+vmovdqa xmmword ptr [rsp-3432], xmm0
+vmovdqa xmmword ptr [rsp-3416], xmm0
+vmovdqa xmmword ptr [rsp-3400], xmm0
+vmovdqa xmmword ptr [rsp-3384], xmm0
+vmovdqa xmmword ptr [rsp-3368], xmm0
+vmovdqa xmmword ptr [rsp-3352], xmm0
+vmovdqa xmmword ptr [rsp-3336], xmm0
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
@@ -3282,7 +3514,57 @@ jne 298b
 jmp 297f
 296:
 297:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqa xmmword ptr [rsp-3816], xmm0
+vmovdqa xmmword ptr [rsp-3800], xmm0
+vmovdqa xmmword ptr [rsp-3784], xmm0
+vmovdqa xmmword ptr [rsp-3768], xmm0
+vmovdqa xmmword ptr [rsp-3752], xmm0
+vmovdqa xmmword ptr [rsp-3736], xmm0
+vmovdqa xmmword ptr [rsp-3720], xmm0
+vmovdqa xmmword ptr [rsp-3704], xmm0
+vmovdqa xmmword ptr [rsp-3688], xmm0
+vmovdqa xmmword ptr [rsp-3576], xmm0
+vmovdqa xmmword ptr [rsp-3560], xmm0
+vmovdqa xmmword ptr [rsp-3544], xmm0
+vmovdqa xmmword ptr [rsp-3528], xmm0
+vmovdqa xmmword ptr [rsp-3512], xmm0
+vmovdqa xmmword ptr [rsp-3496], xmm0
+vmovdqa xmmword ptr [rsp-3480], xmm0
+vmovdqa xmmword ptr [rsp-3464], xmm0
+vmovdqa xmmword ptr [rsp-3448], xmm0
+vmovdqa xmmword ptr [rsp-3432], xmm0
+vmovdqa xmmword ptr [rsp-3416], xmm0
+vmovdqa xmmword ptr [rsp-3400], xmm0
+vmovdqa xmmword ptr [rsp-3384], xmm0
+vmovdqa xmmword ptr [rsp-3368], xmm0
+vmovdqa xmmword ptr [rsp-3352], xmm0
+vmovdqa xmmword ptr [rsp-3336], xmm0
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
@@ -3474,7 +3756,57 @@ jne 243b
 jmp 242f
 241:
 242:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+pxor xmm0, xmm0
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+pxor xmm3, xmm3
+pxor xmm4, xmm4
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+pxor xmm7, xmm7
+pxor xmm8, xmm8
+pxor xmm9, xmm9
+pxor xmm10, xmm10
+pxor xmm11, xmm11
+pxor xmm12, xmm12
+pxor xmm13, xmm13
+pxor xmm14, xmm14
+pxor xmm15, xmm15
+movdqa xmmword ptr [rsp-3816], xmm0
+movdqa xmmword ptr [rsp-3800], xmm0
+movdqa xmmword ptr [rsp-3784], xmm0
+movdqa xmmword ptr [rsp-3768], xmm0
+movdqa xmmword ptr [rsp-3752], xmm0
+movdqa xmmword ptr [rsp-3736], xmm0
+movdqa xmmword ptr [rsp-3720], xmm0
+movdqa xmmword ptr [rsp-3704], xmm0
+movdqa xmmword ptr [rsp-3688], xmm0
+movdqa xmmword ptr [rsp-3576], xmm0
+movdqa xmmword ptr [rsp-3560], xmm0
+movdqa xmmword ptr [rsp-3544], xmm0
+movdqa xmmword ptr [rsp-3528], xmm0
+movdqa xmmword ptr [rsp-3512], xmm0
+movdqa xmmword ptr [rsp-3496], xmm0
+movdqa xmmword ptr [rsp-3480], xmm0
+movdqa xmmword ptr [rsp-3464], xmm0
+movdqa xmmword ptr [rsp-3448], xmm0
+movdqa xmmword ptr [rsp-3432], xmm0
+movdqa xmmword ptr [rsp-3416], xmm0
+movdqa xmmword ptr [rsp-3400], xmm0
+movdqa xmmword ptr [rsp-3384], xmm0
+movdqa xmmword ptr [rsp-3368], xmm0
+movdqa xmmword ptr [rsp-3352], xmm0
+movdqa xmmword ptr [rsp-3336], xmm0
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
         vg_ghash_pclmul = sym super::aes_gcm_siv::vg_ghash_pclmul::vg_ghash_pclmul,
@@ -3683,7 +4015,57 @@ jne 249b
 jmp 248f
 247:
 248:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+pxor xmm0, xmm0
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+pxor xmm3, xmm3
+pxor xmm4, xmm4
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+pxor xmm7, xmm7
+pxor xmm8, xmm8
+pxor xmm9, xmm9
+pxor xmm10, xmm10
+pxor xmm11, xmm11
+pxor xmm12, xmm12
+pxor xmm13, xmm13
+pxor xmm14, xmm14
+pxor xmm15, xmm15
+movdqa xmmword ptr [rsp-3816], xmm0
+movdqa xmmword ptr [rsp-3800], xmm0
+movdqa xmmword ptr [rsp-3784], xmm0
+movdqa xmmword ptr [rsp-3768], xmm0
+movdqa xmmword ptr [rsp-3752], xmm0
+movdqa xmmword ptr [rsp-3736], xmm0
+movdqa xmmword ptr [rsp-3720], xmm0
+movdqa xmmword ptr [rsp-3704], xmm0
+movdqa xmmword ptr [rsp-3688], xmm0
+movdqa xmmword ptr [rsp-3576], xmm0
+movdqa xmmword ptr [rsp-3560], xmm0
+movdqa xmmword ptr [rsp-3544], xmm0
+movdqa xmmword ptr [rsp-3528], xmm0
+movdqa xmmword ptr [rsp-3512], xmm0
+movdqa xmmword ptr [rsp-3496], xmm0
+movdqa xmmword ptr [rsp-3480], xmm0
+movdqa xmmword ptr [rsp-3464], xmm0
+movdqa xmmword ptr [rsp-3448], xmm0
+movdqa xmmword ptr [rsp-3432], xmm0
+movdqa xmmword ptr [rsp-3416], xmm0
+movdqa xmmword ptr [rsp-3400], xmm0
+movdqa xmmword ptr [rsp-3384], xmm0
+movdqa xmmword ptr [rsp-3368], xmm0
+movdqa xmmword ptr [rsp-3352], xmm0
+movdqa xmmword ptr [rsp-3336], xmm0
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,
@@ -3879,7 +4261,73 @@ jmp 244f
 244:
 .base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
 21:
-.base64 "ww=="
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqa xmmword ptr [rsp-3816], xmm0
+vmovdqa xmmword ptr [rsp-3800], xmm0
+vmovdqa xmmword ptr [rsp-3784], xmm0
+vmovdqa xmmword ptr [rsp-3768], xmm0
+vmovdqa xmmword ptr [rsp-3752], xmm0
+vmovdqa xmmword ptr [rsp-3736], xmm0
+vmovdqa xmmword ptr [rsp-3720], xmm0
+vmovdqa xmmword ptr [rsp-3704], xmm0
+vmovdqa xmmword ptr [rsp-3688], xmm0
+vmovdqa xmmword ptr [rsp-3576], xmm0
+vmovdqa xmmword ptr [rsp-3560], xmm0
+vmovdqa xmmword ptr [rsp-3544], xmm0
+vmovdqa xmmword ptr [rsp-3528], xmm0
+vmovdqa xmmword ptr [rsp-3512], xmm0
+vmovdqa xmmword ptr [rsp-3496], xmm0
+vmovdqa xmmword ptr [rsp-3480], xmm0
+vmovdqa xmmword ptr [rsp-3464], xmm0
+vmovdqa xmmword ptr [rsp-3448], xmm0
+vmovdqa xmmword ptr [rsp-3432], xmm0
+vmovdqa xmmword ptr [rsp-3416], xmm0
+vmovdqa xmmword ptr [rsp-3400], xmm0
+vmovdqa xmmword ptr [rsp-3384], xmm0
+vmovdqa xmmword ptr [rsp-3368], xmm0
+vmovdqa xmmword ptr [rsp-3352], xmm0
+vmovdqa xmmword ptr [rsp-3336], xmm0
+vmovdqa xmmword ptr [rsp-2312], xmm0
+vmovdqa xmmword ptr [rsp-2296], xmm0
+vmovdqa xmmword ptr [rsp-2280], xmm0
+vmovdqa xmmword ptr [rsp-2264], xmm0
+vmovdqa xmmword ptr [rsp-2248], xmm0
+vmovdqa xmmword ptr [rsp-2232], xmm0
+vmovdqa xmmword ptr [rsp-2216], xmm0
+vmovdqa xmmword ptr [rsp-2200], xmm0
+vmovdqa xmmword ptr [rsp-2184], xmm0
+vmovdqa xmmword ptr [rsp-2168], xmm0
+vmovdqa xmmword ptr [rsp-2152], xmm0
+vmovdqa xmmword ptr [rsp-2136], xmm0
+vmovdqa xmmword ptr [rsp-2120], xmm0
+vmovdqa xmmword ptr [rsp-2104], xmm0
+vmovdqa xmmword ptr [rsp-2088], xmm0
+vmovdqa xmmword ptr [rsp-2072], xmm0
+vmovdqa xmmword ptr [rsp-2056], xmm0
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 20:
 .base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAAC7AAAAAEyJ/0iBx+gBAABJi6/IAAAASNHtSIPtAQ=="
 246:
@@ -4339,7 +4787,73 @@ jmp 250f
 250:
 .base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
 21:
-.base64 "ww=="
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+vmovdqa xmmword ptr [rsp-3816], xmm0
+vmovdqa xmmword ptr [rsp-3800], xmm0
+vmovdqa xmmword ptr [rsp-3784], xmm0
+vmovdqa xmmword ptr [rsp-3768], xmm0
+vmovdqa xmmword ptr [rsp-3752], xmm0
+vmovdqa xmmword ptr [rsp-3736], xmm0
+vmovdqa xmmword ptr [rsp-3720], xmm0
+vmovdqa xmmword ptr [rsp-3704], xmm0
+vmovdqa xmmword ptr [rsp-3688], xmm0
+vmovdqa xmmword ptr [rsp-3576], xmm0
+vmovdqa xmmword ptr [rsp-3560], xmm0
+vmovdqa xmmword ptr [rsp-3544], xmm0
+vmovdqa xmmword ptr [rsp-3528], xmm0
+vmovdqa xmmword ptr [rsp-3512], xmm0
+vmovdqa xmmword ptr [rsp-3496], xmm0
+vmovdqa xmmword ptr [rsp-3480], xmm0
+vmovdqa xmmword ptr [rsp-3464], xmm0
+vmovdqa xmmword ptr [rsp-3448], xmm0
+vmovdqa xmmword ptr [rsp-3432], xmm0
+vmovdqa xmmword ptr [rsp-3416], xmm0
+vmovdqa xmmword ptr [rsp-3400], xmm0
+vmovdqa xmmword ptr [rsp-3384], xmm0
+vmovdqa xmmword ptr [rsp-3368], xmm0
+vmovdqa xmmword ptr [rsp-3352], xmm0
+vmovdqa xmmword ptr [rsp-3336], xmm0
+vmovdqa xmmword ptr [rsp-2312], xmm0
+vmovdqa xmmword ptr [rsp-2296], xmm0
+vmovdqa xmmword ptr [rsp-2280], xmm0
+vmovdqa xmmword ptr [rsp-2264], xmm0
+vmovdqa xmmword ptr [rsp-2248], xmm0
+vmovdqa xmmword ptr [rsp-2232], xmm0
+vmovdqa xmmword ptr [rsp-2216], xmm0
+vmovdqa xmmword ptr [rsp-2200], xmm0
+vmovdqa xmmword ptr [rsp-2184], xmm0
+vmovdqa xmmword ptr [rsp-2168], xmm0
+vmovdqa xmmword ptr [rsp-2152], xmm0
+vmovdqa xmmword ptr [rsp-2136], xmm0
+vmovdqa xmmword ptr [rsp-2120], xmm0
+vmovdqa xmmword ptr [rsp-2104], xmm0
+vmovdqa xmmword ptr [rsp-2088], xmm0
+vmovdqa xmmword ptr [rsp-2072], xmm0
+vmovdqa xmmword ptr [rsp-2056], xmm0
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 20:
 .base64 "SI2kJPjw//9Ii4QkEA8AAEiJRCQISIuEJBgPAABIiUQkEEiJ4EiDwCBIiUQkGEiLRCQYTItUJAhIiZiQAAAASImomAAAAEyJoKAAAABMiaioAAAATImwsAAAAEyJuLgAAABJicdJif1JibfIAAAASYmX0AAAAEmJj9gAAABNiYfgAAAATYmP6AAAAE2Jl/AAAABIi0wkEEiLAUmJB0iLQQhJiUcIuwAAAABMif9IgcfoAQAASYuvyAAAAEjR7UiD7QE="
 252:
@@ -4795,7 +5309,74 @@ jne 243b
 jmp 242f
 241:
 242:
-.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.base64 "SItMJBBJiwdIiQFJi0cISIlBCEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+pxor xmm0, xmm0
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+pxor xmm3, xmm3
+pxor xmm4, xmm4
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+pxor xmm7, xmm7
+pxor xmm8, xmm8
+pxor xmm9, xmm9
+pxor xmm10, xmm10
+pxor xmm11, xmm11
+pxor xmm12, xmm12
+pxor xmm13, xmm13
+pxor xmm14, xmm14
+pxor xmm15, xmm15
+movdqa xmmword ptr [rsp-3816], xmm0
+movdqa xmmword ptr [rsp-3800], xmm0
+movdqa xmmword ptr [rsp-3784], xmm0
+movdqa xmmword ptr [rsp-3768], xmm0
+movdqa xmmword ptr [rsp-3752], xmm0
+movdqa xmmword ptr [rsp-3736], xmm0
+movdqa xmmword ptr [rsp-3720], xmm0
+movdqa xmmword ptr [rsp-3704], xmm0
+movdqa xmmword ptr [rsp-3688], xmm0
+movdqa xmmword ptr [rsp-3576], xmm0
+movdqa xmmword ptr [rsp-3560], xmm0
+movdqa xmmword ptr [rsp-3544], xmm0
+movdqa xmmword ptr [rsp-3528], xmm0
+movdqa xmmword ptr [rsp-3512], xmm0
+movdqa xmmword ptr [rsp-3496], xmm0
+movdqa xmmword ptr [rsp-3480], xmm0
+movdqa xmmword ptr [rsp-3464], xmm0
+movdqa xmmword ptr [rsp-3448], xmm0
+movdqa xmmword ptr [rsp-3432], xmm0
+movdqa xmmword ptr [rsp-3416], xmm0
+movdqa xmmword ptr [rsp-3400], xmm0
+movdqa xmmword ptr [rsp-3384], xmm0
+movdqa xmmword ptr [rsp-3368], xmm0
+movdqa xmmword ptr [rsp-3352], xmm0
+movdqa xmmword ptr [rsp-3336], xmm0
+movdqa xmmword ptr [rsp-2312], xmm0
+movdqa xmmword ptr [rsp-2296], xmm0
+movdqa xmmword ptr [rsp-2280], xmm0
+movdqa xmmword ptr [rsp-2264], xmm0
+movdqa xmmword ptr [rsp-2248], xmm0
+movdqa xmmword ptr [rsp-2232], xmm0
+movdqa xmmword ptr [rsp-2216], xmm0
+movdqa xmmword ptr [rsp-2200], xmm0
+movdqa xmmword ptr [rsp-2184], xmm0
+movdqa xmmword ptr [rsp-2168], xmm0
+movdqa xmmword ptr [rsp-2152], xmm0
+movdqa xmmword ptr [rsp-2136], xmm0
+movdqa xmmword ptr [rsp-2120], xmm0
+movdqa xmmword ptr [rsp-2104], xmm0
+movdqa xmmword ptr [rsp-2088], xmm0
+movdqa xmmword ptr [rsp-2072], xmm0
+movdqa xmmword ptr [rsp-2056], xmm0
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
         vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
@@ -5004,7 +5585,74 @@ jne 249b
 jmp 248f
 247:
 248:
-.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAAww=="
+.base64 "SYuHwAAAAEmLn5AAAABJi6+YAAAATYunoAAAAE2Lr6gAAABNi7ewAAAATYu/uAAAAEiNpCQIDwAA"
+pxor xmm0, xmm0
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+pxor xmm3, xmm3
+pxor xmm4, xmm4
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+pxor xmm7, xmm7
+pxor xmm8, xmm8
+pxor xmm9, xmm9
+pxor xmm10, xmm10
+pxor xmm11, xmm11
+pxor xmm12, xmm12
+pxor xmm13, xmm13
+pxor xmm14, xmm14
+pxor xmm15, xmm15
+movdqa xmmword ptr [rsp-3816], xmm0
+movdqa xmmword ptr [rsp-3800], xmm0
+movdqa xmmword ptr [rsp-3784], xmm0
+movdqa xmmword ptr [rsp-3768], xmm0
+movdqa xmmword ptr [rsp-3752], xmm0
+movdqa xmmword ptr [rsp-3736], xmm0
+movdqa xmmword ptr [rsp-3720], xmm0
+movdqa xmmword ptr [rsp-3704], xmm0
+movdqa xmmword ptr [rsp-3688], xmm0
+movdqa xmmword ptr [rsp-3576], xmm0
+movdqa xmmword ptr [rsp-3560], xmm0
+movdqa xmmword ptr [rsp-3544], xmm0
+movdqa xmmword ptr [rsp-3528], xmm0
+movdqa xmmword ptr [rsp-3512], xmm0
+movdqa xmmword ptr [rsp-3496], xmm0
+movdqa xmmword ptr [rsp-3480], xmm0
+movdqa xmmword ptr [rsp-3464], xmm0
+movdqa xmmword ptr [rsp-3448], xmm0
+movdqa xmmword ptr [rsp-3432], xmm0
+movdqa xmmword ptr [rsp-3416], xmm0
+movdqa xmmword ptr [rsp-3400], xmm0
+movdqa xmmword ptr [rsp-3384], xmm0
+movdqa xmmword ptr [rsp-3368], xmm0
+movdqa xmmword ptr [rsp-3352], xmm0
+movdqa xmmword ptr [rsp-3336], xmm0
+movdqa xmmword ptr [rsp-2312], xmm0
+movdqa xmmword ptr [rsp-2296], xmm0
+movdqa xmmword ptr [rsp-2280], xmm0
+movdqa xmmword ptr [rsp-2264], xmm0
+movdqa xmmword ptr [rsp-2248], xmm0
+movdqa xmmword ptr [rsp-2232], xmm0
+movdqa xmmword ptr [rsp-2216], xmm0
+movdqa xmmword ptr [rsp-2200], xmm0
+movdqa xmmword ptr [rsp-2184], xmm0
+movdqa xmmword ptr [rsp-2168], xmm0
+movdqa xmmword ptr [rsp-2152], xmm0
+movdqa xmmword ptr [rsp-2136], xmm0
+movdqa xmmword ptr [rsp-2120], xmm0
+movdqa xmmword ptr [rsp-2104], xmm0
+movdqa xmmword ptr [rsp-2088], xmm0
+movdqa xmmword ptr [rsp-2072], xmm0
+movdqa xmmword ptr [rsp-2056], xmm0
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_aes_encrypt_blocks_aesni = sym super::aes::vg_aes_encrypt_blocks_aesni::vg_aes_encrypt_blocks_aesni,
         vg_aes_expand_key_scratch_aesni = sym super::aes::vg_aes_expand_key_scratch_aesni::vg_aes_expand_key_scratch_aesni,

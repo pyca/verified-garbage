@@ -202,7 +202,52 @@ jne 219b
 jmp 218f
 217:
 218:
-.base64 "TYuv0AAAAE2Lt9gAAABJi5+gAAAASYuvqAAAAE2Lp7AAAABNi6+4AAAATYu3wAAAAE2Lv8gAAABIi0QkCEyLVCQQTYsaTIkYTYtaCEyJWAhIjaQkKAoAAMM="
+.base64 "TYuv0AAAAE2Lt9gAAABJi5+gAAAASYuvqAAAAE2Lp7AAAABNi6+4AAAATYu3wAAAAE2Lv8gAAABIi0QkCEyLVCQQTYsaTIkYTYtaCEyJWAhIjaQkKAoAAA=="
+pxor xmm0, xmm0
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+pxor xmm3, xmm3
+pxor xmm4, xmm4
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+pxor xmm7, xmm7
+pxor xmm8, xmm8
+pxor xmm9, xmm9
+pxor xmm10, xmm10
+pxor xmm11, xmm11
+pxor xmm12, xmm12
+pxor xmm13, xmm13
+pxor xmm14, xmm14
+pxor xmm15, xmm15
+movdqa xmmword ptr [rsp-24], xmm0
+movdqa xmmword ptr [rsp-40], xmm0
+movdqa xmmword ptr [rsp-56], xmm0
+movdqa xmmword ptr [rsp-72], xmm0
+movdqa xmmword ptr [rsp-88], xmm0
+movdqa xmmword ptr [rsp-104], xmm0
+movdqa xmmword ptr [rsp-120], xmm0
+movdqa xmmword ptr [rsp-136], xmm0
+movdqa xmmword ptr [rsp-152], xmm0
+movdqa xmmword ptr [rsp-168], xmm0
+movdqa xmmword ptr [rsp-184], xmm0
+movdqa xmmword ptr [rsp-200], xmm0
+movdqa xmmword ptr [rsp-216], xmm0
+movdqa xmmword ptr [rsp-232], xmm0
+movdqa xmmword ptr [rsp-248], xmm0
+movdqa xmmword ptr [rsp-264], xmm0
+movdqa xmmword ptr [rsp-280], xmm0
+movdqa xmmword ptr [rsp-296], xmm0
+movdqa xmmword ptr [rsp-312], xmm0
+movdqa xmmword ptr [rsp-328], xmm0
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
@@ -330,7 +375,52 @@ jne 228b
 jmp 227f
 226:
 227:
-.base64 "SYuHkAAAAEmLn6AAAABJi6+oAAAATYunsAAAAE2Lr7gAAABNi7fAAAAATYu/yAAAAEiNpCQoCgAAww=="
+.base64 "SYuHkAAAAEmLn6AAAABJi6+oAAAATYunsAAAAE2Lr7gAAABNi7fAAAAATYu/yAAAAEiNpCQoCgAA"
+pxor xmm0, xmm0
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+pxor xmm3, xmm3
+pxor xmm4, xmm4
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+pxor xmm7, xmm7
+pxor xmm8, xmm8
+pxor xmm9, xmm9
+pxor xmm10, xmm10
+pxor xmm11, xmm11
+pxor xmm12, xmm12
+pxor xmm13, xmm13
+pxor xmm14, xmm14
+pxor xmm15, xmm15
+movdqa xmmword ptr [rsp-24], xmm0
+movdqa xmmword ptr [rsp-40], xmm0
+movdqa xmmword ptr [rsp-56], xmm0
+movdqa xmmword ptr [rsp-72], xmm0
+movdqa xmmword ptr [rsp-88], xmm0
+movdqa xmmword ptr [rsp-104], xmm0
+movdqa xmmword ptr [rsp-120], xmm0
+movdqa xmmword ptr [rsp-136], xmm0
+movdqa xmmword ptr [rsp-152], xmm0
+movdqa xmmword ptr [rsp-168], xmm0
+movdqa xmmword ptr [rsp-184], xmm0
+movdqa xmmword ptr [rsp-200], xmm0
+movdqa xmmword ptr [rsp-216], xmm0
+movdqa xmmword ptr [rsp-232], xmm0
+movdqa xmmword ptr [rsp-248], xmm0
+movdqa xmmword ptr [rsp-264], xmm0
+movdqa xmmword ptr [rsp-280], xmm0
+movdqa xmmword ptr [rsp-296], xmm0
+movdqa xmmword ptr [rsp-312], xmm0
+movdqa xmmword ptr [rsp-328], xmm0
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_cmac_aes_finalize_aesni = sym super::cmac_aes::vg_cmac_aes_finalize_aesni::vg_cmac_aes_finalize_aesni,
         vg_cmac_aes_update_aesni = sym super::cmac_aes::vg_cmac_aes_update_aesni::vg_cmac_aes_update_aesni,
