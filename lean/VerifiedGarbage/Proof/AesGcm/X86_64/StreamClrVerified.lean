@@ -488,10 +488,9 @@ theorem streamDecryptSB_verified (B : BlkFn CtxMode.base) :
     (fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => streamDecryptSM_ct v B _ _ _ _ _ _ ⟨h₁, trivial⟩ ⟨h₂, trivial⟩ hp e₁ e₂) streamDecryptS_implies
 
 
-theorem streamEncryptSPrepared16_verified (B : BlkFn CtxMode.prepared16) :
-    Verified X86_64.target (streamEncryptS (v.withBlk B))
+theorem streamEncryptSPrepared16_implies :
+    (Proof.AesGcm.streamEncryptX86_64M CtxMode.prepared16).Implies
       (Proof.AesGcm.streamEncryptPrepared16ScratchContract X86_64.abi 24) :=
-  Verified.of_correct (streamEncryptSM_correct v B) (streamEncryptSM_ct v B)
     { pre := by sig_implies_pre [Proof.AesGcm.streamEncryptPrepared16ScratchContract, Proof.AesGcm.streamCryptPreparedScratchSig, Proof.AesGcm.streamCryptPrecomputedScratchSig,
           Proof.Gcm.streamCryptPrepared16Pre, Proof.AesGcm.streamEncryptRoundsPost, Proof.AesGcm.streamEncryptX86_64M,
           Proof.AesGcm.streamEncryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr,
@@ -520,10 +519,15 @@ theorem streamEncryptSPrepared16_verified (B : BlkFn CtxMode.prepared16) :
           | exact Region.disjoint_of_sep (by decide)
           | exact preparedPowers16Repr_of_zero fun _ _ => rfl⟩ }
 
-theorem streamDecryptSPrepared16_verified (B : BlkFn CtxMode.prepared16) :
-    Verified X86_64.target (streamDecryptS (v.withBlk B))
+theorem streamEncryptSPrepared16_verified (B : BlkFn CtxMode.prepared16) :
+    Verified X86_64.target (streamEncryptS (v.withBlk B))
+      (Proof.AesGcm.streamEncryptPrepared16ScratchContract X86_64.abi 24) :=
+  Verified.of_correct (streamEncryptSM_correct v B) (streamEncryptSM_ct v B)
+    streamEncryptSPrepared16_implies
+
+theorem streamDecryptSPrepared16_implies :
+    (Proof.AesGcm.streamDecryptX86_64M CtxMode.prepared16).Implies
       (Proof.AesGcm.streamDecryptPrepared16ScratchContract X86_64.abi 24) :=
-  Verified.of_correct (streamDecryptSM_correct v B) (streamDecryptSM_ct v B)
     { pre := by sig_implies_pre [Proof.AesGcm.streamDecryptPrepared16ScratchContract, Proof.AesGcm.streamCryptPreparedScratchSig, Proof.AesGcm.streamCryptPrecomputedScratchSig,
           Proof.Gcm.streamCryptPrepared16Pre, Proof.AesGcm.streamDecryptRoundsPost, Proof.AesGcm.streamDecryptX86_64M,
           Proof.AesGcm.streamDecryptX86_64, Proof.AesGcm.streamCryptPre, Proof.AesGcm.streamCryptPub, CtxMode.prepared16, CtxMode.preparedN, VG.Proof.Gcm.X86_64.Stitch.PowersN, Spec.Gcm.PreparedPowers16Repr,
@@ -551,6 +555,12 @@ theorem streamDecryptSPrepared16_verified (B : BlkFn CtxMode.prepared16) :
           | decide
           | exact Region.disjoint_of_sep (by decide)
           | exact preparedPowers16Repr_of_zero fun _ _ => rfl⟩ }
+
+theorem streamDecryptSPrepared16_verified (B : BlkFn CtxMode.prepared16) :
+    Verified X86_64.target (streamDecryptS (v.withBlk B))
+      (Proof.AesGcm.streamDecryptPrepared16ScratchContract X86_64.abi 24) :=
+  Verified.of_correct (streamDecryptSM_correct v B) (streamDecryptSM_ct v B)
+    streamDecryptSPrepared16_implies
 
 /-! ### With their working space on the stack -/
 
@@ -723,6 +733,66 @@ theorem streamDecryptClrB_below (B : BlkFn CtxMode.base) (hct : Plain v.callees.
         simp only [UpperLock.inames, hn, List.append_nil]) hs
       ((exec_hoist lv _ _ _ _).mp e₁) ((exec_hoist lv _ _ _ _).mp e₂))
     (by decide) (by decide) (by decide) hsp hd (streamTextPre_local _) trivial h₁ h₂ hp ho hu e₁ e₂
+
+
+open StackLock in
+/-- `streamEncryptClrB_below`, on 16 powers of the hash subkey. -/
+theorem streamEncryptClr16_below (B : BlkFn CtxMode.prepared16) (hct : Plain v.callees.ctr.code)
+    (hgh : Plain v.callees.gh.code) (hn : UpperLock.inames B.enc.code = []) {s₁ s₂ : State}
+    (h₁ : (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pre s₁)
+    (h₂ : (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pre s₂)
+    (hp : (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pub s₁ s₂) (ho : Outside 0 s₁ s₂)
+    (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
+    (e₁ : Exec isa (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamEncryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
+    (e₂ : Exec isa (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamEncryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
+    ∀ x, (below (s₁.gpr .rsp - BitVec.ofNat 64 2584) 24).Contains x 1 → u₁.mem x = u₂.mem x := by
+  have hsp := streamEncryptSM_spSafe (v.wrapC lv) (B.wrapC lv)
+  rw [← hoist_all lv] at hsp
+  have hd := streamEncryptSM_xdepth (v.wrapC lv) (B.wrapC lv)
+  rw [← hoist_x86_64Depth lv] at hd
+  exact framed_same (sig := Proof.Gcm.streamCryptPrecomputedSig) (nm := "scratch") (e := .u64) (n := 320)
+    (pre := Proof.Gcm.streamCryptPrepared16Pre X86_64.abi.ptrBits) (post := Proof.AesGcm.streamEncryptRoundsPost X86_64.abi.ptrBits)
+    (wa := true) (stack := 24) (bytes := 2584) (leak := none) (Verified.hoist lv (streamEncryptSPrepared16_verified (v.wrapC lv) (B.wrapC lv)))
+    (fun a b _ _ _ _ h₁ h₂ hp hs e₁ e₂ =>
+      have k₁ := streamEncryptSPrepared16_implies.pre a h₁
+      have k₂ := streamEncryptSPrepared16_implies.pre b h₂
+      have hq := streamEncryptSPrepared16_implies.pub a b h₁ h₂ hp
+      streamS_same (v.wrapC lv) (B.wrapC lv) true k₁.1 k₁.2 k₂.1 k₂.2 hq
+      (plain_wrap lv hct) (plain_wrap lv hgh)
+      (show UpperLock.inames (.seq B.enc.code (.block (clrAfter lv))) = [] by
+        simp only [UpperLock.inames, hn, List.append_nil]) hs
+      ((exec_hoist lv _ _ _ _).mp e₁) ((exec_hoist lv _ _ _ _).mp e₂))
+    (by decide) (by decide) (by decide) hsp hd (Proof.AesGcm.streamCryptPrepared16Pre_local _) trivial h₁ h₂ hp ho hu e₁ e₂
+
+
+open StackLock in
+/-- `streamDecryptClrB_below`, on 16 powers of the hash subkey. -/
+theorem streamDecryptClr16_below (B : BlkFn CtxMode.prepared16) (hct : Plain v.callees.ctr.code)
+    (hgh : Plain v.callees.gh.code) (hn : UpperLock.inames B.dec.code = []) {s₁ s₂ : State}
+    (h₁ : (Proof.AesGcm.streamDecryptPrepared16RoundsContract X86_64.abi 2608).pre s₁)
+    (h₂ : (Proof.AesGcm.streamDecryptPrepared16RoundsContract X86_64.abi 2608).pre s₂)
+    (hp : (Proof.AesGcm.streamDecryptPrepared16RoundsContract X86_64.abi 2608).pub s₁ s₂) (ho : Outside 0 s₁ s₂)
+    (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
+    (e₁ : Exec isa (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamDecryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
+    (e₂ : Exec isa (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamDecryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
+    ∀ x, (below (s₁.gpr .rsp - BitVec.ofNat 64 2584) 24).Contains x 1 → u₁.mem x = u₂.mem x := by
+  have hsp := streamDecryptSM_spSafe (v.wrapC lv) (B.wrapC lv)
+  rw [← hoist_all lv] at hsp
+  have hd := streamDecryptSM_xdepth (v.wrapC lv) (B.wrapC lv)
+  rw [← hoist_x86_64Depth lv] at hd
+  exact framed_same (sig := Proof.Gcm.streamCryptPrecomputedSig) (nm := "scratch") (e := .u64) (n := 320)
+    (pre := Proof.Gcm.streamCryptPrepared16Pre X86_64.abi.ptrBits) (post := Proof.AesGcm.streamDecryptRoundsPost X86_64.abi.ptrBits)
+    (wa := true) (stack := 24) (bytes := 2584) (leak := none) (Verified.hoist lv (streamDecryptSPrepared16_verified (v.wrapC lv) (B.wrapC lv)))
+    (fun a b _ _ _ _ h₁ h₂ hp hs e₁ e₂ =>
+      have k₁ := streamDecryptSPrepared16_implies.pre a h₁
+      have k₂ := streamDecryptSPrepared16_implies.pre b h₂
+      have hq := streamDecryptSPrepared16_implies.pub a b h₁ h₂ hp
+      streamS_same (v.wrapC lv) (B.wrapC lv) false k₁.1 k₁.2 k₂.1 k₂.2 hq
+      (plain_wrap lv hct) (plain_wrap lv hgh)
+      (show UpperLock.inames (.seq B.dec.code (.block (clrAfter lv))) = [] by
+        simp only [UpperLock.inames, hn, List.append_nil]) hs
+      ((exec_hoist lv _ _ _ _).mp e₁) ((exec_hoist lv _ _ _ _).mp e₂))
+    (by decide) (by decide) (by decide) hsp hd (Proof.AesGcm.streamCryptPrepared16Pre_local _) trivial h₁ h₂ hp ho hu e₁ e₂
 
 end
 
