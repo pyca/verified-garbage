@@ -44,6 +44,7 @@ jmp 21f
 20:
 21:
 .base64 "SIuZAAUAAEiLqQgFAABMi6EQBQAATIupGAUAAEyLsegEAABMi7nwBAAAxfh3ww=="
+.fill 216, 1, 0x90
 .p2align 6"#,
         VG_SHA512_K = sym crate::consts::VG_SHA512_K,
     )
