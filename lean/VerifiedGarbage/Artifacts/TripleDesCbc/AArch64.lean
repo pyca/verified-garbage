@@ -3,9 +3,8 @@ module
 public import VerifiedGarbage.Proof.TripleDes.AArch64.CbcVerified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.CbcTables
 public import VerifiedGarbage.Proof.Framework.Registration
-public import VerifiedGarbage.TCB.AArch64.Print
-
 public import VerifiedGarbage.Proof.TripleDes.AArch64.ShortCbc
+public import VerifiedGarbage.TCB.AArch64.Print
 
 /-! # Triple DES-CBC on AArch64 -/
 
