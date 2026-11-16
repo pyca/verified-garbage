@@ -5,44 +5,44 @@
 // gives.
 
 vg_camellia_expand_key:
-	sub sp, sp, #3248
+	sub sp, sp, #160
 	add x3, sp, #0
 	add x5, x3, #0
 	add x3, x1, #0
-	str x19, [x5, #2944]
-	str x20, [x5, #2952]
-	str x21, [x5, #2960]
-	str x22, [x5, #2968]
-	str x23, [x5, #2976]
-	str x24, [x5, #2984]
-	str x25, [x5, #2992]
-	str x26, [x5, #3000]
-	str x27, [x5, #3008]
-	str x28, [x5, #3016]
+	str x19, [x5, #0]
+	str x20, [x5, #8]
+	str x21, [x5, #16]
+	str x22, [x5, #24]
+	str x23, [x5, #32]
+	str x24, [x5, #40]
+	str x25, [x5, #48]
+	str x26, [x5, #56]
+	str x27, [x5, #64]
+	str x28, [x5, #72]
 	ldr x21, [x0, #0]
-	str x21, [x5, #3024]
+	str x21, [x5, #80]
 	ldr x21, [x0, #8]
-	str x21, [x5, #3032]
+	str x21, [x5, #88]
 	sub x22, x3, #16
 	cbz x22, 20f
 	ldr x21, [x0, #16]
-	str x21, [x5, #3040]
+	str x21, [x5, #96]
 	sub x22, x3, #24
 	cbz x22, 22f
 	ldr x21, [x0, #24]
-	str x21, [x5, #3048]
+	str x21, [x5, #104]
 	b 23f
 22:
 	movz x23, #0, lsl #0
 	sub x23, x23, #1
 	eor x21, x21, x23
-	str x21, [x5, #3048]
+	str x21, [x5, #104]
 23:
 	b 21f
 20:
 	movz x21, #0, lsl #0
-	str x21, [x5, #3040]
-	str x21, [x5, #3048]
+	str x21, [x5, #96]
+	str x21, [x5, #104]
 21:
 	sub x21, x3, #16
 	movz x6, #33392, lsl #0
@@ -231,14 +231,14 @@ vg_camellia_expand_key:
 	movz x15, #0, lsl #0
 	movk x15, #127, lsl #16
 	movk x15, #32512, lsl #32
-	ldr x6, [x5, #3024]
+	ldr x6, [x5, #80]
 	rev x6, x6
-	ldr x7, [x5, #3032]
+	ldr x7, [x5, #88]
 	rev x7, x7
-	ldr x8, [x5, #3040]
+	ldr x8, [x5, #96]
 	rev x8, x8
 	eor x6, x6, x8
-	ldr x8, [x5, #3048]
+	ldr x8, [x5, #104]
 	rev x8, x8
 	eor x7, x7, x8
 	movz x8, #37003, lsl #0
@@ -329,10 +329,10 @@ vg_camellia_expand_key:
 	lsl x10, x16, #32
 	orr x10, x10, x12
 	eor x6, x6, x10
-	ldr x8, [x5, #3024]
+	ldr x8, [x5, #80]
 	rev x8, x8
 	eor x6, x6, x8
-	ldr x8, [x5, #3032]
+	ldr x8, [x5, #88]
 	rev x8, x8
 	eor x7, x7, x8
 	movz x8, #33470, lsl #0
@@ -424,14 +424,14 @@ vg_camellia_expand_key:
 	orr x10, x10, x12
 	eor x6, x6, x10
 	rev x8, x6
-	str x8, [x5, #3072]
+	str x8, [x5, #128]
 	rev x8, x7
-	str x8, [x5, #3080]
+	str x8, [x5, #136]
 	cbz x21, 24f
-	ldr x8, [x5, #3040]
+	ldr x8, [x5, #96]
 	rev x8, x8
 	eor x6, x6, x8
-	ldr x8, [x5, #3048]
+	ldr x8, [x5, #104]
 	rev x8, x8
 	eor x7, x7, x8
 	movz x8, #11549, lsl #0
@@ -523,24 +523,24 @@ vg_camellia_expand_key:
 	orr x10, x10, x12
 	eor x6, x6, x10
 	rev x8, x6
-	str x8, [x5, #3088]
+	str x8, [x5, #144]
 	rev x8, x7
-	str x8, [x5, #3096]
-	ldr x6, [x5, #3024]
+	str x8, [x5, #152]
+	ldr x6, [x5, #80]
 	rev x6, x6
-	ldr x7, [x5, #3032]
+	ldr x7, [x5, #88]
 	rev x7, x7
-	ldr x8, [x5, #3040]
+	ldr x8, [x5, #96]
 	rev x8, x8
-	ldr x9, [x5, #3048]
+	ldr x9, [x5, #104]
 	rev x9, x9
-	ldr x10, [x5, #3072]
+	ldr x10, [x5, #128]
 	rev x10, x10
-	ldr x11, [x5, #3080]
+	ldr x11, [x5, #136]
 	rev x11, x11
-	ldr x12, [x5, #3088]
+	ldr x12, [x5, #144]
 	rev x12, x12
-	ldr x13, [x5, #3096]
+	ldr x13, [x5, #152]
 	rev x13, x13
 	add x21, x6, #0
 	rev x21, x21
@@ -706,21 +706,21 @@ vg_camellia_expand_key:
 	str x21, [x2, #264]
 	b 25f
 24:
-	ldr x6, [x5, #3024]
+	ldr x6, [x5, #80]
 	rev x6, x6
-	ldr x7, [x5, #3032]
+	ldr x7, [x5, #88]
 	rev x7, x7
-	ldr x8, [x5, #3040]
+	ldr x8, [x5, #96]
 	rev x8, x8
-	ldr x9, [x5, #3048]
+	ldr x9, [x5, #104]
 	rev x9, x9
-	ldr x10, [x5, #3072]
+	ldr x10, [x5, #128]
 	rev x10, x10
-	ldr x11, [x5, #3080]
+	ldr x11, [x5, #136]
 	rev x11, x11
-	ldr x12, [x5, #3088]
+	ldr x12, [x5, #144]
 	rev x12, x12
-	ldr x13, [x5, #3096]
+	ldr x13, [x5, #152]
 	rev x13, x13
 	add x21, x6, #0
 	rev x21, x21
@@ -845,16 +845,16 @@ vg_camellia_expand_key:
 	rev x21, x21
 	str x21, [x2, #200]
 25:
-	ldr x19, [x5, #2944]
-	ldr x20, [x5, #2952]
-	ldr x21, [x5, #2960]
-	ldr x22, [x5, #2968]
-	ldr x23, [x5, #2976]
-	ldr x24, [x5, #2984]
-	ldr x25, [x5, #2992]
-	ldr x26, [x5, #3000]
-	ldr x27, [x5, #3008]
-	ldr x28, [x5, #3016]
+	ldr x19, [x5, #0]
+	ldr x20, [x5, #8]
+	ldr x21, [x5, #16]
+	ldr x22, [x5, #24]
+	ldr x23, [x5, #32]
+	ldr x24, [x5, #40]
+	ldr x25, [x5, #48]
+	ldr x26, [x5, #56]
+	ldr x27, [x5, #64]
+	ldr x28, [x5, #72]
 	movz x17, #0, lsl #0
 	add x16, sp, #0
 	stp x17, x17, [x16, #0]
@@ -867,206 +867,7 @@ vg_camellia_expand_key:
 	stp x17, x17, [x16, #112]
 	stp x17, x17, [x16, #128]
 	stp x17, x17, [x16, #144]
-	stp x17, x17, [x16, #160]
-	stp x17, x17, [x16, #176]
-	stp x17, x17, [x16, #192]
-	stp x17, x17, [x16, #208]
-	stp x17, x17, [x16, #224]
-	stp x17, x17, [x16, #240]
-	stp x17, x17, [x16, #256]
-	stp x17, x17, [x16, #272]
-	stp x17, x17, [x16, #288]
-	stp x17, x17, [x16, #304]
-	stp x17, x17, [x16, #320]
-	stp x17, x17, [x16, #336]
-	stp x17, x17, [x16, #352]
-	stp x17, x17, [x16, #368]
-	stp x17, x17, [x16, #384]
-	stp x17, x17, [x16, #400]
-	stp x17, x17, [x16, #416]
-	stp x17, x17, [x16, #432]
-	stp x17, x17, [x16, #448]
-	stp x17, x17, [x16, #464]
-	stp x17, x17, [x16, #480]
-	stp x17, x17, [x16, #496]
-	add x16, sp, #512
-	stp x17, x17, [x16, #0]
-	stp x17, x17, [x16, #16]
-	stp x17, x17, [x16, #32]
-	stp x17, x17, [x16, #48]
-	stp x17, x17, [x16, #64]
-	stp x17, x17, [x16, #80]
-	stp x17, x17, [x16, #96]
-	stp x17, x17, [x16, #112]
-	stp x17, x17, [x16, #128]
-	stp x17, x17, [x16, #144]
-	stp x17, x17, [x16, #160]
-	stp x17, x17, [x16, #176]
-	stp x17, x17, [x16, #192]
-	stp x17, x17, [x16, #208]
-	stp x17, x17, [x16, #224]
-	stp x17, x17, [x16, #240]
-	stp x17, x17, [x16, #256]
-	stp x17, x17, [x16, #272]
-	stp x17, x17, [x16, #288]
-	stp x17, x17, [x16, #304]
-	stp x17, x17, [x16, #320]
-	stp x17, x17, [x16, #336]
-	stp x17, x17, [x16, #352]
-	stp x17, x17, [x16, #368]
-	stp x17, x17, [x16, #384]
-	stp x17, x17, [x16, #400]
-	stp x17, x17, [x16, #416]
-	stp x17, x17, [x16, #432]
-	stp x17, x17, [x16, #448]
-	stp x17, x17, [x16, #464]
-	stp x17, x17, [x16, #480]
-	stp x17, x17, [x16, #496]
-	add x16, sp, #1024
-	stp x17, x17, [x16, #0]
-	stp x17, x17, [x16, #16]
-	stp x17, x17, [x16, #32]
-	stp x17, x17, [x16, #48]
-	stp x17, x17, [x16, #64]
-	stp x17, x17, [x16, #80]
-	stp x17, x17, [x16, #96]
-	stp x17, x17, [x16, #112]
-	stp x17, x17, [x16, #128]
-	stp x17, x17, [x16, #144]
-	stp x17, x17, [x16, #160]
-	stp x17, x17, [x16, #176]
-	stp x17, x17, [x16, #192]
-	stp x17, x17, [x16, #208]
-	stp x17, x17, [x16, #224]
-	stp x17, x17, [x16, #240]
-	stp x17, x17, [x16, #256]
-	stp x17, x17, [x16, #272]
-	stp x17, x17, [x16, #288]
-	stp x17, x17, [x16, #304]
-	stp x17, x17, [x16, #320]
-	stp x17, x17, [x16, #336]
-	stp x17, x17, [x16, #352]
-	stp x17, x17, [x16, #368]
-	stp x17, x17, [x16, #384]
-	stp x17, x17, [x16, #400]
-	stp x17, x17, [x16, #416]
-	stp x17, x17, [x16, #432]
-	stp x17, x17, [x16, #448]
-	stp x17, x17, [x16, #464]
-	stp x17, x17, [x16, #480]
-	stp x17, x17, [x16, #496]
-	add x16, sp, #1536
-	stp x17, x17, [x16, #0]
-	stp x17, x17, [x16, #16]
-	stp x17, x17, [x16, #32]
-	stp x17, x17, [x16, #48]
-	stp x17, x17, [x16, #64]
-	stp x17, x17, [x16, #80]
-	stp x17, x17, [x16, #96]
-	stp x17, x17, [x16, #112]
-	stp x17, x17, [x16, #128]
-	stp x17, x17, [x16, #144]
-	stp x17, x17, [x16, #160]
-	stp x17, x17, [x16, #176]
-	stp x17, x17, [x16, #192]
-	stp x17, x17, [x16, #208]
-	stp x17, x17, [x16, #224]
-	stp x17, x17, [x16, #240]
-	stp x17, x17, [x16, #256]
-	stp x17, x17, [x16, #272]
-	stp x17, x17, [x16, #288]
-	stp x17, x17, [x16, #304]
-	stp x17, x17, [x16, #320]
-	stp x17, x17, [x16, #336]
-	stp x17, x17, [x16, #352]
-	stp x17, x17, [x16, #368]
-	stp x17, x17, [x16, #384]
-	stp x17, x17, [x16, #400]
-	stp x17, x17, [x16, #416]
-	stp x17, x17, [x16, #432]
-	stp x17, x17, [x16, #448]
-	stp x17, x17, [x16, #464]
-	stp x17, x17, [x16, #480]
-	stp x17, x17, [x16, #496]
-	add x16, sp, #2048
-	stp x17, x17, [x16, #0]
-	stp x17, x17, [x16, #16]
-	stp x17, x17, [x16, #32]
-	stp x17, x17, [x16, #48]
-	stp x17, x17, [x16, #64]
-	stp x17, x17, [x16, #80]
-	stp x17, x17, [x16, #96]
-	stp x17, x17, [x16, #112]
-	stp x17, x17, [x16, #128]
-	stp x17, x17, [x16, #144]
-	stp x17, x17, [x16, #160]
-	stp x17, x17, [x16, #176]
-	stp x17, x17, [x16, #192]
-	stp x17, x17, [x16, #208]
-	stp x17, x17, [x16, #224]
-	stp x17, x17, [x16, #240]
-	stp x17, x17, [x16, #256]
-	stp x17, x17, [x16, #272]
-	stp x17, x17, [x16, #288]
-	stp x17, x17, [x16, #304]
-	stp x17, x17, [x16, #320]
-	stp x17, x17, [x16, #336]
-	stp x17, x17, [x16, #352]
-	stp x17, x17, [x16, #368]
-	stp x17, x17, [x16, #384]
-	stp x17, x17, [x16, #400]
-	stp x17, x17, [x16, #416]
-	stp x17, x17, [x16, #432]
-	stp x17, x17, [x16, #448]
-	stp x17, x17, [x16, #464]
-	stp x17, x17, [x16, #480]
-	stp x17, x17, [x16, #496]
-	add x16, sp, #2560
-	stp x17, x17, [x16, #0]
-	stp x17, x17, [x16, #16]
-	stp x17, x17, [x16, #32]
-	stp x17, x17, [x16, #48]
-	stp x17, x17, [x16, #64]
-	stp x17, x17, [x16, #80]
-	stp x17, x17, [x16, #96]
-	stp x17, x17, [x16, #112]
-	stp x17, x17, [x16, #128]
-	stp x17, x17, [x16, #144]
-	stp x17, x17, [x16, #160]
-	stp x17, x17, [x16, #176]
-	stp x17, x17, [x16, #192]
-	stp x17, x17, [x16, #208]
-	stp x17, x17, [x16, #224]
-	stp x17, x17, [x16, #240]
-	stp x17, x17, [x16, #256]
-	stp x17, x17, [x16, #272]
-	stp x17, x17, [x16, #288]
-	stp x17, x17, [x16, #304]
-	stp x17, x17, [x16, #320]
-	stp x17, x17, [x16, #336]
-	stp x17, x17, [x16, #352]
-	stp x17, x17, [x16, #368]
-	stp x17, x17, [x16, #384]
-	stp x17, x17, [x16, #400]
-	stp x17, x17, [x16, #416]
-	stp x17, x17, [x16, #432]
-	stp x17, x17, [x16, #448]
-	stp x17, x17, [x16, #464]
-	stp x17, x17, [x16, #480]
-	stp x17, x17, [x16, #496]
-	add x16, sp, #3072
-	stp x17, x17, [x16, #0]
-	stp x17, x17, [x16, #16]
-	stp x17, x17, [x16, #32]
-	stp x17, x17, [x16, #48]
-	stp x17, x17, [x16, #64]
-	stp x17, x17, [x16, #80]
-	stp x17, x17, [x16, #96]
-	stp x17, x17, [x16, #112]
-	stp x17, x17, [x16, #128]
-	stp x17, x17, [x16, #144]
-	stp x17, x17, [x16, #160]
-	add sp, sp, #3248
+	add sp, sp, #160
 	ret
 	.p2align 6
 
