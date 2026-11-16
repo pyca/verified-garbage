@@ -97,9 +97,9 @@ theorem bitsAt_tr {Q : Nat → Poly → Mem → Addr → Prop} {n : String} {c :
     RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x r) ∧ Reduced y.mem (pa y r))
       (callP n c [.ptr r, .imm γ, .ptr out]) fun _ _ => True := by
   obtain ⟨w1, i1, i2, _, _⟩ := rwChk_spec hc
-  refine callP_tr C.ver.1 C.ver.2.1 (bitsArgs_ok hγ hc)
+  refine callP_tr C.okMx (C.ctMx fun _ _ h => h) (bitsArgs_ok hγ hc)
     fun x y x1 y1 ⟨R, rx, ry⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
-      ⟨_, _, _, _, bitsPre C.hS (At.of R.lx hmx kx) hγ hc hAx rx, bitsPre C.hS (At.of R.ly hmy ky) hγ hc hAy ry, ?_,
+      ⟨_, _, _, _, bitsPre (Q := Q) C.hS (At.of R.lx hmx kx) hγ hc hAx rx, bitsPre (Q := Q) C.hS (At.of R.ly hmy ky) hγ hc hAy ry, ?_,
         by rw [kx.2.1, kx.2.2]; exact Covers.append_left (R.lx.cR i1) (Covers.right (R.lx.cW w1)),
         by rw [kx.2.2]; exact R.lx.cW w1,
         by rw [ky.2.1, ky.2.2]; exact Covers.append_left (R.ly.cR i1) (Covers.right (R.ly.cW w1)),
@@ -107,7 +107,7 @@ theorem bitsAt_tr {Q : Nat → Poly → Mem → Addr → Prop} {n : String} {c :
         by rw [(At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp]⟩
   obtain ⟨hx1, hx2, hx3⟩ := argsIn3 hAx
   obtain ⟨hy1, hy2, hy3⟩ := argsIn3 hAy
-  sig_pub [bitsSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, bitsSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hx1, hx2, hx3, hy1, hy2, hy3, Arg.val, R.pa i1, R.pa i2,
     (At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp, and_self]
 
@@ -189,7 +189,7 @@ theorem normCall_tr {nm : String} {P : Prims} (hP : PrimsOk P D) {f : Ptr} {B : 
       (callP nm P.normLt [.ptr f, .imm B]) fun _ _ => True := by
   have i1 : inB (rbs ++ wbs) f 1024 = true := by
     simp only [normChk, Bool.and_eq_true] at hc; exact hc.1.1
-  refine callP_tr hP.normLt.ver.1 hP.normLt.ver.2.1 (normArgs_ok hB hc)
+  refine callP_tr hP.normLt.okMx (hP.normLt.ctMx fun _ _ h => h) (normArgs_ok hB hc)
     fun x y x1 y1 ⟨R, rx, ry⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, normPre hP.normLt.hS (At.of R.lx hmx kx) hc hAx rx,
         normPre hP.normLt.hS (At.of R.ly hmy ky) hc hAy ry, ?_,
@@ -198,7 +198,7 @@ theorem normCall_tr {nm : String} {P : Prims} (hP : PrimsOk P D) {f : Ptr} {B : 
         by rw [(At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp]⟩
   obtain ⟨hx1, hx2⟩ := argsIn2 hAx
   obtain ⟨hy1, hy2⟩ := argsIn2 hAy
-  sig_pub [normLtContract, normLtSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, normLtContract, normLtSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hx1, hx2, hy1, hy2, Arg.val, R.pa i1, (At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp,
     and_self]
 
@@ -269,7 +269,7 @@ theorem hintCall_tr {nm : String} {P : Prims} (hP : PrimsOk P D) {z r h : Ptr} {
       (Reduced y.mem (pa y z) ∧ Reduced y.mem (pa y r)))
       (callP nm P.makeHint [.ptr z, .ptr r, .imm γ, .ptr h]) fun _ _ => True := by
   obtain ⟨w1, i1, i2, i3, _⟩ := hintChk_spec hc
-  refine callP_tr hP.makeHint.ver.1 hP.makeHint.ver.2.1 (hintArgs_ok hγ hc)
+  refine callP_tr hP.makeHint.okMx (hP.makeHint.ctMx fun _ _ h => h) (hintArgs_ok hγ hc)
     fun x y x1 y1 ⟨R, ⟨rzx, rrx⟩, ⟨rzy, rry⟩⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, hintPre hP.makeHint.hS (At.of R.lx hmx kx) hγ hc hAx rzx rrx,
         hintPre hP.makeHint.hS (At.of R.ly hmy ky) hγ hc hAy rzy rry, ?_,
@@ -280,7 +280,7 @@ theorem hintCall_tr {nm : String} {P : Prims} (hP : PrimsOk P D) {z r h : Ptr} {
         by rw [(At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp]⟩
   obtain ⟨hx1, hx2, hx3, hx4⟩ := argsIn4 hAx
   obtain ⟨hy1, hy2, hy3, hy4⟩ := argsIn4 hAy
-  sig_pub [makeHintContract, makeHintSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, makeHintContract, makeHintSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hx1, hx2, hx3, hx4, hy1, hy2, hy3, hy4, Arg.val, R.pa i1, R.pa i2, R.pa i3,
     (At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp, and_self]
 

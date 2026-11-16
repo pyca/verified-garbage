@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Verify.Call
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
 import VerifiedGarbage.Proof.MlDsa.Verify.Mem
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Contract
@@ -38,21 +39,34 @@ structure CalleeOk (c : Prog isa) (k : Contract isa) : Prop where
   correct : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s'
   ct : ConstantTime isa k.pre k.pub c
   nosp : NoSp c
+  mx : c.allInstrs (fun i => !touchesMxcsr i) = true
   depth : c.depth ≤ 3
   ctl : ctlOk c = true
   spSafe : c.all (fun i => !isa.writesSp i) = true
+
+/-- `C.correct`, for `Contract.mxFree`, whose precondition and postcondition
+are `k`'s. -/
+theorem CalleeOk.okMx {c : Prog isa} {k : Contract isa} (C : CalleeOk c k) :
+    ∀ s, k.mxFree.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.mxFree.post s s' :=
+  C.correct
+
+/-- A callee is constant time from states whose public data agree but in
+MXCSR, which it never touches (`Contract.mxFree`). -/
+theorem CalleeOk.ctMx {c : Prog isa} {k : Contract isa} (C : CalleeOk c k)
+    (hpre : ∀ s m, k.pre s → k.pre (s.withMx m)) : ConstantTime isa k.mxFree.pre k.mxFree.pub c :=
+  Contract.ct_mxFree C.mx C.ct hpre
 
 /-- A callee verified against its shared contract with at most 16 bytes of stack. -/
 theorem CalleeOk.of_verified {c : Prog isa} {sig : Sig} {pre : Curry (sig.words X86_64.abi.ptrBits) (Mem → Prop)}
     {post : sig.Post X86_64.abi.ptrBits} {wa : Bool}
     {leak : Option (Curry (sig.words X86_64.abi.ptrBits) (Mem → List Nat))} {n : Nat}
     (h : Verified X86_64.target c (sig.contract X86_64.abi pre post wa n leak)) (hn : n ≤ 16)
-    (hsp : NoSp c) (hd : c.depth ≤ 3) (hmx : ctlOk c = true)
+    (hsp : NoSp c ∧ c.allInstrs (fun i => !touchesMxcsr i) = true) (hd : c.depth ≤ 3) (hmx : ctlOk c = true)
     (hss : c.all (fun i => !isa.writesSp i) = true) :
     CalleeOk c (sig.contract X86_64.abi pre post wa 16 leak) :=
   ⟨fun s hs => h.1 s (pre_stack hn hs),
     fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => h.2.1 s₁ s₂ t₁ t₂ s₁' s₂' (pre_stack hn h₁) (pre_stack hn h₂) hp e₁ e₂,
-    hsp, hd, hmx, hss⟩
+    hsp.1, hsp.2, hd, hmx, hss⟩
 
 /-! ## Entry
 

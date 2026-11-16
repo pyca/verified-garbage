@@ -12,6 +12,7 @@ public import VerifiedGarbage.Impl.MlKem.X86_64.Frag
 public import VerifiedGarbage.Proof.Framework.X86_64.Call
 public import VerifiedGarbage.Proof.MlKem.X86_64.KgMul
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
 public import VerifiedGarbage.Proof.MlKem.X86_64.Cbd16
 import VerifiedGarbage.Proof.MlKem.X86_64.Lit
 import VerifiedGarbage.Proof.MlKem.X86_64.Decode12
@@ -61,6 +62,21 @@ theorem nosp_of {c : Prog isa} (h : c.allInstrs (fun i => !Taint.clobbers i .rsp
   rw [Code.allInstrs_eq] at h
   intro i hi
   simpa using List.all_eq_true.mp h i hi
+
+/-- `NoSp`, and that the code never touches MXCSR (`touchesMxcsr`), in one
+walk of the code. -/
+theorem nospMx_of {c : Prog isa} (h : c.allInstrs (fun i => !Taint.clobbers i .rsp && !touchesMxcsr i) = true) :
+    NoSp c ∧ c.allInstrs (fun i => !touchesMxcsr i) = true := by
+  rw [Code.allInstrs_eq, List.all_eq_true] at h
+  refine ⟨fun i hi => ?_, ?_⟩
+  · have := h i hi
+    simp only [Bool.and_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true] at this
+    exact this.1
+  · rw [Code.allInstrs_eq, List.all_eq_true]
+    intro i hi
+    have := h i hi
+    simp only [Bool.and_eq_true] at this
+    exact this.2
 
 /-- What a caller needs of a function with the contract `k`. -/
 structure CalleeOk (k : Contract isa) (c : Prog isa) : Prop where

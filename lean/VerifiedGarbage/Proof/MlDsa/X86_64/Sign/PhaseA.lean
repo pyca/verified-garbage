@@ -109,9 +109,9 @@ theorem accAt_tr {t : Poly → Poly → Poly} {n : String} {c : Prog isa} (C : C
     RelCT isa (fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
       (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (callP n c [.ptr f, .ptr g]) fun _ _ => True := by
   obtain ⟨w1, i1, i2, _, ok⟩ := accChk_spec hc
-  refine callP_tr C.ver.1 C.ver.2.1 ok
+  refine callP_tr C.okMx (C.ctMx fun _ _ h => h) ok
     fun x y x1 y1 ⟨R, ⟨rfx, rgx⟩, ⟨rfy, rgy⟩⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
-      ⟨_, _, _, _, accPre C.hS (At.of R.lx hmx kx) hc hAx rfx rgx, accPre C.hS (At.of R.ly hmy ky) hc hAy rfy rgy, ?_,
+      ⟨_, _, _, _, accPre (t := t) C.hS (At.of R.lx hmx kx) hc hAx rfx rgx, accPre (t := t) C.hS (At.of R.ly hmy ky) hc hAy rfy rgy, ?_,
         by rw [kx.2.1, kx.2.2]; exact Covers.append_left (R.lx.cR i2) (Covers.right (R.lx.cW w1)),
         by rw [kx.2.2]; exact R.lx.cW w1,
         by rw [ky.2.1, ky.2.2]; exact Covers.append_left (R.ly.cR i2) (Covers.right (R.ly.cW w1)),
@@ -119,7 +119,7 @@ theorem accAt_tr {t : Poly → Poly → Poly} {n : String} {c : Prog isa} (C : C
         by rw [(At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp]⟩
   obtain ⟨hx1, hx2⟩ := argsIn2 hAx
   obtain ⟨hy1, hy2⟩ := argsIn2 hAy
-  sig_pub [accSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, accSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hx1, hx2, hy1, hy2, Arg.val, R.pa i1, R.pa i2,
     (At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp, and_self]
 
@@ -211,7 +211,7 @@ theorem rejCall_tr {P : Prims} (hP : PrimsOk P D) {a : Ptr} (hc : rejChk (rbs ++
       fun x y => (x.gpr .rax).setWidth 32 = (y.gpr .rax).setWidth 32 := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, ok⟩ := rejChk_spec hc
   have hD : 8 ≤ D := by have := hP.rejNTT.hS; omega_arith
-  refine callPRet_tr hP.rejNTT.ver.1 hP.rejRet ok
+  refine callPRet_tr hP.rejNTT.okMx (RetPub.mxFree hP.rejRet hP.rejNTT.mx fun _ _ h => h) ok
     fun x y x1 y1 ⟨R, hb⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, rejPre hP.rejNTT.hS (At.of R.lx hmx kx) hc hAx, rejPre hP.rejNTT.hS (At.of R.ly hmy ky) hc hAy, ?_,
         by rw [kx.2.1, kx.2.2]; exact Covers.append_left (R.lx.cR i1) (Covers.right (Covers.cons (R.lx.cW w1) (R.lx.cW w2))),
@@ -223,7 +223,7 @@ theorem rejCall_tr {P : Prims} (hP : PrimsOk P D) {a : Ptr} (hc : rejChk (rbs ++
   obtain ⟨hy1, hy2, hy3⟩ := argsIn3 hAy
   have Ax := At.of R.lx hmx kx
   have Ay := At.of R.ly hmy ky
-  sig_pub [rejNTTContract, rejNTTSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, rejNTTContract, rejNTTSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hx1, hx2, hx3, hy1, hy2, hy3, Arg.val, Ax.bytes' i1 hD, Ay.bytes' i1 hD, hb]
   simp only [Ax.rsp, Ay.rsp, R.rsp, R.pa i1, R.pa i2, R.pa i3, and_self]
 
@@ -310,7 +310,7 @@ theorem rej4Call_tr {P : Prims} (hP : PrimsOk P D) {a w : Ptr} (hc : rej4Chk (rb
       fun x y => (x.gpr .rax).setWidth 32 = (y.gpr .rax).setWidth 32 := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, ok⟩ := rej4Chk_spec hc
   have hD : 8 ≤ D := by have := hP.rej4.hS; omega_arith
-  refine callPRet_tr hP.rej4.ver.1 hP.rej4Ret ok
+  refine callPRet_tr hP.rej4.okMx (RetPub.mxFree hP.rej4Ret hP.rej4.mx fun _ _ h => h) ok
     fun x y x1 y1 ⟨R, hb⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, rej4Pre hP.rej4.hS (At.of R.lx hmx kx) hc hAx, rej4Pre hP.rej4.hS (At.of R.ly hmy ky) hc hAy, ?_,
         by rw [kx.2.1, kx.2.2]; exact Covers.append_left (R.lx.cR i1) (Covers.right (Covers.cons (R.lx.cW w1) (R.lx.cW w2))),
@@ -322,7 +322,7 @@ theorem rej4Call_tr {P : Prims} (hP : PrimsOk P D) {a w : Ptr} (hc : rej4Chk (rb
   obtain ⟨hy1, hy2, hy3⟩ := argsIn3 hAy
   have Ax := At.of R.lx hmx kx
   have Ay := At.of R.ly hmy ky
-  sig_pub [rejNTT4Contract, rejNTT4Sig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, rejNTT4Contract, rejNTT4Sig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hx1, hx2, hx3, hy1, hy2, hy3, Arg.val, Ax.bytes' i1 hD, Ay.bytes' i1 hD, hb]
   simp only [Ax.rsp, Ay.rsp, R.rsp, R.pa i1, R.pa i2, R.pa i3, and_self]
 
@@ -386,7 +386,7 @@ theorem maskAt_tr {P : Prims} (hP : PrimsOk P D) {γ : Nat} {a : Ptr} (hγ : γ 
     RelCT isa (LRel D rbs wbs) (maskAt P γ a) fun _ _ => True := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, b1, o1⟩ := maskChk_spec hc
   have hγ' : γ < 2 ^ 32 := by omega_arith
-  refine callP_tr hP.expandMask.ver.1 hP.expandMask.ver.2.1
+  refine callP_tr hP.expandMask.okMx (hP.expandMask.ctMx fun _ _ h => h)
     (by simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, decide_true, Bool.and_true, decide_eq_true hγ']; decide)
     fun x y x1 y1 R ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, maskPre hP.expandMask.hS (At.of R.lx hmx kx) hγ hc hAx,
@@ -398,7 +398,7 @@ theorem maskAt_tr {P : Prims} (hP : PrimsOk P D) {γ : Nat} {a : Ptr} (hγ : γ 
         by rw [(At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp]⟩
   obtain ⟨hx1, hx2, hx3, hx4⟩ := argsIn4 hAx
   obtain ⟨hy1, hy2, hy3, hy4⟩ := argsIn4 hAy
-  sig_pub [expandMaskContract, expandMaskSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, expandMaskContract, expandMaskSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hx1, hx2, hx3, hx4, hy1, hy2, hy3, hy4, Arg.val, R.pa i1, R.pa i2, R.pa i3,
     (At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp, and_self]
 
@@ -473,7 +473,7 @@ theorem mask4Call_tr {P : Prims} (hP : PrimsOk P D) {γ : Nat} {a w : Ptr} (hγ 
     RelCT isa (LRel D rbs wbs) (mask4At P γ a w) fun _ _ => True := by
   obtain ⟨w1, w2, i1, i2, i3, _, _, _, b1, o1, b2, o2⟩ := mask4Chk_spec hc
   have hγ' : γ < 2 ^ 32 := by omega_arith
-  refine callP_tr hP.expandMask4.ver.1 hP.expandMask4.ver.2.1
+  refine callP_tr hP.expandMask4.okMx (hP.expandMask4.ctMx fun _ _ h => h)
     (by simp only [List.all_cons, List.all_nil, Arg.ok, b1, o1, b2, o2, decide_true, Bool.and_true,
       decide_eq_true hγ']; decide)
     fun x y x1 y1 R ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
@@ -486,7 +486,7 @@ theorem mask4Call_tr {P : Prims} (hP : PrimsOk P D) {γ : Nat} {a w : Ptr} (hγ 
         by rw [(At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp]⟩
   obtain ⟨hx1, hx2, hx3, hx4⟩ := argsIn4 hAx
   obtain ⟨hy1, hy2, hy3, hy4⟩ := argsIn4 hAy
-  sig_pub [expandMask4Contract, expandMask4Sig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, expandMask4Contract, expandMask4Sig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hx1, hx2, hx3, hx4, hy1, hy2, hy3, hy4, Arg.val, R.pa i1, R.pa i2, R.pa i3,
     (At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp, and_self]
 
@@ -570,7 +570,7 @@ theorem ballCall_tr {P : Prims} (hP : PrimsOk P D) {len tau : Nat} {c : Ptr} (hp
   have hD : 8 ≤ D := by have := hP.ball.hS; omega_arith
   have hl : len < 2 ^ 32 ∧ tau < 2 ^ 32 := by
     simp only [ballParams, List.mem_cons, Prod.mk.injEq, List.not_mem_nil, or_false] at hp; omega_arith
-  refine callPRet_tr hP.ball.ver.1 hP.ballRet (ballArgs_ok hp b1 o1)
+  refine callPRet_tr hP.ball.okMx (RetPub.mxFree hP.ballRet hP.ball.mx fun _ _ h => h) (ballArgs_ok hp b1 o1)
     fun x y x1 y1 ⟨R, hb⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, ballPre hP.ball.hS (At.of R.lx hmx kx) hp hc hAx, ballPre hP.ball.hS (At.of R.ly hmy ky) hp hc hAy,
         ?_,
@@ -583,7 +583,7 @@ theorem ballCall_tr {P : Prims} (hP : PrimsOk P D) {len tau : Nat} {c : Ptr} (hp
   obtain ⟨hy1, hy2, hy3, hy4, hy5⟩ := argsIn5 hAy
   have Ax := At.of R.lx hmx kx
   have Ay := At.of R.ly hmy ky
-  sig_pub [sampleInBallContract, sampleInBallSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, sampleInBallContract, sampleInBallSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hx1, hx2, hx3, hx4, hx5, hy1, hy2, hy3, hy4, hy5, Arg.val, toNat64 hl.1, Ax.bytes' i1 hD,
     Ay.bytes' i1 hD, hb]
   simp only [Ax.rsp, Ay.rsp, R.rsp, R.pa i1, R.pa i2, R.pa i3, and_self]

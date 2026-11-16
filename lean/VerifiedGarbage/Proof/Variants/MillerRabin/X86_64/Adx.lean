@@ -142,6 +142,12 @@ def arith : RoundArith where
     unfold Impl.Bignum.X86_64.MontFnSpecialized.mm
       Impl.Bignum.X86_64.MontFnSpecialized.body Impl.Bignum.X86_64.MontFnSpecialized.tiled
     split <;> rfl
+  inlineNoMx := by
+    intro o a b
+    change (Impl.Bignum.X86_64.MontFnSpecialized.mm o a b).allInstrs (fun i => !touchesMxcsr i) = true
+    unfold Impl.Bignum.X86_64.MontFnSpecialized.mm
+      Impl.Bignum.X86_64.MontFnSpecialized.body Impl.Bignum.X86_64.MontFnSpecialized.tiled
+    split <;> rfl
   mm := Impl.Bignum.X86_64.MontFn.call "vg_rsa_mont_mul_adx" Impl.Bignum.X86_64.MontFn.mulAdx
   mmOk := call_inlineOk (by decide +kernel)
   mmInline _ _ _ := rfl

@@ -81,7 +81,7 @@ theorem sbpAt_tr {P : Prims} (hP : PrimsOk P D) {f out : Ptr} {b len : Nat}
   have hb' : b < 2 ^ 32 ∧ len < 2 ^ 32 := by
     simp only [simpleBitPackBounds, t1Max, List.mem_cons, List.not_mem_nil, or_false] at hb
     rcases hb with rfl | rfl | rfl <;> subst hl <;> decide
-  refine callP_tr hP.simpleBitPack.ver.1 hP.simpleBitPack.ver.2.1 (sbpArgs_ok hb'.1 hb'.2 hc)
+  refine callP_tr hP.simpleBitPack.okMx (hP.simpleBitPack.ctMx fun _ _ h => h) (sbpArgs_ok hb'.1 hb'.2 hc)
     fun x y x1 y1 ⟨R, rx, ry⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, sbpPre hP.simpleBitPack.hS (At.of R.lx hmx kx) hb hl hc hAx rx,
         sbpPre hP.simpleBitPack.hS (At.of R.ly hmy ky) hb hl hc hAy ry, ?_,
@@ -92,7 +92,7 @@ theorem sbpAt_tr {P : Prims} (hP : PrimsOk P D) {f out : Ptr} {b len : Nat}
         by rw [(At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp]⟩
   obtain ⟨hx1, hx2, hx3, hx4⟩ := argsIn4 hAx
   obtain ⟨hy1, hy2, hy3, hy4⟩ := argsIn4 hAy
-  sig_pub [simpleBitPackContract, simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, simpleBitPackContract, simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hx1, hx2, hx3, hx4, hy1, hy2, hy3, hy4, Arg.val, R.pa i1, R.pa i2,
     (At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp, and_self]
 
@@ -159,7 +159,7 @@ theorem bpAt_tr {P : Prims} (hP : PrimsOk P D) {f out : Ptr} {a b len : Nat}
   obtain ⟨w1, i1, i2, _, _⟩ := rwChk_spec hc
   obtain ⟨ha', hb', hl'⟩ := bitPackParams_lt hp
   rw [← hl] at hl'
-  refine callP_tr hP.bitPack.ver.1 hP.bitPack.ver.2.1 (bpArgs_ok ha' hb' hl' hc)
+  refine callP_tr hP.bitPack.okMx (hP.bitPack.ctMx fun _ _ h => h) (bpArgs_ok ha' hb' hl' hc)
     fun x y x1 y1 ⟨R, ⟨rx, gx⟩, ⟨ry, gy⟩⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, bpPre hP.bitPack.hS (At.of R.lx hmx kx) hp hl hc hAx rx gx,
         bpPre hP.bitPack.hS (At.of R.ly hmy ky) hp hl hc hAy ry gy, ?_,
@@ -170,7 +170,7 @@ theorem bpAt_tr {P : Prims} (hP : PrimsOk P D) {f out : Ptr} {a b len : Nat}
         by rw [(At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp]⟩
   obtain ⟨hx1, hx2, hx3, hx4, hx5⟩ := argsIn5 hAx
   obtain ⟨hy1, hy2, hy3, hy4, hy5⟩ := argsIn5 hAy
-  sig_pub [bitPackContract, bitPackSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, bitPackContract, bitPackSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hx1, hx2, hx3, hx4, hx5, hy1, hy2, hy3, hy4, hy5, Arg.val, R.pa i1, R.pa i2,
     (At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp, and_self]
 
@@ -224,7 +224,7 @@ theorem bupAt_tr {P : Prims} (hP : PrimsOk P D) {v f : Ptr} {a b len : Nat}
   obtain ⟨w1, i1, i2, _, _⟩ := rwChk_spec hc
   obtain ⟨ha', hb', hl'⟩ := bitPackParams_lt hp
   rw [← hl] at hl'
-  refine callP_tr hP.bitUnpack.ver.1 hP.bitUnpack.ver.2.1 (bupArgs_ok ha' hb' hl' hc)
+  refine callP_tr hP.bitUnpack.okMx (hP.bitUnpack.ctMx fun _ _ h => h) (bupArgs_ok ha' hb' hl' hc)
     fun x y x1 y1 R ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, bupPre hP.bitUnpack.hS (At.of R.lx hmx kx) hp hl hc hAx,
         bupPre hP.bitUnpack.hS (At.of R.ly hmy ky) hp hl hc hAy, ?_,
@@ -235,7 +235,7 @@ theorem bupAt_tr {P : Prims} (hP : PrimsOk P D) {v f : Ptr} {a b len : Nat}
         by rw [(At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp]⟩
   obtain ⟨hx1, hx2, hx3, hx4, hx5⟩ := argsIn5 hAx
   obtain ⟨hy1, hy2, hy3, hy4, hy5⟩ := argsIn5 hAy
-  sig_pub [bitUnpackContract, bitUnpackSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, bitUnpackContract, bitUnpackSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hx1, hx2, hx3, hx4, hx5, hy1, hy2, hy3, hy4, hy5, Arg.val, R.pa i1, R.pa i2,
     (At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp, and_self]
 
@@ -306,7 +306,7 @@ theorem hbpAt_tr {P : Prims} (hP : PrimsOk P D) {h y : Ptr} {ω k : Nat} (hp : (
   obtain ⟨w1, i1, i2, _, _⟩ := rwChk_spec hc
   have hD : 8 ≤ D := by have := hP.hintBitPack.hS; omega_arith
   obtain ⟨h1, h2, h3⟩ := hintParams_lt hp
-  refine callP_tr hP.hintBitPack.ver.1 hP.hintBitPack.ver.2.1 (hbpArgs_ok h3 h1 h2 hc)
+  refine callP_tr hP.hintBitPack.okMx (hP.hintBitPack.ctMx fun _ _ h => h) (hbpArgs_ok h3 h1 h2 hc)
     fun x z x1 z1 ⟨R, ox, oz, hl⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAz, hmz⟩, kz⟩ =>
       ⟨_, _, _, _, hbpPre hP.hintBitPack.hS (At.of R.lx hmx kx) hp hc hAx ox,
         hbpPre hP.hintBitPack.hS (At.of R.ly hmz kz) hp hc hAz oz, ?_,
@@ -319,7 +319,7 @@ theorem hbpAt_tr {P : Prims} (hP : PrimsOk P D) {h y : Ptr} {ω k : Nat} (hp : (
   obtain ⟨hz1, hz2, hz3, hz4, hz5⟩ := argsIn5 hAz
   have Ax := At.of R.lx hmx kx
   have Az := At.of R.ly hmz kz
-  sig_pub [hintBitPackContract, hintBitPackSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, hintBitPackContract, hintBitPackSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hx1, hx2, hx3, hx4, hx5, hz1, hz2, hz3, hz4, hz5, Arg.val, toNat64 h3, Ax.coeffs (len := 256 * k) i1 hD,
     Az.coeffs (len := 256 * k) i1 hD, hl]
   simp only [Ax.rsp, Az.rsp, R.rsp, R.pa i1, R.pa i2, and_self]

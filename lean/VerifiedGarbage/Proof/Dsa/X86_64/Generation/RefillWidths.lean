@@ -220,7 +220,7 @@ theorem Agree.pub {u u' s s' : State} (h : Agree u s) (h' : Agree u' s') {sig : 
   · exact Iff.rfl
   · rename_i vals e
     rw [h.args e, h'.args e]
-    simp only [abi, h.mem, h'.mem, h.rsp, h'.rsp]
+    simp only [abi, h.mem, h'.mem, h.rsp, h'.rsp, h.mxcsr, h'.mxcsr]
 
 theorem Agree.abiPreserved {u s s' : State} (h : Agree u s) (a : target.abiPreserved u s') :
     target.abiPreserved s s' := by

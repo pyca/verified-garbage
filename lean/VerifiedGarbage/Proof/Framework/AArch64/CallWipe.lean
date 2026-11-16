@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.Proof.Framework.AArch64.Syms
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 public import VerifiedGarbage.Impl.CallWipe.AArch64
 public import VerifiedGarbage.Proof.Framework.AArch64.StackScratch
 public import VerifiedGarbage.Spec.Zeroize.Contract
@@ -457,15 +458,16 @@ theorem cw_zeroPre (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists
         |>.sub_left (below_below _ 32 zst)
 
 /-- The zeroize function's public data, at its entry, if the array's
-address is public. -/
+address is public, with the second run's PSTATE.DIT the first's
+(`Contract.ditFree`: the zeroize function never touches it). -/
 theorem cw_zeroPub {n zst : Nat} (hn : n < 2 ^ 16) {s₁ s₂ c₁ c₂ : State} (hsp : s₁.sp = s₂.sp)
-    (hpp : s₁.gpr r = s₂.gpr r) (hdit : c₁.dit = c₂.dit) (hc₁ : AfterBody sig post r stack s₁ c₁)
+    (hpp : s₁.gpr r = s₂.gpr r) (hc₁ : AfterBody sig post r stack s₁ c₁)
     (hc₂ : AfterBody sig post r stack s₂ c₂) :
-    (Spec.Zeroize.zeroizeContract abi zst).pub ((cwZero n c₁).callEntry.withRegions [] [⟨s₁.gpr r, n⟩])
+    (Spec.Zeroize.zeroizeContract abi zst).ditFree.pub ((cwZero n c₁).callEntry.withRegions [] [⟨s₁.gpr r, n⟩])
       ((cwZero n c₂).callEntry.withRegions [] [⟨s₂.gpr r, n⟩]) := by
   obtain ⟨d₁, i₁, p₁⟩ := cwZeroEntry hc₁ hn ⟨s₁.gpr r, n⟩
   obtain ⟨d₂, i₂, p₂⟩ := cwZeroEntry hc₂ hn ⟨s₂.gpr r, n⟩
-  exact zeroize_pub_of (by rw [p₁, p₂, hsp]) hdit (by rw [d₁, d₂, hpp])
+  exact zeroize_pub_of (zst := zst) (by rw [p₁, p₂, hsp]) rfl (by rw [d₁, d₂, hpp])
     (BitVec.eq_of_toNat_eq (by rw [i₁, i₂]))
 
 /-- What the zeroize function's run leaves, from the caller's state `s`: the
@@ -702,7 +704,7 @@ the two calls of the first function do (`hbody`). -/
 theorem cw_ct {name zname : String} {body zcode : Prog isa} {zst : Nat} {r : Reg}
     (hz : Verified target zcode (Spec.Zeroize.zeroizeContract abi zst))
     (hk : (sig.words abi.ptrBits).length ≤ 8) (hl : Sig.noLists sig.params = true)
-    (hzd : 16 * zcode.aarch64Depth ≤ zst) (hzs : zst ≤ stack)
+    (hzd : 16 * zcode.aarch64Depth ≤ zst) (hzdit : zcode.all (fun i => !i.touchesDit) = true) (hzs : zst ≤ stack)
     {e : Elem} {k n : Nat} (hn : n ≤ k * e.size) (hn16 : n < 2 ^ 16)
     {σ₁ σ₂ : State} {rd₁ rd₂ : List Region}
     (h₁ : (sig.contract abi pre post wa (stack + 32) leak).pre (σ₁.withRegions rd₁ σ₁.wr))
@@ -711,7 +713,7 @@ theorem cw_ct {name zname : String} {body zcode : Prog isa} {zst : Nat} {r : Reg
     (harr₂ : (⟨σ₂.gpr r, k * e.size⟩, true) ∈ Sig.bufs sig.params (regArgs sig σ₂))
     (hsp12 : σ₁.sp = σ₂.sp) (hpp : σ₁.gpr r = σ₂.gpr r)
     (hbody : RelCT isa (fun a b => a = cwSave r σ₁ ∧ b = cwSave r σ₂) (.call name body)
-      fun c₁ c₂ => (AfterBody sig post r stack σ₁ c₁ ∧ AfterBody sig post r stack σ₂ c₂) ∧ c₁.dit = c₂.dit) :
+      fun c₁ c₂ => AfterBody sig post r stack σ₁ c₁ ∧ AfterBody sig post r stack σ₂ c₂) :
     RelCT isa (fun a b => a = allocated 32 σ₁ ∧ b = allocated 32 σ₂)
       (.seq (.block (saveArg r)) (.seq (.call name body) (.seq (.block (zeroArgs n))
         (.seq (.call zname zcode) (.block restore))))) fun _ _ => True := by
@@ -721,13 +723,12 @@ theorem cw_ct {name zname : String} {body zcode : Prog isa} {zst : Nat} {r : Reg
   · obtain ⟨rfl, rfl⟩ := hab
     exact ⟨_, _, _, saveArg_run r σ₁, by rw [saveArg_run r σ₂]; simp only [slot, hsp12], rfl, rfl⟩
   -- The first function.
-  refine RelCT.seq (R := fun (c₁ c₂ : State) => (AfterBody sig post r stack σ₁ c₁ ∧
-    AfterBody sig post r stack σ₂ c₂) ∧ c₁.dit = c₂.dit) hbody ?_
+  refine RelCT.seq (R := fun c₁ c₂ => AfterBody sig post r stack σ₁ c₁ ∧ AfterBody sig post r stack σ₂ c₂)
+    hbody ?_
   -- The zeroize function's arguments.
-  refine RelCT.seq (R := fun (d₁ d₂ : State) => ((∃ c, AfterBody sig post r stack σ₁ c ∧ d₁ = cwZero n c) ∧
-    (∃ c, AfterBody sig post r stack σ₂ c ∧ d₂ = cwZero n c)) ∧ d₁.dit = d₂.dit)
-    (RelCT.block_of fun c₁ c₂ hc => ?_) ?_
-  · obtain ⟨⟨hc₁, hc₂⟩, hcd⟩ := hc
+  refine RelCT.seq (R := fun d₁ d₂ => (∃ c, AfterBody sig post r stack σ₁ c ∧ d₁ = cwZero n c) ∧
+    (∃ c, AfterBody sig post r stack σ₂ c ∧ d₂ = cwZero n c)) (RelCT.block_of fun c₁ c₂ hc => ?_) ?_
+  · obtain ⟨hc₁, hc₂⟩ := hc
     have w₁ : InRegions c₁.wr (c₁.sp + BitVec.ofNat 64 16) 8 := by
       rw [hc₁.1, hc₁.2.1]; exact slot_in σ₁ (by decide)
     have r₁ : InRegions (c₁.rd ++ c₁.wr) (c₁.sp + BitVec.ofNat 64 8) 8 := by
@@ -736,19 +737,21 @@ theorem cw_ct {name zname : String} {body zcode : Prog isa} {zst : Nat} {r : Reg
       rw [hc₂.1, hc₂.2.1]; exact slot_in σ₂ (by decide)
     have r₂ : InRegions (c₂.rd ++ c₂.wr) (c₂.sp + BitVec.ofNat 64 8) 8 := by
       rw [hc₂.1, hc₂.2.1]; exact slot_in' σ₂ c₂.rd (by decide)
-    refine ⟨_, _, _, zeroArgs_run n w₁ r₁, ?_, ⟨⟨c₁, hc₁, rfl⟩, ⟨c₂, hc₂, rfl⟩⟩, hcd⟩
+    refine ⟨_, _, _, zeroArgs_run n w₁ r₁, ?_, ⟨c₁, hc₁, rfl⟩, ⟨c₂, hc₂, rfl⟩⟩
     rw [zeroArgs_run n w₂ r₂, hc₁.2.1, hc₂.2.1, hsp12]
   -- The zeroize function.
   refine RelCT.seq (R := fun g₁ g₂ => AfterZero sig post r stack n σ₁ g₁ ∧ AfterZero sig post r stack n σ₂ g₂)
     ?_ ?_
   · refine RelCT.mono (RelCT.wp (F₁ := AfterZero sig post r stack n σ₁) (F₂ := AfterZero sig post r stack n σ₂)
-      (RelCT.callEx hz.1 hz.2.1 fun a b hab => ?_) fun a b hab => ?_) (fun _ _ h => h) (fun _ _ h => h.2)
-    · obtain ⟨⟨⟨c₁, hc₁, rfl⟩, ⟨c₂, hc₂, rfl⟩⟩, hdd⟩ := hab
+      (RelCT.callEx (k := (Spec.Zeroize.zeroizeContract abi zst).ditFree) hz.1
+        (Contract.ct_ditFree hzdit hz.2.1 fun _ _ h => h) fun a b hab => ?_) fun a b hab => ?_)
+      (fun _ _ h => h) (fun _ _ h => h.2)
+    · obtain ⟨⟨c₁, hc₁, rfl⟩, ⟨c₂, hc₂, rfl⟩⟩ := hab
       exact ⟨[], [⟨σ₁.gpr r, n⟩], [], [⟨σ₂.gpr r, n⟩], cw_zeroPre (s := σ₁.withRegions rd₁ σ₁.wr) hk hl h₁ harr₁ hn hn16 hzs hc₁,
-        cw_zeroPre (s := σ₂.withRegions rd₂ σ₂.wr) hk hl h₂ harr₂ hn hn16 hzs hc₂, cw_zeroPub hn16 hsp12 hpp hdd hc₁ hc₂,
+        cw_zeroPre (s := σ₂.withRegions rd₂ σ₂.wr) hk hl h₂ harr₂ hn hn16 hzs hc₂, cw_zeroPub (zst := zst) hn16 hsp12 hpp hc₁ hc₂,
         Covers.right (cw_zeroCovers (s := σ₁.withRegions rd₁ σ₁.wr) hk hl h₁ harr₁ hn hc₁), cw_zeroCovers (s := σ₁.withRegions rd₁ σ₁.wr) hk hl h₁ harr₁ hn hc₁,
         Covers.right (cw_zeroCovers (s := σ₂.withRegions rd₂ σ₂.wr) hk hl h₂ harr₂ hn hc₂), cw_zeroCovers (s := σ₂.withRegions rd₂ σ₂.wr) hk hl h₂ harr₂ hn hc₂⟩
-    · obtain ⟨⟨⟨c₁, hc₁, rfl⟩, ⟨c₂, hc₂, rfl⟩⟩, -⟩ := hab
+    · obtain ⟨⟨c₁, hc₁, rfl⟩, ⟨c₂, hc₂, rfl⟩⟩ := hab
       exact ⟨cw_zero_wp (s := σ₁.withRegions rd₁ σ₁.wr) hz hzd hzs hk hl h₁ harr₁ hn hn16 hc₁, cw_zero_wp (s := σ₂.withRegions rd₂ σ₂.wr) hz hzd hzs hk hl h₂ harr₂ hn hn16 hc₂⟩
   -- The result and the return address are restored.
   · refine RelCT.block_of fun g₁ g₂ hg => ?_
@@ -824,8 +827,8 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
     (hps : sig.params = ps₁ ++ (nm, .array true e k) :: ps₂)
     (hi : i = (ps₁.flatMap fun p => p.2.words 64).length)
     (hn : n ≤ k * e.size) (hn16 : n < 2 ^ 16)
-    (hd : 16 * body.aarch64Depth ≤ stack) (hbd : DitDet body) (hzd : 16 * zcode.aarch64Depth ≤ zst)
-    (hzs : zst ≤ stack)
+    (hd : 16 * body.aarch64Depth ≤ stack) (hzdit : zcode.all (fun i => !i.touchesDit) = true)
+    (hzd : 16 * zcode.aarch64Depth ≤ zst) (hzs : zst ≤ stack)
     (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
@@ -882,10 +885,9 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
     have h₂' : (sig.contract abi pre post wa (stack + 32) leak).pre σ₂ := h₂
     have hp' : (sig.contract abi pre post wa (stack + 32) leak).pub σ₁ σ₂ := hp
     have hsp12 : σ₁.sp = σ₂.sp := ((pub_regs hk).mp hp').1.1.1
-    have hdit12 : σ₁.dit = σ₂.dit := ((pub_regs hk).mp hp').1.1.2
     have hpp := hpubA _ _ hp'
     refine RelCT.mono (P := fun a b => a = allocated 32 σ₁ ∧ b = allocated 32 σ₂)
-      (cw_ct (post := post) (leak := leak) (rd₁ := σ₁.rd) (rd₂ := σ₂.rd) hz hk hl hzd hzs hn hn16 h₁' h₂' (harr σ₁) (harr σ₂) hsp12 hpp ?_)
+      (cw_ct (post := post) (leak := leak) (rd₁ := σ₁.rd) (rd₂ := σ₂.rd) hz hk hl hzd hzdit hzs hn hn16 h₁' h₂' (harr σ₁) (harr σ₂) hsp12 hpp ?_)
       (fun a b hab => hab.2) (fun _ _ h => h)
     -- The first function.
     have hcov : ∀ σ : State, Covers (σ.rd ++ σ.wr) ((cwSave r σ).rd ++ (cwSave r σ).wr) ∧
@@ -893,9 +895,7 @@ theorem Verified.callWipe' {post' : sig.Post abi.ptrBits} {name zname : String}
       ⟨Covers.append (Covers.refl _) (Covers.of_mem fun x hx => List.mem_cons_of_mem _ hx),
         Covers.of_mem fun x hx => List.mem_cons_of_mem _ hx⟩
     refine RelCT.mono (RelCT.wp (F₁ := AfterBody sig post r stack σ₁) (F₂ := AfterBody sig post r stack σ₂)
-      (RelCT.call_dit hbd (fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact hdit12)
-        (RelCT.callEx h.1 h.2.1 fun a b hab => ?_)) fun a b hab => ?_) (fun _ _ h => h)
-      (fun _ _ h => ⟨h.2, h.1.2⟩)
+      (RelCT.callEx h.1 h.2.1 fun a b hab => ?_) fun a b hab => ?_) (fun _ _ h => h) (fun _ _ h => h.2)
     · obtain ⟨rfl, rfl⟩ := hab
       exact ⟨σ₁.rd, σ₁.wr, σ₂.rd, σ₂.wr, cw_bodyPre hk hl hpre h₁', cw_bodyPre hk hl hpre h₂',
         cw_bodyPub (rd₁ := σ₁.rd) (rd₂ := σ₂.rd) hk hl r h₁' h₂' hp' hleak, (hcov σ₁).1, (hcov σ₁).2, (hcov σ₂).1, (hcov σ₂).2⟩
@@ -911,8 +911,8 @@ theorem Verified.callWipe {name zname : String} {body zcode : Prog isa} {zst : N
     (hps : sig.params = ps₁ ++ (nm, .array true e k) :: ps₂)
     (hi : i = (ps₁.flatMap fun p => p.2.words 64).length)
     (hn : n ≤ k * e.size) (hn16 : n < 2 ^ 16)
-    (hd : 16 * body.aarch64Depth ≤ stack) (hbd : DitDet body) (hzd : 16 * zcode.aarch64Depth ≤ zst)
-    (hzs : zst ≤ stack)
+    (hd : 16 * body.aarch64Depth ≤ stack) (hzdit : zcode.all (fun i => !i.touchesDit) = true)
+    (hzd : 16 * zcode.aarch64Depth ≤ zst) (hzs : zst ≤ stack)
     (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
@@ -930,7 +930,7 @@ theorem Verified.callWipe {name zname : String} {body zcode : Prog isa} {zst : N
     (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
     Verified target (Impl.CallWipe.AArch64.callWipe (argRegs.getD i .x0) n name body zname zcode)
       (sig.contract abi pre post wa (stack + 32) leak) :=
-  Verified.callWipe' h hz hk hl hps hi hn hn16 hd hbd hzd hzs hpre hpost hpostOut
+  Verified.callWipe' h hz hk hl hps hi hn hn16 hd hzdit hzd hzs hpre hpost hpostOut
     (fun _ _ _ _ _ hq _ => hq) hsat hleak
 
 end

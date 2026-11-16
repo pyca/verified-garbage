@@ -205,12 +205,14 @@ theorem primTr {c : Prog isa} {kk : Nat → Contract isa} (hc : Callee c kk) {gl
     (hg : ∀ x y, P x y → WP isa (.block glue) x (V x) ∧ WP isa (.block glue) y (V y))
     (hP : ∀ stk ≤ 16, ∀ x y x1 y1, P x y → V x x1 → V y y1 → ∃ rd₁ wr₁ rd₂ wr₂ : List Region,
       (kk stk).pre (x1.callEntry.withRegions rd₁ wr₁) ∧ (kk stk).pre (y1.callEntry.withRegions rd₂ wr₂) ∧
-      (kk stk).pub (x1.callEntry.withRegions rd₁ wr₁) (y1.callEntry.withRegions rd₂ wr₂) ∧
+      (kk stk).mxFree.pub (x1.callEntry.withRegions rd₁ wr₁) (y1.callEntry.withRegions rd₂ wr₂) ∧
       Covers (rd₁ ++ wr₁) (x1.rd ++ x1.wr) ∧ Covers wr₁ x1.wr ∧
-      Covers (rd₂ ++ wr₂) (y1.rd ++ y1.wr) ∧ Covers wr₂ y1.wr ∧ x1.gpr .rsp = y1.gpr .rsp) :
+      Covers (rd₂ ++ wr₂) (y1.rd ++ y1.wr) ∧ Covers wr₂ y1.wr ∧ x1.gpr .rsp = y1.gpr .rsp)
+    (hpm : ∀ stk s m, (kk stk).pre s → (kk stk).pre (s.withMx m) := by intro _ _ _ h; exact h) :
     RelCT isa P (.seq (.block glue) (.call n c)) fun _ _ => True := by
   obtain ⟨stk, hs, hver⟩ := hc.verified
-  exact glueCall_tr hver.1 hver.2.1 (moves_tr hnm) hg (hP stk hs)
+  exact glueCall_tr (k := (kk stk).mxFree) hver.1 (Contract.ct_mxFree hc.mx hver.2.1 (hpm stk)) (moves_tr hnm) hg
+    (hP stk hs)
 
 /-! ## The moves of the arguments -/
 
@@ -376,7 +378,7 @@ theorem ipAt_tr {t : Spec.MlDsa.Poly → Spec.MlDsa.Poly} {c : Prog isa} {n : St
         by rw [k1.2.2]; exact covers2 T.sx.lay w1 w2,
         by rw [k2.2.1, k2.2.2]; exact covers_nil_wr (covers2 T.sy.lay w1 w2),
         by rw [k2.2.2]; exact covers2 T.sy.lay w1 w2, by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.inPlaceContract, Proof.MlDsa.inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2, hv2.1, hv2.2, keep_rsp k1, keep_rsp k2, T.rsp, T.pa hb, T.pa (q := sc oSS) (by decide),
     and_self]
 
@@ -446,7 +448,7 @@ theorem addAt_tr {sfx : String} {c : Prog isa} (hc : Callee c fun stk => Proof.M
         by rw [k1.2.2]; exact Covers.cons (T.sx.lay.cW w1) Covers.nil,
         by rw [k2.2.1, k2.2.2]; exact covers_rw T.sy.lay i2 w1,
         by rw [k2.2.2]; exact Covers.cons (T.sy.lay.cW w1) Covers.nil, by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.addContract, Proof.MlDsa.accSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.addContract, Proof.MlDsa.accSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2, hv2.1, hv2.2, keep_rsp k1, keep_rsp k2, T.rsp, T.pa hbf, T.pa hbg, and_self]
 
 end
@@ -582,7 +584,7 @@ theorem dotInvAt_tr {sfx : String} {cd : Prog isa}
         by rw [k2.2.1, k2.2.2]; exact cov T.sy.lay,
         by rw [k2.2.2]; exact Covers.cons (T.sy.lay.cW w1) (Covers.cons (T.sy.lay.cW w2) Covers.nil),
         by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.dotInverseContract, Proof.MlDsa.dotInverseSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.dotInverseContract, Proof.MlDsa.dotInverseSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2.1, hv1.2.2.2, hv2.1, hv2.2.1, hv2.2.2.1, hv2.2.2.2, keep_rsp k1, keep_rsp k2,
     T.rsp, T.pa hbh, T.pa hbf, T.pa hbg, T.pa (q := sc oSS) (by decide), and_self]
 
@@ -659,7 +661,7 @@ theorem p2rAt_tr {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.power2Roun
         by rw [k1.2.1, k1.2.2]; exact covers_rww T.sx.lay i1 w1 w2, by rw [k1.2.2]; exact covers2 T.sx.lay w1 w2,
         by rw [k2.2.1, k2.2.2]; exact covers_rww T.sy.lay i1 w1 w2, by rw [k2.2.2]; exact covers2 T.sy.lay w1 w2,
         by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.power2RoundContract, Proof.MlDsa.power2RoundSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.power2RoundContract, Proof.MlDsa.power2RoundSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2, hv2.1, hv2.2.1, hv2.2.2, keep_rsp k1, keep_rsp k2, T.rsp, T.pa hbt, T.pa hb1,
     T.pa hb0, and_self]
 
@@ -727,7 +729,7 @@ theorem rejNttAt_tr {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.rejNTTC
         by rw [k1.2.1, k1.2.2]; exact covers_rww T.sx.lay i1 w1 w2, by rw [k1.2.2]; exact covers2 T.sx.lay w1 w2,
         by rw [k2.2.1, k2.2.2]; exact covers_rww T.sy.lay i1 w1 w2, by rw [k2.2.2]; exact covers2 T.sy.lay w1 w2,
         by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.rejNTTContract, Proof.MlDsa.rejNTTSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2, hv2.1, hv2.2.1, hv2.2.2, T.pa hbs, T.pa hba, T.pa (q := sc oSS) (by decide),
     and_true]
   refine ⟨by rw [keep_rsp k1, keep_rsp k2, T.rsp], ?_⟩
@@ -799,7 +801,8 @@ theorem rej4At_tr {c : Prog isa} {sfx : String} (hc : Callee4 c) (hba : a.1 ∈ 
       (rej4At c sfx a w) fun _ _ => True := by
   obtain ⟨i1, _, _⟩ := sepB_spec h1
   have g := fun x => glue3_ok (sc_ok oSA4 (by decide)) ha hw x
-  refine glueCall_tr hc.verified.1 hc.verified.2.1
+  refine glueCall_tr (k := (Proof.MlDsa.rejNTT4Contract X86_64.abi 24).mxFree) hc.verified.1
+    (Contract.ct_mxFree hc.mx hc.verified.2.1 fun _ _ h => h)
     (moves_tr (nomem_append (nomem_append (lea_nomem _ _) (lea_nomem _ _)) (lea_nomem _ _)))
     (fun x y _ => ⟨g x, g y⟩)
     fun x y x1 y1 ⟨T, e⟩ ⟨⟨hv1, hm1⟩, k1⟩ ⟨⟨hv2, hm2⟩, k2⟩ =>
@@ -807,7 +810,7 @@ theorem rej4At_tr {c : Prog isa} {sfx : String} (hc : Callee4 c) (hba : a.1 ∈ 
         by rw [k1.2.1, k1.2.2]; exact covers_rww T.sx.lay i1 w1 w2, by rw [k1.2.2]; exact covers2 T.sx.lay w1 w2,
         by rw [k2.2.1, k2.2.2]; exact covers_rww T.sy.lay i1 w1 w2, by rw [k2.2.2]; exact covers2 T.sy.lay w1 w2,
         by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.rejNTT4Contract, Proof.MlDsa.rejNTT4Sig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.rejNTT4Contract, Proof.MlDsa.rejNTT4Sig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2, hv2.1, hv2.2.1, hv2.2.2, T.pa hba, T.pa hbw,
     T.pa (q := sc oSA4) (by decide), and_true]
   refine ⟨by rw [keep_rsp k1, keep_rsp k2, T.rsp], ?_⟩
@@ -922,7 +925,7 @@ theorem rejBAt_tr {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.rejBounde
         by rw [k1.2.1, k1.2.2]; exact covers_rww T.sx.lay i1 w1 w2, by rw [k1.2.2]; exact covers2 T.sx.lay w1 w2,
         by rw [k2.2.1, k2.2.2]; exact covers_rww T.sy.lay i1 w1 w2, by rw [k2.2.2]; exact covers2 T.sy.lay w1 w2,
         by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.rejBoundedContract, Proof.MlDsa.rejBoundedSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2.1, hv1.2.2.2, hv2.1, hv2.2.1, hv2.2.2.1, hv2.2.2.2, T.pa hbs, T.pa hba,
     T.pa (q := sc oSS) (by decide), w32_toNat (eta_lt heta), and_true]
   refine ⟨by rw [keep_rsp k1, keep_rsp k2, T.rsp], ?_⟩
@@ -1008,7 +1011,7 @@ theorem sbpAt_tr {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.simpleBitP
         by rw [k1.2.2]; exact Covers.cons (T.sx.lay.cW w1) Covers.nil,
         by rw [k2.2.1, k2.2.2]; exact covers_rw T.sy.lay i1 w1,
         by rw [k2.2.2]; exact Covers.cons (T.sy.lay.cW w1) Covers.nil, by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.simpleBitPackContract, Proof.MlDsa.simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.simpleBitPackContract, Proof.MlDsa.simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2.1, hv1.2.2.2, hv2.1, hv2.2.1, hv2.2.2.1, hv2.2.2.2, keep_rsp k1, keep_rsp k2,
     T.rsp, T.pa hbf, T.pa hbo, and_self]
 
@@ -1102,7 +1105,7 @@ theorem bpAt_tr {c : Prog isa} (hc : Callee c fun stk => Proof.MlDsa.bitPackCont
         by rw [k1.2.2]; exact Covers.cons (T.sx.lay.cW w1) Covers.nil,
         by rw [k2.2.1, k2.2.2]; exact covers_rw T.sy.lay i1 w1,
         by rw [k2.2.2]; exact Covers.cons (T.sy.lay.cW w1) Covers.nil, by rw [keep_rsp k1, keep_rsp k2, T.rsp]⟩
-  sig_pub [Proof.MlDsa.bitPackContract, Proof.MlDsa.bitPackSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, Proof.MlDsa.bitPackContract, Proof.MlDsa.bitPackSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hv1.1, hv1.2.1, hv1.2.2.1, hv1.2.2.2.1, hv1.2.2.2.2, hv2.1, hv2.2.1, hv2.2.2.1, hv2.2.2.2.1, hv2.2.2.2.2,
     keep_rsp k1, keep_rsp k2, T.rsp, T.pa hbf, T.pa hbo, and_self]
 

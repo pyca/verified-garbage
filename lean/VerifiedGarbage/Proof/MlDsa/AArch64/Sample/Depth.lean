@@ -42,10 +42,6 @@ theorem rejNTT_noDit : (rejNTTWith v.callee).all (fun i => !i.touchesDit) = true
   simp only [rejNTTWith, zeroPoly, rnLoop, rnBody, Code.all, sponge_noDit v, Bool.true_and]
   decide
 
-theorem rejBounded_noDit : (rejBoundedWith v.callee).all (fun i => !i.touchesDit) = true := by
-  simp only [rejBoundedWith, rbLoop, rbBody, Code.all, sponge_noDit v, Bool.true_and]
-  decide
-
 theorem ball_noDit : (sampleInBallWith v.callee).all (fun i => !i.touchesDit) = true := by
   simp only [sampleInBallWith, zeroPoly, bLoop, bBody, bTry, Code.all, sponge_noDit v, Bool.true_and]
   decide

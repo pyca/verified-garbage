@@ -40,6 +40,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Power2Round
 import VerifiedGarbage.Proof.MlDsa.Round.Ones
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 
 /-!
 # ML-DSA signing on AArch64: the primitives it calls

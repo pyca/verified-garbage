@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.RelCT
 public import VerifiedGarbage.Proof.Framework.RelCT
 public import VerifiedGarbage.Proof.MlDsa.Sign.Mem
 public import VerifiedGarbage.Proof.MlKem.X86_64.Wp
+public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
 import VerifiedGarbage.Proof.MlKem.X86_64.Rel
 import VerifiedGarbage.Proof.MlKem.Mem
 import VerifiedGarbage.Proof.Framework.Contract
@@ -49,13 +50,35 @@ structure Callee (k : Nat → Contract isa) (D : Nat) (c : Prog isa) where
   hS : S + 8 ≤ D
   ver : Verified X86_64.target c (k S)
   nosp : NoSp c
+  mx : c.allInstrs (fun i => !touchesMxcsr i) = true
   depth : 8 * (c.depth + 1) ≤ D
+
+/-- A callee is constant time from states whose public data agree but in
+MXCSR, which it never touches (`Contract.mxFree`). -/
+theorem Callee.ctMx {k : Nat → Contract isa} {D : Nat} {c : Prog isa} (C : Callee k D c)
+    (hpre : ∀ s m, (k C.S).pre s → (k C.S).pre (s.withMx m)) :
+    ConstantTime isa (k C.S).mxFree.pre (k C.S).mxFree.pub c :=
+  Contract.ct_mxFree C.mx C.ver.2.1 hpre
+
+/-- `C.ver`'s correctness, for `Contract.mxFree`, whose precondition and
+postcondition are those of the callee's contract. -/
+theorem Callee.okMx {k : Nat → Contract isa} {D : Nat} {c : Prog isa} (C : Callee k D c) :
+    ∀ s, (k C.S).mxFree.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (k C.S).mxFree.post s s' :=
+  C.ver.1
 
 /-- The result of `c` (the low 32 bits of `rax`) is the same in two runs from
 states that satisfy `k.pre` and agree on `k.pub`. -/
 def RetPub (k : Contract isa) (c : Prog isa) : Prop :=
   RelCT isa (fun s₁ s₂ => k.pre s₁ ∧ k.pre s₂ ∧ k.pub s₁ s₂) c
     fun s₁ s₂ => (s₁.gpr .rax).setWidth 32 = (s₂.gpr .rax).setWidth 32
+
+/-- `RetPub` from public data that agree but in MXCSR, for code that never
+touches it (`Exec.withMx`). -/
+theorem RetPub.mxFree {k : Contract isa} {c : Prog isa} (h : RetPub k c)
+    (hc : c.allInstrs (fun i => !touchesMxcsr i) = true) (hpre : ∀ s m, k.pre s → k.pre (s.withMx m)) :
+    RetPub k.mxFree c := fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
+  h s₁ (s₂.withMx s₁.mxcsr) t₁ t₂ s₁' (s₂'.withMx s₁.mxcsr) ⟨h₁, hpre _ _ h₂, hp⟩ e₁
+    (Exec.withMx (noTouch_instrs hc) e₂ _)
 
 /-! ## Blocks without memory accesses -/
 

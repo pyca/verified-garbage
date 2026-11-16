@@ -81,14 +81,14 @@ theorem ipAt_tr {t : Poly → Poly} {n : String} {c : Prog isa} (C : CalleeOk c 
     {P : State → State → Prop}
     (hP : ∀ x y, P x y → Lay rbs wbs x ∧ Lay rbs wbs y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f) ∧ SameB x y) :
     RelCT isa P (callAt n c (ipArgs f)) fun _ _ => True := by
-  refine callAt_tr C.correct C.ct (ip_args hS hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
+  refine callAt_tr C.okMx (C.ctMx fun _ _ h => h) (ip_args hS hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
   · intro x y x1 y1 hp h1 h2
     obtain ⟨Lx, Ly, rx, ry, e⟩ := hP x y hp
-    refine ⟨_, _, _, _, ip_pre Lx hc rx h1, ip_pre Ly hc ry h2, ?_, (ip_cov Lx hc).1, (ip_cov Lx hc).2,
+    refine ⟨_, _, _, _, ip_pre (t := t) Lx hc rx h1, ip_pre (t := t) Ly hc ry h2, ?_, (ip_cov Lx hc).1, (ip_cov Lx hc).2,
       (ip_cov Ly hc).1, (ip_cov Ly hc).2, e.2⟩
     have hb : f.1 ∈ bases := by
       simp only [ipChk, Bool.and_eq_true] at hc; exact ptr_bs hS hc.1.1.1.2
-    sig_pub [inPlaceContract, inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
+    sig_pub [Contract.mxFree, inPlaceContract, inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
     rw [h1.r0, h2.r0, h1.r1,
       h2.r1, h1.rsp, h2.rsp]
     exact ⟨by rw [e.2], by simp only [Arg.val]; rw [e.pa hb], by simp only [Arg.val]; rw [e.pa (by decide)]⟩
@@ -195,15 +195,15 @@ theorem mulAt_tr {P : Prims} (C : CalleeOk P.mul (productContract P.montgomery X
     (hQ : ∀ x y, Q x y → Lay rbs wbs x ∧ Lay rbs wbs y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
       (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g)) ∧ SameB x y) :
     RelCT isa Q (mulAt P h f g) fun _ _ => True := by
-  refine callAt_tr C.correct C.ct (mul_args hS hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
+  refine callAt_tr C.okMx (C.ctMx fun _ _ h => h) (mul_args hS hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
   intro x y x1 y1 hp h1 h2
   obtain ⟨Lx, Ly, rx, ry, e⟩ := hQ x y hp
-  refine ⟨_, _, _, _, mul_pre Lx hc rx.1 rx.2 h1, mul_pre Ly hc ry.1 ry.2 h2, ?_, (mul_cov Lx hc).1, (mul_cov Lx hc).2,
+  refine ⟨_, _, _, _, mul_pre (mont := P.montgomery) Lx hc rx.1 rx.2 h1, mul_pre (mont := P.montgomery) Ly hc ry.1 ry.2 h2, ?_, (mul_cov Lx hc).1, (mul_cov Lx hc).2,
     (mul_cov Ly hc).1, (mul_cov Ly hc).2, e.2⟩
   have hc' := hc
   simp only [mulChk, Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨⟨_, c3⟩, c4⟩, c5⟩, _⟩ := hc'
-  sig_pub [productContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, productContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
   exact mul_pub ⟨ptr_bs hS c3, ptr_bs hS c4, ptr_bs hS c5⟩ e h1 h2
 
 theorem mulAddAt_tr {P : Prims} (C : CalleeOk P.mulAdd (accumulateContract P.montgomery X86_64.abi 16)) {rbs wbs : List (Reg × Nat)}
@@ -212,15 +212,15 @@ theorem mulAddAt_tr {P : Prims} (C : CalleeOk P.mulAdd (accumulateContract P.mon
       (Reduced x.mem (pa x h) ∧ Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
       (Reduced y.mem (pa y h) ∧ Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g)) ∧ SameB x y) :
     RelCT isa Q (mulAddAt P h f g) fun _ _ => True := by
-  refine callAt_tr C.correct C.ct (mul_args hS hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
+  refine callAt_tr C.okMx (C.ctMx fun _ _ h => h) (mul_args hS hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
   intro x y x1 y1 hp h1 h2
   obtain ⟨Lx, Ly, rx, ry, e⟩ := hQ x y hp
-  refine ⟨_, _, _, _, mulAdd_pre Lx hc rx.1 rx.2.1 rx.2.2 h1, mulAdd_pre Ly hc ry.1 ry.2.1 ry.2.2 h2, ?_,
+  refine ⟨_, _, _, _, mulAdd_pre (mont := P.montgomery) Lx hc rx.1 rx.2.1 rx.2.2 h1, mulAdd_pre (mont := P.montgomery) Ly hc ry.1 ry.2.1 ry.2.2 h2, ?_,
     (mul_cov Lx hc).1, (mul_cov Lx hc).2, (mul_cov Ly hc).1, (mul_cov Ly hc).2, e.2⟩
   have hc' := hc
   simp only [mulChk, Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨⟨_, c3⟩, c4⟩, c5⟩, _⟩ := hc'
-  sig_pub [accumulateContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, accumulateContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
   exact mul_pub ⟨ptr_bs hS c3, ptr_bs hS c4, ptr_bs hS c5⟩ e h1 h2
 
 /-! ## Subtraction -/
@@ -282,7 +282,7 @@ theorem subAt_tr {P : Prims} (C : CalleeOk P.sub (subContract X86_64.abi 16)) {r
     (hQ : ∀ x y, Q x y → Lay rbs wbs x ∧ Lay rbs wbs y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
       (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g)) ∧ SameB x y) :
     RelCT isa Q (subAt P f g) fun _ _ => True := by
-  refine callAt_tr C.correct C.ct (sub_args hS hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
+  refine callAt_tr C.okMx (C.ctMx fun _ _ h => h) (sub_args hS hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
   intro x y x1 y1 hp h1 h2
   obtain ⟨Lx, Ly, rx, ry, e⟩ := hQ x y hp
   refine ⟨_, _, _, _, sub_pre Lx hc rx.1 rx.2 h1, sub_pre Ly hc ry.1 ry.2 h2, ?_, (sub_cov Lx hc).1, (sub_cov Lx hc).2,
@@ -290,7 +290,7 @@ theorem subAt_tr {P : Prims} (C : CalleeOk P.sub (subContract X86_64.abi 16)) {r
   have hc' := hc
   simp only [subChk, Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨_, c2⟩, c3⟩, _⟩ := hc'
-  sig_pub [subContract, accSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, subContract, accSig, X86_64.abi, VG.X86_64.argRegs]
   rw [h1.r0, h1.r1, h2.r0, h2.r1, h1.rsp, h2.rsp, e.2]
   simp only [Arg.val]
   exact ⟨trivial, e.pa (ptr_bs hS c2), e.pa (ptr_bs hS c3)⟩

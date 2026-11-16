@@ -100,8 +100,8 @@ theorem Verified.callWipeC' {post' : sig.Post abi.ptrBits} {name zname : String}
     (hps : sig.params = ps₁ ++ (nm, .array true e k) :: ps₂)
     (hi : i = (ps₁.flatMap fun p => p.2.words 64).length)
     (hn : n ≤ k * e.size) (hn16 : n < 2 ^ 16)
-    (hd : 16 * body.aarch64Depth ≤ stack) (hbd : DitDet body) (hzd : 16 * zcode.aarch64Depth ≤ zst)
-    (hzs : zst ≤ stack)
+    (hd : 16 * body.aarch64Depth ≤ stack) (hzdit : zcode.all (fun i => !i.touchesDit) = true)
+    (hzd : 16 * zcode.aarch64Depth ≤ zst) (hzs : zst ≤ stack)
     (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
@@ -165,11 +165,10 @@ theorem Verified.callWipeC' {post' : sig.Post abi.ptrBits} {name zname : String}
     have hp' : (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + 32) leak).pub σ₁ σ₂ := hp
     have hp₀ := (pub_consts.mp hp').1
     have hsp12 : σ₁.sp = σ₂.sp := ((pub_regs hk).mp hp₀).1.1.1
-    have hdit12 : σ₁.dit = σ₂.dit := ((pub_regs hk).mp hp₀).1.1.2
     have hpp : σ₁.gpr r = σ₂.gpr r := cw_pubArr hk hps hr' hp₀
     refine RelCT.mono (P := fun a b => a = allocated 32 σ₁ ∧ b = allocated 32 σ₂)
       (cw_ct (post := post) (leak := leak) (rd₁ := (stripConsts (c₀ :: cs) σ₁).rd)
-        (rd₂ := (stripConsts (c₀ :: cs) σ₂).rd) hz hk hl hzd hzs hn hn16 (pre_consts.mp h₁').1
+        (rd₂ := (stripConsts (c₀ :: cs) σ₂).rd) hz hk hl hzd hzdit hzs hn hn16 (pre_consts.mp h₁').1
         (pre_consts.mp h₂').1 (harr σ₁) (harr σ₂) hsp12 hpp ?_)
       (fun a b hab => hab.2) (fun _ _ h => h)
     -- The first function.
@@ -178,9 +177,7 @@ theorem Verified.callWipeC' {post' : sig.Post abi.ptrBits} {name zname : String}
       ⟨Covers.append (Covers.refl _) (Covers.of_mem fun x hx => List.mem_cons_of_mem _ hx),
         Covers.of_mem fun x hx => List.mem_cons_of_mem _ hx⟩
     refine RelCT.mono (RelCT.wp (F₁ := AfterBody sig post r stack σ₁) (F₂ := AfterBody sig post r stack σ₂)
-      (RelCT.call_dit hbd (fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact hdit12)
-        (RelCT.callEx h.1 h.2.1 fun a b hab => ?_)) fun a b hab => ?_) (fun _ _ h => h)
-      (fun _ _ h => ⟨h.2, h.1.2⟩)
+      (RelCT.callEx h.1 h.2.1 fun a b hab => ?_) fun a b hab => ?_) (fun _ _ h => h) (fun _ _ h => h.2)
     · obtain ⟨rfl, rfl⟩ := hab
       exact ⟨σ₁.rd, σ₁.wr, σ₂.rd, σ₂.wr, cw_bodyPreK hk hl hpre h₁', cw_bodyPreK hk hl hpre h₂',
         cw_bodyPubK hk hl r h₁' h₂' hp' hleak, (hcov σ₁).1, (hcov σ₁).2, (hcov σ₂).1, (hcov σ₂).2⟩
@@ -196,8 +193,8 @@ theorem Verified.callWipeC {name zname : String} {body zcode : Prog isa} {zst : 
     (hps : sig.params = ps₁ ++ (nm, .array true e k) :: ps₂)
     (hi : i = (ps₁.flatMap fun p => p.2.words 64).length)
     (hn : n ≤ k * e.size) (hn16 : n < 2 ^ 16)
-    (hd : 16 * body.aarch64Depth ≤ stack) (hbd : DitDet body) (hzd : 16 * zcode.aarch64Depth ≤ zst)
-    (hzs : zst ≤ stack)
+    (hd : 16 * body.aarch64Depth ≤ stack) (hzdit : zcode.all (fun i => !i.touchesDit) = true)
+    (hzd : 16 * zcode.aarch64Depth ≤ zst) (hzs : zst ≤ stack)
     (hpre : ∀ vs m₁ m₂, vs.length = (sig.words abi.ptrBits).length →
       (∀ b ∈ Sig.bufs sig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (sig.words abi.ptrBits) pre vs m₁ → Curry.apply (sig.words abi.ptrBits) pre vs m₂)
@@ -215,7 +212,7 @@ theorem Verified.callWipeC {name zname : String} {body zcode : Prog isa} {zst : 
     (hleak : Sig.LeakLocal abi.ptrBits sig leak := by trivial) :
     Verified target (Impl.CallWipe.AArch64.callWipe (argRegs.getD i .x0) n name body zname zcode)
       (sig.contract (abi.withConsts (c₀ :: cs)) pre post wa (stack + 32) leak) :=
-  Verified.callWipeC' h hz hk hl hps hi hn hn16 hd hbd hzd hzs hpre hpost hpostOut
+  Verified.callWipeC' h hz hk hl hps hi hn hn16 hd hzdit hzd hzs hpre hpost hpostOut
     (fun _ _ _ _ _ hq _ => hq) hsat hleak
 
 end

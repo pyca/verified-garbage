@@ -71,7 +71,7 @@ theorem calleeOf {sig : Sig} {pre : Curry (sig.words X86_64.abi.ptrBits) (Mem �
     {post : sig.Post X86_64.abi.ptrBits} {wa : Bool} {c : Prog isa}
     (h : FnOk (fun S => sig.contract X86_64.abi pre post wa S none) c) :
     CalleeOk c (sig.contract X86_64.abi pre post wa 16 none) :=
-  CalleeOk.of_verified h.ver (by decide) h.nosp (Nat.le_succ_of_le h.depth) h.ctl h.sp
+  CalleeOk.of_verified h.ver (by decide) ⟨h.nosp, h.mx⟩ (Nat.le_succ_of_le h.depth) h.ctl h.sp
 
 theorem prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) where
   ntt := by
@@ -86,31 +86,31 @@ theorem prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) where
   mulAdd := calleeOf v.ok.mulAdd
   sub := calleeOf v.ok.sub
   rejNtt := (CalleeOk.of_verified Proof.MlDsa.X86_64.Sample.RejNttShort.verified (by decide)
-    (Proof.MlKem.X86_64.nosp_of (by lit_decide)) (by lit_decide) (by lit_decide)
+    (Proof.MlKem.X86_64.nospMx_of (by lit_decide)) (by lit_decide) (by lit_decide)
     (Code.all_of_spTest (by lit_decide)) :
     CalleeOk prims.rejNtt _)
   ball := (CalleeOk.of_verified Proof.MlDsa.X86_64.Sample.sampleInBall_verified (by decide)
-    (Proof.MlKem.X86_64.nosp_of (by lit_decide)) (by lit_decide) (by lit_decide)
+    (Proof.MlKem.X86_64.nospMx_of (by lit_decide)) (by lit_decide) (by lit_decide)
     (Code.all_of_spTest (by lit_decide)) :
     CalleeOk prims.ball _)
   useHint := calleeOf v.ok.useHint
   simpleBitPack := (CalleeOk.of_verified Proof.MlDsa.X86_64.Pack.simpleBitPack_verified (by decide)
-    (Proof.MlKem.X86_64.nosp_of (by lit_decide)) (by lit_decide) (by lit_decide)
+    (Proof.MlKem.X86_64.nospMx_of (by lit_decide)) (by lit_decide) (by lit_decide)
     (Code.all_of_spTest (by lit_decide)) :
     CalleeOk prims.simpleBitPack _)
   bitUnpack := (CalleeOk.of_verified Proof.MlDsa.X86_64.Pack.bitUnpack_verified (by decide)
-    (Proof.MlKem.X86_64.nosp_of (by lit_decide)) (by lit_decide) (by lit_decide)
+    (Proof.MlKem.X86_64.nospMx_of (by lit_decide)) (by lit_decide) (by lit_decide)
     (Code.all_of_spTest (by lit_decide)) :
     CalleeOk prims.bitUnpack _)
   unpackT1 := (CalleeOk.of_verified Proof.MlDsa.X86_64.Pack.unpackT1_verified (by decide)
-    (Proof.MlKem.X86_64.nosp_of (by lit_decide)) (by lit_decide) (by lit_decide)
+    (Proof.MlKem.X86_64.nospMx_of (by lit_decide)) (by lit_decide) (by lit_decide)
     (Code.all_of_spTest (by lit_decide)) :
     CalleeOk prims.unpackT1 _)
   hintUnpack := (CalleeOk.of_verified Proof.MlDsa.X86_64.Pack.hintBitUnpack_verified (by decide)
-    (Proof.MlKem.X86_64.nosp_of (by lit_decide)) (by lit_decide) (by lit_decide)
+    (Proof.MlKem.X86_64.nospMx_of (by lit_decide)) (by lit_decide) (by lit_decide)
     (Code.all_of_spTest (by lit_decide)) :
     CalleeOk prims.hintUnpack _)
   normLt := calleeOf v.ok.normLt
-  rej4 := ⟨v.ok.rej4.ver.1, v.ok.rej4.ver.2.1, v.ok.rej4.nosp, v.ok.rej4.depth, v.ok.rej4.ctl, v.ok.rej4.sp⟩
+  rej4 := ⟨v.ok.rej4.ver.1, v.ok.rej4.ver.2.1, v.ok.rej4.nosp, v.ok.rej4.mx, v.ok.rej4.depth, v.ok.rej4.ctl, v.ok.rej4.sp⟩
 
 end VG.Proof.MlDsa.X86_64.Verify

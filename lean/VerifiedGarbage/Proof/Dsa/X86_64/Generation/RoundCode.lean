@@ -16,6 +16,12 @@ theorem roundCode_safe (v : RoundImpl) : generationSafe (Kernel.called v).run :=
     ((generationSafe.call_of v.ctl v.spSafe v.name).seq
       (show generationSafe (.block Impl.MillerRabin.X86_64.Caller.restore) from rfl))
 
+/-- The call of the round never touches MXCSR. -/
+theorem roundCode_noMx (v : RoundImpl) : (Kernel.called v).run.allInstrs (fun i => !touchesMxcsr i) = true := by
+  simp only [Kernel.called, VG.Impl.MillerRabin.X86_64.Caller.call, Code.allInstrs, v.noMx,
+    Bool.true_and]
+  decide
+
 theorem roundCode_depth (v : RoundImpl) : generationDepth (Kernel.called v).run := by
   change max 0 (max (v.code.x86_64Depth + 8) 0) ≤ 128
   simp only [Nat.zero_max, Nat.max_zero]

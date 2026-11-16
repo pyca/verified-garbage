@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.Arith.Representation
 public import VerifiedGarbage.Proof.MlKem.X86_64.FragCall
+public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
 public import VerifiedGarbage.Impl.MlDsa.X86_64.KeyGen.Prims
 public import VerifiedGarbage.Proof.MlDsa.FusedInverseContract
 import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
@@ -36,6 +37,7 @@ that never writes `rsp` but by calls nested at most twice. -/
 structure Callee (c : Prog isa) (k : Nat → Contract isa) : Prop where
   verified : ∃ stk, stk ≤ 16 ∧ Verified X86_64.target c (k stk)
   nosp : NoSp c
+  mx : c.allInstrs (fun i => !touchesMxcsr i) = true
   depth : c.depth ≤ 2
 
 /-- `vg_mldsa_rej_ntt_poly4`: verified with 24 bytes of stack, never writing `rsp` but by calls nested at
@@ -43,6 +45,7 @@ most three deep. -/
 structure Callee4 (c : Prog isa) : Prop where
   verified : Verified X86_64.target c (Proof.MlDsa.rejNTT4Contract X86_64.abi 24)
   nosp : NoSp c
+  mx : c.allInstrs (fun i => !touchesMxcsr i) = true
   depth : c.depth ≤ 3
 
 /-- Verified implementations of the primitives key generation calls. -/

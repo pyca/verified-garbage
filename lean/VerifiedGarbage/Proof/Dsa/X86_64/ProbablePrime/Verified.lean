@@ -249,6 +249,18 @@ theorem probablePrime_safe (mul : Nat → Nat → Nat → Prog isa) (round : Pro
     (((primeSetup_safe mul hm).seq (millerRabin_safe mul round hm hr)).ite
       (show generationSafe (.block [.mov32 .rax (.imm 3), .store (hdr Impl.RsaKeyGen.X86_64.Candidate.kStat) .rax]) from rfl) _)
 
+theorem primeBytes_noMx (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
+    (hm : ∀ o a b, (mul o a b).allInstrs (fun i => !touchesMxcsr i) = true)
+    (hr : round.allInstrs (fun i => !touchesMxcsr i) = true) :
+    (primeBytes mul round).allInstrs (fun i => !touchesMxcsr i) = true := by
+  simp only [primeBytes, loadPadded, probablePrime, primeSetup, primeR2, Impl.Dsa.X86_64.Arithmetic.constants,
+    Impl.Ffdh.X86_64.ParameterCandidate.prepareConstants,
+    R2Words.choice, R2Words.fast, R2Words.old, VG.Impl.Bignum.X86_64.Public.R2Squares.run,
+    VG.Impl.Bignum.X86_64.Public.R2Squares.init, VG.Impl.Bignum.X86_64.Public.R2Squares.next,
+    millerRabin, primeIteration, drawRound, sampleRound, Impl.Ffdh.X86_64.ParameterCandidate.witnessRound,
+    seqs, Code.allInstrs, Bool.and_eq_true, hm, hr, and_true, true_and]
+  and_intros <;> lit_decide
+
 theorem primeBytes_safe (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
     (hm : ∀ o a b, generationSafe (mul o a b)) (hr : generationSafe round) :
     generationSafe (primeBytes mul round) :=
@@ -336,6 +348,14 @@ theorem code_safe (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
   change ((true && _) && true) = true
   rw [hb']; rfl
 
+theorem code_noMx (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
+    (hm : ∀ o a b, (mul o a b).allInstrs (fun i => !touchesMxcsr i) = true)
+    (hr : round.allInstrs (fun i => !touchesMxcsr i) = true) :
+    (code mul round).allInstrs (fun i => !touchesMxcsr i) = true := by
+  simp only [code, Impl.Bignum.X86_64.seqs, Code.allInstrs,
+    VG.Proof.Dsa.X86_64.Generation.primeBytes_noMx mul round hm hr, Bool.true_and]
+  lit_decide
+
 theorem code_depth (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
     (hm : ∀ o a b, generationDepth (mul o a b)) (hr : generationDepth round) :
     (code mul round).x86_64Depth ≤ 184 := by
@@ -372,6 +392,7 @@ def primeTest (v : RoundImpl) : VG.Proof.Dsa.X86_64.Generation.PrimeTest where
   code := testCode v
   verified := verified v
   safe := testCode_safe v
+  noMx := code_noMx _ _ v.inlineNoMx (VG.Proof.Dsa.X86_64.Generation.roundCode_noMx v)
   depth := code_depth _ _ (VG.Proof.Dsa.X86_64.Generation.inlineMul_depth v)
     (VG.Proof.Dsa.X86_64.Generation.roundCode_depth v)
 

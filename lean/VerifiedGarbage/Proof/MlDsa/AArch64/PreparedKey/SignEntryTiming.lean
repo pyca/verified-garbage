@@ -417,48 +417,33 @@ open VG.Proof.MlDsa.AArch64.KeyGen
 open VG.Proof.MlDsa.AArch64.Message
 
 /-- Replacing scalar rejection tails by the resident pair adds no stack depth. -/
+theorem samples_dle {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params) :
+    DLe (S/16) (Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples P p) := by
+  have h1 : DLe (S/16) P.rejNtt := ⟨by have := hP.rejNtt.fd; omega_using [this], hP.rejNtt.nd⟩
+  have h4 : DLe (S/16) P.rej4 := ⟨by have := hP.rej4.fd; omega_using [this], hP.rej4.nd⟩
+  have hb : DLe (S/16) P.ball := ⟨by have := hP.ball.fd; omega_using [this], hP.ball.nd⟩
+  have h2 : DLe (S/16) Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code := by
+    have hd : Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code.aarch64Depth=0 := by decide +kernel
+    exact ⟨by rw [hd];omega_using [], by lit_decide⟩
+  unfold Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples
+    Impl.MlDsa.AArch64.Verify.OptimizedSamples.expAll
+  split
+  · unfold Impl.MlDsa.AArch64.Verify.OptimizedSamples.expA4
+      Impl.MlDsa.AArch64.Verify.OptimizedSamples.tail2
+      Impl.MlDsa.AArch64.Optimized.MatrixMask.code
+    dle_tac
+  · unfold Impl.MlDsa.AArch64.Verify.OptimizedSamples.expA4
+      Impl.MlDsa.AArch64.Optimized.MatrixMask.code
+    dle_tac
+
 theorem samples_depth {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params) :
     16*(Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples P p).aarch64Depth≤S := by
-  have h1 : DLe (S/16) P.rejNtt := ⟨by have := hP.rejNtt.fd; omega_using [this], hP.rejNtt.nd⟩
-  have h4 : DLe (S/16) P.rej4 := ⟨by have := hP.rej4.fd; omega_using [this], hP.rej4.nd⟩
-  have hb : DLe (S/16) P.ball := ⟨by have := hP.ball.fd; omega_using [this], hP.ball.nd⟩
-  have h2 : DLe (S/16) Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code := by
-    have hd : Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code.aarch64Depth=0 := by decide +kernel
-    exact ⟨by rw [hd];omega_using [], by lit_decide⟩
-  have hd : DLe (S/16) (Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples P p) := by
-    unfold Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples
-      Impl.MlDsa.AArch64.Verify.OptimizedSamples.expAll
-    split
-    · unfold Impl.MlDsa.AArch64.Verify.OptimizedSamples.expA4
-        Impl.MlDsa.AArch64.Verify.OptimizedSamples.tail2
-        Impl.MlDsa.AArch64.Optimized.MatrixMask.code
-      dle_tac
-    · unfold Impl.MlDsa.AArch64.Verify.OptimizedSamples.expA4
-        Impl.MlDsa.AArch64.Optimized.MatrixMask.code
-      dle_tac
-  have := hd.le
+  have := (samples_dle hP p).le
   omega_using [this]
 
-theorem samples_noDit {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params)  :
-    (Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples P p).all (fun i => !i.touchesDit) = true := by
-  have h1 : DLe (S/16) P.rejNtt := ⟨by have := hP.rejNtt.fd; omega_using [this], hP.rejNtt.nd⟩
-  have h4 : DLe (S/16) P.rej4 := ⟨by have := hP.rej4.fd; omega_using [this], hP.rej4.nd⟩
-  have hb : DLe (S/16) P.ball := ⟨by have := hP.ball.fd; omega_using [this], hP.ball.nd⟩
-  have h2 : DLe (S/16) Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code := by
-    have hd : Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code.aarch64Depth=0 := by decide +kernel
-    exact ⟨by rw [hd];omega_using [], by lit_decide⟩
-  have hd : DLe (S/16) (Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples P p) := by
-    unfold Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples
-      Impl.MlDsa.AArch64.Verify.OptimizedSamples.expAll
-    split
-    · unfold Impl.MlDsa.AArch64.Verify.OptimizedSamples.expA4
-        Impl.MlDsa.AArch64.Verify.OptimizedSamples.tail2
-        Impl.MlDsa.AArch64.Optimized.MatrixMask.code
-      dle_tac
-    · unfold Impl.MlDsa.AArch64.Verify.OptimizedSamples.expA4
-        Impl.MlDsa.AArch64.Optimized.MatrixMask.code
-      dle_tac
-  exact hd.nd
+theorem samples_noDit {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params) :
+    (Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples P p).all (fun i => !i.touchesDit) = true :=
+  (samples_dle hP p).nd
 
 end VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples
 

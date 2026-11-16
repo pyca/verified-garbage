@@ -101,14 +101,14 @@ theorem primeCallTest_ct (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Suppor
   refine two_post ?_ fun a u ⟨s, W, V, h, hdi, hsi, hdx, hcx, h8, h9, hm, hsp, hrd, hwr⟩ =>
     WP.mono (primeCall_call_ok T hb h a.geometry hdi hsi hdx hcx h8 h9 hm hsp hrd hwr)
       fun t C => ⟨C.rsp, C.status⟩
-  refine RelCT.callEx T.verified.1 T.verified.2.1 fun s₁ s₂ ⟨a, h₁, h₂⟩ => ?_
+  refine RelCT.callExMx T.verified.1 T.verified.2.1 T.noMx (fun _ _ h => h) fun s₁ s₂ ⟨a, h₁, h₂⟩ => ?_
   obtain ⟨_, _, _, i₁, hdi₁, hsi₁, hdx₁, hcx₁, h8₁, h9₁, hm₁, hsp₁, hrd₁, hwr₁⟩ := h₁
   obtain ⟨_, _, _, i₂, hdi₂, hsi₂, hdx₂, hcx₂, h8₂, h9₂, hm₂, hsp₂, hrd₂, hwr₂⟩ := h₂
   have E₁ := primeCall_entry hb i₁ a.geometry hdi₁ hsi₁ hdx₁ hcx₁ h8₁ h9₁ hm₁ hsp₁ hrd₁ hwr₁
   have E₂ := primeCall_entry hb i₂ a.geometry hdi₂ hsi₂ hdx₂ hcx₂ h8₂ h9₂ hm₂ hsp₂ hrd₂ hwr₂
   refine ⟨_, _, _, _, E₁.pre, E₂.pre, ?_, E₁.reads, E₁.writes, E₂.reads, E₂.writes, hsp₁.trans hsp₂.symm⟩
-  sig_pub [ProbablePrime.contract, Proof.Dsa.ProbablePrime.sizedContract, Proof.Dsa.ProbablePrime.sizedSig,
-    abi, argRegs]
+  sig_pub [Contract.mxFree, ProbablePrime.contract, Proof.Dsa.ProbablePrime.sizedContract,
+    Proof.Dsa.ProbablePrime.sizedSig, abi, argRegs]
   have hl : (BitVec.ofNat 64 (a.rand.length - a.used)).toNat = a.rand.length - a.used := by
     rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by have := i₁.tapeSize; omega_using [this])]
   have hbits : (BitVec.ofNat 64 bits).toNat = bits := by

@@ -70,8 +70,7 @@ theorem args_length : ∀ s vals,
 theorem wiped_scrubbed {P : Spec.Cbc.aesSig.Post 64} {w : Nat} {name : String} {body : Prog isa}
     (z : ZeroizeImpl)
     (h : Verified target body (Spec.Cbc.aesSig.contract abi (pre 64) (tailPost 64 w P) false 8 none))
-    (hsp : body.all (fun i => !isa.writesSp i) = true) (hd : body.x86_64Depth ≤ 8) (hmx : MxDet body)
-    (hw : w ≤ 2176)
+    (hsp : body.all (fun i => !isa.writesSp i) = true) (hd : body.x86_64Depth ≤ 8) (hw : w ≤ 2176)
     (hpost : ∀ vs m₁ m₂ m' x, vs.length = (Spec.Cbc.aesSig.words 64).length →
       (∀ b ∈ Sig.bufs Spec.Cbc.aesSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (Spec.Cbc.aesSig.words 64) P vs m₁ m' x → Curry.apply (Spec.Cbc.aesSig.words 64) P vs m₂ m' x)
@@ -85,7 +84,7 @@ theorem wiped_scrubbed {P : Spec.Cbc.aesSig.Post 64} {w : Nat} {name : String} {
   Verified.callWipeTail' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := [])
     (nm := "scratch") (e := .u64) (k := 272) (i := 5) h z.verified (by decide) rfl rfl rfl
-    (by simp only [Elem.size]; omega_using [hw]) (by omega_using [hw]) (by decide) hsp hd hmx z.spSafe (by rw [z.xd])
+    (by simp only [Elem.size]; omega_using [hw]) (by omega_using [hw]) (by decide) hsp hd z.spSafe z.noMx (by rw [z.xd])
     (Nat.zero_le _) (pre_local 64) (tailPost_local 64 w P hpost) (tailPost_out 64 w P hout hw)
     (wipedTail 64 w P) (sat _)
 
@@ -108,27 +107,6 @@ theorem encrypt_depth (v : BlocksImpl) : (Caller.encrypt v).x86_64Depth ≤ 8 :=
   · simp only [Impl.AesCbc.X86_64.encrypt, Impl.AesCbc.X86_64.whole, Impl.AesCbc.X86_64.encBody,
       Code.x86_64Depth, v.encNoStack, Nat.max_le]
     omega_using []
-
-/-- The callers never load MXCSR: their own code does not, and the blocks
-functions they call do not (`BlocksImpl.encMxcsr`, `decMxcsr`). -/
-theorem decrypt_noMx (v : BlocksImpl) : (Caller.decrypt v).allInstrs (fun i => !loadsMxcsr i) = true := by
-  unfold Caller.decrypt
-  split
-  · lit_decide
-  · split
-    · lit_decide
-    · simp only [Impl.AesCbc.X86_64.decrypt, Impl.AesCbc.X86_64.batched, Impl.AesCbc.X86_64.groups,
-        Impl.AesCbc.X86_64.decGroup, Impl.AesCbc.X86_64.decBody, Code.allInstrs, v.decMxcsr, Bool.and_true,
-        Bool.true_and]
-      decide
-
-theorem encrypt_noMx (v : BlocksImpl) : (Caller.encrypt v).allInstrs (fun i => !loadsMxcsr i) = true := by
-  unfold Caller.encrypt
-  split
-  · lit_decide
-  · simp only [Impl.AesCbc.X86_64.encrypt, Impl.AesCbc.X86_64.whole, Impl.AesCbc.X86_64.encBody,
-      Code.allInstrs, v.encMxcsr, Bool.true_and]
-    decide
 
 /-- The bytes of `scratch` that `Caller.decrypt v` may write: 224 for the
 loops in AES-NI or VAES registers, all of them for the others. -/
@@ -168,8 +146,7 @@ def decrypt (v : BlocksImpl) (z : ZeroizeImpl) : Prog isa :=
 theorem decrypt_scrubbed (v : BlocksImpl) (z : ZeroizeImpl) :
     Verified target (decrypt v z)
       (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (decPost 64)) false 32 none) :=
-  wiped_scrubbed z (decrypt_tail v) (Caller.decryptSpSafe v) (decrypt_depth v)
-    (MxDet.of_noLoad (decrypt_noMx v)) (decWrites_le v)
+  wiped_scrubbed z (decrypt_tail v) (Caller.decryptSpSafe v) (decrypt_depth v) (decWrites_le v)
     (decPost_local 64) (decPost_out 64)
 
 theorem decrypt_verified (v : BlocksImpl) (z : ZeroizeImpl) :
@@ -189,8 +166,7 @@ theorem encrypt_scrubbed (v : BlocksImpl) (z : ZeroizeImpl) :
     Verified target (encrypt v z)
       (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (encPost 64)) false 32 none) :=
   wiped_scrubbed z (Verified.cbc_tail_full (Proof.AesCbc.encrypt_keyed (Caller.verified v)))
-    (Caller.spSafe v) (encrypt_depth v) (MxDet.of_noLoad (encrypt_noMx v)) (by decide) (encPost_local 64)
-    (encPost_out 64)
+    (Caller.spSafe v) (encrypt_depth v) (by decide) (encPost_local 64) (encPost_out 64)
 
 theorem encrypt_verified (v : BlocksImpl) (z : ZeroizeImpl) :
     Verified target (encrypt v z) (Spec.Cbc.aesEncryptContract abi 32) :=
@@ -219,8 +195,7 @@ theorem decryptVaes512_scrubbed :
       (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (decPost 64)) false 32 none) :=
   wiped_scrubbed .avx (Verified.cbc_tail_of_written (Proof.AesCbc.decrypt_keyed Vaes512Decrypt.verified)
       Vaes512Decrypt.written args_length)
-    Vaes512Decrypt.spSafe (by decide) (MxDet.of_noLoad (by lit_decide)) (by decide) (decPost_local 64)
-    (decPost_out 64)
+    Vaes512Decrypt.spSafe (by decide) (by decide) (decPost_local 64) (decPost_out 64)
 
 theorem decryptVaes512_verified :
     Verified target decryptVaes512 (Spec.Cbc.aesDecryptContract abi 32) :=

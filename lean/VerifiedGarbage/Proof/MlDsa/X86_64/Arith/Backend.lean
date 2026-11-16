@@ -41,6 +41,7 @@ stack its calls use) and the code `c`. -/
 structure FnOk (k : Nat → Contract isa) (c : Prog isa) : Prop where
   ver : Verified X86_64.target c (k 0)
   nosp : NoSp c
+  mx : c.allInstrs (fun i => !touchesMxcsr i) = true
   depth : c.depth ≤ 2
   ctl : ctlOk c = true
   sp : c.all (fun i => !isa.writesSp i) = true
@@ -50,6 +51,7 @@ and takes 24 bytes of stack. -/
 structure Rej4Ok (c : Prog isa) : Prop where
   ver : Verified X86_64.target c (Proof.MlDsa.rejNTT4Contract X86_64.abi 24)
   nosp : NoSp c
+  mx : c.allInstrs (fun i => !touchesMxcsr i) = true
   depth : c.depth ≤ 3
   ctl : ctlOk c = true
   sp : c.all (fun i => !isa.writesSp i) = true
@@ -63,6 +65,7 @@ deep and takes 24 bytes of stack. -/
 structure Mask4Ok (c : Prog isa) : Prop where
   ver : Verified X86_64.target c (Proof.MlDsa.expandMask4Contract X86_64.abi 24)
   nosp : NoSp c
+  mx : c.allInstrs (fun i => !touchesMxcsr i) = true
   depth : c.depth ≤ 3
   ctl : ctlOk c = true
   sp : c.all (fun i => !isa.writesSp i) = true
@@ -93,9 +96,9 @@ structure ArithImpl where
 
 /-- `FnOk` of code verified without stack, from evaluating it. -/
 theorem FnOk.of {k : Nat → Contract isa} {c : Prog isa} (h : Verified X86_64.target c (k 0))
-    (hn : c.allInstrs (fun i => !Taint.clobbers i .rsp) = true) (hd : c.depth ≤ 2) (hc : ctlOk c = true)
-    (hs : c.allInstrs (fun i => !isa.writesSp i) = true) : FnOk k c :=
-  ⟨h, Proof.MlKem.X86_64.nosp_of hn, hd, hc, Code.all_of_allInstrs hs⟩
+    (hn : c.allInstrs (fun i => !Taint.clobbers i .rsp && !touchesMxcsr i) = true) (hd : c.depth ≤ 2)
+    (hc : ctlOk c = true) (hs : c.allInstrs (fun i => !isa.writesSp i) = true) : FnOk k c :=
+  ⟨h, (Proof.MlKem.X86_64.nospMx_of hn).1, (Proof.MlKem.X86_64.nospMx_of hn).2, hd, hc, Code.all_of_allInstrs hs⟩
 
 /-- The SSE2 code. -/
 def ArithImpl.sse2 : ArithImpl where
@@ -123,10 +126,14 @@ def ArithImpl.sse2 : ArithImpl where
         (by decide +kernel)
       useHint := FnOk.of Round.useHint_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
         (by decide +kernel)
-      rej4 := ⟨Rej4.rejNTT4_verified, Proof.MlKem.X86_64.nosp_of (by decide +kernel), by decide +kernel,
-        by decide +kernel, Code.all_of_spTest (by decide +kernel), fun _ _ _ => Rej4.rejNTT4_ret⟩
-      expandMask4 := ⟨Mask4.expandMask4_verified, Proof.MlKem.X86_64.nosp_of (by decide +kernel), by decide +kernel,
-        by decide +kernel, Code.all_of_spTest (by decide +kernel)⟩
+      rej4 :=
+        have h := Proof.MlKem.X86_64.nospMx_of (c := Impl.MlDsa.X86_64.Sample.Rej4.rejNTT4) (by decide +kernel)
+        ⟨Rej4.rejNTT4_verified, h.1, h.2, by decide +kernel,
+          by decide +kernel, Code.all_of_spTest (by decide +kernel), fun _ _ _ => Rej4.rejNTT4_ret⟩
+      expandMask4 :=
+        have h := Proof.MlKem.X86_64.nospMx_of (c := Impl.MlDsa.X86_64.Sample.Mask4.expandMask4) (by decide +kernel)
+        ⟨Mask4.expandMask4_verified, h.1, h.2, by decide +kernel,
+          by decide +kernel, Code.all_of_spTest (by decide +kernel)⟩
       dotInv := fun c hc => by
         rcases hc with rfl | rfl | rfl
         · exact FnOk.of Arith.DotS.verified4 (by decide +kernel) (by decide +kernel) (by decide +kernel)

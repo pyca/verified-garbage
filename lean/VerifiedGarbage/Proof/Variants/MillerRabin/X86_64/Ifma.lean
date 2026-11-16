@@ -25,6 +25,7 @@ def variant : RoundImpl :=
     spSafe := Proof.MillerRabin.X86_64.Ifma.code_spSafe Adx.arith (by decide +kernel)
     depth := Proof.MillerRabin.X86_64.Ifma.code_depth Adx.arith (by decide +kernel)
     ctl := Proof.MillerRabin.X86_64.Ifma.code_ctl Adx.arith
+    noMx := Proof.MillerRabin.X86_64.Ifma.code_noMx Adx.arith
     correct := Proof.MillerRabin.X86_64.Ifma.code_correct Adx.arith
     ct := Proof.MillerRabin.X86_64.Ifma.code_ct Adx.arith
     suffix := "_ifma"

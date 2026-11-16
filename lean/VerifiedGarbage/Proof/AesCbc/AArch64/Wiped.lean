@@ -58,7 +58,7 @@ theorem sat (P : Spec.Cbc.aesSig.Post 64) :
 
 theorem wiped_verified {P : Spec.Cbc.aesSig.Post 64} {name : String} {body : Prog isa}
     (h : Verified target body (Spec.Cbc.aesSig.contract abi (pre 64) P false 0 none))
-    (hd : body.aarch64Depth = 0) (hdit : body.all (fun i => !i.writesDit) = true)
+    (hd : body.aarch64Depth = 0)
     (hpost : ∀ vs m₁ m₂ m' x, vs.length = (Spec.Cbc.aesSig.words 64).length →
       (∀ b ∈ Sig.bufs Spec.Cbc.aesSig.params vs, ∀ a, b.1.Contains a 1 → m₁ a = m₂ a) →
       Curry.apply (Spec.Cbc.aesSig.words 64) P vs m₁ m' x → Curry.apply (Spec.Cbc.aesSig.words 64) P vs m₂ m' x)
@@ -72,7 +72,7 @@ theorem wiped_verified {P : Spec.Cbc.aesSig.Post 64} {name : String} {body : Pro
   Verified.callWipe' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := [])
     (nm := "scratch") (e := .u64) (k := 272) (n := 2176) (i := 5) h Proof.Zeroize.AArch64.wideVerified
-    (by decide) rfl rfl rfl (by decide) (by decide) (by rw [hd]) (DitDet.of_noWrite hdit)
+    (by decide) rfl rfl rfl (by decide) (by decide) (by rw [hd]) Proof.Zeroize.AArch64.wide_noDit
     AesEcb.AArch64.zeroize_depth
     (Nat.zero_le _) (pre_local 64) hpost hout (Wipe.wiped 64 P) (sat _)
 
@@ -88,32 +88,17 @@ theorem decrypt_depth (v : BlocksImpl) : (Impl.AesCbc.AArch64.decrypt v.dec).aar
     Impl.AesCbc.AArch64.decGroup, Impl.AesCbc.AArch64.decBody,
     Code.aarch64Depth, AesEcb.AArch64.depth_of_noFrames v.decNoFrames, Nat.max_self]
 
-/-- The callers never write PSTATE.DIT: their own code does not, and the
-blocks functions they call do not (`BlocksImpl.encNoDit`, `decNoDit`). -/
-theorem encrypt_noDit (v : BlocksImpl) : (Caller.encrypt v).all (fun i => !i.writesDit) = true := by
-  unfold Caller.encrypt
-  split
-  · lit_decide
-  · simp only [Impl.AesCbc.AArch64.encrypt, Impl.AesCbc.AArch64.whole, Impl.AesCbc.AArch64.encBody,
-      Code.all, v.encNoDit, Bool.true_and]
-    decide
-
-theorem decrypt_noDit (v : BlocksImpl) : (Impl.AesCbc.AArch64.decrypt v.dec).all (fun i => !i.writesDit) = true := by
-  simp only [Impl.AesCbc.AArch64.decrypt, Impl.AesCbc.AArch64.whole, Impl.AesCbc.AArch64.decBody,
-    Code.all, v.decNoDit, Bool.true_and]
-  decide
-
 theorem encrypt_scrubbed (v : BlocksImpl) :
     Verified target (encrypt v)
       (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (encPost 64)) false 32 none) :=
-  wiped_verified (Proof.AesCbc.encrypt_keyed (Caller.verified v)) (encrypt_depth v) (encrypt_noDit v)
+  wiped_verified (Proof.AesCbc.encrypt_keyed (Caller.verified v)) (encrypt_depth v)
     (encPost_local 64) (encPost_out 64)
 
 theorem decrypt_scrubbed (v : BlocksImpl) :
     Verified target (decrypt v)
       (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (decPost 64)) false 32 none) :=
   wiped_verified (Proof.AesCbc.decrypt_keyed (Proof.AesCbc.AArch64.decrypt_verified v))
-    (decrypt_depth v) (decrypt_noDit v) (decPost_local 64) (decPost_out 64)
+    (decrypt_depth v) (decPost_local 64) (decPost_out 64)
 
 theorem encrypt_verified (v : BlocksImpl) :
     Verified target (encrypt v) (Spec.Cbc.aesEncryptContract abi 32) :=

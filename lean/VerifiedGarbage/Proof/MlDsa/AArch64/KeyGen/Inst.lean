@@ -24,6 +24,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedLoop
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Sponge
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rel
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 
 /-!
 # ML-DSA key generation on AArch64, with this library's primitives

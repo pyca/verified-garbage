@@ -1,6 +1,5 @@
 module
 
-public import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Proof.Aes.AArch64.Variant
 public import VerifiedGarbage.Proof.Aes.AArch64.Aese.Blocks
 public import VerifiedGarbage.Proof.Aes.AArch64.OneBlock
@@ -36,8 +35,6 @@ structure BlocksImpl where
   /-- `vg_aes_encrypt_blocks`: its symbol and code. -/
   enc : Impl.Aes.AArch64.Blocks
   encNoFrames : enc.code.noFrames = true
-  /-- It never writes PSTATE.DIT (`Instr.writesDit`), so leaves the mode as it found it. -/
-  encNoDit : enc.code.all (fun i => !i.writesDit) = true
   encOk : ∀ s, (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre s →
     ∃ t s', Exec isa enc.code s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksAArch64 Spec.Aes.cipher).post s s'
@@ -47,7 +44,6 @@ structure BlocksImpl where
   /-- `vg_aes_decrypt_blocks`: its symbol and code. -/
   dec : Impl.Aes.AArch64.Blocks
   decNoFrames : dec.code.noFrames = true
-  decNoDit : dec.code.all (fun i => !i.writesDit) = true
   decOk : ∀ s, (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre s →
     ∃ t s', Exec isa dec.code s t s' ∧ abiPreserved s s' ∧
       (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).post s s'
@@ -86,13 +82,11 @@ namespace BlocksImpl
 def scalar : BlocksImpl where
   enc := .encScalar
   encNoFrames := by lit_decide
-  encNoDit := by lit_decide
   encOk := OneBlock.encryptBlocksN_correct
   encCt := OneBlock.encryptBlocksN_ct
   encKeepsV := by lit_decide
   dec := .decScalar
   decNoFrames := by lit_decide
-  decNoDit := by lit_decide
   decOk := OneBlock.decryptBlocksN_correct
   decCt := OneBlock.decryptBlocksN_ct
   decKeepsV := by lit_decide
@@ -113,13 +107,11 @@ def scalar : BlocksImpl where
 def aese : BlocksImpl where
   enc := .encAese
   encNoFrames := by lit_decide
-  encNoDit := by lit_decide
   encOk := Aese.encryptBlocks_correct
   encCt := Aese.encryptBlocks_ct
   encKeepsV := by lit_decide
   dec := .decAese
   decNoFrames := by lit_decide
-  decNoDit := by lit_decide
   decOk := Aese.decryptBlocks_correct
   decCt := Aese.decryptBlocks_ct
   decKeepsV := by lit_decide

@@ -14,6 +14,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Call
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedCommitment
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Top
 import VerifiedGarbage.Proof.MlDsa.AArch64.Call.Entry
+import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 
 /-! ### `MlDsa.AArch64.Sign.CommitTailVerified`, which only this module used -/
 
