@@ -9,6 +9,21 @@ import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+import VerifiedGarbage.Proof.Framework.AArch64.Inline
+import VerifiedGarbage.Proof.Framework.Range
+meta import VerifiedGarbage.Impl.Gcm.AArch64.Neon
+meta import VerifiedGarbage.Proof.Gcm.AArch64.Neon.Mul
+meta import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
+meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
+meta import VerifiedGarbage.Proof.Framework.AArch64.Reduce
+meta import VerifiedGarbage.Proof.Framework.Offset
+meta import VerifiedGarbage.Proof.Framework.AddrArith
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
+meta import VerifiedGarbage.Proof.Framework.Range
 
 /-!
 # GHASH with the 8-bit PMULL on AArch64: `vg_ghash_neon`
@@ -700,5 +715,43 @@ theorem loops_ok {s₀ : State} (hp : Pm s₀) :
       · exact .inr ⟨by rw [hev, decide_eq_true hlast], nb s₀ - (i + 1), by omega_using [hi], i + 1, rfl,
           by omega_using [hlast], hI'⟩
     exact WP.loop (M := isa) Inv1 hstep (nb s₀) s₁ ⟨0, rfl, by omega_using [h], hI₁⟩
+
+/-- Whether a register is not one of `preserved`, as one `match` (as in
+`Pmull/Ghash.lean`). -/
+private def notPres : Reg → Bool
+  | .x19 | .x20 | .x21 | .x22 | .x23 | .x24 | .x25 | .x26 | .x27 | .x28 | .x30 => false
+  | _ => true
+
+private theorem keeps_pres {c : Prog isa} (h : c.allInstrs (fun i => (dsts i).all notPres) = true) :
+    c.allInstrs (fun i => preserved.all fun r => !clobbers i r) = true := by
+  rw [Code.allInstrs_eq] at h ⊢
+  refine List.all_eq_true.mpr fun i hi => List.all_eq_true.mpr fun r hr => ?_
+  have hn : notPres r = false := by revert r; decide
+  simp only [clobbers_eq_false_of_all (List.all_eq_true.mp h i hi) hn, Bool.not_false]
+
+theorem correct {s₀ : State} (hp : Pre s₀) :
+    WP isa ghash s₀ fun s' =>
+      (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Gcm.ghashAArch64.post s₀ s' :=
+  WP.mono (WP.gprs (rs := preserved) (loops_ok (Pmull.Pre.pm hp)) (keeps_pres (by decide +kernel))
+    (by decide +kernel))
+    fun _ ⟨h₁, h₂⟩ => ⟨h₂, h₁⟩
+
+theorem ghash_correct (s : State) (hs : Proof.Gcm.ghashAArch64.pre s) :
+    ∃ t s', Exec isa ghash s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashAArch64.post s s' := by
+  obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
+  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by decide +kernel)⟩, h₂⟩
+
+theorem ghash_ct : ConstantTime isa Proof.Gcm.ghashAArch64.pre Proof.Gcm.ghashAArch64.pub ghash := by
+  refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) ?_
+    (by taint_decide)
+  intro s₁ s₂ _ _ ⟨h1, h2, h3, h4, h5, hsp⟩
+  refine ⟨hsp, fun r hr => ?_⟩
+  simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+  rcases hr with rfl | rfl | rfl | rfl | rfl
+  · exact h1
+  · exact h2
+  · exact h3
+  · exact h4
+  · exact h5
 
 end VG.Proof.Gcm.AArch64.Neon
