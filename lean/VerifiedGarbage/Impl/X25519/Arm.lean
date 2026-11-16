@@ -41,13 +41,8 @@ The arithmetic (registers `r1`–`r9`; `r6` = `0xffff`, `r8` = 38):
   (`x < 2²⁵⁵ + 19`), then `x + 19 - 2²⁵⁵` selected with a mask if it is not
   negative.
 
-`vg_x25519_umaal` is the same code but for its multiplications (`mulUAt`),
-which use `umaal` (`hi:lo := n m + hi + lo`, the CPU feature `umaal`): the
-limbs of `[a]` and `[b]` are packed in pairs into eight 32-bit words each, at
-`acc + 64` and `acc + 96`; their 16-word product is computed row by row at
-`acc`, one `umaal` a word; `lo + 38 hi` takes eight more `umaal`s, by 38,
-leaving eight words and a carry `c ≤ 38`; and the limbs of those words' halves
-plus `38 c` are stored at `o` by `pass` and `tail`, as `mul` stores its own.
+`vg_x25519_umaal`, for CPUs with `umaal`, is other code (`Arm/Words.lean`),
+which shares with this one only `bits`, `cswapStep` and `storeN`.
 
 The ladder follows RFC 7748 §5 operation by operation (with `a24 · E` a
 multiplication by the constant element `A24`), over the bits of the scalar
@@ -163,57 +158,6 @@ def mulAt (acc o a b : Nat) : Prog isa :=
 
 /-- `[o] = [a] · [b]`, with the product in `ACC`. -/
 abbrev mul (o a b : Nat) : Prog isa := mulAt ACC o a b
-
-/-! ### Multiplication with `umaal`
-
-The product's 16 words are at `acc`, and the packed operands at `acc + 64`
-and `acc + 96`. -/
-
-/-- Limbs `2k` and `2k + 1` of `[a]` as word `k` of `[d]`. -/
-def uPackStep (d a k : Nat) : List Instr :=
-  [.ldr .r3 .r0 (a + 8 * k), .ldr .r4 .r0 (a + 8 * k + 4), .dp .add .r3 .r3 (.shifted .r4 .lsl 16),
-    .str .r3 .r0 (d + 4 * k)]
-
-/-- The limbs of `[a]` packed into eight words at `[d]`. -/
-def uPack (d a : Nat) : List Instr := (List.range 8).flatMap (uPackStep d a)
-
-/-- Word `j` of row `i` (`r7` = the base plus `4 i`, word `i` of `[a]` in
-`r1`, the carry in `r5`): `r5:acc[i + j] = a_i b_j + acc[i + j] + r5`. -/
-def uRowStep (acc j : Nat) : List Instr :=
-  [.ldr .r2 .r0 (acc + 96 + 4 * j), .ldr .r3 .r7 (acc + 4 * j), .umaal .r3 .r5 .r1 .r2,
-    .str .r3 .r7 (acc + 4 * j)]
-
-/-- Row `i` of the product: `acc[i, i + 9) = acc[i, i + 8) + a_i · b`. -/
-def uRow (acc : Nat) : List Instr :=
-  [.ldr .r1 .r7 (acc + 64), .mov .r5 (.imm 0)] ++ (List.range 8).flatMap (uRowStep acc) ++
-    [.str .r5 .r7 (acc + 32), .dp .add .r7 .r7 (.imm 4), .subs .r9 .r9 (.imm 1)]
-
-/-- Word `k` of `lo + 38 hi`: `r5:acc[k] = 38 acc[8 + k] + acc[k] + r5`. -/
-def uFoldStep (acc k : Nat) : List Instr :=
-  [.ldr .r3 .r0 (acc + 4 * k), .ldr .r2 .r0 (acc + 32 + 4 * k), .umaal .r3 .r5 .r2 .r8,
-    .str .r3 .r0 (acc + 4 * k)]
-
-/-- `lo + 38 hi` into `acc[0, 8)` and the carry `c` in `r5`, then `38 c` into
-`r9` and no carry in `r5`. -/
-def uFold (acc : Nat) : List Instr :=
-  .mov .r5 (.imm 0) :: (List.range 8).flatMap (uFoldStep acc) ++ [.mul .r9 .r5 .r8, .mov .r5 (.imm 0)]
-
-/-- Limb `k` of the folded words (half `k % 2` of `acc[k / 2]`), plus `38 c`
-for limb 0, into `r3`. -/
-def uHalf (acc k : Nat) : List Instr :=
-  .ldr .r3 .r0 (acc + 4 * (k / 2)) ::
-    (if k % 2 = 0 then [.dp .and .r3 .r3 (.reg .r6)] else [.mov .r3 (.shifted .r3 .lsr 16)]) ++
-    (if k = 0 then [.dp .add .r3 .r3 (.reg .r9)] else [])
-
-/-- `[o] = [a] · [b]` (`o` may be `a` or `b`) with `umaal`, in `acc`. -/
-def mulUAt (acc o a b : Nat) : Prog isa :=
-  .seq (.block (prologue ++ zeroAcc acc ++ uPack (acc + 64) a ++ uPack (acc + 96) b ++
-      [.mov .r7 (.reg .r0), .mov .r9 (.imm 8)]))
-    (.seq (.loop (.block (uRow acc)) .ne)
-      (.block (uFold acc ++ pass .r0 o (uHalf acc) ++ tail o)))
-
-/-- `[o] = [a] · [b]` with `umaal`, in `ACC`. -/
-abbrev mulU (o a b : Nat) : Prog isa := mulUAt ACC o a b
 
 /-- Swaps limb `k` of `[x]` and `[y]` if the mask `r9` is all ones (and not
 if it is zero): `d = r9 ∧ (x ⊕ y)`, `x ⊕= d`, `y ⊕= d`. -/
@@ -350,8 +294,5 @@ def x25519With (mul : Nat → Nat → Nat → Prog isa) : Prog isa :=
 
 /-- `vg_x25519`. -/
 def x25519 : Prog isa := x25519With mul
-
-/-- `vg_x25519_umaal`. -/
-def x25519Umaal : Prog isa := x25519With mulU
 
 end VG.Impl.X25519.Arm

@@ -21,7 +21,6 @@ import VerifiedGarbage.Proof.Framework.Arm.Contract
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.Taint
 import VerifiedGarbage.Proof.X25519.Arm.Lit
-import VerifiedGarbage.Proof.X25519.Arm.MulU
 
 /-! ### `X25519.Arm.Main`, which only this module used -/
 
@@ -602,9 +601,9 @@ end
 /-!
 # X25519 on 32-bit ARM: the whole function
 
-`vg_x25519`, and `vg_x25519_umaal`, write `X25519(k, u)` to `out`
-(`x25519_correct`, for any multiplication that meets `mul_ok`'s statement,
-`MulOk`), restoring the callee-saved registers.
+`vg_x25519` writes `X25519(k, u)` to `out` (`x25519_correct`, for any
+multiplication that meets `mul_ok`'s statement, `MulOk`), restoring the
+callee-saved registers.
 -/
 
 @[expose] public section
@@ -782,9 +781,8 @@ end
 /-!
 # X25519 on 32-bit ARM: verified
 
-`vg_x25519` and `vg_x25519_umaal` meet the shared contract of
-`Spec/X25519/Contract.lean`: the proofs against `x25519Arm`, which it
-implies, and a state satisfying it.
+`vg_x25519` meets the shared contract of `Spec/X25519/Contract.lean`: the
+proof against `x25519Arm`, which it implies, and a state satisfying it.
 -/
 
 @[expose] public section
@@ -818,22 +816,6 @@ def x25519Sat : State where
 theorem x25519_verified :
     Verified Arm.target Impl.X25519.Arm.x25519 (Proof.X25519.x25519Contract Arm.abi) :=
   Verified.of_correct x25519_ok x25519_ct' (by
-    sig_implies [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, Proof.X25519.Arm.x25519Arm, Arm.abi,
-      Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [Proof.X25519.Arm.x25519Sat,
-      Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using Proof.X25519.Arm.x25519Sat)
-
-theorem x25519Umaal_ok (s : State) (hs : x25519Arm.pre s) :
-    ∃ t s', Exec isa Impl.X25519.Arm.x25519Umaal s t s' ∧ abiPreserved s s' ∧ x25519Arm.post s s' :=
-  x25519_correct (fun ho hx hy _ hc hlx hly => mulU_ok (by decide) ho hx hy hc hlx hly) (XPre.of hs)
-
-theorem x25519Umaal_ct' : ConstantTime isa x25519Arm.pre x25519Arm.pub Impl.X25519.Arm.x25519Umaal :=
-  x25519Umaal_ct fun _ _ _ _ ⟨_, h0, h1, h2, h3⟩ r hr => by
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl | rfl <;> with_reducible assumption
-
-theorem x25519Umaal_verified :
-    Verified Arm.target Impl.X25519.Arm.x25519Umaal (Proof.X25519.x25519Contract Arm.abi) :=
-  Verified.of_correct x25519Umaal_ok x25519Umaal_ct' (by
     sig_implies [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, Proof.X25519.Arm.x25519Arm, Arm.abi,
       Arm.argRegs, Arm.reduceClassify, Arm.Loc.val, Arm.State.addr] [Proof.X25519.Arm.x25519Sat,
       Arm.stackArg, Arm.stackArgAddr, Mem.readW, Mem.read] using Proof.X25519.Arm.x25519Sat)
