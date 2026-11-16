@@ -301,9 +301,6 @@ theorem aesenc_bcast (u k : BitVec 32) :
       a.extractLsb' (8 * (i % 4)) 8 ^^^ b.extractLsb' (8 * (i % 4)) 8 := fun a b => extract_xor a b _
   rw [hx, sub32_extract _ (by omega_arith)]
 
-theorem shuf_00 (x : BitVec 128) :
-    shufDwords x 0 = ofDwords (dword x 0) (dword x 0) (dword x 0) (dword x 0) := rfl
-
 theorem rot_extract (w : BitVec 32) {m : Nat} (h : m < 4) :
     (w.rotateRight 8).extractLsb' (8 * m) 8 = w.extractLsb' (8 * ((m + 1) % 4)) 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
