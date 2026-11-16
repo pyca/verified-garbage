@@ -65,11 +65,6 @@ theorem relInv {Pre : State → Prop} {Pub : State → State → Prop} {I I' : S
   obtain ⟨-, rfl⟩ := Exec.det e₂ f₂
   exact ⟨ht', σ₁, σ₂, p₁, p₂, hpub, g₁, g₂⟩
 
-/-- Constant time, from a relation of the runs from the entry states. -/
-theorem relStart {Pre : State → Prop} {Pub : State → State → Prop} {c : Prog isa} {Q : State → State → Prop}
-    (h : RelCT isa (Rel2 Pre Pub fun σ s => s = σ) c Q) : ConstantTime isa Pre Pub c :=
-  RelCT.constantTime (RelCT.mono h (fun s₁ s₂ ⟨p₁, p₂, hp⟩ => ⟨s₁, s₂, p₁, p₂, hp, rfl, rfl⟩) fun _ _ h => h)
-
 /-- The final states of two runs related by `P` satisfy what correctness
 says of each, from its own initial state. -/
 theorem RelCT.postDep {P Q : State → State → Prop} {c : Prog isa} {F : State → State → Prop}

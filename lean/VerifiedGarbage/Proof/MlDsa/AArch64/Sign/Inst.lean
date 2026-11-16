@@ -2,8 +2,6 @@ module
 
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentMaskCall
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMask
@@ -15,7 +13,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.Prims
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSelected
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.AddSub
-public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Mul
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.HighPack
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Pack.Hint
@@ -26,7 +23,6 @@ import VerifiedGarbage.Proof.MlDsa.Sign.Bounds
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintPack
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejSelected
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallSelected
@@ -38,6 +34,12 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejPublic
 import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 import VerifiedGarbage.TCB.Axioms
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Power2Round
+import VerifiedGarbage.Proof.MlDsa.Round.Ones
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
 
 /-!
 # ML-DSA signing on AArch64: the primitives it calls
@@ -66,23 +68,13 @@ open VG.Spec.Sha3 (bytesAt)
 def primsWith (c : Impl.Sha3.AArch64.Callee) : Prims where
   suffix := c.suffix
   ntt := Impl.MlDsa.AArch64.Arith.Neon.ntt
-  invNtt := Impl.MlDsa.AArch64.Arith.Neon.nttInv
-  mul := Impl.MlDsa.AArch64.Arith.mul
-  mulAdd := Impl.MlDsa.AArch64.Arith.mulAdd
-  add := Impl.MlDsa.AArch64.Optimized.AddSub.code false
-  sub := Impl.MlDsa.AArch64.Optimized.AddSub.code true
   rej4 := Impl.MlDsa.AArch64.Optimized.ResidentRej.selected c.pairedSha3
   rejNTT := Impl.MlDsa.AArch64.Sample.rejNTTWith c
   expandMask := Impl.MlDsa.AArch64.Sample.expandMaskWith c
   pairedMask := c.pairedSha3
   expandMaskPair := Impl.MlDsa.AArch64.Optimized.ResidentMask.raw
   ball := Impl.MlDsa.AArch64.Optimized.Ball.selected c
-  highBits := Impl.MlDsa.AArch64.Round.highBits
   highPack := Impl.MlDsa.AArch64.Optimized.HighPack.code
-  lowBits := Impl.MlDsa.AArch64.Round.lowBits
-  normLt := Impl.MlDsa.AArch64.Round.normLt
-  makeHint := Impl.MlDsa.AArch64.Round.makeHint
-  simpleBitPack := Impl.MlDsa.AArch64.Optimized.KeygenPack.simple
   bitPack := Impl.MlDsa.AArch64.Optimized.KeygenPack.signed
   bitUnpack := Impl.MlDsa.AArch64.Pack.bitUnpack
   hintBitPack := Impl.MlDsa.AArch64.Pack.hintBitPack
@@ -164,14 +156,6 @@ theorem prims_okWith : PrimsOk (primsWith keccak.callee) signStack where
     have h := Proof.MlDsa.AArch64.Arith.Neon.ntt_verified
     unfold Proof.MlDsa.nttContract at h ⊢
     exact CalleeOk.of_verified (by decide) h (by decide) (by dsimp only [primsWith]; decide +kernel)
-  invNtt := by
-    have h := Proof.MlDsa.AArch64.Arith.Neon.nttInv_verified
-    unfold Proof.MlDsa.nttInvContract at h ⊢
-    exact CalleeOk.of_verified (by decide) h (by decide) (by dsimp only [primsWith]; decide +kernel)
-  mul := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Arith.mul_verified (by decide) (by dsimp only [primsWith]; decide +kernel)
-  mulAdd := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Arith.mulAdd_verified (by decide) (by dsimp only [primsWith]; decide +kernel)
-  add := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Optimized.AddSub.add_verified (by decide) (by dsimp only [primsWith]; decide +kernel)
-  sub := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Optimized.AddSub.sub_verified (by decide) (by dsimp only [primsWith]; decide +kernel)
   rej4 := CalleeOk.of_verified (S := signStack) (by decide)
     (Optimized.ResidentRej.selected_verified keccak.callee.pairedSha3) (by decide)
     (by simp [primsWith,signStack,Optimized.ResidentRej.selected_depth])
@@ -192,21 +176,11 @@ theorem prims_okWith : PrimsOk (primsWith keccak.callee) signStack where
   expandMaskPair := Optimized.ResidentMask.pair_callee (by decide)
   ball := CalleeOk.of_verified (S := signStack) (by decide) (Proof.MlDsa.AArch64.Optimized.Ball.selected_verified keccak) (by decide)
     (by simp [primsWith, signStack, Optimized.Ball.selected_depth keccak])
-  highBits := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Round.highBits_verified (by decide)
-    (by dsimp only [primsWith]; decide +kernel)
   highPack := by
     intro g hg
     exact CalleeOk.of_verified (S := signStack) (by decide)
       (Optimized.HighPack.pack_verified (VG.Proof.MlDsa.AArch64.Round.isG_of_mem hg))
       (by decide) (by dsimp only [primsWith]; rcases VG.Proof.MlDsa.AArch64.Round.isG_of_mem hg with rfl | rfl <;> decide +kernel)
-  lowBits := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Round.lowBits_verified (by decide)
-    (by dsimp only [primsWith]; decide +kernel)
-  normLt := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Round.normLt_verified (by decide)
-    (by dsimp only [primsWith]; decide +kernel)
-  makeHint := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Round.makeHint_verified (by decide)
-    (by dsimp only [primsWith]; decide +kernel)
-  simpleBitPack := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Optimized.KeygenPack.simple_verified (by decide)
-    (by dsimp only [primsWith]; decide +kernel)
   bitPack := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Optimized.KeygenPack.signed_verified (by decide)
     (by dsimp only [primsWith]; decide +kernel)
   bitUnpack := CalleeOk.of_verified (S := signStack) (by decide) Proof.MlDsa.AArch64.Pack.bitUnpack_verified (by decide)

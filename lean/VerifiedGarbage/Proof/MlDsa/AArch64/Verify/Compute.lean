@@ -12,8 +12,8 @@ import VerifiedGarbage.Proof.MlKem.Arith
 # ML-DSA verification on AArch64: what computing `w′₁` keeps
 
 With the entries `A'` of `Â` and `c = c0` as the samplers left them, and `x24`
-their result `q` (`SC`): what a write to `scratch` keeps of it (`SC.keep`,
-`SCChk`, `scchks`), and what the rows of `w′₁` hold on the way (`RowI`).
+their result `q` (`SC`): what a write to `scratch` keeps of it (`SCChk`,
+`scchks`).
 -/
 
 @[expose] public section
@@ -72,16 +72,6 @@ theorem ar_lt {p : Params} {r c : Nat} (hr : r < p.k) (hc : c < p.ℓ) : p.ℓ *
   have := Nat.mul_le_mul_left p.ℓ (show r + 1 ≤ p.k by omega_arith)
   rw [Nat.mul_succ, Nat.mul_comm p.ℓ p.k] at this
   omega_arith
-
-theorem SC.keep {p : Params} (hF : VFacts p) {S : Nat} {σ : State} (hp : vPre p S σ) {h : List (Vector Bool _)}
-    {A' : Nat → Nat → Poly} {c0 : Poly} {q : Bool} {j : Nat} {cn : Bool} {r : Nat} {s s' : State}
-    (hs : SC p σ h A' c0 q j cn r s) {ws : List (Ptr × Nat)} (hP : PPostB S s s' ws) (hc : SCChk p r ws)
-    (h24 : s'.gpr .x24 = s.gpr .x24) : SC p σ h A' c0 q j cn r s' := by
-  have L := hs.vc.lay hF hp
-  exact ⟨hs.vc.step hF hp hP hc.vc, hs.hh, L.keepHint hP hc.hint hs.hint, hs.nok, hs.gd,
-    fun r' hr' c hc' => L.keepPoly hP (hc.a r' hr' c hc') (hs.a r' hr' c hc'),
-    fun i hi => L.keepPoly hP (hc.z i hi) (hs.z i hi), L.keepPoly hP hc.c hs.c,
-    fun r' hr' => by rw [L.keepBytes hP (hc.rows r' hr')]; exact hs.rows r' hr', by rw [h24]; exact hs.x24⟩
 
 theorem keepB_append {rbs wbs : List (Reg × Nat)} {ws₁ ws₂ : List (Ptr × Nat)} {q : Ptr} {l : Nat}
     (h₁ : keepB rbs wbs ws₁ q l = true) (h₂ : keepB rbs wbs ws₂ q l = true) :
@@ -201,24 +191,10 @@ theorem vb_sc {p : Params} {σ s : State} (hs : VB p σ s) : SCx p 0 false 0 σ 
 
 /-! ## A row -/
 
-/-- In row `r`, with `f` holding of the temporaries. -/
-abbrev RowI (p : Params) (r : Nat)
-    (f : State → List (Vector Bool Spec.MlDsa.n) → (Nat → Nat → Poly) → Poly → State → Prop) (σ s : State) : Prop :=
-  ∃ h A' c0 q, SC p σ h A' c0 q p.ℓ true r s ∧ f σ h A' c0 s
-
-/-- `Σ_{s < j} Â[r, s] ẑ[s]` in `w′`. -/
-abbrev wIs (p : Params) (σ : State) (r j : Nat) (A' : Nat → Nat → Poly) (s : State) : Prop :=
-  PolyIs s.mem (pa s (wP p)) (dotAcc p (vSig p σ) A' r j)
-
 /-- `Σₛ Â[r, s] ẑ[s]`. -/
 abbrev rDot (p : Params) (σ : State) (A' : Nat → Nat → Poly) (r : Nat) : Poly := dotAcc p (vSig p σ) A' r p.ℓ
 /-- `t₁[r] · 2ᵈ`. -/
 abbrev rU (p : Params) (σ : State) (r : Nat) : Poly := (vT1 (vPk p σ) r).map fun c => ofInt (c * 2 ^ d : Nat)
-
-theorem SC.zHat {p : Params} {σ : State} {h : List (Vector Bool _)} {A' : Nat → Nat → Poly} {c0 : Poly} {q : Bool}
-    {r : Nat} {s : State} (hs : SC p σ h A' c0 q p.ℓ true r s) {c : Nat} (hc : c < p.ℓ) :
-    PolyIs s.mem (pa s (zP p c)) (zHat p (vSig p σ) c) := by
-  have := hs.z c hc; rwa [ifp hc] at this
 
 theorem hintRow_pa (p : Params) (s : State) (r : Nat) :
     pa s (hP p r) = pa s (hP p 0) + BitVec.ofNat 64 (1024 * r) := by
@@ -226,20 +202,5 @@ theorem hintRow_pa (p : Params) (s : State) (r : Nat) :
   rw [show pa s (hP p r) = s.gpr .x28 + BitVec.ofNat 64 (oP (p.k * p.ℓ + (1 + r))) from rfl,
     show pa s (hP p 0) = s.gpr .x28 + BitVec.ofNat 64 (oP (p.k * p.ℓ + (1 + 0))) from rfl, e, BitVec.ofNat_add,
     BitVec.add_assoc]
-
-/-- The temporaries of a row, facts about them. -/
-abbrev F1 (p : Params) (r j : Nat) (σ : State) (_ : List (Vector Bool Spec.MlDsa.n)) (A' : Nat → Nat → Poly)
-    (_ : Poly) (s : State) : Prop := wIs p σ r j A' s
-abbrev F4 (p : Params) (r : Nat) (σ : State) (_ : List (Vector Bool Spec.MlDsa.n)) (A' : Nat → Nat → Poly)
-    (_ : Poly) (s : State) : Prop := wIs p σ r p.ℓ A' s ∧ PolyIs s.mem (pa s (tmP p)) (ntt (rU p σ r))
-
-theorem w1_bound {p : Params} (hF : VFacts p) {m : Mem} {a : Addr} {σ : State}
-    {h : List (Vector Bool Spec.MlDsa.n)} {A' : Nat → Nat → Poly} {c0 : Poly} {r : Nat}
-    (hq : NatPolyIs m a (w1Row p (vPk p σ) (vSig p σ) A' (ntt c0) h r)) :
-    ∀ i < 256, (coeffAt m a i).toNat ≤ w1Max p := fun i hi => by
-  have := congrArg (·[i]'hi) hq
-  simp only [natPolyAt, Vector.getElem_ofFn, w1Row, Vector.getElem_zipWith] at this
-  rw [this, hF.g2.2]
-  exact Proof.MlDsa.Verify.useHint_le hF.g2.1 _ _
 
 end VG.Proof.MlDsa.AArch64.Verify

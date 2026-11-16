@@ -8,11 +8,9 @@ public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.Prims
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Lay
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
 public import VerifiedGarbage.Proof.Sha3.AArch64.Variant
-import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Mul
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.AddSubVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenRoundVerified
-import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
 import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejNttCT
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.RejBoundedCT
@@ -20,6 +18,10 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.KeygenPackVerified
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
 import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
 import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Ntt
+import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
+import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
 
 /-!
 # ML-DSA key generation on AArch64, with this library's primitives
@@ -46,46 +48,18 @@ theorem prims_okWith : PrimsOk (primsWith keccak.callee) 16 where
     have h := Arith.Neon.ntt_verified
     unfold Proof.MlDsa.nttContract Proof.MlDsa.inPlaceContract at h ⊢
     exact CalleeOk.of_verified (by decide) h (by decide) (by dsimp only [primsWith]; decide)
-  invNtt := by
-    have h := Arith.Neon.nttInv_verified
-    unfold Proof.MlDsa.nttInvContract Proof.MlDsa.inPlaceContract at h ⊢
-    exact CalleeOk.of_verified (by decide) h (by decide) (by dsimp only [primsWith]; decide)
-  mul := CalleeOk.of_verified (by decide) Arith.mul_verified (by decide) (by dsimp only [primsWith]; decide)
-  mulAdd := CalleeOk.of_verified (by decide) Arith.mulAdd_verified (by decide) (by dsimp only [primsWith]; decide)
   add := CalleeOk.of_verified (by decide) Optimized.AddSub.add_verified (by decide) (by dsimp only [primsWith]; decide)
-  sub := CalleeOk.of_verified (by decide) Optimized.AddSub.sub_verified (by decide) (by dsimp only [primsWith]; decide)
   rejNtt := CalleeOk.of_verified (by decide) (Sample.rejNTT_verifiedWith keccak) (by decide) (by simp [primsWith, Sample.rejNTT_depth keccak])
   rej4 := CalleeOk.of_verified (by decide) (Optimized.ResidentRej.selected_verified keccak.callee.pairedSha3) (by decide)
     (by simp only [primsWith,Optimized.ResidentRej.selected_depth,Nat.mul_zero]; decide)
   rejBounded := CalleeOk.of_verified (by decide) (Sample.rejBounded_verifiedWith keccak) (by decide) (by simp [primsWith, Sample.rejBounded_depth keccak])
   ball := CalleeOk.of_verified (by decide) (Optimized.Ball.selected_verified keccak) (by decide) (by simp [primsWith, Optimized.Ball.selected_depth keccak])
   power2Round := CalleeOk.of_verified (by decide) Optimized.KeygenRound.power2Round_verified (by decide) (by dsimp only [primsWith]; decide)
-  useHint := CalleeOk.of_verified (by decide) Round.useHint_verified (by decide) (by dsimp only [primsWith]; decide)
   normLt := CalleeOk.of_verified (by decide) Round.normLt_verified (by decide) (by dsimp only [primsWith]; decide)
   simpleBitPack := CalleeOk.of_verified (by decide) Optimized.KeygenPack.simple_verified (by decide) (by dsimp only [primsWith]; decide)
   bitPack := CalleeOk.of_verified (by decide) Optimized.KeygenPack.signed_verified (by decide) (by dsimp only [primsWith]; decide)
   bitUnpack := CalleeOk.of_verified (by decide) Pack.bitUnpack_verified (by decide) (by dsimp only [primsWith]; decide)
   unpackT1 := CalleeOk.of_verified (by decide) Pack.unpackT1_verified (by decide) (by dsimp only [primsWith]; decide)
   hintUnpack := CalleeOk.of_verified (by decide) Pack.hintBitUnpack_verified (by decide) (by dsimp only [primsWith]; decide)
-
-/-- A state satisfying `keyGenContract`'s precondition. -/
-def kgSat (p : Spec.MlDsa.Params) : State where
-  gpr r := match r with
-    | .x0 => 0x1000 | .x1 => 0x10000 | .x2 => 0x20000 | .x3 => 0x100000 | _ => 0
-  sp := 0x1000000
-  mem _ := 0
-  rd := [⟨0x1000, 32⟩]
-  wr := [⟨0x10000, p.pkLen⟩, ⟨0x20000, p.skLen⟩, ⟨0x100000, scrLen p⟩]
-
-theorem keyGen_sat (p : Spec.MlDsa.Params)
-    (hp : p = Spec.MlDsa.mlDsa44 ∨ p = Spec.MlDsa.mlDsa65 ∨ p = Spec.MlDsa.mlDsa87) :
-    ∃ s, (Spec.MlDsa.keyGenContract p AArch64.abi 16).pre s := by
-  rcases hp with rfl | rfl | rfl
-  · refine ⟨kgSat Spec.MlDsa.mlDsa44, ?_⟩
-    sig_sat_check [Spec.MlDsa.keyGenContract, Spec.MlDsa.keyGenSig, AArch64.abi, VG.AArch64.argRegs]
-  · refine ⟨kgSat Spec.MlDsa.mlDsa65, ?_⟩
-    sig_sat_check [Spec.MlDsa.keyGenContract, Spec.MlDsa.keyGenSig, AArch64.abi, VG.AArch64.argRegs]
-  · refine ⟨kgSat Spec.MlDsa.mlDsa87, ?_⟩
-    sig_sat_check [Spec.MlDsa.keyGenContract, Spec.MlDsa.keyGenSig, AArch64.abi, VG.AArch64.argRegs]
 
 end VG.Proof.MlDsa.AArch64.KeyGen

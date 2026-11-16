@@ -75,7 +75,6 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsEntry
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.OptimizedDecodeTiming
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.OptimizedSat
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 public import VerifiedGarbage.Proof.Sha3.AArch64.Sha3.Vector.Lit
@@ -142,6 +141,8 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PairedRootsTiming
 public import VerifiedGarbage.Proof.Framework.ConstMem
 public import VerifiedGarbage.Proof.MlDsa.Sign.Iter
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Call
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+public import VerifiedGarbage.Spec.MlDsa
 
 /-! ### `MlDsa.AArch64.Verify.OptimizedSelected`, which only this module used -/
 

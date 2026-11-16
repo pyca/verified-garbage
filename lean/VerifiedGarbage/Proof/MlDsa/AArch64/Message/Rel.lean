@@ -1,5 +1,4 @@
 module
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Args
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
@@ -14,6 +13,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.RelCT
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 import VerifiedGarbage.Proof.MlDsa.DecideAt
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+public import VerifiedGarbage.Spec.MlDsa
 
 /-!
 # ML-DSA on AArch64, `sign_message` and `verify_message_cached`: two runs

@@ -28,10 +28,6 @@ theorem zetaTab_eq : TabZ zetaTab id := by
   change zetaTab k = (Spec.MlDsa.zetas k).val*2^32%q
   rw [zetaTab,← zetaNat_eq,zetaNat,Nat.mod_mul_mod]
 
-theorem negZetaTab_eq : TabZ negZetaTab (fun z => -z) := by
-  intro k
-  rw [negZetaTab,← negZetaNat_eq,negZetaNat,zetaNat]
-
 theorem loadZ_ok (up : Bool) (s : State)
     (hin : InRegions (s.rd++s.wr) (s.gpr .x3) 4) :
     WP isa (.block [.ldr .w .x6 .x3 0,stepZ up]) s fun s' =>

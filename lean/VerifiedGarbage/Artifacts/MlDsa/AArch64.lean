@@ -4,7 +4,6 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.Inst
 public import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedPrims
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsEntry
@@ -28,12 +27,10 @@ public import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 public import VerifiedGarbage.Proof.Framework.RelCTAssoc
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Layers
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Ntt
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.NttInv
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedLayer
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedSpec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.PackedStep
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Pro
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Scale
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Step
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Vec
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Ntt
@@ -156,10 +153,7 @@ public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintPack
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.HintUnpack
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.SimpleBitPack
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Unpack
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Bits
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.MakeHint
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.NormLt
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.UseHint
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Depth
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.ExpandMask
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Absorb
@@ -235,6 +229,16 @@ public import VerifiedGarbage.Proof.Variants.Keccak.AArch64
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PkTr
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Verified
 public import VerifiedGarbage.Proof.MlDsa.AArch64.PreparedKey.Message
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+public import VerifiedGarbage.Spec.MlDsa
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Neon.Ntt
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lanes
+public import VerifiedGarbage.Proof.MlDsa.Arith.Mem
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Arith
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Basic
+public import VerifiedGarbage.Proof.MlDsa.AArch64.Round.Power2Round
+public import VerifiedGarbage.Proof.MlDsa.Round.Ones
 
 /-! # ML-DSA (FIPS 204) on AArch64 -/
 

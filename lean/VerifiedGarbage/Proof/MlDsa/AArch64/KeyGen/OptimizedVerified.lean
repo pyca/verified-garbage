@@ -2,7 +2,6 @@ module
 
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsEntry
 public import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedPrims
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Verify.Samp
@@ -50,6 +49,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.RestPack
 import VerifiedGarbage.Impl.MlDsa.AArch64.KeyGen.OptimizedRest
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.OptimizedPackSecret
 import VerifiedGarbage.Proof.MlDsa.AArch64.KeyGen.PrimsOk
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+public import VerifiedGarbage.Spec.MlDsa
 
 /-! ### `MlDsa.AArch64.KeyGen.OptimizedCorrect`, which only this module used -/
 

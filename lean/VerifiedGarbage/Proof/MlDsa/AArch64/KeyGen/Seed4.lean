@@ -59,27 +59,6 @@ structure GS (p : Params) (σ : State) (e j : Nat) (s : State) : Prop where
   done : ∀ k < j,bytesAt s.mem (pa s (sc (oSA4+34*k))) 34 =
     seedA (rhoOf p σ) ((e+k)/p.ℓ) ((e+k)%p.ℓ)
 
-theorem slot_ok {P : Params} (hF : PFacts P) {S : Nat} {σ : State} (hp : kgPre P S σ)
-    {e j : Nat} (he : e+4 ≤ P.k*P.ℓ) (hj : j < 4) {s : State} (h : GS P σ e j s) :
-    WP isa (seedSlot4 P e j) s (GS P σ e (j+1)) := by
-  have hkl := hF.kl; have hl := hF.l; have hk := hF.k; have hsc := scr_eq P
-  have L := h.ks.k1.kc.lay hF hp
-  unfold seedSlot4
-  refine WP.seq (WP.mono (copySeed4_ok hF L hj) fun s1 ⟨hP1,hk1,hb1⟩ => ?_)
-  have h1 := h.ks.keep hF hp hP1 (by unfold k1Chk kcChk; layd)
-    (fun k hk => by layd) (fun _ h => False.elim (Nat.not_lt_zero _ h)) (hk1.get .x24)
-  have L1 := h1.k1.kc.lay hF hp
-  unfold setSR
-  refine WP.mono (setTwo_ok L1 (o := oSA4+34*j+32) (a := (e+j)%P.ℓ) (b := (e+j)/P.ℓ)
-    (by dsimp only [oSA4]; omega_using [hj]) (by layd) (by layd)) fun t ⟨hP2,hk2,hb2⟩ => ?_
-  refine ⟨h1.keep hF hp hP2 (by unfold k1Chk kcChk; layd) (fun k hk => by layd)
-    (fun _ h => False.elim (Nat.not_lt_zero _ h)) (hk2.get .x24),fun k hk => ?_⟩
-  by_cases heq : k = j
-  · subst k
-    rw [bytes34,L1.keepBytes hP2 (by layd),sc_pa hP2,sc_pa hP1,hb1,h.ks.k1.sa,
-      sc_add,← sc_pa hP1,hb2,Proof.MlDsa.KeyGen.seedA_eq]
-  · rw [L1.keepBytes hP2 (by layd),L.keepBytes hP1 (by layd)]
-    exact h.done k (by omega_using [hk, heq])
 end VG.Proof.MlDsa.AArch64.KeyGen
 
 namespace VG.Proof.MlDsa.AArch64.KeyGen
@@ -93,9 +72,4 @@ theorem slot_taint (p : Params) (e : Nat) {j : Nat} (hj : j < 4) :
   rw [VG.Proof.MlDsa.KeyGen.ifp (by dsimp only [oSA4]; omega_using [hj] : oSA4+34*j < 4096)]
   with_unfolding_all rfl
 
-theorem slot_piece {p : Params} (hF : PFacts p) {S e j : Nat} (he : e+4 ≤ p.k*p.ℓ) (hj : j < 4) :
-    Piece p S (GS p · e j) (GS p · e (j+1)) (seedSlot4 p e j) :=
-  ⟨fun _ _ hp h => slot_ok hF hp he hj h,
-    rel_of (Q := Two p S) (taintRel [.x28] (fun _ _ h => Two.x28 h) (slot_taint p e hj))
-      fun _ _ _ _ hp hp' hq h h' => kc_two hF hp hp' hq h.ks.k1.kc h'.ks.k1.kc⟩
 end VG.Proof.MlDsa.AArch64.KeyGen

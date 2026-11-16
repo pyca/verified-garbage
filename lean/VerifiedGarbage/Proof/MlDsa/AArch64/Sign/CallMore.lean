@@ -13,8 +13,8 @@ import VerifiedGarbage.Proof.Sha3.AArch64.Sums
 /-!
 # ML-DSA signing on AArch64: calls of the other primitives
 
-As `Proof/MlDsa/AArch64/Call/`, for the other primitives signing calls: `vg_mldsa_expand_mask_poly`, `vg_mldsa_high_bits`,
-`vg_mldsa_low_bits`, `vg_mldsa_make_hint` and `vg_mldsa_hint_bit_pack`.
+As `Proof/MlDsa/AArch64/Call/`, for the other primitives signing calls: `vg_mldsa_expand_mask_poly` and
+`vg_mldsa_hint_bit_pack`.
 
 Signing branches on the results of the two samplers, so it needs them to be
 the same in two runs whose samplers' public data agree: a callee whose

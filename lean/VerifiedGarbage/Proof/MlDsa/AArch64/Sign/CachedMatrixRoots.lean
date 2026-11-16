@@ -1,6 +1,5 @@
 module
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Sign.CachedMatrix
-public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Arith.Neon.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.BallResident
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Pack.Lit
@@ -17,6 +16,8 @@ import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.StaticRootsExecution
 import VerifiedGarbage.Proof.MlDsa.AArch64.Message.Depth
 import VerifiedGarbage.Proof.MlDsa.AArch64.Sign.PhaseA4
 import VerifiedGarbage.Proof.MlKem.Mem
+public import VerifiedGarbage.Impl.MlDsa.AArch64.Arith.Common
+public import VerifiedGarbage.Spec.MlDsa
 
 /-! ## From `CachedMatrixExpansion.lean` -/
 

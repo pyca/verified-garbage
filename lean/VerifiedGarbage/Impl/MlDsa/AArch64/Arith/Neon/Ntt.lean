@@ -15,9 +15,6 @@ open VG.Impl.MlDsa.AArch64.Arith (storeTab movW)
 
 def zetaTab (m : Nat) : Nat := 1753 ^ Spec.MlDsa.bitRev8 m * 2^32 % 8380417
 
-def negZetaTab (m : Nat) : Nat :=
-  ((8380417 - 1753 ^ Spec.MlDsa.bitRev8 m % 8380417) % 8380417) * 2^32 % 8380417
-
 def stepZ (up : Bool) : Instr :=
   if up then .addImm .x .x3 .x3 4 else .subImm .x .x3 .x3 4
 
@@ -78,15 +75,4 @@ def pro (tab : Nat → Nat) : List Instr := storeTab tab 256 .x1 ++ consts
 
 def ntt : Prog isa := .seq (.block (pro zetaTab)) (layers bfly true [128,64,32,16,8,4,2,1])
 
-def scaleBody : List Instr :=
-  ([.ldrq .v0 .x2 0] : List Instr) ++ mont .v0 .v18 ++ csub .v0 .v4 ++
-    ([.strq .v0 .x2 0, .addImm .x .x2 .x2 16, .subImm .x .x5 .x5 1] : List Instr)
-
-def scale : Prog isa :=
-  .seq (.block (movW .x6 16382 ++
-    ([.vop (.dup .s4 .v18 .x6), mov .x2 .x0, .movz .x .x5 64 0] : List Instr)))
-    (.loop (.block scaleBody) (.nonzero .x .x5))
-
-def nttInv : Prog isa := .seq (.block (pro negZetaTab))
-  (.seq (layers bflyInv false [1,2,4,8,16,32,64,128]) scale)
 end VG.Impl.MlDsa.AArch64.Arith.Neon

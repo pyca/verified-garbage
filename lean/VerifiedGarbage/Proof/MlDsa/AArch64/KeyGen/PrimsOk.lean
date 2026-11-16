@@ -29,17 +29,12 @@ structure PrimsOk (P : Prims) (S : Nat) : Prop where
   s16 : 16 ≤ S
   sl : S < 2 ^ 16
   ntt : CalleeOk S P.ntt (nttContract AArch64.abi S)
-  invNtt : CalleeOk S P.invNtt (nttInvContract AArch64.abi S)
-  mul : CalleeOk S P.mul (mulContract AArch64.abi S)
-  mulAdd : CalleeOk S P.mulAdd (mulAddContract AArch64.abi S)
   add : CalleeOk S P.add (addContract AArch64.abi S)
-  sub : CalleeOk S P.sub (subContract AArch64.abi S)
   rejNtt : CalleeOk S P.rejNtt (rejNTTContract AArch64.abi S)
   rej4 : CalleeOk S P.rej4 (rejNTT4Contract AArch64.abi S)
   rejBounded : CalleeOk S P.rejBounded (rejBoundedContract AArch64.abi S)
   ball : CalleeOk S P.ball (sampleInBallContract AArch64.abi S)
   power2Round : CalleeOk S P.power2Round (power2RoundContract AArch64.abi S)
-  useHint : CalleeOk S P.useHint (useHintContract AArch64.abi S)
   normLt : CalleeOk S P.normLt (normLtContract AArch64.abi S)
   simpleBitPack : CalleeOk S P.simpleBitPack (simpleBitPackContract AArch64.abi S)
   bitPack : CalleeOk S P.bitPack (bitPackContract AArch64.abi S)
