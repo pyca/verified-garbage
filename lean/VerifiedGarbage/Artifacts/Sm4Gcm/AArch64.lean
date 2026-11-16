@@ -80,7 +80,7 @@ of which the other variants would be the same functions. -/
 def artifacts (v : GcmVariant) : List Artifact :=
   (match v.gh with
     | .scalar => artifactsInit ⟨v.gh.impl, v.ctr.impl⟩
-    | .aes => []) ++
+    | .aes | .neon => []) ++
   artifactsOf ⟨v.gh.impl, v.ctr.impl⟩ ++
   (match v.ctr with
     | .scalar => artifactsAes v

@@ -14,7 +14,7 @@ def aes : Proof.AesGcm.AArch64.GcmVariant := ⟨.aese, .aese, .aes, false⟩
 def aesSha3 : Proof.AesGcm.AArch64.GcmVariant := ⟨.aese, .aese, .aes, true⟩
 
 def neon : Proof.AesGcm.AArch64.GcmVariant :=
-  ⟨Proof.Variants.AesCtr32.AArch64.neon, .scalar, .scalar, false⟩
+  ⟨Proof.Variants.AesCtr32.AArch64.neon, .scalar, .neon, false⟩
 
 def scalar : Proof.AesGcm.AArch64.GcmVariant := ⟨.scalar, .scalar, .scalar, false⟩
 

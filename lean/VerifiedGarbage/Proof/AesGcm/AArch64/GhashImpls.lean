@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Callee
 public import VerifiedGarbage.Proof.Gcm.AArch64.Holes
 public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+public import VerifiedGarbage.Proof.Gcm.AArch64.Neon.Ghash
 import VerifiedGarbage.Proof.Gcm.AArch64.Lit
 public import VerifiedGarbage.Proof.Gcm.AArch64.Stitch.Ops
 
@@ -74,12 +75,24 @@ def aes : GhashImpl where
   prepared := some .aes
   withPowers := some .aes
 
+/-- `vg_ghash_neon`, with the `pmull` of bytes, which AdvSIMD has without
+PMULL. -/
+def neon : GhashImpl where
+  fn := ⟨"vg_ghash_neon", Impl.Gcm.AArch64.Neon.ghash⟩
+  noFrames := by decide +kernel
+  ok := Proof.Gcm.AArch64.Neon.ghash_correct
+  ct := Proof.Gcm.AArch64.Neon.ghash_ct
+  keepsV := by decide +kernel
+  suffix := "_neon"
+  features := []
+
 end GhashImpl
 
 /-- The implementation of `vg_ghash` named `n`. -/
 def GhashName.impl : GhashName → GhashImpl
   | .scalar => .scalar
   | .aes => .aes
+  | .neon => .neon
 
 /-- The implementations a variant calls. -/
 def GcmVariant.impl (v : GcmVariant) : GcmImpl := ⟨v.ctr, v.key, v.gh.impl, v.stitch⟩

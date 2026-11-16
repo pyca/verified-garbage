@@ -441,6 +441,7 @@ which the variants then need not import. -/
 inductive GhashName where
   | scalar
   | aes
+  | neon
 
 /-- A variant of `AesGcm` (see `TCB/Emit.lean`): a `GcmImpl` with its
 implementation of `vg_ghash` named (`GhashName`), which `GcmVariant.impl`
