@@ -9955,7 +9955,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_neon(ctx: *const [u64; 32], roun
 cbz x9, 20f
 .inst 0xd2800009,0xf9000289,0xf9000689,0xd344ff03,0x910002e2,0x9103c2a0,0x91000281,0x91080264
 .inst 0xd37cec69,0x8b0902f7,0xd28001ea,0x8a0a0319
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x910002ec,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
 cbz x13, 22f
 .inst 0xd342fdae
@@ -9997,10 +9997,10 @@ b 216f
 .inst 0xd2800003
 216:
 .inst 0x9103c2a0,0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd37df369,0xdac00d29,0xf9003269,0xd37df349,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
 .inst 0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 b 21f
 20:
 .inst 0xb94002e9,0xb94006ea,0xb9400aeb,0x52a0200c,0xb9000289,0xb900068a,0xb9000a8b,0xb9000e8c
@@ -10009,7 +10009,7 @@ b 21f
 .inst 0xb900368a,0xb9003a8b,0xb9003e8c,0xd2800009,0xf9000a89,0xf9000e89,0xf9406e77,0xf9407278
 .inst 0xd2800019,0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7
 .inst 0xcb090318
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x9100828b,0x910002ec,0x9100030d
 cbz x13, 217f
 .inst 0xd342fdae
@@ -10096,7 +10096,7 @@ b 248f
 .inst 0xd2800003
 248:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
 cbz x25, 249f
 .inst 0xd2800209,0xcb190129,0xd344ff0a
@@ -10200,9 +10200,9 @@ b 283f
 .inst 0xd2800023
 283:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x9100828b,0x910002ec,0x9100030d
 cbz x13, 284f
 .inst 0xd342fdae
@@ -10288,10 +10288,10 @@ b 2113f
 .inst 0xd2800003
 2113:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
 .inst 0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xf9400a89,0xf9000269,0xf9400e89,0xf9000669,0x910002a0,0x910002c1,0x91000282,0x91000263
 .inst 0xd2800024,0x91080265
 bl {vg_aes_ctr32_neon}
@@ -10299,7 +10299,7 @@ bl {vg_aes_ctr32_neon}
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912843ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
     )
 }
@@ -10348,7 +10348,7 @@ b 25f
 cbz x9, 27f
 .inst 0xd2800009,0xf9000289,0xf9000689,0xd344ff03,0x910002e2,0x9103c2a0,0x91000281,0x91080264
 .inst 0xd37cec69,0x8b0902f7,0xd28001ea,0x8a0a0319
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x910002ec,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
 cbz x13, 29f
 .inst 0xd342fdae
@@ -10390,10 +10390,10 @@ b 223f
 .inst 0xd2800003
 223:
 .inst 0x9103c2a0,0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd37df369,0xdac00d29,0xf9003269,0xd37df349,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
 .inst 0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 b 28f
 27:
 .inst 0xb94002e9,0xb94006ea,0xb9400aeb,0x52a0200c,0xb9000289,0xb900068a,0xb9000a8b,0xb9000e8c
@@ -10402,7 +10402,7 @@ b 28f
 .inst 0xb900368a,0xb9003a8b,0xb9003e8c,0xd2800009,0xf9000a89,0xf9000e89,0xf9406e77,0xf9407278
 .inst 0xd2800019,0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7
 .inst 0xcb090318
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x9100828b,0x910002ec,0x9100030d
 cbz x13, 224f
 .inst 0xd342fdae
@@ -10489,7 +10489,7 @@ b 255f
 .inst 0xd2800003
 255:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
 cbz x26, 256f
 .inst 0xd2800209,0xcb190129,0xd344ff0a
@@ -10521,9 +10521,9 @@ b 266f
 .inst 0xd2800023
 266:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x9100828b,0x910002ec,0x9100030d
 cbz x13, 267f
 .inst 0xd342fdae
@@ -10609,10 +10609,10 @@ b 296f
 .inst 0xd2800003
 296:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
 .inst 0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xf9400a89,0xf9003a69,0xf9400e89,0xf9003e69,0x910002a0,0x910002c1,0x91000282,0x9101c263
 .inst 0xd2800024,0x91080265
 bl {vg_aes_ctr32_neon}
@@ -10699,7 +10699,7 @@ b 21f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
     )
 }
@@ -10726,7 +10726,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_stream_init_neon(ctx: *const [u64; 32
 cbz x9, 20f
 .inst 0xd2800009,0xf9000289,0xf9000689,0xd344ff03,0x910002e2,0x9103c2a0,0x91000281,0x91080264
 .inst 0xd37cec69,0x8b0902f7,0xd28001ea,0x8a0a0319
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x910002ec,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
 cbz x13, 22f
 .inst 0xd342fdae
@@ -10768,10 +10768,10 @@ b 216f
 .inst 0xd2800003
 216:
 .inst 0x9103c2a0,0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd37df369,0xdac00d29,0xf9003269,0xd37df349,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
 .inst 0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 b 21f
 20:
 .inst 0xb94002e9,0xb94006ea,0xb9400aeb,0x52a0200c,0xb9000289,0xb900068a,0xb9000a8b,0xb9000e8c
@@ -10781,7 +10781,7 @@ b 21f
 .inst 0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e
 .inst 0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 
@@ -10830,9 +10830,9 @@ b 28f
 .inst 0xd2800023
 28:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x9100828b,0x910002ec,0x9100030d
 cbz x13, 29f
 .inst 0xd342fdae
@@ -10870,7 +10870,7 @@ b 210f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
     )
 }
 
@@ -10945,7 +10945,7 @@ b 218f
 .inst 0xd2800003
 218:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
 cbz x25, 219f
 .inst 0xd2800209,0xcb190129,0xd344ff0a
@@ -11049,9 +11049,9 @@ b 253f
 .inst 0xd2800023
 253:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x9100828b,0x910002ec,0x9100030d
 cbz x13, 254f
 .inst 0xd342fdae
@@ -11092,7 +11092,7 @@ b 244f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
     )
 }
@@ -11168,7 +11168,7 @@ b 218f
 .inst 0xd2800003
 218:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
 cbz x26, 219f
 .inst 0xd2800209,0xcb190129,0xd344ff0a
@@ -11200,9 +11200,9 @@ b 229f
 .inst 0xd2800023
 229:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x9100828b,0x910002ec,0x9100030d
 cbz x13, 230f
 .inst 0xd342fdae
@@ -11315,7 +11315,7 @@ b 255f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
     )
 }
@@ -11386,10 +11386,10 @@ b 216f
 .inst 0xd2800003
 216:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
 .inst 0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xf9400a89,0xf9000269,0xf9400e89,0xf9000669,0x910002a0,0x910002c1,0x91000282,0x91000263
 .inst 0xd2800024,0x91080265
 bl {vg_aes_ctr32_neon}
@@ -11397,7 +11397,7 @@ bl {vg_aes_ctr32_neon}
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912803ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
     )
 }
@@ -11484,10 +11484,10 @@ b 223f
 .inst 0xd2800003
 223:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
 .inst 0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xf9400a89,0xf9003a69,0xf9400e89,0xf9003e69,0x910002a0,0x910002c1,0x91000282,0x9101c263
 .inst 0xd2800024,0x91080265
 bl {vg_aes_ctr32_neon}
@@ -11524,7 +11524,7 @@ b 21f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912803ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
     )
 }
@@ -11646,7 +11646,7 @@ b 25f
 cbz x9, 27f
 .inst 0xd2800009,0xf9000289,0xf9000689,0xd344ff03,0x910002e2,0x9103c2a0,0x91000281,0x91080264
 .inst 0xd37cec69,0x8b0902f7,0xd28001ea,0x8a0a0319
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x910002ec,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
 cbz x13, 29f
 .inst 0xd342fdae
@@ -11688,10 +11688,10 @@ b 223f
 .inst 0xd2800003
 223:
 .inst 0x9103c2a0,0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd37df369,0xdac00d29,0xf9003269,0xd37df349,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
 .inst 0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 b 28f
 27:
 .inst 0xb94002e9,0xb94006ea,0xb9400aeb,0x52a0200c,0xb9000289,0xb900068a,0xb9000a8b,0xb9000e8c
@@ -11700,7 +11700,7 @@ b 28f
 .inst 0xb900368a,0xb9003a8b,0xb9003e8c,0xd2800009,0xf9000a89,0xf9000e89,0xf9406e77,0xf9407278
 .inst 0xd2800019,0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7
 .inst 0xcb090318
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x9100828b,0x910002ec,0x9100030d
 cbz x13, 224f
 .inst 0xd342fdae
@@ -11787,7 +11787,7 @@ b 255f
 .inst 0xd2800003
 255:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
 cbz x26, 256f
 .inst 0xd2800209,0xcb190129,0xd344ff0a
@@ -11819,9 +11819,9 @@ b 266f
 .inst 0xd2800023
 266:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x9100828b,0x910002ec,0x9100030d
 cbz x13, 267f
 .inst 0xd342fdae
@@ -11907,10 +11907,10 @@ b 296f
 .inst 0xd2800003
 296:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
 .inst 0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xf9400a89,0xf9003a69,0xf9400e89,0xf9003e69,0x910002a0,0x910002c1,0x91000282,0x9101c263
 .inst 0xd2800024,0x91080265
 bl {vg_aes_ctr32_neon}
@@ -12046,7 +12046,7 @@ b 2139f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x9128c3ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
         vg_aes_ctr32_to_neon = sym super::aes::vg_aes_ctr32_to_neon::vg_aes_ctr32_to_neon,
     )
@@ -12077,7 +12077,7 @@ pub(crate) unsafe extern "C" fn vg_aes_gcm_seal_with_powers_neon(ctx: *const [u6
 cbz x9, 20f
 .inst 0xd2800009,0xf9000289,0xf9000689,0xd344ff03,0x910002e2,0x9103c2a0,0x91000281,0x91080264
 .inst 0xd37cec69,0x8b0902f7,0xd28001ea,0x8a0a0319
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x910002ec,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
 cbz x13, 22f
 .inst 0xd342fdae
@@ -12119,10 +12119,10 @@ b 216f
 .inst 0xd2800003
 216:
 .inst 0x9103c2a0,0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd37df369,0xdac00d29,0xf9003269,0xd37df349,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
 .inst 0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 b 21f
 20:
 .inst 0xb94002e9,0xb94006ea,0xb9400aeb,0x52a0200c,0xb9000289,0xb900068a,0xb9000a8b,0xb9000e8c
@@ -12131,7 +12131,7 @@ b 21f
 .inst 0xb900368a,0xb9003a8b,0xb9003e8c,0xd2800009,0xf9000a89,0xf9000e89,0xf9406e77,0xf9407278
 .inst 0xd2800019,0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7
 .inst 0xcb090318
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x9100828b,0x910002ec,0x9100030d
 cbz x13, 217f
 .inst 0xd342fdae
@@ -12218,7 +12218,7 @@ b 248f
 .inst 0xd2800003
 248:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
 cbz x25, 249f
 .inst 0xd2800209,0xcb190129,0xd344ff0a
@@ -12322,9 +12322,9 @@ b 283f
 .inst 0xd2800023
 283:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x9100828b,0x910002ec,0x9100030d
 cbz x13, 284f
 .inst 0xd342fdae
@@ -12410,10 +12410,10 @@ b 2113f
 .inst 0xd2800003
 2113:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
 .inst 0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xf9400a89,0xf9000269,0xf9400e89,0xf9000669,0x910002a0,0x910002c1,0x91000282,0x91000263
 .inst 0xd2800024,0x91080265
 bl {vg_aes_ctr32_neon}
@@ -12421,7 +12421,7 @@ bl {vg_aes_ctr32_neon}
 .inst 0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b,0xf940667c,0xf9406a7e,0xf9404273,0x912843ff
 .inst 0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
     )
 }
@@ -12468,7 +12468,7 @@ b 25f
 cbz x9, 27f
 .inst 0xd2800009,0xf9000289,0xf9000689,0xd344ff03,0x910002e2,0x9103c2a0,0x91000281,0x91080264
 .inst 0xd37cec69,0x8b0902f7,0xd28001ea,0x8a0a0319
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x910002ec,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
 cbz x13, 29f
 .inst 0xd342fdae
@@ -12510,10 +12510,10 @@ b 223f
 .inst 0xd2800003
 223:
 .inst 0x9103c2a0,0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd37df369,0xdac00d29,0xf9003269,0xd37df349,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
 .inst 0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 b 28f
 27:
 .inst 0xb94002e9,0xb94006ea,0xb9400aeb,0x52a0200c,0xb9000289,0xb900068a,0xb9000a8b,0xb9000e8c
@@ -12522,7 +12522,7 @@ b 28f
 .inst 0xb900368a,0xb9003a8b,0xb9003e8c,0xd2800009,0xf9000a89,0xf9000e89,0xf9406e77,0xf9407278
 .inst 0xd2800019,0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7
 .inst 0xcb090318
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x9100828b,0x910002ec,0x9100030d
 cbz x13, 224f
 .inst 0xd342fdae
@@ -12609,7 +12609,7 @@ b 255f
 .inst 0xd2800003
 255:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
 cbz x26, 256f
 .inst 0xd2800209,0xcb190129,0xd344ff0a
@@ -12641,9 +12641,9 @@ b 266f
 .inst 0xd2800023
 266:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x9100828b,0x910002ec,0x9100030d
 cbz x13, 267f
 .inst 0xd342fdae
@@ -12729,10 +12729,10 @@ b 296f
 .inst 0xd2800003
 296:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
 .inst 0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xf9400a89,0xf9003a69,0xf9400e89,0xf9003e69,0x910002a0,0x910002c1,0x91000282,0x9101c263
 .inst 0xd2800024,0x91080265
 bl {vg_aes_ctr32_neon}
@@ -12819,7 +12819,7 @@ b 21f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x912883ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
     )
 }
@@ -12868,7 +12868,7 @@ b 25f
 cbz x9, 27f
 .inst 0xd2800009,0xf9000289,0xf9000689,0xd344ff03,0x910002e2,0x9103c2a0,0x91000281,0x91080264
 .inst 0xd37cec69,0x8b0902f7,0xd28001ea,0x8a0a0319
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x910002ec,0xd2800009,0xf9003269,0xf9003669,0x9101826b,0x9100032d
 cbz x13, 29f
 .inst 0xd342fdae
@@ -12910,10 +12910,10 @@ b 223f
 .inst 0xd2800003
 223:
 .inst 0x9103c2a0,0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd37df369,0xdac00d29,0xf9003269,0xd37df349,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
 .inst 0x91000281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 b 28f
 27:
 .inst 0xb94002e9,0xb94006ea,0xb9400aeb,0x52a0200c,0xb9000289,0xb900068a,0xb9000a8b,0xb9000e8c
@@ -12922,7 +12922,7 @@ b 28f
 .inst 0xb900368a,0xb9003a8b,0xb9003e8c,0xd2800009,0xf9000a89,0xf9000e89,0xf9406e77,0xf9407278
 .inst 0xd2800019,0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7
 .inst 0xcb090318
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x9100828b,0x910002ec,0x9100030d
 cbz x13, 224f
 .inst 0xd342fdae
@@ -13009,7 +13009,7 @@ b 255f
 .inst 0xd2800003
 255:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd28001e9,0x8a090379,0x91000397,0x91000358
 cbz x26, 256f
 .inst 0xd2800209,0xcb190129,0xd344ff0a
@@ -13041,9 +13041,9 @@ b 266f
 .inst 0xd2800023
 266:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91008282
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd344ff03,0x910002e2,0x9103c2a0,0x91004281,0x91080264,0xd37cec69,0x8b0902f7,0xcb090318
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0x9100828b,0x910002ec,0x9100030d
 cbz x13, 267f
 .inst 0xd342fdae
@@ -13129,10 +13129,10 @@ b 296f
 .inst 0xd2800003
 296:
 .inst 0x9103c2a0,0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xd37df349,0xdac00d29,0xf9003269,0xd37df369,0xdac00d29,0xf9003669,0xd2800023,0x9103c2a0
 .inst 0x91004281,0x91080264,0x91018262
-bl {vg_ghash}
+bl {vg_ghash_neon}
 .inst 0xf9400a89,0xf9003a69,0xf9400e89,0xf9003e69,0x910002a0,0x910002c1,0x91000282,0x9101c263
 .inst 0xd2800024,0x91080265
 bl {vg_aes_ctr32_neon}
@@ -13268,7 +13268,7 @@ b 2139f
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x9128c3ff,0xd65f03c0
 .p2align 6",
-        vg_ghash = sym super::aes_gcm_siv::vg_ghash::vg_ghash,
+        vg_ghash_neon = sym super::aes_gcm_siv::vg_ghash_neon::vg_ghash_neon,
         vg_aes_ctr32_neon = sym super::aes::vg_aes_ctr32_neon::vg_aes_ctr32_neon,
         vg_aes_ctr32_to_neon = sym super::aes::vg_aes_ctr32_to_neon::vg_aes_ctr32_to_neon,
     )

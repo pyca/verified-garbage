@@ -24851,7 +24851,7 @@ vg_aes_gcm_seal_neon:
 	add x23, x23, x9
 	movz x10, #15, lsl #0
 	and x25, x24, x10
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x12, x23, #0
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
@@ -24918,7 +24918,7 @@ vg_aes_gcm_seal_neon:
 	add x1, x20, #0
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsl x9, x27, #3
 	rev x9, x9
 	str x9, [x19, #96]
@@ -24930,7 +24930,7 @@ vg_aes_gcm_seal_neon:
 	add x1, x20, #0
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	b 21f
 20:
 	ldr w9, [x23, #0]
@@ -24967,7 +24967,7 @@ vg_aes_gcm_seal_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x11, x20, #32
 	add x12, x23, #0
 	add x13, x24, #0
@@ -25103,7 +25103,7 @@ vg_aes_gcm_seal_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	movz x9, #15, lsl #0
 	and x25, x27, x9
 	add x23, x28, #0
@@ -25282,7 +25282,7 @@ vg_aes_gcm_seal_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x20, #32
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x3, x24, #4
 	add x2, x23, #0
 	add x0, x21, #240
@@ -25291,7 +25291,7 @@ vg_aes_gcm_seal_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x11, x20, #32
 	add x12, x23, #0
 	add x13, x24, #0
@@ -25425,7 +25425,7 @@ vg_aes_gcm_seal_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsl x9, x26, #3
 	rev x9, x9
 	str x9, [x19, #96]
@@ -25437,7 +25437,7 @@ vg_aes_gcm_seal_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	ldr x9, [x20, #16]
 	str x9, [x19, #0]
 	ldr x9, [x20, #24]
@@ -25546,7 +25546,7 @@ vg_aes_gcm_open_neon:
 	add x23, x23, x9
 	movz x10, #15, lsl #0
 	and x25, x24, x10
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x12, x23, #0
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
@@ -25613,7 +25613,7 @@ vg_aes_gcm_open_neon:
 	add x1, x20, #0
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsl x9, x27, #3
 	rev x9, x9
 	str x9, [x19, #96]
@@ -25625,7 +25625,7 @@ vg_aes_gcm_open_neon:
 	add x1, x20, #0
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	b 28f
 27:
 	ldr w9, [x23, #0]
@@ -25662,7 +25662,7 @@ vg_aes_gcm_open_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x11, x20, #32
 	add x12, x23, #0
 	add x13, x24, #0
@@ -25798,7 +25798,7 @@ vg_aes_gcm_open_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	movz x9, #15, lsl #0
 	and x25, x27, x9
 	add x23, x28, #0
@@ -25849,7 +25849,7 @@ vg_aes_gcm_open_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x20, #32
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x3, x24, #4
 	add x2, x23, #0
 	add x0, x21, #240
@@ -25858,7 +25858,7 @@ vg_aes_gcm_open_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x11, x20, #32
 	add x12, x23, #0
 	add x13, x24, #0
@@ -25991,7 +25991,7 @@ vg_aes_gcm_open_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsl x9, x26, #3
 	rev x9, x9
 	str x9, [x19, #96]
@@ -26003,7 +26003,7 @@ vg_aes_gcm_open_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	ldr x9, [x20, #16]
 	str x9, [x19, #112]
 	ldr x9, [x20, #24]
@@ -26226,7 +26226,7 @@ vg_aes_gcm_stream_init_neon:
 	add x23, x23, x9
 	movz x10, #15, lsl #0
 	and x25, x24, x10
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x12, x23, #0
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
@@ -26293,7 +26293,7 @@ vg_aes_gcm_stream_init_neon:
 	add x1, x20, #0
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsl x9, x27, #3
 	rev x9, x9
 	str x9, [x19, #96]
@@ -26305,7 +26305,7 @@ vg_aes_gcm_stream_init_neon:
 	add x1, x20, #0
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	b 21f
 20:
 	ldr w9, [x23, #0]
@@ -26412,7 +26412,7 @@ vg_aes_gcm_stream_aad_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x20, #32
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x3, x24, #4
 	add x2, x23, #0
 	add x0, x21, #240
@@ -26421,7 +26421,7 @@ vg_aes_gcm_stream_aad_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x11, x20, #32
 	add x12, x23, #0
 	add x13, x24, #0
@@ -26589,7 +26589,7 @@ vg_aes_gcm_stream_encrypt_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	movz x9, #15, lsl #0
 	and x25, x27, x9
 	add x23, x28, #0
@@ -26768,7 +26768,7 @@ vg_aes_gcm_stream_encrypt_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x20, #32
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x3, x24, #4
 	add x2, x23, #0
 	add x0, x21, #240
@@ -26777,7 +26777,7 @@ vg_aes_gcm_stream_encrypt_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x11, x20, #32
 	add x12, x23, #0
 	add x13, x24, #0
@@ -26948,7 +26948,7 @@ vg_aes_gcm_stream_decrypt_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	movz x9, #15, lsl #0
 	and x25, x27, x9
 	add x23, x28, #0
@@ -26999,7 +26999,7 @@ vg_aes_gcm_stream_decrypt_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x20, #32
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x3, x24, #4
 	add x2, x23, #0
 	add x0, x21, #240
@@ -27008,7 +27008,7 @@ vg_aes_gcm_stream_decrypt_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x11, x20, #32
 	add x12, x23, #0
 	add x13, x24, #0
@@ -27303,7 +27303,7 @@ vg_aes_gcm_stream_finish_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsl x9, x26, #3
 	rev x9, x9
 	str x9, [x19, #96]
@@ -27315,7 +27315,7 @@ vg_aes_gcm_stream_finish_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	ldr x9, [x20, #16]
 	str x9, [x19, #0]
 	ldr x9, [x20, #24]
@@ -27469,7 +27469,7 @@ vg_aes_gcm_stream_verify_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsl x9, x26, #3
 	rev x9, x9
 	str x9, [x19, #96]
@@ -27481,7 +27481,7 @@ vg_aes_gcm_stream_verify_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	ldr x9, [x20, #16]
 	str x9, [x19, #112]
 	ldr x9, [x20, #24]
@@ -27735,7 +27735,7 @@ vg_aes_gcm_open_to_neon:
 	add x23, x23, x9
 	movz x10, #15, lsl #0
 	and x25, x24, x10
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x12, x23, #0
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
@@ -27802,7 +27802,7 @@ vg_aes_gcm_open_to_neon:
 	add x1, x20, #0
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsl x9, x27, #3
 	rev x9, x9
 	str x9, [x19, #96]
@@ -27814,7 +27814,7 @@ vg_aes_gcm_open_to_neon:
 	add x1, x20, #0
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	b 28f
 27:
 	ldr w9, [x23, #0]
@@ -27851,7 +27851,7 @@ vg_aes_gcm_open_to_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x11, x20, #32
 	add x12, x23, #0
 	add x13, x24, #0
@@ -27987,7 +27987,7 @@ vg_aes_gcm_open_to_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	movz x9, #15, lsl #0
 	and x25, x27, x9
 	add x23, x28, #0
@@ -28038,7 +28038,7 @@ vg_aes_gcm_open_to_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x20, #32
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x3, x24, #4
 	add x2, x23, #0
 	add x0, x21, #240
@@ -28047,7 +28047,7 @@ vg_aes_gcm_open_to_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x11, x20, #32
 	add x12, x23, #0
 	add x13, x24, #0
@@ -28180,7 +28180,7 @@ vg_aes_gcm_open_to_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsl x9, x26, #3
 	rev x9, x9
 	str x9, [x19, #96]
@@ -28192,7 +28192,7 @@ vg_aes_gcm_open_to_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	ldr x9, [x20, #16]
 	str x9, [x19, #112]
 	ldr x9, [x20, #24]
@@ -28508,7 +28508,7 @@ vg_aes_gcm_seal_with_powers_neon:
 	add x23, x23, x9
 	movz x10, #15, lsl #0
 	and x25, x24, x10
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x12, x23, #0
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
@@ -28575,7 +28575,7 @@ vg_aes_gcm_seal_with_powers_neon:
 	add x1, x20, #0
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsl x9, x27, #3
 	rev x9, x9
 	str x9, [x19, #96]
@@ -28587,7 +28587,7 @@ vg_aes_gcm_seal_with_powers_neon:
 	add x1, x20, #0
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	b 21f
 20:
 	ldr w9, [x23, #0]
@@ -28624,7 +28624,7 @@ vg_aes_gcm_seal_with_powers_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x11, x20, #32
 	add x12, x23, #0
 	add x13, x24, #0
@@ -28760,7 +28760,7 @@ vg_aes_gcm_seal_with_powers_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	movz x9, #15, lsl #0
 	and x25, x27, x9
 	add x23, x28, #0
@@ -28939,7 +28939,7 @@ vg_aes_gcm_seal_with_powers_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x20, #32
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x3, x24, #4
 	add x2, x23, #0
 	add x0, x21, #240
@@ -28948,7 +28948,7 @@ vg_aes_gcm_seal_with_powers_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x11, x20, #32
 	add x12, x23, #0
 	add x13, x24, #0
@@ -29082,7 +29082,7 @@ vg_aes_gcm_seal_with_powers_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsl x9, x26, #3
 	rev x9, x9
 	str x9, [x19, #96]
@@ -29094,7 +29094,7 @@ vg_aes_gcm_seal_with_powers_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	ldr x9, [x20, #16]
 	str x9, [x19, #0]
 	ldr x9, [x20, #24]
@@ -29203,7 +29203,7 @@ vg_aes_gcm_open_with_powers_neon:
 	add x23, x23, x9
 	movz x10, #15, lsl #0
 	and x25, x24, x10
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x12, x23, #0
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
@@ -29270,7 +29270,7 @@ vg_aes_gcm_open_with_powers_neon:
 	add x1, x20, #0
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsl x9, x27, #3
 	rev x9, x9
 	str x9, [x19, #96]
@@ -29282,7 +29282,7 @@ vg_aes_gcm_open_with_powers_neon:
 	add x1, x20, #0
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	b 28f
 27:
 	ldr w9, [x23, #0]
@@ -29319,7 +29319,7 @@ vg_aes_gcm_open_with_powers_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x11, x20, #32
 	add x12, x23, #0
 	add x13, x24, #0
@@ -29455,7 +29455,7 @@ vg_aes_gcm_open_with_powers_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	movz x9, #15, lsl #0
 	and x25, x27, x9
 	add x23, x28, #0
@@ -29506,7 +29506,7 @@ vg_aes_gcm_open_with_powers_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x20, #32
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x3, x24, #4
 	add x2, x23, #0
 	add x0, x21, #240
@@ -29515,7 +29515,7 @@ vg_aes_gcm_open_with_powers_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x11, x20, #32
 	add x12, x23, #0
 	add x13, x24, #0
@@ -29648,7 +29648,7 @@ vg_aes_gcm_open_with_powers_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsl x9, x26, #3
 	rev x9, x9
 	str x9, [x19, #96]
@@ -29660,7 +29660,7 @@ vg_aes_gcm_open_with_powers_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	ldr x9, [x20, #16]
 	str x9, [x19, #112]
 	ldr x9, [x20, #24]
@@ -29932,7 +29932,7 @@ vg_aes_gcm_open_to_with_powers_neon:
 	add x23, x23, x9
 	movz x10, #15, lsl #0
 	and x25, x24, x10
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x12, x23, #0
 	movz x9, #0, lsl #0
 	str x9, [x19, #96]
@@ -29999,7 +29999,7 @@ vg_aes_gcm_open_to_with_powers_neon:
 	add x1, x20, #0
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsl x9, x27, #3
 	rev x9, x9
 	str x9, [x19, #96]
@@ -30011,7 +30011,7 @@ vg_aes_gcm_open_to_with_powers_neon:
 	add x1, x20, #0
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	b 28f
 27:
 	ldr w9, [x23, #0]
@@ -30048,7 +30048,7 @@ vg_aes_gcm_open_to_with_powers_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x11, x20, #32
 	add x12, x23, #0
 	add x13, x24, #0
@@ -30184,7 +30184,7 @@ vg_aes_gcm_open_to_with_powers_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	movz x9, #15, lsl #0
 	and x25, x27, x9
 	add x23, x28, #0
@@ -30235,7 +30235,7 @@ vg_aes_gcm_open_to_with_powers_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x20, #32
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsr x3, x24, #4
 	add x2, x23, #0
 	add x0, x21, #240
@@ -30244,7 +30244,7 @@ vg_aes_gcm_open_to_with_powers_neon:
 	lsl x9, x3, #4
 	add x23, x23, x9
 	sub x24, x24, x9
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	add x11, x20, #32
 	add x12, x23, #0
 	add x13, x24, #0
@@ -30377,7 +30377,7 @@ vg_aes_gcm_open_to_with_powers_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	lsl x9, x26, #3
 	rev x9, x9
 	str x9, [x19, #96]
@@ -30389,7 +30389,7 @@ vg_aes_gcm_open_to_with_powers_neon:
 	add x1, x20, #16
 	add x4, x19, #512
 	add x2, x19, #96
-	bl {vg_ghash}
+	bl {vg_ghash_neon}
 	ldr x9, [x20, #16]
 	str x9, [x19, #112]
 	ldr x9, [x20, #24]
