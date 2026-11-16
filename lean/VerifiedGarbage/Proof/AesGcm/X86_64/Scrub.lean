@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Spec.Gcm.Contract
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
 public import VerifiedGarbage.Proof.Framework.X86_64.ResidueScrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Frame
@@ -242,9 +243,12 @@ use rather than 2.5 KB: over `vg_ghash_pclmul` and `vg_ghash_vpclmul`,
 which need none either, the 208 and 272 bytes they use themselves
 (`streamFinish_framed26`, `streamVerify_framed34`), and with `vg_ghash`'s
 256 bytes at 512, 768 (`_framed96`); followed by the clearing of that whole
-frame (`X86_64.Scrub.withScrubAll`). Over the others, as before.
-`vg_aes_gcm_seal_gather_prepared` calls the first by name: the instances
-over the first are internal functions of their own,
+frame (`X86_64.Scrub.withScrubAll`). Over the bitsliced `vg_aes_ctr32`, whose
+working space is most of the frame, in the frame of 2.5 KB, wiped whole in
+chunks whose 16-byte stores are aligned (`X86_64.RScrub.withScrubAllC`), as
+`vg_cmac_aes_finish` over it is.
+`vg_aes_gcm_seal_gather_prepared` calls the first by name: it calls
+internal functions of its own instead,
 `vg_aes_gcm_stream_finish<suffix>_core` (`finFn`), with the code as it was. -/
 
 theorem streamFinishOut (stack : Nat) :
@@ -272,7 +276,7 @@ def pairOf (c : Ctr32Impl) (n : GhashName) : GcmImpl :=
 
 /-- `vg_aes_gcm_stream_finish` over `c` and `n`: in 232 bytes of stack (792
 over `vg_ghash`), all cleared, for an implementation of `vg_aes_ctr32` that
-needs no working space. -/
+needs no working space; for the others, in 2584 bytes, all cleared. -/
 def streamFinishReg (c : Ctr32Impl) (n : GhashName) : Registration Spec.Gcm.streamFinishApi X86_64.target :=
   match c.free, (pairOf c n).gh.free with
   | some f, some g =>
@@ -289,16 +293,18 @@ def streamFinishReg (c : Ctr32Impl) (n : GhashName) : Registration Spec.Gcm.stre
       stack := 792
       verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed96 (pairOf c n) f)
       spSafe := VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)) } (streamFinishOut _)
-  | none, _ => {
+  | none, _ =>
+    RScrub.withScrubAllC {
       suffix := c.suffix ++ n.impl.suffix
       code := Impl.StackScratch.X86_64.withStackArgScratch 2576 0 (Impl.AesGcm.X86_64.streamFinish (pairOf c n).callees)
       stack := 2584
       verified := Proof.AesGcm.streamFinish_keyed (streamFinish_framed (pairOf c n))
-      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)) }
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamFinish_spSafe (pairOf c n)) } (streamFinishOut _)
+      [8, 2576]
 
 /-- `vg_aes_gcm_stream_verify` over `c` and `n`: in 304 bytes of stack (800
 over `vg_ghash`), all cleared, for an implementation of `vg_aes_ctr32` that
-needs no working space. -/
+needs no working space; for the others, in 2592 bytes, all cleared. -/
 def streamVerifyReg (c : Ctr32Impl) (n : GhashName) : Registration Spec.Gcm.streamVerifyApi X86_64.target :=
   match c.free, (pairOf c n).gh.free with
   | some f, some g =>
@@ -315,11 +321,13 @@ def streamVerifyReg (c : Ctr32Impl) (n : GhashName) : Registration Spec.Gcm.stre
       stack := 800
       verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed96 (pairOf c n) f)
       spSafe := VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)) } (streamVerifyOut _)
-  | none, _ => {
+  | none, _ =>
+    RScrub.withScrubAllC {
       suffix := c.suffix ++ n.impl.suffix
       code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamVerify (pairOf c n).callees)
       stack := 2592
       verified := Proof.AesGcm.streamVerify_keyed (streamVerify_framed (pairOf c n))
-      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)) }
+      spSafe := VG.X86_64.withStackArgScratch_spSafe (streamVerify_spSafe (pairOf c n)) } (streamVerifyOut _)
+      [8, 2584]
 
 end VG.Proof.AesGcm.X86_64.Scrub
