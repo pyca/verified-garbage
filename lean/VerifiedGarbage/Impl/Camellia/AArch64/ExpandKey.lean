@@ -20,7 +20,7 @@ public import VerifiedGarbage.Impl.Camellia.KeyOrder
   of a round's word select from it with `tbl`, whose time does not depend on
   its data.
 * `KL`, `KR`, `KA` and `KB` are kept as the key is loaded, little-endian
-  words of the big-endian bytes, in the tail buffer's slots, two words
+  words of the big-endian bytes, in slots of the working space, two words
   each. `KB` is computed only for a key of 24 or 32 bytes, whose subkeys
   alone use it.
 * The subkeys are then halves of rotations of `KL`, `KR`, `KA` and `KB` as
@@ -39,10 +39,26 @@ namespace VG.Impl.Camellia.AArch64
 
 open VG.AArch64 VG.Impl.Aes.AArch64 VG.Impl.Camellia
 
-def klSlot : Nat := tailSlot
-def krSlot : Nat := tailSlot + 2
-def kaSlot : Nat := tailSlot + 6
-def kbSlot : Nat := tailSlot + 8
+/-- The key schedule's working space, in words: the callee-saved registers
+(`ksavedSlot`), then `KL`, `KR`, `KA` and `KB`. It is a layout of its own,
+not the batch's (`Layers.lean`), so that the frame is no larger than what
+the key schedule writes. -/
+def keySlots : Nat := 20
+def ksavedSlot : Nat := 0
+def klSlot : Nat := 10
+def krSlot : Nat := 12
+def kaSlot : Nat := 16
+def kbSlot : Nat := 18
+
+/-- The callee-saved registers, and their slots in the key schedule's
+working space. -/
+def keySavedRegs : List (Reg × Nat) :=
+  [(.x19, ksavedSlot), (.x20, ksavedSlot + 1), (.x21, ksavedSlot + 2), (.x22, ksavedSlot + 3),
+   (.x23, ksavedSlot + 4), (.x24, ksavedSlot + 5), (.x25, ksavedSlot + 6), (.x26, ksavedSlot + 7),
+   (.x27, ksavedSlot + 8), (.x28, ksavedSlot + 9)]
+
+def keySaveRegs : List Instr := keySavedRegs.map fun (r, k) => stS k r
+def keyRestoreRegs : List Instr := keySavedRegs.map fun (r, k) => ldS r k
 
 /-- Load the key: `KL`, and `KR` by the key's length (in `x3`). -/
 def loadKey : Prog isa :=
@@ -103,13 +119,13 @@ def storeSubkeys (ks : List (Nat × Nat × Bool)) : List Instr :=
   ks.zipIdx.flatMap fun ((v, r, hi), i) => subkey i v r hi
 
 def expandKey : Prog isa :=
-  .seq (.block ([movR sb .x3, movR .x3 .x1] ++ saveRegs))
+  .seq (.block ([movR sb .x3, movR .x3 .x1] ++ keySaveRegs))
     (.seq loadKey
       (.seq (.block (([.subImm .x t0 .x3 16] : List Instr) ++
           Impl.Tbl.AArch64.loadTable (fun k => Spec.Camellia.sbox1Table.getD k 0) ++
           Serial.quarterConstants ++ Serial.maskConstants ++ ka))
         (.seq (.ite (.zero .x t0) (.block (loadValues ++ storeSubkeys subkeys128))
             (.block (kb ++ (loadValues ++ storeSubkeys subkeys256))))
-          (.block restoreRegs))))
+          (.block keyRestoreRegs))))
 
 end VG.Impl.Camellia.AArch64

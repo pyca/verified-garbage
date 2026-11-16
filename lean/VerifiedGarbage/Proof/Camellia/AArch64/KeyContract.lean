@@ -29,11 +29,11 @@ def expandKeyAArch64 : Contract isa where
   pre s :=
     let key : Region := ⟨s.gpr .x0, (s.gpr .x1).toNat⟩
     let sched : Region := ⟨s.gpr .x2, 272⟩
-    let scratch : Region := ⟨s.gpr .x3, 8 * slots⟩
+    let scratch : Region := ⟨s.gpr .x3, 8 * keySlots⟩
     s.rd = [key] ∧ s.wr = [sched, scratch] ∧ key.Disjoint sched ∧ key.Disjoint scratch ∧
       sched.Disjoint scratch ∧
       (s.gpr .x0).toNat + (s.gpr .x1).toNat ≤ 2 ^ 64 ∧ (s.gpr .x2).toNat + 272 ≤ 2 ^ 64 ∧
-      (s.gpr .x3).toNat + 8 * slots ≤ 2 ^ 64 ∧
+      (s.gpr .x3).toNat + 8 * keySlots ≤ 2 ^ 64 ∧
       ((s.gpr .x1).toNat = 16 ∨ (s.gpr .x1).toNat = 24 ∨ (s.gpr .x1).toNat = 32)
   post s s' :=
     Spec.Camellia.bytesAt s'.mem (s.gpr .x2)
