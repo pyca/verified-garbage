@@ -66,7 +66,7 @@ theorem call_ct (M : Mont) (name : String) (hnf : (round M.mm).noFrames = true) 
       obtain ⟨L, hs, ht, hsp⟩ := h
       exact ⟨L, before_good hs, before_good ht, hsp⟩) (fun _ _ h => h)
   · exact RelCT.seq (two_post (prepared_call_ct M name)
-      (fun _ _ h => call_restore_pre M name hnf h)) restore_ct
+      (fun _ _ h => call_restore_pre (round_correct M) name hnf h)) restore_ct
 
 end VG.Proof.MillerRabin.AArch64.Caller
 
@@ -103,7 +103,7 @@ structure Kernel where
 def Kernel.called (M : Mont) (name : String) (hnf : (VG.Impl.MillerRabin.AArch64.round M.mm).noFrames = true) : Kernel where
   run := [VG.Impl.MillerRabin.AArch64.Caller.call name (VG.Impl.MillerRabin.AArch64.round M.mm)]
   nonempty := by simp
-  ok := by exact Caller.call_result_ok M name hnf
+  ok := by exact Caller.call_result_ok (round_correct M) name hnf
   ct := by exact Caller.call_ct M name hnf
 
 end VG.Proof.MillerRabin.AArch64

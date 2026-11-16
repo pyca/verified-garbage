@@ -2,6 +2,8 @@ module
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Contract
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Round
 public import VerifiedGarbage.Proof.Bignum.AArch64.MontCore
+public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrWin
+import VerifiedGarbage.Proof.MillerRabin.AArch64.Core
 
 import VerifiedGarbage.Proof.MillerRabin.AArch64.Context
 import VerifiedGarbage.Proof.MillerRabin.AArch64.Finish
@@ -36,8 +38,8 @@ private theorem exponent_fits {s : State} {B : Addr} {Z w c bm : Nat}
   have hc : c < 2 ^ (64 * w) := h.n ▸ wv_lt s.mem B (slot w aN) w
   exact Nat.lt_of_le_of_lt (Nat.div_le_self _ _) (Nat.lt_of_le_of_lt (Nat.sub_le _ _) hc)
 
-theorem round_correct (M : Mont) (s : State) (h : roundContract.pre s) :
-    ∃ tr t, Exec isa (round M.mm) s tr t ∧ abiPreserved s t ∧ roundContract.post s t := by
+theorem roundW_correct {win : List (Prog isa)} (hwin : WinOK win) (M : Mont) (s : State) (h : roundContract.pre s) :
+    ∃ tr t, Exec isa (roundW win M.mm) s tr t ∧ abiPreserved s t ∧ roundContract.post s t := by
   obtain ⟨h4, h128, hEZ, bm, hc, hE, hodd, h3, hx⟩ := initial_ctx h
   let B := s.gpr .x0
   let w := Proof.Rsa.Mont.wOf s.mem B
@@ -46,11 +48,11 @@ theorem round_correct (M : Mont) (s : State) (h : roundContract.pre s) :
   obtain ⟨b, -, hb⟩ := witness_exists hR hx
   have hX : wv s.mem B (slot w aXm) w = Spec.Rsa.powMod b 1 c * 2 ^ (64 * w) % c := by
     simpa only [VG.Proof.Bignum.powMod_eq, Nat.pow_one] using hb
-  suffices hw : WP isa (round M.mm) s fun t => abiPreserved s t ∧ roundPost s t by
+  suffices hw : WP isa (roundW win M.mm) s fun t => abiPreserved s t ∧ roundPost s t by
     obtain ⟨tr, t, he, ha, hp⟩ := hw
     exact ⟨tr, t, he, ha, hp⟩
-  unfold VG.Impl.MillerRabin.AArch64.round
-  refine WP.seq (WP.mono (core_ok M h128 hEZ hc hE hodd h3 (exponent_fits hc) hX)
+  unfold VG.Impl.MillerRabin.AArch64.roundW
+  refine WP.seq (WP.mono (coreW_ok hwin M h128 hEZ hc hE hodd h3 (exponent_fits hc) hX)
     fun t ⟨ht, _, hp, hf, hk⟩ => ?_)
   refine WP.mono (returnFlag_ok ht.ws hp) fun u ⟨hm, hr, ku⟩ => ⟨?_, ?_⟩
   · have k := hk.trans ku
@@ -64,5 +66,9 @@ theorem round_correct (M : Mont) (s : State) (h : roundContract.pre s) :
       rw [hr, result32, hm']
     · rw [hm]
       exact core_keeps (by have := hc.ws.scr.nowrap; change 8 * (s.gpr .x1).toNat ≤ 2 ^ 64; omega_arith) hf
+
+theorem round_correct (M : Mont) (s : State) (h : roundContract.pre s) :
+    ∃ tr t, Exec isa (round M.mm) s tr t ∧ abiPreserved s t ∧ roundContract.post s t :=
+  roundW_correct (mrWin_winOK M) M s h
 
 end VG.Proof.MillerRabin.AArch64

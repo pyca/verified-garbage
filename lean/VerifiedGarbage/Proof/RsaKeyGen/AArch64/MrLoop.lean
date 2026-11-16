@@ -94,14 +94,14 @@ structure WinInv (B : Addr) (Z w : Nat) (c bm b k : Nat) (W : BitVec 64) (s₀ :
   keep : Keep mmRegs s₀ s
 
 /-- One window of word `k − 1`. -/
-theorem mrWinStep_ok (M : Mont) {B : Addr} {Z w c bm b k : Nat} {W : BitVec 64} {s₀ s : State}
+theorem mrWinStepW_ok {win : List (Prog isa)} (hwin : WinOK win) {B : Addr} {Z w c bm b k : Nat} {W : BitVec 64} {s₀ s : State}
     (hw128 : w ≤ 128) (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hodd : c % 2 = 1) (hc1 : 1 < c) (hk : 1 ≤ k)
     (hkw : k ≤ w) (hW : W.toNat = mrE c / 2 ^ (64 * (k - 1)) % 2 ^ 64) {j : Nat} (hj : j < 16)
     (hI : WinInv B Z w c bm b k W s₀ j s) :
-    WP isa (seqs (mrWin M.mm)) s fun t =>
+    WP isa (seqs win) s fun t =>
       WinInv B Z w c bm b k W s₀ (j + 1) t ∧ ((t.gpr .x3).toNat ≠ 0 ↔ j + 1 ≠ 16) := by
   have hdig := win_digit hW hj
-  refine WP.mono (mrWin_ok M hw128 hEZ hI.ctx hI.tab hodd hc1 hI.y hI.flag hI.v hI.bits (by omega_arith)
+  refine WP.mono (hwin hw128 hEZ hI.ctx hI.tab hodd hc1 hI.y hI.flag hI.v hI.bits (by omega_arith)
     (by omega_arith)) fun t ⟨hct, htt, hyt, hft, hvt, hbt, h3, hfr, kt⟩ => ⟨?_, ?_⟩
   · have e : wRun c b (mrE c) (16 * w) (16 * (w - k) + (j + 1)) =
         wWin c b ((W <<< (4 * j)) >>> 60).toNat
@@ -116,12 +116,28 @@ theorem mrWinStep_ok (M : Mont) {B : Addr} {Z w c bm b k : Nat} {W : BitVec 64} 
   · rw [h3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
 
 /-- The inner loop: the 16 windows of word `k − 1`. -/
+theorem mrWinsW_ok {win : List (Prog isa)} (hwin : WinOK win) {B : Addr} {Z w c bm b k : Nat} {W : BitVec 64} {s₀ s : State}
+    (hw128 : w ≤ 128) (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hodd : c % 2 = 1) (hc1 : 1 < c) (hk : 1 ≤ k)
+    (hkw : k ≤ w) (hW : W.toNat = mrE c / 2 ^ (64 * (k - 1)) % 2 ^ 64) (h0 : WinInv B Z w c bm b k W s₀ 0 s) :
+    WP isa (.loop (seqs win) (.nonzero .x .x3)) s (WinInv B Z w c bm b k W s₀ 16) :=
+  count_loop (cr := .x3) (n := 16) (by decide) (WinInv B Z w c bm b k W s₀)
+    (fun _ hj _ hI => mrWinStepW_ok hwin hw128 hEZ hodd hc1 hk hkw hW hj hI) h0
+
+/-- One window of word `k − 1`, with the masked selection. -/
+theorem mrWinStep_ok (M : Mont) {B : Addr} {Z w c bm b k : Nat} {W : BitVec 64} {s₀ s : State}
+    (hw128 : w ≤ 128) (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hodd : c % 2 = 1) (hc1 : 1 < c) (hk : 1 ≤ k)
+    (hkw : k ≤ w) (hW : W.toNat = mrE c / 2 ^ (64 * (k - 1)) % 2 ^ 64) {j : Nat} (hj : j < 16)
+    (hI : WinInv B Z w c bm b k W s₀ j s) :
+    WP isa (seqs (mrWin M.mm)) s fun t =>
+      WinInv B Z w c bm b k W s₀ (j + 1) t ∧ ((t.gpr .x3).toNat ≠ 0 ↔ j + 1 ≠ 16) :=
+  mrWinStepW_ok (mrWin_winOK M) hw128 hEZ hodd hc1 hk hkw hW hj hI
+
+/-- The inner loop, with the masked selection. -/
 theorem mrWins_ok (M : Mont) {B : Addr} {Z w c bm b k : Nat} {W : BitVec 64} {s₀ s : State}
     (hw128 : w ≤ 128) (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hodd : c % 2 = 1) (hc1 : 1 < c) (hk : 1 ≤ k)
     (hkw : k ≤ w) (hW : W.toNat = mrE c / 2 ^ (64 * (k - 1)) % 2 ^ 64) (h0 : WinInv B Z w c bm b k W s₀ 0 s) :
     WP isa (.loop (seqs (mrWin M.mm)) (.nonzero .x .x3)) s (WinInv B Z w c bm b k W s₀ 16) :=
-  count_loop (cr := .x3) (n := 16) (by decide) (WinInv B Z w c bm b k W s₀)
-    (fun _ hj _ hI => mrWinStep_ok M hw128 hEZ hodd hc1 hk hkw hW hj hI) h0
+  mrWinsW_ok (mrWin_winOK M) hw128 hEZ hodd hc1 hk hkw hW h0
 
 /-- After `j` of the `w` words. -/
 structure WordInv (B : Addr) (Z w : Nat) (c bm b : Nat) (s₀ : State) (j : Nat) (s : State) : Prop where
@@ -220,17 +236,26 @@ theorem wordEnd_ok {B : Addr} {Z w c bm b : Nat} {W : BitVec 64} {s₀ s : State
   · rw [h3, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
 
 /-- One word of the exponentiation. -/
-theorem mrWord_ok (M : Mont) {B : Addr} {Z w c bm b : Nat} {s₀ s : State} (hw128 : w ≤ 128)
+theorem mrWordW_ok {win : List (Prog isa)} (hwin : WinOK win) {B : Addr} {Z w c bm b : Nat} {s₀ s : State} (hw128 : w ≤ 128)
     (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hE : ECtx s.mem B w c) (hodd : c % 2 = 1) (hc1 : 1 < c) {j : Nat}
     (hj : j < w) (hI : WordInv B Z w c bm b s₀ j s) :
-    WP isa (seqs [.block (ws ++ base aE .x16 ++ wordHead), .loop (seqs (mrWin M.mm)) (.nonzero .x .x3),
+    WP isa (seqs [.block (ws ++ base aE .x16 ++ wordHead), .loop (seqs win) (.nonzero .x .x3),
       .block [ldh .x3 kWords]]) s fun t =>
       WordInv B Z w c bm b s₀ (j + 1) t ∧ ((t.gpr .x3).toNat ≠ 0 ↔ j + 1 ≠ w) := by
   have hW : (wordE s.mem B w j).toNat = mrE c / 2 ^ (64 * (w - j - 1)) % 2 ^ 64 := by
     rw [← hE.e]; exact word_of_wv s.mem B (slot w aE) w (by omega_arith)
   simp only [seqs]
   refine WP.seq (WP.mono (wordStart_ok hEZ hj hI) fun s₁ hB0 => ?_)
-  exact WP.seq (WP.mono (mrWins_ok M hw128 hEZ hodd hc1 (by omega_arith) (by omega_arith)
+  exact WP.seq (WP.mono (mrWinsW_ok hwin hw128 hEZ hodd hc1 (by omega_arith) (by omega_arith)
     hW hB0) fun s₂ hB => wordEnd_ok hj hB)
+
+/-- One word of the exponentiation, with the masked selection. -/
+theorem mrWord_ok (M : Mont) {B : Addr} {Z w c bm b : Nat} {s₀ s : State} (hw128 : w ≤ 128)
+    (hEZ : slot w aE + 8 * (w + 2) ≤ Z) (hE : ECtx s.mem B w c) (hodd : c % 2 = 1) (hc1 : 1 < c) {j : Nat}
+    (hj : j < w) (hI : WordInv B Z w c bm b s₀ j s) :
+    WP isa (seqs [.block (ws ++ base aE .x16 ++ wordHead), .loop (seqs (mrWin M.mm)) (.nonzero .x .x3),
+      .block [ldh .x3 kWords]]) s fun t =>
+      WordInv B Z w c bm b s₀ (j + 1) t ∧ ((t.gpr .x3).toNat ≠ 0 ↔ j + 1 ≠ w) :=
+  mrWordW_ok (mrWin_winOK M) hw128 hEZ hE hodd hc1 hj hI
 
 end VG.Proof.RsaKeyGen.AArch64

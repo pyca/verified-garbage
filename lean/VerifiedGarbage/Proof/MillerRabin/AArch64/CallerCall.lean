@@ -1,4 +1,5 @@
 module
+public import VerifiedGarbage.Proof.MillerRabin.AArch64.Contract
 public import VerifiedGarbage.Proof.RsaKeyGen.AArch64.MrSq
 public import VerifiedGarbage.Impl.MillerRabin.AArch64.Round
 public import VerifiedGarbage.Proof.MillerRabin.Contract
@@ -56,13 +57,14 @@ open VG.Impl.MillerRabin.AArch64 VG.Impl.MillerRabin.AArch64.Caller
 open VG.Proof.MlKem.AArch64 (Keep)
 open VG.Proof.Bignum.AArch64.MontFn (numAt_eq)
 
-theorem call_ok (M : Mont) (name : String) (hnf : (round M.mm).noFrames = true)
+theorem call_ok {R : Prog isa} (hR : ∀ s, roundContract.pre s → ∃ tr t, Exec isa R s tr t ∧ abiPreserved s t ∧ roundContract.post s t)
+    (name : String) (hnf : R.noFrames = true)
     {s : State} {B : Addr} {Z w c bm b : Nat}
     (hc : MrCtx s B Z w c bm) (he : ECtx s.mem B w c)
     (h4 : 4 ≤ w) (h128 : w ≤ 128) (hEZ : slot w aE + 8 * (w + 2) ≤ Z)
     (ho : c % 2 = 1) (h3 : 3 ≤ c)
     (hx : wv s.mem B (slot w aXm) w = b % c * 2 ^ (64 * w) % c) :
-    WP isa (call name (round M.mm)) s fun t =>
+    WP isa (call name R) s fun t =>
       t.gpr .x0 = B ∧ abiPreserved s t ∧
       Frame [⟨B, 8 * (32 + 28 * (w + 2))⟩] s.mem t.mem ∧
       ∃ m : Mem, Proof.MillerRabin.Round.Keeps Proof.MillerRabin.Round.compact B (32 + 28 * (w + 2)) w
@@ -118,7 +120,7 @@ theorem call_ok (M : Mont) (name : String) (hnf : (round M.mm).noFrames = true)
         (by have := hc.ws.scr.nowrap; omega_arith)
     · exact Offset.contains_base B (by simp only [pad, n, slot, hdrBytes, aOne]; omega_arith)
         (by have := hc.ws.scr.nowrap; omega_arith)
-  refine WP.seq (WP.callV (round_correct M) hpre (Covers.right hcover) hcover ?_ hnf)
+  refine WP.seq (WP.callV hR hpre (Covers.right hcover) hcover ?_ hnf)
   intro v hrd hwr hsp hf hregs hnever hvcs hp
   change roundPost e (v.withRegions [] [⟨B, 8 * n⟩]) at hp
   unfold roundPost at hp
