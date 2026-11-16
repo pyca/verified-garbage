@@ -44,6 +44,7 @@ import VerifiedGarbage.Proof.Gcm.X86_64.StitchZ.OkP
 import VerifiedGarbage.Proof.Framework.TacticTemplate
 import VerifiedGarbage.Proof.Framework.TaintBatch
 public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamTo.Verified
+public import VerifiedGarbage.Proof.AesGcm.X86_64.StreamClrVerified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.Verified
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Gather.SealCallee
 public import VerifiedGarbage.Proof.AesGcm.X86_64.Short.VerifiedP
@@ -2989,10 +2990,72 @@ theorem streamEncryptCodeF16_mx (v : GcmVariant) :
   simp only [streamEncryptCodeF16, Impl.Gcm.X86_64.Flag.onFlag, Code.iteCold, Code.allInstrs, h₁, h₂, Bool.and_true]
   rfl
 
+/-- Whether `vg_aes_gcm_stream_encrypt_prepared` of a variant whose loops read
+16 powers clears the registers only on the paths that call
+(`streamEncryptClr`), as the variant on VAES and VPCLMULQDQ on 256-bit
+registers does, whose callees never touch the stack. -/
+def GcmVariant.streamF16Clr (v : GcmVariant) : Bool :=
+  v.stitch.any fun p => match p.name with
+    | .vaes => true
+    | _ => false
+
+/-- `streamEncryptCodeF16`, clearing the registers after each call
+(`streamEncryptClr`, at the level of 256-bit registers). -/
+def streamEncryptCodeF16C (v : GcmVariant) : Prog VG.X86_64.isa :=
+  Impl.Gcm.X86_64.Flag.onFlag 16
+    (Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+      (Impl.AesGcm.X86_64.streamEncryptClr (v.impl.withBlk (blkR16 v)) .avx))
+    (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncryptClr v.impl.callees .avx))
+
+/-- The code of `vg_aes_gcm_stream_encrypt_prepared` of a variant whose loops
+read 16 powers: `streamEncryptCodeF16C` where `GcmVariant.streamF16Clr` says
+so, else `streamEncryptCodeF16`. -/
+def streamEncryptCodeF16S (v : GcmVariant) : Prog VG.X86_64.isa :=
+  if v.streamF16Clr then streamEncryptCodeF16C v else streamEncryptCodeF16 v
+
+theorem streamEncryptCodeF16S_verified (v : GcmVariant) :
+    Verified X86_64.target (streamEncryptCodeF16S v)
+      (VG.Proof.AesGcm.Flag.streamEncryptRoundsContractB 16 X86_64.abi 2608) := by
+  unfold streamEncryptCodeF16S
+  split
+  · exact Flag.streamEncrypt_onFlag16B (streamEncryptClr16_framed .avx v.impl (blkR16 v))
+      (streamEncryptClrB_framed .avx v.impl v.impl.blkB)
+  · exact streamEncryptCodeF16_verified v
+
+theorem streamEncryptCodeF16S_spAll (v : GcmVariant) :
+    (streamEncryptCodeF16S v).all (fun i => !X86_64.isa.writesSp i) = true := by
+  unfold streamEncryptCodeF16S
+  split
+  · exact VG.X86_64.onFlag_spSafe (streamEncryptClr_spSafe .avx v.impl (blkR16 v))
+      (streamEncryptClr_spSafe .avx v.impl v.impl.blkB)
+  · exact streamEncryptCodeF16_spAll v
+
+theorem streamEncryptCodeF16S_xdepth (v : GcmVariant) : (streamEncryptCodeF16S v).x86_64Depth ≤ 2608 := by
+  unfold streamEncryptCodeF16S
+  split
+  · have h₁ := streamEncryptClr_xdepth .avx v.impl (blkR16 v)
+    have h₂ := streamEncryptClr_xdepth .avx v.impl v.impl.blkB
+    simp only [streamEncryptCodeF16C, Impl.Gcm.X86_64.Flag.onFlag, Code.iteCold, Code.x86_64Depth, Nat.max_le]
+    exact ⟨Nat.zero_le _, ⟨⟨⟨Nat.zero_le _, Nat.zero_le _⟩, h₁⟩, h₂⟩⟩
+  · exact streamEncryptCodeF16_xdepth v
+
+theorem streamEncryptCodeF16S_mx (v : GcmVariant) :
+    (streamEncryptCodeF16S v).allInstrs (fun i => !VG.X86_64.loadsMxcsr i) = true := by
+  unfold streamEncryptCodeF16S
+  split
+  · have h₁ := streamEncryptClr_mx .avx v.impl (blkR16 v)
+    have h₂ : (Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+        (Impl.AesGcm.X86_64.streamEncryptClr v.impl.callees .avx)).allInstrs (fun i => !VG.X86_64.loadsMxcsr i) = true :=
+      streamEncryptClr_mx .avx v.impl v.impl.blkB
+    simp only [streamEncryptCodeF16C, Impl.Gcm.X86_64.Flag.onFlag, Code.iteCold, Code.allInstrs, h₁, h₂,
+      Bool.and_true]
+    rfl
+  · exact streamEncryptCodeF16_mx v
+
 def encFnF16 (v : GcmVariant) : StreamTo.EncFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
-  .ofFlagged ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix, streamEncryptCodeF16 v⟩
-    (streamEncryptCodeF16_verified v) (streamEncryptCodeF16_spAll v) (streamEncryptCodeF16_xdepth v)
-    (streamEncryptCodeF16_mx v)
+  .ofFlagged ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix, streamEncryptCodeF16S v⟩
+    (streamEncryptCodeF16S_verified v) (streamEncryptCodeF16S_spAll v) (streamEncryptCodeF16S_xdepth v)
+    (streamEncryptCodeF16S_mx v)
 
 def toFnF16 (v : GcmVariant) : Gather.ToFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
   .ofFlagged ⟨"vg_aes_gcm_stream_encrypt_to_prepared16" ++ v.impl.suffix,

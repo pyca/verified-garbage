@@ -120,11 +120,7 @@ def artifactsW (v : GcmVariant) : List Artifact := [
     code := openToCode v
     verified := VG.Proof.AesGcm.Flag.openTo_keyed (openToCode_keyed v)
     spSafe := openToCode_spAll v },
-  Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.impl.callees)
-    verified := VG.Proof.AesGcm.Flag.streamEncrypt_keyed (Flag.streamEncrypt_of_base (streamEncrypt_framed v.impl))
-    spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v.impl) },
+  Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target (streamEncryptWReg v),
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecrypt v.impl.callees)
@@ -155,10 +151,10 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
     spSafe := openToCodeR16_onFlag_spAll v r },
   Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
-    code := streamEncryptCodeF16 v
+    code := streamEncryptCodeF16S v
     verified := VG.Proof.AesGcm.Flag.streamEncrypt_keyed
-      (Flag.streamEncrypt_ofB (Or.inl rfl) (streamEncryptCodeF16_verified v))
-    spSafe := streamEncryptCodeF16_spAll v },
+      (Flag.streamEncrypt_ofB (Or.inl rfl) (streamEncryptCodeF16S_verified v))
+    spSafe := streamEncryptCodeF16S_spAll v },
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
     code := Impl.Gcm.X86_64.Flag.onFlag 16

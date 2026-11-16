@@ -907,6 +907,26 @@ others. -/
 def sealWReg (v : GcmVariant) : Registration Spec.Gcm.sealPreparedApi X86_64.target :=
   if v.impl.suffix = aesNiPclmulV.impl.suffix then sealWAesniPclmul else sealWPlain v
 
+/-! ## `vg_aes_gcm_stream_encrypt_prepared_aesni_pclmul` -/
+
+/-- `vg_aes_gcm_stream_encrypt_prepared` of a variant whose loops read only
+the key context: for the variant on AES-NI and PCLMULQDQ, whose callees never
+touch the stack, the code that clears the registers after each call
+(`streamEncryptClr`, at the level of SSE); for the others, the shared code. -/
+def streamEncryptWReg (v : GcmVariant) : Registration Spec.Gcm.streamEncryptPreparedApi X86_64.target :=
+  if v.impl.suffix = aesNiPclmulV.impl.suffix then {
+    suffix := v.impl.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1
+      (Impl.AesGcm.X86_64.streamEncryptClr v.impl.callees .sse)
+    verified := VG.Proof.AesGcm.Flag.streamEncrypt_keyed
+      (Flag.streamEncrypt_of_base (streamEncryptClrB_framed .sse v.impl v.impl.blkB))
+    spSafe := streamEncryptClr_spSafe .sse v.impl v.impl.blkB }
+  else {
+    suffix := v.impl.suffix
+    code := Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamEncrypt v.impl.callees)
+    verified := VG.Proof.AesGcm.Flag.streamEncrypt_keyed (Flag.streamEncrypt_of_base (streamEncrypt_framed v.impl))
+    spSafe := X86_64.withStackArgScratch_spSafe (streamEncrypt_spSafe v.impl) }
+
 /-! ## `vg_aes_gcm_open_prepared_aesni_pclmul` -/
 
 /-- `BlkLeavesD` from what the decryption leaves in `scratch` (`Blocks.Scr`). -/
