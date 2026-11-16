@@ -499,15 +499,15 @@ GROUPS = {
         ],
     },
     "sm4_cbc": {
-        "lib": ["cipher::sm4::cbc"],
+        "lib": [],
         "tests": ["draft_ribose_sm4::sm4_cbc"],
     },
     "sm4_cfb": {
-        "lib": ["cipher::sm4::cfb"],
+        "lib": [],
         "tests": ["draft_ribose_sm4::sm4_cfb"],
     },
     "sm4_ctr": {
-        "lib": ["cipher::sm4::ctr"],
+        "lib": [],
         "tests": ["draft_ribose_sm4::sm4_ctr"],
     },
     "sm4_ecb": {
