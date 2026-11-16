@@ -28,7 +28,7 @@ no address or branch depends on anything else.
 
 `vg_aes_ctr32_neon` is `ctr32N`, and `vg_aes_ctr32_to_neon` is `ctr32ToN`:
 as `vg_aes_ctr32` and `vg_aes_ctr32_to` do, they return at once for no block
-(`n = 0`), and encrypt one block (`n = 1`) by table lookups (`ctr32One`,
+(`n = 0`), and encrypt one block (`n = 1`) by vector permutations (`ctr32One`,
 `ctr32OneTo`), with nothing bitsliced; `ctr32Gen` is for two blocks or more.
 -/
 
