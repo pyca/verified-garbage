@@ -181,6 +181,12 @@ jobs:
             /crates/verified-garbage-asm-*/Cargo.toml
             /crates/verified-garbage-asm-${{ matrix.asm }}/
             !/crates/verified-garbage-asm-*/assembly/
+      # Measurement only (the ARMv7 audit, issue 4141): the armv7-cross image
+      # has the armhf OpenSSL without its legacy provider, which the
+      # benchmarks of Blowfish, CAST5, IDEA, RC2, RC4 and SEED load.
+      - name: Install the armhf OpenSSL legacy provider
+        if: ${{ matrix.arch == 'arm' || matrix.arch == 'thumb' }}
+        run: apt-get -qq update && apt-get install -qq -y --no-install-recommends openssl-provider-legacy:armhf
       - name: Record CPU and OpenSSL capabilities
         run: |
           openssl version -a
