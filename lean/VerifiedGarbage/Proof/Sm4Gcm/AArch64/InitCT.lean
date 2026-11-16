@@ -117,7 +117,7 @@ theorem init2_ok {s : State} {Ctx W : Addr} (h19 : s.gpr .x19 = W) (h21 : s.gpr 
       (covers_left (covers_off pC' (by decide) (by decide))))
   · exact covers_cons (covers_off pW' (by decide) (by decide)) (covers_off pC' (by decide) (by decide))
 
-theorem init_ct : ConstantTime isa initAArch64.pre initAArch64.pub init := by
+theorem init_ct (v : GcmImpl) : ConstantTime isa initAArch64.pre initAArch64.pub (init v.callees) := by
   refine ct_of fun σ₁ σ₂ h₁ h₂ hq => ?_
   obtain ⟨q0, q1, q2, qsp⟩ := hq
   simp only [initAArch64] at h₁ h₂
@@ -150,8 +150,8 @@ theorem init_ct : ConstantTime isa initAArch64.pre initAArch64.pub init := by
       ⟨_, by taint_decide⟩)
     (pv hwr₁ wr₁ sp₁ rfl g₁ x19₁ x21₁) (pv hwr₂ wr₂ sp₂ qsp.symm g₂ x19₂ x21₂)
     fun τ₁ τ₂ ⟨c₁, y₁, z₁, s₁'⟩ ⟨c₂, y₂, z₂, s₂'⟩ => ?_
-  refine rel_seq (rel_ctr c₁ c₂ (by rw [s₁', s₂', g₁.sp, g₂.sp, sp₁, sp₂, qsp]))
-    (ctr_call c₁) (ctr_call c₂) fun τ₁ τ₂ e₁ e₂ => ?_
+  refine rel_seq (rel_ctr v.ctr c₁ c₂ (by rw [s₁', s₂', g₁.sp, g₂.sp, sp₁, sp₂, qsp]))
+    (ctr_call v.ctr c₁) (ctr_call v.ctr c₂) fun τ₁ τ₂ e₁ e₂ => ?_
   exact rel_taint [.x19, .x21] (by rw [e₁.sp, e₂.sp, s₁', s₂', g₁.sp, g₂.sp, sp₁, sp₂, qsp])
     (by agree_tac [e₁.saved .x19 (by decide) (by decide), e₂.saved .x19 (by decide) (by decide), y₁, y₂,
       e₁.saved .x21 (by decide) (by decide), e₂.saved .x21 (by decide) (by decide), z₁, z₂]) ⟨_, by taint_decide⟩

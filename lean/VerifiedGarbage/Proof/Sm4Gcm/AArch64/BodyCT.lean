@@ -124,8 +124,8 @@ theorem encBody_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {n P : Nat} {D
   have k26₂ : k₂ .x26 = BitVec.ofNat 64 n := (h₂.kept .x26 (by decide)).symm.trans h₂.x26
   have k28₂ : k₂ .x28 = D := (h₂.kept .x28 (by decide)).symm.trans h₂.x28
   refine padArgs_rel L v h₁ h₂ hq fun τ₁ τ₂ c₁ c₂ => ?_
-  refine rel_seq (crypt_rel L c₁ c₂) (WP.with_rdwr (crypt_ok L (icb := 0) c₁))
-    (WP.with_rdwr (crypt_ok L (icb := 0) c₂)) fun τ₁' τ₂' ⟨o₁, rd₁, wr₁⟩ ⟨o₂, rd₂, wr₂⟩ => ?_
+  refine rel_seq (crypt_rel L v c₁ c₂) (WP.with_rdwr (crypt_ok L v (icb := 0) c₁))
+    (WP.with_rdwr (crypt_ok L v (icb := 0) c₂)) fun τ₁' τ₂' ⟨o₁, rd₁, wr₁⟩ ⟨o₂, rd₂, wr₂⟩ => ?_
   refine rel_seq (rel_taint [.x26, .x28] (by rw [o₁.env.sp, o₂.env.sp])
       (by agree_tac [o₁.kept .x26 (by decide), o₂.kept .x26 (by decide), o₁.kept .x28 (by decide),
         o₂.kept .x28 (by decide), k26₁, k26₂, k28₁, k28₂]) ⟨_, by taint_decide⟩)

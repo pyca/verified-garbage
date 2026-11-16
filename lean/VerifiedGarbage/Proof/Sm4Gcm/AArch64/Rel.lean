@@ -23,9 +23,9 @@ theorem rel_gh (g : GhashImpl) {σ₁ σ₂ : State} {H Y D S : Addr} {n : Nat} 
     (h₂ : GhCall σ₂ H Y D S n) (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) (.call g.fn.name g.fn.code) TT :=
   gh_rel g fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨H, Y, D, S, n, h₁, h₂, hsp⟩
 
-theorem rel_ctr {σ₁ σ₂ : State} {K C D : Addr} {n : Nat} (h₁ : CtrCall σ₁ K C D n)
-    (h₂ : CtrCall σ₂ K C D n) (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) ctrCall TT :=
-  ctr_rel fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, C, D, n, h₁, h₂, hsp⟩
+theorem rel_ctr (c : CtrImpl) {σ₁ σ₂ : State} {K C D : Addr} {n : Nat} (h₁ : CtrCall σ₁ K C D n)
+    (h₂ : CtrCall σ₂ K C D n) (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) (.call c.fn.name c.fn.code) TT :=
+  ctr_rel c fun a b hab => by obtain ⟨rfl, rfl⟩ := hab; exact ⟨K, C, D, n, h₁, h₂, hsp⟩
 
 theorem rel_key {σ₁ σ₂ : State} {K C : Addr} (h₁ : KeyCall σ₁ K C) (h₂ : KeyCall σ₂ K C)
     (hsp : σ₁.sp = σ₂.sp) : RelCT isa (Eq2 σ₁ σ₂) (.call "vg_sm4_expand_key" keyCode) TT :=

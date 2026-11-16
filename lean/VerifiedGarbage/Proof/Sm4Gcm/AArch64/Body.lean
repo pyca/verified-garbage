@@ -377,7 +377,7 @@ theorem encBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {n P : Nat} {D : Addr} 
   have hd₃ : DataW Ctx St W SP s₃ D n := h.data.of_eq (by rw [r₃.rd, rd₂]) (by rw [r₃.wr, wr₂])
   have hCr : CrIn Ctx St W SP k P D n s₃ :=
     ⟨he₃, hk₃, x23₃, x24₃, x25₃, hd₃⟩
-  refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok L (icb := icb) hCr)) fun s₄ ⟨h₄, rd₄, wr₄⟩ => ?_)
+  refine WP.seq (WP.mono (WP.with_rdwr (crypt_ok L v (icb := icb) hCr)) fun s₄ ⟨h₄, rd₄, wr₄⟩ => ?_)
   refine WP.seq (WP.mono (textPiece_ok h₄.kept k26 k28) fun s₅ ⟨x23₅, x24₅, r₅⟩ => ?_)
   have he₅ := h₄.env.of_regs r₅
   have hk₅ := h₄.kept.of_others r₅.others
@@ -485,7 +485,7 @@ theorem decBody_ok (v : GcmImpl) {k : Reg → BitVec 64} {n P : Nat} {D : Addr} 
     rcases List.mem_append.mp hr with hr | hr
     · exact data_tFrame h.data r hr
     · exact data_absFrame (.inr rfl) h.data.ok r hr
-  refine WP.mono (crypt_ok L (icb := icb) hCr) fun s₆ h₆ => ⟨h₆.env, h₆.kept, ?_, fun ha hctr => ⟨?_, ?_, ?_⟩⟩
+  refine WP.mono (crypt_ok L v (icb := icb) hCr) fun s₆ h₆ => ⟨h₆.env, h₆.kept, ?_, fun ha hctr => ⟨?_, ?_, ?_⟩⟩
   · rw [r₅.mem] at h₆
     exact (F₄.sub fun r hr => ⟨r, by
       rcases List.mem_append.mp hr with hr | hr

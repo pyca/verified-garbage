@@ -363,10 +363,10 @@ structure BInv (K : Nat → Word) (s₀ : State) (c p : Nat) (s : State) : Prop 
 
 /-! ## Loading and storing the blocks -/
 
-theorem ldData_ok : ∀ (regs : List VReg) (j : Nat) (s : State), regs.Nodup → j + regs.length ≤ 4096 →
-    (∀ k < regs.length, InRegions (s.rd ++ s.wr) (s.gpr .x1 + BitVec.ofNat 64 (16 * (j + k))) 16) →
-    WP isa (.block (ldData regs j)) s fun s' =>
-      (∀ k (h : k < regs.length), s'.v regs[k] = s.mem.readW (s.gpr .x1 + BitVec.ofNat 64 (16 * (j + k))) 128) ∧
+theorem ldData_ok (p : Reg) : ∀ (regs : List VReg) (j : Nat) (s : State), regs.Nodup → j + regs.length ≤ 4096 →
+    (∀ k < regs.length, InRegions (s.rd ++ s.wr) (s.gpr p + BitVec.ofNat 64 (16 * (j + k))) 16) →
+    WP isa (.block (ldData p regs j)) s fun s' =>
+      (∀ k (h : k < regs.length), s'.v regs[k] = s.mem.readW (s.gpr p + BitVec.ofNat 64 (16 * (j + k))) 128) ∧
       VFrame regs s s'
   | [], _, s, _, _, _ => WP.block_nil ⟨fun _ h => absurd h (by simp), VFrame.refl _ _⟩
   | b :: bs, j, s, hnd, hj, hin => by
@@ -374,7 +374,7 @@ theorem ldData_ok : ∀ (regs : List VReg) (j : Nat) (s : State), regs.Nodup →
     simp only [List.length_cons] at hj
     rw [ldData, WP.block_cons_iff]
     refine ⟨_, exec_ldrq (by omega_using [hj]) (by simpa using hin 0 (by simp)), ?_⟩
-    refine WP.mono (ldData_ok bs (j + 1) _ (List.nodup_cons.mp hnd).2 (by omega_using [hj]) fun k hk => by
+    refine WP.mono (ldData_ok p bs (j + 1) _ (List.nodup_cons.mp hnd).2 (by omega_using [hj]) fun k hk => by
       have := hin (k + 1) (by simp; omega_using [hk])
       simpa [State.setV, show j + 1 + k = j + (k + 1) by omega_using []] using this)
       fun s' ⟨e, f⟩ => ⟨fun k hk => ?_, ?_⟩
@@ -415,18 +415,21 @@ theorem dinv_write {m₀ m : Mem} {D : Addr} {n k : Nat} {F : Nat → Block} {v 
   · rw [ite_eq_right h1, ite_eq_right (show ¬ 2 ^ 64 + i - 16 * k < 16 by omega_using [hn, hk]), h i hi,
       ite_eq_left (show i < 16 * k by omega_using [h1]), ite_eq_left (show i < 16 * (k + 1) by omega_using [h1])]
 
-theorem stData_ok {m₀ : Mem} {D : Addr} {n c : Nat} {F : Nat → Block} (hn : 16 * n ≤ 2 ^ 64) :
+/-- The registers stored to the blocks `c + j …` of the `n` at `D`, the address
+of block `c` in `p`: nothing else is written (bytes within `16 n` of `D` only). -/
+theorem stData_ok (p : Reg) {m₀ : Mem} {D : Addr} {n c : Nat} {F : Nat → Block} (hn : 16 * n ≤ 2 ^ 64) :
     ∀ (regs : List VReg) (j : Nat) (s : State),
-    s.gpr .x1 = D + BitVec.ofNat 64 (16 * c) → j + regs.length ≤ 4096 → c + j + regs.length ≤ n →
+    s.gpr p = D + BitVec.ofNat 64 (16 * c) → j + regs.length ≤ 4096 → c + j + regs.length ≤ n →
     (⟨D, 16 * n⟩ : Region) ∈ s.wr → DInv m₀ s.mem D n (c + j) F →
     (∀ k (h : k < regs.length), ∀ t < 16, vbyte (s.v regs[k]) t = (F (c + j + k)).getD t 0) →
-    WP isa (.block (stData regs j)) s fun s' =>
+    WP isa (.block (stData p regs j)) s fun s' =>
       DInv m₀ s'.mem D n (c + j + regs.length) F ∧
-      s'.gpr = s.gpr ∧ s'.v = s.v ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr
-  | [], _, s, _, _, _, _, hD, _ => WP.block_nil ⟨by simpa using hD, rfl, rfl, rfl, rfl, rfl⟩
+      s'.gpr = s.gpr ∧ s'.v = s.v ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
+      ∀ x, ¬ (x - D).toNat < 16 * n → s'.mem x = s.mem x
+  | [], _, s, _, _, _, _, hD, _ => WP.block_nil ⟨by simpa using hD, rfl, rfl, rfl, rfl, rfl, fun _ _ => rfl⟩
   | b :: bs, j, s, hx1, hj, hc, hw, hD, hF => by
     simp only [List.length_cons] at hj hc
-    have ha : s.gpr .x1 + BitVec.ofNat 64 (16 * j) = D + BitVec.ofNat 64 (16 * (c + j)) := by
+    have ha : s.gpr p + BitVec.ofNat 64 (16 * j) = D + BitVec.ofNat 64 (16 * (c + j)) := by
       rw [hx1, Offset.add_add_eq D (show 16 * c + 16 * j = 16 * (c + j) by omega_using [])]
     rw [stData, WP.block_cons_iff]
     refine ⟨_, exec_strq (by omega_using [hj]) (by rw [ha]; exact ⟨_, hw, Offset.contains_base D (by omega_using [hc]) (by omega_using [hn, hc])⟩), ?_⟩
@@ -434,13 +437,17 @@ theorem stData_ok {m₀ : Mem} {D : Addr} {n c : Nat} {F : Nat → Block} (hn : 
     have hst := dinv_write hn (by omega_using [hc]) hD (v := s.v b) fun t ht => by
       have := hF 0 (by simp) t ht
       simpa using this
-    refine WP.mono (stData_ok (m₀ := m₀) (c := c) (F := F) hn bs (j + 1) _ hx1 (by omega_using [hj]) (by omega_using [hc]) hw
+    refine WP.mono (stData_ok p (m₀ := m₀) (c := c) (F := F) hn bs (j + 1) _ hx1 (by omega_using [hj]) (by omega_using [hc]) hw
       (by rw [show c + (j + 1) = c + j + 1 by omega_using []]; exact hst) (fun k hk t ht => by
         have := hF (k + 1) (by simp; omega_using [hk]) t ht
         simp only [List.getElem_cons_succ] at this
         rw [show c + (j + 1) + k = c + j + (k + 1) by omega_using []]; exact this))
-      fun s' ⟨d', g', v', sp', rd', wr'⟩ => ⟨?_, g', v', sp', rd', wr'⟩
-    rw [List.length_cons, show c + j + (bs.length + 1) = c + (j + 1) + bs.length by omega_using []]; exact d'
+      fun s' ⟨d', g', v', sp', rd', wr', fr'⟩ => ⟨?_, g', v', sp', rd', wr', fun x hx => ?_⟩
+    · rw [List.length_cons, show c + j + (bs.length + 1) = c + (j + 1) + bs.length by omega_using []]; exact d'
+    · rw [fr' x hx]
+      exact Mem.write_apply fun h => hx (by
+        have := (Offset.lt_iff x D (d := 16 * (c + j)) (n := 16) (by omega_using [hn, hc])).mp h
+        omega_using [this, hc])
 
 /-! ## The loop bodies -/
 
@@ -449,7 +456,7 @@ registers). -/
 theorem group_ok {K : Nat → Word} {s₀ : State} (hp : Pre s₀) (rs : List VReg) (hrs : rs = regs8 ∨ rs = [.v0])
     (tail : List Instr) {Q : State → Prop} {c : Nat} (hc : c + rs.length ≤ nb s₀) {s : State}
     (hI : BInv K s₀ c c s) (hQ : ∀ s', BInv K s₀ (c + rs.length) c s' → WP isa (.block tail) s' Q) :
-    WP isa (.block (ldData rs 0 ++ crypt rs ++ stData rs 0 ++ tail)) s Q := by
+    WP isa (.block (ldData .x1 rs 0 ++ crypt rs ++ stData .x1 rs 0 ++ tail)) s Q := by
   have hbr := bregs_ok rs hrs
   have hlen : rs.length ≤ 8 := by rcases hrs with rfl | rfl <;> decide
   have hn := hp.nb16
@@ -458,7 +465,7 @@ theorem group_ok {K : Nat → Word} {s₀ : State} (hp : Pre s₀) (rs : List VR
       rw [hI.rd, hI.wr, hI.x1, Offset.add_add_eq _ (show 16 * c + 16 * (0 + k) = 16 * (c + k) by omega_using [])]
       exact ⟨_, List.mem_append_right _ hp.dat, Offset.contains_base _ (by omega_using [hc, hk]) (by omega_using [hc, hn, hk])⟩
   rw [WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
-  refine WP.mono (ldData_ok rs 0 s hbr.1 (by omega_using [hlen]) hin) fun s₁ ⟨e₁, f₁⟩ => ?_
+  refine WP.mono (ldData_ok .x1 rs 0 s hbr.1 (by omega_using [hlen]) hin) fun s₁ ⟨e₁, f₁⟩ => ?_
   have hK₁ : KeysOk K s₁ := hI.keys.of_v fun r => f₁.v _ (hbr.2 r)
   refine WP.mono (crypt_ok hbr hK₁) fun s₂ ⟨e₂, f₂⟩ => ?_
   have hx1 : s₂.gpr .x1 = dp s₀ + BitVec.ofNat 64 (16 * c) := by rw [f₂.gpr, f₁.gpr, hI.x1]
@@ -470,10 +477,10 @@ theorem group_ok {K : Nat → Word} {s₀ : State} (hp : Pre s₀) (rs : List VR
         Offset.add_add_eq _ (show 16 * c + 16 * (0 + k) = 16 * (c + 0 + k) by omega_using []),
         dinv_orig hI.data (by omega_using []) (by omega_using [hc, h])])]
     exact vbyte_out _ ht
-  refine WP.mono (stData_ok (m₀ := s₀.mem) (D := dp s₀) (c := c) hp.nb16 rs 0 s₂ hx1 (by omega_using [hlen])
+  refine WP.mono (stData_ok .x1 (m₀ := s₀.mem) (D := dp s₀) (c := c) hp.nb16 rs 0 s₂ hx1 (by omega_using [hlen])
       (by omega_using [hc]) (by rw [f₂.wr, f₁.wr, hI.wr]; exact hp.dat)
       (by rw [f₂.mem, f₁.mem, Nat.add_zero]; exact hI.data) hF)
-    fun s₃ ⟨d₃, g₃, v₃, sp₃, rd₃, wr₃⟩ => hQ s₃ ?_
+    fun s₃ ⟨d₃, g₃, v₃, sp₃, rd₃, wr₃, _⟩ => hQ s₃ ?_
   have g : ∀ r, s₃.gpr r = s.gpr r := fun r => by rw [g₃, f₂.gpr, f₁.gpr]
   exact ⟨hc, (hK₁.of_v fun r => f₂.v _ (hbr.2 r)).of_v fun r => by rw [v₃], by rw [g]; exact hI.x1,
     by rw [g]; exact hI.x2, by rw [Nat.add_zero] at d₃; exact d₃,
@@ -576,20 +583,22 @@ theorem keys_ok (f : Nat → List Instr) (val : Nat → BitVec 128) (s : State)
     · rw [setV_v_of_ne _ _ fun h => hjk (kreg_inj j (by omega_using [hj, hk]) k (by omega_using [hk]) h)]
       exact e₁ j (by omega_using [hj, hjk])
 
-theorem dirKeys_ok (dir : Dir) {s₀ : State} (hp : Pre s₀) :
-    WP isa (.block (match dir with | .encrypt => encKeys | .decrypt => decKeys)) s₀ fun s' =>
+/-- The round keys of the schedule at `x0`, which is readable. -/
+theorem dirKeys_ok (dir : Dir) {s₀ : State}
+    (hin : ∀ o, o + 16 ≤ 128 → InRegions (s₀.rd ++ s₀.wr) (kp s₀ + BitVec.ofNat 64 o) 16) :
+    WP isa (.block (dirKeys dir)) s₀ fun s' =>
       KeysOk (keyOf s₀ dir) s' ∧ s'.gpr = s₀.gpr ∧ s'.mem = s₀.mem ∧ s'.rd = s₀.rd ∧ s'.wr = s₀.wr := by
   cases dir
   · refine WP.mono (keys_ok (fun i => [.ldrq (kreg i) .x0 (16 * i)])
       (fun i => s₀.mem.readW (kp s₀ + BitVec.ofNat 64 (16 * i)) 128) s₀ (fun i hi s' g m rd wr => ?_) 8
       (Nat.le_refl _)) fun s' ⟨e, h⟩ => ⟨fun r hr => ?_, h⟩
-    · rw [runBlock_cons, exec_ldrq (by omega_using [hi]) (by rw [g, rd, wr]; exact hp.key_in (by omega_using [hi])),
+    · rw [runBlock_cons, exec_ldrq (by omega_using [hi]) (by rw [g, rd, wr]; exact hin _ (by omega_using [hi])),
         runStep_some, runBlock_nil, g, m]
     · rw [e r hr]; exact encKey_readW _ _ hr
   · refine WP.mono (keys_ok (fun i => .ldrq (kreg i) .x0 (16 * (7 - i)) :: revWords (kreg i))
       (fun i => swap8 (VRevOp.rev64s.eval (s₀.mem.readW (kp s₀ + BitVec.ofNat 64 (16 * (7 - i))) 128))) s₀
       (fun i hi s' g m rd wr => ?_) 8 (Nat.le_refl _)) fun s' ⟨e, h⟩ => ⟨fun r hr => ?_, h⟩
-    · rw [runBlock_cons, exec_ldrq (by omega_using [hi]) (by rw [g, rd, wr]; exact hp.key_in (by omega_using [hi])),
+    · rw [runBlock_cons, exec_ldrq (by omega_using [hi]) (by rw [g, rd, wr]; exact hin _ (by omega_using [hi])),
         runStep_some, revWords, rev_ext_run, setV_v_self, setV_setV, g, m]
     · rw [e r hr]; exact decKey_readW _ _ hr
 
@@ -598,7 +607,7 @@ theorem setup_ok (dir : Dir) {s₀ : State} (hp : Pre s₀) :
       BInv (keyOf s₀ dir) s₀ 0 0 s ∧ s.gpr .x13 = BitVec.ofNat 64 (nb s₀ / 8) := by
   unfold setup
   rw [WP.block_append_iff]
-  refine WP.mono (dirKeys_ok dir hp) fun s₁ ⟨hK, g₁, m₁, rd₁, wr₁⟩ => ?_
+  refine WP.mono (dirKeys_ok dir fun _ h => hp.key_in h) fun s₁ ⟨hK, g₁, m₁, rd₁, wr₁⟩ => ?_
   rw [WP.block_cons_iff]; refine ⟨_, exec_lsr_x (sh := 3) (by decide), WP.block_nil ?_⟩
   have hx2 : s₀.gpr .x2 = BitVec.ofNat 64 (nb s₀) := by simp [nb]
   refine ⟨⟨Nat.zero_le _, hK.of_v fun _ => rfl, ?_, ?_, fun i hi => ?_, rd₁, wr₁⟩, ?_⟩

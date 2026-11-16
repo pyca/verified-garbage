@@ -86,7 +86,7 @@ theorem decBody_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {n P : Nat} {D
     (textPiece_ok kk₁ k26₁ k28₁) (textPiece_ok kk₂ k26₂ k28₂) fun τ₁ τ₂ ⟨p23₁, p24₁, rp₁⟩ ⟨p23₂, p24₂, rp₂⟩ => ?_
   have pk₁ := kk₁.of_others rp₁.others
   have pk₂ := kk₂.of_others rp₂.others
-  exact crypt_rel L
+  exact crypt_rel L v
     ⟨e₁.of_regs rp₁, pk₁, p23₁, p24₁,
       by rw [rp₁.others _ (by decide), x25₁], h₁.data.of_eq (by rw [rp₁.rd, rd₁]) (by rw [rp₁.wr, wr₁])⟩
     ⟨e₂.of_regs rp₂, pk₂, p23₂, p24₂,

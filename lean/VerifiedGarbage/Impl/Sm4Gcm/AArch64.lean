@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.AesGcm.AArch64
 public import VerifiedGarbage.Impl.Sm4.AArch64.Ctr32
+public import VerifiedGarbage.Impl.Sm4.AArch64.Sm4e.Modes
 public import VerifiedGarbage.Impl.Sm4.AArch64.Serial.Key
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 
@@ -11,8 +12,9 @@ public import VerifiedGarbage.Impl.StackScratch.AArch64
 The SM4-GCM functions of `Spec/Sm4/Gcm/Contract.lean`, composed of calls of
 the verified `vg_sm4_expand_key`, `vg_sm4_ctr32` and `vg_ghash`, as AES-GCM's
 (`Impl/AesGcm/AArch64.lean`), whose loops, copies, comparisons and register
-conventions they share. They are generic over the implementation of
-`vg_ghash` they call (`Callees`), and emitted once for each.
+conventions they share. They are generic over the implementations of
+`vg_sm4_ctr32` and `vg_ghash` they call (`Callees`), and emitted once for
+each pair.
 
 They differ from AES-GCM's in what they call and where:
 
@@ -20,8 +22,8 @@ They differ from AES-GCM's in what they call and where:
   (bytes 128–143); there is no number of rounds, and `x22` is unused.
 * `vg_sm4_ctr32` takes `(schedule = x0, counter = x1, data = x2, n = x3)`, and
   `vg_sm4_expand_key` `(key = x0, schedule = x1)`: the first keeps its working
-  space in a frame on the stack below ours (3264 bytes), the second has none,
-  and neither takes working space from us.
+  space in a frame on the stack below ours (at most 3264 bytes), the second
+  has none, and neither takes working space from us.
 * So the working space `W` is 768 bytes: AES-GCM's layout up to `vg_ghash`'s
   256 bytes at `W + 512`.
 -/
@@ -34,16 +36,21 @@ open VG.AArch64
 open VG.Impl.AesGcm.AArch64 (Fn mov ptr imm tO uO aadO alenO dataO lenO tlO scrO save restore copyB copy
   minK xorB xor j012 initState cmp tagIn tagOut tagLenOk fo textArgs verRet)
 
-/-- `vg_sm4_ctr32`'s code, with its working space on the stack (as its
-artifact, `Artifacts/Sm4Gcm/AArch64.lean`). -/
+/-- `vg_sm4_ctr32`'s code in the baseline ISA, with its working space on the
+stack. -/
 def ctrCode : Prog isa := Impl.StackScratch.AArch64.withStackScratchWiped 3264 .x4 408 Impl.Sm4.AArch64.ctr32
+
+/-- `vg_sm4_ctr32_sm4`'s code, with the Armv8 SM4 instructions and its working
+space on the stack. -/
+def ctrCodeSm4 : Prog isa := Impl.StackScratch.AArch64.withStackScratchWiped 224 .x4 28 Impl.Sm4.AArch64.Sm4e.ctr32
 
 /-- `vg_sm4_expand_key`'s code (as its artifact, `Artifacts/Sm4/AArch64.lean`). -/
 def keyCode : Prog isa := Impl.Sm4.AArch64.Serial.expandKey
 
-/-- The implementation of `vg_ghash` called. -/
+/-- The implementations of `vg_ghash` and `vg_sm4_ctr32` called. -/
 structure Callees where
   gh : Fn
+  ctr : Fn
 
 variable (c : Callees)
 
@@ -107,7 +114,7 @@ def lens (yo : Nat) (ra rb : Reg) : Prog isa := .seq (.block (lensSeg yo ra rb))
 the schedule (the key context) and the counter block at `x20 + 48`. -/
 def ctrArgs : List Instr := [mov .x0 .x21, ptr .x1 .x20 48]
 
-def ctrCall : Prog isa := .call "vg_sm4_ctr32" ctrCode
+def ctrCall : Prog isa := .call c.ctr.name c.ctr.code
 
 /-- The arguments for the whole blocks at `x23`, and `x23` and `x24` past them. -/
 def crArgs : List Instr :=
@@ -135,11 +142,11 @@ def crTail : Prog isa :=
   .seq (.block [ptr .x11 .x20 64, mov .x12 .x23, mov .x13 .x24]) xor
 
 def crypt : Prog isa :=
-  .seq crSeg1 (.seq ctrCall (.seq crSeg2 (.seq ctrCall crTail)))
+  .seq crSeg1 (.seq (ctrCall c) (.seq crSeg2 (.seq (ctrCall c) crTail)))
 
 /-- `crypt` from the start of a keystream block (`x25 = 0`): no rest of a
 block to use first. -/
-def cryptAl : Prog isa := .seq (.block crArgs) (.seq ctrCall (.seq crSeg2 (.seq ctrCall crTail)))
+def cryptAl : Prog isa := .seq (.block crArgs) (.seq (ctrCall c) (.seq crSeg2 (.seq (ctrCall c) crTail)))
 
 /-! ## The tag and `J₀` -/
 
@@ -151,7 +158,7 @@ def tagSeg (o : Nat) : List Instr :=
 
 /-- The tag of the lengths in `x26` and `x27` into `W + o`. -/
 def tag (o : Nat) : Prog isa :=
-  .seq (lens c 16 .x26 .x27) (.seq (.block (tagSeg o)) ctrCall)
+  .seq (lens c 16 .x26 .x27) (.seq (.block (tagSeg o)) (ctrCall c))
 
 /-- The arguments for absorbing the whole blocks of the nonce into a zero
 accumulator at `x20`, and its last `x25` bytes at `x23`. -/
@@ -186,7 +193,7 @@ def init : Prog isa :=
   .seq (.block initSeg1)
   (.seq (.call "vg_sm4_expand_key" keyCode)
   (.seq (.block initSeg2)
-  (.seq ctrCall
+  (.seq (ctrCall c)
     (.block restore))))
 
 /-- The entry of `encrypt` and `decrypt`: `(ctx = x0, state = x1,
@@ -203,7 +210,7 @@ def textAbs : Prog isa := .ite (.zero .x .x26) (.block []) (absorb c 16)
 /-- The additional data padded if this is the first text, and the text
 (`x26` bytes at `x28`, after `x27` bytes) encrypted and absorbed. -/
 def encBody : Prog isa :=
-  .seq fo (.seq (flush c 16) (.seq (.block textArgs) (.seq crypt
+  .seq fo (.seq (flush c 16) (.seq (.block textArgs) (.seq (crypt c)
     (.seq (.block [mov .x23 .x28, mov .x24 .x26]) (textAbs c)))))
 
 /-- The additional data padded if this is the first text, and the text
@@ -213,7 +220,7 @@ def decAbs : Prog isa :=
 
 /-- `decAbs`, and the text decrypted. -/
 def decBody : Prog isa :=
-  .seq (decAbs c) (.seq (.block [mov .x23 .x28, mov .x24 .x26]) crypt)
+  .seq (decAbs c) (.seq (.block [mov .x23 .x28, mov .x24 .x26]) (crypt c))
 
 /-- `vg_sm4_gcm_stream_encrypt`. -/
 def streamEncrypt : Prog isa := .seq (.block crEntry) (.seq (encBody c) (.block restore))
@@ -285,7 +292,7 @@ def «seal» : Prog isa :=
 
 /-- The text decrypted, from the first counter block. -/
 def oneCrypt : Prog isa :=
-  .seq (.block [.ldr .x .x23 .x19 dataO, .ldr .x .x24 .x19 lenO, imm .x25 0]) cryptAl
+  .seq (.block [.ldr .x .x23 .x19 dataO, .ldr .x .x24 .x19 lenO, imm .x25 0]) (cryptAl c)
 
 /-- `open` once the tag length is allowed. -/
 def openMain : Prog isa :=
@@ -298,7 +305,7 @@ def openMain : Prog isa :=
   (.seq (.block [.ldr .x .x28 .x19 tlO])
   (.seq cmp
   (.seq (.block [imm .x27 1, .sub .x .x27 .x27 .x10])
-  (.seq (.ite (.zero .x .x27) (.block []) oneCrypt)
+  (.seq (.ite (.zero .x .x27) (.block []) (oneCrypt c))
     (.block [mov .x0 .x27]))))))))))
 
 /-- The entry of `open`: `oneEntry`, `tag_len` (at `[sp]`) stashed, and `tag`

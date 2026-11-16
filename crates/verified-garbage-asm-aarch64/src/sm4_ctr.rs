@@ -3,6 +3,75 @@
 //! `assembly/sm4_ctr.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_sm4_ctr_sm4` requires (`Artifact.features`).
+pub const VG_SM4_CTR_SM4_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SM4);
+
+/// SM4-CTR encryption or decryption (NIST SP 800-38A §6.5, draft-ribose-cfrg-sm4-10 §7.1) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.ctrContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `ctr` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `ctr` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `ctr` and `data` may overlap the 224 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sm4` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_ctr_sm4(schedule: *const [u8; 128], ctr: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd10383ff,0x910003e4,0x91000085,0xf90040b3,0xf90044b4,0xf90048b5,0xf9004cb6,0xf90050b7
+.inst 0xf90054b8,0xf90058b9,0xf9005cba,0xf90060bb,0xf90064bc,0xf9400026,0xdac00cc6,0xf9400427
+.inst 0xdac00ce7,0xf90068a6,0xf9006ca7,0xd280000a,0xab0300e7,0x9a0a00c6,0xdac00cc6,0xdac00ce7
+.inst 0xf9000427,0xf9000026,0x91000057,0x91000078
+cbz x24, 20f
+22:
+.inst 0xf94068a6,0xf9406ca7,0xd2800029,0xd280000a,0xdac00cc8,0xf90000a8,0xdac00ce8,0xf90004a8
+.inst 0xab0900e7,0x9a0a00c6,0xdac00cc8,0xf90008a8,0xdac00ce8,0xf9000ca8,0xab0900e7,0x9a0a00c6
+.inst 0xdac00cc8,0xf90010a8,0xdac00ce8,0xf90014a8,0xab0900e7,0x9a0a00c6,0xdac00cc8,0xf90018a8
+.inst 0xdac00ce8,0xf9001ca8,0xab0900e7,0x9a0a00c6,0xdac00cc8,0xf90020a8,0xdac00ce8,0xf90024a8
+.inst 0xab0900e7,0x9a0a00c6,0xdac00cc8,0xf90028a8,0xdac00ce8,0xf9002ca8,0xab0900e7,0x9a0a00c6
+.inst 0xdac00cc8,0xf90030a8,0xdac00ce8,0xf90034a8,0xab0900e7,0x9a0a00c6,0xdac00cc8,0xf90038a8
+.inst 0xdac00ce8,0xf9003ca8,0xab0900e7,0x9a0a00c6,0xf90068a6,0xf9006ca7,0x3dc00010,0x3dc00411
+.inst 0x3dc00812,0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17,0x3dc000a0,0x3dc004a1
+.inst 0x3dc008a2,0x3dc00ca3,0x3dc010a4,0x3dc014a5,0x3dc018a6,0x3dc01ca7,0x6e200800,0x6e200821
+.inst 0x6e200842,0x6e200863,0x6e200884,0x6e2008a5,0x6e2008c6,0x6e2008e7,0xcec08600,0xcec08601
+.inst 0xcec08602,0xcec08603,0xcec08604,0xcec08605,0xcec08606,0xcec08607,0xcec08620,0xcec08621
+.inst 0xcec08622,0xcec08623,0xcec08624,0xcec08625,0xcec08626,0xcec08627,0xcec08640,0xcec08641
+.inst 0xcec08642,0xcec08643,0xcec08644,0xcec08645,0xcec08646,0xcec08647,0xcec08660,0xcec08661
+.inst 0xcec08662,0xcec08663,0xcec08664,0xcec08665,0xcec08666,0xcec08667,0xcec08680,0xcec08681
+.inst 0xcec08682,0xcec08683,0xcec08684,0xcec08685,0xcec08686,0xcec08687,0xcec086a0,0xcec086a1
+.inst 0xcec086a2,0xcec086a3,0xcec086a4,0xcec086a5,0xcec086a6,0xcec086a7,0xcec086c0,0xcec086c1
+.inst 0xcec086c2,0xcec086c3,0xcec086c4,0xcec086c5,0xcec086c6,0xcec086c7,0xcec086e0,0xcec086e1
+.inst 0xcec086e2,0xcec086e3,0xcec086e4,0xcec086e5,0xcec086e6,0xcec086e7,0x4e200800,0x6e004000
+.inst 0x4e200821,0x6e014021,0x4e200842,0x6e024042,0x4e200863,0x6e034063,0x4e200884,0x6e044084
+.inst 0x4e2008a5,0x6e0540a5,0x4e2008c6,0x6e0640c6,0x4e2008e7,0x6e0740e7,0x3d8000a0,0x3d8004a1
+.inst 0x3d8008a2,0x3d800ca3,0x3d8010a4,0x3d8014a5,0x3d8018a6,0x3d801ca7,0xd343ff0d
+cbnz x13, 23f
+.inst 0x91000310
+b 24f
+23:
+.inst 0xd2800110
+24:
+.inst 0x910000ae,0x910001ce,0x910002ef,0x91000211
+25:
+.inst 0xf94001c8,0xf94001e9,0xca090108,0xf90001e8,0xf94005c8,0xf94005e9,0xca090108,0xf90005e8
+.inst 0x910041ce,0x910041ef,0xd1000631
+cbnz x17, 25b
+.inst 0x910001f7,0xcb100318
+cbnz x24, 22b
+b 21f
+20:
+21:
+.inst 0xf94040b3,0xf94044b4,0xf94048b5,0xf9404cb6,0xf94050b7,0xf94054b8,0xf94058b9,0xf9405cba
+.inst 0xf94060bb,0xf94064bc,0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
+.inst 0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611,0xa90a4611,0xa90b4611
+.inst 0xa90c4611,0xa90d4611,0x910383ff,0xd65f03c0
+.p2align 6",
+    )
+}
+
 /// SM4-CTR encryption or decryption (NIST SP 800-38A §6.5, draft-ribose-cfrg-sm4-10 §7.1) of whole blocks, in place: XORs the `n` 16-byte blocks at `data` with the output blocks `Oⱼ = CIPH_K(Tⱼ)`, where `T₁` is the block at `*ctr` and `Tⱼ₊₁ = Tⱼ + 1 mod 2¹²⁸` (Appendix B.1's standard incrementing function on the whole block, read as a big-endian integer), and replaces `*ctr` with `Tₙ₊₁` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`.
 ///
 /// Contract: `VG.Spec.Sm4.ctrContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the counter block or the data.

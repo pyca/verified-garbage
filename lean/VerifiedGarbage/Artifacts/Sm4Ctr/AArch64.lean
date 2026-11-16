@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Sm4.AArch64.CtrVerified
 public import VerifiedGarbage.Proof.Sm4.AArch64.CtrFinal
+public import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Modes
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 import VerifiedGarbage.Proof.Sm4.AArch64.Lit
@@ -13,6 +14,10 @@ import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 namespace VG.Artifacts.Sm4Ctr.AArch64
 
 def artifacts : List Artifact := [
+  Spec.Sm4.ctrApi.artifact AArch64.target {
+    suffix := "_sm4"
+    code := Impl.StackScratch.AArch64.withStackScratchWiped 224 .x4 28 Impl.Sm4.AArch64.Sm4e.ctr
+    verified := Proof.Sm4.AArch64.Sm4e.ctr_framed },
   Spec.Sm4.ctrApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 3264 .x4 408 Impl.Sm4.AArch64.ctr
     verified := Proof.Sm4.AArch64.ctr_framed },

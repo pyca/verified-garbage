@@ -53,19 +53,23 @@ def revWords (k : VReg) : List Instr := [.vop (.rev .rev64s k k), .vop (.ext k k
 def decKeys : List Instr :=
   (List.range 8).flatMap fun i => .ldrq (kreg i) .x0 (16 * (7 - i)) :: revWords (kreg i)
 
+/-- The round keys in the order `dir`'s rounds use them. -/
+def dirKeys : Dir → List Instr
+  | .encrypt => encKeys
+  | .decrypt => decKeys
+
 /-- The round keys, and `x13 = n / 8`. -/
-def setup (dir : Dir) : List Instr :=
-  (match dir with | .encrypt => encKeys | .decrypt => decKeys) ++ ([.lsr .x .x13 .x2 3] : List Instr)
+def setup (dir : Dir) : List Instr := dirKeys dir ++ ([.lsr .x .x13 .x2 3] : List Instr)
 
-/-- Load the data blocks `x1 + 16 (j + i)` into the registers. -/
-def ldData : List VReg → Nat → List Instr
+/-- Load the blocks `p + 16 (j + i)` into the registers. -/
+def ldData (p : Reg) : List VReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => .ldrq b .x1 (16 * j) :: ldData bs (j + 1)
+  | b :: bs, j => .ldrq b p (16 * j) :: ldData p bs (j + 1)
 
-/-- Store the registers to the data blocks `x1 + 16 (j + i)`. -/
-def stData : List VReg → Nat → List Instr
+/-- Store the registers to the blocks `p + 16 (j + i)`. -/
+def stData (p : Reg) : List VReg → Nat → List Instr
   | [], _ => []
-  | b :: bs, j => .strq b .x1 (16 * j) :: stData bs (j + 1)
+  | b :: bs, j => .strq b p (16 * j) :: stData p bs (j + 1)
 
 /-- The words of each block, from their big-endian bytes. -/
 def toWords (regs : List VReg) : List Instr := regs.flatMap fun b => [.vop (.rev .rev32b b b)]
@@ -85,12 +89,12 @@ def crypt (regs : List VReg) : List Instr := toWords regs ++ rounds regs ++ from
 
 /-- Eight blocks; `x13 = n / 8` for the blocks left. -/
 def blk8 : Prog isa :=
-  .block (ldData regs8 0 ++ crypt regs8 ++ stData regs8 0 ++
+  .block (ldData .x1 regs8 0 ++ crypt regs8 ++ stData .x1 regs8 0 ++
     ([.addImm .x .x1 .x1 128, .subImm .x .x2 .x2 8, .lsr .x .x13 .x2 3] : List Instr))
 
 /-- One block. -/
 def blk1 : Prog isa :=
-  .block (ldData [.v0] 0 ++ crypt [.v0] ++ stData [.v0] 0 ++
+  .block (ldData .x1 [.v0] 0 ++ crypt [.v0] ++ stData .x1 [.v0] 0 ++
     ([.addImm .x .x1 .x1 16, .subImm .x .x2 .x2 1] : List Instr))
 
 /-- The whole function: the round keys, then the blocks, eight and then one

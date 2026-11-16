@@ -285,6 +285,10 @@ pub(crate) mod vg_sm4_crypt_prepared;
 pub(crate) mod vg_sm4_ctr32;
 
 #[rustfmt::skip]
+#[path = "internal/vg_sm4_ctr32_sm4.rs"]
+pub(crate) mod vg_sm4_ctr32_sm4;
+
+#[rustfmt::skip]
 #[path = "internal/vg_sm4_ecb.rs"]
 pub(crate) mod vg_sm4_ecb;
 

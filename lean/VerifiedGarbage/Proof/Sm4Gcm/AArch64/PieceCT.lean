@@ -122,30 +122,30 @@ theorem lens_rel (v : GcmImpl) {yo : Nat} (hyo : yo = 0 ∨ yo = 16) {ra rb : Re
   exact rel_gh v.gh a₁.call a₂.call (by rw [a₁.env.sp, a₂.env.sp])
 
 /-- `crypt`. -/
-theorem crypt_rel {k₁ k₂ : Reg → BitVec 64} {P : Nat} {D : Addr} {n : Nat} {σ₁ σ₂ : State}
+theorem crypt_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {P : Nat} {D : Addr} {n : Nat} {σ₁ σ₂ : State}
     (h₁ : CrIn Ctx St W SP k₁ P D n σ₁) (h₂ : CrIn Ctx St W SP k₂ P D n σ₂) :
-    RelCT isa (Eq2 σ₁ σ₂) crypt TT := by
+    RelCT isa (Eq2 σ₁ σ₂) (crypt v.callees) TT := by
   have hc : ∀ {σ : State} {k : Reg → BitVec 64} (h : CrIn Ctx St W SP k P D n σ) {m' : Mem},
       Frame (crFrame St SP D n) σ.mem m' → ciphOf m' Ctx = ciphOf σ.mem Ctx :=
     fun h _ hf => ciph_frame hf (ctx_crFrame L h.data)
   refine rel_seq (rel_taint [.x19, .x20, .x21, .x23, .x24, .x25] (by rw [h₁.env.sp, h₂.env.sp])
       (by agree_tac [h₁.env.x19, h₂.env.x19, h₁.env.x20, h₂.env.x20, h₁.env.x21, h₂.env.x21, h₁.x23, h₂.x23, h₁.x24, h₂.x24, h₁.x25, h₂.x25]) ⟨_, by taint_decide⟩)
     (crSeg1_ok L (icb := 0) h₁) (crSeg1_ok L (icb := 0) h₂) fun τ₁ τ₂ a₁ a₂ => ?_
-  refine rel_seq (rel_ctr a₁.call a₂.call (by rw [a₁.env.sp, a₂.env.sp]))
-    (ctrCall1_ok L a₁ (hc h₁ a₁.frame)) (ctrCall1_ok L a₂ (hc h₂ a₂.frame)) fun τ₁ τ₂ b₁ b₂ => ?_
+  refine rel_seq (rel_ctr v.ctr a₁.call a₂.call (by rw [a₁.env.sp, a₂.env.sp]))
+    (ctrCall1_ok L v a₁ (hc h₁ a₁.frame)) (ctrCall1_ok L v a₂ (hc h₂ a₂.frame)) fun τ₁ τ₂ b₁ b₂ => ?_
   refine rel_seq (rel_taint [.x19, .x20, .x21, .x23, .x24, .x25] (by rw [b₁.1.env.sp, b₂.1.env.sp])
       (by agree_tac [b₁.1.env.x19, b₂.1.env.x19, b₁.1.env.x20, b₂.1.env.x20, b₁.1.env.x21, b₂.1.env.x21,
         b₁.1.x23, b₂.1.x23, b₁.1.x24, b₂.1.x24, b₁.1.x25, b₂.1.x25]) ⟨_, by taint_decide⟩)
     (crSeg2_ok L b₁.1 b₁.2) (crSeg2_ok L b₂.1 b₂.2) fun τ₁ τ₂ c₁ c₂ => ?_
-  refine rel_seq (rel_ctr c₁.call c₂.call (by rw [c₁.env.sp, c₂.env.sp]))
-    (ctrCall2_ok L c₁ (hc h₁ c₁.frame)) (ctrCall2_ok L c₂ (hc h₂ c₂.frame)) fun τ₁ τ₂ d₁ d₂ => ?_
+  refine rel_seq (rel_ctr v.ctr c₁.call c₂.call (by rw [c₁.env.sp, c₂.env.sp]))
+    (ctrCall2_ok L v c₁ (hc h₁ c₁.frame)) (ctrCall2_ok L v c₂ (hc h₂ c₂.frame)) fun τ₁ τ₂ d₁ d₂ => ?_
   exact rel_taint [.x20, .x23, .x24] (by rw [d₁.env.sp, d₂.env.sp])
     (by agree_tac [d₁.env.x20, d₂.env.x20, d₁.x23, d₂.x23, d₁.x24, d₂.x24]) ⟨_, by taint_decide⟩
 
 /-- `cryptAl`: `crypt` from the start of a keystream block. -/
-theorem cryptAl_rel {k₁ k₂ : Reg → BitVec 64} {P : Nat} {D : Addr} {n : Nat} {σ₁ σ₂ : State}
+theorem cryptAl_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {P : Nat} {D : Addr} {n : Nat} {σ₁ σ₂ : State}
     (h₁ : CrIn Ctx St W SP k₁ P D n σ₁) (h₂ : CrIn Ctx St W SP k₂ P D n σ₂) (hP : P % 16 = 0) :
-    RelCT isa (Eq2 σ₁ σ₂) cryptAl TT := by
+    RelCT isa (Eq2 σ₁ σ₂) (cryptAl v.callees) TT := by
   have hc : ∀ {σ : State} {k : Reg → BitVec 64} (h : CrIn Ctx St W SP k P D n σ) {m' : Mem},
       Frame (crFrame St SP D n) σ.mem m' → ciphOf m' Ctx = ciphOf σ.mem Ctx :=
     fun h _ hf => ciph_frame hf (ctx_crFrame L h.data)
@@ -154,14 +154,14 @@ theorem cryptAl_rel {k₁ k₂ : Reg → BitVec 64} {P : Nat} {D : Addr} {n : Na
   refine rel_seq (rel_taint [.x19, .x20, .x21, .x23, .x24] (by rw [h₁.env.sp, h₂.env.sp])
       (by agree_tac [h₁.env.x19, h₂.env.x19, h₁.env.x20, h₂.env.x20, h₁.env.x21, h₂.env.x21, h₁.x23, h₂.x23, h₁.x24, h₂.x24]) ⟨_, by taint_decide⟩)
     (crArgs_ok L m₁) (crArgs_ok L m₂) fun τ₁ τ₂ a₁ a₂ => ?_
-  refine rel_seq (rel_ctr a₁.call a₂.call (by rw [a₁.env.sp, a₂.env.sp]))
-    (ctrCall1_ok L a₁ (hc h₁ a₁.frame)) (ctrCall1_ok L a₂ (hc h₂ a₂.frame)) fun τ₁ τ₂ b₁ b₂ => ?_
+  refine rel_seq (rel_ctr v.ctr a₁.call a₂.call (by rw [a₁.env.sp, a₂.env.sp]))
+    (ctrCall1_ok L v a₁ (hc h₁ a₁.frame)) (ctrCall1_ok L v a₂ (hc h₂ a₂.frame)) fun τ₁ τ₂ b₁ b₂ => ?_
   refine rel_seq (rel_taint [.x19, .x20, .x21, .x23, .x24, .x25] (by rw [b₁.1.env.sp, b₂.1.env.sp])
       (by agree_tac [b₁.1.env.x19, b₂.1.env.x19, b₁.1.env.x20, b₂.1.env.x20, b₁.1.env.x21, b₂.1.env.x21,
         b₁.1.x23, b₂.1.x23, b₁.1.x24, b₂.1.x24, b₁.1.x25, b₂.1.x25]) ⟨_, by taint_decide⟩)
     (crSeg2_ok L b₁.1 b₁.2) (crSeg2_ok L b₂.1 b₂.2) fun τ₁ τ₂ c₁ c₂ => ?_
-  refine rel_seq (rel_ctr c₁.call c₂.call (by rw [c₁.env.sp, c₂.env.sp]))
-    (ctrCall2_ok L c₁ (hc h₁ c₁.frame)) (ctrCall2_ok L c₂ (hc h₂ c₂.frame)) fun τ₁ τ₂ d₁ d₂ => ?_
+  refine rel_seq (rel_ctr v.ctr c₁.call c₂.call (by rw [c₁.env.sp, c₂.env.sp]))
+    (ctrCall2_ok L v c₁ (hc h₁ c₁.frame)) (ctrCall2_ok L v c₂ (hc h₂ c₂.frame)) fun τ₁ τ₂ d₁ d₂ => ?_
   exact rel_taint [.x20, .x23, .x24] (by rw [d₁.env.sp, d₂.env.sp])
     (by agree_tac [d₁.env.x20, d₂.env.x20, d₁.x23, d₂.x23, d₁.x24, d₂.x24]) ⟨_, by taint_decide⟩
 
@@ -188,7 +188,7 @@ theorem tag_rel (v : GcmImpl) {o : Nat} (ho : o = 0 ∨ o = 112) {k₁ k₂ : Re
       (by agree_tac [a₁.env.x19, a₂.env.x19, a₁.env.x20, a₂.env.x20, a₁.env.x21, a₂.env.x21]) t₁)
     (tagSeg_ok L ho a₁.env a₁.kept)
     (tagSeg_ok L ho a₂.env a₂.kept) fun τ₁ τ₂ b₁ b₂ => ?_
-  exact rel_ctr b₁.call b₂.call (by rw [b₁.env.sp, b₂.env.sp])
+  exact rel_ctr v.ctr b₁.call b₂.call (by rw [b₁.env.sp, b₂.env.sp])
 
 /-- `j0hash`. -/
 theorem j0hash_rel (v : GcmImpl) {k₁ k₂ : Reg → BitVec 64} {H₁ H₂ : Block} {Np : Addr} {n : Nat}
