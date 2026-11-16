@@ -11226,15 +11226,21 @@ vg_aes_gcm_open_prepared_vaes_vpclmul:
 	lea rsp, [rsp-8]
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp-2344]
-	vmovdqu YMMWORD PTR [rsp+808], ymm0
-	vmovdqu YMMWORD PTR [rsp+296], ymm0
-	vmovdqu YMMWORD PTR [rsp+24], ymm0
+	movdqu XMMWORD PTR [rsp+824], xmm0
+	movdqu XMMWORD PTR [rsp+808], xmm0
+	movdqu XMMWORD PTR [rsp+312], xmm0
+	movdqu XMMWORD PTR [rsp+296], xmm0
+	movdqu XMMWORD PTR [rsp+40], xmm0
+	movdqu XMMWORD PTR [rsp+24], xmm0
 	mov QWORD PTR [rsp], r11
 	lea rsp, [rsp-8]
 	lea rsp, [rsp-280]
-	vmovdqu YMMWORD PTR [rsp+168], ymm0
-	vmovdqu YMMWORD PTR [rsp+136], ymm0
-	vmovdqu YMMWORD PTR [rsp+104], ymm0
+	movdqu XMMWORD PTR [rsp+184], xmm0
+	movdqu XMMWORD PTR [rsp+168], xmm0
+	movdqu XMMWORD PTR [rsp+152], xmm0
+	movdqu XMMWORD PTR [rsp+136], xmm0
+	movdqu XMMWORD PTR [rsp+120], xmm0
+	movdqu XMMWORD PTR [rsp+104], xmm0
 	movdqu XMMWORD PTR [rsp+88], xmm0
 	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11

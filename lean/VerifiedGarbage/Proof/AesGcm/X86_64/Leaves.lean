@@ -1743,10 +1743,12 @@ def openF16PlainV : Registration Spec.Gcm.openPreparedApi X86_64.target where
   spSafe := openCodeF16V_spAll
 
 /-- `vg_aes_gcm_open_prepared_vaes_vpclmul`, in frames of 2616 bytes,
-followed by the clearing of the granules `openKsF`: it returns without
-secret residue (`openF16_resOk`). -/
+followed by the clearing of the granules `openKsF`, 16 bytes at a time
+(`wide := false`: each granule is 16 bytes aligned, and a 32-byte store of
+two would split a cache line one time in two): it returns without secret
+residue (`openF16_resOk`). -/
 def openF16Vaes : Registration Spec.Gcm.openPreparedApi X86_64.target :=
-  RScrub.withScrubResC openF16PlainV (openPreparedOut _) openKsF openCs openF16_resOk
+  RScrub.withScrubResC openF16PlainV (openPreparedOut _) openKsF openCs openF16_resOk (wide := false)
 
 /-- `vg_aes_gcm_open_prepared` of a variant whose loops read 16 powers: by
 the count, its code on them or its code on the key context
