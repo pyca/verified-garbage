@@ -13,10 +13,11 @@ per byte lane, and no S-box lookup reads memory at a secret address:
 * The halves `L` and `R` of the sixteen blocks are sixteen 32-bit words
   each, four per register (`A`, `v4`–`v7`, and `B`, `v8`–`v11`), in block
   order.
-* The S-boxes `S1`–`S4` are public constants. They are a table the code
-  carries (`ldrqTbl`, the static `VG_CAST5_PLANES`, at a public address), in
-  byte planes: byte `b` of `S_{j+1}[x]` at `1024 j + 256 b + x`
-  (`Impl.Blowfish.AArch64.planeOff`, `planeBytes`).
+* The S-boxes are public constants. They are a table the code carries
+  (`ldrqTbl`, the static `VG_CAST5_PLANES`, at a public address), in byte
+  planes: byte `b` of `S_{j+1}[x]` at `1024 j + 256 b + x`
+  (`Impl.Blowfish.AArch64.planeOff`, `planeBytes`), `S1`–`S4` for the rounds
+  and then `S5`–`S8` for key expansion (`AArch64/TblKey.lean`).
 * A round (`round`): `I = Kmᵢ ± R` or `Kmᵢ ^ R` for the sixteen words, in
   `fReg` (`v12`–`v15`); its rotation left by `Krᵢ mod 32`, the same secret
   amount in every lane, is a multiplication by `2 ^ (Krᵢ mod 32)`
@@ -48,11 +49,12 @@ open VG.Impl.Blowfish.AArch64 (aReg bReg fReg idxReg outReg qReg tReg c64 c128 v
 
 def planesSym : String := "VG_CAST5_PLANES"
 
-/-- `S1`–`S4`, each as the list of its 256 entries. -/
+/-- `S1`–`S8`, each as the list of its 256 entries. -/
 def sboxes : List (List Spec.Cast5.Word) :=
-  [Spec.Cast5.s1.toList, Spec.Cast5.s2.toList, Spec.Cast5.s3.toList, Spec.Cast5.s4.toList]
+  [Spec.Cast5.s1.toList, Spec.Cast5.s2.toList, Spec.Cast5.s3.toList, Spec.Cast5.s4.toList,
+   Spec.Cast5.s5.toList, Spec.Cast5.s6.toList, Spec.Cast5.s7.toList, Spec.Cast5.s8.toList]
 
-/-- The table's 4096 bytes: for each S-box, its four byte planes, each the
+/-- The table's 8192 bytes: for each S-box, its four byte planes, each the
 256 entries' bytes in order. -/
 def planeBytes : List Byte :=
   sboxes.flatMap fun s => (List.range 4).flatMap fun b => s.map fun w => w.extractLsb' (8 * b) 8
@@ -63,29 +65,29 @@ def pack : List Byte → List (BitVec 64)
     (b7 ++ b6 ++ b5 ++ b4 ++ b3 ++ b2 ++ b1 ++ b0) :: pack rest
   | _ => []
 
-/-- The table, as 512 little-endian quadwords. It is built by passes over
+/-- The table, as 1024 little-endian quadwords. It is built by passes over
 the S-boxes' entries in order, never by indexing them, which the kernel,
 evaluating the code that carries the table, would do one step at a time. -/
 def planeWords : List (BitVec 64) := pack planeBytes
 
 /-! ## The round function -/
 
-/-- Quarter `q` of byte plane `b` of S-box `j`, from the table at `x9`, into
-`v28`–`v31`. -/
-def loadQuarter (j b q : Nat) : List Instr :=
-  (List.range 4).map fun r => .ldrqTbl (tReg r) .x9 (planeOff j b + 64 * q + 16 * r) planesSym planeWords
+/-- Quarter `q` of byte plane `b` of S-box `t` (0–7, for `S1`–`S8`), from
+the table at `x9`, into `v28`–`v31`. -/
+def loadQuarter (t b q : Nat) : List Instr :=
+  (List.range 4).map fun r => .ldrqTbl (tReg r) .x9 (planeOff t b + 64 * q + 16 * r) planesSym planeWords
 
-/-- Byte plane `b` of S-box `j` at the indices in `idxReg j`, into
+/-- Byte plane `b` of S-box `t` at the indices in `idxReg j`, into
 `outReg b`: a `tbl` of the first quarter, then a `tbx` of each other. -/
-def lookupPlane (j b : Nat) : List Instr :=
+def lookupPlane (t j b : Nat) : List Instr :=
   (List.range 4).flatMap fun q =>
-    loadQuarter j b q ++
+    loadQuarter t b q ++
       ([.vop (.tblN (q != 0) 4 (outReg b) (tReg 0) (if q = 0 then idxReg j else qReg q))] : List Instr)
 
-/-- S-box `j` at the indices in `idxReg j`, in byte planes in `outReg`. -/
-def lookup (j : Nat) : List Instr :=
+/-- S-box `t` at the indices in `idxReg j`, in byte planes in `outReg`. -/
+def lookup (t j : Nat) : List Instr :=
   [veor (qReg 1) (idxReg j) c64, veor (qReg 2) (idxReg j) c128, veor (qReg 3) (qReg 1) c128] ++
-    (List.range 4).flatMap (lookupPlane j)
+    (List.range 4).flatMap (lookupPlane t j)
 
 /-- The operations of §2.2. -/
 inductive Op | add | eor | sub
@@ -112,7 +114,7 @@ def combine (t j : Nat) : List Instr :=
 
 /-- `f` of the words whose planes are in `idxReg`, into `fReg`. -/
 def f (t : Nat) : List Instr :=
-  (List.range 4).flatMap fun j => lookup j ++ words ++ combine t j
+  (List.range 4).flatMap fun j => lookup j j ++ words ++ combine t j
 
 /-- The power of two in every lane of the rotation. -/
 def mulReg : VReg := .v27

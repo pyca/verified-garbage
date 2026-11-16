@@ -13,7 +13,6 @@ import VerifiedGarbage.Proof.Modes.AArch64.FbFinal
 public import VerifiedGarbage.Proof.Modes.FbFinal
 import VerifiedGarbage.Proof.Cast5.AArch64.FbFinalLit
 import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
-import VerifiedGarbage.Proof.Cast5.AArch64.Lit
 public import VerifiedGarbage.Impl.Cast5.AArch64.FbFinal
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
@@ -32,7 +31,6 @@ meta import VerifiedGarbage.Proof.Modes.AArch64.FbFinal
 meta import VerifiedGarbage.Proof.Modes.FbFinal
 meta import VerifiedGarbage.Proof.Cast5.AArch64.FbFinalLit
 meta import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
-meta import VerifiedGarbage.Proof.Cast5.AArch64.Lit
 meta import VerifiedGarbage.Impl.Cast5.AArch64.FbFinal
 meta import VerifiedGarbage.Impl.StackScratch.AArch64
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts

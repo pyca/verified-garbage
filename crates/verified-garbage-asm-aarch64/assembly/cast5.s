@@ -17,1922 +17,493 @@ vg_cast5_expand_key:
 	sub x1, x1, #1
 	cbnz x1, 20b
 	movz x1, #2, lsl #0
+	add x15, x30, #0
+	movz x6, #64, lsl #0
+	dup v2.16b, w6
+	movz x6, #128, lsl #0
+	dup v3.16b, w6
 21:
-	ldrb w9, [x3, #26]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #24]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #27]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #25]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-22:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 22b
-	mov v6.16b, v1.16b
-	ldrb w9, [x3, #30]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #28]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #31]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #29]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-23:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 23b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[1]
-	eor w0, w0, w9
-	ldr w9, [x3, #16]
-	rev w9, w9
-	eor w0, w0, w9
-	rev w9, w0
-	str w9, [x3, #32]
-	ldrb w9, [x3, #35]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #33]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #34]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #32]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-24:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 24b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[0]
-	eor w0, w0, w9
-	ldr w9, [x3, #24]
-	rev w9, w9
-	eor w0, w0, w9
-	rev w9, w0
-	str w9, [x3, #36]
-	ldrb w9, [x3, #36]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #37]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #38]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #39]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-25:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 25b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[3]
-	eor w0, w0, w9
-	ldr w9, [x3, #28]
-	rev w9, w9
-	eor w0, w0, w9
-	rev w9, w0
-	str w9, [x3, #40]
-	ldrb w9, [x3, #40]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #43]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #41]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #42]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-26:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 26b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[2]
-	eor w0, w0, w9
-	ldr w9, [x3, #20]
-	rev w9, w9
-	eor w0, w0, w9
-	rev w9, w0
-	str w9, [x3, #44]
-	ldrb w9, [x3, #44]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #41]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #38]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #34]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-27:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 27b
-	mov v6.16b, v1.16b
-	ldrb w9, [x3, #38]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #39]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #41]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #40]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-28:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 28b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[3]
-	eor w0, w0, w9
-	str w0, [x2, #0]
-	ldrb w9, [x3, #36]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #37]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #43]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #42]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-29:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 29b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[2]
-	eor w0, w0, w9
-	str w0, [x2, #4]
-	ldrb w9, [x3, #34]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #35]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #45]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #44]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-210:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 210b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[1]
-	eor w0, w0, w9
-	str w0, [x2, #8]
-	ldrb w9, [x3, #32]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #33]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #47]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #46]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-211:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 211b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[0]
-	eor w0, w0, w9
-	str w0, [x2, #12]
-	ldrb w9, [x3, #34]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #32]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #35]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #33]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-212:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 212b
-	mov v6.16b, v1.16b
-	ldrb w9, [x3, #38]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #36]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #39]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #37]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-213:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 213b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[1]
-	eor w0, w0, w9
-	ldr w9, [x3, #40]
-	rev w9, w9
-	eor w0, w0, w9
-	rev w9, w0
-	str w9, [x3, #16]
-	ldrb w9, [x3, #19]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #17]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #18]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #16]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-214:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 214b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[0]
-	eor w0, w0, w9
-	ldr w9, [x3, #32]
-	rev w9, w9
-	eor w0, w0, w9
-	rev w9, w0
-	str w9, [x3, #20]
-	ldrb w9, [x3, #20]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #21]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #22]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #23]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-215:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 215b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[3]
-	eor w0, w0, w9
-	ldr w9, [x3, #36]
-	rev w9, w9
-	eor w0, w0, w9
-	rev w9, w0
-	str w9, [x3, #24]
-	ldrb w9, [x3, #24]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #27]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #25]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #26]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-216:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 216b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[2]
-	eor w0, w0, w9
-	ldr w9, [x3, #44]
-	rev w9, w9
-	eor w0, w0, w9
-	rev w9, w0
-	str w9, [x3, #28]
-	ldrb w9, [x3, #23]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #19]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #29]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #24]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-217:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 217b
-	mov v6.16b, v1.16b
-	ldrb w9, [x3, #29]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #28]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #18]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #19]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-218:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 218b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[3]
-	eor w0, w0, w9
-	str w0, [x2, #16]
-	ldrb w9, [x3, #31]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #30]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #16]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #17]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-219:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 219b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[2]
-	eor w0, w0, w9
-	str w0, [x2, #20]
-	ldrb w9, [x3, #25]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #24]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #22]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #23]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-220:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 220b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[1]
-	eor w0, w0, w9
-	str w0, [x2, #24]
-	ldrb w9, [x3, #27]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #26]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #20]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #21]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-221:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 221b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[0]
-	eor w0, w0, w9
-	str w0, [x2, #28]
-	ldrb w9, [x3, #26]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #24]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #27]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #25]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-222:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 222b
-	mov v6.16b, v1.16b
-	ldrb w9, [x3, #30]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #28]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #31]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #29]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-223:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 223b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[1]
-	eor w0, w0, w9
-	ldr w9, [x3, #16]
-	rev w9, w9
-	eor w0, w0, w9
-	rev w9, w0
-	str w9, [x3, #32]
-	ldrb w9, [x3, #35]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #33]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #34]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #32]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-224:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 224b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[0]
-	eor w0, w0, w9
-	ldr w9, [x3, #24]
-	rev w9, w9
-	eor w0, w0, w9
-	rev w9, w0
-	str w9, [x3, #36]
-	ldrb w9, [x3, #36]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #37]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #38]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #39]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-225:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 225b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[3]
-	eor w0, w0, w9
-	ldr w9, [x3, #28]
-	rev w9, w9
-	eor w0, w0, w9
-	rev w9, w0
-	str w9, [x3, #40]
-	ldrb w9, [x3, #40]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #43]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #41]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #42]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-226:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 226b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[2]
-	eor w0, w0, w9
-	ldr w9, [x3, #20]
-	rev w9, w9
-	eor w0, w0, w9
-	rev w9, w0
-	str w9, [x3, #44]
-	ldrb w9, [x3, #38]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #34]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #44]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #41]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-227:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 227b
-	mov v6.16b, v1.16b
-	ldrb w9, [x3, #45]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #44]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #34]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #35]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-228:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 228b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[3]
-	eor w0, w0, w9
-	str w0, [x2, #32]
-	ldrb w9, [x3, #47]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #46]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #32]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #33]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-229:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 229b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[2]
-	eor w0, w0, w9
-	str w0, [x2, #36]
-	ldrb w9, [x3, #41]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #40]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #38]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #39]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-230:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 230b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[1]
-	eor w0, w0, w9
-	str w0, [x2, #40]
-	ldrb w9, [x3, #43]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #42]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #36]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #37]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-231:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 231b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[0]
-	eor w0, w0, w9
-	str w0, [x2, #44]
-	ldrb w9, [x3, #34]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #32]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #35]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #33]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-232:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 232b
-	mov v6.16b, v1.16b
-	ldrb w9, [x3, #38]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #36]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #39]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #37]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-233:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 233b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[1]
-	eor w0, w0, w9
-	ldr w9, [x3, #40]
-	rev w9, w9
-	eor w0, w0, w9
-	rev w9, w0
-	str w9, [x3, #16]
-	ldrb w9, [x3, #19]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #17]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #18]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #16]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-234:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 234b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[0]
-	eor w0, w0, w9
-	ldr w9, [x3, #32]
-	rev w9, w9
-	eor w0, w0, w9
-	rev w9, w0
-	str w9, [x3, #20]
-	ldrb w9, [x3, #20]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #21]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #22]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #23]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-235:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 235b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[3]
-	eor w0, w0, w9
-	ldr w9, [x3, #36]
-	rev w9, w9
-	eor w0, w0, w9
-	rev w9, w0
-	str w9, [x3, #24]
-	ldrb w9, [x3, #24]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #27]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #25]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #26]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-236:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 236b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[2]
-	eor w0, w0, w9
-	ldr w9, [x3, #44]
-	rev w9, w9
-	eor w0, w0, w9
-	rev w9, w0
-	str w9, [x3, #28]
-	ldrb w9, [x3, #29]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #24]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #23]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #19]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-237:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 237b
-	mov v6.16b, v1.16b
-	ldrb w9, [x3, #22]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #23]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #25]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #24]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-238:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 238b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[3]
-	eor w0, w0, w9
-	str w0, [x2, #48]
-	ldrb w9, [x3, #20]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #21]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #27]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #26]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-239:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 239b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[2]
-	eor w0, w0, w9
-	str w0, [x2, #52]
-	ldrb w9, [x3, #18]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #19]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #29]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #28]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-240:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 240b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[1]
-	eor w0, w0, w9
-	str w0, [x2, #56]
-	ldrb w9, [x3, #16]
-	mov v0.s[0], w9
-	ldrb w9, [x3, #17]
-	mov v0.s[1], w9
-	ldrb w9, [x3, #31]
-	mov v0.s[2], w9
-	ldrb w9, [x3, #30]
-	mov v0.s[3], w9
-	adrp x10, {VG_CAST5_S5678}
-	add x10, x10, {VG_CAST5_S5678}
-	movz x11, #64, lsl #0
-	movi v1.2d, #0
-	movi v2.2d, #0
-	cmeq v3.4s, v3.4s, v3.4s
-	ushr v3.4s, v3.4s, #31
-	and v4.16b, v0.16b, v3.16b
-	movi v16.2d, #0
-	sub v16.4s, v16.4s, v4.4s
-	ushr v4.4s, v0.4s, #1
-	and v4.16b, v4.16b, v3.16b
-	movi v17.2d, #0
-	sub v17.4s, v17.4s, v4.4s
-	ushr v18.4s, v0.4s, #2
-241:
-	ldr q4, [x10, #0]
-	ldr q5, [x10, #16]
-	bit v4.16b, v5.16b, v16.16b
-	ldr q19, [x10, #32]
-	ldr q5, [x10, #48]
-	bit v19.16b, v5.16b, v16.16b
-	bit v4.16b, v19.16b, v17.16b
-	cmeq v5.4s, v18.4s, v2.4s
-	and v4.16b, v4.16b, v5.16b
-	orr v1.16b, v1.16b, v4.16b
-	add v2.4s, v2.4s, v3.4s
-	add x10, x10, #64
-	sub x11, x11, #1
-	cbnz x11, 241b
-	umov w0, v1.s[0]
-	umov w9, v1.s[1]
-	eor w0, w0, w9
-	umov w9, v1.s[2]
-	eor w0, w0, w9
-	umov w9, v1.s[3]
-	eor w0, w0, w9
-	umov w9, v6.s[0]
-	eor w0, w0, w9
-	str w0, [x2, #60]
+	ldrb w10, [x3, #29]
+	mov v16.b[4], w10
+	ldrb w10, [x3, #31]
+	mov v17.b[4], w10
+	ldrb w10, [x3, #28]
+	mov v18.b[4], w10
+	ldrb w10, [x3, #30]
+	mov v19.b[4], w10
+	ldrb w10, [x3, #25]
+	mov v16.b[5], w10
+	ldrb w10, [x3, #27]
+	mov v17.b[5], w10
+	ldrb w10, [x3, #24]
+	mov v18.b[5], w10
+	ldrb w10, [x3, #26]
+	mov v19.b[5], w10
+	bl {vg_cast5_key_sboxes}
+	str q7, [x3, #48]
+	umov w0, v5.s[0]
+	ldr w10, [x3, #56]
+	eor w0, w0, w10
+	ldr w10, [x3, #16]
+	rev w10, w10
+	eor w0, w0, w10
+	rev w10, w0
+	str w10, [x3, #32]
+	ldrb w10, [x3, #32]
+	mov v16.b[4], w10
+	ldrb w10, [x3, #34]
+	mov v17.b[4], w10
+	ldrb w10, [x3, #33]
+	mov v18.b[4], w10
+	ldrb w10, [x3, #35]
+	mov v19.b[4], w10
+	bl {vg_cast5_key_sboxes}
+	umov w0, v5.s[0]
+	ldr w10, [x3, #60]
+	eor w0, w0, w10
+	ldr w10, [x3, #24]
+	rev w10, w10
+	eor w0, w0, w10
+	rev w10, w0
+	str w10, [x3, #36]
+	ldrb w10, [x3, #39]
+	mov v16.b[4], w10
+	ldrb w10, [x3, #38]
+	mov v17.b[4], w10
+	ldrb w10, [x3, #37]
+	mov v18.b[4], w10
+	ldrb w10, [x3, #36]
+	mov v19.b[4], w10
+	bl {vg_cast5_key_sboxes}
+	umov w0, v5.s[0]
+	ldr w10, [x3, #48]
+	eor w0, w0, w10
+	ldr w10, [x3, #28]
+	rev w10, w10
+	eor w0, w0, w10
+	rev w10, w0
+	str w10, [x3, #40]
+	ldrb w10, [x3, #42]
+	mov v16.b[4], w10
+	ldrb w10, [x3, #41]
+	mov v17.b[4], w10
+	ldrb w10, [x3, #43]
+	mov v18.b[4], w10
+	ldrb w10, [x3, #40]
+	mov v19.b[4], w10
+	bl {vg_cast5_key_sboxes}
+	umov w0, v5.s[0]
+	ldr w10, [x3, #52]
+	eor w0, w0, w10
+	ldr w10, [x3, #20]
+	rev w10, w10
+	eor w0, w0, w10
+	rev w10, w0
+	str w10, [x3, #44]
+	ldrb w10, [x3, #37]
+	mov v16.b[4], w10
+	ldrb w10, [x3, #39]
+	mov v17.b[4], w10
+	ldrb w10, [x3, #36]
+	mov v18.b[4], w10
+	ldrb w10, [x3, #38]
+	mov v19.b[4], w10
+	ldrb w10, [x3, #33]
+	mov v16.b[5], w10
+	ldrb w10, [x3, #35]
+	mov v17.b[5], w10
+	ldrb w10, [x3, #32]
+	mov v18.b[5], w10
+	ldrb w10, [x3, #34]
+	mov v19.b[5], w10
+	ldrb w10, [x3, #40]
+	mov v16.b[0], w10
+	ldrb w10, [x3, #41]
+	mov v17.b[0], w10
+	ldrb w10, [x3, #39]
+	mov v18.b[0], w10
+	ldrb w10, [x3, #38]
+	mov v19.b[0], w10
+	ldrb w10, [x3, #42]
+	mov v16.b[1], w10
+	ldrb w10, [x3, #43]
+	mov v17.b[1], w10
+	ldrb w10, [x3, #37]
+	mov v18.b[1], w10
+	ldrb w10, [x3, #36]
+	mov v19.b[1], w10
+	ldrb w10, [x3, #44]
+	mov v16.b[2], w10
+	ldrb w10, [x3, #45]
+	mov v17.b[2], w10
+	ldrb w10, [x3, #35]
+	mov v18.b[2], w10
+	ldrb w10, [x3, #34]
+	mov v19.b[2], w10
+	ldrb w10, [x3, #46]
+	mov v16.b[3], w10
+	ldrb w10, [x3, #47]
+	mov v17.b[3], w10
+	ldrb w10, [x3, #33]
+	mov v18.b[3], w10
+	ldrb w10, [x3, #32]
+	mov v19.b[3], w10
+	ldrb w10, [x3, #34]
+	mov v16.b[8], w10
+	ldrb w10, [x3, #38]
+	mov v17.b[8], w10
+	ldrb w10, [x3, #41]
+	mov v18.b[8], w10
+	ldrb w10, [x3, #44]
+	mov v19.b[8], w10
+	bl {vg_cast5_key_sboxes}
+	str q7, [x3, #48]
+	eor v4.16b, v4.16b, v6.16b
+	str q4, [x2, #0]
+	umov w0, v5.s[0]
+	ldr w10, [x3, #56]
+	eor w0, w0, w10
+	ldr w10, [x3, #40]
+	rev w10, w10
+	eor w0, w0, w10
+	rev w10, w0
+	str w10, [x3, #16]
+	ldrb w10, [x3, #16]
+	mov v16.b[4], w10
+	ldrb w10, [x3, #18]
+	mov v17.b[4], w10
+	ldrb w10, [x3, #17]
+	mov v18.b[4], w10
+	ldrb w10, [x3, #19]
+	mov v19.b[4], w10
+	bl {vg_cast5_key_sboxes}
+	umov w0, v5.s[0]
+	ldr w10, [x3, #60]
+	eor w0, w0, w10
+	ldr w10, [x3, #32]
+	rev w10, w10
+	eor w0, w0, w10
+	rev w10, w0
+	str w10, [x3, #20]
+	ldrb w10, [x3, #23]
+	mov v16.b[4], w10
+	ldrb w10, [x3, #22]
+	mov v17.b[4], w10
+	ldrb w10, [x3, #21]
+	mov v18.b[4], w10
+	ldrb w10, [x3, #20]
+	mov v19.b[4], w10
+	bl {vg_cast5_key_sboxes}
+	umov w0, v5.s[0]
+	ldr w10, [x3, #48]
+	eor w0, w0, w10
+	ldr w10, [x3, #36]
+	rev w10, w10
+	eor w0, w0, w10
+	rev w10, w0
+	str w10, [x3, #24]
+	ldrb w10, [x3, #26]
+	mov v16.b[4], w10
+	ldrb w10, [x3, #25]
+	mov v17.b[4], w10
+	ldrb w10, [x3, #27]
+	mov v18.b[4], w10
+	ldrb w10, [x3, #24]
+	mov v19.b[4], w10
+	bl {vg_cast5_key_sboxes}
+	umov w0, v5.s[0]
+	ldr w10, [x3, #52]
+	eor w0, w0, w10
+	ldr w10, [x3, #44]
+	rev w10, w10
+	eor w0, w0, w10
+	rev w10, w0
+	str w10, [x3, #28]
+	ldrb w10, [x3, #29]
+	mov v16.b[4], w10
+	ldrb w10, [x3, #31]
+	mov v17.b[4], w10
+	ldrb w10, [x3, #28]
+	mov v18.b[4], w10
+	ldrb w10, [x3, #30]
+	mov v19.b[4], w10
+	ldrb w10, [x3, #25]
+	mov v16.b[5], w10
+	ldrb w10, [x3, #27]
+	mov v17.b[5], w10
+	ldrb w10, [x3, #24]
+	mov v18.b[5], w10
+	ldrb w10, [x3, #26]
+	mov v19.b[5], w10
+	ldrb w10, [x3, #19]
+	mov v16.b[0], w10
+	ldrb w10, [x3, #18]
+	mov v17.b[0], w10
+	ldrb w10, [x3, #28]
+	mov v18.b[0], w10
+	ldrb w10, [x3, #29]
+	mov v19.b[0], w10
+	ldrb w10, [x3, #17]
+	mov v16.b[1], w10
+	ldrb w10, [x3, #16]
+	mov v17.b[1], w10
+	ldrb w10, [x3, #30]
+	mov v18.b[1], w10
+	ldrb w10, [x3, #31]
+	mov v19.b[1], w10
+	ldrb w10, [x3, #23]
+	mov v16.b[2], w10
+	ldrb w10, [x3, #22]
+	mov v17.b[2], w10
+	ldrb w10, [x3, #24]
+	mov v18.b[2], w10
+	ldrb w10, [x3, #25]
+	mov v19.b[2], w10
+	ldrb w10, [x3, #21]
+	mov v16.b[3], w10
+	ldrb w10, [x3, #20]
+	mov v17.b[3], w10
+	ldrb w10, [x3, #26]
+	mov v18.b[3], w10
+	ldrb w10, [x3, #27]
+	mov v19.b[3], w10
+	ldrb w10, [x3, #24]
+	mov v16.b[8], w10
+	ldrb w10, [x3, #29]
+	mov v17.b[8], w10
+	ldrb w10, [x3, #19]
+	mov v18.b[8], w10
+	ldrb w10, [x3, #23]
+	mov v19.b[8], w10
+	bl {vg_cast5_key_sboxes}
+	str q7, [x3, #48]
+	eor v4.16b, v4.16b, v6.16b
+	str q4, [x2, #16]
+	umov w0, v5.s[0]
+	ldr w10, [x3, #56]
+	eor w0, w0, w10
+	ldr w10, [x3, #16]
+	rev w10, w10
+	eor w0, w0, w10
+	rev w10, w0
+	str w10, [x3, #32]
+	ldrb w10, [x3, #32]
+	mov v16.b[4], w10
+	ldrb w10, [x3, #34]
+	mov v17.b[4], w10
+	ldrb w10, [x3, #33]
+	mov v18.b[4], w10
+	ldrb w10, [x3, #35]
+	mov v19.b[4], w10
+	bl {vg_cast5_key_sboxes}
+	umov w0, v5.s[0]
+	ldr w10, [x3, #60]
+	eor w0, w0, w10
+	ldr w10, [x3, #24]
+	rev w10, w10
+	eor w0, w0, w10
+	rev w10, w0
+	str w10, [x3, #36]
+	ldrb w10, [x3, #39]
+	mov v16.b[4], w10
+	ldrb w10, [x3, #38]
+	mov v17.b[4], w10
+	ldrb w10, [x3, #37]
+	mov v18.b[4], w10
+	ldrb w10, [x3, #36]
+	mov v19.b[4], w10
+	bl {vg_cast5_key_sboxes}
+	umov w0, v5.s[0]
+	ldr w10, [x3, #48]
+	eor w0, w0, w10
+	ldr w10, [x3, #28]
+	rev w10, w10
+	eor w0, w0, w10
+	rev w10, w0
+	str w10, [x3, #40]
+	ldrb w10, [x3, #42]
+	mov v16.b[4], w10
+	ldrb w10, [x3, #41]
+	mov v17.b[4], w10
+	ldrb w10, [x3, #43]
+	mov v18.b[4], w10
+	ldrb w10, [x3, #40]
+	mov v19.b[4], w10
+	bl {vg_cast5_key_sboxes}
+	umov w0, v5.s[0]
+	ldr w10, [x3, #52]
+	eor w0, w0, w10
+	ldr w10, [x3, #20]
+	rev w10, w10
+	eor w0, w0, w10
+	rev w10, w0
+	str w10, [x3, #44]
+	ldrb w10, [x3, #37]
+	mov v16.b[4], w10
+	ldrb w10, [x3, #39]
+	mov v17.b[4], w10
+	ldrb w10, [x3, #36]
+	mov v18.b[4], w10
+	ldrb w10, [x3, #38]
+	mov v19.b[4], w10
+	ldrb w10, [x3, #33]
+	mov v16.b[5], w10
+	ldrb w10, [x3, #35]
+	mov v17.b[5], w10
+	ldrb w10, [x3, #32]
+	mov v18.b[5], w10
+	ldrb w10, [x3, #34]
+	mov v19.b[5], w10
+	ldrb w10, [x3, #35]
+	mov v16.b[0], w10
+	ldrb w10, [x3, #34]
+	mov v17.b[0], w10
+	ldrb w10, [x3, #44]
+	mov v18.b[0], w10
+	ldrb w10, [x3, #45]
+	mov v19.b[0], w10
+	ldrb w10, [x3, #33]
+	mov v16.b[1], w10
+	ldrb w10, [x3, #32]
+	mov v17.b[1], w10
+	ldrb w10, [x3, #46]
+	mov v18.b[1], w10
+	ldrb w10, [x3, #47]
+	mov v19.b[1], w10
+	ldrb w10, [x3, #39]
+	mov v16.b[2], w10
+	ldrb w10, [x3, #38]
+	mov v17.b[2], w10
+	ldrb w10, [x3, #40]
+	mov v18.b[2], w10
+	ldrb w10, [x3, #41]
+	mov v19.b[2], w10
+	ldrb w10, [x3, #37]
+	mov v16.b[3], w10
+	ldrb w10, [x3, #36]
+	mov v17.b[3], w10
+	ldrb w10, [x3, #42]
+	mov v18.b[3], w10
+	ldrb w10, [x3, #43]
+	mov v19.b[3], w10
+	ldrb w10, [x3, #41]
+	mov v16.b[8], w10
+	ldrb w10, [x3, #44]
+	mov v17.b[8], w10
+	ldrb w10, [x3, #34]
+	mov v18.b[8], w10
+	ldrb w10, [x3, #38]
+	mov v19.b[8], w10
+	bl {vg_cast5_key_sboxes}
+	str q7, [x3, #48]
+	eor v4.16b, v4.16b, v6.16b
+	str q4, [x2, #32]
+	umov w0, v5.s[0]
+	ldr w10, [x3, #56]
+	eor w0, w0, w10
+	ldr w10, [x3, #40]
+	rev w10, w10
+	eor w0, w0, w10
+	rev w10, w0
+	str w10, [x3, #16]
+	ldrb w10, [x3, #16]
+	mov v16.b[4], w10
+	ldrb w10, [x3, #18]
+	mov v17.b[4], w10
+	ldrb w10, [x3, #17]
+	mov v18.b[4], w10
+	ldrb w10, [x3, #19]
+	mov v19.b[4], w10
+	bl {vg_cast5_key_sboxes}
+	umov w0, v5.s[0]
+	ldr w10, [x3, #60]
+	eor w0, w0, w10
+	ldr w10, [x3, #32]
+	rev w10, w10
+	eor w0, w0, w10
+	rev w10, w0
+	str w10, [x3, #20]
+	ldrb w10, [x3, #23]
+	mov v16.b[4], w10
+	ldrb w10, [x3, #22]
+	mov v17.b[4], w10
+	ldrb w10, [x3, #21]
+	mov v18.b[4], w10
+	ldrb w10, [x3, #20]
+	mov v19.b[4], w10
+	bl {vg_cast5_key_sboxes}
+	umov w0, v5.s[0]
+	ldr w10, [x3, #48]
+	eor w0, w0, w10
+	ldr w10, [x3, #36]
+	rev w10, w10
+	eor w0, w0, w10
+	rev w10, w0
+	str w10, [x3, #24]
+	ldrb w10, [x3, #26]
+	mov v16.b[4], w10
+	ldrb w10, [x3, #25]
+	mov v17.b[4], w10
+	ldrb w10, [x3, #27]
+	mov v18.b[4], w10
+	ldrb w10, [x3, #24]
+	mov v19.b[4], w10
+	bl {vg_cast5_key_sboxes}
+	umov w0, v5.s[0]
+	ldr w10, [x3, #52]
+	eor w0, w0, w10
+	ldr w10, [x3, #44]
+	rev w10, w10
+	eor w0, w0, w10
+	rev w10, w0
+	str w10, [x3, #28]
+	ldrb w10, [x3, #24]
+	mov v16.b[0], w10
+	ldrb w10, [x3, #25]
+	mov v17.b[0], w10
+	ldrb w10, [x3, #23]
+	mov v18.b[0], w10
+	ldrb w10, [x3, #22]
+	mov v19.b[0], w10
+	ldrb w10, [x3, #26]
+	mov v16.b[1], w10
+	ldrb w10, [x3, #27]
+	mov v17.b[1], w10
+	ldrb w10, [x3, #21]
+	mov v18.b[1], w10
+	ldrb w10, [x3, #20]
+	mov v19.b[1], w10
+	ldrb w10, [x3, #28]
+	mov v16.b[2], w10
+	ldrb w10, [x3, #29]
+	mov v17.b[2], w10
+	ldrb w10, [x3, #19]
+	mov v18.b[2], w10
+	ldrb w10, [x3, #18]
+	mov v19.b[2], w10
+	ldrb w10, [x3, #30]
+	mov v16.b[3], w10
+	ldrb w10, [x3, #31]
+	mov v17.b[3], w10
+	ldrb w10, [x3, #17]
+	mov v18.b[3], w10
+	ldrb w10, [x3, #16]
+	mov v19.b[3], w10
+	ldrb w10, [x3, #19]
+	mov v16.b[8], w10
+	ldrb w10, [x3, #23]
+	mov v17.b[8], w10
+	ldrb w10, [x3, #24]
+	mov v18.b[8], w10
+	ldrb w10, [x3, #29]
+	mov v19.b[8], w10
+	bl {vg_cast5_key_sboxes}
+	eor v4.16b, v4.16b, v6.16b
+	str q4, [x2, #48]
 	add x2, x2, #64
 	sub x1, x1, #1
 	cbnz x1, 21b
+	add x30, x15, #0
 	ret
 	.p2align 6
 

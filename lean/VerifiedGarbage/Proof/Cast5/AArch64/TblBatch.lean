@@ -68,7 +68,11 @@ def sbox (j : Nat) (x : Byte) : Spec.Cast5.Word :=
   | 0 => Spec.Cast5.S1 x
   | 1 => Spec.Cast5.S2 x
   | 2 => Spec.Cast5.S3 x
-  | _ => Spec.Cast5.S4 x
+  | 3 => Spec.Cast5.S4 x
+  | 4 => Spec.Cast5.S5 x
+  | 5 => Spec.Cast5.S6 x
+  | 6 => Spec.Cast5.S7 x
+  | _ => Spec.Cast5.S8 x
 def planeByte (o : Nat) : Byte :=
   (sbox (o / 1024) (BitVec.ofNat 8 o)).extractLsb' (8 * (o / 256 % 4)) 8
 
@@ -89,27 +93,30 @@ theorem getD_map {α β : Type} (g : α → β) (l : List α) (d : β) (a0 : α)
     (l.map g).getD x d = g (l.getD x a0) := by
   simp [List.getD_eq_getElem?_getD, hx]
 
-theorem sbox_getD {j : Nat} (hj : j < 4) (o : Nat) :
+theorem sbox_getD {j : Nat} (hj : j < 8) (o : Nat) :
     (sboxes.getD j []).getD (o % 256) 0 = sbox j (BitVec.ofNat 8 o) := by
   have hx : o % 256 < 256 := Nat.mod_lt _ (by decide)
-  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl <;>
-    simp [sboxes, sbox, Spec.Cast5.S1, Spec.Cast5.S2, Spec.Cast5.S3, Spec.Cast5.S4, List.getD_eq_getElem?_getD, hx]
+  rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7) with
+    rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+    simp [sboxes, sbox, Spec.Cast5.S1, Spec.Cast5.S2, Spec.Cast5.S3, Spec.Cast5.S4, Spec.Cast5.S5, Spec.Cast5.S6,
+      Spec.Cast5.S7, Spec.Cast5.S8, List.getD_eq_getElem?_getD, hx]
 
 theorem sboxes_len : ∀ s ∈ sboxes, s.length = 256 := by
   intro s hs
   simp only [sboxes, List.mem_cons, List.not_mem_nil, or_false] at hs
-  rcases hs with rfl | rfl | rfl | rfl <;> exact Vector.length_toList
+  rcases hs with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> exact Vector.length_toList
 
-theorem planeBytes_getD {o : Nat} (ho : o < 4096) : planeBytes.getD o 0 = planeByte o := by
+theorem planeBytes_getD {o : Nat} (ho : o < 8192) : planeBytes.getD o 0 = planeByte o := by
   have e : o = 1024 * (o / 1024) + (256 * (o / 256 % 4) + o % 256) := by omega
   have hs : (sboxes.getD (o / 1024) []).length = 256 := by
-    have hj : o / 1024 < 4 := by omega
-    rcases (by omega : o / 1024 = 0 ∨ o / 1024 = 1 ∨ o / 1024 = 2 ∨ o / 1024 = 3) with h | h | h | h <;> rw [h] <;>
+    have hj : o / 1024 < 8 := by omega
+    rcases (by omega : o / 1024 = 0 ∨ o / 1024 = 1 ∨ o / 1024 = 2 ∨ o / 1024 = 3 ∨ o / 1024 = 4 ∨ o / 1024 = 5 ∨
+        o / 1024 = 6 ∨ o / 1024 = 7) with h | h | h | h | h | h | h | h <;> rw [h] <;>
       exact Vector.length_toList
   rw [planeBytes]
   conv => lhs; rw [e]
   rw [getD_flatMap _ 1024 0 [] sboxes (fun s hs => by
-      rw [List.length_flatMap]; simp [sboxes_len s hs]; rfl) _ _ (by show o / 1024 < 4; omega) (by omega),
+      rw [List.length_flatMap]; simp [sboxes_len s hs]; rfl) _ _ (by show o / 1024 < 8; omega) (by omega),
     getD_flatMap _ 256 0 0 (List.range 4) (fun b _ => by rw [List.length_map, hs]) _ _ (by simp; omega)
       (Nat.mod_lt _ (by decide)),
     getD_map _ _ 0 0 (by rw [hs]; exact Nat.mod_lt _ (by decide)), sbox_getD (by omega), planeByte]
@@ -174,7 +181,7 @@ theorem pack_getD : ∀ (i : Nat) (l : List Byte), 8 * (i + 1) ≤ l.length →
   | _, [_, _, _, _, _, _], h => by simp at h; omega
   | _, [_, _, _, _, _, _, _], h => by simp at h; omega
 
-theorem planeBytes_length : planeBytes.length = 4096 := by
+theorem planeBytes_length : planeBytes.length = 8192 := by
   rw [planeBytes, List.length_flatMap]
   have : ∀ s ∈ sboxes, ((List.range 4).flatMap fun b => s.map fun w => w.extractLsb' (8 * b) 8).length = 1024 := by
     intro s hs; rw [List.length_flatMap]; simp [sboxes_len s hs]; rfl
@@ -189,7 +196,7 @@ theorem vbyte_app (hi lo : BitVec 64) {e : Nat} (he : e < 16) :
   · simp [h, hi', show 8 * e + i < 64 by omega]
   · simp [h, hi', show ¬ 8 * e + i < 64 by omega, show 8 * e + i - 64 = 8 * (e - 8) + i by omega]
 
-theorem vbyte_pld {o : Nat} (ho : o % 16 = 0 ∧ o + 16 ≤ 4096) {e : Nat} (he : e < 16) :
+theorem vbyte_pld {o : Nat} (ho : o % 16 = 0 ∧ o + 16 ≤ 8192) {e : Nat} (he : e < 16) :
     vbyte (planeWords.getD (o / 8 + 1) 0 ++ planeWords.getD (o / 8) 0) e = planeByte (o + e) := by
   rw [vbyte_app _ _ he, planeWords, pack_getD _ _ (by rw [planeBytes_length]; omega),
     pack_getD _ _ (by rw [planeBytes_length]; omega)]
@@ -217,14 +224,14 @@ theorem pack_length : ∀ l : List Byte, (pack l).length = l.length / 8
   | [_, _, _, _, _, _] => by simp [pack]
   | [_, _, _, _, _, _, _] => by simp [pack]
 
-theorem planeWords_length : planeWords.length = 512 := by
+theorem planeWords_length : planeWords.length = 1024 := by
   rw [planeWords, pack_length, planeBytes_length]
 
 /-- What a load of the table's sixteen bytes at `o` leaves. -/
 def pldV (o : Nat) : BitVec 128 := planeWords.getD (o / 8 + 1) 0 ++ planeWords.getD (o / 8) 0
 
 /-- A load of the table's sixteen bytes at `off`. -/
-theorem exec_pld (s : State) (t : VReg) {off : Nat} (ho : off % 16 = 0 ∧ off + 16 ≤ 4096)
+theorem exec_pld (s : State) (t : VReg) {off : Nat} (ho : off % 16 = 0 ∧ off + 16 ≤ 8192)
     (h9 : s.gpr .x9 = s.syms planesSym) :
     exec (.ldrqTbl t .x9 off planesSym planeWords) s = some (s.setV t (pldV off)) := by
   have hc : s.gpr .x9 = s.syms planesSym ∧ off % 16 = 0 ∧ off < 65536 ∧ off / 8 + 2 ≤ planeWords.length := by
@@ -234,7 +241,7 @@ theorem exec_pld (s : State) (t : VReg) {off : Nat} (ho : off % 16 = 0 ∧ off +
   rfl
 
 /-- Byte `b` of S-box `j` at `x`. -/
-theorem planeByte_eq {j b : Nat} (hj : j < 4) (hb : b < 4) (x : Byte) :
+theorem planeByte_eq {j b : Nat} (hj : j < 8) (hb : b < 4) (x : Byte) :
     planeByte (planeOff j b + x.toNat) = (sbox j x).extractLsb' (8 * b) 8 := by
   have hx := x.isLt
   have e1 : (planeOff j b + x.toNat) / 1024 = j := by simp only [planeOff]; omega_arith
@@ -254,7 +261,7 @@ theorem loadQuarter_eq (j b q : Nat) :
        .ldrqTbl .v31 .x9 (planeOff j b + 64 * q + 16 * 3) planesSym planeWords] :=
   rfl
 
-theorem quarter_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) {j b q : Nat} (hj : j < 4)
+theorem quarter_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) {j b q : Nat} (hj : j < 8)
     (hb : b < 4) (hq : q < 4) {d m : VReg} (hd : ∀ r < 4, d ≠ tReg r) (hm : ∀ r < 4, m ≠ tReg r) :
     ∃ s', runBlock isa (loadQuarter j b q ++ ([.vop (.tblN (q != 0) 4 d (tReg 0) m)] : List Instr)) s = some s' ∧
       (∀ e < 16, vbyte (s'.v d) e =
@@ -263,7 +270,7 @@ theorem quarter_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) {j b q : Nat
         else if q != 0 then vbyte (s.v d) e else 0) ∧
       VOnly [.v28, .v29, .v30, .v31, d] s s' := by
   let base := planeOff j b + 64 * q
-  have hbase : base % 16 = 0 ∧ base + 64 ≤ 4096 := by simp only [base, planeOff]; omega_arith
+  have hbase : base % 16 = 0 ∧ base + 64 ≤ 8192 := by simp only [base, planeOff]; omega_arith
   let ld (r : Nat) := pldV (base + 16 * r)
   let s₁ := s.setV .v28 (ld 0)
   let s₂ := s₁.setV .v29 (ld 1)
@@ -283,7 +290,7 @@ theorem quarter_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) {j b q : Nat
   let s₅ := s₄.setV d (ofVBytes fun i =>
       if (vbyte (s₄.v m) i).toNat < 16 * 4 then tableByte s₄.v (tReg 0) (vbyte (s₄.v m) i).toNat
       else if (q != 0) then vbyte (s₄.v d) i else 0)
-  have ho : ∀ r < 4, (base + 16 * r) % 16 = 0 ∧ base + 16 * r + 16 ≤ 4096 := fun r hr => by
+  have ho : ∀ r < 4, (base + 16 * r) % 16 = 0 ∧ base + 16 * r + 16 ≤ 8192 := fun r hr => by
     omega_using [hbase, hr]
   refine ⟨s₅, ?_, ?_, ?_⟩
   · have e₁ : exec (.ldrqTbl .v28 .x9 (planeOff j b + 64 * q + 16 * 0) planesSym planeWords) s = some s₁ :=
@@ -313,35 +320,35 @@ theorem quarter_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) {j b q : Nat
 
 /-! ## A byte plane -/
 
-theorem lookupPlane_eq (j b : Nat) :
-    lookupPlane j b =
-      (loadQuarter j b 0 ++ ([.vop (.tblN (0 != 0) 4 (outReg b) (tReg 0) (idxReg j))] : List Instr)) ++
-      ((loadQuarter j b 1 ++ ([.vop (.tblN (1 != 0) 4 (outReg b) (tReg 0) (qReg 1))] : List Instr)) ++
-      ((loadQuarter j b 2 ++ ([.vop (.tblN (2 != 0) 4 (outReg b) (tReg 0) (qReg 2))] : List Instr)) ++
-      ((loadQuarter j b 3 ++ ([.vop (.tblN (3 != 0) 4 (outReg b) (tReg 0) (qReg 3))] : List Instr)) ++ []))) :=
+theorem lookupPlane_eq (t j b : Nat) :
+    lookupPlane t j b =
+      (loadQuarter t b 0 ++ ([.vop (.tblN (0 != 0) 4 (outReg b) (tReg 0) (idxReg j))] : List Instr)) ++
+      ((loadQuarter t b 1 ++ ([.vop (.tblN (1 != 0) 4 (outReg b) (tReg 0) (qReg 1))] : List Instr)) ++
+      ((loadQuarter t b 2 ++ ([.vop (.tblN (2 != 0) 4 (outReg b) (tReg 0) (qReg 2))] : List Instr)) ++
+      ((loadQuarter t b 3 ++ ([.vop (.tblN (3 != 0) 4 (outReg b) (tReg 0) (qReg 3))] : List Instr)) ++ []))) :=
   rfl
 
 /-- Byte plane `b` of S-box `j`, at the indices in `idxReg j` (and them
 XORed with 64, 128 and 192 in `qReg`). -/
-theorem lookupPlane_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) {j b : Nat} (hj : j < 4)
+theorem lookupPlane_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) {t j b : Nat} (ht : t < 8) (hj : j < 4)
     (hb : b < 4) (hq : ∀ q < 4, 0 < q → ∀ e < 16,
       vbyte (s.v (qReg q)) e = vbyte (s.v (idxReg j)) e ^^^ BitVec.ofNat 8 (64 * q)) :
-    ∃ s', runBlock isa (lookupPlane j b) s = some s' ∧
-      (∀ e < 16, vbyte (s'.v (outReg b)) e = planeByte (planeOff j b + (vbyte (s.v (idxReg j)) e).toNat)) ∧
+    ∃ s', runBlock isa (lookupPlane t j b) s = some s' ∧
+      (∀ e < 16, vbyte (s'.v (outReg b)) e = planeByte (planeOff t b + (vbyte (s.v (idxReg j)) e).toNat)) ∧
       VOnly [.v28, .v29, .v30, .v31, outReg b] s s' := by
   have ne := regs_ne j hj b hb
   have hd : ∀ r < 4, outReg b ≠ tReg r := fun r hr => (ne 0 (by decide) r hr).1
-  have h9' : ∀ {t : State}, VOnly [.v28, .v29, .v30, .v31, outReg b] s t → t.gpr .x9 = t.syms planesSym := by
-    intro t ht
-    rw [ht.gpr, ht.1]; exact h9
-  obtain ⟨s₁, r₁, v₁, o₁⟩ := quarter_run h9 hj hb (by decide : 0 < 4) hd (fun r hr => (ne 0 (by decide) r hr).2.1)
-  obtain ⟨s₂, r₂, v₂, o₂⟩ := quarter_run (h9' o₁) hj hb (by decide : 1 < 4) hd
+  have h9' : ∀ {u : State}, VOnly [.v28, .v29, .v30, .v31, outReg b] s u → u.gpr .x9 = u.syms planesSym := by
+    intro u hu
+    rw [hu.gpr, hu.1]; exact h9
+  obtain ⟨s₁, r₁, v₁, o₁⟩ := quarter_run h9 ht hb (by decide : 0 < 4) hd (fun r hr => (ne 0 (by decide) r hr).2.1)
+  obtain ⟨s₂, r₂, v₂, o₂⟩ := quarter_run (h9' o₁) ht hb (by decide : 1 < 4) hd
     (fun r hr => (ne 1 (by decide) r hr).2.2.1)
   have o₁₂ := o₁.trans o₂
-  obtain ⟨s₃, r₃, v₃, o₃⟩ := quarter_run (h9' o₁₂) hj hb (by decide : 2 < 4) hd
+  obtain ⟨s₃, r₃, v₃, o₃⟩ := quarter_run (h9' o₁₂) ht hb (by decide : 2 < 4) hd
     (fun r hr => (ne 2 (by decide) r hr).2.2.1)
   have o₁₃ := o₁₂.trans o₃
-  obtain ⟨s₄, r₄, v₄, o₄⟩ := quarter_run (h9' o₁₃) hj hb (by decide : 3 < 4) hd
+  obtain ⟨s₄, r₄, v₄, o₄⟩ := quarter_run (h9' o₁₃) ht hb (by decide : 3 < 4) hd
     (fun r hr => (ne 3 (by decide) r hr).2.2.1)
   have o₁₄ := o₁₃.trans o₄
   refine ⟨s₄, ?_, ?_, o₁₄⟩
@@ -349,10 +356,10 @@ theorem lookupPlane_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) {j b : N
     exact VG.AArch64.Tbl.runBlock_cat_some r₁ (VG.AArch64.Tbl.runBlock_cat_some r₂
       (VG.AArch64.Tbl.runBlock_cat_some r₃ (VG.AArch64.Tbl.runBlock_cat_some r₄ runBlock_nil)))
   · intro e he
-    have kept : ∀ {t : State} (x : VReg), VOnly [.v28, .v29, .v30, .v31, outReg b] s t →
-        (∀ r < 4, x ≠ tReg r) → x ≠ outReg b → t.v x = s.v x := by
-      intro t x ht hx hxo
-      refine ht.2 x ?_
+    have kept : ∀ {u : State} (x : VReg), VOnly [.v28, .v29, .v30, .v31, outReg b] s u →
+        (∀ r < 4, x ≠ tReg r) → x ≠ outReg b → u.v x = s.v x := by
+      intro u x hu hx hxo
+      refine hu.2 x ?_
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       have := hx 0 (by decide); have := hx 1 (by decide); have := hx 2 (by decide)
       have := hx 3 (by decide)
@@ -373,16 +380,17 @@ theorem lookupPlane_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) {j b : N
     simp only [show (3 != 0) = true from rfl, show (2 != 0) = true from rfl,
       show (1 != 0) = true from rfl, show (0 != 0) = false from rfl, ite_true, Bool.false_eq_true,
       ite_false]
-    have := tbx_chain (fun i => planeByte (planeOff j b + i)) X.toNat hX
+    have := tbx_chain (fun i => planeByte (planeOff t b + i)) X.toNat hX
     simp only [Nat.add_assoc]
     exact this
 
 /-! ## An S-box -/
 
-theorem lookup_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) (hc : Consts s) {j : Nat} (hj : j < 4) :
-    ∃ s', runBlock isa (lookup j) s = some s' ∧
+theorem lookup_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) (hc : Consts s) {t j : Nat} (ht : t < 8)
+    (hj : j < 4) :
+    ∃ s', runBlock isa (lookup t j) s = some s' ∧
       (∀ b < 4, ∀ e < 16, vbyte (s'.v (outReg b)) e =
-        (sbox j (vbyte (s.v (idxReg j)) e)).extractLsb' (8 * b) 8) ∧
+        (sbox t (vbyte (s.v (idxReg j)) e)).extractLsb' (8 * b) 8) ∧
       VOnly lookupRegs s s' := by
   have hidx := idx_ne_q123 j hj
   let s₁ := s.setV (qReg 1) (s.v (idxReg j) ^^^ s.v c64)
@@ -411,24 +419,24 @@ theorem lookup_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) (hc : Consts 
   have o₃ : VOnly lookupRegs s s₃ :=
     (((VOnly.setV s (by simp [lookupRegs, qReg]) _).trans (VOnly.setV _ (by simp [lookupRegs, qReg]) _)).trans
       (VOnly.setV _ (by simp [lookupRegs, qReg]) _))
-  have h9₃ : ∀ {t : State}, VOnly lookupRegs s t → t.gpr .x9 = t.syms planesSym := by
-    intro t ht
-    rw [ht.gpr, ht.1]; exact h9
-  have step : ∀ {t : State} (b : Nat), b < 4 → VOnly lookupRegs s t →
+  have h9₃ : ∀ {u : State}, VOnly lookupRegs s u → u.gpr .x9 = u.syms planesSym := by
+    intro u hu
+    rw [hu.gpr, hu.1]; exact h9
+  have step : ∀ {u : State} (b : Nat), b < 4 → VOnly lookupRegs s u →
       (∀ q < 4, 0 < q → ∀ e < 16,
-        vbyte (t.v (qReg q)) e = vbyte (t.v (idxReg j)) e ^^^ BitVec.ofNat 8 (64 * q)) →
-      ∃ t', runBlock isa (lookupPlane j b) t = some t' ∧
-        (∀ e < 16, vbyte (t'.v (outReg b)) e = planeByte (planeOff j b + (vbyte (t.v (idxReg j)) e).toNat)) ∧
-        VOnly [.v28, .v29, .v30, .v31, outReg b] t t' := by
-    intro t b hb ht hqt
-    exact lookupPlane_run (h9₃ ht) hj hb hqt
+        vbyte (u.v (qReg q)) e = vbyte (u.v (idxReg j)) e ^^^ BitVec.ofNat 8 (64 * q)) →
+      ∃ u', runBlock isa (lookupPlane t j b) u = some u' ∧
+        (∀ e < 16, vbyte (u'.v (outReg b)) e = planeByte (planeOff t b + (vbyte (u.v (idxReg j)) e).toNat)) ∧
+        VOnly [.v28, .v29, .v30, .v31, outReg b] u u' := by
+    intro u b hb hu hqt
+    exact lookupPlane_run (h9₃ hu) ht hj hb hqt
   have ob := plane_sub
-  have hqk : ∀ {t t' : State} (b : Nat), b < 4 → VOnly [.v28, .v29, .v30, .v31, outReg b] t t' →
+  have hqk : ∀ {u u' : State} (b : Nat), b < 4 → VOnly [.v28, .v29, .v30, .v31, outReg b] u u' →
       (∀ q < 4, 0 < q → ∀ e < 16,
-        vbyte (t.v (qReg q)) e = vbyte (t.v (idxReg j)) e ^^^ BitVec.ofNat 8 (64 * q)) →
+        vbyte (u.v (qReg q)) e = vbyte (u.v (idxReg j)) e ^^^ BitVec.ofNat 8 (64 * q)) →
       (∀ q < 4, 0 < q → ∀ e < 16,
-        vbyte (t'.v (qReg q)) e = vbyte (t'.v (idxReg j)) e ^^^ BitVec.ofNat 8 (64 * q)) := by
-    intro t t' b hb o h q hq0 hq1 e he
+        vbyte (u'.v (qReg q)) e = vbyte (u'.v (idxReg j)) e ^^^ BitVec.ofNat 8 (64 * q)) := by
+    intro u u' b hb o h q hq0 hq1 e he
     rw [o.2 _ (q_notin q hq0 hq1 b hb), o.2 _ (idx_notin j hj b hb)]; exact h q hq0 hq1 e he
   have ni := idx_notin j hj
   obtain ⟨t₀, r₀, v₀, o₀⟩ := step 0 (by decide) o₃ hq
@@ -444,9 +452,9 @@ theorem lookup_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) (hc : Consts 
   · have e₁ : exec (veor (qReg 1) (idxReg j) c64) s = some s₁ := rfl
     have e₂ : exec (veor (qReg 2) (idxReg j) c128) s₁ = some s₂ := rfl
     have e₃ : exec (veor (qReg 3) (qReg 1) c128) s₂ = some s₃ := rfl
-    have l : lookup j = [veor (qReg 1) (idxReg j) c64, veor (qReg 2) (idxReg j) c128,
-        veor (qReg 3) (qReg 1) c128] ++ (lookupPlane j 0 ++ (lookupPlane j 1 ++
-        (lookupPlane j 2 ++ (lookupPlane j 3 ++ [])))) := rfl
+    have l : lookup t j = [veor (qReg 1) (idxReg j) c64, veor (qReg 2) (idxReg j) c128,
+        veor (qReg 3) (qReg 1) c128] ++ (lookupPlane t j 0 ++ (lookupPlane t j 1 ++
+        (lookupPlane t j 2 ++ (lookupPlane t j 3 ++ [])))) := rfl
     rw [l, List.cons_append, List.cons_append, List.cons_append, List.nil_append, runBlock_cons, e₁,
       runStep_some, runBlock_cons, e₂, runStep_some, runBlock_cons, e₃, runStep_some]
     exact VG.AArch64.Tbl.runBlock_cat_some r₀ (VG.AArch64.Tbl.runBlock_cat_some r₁
@@ -456,7 +464,7 @@ theorem lookup_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) (hc : Consts 
     have i₂ : t₂.v (idxReg j) = s.v (idxReg j) := (o₂.2 _ (ni 2 (by decide))).trans i₁
     intro b hb e he
     have nob := out_notin
-    rw [← planeByte_eq hj hb]
+    rw [← planeByte_eq ht hb]
     rcases (by omega_using [hb] : b = 0 ∨ b = 1 ∨ b = 2 ∨ b = 3) with rfl | rfl | rfl | rfl
     · rw [o₃'.2 _ (nob 0 (by decide) 3 (by decide) (by decide)), o₂.2 _ (nob 0 (by decide) 2 (by decide) (by decide)),
         o₁.2 _ (nob 0 (by decide) 1 (by decide) (by decide)), v₀ e he, X]
@@ -684,9 +692,9 @@ theorem combine_run (s : State) (t j : Nat) :
 theorem sbox_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) (hc : Consts s) {j : Nat} (hj : j < 4)
     (t : Nat) (x : Nat → Word) (hx : ∀ n < 16, vbyte (s.v (idxReg j)) n = Spec.Cast5.byte (x n) j)
     (hprev : 0 < j → ∀ n < 16, lane s.v fReg n = fAcc t (x n) (j - 1)) :
-    ∃ s', runBlock isa (lookup j ++ words ++ combine t j) s = some s' ∧
+    ∃ s', runBlock isa (lookup j j ++ words ++ combine t j) s = some s' ∧
       (∀ n < 16, lane s'.v fReg n = fAcc t (x n) j) ∧ VOnly stepRegs s s' := by
-  obtain ⟨s₁, r₁, v₁, o₁⟩ := lookup_run h9 hc hj
+  obtain ⟨s₁, r₁, v₁, o₁⟩ := lookup_run h9 hc (t := j) (by omega_using [hj]) hj
   obtain ⟨s₂, r₂, v₂, o₂⟩ := words_run s₁
   obtain ⟨s₃, r₃, v₃, o₃⟩ := combine_run s₂ t j
   refine ⟨s₃, VG.AArch64.Tbl.runBlock_cat_some (VG.AArch64.Tbl.runBlock_cat_some r₁ r₂) r₃, ?_, ?_⟩
@@ -710,8 +718,8 @@ theorem sbox_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) (hc : Consts s)
       (Proof.Blowfish.AArch64.VOnly.mono o₃ (by decide))
 
 theorem f_eq (t : Nat) :
-    f t = (lookup 0 ++ words ++ combine t 0) ++ ((lookup 1 ++ words ++ combine t 1) ++
-      ((lookup 2 ++ words ++ combine t 2) ++ ((lookup 3 ++ words ++ combine t 3) ++ []))) := rfl
+    f t = (lookup 0 0 ++ words ++ combine t 0) ++ ((lookup 1 1 ++ words ++ combine t 1) ++
+      ((lookup 2 2 ++ words ++ combine t 2) ++ ((lookup 3 3 ++ words ++ combine t 3) ++ []))) := rfl
 
 /-- `f`'s S-boxes and operations, of sixteen words whose byte planes are in `idxReg`. -/
 theorem f_run {s : State} (h9 : s.gpr .x9 = s.syms planesSym) (hc : Consts s) (t : Nat) (x : Nat → Word)
