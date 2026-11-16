@@ -29,6 +29,8 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.RegSet
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Sums
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Sums
 meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-! # The initial paired matrix parse observes only the public seed -/
@@ -109,14 +111,18 @@ theorem prepare_ct (sb ss a b k : Nat) : ConstantTime isa (fun _=>True)
     (VG.AArch64.Taint.Agree (Taint.ofRegs [.x28])) (prepareCode sha3 sb ss a b k) := by
   cases sha3
   · by_cases hs : ss<4096
-    · apply vct_eraseOff_eq [.x28]
-        (d:=Code.eraseOff (prepareCode false 0 0 0 0 1))
-        (by simp only [prepareCode,Impl.MlKem.AArch64.Paired.init,Impl.MlKem.AArch64.ptrTo,ite_eq_left hs]; rfl)
-      taint_decide
-    · apply vct_eraseOff_eq [.x28]
-        (d:=Code.eraseOff (prepareCode false 0 4096 0 0 1))
-        (by simp only [prepareCode,Impl.MlKem.AArch64.Paired.init,Impl.MlKem.AArch64.ptrTo,ite_eq_right hs]; rfl)
-      taint_decide
+    · -- The call of the paired Keccak by its summary (`X2Sums.erased`).
+      obtain ⟨hc, h⟩ : ∃ hc, (VectorTaint.taint.check (VectorTaint.ofRegs [.x28])
+          (Code.eraseOff (prepareCode false 0 0 0 0 1)) hc).isSome = true := by
+        taint_decide_sum [VG.Proof.Sha3.AArch64.Neon.X2Sums.erased]
+      exact vct_eraseOff_eq [.x28]
+        (by simp only [prepareCode,Impl.MlKem.AArch64.Paired.init,Impl.MlKem.AArch64.ptrTo,ite_eq_left hs]; rfl) h
+    · -- The call of the paired Keccak by its summary (`X2Sums.erased`).
+      obtain ⟨hc, h⟩ : ∃ hc, (VectorTaint.taint.check (VectorTaint.ofRegs [.x28])
+          (Code.eraseOff (prepareCode false 0 4096 0 0 1)) hc).isSome = true := by
+        taint_decide_sum [VG.Proof.Sha3.AArch64.Neon.X2Sums.erased]
+      exact vct_eraseOff_eq [.x28]
+        (by simp only [prepareCode,Impl.MlKem.AArch64.Paired.init,Impl.MlKem.AArch64.ptrTo,ite_eq_right hs]; rfl) h
   · by_cases hs : ss<4096
     · apply ct_eraseOff_eq [.x28]
         (d:=Code.eraseOff (prepareCode true 0 0 0 0 1))

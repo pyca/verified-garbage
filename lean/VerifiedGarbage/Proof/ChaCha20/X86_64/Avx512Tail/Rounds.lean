@@ -288,17 +288,144 @@ theorem RelS.congr {w₀ : W} {f g : Nat → HE} {k : Nat} {v : CState} (h : Rel
     (e : ∀ i < 16, g (16 * k + i) = f (16 * k + i)) : RelS w₀ g k v := fun i hi => by
   rw [e i hi]; exact h i hi
 
-theorem cols1_check : eq32 (colsH.foldl hstepE vars) (colsE vars 0) = true := by decide +kernel
-theorem diags1_check : eq32 (diagsH.foldl hstepE vars) (diagsE vars 0) = true := by decide +kernel
-theorem cols2_check : eq32 (cols2H.foldl hstepE vars) (colsE (colsE vars 0) 1) = true := by
-  decide +kernel
-theorem diags2_check : eq32 (diags2H.foldl hstepE vars) (diagsE (diagsE vars 0) 1) = true := by
-  decide +kernel
+/-! ## The terms as a list
 
-theorem cols3_check : eq48 (cols3H.foldl hstepE vars) (colsE (colsE (colsE vars 0) 1) 2) = true := by
-  decide +kernel
-theorem diags3_check : eq48 (diags3H.foldl hstepE vars) (diagsE (diagsE (diagsE vars 0) 1) 2) = true := by
-  decide +kernel
+`hstepE`'s terms are a function that every instruction changes: the kernel reads a word of it through every
+instruction before, at an index that is a different term each time, so it finds nothing again. The checks
+evaluate the list of the terms of words `0 … 47` instead (`hstepL`), each list once. -/
+
+/-- The term at `k` of a list (by the recursors, which the kernel evaluates in fewer steps than a
+structural recursion). -/
+noncomputable def nthE (l : List HE) : Nat → HE :=
+  List.rec (fun _ => .var 0) (fun a _ ih k => Nat.rec a (fun n _ => ih n) k) l
+
+/-- The list with `v` at `k`. -/
+noncomputable def setL (l : List HE) : Nat → HE → List HE :=
+  List.rec (fun _ _ => []) (fun a as ih k v => Nat.rec (v :: as) (fun n _ => a :: ih n v) k) l
+
+theorem length_setL : ∀ (l : List HE) (i : Nat) (v : HE), (setL l i v).length = l.length
+  | [], _, _ => rfl
+  | _ :: _, 0, _ => rfl
+  | _ :: l, i + 1, v => congrArg (· + 1) (length_setL l i v)
+
+theorem nthE_setL : ∀ (l : List HE) (i k : Nat) (v : HE), i < l.length →
+    nthE (setL l i v) k = if k = i then v else nthE l k
+  | [], _, _, _, h => absurd h (Nat.not_lt_zero _)
+  | _ :: _, 0, 0, _, _ => rfl
+  | _ :: _, 0, _ + 1, _, _ => rfl
+  | _ :: _, _ + 1, 0, _, _ => rfl
+  | _ :: l, i + 1, k + 1, v, h => by
+    show nthE (setL l i v) k = if k + 1 = i + 1 then v else nthE l k
+    rw [nthE_setL l i k v (Nat.lt_of_succ_lt_succ h)]
+    simp only [Nat.add_right_cancel_iff]
+
+/-- `setRow`, on the list. -/
+noncomputable def setRowL (l : List HE) (d : Nat) (g : Nat → HE) : List HE :=
+  setL (setL (setL (setL l (4 * d) (g 0)) (4 * d + 1) (g 1)) (4 * d + 2) (g 2)) (4 * d + 3) (g 3)
+
+/-- `hstepE`, on the list. -/
+noncomputable def hstepL (l : List HE) : HI → List HE
+  | .add d a b => setRowL l (xidx d) fun q => .add (nthE l (4 * xidx a + q)) (nthE l (4 * xidx b + q))
+  | .xor d a b => setRowL l (xidx d) fun q => .xor (nthE l (4 * xidx a + q)) (nthE l (4 * xidx b + q))
+  | .rol d a n => setRowL l (xidx d) fun q => .rol (nthE l (4 * xidx a + q)) (n.toNat % 32)
+  | .shuf d a o => setRowL l (xidx d) fun q => nthE l (4 * xidx a + sel2 o.toNat q)
+
+/-- The list holds the terms of the words below 48. -/
+def AgreeL (f : Nat → HE) (l : List HE) : Prop := l.length = 48 ∧ ∀ k < 48, nthE l k = f k
+
+/-- An instruction of the rows below 12, whose words the list holds. -/
+def okL : HI → Bool
+  | .add d a b => decide (xidx d < 12) && decide (xidx a < 12) && decide (xidx b < 12)
+  | .xor d a b => decide (xidx d < 12) && decide (xidx a < 12) && decide (xidx b < 12)
+  | .rol d a _ => decide (xidx d < 12) && decide (xidx a < 12)
+  | .shuf d a _ => decide (xidx d < 12) && decide (xidx a < 12)
+
+theorem AgreeL.setRow {f : Nat → HE} {l : List HE} (h : AgreeL f l) {d : Nat} (hd : d < 12) {gf gl : Nat → HE}
+    (hg : ∀ q < 4, gl q = gf q) : AgreeL (setRow f d gf) (setRowL l d gl) := by
+  obtain ⟨hl, h⟩ := h
+  refine ⟨by simp only [setRowL, length_setL, hl], fun k hk => ?_⟩
+  simp only [setRowL, Avx512Tail.setRow]
+  rw [nthE_setL _ _ _ _ (by simp only [length_setL]; omega), nthE_setL _ _ _ _ (by simp only [length_setL]; omega),
+    nthE_setL _ _ _ _ (by simp only [length_setL]; omega), nthE_setL _ _ _ _ (by omega), h k hk,
+    hg 0 (by decide), hg 1 (by decide), hg 2 (by decide), hg 3 (by decide)]
+  rcases (by omega : k = 4 * d + 3 ∨ k = 4 * d + 2 ∨ k = 4 * d + 1 ∨ k = 4 * d ∨ k / 4 ≠ d) with
+    rfl | rfl | rfl | rfl | hne
+  · simp only [↓reduceIte, show (4 * d + 3) / 4 = d by omega, show (4 * d + 3) % 4 = 3 by omega]
+  · simp only [↓reduceIte, show (4 * d + 2) / 4 = d by omega, show (4 * d + 2) % 4 = 2 by omega,
+      show ¬ 4 * d + 2 = 4 * d + 3 by omega]
+  · simp only [↓reduceIte, show (4 * d + 1) / 4 = d by omega, show (4 * d + 1) % 4 = 1 by omega,
+      show ¬ 4 * d + 1 = 4 * d + 3 by omega, show ¬ 4 * d + 1 = 4 * d + 2 by omega]
+  · simp only [↓reduceIte, show 4 * d / 4 = d by omega, show 4 * d % 4 = 0 by omega,
+      show ¬ 4 * d = 4 * d + 3 by omega, show ¬ 4 * d = 4 * d + 2 by omega, show ¬ 4 * d = 4 * d + 1 by omega]
+  · simp only [↓reduceIte, hne, show ¬ k = 4 * d + 3 by omega, show ¬ k = 4 * d + 2 by omega,
+      show ¬ k = 4 * d + 1 by omega, show ¬ k = 4 * d by omega]
+
+theorem AgreeL.step {f : Nat → HE} {l : List HE} (h : AgreeL f l) {i : HI} (hi : okL i = true) :
+    AgreeL (hstepE f i) (hstepL l i) := by
+  cases i with
+  | add d a b =>
+    simp only [okL, Bool.and_eq_true, decide_eq_true_eq] at hi
+    exact h.setRow (gf := fun q => .add (f (4 * xidx a + q)) (f (4 * xidx b + q)))
+      (gl := fun q => .add (nthE l (4 * xidx a + q)) (nthE l (4 * xidx b + q))) hi.1.1
+      fun q hq => by rw [h.2 _ (by omega), h.2 _ (by omega)]
+  | xor d a b =>
+    simp only [okL, Bool.and_eq_true, decide_eq_true_eq] at hi
+    exact h.setRow (gf := fun q => .xor (f (4 * xidx a + q)) (f (4 * xidx b + q)))
+      (gl := fun q => .xor (nthE l (4 * xidx a + q)) (nthE l (4 * xidx b + q))) hi.1.1
+      fun q hq => by rw [h.2 _ (by omega), h.2 _ (by omega)]
+  | rol d a n =>
+    simp only [okL, Bool.and_eq_true, decide_eq_true_eq] at hi
+    exact h.setRow (gf := fun q => .rol (f (4 * xidx a + q)) (n.toNat % 32))
+      (gl := fun q => .rol (nthE l (4 * xidx a + q)) (n.toNat % 32)) hi.1 fun q hq => by rw [h.2 _ (by omega)]
+  | shuf d a o =>
+    simp only [okL, Bool.and_eq_true, decide_eq_true_eq] at hi
+    exact h.setRow (gf := fun q => f (4 * xidx a + sel2 o.toNat q))
+      (gl := fun q => nthE l (4 * xidx a + sel2 o.toNat q)) hi.1
+      fun q _ => h.2 _ (by have := sel2_lt o.toNat q; omega)
+
+theorem AgreeL.foldl : ∀ (is : List HI) {f : Nat → HE} {l : List HE}, AgreeL f l → is.all okL = true →
+    AgreeL (is.foldl hstepE f) (is.foldl hstepL l)
+  | [], _, _, h, _ => h
+  | i :: is, _, _, h, ho => by
+    rw [List.all_cons, Bool.and_eq_true] at ho
+    exact AgreeL.foldl is (h.step ho.1) ho.2
+
+/-- The words, as a list of terms. -/
+def varsL : List HE := (List.range 48).map .var
+
+theorem agreeL_vars : AgreeL vars varsL := ⟨by decide, by decide +kernel⟩
+
+/-- `eq32`, with the list for the first state. -/
+noncomputable def eq32L (l : List HE) (g : Nat → HE) : Bool := (List.range 32).all fun k => nthE l k == g k
+
+/-- `eq48`, with the list for the first state. -/
+noncomputable def eq48L (l : List HE) (g : Nat → HE) : Bool := (List.range 48).all fun k => nthE l k == g k
+
+theorem eq32_of_list {is : List HI} {g : Nat → HE} (ho : is.all okL = true)
+    (h : eq32L (is.foldl hstepL varsL) g = true) : eq32 (is.foldl hstepE vars) g = true := by
+  have ha := (agreeL_vars.foldl is ho).2
+  simp only [eq32, eq32L, List.all_eq_true, List.mem_range] at h ⊢
+  exact fun k hk => by rw [← ha k (by omega)]; exact h k hk
+
+theorem eq48_of_list {is : List HI} {g : Nat → HE} (ho : is.all okL = true)
+    (h : eq48L (is.foldl hstepL varsL) g = true) : eq48 (is.foldl hstepE vars) g = true := by
+  have ha := (agreeL_vars.foldl is ho).2
+  simp only [eq48, eq48L, List.all_eq_true, List.mem_range] at h ⊢
+  exact fun k hk => by rw [← ha k hk]; exact h k hk
+
+theorem cols1_check : eq32 (colsH.foldl hstepE vars) (colsE vars 0) = true :=
+  eq32_of_list (by decide) (by decide +kernel)
+theorem diags1_check : eq32 (diagsH.foldl hstepE vars) (diagsE vars 0) = true :=
+  eq32_of_list (by decide) (by decide +kernel)
+theorem cols2_check : eq32 (cols2H.foldl hstepE vars) (colsE (colsE vars 0) 1) = true :=
+  eq32_of_list (by decide) (by decide +kernel)
+theorem diags2_check : eq32 (diags2H.foldl hstepE vars) (diagsE (diagsE vars 0) 1) = true :=
+  eq32_of_list (by decide) (by decide +kernel)
+
+theorem cols3_check : eq48 (cols3H.foldl hstepE vars) (colsE (colsE (colsE vars 0) 1) 2) = true :=
+  eq48_of_list (by decide) (by decide +kernel)
+theorem diags3_check : eq48 (diags3H.foldl hstepE vars) (diagsE (diagsE (diagsE vars 0) 1) 2) = true :=
+  eq48_of_list (by decide) (by decide +kernel)
 
 /-! ## The double rounds on the words of a lane -/
 

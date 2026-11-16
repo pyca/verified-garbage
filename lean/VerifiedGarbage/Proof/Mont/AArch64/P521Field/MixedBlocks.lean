@@ -13,6 +13,7 @@ public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.PointSchedule
 import VerifiedGarbage.Proof.Mont.AArch64.P521Field.KernelSlice
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.Lit
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.MixedSquare6
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.MixedSquare7
 public import VerifiedGarbage.Proof.Mont.AArch64.P521Field.MixedMul6Field
@@ -391,7 +392,7 @@ def mixedArithmeticBlocks : List (List Instr) := [
 
 def mixedArithmeticCode : List Instr := mixedArithmeticBlocks.flatten
 
-theorem mixed_arithmetic_source : mixedArithmeticCode=(mixedFnBlocks.flatten.drop 16).take 4281 := by lit_decide
+theorem mixed_arithmetic_source : mixedArithmeticCode=(mixedFnBlocks.flatten.drop 16).take 4281 := by rw_lit; kernel_rfl
 
 theorem mixed_arithmetic_novec : ∀i∈mixedArithmeticCode,vdstOf i=none := by
   have h : mixedArithmeticCode.all (fun i => vdstOf i==none)=true := by lit_decide

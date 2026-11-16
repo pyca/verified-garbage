@@ -41,7 +41,12 @@ Avoid these patterns (each has cost tens of seconds in one proof):
 * **Kernel-evaluated data:** anything the kernel evaluates (a taint domain,
   a `decide +kernel` check) should use `Nat` arithmetic, which the kernel
   runs natively, not lists it searches element by element: sets of
-  registers are `RegSet`s (`Proof/Framework/RegSet.lean`), not `List Reg`.
+  registers are `RegSet`s (`Proof/Framework/RegSet.lean`), not `List Reg`,
+  and the bytes of each writable region that the x86-64 residue analysis
+  knows public are a bit mask (`RTaint.FT.pb`,
+  `Proof/Framework/X86_64/ResidueTaint.lean`), not a list of slots. A store
+  that looked its slot up in the list cost the kernel 76 thousand
+  instructions for each slot of a frame of hundreds.
 * **Finite facts:** prove a fact about a few small numbers with one `decide`
   on the bounded statement (`∀ j < 16, ∀ k < 16, wreg j = wreg k → j = k`),
   not `interval_cases j <;> interval_cases k <;> simp`. For a nested `if`

@@ -487,9 +487,7 @@ vg_sha224_digest_shani:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
-	xor r11d, r11d
 	lea rsp, [rsp-176]
-	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+176]
 	xor eax, eax
 	xor ecx, ecx
@@ -689,7 +687,6 @@ vg_sha224_finalize_avx2:
 	vmovdqu YMMWORD PTR [rsp+80], ymm0
 	vmovdqu YMMWORD PTR [rsp+48], ymm0
 	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+624]
 	xor eax, eax
 	xor ecx, ecx
@@ -956,7 +953,6 @@ vg_sha224_digest_avx2:
 	vmovdqu YMMWORD PTR [rsp+176], ymm0
 	vmovdqu YMMWORD PTR [rsp+144], ymm0
 	vmovdqu YMMWORD PTR [rsp+112], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+736]
 	xor eax, eax
 	xor ecx, ecx
@@ -1144,7 +1140,6 @@ vg_sha224_finalize:
 	movdqu XMMWORD PTR [rsp+48], xmm0
 	movdqu XMMWORD PTR [rsp+32], xmm0
 	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+176]
 	xor eax, eax
 	xor ecx, ecx
@@ -1399,7 +1394,6 @@ vg_sha224_digest:
 	movdqu XMMWORD PTR [rsp+144], xmm0
 	movdqu XMMWORD PTR [rsp+128], xmm0
 	movdqu XMMWORD PTR [rsp+112], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+288]
 	xor eax, eax
 	xor ecx, ecx
@@ -2018,9 +2012,7 @@ vg_sha256_digest_shani:
 	pxor xmm13, xmm13
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
-	xor r11d, r11d
 	lea rsp, [rsp-176]
-	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+176]
 	xor eax, eax
 	xor ecx, ecx
@@ -2207,23 +2199,22 @@ vg_sha256_update_avx2:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-624]
-	vmovdqu YMMWORD PTR [rsp+512], ymm0
-	vmovdqu YMMWORD PTR [rsp+480], ymm0
-	vmovdqu YMMWORD PTR [rsp+448], ymm0
-	vmovdqu YMMWORD PTR [rsp+416], ymm0
-	vmovdqu YMMWORD PTR [rsp+384], ymm0
-	vmovdqu YMMWORD PTR [rsp+352], ymm0
-	vmovdqu YMMWORD PTR [rsp+320], ymm0
-	vmovdqu YMMWORD PTR [rsp+288], ymm0
-	vmovdqu YMMWORD PTR [rsp+256], ymm0
-	vmovdqu YMMWORD PTR [rsp+224], ymm0
-	vmovdqu YMMWORD PTR [rsp+192], ymm0
-	vmovdqu YMMWORD PTR [rsp+160], ymm0
-	vmovdqu YMMWORD PTR [rsp+128], ymm0
-	vmovdqu YMMWORD PTR [rsp+96], ymm0
-	vmovdqu YMMWORD PTR [rsp+64], ymm0
-	vmovdqu YMMWORD PTR [rsp+32], ymm0
-	vmovdqu YMMWORD PTR [rsp], ymm0
+	vmovdqu YMMWORD PTR [rsp+496], ymm0
+	vmovdqu YMMWORD PTR [rsp+464], ymm0
+	vmovdqu YMMWORD PTR [rsp+432], ymm0
+	vmovdqu YMMWORD PTR [rsp+400], ymm0
+	vmovdqu YMMWORD PTR [rsp+368], ymm0
+	vmovdqu YMMWORD PTR [rsp+336], ymm0
+	vmovdqu YMMWORD PTR [rsp+304], ymm0
+	vmovdqu YMMWORD PTR [rsp+272], ymm0
+	vmovdqu YMMWORD PTR [rsp+240], ymm0
+	vmovdqu YMMWORD PTR [rsp+208], ymm0
+	vmovdqu YMMWORD PTR [rsp+176], ymm0
+	vmovdqu YMMWORD PTR [rsp+144], ymm0
+	vmovdqu YMMWORD PTR [rsp+112], ymm0
+	vmovdqu YMMWORD PTR [rsp+80], ymm0
+	vmovdqu YMMWORD PTR [rsp+48], ymm0
+	vmovdqu YMMWORD PTR [rsp+16], ymm0
 	lea rsp, [rsp+624]
 	xor eax, eax
 	xor ecx, ecx
@@ -2426,7 +2417,6 @@ vg_sha256_finalize_avx2:
 	vmovdqu YMMWORD PTR [rsp+80], ymm0
 	vmovdqu YMMWORD PTR [rsp+48], ymm0
 	vmovdqu YMMWORD PTR [rsp+16], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+624]
 	xor eax, eax
 	xor ecx, ecx
@@ -2696,7 +2686,6 @@ vg_sha256_digest_avx2:
 	vmovdqu YMMWORD PTR [rsp+176], ymm0
 	vmovdqu YMMWORD PTR [rsp+144], ymm0
 	vmovdqu YMMWORD PTR [rsp+112], ymm0
-	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+736]
 	xor eax, eax
 	xor ecx, ecx
@@ -2868,12 +2857,10 @@ vg_sha256_update:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-176]
-	movdqu XMMWORD PTR [rsp+80], xmm0
 	movdqu XMMWORD PTR [rsp+64], xmm0
 	movdqu XMMWORD PTR [rsp+48], xmm0
 	movdqu XMMWORD PTR [rsp+32], xmm0
 	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+176]
 	xor eax, eax
 	xor ecx, ecx
@@ -3064,7 +3051,6 @@ vg_sha256_finalize:
 	movdqu XMMWORD PTR [rsp+48], xmm0
 	movdqu XMMWORD PTR [rsp+32], xmm0
 	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+176]
 	xor eax, eax
 	xor ecx, ecx
@@ -3322,7 +3308,6 @@ vg_sha256_digest:
 	movdqu XMMWORD PTR [rsp+144], xmm0
 	movdqu XMMWORD PTR [rsp+128], xmm0
 	movdqu XMMWORD PTR [rsp+112], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+288]
 	xor eax, eax
 	xor ecx, ecx

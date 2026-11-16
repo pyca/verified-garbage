@@ -396,7 +396,7 @@ avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl,avx512fp16 | rsa_pkcs1_hashes
 # `_aes_sha3` and `_aes` instances (AES-GCM, AES-GCM-SIV and AES-CBC
 # decryption with FEAT_SHA3 too), SHA-1's and SHA-256's `_sha2` and SHA-512's
 # `_sha512` (and every caller of them: HMAC, PBKDF2, scrypt, DSA, ECDSA,
-# Ed25519, RSA), ML-DSA's and ML-KEM's `_sha3`, SM4's `_sm4` (the key schedule, ECB and every mode, and SM4-GCM's
+# Ed25519, RSA), ML-DSA's and ML-KEM's `_sha3`, SM3's `_sm3` and SM4's `_sm4` (SM4's key schedule, ECB and every mode, and SM4-GCM's
 # `_ctr32_sm4_ghash_aes`), and DIT; and the baseline
 # SHA-3, Ed448 and Poly1305, whose FEAT_SHA3 and NEON variants are chosen
 # off Apple's cores only when `VG_CPU_FEATURES` names them. So no line here
@@ -411,7 +411,7 @@ avx,avx2,avx512f,bmi1,bmi2,adx,avx512ifma,avx512vl,avx512fp16 | rsa_pkcs1_hashes
 # `_sha512` and SHA-1's scalar MGF1; `sha2` RSAES-OAEP with SHA-1's and
 # SHA-256's `_sha2` and SHA-512's scalar code; and `none` the scalar
 # instances of everything the runner's features accelerate: AES and every
-# mode of it, CMAC, SM4 (ECB, CTR, CBC, CFB, OFB and SM4-GCM), ChaCha20, SHA-1, SHA-224, SHA-256,
+# mode of it, CMAC, SM3, SM4 (ECB, CTR, CBC, CFB, OFB and SM4-GCM), ChaCha20, SHA-1, SHA-224, SHA-256,
 # SHA-384 and SHA-512 (with HMAC, PBKDF2, scrypt and the hashes' tables), DSA,
 # ECDSA's hashes, Ed25519, ML-KEM and ML-DSA, RSAES-PKCS1-v1_5 decryption and
 # RSAES-OAEP with the scalar hashes, and code without DIT. AArch64's RSA
@@ -428,7 +428,7 @@ aes | aes_gcm aes_gcm_siv aes_cbc sm4_gcm
 sha3 | sha3 shake mlkem ed448 mldsa_public_key rsa_oaep_pairs
 sha2 | rsa_oaep_pairs
 sm4 | sm4_gcm
-none | aes_gcm aes_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac sm4_ecb sm4_ctr sm4_cbc sm4_cfb sm4_ofb sm4_gcm chacha20 sha1 sha224 sha256 sha384 sha512 scrypt dsa ecdsa p224_sha p256_sha p384_sha ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs mlkem mldsa rsa_pkcs1_hashes rsa_oaep_pairs dit cpu
+none | aes_gcm aes_siv aes_ccm aes_ocb aes_ecb aes_cbc aes_ofb aes_cfb aes_cfb8 aes_ctr aes_xts cmac sm3 sm4_ecb sm4_ctr sm4_cbc sm4_cfb sm4_ofb sm4_gcm chacha20 sha1 sha224 sha256 sha384 sha512 scrypt dsa ecdsa p224_sha p256_sha p384_sha ed25519 message_boundaries_and_unaligned_inputs signing_with_aliased_read_only_inputs mlkem mldsa rsa_pkcs1_hashes rsa_oaep_pairs dit cpu
 """
 
 # ARMv7, in the `rust` job's container (cross-compiled, run as that job

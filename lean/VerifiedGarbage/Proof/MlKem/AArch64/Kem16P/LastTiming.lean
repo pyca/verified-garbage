@@ -43,6 +43,8 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.RegSet
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Sums
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Sums
 meta import VerifiedGarbage.Proof.Framework.RegSet
 
 /-!
@@ -82,8 +84,11 @@ theorem lastPrep_ct {sb ss a k bo N₀ : Nat} (hss : ss < 4096) (hbo : 4096 ≤ 
     ConstantTime isa (fun _ => True) (VG.AArch64.Taint.Agree (Taint.ofRegs [.x28]))
       (lastPrep sha3 sb ss a k bo N₀) := by
   cases sha3
-  · apply Paired.vct_eraseOff_eq [.x28] (d := Code.eraseOff (lastPrep false 0 0 0 1 4096 0)) (lastPrep_erase (sha3 := false) hss hbo)
-    taint_decide
+  · -- The call of the paired Keccak by its summary (`X2Sums.erased`).
+    obtain ⟨hc, h⟩ : ∃ hc, (VectorTaint.taint.check (VectorTaint.ofRegs [.x28])
+        (Code.eraseOff (lastPrep false 0 0 0 1 4096 0)) hc).isSome = true := by
+      taint_decide_sum [VG.Proof.Sha3.AArch64.Neon.X2Sums.erased]
+    exact Paired.vct_eraseOff_eq [.x28] (lastPrep_erase (sha3 := false) hss hbo) h
   · apply ct_eraseOff_eq [.x28] (d := Code.eraseOff (lastPrep true 0 0 0 1 4096 0)) (lastPrep_erase (sha3 := true) hss hbo)
     taint_decide
 

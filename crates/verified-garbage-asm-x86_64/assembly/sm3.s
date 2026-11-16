@@ -184,12 +184,10 @@ vg_sm3_update:
 	pxor xmm0, xmm0
 	xor r11d, r11d
 	lea rsp, [rsp-176]
-	movdqu XMMWORD PTR [rsp+80], xmm0
 	movdqu XMMWORD PTR [rsp+64], xmm0
 	movdqu XMMWORD PTR [rsp+48], xmm0
 	movdqu XMMWORD PTR [rsp+32], xmm0
 	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+176]
 	xor eax, eax
 	xor ecx, ecx
@@ -380,7 +378,6 @@ vg_sm3_finalize:
 	movdqu XMMWORD PTR [rsp+48], xmm0
 	movdqu XMMWORD PTR [rsp+32], xmm0
 	movdqu XMMWORD PTR [rsp+16], xmm0
-	movdqu XMMWORD PTR [rsp], xmm0
 	lea rsp, [rsp+176]
 	xor eax, eax
 	xor ecx, ecx

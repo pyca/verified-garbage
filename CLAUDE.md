@@ -418,7 +418,8 @@ lemmas and tactics to use; read it before writing a proof:
   the lemmas of `Proof/Framework/<ISA>/RegUpd.lean` given their arguments,
   never `rfl`.
 * **What the kernel evaluates:** use `Nat` arithmetic (`RegSet`, not
-  `List Reg`). Code, tables and values it evaluates get a literal
+  `List Reg`; a bit mask of a region's public bytes, not a list of slots).
+  Code, tables and values it evaluates get a literal
   (`materialize_code`, `materialize_table`, `materialize_value`), checked
   with `lit_decide` or `taint_decide`, never `decide +kernel`, and every
   module that evaluates the code imports its `Lit` module, registration

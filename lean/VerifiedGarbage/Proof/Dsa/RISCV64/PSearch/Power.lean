@@ -13,6 +13,13 @@ import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.KernelRfl
+import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Proof.Framework.TaintSumGeneric
+meta import VerifiedGarbage.Proof.Framework.RISCV64.TaintMono
+meta import VerifiedGarbage.Impl.Dsa.RISCV64.Common
+meta import VerifiedGarbage.Impl.Dsa.RISCV64.ParameterSearch
+meta import VerifiedGarbage.Impl.Bignum.RISCV64.ModExp
 
 -- separate module: the power in the P space imports the modular exponentiation's proofs, which the key
 -- working space's arithmetic (`PArith`) does not need
@@ -423,10 +430,20 @@ theorem hPtr_vp {pv : Nat} {H : Addr} (hH : fH ∈ c.LS) (hHv : c.V fH = H) :
 abbrev CertC (pLen qLen : Nat) : Prop := ∃ hc, (VG.Taint.check VG.RISCV64.taint
   (Taint.ofRegs [.s6, .s7, .s8, .a7, .s5, .t0]) (powC pLen qLen) hc).isSome = true
 
-/-- `powC`'s certificate, for any widths. -/
-theorem certC (pLen qLen : Nat) : CertC pLen qLen :=
-  ⟨VG.Taint.hintOfSize VG.RISCV64.taint 64 (Taint.ofRegs [.s6, .s7, .s8, .a7, .s5, .t0]) (powC pLen qLen),
-    by kernel_rfl⟩
+/-- `powC`'s certificate, for any widths. They are only the immediate of one
+`li`, which the analysis does not read: the hint is computed for one of them
+(`taint_decide_generic`, with no summaries) and the kernel checks it for all,
+rather than search for the invariants of the loops itself. -/
+theorem certC (pLen qLen : Nat) : CertC pLen qLen := by
+  have gen : ∀ n : Nat, ∃ hc, (VG.Taint.check VG.RISCV64.taint (Taint.ofRegs [.s6, .s7, .s8, .a7, .s5, .t0])
+      (VG.Impl.Rsa.RISCV64.Keys.seqs [VG.Impl.Dsa.RISCV64.loadArr 4, VG.Impl.Dsa.RISCV64.copy 1 24,
+        .block [scr .s9 sE, .li .s10 n], VG.Impl.Bignum.RISCV64.ModExp.powWin,
+        .block zeroTop4, VG.Impl.Dsa.RISCV64.elemRange]) hc).isSome = true := by
+    intro n
+    have hS : VG.Taint.AllOk VG.RISCV64.taint [] := .nil
+    show ∃ hc, (VG.Taint.check _ _ _ hc).isSome = true
+    taint_decide_generic n := 0 using hS
+  exact gen _
 
 /-- h into array 4, its power, and the range check. -/
 theorem powC_vp {pv ev : Nat} {H : Addr} {hb : List Byte} (cert : CertC G.pLen G.qLen)

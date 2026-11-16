@@ -54,26 +54,29 @@ def runC (r : Reg) (is : List Instr) (ok : Bool) (xs : Nat) : Abs := is.foldl (s
 /-- `is.foldl (step r) ⟨ok, ⟨xs⟩⟩`, for the kernel: it looks at what is
 known before each instruction, so that it computes each step's value before
 the next (the fold would leave a term as deep as the block, too deep for the
-kernel in a long one). Compiled code runs `runC` (Lean's compiler does not
-compile `List.rec`). -/
+kernel in a long one). The set of SSE registers is handed on as the numeral
+it is (`RegSet.force` says how `Nat.casesOn` of its successor has it): the
+term a step leaves is one application deeper at every instruction while an
+SSE register holds the value, and the kernel would evaluate it through all
+of them each time it reads it; with numerals, equal states are also equal
+terms, whose steps the kernel finds again. Compiled code runs `runC` (Lean's
+compiler does not compile `List.rec`). -/
 @[implemented_by runC] noncomputable def run (r : Reg) (is : List Instr) : Bool → Nat → Abs :=
   List.rec (fun ok xs => ⟨ok, ⟨xs⟩⟩)
     (fun i _ ih ok xs =>
       let g := fun a : Abs => ih a.ok a.xs.bits
-      bif ok then (bif Nat.beq xs 0 then g (step r ⟨true, ⟨0⟩⟩ i) else g (step r ⟨true, ⟨xs⟩⟩ i))
-      else (bif Nat.beq xs 0 then g (step r ⟨false, ⟨0⟩⟩ i) else g (step r ⟨false, ⟨xs⟩⟩ i))) is
+      Nat.casesOn (motive := fun _ => Abs) (Nat.succ xs)
+        (bif ok then g (step r ⟨true, ⟨xs⟩⟩ i) else g (step r ⟨false, ⟨xs⟩⟩ i))
+        (fun n => bif ok then g (step r ⟨true, ⟨n⟩⟩ i) else g (step r ⟨false, ⟨n⟩⟩ i))) is
 
 theorem run_eq (r : Reg) : ∀ (is : List Instr) (a : Abs), run r is a.ok a.xs.bits = is.foldl (step r) a
   | [], _ => rfl
   | i :: is, ⟨ok, ⟨xs⟩⟩ => by
     have e : ∀ b : Abs, run r is b.ok b.xs.bits = is.foldl (step r) b := run_eq r is
-    show (bif ok then (bif Nat.beq xs 0 then run r is (step r ⟨true, ⟨0⟩⟩ i).ok (step r ⟨true, ⟨0⟩⟩ i).xs.bits
-        else run r is (step r ⟨true, ⟨xs⟩⟩ i).ok (step r ⟨true, ⟨xs⟩⟩ i).xs.bits)
-      else (bif Nat.beq xs 0 then run r is (step r ⟨false, ⟨0⟩⟩ i).ok (step r ⟨false, ⟨0⟩⟩ i).xs.bits
-        else run r is (step r ⟨false, ⟨xs⟩⟩ i).ok (step r ⟨false, ⟨xs⟩⟩ i).xs.bits)) = _
+    show (bif ok then run r is (step r ⟨true, ⟨xs⟩⟩ i).ok (step r ⟨true, ⟨xs⟩⟩ i).xs.bits
+      else run r is (step r ⟨false, ⟨xs⟩⟩ i).ok (step r ⟨false, ⟨xs⟩⟩ i).xs.bits) = _
     rw [List.foldl_cons]
-    cases ok <;> cases h : Nat.beq xs 0 <;> simp only [Bool.cond_true, Bool.cond_false, e] <;>
-      rw [Nat.eq_of_beq_eq_true h]
+    cases ok <;> simp only [Bool.cond_true, Bool.cond_false, e]
 
 /-- What is known of `r` after `c`, from `a`; a loop's body must keep what
 is known on entry. Calls and frames are not followed. -/

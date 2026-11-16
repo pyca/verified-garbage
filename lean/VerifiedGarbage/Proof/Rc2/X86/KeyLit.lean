@@ -33,6 +33,18 @@ def piLookupLit : List Instr := piLookupWith piWordLit
 
 materialize_value piLookupLit
 
+theorem piWord_eq_lit : piWord = piWordLit := by
+  funext j
+  simp only [piWord, piWordLit, VG.Rc2.piTable_getD]
+
+/-- `piLookup`'s literal: the one of `piLookupLit`, which the literals of the
+code that contains `piLookup` read (three times in the key expansion),
+rather than look PITABLE up in the specification's vector again. -/
+noncomputable abbrev piLookup.lit : List Instr := piLookupLit.lit
+
+theorem piLookup.lit_eq : piLookup = piLookup.lit :=
+  Eq.trans (b := piLookupLit) (by rw [piLookup, piLookupLit, piWord_eq_lit]) piLookupLit.lit_eq
+
 materialize_flat_code expandKey
 
 end VG.Impl.Rc2.X86

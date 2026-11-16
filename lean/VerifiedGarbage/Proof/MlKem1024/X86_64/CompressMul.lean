@@ -56,10 +56,10 @@ open VG.Proof.MlKem.X86_64.CMY
 /-! ## A word -/
 
 theorem hiW11 {x : BitVec 16} {z : Zq} (hx : x.toNat = z.val) : (hiW 36 0x2000 0x7FF x).toNat = compress 11 z :=
-  word_formula (by decide +kernel) hx
+  word_formula (g := hiWN 36 0x2000 0x7FF) (toNat_hiW 36 0x2000 0x7FF) (by decide +kernel) hx
 
 theorem loW5 {x : BitVec 16} {z : Zq} (hx : x.toNat = z.val) : (loW 0x400 0x1F x).toNat = compress 5 z :=
-  word_formula (by decide +kernel) hx
+  word_formula (g := loWN 0x400 0x1F) (toNat_loW 0x400 0x1F) (by decide +kernel) hx
 
 /-! ## Packing eleven bits -/
 

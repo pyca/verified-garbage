@@ -498,6 +498,10 @@ GROUPS = {
             "rfc8032::signing_with_aliased_read_only_inputs",
         ],
     },
+    "sm3": {
+        "lib": ["hashes::sm3"],
+        "tests": ["sm3"],
+    },
     "sm4_cbc": {
         "lib": [],
         "tests": ["draft_ribose_sm4::sm4_cbc"],

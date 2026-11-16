@@ -1421,7 +1421,6 @@ vg_hmac_sha224_finalize_shani:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-168]
-	movdqu XMMWORD PTR [rsp+152], xmm0
 	movdqu XMMWORD PTR [rsp+136], xmm0
 	movdqu XMMWORD PTR [rsp+120], xmm0
 	lea rsp, [rsp+168]
@@ -1573,8 +1572,7 @@ vg_hmac_sha224_finalize_avx2:
 	vpxor xmm15, xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-728]
-	vmovdqu YMMWORD PTR [rsp+696], ymm0
-	movdqu XMMWORD PTR [rsp+680], xmm0
+	vmovdqu YMMWORD PTR [rsp+680], ymm0
 	vmovdqu YMMWORD PTR [rsp+504], ymm0
 	vmovdqu YMMWORD PTR [rsp+472], ymm0
 	vmovdqu YMMWORD PTR [rsp+440], ymm0
@@ -1591,7 +1589,6 @@ vg_hmac_sha224_finalize_avx2:
 	vmovdqu YMMWORD PTR [rsp+88], ymm0
 	vmovdqu YMMWORD PTR [rsp+56], ymm0
 	vmovdqu YMMWORD PTR [rsp+24], ymm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+728]
 	xor eax, eax
 	xor ecx, ecx
@@ -1742,14 +1739,12 @@ vg_hmac_sha224_finalize:
 	pxor xmm15, xmm15
 	xor r11d, r11d
 	lea rsp, [rsp-280]
-	movdqu XMMWORD PTR [rsp+264], xmm0
 	movdqu XMMWORD PTR [rsp+248], xmm0
 	movdqu XMMWORD PTR [rsp+232], xmm0
 	movdqu XMMWORD PTR [rsp+72], xmm0
 	movdqu XMMWORD PTR [rsp+56], xmm0
 	movdqu XMMWORD PTR [rsp+40], xmm0
 	movdqu XMMWORD PTR [rsp+24], xmm0
-	movdqu XMMWORD PTR [rsp+8], xmm0
 	lea rsp, [rsp+280]
 	xor eax, eax
 	xor ecx, ecx

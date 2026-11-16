@@ -23,7 +23,7 @@ pub unsafe fn vg_sm3_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut 
 ///
 /// Contract: `VG.Spec.Sm3.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
 ///
-/// It runs `vg_sm3_update`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm3_update_sm3` if the CPU supports its features (`VG_SM3_UPDATE_SM3_FEATURES`); or else `vg_sm3_update`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -34,15 +34,44 @@ pub unsafe fn vg_sm3_init_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut 
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm3_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sm3::vg_sm3_update(state, count, data, len) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(state: *mut [u8; 96], count: u64, data: *const u8, len: usize);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::sm3::VG_SM3_UPDATE_SM3_FEATURES) }
+            || cpu.contains(crate::sm3::VG_SM3_UPDATE_SM3_FEATURES)
+        {
+            return crate::sm3::vg_sm3_update_sm3;
+        }
+        crate::sm3::vg_sm3_update
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, count, data, len) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, data, len) }
 }
 
 /// Finishes an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SM3 hash value of that message (32 bytes) to `*out`.
 ///
 /// Contract: `VG.Spec.Sm3.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
 ///
-/// It runs `vg_sm3_finalize`, the only implementation of it on this target, which needs no CPU feature (`VG.Rust.Group`), so that the code calling it is the same on every target.
+/// It runs the first of these implementations that applies, in the order its registration file lists them: `vg_sm3_finalize_sm3` if the CPU supports its features (`VG_SM3_FINALIZE_SM3_FEATURES`); or else `vg_sm3_finalize`, which needs no CPU feature. It chooses on its first call, and calls the one it chose from then on without choosing again. Each has this documentation but for its stack (whose requirements here are the largest) and what it writes.
 ///
 /// # Safety
 ///
@@ -54,6 +83,35 @@ pub unsafe fn vg_sm3_update_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mu
 #[allow(clippy::too_many_arguments)]
 #[inline]
 pub unsafe fn vg_sm3_finalize_auto(_dit: verified_garbage_cpu::Dit<'_>, state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
-    // SAFETY: the caller's obligations, which are the base's; it needs no CPU feature.
-    unsafe { crate::sm3::vg_sm3_finalize(state, count, out) }
+    /// The type of the implementations.
+    type Impl = unsafe extern "C" fn(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]);
+    /// The implementation to run on this CPU (`VG.Rust.dispatcher`): one that needs only
+    /// features the CPU has.
+    #[cold]
+    fn select() -> Impl {
+        let cpu = verified_garbage_cpu::detected();
+        if const { verified_garbage_cpu::target_contains(crate::sm3::VG_SM3_FINALIZE_SM3_FEATURES) }
+            || cpu.contains(crate::sm3::VG_SM3_FINALIZE_SM3_FEATURES)
+        {
+            return crate::sm3::vg_sm3_finalize_sm3;
+        }
+        crate::sm3::vg_sm3_finalize
+    }
+    /// The first call: chooses the implementation, records it in `CHOSEN` for the calls
+    /// after it, and runs it.
+    #[cold]
+    unsafe extern "C" fn first(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+        let f = select();
+        CHOSEN.store(f as *mut (), core::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the caller's obligations, which are those of every implementation, `f`
+        // among them, and the CPU has the features `f` needs.
+        unsafe { f(state, count, out) }
+    }
+    /// The function to call: `first`, until it records the implementation it chose.
+    static CHOSEN: core::sync::atomic::AtomicPtr<()> =
+        core::sync::atomic::AtomicPtr::new(first as Impl as *mut ());
+    // SAFETY: `CHOSEN` only ever holds a pointer to a function of the type `Impl`: `first`,
+    // or an implementation `select` returned, which needs only features the CPU has. Calling
+    // either carries the caller's obligations, which are those of every implementation.
+    unsafe { core::mem::transmute::<*mut (), Impl>(CHOSEN.load(core::sync::atomic::Ordering::Relaxed))(state, count, out) }
 }

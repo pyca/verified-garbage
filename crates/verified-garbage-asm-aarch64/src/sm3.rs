@@ -22,6 +22,181 @@ pub(crate) unsafe extern "C" fn vg_sm3_init(state: *mut [u8; 96]) {
     )
 }
 
+/// The CPU features `vg_sm3_update_sm3` requires (`Artifact.features`).
+pub const VG_SM3_UPDATE_SM3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SM4);
+
+/// Absorbs data into an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
+///
+/// Contract: `VG.Spec.Sm3.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `data` must be valid for reads of `len` bytes.
+/// * `state` must not overlap `data` (distinct Rust objects never do).
+/// * Neither `state` nor `data` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sm4` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm3_update_sm3(state: *mut [u8; 96], count: u64, data: *const u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd101c3ff,0x910003e4,0xf81f0ffe,0xf9002093,0xf9002494,0xf9002895,0xf9002c96,0xf9003097
+.inst 0xf9003498,0x91000013,0x91000094,0x91000055,0x91000076,0xd28007e9,0x8a090037
+cbz x22, 20f
+22:
+.inst 0xd280000a
+cbz x23, 23f
+.inst 0xd280080b,0xcb17016b,0xd346fec9
+cbz x9, 25f
+b 26f
+25:
+.inst 0x8b1702c9,0xd346fd29
+cbz x9, 27f
+b 28f
+27:
+.inst 0x910002cb
+28:
+26:
+.inst 0xcb0b02d6,0xd343fd6d
+cbz x13, 29f
+211:
+.inst 0xf94002a9,0x8b17026c,0xf9001189,0x910022b5,0x910022f7,0xd100216b,0xd343fd6d
+cbnz x13, 211b
+b 210f
+29:
+210:
+cbz x11, 212f
+214:
+.inst 0x394002a9,0x8b17026c,0x39008189,0x910006b5,0x910006f7,0xd100056b
+cbnz x11, 214b
+b 213f
+212:
+213:
+.inst 0xd10102e9
+cbz x9, 215f
+b 216f
+215:
+.inst 0x91008261,0xd2800017,0xd280002a
+216:
+b 24f
+23:
+.inst 0xd346fec9
+cbz x9, 217f
+.inst 0x910002a1,0xd346feca,0xd37ae549,0x8b0902b5,0xcb0902d6
+b 218f
+217:
+.inst 0xd280080b,0xcb17016b,0xd346fec9
+cbz x9, 219f
+b 220f
+219:
+.inst 0x8b1702c9,0xd346fd29
+cbz x9, 221f
+b 222f
+221:
+.inst 0x910002cb
+222:
+220:
+.inst 0xcb0b02d6,0xd343fd6d
+cbz x13, 223f
+225:
+.inst 0xf94002a9,0x8b17026c,0xf9001189,0x910022b5,0x910022f7,0xd100216b,0xd343fd6d
+cbnz x13, 225b
+b 224f
+223:
+224:
+cbz x11, 226f
+228:
+.inst 0x394002a9,0x8b17026c,0x39008189,0x910006b5,0x910006f7,0xd100056b
+cbnz x11, 228b
+b 227f
+226:
+227:
+.inst 0xd10102e9
+cbz x9, 229f
+b 230f
+229:
+.inst 0x91008261,0xd2800017,0xd280002a
+230:
+218:
+24:
+cbz x10, 231f
+.inst 0x91000260,0x91000142,0x91000283
+bl {vg_sm3_compress_sm3}
+b 232f
+231:
+232:
+cbnz x22, 22b
+b 21f
+20:
+21:
+.inst 0xf9402293,0xf9402a95,0xf9402e96,0xf9403297,0xf9403698,0xf9402694,0xf84107fe,0x9101c3ff
+.inst 0xd65f03c0
+.p2align 6",
+        vg_sm3_compress_sm3 = sym super::sm3::vg_sm3_compress_sm3::vg_sm3_compress_sm3,
+    )
+}
+
+/// The CPU features `vg_sm3_finalize_sm3` requires (`Artifact.features`).
+pub const VG_SM3_FINALIZE_SM3_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SM4);
+
+/// Finishes an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), writes the SM3 hash value of that message (32 bytes) to `*out`.
+///
+/// Contract: `VG.Spec.Sm3.finalizeContract`. Constant time: only the pointers and `count` may affect timing, not the state.
+///
+/// # Safety
+///
+/// * `state` must be valid for reads and writes of 96 bytes.
+/// * `out` must be valid for reads and writes of 32 bytes.
+/// * The contents of `state` on return are unspecified.
+/// * `state` and `out` must not overlap each other (distinct Rust objects never do).
+/// * Neither `state` nor `out` may overlap the 128 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sm4` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm3_finalize_sm3(state: *mut [u8; 96], count: u64, out: *mut [u8; 32]) {
+    core::arch::naked_asm!(
+        r".inst 0xd101c3ff,0x910003e3,0xf81f0ffe,0xf9002073,0xf9002474,0xf9002875,0xf9002c76,0xf9003077
+.inst 0xf9003478,0x91000013,0x91000074,0x91000055,0x91000036,0xd28007e9,0x8a0902d7,0xd2801009
+.inst 0x8b17026c,0x39008189,0x910006f7,0x91001ef8,0xd346ff18
+20:
+.inst 0xd280080b
+cbz x24, 21f
+b 22f
+21:
+.inst 0xd280070b
+22:
+.inst 0xd2800009,0xcb17016b,0xd343fd6d
+cbz x13, 23f
+25:
+.inst 0x8b17026c,0xf9001189,0x910022f7,0xd100216b,0xd343fd6d
+cbnz x13, 25b
+b 24f
+23:
+24:
+cbz x11, 26f
+28:
+.inst 0x8b17026c,0x39008189,0x910006f7,0xd100056b
+cbnz x11, 28b
+b 27f
+26:
+27:
+cbz x24, 29f
+b 210f
+29:
+.inst 0x8b1602c9,0x8b090129,0x8b090129,0xdac00d29,0xf9002e69
+210:
+.inst 0x91008261,0x91000260,0xd2800022,0x91000283
+bl {vg_sm3_compress_sm3}
+.inst 0xd2800017,0xd1000718
+cbz x24, 20b
+.inst 0xb9400269,0x5ac00929,0xb90002a9,0xb9400669,0x5ac00929,0xb90006a9,0xb9400a69,0x5ac00929
+.inst 0xb9000aa9,0xb9400e69,0x5ac00929,0xb9000ea9,0xb9401269,0x5ac00929,0xb90012a9,0xb9401669
+.inst 0x5ac00929,0xb90016a9,0xb9401a69,0x5ac00929,0xb9001aa9,0xb9401e69,0x5ac00929,0xb9001ea9
+.inst 0xf9402293,0xf9402a95,0xf9402e96,0xf9403297,0xf9403698,0xf9402694,0xf84107fe,0x9101c3ff
+.inst 0xd65f03c0
+.p2align 6",
+        vg_sm3_compress_sm3 = sym super::sm3::vg_sm3_compress_sm3::vg_sm3_compress_sm3,
+    )
+}
+
 /// Absorbs data into an SM3 computation: if the streaming state `*state` represents a message of `count` bytes (modulo 2⁶⁴), it then represents that message followed by the `len` bytes at `data`.
 ///
 /// Contract: `VG.Spec.Sm3.updateContract`. Constant time: only the pointers, `count` and `len` may affect timing, not the state or the data.
@@ -192,3 +367,7 @@ cbz x24, 20b
 #[rustfmt::skip]
 #[path = "internal/vg_sm3_compress.rs"]
 pub(crate) mod vg_sm3_compress;
+
+#[rustfmt::skip]
+#[path = "internal/vg_sm3_compress_sm3.rs"]
+pub(crate) mod vg_sm3_compress_sm3;

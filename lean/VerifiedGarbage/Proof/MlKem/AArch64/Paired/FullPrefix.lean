@@ -18,6 +18,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.RegSet
 meta import VerifiedGarbage.Proof.Framework.RegSet
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Sums
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Sums
 
 /-! # Complete singleton stream and vector parser entry for relational timing -/
 @[expose] public section
@@ -64,16 +66,20 @@ theorem fullPrefix_ct {sb ss off a k : Nat} (hss : ss<4096) : ConstantTime isa (
     (VG.AArch64.Taint.Agree (Taint.ofRegs [.x19,.x28])) (fullPrefix sha3 sb ss off a k) := by
   cases sha3
   · by_cases ho : off<4096
-    · apply vct_eraseOff_eq [.x19,.x28]
-        (d := Code.eraseOff (fullPrefix false 0 0 0 0 1))
+    · -- The call of the paired Keccak by its summary (`X2Sums.erased`).
+      obtain ⟨hc, h⟩ : ∃ hc, (VectorTaint.taint.check (VectorTaint.ofRegs [.x19,.x28])
+          (Code.eraseOff (fullPrefix false 0 0 0 0 1)) hc).isSome = true := by
+        taint_decide_sum [VG.Proof.Sha3.AArch64.Neon.X2Sums.erased]
+      exact vct_eraseOff_eq [.x19,.x28]
         (by simp only [fullPrefix,fullInit_eq hss,fullInit_eq (by decide : 0<4096),fullPrep,fullEntry,
-          Impl.MlKem.AArch64.ptrTo,ite_eq_left hss,ite_eq_left ho]; rfl)
-      taint_decide
-    · apply vct_eraseOff_eq [.x19,.x28]
-        (d := Code.eraseOff (fullPrefix false 0 0 4096 0 1))
+          Impl.MlKem.AArch64.ptrTo,ite_eq_left hss,ite_eq_left ho]; rfl) h
+    · -- The call of the paired Keccak by its summary (`X2Sums.erased`).
+      obtain ⟨hc, h⟩ : ∃ hc, (VectorTaint.taint.check (VectorTaint.ofRegs [.x19,.x28])
+          (Code.eraseOff (fullPrefix false 0 0 4096 0 1)) hc).isSome = true := by
+        taint_decide_sum [VG.Proof.Sha3.AArch64.Neon.X2Sums.erased]
+      exact vct_eraseOff_eq [.x19,.x28]
         (by simp only [fullPrefix,fullInit_eq hss,fullInit_eq (by decide : 0<4096),fullPrep,fullEntry,
-          Impl.MlKem.AArch64.ptrTo,ite_eq_left hss,ite_eq_right ho]; rfl)
-      taint_decide
+          Impl.MlKem.AArch64.ptrTo,ite_eq_left hss,ite_eq_right ho]; rfl) h
   · by_cases ho : off<4096
     · apply ct_eraseOff_eq [.x19,.x28]
         (d := Code.eraseOff (fullPrefix true 0 0 0 0 1))

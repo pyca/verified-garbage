@@ -76,11 +76,46 @@ def spAux : List (Nat × Nat) → Nat → List (Nat × Nat × Nat)
   | q :: qs, i =>
     (if argRegs.length ≤ q.1 then [(8 * (q.1 - argRegs.length), i, 0)] else []) ++ spAux qs (i + 1)
 
+/-- The bytes of `pubs` (`(i, o, n)`: the `n` bytes at offset `o` of writable
+buffer `i`), as a bit mask for each of `n` buffers. -/
+def pbInit (n : Nat) (pubs : List (Nat × Nat × Nat)) : List Nat :=
+  (List.range n).map fun i => pubs.foldl (fun b sl => if sl.1 = i then bset b sl.2.1 sl.2.2 else b) 0
+
+theorem pbInit_bit {n : Nat} {pubs : List (Nat × Nat × Nat)} {i k : Nat}
+    (h : (pbGet (pbInit n pubs) i).testBit k = true) :
+    ∃ sl ∈ pubs, sl.1 = i ∧ sl.2.1 ≤ k ∧ k < sl.2.1 + sl.2.2 := by
+  have fold : ∀ (l : List (Nat × Nat × Nat)) (b : Nat),
+      (l.foldl (fun b sl => if sl.1 = i then bset b sl.2.1 sl.2.2 else b) b).testBit k = true →
+      b.testBit k = true ∨ ∃ sl ∈ l, sl.1 = i ∧ sl.2.1 ≤ k ∧ k < sl.2.1 + sl.2.2 := by
+    intro l
+    induction l with
+    | nil => exact fun b h => .inl h
+    | cons sl l ih =>
+      intro b h
+      rcases ih _ h with h | ⟨q, hq, h⟩
+      · dsimp only at h
+        split at h
+        · rename_i h0
+          rw [testBit_bset, Bool.or_eq_true, Bool.and_eq_true, decide_eq_true_eq, decide_eq_true_eq] at h
+          rcases h with h | h
+          · exact .inl h
+          · exact .inr ⟨sl, List.mem_cons_self, h0, h⟩
+        · exact .inl h
+      · exact .inr ⟨q, List.mem_cons_of_mem _ hq, h⟩
+  rw [pbGet_eq, pbInit, List.getD_eq_getElem?_getD, List.getElem?_map] at h
+  by_cases hi : i < n
+  · rw [List.getElem?_range hi, Option.map_some, Option.getD_some] at h
+    rcases fold pubs 0 h with h | h
+    · simp only [Nat.zero_testBit, Bool.false_eq_true] at h
+    · exact h
+  · rw [List.getElem?_eq_none (by rw [List.length_range]; omega_using [hi]), Option.map_none, Option.getD_none] at h
+    simp only [Nat.zero_testBit, Bool.false_eq_true] at h
+
 /-- Where the analysis of a function of signature `sig` starts. -/
 def init (sig : Sig) (stack : Nat) (pubs : List (Nat × Nat × Nat) := []) : FT :=
   let ws := wrInfo sig.params 0
-  let t : Taint.T := ⟨allRegs, true, ws.map (·.2), basesAux ws 0, pubs, .empty, allX⟩
-  ⟨true, t, 0, 0, stack, [], [], [], none, [], [], 8 * nStack sig, saOf sig, spAux ws 0⟩
+  let t : Taint.T := ⟨allRegs, true, ws.map (·.2), basesAux ws 0, [], .empty, allX⟩
+  ⟨true, t, 0, 0, stack, 0, [], [], none, [], [], 8 * nStack sig, saOf sig, spAux ws 0, pbInit ws.length pubs⟩
 
 /-- The writable buffers. -/
 def wrOf (ps : List (String × Param)) (vs : List (BitVec 64)) : List Region :=
@@ -519,8 +554,7 @@ theorem init_agree (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} (hfit : p
     · exact (hdis r hr).2 h0
   have hrsp := (s₁.gpr .rsp).isLt
   refine ⟨⟨⟨fun r _ => hgr r, fun _ => ⟨hcf, hzf, hsf, hof⟩⟩, fun _ => hwr, wf₁, wf₂,
-      fun sl h => by simp only [pubsFit, List.all_eq_true, decide_eq_true_eq] at hfit; exact hfit sl h,
-      fun sl h k h1 h2 => hag sl h k h1 h2, noLo, fun r _ => (by rw [hx])⟩,
+      fun _ h => (by cases h), fun _ h => (by cases h), noLo, fun r _ => (by rw [hx])⟩,
     hgr .rsp, hu, hwr, ?_, Nat.zero_le _, ?_, (by simp [init]; omega_using []), fun _ h => absurd h (Nat.not_lt_zero _), ?_,
     fun _ h => (by cases h), List.Pairwise.nil, fun _ h => (by cases h), ?_, fun _ h => (by cases h),
     ⟨fun _ h => (by cases h), fun _ _ h => (by cases h), fun _ h => (by cases h), (init_sp hA h₁).1⟩,
@@ -528,7 +562,12 @@ theorem init_agree (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} (hfit : p
     fun _ h => absurd h (Nat.not_lt_zero _),
     fun h => by have := (pre_argArea hA h₁).1 (by simp only [init] at h; omega_using [h]); simp only [init]; omega_using [this],
     fun k hk r hr => by rw [aa_init]; exact (pre_argArea hA h₁).2 k hk r hr,
-    (init_sa hA hp).2, (init_sa hA hp).1, (init_sp hA h₁).2⟩
+    (init_sa hA hp).2, (init_sa hA hp).1, (init_sp hA h₁).2, ?_⟩
+  rotate_right
+  · intro i k hk
+    obtain ⟨sl, hsl, rfl, h1, h2⟩ := pbInit_bit hk
+    simp only [pubsFit, List.all_eq_true, decide_eq_true_eq] at hfit
+    exact ⟨by have := hfit sl hsl; simp only [init]; omega_using [h2, this], hag sl hsl k h1 h2⟩
   · intro h
     rw [h] at hF
     exact List.eq_nil_of_length_eq_zero (forall₂_length hF)
@@ -549,29 +588,90 @@ theorem init_agree (hA : ScrubAbi A) {pubs : List (Nat × Nat × Nat)} (hfit : p
 it started, and every byte of it `sec` lists in a granule `ks` lists. -/
 def resOkB (τ : FT) (stack : Nat) (ks cs : List Nat) : Bool :=
   τ.ok && τ.room == stack && τ.depth == 0 &&
-    (List.range stack).all fun j => cov ks cs j || !τ.sec.any fun p => decide (p.1 ≤ j ∧ j < p.1 + p.2)
+    (List.range stack).all fun j => cov ks cs j || !τ.sec.testBit j
 
-/-- `resOkB`, checking only the bytes that `sec` lists (usually a few
-intervals) rather than every byte of the window (`stack` of them, a few
-seconds in the kernel for thousands). -/
+def wordAllC (p : Nat → Bool) (n o : Nat) : Nat → Bool
+  | 0 => true
+  | b + 1 => (bif Nat.beq (Nat.land 1 (Nat.shiftRight n (Nat.add o b))) 0 then true else p (Nat.add o b)) &&
+    wordAllC p n o b
+
+/-- `p` holds of every bit set in `n` among the `k` from bit `o`. -/
+@[implemented_by wordAllC] def wordAll (p : Nat → Bool) (n o k : Nat) : Bool :=
+  Nat.rec (motive := fun _ => Bool) true
+    (fun b ih => (bif Nat.beq (Nat.land 1 (Nat.shiftRight n (Nat.add o b))) 0 then true else p (Nat.add o b)) && ih) k
+
+def bitsAllC (p : Nat → Bool) (n : Nat) : Nat → Bool
+  | 0 => true
+  | w + 1 => (bif Nat.beq (Nat.land (Nat.shiftRight n (Nat.mul 64 w)) (ones 64)) 0 then true
+      else wordAll p n (Nat.mul 64 w) 64) && bitsAllC p n w
+
+/-- `p` holds of every bit set in `n` among its first `64 * words`: a word
+of 64 bits at a time, and bit by bit in those that are not zero. -/
+@[implemented_by bitsAllC] def bitsAll (p : Nat → Bool) (n words : Nat) : Bool :=
+  Nat.rec (motive := fun _ => Bool) true
+    (fun w ih => (bif Nat.beq (Nat.land (Nat.shiftRight n (Nat.mul 64 w)) (ones 64)) 0 then true
+      else wordAll p n (Nat.mul 64 w) 64) && ih) words
+
+theorem beq_bit (n i : Nat) : Nat.beq (Nat.land 1 (Nat.shiftRight n i)) 0 = !n.testBit i := by
+  rw [Nat.testBit, bne, Bool.not_not, Bool.eq_iff_iff, Nat.beq_eq, beq_iff_eq]
+  rfl
+
+theorem wordAll_bit {p : Nat → Bool} {n o : Nat} : ∀ {k : Nat}, wordAll p n o k = true →
+    ∀ b < k, n.testBit (o + b) = true → p (o + b) = true
+  | 0, _, _, hb, _ => absurd hb (Nat.not_lt_zero _)
+  | k + 1, h, b, hb, hj => by
+    have h' : ((bif Nat.beq (Nat.land 1 (Nat.shiftRight n (Nat.add o k))) 0 then true else p (Nat.add o k)) &&
+        wordAll p n o k) = true := h
+    rw [Bool.and_eq_true, beq_bit] at h'
+    by_cases hbk : b = k
+    · subst hbk
+      have h1 := h'.1
+      rw [show Nat.add o b = o + b from rfl, hj] at h1
+      exact h1
+    · exact wordAll_bit h'.2 b (by omega) hj
+
+theorem bitsAll_bit {p : Nat → Bool} {n : Nat} : ∀ {words : Nat}, bitsAll p n words = true →
+    ∀ j < 64 * words, n.testBit j = true → p j = true
+  | 0, _, _, hj, _ => absurd hj (Nat.not_lt_zero _)
+  | w + 1, h, j, hj, hb => by
+    have h' : ((bif Nat.beq (Nat.land (Nat.shiftRight n (Nat.mul 64 w)) (ones 64)) 0 then true
+        else wordAll p n (Nat.mul 64 w) 64) && bitsAll p n w) = true := h
+    rw [Bool.and_eq_true] at h'
+    by_cases hjw : j < 64 * w
+    · exact bitsAll_bit h'.2 j hjw hb
+    · have h1 := h'.1
+      have e : j = 64 * w + (j - 64 * w) := by omega
+      cases hz : Nat.beq (Nat.land (Nat.shiftRight n (Nat.mul 64 w)) (ones 64)) 0
+      · rw [hz, Bool.cond_false] at h1
+        have := wordAll_bit (o := 64 * w) h1 (j - 64 * w) (by omega)
+          (show n.testBit (64 * w + (j - 64 * w)) = true by rw [← e]; exact hb)
+        rw [← e] at this
+        exact this
+      · have hz' : (n >>> (64 * w) &&& ones 64) = 0 := Nat.eq_of_beq_eq_true hz
+        have := congrArg (·.testBit (j - 64 * w)) hz'
+        simp only [Nat.testBit_and, Nat.testBit_shiftRight, testBit_ones, ← e, hb, Bool.true_and, Nat.zero_testBit,
+          decide_eq_false_iff_not] at this
+        omega
+
+/-- `resOkB`, checking only the bytes that `sec` lists (usually few), which
+it finds a word of 64 at a time (`bitsAll`), rather than every byte of the
+window (`stack` of them, a few seconds in the kernel for thousands). -/
 def resOkF (τ : FT) (stack : Nat) (ks cs : List Nat) : Bool :=
   τ.ok && τ.room == stack && τ.depth == 0 &&
-    τ.sec.all fun p => (List.range' p.1 p.2).all fun j => !decide (j < stack) || cov ks cs j
+    bitsAll (cov ks cs) (Nat.mod τ.sec (Nat.pow 2 stack)) (Nat.add (Nat.div stack 64) 1)
 
 theorem resOkB_of_resOkF {τ : FT} {stack : Nat} {ks cs : List Nat} (h : resOkF τ stack ks cs = true) :
     resOkB τ stack ks cs = true := by
-  simp only [resOkF, Bool.and_eq_true, List.all_eq_true, List.mem_range'_1, Bool.or_eq_true,
-    Bool.not_eq_true', decide_eq_false_iff_not, Nat.not_lt] at h
+  simp only [resOkF, Bool.and_eq_true] at h
   obtain ⟨⟨⟨ho, hr⟩, hd⟩, hs⟩ := h
   simp only [resOkB, ho, hr, hd, Bool.true_and, List.all_eq_true, List.mem_range, Bool.or_eq_true,
-    Bool.not_eq_true', List.any_eq_false, decide_eq_true_eq]
+    Bool.not_eq_true']
   intro j hj
-  by_cases hc : cov ks cs j = true
-  · exact .inl hc
-  · refine .inr fun p hp hin => hc ?_
-    rcases hs p hp j hin with h | h
-    · omega
-    · exact h
+  cases hb : τ.sec.testBit j
+  · exact .inr rfl
+  · refine .inl (bitsAll_bit hs j (by show j < 64 * (stack / 64 + 1); omega) ?_)
+    show (τ.sec % 2 ^ stack).testBit j = true
+    rw [Nat.testBit_mod_two_pow, hb, decide_eq_true hj]; rfl
 
 /-- `(o.any (resOkF · stack ks cs))` gives `resOkB`'s. -/
 theorem any_resOkB {o : Option FT} {stack : Nat} {ks cs : List Nat}
@@ -594,7 +694,7 @@ theorem resOk_of_check {c : Prog isa} {ks cs : List Nat} {pubs : List (Nat × Na
     | none => rw [h'] at hc; cases hc
     | some τf => rw [h'] at hc; exact ⟨τf, rfl, hc⟩
   simp only [resOkB, Bool.and_eq_true, beq_iff_eq, List.all_eq_true, List.mem_range, Bool.or_eq_true,
-    Bool.not_eq_true', List.any_eq_false, decide_eq_true_eq] at hb
+    Bool.not_eq_true'] at hb
   obtain ⟨⟨⟨hok, hroom⟩, hdep⟩, hcov⟩ := hb
   intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx hw
   obtain ⟨-, ha⟩ := VG.Taint.check_sound (A := rtaint) hτ (init_agree hA hfit hpub h₁ h₂ ho hp hu) e₁ e₂
@@ -617,10 +717,10 @@ theorem resOk_of_check {c : Prog isa} {ks cs : List Nat} {pubs : List (Nat × Na
     · rfl
     · exact absurd ⟨hcs ▸ hx, by rw [hcs, hJ]; exact h'⟩ hw
   have hns : ¬ InSec τf.sec j := by
-    rintro ⟨p, hp, h1, h2⟩
+    intro hin
     rcases hcov j hj with h | h
     · rw [hcj] at h; cases h
-    · exact h p hp ⟨h1, h2⟩
+    · rw [show τf.sec.testBit j = true from hin] at h; cases h
   have hfree : ∀ r ∈ u₁.wr, ¬ r.Contains (RTaint.wa u₁ τf j) 1 := by
     intro r hr hc
     rw [hwr] at hr
@@ -643,10 +743,8 @@ def granules : List Nat → List (Nat × Nat)
     (if b % 16 = 8 then [(bs.sum, 8)] else []) ++ granules bs
 
 /-- The granules of `wipe _ cs` that hold a byte `sec` lists. -/
-def keepOf (sec : List (Nat × Nat)) (cs : List Nat) : List Nat :=
-  (granules cs).filterMap fun g =>
-    if (List.range g.2).any (fun k => sec.any fun p => decide (p.1 ≤ g.1 + k ∧ g.1 + k < p.1 + p.2)) then
-      some g.1 else none
+def keepOf (sec : Nat) (cs : List Nat) : List Nat :=
+  (granules cs).filterMap fun g => if (sec >>> g.1) % 2 ^ g.2 ≠ 0 then some g.1 else none
 
 /-! ## Registrations -/
 

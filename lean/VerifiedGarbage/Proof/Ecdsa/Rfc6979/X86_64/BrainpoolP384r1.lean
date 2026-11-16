@@ -9,6 +9,7 @@ import VerifiedGarbage.Impl.Weierstrass.X86_64.WinJacA
 import VerifiedGarbage.Proof.Framework.LitShare
 import VerifiedGarbage.Proof.Framework.OmegaLit
 public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 import VerifiedGarbage.Proof.Weierstrass.TCombWords
 meta import VerifiedGarbage.Proof.Ecdsa.Rfc6979.X86_64.TableSat
 meta import VerifiedGarbage.Spec.Ecdsa.Rfc6979.Curves
@@ -70,6 +71,12 @@ theorem brainpoolp384r1SatMem_held : ∀ i < brainpoolp384r1W.length,
 theorem brainpoolp384r1_blk : RfcT (cfgC Impl.Ecdsa.X86_64.brainpoolp384r1S false 0) := by rfcT_decide
 
 
+/-- The tests of the instructions of `sign_k`'s code: one walk of it, and one
+match for each instruction (`Proof/Framework/X86_64/InstrBits.lean`). -/
+theorem brainpoolp384r1_bits :
+    Impl.Ecdsa.X86_64.signBrainpoolP384r1.allInstrs (hasBits (bMx + bSp + bNs)) = true := by
+  lit_decide
+
 /-- brainpoolp384r1, with the group law `hL` and the inversions'
 soundness `hI`. -/
 def brainpoolp384r1 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve)
@@ -86,9 +93,9 @@ def brainpoolp384r1 (hL : Weierstrass.Law Spec.BrainpoolP384r1.curve)
   coreC := Impl.Ecdsa.X86_64.signBrainpoolP384r1
   coreX := by rw [coreK_brainpoolp384r1]; exact Proof.Ecdsa.X86_64.BrainpoolP384r1.sign_call_x86 hL hI
   coreCT := by rw [coreK_brainpoolp384r1]; exact Proof.Ecdsa.X86_64.BrainpoolP384r1.sign_ct
-  coreNs := by lit_decide
-  coreSp := by lit_decide
-  coreMx := by lit_decide
+  coreNs := Code.noRsp_of_bits rfl brainpoolp384r1_bits
+  coreSp := Code.sp_of_bits rfl brainpoolp384r1_bits
+  coreMx := Code.noMx_of_bits rfl brainpoolp384r1_bits
   coreD := by lit_decide
   blk := brainpoolp384r1_blk
 
