@@ -195,11 +195,11 @@ theorem post_of {s s' : State} (h : splitPost s s') : (sealSplitScratchContract 
   exact fun _ => h
 
 theorem pub_of {s₁ s₂ : State} (hp : (sealSplitScratchContract X86_64.abi 212 64).pub s₁ s₂) : splitPub s₁ s₂ := by
-  sig_pub [sealSplitScratchContract, Sig.scratchContract, Sig.withScratch, Proof.ChaCha20Poly1305.sealSplitSig,
+  sig_pub_keep [sealSplitScratchContract, Sig.scratchContract, Sig.withScratch, Proof.ChaCha20Poly1305.sealSplitSig,
     Proof.ChaCha20Poly1305.sealSplitPre, X86_64.abi, X86_64.argRegs, stackArgs_four, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero] at hp
-  obtain ⟨qsp, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃⟩ := hp
-  exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, qsp, a₀, a₁, a₂, a₃⟩
+  obtain ⟨qsp, qm, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃⟩ := hp
+  exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, qsp, a₀, a₁, a₂, a₃, qm⟩
 
 /-- A state satisfying the precondition, with its working space: no
 additional data or data, `dst` at `0x3000`, `tag` at `0x4000` and `work`

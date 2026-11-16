@@ -7,7 +7,8 @@
 //! instruction Intel lists runs it first, and panics unless MXCSR then holds
 //! `0x1FBF` (`verified_garbage_cpu::mcdt_entered`; "Dispatchers" in
 //! `lean/VerifiedGarbage/TCB/Rust.lean`), unless its code calls it itself
-//! before them (`Rust.mcdtOpen`: Poly1305's update). This holds their tests.
+//! before them (`Rust.mcdtOpen`: Poly1305's update and ChaCha20-Poly1305).
+//! This holds their tests.
 
 #![cfg(target_arch = "x86_64")]
 
@@ -55,6 +56,35 @@ mod tests {
         // SAFETY: restores the MXCSR read above.
         unsafe { core::arch::x86_64::_mm_setcsr(saved) };
         assert_eq!(tag, other);
+        assert_eq!(after & 0xFFC0, (saved | 0x8000) & 0xFFC0);
+    }
+
+    /// So does ChaCha20-Poly1305's, through Poly1305's: where MXCSR's control
+    /// bits are not the default, sealing and opening give what they give
+    /// with the default ones, and leave the control bits as they were.
+    #[test]
+    #[allow(deprecated)]
+    fn chacha20poly1305_other_control_bits() {
+        let aead = crate::aead::chacha20poly1305::ChaCha20Poly1305::new(&[7u8; 32]);
+        let nonce = [3u8; 12];
+        let aad = [0x11u8; 600];
+        let mut ct = [0x5au8; 2048];
+        let tag = aead.encrypt_in_place(&nonce, &aad, &mut ct).unwrap();
+        let saved = mxcsr();
+        // SAFETY: `ldmxcsr` of MXCSR with FTZ set, which no code of this test
+        // depends on; restored below.
+        unsafe { core::arch::x86_64::_mm_setcsr(saved | 0x8000) };
+        let mut other = [0x5au8; 2048];
+        let other_tag = aead.encrypt_in_place(&nonce, &aad, &mut other);
+        let mut pt = other;
+        let opened = aead.decrypt_in_place(&nonce, &aad, &mut pt, &tag);
+        let after = mxcsr();
+        // SAFETY: restores the MXCSR read above.
+        unsafe { core::arch::x86_64::_mm_setcsr(saved) };
+        assert_eq!(other_tag.unwrap(), tag);
+        assert_eq!(other, ct);
+        assert!(opened.is_ok());
+        assert_eq!(pt, [0x5au8; 2048]);
         assert_eq!(after & 0xFFC0, (saved | 0x8000) & 0xFFC0);
     }
 

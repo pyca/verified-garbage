@@ -832,7 +832,9 @@ theorem pre : preX86_64 true (u.withRegions (rdB u) (wrB u)) := by
     FPre.stk_disj hs.b_d (d := 24) (n := 8) (by decide), FPre.stk_disj hs.b_t (d := 24) (n := 8) (by decide),
     FPre.stk0 hs.b_w (by decide), FPre.stk0 hs.b_k (by decide), FPre.stk0 hs.b_n (by decide),
     FPre.stk0 hs.b_a (by decide), FPre.stk0 hs.b_d (by decide), FPre.stk0 hs.b_t (by decide),
-    hs.o_w, hs.o_a, hs.o_d, hs.o_t, hs.o_k, hs.o_n⟩
+    hs.o_w, hs.o_a, hs.o_d, hs.o_t, hs.o_k, hs.o_n, by
+      have := hs.sp_lo
+      simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]; omega⟩
 
 end Body
 

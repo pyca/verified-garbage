@@ -118,13 +118,13 @@ theorem mid_rel : RelCT isa (Mid s₀ s₀') (.ite .b (.block []) (.call v.name 
   refine RelCT.ite (fun s₁ s₂ h => by simp only [eval, h.1.2]) ?_ ?_
   · obtain ⟨_, hn⟩ := none_taint
     exact RelCT.taintRegs (fun s₁ s₂ h => Taint.agree_ofRegs fun r hr => h.1.1.1 r (sub r hr)) postRegs hn
-  · have ct := RelCT.callEx (n := v.name) (k := blocksStackM v.stack)
+  · have ct := RelCT.callEx (n := v.name) (k := blocksStack v.stack)
       (P := fun s₁ s₂ => Mid s₀ s₀' s₁ s₂ ∧ eval .b s₁ = some false) v.ok v.ct
       fun s₁ s₂ ⟨⟨⟨hr, _⟩, ⟨c₁, r₁⟩, ⟨c₂, r₂⟩, hmx⟩, _⟩ => by
         obtain ⟨p₁, cv₁, w₁⟩ := call_pre v hp r₁
         obtain ⟨p₂, cv₂, w₂⟩ := call_pre v hp' r₂
         refine ⟨_, _, _, _, p₁, p₂, ?_, cv₁, w₁, cv₂, w₂, hr .rsp (by simp)⟩
-        simp only [blocksStackM, Proof.Poly1305.blocksX86_64, State.withRegions_gpr, State.callEntry_rsp,
+        simp only [blocksStack, Proof.Poly1305.blocksX86_64, State.withRegions_gpr, State.callEntry_rsp,
           State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
           State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp)]
         exact ⟨⟨hr .rdi (by simp), hr .rsi (by simp), hr .rdx (by simp)⟩, by rw [hr .rsp (by simp)], hmx⟩

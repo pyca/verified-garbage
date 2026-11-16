@@ -45,6 +45,13 @@ import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.RegionsSub
 import VerifiedGarbage.Proof.Framework.X86_64.Frame
+import VerifiedGarbage.Proof.Framework.X86_64.CallSp
+public import VerifiedGarbage.Proof.Framework.X86_64.TaintMx
+import VerifiedGarbage.Proof.Mcdt.X86_64.Op
+meta import VerifiedGarbage.Proof.Mcdt.X86_64.Op
+public import VerifiedGarbage.Proof.Framework.TaintOps
+meta import VerifiedGarbage.Proof.Framework.TaintOps
+import VerifiedGarbage.Proof.Framework.X86_64.Abi
 import VerifiedGarbage.Proof.Framework.X86_64.Lit
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.Last8
 meta import VerifiedGarbage.Proof.ChaCha20.X86_64.Avx2.RoundsVL
@@ -182,23 +189,23 @@ theorem init_call {s : State} {P K : Addr} (hrdi : s.gpr .rdi = P) (hrsi : s.gpr
 
 /-! ## `vg_poly1305_blocks` -/
 
-theorem avx2_keeps : ((instrs Impl.Poly1305.X86_64.Avx2.blocksAvx2).all fun i =>
-    !Taint.clobbers i .rdi && !Taint.clobbers i .rsp) = true := by
+theorem avx2_di' : ((instrs Impl.Poly1305.X86_64.Avx2.blocksAvx2).all fun i => !Taint.clobbers i .rdi) = true := by
   rw [← Code.allInstrs_eq]; lit_decide
 
-theorem avx2_depth : Impl.Poly1305.X86_64.Avx2.blocksAvx2.depth = 1 := by lit_decide
+theorem avx2_di : ∀ i ∈ instrs Impl.Poly1305.X86_64.Avx2.blocksAvx2, Taint.clobbers i .rdi = false :=
+  fun i hi => by simpa using List.all_eq_true.mp avx2_di' i hi
 
-theorem avx512_keeps : ((instrs Impl.Poly1305.X86_64.Avx512.blocksAvx512).all fun i =>
-    !Taint.clobbers i .rdi && !Taint.clobbers i .rsp) = true := by
+theorem avx512_di' : ((instrs Impl.Poly1305.X86_64.Avx512.blocksAvx512).all fun i => !Taint.clobbers i .rdi) = true := by
   rw [← Code.allInstrs_eq]; lit_decide
 
-theorem avx512_depth : Impl.Poly1305.X86_64.Avx512.blocksAvx512.depth = 2 := by lit_decide
+theorem avx512_di : ∀ i ∈ instrs Impl.Poly1305.X86_64.Avx512.blocksAvx512, Taint.clobbers i .rdi = false :=
+  fun i hi => by simpa using List.all_eq_true.mp avx512_di' i hi
 
-theorem ifma_keeps : ((instrs Impl.Poly1305.X86_64.Ifma.blocksIfma).all fun i =>
-    !Taint.clobbers i .rdi && !Taint.clobbers i .rsp) = true := by
+theorem ifma_di' : ((instrs Impl.Poly1305.X86_64.Ifma.blocksIfma).all fun i => !Taint.clobbers i .rdi) = true := by
   rw [← Code.allInstrs_eq]; lit_decide
 
-theorem ifma_depth : Impl.Poly1305.X86_64.Ifma.blocksIfma.depth = 2 := by lit_decide
+theorem ifma_di : ∀ i ∈ instrs Impl.Poly1305.X86_64.Ifma.blocksIfma, Taint.clobbers i .rdi = false :=
+  fun i hi => by simpa using List.all_eq_true.mp ifma_di' i hi
 
 theorem below8_24' (sp : Addr) : Region.Sub (below sp 8) (below sp 24) := below_sub (by lit_omega) (by lit_omega)
 theorem below16_24 (sp : Addr) : Region.Sub (below sp 16) (below sp 24) := below_sub (by lit_omega) (by lit_omega)
@@ -216,8 +223,10 @@ variable {s : State} {P p : Addr} {n : Nat} (hrdi : s.gpr .rdi = P) (hrsi : s.gp
     (hdj : (⟨P, 128⟩ : Region).Disjoint ⟨p, 16 * n⟩) (hwrap : p.toNat + 16 * n ≤ 2 ^ 64)
     (hsP : (below (s.gpr .rsp) 24).Disjoint ⟨P, 128⟩) (hsp : (below (s.gpr .rsp) 24).Disjoint ⟨p, 16 * n⟩)
     (hc : Covers ([⟨p, 16 * n⟩] ++ [⟨P, 128⟩]) (s.rd ++ s.wr)) (hw : Covers [⟨P, 128⟩] s.wr)
-include hrdi hrsi hrdx hn hdj hwrap hsP hsp hc hw
+    (hS : 24 ≤ (s.gpr .rsp).toNat)
+include hrdi hrsi hrdx hn hdj hwrap hsP hsp hc hw hS
 
+omit hS in
 theorem scalar_call : WP isa (.call "vg_poly1305_blocks" Impl.Poly1305.X86_64.blocks) s (BlocksPost s P p n) := by
   obtain hn' : (BitVec.ofNat 64 n).toNat = n := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by lit_omega)
@@ -245,89 +254,33 @@ theorem scalar_call : WP isa (.call "vg_poly1305_blocks" Impl.Poly1305.X86_64.bl
     rwa [bytesAt_frame (callEntry_frame s) (by simpa using (hsp.sub_left (below8_24' _)).symm)
       (by lit_omega)] at h
 
-theorem avx2_call :
-    WP isa (.call "vg_poly1305_blocks_avx2" Impl.Poly1305.X86_64.Avx2.blocksAvx2) s (BlocksPost s P p n) := by
+/-- A call of an implementation of `vg_poly1305_blocks` with its own call of
+`vg_mcdt_enter`, whose frame and calls use 16 bytes of stack below its return
+address. -/
+theorem mcdt_call {name : String} {c : Prog isa}
+    (hok : ∀ s, (Proof.Poly1305.blocksStack 16).pre s →
+      ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ (Proof.Poly1305.blocksStack 16).post s s')
+    (hsS : SpSafe c) (hd : c.x86_64Depth = 16) (hdi : ∀ i ∈ instrs c, Taint.clobbers i .rdi = false) :
+    WP isa (.call name c) s (BlocksPost s P p n) := by
   obtain hn' : (BitVec.ofNat 64 n).toNat = n := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by lit_omega)
   obtain hsP8 := hsP.sub_left (below8_24' _)
-  refine WP.call_mx (k := Proof.Poly1305.X86_64.Avx2.blocksAvx2X86_64)
-    Proof.Poly1305.X86_64.Avx2.blocksAvx2_ok
-    (keeps_of avx2_keeps fun _ h => and_right h) (by rw [avx2_depth]; decide)
+  refine X86_64.WP.call_sp_mx (k := Proof.Poly1305.blocksStack 16) hok hsS (by rw [hd]; decide)
     (rd := [⟨p, 16 * n⟩]) (wr := [⟨P, 128⟩]) ?_ hc hw ?_
-  · simp only [Proof.Poly1305.X86_64.Avx2.blocksAvx2X86_64, State.withRegions_gpr, State.withRegions_rd,
+  · simp only [Proof.Poly1305.blocksStack, State.withRegions_gpr, State.withRegions_rd,
       State.withRegions_wr, State.callEntry_rsp, callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp),
       callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp), callEntry_gpr' s (by decide : Reg.rdx ≠ .rsp), hrdi,
       hrsi, hrdx, hn']
-    exact ⟨trivial, trivial, hdj, hsP8, (hsP.sub_left (below16_24 _)).sub_left (below_callee _ 8),
-      (hsp.sub_left (below16_24 _)).sub_left (below_callee _ 8), hwrap⟩
+    refine ⟨trivial, trivial, hdj, hsP8, hsP.sub_left (below_callee _ 16), hsp.sub_left (below_callee _ 16), hwrap,
+      ?_⟩
+    rw [show (8 : BitVec 64) = BitVec.ofNat 64 8 from rfl, toNat_sub_ofNat (by lit_omega)]; lit_omega
   · intro s' hrd hwr hcs hf hkeep ⟨s₂, hm₂, _, hpost⟩ hmx
-    rw [avx2_depth] at hf
-    refine ⟨hrd, hwr, hcs, hf.sub fun r hr => ?_,
-      by rw [hkeep .rdi (keeps_of avx2_keeps fun _ h => and_left h), hrdi], fun key msg hr => ?_, hmx⟩
-    · simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl
-      · exact ⟨_, by simp, fun _ h => h⟩
-      · exact ⟨_, by simp, below16_24 _⟩
-    simp only [Proof.Poly1305.X86_64.Avx2.blocksAvx2X86_64, Proof.Poly1305.blocksX86_64,
-      State.withRegions_gpr, State.withRegions_mem,
-      callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp), callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp),
-      callEntry_gpr' s (by decide : Reg.rdx ≠ .rsp), hrdi, hrsi, hrdx, hn', hm₂] at hpost
-    obtain h := hpost key msg (Repr.frame (callEntry_frame s) (h := hr) (by simpa using hsP8.symm))
-    rwa [bytesAt_frame (callEntry_frame s) (by simpa using (hsp.sub_left (below8_24' _)).symm)
-      (by lit_omega)] at h
-
-theorem avx512_call :
-    WP isa (.call "vg_poly1305_blocks_avx512" Impl.Poly1305.X86_64.Avx512.blocksAvx512) s (BlocksPost s P p n) := by
-  obtain hn' : (BitVec.ofNat 64 n).toNat = n := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by lit_omega)
-  obtain hsP8 := hsP.sub_left (below8_24' _)
-  refine WP.call_mx (k := Proof.Poly1305.X86_64.Avx512.blocksAvx512X86_64)
-    Proof.Poly1305.X86_64.Avx512.blocksAvx512_ok
-    (keeps_of avx512_keeps fun _ h => and_right h) (by rw [avx512_depth]; decide)
-    (rd := [⟨p, 16 * n⟩]) (wr := [⟨P, 128⟩]) ?_ hc hw ?_
-  · simp only [Proof.Poly1305.X86_64.Avx512.blocksAvx512X86_64, Proof.Poly1305.blocksStack,
-      State.withRegions_gpr, State.withRegions_rd,
-      State.withRegions_wr, State.callEntry_rsp, callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp),
-      callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp), callEntry_gpr' s (by decide : Reg.rdx ≠ .rsp), hrdi,
-      hrsi, hrdx, hn']
-    exact ⟨trivial, trivial, hdj, hsP8, hsP.sub_left (below_callee _ 16),
-      hsp.sub_left (below_callee _ 16), hwrap⟩
-  · intro s' hrd hwr hcs hf hkeep ⟨s₂, hm₂, _, hpost⟩ hmx
-    rw [avx512_depth] at hf
-    refine ⟨hrd, hwr, hcs, hf,
-      by rw [hkeep .rdi (keeps_of avx512_keeps fun _ h => and_left h), hrdi], fun key msg hr => ?_, hmx⟩
-    simp only [Proof.Poly1305.X86_64.Avx512.blocksAvx512X86_64, Proof.Poly1305.blocksStack,
-      Proof.Poly1305.blocksX86_64, State.withRegions_gpr, State.withRegions_mem,
-      callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp), callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp),
-      callEntry_gpr' s (by decide : Reg.rdx ≠ .rsp), hrdi, hrsi, hrdx, hn', hm₂] at hpost
-    obtain h := hpost key msg (Repr.frame (callEntry_frame s) (h := hr) (by simpa using hsP8.symm))
-    rwa [bytesAt_frame (callEntry_frame s) (by simpa using (hsp.sub_left (below8_24' _)).symm)
-      (by lit_omega)] at h
-
-theorem ifma_call :
-    WP isa (.call "vg_poly1305_blocks_ifma" Impl.Poly1305.X86_64.Ifma.blocksIfma) s (BlocksPost s P p n) := by
-  obtain hn' : (BitVec.ofNat 64 n).toNat = n := by
-    rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by lit_omega)
-  obtain hsP8 := hsP.sub_left (below8_24' _)
-  refine WP.call_mx (k := Proof.Poly1305.X86_64.Avx512.blocksAvx512X86_64)
-    Proof.Poly1305.X86_64.Ifma.blocksIfma_ok
-    (keeps_of ifma_keeps fun _ h => and_right h) (by rw [ifma_depth]; decide)
-    (rd := [⟨p, 16 * n⟩]) (wr := [⟨P, 128⟩]) ?_ hc hw ?_
-  · simp only [Proof.Poly1305.X86_64.Avx512.blocksAvx512X86_64, Proof.Poly1305.blocksStack,
-      State.withRegions_gpr, State.withRegions_rd,
-      State.withRegions_wr, State.callEntry_rsp, callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp),
-      callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp), callEntry_gpr' s (by decide : Reg.rdx ≠ .rsp), hrdi,
-      hrsi, hrdx, hn']
-    exact ⟨trivial, trivial, hdj, hsP8, hsP.sub_left (below_callee _ 16),
-      hsp.sub_left (below_callee _ 16), hwrap⟩
-  · intro s' hrd hwr hcs hf hkeep ⟨s₂, hm₂, _, hpost⟩ hmx
-    rw [ifma_depth] at hf
-    refine ⟨hrd, hwr, hcs, hf,
-      by rw [hkeep .rdi (keeps_of ifma_keeps fun _ h => and_left h), hrdi], fun key msg hr => ?_, hmx⟩
-    simp only [Proof.Poly1305.X86_64.Avx512.blocksAvx512X86_64, Proof.Poly1305.blocksStack,
-      Proof.Poly1305.blocksX86_64, State.withRegions_gpr, State.withRegions_mem,
-      callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp), callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp),
-      callEntry_gpr' s (by decide : Reg.rdx ≠ .rsp), hrdi, hrsi, hrdx, hn', hm₂] at hpost
+    rw [hd] at hf
+    refine ⟨hrd, hwr, hcs, hf, by rw [hkeep .rdi hdi, hrdi], fun key msg hr => ?_, hmx⟩
+    simp only [Proof.Poly1305.blocksStack, Proof.Poly1305.blocksX86_64, State.withRegions_gpr,
+      State.withRegions_mem, callEntry_gpr' s (by decide : Reg.rdi ≠ .rsp),
+      callEntry_gpr' s (by decide : Reg.rsi ≠ .rsp), callEntry_gpr' s (by decide : Reg.rdx ≠ .rsp), hrdi, hrsi, hrdx,
+      hn', hm₂] at hpost
     obtain h := hpost key msg (Repr.frame (callEntry_frame s) (h := hr) (by simpa using hsP8.symm))
     rwa [bytesAt_frame (callEntry_frame s) (by simpa using (hsp.sub_left (below8_24' _)).symm)
       (by lit_omega)] at h
@@ -336,9 +289,12 @@ theorem ifma_call :
 theorem blocks_call (b : Impl.Poly1305.X86_64.Blocks) : WP isa (.call b.name b.code) s (BlocksPost s P p n) := by
   cases b
   · exact scalar_call hrdi hrsi hrdx hn hdj hwrap hsP hsp hc hw
-  · exact avx2_call hrdi hrsi hrdx hn hdj hwrap hsP hsp hc hw
-  · exact avx512_call hrdi hrsi hrdx hn hdj hwrap hsP hsp hc hw
-  · exact ifma_call hrdi hrsi hrdx hn hdj hwrap hsP hsp hc hw
+  · exact mcdt_call hrdi hrsi hrdx hn hdj hwrap hsP hsp hc hw hS Proof.Poly1305.X86_64.Avx2.blocksAvx2_ok
+      (SpSafe.of_all (Code.all_of_spTest (by lit_decide))) (by lit_decide) avx2_di
+  · exact mcdt_call hrdi hrsi hrdx hn hdj hwrap hsP hsp hc hw hS Proof.Poly1305.X86_64.Avx512.blocksAvx512_ok
+      (SpSafe.of_all (Code.all_of_spTest (by lit_decide))) (by lit_decide) avx512_di
+  · exact mcdt_call hrdi hrsi hrdx hn hdj hwrap hsP hsp hc hw hS Proof.Poly1305.X86_64.Ifma.blocksIfma_ok
+      (SpSafe.of_all (Code.all_of_spTest (by lit_decide))) (by lit_decide) ifma_di
 
 end
 
@@ -520,13 +476,14 @@ def preX86_64 (enc : Bool) (s : X86_64.State) : Prop :=
   stack.Disjoint data ∧ stack.Disjoint tag ∧
   (stackArg s 1).toNat + 1696 ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + (s.gpr .rcx).toNat ≤ 2 ^ 64 ∧
   (s.gpr .r8).toNat + (s.gpr .r9).toNat ≤ 2 ^ 64 ∧ (stackArg s 0).toNat + 16 ≤ 2 ^ 64 ∧
-  (s.gpr .rdi).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + 12 ≤ 2 ^ 64
+  (s.gpr .rdi).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .rsi).toNat + 12 ≤ 2 ^ 64 ∧ 24 ≤ (s.gpr .rsp).toNat
 
 open VG.X86_64 in
 def pubX86_64 (s₁ s₂ : X86_64.State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
   s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧
-  s₁.gpr .rsp = s₂.gpr .rsp ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1
+  s₁.gpr .rsp = s₂.gpr .rsp ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1 ∧
+  s₁.mxcsr = s₂.mxcsr
 
 open VG.X86_64 in
 /-- `vg_chacha20_poly1305_seal(key, nonce, aad, aad_len, data, len, tag, work)`. -/
@@ -674,10 +631,11 @@ structure APre (enc : Bool) (s₀ : State) : Prop where
   wrap_t : (tp s₀).toNat + 16 ≤ 2 ^ 64
   wrap_k : (kp s₀).toNat + 32 ≤ 2 ^ 64
   wrap_n : (np s₀).toNat + 12 ≤ 2 ^ 64
+  sp24 : 24 ≤ (s₀.gpr .rsp).toNat
 
 theorem APre.of {enc : Bool} (s₀ : State) (h : preX86_64 enc s₀) : APre enc s₀ := by
-  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23, h24, h25, h26, h27, h28, h29⟩ := h
-  exact ⟨⟨[], by rw [List.append_nil]; exact h1⟩, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23, h24, h25, h26, h27, h28, h29⟩
+  obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23, h24, h25, h26, h27, h28, h29, h30⟩ := h
+  exact ⟨⟨[], by rw [List.append_nil]; exact h1⟩, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20, h21, h22, h23, h24, h25, h26, h27, h28, h29, h30⟩
 
 theorem APre.a_d {enc : Bool} {s₀ : State} (hp : APre enc s₀) : (aR s₀).Disjoint (dR s₀) := hp.d_a.symm
 
@@ -2919,7 +2877,7 @@ theorem padTail_ok (b : Impl.Poly1305.X86_64.Blocks) {k : Nat} (hk : k = 1 ∨ k
     rw [mm₆, stored_bytes (tb_lt s.mem Q) s.mem (cx s₀) hlo hhi hj]
     split <;> rfl
   obtain hk2 : k ≤ 2 := by omega_using [hk]
-  refine WP.seq (WP.mono (blocks_call (n := k) rdi₆ rsi₆ rdx₆ (by lit_omega)
+  refine WP.seq (WP.mono (blocks_call (n := k) (hS := by rw [rsp₆]; exact hp.sp24) rdi₆ rsi₆ rdx₆ (by lit_omega)
     (sub_disj s₀ (b := 576) (m := 16 * k) (by lit_omega) (by lit_omega) (by lit_omega))
     (by rw [hp.off_toNat (by lit_omega)]; have := hp.wrap_c; omega_using [hk2, this])
     (by rw [rsp₆]; exact hp.stk_sub (by lit_omega)) (by rw [rsp₆]; exact hp.stk_sub (by lit_omega))
@@ -3015,7 +2973,7 @@ theorem padCopy_ok (b : Impl.Poly1305.X86_64.Blocks) {k : Nat} (hk : k = 1 ∨ k
   obtain wr₆' : s₆.wr = s₀.wr := by rw [wr₆, wr₅, wr₄, h₃.wr, wr₂, hwr]
   obtain mm₆ : s₆.mem = s₃.mem := by rw [m₆, m₅, m₄]
   obtain hk2 : k ≤ 2 := by omega_using [hk]
-  refine WP.seq (WP.mono (blocks_call (n := k) rdi₆ rsi₆ rdx₆ (by lit_omega)
+  refine WP.seq (WP.mono (blocks_call (n := k) (hS := by rw [rsp₆]; exact hp.sp24) rdi₆ rsi₆ rdx₆ (by lit_omega)
     (sub_disj s₀ (b := 576) (m := 16 * k) (by lit_omega) (by lit_omega) (by lit_omega))
     (by rw [hp.off_toNat (by lit_omega)]; have := hp.wrap_c; omega_using [hk2, this])
     (by rw [rsp₆]; exact hp.stk_sub (by lit_omega)) (by rw [rsp₆]; exact hp.stk_sub (by lit_omega))
@@ -3120,7 +3078,7 @@ theorem wholeBlocks_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : AP
     refine WP.block_nil ⟨g₁', rd₁, wr₁, by rw [m₁]; exact Frame.refl _ _, by rw [mx₁], fun key msg hr => ?_⟩
     rw [m₁, h0, Nat.mul_zero]
     simpa [bytesAt] using hr
-  refine WP.seq (WP.mono (blocks_call (P := off (cx s₀) 448) (p := P) (n := len / 16)
+  refine WP.seq (WP.mono (blocks_call (P := off (cx s₀) 448) (p := P) (n := len / 16) (hS := by rw [rsp₁]; exact hp.sp24)
     (by rw [rdi₁, hr15]) (by rw [rsi₁, hP]) (by rw [rdx₁, hn, shr4_ofNat hlt]) (by lit_omega)
     ((hcP.sub_left (sub_ctx s₀ (by lit_omega))).sub_right (Region.sub_prefix hk))
     (by have := hs.wrap; omega_using [this])
@@ -4542,7 +4500,7 @@ theorem absorbLengths_ok (b : Impl.Poly1305.X86_64.Blocks) {s₀ : State} (hp : 
   obtain rsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := by rw [cs₁ _ calleeSaved_rsp, h.rsp]
   obtain wr₁' : s₁.wr = s₀.wr := by rw [wr₁, h.wr]
   rw [h.r15] at rdi₁ rsi₁
-  refine WP.seq (WP.mono (blocks_call (n := 1) rdi₁ rsi₁ (by rw [rdx₁]; rfl) (by lit_omega)
+  refine WP.seq (WP.mono (blocks_call (n := 1) (hS := by rw [rsp₁]; exact hp.sp24) rdi₁ rsi₁ (by rw [rdx₁]; rfl) (by lit_omega)
     (sub_disj s₀ (b := 592) (m := 16 * 1) (by lit_omega) (by lit_omega) (by lit_omega))
     (by rw [hp.off_toNat (by lit_omega)]; have := hp.wrap_c; omega_using [this])
     (by rw [rsp₁]; exact hp.stk_sub (by lit_omega)) (by rw [rsp₁]; exact hp.stk_sub (by lit_omega))
@@ -5102,7 +5060,7 @@ theorem APre.wr_eq {s₀ : State} (hp : APre e s₀) :
 
 theorem pub_regs {s₁ s₂ : State} (hq : pubX86_64 s₁ s₂) :
     ctxR s₁ = ctxR s₂ ∧ dR s₁ = dR s₂ ∧ tR s₁ = tR s₂ := by
-  obtain ⟨-, -, -, -, p5, p6, -, p8, p9⟩ := hq
+  obtain ⟨-, -, -, -, p5, p6, -, p8, p9, -⟩ := hq
   simp only [ctxR, dR, tR, cx, dp, L, tp, p5, p6, p8, p9, and_self]
 
 theorem wf₀ {s₀ : State} (hp : APre e s₀) (t : Addr) : X86_64.Taint.Wf (τ₀ e) (entryT s₀ t) := by
@@ -5125,7 +5083,7 @@ theorem wf₀ {s₀ : State} (hp : APre e s₀) (t : Addr) : X86_64.Taint.Wf (τ
 theorem agree₀ {s₁ s₂ : State} (h₁ : APre e s₁) (h₂ : APre e s₂) (hq : pubX86_64 s₁ s₂) {t₁ t₂ : Addr}
     (ht : t₁ = t₂) : X86_64.Taint.Agree (τ₀ e) (entryT s₁ t₁) (entryT s₂ t₂) := by
   have hq' := hq
-  obtain ⟨p1, p2, p3, p4, p5, p6, p7, p8, p9⟩ := hq'
+  obtain ⟨p1, p2, p3, p4, p5, p6, p7, p8, p9, -⟩ := hq'
   obtain ⟨c, d, t⟩ := pub_regs hq
   obtain g : ∀ s t r, (entryT s t).gpr r = if r = .r11 then t else if r = .rax then cx s else s.gpr r := by
     intro s t r; simp [entryT, State.setReg]
@@ -5320,7 +5278,7 @@ theorem AfterT.wf {s : State} (h : AfterT s₀ t₁₂ s) : X86_64.Taint.Wf (τ�
 include hp hp' hq ht in
 theorem agree₁ {s₁ s₂ : State} (h₁ : AfterT s₀ t₁₂ s₁) (h₂ : AfterT s₀' t₁₂' s₂) : X86_64.Taint.Agree (τ₁ e) s₁ s₂ := by
   have hq' := hq
-  obtain ⟨-, -, -, -, p5, p6, p7, p8, p9⟩ := hq'
+  obtain ⟨-, -, -, -, p5, p6, p7, p8, p9, -⟩ := hq'
   obtain ⟨c, d, t⟩ := pub_regs hq
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, h₁.wf hp, h₂.wf hp', ?_, ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · simp only [τ₁, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -5340,7 +5298,7 @@ after its first `m` bytes. -/
 theorem callM_rel (v : Proof.ChaCha20.X86_64.XorImpl) (m : Nat) :
     RelCT isa (fun s₁ s₂ => XArgsMT s₀ t₁₂ m s₁ ∧ XArgsMT s₀' t₁₂' m s₂) v.callee.inPlace
       fun s₁ s₂ => AfterT s₀ t₁₂ s₁ ∧ AfterT s₀' t₁₂' s₂ := by
-  obtain ⟨-, -, -, -, p5, p6, p7, -, p9⟩ := hq
+  obtain ⟨-, -, -, -, p5, p6, p7, -, p9, -⟩ := hq
   obtain ct := v.relIn (P := fun s₁ s₂ => XArgsMT s₀ t₁₂ m s₁ ∧ XArgsMT s₀' t₁₂' m s₂)
     fun s₁ s₂ ⟨a₁, a₂⟩ =>
     ⟨[], _, [], _, a₁.pre hp v, a₂.pre hp' v, by
@@ -5382,7 +5340,7 @@ theorem callTo_rel (v : Proof.ChaCha20.X86_64.XorImpl) (m : Nat) (hs : SrcIO s�
     (ht : t₁₂ = t₁₂') :
     RelCT isa (fun s₁ s₂ => XArgsTo s₀ t₁₂ m s₁ ∧ XArgsTo s₀' t₁₂' m s₂) (callX v.callee true)
       fun s₁ s₂ => AfterT s₀ t₁₂ s₁ ∧ AfterT s₀' t₁₂' s₂ := by
-  obtain ⟨-, -, -, -, p5, p6, p7, -, p9⟩ := hq
+  obtain ⟨-, -, -, -, p5, p6, p7, -, p9, -⟩ := hq
   obtain ct := v.relTo (P := fun s₁ s₂ => XArgsTo s₀ t₁₂ m s₁ ∧ XArgsTo s₀' t₁₂' m s₂)
     fun s₁ s₂ ⟨a₁, a₂⟩ =>
     ⟨_, _, _, _, a₁.pre hp hs v, a₂.pre hp' hs' v, by
@@ -5446,7 +5404,7 @@ include hp hp' hq ht in
 theorem agreeA {fold pass : Nat} {s₁ s₂ : State} (h₁ : AfterFT fold pass s₀ t₁₂ s₁) (h₂ : AfterFT fold pass s₀' t₁₂' s₂) :
     X86_64.Taint.Agree (τA e) s₁ s₂ := by
   have hq' := hq
-  obtain ⟨-, -, p3, p4, p5, p6, p7, p8, p9⟩ := hq'
+  obtain ⟨-, -, p3, p4, p5, p6, p7, p8, p9, -⟩ := hq'
   obtain ⟨c, d, t⟩ := pub_regs hq
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, h₁.wf hp, h₂.wf hp', ?_, ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · simp only [τA, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -5475,7 +5433,7 @@ include hp hp' hq ht in
 theorem agreeS {fold pass : Nat} {s₁ s₂ : State} (h₁ : AtIteT fold pass s₀ t₁₂ s₁) (h₂ : AtIteT fold pass s₀' t₁₂' s₂) :
     X86_64.Taint.Agree (τS e) s₁ s₂ := by
   have hq' := hq
-  obtain ⟨-, -, -, -, p5, p6, p7, p8, p9⟩ := hq'
+  obtain ⟨-, -, -, -, p5, p6, p7, p8, p9, -⟩ := hq'
   obtain ⟨c, d, t⟩ := pub_regs hq
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, h₁.wf hp, h₂.wf hp', ?_, ?_, X86_64.Taint.noLo, X86_64.Taint.noXr⟩
   · simp only [τS, RegSet.mem_ofList, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -5502,7 +5460,7 @@ include hp hp' hq ht in
 /-- As `agreeS`, from the invariant alone. -/
 theorem agreeI {s₁ s₂ : State} (h₁ : InvT s₀ t₁₂ s₁) (h₂ : InvT s₀' t₁₂' s₂) : X86_64.Taint.Agree (τS e) s₁ s₂ := by
   have hq' := hq
-  obtain ⟨-, -, -, -, p5, p6, p7, p8, p9⟩ := hq'
+  obtain ⟨-, -, -, -, p5, p6, p7, p8, p9, -⟩ := hq'
   obtain ⟨c, d, t⟩ := pub_regs hq
   refine ⟨⟨fun r hr => ?_, fun h => by cases h⟩, fun _ => ?_, h₁.wfS hp, h₂.wfS hp', ?_, ?_, X86_64.Taint.noLo,
     X86_64.Taint.noXr⟩
@@ -5550,7 +5508,7 @@ theorem call1_rel (v : Proof.ChaCha20.X86_64.XorImpl) {pass : Nat} :
     RelCT isa (fun s₁ s₂ => FArgsT v.callee.fold pass s₀ t₁₂ s₁ ∧ FArgsT v.callee.fold pass s₀' t₁₂' s₂)
       v.callee.inPlace
       fun s₁ s₂ => AfterFT v.callee.fold pass s₀ t₁₂ s₁ ∧ AfterFT v.callee.fold pass s₀' t₁₂' s₂ := by
-  obtain ⟨-, -, -, -, p5, p6, p7, -, p9⟩ := hq
+  obtain ⟨-, -, -, -, p5, p6, p7, -, p9, -⟩ := hq
   have hfl := v.fold_le
   have ct := v.relIn
     (P := fun s₁ s₂ => FArgsT v.callee.fold pass s₀ t₁₂ s₁ ∧ FArgsT v.callee.fold pass s₀' t₁₂' s₂) fun s₁ s₂ ⟨a₁, a₂⟩ =>
@@ -5598,25 +5556,37 @@ def τB (enc big : Bool) : X86_64.Taint.T :=
 
 section
 open Impl.Poly1305.X86_64.Blocks
-taint_summary blocksBigS : taintS (τB true true) (.call scalar.name scalar.code)
-taint_summary blocksSmallS : taintS (τB true false) (.call scalar.name scalar.code)
-taint_summary blocksBigAvx2S : taintS (τB true true) (.call avx2.name avx2.code) using blocksBigS
-taint_summary blocksSmallAvx2S : taintS (τB true false) (.call avx2.name avx2.code) using blocksSmallS
-taint_summary blocksBigAvx512S : taintS (τB true true) (.call avx512.name avx512.code) using blocksBigS blocksBigAvx2S
-taint_summary blocksSmallAvx512S : taintS (τB true false) (.call avx512.name avx512.code) using blocksSmallS blocksSmallAvx2S
-taint_summary blocksBigIfmaS : taintS (τB true true) (.call ifma.name ifma.code) using blocksBigS blocksBigAvx2S
-taint_summary blocksSmallIfmaS : taintS (τB true false) (.call ifma.name ifma.code) using blocksSmallS blocksSmallAvx2S
-taint_summary blocksBigO : taintS (τB false true) (.call scalar.name scalar.code)
-taint_summary blocksSmallO : taintS (τB false false) (.call scalar.name scalar.code)
-taint_summary blocksBigAvx2O : taintS (τB false true) (.call avx2.name avx2.code) using blocksBigO
-taint_summary blocksSmallAvx2O : taintS (τB false false) (.call avx2.name avx2.code) using blocksSmallO
-taint_summary blocksBigAvx512O : taintS (τB false true) (.call avx512.name avx512.code) using blocksBigO blocksBigAvx2O
-taint_summary blocksSmallAvx512O : taintS (τB false false) (.call avx512.name avx512.code) using blocksSmallO blocksSmallAvx2O
-taint_summary blocksBigIfmaO : taintS (τB false true) (.call ifma.name ifma.code) using blocksBigO blocksBigAvx2O
-taint_summary blocksSmallIfmaO : taintS (τB false false) (.call ifma.name ifma.code) using blocksSmallO blocksSmallAvx2O
+taint_summary_ops blocksBigS : taintMx (τB true true) (.call scalar.name scalar.code)
+taint_summary_ops blocksSmallS : taintMx (τB true false) (.call scalar.name scalar.code)
+taint_summary_ops blocksBigAvx2S : taintMx (τB true true) (.call avx2.name avx2.code)
+  using Mcdt.X86_64.enterOpMx_ok blocksBigS
+taint_summary_ops blocksSmallAvx2S : taintMx (τB true false) (.call avx2.name avx2.code)
+  using Mcdt.X86_64.enterOpMx_ok blocksSmallS
+taint_summary_ops blocksBigAvx512S : taintMx (τB true true) (.call avx512.name avx512.code)
+  using Mcdt.X86_64.enterOpMx_ok blocksBigS
+taint_summary_ops blocksSmallAvx512S : taintMx (τB true false) (.call avx512.name avx512.code)
+  using Mcdt.X86_64.enterOpMx_ok blocksSmallS
+taint_summary_ops blocksBigIfmaS : taintMx (τB true true) (.call ifma.name ifma.code)
+  using Mcdt.X86_64.enterOpMx_ok blocksBigS
+taint_summary_ops blocksSmallIfmaS : taintMx (τB true false) (.call ifma.name ifma.code)
+  using Mcdt.X86_64.enterOpMx_ok blocksSmallS
+taint_summary_ops blocksBigO : taintMx (τB false true) (.call scalar.name scalar.code)
+taint_summary_ops blocksSmallO : taintMx (τB false false) (.call scalar.name scalar.code)
+taint_summary_ops blocksBigAvx2O : taintMx (τB false true) (.call avx2.name avx2.code)
+  using Mcdt.X86_64.enterOpMx_ok blocksBigO
+taint_summary_ops blocksSmallAvx2O : taintMx (τB false false) (.call avx2.name avx2.code)
+  using Mcdt.X86_64.enterOpMx_ok blocksSmallO
+taint_summary_ops blocksBigAvx512O : taintMx (τB false true) (.call avx512.name avx512.code)
+  using Mcdt.X86_64.enterOpMx_ok blocksBigO
+taint_summary_ops blocksSmallAvx512O : taintMx (τB false false) (.call avx512.name avx512.code)
+  using Mcdt.X86_64.enterOpMx_ok blocksSmallO
+taint_summary_ops blocksBigIfmaO : taintMx (τB false true) (.call ifma.name ifma.code)
+  using Mcdt.X86_64.enterOpMx_ok blocksBigO
+taint_summary_ops blocksSmallIfmaO : taintMx (τB false false) (.call ifma.name ifma.code)
+  using Mcdt.X86_64.enterOpMx_ok blocksSmallO
 end
 
-taint_summary finalizeSumS : taintS (τB true false)
+taint_summary_ops finalizeSumS : taintMx (τB true false)
   (.call "vg_poly1305_finalize_scratch" Impl.Poly1305.X86_64.finalize)
 /-- The public registers at `open`'s call of `vg_poly1305_finalize_scratch`,
 which writes the tag to `ctx + 48`, a known place in the working space, so
@@ -5649,24 +5619,54 @@ theorem cryptPre_taint (enc tb : Bool) {fold pass wide : Nat} {b : Impl.Poly1305
     taint_decide_sum []
 
 theorem sealMid_taint {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass wide b) :
-    ∃ h, (taintS.check (τA true) (sealMid fold b) h).isSome = true := by
+    VG.Taint.Sem taintMx (τA true) (sealMid fold b) := by
   rcases h with ⟨rfl, rfl, -, rfl⟩ | ⟨rfl, rfl, -, rfl⟩ | ⟨rfl, rfl, -, rfl | rfl⟩ <;>
-    taint_decide_sum [blocksBigS, blocksBigAvx2S, blocksBigAvx512S, blocksBigIfmaS]
+    taint_decide_ops [blocksBigS, blocksBigAvx2S, blocksBigAvx512S, blocksBigIfmaS]
 
 theorem sealPost_taint {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass wide b) :
-    ∃ h, (taintS.check (τ₁ true) (sealPost fold pass wide b) h).isSome = true := by
+    VG.Taint.Sem taintMx (τ₁ true) (sealPost fold pass wide b) := by
   rcases h with ⟨rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl, rfl | rfl⟩ <;>
-    taint_decide_sum [blocksSmallS, blocksSmallAvx2S, blocksSmallAvx512S, blocksSmallIfmaS, finalizeSumS]
+    taint_decide_ops [blocksSmallS, blocksSmallAvx2S, blocksSmallAvx512S, blocksSmallIfmaS, finalizeSumS]
 
 theorem openMid_taint {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass wide b) :
-    ∃ h, (taintS.check (τA false) (openMid fold b) h).isSome = true := by
+    VG.Taint.Sem taintMx (τA false) (openMid fold b) := by
   rcases h with ⟨rfl, rfl, -, rfl⟩ | ⟨rfl, rfl, -, rfl⟩ | ⟨rfl, rfl, -, rfl | rfl⟩ <;>
-    taint_decide_sum [blocksBigO, blocksSmallO, blocksBigAvx2O, blocksSmallAvx2O, blocksBigAvx512O,
+    taint_decide_ops [blocksBigO, blocksSmallO, blocksBigAvx2O, blocksSmallAvx2O, blocksBigAvx512O,
       blocksSmallAvx512O, blocksBigIfmaO, blocksSmallIfmaO]
 
 theorem openPost_taint {fold pass wide : Nat} {b : Impl.Poly1305.X86_64.Blocks} (h : FoldPoly fold pass wide b) :
     ∃ h, (taintS.check (τ₁ false) (openPost fold pass wide) h).isSome = true := by
   rcases h with ⟨rfl, rfl, rfl, -⟩ | ⟨rfl, rfl, rfl, -⟩ | ⟨rfl, rfl, rfl, -⟩ <;> taint_decide_sum [finalizeSumO]
+
+/-- `h`, with MXCSR the same in both runs before and after, for code whose
+MXCSR after is determined by the one before and the trace. -/
+theorem relMx {c : Prog isa} {P Q : State → State → Prop} (hd : MxDet c) (h : RelCT isa P c Q) :
+    RelCT isa (fun a b => P a b ∧ a.mxcsr = b.mxcsr) c fun a b => Q a b ∧ a.mxcsr = b.mxcsr :=
+  RelCT.and_mx hd (fun _ _ h => h.2) (h.mono (fun _ _ h => h.1) fun _ _ h => h)
+
+/-- A check in `taintMx` from states that agree on `τ` and on MXCSR. -/
+theorem relTaintMx {c : Prog isa} {P : State → State → Prop} (τ : X86_64.Taint.T)
+    (hp : ∀ s₁ s₂, P s₁ s₂ → X86_64.Taint.Agree τ s₁ s₂) (h : VG.Taint.Sem taintMx τ c) :
+    RelCT isa (fun a b => P a b ∧ a.mxcsr = b.mxcsr) c fun a b => a.mxcsr = b.mxcsr :=
+  (VG.Taint.RelCT.ofSem (A := taintMx) (τ := τ) (fun _ _ h => ⟨hp _ _ h.1, h.2⟩) h).mono (fun _ _ h => h)
+    fun _ _ h => taintMx_mx h
+
+theorem prologueA_mx (v : Proof.ChaCha20.X86_64.XorImpl) :
+    (prologueA v.callee.fold v.callee.pass v.callee.wide).allInstrs (fun i => !loadsMxcsr i) = true := by
+  rcases v.fold_poly with ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ <;>
+    (rw [hf, hpass, hw]; lit_decide)
+
+theorem inPlace_mx (v : Proof.ChaCha20.X86_64.XorImpl) :
+    v.callee.inPlace.allInstrs (fun i => !loadsMxcsr i) = true := by
+  simp only [Impl.ChaCha20.X86_64.Callee.inPlace, Code.allInstrs, v.mxcsr]; rfl
+
+theorem cryptIte_mx (v : Proof.ChaCha20.X86_64.XorImpl) {tb : Bool} :
+    (cryptIte v.callee tb).allInstrs (fun i => !loadsMxcsr i) = true := by
+  cases tb <;>
+  rcases v.fold_poly with ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ | ⟨hf, hpass, hw, -⟩ <;>
+    (simp only [cryptIte, cryptSmall, cryptBig, callX, xorKs, Bool.cond_false, Bool.cond_true,
+      Impl.ChaCha20.X86_64.Callee.inPlace, Code.allInstrs, v.mxcsr, hf, hpass, hw];
+      rfl)
 
 section
 variable (v : Proof.ChaCha20.X86_64.XorImpl) {s₀ s₀' : State}
@@ -5676,14 +5676,15 @@ for `seal` and `open` but for the code between the calls (`mid`). -/
 theorem toPost_rel {enc : Bool} (hp : APre enc s₀) (hp' : APre enc s₀') (hq : pubX86_64 s₀ s₀')
     {t₁ t₂ : Addr} (ht : t₁ = t₂) {tb : Bool} (hs : tb = true → SrcIO s₀ t₁ ∧ SrcIO s₀' t₂) {ent : List Instr}
     (hent : RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.block ent)
-      fun s₁ s₂ => s₁ = entryT s₀ t₁ ∧ s₂ = entryT s₀' t₂)
-    {mid : Prog isa} (hmid : RelCT isa (fun s₁ s₂ => AfterFT v.callee.fold v.callee.pass s₀ t₁ s₁ ∧
-        AfterFT v.callee.fold v.callee.pass s₀' t₂ s₂) mid
-      (fun s₁ s₂ => AtIteT v.callee.fold v.callee.pass s₀ t₁ s₁ ∧ AtIteT v.callee.fold v.callee.pass s₀' t₂ s₂)) :
+      fun s₁ s₂ => s₁ = entryT s₀ t₁ ∧ s₂ = entryT s₀' t₂) (hentM : MxDet (.block ent))
+    {mid : Prog isa} (hmid : RelCT isa (fun s₁ s₂ => (AfterFT v.callee.fold v.callee.pass s₀ t₁ s₁ ∧
+        AfterFT v.callee.fold v.callee.pass s₀' t₂ s₂) ∧ s₁.mxcsr = s₂.mxcsr) mid
+      (fun s₁ s₂ => (AtIteT v.callee.fold v.callee.pass s₀ t₁ s₁ ∧ AtIteT v.callee.fold v.callee.pass s₀' t₂ s₂) ∧
+        s₁.mxcsr = s₂.mxcsr)) :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀')
       (.seq (.block ent) (.seq (prologueA v.callee.fold v.callee.pass v.callee.wide) (.seq v.callee.inPlace
         (.seq mid (cryptIte v.callee tb)))))
-      fun s₁ s₂ => AfterT s₀ t₁ s₁ ∧ AfterT s₀' t₂ s₂ := by
+      fun s₁ s₂ => (AfterT s₀ t₁ s₁ ∧ AfterT s₀' t₂ s₂) ∧ s₁.mxcsr = s₂.mxcsr := by
   have hfl := v.fold_le
   obtain ⟨_, hA⟩ := prologueA_taint enc v.fold_poly
   obtain pA := ((RelCT.taint (A := taintS) (P := fun s₁ s₂ => s₁ = entryT s₀ t₁ ∧ s₂ = entryT s₀' t₂) (τ₀ enc)
@@ -5730,24 +5731,31 @@ theorem toPost_rel {enc : Bool} (hp : APre enc s₀) (hp' : APre enc s₀') (hq 
         fun s₁ s₂ h => ⟨WP.mono (cryptPreTo_ok v (pass_of v) hp h.1.1.inv (hs rfl).1) fun _ h => h.1,
           WP.mono (cryptPreTo_ok v (pass_of v) hp' h.1.2.inv (hs rfl).2) fun _ h => by rw [← hLL]; exact h.1⟩).mono
         (fun _ _ h => h) (fun _ _ h => h.2) |>.seq (callTo_rel hp hp' hq v _ (hs rfl).1 (hs rfl).2 ht)
-  obtain ite := RelCT.ite hc (small.mono (fun _ _ h => h) fun _ _ h => h.2) big
-  exact hent.seq (pA.seq ((call1_rel hp hp' hq v).seq (hmid.seq ite)))
+  have ite := relMx (MxDet.of_noLoad (cryptIte_mx v)) (RelCT.ite hc (small.mono (fun _ _ h => h) fun _ _ h => h.2) big)
+  have hm : s₀.mxcsr = s₀'.mxcsr := hq.2.2.2.2.2.2.2.2.2
+  exact ((relMx hentM hent).mono (fun _ _ h => ⟨h, by rw [h.1, h.2]; exact hm⟩) fun _ _ h => h).seq
+    ((relMx (MxDet.of_noLoad (prologueA_mx v)) pA).seq ((relMx (MxDet.of_noLoad (inPlace_mx v))
+      (call1_rel hp hp' hq v)).seq (hmid.seq ite)))
 
 theorem seal_rel (h₀ : preX86_64 true s₀) (h₀' : preX86_64 true s₀') (hq : pubX86_64 s₀ s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') («seal» v.callee v.poly) fun _ _ => True := by
   obtain hp := APre.of _ h₀
   obtain hp' := APre.of _ h₀'
   have hfl := v.fold_le
-  obtain ⟨_, hmid⟩ := sealMid_taint v.fold_poly
-  obtain ⟨_, hpost⟩ := sealPost_taint v.fold_poly
-  obtain mid := ((RelCT.taint (A := taintS)
-    (P := fun s₁ s₂ => AfterFT v.callee.fold v.callee.pass s₀ (tp s₀) s₁ ∧ AfterFT v.callee.fold v.callee.pass s₀' (tp s₀') s₂) (τA true)
+  have hmid := sealMid_taint v.fold_poly
+  have hpost := sealPost_taint v.fold_poly
+  have mid := ((relTaintMx (P := fun s₁ s₂ => AfterFT v.callee.fold v.callee.pass s₀ (tp s₀) s₁ ∧
+      AfterFT v.callee.fold v.callee.pass s₀' (tp s₀') s₂) (τA true)
     (fun _ _ h => agreeA hp hp' hq (tp_pub hq) h.1 h.2) hmid).wp (F₁ := AtIteT v.callee.fold v.callee.pass s₀ (tp s₀))
     (F₂ := AtIteT v.callee.fold v.callee.pass s₀' (tp s₀')) fun _ _ h =>
-      ⟨sealMid_ok hfl v.poly hp h.1, sealMid_ok hfl v.poly hp' h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
-  obtain post := RelCT.taint (A := taintS) (P := fun s₁ s₂ => AfterT s₀ (tp s₀) s₁ ∧ AfterT s₀' (tp s₀') s₂) (τ₁ true)
-    (fun _ _ h => agree₁ hp hp' hq (tp_pub hq) h.1 h.2) hpost
-  have := (toPost_rel v hp hp' hq (tp_pub hq) (tb := false) (fun h => nomatch h) (entry_rel hp hp' hq) mid).seq post
+      ⟨sealMid_ok hfl v.poly hp h.1.1, sealMid_ok hfl v.poly hp' h.1.2⟩).mono (Q' := fun (s₁ s₂ : State) => (AtIteT v.callee.fold v.callee.pass s₀ (tp s₀) s₁ ∧
+        AtIteT v.callee.fold v.callee.pass s₀' (tp s₀') s₂) ∧ s₁.mxcsr = s₂.mxcsr) (fun _ _ h => h)
+      fun _ _ h => ⟨h.2, h.1⟩
+  have post := (relTaintMx (P := fun s₁ s₂ => AfterT s₀ (tp s₀) s₁ ∧ AfterT s₀' (tp s₀') s₂) (τ₁ true)
+    (fun _ _ h => agree₁ hp hp' hq (tp_pub hq) h.1 h.2) hpost).mono (Q' := fun _ _ => True) (fun _ _ h => h)
+    fun _ _ _ => trivial
+  have := (toPost_rel v hp hp' hq (tp_pub hq) (tb := false) (fun h => nomatch h) (entry_rel hp hp' hq)
+    (MxDet.of_noLoad (by lit_decide)) mid).seq post
   refine RelCT.of_exec seal_exec ?_
   exact RelCT.of_exec (fun e => by
     cases e with | seq e₀ e => cases e with | seq eA e => cases e with | seq eC e => cases e with
@@ -5760,17 +5768,20 @@ theorem body_rel (hp : APre false s₀) (hp' : APre false s₀') (hq : pubX86_64
     (hsrc : SrcIO s₀ (sp s₀)) (hsrc' : SrcIO s₀' (sp s₀')) :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (openBody v.callee v.poly) fun _ _ => True := by
   have hfl := v.fold_le
-  obtain ⟨_, hmid⟩ := openMid_taint v.fold_poly
+  have hmid := openMid_taint v.fold_poly
   obtain ⟨_, hpost⟩ := openPost_taint v.fold_poly
-  obtain mid := ((RelCT.taint (A := taintS)
-    (P := fun s₁ s₂ => AfterFT v.callee.fold v.callee.pass s₀ (sp s₀) s₁ ∧
+  have mid := ((relTaintMx (P := fun s₁ s₂ => AfterFT v.callee.fold v.callee.pass s₀ (sp s₀) s₁ ∧
       AfterFT v.callee.fold v.callee.pass s₀' (sp s₀') s₂) (τA false)
     (fun _ _ h => agreeA hp hp' hq hs h.1 h.2) hmid).wp (F₁ := AtIteT v.callee.fold v.callee.pass s₀ (sp s₀))
     (F₂ := AtIteT v.callee.fold v.callee.pass s₀' (sp s₀')) fun _ _ h =>
-      ⟨openMid_ok hfl v.poly hp hsrc.1 h.1, openMid_ok hfl v.poly hp' hsrc'.1 h.2⟩).mono (fun _ _ h => h) fun _ _ h => h.2
-  obtain post := RelCT.taint (A := taintS) (P := fun s₁ s₂ => AfterT s₀ (sp s₀) s₁ ∧ AfterT s₀' (sp s₀') s₂)
-    (τ₁ false) (fun _ _ h => agree₁ hp hp' hq hs h.1 h.2) hpost
-  have := (toPost_rel v hp hp' hq hs (tb := true) (fun _ => ⟨hsrc, hsrc'⟩) (entryO_rel hp hp' hq) mid).seq post
+      ⟨openMid_ok hfl v.poly hp hsrc.1 h.1.1, openMid_ok hfl v.poly hp' hsrc'.1 h.1.2⟩).mono (Q' := fun (s₁ s₂ : State) => (AtIteT v.callee.fold v.callee.pass s₀ (sp s₀) s₁ ∧
+        AtIteT v.callee.fold v.callee.pass s₀' (sp s₀') s₂) ∧ s₁.mxcsr = s₂.mxcsr) (fun _ _ h => h)
+      fun _ _ h => ⟨h.2, h.1⟩
+  have post := RelCT.taint (A := taintS) (P := fun s₁ s₂ => (AfterT s₀ (sp s₀) s₁ ∧ AfterT s₀' (sp s₀') s₂) ∧
+      s₁.mxcsr = s₂.mxcsr)
+    (τ₁ false) (fun _ _ h => agree₁ hp hp' hq hs h.1.1 h.1.2) hpost
+  have := (toPost_rel v hp hp' hq hs (tb := true) (fun _ => ⟨hsrc, hsrc'⟩) (entryO_rel hp hp' hq)
+    (MxDet.of_noLoad (by lit_decide)) mid).seq post
   refine RelCT.of_exec open_exec ?_
   exact RelCT.of_exec (fun e => by
     cases e with | seq e₀ e => cases e with | seq eA e => cases e with | seq eC e => cases e with

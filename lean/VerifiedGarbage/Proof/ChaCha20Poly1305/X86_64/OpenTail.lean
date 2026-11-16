@@ -389,7 +389,7 @@ include hp hp' hq hl
 /-- `openTail`, in two runs from the states `body_ok` describes. -/
 theorem tail_rel {t t' : Addr} :
     RelCT isa (fun x y => TailIn s₀ t x ∧ TailIn s₀' t' y) openTail fun _ _ => True := by
-  obtain ⟨-, -, -, -, p5, p6, p7, p8, p9⟩ := id hq
+  obtain ⟨-, -, -, -, p5, p6, p7, p8, p9, -⟩ := id hq
   have ecx : cx s₀ = cx s₀' := by simp only [cx, p9]
   have edp : dp s₀ = dp s₀' := by simp only [dp, p5]
   have etp : tp s₀ = tp s₀' := by simp only [tp, p8]

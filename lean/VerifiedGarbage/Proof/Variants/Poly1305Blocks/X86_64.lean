@@ -36,16 +36,16 @@ namespace BlocksImpl
 
 /-- The AVX2 implementation, `vg_poly1305_blocks_avx2`. -/
 def avx2 : BlocksImpl where
-  name := Impl.Poly1305.X86_64.Blocks.nameM .avx2
-  code := Impl.Poly1305.X86_64.Blocks.codeM .avx2
+  name := Impl.Poly1305.X86_64.Blocks.name .avx2
+  code := Impl.Poly1305.X86_64.Blocks.code .avx2
   stack := 16
   stack_le := by decide
   depth_le := by
-    change Impl.Poly1305.X86_64.Avx2.blocksAvx2M.depth ≤ 2
+    change Impl.Poly1305.X86_64.Avx2.blocksAvx2.depth ≤ 2
     lit_decide
-  xdepth := by change Impl.Poly1305.X86_64.Avx2.blocksAvx2M.x86_64Depth ≤ 16; lit_decide
-  ok := Avx2.blocksAvx2M_ok
-  ct := Avx2.blocksAvx2M_ct
+  xdepth := by change Impl.Poly1305.X86_64.Avx2.blocksAvx2.x86_64Depth ≤ 16; lit_decide
+  ok := Avx2.blocksAvx2_ok
+  ct := Avx2.blocksAvx2_ct
   spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_avx2"
   features := Impl.Poly1305.X86_64.Blocks.features .avx2
@@ -82,16 +82,16 @@ namespace BlocksImpl
 
 /-- The AVX-512 implementation, `vg_poly1305_blocks_avx512`. -/
 def avx512 : BlocksImpl where
-  name := Impl.Poly1305.X86_64.Blocks.nameM .avx512
-  code := Impl.Poly1305.X86_64.Blocks.codeM .avx512
+  name := Impl.Poly1305.X86_64.Blocks.name .avx512
+  code := Impl.Poly1305.X86_64.Blocks.code .avx512
   stack := 16
   stack_le := by decide
   depth_le := by
-    change Impl.Poly1305.X86_64.Avx512.blocksAvx512M.depth ≤ 2
+    change Impl.Poly1305.X86_64.Avx512.blocksAvx512.depth ≤ 2
     lit_decide
-  xdepth := by change Impl.Poly1305.X86_64.Avx512.blocksAvx512M.x86_64Depth ≤ 16; lit_decide
-  ok := Avx512.blocksAvx512M_ok
-  ct := Avx512.blocksAvx512M_ct
+  xdepth := by change Impl.Poly1305.X86_64.Avx512.blocksAvx512.x86_64Depth ≤ 16; lit_decide
+  ok := Avx512.blocksAvx512_ok
+  ct := Avx512.blocksAvx512_ct
   spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_avx512"
   features := Impl.Poly1305.X86_64.Blocks.features .avx512
@@ -128,16 +128,16 @@ namespace BlocksImpl
 
 /-- The AVX-512 IFMA implementation, `vg_poly1305_blocks_ifma`. -/
 def ifma : BlocksImpl where
-  name := Impl.Poly1305.X86_64.Blocks.nameM .ifma
-  code := Impl.Poly1305.X86_64.Blocks.codeM .ifma
+  name := Impl.Poly1305.X86_64.Blocks.name .ifma
+  code := Impl.Poly1305.X86_64.Blocks.code .ifma
   stack := 16
   stack_le := by decide
   depth_le := by
-    change Impl.Poly1305.X86_64.Ifma.blocksIfmaM.depth ≤ 2
+    change Impl.Poly1305.X86_64.Ifma.blocksIfma.depth ≤ 2
     lit_decide
-  xdepth := by change Impl.Poly1305.X86_64.Ifma.blocksIfmaM.x86_64Depth ≤ 16; lit_decide
-  ok := Ifma.blocksIfmaM_ok
-  ct := Ifma.blocksIfmaM_ct
+  xdepth := by change Impl.Poly1305.X86_64.Ifma.blocksIfma.x86_64Depth ≤ 16; lit_decide
+  ok := Ifma.blocksIfma_ok
+  ct := Ifma.blocksIfma_ct
   spSafe := Code.all_of_spTest (by lit_decide)
   suffix := "_ifma"
   features := Impl.Poly1305.X86_64.Blocks.features .ifma

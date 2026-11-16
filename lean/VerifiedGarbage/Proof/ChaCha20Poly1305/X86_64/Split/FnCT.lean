@@ -46,7 +46,7 @@ def splitPub (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧
     s₁.gpr .rsp = s₂.gpr .rsp ∧ stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1 ∧
-    stackArg s₁ 2 = stackArg s₂ 2 ∧ stackArg s₁ 3 = stackArg s₂ 3
+    stackArg s₁ 2 = stackArg s₂ 2 ∧ stackArg s₁ 3 = stackArg s₂ 3 ∧ s₁.mxcsr = s₂.mxcsr
 
 theorem sealSplitBody_ct (v : Proof.ChaCha20.X86_64.XorImpl) (b : Impl.Poly1305.X86_64.Blocks)
     (hvb : v.poly = b) (hb : b = .avx512 ∨ b = .ifma) :
@@ -69,7 +69,7 @@ include p₁ p₂ hq
 
 /-- `head`, in two runs. -/
 theorem head_rel (whole : Bool) (w : Width) : RelCT isa (Eq2 σ₁ σ₂) (head whole w) TT := by
-  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, qsp, a₀, a₁, a₂, a₃⟩ := hq
+  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, qsp, a₀, a₁, a₂, a₃, -⟩ := hq
   have hc : cntOf σ₁ whole = cntOf σ₂ whole := by simp only [cntOf, eSN, eLn, q₆, a₁]
   refine rel_seq (rel_regs [.rsp] (by simp [qsp]) ⟨_, by taint_decide⟩) (loaded_ok p₁) (loaded_ok p₂)
     fun x₁ x₂ hx₁ hx₂ => ?_
@@ -100,12 +100,12 @@ omit p₁ p₂ in
 /-- The public data of `seal`'s entry state in the frame, in two runs. -/
 theorem body_pub {whole : Bool} {u₁ u₂ : State} (hu₁ : Body whole σ₁ u₁) (hu₂ : Body whole σ₂ u₂) :
     PubS u₁ u₂ := by
-  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, qsp, a₀, a₁, a₂, a₃⟩ := hq
+  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, qsp, a₀, a₁, a₂, a₃, qm⟩ := hq
   have hB : fB σ₁ = fB σ₂ := by simp only [fB, qsp]
   exact ⟨⟨by rw [hu₁.rdi, hu₂.rdi, q₁], by rw [hu₁.rsi, hu₂.rsi, q₂], by rw [hu₁.rdx, hu₂.rdx, q₃],
     by rw [hu₁.rcx, hu₂.rcx, q₄], by rw [hu₁.r8, hu₂.r8, eDst, eDst, a₀], by rw [hu₁.r9, hu₂.r9, a₁],
     by rw [hu₁.rsp, hu₂.rsp, hB], by rw [hu₁.arg0, hu₂.arg0, eTg, eTg, a₂],
-    by rw [hu₁.arg1, hu₂.arg1, eW, eW, a₃]⟩, by rw [hu₁.arg2, hu₂.arg2, eSrc, eSrc, q₅],
+    by rw [hu₁.arg1, hu₂.arg1, eW, eW, a₃], by rw [hu₁.mx, hu₂.mx, qm]⟩, by rw [hu₁.arg2, hu₂.arg2, eSrc, eSrc, q₅],
     by rw [hu₁.arg3, hu₂.arg3, q₆]⟩
 
 /-- The frame around a body that is constant time from `seal`'s entry state,

@@ -509,13 +509,14 @@ theorem openCall_ct (v : XorImpl) : ConstantTime isa openK.pre openK.pub (openCa
   refine Gather.ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
   have p₁ : openPre σ₁ := p₁
   have p₂ : openPre σ₂ := p₂
-  obtain ⟨⟨q₁, q₂, q₃, q₄, q₅, q₆, qsp, a₀, a₁⟩, ql⟩ := hq
+  obtain ⟨⟨q₁, q₂, q₃, q₄, q₅, q₆, qsp, a₀, a₁, qm⟩, ql⟩ := hq
   refine Gather.rel_seq (Gather.rel_regs [.rsp] (by simp [qsp]) ⟨_, by taint_decide⟩) (openArgs_ok p₁)
     (openArgs_ok p₂) fun h₁ h₂ hh₁ hh₂ => CallOpen.callOpen_rel v (ocpre_of p₁ hh₁) (ocpre_of p₂ hh₂)
       ⟨by rw [hh₁.rdi, hh₂.rdi, q₁], by rw [hh₁.rsi, hh₂.rsi, q₂], by rw [hh₁.rdx, hh₂.rdx, q₃],
         by rw [hh₁.rcx, hh₂.rcx, q₄], by rw [hh₁.r8, hh₂.r8, q₅], by rw [hh₁.r9, hh₂.r9, q₆],
         by rw [hh₁.r10, hh₂.r10, a₀], by rw [hh₁.r11, hh₂.r11, q₅],
-        by rw [hh₁.rax, hh₂.rax, a₁], by rw [hh₁.rsp, hh₂.rsp, qsp], ?_⟩
+        by rw [hh₁.rax, hh₂.rax, a₁], by rw [hh₁.rsp, hh₂.rsp, qsp], ?_,
+        by rw [hh₁.mx, hh₂.mx, qm]⟩
   have leak : ∀ {σ h : State}, OLoaded σ h → CallOpen.hLeak h = openLeakX86_64 σ := fun {σ h} hh => by
     unfold CallOpen.hLeak openLeakX86_64
     rw [hh.mem, hh.rdi, hh.rsi, hh.rdx, hh.rcx, CallOpen.hS, CallOpen.hT, CallOpen.hL, hh.r11, hh.r10, hh.r9]

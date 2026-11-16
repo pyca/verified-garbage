@@ -33,27 +33,10 @@ namespace VG.Proof.Poly1305
 
 open VG.X86_64 in
 /-- `blocksX86_64` with `k` bytes of stack below the return address, for an
-implementation whose calls use them: what callers of any implementation of
-`vg_poly1305_blocks` rely on. -/
-def blocksStack (k : Nat) : Contract X86_64.isa where
-  pre s :=
-    let state : Region := ⟨s.gpr .rdi, 128⟩
-    let blocks : Region := ⟨s.gpr .rsi, 16 * (s.gpr .rdx).toNat⟩
-    let ret : Region := ⟨s.gpr .rsp, 8⟩
-    let stack : Region := ⟨s.gpr .rsp - BitVec.ofNat 64 k, k⟩
-    s.rd = [blocks] ∧ s.wr = [state] ∧ state.Disjoint blocks ∧ ret.Disjoint state ∧
-      stack.Disjoint state ∧ stack.Disjoint blocks ∧
-      (s.gpr .rsi).toNat + 16 * (s.gpr .rdx).toNat ≤ 2 ^ 64
-  post := Proof.Poly1305.blocksX86_64.post
-  pub s₁ s₂ := Proof.Poly1305.blocksX86_64.pub s₁ s₂ ∧ s₁.gpr .rsp = s₂.gpr .rsp
-
-
-open VG.X86_64 in
-/-- `blocksStack`, for an implementation that may have frames: `blocksX86_64` with `k` bytes of stack below the return address, for an
 implementation whose calls and frames use them (which do not wrap around),
 and MXCSR public: what callers of any implementation of
 `vg_poly1305_blocks` rely on. -/
-def blocksStackM (k : Nat) : Contract X86_64.isa where
+def blocksStack (k : Nat) : Contract X86_64.isa where
   pre s :=
     let state : Region := ⟨s.gpr .rdi, 128⟩
     let blocks : Region := ⟨s.gpr .rsi, 16 * (s.gpr .rdx).toNat⟩
@@ -98,10 +81,10 @@ structure BlocksImpl where
   /-- The stack it uses below its return address. -/
   xdepth : code.x86_64Depth ≤ stack
   /-- It is correct. -/
-  ok : ∀ s, (blocksStackM stack).pre s →
-    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (blocksStackM stack).post s s'
+  ok : ∀ s, (blocksStack stack).pre s →
+    ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ (blocksStack stack).post s s'
   /-- It is constant time. -/
-  ct : ConstantTime isa (blocksStackM stack).pre (blocksStackM stack).pub code
+  ct : ConstantTime isa (blocksStack stack).pre (blocksStack stack).pub code
   /-- It writes the stack pointer only in the pushes and pops of its frames. -/
   spSafe : code.all (fun i => !isa.writesSp i) = true
   /-- What the names of its callers' instances end with (e.g. `_avx2`;
@@ -116,11 +99,11 @@ structure BlocksImpl where
 
 namespace BlocksImpl
 
-theorem scalar_ok : ∀ s, (blocksStackM 0).pre s → ∃ t s', Exec isa Impl.Poly1305.X86_64.blocks s t s' ∧
-    abiPreserved s s' ∧ (blocksStackM 0).post s s' :=
+theorem scalar_ok : ∀ s, (blocksStack 0).pre s → ∃ t s', Exec isa Impl.Poly1305.X86_64.blocks s t s' ∧
+    abiPreserved s s' ∧ (blocksStack 0).post s s' :=
   fun s ⟨h1, h2, h3, h4, _, _, h7, _⟩ => blocks_ok s ⟨h1, h2, h3, h4, h7⟩
 
-theorem scalar_ct : ConstantTime isa (blocksStackM 0).pre (blocksStackM 0).pub Impl.Poly1305.X86_64.blocks :=
+theorem scalar_ct : ConstantTime isa (blocksStack 0).pre (blocksStack 0).pub Impl.Poly1305.X86_64.blocks :=
   fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨a1, a2, a3, a4, _, _, a7, _⟩ ⟨b1, b2, b3, b4, _, _, b7, _⟩ hp e₁ e₂ =>
     blocks_ct s₁ s₂ t₁ t₂ s₁' s₂' ⟨a1, a2, a3, a4, a7⟩ ⟨b1, b2, b3, b4, b7⟩ hp.1 e₁ e₂
 

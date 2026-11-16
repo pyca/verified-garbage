@@ -43,22 +43,6 @@ def Blocks.code : Blocks → Prog isa
   | .avx512 => Avx512.blocksAvx512
   | .ifma => Ifma.blocksIfma
 
-/-- The symbol of its version that calls `vg_mcdt_enter` itself, only
-before the vector code (`Avx2.guard`), so that its callers' dispatchers
-need not (`Rust.mcdtOpen`); the scalar one needs none. -/
-def Blocks.nameM : Blocks → String
-  | .scalar => "vg_poly1305_blocks"
-  | .avx2 => "vg_poly1305_blocks_avx2_mcdt"
-  | .avx512 => "vg_poly1305_blocks_avx512_mcdt"
-  | .ifma => "vg_poly1305_blocks_ifma_mcdt"
-
-/-- Its code. -/
-def Blocks.codeM : Blocks → Prog isa
-  | .scalar => blocks
-  | .avx2 => Avx2.blocksAvx2M
-  | .avx512 => Avx512.blocksAvx512M
-  | .ifma => Ifma.blocksIfmaM
-
 /-- The CPU features its code requires. -/
 def Blocks.features : Blocks → List String
   | .scalar => []

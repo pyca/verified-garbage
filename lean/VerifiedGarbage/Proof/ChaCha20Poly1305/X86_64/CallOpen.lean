@@ -75,9 +75,9 @@ theorem pad_ok (s : State) : WP isa (.block (Stitch.padIns .rax 41)) s fun u => 
 /-- `APre` does not depend on `rax`. -/
 theorem apre_setRax {s : State} (hp : APre false s) (v : BitVec 64) : APre false (s.setReg .rax v) := by
   obtain ⟨⟨more, h1⟩, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20,
-    h21, h22, h23, h24, h25, h26, h27, h28, h29⟩ := hp
+    h21, h22, h23, h24, h25, h26, h27, h28, h29, h30⟩ := hp
   exact ⟨⟨more, h1⟩, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13, h14, h15, h16, h17, h18, h19, h20,
-    h21, h22, h23, h24, h25, h26, h27, h28, h29⟩
+    h21, h22, h23, h24, h25, h26, h27, h28, h29, h30⟩
 
 /-- Nor does `sharedK`'s precondition. -/
 theorem spre_setRax {s : State} (hp : SPreO s) (v : BitVec 64) : SPreO (s.setReg .rax v) := by
@@ -339,6 +339,7 @@ structure CPub (h₁ h₂ : State) : Prop where
   rax : h₁.gpr .rax = h₂.gpr .rax
   rsp : h₁.gpr .rsp = h₂.gpr .rsp
   leak : hLeak h₁ = hLeak h₂
+  mx : h₁.mxcsr = h₂.mxcsr
 
 /-! ## The callee's entry -/
 
@@ -506,7 +507,9 @@ theorem pre : preX86_64 false (u.withRegions (rdB u) (wrB u)) := by
     CPre.stk_disj hs.b_d (d := 24) (n := 8) (by decide), CPre.stk_disj hs.b_t (d := 24) (n := 8) (by decide),
     CPre.stk0 hs.b_w (by decide), CPre.stk0 hs.b_k (by decide), CPre.stk0 hs.b_n (by decide),
     CPre.stk0 hs.b_a (by decide), CPre.stk0 hs.b_d (by decide), CPre.stk0 hs.b_t (by decide),
-    hs.o_w, hs.o_a, hs.o_d, hs.o_t, hs.o_k, hs.o_n⟩
+    hs.o_w, hs.o_a, hs.o_d, hs.o_t, hs.o_k, hs.o_n, by
+      have := hs.sp_lo
+      simp only [BitVec.toNat_add, BitVec.toNat_sub, BitVec.toNat_ofNat, Nat.reducePow, Nat.reduceMod]; omega⟩
 
 /-- The callee's precondition, narrowed. -/
 theorem spre : SPreO (nS u) := by
@@ -725,7 +728,7 @@ theorem callOpen_rel (v : XorImpl) {h₁ h₂ : State} (p₁ : CPre h₁) (p₂ 
   have hu₁ := p₁.entry
   have hu₂ := p₂.entry
   have hB : hB h₁ = hB h₂ := by simp only [hB, hq.rsp]
-  refine ⟨_, _, _, _, hu₁.spre p₁, hu₂.spre p₂, ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩,
+  refine ⟨_, _, _, _, hu₁.spre p₁, hu₂.spre p₂, ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩,
     Covers.append_left (hu₁.rd_cov p₁) (hu₁.wr_cov p₁).right, hu₁.wr_cov p₁,
     Covers.append_left (hu₂.rd_cov p₂) (hu₂.wr_cov p₂).right, hu₂.wr_cov p₂, ?_⟩
   · show (eS h₁).gpr .rdi = (eS h₂).gpr .rdi; rw [hu₁.rdi, hu₂.rdi, hq.rdi]
@@ -737,6 +740,7 @@ theorem callOpen_rel (v : XorImpl) {h₁ h₂ : State} (p₁ : CPre h₁) (p₂ 
   · show (eS h₁).gpr .rsp = (eS h₂).gpr .rsp; rw [hu₁.rsp, hu₂.rsp, hB]
   · show stackArg (eS h₁) 0 = stackArg (eS h₂) 0; rw [hu₁.arg0, hu₂.arg0, hT, hT, hq.r10]
   · show stackArg (eS h₁) 1 = stackArg (eS h₂) 1; rw [hu₁.arg1, hu₂.arg1, hW, hW, hq.rax]
+  · exact hq.mx
   · show (eS h₁).gpr .r11 = (eS h₂).gpr .r11; rw [hu₁.r11, hu₂.r11, hq.r11]
   · rw [hu₁.leak p₁, hu₂.leak p₂, hq.leak]
   · show ((pushed frameRegs h₁).gpr .rsp) = (pushed frameRegs h₂).gpr .rsp

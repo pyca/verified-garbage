@@ -100,7 +100,7 @@ jmp 21f
 21:
 .base64 "TYnHSIn7SIn1SYnMSInKSMHqBEiD+RA="
 jb 29f
-call {vg_poly1305_blocks_ifma_mcdt}
+call {vg_poly1305_blocks_ifma}
 jmp 210f
 29:
 210:
@@ -115,7 +115,7 @@ jmp 212f
 212:
 .base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_poly1305_blocks_ifma_mcdt = sym super::poly1305::vg_poly1305_blocks_ifma_mcdt::vg_poly1305_blocks_ifma_mcdt,
+        vg_poly1305_blocks_ifma = sym super::poly1305::vg_poly1305_blocks_ifma::vg_poly1305_blocks_ifma,
     )
 }
 
@@ -165,7 +165,7 @@ jmp 21f
 21:
 .base64 "TYnHSIn7SIn1SYnMSInKSMHqBEiD+RA="
 jb 29f
-call {vg_poly1305_blocks_avx512_mcdt}
+call {vg_poly1305_blocks_avx512}
 jmp 210f
 29:
 210:
@@ -180,7 +180,7 @@ jmp 212f
 212:
 .base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_poly1305_blocks_avx512_mcdt = sym super::poly1305::vg_poly1305_blocks_avx512_mcdt::vg_poly1305_blocks_avx512_mcdt,
+        vg_poly1305_blocks_avx512 = sym super::poly1305::vg_poly1305_blocks_avx512::vg_poly1305_blocks_avx512,
     )
 }
 
@@ -230,7 +230,7 @@ jmp 21f
 21:
 .base64 "TYnHSIn7SIn1SYnMSInKSMHqBEiD+RA="
 jb 29f
-call {vg_poly1305_blocks_avx2_mcdt}
+call {vg_poly1305_blocks_avx2}
 jmp 210f
 29:
 210:
@@ -245,7 +245,7 @@ jmp 212f
 212:
 .base64 "SYsfSYtvCE2LZxBNi28YTYt3IE2LfyhIjaQkiAAAAMX578DF8e/Jxenv0sXh79vF2e/kxdHv7cXJ7/bFwe//xEE578DEQTHvycRBKe/SxEEh79vEQRnv5MRBEe/txEEJ7/bEQQHv/0iNpCRg////SI2kJKAAAAAxwDHJMdIx9jH/RTHARTHJRTHSRTHbww=="
 .p2align 6"#,
-        vg_poly1305_blocks_avx2_mcdt = sym super::poly1305::vg_poly1305_blocks_avx2_mcdt::vg_poly1305_blocks_avx2_mcdt,
+        vg_poly1305_blocks_avx2 = sym super::poly1305::vg_poly1305_blocks_avx2::vg_poly1305_blocks_avx2,
     )
 }
 
@@ -319,24 +319,12 @@ pub(crate) mod vg_poly1305_blocks;
 pub(crate) mod vg_poly1305_blocks_avx2;
 
 #[rustfmt::skip]
-#[path = "internal/vg_poly1305_blocks_avx2_mcdt.rs"]
-pub(crate) mod vg_poly1305_blocks_avx2_mcdt;
-
-#[rustfmt::skip]
 #[path = "internal/vg_poly1305_blocks_avx512.rs"]
 pub(crate) mod vg_poly1305_blocks_avx512;
 
 #[rustfmt::skip]
-#[path = "internal/vg_poly1305_blocks_avx512_mcdt.rs"]
-pub(crate) mod vg_poly1305_blocks_avx512_mcdt;
-
-#[rustfmt::skip]
 #[path = "internal/vg_poly1305_blocks_ifma.rs"]
 pub(crate) mod vg_poly1305_blocks_ifma;
-
-#[rustfmt::skip]
-#[path = "internal/vg_poly1305_blocks_ifma_mcdt.rs"]
-pub(crate) mod vg_poly1305_blocks_ifma_mcdt;
 
 #[rustfmt::skip]
 #[path = "internal/vg_poly1305_finalize_scratch.rs"]

@@ -94,14 +94,14 @@ include hp h
 /-- The callee's precondition, with the regions it is given, and that it is given
 regions we have. -/
 theorem call_pre :
-    (blocksStackM v.stack).pre (s.callEntry.withRegions [blkR s₀ c] [sR (st s₀)]) ∧
+    (blocksStack v.stack).pre (s.callEntry.withRegions [blkR s₀ c] [sR (st s₀)]) ∧
     Covers ([blkR s₀ c] ++ [sR (st s₀)]) (s.rd ++ s.wr) ∧ Covers [sR (st s₀)] s.wr := by
   have hsp : s.gpr .rsp = s₀.gpr .rsp := h.rsp
   have hstk : Region.Sub (below (s.gpr .rsp) 24) (stkR s₀) := by rw [hsp]; exact fun _ h => h
   have hle := blk_le h.c_le
   have hdl := dl_lt s₀
   refine ⟨?_, ?_, ?_⟩
-  · simp only [blocksStackM, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
+  · simp only [blocksStack, State.withRegions_gpr, State.withRegions_rd, State.withRegions_wr,
       State.callEntry_rsp, State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp),
       State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp),
       h.rdi, h.rsi, h.rdx, blk_toNat]
@@ -139,7 +139,7 @@ theorem call_ok (hge : 16 ≤ dl s₀ - c) :
   have hsp : s.gpr .rsp = s₀.gpr .rsp := h.rsp
   have hd := v.xdepth
   have hs16 := v.stack_le
-  refine X86_64.WP.call_sp_mx (k := blocksStackM v.stack) v.ok (SpSafe.of_all v.spSafe) (by omega_using [hd, hs16]) hpre hc hw ?_
+  refine X86_64.WP.call_sp_mx (k := blocksStack v.stack) v.ok (SpSafe.of_all v.spSafe) (by omega_using [hd, hs16]) hpre hc hw ?_
   intro s' hrd hwr hcs hf _ ⟨s₂, hm₂, _, hpost⟩ hmx'
   have cs : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r := hcs
   have hf' : Frame [sR (st s₀), stkR s₀] s.mem s'.mem := hf.sub fun r hr => by
@@ -163,7 +163,7 @@ theorem call_ok (hge : 16 ≤ dl s₀ - c) :
     rcases hr with rfl | rfl
     · exact hp.d_st.sub_left (blk_dR h.c_le)
     · exact hp.d_sc.sub_left (blk_dR h.c_le)
-  simp only [blocksStackM, Proof.Poly1305.blocksX86_64, State.withRegions_gpr, State.withRegions_mem,
+  simp only [blocksStack, Proof.Poly1305.blocksX86_64, State.withRegions_gpr, State.withRegions_mem,
     State.callEntry_gpr _ (by decide : Reg.rdi ≠ .rsp), State.callEntry_gpr _ (by decide : Reg.rsi ≠ .rsp),
     State.callEntry_gpr _ (by decide : Reg.rdx ≠ .rsp), h.rdi, h.rsi, h.rdx, blk_toNat, hm₂, hblk] at hpost
   obtain ⟨X, Y, hX, hY, hXY, hYd, hbuf, hrep⟩ := h.st

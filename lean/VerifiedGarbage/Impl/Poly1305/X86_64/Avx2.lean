@@ -35,9 +35,7 @@ the first `4 ⌊n / 4⌋` blocks are absorbed four at a time, as in OpenSSL's
   scratch, and the mask `2²⁶ - 1` and the pad bit `2²⁴` are broadcast from
   `r8` and `r9` when needed.
 * `vpmuludq` has MXCSR-configuration-dependent timing on some processors
-  (see "MCDT" in `TCB/X86_64/Isa.lean`): in `blocksAvx2`, the dispatcher of
-  its caller runs `vg_mcdt_enter` first, which leaves MXCSR `0x1FBF` for the
-  whole call. `blocksAvx2M` (`vg_poly1305_blocks_avx2_mcdt`) instead calls
+  (see "MCDT" in `TCB/X86_64/Isa.lean`): the function calls
   `vg_mcdt_enter` (`Spec/Mcdt.lean`) itself, with at least `minBlocks`
   blocks only, keeping `n` in `r9`, and runs the vector code only if it
   returned 1, which leaves MXCSR `0x1FBF` until the function returns
@@ -248,12 +246,9 @@ then the rest by `vg_poly1305_blocks`. -/
 def big : Prog isa :=
   .seq body (.seq (.block [.alu .test .rdx (.reg .rdx)]) (.ite .e (.block []) scalar))
 
-def blocksAvx2 : Prog isa :=
-  .seq (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 minBlocks))]) (.ite .b scalar big)
-
-/-- `blocksAvx2`, with the vector code run only once `vg_mcdt_enter` has
+/-- The function: the vector code run only once `vg_mcdt_enter` has
 returned 1 (`guard`). -/
-def blocksAvx2M : Prog isa :=
+def blocksAvx2 : Prog isa :=
   .seq (.block [.alu .cmp .rdx (.imm (BitVec.ofNat 32 minBlocks))]) (.ite .b scalar (guard big))
 
 end VG.Impl.Poly1305.X86_64.Avx2
