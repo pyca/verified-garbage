@@ -72,7 +72,7 @@ theorem umaal_sound {τ τ' : VG.Arm.Taint.T} {lo hi n m : Reg} {s₁ s₂ s₁'
   · rw [n₁, z₁, c₁, v₁, n₂, z₂, c₂, v₂]; exact ha.rf.2 hf
 
 private theorem base_sound {τ τ' : VG.Arm.Taint.T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
-    (ha : VG.Arm.Taint.Agree τ s₁ s₂) (hs : VG.Arm.Taint.stepKM τ i = some τ')
+    (ha : VG.Arm.Taint.Agree τ s₁ s₂) (hs : taint.step τ i = some τ')
     (e₁ : exec i s₁ = some s₁') (e₂ : exec i s₂ = some s₂') :
     addrs i s₁ = addrs i s₂ ∧ VG.Arm.Taint.Agree τ' s₁' s₂' :=
   taint.step_sound ha hs e₁ e₂

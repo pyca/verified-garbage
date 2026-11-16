@@ -59,6 +59,17 @@ def subset (a b : RegSet R) : Bool := Nat.beq (Nat.land a.bits b.bits) a.bits
 
 def ofList (rs : List R) : RegSet R := rs.foldr (fun r s => s.insert r) empty
 
+/-- `k s`, with the set `s` evaluated: what `k` is given has a numeral for its
+bits, whatever term `s` is, so that two sets that are equal are the same term
+(see "An analysis the kernel finds again" in the `proof-performance` skill).
+The kernel evaluates `Nat.succ` of a numeral to a numeral, and a recursor on
+that one hands over its predecessor, a numeral. -/
+def force {α : Type} (s : RegSet R) (k : RegSet R → α) : α :=
+  Nat.casesOn (motive := fun _ => α) (Nat.succ s.bits) (k s) (fun n => k ⟨n⟩)
+
+omit [RegIdx R] in
+theorem force_eq {α : Type} (s : RegSet R) (k : RegSet R → α) : s.force k = k s := rfl
+
 instance : Coe (List R) (RegSet R) := ⟨ofList⟩
 
 theorem mem_iff {s : RegSet R} {r : R} : r ∈ s ↔ s.bits.testBit (RegIdx.idx r) = true := by

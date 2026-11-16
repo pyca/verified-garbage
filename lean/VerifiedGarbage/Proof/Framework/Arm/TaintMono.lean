@@ -893,8 +893,9 @@ that do not repeat a slot: the same analysis, for checks with summaries
 def taintS : VG.Taint isa where
   T := Taint.T
   Agree := Taint.Agree
-  step := Taint.stepKD
+  step := Taint.stepKeep
   step_sound {τ τ' i s₁ s₂ s₁' s₂'} ha hs e₁ e₂ := by
+    rw [Taint.stepKeep_eq] at hs
     rcases Taint.stepKD_spec τ i with ⟨h, -⟩ | ⟨a, b, h₁, h₂, hab⟩
     · rw [h] at hs; cases hs
     · rw [h₁] at hs; cases hs
@@ -916,6 +917,10 @@ def taintS : VG.Taint isa where
   pop _ _ := none
   pop_sound _ h := by cases h
 
+/-- `taintS`'s step is `stepKD`'s (`stepKeep_eq`). -/
+theorem taintS_step (τ : Taint.T) (i : Instr) : taintS.step τ i = Taint.stepKD τ i :=
+  congrFun (congrFun Taint.stepKeep_eq τ) i
+
 namespace Taint
 
 theorem callStep_mono {τ σ : T} (h : Le τ σ) : Le (callStep τ) (callStep σ) :=
@@ -929,7 +934,7 @@ instance : VG.Taint.LeFrame taintS where
   le_trans h₁ h₂ := leS_iff.mpr ((leS_iff.mp h₁).trans (leS_iff.mp h₂))
   le_right h := leS_iff.mpr (leS_iff.mp h).right
   step {τ σ τ'} i h hs := by
-    have hs : stepKD τ i = some τ' := hs
+    have hs : stepKD τ i = some τ' := (taintS_step τ i).symm.trans hs
     rcases stepKD_spec τ i with ⟨h', -⟩ | ⟨a, b, h₁, h₂, hab⟩
     · rw [h'] at hs; cases hs
     rw [h₁] at hs; cases hs
@@ -937,7 +942,7 @@ instance : VG.Taint.LeFrame taintS where
     rcases stepKD_spec σ i with ⟨-, h'⟩ | ⟨c, d, h₅, h₆, hcd⟩
     · rw [h'] at h₃; cases h₃
     rw [h₆] at h₃; cases h₃
-    exact ⟨c, h₅, leS_iff.mpr (h₄.sim hab hcd)⟩
+    exact ⟨c, (taintS_step σ i).trans h₅, leS_iff.mpr (h₄.sim hab hcd)⟩
   condPub _ h hc := (leS_iff.mp h).flags hc
   meet h₁ h₂ := leS_iff.mpr ((leS_iff.mp h₁).meetM (leS_iff.mp h₂).toLeW)
   call h hs := by cases hs; exact ⟨_, rfl, leS_iff.mpr (callStep_mono (leS_iff.mp h))⟩
@@ -963,7 +968,7 @@ instance : VG.Taint.LeFrame taintS where
   keeps_bot i := by unfold keepsI; cases dst i <;> simp [regOnly, bot, RegSet.mem, RegSet.empty]
   keepsCall_bot := rfl
   step_keeps {F Φ σ σ'} i hk hΦF hΦ hs := by
-    have hs : stepKD σ i = some σ' := hs
+    have hs : stepKD σ i = some σ' := (taintS_step σ i).symm.trans hs
     rcases stepKD_spec σ i with ⟨h', -⟩ | ⟨a, b, h₁, h₂, hab⟩
     · rw [h'] at hs; cases hs
     rw [h₁] at hs; cases hs

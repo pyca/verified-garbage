@@ -109,7 +109,7 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   match that is left still costs a third of a millisecond: Lean compiles
   it to a matcher, a function of the instruction and of the alternatives,
   and unfolding it builds a term of every case around the alternatives to
-  keep one. `inline_match% f g …` (`Proof/Framework/X86_64/Taint.lean`) is
+  keep one. `inline_match% f g …` (`Proof/Framework/Taint.lean`) is
   `f` as a `casesOn` whose cases are closed terms, with the matches of `f`
   and of the functions `g …` it applies to the instruction resolved in
   each (`stepKeepFnK`, `RTaint.stepFn1K`; equal to `f` by cases and
@@ -132,11 +132,14 @@ Avoid these patterns (each has cost tens of seconds in one proof):
   (inlined field arithmetic: 85% of the steps of the residue analysis of
   brainpoolP512r1's ECDH on x86-64, whose check went from 23.8 s to 4.9 s).
   So a step function the kernel evaluates
-  (`Proof/Framework/X86_64/Taint.lean`, `ResidueTaint.lean`):
+  (`Proof/Framework/X86_64/Taint.lean` and `ResidueTaint.lean`,
+  `Proof/Framework/Arm/Taint.lean`):
   * gives a state that is evaluated: what it computed is forced before the
     state is built, in control flow, and the state built of the values
-    (`Taint.forceT`: a set of registers by `forceRegs`, which hands on a
-    numeral, a `Bool` by `casesOn`; `forceList` for a list's first cell);
+    (`Taint.forceT`: a set of registers by `RegSet.force`, which hands on
+    a numeral, a `Bool` by `casesOn`; `forceList` for a list's first cell;
+    on Arm a list that changed is evaluated through, `forceBases` and
+    `forceSlots`, since it is a term in the whole taint before);
   * hands on the fields it does not change as the terms they were:
     destructure the state (`match τ with | ⟨rg, f, l, b, sl, lo, x⟩ =>`)
     rather than project or update it (`{ τ with … }` makes every field a

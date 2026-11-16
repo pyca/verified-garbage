@@ -1914,7 +1914,7 @@ theorem forceOpt_eq {α β : Type} (o : Option β) (k : Option β → α) : forc
 
 theorem forceTAll_eq {α : Type} (t : Taint.T) (k : Taint.T → α) : forceTAll t k = k t := by
   obtain ⟨rg, f, l, b, sl, lo, x⟩ := t
-  simp only [forceTAll, forceList_eq, Taint.forceRegs_eq, Taint.forceT_eq]
+  simp only [forceTAll, forceList_eq, RegSet.force_eq, Taint.forceT_eq]
 
 /-- `step` changes only the base taint, the bounds, the flags and the pointers in slots. -/
 theorem step_same {τ τ' : FT} {i : Instr} (h : step τ i = some τ') :

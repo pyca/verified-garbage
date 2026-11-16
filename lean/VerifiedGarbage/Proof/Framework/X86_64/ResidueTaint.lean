@@ -533,7 +533,7 @@ their first cell). -/
 def forceTAll {α : Type} (t : Taint.T) (k : Taint.T → α) : α :=
   match t with
   | ⟨rg, f, l, b, sl, lo, x⟩ =>
-    forceList l fun l => forceList b fun b => forceList sl fun sl => Taint.forceRegs lo fun lo =>
+    forceList l fun l => forceList b fun b => forceList sl fun sl => lo.force fun lo =>
       Taint.forceT ⟨rg, f, l, b, sl, lo, x⟩ k
 
 /-- `step · i`, giving a taint that is evaluated, and whose fields `step`
