@@ -2,7 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Reg.Keys
 public import VerifiedGarbage.Proof.GcmSiv.MulX
-public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
+public import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Exec
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Keys
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Absorb
 import VerifiedGarbage.Proof.AesGcm.X86_64.Loops
@@ -10,7 +10,6 @@ import VerifiedGarbage.Proof.Framework.WriteBytes
 import VerifiedGarbage.Proof.Cmac.Spec
 import VerifiedGarbage.Proof.Gcm.Stream
 import VerifiedGarbage.Proof.GcmSiv.Spec
-import VerifiedGarbage.Proof.GcmSiv.Polyval
 import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
@@ -27,6 +26,8 @@ that key (`hkey_ok`), and each block loaded as it is and multiplied
 (`mulY_ok`, `body4_ok`) is a step of `Spec.Gcm.ghashFrom`.
 -/
 
+-- separate module: POLYVAL, apart from the tag and counter mode
+
 @[expose] public section
 
 set_option linter.unusedSimpArgs false
@@ -38,23 +39,47 @@ open VG.Impl.AesGcmSiv.X86_64 (akO bO)
 open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.AesGcmSiv.X86_64 (add_ofNat_assoc punpck_movq mulXG_words)
-open VG.Proof.Gcm.X86_64.Pclmul (Prod prod Only zero_ok acc_ok reduce_ok constImm_ok hInvImm_ok pows_ok step1
-  step4 pxor72_ok)
-open VG.Proof.Gcm.Poly (φ x)
+open VG.Proof.Gcm.X86_64.Pclmul (Prod prod Only zero_ok acc_ok reduce_ok constImm_ok pxor72_ok)
 open VG.Proof.GcmSiv.Polyval (mulXG)
 
 /-- GHASH's key for the authentication key at `W + 16`. -/
 abbrev hOf (m : Mem) (W : Addr) : Spec.Gcm.Block :=
   mulXG (Spec.GcmSiv.ofBytes (bytesAt m (W + BitVec.ofNat 64 16) 16))
 
+/-- What these proofs need of GHASH's field (`Proof/Gcm/X86_64/Pclmul/Ghash.lean`),
+whose algebra they do not import: which registers hold a key's multiplier
+(`G`) and those of its powers (`P2`–`P4`), that the code computing them does
+(`inv`, `pows`), that the reduced products of blocks with them are GHASH's
+steps (`step1`, `step4`), and that POLYVAL is GHASH with `mulXG` of its key
+(`pv`). `Proof/AesGcmSiv/X86_64/Instances.lean` has them (`mulFacts`). -/
+structure MulFacts where
+  G : Spec.Gcm.Block → BitVec 128 → Prop
+  P2 : Spec.Gcm.Block → BitVec 128 → Prop
+  P3 : Spec.Gcm.Block → BitVec 128 → Prop
+  P4 : Spec.Gcm.Block → BitVec 128 → Prop
+  step1 : ∀ H Y X₁ T₁ : Spec.Gcm.Block, G H T₁ →
+    Proof.Gcm.X86_64.Pclmul.reduce (Prod.zero.acc (Y ^^^ X₁) T₁) = Spec.Gcm.mul (Y ^^^ X₁) H
+  step4 : ∀ H Y X₁ X₂ X₃ X₄ T₁ T₂ T₃ T₄ : Spec.Gcm.Block, G H T₁ → P2 H T₂ → P3 H T₃ → P4 H T₄ →
+    Proof.Gcm.X86_64.Pclmul.reduce ((((Prod.zero.acc (Y ^^^ X₁) T₄).acc X₂ T₃).acc X₃ T₂).acc X₄ T₁) =
+      Spec.Gcm.mul (Spec.Gcm.mul (Spec.Gcm.mul (Spec.Gcm.mul (Y ^^^ X₁) H ^^^ X₂) H ^^^ X₃) H ^^^ X₄) H
+  inv : ∀ s : State, WP isa (.block Impl.Gcm.X86_64.Pclmul.hInvImm) s fun s' =>
+    G (s.xmm .xmm7) (s'.xmm .xmm3) ∧ Only [.xmm3, .xmm11, .xmm12, .xmm13, .xmm14] s s'
+  pows : ∀ (H : Spec.Gcm.Block) (s : State), s.xmm .xmm1 = Impl.Gcm.X86_64.Pclmul.poly → G H (s.xmm .xmm3) →
+    WP isa (.block Impl.Gcm.X86_64.Pclmul.pows) s fun s' =>
+      P2 H (s'.xmm .xmm4) ∧ P3 H (s'.xmm .xmm5) ∧ P4 H (s'.xmm .xmm6) ∧
+      Only [.xmm4, .xmm5, .xmm6, .xmm8, .xmm9, .xmm10, .xmm11] s s'
+  pv : GcmSiv.Polyval.PolyvalEq
+
+variable {F : MulFacts}
+
 /-- GHASH's registers for the key `H`: the reduction constant in `xmm1` and
 `H'` in `xmm3`. -/
-structure GReg (H : Spec.Gcm.Block) (t : State) : Prop where
+structure GReg (F : MulFacts) (H : Spec.Gcm.Block) (t : State) : Prop where
   c : t.xmm .xmm1 = Impl.Gcm.X86_64.Pclmul.poly
-  h : x * φ (t.xmm .xmm3) = φ H
+  h : F.G H (t.xmm .xmm3)
 
-theorem GReg.keep {H : Spec.Gcm.Block} {rs : List XReg} {t t' : State} (g : GReg H t) (o : Only rs t t')
-    (h1 : .xmm1 ∉ rs) (h3 : .xmm3 ∉ rs) : GReg H t' :=
+theorem GReg.keep {H : Spec.Gcm.Block} {rs : List XReg} {t t' : State} (g : GReg F H t) (o : Only rs t t')
+    (h1 : .xmm1 ∉ rs) (h3 : .xmm3 ∉ rs) : GReg F H t' :=
   ⟨by rw [o.xmm _ h1, g.c], by rw [o.xmm _ h3]; exact g.h⟩
 
 /-- The registers `mulY` writes. -/
@@ -62,7 +87,7 @@ abbrev mulRegs : List XReg :=
   [.xmm8, .xmm9, .xmm10, .xmm7, .xmm8, .xmm9, .xmm10, .xmm11, .xmm8, .xmm9, .xmm10, .xmm11, .xmm2]
 
 /-- `mulY`: a step of GHASH, on the block in `xmm7`. -/
-theorem mulY_ok {H : Spec.Gcm.Block} {t : State} (g : GReg H t) :
+theorem mulY_ok {H : Spec.Gcm.Block} {t : State} (g : GReg F H t) :
     WP isa (.block mulY) t fun t' =>
       t'.xmm .xmm2 = Spec.Gcm.mul (t.xmm .xmm2 ^^^ t.xmm .xmm7) H ∧ Only mulRegs t t' := by
   simp only [mulY, List.append_assoc]
@@ -79,13 +104,13 @@ theorem mulY_ok {H : Spec.Gcm.Block} {t : State} (g : GReg H t) :
     ⟨?_, o₁.trans (o₂.trans (o₃.trans o₄))⟩
   rw [e₄, p₃, o₂.prod (by decide) (by decide) (by decide), p₁, e₂, o₂.xmm .xmm3 (by decide),
     o₁.xmm .xmm2 (by decide), o₁.xmm .xmm7 (by decide), o₁.xmm .xmm3 (by decide)]
-  exact step1 H _ _ _ g.h
+  exact F.step1 H _ _ _ g.h
 
 /-- `hkey`: GHASH's registers for the key of the authentication key, and
 `Y = 0`. -/
 theorem hkey_ok {K W SP : Addr} {t : State} (E : Env K W SP t) :
     WP isa (.block hkey) t fun t' =>
-      GReg (hOf t.mem W) t' ∧ t'.xmm .xmm2 = 0 ∧ t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
+      GReg F (hOf t.mem W) t' ∧ t'.xmm .xmm2 = 0 ∧ t'.mem = t.mem ∧ t'.rd = t.rd ∧ t'.wr = t.wr ∧
       ∀ r ∈ calleeSaved, t'.gpr r = t.gpr r := by
   have h15 := E.r15
   have r₁ := E.perm.wR (show 16 + 8 ≤ 488 by decide)
@@ -102,7 +127,7 @@ theorem hkey_ok {K W SP : Addr} {t : State} (E : Env K W SP t) :
       t₁.xmm .xmm7 = hOf t.mem W ∧ t₁.mem = t.mem ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr ∧
       ∀ r ∈ calleeSaved, t₁.gpr r = t.gpr r := by
     refine ⟨_, by xrun [h15, r₁, r₂], ?_, ?_, ?_, ?_, ?_⟩
-    · simp (config := {decide := true}) only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true,
+    · simp only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true,
         ite_false, reduceCtorEq, xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg, xmm_arithFlags, xmm_setFlags,
         punpck_movq, add_ofNat_assoc, Nat.reduceAdd, ne_eq, not_false_eq_true]
       rw [hOf, GcmSiv.ofBytes_bytesAt, add_ofNat_assoc, ← mulXG_words]
@@ -117,15 +142,16 @@ theorem hkey_ok {K W SP : Addr} {t : State} (E : Env K W SP t) :
   rw [WP.block_append_iff]
   refine WP.mono (constImm_ok .xmm1 Impl.Gcm.X86_64.Pclmul.poly t₁ (by decide)) fun s₂ ⟨c₂, o₂⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (hInvImm_ok s₂) fun s₃ ⟨h₃, o₃⟩ => ?_
+  refine WP.mono (F.inv s₂) fun s₃ ⟨h₃, o₃⟩ => ?_
   apply WP.of_runBlock
   simp only [runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, isa, State.setXmm,
     Option.some.injEq, exists_eq_left']
   refine ⟨⟨?_, ?_⟩, ?_, ?_, ?_, ?_, ?_⟩
   · show s₃.xmm .xmm1 = _
     rw [o₃.xmm _ (by decide), c₂]
-  · show x * φ (s₃.xmm .xmm3) = _
-    rw [h₃, o₂.xmm _ (by decide), x7]
+  · show F.G _ (s₃.xmm .xmm3)
+    rw [← x7, ← o₂.xmm .xmm7 (by decide)]
+    exact h₃
   · show XBinOp.eval .pxor (s₃.xmm .xmm2) (s₃.xmm .xmm2) = 0
     exact BitVec.xor_self
   · show s₃.mem = _
@@ -168,12 +194,12 @@ theorem ld_run (k : Nat) (t : State) (hin : InRegions (t.rd ++ t.wr) (t.gpr .r12
     simp only [xmm_setXmm_of_ne _ _ hr]
 
 /-- `j` of the `nb` blocks at `P` absorbed, from `σ`. -/
-structure AInv (K W SP : Addr) (H : Spec.Gcm.Block) (σ : State) (P : Addr) (nb j : Nat) (t : State) : Prop where
+structure AInv (F : MulFacts) (K W SP : Addr) (H : Spec.Gcm.Block) (σ : State) (P : Addr) (nb j : Nat) (t : State) : Prop where
   env : Env K W SP t
   rd : t.rd = σ.rd
   wr : t.wr = σ.wr
   mem : t.mem = σ.mem
-  g : GReg H t
+  g : GReg F H t
   r12 : t.gpr .r12 = P + BitVec.ofNat 64 (16 * j)
   rbx : t.gpr .rbx = BitVec.ofNat 64 (nb - j)
   rbp : t.gpr .rbp = σ.gpr .rbp
@@ -181,8 +207,8 @@ structure AInv (K W SP : Addr) (H : Spec.Gcm.Block) (σ : State) (P : Addr) (nb 
 
 /-- One block absorbed. -/
 theorem body1_ok {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {nb j : Nat}
-    (hP : Buf K W SP σ P (16 * nb)) (hj : j < nb) {t : State} (I : AInv K W SP H σ P nb j t) :
-    WP isa (.block body1) t fun t' => AInv K W SP H σ P nb (j + 1) t' ∧ t'.zf = some (decide (nb - j = 1)) := by
+    (hP : Buf K W SP σ P (16 * nb)) (hj : j < nb) {t : State} (I : AInv F K W SP H σ P nb j t) :
+    WP isa (.block body1) t fun t' => AInv F K W SP H σ P nb (j + 1) t' ∧ t'.zf = some (decide (nb - j = 1)) := by
   have hlt := hP.lt
   have hin : InRegions (t.rd ++ t.wr) (t.gpr .r12 + BitVec.ofNat 64 (16 * 0)) 16 := by
     rw [I.r12, I.rd, I.wr, Nat.mul_zero, BitVec.add_zero]
@@ -230,10 +256,10 @@ theorem body1_ok {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {n
 /-! ## Four blocks -/
 
 /-- `H'²`–`H'⁴` in `xmm4`–`xmm6`. -/
-structure PW (H : Spec.Gcm.Block) (t : State) : Prop where
-  p2 : x * φ (t.xmm .xmm4) = φ H ^ 2
-  p3 : x * φ (t.xmm .xmm5) = φ H ^ 3
-  p4 : x * φ (t.xmm .xmm6) = φ H ^ 4
+structure PW (F : MulFacts) (H : Spec.Gcm.Block) (t : State) : Prop where
+  p2 : F.P2 H (t.xmm .xmm4)
+  p3 : F.P3 H (t.xmm .xmm5)
+  p4 : F.P4 H (t.xmm .xmm6)
 
 /-- The block at `r12 + 16 k` added to the product with the power in `b`. -/
 theorem ldAcc_ok (k : Nat) (b : XReg) (s : State)
@@ -266,8 +292,8 @@ theorem ldAccY_ok (s : State) (hin : InRegions (s.rd ++ s.wr) (s.gpr .r12 + BitV
   rw [p', o₂.prod (by decide) (by decide) (by decide), o₁.prod (by decide) (by decide) (by decide), e₂, x7,
     o₁.xmm .xmm2 (by decide), o₂.xmm .xmm6 (by decide), o₁.xmm .xmm6 (by decide)]
 
-theorem PW.keep {H : Spec.Gcm.Block} {rs : List XReg} {t t' : State} (p : PW H t) (o : Only rs t t')
-    (h4 : .xmm4 ∉ rs) (h5 : .xmm5 ∉ rs) (h6 : .xmm6 ∉ rs) : PW H t' :=
+theorem PW.keep {H : Spec.Gcm.Block} {rs : List XReg} {t t' : State} (p : PW F H t) (o : Only rs t t')
+    (h4 : .xmm4 ∉ rs) (h5 : .xmm5 ∉ rs) (h6 : .xmm6 ∉ rs) : PW F H t' :=
   ⟨by rw [o.xmm _ h4]; exact p.p2, by rw [o.xmm _ h5]; exact p.p3, by rw [o.xmm _ h6]; exact p.p4⟩
 
 theorem ghashFrom_snoc4 (H Y : Spec.Gcm.Block) (f : Nat → Spec.Gcm.Block) (j : Nat) :
@@ -279,8 +305,8 @@ theorem ghashFrom_snoc4 (H Y : Spec.Gcm.Block) (f : Nat → Spec.Gcm.Block) (j :
 
 /-- Four blocks absorbed. -/
 theorem body4_ok {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {nb j : Nat}
-    (hP : Buf K W SP σ P (16 * nb)) (hj : j + 4 ≤ nb) {t : State} (I : AInv K W SP H σ P nb j t) (pw : PW H t) :
-    WP isa (.block body4) t fun t' => AInv K W SP H σ P nb (j + 4) t' ∧ PW H t' ∧
+    (hP : Buf K W SP σ P (16 * nb)) (hj : j + 4 ≤ nb) {t : State} (I : AInv F K W SP H σ P nb j t) (pw : PW F H t) :
+    WP isa (.block body4) t fun t' => AInv F K W SP H σ P nb (j + 4) t' ∧ PW F H t' ∧
       t'.cf = some (decide (nb - (j + 4) < 4)) := by
   have hlt := hP.lt
   have inb : ∀ k < 4, InRegions (t.rd ++ t.wr) (t.gpr .r12 + BitVec.ofNat 64 (16 * k)) 16 := fun k hk => by
@@ -348,7 +374,7 @@ theorem body4_ok {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {n
       O₃.gpr _ (by decide), O₃.mem, O₃.xmm .xmm4 (by decide), O₂.gpr _ (by decide), O₂.mem,
       O₂.xmm .xmm5 (by decide), o₁.gpr _ (by decide), o₁.mem, o₁.xmm .xmm6 (by decide), o₁.xmm .xmm2 (by decide),
       I.r12, rd 0, rd 1, rd 2, rd 3, I.y, ghashFrom_snoc4,
-      step4 H _ _ _ _ _ _ _ _ _ I.g.h pw.p2 pw.p3 pw.p4]
+      F.step4 H _ _ _ _ _ _ _ _ _ I.g.h pw.p2 pw.p3 pw.p4]
     rfl
   · exact ⟨by rw [x₇, O₆.xmm _ (by decide)]; exact pw.p2, by rw [x₇, O₆.xmm _ (by decide)]; exact pw.p3,
       by rw [x₇, O₆.xmm _ (by decide)]; exact pw.p4⟩
@@ -357,12 +383,12 @@ theorem body4_ok {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {n
 /-! ## The whole blocks -/
 
 theorem AInv.flags {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {nb j : Nat} {t : State}
-    (I : AInv K W SP H σ P nb j t) (x : BitVec 64) (c o : Bool) : AInv K W SP H σ P nb j (arithFlags t x c o) :=
+    (I : AInv F K W SP H σ P nb j t) (x : BitVec 64) (c o : Bool) : AInv F K W SP H σ P nb j (arithFlags t x c o) :=
   ⟨I.env.keep (fun _ _ => rfl) rfl rfl, I.rd, I.wr, I.mem, ⟨I.g.c, I.g.h⟩, I.r12, I.rbx, I.rbp, I.y⟩
 
 theorem AInv.only {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {nb j : Nat} {rs : List XReg}
-    {t t' : State} (I : AInv K W SP H σ P nb j t) (o : Only rs t t') (h1 : .xmm1 ∉ rs) (h2 : .xmm2 ∉ rs)
-    (h3 : .xmm3 ∉ rs) : AInv K W SP H σ P nb j t' :=
+    {t t' : State} (I : AInv F K W SP H σ P nb j t) (o : Only rs t t') (h1 : .xmm1 ∉ rs) (h2 : .xmm2 ∉ rs)
+    (h3 : .xmm3 ∉ rs) : AInv F K W SP H σ P nb j t' :=
   ⟨I.env.keep (fun r hr => o.gpr r (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> decide))
       o.rd o.wr, o.rd.trans I.rd, o.wr.trans I.wr, o.mem.trans I.mem, I.g.keep o h1 h3,
@@ -397,10 +423,10 @@ theorem test_run (r : Reg) (u : State) {k : Nat} (hk : k < 2 ^ 64) (h : u.gpr r 
 
 /-- The loop of single blocks, from any block before the last. -/
 theorem ones_ok {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {nb j₀ : Nat}
-    (hP : Buf K W SP σ P (16 * nb)) (hj₀ : j₀ < nb) {t : State} (I₀ : AInv K W SP H σ P nb j₀ t) :
-    WP isa (.loop (.block body1) .ne) t (AInv K W SP H σ P nb nb) := by
+    (hP : Buf K W SP σ P (16 * nb)) (hj₀ : j₀ < nb) {t : State} (I₀ : AInv F K W SP H σ P nb j₀ t) :
+    WP isa (.loop (.block body1) .ne) t (AInv F K W SP H σ P nb nb) := by
   refine WP.loop (M := isa) (body := .block body1) (c := .ne)
-    (fun (m : Nat) (t : State) => ∃ j, m = nb - j ∧ j < nb ∧ AInv K W SP H σ P nb j t) ?_ (nb - j₀) t
+    (fun (m : Nat) (t : State) => ∃ j, m = nb - j ∧ j < nb ∧ AInv F K W SP H σ P nb j t) ?_ (nb - j₀) t
     ⟨j₀, rfl, hj₀, I₀⟩
   rintro m t ⟨j, rfl, hj, I⟩
   refine WP.mono (body1_ok hP hj I) fun t' ⟨I', hz⟩ => ?_
@@ -415,13 +441,13 @@ theorem ones_ok {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {nb
 
 /-- The whole blocks absorbed. -/
 theorem absorbBlocks_ok (four : Bool) {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {nb : Nat}
-    (hP : Buf K W SP σ P (16 * nb)) {t : State} (I : AInv K W SP H σ P nb 0 t)
+    (hP : Buf K W SP σ P (16 * nb)) {t : State} (I : AInv F K W SP H σ P nb 0 t)
     (hz : t.zf = some (decide (nb = 0))) :
-    WP isa (absorbBlocks four) t (AInv K W SP H σ P nb nb) := by
+    WP isa (absorbBlocks four) t (AInv F K W SP H σ P nb nb) := by
   have hlt := hP.lt
-  have ones : ∀ k, k ≤ nb → ∀ u, AInv K W SP H σ P nb k u →
+  have ones : ∀ k, k ≤ nb → ∀ u, AInv F K W SP H σ P nb k u →
       WP isa (.seq (.block [.alu .test .rbx (.reg .rbx)]) (.ite .e (.block []) (.loop (.block body1) .ne))) u
-        (AInv K W SP H σ P nb nb) := by
+        (AInv F K W SP H σ P nb nb) := by
     intro k hk u Iu
     obtain ⟨run₂, hy⟩ := test_run .rbx u (k := nb - k) (by omega_arith) Iu.rbx
     refine WP.seq (WP.of_runBlock ⟨_, run₂, ?_⟩)
@@ -444,13 +470,13 @@ theorem absorbBlocks_ok (four : Bool) {K W SP : Addr} {H : Spec.Gcm.Block} {σ :
     refine WP.seq (WP.of_runBlock ⟨_, run₁, ?_⟩)
     have I₁ := I.flags x (decide (nb < 4)) o
     have mid : WP isa (.ite .b (.block []) (.seq (.block Impl.Gcm.X86_64.Pclmul.pows) (.loop (.block body4) .ae)))
-        (arithFlags t x (decide (nb < 4)) o) fun v => ∃ k, k ≤ nb ∧ AInv K W SP H σ P nb k v := by
+        (arithFlags t x (decide (nb < 4)) o) fun v => ∃ k, k ≤ nb ∧ AInv F K W SP H σ P nb k v := by
       refine WP.ite (decide (nb < 4)) rfl (fun _ => WP.block_nil ⟨0, Nat.zero_le _, I₁⟩) (fun h4 => ?_)
       have h4' : ¬ nb < 4 := by simpa using h4
-      refine WP.seq (WP.mono (Proof.Gcm.X86_64.Pclmul.pows_ok _ I₁.g.c I₁.g.h) fun u₁ ⟨p2, p3, p4, o₁⟩ => ?_)
+      refine WP.seq (WP.mono (F.pows _ _ I₁.g.c I₁.g.h) fun u₁ ⟨p2, p3, p4, o₁⟩ => ?_)
       have Iu := I₁.only o₁ (by decide) (by decide) (by decide)
       refine WP.loop (M := isa) (body := .block body4) (c := .ae)
-        (fun (m : Nat) (v : State) => ∃ k, m = nb - k ∧ k + 4 ≤ nb ∧ AInv K W SP H σ P nb k v ∧ PW H v) ?_
+        (fun (m : Nat) (v : State) => ∃ k, m = nb - k ∧ k + 4 ≤ nb ∧ AInv F K W SP H σ P nb k v ∧ PW F H v) ?_
         (nb - 0) u₁ ⟨0, rfl, by omega_arith, Iu, ⟨p2, p3, p4⟩⟩
       rintro m v ⟨k, rfl, hk, Iv, pv⟩
       refine WP.mono (body4_ok hP hk Iv pv) fun v' ⟨Iv', pv', hcf'⟩ => ?_
@@ -469,20 +495,20 @@ theorem absorbBlocks_ok (four : Bool) {K W SP : Addr} {H : Spec.Gcm.Block} {σ :
 open VG.Proof.AesGcmSiv.X86_64 (writeW128_app pxor_self pad_bytes)
 
 /-- What absorbing the elements `xs` leaves. -/
-structure APost (K W SP : Addr) (H : Spec.Gcm.Block) (xs : List Spec.Gcm.Block) (t t' : State) : Prop where
+structure APost (F : MulFacts) (K W SP : Addr) (H : Spec.Gcm.Block) (xs : List Spec.Gcm.Block) (t t' : State) : Prop where
   env : Env K W SP t'
   rd : t'.rd = t.rd
   wr : t'.wr = t.wr
   frame : Frame [⟨W + BitVec.ofNat 64 128, 16⟩] t.mem t'.mem
-  g : GReg H t'
+  g : GReg F H t'
   y : t'.xmm .xmm2 = ghashFrom H (t.xmm .xmm2) xs
 
 /-- The last `r` bytes, padded, absorbed. -/
 theorem tail_ok {K W SP : Addr} (L : Lay K W SP) {H : Spec.Gcm.Block} {t : State} (E : Env K W SP t)
-    (g : GReg H t) {P : Addr} {r : Nat} (hr1 : 1 ≤ r) (hr : r < 16) (hP : Buf K W SP t P r)
+    (g : GReg F H t) {P : Addr} {r : Nat} (hr1 : 1 ≤ r) (hr : r < 16) (hP : Buf K W SP t P r)
     (hsi : t.gpr .rsi = P) (hcx : t.gpr .rcx = BitVec.ofNat 64 r) :
     WP isa absorbTail t
-      (APost K W SP H [Spec.GcmSiv.ofBytes (bytesAt t.mem P r ++ Spec.GcmSiv.zeros (16 - r))] t) := by
+      (APost F K W SP H [Spec.GcmSiv.ofBytes (bytesAt t.mem P r ++ Spec.GcmSiv.zeros (16 - r))] t) := by
   have h15 := E.r15
   have hw := L.ww
   obtain w₀ := E.perm.wW (show 128 + 16 ≤ 488 by decide)
@@ -493,7 +519,7 @@ theorem tail_ok {K W SP : Addr} (L : Lay K W SP) {H : Spec.Gcm.Block} {t : State
       (∀ r, r ≠ .rdi → t₁.gpr r = t.gpr r) ∧ (∀ r, r ≠ .xmm7 → t₁.xmm r = t.xmm r) ∧ t₁.rd = t.rd ∧
       t₁.wr = t.wr := by
     refine ⟨_, by xrun [ptr, bO, h15, w₀, pxor_self], ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · simp (config := {decide := true}) only [mem_setReg, mem_arithFlags, mem_setXmm, gpr_setXmm, gpr_setReg,
+    · simp only [mem_setReg, mem_arithFlags, mem_setXmm, gpr_setXmm, gpr_setReg,
         gpr_arithFlags, ite_true, ite_false, reduceCtorEq, xmm_setXmm_self, pxor_self, writeW128_app,
         Proof.Cmac.zero2, h15, add_ofNat_assoc, ne_eq, not_false_eq_true]
       rfl
@@ -543,7 +569,7 @@ theorem tail_ok {K W SP : Addr} (L : Lay K W SP) {H : Spec.Gcm.Block} {t : State
     · simp only [xmm_setXmm_self]
     · simp only [List.mem_singleton] at hr
       simp only [xmm_setXmm_of_ne _ _ hr]
-  obtain g₃ : GReg H t₃ :=
+  obtain g₃ : GReg F H t₃ :=
     ⟨by rw [o₃.xmm _ (by decide), hx₂, hx₁ _ (by decide)]; exact g.c,
       by rw [o₃.xmm _ (by decide), hx₂, hx₁ _ (by decide)]; exact g.h⟩
   rw [show (([.movdquLoad .xmm7 (at_ .rdi 0)] : List Instr) ++ mulY) =
@@ -563,9 +589,9 @@ theorem tail_ok {K W SP : Addr} (L : Lay K W SP) {H : Spec.Gcm.Block} {t : State
 
 /-- The `n` bytes at `Q`, padded, absorbed. -/
 theorem absorb_ok (four : Bool) {K W SP : Addr} (L : Lay K W SP) {H : Spec.Gcm.Block} {t : State}
-    (E : Env K W SP t) (g : GReg H t) {Q : Addr} {n : Nat} (hQ : Buf K W SP t Q n) (h12 : t.gpr .r12 = Q)
+    (E : Env K W SP t) (g : GReg F H t) {Q : Addr} {n : Nat} (hQ : Buf K W SP t Q n) (h12 : t.gpr .r12 = Q)
     (hbp : t.gpr .rbp = BitVec.ofNat 64 n) :
-    WP isa (absorb four) t (APost K W SP H (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem Q n))) t) := by
+    WP isa (absorb four) t (APost F K W SP H (Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem Q n))) t) := by
   have hn := hQ.lt
   obtain ⟨t₁, run₁, hbx₁, hzf₁, hg₁, hx₁, hm₁, hrd₁, hwr₁⟩ : ∃ t₁ : State,
       runBlock isa [.mov .rbx (.reg .rbp), .shift .shr .rbx 4, .alu .test .rbx (.reg .rbx)] t = some t₁ ∧
@@ -580,7 +606,7 @@ theorem absorb_ok (four : Bool) {K W SP : Addr} (L : Lay K W SP) {H : Spec.Gcm.B
     · intro r h₁; simp only [gpr_setReg, gpr_arithFlags, gpr_setFlags, h₁, ite_false]
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
-  obtain I₁ : AInv K W SP H t Q (n / 16) 0 t₁ :=
+  obtain I₁ : AInv F K W SP H t Q (n / 16) 0 t₁ :=
     ⟨E.keep (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl <;> exact hg₁ _ (by decide)) hrd₁ hwr₁, hrd₁, hwr₁, hm₁,
@@ -610,7 +636,7 @@ theorem absorb_ok (four : Bool) {K W SP : Addr} (L : Lay K W SP) {H : Spec.Gcm.B
   obtain E₃ : Env K W SP t₃ := I₂.env.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> exact hg₃ _ (by decide) (by decide)) hrd₃ hwr₃
-  obtain g₃ : GReg H t₃ := ⟨by rw [hx₃]; exact I₂.g.c, by rw [hx₃]; exact I₂.g.h⟩
+  obtain g₃ : GReg F H t₃ := ⟨by rw [hx₃]; exact I₂.g.c, by rw [hx₃]; exact I₂.g.h⟩
   obtain y₃ : t₃.xmm .xmm2 = ghashFrom H (t.xmm .xmm2) (Proof.AesGcmSiv.X86_64.elemsAt t.mem Q (n / 16)) := by
     rw [hx₃, I₂.y]
   rw [Proof.AesGcmSiv.X86_64.elems_pad16_bytesAt]
@@ -632,7 +658,7 @@ theorem absorb_ok (four : Bool) {K W SP : Addr} (L : Lay K W SP) {H : Spec.Gcm.B
 open VG.Impl.AesGcmSiv.X86_64 (aadO alenO dataO lenO)
 
 /-- The lengths block absorbed. -/
-theorem lens_ok {K W SP : Addr} {H : Spec.Gcm.Block} {t : State} (E : Env K W SP t) (g : GReg H t) {al n : Nat}
+theorem lens_ok {K W SP : Addr} {H : Spec.Gcm.Block} {t : State} (E : Env K W SP t) (g : GReg F H t) {al n : Nat}
     (hal : t.mem.readW (W + BitVec.ofNat 64 224) 64 = BitVec.ofNat 64 al)
     (hn : t.mem.readW (W + BitVec.ofNat 64 240) 64 = BitVec.ofNat 64 n) (hal' : al < 2 ^ 64) (hn' : n < 2 ^ 64) :
     WP isa (.block lens) t fun t' =>
@@ -652,17 +678,17 @@ theorem lens_ok {K W SP : Addr} {H : Spec.Gcm.Block} {t : State} (E : Env K W SP
       t₁.xmm .xmm1 = t.xmm .xmm1 ∧ t₁.xmm .xmm3 = t.xmm .xmm3 ∧
       t₁.mem = t.mem ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr ∧ ∀ r ∈ [Reg.r13, .r15, .rsp], t₁.gpr r = t.gpr r := by
     refine ⟨_, by xrun [alenO, lenO, h15, r₁, r₂, hal, hn], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-    · simp (config := {decide := true}) only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true,
+    · simp only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true,
         ite_false, reduceCtorEq, xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg, xmm_arithFlags, xmm_setFlags,
         mem_setReg, mem_arithFlags, mem_setXmm, alenO, lenO, h15, hal, hn,
         punpck_movq, Proof.AesGcm.X86_64.times8_val, Proof.AesGcm.X86_64.toNat_ofNat_of_lt hal',
         Proof.AesGcm.X86_64.toNat_ofNat_of_lt hn', ne_eq, not_false_eq_true]
-    · simp (config := {decide := true}) only [xmm_setXmm_of_ne, xmm_setReg, xmm_arithFlags, xmm_setFlags, ne_eq,
-        not_false_eq_true]
-    · simp (config := {decide := true}) only [xmm_setXmm_of_ne, xmm_setReg, xmm_arithFlags, xmm_setFlags, ne_eq,
-        not_false_eq_true]
-    · simp (config := {decide := true}) only [xmm_setXmm_of_ne, xmm_setReg, xmm_arithFlags, xmm_setFlags, ne_eq,
-        not_false_eq_true]
+    · simp only [xmm_setXmm_of_ne _ _ (show XReg.xmm2 ≠ XReg.xmm7 by decide),
+        xmm_setXmm_of_ne _ _ (show XReg.xmm2 ≠ XReg.xmm11 by decide), xmm_setReg, xmm_arithFlags, xmm_setFlags]
+    · simp only [xmm_setXmm_of_ne _ _ (show XReg.xmm1 ≠ XReg.xmm7 by decide),
+        xmm_setXmm_of_ne _ _ (show XReg.xmm1 ≠ XReg.xmm11 by decide), xmm_setReg, xmm_arithFlags, xmm_setFlags]
+    · simp only [xmm_setXmm_of_ne _ _ (show XReg.xmm3 ≠ XReg.xmm7 by decide),
+        xmm_setXmm_of_ne _ _ (show XReg.xmm3 ≠ XReg.xmm11 by decide), xmm_setReg, xmm_arithFlags, xmm_setFlags]
     · rfl
     · rfl
     · rfl
@@ -691,7 +717,7 @@ structure PolyPost (K W SP : Addr) (A D : Addr) (al n : Nat) (t t' : State) : Pr
       Spec.GcmSiv.elems (Spec.GcmSiv.pad16 (bytesAt t.mem D n)) ++
       [Spec.GcmSiv.ofBytes (Spec.GcmSiv.le64 (8 * al) ++ Spec.GcmSiv.le64 (8 * n))])
 
-theorem polyval_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t) {R : Nat} {N A D : Addr}
+theorem polyval_ok (F : MulFacts) {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP t) {R : Nat} {N A D : Addr}
     {al n : Nat} (S : Slots W R N A D al n t.mem) (hA : Buf K W SP t A al) (hD : Buf K W SP t D n) :
     WP isa polyval t (PolyPost K W SP A D al n t) := by
   have hw := L.ww
@@ -719,7 +745,7 @@ theorem polyval_ok {K W SP : Addr} (L : Lay K W SP) {t : State} (E : Env K W SP 
     hkey ++ ([.mov .r12 (.mem (at_ .r15 216)), .mov .rbp (.mem (at_ .r15 (216 + 8)))] : List Instr) from rfl]
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  refine WP.mono (hkey_ok E) fun t₁ ⟨g₁, y₁, m₁, rd₁, wr₁, sv₁⟩ => ?_
+  refine WP.mono (hkey_ok (F := F) E) fun t₁ ⟨g₁, y₁, m₁, rd₁, wr₁, sv₁⟩ => ?_
   have E₁ : Env K W SP t₁ := E.of_saved sv₁ rd₁ wr₁
   obtain ⟨t₂, run₂, r12₂, rbp₂, g₂, x₂, m₂, rd₂, wr₂⟩ := ld t₁ 216 A al E₁ (by decide) (by decide)
     (by rw [m₁]; exact S.aad) (by rw [m₁]; exact S.alen)

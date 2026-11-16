@@ -23,6 +23,8 @@ Untrusted: everything here is checked by Lean. `derive` leaves the halves of
 schedule at `W + 248` (`expand_ok`), by `AesNi.expandKey` inline.
 -/
 
+-- separate module: the keys, apart from POLYVAL
+
 @[expose] public section
 
 set_option linter.unusedSimpArgs false
@@ -58,7 +60,7 @@ structure DInv (K W SP : Addr) (σ : State) (R : Nat) (N : Addr) (i : Nat) (t : 
 /-- The start of `derive`. -/
 theorem derInit_ok {K W SP : Addr} {σ : State} (E : Env K W SP σ) {R : Nat} (hR : R = 10 ∨ R = 14)
     {N A D : Addr} {al n : Nat} (S : Slots W R N A D al n σ.mem) :
-    WP isa (.block (aesArgs [.mov .rdi (.reg .r13)] ++
+    WP isa (.block (aesArgs ([.mov .rdi (.reg .r13)] : List Instr) ++
       ([.mov .rdx (.mem (at_ .r15 nonceO)), .mov32 .rbx (imm 0)] : List Instr))) σ (DInv K W SP σ R N 0) := by
   have h15 := E.r15
   have h13 := E.r13
@@ -142,10 +144,10 @@ theorem derivePair_run {K W SP : Addr} {σ : State} {R : Nat} {N : Addr} {i : Na
   simp only [BitVec.add_zero] at n₀
   have hdx := I.rdx
   refine ⟨_, by xrun [derivePair, hdx, n₀, n₄, I.rbx], ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · simp (config := {decide := true}) only [gpr_setXmm, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true,
+  · simp only [gpr_setXmm, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true,
       ite_false, reduceCtorEq, xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg, xmm_arithFlags, xmm_setFlags,
       punpck_movq, or_one hi hev, I.rbx, ne_eq, not_false_eq_true]
-  · simp (config := {decide := true}) only [gpr_setXmm, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true,
+  · simp only [gpr_setXmm, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true,
       ite_false, reduceCtorEq, xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg, xmm_arithFlags, xmm_setFlags,
       punpck_movq, or_one hi hev, I.rbx, ne_eq, not_false_eq_true]
   · rfl
@@ -171,7 +173,7 @@ theorem deriveKeep_run {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 �
       rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> decide
     rw [e8, BitVec.add_comm (BitVec.ofNat 64 (8 * i)) W, add_ofNat_assoc, Nat.add_comm]
   refine ⟨_, by xrun [deriveKeep, h15, hbx, hsi, ww, ea, punpck_lo], ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · simp (config := {decide := true}) only [mem_setReg, mem_setFlags, mem_arithFlags, mem_setXmm, gpr_setXmm,
+  · simp only [mem_setReg, mem_setFlags, mem_arithFlags, mem_setXmm, gpr_setXmm,
       gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, xmm_setXmm_self,
       xmm_setXmm_of_ne, xmm_setReg, xmm_arithFlags, xmm_setFlags, punpck_lo, writeW128_app, h15, hbx, ea,
       ne_eq, not_false_eq_true]

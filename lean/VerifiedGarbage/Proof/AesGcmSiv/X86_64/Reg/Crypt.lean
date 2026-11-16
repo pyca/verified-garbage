@@ -63,6 +63,15 @@ theorem aesWith_le16 (nr : Nat) (w : List Byte) (x r : BitVec 128) (h : st r = S
 theorem le16_app (hi lo : BitVec 64) : le16 (hi ++ lo) = le8 lo ++ le8 hi := by
   rw [← bytesAt_writeW128 (fun _ => 0) 0 (hi ++ lo), writeW128_app, Proof.Cmac.bytesAt_store2]
 
+/-- A register as its two quadwords. -/
+theorem qwords (v : BitVec 128) : v = qword v 1 ++ qword v 0 := by
+  apply BitVec.eq_of_getLsbD_eq; intro i hi
+  simp only [qword, BitVec.getLsbD_append, BitVec.getLsbD_extractLsb']
+  by_cases h : i < 64
+  · simp only [h, ↓reduceIte, decide_true, Nat.mul_zero, Nat.zero_add, Bool.true_and]
+  · simp only [h, ite_false, decide_eq_true (show i - 64 < 64 by omega_arith), Bool.true_and]
+    exact congrArg _ (by omega_arith)
+
 /-- The high quadword, shifted down and moved out. -/
 theorem hi64 (v : BitVec 128) : (XShiftOp.eval .psrldq v 8).extractLsb' 0 64 = qword v 1 := by
   rw [show XShiftOp.eval .psrldq v 8 = v >>> 64 from rfl]
@@ -106,11 +115,12 @@ theorem tagIn_run {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {t : State}
   obtain n₈ := in_off (d := 8) (n := 4) hN.rd (by decide) (by decide)
   refine ⟨_, by xrun [tagIn, aesArgs, lastKey, skO, roundsO, nonceO, h15, rR, rN, rr, rn, n₀, n₈], ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_⟩
-  · simp (config := {decide := true}) only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true,
+  · simp only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true,
       ite_false, reduceCtorEq, xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg, xmm_arithFlags, xmm_setFlags,
       mem_setReg, mem_arithFlags, mem_setXmm, mem_setFlags, punpck_movq, h15, rN, nonceO, ne_eq, not_false_eq_true]
     rw [le16_app, hi64, show (t.xmm .xmm2).extractLsb' 0 64 = qword (t.xmm .xmm2) 0 from rfl]
-    conv_rhs => rw [Proof.Gcm.X86_64.Pclmul.qwords (t.xmm .xmm2)]
+    rw [show Spec.GcmSiv.toBytes (t.xmm .xmm2) =
+      Spec.GcmSiv.toBytes (qword (t.xmm .xmm2) 1 ++ qword (t.xmm .xmm2) 0) from congrArg _ (qwords _)]
     rw [GcmSiv.toBytes_append, show (12 : Nat) = 8 + 4 from rfl, Proof.Cmac.bytesAt_add, ← Proof.Cmac.le8_readW,
       ← Proof.Cmac.le4_readW, GcmSiv.tagOf_words]
     rfl
@@ -499,7 +509,7 @@ theorem ctrInit_run {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {t : Stat
   rw [Proof.AesGcm.X86_64.toNat_ofNat_of_lt hn, Proof.AesGcm.X86_64.imm_eq (by decide)] at hand
   refine ⟨_, by xrun [ctrInit, aesArgs, lastKey, skO, roundsO, tagO, dataO, lenO, h15, rR, sD, sL, rr, rD, rL, rT,
     rT'], ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · simp (config := {decide := true}) only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true,
+  · simp only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true,
       ite_false, reduceCtorEq, xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg, xmm_arithFlags, xmm_setFlags,
       mem_setReg, mem_arithFlags, mem_setXmm, mem_setFlags, h15, tagO, BitVec.add_zero, ne_eq, not_false_eq_true]
     have e : XShiftOp.eval .pslldq ((0 : BitVec 64) ++ (9223372036854775808 : BitVec 64)) 8 =
@@ -510,7 +520,7 @@ theorem ctrInit_run {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {t : Stat
       BitVec.zero_or, BitVec.or_comm, Proof.Cmac.bytesAt_split, ← Proof.Cmac.le8_readW, ← Proof.Cmac.le8_readW,
       GcmSiv.initialCounter_words]
     rfl
-  · simp (config := {decide := true}) only [xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg, xmm_arithFlags,
+  · simp only [xmm_setXmm_self, xmm_setXmm_of_ne, xmm_setReg, xmm_arithFlags,
       xmm_setFlags, gpr_setXmm, gpr_setReg, ite_true, ite_false, reduceCtorEq, ne_eq, not_false_eq_true]
   · simp only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, ite_true, ite_false, reduceCtorEq, h15, skO]
   · simp only [gpr_setXmm, gpr_setReg, gpr_arithFlags, gpr_setFlags, mem_setXmm, mem_setReg, mem_arithFlags,

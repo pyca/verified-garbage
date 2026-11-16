@@ -6,6 +6,7 @@ import VerifiedGarbage.Proof.AesGcmSiv.X86_64.FnCT
 import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Fn
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.GcmSiv.Polyval
+import VerifiedGarbage.Proof.Gcm.X86_64.Pclmul.Ghash
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 public import Aesop.BuiltinRules
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64
@@ -818,18 +819,33 @@ def shortSeal (v : GcmImpl) : Prog isa :=
 def shortOpen (v : GcmImpl) : Prog isa :=
   if sivReg v then regOpen else Impl.StackScratch.X86_64.withStackArgScratch 3848 2 (openCode v)
 
+open VG.Proof.Gcm.Poly (φ x) in
+/-- GHASH's field for the code in registers (`Proof.AesGcmSivReg.X86_64.MulFacts`),
+whose proofs do not import its algebra. -/
+private def mulFacts : Proof.AesGcmSivReg.X86_64.MulFacts where
+  G H T := x * φ T = φ H
+  P2 H T := x * φ T = φ H ^ 2
+  P3 H T := x * φ T = φ H ^ 3
+  P4 H T := x * φ T = φ H ^ 4
+  step1 := fun H Y X₁ T₁ h => Proof.Gcm.X86_64.Pclmul.step1 H Y X₁ T₁ h
+  step4 := fun H Y X₁ X₂ X₃ X₄ T₁ T₂ T₃ T₄ h₁ h₂ h₃ h₄ =>
+    Proof.Gcm.X86_64.Pclmul.step4 H Y X₁ X₂ X₃ X₄ T₁ T₂ T₃ T₄ h₁ h₂ h₃ h₄
+  inv := Proof.Gcm.X86_64.Pclmul.hInvImm_ok
+  pows := fun _ s h1 hH => Proof.Gcm.X86_64.Pclmul.pows_ok s h1 hH
+  pv := GcmSiv.Polyval.polyvalFrom_eq
+
 theorem shortSeal_verified (v : GcmImpl) :
     Verified X86_64.target (shortSeal v) (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856) := by
   unfold shortSeal
   split
-  · exact Proof.AesGcmSivReg.X86_64.seal_framedL
+  · exact Proof.AesGcmSivReg.X86_64.seal_framedL mulFacts
   · exact sealCode_framed v
 
 theorem shortOpen_verified (v : GcmImpl) :
     Verified X86_64.target (shortOpen v) (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856) := by
   unfold shortOpen
   split
-  · exact Proof.AesGcmSivReg.X86_64.open_framedL
+  · exact Proof.AesGcmSivReg.X86_64.open_framedL mulFacts
   · exact openCode_framed v
 
 theorem shortSeal_spSafe (v : GcmImpl) : (shortSeal v).all (fun i => !X86_64.isa.writesSp i) = true := by

@@ -19,6 +19,8 @@ arguments, saves our caller's registers at `W + 144` and keeps the arguments
 but `tag` in `W` (`entry_ok`); `restore` reads the registers back (`restore_ok`).
 -/
 
+-- separate module: the entry, the exit and the arguments, apart from the pieces
+
 @[expose] public section
 
 set_option linter.unusedSimpArgs false

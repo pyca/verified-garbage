@@ -279,13 +279,15 @@ theorem crypt_st (L : Lay K W SP) (hR : R = 10 ∨ R = 14) {t : State} (h : St K
         · exact ⟨wA W, by simp, Offset.sub_base W (by decide)⟩
         · exact ⟨_, by simp, fun _ h => h⟩) Cr.rd Cr.wr
 
+variable {F : MulFacts}
+
 /-- `St`, with GHASH's registers for some key. -/
-def PG (K W SP : Addr) (R : Nat) (N A D : Addr) (al n : Nat) (T : Addr) (t : State) : Prop :=
-  St K W SP R N A D al n T t ∧ ∃ H, GReg H t
+def PG (F : MulFacts) (K W SP : Addr) (R : Nat) (N A D : Addr) (al n : Nat) (T : Addr) (t : State) : Prop :=
+  St K W SP R N A D al n T t ∧ ∃ H, GReg F H t
 
 /-- `PG`, with an input and its length in `r12` and `rbp`. -/
-def PR (K W SP : Addr) (R : Nat) (N A D : Addr) (al n : Nat) (T : Addr) (Q : Addr) (k : Nat) (t : State) : Prop :=
-  PG K W SP R N A D al n T t ∧ t.gpr .r12 = Q ∧ t.gpr .rbp = BitVec.ofNat 64 k
+def PR (F : MulFacts) (K W SP : Addr) (R : Nat) (N A D : Addr) (al n : Nat) (T : Addr) (Q : Addr) (k : Nat) (t : State) : Prop :=
+  PG F K W SP R N A D al n T t ∧ t.gpr .r12 = Q ∧ t.gpr .rbp = BitVec.ofNat 64 k
 
 /-- A pointer and a length loaded from their slots. -/
 theorem ld_ok {u : State} (Eu : Env K W SP u) {o : Nat} {P : Addr} {k : Nat} (h₁ : 200 ≤ o) (h₂ : o + 16 ≤ 248)
@@ -312,11 +314,11 @@ theorem St.same {t t' : State} (h : St K W SP R N A D al n T t) (hm : t'.mem = t
 
 theorem polyA_wp {t : State} (h : St K W SP R N A D al n T t) :
     WP isa (.block (hkey ++ ([.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))] : List Instr))) t
-      (PR K W SP R N A D al n T A al) := by
+      (PR F K W SP R N A D al n T A al) := by
   rw [show (hkey ++ ([.mov .r12 (.mem (at_ .r15 aadO)), .mov .rbp (.mem (at_ .r15 alenO))] : List Instr)) =
     hkey ++ ([.mov .r12 (.mem (at_ .r15 216)), .mov .rbp (.mem (at_ .r15 (216 + 8)))] : List Instr) from rfl,
     WP.block_append_iff]
-  refine WP.mono (hkey_ok h.bufs.one.env) fun t₁ ⟨g₁, _, m₁, rd₁, wr₁, sv₁⟩ => ?_
+  refine WP.mono (hkey_ok (F := F) h.bufs.one.env) fun t₁ ⟨g₁, _, m₁, rd₁, wr₁, sv₁⟩ => ?_
   have E₁ : Env K W SP t₁ := h.bufs.one.env.of_saved sv₁ rd₁ wr₁
   obtain ⟨t₂, run₂, r12₂, rbp₂, g₂, x₂, m₂, rd₂, wr₂⟩ := ld_ok E₁ (o := 216) (P := A) (k := al) (by decide)
     (by decide) (m₁ ▸ h.bufs.one.sl.aad) (m₁ ▸ h.bufs.one.sl.alen)
@@ -326,9 +328,9 @@ theorem polyA_wp {t : State} (h : St K W SP R N A D al n T t) :
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> decide
   rw [g₂ r hne.1 hne.2.1, sv₁ r hne.2.2]
 
-theorem polyD_wp {t : State} (h : PG K W SP R N A D al n T t) :
+theorem polyD_wp {t : State} (h : PG F K W SP R N A D al n T t) :
     WP isa (.block [.mov .r12 (.mem (at_ .r15 dataO)), .mov .rbp (.mem (at_ .r15 lenO))]) t
-      (PR K W SP R N A D al n T D n) := by
+      (PR F K W SP R N A D al n T D n) := by
   obtain ⟨hs, H, g⟩ := h
   obtain ⟨t₂, run₂, r12₂, rbp₂, g₂, x₂, m₂, rd₂, wr₂⟩ := ld_ok hs.bufs.one.env (o := 232) (P := D) (k := n) (by decide)
     (by decide) hs.bufs.one.sl.data hs.bufs.one.sl.len
@@ -338,22 +340,22 @@ theorem polyD_wp {t : State} (h : PG K W SP R N A D al n T t) :
     H, by rw [x₂]; exact g.c, by rw [x₂]; exact g.h⟩, r12₂, rbp₂⟩
 
 theorem absorb_st (four : Bool) (L : Lay K W SP) {Q : Addr} {k : Nat} {t : State} (hQ : Buf K W SP t Q k)
-    (h : PR K W SP R N A D al n T Q k t) : WP isa (absorb four) t (PG K W SP R N A D al n T) := by
+    (h : PR F K W SP R N A D al n T Q k t) : WP isa (absorb four) t (PG F K W SP R N A D al n T) := by
   obtain ⟨⟨hs, H, g⟩, r12, rbp⟩ := h
   refine WP.mono (absorb_ok four L hs.bufs.one.env g hQ r12 rbp) fun _ P => ?_
   exact ⟨hs.frame P.env P.frame (fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact L.w_w (.inr (by decide)) (by decide) (by decide))
       (frA (d := 128) (k := 16) (by decide) P.frame) P.rd P.wr, H, P.g⟩
 
-theorem lens_st {t : State} (h : PG K W SP R N A D al n T t) :
+theorem lens_st {t : State} (h : PG F K W SP R N A D al n T t) :
     WP isa (.block lens) t (St K W SP R N A D al n T) := by
   obtain ⟨hs, H, g⟩ := h
   refine WP.mono (lens_ok hs.bufs.one.env g hs.bufs.one.sl.alen hs.bufs.one.sl.len hs.bufs.aad.lt hs.bufs.data.lt)
     fun _ ⟨_, m, rd, wr, hg⟩ => hs.same m hg rd wr
 
-theorem polyval_st (L : Lay K W SP) {t : State} (h : St K W SP R N A D al n T t) :
+theorem polyval_st (F : MulFacts) (L : Lay K W SP) {t : State} (h : St K W SP R N A D al n T t) :
     WP isa polyval t (St K W SP R N A D al n T) :=
-  WP.seq (WP.mono (polyA_wp h) fun _ h₁ => WP.seq (WP.mono (absorb_st false L h₁.1.1.bufs.aad h₁)
+  WP.seq (WP.mono (polyA_wp (F := F) h) fun _ h₁ => WP.seq (WP.mono (absorb_st false L h₁.1.1.bufs.aad h₁)
     fun _ h₂ => WP.seq (WP.mono (polyD_wp h₂) fun _ h₃ => WP.seq (WP.mono (absorb_st true L h₃.1.1.bufs.data h₃)
       fun _ h₄ => lens_st h₄))))
 
@@ -377,34 +379,34 @@ theorem keys_rel (L : Lay K W SP) (hR : R = 10 ∨ R = 14) (hret : (⟨SP, 8⟩ 
   RelCT.seq (piece_rel hDW hn derive_check (fun _ h => derive_st L hR h) hP)
     (piece_rel hDW hn expand_check (fun _ h => expand_st L hR hret h) fun _ _ h => h.2)
 
-theorem polyval_rel (L : Lay K W SP) {P : State → State → Prop}
+theorem polyval_rel (F : MulFacts) (L : Lay K W SP) {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂) :
     RelCT isa P polyval fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂ := by
   have r₁ := (rel_taintC [] hDW hn (fun t₁ t₂ h => ⟨(hP _ _ h).1.bufs.one, (hP _ _ h).2.bufs.one,
       fun _ h => nomatch h⟩) polyA_check).wp
-    (F₁ := PR K W SP R N A D al n T A al) (F₂ := PR K W SP R N A D al n T A al)
+    (F₁ := PR F K W SP R N A D al n T A al) (F₂ := PR F K W SP R N A D al n T A al)
     fun t₁ t₂ h => ⟨polyA_wp (hP _ _ h).1, polyA_wp (hP _ _ h).2⟩
-  have r₂ := (rel_taintC [.r12, .rbp] (P := fun t₁ t₂ => True ∧ PR K W SP R N A D al n T A al t₁ ∧
-      PR K W SP R N A D al n T A al t₂) hDW hn (fun t₁ t₂ h => ⟨h.2.1.1.1.bufs.one, h.2.2.1.1.bufs.one, fun r hr => by
+  have r₂ := (rel_taintC [.r12, .rbp] (P := fun t₁ t₂ => True ∧ PR F K W SP R N A D al n T A al t₁ ∧
+      PR F K W SP R N A D al n T A al t₂) hDW hn (fun t₁ t₂ h => ⟨h.2.1.1.1.bufs.one, h.2.2.1.1.bufs.one, fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · rw [h.2.1.2.1, h.2.2.2.1]
         · rw [h.2.1.2.2, h.2.2.2.2]⟩) (absorb_check false)).wp
-    (F₁ := PG K W SP R N A D al n T) (F₂ := PG K W SP R N A D al n T)
+    (F₁ := PG F K W SP R N A D al n T) (F₂ := PG F K W SP R N A D al n T)
     fun t₁ t₂ h => ⟨absorb_st false L h.2.1.1.1.bufs.aad h.2.1, absorb_st false L h.2.2.1.1.bufs.aad h.2.2⟩
-  have r₃ := (rel_taintC [] (P := fun t₁ t₂ => True ∧ PG K W SP R N A D al n T t₁ ∧ PG K W SP R N A D al n T t₂)
+  have r₃ := (rel_taintC [] (P := fun t₁ t₂ => True ∧ PG F K W SP R N A D al n T t₁ ∧ PG F K W SP R N A D al n T t₂)
       hDW hn (fun t₁ t₂ h => ⟨h.2.1.1.bufs.one, h.2.2.1.bufs.one, fun _ h => nomatch h⟩) polyD_check).wp
-    (F₁ := PR K W SP R N A D al n T D n) (F₂ := PR K W SP R N A D al n T D n)
+    (F₁ := PR F K W SP R N A D al n T D n) (F₂ := PR F K W SP R N A D al n T D n)
     fun t₁ t₂ h => ⟨polyD_wp h.2.1, polyD_wp h.2.2⟩
-  have r₄ := (rel_taintC [.r12, .rbp] (P := fun t₁ t₂ => True ∧ PR K W SP R N A D al n T D n t₁ ∧
-      PR K W SP R N A D al n T D n t₂) hDW hn (fun t₁ t₂ h => ⟨h.2.1.1.1.bufs.one, h.2.2.1.1.bufs.one, fun r hr => by
+  have r₄ := (rel_taintC [.r12, .rbp] (P := fun t₁ t₂ => True ∧ PR F K W SP R N A D al n T D n t₁ ∧
+      PR F K W SP R N A D al n T D n t₂) hDW hn (fun t₁ t₂ h => ⟨h.2.1.1.1.bufs.one, h.2.2.1.1.bufs.one, fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
         · rw [h.2.1.2.1, h.2.2.2.1]
         · rw [h.2.1.2.2, h.2.2.2.2]⟩) (absorb_check true)).wp
-    (F₁ := PG K W SP R N A D al n T) (F₂ := PG K W SP R N A D al n T)
+    (F₁ := PG F K W SP R N A D al n T) (F₂ := PG F K W SP R N A D al n T)
     fun t₁ t₂ h => ⟨absorb_st true L h.2.1.1.1.bufs.data h.2.1, absorb_st true L h.2.2.1.1.bufs.data h.2.2⟩
-  have r₅ := (rel_taintC [] (P := fun t₁ t₂ => True ∧ PG K W SP R N A D al n T t₁ ∧ PG K W SP R N A D al n T t₂)
+  have r₅ := (rel_taintC [] (P := fun t₁ t₂ => True ∧ PG F K W SP R N A D al n T t₁ ∧ PG F K W SP R N A D al n T t₂)
       hDW hn (fun t₁ t₂ h => ⟨h.2.1.1.bufs.one, h.2.2.1.bufs.one, fun _ h => nomatch h⟩) lens_check).wp
     (F₁ := St K W SP R N A D al n T) (F₂ := St K W SP R N A D al n T)
     fun t₁ t₂ h => ⟨lens_st h.2.1, lens_st h.2.2⟩
@@ -606,16 +608,16 @@ variable {K W SP : Addr} {R : Nat} {N A D T : Addr} {al n : Nat}
 /-- `seal` after its entry, up to the copy of the tag. -/
 abbrev sealFront : Prog isa := .seq (.seq (.seq keys polyval) (tag tagO)) crypt
 
-theorem sealFront_st (L : Lay K W SP) (hR : R = 10 ∨ R = 14) (hret : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 488⟩)
+theorem sealFront_st (F : MulFacts) (L : Lay K W SP) (hR : R = 10 ∨ R = 14) (hret : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 488⟩)
     {t : State} (h : St K W SP R N A D al n T t) : WP isa sealFront t (St K W SP R N A D al n T) :=
-  WP.seq (WP.mono (WP.seq (WP.mono (WP.seq (WP.mono (keys_st L hR hret h) fun _ h => polyval_st L h))
+  WP.seq (WP.mono (WP.seq (WP.mono (WP.seq (WP.mono (keys_st L hR hret h) fun _ h => polyval_st F L h))
     fun _ h => tag_st L hR (.inl rfl) h)) fun _ h => crypt_st L hR h)
 
-theorem sealFront_rel (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 488⟩) (hn : n ≤ 2 ^ 64) (L : Lay K W SP)
+theorem sealFront_rel (F : MulFacts) (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 488⟩) (hn : n ≤ 2 ^ 64) (L : Lay K W SP)
     (hR : R = 10 ∨ R = 14) (hret : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 488⟩) {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂) :
     RelCT isa P sealFront fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂ :=
-  RelCT.seq (RelCT.seq (RelCT.seq (keys_rel hDW hn L hR hret hP) (polyval_rel hDW hn L fun _ _ h => h.2))
+  RelCT.seq (RelCT.seq (RelCT.seq (keys_rel hDW hn L hR hret hP) (polyval_rel hDW hn F L fun _ _ h => h.2))
     (piece_rel hDW hn (tag_check 0 (.inl rfl)) (fun _ h => tag_st L hR (.inl rfl) h) fun _ _ h => h.2))
     (piece_rel hDW hn crypt_check (fun _ h => crypt_st L hR h) fun _ _ h => h.2)
 
@@ -626,7 +628,7 @@ theorem tagOut_check : ∃ hc, (taint.check (Taint.ofRegs [.rcx, .r15]) (.block 
 
 
 /-- `vg_aes_gcm_siv_seal`, in two runs with the same public arguments. -/
-theorem seal_rel {s₀ s₀' : State} (hp : sealPre s₀) (hp' : sealPre s₀') (hq : onePub s₀ s₀') :
+theorem seal_rel (F : MulFacts) {s₀ s₀' : State} (hp : sealPre s₀) (hp' : sealPre s₀') (hq : onePub s₀ s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') Impl.AesGcmSiv.X86_64Reg.seal fun _ _ => True := by
   have Ar := (args_of_seal hp).1.1
   have L := Ar.lay
@@ -641,7 +643,7 @@ theorem seal_rel {s₀ s₀' : State} (hp : sealPre s₀) (hp' : sealPre s₀') 
       SealIn (s₀.gpr .rdi) (arg s₀ 2) (s₀.gpr .rsp) (s₀.gpr .rsi).toNat (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .r9)
         (s₀.gpr .r8).toNat (arg s₀ 0).toNat (arg s₀ 1) s₂)
     [⟨arg s₀ 1, 16⟩] [⟨s₀.gpr .r9, (arg s₀ 0).toNat⟩, ⟨arg s₀ 2, 488⟩]
-    (sealFront_rel Ar.data.w hn L Ar.rounds Ar.retW
+    (sealFront_rel F Ar.data.w hn L Ar.rounds Ar.retW
       fun _ _ h => by obtain ⟨_, _, hp, rfl, rfl⟩ := h; exact ⟨hp.2.1.2, hp.2.2.2⟩)
     fun s₁ s₂ h => by
       have hc : ∀ {s : State}, s.wr = [⟨s₀.gpr .r9, (arg s₀ 0).toNat⟩, ⟨arg s₀ 1, 16⟩, ⟨arg s₀ 2, 488⟩] →
@@ -652,8 +654,8 @@ theorem seal_rel {s₀ s₀' : State} (hp : sealPre s₀) (hp' : sealPre s₀') 
           simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢ <;>
           rcases hr with h | h | h <;> simp [h]
       obtain ⟨_, ⟨hw₁, p₁⟩, ⟨hw₂, p₂⟩⟩ := h
-      obtain ⟨t₁, u₁, e₁, -⟩ := sealFront_st L Ar.rounds Ar.retW p₁
-      obtain ⟨t₂, u₂, e₂, -⟩ := sealFront_st L Ar.rounds Ar.retW p₂
+      obtain ⟨t₁, u₁, e₁, -⟩ := sealFront_st F L Ar.rounds Ar.retW p₁
+      obtain ⟨t₂, u₂, e₂, -⟩ := sealFront_st F L Ar.rounds Ar.retW p₂
       exact ⟨⟨(hc hw₁).1, (hc hw₁).2, t₁, u₁, e₁⟩, ⟨(hc hw₂).1, (hc hw₂).2, t₂, u₂, e₂⟩⟩
   exact RelCT.seq front (rel_loadT (l := tagOut.tail ++ restore) (fun _ _ h => by
     obtain ⟨_, _, ⟨-, m₁, m₂⟩, ⟨g₁, h₁, c₁⟩, ⟨g₂, h₂, c₂⟩⟩ := h
@@ -744,7 +746,7 @@ theorem mask_st {K W SP : Addr} {R : Nat} {N A D T : Addr} {al n : Nat} {t : Sta
 
 
 /-- `open` after its entry, in two runs. -/
-theorem openBody_rel {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D T : Addr}
+theorem openBody_rel (F : MulFacts) {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {N A D T : Addr}
     {al n : Nat} (hDW : (⟨D, n⟩ : Region).Disjoint ⟨W, 488⟩) (hn : n ≤ 2 ^ 64)
     (hret : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 488⟩) {P : State → State → Prop}
     (hP : ∀ t₁ t₂, P t₁ t₂ → St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂) :
@@ -760,7 +762,7 @@ theorem openBody_rel {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨
       St K W SP R N A D al n T t₂) fun _ _ h => h.2
   have r₂ := piece_rel hDW hn crypt_check (fun _ h => crypt_st L hR h) (P := fun t₁ t₂ => True ∧
       St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂) fun _ _ h => h.2
-  have r₃ := polyval_rel hDW hn L (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧
+  have r₃ := polyval_rel hDW hn F L (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧
       St K W SP R N A D al n T t₂) fun _ _ h => h.2
   have r₄ := piece_rel hDW hn (tag_check 128 (.inr rfl)) (fun _ h => tag_st L hR (.inr rfl) h)
     (P := fun t₁ t₂ => True ∧ St K W SP R N A D al n T t₁ ∧ St K W SP R N A D al n T t₂) fun _ _ h => h.2
@@ -778,11 +780,11 @@ theorem openBody_rel {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨
   exact RelCT.seq r₀ (RelCT.seq r₁ (RelCT.seq r₂ (RelCT.seq r₃ (RelCT.seq r₄ (RelCT.seq r₅ (RelCT.seq r₆ r₇))))))
 
 /-- `vg_aes_gcm_siv_open`, in two runs with the same public arguments. -/
-theorem open_rel {s₀ s₀' : State} (hp : openPre s₀) (hp' : openPre s₀') (hq : onePub s₀ s₀') :
+theorem open_rel (F : MulFacts) {s₀ s₀' : State} (hp : openPre s₀) (hp' : openPre s₀') (hq : onePub s₀ s₀') :
     RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') Impl.AesGcmSiv.X86_64Reg.open fun _ _ => True := by
   have Ar := (args_of_open hp).1.1
   refine RelCT.seq (entry_rel (pub_regs hq) (hq.2.2.2.2.2.2.2 2 (by decide)) (argW_in Ar rfl)
     (argW_in (args_of_open hp').1.1 rfl) (entry_open hp) (entry_open_pub hp' hq)) ?_
-  exact openBody_rel Ar.lay Ar.rounds Ar.data.w (Nat.le_of_lt Ar.data.lt) Ar.retW fun _ _ h => ⟨h.2.1, h.2.2⟩
+  exact openBody_rel F Ar.lay Ar.rounds Ar.data.w (Nat.le_of_lt Ar.data.lt) Ar.retW fun _ _ h => ⟨h.2.1, h.2.2⟩
 
 end VG.Proof.AesGcmSivReg.X86_64

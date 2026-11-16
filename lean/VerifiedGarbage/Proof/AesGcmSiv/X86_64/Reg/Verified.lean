@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.AesGcmSiv.Rounds
 public import VerifiedGarbage.Proof.AesGcmSiv.Scratch
 public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Reg.Env
+public import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Reg.Polyval
 public import VerifiedGarbage.Impl.AesGcmSiv.X86_64Reg
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -54,21 +55,21 @@ theorem seal_xdepth : Impl.AesGcmSiv.X86_64Reg.seal.x86_64Depth ≤ 8 := by lit_
 
 theorem open_xdepth : Impl.AesGcmSiv.X86_64Reg.open.x86_64Depth ≤ 8 := by lit_decide
 
-theorem seal_correct (s : State) (hs : sealX86_64.pre s) :
+theorem seal_correct (F : MulFacts) (s : State) (hs : sealX86_64.pre s) :
     ∃ t s', Exec isa Impl.AesGcmSiv.X86_64Reg.seal s t s' ∧ abiPreserved s s' ∧ sealX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := seal_wp hs
+  obtain ⟨t, s', he, hg, hp⟩ := seal_wp F hs
   exact ⟨t, s', he, abiPreserved_of_exec seal_mx he hg, hp⟩
 
-theorem open_correct (s : State) (hs : openX86_64.pre s) :
+theorem open_correct (F : MulFacts) (s : State) (hs : openX86_64.pre s) :
     ∃ t s', Exec isa Impl.AesGcmSiv.X86_64Reg.open s t s' ∧ abiPreserved s s' ∧ openX86_64.post s s' := by
-  obtain ⟨t, s', he, hg, hp⟩ := open_wp hs
+  obtain ⟨t, s', he, hg, hp⟩ := open_wp F hs
   exact ⟨t, s', he, abiPreserved_of_exec open_mx he hg, hp⟩
 
-theorem seal_ct : ConstantTime isa sealX86_64.pre sealX86_64.pub Impl.AesGcmSiv.X86_64Reg.seal :=
-  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (seal_rel h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+theorem seal_ct (F : MulFacts) : ConstantTime isa sealX86_64.pre sealX86_64.pub Impl.AesGcmSiv.X86_64Reg.seal :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (seal_rel F h₁ h₂ hq _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
-theorem open_ct : ConstantTime isa openX86_64.pre openX86_64.pub Impl.AesGcmSiv.X86_64Reg.open :=
-  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (open_rel h₁ h₂ hq.1 _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+theorem open_ct (F : MulFacts) : ConstantTime isa openX86_64.pre openX86_64.pub Impl.AesGcmSiv.X86_64Reg.open :=
+  fun _ _ _ _ _ _ h₁ h₂ hq e₁ e₂ => (open_rel F h₁ h₂ hq.1 _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 /-- A state satisfying the precondition of `vg_aes_gcm_siv_seal`: no
 additional data, no data, the tag at `0x3000` and `work` at 0. -/
@@ -83,9 +84,9 @@ def sealSat : State where
   rd := [⟨0x1000, 240⟩, ⟨0x2000, 12⟩, ⟨0x2100, 0⟩, ⟨0x8008, 24⟩]
   wr := [⟨0, 0⟩, ⟨0x3000, 16⟩, ⟨0, 488⟩]
 
-theorem seal_verified :
+theorem seal_verified (F : MulFacts) :
     Verified X86_64.target Impl.AesGcmSiv.X86_64Reg.seal (Proof.AesGcmSiv.sealScratchContract X86_64.abi 61 8) :=
-  Verified.of_correct seal_correct seal_ct (by
+  Verified.of_correct (seal_correct F) (seal_ct F) (by
     sig_implies [Proof.AesGcmSiv.sealScratchContract, Proof.AesGcmSiv.sealScratchSig, Spec.GcmSiv.sealPre,
       Proof.AesGcmSiv.sealRoundsPost, Proof.AesGcmSivReg.sealX86_64, Proof.AesGcmSivReg.sealPre, Proof.AesGcmSivReg.oneLay,
       Proof.AesGcmSivReg.onePub, X86_64.abi, Proof.AesGcmSivReg.arg, Proof.AesGcmSivReg.args, Proof.AesGcmSivReg.stk8,
@@ -100,9 +101,9 @@ def openSat : State := { sealSat with
 
 /-- `open`'s public data include its leak, from which `pub` has whether it
 succeeds. -/
-theorem open_verified :
+theorem open_verified (F : MulFacts) :
     Verified X86_64.target Impl.AesGcmSiv.X86_64Reg.open (Proof.AesGcmSiv.openScratchContract X86_64.abi 61 8) :=
-  Verified.of_correct open_correct open_ct
+  Verified.of_correct (open_correct F) (open_ct F)
     { pre := by sig_implies_pre [Proof.AesGcmSiv.openScratchContract, Proof.AesGcmSiv.openScratchSig,
         Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost, Spec.GcmSiv.openLeak, Proof.AesGcmSivReg.openX86_64,
         Proof.AesGcmSivReg.openLeak, Proof.AesGcmSivReg.openResult, Proof.AesGcmSivReg.openPost, Proof.AesGcmSivReg.openPre,
@@ -174,13 +175,13 @@ theorem sealFrameSat_pre : ∃ s, (Proof.AesGcmSiv.sealRoundsContract X86_64.abi
   implies_sat [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, Proof.AesGcmSiv.sealRoundsPost,
     X86_64.abi, X86_64.argRegs] [sealFrameSat, sealSat] using sealFrameSat
 
-theorem seal_framed :
+theorem seal_framed (F : MulFacts) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 520 2 Impl.AesGcmSiv.X86_64Reg.seal)
       (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 528) :=
   X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 61) (pre := Spec.GcmSiv.sealPre X86_64.abi.ptrBits)
     (post := Proof.AesGcmSiv.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
-    (bytes := 520) seal_verified (by decide) (by decide) (by decide)
+    (bytes := 520) (seal_verified F) (by decide) (by decide) (by decide)
     seal_spSafe seal_xdepth (Proof.AesGcmSiv.sealPre_local _) (Proof.AesGcmSiv.sealPost_local _) sealFrameSat_pre
 
 /-- A state satisfying `vg_aes_gcm_siv_open`'s precondition, without the
@@ -192,14 +193,14 @@ theorem openFrameSat_pre : ∃ s, (Proof.AesGcmSiv.openRoundsContract X86_64.abi
   implies_sat [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost,
     Spec.GcmSiv.openLeak, X86_64.abi, X86_64.argRegs] [openFrameSat, sealSat] using openFrameSat
 
-theorem open_framed :
+theorem open_framed (F : MulFacts) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 520 2 Impl.AesGcmSiv.X86_64Reg.open)
       (Proof.AesGcmSiv.openRoundsContract X86_64.abi 528) :=
   X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 61) (pre := Spec.GcmSiv.openPre X86_64.abi.ptrBits)
     (post := Proof.AesGcmSiv.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (bytes := 520)
-    (Proof.AesGcmSiv.Verified.of_openScratch open_verified)
+    (Proof.AesGcmSiv.Verified.of_openScratch (open_verified F))
     (by decide) (by decide) (by decide) open_spSafe open_xdepth (Proof.AesGcmSiv.openPre_local _)
     (Proof.AesGcmSiv.openPost_local _) openFrameSat_pre (hleak := Proof.AesGcmSiv.openLeak_local _)
 
@@ -214,27 +215,27 @@ theorem sealFrameSat_preL : ∃ s, (Proof.AesGcmSiv.sealRoundsContract X86_64.ab
   implies_sat [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, Spec.GcmSiv.sealPre, Proof.AesGcmSiv.sealRoundsPost,
     X86_64.abi, X86_64.argRegs] [sealFrameSat, sealSat] using sealFrameSat
 
-theorem seal_framedL :
+theorem seal_framedL (F : MulFacts) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 Impl.AesGcmSiv.X86_64Reg.seal)
       (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856) :=
   X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.sealSig) (nm := "work") (e := .u64)
     (n := 61) (pre := Spec.GcmSiv.sealPre X86_64.abi.ptrBits)
     (post := Proof.AesGcmSiv.sealRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
-    (bytes := 3848) seal_verified (by decide) (by decide) (by decide)
+    (bytes := 3848) (seal_verified F) (by decide) (by decide) (by decide)
     seal_spSafe seal_xdepth (Proof.AesGcmSiv.sealPre_local _) (Proof.AesGcmSiv.sealPost_local _) sealFrameSat_preL
 
 theorem openFrameSat_preL : ∃ s, (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856).pre s := by
   implies_sat [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openPre, Proof.AesGcmSiv.openRoundsPost,
     Spec.GcmSiv.openLeak, X86_64.abi, X86_64.argRegs] [openFrameSat, sealSat] using openFrameSat
 
-theorem open_framedL :
+theorem open_framedL (F : MulFacts) :
     Verified X86_64.target (Impl.StackScratch.X86_64.withStackArgScratch 3848 2 Impl.AesGcmSiv.X86_64Reg.open)
       (Proof.AesGcmSiv.openRoundsContract X86_64.abi 3856) :=
   X86_64.Verified.stackArgScratch (sig := Spec.GcmSiv.openSig) (nm := "work") (e := .u64)
     (n := 61) (pre := Spec.GcmSiv.openPre X86_64.abi.ptrBits)
     (post := Proof.AesGcmSiv.openRoundsPost X86_64.abi.ptrBits) (wa := true) (stack := 8)
     (leak := some (Spec.GcmSiv.openLeak X86_64.abi.ptrBits)) (bytes := 3848)
-    (Proof.AesGcmSiv.Verified.of_openScratch open_verified)
+    (Proof.AesGcmSiv.Verified.of_openScratch (open_verified F))
     (by decide) (by decide) (by decide) open_spSafe open_xdepth (Proof.AesGcmSiv.openPre_local _)
     (Proof.AesGcmSiv.openPost_local _) openFrameSat_preL (hleak := Proof.AesGcmSiv.openLeak_local _)
 
