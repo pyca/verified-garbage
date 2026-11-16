@@ -73,8 +73,6 @@ x86_64 vg_aes_ocb_open_aesni
 x86_64 vg_aes_ocb_open_vaes
 x86_64 vg_aes_ocb_seal_aesni
 x86_64 vg_aes_ocb_seal_vaes
-x86_64 vg_aes_siv_decrypt_aesni
-x86_64 vg_aes_siv_encrypt_aesni
 x86_64 vg_cmac_aes_absorb
 x86_64 vg_cmac_aes_finish
 x86_64 vg_cmac_aes_init
