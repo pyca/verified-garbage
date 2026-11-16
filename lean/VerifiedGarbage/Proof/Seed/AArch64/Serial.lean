@@ -18,11 +18,12 @@ import VerifiedGarbage.Proof.Seed.Memory
 public import VerifiedGarbage.Spec.Aes
 
 /-!
-# SEED's one-block core on AArch64 enciphers a block
+# SEED's one-block core on AArch64 enciphers or deciphers a block
 
-`crypt_wp`: `Impl.Seed.AArch64.Serial.crypt` replaces the block at
-`x5 + bufOff` with `Spec.Seed.encryptBlock` of it, under the schedule at
-`x5 + keyOff`, and changes no other memory.
+`crypt_wp`: `Impl.Seed.AArch64.Serial.crypt d` replaces the block at
+`x5 + bufOff` with `Spec.Seed.crypt` of it under the round keys of the
+schedule at `x5 + keyOff` in the direction's order (`keyIdx`:
+`Spec.Seed.encryptBlock` or `decryptBlock`), and changes no other memory.
 
 * `aff_ok`: `S1[x]` is `S0[x]` through the two tables of sixteen bytes
   (checked on the packed S-boxes, `Proof/Seed/SboxLit.lean`).
@@ -666,32 +667,40 @@ def rk (m : Mem) (p : Addr) (keyOff i : Nat) : Word × Word :=
 /-- The registers the rounds write. -/
 def written : List Reg := [.x0, .x1, .x2, .x3, .x8, .x9, .x10, .x11, .x12, .x13]
 
-theorem round2_run {s : State} {keyOff j : Nat} (hc : Consts s) (hj : j < 8)
+theorem keyIdx_lt (d : Spec.Seed.Direction) {i : Nat} (hi : i < 16) : keyIdx d i < 16 := by
+  cases d
+  · exact hi
+  · exact Nat.lt_of_le_of_lt (Nat.sub_le 15 i) (by decide)
+
+theorem round2_run (d : Spec.Seed.Direction) {s : State} {keyOff j : Nat} (hc : Consts s) (hj : j < 8)
     (hk : keyOff % 4 = 0 ∧ keyOff + 128 < 16384)
     (hr : ∀ i < 32, InRegions (s.rd ++ s.wr) (s.gpr .x5 + BitVec.ofNat 64 (keyOff + 4 * i)) 4) :
-    ∃ t, runBlock isa (round2 keyOff j) s = some t ∧
-      quadOf t = Spec.Seed.round (rk s.mem (s.gpr .x5) keyOff (2 * j + 1))
-        (Spec.Seed.round (rk s.mem (s.gpr .x5) keyOff (2 * j)) (quadOf s)) ∧
+    ∃ t, runBlock isa (round2 d keyOff j) s = some t ∧
+      quadOf t = Spec.Seed.round (rk s.mem (s.gpr .x5) keyOff (keyIdx d (2 * j + 1)))
+        (Spec.Seed.round (rk s.mem (s.gpr .x5) keyOff (keyIdx d (2 * j))) (quadOf s)) ∧
       (∀ r, r ∉ written → t.gpr r = s.gpr r) ∧
       Consts t ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
-  have e1 : keyOff + 16 * j = keyOff + 8 * (2 * j) := by omega_using []
-  have e2 : keyOff + 8 * (2 * j) + 8 = keyOff + 8 * (2 * j + 1) := by omega_using []
-  have a0 : keyOff + 8 * (2 * j) = keyOff + 4 * (4 * j) := by omega_using []
-  have a1 : keyOff + 8 * (2 * j) + 4 = keyOff + 4 * (4 * j + 1) := by omega_using []
-  have a2 : keyOff + 8 * (2 * j + 1) = keyOff + 4 * (4 * j + 2) := by omega_using []
-  have a3 : keyOff + 8 * (2 * j + 1) + 4 = keyOff + 4 * (4 * j + 3) := by omega_using []
+  have i0 : keyIdx d (2 * j) < 16 := keyIdx_lt d (by omega_using [hj])
+  have i1 : keyIdx d (2 * j + 1) < 16 := keyIdx_lt d (by omega_using [hj])
+  rw [round2]
+  generalize keyIdx d (2 * j) = p at i0 ⊢
+  generalize keyIdx d (2 * j + 1) = q at i1 ⊢
+  have a0 : keyOff + 8 * p = keyOff + 4 * (2 * p) := by omega_using []
+  have a1 : keyOff + 8 * p + 4 = keyOff + 4 * (2 * p + 1) := by omega_using []
+  have a2 : keyOff + 8 * q = keyOff + 4 * (2 * q) := by omega_using []
+  have a3 : keyOff + 8 * q + 4 = keyOff + 4 * (2 * q + 1) := by omega_using []
   obtain ⟨u, ue, u0, u1, ug, uc, um, urd, uwr, usp⟩ := f_run (s := s) (l0 := .x0) (l1 := .x1) (r0 := .x2)
-    (r1 := .x3) (koff := keyOff + 8 * (2 * j)) hc (by decide) (by decide) (by decide) (by decide) (by decide)
-    ⟨by omega_using [hk.1], by omega_using [hk.2, hj]⟩ (by rw [a0]; exact hr _ (by omega_using [hj]))
-    (by rw [a1]; exact hr _ (by omega_using [hj]))
+    (r1 := .x3) (koff := keyOff + 8 * p) hc (by decide) (by decide) (by decide) (by decide) (by decide)
+    ⟨by omega_using [hk.1], by omega_using [hk.2, i0]⟩ (by rw [a0]; exact hr _ (by omega_using [i0]))
+    (by rw [a1]; exact hr _ (by omega_using [i0]))
   have u5 : u.gpr .x5 = s.gpr .x5 := ug _ (by decide) (by decide) (by decide)
   obtain ⟨t, te, t2, t3, tg, tc, tm, trd, twr, tsp⟩ := f_run (s := u) (l0 := .x2) (l1 := .x3) (r0 := .x0)
-    (r1 := .x1) (koff := keyOff + 8 * (2 * j + 1)) uc (by decide) (by decide) (by decide) (by decide)
-    (by decide) ⟨by omega_using [hk.1], by omega_using [hk.2, hj]⟩
-    (by rw [urd, uwr, u5, a2]; exact hr _ (by omega_using [hj]))
-    (by rw [urd, uwr, u5, a3]; exact hr _ (by omega_using [hj]))
+    (r1 := .x1) (koff := keyOff + 8 * q) uc (by decide) (by decide) (by decide) (by decide)
+    (by decide) ⟨by omega_using [hk.1], by omega_using [hk.2, i1]⟩
+    (by rw [urd, uwr, u5, a2]; exact hr _ (by omega_using [i1]))
+    (by rw [urd, uwr, u5, a3]; exact hr _ (by omega_using [i1]))
   refine ⟨t, ?_, ?_, ?_, tc, tm.trans um, trd.trans urd, twr.trans uwr, tsp.trans usp⟩
-  · rw [round2, e1, e2, VG.Interleave.runBlock_append, ue, Option.bind_some, te]
+  · rw [VG.Interleave.runBlock_append, ue, Option.bind_some, te]
   · have k2 : wd u .x2 = wd s .x2 := by rw [wd, ug _ (by decide) (by decide) (by decide)]
     have k3 : wd u .x3 = wd s .x3 := by rw [wd, ug _ (by decide) (by decide) (by decide)]
     have k0 : wd t .x0 = wd u .x0 := by rw [wd, tg _ (by decide) (by decide) (by decide)]
@@ -707,11 +716,11 @@ theorem round2_run {s : State} {keyOff j : Nat} (hc : Consts s) (hj : j < 8)
     rw [tg r (fun h => hr' (by simp [written, h])) (fun h => hr' (by simp [written, h])) h,
       ug r (fun h => hr' (by simp [written, h])) (fun h => hr' (by simp [written, h])) h]
 
-theorem rounds_run (s : State) (keyOff n : Nat) (hn : n ≤ 8) (hc : Consts s)
+theorem rounds_run (d : Spec.Seed.Direction) (s : State) (keyOff n : Nat) (hn : n ≤ 8) (hc : Consts s)
     (hk : keyOff % 4 = 0 ∧ keyOff + 128 < 16384)
     (hr : ∀ i < 32, InRegions (s.rd ++ s.wr) (s.gpr .x5 + BitVec.ofNat 64 (keyOff + 4 * i)) 4) :
-    ∃ t, runBlock isa ((List.range n).flatMap (round2 keyOff)) s = some t ∧
-      quadOf t = roundsN (rk s.mem (s.gpr .x5) keyOff) (2 * n) (quadOf s) ∧
+    ∃ t, runBlock isa ((List.range n).flatMap (round2 d keyOff)) s = some t ∧
+      quadOf t = roundsN (fun i => rk s.mem (s.gpr .x5) keyOff (keyIdx d i)) (2 * n) (quadOf s) ∧
       (∀ r, r ∉ written → t.gpr r = s.gpr r) ∧
       Consts t ∧ t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
   induction n with
@@ -719,7 +728,7 @@ theorem rounds_run (s : State) (keyOff n : Nat) (hn : n ≤ 8) (hc : Consts s)
   | succ n ih =>
     obtain ⟨a, ae, aq, ag, ac, am, ard, awr, asp⟩ := ih (by omega_using [hn])
     have a5 : a.gpr .x5 = s.gpr .x5 := ag _ (by decide)
-    obtain ⟨b, be, bq, bg, bc, bm, brd, bwr, bsp⟩ := round2_run (s := a) (keyOff := keyOff) (j := n) ac
+    obtain ⟨b, be, bq, bg, bc, bm, brd, bwr, bsp⟩ := round2_run d (s := a) (keyOff := keyOff) (j := n) ac
       (by omega_using [hn]) hk (fun i hi => by rw [ard, awr, a5]; exact hr i hi)
     refine ⟨b, ?_, ?_, fun r hr' => (bg r hr').trans (ag r hr'), bc, bm.trans am, brd.trans ard,
       bwr.trans awr, bsp.trans asp⟩
@@ -957,18 +966,19 @@ def cryptRegs : List Reg := written ++ setupRegs
 
 /-- `crypt`: the block at `x5 + bufOff` enciphered under the schedule at
 `x5 + keyOff`. -/
-theorem crypt_wp {s : State} {bufOff keyOff : Nat}
+theorem crypt_wp (dir : Spec.Seed.Direction) {s : State} {bufOff keyOff : Nat}
     (hb : bufOff % 4 = 0 ∧ bufOff + 16 < 16384) (hk : keyOff % 4 = 0 ∧ keyOff + 128 < 16384)
     (hrk : ∀ i < 32, InRegions (s.rd ++ s.wr) (s.gpr .x5 + BitVec.ofNat 64 (keyOff + 4 * i)) 4)
     (hwb : ∀ i < 4, InRegions s.wr (s.gpr .x5 + BitVec.ofNat 64 (bufOff + 4 * i)) 4) :
-    WP isa (.block (crypt bufOff keyOff)) s fun t =>
+    WP isa (.block (crypt dir bufOff keyOff)) s fun t =>
       (∀ r, r ∉ cryptRegs → t.gpr r = s.gpr r) ∧
       Frame [⟨s.gpr .x5 + BitVec.ofNat 64 bufOff, 16⟩] s.mem t.mem ∧
       Spec.Aes.bytesAt t.mem (s.gpr .x5 + BitVec.ofNat 64 bufOff) 16 =
-        (Spec.Seed.encryptBlock (Spec.Seed.scheduleAt s.mem (s.gpr .x5 + BitVec.ofNat 64 keyOff))
+        (Spec.Seed.crypt (fun j => Spec.Seed.roundKey
+            (Spec.Seed.scheduleAt s.mem (s.gpr .x5 + BitVec.ofNat 64 keyOff)) (keyIdx dir j))
           (Spec.Seed.blockAt s.mem (s.gpr .x5 + BitVec.ofNat 64 bufOff))).toList ∧
       t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
-  change WP isa (.block (setup ++ loadBlock bufOff ++ (List.range 8).flatMap (round2 keyOff) ++
+  change WP isa (.block (setup ++ loadBlock bufOff ++ (List.range 8).flatMap (round2 dir keyOff) ++
     storeBlock bufOff)) s _
   rw [List.append_assoc, List.append_assoc, WP.block_append_iff]
   refine WP.mono (setup_wp s) fun a ⟨ac, ag, am, ard, awr, asp⟩ => ?_
@@ -984,7 +994,7 @@ theorem crypt_wp {s : State} {bufOff keyOff : Nat}
     simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢
     rcases h with h | h | h | h <;> simp [h])))
   have b5 : b.gpr .x5 = s.gpr .x5 := (bfr _ (by decide)).trans a5
-  obtain ⟨c, ce, cq, cg, cc, cm, crd, cwr, csp⟩ := rounds_run b keyOff 8 (Nat.le_refl _) bc hk
+  obtain ⟨c, ce, cq, cg, cc, cm, crd, cwr, csp⟩ := rounds_run dir b keyOff 8 (Nat.le_refl _) bc hk
     (fun i hi => by rw [brd, bwr, ard, awr, b5]; exact hrk i hi)
   have c5 : c.gpr .x5 = s.gpr .x5 := (cg _ (by decide)).trans b5
   have cmem : c.mem = s.mem := cm.trans (bm.trans am)
@@ -1006,8 +1016,9 @@ theorem crypt_wp {s : State} {bufOff keyOff : Nat}
     exact df
   · let K := Spec.Seed.scheduleAt s.mem (s.gpr .x5 + BitVec.ofNat 64 keyOff)
     let q := quadOf c
-    have hkeys : ∀ j < 16, rk b.mem (b.gpr .x5) keyOff j = Spec.Seed.roundKey K j := fun j hj => by
-      rw [VG.Proof.Seed.roundKey_readW _ _ hj, show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl,
+    have hkeys : ∀ j < 16, rk b.mem (b.gpr .x5) keyOff (keyIdx dir j) = Spec.Seed.roundKey K (keyIdx dir j) :=
+        fun j hj => by
+      rw [VG.Proof.Seed.roundKey_readW _ _ (keyIdx_lt dir hj), show (4 : BitVec 64) = BitVec.ofNat 64 4 from rfl,
         VG.Offset.add_add, VG.Offset.add_add, rk, bm, am, b5]
     have hquad : quadOf b = decodeQ (Spec.Seed.blockAt s.mem (s.gpr .x5 + BitVec.ofNat 64 bufOff)) := by
       have q0 := bw 0 (by decide)
@@ -1018,14 +1029,14 @@ theorem crypt_wp {s : State} {bufOff keyOff : Nat}
       rw [VG.Proof.Seed.decodeQ_blockAt, VG.Offset.add_add, VG.Offset.add_add, VG.Offset.add_add,
         VG.Offset.add_add]
       exact Prod.ext q0 (Prod.ext q1 (Prod.ext q2 q3))
-    have hq : q = roundsN (Spec.Seed.roundKey K) 16
+    have hq : q = roundsN (fun j => Spec.Seed.roundKey K (keyIdx dir j)) 16
         (decodeQ (Spec.Seed.blockAt s.mem (s.gpr .x5 + BitVec.ofNat 64 bufOff))) := by
-      rw [← hquad, ← VG.Proof.Seed.roundsN_congr 16 _ hkeys]
+      rw [← hquad, ← VG.Proof.Seed.roundsN_congr (k₂ := fun j => Spec.Seed.roundKey K (keyIdx dir j)) 16 _ hkeys]
       exact cq
     rw [stored_bytes (z := fun i => (#v[q.2.2.1, q.2.2.2, q.1, q.2.1] : Vector Word 4).getD i 0) (fun i hi => by
       rw [VG.Offset.add_add, ← c5, dw i hi]
       rcases (show i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 by omega_using [hi]) with rfl | rfl | rfl | rfl <;> rfl)]
-    rw [Spec.Seed.encryptBlock, VG.Proof.Seed.crypt_eq, ← hq]
+    rw [VG.Proof.Seed.crypt_eq, ← hq]
     rfl
 
 end VG.Proof.Seed.AArch64.Serial

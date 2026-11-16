@@ -69,8 +69,10 @@ theorem crypt_keeps_x30 (d : Direction) : KeepsReg .x30 (dirCore d).crypt := by
     | seq hC hB => exact crypt_keeps_x30_aux d hA hC hB
 
 /-- The one-block core does not write `x30`. -/
-theorem serialCrypt_keeps_x30 : KeepsReg .x30 serialCore.crypt :=
-  Modes.AArch64.keepsReg_of_regSafe (by lit_decide)
+theorem serialCrypt_keeps_x30 (d : Direction) : KeepsReg .x30 (serialDirCore d).crypt := by
+  cases d
+  · exact Modes.AArch64.keepsReg_of_regSafe (by lit_decide)
+  · exact Modes.AArch64.keepsReg_of_regSafe (by lit_decide)
 
 /-- `WP.gprs` for `x30`, from `KeepsReg` rather than the absence of calls. -/
 theorem WP.gprs' {c : Prog isa} {s : State} {Q : State → Prop} (hk : KeepsReg .x30 c) (h : WP isa c s Q) :
@@ -83,7 +85,7 @@ theorem WP.gprs' {c : Prog isa} {s : State} {Q : State → Prop} (hk : KeepsReg 
 blocks that do not write `x30`. -/
 tactic_template "keeps_x30" : tactic => `(tactic| repeat (first
   | with_reducible exact crypt_keeps_x30 _
-  | with_reducible exact serialCrypt_keeps_x30
+  | with_reducible exact serialCrypt_keeps_x30 _
   | apply KeepsReg.seq
   | apply KeepsReg.ite
   | apply KeepsReg.loop

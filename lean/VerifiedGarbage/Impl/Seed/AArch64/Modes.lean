@@ -13,12 +13,13 @@ public import VerifiedGarbage.Impl.Modes.AArch64.CfbDec
 modes' generic CBC that updates the chaining value, OFB and CFB
 (`Impl/Modes/AArch64/CbcChained.lean`, `Fb.lean`) over `vg_seed_ecb_{en,de}crypt`'s batch of sixteen blocks
 (`batch`), with the working space in the scratch buffer, which the artifact
-allocates on the stack. CBC decryption deciphers sixteen blocks at a time;
+allocates on the stack. CBC decryption deciphers sixteen blocks at a time,
+from seven blocks on, and fewer one at a time (`serialDirCore .decrypt`);
 CFB decryption gathers the preceding ciphertexts and enciphers sixteen
 independent blocks at a time, from six blocks on; fewer go one at a time,
 as CFB encryption's do. The modes whose blocks each need the one
 before (CBC encryption, OFB and CFB encryption) encipher one block at a
-time by table lookups in vector registers (`serialCore`, `Serial.lean`),
+time by table lookups in vector registers (`serialDirCore`, `Serial.lean`),
 which a batch does in the time of about seven.
 
 The core's slots: the batch's 122 (its working area, at `sb` = `x5` as the
@@ -29,7 +30,7 @@ no vector register: `crypt` keeps the data's address and the blocks left
 (`x23`, `x24`) in `v29` and `v30` (`dup`, back by `umov`), which the taint
 analysis keeps public across the batch, points `x1`, `x2` and `x0` at the
 buffer, its sixteen blocks and the copy's first round key, and runs the
-batch. `serialCore` has the same slots (its block is the buffer's first, and
+batch. `serialDirCore` has the same slots (its block is the buffer's first, and
 the batch's working area is unused), so that the functions' frames are the
 same size; it writes none of `x23`, `x24` and `x25`, where CBC encryption
 and the feedback modes keep the IV's address.
@@ -91,14 +92,18 @@ def modeRegs : Impl.Modes.AArch64.CtrRegs := ⟨.x1, .x2, .x3, .x4⟩
 
 /-- The buffer's first block enciphered under the schedule's copy
 (`Serial.crypt`). -/
-def serialCrypt : Prog isa := .block (Serial.crypt (8 * bufSlot) (8 * schedSlot))
+def serialCrypt : Prog isa := .block (Serial.crypt .encrypt (8 * bufSlot) (8 * schedSlot))
 
-/-- SEED encryption's core for the modes whose blocks each need the one
-before: one block, the buffer's first, by table lookups in vector
-registers. -/
-def serialCore : Impl.Modes.AArch64.Core where
+/-- The buffer's first block deciphered under the schedule's copy. -/
+def serialDecrypt : Prog isa := .block (Serial.crypt .decrypt (8 * bufSlot) (8 * schedSlot))
+
+/-- SEED's one-block core in the direction `d`: the buffer's first block,
+by table lookups in vector registers. -/
+def serialDirCore (d : Direction) : Impl.Modes.AArch64.Core where
   prepare := (dirCore .encrypt).prepare
-  crypt := serialCrypt
+  crypt := match d with
+    | .encrypt => serialCrypt
+    | .decrypt => serialDecrypt
   slots := schedSlot + 16
   total := schedSlot + 28
   buf := bufSlot
@@ -107,14 +112,24 @@ def serialCore : Impl.Modes.AArch64.Core where
   dataReg := .x23
   leftReg := .x24
 
+/-- SEED encryption's core for the modes whose blocks each need the one
+before. -/
+abbrev serialCore : Impl.Modes.AArch64.Core := serialDirCore .encrypt
+
 /-- SEED encryption's core for CBC encryption and the feedback modes. -/
 abbrev fbCore : Impl.Modes.AArch64.Core := serialCore
 
 /-- `vg_seed_cbc_encrypt_chained`. -/
 def cbcEncryptChained : Prog isa := fbCore.cbcEncryptChained modeRegs .x25
 
-/-- `vg_seed_cbc_decrypt_chained`. -/
-def cbcDecryptChained : Prog isa := (dirCore .decrypt).cbcDecryptChained modeRegs
+/-- `vg_seed_cbc_decrypt_chained`: fewer than seven blocks one at a time,
+which a batch does not beat (`(n + 1) / 8` is zero; `n + 1` wraps only for
+an `n` no buffer has, and either way is correct for any `n`); otherwise by
+batches. -/
+def cbcDecryptChained : Prog isa :=
+  .seq (.block [.addImm .x .x13 .x3 1, .lsr .x .x13 .x13 3])
+    (.ite (.zero .x .x13) ((serialDirCore .decrypt).cbcDecryptChained modeRegs)
+      ((dirCore .decrypt).cbcDecryptChained modeRegs))
 
 /-- `vg_seed_ofb`. -/
 def ofb : Prog isa := fbCore.fb .ofb modeRegs .x25

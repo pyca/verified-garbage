@@ -4,12 +4,13 @@ public import VerifiedGarbage.Impl.Tbl.AArch64
 public import VerifiedGarbage.Spec.Seed
 
 /-!
-# SEED encryption of one block by table lookups, on AArch64
+# SEED on one block by table lookups, on AArch64
 
-`crypt bufOff keyOff`: the block at `x5 + bufOff` enciphered in place under
-the schedule at `x5 + keyOff`, for the modes whose blocks each need the one
-before (the batch of `Ecb.lean` enciphers sixteen blocks in the time of
-about seven of these).
+`crypt d bufOff keyOff`: the block at `x5 + bufOff` enciphered or deciphered
+in place under the schedule at `x5 + keyOff`, for the modes whose blocks
+each need the one before, and for calls of a few blocks (the batch of
+`Ecb.lean` does sixteen blocks in the time of about seven of these).
+Decryption is encryption with the round keys from the last (`keyIdx`).
 
 `S0` is in the table registers `v16`–`v31`, loaded by immediates
 (`Impl.Tbl.AArch64.loadTable`), and the four bytes of `G`'s argument select
@@ -91,10 +92,16 @@ def f (l0 l1 r0 r1 : Reg) (koff : Nat) : List Instr :=
   [.addImm .x .x8 .x10 0, .add .w .x10 .x10 .x9] ++ g ++
   [.logic .eor .w l1 l1 .x10, .add .w .x10 .x10 .x8, .logic .eor .w l0 l0 .x10]
 
+/-- The round key of round `i + 1` (from 0): encryption's from the first,
+decryption's from the last (RFC 4269 §2.4). -/
+def keyIdx : Spec.Seed.Direction → Nat → Nat
+  | .encrypt, i => i
+  | .decrypt, i => 15 - i
+
 /-- Rounds `2 j + 1` and `2 j + 2`: the first on `x0` and `x1`, the second
 on `x2` and `x3`. -/
-def round2 (keyOff j : Nat) : List Instr :=
-  f .x0 .x1 .x2 .x3 (keyOff + 16 * j) ++ f .x2 .x3 .x0 .x1 (keyOff + 16 * j + 8)
+def round2 (d : Spec.Seed.Direction) (keyOff j : Nat) : List Instr :=
+  f .x0 .x1 .x2 .x3 (keyOff + 8 * keyIdx d (2 * j)) ++ f .x2 .x3 .x0 .x1 (keyOff + 8 * keyIdx d (2 * j + 1))
 
 /-- The register of word `i`. -/
 def wordReg (i : Nat) : Reg := (#[.x0, .x1, .x2, .x3] : Array Reg)[i]!
@@ -108,9 +115,9 @@ def storeBlock (bufOff : Nat) : List Instr :=
   (List.range 4).flatMap fun i =>
     [.rev32 (wordReg ((i + 2) % 4)) (wordReg ((i + 2) % 4)), .str .w (wordReg ((i + 2) % 4)) .x5 (bufOff + 4 * i)]
 
-/-- The block at `x5 + bufOff` enciphered in place, with the schedule at
-`x5 + keyOff`. -/
-def crypt (bufOff keyOff : Nat) : List Instr :=
-  setup ++ loadBlock bufOff ++ (List.range 8).flatMap (round2 keyOff) ++ storeBlock bufOff
+/-- The block at `x5 + bufOff` enciphered or deciphered in place, with the
+schedule at `x5 + keyOff`. -/
+def crypt (d : Spec.Seed.Direction) (bufOff keyOff : Nat) : List Instr :=
+  setup ++ loadBlock bufOff ++ (List.range 8).flatMap (round2 d keyOff) ++ storeBlock bufOff
 
 end VG.Impl.Seed.AArch64.Serial
