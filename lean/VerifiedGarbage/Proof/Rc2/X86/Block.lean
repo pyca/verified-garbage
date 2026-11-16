@@ -70,10 +70,10 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   have argRead (st : State) (rd : st.rd = s.rd) (wr : st.wr = s.wr)
       (sp : st.gpr .esp = s.gpr .esp) : ∀ i < 3, InRegions (st.rd ++ st.wr) (argAddr st i) 4 := by
     intro i hi
-    have fit : (st.gpr .esp).toNat + 16 ≤ 2 ^ 32 := by rw [sp]; exact spFit
+    obtain fit : (st.gpr .esp).toNat + 16 ≤ 2 ^ 32 := by rw [sp]; exact spFit
     rw [argAddr_eq st i (by omega_arith), sp, rd, wr, hrd, hwr]
     exact ⟨⟨argAddr s 0, 12⟩, by simp, argContainsCount s 3 spFit i hi⟩
-  have writes : ∀ i < 5, InRegions s.wr (addr32 (arg s 2) + BitVec.ofNat 64 (4 * i)) 4 := by
+  obtain writes : ∀ i < 5, InRegions s.wr (addr32 (arg s 2) + BitVec.ofNat 64 (4 * i)) 4 := by
     intro i hi
     rw [hwr]
     exact ⟨⟨addr32 (arg s 2), 256⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
@@ -86,31 +86,31 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
     (by rw [scratch₀]; exact scratchFit) (by rw [keep₀.wr, scratch₀]; exact writes))
   intro s₁ h₁
   have gpr₀ (r : Reg) (hr : r ≠ .eax) : s₀.gpr r = s.gpr r := keep₀.reg r (by simpa using hr)
-  have sp₁ : s₁.gpr .esp = s.gpr .esp := by rw [h₁.1]; exact gpr₀ .esp (by decide)
-  have savedFrame : Frame [⟨addr32 (arg s 2), 256⟩] s.mem s₁.mem := by
+  obtain sp₁ : s₁.gpr .esp = s.gpr .esp := by rw [h₁.1]; exact gpr₀ .esp (by decide)
+  obtain savedFrame : Frame [⟨addr32 (arg s 2), 256⟩] s.mem s₁.mem := by
     rw [h₁.2.2.2, keep₀.mem, scratch₀]
     exact saveMem_frame_le s.mem (addr32 (arg s 2)) (fun i => s₀.gpr (blockSavedReg i)) 5 64 (by decide) (by decide)
-  have args₁ := arguments_frame 3 savedFrame sp₁ spFit (by simpa using argsScratch)
+  obtain args₁ := arguments_frame 3 savedFrame sp₁ spFit (by simpa using argsScratch)
   rw [WP.block_append_iff]
   obtain ⟨s₂, run₂, scratch₂, data₂, keep₂⟩ := pinBlock_ok s₁
     (argRead s₁ (h₁.2.1.trans keep₀.rd) (h₁.2.2.1.trans keep₀.wr) sp₁ 1 (by decide))
   refine WP.of_runBlock ⟨s₂, run₂, ?_⟩
   rw [h₁.1, scratch₀] at scratch₂
   rw [args₁ 1 (by decide)] at data₂
-  have sp₂ : s₂.gpr .esp = s.gpr .esp := (keep₂.reg .esp (by decide)).trans sp₁
-  have rd₂ := keep₂.rd.trans (h₁.2.1.trans keep₀.rd)
-  have wr₂ := keep₂.wr.trans (h₁.2.2.1.trans keep₀.wr)
-  have frame₂ : Frame [⟨addr32 (arg s 2), 256⟩] s.mem s₂.mem := by rw [keep₂.mem]; exact savedFrame
-  have args₂ := arguments_frame 3 frame₂ sp₂ spFit (by simpa using argsScratch)
-  have base₂ : wordBase s₂ = addr32 (arg s 2) + 64 := by unfold wordBase; rw [scratch₂]
-  have wordsSub : Region.Sub ⟨wordBase s₂, 16⟩ ⟨addr32 (arg s 2), 256⟩ := by
+  obtain sp₂ : s₂.gpr .esp = s.gpr .esp := (keep₂.reg .esp (by decide)).trans sp₁
+  obtain rd₂ := keep₂.rd.trans (h₁.2.1.trans keep₀.rd)
+  obtain wr₂ := keep₂.wr.trans (h₁.2.2.1.trans keep₀.wr)
+  obtain frame₂ : Frame [⟨addr32 (arg s 2), 256⟩] s.mem s₂.mem := by rw [keep₂.mem]; exact savedFrame
+  obtain args₂ := arguments_frame 3 frame₂ sp₂ spFit (by simpa using argsScratch)
+  obtain base₂ : wordBase s₂ = addr32 (arg s 2) + 64 := by unfold wordBase; rw [scratch₂]
+  obtain wordsSub : Region.Sub ⟨wordBase s₂, 16⟩ ⟨addr32 (arg s 2), 256⟩ := by
     rw [base₂]; exact Offset.sub_base (addr32 (arg s 2)) (d := 64) (n := 16) (k := 256) (by decide)
-  have area₂ : areaBase s₂ = addr32 (arg s 2) + BitVec.ofNat 64 48 := by unfold areaBase; rw [scratch₂]
-  have areaSub : Region.Sub ⟨areaBase s₂, 32⟩ ⟨addr32 (arg s 2), 256⟩ := by
+  obtain area₂ : areaBase s₂ = addr32 (arg s 2) + BitVec.ofNat 64 48 := by unfold areaBase; rw [scratch₂]
+  obtain areaSub : Region.Sub ⟨areaBase s₂, 32⟩ ⟨addr32 (arg s 2), 256⟩ := by
     rw [area₂]; exact Offset.sub_base (addr32 (arg s 2)) (d := 48) (n := 32) (k := 256) (by decide)
-  have dataWords : (Region.mk (addr32 (arg s 1)) 8).Disjoint ⟨wordBase s₂, 16⟩ := by
+  obtain dataWords : (Region.mk (addr32 (arg s 1)) 8).Disjoint ⟨wordBase s₂, 16⟩ := by
     intro a ha hb; exact dataSep a ha (wordsSub a hb)
-  have env₂ : RoundEnv s₂ := by
+  obtain env₂ : RoundEnv s₂ := by
     constructor
     · rw [scratch₂]; exact scratchFit
     · rw [args₂ 0 (by decide)]; exact keyFit
@@ -131,11 +131,11 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
       rw [ae]
       intro a ha hb
       exact argsScratch a (Region.sub_prefix (by decide : 4 ≤ 12) a ha) (areaSub a hb)
-  have input₂ : Spec.Rc2.blockAt s₂.mem (addr32 (s₂.gpr .edi)) = Spec.Rc2.blockAt s.mem (addr32 (arg s 1)) := by
+  obtain input₂ : Spec.Rc2.blockAt s₂.mem (addr32 (s₂.gpr .edi)) = Spec.Rc2.blockAt s.mem (addr32 (arg s 1)) := by
     rw [data₂]; exact blockAt_frame frame₂ _ (by simpa using dataSep)
-  have schedule₂ : Spec.Rc2.scheduleAt s₂.mem (addr32 (arg s₂ 0)) = Spec.Rc2.scheduleAt s.mem (addr32 (arg s 0)) := by
+  obtain schedule₂ : Spec.Rc2.scheduleAt s₂.mem (addr32 (arg s₂ 0)) = Spec.Rc2.scheduleAt s.mem (addr32 (arg s 0)) := by
     rw [args₂ 0 (by decide)]; exact scheduleAt_frame frame₂ _ (by simpa using keySep)
-  have dataRead₂ : ∀ i < 8, InRegions (s₂.rd ++ s₂.wr) (addr32 (s₂.gpr .edi) + BitVec.ofNat 64 i) 1 := by
+  obtain dataRead₂ : ∀ i < 8, InRegions (s₂.rd ++ s₂.wr) (addr32 (s₂.gpr .edi) + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [rd₂, wr₂, data₂, hrd, hwr]
     exact ⟨⟨addr32 (arg s 1), 8⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
@@ -146,20 +146,20 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   rw [WP.block_append_iff]
   apply WP.mono (rounds_ok d s₃ _ h₃.1 (h₃.2.env env₂))
   intro s₄ h₄
-  have core := h₃.2.trans h₄.2
-  have env₄ := core.env env₂
-  have sp₄ : s₄.gpr .esp = s.gpr .esp := (core.reg .esp (by decide)).trans sp₂
-  have scratch₄ : s₄.gpr .ebp = arg s 2 := (core.reg .ebp (by decide)).trans scratch₂
-  have rd₄ := core.rd.trans rd₂
-  have wr₄ := core.wr.trans wr₂
-  have frame₄ : Frame [⟨addr32 (arg s 2), 256⟩] s.mem s₄.mem :=
+  obtain core := h₃.2.trans h₄.2
+  obtain env₄ := core.env env₂
+  obtain sp₄ : s₄.gpr .esp = s.gpr .esp := (core.reg .esp (by decide)).trans sp₂
+  obtain scratch₄ : s₄.gpr .ebp = arg s 2 := (core.reg .ebp (by decide)).trans scratch₂
+  obtain rd₄ := core.rd.trans rd₂
+  obtain wr₄ := core.wr.trans wr₂
+  obtain frame₄ : Frame [⟨addr32 (arg s 2), 256⟩] s.mem s₄.mem :=
     frame₂.trans (core.mem.sub (by
       intro r hr; simp only [List.mem_singleton] at hr; subst r
       exact ⟨_, List.mem_cons_self, areaSub⟩))
-  have args₄ := arguments_frame 3 frame₄ sp₄ spFit (by simpa using argsScratch)
+  obtain args₄ := arguments_frame 3 frame₄ sp₄ spFit (by simpa using argsScratch)
   let v := (List.range 16).foldl (fun v j => roundSpec d
     (Spec.Rc2.scheduleAt s.mem (addr32 (arg s 0))) j v) (Spec.Rc2.decodeBlock (Spec.Rc2.blockAt s.mem (addr32 (arg s 1))))
-  have words₄ : MemWords s₄.mem (wordBase s₄) v := by
+  obtain words₄ : MemWords s₄.mem (wordBase s₄) v := by
     have h := h₄.1
     rw [h₃.2.schedule env₂, schedule₂, input₂] at h
     exact h
@@ -167,8 +167,8 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
   obtain ⟨s₅, run₅, data₅, keep₅⟩ := loadArg_ok s₄ .edi 1 (argRead s₄ rd₄ wr₄ sp₄ 1 (by decide))
   refine WP.of_runBlock ⟨s₅, run₅, ?_⟩
   rw [args₄ 1 (by decide)] at data₅
-  have base₅ : wordBase s₅ = wordBase s₄ := by unfold wordBase; rw [keep₅.reg .ebp (by decide)]
-  have writable₅ : ∀ i < 8, InRegions s₅.wr (addr32 (s₅.gpr .edi) + BitVec.ofNat 64 i) 1 := by
+  obtain base₅ : wordBase s₅ = wordBase s₄ := by unfold wordBase; rw [keep₅.reg .ebp (by decide)]
+  obtain writable₅ : ∀ i < 8, InRegions s₅.wr (addr32 (s₅.gpr .edi) + BitVec.ofNat 64 i) 1 := by
     intro i hi
     rw [keep₅.wr, wr₄, data₅, hwr]
     exact ⟨⟨addr32 (arg s 1), 8⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
@@ -178,32 +178,32 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
     (by rw [keep₅.rd, keep₅.wr, base₅]; exact env₄.wordRead)
     (by rw [base₅, core.base, data₅]; exact dataWords.symm) writable₅)
   intro s₆ h₆
-  have mem₆ : s₆.mem = s₄.mem.writeW (addr32 (arg s 1)) (pack v) := by rw [h₆.mem, keep₅.mem, data₅]
-  have scratch₆ : s₆.gpr .ebp = arg s 2 := (h₆.reg .ebp (by decide)).trans ((keep₅.reg .ebp (by decide)).trans scratch₄)
-  have sp₆ : s₆.gpr .esp = s.gpr .esp := (h₆.reg .esp (by decide)).trans ((keep₅.reg .esp (by decide)).trans sp₄)
-  have rd₆ := h₆.rd.trans (keep₅.rd.trans rd₄)
-  have wr₆ := h₆.wr.trans (keep₅.wr.trans wr₄)
+  obtain mem₆ : s₆.mem = s₄.mem.writeW (addr32 (arg s 1)) (pack v) := by rw [h₆.mem, keep₅.mem, data₅]
+  obtain scratch₆ : s₆.gpr .ebp = arg s 2 := (h₆.reg .ebp (by decide)).trans ((keep₅.reg .ebp (by decide)).trans scratch₄)
+  obtain sp₆ : s₆.gpr .esp = s.gpr .esp := (h₆.reg .esp (by decide)).trans ((keep₅.reg .esp (by decide)).trans sp₄)
+  obtain rd₆ := h₆.rd.trans (keep₅.rd.trans rd₄)
+  obtain wr₆ := h₆.wr.trans (keep₅.wr.trans wr₄)
   rw [WP.block_append_iff]
   obtain ⟨s₇, run₇, base₇, keep₇⟩ := blockScratchBase_ok s₆
   refine WP.of_runBlock ⟨s₇, run₇, ?_⟩
   rw [scratch₆] at base₇
-  have reads₇ : ∀ i ∈ List.range 5, InRegions (s₇.rd ++ s₇.wr) (addr32 (s₇.gpr .eax) + BitVec.ofNat 64 (4 * i)) 4 := by
+  obtain reads₇ : ∀ i ∈ List.range 5, InRegions (s₇.rd ++ s₇.wr) (addr32 (s₇.gpr .eax) + BitVec.ofNat 64 (4 * i)) 4 := by
     intro i hi
     rw [keep₇.rd, keep₇.wr, rd₆, wr₆, base₇, hrd, hwr]
-    have bound := List.mem_range.mp hi
+    obtain bound := List.mem_range.mp hi
     exact ⟨⟨addr32 (arg s 2), 256⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  have stored₇ : ∀ i ∈ List.range 5, s₇.mem.readW (addr32 (s₇.gpr .eax) + BitVec.ofNat 64 (4 * i)) 32 = s.gpr (blockSavedReg i) := by
+  obtain stored₇ : ∀ i ∈ List.range 5, s₇.mem.readW (addr32 (s₇.gpr .eax) + BitVec.ofNat 64 (4 * i)) 32 = s.gpr (blockSavedReg i) := by
     intro i hi
-    have bound := List.mem_range.mp hi
+    obtain bound := List.mem_range.mp hi
     rw [keep₇.mem, mem₆, base₇, Mem.readW_writeW_sep
       (dataSep.symm.sep (Offset.contains_base _ (by omega_arith) (by omega_arith)) (Region.contains_self _ _)) (by decide)]
-    have sep : (Region.mk (addr32 (arg s 2)) 20).Disjoint ⟨areaBase s₂, 32⟩ := by
+    obtain sep : (Region.mk (addr32 (arg s 2)) 20).Disjoint ⟨areaBase s₂, 32⟩ := by
       rw [area₂]; exact (Offset.disjoint_base (addr32 (arg s 2)) (d := 48) (n := 32) (k := 20) (by decide) (by decide)).symm
     rw [core.mem.readW (r := ⟨addr32 (arg s 2), 20⟩)
       (Offset.contains_base _ (by omega_arith) (by omega_arith)) (by simpa using sep) (by decide),
       keep₂.mem, h₁.2.2.2, scratch₀, saveMem_read _ _ _ 5 (by decide) i bound]
     exact gpr₀ _ (by
-      have fact : ∀ i ∈ List.range 5, blockSavedReg i ≠ .eax := by decide
+      obtain fact : ∀ i ∈ List.range 5, blockSavedReg i ≠ .eax := by decide
       exact fact i hi)
   rw [blockRestore_eq]
   apply WP.mono (restoreCode_ok s₇ .eax blockSavedReg (List.range 5) s.gpr
@@ -216,7 +216,7 @@ theorem block_correct (d : Spec.Rc2.Direction) (s : State) (hs : (blockContract 
       · subst r
         exact (h₈.2.reg .esp (by decide)).trans ((keep₇.reg .esp (by decide)).trans sp₆)
       · exact h₈.1 r (by
-          have fact : ∀ r ∈ calleeSaved, r ≠ .esp → r ∈ (List.range 5).map blockSavedReg := by decide
+          obtain fact : ∀ r ∈ calleeSaved, r ≠ .esp → r ∈ (List.range 5).map blockSavedReg := by decide
           exact fact r hr he)
     · rw [h₈.2.mem, keep₇.mem, mem₆, Mem.readW_writeW_sep
         (retData.sep (Region.contains_self _ _) (Region.contains_self _ _)) (by decide)]
@@ -248,7 +248,7 @@ theorem blockTaint_wf {d : Spec.Rc2.Direction} {s : State} (h : (blockContract d
 theorem blockTaint_agree {d : Spec.Rc2.Direction} {s₁ s₂ : State} (h₁ : (blockContract d).pre s₁) (h₂ : (blockContract d).pre s₂)
     (hp : (blockContract d).pub s₁ s₂) : VG.X86.Taint.Agree blockTaint s₁ s₂ := by
   obtain ⟨sp, args⟩ := hp
-  have fit : ∀ s, (blockContract d).pre s → (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 := by
+  obtain fit : ∀ s, (blockContract d).pre s → (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 := by
     intro s hs; exact hs.2.2.2.2.2.2.2.2.2.2.2
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     blockTaint_wf h₁, blockTaint_wf h₂, VG.X86.Taint.slotsOk_empty,

@@ -182,14 +182,14 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
   swap
   · exact Pc.vacuous fun a s ⟨h₁, h₂, _⟩ => hex ⟨a, h₁, h₂⟩
   obtain ⟨z, hz, hzq⟩ := hex
-  have hzp : pubSw 10 7 z = q.1 := by rw [← hzq]
-  have G : OL q.1 := (op_of_open hz).ol rfl (by decide) hzp
+  obtain hzp : pubSw 10 7 z = q.1 := by rw [← hzq]
+  obtain G : OL q.1 := (op_of_open hz).ol rfl (by decide) hzp
   have L := G.L
   obtain ⟨-, ftg, tw, kt⟩ := openPre_tag hz
   rw [open_tag hzp, open_arg hzp (i := 8) (by decide)] at ftg
   rw [open_tag hzp, open_arg hzp (i := 8) (by decide), pubSw_W hzp (m := 9) (by decide) rfl] at tw
   rw [open_tag hzp, open_arg hzp (i := 8) (by decide), pubSw_esp hzp] at kt
-  have ht32 : (q.1.2 8).toNat < 2 ^ 32 := (q.1.2 8).isLt
+  obtain ht32 : (q.1.2 8).toNat < 2 ^ 32 := (q.1.2 8).isLt
   generalize hok : Spec.Gcm.tagLenOk (q.1.2 8).toNat = ok
   rw [open_eq]
   -- The entry.
@@ -220,9 +220,9 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
     simp only [PostO, oRes_bad (show Spec.Gcm.tagLenOk (q.1.2 8).toNat = false by rw [hok, hf])]
     exact ⟨by regs []; rfl, by mems []; exact h.data⟩
   -- An allowed one.
-  have hT : ok = true := by simpa using hb
-  have hT' : Spec.Gcm.tagLenOk (q.1.2 8).toNat = true := by rw [hok, hT]
-  have ht' : 1 ≤ (q.1.2 8).toNat ∧ (q.1.2 8).toNat ≤ 16 := by
+  obtain hT : ok = true := by simpa using hb
+  obtain hT' : Spec.Gcm.tagLenOk (q.1.2 8).toNat = true := by rw [hok, hT]
+  obtain ht' : 1 ≤ (q.1.2 8).toNat ∧ (q.1.2 8).toNat ≤ 16 := by
     have := hT'
     simp only [Spec.Gcm.tagLenOk, Bool.and_eq_true, decide_eq_true_eq] at this
     omega_using [this]
@@ -232,7 +232,7 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
   refine Pc.seq (Pc.lift (oneTag_pc G (o := 112) (.inr rfl)) (fun s₀ s => (s₀, s))
     fun s₀ s ⟨_, _, ⟨ha, _⟩, _⟩ => ⟨⟨ha.o, ha.j, ha.y⟩, rfl⟩) ?_
   -- The received tag copied.
-  have tgl : ∀ {sA s₂ s₃ : State}, slotv sA.mem (q.1.2 7) tglO = BitVec.ofNat 32 (q.1.2 8).toNat →
+  obtain tgl : ∀ {sA s₂ s₃ : State}, slotv sA.mem (q.1.2 7) tglO = BitVec.ofNat 32 (q.1.2 8).toNat →
       Frame (oF q.1) sA.mem s₂.mem → Frame (oT q.1 112) s₂.mem s₃.mem →
       slotv s₃.mem (q.1.2 7) tglO = BitVec.ofNat 32 (q.1.2 8).toNat := fun hs fA fT => by
     rw [slotv_eq, slot_frame (oT_oF fT) (kept_woF G (o := tglO) (by decide) (.inl (by decide)) (by decide)),
@@ -253,7 +253,7 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
         rw [o₃.rd, o₃.wr, ← open_tag hx.pub, ← open_arg hx.pub (i := 8) (by decide)]
         exact (openPre_tag hx.pre).1⟩)) ?_
   -- Compared.
-  have rR_tgl : ∀ {s s' : State}, Frame [⟨w64 (q.1.2 7) + BitVec.ofNat 64 rO, 16⟩] s.mem s'.mem →
+  obtain rR_tgl : ∀ {s s' : State}, Frame [⟨w64 (q.1.2 7) + BitVec.ofNat 64 rO, 16⟩] s.mem s'.mem →
       slotv s'.mem (q.1.2 7) tglO = slotv s.mem (q.1.2 7) tglO := fun f => by
     rw [slotv_eq, slotv_eq]
     exact slot_frame f fun r hr => by
@@ -277,45 +277,45 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
     (by taint_decide)) ?_
   · obtain ⟨s₄, ⟨s₃, ⟨s₂, ⟨sA, ⟨hE, _, hx, _⟩, ⟨ha, fA⟩, _⟩, ⟨o₃, ht, fT⟩, _⟩,
       ⟨b₄, f₄, bp₄, si₄, sp₄, rd₄, wr₄⟩⟩, ⟨a₅, f₅, bp₅, si₅, sp₅, rd₅, wr₅⟩⟩ := hk
-    have fo₄ : Frame (oF q.1) s₃.mem s₄.mem := f₄.sub fun r hr => by
+    obtain fo₄ : Frame (oF q.1) s₃.mem s₄.mem := f₄.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩
-    have fo₅ : Frame (oF q.1) s₄.mem s₅.mem := f₅.sub fun r hr => by
+    obtain fo₅ : Frame (oF q.1) s₄.mem s₅.mem := f₅.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨wsR (q.1.2 7), by simp, Offset.sub _ (by decide) (by decide)⟩
-    have o₅ := (o₃.frame G (Frame.oD fo₄) bp₄ si₄ sp₄ rd₄ wr₄).frame G (Frame.oD fo₅) bp₅ si₅ sp₅ rd₅ wr₅
+    obtain o₅ := (o₃.frame G (Frame.oD fo₄) bp₄ si₄ sp₄ rd₄ wr₄).frame G (Frame.oD fo₅) bp₅ si₅ sp₅ rd₅ wr₅
     -- The tags.
-    have hc₂ : bytesAt s₂.mem (w64 (q.1.2 5)) (q.1.2 6).toNat = bytesAt s₀.mem (w64 (q.1.2 5)) (q.1.2 6).toNat := by
+    obtain hc₂ : bytesAt s₂.mem (w64 (q.1.2 5)) (q.1.2 6).toNat = bytesAt s₀.mem (w64 (q.1.2 5)) (q.1.2 6).toNat := by
       rw [bytesAt_frame fA (d_oF G) (by have := G.fd; omega_using [])]; exact hE.data
-    have hT₃ : bytesAt s₃.mem (w64 (q.1.2 7) + BitVec.ofNat 64 uO) 16 = tagOf q.1 s₀ := by
+    obtain hT₃ : bytesAt s₃.mem (w64 (q.1.2 7) + BitVec.ofNat 64 uO) 16 = tagOf q.1 s₀ := by
       dsimp only at ht
       rw [ht, hc₂, tagOf, Proof.Gcm.fullTag_eq, padded_eq, length_bytesAt, length_bytesAt]
-    have hT₄ : bytesAt s₄.mem (w64 (q.1.2 7) + BitVec.ofNat 64 uO) (q.1.2 8).toNat =
+    obtain hT₄ : bytesAt s₄.mem (w64 (q.1.2 7) + BitVec.ofNat 64 uO) (q.1.2 8).toNat =
         (tagOf q.1 s₀).take (q.1.2 8).toNat := by
       rw [← bytesAt_take _ _ t16, bytesAt_frame f₄ (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact Lay.w_w (.inl (by decide)) (by decide) (by decide)) (by decide), hT₃]
-    have hw₃ : bytesAt s₃.mem (w64 (q.1.2 9)) (q.1.2 8).toNat = rcvOf q.1 s₀ := by
-      have ht₁ : (q.1.2 8).toNat ≤ 2 ^ 64 := by omega_using []
+    obtain hw₃ : bytesAt s₃.mem (w64 (q.1.2 9)) (q.1.2 8).toNat = rcvOf q.1 s₀ := by
+      obtain ht₁ : (q.1.2 8).toNat ≤ 2 ^ 64 := by omega_using []
       rw [bytesAt_frame (oT_oF fT) (t_woF (by decide) tw kt) ht₁,
         bytesAt_frame fA (fun r hr => t_woF (o := 0) (by decide) tw kt r (List.mem_cons_of_mem _ hr)) ht₁,
         bytesAt_frame hE.frame (fun r hr => by
           simp only [List.mem_singleton] at hr; subst hr; exact tw.sub_right (Lay.wSub (by decide))) ht₁]
-    have hR₄ : bytesAt s₄.mem (w64 (q.1.2 7) + BitVec.ofNat 64 rO) 16 =
+    obtain hR₄ : bytesAt s₄.mem (w64 (q.1.2 7) + BitVec.ofNat 64 rO) 16 =
         rcvOf q.1 s₀ ++ zeros (16 - (q.1.2 8).toNat) := by
       rw [b₄, hw₃]
-    have hq2 := hx.q2 hT'
-    have a₅' : s₅.gpr .eax = BitVec.ofNat 32 (if q.2 = true then 1 else 0) := by
+    obtain hq2 := hx.q2 hT'
+    obtain a₅' : s₅.gpr .eax = BitVec.ofNat 32 (if q.2 = true then 1 else 0) := by
       rw [a₅, hT₄, hR₄, hq2]
       by_cases h : (tagOf q.1 s₀).take (q.1.2 8).toNat = rcvOf q.1 s₀
       · simp only [h, List.append_left_inj, decide_true, ↓reduceIte]
       · simp only [h, List.append_left_inj, decide_false, Bool.false_eq_true, ↓reduceIte]
-    have aW := o₅.env.wIn (d := auxO) (n := 4) (by decide)
+    obtain aW := o₅.env.wIn (d := auxO) (n := 4) (by decide)
     refine WP.of_runBlock ⟨_, by xrun [o₅.env.ebp, L.aW, aW], ?_⟩
-    have fx : Frame (oF q.1) s₅.mem (s₅.mem.writeW (w64 (q.1.2 7) + BitVec.ofNat 64 auxO) (s₅.gpr .eax)) :=
+    obtain fx : Frame (oF q.1) s₅.mem (s₅.mem.writeW (w64 (q.1.2 7) + BitVec.ofNat 64 auxO) (s₅.gpr .eax)) :=
       (Frame.refl _ _).writeW (by simp) _ (Region.contains_self _ _)
-    have fx₁ : Frame [⟨w64 (q.1.2 7) + BitVec.ofNat 64 auxO, 4⟩] s₅.mem
+    obtain fx₁ : Frame [⟨w64 (q.1.2 7) + BitVec.ofNat 64 auxO, 4⟩] s₅.mem
         (s₅.mem.writeW (w64 (q.1.2 7) + BitVec.ofNat 64 auxO) (s₅.gpr .eax)) :=
       (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-    have sg : ∀ {o : Nat}, 80 ≤ o → o + 16 ≤ 2560 → ∀ r ∈ [(⟨w64 (q.1.2 7) + BitVec.ofNat 64 o, 16⟩ : Region)],
+    obtain sg : ∀ {o : Nat}, 80 ≤ o → o + 16 ≤ 2560 → ∀ r ∈ [(⟨w64 (q.1.2 7) + BitVec.ofNat 64 o, 16⟩ : Region)],
         (⟨w64 (stOf (q.1.2 7)) + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint r := fun h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact st48_w G h₁ h₂
     refine ⟨o₅.frame G (by mems []; exact Frame.oD fx) (by regs []) (by regs []) (by regs []) (by mems [])
@@ -357,14 +357,14 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
   -- The result.
   refine Pc.taint [.ebp] (fun s₀ s h => ?_) (fun _ _ s₁ s₂ h₁ h₂ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [h₁.o.env.ebp, h₂.o.env.ebp]) (by taint_decide)
-  have aR := h.o.env.wIn' (d := auxO) (n := 4) (by decide)
+  obtain aR := h.o.env.wIn' (d := auxO) (n := 4) (by decide)
   have hv := h.aux
   rw [slotv_eq] at hv
   simp only [auxO] at hv aR
   refine WP.of_runBlock ⟨_, by xrun [h.o.env.ebp, L.aW, aR, hv], ?_⟩
   refine ⟨h.o.frame G (by mems []; exact Frame.refl _ _) (by regs []) (by regs []) (by regs []) (by mems [])
     (by mems []), h.ix, ?_⟩
-  have hq2 := h.ix.q2 hT'
+  obtain hq2 := h.ix.q2 hT'
   simp only [PostO, oRes_ok hT']
   by_cases hX : (tagOf q.1 s₀).take (q.1.2 8).toNat = rcvOf q.1 s₀
   · have h2 : q.2 = true := by rw [hq2]; simpa using hX
@@ -380,7 +380,7 @@ theorem open_pc (q : (BitVec 32 × (Nat → BitVec 32)) × Bool) :
   -- The exit.
   refine Pc.taint [.ebp] (fun s₀ s ⟨o, hx, hpost⟩ => ?_) (fun _ _ s₁ s₂ ⟨o₁, _⟩ ⟨o₂, _⟩ r hr => by
       simp only [List.mem_singleton] at hr; subst hr; rw [o₁.env.ebp, o₂.env.ebp]) (by taint_decide)
-  have esp := pubSw_esp hx.pub
+  obtain esp := pubSw_esp hx.pub
   refine WP.mono (exit_ok o.env.ebp (by rw [o.env.esp, esp]) (covers_left o.env.wW) L.fw o.saved
     (by rw [esp]; exact o.ret)) fun s' ⟨abi, m', ax, _, _⟩ => ⟨abi, ?_⟩
   simp only [openX86, ret32_eq]

@@ -66,9 +66,9 @@ theorem yValue_ok {s : State} {L : Lay} {key x out : Addr} {p : Nat} (hL : L.Ok)
   have hql := hL.ql
   have hpl := hL.pl
   have hbe := hL.buf_end
-  have hqZ : L.qOff + 1600 ≤ L.Z := by simp only [Lay.bOff] at hbe; omega_using [hbe]
-  have e0 := Lay.slot_eq L.wp 0; have e1 := Lay.slot_eq L.wp 1; have e4 := Lay.slot_eq L.wp 4
-  have e7 := Lay.slot_eq L.wp 7; have e8 := Lay.slot_eq L.wp 8; have e24 := Lay.slot_eq L.wp 24; have e28 := Lay.slot_eq L.wp 28
+  obtain hqZ : L.qOff + 1600 ≤ L.Z := by simp only [Lay.bOff] at hbe; omega_using [hbe]
+  obtain e0 := Lay.slot_eq L.wp 0; have e1 := Lay.slot_eq L.wp 1; have e4 := Lay.slot_eq L.wp 4
+  obtain e7 := Lay.slot_eq L.wp 7; have e8 := Lay.slot_eq L.wp 8; have e24 := Lay.slot_eq L.wp 24; have e28 := Lay.slot_eq L.wp 28
   have hq28 : L.qOff = slot L.wp 28 := rfl
   unfold yValue
   -- The pointers: x into `r24`, g's octets into `r12`.
@@ -77,8 +77,8 @@ theorem yValue_ok {s : State} {L : Lay} {key x out : Addr} {p : Nat} (hL : L.Ok)
   refine WP.mono (WP.keep [.r24] (Q := fun u => u.gpr .r24 = x ∧ u.mem = s.mem)
     (by prun [hr.r28, BitVec.add_zero]) (by decide)) fun s₁ ⟨⟨a24, m1⟩, k1⟩ => ?_
   refine WP.mono (ptrG_ok (hr.keep k1)) fun s₂ ⟨⟨b12, _, m2⟩, k2⟩ => ?_
-  have k12 := k1.trans k2
-  have hm2 : s₂.mem = s.mem := by rw [m2, m1]
+  obtain k12 := k1.trans k2
+  obtain hm2 : s₂.mem = s.mem := by rw [m2, m1]
   -- `g^x mod p` into array 4.
   refine WP.seq (WP.mono (powSrc_ok (N := off key (L.pl + L.ql)) (E := x) (p := p) hL
       (hr.keep k12) (hin.keep k12 (by decide))
@@ -86,51 +86,51 @@ theorem yValue_ok {s : State} {L : Lay} {key x out : Addr} {p : Nat} (hL : L.Ok)
       ((k2.gpr .r24 (by decide)).trans a24) (by rw [hm2]; exact hp0) hp hpo (by rw [hm2]; exact hrr))
     fun s₃ ⟨⟨v4, in3, o3⟩, k3⟩ => ?_)
   rw [hm2] at v4 o3
-  have k13 := k12.trans k3
+  obtain k13 := k12.trans k3
   have y4 : arr s₃.mem L.S L.wp 4 = gOf s.mem L key ^ kOf s.mem L x % p := v4
-  have hyp : gOf s.mem L key ^ kOf s.mem L x % p < p := Nat.mod_lt _ (by omega_using [hp])
+  obtain hyp : gOf s.mem L key ^ kOf s.mem L x % p < p := Nat.mod_lt _ (by omega_using [hp])
   generalize gOf s.mem L key ^ kOf s.mem L x % p = y at y4 hyp ⊢
   -- 0 into array 7, `r22 :=` all ones.
   refine WP.seq (WP.mono (zeroArr_ok in3.env (j := 7) (by decide)) fun s₄ ⟨⟨z7, o4⟩, k4⟩ => ?_)
-  have en4 := in3.env.keep k4 (by decide)
+  obtain en4 := in3.env.keep k4 (by decide)
   refine WP.seq (WP.mono (WP.keep [.r22] (Q := fun u => u.gpr .r22 = mask true ∧ u.mem = s₄.mem)
     (by prun []; rfl) (by decide)) fun s₅ ⟨⟨a22, m5⟩, k5⟩ => ?_)
-  have en5 := en4.keep k5 (by decide)
-  have y5 : arr s₅.mem L.S L.wp 4 = y := by
+  obtain en5 := en4.keep k5 (by decide)
+  obtain y5 : arr s₅.mem L.S L.wp 4 = y := by
     rw [m5, arr, Outside.val32 o4 (by omega_using [e4, e7]) (by omega_using [hw, e4])]; exact y4
   -- `r22 &=` the masks of `y ≠ 0` and `y ≠ 1`.
   refine WP.seq (WP.mono (nonZero_ok en5 (a := 4) (c := 0) (by decide) (by rw [m5]; exact z7) a22)
     fun s₆ ⟨⟨b22, m6⟩, k6⟩ => ?_)
   rw [y5] at b22
-  have en6 := en5.keep k6 (by decide)
+  obtain en6 := en5.keep k6 (by decide)
   refine WP.seq (WP.mono (Pub.oneP_ok en6.hs (by omega_using [hw]) (by omega_using [hw]) (by omega_using [e8, e28, hq28]) en6.h10 en6.h29 en6.h11)
     fun s₇ ⟨⟨v7, o7⟩, k7⟩ => ?_)
-  have en7 := en6.keep k7 (by decide)
-  have y7 : arr s₇.mem L.S L.wp 4 = y := by
+  obtain en7 := en6.keep k7 (by decide)
+  obtain y7 : arr s₇.mem L.S L.wp 4 = y := by
     rw [arr, Outside.val32 o7 (by omega_using [e4, e7]) (by omega_using [hw, e4]), m6]; exact y5
   refine WP.seq (WP.mono (nonZero_ok en7 (a := 4) (c := 1) (by decide) v7
     ((k7.gpr .r22 (by decide)).trans b22)) fun s₈ ⟨⟨c22, m8⟩, k8⟩ => ?_)
   rw [y7, Bool.true_and] at c22
-  have en8 := en7.keep k8 (by decide)
+  obtain en8 := en7.keep k8 (by decide)
   -- y to the buffer.
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  have k18 := (((((k13.trans k4).trans k5).trans k6).trans k7).trans k8)
+  obtain k18 := (((((k13.trans k4).trans k5).trans k6).trans k7).trans k8)
   refine WP.mono (bufBase_ok hL (hr.keep k18) (rd := .r12) (t := .r0) (by decide)) fun s₉ ⟨⟨c12, m9⟩, k9⟩ => ?_
   refine WP.mono (getP_ok ((hr.keep k18).keep k9) .r6) fun s₁₀ ⟨⟨c6, m10⟩, k10⟩ => ?_
-  have k910 := k9.trans k10
-  have hm10 : s₁₀.mem = s₇.mem := by rw [m10, m9, m8]
+  obtain k910 := k9.trans k10
+  obtain hm10 : s₁₀.mem = s₇.mem := by rw [m10, m9, m8]
   refine WP.mono (storeBE_ok (j := 4) (O := L.Buf) (k := L.pl) (en8.keep k910 (by decide)) (by decide)
     (ScrL.bufN (hs.congr (k18.trans k910).wr) hL (by omega_using [])) ((k10.gpr .r12 (by decide)).trans c12) c6
     (by omega_using [hpl]) (by omega_using [hw8]) (combBufPastP hL)) fun t ⟨⟨vt, ot⟩, kt⟩ => ?_
   rw [hm10] at vt ot
-  have hplt : p < 2 ^ (8 * L.pl) := by
+  obtain hplt : p < 2 ^ (8 * L.pl) := by
     rw [← hp0, ← hw8, show 8 * (8 * L.wp) = 32 * (2 * L.wp) by omega_using []]; exact val32_lt _ _ _ _
   have y7' : val32 s₇.mem L.S (slot L.wp 4) (2 * L.wp) = y := y7
-  have hm6 : s₆.mem = s₄.mem := by rw [m6, m5]
-  have o47 : Outside L.S (slot L.wp 7) (8 * L.wp) s₃.mem s₇.mem := by
+  obtain hm6 : s₆.mem = s₄.mem := by rw [m6, m5]
+  obtain o47 : Outside L.S (slot L.wp 7) (8 * L.wp) s₃.mem s₇.mem := by
     rw [← hm6] at o4; exact o4.trans o7
-  have kall := (k18.trans k910).trans kt
+  obtain kall := (k18.trans k910).trans kt
   refine ⟨⟨?_, (kt.gpr .r22 (by decide)).trans ((k910.gpr .r22 (by decide)).trans c22),
     ⟨en8.keep (k910.trans kt) (by decide), (kall.gpr .r21 (by decide)).trans hin.h21,
       (kall.gpr .r23 (by decide)).trans hin.h23⟩,
@@ -203,7 +203,7 @@ theorem maskCopy_ok {s : State} {src dst : Addr} {N : Nat} {c : Bool} (hN : 0 < 
       fun _ h => absurd h (by omega_using []), Keep.refl _ _⟩ h17)
     fun t ⟨t14, t16, tout, tb, tk⟩ => ⟨⟨?_, tout, t14, t16⟩, tk⟩
   · have t20 : t.gpr .r20 = mask c := (tk.gpr .r20 (by decide)).trans h20
-    have hst : WP isa (.block [.lbz .r0 .r14 0, .logic .and .r0 .r0 .r20, .stb .r0 .r16 0, .addi .r14 .r14 1,
+    obtain hst : WP isa (.block [.lbz .r0 .r14 0, .logic .and .r0 .r0 .r20, .stb .r0 .r16 0, .addi .r14 .r14 1,
         .addi .r16 .r16 1, .subi .r17 .r17 1]) t fun t' =>
         (t'.gpr .r14 = off src (i + 1) ∧ t'.gpr .r16 = off dst (i + 1) ∧
           t'.gpr .r17 = t.gpr .r17 - BitVec.ofNat 64 1 ∧
@@ -219,7 +219,7 @@ theorem maskCopy_ok {s : State} {src dst : Addr} {N : Nat} {c : Bool} (hN : 0 < 
         ((((t.mem.read (off src i) 1).setWidth 64) &&& mask c).setWidth 8) (by omega_using [hN', hi])
       rw [am]; exact (tout.mono (Nat.le_refl _) (by omega_using [])).trans (hw1.mono (by omega_using []) (by omega_using []))
     · intro i' hi'
-      have hw1 := write1_outside t.mem dst (d := i)
+      obtain hw1 := write1_outside t.mem dst (d := i)
         ((((t.mem.read (off src i) 1).setWidth 64) &&& mask c).setWidth 8) (by omega_using [hN', hi])
       rw [am]
       rcases Nat.lt_succ_iff_lt_or_eq.mp hi' with hi' | rfl
@@ -276,7 +276,7 @@ theorem bytes_kept {m m' : Mem} {D O : Addr} {k n : Nat} (h : Outside O 0 n m m'
     Spec.Rsa.bytesAt m' D k = Spec.Rsa.bytesAt m D k := by
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => h _ (Or.inr ?_)
-  have hi := List.mem_range.mp hi
+  obtain hi := List.mem_range.mp hi
   by_contra hc
   exact hsep i hi (D + BitVec.ofNat 64 i) (by omega) rfl
 
@@ -285,7 +285,7 @@ theorem part_kept {m m' : Mem} {O : Addr} {o n a k : Nat} (h : Outside O o n m m
     (hw : a + k < 2 ^ 64) : Spec.Rsa.bytesAt m' (off O a) k = Spec.Rsa.bytesAt m (off O a) k := by
   simp only [Spec.Rsa.bytesAt]
   refine List.map_congr_left fun i hi => h _ ?_
-  have hi := List.mem_range.mp hi
+  obtain hi := List.mem_range.mp hi
   rw [off_add, Bignum.PPC64LE.ofs_off0 _ (by omega_using [hw, hi])]
   omega_using [hd, hi]
 
@@ -318,9 +318,9 @@ theorem doutput_ok {s : State} {L : Lay} {key x out : Addr} {c : Bool} (hL : L.O
   have hnw := hL.nowrap
   have hno := ho.nowrap
   have hw8 := hL.wp_eq
-  have hT : 3 * L.pl + 2 * L.ql < 2 ^ 64 := by omega_using [hql, hpl]
+  obtain hT : 3 * L.pl + 2 * L.ql < 2 ^ 64 := by omega_using [hql, hpl]
   -- The buffer is apart from `out`.
-  have hbo : ∀ i < L.pl, ∀ y, ofs out y < 3 * L.pl + 2 * L.ql → off L.Buf i ≠ y := by
+  obtain hbo : ∀ i < L.pl, ∀ y, ofs out y < 3 * L.pl + 2 * L.ql → off L.Buf i ≠ y := by
     intro i hi y hy he
     subst he
     refine hos.sep (ofs out (off L.Buf i)) hy (off L.Buf i) ?_ (off_ofs _ _)
@@ -334,7 +334,7 @@ theorem doutput_ok {s : State} {L : Lay} {key x out : Addr} {c : Bool} (hL : L.O
       prun [hr.r26, hr.r27, Regs.p_eq hr, Regs.q_eq hr, BitVec.add_zero]
       simp only [off, BitVec.ofNat_add_ofNat]; congr 1; omega_using []) (by decide))
     fun s₁ ⟨⟨a16, a14, a17, m1⟩, k1⟩ => ?_)
-  have N1 : 0 < 2 * L.pl + L.ql := by omega_using [hql]
+  obtain N1 : 0 < 2 * L.pl + L.ql := by omega_using [hql]
   refine WP.seq (WP.mono (maskCopy_ok (c := c) N1 (by omega_using [hql, hpl]) (scr_prefix (ho.congr k1.wr) (by omega_using []))
       (fun i hi => by rw [k1.rd, k1.wr]; exact hk.rd i hi)
       (fun i hi y hy => hko i hi y (by omega_using [hy])) a14 a16 a17 ((k1.gpr .r20 (by decide)).trans h20))
@@ -343,14 +343,14 @@ theorem doutput_ok {s : State} {L : Lay} {key x out : Addr} {c : Bool} (hL : L.O
   -- The buffer and `p_len`.
   refine WP.seq ?_
   rw [WP.block_append_iff, WP.block_append_iff]
-  have hr2 := (hr.keep k1).keep k2
+  obtain hr2 := (hr.keep k1).keep k2
   refine WP.mono (bufBase_ok hL hr2 (rd := .r12) (t := .r0) (by decide)) fun s₃ ⟨⟨c12, m3⟩, k3⟩ => ?_
   refine WP.mono (WP.keep [.r14] (Q := fun u => u.gpr .r14 = L.Buf ∧ u.mem = s₃.mem)
     (by prun [c12, BitVec.add_zero]) (by decide)) fun s₄ ⟨⟨c14, m4⟩, k4⟩ => ?_
   refine WP.mono (getP_ok ((hr2.keep k3).keep k4) .r17) fun s₅ ⟨⟨c17, m5⟩, k5⟩ => ?_
-  have k35 := (k3.trans k4).trans k5
-  have hm5 : s₅.mem = s₂.mem := by rw [m5, m4, m3]
-  have k15 := (k1.trans k2).trans k35
+  obtain k35 := (k3.trans k4).trans k5
+  obtain hm5 : s₅.mem = s₂.mem := by rw [m5, m4, m3]
+  obtain k15 := (k1.trans k2).trans k35
   refine WP.seq (WP.mono (maskCopy_ok (c := c) (N := L.pl) (by omega_using [hpl]) (by omega_using [hpl])
       (scr_sub (ho.congr k15.wr) (o := 2 * L.pl + L.ql) (n := L.pl) (by omega_using []) (by omega_using [hpl]))
       (fun i hi => by rw [k15.rd, k15.wr]; exact (ScrL.bufN hs hL (n := L.pl) (by omega_using [])).ld (show i + 1 ≤ L.pl by omega_using [hi]))
@@ -361,13 +361,13 @@ theorem doutput_ok {s : State} {L : Lay} {key x out : Addr} {c : Bool} (hL : L.O
   -- x and `q_len`.
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  have hr6 := (hr.keep k15).keep k6
+  obtain hr6 := (hr.keep k15).keep k6
   refine WP.mono (WP.keep [.r14] (Q := fun u => u.gpr .r14 = x ∧ u.mem = s₆.mem)
     (by prun [hr6.r28, BitVec.add_zero]) (by decide)) fun s₇ ⟨⟨e14, m7⟩, k7⟩ => ?_
   refine WP.mono (getQ_ok (hr6.keep k7) .r17) fun s₈ ⟨⟨e17, m8⟩, k8⟩ => ?_
-  have k16 := k15.trans k6
-  have k18 := (k16.trans k7).trans k8
-  have hm8 : s₈.mem = s₆.mem := by rw [m8, m7]
+  obtain k16 := k15.trans k6
+  obtain k18 := (k16.trans k7).trans k8
+  obtain hm8 : s₈.mem = s₆.mem := by rw [m8, m7]
   refine WP.seq (WP.mono (maskCopy_ok (c := c) (N := L.ql) (by omega_using [hql]) (by omega_using [hql])
       (scr_sub (ho.congr k18.wr) (o := 3 * L.pl + L.ql) (n := L.ql) (by omega_using []) (by omega_using [hql]))
       (fun i hi => by rw [k18.rd, k18.wr]; exact hx.rd i hi)
@@ -380,19 +380,19 @@ theorem doutput_ok {s : State} {L : Lay} {key x out : Addr} {c : Bool} (hL : L.O
   refine WP.mono (WP.keep [.r0, .r3] (Q := fun u => u.gpr .r3 = BitVec.ofNat 64 (if c then 1 else 0) ∧
     u.mem = s₉.mem) (by prun [(k18.trans k9).gpr .r20 (by decide), h20, mask_low]) (by decide))
     fun t ⟨⟨t3, mt⟩, kt⟩ => ?_
-  have kall := (k18.trans k9).trans kt
+  obtain kall := (k18.trans k9).trans kt
   rw [mt]
   -- The frames, relative to `out`.
-  have o6' : Outside out (2 * L.pl + L.ql) L.pl s₂.mem s₆.mem := by
+  obtain o6' : Outside out (2 * L.pl + L.ql) L.pl s₂.mem s₆.mem := by
     have := outside_shift (B := out) (a := 2 * L.pl + L.ql) o6 (by omega_using [hql, hpl]) (by omega_using [hql, hpl])
     rwa [Nat.add_zero] at this
-  have o9' : Outside out (3 * L.pl + L.ql) L.ql s₆.mem s₉.mem := by
+  obtain o9' : Outside out (3 * L.pl + L.ql) L.ql s₆.mem s₉.mem := by
     have := outside_shift (B := out) (a := 3 * L.pl + L.ql) o9 (by omega_using [hql, hpl]) (by omega_using [hql, hpl])
     rwa [Nat.add_zero] at this
   -- The sources, unchanged.
-  have eb : Spec.Rsa.bytesAt s₂.mem L.Buf L.pl = Spec.Rsa.bytesAt s.mem L.Buf L.pl :=
+  obtain eb : Spec.Rsa.bytesAt s₂.mem L.Buf L.pl = Spec.Rsa.bytesAt s.mem L.Buf L.pl :=
     bytes_kept o2 fun i hi y hy => hbo i hi y (by omega_using [hy])
-  have ex : Spec.Rsa.bytesAt s₆.mem x L.ql = Spec.Rsa.bytesAt s.mem x L.ql :=
+  obtain ex : Spec.Rsa.bytesAt s₆.mem x L.ql = Spec.Rsa.bytesAt s.mem x L.ql :=
     bytes_kept ((o2.mono (n' := 3 * L.pl + L.ql) (Nat.le_refl _) (by omega_using [])).trans
       (o6'.mono (Nat.zero_le _) (by omega_using []))) fun i hi y hy => hxo i hi y (by omega_using [hy])
   rw [eb] at v6
@@ -401,12 +401,12 @@ theorem doutput_ok {s : State} {L : Lay} {key x out : Addr} {c : Bool} (hL : L.O
       (o9'.mono (Nat.zero_le _) (by omega_using [])), t3⟩, kall.mono (by decide)⟩
   -- The three parts of `out`.
   rw [show 3 * L.pl + 2 * L.ql = 2 * L.pl + L.ql + L.pl + L.ql by omega_using [], bytesAt_add, bytesAt_add]
-  have p1 : Spec.Rsa.bytesAt s₉.mem out (2 * L.pl + L.ql) = Spec.Rsa.bytesAt s₂.mem out (2 * L.pl + L.ql) := by
-    have e1 := part_kept (a := 0) (k := 2 * L.pl + L.ql) o9' (Or.inl (by omega_using [])) (by omega_using [hql, hpl])
-    have e2 := part_kept (a := 0) (k := 2 * L.pl + L.ql) o6' (Or.inl (by omega_using [])) (by omega_using [hql, hpl])
+  obtain p1 : Spec.Rsa.bytesAt s₉.mem out (2 * L.pl + L.ql) = Spec.Rsa.bytesAt s₂.mem out (2 * L.pl + L.ql) := by
+    obtain e1 := part_kept (a := 0) (k := 2 * L.pl + L.ql) o9' (Or.inl (by omega_using [])) (by omega_using [hql, hpl])
+    obtain e2 := part_kept (a := 0) (k := 2 * L.pl + L.ql) o6' (Or.inl (by omega_using [])) (by omega_using [hql, hpl])
     simp only [off, BitVec.add_zero] at e1 e2
     rw [e1, e2]
-  have p2 : Spec.Rsa.bytesAt s₉.mem (off out (2 * L.pl + L.ql)) L.pl =
+  obtain p2 : Spec.Rsa.bytesAt s₉.mem (off out (2 * L.pl + L.ql)) L.pl =
       Spec.Rsa.bytesAt s₆.mem (off out (2 * L.pl + L.ql)) L.pl :=
     part_kept o9' (Or.inl (by omega_using [])) (by omega_using [hql, hpl])
   rw [p1, p2, v2, v6, show 2 * L.pl + L.ql + L.pl = 3 * L.pl + L.ql by omega_using [], v9]
@@ -469,13 +469,13 @@ theorem dbody_ok {s₀ s : State} {L : Lay} {key x out : Addr} (hL : L.Ok) (hP :
   have hw8 := hL.wp_eq
   obtain ⟨ip, scr, regs, p0, -, p8, q0, -, -⟩ := hc
   obtain ⟨-, -, eg⟩ := params_kept hk hkp.out
-  have ex : kOf s.mem L x = kOf s₀.mem L x := by simp only [kOf]; rw [hx.kept hkp.out]
-  have ekey : Spec.Rsa.bytesAt s.mem key (2 * L.pl + L.ql) = Spec.Rsa.bytesAt s₀.mem key (2 * L.pl + L.ql) :=
+  obtain ex : kOf s.mem L x = kOf s₀.mem L x := by simp only [kOf]; rw [hx.kept hkp.out]
+  obtain ekey : Spec.Rsa.bytesAt s.mem key (2 * L.pl + L.ql) = Spec.Rsa.bytesAt s₀.mem key (2 * L.pl + L.ql) :=
     hk.kept hkp.out
-  have exb : Spec.Rsa.bytesAt s.mem x L.ql = Spec.Rsa.bytesAt s₀.mem x L.ql := hx.kept hkp.out
-  have B := VG.Proof.Dsa.supported_bounds hP.1.1
+  obtain exb : Spec.Rsa.bytesAt s.mem x L.ql = Spec.Rsa.bytesAt s₀.mem x L.ql := hx.kept hkp.out
+  obtain B := VG.Proof.Dsa.supported_bounds hP.1.1
   have hpo := hP.1.2.2
-  have hplt : pOf s₀.mem L key < 256 ^ L.pl := by
+  obtain hplt : pOf s₀.mem L key < 256 ^ L.pl := by
     have := VG.Proof.Dsa.decodeBE_lt (Spec.Rsa.bytesAt s₀.mem key L.pl)
     rwa [VG.Proof.Bignum.bytesAt_length] at this
   generalize pOf s₀.mem L key = p at p0 p8 B hpo hplt
@@ -486,35 +486,35 @@ theorem dbody_ok {s₀ s : State} {L : Lay} {key x out : Addr} (hL : L.Ok) (hP :
   refine WP.seq (WP.mono (yValue_ok hL scr regs ip hk hx p0 (by omega_using [B]) hpo p8) fun s₁ ⟨⟨vy, my, ip1, b1, oq1⟩, k1⟩ => ?_)
   rw [eg, ex] at vy my
   generalize hy : g ^ kOf s₀.mem L x % p = y at vy my
-  have hyp : y < p := by rw [← hy]; exact Nat.mod_lt _ (by omega_using [hpo])
-  have hr1 := regs.keep k1
+  obtain hyp : y < p := by rw [← hy]; exact Nat.mod_lt _ (by omega_using [hpo])
+  obtain hr1 := regs.keep k1
   -- x's range.
   refine WP.seq (WP.mono (xRange_ok hL (scr.congr k1.wr) hr1 (hx.keep k1.rd k1.wr) my) fun s₂ ⟨⟨m2, Q2, qa2⟩, k2⟩ => ?_)
-  have aq : arrQ s₁.mem L 0 = q := by
+  obtain aq : arrQ s₁.mem L 0 = q := by
     rw [← q0]
     exact Outside.val32 oq1 (Or.inl (by simp only [slot_eq]; omega_using [])) (by simp only [slot_eq]; omega_using [])
-  have ex1 : kOf s₁.mem L x = kOf s₀.mem L x := by
+  obtain ex1 : kOf s₁.mem L x = kOf s₀.mem L x := by
     rw [kOf, kOf, hx.kept (Kept.ofBody hL b1).out, exb]
   rw [aq, ex1] at m2
   -- The output.
-  have b12 : Body L s.mem s₂.mem := b1.trans (qa2.qbody.body hL)
-  have k12 := k1.trans k2
+  obtain b12 : Body L s.mem s₂.mem := b1.trans (qa2.qbody.body hL)
+  obtain k12 := k1.trans k2
   refine WP.mono (doutput_ok hL Q2.scr Q2.regs m2 (hk.keep k12.rd k12.wr) (hx.keep k12.rd k12.wr)
     (ho.congr k12.wr) (hos.keep k12.rd k12.wr) hko hxo) fun t ⟨⟨vt, ot, t3⟩, kt⟩ => ?_
-  have hD : DeriveOk p q g (kOf s₀.mem L x) = (1 < y ∧ 0 < kOf s₀.mem L x ∧ kOf s₀.mem L x < q) := by
+  obtain hD : DeriveOk p q g (kOf s₀.mem L x) = (1 < y ∧ 0 < kOf s₀.mem L x ∧ kOf s₀.mem L x < q) := by
     unfold DeriveOk; rw [hy]
-  have hc : (decide (y ≠ 0) && decide (y ≠ 1) && decide (0 < kOf s₀.mem L x ∧ kOf s₀.mem L x < q)) =
+  obtain hc : (decide (y ≠ 0) && decide (y ≠ 1) && decide (0 < kOf s₀.mem L x ∧ kOf s₀.mem L x < q)) =
       decide (1 < y ∧ 0 < kOf s₀.mem L x ∧ kOf s₀.mem L x < q) := by
     by_cases h0 : y = 0 <;> by_cases h1 : y = 1 <;> simp [h0, h1] <;> omega_using [h0, h1]
   rw [hc] at vt t3
-  have eb : Spec.Rsa.bytesAt s₂.mem L.Buf L.pl = Spec.Dsa.encodeBE L.pl y := by
-    have hb : L.Buf = off L.Q 1600 := by simp only [Lay.Buf, Lay.Q, Lay.bOff, off_off]
-    have hb2 : Spec.Rsa.bytesAt s₂.mem L.Buf L.pl = Spec.Rsa.bytesAt s₁.mem L.Buf L.pl := by
+  obtain eb : Spec.Rsa.bytesAt s₂.mem L.Buf L.pl = Spec.Dsa.encodeBE L.pl y := by
+    obtain hb : L.Buf = off L.Q 1600 := by simp only [Lay.Buf, Lay.Q, Lay.bOff, off_off]
+    obtain hb2 : Spec.Rsa.bytesAt s₂.mem L.Buf L.pl = Spec.Rsa.bytesAt s₁.mem L.Buf L.pl := by
       rw [hb]; exact part_kept qa2 (Or.inr (by simp only [slot_eq]; omega_using [])) (by omega_using [hpl])
     rw [hb2]
     exact ((VG.Proof.Dsa.encodeBE_eq_bytes (VG.Proof.Bignum.bytesAt_length _ _ _) (by omega_using [hplt, hyp])).mpr vy.symm).symm
-  have kall := k12.trans kt
-  have K2 := Kept.ofBody hL b12
+  obtain kall := k12.trans kt
+  obtain K2 := Kept.ofBody hL b12
   rw [eb, hk.kept K2.out, hx.kept K2.out, ekey, exb] at vt
   simp only [decide_eq_true_eq] at vt t3
   simp only [hD]

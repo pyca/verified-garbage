@@ -75,7 +75,7 @@ theorem park_ok {s : State} {B : Addr} (hB : s.gpr Impl.Modes.RISCV64.sb = B) (h
   refine WP.runBlock_of ?_
   rw [park]
   refine wp_addi (by decide) fun s₁ u₁ => ?_
-  have b₁ : s₁.gpr Impl.Modes.RISCV64.sb = B := by rw [u₁.other _ (by decide), hB]
+  obtain b₁ : s₁.gpr Impl.Modes.RISCV64.sb = B := by rw [u₁.other _ (by decide), hB]
   refine wp_sd (a := raA B) (by decide) (by rw [b₁, raA, ecbA, VG.Offset.add_add])
     (Spill.al8 hal (by decide))
     (by rw [u₁.wr]; exact ⟨_, hw, VG.Offset.contains_base _ (by decide) (by decide)⟩) fun s₂ m₂ => ?_
@@ -84,7 +84,7 @@ theorem park_ok {s : State} {B : Addr} (hB : s.gpr Impl.Modes.RISCV64.sb = B) (h
     (by rw [m₂.wr, u₁.wr]; exact ⟨_, hw, VG.Offset.contains_base _ (by decide) (by decide)⟩) fun s₃ m₃ => ?_
   simp only [movR]
   refine wp_mv fun s₄ u₄ => wp_mv fun s₅ u₅ => wp_mv fun s₆ u₆ => WP.block_nil ?_
-  have g₃ : ∀ r, r ≠ .t0 → s₃.gpr r = s.gpr r := fun r h => by rw [m₃.gpr, m₂.gpr, u₁.other r h]
+  obtain g₃ : ∀ r, r ≠ .t0 → s₃.gpr r = s.gpr r := fun r h => by rw [m₃.gpr, m₂.gpr, u₁.other r h]
   refine ⟨?_, ?_, ?_, ?_, fun r h0 h2 h3 hra => ?_, ?_, ?_, ?_, ?_⟩
   · rw [u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), m₃.gpr, m₂.gpr]
     exact u₁.gpr.trans (by rw [hB])
@@ -112,11 +112,11 @@ theorem unpark_ok {s : State} {B : Addr} (hb : s.gpr sb = ecbA B) (hal : (ecbA B
   rw [unpark]
   simp only [movR]
   refine wp_mv fun s₁ u₁ => wp_mv fun s₂ u₂ => wp_mv fun s₃ u₃ => wp_subi (by decide) fun s₄ u₄ => ?_
-  have g₃ : ∀ r, r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → s₃.gpr r = s.gpr r := fun r a b c => by
+  obtain g₃ : ∀ r, r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → s₃.gpr r = s.gpr r := fun r a b c => by
     rw [u₃.other r c, u₂.other r b, u₁.other r a]
-  have b₄ : s₄.gpr sb = ecbA B := by rw [u₄.other _ (by decide), g₃ _ (by decide) (by decide) (by decide), hb]
-  have m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have inR : ∀ k, 8 * k + 8 ≤ 8 * 400 → InRegions (s₄.rd ++ s₄.wr) (ecbA B + BitVec.ofNat 64 (8 * k)) 8 :=
+  obtain b₄ : s₄.gpr sb = ecbA B := by rw [u₄.other _ (by decide), g₃ _ (by decide) (by decide) (by decide), hb]
+  obtain m₄ : s₄.mem = s.mem := by rw [u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain inR : ∀ k, 8 * k + 8 ≤ 8 * 400 → InRegions (s₄.rd ++ s₄.wr) (ecbA B + BitVec.ofNat 64 (8 * k)) 8 :=
     fun k hk => by
       rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd, u₄.wr, u₃.wr, u₂.wr, u₁.wr]
       exact ⟨_, List.mem_append_right _ hw, VG.Offset.contains_base _ (by omega_using [hk]) (by omega_using [hk])⟩
@@ -171,7 +171,7 @@ theorem readyAt_congr {d : Dir} {R : Nat} {m m' : Mem} {b : Addr} {w : List (Bit
       m'.readW (wordAddr b k) 64 = m.readW (wordAddr b k) 64) :
     ReadyAt d R m' b w := by
   obtain ⟨hm, he⟩ := h
-  have hg4 : R / 6 ≤ 4 := by omega_using [hR]
+  obtain hg4 : R / 6 ≤ 4 := by omega_using [hR]
   refine ⟨fun kv hkv => ?_, fun i hi => (he i hi).congr fun j hj => ?_⟩
   · rw [← hm kv hkv]; exact hw _ (.inl (allMasks_range kv hkv))
   · rw [entryW_word, entryW_word]
@@ -183,7 +183,7 @@ theorem word_disjoint {d : Dir} {R : Nat} {B : Addr} {k : Nat} (hk : (48 ≤ k �
     {r : Region}
     (hr : Region.Disjoint (coreRegion (inlineCore d R) B) r ∨ Region.Sub r (blkRegion (inlineCore d R) B)) :
     Region.Disjoint ⟨wordAddr (ecbA B) k, 8⟩ r := by
-  have hk' : k < 400 := by rw [keySlot_eq, slots_eq] at hk; omega_using [hk]
+  obtain hk' : k < 400 := by rw [keySlot_eq, slots_eq] at hk; omega_using [hk]
   rcases hr with h | h
   · refine h.sub_left ?_
     show Region.Sub ⟨B + BitVec.ofNat 64 48 + BitVec.ofNat 64 (8 * k), 8⟩ ⟨B + BitVec.ofNat 64 48, 3200⟩
@@ -209,8 +209,8 @@ theorem keyArgs_congr {R : Nat} {s s' : State} {rs : List Region} {w : List (Bit
   rw [hws]
   simp only [schedWords]
   refine List.map_congr_left fun i hi => ?_
-  have hi := List.mem_range.mp hi
-  have hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega_using [hR, hi]
+  obtain hi := List.mem_range.mp hi
+  obtain hl : 8 * i + 8 ≤ 272 := by simp only [Spec.Camellia.scheduleLength] at hi; omega_using [hR, hi]
   exact (wordAt_frame hf fun r hr => (hdis r hr).sub_left (VG.Offset.sub_base p hl)).symm
 
 /-- The cipher of the direction `d`. -/
@@ -241,8 +241,8 @@ theorem crypt_spec (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) (w : List (BitVe
 /-- What `park` writes keeps everything else. -/
 theorem park_frame (m : Mem) (B : Addr) (v₁ v₂ : BitVec 64) :
     Frame [⟨raA B, 16⟩] m ((m.writeW (raA B) v₁).writeW (a0A B) v₂) := by
-  have h₁ : (⟨raA B, 16⟩ : Region).Contains (raA B) (64 / 8) := by simp [Region.Contains]
-  have h₂ : (⟨raA B, 16⟩ : Region).Contains (a0A B) (64 / 8) := by
+  obtain h₁ : (⟨raA B, 16⟩ : Region).Contains (raA B) (64 / 8) := by simp [Region.Contains]
+  obtain h₂ : (⟨raA B, 16⟩ : Region).Contains (a0A B) (64 / 8) := by
     rw [show a0A B = raA B + BitVec.ofNat 64 8 by rw [raA, VG.Offset.add_add]; rfl]
     exact VG.Offset.contains_base _ (by decide) (by decide)
   exact ((Frame.refl _ _).writeW List.mem_cons_self _ h₁).writeW List.mem_cons_self _ h₂
@@ -252,7 +252,7 @@ theorem park_read (m : Mem) (B : Addr) (v₁ v₂ : BitVec 64) :
     ((m.writeW (raA B) v₁).writeW (a0A B) v₂).readW (raA B) 64 = v₁ ∧
       ((m.writeW (raA B) v₁).writeW (a0A B) v₂).readW (a0A B) 64 = v₂ := by
   refine ⟨?_, Mem.readW_writeW_self64 _ _ _⟩
-  have f : Frame [⟨a0A B, 8⟩] (m.writeW (raA B) v₁) ((m.writeW (raA B) v₁).writeW (a0A B) v₂) :=
+  obtain f : Frame [⟨a0A B, 8⟩] (m.writeW (raA B) v₁) ((m.writeW (raA B) v₁).writeW (a0A B) v₂) :=
     (Frame.refl _ _).writeW List.mem_cons_self _ (Region.contains_self _ _)
   rw [f.readW (r := ⟨raA B, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide), Mem.readW_writeW_self64]
   simp only [List.mem_singleton] at hr; subst hr
@@ -278,7 +278,7 @@ theorem kept_of {s s₀ s₄ s' : State} {B : Addr} (hB : s.gpr Impl.Modes.RISCV
     ∀ r ∈ kept, s'.gpr r = s.gpr r := by
   intro r hr
   simp only [kept, preserved, List.mem_cons, List.not_mem_nil, or_false] at hr
-  have gen : ∀ r ∈ preserved, r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → r ≠ .s4 → s'.gpr r = s.gpr r :=
+  obtain gen : ∀ r ∈ preserved, r ≠ .s1 → r ≠ .s2 → r ≠ .s3 → r ≠ .s4 → s'.gpr r = s.gpr r :=
     fun r hp h1 h2 h3 h4 => by
       obtain ⟨i, hi, rfl⟩ := preserved_sreg r hp
       rw [rest i hi h1 h2 h3 h4, r₀ _ hp h1 h2 h3 h4]
@@ -310,19 +310,19 @@ theorem prepBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B 
   unfold prepareKeys
   refine WP.seq (WP.of_runBlock ⟨s₃, by
     rw [runBlock_append', runBlock_append', e₁, Option.bind_some, e₂, Option.bind_some, e₃], ?_⟩)
-  have hk₃ : KeyPre s₃ b p := ⟨b₃, by rw [wr₃, wr₂, wr₁]; exact hw, hal, hfit,
+  obtain hk₃ : KeyPre s₃ b p := ⟨b₃, by rw [wr₃, wr₂, wr₁]; exact hw, hal, hfit,
     List.mem_append_left _ (by rw [rd₃, rd₂, rd₁]; exact hrK), fitK, dSS⟩
-  have a0₃ : s₃.gpr .a0 = p := by
+  obtain a0₃ : s₃.gpr .a0 = p := by
     rw [g₃ _ (by decide) (by decide) (by decide), o₂ _ (by decide),
       o₁ _ (by decide) (by decide) (by decide) (by decide), hp]
   obtain ⟨g, hgR⟩ : ∃ g, R / 6 = g := ⟨_, rfl⟩
-  have hg : g = 3 ∨ g = 4 := by omega_using [hR, hgR]
-  have hz : isa.eval (.zero t0) s₃ = some (decide (g = 3)) := by
+  obtain hg : g = 3 ∨ g = 4 := by omega_using [hR, hgR]
+  obtain hz : isa.eval (.zero t0) s₃ = some (decide (g = 3)) := by
     rw [Steps.eval_zero, t₃, a1₂, VG.Offset.ofNat_sub_ofNat_beq (by omega_using [hR]) (by decide)]
     exact congrArg some (decide_eq_decide.mpr ⟨fun h => by omega_using [hgR, h], fun h => by omega_using [hR, hgR, h]⟩)
   refine WP.seq (WP.mono (keys_wp d hg hz hk₃ a0₃ mk₃) fun s₄ ⟨k₄, _⟩ => ?_)
   have base₄ : s₄.gpr sb = b := k₄.pre.base
-  have sv₄ : Saved s₂ b s₄.mem := fun i hi => by
+  obtain sv₄ : Saved s₂ b s₄.mem := fun i hi => by
     rw [← sv₃ i hi]
     refine k₄.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [keyRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -330,34 +330,34 @@ theorem prepBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B 
     · exact VG.Offset.disjoint_base b (d := 8 * (savedSlot + i)) (by omega_using []) (by rw [savedSlot_eq]; omega_using [hi])
     · exact VG.Offset.disjoint b (by rw [savedSlot_eq, keySlot_eq]; omega_using [hi]) (by rw [savedSlot_eq]; omega_using [hi])
         (by decide)
-  have hw₄ : (⟨b, 8 * slots⟩ : Region) ∈ s₄.wr := by rw [k₄.wr, wr₃, wr₂, wr₁]; exact hw
+  obtain hw₄ : (⟨b, 8 * slots⟩ : Region) ∈ s₄.wr := by rw [k₄.wr, wr₃, wr₂, wr₁]; exact hw
   obtain ⟨s₅, e₅, rg₅, ro₅, m₅, rd₅, wr₅⟩ := restore_ok hw₄ base₄ hal sv₄
-  have b₅ : s₅.gpr sb = ecbA B := (ro₅ sb a5_ne_sreg).trans (base₄.trans hb.symm)
+  obtain b₅ : s₅.gpr sb = ecbA B := (ro₅ sb a5_ne_sreg).trans (base₄.trans hb.symm)
   obtain ⟨s₆, e₆, s1₆, s2₆, s3₆, s4₆, ra₆, a0₆, o₆, m₆, rd₆, wr₆, -⟩ :=
     unpark_ok b₅ (hb ▸ hal) (by rw [wr₅, hb]; exact hw₄)
   refine WP.of_runBlock ⟨s₆, by rw [runBlock_append', e₅, Option.bind_some, e₆], ?_⟩
   -- The memory.
-  have F₁ : Frame [⟨b, 8 * slots⟩] s.mem s₂.mem := by
+  obtain F₁ : Frame [⟨b, 8 * slots⟩] s.mem s₂.mem := by
     rw [m₂, m₁]
     refine (park_frame _ _ _ _).sub fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨_, List.mem_singleton_self _, by rw [raA, hb]; exact VG.Offset.sub_base b (by rw [slots_eq]; decide)⟩
-  have F₃ : Frame [⟨b, 8 * slots⟩] s₂.mem s₃.mem := f₃.sub fun r hr => by
+  obtain F₃ : Frame [⟨b, 8 * slots⟩] s₂.mem s₃.mem := f₃.sub fun r hr => by
     simp only [savedRegion, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
     · exact ⟨_, List.mem_singleton_self _, VG.Offset.sub_base b (by decide)⟩
-  have F₄ : Frame [⟨b, 8 * slots⟩] s₃.mem s₄.mem := k₄.frame.sub fun r hr => by
+  obtain F₄ : Frame [⟨b, 8 * slots⟩] s₃.mem s₄.mem := k₄.frame.sub fun r hr => by
     simp only [keyRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
     · exact ⟨_, List.mem_singleton_self _, VG.Offset.sub_base b (by decide)⟩
-  have mem₆ : s₆.mem = s₄.mem := by rw [m₆, m₅]
+  obtain mem₆ : s₆.mem = s₄.mem := by rw [m₆, m₅]
   -- `park`'s slots, through the prologue and the key setup.
-  have slot : ∀ k, savedSlot + 14 ≤ k + 2 → k < savedSlot + 14 →
+  obtain slot : ∀ k, savedSlot + 14 ≤ k + 2 → k < savedSlot + 14 →
       s₄.mem.readW (b + BitVec.ofNat 64 (8 * k)) 64 = s₂.mem.readW (b + BitVec.ofNat 64 (8 * k)) 64 := by
     intro k h1 h2
-    have hk : savedSlot + 12 ≤ k := by omega_using [h1]
+    obtain hk : savedSlot + 12 ≤ k := by omega_using [h1]
     rw [k₄.frame.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide),
       f₃.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)]
     · simp only [savedRegion, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -370,14 +370,14 @@ theorem prepBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B 
       rcases hr with rfl | rfl
       · exact VG.Offset.disjoint_base b (by rw [savedSlot_eq]; omega_using [hk]) (by omega_using [h2])
       · exact VG.Offset.disjoint b (.inl (by rw [keySlot_eq]; omega_using [h2])) (by omega_using [h2]) (by rw [keySlot_eq, slots_eq]; decide)
-  have pr := park_read s.mem B (s.gpr .ra) (s.gpr .a0)
+  obtain pr := park_read s.mem B (s.gpr .ra) (s.gpr .a0)
   rw [← m₁, ← m₂] at pr
-  have hra : s₄.mem.readW (raA B) 64 = s.gpr .ra := by
+  obtain hra : s₄.mem.readW (raA B) 64 = s.gpr .ra := by
     rw [raA, hb, slot raSlot (by decide) (by decide), ← hb]; exact pr.1
-  have ha0 : s₄.mem.readW (a0A B) 64 = s.gpr .a0 := by
+  obtain ha0 : s₄.mem.readW (a0A B) 64 = s.gpr .a0 := by
     rw [a0A, hb, slot a0Slot (by decide) (by decide), ← hb]; exact pr.2
   -- The registers.
-  have r₄ : ∀ r, r ∉ sboxWrites → r ≠ kp → r ≠ .a0 → r ≠ .a4 → r ≠ sb → r ≠ t0 → r ≠ t1 → r ≠ .a1 →
+  obtain r₄ : ∀ r, r ∉ sboxWrites → r ≠ kp → r ≠ .a0 → r ≠ .a4 → r ≠ sb → r ≠ t0 → r ≠ t1 → r ≠ .a1 →
       s₄.gpr r = s₁.gpr r := fun r a b c e f g h i => by
     rw [k₄.regs r a b c e, g₃ r f g h, o₂ r i]
   refine ⟨s4₆, kept_of hB (s₄ := s₄) (s₀ := s₂)
@@ -400,7 +400,7 @@ theorem prepBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B 
   · rw [mem₆]; exact k₄.masks.at base₄
   · rw [mem₆]
     rw [hgR] at hi ⊢
-    have hl : permOf d g i < Spec.Camellia.scheduleLength R := by
+    obtain hl : permOf d g i < Spec.Camellia.scheduleLength R := by
       have := dirPerm_lt (specDir d) hi
       simp only [Spec.Camellia.scheduleLength]; simp only [permOf] at *; omega_using [hgR, this]
     have := k₄.ent i hi
@@ -448,10 +448,10 @@ theorem cryptBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   generalize hb : ecbA B = b at hal hw hfit hr
   obtain ⟨g, hgR⟩ : ∃ g, R / 6 = g := ⟨_, rfl⟩
-  have hg : g = 3 ∨ g = 4 := by omega_using [hR, hgR]
+  obtain hg : g = 3 ∨ g = 4 := by omega_using [hR, hgR]
   obtain ⟨s₁, e₁, t0₁, a2₁, a3₁, ra₁, o₁, m₁, rd₁, wr₁, -⟩ := park_ok hB (hb ▸ hal) (hb ▸ hw)
   obtain ⟨s₂, e₂, sb₂, o₂, m₂, rd₂, wr₂⟩ := movR_ok s₁ sb t0
-  have b₂ : s₂.gpr sb = b := sb₂.trans (t0₁.trans hb)
+  obtain b₂ : s₂.gpr sb = b := sb₂.trans (t0₁.trans hb)
   obtain ⟨s₃, e₃, sv₃, g₃, rd₃, wr₃, f₃, sl₃⟩ := save_ok (by rw [wr₂, wr₁]; exact hw) b₂ hal
   obtain ⟨s₄, e₄, a4₄, o₄, m₄, rd₄, wr₄⟩ := endAddr_ok s₃ (g := g) (by omega_using [hg])
   unfold cryptBlocks
@@ -459,14 +459,14 @@ theorem cryptBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B
   refine WP.seq (WP.of_runBlock ⟨s₄, by
     rw [runBlock_append', runBlock_append', runBlock_append', e₁, Option.bind_some, e₂, Option.bind_some, e₃,
       Option.bind_some, e₄], ?_⟩)
-  have b₄ : s₄.gpr sb = b := by rw [o₄ _ (by decide), g₃, b₂]
-  have hw₄ : (⟨b, 8 * slots⟩ : Region) ∈ s₄.wr := by rw [wr₄, wr₃, wr₂, wr₁]; exact hw
+  obtain b₄ : s₄.gpr sb = b := by rw [o₄ _ (by decide), g₃, b₂]
+  obtain hw₄ : (⟨b, 8 * slots⟩ : Region) ∈ s₄.wr := by rw [wr₄, wr₃, wr₂, wr₁]; exact hw
   -- The masks and the table, as on entry.
-  have F₁ : Frame [⟨raA B, 16⟩] s.mem s₂.mem := by rw [m₂, m₁]; exact park_frame _ _ _ _
-  have pres : ∀ k, (48 ≤ k ∧ k < 59) ∨ (keySlot ≤ k ∧ k < slots) →
+  obtain F₁ : Frame [⟨raA B, 16⟩] s.mem s₂.mem := by rw [m₂, m₁]; exact park_frame _ _ _ _
+  obtain pres : ∀ k, (48 ≤ k ∧ k < 59) ∨ (keySlot ≤ k ∧ k < slots) →
       s₄.mem.readW (wordAddr b k) 64 = s.mem.readW (wordAddr b k) 64 := by
     intro k hk
-    have hk' : (k < savedSlot ∨ savedSlot + 12 ≤ k) ∧ k < 400 := by
+    obtain hk' : (k < savedSlot ∨ savedSlot + 12 ≤ k) ∧ k < 400 := by
       rw [savedSlot_eq]; rw [keySlot_eq, slots_eq] at hk; omega_using [hk]
     have := sl₃ k hk'.1 (Nat.lt_trans hk'.2 (by decide))
     change s₃.mem.readW (wordAddr (s₃.gpr sb) k) 64 = s₂.mem.readW (wordAddr (s₂.gpr sb) k) 64 at this
@@ -480,7 +480,7 @@ theorem cryptBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B
     · exact VG.Offset.disjoint b (.inl (by rw [raSlot_eq]; omega_using [hk])) (by omega_using [hk']) (by rw [raSlot_eq]; decide)
     · exact VG.Offset.disjoint b (.inr (by rw [raSlot_eq]; omega_using [hk])) (by omega_using [hk']) (by rw [raSlot_eq]; decide)
   let E : Nat → BitVec 64 := fun i => w.getD (permOf d g i) 0
-  have hcore : CorePre s₄ g E :=
+  obtain hcore : CorePre s₄ g E :=
     { scr := by rw [b₄]; exact hw₄
       al := by rw [b₄]; exact hal
       fit := by rw [b₄]; exact hfit
@@ -497,9 +497,9 @@ theorem cryptBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B
       hg := hg
       bound := by rw [a4₄, o₄ _ (by decide), g₃] }
   refine WP.seq (WP.mono (crypt8_ok hcore) fun s₅ ⟨c₅, k₅⟩ => ?_)
-  have b₅ : s₅.gpr sb = b := by rw [c₅.base, b₄]
-  have f₅ : Frame (ctxRegions b) s₄.mem s₅.mem := by have := c₅.frame; rwa [b₄] at this
-  have sv₅ : Saved s₂ b s₅.mem := fun i hi => by
+  obtain b₅ : s₅.gpr sb = b := by rw [c₅.base, b₄]
+  obtain f₅ : Frame (ctxRegions b) s₄.mem s₅.mem := by have := c₅.frame; rwa [b₄] at this
+  obtain sv₅ : Saved s₂ b s₅.mem := fun i hi => by
     rw [← sv₃ i hi, ← m₄]
     refine f₅.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     simp only [ctxRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -508,13 +508,13 @@ theorem cryptBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B
     · exact VG.Offset.disjoint b (.inl (by rw [savedSlot_eq, tailSlot_eq]; omega_using [hi])) (by rw [savedSlot_eq]; omega_using [hi])
         (by rw [tailSlot_eq]; decide)
   obtain ⟨s₆, e₆, rg₆, ro₆, m₆, rd₆, wr₆⟩ := restore_ok (by rw [c₅.wr]; exact hw₄) b₅ hal sv₅
-  have b₆ : s₆.gpr sb = ecbA B := (ro₆ sb a5_ne_sreg).trans (b₅.trans hb.symm)
+  obtain b₆ : s₆.gpr sb = ecbA B := (ro₆ sb a5_ne_sreg).trans (b₅.trans hb.symm)
   obtain ⟨s₇, e₇, s1₇, s2₇, s3₇, s4₇, ra₇, a0₇, o₇, m₇, rd₇, wr₇, -⟩ :=
     unpark_ok b₆ (hb ▸ hal) (by rw [wr₆, c₅.wr, hb]; exact hw₄)
   refine WP.of_runBlock ⟨s₇, by rw [runBlock_append', e₆, Option.bind_some, e₇], ?_⟩
-  have mem₇ : s₇.mem = s₅.mem := by rw [m₇, m₆]
+  obtain mem₇ : s₇.mem = s₅.mem := by rw [m₇, m₆]
   -- `park`'s slots.
-  have slot : ∀ k, savedSlot + 12 ≤ k → k < savedSlot + 14 →
+  obtain slot : ∀ k, savedSlot + 12 ≤ k → k < savedSlot + 14 →
       s₅.mem.readW (b + BitVec.ofNat 64 (8 * k)) 64 = s₂.mem.readW (b + BitVec.ofNat 64 (8 * k)) 64 := by
     intro k h1 h2
     rw [savedSlot_eq] at h1 h2
@@ -526,16 +526,16 @@ theorem cryptBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B
       rcases hr with rfl | rfl
       · exact VG.Offset.disjoint_base b (by rw [savedSlot_eq]; omega_using [h1]) (by omega_using [h2])
       · exact VG.Offset.disjoint b (.inl (by rw [tailSlot_eq]; omega_using [h2])) (by omega_using [h2]) (by rw [tailSlot_eq]; decide)
-  have pr := park_read s.mem B (s.gpr .ra) (s.gpr .a0)
+  obtain pr := park_read s.mem B (s.gpr .ra) (s.gpr .a0)
   rw [← m₁, ← m₂] at pr
-  have hra : s₅.mem.readW (raA B) 64 = s.gpr .ra := by
+  obtain hra : s₅.mem.readW (raA B) 64 = s.gpr .ra := by
     rw [raA, hb, slot raSlot (by decide) (by decide), ← hb]; exact pr.1
-  have ha0 : s₅.mem.readW (a0A B) 64 = s.gpr .a0 := by
+  obtain ha0 : s₅.mem.readW (a0A B) 64 = s.gpr .a0 := by
     rw [a0A, hb, slot a0Slot (by decide) (by decide), ← hb]; exact pr.2
-  have r₅ : ∀ r, r ∉ sboxWrites → r ≠ kp → r ≠ .a0 → r ≠ .a4 → r ≠ sb → s₅.gpr r = s₁.gpr r :=
+  obtain r₅ : ∀ r, r ∉ sboxWrites → r ≠ kp → r ≠ .a0 → r ≠ .a4 → r ≠ sb → s₅.gpr r = s₁.gpr r :=
     fun r a b' c e f => by rw [c₅.keep r a b' c, o₄ r e, g₃, o₂ r f]
   -- The tail buffer, on entry to the rounds.
-  have tail₄ : ∀ j < 8, Spec.Camellia.blockAt s₄.mem (b + BitVec.ofNat 64 (8 * tailSlot + 16 * j)) =
+  obtain tail₄ : ∀ j < 8, Spec.Camellia.blockAt s₄.mem (b + BitVec.ofNat 64 (8 * tailSlot + 16 * j)) =
       Spec.Camellia.blockAt s.mem (b + BitVec.ofNat 64 (8 * tailSlot + 16 * j)) := fun j hj => by
     rw [m₄, blockAt_frame f₃ fun r hr => ?_, blockAt_frame F₁ fun r hr => ?_]
     · simp only [List.mem_singleton] at hr; subst hr
@@ -565,7 +565,7 @@ theorem cryptBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B
     have := hr.2 i hi
     rw [hgR] at hi this ⊢
     refine this.congr fun j hj => ?_
-    have hj' : keySlot ≤ keySlot + 8 * i + j ∧ keySlot + 8 * i + j < slots := ⟨by omega_using [], by
+    obtain hj' : keySlot ≤ keySlot + 8 * i + j ∧ keySlot + 8 * i + j < slots := ⟨by omega_using [], by
       rw [keySlot_eq, slots_eq]; omega_using [hg, hi, hj]⟩
     rw [entryW_word, entryW_word, f₅.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide),
       pres _ (.inr hj')]
@@ -577,16 +577,16 @@ theorem cryptBody_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B
     · exact VG.Offset.disjoint b (.inr (by simp only [keySlot_eq, tailSlot_eq]; omega_using []))
         (by simp only [keySlot_eq, slots_eq] at hj' ⊢; omega_using [hj']) (by rw [tailSlot_eq]; decide)
   · rw [mem₇]
-    have F₃ : Frame [⟨b, 8 * slots⟩] s₂.mem s₄.mem := by
+    obtain F₃ : Frame [⟨b, 8 * slots⟩] s₂.mem s₄.mem := by
       rw [m₄]; refine f₃.sub fun r hr => ?_
       simp only [savedRegion, List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, VG.Offset.sub_base b (by decide)⟩
-    have F₅ : Frame [⟨b, 8 * slots⟩] s₄.mem s₅.mem := f₅.sub fun r hr => by
+    obtain F₅ : Frame [⟨b, 8 * slots⟩] s₄.mem s₅.mem := f₅.sub fun r hr => by
       simp only [ctxRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by decide)⟩
       · exact ⟨_, List.mem_singleton_self _, VG.Offset.sub_base b (by decide)⟩
-    have F₁' : Frame [⟨b, 8 * slots⟩] s.mem s₂.mem := F₁.sub fun r hr => by
+    obtain F₁' : Frame [⟨b, 8 * slots⟩] s.mem s₂.mem := F₁.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_singleton_self _, by rw [raA, hb]; exact VG.Offset.sub_base b (by rw [slots_eq]; decide)⟩
     exact (F₁'.trans F₃).trans F₅
@@ -639,8 +639,8 @@ theorem prepare_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B :
       (∀ r ∈ kept, s'.gpr r = s.gpr r) ∧ Frame [coreRegion (inlineCore d R) B] s.mem s'.mem ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨p, hp, hws, hin, hfit, hdis⟩ := hk
-  have dSS : Region.Disjoint ⟨p, 272⟩ ⟨ecbA B, 8 * slots⟩ := (hdis _ hm).sub_right (ecb_sub d R B)
-  have w₀ := prepBody_wp d hR (s := s.withRegions [⟨p, 272⟩] [⟨ecbA B, 8 * slots⟩]) hB (ecb_al hS)
+  obtain dSS : Region.Disjoint ⟨p, 272⟩ ⟨ecbA B, 8 * slots⟩ := (hdis _ hm).sub_right (ecb_sub d R B)
+  obtain w₀ := prepBody_wp d hR (s := s.withRegions [⟨p, 272⟩] [⟨ecbA B, 8 * slots⟩]) hB (ecb_al hS)
     (List.mem_singleton_self _) (ecb_fit hS) hp (List.mem_singleton_self _) hfit dSS
   refine WP.narrow w₀ (VG.Covers.append (VG.Covers.of_mem fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hin) (VG.Covers.one (ecb_in hS)))
@@ -658,13 +658,13 @@ theorem crypt_wp (d : Dir) {R : Nat} (hR : R = 18 ∨ R = 24) {s : State} {B : A
         dirCipher d (Spec.Camellia.subkeysOfWords R w)
           (Spec.Aes.bytesAt s.mem (blkAddr (inlineCore d R) B j) (4 * (inlineCore d R).bw))) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have w₀ := cryptBody_wp d hR (s := s.withRegions [] [⟨ecbA B, 8 * slots⟩]) hB (ecb_al hS)
+  obtain w₀ := cryptBody_wp d hR (s := s.withRegions [] [⟨ecbA B, 8 * slots⟩]) hB (ecb_al hS)
     (List.mem_singleton_self _) (ecb_fit hS) hr
   refine WP.narrow w₀ (VG.Covers.append VG.Covers.nil (VG.Covers.one (ecb_in hS))) (VG.Covers.one (ecb_in hS))
     (fun s' rd' wr' _ f' ⟨b', k', r', _, blk', _, _⟩ => ⟨b', fun r hr => k' r hr, r', f', fun j hj => ?_, rd', wr'⟩)
     (crypt_noFrames d R)
   have hj8 : j < 8 := hj
-  have ha : blkAddr (inlineCore d R) B j = ecbA B + BitVec.ofNat 64 (8 * tailSlot + 16 * j) := by
+  obtain ha : blkAddr (inlineCore d R) B j = ecbA B + BitVec.ofNat 64 (8 * tailSlot + 16 * j) := by
     show B + BitVec.ofNat 64 (8 * 102) + BitVec.ofNat 64 (16 * j) =
       B + BitVec.ofNat 64 48 + BitVec.ofNat 64 (8 * 96 + 16 * j)
     rw [VG.Offset.add_add, VG.Offset.add_add]

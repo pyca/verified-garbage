@@ -474,7 +474,9 @@ lemmas and tactics to use; read it before writing a proof:
   proof: work repeated in every case of a split (`cases x <;> simp_all`),
   `simp (disch := omega)`, `omega` on a fact that is not linear, an
   alternative of `first` that fails slowly, an implicit argument left to
-  unification.
+  unification. In a long proof, `obtain x : T := proof` rather than `have`
+  for a fact with a proof of its own: `have` keeps the proof in the
+  context, which every nested `by` shares again.
 * **Imports:** never `Mathlib.Tactic` or all of Mathlib; keep
   `IntervalCases`, `NormNum`, `Ring` and heavy algebra out of modules many
   others import; a module of one target never imports another target's,

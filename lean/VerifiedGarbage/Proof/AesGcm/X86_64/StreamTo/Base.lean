@@ -98,7 +98,7 @@ structure SP' (M : CtxMode) (s : State) : Prop where
 theorem SP'.ofM {M : CtxMode} {s : State} (h : Proof.AesGcm.streamToPreM M s) : SP' M s := by
   simp only [Proof.AesGcm.streamToPreM, Proof.AesGcm.args, Proof.AesGcm.arg, Proof.AesGcm.ret,
     Proof.AesGcm.stkS, Proof.AesGcm.rounds] at h
-  have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
+  obtain hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
   sig_split h
   rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
     a₂₈ a₂₉ a₃₀ a₃₁
@@ -166,8 +166,8 @@ stack arguments. -/
 theorem keep_a {m m' : Mem} (hf : Frame (wR s ++ [tR s]) m m') {i : Nat} (hi : i < 4) :
     m'.readW (SP s + BitVec.ofNat 64 (8 * (i + 1))) 64 = m.readW (SP s + BitVec.ofNat 64 (8 * (i + 1))) 64 :=
   hf.readW (r := ⟨SP s + BitVec.ofNat 64 (8 * (i + 1)), 8⟩) (Region.contains_self _ _) (fun r hr => by
-    have hs : Region.Sub ⟨SP s + BitVec.ofNat 64 (8 * (i + 1)), 8⟩ (aR s) := by
-      have e : SP s + BitVec.ofNat 64 (8 * (i + 1)) = SP s + BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * i) := by
+    obtain hs : Region.Sub ⟨SP s + BitVec.ofNat 64 (8 * (i + 1)), 8⟩ (aR s) := by
+      obtain e : SP s + BitVec.ofNat 64 (8 * (i + 1)) = SP s + BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * i) := by
         rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
       rw [e]; exact Offset.sub_base _ (by omega_using [hi])
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr

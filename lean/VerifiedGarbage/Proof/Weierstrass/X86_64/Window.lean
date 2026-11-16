@@ -50,7 +50,7 @@ theorem winRD {K : WinCfg} {size : Nat} (hL : WinLay K size) :
     (∀ x ∈ [K.R.x, K.R.y, K.R.z], x ∉ [K.D.x, K.D.y, K.D.z]) ∧
     (K.R.x ≠ K.R.y ∧ K.R.x ≠ K.R.z ∧ K.R.y ≠ K.R.z) := by
   obtain ⟨rxy, rxz, ryz, hRD, -, -, -, -, -, -⟩ := hL.other_ne
-  have hw : ∀ z ∈ [K.R.x, K.R.y, K.R.z, K.D.x, K.D.y, K.D.z], z ∈ winWs K := by
+  obtain hw : ∀ z ∈ [K.R.x, K.R.y, K.R.z, K.D.x, K.D.y, K.D.z], z ∈ winWs K := by
     intro z hz
     refine winOther_ws K z ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hz
@@ -76,9 +76,9 @@ theorem winCopy_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : Win
   obtain ⟨k₁, I₁, v₁⟩ := h₁
   obtain ⟨hle, hap, hne, ho⟩ := winRD hL
   refine WP.mono (copyPt_ok (k₁.scr hs) hle hap hne ho) fun s₂ ⟨wx, wy, wz, k₂, U₂⟩ => ?_
-  have hDx : K.D.x ∈ [K.D.x, K.D.y, K.D.z] ++ V := by simp
-  have hDy : K.D.y ∈ [K.D.x, K.D.y, K.D.z] ++ V := by simp
-  have hDz : K.D.z ∈ [K.D.x, K.D.y, K.D.z] ++ V := by simp
+  obtain hDx : K.D.x ∈ [K.D.x, K.D.y, K.D.z] ++ V := by simp
+  obtain hDy : K.D.y ∈ [K.D.x, K.D.y, K.D.z] ++ V := by simp
+  obtain hDz : K.D.z ∈ [K.D.x, K.D.y, K.D.z] ++ V := by simp
   refine ⟨(k₁.scr hs).of_keepRegs k₂ (by decide), ?_, ?_, ?_, ?_⟩
   · have c1 : ∀ r ∈ [Reg.rax], r ∈ clob K.M.n := by intro r hr; simp at hr; subst hr; simp [clob]
     exact (⟨k₁.gpr, k₁.rd, k₁.wr⟩ : KeepRegs (clob K.M.n) s s₁).trans (k₂.mono c1)
@@ -106,13 +106,13 @@ theorem winAdd_ok {K : WinCfg} {C : Curve} {base : Addr} {size : Nat} (hL : WinL
       (SumPostW K C base size (VG.Proof.Weierstrass.rcbAdd3 (tmv C K.M.n base s K.S.b3)
         (tmv C K.M.n base s K.R.x) (tmv C K.M.n base s K.R.y) (tmv C K.M.n base s K.R.z)
         (tmv C K.M.n base s K.E.x) (tmv C K.M.n base s K.E.y) (tmv C K.M.n base s K.E.z)) s) := by
-  have hO : ∀ x ∈ rcbW K.S K.D ++ rcbR K.S K.R K.E, x ∈ winSlots K := by
+  obtain hO : ∀ x ∈ rcbW K.S K.D ++ rcbR K.S K.R K.E, x ∈ winSlots K := by
     intro x hx
     rcases List.mem_append.mp hx with hx | hx
     · exact winOther_mem (List.mem_append_right _ hx)
     simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> win_mem
-  have hI : Inv K.M base size C.p (· ∈ winSlots K) (rcbR K.S K.R K.E) (tmv C K.M.n base s) s :=
+  obtain hI : Inv K.M base size C.p (· ∈ winSlots K) (rcbR K.S K.R K.E) (tmv C K.M.n base s) s :=
     ⟨hs, hM, fun x hx => hO x (List.mem_append_right _ hx), hlt, fun _ _ => rfl⟩
   exact winCopy_ok hL hs (rcb3_ok hL.lay hp (hL.rcbApart_D (Or.inr rfl)) hO hI (fun x hx => hx))
 
@@ -193,7 +193,7 @@ theorem cmpRbx_ok (s : State) {j i : Nat} (hi : i < 2 ^ 31) (hj : j < 2 ^ 63)
     (hb : s.gpr .rbx = BitVec.ofNat 64 j) :
     WP isa (.block [.alu .cmp .rbx (.imm (BitVec.ofNat 32 i))]) s fun t =>
       isa.eval .e t = some (decide (j = i)) ∧ Keeps [] s t := by
-  have hse : BitVec.signExtend 64 (BitVec.ofNat 32 i) = BitVec.ofNat 64 i := by
+  obtain hse : BitVec.signExtend 64 (BitVec.ofNat 32 i) = BitVec.ofNat 64 i := by
     rw [BitVec.signExtend_eq_setWidth_of_msb_false (BitVec.msb_eq_false_iff_two_mul_lt.mpr (by
         rw [BitVec.toNat_ofNat]; omega_arith)),
       BitVec.setWidth_ofNat_of_le_of_lt (by decide) (by omega_arith)]
@@ -227,22 +227,22 @@ theorem copyD_tbl {K : WinCfg} {size : Nat} (hL : WinLay K size) {m : Nat} (hm1 
         x + 8 * K.M.n ≤ y ∨ y + 8 * K.M.n ≤ x) ∧
     (∀ x ∈ [(K.tblPt m).x, (K.tblPt m).y, (K.tblPt m).z], x ∉ [K.D.x, K.D.y, K.D.z]) ∧
     ((K.tblPt m).x ≠ (K.tblPt m).y ∧ (K.tblPt m).x ≠ (K.tblPt m).z ∧ (K.tblPt m).y ≠ (K.tblPt m).z) := by
-  have st := tblPt_slots K hm1 hm8
-  have dO : ∀ y ∈ [K.D.x, K.D.y, K.D.z], y ∈ winOther K := by
+  obtain st := tblPt_slots K hm1 hm8
+  obtain dO : ∀ y ∈ [K.D.x, K.D.y, K.D.z], y ∈ winOther K := by
     intro y hy; simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
     rcases hy with rfl | rfl | rfl <;> win_mem
-  have sl : ∀ x ∈ [(K.tblPt m).x, (K.tblPt m).y, (K.tblPt m).z, K.D.x, K.D.y, K.D.z], x ∈ winSlots K := by
+  obtain sl : ∀ x ∈ [(K.tblPt m).x, (K.tblPt m).y, (K.tblPt m).z, K.D.x, K.D.y, K.D.z], x ∈ winSlots K := by
     intro x hx
     rcases List.mem_append.mp (show x ∈ [(K.tblPt m).x, (K.tblPt m).y, (K.tblPt m).z] ++
       [K.D.x, K.D.y, K.D.z] by simpa using hx) with h | h
     · exact (st x h).1
     · exact winOther_mem (dO x h)
-  have td : ∀ x ∈ [(K.tblPt m).x, (K.tblPt m).y, (K.tblPt m).z], ∀ y ∈ [K.D.x, K.D.y, K.D.z],
+  obtain td : ∀ x ∈ [(K.tblPt m).x, (K.tblPt m).y, (K.tblPt m).z], ∀ y ∈ [K.D.x, K.D.y, K.D.z],
       x + 8 * K.M.n ≤ y ∨ y + 8 * K.M.n ≤ x := by
     intro x hx y hy
     obtain ⟨i, hi, rfl, -, -⟩ := tblPt_mem K hm1 hm8 x hx
     exact (hL.tbl_apart (List.mem_append_right _ (dO y hy)) hi).symm
-  have ne : (K.tblPt m).x ≠ (K.tblPt m).y ∧ (K.tblPt m).x ≠ (K.tblPt m).z ∧ (K.tblPt m).y ≠ (K.tblPt m).z := by
+  obtain ne : (K.tblPt m).x ≠ (K.tblPt m).y ∧ (K.tblPt m).x ≠ (K.tblPt m).z ∧ (K.tblPt m).y ≠ (K.tblPt m).z := by
     rw [tblPt_x, tblPt_y, tblPt_z]
     exact ⟨hL.tbl_ne₂ (by omega_arith), hL.tbl_ne₂ (by omega_arith), hL.tbl_ne₂ (by omega_arith)⟩
   refine ⟨fun x hx => hL.lay.le x (sl x hx), fun x hx y hy hxy => ?_, fun x hx hy => ?_, ne⟩
@@ -273,9 +273,9 @@ theorem storeEntry_ok {K : WinCfg} {size : Nat} (hL : WinLay K size) {base : Add
     rw [WinCfg.storeEntry]
     refine WP.seq (WP.mono (cmpRbx_ok s (j := i) (i := j + 1) (by omega_arith) (by omega_arith) hb)
       fun t ⟨ev, kt⟩ => ?_)
-    have hst := hs.of_keeps kt (by decide)
+    obtain hst := hs.of_keeps kt (by decide)
     have mt : t.mem = s.mem := kt.2.1
-    have kt' : KeepRegs [.rax] s t := (Keeps.regs kt).mono fun r hr => by simp at hr
+    obtain kt' : KeepRegs [.rax] s t := (Keeps.regs kt).mono fun r hr => by simp at hr
     refine WP.ite _ ev (fun he => ?_) (fun he => ?_)
     · obtain rfl : i = j + 1 := of_decide_eq_true he
       obtain ⟨a, c, d, e⟩ := copyD_tbl hL (m := 7 - j) (by omega_arith) (by omega_arith)
@@ -298,23 +298,23 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
   have hn := hI.inv.scr.nowrap
   rw [WinCfg.buildStep]
   refine WP.seq (WP.mono (decRbx_ok s (j := 8 - m) (by omega_using [h1, h7]) (by omega_using [h1, h7]) hI.rbx) fun s₁ ⟨x₁, k₁⟩ => ?_)
-  have hs₁ := hI.inv.scr.of_keeps k₁ (by decide)
+  obtain hs₁ := hI.inv.scr.of_keeps k₁ (by decide)
   have m₁ : s₁.mem = s.mem := k₁.2.1
-  have tb : tmv C K.M.n base s₁ K.S.b3 = Fin.ofNat C.p C.b := by
+  obtain tb : tmv C K.M.n base s₁ K.S.b3 = Fin.ofNat C.p C.b := by
     show toM _ _ _ = _; rw [m₁, winRo_val hL hI.inv.unch hn (by simp [winRo])]; exact hF.b
-  have ro_lt : ∀ x ∈ winRo K, wordsVal s₁.mem base x K.M.n < C.p := fun x hx => by
+  obtain ro_lt : ∀ x ∈ winRo K, wordsVal s₁.mem base x K.M.n < C.p := fun x hx => by
     rw [m₁, winRo_val hL hI.inv.unch hn hx]; exact hF.ro_lt x hx
-  have tP : ∀ x ∈ [K.P.x, K.P.y, K.P.z], tmv C K.M.n base s₁ x = tmv C K.M.n base s₀ x := by
+  obtain tP : ∀ x ∈ [K.P.x, K.P.y, K.P.z], tmv C K.M.n base s₁ x = tmv C K.M.n base s₀ x := by
     intro x hx; show toM _ _ _ = toM _ _ _; rw [m₁, winRo_val hL hI.inv.unch hn (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl <;> simp [winRo])]
-  have hO : ∀ x ∈ rcbW K.S K.D ++ rcbR K.S K.E K.P, x ∈ winSlots K := by
+  obtain hO : ∀ x ∈ rcbW K.S K.D ++ rcbR K.S K.E K.P, x ∈ winSlots K := by
     intro x hx
     rcases List.mem_append.mp hx with hx | hx
     · exact winOther_mem (List.mem_append_right _ hx)
     simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> win_mem
-  have hlt : ∀ x ∈ rcbR K.S K.E K.P, wordsVal s₁.mem base x K.M.n < C.p := by
+  obtain hlt : ∀ x ∈ rcbR K.S K.E K.P, wordsVal s₁.mem base x K.M.n < C.p := by
     intro x hx
     simp only [rcbR, List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -326,25 +326,25 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
     · exact ro_lt _ (by simp [winRo])
     · exact ro_lt _ (by simp [winRo])
     · exact ro_lt _ (by simp [winRo])
-  have hI₁ : Inv K.M base size C.p (· ∈ winSlots K) (rcbR K.S K.E K.P) (tmv C K.M.n base s₁) s₁ :=
+  obtain hI₁ : Inv K.M base size C.p (· ∈ winSlots K) (rcbR K.S K.E K.P) (tmv C K.M.n base s₁) s₁ :=
     ⟨hs₁, by rw [m₁]; exact hI.inv.mod, fun x hx => hO x (List.mem_append_right _ hx), hlt,
       fun _ _ => rfl⟩
-  have W := rcb3_ok hL.lay hp hL.rcbApart_EP hO hI₁ (fun x hx => hx)
+  obtain W := rcb3_ok hL.lay hp hL.rcbApart_EP hO hI₁ (fun x hx => hx)
   refine WP.seq ((WP.mono W fun s₂ ⟨k₂, I₂, v₂⟩ => ?_))
   -- `D` is `[m + 1]P`.
-  have hox : K.D.x ∈ [K.D.x, K.D.y, K.D.z] ++ rcbR K.S K.E K.P := by simp
-  have hoy : K.D.y ∈ [K.D.x, K.D.y, K.D.z] ++ rcbR K.S K.E K.P := by simp
-  have hoz : K.D.z ∈ [K.D.x, K.D.y, K.D.z] ++ rcbR K.S K.E K.P := by simp
-  have dlt : ∀ x ∈ [K.D.x, K.D.y, K.D.z], wordsVal s₂.mem base x K.M.n < C.p := by
+  obtain hox : K.D.x ∈ [K.D.x, K.D.y, K.D.z] ++ rcbR K.S K.E K.P := by simp
+  obtain hoy : K.D.y ∈ [K.D.x, K.D.y, K.D.z] ++ rcbR K.S K.E K.P := by simp
+  obtain hoz : K.D.z ∈ [K.D.x, K.D.y, K.D.z] ++ rcbR K.S K.E K.P := by simp
+  obtain dlt : ∀ x ∈ [K.D.x, K.D.y, K.D.z], wordsVal s₂.mem base x K.M.n < C.p := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl
     · exact I₂.lt _ hox
     · exact I₂.lt _ hoy
     · exact I₂.lt _ hoz
-  have dRep : Rep C (tmv C K.M.n base s₂ K.D.x) (tmv C K.M.n base s₂ K.D.y) (tmv C K.M.n base s₂ K.D.z)
+  obtain dRep : Rep C (tmv C K.M.n base s₂ K.D.x) (tmv C K.M.n base s₂ K.D.y) (tmv C K.M.n base s₂ K.D.z)
       (mul (m + 1) P) := by
-    have hS : (tmv C K.M.n base s₂ K.D.x, tmv C K.M.n base s₂ K.D.y, tmv C K.M.n base s₂ K.D.z) =
+    obtain hS : (tmv C K.M.n base s₂ K.D.x, tmv C K.M.n base s₂ K.D.y, tmv C K.M.n base s₂ K.D.z) =
         VG.Proof.Weierstrass.rcbAdd3 (tmv C K.M.n base s₁ K.S.b3)
           (tmv C K.M.n base s₁ K.E.x) (tmv C K.M.n base s₁ K.E.y) (tmv C K.M.n base s₁ K.E.z)
           (tmv C K.M.n base s₁ K.P.x) (tmv C K.M.n base s₁ K.P.y) (tmv C K.M.n base s₁ K.P.z) := by
@@ -352,22 +352,22 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
       show (toM _ _ _, toM _ _ _, toM _ _ _) = _
       rw [I₂.val _ hox, I₂.val _ hoy, I₂.val _ hoz]
     rw [tb, tP K.P.x (by simp), tP K.P.y (by simp), tP K.P.z (by simp)] at hS
-    have hE : Rep C (tmv C K.M.n base s₁ K.E.x) (tmv C K.M.n base s₁ K.E.y) (tmv C K.M.n base s₁ K.E.z)
+    obtain hE : Rep C (tmv C K.M.n base s₁ K.E.x) (tmv C K.M.n base s₁ K.E.y) (tmv C K.M.n base s₁ K.E.z)
         (mul m P) := by
       show Rep C (toM _ _ _) (toM _ _ _) (toM _ _ _) _; rw [m₁]; exact hI.rep
-    have hPr : Rep C (tmv C K.M.n base s₀ K.P.x) (tmv C K.M.n base s₀ K.P.y)
+    obtain hPr : Rep C (tmv C K.M.n base s₀ K.P.x) (tmv C K.M.n base s₀ K.P.y)
         (tmv C K.M.n base s₀ K.P.z) (mul 1 P) := by rw [mul_one_pt]; exact hF.pt
-    have hR := hC.add3 hM3 (hC.onCurve_mul hP m) (hC.onCurve_mul hP 1) hE hPr hS.symm
+    obtain hR := hC.add3 hM3 (hC.onCurve_mul hP m) (hC.onCurve_mul hP 1) hE hPr hS.symm
     rw [hC.add_mul_mul hP] at hR
     exact hR
-  have hs₂ := k₂.scr hs₁
+  obtain hs₂ := k₂.scr hs₁
   have U₂ := k₂.unch
   -- `E = D`.
-  have eO : ∀ y ∈ [K.E.x, K.E.y, K.E.z, K.D.x, K.D.y, K.D.z], y ∈ winOther K := by
+  obtain eO : ∀ y ∈ [K.E.x, K.E.y, K.E.z, K.D.x, K.D.y, K.D.z], y ∈ winOther K := by
     intro y hy; simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
     rcases hy with rfl | rfl | rfl | rfl | rfl | rfl <;> win_mem
   obtain ⟨-, -, -, -, exy, exz, eyz, hED, -, -⟩ := hL.other_ne
-  have hEd : ∀ x ∈ [K.E.x, K.E.y, K.E.z], x ∉ [K.D.x, K.D.y, K.D.z] := by
+  obtain hEd : ∀ x ∈ [K.E.x, K.E.y, K.E.z], x ∉ [K.D.x, K.D.y, K.D.z] := by
     intro x hx hd
     refine hED x hx (List.mem_cons_of_mem _ ?_)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
@@ -376,34 +376,34 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
     (fun x hx => hL.lay.le x (winOther_mem (eO x hx)))
     (fun x hx y hy hxy => hL.apart₂ (winOther_ws K x (eO x (List.mem_append_left [K.D.x, K.D.y, K.D.z] hx)))
       (winOther_ws K y (eO y hy)) hxy) hEd ⟨exy, exz, eyz⟩) fun s₃ ⟨e1, e2, e3, k₃, U₃⟩ => ?_)
-  have hs₃ := hs₂.of_keepRegs k₃ (by decide)
-  have x₃ : s₃.gpr .rbx = BitVec.ofNat 64 (7 - m) := by
+  obtain hs₃ := hs₂.of_keepRegs k₃ (by decide)
+  obtain x₃ : s₃.gpr .rbx = BitVec.ofNat 64 (7 - m) := by
     rw [k₃.gpr _ (by decide), k₂.gpr _ (rbx_not_clob _), x₁]; congr 1; omega_using [h1, h7]
   -- `D` into entry `m + 1`.
   refine WP.seq (WP.mono (storeEntry_ok hL (i := 7 - m) 6 (by omega_using [h1, h7]) (Nat.le_refl _) hs₃ x₃)
     fun s₄ ⟨f1, f2, f3, k₄, U₄⟩ => ?_)
   rw [show 8 - (7 - m) = m + 1 by omega_using [h1, h7]] at f1 f2 f3 U₄
-  have hs₄ := hs₃.of_keepRegs k₄ (by decide)
-  have x₄ : s₄.gpr .rbx = BitVec.ofNat 64 (7 - m) := by rw [k₄.gpr _ (by decide), x₃]
+  obtain hs₄ := hs₃.of_keepRegs k₄ (by decide)
+  obtain x₄ : s₄.gpr .rbx = BitVec.ofNat 64 (7 - m) := by rw [k₄.gpr _ (by decide), x₃]
   refine WP.mono (testRbx_ok s₄ (j := 7 - m) (by omega_using [h1, h7]) x₄) fun s₅ ⟨z₅, k₅⟩ => ?_
   have m₅ : s₅.mem = s₄.mem := k₅.2.1
-  have b64 : ∀ x ∈ winSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by
+  obtain b64 : ∀ x ∈ winSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by
     have := hL.lay.le x hx; omega_using [this, hn]
-  have sT := tblPt_slots K (m := m + 1) (by omega_using [h1, h7]) (by omega_using [h1, h7])
+  obtain sT := tblPt_slots K (m := m + 1) (by omega_using [h1, h7]) (by omega_using [h1, h7])
   -- `D` is kept by the copy into `E`, and `E` by the store.
-  have dE : ∀ x ∈ [K.D.x, K.D.y, K.D.z], wordsVal s₃.mem base x K.M.n = wordsVal s₂.mem base x K.M.n := by
+  obtain dE : ∀ x ∈ [K.D.x, K.D.y, K.D.z], wordsVal s₃.mem base x K.M.n = wordsVal s₂.mem base x K.M.n := by
     intro x hx
     refine U₃.wordsVal (fun w hw => ?_) (b64 x (winOther_mem (eO x (List.mem_append_right [K.E.x, K.E.y, K.E.z] hx))))
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-    have hxE : ∀ y ∈ [K.E.x, K.E.y, K.E.z], x ≠ y := fun y hy hxy => hEd y hy (hxy ▸ hx)
+    obtain hxE : ∀ y ∈ [K.E.x, K.E.y, K.E.z], x ≠ y := fun y hy hxy => hEd y hy (hxy ▸ hx)
     rcases hw with rfl | rfl | rfl <;> dsimp only <;>
       exact hL.apart₂ (winOther_ws K x (eO x (List.mem_append_right [K.E.x, K.E.y, K.E.z] hx)))
         (winOther_ws K _ (eO _ (by simp))) (hxE _ (by simp))
-  have tE : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal s₄.mem base x K.M.n = wordsVal s₃.mem base x K.M.n := by
+  obtain tE : ∀ x ∈ [K.E.x, K.E.y, K.E.z], wordsVal s₄.mem base x K.M.n = wordsVal s₃.mem base x K.M.n := by
     intro x hx
     refine U₄.wordsVal (fun w hw => ?_) (b64 x (winOther_mem (eO x (List.mem_append_left [K.D.x, K.D.y, K.D.z] hx))))
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-    have hxo : x ∈ winRo K ++ winOther K := List.mem_append_right _ (eO x (List.mem_append_left [K.D.x, K.D.y, K.D.z] hx))
+    obtain hxo : x ∈ winRo K ++ winOther K := List.mem_append_right _ (eO x (List.mem_append_left [K.D.x, K.D.y, K.D.z] hx))
     rcases hw with rfl | rfl | rfl <;> dsimp only
     · obtain ⟨i, hi, e, -, -⟩ := tblPt_mem K (m := m + 1) (by omega_using [h1, h7]) (by omega_using [h1, h7]) _ (by simp : (K.tblPt (m + 1)).x ∈ _)
       rw [e]; exact hL.tbl_apart hxo hi
@@ -411,28 +411,28 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
       rw [e]; exact hL.tbl_apart hxo hi
     · obtain ⟨i, hi, e, -, -⟩ := tblPt_mem K (m := m + 1) (by omega_using [h1, h7]) (by omega_using [h1, h7]) _ (by simp : (K.tblPt (m + 1)).z ∈ _)
       rw [e]; exact hL.tbl_apart hxo hi
-  have vEx : wordsVal s₅.mem base K.E.x K.M.n = wordsVal s₂.mem base K.D.x K.M.n := by
+  obtain vEx : wordsVal s₅.mem base K.E.x K.M.n = wordsVal s₂.mem base K.D.x K.M.n := by
     rw [m₅, tE _ (by simp), e1]
-  have vEy : wordsVal s₅.mem base K.E.y K.M.n = wordsVal s₂.mem base K.D.y K.M.n := by
+  obtain vEy : wordsVal s₅.mem base K.E.y K.M.n = wordsVal s₂.mem base K.D.y K.M.n := by
     rw [m₅, tE _ (by simp), e2]
-  have vEz : wordsVal s₅.mem base K.E.z K.M.n = wordsVal s₂.mem base K.D.z K.M.n := by
+  obtain vEz : wordsVal s₅.mem base K.E.z K.M.n = wordsVal s₂.mem base K.D.z K.M.n := by
     rw [m₅, tE _ (by simp), e3]
-  have vTx : wordsVal s₅.mem base (K.tblPt (m + 1)).x K.M.n = wordsVal s₂.mem base K.D.x K.M.n := by
+  obtain vTx : wordsVal s₅.mem base (K.tblPt (m + 1)).x K.M.n = wordsVal s₂.mem base K.D.x K.M.n := by
     rw [m₅, f1, dE _ (by simp)]
-  have vTy : wordsVal s₅.mem base (K.tblPt (m + 1)).y K.M.n = wordsVal s₂.mem base K.D.y K.M.n := by
+  obtain vTy : wordsVal s₅.mem base (K.tblPt (m + 1)).y K.M.n = wordsVal s₂.mem base K.D.y K.M.n := by
     rw [m₅, f2, dE _ (by simp)]
-  have vTz : wordsVal s₅.mem base (K.tblPt (m + 1)).z K.M.n = wordsVal s₂.mem base K.D.z K.M.n := by
+  obtain vTz : wordsVal s₅.mem base (K.tblPt (m + 1)).z K.M.n = wordsVal s₂.mem base K.D.z K.M.n := by
     rw [m₅, f3, dE _ (by simp)]
   -- What the step writes: the addition's slots and temporary area, `E` and the entry.
-  have UU := U₂.trans (U₃.trans U₄)
-  have L2 : ∀ w ∈ (rcbW K.S K.D).map (·, 8 * K.M.n) ++ [(K.M.tmp, 8 * K.M.n)],
+  obtain UU := U₂.trans (U₃.trans U₄)
+  obtain L2 : ∀ w ∈ (rcbW K.S K.D).map (·, 8 * K.M.n) ++ [(K.M.tmp, 8 * K.M.n)],
       w = (K.M.tmp, 8 * K.M.n) ∨ ∃ y ∈ winOther K, w = (y, 8 * K.M.n) := by
     intro w hw
     rcases List.mem_append.mp hw with h | h
     · obtain ⟨y, hy, rfl⟩ := List.mem_map.mp h
       exact Or.inr ⟨y, List.mem_append_right _ hy, rfl⟩
     · exact Or.inl (List.mem_singleton.mp h)
-  have L3 : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n)],
+  obtain L3 : ∀ w ∈ [(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n)],
       ∃ y ∈ winOther K, w = (y, 8 * K.M.n) := by
     intro w hw
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -440,7 +440,7 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
     · exact ⟨_, by win_mem, rfl⟩
     · exact ⟨_, by win_mem, rfl⟩
     · exact ⟨_, by win_mem, rfl⟩
-  have L4 : ∀ w ∈ [((K.tblPt (m + 1)).x, 8 * K.M.n), ((K.tblPt (m + 1)).y, 8 * K.M.n),
+  obtain L4 : ∀ w ∈ [((K.tblPt (m + 1)).x, 8 * K.M.n), ((K.tblPt (m + 1)).y, 8 * K.M.n),
       ((K.tblPt (m + 1)).z, 8 * K.M.n)], ∃ y ∈ [(K.tblPt (m + 1)).x, (K.tblPt (m + 1)).y,
         (K.tblPt (m + 1)).z], w = (y, 8 * K.M.n) := by
     intro w hw
@@ -449,7 +449,7 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
     · exact ⟨_, by simp, rfl⟩
     · exact ⟨_, by simp, rfl⟩
     · exact ⟨_, by simp, rfl⟩
-  have split : ∀ {Q : Nat × Nat → Prop}, (w : Nat × Nat) →
+  obtain split : ∀ {Q : Nat × Nat → Prop}, (w : Nat × Nat) →
       w ∈ (rcbW K.S K.D).map (·, 8 * K.M.n) ++ [(K.M.tmp, 8 * K.M.n)] ++
         ([(K.E.x, 8 * K.M.n), (K.E.y, 8 * K.M.n), (K.E.z, 8 * K.M.n)] ++
           [((K.tblPt (m + 1)).x, 8 * K.M.n), ((K.tblPt (m + 1)).y, 8 * K.M.n),
@@ -464,13 +464,13 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
     · rcases List.mem_append.mp h with h | h
       · obtain ⟨y, hy, rfl⟩ := L3 w h; exact qo y hy
       · obtain ⟨y, hy, rfl⟩ := L4 w h; exact qT y hy
-  have U : Unch base (winW K) s.mem s₅.mem := by
+  obtain U : Unch base (winW K) s.mem s₅.mem := by
     rw [← m₁, m₅]
     refine UU.mono fun w hw => split w hw (by simp [winW])
       (fun y hy => by simp only [winW, List.mem_append, List.mem_map]; exact Or.inl ⟨y, winOther_ws K y hy, rfl⟩)
       (fun y hy => by simp only [winW, List.mem_append, List.mem_map]; exact Or.inl ⟨y, (sT y hy).2, rfl⟩)
-  have keep : KeepRegs (powClob K.M.n) s s₅ := by
-    have c1 : ∀ r ∈ [Reg.rax], r ∈ powClob K.M.n := by intro r hr; simp at hr; subst hr; simp [powClob, clob]
+  obtain keep : KeepRegs (powClob K.M.n) s s₅ := by
+    obtain c1 : ∀ r ∈ [Reg.rax], r ∈ powClob K.M.n := by intro r hr; simp at hr; subst hr; simp [powClob, clob]
     exact (((Keeps.regs k₁).mono fun r hr => by simp at hr; simp [hr, powClob]).trans
       ((⟨fun r hr => k₂.gpr r fun h => hr (List.mem_cons_of_mem _ h), k₂.rd, k₂.wr⟩ :
         KeepRegs (powClob K.M.n) s₁ s₂).trans ((k₃.mono c1).trans ((k₄.mono c1).trans
@@ -480,9 +480,9 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
     hI.inv.mod.unch U (winW_mo hL hI.inv.mod) hn, fun j hj1 hjm => ?_⟩, ?_, ?_, ?_⟩, ?_⟩
   · rcases Nat.lt_or_ge j (m + 1) with hj | hj
     · -- An entry built before keeps its numbers.
-      have Tj := hI.inv.tbl j hj1 (by omega_using [h1, h7, hj1, hjm, hj])
-      have sj := tblPt_slots K (m := j) hj1 (by omega_using [h1, h7, hj1, hjm, hj])
-      have e : ∀ x ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z],
+      obtain Tj := hI.inv.tbl j hj1 (by omega_using [h1, h7, hj1, hjm, hj])
+      obtain sj := tblPt_slots K (m := j) hj1 (by omega_using [h1, h7, hj1, hjm, hj])
+      obtain e : ∀ x ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z],
           wordsVal s₅.mem base x K.M.n = wordsVal s.mem base x K.M.n := by
         intro x hx
         rw [← m₁, m₅]
@@ -495,7 +495,7 @@ theorem buildStep_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL :
           (fun y hy => tbl_apart_entry (K := K) hj1 (by omega_using [h1, h7, hj1, hjm, hj]) (by omega_using [h1, h7, hj1, hjm, hj]) (by omega_using [h1, h7, hj1, hjm, hj]) (by omega_using [h1, h7, hj1, hjm, hj]) x hx
             y hy)) (b64 _ (sj _ hx).1)
       refine ⟨fun x hx => by rw [e x hx]; exact Tj.1 x hx, ?_⟩
-      have ex : ∀ x ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z],
+      obtain ex : ∀ x ∈ [(K.tblPt j).x, (K.tblPt j).y, (K.tblPt j).z],
           tmv C K.M.n base s₅ x = tmv C K.M.n base s x := fun x hx => by
         show toM _ _ _ = toM _ _ _; rw [e x hx]
       rw [ex _ (by simp), ex _ (by simp), ex _ (by simp)]
@@ -527,26 +527,26 @@ theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
     (hF : WinFixed K C base s P k) :
     WP isa (WinCfg.build K).inline s (BuildInv K C base size P s 8) := by
   have hn := hs.nowrap
-  have s1 := tblPt_slots K (m := 1) (Nat.le_refl _) (by omega_arith)
-  have pRo : ∀ x ∈ [K.P.x, K.P.y, K.P.z], x ∈ winRo K := by
+  obtain s1 := tblPt_slots K (m := 1) (Nat.le_refl _) (by omega_arith)
+  obtain pRo : ∀ x ∈ [K.P.x, K.P.y, K.P.z], x ∈ winRo K := by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> simp [winRo]
-  have eO : ∀ x ∈ [K.E.x, K.E.y, K.E.z], x ∈ winOther K := by
+  obtain eO : ∀ x ∈ [K.E.x, K.E.y, K.E.z], x ∈ winOther K := by
     intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> win_mem
-  have b64 : ∀ x ∈ winSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by
+  obtain b64 : ∀ x ∈ winSlots K, x + 8 * K.M.n ≤ 2 ^ 64 := fun x hx => by
     have := hL.lay.le x hx; omega_arith
   -- `[1]P = P`.
-  have tP : ∀ x ∈ [(K.tblPt 1).x, (K.tblPt 1).y, (K.tblPt 1).z], ∀ y ∈ [K.P.x, K.P.y, K.P.z],
+  obtain tP : ∀ x ∈ [(K.tblPt 1).x, (K.tblPt 1).y, (K.tblPt 1).z], ∀ y ∈ [K.P.x, K.P.y, K.P.z],
       x + 8 * K.M.n ≤ y ∨ y + 8 * K.M.n ≤ x := by
     intro x hx y hy
     obtain ⟨i, hi, rfl, -, -⟩ := tblPt_mem K (m := 1) (Nat.le_refl _) (by omega_arith) x hx
     exact (hL.tbl_apart (List.mem_append_left _ (pRo y hy)) hi).symm
-  have ne1 : (K.tblPt 1).x ≠ (K.tblPt 1).y ∧ (K.tblPt 1).x ≠ (K.tblPt 1).z ∧
+  obtain ne1 : (K.tblPt 1).x ≠ (K.tblPt 1).y ∧ (K.tblPt 1).x ≠ (K.tblPt 1).z ∧
       (K.tblPt 1).y ≠ (K.tblPt 1).z := by
     rw [tblPt_x, tblPt_y, tblPt_z]
     exact ⟨hL.tbl_ne₂ (by omega_arith), hL.tbl_ne₂ (by omega_arith), hL.tbl_ne₂ (by omega_arith)⟩
-  have slP : ∀ x ∈ [(K.tblPt 1).x, (K.tblPt 1).y, (K.tblPt 1).z, K.P.x, K.P.y, K.P.z], x ∈ winSlots K := by
+  obtain slP : ∀ x ∈ [(K.tblPt 1).x, (K.tblPt 1).y, (K.tblPt 1).z, K.P.x, K.P.y, K.P.z], x ∈ winSlots K := by
     intro x hx
     rcases List.mem_append.mp (show x ∈ [(K.tblPt 1).x, (K.tblPt 1).y, (K.tblPt 1).z] ++
       [K.P.x, K.P.y, K.P.z] by simpa using hx) with h | h
@@ -564,12 +564,12 @@ theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
       · exact hL.apart₂ (s1 x hx).2 (s1 y h).2 hxy
       · exact tP x hx y h)
     (fun x hx h => by have := tP x hx x h; have := hL.n0; omega_arith) ne1) fun s₁ ⟨a1, a2, a3, k₁, U₁⟩ => ?_
-  have hs₁ := hs.of_keepRegs k₁ (by decide)
+  obtain hs₁ := hs.of_keepRegs k₁ (by decide)
   -- `E = P`.
   obtain ⟨-, -, -, -, exy, exz, eyz, -⟩ := hL.other_ne
-  have eP : ∀ x ∈ [K.E.x, K.E.y, K.E.z], ∀ y ∈ [K.P.x, K.P.y, K.P.z], x ≠ y := fun x hx y hy h =>
+  obtain eP : ∀ x ∈ [K.E.x, K.E.y, K.E.z], ∀ y ∈ [K.P.x, K.P.y, K.P.z], x ≠ y := fun x hx y hy h =>
     hL.ro y (pRo y hy) (h ▸ eO x hx)
-  have slE : ∀ x ∈ [K.E.x, K.E.y, K.E.z, K.P.x, K.P.y, K.P.z], x ∈ winSlots K := by
+  obtain slE : ∀ x ∈ [K.E.x, K.E.y, K.E.z, K.P.x, K.P.y, K.P.z], x ∈ winSlots K := by
     intro x hx
     rcases List.mem_append.mp (show x ∈ [K.E.x, K.E.y, K.E.z] ++ [K.P.x, K.P.y, K.P.z] from hx) with h | h
     · exact winOther_mem (eO x h)
@@ -579,10 +579,10 @@ theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
     (fun x hx => hL.lay.le x (slE x hx))
     (fun x hx y hy hxy => hL.lay.apart x y (slE x (List.mem_append_left [K.P.x, K.P.y, K.P.z] hx)) (slE y hy) hxy)
     (fun x hx h => eP x hx x h rfl) ⟨exy, exz, eyz⟩) fun s₂ ⟨c1, c2, c3, k₂, U₂⟩ => ?_
-  have hs₂ := hs₁.of_keepRegs k₂ (by decide)
+  obtain hs₂ := hs₁.of_keepRegs k₂ (by decide)
   refine WP.mono (mov32Rbx_ok s₂ (j := 7) (by decide)) fun s₃ ⟨x₃, k₃⟩ => ?_
   -- The invariant for `[1]P`.
-  have U : Unch base (winW K) s.mem s₃.mem := by
+  obtain U : Unch base (winW K) s.mem s₃.mem := by
     rw [k₃.2.1]
     refine (U₁.trans U₂).mono fun w hw => ?_
     rcases List.mem_append.mp hw with h | h
@@ -600,7 +600,7 @@ theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
       · exact Or.inl ⟨_, winOther_ws K _ (eO _ (by simp)), rfl⟩
   have m₃ : s₃.mem = s₂.mem := k₃.2.1
   -- `[1]P` is kept by the copy into `E`.
-  have kT : ∀ x ∈ [(K.tblPt 1).x, (K.tblPt 1).y, (K.tblPt 1).z],
+  obtain kT : ∀ x ∈ [(K.tblPt 1).x, (K.tblPt 1).y, (K.tblPt 1).z],
       wordsVal s₃.mem base x K.M.n = wordsVal s₁.mem base x K.M.n := by
     intro x hx
     rw [m₃]
@@ -611,14 +611,14 @@ theorem build_ok {K : WinCfg} {C : Curve} {base : Addr} {size k : Nat} (hL : Win
     · exact (hL.tbl_apart (x := K.E.x) (List.mem_append_right _ (by win_mem)) hi).symm
     · exact (hL.tbl_apart (x := K.E.y) (List.mem_append_right _ (by win_mem)) hi).symm
     · exact (hL.tbl_apart (x := K.E.z) (List.mem_append_right _ (by win_mem)) hi).symm
-  have kP : ∀ x ∈ [K.P.x, K.P.y, K.P.z], wordsVal s₁.mem base x K.M.n = wordsVal s.mem base x K.M.n := by
+  obtain kP : ∀ x ∈ [K.P.x, K.P.y, K.P.z], wordsVal s₁.mem base x K.M.n = wordsVal s.mem base x K.M.n := by
     intro x hx
     refine U₁.wordsVal (fun w hw => ?_) (b64 x (winRo_slots K x (pRo x hx)))
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl <;>
       exact (tP _ (by simp) x hx).symm
-  have c1' : ∀ r ∈ [Reg.rax], r ∈ powClob K.M.n := by intro r hr; simp at hr; subst hr; simp [powClob, clob]
-  have I₁ : BuildInvE K C base size P s 1 s₃ := by
+  obtain c1' : ∀ r ∈ [Reg.rax], r ∈ powClob K.M.n := by intro r hr; simp at hr; subst hr; simp [powClob, clob]
+  obtain I₁ : BuildInvE K C base size P s 1 s₃ := by
     refine ⟨⟨hs₂.of_keeps k₃ (by decide), ((k₁.mono c1').trans (k₂.mono c1')).trans
       ((Keeps.regs k₃).mono fun r hr => by simp at hr; simp [hr, powClob]), U, hM.unch U (winW_mo hL hM) hn,
       fun j hj1 hj => ?_⟩, fun x hx => ?_, ?_, by rw [x₃]⟩

@@ -111,57 +111,57 @@ theorem cmsFold_ok (s : State) :
   refine WP.mono (adoxR_ok s₅ of₅) fun s₆ ⟨o₆, of₆, cf₆, e₆, k₆⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (mov32Imm_ok s₆ .r14 0) fun s₇ ⟨z₇, cf₇, of₇, k₇⟩ => ?_
-  have zb : ∀ {t : State}, Keeps [.rax, .rcx, .r8, .r9, .r10, .r11, .r12, .r13, .r14] s₁ t → t.gpr .rbp = 0 :=
+  obtain zb : ∀ {t : State}, Keeps [.rax, .rcx, .r8, .r9, .r10, .r11, .r12, .r13, .r14] s₁ t → t.gpr .rbp = 0 :=
     fun h => (h.1 .rbp (by decide)).trans z₁
-  have K₇ : Keeps [.rax, .rcx, .r8, .r9, .r10, .r11, .r12, .r13, .r14] s₁ s₇ :=
+  obtain K₇ : Keeps [.rax, .rcx, .r8, .r9, .r10, .r11, .r12, .r13, .r14] s₁ s₇ :=
     (((((k₂.mono (by sub_regs)).trans (k₃.mono (by sub_regs))).trans (k₄.mono (by sub_regs))).trans
       (k₅.mono (by sub_regs))).trans (k₆.mono (by sub_regs))).trans (k₇.mono (by sub_regs))
   rw [WP.block_append_iff]
   refine WP.mono (carries_ok s₇ (cf₇.trans (cf₆.trans cf₅)) (of₇.trans of₆) (zb K₇) (by decide))
     fun s₈ ⟨c₈, o₈, cf₈, of₈, e₈, k₈⟩ => ?_
-  have K₈ := K₇.trans (k₈.mono (by sub_regs))
+  obtain K₈ := K₇.trans (k₈.mono (by sub_regs))
   rw [WP.block_append_iff]
   refine WP.mono (carries_ok s₈ cf₈ of₈ (zb (K₈.mono (by sub_regs))) (by decide))
     fun s₉ ⟨c₉, o₉, cf₉, of₉, e₉, k₉⟩ => ?_
-  have K₉ := K₈.trans (k₉.mono (by sub_regs))
+  obtain K₉ := K₈.trans (k₉.mono (by sub_regs))
   rw [WP.block_append_iff]
   refine WP.mono (carries_ok s₉ cf₉ of₉ (zb (K₉.mono (by sub_regs))) (by decide))
     fun s₁₀ ⟨c₁₀, o₁₀, cf₁₀, of₁₀, e₁₀, k₁₀⟩ => ?_
-  have K₁₀ := K₉.trans (k₁₀.mono (by sub_regs))
+  obtain K₁₀ := K₉.trans (k₁₀.mono (by sub_regs))
   refine WP.mono (carries_ok s₁₀ cf₁₀ of₁₀ (zb (K₁₀.mono (by sub_regs))) (by decide))
     fun s₁₁ ⟨c₁₁, o₁₁, cf₁₁, of₁₁, e₁₁, k₁₁⟩ => ⟨?_, ?_⟩
   · have g : ∀ {r : Reg} {t t' : State} {rs : List Reg}, Keeps rs t t' → r ∉ rs → t'.gpr r = t.gpr r :=
       fun h hr => h.1 _ hr
-    have f8 : s₁₁.gpr .r8 = s₃.gpr .r8 := by
+    obtain f8 : s₁₁.gpr .r8 = s₃.gpr .r8 := by
       rw [g k₁₁ (by decide), g k₁₀ (by decide), g k₉ (by decide), g k₈ (by decide), g k₇ (by decide),
         g k₆ (by decide), g k₅ (by decide), g k₄ (by decide)]
-    have f9 : s₁₁.gpr .r9 = s₅.gpr .r9 := by
+    obtain f9 : s₁₁.gpr .r9 = s₅.gpr .r9 := by
       rw [g k₁₁ (by decide), g k₁₀ (by decide), g k₉ (by decide), g k₈ (by decide), g k₇ (by decide),
         g k₆ (by decide)]
-    have f10 : s₁₁.gpr .r10 = s₆.gpr .r10 := by
+    obtain f10 : s₁₁.gpr .r10 = s₆.gpr .r10 := by
       rw [g k₁₁ (by decide), g k₁₀ (by decide), g k₉ (by decide), g k₈ (by decide), g k₇ (by decide)]
-    have f11 : s₁₁.gpr .r11 = s₈.gpr .r11 := by
+    obtain f11 : s₁₁.gpr .r11 = s₈.gpr .r11 := by
       rw [g k₁₁ (by decide), g k₁₀ (by decide), g k₉ (by decide)]
-    have f12 : s₁₁.gpr .r12 = s₉.gpr .r12 := by rw [g k₁₁ (by decide), g k₁₀ (by decide)]
-    have f13 : s₁₁.gpr .r13 = s₁₀.gpr .r13 := by rw [g k₁₁ (by decide)]
-    have i8 : s₂.gpr .r8 = s.gpr .r8 := by rw [g k₂ (by decide), g k₁ (by decide)]
-    have i9 : s₂.gpr .r9 = s.gpr .r9 := by rw [g k₂ (by decide), g k₁ (by decide)]
-    have j9 : s₄.gpr .r9 = s₃.gpr .r9 := by rw [g k₄ (by decide)]
-    have i10 : s₄.gpr .r10 = s.gpr .r10 := by
+    obtain f12 : s₁₁.gpr .r12 = s₉.gpr .r12 := by rw [g k₁₁ (by decide), g k₁₀ (by decide)]
+    obtain f13 : s₁₁.gpr .r13 = s₁₀.gpr .r13 := by rw [g k₁₁ (by decide)]
+    obtain i8 : s₂.gpr .r8 = s.gpr .r8 := by rw [g k₂ (by decide), g k₁ (by decide)]
+    obtain i9 : s₂.gpr .r9 = s.gpr .r9 := by rw [g k₂ (by decide), g k₁ (by decide)]
+    obtain j9 : s₄.gpr .r9 = s₃.gpr .r9 := by rw [g k₄ (by decide)]
+    obtain i10 : s₄.gpr .r10 = s.gpr .r10 := by
       rw [g k₄ (by decide), g k₃ (by decide), g k₂ (by decide), g k₁ (by decide)]
-    have d2 : s₂.gpr .rdx = s.gpr .rdx := by rw [g k₂ (by decide), g k₁ (by decide)]
-    have d4 : s₄.gpr .rdx = s.gpr .rdx := by rw [g k₄ (by decide), g k₃ (by decide), d2]
-    have d5 : s₅.gpr .rdx = s.gpr .rdx := by rw [g k₅ (by decide), d4]
-    have i11 : s₇.gpr .r11 = s.gpr .r11 := by
+    obtain d2 : s₂.gpr .rdx = s.gpr .rdx := by rw [g k₂ (by decide), g k₁ (by decide)]
+    obtain d4 : s₄.gpr .rdx = s.gpr .rdx := by rw [g k₄ (by decide), g k₃ (by decide), d2]
+    obtain d5 : s₅.gpr .rdx = s.gpr .rdx := by rw [g k₅ (by decide), d4]
+    obtain i11 : s₇.gpr .r11 = s.gpr .r11 := by
       rw [g k₇ (by decide), g k₆ (by decide), g k₅ (by decide), g k₄ (by decide), g k₃ (by decide),
         g k₂ (by decide), g k₁ (by decide)]
-    have i12 : s₈.gpr .r12 = s.gpr .r12 := by
+    obtain i12 : s₈.gpr .r12 = s.gpr .r12 := by
       rw [g k₈ (by decide), g k₇ (by decide), g k₆ (by decide), g k₅ (by decide), g k₄ (by decide),
         g k₃ (by decide), g k₂ (by decide), g k₁ (by decide)]
-    have i13 : s₉.gpr .r13 = s.gpr .r13 := by
+    obtain i13 : s₉.gpr .r13 = s.gpr .r13 := by
       rw [g k₉ (by decide), g k₈ (by decide), g k₇ (by decide), g k₆ (by decide), g k₅ (by decide),
         g k₄ (by decide), g k₃ (by decide), g k₂ (by decide), g k₁ (by decide)]
-    have i14 : (s₁₀.gpr .r14).toNat = 0 := by
+    obtain i14 : (s₁₀.gpr .r14).toNat = 0 := by
       rw [g k₁₀ (by decide), g k₉ (by decide), g k₈ (by decide)]; exact z₇.trans rfl
     rw [a₂, i8, i9, d2] at e₃
     rw [j9, i10, d4, a₄] at e₅
@@ -470,42 +470,42 @@ theorem dblCms_run {F : Type _} [Lean.Grind.CommRing F] (S : RcbSlots) (p : Pt) 
   rcases hd with ⟨⟨h01, h02, h03, h04, h05, h06, h07, h08⟩, ⟨h12, h13, h14, h15, h16, h17, h18⟩,
     ⟨h23, h24, h25, h26, h27, h28⟩, ⟨h34, h35, h36, h37, h38⟩, ⟨h45, h46, h47, h48⟩, ⟨h56, h57, h58⟩,
     ⟨h67, h68⟩, h78, _⟩
-  have h10 := Ne.symm h01
-  have h20 := Ne.symm h02
-  have h30 := Ne.symm h03
-  have h40 := Ne.symm h04
-  have h50 := Ne.symm h05
-  have h60 := Ne.symm h06
-  have h70 := Ne.symm h07
-  have h80 := Ne.symm h08
-  have h21 := Ne.symm h12
-  have h31 := Ne.symm h13
-  have h41 := Ne.symm h14
-  have h51 := Ne.symm h15
-  have h61 := Ne.symm h16
-  have h71 := Ne.symm h17
-  have h81 := Ne.symm h18
-  have h32 := Ne.symm h23
-  have h42 := Ne.symm h24
-  have h52 := Ne.symm h25
-  have h62 := Ne.symm h26
-  have h72 := Ne.symm h27
-  have h82 := Ne.symm h28
-  have h43 := Ne.symm h34
-  have h53 := Ne.symm h35
-  have h63 := Ne.symm h36
-  have h73 := Ne.symm h37
-  have h83 := Ne.symm h38
-  have h54 := Ne.symm h45
-  have h64 := Ne.symm h46
-  have h74 := Ne.symm h47
-  have h84 := Ne.symm h48
-  have h65 := Ne.symm h56
-  have h75 := Ne.symm h57
-  have h85 := Ne.symm h58
-  have h76 := Ne.symm h67
-  have h86 := Ne.symm h68
-  have h87 := Ne.symm h78
+  obtain h10 := Ne.symm h01
+  obtain h20 := Ne.symm h02
+  obtain h30 := Ne.symm h03
+  obtain h40 := Ne.symm h04
+  obtain h50 := Ne.symm h05
+  obtain h60 := Ne.symm h06
+  obtain h70 := Ne.symm h07
+  obtain h80 := Ne.symm h08
+  obtain h21 := Ne.symm h12
+  obtain h31 := Ne.symm h13
+  obtain h41 := Ne.symm h14
+  obtain h51 := Ne.symm h15
+  obtain h61 := Ne.symm h16
+  obtain h71 := Ne.symm h17
+  obtain h81 := Ne.symm h18
+  obtain h32 := Ne.symm h23
+  obtain h42 := Ne.symm h24
+  obtain h52 := Ne.symm h25
+  obtain h62 := Ne.symm h26
+  obtain h72 := Ne.symm h27
+  obtain h82 := Ne.symm h28
+  obtain h43 := Ne.symm h34
+  obtain h53 := Ne.symm h35
+  obtain h63 := Ne.symm h36
+  obtain h73 := Ne.symm h37
+  obtain h83 := Ne.symm h38
+  obtain h54 := Ne.symm h45
+  obtain h64 := Ne.symm h46
+  obtain h74 := Ne.symm h47
+  obtain h84 := Ne.symm h48
+  obtain h65 := Ne.symm h56
+  obtain h75 := Ne.symm h57
+  obtain h85 := Ne.symm h58
+  obtain h76 := Ne.symm h67
+  obtain h86 := Ne.symm h68
+  obtain h87 := Ne.symm h78
   simp only [dblCmsSteps, runSteps, List.foldl, DStep.run, FOp.run, Function.update_apply, dblJF, smulN,
     Prod.mk.injEq, *, ite_true, ite_false]
   refine ⟨?_, ?_, ?_⟩ <;> grind

@@ -48,7 +48,7 @@ theorem WP.seqs_append : ∀ {l₁ l₂ : List (Prog isa)}, l₁ ≠ [] → l₂
     obtain ⟨d, ds, rfl⟩ := List.exists_cons_of_ne_nil h₂
     exact WP.seq h
   | c :: c' :: cs, l₂, _, h₂, s, Q, h => by
-    have ih := @WP.seqs_append (c' :: cs) l₂ (List.cons_ne_nil _ _) h₂
+    obtain ih := @WP.seqs_append (c' :: cs) l₂ (List.cons_ne_nil _ _) h₂
     exact WP.seq (WP.mono (WP.seq_inv h) fun t ht => ih ht)
 
 theorem vframe_keep {s u v : State} (hp : VPre tsH tsG s) (hw : u.wr = frR s :: s.wr) (hsp : u.gpr .rsp = fb s)
@@ -77,7 +77,7 @@ theorem db_bytes (V : Nat → Byte) (mk : List Byte) {e db z : Nat} (hmk : mk.le
       (Spec.RsaPss.clearTop z (Spec.Mgf1.xorBytes ((List.range db).map fun i => V (e + i)) mk)).getD i 0 := by
   intro i hi
   rw [clearTop_getD]
-  have hx : ∀ j < db, (Spec.Mgf1.xorBytes ((List.range db).map fun i => V (e + i)) mk).getD j 0 =
+  obtain hx : ∀ j < db, (Spec.Mgf1.xorBytes ((List.range db).map fun i => V (e + i)) mk).getD j 0 =
       V (e + j) ^^^ mk.getD j 0 := fun j hj => by
     rw [xorBytes_getD (by simp; omega_arith) (by omega_arith), getD_map_range, ifp hj]
   simp only [upd, mixV]
@@ -109,10 +109,10 @@ theorem vscan_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W 
         Rep u'.mem F S V (upd (upd (upd W 34 (BitVec.ofNat 64 pos)) 33 a) 27
           (BitVec.ofNat 64 (db - pos - 1 + (8 + H.D)))) := by
   intro ff fd pos val
-  have hfnz : fnz (fun i => V (e + i)) db = if lz dbL < db then some (lz dbL) else none := by
+  obtain hfnz : fnz (fun i => V (e + i)) db = if lz dbL < db then some (lz dbL) else none := by
     rw [fnz_congr (g := fun i => dbL.getD i 0) fun i hi => hV i hi]
     exact fnz_lz dbL db (by omega_arith)
-  have generic : ∀ v : State, Keep [.rax] u v → v.mem = u.mem → ff = false →
+  obtain generic : ∀ v : State, Keep [.rax] u v → v.mem = u.mem → ff = false →
       WP isa (.seq posScan (posCheck H)) v fun u' => Lay u' F S ∧
         Keep [.rdi, .r10, .r8, .rdx, .rsi, .r11, .rax, .r9, .rcx] u u' ∧
         ∃ a, (a = 0 ↔ W 33 = 0 ∧ (if ff then (∀ i < pos, dbL.getD i 0 = 0) ∧ dbL.getD pos 0 = 1
@@ -120,14 +120,14 @@ theorem vscan_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W 
           Rep u'.mem F S V (upd (upd (upd W 34 (BitVec.ofNat 64 pos)) 33 a) 27
             (BitVec.ofNat 64 (db - pos - 1 + (8 + H.D)))) := by
     intro v kv hm hff
-    have Lv := L.congr (kv.gpr (by decide)) kv.2.2 (by rw [hm])
-    have Rv : Rep v.mem F S V W := hm ▸ R
-    have hpos' : pos = if lz dbL < db then lz dbL else 0 := by simp only [pos, hff, Bool.false_eq_true, ite_false]
+    obtain Lv := L.congr (kv.gpr (by decide)) kv.2.2 (by rw [hm])
+    obtain Rv : Rep v.mem F S V W := hm ▸ R
+    obtain hpos' : pos = if lz dbL < db then lz dbL else 0 := by simp only [pos, hff, Bool.false_eq_true, ite_false]
     refine WP.seq (WP.mono (posScan_ok Lv Rv he hdb hdb1 hfit) fun v4 ⟨k4, hm4, hdx4, hsi4, h114⟩ => ?_)
     rw [hfnz] at hdx4 hsi4 h114
-    have L4 := Lv.congr (k4.gpr (by decide)) k4.2.2 (by rw [hm4])
-    have R4 : Rep v4.mem F S V W := hm4 ▸ Rv
-    have hp : pos < db := by rw [hpos']; split <;> omega_arith
+    obtain L4 := Lv.congr (k4.gpr (by decide)) k4.2.2 (by rw [hm4])
+    obtain R4 : Rep v4.mem F S V W := hm4 ▸ Rv
+    obtain hp : pos < db := by rw [hpos']; split <;> omega_arith
     refine WP.mono (posCheck_ok hH L4 R4 (db := db) (pos := pos) (fd := fd) (val := val) hdb hany hp
       (by rw [hdx4]; simp only [fd]; by_cases hc : lz dbL < db <;> simp [hc])
       (by rw [hsi4, hpos']; by_cases hc : lz dbL < db <;> simp [hc])
@@ -141,23 +141,23 @@ theorem vscan_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W 
   · xrun [ea_sp, L.rsp, L.ld (d := sAny) (by decide), R.rd (d := sAny) 35 rfl (by decide)]
     rw [BitVec.and_self]
     rfl
-  have Lv := L.congr (kv.gpr (by decide)) kv.2.2 (by rw [hm])
-  have Rv : Rep v.mem F S V W := hm ▸ R
+  obtain Lv := L.congr (kv.gpr (by decide)) kv.2.2 (by rw [hm])
+  obtain Rv : Rep v.mem F S V W := hm ▸ R
   refine WP.ite (M := isa) _ (show isa.eval .e v = _ from hz) (fun hb => ?_) (fun hb => ?_)
   · rw [decide_eq_true_eq, hany] at hb
-    have hfx : fixed = true := by cases fixed <;> simp_all
+    obtain hfx : fixed = true := by cases fixed <;> simp_all
     refine WP.seq (WP.mono (WP.keep [.rax] (Q := fun w =>
       w.mem = v.mem ∧ w.cf = some (decide ((W 36).toNat < db))) ?_ rfl) fun w ⟨⟨hmw, hc⟩, kw⟩ => ?_)
     · xrun [ea_sp, Lv.rsp, Lv.ld (d := sSlen) (by decide), Lv.ld (d := sDb) (by decide),
         Rv.rd (d := sSlen) 36 rfl (by decide), Rv.rd (d := sDb) 24 rfl (by decide), hdb]
       simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (show db < 2 ^ 64 by omega_arith)]
-    have kuw : Keep [.rax] u w := (kv.trans kw).mono (by decide)
-    have hmu : w.mem = u.mem := hmw.trans hm
+    obtain kuw : Keep [.rax] u w := (kv.trans kw).mono (by decide)
+    obtain hmu : w.mem = u.mem := hmw.trans hm
     refine WP.ite (M := isa) _ (show isa.eval .b w = _ from hc) (fun hf => ?_) (fun hf => ?_)
     · rw [decide_eq_true_eq] at hf
-      have hff : ff = true := by simp only [ff, hfx, hf, decide_true, Bool.and_self]
-      have hp : pos = db - (W 36).toNat - 1 := by simp only [pos, hff, ite_true]
-      have Lw := L.congr (kuw.gpr (by decide)) kuw.2.2 (by rw [hmu])
+      obtain hff : ff = true := by simp only [ff, hfx, hf, decide_true, Bool.and_self]
+      obtain hp : pos = db - (W 36).toNat - 1 := by simp only [pos, hff, ite_true]
+      obtain Lw := L.congr (kuw.gpr (by decide)) kuw.2.2 (by rw [hmu])
       refine WP.mono (prefixCheck_ok hH Lw (hmu ▸ R) he hdb (show W 36 = BitVec.ofNat 64 (W 36).toNat by simp)
         hf hfit hdb2) fun u' ⟨L', k', a, ha, R'⟩ => ⟨L', (kuw.trans k').mono (by decide), a, ?_, ?_⟩
       · rw [ha, hff, hp]
@@ -170,7 +170,7 @@ theorem vscan_ok {u : State} {F S : Addr} (L : Lay u F S) {V : Nat → Byte} {W 
     · rw [decide_eq_false_iff_not] at hf
       exact generic w kuw hmu (by simp only [ff, hfx, hf, decide_false, Bool.and_false])
   · rw [decide_eq_false_iff_not, hany] at hb
-    have hfx : fixed = false := by cases fixed <;> simp_all
+    obtain hfx : fixed = false := by cases fixed <;> simp_all
     exact generic v kv hm (by simp only [ff, hfx, Bool.false_and])
 
 include hH in
@@ -209,41 +209,41 @@ theorem vmid_ok {G : Impl.Pbkdf2.Md.X86_64.Stream} (hG : Pbkdf2.Md.X86_64.Calls.
   refine WP.seq (X86_64.WP.mono_syms (acc0_ok L R (c := (0xFF : Byte) >>> z) hk he hc hlo (by omega_arith) hk2
     (by omega_arith)) fun u1 ⟨L1, k1, R1⟩ sy1 => ?_)
   set a0 := acc0V (V (oEm + k - 1)) (V oEm) (V (oEm + lo)) ((0xFF : Byte) >>> z) lo
-  have g1 : ∀ j, j ≠ 33 → upd W 33 a0 j = W j := fun j h => by simp [upd, h]
+  obtain g1 : ∀ j, j ≠ 33 → upd W 33 a0 j = W j := fun j h => by simp [upd, h]
   -- The mask.
   refine WP.seq (WP.mono (mgfXor_ok hG hGh hGl hGv H L1 R1
     (hGT.congr sy1 fun j h1 h2 => g1 j (by omega_arith)) (e := oEm + lo) (db := db)
     ⟨by omega_arith, hdb1, by omega_arith⟩ (by rw [g1 23 (by decide), he]) (by rw [g1 24 (by decide), hdb]))
     fun u2 ⟨L2, rd2, wr2, cs2, V2, W2, R2, hW2, hV2⟩ => ?_)
   -- The top bits.
-  have h23 : W2 23 = off S (oEm + lo) := by rw [hW2 23 (by decide) (by omega_arith), g1 23 (by decide), he]
-  have h25 : W2 25 = BitVec.setWidth 64 ((0xFF : Byte) >>> z) := by
+  obtain h23 : W2 23 = off S (oEm + lo) := by rw [hW2 23 (by decide) (by omega_arith), g1 23 (by decide), he]
+  obtain h25 : W2 25 = BitVec.setWidth 64 ((0xFF : Byte) >>> z) := by
     rw [hW2 25 (by decide) (by omega_arith), g1 25 (by decide), hc]
   refine WP.seq (WP.mono (clearTop_ok L2 R2 (e := oEm + lo) h23 h25 (by omega_arith)) fun u3 ⟨L3, k3, R3⟩ => ?_)
   set V3 := upd V2 (oEm + lo) (V2 (oEm + lo) &&& ((0xFF : Byte) >>> z))
   -- `DB`'s bytes.
-  have hmk : (Spec.Mgf1.mgf1 Gs hB db).length = db := Proof.Mgf1.mgf1_length hGv _ _
-  have hV3 : ∀ i < db, V3 (oEm + lo + i) = dbL.getD i 0 := fun i hi => by
+  obtain hmk : (Spec.Mgf1.mgf1 Gs hB db).length = db := Proof.Mgf1.mgf1_length hGv _ _
+  obtain hV3 : ∀ i < db, V3 (oEm + lo + i) = dbL.getD i 0 := fun i hi => by
     have hm : ∀ o < oRsa, ctOut o → V2 o = mixV V (Spec.Mgf1.mgf1 Gs hB db) (oEm + lo) db o := hV2
-    have hco : ∀ j < db, ctOut (oEm + lo + j) := fun j hj => ⟨by unfold oLen; omega_arith, by unfold oY; omega_arith⟩
+    obtain hco : ∀ j < db, ctOut (oEm + lo + j) := fun j hj => ⟨by unfold oLen; omega_arith, by unfold oY; omega_arith⟩
     have := db_bytes V (Spec.Mgf1.mgf1 Gs hB db) (e := oEm + lo) (z := z) hmk i hi
     rw [← this]
     simp only [V3, upd]
     by_cases h0 : i = 0
     · subst h0
-      have hco0 : ctOut (oEm + lo) := ⟨by unfold oLen; omega_arith, by unfold oY; omega_arith⟩
+      obtain hco0 : ctOut (oEm + lo) := ⟨by unfold oLen; omega_arith, by unfold oY; omega_arith⟩
       rw [Nat.add_zero, ifp rfl, ifp rfl, hm _ (by omega_arith) hco0]
     · rw [ifn (by omega_arith), ifn (by omega_arith), hm _ (by omega_arith) (hco i hi)]
   have R3' : Rep u3.mem F S V3 W2 := R3
   have h23' : W2 23 = off S (oEm + lo) := h23
-  have h24 : W2 24 = BitVec.ofNat 64 db := by rw [hW2 24 (by decide) (by omega_arith), g1 24 (by decide), hdb]
-  have h35 : W2 35 = if fixed then 0 else 1 := by rw [hW2 35 (by decide) (by omega_arith), g1 35 (by decide), hany]
-  have h36 : W2 36 = W 36 := by rw [hW2 36 (by decide) (by omega_arith), g1 36 (by decide)]
-  have h33 : W2 33 = acc0V (V (oEm + k - 1)) (V oEm) (V (oEm + lo)) ((0xFF : Byte) >>> z) lo := by
+  obtain h24 : W2 24 = BitVec.ofNat 64 db := by rw [hW2 24 (by decide) (by omega_arith), g1 24 (by decide), hdb]
+  obtain h35 : W2 35 = if fixed then 0 else 1 := by rw [hW2 35 (by decide) (by omega_arith), g1 35 (by decide), hany]
+  obtain h36 : W2 36 = W 36 := by rw [hW2 36 (by decide) (by omega_arith), g1 36 (by decide)]
+  obtain h33 : W2 33 = acc0V (V (oEm + k - 1)) (V oEm) (V (oEm + lo)) ((0xFF : Byte) >>> z) lo := by
     rw [hW2 33 (by decide) (by omega_arith)]; simp [upd]; rfl
-  have hlen : dbL.length = db := by simp only [dbL]; rw [clearTop_length, Proof.Mgf1.xorBytes_length]; simp [hmk]
+  obtain hlen : dbL.length = db := by simp only [dbL]; rw [clearTop_length, Proof.Mgf1.xorBytes_length]; simp [hmk]
   -- The padding's checks.
-  have hscan := vscan_ok hH L3 R3' (e := oEm + lo) (db := db) (fixed := fixed) (dbL := dbL) h23' h24 h35 hdb1
+  obtain hscan := vscan_ok hH L3 R3' (e := oEm + lo) (db := db) (fixed := fixed) (dbL := dbL) h23' h24 h35 hdb1
     (by omega_arith) (by omega_arith) hV3 hlen
   rw [h36] at hscan
   refine WP.mono hscan fun u5 ⟨L5, k5, a, ha, R5⟩ => ?_
@@ -293,44 +293,44 @@ theorem vback_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {dn : String} {f : MdFns} 
   -- `Y` cleared.
   refine WP.seq (X86_64.WP.mono_syms (WP.keepIn (by safe_by [clearY]) (by exact Nat.zero_le 16)
     (clearY_ok L R)) fun u1 ⟨⟨L1, k1, hcx1, R1⟩, f1⟩ sy1 => ?_)
-  have hS1 := chain (u := u) rfl L.rsp (fun _ _ => rfl) f1
+  obtain hS1 := chain (u := u) rfl L.rsp (fun _ _ => rfl) f1
   -- `mHash`.
   refine WP.seq (X86_64.WP.mono_syms (WP.keepIn (by safe_by [copyDigest]) (by exact Nat.zero_le 16)
     (copyDigest_ok hH L1 R1 (p := dig) hdg hcx1
       (fun i hi => by rw [k1.2.1, k1.2.2]; exact hdR i hi)
       (fun i hi j hj => Outside.ne L1 (by rw [k1.2.2]; exact hdO i hi) (by omega_arith))))
     fun u2 ⟨⟨L2, k2, R2⟩, f2⟩ sy2 => ?_)
-  have hS2 := chain (u := u) k1.2.2 L1.rsp hS1 f2
+  obtain hS2 := chain (u := u) k1.2.2 L1.rsp hS1 f2
   -- `DB`.
   refine WP.seq (X86_64.WP.mono_syms (copyDb_ok L2 R2 (e := oEm + lo) (db := db) he hdb
     ((k2.gpr (by decide)).trans hcx1) hdb1 (by omega_arith) (by omega_arith)) fun u3 ⟨L3, k3, R3⟩ sy3 => ?_)
   set V4 := clrV V oY 2048 with hV4
   set V5 := cpV V4 (fun i => u1.mem (dig + BitVec.ofNat 64 i)) (oY + 8) H.D with hV5
   set V6 := cpV V5 (fun i => V5 (oEm + lo + i)) (oY + (8 + H.D)) db with hV6
-  have e5 : ∀ i < db, V5 (oEm + lo + i) = V (oEm + lo + i) := fun i hi => by
+  obtain e5 : ∀ i < db, V5 (oEm + lo + i) = V (oEm + lo + i) := fun i hi => by
     simp only [hV5, hV4, cpV, clrV]; rw [ifn (by omega_arith), ifn (by omega_arith)]
   -- The shift.
-  have hz : ∀ j, db ≤ j → j < db + 512 → V6 (oY + 8 + H.D + j) = 0 := fun j h1 h2 => by
+  obtain hz : ∀ j, db ≤ j → j < db + 512 → V6 (oY + 8 + H.D + j) = 0 := fun j h1 h2 => by
     simp only [hV6, hV5, hV4, cpV, clrV]; rw [ifn (by omega_arith), ifn (by omega_arith), ifp (by omega_arith)]
   refine WP.seq (X86_64.WP.mono_syms (shift_ok hH L3 R3 (pos := pos) (db := db) hpos hdb (by omega_arith) hdb1
     (by omega_arith) hz) fun u4 I4 sy4 => ?_)
   obtain ⟨V7, W4, R4, -, -, -, hW4, hV7, hO7⟩ := I4.rep
-  have hp10 : (pos + 1) % 2 ^ 10 = pos + 1 := Nat.mod_eq_of_lt (by rw [show (2 : Nat) ^ 10 = 1024 from rfl]; omega_arith)
+  obtain hp10 : (pos + 1) % 2 ^ 10 = pos + 1 := Nat.mod_eq_of_lt (by rw [show (2 : Nat) ^ 10 = 1024 from rfl]; omega_arith)
   rw [hp10] at hV7
-  have g4 : ∀ j, j ≠ 44 → j ≠ 45 → j ≠ 46 → j < nW → W4 j = W j := fun j a b c d => hW4 j d a b c
+  obtain g4 : ∀ j, j ≠ 44 → j ≠ 45 → j ≠ 46 → j < nW → W4 j = W j := fun j a b c d => hW4 j d a b c
   -- `nbm`.
   refine WP.seq (X86_64.WP.mono_syms (verifyNb_ok hH I4.L R4 (db := db) (by rw [g4 24 (by decide) (by decide)
     (by decide) (by decide), hdb]) (by omega_arith)) fun u5 ⟨L5, k5, R5⟩ sy5 => ?_)
   -- The hash of `M'`.
-  have hml : msg.length = db - pos - 1 + (8 + H.D) := by
+  obtain hml : msg.length = db - pos - 1 + (8 + H.D) := by
     simp only [msg, List.length_append, RsaPss.zeros_length, List.length_map, List.length_range, List.length_drop]
     omega_arith
   have hB0 := hH.B_pos
   have hBl := hH.B_le
   have hL := hH.dims.L
-  have hnb1 := Nat.lt_div_mul_add (a := db + (7 + H.D + H.P.L)) (b := H.P.B) hB0
-  have hnb2 := Nat.div_mul_le_self (db + (7 + H.D + H.P.L)) H.P.B
-  have hmsg : ∀ i, msg.getD i 0 = if i < 8 then 0 else if i < 8 + H.D then u.mem (dig + BitVec.ofNat 64 (i - 8))
+  obtain hnb1 := Nat.lt_div_mul_add (a := db + (7 + H.D + H.P.L)) (b := H.P.B) hB0
+  obtain hnb2 := Nat.div_mul_le_self (db + (7 + H.D + H.P.L)) H.P.B
+  obtain hmsg : ∀ i, msg.getD i 0 = if i < 8 then 0 else if i < 8 + H.D then u.mem (dig + BitVec.ofNat 64 (i - 8))
       else if i < 8 + H.D + (db - (pos + 1)) then V (oEm + lo + (pos + 1 + (i - (8 + H.D)))) else 0 := fun i => by
     simp only [msg, getD_app, List.length_append, RsaPss.zeros_length, List.length_map, List.length_range,
       getD_map_range, bytesF, RsaPss.zeros_getD]
@@ -352,7 +352,7 @@ theorem vback_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {dn : String} {f : MdFns} 
         (by rw [upd_ne' (by decide), g4 10 (by decide) (by decide) (by decide) (by decide)])) hdk)
     fun u6 ⟨L6, rd6, wr6, cs6, V8, W6, R6, hout6, hW6, hdig6⟩ => ?_)
   · rw [hmsg]
-    have hi' : i < 2048 := by rw [Nat.succ_mul] at hi; omega_arith
+    obtain hi' : i < 2048 := by rw [Nat.succ_mul] at hi; omega_arith
     by_cases hY : 8 + H.D ≤ i ∧ i < 8 + H.D + db
     · have := hV7 (i - (8 + H.D)) (by omega_arith)
       rw [show oY + 8 + H.D + (i - (8 + H.D)) = oY + i by omega_arith] at this
@@ -373,29 +373,29 @@ theorem vback_ok (lk : Pbkdf2.Md.X86_64.MgfLink H hH) {dn : String} {f : MdFns} 
         exact hS1 _ (hdO _ (by omega_arith))
       · rw [ifn (by omega_arith), ifp (by omega_arith), ifn h1, ifn h2, ifn (by omega_arith)]
   -- The comparison.
-  have h23 : W6 23 = off S (oEm + lo) := by
+  obtain h23 : W6 23 = off S (oEm + lo) := by
     rw [hW6 23 (by decide) (by decide) (by decide)]; simp only [upd]
     rw [ifn (by decide), g4 23 (by decide) (by decide) (by decide) (by decide), he]
-  have h24 : W6 24 = BitVec.ofNat 64 db := by
+  obtain h24 : W6 24 = BitVec.ofNat 64 db := by
     rw [hW6 24 (by decide) (by decide) (by decide)]; simp only [upd]
     rw [ifn (by decide), g4 24 (by decide) (by decide) (by decide) (by decide), hdb]
   refine WP.mono (cmpH_ok hH L6 R6 h23 h24 (by omega_arith)) fun u7 ⟨k7, hm7, hax7⟩ => ?_
-  have L7 : Lay u7 F S := L6.congr (k7.gpr (by decide)) k7.2.2 (by rw [hm7])
-  have hrd : u6.rd = u.rd := by
+  obtain L7 : Lay u7 F S := L6.congr (k7.gpr (by decide)) k7.2.2 (by rw [hm7])
+  obtain hrd : u6.rd = u.rd := by
     rw [rd6, k5.2.1, I4.keep.2.1, k3.2.1, k2.2.1, k1.2.1]
-  have hwr : u6.wr = u.wr := by
+  obtain hwr : u6.wr = u.wr := by
     rw [wr6, k5.2.2, I4.keep.2.2, k3.2.2, k2.2.2, k1.2.2]
   refine ⟨L7, k7.2.1.trans hrd, k7.2.2.trans hwr, fun r hr => ?_, ⟨V8, W6, hm7 ▸ R6, fun j hj a b c d e f => ?_⟩, ?_⟩
   · rw [keep_cs k7 (by decide) r hr, cs6 r hr, keep_cs k5 (by decide) r hr, keep_cs I4.keep (by decide) r hr,
       keep_cs k3 (by decide) r hr, keep_cs k2 (by decide) r hr, keep_cs k1 (by decide) r hr]
   · rw [hW6 j hj b c]; simp only [upd]; rw [ifn a, g4 j d e f hj]
   · rw [hax7]
-    have h33 : W6 33 = W 33 := by
+    obtain h33 : W6 33 = W 33 := by
       rw [hW6 33 (by decide) (by decide) (by decide)]; simp only [upd]
       rw [ifn (by decide), g4 33 (by decide) (by decide) (by decide) (by decide)]
-    have hH' : ∀ i < H.D, V8 (oDig + i) = (lk.G.hash msg).getD i 0 := fun i hi => by
+    obtain hH' : ∀ i < H.D, V8 (oDig + i) = (lk.G.hash msg).getD i 0 := fun i hi => by
       rw [map_range_getD hdig6 hi, ← lk.hash]
-    have hE : ∀ i < H.D, V8 (oEm + lo + db + i) = V (oEm + lo + db + i) := fun i hi => by
+    obtain hE : ∀ i < H.D, V8 (oEm + lo + db + i) = V (oEm + lo + db + i) := fun i hi => by
       rw [hout6 _ (by omega_arith) ⟨by unfold oLen; omega_arith, by omega_arith⟩, hO7 _ (by omega_arith)]
       simp only [hV6, hV5, hV4, cpV, clrV]
       rw [ifn (by omega_arith), ifn (by omega_arith), ifn (by omega_arith)]

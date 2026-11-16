@@ -59,14 +59,14 @@ theorem preLen_ge (A : PPABI s) :
 
 theorem inV_toNat (A : PPABI s) : (inV s).toNat = (arg s 0).toNat + 8 * Spec.Rsa.modulusWords (arg s 3).toNat := by
   have pb := A.preBound
-  have pl := preLen_ge A
+  obtain pl := preLen_ge A
   simp only [inV, BitVec.toNat_add, BitVec.toNat_ofNat]
   rw [Nat.mod_eq_of_lt (a := 8 * Spec.Rsa.modulusWords (arg s 3).toNat) (by omega_using [pb, pl]), Nat.mod_eq_of_lt (by omega_using [pb, pl])]
 
 theorem inV_ptr (A : PPABI s) :
     (inV s).setWidth 64 = argumentPointer s 0 + BitVec.ofNat 64 (8 * Spec.Rsa.modulusWords (arg s 3).toNat) := by
   have pb := A.preBound
-  have pl := preLen_ge A
+  obtain pl := preLen_ge A
   apply BitVec.eq_of_toNat_eq
   rw [BitVec.toNat_setWidth, inV_toNat A]
   simp only [argumentPointer, BitVec.toNat_add, BitVec.toNat_setWidth, BitVec.toNat_ofNat]
@@ -75,7 +75,7 @@ theorem inV_ptr (A : PPABI s) :
 
 /-- The input lies in `pre`, after `n`'s values' first `n_len` bytes. -/
 theorem in_sub (A : PPABI s) : Region.Sub ⟨(inV s).setWidth 64, (arg s 3).toNat⟩ (preR s) := by
-  have pl := preLen_ge A
+  obtain pl := preLen_ge A
   have := A.lengths
   simp only [Spec.Rsa.lenValid, Spec.Rsa.modulusWords] at this pl
   rw [inV_ptr A]
@@ -84,7 +84,7 @@ theorem in_sub (A : PPABI s) : Region.Sub ⟨(inV s).setWidth 64, (arg s 3).toNa
 theorem in_out (A : PPABI s) :
     Region.Disjoint ⟨(inV s).setWidth 64, (arg s 3).toNat⟩ ⟨argumentPointer s 0, (arg s 3).toNat⟩ := by
   have := A.preBound
-  have pl := preLen_ge A
+  obtain pl := preLen_ge A
   rw [inV_ptr A]
   exact Offset.disjoint_base _ (by simp only [Spec.Rsa.modulusWords]; omega_using []) (by omega_using [pl])
 
@@ -94,25 +94,25 @@ theorem inputArg_ok {is : List Instr} {Q : State → Prop} (A : PPABI s) (B : Bo
       u.mem.readW (slot s (4 * 4)) 32 = inV s → WP isa (.block is) u Q) :
     WP isa (.block (Impl.Bignum.X86.PrivPre.inputArg ++ is)) t Q := by
   have pb := A.preBound
-  have pl := preLen_ge A
+  obtain pl := preLen_ge A
   simp only [Impl.Bignum.X86.PrivPre.inputArg, Impl.Bignum.X86.PrivPre.shl, List.cons_append, List.nil_append]
   refine wp_movS (B.readArg A (by decide)) fun u₁ U₁ _ => wp_addi fun u₂ U₂ => wp_shr (by decide)
     fun u₃ U₃ _ => wp_add fun u₄ U₄ _ => wp_add fun u₅ U₅ _ => wp_add fun u₆ U₆ _ => ?_
-  have K₆ : Keeps [.eax] t u₆ :=
+  obtain K₆ : Keeps [.eax] t u₆ :=
     ⟨fun r hr => by
-      have hr' : r ≠ .eax := by simpa using hr
+      obtain hr' : r ≠ .eax := by simpa using hr
       rw [U₆.other _ hr', U₅.other _ hr', U₄.other _ hr', U₃.other _ hr', U₂.other _ hr', U₁.other _ hr'],
       by rw [U₆.rd, U₅.rd, U₄.rd, U₃.rd, U₂.rd, U₁.rd], by rw [U₆.wr, U₅.wr, U₄.wr, U₃.wr, U₂.wr, U₁.wr]⟩
-  have M₆ : u₆.mem = t.mem := by rw [U₆.mem, U₅.mem, U₄.mem, U₃.mem, U₂.mem, U₁.mem]
-  have B₆ : Body s u₆ := B.next (K₆.1 _ (by decide)) K₆.2.1 K₆.2.2 (by rw [M₆]; exact Frame.refl _ _)
+  obtain M₆ : u₆.mem = t.mem := by rw [U₆.mem, U₅.mem, U₄.mem, U₃.mem, U₂.mem, U₁.mem]
+  obtain B₆ : Body s u₆ := B.next (K₆.1 _ (by decide)) K₆.2.1 K₆.2.2 (by rw [M₆]; exact Frame.refl _ _)
   refine wp_addS (B₆.readArg A (by decide)) fun u₇ U₇ _ => ?_
-  have K₇ : Keeps [.eax] t u₇ := K₆.trans (U₇.keeps.mono (by decide))
-  have M₇ : u₇.mem = t.mem := by rw [U₇.mem, M₆]
-  have B₇ : Body s u₇ := B.next (K₇.1 _ (by decide)) K₇.2.1 K₇.2.2 (by rw [M₇]; exact Frame.refl _ _)
-  have v₇ : u₇.gpr .eax = inV s := by
+  obtain K₇ : Keeps [.eax] t u₇ := K₆.trans (U₇.keeps.mono (by decide))
+  obtain M₇ : u₇.mem = t.mem := by rw [U₇.mem, M₆]
+  obtain B₇ : Body s u₇ := B.next (K₇.1 _ (by decide)) K₇.2.1 K₇.2.2 (by rw [M₇]; exact Frame.refl _ _)
+  obtain v₇ : u₇.gpr .eax = inV s := by
     have l := A.lengths
     simp only [Spec.Rsa.lenValid] at l
-    have hw : ((arg s 3 + 7) >>> 3).toNat = Spec.Rsa.modulusWords (arg s 3).toNat := by
+    obtain hw : ((arg s 3 + 7) >>> 3).toNat = Spec.Rsa.modulusWords (arg s 3).toNat := by
       simp only [Spec.Rsa.modulusWords, BitVec.toNat_add, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
       rw [show (7 : BitVec 32).toNat = 7 from rfl, Nat.mod_eq_of_lt (a := (arg s 3).toNat + 7) (by omega_using [l])]
     rw [U₇.gpr, U₆.gpr, U₅.gpr, U₄.gpr, U₃.gpr, U₂.gpr, U₁.gpr]
@@ -137,21 +137,21 @@ theorem primesArgs_ok (A : PPABI s) (B : Body s t) :
   refine wp_slot A B (d := 80) (by decide) fun u₀ B₀ M₀ => ?_
   refine wp_copies A primesPairs B₀ (by decide) (by decide) fun u₁ B₁ K₁ F₁ V₁ => ?_
   refine inputArg_ok A B₁ fun u B' K₂ F₂ V₂ => WP.block_nil ?_
-  have Fs : Frame ((primesPairs.map fun p => argR s p.2) ++ [argR s 4]) u₀.mem u.mem :=
+  obtain Fs : Frame ((primesPairs.map fun p => argR s p.2) ++ [argR s 4]) u₀.mem u.mem :=
     (F₁.mono fun r hr => List.mem_append_left _ hr).trans (F₂.mono fun r hr => List.mem_append_right _ hr)
-  have V : ∀ p ∈ primesPairs, u.mem.readW (slot s (4 * p.2)) 32 = arg s p.1 := fun p hp => by
+  obtain V : ∀ p ∈ primesPairs, u.mem.readW (slot s (4 * p.2)) 32 = arg s p.1 := fun p hp => by
     rw [← V₁ p hp]
     refine F₂.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     obtain rfl := List.mem_singleton.mp hr
-    have h17 : p.2 < 18 ∧ p.2 ≠ 4 := by revert hp; generalize p = q; decide +revert
+    obtain h17 : p.2 < 18 ∧ p.2 ≠ 4 := by revert hp; generalize p = q; decide +revert
     simp only [argR, slot]
     exact Offset.disjoint _ (by omega_using [h17]) (by omega_using [h17]) (by omega_using [])
   have M₁ := M₀
-  have K : Keeps [.eax] u₀ u := K₁.trans K₂
+  obtain K : Keeps [.eax] u₀ u := K₁.trans K₂
   refine ⟨B', ⟨fun r hr => by rw [K.1 r hr, M₁.gpr], by rw [K.2.1, M₁.rd], by rw [K.2.2, M₁.wr]⟩, ?_, ?_, ?_⟩
   · have sub : ∀ p ∈ primesPairs, Region.Sub (argR s p.2) ⟨slot s 0, 84⟩ := fun p hp => by
       have := (List.mem_map_of_mem (f := Prod.snd) hp)
-      have h17 : p.2 < 18 := by revert this; generalize p.2 = j; decide +revert
+      obtain h17 : p.2 < 18 := by revert this; generalize p.2 = j; decide +revert
       simp only [argR, slot]
       exact Offset.sub _ (by omega_using []) (by omega_using [h17])
     refine (?_ : Frame [⟨slot s 0, 84⟩] t.mem u₀.mem).trans (Fs.sub fun r hr => ?_)
@@ -167,79 +167,79 @@ theorem primesArgs_ok (A : PPABI s) (B : Body s t) :
     rcases List.mem_append.mp hr with hr | hr
     · obtain ⟨p, hp, rfl⟩ := List.mem_map.mp hr
       have := (List.mem_map_of_mem (f := Prod.snd) hp)
-      have h17 : p.2 < 18 := by revert this; generalize p.2 = j; decide +revert
+      obtain h17 : p.2 < 18 := by revert this; generalize p.2 = j; decide +revert
       exact Offset.disjoint _ (by omega_using [h17]) (by omega_using []) (by omega_using [h17])
     · obtain rfl := List.mem_singleton.mp hr
       exact Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])
   · intro j hj
     match j, hj with
     | 0, _ =>
-      have v := V (0, 0) (by decide)
+      obtain v := V (0, 0) (by decide)
       simp only at v
       rw [v]; rfl
     | 1, _ =>
-      have v := V (3, 1) (by decide)
+      obtain v := V (3, 1) (by decide)
       simp only at v
       rw [v]; rfl
     | 2, _ =>
-      have v := V (2, 2) (by decide)
+      obtain v := V (2, 2) (by decide)
       simp only at v
       rw [v]; rfl
     | 3, _ =>
-      have v := V (3, 3) (by decide)
+      obtain v := V (3, 3) (by decide)
       simp only at v
       rw [v]; rfl
     | 4, _ => rw [V₂]; rfl
     | 5, _ =>
-      have v := V (3, 5) (by decide)
+      obtain v := V (3, 5) (by decide)
       simp only at v
       rw [v]; rfl
     | 6, _ =>
-      have v := V (4, 6) (by decide)
+      obtain v := V (4, 6) (by decide)
       simp only at v
       rw [v]; rfl
     | 7, _ =>
-      have v := V (5, 7) (by decide)
+      obtain v := V (5, 7) (by decide)
       simp only at v
       rw [v]; rfl
     | 8, _ =>
-      have v := V (6, 8) (by decide)
+      obtain v := V (6, 8) (by decide)
       simp only at v
       rw [v]; rfl
     | 9, _ =>
-      have v := V (7, 9) (by decide)
+      obtain v := V (7, 9) (by decide)
       simp only at v
       rw [v]; rfl
     | 10, _ =>
-      have v := V (4, 10) (by decide)
+      obtain v := V (4, 10) (by decide)
       simp only at v
       rw [v]; rfl
     | 11, _ =>
-      have v := V (5, 11) (by decide)
+      obtain v := V (5, 11) (by decide)
       simp only at v
       rw [v]; rfl
     | 12, _ =>
-      have v := V (6, 12) (by decide)
+      obtain v := V (6, 12) (by decide)
       simp only at v
       rw [v]; rfl
     | 13, _ =>
-      have v := V (7, 13) (by decide)
+      obtain v := V (7, 13) (by decide)
       simp only at v
       rw [v]; rfl
     | 14, _ =>
-      have v := V (4, 14) (by decide)
+      obtain v := V (4, 14) (by decide)
       simp only at v
       rw [v]; rfl
     | 15, _ =>
-      have v := V (5, 15) (by decide)
+      obtain v := V (5, 15) (by decide)
       simp only at v
       rw [v]; rfl
     | 16, _ =>
-      have v := V (8, 16) (by decide)
+      obtain v := V (8, 16) (by decide)
       simp only at v
       rw [v]; rfl
     | 17, _ =>
-      have v := V (9, 17) (by decide)
+      obtain v := V (9, 17) (by decide)
       simp only at v
       rw [v]; rfl
     | _ + 18, h => omega
@@ -259,11 +259,11 @@ theorem out_sub (A : PPABI s) : Region.Sub ⟨argumentPointer s 0, (arg s 3).toN
 
 theorem pr_pre (A : PPABI s) (B : Body s u) (V : ∀ j < 18, u.mem.readW (slot s (4 * j)) 32 = primesVal s j) :
     (Proof.Rsa.privateCrtContract abi 96).pre (u.callEntry.withRegions (prRd s) (prWr s)) := by
-  have hv : ∀ j < 18, arg (u.callEntry.withRegions (prRd s) (prWr s)) j = primesVal s j := fun j hj => by
+  obtain hv : ∀ j < 18, arg (u.callEntry.withRegions (prRd s) (prWr s)) j = primesVal s j := fun j hj => by
     rw [callee_arg A B hj]; exact V j hj
   have hl := A.preLength
   simp only [Spec.Rsa.privatePrecomputedWords, Spec.Rsa.precomputedWords, Spec.Rsa.modulusWords] at hl
-  have os := out_sub A
+  obtain os := out_sub A
   have l := A.stackLow
   have hb := A.stackBound
   simp only [stackBytes] at l
@@ -280,41 +280,41 @@ theorem pr_pre (A : PPABI s) (B : Body s u) (V : ∀ j < 18, u.mem.readW (slot s
   have q1 := A.qPositive
   have q2 := A.qLength
   have sl := A.scratchLength
-  have o_n := A.preN.sub_left os
-  have o_p := A.preP.sub_left os
-  have o_q := A.preQ.sub_left os
-  have o_w := A.preWs.sub_left os
+  obtain o_n := A.preN.sub_left os
+  obtain o_p := A.preP.sub_left os
+  obtain o_q := A.preQ.sub_left os
+  obtain o_w := A.preWs.sub_left os
   have n_w := A.nWs
   have p_w := A.pWs
   have q_w := A.qWs
-  have o_a := (top_apart (d := 100) (n := 72) (by decide) (A.belowPre.sub_right os)).symm
-  have n_a := (top_apart (d := 100) (n := 72) (by decide) A.belowN).symm
-  have p_a := (top_apart (d := 100) (n := 72) (by decide) A.belowP).symm
-  have q_a := (top_apart (d := 100) (n := 72) (by decide) A.belowQ).symm
-  have w_a := (top_apart (d := 100) (n := 72) (by decide) A.belowWs).symm
-  have r_o := top_apart (d := 96) (n := 4) (by decide) (A.belowPre.sub_right os)
-  have r_n := top_apart (d := 96) (n := 4) (by decide) A.belowN
-  have r_p := top_apart (d := 96) (n := 4) (by decide) A.belowP
-  have r_q := top_apart (d := 96) (n := 4) (by decide) A.belowQ
-  have r_w := top_apart (d := 96) (n := 4) (by decide) A.belowWs
-  have r_a : (⟨bot s + BitVec.ofNat 64 96, 4⟩ : Region).Disjoint ⟨slot s 0, 72⟩ :=
+  obtain o_a := (top_apart (d := 100) (n := 72) (by decide) (A.belowPre.sub_right os)).symm
+  obtain n_a := (top_apart (d := 100) (n := 72) (by decide) A.belowN).symm
+  obtain p_a := (top_apart (d := 100) (n := 72) (by decide) A.belowP).symm
+  obtain q_a := (top_apart (d := 100) (n := 72) (by decide) A.belowQ).symm
+  obtain w_a := (top_apart (d := 100) (n := 72) (by decide) A.belowWs).symm
+  obtain r_o := top_apart (d := 96) (n := 4) (by decide) (A.belowPre.sub_right os)
+  obtain r_n := top_apart (d := 96) (n := 4) (by decide) A.belowN
+  obtain r_p := top_apart (d := 96) (n := 4) (by decide) A.belowP
+  obtain r_q := top_apart (d := 96) (n := 4) (by decide) A.belowQ
+  obtain r_w := top_apart (d := 96) (n := 4) (by decide) A.belowWs
+  obtain r_a : (⟨bot s + BitVec.ofNat 64 96, 4⟩ : Region).Disjoint ⟨slot s 0, 72⟩ :=
     Offset.disjoint _ (by omega_using []) (by omega_using []) (by omega_using [])
-  have bs : Region.Sub ⟨bot s, 96⟩ (topR s) := Region.sub_prefix (by simp [stackBytes])
-  have b_o := (A.belowPre.sub_right os).sub_left bs
-  have b_n := A.belowN.sub_left bs
-  have b_p := A.belowP.sub_left bs
-  have b_q := A.belowQ.sub_left bs
-  have b_w := A.belowWs.sub_left bs
-  have b_a : (⟨bot s, 96⟩ : Region).Disjoint ⟨slot s 0, 72⟩ := Offset.base_disjoint _ (by omega_using []) (by omega_using [])
-  have is := in_sub A
-  have i_o := in_out A
-  have o_i := (in_out A).symm
-  have i_w := A.preWs.sub_left is
-  have i_a := (top_apart (d := 100) (n := 72) (by decide) (A.belowPre.sub_right is)).symm
-  have r_i := top_apart (d := 96) (n := 4) (by decide) (A.belowPre.sub_right is)
-  have b_i := (A.belowPre.sub_right is).sub_left bs
-  have ib : (inV s).toNat + (arg s 3).toNat ≤ 2 ^ 32 := by
-    have pl := preLen_ge A
+  obtain bs : Region.Sub ⟨bot s, 96⟩ (topR s) := Region.sub_prefix (by simp [stackBytes])
+  obtain b_o := (A.belowPre.sub_right os).sub_left bs
+  obtain b_n := A.belowN.sub_left bs
+  obtain b_p := A.belowP.sub_left bs
+  obtain b_q := A.belowQ.sub_left bs
+  obtain b_w := A.belowWs.sub_left bs
+  obtain b_a : (⟨bot s, 96⟩ : Region).Disjoint ⟨slot s 0, 72⟩ := Offset.base_disjoint _ (by omega_using []) (by omega_using [])
+  obtain is := in_sub A
+  obtain i_o := in_out A
+  obtain o_i := (in_out A).symm
+  obtain i_w := A.preWs.sub_left is
+  obtain i_a := (top_apart (d := 100) (n := 72) (by decide) (A.belowPre.sub_right is)).symm
+  obtain r_i := top_apart (d := 96) (n := 4) (by decide) (A.belowPre.sub_right is)
+  obtain b_i := (A.belowPre.sub_right is).sub_left bs
+  obtain ib : (inV s).toNat + (arg s 3).toNat ≤ 2 ^ 32 := by
+    obtain pl := preLen_ge A
     rw [inV_toNat A]; simp only [Spec.Rsa.modulusWords] at pl ⊢; omega_using [hl, pb]
   sig_pre [Proof.Rsa.privateCrtContract, Proof.Rsa.privateCrtSig, abi, argSlots, argVal, argBytes, stackBelow]
   simp only [hv 0 (by decide), hv 1 (by decide), hv 2 (by decide), hv 3 (by decide), hv 4 (by decide), hv 5 (by decide), hv 6 (by decide), hv 7 (by decide), hv 8 (by decide), hv 9 (by decide), hv 10 (by decide), hv 11 (by decide), hv 12 (by decide), hv 13 (by decide), hv 14 (by decide), hv 15 (by decide), hv 16 (by decide), hv 17 (by decide), primesVal, callee_argAddr A B]
@@ -333,7 +333,7 @@ theorem callee_bytes (A : PPABI s) (B : Body s u) {rd wr : List Region} {a : Add
     Spec.Rsa.bytesAt (u.callEntry.withRegions rd wr).mem a n = Spec.Rsa.bytesAt s.mem a n := by
   unfold Spec.Rsa.bytesAt
   refine List.map_congr_left fun i hi => ?_
-  have hi := List.mem_range.mp hi
+  obtain hi := List.mem_range.mp hi
   rw [(callee_mem A B).bytes (R := ⟨a, n⟩) (fun r hr => ?_) (by simp; omega_using [hn]) hi]
   · exact B.frame.bytes (R := ⟨a, n⟩) hR (by simp; omega_using [hn]) hi
   · obtain rfl := List.mem_singleton.mp hr
@@ -376,7 +376,7 @@ abbrev xPre (s : State) (m : Mem) : Nat := (m.read ((inV s).setWidth 64) (arg s 
 
 theorem pr_covers (A : PPABI s) (B : Body s u) :
     Covers (prRd s ++ prWr s) (u.rd ++ u.wr) ∧ Covers (prWr s) u.wr := by
-  have cw : Covers (prWr s) u.wr := by
+  obtain cw : Covers (prWr s) u.wr := by
     rw [B.wr, A.wr]
     refine Covers.of_forall fun r hr => ?_
     simp only [prWr, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -388,13 +388,13 @@ theorem pr_covers (A : PPABI s) (B : Body s u) :
     · exact Covers.of_mem fun r hr => by simp at hr; subst hr; simp
     · exact Covers.one ⟨frameR s, by simp, by
         rw [frame_base A]; exact Offset.contains _ (by omega_using []) (by omega_using []) (by omega_using [])⟩
-  have cr : Covers (prRd s ++ prWr s) (u.rd ++ u.wr) := by
+  obtain cr : Covers (prRd s ++ prWr s) (u.rd ++ u.wr) := by
     refine Covers.append_left (Covers.of_forall fun r hr => ?_) (Covers.right cw)
     simp only [prRd, List.mem_cons, List.not_mem_nil, or_false] at hr
-    have pl := preLen_ge A
-    have rdC : ∀ r ∈ s.rd, Covers [r] (u.rd ++ u.wr) := fun r h =>
+    obtain pl := preLen_ge A
+    obtain rdC : ∀ r ∈ s.rd, Covers [r] (u.rd ++ u.wr) := fun r h =>
       Covers.left (Covers.of_mem fun r' hr' => by rw [List.mem_singleton.mp hr', B.rd]; exact h)
-    have inC : Covers [⟨(inV s).setWidth 64, (arg s 3).toNat⟩] (u.rd ++ u.wr) := by
+    obtain inC : Covers [⟨(inV s).setWidth 64, (arg s 3).toNat⟩] (u.rd ++ u.wr) := by
       refine Covers.right (Covers.of_sub fun r' hr' => ⟨preR s, ?_, 8 * Spec.Rsa.modulusWords (arg s 3).toNat, ?_, ?_⟩)
       · rw [B.wr, A.wr]; simp
       · rw [List.mem_singleton.mp hr']; exact inV_ptr A
@@ -412,8 +412,8 @@ theorem pr_call {prName : String} (st : stackUse primes ≤ 96) (ns : NoSp prime
     (A : PPABI s) (B : Body s u) (V : ∀ j < 18, u.mem.readW (slot s (4 * j)) 32 = primesVal s j) :
     WP isa (.call prName primes) u fun v => Body s v ∧ Keeps [.eax, .ecx, .edx] u v ∧
       Frame [wsR s, ⟨bot s, 100⟩] u.mem v.mem ∧ PrOut s (xPre s u.mem) v := by
-  have os := out_sub A
-  have argsSub : Region.Sub ⟨slot s 0, 72⟩ (frameR s) := by
+  obtain os := out_sub A
+  obtain argsSub : Region.Sub ⟨slot s 0, 72⟩ (frameR s) := by
     rw [frame_base A]; exact Offset.sub _ (by omega_using []) (by omega_using [])
   obtain ⟨cr, cw⟩ := pr_covers A B
   refine WP.mono (body_call primes_verified.1 st ns A B (pr_pre A B V) cr cw fun r hr => ?_)
@@ -426,15 +426,15 @@ theorem pr_call {prName : String} (st : stackUse primes ≤ 96) (ns : NoSp prime
   · have hv : ∀ j < 18, arg (u.callEntry.withRegions (prRd s) (prWr s)) j = primesVal s j := fun j hj => by
       rw [callee_arg A B hj]; exact V j hj
     obtain ⟨-, -, -, PF⟩ := post
-    have ws : (⟨argumentPointer (u.callEntry.withRegions (prRd s) (prWr s)) 16,
+    obtain ws : (⟨argumentPointer (u.callEntry.withRegions (prRd s) (prWr s)) 16,
         (arg (u.callEntry.withRegions (prRd s) (prWr s)) 17).toNat * 8⟩ : Region) = wsR s := by
       simp only [argumentPointer, hv 16 (by decide), hv 17 (by decide), primesVal]
     rw [ws, M] at PF
-    have bl : Region.Sub (below ((u.callEntry.withRegions (prRd s) (prWr s)).gpr .esp) 96) ⟨bot s, 100⟩ := by
+    obtain bl : Region.Sub (below ((u.callEntry.withRegions (prRd s) (prWr s)).gpr .esp) 96) ⟨bot s, 100⟩ := by
       rw [State.withRegions_gpr, State.callEntry_esp]
       have l := A.stackLow
       simp only [stackBytes] at l
-      have e : (u.gpr .esp).toNat = (s.gpr .esp).toNat - 96 := by
+      obtain e : (u.gpr .esp).toNat = (s.gpr .esp).toNat - 96 := by
         rw [B.sp, sub_toNat (by simp only [Impl.Bignum.X86.PrivPre.frameBytes]; omega_using [l])]; rfl
       exact fun a h => below_frame A B (Nat.le_refl _) a
         (below_inner (sp := u.gpr .esp) (a := 96) (b := 100) (k := 4) (by decide) (by omega_using [l, e]) a h)
@@ -447,7 +447,7 @@ theorem pr_call {prName : String} (st : stackUse primes ≤ 96) (ns : NoSp prime
       · exact ⟨⟨bot s, 100⟩, by simp, bl⟩
   · have hv : ∀ j < 18, arg (u.callEntry.withRegions (prRd s) (prWr s)) j = primesVal s j := fun j hj => by
       rw [callee_arg A B hj]; exact V j hj
-    have cv : ∀ {i a : Nat}, arg (u.callEntry.withRegions (prRd s) (prWr s)) i = arg s a →
+    obtain cv : ∀ {i a : Nat}, arg (u.callEntry.withRegions (prRd s) (prWr s)) i = arg s a →
         arg (u.callEntry.withRegions (prRd s) (prWr s)) (i + 1) = arg s (a + 1) →
         (∀ r ∈ bodyW s, (⟨argumentPointer s a, (arg s (a + 1)).toNat⟩ : Region).Disjoint r) →
         Crt.componentValue (u.callEntry.withRegions (prRd s) (prWr s)).mem
@@ -456,9 +456,9 @@ theorem pr_call {prName : String} (st : stackUse primes ≤ 96) (ns : NoSp prime
       unfold Crt.componentValue
       rw [h₁, h₂]
       exact congrArg _ (callee_bytes A B hR (arg s (a + 1)).isLt)
-    have c2 := cv (i := 2) (a := 2) (hv 2 (by decide)) (hv 3 (by decide)) (n_apart A)
-    have c6 := cv (i := 6) (a := 4) (hv 6 (by decide)) (hv 7 (by decide)) (p_apart A)
-    have c8 := cv (i := 8) (a := 6) (hv 8 (by decide)) (hv 9 (by decide)) (q_apart A)
+    obtain c2 := cv (i := 2) (a := 2) (hv 2 (by decide)) (hv 3 (by decide)) (n_apart A)
+    obtain c6 := cv (i := 6) (a := 4) (hv 6 (by decide)) (hv 7 (by decide)) (p_apart A)
+    obtain c8 := cv (i := 8) (a := 6) (hv 8 (by decide)) (hv 9 (by decide)) (q_apart A)
     obtain ⟨Pe, P16, P17, -⟩ := post
     rw [c2, c6, c8] at Pe
     rw [c6] at P16
@@ -466,7 +466,7 @@ theorem pr_call {prName : String} (st : stackUse primes ≤ 96) (ns : NoSp prime
     simp only [argumentPointer, hv 16 (by decide), hv 3 (by decide), hv 7 (by decide), hv 9 (by decide),
       primesVal] at P16 P17
     rw [M] at P16 P17
-    have xe : xIn (u.callEntry.withRegions (prRd s) (prWr s)).mem (arg (u.callEntry.withRegions (prRd s) (prWr s)))
+    obtain xe : xIn (u.callEntry.withRegions (prRd s) (prWr s)).mem (arg (u.callEntry.withRegions (prRd s) (prWr s)))
         (arg s 3).toNat = xPre s u.mem := by
       simp only [xIn, byteAddr, hv 4 (by decide), primesVal]
       congr 1

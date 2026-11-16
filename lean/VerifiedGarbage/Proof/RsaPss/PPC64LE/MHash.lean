@@ -91,7 +91,7 @@ theorem compLoop_ok {t : State} (h : Base Sp (vP D) s t) (sy : t.syms = s.syms) 
   have hN := ok.dims.N
   have hso := ok.dims.so
   have hB := ok.dims.B
-  have hn : nbm ≤ 32 := by rcases hB with e | e <;> rw [e] at hnb <;> omega_using [hnb]
+  obtain hn : nbm ≤ 32 := by rcases hB with e | e <;> rw [e] at hnb <;> omega_using [hnb]
   let V := view t.mem (Sp s)
   let hv := md.stateAt t.mem (off (Sp s) oSt)
   refine WP.seq (WP.of_syms (wp_li (by decide) fun t₁ o₁ e₁ => wp_nil fun y₁ => ?_))
@@ -101,15 +101,15 @@ theorem compLoop_ok {t : State} (h : Base Sp (vP D) s t) (sy : t.syms = s.syms) 
       e₁, by rw [o₁.mem, Md.compressList_zero], fun h => absurd h (Nat.not_lt_zero _), fun o _ _ => by rw [o₁.mem]⟩
     (by rw [o₁.get .r28, h28])
   intro i hi u I _
-  have hBi : P.B * i + P.B ≤ 2048 := by
+  obtain hBi : P.B * i + P.B ≤ 2048 := by
     rw [← Nat.mul_succ]; exact Nat.le_trans (Nat.mul_le_mul_left _ hi) (by rw [Nat.mul_comm]; exact hnb)
   -- The arguments.
   refine WP.seq (WP.of_syms (wp_addi (h := by decide) fun u₁ p₁ f₁ => wp_lsl (h := by omega_using [hlg7]) fun u₂ p₂ f₂ =>
     wp_add fun u₃ p₃ f₃ => wp_addi (h := by decide) fun u₄ p₄ f₄ => wp_li (by decide) fun u₅ p₅ f₅ =>
     wp_addi (h := by decide) fun u₆ p₆ f₆ => wp_nil fun y₆ => ?_))
-  have k₆ : Only [.r3, .r4, .r5, .r6] u u₆ := (p₁.trans (p₂.trans (p₃.trans (p₄.trans (p₅.trans p₆))))).mono
-  have b₆ := I.base.only F k₆
-  have g4 : u₆.gpr .r4 = off (Sp s) (oY + P.B * i) := by
+  obtain k₆ : Only [.r3, .r4, .r5, .r6] u u₆ := (p₁.trans (p₂.trans (p₃.trans (p₄.trans (p₅.trans p₆))))).mono
+  obtain b₆ := I.base.only F k₆
+  obtain g4 : u₆.gpr .r4 = off (Sp s) (oY + P.B * i) := by
     rw [p₆.get .r4, p₅.get .r4, f₄, f₃, f₂, p₁.get .r26, I.r26, p₂.get .r14, p₁.get .r14, I.base.r14,
       ofNat_shl (by rw [hlg]; omega_using [hBi]), hlg]
     show _ = Sp s + _
@@ -120,24 +120,24 @@ theorem compLoop_ok {t : State} (h : Base Sp (vP D) s t) (sy : t.syms = s.syms) 
       g4 (by rw [p₆.get .r5, f₅]) (by rw [f₆, p₅.get .r14, p₄.get .r14, p₃.get .r14, p₂.get .r14, p₁.get .r14,
         I.base.r14]) (by omega_using [hBi])) fun u₇ ⟨⟨b₇, g₇, s₇, st₇⟩, y₇⟩ => ?_)
   -- The selection.
-  have r26₇ : u₇.gpr .r26 = BitVec.ofNat 64 i := by rw [g₇ _ (by decide), k₆.get .r26, I.r26]
-  have r27₇ : u₇.gpr .r27 = BitVec.ofNat 64 fb := by rw [g₇ _ (by decide), k₆.get .r27, I.keep .r27 (by simp), h27]
+  obtain r26₇ : u₇.gpr .r26 = BitVec.ofNat 64 i := by rw [g₇ _ (by decide), k₆.get .r26, I.r26]
+  obtain r27₇ : u₇.gpr .r27 = BitVec.ofNat 64 fb := by rw [g₇ _ (by decide), k₆.get .r27, I.keep .r27 (by simp), h27]
   refine WP.seq (WP.of_syms (WP.mono (selHash_ok L hN.1 hN.2 b₇ r26₇ r27₇ (by omega_using [hn, hi]) (by omega_using [hfb, hn]))
     fun u₈ ⟨b₈, k₈, v₈⟩ y₈ => ?_))
   refine WP.of_syms (wp_addi fun u₉ p₉ f₉ => wp_subi fun u₁₀ p₁₀ f₁₀ => wp_nil fun y₁₀ => ?_)
-  have k₁₀ : Only [.r26, .r28] u₈ u₁₀ := (p₉.trans p₁₀).mono
+  obtain k₁₀ : Only [.r26, .r28] u₈ u₁₀ := (p₉.trans p₁₀).mono
   have m₁₀ : u₁₀.mem = u₈.mem := k₁₀.mem
   -- The bytes of the hash value at `oSt` are kept by the selection.
-  have vSt : ∀ k < P.N, u₁₀.mem (off (Sp s) oSt + BitVec.ofNat 64 k) = u₇.mem (off (Sp s) oSt + BitVec.ofNat 64 k) :=
+  obtain vSt : ∀ k < P.N, u₁₀.mem (off (Sp s) oSt + BitVec.ofNat 64 k) = u₇.mem (off (Sp s) oSt + BitVec.ofNat 64 k) :=
     fun k hk => by
       have := v₈ (oSt + k) (by omega_using [hR, hSt, hN, hk]); rw [ifn (by omega_using [hSt, hSl, hN, hk])] at this
       rw [m₁₀, off_add']; exact this
-  have hblk : md.blockAt u.mem (off (Sp s) (oY + P.B * i)) = md.blockOf (yl V) i := by
+  obtain hblk : md.blockAt u.mem (off (Sp s) (oY + P.B * i)) = md.blockOf (yl V) i := by
     simp only [Md.blockAt, Md.blockOf]
     refine md.parse_congr fun k hk => ?_
     rw [yl_getD (by omega_using [hBi, hk]), off_add', show oY + P.B * i + k = oY + (P.B * i + k) by omega_using []]
     exact I.mem _ (by omega_using [hR, hY, hBi, hk]) (.inr ⟨by omega_using [], by omega_using [hBi, hk]⟩)
-  have hst : md.stateAt u₁₀.mem (off (Sp s) oSt) = md.compressList hv (yl V) (i + 1) := by
+  obtain hst : md.stateAt u₁₀.mem (off (Sp s) oSt) = md.compressList hv (yl V) (i + 1) := by
     rw [md.stateAt_congr vSt, st₇, k₆.mem, hblk, I.st, Md.compressList_succ]
   refine ⟨⟨b₈.only F k₁₀, y₁₀.trans (y₈.trans y₇), fun r hr => ?_, ?_, hst, fun hlt => ?_, fun o ho hr => ?_⟩, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -151,19 +151,19 @@ theorem compLoop_ok {t : State} (h : Base Sp (vP D) s t) (sy : t.syms = s.syms) 
       refine ok.reloc _ _ _ _ fun k hk => ?_
       have := v₈ (oSel + k) (by omega_using [hR, hSl, hN, hk])
       rw [ifp ⟨by omega_using [], by omega_using [hk], rfl⟩, show oSt + (oSel + k - oSel) = oSt + k by omega_using []] at this
-      have a1 : u₁₀.mem (off (Sp s) oSel + BitVec.ofNat 64 k) = u₇.mem (off (Sp s) oSt + BitVec.ofNat 64 k) := by
+      obtain a1 : u₁₀.mem (off (Sp s) oSel + BitVec.ofNat 64 k) = u₇.mem (off (Sp s) oSt + BitVec.ofNat 64 k) := by
         rw [m₁₀, off_add', off_add']; exact this
       exact a1.trans (vSt k hk).symm
     · have hlt' : fb < i := by omega_using [hlt, e]
       rw [← I.sel hlt']
       refine md.stateAt_congr fun k hk => ?_
-      have e8 := v₈ (oSel + k) (by omega_using [hR, hSl, hN, hk])
+      obtain e8 := v₈ (oSel + k) (by omega_using [hR, hSl, hN, hk])
       rw [ifn (fun h => e h.2.2)] at e8
-      have e7 := s₇ (oSel + k) (by omega_using [hR, hSl, hN, hk]) (by simp; omega_using [hSt, hSl, hW, hN, hso])
+      obtain e7 := s₇ (oSel + k) (by omega_using [hR, hSl, hN, hk]) (by simp; omega_using [hSt, hSl, hW, hN, hso])
       rw [m₁₀, off_add']; exact e8.trans (e7.trans (by rw [k₆.mem]; rfl))
   · have e8 := v₈ o ho
     rw [ifn (by omega_using [hn0, hnb, hfb, hR, hY, hSt, hSl, hN, hB, hn, hi, hBi, ho, hr])] at e8
-    have e7 := s₇ o ho (by simp; omega_using [hY, hSt, hW, hN, hso, hr])
+    obtain e7 := s₇ o ho (by simp; omega_using [hY, hSt, hW, hN, hso, hr])
     rw [m₁₀]; exact e8.trans (e7.trans (by rw [k₆.mem]; exact I.mem o ho hr))
   · rw [f₁₀, p₉.get .r28, k₈.get .r28, g₇ _ (by decide), k₆.get .r28]
 
@@ -190,16 +190,16 @@ theorem y_pad {B L fb nbm : Nat} (msg len : List Byte) (hfb : fb = lastBlk B L m
     (hW : ∀ j < B * nbm, W (oY + j) = msg.getD j 0 ||| (if j = msg.length then 0x80 else 0)) :
     ∀ j < B * (fb + 1), vLen W len B L fb nbm (oY + j) = padded B L msg len j := by
   intro j hj
-  have hB0 : 0 < B := by omega_using [hLB]
-  have e := Nat.div_add_mod j B
-  have hk : j % B < B := Nat.mod_lt _ hB0
-  have hb : j / B < fb + 1 := (Nat.div_lt_iff_lt_mul hB0).mpr (by rw [Nat.mul_comm]; exact hj)
-  have hfit : msg.length + L < B * (fb + 1) := by
+  obtain hB0 : 0 < B := by omega_using [hLB]
+  obtain e := Nat.div_add_mod j B
+  obtain hk : j % B < B := Nat.mod_lt _ hB0
+  obtain hb : j / B < fb + 1 := (Nat.div_lt_iff_lt_mul hB0).mpr (by rw [Nat.mul_comm]; exact hj)
+  obtain hfit : msg.length + L < B * (fb + 1) := by
     rw [hfb]; unfold lastBlk
     have := Nat.lt_div_mul_add (a := msg.length + L) (b := B) hB0
     rw [Nat.mul_add, Nat.mul_one, Nat.mul_comm]; omega_using [this]
-  have hlow : B * fb ≤ msg.length + L := by rw [hfb]; unfold lastBlk; exact Nat.mul_div_le _ _
-  have hjn : j < B * nbm := Nat.lt_of_lt_of_le hj (Nat.mul_le_mul_left _ hfbn)
+  obtain hlow : B * fb ≤ msg.length + L := by rw [hfb]; unfold lastBlk; exact Nat.mul_div_le _ _
+  obtain hjn : j < B * nbm := Nat.lt_of_lt_of_le hj (Nat.mul_le_mul_left _ hfbn)
   generalize hbv : j / B = b at e hb
   generalize hkv : j % B = k at e hk
   subst e
@@ -207,7 +207,7 @@ theorem y_pad {B L fb nbm : Nat} (msg len : List Byte) (hfb : fb = lastBlk B L m
     show oY + B * b + k = oY + (B * b + k) by omega_using [], hW _ hjn]
   simp only [padded, ← hfb]
   rw [Nat.mul_add, Nat.mul_one] at hfit hj
-  have hz : ∀ i, msg.length ≤ i → msg.getD i 0 = 0 := fun i hi => by
+  obtain hz : ∀ i, msg.length ≤ i → msg.getD i 0 = 0 := fun i hi => by
     rw [List.getD_eq_getElem?_getD, List.getElem?_eq_none hi]; rfl
   by_cases e₁ : B * b + k < msg.length
   · have : ¬(b = fb ∧ B - L ≤ k) := by
@@ -257,37 +257,37 @@ theorem ctHash_ok (hD : H.D = D) (hN : H.N = P.N) (hB : H.B = P.B) {t : State} (
   have hNd := ok.dims.N
   have hBd := ok.dims.B
   have hLd := ok.dims.L
-  have hk := L.hk; have hk2 := L.k2; have hD64 := L.D64; have hD0 := L.D0
+  obtain hk := L.hk; have hk2 := L.k2; have hD64 := L.D64; have hD0 := L.D0
   have hDN : D ≤ P.N := hl.DN
-  have hLB : P.L < P.B := by rcases hBd with e | e <;> omega_using [hLd, e]
-  have hB0 : 0 < P.B := by omega_using [hBd]
-  have hS : H.S = P.N + P.B := by simp only [Hash.S, hN, hB]
+  obtain hLB : P.L < P.B := by rcases hBd with e | e <;> omega_using [hLd, e]
+  obtain hB0 : 0 < P.B := by omega_using [hBd]
+  obtain hS : H.S = P.N + P.B := by simp only [Hash.S, hN, hB]
   -- The lengths.
   let ℓ := 8 + D + sl
   let nbm := (dN + (8 + D - 1 + P.L)) / P.B + 1
   let fb := lastBlk P.B P.L ℓ
-  have hnb : nbm * P.B ≤ 2048 := by
+  obtain hnb : nbm * P.B ≤ 2048 := by
     have := Nat.div_mul_le_self (dN + (8 + D - 1 + P.L)) P.B
     rw [Nat.add_mul, Nat.one_mul]; rcases hBd with e | e <;> rw [e] at this ⊢ <;> omega_using [hLd, hk, hk2]
-  have hn0 : 0 < nbm * P.B := Nat.mul_pos (Nat.succ_pos _) hB0
-  have hfb : fb < nbm := by
+  obtain hn0 : 0 < nbm * P.B := Nat.mul_pos (Nat.succ_pos _) hB0
+  obtain hfb : fb < nbm := by
     show (ℓ + P.L) / P.B < _ + 1
     exact Nat.lt_succ_of_le (Nat.div_le_div_right (by omega_using [hsl]))
-  have hn32 : nbm ≤ 32 := by rcases hBd with e | e <;> rw [e] at hnb <;> omega_using [hnb]
-  have hcm : nbm * P.B = P.B * nbm := Nat.mul_comm _ _
-  have hfbB : P.B * (fb + 1) ≤ 2048 := Nat.le_trans (Nat.mul_le_mul_left _ hfb) (by rw [← hcm]; exact hnb)
+  obtain hn32 : nbm ≤ 32 := by rcases hBd with e | e <;> rw [e] at hnb <;> omega_using [hnb]
+  obtain hcm : nbm * P.B = P.B * nbm := Nat.mul_comm _ _
+  obtain hfbB : P.B * (fb + 1) ≤ 2048 := Nat.le_trans (Nat.mul_le_mul_left _ hfb) (by rw [← hcm]; exact hnb)
   refine WP.seq (WP.of_syms (wp_addi (h := by omega_using [hD, hD64]) fun t₁ o₁ e₁ => wp_addi (h := by omega_using [hD, hBd, hLd, hk, hD64, hD0, hDN, hLB, hB0, hnb, hn0, hcm, hfbB]) fun t₂ o₂ e₂ =>
     wp_lsr (h := by omega_using [hlg7]) fun t₃ o₃ e₃ => wp_addi (h := by decide) fun t₄ o₄ e₄ => wp_nil fun y₄ => ?_))
-  have k₄ : Only [.r29, .r28] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
-  have g29 : t₄.gpr .r29 = BitVec.ofNat 64 ℓ := by
+  obtain k₄ : Only [.r29, .r28] t t₄ := (o₁.trans (o₂.trans (o₃.trans o₄))).mono
+  obtain g29 : t₄.gpr .r29 = BitVec.ofNat 64 ℓ := by
     rw [o₄.get .r29, o₃.get .r29, o₂.get .r29, e₁, h25, hD, BitVec.ofNat_add_ofNat]; congr 1; omega_using []
-  have g28 : t₄.gpr .r28 = BitVec.ofNat 64 nbm := by
+  obtain g28 : t₄.gpr .r28 = BitVec.ofNat 64 nbm := by
     rw [e₄, e₃, e₂, o₁.get .r21, h.pdb, L.hdb, hD, BitVec.ofNat_add_ofNat, Proof.MdStream.PPC64LE.ofNat_shr (by omega_using [hsl, hNd, hBd, hLd, hk, hk2, hD64, hD0, hDN, hLB, hB0, hnb, hn0, hcm, hfbB]),
       hlg, BitVec.ofNat_add_ofNat]
-  have b₄ := h.only F k₄
+  obtain b₄ := h.only F k₄
   -- `init`.
   refine WP.seq (WP.mono (hInit_ok F hH T b₄ (y₄.trans sy)) fun t₅ ⟨⟨b₅, g₅, s₅, r₅⟩, y₅⟩ => ?_)
-  have iv₅ : md.stateAt t₅.mem (off (Sp s) oSt) = iv := by
+  obtain iv₅ : md.stateAt t₅.mem (off (Sp s) oSt) = iv := by
     have := (hl.repr _ _ _ r₅).1
     rw [this, List.length_nil, Nat.zero_div, Md.compressList_zero]
   -- `0x80`.
@@ -297,9 +297,9 @@ theorem ctHash_ok (hD : H.D = D) (hN : H.N = P.N) (hB : H.B = P.B) {t : State} (
   refine WP.seq (WP.of_syms (WP.mono (lenField_ok L ok.shape ok.lenLr (by rcases hBd with e | e <;> omega_using [hLn, hNd, e]) hLd.2 hlg7 (ℓ := ℓ)
     b₆ (by rw [k₆.get .r29, g₅ _ (by decide), g29]) (by omega)) fun t₇ ⟨b₇, k₇, g27, m₇⟩ y₇ => ?_))
   rw [md.lenOf_eq _ (ok.lenOk _ (by omega))] at m₇
-  have g27' : t₇.gpr .r27 = BitVec.ofNat 64 fb := by rw [g27, hlg]; rfl
+  obtain g27' : t₇.gpr .r27 = BitVec.ofNat 64 fb := by rw [g27, hlg]; rfl
   -- Into the last block.
-  have v₇ : ∀ o < oRsa, view t₇.mem (Sp s) o =
+  obtain v₇ : ∀ o < oRsa, view t₇.mem (Sp s) o =
       if oLen ≤ o ∧ o < oLen + P.L then (md.lenBytes ℓ).getD (o - oLen) 0 else view t₆.mem (Sp s) o := by
     intro o ho; rw [m₇, view_wb _ _ (by rw [md.lenBytes_length]; omega_using [hR, hLn, hLd]) ho, md.lenBytes_length]
   refine WP.seq (WP.of_syms (WP.mono (lenLoop_ok L hBd hLB hLd.1 b₇
@@ -307,10 +307,10 @@ theorem ctHash_ok (hD : H.D = D) (hN : H.N = P.N) (hB : H.B = P.B) {t : State} (
     (len := md.lenBytes ℓ) (fun i hi => by rw [v₇ _ (by omega_using [hR, hLn, hLd, hi]), ifp ⟨by omega_using [], by omega_using [hi]⟩, Nat.add_sub_cancel_left]))
     fun t₈ ⟨b₈, k₈, v₈⟩ y₈ => ?_))
   -- The compression.
-  have hst₈ : md.stateAt t₈.mem (off (Sp s) oSt) = iv := by
+  obtain hst₈ : md.stateAt t₈.mem (off (Sp s) oSt) = iv := by
     rw [← iv₅]
     refine md.stateAt_congr fun i hi => ?_
-    have e8 := v₈ (oSt + i) (by omega_using [hR, hSt, hNd, hi])
+    obtain e8 := v₈ (oSt + i) (by omega_using [hR, hSt, hNd, hi])
     rw [vLen_lt _ _ _ _ _ _ _ (by omega_using [hY', hSt, hNd, hi]), v₇ _ (by omega_using [hR, hSt, hNd, hi]), ifn (by omega_using [hSt, hLn, hNd, hBd, hLd, hDN, hLB, hB0, hnb, hn0, hcm, hfbB, hi]), v₆ _ (by omega_using [hR, hSt, hNd, hi])] at e8
     simp only [v80] at e8
     rw [ifn (by omega_using [hY', hSt, hNd, hBd, hLd, hDN, hLB, hB0, hnb, hn0, hfb, hn32, hcm, hfbB, hi])] at e8
@@ -322,7 +322,7 @@ theorem ctHash_ok (hD : H.D = D) (hN : H.N = P.N) (hB : H.B = P.B) {t : State} (
   -- The digest.
   refine WP.seq (WP.of_syms (wp_addi (h := by decide) fun t₁₀ o₁₀ e₁₀ => wp_addi (h := by decide)
     fun t₁₁ o₁₁ e₁₁ => wp_nil fun y₁₁ => ?_))
-  have k₁₁ : Only [.r3, .r4] t₉ t₁₁ := (o₁₀.trans o₁₁).mono
+  obtain k₁₁ : Only [.r3, .r4] t₉ t₁₁ := (o₁₀.trans o₁₁).mono
   refine WP.mono (digM_ok F T ok.dig ok.digNF hNd.2 (I.base.only F k₁₁) (y₁₁.trans I.sy)
     (by rw [o₁₁.get .r3, e₁₀, I.base.r14]) (by rw [e₁₁, o₁₀.get .r14, I.base.r14])) fun t' ⟨⟨b', g', s', m'⟩, y'⟩ =>
     ⟨⟨b', ?_, fun o ho => ?_, fun i hi => ?_⟩, y'⟩
@@ -335,8 +335,8 @@ theorem ctHash_ok (hD : H.D = D) (hN : H.N = P.N) (hB : H.B = P.B) {t : State} (
     rw [ifn (by omega_using [hY', hSt, hBd, hLd, hLB, hB0, hnb, hn0, hfb, hn32, hcm, hfbB, ho]), s₅ o (by omega_using [hR, hSt, ho]) (by simp; omega_using [ho]), show view t₄.mem (Sp s) o = view t.mem (Sp s) o by
       rw [k₄.mem]]
   · -- The selected hash value is that of the padded message.
-    have hsel := I.sel hfb
-    have hpad : md.compressList iv (yl (view t₈.mem (Sp s))) (fb + 1) =
+    obtain hsel := I.sel hfb
+    obtain hpad : md.compressList iv (yl (view t₈.mem (Sp s))) (fb + 1) =
         md.compressList iv (md.pad msg) ((md.pad msg).length / P.B) := by
       rw [RsaPss.pad_length md msg hB0 hLB, Nat.mul_div_cancel_left _ hB0, hml]
       refine md.compressList_congr fun j hj => ?_
@@ -346,7 +346,7 @@ theorem ctHash_ok (hD : H.D = D) (hN : H.N = P.N) (hB : H.B = P.B) {t : State} (
       simp only [v80]
       rw [ifp ⟨by omega_using [], by omega_using [hcm, hj']⟩, Nat.add_sub_cancel_left, s₅ _ (by omega_using [hR, hY', hBd, hLB, hB0, hnb, hn0, hfb, hn32, hcm, hfbB, hj, hj']) (by simp; omega_using [hY', hSt, hNd, hBd, hDN, hLB, hB0, hS, hnb, hn0, hfb, hn32, hcm, hfbB, hj, hj']),
         show view t₄.mem (Sp s) (oY + j') = view t.mem (Sp s) (oY + j') by rw [k₄.mem], hY j' (by omega_using [hnb, hcm, hj']), hml]
-    have hdl := md.digest_length (md.stateAt t₁₁.mem (off (Sp s) oSel))
+    obtain hdl := md.digest_length (md.stateAt t₁₁.mem (off (Sp s) oSel))
     rw [m', view_wb _ _ (by rw [hdl]; omega_using [hR, hDg, hNd]) (by omega_using [hR, hDg, hD64, hi]), ifp ⟨by omega_using [], by rw [hdl]; omega_using [hDN, hi]⟩, Nat.add_sub_cancel_left,
       k₁₁.mem, hsel, hpad, hl.hash]
     show (md.hash iv msg).getD i 0 = ((md.hash iv msg).take D).getD i 0

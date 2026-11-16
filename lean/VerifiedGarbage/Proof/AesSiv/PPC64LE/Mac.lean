@@ -216,11 +216,11 @@ theorem cmacLen_wp {c : Cx} {s : State} (E : Env c s) {st : Nat} (hst : st + 16 
   unfold cmacLen
   refine WP.seq (zero16_wp E (d := st) (by omega_arith) (by omega_arith) fun s₁ pk₁ g₁ m₁ => ?_)
   refine wp_li (by decide) fun s₂ u₂ => WP.block_nil ?_
-  have K₂ : MacKeep s s₂ :=
+  obtain K₂ : MacKeep s s₂ :=
     ⟨pk₁.trans (PK.ofUpd u₂), by rw [u₂.other _ (by decide), g₁ _ (by decide)],
       by rw [u₂.other _ (by decide), g₁ _ (by decide)], by rw [u₂.other _ (by decide), g₁ _ (by decide)],
       by rw [u₂.other _ (by decide), g₁ _ (by decide)]⟩
-  have h20₂ : s₂.gpr .r20 = BitVec.ofNat 64 n := by rw [K₂.r20, h20]
+  obtain h20₂ : s₂.gpr .r20 = BitVec.ofNat 64 n := by rw [K₂.r20, h20]
   refine WP.ite (decide (n = 0)) (VG.Proof.Gather.PPC64LE.eval_zero h20₂ hn) (fun ht => ?_) (fun hf => ?_)
   · have h0 : n = 0 := by simpa using ht
     subst h0
@@ -242,17 +242,17 @@ theorem cmacOf_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {st : Nat} (hst
     WP isa (cmacOf st) s fun s' => MacKeep s s' ∧ Frame (macR c st) s.mem s'.mem ∧
       bytesAt s'.mem (c.W + BitVec.ofNat 64 st) 16 = Spec.Siv.ctxMac s.mem c.C c.R (bytesAt s.mem P n) := by
   have hn := hP.lt
-  have hcl := chainedLen_le n
-  have hcd := chainedLen_div n
-  have hrest := chainedLen_rest n
+  obtain hcl := chainedLen_le n
+  obtain hcd := chainedLen_div n
+  obtain hrest := chainedLen_rest n
   have hRb := L.rb
   unfold cmacOf
   refine WP.seq (WP.mono (cmacLen_wp E hst hst8 hn h20) fun s₁ ⟨K₁, h21₁, m₁⟩ => ?_)
-  have E₁ := E.of_pk K₁.pk
-  have h19₁ : s₁.gpr .r19 = P := by rw [K₁.r19, h19]
-  have h20₁ : s₁.gpr .r20 = BitVec.ofNat 64 n := by rw [K₁.r20, h20]
+  obtain E₁ := E.of_pk K₁.pk
+  obtain h19₁ : s₁.gpr .r19 = P := by rw [K₁.r19, h19]
+  obtain h20₁ : s₁.gpr .r20 = BitVec.ofNat 64 n := by rw [K₁.r20, h20]
   -- The update's arguments.
-  have A₁ : WP isa (.block (cmacArgs₁ st)) s₁ fun s₂ => MacKeep s₁ s₂ ∧ s₂.mem = s₁.mem ∧
+  obtain A₁ : WP isa (.block (cmacArgs₁ st)) s₁ fun s₂ => MacKeep s₁ s₂ ∧ s₂.mem = s₁.mem ∧
       s₂.gpr .r21 = s₁.gpr .r21 ∧
       UArgs s₂ c.C (c.W + BitVec.ofNat 64 st) P (c.W + BitVec.ofNat 64 384) c.R (Spec.Cmac.chainedLen 16 n / 16) := by
     unfold cmacArgs₁ macArgs
@@ -260,10 +260,10 @@ theorem cmacOf_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {st : Nat} (hst
     refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega_arith) fun t₃ v₃ =>
       wp_addi (by decide) (by decide) fun t₄ v₄ => wp_mv fun t₅ v₅ => wp_lsr (by decide) fun t₆ v₆ =>
       WP.block_nil ?_
-    have K : MacKeep s₁ t₆ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
+    obtain K : MacKeep s₁ t₆ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
       ((MacKeep.ofUpd v₄).trans ((MacKeep.ofUpd v₅).trans (MacKeep.ofUpd v₆)))))
-    have E₆ := E₁.of_pk K.pk
-    have hq := (hP.take hcl).of_eq (by rw [K.pk.rd, K₁.pk.rd]) (by rw [K.pk.wr, K₁.pk.wr])
+    obtain E₆ := E₁.of_pk K.pk
+    obtain hq := (hP.take hcl).of_eq (by rw [K.pk.rd, K₁.pk.rd]) (by rw [K.pk.wr, K₁.pk.wr])
     rw [← hcd] at hq
     refine ⟨K, by rw [v₆.mem, v₅.mem, v₄.mem, v₃.mem, v₂.mem, v₁.mem],
       by rw [v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide),
@@ -283,15 +283,15 @@ theorem cmacOf_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {st : Nat} (hst
         v₂.other _ (by decide), v₁.other _ (by decide), E₁.r14]; rfl)
   refine WP.seq (WP.mono A₁ fun s₂ ⟨K₂, m₂, h21₂, U⟩ => ?_)
   refine WP.seq (WP.mono (upd_call U) fun s₃ h₃ => ?_)
-  have K₃ : MacKeep s₂ s₃ := MacKeep.ofSaved h₃.rd h₃.wr h₃.sp h₃.saved
-  have K₁₃ := K₂.trans K₃
-  have E₃ := E₁.of_pk K₁₃.pk
-  have h21₃ : s₃.gpr .r21 = BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 n) := by
+  obtain K₃ : MacKeep s₂ s₃ := MacKeep.ofSaved h₃.rd h₃.wr h₃.sp h₃.saved
+  obtain K₁₃ := K₂.trans K₃
+  obtain E₃ := E₁.of_pk K₁₃.pk
+  obtain h21₃ : s₃.gpr .r21 = BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 n) := by
     rw [h₃.saved _ (by decide), h21₂, h21₁]
   -- The finalization's arguments.
-  have hq : Buf c s₃ (P + BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 n)) (n - Spec.Cmac.chainedLen 16 n) :=
+  obtain hq : Buf c s₃ (P + BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 n)) (n - Spec.Cmac.chainedLen 16 n) :=
     (hP.drop hcl).of_eq (by rw [K₁₃.pk.rd, K₁.pk.rd]) (by rw [K₁₃.pk.wr, K₁.pk.wr])
-  have A₂ : WP isa (.block (cmacArgs₂ st)) s₃ fun s₄ => MacKeep s₃ s₄ ∧ s₄.mem = s₃.mem ∧
+  obtain A₂ : WP isa (.block (cmacArgs₂ st)) s₃ fun s₄ => MacKeep s₃ s₄ ∧ s₄.mem = s₃.mem ∧
       FArgs s₄ c.C (c.W + BitVec.ofNat 64 st) (P + BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 n))
         (c.W + BitVec.ofNat 64 384) (n - Spec.Cmac.chainedLen 16 n) c.R := by
     unfold cmacArgs₂ macArgs
@@ -299,10 +299,10 @@ theorem cmacOf_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {st : Nat} (hst
     refine wp_mv fun t₁ v₁ => wp_mv fun t₂ v₂ => wp_addi (by decide) (by omega_arith) fun t₃ v₃ =>
       wp_addi (by decide) (by decide) fun t₄ v₄ => wp_add fun t₅ v₅ => wp_sub fun t₆ v₆ =>
       WP.block_nil ?_
-    have K : MacKeep s₃ t₆ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
+    obtain K : MacKeep s₃ t₆ := (MacKeep.ofUpd v₁).trans ((MacKeep.ofUpd v₂).trans ((MacKeep.ofUpd v₃).trans
       ((MacKeep.ofUpd v₄).trans ((MacKeep.ofUpd v₅).trans (MacKeep.ofUpd v₆)))))
-    have E₆ := E₃.of_pk K.pk
-    have hq' := hq.of_eq K.pk.rd K.pk.wr
+    obtain E₆ := E₃.of_pk K.pk
+    obtain hq' := hq.of_eq K.pk.rd K.pk.wr
     refine ⟨K, by rw [v₆.mem, v₅.mem, v₄.mem, v₃.mem, v₂.mem, v₁.mem], ?_⟩
     exact fargs L E₆ hst hrest hq'.src (hq'.wd (by omega_arith))
       (by rw [v₆.other _ (by decide), v₅.other _ (by decide), v₄.other _ (by decide), v₃.other _ (by decide),
@@ -320,26 +320,26 @@ theorem cmacOf_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {st : Nat} (hst
         v₂.other _ (by decide), v₁.other _ (by decide), E₃.r14]; rfl)
   refine WP.seq (WP.mono A₂ fun s₄ ⟨K₄, m₄, F⟩ => ?_)
   refine WP.mono (fin_call_raw F) fun s₅ h₅ => ?_
-  have K₅ : MacKeep s₄ s₅ := MacKeep.ofSaved h₅.rd h₅.wr h₅.sp h₅.saved
+  obtain K₅ : MacKeep s₄ s₅ := MacKeep.ofSaved h₅.rd h₅.wr h₅.sp h₅.saved
   refine ⟨K₁.trans (K₁₃.trans (K₄.trans K₅)), ?_, ?_⟩
   -- The memory: what each step writes.
-  have f₁ : Frame (macR c st) s.mem s₁.mem := by
+  obtain f₁ : Frame (macR c st) s.mem s₁.mem := by
     rw [m₁]; exact (Proof.Cmac.frame_store2 _ _ _).mono (by simp)
   have f₃ : Frame (macR c st) s₂.mem s₃.mem := h₃.frame
   have f₅ : Frame (macR c st) s₄.mem s₅.mem := h₅.frame
-  have f₁₃ : Frame (macR c st) s.mem s₃.mem := f₁.trans (by rw [← m₂]; exact f₃)
+  obtain f₁₃ : Frame (macR c st) s.mem s₃.mem := f₁.trans (by rw [← m₂]; exact f₃)
   · exact f₁₃.trans (by rw [← m₄]; exact f₅)
   -- What the calls read is as on entry.
-  have f₁ : Frame (macR c st) s.mem s₁.mem := by
+  obtain f₁ : Frame (macR c st) s.mem s₁.mem := by
     rw [m₁]; exact (Proof.Cmac.frame_store2 _ _ _).mono (by simp)
-  have f₁₃ : Frame (macR c st) s.mem s₃.mem := f₁.trans (by rw [← m₂]; exact h₃.frame)
-  have dc : ∀ r ∈ macR c st, (⟨c.C, 512⟩ : Region).Disjoint r := by
+  obtain f₁₃ : Frame (macR c st) s.mem s₃.mem := f₁.trans (by rw [← m₂]; exact h₃.frame)
+  obtain dc : ∀ r ∈ macR c st, (⟨c.C, 512⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact L.c0_w' (by decide) (by omega_arith)
     · exact L.c0_w' (by decide) (by decide)
-  have dp : ∀ r ∈ macR c st, (⟨P, n⟩ : Region).Disjoint r := by
+  obtain dp : ∀ r ∈ macR c st, (⟨P, n⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -351,23 +351,23 @@ theorem cmacOf_wp {c : Cx} (L : Lay c) {s : State} (E : Env c s) {st : Nat} (hst
   have cP {d k : Nat} (hd : d + k ≤ n) {m' : Mem} (hf : Frame (macR c st) s.mem m') :
       bytesAt m' (P + BitVec.ofNat 64 d) k = bytesAt s.mem (P + BitVec.ofNat 64 d) k :=
     Proof.Cmac.bytesAt_frame hf (fun r hr => (dp r hr).sub_left (Offset.sub_base _ hd)) (by omega_arith)
-  have k0 : ∀ a : Addr, a + BitVec.ofNat 64 0 = a := fun a => BitVec.add_zero a
-  have sch₁ := cK (d := 0) (k := 16 * (c.R + 1)) (by omega_arith) f₁
-  have sch₃ := cK (d := 0) (k := 16 * (c.R + 1)) (by omega_arith) f₁₃
-  have k1 := cK (d := 240) (k := 16) (by decide) f₁₃
-  have k2 := cK (d := 256) (k := 16) (by decide) f₁₃
-  have pre₁ := cP (d := 0) (k := Spec.Cmac.chainedLen 16 n) (by omega_arith) f₁
-  have rest₃ := cP (d := Spec.Cmac.chainedLen 16 n) (k := n - Spec.Cmac.chainedLen 16 n) (by omega_arith) f₁₃
+  obtain k0 : ∀ a : Addr, a + BitVec.ofNat 64 0 = a := fun a => BitVec.add_zero a
+  obtain sch₁ := cK (d := 0) (k := 16 * (c.R + 1)) (by omega_arith) f₁
+  obtain sch₃ := cK (d := 0) (k := 16 * (c.R + 1)) (by omega_arith) f₁₃
+  obtain k1 := cK (d := 240) (k := 16) (by decide) f₁₃
+  obtain k2 := cK (d := 256) (k := 16) (by decide) f₁₃
+  obtain pre₁ := cP (d := 0) (k := Spec.Cmac.chainedLen 16 n) (by omega_arith) f₁
+  obtain rest₃ := cP (d := Spec.Cmac.chainedLen 16 n) (k := n - Spec.Cmac.chainedLen 16 n) (by omega_arith) f₁₃
   rw [k0] at sch₁ sch₃ pre₁
-  have hz : bytesAt s₁.mem (c.W + BitVec.ofNat 64 st) 16 = Spec.Cmac.zeros 16 := by
+  obtain hz : bytesAt s₁.mem (c.W + BitVec.ofNat 64 st) 16 = Spec.Cmac.zeros 16 := by
     rw [m₁, Proof.Cmac.zero2_bytes]
-  have hS : (bytesAt s.mem P n).length = n := Proof.Cmac.bytesAt_length _ _ _
-  have hsplit : n = Spec.Cmac.chainedLen 16 n + (n - Spec.Cmac.chainedLen 16 n) := by omega_arith
-  have tk : (bytesAt s.mem P n).take (Spec.Cmac.chainedLen 16 n) =
+  obtain hS : (bytesAt s.mem P n).length = n := Proof.Cmac.bytesAt_length _ _ _
+  obtain hsplit : n = Spec.Cmac.chainedLen 16 n + (n - Spec.Cmac.chainedLen 16 n) := by omega_arith
+  obtain tk : (bytesAt s.mem P n).take (Spec.Cmac.chainedLen 16 n) =
       bytesAt s.mem P (Spec.Cmac.chainedLen 16 n) := by
     have := take_bytesAt s.mem P (a := Spec.Cmac.chainedLen 16 n) (b := n - Spec.Cmac.chainedLen 16 n)
     rwa [← hsplit] at this
-  have dr : (bytesAt s.mem P n).drop (Spec.Cmac.chainedLen 16 n) =
+  obtain dr : (bytesAt s.mem P n).drop (Spec.Cmac.chainedLen 16 n) =
       bytesAt s.mem (P + BitVec.ofNat 64 (Spec.Cmac.chainedLen 16 n)) (n - Spec.Cmac.chainedLen 16 n) := by
     have := drop_bytesAt s.mem P (a := Spec.Cmac.chainedLen 16 n) (b := n - Spec.Cmac.chainedLen 16 n)
     rwa [← hsplit] at this

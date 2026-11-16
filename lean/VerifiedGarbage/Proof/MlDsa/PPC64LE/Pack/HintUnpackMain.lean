@@ -183,33 +183,33 @@ theorem zero_ok : WP isa hbuZero s₀ (ZPost s₀) := by
   refine WP.seq (wp_lsl (by decide) fun s₁ o₁ => wp_lsr (by decide) fun s₂ o₂ => wp_sub fun s₃ o₃ =>
     wp_addi (by decide) (by decide) fun s₄ o₄ => wp_li (by decide) fun s₅ o₅ =>
     wp_addi (by decide) (by decide) fun s₆ o₆ => wp_nil ?_)
-  have k₅ := (((o₁.keepH.trans o₂.keepH).trans o₃.keepH).trans o₄.keepH).trans o₅.keepH
-  have k₆ := k₅.trans o₆.keepH
-  have m₆ : s₆.mem = s₀.mem := by rw [o₆.mem, o₅.mem, o₄.mem, o₃.mem, o₂.mem, o₁.mem]
-  have r5 : s₆.gpr .r5 = BitVec.ofNat 64 (uω s₀) := by
+  obtain k₅ := (((o₁.keepH.trans o₂.keepH).trans o₃.keepH).trans o₄.keepH).trans o₅.keepH
+  obtain k₆ := k₅.trans o₆.keepH
+  obtain m₆ : s₆.mem = s₀.mem := by rw [o₆.mem, o₅.mem, o₄.mem, o₃.mem, o₂.mem, o₁.mem]
+  obtain r5 : s₆.gpr .r5 = BitVec.ofNat 64 (uω s₀) := by
     rw [o₆.other _ (by decide), o₅.other _ (by decide), o₄.other _ (by decide), o₃.other _ (by decide), o₂.gpr,
       o₁.gpr, zext_eq]
-  have r0 : s₆.gpr .r0 = 0 := by rw [o₆.other _ (by decide), o₅.gpr]; rfl
-  have r12 : s₆.gpr .r12 = BitVec.ofNat 64 (uk s₀) := by
+  obtain r0 : s₆.gpr .r0 = 0 := by rw [o₆.other _ (by decide), o₅.gpr]; rfl
+  obtain r12 : s₆.gpr .r12 = BitVec.ofNat 64 (uk s₀) := by
     rw [o₆.other _ (by decide), o₅.other _ (by decide), o₄.other _ (by decide), o₃.gpr,
       o₂.other _ (by decide), o₁.other _ (by decide), o₂.gpr, o₁.gpr, zext_eq]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_sub_of_le (by rw [BitVec.le_def, ofNat_lt (by omega_arith)]; exact hp.ωle), ofNat_lt (by omega_arith),
       ofNat_lt (by omega_arith)]
-  have hwr : s₆.wr = [uhR s₀] := by rw [k₆.2.2, hp.wr]
+  obtain hwr : s₆.wr = [uhR s₀] := by rw [k₆.2.2, hp.wr]
   refine WP.seq (wp_loop_nz (ZInv s₀ s₆) (N := 256 * uk s₀) (by omega_arith) (fun t ht s h => ?_) (fun s h => ?_)
     ⟨by rw [o₆.gpr, k₅.gpr (r := .r6) (by decide), add0], ?_, Keep.refl _ _,
       by rw [m₆]; exact Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _)⟩)
   · -- A word.
-    have hc : (uhR s₀).Contains (coeffAddr (uH s₀) t) 4 := Offset.contains_base _ (by omega_arith) (by omega_arith)
+    obtain hc : (uhR s₀).Contains (coeffAddr (uH s₀) t) 4 := Offset.contains_base _ (by omega_arith) (by omega_arith)
     refine wp_stw (by decide) (by decide) (by rw [h.r10, add0])
       (by rw [h.keep.2.2, hwr]; exact ⟨_, List.mem_singleton_self _, hc⟩) fun s₁ m₁ =>
       wp_addi (by decide) (by decide) fun s₂ o₂ => wp_subi (by decide) (by decide) fun s₃ o₃ => wp_nil ?_
-    have c9 : s₃.gpr .r9 = BitVec.ofNat 64 (256 * uk s₀ - (t + 1)) := by
+    obtain c9 : s₃.gpr .r9 = BitVec.ofNat 64 (256 * uk s₀ - (t + 1)) := by
       rw [o₃.gpr, o₂.other _ (by decide), m₁.gpr, h.r9, count_sub ht]
-    have m₃ : s₃.mem = s.mem.writeW (coeffAddr (uH s₀) t) ((s.gpr .r0).setWidth 32) := by
+    obtain m₃ : s₃.mem = s.mem.writeW (coeffAddr (uH s₀) t) ((s.gpr .r0).setWidth 32) := by
       rw [o₃.mem, o₂.mem, m₁.mem]
-    have z0 : (s.gpr .r0).setWidth 32 = 0 := by rw [h.keep.gpr (by decide), r0]; rfl
+    obtain z0 : (s.gpr .r0).setWidth 32 = 0 := by rw [h.keep.gpr (by decide), r0]; rfl
     refine ⟨⟨?_, c9, (h.keep.trans ((m₁.keepH.trans o₂.keepH).trans o₃.keepH)).mono (by decide), ?_,
       fun u hu => ?_⟩, by rw [c9]; exact count_nz ht (by omega_arith)⟩
     · rw [o₃.other _ (by decide), o₂.gpr, m₁.gpr, h.r10, ptr_add, Nat.mul_succ]
@@ -247,8 +247,8 @@ theorem set_ok {i bound idx : Nat} (hi : i < uk s₀) (hidx : idx < uLen s₀) {
   obtain ⟨hk4, hk8, -, hω80, hsum, hL88⟩ := ufacts hp
   have fH := hp.fitH
   have hl := hp.hlen
-  have hb := ((uYs s₀).getD idx 0).isLt
-  have hc : (uhR s₀).Contains (coeffAddr (uH s₀) (256 * i + ((uYs s₀).getD idx 0).toNat)) 4 :=
+  obtain hb := ((uYs s₀).getD idx 0).isLt
+  obtain hc : (uhR s₀).Contains (coeffAddr (uH s₀) (256 * i + ((uYs s₀).getD idx 0).toNat)) 4 :=
     Offset.contains_base _ (by omega_arith) (by omega_arith)
   unfold hbuSet
   refine wp_add fun s₁ o₁ => wp_lbz (a := uY s₀ + BitVec.ofNat 64 idx) (by decide) (by decide)
@@ -260,9 +260,9 @@ theorem set_ok {i bound idx : Nat} (hi : i < uk s₀) (hidx : idx < uLen s₀) {
   · rw [o₅.other _ (by decide), o₄.gpr, o₃.other _ (by decide), o₃.gpr, o₂.other _ (by decide),
       o₁.other _ (by decide), hP.r6, o₂.gpr, o₁.mem, yByte hp hP.com hidx, shl2_byte, add0, ptr_add]
     congr 2; omega_arith
-  have k₇ := (((((o₁.keepH.trans o₂.keepH).trans o₃.keepH).trans o₄.keepH).trans o₅.keepH).trans m₆.keepH).trans
+  obtain k₇ := (((((o₁.keepH.trans o₂.keepH).trans o₃.keepH).trans o₄.keepH).trans o₅.keepH).trans m₆.keepH).trans
     o₇.keepH
-  have mem₇ : s₇.mem = s.mem.writeW (coeffAddr (uH s₀) (256 * i + ((uYs s₀).getD idx 0).toNat)) (1 : BitVec 32) := by
+  obtain mem₇ : s₇.mem = s.mem.writeW (coeffAddr (uH s₀) (256 * i + ((uYs s₀).getD idx 0).toNat)) (1 : BitVec 32) := by
     rw [o₇.mem, m₆.mem, o₅.gpr, o₅.mem, o₄.mem, o₃.mem, o₂.mem, o₁.mem]; rfl
   refine ⟨hP.of (k₇.mono (by decide)) (by rw [mem₇]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ hc),
     k₇.mono (by decide), ?_, by rw [mem₇]; exact harr_set hk8 hh hi hb⟩
@@ -277,7 +277,7 @@ theorem more_ok {i bound idx : Nat} (hb : bound < 256) (hidx : idx ≤ 256) {s :
       s'.gpr .r11 = BitVec.ofNat 64 idx ∧ s'.gpr .r0 = BitVec.ofNat 64 (if idx < bound then 1 else 0) := by
   unfold hbuMore ltBit
   refine wp_sub fun s₁ o₁ => wp_lsr (by decide) fun s₂ o₂ => wp_nil ?_
-  have k₂ := o₁.keepH.trans o₂.keepH
+  obtain k₂ := o₁.keepH.trans o₂.keepH
   refine ⟨hP.of (k₂.mono (by decide)) (by rw [o₂.mem, o₁.mem]; exact Frame.refl _ _), k₂.mono (by decide),
     by rw [o₂.mem, o₁.mem], by rw [k₂.gpr (by decide), h11], ?_⟩
   rw [o₂.gpr, o₁.gpr, h11, hP.r8, ltBit_eq (by omega_arith) (by omega_arith)]
@@ -290,8 +290,8 @@ theorem next_ok {i bound first idx : Nat} (hi : i < uk s₀) (hfi : first < idx)
       SRel s₀ (huStep (uYs s₀) i first (hA, idx) 0) s' ∧
       s'.gpr .r0 = BitVec.ofNat 64 (if ixOf (huStep (uYs s₀) i first (hA, idx) 0) < bound then 1 else 0) := by
   obtain ⟨hk4, hk8, -, hω80, hsum, hL88⟩ := ufacts hp
-  have hcb := ((uYs s₀).getD idx 0).isLt
-  have hpb := ((uYs s₀).getD (idx - 1) 0).isLt
+  obtain hcb := ((uYs s₀).getD idx 0).isLt
+  obtain hpb := ((uYs s₀).getD (idx - 1) 0).isLt
   unfold hbuNext ltBit
   simp only [List.cons_append, List.nil_append]
   refine WP.seq (wp_add fun s₁ o₁ => wp_lbz (a := uY s₀ + BitVec.ofNat 64 idx) (by decide) (by decide)
@@ -301,29 +301,29 @@ theorem next_ok {i bound first idx : Nat} (hi : i < uk s₀) (hfi : first < idx)
       (by rw [o₃.gpr, o₂.other _ (by decide), o₁.gpr, hP.com.r3, h11, add0, ptr_pred _ (by omega_arith)])
       (by rw [o₃.rd, o₃.wr, o₂.rd, o₂.wr, o₁.rd, o₁.wr]; exact yIn hp hP.com (by omega_arith)) fun s₄ o₄ =>
     wp_sub fun s₅ o₅ => wp_lsr (by decide) fun s₆ o₆ => wp_nil ?_)
-  have k₆ := ((((o₁.keepH.trans o₂.keepH).trans o₃.keepH).trans o₄.keepH).trans o₅.keepH).trans o₆.keepH
-  have m₆ : s₆.mem = s.mem := by rw [o₆.mem, o₅.mem, o₄.mem, o₃.mem, o₂.mem, o₁.mem]
-  have hP₆ : PCom s₀ i bound s₆ := hP.of (k₆.mono (by decide)) (by rw [m₆]; exact Frame.refl _ _)
-  have r0 : s₆.gpr .r0 = BitVec.ofNat 64
+  obtain k₆ := ((((o₁.keepH.trans o₂.keepH).trans o₃.keepH).trans o₄.keepH).trans o₅.keepH).trans o₆.keepH
+  obtain m₆ : s₆.mem = s.mem := by rw [o₆.mem, o₅.mem, o₄.mem, o₃.mem, o₂.mem, o₁.mem]
+  obtain hP₆ : PCom s₀ i bound s₆ := hP.of (k₆.mono (by decide)) (by rw [m₆]; exact Frame.refl _ _)
+  obtain r0 : s₆.gpr .r0 = BitVec.ofNat 64
       (if ((uYs s₀).getD (idx - 1) 0).toNat < ((uYs s₀).getD idx 0).toNat then 1 else 0) := by
     rw [o₆.gpr, o₅.gpr, o₄.gpr, o₄.other _ (by decide), o₃.other _ (by decide), o₂.gpr, o₃.mem, o₂.mem, o₁.mem,
       yByte hp hP.com (by omega_arith), yByte hp hP.com (by omega_arith), byte_ofNat, byte_ofNat,
       ltBit_eq (by omega_arith) (by omega_arith)]
-  have h11₆ : s₆.gpr .r11 = BitVec.ofNat 64 idx := by rw [k₆.gpr (by decide), h11]
+  obtain h11₆ : s₆.gpr .r11 = BitVec.ofNat 64 idx := by rw [k₆.gpr (by decide), h11]
   refine WP.seq (WP.ite _ (eval_lt_zero r0) (fun hge => ?_) (fun hlt => ?_))
   · -- Not increasing: fail.
-    have hge : ((uYs s₀).getD idx 0).toNat ≤ ((uYs s₀).getD (idx - 1) 0).toNat := of_decide_eq_true hge
-    have hs : huStep (uYs s₀) i first (hA, idx) 0 = none := by
+    obtain hge : ((uYs s₀).getD idx 0).toNat ≤ ((uYs s₀).getD (idx - 1) 0).toNat := of_decide_eq_true hge
+    obtain hs : huStep (uYs s₀) i first (hA, idx) 0 = none := by
       simp only [huStep]; exact ite_eq_left_of_eq_true _ _ (eq_true ⟨hfi, hge⟩)
     rw [hs]
     refine wp_li (by decide) fun s₇ o₇ => wp_nil ?_
-    have hP₇ : PCom s₀ i bound s₇ := hP₆.of (o₇.keepH.mono (by decide)) (by rw [o₇.mem]; exact Frame.refl _ _)
+    obtain hP₇ : PCom s₀ i bound s₇ := hP₆.of (o₇.keepH.mono (by decide)) (by rw [o₇.mem]; exact Frame.refl _ _)
     refine WP.mono (more_ok (by omega_arith) (by decide) hP₇ o₇.gpr) fun s₈ ⟨hP₈, k₈, _, h11₈, r0₈⟩ =>
       ⟨hP₈, ((k₆.trans o₇.keepH).trans k₈).mono (by decide), h11₈, r0₈⟩
   · -- `y[index - 1] < y[index]`: set it.
-    have hlt : ((uYs s₀).getD (idx - 1) 0).toNat < ((uYs s₀).getD idx 0).toNat := by
+    obtain hlt : ((uYs s₀).getD (idx - 1) 0).toNat < ((uYs s₀).getD idx 0).toNat := by
       have := of_decide_eq_false hlt; omega_arith
-    have hs : huStep (uYs s₀) i first (hA, idx) 0 = some (huSet i ((uYs s₀).getD idx 0).toNat hA, idx + 1) := by
+    obtain hs : huStep (uYs s₀) i first (hA, idx) 0 = some (huSet i ((uYs s₀).getD idx 0).toNat hA, idx + 1) := by
       simp only [huStep]; exact ite_eq_right_of_eq_false _ _ (eq_false (by omega_arith))
     rw [hs]
     refine WP.mono (set_ok hp hi (hA := hA) (by omega_arith) hP₆ h11₆ (by rw [m₆]; exact hh)) fun s₇ ⟨hP₇, k₇, h11₇, hh₇⟩ => ?_
@@ -343,11 +343,11 @@ theorem coefs_ok {i bound first : Nat} (hi : i < uk s₀) (hfb : first ≤ bound
   refine WP.seq (WP.mono (more_ok (by omega_arith) (by omega_arith) hP h11) fun s₁ ⟨hP₁, k₁, m₁, h11₁, r0₁⟩ => ?_)
   refine WP.ite _ (eval_lt_zero r0₁) (fun hge => ?_) (fun hlt => ?_)
   · -- `first = bound`: nothing.
-    have e : bound - first = 0 := by have := of_decide_eq_true hge; omega_arith
+    obtain e : bound - first = 0 := by have := of_decide_eq_true hge; omega_arith
     rw [e]
     exact wp_nil ⟨hP₁, k₁, h11₁, by omega_arith, by rw [m₁]; exact hh⟩
-  have hlt : first < bound := by have := of_decide_eq_false hlt; omega_arith
-  have F1 : optFold (huStep (uYs s₀) i first) (List.range 1) (hA, first) =
+  obtain hlt : first < bound := by have := of_decide_eq_false hlt; omega_arith
+  obtain F1 : optFold (huStep (uYs s₀) i first) (List.range 1) (hA, first) =
       some (huSet i ((uYs s₀).getD first 0).toNat hA, first + 1) := by
     simp only [List.range_one, optFold, huStep, gt_iff_lt, Nat.lt_irrefl, false_and, ↓reduceIte, Option.bind_some]
   refine WP.seq ?_
@@ -356,10 +356,10 @@ theorem coefs_ok {i bound first : Nat} (hi : i < uk s₀) (hfb : first ≤ bound
     WP.mono (more_ok (by omega_arith) (by omega_arith) hP₂ h11₂) fun s₃ ⟨hP₃, k₃, m₃, h11₃, r0₃⟩ => ?_
   refine WP.ite _ (eval_lt_zero r0₃) (fun hge => ?_) (fun hlt' => ?_)
   · -- `first + 1 = bound`.
-    have e : bound - first = 1 := by have := of_decide_eq_true hge; omega_arith
+    obtain e : bound - first = 1 := by have := of_decide_eq_true hge; omega_arith
     rw [e, F1]
     exact wp_nil ⟨hP₃, ((k₁.trans k₂).trans k₃).mono (by decide), h11₃, by omega_arith, by rw [m₃]; exact hh₂⟩
-  have hlt' : first + 1 < bound := by have := of_decide_eq_false hlt'; omega_arith
+  obtain hlt' : first + 1 < bound := by have := of_decide_eq_false hlt'; omega_arith
   -- The loop: after `t ≥ 1` coefficients, the state of the spec's fold.
   refine WP.loop (M := isa) (fun m s' => ∃ t, 1 ≤ t ∧ first + t < bound ∧ m = bound - first - t ∧
       ∃ hA' : Array (Vector Bool n), optFold (huStep (uYs s₀) i first) (List.range t) (hA, first) = some (hA', first + t) ∧
@@ -368,10 +368,10 @@ theorem coefs_ok {i bound first : Nat} (hi : i < uk s₀) (hfb : first ≤ bound
     (fun m s' ⟨t, ht1, htb, hm, hA', hF, hP', k', h11', hh'⟩ => ?_) _ s₃
     ⟨1, Nat.le_refl _, hlt', rfl, _, F1, hP₃, ((k₁.trans k₂).trans k₃).mono (by decide), h11₃, by rw [m₃]; exact hh₂⟩
   refine WP.mono (next_ok hp hi (first := first) (by omega_arith) htb hbω hP' h11' hh') fun s₄ ⟨hP₄, k₄, hS, r0₄⟩ => ?_
-  have hF1 : optFold (huStep (uYs s₀) i first) (List.range (t + 1)) (hA, first) =
+  obtain hF1 : optFold (huStep (uYs s₀) i first) (List.range (t + 1)) (hA, first) =
       huStep (uYs s₀) i first (hA', first + t) 0 := by
     rw [optFold_range_succ, hF]; rfl
-  have k₄' : Keep cRegs s s₄ := (k'.trans k₄).mono (by decide)
+  obtain k₄' : Keep cRegs s s₄ := (k'.trans k₄).mono (by decide)
   cases hst : huStep (uYs s₀) i first (hA', first + t) 0 with
   | none =>
     rw [hst] at hS r0₄
@@ -381,7 +381,7 @@ theorem coefs_ok {i bound first : Nat} (hi : i < uk s₀) (hfb : first ≤ bound
     exact hS
   | some st =>
     obtain ⟨hA'', idx''⟩ := st
-    have e := huStep_idx hst
+    obtain e := huStep_idx hst
     simp only at e
     rw [hst] at hS r0₄
     simp only [ixOf] at r0₄
@@ -463,7 +463,7 @@ theorem poly_ok {i : Nat} (hi : i < uk s₀) {s : State} (hI : OInv s₀ i s) :
     WP isa hbuPoly s (PPost s₀ i s) := by
   obtain ⟨hk4, hk8, -, hω80, hsum, hL88⟩ := ufacts hp
   have hS := hI.st
-  have hsucc := uSt_succ (s₀ := s₀) i
+  obtain hsucc := uSt_succ (s₀ := s₀) i
   unfold hbuPoly
   cases hst : uSt s₀ i with
   | none =>
@@ -487,34 +487,34 @@ theorem poly_ok {i : Nat} (hi : i < uk s₀) {s : State} (hI : OInv s₀ i s) :
     refine WP.ite _ (eval_lt_zero r0₁) (fun _ => ?_) fun h => absurd (of_decide_eq_false h) (by omega_arith)
     obtain ⟨bound, hbound⟩ : ∃ b, ((uYs s₀).getD (uω s₀ + i) 0).toNat = b := ⟨_, rfl⟩
     rw [hbound] at hsucc
-    have hb : bound < 256 := hbound ▸ ((uYs s₀).getD (uω s₀ + i) 0).isLt
-    have hc₁ : UCom s₀ s₁ := hI.com.of k₁ (by decide) (by decide) (by rw [m₁]; exact Frame.refl _ _)
+    obtain hb : bound < 256 := hbound ▸ ((uYs s₀).getD (uω s₀ + i) 0).isLt
+    obtain hc₁ : UCom s₀ s₁ := hI.com.of k₁ (by decide) (by decide) (by rw [m₁]; exact Frame.refl _ _)
     refine WP.seq ?_
     rw [WP.block_append_iff]
     refine wp_lbz (a := uY s₀ + BitVec.ofNat 64 (uω s₀ + i)) (by decide) (by decide)
       (by rw [k₁.gpr (by decide), hI.r10, add0]) (yIn hp hc₁ (by omega_arith)) fun s₂ o₂ => wp_nil ?_
-    have hc₂ : UCom s₀ s₂ := hc₁.of o₂.keepH (by decide) (by decide) (by rw [o₂.mem]; exact Frame.refl _ _)
-    have r8 : s₂.gpr .r8 = BitVec.ofNat 64 bound := by rw [o₂.gpr, yByte hp hc₁ (by omega_arith), byte_ofNat, hbound]
-    have h11₂ : s₂.gpr .r11 = BitVec.ofNat 64 idx := by rw [o₂.other _ (by decide), k₁.gpr (by decide), h11]
+    obtain hc₂ : UCom s₀ s₂ := hc₁.of o₂.keepH (by decide) (by decide) (by rw [o₂.mem]; exact Frame.refl _ _)
+    obtain r8 : s₂.gpr .r8 = BitVec.ofNat 64 bound := by rw [o₂.gpr, yByte hp hc₁ (by omega_arith), byte_ofNat, hbound]
+    obtain h11₂ : s₂.gpr .r11 = BitVec.ofNat 64 idx := by rw [o₂.other _ (by decide), k₁.gpr (by decide), h11]
     refine WP.mono (lt_ok (by omega_arith) (by omega_arith) r8 h11₂) fun s₃ ⟨k₃, m₃, r0₃⟩ => ?_
-    have k₃' : Keep [.r0, .r8, .r9, .r11] s s₃ := ((k₁.trans o₂.keepH).trans k₃).mono (by decide)
-    have m₃' : s₃.mem = s.mem := by rw [m₃, o₂.mem, m₁]
-    have hc₃ : UCom s₀ s₃ := hc₂.of k₃ (by decide) (by decide) (by rw [m₃]; exact Frame.refl _ _)
-    have fail : ∀ {s'}, Keep [.r0, .r11] s₃ s' → s'.mem = s₃.mem → s'.gpr .r11 = BitVec.ofNat 64 256 →
+    obtain k₃' : Keep [.r0, .r8, .r9, .r11] s s₃ := ((k₁.trans o₂.keepH).trans k₃).mono (by decide)
+    obtain m₃' : s₃.mem = s.mem := by rw [m₃, o₂.mem, m₁]
+    obtain hc₃ : UCom s₀ s₃ := hc₂.of k₃ (by decide) (by decide) (by rw [m₃]; exact Frame.refl _ _)
+    obtain fail : ∀ {s'}, Keep [.r0, .r11] s₃ s' → s'.mem = s₃.mem → s'.gpr .r11 = BitVec.ofNat 64 256 →
         bound < idx ∨ bound > uω s₀ → PPost s₀ i s s' := fun k' m' h11' hc => by
       refine ⟨(k₃'.trans k').mono (by decide), hc₃.of k' (by decide) (by decide) (by rw [m']; exact Frame.refl _ _),
         ?_⟩
       rw [hsucc, ite_eq_left_of_eq_true _ _ (eq_true hc)]; exact h11'
     refine WP.ite _ (eval_lt_zero r0₃) (fun hge => ?_)
       fun hlt => WP.mono fail_ok fun s' ⟨k', m', h11'⟩ => fail (k'.mono (by decide)) m' h11' (.inl (by have := of_decide_eq_false hlt; omega_arith))
-    have hge : idx ≤ bound := of_decide_eq_true hge
+    obtain hge : idx ≤ bound := of_decide_eq_true hge
     refine WP.seq (WP.mono (lt_ok (a := uω s₀) (b := bound) (by omega_arith) (by omega_arith) hc₃.r5
       (by rw [k₃.gpr (by decide), r8])) fun s₄ ⟨k₄, m₄, r0₄⟩ => ?_)
     refine WP.ite _ (eval_lt_zero r0₄) (fun hle => ?_)
       fun hgt => WP.mono fail_ok fun s' ⟨k', m', h11'⟩ => fail (s' := s') ((k₄.trans k').mono (by decide))
         (by rw [m', m₄]) h11' (.inr (by have := of_decide_eq_false hgt; omega_arith))
-    have hle : bound ≤ uω s₀ := of_decide_eq_true hle
-    have hP₄ : PCom s₀ i bound s₄ := ⟨hc₃.of k₄ (by decide) (by decide) (by rw [m₄]; exact Frame.refl _ _),
+    obtain hle : bound ≤ uω s₀ := of_decide_eq_true hle
+    obtain hP₄ : PCom s₀ i bound s₄ := ⟨hc₃.of k₄ (by decide) (by decide) (by rw [m₄]; exact Frame.refl _ _),
       by rw [k₄.gpr (by decide), k₃.gpr (by decide), o₂.other _ (by decide), k₁.gpr (by decide), hI.r6],
       by rw [k₄.gpr (by decide), k₃.gpr (by decide), r8]⟩
     refine WP.mono (coefs_ok hp hi (hA := hA) hge hle hP₄ (by rw [k₄.gpr (by decide), k₃.gpr (by decide), h11₂])
@@ -537,9 +537,9 @@ theorem upoly_ok {i : Nat} (hi : i < uk s₀) {s : State} (hI : OInv s₀ i s) :
   refine WP.seq (WP.mono (poly_ok hp hi hI) fun s₁ ⟨k₁, hc₁, hS₁⟩ => ?_)
   refine wp_addi (by decide) (by decide) fun s₂ o₂ => wp_addi (by decide) (by decide) fun s₃ o₃ =>
     wp_subi (by decide) (by decide) fun s₄ o₄ => wp_nil ?_
-  have k₄ := (o₂.keepH.trans o₃.keepH).trans o₄.keepH
-  have m₄ : s₄.mem = s₁.mem := by rw [o₄.mem, o₃.mem, o₂.mem]
-  have c12 : s₄.gpr .r12 = BitVec.ofNat 64 (uk s₀ - (i + 1)) := by
+  obtain k₄ := (o₂.keepH.trans o₃.keepH).trans o₄.keepH
+  obtain m₄ : s₄.mem = s₁.mem := by rw [o₄.mem, o₃.mem, o₂.mem]
+  obtain c12 : s₄.gpr .r12 = BitVec.ofNat 64 (uk s₀ - (i + 1)) := by
     rw [o₄.gpr, o₃.other _ (by decide), o₂.other _ (by decide), k₁.gpr (by decide), hI.r12, count_sub hi]
   refine ⟨⟨hc₁.of k₄ (by decide) (by decide) (by rw [m₄]; exact Frame.refl _ _), ?_, ?_, c12,
     hS₁.of (k₄.gpr (by decide)) m₄⟩, by rw [c12]; exact count_nz hi (by omega_arith)⟩
@@ -580,45 +580,45 @@ theorem trail_some {idx : Nat} (hidx : idx ≤ uω s₀) {s : State} (hc : UCom 
   obtain ⟨hk4, hk8, -, hω80, hsum, hL88⟩ := ufacts hp
   unfold hbuTrail
   refine WP.seq (WP.mono (lt_ok (by omega_arith) (by omega_arith) h11 hc.r5) fun s₁ ⟨k₁, m₁, r0₁⟩ => ?_)
-  have hc₁ : UCom s₀ s₁ := hc.of k₁ (by decide) (by decide) (by rw [m₁]; exact Frame.refl _ _)
+  obtain hc₁ : UCom s₀ s₁ := hc.of k₁ (by decide) (by decide) (by rw [m₁]; exact Frame.refl _ _)
   refine WP.ite _ (eval_lt_zero r0₁) (fun hge => ?_) (fun hlt => ?_)
   · -- `idx = ω`: nothing.
-    have e : uω s₀ - idx = 0 := by have := of_decide_eq_true hge; omega_arith
+    obtain e : uω s₀ - idx = 0 := by have := of_decide_eq_true hge; omega_arith
     refine wp_nil ⟨hc₁, m₁, ?_⟩
     rw [k₁.gpr (by decide), h11, e]
     simp only [List.range'_zero, optFold, Option.isSome_some, ↓reduceIte]
     congr 1; omega_arith
-  have hlt : idx < uω s₀ := by have := of_decide_eq_false hlt; omega_arith
+  obtain hlt : idx < uω s₀ := by have := of_decide_eq_false hlt; omega_arith
   refine WP.loop (M := isa) (fun m s' => ∃ u, m = uω s₀ - idx - u ∧ idx + u < uω s₀ ∧
       optFold (huTrail (uYs s₀)) (List.range' idx u) () = some () ∧ s'.gpr .r11 = BitVec.ofNat 64 (idx + u) ∧
       UCom s₀ s' ∧ s'.mem = s.mem)
     (fun m s' ⟨u, hm, hu, hF, h11', hc', hm'⟩ => ?_) _ s₁
     ⟨0, rfl, by omega_arith, rfl, by rw [k₁.gpr (by decide), h11]; rfl, hc₁, m₁⟩
-  have hF1 : optFold (huTrail (uYs s₀)) (List.range' idx (u + 1)) () = huTrail (uYs s₀) () (idx + u) := by
+  obtain hF1 : optFold (huTrail (uYs s₀)) (List.range' idx (u + 1)) () = huTrail (uYs s₀) () (idx + u) := by
     rw [optFold_range'_succ, hF]; rfl
   refine WP.seq (wp_add fun s₂ o₂ => wp_lbz (a := uY s₀ + BitVec.ofNat 64 (idx + u)) (by decide) (by decide)
     (by rw [o₂.gpr, hc'.r3, h11', add0]) (by rw [o₂.rd, o₂.wr]; exact yIn hp hc' (by omega_arith)) fun s₃ o₃ =>
     wp_nil ?_)
-  have k₃ := o₂.keepH.trans o₃.keepH
-  have m₃ : s₃.mem = s'.mem := by rw [o₃.mem, o₂.mem]
-  have hc₃ : UCom s₀ s₃ := hc'.of k₃ (by decide) (by decide) (by rw [m₃]; exact Frame.refl _ _)
-  have r9 : s₃.gpr .r9 = BitVec.ofNat 64 ((uYs s₀).getD (idx + u) 0).toNat := by
+  obtain k₃ := o₂.keepH.trans o₃.keepH
+  obtain m₃ : s₃.mem = s'.mem := by rw [o₃.mem, o₂.mem]
+  obtain hc₃ : UCom s₀ s₃ := hc'.of k₃ (by decide) (by decide) (by rw [m₃]; exact Frame.refl _ _)
+  obtain r9 : s₃.gpr .r9 = BitVec.ofNat 64 ((uYs s₀).getD (idx + u) 0).toNat := by
     rw [o₃.gpr, o₂.mem, yByte hp hc' (by omega_arith), byte_ofNat]
-  have hyb := ((uYs s₀).getD (idx + u) 0).isLt
+  obtain hyb := ((uYs s₀).getD (idx + u) 0).isLt
   refine WP.seq (WP.ite _ (eval_zero_ofNat s₃ .r9 (by omega_arith) r9) (fun hz => ?_) (fun hnz => ?_))
   · -- A zero byte: next.
-    have hz : (uYs s₀).getD (idx + u) 0 = 0 := by
+    obtain hz : (uYs s₀).getD (idx + u) 0 = 0 := by
       apply BitVec.eq_of_toNat_eq; exact of_decide_eq_true hz
-    have hF2 : optFold (huTrail (uYs s₀)) (List.range' idx (u + 1)) () = some () := by
+    obtain hF2 : optFold (huTrail (uYs s₀)) (List.range' idx (u + 1)) () = some () := by
       rw [hF1]; simp only [huTrail, hz, ne_eq, not_true_eq_false, ↓reduceIte]
     refine wp_addi (by decide) (by decide) fun s₄ o₄ => wp_nil ?_
-    have h11₄ : s₄.gpr .r11 = BitVec.ofNat 64 (idx + (u + 1)) := by
+    obtain h11₄ : s₄.gpr .r11 = BitVec.ofNat 64 (idx + (u + 1)) := by
       rw [o₄.gpr, k₃.gpr (by decide), h11', ofNat_succ, Nat.add_assoc]
-    have hc₄ : UCom s₀ s₄ := hc₃.of o₄.keepH (by decide) (by decide) (by rw [o₄.mem]; exact Frame.refl _ _)
+    obtain hc₄ : UCom s₀ s₄ := hc₃.of o₄.keepH (by decide) (by decide) (by rw [o₄.mem]; exact Frame.refl _ _)
     refine WP.mono (lt_ok (by omega_arith) (by omega_arith) h11₄ hc₄.r5) fun s₅ ⟨k₅, m₅, r0₅⟩ => ?_
-    have hc₅ : UCom s₀ s₅ := hc₄.of k₅ (by decide) (by decide) (by rw [m₅]; exact Frame.refl _ _)
-    have h11₅ : s₅.gpr .r11 = BitVec.ofNat 64 (idx + (u + 1)) := by rw [k₅.gpr (by decide), h11₄]
-    have hm₅ : s₅.mem = s.mem := by rw [m₅, o₄.mem, m₃, hm']
+    obtain hc₅ : UCom s₀ s₅ := hc₄.of k₅ (by decide) (by decide) (by rw [m₅]; exact Frame.refl _ _)
+    obtain h11₅ : s₅.gpr .r11 = BitVec.ofNat 64 (idx + (u + 1)) := by rw [k₅.gpr (by decide), h11₄]
+    obtain hm₅ : s₅.mem = s.mem := by rw [m₅, o₄.mem, m₃, hm']
     by_cases e : idx + (u + 1) < uω s₀
     · exact .inr ⟨by rw [eval_lt_nonzero r0₅]; exact congrArg some (decide_eq_true e), _, by omega_arith, u + 1, rfl, e,
         hF2, h11₅, hc₅, hm₅⟩
@@ -627,13 +627,13 @@ theorem trail_some {idx : Nat} (hidx : idx ≤ uω s₀) {s : State} (hc : UCom 
       simp only [Option.isSome_some, ↓reduceIte]
       congr 1; omega_arith
   · -- A nonzero byte: fail.
-    have hnz : (uYs s₀).getD (idx + u) 0 ≠ 0 := fun e => by
+    obtain hnz : (uYs s₀).getD (idx + u) 0 ≠ 0 := fun e => by
       have := of_decide_eq_false hnz; rw [e] at this; exact this rfl
-    have hn : optFold (huTrail (uYs s₀)) (List.range' idx (uω s₀ - idx)) () = none :=
+    obtain hn : optFold (huTrail (uYs s₀)) (List.range' idx (uω s₀ - idx)) () = none :=
       optFold_range'_none _ _ (show u + 1 ≤ uω s₀ - idx by omega_arith)
         (by rw [hF1, huTrail, ite_eq_left_of_eq_true _ _ (eq_true hnz)])
     refine WP.mono fail_ok fun s₄ ⟨k₄, m₄, h11₄⟩ => ?_
-    have hc₄ : UCom s₀ s₄ := hc₃.of k₄ (by decide) (by decide) (by rw [m₄]; exact Frame.refl _ _)
+    obtain hc₄ : UCom s₀ s₄ := hc₃.of k₄ (by decide) (by decide) (by rw [m₄]; exact Frame.refl _ _)
     refine WP.mono (lt_ok (by decide) (by omega_arith) h11₄ hc₄.r5) fun s₅ ⟨k₅, m₅, r0₅⟩ => ?_
     refine .inl ⟨by rw [eval_lt_nonzero r0₅]; exact congrArg some (decide_eq_false (by omega_arith)),
       hc₄.of k₅ (by decide) (by decide) (by rw [m₅]; exact Frame.refl _ _), by rw [m₅, m₄, m₃, hm'], ?_⟩

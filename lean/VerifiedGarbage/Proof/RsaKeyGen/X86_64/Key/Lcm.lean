@@ -31,7 +31,7 @@ theorem divInit_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (iT : Nat
   rw [divInit, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono h.ws.ws_ok fun s₁ ⟨h12, h9, m₁, k₁⟩ => ?_
   refine WP.mono (base_ok iT (r := .r8) (by decide) ((k₁.gpr (by decide)).trans h.ws.rdi) h9) fun s₂ ⟨_, m₂, k₂⟩ => ?_
-  have e12 : s₂.gpr .r12 = BitVec.ofNat 64 I.W := (k₂.gpr (by decide)).trans h12
+  obtain e12 : s₂.gpr .r12 = BitVec.ofNat 64 I.W := (k₂.gpr (by decide)).trans h12
   refine WP.mono (WP.keep [.r11] (Q := fun t => t.gpr .r11 = BitVec.ofNat 64 I.W ∧ t.mem = s₂.mem)
     (by xrun [e12]) rfl) fun s₃ ⟨⟨h11, m₃⟩, k₃⟩ => ?_
   refine WP.mono (WP.keep [.r11] (Q := fun t => t.gpr .r11 = BitVec.ofNat 64 (64 * I.W) ∧ t.mem = s₃.mem)
@@ -57,7 +57,7 @@ theorem twos_k {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (hU0 : atop 
   have hw2 := h.ws.w2
   simp only [twos, seqs]
   refine WP.seq (WP.mono (divInit_k h aT) fun s₁ ⟨h11, h13, m₁, k₁⟩ => ?_)
-  have h₁ := h.step (cs := []) (by rw [m₁]; exact KF.refl _ _ _) rfl k₁ (by decide)
+  obtain h₁ := h.step (cs := []) (by rw [m₁]; exact KF.refl _ _ _) rfl k₁ (by decide)
   refine wp_upto (a := 0) (N := 64 * I.W) (by omega_using [hw1])
     (fun j t => t.gpr .r11 = BitVec.ofNat 64 (64 * I.W) ∧ t.gpr .r13 = BitVec.ofNat 64 j ∧ TwoP I m₀ s t ∧
       (av I t.mem aU, av I t.mem aV, av I t.mem aL) = halveIter j (av I s.mem aU, av I s.mem aV, av I s.mem aL))
@@ -236,7 +236,7 @@ theorem gcdUV_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) (h
 /-- Word `W` of a number of `W + 2` words below `2^(64 W)`. -/
 theorem top_zero_of_lt {m : Mem} {B : Addr} {d W : Nat} (h : wv m B d (W + 2) < 2 ^ (64 * W)) :
     word m B (d + 8 * W) = 0 := by
-  have e := wv_add m B d W 2
+  obtain e := wv_add m B d W 2
   have : wv m B (d + 8 * W) 2 = 0 := by
     rcases Nat.eq_zero_or_pos (wv m B (d + 8 * W) 2) with h0 | h0
     · exact h0
@@ -258,16 +258,16 @@ theorem lcm_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {w :
         .hdr kOk, .priv] s.mem t.mem ∧ av I t.mem aL = Nat.lcm a b := by
   have hZ := h.hZ
   have hw1 := h.ws.w1
-  have hab : a * b < 2 ^ (64 * I.W) := by
+  obtain hab : a * b < 2 ^ (64 * I.W) := by
     rw [hW, show 64 * (2 * w) = 64 * w + 64 * w by omega_using [], Nat.pow_add]
     exact Nat.mul_lt_mul_of_lt_of_le ha' (by omega_using [hb']) (Nat.two_pow_pos _)
   rw [lcmPart_eq]
   refine wp_seqs_append (by simp [phi]) (by simp) (WP.mono (phi_k h hW ha hb ha' hb') fun s₁ ⟨h₁, f₁, v₁⟩ => ?_)
-  have hokL : [Rc.arr aL].all Rc.ok = true := by decide
-  have vL₁ : av I s₁.mem aL = a * b := av_of_full v₁ hab
-  have tL₁ : atop I s₁.mem aL = 0 := top_zero_of_lt (by rw [v₁]; exact hab)
-  have vP₁ : av I s₁.mem aPm = a := by rw [f₁.av hokL (by decide) (by decide) hZ]; exact ha
-  have vQ₁ : av I s₁.mem aQm = b := by rw [f₁.av hokL (by decide) (by decide) hZ]; exact hb
+  obtain hokL : [Rc.arr aL].all Rc.ok = true := by decide
+  obtain vL₁ : av I s₁.mem aL = a * b := av_of_full v₁ hab
+  obtain tL₁ : atop I s₁.mem aL = 0 := top_zero_of_lt (by rw [v₁]; exact hab)
+  obtain vP₁ : av I s₁.mem aPm = a := by rw [f₁.av hokL (by decide) (by decide) hZ]; exact ha
+  obtain vQ₁ : av I s₁.mem aQm = b := by rw [f₁.av hokL (by decide) (by decide) hZ]; exact hb
   refine wp_seqs_append (by simp) (by simp [twos]) ?_
   simp only [seqs]
   refine WP.seq (WP.mono (zeroA_k h₁ (j := aU) (by decide)) fun s₂ ⟨h₂, f₂, z₂, _⟩ =>
@@ -275,52 +275,52 @@ theorem lcm_k [InvLaw] {I : KIn} {m₀ : Mem} {s : State} (h : KS I m₀ s) {w :
       WP.seq (WP.mono (zeroA_k h₃ (j := aV) (by decide)) fun s₄ ⟨h₄, f₄, z₄, _⟩ =>
         WP.mono (copyA_k h₄ (o := aV) (a := aQm) (by decide) (by decide) (by decide))
           fun s₅ ⟨h₅, f₅, v₅, t₅, _⟩ => ?_)))
-  have hU : [Rc.arr aU].all Rc.ok = true := by decide
-  have hV : [Rc.arr aV].all Rc.ok = true := by decide
-  have vU₅ : av I s₅.mem aU = a := by
+  obtain hU : [Rc.arr aU].all Rc.ok = true := by decide
+  obtain hV : [Rc.arr aV].all Rc.ok = true := by decide
+  obtain vU₅ : av I s₅.mem aU = a := by
     rw [f₅.av hV (by decide) (by decide) hZ, f₄.av hV (by decide) (by decide) hZ, v₃,
       f₂.av hU (by decide) (by decide) hZ, vP₁]
-  have vV₅ : av I s₅.mem aV = b := by
+  obtain vV₅ : av I s₅.mem aV = b := by
     rw [v₅, f₄.av hV (by decide) (by decide) hZ, f₃.av hU (by decide) (by decide) hZ,
       f₂.av hU (by decide) (by decide) hZ, vQ₁]
-  have vL₅ : av I s₅.mem aL = a * b := by
+  obtain vL₅ : av I s₅.mem aL = a * b := by
     rw [f₅.av hV (by decide) (by decide) hZ, f₄.av hV (by decide) (by decide) hZ,
       f₃.av hU (by decide) (by decide) hZ, f₂.av hU (by decide) (by decide) hZ, vL₁]
-  have tU₅ : atop I s₅.mem aU = 0 := by
+  obtain tU₅ : atop I s₅.mem aU = 0 := by
     rw [f₅.at hV (by decide) (by decide) hZ, f₄.at hV (by decide) (by decide) hZ, t₃]; exact (wv_zero2 z₂).2
-  have tV₅ : atop I s₅.mem aV = 0 := by rw [t₅]; exact (wv_zero2 z₄).2
-  have tL₅ : atop I s₅.mem aL = 0 := by
+  obtain tV₅ : atop I s₅.mem aV = 0 := by rw [t₅]; exact (wv_zero2 z₄).2
+  obtain tL₅ : atop I s₅.mem aL = 0 := by
     rw [f₅.at hV (by decide) (by decide) hZ, f₄.at hV (by decide) (by decide) hZ,
       f₃.at hU (by decide) (by decide) hZ, f₂.at hU (by decide) (by decide) hZ, tL₁]
   -- The halving.
   refine wp_seqs_append (by simp [twos]) (by simp [gcdUV]) (WP.mono (twos_k h₅ tU₅ tV₅ tL₅)
     fun s₆ ⟨⟨h₆, f₆, tU₆, tV₆, tL₆⟩, hv₆⟩ => ?_)
   rw [vU₅, vV₅, vL₅] at hv₆
-  have hK : a < 2 ^ (64 * I.W) ∧ b < 2 ^ (64 * I.W) := by
+  obtain hK : a < 2 ^ (64 * I.W) ∧ b < 2 ^ (64 * I.W) := by
     rw [hW]; exact ⟨Nat.lt_of_lt_of_le ha' (Nat.pow_le_pow_right (by decide) (by omega_using [])),
       Nat.lt_of_lt_of_le hb' (Nat.pow_le_pow_right (by decide) (by omega_using []))⟩
-  have hle := lcm_eq hK.1 hK.2
+  obtain hle := lcm_eq hK.1 hK.2
   dsimp only at hle
-  have hB := halveIter_bounds (64 * I.W) (st := (a, b, a * b)) (a := 2 ^ (64 * w)) (b := 2 ^ (64 * w))
+  obtain hB := halveIter_bounds (64 * I.W) (st := (a, b, a * b)) (a := 2 ^ (64 * w)) (b := 2 ^ (64 * w))
     (f := 2 ^ (64 * I.W)) ⟨ha', hb', hab⟩
   generalize halveIter (64 * I.W) (a, b, a * b) = st at hv₆ hle hB
   obtain ⟨x, y, f⟩ := st
   simp only [Prod.mk.injEq] at hv₆
   obtain ⟨hx, hy, hf⟩ := hv₆
   dsimp only at hle hB
-  have hW2 : I.W / 2 = w := by omega_using [hW]
+  obtain hW2 : I.W / 2 = w := by omega_using [hW]
   -- `gcd(u, v)`.
   refine wp_seqs_append (by simp [gcdUV]) (by simp) (WP.mono (gcdUV_k h₆ tU₆ (by rw [hW2]; omega_using [hw1, hW]) (by rw [hx, hW2]; exact hB.1)
     (by rw [hy, hW2]; exact hB.2.1) (by rw [hx, hy]; exact hle.1))
     fun s₇ ⟨h₇, f₇, vV₇⟩ => ?_)
   rw [hx, hy] at vV₇
   dsimp only at vV₇
-  have hokG : [Rc.arr aU, Rc.arr aV, Rc.arr aC, Rc.arr aM, Rc.arr aX₁, Rc.arr aX₂, Rc.arr aT, Rc.hdr sMo,
+  obtain hokG : [Rc.arr aU, Rc.arr aV, Rc.arr aC, Rc.arr aM, Rc.arr aX₁, Rc.arr aX₂, Rc.arr aT, Rc.hdr sMo,
     Rc.hdr kOk].all Rc.ok = true := by decide
-  have vL₇ : av I s₇.mem aL = f := by rw [f₇.av hokG (by decide) (by decide) hZ, hf]
+  obtain vL₇ : av I s₇.mem aL = f := by rw [f₇.av hokG (by decide) (by decide) hZ, hf]
   generalize hg : (if (if y % 2 = 0 then x else y) ≤ 1 then 1 else
     Nat.gcd (if y % 2 = 0 then y else x) (if y % 2 = 0 then x else y)) = g at vV₇ hle
-  have hg0 : 0 < g := by
+  obtain hg0 : 0 < g := by
     rw [← hg]
     generalize (if y % 2 = 0 then x else y) = v
     generalize (if y % 2 = 0 then y else x) = u

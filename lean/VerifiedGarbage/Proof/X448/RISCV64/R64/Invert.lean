@@ -89,7 +89,7 @@ abbrev SqInv (b : Addr) (s0 : State) (a : BitVec 64) (o n : Nat) (qs : List Nat)
 theorem sep8_self {o : Nat} {qs : List Nat} (hq : Sep8 o qs = true) (ho : o + 56 ≤ ACC) :
     Sep8 o (o :: qs) = true := by
   refine sep8_cons ?_ hq
-  have h8 := sep8_o hq
+  obtain h8 := sep8_o hq
   have hA : ACC = 952 := rfl
   simp only [Sep8, Sep1, List.all_cons, List.all_nil, Bool.and_true, beq_self_eq_true,
     Bool.true_or, Bool.true_and, Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq]
@@ -102,7 +102,7 @@ theorem sqStep_ok {o n : Nat} {qs : List Nat} {v : Nat → Fe} {y : Fe} (hq : Se
       (s'.gpr .t1 != 0) = decide (m - 1 ≠ 0) := by
   unfold sqStep
   refine WP.seq (wp_subi (by decide) fun s1 u1 => WP.block_nil ?_)
-  have h1 : Cur b s0 a (BitVec.ofNat 64 (m - 1)) (o :: qs) (upd v o (VG.Proof.X448.sqn y (n - m))) s1 :=
+  obtain h1 : Cur b s0 a (BitVec.ofNat 64 (m - 1)) (o :: qs) (upd v o (VG.Proof.X448.sqn y (n - m))) s1 :=
     ⟨h.ctx.of_rest (u1.rest (ws := [.t1]) (by decide)) (by decide),
       h.stp.trans (Stp.of_rest (u1.rest (ws := [.t1]) (by decide)) (by decide) u1.mem),
       by rw [u1.other _ (by decide), h.t2],
@@ -124,7 +124,7 @@ theorem sqn_ok {o x n : Nat} {qs : List Nat} {v : Nat → Fe} (hn1 : 1 ≤ n) (h
   · simp only [h1, ↓reduceIte]
     refine WP.seq (WP.mono (opMulE hq ho hx hx h) fun s1 ⟨c1, h1'⟩ => ?_)
     refine WP.seq (wp_li (by omega_using [hn]) fun s2 u2 => WP.block_nil ?_)
-    have h2 : SqInv b s0 a o n qs v (v x) (n - 1) s2 :=
+    obtain h2 : SqInv b s0 a o n qs v (v x) (n - 1) s2 :=
       ⟨h1'.ctx.of_rest (u2.rest (ws := [.t1]) (by decide)) (by decide),
         h1'.stp.trans (Stp.of_rest (u2.rest (ws := [.t1]) (by decide)) (by decide) u2.mem),
         by rw [u2.other _ (by decide), h1'.t2], by rw [u2.gpr],
@@ -183,7 +183,7 @@ theorem chain223_ok {qs : List Nat} {v : Nat → Fe} (hR : Sep8 R qs = true) (hZ
   obtain ⟨q6, n6⟩ := temps_get hT (t := T6) (by decide)
   -- `z` as the power `z^1` in its slot.
   have hZ0 : Z2 ∈ Z2 :: qs := List.mem_cons_self
-  have h0 : CurE b s0 a (Z2 :: qs) (upd v Z2 (VG.Proof.X448.pw (v Z2) 1)) s :=
+  obtain h0 : CurE b s0 a (Z2 :: qs) (upd v Z2 (VG.Proof.X448.pw (v Z2) 1)) s :=
     let ⟨c, h⟩ := h
     ⟨c, h.congr (fun q hq => by
       simp only [List.mem_cons] at hq; rcases hq with rfl | hq
@@ -192,14 +192,14 @@ theorem chain223_ok {qs : List Nat} {v : Nat → Fe} (hR : Sep8 R qs = true) (hZ
       by_cases e : q = Z2
       · subst e; rw [upd_self, VG.Proof.X448.pw_one]
       · rw [upd_of_ne _ _ e]⟩
-  have hRZ : Sep8 R (Z2 :: qs) = true := sep8_cons (by decide) hR
-  have g0 : Sep8 T0 (Z2 :: qs) = true := sep8_cons (by decide) q0
-  have g1 : Sep8 T1 (Z2 :: qs) = true := sep8_cons (by decide) q1
-  have g2 : Sep8 T2 (Z2 :: qs) = true := sep8_cons (by decide) q2
-  have g3 : Sep8 T3 (Z2 :: qs) = true := sep8_cons (by decide) q3
-  have g4 : Sep8 T4 (Z2 :: qs) = true := sep8_cons (by decide) q4
-  have g5 : Sep8 T5 (Z2 :: qs) = true := sep8_cons (by decide) q5
-  have g6 : Sep8 T6 (Z2 :: qs) = true := sep8_cons (by decide) q6
+  obtain hRZ : Sep8 R (Z2 :: qs) = true := sep8_cons (by decide) hR
+  obtain g0 : Sep8 T0 (Z2 :: qs) = true := sep8_cons (by decide) q0
+  obtain g1 : Sep8 T1 (Z2 :: qs) = true := sep8_cons (by decide) q1
+  obtain g2 : Sep8 T2 (Z2 :: qs) = true := sep8_cons (by decide) q2
+  obtain g3 : Sep8 T3 (Z2 :: qs) = true := sep8_cons (by decide) q3
+  obtain g4 : Sep8 T4 (Z2 :: qs) = true := sep8_cons (by decide) q4
+  obtain g5 : Sep8 T5 (Z2 :: qs) = true := sep8_cons (by decide) q5
+  obtain g6 : Sep8 T6 (Z2 :: qs) = true := sep8_cons (by decide) q6
   unfold chain223
   refine WP.seq (WP.mono (sqnP (z := v Z2) (ea := 1) (by decide) (by decide) (by sep8) (by decide) hZ0 (by look) h0) fun s1 h1 => ?_)
   refine WP.seq (WP.mono (opMulP (z := v Z2) (ea := 1 * 2 ^ 1) (eb := 1) (ee := 2 ^ 2 - 1) (by sep8) (by decide) (by simp) (by simp [hZ0])
@@ -251,12 +251,12 @@ theorem chain223_ok {qs : List Nat} {v : Nat → Fe} (hR : Sep8 R qs = true) (hZ
     · simp (disch := decide) only [chainV, upd_self]
     · simp (disch := decide) only [chainV, upd_self, upd_of_ne]
     · have e0 : q ≠ T0 := fun e => n0 (e ▸ hq)
-      have e1 : q ≠ T1 := fun e => n1 (e ▸ hq)
-      have e2 : q ≠ T2 := fun e => n2 (e ▸ hq)
-      have e3 : q ≠ T3 := fun e => n3 (e ▸ hq)
-      have e4 : q ≠ T4 := fun e => n4 (e ▸ hq)
-      have e5 : q ≠ T5 := fun e => n5 (e ▸ hq)
-      have e6 : q ≠ T6 := fun e => n6 (e ▸ hq)
+      obtain e1 : q ≠ T1 := fun e => n1 (e ▸ hq)
+      obtain e2 : q ≠ T2 := fun e => n2 (e ▸ hq)
+      obtain e3 : q ≠ T3 := fun e => n3 (e ▸ hq)
+      obtain e4 : q ≠ T4 := fun e => n4 (e ▸ hq)
+      obtain e5 : q ≠ T5 := fun e => n5 (e ▸ hq)
+      obtain e6 : q ≠ T6 := fun e => n6 (e ▸ hq)
       by_cases eR : q = R
       · subst eR
         simp (disch := decide) only [chainV, upd_self]
@@ -275,38 +275,38 @@ theorem chain223Call_ok {qs : List Nat} {v : Nat → Fe} {s : State}
   obtain ⟨c, h⟩ := h
   unfold chain223Call
   refine WP.seq (sd_ok h.ctx (by decide) (by decide) fun s1 u1 => WP.block_nil ?_)
-  have hc1 : Ctx b s1 := h.ctx.of_rest (u1.rest []) (by decide)
-  have fs : Frame [⟨b + BitVec.ofNat 64 ACC, 8⟩] s.mem s1.mem := by
+  obtain hc1 : Ctx b s1 := h.ctx.of_rest (u1.rest []) (by decide)
+  obtain fs : Frame [⟨b + BitVec.ofNat 64 ACC, 8⟩] s.mem s1.mem := by
     rw [u1.mem]
     exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (by simp [Region.Contains])
-  have f1 : Frame [VG.Proof.X448.RISCV64.FA b] s.mem s1.mem :=
+  obtain f1 : Frame [VG.Proof.X448.RISCV64.FA b] s.mem s1.mem :=
     fs.sub fun r hr => by
       rw [List.mem_singleton.mp hr]
       exact ⟨_, List.mem_singleton_self _, Offset.sub_base _ (by decide)⟩
   have hACC : ACC = 952 := rfl
-  have sl1 : SlotsOk s1.mem b qs v := by
+  obtain sl1 : SlotsOk s1.mem b qs v := by
     intro q hq
-    have hb := (sep1_get (sep8_sep1 hR) hq).2.1
-    have e := VG.Proof.X448.RISCV64.limb_frame fs (o := q) fun r hr k hk => by
+    obtain hb := (sep1_get (sep8_sep1 hR) hq).2.1
+    obtain e := VG.Proof.X448.RISCV64.limb_frame fs (o := q) fun r hr k hk => by
       rw [List.mem_singleton.mp hr]
       exact Offset.disjoint b (.inl (by omega_using [hb, hk]))
         (by omega_using [hb, hk, hACC]) (by decide)
     rw [FS, VG.Proof.X448.RISCV64.V, val32_congr e]
     exact h.slots q hq
-  have hcE : Ctx b s1.callEntry := ⟨hc1.a3, hc1.al, hc1.wr⟩
-  have body : WP isa chain223Shared s1.callEntry fun t =>
+  obtain hcE : Ctx b s1.callEntry := ⟨hc1.a3, hc1.al, hc1.wr⟩
+  obtain body : WP isa chain223Shared s1.callEntry fun t =>
       CurE b s1.callEntry (s.gpr .ra) (R :: T6 :: qs) (chainV v) t := by
     unfold chain223Shared
     refine WP.seq (ld_ok hcE (by decide) (by decide) fun s2 u2 => WP.block_nil ?_)
-    have ht2 : s2.gpr .t2 = s.gpr .ra := by
+    obtain ht2 : s2.gpr .t2 = s.gpr .ra := by
       rw [u2.gpr, State.callEntry_mem, u1.mem, Mem.readW_writeW_self64]
-    have hc2 := hcE.of_rest (u2.rest (ws := [.t2]) (by decide)) (by decide)
+    obtain hc2 := hcE.of_rest (u2.rest (ws := [.t2]) (by decide)) (by decide)
     exact chain223_ok hR hZ hT ⟨_, hc2,
       Stp.of_rest (u2.rest (ws := [.t2]) (by decide)) (by decide) u2.mem,
       ht2, rfl, by rw [u2.mem, State.callEntry_mem]; exact sl1⟩
   obtain ⟨tr, s3, he, c3, h3⟩ := body
-  have hra := h3.stp.rest.gpr .ra (by decide)
-  have hret : isa.ret s1.callEntry s3 = some s3 := by
+  obtain hra := h3.stp.rest.gpr .ra (by decide)
+  obtain hret : isa.ret s1.callEntry s3 = some s3 := by
     simp only [isa, ret, hra, ↓reduceIte]
   refine WP.seq ⟨_, s3, Exec.call (call_callEntry s1) he hret, ?_⟩
   refine wp_addi (by decide) fun s4 u4 => WP.block_nil ⟨c3, h3.ctx.of_rest
@@ -334,14 +334,14 @@ theorem drop_R {qs : List Nat} (hq : Sep8 R qs = true) (hT : TempsOk qs = true) 
     Sep8 R (qs.filter (· ≠ R)) = true ∧ TempsOk (qs.filter (· ≠ R)) = true ∧
       CurE b s a (qs.filter (· ≠ R)) v s := by
   -- `R`'s element is whatever is there; the chain overwrites it.
-  have hC : CurE b s a (qs.filter (· ≠ R)) v s :=
+  obtain hC : CurE b s a (qs.filter (· ≠ R)) v s :=
     ⟨_, hc, Stp.refl _ _, h0, rfl, fun q hq => by
       simp only [List.mem_filter, decide_eq_true_eq] at hq; exact hS q hq.1 hq.2⟩
-  have hfR : Sep8 R (qs.filter (· ≠ R)) = true := by
+  obtain hfR : Sep8 R (qs.filter (· ≠ R)) = true := by
     simp only [Sep8, Sep1, Bool.and_eq_true, List.all_eq_true] at hq ⊢
     exact ⟨⟨⟨hq.1.1.1, fun q hq' => hq.1.1.2 q (List.mem_filter.mp hq').1⟩, hq.1.2⟩,
       fun q hq' => hq.2 q (List.mem_filter.mp hq').1⟩
-  have hfT : TempsOk (qs.filter (· ≠ R)) = true := by
+  obtain hfT : TempsOk (qs.filter (· ≠ R)) = true := by
     refine List.all_eq_true.mpr fun t ht => ?_
     obtain ⟨h1, h2⟩ := temps_get hT ht
     simp only [Bool.and_eq_true, Bool.not_eq_true']
@@ -362,9 +362,9 @@ theorem invertQ_ok {qs : List Nat} (hq : Sep8 R qs = true) (hZ : Z2 ∈ qs)
     (hS : ∀ q ∈ qs, q ≠ R → FS s.mem b q = v q) (h0 : s.gpr .t2 = a) :
     WP isa Impl.X448.RISCV64.R64.invert s fun s' => Stp b s s' ∧ Ctx b s' ∧
       SlotsOk s'.mem b qs (upd v R (VG.Proof.X448.pw (v Z2) (P - 2))) := by
-  have hZR : Z2 ≠ R := by decide
+  obtain hZR : Z2 ≠ R := by decide
   obtain ⟨hfR, hfT, hC⟩ := drop_R hq hT hc hS h0
-  have hZf : Z2 ∈ qs.filter (· ≠ R) := by simp [hZ, hZR]
+  obtain hZf : Z2 ∈ qs.filter (· ≠ R) := by simp [hZ, hZR]
   obtain ⟨f6, _⟩ := temps_get hfT (t := T6) (by decide)
   unfold Impl.X448.RISCV64.R64.invert invTail
   refine WP.seq (WP.mono (chain223Call_ok hfR hZf hfT hC) fun s1 h1 => ?_)
@@ -383,7 +383,7 @@ theorem invertQ_ok {qs : List Nat} (hq : Sep8 R qs = true) (hZ : Z2 ∈ qs)
   · subst eR
     rw [h5.slots _ List.mem_cons_self, upd_self, upd_self]
   · have hq' : q ∈ qs.filter (· ≠ R) := by simp [hq, eR]
-    have e6 : q ≠ T6 := fun e => (temps_get hT (t := T6) (by decide)).2 (e ▸ hq)
+    obtain e6 : q ≠ T6 := fun e => (temps_get hT (t := T6) (by decide)).2 (e ▸ hq)
     rw [h5.slots q (by repeat (first | exact hq' | apply List.mem_cons_of_mem)), upd_of_ne _ _ eR]
     simp only [chainV, upd_of_ne _ _ e6, upd_of_ne _ _ eR]
 

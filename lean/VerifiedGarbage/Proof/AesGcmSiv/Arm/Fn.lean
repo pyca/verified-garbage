@@ -45,14 +45,14 @@ theorem cmp_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
       t'.gpr .r0 = (if bytesAt t.mem (State.addr p.W) 16 =
         bytesAt t.mem (State.addr p.W + BitVec.ofNat 64 176) 16 then 1 else 0) ∧
       Others [.r0, .r1, .r2] t t' ∧ t'.mem = t.mem ∧ t'.sp = t.sp ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
-  have r₀ : InRegions (t.rd ++ t.wr) (State.addr p.W) 4 := by simpa using E.perm.wR (show 0 + 4 ≤ 3760 by decide)
-  have r₁ := E.perm.wR (show 4 + 4 ≤ 3760 by decide)
-  have r₂ := E.perm.wR (show 8 + 4 ≤ 3760 by decide)
-  have r₃ := E.perm.wR (show 12 + 4 ≤ 3760 by decide)
-  have q₀ := E.perm.wR (show 176 + 4 ≤ 3760 by decide)
-  have q₁ := E.perm.wR (show 180 + 4 ≤ 3760 by decide)
-  have q₂ := E.perm.wR (show 184 + 4 ≤ 3760 by decide)
-  have q₃ := E.perm.wR (show 188 + 4 ≤ 3760 by decide)
+  obtain r₀ : InRegions (t.rd ++ t.wr) (State.addr p.W) 4 := by simpa using E.perm.wR (show 0 + 4 ≤ 3760 by decide)
+  obtain r₁ := E.perm.wR (show 4 + 4 ≤ 3760 by decide)
+  obtain r₂ := E.perm.wR (show 8 + 4 ≤ 3760 by decide)
+  obtain r₃ := E.perm.wR (show 12 + 4 ≤ 3760 by decide)
+  obtain q₀ := E.perm.wR (show 176 + 4 ≤ 3760 by decide)
+  obtain q₁ := E.perm.wR (show 180 + 4 ≤ 3760 by decide)
+  obtain q₂ := E.perm.wR (show 184 + 4 ≤ 3760 by decide)
+  obtain q₃ := E.perm.wR (show 188 + 4 ≤ 3760 by decide)
   refine ⟨_, by simp only [cmp, xorW]; srun [E.r11, add_ofNat_zero, L.wA, r₀, r₁, r₂, r₃, q₀, q₁, q₂, q₃], ?_,
     by others_tac, by rfl, by rfl, by rfl, by rfl⟩
   simp only [gpr_setReg, ite_true, ite_false, reduceCtorEq]
@@ -94,10 +94,10 @@ theorem maskLoop_ok (s : State) {D : BitVec 32} {n : Nat} (h4 : s.gpr .r4 = D) (
     ⟨0, rfl, by omega_arith, by rw [h4, add_ofNat_zero], by rw [h5, Nat.sub_zero],
       by simp [maskBytes, bytesAt, writeBytes_nil], fun _ _ => rfl, rfl, rfl, rfl⟩
   rintro k t ⟨i, rfl, hi, r4, r5, mem, g, sp, rd, wr⟩
-  have ea : State.addr (D + BitVec.ofNat 32 i) = State.addr D + BitVec.ofNat 64 i := addr_add (by omega_arith)
-  have w₁ : InRegions t.wr (State.addr D + BitVec.ofNat 64 i) 1 := by rw [wr]; exact in_of_covers hw hi (by omega_arith)
-  have w₂ : InRegions (t.rd ++ t.wr) (State.addr D + BitVec.ofNat 64 i) 1 := Proof.AesGcm.Arm.in_left w₁
-  have h1 : t.gpr .r1 = s.gpr .r1 := g _ (by decide)
+  obtain ea : State.addr (D + BitVec.ofNat 32 i) = State.addr D + BitVec.ofNat 64 i := addr_add (by omega_arith)
+  obtain w₁ : InRegions t.wr (State.addr D + BitVec.ofNat 64 i) 1 := by rw [wr]; exact in_of_covers hw hi (by omega_arith)
+  obtain w₂ : InRegions (t.rd ++ t.wr) (State.addr D + BitVec.ofNat 64 i) 1 := Proof.AesGcm.Arm.in_left w₁
+  obtain h1 : t.gpr .r1 = s.gpr .r1 := g _ (by decide)
   obtain ⟨t', run', mem', r4', r5', z', g', sp', rd', wr'⟩ : ∃ t', runBlock isa maskBody t = some t' ∧
       t'.mem = t.mem.writeW (State.addr D + BitVec.ofNat 64 i)
         (t.mem (State.addr D + BitVec.ofNat 64 i) &&& (s.gpr .r1).setWidth 8) ∧
@@ -113,16 +113,16 @@ theorem maskLoop_ok (s : State) {D : BitVec 32} {n : Nat} (h4 : s.gpr .r4 = D) (
       rw [z_cmp (by omega_arith) (by decide)]
       congr 1; apply propext; omega_arith
   refine WP.of_runBlock ⟨t', run', ?_⟩
-  have hlen : (maskBytes s.mem (State.addr D) ((s.gpr .r1).setWidth 8) i).length = i := by
+  obtain hlen : (maskBytes s.mem (State.addr D) ((s.gpr .r1).setWidth 8) i).length = i := by
     simp [maskBytes, length_bytesAt]
-  have hmem : t'.mem = writeBytes s.mem (State.addr D) (maskBytes s.mem (State.addr D) ((s.gpr .r1).setWidth 8) (i + 1)) := by
+  obtain hmem : t'.mem = writeBytes s.mem (State.addr D) (maskBytes s.mem (State.addr D) ((s.gpr .r1).setWidth 8) (i + 1)) := by
     rw [mem', mem, dst_kept' (by omega_arith) _ hlen]
     simp only [maskBytes]
     rw [Proof.AesGcm.Arm.bytesAt_succ, List.map_append, List.map_cons, List.map_nil,
       writeBytes_snoc s.mem _ _ _ (by rw [List.length_map, length_bytesAt]; omega_arith),
       List.length_map, length_bytesAt]
-  have ev := eval_ne' z'
-  have gg : Others [.r4, .r5, .r12] s t' := fun r hr => by rw [g' r hr, g r hr]
+  obtain ev := eval_ne' z'
+  obtain gg : Others [.r4, .r5, .r12] s t' := fun r hr => by rw [g' r hr, g r hr]
   by_cases he : i + 1 = n
   · left
     exact ⟨by rw [ev]; simp [he], by rw [hmem, he], gg, by rw [sp', sp], by rw [rd', rd], by rw [wr', wr]⟩
@@ -150,8 +150,8 @@ theorem mask_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p t.me
     (hok : t.gpr .r0 = BitVec.ofNat 32 (if c then 1 else 0)) :
     WP isa mask t (MaskPost p c t) := by
   have hn := L.n_lt
-  have a₄ := E.perm.argR' L (k := 4) (by decide)
-  have a₈ := E.perm.argR' L (k := 8) (by decide)
+  obtain a₄ := E.perm.argR' L (k := 4) (by decide)
+  obtain a₈ := E.perm.argR' L (k := 8) (by decide)
   obtain ⟨t₁, run₁, r1₁, r4₁, r5₁, z₁, ho₁, hm₁, sp₁, rd₁, wr₁⟩ : ∃ t₁ : State, runBlock isa
       [.ldrSp .r4 4, .ldrSp .r5 8, .mov .r1 (Impl.AesGcm.Arm.imm 0), .dp .sub .r1 .r1 (.reg .r0),
         .cmp .r5 (Impl.AesGcm.Arm.imm 0)] t = some t₁ ∧
@@ -165,19 +165,19 @@ theorem mask_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) (A : Args p t.me
     · simp only [z_subFlags, gpr_setReg, ite_true, ite_false, reduceCtorEq]
       rw [z_cmp hn (by decide)]
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
-  have E₁ : Env p t₁ := E.of_others ho₁ sp₁ rd₁ wr₁
-  have r0₁ : t₁.gpr .r0 = t.gpr .r0 := ho₁ _ (by decide)
+  obtain E₁ : Env p t₁ := E.of_others ho₁ sp₁ rd₁ wr₁
+  obtain r0₁ : t₁.gpr .r0 = t.gpr .r0 := ho₁ _ (by decide)
   refine WP.ite (decide (p.n = 0)) (eval_eq' z₁) (fun ht => ?_) (fun hf => ?_)
   · have h0 : p.n = 0 := by simpa using ht
     refine WP.block_nil ⟨E₁, r0₁, by rw [hm₁]; exact Frame.refl _ _, ?_⟩
     rw [h0]; split <;> simp [bytesAt, Spec.GcmSiv.zeros]
   · have h0 : p.n ≠ 0 := by simpa using hf
     refine WP.mono (maskLoop_ok t₁ r4₁ r5₁ (by omega_arith) hn L.dw E₁.perm.d) fun t₂ ⟨hm₂, ho₂, sp₂, rd₂, wr₂⟩ => ?_
-    have hl : (maskBytes t₁.mem (State.addr p.D) ((t₁.gpr .r1).setWidth 8) p.n).length = p.n := by
+    obtain hl : (maskBytes t₁.mem (State.addr p.D) ((t₁.gpr .r1).setWidth 8) p.n).length = p.n := by
       simp [maskBytes, length_bytesAt]
     refine ⟨E₁.of_others ho₂ sp₂ rd₂ wr₂, by rw [ho₂ _ (by decide), r0₁],
       by rw [hm₂, ← hm₁]; exact Proof.AesGcm.Arm.writeBytes_frame' _ hl, ?_⟩
-    have e := Proof.AesGcm.Arm.bytesAt_writeBytes_self t₁.mem (State.addr p.D)
+    obtain e := Proof.AesGcm.Arm.bytesAt_writeBytes_self t₁.mem (State.addr p.D)
       (maskBytes t₁.mem (State.addr p.D) ((t₁.gpr .r1).setWidth 8) p.n) (by omega_arith)
     rw [hl] at e
     rw [hm₂, e, r1₁, hok, hm₁]
@@ -248,10 +248,10 @@ theorem perm_of_cov {s : State} (hk : Covers [⟨State.addr (s.gpr .r0), 240⟩]
 theorem args_of_seal {s : State} (h : sealPre s) :
     Lay (prmOf s) ∧ Perm (prmOf s) s ∧ Covers [⟨State.addr (arg s 3), 16⟩] s.wr := by
   obtain ⟨hrd, hwr, ta, hl⟩ := h
-  have mrd : ∀ r ∈ [(⟨State.addr (s.gpr .r0), 240⟩ : Region), ⟨State.addr (s.gpr .r2), 12⟩,
+  obtain mrd : ∀ r ∈ [(⟨State.addr (s.gpr .r0), 240⟩ : Region), ⟨State.addr (s.gpr .r2), 12⟩,
       ⟨State.addr (s.gpr .r3), (arg s 0).toNat⟩, args s 5], Covers [r] (s.rd ++ s.wr) :=
     fun r hr => covers_of_mem (List.mem_append_left _ (by rw [hrd]; exact hr))
-  have mwr : ∀ r ∈ [(⟨State.addr (arg s 1), (arg s 2).toNat⟩ : Region), ⟨State.addr (arg s 3), 16⟩,
+  obtain mwr : ∀ r ∈ [(⟨State.addr (arg s 1), (arg s 2).toNat⟩ : Region), ⟨State.addr (arg s 3), 16⟩,
       ⟨State.addr (arg s 4), 3760⟩], Covers [r] s.wr := fun r hr => covers_of_mem (by rw [hwr]; exact hr)
   obtain ⟨-, -, -, -, -, -, -, -, -, da, wa, -⟩ := id hl
   exact ⟨lay_of hl, perm_of_cov (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mwr _ (by simp))
@@ -266,10 +266,10 @@ theorem args_of_seal {s : State} (h : sealPre s) :
 /-- `open`'s layout and permissions, with its received tag, to read. -/
 theorem args_of_open {s : State} (h : openPre s) : Lay (prmOf s) ∧ Perm (prmOf s) s := by
   obtain ⟨hrd, hwr, hl⟩ := h
-  have mrd : ∀ r ∈ [(⟨State.addr (s.gpr .r0), 240⟩ : Region), ⟨State.addr (s.gpr .r2), 12⟩,
+  obtain mrd : ∀ r ∈ [(⟨State.addr (s.gpr .r0), 240⟩ : Region), ⟨State.addr (s.gpr .r2), 12⟩,
       ⟨State.addr (s.gpr .r3), (arg s 0).toNat⟩, ⟨State.addr (arg s 3), 16⟩, args s 5], Covers [r] (s.rd ++ s.wr) :=
     fun r hr => covers_of_mem (List.mem_append_left _ (by rw [hrd]; exact hr))
-  have mwr : ∀ r ∈ [(⟨State.addr (arg s 1), (arg s 2).toNat⟩ : Region), ⟨State.addr (arg s 4), 3760⟩],
+  obtain mwr : ∀ r ∈ [(⟨State.addr (arg s 1), (arg s 2).toNat⟩ : Region), ⟨State.addr (arg s 4), 3760⟩],
       Covers [r] s.wr := fun r hr => covers_of_mem (by rw [hwr]; exact hr)
   obtain ⟨-, -, -, -, -, -, -, -, -, da, wa, -⟩ := id hl
   exact ⟨lay_of hl, perm_of_cov (mrd _ (by simp)) (mrd _ (by simp)) (mrd _ (by simp)) (mwr _ (by simp))
@@ -295,8 +295,8 @@ structure Entered (s s₁ : State) : Prop where
 /-- `entry`. -/
 theorem entry_ok {s : State} (L : Lay (prmOf s)) (P : Perm (prmOf s) s) : WP isa (.block entry) s (Entered s) := by
   have hw := L.ww
-  have ha : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 16)) 4 := P.argR' L (k := 16) (by decide)
-  have e16 : s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 16)) 32 = (prmOf s).W := by simp [prmOf, arg, stackArg_eq]
+  obtain ha : InRegions (s.rd ++ s.wr) (State.addr (s.sp + BitVec.ofNat 32 16)) 4 := P.argR' L (k := 16) (by decide)
+  obtain e16 : s.mem.readW (State.addr (s.sp + BitVec.ofNat 32 16)) 32 = (prmOf s).W := by simp [prmOf, arg, stackArg_eq]
   refine Proof.AesGcm.Arm.entry_ok (off := 16) (by decide) ha (by rw [e16]; omega_arith)
     (by rw [e16]; exact P.w2560) fun s₁ g16 g rd wr sp sv fr => ?_
   rw [e16] at g16 sv fr
@@ -329,17 +329,17 @@ theorem recv_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (A : Args p s.me
       Others [.r0, .r1, .r2, .r3, .r12] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨hT, hTa⟩ := tagArg L E A
   have tw := L.tw
-  have eT : ∀ k, k < 16 → State.addr (p.T + BitVec.ofNat 32 k) = State.addr p.T + BitVec.ofNat 64 k :=
+  obtain eT : ∀ k, k < 16 → State.addr (p.T + BitVec.ofNat 32 k) = State.addr p.T + BitVec.ofNat 64 k :=
     fun k hk => addr_add (by omega_arith)
-  have t₀ : InRegions (s.rd ++ s.wr) (State.addr p.T) 4 := by
+  obtain t₀ : InRegions (s.rd ++ s.wr) (State.addr p.T) 4 := by
     simpa using in_off (d := 0) (n := 4) E.perm.t (by decide) (by decide)
-  have t₁ := in_off (d := 4) (n := 4) E.perm.t (by decide) (by decide)
-  have t₂ := in_off (d := 8) (n := 4) E.perm.t (by decide) (by decide)
-  have t₃ := in_off (d := 12) (n := 4) E.perm.t (by decide) (by decide)
-  have w₀ : InRegions s.wr (State.addr p.W) 4 := by simpa using E.perm.wW (show 0 + 4 ≤ 3760 by decide)
-  have w₁ := E.perm.wW (show 4 + 4 ≤ 3760 by decide)
-  have w₂ := E.perm.wW (show 8 + 4 ≤ 3760 by decide)
-  have w₃ := E.perm.wW (show 12 + 4 ≤ 3760 by decide)
+  obtain t₁ := in_off (d := 4) (n := 4) E.perm.t (by decide) (by decide)
+  obtain t₂ := in_off (d := 8) (n := 4) E.perm.t (by decide) (by decide)
+  obtain t₃ := in_off (d := 12) (n := 4) E.perm.t (by decide) (by decide)
+  obtain w₀ : InRegions s.wr (State.addr p.W) 4 := by simpa using E.perm.wW (show 0 + 4 ≤ 3760 by decide)
+  obtain w₁ := E.perm.wW (show 4 + 4 ≤ 3760 by decide)
+  obtain w₂ := E.perm.wW (show 8 + 4 ≤ 3760 by decide)
+  obtain w₃ := E.perm.wW (show 12 + 4 ≤ 3760 by decide)
   refine ⟨_, by simp only [recv]; srun [E.r11, add_ofNat_zero, L.wA, hT, hTa, eT, t₀, t₁, t₂, t₃, w₀, w₁, w₂, w₃],
     ?_, ?_, by others_tac, by rfl, by rfl, by rfl⟩
   · simp only [mem_setReg, mem_store]
@@ -355,16 +355,16 @@ theorem tagOut_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (A : Args p s.
       Others [.r0, .r1, .r2, .r3, .r12] s s' ∧ s'.sp = s.sp ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   obtain ⟨hT, hTa⟩ := tagArg L E A
   have tw := L.tw
-  have eT : ∀ k, k < 16 → State.addr (p.T + BitVec.ofNat 32 k) = State.addr p.T + BitVec.ofNat 64 k :=
+  obtain eT : ∀ k, k < 16 → State.addr (p.T + BitVec.ofNat 32 k) = State.addr p.T + BitVec.ofNat 64 k :=
     fun k hk => addr_add (by omega_arith)
-  have t₀ : InRegions s.wr (State.addr p.T) 4 := by simpa using in_off (d := 0) (n := 4) hTw (by decide) (by decide)
-  have t₁ := in_off (d := 4) (n := 4) hTw (by decide) (by decide)
-  have t₂ := in_off (d := 8) (n := 4) hTw (by decide) (by decide)
-  have t₃ := in_off (d := 12) (n := 4) hTw (by decide) (by decide)
-  have w₀ : InRegions (s.rd ++ s.wr) (State.addr p.W) 4 := by simpa using E.perm.wR (show 0 + 4 ≤ 3760 by decide)
-  have w₁ := E.perm.wR (show 4 + 4 ≤ 3760 by decide)
-  have w₂ := E.perm.wR (show 8 + 4 ≤ 3760 by decide)
-  have w₃ := E.perm.wR (show 12 + 4 ≤ 3760 by decide)
+  obtain t₀ : InRegions s.wr (State.addr p.T) 4 := by simpa using in_off (d := 0) (n := 4) hTw (by decide) (by decide)
+  obtain t₁ := in_off (d := 4) (n := 4) hTw (by decide) (by decide)
+  obtain t₂ := in_off (d := 8) (n := 4) hTw (by decide) (by decide)
+  obtain t₃ := in_off (d := 12) (n := 4) hTw (by decide) (by decide)
+  obtain w₀ : InRegions (s.rd ++ s.wr) (State.addr p.W) 4 := by simpa using E.perm.wR (show 0 + 4 ≤ 3760 by decide)
+  obtain w₁ := E.perm.wR (show 4 + 4 ≤ 3760 by decide)
+  obtain w₂ := E.perm.wR (show 8 + 4 ≤ 3760 by decide)
+  obtain w₃ := E.perm.wR (show 12 + 4 ≤ 3760 by decide)
   refine ⟨_, by simp only [tagOut]; srun [E.r11, add_ofNat_zero, L.wA, hT, hTa, eT, t₀, t₁, t₂, t₃, w₀, w₁, w₂, w₃],
     ?_, ?_, by others_tac, by rfl, by rfl, by rfl⟩
   · simp only [mem_setReg, mem_store]
@@ -461,26 +461,26 @@ theorem seal_wp (hti : TagInputEq) {s : State} (h : sealPre s) :
   obtain ⟨L, P, hTw⟩ := args_of_seal h
   have hRb := L.rounds_le
   have hn := L.n_lt
-  have A₀ := args_of s
+  obtain A₀ := args_of s
   refine WP.seq (WP.mono (WP.rdwr (entry_ok L P)) fun s₁ ⟨En, _, w₁⟩ => ?_)
-  have A₁ : Args (prmOf s) s₁.mem := A₀.frame L En.frame (by disj_tac L)
+  obtain A₁ : Args (prmOf s) s₁.mem := A₀.frame L En.frame (by disj_tac L)
   -- The keys.
   refine WP.seq (WP.mono (WP.rdwr (keys_ok L En.env)) fun s₂ ⟨Ky, _, w₂⟩ => ?_)
-  have A₂ : Args (prmOf s) s₂.mem := A₁.frame L Ky.frame (by disj_tac L)
+  obtain A₂ : Args (prmOf s) s₂.mem := A₁.frame L Ky.frame (by disj_tac L)
   -- POLYVAL and the tag input.
   refine WP.seq (WP.mono (polyval_ok L Ky.env A₂ Ky.hkey Ky.acc) fun s₃ Po => ?_)
-  have A₃ : Args (prmOf s) s₃.mem := A₂.frame L Po.frame (by disj_tac L)
+  obtain A₃ : Args (prmOf s) s₃.mem := A₂.frame L Po.frame (by disj_tac L)
   -- The tag.
   refine WP.seq (WP.mono (tag_ok L Po.env (o := 0) (by decide)) fun s₄ Tg => ?_)
-  have A₄ : Args (prmOf s) s₄.mem := A₃.frame L Tg.frame (by disj_tac L)
+  obtain A₄ : Args (prmOf s) s₄.mem := A₃.frame L Tg.frame (by disj_tac L)
   -- Counter mode.
   refine WP.seq (WP.mono (crypt_ok L Tg.env A₄) fun s₅ Cr => ?_)
-  have A₅ : Args (prmOf s) s₅.mem := A₄.frame L Cr.frame (by disj_tac L)
+  obtain A₅ : Args (prmOf s) s₅.mem := A₄.frame L Cr.frame (by disj_tac L)
   -- The copy of the tag, and `restore`.
-  have w₅ : s₅.wr = s.wr := by rw [Cr.wr, Tg.wr, Po.wr, w₂, w₁]
+  obtain w₅ : s₅.wr = s.wr := by rw [Cr.wr, Tg.wr, Po.wr, w₂, w₁]
   obtain ⟨s₆, run₆, fT, hT₆, ho₆, sp₆, rd₆, wr₆⟩ := tagOut_ok L Cr.env A₅ (by rw [w₅]; exact hTw)
-  have E₆ : Env (prmOf s) s₆ := Cr.env.of_others ho₆ sp₆ rd₆ wr₆
-  have sv₆ : SavedAt s₆.mem (prmOf s).W s :=
+  obtain E₆ : Env (prmOf s) s₆ := Cr.env.of_others ho₆ sp₆ rd₆ wr₆
+  obtain sv₆ : SavedAt s₆.mem (prmOf s).W s :=
     (((((En.saved.frame Ky.frame (by disj_tac L)).frame Po.frame (by disj_tac L)).frame Tg.frame
       (by disj_tac L)).frame Cr.frame (by disj_tac L))).frame fT fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
@@ -493,27 +493,27 @@ theorem seal_wp (hti : TagInputEq) {s : State} (h : sealPre s) :
     (bytesAt s'.mem (State.addr (prmOf s).D) (prmOf s).n, bytesAt s'.mem (State.addr (prmOf s).T) 16)
   rw [hm, hT₆, bytesAt_keep fT (by disj_tac L) (by omega_arith)]
   -- What the pieces read.
-  have hK₁ : Spec.GcmSiv.ctxCiph s₁.mem (State.addr (prmOf s).K) (prmOf s).R =
+  obtain hK₁ : Spec.GcmSiv.ctxCiph s₁.mem (State.addr (prmOf s).K) (prmOf s).R =
       Spec.GcmSiv.ctxCiph s.mem (State.addr (prmOf s).K) (prmOf s).R :=
     ciph_keep En.frame (by disj_tac L) hRb
-  have n₁ : bytesAt s₁.mem (State.addr (prmOf s).N) 12 = bytesAt s.mem (State.addr (prmOf s).N) 12 :=
+  obtain n₁ : bytesAt s₁.mem (State.addr (prmOf s).N) 12 = bytesAt s.mem (State.addr (prmOf s).N) 12 :=
     bytesAt_keep En.frame (by disj_tac L) (by decide)
-  have n₂ : bytesAt s₂.mem (State.addr (prmOf s).N) 12 = bytesAt s.mem (State.addr (prmOf s).N) 12 := by
+  obtain n₂ : bytesAt s₂.mem (State.addr (prmOf s).N) 12 = bytesAt s.mem (State.addr (prmOf s).N) 12 := by
     rw [bytesAt_keep Ky.frame (by disj_tac L) (by decide), n₁]
-  have a₂ : bytesAt s₂.mem (State.addr (prmOf s).A) (prmOf s).al = bytesAt s.mem (State.addr (prmOf s).A) (prmOf s).al := by
+  obtain a₂ : bytesAt s₂.mem (State.addr (prmOf s).A) (prmOf s).al = bytesAt s.mem (State.addr (prmOf s).A) (prmOf s).al := by
     rw [bytesAt_keep Ky.frame (by disj_tac L) (by have := L.al_lt; omega_arith),
       bytesAt_keep En.frame (by disj_tac L) (by have := L.al_lt; omega_arith)]
-  have d₂ : bytesAt s₂.mem (State.addr (prmOf s).D) (prmOf s).n = bytesAt s.mem (State.addr (prmOf s).D) (prmOf s).n := by
+  obtain d₂ : bytesAt s₂.mem (State.addr (prmOf s).D) (prmOf s).n = bytesAt s.mem (State.addr (prmOf s).D) (prmOf s).n := by
     rw [bytesAt_keep Ky.frame (by disj_tac L) (by omega_arith), bytesAt_keep En.frame (by disj_tac L) (by omega_arith)]
-  have d₄ : bytesAt s₄.mem (State.addr (prmOf s).D) (prmOf s).n = bytesAt s.mem (State.addr (prmOf s).D) (prmOf s).n := by
+  obtain d₄ : bytesAt s₄.mem (State.addr (prmOf s).D) (prmOf s).n = bytesAt s.mem (State.addr (prmOf s).D) (prmOf s).n := by
     rw [bytesAt_keep Tg.frame (by disj_tac L) (by omega_arith), bytesAt_keep Po.frame (by disj_tac L) (by omega_arith), d₂]
-  have key₃ : Spec.GcmSiv.ctxCiph s₃.mem (State.addr (prmOf s).W + BitVec.ofNat 64 192) (prmOf s).R =
+  obtain key₃ : Spec.GcmSiv.ctxCiph s₃.mem (State.addr (prmOf s).W + BitVec.ofNat 64 192) (prmOf s).R =
       Spec.GcmSiv.ctxCiph s₂.mem (State.addr (prmOf s).W + BitVec.ofNat 64 192) (prmOf s).R :=
     ciph_keep Po.frame (by disj_tac L) hRb
-  have key₄ : Spec.GcmSiv.ctxCiph s₄.mem (State.addr (prmOf s).W + BitVec.ofNat 64 192) (prmOf s).R =
+  obtain key₄ : Spec.GcmSiv.ctxCiph s₄.mem (State.addr (prmOf s).W + BitVec.ofNat 64 192) (prmOf s).R =
       Spec.GcmSiv.ctxCiph s₂.mem (State.addr (prmOf s).W + BitVec.ofNat 64 192) (prmOf s).R := by
     rw [ciph_keep Tg.frame (by disj_tac L) hRb, key₃]
-  have t₅ : bytesAt s₅.mem (State.addr (prmOf s).W + BitVec.ofNat 64 0) 16 =
+  obtain t₅ : bytesAt s₅.mem (State.addr (prmOf s).W + BitVec.ofNat 64 0) 16 =
       bytesAt s₄.mem (State.addr (prmOf s).W + BitVec.ofNat 64 0) 16 :=
     bytesAt_keep Cr.frame (by disj_tac L) (by decide)
   rw [BitVec.add_zero] at t₅
@@ -573,86 +573,86 @@ theorem open_wp (hti : TagInputEq) {s : State} (h : openPre s) :
   obtain ⟨L, P⟩ := args_of_open h
   have hRb := L.rounds_le
   have hn := L.n_lt
-  have A₀ := args_of s
+  obtain A₀ := args_of s
   refine WP.seq (WP.mono (entry_ok L P) fun s₀ En₀ => ?_)
-  have A₀' : Args (prmOf s) s₀.mem := A₀.frame L En₀.frame (by disj_tac L)
+  obtain A₀' : Args (prmOf s) s₀.mem := A₀.frame L En₀.frame (by disj_tac L)
   -- The received tag, copied to `W`.
   obtain ⟨s₁, run₁, fR, hR₁, ho₁, sp₁, rd₁, wr₁⟩ := recv_ok L En₀.env A₀'
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have fR' : Frame [⟨State.addr (prmOf s).W + BitVec.ofNat 64 0, 16⟩] s₀.mem s₁.mem := by
+  obtain fR' : Frame [⟨State.addr (prmOf s).W + BitVec.ofNat 64 0, 16⟩] s₀.mem s₁.mem := by
     rw [BitVec.add_zero]; exact fR
-  have E₁ : Env (prmOf s) s₁ := En₀.env.of_others ho₁ sp₁ rd₁ wr₁
-  have sv₁ : SavedAt s₁.mem (prmOf s).W s := En₀.saved.frame fR' (by disj_tac L)
-  have f₁ : Frame [savedR (prmOf s).W, ⟨State.addr (prmOf s).W + BitVec.ofNat 64 0, 16⟩] s.mem s₁.mem :=
+  obtain E₁ : Env (prmOf s) s₁ := En₀.env.of_others ho₁ sp₁ rd₁ wr₁
+  obtain sv₁ : SavedAt s₁.mem (prmOf s).W s := En₀.saved.frame fR' (by disj_tac L)
+  obtain f₁ : Frame [savedR (prmOf s).W, ⟨State.addr (prmOf s).W + BitVec.ofNat 64 0, 16⟩] s.mem s₁.mem :=
     (En₀.frame.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, List.mem_cons_self, fun _ h => h⟩).trans
     (fR'.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨_, by simp, fun _ h => h⟩)
-  have A₁ : Args (prmOf s) s₁.mem := A₀'.frame L fR' (by disj_tac L)
-  have hT₁ : bytesAt s₁.mem (State.addr (prmOf s).W + BitVec.ofNat 64 0) 16 =
+  obtain A₁ : Args (prmOf s) s₁.mem := A₀'.frame L fR' (by disj_tac L)
+  obtain hT₁ : bytesAt s₁.mem (State.addr (prmOf s).W + BitVec.ofNat 64 0) 16 =
       bytesAt s.mem (State.addr (prmOf s).T) 16 := by
     rw [BitVec.add_zero, hR₁, bytesAt_keep En₀.frame (by disj_tac L) (by decide)]
   -- The keys.
   refine WP.seq (WP.mono (keys_ok L E₁) fun s₂ Ky => ?_)
-  have A₂ : Args (prmOf s) s₂.mem := A₁.frame L Ky.frame (by disj_tac L)
+  obtain A₂ : Args (prmOf s) s₂.mem := A₁.frame L Ky.frame (by disj_tac L)
   -- Counter mode from the received tag.
   refine WP.seq (WP.mono (crypt_ok L Ky.env A₂) fun s₃ Cr => ?_)
-  have A₃ : Args (prmOf s) s₃.mem := A₂.frame L Cr.frame (by disj_tac L)
-  have a₃ : bytesAt s₃.mem (State.addr (prmOf s).W + BitVec.ofNat 64 16) 16 =
+  obtain A₃ : Args (prmOf s) s₃.mem := A₂.frame L Cr.frame (by disj_tac L)
+  obtain a₃ : bytesAt s₃.mem (State.addr (prmOf s).W + BitVec.ofNat 64 16) 16 =
       bytesAt s₂.mem (State.addr (prmOf s).W + BitVec.ofNat 64 16) 16 :=
     bytesAt_keep Cr.frame (by disj_tac L) (by decide)
-  have hG₃ : Spec.Gcm.blockAt s₃.mem (State.addr (prmOf s).W + BitVec.ofNat 64 64) =
+  obtain hG₃ : Spec.Gcm.blockAt s₃.mem (State.addr (prmOf s).W + BitVec.ofNat 64 64) =
       GcmSiv.Words.hkeyOf (Spec.GcmSiv.ofBytes (bytesAt s₃.mem (State.addr (prmOf s).W + BitVec.ofNat 64 16) 16)) := by
     rw [Proof.AesGcm.Arm.blockAt_frame Cr.frame (by disj_tac L), Ky.hkey, a₃]
-  have hY₃ : Spec.Gcm.blockAt s₃.mem (State.addr (prmOf s).W + BitVec.ofNat 64 80) = 0 := by
+  obtain hY₃ : Spec.Gcm.blockAt s₃.mem (State.addr (prmOf s).W + BitVec.ofNat 64 80) = 0 := by
     rw [Proof.AesGcm.Arm.blockAt_frame Cr.frame (by disj_tac L), Ky.acc]
   -- POLYVAL of the plaintext and the tag input.
   refine WP.seq (WP.mono (polyval_ok L Cr.env A₃ hG₃ hY₃) fun s₄ Po => ?_)
-  have A₄ : Args (prmOf s) s₄.mem := A₃.frame L Po.frame (by disj_tac L)
+  obtain A₄ : Args (prmOf s) s₄.mem := A₃.frame L Po.frame (by disj_tac L)
   -- Its tag at `W + 176`.
   refine WP.seq (WP.mono (tag_ok L Po.env (o := 176) (by decide)) fun s₅ Tg => ?_)
-  have A₅ : Args (prmOf s) s₅.mem := A₄.frame L Tg.frame (by disj_tac L)
+  obtain A₅ : Args (prmOf s) s₅.mem := A₄.frame L Tg.frame (by disj_tac L)
   -- The comparison.
   obtain ⟨s₆, run₆, r0₆, ho₆, hm₆, sp₆, rd₆, wr₆⟩ := cmp_ok L Tg.env
   refine WP.seq (WP.of_runBlock ⟨s₆, run₆, ?_⟩)
-  have E₆ : Env (prmOf s) s₆ := Tg.env.of_others ho₆ sp₆ rd₆ wr₆
+  obtain E₆ : Env (prmOf s) s₆ := Tg.env.of_others ho₆ sp₆ rd₆ wr₆
   rw [ite_ofNat] at r0₆
   -- The mask.
   refine WP.seq (WP.mono (mask_ok L E₆ (hm₆ ▸ A₅) r0₆) fun s₇ Mk => ?_)
   -- The restore.
-  have sv₇ : SavedAt s₇.mem (prmOf s).W s := by
+  obtain sv₇ : SavedAt s₇.mem (prmOf s).W s := by
     have := ((((sv₁.frame Ky.frame (by disj_tac L)).frame Cr.frame (by disj_tac L)).frame Po.frame
       (by disj_tac L)).frame Tg.frame (by disj_tac L))
     rw [← hm₆] at this
     exact this.frame Mk.frame (by disj_tac L)
   refine WP.mono (exit_ok L Mk.env rfl sv₇) fun s' ⟨ga, hm, hr0⟩ => ⟨ga, ?_⟩
   -- What the pieces read.
-  have hK₁ : Spec.GcmSiv.ctxCiph s₁.mem (State.addr (prmOf s).K) (prmOf s).R =
+  obtain hK₁ : Spec.GcmSiv.ctxCiph s₁.mem (State.addr (prmOf s).K) (prmOf s).R =
       Spec.GcmSiv.ctxCiph s.mem (State.addr (prmOf s).K) (prmOf s).R :=
     ciph_keep f₁ (by disj_tac L) hRb
-  have n₁ : bytesAt s₁.mem (State.addr (prmOf s).N) 12 = bytesAt s.mem (State.addr (prmOf s).N) 12 :=
+  obtain n₁ : bytesAt s₁.mem (State.addr (prmOf s).N) 12 = bytesAt s.mem (State.addr (prmOf s).N) 12 :=
     bytesAt_keep f₁ (by disj_tac L) (by decide)
-  have n₃ : bytesAt s₃.mem (State.addr (prmOf s).N) 12 = bytesAt s.mem (State.addr (prmOf s).N) 12 := by
+  obtain n₃ : bytesAt s₃.mem (State.addr (prmOf s).N) 12 = bytesAt s.mem (State.addr (prmOf s).N) 12 := by
     rw [bytesAt_keep Cr.frame (by disj_tac L) (by decide), bytesAt_keep Ky.frame (by disj_tac L) (by decide), n₁]
-  have a₃' : bytesAt s₃.mem (State.addr (prmOf s).A) (prmOf s).al =
+  obtain a₃' : bytesAt s₃.mem (State.addr (prmOf s).A) (prmOf s).al =
       bytesAt s.mem (State.addr (prmOf s).A) (prmOf s).al := by
     rw [bytesAt_keep Cr.frame (by disj_tac L) (by have := L.al_lt; omega_arith),
       bytesAt_keep Ky.frame (by disj_tac L) (by have := L.al_lt; omega_arith),
       bytesAt_keep f₁ (by disj_tac L) (by have := L.al_lt; omega_arith)]
-  have d₂ : bytesAt s₂.mem (State.addr (prmOf s).D) (prmOf s).n = bytesAt s.mem (State.addr (prmOf s).D) (prmOf s).n := by
+  obtain d₂ : bytesAt s₂.mem (State.addr (prmOf s).D) (prmOf s).n = bytesAt s.mem (State.addr (prmOf s).D) (prmOf s).n := by
     rw [bytesAt_keep Ky.frame (by disj_tac L) (by omega_arith), bytesAt_keep f₁ (by disj_tac L) (by omega_arith)]
-  have tag₂ : bytesAt s₂.mem (State.addr (prmOf s).W + BitVec.ofNat 64 0) 16 =
+  obtain tag₂ : bytesAt s₂.mem (State.addr (prmOf s).W + BitVec.ofNat 64 0) 16 =
       bytesAt s.mem (State.addr (prmOf s).T) 16 := by
     rw [bytesAt_keep Ky.frame (by disj_tac L) (by decide), hT₁]
-  have tag₅ : bytesAt s₅.mem (State.addr (prmOf s).W + BitVec.ofNat 64 0) 16 =
+  obtain tag₅ : bytesAt s₅.mem (State.addr (prmOf s).W + BitVec.ofNat 64 0) 16 =
       bytesAt s.mem (State.addr (prmOf s).T) 16 := by
     rw [bytesAt_keep Tg.frame (by disj_tac L) (by decide), bytesAt_keep Po.frame (by disj_tac L) (by decide),
       bytesAt_keep Cr.frame (by disj_tac L) (by decide), tag₂]
   rw [BitVec.add_zero] at tag₂ tag₅
-  have ci₄ : Spec.GcmSiv.ctxCiph s₄.mem (State.addr (prmOf s).W + BitVec.ofNat 64 192) (prmOf s).R =
+  obtain ci₄ : Spec.GcmSiv.ctxCiph s₄.mem (State.addr (prmOf s).W + BitVec.ofNat 64 192) (prmOf s).R =
       Spec.GcmSiv.ctxCiph s₂.mem (State.addr (prmOf s).W + BitVec.ofNat 64 192) (prmOf s).R := by
     rw [ciph_keep Po.frame (by disj_tac L) hRb, ciph_cryR L Cr.frame]
-  have d₆ : bytesAt s₆.mem (State.addr (prmOf s).D) (prmOf s).n = bytesAt s₃.mem (State.addr (prmOf s).D) (prmOf s).n := by
+  obtain d₆ : bytesAt s₆.mem (State.addr (prmOf s).D) (prmOf s).n = bytesAt s₃.mem (State.addr (prmOf s).D) (prmOf s).n := by
     rw [hm₆, bytesAt_keep Tg.frame (by disj_tac L) (by omega_arith), bytesAt_keep Po.frame (by disj_tac L) (by omega_arith)]
   have au := Ky.auth
   have ci := Ky.ciph
@@ -666,10 +666,10 @@ theorem open_wp (hti : TagInputEq) {s : State} (h : openPre s) :
   have md := Mk.data
   rw [hm₆, tg, tag₅] at md
   rw [← hm₆, d₆, pt₃] at md
-  have ax : s'.gpr .r0 = s₆.gpr .r0 := by rw [hr0, Mk.r0]
+  obtain ax : s'.gpr .r0 = s₆.gpr .r0 := by rw [hr0, Mk.r0]
   rw [r0₆, tg, tag₅] at ax
   show openPost (openResult s) s' (State.addr (prmOf s).D) (prmOf s).n
-  have hdec : openResult s =
+  obtain hdec : openResult s =
       let dk := Spec.GcmSiv.deriveKeys (Spec.GcmSiv.ctxCiph s.mem (State.addr (prmOf s).K) (prmOf s).R)
         (Spec.GcmSiv.keyLen (prmOf s).R) (bytesAt s.mem (State.addr (prmOf s).N) 12)
       if Spec.GcmSiv.aes dk.2 (tagInputG dk.1 (bytesAt s.mem (State.addr (prmOf s).N) 12)

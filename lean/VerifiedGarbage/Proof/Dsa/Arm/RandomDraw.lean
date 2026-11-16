@@ -58,7 +58,7 @@ theorem nz_bit (x : BitVec 32) (h : x.toNat < 256) :
   · subst hx; rfl
   · have : x.toNat ≠ 0 := fun e => hx (BitVec.eq_of_toNat_eq e)
     simp only [hx, ↓reduceIte, show (0 : BitVec 32).toNat = 0 from rfl]
-    have e : decide (2 ^ (32 - 1) ≤ (2 ^ 32 - x.toNat + 0) % 2 ^ 32) = true := decide_eq_true (by omega_using [h, this])
+    obtain e : decide (2 ^ (32 - 1) ≤ (2 ^ 32 - x.toNat + 0) % 2 ^ 32) = true := decide_eq_true (by omega_using [h, this])
     rw [e, Bool.true_or]; rfl
 
 theorem ofNat_add_one_sub {x : BitVec 32} {c : Nat} (hc : c + 1 < 2 ^ 32) :
@@ -87,33 +87,33 @@ theorem rangeByte_ok {s₀ t₀ t : State} (A : RandomABI s₀) {cs : List Byte}
     WP isa (.block rangeByte) t fun u => RangeInv s₀ t₀ cs k u ∧ u.z = decide (k = 0) := by
   have hF : frameBytes = 112 := rfl
   have hon : oNonce = 64 := rfl
-  have hql := rQBytes_le A
-  have hfit := rWidth_le s₀
-  have hdp := drawPlace_le A
-  have hq := I.ready.q A
+  obtain hql := rQBytes_le A
+  obtain hfit := rWidth_le s₀
+  obtain hdp := drawPlace_le A
+  obtain hq := I.ready.q A
   have hqfit := hq.fit
   have hrf := I.ready.rf
   unfold rangeByte borrow
   simp only [List.cons_append, List.nil_append]
   refine wp_dp (op2_imm (by decide)) fun t₁ u₁ => wp_dp (op2_imm (by decide)) fun t₂ u₂ => ?_
-  have e₂ : t₂.gpr .r4 = t.gpr .r11 + BitVec.ofNat 32 (drawPlace s₀ + k) := by
+  obtain e₂ : t₂.gpr .r4 = t.gpr .r11 + BitVec.ofNat 32 (drawPlace s₀ + k) := by
     rw [u₂.other _ (by decide), u₁.gpr]
     show t.gpr .r4 - 1 = _
     rw [I.r4, show drawPlace s₀ + (k + 1) = drawPlace s₀ + k + 1 from rfl, ofNat_add_one_sub (by omega_using [hk, hon, hdp])]
-  have s₂ : t₂.gpr .r1 = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀ + k) := by
+  obtain s₂ : t₂.gpr .r1 = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀ + k) := by
     rw [u₂.gpr, u₁.other _ (by decide)]
     show t.gpr .r1 - 1 = _
     rw [I.r1, show (rQBytes s₀).length - rWidth s₀ + (k + 1) = (rQBytes s₀).length - rWidth s₀ + k + 1 from rfl,
       ofNat_add_one_sub (by omega_using [hk, hql, hfit])]
-  have r11₂ : t₂.gpr .r11 = t.gpr .r11 := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]
-  have hn := hnonce k hk
+  obtain r11₂ : t₂.gpr .r11 = t.gpr .r11 := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]
+  obtain hn := hnonce k hk
   rw [← I.mem] at hn
   refine wp_ldrb (a := off (rBase s₀) (drawPlace s₀ + k)) (by decide)
     (by rw [BitVec.add_zero, e₂]; exact hrf.ea (by omega_using [hk, hF, hon, hdp]))
     (by rw [u₂.rd, u₁.rd, u₂.wr, u₁.wr]; exact hrf.read (d := drawPlace s₀ + k) (n := 1) (by omega_using [hk, hF, hon, hdp])) fun t₃ u₃ => ?_
   rw [u₂.mem, u₁.mem, hn] at u₃
   refine wp_dp (op2_reg _ _) fun t₄ u₄ => ?_
-  have hqi : (rQBytes s₀).length - rWidth s₀ + k < (rQBytes s₀).length := by omega_using [hk, hfit]
+  obtain hqi : (rQBytes s₀).length - rWidth s₀ + k < (rQBytes s₀).length := by omega_using [hk, hfit]
   refine wp_ldrb (a := State.addr (rQ s₀) + BitVec.ofNat 64 ((rQBytes s₀).length - rWidth s₀ + k)) (by decide)
     (by rw [BitVec.add_zero, u₄.other _ (by decide), u₃.other _ (by decide), s₂, VG.Arm.addr_add (by omega_using [hk, hfit, hqfit])])
     (by rw [u₄.rd, u₃.rd, u₂.rd, u₁.rd, u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact hq.rd _ hqi) fun t₅ u₅ => ?_
@@ -121,20 +121,20 @@ theorem rangeByte_ok {s₀ t₀ t : State} (A : RandomABI s₀) {cs : List Byte}
   refine wp_dp (op2_reg _ _) fun t₆ u₆ => wp_dp (op2_reg _ _) fun t₇ u₇ => wp_mov (op2_lsr (by decide)) fun t₈ u₈ =>
     wp_mov (op2_reg _ _) fun t₉ u₉ => wp_dec fun t₁₀ u₁₀ z₁₀ => WP.block_nil ?_
   -- The values.
-  have hc := VG.Proof.Dsa.randomBorrow_le (cs.drop (k + 1)) ((qSig s₀).drop (k + 1))
-  have hcs' : k < cs.length := by omega_using [hcs, hk]
-  have hqs' : k < (qSig s₀).length := by rw [qSig_length]; omega_using [hk]
-  have hqk : (qSig s₀)[k] = (rQBytes s₀)[(rQBytes s₀).length - rWidth s₀ + k] := by
+  obtain hc := VG.Proof.Dsa.randomBorrow_le (cs.drop (k + 1)) ((qSig s₀).drop (k + 1))
+  obtain hcs' : k < cs.length := by omega_using [hcs, hk]
+  obtain hqs' : k < (qSig s₀).length := by rw [qSig_length]; omega_using [hk]
+  obtain hqk : (qSig s₀)[k] = (rQBytes s₀)[(rQBytes s₀).length - rWidth s₀ + k] := by
     simp only [qSig, qSigOf, List.getElem_drop]
-  have hdrop : ∀ (l : List Byte) (h : k < l.length), l.drop k = l[k] :: l.drop (k + 1) := fun l h => by
+  obtain hdrop : ∀ (l : List Byte) (h : k < l.length), l.drop k = l[k] :: l.drop (k + 1) := fun l h => by
     rw [List.drop_eq_getElem_cons h]
-  have hb : randomBorrow (cs.drop k) ((qSig s₀).drop k) =
+  obtain hb : randomBorrow (cs.drop k) ((qSig s₀).drop k) =
       if (cs[k]).toNat < ((qSig s₀)[k]).toNat + randomBorrow (cs.drop (k + 1)) ((qSig s₀).drop (k + 1))
       then 1 else 0 := by
     rw [hdrop cs hcs', hdrop (qSig s₀) hqs', randomBorrow]
-  have hcg : cs.getD k 0 = cs[k] := by
+  obtain hcg : cs.getD k 0 = cs[k] := by
     simp only [List.getD_eq_getElem?_getD, List.getElem?_eq_getElem hcs', Option.getD_some]
-  have r0₇ : t₇.gpr .r0 = BitVec.ofNat 32 (cs[k]).toNat - BitVec.ofNat 32 (((qSig s₀)[k]).toNat +
+  obtain r0₇ : t₇.gpr .r0 = BitVec.ofNat 32 (cs[k]).toNat - BitVec.ofNat 32 (((qSig s₀)[k]).toNat +
       randomBorrow (cs.drop (k + 1)) ((qSig s₀).drop (k + 1))) := by
     rw [u₇.gpr]
     show t₆.gpr .r0 - t₆.gpr .r5 = _
@@ -143,13 +143,13 @@ theorem rangeByte_ok {s₀ t₀ t : State} (A : RandomABI s₀) {cs : List Byte}
     rw [u₅.gpr, u₅.other .r0 (by decide), u₅.other .r3 (by decide), u₄.other .r0 (by decide),
       u₄.other .r3 (by decide), u₃.gpr, u₃.other .r3 (by decide), u₂.other .r3 (by decide), u₁.other .r3 (by decide),
       I.r3, hcg, hqk, setWidth8_ofNat, setWidth8_ofNat, BitVec.ofNat_add_ofNat]
-  have R : Rest rangeRegs t t₁₀ :=
+  obtain R : Rest rangeRegs t t₁₀ :=
     (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans ((u₃.rest (by decide)).trans ((u₄.rest (by decide)).trans
       ((u₅.rest (by decide)).trans ((u₆.rest (by decide)).trans ((u₇.rest (by decide)).trans ((u₈.rest (by decide)).trans
       ((u₉.rest (by decide)).trans (u₁₀.rest (by decide))))))))))
-  have hm : t₁₀.mem = t.mem := by
+  obtain hm : t₁₀.mem = t.mem := by
     rw [u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have r6₁₀ : t₁₀.gpr .r6 = t.gpr .r6 ||| cs[k].setWidth 32 := by
+  obtain r6₁₀ : t₁₀.gpr .r6 = t.gpr .r6 ||| cs[k].setWidth 32 := by
     rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide), u₇.other _ (by decide),
       u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr]
     show t₃.gpr .r6 ||| t₃.gpr .r0 = _
@@ -190,17 +190,17 @@ theorem rangeFinish_ok {s₀ t₀ t : State} {cs : List Byte} (hcs : cs.length =
   refine wp_mov (op2_imm (by decide)) fun t₁ u₁ => wp_dp (op2_reg _ _) fun t₂ u₂ => wp_dp (op2_reg _ _) fun t₃ u₃ =>
     wp_mov (op2_lsr (by decide)) fun t₄ u₄ => wp_dp (op2_reg _ _) fun t₅ u₅ => wp_cmp0 fun t₆ f₆ z₆ =>
     WP.block_nil ?_
-  have hb := VG.Proof.Dsa.randomBorrow_eq cs (qSig s₀) (by rw [hcs, qSig_length])
-  have hz : (t.gpr .r6 = 0) ↔ Spec.Dsa.decodeBE cs = 0 := by
+  obtain hb := VG.Proof.Dsa.randomBorrow_eq cs (qSig s₀) (by rw [hcs, qSig_length])
+  obtain hz : (t.gpr .r6 = 0) ↔ Spec.Dsa.decodeBE cs = 0 := by
     rw [VG.Proof.Dsa.decodeBE_eq_zero]; simpa only [List.drop_zero] using I.r6z
-  have r6 : t₂.gpr .r6 = t.gpr .r6 := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]
-  have r0₄ : t₄.gpr .r0 = if t.gpr .r6 = 0 then 0 else 1 := by
+  obtain r6 : t₂.gpr .r6 = t.gpr .r6 := by rw [u₂.other _ (by decide), u₁.other _ (by decide)]
+  obtain r0₄ : t₄.gpr .r0 = if t.gpr .r6 = 0 then 0 else 1 := by
     rw [u₄.gpr, u₃.gpr]
     show (t₂.gpr .r0 ||| t₂.gpr .r6) >>> 31 = _
     rw [u₂.gpr, r6]
     show ((t₁.gpr .r0 - t₁.gpr .r6) ||| t.gpr .r6) >>> 31 = _
     rw [u₁.gpr, u₁.other _ (by decide), nz_bit _ I.r6]
-  have r3₅ : t₅.gpr .r3 = (if accepts s₀ cs then 1 else 0) := by
+  obtain r3₅ : t₅.gpr .r3 = (if accepts s₀ cs then 1 else 0) := by
     rw [u₅.gpr]
     show t₄.gpr .r3 &&& t₄.gpr .r0 = _
     rw [r0₄, u₄.other _ (by decide), u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide), I.r3]
@@ -208,9 +208,9 @@ theorem rangeFinish_ok {s₀ t₀ t : State} {cs : List Byte} (hcs : cs.length =
     unfold accepts acceptsOf
     by_cases hp : Spec.Dsa.decodeBE cs = 0 <;> by_cases hl : Spec.Dsa.decodeBE cs < Spec.Dsa.decodeBE (qSig s₀) <;>
       simp [hp, hl] <;> first | decide | omega
-  have R : Rest rangeRegs t t₆ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans ((u₃.rest (by decide)).trans
+  obtain R : Rest rangeRegs t t₆ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans ((u₃.rest (by decide)).trans
     ((u₄.rest (by decide)).trans ((u₅.rest (by decide)).trans (f₆.rest _)))))
-  have hm : t₆.mem = t.mem := by rw [f₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain hm : t₆.mem = t.mem := by rw [f₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
   refine ⟨by rw [f₆.gpr]; exact r3₅, ?_, hm.trans I.mem, I.ready.congr R (by rw [hm]; exact Frame.refl _ _),
     I.rest.trans R⟩
   rw [z₆, r3₅]
@@ -221,21 +221,21 @@ theorem rangeInit_ok {s₀ t : State} (A : RandomABI s₀) (h : RReady s₀ t) {
     (hq : slot t.mem (rBase s₀) oQ = rQ s₀ + BitVec.ofNat 32 ((rQBytes s₀).length - rWidth s₀))
     (hw : slot t.mem (rBase s₀) oWidth = BitVec.ofNat 32 (rWidth s₀)) (hcs : cs.length = rWidth s₀) :
     WP isa (.block rangeInit) t fun u => RangeInv s₀ t cs (rWidth s₀) u ∧ u.mem = t.mem := by
-  have hql := rQBytes_le A
-  have hqn := rQBytes_length A
-  have hfit := rWidth_le s₀
+  obtain hql := rQBytes_le A
+  obtain hqn := rQBytes_length A
+  obtain hfit := rWidth_le s₀
   unfold rangeInit
   refine wp_dp (op2_imm (by decide)) fun t₁ u₁ => wp_ldArg A (h.upd u₁) (j := 2) (by decide) fun t₂ u₂ =>
     wp_dp (op2_reg _ _) fun t₃ u₃ => wp_ld (((h.upd u₁).upd u₂).upd u₃) (by decide) fun t₄ u₄ =>
     wp_ld ((((h.upd u₁).upd u₂).upd u₃).upd u₄) (by decide) fun t₅ u₅ => wp_dp (op2_reg _ _) fun t₆ u₆ =>
     wp_mov (op2_imm (by decide)) fun t₇ u₇ => wp_mov (op2_imm (by decide)) fun t₈ u₈ => WP.block_nil ?_
-  have R : Rest rangeRegs t t₈ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans ((u₃.rest (by decide)).trans
+  obtain R : Rest rangeRegs t t₈ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans ((u₃.rest (by decide)).trans
     ((u₄.rest (by decide)).trans ((u₅.rest (by decide)).trans ((u₆.rest (by decide)).trans ((u₇.rest (by decide)).trans
     (u₈.rest (by decide))))))))
-  have m₈ : t₈.mem = t.mem := by
+  obtain m₈ : t₈.mem = t.mem := by
     rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have hcsd : cs.drop (rWidth s₀) = [] := List.drop_eq_nil_of_le (by omega_using [hcs])
-  have hqd : (qSig s₀).drop (rWidth s₀) = [] := List.drop_eq_nil_of_le (by rw [qSig_length])
+  obtain hcsd : cs.drop (rWidth s₀) = [] := List.drop_eq_nil_of_le (by omega_using [hcs])
+  obtain hqd : (qSig s₀).drop (rWidth s₀) = [] := List.drop_eq_nil_of_le (by rw [qSig_length])
   refine ⟨⟨h.congr R (by rw [m₈]; exact Frame.refl _ _), m₈, ?_, ?_, ?_, ?_, ?_, ?_, R⟩, m₈⟩
   · rw [u₈.other _ (by decide), u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide),
       u₄.other _ (by decide), u₃.gpr, R.gpr .r11 (by decide)]
@@ -370,9 +370,9 @@ theorem Smp.of {s₀ t u : State} (A : RandomABI s₀) {used draws used' draws' 
     (hu : slot u.mem (rBase s₀) oUsed = BitVec.ofNat 32 used')
     (hdw : slot u.mem (rBase s₀) oDraws = BitVec.ofNat 32 draws')
     (hub : used' ≤ (rInput s₀).rand.length) : Smp s₀ used' draws' u := by
-  have hfit := rWidth_le s₀
-  have hql := rQBytes_le A
-  have hd : ∀ d, oDraws + 4 ≤ d → d + 4 ≤ oStatus → slot u.mem (rBase s₀) d = slot t.mem (rBase s₀) d :=
+  obtain hfit := rWidth_le s₀
+  obtain hql := rQBytes_le A
+  obtain hd : ∀ d, oDraws + 4 ≤ d → d + 4 ≤ oStatus → slot u.mem (rBase s₀) d = slot t.mem (rBase s₀) d :=
     fun d h₁ h₂ => slot_outs hm (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       unfold oDraws oStatus at *
@@ -415,10 +415,10 @@ theorem drawDec_ok {s₀ t : State} (A : RandomABI s₀) {used draws : Nat} (S :
   have h := S.ready
   refine wp_ld h (by decide) fun t₁ u₁ => wp_dec fun t₂ u₂ z₂ =>
     wp_stF ((h.upd u₁).upd u₂) (by decide) fun t₃ m₃ h₃ zz₃ _ => WP.block_nil ?_
-  have v₂ : t₂.gpr .r0 = BitVec.ofNat 32 (draws - 1) := by rw [u₂.gpr, u₁.gpr, S.drawsW, ofNat_sub_one hd]
-  have hm₃ : t₃.mem = t.mem.writeW (off (rBase s₀) oDraws) (BitVec.ofNat 32 (draws - 1)) := by
+  obtain v₂ : t₂.gpr .r0 = BitVec.ofNat 32 (draws - 1) := by rw [u₂.gpr, u₁.gpr, S.drawsW, ofNat_sub_one hd]
+  obtain hm₃ : t₃.mem = t.mem.writeW (off (rBase s₀) oDraws) (BitVec.ofNat 32 (draws - 1)) := by
     rw [m₃.mem, v₂, u₂.mem, u₁.mem]
-  have S₃ : Smp s₀ used (draws - 1) t₃ :=
+  obtain S₃ : Smp s₀ used (draws - 1) t₃ :=
     S.of A h₃ (by rw [hm₃]; exact store_outs _ _ _ (by simp only [drawRanges, List.mem_cons, true_or, or_true]))
       (by rw [hm₃, slot_write_ne _ _ _ (by decide) (by decide) (by decide)]; exact S.usedW)
       (by rw [hm₃, slot_write_self]) S.usedBound
@@ -440,7 +440,7 @@ theorem drawFinish_ok {s₀ t : State} (A : RandomABI s₀) {used draws : Nat} (
     refine WP.ite true (by rw [eval_ne, hz]; rfl)
       (fun _ => wp_mov (op2_imm (by decide)) fun t₁ u₁ => ?_) (fun e => Bool.noConfusion e)
     refine wp_st (h.upd u₁) (by decide) fun t₂ m₂ h₂ => WP.block_nil ?_
-    have hm : t₂.mem = t.mem.writeW (off (rBase s₀) oStatus) (1 : BitVec 32) := by rw [m₂.mem, u₁.gpr, u₁.mem]
+    obtain hm : t₂.mem = t.mem.writeW (off (rBase s₀) oStatus) (1 : BitVec 32) := by rw [m₂.mem, u₁.gpr, u₁.mem]
     refine ⟨(u₁.rest (by decide)).trans (m₂.rest _), h₂, by rw [hm]; exact store_outs _ _ _ (by decide),
       fun _ => ⟨S.congr A h₂ ?_ ?_ ?_, ?_⟩, fun e => Bool.noConfusion e⟩
     · rw [hm]; exact store_outs _ _ _ (by simp only [drawRanges, List.mem_cons, true_or, or_true])
@@ -453,7 +453,7 @@ theorem drawFinish_ok {s₀ t : State} (A : RandomABI s₀) {used draws : Nat} (
     by_cases h0 : draws - 1 = 0
     · refine WP.ite true (by rw [eval_eq, z₃, decide_eq_true h0]) (fun _ => ?_) (fun e => Bool.noConfusion e)
       refine wp_st h₃ (by decide) fun t₄ m₄ h₄ => WP.block_nil ?_
-      have hm₄ : t₄.mem = t₃.mem.writeW (off (rBase s₀) oStatus) (0 : BitVec 32) := by
+      obtain hm₄ : t₄.mem = t₃.mem.writeW (off (rBase s₀) oStatus) (0 : BitVec 32) := by
         rw [m₄.mem, v₃, h0]; rfl
       refine ⟨k₃.trans (m₄.rest _), h₄, ?_, fun e => Bool.noConfusion e, fun _ => ⟨S₃.congr A h₄ ?_ ?_ ?_, ?_⟩⟩
       · rw [hm₄, hm₃]
@@ -526,29 +526,29 @@ theorem drawHead_ok {s₀ t : State} (A : RandomABI s₀) {used draws : Nat} (S 
       Rest sampleRegs t u ∧ u.z = decide ((rInput s₀).rand.length - used < rWidth s₀) := by
   have h := S.ready
   have hub := S.usedBound
-  have hfit := rWidth_le s₀
-  have hql := rQBytes_le A
-  have hrl : (rInput s₀).rand.length = (stackArg s₀ 6).toNat := by simp only [rInput, rBytes_length]
-  have e6 : stackArg s₀ 6 = BitVec.ofNat 32 (rInput s₀).rand.length := by
+  obtain hfit := rWidth_le s₀
+  obtain hql := rQBytes_le A
+  obtain hrl : (rInput s₀).rand.length = (stackArg s₀ 6).toNat := by simp only [rInput, rBytes_length]
+  obtain e6 : stackArg s₀ 6 = BitVec.ofNat 32 (rInput s₀).rand.length := by
     rw [hrl, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   unfold drawHead
   refine wp_ldArg A h (j := 6) (by decide) fun t₁ u₁ => wp_ld (h.upd u₁) (by decide) fun t₂ u₂ =>
     wp_dp (op2_reg _ _) fun t₃ u₃ => wp_ld (((h.upd u₁).upd u₂).upd u₃) (by decide) fun t₄ u₄ =>
     wp_subsC (op2_reg _ _) fun t₅ u₅ c₅ => wp_movC (op2_imm (by decide)) fun t₆ u₆ c₆ =>
     wp_adc (op2_imm (by decide)) fun t₇ u₇ => wp_cmp0 fun t₈ f₈ z₈ => WP.block_nil ?_
-  have h₈ := ((((((((h.upd u₁).upd u₂).upd u₃).upd u₄).upd u₅).upd u₆).upd u₇).fupd f₈)
-  have R : Rest sampleRegs t t₈ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans ((u₃.rest (by decide)).trans
+  obtain h₈ := ((((((((h.upd u₁).upd u₂).upd u₃).upd u₄).upd u₅).upd u₆).upd u₇).fupd f₈)
+  obtain R : Rest sampleRegs t t₈ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans ((u₃.rest (by decide)).trans
     ((u₄.rest (by decide)).trans ((u₅.rest (by decide)).trans ((u₆.rest (by decide)).trans ((u₇.rest (by decide)).trans
     (f₈.rest _)))))))
-  have m₈ : t₈.mem = t.mem := by rw [f₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
-  have r0₄ : t₄.gpr .r0 = BitVec.ofNat 32 ((rInput s₀).rand.length - used) := by
+  obtain m₈ : t₈.mem = t.mem := by rw [f₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, u₁.mem]
+  obtain r0₄ : t₄.gpr .r0 = BitVec.ofNat 32 ((rInput s₀).rand.length - used) := by
     rw [u₄.other _ (by decide), u₃.gpr]
     show t₂.gpr .r0 - t₂.gpr .r7 = _
     rw [u₂.gpr, u₂.other _ (by decide), u₁.gpr, u₁.mem, S.usedW, e6, sub_ofNat32 hub (by omega_arith)]
-  have r7₄ : t₄.gpr .r7 = BitVec.ofNat 32 (rWidth s₀) := by
+  obtain r7₄ : t₄.gpr .r7 = BitVec.ofNat 32 (rWidth s₀) := by
     rw [u₄.gpr, u₃.mem, u₂.mem, u₁.mem, S.width]
   rw [r0₄, r7₄, toNat_imm (by omega_arith), toNat_imm (by omega_arith)] at c₅
-  have r0₇ : t₇.gpr .r0 = if decide (rWidth s₀ ≤ (rInput s₀).rand.length - used) then 1 else 0 := by
+  obtain r0₇ : t₇.gpr .r0 = if decide (rWidth s₀ ≤ (rInput s₀).rand.length - used) then 1 else 0 := by
     rw [u₇.gpr, u₆.gpr, c₆, c₅]
     split <;> rfl
   refine ⟨S.congr A h₈ (by rw [m₈]; exact Outs.refl _ _ _) (by rw [m₈]) (by rw [m₈]), m₈, R, ?_⟩
@@ -567,13 +567,13 @@ theorem drawUsed_ok {s₀ t : State} (A : RandomABI s₀) {used draws : Nat} (S 
   have h := S.ready
   refine wp_ld h (by decide) fun t₁ u₁ => wp_ld (h.upd u₁) (by decide) fun t₂ u₂ =>
     wp_dp (op2_reg _ _) fun t₃ u₃ => wp_st (((h.upd u₁).upd u₂).upd u₃) (by decide) fun t₄ m₄ h₄ => WP.block_nil ?_
-  have v₃ : t₃.gpr .r0 = BitVec.ofNat 32 (used + rWidth s₀) := by
+  obtain v₃ : t₃.gpr .r0 = BitVec.ofNat 32 (used + rWidth s₀) := by
     rw [u₃.gpr]
     show t₂.gpr .r0 + t₂.gpr .r7 = _
     rw [u₂.gpr, u₂.other _ (by decide), u₁.gpr, u₁.mem, S.usedW, S.width, BitVec.ofNat_add]
-  have hm₄ : t₄.mem = t.mem.writeW (off (rBase s₀) oUsed) (BitVec.ofNat 32 (used + rWidth s₀)) := by
+  obtain hm₄ : t₄.mem = t.mem.writeW (off (rBase s₀) oUsed) (BitVec.ofNat 32 (used + rWidth s₀)) := by
     rw [m₄.mem, v₃, u₃.mem, u₂.mem, u₁.mem]
-  have o₄ : Outs (rBase s₀) [(oUsed, 4)] t.mem t₄.mem := by rw [hm₄]; exact store_outs _ _ _ (by decide)
+  obtain o₄ : Outs (rBase s₀) [(oUsed, 4)] t.mem t₄.mem := by rw [hm₄]; exact store_outs _ _ _ (by decide)
   exact ⟨S.of A h₄ (o₄.mono fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp [drawRanges])
     (by rw [hm₄, slot_write_self]) (by rw [hm₄, slot_write_ne _ _ _ (by decide) (by decide) (by decide)]; exact S.drawsW)
     hfull, hm₄, (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans ((u₃.rest (by decide)).trans (m₄.rest _)))⟩
@@ -586,12 +586,12 @@ theorem drawCopy_ok {s₀ t : State} (A : RandomABI s₀) {used draws : Nat} (S 
         copied (drawBytes s₀ used) (maskValue (rLead s₀).toNat) i) ∧
       Outside (rBase s₀) (drawPlace s₀) (rWidth s₀) t.mem u.mem ∧
       Rest sampleRegs t u := by
-  have hql := rQBytes_le A
-  have hfit := rWidth_le s₀
+  obtain hql := rQBytes_le A
+  obtain hfit := rWidth_le s₀
   refine WP.mono (copy_ok A S.ready S.usedW S.width S.mask hfull hw1) fun t₄ ⟨h₄, hc₄, ho₄, k₄⟩ => ?_
-  have o₄ : Outs (rBase s₀) (drawRanges s₀) t.mem t₄.mem :=
+  obtain o₄ : Outs (rBase s₀) (drawRanges s₀) t.mem t₄.mem :=
     Outs.of_outside ho₄ (by simp only [drawRanges, List.mem_cons, true_or, or_true])
-  have sl₄ : ∀ d, d + 4 ≤ oNonce → slot t₄.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd' =>
+  obtain sl₄ : ∀ d, d + 4 ≤ oNonce → slot t₄.mem (rBase s₀) d = slot t.mem (rBase s₀) d := fun d hd' =>
     slot_outs (Outs.of_outside ho₄ (List.mem_singleton_self _)) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; left; unfold drawPlace; omega_arith) (by unfold oNonce at hd'; omega_arith)
   exact ⟨S.congr A h₄ o₄ (sl₄ _ (by decide)) (sl₄ _ (by decide)), hc₄, ho₄, k₄.mono (by decide)⟩
@@ -603,9 +603,9 @@ theorem drawUsed_bytes {s₀ : State} (A : RandomABI s₀) {t u : State} {used v
       copied (drawBytes s₀ used) (maskValue (rLead s₀).toNat) i) :
     ∀ i < rWidth s₀, u.mem (off (rBase s₀) (drawPlace s₀ + i)) =
       copied (drawBytes s₀ used) (maskValue (rLead s₀).toNat) i := fun i hi => by
-  have hql := rQBytes_le A
-  have hfit := rWidth_le s₀
-  have o₇ : Outs (rBase s₀) [(oUsed, 4)] t.mem u.mem := by rw [hm]; exact store_outs _ _ _ (by decide)
+  obtain hql := rQBytes_le A
+  obtain hfit := rWidth_le s₀
+  obtain o₇ : Outs (rBase s₀) [(oUsed, 4)] t.mem u.mem := by rw [hm]; exact store_outs _ _ _ (by decide)
   rw [o₇ _ fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     rw [ofs_off0 _ (by unfold drawPlace oNonce; omega_arith)]; right; unfold drawPlace oNonce oUsed; omega_arith]

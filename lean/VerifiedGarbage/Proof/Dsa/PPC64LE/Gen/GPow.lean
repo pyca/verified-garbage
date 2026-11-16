@@ -87,19 +87,19 @@ theorem powA_ok {s : State} {S : Addr} {pLen : Nat} (hl : pLen = 128 ∨ pLen = 
           2 ^ (128 * pw pLen) % Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off S sPBE) pLen) ∧
         Outside (off S pB) (slot (pw pLen) 0) (4 * (8 * (pw pLen + 2))) s.mem t.mem) ∧
       BKeep powARegs s t := by
-  have hZ := pZ_eq hl
+  obtain hZ := pZ_eq hl
   have hnw := hs.nowrap
-  have pb15 : pB + 256 < 2 ^ 15 := by decide
-  have pl15 : pLen < 2 ^ 15 := by omega_using [hl]
-  have w15 : pLen / 4 < 2 ^ 15 := by omega_using [hl]
-  have p15 : pLen + 16 < 2 ^ 15 := by omega_using [hl]
-  have wd : 2 * pw pLen = pLen / 4 := by rcases hl with rfl | rfl | rfl <;> decide
-  have wd2 : 8 * (pw pLen + 2) = pLen + 16 := by rcases hl with rfl | rfl | rfl <;> decide
-  have e : ∀ j, slot (pw pLen) j = hdrBytes + j * (8 * (pw pLen + 2)) := fun _ => rfl
+  obtain pb15 : pB + 256 < 2 ^ 15 := by decide
+  obtain pl15 : pLen < 2 ^ 15 := by omega_using [hl]
+  obtain w15 : pLen / 4 < 2 ^ 15 := by omega_using [hl]
+  obtain p15 : pLen + 16 < 2 ^ 15 := by omega_using [hl]
+  obtain wd : 2 * pw pLen = pLen / 4 := by rcases hl with rfl | rfl | rfl <;> decide
+  obtain wd2 : 8 * (pw pLen + 2) = pLen + 16 := by rcases hl with rfl | rfl | rfl <;> decide
+  obtain e : ∀ j, slot (pw pLen) j = hdrBytes + j * (8 * (pw pLen + 2)) := fun _ => rfl
   have hh : hdrBytes = 256 := rfl
-  have e0 := e 0; have e1 := e 1; have e4 := e 4
+  obtain e0 := e 0; have e1 := e 1; have e4 := e 4
   -- Into the P space.
-  have hb : WP isa (.block (enterP pLen ++ [scr .r12 sPBE, .li .r6 pLen])) s fun u =>
+  obtain hb : WP isa (.block (enterP pLen ++ [scr .r12 sPBE, .li .r6 pLen])) s fun u =>
       (u.gpr .r21 = off S pB ∧ u.gpr .r23 = off S pB ∧ u.gpr .r31 = off S pB ∧
         u.gpr .r10 = off (off S pB) (slot (pw pLen) 0) ∧ u.gpr .r11 = BitVec.ofNat 64 (2 * pw pLen) ∧
         u.gpr .r29 = BitVec.ofNat 64 (8 * (pw pLen + 2)) ∧ u.gpr .r12 = off S sPBE ∧
@@ -114,29 +114,29 @@ theorem powA_ok {s : State} {S : Addr} {pLen : Nat} (hl : pLen = 128 ∨ pLen = 
     rw [e0, Nat.zero_mul, Nat.add_zero]
   unfold powA
   refine WP.seq (WP.seq (WP.seq (WP.mono hb fun s₁ ⟨⟨a21, a23, a31, a10, a11, a29, a12, a6, m1⟩, k1⟩ => ?_)))
-  have en1 : Env s₁ (off S pB) (pZ pLen) (pw pLen) :=
+  obtain en1 : Env s₁ (off S pB) (pZ pLen) (pw pLen) :=
     ⟨hs.congr k1.wr, a10, a29, a11, a31, by omega_using [hl, wd], by omega_using [hl, wd], by rw [hZ]⟩
   refine WP.mono (VG.Proof.Dsa.PPC64LE.loadArr_ok en1 (j := 0) (by decide) a12 a6 (by omega_using [hl]) (by omega_using [hl, wd])
     (fun i hi => by rw [k1.rd, k1.wr]; exact hrd i hi) (fun i hi x hx => hsep i hi x hx))
     fun s₂ ⟨⟨v0, top0, o2, b10⟩, k2⟩ => ?_
   rw [m1] at v0 o2
-  have en2 := VG.Proof.Dsa.PPC64LE.env_keep10 en1 k2 (by decide) b10
+  obtain en2 := VG.Proof.Dsa.PPC64LE.env_keep10 en1 k2 (by decide) b10
   rw [WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (en2.base (rd := .r5) (by decide) (by decide) 1) fun s₃ ⟨⟨a5, m3⟩, k3⟩ => ?_
-  have en3 := en2.keep k3 (by decide)
+  obtain en3 := en2.keep k3 (by decide)
   refine WP.mono (en3.base (rd := .r8) (by decide) (by decide) 2) fun s₄ ⟨⟨a8, m4⟩, k4⟩ => ?_
-  have en4 := en3.keep k4 (by decide)
+  obtain en4 := en3.keep k4 (by decide)
   refine WP.mono (en4.base (rd := .r9) (by decide) (by decide) 3) fun s₅ ⟨⟨a9, m5⟩, k5⟩ => ?_
-  have en5 := en4.keep k5 (by decide)
-  have hm5 : s₅.mem = s₂.mem := by rw [m5, m4, m3]
-  have v0' : val32 s₅.mem (off S pB) (slot (pw pLen) 0) (2 * pw pLen) =
+  obtain en5 := en4.keep k5 (by decide)
+  obtain hm5 : s₅.mem = s₂.mem := by rw [m5, m4, m3]
+  obtain v0' : val32 s₅.mem (off S pB) (slot (pw pLen) 0) (2 * pw pLen) =
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off S sPBE) pLen) := by rw [hm5]; exact v0
   refine WP.mono (r2_ok en5.hs ((k5.gpr .r8 (by decide)).trans a8) a9 en5.h10
     ((k5.gpr .r5 (by decide)).trans ((k4.gpr .r5 (by decide)).trans a5)) en5.h11 (by omega_using [hl, wd]) (by omega_using [hl, wd])
     (by rw [e, hZ.symm.trans (e 28)]; omega_using []) (by rw [v0']; exact hp)) fun t ⟨hr2, o7, k7⟩ => ?_
   rw [v0'] at hr2
-  have k1t := (((k1.trans k2).trans k3).trans ((k4.trans k5).trans k7))
-  have k2t := (k2.trans k3).trans ((k4.trans k5).trans k7)
+  obtain k1t := (((k1.trans k2).trans k3).trans ((k4.trans k5).trans k7))
+  obtain k2t := (k2.trans k3).trans ((k4.trans k5).trans k7)
   refine ⟨⟨en5.keep k7 (by decide), (k2t.gpr .r21 (by decide)).trans a21, (k2t.gpr .r23 (by decide)).trans a23,
     ?_, ?_, hr2, ?_⟩, k1t.mono (by decide)⟩
   · show val32 t.mem (off S pB) (slot (pw pLen) 0) (2 * pw pLen) = _
@@ -179,27 +179,27 @@ theorem powC_ok {s : State} {S H : Addr} {pLen qLen p : Nat} (hl : pLen = 128 �
         Env t (off S pB) (pZ pLen) (pw pLen) ∧
         Outside (off S pB) (slot (pw pLen) 1) (7 * (8 * (pw pLen + 2))) s.mem t.mem) ∧
       BKeep powCRegs s t := by
-  have hZ := pZ_eq hl
+  obtain hZ := pZ_eq hl
   have hnw := en.hs.nowrap
   have hw4 := en.hw
   have hw' := en.hw'
-  have e : ∀ j, slot (pw pLen) j = hdrBytes + j * (8 * (pw pLen + 2)) := fun _ => rfl
+  obtain e : ∀ j, slot (pw pLen) j = hdrBytes + j * (8 * (pw pLen + 2)) := fun _ => rfl
   have hh : hdrBytes = 256 := rfl
-  have e0 := e 0; have e1 := e 1; have e3 := e 3; have e4 := e 4; have e8 := e 8; have e28 := e 28
-  have wl : 8 * pw pLen = pLen := by rcases hl with rfl | rfl | rfl <;> decide
-  have sE15 : sE < 2 ^ 15 := by decide
+  obtain e0 := e 0; have e1 := e 1; have e3 := e 3; have e4 := e 4; have e8 := e 8; have e28 := e 28
+  obtain wl : 8 * pw pLen = pLen := by rcases hl with rfl | rfl | rfl <;> decide
+  obtain sE15 : sE < 2 ^ 15 := by decide
   -- h into array 4.
   unfold powC
   refine WP.seq (WP.mono (VG.Proof.Dsa.PPC64LE.loadArr_ok en (j := 4) (by decide) h12 h6 (by omega_using [hl]) (by omega_using [wl])
     hHrd hHsep) fun s₂ ⟨⟨v4, top4, o2, a10⟩, k2⟩ => ?_)
-  have en2 := VG.Proof.Dsa.PPC64LE.env_keep10 en k2 (by decide) a10
+  obtain en2 := VG.Proof.Dsa.PPC64LE.env_keep10 en k2 (by decide) a10
   -- `-p⁻¹`, and the exponent's pointer and length.
   refine WP.seq ?_
   rw [WP.block_append_iff]
-  have p2 : val32 s₂.mem (off S pB) (slot (pw pLen) 0) (2 * pw pLen) = p := by
+  obtain p2 : val32 s₂.mem (off S pB) (slot (pw pLen) 0) (2 * pw pLen) = p := by
     rw [Outside.val32 o2 (by omega_using [e0, e4]) (by omega_using [hw', hh, e0])]; exact hp0
-  have hlow : (word s₂.mem (off S pB) (slot (pw pLen) 0)).toNat % 2 = 1 := by
-    have h1 := word_eq_w32 s₂.mem (off S pB) (slot (pw pLen) 0)
+  obtain hlow : (word s₂.mem (off S pB) (slot (pw pLen) 0)).toNat % 2 = 1 := by
+    obtain h1 := word_eq_w32 s₂.mem (off S pB) (slot (pw pLen) 0)
     have h2 : val32 s₂.mem (off S pB) (slot (pw pLen) 0) (2 * pw pLen - 1 + 1) =
         w32 s₂.mem (off S pB) (slot (pw pLen) 0) + 2 ^ 32 *
           val32 s₂.mem (off S pB) (slot (pw pLen) 0 + 4) (2 * pw pLen - 1) := rfl
@@ -210,18 +210,18 @@ theorem powC_ok {s : State} {S H : Addr} {pLen qLen p : Nat} (hl : pLen = 128 �
       t.gpr .r31 = BitVec.ofNat 64 (eBytes pLen qLen) ∧ t.mem = s₃.mem) (by
       prun [scr, (k3.gpr .r28 (by decide)).trans ((k2.gpr .r28 (by decide)).trans h28), exec_li heB',
         exec_addi (show Reg.r28 ≠ .r0 by decide) sE15]) (by rfl)) fun s₄ ⟨⟨a30, a31, m4⟩, k4⟩ => ?_
-  have k34 := k3.trans k4
-  have p4 : val32 s₄.mem (off S pB) (slot (pw pLen) 0) (2 * pw pLen) = p := by rw [m4, m3]; exact p2
-  have r1 : val32 s₄.mem (off S pB) (slot (pw pLen) 1) (2 * pw pLen) = 2 ^ (128 * pw pLen) % p := by
+  obtain k34 := k3.trans k4
+  obtain p4 : val32 s₄.mem (off S pB) (slot (pw pLen) 0) (2 * pw pLen) = p := by rw [m4, m3]; exact p2
+  obtain r1 : val32 s₄.mem (off S pB) (slot (pw pLen) 1) (2 * pw pLen) = 2 ^ (128 * pw pLen) % p := by
     rw [m4, m3, Outside.val32 o2 (by omega_using [e1, e4]) (by omega_using [hw', hh, e1])]; exact hrr
-  have x4 : val32 s₄.mem (off S pB) (slot (pw pLen) 4) (2 * pw pLen) =
+  obtain x4 : val32 s₄.mem (off S pB) (slot (pw pLen) 4) (2 * pw pLen) =
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem H pLen) := by rw [m4, m3]; exact v4
-  have eE : Spec.Rsa.bytesAt s₄.mem (off S sE) (eBytes pLen qLen) =
+  obtain eE : Spec.Rsa.bytesAt s₄.mem (off S sE) (eBytes pLen qLen) =
       Spec.Rsa.bytesAt s.mem (off S sE) (eBytes pLen qLen) := by
     rw [m4, m3]
     simp only [Spec.Rsa.bytesAt]
     refine List.map_congr_left fun i hi => o2 _ ?_
-    have hi := List.mem_range.mp hi
+    obtain hi := List.mem_range.mp hi
     rcases Nat.lt_or_ge (VG.Proof.Bignum.ofs (off S pB) (off (off S sE) i)) (pZ pLen) with h | h
     · exact absurd rfl (hEsep i hi _ h)
     · exact .inr (Nat.le_trans (by omega : slot (pw pLen) 4 + 8 * (pw pLen + 1) ≤ pZ pLen) h)
@@ -234,21 +234,21 @@ theorem powC_ok {s : State} {S H : Addr} {pLen qLen p : Nat} (hl : pLen = 128 �
     (by omega_using [heB']) (by rw [(k2.trans k34).rd, (k2.trans k34).wr]; exact hErd)
     (fun i hi x hx => hEsep i hi x hx)) fun s₅ ⟨⟨hpow, o5⟩, k5⟩ => ?_)
   rw [eE, p4, x4] at hpow
-  have v5 := hpow (by rw [r1, ← Nat.pow_add, show 64 * pw pLen + 64 * pw pLen = 128 * pw pLen by omega_using []])
+  obtain v5 := hpow (by rw [r1, ← Nat.pow_add, show 64 * pw pLen + 64 * pw pLen = 128 * pw pLen by omega_using []])
   -- `r31` back, and array 4's word `w` zero.
   refine WP.seq ?_
-  have k25 := (k2.trans k34).trans k5
-  have b23 : s₅.gpr .r23 = off S pB := (k25.gpr .r23 (by decide)).trans h23
-  have b10 : s₅.gpr .r10 = off (off S pB) (slot (pw pLen) 0) :=
+  obtain k25 := (k2.trans k34).trans k5
+  obtain b23 : s₅.gpr .r23 = off S pB := (k25.gpr .r23 (by decide)).trans h23
+  obtain b10 : s₅.gpr .r10 = off (off S pB) (slot (pw pLen) 0) :=
     (k5.gpr .r10 (by decide)).trans ((k34.gpr .r10 (by decide)).trans en2.h10)
-  have b29 : s₅.gpr .r29 = BitVec.ofNat 64 (8 * (pw pLen + 2)) :=
+  obtain b29 : s₅.gpr .r29 = BitVec.ofNat 64 (8 * (pw pLen + 2)) :=
     (k5.gpr .r29 (by decide)).trans ((k34.gpr .r29 (by decide)).trans en2.h29)
-  have a14 : off S (pB + slot (pw pLen) 0 + 8 * (pw pLen + 2) + 8 * (pw pLen + 2) + 8 * (pw pLen + 2) +
+  obtain a14 : off S (pB + slot (pw pLen) 0 + 8 * (pw pLen + 2) + 8 * (pw pLen + 2) + 8 * (pw pLen + 2) +
       8 * (pw pLen + 2) + 8 * (pw pLen + 2)) - 16#64 = off S (pB + (slot (pw pLen) 4 + 8 * pw pLen)) := by
     rw [show (16#64 : BitVec 64) = BitVec.ofNat 64 16 from rfl, off, VG.Offset.add_ofNat_sub S (by omega_using [])]
     congr 2; omega_using [e0, e4]
-  have st : InRegions s₅.wr (off S (pB + (slot (pw pLen) 4 + 8 * pw pLen))) 8 := by
-    have h := ((en2.hs.congr k34.wr).congr k5.wr).st (show slot (pw pLen) 4 + 8 * pw pLen + 8 ≤ pZ pLen by omega)
+  obtain st : InRegions s₅.wr (off S (pB + (slot (pw pLen) 4 + 8 * pw pLen))) 8 := by
+    obtain h := ((en2.hs.congr k34.wr).congr k5.wr).st (show slot (pw pLen) 4 + 8 * pw pLen + 8 ≤ pZ pLen by omega)
     dsimp only [VG.Proof.Bignum.off, VG.Proof.Mont.off] at h ⊢
     rwa [BitVec.add_assoc, ← BitVec.ofNat_add] at h
   refine WP.mono (VG.Proof.Bignum.PPC64LE.WP.keep [.r31, .r10, .r14, .r0] (Q := fun t =>
@@ -258,22 +258,22 @@ theorem powC_ok {s : State} {S H : Addr} {pLen qLen p : Nat} (hl : pLen = 128 �
       prun [b23, b10, b29, BitVec.add_zero, off_add, a14, hh, st, VG.Proof.Bignum.off_off]
       exact ⟨by rw [e0, hh, Nat.zero_mul, Nat.add_zero], rfl⟩
 ) (by decide)) fun s₆ ⟨⟨a31', a10', m6⟩, k6⟩ => ?_
-  have k6' := (k34.trans k5).trans k6
-  have en6 : Env s₆ (off S pB) (pZ pLen) (pw pLen) := ⟨en2.hs.congr k6'.wr, a10',
+  obtain k6' := (k34.trans k5).trans k6
+  obtain en6 : Env s₆ (off S pB) (pZ pLen) (pw pLen) := ⟨en2.hs.congr k6'.wr, a10',
     (k6'.gpr .r29 (by decide)).trans en2.h29, (k6'.gpr .r11 (by decide)).trans en2.h11, a31', en.hw, en.hw', en.hZ⟩
-  have wo : Outside (off S pB) (slot (pw pLen) 4 + 8 * pw pLen) 8 s₅.mem s₆.mem := by
+  obtain wo : Outside (off S pB) (slot (pw pLen) 4 + 8 * pw pLen) 8 s₅.mem s₆.mem := by
     rw [m6]; exact fun x hx => VG.Proof.Bignum.writeW_outside s₅.mem (off S pB) 0 (by omega_using [hw', hh, e4]) x hx
-  have top6 : word s₆.mem (off S pB) (slot (pw pLen) 4 + 8 * pw pLen) = 0 := by
+  obtain top6 : word s₆.mem (off S pB) (slot (pw pLen) 4 + 8 * pw pLen) = 0 := by
     rw [m6]; exact VG.Proof.Bignum.word_writeW_self _ _ _ _
-  have o5' : Outside (off S pB) (slot (pw pLen) 1) (slot (pw pLen) 8 - slot (pw pLen) 1) s₄.mem s₅.mem :=
+  obtain o5' : Outside (off S pB) (slot (pw pLen) 1) (slot (pw pLen) 8 - slot (pw pLen) 1) s₄.mem s₅.mem :=
     outs_within' o5 fun r hr => by
       simp only [Pub.powRs, List.map, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> dsimp only <;> rw [e, e] <;> omega_arith
-  have v6 : arr s₆.mem (off S pB) (pw pLen) 4 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem H pLen) ^
+  obtain v6 : arr s₆.mem (off S pB) (pw pLen) 4 = Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem H pLen) ^
       Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off S sE) (eBytes pLen qLen)) % p := by
     show val32 s₆.mem (off S pB) (slot (pw pLen) 4) (2 * pw pLen) = _
     rw [Outside.val32 wo (by omega_using []) (by omega_using [hw', hh, e4])]; exact v5
-  have p6 : arr s₆.mem (off S pB) (pw pLen) 0 = p := by
+  obtain p6 : arr s₆.mem (off S pB) (pw pLen) 0 = p := by
     show val32 s₆.mem (off S pB) (slot (pw pLen) 0) (2 * pw pLen) = _
     rw [Outside.val32 wo (by omega_using [e0, e4]) (by omega_using [hw', hh, e0]), Outside.val32 o5' (by omega_using [e0, e1]) (by omega_using [hw', hh, e0])]; exact p4
   refine WP.mono (VG.Proof.Dsa.PPC64LE.elemRange_ok en6 top6) fun t ⟨⟨r0, v7, o7, en7⟩, k7⟩ => ?_
@@ -314,7 +314,7 @@ open VG.Proof.Bignum (slot)
 at least `Z` past `S + a`. -/
 theorem le_ofs_off {S x : Addr} {a Z : Nat} (ha0 : a < 2 ^ 64) (ha : a + Z ≤ 2 ^ 64)
     (h : (x - S).toNat < a ∨ a + Z ≤ (x - S).toNat) : Z ≤ VG.Proof.Bignum.ofs (off S a) x := by
-  have hlt := (x - S).isLt
+  obtain hlt := (x - S).isLt
   simp only [VG.Proof.Bignum.ofs, off]
   rw [Offset.toNat_sub_add x S (by omega_using [ha0])]
   rcases h with h | h
@@ -357,7 +357,7 @@ theorem GI.srcBelow (h : GI G STK σ V LS s) {a n : Nat} (ha : a + n ≤ pB) :
   · rw [show off (off G.scr a) i = G.sa (a + i) from G.sa_add a i]
     exact h.inRdWr (by omega_using [ha, pb, hi])
   · subst e
-    have d : (off (off G.scr a) i - G.scr).toNat = a + i := by
+    obtain d : (off (off G.scr a) i - G.scr).toNat = a + i := by
       rw [show off (off G.scr a) i = G.scr + BitVec.ofNat 64 (a + i) from G.sa_add a i, Offset.add_sub_cancel_left,
         BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [ha, pb, fit, hi])]
     have : pZ G.pLen ≤ VG.Proof.Bignum.ofs G.pS (off (off G.scr a) i) :=
@@ -386,9 +386,9 @@ theorem SS.of_pspace {σ s t : State} {ws : List Reg} (h : SS G 176 σ c s) (k :
     (hcl : ∀ x ∈ c.cl, Apart pB (pZ G.pLen) x) (h28 : .r28 ∉ ws := by decide) : SS G 176 σ c t := by
   have ⟨pb, pk⟩ := h.gi.pBig
   have hE := h.gi.hEnd_le
-  have f0 : Frame [G.rs pB (pZ G.pLen)] s.mem t.mem :=
+  obtain f0 : Frame [G.rs pB (pZ G.pLen)] s.mem t.mem :=
     frame_of_outside (L := pZ G.pLen) (o.mono (Nat.zero_le _) (by omega_using [hn]))
-  have f : Frame (G.rss [(pB, pZ G.pLen)] ++ [rBelow σ 176]) s.mem t.mem :=
+  obtain f : Frame (G.rss [(pB, pZ G.pLen)] ++ [rBelow σ 176]) s.mem t.mem :=
     f0.mono fun r hr => List.mem_append_left _ hr
   exact h.of_scrs (ws := ws) ⟨k.gpr, k.rd, k.wr⟩ k.sp (os := [(pB, pZ G.pLen)])
     (fun p hp => by
@@ -412,19 +412,19 @@ theorem powA_vp {pv : Nat} (hPc : (sPBE, Spec.Rsa.i2osp pv G.pLen) ∈ c.cl) (hp
   have gi := h.gi
   have ⟨pb, _⟩ := gi.pBig
   have l := gi.lens3
-  have hb' : Spec.Rsa.bytesAt s.mem (off G.scr sPBE) G.pLen = Spec.Rsa.i2osp pv G.pLen := by
+  obtain hb' : Spec.Rsa.bytesAt s.mem (off G.scr sPBE) G.pLen = Spec.Rsa.i2osp pv G.pLen := by
     have := h.sb _ hPc
     simp only [VG.Proof.Rsa.i2osp_length] at this
     exact this
-  have ev : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off G.scr sPBE) G.pLen) = pv := by
+  obtain ev : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off G.scr sPBE) G.pLen) = pv := by
     rw [hb', VG.Proof.Rsa.os2ip_i2osp, Nat.mod_eq_of_lt hpv]
-  have hsrc := gi.srcBelow (a := sPBE) (n := G.pLen) (by rcases l with e | e | e <;> rw [e] <;> decide)
+  obtain hsrc := gi.srcBelow (a := sPBE) (n := G.pLen) (by rcases l with e | e | e <;> rw [e] <;> decide)
   refine WP.mono (powA_ok l gi.r28 (gi.scrAt pb (by simp only [pZ]; rcases l with e | e | e <;> rw [e] <;> decide)) hsrc.1 hsrc.2 (by rw [ev]; exact hp2))
     fun t ⟨⟨en, a21, a23, v0, z0, v1, o⟩, k⟩ => ?_
   rw [ev] at v0 v1
   refine ⟨⟨h.of_pspace k o ?_ hcl, x⟩, en, a21, a23, v0, z0, v1⟩
-  have hZ := pZ_eq l
-  have e : ∀ j, slot (pw G.pLen) j = hdrBytes + j * (8 * (pw G.pLen + 2)) := fun _ => rfl
+  obtain hZ := pZ_eq l
+  obtain e : ∀ j, slot (pw G.pLen) j = hdrBytes + j * (8 * (pw G.pLen + 2)) := fun _ => rfl
   rw [← hZ, e, e]; simp only [hdrBytes]; omega_using []
 
 /-- After `h`'s pointer and its length. -/
@@ -439,13 +439,13 @@ theorem hPtr_vp {pv : Nat} {H : Addr} (hH : fH ∈ c.LS) (hHv : c.V fH = H) :
     fun σ s ⟨⟨h, x⟩, en, a21, a23, v0, z0, v1⟩ => ?_
   have l := h.lens
   have hE := h.gi.hEnd_le
-  have p15 : G.pLen < 2 ^ 15 := by rcases l with e | e | e <;> rw [e] <;> decide
+  obtain p15 : G.pLen < 2 ^ 15 := by rcases l with e | e | e <;> rw [e] <;> decide
   refine WP.cons (s' := s.write .r12 H) ?_ (WP.cons (s' := (s.write .r12 H).write .r6 (BitVec.ofNat 64 G.pLen))
     (exec_li p15) (WP.block_nil ?_))
   · rw [show ld .r12 fH = .load .d .r12 .r28 fH from rfl, exec_load_d (by decide) ⟨by decide, by decide⟩
       (by rw [h.gi.r28]; exact h.gi.inRdWr (by simp only [hEnd, fSave, fH] at hE ⊢; omega_using [hE])), h.gi.r28,
       show s.mem.readW (G.scr + BitVec.ofNat 64 fH) 64 = H from (h.gi.slotV hH).trans hHv]
-  have k : BKeep [.r12, .r6] s ((s.write .r12 H).write .r6 (BitVec.ofNat 64 G.pLen)) :=
+  obtain k : BKeep [.r12, .r6] s ((s.write .r12 H).write .r6 (BitVec.ofNat 64 G.pLen)) :=
     (VG.Proof.Bignum.PPC64LE.Keep.write s .r12 H).trans (VG.Proof.Bignum.PPC64LE.Keep.write _ .r6 _)
   refine ⟨⟨⟨h.of_keep ⟨k.gpr, k.rd, k.wr⟩ rfl k.sp, x⟩, en.keep k (by decide), (k.gpr .r21 (by decide)).trans a21,
     (k.gpr .r23 (by decide)).trans a23, v0, z0, v1⟩, ?_, (Upd.write _ _ _).gpr⟩
@@ -479,23 +479,23 @@ theorem powC_vp {pv ev : Nat} {H : Addr} {hb : List Byte} (cert : CertC G.pLen G
   have ⟨pb, _⟩ := gi.pBig
   have l := gi.lens
   have l3 := gi.lens3
-  have heB : 1 ≤ eBytes G.pLen G.qLen ∧ eBytes G.pLen G.qLen < 2 ^ 15 ∧ sE + eBytes G.pLen G.qLen ≤ pB := by
+  obtain heB : 1 ≤ eBytes G.pLen G.qLen ∧ eBytes G.pLen G.qLen < 2 ^ 15 ∧ sE + eBytes G.pLen G.qLen ≤ pB := by
     simp only [eBytes]; rcases l with ⟨e1, e2⟩ | ⟨e1, e2⟩ | ⟨e1, e2⟩ <;> rw [e1, e2] <;> decide
-  have hEb : Spec.Rsa.bytesAt s.mem (off G.scr sE) (eBytes G.pLen G.qLen) =
+  obtain hEb : Spec.Rsa.bytesAt s.mem (off G.scr sE) (eBytes G.pLen G.qLen) =
       Spec.Rsa.i2osp ev (eBytes G.pLen G.qLen) := by
     have := h.sb _ hEc
     simp only [VG.Proof.Rsa.i2osp_length] at this
     exact this
-  have ev' : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off G.scr sE) (eBytes G.pLen G.qLen)) = ev := by
+  obtain ev' : Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off G.scr sE) (eBytes G.pLen G.qLen)) = ev := by
     rw [hEb, VG.Proof.Rsa.os2ip_i2osp, Nat.mod_eq_of_lt hev]
   obtain ⟨hrd, hdj, hfit, hbs⟩ := hsrc σ s ⟨h, x⟩
-  have hE := gi.srcBelow (a := sE) (n := eBytes G.pLen G.qLen) heB.2.2
+  obtain hE := gi.srcBelow (a := sE) (n := eBytes G.pLen G.qLen) heB.2.2
   refine WP.mono (powC_ok l3 en a23 gi.r28 a12 a6 hrd (src_apart hdj hfit pb) heB.1 heB.2.1 hE.1 hE.2 v0 z0 hp2
     hpo v1) fun t ⟨⟨v4, r0, en', o⟩, k⟩ => ?_
   rw [ev', hbs] at v4
   refine ⟨⟨h.of_pspace k o ?_ hcl, x⟩, en', v4, r0⟩
-  have hZ := pZ_eq l3
-  have e : ∀ j, slot (pw G.pLen) j = hdrBytes + j * (8 * (pw G.pLen + 2)) := fun _ => rfl
+  obtain hZ := pZ_eq l3
+  obtain e : ∀ j, slot (pw G.pLen) j = hdrBytes + j * (8 * (pw G.pLen + 2)) := fun _ => rfl
   rw [← hZ, e, e]; simp only [hdrBytes]; omega_using []
 
 /-- `power`: `h^e mod p` into array 4 of the P space, for p at `sPBE`, `e`
@@ -529,12 +529,12 @@ theorem gStore_vp {g : Nat} (hg : g < 2 ^ (8 * G.pLen)) (hcl : ∀ x ∈ c.cl, A
   have l := gi.lens3
   have ⟨pb, pk⟩ := gi.pBig
   have hE := gi.hEnd_le
-  have hl : G.pLen < 2 ^ 15 ∧ 1 ≤ G.pLen ∧ G.pLen ≤ 8 * pw G.pLen ∧ sG + G.pLen ≤ pB := by
+  obtain hl : G.pLen < 2 ^ 15 ∧ 1 ≤ G.pLen ∧ G.pLen ≤ 8 * pw G.pLen ∧ sG + G.pLen ≤ pB := by
     rcases l with e | e | e <;> rw [e] <;> decide
   refine WP.seq (WP.cons (s' := s.write .r12 (off G.scr sG)) ?_ (WP.cons
     (s' := (s.write .r12 (off G.scr sG)).write .r6 (BitVec.ofNat 64 G.pLen)) (exec_li hl.1) (WP.block_nil ?_)))
   · rw [show scr .r12 sG = .addi .r12 .r28 sG from rfl, exec_addi (by decide) (by decide), gi.r28]
-  have k : BKeep [.r12, .r6] s ((s.write .r12 (off G.scr sG)).write .r6 (BitVec.ofNat 64 G.pLen)) :=
+  obtain k : BKeep [.r12, .r6] s ((s.write .r12 (off G.scr sG)).write .r6 (BitVec.ofNat 64 G.pLen)) :=
     (VG.Proof.Bignum.PPC64LE.Keep.write s .r12 _).trans (VG.Proof.Bignum.PPC64LE.Keep.write _ .r6 _)
   refine WP.mono (VG.Proof.Dsa.PPC64LE.storeBE_ok (j := 4) (O := off G.scr sG) (k := G.pLen)
     (en.keep k (by decide)) (by decide) ((gi.scrAt (o := sG) (n := G.pLen) (by omega_using [pb, hl]) hl.2.1).congr k.wr)
@@ -542,8 +542,8 @@ theorem gStore_vp {g : Nat} (hg : g < 2 ^ (8 * G.pLen)) (hcl : ∀ x ∈ c.cl, A
     hl.2.2.1 ?_) fun t ⟨⟨vt, ot⟩, kt⟩ => ?_
   · intro x hx
     have fit := gi.scrFit
-    have e := Offset.toNat_sub_add x G.scr (d := sG) (by decide)
-    have hlt := (x - G.scr).isLt
+    obtain e := Offset.toNat_sub_add x G.scr (d := sG) (by decide)
+    obtain hlt := (x - G.scr).isLt
     change (x - (G.scr + BitVec.ofNat 64 sG)).toNat < G.pLen at hx
     rw [e] at hx
     exact le_ofs_off (by decide) (by omega_using [pb, fit]) (.inl (by
@@ -552,16 +552,16 @@ theorem gStore_vp {g : Nat} (hg : g < 2 ^ (8 * G.pLen)) (hcl : ∀ x ∈ c.cl, A
           Nat.mod_eq_of_lt (by omega_using [])] at hx
         omega_using [hl, hx]
       · rw [Nat.mod_eq_of_lt (by omega_using [hy])] at hx; omega_using [hl, hx]))
-  have kk := k.trans kt
-  have bt : Spec.Rsa.bytesAt t.mem (off G.scr sG) G.pLen = Spec.Rsa.i2osp g G.pLen := by
-    have e1 : Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (off G.scr sG) G.pLen) = g := by
+  obtain kk := k.trans kt
+  obtain bt : Spec.Rsa.bytesAt t.mem (off G.scr sG) G.pLen = Spec.Rsa.i2osp g G.pLen := by
+    obtain e1 : Spec.Rsa.os2ip (Spec.Rsa.bytesAt t.mem (off G.scr sG) G.pLen) = g := by
       rw [vt, VG.Proof.Dsa.PPC64LE.read_low _ _ hl.2.2.1 (by
         show arr s.mem G.pS (pw G.pLen) 4 < _; rw [v4]; exact hg)]
       exact v4
     have := VG.Proof.Rsa.i2osp_os2ip (Spec.Rsa.bytesAt t.mem (off G.scr sG) G.pLen)
     rw [e1, show (Spec.Rsa.bytesAt t.mem (off G.scr sG) G.pLen).length = G.pLen by simp [Spec.Rsa.bytesAt]] at this
     exact this.symm
-  have f0 : Frame [G.rs sG G.pLen] s.mem t.mem := frame_of_outside (L := G.pLen) ot
+  obtain f0 : Frame [G.rs sG G.pLen] s.mem t.mem := frame_of_outside (L := G.pLen) ot
   refine ⟨h.of_scrs (ws := [.r12, .r6] ++ VG.Proof.Dsa.PPC64LE.storeRegs) ⟨kk.gpr, kk.rd, kk.wr⟩ kk.sp
     (os := [(sG, G.pLen)]) (fun p hp => by
       rw [List.mem_singleton] at hp; subst hp

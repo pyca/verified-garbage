@@ -47,7 +47,7 @@ theorem addOut_ok {r v o : Reg} (hrv : r ≠ v) (hro : r ≠ o) :
 /-- The borrow out of `a - b`, as `sltu` computes it before the subtraction. -/
 theorem borrow (a b : BitVec 64) :
     (a - b).toNat + b.toNat = a.toNat + 2 ^ 64 * (if a < b then (1 : BitVec 64) else 0).toNat := by
-  have ha := a.isLt; have hb := b.isLt
+  obtain ha := a.isLt; have hb := b.isLt
   rw [BitVec.toNat_sub]
   by_cases h : a.toNat < b.toNat
   · have hlt : a < b := BitVec.lt_def.mpr h
@@ -141,54 +141,54 @@ theorem foldR_ok :
   · have k := ((((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).trans k8).trans
       k9).trans k10
     -- the registers each step reads, through the later steps
-    have c5 : s4.gpr .a5 = s.gpr .a5 := by
+    obtain c5 : s4.gpr .a5 = s.gpr .a5 := by
       rw [k4.1 _ (by decide), k3.1 _ (by decide), k2.1 _ (by decide), k1.1 _ (by decide)]
     rw [c5] at e5
-    have e5 := e5 hc
-    have l1 : s10.gpr (w 0) = s1.gpr (w 0) := by
+    obtain e5 := e5 hc
+    obtain l1 : s10.gpr (w 0) = s1.gpr (w 0) := by
       rw [k10.1 _ (by decide), k9.1 _ (by decide), k8.1 _ (by decide), k7.1 _ (by decide),
         k6.1 _ (by decide), k5.1 _ (by decide), k4.1 _ (by decide), k3.1 _ (by decide),
         k2.1 _ (by decide)]
-    have l2 : s10.gpr (w 1) = s2.gpr (w 1) := by
+    obtain l2 : s10.gpr (w 1) = s2.gpr (w 1) := by
       rw [k10.1 _ (by decide), k9.1 _ (by decide), k8.1 _ (by decide), k7.1 _ (by decide),
         k6.1 _ (by decide), k5.1 _ (by decide), k4.1 _ (by decide), k3.1 _ (by decide)]
-    have l3 : s10.gpr (w 2) = s3.gpr (w 2) := by
+    obtain l3 : s10.gpr (w 2) = s3.gpr (w 2) := by
       rw [k10.1 _ (by decide), k9.1 _ (by decide), k8.1 _ (by decide), k7.1 _ (by decide),
         k6.1 _ (by decide), k5.1 _ (by decide), k4.1 _ (by decide)]
-    have l4 : s10.gpr (w 3) = s6.gpr (w 3) := by
+    obtain l4 : s10.gpr (w 3) = s6.gpr (w 3) := by
       rw [k10.1 _ (by decide), k9.1 _ (by decide), k8.1 _ (by decide), k7.1 _ (by decide)]
-    have l5 : s10.gpr (w 4) = s8.gpr (w 4) := by rw [k10.1 _ (by decide), k9.1 _ (by decide)]
-    have l6 : s10.gpr (w 5) = s9.gpr (w 5) := by rw [k10.1 _ (by decide)]
+    obtain l5 : s10.gpr (w 4) = s8.gpr (w 4) := by rw [k10.1 _ (by decide), k9.1 _ (by decide)]
+    obtain l6 : s10.gpr (w 5) = s9.gpr (w 5) := by rw [k10.1 _ (by decide)]
     have r0 : s.gpr (w 0) = s.gpr (w 0) := rfl
-    have r1 : s1.gpr (w 1) = s.gpr (w 1) := k1.1 _ (by decide)
-    have r2 : s2.gpr (w 2) = s.gpr (w 2) := by rw [k2.1 _ (by decide), k1.1 _ (by decide)]
-    have r3 : s3.gpr (w 3) = s.gpr (w 3) := by
+    obtain r1 : s1.gpr (w 1) = s.gpr (w 1) := k1.1 _ (by decide)
+    obtain r2 : s2.gpr (w 2) = s.gpr (w 2) := by rw [k2.1 _ (by decide), k1.1 _ (by decide)]
+    obtain r3 : s3.gpr (w 3) = s.gpr (w 3) := by
       rw [k3.1 _ (by decide), k2.1 _ (by decide), k1.1 _ (by decide)]
-    have r4 : s7.gpr (w 4) = s.gpr (w 4) := by
+    obtain r4 : s7.gpr (w 4) = s.gpr (w 4) := by
       rw [k7.1 _ (by decide), k6.1 _ (by decide), k5.1 _ (by decide), k4.1 _ (by decide),
         k3.1 _ (by decide), k2.1 _ (by decide), k1.1 _ (by decide)]
-    have r5 : s8.gpr (w 5) = s.gpr (w 5) := by
+    obtain r5 : s8.gpr (w 5) = s.gpr (w 5) := by
       rw [k8.1 _ (by decide), k7.1 _ (by decide), k6.1 _ (by decide), k5.1 _ (by decide),
         k4.1 _ (by decide), k3.1 _ (by decide), k2.1 _ (by decide), k1.1 _ (by decide)]
-    have r6 : s9.gpr (w 6) = s.gpr (w 6) := by
+    obtain r6 : s9.gpr (w 6) = s.gpr (w 6) := by
       rw [k9.1 _ (by decide), k8.1 _ (by decide), k7.1 _ (by decide), k6.1 _ (by decide),
         k5.1 _ (by decide), k4.1 _ (by decide), k3.1 _ (by decide), k2.1 _ (by decide),
         k1.1 _ (by decide)]
-    have t4 : s5.gpr (w 3) = s4.gpr (w 3) := k5.1 _ (by decide)
-    have t5 : s5.gpr .t0 = s4.gpr .t0 := k5.1 _ (by decide)
-    have t6 : s6.gpr .t0 = s5.gpr .t0 := k6.1 _ (by decide)
+    obtain t4 : s5.gpr (w 3) = s4.gpr (w 3) := k5.1 _ (by decide)
+    obtain t5 : s5.gpr .t0 = s4.gpr .t0 := k5.1 _ (by decide)
+    obtain t6 : s6.gpr .t0 = s5.gpr .t0 := k6.1 _ (by decide)
     rw [r1] at e2; rw [r2] at e3; rw [r3] at e4; rw [t4] at e6
     rw [r4] at e8; rw [r5] at e9; rw [r6] at e10
-    have t7 : s6.gpr .t0 = s4.gpr .t0 := by rw [t6, t5]
+    obtain t7 : s6.gpr .t0 = s4.gpr .t0 := by rw [t6, t5]
     rw [t7] at e7
-    have hb : ∀ (x : State) (r : Reg), (x.gpr r).toNat < 2 ^ 64 := fun x r => (x.gpr r).isLt
+    obtain hb : ∀ (x : State) (r : Reg), (x.gpr r).toNat < 2 ^ 64 := fun x r => (x.gpr r).isLt
     have := hb s1 .t0; have := hb s2 .t0; have := hb s3 .t0; have := hb s4 .t0; have := hb s6 .a7
     have := hb s1 (w 0); have := hb s2 (w 1); have := hb s3 (w 2); have := hb s4 (w 3)
     have := hb s6 (w 3); have := hb s8 (w 4); have := hb s9 (w 5); have := hb s10 (w 6)
     have := hb s7 .t0; have := hb s8 .t0; have := hb s9 .t0; have := hb s10 .a5
     have := hb s (w 0); have := hb s (w 1); have := hb s (w 2); have := hb s (w 3)
     have := hb s (w 4); have := hb s (w 5); have := hb s (w 6)
-    have e7 := e7 (by omega_using [e4, e6])
+    obtain e7 := e7 (by omega_using [e4, e6])
     simp only [rw7, val7, l1, l2, l3, l4, l5, l6]
     omega_arith
   · exact (((((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).trans k8).trans
@@ -228,47 +228,47 @@ theorem unfoldR_ok :
   · have c5 : s4.gpr .a5 = s.gpr .a5 := by
       rw [k4.1 _ (by decide), k3.1 _ (by decide), k2.1 _ (by decide), k1.1 _ (by decide)]
     rw [c5] at e5
-    have e5 := e5 hc
-    have l1 : s10.gpr (w 0) = s1.gpr (w 0) := by
+    obtain e5 := e5 hc
+    obtain l1 : s10.gpr (w 0) = s1.gpr (w 0) := by
       rw [k10.1 _ (by decide), k9.1 _ (by decide), k8.1 _ (by decide), k7.1 _ (by decide),
         k6.1 _ (by decide), k5.1 _ (by decide), k4.1 _ (by decide), k3.1 _ (by decide),
         k2.1 _ (by decide)]
-    have l2 : s10.gpr (w 1) = s2.gpr (w 1) := by
+    obtain l2 : s10.gpr (w 1) = s2.gpr (w 1) := by
       rw [k10.1 _ (by decide), k9.1 _ (by decide), k8.1 _ (by decide), k7.1 _ (by decide),
         k6.1 _ (by decide), k5.1 _ (by decide), k4.1 _ (by decide), k3.1 _ (by decide)]
-    have l3 : s10.gpr (w 2) = s3.gpr (w 2) := by
+    obtain l3 : s10.gpr (w 2) = s3.gpr (w 2) := by
       rw [k10.1 _ (by decide), k9.1 _ (by decide), k8.1 _ (by decide), k7.1 _ (by decide),
         k6.1 _ (by decide), k5.1 _ (by decide), k4.1 _ (by decide)]
-    have l4 : s10.gpr (w 3) = s6.gpr (w 3) := by
+    obtain l4 : s10.gpr (w 3) = s6.gpr (w 3) := by
       rw [k10.1 _ (by decide), k9.1 _ (by decide), k8.1 _ (by decide), k7.1 _ (by decide)]
-    have l5 : s10.gpr (w 4) = s8.gpr (w 4) := by rw [k10.1 _ (by decide), k9.1 _ (by decide)]
-    have l6 : s10.gpr (w 5) = s9.gpr (w 5) := by rw [k10.1 _ (by decide)]
-    have r1 : s1.gpr (w 1) = s.gpr (w 1) := k1.1 _ (by decide)
-    have r2 : s2.gpr (w 2) = s.gpr (w 2) := by rw [k2.1 _ (by decide), k1.1 _ (by decide)]
-    have r3 : s3.gpr (w 3) = s.gpr (w 3) := by
+    obtain l5 : s10.gpr (w 4) = s8.gpr (w 4) := by rw [k10.1 _ (by decide), k9.1 _ (by decide)]
+    obtain l6 : s10.gpr (w 5) = s9.gpr (w 5) := by rw [k10.1 _ (by decide)]
+    obtain r1 : s1.gpr (w 1) = s.gpr (w 1) := k1.1 _ (by decide)
+    obtain r2 : s2.gpr (w 2) = s.gpr (w 2) := by rw [k2.1 _ (by decide), k1.1 _ (by decide)]
+    obtain r3 : s3.gpr (w 3) = s.gpr (w 3) := by
       rw [k3.1 _ (by decide), k2.1 _ (by decide), k1.1 _ (by decide)]
-    have r4 : s7.gpr (w 4) = s.gpr (w 4) := by
+    obtain r4 : s7.gpr (w 4) = s.gpr (w 4) := by
       rw [k7.1 _ (by decide), k6.1 _ (by decide), k5.1 _ (by decide), k4.1 _ (by decide),
         k3.1 _ (by decide), k2.1 _ (by decide), k1.1 _ (by decide)]
-    have r5 : s8.gpr (w 5) = s.gpr (w 5) := by
+    obtain r5 : s8.gpr (w 5) = s.gpr (w 5) := by
       rw [k8.1 _ (by decide), k7.1 _ (by decide), k6.1 _ (by decide), k5.1 _ (by decide),
         k4.1 _ (by decide), k3.1 _ (by decide), k2.1 _ (by decide), k1.1 _ (by decide)]
-    have r6 : s9.gpr (w 6) = s.gpr (w 6) := by
+    obtain r6 : s9.gpr (w 6) = s.gpr (w 6) := by
       rw [k9.1 _ (by decide), k8.1 _ (by decide), k7.1 _ (by decide), k6.1 _ (by decide),
         k5.1 _ (by decide), k4.1 _ (by decide), k3.1 _ (by decide), k2.1 _ (by decide),
         k1.1 _ (by decide)]
-    have t4 : s5.gpr (w 3) = s4.gpr (w 3) := k5.1 _ (by decide)
-    have t6 : s6.gpr .a7 = s4.gpr .a7 := by rw [k6.1 _ (by decide), k5.1 _ (by decide)]
+    obtain t4 : s5.gpr (w 3) = s4.gpr (w 3) := k5.1 _ (by decide)
+    obtain t6 : s6.gpr .a7 = s4.gpr .a7 := by rw [k6.1 _ (by decide), k5.1 _ (by decide)]
     rw [r1] at e2; rw [r2] at e3; rw [r3] at e4; rw [t4] at e6
     rw [r4] at e8; rw [r5] at e9; rw [r6] at e10; rw [t6] at e7
-    have hb : ∀ (x : State) (r : Reg), (x.gpr r).toNat < 2 ^ 64 := fun x r => (x.gpr r).isLt
+    obtain hb : ∀ (x : State) (r : Reg), (x.gpr r).toNat < 2 ^ 64 := fun x r => (x.gpr r).isLt
     have := hb s1 .t0; have := hb s2 .a7; have := hb s3 .t0; have := hb s4 .a7; have := hb s6 .a5
     have := hb s1 (w 0); have := hb s2 (w 1); have := hb s3 (w 2); have := hb s4 (w 3)
     have := hb s6 (w 3); have := hb s8 (w 4); have := hb s9 (w 5); have := hb s10 (w 6)
     have := hb s7 .a7; have := hb s8 .t0; have := hb s9 .a7; have := hb s10 .a5; have := hb s5 .t0
     have := hb s (w 0); have := hb s (w 1); have := hb s (w 2); have := hb s (w 3)
     have := hb s (w 4); have := hb s (w 5); have := hb s (w 6)
-    have e7 := e7 (by omega_using [e4, e6])
+    obtain e7 := e7 (by omega_using [e4, e6])
     simp only [rw7, val7, l1, l2, l3, l4, l5, l6]
     omega_arith
   · exact (((((((((k1.trans k2).trans k3).trans k4).trans k5).trans k6).trans k7).trans k8).trans

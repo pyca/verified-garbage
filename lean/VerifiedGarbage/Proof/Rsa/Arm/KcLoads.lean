@@ -68,7 +68,7 @@ theorem save_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096) {rest
     WP isa (.block (.ldrSp .r12 (4 * iS) :: (saveK.map (fun p => Instr.str p.1 .r12 p.2) ++ rest))) σ Q := by
   have fS := h.fS
   have fits := h.fits
-  have hz : 64 ≤ (stackArg σ (iS + 1)).toNat * 8 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_arith) fits
+  obtain hz : 64 ≤ (stackArg σ (iS + 1)).toNat * 8 := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_arith) fits
   refine wp_ldrSpA h.rdA h.sp (by have := h.hS; omega_arith) h4 fun s1 u1 => ?_
   refine save_slots_ok (lo := 20) (hi := 64) (by decide) (by rw [u1.gpr]; omega_arith)
     (fun d h1 h2 => ⟨rS iS σ, by rw [u1.wr, h.wr]; simp, by
@@ -107,23 +107,23 @@ theorem entryFirst_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096)
   refine wp_mov (op2_reg _ _) fun s4 u4 => ?_
   refine wp_mov (op2_reg _ _) fun s5 u5 => ?_
   refine wp_mov (op2_reg _ _) fun s6 u6 => ?_
-  have r6' : Rest [.r8, .r10, .r11, .r4, .r6] s1 s6 := (u2.rest (by simp)).trans ((u3.rest (by simp)).trans
+  obtain r6' : Rest [.r8, .r10, .r11, .r4, .r6] s1 s6 := (u2.rest (by simp)).trans ((u3.rest (by simp)).trans
     ((u4.rest (by simp)).trans ((u5.rest (by simp)).trans (u6.rest (by simp)))))
-  have m6 : s6.mem = s1.mem := u6.mem.trans (u5.mem.trans (u4.mem.trans (u3.mem.trans u2.mem)))
-  have b6 := b1.of_rest r6' m6
-  have e8 : s6.gpr .r8 = (geo iS σ).B := by
+  obtain m6 : s6.mem = s1.mem := u6.mem.trans (u5.mem.trans (u4.mem.trans (u3.mem.trans u2.mem)))
+  obtain b6 := b1.of_rest r6' m6
+  obtain e8 : s6.gpr .r8 = (geo iS σ).B := by
     rw [u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide), u2.gpr,
       p12]
-  have e10 : s6.gpr .r10 = σ.gpr .r0 := by
+  obtain e10 : s6.gpr .r10 = σ.gpr .r0 := by
     rw [u6.other _ (by decide), u5.other _ (by decide), u4.other _ (by decide), u3.gpr, u2.other _ (by decide),
       o1 _ (by decide)]
-  have e11 : s6.gpr .r11 = σ.gpr .r1 := by
+  obtain e11 : s6.gpr .r11 = σ.gpr .r1 := by
     rw [u6.other _ (by decide), u5.other _ (by decide), u4.gpr, u3.other _ (by decide), u2.other _ (by decide),
       o1 _ (by decide)]
-  have e4 : s6.gpr .r4 = σ.gpr .r2 := by
+  obtain e4 : s6.gpr .r4 = σ.gpr .r2 := by
     rw [u6.other _ (by decide), u5.gpr, u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide),
       o1 _ (by decide)]
-  have e6 : s6.gpr .r6 = σ.gpr .r3 := by
+  obtain e6 : s6.gpr .r6 = σ.gpr .r3 := by
     rw [u6.gpr, u5.other _ (by decide), u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide),
       o1 _ (by decide)]
   -- `setup`.
@@ -131,7 +131,7 @@ theorem entryFirst_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096)
   simp only [List.append_assoc, List.cons_append]
   refine wp_dp (op2_imm (by decide)) fun s7 u7 => ?_
   refine wp_mov (op2_lsr (by decide)) fun s8 u8 => ?_
-  have h9 : s8.gpr .r9 = BitVec.ofNat 32 (geo iS σ).w := by
+  obtain h9 : s8.gpr .r9 = BitVec.ofNat 32 (geo iS σ).w := by
     rw [u8.gpr, u7.gpr, dpVal, e11]
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_add, BitVec.toNat_ofNat,
@@ -139,34 +139,34 @@ theorem entryFirst_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096)
     simp only [Geo.w, fK] at *
     omega_arith
   refine stride_ok (by omega_arith) h9 fun s9 h7 r9 m9 => ?_
-  have r79 : Rest [.r9, .r7] s6 s9 := (u7.rest (by simp)).trans ((u8.rest (by simp)).trans (r9.mono (by simp)))
-  have m79 : s9.mem = s6.mem := m9.trans (u8.mem.trans u7.mem)
-  have ws9 : Ws s9 (geo iS σ).B (geo iS σ).Z (geo iS σ).w nArr :=
+  obtain r79 : Rest [.r9, .r7] s6 s9 := (u7.rest (by simp)).trans ((u8.rest (by simp)).trans (r9.mono (by simp)))
+  obtain m79 : s9.mem = s6.mem := m9.trans (u8.mem.trans u7.mem)
+  obtain ws9 : Ws s9 (geo iS σ).B (geo iS σ).Z (geo iS σ).w nArr :=
     ⟨fS, by rw [r79.wr, r6'.wr, b1.wr, h.wr]; simp, fits, by omega_arith, by omega_arith, h7,
       by rw [r79.gpr _ (by decide), e8], by rw [r9.gpr _ (by decide), h9]⟩
-  have b9 := b6.of_rest r79 m79
+  obtain b9 := b6.of_rest r79 m79
   refine wp_strSlot ws9 (d := 16) (by decide) fun s10 u10 => ?_
-  have ws10 := ws9.of_mupd u10
-  have hz : 64 ≤ (geo iS σ).Z := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_arith) fits
-  have o10 := writeW32_outside s9.mem (State.addr (geo iS σ).B) (d := 16) (s9.gpr .r9) (by decide)
+  obtain ws10 := ws9.of_mupd u10
+  obtain hz : 64 ≤ (geo iS σ).Z := Nat.le_trans (by simp only [arr, hdr, nArr, S]; omega_arith) fits
+  obtain o10 := writeW32_outside s9.mem (State.addr (geo iS σ).B) (d := 16) (s9.gpr .r9) (by decide)
   rw [← u10.mem] at o10
-  have b10 := b9.outside o10 (by omega_arith) (by omega_arith) u10.sp u10.rd u10.wr
-  have c10 : s10.mem.readW (off (State.addr (geo iS σ).B) 16) 32 = BitVec.ofNat 32 (geo iS σ).w := by
+  obtain b10 := b9.outside o10 (by omega_arith) (by omega_arith) u10.sp u10.rd u10.wr
+  obtain c10 : s10.mem.readW (off (State.addr (geo iS σ).B) 16) 32 = BitVec.ofNat 32 (geo iS σ).w := by
     rw [u10.mem, Mem.readW_writeW_self32, ws9.r9]
   refine wp_dp (op2_imm (by decide)) fun s11 u11 => ?_
   refine wp_mov (op2_imm (by decide)) fun s12 u12 => ?_
   refine wp_mul fun s13 u13 => ?_
   refine wp_mov (op2_lsr (by decide)) fun s14 u14 => ?_
   refine wp_mov (op2_imm (by decide)) fun u u15 => WP.block_nil ?_
-  have rest : Rest [.r0, .lr, .r3] s10 u := (u11.rest (by simp)).trans ((u12.rest (by simp)).trans
+  obtain rest : Rest [.r0, .lr, .r3] s10 u := (u11.rest (by simp)).trans ((u12.rest (by simp)).trans
     ((u13.rest (by simp)).trans ((u14.rest (by simp)).trans (u15.rest (by simp)))))
-  have mu : u.mem = s10.mem := by rw [u15.mem, u14.mem, u13.mem, u12.mem, u11.mem]
-  have bu := b10.of_rest rest mu
-  have hu := ws10.rest rest
-  have p0 : u.gpr .r0 = (geo iS σ).B + BitVec.ofNat 32 hdr := by
+  obtain mu : u.mem = s10.mem := by rw [u15.mem, u14.mem, u13.mem, u12.mem, u11.mem]
+  obtain bu := b10.of_rest rest mu
+  obtain hu := ws10.rest rest
+  obtain p0 : u.gpr .r0 = (geo iS σ).B + BitVec.ofNat 32 hdr := by
     rw [u15.other _ (by decide), u14.other _ (by decide), u13.other _ (by decide), u12.other _ (by decide), u11.gpr,
       dpVal, ws10.r8]
-  have plr : u.gpr .lr = BitVec.ofNat 32 (nArr * ((geo iS σ).w + 2)) := by
+  obtain plr : u.gpr .lr = BitVec.ofNat 32 (nArr * ((geo iS σ).w + 2)) := by
     rw [u15.other _ (by decide), u14.gpr, u13.gpr, u12.gpr, u12.other _ (by decide), u11.other _ (by decide),
       ws10.r7]
     apply BitVec.eq_of_toNat_eq
@@ -177,13 +177,13 @@ theorem entryFirst_ok {σ : State} (h : FnPre nA iS ins σ) (h4 : 4 * iS < 4096)
       Nat.mod_eq_of_lt (a := 24 * (4 * ((geo iS σ).w + 2))) (by omega_arith),
       Nat.mod_eq_of_lt (a := 24 * ((geo iS σ).w + 2)) (by omega_arith)]
     omega_arith
-  have nfit : hdr + 4 * (nArr * ((geo iS σ).w + 2)) ≤ (geo iS σ).Z := by
+  obtain nfit : hdr + 4 * (nArr * ((geo iS σ).w + 2)) ≤ (geo iS σ).Z := by
     simp only [arr, S, nArr] at fits ⊢; omega_arith
   refine WP.mono (zero_ok u (base := (geo iS σ).B) (size := (geo iS σ).Z) (o := hdr) (n := nArr * ((geo iS σ).w + 2))
     ⟨fS, nfit, ⟨rS iS σ, by rw [bu.wr, h.wr]; simp, Region.contains_self _ _⟩⟩
     (by simp only [nArr]; omega_arith) p0 plr (by rw [u15.gpr])) fun t inv => ?_
-  have bt := bu.outside inv.outside (by simp only [hdr]; omega_arith) nfit inv.rest.sp inv.rest.rd inv.rest.wr
-  have rT : Rest [.r0, .lr, .r3, .r7, .r9] s6 t :=
+  obtain bt := bu.outside inv.outside (by simp only [hdr]; omega_arith) nfit inv.rest.sp inv.rest.rd inv.rest.wr
+  obtain rT : Rest [.r0, .lr, .r3, .r7, .r9] s6 t :=
     (r79.mono (by simp)).trans ((u10.rest _).trans ((rest.trans (inv.rest.mono (by simp))).mono (by simp)))
   refine ⟨⟨bt, hu.rest inv.rest, ?_, fun j hj => ?_, by rw [rT.gpr _ (by decide), e10],
     by rw [rT.gpr _ (by decide), e11]⟩, by rw [rT.gpr _ (by decide), e4], by rw [rT.gpr _ (by decide), e6]⟩
@@ -243,16 +243,16 @@ theorem EntSt.load_ok {σ s : State} {A : Nat → Nat} (h : EntSt nA iS ins σ s
       Rest [.r0, .r1, .r2, .r3, .r5, .lr] s t := by
   have pre := h.base.pre
   have hw := h.ws
-  have fit' := hw.arr_fit hj
+  obtain fit' := hw.arr_fit hj
   have nw := hw.nowrap
   have w16 := pre.w16
   have kb := pre.kb
   have hS : S (geo iS σ).w = 4 * ((geo iS σ).w + 2) := rfl
-  have hkw : k ≤ 4 * (geo iS σ).w := by
+  obtain hkw : k ≤ 4 * (geo iS σ).w := by
     have : (geo iS σ).w = (fK σ + 3) / 4 := rfl
     omega_arith
-  have hB : (geo iS σ).B.toNat + (arr (geo iS σ).w j + 4 * ((geo iS σ).w + 2)) ≤ 2 ^ 32 := by
-    have f2 : arr (geo iS σ).w j + 4 * ((geo iS σ).w + 2) ≤ (geo iS σ).Z := hw.arr_fit hj
+  obtain hB : (geo iS σ).B.toNat + (arr (geo iS σ).w j + 4 * ((geo iS σ).w + 2)) ≤ 2 ^ 32 := by
+    obtain f2 : arr (geo iS σ).w j + 4 * ((geo iS σ).w + 2) ≤ (geo iS σ).Z := hw.arr_fit hj
     have := hw.nowrap
     omega_arith
   rw [CrtValues.load, WP.seq_iff]
@@ -260,14 +260,14 @@ theorem EntSt.load_ok {σ s : State} {A : Nat → Nat} (h : EntSt nA iS ins σ s
   refine wp_mov (op2_reg _ _) fun s2 u2 => ?_
   refine wp_dp (op2_imm (by decide)) fun s3 u3 => ?_
   refine wp_mov (op2_imm (by decide)) fun u u4 => WP.block_nil ?_
-  have rest : Rest [.r0, .r3, .r5, .lr] s u :=
+  obtain rest : Rest [.r0, .r3, .r5, .lr] s u :=
     (r1.mono (by simp)).trans ((u2.rest (by simp)).trans ((u3.rest (by simp)).trans (u4.rest (by simp))))
-  have mu : u.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, m1]
-  have bu := h.base.of_rest rest mu
-  have hu := hw.rest rest
-  have ad : State.addr ((geo iS σ).B + BitVec.ofNat 32 (arr (geo iS σ).w j)) =
+  obtain mu : u.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, m1]
+  obtain bu := h.base.of_rest rest mu
+  obtain hu := hw.rest rest
+  obtain ad : State.addr ((geo iS σ).B + BitVec.ofNat 32 (arr (geo iS σ).w j)) =
       off (State.addr (geo iS σ).B) (arr (geo iS σ).w j) := hw.addr (by omega_arith)
-  have p0 : u.gpr .r0 = (geo iS σ).B + BitVec.ofNat 32 (arr (geo iS σ).w j) := by
+  obtain p0 : u.gpr .r0 = (geo iS σ).B + BitVec.ofNat 32 (arr (geo iS σ).w j) := by
     rw [u4.other _ (by decide), u3.other _ (by decide), u2.other _ (by decide), p1]
   refine WP.mono (loadBE_ok u (src := src) (dst := (geo iS σ).B + BitVec.ofNat 32 (arr (geo iS σ).w j))
     (n := (geo iS σ).w + 2) pos (by omega_arith) (by omega_arith) fit
@@ -288,8 +288,8 @@ theorem EntSt.load_ok {σ s : State} {A : Nat → Nat} (h : EntSt nA iS ins σ s
     (by rw [u4.gpr])) ?_
   rintro t ⟨v, f, r⟩
   rw [ad] at f v
-  have k' : Keep (geo iS σ).B (geo iS σ).w [j] [] u.mem t.mem := Keep.of_frame_arr f (by omega_arith)
-  have RT : Rest [.r0, .r1, .r2, .r3, .r5, .lr] s t := (rest.mono (by simp)).trans (r.mono (by simp))
+  obtain k' : Keep (geo iS σ).B (geo iS σ).w [j] [] u.mem t.mem := Keep.of_frame_arr f (by omega_arith)
+  obtain RT : Rest [.r0, .r1, .r2, .r3, .r5, .lr] s t := (rest.mono (by simp)).trans (r.mono (by simp))
   refine ⟨⟨bu.keep k' (by simpa using hj) (by simp) (by simp) r.sp r.rd r.wr, hu.rest r, ?_, fun i hi => ?_,
     (RT.gpr _ (by decide)).trans h.r10, (RT.gpr _ (by decide)).trans h.r11⟩, RT⟩
   · rw [slot_eq_of_keep k' (by decide) (by simp), mu, h.cnt]
@@ -311,15 +311,15 @@ theorem EntSt.loadArg_ok {σ s : State} {A : Nat → Nat} (h : EntSt nA iS ins �
     WP isa (seqs (loadArg (4 * p.1) p.2 ++ rest)) s Q := by
   have pre := h.base.pre
   have hA := pre.hA
-  have hi := pre.hIns p hp
-  have hn := pre.ins1 p hp
+  obtain hi := pre.hIns p hp
+  obtain hn := pre.ins1 p hp
   unfold loadArg CrtValues.args
   rw [List.cons_append, List.cons_append, List.nil_append, wp_seqs_cons (List.cons_ne_nil _ _)]
   refine h.base.ldrSp (i := p.1) (by omega_arith) (by omega_arith) fun s1 b1 u1 => ?_
-  have e : 4 * p.1 + 4 = 4 * (p.1 + 1) := by omega_arith
+  obtain e : 4 * p.1 + 4 = 4 * (p.1 + 1) := by omega_arith
   rw [e]
   refine b1.ldrSp (i := p.1 + 1) hi.1 (by omega_arith) fun s2 b2 u2 => WP.block_nil ?_
-  have h2 : EntSt nA iS ins σ s2 A :=
+  obtain h2 : EntSt nA iS ins σ s2 A :=
     (h.of_rest ((u1.rest (ws := [.r4, .r6]) (by simp)).trans (u2.rest (ws := [.r4, .r6]) (by simp)))
       (u2.mem.trans u1.mem) (by decide) (by decide) (by decide) (by decide) (by decide))
   rw [wp_seqs_cons hr]

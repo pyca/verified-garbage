@@ -80,11 +80,11 @@ theorem chainStep_ok {s : State} {b k t : Nat} (hk : b + k + 1 < 16) (ht : 28 �
       LaneIs u (b + k) (fun e => x e % 2 ^ 28) ∧ LaneIs u (b + k + 1) (fun e => y e + x e / 2 ^ 28) ∧
       u.mem = s.mem ∧ u.gpr = s.gpr ∧ u.rd = s.rd ∧ u.wr = s.wr ∧
       (∀ r : VReg, r ≠ V t → r ≠ V (b + k) → r ≠ V (b + k + 1) → u.v r = s.v r) := by
-  have n1 : V t ≠ V (b + k) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
-  have n2 : V t ≠ V (b + k + 1) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
-  have n3 : V (b + k) ≠ V (b + k + 1) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
-  have n4 : V 30 ≠ V t := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
-  have n5 : V 30 ≠ V (b + k) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  obtain n1 : V t ≠ V (b + k) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  obtain n2 : V t ≠ V (b + k + 1) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  obtain n3 : V (b + k) ≠ V (b + k + 1) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  obtain n4 : V 30 ≠ V t := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
+  obtain n5 : V 30 ≠ V (b + k) := V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)
   have n1' := n1.symm
   have n2' := n2.symm
   have n3' := n3.symm
@@ -123,25 +123,25 @@ theorem chainLoop_ok {s : State} (r : Nat → Nat → Nat) (hr : ∀ k < 16, Lan
       t.mem = s.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       (∀ e < 2, (vdword (t.v (V 30)) e).toNat = 2 ^ 28 - 1) ∧
       (∀ v : VReg, (∀ n < 16, v ≠ V n) → v ≠ V 28 → v ≠ V 29 → t.v v = s.v v) := by
-  have ci : ∀ e < 2, ∀ b ∈ [0, 8], ∀ k ≤ 8, cin (r e) b k < 2 ^ 36 := fun e he b hb' k hk =>
+  obtain ci : ∀ e < 2, ∀ b ∈ [0, 8], ∀ k ≤ 8, cin (r e) b k < 2 ^ 36 := fun e he b hb' k hk =>
     cin_le (fun k hk => hb e he _ (by simp at hb'; omega_arith)) k hk
   let inv := fun n (t : State) =>
     (∀ k < 8, LaneIs t k (fun e => chainAt (r e) 0 n k)) ∧ (∀ k < 8, LaneIs t (8 + k) (fun e => chainAt (r e) 8 n k)) ∧
     t.mem = s.mem ∧ t.gpr = s.gpr ∧ t.rd = s.rd ∧ t.wr = s.wr ∧ (∀ e < 2, (vdword (t.v (V 30)) e).toNat = 2 ^ 28 - 1) ∧
     (∀ v : VReg, (∀ n < 16, v ≠ V n) → v ≠ V 28 → v ≠ V 29 → t.v v = s.v v)
-  have i0 : inv 0 s := ⟨fun k hk e he => by dsimp only; rw [chainAt_zero, Nat.zero_add]; exact hr k (by omega_arith) e he,
+  obtain i0 : inv 0 s := ⟨fun k hk e he => by dsimp only; rw [chainAt_zero, Nat.zero_add]; exact hr k (by omega_arith) e he,
     fun k hk e he => by dsimp only; rw [chainAt_zero]; exact hr (8 + k) (by omega_arith) e he,
     rfl, rfl, rfl, rfl, hM, fun _ _ _ _ => rfl⟩
   refine WP.mono (wp_range_flatMap (M := isa) (N := 7) inv (fun n t hn ⟨t0, t8, tm, tg, tr, tw, tM, tv⟩ => ?_) 7
     (by decide) s i0) fun t ht => ht
   · rw [WP.block_append_iff]
-    have cn : ∀ e < 2, ∀ b ∈ [0, 8], chainAt (r e) b n n = cval (r e) b n := fun e _ b _ => by
+    obtain cn : ∀ e < 2, ∀ b ∈ [0, 8], chainAt (r e) b n n = cval (r e) b n := fun e _ b _ => by
       simp [chainAt]
-    have cn1 : ∀ e < 2, ∀ b ∈ [0, 8], chainAt (r e) b n (n + 1) = r e (b + (n + 1)) := fun e _ b _ => by
+    obtain cn1 : ∀ e < 2, ∀ b ∈ [0, 8], chainAt (r e) b n (n + 1) = r e (b + (n + 1)) := fun e _ b _ => by
       simp [chainAt, show ¬ (n + 1 < n) by omega_arith]
-    have bnd : ∀ e < 2, ∀ b ∈ [0, 8], r e (b + (n + 1)) + cval (r e) b n / 2 ^ 28 < 2 ^ 64 := fun e he b hb' => by
-      have h1 := ci e he b hb' (n + 1) (by omega_arith)
-      have h2 := hb e he (b + (n + 1)) (by simp at hb'; omega_arith)
+    obtain bnd : ∀ e < 2, ∀ b ∈ [0, 8], r e (b + (n + 1)) + cval (r e) b n / 2 ^ 28 < 2 ^ 64 := fun e he b hb' => by
+      obtain h1 := ci e he b hb' (n + 1) (by omega_arith)
+      obtain h2 := hb e he (b + (n + 1)) (by simp at hb'; omega_arith)
       simp only [cin] at h1
       simp only [cval]
       omega_arith
@@ -150,10 +150,10 @@ theorem chainLoop_ok {s : State} (r : Nat → Nat → Nat) (hr : ∀ k < 16, Lan
       (fun e he => by rw [Nat.zero_add, t0 (n + 1) (by omega_arith) e he]; dsimp only; rw [cn1 e he 0 (by simp)])
       (fun e he => bnd e he 0 (by simp))) fun u ⟨ua, ub, um, ug, ur, uw, uv⟩ => ?_
     simp only [Nat.zero_add] at ua ub uv
-    have u8 : ∀ k < 8, u.v (V (8 + k)) = t.v (V (8 + k)) := fun k hk =>
+    obtain u8 : ∀ k < 8, u.v (V (8 + k)) = t.v (V (8 + k)) := fun k hk =>
       uv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
         (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
-    have uM : ∀ e < 2, (vdword (u.v (V 30)) e).toNat = 2 ^ 28 - 1 := fun e he => by
+    obtain uM : ∀ e < 2, (vdword (u.v (V 30)) e).toNat = 2 ^ 28 - 1 := fun e he => by
       rw [uv _ (by decide) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))]
       exact tM e he
     refine WP.mono (chainStep_ok (b := 8) (k := n) (t := 29) (by omega_arith) (by omega_arith) uM
@@ -162,7 +162,7 @@ theorem chainLoop_ok {s : State} (r : Nat → Nat → Nat) (hr : ∀ k < 16, Lan
         rw [show 8 + n + 1 = 8 + (n + 1) by omega_arith, u8 (n + 1) (by omega_arith), t8 (n + 1) (by omega_arith) e he]
         dsimp only; rw [cn1 e he 8 (by simp)])
       (fun e he => bnd e he 8 (by simp))) fun w ⟨wa, wb, wm, wg, wr, ww, wv⟩ => ?_
-    have w0 : ∀ k < 8, w.v (V k) = u.v (V k) := fun k hk =>
+    obtain w0 : ∀ k < 8, w.v (V k) = u.v (V k) := fun k hk =>
       wv _ (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith)) (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
         (V_ne _ (by omega_arith) _ (by omega_arith) (by omega_arith))
     refine ⟨fun k hk e he => ?_, fun k hk e he => ?_, wm.trans (um.trans tm), wg.trans (ug.trans tg),
@@ -197,61 +197,61 @@ theorem wrap_ok {t : State} (r : Nat → Nat → Nat) (hb : ∀ e < 2, ∀ k < 1
     WP isa (.block wrap) t fun u =>
       (∀ k < 16, LaneIs u k (fun e => limbs28 (r e) k)) ∧ u.mem = t.mem ∧ u.gpr = t.gpr ∧ u.rd = t.rd ∧
       u.wr = t.wr ∧ (∀ v : VReg, (∀ n < 16, v ≠ V n) → v ≠ V 28 → v ≠ V 29 → u.v v = t.v v) := by
-  have ci : ∀ e < 2, ∀ b ∈ [0, 8], ∀ k ≤ 8, cin (r e) b k < 2 ^ 36 := fun e he b hb' k hk =>
+  obtain ci : ∀ e < 2, ∀ b ∈ [0, 8], ∀ k ≤ 8, cin (r e) b k < 2 ^ 36 := fun e he b hb' k hk =>
     cin_le (fun k hk => hb e he _ (by simp at hb'; omega_arith)) k hk
-  have c7 : ∀ e < 2, cval (r e) 0 7 / 2 ^ 28 < 2 ^ 36 := fun e he => by
+  obtain c7 : ∀ e < 2, cval (r e) 0 7 / 2 ^ 28 < 2 ^ 36 := fun e he => by
     have := ci e he 0 (by simp) 8 (by omega_arith); simp only [cin] at this; exact this
-  have c15 : ∀ e < 2, cval (r e) 8 7 / 2 ^ 28 < 2 ^ 36 := fun e he => by
+  obtain c15 : ∀ e < 2, cval (r e) 8 7 / 2 ^ 28 < 2 ^ 36 := fun e he => by
     have := ci e he 8 (by simp) 8 (by omega_arith); simp only [cin] at this; exact this
-  have n0_7 : V 0 ≠ V 7 := by decide
-  have n0_8 : V 0 ≠ V 8 := by decide
-  have n0_15 : V 0 ≠ V 15 := by decide
-  have n0_28 : V 0 ≠ V 28 := by decide
-  have n0_29 : V 0 ≠ V 29 := by decide
-  have n0_30 : V 0 ≠ V 30 := by decide
-  have n7_0 : V 7 ≠ V 0 := by decide
-  have n7_8 : V 7 ≠ V 8 := by decide
-  have n7_15 : V 7 ≠ V 15 := by decide
-  have n7_28 : V 7 ≠ V 28 := by decide
-  have n7_29 : V 7 ≠ V 29 := by decide
-  have n7_30 : V 7 ≠ V 30 := by decide
-  have n8_0 : V 8 ≠ V 0 := by decide
-  have n8_7 : V 8 ≠ V 7 := by decide
-  have n8_15 : V 8 ≠ V 15 := by decide
-  have n8_28 : V 8 ≠ V 28 := by decide
-  have n8_29 : V 8 ≠ V 29 := by decide
-  have n8_30 : V 8 ≠ V 30 := by decide
-  have n15_0 : V 15 ≠ V 0 := by decide
-  have n15_7 : V 15 ≠ V 7 := by decide
-  have n15_8 : V 15 ≠ V 8 := by decide
-  have n15_28 : V 15 ≠ V 28 := by decide
-  have n15_29 : V 15 ≠ V 29 := by decide
-  have n15_30 : V 15 ≠ V 30 := by decide
-  have n28_0 : V 28 ≠ V 0 := by decide
-  have n28_7 : V 28 ≠ V 7 := by decide
-  have n28_8 : V 28 ≠ V 8 := by decide
-  have n28_15 : V 28 ≠ V 15 := by decide
-  have n28_29 : V 28 ≠ V 29 := by decide
-  have n28_30 : V 28 ≠ V 30 := by decide
-  have n29_0 : V 29 ≠ V 0 := by decide
-  have n29_7 : V 29 ≠ V 7 := by decide
-  have n29_8 : V 29 ≠ V 8 := by decide
-  have n29_15 : V 29 ≠ V 15 := by decide
-  have n29_28 : V 29 ≠ V 28 := by decide
-  have n29_30 : V 29 ≠ V 30 := by decide
-  have n30_0 : V 30 ≠ V 0 := by decide
-  have n30_7 : V 30 ≠ V 7 := by decide
-  have n30_8 : V 30 ≠ V 8 := by decide
-  have n30_15 : V 30 ≠ V 15 := by decide
-  have n30_28 : V 30 ≠ V 28 := by decide
-  have n30_29 : V 30 ≠ V 29 := by decide
-  have l7 : ∀ e < 2, (vdword (t.v (V 7)) e).toNat = cval (r e) 0 7 := fun e he => by
+  obtain n0_7 : V 0 ≠ V 7 := by decide
+  obtain n0_8 : V 0 ≠ V 8 := by decide
+  obtain n0_15 : V 0 ≠ V 15 := by decide
+  obtain n0_28 : V 0 ≠ V 28 := by decide
+  obtain n0_29 : V 0 ≠ V 29 := by decide
+  obtain n0_30 : V 0 ≠ V 30 := by decide
+  obtain n7_0 : V 7 ≠ V 0 := by decide
+  obtain n7_8 : V 7 ≠ V 8 := by decide
+  obtain n7_15 : V 7 ≠ V 15 := by decide
+  obtain n7_28 : V 7 ≠ V 28 := by decide
+  obtain n7_29 : V 7 ≠ V 29 := by decide
+  obtain n7_30 : V 7 ≠ V 30 := by decide
+  obtain n8_0 : V 8 ≠ V 0 := by decide
+  obtain n8_7 : V 8 ≠ V 7 := by decide
+  obtain n8_15 : V 8 ≠ V 15 := by decide
+  obtain n8_28 : V 8 ≠ V 28 := by decide
+  obtain n8_29 : V 8 ≠ V 29 := by decide
+  obtain n8_30 : V 8 ≠ V 30 := by decide
+  obtain n15_0 : V 15 ≠ V 0 := by decide
+  obtain n15_7 : V 15 ≠ V 7 := by decide
+  obtain n15_8 : V 15 ≠ V 8 := by decide
+  obtain n15_28 : V 15 ≠ V 28 := by decide
+  obtain n15_29 : V 15 ≠ V 29 := by decide
+  obtain n15_30 : V 15 ≠ V 30 := by decide
+  obtain n28_0 : V 28 ≠ V 0 := by decide
+  obtain n28_7 : V 28 ≠ V 7 := by decide
+  obtain n28_8 : V 28 ≠ V 8 := by decide
+  obtain n28_15 : V 28 ≠ V 15 := by decide
+  obtain n28_29 : V 28 ≠ V 29 := by decide
+  obtain n28_30 : V 28 ≠ V 30 := by decide
+  obtain n29_0 : V 29 ≠ V 0 := by decide
+  obtain n29_7 : V 29 ≠ V 7 := by decide
+  obtain n29_8 : V 29 ≠ V 8 := by decide
+  obtain n29_15 : V 29 ≠ V 15 := by decide
+  obtain n29_28 : V 29 ≠ V 28 := by decide
+  obtain n29_30 : V 29 ≠ V 30 := by decide
+  obtain n30_0 : V 30 ≠ V 0 := by decide
+  obtain n30_7 : V 30 ≠ V 7 := by decide
+  obtain n30_8 : V 30 ≠ V 8 := by decide
+  obtain n30_15 : V 30 ≠ V 15 := by decide
+  obtain n30_28 : V 30 ≠ V 28 := by decide
+  obtain n30_29 : V 30 ≠ V 29 := by decide
+  obtain l7 : ∀ e < 2, (vdword (t.v (V 7)) e).toNat = cval (r e) 0 7 := fun e he => by
     rw [t0 7 (by omega_arith) e he]; simp [chainAt]
-  have l15 : ∀ e < 2, (vdword (t.v (V 15)) e).toNat = cval (r e) 8 7 := fun e he => by
+  obtain l15 : ∀ e < 2, (vdword (t.v (V 15)) e).toNat = cval (r e) 8 7 := fun e he => by
     rw [t8 7 (by omega_arith) e he]; simp [chainAt]
-  have l0 : ∀ e < 2, (vdword (t.v (V 0)) e).toNat = cval (r e) 0 0 % 2 ^ 28 := fun e he => by
+  obtain l0 : ∀ e < 2, (vdword (t.v (V 0)) e).toNat = cval (r e) 0 0 % 2 ^ 28 := fun e he => by
     rw [t0 0 (by omega_arith) e he]; simp [chainAt]
-  have l8 : ∀ e < 2, (vdword (t.v (V 8)) e).toNat = cval (r e) 8 0 % 2 ^ 28 := fun e he => by
+  obtain l8 : ∀ e < 2, (vdword (t.v (V 8)) e).toNat = cval (r e) 8 0 % 2 ^ 28 := fun e he => by
     rw [t8 0 (by omega_arith) e he]; simp [chainAt]
   simp only [wrap]
   refine WP.block_cons_iff.mpr ⟨_, exec_vo_of rfl, ?_⟩
@@ -332,9 +332,9 @@ theorem chain_val (r : Nat → Nat) (b : Nat) (n : Nat) :
   | zero => simp [psum, cin]
   | succ n ih =>
     simp only [psum, cin]
-    have e' : cval r b n % 2 ^ 28 + (cval r b n / 2 ^ 28) * 2 ^ 28 = r (b + n) + cin r b n := by
+    obtain e' : cval r b n % 2 ^ 28 + (cval r b n / 2 ^ 28) * 2 ^ 28 = r (b + n) + cin r b n := by
       simp only [cval]; omega_arith
-    have e : ((cval r b n % 2 ^ 28 : Nat) : Int) + ((cval r b n / 2 ^ 28 : Nat) : Int) * 2 ^ 28 =
+    obtain e : ((cval r b n % 2 ^ 28 : Nat) : Int) + ((cval r b n / 2 ^ 28 : Nat) : Int) * 2 ^ 28 =
         (r (b + n) : Int) + cin r b n := by exact_mod_cast e'
     rw [← ih]
     have : ((cval r b n % 2 ^ 28 : Nat) : Int) * (2 ^ 28) ^ n + ((cval r b n / 2 ^ 28 : Nat) : Int) * (2 ^ 28) ^ (n + 1) =
@@ -343,8 +343,8 @@ theorem chain_val (r : Nat → Nat) (b : Nat) (n : Nat) :
 
 theorem limbs28_val (r : Nat → Nat) :
     psum (limbs28 r) (2 ^ 28) 16 = psum r (2 ^ 28) 16 - (C15 r : Int) * ((2 ^ 28) ^ 16 - (2 ^ 28) ^ 8 - 1) := by
-  have h0 := chain_val r 0 8
-  have h8 := chain_val r 8 8
+  obtain h0 := chain_val r 0 8
+  obtain h8 := chain_val r 8 8
   have c7 : cin r 0 8 = C7 r := rfl
   have c15 : cin r 8 8 = C15 r := rfl
   rw [c7] at h0

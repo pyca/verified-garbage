@@ -54,47 +54,47 @@ theorem startF_ok {s : State} (h : Bx L s B Z len N n) {i : Nat} (hi : i + 8 ≤
   have hf16 := h.fits16
   have e16 : win = 16 := rfl
   have efs : fgSz = 16 := rfl
-  have r4 : fg0 len = 160 + 4 * (4 * kw len + 8) + 16 := by simp only [fg0, rv_arr]; rfl
-  have ke := kw_eq len
+  obtain r4 : fg0 len = 160 + 4 * (4 * kw len + 8) + 16 := by simp only [fg0, rv_arr]; rfl
+  obtain ke := kw_eq len
   unfold startF
   simp only [List.append_assoc]
   refine ptr_ok h.ws h.slots hZ (r := .ebx) (t := .edx) (by decide) (by decide) (by decide) (by decide)
     (by intro e; cases e) (by rw [rv_h0 rfl n (kw len / 2), ← fg0, r4]; omega_using [hn, hf16, ke]) fun s₁ K₁ m₁ p₁ => ?_
   rw [rv_h0 rfl n (kw len / 2), ← fg0] at p₁
   simp only [List.cons_append, List.nil_append]
-  have H₁ : Bx L s₁ B Z len N n := h.keep K₁ (by decide) (by decide) (o := 160) (c := 0)
+  obtain H₁ : Bx L s₁ B Z len N n := h.keep K₁ (by decide) (by decide) (o := 160) (c := 0)
     (by rw [m₁]; exact Outside.refl _ _ _ _) (Nat.le_refl _) (by omega_using [hf16])
   refine wp_movS (readSrc_ptr H₁.ws.rt p₁ (d := i) (by omega_using [hi, hf16, efs, r4, ke])) fun s₂ U₂ _ => ?_
-  have hs₂ := H₁.ws.ws.workspace.of_keeps U₂.keeps (by decide)
+  obtain hs₂ := H₁.ws.ws.workspace.of_keeps U₂.keeps (by decide)
   refine wp_storeS (hs₂.ea (by omega_using [hf16, e16])) (hs₂.write (d := win + 4) (n := 4) (by omega_using [hf16, e16])) fun s₃ U₃ => ?_
-  have K₃ : Keeps [.eax, .ebx, .edx] s s₃ :=
+  obtain K₃ : Keeps [.eax, .ebx, .edx] s s₃ :=
     ((K₁.mono (by decide)).trans (U₂.keeps.mono (by decide))).trans (U₃.keeps _)
-  have O₃ : Outside B (win + 4) 4 s.mem s₃.mem := by
+  obtain O₃ : Outside B (win + 4) 4 s.mem s₃.mem := by
     rw [U₃.mem, U₂.mem, m₁]; exact writeW32_outside _ _ _ (by omega_using [e16])
-  have H₃ : Bx L s₃ B Z len N n := h.keepLow K₃ (by decide) (by decide) O₃ (by decide)
-  have F₃ : w32 s₃.mem B (win + 4) = w32 s.mem B (fg0 len + i) := by
+  obtain H₃ : Bx L s₃ B Z len N n := h.keepLow K₃ (by decide) (by decide) O₃ (by decide)
+  obtain F₃ : w32 s₃.mem B (win + 4) = w32 s.mem B (fg0 len + i) := by
     rw [U₃.mem, w32_write_self, U₂.gpr, m₁]
-  have p₃ : PtrAt s₃ B .ebx (fg0 len) := by
+  obtain p₃ : PtrAt s₃ B .ebx (fg0 len) := by
     rw [PtrAt, (U₃.keeps []).1 _ (by decide), U₂.other _ (by decide)]; exact p₁
   refine wp_movS (readSrc_ptr H₃.ws.rt p₃ (d := i + 4) (by omega_using [hi, hf16, efs, r4, ke])) fun s₅ U₅ _ => ?_
-  have hs₅ := H₃.ws.ws.workspace.of_keeps U₅.keeps (by decide)
+  obtain hs₅ := H₃.ws.ws.workspace.of_keeps U₅.keeps (by decide)
   refine wp_storeS (hs₅.ea (by omega_using [hf16, e16])) (hs₅.write (d := win + 8) (n := 4) (by omega_using [hf16, e16])) fun s₆ U₆ => ?_
-  have K₆ : Keeps [.eax, .ebx, .edx] s₃ s₆ := (U₅.keeps.mono (by decide)).trans (U₆.keeps _)
-  have O₆ : Outside B (win + 8) 4 s₃.mem s₆.mem := by
+  obtain K₆ : Keeps [.eax, .ebx, .edx] s₃ s₆ := (U₅.keeps.mono (by decide)).trans (U₆.keeps _)
+  obtain O₆ : Outside B (win + 8) 4 s₃.mem s₆.mem := by
     rw [U₆.mem, U₅.mem]; exact writeW32_outside _ _ _ (by omega_using [e16])
-  have H₆ : Bx L s₆ B Z len N n := H₃.keepLow K₆ (by decide) (by decide) O₆ (by decide)
-  have G₆ : w32 s₆.mem B (win + 8) = w32 s.mem B (fg0 len + (i + 4)) := by
+  obtain H₆ : Bx L s₆ B Z len N n := H₃.keepLow K₆ (by decide) (by decide) O₆ (by decide)
+  obtain G₆ : w32 s₆.mem B (win + 8) = w32 s.mem B (fg0 len + (i + 4)) := by
     rw [U₆.mem, w32_write_self, U₅.gpr, ← O₃.w32 (d := fg0 len + (i + 4)) (by omega_using [e16, r4]) (by omega_using [hi, hn, hf16, efs, r4, ke])]
   -- The identity matrix.
   refine WP.mono (VG.Proof.Weierstrass.X86.Inv.setMatrix_ok H₆.ws.ws.workspace (dst := win + 12) (by omega_using [hf16, e16]))
     fun u ⟨U, V, Q, R, K₇, O₇⟩ => ?_
-  have H₇ : Bx L u B Z len N n := H₆.keepLow K₇ (by decide) (by decide) O₇ (by decide)
+  obtain H₇ : Bx L u B Z len N n := H₆.keepLow K₇ (by decide) (by decide) O₇ (by decide)
   refine ⟨H₇, ?_, ((K₃.trans K₆).trans (K₇.mono (by decide))).mono (by decide), ?_⟩
   · have D : w32 u.mem B win = w32 s.mem B win := by
       rw [O₇.w32 (by omega_using []) (by omega_using [e16]), O₆.w32 (by omega_using []) (by omega_using [e16]), O₃.w32 (by omega_using []) (by omega_using [e16])]
-    have F : w32 u.mem B (win + 4) = w32 s.mem B (fg0 len + i) := by
+    obtain F : w32 u.mem B (win + 4) = w32 s.mem B (fg0 len + i) := by
       rw [O₇.w32 (by omega_using []) (by omega_using [e16]), O₆.w32 (by omega_using []) (by omega_using [e16]), F₃]
-    have G : w32 u.mem B (win + 8) = w32 s.mem B (fg0 len + (i + 4)) := by
+    obtain G : w32 u.mem B (win + 8) = w32 s.mem B (fg0 len + (i + 4)) := by
       rw [O₇.w32 (by omega_using []) (by omega_using [e16]), G₆]
     simp only [wordState, atWord, Divstep.W32.WSt.mk.injEq, Nat.reduceMul, Nat.add_zero]
     refine ⟨BitVec.eq_of_toNat_eq D, BitVec.eq_of_toNat_eq F, BitVec.eq_of_toNat_eq G,
@@ -129,7 +129,7 @@ theorem maskStep_ok {s : State} {W : Addr} {bytes src dst : Nat} (ws : Ws s W by
   obtain ⟨hdi, aS, rS⟩ := ptrRead ws di (d := src) (by omega_using [hs])
   obtain ⟨-, aD, -⟩ := ptrRead ws di (d := dst) (by omega_using [hd])
   simp only [Nat.zero_add] at aS rS aD
-  have wD := ws_write ws hd
+  obtain wD := ws_write ws hd
   refine WP.mono (WP.keeps [.eax] (Q := fun u =>
       u.mem = s.mem.writeW (off W dst) (maskW (s.mem.readW (off W src) 32))) ?_ rfl) fun u ⟨h, k⟩ => ⟨h, k⟩
   xrun [signEax, sc, hdi, aS, rS, aD, wD, List.cons_append, List.nil_append]
@@ -142,8 +142,8 @@ theorem coefMasks_ok {s : State} (h : Bx L s B Z len N n) :
   have hn := h.nowrap
   have hf16 := h.fits16
   have scr := h.ws.ws.workspace
-  have ws : Ws s B Z := ⟨scr.wr, scr.nowrap⟩
-  have di : PtrAt s B .edi 0 := by rw [PtrAt, RtWs.edi_eq h.ws, BitVec.toNat_ofNat]; omega_using []
+  obtain ws : Ws s B Z := ⟨scr.wr, scr.nowrap⟩
+  obtain di : PtrAt s B .edi 0 := by rw [PtrAt, RtWs.edi_eq h.ws, BitVec.toNat_ofNat]; omega_using []
   have e16 : win = 16 := rfl
   have eM : sMu = 160 := rfl
   have code : coefMasks = ([.mov .eax (.mem (sc (win + 12 + 4 * 0)))] ++ signEax ++ [.store (sc (sMu + 4 * 0)) .eax]) ++
@@ -153,33 +153,33 @@ theorem coefMasks_ok {s : State} (h : Bx L s B Z len N n) :
   rw [code, WP.block_append_iff]
   refine WP.mono (maskStep_ok ws di (by omega_using [hf16, e16]) (by omega_using [hf16, eM])) fun u₁ ⟨m₁, k₁⟩ => ?_
   rw [WP.block_append_iff]
-  have ws₁ := ws.of_keeps k₁
-  have di₁ : PtrAt u₁ B .edi 0 := by rw [PtrAt, k₁.1 _ (by decide)]; exact di
+  obtain ws₁ := ws.of_keeps k₁
+  obtain di₁ : PtrAt u₁ B .edi 0 := by rw [PtrAt, k₁.1 _ (by decide)]; exact di
   refine WP.mono (maskStep_ok ws₁ di₁ (by omega_using [hf16, e16]) (by omega_using [hf16, eM])) fun u₂ ⟨m₂, k₂⟩ => ?_
   rw [WP.block_append_iff]
-  have ws₂ := ws₁.of_keeps k₂
-  have di₂ : PtrAt u₂ B .edi 0 := by rw [PtrAt, k₂.1 _ (by decide)]; exact di₁
+  obtain ws₂ := ws₁.of_keeps k₂
+  obtain di₂ : PtrAt u₂ B .edi 0 := by rw [PtrAt, k₂.1 _ (by decide)]; exact di₁
   refine WP.mono (maskStep_ok ws₂ di₂ (by omega_using [hf16, e16]) (by omega_using [hf16, eM])) fun u₃ ⟨m₃, k₃⟩ => ?_
-  have ws₃ := ws₂.of_keeps k₃
-  have di₃ : PtrAt u₃ B .edi 0 := by rw [PtrAt, k₃.1 _ (by decide)]; exact di₂
+  obtain ws₃ := ws₂.of_keeps k₃
+  obtain di₃ : PtrAt u₃ B .edi 0 := by rw [PtrAt, k₃.1 _ (by decide)]; exact di₂
   refine WP.mono (maskStep_ok ws₃ di₃ (by omega_using [hf16, e16]) (by omega_using [hf16, eM])) fun u ⟨m₄, k₄⟩ => ?_
-  have K : Keeps [.eax] s u := ((k₁.trans k₂).trans k₃).trans k₄
-  have O : Outside B sMu 16 s.mem u.mem := fun x hx => by
+  obtain K : Keeps [.eax] s u := ((k₁.trans k₂).trans k₃).trans k₄
+  obtain O : Outside B sMu 16 s.mem u.mem := fun x hx => by
     rw [m₄, m₃, m₂, m₁]
     rw [writeW32_outside _ _ _ (by omega_using [eM]) x (by omega_using [hx]), writeW32_outside _ _ _ (by omega_using [eM]) x (by omega_using [hx]),
       writeW32_outside _ _ _ (by omega_using [eM]) x (by omega_using [hx]), writeW32_outside _ _ _ (by omega_using [eM]) x (by omega_using [hx])]
   refine ⟨h.keep K (by decide) (by decide) O (by decide) (by omega_using [hf16, eM]), ?_, O, K⟩
   -- The masks, through the later stores.
-  have src : ∀ k < 4, ∀ {m : Mem}, Outside B sMu 16 s.mem m →
+  obtain src : ∀ k < 4, ∀ {m : Mem}, Outside B sMu 16 s.mem m →
       m.readW (off B (win + 12 + 4 * k)) 32 = s.mem.readW (off B (win + 12 + 4 * k)) 32 := fun k hk m hm =>
     BitVec.eq_of_toNat_eq (hm.w32 (.inl (by omega_using [e16, eM, hk])) (by omega_using [e16, hk]))
-  have O₁ : Outside B sMu 16 s.mem u₁.mem := fun x hx => by
+  obtain O₁ : Outside B sMu 16 s.mem u₁.mem := fun x hx => by
     rw [m₁, writeW32_outside _ _ _ (by omega_using [eM]) x (by omega_using [hx])]
-  have O₂ : Outside B sMu 16 s.mem u₂.mem := fun x hx => by
+  obtain O₂ : Outside B sMu 16 s.mem u₂.mem := fun x hx => by
     rw [m₂, writeW32_outside _ _ _ (by omega_using [eM]) x (by omega_using [hx]), O₁ x hx]
-  have O₃ : Outside B sMu 16 s.mem u₃.mem := fun x hx => by
+  obtain O₃ : Outside B sMu 16 s.mem u₃.mem := fun x hx => by
     rw [m₃, writeW32_outside _ _ _ (by omega_using [eM]) x (by omega_using [hx]), O₂ x hx]
-  have ne : ∀ {m : Mem} {d d' : Nat} (v : BitVec 32), d + 4 ≤ d' ∨ d' + 4 ≤ d → d + 4 ≤ Z → d' + 4 ≤ Z →
+  obtain ne : ∀ {m : Mem} {d d' : Nat} (v : BitVec 32), d + 4 ≤ d' ∨ d' + 4 ≤ d → d + 4 ≤ Z → d' + 4 ≤ Z →
       (m.writeW (off B d') v).readW (off B d) 32 = m.readW (off B d) 32 := fun v hd h1 h2 =>
     BitVec.eq_of_toNat_eq (w32_write_ne (size := Z) hn h2 h1 hd v)
   intro j hj
@@ -223,7 +223,7 @@ theorem mdStep_ok {s : State} {W : Addr} {bytes cu cv dst : Nat} (ws : Ws s W by
   obtain ⟨-, aI, rI⟩ := ptrRead ws di (d := win + 28) (by omega_using [hi])
   obtain ⟨-, aD, -⟩ := ptrRead ws di (d := dst) (by omega_using [hd])
   simp only [Nat.zero_add] at aU rU aV rV aS rS aT rT aI rI aD
-  have wD := ws_write ws hd
+  obtain wD := ws_write ws hd
   refine WP.mono (WP.keeps [.eax, .edx, .ebp, .esi] (Q := fun u =>
       u.mem = s.mem.writeW (off W dst) (mdWord (s.mem.readW (off W cu) 32) (s.mem.readW (off W cv) 32)
         (s.mem.readW (off W sMd) 32) (s.mem.readW (off W (sMd + 4)) 32) (s.gpr .ebx) (s.gpr .ecx)
@@ -263,7 +263,7 @@ theorem maskStepR_ok {s : State} {W : Addr} {bytes e d dst : Nat} (ws : Ws s W b
   obtain ⟨hsi, aS, rS⟩ := ptrRead ws si (d := d) (by omega_using [hs])
   obtain ⟨hdi, aD, -⟩ := ptrRead ws di (d := dst) (by omega_using [hd])
   simp only [Nat.zero_add] at aD
-  have wD := ws_write ws hd
+  obtain wD := ws_write ws hd
   refine WP.mono (WP.keeps [.eax] (Q := fun u =>
       u.mem = s.mem.writeW (off W dst) (maskW (s.mem.readW (off W (e + d)) 32))) ?_ rfl) fun u ⟨h, k⟩ => ⟨h, k⟩
   xrun [signEax, sc, hsi, hdi, aS, rS, aD, wD, List.cons_append, List.nil_append]
@@ -315,72 +315,72 @@ theorem mdme_ok {s : State} (h : Bx L s B Z len N) {dx : Nat} (hdx : dx + 8 ≤ 
   have hn := h.nowrap
   have hZ := h.halfZ
   have hf16 := h.fits16
-  have ke := kw_eq len
-  have e16 : win = 16 := rfl; have eD : sMd = 184 := rfl; have eM : sMm = 200 := rfl
-  have eds : deSz = 20 := rfl; have eH : halfSlot = 96 := rfl
-  have r11 : de0 len = 160 + 11 * (4 * kw len + 8) + 20 := by simp only [de0, rv_arr]; rfl
+  obtain ke := kw_eq len
+  obtain e16 : win = 16 := rfl; have eD : sMd = 184 := rfl; have eM : sMm = 200 := rfl
+  obtain eds : deSz = 20 := rfl; have eH : halfSlot = 96 := rfl
+  obtain r11 : de0 len = 160 + 11 * (4 * kw len + 8) + 20 := by simp only [de0, rv_arr]; rfl
   have scr := h.ws.ws.workspace
-  have ws : Ws s B Z := ⟨scr.wr, scr.nowrap⟩
-  have di : PtrAt s B .edi 0 := by rw [PtrAt, RtWs.edi_eq h.ws, BitVec.toNat_ofNat]; omega_using []
+  obtain ws : Ws s B Z := ⟨scr.wr, scr.nowrap⟩
+  obtain di : PtrAt s B .edi 0 := by rw [PtrAt, RtWs.edi_eq h.ws, BitVec.toNat_ofNat]; omega_using []
   rw [mdme_code]
   refine ptr_ok h.ws h.slots hZ (r := .esi) (t := .edx) (by decide) (by decide) (by decide) (by decide)
     (by intro e; cases e) (by rw [← de0, r11]; omega_using [hn, hf16, ke]) fun u K₁ m₁ p₁ => ?_
   rw [← de0] at p₁
-  have wsu := ws.of_keeps K₁
-  have diu : PtrAt u B .edi 0 := by rw [PtrAt, K₁.1 _ (by decide)]; exact di
-  have hh : u.mem.readW (off B halfSlot) 32 = BitVec.ofNat 32 (4 * nw len) := by
+  obtain wsu := ws.of_keeps K₁
+  obtain diu : PtrAt u B .edi 0 := by rw [PtrAt, K₁.1 _ (by decide)]; exact di
+  obtain hh : u.mem.readW (off B halfSlot) 32 = BitVec.ofNat 32 (4 * nw len) := by
     rw [m₁, h.slots.halfW]
   rw [WP.block_append_iff]
   refine WP.mono (loadsDE_ok (n := nw len) wsu diu p₁ hh (by omega_using [hZ]) (by omega_using [hdx, hf16, ke, eds, r11])) fun u₂ ⟨b₂, c₂, p₂, m₂, K₂⟩ => ?_
-  have ws₂ := wsu.of_keeps K₂
-  have di₂ : PtrAt u₂ B .edi 0 := by rw [PtrAt, K₂.1 _ (by decide)]; exact diu
+  obtain ws₂ := wsu.of_keeps K₂
+  obtain di₂ : PtrAt u₂ B .edi 0 := by rw [PtrAt, K₂.1 _ (by decide)]; exact diu
   rw [WP.block_append_iff]
   refine WP.mono (maskStepR_ok ws₂ di₂ p₂ (d := dx) (dst := sMd) (by omega_using [hdx, hf16, ke, eds, r11]) (by omega_using [hf16, eD])) fun u₃ ⟨m₃, K₃⟩ => ?_
-  have ws₃ := ws₂.of_keeps K₃
-  have di₃ : PtrAt u₃ B .edi 0 := by rw [PtrAt, K₃.1 _ (by decide)]; exact di₂
-  have p₃ : PtrAt u₃ B .esi (de0 len + 20 * nw len) := by rw [PtrAt, K₃.1 _ (by decide)]; exact p₂
+  obtain ws₃ := ws₂.of_keeps K₃
+  obtain di₃ : PtrAt u₃ B .edi 0 := by rw [PtrAt, K₃.1 _ (by decide)]; exact di₂
+  obtain p₃ : PtrAt u₃ B .esi (de0 len + 20 * nw len) := by rw [PtrAt, K₃.1 _ (by decide)]; exact p₂
   rw [WP.block_append_iff]
   refine WP.mono (maskStepR_ok ws₃ di₃ p₃ (d := dx + 4) (dst := sMd + 4) (by omega_using [hdx, hf16, ke, eds, r11]) (by omega_using [hf16, eD]))
     fun u₄ ⟨m₄, K₄⟩ => ?_
-  have ws₄ := ws₃.of_keeps K₄
-  have di₄ : PtrAt u₄ B .edi 0 := by rw [PtrAt, K₄.1 _ (by decide)]; exact di₃
+  obtain ws₄ := ws₃.of_keeps K₄
+  obtain di₄ : PtrAt u₄ B .edi 0 := by rw [PtrAt, K₄.1 _ (by decide)]; exact di₃
   rw [WP.block_append_iff]
   refine WP.mono (mdStep_ok ws₄ di₄ (cu := win + 12 + 8 * 0) (cv := win + 16 + 8 * 0) (dst := sMd + 8 + 4 * 0)
     (by omega_using [hf16, e16]) (by omega_using [hf16, e16]) (by omega_using [hf16, eD]) (by omega_using [hf16, eD]) (by omega_using [hf16, e16])) fun u₅ ⟨m₅, K₅⟩ => ?_
-  have ws₅ := ws₄.of_keeps K₅
-  have di₅ : PtrAt u₅ B .edi 0 := by rw [PtrAt, K₅.1 _ (by decide)]; exact di₄
+  obtain ws₅ := ws₄.of_keeps K₅
+  obtain di₅ : PtrAt u₅ B .edi 0 := by rw [PtrAt, K₅.1 _ (by decide)]; exact di₄
   rw [WP.block_append_iff]
   refine WP.mono (mdStep_ok ws₅ di₅ (cu := win + 12 + 8 * 1) (cv := win + 16 + 8 * 1) (dst := sMd + 8 + 4 * 1)
     (by omega_using [hf16, e16]) (by omega_using [hf16, e16]) (by omega_using [hf16, eD]) (by omega_using [hf16, eD]) (by omega_using [hf16, e16])) fun u₆ ⟨m₆, K₆⟩ => ?_
-  have ws₆ := ws₅.of_keeps K₆
-  have di₆ : PtrAt u₆ B .edi 0 := by rw [PtrAt, K₆.1 _ (by decide)]; exact di₅
+  obtain ws₆ := ws₅.of_keeps K₆
+  obtain di₆ : PtrAt u₆ B .edi 0 := by rw [PtrAt, K₆.1 _ (by decide)]; exact di₅
   rw [WP.block_append_iff]
   refine WP.mono (maskStep_ok ws₆ di₆ (src := sMd + 8) (dst := sMm) (by omega_using [hf16, eD]) (by omega_using [hf16, eM])) fun u₇ ⟨m₇, K₇⟩ => ?_
-  have ws₇ := ws₆.of_keeps K₇
-  have di₇ : PtrAt u₇ B .edi 0 := by rw [PtrAt, K₇.1 _ (by decide)]; exact di₆
+  obtain ws₇ := ws₆.of_keeps K₇
+  obtain di₇ : PtrAt u₇ B .edi 0 := by rw [PtrAt, K₇.1 _ (by decide)]; exact di₆
   rw [WP.block_append_iff]
   refine WP.mono (maskStep_ok ws₇ di₇ (src := sMd + 12) (dst := sMm + 4) (by omega_using [hf16, eD]) (by omega_using [hf16, eM]))
     fun w ⟨m₈, K₈⟩ => ?_
   -- The frame.
-  have O : Outside B sMd 24 s.mem w.mem := fun x hx => by
+  obtain O : Outside B sMd 24 s.mem w.mem := fun x hx => by
     rw [m₈, writeW32_outside _ _ _ (by omega_using [eM]) x (by omega_using [eD, eM, hx]), m₇, writeW32_outside _ _ _ (by omega_using [eM]) x (by omega_using [eD, eM, hx]),
       m₆, writeW32_outside _ _ _ (by omega_using [eD]) x (by omega_using [hx]), m₅, writeW32_outside _ _ _ (by omega_using [eD]) x (by omega_using [hx]),
       m₄, writeW32_outside _ _ _ (by omega_using [eD]) x (by omega_using [hx]), m₃, writeW32_outside _ _ _ (by omega_using [eD]) x (by omega_using [hx]),
       m₂, m₁]
-  have KK : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s w := by
+  obtain KK : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s w := by
     refine (K₁.mono (by decide)).trans ((K₂.mono (by decide)).trans ((K₃.mono (by decide)).trans
       ((K₄.mono (by decide)).trans ((K₅.mono (by decide)).trans ((K₆.mono (by decide)).trans
       ((K₇.mono (by decide)).trans (K₈.mono (by decide))))))))
-  have O0 : Outside B 0 Z s.mem w.mem := O.mono (Nat.zero_le _) (by omega_using [hf16, eD])
+  obtain O0 : Outside B 0 Z s.mem w.mem := O.mono (Nat.zero_le _) (by omega_using [hf16, eD])
   unfold restoreEdi
   refine wp_movS (h.ws.wsArg.keep KK (by decide) O0).readSrc fun t₁ U _ => WP.block_nil ?_
-  have K' : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t₁ :=
+  obtain K' : Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t₁ :=
     VG.Proof.Bignum.X86.PublicRt.Keeps.drop_edi (rs := [.eax, .ebx, .ecx, .edx, .ebp, .esi])
       ((KK.mono (by decide)).trans (U.keeps.mono (by decide))) (U.gpr.trans (RtWs.edi_eq h.ws).symm)
-  have O' : Outside B sMd 24 s.mem t₁.mem := by rw [U.mem]; exact O
+  obtain O' : Outside B sMd 24 s.mem t₁.mem := by rw [U.mem]; exact O
   refine ⟨h.keep K' (by decide) (by decide) O' (by omega_using [eD]) (by omega_using [hf16, eD]), O', K', ?_⟩
   -- The values.
-  have ne : ∀ {m : Mem} {d d' : Nat} (v : BitVec 32), d + 4 ≤ d' ∨ d' + 4 ≤ d → d + 4 ≤ Z → d' + 4 ≤ Z →
+  obtain ne : ∀ {m : Mem} {d d' : Nat} (v : BitVec 32), d + 4 ≤ d' ∨ d' + 4 ≤ d → d + 4 ≤ Z → d' + 4 ≤ Z →
       (m.writeW (off B d') v).readW (off B d) 32 = m.readW (off B d) 32 := fun v hd h1 h2 =>
     BitVec.eq_of_toNat_eq (w32_write_ne (size := Z) hn h2 h1 hd v)
   rw [U.mem]
@@ -388,44 +388,44 @@ theorem mdme_ok {s : State} (h : Bx L s B Z len N) {dx : Nat} (hdx : dx + 8 ≤ 
   rw [show sMd + 8 + 4 = sMd + 12 from rfl, show win + 12 + 8 = win + 20 from rfl,
     show win + 16 + 8 = win + 24 from rfl] at m₆
   -- `ebx`, `ecx` at the `md` steps: `d`, `e`'s low words.
-  have eb₄ : u₄.gpr .ebx = s.mem.readW (off B (de0 len + dx)) 32 := by
+  obtain eb₄ : u₄.gpr .ebx = s.mem.readW (off B (de0 len + dx)) 32 := by
     rw [K₄.1 _ (by decide), K₃.1 _ (by decide), b₂, m₁]
-  have ec₄ : u₄.gpr .ecx = s.mem.readW (off B (de0 len + (dx + 4))) 32 := by
+  obtain ec₄ : u₄.gpr .ecx = s.mem.readW (off B (de0 len + (dx + 4))) 32 := by
     rw [K₄.1 _ (by decide), K₃.1 _ (by decide), c₂, m₁]
-  have eb₅ : u₅.gpr .ebx = u₄.gpr .ebx := K₅.1 _ (by decide)
-  have ec₅ : u₅.gpr .ecx = u₄.gpr .ecx := K₅.1 _ (by decide)
+  obtain eb₅ : u₅.gpr .ebx = u₄.gpr .ebx := K₅.1 _ (by decide)
+  obtain ec₅ : u₅.gpr .ecx = u₄.gpr .ecx := K₅.1 _ (by decide)
   -- Reads of what the steps do not write.
-  have O₄ : Outside B sMd 24 s.mem u₄.mem := fun x hx => by
+  obtain O₄ : Outside B sMd 24 s.mem u₄.mem := fun x hx => by
     rw [m₄, writeW32_outside _ _ _ (by omega_using [eD]) x (by omega_using [hx]), m₃, writeW32_outside _ _ _ (by omega_using [eD]) x (by omega_using [hx]), m₂, m₁]
-  have O₅ : Outside B sMd 24 s.mem u₅.mem := fun x hx => by
+  obtain O₅ : Outside B sMd 24 s.mem u₅.mem := fun x hx => by
     rw [m₅, writeW32_outside _ _ _ (by omega_using [eD]) x (by omega_using [hx]), O₄ x hx]
-  have rd : ∀ {m : Mem}, Outside B sMd 24 s.mem m → ∀ d, d + 4 ≤ sMd ∨ sMd + 24 ≤ d → d + 4 ≤ Z →
+  obtain rd : ∀ {m : Mem}, Outside B sMd 24 s.mem m → ∀ d, d + 4 ≤ sMd ∨ sMd + 24 ≤ d → d + 4 ≤ Z →
       m.readW (off B d) 32 = s.mem.readW (off B d) 32 := fun hm d hd hdz =>
     BitVec.eq_of_toNat_eq (hm.w32 hd (by omega_using [hn, hdz]))
-  have sd₄ : u₄.mem.readW (off B sMd) 32 = maskW (s.mem.readW (off B (de0 len + 20 * nw len + dx)) 32) := by
+  obtain sd₄ : u₄.mem.readW (off B sMd) 32 = maskW (s.mem.readW (off B (de0 len + 20 * nw len + dx)) 32) := by
     rw [m₄, ne _ (by omega_using []) (by omega_using [hf16, eD]) (by omega_using [hf16, eD]), m₃, Mem.readW_writeW_self32, m₂, m₁]
-  have se₄ : u₄.mem.readW (off B (sMd + 4)) 32 =
+  obtain se₄ : u₄.mem.readW (off B (sMd + 4)) 32 =
       maskW (s.mem.readW (off B (de0 len + 20 * nw len + (dx + 4))) 32) := by
     rw [m₄, Mem.readW_writeW_self32, m₃, ne _ (by omega_using [eD, r11]) (by omega_using [hdx, hf16, ke, eds, r11]) (by omega_using [hf16, eD]), m₂, m₁]
-  have md₅ : u₅.mem.readW (off B (sMd + 8)) 32 = mdWord (s.mem.readW (off B (win + 12)) 32) (s.mem.readW (off B (win + 16)) 32)
+  obtain md₅ : u₅.mem.readW (off B (sMd + 8)) 32 = mdWord (s.mem.readW (off B (win + 12)) 32) (s.mem.readW (off B (win + 16)) 32)
       (maskW (s.mem.readW (off B (de0 len + 20 * nw len + dx)) 32))
       (maskW (s.mem.readW (off B (de0 len + 20 * nw len + (dx + 4))) 32))
       (s.mem.readW (off B (de0 len + dx)) 32) (s.mem.readW (off B (de0 len + (dx + 4))) 32)
       (s.mem.readW (off B (win + 28)) 32) := by
     rw [m₅, Mem.readW_writeW_self32, sd₄, se₄, eb₄, ec₄, rd O₄ _ (by omega_using [e16, eD]) (by omega_using [hf16, e16]), rd O₄ _ (by omega_using [e16, eD]) (by omega_using [hf16, e16]),
       rd O₄ (win + 28) (by omega_using [e16, eD]) (by omega_using [hf16, e16])]
-  have me₆ : u₆.mem.readW (off B (sMd + 12)) 32 = mdWord (s.mem.readW (off B (win + 20)) 32) (s.mem.readW (off B (win + 24)) 32)
+  obtain me₆ : u₆.mem.readW (off B (sMd + 12)) 32 = mdWord (s.mem.readW (off B (win + 20)) 32) (s.mem.readW (off B (win + 24)) 32)
       (maskW (s.mem.readW (off B (de0 len + 20 * nw len + dx)) 32))
       (maskW (s.mem.readW (off B (de0 len + 20 * nw len + (dx + 4))) 32))
       (s.mem.readW (off B (de0 len + dx)) 32) (s.mem.readW (off B (de0 len + (dx + 4))) 32)
       (s.mem.readW (off B (win + 28)) 32) := by
-    have sd₅ : u₅.mem.readW (off B sMd) 32 = u₄.mem.readW (off B sMd) 32 := by
+    obtain sd₅ : u₅.mem.readW (off B sMd) 32 = u₄.mem.readW (off B sMd) 32 := by
       rw [m₅, ne _ (by omega_using []) (by omega_using [hf16, eD]) (by omega_using [hf16, eD])]
-    have se₅ : u₅.mem.readW (off B (sMd + 4)) 32 = u₄.mem.readW (off B (sMd + 4)) 32 := by
+    obtain se₅ : u₅.mem.readW (off B (sMd + 4)) 32 = u₄.mem.readW (off B (sMd + 4)) 32 := by
       rw [m₅, ne _ (by omega_using []) (by omega_using [hf16, eD]) (by omega_using [hf16, eD])]
     rw [m₆, Mem.readW_writeW_self32, sd₅, se₅, sd₄, se₄, eb₅, ec₅, eb₄, ec₄, rd O₅ (win + 20) (by omega_using [e16, eD]) (by omega_using [hf16, e16]),
       rd O₅ (win + 24) (by omega_using [e16, eD]) (by omega_using [hf16, e16]), rd O₅ (win + 28) (by omega_using [e16, eD]) (by omega_using [hf16, e16])]
-  have md₆ : u₆.mem.readW (off B (sMd + 8)) 32 = u₅.mem.readW (off B (sMd + 8)) 32 := by
+  obtain md₆ : u₆.mem.readW (off B (sMd + 8)) 32 = u₅.mem.readW (off B (sMd + 8)) 32 := by
     rw [m₆, ne _ (by omega_using []) (by omega_using [hf16, eD]) (by omega_using [hf16, eD])]
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [m₈, ne _ (by omega_using [eD, eM]) (by omega_using [hf16, eD]) (by omega_using [hf16, eM]), m₇, ne _ (by omega_using [eD, eM]) (by omega_using [hf16, eD]) (by omega_using [hf16, eM]), m₆,

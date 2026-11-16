@@ -79,9 +79,9 @@ theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
   generalize hK : s.gpr .x0 = K at *
   generalize hCtx : s.gpr .x1 = Ctx at *
   generalize hW : s.gpr .x2 = W at *
-  have pW : Covers [⟨W, 768⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
-  have pC : Covers [⟨Ctx, 256⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
-  have pK : Covers [⟨K, 16⟩] (s.rd ++ s.wr) := by rw [hrd]; exact covers_of_mem (by simp)
+  obtain pW : Covers [⟨W, 768⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
+  obtain pC : Covers [⟨Ctx, 256⟩] s.wr := by rw [hwr]; exact covers_of_mem (by simp)
+  obtain pK : Covers [⟨K, 16⟩] (s.rd ++ s.wr) := by rw [hrd]; exact covers_of_mem (by simp)
   -- The registers saved, the context and `W` to `x21` and `x19`.
   obtain ⟨s₁, run₁, g₁, sp₁, rd₁, wr₁, m₁⟩ := save_ok s .x2 hW pW
   obtain ⟨s₂, run₂, x19₂, x21₂, x0₂, x1₂, og₂, sp₂, m₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa
@@ -95,29 +95,29 @@ theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
     · simp [gpr_write, g₁, hK]
     · simp [gpr_write, g₁, hCtx]
   refine WP.seq (WP.block_append (WP.of_runBlock ⟨s₁, run₁, WP.of_runBlock ⟨s₂, run₂, ?_⟩⟩))
-  have rd₂' : s₂.rd = s.rd := rd₂.trans rd₁
-  have wr₂' : s₂.wr = s.wr := wr₂.trans wr₁
-  have sp₂' : s₂.sp = s.sp := sp₂.trans sp₁
+  obtain rd₂' : s₂.rd = s.rd := rd₂.trans rd₁
+  obtain wr₂' : s₂.wr = s.wr := wr₂.trans wr₁
+  obtain sp₂' : s₂.sp = s.sp := sp₂.trans sp₁
   -- The key schedule.
-  have kc : KeyCall s₂ K Ctx := by
+  obtain kc : KeyCall s₂ K Ctx := by
     refine ⟨x0₂, x1₂, by rw [sp₂']; exact hsp, fK, by omega_arith, d_kc.sub_right (Region.sub_prefix (by decide)),
       by rw [sp₂']; exact sK, by rw [sp₂']; exact sC.sub_right (Region.sub_prefix (by decide)), ?_, ?_⟩
     · rw [rd₂', wr₂']
       exact covers_cons pK (covers_left (covers_prefix pC (by decide)))
     · rw [wr₂']; exact covers_prefix pC (by decide)
   refine WP.seq (WP.mono (key_call v.ctr.key kc) fun s₃ g => ?_)
-  have g19 : s₃.gpr .x19 = W := by rw [g.saved .x19 (by decide) (by decide), x19₂]
-  have g21 : s₃.gpr .x21 = Ctx := by rw [g.saved .x21 (by decide) (by decide), x21₂]
-  have rd₃ : s₃.rd = s.rd := g.rd.trans rd₂'
-  have wr₃ : s₃.wr = s.wr := g.wr.trans wr₂'
-  have sp₃ : s₃.sp = s.sp := g.sp.trans sp₂'
+  obtain g19 : s₃.gpr .x19 = W := by rw [g.saved .x19 (by decide) (by decide), x19₂]
+  obtain g21 : s₃.gpr .x21 = Ctx := by rw [g.saved .x21 (by decide) (by decide), x21₂]
+  obtain rd₃ : s₃.rd = s.rd := g.rd.trans rd₂'
+  obtain wr₃ : s₃.wr = s.wr := g.wr.trans wr₂'
+  obtain sp₃ : s₃.sp = s.sp := g.sp.trans sp₂'
   have gf := g.frame
   rw [sp₂'] at gf
   -- A zero block at the context's `H` and a zero counter block in `T`.
-  have w₁ := in_off pC (show 240 + 8 ≤ 256 by decide) (by decide)
-  have w₂ := in_off pC (show 248 + 8 ≤ 256 by decide) (by decide)
-  have w₃ := in_off pW (show 96 + 8 ≤ 768 by decide) (by decide)
-  have w₄ := in_off pW (show 104 + 8 ≤ 768 by decide) (by decide)
+  obtain w₁ := in_off pC (show 240 + 8 ≤ 256 by decide) (by decide)
+  obtain w₂ := in_off pC (show 248 + 8 ≤ 256 by decide) (by decide)
+  obtain w₃ := in_off pW (show 96 + 8 ≤ 768 by decide) (by decide)
+  obtain w₄ := in_off pW (show 104 + 8 ≤ 768 by decide) (by decide)
   rw [← wr₃] at w₁ w₂ w₃ w₄
   obtain ⟨s₄, run₄, hm₄, x0₄, x1₄, x2₄, x3₄, og₄, sp₄, rd₄, wr₄⟩ : ∃ s₄, runBlock isa initSeg2 s₃ = some s₄ ∧
       s₄.mem = (((s₃.mem.writeW (Ctx + BitVec.ofNat 64 240) (0 : BitVec 64)).writeW
@@ -134,36 +134,36 @@ theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
     · simp [gpr_write, g21]
     · simp [gpr_write]
   refine WP.seq (WP.of_runBlock ⟨s₄, run₄, ?_⟩)
-  have rd₄' : s₄.rd = s.rd := rd₄.trans rd₃
-  have wr₄' : s₄.wr = s.wr := wr₄.trans wr₃
-  have sp₄' : s₄.sp = s.sp := sp₄.trans sp₃
-  have dCW : ∀ d n, d + n ≤ 256 → ∀ e k, e + k ≤ 768 →
+  obtain rd₄' : s₄.rd = s.rd := rd₄.trans rd₃
+  obtain wr₄' : s₄.wr = s.wr := wr₄.trans wr₃
+  obtain sp₄' : s₄.sp = s.sp := sp₄.trans sp₃
+  obtain dCW : ∀ d n, d + n ≤ 256 → ∀ e k, e + k ≤ 768 →
       (⟨Ctx + BitVec.ofNat 64 d, n⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 e, k⟩ := fun d n hd e k he =>
     (d_cs.sub_left (Offset.sub_base _ hd)).sub_right (Offset.sub_base _ he)
-  have dK0 : (⟨Ctx, 128⟩ : Region).Disjoint ⟨Ctx + BitVec.ofNat 64 240, 16⟩ :=
+  obtain dK0 : (⟨Ctx, 128⟩ : Region).Disjoint ⟨Ctx + BitVec.ofNat 64 240, 16⟩ :=
     Offset.base_disjoint Ctx (by decide) (by omega_arith)
-  have e248 : Ctx + BitVec.ofNat 64 248 = Ctx + BitVec.ofNat 64 240 + BitVec.ofNat 64 8 :=
+  obtain e248 : Ctx + BitVec.ofNat 64 248 = Ctx + BitVec.ofNat 64 240 + BitVec.ofNat 64 8 :=
     (add_ofNat_assoc _ 240 8).symm
-  have e104 : W + BitVec.ofNat 64 104 = W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8 :=
+  obtain e104 : W + BitVec.ofNat 64 104 = W + BitVec.ofNat 64 96 + BitVec.ofNat 64 8 :=
     (add_ofNat_assoc _ 96 8).symm
   rw [e248, e104] at hm₄
-  have f₄ : Frame [⟨Ctx + BitVec.ofNat 64 240, 16⟩, ⟨W + BitVec.ofNat 64 96, 16⟩] s₃.mem s₄.mem := by
+  obtain f₄ : Frame [⟨Ctx + BitVec.ofNat 64 240, 16⟩, ⟨W + BitVec.ofNat 64 96, 16⟩] s₃.mem s₄.mem := by
     rw [hm₄]
     exact ((Proof.Cmac.frame_store2 _ _ _).mono (by simp)).trans ((Proof.Cmac.frame_store2 _ _ _).mono (by simp))
-  have hT₄ : blockAt s₄.mem (W + BitVec.ofNat 64 96) = 0 := by
+  obtain hT₄ : blockAt s₄.mem (W + BitVec.ofNat 64 96) = 0 := by
     rw [blockAt, hm₄, zeroT_bytes]; decide
-  have hD₄ : blockAt s₄.mem (Ctx + BitVec.ofNat 64 240) = 0 := by
+  obtain hD₄ : blockAt s₄.mem (Ctx + BitVec.ofNat 64 240) = 0 := by
     rw [blockAt, hm₄, bytesAt_frame (Proof.Cmac.frame_store2 _ _ _) (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact dCW 240 16 (by decide) 96 16 (by decide)) (by decide),
       zeroT_bytes]
     decide
-  have fsv : Frame [savedR W] s.mem s₁.mem := by rw [m₁]; exact savedMem_frame _ _ _
+  obtain fsv : Frame [savedR W] s.mem s₁.mem := by rw [m₁]; exact savedMem_frame _ _ _
   -- The key, as the callee read it, and the schedule.
-  have hKey : Spec.Sm4.blockAt s₂.mem K = Vector.ofFn fun i : Fin 16 => (bytesAt s.mem K 16).getD i.val 0 := by
+  obtain hKey : Spec.Sm4.blockAt s₂.mem K = Vector.ofFn fun i : Fin 16 => (bytesAt s.mem K 16).getD i.val 0 := by
     rw [sm4BlockAt_eq, m₂, bytesAt_frame fsv (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact d_ks.sub_right (Offset.sub_base W (by decide)))
       (by decide)]
-  have hk₄ : Spec.Sm4.scheduleAt s₄.mem Ctx =
+  obtain hk₄ : Spec.Sm4.scheduleAt s₄.mem Ctx =
       Spec.Sm4.expandKey (Vector.ofFn fun i : Fin 16 => (bytesAt s.mem K 16).getD i.val 0) := by
     rw [Proof.Sm4.scheduleAt_frame f₄ (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -171,10 +171,10 @@ theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
         · exact dK0
         · exact (d_cs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base W (by decide))),
       g.out, hKey]
-  have pC' : Covers [⟨Ctx, 256⟩] s₄.wr := by rw [wr₄']; exact pC
-  have pW' : Covers [⟨W, 768⟩] s₄.wr := by rw [wr₄']; exact pW
+  obtain pC' : Covers [⟨Ctx, 256⟩] s₄.wr := by rw [wr₄']; exact pC
+  obtain pW' : Covers [⟨W, 768⟩] s₄.wr := by rw [wr₄']; exact pW
   -- `H = CIPH_K(0¹²⁸)`.
-  have cc : CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) 1 := by
+  obtain cc : CtrCall s₄ Ctx (W + BitVec.ofNat 64 96) (Ctx + BitVec.ofNat 64 240) 1 := by
     refine ⟨x0₄, x1₄, x2₄, x3₄, by rw [sp₄']; exact hsp, by decide, ?_, by omega_arith, ?_,
       ?_, dK0, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le (Ctx.toNat + 240 % 2 ^ 64) (2 ^ 64); omega_arith
@@ -193,21 +193,21 @@ theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
   rw [sp₄'] at cf
   have gout := c.out
   rw [blocksAt_one, blocksAt_one, ctr32_single, List.cons.injEq, hT₄, hD₄, hk₄] at gout
-  have c19 : s₅.gpr .x19 = W := by rw [c.saved .x19 (by decide) (by decide), og₄ _ (by decide), g19]
-  have dSvK : ∀ r ∈ [(⟨Ctx, 128⟩ : Region), stk s.sp], (savedR W).Disjoint r := by
+  obtain c19 : s₅.gpr .x19 = W := by rw [c.saved .x19 (by decide) (by decide), og₄ _ (by decide), g19]
+  obtain dSvK : ∀ r ∈ [(⟨Ctx, 128⟩ : Region), stk s.sp], (savedR W).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact (d_cs.sub_left (Region.sub_prefix (by decide))).sub_right (Offset.sub_base W (by decide)) |>.symm
     · exact (sW.sub_right (Offset.sub_base W (by decide))).symm
-  have dSv₄ : ∀ r ∈ [(⟨Ctx + BitVec.ofNat 64 240, 16⟩ : Region), ⟨W + BitVec.ofNat 64 96, 16⟩],
+  obtain dSv₄ : ∀ r ∈ [(⟨Ctx + BitVec.ofNat 64 240, 16⟩ : Region), ⟨W + BitVec.ofNat 64 96, 16⟩],
       (savedR W).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact (dCW 240 16 (by decide) 128 88 (by decide)).symm
     · exact Offset.disjoint W (.inr (by decide)) (by decide) (by omega_arith)
-  have dSv₅ : ∀ r ∈ [(⟨W + BitVec.ofNat 64 96, 16⟩ : Region), ⟨Ctx + BitVec.ofNat 64 240, 16 * 1⟩, stk s.sp],
+  obtain dSv₅ : ∀ r ∈ [(⟨W + BitVec.ofNat 64 96, 16⟩ : Region), ⟨Ctx + BitVec.ofNat 64 240, 16 * 1⟩, stk s.sp],
       (savedR W).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -215,10 +215,10 @@ theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
     · exact Offset.disjoint W (.inr (by decide)) (by decide) (by omega_arith)
     · exact (dCW 240 16 (by decide) 128 88 (by decide)).symm
     · exact (sW.sub_right (Offset.sub_base W (by decide))).symm
-  have hsv₁ : SavedAt s₁.mem W s := by rw [m₁]; exact savedAt_save _ _ _
-  have hsv₅ : SavedAt s₅.mem W s :=
+  obtain hsv₁ : SavedAt s₁.mem W s := by rw [m₁]; exact savedAt_save _ _ _
+  obtain hsv₅ : SavedAt s₅.mem W s :=
     (((hsv₁.frame (by rw [← m₂]; exact gf) dSvK).frame f₄ dSv₄).frame cf dSv₅)
-  have pWr : Covers [⟨W, 768⟩] (s₅.rd ++ s₅.wr) := by rw [c.rd, c.wr, rd₄', wr₄']; exact covers_left pW
+  obtain pWr : Covers [⟨W, 768⟩] (s₅.rd ++ s₅.wr) := by rw [c.rd, c.wr, rd₄', wr₄']; exact covers_left pW
   refine WP.mono (exit_ok c19 (by rw [c.sp, sp₄']) pWr hsv₅) fun s' ⟨hg, hm, _⟩ => ⟨hg, ?_, ?_⟩
   · rw [hm, Proof.Sm4.scheduleAt_frame cf (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

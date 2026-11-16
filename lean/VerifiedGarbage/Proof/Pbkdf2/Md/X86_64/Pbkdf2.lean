@@ -203,7 +203,7 @@ theorem KR.keep {s s' : State} (h : KR (H := H) s₀ s) (hrd : s'.rd = s.rd) (hw
     (hf : Frame rs s.mem s'.mem) (hd : ∀ r ∈ rs, (hdrR (H := H) s₀).Disjoint r)
     (hsub : ∀ r ∈ rs, ∃ r' ∈ [outR s₀, scR (H := H) s₀, stkR s₀], Region.Sub r r') :
     KR (H := H) s₀ s' := by
-  have hs : Region.Sub (VG.Proof.Pbkdf2.Md.X86_64.Calls.saveR H.hh (scr s₀)) (hdrR (H := H) s₀) := Offset.sub _ (Nat.le_refl _) (by
+  obtain hs : Region.Sub (VG.Proof.Pbkdf2.Md.X86_64.Calls.saveR H.hh (scr s₀)) (hdrR (H := H) s₀) := Offset.sub _ (Nat.le_refl _) (by
     show 8 * H.W + 48 ≤ 8 * H.W + 64; omega_using [])
   refine ⟨hrd.trans h.rd, hwr.trans h.wr, hsp.trans h.rsp, h15.trans h.r15,
     SavedRegs.frame H.hh h.saved hf fun r hr => (hd r hr).sub_left hs, ?_, ?_, h.frame.trans (hf.sub hsub)⟩
@@ -238,7 +238,7 @@ theorem KR.call {s s' : State} (h : KR (H := H) s₀ s) (hrd : s'.rd = s.rd) (hw
       ∃ o k, r = sR s₀ o k ∧ H.st0O ≤ o ∧ o + k ≤ (H.W + H.S) * 8) :
     KR (H := H) s₀ s' := by
   have := end_le hz; have := layout (H := H)
-  have hst : H.sv + 64 = H.st0O := by simp [Hash.st0O]
+  obtain hst : H.sv + 64 = H.st0O := by simp [Hash.st0O]
   refine h.keep hrd hwr (hcs _ (by simp [calleeSaved])) (hcs _ (by simp [calleeSaved])) hf
     (fun r hr => ?_) (fun r hr => ?_)
   · rcases List.mem_append.mp hr with hr | hr
@@ -569,45 +569,45 @@ theorem entry_ok {s₂ : State} (hl₂ : Loaded s₀ s₂) : WP isa (.block H.en
     (by rw [hl₂.wr]; exact sc_mem hp) (by show 8 * H.W + 48 ≤ (H.W + H.S) * 8; exact hz.o_W8_48_le_L)
     fun s₃ g₃ rd₃ wr₃ f₃ sv₃ => ?_
   refine wp_mov fun s₄ u₄ _ _ => ?_
-  have h15 : s₄.gpr .r15 = scr s₀ := by rw [u₄.gpr, g₃, h8]
-  have wr₄ : s₄.wr = s₀.wr := by rw [u₄.wr, wr₃, hl₂.wr]
+  obtain h15 : s₄.gpr .r15 = scr s₀ := by rw [u₄.gpr, g₃, h8]
+  obtain wr₄ : s₄.wr = s₀.wr := by rw [u₄.wr, wr₃, hl₂.wr]
   refine wp_store (a := A s₀ H.outO) (by rw [ea_nat, h15]) (in_sc hp hz wr₄ (by exact hz.o_outO_8_le_L))
     fun s₅ g₅ m₅ rd₅ wr₅ => ?_
   refine wp_mov32r fun s₆ u₆ => wp_subi fun s₇ u₇ _ => ?_
-  have wr₆ : s₆.wr = s₀.wr := by rw [u₆.wr, wr₅, wr₄]
-  have h15' : s₆.gpr .r15 = scr s₀ := by rw [u₆.other _ (by decide), g₅, h15]
+  obtain wr₆ : s₆.wr = s₀.wr := by rw [u₆.wr, wr₅, wr₄]
+  obtain h15' : s₆.gpr .r15 = scr s₀ := by rw [u₆.other _ (by decide), g₅, h15]
   refine wp_store (a := A s₀ H.cO) (by rw [ea_nat, u₇.other _ (by decide), h15'])
     (by rw [u₇.wr, wr₆]; exact in_sc hp hz rfl (by exact hz.o_cO_8_le_L)) fun s₈ g₈ m₈ rd₈ wr₈ => ?_
   refine wp_mov fun s₉ u₉ _ _ => wp_mov fun s₁₀ u₁₀ _ _ => wp_mov fun s₁₁ u₁₁ _ _ =>
     wp_mov fun s₁₂ u₁₂ _ _ => wp_cmpi fun s₁₃ g₁₃ m₁₃ rd₁₃ wr₁₃ c₁₃ _ => WP.block_nil ?_
   -- The registers.
-  have g : ∀ r, r ≠ .rax → r ≠ .r15 → r ≠ .rbx → r ≠ .rbp → r ≠ .r12 → r ≠ .r13 → r ≠ .r8 → r ≠ .r10 →
+  obtain g : ∀ r, r ≠ .rax → r ≠ .r15 → r ≠ .rbx → r ≠ .rbp → r ≠ .r12 → r ≠ .r13 → r ≠ .r8 → r ≠ .r10 →
       s₁₃.gpr r = s₀.gpr r := fun r h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈ => by
     rw [g₁₃, u₁₂.other r h₆, u₁₁.other r h₅, u₁₀.other r h₄, u₉.other r h₃, g₈, u₇.other r h₁, u₆.other r h₁,
       g₅, u₄.other r h₂, g₃, g₂ r h₇ h₈]
-  have gs : ∀ r, r ≠ .rax → r ≠ .r15 → r ≠ .rbx → r ≠ .rbp → r ≠ .r12 → r ≠ .r13 → s₈.gpr r = s₂.gpr r :=
+  obtain gs : ∀ r, r ≠ .rax → r ≠ .r15 → r ≠ .rbx → r ≠ .rbp → r ≠ .r12 → r ≠ .r13 → s₈.gpr r = s₂.gpr r :=
     fun r h₁ h₂ _ _ _ _ => by rw [g₈, u₇.other r h₁, u₆.other r h₁, g₅, u₄.other r h₂, g₃]
-  have rax₈ : s₇.gpr .rax = BitVec.ofNat 64 (cc s₀ - 1) := by
+  obtain rax₈ : s₇.gpr .rax = BitVec.ofNat 64 (cc s₀ - 1) := by
     rw [u₇.gpr, u₆.gpr, g₅, u₄.other _ (by decide), g₃, hl₂.r10, zx32, sx1,
       ofNat_pred hc0]
-  have r9₄ : s₄.gpr .r9 = out s₀ := by rw [u₄.other _ (by decide), g₃, g₂ _ (by decide) (by decide)]
+  obtain r9₄ : s₄.gpr .r9 = out s₀ := by rw [u₄.other _ (by decide), g₃, g₂ _ (by decide) (by decide)]
   -- The memory.
-  have m₁₃ : s₁₃.mem = (s₃.mem.writeW (A s₀ H.outO) (out s₀)).writeW (A s₀ H.cO)
+  obtain m₁₃ : s₁₃.mem = (s₃.mem.writeW (A s₀ H.outO) (out s₀)).writeW (A s₀ H.cO)
       (BitVec.ofNat 64 (cc s₀ - 1)) := by
     rw [m₁₃, u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem, m₈, u₇.mem, u₆.mem, m₅, u₄.mem, r9₄, rax₈]
-  have dOC : Region.Disjoint ⟨A s₀ H.outO, 8⟩ ⟨A s₀ H.cO, 8⟩ := part_disj hz (Or.inl (by exact hz.o_outO_8_le_cO)) (by exact hz.o_outO_8_le_L) (by exact hz.o_cO_8_le_L)
-  have fW : Frame [sR s₀ H.outO 16] s₃.mem s₁₃.mem := by
+  obtain dOC : Region.Disjoint ⟨A s₀ H.outO, 8⟩ ⟨A s₀ H.cO, 8⟩ := part_disj hz (Or.inl (by exact hz.o_outO_8_le_cO)) (by exact hz.o_outO_8_le_L) (by exact hz.o_cO_8_le_L)
+  obtain fW : Frame [sR s₀ H.outO 16] s₃.mem s₁₃.mem := by
     rw [m₁₃]
     exact ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains _ (Nat.le_refl _) (by exact hz.o_outO_64d8_le_outO_16)
       (by exact hz.o_outO_16_lt_p64))).writeW (List.mem_singleton_self _) _ (Offset.contains _ (by exact hz.o_outO_le_cO) (by exact hz.o_cO_64d8_le_outO_16) (by exact hz.o_outO_16_lt_p64))
-  have f₀ : Frame [outR s₀, scR (H := H) s₀, stkR s₀] s₀.mem s₁₃.mem := by
+  obtain f₀ : Frame [outR s₀, scR (H := H) s₀, stkR s₀] s₀.mem s₁₃.mem := by
     have e₂ : s₂.mem = s₀.mem := hl₂.mem
     rw [← e₂]
     refine (f₃.sub fun r hr => ?_).trans (fW.sub fun r hr => ?_)
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨scR (H := H) s₀, by simp, Offset.sub_base _ (by show 8 * H.W + 48 ≤ (H.W + H.S) * 8; exact hz.o_W8_48_le_L)⟩
     · simp only [List.mem_singleton] at hr; subst hr; exact ⟨scR (H := H) s₀, by simp, part_sub (by exact hz.o_outO_16_le_L)⟩
-  have sv : SavedRegs H.hh (scr s₀) s₀ s₃.mem :=
+  obtain sv : SavedRegs H.hh (scr s₀) s₀ s₃.mem :=
     ⟨by rw [sv₃.rbx, g₂ _ (by decide) (by decide)], by rw [sv₃.rbp, g₂ _ (by decide) (by decide)],
       by rw [sv₃.r12, g₂ _ (by decide) (by decide)], by rw [sv₃.r13, g₂ _ (by decide) (by decide)],
       by rw [sv₃.r14, g₂ _ (by decide) (by decide)], by rw [sv₃.r15, g₂ _ (by decide) (by decide)]⟩
@@ -702,13 +702,13 @@ omit hp hz in
 /-- A key longer than a block and its digest give the same `K₀`. -/
 theorem blockKey_hash (hH : HashOK H) {k : List Byte} (hk : H.P.B < k.length) :
     blockKey hH.SH.H (hH.SH.H.hash k) = blockKey hH.SH.H k := by
-  have hl := hash_len hH k; have hB := hH.hB; have := hH.hDL
+  obtain hl := hash_len hH k; have hB := hH.hB; have := hH.hDL
   simp only [blockKey, hB, hl, ite_eq_left_of_eq_true _ _ (eq_true hk),
     ite_eq_right_of_eq_false _ _ (eq_false (show ¬ H.P.B < H.D by omega_arith))]
 
 omit hp hz in
 theorem blockKey_length (hH : HashOK H) (k : List Byte) : (blockKey hH.SH.H k).length = H.P.B := by
-  have hB := hH.hB; have := hH.hDL
+  obtain hB := hH.hB; have := hH.hDL
   simp only [blockKey, hB, List.length_append, List.length_replicate]
   split
   · rw [hash_len]; omega_arith
@@ -729,7 +729,7 @@ abbrev eregs : List Reg := [.rbx, .rbp, .r12, .r13, .r15, .rsp]
 omit hp hz in
 theorem KE.upd {s s' : State} (h : KE (H := H) s₀ s) {d : Reg} {v : BitVec 64} (u : Upd s s' d v)
     (hd : d ∉ eregs) : KE (H := H) s₀ s' := by
-  have ne : ∀ r ∈ eregs, r ≠ d := fun r hr e => hd (e ▸ hr)
+  obtain ne : ∀ r ∈ eregs, r ≠ d := fun r hr e => hd (e ▸ hr)
   exact ⟨h.kr.upd u ⟨(ne _ (by simp)).symm, (ne _ (by simp)).symm⟩, by rw [u.other _ (ne _ (by simp)), h.rbx],
     by rw [u.other _ (ne _ (by simp)), h.rbp], by rw [u.other _ (ne _ (by simp)), h.r12],
     by rw [u.other _ (ne _ (by simp)), h.r13]⟩
@@ -781,7 +781,7 @@ theorem hk3_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s) (hr : hH.SH.
   have hF : H.stream.F = H.P.N := rfl
   refine scr_ok h.kr.r15 (by exact hz.o_stWO_lt_p31) fun s₃ u₃ => wp_mov32i fun s₄ u₄ _ _ => wp_mov fun s₅ u₅ _ _ =>
     wp_mov fun s₆ u₆ _ _ => wp_mov fun s₇ u₇ _ _ => WP.block_nil ?_
-  have k₇ := ((((h.upd u₃ (by decide)).upd u₄ (by decide)).upd u₅ (by decide)).upd u₆ (by decide)).upd u₇
+  obtain k₇ := ((((h.upd u₃ (by decide)).upd u₄ (by decide)).upd u₅ (by decide)).upd u₆ (by decide)).upd u₇
     (by decide)
   refine ⟨k₇, ?_, by rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr]; rfl,
     by rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem]; exact hr⟩
@@ -842,7 +842,7 @@ theorem hk5_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s)
   refine scr_ok h.kr.r15 (by exact hz.o_stWO_lt_p31) fun s₉ u₉ => wp_mov fun s₁₀ u₁₀ _ _ => ?_
   refine scr_ok (by rw [u₁₀.other _ (by decide), u₉.other _ (by decide), h.kr.r15]) (by exact hz.o_hkO_lt_p31)
     fun s₁₁ u₁₁ => wp_mov fun s₁₂ u₁₂ _ _ => WP.block_nil ?_
-  have k₁₂ := (((h.upd u₉ (by decide)).upd u₁₀ (by decide)).upd u₁₁ (by decide)).upd u₁₂ (by decide)
+  obtain k₁₂ := (((h.upd u₉ (by decide)).upd u₁₀ (by decide)).upd u₁₁ (by decide)).upd u₁₂ (by decide)
   refine ⟨k₁₂, ?_, by rw [u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.gpr, u₉.other _ (by decide),
     h.rbp], by rw [u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem]; exact hr⟩
   exact
@@ -888,7 +888,7 @@ theorem hk7_ok {s : State} (h : KE (H := H) s₀ s) :
     WP isa (.block (VG.Impl.Pbkdf2.Md.X86_64.scr .rdx H.hkO ++
       ([.mov32 .rcx (.imm (BitVec.ofNat 32 H.D))] : List Instr))) s fun t =>
       KE (H := H) s₀ t ∧ t.gpr .rdx = A s₀ H.hkO ∧ (t.gpr .rcx).toNat = H.D ∧ t.mem = s.mem := by
-  have hD := hz.z.D; have hN := hz.z.N
+  obtain hD := hz.z.D; have hN := hz.z.N
   have hB := hz.z.B_le
   refine scr_ok h.kr.r15 (by exact hz.o_hkO_lt_p31) fun s₁₄ u₁₄ => wp_mov32i fun s₁₅ u₁₅ _ _ => WP.block_nil ?_
   exact ⟨(h.upd u₁₄ (by decide)).upd u₁₅ (by decide), by rw [u₁₅.other _ (by decide), u₁₄.gpr],
@@ -920,15 +920,15 @@ theorem key_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s)
   unfold Hash.key
   refine WP.ite (!decide (pwl s₀ < H.P.B + 1)) (by simp [eval, hcf]) (fun hT => ?_) fun hF => ?_
   · have hlong : ¬ pwl s₀ < H.P.B + 1 := of_decide_eq_false (Bool.not_eq_true' _ ▸ hT)
-    have e₁ : kp H s₀ = A s₀ H.hkO := ite_eq_right_of_eq_false _ _ (eq_false hlong)
-    have e₂ : kl H s₀ = H.D := ite_eq_right_of_eq_false _ _ (eq_false hlong)
+    obtain e₁ : kp H s₀ = A s₀ H.hkO := ite_eq_right_of_eq_false _ _ (eq_false hlong)
+    obtain e₂ : kl H s₀ = H.D := ite_eq_right_of_eq_false _ _ (eq_false hlong)
     rw [e₁, e₂]
     refine WP.mono (hashKey_ok hp hz hH h) fun t ⟨k, rdx, rcx, hb⟩ =>
       ⟨k, rdx, rcx, ⟨.inr ⟨rfl, rfl⟩, by exact hz.o_D_le_B, ?_⟩⟩
     rw [hb, blockKey_hash hH (by rw [bytesAt_length]; omega_arith)]
   · have hshort : pwl s₀ < H.P.B + 1 := of_decide_eq_true (by simpa using hF)
-    have e₁ : kp H s₀ = pw s₀ := ite_eq_left_of_eq_true _ _ (eq_true hshort)
-    have e₂ : kl H s₀ = pwl s₀ := ite_eq_left_of_eq_true _ _ (eq_true hshort)
+    obtain e₁ : kp H s₀ = pw s₀ := ite_eq_left_of_eq_true _ _ (eq_true hshort)
+    obtain e₂ : kl H s₀ = pwl s₀ := ite_eq_left_of_eq_true _ _ (eq_true hshort)
     rw [e₁, e₂]
     refine wp_mov fun t₁ u₁ _ _ => wp_mov fun t₂ u₂ _ _ => WP.block_nil ?_
     refine ⟨(h.upd u₁ (by decide)).upd u₂ (by decide), by rw [u₂.other _ (by decide), u₁.gpr, h.rbx],
@@ -985,7 +985,7 @@ theorem KeyAt.facts (hH : HashOK H) {m : Mem} {kp : Addr} {kl : Nat} (hk : KeyAt
     Covers [⟨kp, kl⟩] (s.rd ++ s.wr) ∧ Region.Disjoint ⟨kp, kl⟩ ⟨A s₀ H.st0O, H.S⟩ ∧
       Region.Disjoint ⟨kp, kl⟩ ⟨A s₀ H.st1O, H.S⟩ ∧ Region.Disjoint ⟨kp, kl⟩ (lowR (H := H) s₀) ∧
       (below (s.gpr .rsp) 24).Disjoint ⟨kp, kl⟩ := by
-  have hD := hz.z.D; have hN := hz.z.N
+  obtain hD := hz.z.D; have hN := hz.z.N
   rcases hk.loc with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   · exact ⟨VG.Proof.Hmac.Generic.Common.covers_one (List.mem_append_left _ (by rw [h.rd, hp.rd]; simp)),
       hp.pw_s.sub_right (part_sub (by exact hz.o_st0O_S_le_L)), hp.pw_s.sub_right (part_sub (by exact hz.o_st1O_S_le_L)),
@@ -1013,8 +1013,8 @@ theorem su1_ok (hH : HashOK H) {s : State} (h : KE (H := H) s₀ s) (hdx : s.gpr
   refine scr_ok h.kr.r15 (by exact hz.o_st0O_lt_p31) fun s₁ u₁ => ?_
   refine scr_ok (by rw [u₁.other _ (by decide), h.kr.r15]) (by exact hz.o_st1O_lt_p31) fun s₂ u₂ => wp_mov fun s₃ u₃ _ _ =>
     WP.block_nil ?_
-  have k₃ := ((h.upd u₁ (by decide)).upd u₂ (by decide)).upd u₃ (by decide)
-  have m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
+  obtain k₃ := ((h.upd u₁ (by decide)).upd u₂ (by decide)).upd u₃ (by decide)
+  obtain m₃ : s₃.mem = s.mem := by rw [u₃.mem, u₂.mem, u₁.mem]
   obtain ⟨kc, k_i, k_o, k_s, k_stk⟩ := hk.facts hp hz hH k₃.kr
   refine ⟨k₃, ?_, m₃ ▸ hk⟩
   exact
@@ -1090,22 +1090,22 @@ theorem su3_ok (hH : HashOK H) {s₄ : State} (h : KE (H := H) s₀ s₄)
     (fun j hj => by rw [h.kr.r15, add_ofNat]; exact in_sc hp hz h.kr.wr (by omega_using [hj, hz.o_stSO_S_le_L]))
     (by rw [h.kr.r15]; exact part_disj hz (Or.inl (by exact hz.o_st0O_S_le_stSO)) (by exact hz.o_st0O_S_le_L) (by exact hz.o_stSO_S_le_L))) fun s₅ c₅ => ?_)
   rw [h.kr.r15] at c₅
-  have f₅ : Frame [sR s₀ H.stSO H.S] s₄.mem s₅.mem := by
+  obtain f₅ : Frame [sR s₀ H.stSO H.S] s₄.mem s₅.mem := by
     rw [c₅.mem]; exact writeBytes_frame _ _ _ (by rw [bytesAt_length]; exact Region.contains_self _ _)
-  have k₅ : KE (H := H) s₀ s₅ := ⟨h.kr.write hz c₅.rd c₅.wr (c₅.other _ (by decide) (by decide))
+  obtain k₅ : KE (H := H) s₀ s₅ := ⟨h.kr.write hz c₅.rd c₅.wr (c₅.other _ (by decide) (by decide))
       (c₅.other _ (by decide) (by decide)) (o := H.stSO) (n := H.S) (by exact hz.o_st0O_le_stSO) (by exact hz.o_stSO_S_le_L) f₅,
     by rw [c₅.other _ (by decide) (by decide), h.rbx], by rw [c₅.other _ (by decide) (by decide), h.rbp],
     by rw [c₅.other _ (by decide) (by decide), h.r12], by rw [c₅.other _ (by decide) (by decide), h.r13]⟩
-  have dS : ∀ o, o + H.S ≤ H.stSO → ∀ r ∈ [sR s₀ H.stSO H.S], Region.Disjoint ⟨A s₀ o, H.S⟩ r := fun o ho r hr => by
+  obtain dS : ∀ o, o + H.S ≤ H.stSO → ∀ r ∈ [sR s₀ H.stSO H.S], Region.Disjoint ⟨A s₀ o, H.S⟩ r := fun o ho r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact part_disj hz (Or.inl ho) (by omega_using [ho, hz.o_stSO_S_le_L]) (by exact hz.o_stSO_S_le_L)
-  have ri₅ := repr_keep hH f₅ (dS _ (by exact hz.o_st0O_S_le_stSO)) ri₄
-  have ro₅ := repr_keep hH f₅ (dS _ (by exact hz.o_st1O_S_le_stSO)) ro₄
-  have rs₅ : hH.SH.Repr s₅.mem (A s₀ H.stSO) (xorPad (K0 hH s₀) ipad) := by rw [c₅.mem]; exact repr_copy hH ri₄
+  obtain ri₅ := repr_keep hH f₅ (dS _ (by exact hz.o_st0O_S_le_stSO)) ri₄
+  obtain ro₅ := repr_keep hH f₅ (dS _ (by exact hz.o_st1O_S_le_stSO)) ro₄
+  obtain rs₅ : hH.SH.Repr s₅.mem (A s₀ H.stSO) (xorPad (K0 hH s₀) ipad) := by rw [c₅.mem]; exact repr_copy hH ri₄
   refine scr_ok k₅.kr.r15 (by exact hz.o_stSO_lt_p31) fun s₆ u₆ => wp_mov32i fun s₇ u₇ _ _ => wp_mov fun s₈ u₈ _ _ =>
     wp_mov fun s₉ u₉ _ _ => wp_mov fun s₁₀ u₁₀ _ _ => WP.block_nil ?_
-  have k₁₀ := ((((k₅.upd u₆ (by decide)).upd u₇ (by decide)).upd u₈ (by decide)).upd u₉ (by decide)).upd u₁₀
+  obtain k₁₀ := ((((k₅.upd u₆ (by decide)).upd u₇ (by decide)).upd u₈ (by decide)).upd u₉ (by decide)).upd u₁₀
     (by decide)
-  have m₁₀ : s₁₀.mem = s₅.mem := by rw [u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem]
+  obtain m₁₀ : s₁₀.mem = s₅.mem := by rw [u₁₀.mem, u₉.mem, u₈.mem, u₇.mem, u₆.mem]
   refine ⟨k₁₀, ?_, by rw [u₁₀.other _ (by decide), u₉.other _ (by decide), u₈.other _ (by decide), u₇.gpr,
       zx_ofNat (by exact hz.o_B_lt_p32)], m₁₀ ▸ ri₅, m₁₀ ▸ ro₅, m₁₀ ▸ rs₅⟩
   exact
@@ -1144,12 +1144,12 @@ theorem su4_ok (hH : HashOK H) {s₁₀ : State} (k₁₀ : KE (H := H) s₀ s�
   have hSS : H.stream.S = H.P.N + H.P.B := rfl
   have hsnw := hp.snw
   refine VG.Proof.Pbkdf2.Md.X86_64.Calls.upd_call hH.stream ua (by have := hp.sanw; omega_arith) fun s₁₁ a₁₁ r₁₁ => ?_
-  have k₁₁ := k₁₀.call hp hz a₁₁.rd a₁₁.wr a₁₁.cs (by decide) a₁₁.frame fun r hr => by
+  obtain k₁₁ := k₁₀.call hp hz a₁₁.rd a₁₁.wr a₁₁.cs (by decide) a₁₁.frame fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact .inr ⟨_, _, rfl, by exact hz.o_st0O_le_stSO, by exact hz.o_stSO_hsS_le_L⟩
     · exact .inl ⟨_, rfl, by rw [hWb]; exact hz.o_so_48_le_W8⟩
-  have dW : ∀ o, H.st0O ≤ o → o + H.S ≤ H.stSO → ∀ r ∈ [(⟨A s₀ H.stSO, H.stream.S⟩ : Region), ⟨scr s₀, hH.stream.Wb⟩] ++
+  obtain dW : ∀ o, H.st0O ≤ o → o + H.S ≤ H.stSO → ∀ r ∈ [(⟨A s₀ H.stSO, H.stream.S⟩ : Region), ⟨scr s₀, hH.stream.Wb⟩] ++
       [below (s₁₀.gpr .rsp) 16], Region.Disjoint ⟨A s₀ o, H.S⟩ r := fun o ho₀ ho =>
     disj_call hp k₁₀.kr (part_sub (by omega_using [ho, hz.o_stSO_S_le_L])) (by decide) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr

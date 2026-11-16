@@ -31,7 +31,7 @@ structure Chn (E : Env) (k : Nat) (v : F5 T) (x : Fin pN) : Prop where
 theorem Same.chn {iv : BT} {E' E : Env} {ys xs : List (F5 T)} (h : Same iv E' ys E xs) (j k : Nat) {b : Int × Int}
     (hk : k < 4) (hb : iv.get j k = some b) {v : F5 T} (hv : xs.getD j zero5 = v) {x : Fin pN}
     (hc : Chn E k v x) : Chn E' k (ys.getD j zero5) x := by
-  have e := h.val j k hk hb hv
+  obtain e := h.val j k hk hb hv
   exact ⟨by rw [e]; exact hc.lo, by rw [e]; exact hc.hi, by rw [e]; exact hc.d⟩
 
 /-- Two points with one `Z`: `(x1, y1, z)` and `(x2, y2, z)`. -/
@@ -227,12 +227,12 @@ theorem zaddu_s0 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf reg
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf (zadduLocs.getD 0 []) zadduBT0) ∧
         ZCut1 (envOf s) ((zL 0).getD 0 zero5) ((zL 0).getD 1 zero5) ((zL 0).getD 2 zero5) p := by
   obtain ⟨x1, y1, y2, z, x2⟩ := h
-  have v0 := zaddu1g_v0 (t5 10) (t5 15) (envOf s₀)
-  have v1 := zaddu1g_v1 (t5 10) (t5 15) (envOf s₀)
-  have v2 := zaddu1g_v2 (t5 10) (t5 15) (envOf s₀)
-  have v3 := zaddu1g_v3 (t5 10) (t5 15) (envOf s₀)
-  have x1l := x1.lo; have x1h := x1.hi; have y1l := y1.lo; have y1h := y1.hi; have y2l := y2.lo; have y2h := y2.hi
-  have zl := z.lo; have zh := z.hi; have x2l := x2.lo; have x2h := x2.hi
+  obtain v0 := zaddu1g_v0 (t5 10) (t5 15) (envOf s₀)
+  obtain v1 := zaddu1g_v1 (t5 10) (t5 15) (envOf s₀)
+  obtain v2 := zaddu1g_v2 (t5 10) (t5 15) (envOf s₀)
+  obtain v3 := zaddu1g_v3 (t5 10) (t5 15) (envOf s₀)
+  obtain x1l := x1.lo; have x1h := x1.hi; have y1l := y1.lo; have y1h := y1.hi; have y2l := y2.lo; have y2h := y2.hi
+  obtain zl := z.lo; have zh := z.hi; have x2l := x2.lo; have x2h := x2.hi
   obtain ⟨i0, hi0⟩ := norm_iv zaddu_iv0 (t := (Id.run (norm tops (Id.run (zaddu1g tops (t5 10) (t5 15))))).l4) rfl 0
     (by decide) (b := _) rfl
   obtain ⟨i1, hi1⟩ := norm_iv zaddu_iv0 (t := (Id.run (norm tops (Id.run (zaddu1g tops (t5 10) (t5 15))))).l4) rfl 1
@@ -241,13 +241,13 @@ theorem zaddu_s0 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf reg
     (by decide) (b := _) rfl
   obtain ⟨i3, hi3⟩ := norm_iv zaddu_iv0 (t := (Id.run (norm tops (Id.run (zaddu1g tops (t5 10) (t5 15))))).l4) rfl 3
     (by decide) (b := _) rfl
-  have c0 : Car (envOf s₀) 0 _ p.dx := Car.norm hB _ (by decide) hi0 (by rw [v0]; rng) (by rw [v0]; rng)
+  obtain c0 : Car (envOf s₀) 0 _ p.dx := Car.norm hB _ (by decide) hi0 (by rw [v0]; rng) (by rw [v0]; rng)
     (by rw [v0]; z_ring [x1.d, x2.d])
-  have c1 : Car (envOf s₀) 1 _ p.dy := Car.norm hB _ (by decide) hi1 (by rw [v1]; rng) (by rw [v1]; rng)
+  obtain c1 : Car (envOf s₀) 1 _ p.dy := Car.norm hB _ (by decide) hi1 (by rw [v1]; rng) (by rw [v1]; rng)
     (by rw [v1]; z_ring [y1.d, y2.d])
-  have c2 : Car (envOf s₀) 2 _ p.z := Car.norm hB _ (by decide) hi2 (by rw [v2]; rng) (by rw [v2]; rng)
+  obtain c2 : Car (envOf s₀) 2 _ p.z := Car.norm hB _ (by decide) hi2 (by rw [v2]; rng) (by rw [v2]; rng)
     (by rw [v2]; z_ring [z.d])
-  have c3 : Car (envOf s₀) 3 _ p.x1 := Car.norm hB _ (by decide) hi3 (by rw [v3]; rng) (by rw [v3]; rng)
+  obtain c3 : Car (envOf s₀) 3 _ p.x1 := Car.norm hB _ (by decide) hi3 (by rw [v3]; rng) (by rw [v3]; rng)
     (by rw [v3]; z_ring [x1.d])
   refine WP.mono (cut_step' zaddu_chk0 hc hB zaddu_iv0 zaddu_ov0
     (rs := [Id.run (norm tops (Id.run (zaddu1g tops (t5 10) (t5 15)))), t5 10, t5 15]) rfl rfl (by decide) ?_)
@@ -267,8 +267,8 @@ theorem zaddu_s1 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (za
     WP isa (.block (zadduPieces.getD 1 [])) s₀ fun s =>
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf (zadduLocs.getD 1 []) zadduBT1) ∧
         ZCut2 (envOf s) ((zL 1).getD 0 zero5) ((zL 1).getD 1 zero5) ((zL 1).getD 2 zero5) ((zL 1).getD 3 zero5) p := by
-  have hchk := zaddu_chk1; have hiv := zaddu_iv1
-  have hL := list3 (zL 0) zero5 (by decide +kernel)
+  obtain hchk := zaddu_chk1; have hiv := zaddu_iv1
+  obtain hL := list3 (zL 0) zero5 (by decide +kernel)
   simp only [zL] at h hL
   generalize leaves (zadduLocs.getD 0 []) = L at h hchk hiv hL
   generalize L.getD 0 zero5 = o1, L.getD 1 zero5 = r, L.getD 2 zero5 = c at h hL
@@ -289,27 +289,27 @@ theorem zaddu_s2 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (za
     WP isa (.block (zadduPieces.getD 2 [])) s₀ fun s =>
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf (zadduLocs.getD 2 []) zadduBT2) ∧
         ZCut3 (envOf s) ((zL 2).getD 0 zero5) ((zL 2).getD 1 zero5) ((zL 2).getD 2 zero5) p := by
-  have hchk := zaddu_chk2; have hiv := zaddu_iv2
-  have hL := list4 (zL 1) zero5 (by decide +kernel)
+  obtain hchk := zaddu_chk2; have hiv := zaddu_iv2
+  obtain hL := list4 (zL 1) zero5 (by decide +kernel)
   simp only [zL] at h hL
   generalize leaves (zadduLocs.getD 1 []) = L at h hchk hiv hL
   generalize L.getD 0 zero5 = q1, L.getD 1 zero5 = o1, L.getD 2 zero5 = r, L.getD 3 zero5 = c at h hL
   subst hL
   obtain ⟨cc, dd, z3, dy, x1, y1, x2⟩ := h
   obtain ⟨v0, v1, v2, v3⟩ := zn1g_v q1 r (envOf s₀)
-  have ccl := cc.lo; have cch := cc.hi; have ddl := dd.lo; have ddh := dd.hi; have z3l := z3.lo; have z3h := z3.hi
-  have y1l := y1.lo; have y1h := y1.hi
+  obtain ccl := cc.lo; have cch := cc.hi; have ddl := dd.lo; have ddh := dd.hi; have z3l := z3.lo; have z3h := z3.hi
+  obtain y1l := y1.lo; have y1h := y1.hi
   obtain ⟨i0, hi0⟩ := norm_iv hiv (t := (Id.run (norm tops (zn1g q1 r))).l4) rfl 0 (by decide) (b := _) rfl
   obtain ⟨i1, hi1⟩ := norm_iv hiv (t := (Id.run (norm tops (zn1g q1 r))).l4) rfl 1 (by decide) (b := _) rfl
   obtain ⟨i2, hi2⟩ := norm_iv hiv (t := (Id.run (norm tops (zn1g q1 r))).l4) rfl 2 (by decide) (b := _) rfl
   obtain ⟨i3, hi3⟩ := norm_iv hiv (t := (Id.run (norm tops (zn1g q1 r))).l4) rfl 3 (by decide) (b := _) rfl
-  have c0 : Car (envOf s₀) 0 _ p.C := Car.norm hB _ (by decide) hi0 (by rw [v0]; rng) (by rw [v0]; rng)
+  obtain c0 : Car (envOf s₀) 0 _ p.C := Car.norm hB _ (by decide) hi0 (by rw [v0]; rng) (by rw [v0]; rng)
     (by rw [v0]; exact cc.d)
-  have c1 : Car (envOf s₀) 1 _ p.Dd := Car.norm hB _ (by decide) hi1 (by rw [v1]; rng) (by rw [v1]; rng)
+  obtain c1 : Car (envOf s₀) 1 _ p.Dd := Car.norm hB _ (by decide) hi1 (by rw [v1]; rng) (by rw [v1]; rng)
     (by rw [v1]; exact dd.d)
-  have c2 : Car (envOf s₀) 2 _ p.z3 := Car.norm hB _ (by decide) hi2 (by rw [v2]; rng) (by rw [v2]; rng)
+  obtain c2 : Car (envOf s₀) 2 _ p.z3 := Car.norm hB _ (by decide) hi2 (by rw [v2]; rng) (by rw [v2]; rng)
     (by rw [v2]; exact z3.d)
-  have c3 : Car (envOf s₀) 3 _ p.y1 := Car.norm hB _ (by decide) hi3 (by rw [v3]; rng) (by rw [v3]; rng)
+  obtain c3 : Car (envOf s₀) 3 _ p.y1 := Car.norm hB _ (by decide) hi3 (by rw [v3]; rng) (by rw [v3]; rng)
     (by rw [v3]; exact y1.d)
   refine WP.mono (cut_step' hchk hc hB hiv zaddu_ov2 (rs := [Id.run (norm tops (zn1g q1 r)), o1, c]) rfl rfl
     (Nat.le_of_eq rfl) ?_) fun s ⟨hc', hk, hE, hS⟩ => ⟨hc', hk, hE, ?_⟩
@@ -333,19 +333,19 @@ theorem zaddu_s3 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (za
     WP isa (.block (zadduPieces.getD 3 [])) s₀ fun s =>
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf (zadduLocs.getD 3 []) zadduBT3) ∧
         ZCut4 (envOf s) ((zL 3).getD 0 zero5) ((zL 3).getD 1 zero5) ((zL 3).getD 2 zero5) p := by
-  have hchk := zaddu_chk3; have hiv := zaddu_iv3
-  have hL := list3 (zL 2) zero5 (by decide +kernel)
+  obtain hchk := zaddu_chk3; have hiv := zaddu_iv3
+  obtain hL := list3 (zL 2) zero5 (by decide +kernel)
   simp only [zL] at h hL
   generalize leaves (zadduLocs.getD 2 []) = L at h hchk hiv hL
   generalize L.getD 0 zero5 = n1, L.getD 1 zero5 = o1, L.getD 2 zero5 = c at h hL
   subst hL
   obtain ⟨cc, dd, z3, y1, dy, x1, x2⟩ := h
-  have a0 : Car (envOf s₀) 0 (za2 o1 c n1) p.x1 :=
+  obtain a0 : Car (envOf s₀) 0 (za2 o1 c n1) p.x1 :=
     Lim.blendL (by decide) (by decide) (Lim.blendL (by decide) (by decide) (Lim.perm 3 3 3 3 (by decide) x1))
-  have a1 : Car (envOf s₀) 1 (za2 o1 c n1) p.x2 :=
+  obtain a1 : Car (envOf s₀) 1 (za2 o1 c n1) p.x2 :=
     Lim.blendL (by decide) (by decide) (Lim.blendR (by decide) (by decide) (Lim.perm 3 3 3 3 (by decide) x2))
-  have a2 : Car (envOf s₀) 2 (za2 o1 c n1) p.z3 := Lim.blendR (by decide) (by decide) z3
-  have a3 : Car (envOf s₀) 3 (za2 o1 c n1) p.x1 :=
+  obtain a2 : Car (envOf s₀) 2 (za2 o1 c n1) p.z3 := Lim.blendR (by decide) (by decide) z3
+  obtain a3 : Car (envOf s₀) 3 (za2 o1 c n1) p.x1 :=
     Lim.blendL (by decide) (by decide) (Lim.blendL (by decide) (by decide) (Lim.perm 3 3 3 3 (by decide) x1))
   refine WP.mono (cut_step' hchk hc hB hiv zaddu_ov3
     (rs := [Id.run (mulCore tops (za2 o1 c n1) (Id.run (fperm tops n1 0 0 2 0))), n1, o1]) rfl rfl (Nat.le_of_eq rfl)
@@ -362,19 +362,19 @@ theorem zaddu_s4 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (za
     WP isa (.block (zadduPieces.getD 4 [])) s₀ fun s =>
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf (zadduLocs.getD 4 []) zadduBT4) ∧
         ZCut5 (envOf s) ((zL 4).getD 0 zero5) ((zL 4).getD 1 zero5) ((zL 4).getD 2 zero5) ((zL 4).getD 3 zero5) p := by
-  have hchk := zaddu_chk4; have hiv := zaddu_iv4
-  have hL := list3 (zL 3) zero5 (by decide +kernel)
+  obtain hchk := zaddu_chk4; have hiv := zaddu_iv4
+  obtain hL := list3 (zL 3) zero5 (by decide +kernel)
   simp only [zL] at h hL
   generalize leaves (zadduLocs.getD 3 []) = L at h hchk hiv hL
   generalize L.getD 0 zero5 = q2, L.getD 1 zero5 = n1, L.getD 2 zero5 = o1 at h hL
   subst hL
   obtain ⟨w1, w2, zz3, w1', dd, z3, y1, dy⟩ := h
-  have v0 := zaddu5g_v0 q2 n1 (envOf s₀)
-  have v1 := zaddu5g_v1 q2 n1 (envOf s₀)
-  have v2 := zaddu5g_v2 q2 n1 (envOf s₀)
-  have v3 := zaddu5g_v3 q2 n1 (envOf s₀)
-  have w1l := w1.lo; have w1h := w1.hi; have w2l := w2.lo; have w2h := w2.hi; have zl := zz3.lo; have zh := zz3.hi
-  have w3l := w1'.lo; have w3h := w1'.hi; have ddl := dd.lo; have ddh := dd.hi
+  obtain v0 := zaddu5g_v0 q2 n1 (envOf s₀)
+  obtain v1 := zaddu5g_v1 q2 n1 (envOf s₀)
+  obtain v2 := zaddu5g_v2 q2 n1 (envOf s₀)
+  obtain v3 := zaddu5g_v3 q2 n1 (envOf s₀)
+  obtain w1l := w1.lo; have w1h := w1.hi; have w2l := w2.lo; have w2h := w2.hi; have zl := zz3.lo; have zh := zz3.hi
+  obtain w3l := w1'.lo; have w3h := w1'.hi; have ddl := dd.lo; have ddh := dd.hi
   obtain ⟨i0, hi0⟩ := norm_iv hiv (t := (Id.run (norm tops (Id.run (zaddu5g tops q2 n1)))).l4) rfl 0 (by decide)
     (b := _) rfl
   obtain ⟨i1, hi1⟩ := norm_iv hiv (t := (Id.run (norm tops (Id.run (zaddu5g tops q2 n1)))).l4) rfl 1 (by decide)
@@ -383,13 +383,13 @@ theorem zaddu_s4 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (za
     (b := _) rfl
   obtain ⟨i3, hi3⟩ := norm_iv hiv (t := (Id.run (norm tops (Id.run (zaddu5g tops q2 n1)))).l4) rfl 3 (by decide)
     (b := _) rfl
-  have c0 : Car (envOf s₀) 0 _ (p.W1 - p.W2) := Car.norm hB _ (by decide) hi0 (by rw [v0]; rng) (by rw [v0]; rng)
+  obtain c0 : Car (envOf s₀) 0 _ (p.W1 - p.W2) := Car.norm hB _ (by decide) hi0 (by rw [v0]; rng) (by rw [v0]; rng)
     (by rw [v0]; z_ring [w1.d, w2.d])
-  have c1 : Car (envOf s₀) 1 _ (p.W1 - p.x3) := Car.norm hB _ (by decide) hi1 (by rw [v1]; rng) (by rw [v1]; rng)
+  obtain c1 : Car (envOf s₀) 1 _ (p.W1 - p.x3) := Car.norm hB _ (by decide) hi1 (by rw [v1]; rng) (by rw [v1]; rng)
     (by rw [v1]; z_ring [w1.d, w2.d, dd.d])
-  have c2 : Car (envOf s₀) 2 _ p.zz3 := Car.norm hB _ (by decide) hi2 (by rw [v2]; rng) (by rw [v2]; rng)
+  obtain c2 : Car (envOf s₀) 2 _ p.zz3 := Car.norm hB _ (by decide) hi2 (by rw [v2]; rng) (by rw [v2]; rng)
     (by rw [v2]; z_ring [zz3.d])
-  have c3 : Car (envOf s₀) 3 _ p.x3 := Car.norm hB _ (by decide) hi3 (by rw [v3]; rng) (by rw [v3]; rng)
+  obtain c3 : Car (envOf s₀) 3 _ p.x3 := Car.norm hB _ (by decide) hi3 (by rw [v3]; rng) (by rw [v3]; rng)
     (by rw [v3]; z_ring [w1'.d, w2.d, dd.d])
   refine WP.mono (cut_step' hchk hc hB hiv zaddu_ov4
     (rs := [Id.run (norm tops (Id.run (zaddu5g tops q2 n1))), q2, n1, o1]) rfl rfl (Nat.le_of_eq rfl) ?_)
@@ -415,17 +415,17 @@ theorem zaddu_s5 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (za
     WP isa (.block (zadduPieces.getD 5 [])) s₀ fun s =>
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf (zadduLocs.getD 5 []) zadduBT5) ∧
         ZCut6 (envOf s) ((zL 5).getD 0 zero5) ((zL 5).getD 1 zero5) ((zL 5).getD 2 zero5) ((zL 5).getD 3 zero5) p := by
-  have hchk := zaddu_chk5; have hiv := zaddu_iv5
-  have hL := list4 (zL 4) zero5 (by decide +kernel)
+  obtain hchk := zaddu_chk5; have hiv := zaddu_iv5
+  obtain hL := list4 (zL 4) zero5 (by decide +kernel)
   simp only [zL] at h hL
   generalize leaves (zadduLocs.getD 4 []) = L at h hchk hiv hL
   generalize L.getD 0 zero5 = n2, L.getD 1 zero5 = q2, L.getD 2 zero5 = n1, L.getD 3 zero5 = o1 at h hL
   subst hL
   obtain ⟨dw, e, zz3, x3, w1, z3, y1, dy⟩ := h
-  have a0 : Car (envOf s₀) 0 (za3 n1 o1) p.y1 :=
+  obtain a0 : Car (envOf s₀) 0 (za3 n1 o1) p.y1 :=
     Lim.blendL (by decide) (by decide) (Lim.blendL (by decide) (by decide) (Lim.perm 3 3 3 3 (by decide) y1))
-  have a1 : Car (envOf s₀) 1 (za3 n1 o1) p.dy := Lim.blendL (by decide) (by decide) (Lim.blendR (by decide) (by decide) dy)
-  have a2 : Car (envOf s₀) 2 (za3 n1 o1) p.z3 := Lim.blendR (by decide) (by decide) z3
+  obtain a1 : Car (envOf s₀) 1 (za3 n1 o1) p.dy := Lim.blendL (by decide) (by decide) (Lim.blendR (by decide) (by decide) dy)
+  obtain a2 : Car (envOf s₀) 2 (za3 n1 o1) p.z3 := Lim.blendR (by decide) (by decide) z3
   refine WP.mono (cut_step' hchk hc hB hiv zaddu_ov5 (rs := [Id.run (mulCore tops (za3 n1 o1) n2), n2, q2, n1]) rfl rfl
     (Nat.le_of_eq rfl) (fun j k hm => absurd hm List.not_mem_nil)) fun s ⟨hc', hk, hE, hS⟩ => ⟨hc', hk, hE, ?_⟩
   exact ⟨hS.raw 0 0 (by decide) rfl rfl (Raw.mul a0 dw), hS.raw 0 1 (by decide) rfl rfl (Raw.mul a1 e),
@@ -453,41 +453,41 @@ theorem zaddu_s6 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (za
     (h : ZCut6 (envOf s₀) ((zL 5).getD 0 zero5) ((zL 5).getD 1 zero5) ((zL 5).getD 2 zero5) ((zL 5).getD 3 zero5) p) :
     WP isa (.block (zadduPieces.getD 6 [])) s₀ fun s =>
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf regs20 tabBT) ∧ ZOut (envOf s) (t5 0) (t5 5) (t5 10) (t5 15) p := by
-  have hchk := zaddu_chk6; have hiv := zaddu_iv6
-  have hL := list4 (zL 5) zero5 (by decide +kernel)
+  obtain hchk := zaddu_chk6; have hiv := zaddu_iv6
+  obtain hL := list4 (zL 5) zero5 (by decide +kernel)
   simp only [zL] at h hL
   generalize leaves (zadduLocs.getD 5 []) = L at h hchk hiv hL
   generalize L.getD 0 zero5 = q3, L.getD 1 zero5 = n2, L.getD 2 zero5 = q2, L.getD 3 zero5 = n1 at h hL
   subst hL
   obtain ⟨a1, ev, zzz3, zz3, x3, w1, z3⟩ := h
-  have nb : Nb ≤ 2 ^ 259 := by simp only [Nb]; omega_using []
-  have v0 := zaddu7v_v0 q3 (envOf s₀)
-  have v3 := zaddu7v_v3 q3 (envOf s₀)
-  have r0 := zaddu7r_v0 q3 q2 (envOf s₀)
-  have r1 := zaddu7r_v1 q3 q2 (envOf s₀)
-  have r2 := zaddu7r_v2 q3 q2 (envOf s₀)
-  have a1l := a1.lo; have a1h := a1.hi; have evl := ev.lo; have evh := ev.hi; have zl := zzz3.lo; have zh := zzz3.hi
-  have w1l := w1.lo; have w1h := w1.hi
+  obtain nb : Nb ≤ 2 ^ 259 := by simp only [Nb]; omega_using []
+  obtain v0 := zaddu7v_v0 q3 (envOf s₀)
+  obtain v3 := zaddu7v_v3 q3 (envOf s₀)
+  obtain r0 := zaddu7r_v0 q3 q2 (envOf s₀)
+  obtain r1 := zaddu7r_v1 q3 q2 (envOf s₀)
+  obtain r2 := zaddu7r_v2 q3 q2 (envOf s₀)
+  obtain a1l := a1.lo; have a1h := a1.hi; have evl := ev.lo; have evh := ev.hi; have zl := zzz3.lo; have zh := zzz3.hi
+  obtain w1l := w1.lo; have w1h := w1.hi
   obtain ⟨i0, hi0⟩ := norm_iv1 hiv (t := (znv q3).l4) rfl 0 (by decide) (b := _) rfl
   obtain ⟨i3, hi3⟩ := norm_iv1 hiv (t := (znv q3).l4) rfl 3 (by decide) (b := _) rfl
-  have c0 : Car (envOf s₀) 0 (znv q3) p.zzz3 := Car.norm hB _ (by decide) hi0 (by rw [v0]; rng) (by rw [v0]; rng)
+  obtain c0 : Car (envOf s₀) 0 (znv q3) p.zzz3 := Car.norm hB _ (by decide) hi0 (by rw [v0]; rng) (by rw [v0]; rng)
     (by rw [v0]; z_ring [zzz3.d])
-  have c3 : Car (envOf s₀) 3 (znv q3) (2 * (p.Ev - p.A1)) :=
+  obtain c3 : Car (envOf s₀) 3 (znv q3) (2 * (p.Ev - p.A1)) :=
     Car.norm hB _ (by decide) hi3 (by rw [v3]; rng) (by rw [v3]; rng) (by rw [v3]; z_ring [ev.d, a1.d])
-  have t0 : Car (envOf s₀) 0 (zta q3 n2 n1) p.zz3 :=
+  obtain t0 : Car (envOf s₀) 0 (zta q3 n2 n1) p.zz3 :=
     Lim.blendL (by decide) (by decide) (Lim.blendL (by decide) (by decide) (Lim.perm 2 3 2 3 (by decide) zz3))
-  have t1 : Car (envOf s₀) 1 (zta q3 n2 n1) p.x3 :=
+  obtain t1 : Car (envOf s₀) 1 (zta q3 n2 n1) p.x3 :=
     Lim.blendL (by decide) (by decide) (Lim.blendL (by decide) (by decide) (Lim.perm 2 3 2 3 (by decide) x3))
-  have t2 : Car (envOf s₀) 2 (zta q3 n2 n1) p.z3 :=
+  obtain t2 : Car (envOf s₀) 2 (zta q3 n2 n1) p.z3 :=
     Lim.blendL (by decide) (by decide) (Lim.blendR (by decide) (by decide) z3)
-  have t3 : Car (envOf s₀) 3 (zta q3 n2 n1) (2 * (p.Ev - p.A1)) := Lim.blendR (by decide) (by decide) c3
-  have cz : Car (envOf s₀) 2 (Id.run (fblend tops n1 n2 8)) p.z3 := Lim.blendL (by decide) (by decide) z3
-  have cx : Car (envOf s₀) 3 (Id.run (fblend tops n1 n2 8)) p.x3 := Lim.blendR (by decide) (by decide) x3
-  have k0 : Chn (envOf s₀) 0 (Id.run (zaddu7r tops q3 q2 (zpa q3))) p.W1 :=
+  obtain t3 : Car (envOf s₀) 3 (zta q3 n2 n1) (2 * (p.Ev - p.A1)) := Lim.blendR (by decide) (by decide) c3
+  obtain cz : Car (envOf s₀) 2 (Id.run (fblend tops n1 n2 8)) p.z3 := Lim.blendL (by decide) (by decide) z3
+  obtain cx : Car (envOf s₀) 3 (Id.run (fblend tops n1 n2 8)) p.x3 := Lim.blendR (by decide) (by decide) x3
+  obtain k0 : Chn (envOf s₀) 0 (Id.run (zaddu7r tops q3 q2 (zpa q3))) p.W1 :=
     ⟨by rw [r0]; rng, by rw [r0]; rng, by rw [r0]; z_ring [w1.d]⟩
-  have k1 : Chn (envOf s₀) 1 (Id.run (zaddu7r tops q3 q2 (zpa q3))) p.A1 :=
+  obtain k1 : Chn (envOf s₀) 1 (Id.run (zaddu7r tops q3 q2 (zpa q3))) p.A1 :=
     ⟨by rw [r1]; rng, by rw [r1]; rng, by rw [r1]; z_ring [a1.d]⟩
-  have k2 : Chn (envOf s₀) 2 (Id.run (zaddu7r tops q3 q2 (zpa q3))) (p.Ev - p.A1) :=
+  obtain k2 : Chn (envOf s₀) 2 (Id.run (zaddu7r tops q3 q2 (zpa q3))) (p.Ev - p.A1) :=
     ⟨by rw [r2]; rng, by rw [r2]; rng, by rw [r2]; z_ring [ev.d, a1.d]⟩
   refine WP.mono (cut_step' hchk hc hB hiv zaddu_ov6
     (rs := [zta q3 n2 n1, znv q3, Id.run (zaddu7r tops q3 q2 (zpa q3)), Id.run (fblend tops n1 n2 8)]) rfl rfl
@@ -550,7 +550,7 @@ theorem Val.sqrE {E : Env} {k : Nat} {a : F5 T} {x : Fin pN} (h : Ent E k a x) :
   obtain ⟨M, h0, h1, h2⟩ := sqrCore_val a E k h.c
   have a0 := h.c.nonneg
   have hA := h.hi
-  have hp : vI E k a * vI E k a ≤ 2 ^ 259 * 2 ^ 259 :=
+  obtain hp : vI E k a * vI E k a ≤ 2 ^ 259 * 2 ^ 259 :=
     Int.mul_le_mul (Int.le_of_lt hA) (Int.le_of_lt hA) a0 (by decide)
   refine ⟨?_, ?_, ?_⟩
   · have := Int.mul_nonneg a0 a0
@@ -684,19 +684,19 @@ theorem dblu_s1 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (dbl
     WP isa (.block (dbluPieces.getD 1 [])) s₀ fun s =>
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf (dbluLocs.getD 1 []) dbluBT1) ∧
         UCut2 (envOf s) ((uL 1).getD 0 zero5) ((uL 1).getD 1 zero5) p := by
-  have hchk := dblu_chk1; have hiv := dblu_iv1
-  have hL := list3 (uL 0) zero5 (by decide +kernel)
+  obtain hchk := dblu_chk1; have hiv := dblu_iv1
+  obtain hL := list3 (uL 0) zero5 (by decide +kernel)
   simp only [uL] at h hL
   generalize leaves (dbluLocs.getD 0 []) = L at h hchk hiv hL
   generalize L.getD 0 zero5 = sq, L.getD 1 zero5 = ta, L.getD 2 zero5 = tb at h hL
   subst hL
   obtain ⟨zz, xx, yy, x, y⟩ := h
-  have v0 := dblu2g_v0 sq ta (envOf s₀)
-  have v1 := dblu2g_v1 sq ta (envOf s₀)
-  have v2 := dblu2g_v2 sq ta (envOf s₀)
-  have v3 := dblu2g_v3 sq ta (envOf s₀)
-  have zzl := zz.lo; have zzh := zz.hi; have xxl := xx.lo; have xxh := xx.hi; have yyl := yy.lo; have yyh := yy.hi
-  have xl := x.lo; have xh := x.hi
+  obtain v0 := dblu2g_v0 sq ta (envOf s₀)
+  obtain v1 := dblu2g_v1 sq ta (envOf s₀)
+  obtain v2 := dblu2g_v2 sq ta (envOf s₀)
+  obtain v3 := dblu2g_v3 sq ta (envOf s₀)
+  obtain zzl := zz.lo; have zzh := zz.hi; have xxl := xx.lo; have xxh := xx.hi; have yyl := yy.lo; have yyh := yy.hi
+  obtain xl := x.lo; have xh := x.hi
   obtain ⟨i0, hi0⟩ := norm_iv hiv (t := (Id.run (norm tops (Id.run (dblu2g tops sq ta)))).l4) rfl 0 (by decide)
     (b := _) rfl
   obtain ⟨i1, hi1⟩ := norm_iv hiv (t := (Id.run (norm tops (Id.run (dblu2g tops sq ta)))).l4) rfl 1 (by decide)
@@ -705,13 +705,13 @@ theorem dblu_s1 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (dbl
     (b := _) rfl
   obtain ⟨i3, hi3⟩ := norm_iv hiv (t := (Id.run (norm tops (Id.run (dblu2g tops sq ta)))).l4) rfl 3 (by decide)
     (b := _) rfl
-  have c0 : Car (envOf s₀) 0 _ p.x := Car.norm hB _ (by decide) hi0 (by rw [v0]; rng) (by rw [v0]; rng)
+  obtain c0 : Car (envOf s₀) 0 _ p.x := Car.norm hB _ (by decide) hi0 (by rw [v0]; rng) (by rw [v0]; rng)
     (by rw [v0]; u_ring [x.d])
-  have c1 : Car (envOf s₀) 1 _ p.YY := Car.norm hB _ (by decide) hi1 (by rw [v1]; simp only [Sq] at *; rng)
+  obtain c1 : Car (envOf s₀) 1 _ p.YY := Car.norm hB _ (by decide) hi1 (by rw [v1]; simp only [Sq] at *; rng)
     (by rw [v1]; simp only [Sq] at *; rng) (by rw [v1]; u_ring [yy.d])
-  have c2 : Car (envOf s₀) 2 _ p.M := Car.norm hB _ (by decide) hi2 (by rw [v2]; simp only [Sq] at *; rng)
+  obtain c2 : Car (envOf s₀) 2 _ p.M := Car.norm hB _ (by decide) hi2 (by rw [v2]; simp only [Sq] at *; rng)
     (by rw [v2]; simp only [Sq] at *; rng) (by rw [v2]; u_ring [xx.d, zz.d])
-  have c3 : Car (envOf s₀) 3 _ p.YY := Car.norm hB _ (by decide) hi3 (by rw [v3]; simp only [Sq] at *; rng)
+  obtain c3 : Car (envOf s₀) 3 _ p.YY := Car.norm hB _ (by decide) hi3 (by rw [v3]; simp only [Sq] at *; rng)
     (by rw [v3]; simp only [Sq] at *; rng) (by rw [v3]; u_ring [yy.d])
   refine WP.mono (cut_step' hchk hc hB hiv dblu_ov1 (rs := [Id.run (norm tops (Id.run (dblu2g tops sq ta))), ta, tb])
     rfl rfl (Nat.le_of_eq rfl) ?_) fun s ⟨hc', hk, hE, hS⟩ => ⟨hc', hk, hE, ?_⟩
@@ -730,8 +730,8 @@ theorem dblu_s2 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (dbl
     WP isa (.block (dbluPieces.getD 2 [])) s₀ fun s =>
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf (dbluLocs.getD 2 []) dbluBT2) ∧
         UCut3 (envOf s) ((uL 2).getD 0 zero5) ((uL 2).getD 1 zero5) ((uL 2).getD 2 zero5) p := by
-  have hchk := dblu_chk2; have hiv := dblu_iv2
-  have hL := list3 (uL 1) zero5 (by decide +kernel)
+  obtain hchk := dblu_chk2; have hiv := dblu_iv2
+  obtain hL := list3 (uL 1) zero5 (by decide +kernel)
   simp only [uL] at h hL
   generalize leaves (dbluLocs.getD 1 []) = L at h hchk hiv hL
   generalize L.getD 0 zero5 = n1, L.getD 1 zero5 = ta, L.getD 2 zero5 = tb at h hL
@@ -751,23 +751,23 @@ theorem dblu_s3 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (dbl
     WP isa (.block (dbluPieces.getD 3 [])) s₀ fun s =>
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf (dbluLocs.getD 3 []) dbluBT3) ∧
         UCut4 (envOf s) ((uL 3).getD 0 zero5) ((uL 3).getD 1 zero5) ((uL 3).getD 2 zero5) ((uL 3).getD 3 zero5) p := by
-  have hchk := dblu_chk3; have hiv := dblu_iv3
-  have hL := list4 (uL 2) zero5 (by decide +kernel)
+  obtain hchk := dblu_chk3; have hiv := dblu_iv3
+  obtain hL := list4 (uL 2) zero5 (by decide +kernel)
   simp only [uL] at h hL
   generalize leaves (dbluLocs.getD 2 []) = L at h hchk hiv hL
   generalize L.getD 0 zero5 = q2, L.getD 1 zero5 = n1, L.getD 2 zero5 = ta, L.getD 3 zero5 = tb at h hL
   subst hL
   obtain ⟨s', yy2, mm, m, y⟩ := h
-  have v0 := dblu4g_v0 q2 (envOf s₀)
-  have v1 := dblu4g_v1 q2 (envOf s₀)
-  have sl := s'.lo; have sh := s'.hi; have ml := mm.lo; have mh := mm.hi
+  obtain v0 := dblu4g_v0 q2 (envOf s₀)
+  obtain v1 := dblu4g_v1 q2 (envOf s₀)
+  obtain sl := s'.lo; have sh := s'.hi; have ml := mm.lo; have mh := mm.hi
   obtain ⟨i0, hi0⟩ := norm_iv hiv (t := (Id.run (norm tops (Id.run (dblu4g tops q2)))).l4) rfl 0 (by decide)
     (b := _) rfl
   obtain ⟨i1, hi1⟩ := norm_iv hiv (t := (Id.run (norm tops (Id.run (dblu4g tops q2)))).l4) rfl 1 (by decide)
     (b := _) rfl
-  have c0 : Car (envOf s₀) 0 _ p.w := Car.norm hB _ (by decide) hi0 (by rw [v0]; rng) (by rw [v0]; rng)
+  obtain c0 : Car (envOf s₀) 0 _ p.w := Car.norm hB _ (by decide) hi0 (by rw [v0]; rng) (by rw [v0]; rng)
     (by rw [v0]; u_ring [s'.d, mm.d])
-  have c1 : Car (envOf s₀) 1 _ (4 * p.S) := Car.norm hB _ (by decide) hi1 (by rw [v1]; rng) (by rw [v1]; rng)
+  obtain c1 : Car (envOf s₀) 1 _ (4 * p.S) := Car.norm hB _ (by decide) hi1 (by rw [v1]; rng) (by rw [v1]; rng)
     (by rw [v1]; u_ring [s'.d])
   refine WP.mono (cut_step' hchk hc hB hiv dblu_ov3
     (rs := [Id.run (norm tops (Id.run (dblu4g tops q2))), q2, n1, ta, tb]) rfl rfl (Nat.le_of_eq rfl) ?_)
@@ -789,29 +789,29 @@ theorem dblu_s4 {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ (bndsOf (dbl
     (h : UCut4 (envOf s₀) ((uL 3).getD 0 zero5) ((uL 3).getD 1 zero5) ((uL 3).getD 2 zero5) ((uL 3).getD 3 zero5) p) :
     WP isa (.block (dbluPieces.getD 4 [])) s₀ fun s =>
       Ctx par s ∧ Kept s₀ s ∧ EnvOK s (bndsOf regs20 tabBT) ∧ ChainOk (envOf s) (t5 10) (t5 15) p.out := by
-  have hchk := dblu_chk4; have hiv := dblu_iv4
-  have hL := list5 (uL 3) zero5 (by decide +kernel)
+  obtain hchk := dblu_chk4; have hiv := dblu_iv4
+  obtain hL := list5 (uL 3) zero5 (by decide +kernel)
   simp only [uL] at h hL
   generalize leaves (dbluLocs.getD 3 []) = L at h hchk hiv hL
   generalize L.getD 0 zero5 = n2, L.getD 1 zero5 = q2, L.getD 2 zero5 = n1, L.getD 3 zero5 = ta,
     L.getD 4 zero5 = tb at h hL
   subst hL
   obtain ⟨w, s4, s', yy2, mm, m, y⟩ := h
-  have q0 : Raw (envOf s₀) 0 (uq3 n1 n2) (p.M * p.w) := Raw.mul (Lim.perm 2 2 2 2 (by decide) m) w
-  have r0 := dblu5r_v0 (uq3 n1 n2) q2 (envOf s₀)
-  have r1 := dblu5r_v1 (uq3 n1 n2) q2 (envOf s₀)
-  have r2 := dblu5r_v2 (uq3 n1 n2) q2 (envOf s₀)
-  have sl := s'.lo; have sh := s'.hi; have ml := mm.lo; have mh := mm.hi; have yl := yy2.lo; have yh := yy2.hi
-  have ql := q0.lo; have qh := q0.hi
-  have k0 : Chn (envOf s₀) 0 (Id.run (dblu5r tops (uq3 n1 n2) q2)) p.XT :=
+  obtain q0 : Raw (envOf s₀) 0 (uq3 n1 n2) (p.M * p.w) := Raw.mul (Lim.perm 2 2 2 2 (by decide) m) w
+  obtain r0 := dblu5r_v0 (uq3 n1 n2) q2 (envOf s₀)
+  obtain r1 := dblu5r_v1 (uq3 n1 n2) q2 (envOf s₀)
+  obtain r2 := dblu5r_v2 (uq3 n1 n2) q2 (envOf s₀)
+  obtain sl := s'.lo; have sh := s'.hi; have ml := mm.lo; have mh := mm.hi; have yl := yy2.lo; have yh := yy2.hi
+  obtain ql := q0.lo; have qh := q0.hi
+  obtain k0 : Chn (envOf s₀) 0 (Id.run (dblu5r tops (uq3 n1 n2) q2)) p.XT :=
     ⟨by rw [r0]; rng, by rw [r0]; rng, by rw [r0]; u_ring [mm.d, s'.d]⟩
-  have k1 : Chn (envOf s₀) 1 (Id.run (dblu5r tops (uq3 n1 n2) q2)) p.YT :=
+  obtain k1 : Chn (envOf s₀) 1 (Id.run (dblu5r tops (uq3 n1 n2) q2)) p.YT :=
     ⟨by rw [r1]; rng, by rw [r1]; rng, by rw [r1]; u_ring [q0.d, yy2.d]⟩
-  have k2 : Chn (envOf s₀) 2 (Id.run (dblu5r tops (uq3 n1 n2) q2)) (4 * p.YY2) :=
+  obtain k2 : Chn (envOf s₀) 2 (Id.run (dblu5r tops (uq3 n1 n2) q2)) (4 * p.YY2) :=
     ⟨by rw [r2]; rng, by rw [r2]; rng, by rw [r2]; u_ring [yy2.d]⟩
-  have cz : Ent (envOf s₀) 2 (Id.run (fblend tops (Id.run (fperm tops ta 3 3 3 3)) (Id.run (fperm tops n2 1 1 1 1)) 8))
+  obtain cz : Ent (envOf s₀) 2 (Id.run (fblend tops (Id.run (fperm tops ta 3 3 3 3)) (Id.run (fperm tops n2 1 1 1 1)) 8))
       p.y := Lim.blendL (by decide) (by decide) (Lim.perm 3 3 3 3 (by decide) y)
-  have cx : Car (envOf s₀) 3 (Id.run (fblend tops (Id.run (fperm tops ta 3 3 3 3)) (Id.run (fperm tops n2 1 1 1 1)) 8))
+  obtain cx : Car (envOf s₀) 3 (Id.run (fblend tops (Id.run (fperm tops ta 3 3 3 3)) (Id.run (fperm tops n2 1 1 1 1)) 8))
       (4 * p.S) := Lim.blendR (by decide) (by decide) (Lim.perm 1 1 1 1 (by decide) s4)
   refine WP.mono (cut_step' hchk hc hB hiv dblu_ov4
     (rs := [ta, tb, Id.run (dblu5r tops (uq3 n1 n2) q2),
@@ -857,25 +857,25 @@ theorem tabG_ok {s₀ : State} (hc : Ctx par s₀) (hB : EnvOK s₀ stB) :
         Ent (envOf s) 2 (t5 0) (D (cHalf : Nat)) ∧
         Ent (envOf s) 3 (t5 0) (D (4 * wv (envOf s₀) (.ld .rdx 0))) ∧
         Ent (envOf s) 0 (t5 5) (D (cEighth : Nat)) := by
-  have wx := words_ld hB .rcx rfl 0
-  have wy := words_ld hB .rdx rfl 0
+  obtain wx := words_ld hB .rcx rfl 0
+  obtain wy := words_ld hB .rdx rfl 0
   obtain ⟨⟨xc, xv⟩, yc, yv⟩ := convGg_val (.ld .rcx 0) (.ld .rdx 0) (envOf s₀) wx wy
-  have xl := wx.lo; have xh := wx.hi; have yl := wy.lo; have yh := wy.hi
+  obtain xl := wx.lo; have xh := wx.hi; have yl := wy.lo; have yh := wy.hi
   have p0 (a b c d : Nat) : pick4 a b c d 0 = a := rfl
   have p2 (a b c d : Nat) : pick4 a b c d 2 = c := rfl
-  have k0 := fconst_car cQuarter 0 cHalf 0 (envOf s₀) (k := 0) (by decide) (by rw [p0]; decide +kernel)
-  have k2 := fconst_car cQuarter 0 cHalf 0 (envOf s₀) (k := 2) (by decide) (by rw [p2]; decide +kernel)
-  have k8 := fconst_car cEighth 0 0 0 (envOf s₀) (k := 0) (by decide) (by rw [p0]; decide +kernel)
+  obtain k0 := fconst_car cQuarter 0 cHalf 0 (envOf s₀) (k := 0) (by decide) (by rw [p0]; decide +kernel)
+  obtain k2 := fconst_car cQuarter 0 cHalf 0 (envOf s₀) (k := 2) (by decide) (by rw [p2]; decide +kernel)
+  obtain k8 := fconst_car cEighth 0 0 0 (envOf s₀) (k := 0) (by decide) (by rw [p0]; decide +kernel)
   rw [p0] at k0 k8
   rw [p2] at k2
-  have nb : Nb ≤ 2 ^ 259 := by simp only [Nb]; omega_using []
-  have a0 : Ent (envOf s₀) 0 tabGA (D (cQuarter : Nat)) := Lim.blendR (by decide) (by decide) (k0.mono nb)
-  have a1 : Ent (envOf s₀) 1 tabGA (D (4 * wv (envOf s₀) (.ld .rcx 0))) :=
+  obtain nb : Nb ≤ 2 ^ 259 := by simp only [Nb]; omega_using []
+  obtain a0 : Ent (envOf s₀) 0 tabGA (D (cQuarter : Nat)) := Lim.blendR (by decide) (by decide) (k0.mono nb)
+  obtain a1 : Ent (envOf s₀) 1 tabGA (D (4 * wv (envOf s₀) (.ld .rcx 0))) :=
     Lim.blendL (by decide) (by decide) ⟨xc, by rw [xv]; omega_using [xh], by rw [xv]⟩
-  have a2 : Ent (envOf s₀) 2 tabGA (D (cHalf : Nat)) := Lim.blendR (by decide) (by decide) (k2.mono nb)
-  have a3 : Ent (envOf s₀) 3 tabGA (D (4 * wv (envOf s₀) (.ld .rdx 0))) :=
+  obtain a2 : Ent (envOf s₀) 2 tabGA (D (cHalf : Nat)) := Lim.blendR (by decide) (by decide) (k2.mono nb)
+  obtain a3 : Ent (envOf s₀) 3 tabGA (D (4 * wv (envOf s₀) (.ld .rdx 0))) :=
     Lim.blendL (by decide) (by decide) ⟨yc, by rw [yv]; omega_using [yh], by rw [yv]⟩
-  have b0 : Ent (envOf s₀) 0 (Id.run (fconst tops cEighth 0 0 0)) (D (cEighth : Nat)) := k8.mono nb
+  obtain b0 : Ent (envOf s₀) 0 (Id.run (fconst tops cEighth 0 0 0)) (D (cEighth : Nat)) := k8.mono nb
   rw [tabGPieces_flat]
   refine WP.mono (cut_step' tabG_chk0 hc hB tabG_iv0 tabG_ov0
     (rs := [tabGA, Id.run (fconst tops cEighth 0 0 0)]) rfl rfl (Nat.le_of_eq rfl)

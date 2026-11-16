@@ -50,23 +50,23 @@ theorem rej_piece {F : List Byte → Bool} {nm : String} {c : Prog isa} (hv : Ve
   set C : Buf := ⟨ca, co, 2048⟩
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨hD, hR⟩, hC⟩, dDR⟩, dDC⟩, dRC⟩ := hc
-  have hR' := (Lay.okW_iff.mp hR).1
-  have hC' := (Lay.okW_iff.mp hC).1
+  obtain hR' := (Lay.okW_iff.mp hR).1
+  obtain hC' := (Lay.okW_iff.mp hC).1
   refine callPR_piece _ 3 rfl hv ok (by decide) (by decide) (by simp [argOk, hD, hR', hC']) (fun s₀ => [D.rgn s₀])
     (fun s₀ => [R.rgn s₀, C.rgn s₀, below (E1 s₀) 12]) hA
     (fun s₀ s₁ hp ⟨s, ha, h, m, hg⟩ => ?_) (fun s₀ s₀' s₁ s₁' hp hp' hq ⟨s, ha, h, m, hg⟩ ⟨s', ha', h', m', hg'⟩ => ?_)
     (fun s₀ hp r hr => ?_) (fun s₀ s₁ s' hp ⟨s, ha, h, m, hg⟩ h' fr post => ?_)
   · have a0 : arg (pushed (argPush 3) s₁).callEntry 0 = D.ptr s₀ := ent_arg hp h (as := [.buf D, .buf R, .buf C]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 3) s₁).callEntry 1 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 3) s₁).callEntry 2 = C.ptr s₀ := ent_arg hp h (as := [.buf D, .buf R, .buf C]) (by simp) hg (i := 2) (by simp)
-    have eA : argAddr (pushed (argPush 3) s₁).callEntry 0 = _ := ent_arg0 h (n := 3) (by decide)
-    have eSp : (pushed (argPush 3) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 3) (by decide)
+    obtain a1 : arg (pushed (argPush 3) s₁).callEntry 1 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 3) s₁).callEntry 2 = C.ptr s₀ := ent_arg hp h (as := [.buf D, .buf R, .buf C]) (by simp) hg (i := 2) (by simp)
+    obtain eA : argAddr (pushed (argPush 3) s₁).callEntry 0 = _ := ent_arg0 h (n := 3) (by decide)
+    obtain eSp : (pushed (argPush 3) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 3) (by decide)
     obtain ⟨rD₁, rD₂, rD₃⟩ := ent_rgn hp hD (n := 3) (K := 56) (by decide)
     obtain ⟨rR₁, rR₂, rR₃⟩ := ent_rgn hp hR' (n := 3) (K := 56) (by decide)
     obtain ⟨rC₁, rC₂, rC₃⟩ := ent_rgn hp hC' (n := 3) (K := 56) (by decide)
     obtain ⟨rA₂, rA₃⟩ := ent_self hp (n := 3) (K := 56) (by decide)
-    have hE := E1_big hp
-    have cv := covers_of (s := s₁) (n := 3) (rd := [D.rgn s₀]) (wr := [R.rgn s₀, C.rgn s₀, below (E1 s₀) 12])
+    obtain hE := E1_big hp
+    obtain cv := covers_of (s := s₁) (n := 3) (rd := [D.rgn s₀]) (wr := [R.rgn s₀, C.rgn s₀, below (E1 s₀) 12])
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         subst hr; exact Buf.within hp hD h.rd h.wr) fun r hr => by
@@ -84,20 +84,20 @@ theorem rej_piece {F : List Byte → Bool} {nm : String} {c : Prog isa} (hv : Ve
       rfl, rfl, Buf.disj hp hD hR' dDR, Buf.disj hp hD hC' dDC, rD₁, Buf.disj hp hR' hC' dRC, rR₁, rC₁,
       rD₂, rR₂, rC₂, rA₂, rD₃, rR₃, rC₃, rA₃, Buf.fit hp hD, Buf.fit hp hR', Buf.fit hp hC'⟩
   · have e₁ : D.ptr s₀ = D.ptr s₀' := hq.t.ptr hD
-    have e₂ : R.ptr s₀ = R.ptr s₀' := hq.t.ptr hR'
-    have e₃ : C.ptr s₀ = C.ptr s₀' := hq.t.ptr hC'
+    obtain e₂ : R.ptr s₀ = R.ptr s₀' := hq.t.ptr hR'
+    obtain e₃ : C.ptr s₀ = C.ptr s₀' := hq.t.ptr hC'
     refine ⟨by simp only [Buf.rgn, e₁], by simp only [Buf.rgn, e₂, e₃, hq.t.E1], ?_⟩
-    have a0 : arg (pushed (argPush 3) s₁).callEntry 0 = D.ptr s₀ := ent_arg hp h (as := [.buf D, .buf R, .buf C]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 3) s₁).callEntry 1 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 3) s₁).callEntry 2 = C.ptr s₀ := ent_arg hp h (as := [.buf D, .buf R, .buf C]) (by simp) hg (i := 2) (by simp)
-    have a0' : arg (pushed (argPush 3) s₁').callEntry 0 = D.ptr s₀' := ent_arg hp' h' (as := [.buf D, .buf R, .buf C]) (by simp) hg' (i := 0) (by simp)
-    have a1' : arg (pushed (argPush 3) s₁').callEntry 1 = R.ptr s₀' := ent_arg hp' h' (as := [.buf D, .buf R, .buf C]) (by simp) hg' (i := 1) (by simp)
-    have a2' : arg (pushed (argPush 3) s₁').callEntry 2 = C.ptr s₀' := ent_arg hp' h' (as := [.buf D, .buf R, .buf C]) (by simp) hg' (i := 2) (by simp)
-    have eSp : (pushed (argPush 3) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 3) (by decide)
-    have eSp' : (pushed (argPush 3) s₁').callEntry.gpr .esp = _ := ent_esp h' (n := 3) (by decide)
-    have b₁ := VG.Proof.MlKem.bytesAt_congr (ent_bytes hp h (n := 3) (by decide) hD)
-    have b₂ := VG.Proof.MlKem.bytesAt_congr (ent_bytes hp' h' (n := 3) (by decide) hD)
-    have key : bytesAt (pushed (argPush 3) s₁).callEntry.mem (D.addr s₀) 34 =
+    obtain a0 : arg (pushed (argPush 3) s₁).callEntry 0 = D.ptr s₀ := ent_arg hp h (as := [.buf D, .buf R, .buf C]) (by simp) hg (i := 0) (by simp)
+    obtain a1 : arg (pushed (argPush 3) s₁).callEntry 1 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 3) s₁).callEntry 2 = C.ptr s₀ := ent_arg hp h (as := [.buf D, .buf R, .buf C]) (by simp) hg (i := 2) (by simp)
+    obtain a0' : arg (pushed (argPush 3) s₁').callEntry 0 = D.ptr s₀' := ent_arg hp' h' (as := [.buf D, .buf R, .buf C]) (by simp) hg' (i := 0) (by simp)
+    obtain a1' : arg (pushed (argPush 3) s₁').callEntry 1 = R.ptr s₀' := ent_arg hp' h' (as := [.buf D, .buf R, .buf C]) (by simp) hg' (i := 1) (by simp)
+    obtain a2' : arg (pushed (argPush 3) s₁').callEntry 2 = C.ptr s₀' := ent_arg hp' h' (as := [.buf D, .buf R, .buf C]) (by simp) hg' (i := 2) (by simp)
+    obtain eSp : (pushed (argPush 3) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 3) (by decide)
+    obtain eSp' : (pushed (argPush 3) s₁').callEntry.gpr .esp = _ := ent_esp h' (n := 3) (by decide)
+    obtain b₁ := VG.Proof.MlKem.bytesAt_congr (ent_bytes hp h (n := 3) (by decide) hD)
+    obtain b₂ := VG.Proof.MlKem.bytesAt_congr (ent_bytes hp' h' (n := 3) (by decide) hD)
+    obtain key : bytesAt (pushed (argPush 3) s₁).callEntry.mem (D.addr s₀) 34 =
         bytesAt (pushed (argPush 3) s₁').callEntry.mem (D.addr s₀') 34 := by
       rw [b₁, b₂, m, m']; exact hseed s₀ s₀' s s' hp hp' hq ha ha'
     simp only [Buf.addr, e₁] at key
@@ -111,9 +111,9 @@ theorem rej_piece {F : List Byte → Bool} {nm : String} {c : Prog isa} (hv : Ve
     · exact Buf.inW hp hC' (Lay.okW_iff.mp hC).2
     · exact stk_W hp (by decide)
   · obtain ⟨s₂, m₂, g₂, post⟩ := post
-    have a0 : arg (pushed (argPush 3) s₁).callEntry 0 = D.ptr s₀ := ent_arg hp h (as := [.buf D, .buf R, .buf C]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 3) s₁).callEntry 1 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
-    have b₁ : bytesAt (pushed (argPush 3) s₁).callEntry.mem ((D.ptr s₀).setWidth 64) 34 = bytesAt s.mem (D.addr s₀) 34 := by
+    obtain a0 : arg (pushed (argPush 3) s₁).callEntry 0 = D.ptr s₀ := ent_arg hp h (as := [.buf D, .buf R, .buf C]) (by simp) hg (i := 0) (by simp)
+    obtain a1 : arg (pushed (argPush 3) s₁).callEntry 1 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
+    obtain b₁ : bytesAt (pushed (argPush 3) s₁).callEntry.mem ((D.ptr s₀).setWidth 64) 34 = bytesAt s.mem (D.addr s₀) 34 := by
       rw [← m]; exact VG.Proof.MlKem.bytesAt_congr (ent_bytes hp h (n := 3) (by decide) hD)
     generalize he : (pushed (argPush 3) s₁).callEntry = e at a0 a1 post
     sig_post [rejK, withRet, rejNTTContract, rejNTTSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
@@ -138,27 +138,27 @@ theorem mask_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (exp
   set D : Buf := ⟨da, dO, 66⟩
   set R : Buf := ⟨aa, ao, 1024⟩
   set C : Buf := ⟨ca, co, 2048⟩
-  have g1l : (BitVec.ofNat 32 g1).toNat = g1 := by rcases hg1 with rfl | rfl <;> rfl
+  obtain g1l : (BitVec.ofNat 32 g1).toNat = g1 := by rcases hg1 with rfl | rfl <;> rfl
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨hD, hR⟩, hC⟩, dDR⟩, dDC⟩, dRC⟩ := hc
-  have hR' := (Lay.okW_iff.mp hR).1
-  have hC' := (Lay.okW_iff.mp hC).1
+  obtain hR' := (Lay.okW_iff.mp hR).1
+  obtain hC' := (Lay.okW_iff.mp hC).1
   refine callP_piece _ 4 rfl hv ok (by decide) (by decide) (by simp [argOk, hD, hR', hC']) (fun s₀ => [D.rgn s₀])
     (fun s₀ => [R.rgn s₀, C.rgn s₀, below (E1 s₀) 16]) hA
     (fun s₀ s₁ hp ⟨s, ha, h, m, hg⟩ => ?_) (fun s₀ s₀' s₁ s₁' hp hp' hq ⟨s, ha, h, m, hg⟩ ⟨s', ha', h', m', hg'⟩ => ?_)
     (fun s₀ hp r hr => ?_) (fun s₀ s₁ s' hp ⟨s, ha, h, m, hg⟩ h' fr post => ?_)
   · have a0 : arg (pushed (argPush 4) s₁).callEntry 0 = D.ptr s₀ := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 4) s₁).callEntry 1 = BitVec.ofNat 32 g1 := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 4) s₁).callEntry 2 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 2) (by simp)
-    have a3 : arg (pushed (argPush 4) s₁).callEntry 3 = C.ptr s₀ := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 3) (by simp)
-    have eA : argAddr (pushed (argPush 4) s₁).callEntry 0 = _ := ent_arg0 h (n := 4) (by decide)
-    have eSp : (pushed (argPush 4) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 4) (by decide)
+    obtain a1 : arg (pushed (argPush 4) s₁).callEntry 1 = BitVec.ofNat 32 g1 := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 4) s₁).callEntry 2 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 2) (by simp)
+    obtain a3 : arg (pushed (argPush 4) s₁).callEntry 3 = C.ptr s₀ := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 3) (by simp)
+    obtain eA : argAddr (pushed (argPush 4) s₁).callEntry 0 = _ := ent_arg0 h (n := 4) (by decide)
+    obtain eSp : (pushed (argPush 4) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 4) (by decide)
     obtain ⟨rD₁, rD₂, rD₃⟩ := ent_rgn hp hD (n := 4) (K := 56) (by decide)
     obtain ⟨rR₁, rR₂, rR₃⟩ := ent_rgn hp hR' (n := 4) (K := 56) (by decide)
     obtain ⟨rC₁, rC₂, rC₃⟩ := ent_rgn hp hC' (n := 4) (K := 56) (by decide)
     obtain ⟨rA₂, rA₃⟩ := ent_self hp (n := 4) (K := 56) (by decide)
-    have hE := E1_big hp
-    have cv := covers_of (s := s₁) (n := 4) (rd := [D.rgn s₀]) (wr := [R.rgn s₀, C.rgn s₀, below (E1 s₀) 16])
+    obtain hE := E1_big hp
+    obtain cv := covers_of (s := s₁) (n := 4) (rd := [D.rgn s₀]) (wr := [R.rgn s₀, C.rgn s₀, below (E1 s₀) 16])
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         subst hr; exact Buf.within hp hD h.rd h.wr) fun r hr => by
@@ -176,19 +176,19 @@ theorem mask_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (exp
       rfl, rfl, Buf.disj hp hD hR' dDR, Buf.disj hp hD hC' dDC, rD₁, Buf.disj hp hR' hC' dRC, rR₁, rC₁,
       rD₂, rR₂, rC₂, rA₂, rD₃, rR₃, rC₃, rA₃, Buf.fit hp hD, Buf.fit hp hR', Buf.fit hp hC', hg1⟩
   · have e₁ : D.ptr s₀ = D.ptr s₀' := hq.t.ptr hD
-    have e₂ : R.ptr s₀ = R.ptr s₀' := hq.t.ptr hR'
-    have e₃ : C.ptr s₀ = C.ptr s₀' := hq.t.ptr hC'
+    obtain e₂ : R.ptr s₀ = R.ptr s₀' := hq.t.ptr hR'
+    obtain e₃ : C.ptr s₀ = C.ptr s₀' := hq.t.ptr hC'
     refine ⟨by simp only [Buf.rgn, e₁], by simp only [Buf.rgn, e₂, e₃, hq.t.E1], ?_⟩
-    have a0 : arg (pushed (argPush 4) s₁).callEntry 0 = D.ptr s₀ := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 4) s₁).callEntry 1 = BitVec.ofNat 32 g1 := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 4) s₁).callEntry 2 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 2) (by simp)
-    have a3 : arg (pushed (argPush 4) s₁).callEntry 3 = C.ptr s₀ := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 3) (by simp)
-    have a0' : arg (pushed (argPush 4) s₁').callEntry 0 = D.ptr s₀' := ent_arg hp' h' (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg' (i := 0) (by simp)
-    have a1' : arg (pushed (argPush 4) s₁').callEntry 1 = BitVec.ofNat 32 g1 := ent_arg hp' h' (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg' (i := 1) (by simp)
-    have a2' : arg (pushed (argPush 4) s₁').callEntry 2 = R.ptr s₀' := ent_arg hp' h' (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg' (i := 2) (by simp)
-    have a3' : arg (pushed (argPush 4) s₁').callEntry 3 = C.ptr s₀' := ent_arg hp' h' (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg' (i := 3) (by simp)
-    have eSp : (pushed (argPush 4) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 4) (by decide)
-    have eSp' : (pushed (argPush 4) s₁').callEntry.gpr .esp = _ := ent_esp h' (n := 4) (by decide)
+    obtain a0 : arg (pushed (argPush 4) s₁).callEntry 0 = D.ptr s₀ := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 0) (by simp)
+    obtain a1 : arg (pushed (argPush 4) s₁).callEntry 1 = BitVec.ofNat 32 g1 := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 4) s₁).callEntry 2 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 2) (by simp)
+    obtain a3 : arg (pushed (argPush 4) s₁).callEntry 3 = C.ptr s₀ := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 3) (by simp)
+    obtain a0' : arg (pushed (argPush 4) s₁').callEntry 0 = D.ptr s₀' := ent_arg hp' h' (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg' (i := 0) (by simp)
+    obtain a1' : arg (pushed (argPush 4) s₁').callEntry 1 = BitVec.ofNat 32 g1 := ent_arg hp' h' (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg' (i := 1) (by simp)
+    obtain a2' : arg (pushed (argPush 4) s₁').callEntry 2 = R.ptr s₀' := ent_arg hp' h' (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg' (i := 2) (by simp)
+    obtain a3' : arg (pushed (argPush 4) s₁').callEntry 3 = C.ptr s₀' := ent_arg hp' h' (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg' (i := 3) (by simp)
+    obtain eSp : (pushed (argPush 4) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 4) (by decide)
+    obtain eSp' : (pushed (argPush 4) s₁').callEntry.gpr .esp = _ := ent_esp h' (n := 4) (by decide)
     generalize he : (pushed (argPush 4) s₁).callEntry = e at a0 a1 a2 a3 eSp ⊢
     generalize he' : (pushed (argPush 4) s₁').callEntry = e' at a0' a1' a2' a3' eSp' ⊢
     sig_pub [expandMaskContract, expandMaskSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
@@ -199,10 +199,10 @@ theorem mask_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (exp
     · exact Buf.inW hp hC' (Lay.okW_iff.mp hC).2
     · exact stk_W hp (by decide)
   · obtain ⟨s₂, m₂, post⟩ := post
-    have a0 : arg (pushed (argPush 4) s₁).callEntry 0 = D.ptr s₀ := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 4) s₁).callEntry 1 = BitVec.ofNat 32 g1 := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 4) s₁).callEntry 2 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 2) (by simp)
-    have b₁ : bytesAt (pushed (argPush 4) s₁).callEntry.mem ((D.ptr s₀).setWidth 64) 66 = bytesAt s.mem (D.addr s₀) 66 := by
+    obtain a0 : arg (pushed (argPush 4) s₁).callEntry 0 = D.ptr s₀ := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 0) (by simp)
+    obtain a1 : arg (pushed (argPush 4) s₁).callEntry 1 = BitVec.ofNat 32 g1 := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 4) s₁).callEntry 2 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .imm g1, .buf R, .buf C]) (by simp) hg (i := 2) (by simp)
+    obtain b₁ : bytesAt (pushed (argPush 4) s₁).callEntry.mem ((D.ptr s₀).setWidth 64) 66 = bytesAt s.mem (D.addr s₀) 66 := by
       rw [← m]; exact VG.Proof.MlKem.bytesAt_congr (ent_bytes hp h (n := 4) (by decide) hD)
     generalize he : (pushed (argPush 4) s₁).callEntry = e at a0 a1 a2 post
     sig_post [expandMaskContract, expandMaskSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
@@ -230,29 +230,29 @@ theorem ball_piece {F : Nat → List Byte → Bool} {nm : String} {c : Prog isa}
   set D : Buf := ⟨da, dO, len⟩
   set R : Buf := ⟨aa, ao, 1024⟩
   set C : Buf := ⟨ca, co, 2048⟩
-  have ll : (BitVec.ofNat 32 len).toNat = len := by simp [ballParams] at hlt; rcases hlt with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rfl
-  have tl : (BitVec.ofNat 32 tau).toNat = tau := by simp [ballParams] at hlt; rcases hlt with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rfl
+  obtain ll : (BitVec.ofNat 32 len).toNat = len := by simp [ballParams] at hlt; rcases hlt with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rfl
+  obtain tl : (BitVec.ofNat 32 tau).toNat = tau := by simp [ballParams] at hlt; rcases hlt with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rfl
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨⟨hD, hR⟩, hC⟩, dDR⟩, dDC⟩, dRC⟩ := hc
-  have hR' := (Lay.okW_iff.mp hR).1
-  have hC' := (Lay.okW_iff.mp hC).1
+  obtain hR' := (Lay.okW_iff.mp hR).1
+  obtain hC' := (Lay.okW_iff.mp hC).1
   refine callPR_piece _ 5 rfl hv ok (by decide) (by decide) (by simp [argOk, hD, hR', hC']) (fun s₀ => [D.rgn s₀])
     (fun s₀ => [R.rgn s₀, C.rgn s₀, below (E1 s₀) 20]) hA
     (fun s₀ s₁ hp ⟨s, ha, h, m, hg⟩ => ?_) (fun s₀ s₀' s₁ s₁' hp hp' hq ⟨s, ha, h, m, hg⟩ ⟨s', ha', h', m', hg'⟩ => ?_)
     (fun s₀ hp r hr => ?_) (fun s₀ s₁ s' hp ⟨s, ha, h, m, hg⟩ h' fr post => ?_)
   · have a0 : arg (pushed (argPush 5) s₁).callEntry 0 = D.ptr s₀ := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 5) s₁).callEntry 1 = BitVec.ofNat 32 len := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 5) s₁).callEntry 2 = BitVec.ofNat 32 tau := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 2) (by simp)
-    have a3 : arg (pushed (argPush 5) s₁).callEntry 3 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 3) (by simp)
-    have a4 : arg (pushed (argPush 5) s₁).callEntry 4 = C.ptr s₀ := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 4) (by simp)
-    have eA : argAddr (pushed (argPush 5) s₁).callEntry 0 = _ := ent_arg0 h (n := 5) (by decide)
-    have eSp : (pushed (argPush 5) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 5) (by decide)
+    obtain a1 : arg (pushed (argPush 5) s₁).callEntry 1 = BitVec.ofNat 32 len := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 5) s₁).callEntry 2 = BitVec.ofNat 32 tau := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 2) (by simp)
+    obtain a3 : arg (pushed (argPush 5) s₁).callEntry 3 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 3) (by simp)
+    obtain a4 : arg (pushed (argPush 5) s₁).callEntry 4 = C.ptr s₀ := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 4) (by simp)
+    obtain eA : argAddr (pushed (argPush 5) s₁).callEntry 0 = _ := ent_arg0 h (n := 5) (by decide)
+    obtain eSp : (pushed (argPush 5) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 5) (by decide)
     obtain ⟨rD₁, rD₂, rD₃⟩ := ent_rgn hp hD (n := 5) (K := 56) (by decide)
     obtain ⟨rR₁, rR₂, rR₃⟩ := ent_rgn hp hR' (n := 5) (K := 56) (by decide)
     obtain ⟨rC₁, rC₂, rC₃⟩ := ent_rgn hp hC' (n := 5) (K := 56) (by decide)
     obtain ⟨rA₂, rA₃⟩ := ent_self hp (n := 5) (K := 56) (by decide)
-    have hE := E1_big hp
-    have cv := covers_of (s := s₁) (n := 5) (rd := [D.rgn s₀]) (wr := [R.rgn s₀, C.rgn s₀, below (E1 s₀) 20])
+    obtain hE := E1_big hp
+    obtain cv := covers_of (s := s₁) (n := 5) (rd := [D.rgn s₀]) (wr := [R.rgn s₀, C.rgn s₀, below (E1 s₀) 20])
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         subst hr; exact Buf.within hp hD h.rd h.wr) fun r hr => by
@@ -270,24 +270,24 @@ theorem ball_piece {F : Nat → List Byte → Bool} {nm : String} {c : Prog isa}
       rfl, rfl, Buf.disj hp hD hR' dDR, Buf.disj hp hD hC' dDC, rD₁, Buf.disj hp hR' hC' dRC, rR₁, rC₁,
       rD₂, rR₂, rC₂, rA₂, rD₃, rR₃, rC₃, rA₃, Buf.fit hp hD, Buf.fit hp hR', Buf.fit hp hC', hlt⟩
   · have e₁ : D.ptr s₀ = D.ptr s₀' := hq.t.ptr hD
-    have e₂ : R.ptr s₀ = R.ptr s₀' := hq.t.ptr hR'
-    have e₃ : C.ptr s₀ = C.ptr s₀' := hq.t.ptr hC'
+    obtain e₂ : R.ptr s₀ = R.ptr s₀' := hq.t.ptr hR'
+    obtain e₃ : C.ptr s₀ = C.ptr s₀' := hq.t.ptr hC'
     refine ⟨by simp only [Buf.rgn, e₁], by simp only [Buf.rgn, e₂, e₃, hq.t.E1], ?_⟩
-    have a0 : arg (pushed (argPush 5) s₁).callEntry 0 = D.ptr s₀ := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 5) s₁).callEntry 1 = BitVec.ofNat 32 len := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 5) s₁).callEntry 2 = BitVec.ofNat 32 tau := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 2) (by simp)
-    have a3 : arg (pushed (argPush 5) s₁).callEntry 3 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 3) (by simp)
-    have a4 : arg (pushed (argPush 5) s₁).callEntry 4 = C.ptr s₀ := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 4) (by simp)
-    have a0' : arg (pushed (argPush 5) s₁').callEntry 0 = D.ptr s₀' := ent_arg hp' h' (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg' (i := 0) (by simp)
-    have a1' : arg (pushed (argPush 5) s₁').callEntry 1 = BitVec.ofNat 32 len := ent_arg hp' h' (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg' (i := 1) (by simp)
-    have a2' : arg (pushed (argPush 5) s₁').callEntry 2 = BitVec.ofNat 32 tau := ent_arg hp' h' (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg' (i := 2) (by simp)
-    have a3' : arg (pushed (argPush 5) s₁').callEntry 3 = R.ptr s₀' := ent_arg hp' h' (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg' (i := 3) (by simp)
-    have a4' : arg (pushed (argPush 5) s₁').callEntry 4 = C.ptr s₀' := ent_arg hp' h' (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg' (i := 4) (by simp)
-    have eSp : (pushed (argPush 5) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 5) (by decide)
-    have eSp' : (pushed (argPush 5) s₁').callEntry.gpr .esp = _ := ent_esp h' (n := 5) (by decide)
-    have b₁ := VG.Proof.MlKem.bytesAt_congr (ent_bytes hp h (n := 5) (by decide) hD)
-    have b₂ := VG.Proof.MlKem.bytesAt_congr (ent_bytes hp' h' (n := 5) (by decide) hD)
-    have key : bytesAt (pushed (argPush 5) s₁).callEntry.mem (D.addr s₀) len =
+    obtain a0 : arg (pushed (argPush 5) s₁).callEntry 0 = D.ptr s₀ := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 0) (by simp)
+    obtain a1 : arg (pushed (argPush 5) s₁).callEntry 1 = BitVec.ofNat 32 len := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 5) s₁).callEntry 2 = BitVec.ofNat 32 tau := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 2) (by simp)
+    obtain a3 : arg (pushed (argPush 5) s₁).callEntry 3 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 3) (by simp)
+    obtain a4 : arg (pushed (argPush 5) s₁).callEntry 4 = C.ptr s₀ := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 4) (by simp)
+    obtain a0' : arg (pushed (argPush 5) s₁').callEntry 0 = D.ptr s₀' := ent_arg hp' h' (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg' (i := 0) (by simp)
+    obtain a1' : arg (pushed (argPush 5) s₁').callEntry 1 = BitVec.ofNat 32 len := ent_arg hp' h' (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg' (i := 1) (by simp)
+    obtain a2' : arg (pushed (argPush 5) s₁').callEntry 2 = BitVec.ofNat 32 tau := ent_arg hp' h' (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg' (i := 2) (by simp)
+    obtain a3' : arg (pushed (argPush 5) s₁').callEntry 3 = R.ptr s₀' := ent_arg hp' h' (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg' (i := 3) (by simp)
+    obtain a4' : arg (pushed (argPush 5) s₁').callEntry 4 = C.ptr s₀' := ent_arg hp' h' (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg' (i := 4) (by simp)
+    obtain eSp : (pushed (argPush 5) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 5) (by decide)
+    obtain eSp' : (pushed (argPush 5) s₁').callEntry.gpr .esp = _ := ent_esp h' (n := 5) (by decide)
+    obtain b₁ := VG.Proof.MlKem.bytesAt_congr (ent_bytes hp h (n := 5) (by decide) hD)
+    obtain b₂ := VG.Proof.MlKem.bytesAt_congr (ent_bytes hp' h' (n := 5) (by decide) hD)
+    obtain key : bytesAt (pushed (argPush 5) s₁).callEntry.mem (D.addr s₀) len =
         bytesAt (pushed (argPush 5) s₁').callEntry.mem (D.addr s₀') len := by
       rw [b₁, b₂, m, m']; exact hseed s₀ s₀' s s' hp hp' hq ha ha'
     simp only [Buf.addr, e₁] at key
@@ -302,11 +302,11 @@ theorem ball_piece {F : Nat → List Byte → Bool} {nm : String} {c : Prog isa}
     · exact Buf.inW hp hC' (Lay.okW_iff.mp hC).2
     · exact stk_W hp (by decide)
   · obtain ⟨s₂, m₂, g₂, post⟩ := post
-    have a0 : arg (pushed (argPush 5) s₁).callEntry 0 = D.ptr s₀ := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 5) s₁).callEntry 1 = BitVec.ofNat 32 len := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 5) s₁).callEntry 2 = BitVec.ofNat 32 tau := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 2) (by simp)
-    have a3 : arg (pushed (argPush 5) s₁).callEntry 3 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 3) (by simp)
-    have b₁ : bytesAt (pushed (argPush 5) s₁).callEntry.mem ((D.ptr s₀).setWidth 64) len = bytesAt s.mem (D.addr s₀) len := by
+    obtain a0 : arg (pushed (argPush 5) s₁).callEntry 0 = D.ptr s₀ := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 0) (by simp)
+    obtain a1 : arg (pushed (argPush 5) s₁).callEntry 1 = BitVec.ofNat 32 len := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 5) s₁).callEntry 2 = BitVec.ofNat 32 tau := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 2) (by simp)
+    obtain a3 : arg (pushed (argPush 5) s₁).callEntry 3 = R.ptr s₀ := ent_arg hp h (as := [.buf D, .imm len, .imm tau, .buf R, .buf C]) (by simp) hg (i := 3) (by simp)
+    obtain b₁ : bytesAt (pushed (argPush 5) s₁).callEntry.mem ((D.ptr s₀).setWidth 64) len = bytesAt s.mem (D.addr s₀) len := by
       rw [← m]; exact VG.Proof.MlKem.bytesAt_congr (ent_bytes hp h (n := 5) (by decide) hD)
     generalize he : (pushed (argPush 5) s₁).callEntry = e at a0 a1 a2 a3 post
     sig_post [ballK, withRet, sampleInBallContract, sampleInBallSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post

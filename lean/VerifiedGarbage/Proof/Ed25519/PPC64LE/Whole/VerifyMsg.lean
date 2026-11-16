@@ -96,7 +96,7 @@ def VerWr (s : State) (r : Region) : Prop :=
 theorem verStep {s t t' : State} (hp : VerPre s) (h : VerInv s t) (hrd : t'.rd = t.rd)
     (hwr : t'.wr = t.wr) (hsp : t'.sp = t.sp) (hg : ∀ r ∈ preserved, t'.gpr r = t.gpr r) {Wc : List Region}
     (hf : Frame Wc t.mem t'.mem) (hW : ∀ r ∈ Wc, VerWr s r) : VerInv s t' := by
-  have hs : Region.Sub (slotArea (s.gpr .r8) 128 verifyRegs) ⟨s.gpr .r8, 192⟩ := Offset.sub_base _ (by decide)
+  obtain hs : Region.Sub (slotArea (s.gpr .r8) 128 verifyRegs) ⟨s.gpr .r8, 192⟩ := Offset.sub_base _ (by decide)
   refine Inv.step h verifyRegs_pres hrd hwr hsp hg hf (fun r hr => ?_) fun r hr => ?_
   · rcases hW r hr with rfl | rfl | ⟨d, n, hdn, rfl⟩
     · exact ⟨_, by simp, fun _ h => h⟩
@@ -128,20 +128,20 @@ theorem ver_Fw {s t : State} (hp : VerPre s) (h : VerInv s t) : (⟨s.gpr .r8, 1
 theorem verSetup_ok {s : State} (hp : VerPre s) :
     WP isa (.block (saveRegs .r8 128 verifyRegs ++
       [mov .r20 .r3, mov .r21 .r4, mov .r22 .r5, mov .r23 .r6, mov .r24 .r7, mov .r25 .r8])) s (VerInv s) := by
-  have hF : (⟨s.gpr .r8, 192⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
-  have hsl : ∀ p ∈ slots 128 verifyRegs, p.2 + 8 ≤ 192 := by decide
+  obtain hF : (⟨s.gpr .r8, 192⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+  obtain hsl : ∀ p ∈ slots 128 verifyRegs, p.2 + 8 ≤ 192 := by decide
   refine save_ok (by decide) (by decide) (by decide)
     (fun p hp' => in_base hF (hsl p hp') (by have := hsl p hp'; omega_using [this])) fun u hu _ hsv hfr => ?_
   unfold mov
   refine wp_addi (by decide) (by decide) fun u₁ h₁ => wp_addi (by decide) (by decide) fun u₂ h₂ =>
     wp_addi (by decide) (by decide) fun u₃ h₃ => wp_addi (by decide) (by decide) fun u₄ h₄ =>
     wp_addi (by decide) (by decide) fun u₅ h₅ => wp_addi (by decide) (by decide) fun u₆ h₆ => WP.block_nil ?_
-  have m₆ : u₆.mem = u.mem := by rw [h₆.mem, h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem]
-  have g₆ : ∀ r, r ∉ verifyRegs → u₆.gpr r = u.gpr r := fun r hr => by
+  obtain m₆ : u₆.mem = u.mem := by rw [h₆.mem, h₅.mem, h₄.mem, h₃.mem, h₂.mem, h₁.mem]
+  obtain g₆ : ∀ r, r ∉ verifyRegs → u₆.gpr r = u.gpr r := fun r hr => by
     simp only [verifyRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     obtain ⟨a, b, c, d, e, f⟩ := hr
     rw [h₆.other _ f, h₅.other _ e, h₄.other _ d, h₃.other _ c, h₂.other _ b, h₁.other _ a]
-  have gu : ∀ r, r ≠ .r0 → u.gpr r = s.gpr r := fun r h => hu.gpr r (by simpa using h)
+  obtain gu : ∀ r, r ≠ .r0 → u.gpr r = s.gpr r := fun r h => hu.gpr r (by simpa using h)
   refine ⟨by rw [h₆.rd, h₅.rd, h₄.rd, h₃.rd, h₂.rd, h₁.rd, hu.rd],
     by rw [h₆.wr, h₅.wr, h₄.wr, h₃.wr, h₂.wr, h₁.wr, hu.wr],
     by rw [h₆.sp, h₅.sp, h₄.sp, h₃.sp, h₂.sp, h₁.sp, hu.sp], fun r hr => ?_, fun r hr hn => ?_, m₆ ▸ hsv,
@@ -181,17 +181,17 @@ structure VerArgs (s t : State) : Prop where
   ch : bytesAt t.mem (s.gpr .r8) 64 = vChallenge s
 
 theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHash s (VerArgs s) := by
-  have hlen : (s.gpr .r5).toNat + 8192 ≤ 2 ^ 64 := len_add_le (Nat.le_of_lt (s.gpr .r5).isLt) (by decide) hp.mC
-  have scW : ∀ {t : State}, VerInv s t → ∀ r ∈ [(⟨s.gpr .r7, 8192⟩ : Region), below t.sp 48], VerWr s r :=
+  obtain hlen : (s.gpr .r5).toNat + 8192 ≤ 2 ^ 64 := len_add_le (Nat.le_of_lt (s.gpr .r5).isLt) (by decide) hp.mC
+  obtain scW : ∀ {t : State}, VerInv s t → ∀ r ∈ [(⟨s.gpr .r7, 8192⟩ : Region), below t.sp 48], VerWr s r :=
     fun h r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact .inl rfl
       · exact .inr (.inl (by rw [h.sp]))
-  have S32 : Region.Sub ⟨s.gpr .r6, 32⟩ ⟨s.gpr .r6, 64⟩ := Region.sub_prefix (by decide)
-  have F0 : Region.Sub ⟨s.gpr .r8, 32⟩ ⟨s.gpr .r8, 192⟩ := Region.sub_prefix (by decide)
-  have F64 : Region.Sub ⟨s.gpr .r8 + BitVec.ofNat 64 64, 64⟩ ⟨s.gpr .r8, 192⟩ := Offset.sub_base _ (by decide)
-  have inRd : ∀ {t : State}, VerInv s t → ∀ {r : Region}, r ∈ s.rd → Covers [r] (t.rd ++ t.wr) :=
+  obtain S32 : Region.Sub ⟨s.gpr .r6, 32⟩ ⟨s.gpr .r6, 64⟩ := Region.sub_prefix (by decide)
+  obtain F0 : Region.Sub ⟨s.gpr .r8, 32⟩ ⟨s.gpr .r8, 192⟩ := Region.sub_prefix (by decide)
+  obtain F64 : Region.Sub ⟨s.gpr .r8 + BitVec.ofNat 64 64, 64⟩ ⟨s.gpr .r8, 192⟩ := Offset.sub_base _ (by decide)
+  obtain inRd : ∀ {t : State}, VerInv s t → ∀ {r : Region}, r ∈ s.rd → Covers [r] (t.rd ++ t.wr) :=
     fun h r hr a n hi => by
       obtain ⟨r', hr', hc⟩ := hi
       rw [List.mem_singleton.mp hr'] at hc
@@ -200,7 +200,7 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
   refine WP.seq (WP.mono (verSetup_ok hp) fun t₁ h₁ => ?_)
   refine WP.seq (hashInit_ok C (sr := .r24) (by decide) (h₁.regs _ (by decide)) (ver_env hp h₁)
     fun t₂ a b c f₂ g hr₂ => ?_)
-  have h₂ := verStep hp h₁ a b c g f₂ (scW h₁)
+  obtain h₂ := verStep hp h₁ a b c g f₂ (scW h₁)
   -- `R`, the signature's first half.
   refine WP.seq (hashUpdate_ok C (sr := .r24) (src := .r23) (off := 0) (len := 32) (by decide) (by decide)
     (by decide) (by decide) (by decide) (h₂.regs _ (by decide)) (by rw [h₂.regs _ (by decide), BitVec.add_zero]; rfl)
@@ -210,8 +210,8 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
       rw [List.mem_singleton.mp hr, h₂.rd, hp.rd]
       exact ⟨⟨s.gpr .r6, 64⟩, by simp, 0, by simp, by simp⟩)
     (hp.sC.sub_left S32) (by rw [h₂.sp]; exact hp.bS.sub_right S32) fun t₃ a b c f₃ g hr₃ => ?_)
-  have h₃ := verStep hp h₂ a b c g f₃ (scW h₂)
-  have r₃ : Repr t₃.mem (s.gpr .r7) (bytesAt s.mem (s.gpr .r6) 32) := by
+  obtain h₃ := verStep hp h₂ a b c g f₃ (scW h₂)
+  obtain r₃ : Repr t₃.mem (s.gpr .r7) (bytesAt s.mem (s.gpr .r6) 32) := by
     have := hr₃ [] hr₂ rfl
     rwa [List.nil_append, ver_input h₂ (by decide) (hp.sC.sub_left S32) (hp.sF.sub_left S32)
       (hp.bS.symm.sub_left S32)] at this
@@ -221,8 +221,8 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
     (Sets.li (d := .r4) (k := 32) (by decide)) (Sets.li (d := .r6) (k := 32) (by decide))
     (fun _ _ _ => rfl) (fun _ _ _ => rfl) rfl (ver_env hp h₃) (inRd h₃ (by rw [hp.rd]; simp))
     hp.pC (by rw [h₃.sp]; exact hp.bP) fun t₄ a b c f₄ g hr₄ => ?_)
-  have h₄ := verStep hp h₃ a b c g f₄ (scW h₃)
-  have r₄ : Repr t₄.mem (s.gpr .r7) (bytesAt s.mem (s.gpr .r6) 32 ++ bytesAt s.mem (s.gpr .r3) 32) := by
+  obtain h₄ := verStep hp h₃ a b c g f₄ (scW h₃)
+  obtain r₄ : Repr t₄.mem (s.gpr .r7) (bytesAt s.mem (s.gpr .r6) 32 ++ bytesAt s.mem (s.gpr .r3) 32) := by
     have := hr₄ _ r₃ (by simp [bytesAt])
     rwa [ver_input h₃ (by decide) hp.pC hp.pF hp.bP.symm] at this
   -- The message.
@@ -233,8 +233,8 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
     (fun _ _ _ => rfl) (fun g g' hg => by rw [hg .r22 (by decide) (by decide) (by decide)])
     (by rw [BitVec.add_zero, h₄.regs _ (by decide)]; rfl) (ver_env hp h₄) (inRd h₄ (by rw [hp.rd]; simp))
     hp.mC (by rw [h₄.sp]; exact hp.bM) fun t₅ a b c f₅ g hr₅ => ?_)
-  have h₅ := verStep hp h₄ a b c g f₅ (scW h₄)
-  have r₅ : Repr t₅.mem (s.gpr .r7)
+  obtain h₅ := verStep hp h₄ a b c g f₅ (scW h₄)
+  obtain r₅ : Repr t₅.mem (s.gpr .r7)
       (bytesAt s.mem (s.gpr .r6) 32 ++ bytesAt s.mem (s.gpr .r3) 32 ++ vmsgB s) := by
     have := hr₅ _ r₄ (by simp [bytesAt])
     rwa [ver_input h₄ (s.gpr .r5).isLt hp.mC hp.mF hp.bM.symm] at this
@@ -247,21 +247,21 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
     (Covers.of_sub fun r hr => by
       rw [List.mem_singleton.mp hr]; exact ⟨_, ver_Fw hp h₅, 64, rfl, show 64 + 64 ≤ 192 by decide⟩)
     (hp.cF.symm.sub_left F64) (by rw [h₅.sp]; exact hp.bF.sub_right F64) fun t₆ a b c f₆ g hd₆ => ?_)
-  have h₆ := verStep hp h₅ a b c g f₆ (fun r hr => by
+  obtain h₆ := verStep hp h₅ a b c g f₆ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact .inl rfl
     · exact .inr (.inr ⟨64, 64, by decide, rfl⟩)
     · exact .inr (.inl (by rw [h₅.sp])))
-  have dg : bytesAt t₆.mem (s.gpr .r8 + BitVec.ofNat 64 64) 64 =
+  obtain dg : bytesAt t₆.mem (s.gpr .r8 + BitVec.ofNat 64 64) 64 =
       Spec.Sha512.sha512 (bytesAt s.mem (s.gpr .r6) 32 ++ bytesAt s.mem (s.gpr .r3) 32 ++ vmsgB s) :=
     hd₆ _ r₅ (by simp [bytesAt]; omega_using [hlen])
       (by rw [h₅.regs _ (by decide), cnt_eq, verV_r22]; simp [bytesAt]; congr 1; omega_using [])
   -- `scalar_reduce`.
-  have ce : ∀ (u : State) q, q ∉ linkRegs → ∀ rd wr, (u.callEntry.withRegions rd wr).gpr q = u.gpr q :=
+  obtain ce : ∀ (u : State) q, q ∉ linkRegs → ∀ rd wr, (u.callEntry.withRegions rd wr).gpr q = u.gpr q :=
     fun _ q hq _ _ => by rw [State.withRegions_gpr, State.callEntry_gpr _ hq]
-  have hFw := ver_Fw hp h₆
-  have hCw : (⟨s.gpr .r7, 8192⟩ : Region) ∈ t₆.wr := (ver_env hp h₆).w
+  obtain hFw := ver_Fw hp h₆
+  obtain hCw : (⟨s.gpr .r7, 8192⟩ : Region) ∈ t₆.wr := (ver_env hp h₆).w
   unfold mov
   refine WP.seq (args3_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) fun t₇ k₇ c3 c4 c5 => ?_)
@@ -291,16 +291,16 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
   simp only [reducePPC, State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem,
     State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide),
     c3, c4, k₇.mem, dg] at hpost
-  have h₈ := verStep hp h₆ (a.trans k₇.rd) (b.trans k₇.wr) (c.trans k₇.sp)
+  obtain h₈ := verStep hp h₆ (a.trans k₇.rd) (b.trans k₇.wr) (c.trans k₇.sp)
     (fun r hr => (g r hr).trans (k₇.pres r hr)) (k₇.mem ▸ f₈) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact .inr (.inr ⟨0, 32, by decide, by simp⟩)
       · exact .inl rfl
   -- The upper half zeroed, and the arguments.
-  have hFw₈ : (⟨s.gpr .r8, 192⟩ : Region) ∈ t₈.wr := ver_Fw hp h₈
-  have e25 : t₈.gpr .r25 = s.gpr .r8 := h₈.regs _ (by decide)
-  have inF : ∀ (u : State), u.wr = t₈.wr → ∀ d, d + 8 ≤ 192 → InRegions u.wr (s.gpr .r8 + BitVec.ofNat 64 d) 8 :=
+  obtain hFw₈ : (⟨s.gpr .r8, 192⟩ : Region) ∈ t₈.wr := ver_Fw hp h₈
+  obtain e25 : t₈.gpr .r25 = s.gpr .r8 := h₈.regs _ (by decide)
+  obtain inF : ∀ (u : State), u.wr = t₈.wr → ∀ d, d + 8 ≤ 192 → InRegions u.wr (s.gpr .r8 + BitVec.ofNat 64 d) 8 :=
     fun u hu d hd => by rw [hu]; exact in_base hFw₈ hd (by omega_using [hd])
   refine wp_li (d := .r8) (imm := 0) (by decide) fun u₁ e₁ => ?_
   refine wp_stdd (a := s.gpr .r8 + BitVec.ofNat 64 32) (by decide) ⟨by decide, by decide⟩
@@ -316,29 +316,29 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
   refine wp_addi (by decide) (by decide) fun v₁ g₁ => wp_addi (by decide) (by decide) fun v₂ g₂ =>
     wp_addi (by decide) (by decide) fun v₃ g₃ => wp_addi (by decide) (by decide) fun v₄ g₄ => WP.block_nil ?_
   have z₁ : u₁.gpr .r8 = 0 := e₁.gpr
-  have z₂ : u₂.gpr .r8 = 0 := by rw [e₂.gpr, z₁]
-  have z₃ : u₃.gpr .r8 = 0 := by rw [e₃.gpr, z₂]
-  have z₄ : u₄.gpr .r8 = 0 := by rw [e₄.gpr, z₃]
-  have mv : v₄.mem = ((((t₈.mem.writeW (s.gpr .r8 + BitVec.ofNat 64 32) (0 : BitVec 64)).writeW
+  obtain z₂ : u₂.gpr .r8 = 0 := by rw [e₂.gpr, z₁]
+  obtain z₃ : u₃.gpr .r8 = 0 := by rw [e₃.gpr, z₂]
+  obtain z₄ : u₄.gpr .r8 = 0 := by rw [e₄.gpr, z₃]
+  obtain mv : v₄.mem = ((((t₈.mem.writeW (s.gpr .r8 + BitVec.ofNat 64 32) (0 : BitVec 64)).writeW
       (s.gpr .r8 + BitVec.ofNat 64 40) (0 : BitVec 64)).writeW (s.gpr .r8 + BitVec.ofNat 64 48) (0 : BitVec 64)).writeW
       (s.gpr .r8 + BitVec.ofNat 64 56) (0 : BitVec 64)) := by
     rw [g₄.mem, g₃.mem, g₂.mem, g₁.mem, e₅.mem, e₄.mem, e₃.mem, e₂.mem, e₁.mem, z₁, z₂, z₃, z₄]
-  have gp : ∀ r ∈ preserved, v₄.gpr r = t₈.gpr r := fun r hr => by
+  obtain gp : ∀ r ∈ preserved, v₄.gpr r = t₈.gpr r := fun r hr => by
     obtain ⟨p3, p4, p5, p6, -⟩ := pres_args hr
     rw [g₄.other _ p6, g₃.other _ p5, g₂.other _ p4, g₁.other _ p3, e₅.gpr, e₄.gpr, e₃.gpr, e₂.gpr,
       e₁.other _ (by revert hr; cases r <;> decide)]
-  have cont : ∀ d, 32 ≤ d → d + 8 ≤ 64 → Region.Contains ⟨s.gpr .r8 + BitVec.ofNat 64 32, 32⟩
+  obtain cont : ∀ d, 32 ≤ d → d + 8 ≤ 64 → Region.Contains ⟨s.gpr .r8 + BitVec.ofNat 64 32, 32⟩
       (s.gpr .r8 + BitVec.ofNat 64 d) (64 / 8) := fun d h₁ h₂ => Offset.contains _ h₁ (by omega_using [h₂]) (by omega_using [])
-  have fv : Frame [⟨s.gpr .r8 + BitVec.ofNat 64 32, 32⟩] t₈.mem v₄.mem := by
+  obtain fv : Frame [⟨s.gpr .r8 + BitVec.ofNat 64 32, 32⟩] t₈.mem v₄.mem := by
     rw [mv]
     exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (cont 32 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (cont 40 (by decide) (by decide))).writeW (List.mem_singleton_self _) _
       (cont 48 (by decide) (by decide))).writeW (List.mem_singleton_self _) _ (cont 56 (by decide) (by decide))
-  have rr : ∀ (x : Mem) (i j : Nat) (v : BitVec 64), i + 8 ≤ j ∨ j + 8 ≤ i → i + 8 ≤ 192 → j + 8 ≤ 192 →
+  obtain rr : ∀ (x : Mem) (i j : Nat) (v : BitVec 64), i + 8 ≤ j ∨ j + 8 ≤ i → i + 8 ≤ 192 → j + 8 ≤ 192 →
       (x.writeW (s.gpr .r8 + BitVec.ofNat 64 j) v).readW (s.gpr .r8 + BitVec.ofNat 64 i) 64 =
         x.readW (s.gpr .r8 + BitVec.ofNat 64 i) 64 :=
     fun x i j v h hi hj => Mem.readW_writeW_sep (Offset.sep _ h (by omega_using [hi]) (by omega_using [hj])) (by decide)
-  have hz : ∀ k < 4, v₄.mem.readW (s.gpr .r8 + BitVec.ofNat 64 32 + BitVec.ofNat 64 (8 * k)) 64 = 0 := by
+  obtain hz : ∀ k < 4, v₄.mem.readW (s.gpr .r8 + BitVec.ofNat 64 32 + BitVec.ofNat 64 (8 * k)) 64 = 0 := by
     intro k hk
     rw [mv, Offset.add_add]
     have : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 := by omega_using [hk]
@@ -350,7 +350,7 @@ theorem verifyHash_ok (C : ShaOK) {s : State} (hp : VerPre s) : WP isa verifyHas
         rr _ 40 48 _ (by decide) (by decide) (by decide), Mem.readW_writeW_self64]
     · rw [show 32 + 8 * 2 = 48 from rfl, rr _ 48 56 _ (by decide) (by decide) (by decide), Mem.readW_writeW_self64]
     · rw [show 32 + 8 * 3 = 56 from rfl, Mem.readW_writeW_self64]
-  have g₃' : ∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r8 → v₄.gpr r = t₈.gpr r :=
+  obtain g₃' : ∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r8 → v₄.gpr r = t₈.gpr r :=
     fun r a b c d e => by
       rw [g₄.other _ d, g₃.other _ c, g₂.other _ b, g₁.other _ a, e₅.gpr, e₄.gpr, e₃.gpr, e₂.gpr, e₁.other _ e]
   refine ⟨verStep hp h₈ (by rw [g₄.rd, g₃.rd, g₂.rd, g₁.rd, e₅.rd, e₄.rd, e₃.rd, e₂.rd, e₁.rd])
@@ -435,7 +435,7 @@ theorem verify_ok' (hR : RhsOk) (s : State) (hs : verifyPPC.pre s) :
 
 theorem bytes_of_leak {a₁ b₁ c₁ a₂ b₂ c₂ : List Byte} (ha : a₁.length = a₂.length) (hb : b₁.length = b₂.length)
     (h : (a₁ ++ b₁ ++ c₁).map (·.toNat) = (a₂ ++ b₂ ++ c₂).map (·.toNat)) : a₁ = a₂ ∧ b₁ = b₂ ∧ c₁ = c₂ := by
-  have e : a₁ ++ b₁ ++ c₁ = a₂ ++ b₂ ++ c₂ := by
+  obtain e : a₁ ++ b₁ ++ c₁ = a₂ ++ b₂ ++ c₂ := by
     have := congrArg (List.map fun n => BitVec.ofNat 8 n) h
     simpa [List.map_map, Function.comp_def] using this
   obtain ⟨e1, e2⟩ := List.append_inj e (by simp [ha, hb])
@@ -446,7 +446,7 @@ theorem verify_ct (hR : RhsOk) (hRC : RhsCT) :
     ConstantTime isa verifyPPC.pre verifyPPC.pub Impl.Ed25519.PPC64LE.verifyEquation := by
   refine RelCT.constantTime (Q := fun _ _ => True) fun s₁ s₂ _ _ _ _ ⟨h₁, h₂, hp⟩ e₁ e₂ => ?_
   obtain ⟨p3, p4, p5, p6, psp, pl, psy⟩ := hp
-  have hl : ∀ (s : State) (p : Addr) (n : Nat), (Spec.Ed25519.bytesAt s.mem p n).length = n := fun _ _ _ => by
+  obtain hl : ∀ (s : State) (p : Addr) (n : Nat), (Spec.Ed25519.bytesAt s.mem p n).length = n := fun _ _ _ => by
     simp [Spec.Ed25519.bytesAt]
   obtain ⟨b3, b4, b5⟩ := bytes_of_leak (by rw [hl, hl]) (by rw [hl, hl]) pl
   refine verifyEquation_rel hR hRC (b := s₁.gpr .r6) (sp := s₁.sp) (pk := s₁.gpr .r3) (sig := s₁.gpr .r4)
@@ -468,9 +468,9 @@ theorem bstat_of_consts' {st : Nat} {s : State} {ws : List (BitVec 64)} (hl : ws
       (∀ q < 240, s.mem.readW (s.syms bSym + BitVec.ofNat 64 (8 * q)) 64 = bWord q) ∧
       (∀ r ∈ s.wr, Region.Disjoint ⟨s.syms bSym, 1920⟩ r) ∧
       ∀ r ∈ PPC64LE.abi.reserved st s, Region.Disjoint ⟨s.syms bSym, 1920⟩ r := by
-  have hrd := h.mem_rd List.mem_cons_self
-  have hfit := h.fit List.mem_cons_self
-  have hd : (∀ r ∈ s.wr, Region.Disjoint ⟨s.syms bSym, 8 * ws.length⟩ r) ∧
+  obtain hrd := h.mem_rd List.mem_cons_self
+  obtain hfit := h.fit List.mem_cons_self
+  obtain hd : (∀ r ∈ s.wr, Region.Disjoint ⟨s.syms bSym, 8 * ws.length⟩ r) ∧
       ∀ r ∈ PPC64LE.abi.reserved st s, Region.Disjoint ⟨s.syms bSym, 8 * ws.length⟩ r :=
     (h.2.2.1 _ List.mem_cons_self).2
   rw [hl] at hrd hfit hd
@@ -538,10 +538,10 @@ abbrev verRd (s : State) : List Region := [⟨s.gpr .r3, 32⟩, ⟨s.gpr .r6, 64
 /-- The narrowed state `verify_equation` starts in. -/
 theorem verCall_pre {s t : State} (hp : VerPre s) (ha : VerArgs s t) (sy : t.syms = s.syms) :
     verifyPPC.pre (t.callEntry.withRegions (verRd s) [⟨s.gpr .r7, 8192⟩]) := by
-  have ce : ∀ q, q ∉ linkRegs → (t.callEntry.withRegions (verRd s) [⟨s.gpr .r7, 8192⟩]).gpr q = t.gpr q :=
+  obtain ce : ∀ q, q ∉ linkRegs → (t.callEntry.withRegions (verRd s) [⟨s.gpr .r7, 8192⟩]).gpr q = t.gpr q :=
     fun q hq => by rw [State.withRegions_gpr, State.callEntry_gpr _ hq]
   have cy : (t.callEntry.withRegions (verRd s) [⟨s.gpr .r7, 8192⟩]).syms = s.syms := sy
-  have cm : (t.callEntry.withRegions (verRd s) [⟨s.gpr .r7, 8192⟩]).mem = t.mem := by
+  obtain cm : (t.callEntry.withRegions (verRd s) [⟨s.gpr .r7, 8192⟩]).mem = t.mem := by
     rw [State.withRegions_mem, State.callEntry_mem]
   refine ⟨by rw [State.withRegions_rd, ce _ (by decide), ce _ (by decide), ce _ (by decide), ha.r3, ha.r4, ha.r5, cy],
     by rw [State.withRegions_wr, ce _ (by decide), ha.r6], by rw [ce _ (by decide), ce _ (by decide), ha.r3, ha.r6]; exact hp.pC,
@@ -591,8 +591,8 @@ theorem verifyMessage_wp (C : ShaOK) (hR : RhsOk) {s : State} (hp : VerPre s) :
   unfold verifyMessage
   refine WP.seq (WP.mono_syms (verifyHash_ok C hp) fun t ha sy => ?_)
   refine WP.seq (WP.mono (verCall_ok hR hp ha sy) fun t' ⟨h', hr⟩ => ?_)
-  have hFw : (⟨s.gpr .r8, 192⟩ : Region) ∈ t'.rd ++ t'.wr := List.mem_append_right _ (ver_Fw hp h')
-  have hrl : ∀ p ∈ restoreList 128 verifyRegs, p.2 + 8 ≤ 192 := by decide
+  obtain hFw : (⟨s.gpr .r8, 192⟩ : Region) ∈ t'.rd ++ t'.wr := List.mem_append_right _ (ver_Fw hp h')
+  obtain hrl : ∀ p ∈ restoreList 128 verifyRegs, p.2 + 8 ≤ 192 := by decide
   refine restore_ok h' (by decide) (h'.regs _ (by decide)) (by decide) (by decide) (by decide) (by decide)
     (fun p hp' => in_base hFw (hrl p hp') (by have := hrl p hp'; omega_using [this]))
     fun t₅ g₅ sp₅ lr₅ _ o₅ => ⟨g₅, sp₅, lr₅, ?_⟩

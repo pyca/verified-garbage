@@ -35,7 +35,7 @@ theorem sqCount_ok (s : State) {base : BitVec 32} {size M c : Nat} (ws : Workspa
   refine wp_subs (op2_imm (by decide)) fun s2 u2 hz => ?_
   refine wp_str_z (by decide) (sq_ea nowrap ((u2.other .r0 (by decide)).trans ((u1.other .r0 (by decide)).trans p0))
     (by omega_using [fit])) (by rw [u2.wr, u1.wr]; exact ws.write (by omega_using [fit])) fun t u3 z3 => WP.block_nil ?_
-  have v : s2.gpr .lr = BitVec.ofNat 32 (c - 1) := by
+  obtain v : s2.gpr .lr = BitVec.ofNat 32 (c - 1) := by
     rw [u2.gpr, u1.gpr, hc]
     change BitVec.ofNat 32 c - BitVec.ofNat 32 1 = _
     rw [BitVec.ofNat_sub_ofNat_of_le _ _ (by decide) (by omega_using [h1])]
@@ -61,31 +61,31 @@ theorem crossArgs_ok (s : State) {base : BitVec 32} {size M A C P : Nat} (ws : W
   have nowrap := ws.nowrap
   unfold crossArgs
   refine wp_ldr (by decide) (sq_ea nowrap p0 (by omega_using [fit])) (ws.read (by omega_using [fit])) fun s1 u1 => ?_
-  have p1 := (u1.other .r0 (by decide)).trans p0
+  obtain p1 := (u1.other .r0 (by decide)).trans p0
   refine wp_ldr (by decide) (sq_ea nowrap p1 (by omega_using [fit])) (by rw [u1.rd, u1.wr]; exact ws.read (by omega_using [fit]))
     fun s2 u2 => ?_
-  have p2 := (u2.other .r0 (by decide)).trans p1
+  obtain p2 := (u2.other .r0 (by decide)).trans p1
   refine wp_ldr (by decide) (sq_ea nowrap p2 (by omega_using [fit]))
     (by rw [u2.rd, u2.wr, u1.rd, u1.wr]; exact ws.read (by omega_using [fit])) fun s3 u3 => ?_
-  have p3 := (u3.other .r0 (by decide)).trans p2
+  obtain p3 := (u3.other .r0 (by decide)).trans p2
   refine wp_dp (op2_imm (by decide)) fun s4 u4 => ?_
-  have p4 := (u4.other .r0 (by decide)).trans p3
+  obtain p4 := (u4.other .r0 (by decide)).trans p3
   refine wp_str (by decide) (sq_ea nowrap p4 (by omega_using [fit]))
     (by rw [u4.wr, u3.wr, u2.wr, u1.wr]; exact ws.write (by omega_using [fit])) fun s5 u5 => ?_
-  have p5 : s5.gpr .r0 = base + BitVec.ofNat 32 M := by rw [u5.gpr]; exact p4
+  obtain p5 : s5.gpr .r0 = base + BitVec.ofNat 32 M := by rw [u5.gpr]; exact p4
   refine wp_dp (op2_imm (by decide)) fun s6 u6 => ?_
-  have p6 := (u6.other .r0 (by decide)).trans p5
+  obtain p6 := (u6.other .r0 (by decide)).trans p5
   refine wp_str (by decide) (sq_ea nowrap p6 (by omega_using [fit]))
     (by rw [u6.wr, u5.wr, u4.wr, u3.wr, u2.wr, u1.wr]; exact ws.write (by omega_using [fit])) fun s7 u7 => ?_
   refine wp_mov (op2_reg _ _) fun s8 u8 => ?_
   refine wp_mov (op2_imm (by decide)) fun t u9 => WP.block_nil ?_
-  have g2 : s2.gpr .r2 = base + BitVec.ofNat 32 A := by rw [u2.other .r2 (by decide), u1.gpr, hn]
-  have g3 : s3.gpr .r3 = base + BitVec.ofNat 32 P := by rw [u3.gpr, u2.mem, u1.mem, ht]
-  have v4 : s4.gpr .r4 = base + BitVec.ofNat 32 (P + 8) := by
+  obtain g2 : s2.gpr .r2 = base + BitVec.ofNat 32 A := by rw [u2.other .r2 (by decide), u1.gpr, hn]
+  obtain g3 : s3.gpr .r3 = base + BitVec.ofNat 32 P := by rw [u3.gpr, u2.mem, u1.mem, ht]
+  obtain v4 : s4.gpr .r4 = base + BitVec.ofNat 32 (P + 8) := by
     rw [u4.gpr, dpVal, g3]
     change base + BitVec.ofNat 32 P + BitVec.ofNat 32 8 = _
     rw [Offset.add_add]
-  have v6 : s6.gpr .r12 = base + BitVec.ofNat 32 (A + 4) := by
+  obtain v6 : s6.gpr .r12 = base + BitVec.ofNat 32 (A + 4) := by
     rw [u6.gpr, dpVal, u5.gpr, u4.other .r2 (by decide), u3.other .r2 (by decide), g2]
     change base + BitVec.ofNat 32 A + BitVec.ofNat 32 4 = _
     rw [Offset.add_add]
@@ -144,81 +144,81 @@ theorem crossRound_ok (s : State) {k : Nat} (h : CrossInv m0 base size out a mod
   rw [crossRound, WP.seq_iff]
   refine WP.mono (sqAnchor_ok s env) ?_
   rintro s1 ⟨p1, m1, r1⟩
-  have e1 := env.of_mem m1 r1
+  obtain e1 := env.of_mem m1 r1
   rw [WP.seq_iff]
   refine WP.mono (crossArgs_ok s1 (A := a + 4 * k) (C := len) (P := o) e1.workspace (by omega_arith) p1
     (by rw [m1]; exact h.next) (by rw [m1, hlen]; exact h.cnt) (by rw [m1, ho]; exact h.tptr)) ?_
   rintro s2 ⟨g2, g12, glr, g0, g11, m2, r2⟩
-  have o2a := writeW32_outside s1.mem (State.addr base) (d := M + 20) (base + BitVec.ofNat 32 (o + 8))
+  obtain o2a := writeW32_outside s1.mem (State.addr base) (d := M + 20) (base + BitVec.ofNat 32 (o + 8))
     (by omega_arith)
-  have o2b := writeW32_outside (s1.mem.writeW (off (State.addr base) (M + 20)) (base + BitVec.ofNat 32 (o + 8)))
+  obtain o2b := writeW32_outside (s1.mem.writeW (off (State.addr base) (M + 20)) (base + BitVec.ofNat 32 (o + 8)))
     (State.addr base) (d := M + 12) (base + BitVec.ofNat 32 (a + 4 * k + 4)) (by omega_arith)
   rw [← m2] at o2b
-  have O2 : Outside (State.addr base) (M + 12) 12 s1.mem s2.mem :=
+  obtain O2 : Outside (State.addr base) (M + 12) 12 s1.mem s2.mem :=
     (o2a.mono (by omega_arith) (by omega_arith)).trans (o2b.mono (by omega_arith) (by omega_arith))
-  have e2 := e1.next (Outs.of_outside (O2.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith) (by omega_arith))
+  obtain e2 := e1.next (Outs.of_outside (O2.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith) (by omega_arith))
     (by simp)) r2
   rw [WP.seq_iff]
   refine WP.mono (crossScalar_ok s2 e2.workspace (by omega_arith) g2) ?_
   rintro s3 ⟨g1, m3, r3⟩
-  have e3 := e2.of_mem m3 r3
-  have ctx : RowCtx s3 base size o (a + 4 * (k + 1)) len :=
+  obtain e3 := e2.of_mem m3 r3
+  obtain ctx : RowCtx s3 base size o (a + 4 * (k + 1)) len :=
     ⟨nowrap, by omega_arith, by omega_arith, by omega_arith, e3.workspace.writable⟩
   rw [WP.seq_iff]
   refine WP.mono (row_ok s3 ctx (by omega_arith) ((r3.gpr .r0 (by decide)).trans g0)
     (by rw [r3.gpr .r12 (by decide), g12, show a + 4 * k + 4 = a + 4 * (k + 1) by omega_arith])
     ((r3.gpr .lr (by decide)).trans glr)) ?_
   intro s4 ri
-  have e4 := e3.next (Outs.of_outside (ri.outside.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith)
+  obtain e4 := e3.next (Outs.of_outside (ri.outside.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith)
     (by omega_arith)) (by simp)) ri.rest
   rw [WP.seq_iff]
   refine WP.mono (crossCarry_ok s4 e4.workspace (d := o + 4 * len) (by omega_arith) ri.outPtr) ?_
   rintro s5 ⟨m5, r5⟩
-  have o5 := writeW32_outside s4.mem (State.addr base) (d := o + 4 * len) (s4.gpr .r11) (by omega_arith)
+  obtain o5 := writeW32_outside s4.mem (State.addr base) (d := o + 4 * len) (s4.gpr .r11) (by omega_arith)
   rw [← m5] at o5
-  have OW : Outside (State.addr base) o (4 * len + 4) s3.mem s5.mem :=
+  obtain OW : Outside (State.addr base) o (4 * len + 4) s3.mem s5.mem :=
     (ri.outside.mono (by omega_arith) (by omega_arith)).trans (o5.mono (by omega_arith) (by omega_arith))
-  have e5 := e4.next (Outs.of_outside (o5.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith) (by omega_arith))
+  obtain e5 := e4.next (Outs.of_outside (o5.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith) (by omega_arith))
     (by simp)) r5
   rw [WP.seq_iff]
   refine WP.mono (sqAnchor_ok s5 e5) ?_
   rintro s6 ⟨p6, m6, r6⟩
-  have e6 := e5.of_mem m6 r6
-  have cnt6 : s6.mem.readW (off (State.addr base) (M + 16)) 32 = BitVec.ofNat 32 len := by
+  obtain e6 := e5.of_mem m6 r6
+  obtain cnt6 : s6.mem.readW (off (State.addr base) (M + 16)) 32 = BitVec.ofNat 32 len := by
     rw [m6, outside_read32 OW (by omega_arith) (by omega_arith), m3, m2, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith),
       rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m1, hlen]
     exact h.cnt
   refine WP.mono (sqCount_ok s6 e6.workspace (by omega_arith) p6 cnt6 (by omega_arith) (by omega_arith)) ?_
   rintro t ⟨m7, z7, r7⟩
-  have o7 := writeW32_outside s6.mem (State.addr base) (d := M + 16) (BitVec.ofNat 32 (len - 1)) (by omega_arith)
+  obtain o7 := writeW32_outside s6.mem (State.addr base) (d := M + 16) (BitVec.ofNat 32 (len - 1)) (by omega_arith)
   rw [← m7] at o7
-  have et := e6.next (Outs.of_outside (o7.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith) (by omega_arith))
+  obtain et := e6.next (Outs.of_outside (o7.mono (o' := M) (n' := 4 * (2 * n + 8)) (by omega_arith) (by omega_arith))
     (by simp)) r7
   -- Everything but the metadata's words from `M + 12` and the row.
-  have all : Outs (State.addr base) [(M + 12, 12), (o, 4 * len + 4)] s.mem t.mem := by
-    have A1 : Outs (State.addr base) [(M + 12, 12), (o, 4 * len + 4)] s1.mem s2.mem :=
+  obtain all : Outs (State.addr base) [(M + 12, 12), (o, 4 * len + 4)] s.mem t.mem := by
+    obtain A1 : Outs (State.addr base) [(M + 12, 12), (o, 4 * len + 4)] s1.mem s2.mem :=
       Outs.of_outside O2 (by simp)
-    have A2 : Outs (State.addr base) [(M + 12, 12), (o, 4 * len + 4)] s3.mem s5.mem :=
+    obtain A2 : Outs (State.addr base) [(M + 12, 12), (o, 4 * len + 4)] s3.mem s5.mem :=
       Outs.of_outside OW (by simp)
-    have A3 : Outs (State.addr base) [(M + 12, 12), (o, 4 * len + 4)] s6.mem t.mem :=
+    obtain A3 : Outs (State.addr base) [(M + 12, 12), (o, 4 * len + 4)] s6.mem t.mem :=
       Outs.of_outside (o7.mono (o' := M + 12) (n' := 12) (by omega_arith) (by omega_arith)) (by simp)
     rw [m1] at A1; rw [m3] at A2; rw [m6] at A3
     exact A1.trans (A2.trans A3)
   -- The value.
-  have aw := e2.aWord (j := k) (by omega_arith)
-  have av := e3.aVal (d := a + 4 * (k + 1)) (k := len) (by omega_arith) (by omega_arith)
-  have v3 : val32 s3.mem (State.addr base) (M + 24) (2 * n + 2) = sqCross m0 (State.addr base) a n k := by
+  obtain aw := e2.aWord (j := k) (by omega_arith)
+  obtain av := e3.aVal (d := a + 4 * (k + 1)) (k := len) (by omega_arith) (by omega_arith)
+  obtain v3 : val32 s3.mem (State.addr base) (M + 24) (2 * n + 2) = sqCross m0 (State.addr base) a n k := by
     rw [m3, O2.val32 (by omega_arith) (by omega_arith), m1]; exact h.value
-  have rep := val32_replace (m := s3.mem) (m' := s5.mem) (base := State.addr base) (d := M + 24)
+  obtain rep := val32_replace (m := s3.mem) (m' := s5.mem) (base := State.addr base) (d := M + 24)
     (i := 2 * k + 1) (j := n - k) (k := n + 1 - k) (OW.val32 (by omega_arith) (by omega_arith))
     (OW.val32 (by omega_arith) (by omega_arith))
   rw [show 2 * k + 1 + (n - k) + (n + 1 - k) = 2 * n + 2 by omega_arith,
     show M + 24 + 4 * (2 * k + 1) = o by omega_arith, show n - k = len + 1 by omega_arith] at rep
-  have xn : val32 s5.mem (State.addr base) o len = val32 s4.mem (State.addr base) o len :=
+  obtain xn : val32 s5.mem (State.addr base) o len = val32 s4.mem (State.addr base) o len :=
     o5.val32 (by omega_arith) (by omega_arith)
-  have wn : w32 s5.mem (State.addr base) (o + 4 * len) = (s4.gpr .r11).toNat := by
+  obtain wn : w32 s5.mem (State.addr base) (o + 4 * len) = (s4.gpr .r11).toNat := by
     rw [m5, w32_write_self]
-  have wo : w32 s3.mem (State.addr base) (o + 4 * len) = 0 := by
+  obtain wo : w32 s3.mem (State.addr base) (o + 4 * len) = 0 := by
     rw [m3, O2.w32 (by omega_arith) (by omega_arith), m1, show o + 4 * len = M + 24 + 4 * (k + n) by omega_arith]
     have z := h.top
     rw [show n + 2 - k = (n + 1 - k) + 1 by omega_arith] at z
@@ -227,7 +227,7 @@ theorem crossRound_ok (s : State) {k : Nat} (h : CrossInv m0 base size out a mod
   rw [(r3.gpr .r11 (by decide)).trans g11, g1] at row
   change _ = _ + w32 s2.mem (State.addr base) (a + 4 * k) * _ + (0 : BitVec 32).toNat at row
   rw [aw, show a + 4 * (k + 1) = a + 4 * (k + 1) from rfl] at row
-  have vt : val32 t.mem (State.addr base) (M + 24) (2 * n + 2) = val32 s5.mem (State.addr base) (M + 24) (2 * n + 2) := by
+  obtain vt : val32 t.mem (State.addr base) (M + 24) (2 * n + 2) = val32 s5.mem (State.addr base) (M + 24) (2 * n + 2) := by
     rw [o7.val32 (by omega_arith) (by omega_arith), m6]
   refine ⟨⟨et, by omega_arith, h.md.of_outs all (by simp; omega_arith) (by omega_arith), ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_⟩
   · rw [m7, rd_other _ (by omega_arith) (by omega_arith) (by omega_arith), m6, outside_read32 OW (by omega_arith) (by omega_arith), m3, m2,
@@ -242,7 +242,7 @@ theorem crossRound_ok (s : State) {k : Nat} (h : CrossInv m0 base size out a mod
   · rw [all.val32 (by simp; omega_arith) (by omega_arith)]
     have z := h.top
     rw [show n + 2 - k = 1 + (n + 2 - (k + 1)) by omega_arith] at z
-    have z' := val32_zero_tail z
+    obtain z' := val32_zero_tail z
     rwa [show M + 24 + 4 * (k + n) + 4 * 1 = M + 24 + 4 * (k + 1 + n) by omega_arith] at z'
   · rw [z7, hlen]; simp only [show n - 1 - k = 1 ↔ k + 2 = n by omega_arith]
   · exact (r1.mono (by decide)).trans ((r2.mono (by decide)).trans

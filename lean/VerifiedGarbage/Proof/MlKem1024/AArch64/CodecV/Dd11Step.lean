@@ -81,10 +81,10 @@ theorem dd11Group_ok {s : State} {g : Nat} (hg : g < 4) (hc : DConsts 11 s)
     wp_vop (eval_shift (by decide)) fun s3 h3' => wp_vop (by simp only [VOp.eval]; rfl) fun s4 h4 =>
     wp_vop rfl fun s5 h5 => wp_vop rfl fun s6 h6 => ?_
   -- the group, in the low 11 bytes of `v7`
-  have hBl : ∀ j < 11, B j < 2 ^ 8 := fun j hj => by rw [← hB j hj]; exact (tableByte s.v .v4 _).isLt
-  have r7 : ∀ j < 16, (vbyte (s1.v .v7) j).toNat = if j < 11 then B j else 0 := fun j hj => by
+  obtain hBl : ∀ j < 11, B j < 2 ^ 8 := fun j hj => by rw [← hB j hj]; exact (tableByte s.v .v4 _).isLt
+  obtain r7 : ∀ j < 16, (vbyte (s1.v .v7) j).toNat = if j < 11 then B j else 0 := fun j hj => by
     rw [h1.v]
-    have hk : (vbyte (s.v (dd11IdxReg g)) j).toNat = if j < 11 then 11 * g + j else 255 := by
+    obtain hk : (vbyte (s.v (dd11IdxReg g)) j).toNat = if j < 11 then 11 * g + j else 255 := by
       rw [hidx, toNat_idxVec _ (by
         intro x hx; simp only [dd11Idx, List.mem_map, List.mem_range] at hx; omega) hj, dd11Idx_eq g hj]
     by_cases h : j < 11
@@ -93,21 +93,21 @@ theorem dd11Group_ok {s : State} {g : Nat} (hg : g < 4) (hc : DConsts 11 s)
     · rw [ite_eq_right h] at hk ⊢
       rw [vbyte_tblN_out hj hk (by omega_arith)]; rfl
   -- the group as its low eight bytes `L` and its high three `Hh`
-  have b0 := hBl 0 (by decide); have b1 := hBl 1 (by decide); have b2 := hBl 2 (by decide)
-  have b3 := hBl 3 (by decide); have b4 := hBl 4 (by decide); have b5 := hBl 5 (by decide)
-  have b6 := hBl 6 (by decide); have b7 := hBl 7 (by decide); have b8 := hBl 8 (by decide)
-  have b9 := hBl 9 (by decide); have b10 := hBl 10 (by decide)
+  obtain b0 := hBl 0 (by decide); have b1 := hBl 1 (by decide); have b2 := hBl 2 (by decide)
+  obtain b3 := hBl 3 (by decide); have b4 := hBl 4 (by decide); have b5 := hBl 5 (by decide)
+  obtain b6 := hBl 6 (by decide); have b7 := hBl 7 (by decide); have b8 := hBl 8 (by decide)
+  obtain b9 := hBl 9 (by decide); have b10 := hBl 10 (by decide)
   generalize hL : B 0 + B 1 * 2 ^ 8 + B 2 * 2 ^ 16 + B 3 * 2 ^ 24 + B 4 * 2 ^ 32 + B 5 * 2 ^ 40 + B 6 * 2 ^ 48 +
     B 7 * 2 ^ 56 = L
   generalize hH : B 8 + B 9 * 2 ^ 8 + B 10 * 2 ^ 16 = Hh
-  have Llt : L < 2 ^ 64 := by omega_arith
-  have Hlt : Hh < 2 ^ 24 := by omega_arith
-  have split : num11 B = L + 2 ^ 64 * Hh := by simp only [num11]; omega_arith
-  have nlo : num11 B % 2 ^ 64 = L := by
+  obtain Llt : L < 2 ^ 64 := by omega_arith
+  obtain Hlt : Hh < 2 ^ 24 := by omega_arith
+  obtain split : num11 B = L + 2 ^ 64 * Hh := by simp only [num11]; omega_arith
+  obtain nlo : num11 B % 2 ^ 64 = L := by
     rw [split, Nat.add_mul_mod_self_left, Nat.mod_eq_of_lt Llt]
-  have nhi : num11 B / 2 ^ 64 = Hh := by
+  obtain nhi : num11 B / 2 ^ 64 = Hh := by
     rw [split, Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.div_eq_of_lt Llt, Nat.zero_add]
-  have lo : (vdword (s1.v .v7) 0).toNat = num11 B % 2 ^ 64 := by
+  obtain lo : (vdword (s1.v .v7) 0).toNat = num11 B % 2 ^ 64 := by
     have := dword_of_bytes (s1.v .v7) 0
     simp only [Nat.mul_zero, Nat.zero_add] at this
     rw [this, r7 0 (by decide), r7 1 (by decide), r7 2 (by decide), r7 3 (by decide), r7 4 (by decide),
@@ -115,7 +115,7 @@ theorem dd11Group_ok {s : State} {g : Nat} (hg : g < 4) (hc : DConsts 11 s)
     simp only [show (0 : Nat) < 11 by decide, show (1 : Nat) < 11 by decide, show (2 : Nat) < 11 by decide,
       show (3 : Nat) < 11 by decide, show (4 : Nat) < 11 by decide, show (5 : Nat) < 11 by decide,
       show (6 : Nat) < 11 by decide, show (7 : Nat) < 11 by decide, ite_true]
-  have hi : (vdword (s1.v .v7) 1).toNat = num11 B / 2 ^ 64 := by
+  obtain hi : (vdword (s1.v .v7) 1).toNat = num11 B / 2 ^ 64 := by
     have := dword_of_bytes (s1.v .v7) 1
     simp only [Nat.mul_one] at this
     rw [this, r7 8 (by decide), r7 9 (by decide), r7 10 (by decide), r7 11 (by decide), r7 12 (by decide),
@@ -125,37 +125,37 @@ theorem dd11Group_ok {s : State} {g : Nat} (hg : g < 4) (hc : DConsts 11 s)
       show ¬ (14 : Nat) < 11 by decide, show ¬ (15 : Nat) < 11 by decide, ite_true, ite_false]
     omega_arith
   -- the high 44 bits in the low doubleword of `v1`
-  have v7a : s2.v .v7 = s1.v .v7 := h2.get .v7 (by decide)
-  have d1 : (vdword (s2.v .v1) 0).toNat = num11 B % 2 ^ 64 / 2 ^ 44 := by
+  obtain v7a : s2.v .v7 = s1.v .v7 := h2.get .v7 (by decide)
+  obtain d1 : (vdword (s2.v .v1) 0).toNat = num11 B % 2 ^ 64 / 2 ^ 44 := by
     rw [h2.v, StraightV.vdword_map2 _ _ _ (by decide)]
     simp only [VShiftOp.eval, BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow]
     rw [lo]
-  have d2 : (vdword (s4.v .v2) 0).toNat = num11 B / 2 ^ 64 * 2 ^ 20 % 2 ^ 64 := by
+  obtain d2 : (vdword (s4.v .v2) 0).toNat = num11 B / 2 ^ 64 * 2 ^ 20 % 2 ^ 64 := by
     rw [h4.v, vdword_ext8 _ (by decide), h3'.v, StraightV.vdword_map2 _ _ _ (by decide)]
     simp only [VShiftOp.eval, BitVec.toNat_shiftLeft, Nat.shiftLeft_eq]
     rw [v7a, hi]
-  have d5 : (vdword (s5.v .v1) 0).toNat = num11 B / 2 ^ 44 := by
+  obtain d5 : (vdword (s5.v .v1) 0).toNat = num11 B / 2 ^ 44 := by
     rw [h5.v, StraightV.vdword_or, BitVec.toNat_or, h4.get .v1 (by decide), h3'.get .v1 (by decide), d1, d2]
     rw [nlo, nhi, Nat.mod_eq_of_lt (show Hh * 2 ^ 20 < 2 ^ 64 by omega_arith), or_shift (by omega_arith), split,
       show (2 : Nat) ^ 64 = 2 ^ 44 * 2 ^ 20 from by rw [← Nat.pow_add], Nat.mul_assoc,
       Nat.add_mul_div_left _ _ (Nat.two_pow_pos _), Nat.mul_comm]
-  have D : DLanes (s6.v .v7) fun l => if l = 0 then num11 B % 2 ^ 64 else num11 B / 2 ^ 44 := fun l hl => by
+  obtain D : DLanes (s6.v .v7) fun l => if l = 0 then num11 B % 2 ^ 64 else num11 B / 2 ^ 44 := fun l hl => by
     rw [h6.v, eval_zip1_d2]
     rcases (show l = 0 ∨ l = 1 by omega_arith) with rfl | rfl
     · rw [vdword_ofVDwords_0, h5.get .v7 (by decide), h4.get .v7 (by decide), h3'.get .v7 (by decide), v7a, lo]
       simp only [↓reduceIte]
     · rw [vdword_ofVDwords_1, d5]
       simp only [Nat.one_ne_zero, ↓reduceIte]
-  have c6 : VChg [.v7, .v1, .v2, .v2, .v1, .v7] s s6 :=
+  obtain c6 : VChg [.v7, .v1, .v2, .v2, .v1, .v7] s s6 :=
     ((((h1.chg.trans h2.chg).trans h3'.chg).trans h4.chg).trans h5.chg).trans h6.chg
-  have r18 : Lanes (s6.v .v18) fun _ => 2 ^ (2 * 11) - 1 := Lanes.chg c6 (by decide) h18
-  have r19 : Lanes (s6.v .v19) fun _ => 2 ^ 11 - 1 := Lanes.chg c6 (by decide) h19
+  obtain r18 : Lanes (s6.v .v18) fun _ => 2 ^ (2 * 11) - 1 := Lanes.chg c6 (by decide) h18
+  obtain r19 : Lanes (s6.v .v19) fun _ => 2 ^ 11 - 1 := Lanes.chg c6 (by decide) h19
   refine ddSplit_ok (b := 11) (.inr rfl) r18 r19 D (k := fun a7 c7 L2 L3 => ?_)
-  have cs7 : DConsts 11 a7 := hc.chg (c6.trans c7) (by decide) (by decide)
+  obtain cs7 : DConsts 11 a7 := hc.chg (c6.trans c7) (by decide) (by decide)
   -- the values of 11 bits of the group
-  have dv : ∀ m < 8, dig 11 (fun l => if l = 0 then num11 B % 2 ^ 64 else num11 B / 2 ^ 44) m =
+  obtain dv : ∀ m < 8, dig 11 (fun l => if l = 0 then num11 B % 2 ^ 64 else num11 B / 2 ^ 44) m =
       num11 B / 2 ^ (11 * m) % 2 ^ 11 := fun m hm => dig11_eq _ hm
-  have dlt : ∀ m, dig 11 (fun l => if l = 0 then num11 B % 2 ^ 64 else num11 B / 2 ^ 44) m < 2 ^ 11 :=
+  obtain dlt : ∀ m, dig 11 (fun l => if l = 0 then num11 B % 2 ^ 64 else num11 B / 2 ^ 44) m < 2 ^ 11 :=
     fun m => Nat.mod_lt _ (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (decV_ok (v := .v2) (by decide) (by decide) cs7.q cs7.h (by decide) L2
@@ -163,7 +163,7 @@ theorem dd11Group_ok {s : State} {g : Nat} (hg : g < 4) (hc : DConsts 11 s)
   rw [WP.block_append_iff]
   refine WP.mono (decV_ok (v := .v3) (by decide) (by decide) (cs7.chg e1).q (cs7.chg e1).h (by decide)
     (Lanes.chg e1 (by decide) L3) fun e _ => dlt _) fun b2 ⟨e2, r3⟩ => ?_
-  have c := (c6.trans c7).trans (e1.trans e2)
+  obtain c := (c6.trans c7).trans (e1.trans e2)
   simp only [List.nil_append]
   refine wp_strq2 (by rw [c.wr]; exact hw) (by rw [c.gpr]; exact h3) ⟨by omega_arith, by omega_arith⟩ ht
     (by rw [c.mem]; exact hcu) (by rw [c.mem]; exact hf)
@@ -255,9 +255,9 @@ theorem step11 {s₀ : State} (hp : Pre width11 s₀) {k : Nat} (hk : k < 8) {s 
     (h : DInv width11 4 K11 s₀ k s) :
     WP isa (.block dd11Body) s fun t =>
       DInv width11 4 K11 s₀ (k + 1) t ∧ ((t.gpr .x11).toNat ≠ 0 ↔ k + 1 ≠ 8) := by
-  have x0 : s.gpr .x0 = bP s₀ + BitVec.ofNat 64 (44 * k) := by
+  obtain x0 : s.gpr .x0 = bP s₀ + BitVec.ofNat 64 (44 * k) := by
     rw [h.x0, show width11.nb * 4 * k = 44 * k by simp [width11]; try omega_arith]
-  have inr : ∀ o n, o + n ≤ 44 → InRegions (s.rd ++ s.wr) (bP s₀ + BitVec.ofNat 64 (44 * k + o)) n := fun o n hon => by
+  obtain inr : ∀ o n, o + n ≤ 44 → InRegions (s.rd ++ s.wr) (bP s₀ + BitVec.ofNat 64 (44 * k + o)) n := fun o n hon => by
     rw [h.rd, h.wr, hp.rd, hp.wr]
     exact in_rd (in_regions (List.mem_singleton_self _) (contains_off (by simp [width11]; omega_arith) (by decide)))
   unfold dd11Body
@@ -278,9 +278,9 @@ theorem step11 {s₀ : State} (hp : Pre width11 s₀) {k : Nat} (hk : k < 8) {s 
       t.gpr .x9 = (s4.mem.readW (bP s₀ + BitVec.ofNat 64 (44 * k + 40)) 32).setWidth 64) ⟨o, e⟩)
     fun s5 ⟨o5, e5⟩ v5 => ?_
   refine wp_vop rfl fun s6 h6 => ?_
-  have m6 : s6.mem = s.mem := by rw [h6.mem, o5.mem, h4.mem, o3.mem, h2.mem, h1.mem]
+  obtain m6 : s6.mem = s.mem := by rw [h6.mem, o5.mem, h4.mem, o3.mem, h2.mem, h1.mem]
   -- the 44 bytes, as a table of three registers
-  have tab : ∀ i < 44, (tableByte s6.v .v4 i).toNat = byte width11 s₀ (44 * k + i) := fun i hi => by
+  obtain tab : ∀ i < 44, (tableByte s6.v .v4 i).toNat = byte width11 s₀ (44 * k + i) := fun i hi => by
     unfold tableByte
     rcases (show i / 16 = 0 ∨ i / 16 = 1 ∨ i / 16 = 2 by omega_arith) with q | q | q <;> rw [q]
     · rw [show Nat.repeat VReg.succ 0 VReg.v4 = .v4 from rfl, h6.get .v4 (by decide), v5, h4.get .v4 (by decide),
@@ -302,24 +302,24 @@ theorem step11 {s₀ : State} (hp : Pre width11 s₀) {k : Nat} (hk : k < 8) {s 
           ptr_add, show 44 * k + 32 + i % 16 = 44 * k + i by omega_arith]
         exact hp.byte_eq h.frame (by simp [width11]; omega_arith) (by decide)
   -- the frame so far
-  have g6 : ∀ r, r ≠ .x9 → s6.gpr r = s.gpr r := fun r hr => by
+  obtain g6 : ∀ r, r ≠ .x9 → s6.gpr r = s.gpr r := fun r hr => by
     rw [h6.gpr, o5.gpr r (by simpa using hr), h4.gpr, o3.gpr r (by simpa using hr), h2.gpr, h1.gpr]
-  have v6 : ∀ r, r ≠ .v4 → r ≠ .v5 → r ≠ .v6 → s6.v r = s.v r := fun r a b c => by
+  obtain v6 : ∀ r, r ≠ .v4 → r ≠ .v5 → r ≠ .v6 → s6.v r = s.v r := fun r a b c => by
     rw [h6.get r c, v5, h4.get r c, v3, h2.get r b, h1.get r a]
-  have wr6 : s6.wr = s.wr := by rw [h6.wr, o5.wr, h4.wr, o3.wr, h2.wr, h1.wr]
-  have x3 : s.gpr .x3 = coeffAddr (fP s₀) (32 * k) := by
+  obtain wr6 : s6.wr = s.wr := by rw [h6.wr, o5.wr, h4.wr, o3.wr, h2.wr, h1.wr]
+  obtain x3 : s.gpr .x3 = coeffAddr (fP s₀) (32 * k) := by
     rw [h.x3, show width11.c * 4 * k = 32 * k by simp [width11]; try omega_arith]
-  have out : CoeffsUpTo s6.mem (fP s₀) (32 * k) (DD.G width11 s₀) (old s₀) := by
+  obtain out : CoeffsUpTo s6.mem (fP s₀) (32 * k) (DD.G width11 s₀) (old s₀) := by
     rw [m6, show 32 * k = width11.c * 4 * k by simp [width11]; try omega_arith]; exact h.out
   -- what the groups keep
-  have keep : ∀ u : State, (∀ r, r ≠ .v1 → r ≠ .v2 → r ≠ .v3 → r ≠ .v7 → u.v r = s6.v r) →
+  obtain keep : ∀ u : State, (∀ r, r ≠ .v1 → r ≠ .v2 → r ≠ .v3 → r ≠ .v7 → u.v r = s6.v r) →
       DConsts 11 u ∧ (Lanes (u.v .v18) fun _ => 2 ^ 22 - 1) ∧ (Lanes (u.v .v19) fun _ => 2 ^ 11 - 1) ∧
       (∀ g < 4, u.v (dd11IdxReg g) = idxVec (dd11Idx g)) ∧
       ∀ g < 4, ∀ j < 11, (tableByte u.v .v4 (11 * g + j)).toNat = byte width11 s₀ (11 * (4 * k + g) + j) := by
     intro u hu
-    have hr : ∀ r, r ≠ .v1 → r ≠ .v2 → r ≠ .v3 → r ≠ .v4 → r ≠ .v5 → r ≠ .v6 → r ≠ .v7 → u.v r = s.v r :=
+    obtain hr : ∀ r, r ≠ .v1 → r ≠ .v2 → r ≠ .v3 → r ≠ .v4 → r ≠ .v5 → r ≠ .v6 → r ≠ .v7 → u.v r = s.v r :=
       fun r a b c d e f g' => by rw [hu r a b c g', v6 r d e f]
-    have q : ∀ r, r ∉ [VReg.v1, .v2, .v3, .v4, .v5, .v6, .v7] → u.v r = s.v r := fun r hr' => by
+    obtain q : ∀ r, r ∉ [VReg.v1, .v2, .v3, .v4, .v5, .v6, .v7] → u.v r = s.v r := fun r hr' => by
       simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr'
       obtain ⟨a, b, c, d, e, f, g'⟩ := hr'
       exact hr r a b c d e f g'
@@ -330,9 +330,9 @@ theorem step11 {s₀ : State} (hp : Pre width11 s₀) {k : Nat} (hk : k < 8) {s 
         rw [hr _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), ← e] <;>
         exact h.K.2.2 g hg
     · rw [tableByte_frame hu (by omega_arith), tab _ (by omega_arith), show 44 * k + (11 * g + j) = 11 * (4 * k + g) + j by omega_arith]
-  have hu6 : ∀ r, r ≠ .v1 → r ≠ .v2 → r ≠ .v3 → r ≠ .v7 → s6.v r = s6.v r := fun _ _ _ _ _ => rfl
+  obtain hu6 : ∀ r, r ≠ .v1 → r ≠ .v2 → r ≠ .v3 → r ≠ .v7 → s6.v r = s6.v r := fun _ _ _ _ _ => rfl
   -- the four groups
-  have grp : ∀ (g : Nat) (u : State), g < 4 → (∀ r, r ≠ .v1 → r ≠ .v2 → r ≠ .v3 → r ≠ .v7 → u.v r = s6.v r) →
+  obtain grp : ∀ (g : Nat) (u : State), g < 4 → (∀ r, r ≠ .v1 → r ≠ .v2 → r ≠ .v3 → r ≠ .v7 → u.v r = s6.v r) →
       u.gpr = s6.gpr → u.wr = s.wr → CoeffsUpTo u.mem (fP s₀) (32 * k + 8 * g) (DD.G width11 s₀) (old s₀) →
       Frame [polyRegion (fP s₀)] s₀.mem u.mem → ∀ (is : List Instr) (Q : State → Prop),
       (∀ u', u'.gpr = u.gpr → u'.rd = u.rd → u'.wr = u.wr → u'.sp = u.sp →
@@ -358,8 +358,8 @@ theorem step11 {s₀ : State} (hp : Pre width11 s₀) {k : Nat} (hk : k < 8) {s 
     (by rw [g3, g2, g1]) (by rw [wr3, wr2, wr1, wr6])
     (by rw [show 32 * k + 8 * 3 = 32 * k + 8 * 2 + 8 by omega_arith]; exact o3') f3 _ _
     fun u4 g4 rd4 wr4 sp4 v4 o4 f4 => ?_
-  have k4 : k < 256 / (width11.c * 4) := by simp [width11]; omega_arith
-  have gg : ∀ r, r ≠ .x9 → u4.gpr r = s.gpr r := fun r hr => by rw [g4, g3, g2, g1, g6 r hr]
+  obtain k4 : k < 256 / (width11.c * 4) := by simp [width11]; omega_arith
+  obtain gg : ∀ r, r ≠ .x9 → u4.gpr r = s.gpr r := fun r hr => by rw [g4, g3, g2, g1, g6 r hr]
   refine WP.mono (dtail_ok (w := width11) (Ng := 4) (s₀ := s₀) k4 (by rw [gg .x0 (by decide), h.x0])
     (by rw [gg .x3 (by decide), h.x3]) (by rw [gg .x11 (by decide), h.x11]) (by decide) (by decide))
     fun u ⟨o, uv, u0, u3, u11, uc⟩ => ?_

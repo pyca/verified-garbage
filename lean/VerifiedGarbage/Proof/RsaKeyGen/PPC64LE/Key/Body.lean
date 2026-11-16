@@ -88,12 +88,12 @@ theorem primes_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 
   refine WP.mono (selE h6 k6 (o := aQm) (a := aT) (b := aZero) (sl := X0) (bit := by rw [g6]; exact flag01 _))
     fun t ⟨ht, kt, ft, rt⟩ => ?_
   obtain ⟨V7, kt, e7, o7⟩ := kt.vx
-  have hp := ks.lt (j := aP0) (by decide)
-  have hq := ks.lt (j := aQ0) (by decide)
-  have vP : V7 aP = if V aP0 < V aQ0 then V aQ0 else V aP0 := by
+  obtain hp := ks.lt (j := aP0) (by decide)
+  obtain hq := ks.lt (j := aQ0) (by decide)
+  obtain vP : V7 aP = if V aP0 < V aQ0 then V aQ0 else V aP0 := by
     simp (disch := decide) only [o7, o6, o5, o4, o3, e2, g1, o1]
     split <;> simp_all
-  have vQ : V7 aQ = if V aP0 < V aQ0 then V aP0 else V aQ0 := by
+  obtain vQ : V7 aQ = if V aP0 < V aQ0 then V aP0 else V aQ0 := by
     simp (disch := decide) only [o7, o6, o5, o4, e3, g1, o2, o1]
     split <;> simp_all
   refine ⟨ht, ⟨V7, F6, kt, fun j hj hn => ?_, fun d _ hd => ?_, vP, vQ, ?_, ?_⟩,
@@ -201,9 +201,9 @@ theorem dOdd_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10 
           V' aDo = V aL / mE (V aE) * (mE (V aE) - x) + (V aL % mE (V aE) * (mE (V aE) - x) + 1) / mE (V aE) ∧
           F' X6 = if ¬ V aL < 2 ∧ Nat.gcd (V aL % mE (V aE)) (mE (V aE)) = 1 then 1 else 0)) ∧
       KK B w s.mem t.mem ∧ Keep bodyRegs s t := by
-  have hM : 2 ^ 128 ≤ 2 ^ (32 * w) := Nat.pow_le_pow_right (by decide) (by omega_arith)
-  have mo := mE_odd (V aE)
-  have mlt : mE (V aE) < 2 ^ 64 := by unfold mE; split <;> omega_arith
+  obtain hM : 2 ^ 128 ≤ 2 ^ (32 * w) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  obtain mo := mE_odd (V aE)
+  obtain mlt : mE (V aE) < 2 ^ 64 := by unfold mE; split <;> omega_arith
   rw [dOdd_eq, wp_seqs_append (by simp) (by simp [ltS])]
   -- `X0` := `e` odd and at least 3; `[aME] := mE`.
   change WP isa (.seq (.block (andNotS X0 X5 X3 ++ [])) _) s _
@@ -214,7 +214,7 @@ theorem dOdd_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10 
   refine WP.seq (WP.mono (selE h1 k1 (o := aME) (a := aThree) (b := aE) (sl := X0)
     (bit := by rw [g1]; exact flag01 _)) fun t2 ⟨h2, k2, f2, r2⟩ => ?_)
   obtain ⟨V2, k2, e2, o2⟩ := k2.vx
-  have vME : V2 aME = mE (V aE) := by
+  obtain vME : V2 aME = mE (V aE) := by
     rw [e2, g1, b5, b3, three, mE]
     have := Nat.mod_two_eq_zero_or_one (V aE)
     by_cases a : V aE < 3 <;> by_cases b : V aE % 2 = 1 <;> simp [a, b] <;> omega_arith
@@ -223,19 +223,19 @@ theorem dOdd_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10 
   obtain ⟨V3, k3, e3, o3⟩ := k3.vx
   refine WP.seq (WP.mono (copyE h3 k3 (o := aDv) (a := aME)) fun t4 ⟨h4, k4, f4, r4⟩ => ?_)
   obtain ⟨V4, k4, e4, o4⟩ := k4.vx
-  have vDv : V4 aDv = mE (V aE) := by rw [e4, o3 aME (by decide), vME]
+  obtain vDv : V4 aDv = mE (V aE) := by rw [e4, o3 aME (by decide), vME]
   refine WP.seq (WP.mono (divE h4 k4 (q := aQd) (r := aR) (t := aDt)) fun t5 ⟨h5, ⟨V5, k5, o5, e5⟩, f5, r5⟩ => ?_)
-  have vL : V4 aQd = V aL := by rw [o4 aQd (by decide), e3, o2 aL (by decide)]
-  have vQ : V5 aQd = V aL / mE (V aE) := by rw [(e5 (by rw [vDv]; omega_arith)).1, vL, vDv]
-  have vR : V5 aR = V aL % mE (V aE) := by rw [(e5 (by rw [vDv]; omega_arith)).2, vL, vDv]
+  obtain vL : V4 aQd = V aL := by rw [o4 aQd (by decide), e3, o2 aL (by decide)]
+  obtain vQ : V5 aQd = V aL / mE (V aE) := by rw [(e5 (by rw [vDv]; omega_arith)).1, vL, vDv]
+  obtain vR : V5 aR = V aL % mE (V aE) := by rw [(e5 (by rw [vDv]; omega_arith)).2, vL, vDv]
   -- `x = R⁻¹ mod mE`.
-  have c5 : ∀ j < nArr, j ≠ aME → j ≠ aQd → j ≠ aDv → j ≠ aR → j ≠ aDt → V5 j = V j := fun j hj a b c d f => by
+  obtain c5 : ∀ j < nArr, j ≠ aME → j ≠ aQd → j ≠ aDv → j ≠ aR → j ≠ aDt → V5 j = V j := fun j hj a b c d f => by
     rw [o5 j hj b d f, o4 j c, o3 j b, o2 j a]
-  have one5 : V5 aOne = 1 := by
+  obtain one5 : V5 aOne = 1 := by
     rw [c5 aOne (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), one]
-  have zero5 : V5 aZero = 0 := by
+  obtain zero5 : V5 aZero = 0 := by
     rw [c5 aZero (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), zero]
-  have vM5 : V5 aME = mE (V aE) := by
+  obtain vM5 : V5 aME = mE (V aE) := by
     rw [o5 aME (by decide) (by decide) (by decide) (by decide), o4 aME (by decide), o3 aME (by decide), vME]
   refine WP.seq (WP.mono (invOfE h5 k5 hw (a := aR) (m := aME) (hk := nTwo_width) (hn1 := by decide)
     (hnw := by omega_arith) (hfit := by omega_arith) (han := by rw [vR]; exact Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) mlt)
@@ -247,14 +247,14 @@ theorem dOdd_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10 
   obtain ⟨F7, k7, g7, p7⟩ := k7.fx
   refine WP.seq (WP.mono (sub3E h7 k7 (o := aTt) (a := aME) (b := 3)) fun t8 ⟨h8, k8, _, f8, r8⟩ => ?_)
   obtain ⟨V8, k8, e8, o8⟩ := k8.vx
-  have vM6 : V6 aME = mE (V aE) := by rw [o6 aME (by decide) (by decide), vM5]
-  have vT : V8 aTt = mE (V aE) - V6 3 := by
+  obtain vM6 : V6 aME = mE (V aE) := by rw [o6 aME (by decide) (by decide), vM5]
+  obtain vT : V8 aTt = mE (V aE) - V6 3 := by
     rw [e8, vM6]
     unfold subW
     rw [show mE (V aE) + 2 ^ (32 * w) - V6 3 = (mE (V aE) - V6 3) + 2 ^ (32 * w) by omega_arith, Nat.add_mod_right,
       Nat.mod_eq_of_lt (by omega_arith)]
   -- `Q t` and `R t`.
-  have o68 : ∀ j < nArr, j ∉ invOfArrs → j ≠ aTt → V8 j = V5 j := fun j hj hi ht => by rw [o8 j ht, o6 j hj hi]
+  obtain o68 : ∀ j < nArr, j ∉ invOfArrs → j ≠ aTt → V8 j = V5 j := fun j hj hi ht => by rw [o8 j ht, o6 j hj hi]
   refine WP.seq (WP.mono (mulToE h8 k8 (o := aQt) (a := aQd) (b := aTt) (K := 64) (hK := by decide)
     (hK' := by decide) (hk := fun u _ => li64_ok u) (hZ := by rw [o68 aZero (by decide) (by decide) (by decide),
       c5 aZero (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), zero]))
@@ -263,61 +263,61 @@ theorem dOdd_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10 
     (hK' := by decide) (hk := fun u _ => li64_ok u) (hZ := by rw [o9 aZero (by decide) (by decide) (by decide),
       o68 aZero (by decide) (by decide) (by decide), c5 aZero (by decide) (by decide) (by decide) (by decide)
       (by decide) (by decide), zero])) fun t10 ⟨h10, ⟨V10, k10, o10, e10⟩, f10, r10⟩ => ?_)
-  have tlt : V8 aTt < 2 ^ 64 := by rw [vT]; omega_arith
-  have vQt : V10 aQt = V aL / mE (V aE) * (mE (V aE) - V6 3) := by
-    have fit := odd_fits (L := V aL) (x := V6 3) mlt (by omega_arith)
+  obtain tlt : V8 aTt < 2 ^ 64 := by rw [vT]; omega_arith
+  obtain vQt : V10 aQt = V aL / mE (V aE) * (mE (V aE) - V6 3) := by
+    obtain fit := odd_fits (L := V aL) (x := V6 3) mlt (by omega_arith)
     rw [o10 aQt (by decide) (by decide) (by decide), e9, o68 aQd (by decide) (by decide) (by decide), vQ, Nat.mod_eq_of_lt tlt,
       vT, Nat.mod_eq_of_lt]
     have := ks.lt (j := aL) (by decide)
     omega_arith
-  have vRt : V10 aRt = V aL % mE (V aE) * (mE (V aE) - V6 3) := by
-    have fit := odd_fits (L := V aL) (x := V6 3) mlt (by omega_arith)
-    have t9 : V9 aTt = V8 aTt := o9 aTt (by decide) (by decide) (by decide)
+  obtain vRt : V10 aRt = V aL % mE (V aE) * (mE (V aE) - V6 3) := by
+    obtain fit := odd_fits (L := V aL) (x := V6 3) mlt (by omega_arith)
+    obtain t9 : V9 aTt = V8 aTt := o9 aTt (by decide) (by decide) (by decide)
     rw [e10, o9 aR (by decide) (by decide) (by decide), o68 aR (by decide) (by decide) (by decide), vR, t9,
       Nat.mod_eq_of_lt tlt, vT, Nat.mod_eq_of_lt (by omega_arith)]
   -- `R t + 1`, `c = (R t + 1) / mE`, `d = Q t + c`.
-  have z10 : V10 aZero = 0 := by
+  obtain z10 : V10 aZero = 0 := by
     rw [o10 aZero (by decide) (by decide) (by decide), o9 aZero (by decide) (by decide) (by decide), o68 aZero (by decide) (by decide)
       (by decide), c5 aZero (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), zero]
-  have one10 : V10 aOne = 1 := by
+  obtain one10 : V10 aOne = 1 := by
     rw [o10 aOne (by decide) (by decide) (by decide), o9 aOne (by decide) (by decide) (by decide), o68 aOne (by decide) (by decide)
       (by decide), c5 aOne (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), one]
   refine WP.seq (WP.mono (addToE h10 k10 (o := aRt) (a := aOne) (n := aNc) (z := aZero) (z0 := z10))
     fun t11 ⟨h11, k11, f11, r11⟩ => ?_)
   obtain ⟨V11, k11, e11, o11⟩ := k11.vx
-  have fit := odd_fits (L := V aL) (x := V6 3) mlt (by omega_arith)
-  have vRt1 : V11 aRt = V aL % mE (V aE) * (mE (V aE) - V6 3) + 1 := by
+  obtain fit := odd_fits (L := V aL) (x := V6 3) mlt (by omega_arith)
+  obtain vRt1 : V11 aRt = V aL % mE (V aE) * (mE (V aE) - V6 3) + 1 := by
     rw [e11, vRt, one10, Nat.mod_eq_of_lt (by omega_arith)]
-  have vDv10 : V10 aDv = mE (V aE) := by
+  obtain vDv10 : V10 aDv = mE (V aE) := by
     rw [o10 aDv (by decide) (by decide) (by decide), o9 aDv (by decide) (by decide) (by decide),
       o68 aDv (by decide) (by decide) (by decide), o5 aDv (by decide) (by decide) (by decide) (by decide), vDv]
-  have vDv11 : V11 aDv = mE (V aE) := by rw [o11 aDv (by decide), upd_ne (by decide), vDv10]
+  obtain vDv11 : V11 aDv = mE (V aE) := by rw [o11 aDv (by decide), upd_ne (by decide), vDv10]
   refine WP.seq (WP.mono (divE h11 k11 (q := aRt) (r := aDr) (t := aDt)) fun t12 ⟨h12, ⟨V12, k12, o12, e12⟩, f12,
     r12⟩ => ?_)
-  have vC : V12 aRt = (V aL % mE (V aE) * (mE (V aE) - V6 3) + 1) / mE (V aE) := by
+  obtain vC : V12 aRt = (V aL % mE (V aE) * (mE (V aE) - V6 3) + 1) / mE (V aE) := by
     rw [(e12 (by rw [vDv11]; omega_arith)).1, vRt1, vDv11]
   refine WP.seq (WP.mono (copyE h12 k12 (o := aDo) (a := aQt)) fun t13 ⟨h13, k13, f13, r13⟩ => ?_)
   obtain ⟨V13, k13, e13, o13⟩ := k13.vx
-  have z13 : V13 aZero = 0 := by
+  obtain z13 : V13 aZero = 0 := by
     rw [o13 aZero (by decide), o12 aZero (by decide) (by decide) (by decide) (by decide), o11 aZero (by decide),
       upd_ne (by decide), z10]
   refine WP.mono (addToE h13 k13 (o := aDo) (a := aRt) (n := aNc) (z := aZero) (z0 := z13))
     fun t14 ⟨h14, k14, f14, r14⟩ => ?_
   obtain ⟨V14, k14, e14, o14⟩ := k14.vx
-  have vQt12 : V12 aQt = V aL / mE (V aE) * (mE (V aE) - V6 3) := by
+  obtain vQt12 : V12 aQt = V aL / mE (V aE) * (mE (V aE) - V6 3) := by
     rw [o12 aQt (by decide) (by decide) (by decide) (by decide), o11 aQt (by decide), upd_ne (by decide), vQt]
-  have vDo : V14 aDo = V aL / mE (V aE) * (mE (V aE) - V6 3) +
+  obtain vDo : V14 aDo = V aL / mE (V aE) * (mE (V aE) - V6 3) +
       (V aL % mE (V aE) * (mE (V aE) - V6 3) + 1) / mE (V aE) := by
     rw [e14, e13, o13 aRt (by decide), vQt12, vC]
     have := ks.lt (j := aL) (by decide)
     rw [Nat.mod_eq_of_lt (by omega_arith)]
   -- `X2` := `L < 2`, `X6` := `L ≥ 2` and `gcd(R, mE) = 1`.
-  have vL14 : V14 aL = V aL := by
+  obtain vL14 : V14 aL = V aL := by
     rw [o14 aL (by decide), upd_ne (by decide), o13 aL (by decide), o12 aL (by decide) (by decide) (by decide)
       (by decide), o11 aL (by decide), upd_ne (by decide), o10 aL (by decide) (by decide) (by decide),
       o9 aL (by decide) (by decide) (by decide), o68 aL (by decide) (by decide) (by decide),
       c5 aL (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)]
-  have vTwo14 : V14 aTwo = 2 := by
+  obtain vTwo14 : V14 aTwo = 2 := by
     rw [o14 aTwo (by decide), upd_ne (by decide), o13 aTwo (by decide), o12 aTwo (by decide) (by decide)
       (by decide) (by decide), o11 aTwo (by decide), upd_ne (by decide), o10 aTwo (by decide) (by decide)
       (by decide), o9 aTwo (by decide) (by decide) (by decide), o68 aTwo (by decide) (by decide) (by decide),
@@ -337,10 +337,10 @@ theorem dOdd_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10 
       List.not_mem_nil, or_false, not_or] at hn
     obtain ⟨n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12, n13, n14, n15, n16, n17, n18, n19, n20, n21,
       n22, n23, n24, n25, n26, n27, n28, n29, n30, n31⟩ := hn
-    have hi : j ∉ invOfArrs := by
+    obtain hi : j ∉ invOfArrs := by
       simp only [invOfArrs, List.mem_cons, List.not_mem_nil, or_false, not_or]
       exact ⟨n13, n14, n15, n16, n17, n18, n19, n20, n21, n22, n23, n24, n25, n26⟩
-    have hm : j ∉ mulArrs := by
+    obtain hm : j ∉ mulArrs := by
       simp only [mulArrs, List.mem_cons, List.not_mem_nil, or_false, not_or]; exact ⟨n27, n28, n29, n30, n31⟩
     rw [o15 j n12, o14 j n11, upd_ne n10, o13 j n11, o12 j hj n9 n5 n6, o11 j n9, upd_ne n10,
       o10 j hj n9 hm, o9 j hj n8 hm, o8 j n7, o6 j hj hi, c5 j hj n1 n2 n3 n4 n6]
@@ -404,13 +404,13 @@ theorem dOne_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (one : V aOne = 1)
   refine WP.seq ?_
   refine notSE h1 k1 (d := X7) (a := X0) (ba := by rw [g1]; exact flag01 _) (k := fun t2 h2 k2 f2 r2 => ?_)
   obtain ⟨F2, k2, g2, p2⟩ := k2.fx
-  have c6 : F2 X6 ≤ 1 := by rw [p2 X6 (by decide), p1 X6 (by decide)]; exact b6
-  have c7 : F2 X7 ≤ 1 := by rw [g2]; omega_arith
-  have c4' : F2 X4 ≤ 1 := by rw [p2 X4 (by decide), p1 X4 (by decide)]; exact b4
+  obtain c6 : F2 X6 ≤ 1 := by rw [p2 X6 (by decide), p1 X6 (by decide)]; exact b6
+  obtain c7 : F2 X7 ≤ 1 := by rw [g2]; omega_arith
+  obtain c4' : F2 X4 ≤ 1 := by rw [p2 X4 (by decide), p1 X4 (by decide)]; exact b4
   refine selSE h2 k2 (d := X6) (a := X6) (b := X7) (c := X4) (ba := c6) (bb := c7) (bc := c4')
     (k := fun t3 h3 k3 f3 r3 => WP.block_nil ?_)
   obtain ⟨F3, k3, g3, p3⟩ := k3.fx
-  have c4 : F3 X4 = F X4 := by rw [p3 X4 (by decide), p2 X4 (by decide), p1 X4 (by decide)]
+  obtain c4 : F3 X4 = F X4 := by rw [p3 X4 (by decide), p2 X4 (by decide), p1 X4 (by decide)]
   refine WP.mono (selE h3 k3 (o := aS) (a := aDo) (b := aOne) (sl := X4) (bit := by rw [c4]; exact b4))
     fun t ⟨ht, kt, ft, rt⟩ => ?_
   obtain ⟨V4, kt, e4, o4⟩ := kt.vx
@@ -529,39 +529,39 @@ theorem dPart_ok [InvLaw] (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (hw : 10
       KK B w s.mem t.mem ∧ Keep bodyRegs s t := by
   change WP isa (.seq eFlags (.seq dOdd (.seq dOne dEven))) s _
   refine WP.seq (WP.mono (eFlags_ok h ks one three) fun t1 ⟨h1, ⟨V1, F1, k1, o1, p1, x3, x4, x5⟩, f1, r1⟩ => ?_)
-  have one1 : V1 aOne = 1 := by rw [o1 _ (by decide), one]
-  have two1 : V1 aTwo = 2 := by rw [o1 _ (by decide), two]
-  have three1 : V1 aThree = 3 := by rw [o1 _ (by decide), three]
-  have zero1 : V1 aZero = 0 := by rw [o1 _ (by decide), zero]
-  have e1 : V1 aE = V aE := o1 _ (by decide)
-  have l1 : V1 aL = V aL := o1 _ (by decide)
+  obtain one1 : V1 aOne = 1 := by rw [o1 _ (by decide), one]
+  obtain two1 : V1 aTwo = 2 := by rw [o1 _ (by decide), two]
+  obtain three1 : V1 aThree = 3 := by rw [o1 _ (by decide), three]
+  obtain zero1 : V1 aZero = 0 := by rw [o1 _ (by decide), zero]
+  obtain e1 : V1 aE = V aE := o1 _ (by decide)
+  obtain l1 : V1 aL = V aL := o1 _ (by decide)
   refine WP.seq (WP.mono (dOdd_ok h1 k1 hw (by rw [e1]; exact he) one1 two1 three1 zero1 (by rw [x3, e1])
     (by rw [x5, e1])) fun t2 ⟨h2, ⟨V2, F2, k2, o2, p2, x, xl, xd, vDo, x6⟩, f2, r2⟩ => ?_)
   simp only [e1, l1] at xl xd vDo x6
-  have one2 : V2 aOne = 1 := by rw [o2 _ (by decide) (by decide), one1]
-  have three2 : V2 aThree = 3 := by rw [o2 _ (by decide) (by decide), three1]
-  have zero2 : V2 aZero = 0 := by rw [o2 _ (by decide) (by decide), zero1]
-  have e2 : V2 aE = V aE := by rw [o2 _ (by decide) (by decide), e1]
-  have l2 : V2 aL = V aL := by rw [o2 _ (by decide) (by decide), l1]
-  have y4 : F2 X4 = if V aE = 1 then 1 else 0 := by rw [p2 X4 (by decide) (by decide) (by decide) (by decide), x4]
-  have y3 : F2 X3 = V aE % 2 := by rw [p2 X3 (by decide) (by decide) (by decide) (by decide), x3]
-  have y5 : F2 X5 = if V aE < 3 then 1 else 0 := by rw [p2 X5 (by decide) (by decide) (by decide) (by decide), x5]
+  obtain one2 : V2 aOne = 1 := by rw [o2 _ (by decide) (by decide), one1]
+  obtain three2 : V2 aThree = 3 := by rw [o2 _ (by decide) (by decide), three1]
+  obtain zero2 : V2 aZero = 0 := by rw [o2 _ (by decide) (by decide), zero1]
+  obtain e2 : V2 aE = V aE := by rw [o2 _ (by decide) (by decide), e1]
+  obtain l2 : V2 aL = V aL := by rw [o2 _ (by decide) (by decide), l1]
+  obtain y4 : F2 X4 = if V aE = 1 then 1 else 0 := by rw [p2 X4 (by decide) (by decide) (by decide) (by decide), x4]
+  obtain y3 : F2 X3 = V aE % 2 := by rw [p2 X3 (by decide) (by decide) (by decide) (by decide), x3]
+  obtain y5 : F2 X5 = if V aE < 3 then 1 else 0 := by rw [p2 X5 (by decide) (by decide) (by decide) (by decide), x5]
   refine WP.seq (WP.mono (dOne_ok h2 k2 one2 (by rw [y4]; exact flag01 _) (by rw [x6]; exact flag01 _))
     fun t3 ⟨h3, ⟨V3, F3, k3, o3, p3, z6, vS⟩, f3, r3⟩ => ?_)
-  have one3 : V3 aOne = 1 := by rw [o3 _ (by decide), one2]
-  have three3 : V3 aThree = 3 := by rw [o3 _ (by decide), three2]
-  have zero3 : V3 aZero = 0 := by rw [o3 _ (by decide), zero2]
-  have e3 : V3 aE = V aE := by rw [o3 _ (by decide), e2]
-  have l3 : V3 aL = V aL := by rw [o3 _ (by decide), l2]
-  have w3 : F3 X3 = V aE % 2 := by rw [p3 X3 (by decide) (by decide) (by decide), y3]
+  obtain one3 : V3 aOne = 1 := by rw [o3 _ (by decide), one2]
+  obtain three3 : V3 aThree = 3 := by rw [o3 _ (by decide), three2]
+  obtain zero3 : V3 aZero = 0 := by rw [o3 _ (by decide), zero2]
+  obtain e3 : V3 aE = V aE := by rw [o3 _ (by decide), e2]
+  obtain l3 : V3 aL = V aL := by rw [o3 _ (by decide), l2]
+  obtain w3 : F3 X3 = V aE % 2 := by rw [p3 X3 (by decide) (by decide) (by decide), y3]
   refine WP.mono (dEven_ok h3 k3 hw hwe (by rw [e3]; exact he) one3 three3 zero3 (by rw [w3, e3]) (by rw [z6, x6]; split <;> split <;> omega_arith))
     fun t ⟨ht, ⟨V4, F4, k4, o4, p4, ⟨x', xl', xd', vD⟩, z6'⟩, f4, r4⟩ => ?_
   simp only [e3, l3] at xl' xd' vD z6'
   refine ⟨ht, ⟨V4, F4, k4, fun j hj hn => ?_, fun d a b c d3 d4 d5 d6 d7 => ?_, ?_, ?_, ?_, ?_⟩,
     ((f1.trans f2).trans f3).trans f4, (((r1.trans' r2).trans' r3).trans' r4)⟩
   · have n4 : j ∉ dEvenArrs := fun m => hn (List.mem_append_right _ m)
-    have n3 : j ∉ dOddArrs := fun m => hn (List.mem_append_left _ (List.mem_append_right _ m))
-    have n12 : j ≠ aT ∧ j ≠ aS := ⟨fun e => hn (by rw [e]; decide), fun e => hn (by rw [e]; decide)⟩
+    obtain n3 : j ∉ dOddArrs := fun m => hn (List.mem_append_left _ (List.mem_append_right _ m))
+    obtain n12 : j ≠ aT ∧ j ≠ aS := ⟨fun e => hn (by rw [e]; decide), fun e => hn (by rw [e]; decide)⟩
     rw [o4 j hj n4, o3 j n12.2, o2 j hj n3, o1 j n12.1]
   · rw [p4 d a b c d6, p3 d a d6 d7, p2 d a b c d6, p1 d d3 d4 d5]
   · rw [p4 X3 (by decide) (by decide) (by decide) (by decide), w3]
@@ -771,11 +771,11 @@ theorem crtOf_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {o j : Nat} (ho :
   obtain ⟨V4, k4, e4, o4⟩ := k4.vx
   refine WP.mono (divE h4 k4 (q := aQd) (r := o) (t := aDt) (hr := ho) (hqr := hoQ) (hrt := hoT) (hrd := hoD))
     fun t ⟨ht, ⟨V5, k5, o5, e5⟩, f5, r5⟩ => ?_
-  have vS : V2 aS = if V j = 0 then 1 else V j := by
+  obtain vS : V2 aS = if V j = 0 then 1 else V j := by
     rw [e2, g1, zero, sel_flag, one]
-  have vDv : V4 aDv = if V j = 0 then 1 else V j := by
+  obtain vDv : V4 aDv = if V j = 0 then 1 else V j := by
     rw [e4, o3 aS (by decide), vS]
-  have pos : 0 < V4 aDv := by rw [vDv]; split <;> omega_arith
+  obtain pos : 0 < V4 aDv := by rw [vDv]; split <;> omega_arith
   refine ⟨ht, ⟨V5, F1, k5, fun k hk hn => ?_, p1, ?_⟩, (((f1.trans f2).trans f3).trans f4).trans f5,
     ((((r1.trans' r2).trans' r3).trans' r4).trans' r5).mono⟩
   · simp only [crtArrs, List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
@@ -817,7 +817,7 @@ theorem nPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) {L : Nat}
   refine WP.mono (mulToE h ks (o := aN) (a := aP) (b := aQ) (K := 8 * L) (k := cnt8) (hK := by omega_arith)
     (hK' := hL') (hk := fun u hu => cnt8_ok hL' u (by rw [hu, h22])) (hZ := zero))
     fun t ⟨ht, ⟨V', kt, ot, et⟩, ft, rt⟩ => ⟨ht, ⟨V', kt, ot, ?_⟩, ft, rt⟩
-  have hpq : V aP * V aQ < 2 ^ (32 * w) := by
+  obtain hpq : V aP * V aQ < 2 ^ (32 * w) := by
     rw [hw, show 16 * L = 8 * L + 8 * L by omega_arith, Nat.pow_add]
     exact Nat.mul_lt_mul'' hp hq
   rw [et, Nat.mod_eq_of_lt hq, Nat.mod_eq_of_lt hpq]
@@ -867,8 +867,8 @@ theorem maskPart_ok (h : Ws s B Z w nArr) (ks : KS s.mem B w V F) (b0 : F X0 ≤
   obtain ⟨V8, k8, e8, o8⟩ := k8.vx
   obtain ⟨F8, k8, g8, p8⟩ := k8.fx
   change WP isa (.block _) t8 _
-  have c5 : F8 X5 = F X5 := by vsimp [p8, p7, p6, p5, p4, p3, p2, p1]
-  have c7 : F8 X7 = F X7 := by vsimp [p8, p7, p6, p5, p4, p3, p2, p1]
+  obtain c5 : F8 X5 = F X5 := by vsimp [p8, p7, p6, p5, p4, p3, p2, p1]
+  obtain c7 : F8 X7 = F X7 := by vsimp [p8, p7, p6, p5, p4, p3, p2, p1]
   refine andNotSE h8 k8 (d := X4) (a := X5) (b := X2) (ba := by rw [c5]; exact b5)
     (bb := by rw [g8]; exact flag01 _) (k := fun t9 h9 k9 f9 r9 => ?_)
   obtain ⟨F9, k9, g9, p9⟩ := k9.fx
@@ -981,138 +981,138 @@ theorem body_cut_ok [InvLaw] {s0 s : State} (h : Base s0 s) (ha : Args s0 s) :
       WP isa dPart t5 fun t6 => Base s0 t6 ∧ Args s0 t6 ∧ WReg s0 t6 ∧
       WP isa (seqs [smallPart, qinvPart]) t6 fun t8 => Base s0 t8 ∧ Args s0 t8 ∧ WReg s0 t8 ∧
       WP isa (seqs bodyT) t8 fun t => BodyPost s0 t ∧ Keep bodyAll s t := by
-  have p := kpre h.pre
+  obtain p := kpre h.pre
   obtain ⟨-, hw16, hw256, hlw, h4⟩ := pre_ws h.pre
   have l1 := p.l1
   have l2 := p.l2
   have el8 := p.el8
-  have hpl : pIn s0 < 2 ^ (8 * kL s0) := by
+  obtain hpl : pIn s0 < 2 ^ (8 * kL s0) := by
     have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s0.mem (s0.gpr .r7) (kL s0))
     rw [show (Spec.Rsa.bytesAt s0.mem (s0.gpr .r7) (kL s0)).length = kL s0 by simp [Spec.Rsa.bytesAt]] at this
     rw [Nat.pow_mul]; exact this
-  have hql : qIn s0 < 2 ^ (8 * kL s0) := by
+  obtain hql : qIn s0 < 2 ^ (8 * kL s0) := by
     have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s0.mem (s0.gpr .r9) (kL s0))
     rw [show (Spec.Rsa.bytesAt s0.mem (s0.gpr .r9) (kL s0)).length = kL s0 by simp [Spec.Rsa.bytesAt]] at this
     rw [Nat.pow_mul]; exact this
-  have hel : eIn s0 < 2 ^ 64 := by
+  obtain hel : eIn s0 < 2 ^ 64 := by
     have := VG.Proof.Bignum.os2ip_lt (Spec.Rsa.bytesAt s0.mem (PPC64LE.stackArg s0 6) (PPC64LE.stackArg s0 7).toNat)
     simp only [Spec.Rsa.bytesAt, List.length_map, List.length_range] at this
     exact Nat.lt_of_lt_of_le this (by
       rw [show (2 : Nat) ^ 64 = 256 ^ 8 by decide]; exact Nat.pow_le_pow_right (by decide) el8)
-  have hW : 32 * kW s0 = 16 * kL s0 := by omega_arith
+  obtain hW : 32 * kW s0 = 16 * kL s0 := by omega_arith
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (setup_ok h ha.r22) fun t1 ⟨b1, w1, k1, r1⟩ => ?_
-  have a1 := ha.of_keep r1
+  obtain a1 := ha.of_keep r1
   rw [wp_seqs_cons (by simp [consts])]
   refine WP.mono (loads_ok b1 a1 w1 k1 rfl rfl rfl) fun t2 ⟨b2, w2, ⟨V2, k2, o2, eP, eQ, eE⟩, r2⟩ => ?_
-  have a2 := a1.of_keep r2
+  obtain a2 := a1.of_keep r2
   rw [wp_seqs_append (by simp [consts]) (List.cons_ne_nil _ _)]
   refine WP.mono (consts_ok b2 a2 w2 k2 (by rw [o2 _ (by decide) (by decide) (by decide)])
     (by rw [o2 _ (by decide) (by decide) (by decide)]) (by rw [o2 _ (by decide) (by decide) (by decide)])
     (by rw [o2 _ (by decide) (by decide) (by decide)]) (by rw [o2 _ (by decide) (by decide) (by decide)])
     (by rw [o2 _ (by decide) (by decide) (by decide)]))
     fun t3 ⟨b3, w3, ⟨V3, k3, o3, one3, two3, three3, c3, c33, top3⟩, r3⟩ => ?_
-  have a3 := a2.of_keep r3
-  have zero3 : V3 aZero = 0 := by
+  obtain a3 := a2.of_keep r3
+  obtain zero3 : V3 aZero = 0 := by
     rw [o3 _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
       o2 _ (by decide) (by decide) (by decide)]
-  have p3 : V3 aP0 = pIn s0 := by
+  obtain p3 : V3 aP0 = pIn s0 := by
     rw [o3 _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), eP]
-  have q3 : V3 aQ0 = qIn s0 := by
+  obtain q3 : V3 aQ0 = qIn s0 := by
     rw [o3 _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), eQ]
-  have e3 : V3 aE = eIn s0 := by
+  obtain e3 : V3 aE = eIn s0 := by
     rw [o3 _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), eE]
   -- The primes.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (primes_ok w3 k3 one3 zero3) fun t4 ⟨w4, ⟨V4, F4, k4, o4, p4, vP, vQ, vPm, vQm⟩, f4, r4⟩ => ?_
-  have b4 := b3.of_phase f4 r4
-  have a4 := a3.of_keep r4
+  obtain b4 := b3.of_phase f4 r4
+  obtain a4 := a3.of_keep r4
   rw [p3, q3] at vP vQ
   rw [vP] at vPm
   rw [vQ] at vQm
-  have hP : kP s0 < 2 ^ (8 * kL s0) := by simp only [kP]; split <;> with_reducible assumption
-  have hQ : kQ s0 < 2 ^ (8 * kL s0) := by simp only [kQ]; split <;> with_reducible assumption
+  obtain hP : kP s0 < 2 ^ (8 * kL s0) := by simp only [kP]; split <;> with_reducible assumption
+  obtain hQ : kQ s0 < 2 ^ (8 * kL s0) := by simp only [kQ]; split <;> with_reducible assumption
   -- `L`.
-  have h22 : t4.gpr .r22 = BitVec.ofNat 64 (kL s0) := by
+  obtain h22 : t4.gpr .r22 = BitVec.ofNat 64 (kL s0) := by
     rw [a4.r22]; exact VG.Proof.Rsa.PPC64LE.CrtValues.ofNat_toNat64 _
   refine WP.mono (lcmPart_ok w4 k4 h22 (by omega_arith) (by omega_arith) hW (by omega_arith) h4 (by rw [vPm]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) hP)
     (by rw [vQm]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) hQ)
     (by vsimp [o4, one3]) (by vsimp [o4, o3, two3]) (by vsimp [o4, three3]) (by vsimp [o4, zero3]))
     fun t5 ⟨w5, ⟨V5, F5, k5, o5, p5, vL⟩, f5, r5⟩ => ?_
-  have b5 := b4.of_phase f5 r5
-  have a5 := a4.of_keep r5
+  obtain b5 := b4.of_phase f5 r5
+  obtain a5 := a4.of_keep r5
   rw [vPm, vQm] at vL
   refine ⟨b5, a5, ⟨w5.r29, w5.r30⟩, ?_⟩
   -- `d`.
   refine WP.mono (dPart_ok w5 k5 (by omega_arith) (by omega_arith) (by vsimp [o5, o4, e3]; exact hel) (by vsimp [o5, o4, one3])
     (by vsimp [o5, o4, two3]) (by vsimp [o5, o4, three3]) (by vsimp [o5, o4, zero3]))
     fun t6 ⟨w6, ⟨V6, F6, k6, o6, p6, x3, x5, x6, vD⟩, f6, r6⟩ => ?_
-  have b6 := b5.of_phase f6 r6
-  have a6 := a5.of_keep r6
-  have eE5 : V5 aE = eIn s0 := by vsimp [o5, o4, e3]
+  obtain b6 := b5.of_phase f6 r6
+  obtain a6 := a5.of_keep r6
+  obtain eE5 : V5 aE = eIn s0 := by vsimp [o5, o4, e3]
   simp only [eE5, vL] at x3 x5 x6 vD
   refine ⟨b6, a6, ⟨w6.r29, w6.r30⟩, ?_⟩
   -- Small.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (smallPart_ok w6 k6 (flag_le x6)) fun t7 ⟨w7, ⟨V7, F7, k7, o7, p7, x7⟩, f7, r7⟩ => ?_
-  have b7 := b6.of_phase f7 r7
-  have a7 := a6.of_keep r7
-  have vC6 : V6 aC = 2 ^ (8 * kL s0) + 1 := by vsimp [o6, o5, o4, c3]
+  obtain b7 := b6.of_phase f7 r7
+  obtain a7 := a6.of_keep r7
+  obtain vC6 : V6 aC = 2 ^ (8 * kL s0) + 1 := by vsimp [o6, o5, o4, c3]
   simp only [x6, vC6] at x7
   -- `qInv`.
-  have vP7 : V7 aP = kP s0 := by vsimp [o7, o6, o5, vP]
-  have vQ7 : V7 aQ = kQ s0 := by vsimp [o7, o6, o5, vQ]
+  obtain vP7 : V7 aP = kP s0 := by vsimp [o7, o6, o5, vP]
+  obtain vQ7 : V7 aQ = kQ s0 := by vsimp [o7, o6, o5, vQ]
   refine WP.mono (qinvPart_ok w7 k7 (by vsimp [o7, o6, o5, o4, one3]) (by vsimp [o7, o6, o5, o4, three3])
     (by vsimp [o7, o6, o5, o4, zero3]) (by omega_arith) (by omega_arith) (by rw [a7.r22, ← a4.r22]; exact h22)
     (by omega_arith) h4
     (by omega_arith) (by omega_arith) (by rw [vP7]; exact hP) (by rw [vQ7]; exact hQ)) fun t8 ⟨w8, ⟨V8, F8, k8, o8, p8, y0, y1, xl, xd⟩, f8, r8⟩ => ?_
-  have b8 := b7.of_phase f8 r8
-  have a8 := a7.of_keep r8
+  obtain b8 := b7.of_phase f8 r8
+  obtain a8 := a7.of_keep r8
   simp only [vP7, vQ7] at y0 y1 xl xd
   refine ⟨b8, a8, ⟨w8.r29, w8.r30⟩, ?_⟩
   -- `dP`, `dQ`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (crtPart_ok w8 k8 (by vsimp [o8, o7, o6, o5, o4, one3]) (by vsimp [o8, o7, o6, o5, o4, zero3]))
     fun t9 ⟨w9, ⟨V9, F9, k9, o9, p9, vDP, vDQ⟩, f9, r9⟩ => ?_
-  have b9 := b8.of_phase f9 r9
-  have a9 := a8.of_keep r9
+  obtain b9 := b8.of_phase f9 r9
+  obtain a9 := a8.of_keep r9
   -- `n`.
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  have vP9 : V9 aP = kP s0 := by vsimp [o9, o8, vP7]
-  have vQ9 : V9 aQ = kQ s0 := by vsimp [o9, o8, vQ7]
+  obtain vP9 : V9 aP = kP s0 := by vsimp [o9, o8, vP7]
+  obtain vQ9 : V9 aQ = kQ s0 := by vsimp [o9, o8, vQ7]
   refine WP.mono (nPart_ok w9 k9 (by rw [a9.r22, ← a4.r22]; exact h22) (by omega_arith) (by omega_arith) hW
     (by rw [vP9]; exact hP) (by rw [vQ9]; exact hQ) (by vsimp [o9, o8, o7, o6, o5, o4, zero3]))
     fun t10 ⟨w10, ⟨V10, k10, o10, vN⟩, f10, r10⟩ => ?_
-  have b10 := b9.of_phase f10 r10
-  have a10 := a9.of_keep r10
+  obtain b10 := b9.of_phase f10 r10
+  obtain a10 := a9.of_keep r10
   simp only [vP9, vQ9] at vN
   -- The mask.
-  have g0 : F9 X0 = kP s0 % 2 := by vsimp [p9, y0]
-  have g1 : F9 X1 = if Nat.gcd (kQ s0) (mL (kP s0)) = 1 then 1 else 0 := by vsimp [p9, y1]
-  have g3 : F9 X3 = eIn s0 % 2 := by vsimp [p9, p8, p7, x3]
-  have g5 : F9 X5 = if eIn s0 < 3 then 1 else 0 := by vsimp [p9, p8, p7, x5]
-  have g6 : F9 X6 = if okv (eIn s0) (kLc s0) then 1 else 0 := by vsimp [p9, p8, p7, x6]
-  have g7 : F9 X7 = if (if okv (eIn s0) (kLc s0) then 1 else 0) = 1 ∧ V6 aD < 2 ^ (8 * kL s0) + 1 then 1 else 0 := by
+  obtain g0 : F9 X0 = kP s0 % 2 := by vsimp [p9, y0]
+  obtain g1 : F9 X1 = if Nat.gcd (kQ s0) (mL (kP s0)) = 1 then 1 else 0 := by vsimp [p9, y1]
+  obtain g3 : F9 X3 = eIn s0 % 2 := by vsimp [p9, p8, p7, x3]
+  obtain g5 : F9 X5 = if eIn s0 < 3 then 1 else 0 := by vsimp [p9, p8, p7, x5]
+  obtain g6 : F9 X6 = if okv (eIn s0) (kLc s0) then 1 else 0 := by vsimp [p9, p8, p7, x6]
+  obtain g7 : F9 X7 = if (if okv (eIn s0) (kLc s0) then 1 else 0) = 1 ∧ V6 aD < 2 ^ (8 * kL s0) + 1 then 1 else 0 := by
     vsimp [p9, p8, x7]
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (maskPart_ok w10 k10 (by rw [g0]; omega_arith) (flag_le g1) (by rw [g3]; omega_arith) (flag_le g5)
     (flag_le g6) (flag_le g7)) fun t11 ⟨w11, ⟨V11, F11, k11, o11, p11, x8⟩, f11, r11⟩ => ?_
-  have b11 := b10.of_phase f11 r11
-  have a11 := a10.of_keep r11
-  have vD9 : V9 aD = V6 aD := by vsimp [o9, o8, o7]
+  obtain b11 := b10.of_phase f11 r11
+  obtain a11 := a10.of_keep r11
+  obtain vD9 : V9 aD = V6 aD := by vsimp [o9, o8, o7]
   have vN10 : V10 aN = kP s0 * kQ s0 := vN
-  have vTop : V10 aTop = 2 ^ (16 * kL s0 - 1) := by vsimp [o10, o9, o8, o7, o6, o5, o4, top3]; rw [hW]
-  have vE : V10 aE = eIn s0 := by vsimp [o10, o9, o8, o7, o6, eE5]
-  have vC33 : V10 aC33 = 2 ^ 33 := by vsimp [o10, o9, o8, o7, o6, o5, o4, c33]
-  have vQ10 : V10 aQ = kQ s0 := by vsimp [o10, vQ9]
+  obtain vTop : V10 aTop = 2 ^ (16 * kL s0 - 1) := by vsimp [o10, o9, o8, o7, o6, o5, o4, top3]; rw [hW]
+  obtain vE : V10 aE = eIn s0 := by vsimp [o10, o9, o8, o7, o6, eE5]
+  obtain vC33 : V10 aC33 = 2 ^ 33 := by vsimp [o10, o9, o8, o7, o6, o5, o4, c33]
+  obtain vQ10 : V10 aQ = kQ s0 := by vsimp [o10, vQ9]
   simp only [vN10, vTop, vE, vC33, vQ10, g0, g1, g3, g5, g6, g7] at x8
-  have sm : (if (if okv (eIn s0) (kLc s0) then 1 else 0) = 1 ∧ V6 aD < 2 ^ (8 * kL s0) + 1 then 1 else 0) =
+  obtain sm : (if (if okv (eIn s0) (kLc s0) then 1 else 0) = 1 ∧ V6 aD < 2 ^ (8 * kL s0) + 1 then 1 else 0) =
       if kSmall s0 (V6 aD) then 1 else 0 := by
     unfold kSmall; by_cases o : okv (eIn s0) (kLc s0) <;> simp [o]
-  have mk : F11 X8 = if kMask s0 (V6 aD) then 1 else 0 := by
+  obtain mk : F11 X8 = if kMask s0 (V6 aD) then 1 else 0 := by
     rw [x8, sm]; unfold kMask
     simp only [flag_one, flag_zero]
-  have s7 : F11 X7 = if kSmall s0 (V6 aD) then 1 else 0 := by vsimp [p11]; rw [g7, sm]
+  obtain s7 : F11 X7 = if kSmall s0 (V6 aD) then 1 else 0 := by vsimp [p11]; rw [g7, sm]
   -- The stores.
   refine WP.mono (stores_ok b11 a11 w11 (a := decide (kSmall s0 (V6 aD))) (b := decide (kMask s0 (V6 aD)))
     (slot_flag (k11.flg X7 (by decide)) s7) (slot_flag (k11.flg X8 (by decide)) mk))

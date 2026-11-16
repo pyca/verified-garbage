@@ -62,7 +62,7 @@ theorem cmaddA24_ok {base : Addr} {s : State} (hs : Scratch s base) (hz : s.gpr 
         env t.mem base = Function.update (env s.mem base) 2
           (toFe 121666 * env s.mem base 7 + env s.mem base 8) := by
   rw [VG.Impl.X25519.AArch64.AltLadder.cmaddA24, List.append_assoc, WP.block_append_iff]
-  have ha : WP isa (.block [VG.Impl.Ed25519.AArch64.mov .x20 .x1, .movz .x .x1 0xdb42 0,
+  obtain ha : WP isa (.block [VG.Impl.Ed25519.AArch64.mov .x20 .x1, .movz .x .x1 0xdb42 0,
       .movk .x .x1 1 1]) s fun t => t.gpr .x20 = s.gpr .x1 ∧ (t.gpr .x1).toNat = 121666 ∧
       Keeps [.x20, .x1] s t := by
     apply WP.of_runBlock
@@ -75,12 +75,12 @@ theorem cmaddA24_ok {base : Addr} {s : State} (hs : Scratch s base) (hz : s.gpr 
     · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
       simp only [RegUpd.gpr_write, hr.1, hr.2, ite_false]
   refine WP.mono ha fun a ⟨a20, a1, ka⟩ => ?_
-  have hsa : Scratch a base := hs.of_keeps ka (by decide)
+  obtain hsa : Scratch a base := hs.of_keeps ka (by decide)
   rw [WP.block_append_iff]
   refine WP.mono (cmaddE hsa 2 7 8 (by decide) (by decide) (by decide)
     ((ka.gpr _ (by decide)).trans hz) a1) fun b ⟨hb, lb, eb⟩ => ?_
   refine WP.mono (mov_ok b .x1 .x20) fun t ⟨t1, kt⟩ => ?_
-  have k1 : ∀ r, r ≠ .x1 → t.gpr r = b.gpr r := fun r hr =>
+  obtain k1 : ∀ r, r ≠ .x1 → t.gpr r = b.gpr r := fun r hr =>
     kt.gpr r (by simp only [List.mem_cons, List.not_mem_nil, or_false]; exact hr)
   refine ⟨⟨fun r hr h19 => ?_, by rw [kt.rd, hb.rd, ka.rd], by rw [kt.wr, hb.wr, ka.wr],
       by rw [kt.sp, hb.sp, ka.sp], ?_⟩, ?_, ?_, by rw [kt.mem]; exact lb,
@@ -115,126 +115,126 @@ theorem body_ok {base : Addr} {s : State} {k : Nat} {x1 : Fe} {st : Ladder} {i :
   simp only [VG.Impl.X25519.AArch64.AltLadder.body, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (x17_ok s) fun a ⟨za, ka⟩ => ?_
-  have lka : LoopKeep base s a := LoopKeep.of_keeps ka (by decide)
-  have B : ∀ j : VG.Impl.Ed25519.AArch64.Slot, S14 j = true → fe a.mem base (offset j) < P2 := fun j hj => by
+  obtain lka : LoopKeep base s a := LoopKeep.of_keeps ka (by decide)
+  obtain B : ∀ j : VG.Impl.Ed25519.AArch64.Slot, S14 j = true → fe a.mem base (offset j) < P2 := fun j hj => by
     rw [ka.mem]; exact hB j hj
   -- the sums and differences
   rw [WP.block_append_iff]
   refine WP.mono (subE (lka.scratch hs) 6 3 4 (by decide) (by decide) (by decide) za (B 4 rfl))
     fun b1 ⟨h1, e1⟩ => ?_
-  have lk1 := lka.trans (AltOp.lk h1 (by decide))
-  have z1 : b1.gpr .x17 = 0 := (h1.gpr _ (by decide)).trans za
+  obtain lk1 := lka.trans (AltOp.lk h1 (by decide))
+  obtain z1 : b1.gpr .x17 = 0 := (h1.gpr _ (by decide)).trans za
   rw [WP.block_append_iff]
   refine WP.mono (addE (lk1.scratch hs) 5 1 2 (by decide) (by decide) (by decide) z1
     (by rw [fr h1 1 (by decide)]; exact B 1 rfl) (by rw [fr h1 2 (by decide)]; exact B 2 rfl))
     fun b2 ⟨h2, e2⟩ => ?_
-  have lk2 := lk1.trans (AltOp.lk h2 (by decide))
-  have z2 : b2.gpr .x17 = 0 := (h2.gpr _ (by decide)).trans z1
+  obtain lk2 := lk1.trans (AltOp.lk h2 (by decide))
+  obtain z2 : b2.gpr .x17 = 0 := (h2.gpr _ (by decide)).trans z1
   rw [WP.block_append_iff]
   refine WP.mono (subE (lk2.scratch hs) 2 1 2 (by decide) (by decide) (by decide) z2
     (by rw [fr h2 2 (by decide), fr h1 2 (by decide)]; exact B 2 rfl))
     fun b3 ⟨h3, e3⟩ => ?_
-  have lk3 := lk2.trans (AltOp.lk h3 (by decide))
-  have z3 : b3.gpr .x17 = 0 := (h3.gpr _ (by decide)).trans z2
+  obtain lk3 := lk2.trans (AltOp.lk h3 (by decide))
+  obtain z3 : b3.gpr .x17 = 0 := (h3.gpr _ (by decide)).trans z2
   rw [WP.block_append_iff]
   refine WP.mono (addE (lk3.scratch hs) 4 3 4 (by decide) (by decide) (by decide) z3
     (by rw [fr h3 3 (by decide), fr h2 3 (by decide), fr h1 3 (by decide)]; exact B 3 rfl)
     (by rw [fr h3 4 (by decide), fr h2 4 (by decide), fr h1 4 (by decide)]; exact B 4 rfl))
     fun b4 ⟨h4, e4⟩ => ?_
-  have lk4 := lk3.trans (AltOp.lk h4 (by decide))
-  have z4 : b4.gpr .x17 = 0 := (h4.gpr _ (by decide)).trans z3
+  obtain lk4 := lk3.trans (AltOp.lk h4 (by decide))
+  obtain z4 : b4.gpr .x17 = 0 := (h4.gpr _ (by decide)).trans z3
   rw [WP.block_append_iff]
   refine WP.mono (mulE (lk4.scratch hs) 7 5 6 (by decide) (by decide) (by decide) z4)
     fun b5 ⟨h5, l5, e5⟩ => ?_
-  have lk5 := lk4.trans (AltOp.lk h5 (by decide))
-  have z5 : b5.gpr .x17 = 0 := (h5.gpr _ (by decide)).trans z4
+  obtain lk5 := lk4.trans (AltOp.lk h5 (by decide))
+  obtain z5 : b5.gpr .x17 = 0 := (h5.gpr _ (by decide)).trans z4
   -- the bit, and the flag
-  have c5 : b5.gpr .x19 = BitVec.ofNat 64 (i+1) := by
+  obtain c5 : b5.gpr .x19 = BitVec.ofNat 64 (i+1) := by
     rw [h5.gpr _ (by decide), h4.gpr _ (by decide), h3.gpr _ (by decide), h2.gpr _ (by decide),
       h1.gpr _ (by decide), ka.gpr _ (by decide)]; exact hcnt
-  have w5 : word b5.mem base 768 = BitVec.ofNat 64 st.swap := by
+  obtain w5 : word b5.mem base 768 = BitVec.ofNat 64 st.swap := by
     rw [AltOp.w768 h5, AltOp.w768 h4, AltOp.w768 h3, AltOp.w768 h2, AltOp.w768 h1, ka.mem]; exact hw
   rw [WP.block_append_iff]
   refine WP.mono (bitFlags_ok (lk5.scratch hs) hi hsw (bit_le k i) c5 w5
     (by rw [lk5.bit hi]; exact hb)) fun f ⟨lkf, gf, ef, cf, zf, wf, of⟩ => ?_
-  have lkF := lk5.trans lkf
-  have zF : f.gpr .x17 = 0 := (gf _ (by decide) (by decide) (by decide) (by decide)).trans z5
-  have ofe : ∀ j : VG.Impl.Ed25519.AArch64.Slot, fe f.mem base (offset j) = fe b5.mem base (offset j) := fun j =>
+  obtain lkF := lk5.trans lkf
+  obtain zF : f.gpr .x17 = 0 := (gf _ (by decide) (by decide) (by decide) (by decide)).trans z5
+  obtain ofe : ∀ j : VG.Impl.Ed25519.AArch64.Slot, fe f.mem base (offset j) = fe b5.mem base (offset j) := fun j =>
     of.fe (Or.inl (by simp only [offset]; omega_using [])) (by simp only [offset]; omega_using [])
   -- the point to double
   rw [WP.block_append_iff]
   refine WP.mono (muxE (lkF.scratch hs) 8 6 2 (by decide) (by decide) (by decide))
     fun c6 ⟨h6, zf6, _, e6⟩ => ?_
-  have lk6 := lkF.trans (AltOp.lk h6 (by decide))
-  have z6 : c6.gpr .x17 = 0 := (h6.gpr _ (by decide)).trans zF
+  obtain lk6 := lkF.trans (AltOp.lk h6 (by decide))
+  obtain z6 : c6.gpr .x17 = 0 := (h6.gpr _ (by decide)).trans zF
   rw [WP.block_append_iff]
   refine WP.mono (muxE (lk6.scratch hs) 1 4 5 (by decide) (by decide) (by decide))
     fun c7 ⟨h7, _, _, e7⟩ => ?_
-  have lk7 := lk6.trans (AltOp.lk h7 (by decide))
-  have z7 : c7.gpr .x17 = 0 := (h7.gpr _ (by decide)).trans z6
+  obtain lk7 := lk6.trans (AltOp.lk h7 (by decide))
+  obtain z7 : c7.gpr .x17 = 0 := (h7.gpr _ (by decide)).trans z6
   -- the products and squares
   rw [WP.block_append_iff]
   refine WP.mono (mulE (lk7.scratch hs) 3 4 2 (by decide) (by decide) (by decide) z7)
     fun c8 ⟨h8, l8, e8⟩ => ?_
-  have lk8 := lk7.trans (AltOp.lk h8 (by decide))
-  have z8 : c8.gpr .x17 = 0 := (h8.gpr _ (by decide)).trans z7
+  obtain lk8 := lk7.trans (AltOp.lk h8 (by decide))
+  obtain z8 : c8.gpr .x17 = 0 := (h8.gpr _ (by decide)).trans z7
   rw [WP.block_append_iff]
   refine WP.mono (sqrE (lk8.scratch hs) 8 8 (by decide) (by decide) z8)
     fun c9 ⟨h9, l9, e9⟩ => ?_
-  have lk9 := lk8.trans (AltOp.lk h9 (by decide))
-  have z9 : c9.gpr .x17 = 0 := (h9.gpr _ (by decide)).trans z8
+  obtain lk9 := lk8.trans (AltOp.lk h9 (by decide))
+  obtain z9 : c9.gpr .x17 = 0 := (h9.gpr _ (by decide)).trans z8
   rw [WP.block_append_iff]
   refine WP.mono (subE (lk9.scratch hs) 4 7 3 (by decide) (by decide) (by decide) z9
     (by rw [fr h9 3 (by decide)]; exact l8)) fun c10 ⟨h10, e10⟩ => ?_
-  have lk10 := lk9.trans (AltOp.lk h10 (by decide))
-  have z10 : c10.gpr .x17 = 0 := (h10.gpr _ (by decide)).trans z9
+  obtain lk10 := lk9.trans (AltOp.lk h10 (by decide))
+  obtain z10 : c10.gpr .x17 = 0 := (h10.gpr _ (by decide)).trans z9
   rw [WP.block_append_iff]
   refine WP.mono (sqrE (lk10.scratch hs) 1 1 (by decide) (by decide) z10)
     fun c11 ⟨h11, l11, e11⟩ => ?_
-  have lk11 := lk10.trans (AltOp.lk h11 (by decide))
-  have z11 : c11.gpr .x17 = 0 := (h11.gpr _ (by decide)).trans z10
+  obtain lk11 := lk10.trans (AltOp.lk h11 (by decide))
+  obtain z11 : c11.gpr .x17 = 0 := (h11.gpr _ (by decide)).trans z10
   rw [WP.block_append_iff]
   refine WP.mono (addE (lk11.scratch hs) 3 7 3 (by decide) (by decide) (by decide) z11
     (by rw [fr h11 7 (by decide), fr h10 7 (by decide), fr h9 7 (by decide), fr h8 7 (by decide),
       fr h7 7 (by decide), fr h6 7 (by decide), ofe]; exact l5)
     (by rw [fr h11 3 (by decide), fr h10 3 (by decide), fr h9 3 (by decide)]; exact l8))
     fun c12 ⟨h12, e12⟩ => ?_
-  have lk12 := lk11.trans (AltOp.lk h12 (by decide))
-  have z12 : c12.gpr .x17 = 0 := (h12.gpr _ (by decide)).trans z11
+  obtain lk12 := lk11.trans (AltOp.lk h12 (by decide))
+  obtain z12 : c12.gpr .x17 = 0 := (h12.gpr _ (by decide)).trans z11
   rw [WP.block_append_iff]
   refine WP.mono (sqrE (lk12.scratch hs) 4 4 (by decide) (by decide) z12)
     fun c13 ⟨h13, l13, e13⟩ => ?_
-  have lk13 := lk12.trans (AltOp.lk h13 (by decide))
-  have z13 : c13.gpr .x17 = 0 := (h13.gpr _ (by decide)).trans z12
+  obtain lk13 := lk12.trans (AltOp.lk h13 (by decide))
+  obtain z13 : c13.gpr .x17 = 0 := (h13.gpr _ (by decide)).trans z12
   rw [WP.block_append_iff]
   refine WP.mono (subE (lk13.scratch hs) 7 1 8 (by decide) (by decide) (by decide) z13
     (by rw [fr h13 8 (by decide), fr h12 8 (by decide), fr h11 8 (by decide),
       fr h10 8 (by decide)]; exact l9)) fun c14 ⟨h14, e14⟩ => ?_
-  have lk14 := lk13.trans (AltOp.lk h14 (by decide))
-  have z14 : c14.gpr .x17 = 0 := (h14.gpr _ (by decide)).trans z13
+  obtain lk14 := lk13.trans (AltOp.lk h14 (by decide))
+  obtain z14 : c14.gpr .x17 = 0 := (h14.gpr _ (by decide)).trans z13
   rw [WP.block_append_iff]
   refine WP.mono (sqrE (lk14.scratch hs) 3 3 (by decide) (by decide) z14)
     fun c15 ⟨h15, l15, e15⟩ => ?_
-  have lk15 := lk14.trans (AltOp.lk h15 (by decide))
-  have z15 : c15.gpr .x17 = 0 := (h15.gpr _ (by decide)).trans z14
+  obtain lk15 := lk14.trans (AltOp.lk h15 (by decide))
+  obtain z15 : c15.gpr .x17 = 0 := (h15.gpr _ (by decide)).trans z14
   rw [WP.block_append_iff]
   refine WP.mono (cmaddA24_ok (lk15.scratch hs) z15)
     fun c16 ⟨lk16', z16, x16, _, o16, e16⟩ => ?_
-  have lk16 := lk15.trans lk16'
+  obtain lk16 := lk15.trans lk16'
   rw [WP.block_append_iff]
   refine WP.mono (mulE (lk16.scratch hs) 1 1 8 (by decide) (by decide) (by decide) z16)
     fun c17 ⟨h17, l17, e17⟩ => ?_
-  have lk17 := lk16.trans (AltOp.lk h17 (by decide))
-  have z17 : c17.gpr .x17 = 0 := (h17.gpr _ (by decide)).trans z16
+  obtain lk17 := lk16.trans (AltOp.lk h17 (by decide))
+  obtain z17 : c17.gpr .x17 = 0 := (h17.gpr _ (by decide)).trans z16
   rw [WP.block_append_iff]
   refine WP.mono (mulE (lk17.scratch hs) 4 4 0 (by decide) (by decide) (by decide) z17)
     fun c18 ⟨h18, l18, e18⟩ => ?_
-  have lk18 := lk17.trans (AltOp.lk h18 (by decide))
-  have z18 : c18.gpr .x17 = 0 := (h18.gpr _ (by decide)).trans z17
+  obtain lk18 := lk17.trans (AltOp.lk h18 (by decide))
+  obtain z18 : c18.gpr .x17 = 0 := (h18.gpr _ (by decide)).trans z17
   refine WP.mono (mulE (lk18.scratch hs) 2 7 2 (by decide) (by decide) (by decide) z18)
     fun t ⟨h19, l19, e19⟩ => ?_
-  have lk19 := lk18.trans (AltOp.lk h19 (by decide))
-  have o16fe : ∀ j : VG.Impl.Ed25519.AArch64.Slot, j ≠ 2 → fe c16.mem base (offset j) = fe c15.mem base (offset j) :=
+  obtain lk19 := lk18.trans (AltOp.lk h19 (by decide))
+  obtain o16fe : ∀ j : VG.Impl.Ed25519.AArch64.Slot, j ≠ 2 → fe c16.mem base (offset j) = fe c15.mem base (offset j) :=
     fun j hj => o16.fe (apart j 2 hj) (by simp only [offset]; omega_using [])
   refine ⟨lk19, ?_, ?_, ?_, ?_⟩
   · have henv : env t.mem base = altEnv (env s.mem base) (st.swap == bit k i) := by

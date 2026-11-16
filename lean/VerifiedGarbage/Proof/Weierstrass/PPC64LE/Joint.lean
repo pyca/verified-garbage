@@ -60,19 +60,19 @@ theorem acc_step (hC : Law C) {G Q : Point C} (hG : onCurve C G = true) (hQ : on
     acc G Q u v j =
       add (add (acc G Q u v (j + 1)) (acc G Q u v (j + 1))) (entry G Q (u.testBit j) (v.testBit j)) := by
   obtain ⟨M, _, f, hf⟩ := hC.group
-  have hk : ∀ k : Nat, k >>> j = 2 * (k >>> (j + 1)) + (k.testBit j).toNat := fun k => by
+  obtain hk : ∀ k : Nat, k >>> j = 2 * (k >>> (j + 1)) + (k.testBit j).toNat := fun k => by
     rw [Nat.testBit, Nat.shiftRight_succ, Nat.one_and_eq_mod_two]
     cases h : (k >>> j) % 2 == 1 <;> simp_all <;> omega_using [h]
-  have hA := acc_curve hC hG hQ u v (j + 1)
-  have hD := hC.onCurve_add hA hA
-  have fA : f (acc G Q u v (j + 1)) =
+  obtain hA := acc_curve hC hG hQ u v (j + 1)
+  obtain hD := hC.onCurve_add hA hA
+  obtain fA : f (acc G Q u v (j + 1)) =
       ((u >>> (j + 1) : Nat) : Int) • f G + ((v >>> (j + 1) : Nat) : Int) • f Q := by
     rw [acc, hf.add (hC.onCurve_mul hG _) (hC.onCurve_mul hQ _), hf.mul hG, hf.mul hQ]
-  have fJ : f (acc G Q u v j) =
+  obtain fJ : f (acc G Q u v j) =
       ((u >>> j : Nat) : Int) • f G + ((v >>> j : Nat) : Int) • f Q := by
     rw [acc, hf.add (hC.onCurve_mul hG _) (hC.onCurve_mul hQ _), hf.mul hG, hf.mul hQ]
-  have hu := hk u
-  have hv := hk v
+  obtain hu := hk u
+  obtain hv := hk v
   generalize u >>> (j + 1) = a at hu fA
   generalize v >>> (j + 1) = b at hv fA
   rcases eu : u.testBit j <;> rcases ev : v.testBit j <;> rw [eu] at hu <;> rw [ev] at hv <;>
@@ -192,8 +192,8 @@ theorem jW_cover {W : List (Nat × Nat)}
 theorem ro_keep (hJ : JLay J) {m m₀ : Mem} (hU : Unch base (jW J) m₀ m)
     {x : Nat} (hx : x ∈ roL J) :
     wordsVal m base x J.L.M.n = wordsVal m₀ base x J.L.M.n := by
-  have hl := (hJ.low x (List.mem_append_left _ (List.mem_append_left _ hx))).1
-  have hap := hJ.ro x hx
+  obtain hl := (hJ.low x (List.mem_append_left _ (List.mem_append_left _ hx))).1
+  obtain hap := hJ.ro x hx
   have hk6 := hJ.lad.k6
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, ho1, h8⟩ := lay_nums hJ.lad.k3 hk6
   refine hU.wordsVal (fun w hw => ?_) (by omega_using [hl, h1, h2, hb3, ha, hq, hp, hoo])
@@ -215,11 +215,11 @@ theorem wL_low (hJ : JLay J) : ∀ x ∈ wL J, x + 8 * J.L.M.n ≤ oAt J.L.M.n :
 
 /-- What the loop writes ends below byte 4096. -/
 theorem jW_le (hJ : JLay J) : ∀ w ∈ jW J, w.1 + w.2 ≤ 4096 := by
-  have hl := wL_low hJ
+  obtain hl := wL_low hJ
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, ho1, h8⟩ := lay_nums hJ.lad.k3 hJ.lad.k6
-  have r1 := hl J.L.R.x (by list_mem); have r2 := hl J.L.R.y (by list_mem); have r3 := hl J.L.R.z (by list_mem)
-  have t1 := hl J.L.T.x (by list_mem); have t2 := hl J.L.T.y (by list_mem); have t3 := hl J.L.T.z (by list_mem)
-  have d1 := hl J.L.D.x (by list_mem); have d2 := hl J.L.D.y (by list_mem); have d3 := hl J.L.D.z (by list_mem)
+  obtain r1 := hl J.L.R.x (by list_mem); have r2 := hl J.L.R.y (by list_mem); have r3 := hl J.L.R.z (by list_mem)
+  obtain t1 := hl J.L.T.x (by list_mem); have t2 := hl J.L.T.y (by list_mem); have t3 := hl J.L.T.z (by list_mem)
+  obtain d1 := hl J.L.D.x (by list_mem); have d2 := hl J.L.D.y (by list_mem); have d3 := hl J.L.D.z (by list_mem)
   intro w hw
   simp only [jW, List.mem_cons, List.not_mem_nil, or_false] at hw
   rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> (simp only; omega_using [h1, h2, hb3, ha,
@@ -282,7 +282,7 @@ theorem selQ_conds {n : Nat} (hk3 : 3 ≤ n) (hk6 : n ≤ 6) {a b : Pt}
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, ho1, h8⟩ := lay_nums hk3 hk6
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at ho
   obtain ⟨⟨a1, a1'⟩, ⟨a2, a2'⟩, ⟨a3, a3'⟩, ⟨b1, b1'⟩, ⟨b2, b2'⟩, ⟨b3, b3'⟩⟩ := ho
-  have e4 : qAt n % 4 = 0 ∧ qAt n + 24 * n ≤ 4096 ∧ oAt n + 24 * n ≤ qAt n := by
+  obtain e4 : qAt n % 4 = 0 ∧ qAt n + 24 * n ≤ 4096 ∧ oAt n + 24 * n ≤ qAt n := by
     omega_using [h1, h2, he, hb3, ha, hq, hp, hoo, ho1, h8]
   obtain ⟨q4, qle, qge⟩ := e4
   simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
@@ -323,37 +323,37 @@ theorem dbl_ok {G Q : Point C} {u v : Nat} {S : Impl.Weierstrass.Mont.Modulus}
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, ho1, h8⟩ := lay_nums hk3 hk6
   have hn := hI.ws.nowrap
   obtain ⟨-, -, -, -, -, rxl, ryl, rzl⟩ := hL.al
-  have rx := hL.rx; have ry := hL.ry; have rz := hL.rz
-  have cR := copyPt_conds (a := J.L.R) hk3 hk6 (.inl rfl) (by omega_using [hoo, rx]) (by omega_using [hoo, ry])
+  obtain rx := hL.rx; have ry := hL.ry; have rz := hL.rz
+  obtain cR := copyPt_conds (a := J.L.R) hk3 hk6 (.inl rfl) (by omega_using [hoo, rx]) (by omega_using [hoo, ry])
       (by omega_using [hoo, rz])
     ⟨rxl, ryl, rzl⟩
-  have cO := copyPt_conds (a := ptAt J.L.M.n (oAt J.L.M.n)) hk3 hk6 (.inl rfl)
+  obtain cO := copyPt_conds (a := ptAt J.L.M.n (oAt J.L.M.n)) hk3 hk6 (.inl rfl)
     (by simp only [ptAt]; omega_using [he, hoo]) (by simp only [ptAt]; omega_using [he, hoo])
         (by simp only [ptAt]; omega_using [he, hoo])
     (by simp only [ptAt]; omega_using [h1, h2, he, hb3, ha, hq, hp, hoo])
-  have lrx : wordsVal s.mem base J.L.R.x J.L.M.n < C.p := hI.lt _ (by list_mem)
-  have lry : wordsVal s.mem base J.L.R.y J.L.M.n < C.p := hI.lt _ (by list_mem)
-  have lrz : wordsVal s.mem base J.L.R.z J.L.M.n < C.p := hI.lt _ (by list_mem)
-  have la : wordsVal s.mem base (aAt J.L.M.n) J.L.M.n < C.p := by rw [hI.ab.1]; exact hF.lt _ (by list_mem)
-  have lb : wordsVal s.mem base (b3At J.L.M.n) J.L.M.n < C.p := by rw [hI.ab.2]; exact hF.lt _ (by list_mem)
+  obtain lrx : wordsVal s.mem base J.L.R.x J.L.M.n < C.p := hI.lt _ (by list_mem)
+  obtain lry : wordsVal s.mem base J.L.R.y J.L.M.n < C.p := hI.lt _ (by list_mem)
+  obtain lrz : wordsVal s.mem base J.L.R.z J.L.M.n < C.p := hI.lt _ (by list_mem)
+  obtain la : wordsVal s.mem base (aAt J.L.M.n) J.L.M.n < C.p := by rw [hI.ab.1]; exact hF.lt _ (by list_mem)
+  obtain lb : wordsVal s.mem base (b3At J.L.M.n) J.L.M.n < C.p := by rw [hI.ab.2]; exact hF.lt _ (by list_mem)
   -- `r31 -= 1`.
   refine WP.seq (wp_decCounter hj hI.r31 ?_)
   generalize hs₁ : s.write .r31 (BitVec.ofNat 64 (j - 1)) = s₁
-  have K₁ : Kp [.r31] s s₁ := by rw [← hs₁]; exact Kp.write _ _ (by decide)
-  have w₁ := hI.ws.of_rk (K₁.rk (rs' := powClob))
-  have m₁ : s₁.mem = s.mem := by rw [← hs₁]; rfl
-  have c₁ : s₁.gpr .r31 = BitVec.ofNat 64 (j - 1) := by rw [← hs₁]; simp only [write_gpr, ite_true]
+  obtain K₁ : Kp [.r31] s s₁ := by rw [← hs₁]; exact Kp.write _ _ (by decide)
+  obtain w₁ := hI.ws.of_rk (K₁.rk (rs' := powClob))
+  obtain m₁ : s₁.mem = s.mem := by rw [← hs₁]; rfl
+  obtain c₁ : s₁.gpr .r31 = BitVec.ofNat 64 (j - 1) := by rw [← hs₁]; simp only [write_gpr, ite_true]
   -- `P = R`.
   refine WP.mono (copyPt_ok w₁.ws w₁.at3 (n := J.L.M.n) (o := ptAt J.L.M.n (pAt J.L.M.n)) (a := J.L.R)
     cR.1 cR.2.1 cR.2.2.1 cR.2.2.2) fun s₂ ⟨px₂, py₂, pz₂, k₂, O₂⟩ => ?_
   simp only [ptAt] at px₂ py₂ pz₂ O₂
   rw [m₁] at px₂ py₂ pz₂ O₂
-  have w₂ := w₁.of_rk (k₂.rk (rs' := powClob))
+  obtain w₂ := w₁.of_rk (k₂.rk (rs' := powClob))
   have U₂ : Unch base [(pAt J.L.M.n, 8 * J.L.M.n), (pAt J.L.M.n + elemBytes J.L.M.n, 8 * J.L.M.n),
       (pAt J.L.M.n + 2 * elemBytes J.L.M.n, 8 * J.L.M.n)] s.mem s₂.mem := O₂
-  have a₂ : wordsVal s₂.mem base (aAt J.L.M.n) J.L.M.n = wordsVal s.mem base (aAt J.L.M.n) J.L.M.n :=
+  obtain a₂ : wordsVal s₂.mem base (aAt J.L.M.n) J.L.M.n = wordsVal s.mem base (aAt J.L.M.n) J.L.M.n :=
     U₂.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha])
-  have b₂ : wordsVal s₂.mem base (b3At J.L.M.n) J.L.M.n = wordsVal s.mem base (b3At J.L.M.n) J.L.M.n :=
+  obtain b₂ : wordsVal s₂.mem base (b3At J.L.M.n) J.L.M.n = wordsVal s.mem base (b3At J.L.M.n) J.L.M.n :=
     U₂.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3])
   -- `O = P + P`.
   refine WP.seq (WP.mono (ptCall_ok (S := ⟨c, w, C.p, J.L.M.n, d⟩) hM hodd hk3 hk6 true (a0 := false) w₂
@@ -374,19 +374,19 @@ theorem dbl_ok {G Q : Point C} {u v : Nat} {S : Impl.Weierstrass.Mont.Modulus}
   simp only [Eb, enc_0, enc_1, enc_2, enc_3, enc_4, enc_5, enc_9, enc_10] at E₃
   rw [a₂, b₂, px₂, py₂, pz₂] at E₃
   -- `R + R` represents `2 acc j`.
-  have hA := acc_curve hC hG hQ u v j
-  have hab : toM C.p (2 ^ (64 * J.L.M.n)) (wordsVal s.mem base (aAt J.L.M.n) J.L.M.n) = Fin.ofNat C.p C.a ∧
+  obtain hA := acc_curve hC hG hQ u v j
+  obtain hab : toM C.p (2 ^ (64 * J.L.M.n)) (wordsVal s.mem base (aAt J.L.M.n) J.L.M.n) = Fin.ofNat C.p C.a ∧
       toM C.p (2 ^ (64 * J.L.M.n)) (wordsVal s.mem base (b3At J.L.M.n) J.L.M.n) = Fin.ofNat C.p (3 * C.b) := by
     rw [hI.ab.1, hI.ab.2]; exact hF.ab
   rw [hab.1, hab.2] at E₃
-  have R₃ := hC.add hA hA hI.rep hI.rep E₃.symm
-  have l3x := L₃ 0 (by decide)
-  have l3y := L₃ 1 (by decide)
-  have l3z := L₃ 2 (by decide)
+  obtain R₃ := hC.add hA hA hI.rep hI.rep E₃.symm
+  obtain l3x := L₃ 0 (by decide)
+  obtain l3y := L₃ 1 (by decide)
+  obtain l3z := L₃ 2 (by decide)
   rw [enc_0] at l3x
   rw [enc_1] at l3y
   rw [enc_2] at l3z
-  have w₃ := w₂.of_rk (k₃.mono (rs' := powClob))
+  obtain w₃ := w₂.of_rk (k₃.mono (rs' := powClob))
   refine k s₃ ⟨w₃, by rw [k₃.gpr _ (by decide), k₂.gpr _ (by decide), c₁],
     hI.keep.trans ((K₁.rk (rs' := powClob)).trans ((k₂.rk (rs' := powClob)).trans (k₃.mono (rs' := powClob)))),
     ((hI.unch.trans U₂).trans (show Unch base _ s₂.mem s₃.mem from O₃)).cover (jW_cover fun w hw => by
@@ -460,7 +460,7 @@ theorem selU_ok {G Q : Point C} {u v : Nat}
   have hn := h.ws.nowrap
   have hbl := hL.bits
   have hbe := hL.bitsE
-  have cO := copyPt_conds (a := ptAt J.L.M.n (oAt J.L.M.n)) hk3 hk6 (.inl rfl)
+  obtain cO := copyPt_conds (a := ptAt J.L.M.n (oAt J.L.M.n)) hk3 hk6 (.inl rfl)
     (by simp only [ptAt]; omega_using [he, hoo]) (by simp only [ptAt]; omega_using [he, hoo])
         (by simp only [ptAt]; omega_using [he, hoo])
     (by simp only [ptAt]; omega_using [h1, h2, he, hb3, ha, hq, hp, hoo])
@@ -468,28 +468,28 @@ theorem selU_ok {G Q : Point C} {u v : Nat}
   refine WP.mono (copyPt_ok h.ws.ws h.ws.at3 (n := J.L.M.n) (o := ptAt J.L.M.n (pAt J.L.M.n))
     (a := ptAt J.L.M.n (oAt J.L.M.n)) cO.1 cO.2.1 cO.2.2.1 cO.2.2.2) fun s₄ ⟨px₄, py₄, pz₄, k₄, O₄⟩ => ?_
   simp only [ptAt] at px₄ py₄ pz₄ O₄
-  have w₄ := h.ws.of_rk (k₄.rk (rs' := powClob))
-  have U₄ : Unch base (jW J) s₀.mem s₄.mem :=
+  obtain w₄ := h.ws.of_rk (k₄.rk (rs' := powClob))
+  obtain U₄ : Unch base (jW J) s₀.mem s₄.mem :=
     (h.unch.trans (show Unch base _ s₃.mem s₄.mem from O₄)).cover (jW_cover fun w hw => by
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with h | (rfl | rfl | rfl)
       · exact .inr h
       all_goals exact .inl ⟨by simp only; omega_using [hoo], by simp only; omega_using [h1, h2, hb3, ha, hq, hp]⟩)
-  have c₄ : s₄.gpr .r31 = BitVec.ofNat 64 (j - 1) := by rw [k₄.gpr _ (by decide), h.r31]
+  obtain c₄ : s₄.gpr .r31 = BitVec.ofNat 64 (j - 1) := by rw [k₄.gpr _ (by decide), h.r31]
   rw [WP.block_append_iff]
   refine WP.mono (bitMask_bool_ok w₄.ws w₄.at3 (d := J.L.bits) c₄ (by omega_using [hj, hjn, hbe])
     (c := u.testBit (j - 1)) (by rw [jW_byte hJ U₄ (by omega_using [hbl]) (by omega_using [hjn, hbe]), hF.bu _
         (by omega_using [hj, hjn])]))
     fun s₅ ⟨g₅, k₅, m₅⟩ => ?_
-  have w₅ := w₄.of_rk (k₅.rk (rs' := powClob))
+  obtain w₅ := w₄.of_rk (k₅.rk (rs' := powClob))
   rw [WP.block_append_iff]
-  have sT := sel_conds hk3 hk6 (o := J.L.T) (a := J.O) (b := J.L.G) (low_of hJ (by
+  obtain sT := sel_conds hk3 hk6 (o := J.L.T) (a := J.O) (b := J.L.G) (low_of hJ (by
       intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> list_mem))
     hJ.tne (fun d hd e he => Apart.symm (hJ.ro e (og_sub e he) d (t_sub d hd)))
   refine WP.mono (selPt_ok w₅.ws (k₅.at w₄.at3) _ g₅ (n := J.L.M.n) (o := J.L.T) (a := J.O) (b := J.L.G)
     sT.1 sT.2.1 sT.2.2.1 sT.2.2.2) fun s₆ ⟨tx₆, ty₆, tz₆, k₆, O₆⟩ => ?_
-  have sD := sel_conds hk3 hk6 (o := J.L.D) (a := J.Q) (b := J.GQ) (low_of hJ (by
+  obtain sD := sel_conds hk3 hk6 (o := J.L.D) (a := J.Q) (b := J.GQ) (low_of hJ (by
       intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> list_mem))
     hJ.dne (fun d hd e he => Apart.symm (hJ.ro e (qgq_sub e he) d (d_sub d hd)))
@@ -497,25 +497,25 @@ theorem selU_ok {G Q : Point C} {u v : Nat}
     (by rw [k₆.gpr _ (by decide)]; exact g₅)
     (n := J.L.M.n) (o := J.L.D) (a := J.Q) (b := J.GQ) sD.1 sD.2.1 sD.2.2.1 sD.2.2.2)
     fun s₇ ⟨dx₇, dy₇, dz₇, k₇, O₇⟩ => ?_
-  have U₆₄ : Unch base [(J.L.T.x, 8 * J.L.M.n), (J.L.T.y, 8 * J.L.M.n), (J.L.T.z, 8 * J.L.M.n)] s₄.mem s₆.mem := by
+  obtain U₆₄ : Unch base [(J.L.T.x, 8 * J.L.M.n), (J.L.T.y, 8 * J.L.M.n), (J.L.T.z, 8 * J.L.M.n)] s₄.mem s₆.mem := by
     rw [← m₅]; exact O₆
   have U₇₆ : Unch base [(J.L.D.x, 8 * J.L.M.n), (J.L.D.y, 8 * J.L.M.n), (J.L.D.z, 8 * J.L.M.n)] s₆.mem s₇.mem := O₇
-  have U₆ : Unch base (jW J) s₀.mem s₆.mem :=
+  obtain U₆ : Unch base (jW J) s₀.mem s₆.mem :=
     (U₄.trans U₆₄).cover (jW_cover fun w hw => by
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with h | (rfl | rfl | rfl) <;> exact .inr (by first | exact h | list_mem))
-  have U₇ : Unch base (jW J) s₀.mem s₇.mem :=
+  obtain U₇ : Unch base (jW J) s₀.mem s₇.mem :=
     (U₆.trans U₇₆).cover (jW_cover fun w hw => by
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with h | (rfl | rfl | rfl) <;> exact .inr (by first | exact h | list_mem))
-  have tdL : ∀ x ∈ tL J ++ dL J, x + 8 * J.L.M.n ≤ oAt J.L.M.n := fun x hx => by
+  obtain tdL : ∀ x ∈ tL J ++ dL J, x + 8 * J.L.M.n ≤ oAt J.L.M.n := fun x hx => by
     rcases List.mem_append.mp hx with h | h
     · exact (hJ.low x (List.mem_append_left _ (List.mem_append_right _ h))).1
     · exact (hJ.low x (List.mem_append_right _ h)).1
-  have tl1 := tdL J.L.T.x (by list_mem); have tl2 := tdL J.L.T.y (by list_mem); have tl3 := tdL J.L.T.z (by list_mem)
-  have dl1 := tdL J.L.D.x (by list_mem); have dl2 := tdL J.L.D.y (by list_mem); have dl3 := tdL J.L.D.z (by list_mem)
-  have U₇₄ := U₆₄.trans U₇₆
-  have hi : ∀ {x : Nat}, oAt J.L.M.n ≤ x → x + 8 * J.L.M.n ≤ 4096 →
+  obtain tl1 := tdL J.L.T.x (by list_mem); have tl2 := tdL J.L.T.y (by list_mem); have tl3 := tdL J.L.T.z (by list_mem)
+  obtain dl1 := tdL J.L.D.x (by list_mem); have dl2 := tdL J.L.D.y (by list_mem); have dl3 := tdL J.L.D.z (by list_mem)
+  obtain U₇₄ := U₆₄.trans U₇₆
+  obtain hi : ∀ {x : Nat}, oAt J.L.M.n ≤ x → x + 8 * J.L.M.n ≤ 4096 →
       wordsVal s₇.mem base x J.L.M.n = wordsVal s₄.mem base x J.L.M.n := fun h1 h2 =>
     U₇₄.wordsVal (by ppc_apart) (by omega_using [h2])
   have td := hJ.td
@@ -536,9 +536,9 @@ theorem selU_ok {G Q : Point C} {u v : Nat}
       hi (by omega_using [hoo]) (by omega_using [h1, h2, hb3, ha, hq, hp]), px₄, py₄, pz₄]
     exact h.rep
   · intro i hi'
-    have k₄₀ : ∀ {x : Nat}, x ∈ roL J → wordsVal s₅.mem base x J.L.M.n = wordsVal s₀.mem base x J.L.M.n :=
+    obtain k₄₀ : ∀ {x : Nat}, x ∈ roL J → wordsVal s₅.mem base x J.L.M.n = wordsVal s₀.mem base x J.L.M.n :=
       fun hx => by rw [m₅]; exact ro_keep hJ U₄ hx
-    have t76 : ∀ {x : Nat}, x ∈ tL J → wordsVal s₇.mem base x J.L.M.n = wordsVal s₆.mem base x J.L.M.n :=
+    obtain t76 : ∀ {x : Nat}, x ∈ tL J → wordsVal s₇.mem base x J.L.M.n = wordsVal s₆.mem base x J.L.M.n :=
       fun hx => U₇₆.wordsVal (fun w hw => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
         rcases hw with rfl | rfl | rfl <;> exact td _ hx _ (by list_mem))
@@ -549,7 +549,7 @@ theorem selU_ok {G Q : Point C} {u v : Nat}
     · rw [t76 (by list_mem), ty₆, k₄₀ (by list_mem), k₄₀ (by list_mem)]
     · rw [t76 (by list_mem), tz₆, k₄₀ (by list_mem), k₄₀ (by list_mem)]
   · intro i hi'
-    have k₆₀ : ∀ {x : Nat}, x ∈ roL J → wordsVal s₆.mem base x J.L.M.n = wordsVal s₀.mem base x J.L.M.n :=
+    obtain k₆₀ : ∀ {x : Nat}, x ∈ roL J → wordsVal s₆.mem base x J.L.M.n = wordsVal s₀.mem base x J.L.M.n :=
       fun hx => ro_keep hJ U₆ hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi'
     rcases hi' with rfl | rfl | rfl
@@ -574,7 +574,7 @@ theorem selV_ok {G Q : Point C} {u v : Nat}
     (c := v.testBit (j - 1)) (by rw [jW_byte hJ h.unch (by omega_using [hbv]) (by omega_using [hjn, hbv]), hF.bv _
         (by omega_using [hj, hjn])]))
     fun s₈ ⟨g₈, k₈, m₈⟩ => ?_
-  have sQ := selQ_conds hk3 hk6 (a := J.L.T) (b := J.L.D) (low_of hJ (by
+  obtain sQ := selQ_conds hk3 hk6 (a := J.L.T) (b := J.L.D) (low_of hJ (by
       intro x hx; simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> list_mem))
   refine WP.mono (selPt_ok (k₈.ws h.ws.ws) (k₈.at h.ws.at3) (v.testBit (j - 1)) g₈ (n := J.L.M.n)
@@ -584,16 +584,16 @@ theorem selV_ok {G Q : Point C} {u v : Nat}
   rw [m₈] at qx₉ qy₉ qz₉ O₉
   have U₉₇ : Unch base [(qAt J.L.M.n, 8 * J.L.M.n), (qAt J.L.M.n + elemBytes J.L.M.n, 8 * J.L.M.n),
       (qAt J.L.M.n + 2 * elemBytes J.L.M.n, 8 * J.L.M.n)] s₇.mem s₉.mem := O₉
-  have hi : ∀ {x : Nat}, x + 8 * J.L.M.n ≤ qAt J.L.M.n ∨ aAt J.L.M.n ≤ x → x + 8 * J.L.M.n ≤ 4096 →
+  obtain hi : ∀ {x : Nat}, x + 8 * J.L.M.n ≤ qAt J.L.M.n ∨ aAt J.L.M.n ≤ x → x + 8 * J.L.M.n ≤ 4096 →
       wordsVal s₉.mem base x J.L.M.n = wordsVal s₇.mem base x J.L.M.n := fun h1 h2 =>
     U₉₇.wordsVal (by ppc_apart) (by omega_using [h2])
-  have ex : ∀ {x t d gq q g o : Nat}, x = (if v.testBit (j - 1) then d else t) →
+  obtain ex : ∀ {x t d gq q g o : Nat}, x = (if v.testBit (j - 1) then d else t) →
       d = (if u.testBit (j - 1) then gq else q) → t = (if u.testBit (j - 1) then g else o) →
       x = if v.testBit (j - 1) then (if u.testBit (j - 1) then gq else q)
         else (if u.testBit (j - 1) then g else o) := fun hx hd ht => by rw [hx, hd, ht]
-  have vx := ex qx₉ (h.d (J.L.D.x, J.GQ.x, J.Q.x) (by list_mem)) (h.t (J.L.T.x, J.L.G.x, J.O.x) (by list_mem))
-  have vy := ex qy₉ (h.d (J.L.D.y, J.GQ.y, J.Q.y) (by list_mem)) (h.t (J.L.T.y, J.L.G.y, J.O.y) (by list_mem))
-  have vz := ex qz₉ (h.d (J.L.D.z, J.GQ.z, J.Q.z) (by list_mem)) (h.t (J.L.T.z, J.L.G.z, J.O.z) (by list_mem))
+  obtain vx := ex qx₉ (h.d (J.L.D.x, J.GQ.x, J.Q.x) (by list_mem)) (h.t (J.L.T.x, J.L.G.x, J.O.x) (by list_mem))
+  obtain vy := ex qy₉ (h.d (J.L.D.y, J.GQ.y, J.Q.y) (by list_mem)) (h.t (J.L.T.y, J.L.G.y, J.O.y) (by list_mem))
+  obtain vz := ex qz₉ (h.d (J.L.D.z, J.GQ.z, J.Q.z) (by list_mem)) (h.t (J.L.T.z, J.L.G.z, J.O.z) (by list_mem))
   dsimp only at vx vy vz
   have lt := hF.lt
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at lt
@@ -644,7 +644,7 @@ theorem copyR_conds (hJ : JLay J) :
   have hL := hJ.lad
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, ho1, h8⟩ := lay_nums hL.k3 hL.k6
   obtain ⟨-, -, -, -, -, rxl, ryl, rzl⟩ := hL.al
-  have rx := hL.rx; have ry := hL.ry; have rz := hL.rz
+  obtain rx := hL.rx; have ry := hL.ry; have rz := hL.rz
   refine ⟨?_, ?_, hL.rne, ?_⟩ <;>
     simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] <;> omega_using [h1, h2,
         he, hb3, ha, hq, hp, hoo, rxl, ryl, rzl, rx, ry, rz]
@@ -665,8 +665,8 @@ theorem add_ok {G Q : Point C} {u v : Nat} {S : Impl.Weierstrass.Mont.Modulus}
   have hk6 := hL.k6
   obtain ⟨h1, h2, he, hb3, ha, hq, hp, hoo, ho1, h8⟩ := lay_nums hk3 hk6
   have hn := h.ws.nowrap
-  have la : wordsVal s₉.mem base (aAt J.L.M.n) J.L.M.n < C.p := by rw [h.ab.1]; exact hF.lt _ (by list_mem)
-  have lb : wordsVal s₉.mem base (b3At J.L.M.n) J.L.M.n < C.p := by rw [h.ab.2]; exact hF.lt _ (by list_mem)
+  obtain la : wordsVal s₉.mem base (aAt J.L.M.n) J.L.M.n < C.p := by rw [h.ab.1]; exact hF.lt _ (by list_mem)
+  obtain lb : wordsVal s₉.mem base (b3At J.L.M.n) J.L.M.n < C.p := by rw [h.ab.2]; exact hF.lt _ (by list_mem)
   refine WP.seq (WP.mono (ptCall_ok (S := ⟨c, w, C.p, J.L.M.n, d⟩) hM hodd hk3 hk6 false (a0 := false) h.ws
     (rIds_lt_of false fun x hx => by
       simp only [Bool.false_eq_true, ↓reduceIte, List.mem_cons, List.not_mem_nil, or_false] at hx
@@ -683,24 +683,24 @@ theorem add_ok {G Q : Point C} {u v : Nat} {S : Impl.Weierstrass.Mont.Modulus}
   simp only [ptVal, Bool.false_eq_true, ↓reduceIte] at E₁₀
   simp only [Eb, enc_0, enc_1, enc_2, enc_3, enc_4, enc_5, enc_6, enc_7, enc_8, enc_9, enc_10,
     Bool.false_eq_true, ↓reduceIte] at E₁₀
-  have hab : toM C.p (2 ^ (64 * J.L.M.n)) (wordsVal s₉.mem base (aAt J.L.M.n) J.L.M.n) = Fin.ofNat C.p C.a ∧
+  obtain hab : toM C.p (2 ^ (64 * J.L.M.n)) (wordsVal s₉.mem base (aAt J.L.M.n) J.L.M.n) = Fin.ofNat C.p C.a ∧
       toM C.p (2 ^ (64 * J.L.M.n)) (wordsVal s₉.mem base (b3At J.L.M.n) J.L.M.n) = Fin.ofNat C.p (3 * C.b) := by
     rw [h.ab.1, h.ab.2]; exact hF.ab
   rw [hab.1, hab.2] at E₁₀
-  have hA := acc_curve hC hG hQ u v j
-  have R₁₀ := hC.add (hC.onCurve_add hA hA) (entry_curve hC hG hQ _ _) h.prep h.qrep E₁₀.symm
-  have l0 := L₁₀ 0 (by decide)
-  have l1 := L₁₀ 1 (by decide)
-  have l2 := L₁₀ 2 (by decide)
+  obtain hA := acc_curve hC hG hQ u v j
+  obtain R₁₀ := hC.add (hC.onCurve_add hA hA) (entry_curve hC hG hQ _ _) h.prep h.qrep E₁₀.symm
+  obtain l0 := L₁₀ 0 (by decide)
+  obtain l1 := L₁₀ 1 (by decide)
+  obtain l2 := L₁₀ 2 (by decide)
   rw [enc_0] at l0
   rw [enc_1] at l1
   rw [enc_2] at l2
-  have w₁₀ := h.ws.of_rk (k₁₀.mono (rs' := powClob))
-  have cR := copyR_conds hJ
+  obtain w₁₀ := h.ws.of_rk (k₁₀.mono (rs' := powClob))
+  obtain cR := copyR_conds hJ
   refine WP.mono (copyPt_ok w₁₀.ws w₁₀.at3 (n := J.L.M.n) (o := J.L.R) (a := ptAt J.L.M.n (oAt J.L.M.n))
     cR.1 cR.2.1 cR.2.2.1 cR.2.2.2) fun s₁₁ ⟨rx₁₁, ry₁₁, rz₁₁, k₁₁, O₁₁⟩ => ?_
   simp only [ptAt] at rx₁₁ ry₁₁ rz₁₁
-  have rx := hL.rx; have ry := hL.ry; have rz := hL.rz
+  obtain rx := hL.rx; have ry := hL.ry; have rz := hL.rz
   have U₁₁ : Unch base [(J.L.R.x, 8 * J.L.M.n), (J.L.R.y, 8 * J.L.M.n), (J.L.R.z, 8 * J.L.M.n)]
       s₁₀.mem s₁₁.mem := O₁₁
   refine ⟨w₁₀.of_rk (k₁₁.rk (rs' := powClob)), by rw [k₁₁.gpr _ (by decide), k₁₀.gpr _ (by decide), h.r31],
@@ -761,8 +761,8 @@ theorem loop_ok {G Q : Point C} {u v : Nat} {S : Impl.Weierstrass.Mont.Modulus}
       Rep C (tmv C J.L.M.n base s' J.L.R.x) (tmv C J.L.M.n base s' J.L.R.y) (tmv C J.L.M.n base s' J.L.R.z)
         (add (mul u G) (mul v Q)) := by
   have hnb := hJ.lad.nbits
-  have top : acc G Q u v J.L.nbits = .infinity := by
-    have h0 : ∀ X : Point C, mul 0 X = .infinity := fun X => by rw [Spec.Weierstrass.mul]; rfl
+  obtain top : acc G Q u v J.L.nbits = .infinity := by
+    obtain h0 : ∀ X : Point C, mul 0 X = .infinity := fun X => by rw [Spec.Weierstrass.mul]; rfl
     rw [acc, Nat.shiftRight_eq_div_pow, Nat.shiftRight_eq_div_pow, Nat.div_eq_of_lt hu, Nat.div_eq_of_lt hv,
       h0, h0]
     rfl
@@ -810,18 +810,18 @@ theorem setup_ok {G Q : Point C} {S : Impl.Weierstrass.Mont.Modulus}
   obtain ⟨h1, h2, he, hb3, ha, hq', hp, hoo, ho1, h8⟩ := lay_nums hk3 hk6
   have hn := hw.nowrap
   obtain ⟨al, bl, gxl, gyl, gzl, -, -, -⟩ := hL.al
-  have sa := hL.a; have sb := hL.b3; have sgx := hL.gx; have sgy := hL.gy; have sgz := hL.gz
-  have qsub : ∀ x ∈ [J.Q.x, J.Q.y, J.Q.z], x ∈ roL J ++ tL J ++ dL J := by
+  obtain sa := hL.a; have sb := hL.b3; have sgx := hL.gx; have sgy := hL.gy; have sgz := hL.gz
+  obtain qsub : ∀ x ∈ [J.Q.x, J.Q.y, J.Q.z], x ∈ roL J ++ tL J ++ dL J := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> list_mem
-  have qL := low_of hJ qsub
+  obtain qL := low_of hJ qsub
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at qL
   obtain ⟨⟨qx1, qx2⟩, ⟨qy1, qy2⟩, ⟨qz1, qz2⟩⟩ := qL
-  have cG := copyPt_conds (a := J.L.G) hk3 hk6 (.inl rfl) (by omega_using [hoo, sgx]) (by omega_using [hoo, sgy])
+  obtain cG := copyPt_conds (a := J.L.G) hk3 hk6 (.inl rfl) (by omega_using [hoo, sgx]) (by omega_using [hoo, sgy])
       (by omega_using [hoo, sgz])
     ⟨gxl, gyl, gzl⟩
-  have cQ := copyPt_conds (a := J.Q) hk3 hk6 (.inr rfl) (by omega_using [hp, hoo, qx1]) (by omega_using [hp, hoo, qy1])
+  obtain cQ := copyPt_conds (a := J.Q) hk3 hk6 (.inr rfl) (by omega_using [hp, hoo, qx1]) (by omega_using [hp, hoo, qy1])
       (by omega_using [hp, hoo, qz1])
     ⟨qx2, qy2, qz2⟩
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at hlt
@@ -850,40 +850,40 @@ theorem setup_ok {G Q : Point C} {S : Impl.Weierstrass.Mont.Modulus}
       (pAt J.L.M.n + 2 * elemBytes J.L.M.n, 8 * J.L.M.n)] s₂.mem s₃.mem := O₃
   have U₅ : Unch base [(qAt J.L.M.n, 8 * J.L.M.n), (qAt J.L.M.n + elemBytes J.L.M.n, 8 * J.L.M.n),
       (qAt J.L.M.n + 2 * elemBytes J.L.M.n, 8 * J.L.M.n)] s₃.mem s₄.mem := O₄
-  have lo : ∀ {x : Nat}, x + 8 * J.L.M.n ≤ oAt J.L.M.n →
+  obtain lo : ∀ {x : Nat}, x + 8 * J.L.M.n ≤ oAt J.L.M.n →
       wordsVal s₂.mem base x J.L.M.n = wordsVal s.mem base x J.L.M.n := fun h =>
     (U₃.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha, hq', hp, hoo, h])).trans (U₂.wordsVal (by ppc_apart)
         (by omega_using [h1, h2, hb3, ha, hq', hp, hoo, h]))
-  have lo3 : ∀ {x : Nat}, x + 8 * J.L.M.n ≤ oAt J.L.M.n →
+  obtain lo3 : ∀ {x : Nat}, x + 8 * J.L.M.n ≤ oAt J.L.M.n →
       wordsVal s₃.mem base x J.L.M.n = wordsVal s.mem base x J.L.M.n := fun h =>
     (U₄.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha, hq', hp, hoo, h])).trans (lo h)
   -- What the call reads.
-  have a₄ : wordsVal s₄.mem base (aAt J.L.M.n) J.L.M.n = wordsVal s.mem base J.L.S.a J.L.M.n := by
+  obtain a₄ : wordsVal s₄.mem base (aAt J.L.M.n) J.L.M.n = wordsVal s.mem base J.L.S.a J.L.M.n := by
     rw [U₅.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha]), U₄.wordsVal (by ppc_apart)
         (by omega_using [h1, h2, hb3, ha]),
       U₃.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha]), a₁]
-  have b₄ : wordsVal s₄.mem base (b3At J.L.M.n) J.L.M.n = wordsVal s.mem base J.L.S.b3 J.L.M.n := by
+  obtain b₄ : wordsVal s₄.mem base (b3At J.L.M.n) J.L.M.n = wordsVal s.mem base J.L.S.b3 J.L.M.n := by
     rw [U₅.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3]), U₄.wordsVal (by ppc_apart)
         (by omega_using [h1, h2, hb3]), b₂,
       U₂.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha, hq', hp, hoo, sb])]
-  have p₄ : ∀ i < 3, wordsVal s₄.mem base (pAt J.L.M.n + i * elemBytes J.L.M.n) J.L.M.n =
+  obtain p₄ : ∀ i < 3, wordsVal s₄.mem base (pAt J.L.M.n + i * elemBytes J.L.M.n) J.L.M.n =
       wordsVal s₃.mem base (pAt J.L.M.n + i * elemBytes J.L.M.n) J.L.M.n := fun i hi => by
     obtain rfl | rfl | rfl : i = 0 ∨ i = 1 ∨ i = 2 := by omega_using [hi]
     all_goals exact U₅.wordsVal (by ppc_apart) (by omega_using [h1, h2, hb3, ha, hq', hp])
-  have gx₄ : wordsVal s₄.mem base (pAt J.L.M.n) J.L.M.n = wordsVal s.mem base J.L.G.x J.L.M.n := by
+  obtain gx₄ : wordsVal s₄.mem base (pAt J.L.M.n) J.L.M.n = wordsVal s.mem base J.L.G.x J.L.M.n := by
     have := p₄ 0 (by decide); simp only [Nat.zero_mul, Nat.add_zero] at this
     rw [this, gx₃, lo sgx]
-  have gy₄ : wordsVal s₄.mem base (pAt J.L.M.n + elemBytes J.L.M.n) J.L.M.n =
+  obtain gy₄ : wordsVal s₄.mem base (pAt J.L.M.n + elemBytes J.L.M.n) J.L.M.n =
       wordsVal s.mem base J.L.G.y J.L.M.n := by
     have := p₄ 1 (by decide); simp only [Nat.one_mul] at this
     rw [this, gy₃, lo sgy]
-  have gz₄ : wordsVal s₄.mem base (pAt J.L.M.n + 2 * elemBytes J.L.M.n) J.L.M.n =
+  obtain gz₄ : wordsVal s₄.mem base (pAt J.L.M.n + 2 * elemBytes J.L.M.n) J.L.M.n =
       wordsVal s.mem base J.L.G.z J.L.M.n := by
     rw [p₄ 2 (by decide), gz₃, lo sgz]
   rw [lo3 qx1] at qx₄
   rw [lo3 qy1] at qy₄
   rw [lo3 qz1] at qz₄
-  have w₄ := hw.of_rk ((k₁.rk (rs' := powClob)).trans ((k₂.rk (rs' := powClob)).trans ((k₃.rk (rs' := powClob)).trans
+  obtain w₄ := hw.of_rk ((k₁.rk (rs' := powClob)).trans ((k₂.rk (rs' := powClob)).trans ((k₃.rk (rs' := powClob)).trans
     (k₄.rk (rs' := powClob)))))
   refine WP.seq (WP.mono (ptCall_ok (S := ⟨c, w, C.p, J.L.M.n, d⟩) hM hodd hk3 hk6 false (a0 := false) w₄
     (rIds_lt_of false fun x hx => by
@@ -905,9 +905,9 @@ theorem setup_ok {G Q : Point C} {S : Impl.Weierstrass.Mont.Modulus}
   have hb' : toM C.p (2 ^ (64 * J.L.M.n)) (wordsVal s.mem base J.L.S.b3 J.L.M.n) = Fin.ofNat C.p (3 * C.b) :=
     hab.2
   rw [a₄, b₄, gx₄, gy₄, gz₄, qx₄, qy₄, qz₄, ha', hb'] at E₅
-  have l0 := L₅ 0 (by decide)
-  have l1 := L₅ 1 (by decide)
-  have l2 := L₅ 2 (by decide)
+  obtain l0 := L₅ 0 (by decide)
+  obtain l1 := L₅ 1 (by decide)
+  obtain l2 := L₅ 2 (by decide)
   rw [enc_0] at l0
   rw [enc_1] at l1
   rw [enc_2] at l2
@@ -946,7 +946,7 @@ theorem start_apart (hJ : JLay J) :
     ∀ d ∈ [J.L.G.x, J.L.G.y, J.L.G.z, J.Q.x, J.Q.y, J.Q.z, J.O.x, J.O.y, J.O.z],
       ∀ y ∈ [J.GQ.x, J.GQ.y, J.GQ.z, J.L.R.x, J.L.R.y, J.L.R.z], Apart J.L.M.n d y := by
   intro d hd y hy
-  have hd' : d ∈ roL J := by
+  obtain hd' : d ∈ roL J := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> list_mem
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hy
@@ -975,10 +975,10 @@ theorem start_low (hJ : JLay J) : ∀ w ∈ startW J, w.1 + w.2 ≤ oAt J.L.M.n 
 theorem start_gR (hJ : JLay J) :
     ∀ g ∈ [J.GQ.x, J.GQ.y, J.GQ.z], ∀ r ∈ [J.L.R.x, J.L.R.y, J.L.R.z], Apart J.L.M.n g r := by
   intro g hg r hr
-  have hg' : g ∈ roL J := by
+  obtain hg' : g ∈ roL J := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl <;> list_mem
-  have hr' : r ∈ wL J := by
+  obtain hr' : r ∈ wL J := by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> list_mem
   exact hJ.ro g hg' r hr'
@@ -1003,12 +1003,12 @@ theorem start_run (hJ : JLay J) {t : State} (hw : WsReg t base) (hone' : J.one <
   obtain ⟨h1, h2, he, hb3, ha, hq', hp', hoo, ho1, h8⟩ := lay_nums hk3 hk6
   have hn := hw.nowrap
   have hnb := hL.nbits
-  have rx := hL.rx; have ry := hL.ry; have rz := hL.rz
-  have gqs : ∀ x ∈ [J.GQ.x, J.GQ.y, J.GQ.z], x ∈ roL J ++ tL J ++ dL J := by
+  obtain rx := hL.rx; have ry := hL.ry; have rz := hL.rz
+  obtain gqs : ∀ x ∈ [J.GQ.x, J.GQ.y, J.GQ.z], x ∈ roL J ++ tL J ++ dL J := by
     intro x hx
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
     rcases hx with rfl | rfl | rfl <;> list_mem
-  have gqL := low_of hJ gqs
+  obtain gqL := low_of hJ gqs
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at gqL
   obtain ⟨⟨gx1, gx2⟩, ⟨gy1, gy2⟩, ⟨gz1, gz2⟩⟩ := gqL
   rw [JointCfg.start]
@@ -1036,13 +1036,13 @@ theorem start_run (hJ : JLay J) {t : State} (hw : WsReg t base) (hone' : J.one <
         (by omega_using [h1, h2, hb3, ha, hq', hp', hoo, rz]) (Nat.two_pow_pos _)) fun s₄ ⟨O₄, v₄, k₄⟩ =>
     wp_step (exec_li hnb.2) (WP.block_nil ?_)
   have U₁ : Unch base [(J.GQ.x, 8 * J.L.M.n), (J.GQ.y, 8 * J.L.M.n), (J.GQ.z, 8 * J.L.M.n)] t.mem s₁.mem := O₁
-  have gR := start_gR hJ
+  obtain gR := start_gR hJ
   have hRR := hL.rne
-  have gq : ∀ {g f : Nat}, g ∈ [J.GQ.x, J.GQ.y, J.GQ.z] →
+  obtain gq : ∀ {g f : Nat}, g ∈ [J.GQ.x, J.GQ.y, J.GQ.z] →
       wordsVal s₁.mem base g J.L.M.n = wordsVal t.mem base f J.L.M.n →
       wordsVal s₄.mem base g J.L.M.n = wordsVal t.mem base f J.L.M.n := by
     intro g f hg e
-    have l := (start_low hJ (g, 8 * J.L.M.n) (by
+    obtain l := (start_low hJ (g, 8 * J.L.M.n) (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
       rcases hg with rfl | rfl | rfl <;> simp)).1
     simp only at l
@@ -1087,22 +1087,22 @@ theorem start_ok {G Q : Point C} {u v : Nat} (hC : Law C) (hJ : JLay J) {t : Sta
   have hk6 := hL.k6
   obtain ⟨h1, h2, he, hb3, ha, hq', hp', hoo, ho1, h8⟩ := lay_nums hk3 hk6
   have hn := hw.nowrap
-  have low := start_low hJ
-  have keep : ∀ {d : Nat}, (∀ y ∈ [J.GQ.x, J.GQ.y, J.GQ.z, J.L.R.x, J.L.R.y, J.L.R.z], Apart J.L.M.n d y) →
+  obtain low := start_low hJ
+  obtain keep : ∀ {d : Nat}, (∀ y ∈ [J.GQ.x, J.GQ.y, J.GQ.z, J.L.R.x, J.L.R.y, J.L.R.z], Apart J.L.M.n d y) →
       d + 8 * J.L.M.n ≤ 8192 → wordsVal s₀.mem base d J.L.M.n = wordsVal t.mem base d J.L.M.n :=
     fun hd hd' => R.unch.wordsVal (fun w hw => by
       simp only [startW, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl | rfl | rfl | rfl <;> exact hd _ (by list_mem)) (by omega_using [hd'])
-  have roLow : ∀ d ∈ [J.L.G.x, J.L.G.y, J.L.G.z, J.Q.x, J.Q.y, J.Q.z, J.O.x, J.O.y, J.O.z],
+  obtain roLow : ∀ d ∈ [J.L.G.x, J.L.G.y, J.L.G.z, J.Q.x, J.Q.y, J.Q.z, J.O.x, J.O.y, J.O.z],
       d + 8 * J.L.M.n ≤ 8192 := fun d hd => by
     have : d + 8 * J.L.M.n ≤ oAt J.L.M.n := (hJ.low d (by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
       rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> list_mem)).1
     omega_using [h1, h2, hb3, ha, hq', hp', hoo, this]
-  have kp : ∀ d ∈ [J.L.G.x, J.L.G.y, J.L.G.z, J.Q.x, J.Q.y, J.Q.z, J.O.x, J.O.y, J.O.z],
+  obtain kp : ∀ d ∈ [J.L.G.x, J.L.G.y, J.L.G.z, J.Q.x, J.Q.y, J.Q.z, J.O.x, J.O.y, J.O.z],
       wordsVal s₀.mem base d J.L.M.n = wordsVal t.mem base d J.L.M.n :=
     fun d hd => keep (start_apart hJ d hd) (roLow d hd)
-  have kab : ∀ d ∈ [aAt J.L.M.n, b3At J.L.M.n],
+  obtain kab : ∀ d ∈ [aAt J.L.M.n, b3At J.L.M.n],
       wordsVal s₀.mem base d J.L.M.n = wordsVal t.mem base d J.L.M.n := fun d hd =>
     R.unch.wordsVal (fun w hw => by
       obtain ⟨l1, l2⟩ := low w hw
@@ -1114,10 +1114,10 @@ theorem start_ok {G Q : Point C} {u v : Nat} (hC : Law C) (hJ : JLay J) {t : Sta
   obtain ⟨kgx, kgy, kgz, kqx, kqy, kqz, kox, koy, koz⟩ := kp
   obtain ⟨ka, kb⟩ := kab
   obtain ⟨la, lb, lgx, lgy, lgz, lqx, lqy, lqz, lfx, lfy, lfz, lox, loy, loz⟩ := hlt
-  have tc : ∀ {s s' : State} {x y : Nat}, wordsVal s.mem base x J.L.M.n = wordsVal s'.mem base y J.L.M.n →
+  obtain tc : ∀ {s s' : State} {x y : Nat}, wordsVal s.mem base x J.L.M.n = wordsVal s'.mem base y J.L.M.n →
       tmv C J.L.M.n base s x = tmv C J.L.M.n base s' y := fun e => by
     show toM _ _ _ = toM _ _ _; rw [e]
-  have by4 : ∀ {d : Nat}, 4096 ≤ d → d < 8192 → s₀.mem (off base d) = t.mem (off base d) := fun h1 h2 =>
+  obtain by4 : ∀ {d : Nat}, 4096 ≤ d → d < 8192 → s₀.mem (off base d) = t.mem (off base d) := fun h1 h2 =>
     R.unch.byte (fun w hw => by
       obtain ⟨l1, -⟩ := low w hw
       right; omega_arith) (by omega_using [h2])
@@ -1197,22 +1197,22 @@ theorem setPost_start {G Q : Point C} {u v : Nat} (hJ : JLay J) {s t : State} (h
   have hk3 := hL.k3
   have hk6 := hL.k6
   obtain ⟨h1, h2, he, hb3, ha, hq', hp', hoo, ho1, h8⟩ := lay_nums hk3 hk6
-  have lo : ∀ {d : Nat}, d + 8 * J.L.M.n ≤ oAt J.L.M.n →
+  obtain lo : ∀ {d : Nat}, d + 8 * J.L.M.n ≤ oAt J.L.M.n →
       wordsVal t.mem base d J.L.M.n = wordsVal s.mem base d J.L.M.n := fun hd =>
     ht.unch.wordsVal (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw; subst hw; left; exact hd)
           (by omega_using [h1, h2, hb3, ha, hq', hp', hoo, hd])
-  have rl : ∀ d ∈ [J.L.G.x, J.L.G.y, J.L.G.z, J.Q.x, J.Q.y, J.Q.z, J.O.x, J.O.y, J.O.z],
+  obtain rl : ∀ d ∈ [J.L.G.x, J.L.G.y, J.L.G.z, J.Q.x, J.Q.y, J.Q.z, J.O.x, J.O.y, J.O.z],
       wordsVal t.mem base d J.L.M.n = wordsVal s.mem base d J.L.M.n := fun d hd => lo (hJ.low d (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
     rcases hd with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> list_mem)).1
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at rl hlt
   obtain ⟨kgx, kgy, kgz, kqx, kqy, kqz, kox, koy, koz⟩ := rl
   obtain ⟨la, lb, lgx, lgy, lgz, lqx, lqy, lqz, lox, loy, loz⟩ := hlt
-  have tc : ∀ {s s' : State} {x y : Nat}, wordsVal s.mem base x J.L.M.n = wordsVal s'.mem base y J.L.M.n →
+  obtain tc : ∀ {s s' : State} {x y : Nat}, wordsVal s.mem base x J.L.M.n = wordsVal s'.mem base y J.L.M.n →
       tmv C J.L.M.n base s x = tmv C J.L.M.n base s' y := fun e => by
     show toM _ _ _ = toM _ _ _; rw [e]
-  have by4 : ∀ {d : Nat}, 4096 ≤ d → d < 8192 → t.mem (off base d) = s.mem (off base d) := fun h1 h2 =>
+  obtain by4 : ∀ {d : Nat}, 4096 ≤ d → d < 8192 → t.mem (off base d) = s.mem (off base d) := fun h1 h2 =>
     ht.unch.byte (fun w hw => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hw; subst hw; right; simp only; omega_arith)
       (by omega_using [h2])

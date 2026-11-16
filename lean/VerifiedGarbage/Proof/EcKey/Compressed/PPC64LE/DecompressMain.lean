@@ -123,12 +123,12 @@ theorem decompressPeer_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s
   have hp3 := hc.p_ge
   have hl8 := hc.len8
   have hlhi := hc.len_hi
-  have hF : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
-  have hR2 := sl_le c h7 (i := R2P) (by decide)
-  have hB := sl_le c h7 (i := BP) (by decide)
-  have hD := sl_le c h7 (i := D) (by decide)
-  have hE := sl_le c h7 (i := E) (by decide)
-  have hM := sl_le c h7 (i := MP) (by decide)
+  obtain hF : c.sl FLAG + 8 ≤ size := by have := sl_le c h7 (i := FLAG) (by decide); omega_arith
+  obtain hR2 := sl_le c h7 (i := R2P) (by decide)
+  obtain hB := sl_le c h7 (i := BP) (by decide)
+  obtain hD := sl_le c h7 (i := D) (by decide)
+  obtain hE := sl_le c h7 (i := E) (by decide)
+  obtain hM := sl_le c h7 (i := MP) (by decide)
   generalize hqa : s.gpr .r12 = qa at hqfit hin hd ⊢
   rw [decompressPeer_eq]
   -- The constants.
@@ -139,19 +139,19 @@ theorem decompressPeer_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s
       · exact ⟨show BP < 45 by decide, Nat.lt_trans (Nat.mod_lt _ (by omega_arith)) hpl⟩)
       (show [R2P, BP].Nodup by decide))
     fun s₁ ⟨e₁, k₁, U₁⟩ => ?_)
-  have hw₁ := hw.of_kp k₁
+  obtain hw₁ := hw.of_kp k₁
   have U₁' : Unch base (slW c [R2P, BP]) s.mem s₁.mem := U₁
   -- `public + 1`
   refine wp_step (exec_addi (by decide) (by decide)) ?_
-  have k₂ : Kp [.r6, .r11] s (s₁.write .r6 (s₁.gpr .r12 + BitVec.ofNat 64 1)) :=
+  obtain k₂ : Kp [.r6, .r11] s (s₁.write .r6 (s₁.gpr .r12 + BitVec.ofNat 64 1)) :=
     (k₁.mono (by decide)).trans (Kp.write _ _ (by decide))
-  have hq₁ : s₁.gpr .r12 = qa := by rw [k₁.gpr _ (by decide), hqa]
-  have hrw : ∀ {t : State} {rs : List Reg}, Kp rs s t → t.rd ++ t.wr = s.rd ++ s.wr := fun K => by
+  obtain hq₁ : s₁.gpr .r12 = qa := by rw [k₁.gpr _ (by decide), hqa]
+  obtain hrw : ∀ {t : State} {rs : List Reg}, Kp rs s t → t.rd ++ t.wr = s.rd ++ s.wr := fun K => by
     rw [K.rd, K.wr]
-  have O₁ : Outside base 0 4096 s.mem s₁.mem := U₁'.outside fun w hw => by
+  obtain O₁ : Outside base 0 4096 s.mem s₁.mem := U₁'.outside fun w hw => by
     simp only [slW, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl <;> exact ⟨Nat.zero_le _, by dsimp only; omega_arith⟩
-  have hfit₁ : (qa + BitVec.ofNat 64 1).toNat + c.C.len ≤ 2 ^ 64 := by
+  obtain hfit₁ : (qa + BitVec.ofNat 64 1).toNat + c.C.len ≤ 2 ^ 64 := by
     rw [Offset.toNat_add_ofNat, Nat.mod_eq_of_lt (show 1 < 2 ^ 64 by decide), Nat.mod_eq_of_lt (by omega_arith)]
     omega_arith
   -- `x`
@@ -162,11 +162,11 @@ theorem decompressPeer_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s
       rw [Offset.add_add]; exact Offset.contains_base qa (by omega_arith) (by omega_arith)⟩)
     (hd.sub_left (Offset.sub_base qa (by omega_arith))) (by simp only [write_mem]; exact O₁))
     fun s₃ ⟨e₃, k₃, O₃⟩ => ?_)
-  have K₃ : Kp [.r6, .r8, .r9, .r11] s s₃ :=
+  obtain K₃ : Kp [.r6, .r8, .r9, .r11] s s₃ :=
     (k₂.mono (by decide)).trans (k₃.mono (by decide))
-  have hw₃ := hw.of_kp K₃
-  have hq₃ : s₃.gpr .r12 = qa := by rw [K₃.gpr _ (by decide), hqa]
-  have O₃' : Outside base 0 size s.mem s₃.mem :=
+  obtain hw₃ := hw.of_kp K₃
+  obtain hq₃ : s₃.gpr .r12 = qa := by rw [K₃.gpr _ (by decide), hqa]
+  obtain O₃' : Outside base 0 size s.mem s₃.mem :=
     (O₁.mono (Nat.le_refl _) (by omega_arith)).trans (O₃.mono (Nat.zero_le _) (by omega_arith))
   -- the tag
   refine wp_append (WP.mono (decompressTag_ok c hw₃.ws hw₃.at3
@@ -174,44 +174,44 @@ theorem decompressPeer_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s
       have := Offset.contains_base qa (d := 0) (n := 1) (k := 1 + c.C.len) (by omega_arith) (by omega_arith)
       rw [BitVec.add_zero] at this; rw [hq₃]; exact this⟩ (by omega_arith)) fun s₄ ⟨m₄, k₄, h₄⟩ => ?_)
   rw [hq₃] at m₄ h₄
-  have hw₄ := hw₃.of_kp k₄
-  have lead₃ : s₃.mem qa = s.mem qa := by
+  obtain hw₄ := hw₃.of_kp k₄
+  obtain lead₃ : s₃.mem qa = s.mem qa := by
     have := keep_of_disjoint' O₃' hd (by omega_arith) (i := 0) (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
   rw [lead₃] at m₄ h₄
-  have O₄ : Outside base (c.sl D) 8 s₃.mem s₄.mem := by rw [h₄]; exact writeW_outside _ _ _ (by omega_arith)
+  obtain O₄ : Outside base (c.sl D) 8 s₃.mem s₄.mem := by rw [h₄]; exact writeW_outside _ _ _ (by omega_arith)
   -- the flag `&=` the tag's mask
   refine wp_append (WP.mono (andFlag_ok c hw₄.ws hw₄.at3 hF) fun s₅ ⟨f₅, k₅, m₅⟩ => ?_)
   rw [m₄] at f₅
-  have hw₅ := hw₄.of_kp k₅
-  have O₅ : Outside base (c.sl FLAG) 8 s₄.mem s₅.mem := by rw [m₅]; exact writeW_outside _ _ _ (by omega_arith)
+  obtain hw₅ := hw₄.of_kp k₅
+  obtain O₅ : Outside base (c.sl FLAG) 8 s₄.mem s₅.mem := by rw [m₅]; exact writeW_outside _ _ _ (by omega_arith)
   -- `x < p`
   refine WP.mono (checkLtP_ok c hw₅.ws hw₅.at3 (by omega_arith) (by omega_arith) hF) fun s₆ ⟨f₆, k₆, O₆⟩ => ?_
   -- The slots.
-  have U₃₆ : Unch base ([(c.sl D, 8)] ++ [(c.sl FLAG, 8)] ++ [(c.sl FLAG, 8)]) s₃.mem s₆.mem :=
+  obtain U₃₆ : Unch base ([(c.sl D, 8)] ++ [(c.sl FLAG, 8)] ++ [(c.sl FLAG, 8)]) s₃.mem s₆.mem :=
     (O₄.unch.trans O₅.unch).trans O₆.unch
-  have apDF : ∀ {i}, i < 45 → i ≠ FLAG → i ≠ D →
+  obtain apDF : ∀ {i}, i < 45 → i ≠ FLAG → i ≠ D →
       ∀ w ∈ [(c.sl D, 8)] ++ [(c.sl FLAG, 8)] ++ [(c.sl FLAG, 8)],
         c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := fun hi hf hD' =>
     apart_append (apart_append (fun w hw => by
       rw [List.mem_singleton.mp hw]; have := sl_apart c hD'; dsimp only; omega_arith) (apart_flag h0 hf))
       (apart_flag h0 hf)
-  have v₆ : ∀ {i}, i < 45 → i ≠ FLAG → i ≠ D → sv c base s₆ i = sv c base s₃ i := fun hi hf hD' =>
+  obtain v₆ : ∀ {i}, i < 45 → i ≠ FLAG → i ≠ D → sv c base s₆ i = sv c base s₃ i := fun hi hf hD' =>
     sv_unch U₃₆ h7 hn hi (apDF hi hf hD')
-  have v₃ : ∀ {i}, i < 45 → i ≠ E → sv c base s₃ i = sv c base s₁ i := fun hi hl =>
+  obtain v₃ : ∀ {i}, i < 45 → i ≠ E → sv c base s₃ i = sv c base s₁ i := fun hi hl =>
     sv_unch O₃.unch h7 hn hi (apart_slW (c := c) (l := [E]) (by simpa using hl))
-  have v₁ : ∀ {i}, i < 45 → i ∉ [R2P, BP] → sv c base s₁ i = sv c base s i := fun hi hl =>
+  obtain v₁ : ∀ {i}, i < 45 → i ∉ [R2P, BP] → sv c base s₁ i = sv c base s i := fun hi hl =>
     sv_unch U₁' h7 hn hi (apart_slW (c := c) (l := [R2P, BP]) hl)
-  have xE : sv c base s₆ E = ofBytes (Spec.Ecdsa.bytesAt s.mem (qa + BitVec.ofNat 64 1) c.C.len) := by
+  obtain xE : sv c base s₆ E = ofBytes (Spec.Ecdsa.bytesAt s.mem (qa + BitVec.ofNat 64 1) c.C.len) := by
     rw [v₆ (by decide) (by decide) (by decide)]; exact e₃
-  have hsD := sl_apart c (i := D) (j := FLAG) (by decide)
+  obtain hsD := sl_apart c (i := D) (j := FLAG) (by decide)
   refine ⟨hw₅.of_kp k₆, ?_, ?_, ?_, ?_, xE, ?_, ?_⟩
   · exact (((K₃.mono (by decide)).trans (k₄.mono (by decide))).trans (k₅.mono (by decide))).trans
       (k₆.mono (by decide))
   · refine ((U₁'.trans O₃.unch).trans U₃₆).cover fun w hw => ?_
     simp only [slW, List.map_cons, List.map_nil, List.mem_append, List.mem_cons, List.not_mem_nil, or_false,
       or_assoc] at hw
-    have h8 : 8 ≤ 8 * c.n := by omega_arith
+    obtain h8 : 8 ≤ 8 * c.n := by omega_arith
     rcases hw with h | h | h | h | h | h <;> subst h
     · exact ⟨_, by simp [slW], Nat.le_refl _, Nat.le_refl _⟩
     · exact ⟨_, by simp [slW], Nat.le_refl _, Nat.le_refl _⟩
@@ -232,11 +232,11 @@ theorem decompressPeer_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s
         sv_unch O₄.unch h7 hn (i := MP) (by decide) (fun w hw => by
           rw [List.mem_singleton.mp hw]; have := sl_apart c (i := MP) (j := D) (by decide); dsimp only; omega_arith)]
       exact (v₃ (by decide) (by decide)).trans ((v₁ (by decide) (by decide)).trans hmp)
-    have e₅ : wordsVal s₅.mem base (c.sl E) c.n = sv c base s₆ E :=
+    obtain e₅ : wordsVal s₅.mem base (c.sl E) c.n = sv c base s₆ E :=
       (sv_unch O₆.unch h7 hn (i := E) (by decide) (apart_flag h0 (by decide))).symm
-    have hFl := sl_le c h7 (i := FLAG) (by decide)
-    have fl₄ : flagW c base s₄ = flagW c base s := by
-      have ap : ∀ w ∈ slW c [R2P, BP] ++ [(c.sl E, 8 * c.n)] ++ [(c.sl D, 8)],
+    obtain hFl := sl_le c h7 (i := FLAG) (by decide)
+    obtain fl₄ : flagW c base s₄ = flagW c base s := by
+      obtain ap : ∀ w ∈ slW c [R2P, BP] ++ [(c.sl E, 8 * c.n)] ++ [(c.sl D, 8)],
           c.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ c.sl FLAG := fun w hw => by
         simp only [slW, List.map_cons, List.map_nil, List.mem_append, List.mem_cons, List.not_mem_nil,
           or_false, or_assoc] at hw
@@ -312,49 +312,49 @@ theorem checkRoot_ok (hc : CfgOk c) {base : Addr} {s : State} (hw : WsReg s base
   have h7 := hc.n10
   have hn := hw.nowrap
   have hsz : size = 8192 := rfl
-  have hF := sl_le c h7 (i := FLAG) (by decide)
-  have hW := sl_le c h7 (i := W3) (by decide)
-  have hY := sl_le c h7 (i := QY) (by decide)
-  have hD := sl_le c h7 (i := D) (by decide)
+  obtain hF := sl_le c h7 (i := FLAG) (by decide)
+  obtain hW := sl_le c h7 (i := W3) (by decide)
+  obtain hY := sl_le c h7 (i := QY) (by decide)
+  obtain hD := sl_le c h7 (i := D) (by decide)
   change WP isa (.seq (fprog c.SP (Impl.EcKey.Compressed.PPC64LE.checkRootOps c))
     (.block (Impl.Ecdh.PPC64LE.Cfg.checkZero c (c.sl W3) ++ (Impl.EcKey.Compressed.PPC64LE.parityMask c ++
       (Impl.EcKey.Compressed.PPC64LE.invertMask ++ c.andFlag))))) s _
   refine WP.seq (WP.mono (checkPoly_ok hc hw hy hr hr2) fun s₁ ⟨hw₁, k₁, U₁, lt₁, v₁⟩ => ?_)
-  have ap₁ : ∀ {i}, i < 45 → i ∉ [QYM, W1, W3] →
+  obtain ap₁ : ∀ {i}, i < 45 → i ∉ [QYM, W1, W3] →
       ∀ w ∈ checkW c, c.sl i + 8 * c.n ≤ w.1 ∨ w.1 + w.2 ≤ c.sl i := fun hi hl =>
     apart_append (apart_slW hl) (apart_own h7 hi)
-  have flag₁ : flagW c base s₁ = mask64 P := by
+  obtain flag₁ : flagW c base s₁ = mask64 P := by
     rw [flagW, U₁.word (fun w hw' => (ap₁ (i := FLAG) (by decide) (by decide) w hw').imp (fun h => by omega_using [h0, h]) id)
       (by omega_using [hF]), ← flagW, hf]
-  have hz : sv c base s₁ W3 = 0 ↔
+  obtain hz : sv c base s₁ W3 = 0 ↔
       Fin.ofNat c.C.p (sv c base s QY) * Fin.ofNat c.C.p (sv c base s QY) =
         toM c.C.p (2 ^ (64 * c.n)) (sv c base s W2) := by
     rw [← toM_eq_zero_iff (unitMod_pow_two hc.p_odd (64 * c.n)) lt₁, v₁]
     constructor <;> intro h <;> grind
-  have y₁ : sv c base s₁ QY = sv c base s QY := sv_unch U₁ h7 hn (by decide) (ap₁ (by decide) (by decide))
-  have d₁ : word s₁.mem base (c.sl D) = word s.mem base (c.sl D) :=
+  obtain y₁ : sv c base s₁ QY = sv c base s QY := sv_unch U₁ h7 hn (by decide) (ap₁ (by decide) (by decide))
+  obtain d₁ : word s₁.mem base (c.sl D) = word s.mem base (c.sl D) :=
     U₁.word (fun w hw' => (ap₁ (i := D) (by decide) (by decide) w hw').imp (fun h => by omega_using [h0, h]) id) (by omega_using [hD])
   rw [WP.block_append_iff]
   refine WP.mono (checkZero_ok c hw₁.ws hw₁.at3 (sl_al c W3) h0 (by omega_using [hW]) (by omega_using [hF])) fun s₂ ⟨f₂, k₂, O₂⟩ => ?_
-  have y₂ : sv c base s₂ QY = sv c base s QY :=
+  obtain y₂ : sv c base s₂ QY = sv c base s QY :=
     (sv_unch O₂.unch h7 hn (by decide) (apart_flag h0 (by decide))).trans y₁
-  have d₂ : word s₂.mem base (c.sl D) = word s.mem base (c.sl D) :=
+  obtain d₂ : word s₂.mem base (c.sl D) = word s.mem base (c.sl D) :=
     (O₂.unch.word (fun w hw' => by
       rw [List.mem_singleton.mp hw']; have := sl_lt c (i := D) (j := FLAG) (by decide); dsimp only; omega_using [h0, this])
       (by omega_using [hD])).trans d₁
-  have hw₂ := hw₁.of_kp k₂
+  obtain hw₂ := hw₁.of_kp k₂
   rw [WP.block_append_iff]
   refine WP.mono (parityMask_ok c hw₂.ws hw₂.at3 h0 (by omega_using [hY]) (by omega_using [hD])) fun s₃ ⟨mask₃, k₃, m₃⟩ => ?_
   rw [y₂, d₂] at mask₃
   rw [WP.block_append_iff]
   refine WP.mono (invertMask_ok mask₃) fun s₄ ⟨mask₄, k₄, m₄⟩ => ?_
-  have hw₄ := (hw₂.of_kp k₃).of_kp k₄
+  obtain hw₄ := (hw₂.of_kp k₃).of_kp k₄
   refine WP.mono (andFlag_ok c hw₄.ws hw₄.at3 (by omega_using [hF])) fun s₅ ⟨flag₅, k₅, m₅⟩ => ?_
-  have fl₄ : flagW c base s₄ = flagW c base s₂ := by simp only [flagW, m₄, m₃]
+  obtain fl₄ : flagW c base s₄ = flagW c base s₂ := by simp only [flagW, m₄, m₃]
   refine ⟨hw₄.of_kp k₅, k₁.trans ((((k₂.rk (rs' := fnClob)).trans (k₃.rk (rs' := fnClob))).trans
     (k₄.rk (rs' := fnClob))).trans (k₅.rk (rs' := fnClob))), ?_, ?_⟩
   · have O₅ : Outside base (c.sl FLAG) 8 s₄.mem s₅.mem := by rw [m₅]; exact writeW_outside _ _ _ (by omega_using [hF])
-    have U₂₅ : Unch base [(c.sl FLAG, 8)] s₂.mem s₅.mem := by
+    obtain U₂₅ : Unch base [(c.sl FLAG, 8)] s₂.mem s₅.mem := by
       have := O₅.unch; rw [m₄, m₃] at this; exact this
     exact (U₁.trans (O₂.unch.trans U₂₅ |>.mono fun w hw' => by
       simp only [List.mem_append, List.mem_singleton, or_self] at hw'; exact List.mem_singleton.mpr hw'))
@@ -521,7 +521,7 @@ theorem candW_le (h7 : c.n < 10) : ∀ w ∈ candW c, w.1 + w.2 ≤ size := by
   have := bitsAt_le c h7 (j := 2) (by decide)
   refine le_append (fun w hw => ?_) (fun w hw => ?_)
   · obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-    have hl : ∀ i ∈ candSlots, i < 45 := by decide
+    obtain hl : ∀ i ∈ candSlots, i < 45 := by decide
     have := sl_le c h7 (hl i hi)
     dsimp only; omega_arith
   · simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
@@ -581,22 +581,22 @@ structure DPre (c : Cfg) (s : State) : Prop where
   sc_fit : (s.gpr .r5).toNat + size ≤ 2 ^ 64
 
 theorem DPre.setup {s : State} (hp : DPre c s) : SetupPre c args (s.write .r12 (s.gpr .r4)) := by
-  have hr12 : (s.write .r12 (s.gpr .r4)).gpr .r12 = s.gpr .r4 := by simp only [write_gpr, ite_true]
-  have hr5 : (s.write .r12 (s.gpr .r4)).gpr .r5 = s.gpr .r5 := by
+  obtain hr12 : (s.write .r12 (s.gpr .r4)).gpr .r12 = s.gpr .r4 := by simp only [write_gpr, ite_true]
+  obtain hr5 : (s.write .r12 (s.gpr .r4)).gpr .r5 = s.gpr .r5 := by
     simp only [write_gpr, reduceCtorEq, ite_false]
-  have hlen : c.C.len ≤ 1 + c.C.len := by omega_arith
-  have hin : ∀ e, e + 8 ≤ c.C.len → InRegions ((s.write .r12 (s.gpr .r4)).rd ++ (s.write .r12 (s.gpr .r4)).wr)
+  obtain hlen : c.C.len ≤ 1 + c.C.len := by omega_arith
+  obtain hin : ∀ e, e + 8 ≤ c.C.len → InRegions ((s.write .r12 (s.gpr .r4)).rd ++ (s.write .r12 (s.gpr .r4)).wr)
       ((s.write .r12 (s.gpr .r4)).gpr .r12 + BitVec.ofNat 64 e) 8 := fun e he => by
     rw [hr12, write_rd, write_wr]
     exact inRegions_words (len := 1 + c.C.len) (by rw [hp.rd]; simp) (by have := hp.pk_fit; omega_arith) e (by omega_arith)
-  have hd : Region.Disjoint ⟨(s.write .r12 (s.gpr .r4)).gpr .r12, c.C.len⟩
+  obtain hd : Region.Disjoint ⟨(s.write .r12 (s.gpr .r4)).gpr .r12, c.C.len⟩
       ⟨(s.write .r12 (s.gpr .r4)).gpr .r5, size⟩ := by
     rw [hr12, hr5]; exact hp.pk_sc.sub_left (Region.sub_prefix hlen)
-  have hf : ((s.write .r12 (s.gpr .r4)).gpr .r12).toNat + c.C.len ≤ 2 ^ 64 := by
+  obtain hf : ((s.write .r12 (s.gpr .r4)).gpr .r12).toNat + c.C.len ≤ 2 ^ 64 := by
     rw [hr12]; have := hp.pk_fit; omega_arith
-  have hwr : (⟨(s.write .r12 (s.gpr .r4)).gpr .r5, size⟩ : Region) ∈ (s.write .r12 (s.gpr .r4)).wr := by
+  obtain hwr : (⟨(s.write .r12 (s.gpr .r4)).gpr .r5, size⟩ : Region) ∈ (s.write .r12 (s.gpr .r4)).wr := by
     rw [hr5, write_wr, hp.wr]; simp
-  have hsf : ((s.write .r12 (s.gpr .r4)).gpr .r5).toNat + size ≤ 2 ^ 64 := by rw [hr5]; exact hp.sc_fit
+  obtain hsf : ((s.write .r12 (s.gpr .r4)).gpr .r5).toNat + size ≤ 2 ^ 64 := by rw [hr5]; exact hp.sc_fit
   exact ⟨.inl rfl, by decide, by decide, by decide, by decide, hwr, hsf, hin, hin, hin, hd, hd, hd, hf, hf, hf⟩
 
 theorem decompress_eq' (c : Cfg) : Impl.EcKey.Compressed.PPC64LE.decompress c =
@@ -622,114 +622,114 @@ theorem decompress_ok (hc : CfgOk c) {root : Fe c.C → Fe c.C} (hroot : Candida
   have hl8 := hc.len8
   have hp3 := hc.p_ge
   have hsz : size = 8192 := rfl
-  have hpR := unitMod_pow_two hc.p_odd (64 * c.n)
+  obtain hpR := unitMod_pow_two hc.p_odd (64 * c.n)
   rw [decompress_eq']
   -- `public` to `r12`, and the setup.
   refine WP.seq (wp_step exec_mov (WP.mono (stage₀' hc hp.setup) fun s₂ ⟨S₂, kp₂⟩ => ?_))
-  have hr5 : (s₀.write .r12 (s₀.gpr .r4)).gpr .r5 = s₀.gpr .r5 := by
+  obtain hr5 : (s₀.write .r12 (s₀.gpr .r4)).gpr .r5 = s₀.gpr .r5 := by
     simp only [write_gpr, reduceCtorEq, ite_false]
   generalize hb : (s₀.write .r12 (s₀.gpr .r4)).gpr args.sc = base at S₂
   replace hb : s₀.gpr .r5 = base := hr5.symm.trans hb
   have hn := S₂.ws.nowrap
-  have r12₂ : s₂.gpr .r12 = s₀.gpr .r4 := by
+  obtain r12₂ : s₂.gpr .r12 = s₀.gpr .r4 := by
     rw [kp₂.gpr _ (by decide)]; simp only [write_gpr, ite_true]
-  have W₂ : Outside base 0 size s₀.mem s₂.mem :=
+  obtain W₂ : Outside base 0 size s₀.mem s₂.mem :=
     S₂.whole.outside fun w hw => by rw [List.mem_singleton.mp hw]; exact ⟨Nat.le_refl _, Nat.le_refl _⟩
-  have hpsc : Region.Disjoint ⟨s₀.gpr .r4, 1 + c.C.len⟩ ⟨base, size⟩ := by rw [← hb]; exact hp.pk_sc
+  obtain hpsc : Region.Disjoint ⟨s₀.gpr .r4, 1 + c.C.len⟩ ⟨base, size⟩ := by rw [← hb]; exact hp.pk_sc
   -- The key.
   refine WP.seq (WP.mono (decompressPeer_ok hc S₂.ws
     (by rw [r12₂]; exact hp.pk_fit) (by rw [r12₂, S₂.rk.rd, S₂.rk.wr, write_rd, write_wr, hp.rd]; simp)
     (by rw [r12₂]; exact hpsc) S₂.fixed.mp) fun s₃ ⟨hw₃, k₃, U₃, r2₃, bp₃, x₃, d₃, f₃⟩ => ?_)
   rw [r12₂] at x₃ d₃ f₃
-  have K₃ := S₂.toKeep.step h7 (k₃.rk (rs' := peerClob)) (hU := U₃)
+  obtain K₃ := S₂.toKeep.step h7 (k₃.rk (rs' := peerClob)) (hU := U₃)
     (hW := (fixedOk_slW (by decide)).append fixedOk_flag)
     (hWs := le_append (fun w hw => by
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      have hl₃ : ∀ i ∈ [R2P, BP, E, D], i < 45 := by decide
+      obtain hl₃ : ∀ i ∈ [R2P, BP, E, D], i < 45 := by decide
       have := sl_le c h7 (hl₃ i hi); dsimp only; omega_arith)
       (fun w hw => by
         rw [List.mem_singleton.mp hw]; have := sl_le c h7 (i := FLAG) (by decide); dsimp only; omega_arith))
-  have hq0 : s₂.mem (s₀.gpr .r4) = keyTag s₀ := by
+  obtain hq0 : s₂.mem (s₀.gpr .r4) = keyTag s₀ := by
     have := keep_of_disjoint' W₂ hpsc (by omega_arith) (i := 0) (by omega_arith) (by omega_arith)
     rwa [BitVec.add_zero] at this
-  have x₃' : sv c base s₃ E = keyX c s₀ := by
+  obtain x₃' : sv c base s₃ E = keyX c s₀ := by
     rw [x₃, bytesAt_keep W₂ (hpsc.sub_left (Offset.sub_base _ (by omega_arith))) (by omega_arith) (by omega_arith)]
   rw [hq0] at d₃ f₃
-  have hf₃ : flagW c base s₃ = mask64 ((keyTag s₀ = 2 ∨ keyTag s₀ = 3) ∧ keyX c s₀ < c.C.p) := by
+  obtain hf₃ : flagW c base s₃ = mask64 ((keyTag s₀ = 2 ∨ keyTag s₀ = 3) ∧ keyX c s₀ < c.C.p) := by
     rw [f₃, S₂.flag, BitVec.allOnes_and, mask64_and, x₃']
   -- `x³ + a x + b`.
   refine WP.seq (WP.mono (rhs_ok hc K₃.ws r2₃ K₃.fixed.ap bp₃) fun s₄ ⟨hw₄, k₄, U₄, lt₄, v₄⟩ => ?_)
-  have K₄ := K₃.step h7 k₄ (hU := U₄) (hW := (fixedOk_slW (by decide)).append (fixedOk_own h7))
+  obtain K₄ := K₃.step h7 k₄ (hU := U₄) (hW := (fixedOk_slW (by decide)).append (fixedOk_own h7))
     (hWs := le_append (fun w hw => by
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      have hl₄ : ∀ i ∈ [QXM, W1, W2, W3], i < 45 := by decide
+      obtain hl₄ : ∀ i ∈ [QXM, W1, W2, W3], i < 45 := by decide
       have := sl_le c h7 (hl₄ i hi); dsimp only; omega_arith)
       (fun w hw => by rw [List.mem_singleton.mp hw]; have := own_below_bits c h7 0; have := bitsAt_le c h7 (j := 0) (by decide); dsimp only; omega_arith))
-  have e₄ : ∀ {i}, i < 45 → i ∉ [QXM, W1, W2, W3] → sv c base s₄ i = sv c base s₃ i := fun hi hl =>
+  obtain e₄ : ∀ {i}, i < 45 → i ∉ [QXM, W1, W2, W3] → sv c base s₄ i = sv c base s₃ i := fun hi hl =>
     sv_unch U₄ h7 hn hi (apart_append (apart_slW hl) (apart_own h7 hi))
-  have ew₄ : ∀ {i}, i < 45 → i ∉ [QXM, W1, W2, W3] → word s₄.mem base (c.sl i) = word s₃.mem base (c.sl i) :=
+  obtain ew₄ : ∀ {i}, i < 45 → i ∉ [QXM, W1, W2, W3] → word s₄.mem base (c.sl i) = word s₃.mem base (c.sl i) :=
     fun hi hl => U₄.word (fun w hw => (apart_append (apart_slW hl) (apart_own h7 hi) w hw).imp
       (fun h => by omega_arith) id) (by have := sl_le c h7 hi; omega_arith)
   rw [x₃'] at v₄
   -- The candidate.
   refine WP.seq (WP.seq (WP.mono (hroot base s₄ K₄.ws lt₄ K₄.fixed.onep) fun s₅ ⟨hw₅, k₅, U₅, lt₅, v₅⟩ => ?_))
-  have K₅ := K₄.step h7 k₅ (hU := U₅) (hW := candW_fixed h7) (hWs := candW_le h7)
-  have e₅ : ∀ {i}, i < 45 → i ∉ candSlots → sv c base s₅ i = sv c base s₄ i := fun hi hl =>
+  obtain K₅ := K₄.step h7 k₅ (hU := U₅) (hW := candW_fixed h7) (hWs := candW_le h7)
+  obtain e₅ : ∀ {i}, i < 45 → i ∉ candSlots → sv c base s₅ i = sv c base s₄ i := fun hi hl =>
     sv_unch U₅ h7 hn hi (apart_candW h7 hi hl)
-  have ew₅ : ∀ {i}, i < 45 → i ∉ candSlots → word s₅.mem base (c.sl i) = word s₄.mem base (c.sl i) :=
+  obtain ew₅ : ∀ {i}, i < 45 → i ∉ candSlots → word s₅.mem base (c.sl i) = word s₄.mem base (c.sl i) :=
     fun hi hl => U₅.word (fun w hw => (apart_candW h7 hi hl w hw).imp (fun h => by omega_arith) id)
       (by have := sl_le c h7 hi; omega_arith)
   rw [v₄] at v₅
   -- The root of the tag's parity.
   refine WP.seq (WP.mono (selectRoot_ok hc K₅.ws K₅.fixed.one K₅.fixed.zero) fun s₆ ⟨hw₆, k₆, U₆, lt₆, v₆⟩ => ?_)
-  have K₆ := K₅.step h7 k₆ (hU := U₆) (hW := (fixedOk_slW (by decide)).append (fixedOk_own h7))
+  obtain K₆ := K₅.step h7 k₆ (hU := U₆) (hW := (fixedOk_slW (by decide)).append (fixedOk_own h7))
     (hWs := le_append (fun w hw => by
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      have hl₆ : ∀ i ∈ [QY, W0], i < 45 := by decide
+      obtain hl₆ : ∀ i ∈ [QY, W0], i < 45 := by decide
       have := sl_le c h7 (hl₆ i hi); dsimp only; omega_arith)
       (fun w hw => by rw [List.mem_singleton.mp hw]; have := own_below_bits c h7 0; have := bitsAt_le c h7 (j := 0) (by decide); dsimp only; omega_arith))
-  have e₆ : ∀ {i}, i < 45 → i ∉ [QY, W0] → sv c base s₆ i = sv c base s₅ i := fun hi hl =>
+  obtain e₆ : ∀ {i}, i < 45 → i ∉ [QY, W0] → sv c base s₆ i = sv c base s₅ i := fun hi hl =>
     sv_unch U₆ h7 hn hi (apart_append (apart_slW hl) (apart_own h7 hi))
-  have ew₆ : ∀ {i}, i < 45 → i ∉ [QY, W0] → word s₆.mem base (c.sl i) = word s₅.mem base (c.sl i) :=
+  obtain ew₆ : ∀ {i}, i < 45 → i ∉ [QY, W0] → word s₆.mem base (c.sl i) = word s₅.mem base (c.sl i) :=
     fun hi hl => U₆.word (fun w hw => (apart_append (apart_slW hl) (apart_own h7 hi) w hw).imp
       (fun h => by omega_arith) id) (by have := sl_le c h7 hi; omega_arith)
-  have tagD : word s₅.mem base (c.sl D) = (keyTag s₀).setWidth 64 := by
+  obtain tagD : word s₅.mem base (c.sl D) = (keyTag s₀).setWidth 64 := by
     rw [ew₅ (by decide) (by decide), ew₄ (by decide) (by decide), d₃]
-  have tagN : (word s₅.mem base (c.sl D)).toNat = (keyTag s₀).toNat := by
+  obtain tagN : (word s₅.mem base (c.sl D)).toNat = (keyTag s₀).toNat := by
     rw [tagD, BitVec.toNat_setWidth, Nat.mod_eq_of_lt (Nat.lt_trans (BitVec.isLt _) (by decide))]
   rw [v₅, tagN] at v₆
   have y₆ : Fin.ofNat c.C.p (sv c base s₆ QY) = keyRoot c root s₀ := v₆
-  have yv₆ : sv c base s₆ QY = (keyRoot c root s₀).val := by
+  obtain yv₆ : sv c base s₆ QY = (keyRoot c root s₀).val := by
     simpa only [Fin.val_ofNat, Nat.mod_eq_of_lt lt₆] using congrArg Fin.val y₆
   -- The checks.
-  have w2₆ : sv c base s₆ W2 = sv c base s₄ W2 :=
+  obtain w2₆ : sv c base s₆ W2 = sv c base s₄ W2 :=
     (e₆ (by decide) (by decide)).trans (e₅ (by decide) (by decide))
-  have r2₆ : sv c base s₆ R2P = c.R * c.R % c.C.p := by
+  obtain r2₆ : sv c base s₆ R2P = c.R * c.R % c.C.p := by
     rw [e₆ (by decide) (by decide), e₅ (by decide) (by decide), e₄ (by decide) (by decide)]; exact r2₃
-  have fl₆ : flagW c base s₆ = mask64 ((keyTag s₀ = 2 ∨ keyTag s₀ = 3) ∧ keyX c s₀ < c.C.p) := by
+  obtain fl₆ : flagW c base s₆ = mask64 ((keyTag s₀ = 2 ∨ keyTag s₀ = 3) ∧ keyX c s₀ < c.C.p) := by
     rw [flagW, ew₆ (i := FLAG) (by decide) (by decide), ew₅ (by decide) (by decide),
       ew₄ (by decide) (by decide), ← flagW, hf₃]
   refine WP.mono (checkRoot_ok hc K₆.ws lt₆ (by rw [w2₆]; exact lt₄) r2₆ fl₆) fun s₇ ⟨hw₇, k₇, U₇, f₇⟩ => ?_
-  have K₇ := K₆.step h7 k₇ (hU := U₇) (hW := ((fixedOk_slW (by decide)).append (fixedOk_own h7)).append fixedOk_flag)
+  obtain K₇ := K₆.step h7 k₇ (hU := U₇) (hW := ((fixedOk_slW (by decide)).append (fixedOk_own h7)).append fixedOk_flag)
     (hWs := le_append (le_append (fun w hw => by
       obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hw
-      have hl₇ : ∀ i ∈ [QYM, W1, W3], i < 45 := by decide
+      obtain hl₇ : ∀ i ∈ [QYM, W1, W3], i < 45 := by decide
       have := sl_le c h7 (hl₇ i hi); dsimp only; omega_arith)
       (fun w hw => by rw [List.mem_singleton.mp hw]; have := own_below_bits c h7 0; have := bitsAt_le c h7 (j := 0) (by decide); dsimp only; omega_arith))
       (fun w hw => by rw [List.mem_singleton.mp hw]; have := sl_le c h7 (i := FLAG) (by decide); dsimp only; omega_arith))
-  have e₇ : ∀ {i}, i < 45 → i ∉ [QYM, W1, W3] → i ≠ FLAG → sv c base s₇ i = sv c base s₆ i := fun hi hl hf =>
+  obtain e₇ : ∀ {i}, i < 45 → i ∉ [QYM, W1, W3] → i ≠ FLAG → sv c base s₇ i = sv c base s₆ i := fun hi hl hf =>
     sv_unch U₇ h7 hn hi (apart_append (apart_append (apart_slW hl) (apart_own h7 hi)) (apart_flag h0 hf))
-  have hacc : flagW c base s₇ = mask64 (decide (DAccept c root s₀) = true) := by
-    have hD₆ : (word s₆.mem base (c.sl D)).toNat = (keyTag s₀).toNat := by
+  obtain hacc : flagW c base s₇ = mask64 (decide (DAccept c root s₀) = true) := by
+    obtain hD₆ : (word s₆.mem base (c.sl D)).toNat = (keyTag s₀).toNat := by
       rw [ew₆ (by decide) (by decide), tagN]
     rw [f₇, y₆, w2₆, v₄, yv₆, hD₆]
     simp only [mask64, decide_eq_true_eq, DAccept, keyRhs, and_assoc]
-  have h14 : s₇.gpr .r14 = s₀.gpr .r3 := by
+  obtain h14 : s₇.gpr .r14 = s₀.gpr .r3 := by
     rw [K₇.r14]; simp only [write_gpr, reduceCtorEq, ite_false]
-  have x₇ : sv c base s₇ E = keyX c s₀ := by
+  obtain x₇ : sv c base s₇ E = keyX c s₀ := by
     rw [e₇ (by decide) (by decide) (by decide), e₆ (by decide) (by decide), e₅ (by decide) (by decide),
       e₄ (by decide) (by decide), x₃']
-  have y₇ : sv c base s₇ QY = (keyRoot c root s₀).val := by
+  obtain y₇ : sv c base s₇ QY = (keyRoot c root s₀).val := by
     rw [e₇ (by decide) (by decide) (by decide), yv₆]
   -- The result.
   refine WP.mono (VG.Proof.EcKey.PPC64LE.pkFinishWith_ok hc (x := E) (y := QY) (by decide) (by decide) K₇.ws h14
@@ -737,7 +737,7 @@ theorem decompress_ok (hc : CfgOk c) {root : Fe c.C → Fe c.C} (hroot : Candida
     fun s' ⟨bytes, r3, lr, r14, r31, rk, _⟩ => ⟨⟨?_, ?_, ?_⟩, ?_, ?_⟩
   · intro r hr
     have hsv := K₇.fixed.saved
-    have hcases : ∀ r ∈ preserved, r = .r14 ∨ r = .r31 ∨
+    obtain hcases : ∀ r ∈ preserved, r = .r14 ∨ r = .r31 ∨
         (r ∉ [Reg.r0, .r3, .r4, .r5, .r6, .r10, .r14, .r31] ∧ r ∉ work) := by decide
     rcases hcases r hr with rfl | rfl | ⟨h₁, h₂⟩
     · rw [r14, hsv (.r14, 0) (by decide)]; simp only [write_gpr, reduceCtorEq, ite_false]
@@ -760,7 +760,7 @@ theorem key_bytes (m : Mem) (p : Addr) (L : Nat) :
 theorem decompress_key (c : Cfg) (root : Fe c.C → Fe c.C) (s : State) :
     Impl.EcKey.Compressed.decode c.C root (Spec.EcKey.bytesAt s.mem (s.gpr .r4) (c.C.len + 1)) =
       if DAccept c root s then some (.affine (Fin.ofNat c.C.p (keyX c s)) (keyRoot c root s)) else none := by
-  have hb := key_bytes s.mem (s.gpr .r4) c.C.len
+  obtain hb := key_bytes s.mem (s.gpr .r4) c.C.len
   exact decode_checked_eq root (length_bytesAt _ _ _)
     (by change (Spec.Ecdsa.bytesAt _ _ _).head? = _; rw [hb]; rfl)
     (by change ofBytes ((Spec.Ecdsa.bytesAt _ _ _).drop 1) = _; rw [hb]; rfl)
@@ -770,7 +770,7 @@ theorem decompress_correct (c : Cfg) (hc : CfgOk c) (root : Fe c.C → Fe c.C) (
     ∃ t s', Exec isa (Impl.EcKey.Compressed.PPC64LE.decompress c) s t s' ∧
       abiPreserved s s' ∧ (decompressContract c.C root).post s s' := by
   obtain ⟨hrd, hwr, hpo, hpw, how, hfit, hpkfit, hwfit⟩ := hs
-  have hp : DPre c s :=
+  obtain hp : DPre c s :=
     ⟨by rw [hrd, show c.C.len + 1 = 1 + c.C.len by omega_arith],
       by rw [hwr, show 2 * c.C.len + 1 = 1 + 2 * c.C.len by omega_arith],
       by simpa only [show c.C.len + 1 = 1 + c.C.len by omega_arith] using hpw,
