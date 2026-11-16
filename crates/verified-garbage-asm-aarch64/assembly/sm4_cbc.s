@@ -4,6 +4,111 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
+vg_sm4_cbc_encrypt_chained_sm4:
+	sub sp, sp, #112
+	add x4, sp, #0
+	add x5, x4, #0
+	str x19, [x5, #16]
+	str x20, [x5, #24]
+	str x21, [x5, #32]
+	str x22, [x5, #40]
+	str x23, [x5, #48]
+	str x24, [x5, #56]
+	str x25, [x5, #64]
+	str x26, [x5, #72]
+	str x27, [x5, #80]
+	str x28, [x5, #88]
+	add x19, x1, #0
+	cbz x3, 20f
+	ldr x6, [x2, #0]
+	ldr x7, [x1, #0]
+	eor x6, x6, x7
+	str x6, [x2, #0]
+	ldr x6, [x2, #8]
+	ldr x7, [x1, #8]
+	eor x6, x6, x7
+	str x6, [x2, #8]
+	b 21f
+20:
+21:
+	add x23, x2, #0
+	add x24, x3, #0
+	cbz x24, 22f
+24:
+	ldr x6, [x23, #0]
+	str x6, [x5, #0]
+	ldr x6, [x23, #8]
+	str x6, [x5, #8]
+	ldr q16, [x0, #0]
+	ldr q17, [x0, #16]
+	ldr q18, [x0, #32]
+	ldr q19, [x0, #48]
+	ldr q20, [x0, #64]
+	ldr q21, [x0, #80]
+	ldr q22, [x0, #96]
+	ldr q23, [x0, #112]
+	ldr q0, [x5, #0]
+	rev32 v0.16b, v0.16b
+	sm4e v0.4s, v16.4s
+	sm4e v0.4s, v17.4s
+	sm4e v0.4s, v18.4s
+	sm4e v0.4s, v19.4s
+	sm4e v0.4s, v20.4s
+	sm4e v0.4s, v21.4s
+	sm4e v0.4s, v22.4s
+	sm4e v0.4s, v23.4s
+	rev64 v0.16b, v0.16b
+	ext v0.16b, v0.16b, v0.16b, #8
+	str q0, [x5, #0]
+	ldr x6, [x5, #0]
+	str x6, [x23, #0]
+	ldr x6, [x5, #8]
+	str x6, [x23, #8]
+	sub x24, x24, #1
+	cbz x24, 25f
+	ldr x6, [x23, #16]
+	ldr x7, [x5, #0]
+	eor x6, x6, x7
+	str x6, [x23, #16]
+	ldr x6, [x23, #24]
+	ldr x7, [x5, #8]
+	eor x6, x6, x7
+	str x6, [x23, #24]
+	b 26f
+25:
+26:
+	add x23, x23, #16
+	cbnz x24, 24b
+	ldr x6, [x5, #0]
+	str x6, [x19, #0]
+	ldr x6, [x5, #8]
+	str x6, [x19, #8]
+	b 23f
+22:
+23:
+	ldr x19, [x5, #16]
+	ldr x20, [x5, #24]
+	ldr x21, [x5, #32]
+	ldr x22, [x5, #40]
+	ldr x23, [x5, #48]
+	ldr x24, [x5, #56]
+	ldr x25, [x5, #64]
+	ldr x26, [x5, #72]
+	ldr x27, [x5, #80]
+	ldr x28, [x5, #88]
+	movz x17, #0, lsl #0
+	add x16, sp, #0
+	stp x17, x17, [x16, #0]
+	stp x17, x17, [x16, #16]
+	stp x17, x17, [x16, #32]
+	stp x17, x17, [x16, #48]
+	stp x17, x17, [x16, #64]
+	stp x17, x17, [x16, #80]
+	stp x17, x17, [x16, #96]
+	add sp, sp, #112
+	ret
+	.p2align 6
+
 vg_sm4_cbc_encrypt_chained:
 	sub sp, sp, #3264
 	add x4, sp, #0

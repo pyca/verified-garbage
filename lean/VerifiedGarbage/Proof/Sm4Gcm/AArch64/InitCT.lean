@@ -133,7 +133,8 @@ theorem init_ct (v : GcmImpl) : ConstantTime isa initAArch64.pre initAArch64.pub
     (init1_ok q0.symm q1.symm q2.symm (by rw [← qsp]; exact hsp) hrd₂ hwr₂ d_kc (by rw [← qsp]; exact sK)
       (by rw [← qsp]; exact sC) fK fC)
     fun τ₁ τ₂ ⟨k₁, x19₁, x21₁, sp₁, rd₁, wr₁⟩ ⟨k₂, x19₂, x21₂, sp₂, rd₂, wr₂⟩ => ?_
-  refine rel_seq (rel_key k₁ k₂ (by rw [sp₁, sp₂, qsp])) (key_call k₁) (key_call k₂)
+  refine rel_seq (rel_key v.ctr.key k₁ k₂ (by rw [sp₁, sp₂, qsp])) (key_call v.ctr.key k₁)
+      (key_call v.ctr.key k₂)
     fun τ₁' τ₂' g₁ g₂ => ?_
   have pv : ∀ {σ τ τ' : State}, σ.wr = [⟨Ctx, 256⟩, ⟨W, 768⟩] → τ.wr = σ.wr → τ.sp = σ.sp →
       σ.sp = σ₁.sp → KeyPost τ K Ctx τ' → τ.gpr .x19 = W → τ.gpr .x21 = Ctx →

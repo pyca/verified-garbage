@@ -10,6 +10,7 @@ import VerifiedGarbage.Proof.Sm4.AArch64.Ctr32Verified
 import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Modes
 public import VerifiedGarbage.Proof.Framework.QualifiedName
 import VerifiedGarbage.Proof.Sm4.AArch64.Serial.Key
+import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Key
 import VerifiedGarbage.Proof.Sm4.AArch64.Ctr32Lit
 import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
@@ -40,7 +41,10 @@ The functions are generic over the implementation of `vg_sm4_ctr32` they
 call (`CtrImpl`): the bitsliced one of the baseline ISA (`CtrImpl.scalar`),
 whose frame is the 3264 bytes, and the one with the Armv8 SM4 instructions
 (`CtrImpl.sm4`, `vg_sm4_ctr32_sm4`), whose frame of 224 bytes is within
-them.
+them. Each comes with the implementation of `vg_sm4_expand_key` that needs
+the same CPU features (`KeyImpl`: `vg_sm4_expand_key`, and
+`vg_sm4_expand_key_sm4` with the SM4 instructions), which `vg_sm4_gcm_init`
+calls.
 -/
 
 @[expose] public section
@@ -176,14 +180,65 @@ theorem ctrCode_keepsV : ctrCode.allInstrs keepsV = true := by lit_decide
 
 theorem ctrCodeSm4_keepsV : ctrCodeSm4.allInstrs keepsV = true := by lit_decide
 
+theorem key_ok : ∀ s, keyF.pre s → ∃ t s', Exec isa keyCode s t s' ∧ abiPreserved s s' ∧ keyF.post s s' :=
+  (Proof.Sm4.AArch64.Serial.expandKey_verified.of_implies keyF_implies).1
+
+theorem key_ct : ConstantTime isa keyF.pre keyF.pub keyCode :=
+  (Proof.Sm4.AArch64.Serial.expandKey_verified.of_implies keyF_implies).2.1
+
+theorem keySm4_ok : ∀ s, keyF.pre s → ∃ t s', Exec isa keyCodeSm4 s t s' ∧ abiPreserved s s' ∧ keyF.post s s' :=
+  (Proof.Sm4.AArch64.Sm4e.expandKey_verified.of_implies keyF_implies).1
+
+theorem keySm4_ct : ConstantTime isa keyF.pre keyF.pub keyCodeSm4 :=
+  (Proof.Sm4.AArch64.Sm4e.expandKey_verified.of_implies keyF_implies).2.1
+
+theorem key_depth : 16 * keyCode.aarch64Depth ≤ 3264 := by lit_decide
+
+theorem keySm4_depth : 16 * keyCodeSm4.aarch64Depth ≤ 3264 := by lit_decide
+
+/-- `vg_sm4_expand_key`'s implementations keep the low halves of `v8`–`v15`. -/
+theorem keyCode_keepsV : keyCode.allInstrs keepsV = true := by lit_decide
+
+theorem keyCodeSm4_keepsV : keyCodeSm4.allInstrs keepsV = true := by lit_decide
+
+/-- An implementation of `vg_sm4_expand_key` on AArch64. -/
+structure KeyImpl where
+  fn : Fn
+  ok : ∀ s, keyF.pre s → ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ keyF.post s s'
+  ct : ConstantTime isa keyF.pre keyF.pub fn.code
+  depth : 16 * fn.code.aarch64Depth ≤ 3264
+  keepsV : fn.code.allInstrs keepsV = true
+
+namespace KeyImpl
+
+/-- `vg_sm4_expand_key`, in the baseline ISA. -/
+def scalar : KeyImpl where
+  fn := ⟨"vg_sm4_expand_key", keyCode⟩
+  ok := key_ok
+  ct := key_ct
+  depth := key_depth
+  keepsV := keyCode_keepsV
+
+/-- `vg_sm4_expand_key_sm4`, with the Armv8 SM4 instructions. -/
+def sm4 : KeyImpl where
+  fn := ⟨"vg_sm4_expand_key_sm4", keyCodeSm4⟩
+  ok := keySm4_ok
+  ct := keySm4_ct
+  depth := keySm4_depth
+  keepsV := keyCodeSm4_keepsV
+
+end KeyImpl
+
 /-- An implementation of `vg_sm4_ctr32` on AArch64, whose frames are within
-the 3264 bytes below the stack pointer. -/
+the 3264 bytes below the stack pointer, and the implementation of
+`vg_sm4_expand_key` for the same CPUs. -/
 structure CtrImpl where
   fn : Fn
   ok : ∀ s, ctrF.pre s → ∃ t s', Exec isa fn.code s t s' ∧ abiPreserved s s' ∧ ctrF.post s s'
   ct : ConstantTime isa ctrF.pre ctrF.pub fn.code
   depth : 16 * fn.code.aarch64Depth ≤ 3264
   keepsV : fn.code.allInstrs keepsV = true
+  key : KeyImpl
   suffix : String
 
 namespace CtrImpl
@@ -195,6 +250,7 @@ def scalar : CtrImpl where
   ct := ctr_ct
   depth := ctr_depth
   keepsV := ctrCode_keepsV
+  key := .scalar
   suffix := ""
 
 /-- `vg_sm4_ctr32_sm4`, with the Armv8 SM4 instructions. -/
@@ -204,20 +260,10 @@ def sm4 : CtrImpl where
   ct := ctrSm4_ct
   depth := ctrSm4_depth
   keepsV := ctrCodeSm4_keepsV
+  key := .sm4
   suffix := "_sm4"
 
 end CtrImpl
-
-theorem key_ok : ∀ s, keyF.pre s → ∃ t s', Exec isa keyCode s t s' ∧ abiPreserved s s' ∧ keyF.post s s' :=
-  (Proof.Sm4.AArch64.Serial.expandKey_verified.of_implies keyF_implies).1
-
-theorem key_ct : ConstantTime isa keyF.pre keyF.pub keyCode :=
-  (Proof.Sm4.AArch64.Serial.expandKey_verified.of_implies keyF_implies).2.1
-
-theorem key_depth : 16 * keyCode.aarch64Depth ≤ 3264 := by lit_decide
-
-/-- `vg_sm4_expand_key` keeps the low halves of `v8`–`v15`. -/
-theorem keyCode_keepsV : keyCode.allInstrs keepsV = true := by lit_decide
 
 theorem toNat_ofNat_lt {n : Nat} (h : n < 2 ^ 64) : (BitVec.ofNat 64 n).toNat = n := by
   rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt h
@@ -324,21 +370,21 @@ theorem KeyCall.pre {s : State} {K C : Addr} (h : KeyCall s K C) :
     State.callEntry_sp, AesGcm.AArch64.callEntry_x0, AesGcm.AArch64.callEntry_x1, h.x0, h.x1]
   exact ⟨h.sp, trivial, trivial, h.kc, h.sk, h.sc, h.kw, h.cw⟩
 
-theorem key_call {s : State} {K C : Addr} (h : KeyCall s K C) :
-    WP isa (.call "vg_sm4_expand_key" keyCode) s (KeyPost s K C) := by
-  refine WP.callF (k := keyF) key_ok (rd := [⟨K, 16⟩]) (wr := [⟨C, 128⟩]) h.pre h.reads h.writes ?_
-    (by lit_decide)
+theorem key_call (c : KeyImpl) {s : State} {K C : Addr} (h : KeyCall s K C) :
+    WP isa (.call c.fn.name c.fn.code) s (KeyPost s K C) := by
+  refine WP.callF (k := keyF) c.ok (rd := [⟨K, 16⟩]) (wr := [⟨C, 128⟩]) h.pre h.reads h.writes ?_
+    (Nat.lt_of_le_of_lt c.depth (by decide))
   intro s' hrd hwr hsp hf hsaved hpost
   simp only [keyF, State.withRegions_gpr, State.withRegions_mem, State.callEntry_mem,
     AesGcm.AArch64.callEntry_x0, AesGcm.AArch64.callEntry_x1, h.x0, h.x1] at hpost
-  exact ⟨hrd, hwr, hsp, hsaved, Frame.below_mono hf key_depth (by decide), hpost⟩
+  exact ⟨hrd, hwr, hsp, hsaved, Frame.below_mono hf c.depth (by decide), hpost⟩
 
-theorem key_rel {P : State → State → Prop}
+theorem key_rel (c : KeyImpl) {P : State → State → Prop}
     (h : ∀ s₁ s₂, P s₁ s₂ → ∃ K C : Addr, KeyCall s₁ K C ∧ KeyCall s₂ K C ∧ s₁.sp = s₂.sp) :
-    RelCT isa P (.call "vg_sm4_expand_key" keyCode) fun _ _ => True := by
+    RelCT isa P (.call c.fn.name c.fn.code) fun _ _ => True := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   obtain ⟨K, C, h₁, h₂, hsp⟩ := h s₁ s₂ hp
-  refine RelCT.call (P := fun a b => a = s₁ ∧ b = s₂) key_ok key_ct [⟨K, 16⟩] [⟨C, 128⟩]
+  refine RelCT.call (P := fun a b => a = s₁ ∧ b = s₂) c.ok c.ct [⟨K, 16⟩] [⟨C, 128⟩]
     (fun a b hab => ?_) _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂
   obtain ⟨rfl, rfl⟩ := hab
   refine ⟨h₁.pre, h₂.pre, ?_, h₁.reads, h₁.writes, h₂.reads, h₂.writes⟩
@@ -348,8 +394,8 @@ theorem key_rel {P : State → State → Prop}
 
 /-! ## The implementations, together -/
 
-/-- What an SM4-GCM function calls besides `vg_sm4_expand_key`: an
-implementation of `vg_ghash` and one of `vg_sm4_ctr32`. -/
+/-- What an SM4-GCM function calls: an implementation of `vg_ghash`, and one
+of `vg_sm4_ctr32` with its `vg_sm4_expand_key`. -/
 structure GcmImpl where
   gh : AesGcm.AArch64.GhashImpl
   ctr : CtrImpl
@@ -358,7 +404,7 @@ namespace GcmImpl
 
 variable (v : GcmImpl)
 
-def callees : Callees := ⟨v.gh.fn, v.ctr.fn⟩
+def callees : Callees := ⟨v.gh.fn, v.ctr.fn, v.ctr.key.fn⟩
 
 /-- What the names of the SM4-GCM functions end with: the suffix of each
 implementation that is not the baseline's, after its interface's tag

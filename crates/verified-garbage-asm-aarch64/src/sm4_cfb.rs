@@ -3,6 +3,46 @@
 //! `assembly/sm4_cfb.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_sm4_cfb128_encrypt_sm4` requires (`Artifact.features`).
+pub const VG_SM4_CFB128_ENCRYPT_SM4_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SM4);
+
+/// SM4-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments; GB/T 32907-2016 §7.1) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.cfbEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 112 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sm4` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_cfb128_encrypt_sm4(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd101c3ff,0x910003e4,0x91000085,0xf90008b3,0xf9000cb4,0xf90010b5,0xf90014b6,0xf90018b7
+.inst 0xf9001cb8,0xf90020b9,0xf90024ba,0xf90028bb,0xf9002cbc,0x91000033,0x91000057,0x91000078
+.inst 0xf9400266,0xf90000a6,0xf9400666,0xf90004a6
+cbz x24, 20f
+22:
+.inst 0x3dc00010,0x3dc00411,0x3dc00812,0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17
+.inst 0x3dc000a0,0x6e200800,0xcec08600,0xcec08620,0xcec08640,0xcec08660,0xcec08680,0xcec086a0
+.inst 0xcec086c0,0xcec086e0,0x4e200800,0x6e004000,0x3d8000a0,0xf94002e6,0xf94000a7,0xca0700c6
+.inst 0xf90002e6,0xf94006e6,0xf94004a7,0xca0700c6,0xf90006e6,0xf94002e6,0xf90000a6,0xf94006e6
+.inst 0xf90004a6,0x910042f7,0xd1000718
+cbnz x24, 22b
+b 21f
+20:
+21:
+.inst 0xf94000a6,0xf9000266,0xf94004a6,0xf9000666,0xf94008b3,0xf9400cb4,0xf94010b5,0xf94014b6
+.inst 0xf94018b7,0xf9401cb8,0xf94020b9,0xf94024ba,0xf94028bb,0xf9402cbc,0xd2800011,0x910003f0
+.inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0x9101c3ff
+.inst 0xd65f03c0
+.p2align 6",
+    )
+}
+
 /// SM4-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments; GB/T 32907-2016 §7.1) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`.
 ///
 /// Contract: `VG.Spec.Sm4.cfbEncryptContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
@@ -493,6 +533,54 @@ b 217f
     )
 }
 
+/// The CPU features `vg_sm4_cfb128_encrypt_final_sm4` requires (`Artifact.features`).
+pub const VG_SM4_CFB128_ENCRYPT_FINAL_SM4_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SM4);
+
+/// SM4-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments; GB/T 32907-2016 §7.1) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 112 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sm4` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_cfb128_encrypt_final_sm4(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd101c3ff,0x910003e4,0x91000085,0xf90008b3,0xf9000cb4,0xf90010b5,0xf90014b6,0xf90018b7
+.inst 0xf9001cb8,0xf90020b9,0xf90024ba,0xf90028bb,0xf9002cbc,0x91000033,0x91000057,0x91000078
+.inst 0xf9400266,0xf90000a6,0xf9400666,0xf90004a6
+cbz x24, 20f
+22:
+.inst 0x3dc00010,0x3dc00411,0x3dc00812,0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17
+.inst 0x3dc000a0,0x6e200800,0xcec08600,0xcec08620,0xcec08640,0xcec08660,0xcec08680,0xcec086a0
+.inst 0xcec086c0,0xcec086e0,0x4e200800,0x6e004000,0x3d8000a0,0xd344ff08
+cbz x8, 23f
+.inst 0xf94002e6,0xf94000a7,0xca0700c6,0xf90002e6,0xf94006e6,0xf94004a7,0xca0700c6,0xf90006e6
+.inst 0xf94002e6,0xf90000a6,0xf94006e6,0xf90004a6,0x910042f7,0xd1004318
+b 24f
+23:
+.inst 0x910000a9
+25:
+.inst 0x39400126,0x394002e7,0xca0600e7,0x390002e7,0x91000529,0x910006f7,0xd1000718
+cbnz x24, 25b
+24:
+cbnz x24, 22b
+b 21f
+20:
+21:
+.inst 0xf94000a6,0xf9000266,0xf94004a6,0xf9000666,0xf94008b3,0xf9400cb4,0xf94010b5,0xf94014b6
+.inst 0xf94018b7,0xf9401cb8,0xf94020b9,0xf94024ba,0xf94028bb,0xf9402cbc,0xd2800011,0x910003f0
+.inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0x9101c3ff
+.inst 0xd65f03c0
+.p2align 6",
+    )
+}
+
 /// SM4-CFB128 encryption (NIST SP 800-38A §6.3, with 128-bit segments; GB/T 32907-2016 §7.1) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `P₁ … Pₙ₋₁` at `data` with `Cⱼ = Pⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Pₙ*` of `u` bytes with `Cₙ* = Pₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
 ///
 /// Contract: `VG.Spec.Sm4.cfbEncryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
@@ -672,6 +760,55 @@ b 22f
 .inst 0xa91b4611,0xa91c4611,0xa91d4611,0xa91e4611,0xa91f4611,0x913003f0,0xa9004611,0xa9014611
 .inst 0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0xa9074611,0xa9084611,0xa9094611
 .inst 0xa90a4611,0xa90b4611,0x913303ff,0xd65f03c0
+.p2align 6",
+    )
+}
+
+/// The CPU features `vg_sm4_cfb128_decrypt_final_sm4` requires (`Artifact.features`).
+pub const VG_SM4_CFB128_DECRYPT_FINAL_SM4_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SM4);
+
+/// SM4-CFB128 decryption (NIST SP 800-38A §6.3, with 128-bit segments; GB/T 32907-2016 §7.1) of the last piece of a message, of any length, in place: replaces its whole 16-byte blocks `C₁ … Cₙ₋₁` at `data` with `Pⱼ = Cⱼ ⊕ CIPH_K(Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and a partial last segment `Cₙ*` of `u` bytes with `Pₙ* = Cₙ* ⊕ MSB_u(Oₙ)`, `Oₙ = CIPH_K(Cₙ₋₁)` (an extension of SP 800-38A, which defines CFB only for whole segments, by the rule of §6.4 and §6.5). Replaces `*iv` with the last ciphertext block, the last whole block at `data` on entry, so that a further call continues the message, if `len` is a multiple of 16 (leaving it unchanged if `len = 0`), and otherwise with `Oₙ`: keystream, to be wiped, after which the message must end. `CIPH_K` is SM4 encryption under the schedule written by `vg_sm4_expand_key`.
+///
+/// Contract: `VG.Spec.Sm4.cfbDecryptFinalContract`. Constant time: only the pointers and `len` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `len` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 112 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sm4` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_cfb128_decrypt_final_sm4(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut u8, len: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd101c3ff,0x910003e4,0x91000085,0xf90008b3,0xf9000cb4,0xf90010b5,0xf90014b6,0xf90018b7
+.inst 0xf9001cb8,0xf90020b9,0xf90024ba,0xf90028bb,0xf9002cbc,0x91000033,0x91000057,0x91000078
+.inst 0xf9400266,0xf90000a6,0xf9400666,0xf90004a6
+cbz x24, 20f
+22:
+.inst 0x3dc00010,0x3dc00411,0x3dc00812,0x3dc00c13,0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17
+.inst 0x3dc000a0,0x6e200800,0xcec08600,0xcec08620,0xcec08640,0xcec08660,0xcec08680,0xcec086a0
+.inst 0xcec086c0,0xcec086e0,0x4e200800,0x6e004000,0x3d8000a0,0xd344ff08
+cbz x8, 23f
+.inst 0xf94002e6,0xf94000a7,0xca0700c6,0xf90002e6,0xf94006e6,0xf94004a7,0xca0700c6,0xf90006e6
+.inst 0xf94000a6,0xf94002e7,0xca0700c6,0xf90000a6,0xf94004a6,0xf94006e7,0xca0700c6,0xf90004a6
+.inst 0x910042f7,0xd1004318
+b 24f
+23:
+.inst 0x910000a9
+25:
+.inst 0x39400126,0x394002e7,0xca0600e7,0x390002e7,0x91000529,0x910006f7,0xd1000718
+cbnz x24, 25b
+24:
+cbnz x24, 22b
+b 21f
+20:
+21:
+.inst 0xf94000a6,0xf9000266,0xf94004a6,0xf9000666,0xf94008b3,0xf9400cb4,0xf94010b5,0xf94014b6
+.inst 0xf94018b7,0xf9401cb8,0xf94020b9,0xf94024ba,0xf94028bb,0xf9402cbc,0xd2800011,0x910003f0
+.inst 0xa9004611,0xa9014611,0xa9024611,0xa9034611,0xa9044611,0xa9054611,0xa9064611,0x9101c3ff
+.inst 0xd65f03c0
 .p2align 6",
     )
 }

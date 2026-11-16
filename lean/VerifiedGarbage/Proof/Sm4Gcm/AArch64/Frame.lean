@@ -105,7 +105,7 @@ theorem init_wp (v : GcmImpl) {s : State} (hp : initAArch64.pre s) :
     · rw [rd₂', wr₂']
       exact covers_cons pK (covers_left (covers_prefix pC (by decide)))
     · rw [wr₂']; exact covers_prefix pC (by decide)
-  refine WP.seq (WP.mono (key_call kc) fun s₃ g => ?_)
+  refine WP.seq (WP.mono (key_call v.ctr.key kc) fun s₃ g => ?_)
   have g19 : s₃.gpr .x19 = W := by rw [g.saved .x19 (by decide) (by decide), x19₂]
   have g21 : s₃.gpr .x21 = Ctx := by rw [g.saved .x21 (by decide) (by decide), x21₂]
   have rd₃ : s₃.rd = s.rd := g.rd.trans rd₂'
@@ -263,7 +263,7 @@ def GcmImpl.features (v : GcmImpl) : List String := v.gh.features
 /-! ## v8–v15 -/
 
 theorem init_keepsV (v : GcmImpl) : (init v.callees).allInstrs keepsV = true := by
-  simp only [init, ctrCall, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, keyCode_keepsV]; lit_decide
+  simp only [init, ctrCall, GcmImpl.callees, Code.allInstrs, v.ctr.keepsV, v.ctr.key.keepsV]; lit_decide
 
 theorem streamEncrypt_keepsV (v : GcmImpl) : (streamEncrypt v.callees).allInstrs keepsV = true := by
   simp only [streamEncrypt, encBody, fo, textAbs, crypt, crSeg1, crSeg2, crTail, ctrCall, ghCall, absorb,

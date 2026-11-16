@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Sm4.AArch64.EcbCall
 public import VerifiedGarbage.Proof.Sm4.AArch64.Verified
 public import VerifiedGarbage.Proof.Sm4.AArch64.PreparedVerified
 public import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Ecb
+public import VerifiedGarbage.Proof.Sm4.AArch64.Sm4e.Key
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
 
@@ -15,6 +16,10 @@ public import VerifiedGarbage.TCB.AArch64.Print
 namespace VG.Artifacts.Sm4.AArch64
 
 def artifacts : List Artifact := [
+  Spec.Sm4.expandKeyApi.artifact AArch64.target {
+    suffix := "_sm4"
+    code := Impl.Sm4.AArch64.Sm4e.expandKey
+    verified := Proof.Sm4.AArch64.Sm4e.expandKey_verified },
   Spec.Sm4.expandKeyApi.artifact AArch64.target {
     code := Impl.Sm4.AArch64.Serial.expandKey
     verified := Proof.Sm4.AArch64.Serial.expandKey_verified },

@@ -1385,7 +1385,7 @@ yours to keep:
 
 <td>✅</td>
 
-<td>✅</td>
+<td>✅ SM4</td>
 
 <td>✅</td>
 

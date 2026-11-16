@@ -4,6 +4,7 @@ public import VerifiedGarbage.Impl.AesGcm.AArch64
 public import VerifiedGarbage.Impl.Sm4.AArch64.Ctr32
 public import VerifiedGarbage.Impl.Sm4.AArch64.Sm4e.Modes
 public import VerifiedGarbage.Impl.Sm4.AArch64.Serial.Key
+public import VerifiedGarbage.Impl.Sm4.AArch64.Sm4e.Key
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
@@ -13,8 +14,8 @@ The SM4-GCM functions of `Spec/Sm4/Gcm/Contract.lean`, composed of calls of
 the verified `vg_sm4_expand_key`, `vg_sm4_ctr32` and `vg_ghash`, as AES-GCM's
 (`Impl/AesGcm/AArch64.lean`), whose loops, copies, comparisons and register
 conventions they share. They are generic over the implementations of
-`vg_sm4_ctr32` and `vg_ghash` they call (`Callees`), and emitted once for
-each pair.
+`vg_sm4_ctr32`, `vg_sm4_expand_key` and `vg_ghash` they call (`Callees`),
+and emitted once for each choice of them.
 
 They differ from AES-GCM's in what they call and where:
 
@@ -47,10 +48,15 @@ def ctrCodeSm4 : Prog isa := Impl.StackScratch.AArch64.withStackScratchWiped 224
 /-- `vg_sm4_expand_key`'s code (as its artifact, `Artifacts/Sm4/AArch64.lean`). -/
 def keyCode : Prog isa := Impl.Sm4.AArch64.Serial.expandKey
 
-/-- The implementations of `vg_ghash` and `vg_sm4_ctr32` called. -/
+/-- `vg_sm4_expand_key_sm4`'s code, with the Armv8 SM4 instructions. -/
+def keyCodeSm4 : Prog isa := Impl.Sm4.AArch64.Sm4e.expandKey
+
+/-- The implementations of `vg_ghash`, `vg_sm4_ctr32` and `vg_sm4_expand_key`
+called. -/
 structure Callees where
   gh : Fn
   ctr : Fn
+  key : Fn
 
 variable (c : Callees)
 
@@ -191,7 +197,7 @@ def initSeg2 : List Instr :=
 
 def init : Prog isa :=
   .seq (.block initSeg1)
-  (.seq (.call "vg_sm4_expand_key" keyCode)
+  (.seq (.call c.key.name c.key.code)
   (.seq (.block initSeg2)
   (.seq (ctrCall c)
     (.block restore))))

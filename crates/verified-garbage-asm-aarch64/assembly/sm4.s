@@ -4,6 +4,40 @@
 // `src/` as its machine code, which `lean/VerifiedGarbage/TCB/<ISA>/Encode.lean`
 // gives.
 
+vg_sm4_expand_key_sm4:
+	ldr q0, [x0, #0]
+	rev32 v0.16b, v0.16b
+	adrp x9, {VG_SM4_FK_CK}
+	add x9, x9, {VG_SM4_FK_CK}
+	ldr q1, [x9, #0]
+	eor v0.16b, v0.16b, v1.16b
+	ldr q1, [x9, #16]
+	sm4ekey v0.4s, v0.4s, v1.4s
+	str q0, [x1, #0]
+	ldr q1, [x9, #32]
+	sm4ekey v0.4s, v0.4s, v1.4s
+	str q0, [x1, #16]
+	ldr q1, [x9, #48]
+	sm4ekey v0.4s, v0.4s, v1.4s
+	str q0, [x1, #32]
+	ldr q1, [x9, #64]
+	sm4ekey v0.4s, v0.4s, v1.4s
+	str q0, [x1, #48]
+	ldr q1, [x9, #80]
+	sm4ekey v0.4s, v0.4s, v1.4s
+	str q0, [x1, #64]
+	ldr q1, [x9, #96]
+	sm4ekey v0.4s, v0.4s, v1.4s
+	str q0, [x1, #80]
+	ldr q1, [x9, #112]
+	sm4ekey v0.4s, v0.4s, v1.4s
+	str q0, [x1, #96]
+	ldr q1, [x9, #128]
+	sm4ekey v0.4s, v0.4s, v1.4s
+	str q0, [x1, #112]
+	ret
+	.p2align 6
+
 vg_sm4_expand_key:
 	movz x6, #37078, lsl #0
 	movk x6, #65257, lsl #16

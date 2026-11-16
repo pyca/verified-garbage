@@ -3,6 +3,35 @@
 //! `assembly/sm4.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_sm4_expand_key_sm4` requires (`Artifact.features`).
+pub const VG_SM4_EXPAND_KEY_SM4_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SM4);
+
+/// SM4 key expansion (draft-ribose-cfrg-sm4-10 §7.3): expands the 16-byte key at `key` into the 32 round keys, written to `schedule` as 32 little-endian 32-bit words `rk_0`, …, `rk_31`.
+///
+/// Contract: `VG.Spec.Sm4.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.
+///
+/// # Safety
+///
+/// * `key` must be valid for reads of 16 bytes.
+/// * `schedule` must be valid for reads and writes of 128 bytes.
+/// * `schedule` must not overlap `key` (distinct Rust objects never do).
+/// * Neither `key` nor `schedule` may wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sm4` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_expand_key_sm4(key: *const [u8; 16], schedule: *mut [u8; 128]) {
+    core::arch::naked_asm!(
+        r".inst 0x3dc00000,0x6e200800",
+        concat!("adrp x9, ", vg_sym_page!("{VG_SM4_FK_CK}")),
+        concat!("add x9, x9, ", vg_sym_pageoff!("{VG_SM4_FK_CK}")),
+        r".inst 0x3dc00121,0x6e211c00,0x3dc00521,0xce61c800,0x3d800020,0x3dc00921,0xce61c800,0x3d800420
+.inst 0x3dc00d21,0xce61c800,0x3d800820,0x3dc01121,0xce61c800,0x3d800c20,0x3dc01521,0xce61c800
+.inst 0x3d801020,0x3dc01921,0xce61c800,0x3d801420,0x3dc01d21,0xce61c800,0x3d801820,0x3dc02121
+.inst 0xce61c800,0x3d801c20,0xd65f03c0
+.p2align 6",
+        VG_SM4_FK_CK = sym super::consts::VG_SM4_FK_CK,
+    )
+}
+
 /// SM4 key expansion (draft-ribose-cfrg-sm4-10 §7.3): expands the 16-byte key at `key` into the 32 round keys, written to `schedule` as 32 little-endian 32-bit words `rk_0`, …, `rk_31`.
 ///
 /// Contract: `VG.Spec.Sm4.expandKeyContract`. Constant time: only pointers may affect timing, not key bytes.

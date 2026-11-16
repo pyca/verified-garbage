@@ -3,6 +3,56 @@
 //! `assembly/sm4_cbc.s`.
 #![allow(dead_code)]
 
+/// The CPU features `vg_sm4_cbc_encrypt_chained_sm4` requires (`Artifact.features`).
+pub const VG_SM4_CBC_ENCRYPT_CHAINED_SM4_FEATURES: verified_garbage_cpu::Features = verified_garbage_cpu::Features(verified_garbage_cpu::feature::SM4);
+
+/// SM4-CBC encryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.1) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`. No padding is added.
+///
+/// Contract: `VG.Spec.Sm4.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.
+///
+/// # Safety
+///
+/// * `schedule` must be valid for reads of 128 bytes.
+/// * `iv` must be valid for reads and writes of 16 bytes.
+/// * `data` must be valid for reads and writes of `16 * n` bytes.
+/// * `iv` and `data` must not overlap each other or `schedule` (distinct Rust objects never do).
+/// * None of `schedule`, `iv` and `data` may overlap the 112 bytes of stack below the stack pointer, or wrap around the end of the address space (no Rust object does).
+/// * The CPU must support the `sm4` target feature.
+#[unsafe(naked)]
+pub(crate) unsafe extern "C" fn vg_sm4_cbc_encrypt_chained_sm4(schedule: *const [u8; 128], iv: *mut [u8; 16], data: *mut [u8; 16], n: usize) {
+    core::arch::naked_asm!(
+        r".inst 0xd101c3ff,0x910003e4,0x91000085,0xf90008b3,0xf9000cb4,0xf90010b5,0xf90014b6,0xf90018b7
+.inst 0xf9001cb8,0xf90020b9,0xf90024ba,0xf90028bb,0xf9002cbc,0x91000033
+cbz x3, 20f
+.inst 0xf9400046,0xf9400027,0xca0700c6,0xf9000046,0xf9400446,0xf9400427,0xca0700c6,0xf9000446
+b 21f
+20:
+21:
+.inst 0x91000057,0x91000078
+cbz x24, 22f
+24:
+.inst 0xf94002e6,0xf90000a6,0xf94006e6,0xf90004a6,0x3dc00010,0x3dc00411,0x3dc00812,0x3dc00c13
+.inst 0x3dc01014,0x3dc01415,0x3dc01816,0x3dc01c17,0x3dc000a0,0x6e200800,0xcec08600,0xcec08620
+.inst 0xcec08640,0xcec08660,0xcec08680,0xcec086a0,0xcec086c0,0xcec086e0,0x4e200800,0x6e004000
+.inst 0x3d8000a0,0xf94000a6,0xf90002e6,0xf94004a6,0xf90006e6,0xd1000718
+cbz x24, 25f
+.inst 0xf9400ae6,0xf94000a7,0xca0700c6,0xf9000ae6,0xf9400ee6,0xf94004a7,0xca0700c6,0xf9000ee6
+b 26f
+25:
+26:
+.inst 0x910042f7
+cbnz x24, 24b
+.inst 0xf94000a6,0xf9000266,0xf94004a6,0xf9000666
+b 23f
+22:
+23:
+.inst 0xf94008b3,0xf9400cb4,0xf94010b5,0xf94014b6,0xf94018b7,0xf9401cb8,0xf94020b9,0xf94024ba
+.inst 0xf94028bb,0xf9402cbc,0xd2800011,0x910003f0,0xa9004611,0xa9014611,0xa9024611,0xa9034611
+.inst 0xa9044611,0xa9054611,0xa9064611,0x9101c3ff,0xd65f03c0
+.p2align 6",
+    )
+}
+
 /// SM4-CBC encryption (NIST SP 800-38A §6.2, GB/T 32907-2016 §7.1) of whole blocks, in place: replaces the `n` 16-byte blocks `P₁ … Pₙ` at `data` with `Cⱼ = CIPH_K(Pⱼ ⊕ Cⱼ₋₁)`, where `C₀` is the block at `*iv`, and `*iv` with `Cₙ` (leaving it unchanged if `n = 0`), so that a further call continues the message. `CIPH_K` is SM4 under the schedule written by `vg_sm4_expand_key`. No padding is added.
 ///
 /// Contract: `VG.Spec.Sm4.cbcEncryptChainedContract`. Constant time: only the pointers and `n` may affect timing, not the schedule, the chaining value or the data.

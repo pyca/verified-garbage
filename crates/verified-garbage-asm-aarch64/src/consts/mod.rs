@@ -135,6 +135,10 @@ mod vg_sha512_k;
 pub use vg_sha512_k::VG_SHA512_K;
 
 #[rustfmt::skip]
+mod vg_sm4_fk_ck;
+pub use vg_sm4_fk_ck::VG_SM4_FK_CK;
+
+#[rustfmt::skip]
 mod vg_triple_des_key_select;
 pub use vg_triple_des_key_select::VG_TRIPLE_DES_KEY_SELECT;
 

@@ -518,6 +518,10 @@ GROUPS = {
         "lib": ["aead::sm4_gcm"],
         "tests": ["rfc8998::sm4_gcm", "wycheproof::sm4_gcm"],
     },
+    "sm4_ofb": {
+        "lib": [],
+        "tests": ["draft_ribose_sm4::sm4_ofb"],
+    },
     "triple_des_cbc": {
         "lib": [],
         "tests": ["cavp::triple_des_cbc"],

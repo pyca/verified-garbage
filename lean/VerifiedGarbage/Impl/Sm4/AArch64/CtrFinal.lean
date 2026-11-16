@@ -1,20 +1,23 @@
 module
 
 public import VerifiedGarbage.Impl.Sm4.AArch64.Ctr
+public import VerifiedGarbage.Impl.Sm4.AArch64.Sm4e.Modes
 public import VerifiedGarbage.Impl.AesCtr.AArch64.Final
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 
 /-!
 # SM4-CTR of a message's last piece: AArch64 implementation
 
-`ctrFinal` (schedule = x0, ctr = x1, data = x2, len = x3, save = x4): the
-code of `vg_sm4_ctr_final`, whose registration frames it with a buffer of its
+`ctrFinal name whole` (schedule = x0, ctr = x1, data = x2, len = x3,
+save = x4): the code of `vg_sm4_ctr_final`, around calls of an
+implementation of `vg_sm4_ctr`, the function `name` with the code `whole`
+(the bitsliced one, `ctrFramed`, or the one with the Armv8 SM4
+instructions, `ctrFramedSm4`). Its registration frames it with a buffer of its
 own on the stack, `save`, of 80 bytes, passed in `x4`:
 the caller's callee-saved registers and the return address, then a block of
 the code's own. It is AES-CTR's final function's
 (`Impl/AesCtr/AArch64/Final.lean`) with SM4's arguments, around calls
-of `vg_sm4_ctr`, framed by its own working space on the stack
-(`ctrFramed`):
+of `vg_sm4_ctr`, framed by its own working space on the stack:
 
 1. the registers saved in `save` (AES-CFB's final functions' slots,
    `finalSaved`), and the arguments kept in `x19` (schedule), `x21` (ctr),
@@ -46,6 +49,9 @@ open VG.Impl.Modes.AArch64 (xorByte)
 /-- `vg_sm4_ctr`, with its working space on the stack. -/
 def ctrFramed : Prog isa := Impl.StackScratch.AArch64.withStackScratchWiped 3264 .x4 408 ctr
 
+/-- `vg_sm4_ctr_sm4`, with its working space on the stack. -/
+def ctrFramedSm4 : Prog isa := Impl.StackScratch.AArch64.withStackScratchWiped 224 .x4 28 Sm4e.ctr
+
 /-- The registers saved in `save`, at `x4`. -/
 def ctrFinalSave : List Instr := finalSaved.map fun (r, d) => .str .x r .x4 d
 
@@ -70,14 +76,16 @@ def ctrFinalTailArgs : List Instr :=
   .movz .x .x9 0 0 :: (zeroSlots.map fun p => .str .x p.1 .x25 p.2) ++ ctrFinalTailMoves
 
 /-- The partial last block: the output block `CIPH_K(Tₙ₊₁)` in the block of
-`save`, and its first `u` bytes XORed into the data. -/
-def ctrFinalTail : Prog isa :=
-  .seq (.block ctrFinalTailArgs) (.seq (.call "vg_sm4_ctr" ctrFramed)
+`save`, by a call of `vg_sm4_ctr`'s implementation `name`, `whole`, and its
+first `u` bytes XORed into the data. -/
+def ctrFinalTail (name : String) (whole : Prog isa) : Prog isa :=
+  .seq (.block ctrFinalTailArgs) (.seq (.call name whole)
     (.seq (.block tailKey) (.loop (.block (xorByte .x22 .x23)) (.nonzero .x .x23))))
 
-/-- `vg_sm4_ctr_final`. -/
-def ctrFinal : Prog isa :=
-  .seq (.block ctrFinalSetup) (.seq (.call "vg_sm4_ctr" ctrFramed)
-    (.seq (.ite (.zero .x .x23) (.block []) ctrFinalTail) (.block finalRestore)))
+/-- `vg_sm4_ctr_final`, around calls of `vg_sm4_ctr`'s implementation `name`,
+`whole`. -/
+def ctrFinal (name : String) (whole : Prog isa) : Prog isa :=
+  .seq (.block ctrFinalSetup) (.seq (.call name whole)
+    (.seq (.ite (.zero .x .x23) (.block []) (ctrFinalTail name whole)) (.block finalRestore)))
 
 end VG.Impl.Sm4.AArch64

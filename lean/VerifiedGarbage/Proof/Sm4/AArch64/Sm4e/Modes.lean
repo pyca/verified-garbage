@@ -62,8 +62,9 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 /-!
 # SM4's core for the modes with the Armv8 SM4 instructions
 
-`coreSpec d`: the core that transforms eight blocks with `sm4e`
-(`Impl.Sm4.AArch64.Sm4e.core d`) meets what the modes need of a core
+`coreSpec d`, `coreSpec1 d`: the cores that transform eight blocks, or one,
+with `sm4e` (`Impl.Sm4.AArch64.Sm4e.core d`, `core1 d`) meet what the modes
+need of a core
 (`Proof.Modes.AArch64.CoreSpec`), with the key a schedule and its cipher
 `Spec.Sm4.cipher` for encryption and `Spec.Sm4.invCipher` for decryption
 (`dirCipher`, as the bitsliced core's, `ModeCore.lean`).
@@ -74,9 +75,10 @@ the modes' registers, and the schedule readable and apart from every
 writable region, so that nothing a mode writes changes it (`ready_frame`).
 `KeyArgs` says the same at entry.
 
-`crypt` is ECB's pieces on the buffer: the round keys (`dirKeys_ok`), the
-eight blocks loaded (`ldData_ok`), the rounds (`crypt_ok`) and the blocks
-stored (`stData_ok`), which writes the buffer only.
+`crypt` is ECB's pieces on the buffer (`cryptBuf_wp`, for the eight
+registers of the one core or the one of the other): the round keys (`dirKeys_ok`), the blocks loaded
+(`ldData_ok`), the rounds (`crypt_ok`) and the blocks stored (`stData_ok`),
+which writes the buffer only.
 
 `ctr_verified`, `ctr32_verified`, `cbcDecryptChained_verified` and
 `cfbDecrypt_verified`: the modes' CTR, counter mode with `inc₃₂`, CBC
@@ -114,10 +116,11 @@ theorem keyArgs_congr {s s' : State} {rs : List Region} {k : Spec.Sm4.Schedule} 
     (hf : Frame rs s.mem s'.mem) : KeyArgs s' rs k :=
   ⟨Proof.Sm4.AArch64.keyArgs_congr h.1 hr hrd hwr hf, by rw [hwr, hr .x0 List.mem_cons_self]; exact h.2⟩
 
-theorem ready_frame (d : Dir) {s s' : State} {k : Spec.Sm4.Schedule} {rs : List Region} (h : Ready s k)
-    (hf : Frame rs s.mem s'.mem) (hw : WrIn rs s s') (hg : ∀ r, r ∉ modeRegs (core d) → s'.gpr r = s.gpr r) :
+theorem ready_frame {c : Impl.Modes.AArch64.Core} (h0 : Reg.x0 ∉ modeRegs c) {s s' : State}
+    {k : Spec.Sm4.Schedule} {rs : List Region} (h : Ready s k)
+    (hf : Frame rs s.mem s'.mem) (hw : WrIn rs s s') (hg : ∀ r, r ∉ modeRegs c → s'.gpr r = s.gpr r) :
     Ready s' k := by
-  have h0 : s'.gpr .x0 = s.gpr .x0 := hg .x0 (by cases d <;> decide)
+  have h0 : s'.gpr .x0 = s.gpr .x0 := hg .x0 h0
   obtain ⟨⟨p, hp, hk, hin, hfit, -⟩, hdis⟩ := h
   subst hp
   refine ⟨⟨s.gpr .x0, h0, ?_, by rw [hw.rd]; exact hin, hfit, fun _ hr => absurd hr List.not_mem_nil⟩,
@@ -127,6 +130,12 @@ theorem ready_frame (d : Dir) {s s' : State} {k : Spec.Sm4.Schedule} {rs : List 
     (by show 128 ≤ 2 ^ 64; omega_arith) hi).symm
   obtain ⟨w, hw', hsub⟩ := hw.sub r hr
   exact (hdis w hw').sub_right hsub
+
+/-- Nothing is prepared: the key is ready where it is. -/
+theorem ready_of_keyArgs {s : State} {rs : List Region} {k : Spec.Sm4.Schedule} (hk : KeyArgs s rs k) :
+    Ready s k := by
+  obtain ⟨⟨p, hp, hk', hin, hfit, -⟩, hdis⟩ := hk
+  exact ⟨⟨p, hp, hk', hin, hfit, fun _ hr => absurd hr List.not_mem_nil⟩, hdis⟩
 
 /-- The cipher of `d` on the 16 bytes at `p` is the specification's block
 function. -/
@@ -147,30 +156,31 @@ theorem dinv_done {m₀ m : Mem} {D : Addr} {n c : Nat} {F : Nat → Block} (h :
 
 theorem total_eq (d : Dir) : (core d).total = 28 := rfl
 
-theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B)
-    (hs : ScrIn s B (core d).total) (hr : Ready s k) :
-    WP isa (core d).crypt s fun s' => s'.gpr sb = B ∧
-      s'.gpr .x23 = s.gpr .x23 ∧ s'.gpr .x24 = s.gpr .x24 ∧ Ready s' k ∧
-      Frame [coreRegion (core d) B] s.mem s'.mem ∧
-      (∀ j < (core d).G, bytesAt s'.mem (bufAddr (core d) B j) 16 =
-        dirCipher d k (bytesAt s.mem (bufAddr (core d) B j) 16)) ∧
+/-- The blocks of the buffer at `B`, one for each register of `regs`, each
+replaced with its cipher: the buffer is within `16 n` writable bytes at `B`,
+and nothing else is written, no general-purpose register either. -/
+theorem cryptBuf_wp (d : Dir) {regs : List VReg} (hrs : regs = regs8 ∨ regs = [.v0]) {s : State} {B : Addr}
+    {k : Spec.Sm4.Schedule} {n : Nat} (hB : s.gpr sb = B) (hfB : B.toNat + 16 * n ≤ 2 ^ 64)
+    (hwB : (⟨B, 16 * n⟩ : Region) ∈ s.wr) (hn : regs.length ≤ n) (hr : Ready s k) :
+    WP isa (.block (cryptBuf regs d)) s fun s' => s'.gpr = s.gpr ∧ Ready s' k ∧
+      Frame [⟨B, 16 * regs.length⟩] s.mem s'.mem ∧
+      (∀ j < regs.length, bytesAt s'.mem (B + BitVec.ofNat 64 (16 * j)) 16 =
+        dirCipher d k (bytesAt s.mem (B + BitVec.ofNat 64 (16 * j)) 16)) ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hfB : B.toNat + 224 ≤ 2 ^ 64 := hs.fit
-  have hwB : (⟨B, 16 * 14⟩ : Region) ∈ s.wr := hs.wr
+  have hl : regs.length ≤ 8 := by rcases hrs with rfl | rfl <;> decide
   obtain ⟨⟨p, hp, hk, hin, hfit, -⟩, hdis⟩ := hr
   subst hp
-  have hbr := bregs_ok regs8 (.inl rfl)
-  show WP isa (.block (cryptBuf d)) s _
+  have hbr := bregs_ok regs hrs
   rw [cryptBuf, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   -- The round keys.
   refine WP.mono (dirKeys_ok d (s₀ := s) fun o ho =>
     ⟨_, List.mem_append_left _ hin, Offset.contains_base _ ho (by omega_using [ho])⟩)
     fun s₁ ⟨hK, g₁, m₁, rd₁, wr₁⟩ => ?_
   -- The blocks.
-  refine WP.mono (ldData_ok sb regs8 0 s₁ hbr.1 (by decide) fun j hj => by
+  refine WP.mono (ldData_ok sb regs 0 s₁ hbr.1 (by omega_using [hl]) fun j hj => by
     rw [rd₁, wr₁, g₁, hB]
-    have hj : j < 8 := hj
-    exact ⟨_, List.mem_append_right _ hwB, Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩)
+    exact ⟨_, List.mem_append_right _ hwB, Offset.contains_base _ (by omega_using [hj, hn])
+      (by omega_using [hj, hn, hfB])⟩)
     fun s₂ ⟨e₂, f₂⟩ => ?_
   have hK₂ : KeysOk (keyOf s d) s₂ := hK.of_v fun r => f₂.v _ (hbr.2 r)
   refine WP.mono (crypt_ok hbr hK₂) fun s₃ ⟨e₃, f₃⟩ => ?_
@@ -178,74 +188,106 @@ theorem crypt_wp (d : Dir) {s : State} {B : Addr} {k : Spec.Sm4.Schedule} (hB : 
   have m₃ : s₃.mem = s.mem := by rw [f₃.mem, f₂.mem, m₁]
   let F : Nat → Block := fun j =>
     outBlock (quads .enc (keyOf s d) 8 (ofBlock (blockAt s.mem (B + BitVec.ofNat 64 (16 * j)))))
-  have hF : ∀ j (h : j < regs8.length), ∀ t < 16, vbyte (s₃.v regs8[j]) t = (F (0 + 0 + j)).getD t 0 := by
+  have hF : ∀ j (h : j < regs.length), ∀ t < 16, vbyte (s₃.v regs[j]) t = (F (0 + 0 + j)).getD t 0 := by
     intro j h t ht
     rw [e₃ _ (List.getElem_mem h) (ofBlock (blockAt s.mem (B + BitVec.ofNat 64 (16 * (0 + 0 + j))))) (by
       rw [e₂ j h, rev32b_readW, g₁, hB, m₁, show 0 + 0 + j = 0 + j by omega_using []])]
     exact vbyte_out _ ht
-  refine WP.mono (stData_ok sb (m₀ := s.mem) (D := B) (n := 14) (c := 0) (F := F) (by decide) regs8 0 s₃
-    (by rw [g₃, hB]; simp) (by decide) (by decide) (by rw [f₃.wr, f₂.wr, wr₁]; exact hwB)
+  refine WP.mono (stData_ok sb (m₀ := s.mem) (D := B) (n := n) (c := 0) (F := F) (by omega_using [hfB]) regs 0 s₃
+    (by rw [g₃, hB]; simp) (by omega_using [hl]) (by omega_using [hn])
+    (by rw [f₃.wr, f₂.wr, wr₁]; exact hwB)
     (fun i _ => by rw [m₃, ite_eq_right (by omega_using [])]) hF)
     fun s₄ ⟨d₄, g₄, _, _, rd₄, wr₄, fr₄⟩ => ?_
   have g : s₄.gpr = s.gpr := by rw [g₄, g₃]
   have rd : s₄.rd = s.rd := by rw [rd₄, f₃.rd, f₂.rd, rd₁]
   have wr : s₄.wr = s.wr := by rw [wr₄, f₃.wr, f₂.wr, wr₁]
-  have hfr : Frame [coreRegion (core d) B] s.mem s₄.mem := by
+  have hfr : Frame [⟨B, 16 * regs.length⟩] s.mem s₄.mem := by
     intro x hx
-    have hx' : ¬ (x - B).toNat + 1 ≤ 128 := hx _ List.mem_cons_self
-    by_cases h224 : (x - B).toNat < 16 * 14
+    have hx' : ¬ (x - B).toNat + 1 ≤ 16 * regs.length := hx _ List.mem_cons_self
+    by_cases hxn : (x - B).toNat < 16 * n
     · have e : x = B + BitVec.ofNat 64 (x - B).toNat := by
         rw [BitVec.ofNat_toNat, BitVec.setWidth_eq, BitVec.add_comm, BitVec.sub_add_cancel]
-      rw [e, d₄ _ h224, ite_eq_right (by show ¬ (x - B).toNat < 16 * 8; omega_using [hx'])]
-    · rw [fr₄ x h224, m₃]
-  refine ⟨by rw [g, hB], by rw [g], by rw [g], ?_, hfr, fun j hj => ?_, rd, wr⟩
+      rw [e, d₄ _ hxn, ite_eq_right (by omega_using [hx'])]
+    · rw [fr₄ x hxn, m₃]
+  refine ⟨g, ?_, hfr, fun j hj => ?_, rd, wr⟩
   · refine ⟨⟨s.gpr .x0, by rw [g], ?_, by rw [rd]; exact hin, hfit, fun _ hr => absurd hr List.not_mem_nil⟩,
       by rw [wr, g]; exact hdis⟩
     rw [hk]
     exact (Proof.Sm4.scheduleAt_congr fun i hi => hfr.bytes (R := ⟨s.gpr .x0, 128⟩) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
-      exact (hdis _ hwB).sub_right (Region.sub_prefix (by cases d <;> decide)))
+      exact (hdis _ hwB).sub_right (Region.sub_prefix (by omega_using [hn])))
       (by show 128 ≤ 2 ^ 64; omega_arith) hi).symm
-  · have hj : j < 8 := hj
-    have ha : bufAddr (core d) B j = B + BitVec.ofNat 64 (16 * j) :=
-      congrArg (B + BitVec.ofNat 64 ·) (show 8 * 0 + 16 * j = 16 * j by omega_using [])
-    rw [ha, dirCipher_blockFn, Proof.Sm4.bytesAt_eq_blockAt, blockFn_eq, hk,
-      dinv_done d₄ (show j < 0 + 0 + regs8.length from hj) (by decide)]
+  · rw [dirCipher_blockFn, Proof.Sm4.bytesAt_eq_blockAt, blockFn_eq, hk,
+      dinv_done d₄ (show j < 0 + 0 + regs.length by omega_using [hj]) (by omega_using [hn])]
+
+/-- The cores: of the eight blocks in `regs8`, or of the one in `v0`. -/
+def CoreOk (regs : List VReg) (lg : Nat) : Prop := (regs = regs8 ∧ lg = 3) ∨ (regs = [.v0] ∧ lg = 0)
+
+theorem crypt_wp (d : Dir) {regs : List VReg} {lg : Nat} (hc : CoreOk regs lg) {s : State} {B : Addr}
+    {k : Spec.Sm4.Schedule} (hB : s.gpr sb = B) (hs : ScrIn s B (coreOf regs lg d).total) (hr : Ready s k) :
+    WP isa (coreOf regs lg d).crypt s fun s' => s'.gpr sb = B ∧
+      s'.gpr .x23 = s.gpr .x23 ∧ s'.gpr .x24 = s.gpr .x24 ∧ Ready s' k ∧
+      Frame [coreRegion (coreOf regs lg d) B] s.mem s'.mem ∧
+      (∀ j < (coreOf regs lg d).G, bytesAt s'.mem (bufAddr (coreOf regs lg d) B j) 16 =
+        dirCipher d k (bytesAt s.mem (bufAddr (coreOf regs lg d) B j) 16)) ∧
+      s'.rd = s.rd ∧ s'.wr = s.wr := by
+  have hG : (coreOf regs lg d).G = regs.length := by rcases hc with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rfl
+  have e : 16 * (regs.length + 6) = 8 * (coreOf regs lg d).total := by
+    show _ = 8 * (2 * regs.length + 12); omega_using []
+  have e' : 16 * regs.length = 8 * (coreOf regs lg d).slots := by
+    show _ = 8 * (2 * regs.length); omega_using []
+  refine WP.mono (cryptBuf_wp d (hc.imp And.left And.left) (n := regs.length + 6) hB (by rw [e]; exact hs.fit)
+    (by rw [e]; exact hs.wr) (Nat.le_add_right _ _) hr) fun s' ⟨g, r, f, c, rd, wr⟩ =>
+    ⟨by rw [g, hB], by rw [g], by rw [g], r, by rw [e'] at f; exact f, fun j hj => ?_, rd, wr⟩
+  have ha : bufAddr (coreOf regs lg d) B j = B + BitVec.ofNat 64 (16 * j) :=
+    congrArg (B + BitVec.ofNat 64 ·) (show 8 * 0 + 16 * j = 16 * j by omega_using [])
+  rw [ha]
+  exact c j (hG ▸ hj)
 
 /-- The core's blocks are two words. -/
 @[simp] theorem core_bw (d : Dir) : (core d).bw = 2 := rfl
+@[simp] theorem core1_bw (d : Dir) : (core1 d).bw = 2 := rfl
 
-/-- The core with `sm4e` meets what the modes need, for the direction `d`. -/
-def coreSpec (d : Dir) : CoreSpec (core d) where
+/-- A core with `sm4e` meets what the modes need, for the direction `d`. -/
+def coreSpecOf (d : Dir) {regs : List VReg} {lg : Nat} (hc : CoreOk regs lg) : CoreSpec (coreOf regs lg d) where
   Key := Spec.Sm4.Schedule
   cipher := dirCipher d
   KeyArgs := KeyArgs
   Ready s _ k := Ready s k
   cipher_len _ _ := by cases d <;> simp [dirCipher, Spec.Sm4.cipher, Spec.Sm4.invCipher]
-  layout := ⟨by cases d <;> decide, by cases d <;> decide, by cases d <;> decide, by cases d <;> decide,
-    by cases d <;> decide⟩
-  keyRegs_ok := by cases d <;> decide
-  regs_ok := by cases d <;> decide
+  layout := by
+    rcases hc with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> cases d <;>
+      exact ⟨by decide, by decide, by decide, by decide, by decide⟩
+  keyRegs_ok := by rcases hc with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> cases d <;> decide
+  regs_ok := by rcases hc with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> cases d <;> decide
   keyArgs_congr h hr hrd hwr _ hf := keyArgs_congr h hr hrd hwr hf
-  ready_frame h hf _ hw hg := ready_frame d h hf hw hg
-  prepare_wp hB _ _ hk := WP.block_nil ⟨⟨by
-      obtain ⟨⟨p, hp, hk', hin, hfit, -⟩, hdis⟩ := hk
-      exact ⟨p, hp, hk', hin, hfit, fun _ hr => absurd hr List.not_mem_nil⟩, hk.2⟩,
-    hB, rfl, rfl, Frame.refl _ _, rfl, rfl⟩
-  crypt_wp := crypt_wp d
+  ready_frame h hf _ hw hg :=
+    ready_frame (by rcases hc with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> cases d <;> decide) h hf hw hg
+  prepare_wp hB _ _ hk := WP.block_nil ⟨ready_of_keyArgs hk, hB, rfl, rfl, Frame.refl _ _, rfl, rfl⟩
+  crypt_wp := crypt_wp d hc
+
+/-- The core of eight blocks. -/
+def coreSpec (d : Dir) : CoreSpec (core d) := coreSpecOf d (.inl ⟨rfl, rfl⟩)
+
+/-- The core of one block. -/
+def coreSpec1 (d : Dir) : CoreSpec (core1 d) := coreSpecOf d (.inr ⟨rfl, rfl⟩)
 
 /-! ## The modes -/
 
-/-- The precondition of the modes on AArch64, with the working space at `x4`. -/
-def mPre (s : State) : Prop :=
+/-- The precondition of the modes on AArch64, with the data `len` bytes
+long and the working space of `w` words at `x4`. -/
+def mPre (w : Nat) (len : State → Nat) (s : State) : Prop :=
   let sched : Region := ⟨s.gpr .x0, 128⟩
   let iv : Region := ⟨s.gpr .x1, 16⟩
-  let data : Region := ⟨s.gpr .x2, 16 * (s.gpr .x3).toNat⟩
-  let scratch : Region := ⟨s.gpr .x4, 8 * 28⟩
+  let data : Region := ⟨s.gpr .x2, len s⟩
+  let scratch : Region := ⟨s.gpr .x4, 8 * w⟩
   s.rd = [sched] ∧ s.wr = [iv, data, scratch] ∧ sched.Disjoint iv ∧ sched.Disjoint data ∧
     sched.Disjoint scratch ∧ iv.Disjoint data ∧ iv.Disjoint scratch ∧ data.Disjoint scratch ∧
     (s.gpr .x0).toNat + 128 ≤ 2 ^ 64 ∧ (s.gpr .x1).toNat + 16 ≤ 2 ^ 64 ∧
-    (s.gpr .x2).toNat + 16 * (s.gpr .x3).toNat ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8 * 28 ≤ 2 ^ 64
+    (s.gpr .x2).toNat + len s ≤ 2 ^ 64 ∧ (s.gpr .x4).toNat + 8 * w ≤ 2 ^ 64
+
+/-- `n` blocks. -/
+abbrev blkLen (s : State) : Nat := 16 * (s.gpr .x3).toNat
 
 /-- The public arguments. -/
 def mPub (s₁ s₂ : State) : Prop :=
@@ -259,14 +301,14 @@ abbrev blocksOf (s : State) (m : Mem) : List (List Byte) := Spec.Cbc.blocksAt m 
 
 /-- CTR with its working space at `x4`. -/
 def ctrC : Contract isa where
-  pre := mPre
+  pre := mPre 28 blkLen
   post s s' := blocksOf s s'.mem = Spec.Ctr.crypt (Spec.Sm4.cipher (schedOf s)) (ivOf s) (blocksOf s s.mem) ∧
     bytesAt s'.mem (s.gpr .x1) 16 = Spec.Ctr.next (ivOf s) (s.gpr .x3).toNat
   pub := mPub
 
 /-- Counter mode with `inc₃₂`, with its working space at `x4`. -/
 def ctr32C : Contract isa where
-  pre := mPre
+  pre := mPre 28 blkLen
   post s s' :=
     Spec.Gcm.blocksAt s'.mem (s.gpr .x2) (s.gpr .x3).toNat =
         Spec.Gcm.ctr32 (Spec.Sm4.gcmCipher (schedOf s)) (Spec.Gcm.blockAt s.mem (s.gpr .x1))
@@ -277,14 +319,14 @@ def ctr32C : Contract isa where
 
 /-- CBC decryption that updates the chaining value. -/
 def cbcDecC : Contract isa where
-  pre := mPre
+  pre := mPre 28 blkLen
   post s s' := blocksOf s s'.mem = Spec.Cbc.decrypt (Spec.Sm4.invCipher (schedOf s)) (ivOf s) (blocksOf s s.mem) ∧
     bytesAt s'.mem (s.gpr .x1) 16 = Spec.Cbc.next (ivOf s) (blocksOf s s.mem)
   pub := mPub
 
 /-- CFB128 decryption. -/
 def cfbDecC : Contract isa where
-  pre := mPre
+  pre := mPre 28 blkLen
   post s s' := blocksOf s s'.mem = Spec.Cfb.decrypt (Spec.Sm4.cipher (schedOf s)) (ivOf s) (blocksOf s s.mem) ∧
     bytesAt s'.mem (s.gpr .x1) 16 = Spec.Cbc.next (ivOf s) (blocksOf s s.mem)
   pub := mPub
@@ -305,21 +347,28 @@ attribute [local irreducible] Spec.Sm4.invCipher in
 theorem invCipher_eq (k : Spec.Sm4.Schedule) :
     ((coreSpec .decrypt).toBlock rfl).cipher k = Spec.Sm4.invCipher k := rfl
 
-/-- The key arguments of the precondition. -/
-theorem keyArgs_of_pre {s : State} (hp : mPre s) :
-    KeyArgs s [⟨s.gpr .x4, 8 * 28⟩, ⟨s.gpr .x1, 16⟩] (schedOf s) := by
+/-- The key arguments of the precondition, outside any writable regions `rs`. -/
+theorem keyArgs_of_pre' {w : Nat} {len : State → Nat} {s : State} (hp : mPre w len s) (rs : List Region)
+    (hrs : ∀ r ∈ rs, r ∈ s.wr) : KeyArgs s rs (schedOf s) := by
   obtain ⟨hrd, hwr, dKV, dKD, dKS, -, -, -, fitK, -⟩ := hp
-  refine ⟨⟨s.gpr .x0, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => ?_⟩, fun w hw => ?_⟩
-  · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl
-    · exact dKS
-    · exact dKV
-  · rw [hwr] at hw
-    simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
-    rcases hw with rfl | rfl | rfl
+  have hdis : ∀ r ∈ s.wr, Region.Disjoint ⟨s.gpr .x0, 128⟩ r := fun r hr => by
+    rw [hwr] at hr
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl
     · exact dKV
     · exact dKD
     · exact dKS
+  exact ⟨⟨s.gpr .x0, rfl, rfl, by rw [hrd]; simp, fitK, fun r hr => hdis r (hrs r hr)⟩, hdis⟩
+
+/-- The key arguments of the precondition. -/
+theorem keyArgs_of_pre {w : Nat} {len : State → Nat} {s : State} (hp : mPre w len s) :
+    KeyArgs s [⟨s.gpr .x4, 8 * w⟩, ⟨s.gpr .x1, 16⟩] (schedOf s) :=
+  keyArgs_of_pre' hp _ fun r hr => by
+    rw [hp.2.1]
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
+    rcases hr with rfl | rfl
+    · exact .inr (.inr rfl)
+    · exact .inl rfl
 
 /-- What each mode keeps of the callee-saved registers. -/
 abbrev Saved (s₀ s' : State) : Prop :=
@@ -391,7 +440,8 @@ theorem correct_of {c : Prog isa} {k : Contract isa}
   obtain ⟨t, s', he, ⟨h₁, h₂⟩, h₃⟩ := WP.gprs (rs := [.x30]) (hw s hs) h30 hn
   exact ⟨t, s', he, ⟨Modes.AArch64.preserved_of h₁ h₃, Exec.sp he, Exec.preservedV he hv⟩, h₂⟩
 
-theorem taint_agree (s₁ s₂ : State) (_ : mPre s₁) (_ : mPre s₂) (hp : mPub s₁ s₂) :
+theorem taint_agree {w : Nat} {len : State → Nat} (s₁ s₂ : State) (_ : mPre w len s₁) (_ : mPre w len s₂)
+    (hp : mPub s₁ s₂) :
     VG.AArch64.Taint.Agree (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) s₁ s₂ := by
   obtain ⟨h1, h2, h3, h4, h5, hsp⟩ := hp
   refine ⟨hsp, fun r hr => ?_⟩

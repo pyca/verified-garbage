@@ -2457,7 +2457,7 @@ vg_sm4_gcm_init_ctr32_sm4:
 	str x19, [x2, #128]
 	add x19, x2, #0
 	add x21, x1, #0
-	bl {vg_sm4_expand_key}
+	bl {vg_sm4_expand_key_sm4}
 	movz x9, #0, lsl #0
 	str x9, [x21, #240]
 	str x9, [x21, #248]

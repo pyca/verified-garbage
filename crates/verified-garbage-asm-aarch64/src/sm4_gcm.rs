@@ -1465,14 +1465,14 @@ pub(crate) unsafe extern "C" fn vg_sm4_gcm_init_ctr32_sm4(key: *const [u8; 16], 
     core::arch::naked_asm!(
         r".inst 0xd10c03ff,0x910003e2,0xf9004454,0xf9004855,0xf9004c56,0xf9005057,0xf9005458,0xf9005859
 .inst 0xf9005c5a,0xf900605b,0xf900645c,0xf900685e,0xf9004053,0x91000053,0x91000035
-bl {vg_sm4_expand_key}
+bl {vg_sm4_expand_key_sm4}
 .inst 0xd2800009,0xf9007aa9,0xf9007ea9,0xf9003269,0xf9003669,0x910002a0,0x91018261,0x9103c2a2
 .inst 0xd2800023
 bl {vg_sm4_ctr32_sm4}
 .inst 0xf9404674,0xf9404a75,0xf9404e76,0xf9405277,0xf9405678,0xf9405a79,0xf9405e7a,0xf940627b
 .inst 0xf940667c,0xf9406a7e,0xf9404273,0x910c03ff,0xd65f03c0
 .p2align 6",
-        vg_sm4_expand_key = sym super::sm4::vg_sm4_expand_key,
+        vg_sm4_expand_key_sm4 = sym super::sm4::vg_sm4_expand_key_sm4,
         vg_sm4_ctr32_sm4 = sym super::sm4::vg_sm4_ctr32_sm4::vg_sm4_ctr32_sm4,
     )
 }
