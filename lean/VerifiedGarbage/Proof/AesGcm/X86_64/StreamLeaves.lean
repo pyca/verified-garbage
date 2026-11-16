@@ -1028,6 +1028,31 @@ theorem streamEncryptClr16_leaves (B : BlkFn CtxMode.prepared16)
       exact q)
     rfl (by decide) (by decide) hsp hd (Proof.AesGcm.streamCryptPrepared16Pre_local _) hs he
 
+/-- `streamEncryptClr16_leaves` for `vg_aes_gcm_stream_decrypt`. -/
+theorem streamDecryptClr16_leaves (B : BlkFn CtxMode.prepared16)
+    {Lb : BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → BitVec 64 → Addr → Addr → Option (BitVec 8)}
+    (hL : BlkLeft Lb B.dec.code CtxMode.prepared16) {s : State}
+    (hs : (Proof.AesGcm.streamDecryptPrepared16RoundsContract X86_64.abi 2608).pre s) {t : List Leak} {u : State}
+    (he : Exec isa (withStackArgScratch 2584 1 (streamDecryptClr (v.withBlk B) lv)) s t u) :
+    ∀ x, (⟨s.gpr .rsp - BitVec.ofNat 64 2584, 2584⟩ : Region).Contains x 1 →
+      u.mem x = (streamFV Lb s x).getD (s.mem x) := by
+  have hsp := streamDecryptSM_spSafe (v.wrapC lv) (B.wrapC lv)
+  rw [← hoist_all lv] at hsp
+  have hd := streamDecryptSM_xdepth (v.wrapC lv) (B.wrapC lv)
+  rw [← hoist_x86_64Depth lv] at hd
+  exact framedS_leaves (sig := Proof.Gcm.streamCryptPrecomputedSig) (nm := "scratch") (e := .u64) (n := 320)
+    (pre := Proof.Gcm.streamCryptPrepared16Pre X86_64.abi.ptrBits)
+    (post := Proof.AesGcm.streamDecryptRoundsPost X86_64.abi.ptrBits)
+    (wa := true) (leak := none) (P := (Proof.AesGcm.streamDecryptX86_64M CtxMode.prepared16).pre)
+    (Verified.hoist lv (streamDecryptSPrepared16_verified (v.wrapC lv) (B.wrapC lv)))
+    (fun s h => streamDecryptSPrepared16_implies.pre s h)
+    (fun s t s' hp he => by
+      obtain ⟨t', s'', e', q⟩ := streamS_leaves (v.wrapC lv) (B.wrapC lv) (gf.wrapC lv) (cf.wrapC lv) false
+        (hL.wrapC lv) hp.1 hp.2
+      obtain ⟨-, rfl⟩ := Exec.det ((exec_hoist lv _ _ _ _).mp he) e'
+      exact q)
+    rfl (by decide) (by decide) hsp hd (Proof.AesGcm.streamCryptPrepared16Pre_local _) hs he
+
 end
 
 end VG.Proof.AesGcm.X86_64
