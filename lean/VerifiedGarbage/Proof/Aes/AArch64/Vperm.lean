@@ -757,4 +757,170 @@ theorem core_ok {s : State} {K : Addr} {R : Nat} (hK : (⟨K, 240⟩ : Region) �
   refine ⟨by rw [tst, am, a0], fun r h0 h1 h6 => (tg r h0 h1).trans (ag r h6), tm.trans am,
     trd.trans ard, twr.trans awr, tsp.trans asp⟩
 
+/-! ## Decryption: one byte -/
+
+namespace Dec
+
+open VG.Impl.Aes.AArch64.Vperm.Dec
+open VG.Proof.Aes.Vector (vbyte_invShiftRows vbyte_invMixColumns st_aesimc st_invSub)
+
+/-- The byte `x`, as the decryption's state holds it. -/
+def D (x : BitVec 8) : BitVec 8 := nib dh (x >>> 4) ^^^ nib dl (x &&& 0x0f)
+
+/-- `D`, less `D 0`: it is linear. -/
+def Dl (x : BitVec 8) : BitVec 8 := D x ^^^ 0xd1
+
+/-- The inverse S-box, from the tables. -/
+theorem isb_eq : ∀ z : BitVec 8,
+    aesInvSbox z = nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)) := by decide +kernel
+
+theorem x0_tab : ∀ z : BitVec 8, nib x0u (ioB (D z)) ^^^ nib x0t (joB (D z)) =
+    Dl (aesMul 0x0e (nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)))) := by decide +kernel
+theorem x1_tab : ∀ z : BitVec 8, nib x1u (ioB (D z)) ^^^ nib x1t (joB (D z)) =
+    Dl (aesMul 0x0b (nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)))) := by decide +kernel
+theorem x2_tab : ∀ z : BitVec 8, nib x2u (ioB (D z)) ^^^ nib x2t (joB (D z)) =
+    Dl (aesMul 0x0d (nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)))) := by decide +kernel
+theorem x3_tab : ∀ z : BitVec 8, nib x3u (ioB (D z)) ^^^ nib x3t (joB (D z)) =
+    Dl (aesMul 0x09 (nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)))) := by decide +kernel
+
+/-- A round key's byte, through a pair of the tables. -/
+def Yb (l h : BitVec 128) (x : BitVec 8) : BitVec 8 := nib l (x &&& 0x0f) ^^^ nib h (x >>> 4)
+
+theorem y0_tab : ∀ x : BitVec 8, Yb y0l y0h x = D (aesMul 0x0e x) := by decide +kernel
+theorem y1_tab : ∀ x : BitVec 8, Yb y1l y1h x = Dl (aesMul 0x0b x) := by decide +kernel
+theorem y2_tab : ∀ x : BitVec 8, Yb y2l y2h x = Dl (aesMul 0x0d x) := by decide +kernel
+theorem y3_tab : ∀ x : BitVec 8, Yb y3l y3h x = Dl (aesMul 0x09 x) := by decide +kernel
+
+theorem Dl_bits : ∀ x : BitVec 8, Dl x = bits Dl x := by decide +kernel
+theorem g0_bits : ∀ x : BitVec 8,
+    Dl (aesMul 0x0e x) = bits (fun x => Dl (aesMul 0x0e x)) x := by decide +kernel
+theorem g1_bits : ∀ x : BitVec 8,
+    Dl (aesMul 0x0b x) = bits (fun x => Dl (aesMul 0x0b x)) x := by decide +kernel
+theorem g2_bits : ∀ x : BitVec 8,
+    Dl (aesMul 0x0d x) = bits (fun x => Dl (aesMul 0x0d x)) x := by decide +kernel
+theorem g3_bits : ∀ x : BitVec 8,
+    Dl (aesMul 0x09 x) = bits (fun x => Dl (aesMul 0x09 x)) x := by decide +kernel
+
+/-- A byte of a round: InvMixColumns of the inverse S-box's bytes `u₀`, …,
+`u₃` of a column, each XORed with the round key's byte, under `D`. -/
+theorem imix_byte (u₀ u₁ u₂ u₃ k₀ k₁ k₂ k₃ : BitVec 8) :
+    Dl (aesMul 0x0e u₀) ^^^ Dl (aesMul 0x0b u₁) ^^^
+        (D (aesMul 0x0e k₀) ^^^ Dl (aesMul 0x0b k₁) ^^^ Dl (aesMul 0x0d k₂) ^^^ Dl (aesMul 0x09 k₃)) ^^^
+        (Dl (aesMul 0x0d u₂) ^^^ Dl (aesMul 0x09 u₃)) =
+      D (aesMul 0x0e (u₀ ^^^ k₀) ^^^ aesMul 0x0b (u₁ ^^^ k₁) ^^^ aesMul 0x0d (u₂ ^^^ k₂) ^^^
+        aesMul 0x09 (u₃ ^^^ k₃)) := by
+  have hD : ∀ x, D x = Dl x ^^^ 0xd1 := fun x => by
+    rw [Dl, BitVec.xor_assoc, BitVec.xor_self, BitVec.xor_zero]
+  rw [hD, hD, xor_of_bits Dl_bits, xor_of_bits Dl_bits, xor_of_bits Dl_bits,
+    xor_of_bits (f := fun x => Dl (aesMul 0x0e x)) g0_bits, xor_of_bits (f := fun x => Dl (aesMul 0x0b x)) g1_bits,
+    xor_of_bits (f := fun x => Dl (aesMul 0x0d x)) g2_bits, xor_of_bits (f := fun x => Dl (aesMul 0x09 x)) g3_bits]
+  ac_rfl
+
+/-! ## Decryption: the vectors -/
+
+/-- The state `x`, as the decryption holds it. -/
+def Dv (x : BitVec 128) : BitVec 128 := ofVBytes fun e => D (vbyte x e)
+
+theorem vbyte_Dv (x : BitVec 128) {e : Nat} (he : e < 16) : vbyte (Dv x) e = D (vbyte x e) :=
+  Vector.vbyte_ofVBytes _ he
+
+/-- `first`'s result. -/
+def firstV (x : BitVec 128) : BitVec 128 := tblV dh (ushr4 x) ^^^ tblV dl (x &&& mask)
+
+theorem firstV_eq (x : BitVec 128) : firstV x = Dv x := by
+  apply ext_vbyte
+  intro e he
+  rw [firstV, vbyte_xor, vbyte_tblV _ _ he, vbyte_tblV _ _ he, vbyte_ushr4 _ he, vbyte_and, vbyte_mask e he,
+    vbyte_Dv _ he]
+  rfl
+
+/-- `keyTerm`'s result, on the round key `k`. -/
+def Yv (l h k : BitVec 128) : BitVec 128 := tblV l (k &&& mask) ^^^ tblV h (ushr4 k)
+
+theorem vbyte_Yv (l h k : BitVec 128) {e : Nat} (he : e < 16) : vbyte (Yv l h k) e = Yb l h (vbyte k e) := by
+  rw [Yv, vbyte_xor, vbyte_tblV _ _ he, vbyte_tblV _ _ he, vbyte_ushr4 _ he, vbyte_and, vbyte_mask e he]
+  rfl
+
+/-- `key`'s result. -/
+def keyV (k : BitVec 128) : BitVec 128 :=
+  Yv y0l y0h k ^^^ tblV (Yv y1l y1h k) rot ^^^ tblV (Yv y2l y2h k) rot2 ^^^ tblV (Yv y3l y3h k) rot3
+
+/-- InvShiftRows' index. -/
+def isrI (t : Nat) : Nat := t % 4 + 4 * ((t / 4 + 4 - t % 4) % 4)
+
+theorem p_p0 : ∀ t < 16, (vbyte p0 t).toNat = isrI (rI 0 t) := by decide +kernel
+theorem p_p1 : ∀ t < 16, (vbyte p1 t).toNat = isrI (rI 1 t) := by decide +kernel
+theorem p_p2 : ∀ t < 16, (vbyte p2 t).toNat = isrI (rI 2 t) := by decide +kernel
+theorem p_p3 : ∀ t < 16, (vbyte p3 t).toNat = isrI (rI 3 t) := by decide +kernel
+theorem p_rot2 : ∀ t < 16, (vbyte rot2 t).toNat = rI 2 t := by decide +kernel
+theorem p_rot3 : ∀ t < 16, (vbyte rot3 t).toNat = rI 3 t := by decide +kernel
+theorem isrI_lt : ∀ t < 16, isrI t < 16 := by decide
+
+theorem vbyte_keyV (k : BitVec 128) {e : Nat} (he : e < 16) :
+    vbyte (keyV k) e = D (aesMul 0x0e (vbyte k e)) ^^^ Dl (aesMul 0x0b (vbyte k (rI 1 e))) ^^^
+      Dl (aesMul 0x0d (vbyte k (rI 2 e))) ^^^ Dl (aesMul 0x09 (vbyte k (rI 3 e))) := by
+  have h1 := rI_lt 1 (by decide) e he
+  have h2 := rI_lt 2 (by decide) e he
+  have h3 := rI_lt 3 (by decide) e he
+  rw [keyV, vbyte_xor, vbyte_xor, vbyte_xor, vbyte_perm _ he (p_rot e he) h1,
+    vbyte_perm _ he (p_rot2 e he) h2, vbyte_perm _ he (p_rot3 e he) h3, vbyte_Yv _ _ _ he,
+    vbyte_Yv _ _ _ h1, vbyte_Yv _ _ _ h2, vbyte_Yv _ _ _ h3, y0_tab, y1_tab, y2_tab, y3_tab]
+
+/-- A product of the inverse S-box's bytes, permuted: a term of `mix`. -/
+def xV (u t p io jo : BitVec 128) : BitVec 128 := tblV (tblV u io ^^^ tblV t jo) p
+
+/-- `mix`'s result. -/
+def mixV (io jo k : BitVec 128) : BitVec 128 :=
+  xV x0u x0t p0 io jo ^^^ xV x1u x1t p1 io jo ^^^ k ^^^ (xV x2u x2t p2 io jo ^^^ xV x3u x3t p3 io jo)
+
+theorem vbyte_xV {u t p : BitVec 128} {c : BitVec 8} {n : Nat} (hn : n < 4)
+    (hp : ∀ e < 16, (vbyte p e).toNat = isrI (rI n e))
+    (ht : ∀ z : BitVec 8, nib u (ioB (D z)) ^^^ nib t (joB (D z)) =
+      Dl (aesMul c (nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)))))
+    (x : BitVec 128) {e : Nat} (he : e < 16) :
+    vbyte (xV u t p (ioV (Dv x)) (joV (Dv x))) e = Dl (aesMul c (aesInvSbox (vbyte x (isrI (rI n e))))) := by
+  have hs := isrI_lt _ (rI_lt n hn e he)
+  rw [xV, vbyte_perm _ he (hp e he) hs, vbyte_xor, vbyte_tblV _ _ hs, vbyte_tblV _ _ hs, vbyte_ioV _ hs,
+    vbyte_joV _ hs, vbyte_Dv _ hs, ht, isb_eq]
+
+/-- `invert` and `mix` are a round of the inverse cipher, on the bytes
+under `D`. -/
+theorem mixV_eq (x k : BitVec 128) :
+    mixV (ioV (Dv x)) (joV (Dv x)) (keyV k) =
+      Dv (aesInvMixColumns (aesMapBytes aesInvSbox (aesInvShiftRows x) ^^^ k)) := by
+  apply ext_vbyte
+  intro e he
+  have h0 := rI_lt 0 (by decide) e he
+  have h1 := rI_lt 1 (by decide) e he
+  have h2 := rI_lt 2 (by decide) e he
+  have h3 := rI_lt 3 (by decide) e he
+  rw [mixV, vbyte_xor, vbyte_xor, vbyte_xor, vbyte_xor, vbyte_xV (by decide) p_p0 x0_tab _ he,
+    vbyte_xV (by decide) p_p1 x1_tab _ he, vbyte_xV (by decide) p_p2 x2_tab _ he,
+    vbyte_xV (by decide) p_p3 x3_tab _ he, vbyte_keyV _ he, vbyte_Dv _ he, vbyte_invMixColumns _ he]
+  change _ = D (aesMul 0x0e (vbyte (aesMapBytes aesInvSbox (aesInvShiftRows x) ^^^ k) (rI 0 e)) ^^^
+    aesMul 0x0b (vbyte (aesMapBytes aesInvSbox (aesInvShiftRows x) ^^^ k) (rI 1 e)) ^^^
+    aesMul 0x0d (vbyte (aesMapBytes aesInvSbox (aesInvShiftRows x) ^^^ k) (rI 2 e)) ^^^
+    aesMul 0x09 (vbyte (aesMapBytes aesInvSbox (aesInvShiftRows x) ^^^ k) (rI 3 e)))
+  rw [vbyte_xor, vbyte_xor, vbyte_xor, vbyte_xor, vbyte_mapBytes _ _ h0, vbyte_mapBytes _ _ h1,
+    vbyte_mapBytes _ _ h2, vbyte_mapBytes _ _ h3, vbyte_invShiftRows _ h0, vbyte_invShiftRows _ h1,
+    vbyte_invShiftRows _ h2, vbyte_invShiftRows _ h3]
+  rw [show vbyte k (rI 0 e) = vbyte k e by rw [rI_zero e he]]
+  exact imix_byte _ _ _ _ _ _ _ _
+
+/-- `last`'s result. -/
+def lastV (io jo k : BitVec 128) : BitVec 128 := tblV (tblV dbou io ^^^ tblV dbot jo) p0 ^^^ k
+
+/-- `invert` and `last` are the last round of the inverse cipher. -/
+theorem lastV_eq (x k : BitVec 128) :
+    lastV (ioV (Dv x)) (joV (Dv x)) k = aesMapBytes aesInvSbox (aesInvShiftRows x) ^^^ k := by
+  apply ext_vbyte
+  intro e he
+  have hs := isrI_lt _ (rI_lt 0 (by decide) e he)
+  rw [lastV, vbyte_xor, vbyte_perm _ he (p_p0 e he) hs, vbyte_xor, vbyte_tblV _ _ hs, vbyte_tblV _ _ hs,
+    vbyte_ioV _ hs, vbyte_joV _ hs, vbyte_Dv _ hs, ← isb_eq, vbyte_xor, vbyte_mapBytes _ _ he,
+    vbyte_invShiftRows _ he, rI_zero e he]
+  rfl
+
+end Dec
+
 end VG.Proof.Aes.AArch64.Vperm
