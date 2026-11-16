@@ -50,7 +50,7 @@ structure Blocks where
   code : Prog isa
 
 def Blocks.encScalar : Blocks := ⟨"vg_aes_encrypt_blocks", encryptBlocksN⟩
-def Blocks.decScalar : Blocks := ⟨"vg_aes_decrypt_blocks", decryptBlocks⟩
+def Blocks.decScalar : Blocks := ⟨"vg_aes_decrypt_blocks", decryptBlocksN⟩
 def Blocks.encAese : Blocks := ⟨"vg_aes_encrypt_blocks_aes", Aese.encryptBlocks⟩
 def Blocks.decAese : Blocks := ⟨"vg_aes_decrypt_blocks_aes", Aese.decryptBlocks⟩
 

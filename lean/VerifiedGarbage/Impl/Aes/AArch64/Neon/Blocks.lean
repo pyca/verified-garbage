@@ -43,7 +43,8 @@ branch depends on anything else.
 
 `vg_aes_encrypt_blocks_neon` is `encryptBlocks`: one block (`n = 1`) is
 encrypted by vector permutations (`Vperm.lean`), as `vg_aes_encrypt_blocks`
-does it, with nothing bitsliced.
+does it, with nothing bitsliced; `vg_aes_decrypt_blocks_neon`
+(`decryptBlocks`) decrypts one block so.
 -/
 
 @[expose] public section
@@ -236,7 +237,9 @@ other number of blocks bitsliced. -/
 def encryptBlocks : Prog isa :=
   .seq (.block [.subImm .x .x6 .x3 1]) (.ite (.zero .x .x6) encryptOne (blocks encrypt8))
 
-/-- `vg_aes_decrypt_blocks_neon`. -/
-def decryptBlocks : Prog isa := blocks decrypt8
+/-- `vg_aes_decrypt_blocks_neon`: one block by vector permutations, any
+other number of blocks bitsliced. -/
+def decryptBlocks : Prog isa :=
+  .seq (.block [.subImm .x .x6 .x3 1]) (.ite (.zero .x .x6) decryptOne (blocks decrypt8))
 
 end VG.Impl.Aes.AArch64.Neon

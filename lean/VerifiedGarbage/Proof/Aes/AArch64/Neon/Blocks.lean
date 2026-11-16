@@ -905,10 +905,34 @@ theorem encryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Ae
     WP.gprs (rs := preserved) (encryptBlocks_wp hs) (by lit_decide) (by lit_decide)
   exact ⟨t, s', he, ⟨h₃, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
+/-- `decryptBlocks`: one block by the tables (`OneBlock.decryptOne_ok`), any
+other number of blocks bitsliced. -/
+theorem decryptBlocks_wp {s₀ : State} (hp : (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre s₀) :
+    WP isa decryptBlocks s₀ fun s' => (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).post s₀ s' := by
+  unfold decryptBlocks
+  let s₁ := s₀.write .x .x6 (s₀.read .x .x3 - BitVec.ofNat 64 1)
+  refine WP.seq ?_
+  rw [WP.block_cons_iff]
+  refine ⟨s₁, exec_subImm_x (imm := 1) (by decide), WP.block_nil ?_⟩
+  have hp₁ : (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre s₁ := hp
+  refine WP.ite (s₀.gpr .x3 - BitVec.ofNat 64 1 == 0)
+    (by simp [AArch64.eval, State.read, s₁, State.write]) (fun hb => ?_) (fun _ => ?_)
+  · have x3 : s₀.gpr .x3 = BitVec.ofNat 64 1 := by
+      have h := BitVec.sub_add_cancel (s₀.gpr .x3) (BitVec.ofNat 64 1)
+      rw [eq_of_beq hb] at h
+      exact h.symm.trans (by decide)
+    have h3 : (s₁.gpr .x3).toNat = 1 := by
+      show (s₀.gpr .x3).toNat = 1
+      rw [x3]; rfl
+    exact WP.mono (OneBlock.decryptOne_ok hp₁ h3) fun s' h => h.2
+  · exact correct_blocks decrypt8_cryptOk hp₁
+
 theorem decryptBlocks_correct (s : State) (hs : (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).pre s) :
     ∃ t s', Exec isa decryptBlocks s t s' ∧ abiPreserved s s' ∧
-      (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).post s s' :=
-  blocks_correct decrypt8_cryptOk (by lit_decide) (by lit_decide) (by lit_decide) s hs
+      (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).post s s' := by
+  obtain ⟨t, s', he, h₂, h₃⟩ :=
+    WP.gprs (rs := preserved) (decryptBlocks_wp hs) (by lit_decide) (by lit_decide)
+  exact ⟨t, s', he, ⟨h₃, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
 theorem encryptBlocks_ct : ConstantTime isa (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pre
     (Proof.Aes.blocksAArch64 Spec.Aes.cipher).pub encryptBlocks := by

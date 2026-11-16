@@ -87,8 +87,8 @@ def scalar : BlocksImpl where
   encKeepsV := by lit_decide
   dec := .decScalar
   decNoFrames := by lit_decide
-  decOk := decryptBlocks_correct
-  decCt := decryptBlocks_ct
+  decOk := OneBlock.decryptBlocksN_correct
+  decCt := OneBlock.decryptBlocksN_ct
   decKeepsV := by lit_decide
   free := false
   encFree := nofun

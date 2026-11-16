@@ -30,7 +30,8 @@ values; no address and no branch depends on anything else.
 `vg_aes_encrypt_blocks` is `encryptBlocksN`: one block (`n = 1`, as the
 modes whose blocks each need the one before give it) is encrypted by vector
 permutations (`Vperm.lean`), with no round key bitsliced and nothing written
-to `scratch`; any other `n` runs the bitsliced code.
+to `scratch`; any other `n` runs the bitsliced code. `vg_aes_decrypt_blocks`
+is `decryptBlocksN`, the same for decryption.
 -/
 
 @[expose] public section
@@ -113,5 +114,14 @@ def encryptOne : Prog isa :=
 number of blocks bitsliced. -/
 def encryptBlocksN : Prog isa :=
   .seq (.block [.subImm .x .x6 .x3 1]) (.ite (.zero .x .x6) encryptOne encryptBlocks)
+
+/-- The block at `x2`, decrypted in place by vector permutations. -/
+def decryptOne : Prog isa :=
+  .seq (.block [.ldrq .v0 .x2 0]) (.seq Vperm.Dec.core (.block [.strq .v0 .x2 0]))
+
+/-- `vg_aes_decrypt_blocks`: one block by vector permutations, any other
+number of blocks bitsliced. -/
+def decryptBlocksN : Prog isa :=
+  .seq (.block [.subImm .x .x6 .x3 1]) (.ite (.zero .x .x6) decryptOne decryptBlocks)
 
 end VG.Impl.Aes.AArch64

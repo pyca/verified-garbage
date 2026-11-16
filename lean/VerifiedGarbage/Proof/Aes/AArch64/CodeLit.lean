@@ -30,6 +30,7 @@ materialize_code ctr32N
 materialize_code ctr32ToN
 materialize_code encryptBlocksN
 materialize_code decryptBlocks
+materialize_code decryptBlocksN
 end VG.Impl.Aes.AArch64
 
 namespace VG.Impl.Aes.AArch64.Aese
