@@ -94,10 +94,11 @@ variable (v : GcmImpl) {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
 include L
 
 omit L in
-/-- The rest of the keystream block. -/
-theorem cryptHead_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
+/-- The rest of the keystream block, and what it writes. -/
+theorem cryptHead_okF {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
     (h : CrIn Ctx St W SP R icb P D n s) (hn : n ≠ 0) (hP : P % 16 ≠ 0) :
-    WP isa cryptHead s (CrMid Ctx St W SP R icb P D n s.mem (min (16 - P % 16) n)) := by
+    WP isa cryptHead s fun s' => CrMid Ctx St W SP R icb P D n s.mem (min (16 - P % 16) n) s' ∧
+      Frame [⟨D, n⟩] s.mem s'.mem := by
   obtain hlt : P % 16 < 16 := Nat.mod_lt _ (by decide)
   have hn' := h.data.ok.lt
   have he := h.env
@@ -151,7 +152,10 @@ theorem cryptHead_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s :
     · simp [gpr_setReg, ebp, h3rcx, h.rbp, ofNat_sub hkn hn']
     · intro r h₁ h₂; simp [gpr_setReg, h₁, h₂]
     all_goals rfl
-  refine WP.of_runBlock ⟨s₄, run₄, ?_⟩
+  refine WP.of_runBlock ⟨s₄, run₄, ?_, by
+    rw [hm₄]; exact fw.sub fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_singleton_self _, Region.sub_prefix hkn⟩⟩
   obtain he₄ : Env Ctx St W SP s₄ := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;>
@@ -186,6 +190,13 @@ theorem cryptHead_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s :
   · rw [hm₄]; exact fw.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨_, List.mem_cons_self .., Region.sub_prefix hkn⟩
+
+omit L in
+/-- The rest of the keystream block. -/
+theorem cryptHead_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : State}
+    (h : CrIn Ctx St W SP R icb P D n s) (hn : n ≠ 0) (hP : P % 16 ≠ 0) :
+    WP isa cryptHead s (CrMid Ctx St W SP R icb P D n s.mem (min (16 - P % 16) n)) :=
+  WP.mono (cryptHead_okF h hn hP) fun _ h => h.1
 
 omit L in
 /-- The arguments of a call of `vg_aes_ctr32`, from `W + 176` and the state. -/
@@ -655,6 +666,48 @@ theorem crypt_ok {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat} {s : Sta
     · obtain ⟨j, hj⟩ := hj
       refine WP.seq (WP.mono (cryptWhole_ok v L hj (hj.ciph L)) fun s'' hj' => ?_)
       exact cryptTail_ok v L hj' (by have := hj.le; omega_arith) (hj'.ciph L)
+
+/-- `crypt`, with the calls of `vg_aes_ctr32` `C`, and what it writes. -/
+theorem crypt_okP {sc : Nat} (C : CrCallP v sc) {R : Nat} {icb : Block} {P : Nat} {D : Addr} {n : Nat}
+    {s : State} (h : CrIn Ctx St W SP R icb P D n s) :
+    WP isa (crypt v.callees) s fun s' => CrOut Ctx St W SP R icb P D n s.mem s' ∧
+      Frame (crFrameS St W SP D n sc) s.mem s'.mem := by
+  have hn' := h.data.ok.lt
+  have he := h.env
+  obtain ⟨s₁, run₁, hzf, hg₁, hm₁, hrd₁, hwr₁⟩ := test_ok s .rbp h.rbp hn'
+  refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
+  obtain he₁ : Env Ctx St W SP s₁ := he.keep (fun r _ => by rw [hg₁]) hrd₁ hwr₁
+  refine WP.ite (decide (n = 0)) (eval_e hzf) (fun ht => ?_) (fun hf => ?_)
+  · have h0 : n = 0 := by simpa using ht
+    subst h0
+    exact WP.block_nil ⟨⟨he₁, by rw [hm₁]; exact h.rounds, fun hc₀ => by rw [hm₁]; exact hc₀,
+      fun _ => by simp [bytesAt]; rfl, by rw [hm₁]; exact Frame.refl _ _⟩, by rw [hm₁]; exact Frame.refl _ _⟩
+  · have h0 : n ≠ 0 := by simpa using hf
+    obtain h₁ : CrIn Ctx St W SP R icb P D n s₁ := ⟨he₁, by rw [hg₁]; exact h.r12, by rw [hg₁]; exact h.rbp,
+      by rw [hg₁]; exact h.rbx, h.data.of_eq hrd₁ hwr₁, by rw [hm₁]; exact h.rounds⟩
+    obtain ⟨s₂, run₂, hzf₂, hg₂, hm₂, hrd₂, hwr₂⟩ := test_ok s₁ .rbx h₁.rbx
+      (by have := Nat.mod_lt P (show 16 > 0 by decide); omega_arith)
+    obtain he₂ : Env Ctx St W SP s₂ := he₁.keep (fun r _ => by rw [hg₂]) hrd₂ hwr₂
+    obtain h₂ : CrIn Ctx St W SP R icb P D n s₂ := ⟨he₂, by rw [hg₂]; exact h₁.r12, by rw [hg₂]; exact h₁.rbp,
+      by rw [hg₂]; exact h₁.rbx, h₁.data.of_eq hrd₂ hwr₂, by rw [hm₂]; exact h₁.rounds⟩
+    obtain hm₀ : s₂.mem = s.mem := hm₂.trans hm₁
+    obtain dsub : Region.Sub ⟨D, n⟩ ⟨D, n⟩ := fun _ h => h
+    refine WP.seq (WP.of_runBlock ⟨s₂, run₂, ?_⟩)
+    refine WP.seq (WP.mono (Q := fun (s' : State) => ∃ j, CrMid Ctx St W SP R icb P D n s.mem j s' ∧
+        Frame [⟨D, n⟩] s.mem s'.mem)
+      (WP.ite (decide (P % 16 = 0)) (eval_e hzf₂) (fun ht => ?_) (fun hf => ?_)) fun s' hj => ?_)
+    · have ho : P % 16 = 0 := by simpa using ht
+      exact WP.block_nil ⟨0, ⟨he₂, by omega_arith, by rw [h₂.r12]; simp, by rw [h₂.rbp, Nat.sub_zero], h₂.data,
+        h₂.rounds, fun hc₀ => by rw [hm₀]; simpa using hc₀, fun _ => by simp [bytesAt]; rfl, by rw [hm₀],
+        .inr (by omega_arith), by rw [← hm₀]; exact Frame.refl _ _⟩, by rw [hm₀]; exact Frame.refl _ _⟩
+    · have := cryptHead_okF h₂ h0 (by simpa using hf)
+      rw [hm₀] at this; exact WP.mono this fun _ h => ⟨_, h⟩
+    · obtain ⟨j, hj, f₁⟩ := hj
+      refine WP.seq (WP.mono (cryptWhole_okP v L C hj (hj.ciph L)) fun s'' ⟨hj', f₂⟩ => ?_)
+      refine WP.mono (cryptTail_okP v L C hj' (by have := hj.le; omega_arith) (hj'.ciph L))
+        fun _ ⟨o, f₃⟩ => ⟨o, (f₁.sub fun r hr => ?_).trans (f₂.trans f₃)⟩
+      simp only [List.mem_singleton] at hr; subst hr
+      exact ⟨_, List.mem_cons_self .., dsub⟩
 
 omit L in
 /-- `cryptHead` alone, for data within the rest of the keystream block. -/
