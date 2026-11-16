@@ -146,8 +146,7 @@ jobs:
                   qemu-arm "target/$target/debug/hello"
                 done
                 # The legacy provider of the armhf OpenSSL, which the
-                # benchmarks of the legacy ciphers load (no apostrophe here:
-                # the script is in single quotes).
+                # benchmarks of the legacy ciphers load.
                 test -e /usr/lib/arm-linux-gnueabihf/ossl-modules/legacy.so
               fi
               rustup component list --installed | xargs rustup component remove
