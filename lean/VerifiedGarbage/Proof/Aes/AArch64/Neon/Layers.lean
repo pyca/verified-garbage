@@ -7,6 +7,10 @@ public import VerifiedGarbage.Proof.Framework.AArch64.StraightQ
 public import VerifiedGarbage.Proof.Framework.Block
 public import VerifiedGarbage.Proof.Aes.AArch64.Encrypt
 public import VerifiedGarbage.Proof.Aes.InvSboxSpec
+import VerifiedGarbage.Proof.Framework.Bitslice.LanesMap
+meta import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
+public import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 import VerifiedGarbage.Proof.Framework.Offset
@@ -267,7 +271,34 @@ theorem xorBits_map (W : Nat → BitVec 128) (l : List (Nat × Nat)) (hl : ∀ w
     simp only [List.map_cons, xorBits_cons, termsXor, List.foldr_cons] at ih ⊢
     rw [bitOf_word _ _ _ (hl wt (by simp)), ih fun v hv => hl v (by simp [hv])]
 
+/-! ## The lanes of MixColumns and its inverse
+
+Their checks (`mc_check`, `invMc_check`) compare the eight words the code computes with the lanes of
+`mcG` and `invMcG`: a dozen atoms at each of 128 positions of each word, which the kernel takes ten
+times as long to evaluate, from the tables of the specification, as to run the code. Every bit is
+the XOR of the same bits `(w, k)` (bit `w` of the byte `k` rows down), so the lanes are the XOR of
+those of each `(w, k)` at every position (`Bitslice.mk_map`): thirty-two patterns, in a table
+(`colPat`), that both checks read. -/
+
+/-- The lanes of bit `w` of the byte `k` rows down, at every position. -/
+def colPat (w k : Nat) : Nat := mk 128 (fun p => [128 * w + down p k]) 128
+
+/-- The lanes of the XOR of the bits `ws`, each at every position. -/
+def colLanes (ws : List (Nat × Nat)) : Nat := ws.foldr (fun wk acc => colPat wk.1 wk.2 ^^^ acc) 0
+
+theorem mk_cols (ws : List (Nat × Nat)) :
+    mk 128 (fun p => (ws.map fun wk => (wk.1, down p wk.2)).map fun wt => 128 * wt.1 + wt.2) 128 =
+      colLanes ws := by
+  simp only [List.map_map]
+  exact mk_map 128 (fun p (wk : Nat × Nat) => 128 * wk.1 + down p wk.2) ws 128
+
 end VG.Proof.Aes.AArch64.Neon
+
+namespace VG
+
+materialize_table Proof.Aes.AArch64.Neon.colPat 8 4
+
+end VG
 
 end
 
@@ -488,13 +519,43 @@ theorem invSr_check : StraightQ.check (lanes 128 10) noExt (StraightQ.linExt 0) 
     (StraightQ.linEnv (insOf A) [(idxR, invSrIdx)]) (StraightQ.linPost 10 (outsOf A invSrG)) = true := by
   decide +kernel
 
+/-- `linPost 10 (outsOf A g)` for a layer whose bit `p` of word `j` is the XOR of the bits `words j`,
+each `k` rows down from `p`, against the table of their lanes (`colLanes`): what the kernel evaluates. -/
+def colPost (words : Nat → List (Nat × Nat)) (e : StraightQ.Env (Nat × Nat)) : Bool :=
+  (List.range 8).all fun j => match e.reg (A j) with
+    | some v => v == (0, colLanes (words j)) && decide (v.2 < 2 ^ (128 * 2 ^ 10))
+    | none => false
+
+theorem linPost_of_cols {words : Nat → List (Nat × Nat)} {e : StraightQ.Env (Nat × Nat)}
+    (h : colPost words e = true) :
+    StraightQ.linPost 10 (outsOf A fun j p =>
+      ((words j).map fun wk => (wk.1, down p wk.2)).map fun wt => 128 * wt.1 + wt.2) e = true := by
+  simp only [colPost, List.all_eq_true, List.mem_range] at h
+  simp only [StraightQ.linPost, outsOf, List.all_map, List.all_eq_true, List.mem_range, Function.comp]
+  intro j hj
+  have hj := h j hj
+  unfold outOkW outWordW
+  rw [mk_cols]
+  exact hj
+
+theorem check_of_cols {is : List Instr} {words : Nat → List (Nat × Nat)}
+    (h : StraightQ.check (lanes 128 10) noExt (StraightQ.linExt 0) is
+      (StraightQ.linEnv (insOf B) [(idxR, rotIdx)]) (colPost words) = true) :
+    StraightQ.check (lanes 128 10) noExt (StraightQ.linExt 0) is
+      (StraightQ.linEnv (insOf B) [(idxR, rotIdx)]) (StraightQ.linPost 10 (outsOf A fun j p =>
+        ((words j).map fun wk => (wk.1, down p wk.2)).map fun wt => 128 * wt.1 + wt.2)) = true := by
+  obtain ⟨e, he, hp⟩ := StraightQ.of_check _ _ h
+  unfold StraightQ.check
+  rw [he]
+  exact linPost_of_cols hp
+
 theorem mc_check : StraightQ.check (lanes 128 10) noExt (StraightQ.linExt 0) mcCore
-    (StraightQ.linEnv (insOf B) [(idxR, rotIdx)]) (StraightQ.linPost 10 (outsOf A mcG)) = true := by
-  decide +kernel
+    (StraightQ.linEnv (insOf B) [(idxR, rotIdx)]) (StraightQ.linPost 10 (outsOf A mcG)) = true :=
+  check_of_cols (words := mcWords) (by lit_decide)
 
 theorem invMc_check : StraightQ.check (lanes 128 10) noExt (StraightQ.linExt 0) (invMcPre ++ mcCore)
-    (StraightQ.linEnv (insOf B) [(idxR, rotIdx)]) (StraightQ.linPost 10 (outsOf A invMcG)) = true := by
-  decide +kernel
+    (StraightQ.linEnv (insOf B) [(idxR, rotIdx)]) (StraightQ.linPost 10 (outsOf A invMcG)) = true :=
+  check_of_cols (words := invMcWords) (by lit_decide)
 
 theorem arkA_check : StraightQ.check (lanes 128 11) arkCfg (StraightQ.linExt 8) (addRoundKey A)
     (StraightQ.linEnv (insOf A) []) (StraightQ.linPost 11 (outsOf A arkG)) = true := by

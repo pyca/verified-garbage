@@ -2,6 +2,8 @@ module
 
 public import VerifiedGarbage.Impl.Seed.RISCV64.G16
 public import VerifiedGarbage.Proof.Seed.G16
+public import VerifiedGarbage.Proof.Seed.G16Lanes
+import VerifiedGarbage.Proof.Framework.Lit
 public import VerifiedGarbage.Proof.Aes.RISCV64.Layers
 import VerifiedGarbage.Proof.Framework.Bitslice.Lanes
 import VerifiedGarbage.Proof.Framework.Offset
@@ -25,7 +27,7 @@ namespace VG.Proof.Seed.RISCV64
 
 open VG VG.RISCV64 VG.RISCV64.Straight VG.Bitslice VG.Impl.Seed VG.Impl.Seed.RISCV64
 open VG.Impl.Aes.RISCV64 (q t0 t1 sb sboxCode)
-open VG.Proof.Seed (l1 l2 wordQ g16_words)
+open VG.Proof.Seed (l1 l2 wordQ g16_words l2Lane l2_lt)
 open VG.Proof.Aes.RISCV64 (sboxWrites)
 
 /-- The memory `g16` uses: the slots it reads and writes (the S-box's and
@@ -61,8 +63,21 @@ def post2 (e : Env (Nat × Nat)) : Bool :=
     e.slot (tSlot i) == some (gConst.toNat, mk 64 (l2 i) 64) &&
       (List.range 64).all fun t => (l2 i t).all (· < 2 ^ 9)
 
+/-- `post2`, against the table of the output layer's lanes (`Proof/Seed/G16Lanes.lean`): what the
+kernel evaluates. -/
+def post2K (e : Env (Nat × Nat)) : Bool :=
+  (List.range 8).all fun i => e.slot (tSlot i) == some (gConst.toNat, l2Lane i)
+
+theorem post2_of_K {e : Env (Nat × Nat)} (h : post2K e = true) : post2 e = true := by
+  simp only [post2K, post2, List.all_eq_true, List.mem_range, Bool.and_eq_true, beq_iff_eq,
+    decide_eq_true_eq] at h ⊢
+  exact fun i hi => ⟨h i hi, fun t ht a ha => l2_lt hi ht a ha⟩
+
 theorem g16Out_check : check (lanes 64 9) gCfg (kExt gKs) g16Out env2 post2 = true := by
-  decide +kernel
+  obtain ⟨e, he, hp⟩ := of_check _ _ _ (show check (lanes 64 9) gCfg (kExt gKs) g16Out env2 post2K = true by lit_decide)
+  unfold check
+  rw [he]
+  exact post2_of_K hp
 
 /-! ## Relating the checks to the machine -/
 
