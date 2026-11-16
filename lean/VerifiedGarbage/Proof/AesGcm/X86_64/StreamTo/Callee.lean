@@ -59,7 +59,7 @@ def encCallPre (M : CtxMode) (s : State) : Prop :=
 def encCallPub (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧
-    s₁.gpr .rsp = s₂.gpr .rsp ∧ arg s₁ 0 = arg s₂ 0
+    s₁.gpr .rsp = s₂.gpr .rsp ∧ arg s₁ 0 = arg s₂ 0 ∧ s₁.mxcsr = s₂.mxcsr
 
 /-- `vg_aes_gcm_stream_encrypt`, called with the layout of its shared
 contract, for a key context of kind `M`. -/
@@ -124,7 +124,7 @@ theorem encSpecP_post {s s' : State} (hR : Proof.AesGcm.rounds s)
 
 theorem encSpec_pub {s₁ s₂ : State} (h : encCallPub s₁ s₂) :
     (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, aMd⟩ := h
   sig_pub [Proof.AesGcm.streamEncryptRoundsContract, Spec.Gcm.streamCryptSig, X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.AesGcm.streamEncryptRoundsContract, Spec.Gcm.streamCryptSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg]
@@ -134,7 +134,7 @@ theorem encSpec_pub {s₁ s₂ : State} (h : encCallPub s₁ s₂) :
 
 theorem encSpecP_pub {s₁ s₂ : State} (h : encCallPub s₁ s₂) :
     (Proof.AesGcm.streamEncryptPrecomputedRoundsContract X86_64.abi 2608).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, aMd⟩ := h
   sig_pub [Proof.AesGcm.streamEncryptPrecomputedRoundsContract, Proof.Gcm.streamCryptPrecomputedSig, X86_64.abi,
     X86_64.argRegs]
   sig_reduce [Proof.AesGcm.streamEncryptPrecomputedRoundsContract, Proof.Gcm.streamCryptPrecomputedSig, X86_64.abi,
@@ -142,6 +142,13 @@ theorem encSpecP_pub {s₁ s₂ : State} (h : encCallPub s₁ s₂) :
   simp only [Proof.AesGcm.arg, X86_64.stackArg, X86_64.stackArgAddr] at a₈
   sig_and_intros
   all_goals first | with_reducible assumption | trivial
+
+/-- A call in a frame of pushes, of code that loads no MXCSR, loads none. -/
+theorem call_frame_mx {rs : List Reg} {r : Reg} {k : Nat} {n : String} {c : Prog isa}
+    (h : c.allInstrs (fun i => !loadsMxcsr i) = true) :
+    (Code.frame (.push rs) (.call n c) (.pop r k) : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true := by
+  simp only [Code.allInstrs, h, Bool.and_true]
+  rfl
 
 /-- An implementation of `vg_aes_gcm_stream_encrypt` for a key context of
 kind `M`, by `encK M`, that writes `rsp` only in its frames, uses at most

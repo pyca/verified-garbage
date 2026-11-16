@@ -24,16 +24,23 @@ namespace VG.Proof.Variants.RsaPrivateCrt.Arm.Umaal
 
 open VG.Arm VG.Impl.Bignum.Arm VG.Proof.Bignum.Arm
 
+/-- The stack of both functions before the row transform, which does not add to it
+(`armStack_umaalArithmetic`), in one evaluation: the kernel neither builds the transformed code
+nor builds twice the code the two share. -/
+theorem stacks : FrameStack.armStack (CrtFn.codeWith CrtFios.phase) ≤ 56 ∧
+    FrameStack.armStack (CrtFn.codeGiven CrtFios.phase) ≤ 56 := by
+  decide +kernel
+
 def variant : Proof.Rsa.Arm.CrtImpl :=
   { Base.variant with
     name := "vg_rsa_private_crt" ++ "_umaal"
     code := CrtFios.code
     verified := crtUmaal_verified
-    stack := by decide +kernel
+    stack := (armStack_umaalArithmetic _).trans stacks.1
     crtPName := "vg_rsa_private_crt_precomputed" ++ "_umaal"
     crtP := CrtFios.codeGiven
     crtPVerified := crtUmaal_verifiedP
-    crtPStack := by decide +kernel
+    crtPStack := (armStack_umaalArithmetic _).trans stacks.2
     pcName := Spec.Rsa.publicPrecomputeApi.name ++ "_umaal"
     pc := umaalArithmetic Base.variant.pc
     pcVerified := umaalArithmetic_verified Base.variant.pcVerified

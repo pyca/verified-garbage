@@ -45,6 +45,30 @@ end VG.Impl.Sm4.AArch64.Serial
 
 namespace VG.Proof.Sm4.AArch64
 
+/-! The key expansion loads the S-box by immediates (`Impl.Tbl.AArch64.loadTable`),
+a lookup in the specification's vector for each of its 256 bytes. The code
+that loads it is evaluated once here, its bytes read from the packed table
+(`Proof.Sm4.sboxN.lit`), and is the literal of the code the key expansion
+contains (`sboxLoad.lit_eq`), as for SEED (`Proof/Seed/AArch64/ModesLit.lean`). -/
+
+/-- The code that loads the S-box, its bytes from the packed table. -/
+private def sboxPacked : List VG.AArch64.Instr :=
+  Impl.Tbl.AArch64.loadTable (fun k => BitVec.ofNat 8 (Proof.Sm4.sboxN k))
+
+materialize_value sboxPacked
+
+/-- The literal of the code that loads the S-box (private: only this module's
+literals contain that code outside a literal). -/
+private noncomputable abbrev sboxLoad.lit : List VG.AArch64.Instr := sboxPacked.lit
+
+private theorem sboxLoad.lit_eq :
+    Impl.Tbl.AArch64.loadTable (fun k => Spec.Sm4.sbox.getD k 0) = sboxLoad.lit := by
+  have e : (fun k => Spec.Sm4.sbox.getD k 0) = fun k => BitVec.ofNat 8 (Proof.Sm4.sboxN k) := by
+    funext k
+    rw [Proof.Sm4.sboxN_getD, BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  rw [e]
+  exact sboxPacked.lit_eq
+
 materialize_flat_code serialExpandKeyCode := Impl.Sm4.AArch64.Serial.expandKey
 materialize_flat_code ecbEncrypt := Impl.Sm4.AArch64.ecb .encrypt
 materialize_flat_code ecbDecrypt := Impl.Sm4.AArch64.ecb .decrypt

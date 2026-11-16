@@ -93,11 +93,11 @@ theorem gatherPost_of {s s' : State} (h : gatherPost s s') :
 
 theorem gatherPub_of {s₁ s₂ : State} (hp : (Spec.ChaCha20Poly1305.sealGatherContract AArch64.abi 1296).pub s₁ s₂) :
     gatherPub s₁ s₂ := by
-  sig_pub [Spec.ChaCha20Poly1305.sealGatherContract, Spec.ChaCha20Poly1305.sealGatherSig,
+  sig_pub_keep [Spec.ChaCha20Poly1305.sealGatherContract, Spec.ChaCha20Poly1305.sealGatherSig,
     Spec.ChaCha20Poly1305.sealGatherPre, AArch64.abi, AArch64.argRegs, stackArgs_one, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
-  obtain ⟨qsp, q0, q1, q2, q3, q4, q5, q6, q7, a0, hd⟩ := hp
-  exact ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, a0, hd⟩
+  obtain ⟨qsp, qd, q0, q1, q2, q3, q4, q5, q6, q7, a0, hd⟩ := hp
+  exact ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qd, a0, hd⟩
 
 /-- A state satisfying the precondition of `vg_chacha20_poly1305_seal_gather`:
 no slices, no additional data or text; the tag at `0x5000`. -/

@@ -118,7 +118,7 @@ theorem call_mid {o q : Nat} (hq0 : q ≠ 0) (hq : o + 16 * q ≤ L s) (htl : (T
     {st₄ st' : State}
     (f₄ : Frame (wR s ++ [tR s]) s.mem st₄.mem) (sem₄ : Sem s o st₄.mem) (hk₄ : Kept s (o + 16 * q) st₄.mem)
     (hsp₄ : st₄.gpr .rsp = SP s) (hcs₄ : ∀ r ∈ calleeSaved, st₄.gpr r = s.gpr r) (hrd₄ : st₄.rd = s.rd)
-    (hwr₄ : st₄.wr = s.wr)
+    (hwr₄ : st₄.wr = s.wr) (hmx : st'.mxcsr = s.mxcsr)
     (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st₄.gpr r) (hrd : st'.rd = st₄.rd) (hwr : st'.wr = st₄.wr)
     (hf : Frame (blkWr s o q ++ [tR s]) st₄.mem st'.mem)
     (o₁ : blocksAt st'.mem (Dst s + BitVec.ofNat 64 o) q =
@@ -134,7 +134,7 @@ theorem call_mid {o q : Nat} (hq0 : q ≠ 0) (hq : o + 16 * q ≤ L s) (htl : (T
   have f' : Frame (wR s ++ [tR s]) s.mem st'.mem := f₄.trans (blk_wR (s := s) hq hf)
   refine ⟨hq, htl, by rw [hcs _ (by decide), hsp₄], fun r hr => by rw [hcs r hr, hcs₄ r hr],
     by rw [hrd, hrd₄], by rw [hwr, hwr₄], hk₄.frame hf (kR'_blk hp hq), f',
-    fun iv a p hr hal hpl => ?_⟩
+    fun iv a p hr hal hpl => ?_, hmx⟩
   -- The state before the call.
   obtain ⟨hr₄, dd₄⟩ := sem₄ iv a p hr hal hpl
   have hX : (p ++ pt s o).length = (TL s).toNat + o := by rw [List.length_append, length_bytesAt, hpl]
@@ -171,12 +171,12 @@ theorem blocks_ok (T : BlkToFn M) {o : Nat} {st : State} (h : Mid s o st) :
   have ho := h.o_le
   have htl := h.tl
   unfold blocks
-  refine WP.seq (WP.mono (blocksLoad_ok hp h) fun s₀ ⟨h11, hcx, h8, g₀, m₀, rd₀, wr₀⟩ => ?_)
+  refine WP.seq (WP.mono_mx (by decide) (blocksLoad_ok hp h) fun s₀ ⟨h11, hcx, h8, g₀, m₀, rd₀, wr₀⟩ mx_s₀ => ?_)
   have M₀ : Mid s o s₀ := h.regs m₀ (fun r hr => g₀ r (by rintro rfl; simp [calleeSaved] at hr)
     (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)
-    (by rintro rfl; simp [calleeSaved] at hr)) rd₀ wr₀
-  refine WP.seq (WP.mono hd1_ok fun s₁ ⟨ax₁, z₁, g₁, m₁, rd₁, wr₁⟩ => ?_)
-  have M₁ : Mid s o s₁ := M₀.regs m₁ (fun r hr => g₁ r (by rintro rfl; simp [calleeSaved] at hr)) rd₁ wr₁
+    (by rintro rfl; simp [calleeSaved] at hr)) rd₀ wr₀ mx_s₀
+  refine WP.seq (WP.mono_mx (by decide) hd1_ok fun s₁ ⟨ax₁, z₁, g₁, m₁, rd₁, wr₁⟩ mx_s₁ => ?_)
+  have M₁ : Mid s o s₁ := M₀.regs m₁ (fun r hr => g₁ r (by rintro rfl; simp [calleeSaved] at hr)) rd₁ wr₁ mx_s₁
   -- `rax`: `aad_len` after no text, and the text so far and the bytes done otherwise.
   have hsel : WP isa (.ite .e (.block [.mov .rax (.reg .rcx)]) (.block [])) s₁ fun s₂ =>
       s₂.gpr .rax = Sel s o ∧ (∀ r, r ≠ .rax → s₂.gpr r = s₁.gpr r) ∧ s₂.mem = s₁.mem ∧ s₂.rd = s₁.rd ∧
@@ -188,10 +188,10 @@ theorem blocks_ok (T : BlkToFn M) {o : Nat} {st : State} (h : Mid s o st) :
       (fun e => WP.block_nil ⟨by
         have hz : TL s + BitVec.ofNat 64 o ≠ 0 := by rw [← h8]; simpa using e
         rw [ax₁, h8]; simp only [Sel, hz, ite_false], fun _ _ => rfl, rfl, rfl, rfl⟩)
-  refine WP.seq (WP.mono hsel fun s₁' ⟨ax₁', g₁', m₁', rd₁', wr₁'⟩ => ?_)
-  have M₁' : Mid s o s₁' := M₁.regs m₁' (fun r hr => g₁' r (by rintro rfl; simp [calleeSaved] at hr)) rd₁' wr₁'
-  refine WP.seq (WP.mono (hd2_ok (T := Sel s o) ax₁') fun s₂ ⟨z₂, g₂, m₂, rd₂, wr₂⟩ => ?_)
-  have M₂ : Mid s o s₂ := M₁'.regs m₂ (fun r hr => g₂ r (by rintro rfl; simp [calleeSaved] at hr)) rd₂ wr₂
+  refine WP.seq (WP.mono_mx (by decide) hsel fun s₁' ⟨ax₁', g₁', m₁', rd₁', wr₁'⟩ mx_s₁' => ?_)
+  have M₁' : Mid s o s₁' := M₁.regs m₁' (fun r hr => g₁' r (by rintro rfl; simp [calleeSaved] at hr)) rd₁' wr₁' mx_s₁'
+  refine WP.seq (WP.mono_mx (by decide) (hd2_ok (T := Sel s o) ax₁') fun s₂ ⟨z₂, g₂, m₂, rd₂, wr₂⟩ mx_s₂ => ?_)
+  have M₂ : Mid s o s₂ := M₁'.regs m₂ (fun r hr => g₂ r (by rintro rfl; simp [calleeSaved] at hr)) rd₂ wr₂ mx_s₂
   refine WP.ite (!(BitVec.ofNat 64 ((Sel s o).toNat % 16) == 0)) (by simp only [eval, z₂, Option.map_some])
     (fun _ => WP.block_nil ⟨o, M₂⟩) (fun e₂ => ?_)
   obtain ⟨ht16, ht0⟩ := sel_mod (s := s) (o := o) (by
@@ -200,17 +200,17 @@ theorem blocks_ok (T : BlkToFn M) {o : Nat} {st : State} (h : Mid s o st) :
     rwa [BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith)] at this)
   rw [tl_add htl] at ht16
   have h11₂ : s₂.gpr .r11 = W s := by rw [g₂ _ (by decide), g₁' _ (by decide), g₁ _ (by decide), h11]
-  refine WP.seq (WP.mono (blocksCount_ok hp h11₂ M₂.kept ho M₂.rd M₂.wr) fun s₃ ⟨ax₃, z₃, g₃, m₃, rd₃, wr₃⟩ => ?_)
+  refine WP.seq (WP.mono_mx (by decide) (blocksCount_ok hp h11₂ M₂.kept ho M₂.rd M₂.wr) fun s₃ ⟨ax₃, z₃, g₃, m₃, rd₃, wr₃⟩ mx_s₃ => ?_)
   have M₃ : Mid s o s₃ := M₂.regs m₃ (fun r hr => g₃ r (by rintro rfl; simp [calleeSaved] at hr)
-    (by rintro rfl; simp [calleeSaved] at hr)) rd₃ wr₃
+    (by rintro rfl; simp [calleeSaved] at hr)) rd₃ wr₃ mx_s₃
   refine WP.ite (decide ((L s - o) / 16 = 0)) (by simp only [eval, z₃]) (fun _ => WP.block_nil ⟨o, M₃⟩)
     (fun e₃ => ?_)
   have hq0 : (L s - o) / 16 ≠ 0 := by simpa using e₃
   have h8₃ : s₃.gpr .r8 = TL s + BitVec.ofNat 64 o := by
     rw [g₃ _ (by decide) (by decide), g₂ _ (by decide), g₁' _ (by decide), g₁ _ (by decide), h8]
-  refine WP.seq (WP.mono (len_ok ax₃ h8₃) fun s₄ ⟨r9₄, ax₄, cf₄, g₄, m₄, rd₄, wr₄⟩ => ?_)
+  refine WP.seq (WP.mono_mx (by decide) (len_ok ax₃ h8₃) fun s₄ ⟨r9₄, ax₄, cf₄, g₄, m₄, rd₄, wr₄⟩ mx_s₄ => ?_)
   have M₄ : Mid s o s₄ := M₃.regs m₄ (fun r hr => g₄ r (by rintro rfl; simp [calleeSaved] at hr)
-    (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)) rd₄ wr₄
+    (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)) rd₄ wr₄ mx_s₄
   have h16 : (BitVec.ofNat 64 (16 * ((L s - o) / 16))).toNat = 16 * ((L s - o) / 16) := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_arith)
   rw [h16, tl_add htl] at cf₄
@@ -219,23 +219,24 @@ theorem blocks_ok (T : BlkToFn M) {o : Nat} {st : State} (h : Mid s o st) :
   have htl' : (TL s).toNat + (o + 16 * ((L s - o) / 16)) < 2 ^ 64 := by simp at e₄; omega_arith
   have h11₄ : s₄.gpr .r11 = W s := by
     rw [g₄ _ (by decide) (by decide) (by decide), g₃ _ (by decide) (by decide), h11₂]
-  refine WP.seq (WP.mono (blocksArgs_ok hp h11₄ ax₄ M₄.kept M₄.rd M₄.wr)
-    fun s₅ ⟨di, si, dx, cx, r8₅, r10₅, ax₅, g₅, k₅, f₅, rd₅, wr₅⟩ => ?_)
+  refine WP.seq (WP.mono_mx (by decide) (blocksArgs_ok hp h11₄ ax₄ M₄.kept M₄.rd M₄.wr)
+    fun s₅ ⟨di, si, dx, cx, r8₅, r10₅, ax₅, g₅, k₅, f₅, rd₅, wr₅⟩ mx₅ => ?_)
   have hq : o + 16 * ((L s - o) / 16) ≤ L s := by omega_arith
   have sp₅ : s₅.gpr .rsp = SP s := by
     rw [g₅ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), M₄.rsp]
   have r9₅ : s₅.gpr .r9 = BitVec.ofNat 64 ((L s - o) / 16) := by
     rw [g₅ _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), r9₄]
   have si₅ : s₅.gpr .rsi = s.gpr .rsi := si
-  refine WP.mono (blkCall_ok hp T hq sp₅ (rd₅.trans M₄.rd) (wr₅.trans M₄.wr) (M₄.frame.trans (frame_kR' f₅))
-    di si₅ dx cx r8₅ r9₅ r10₅ ax₅) fun s₆ ⟨cs₆, rd₆, wr₆, f₆, o₁, o₂, o₃⟩ => ⟨o + 16 * ((L s - o) / 16), ?_⟩
+  refine WP.mono_mx (call_frame_mx T.mx) (blkCall_ok hp T hq sp₅ (rd₅.trans M₄.rd) (wr₅.trans M₄.wr)
+    (M₄.frame.trans (frame_kR' f₅)) di si₅ dx cx r8₅ r9₅ r10₅ ax₅)
+    fun s₆ ⟨cs₆, rd₆, wr₆, f₆, o₁, o₂, o₃⟩ mx₆ => ⟨o + 16 * ((L s - o) / 16), ?_⟩
   have cs₅ : ∀ r ∈ calleeSaved, s₅.gpr r = s.gpr r := fun r hr => by
     rw [g₅ r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)
       (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)
       (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)
       (by rintro rfl; simp [calleeSaved] at hr), M₄.saved r hr]
   exact call_mid hp hq0 hq htl' ht0 ht16 (M₄.frame.trans (frame_kR' f₅)) (M₄.sem.kR' hp f₅ ho) k₅
-    sp₅ cs₅ (rd₅.trans M₄.rd) (wr₅.trans M₄.wr) cs₆ rd₆ wr₆ f₆ o₁ o₂ o₃
+    sp₅ cs₅ (rd₅.trans M₄.rd) (wr₅.trans M₄.wr) (mx₆.trans (mx₅.trans M₄.mx)) cs₆ rd₆ wr₆ f₆ o₁ o₂ o₃
 
 end
 

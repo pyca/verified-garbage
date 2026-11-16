@@ -42,10 +42,12 @@ structure SwapInv (b : BitVec 32) (x y sw : Nat) (s0 : State) (n : Nat) (s : Sta
   ly : ∀ j < n, limb s.mem (State.addr b) y j =
     sel sw (limb s0.mem (State.addr b) y j) (limb s0.mem (State.addr b) x j)
 
-theorem cswap_ok {x y : Nat} (hx : x + 64 ≤ 4096) (hy : y + 64 ≤ 4096) (hxy : x + 64 ≤ y ∨ y + 64 ≤ x)
+/-- The swap of the first `n` limbs. -/
+theorem cswapN_ok {n x y : Nat} (hx : x + 4 * n ≤ 4096) (hy : y + 4 * n ≤ 4096)
+    (hxy : x + 4 * n ≤ y ∨ y + 4 * n ≤ x)
     {s0 : State} (hc : CtxN e b s0) {sw : Nat} (hsw : sw ≤ 1) (h9 : s0.gpr .r9 = 0 - BitVec.ofNat 32 sw) :
-    WP isa (.block (cswap x y)) s0 (SwapInv b x y sw s0 16) := by
-  refine wp_range_flatMap (M := isa) (SwapInv b x y sw s0) (fun k s hk h => ?_) 16 (Nat.le_refl _) s0
+    WP isa (.block ((List.range n).flatMap (cswapStep x y))) s0 (SwapInv b x y sw s0 n) := by
+  refine wp_range_flatMap (M := isa) (SwapInv b x y sw s0) (fun k s hk h => ?_) n (Nat.le_refl _) s0
     ⟨Rest.refl _ _, Frame.refl _ _, fun _ h => absurd h (Nat.not_lt_zero _),
       fun _ h => absurd h (Nat.not_lt_zero _)⟩
   have hcs : CtxN e b s := hc.of_rest h.rest (by decide)
@@ -122,6 +124,11 @@ theorem cswap_ok {x y : Nat} (hx : x + 64 ≤ 4096) (hy : y + 64 ≤ 4096) (hxy 
     · rw [wd_write_other _ _ _ (by omega_using [hj]) (by omega_arith) (by omega_using [hy, hk]),
         wd_write_other _ _ _ (by omega_arith) (by omega_arith) (by omega_using [hx, hk])]; exact h.ly j hj
     · rw [wd_write_self, vy]
+
+theorem cswap_ok {x y : Nat} (hx : x + 64 ≤ 4096) (hy : y + 64 ≤ 4096) (hxy : x + 64 ≤ y ∨ y + 64 ≤ x)
+    {s0 : State} (hc : CtxN e b s0) {sw : Nat} (hsw : sw ≤ 1) (h9 : s0.gpr .r9 = 0 - BitVec.ofNat 32 sw) :
+    WP isa (.block (cswap x y)) s0 (SwapInv b x y sw s0 16) :=
+  cswapN_ok (n := 16) hx hy hxy hc hsw h9
 
 end
 

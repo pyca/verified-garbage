@@ -220,6 +220,10 @@ def primeTest (v : RoundImpl) : VG.Proof.Dsa.AArch64.Generation.PrimeTest where
   code := testCode v
   verified _ hb := verified v hb
   depth := testCode_depth v
+  noDit _ hb := by
+    have h := test_noDit v hb
+    simp only [testCode, Impl.Dsa.AArch64.ProbablePrime.code, Impl.Bignum.AArch64.seqs, Code.all, h]
+    rfl
 
 end VG.Proof.Dsa.AArch64.ProbablePrime
 

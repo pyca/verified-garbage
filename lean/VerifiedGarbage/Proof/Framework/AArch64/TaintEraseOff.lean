@@ -57,8 +57,9 @@ theorem checkBlock_eraseOff (τ : taint.T) (is : List isa.Instr) :
   induction is generalizing τ with
   | nil => rfl
   | cons i is ih =>
-    show (step τ i.eraseOff).bind _ = (step τ i).bind _
-    exact congr (congrArg Option.bind (step_eraseOff τ i)) (funext ih)
+    show (taint.step τ i.eraseOff).bind _ = (taint.step τ i).bind _
+    exact congr (congrArg Option.bind
+      ((taint_step _ _).trans ((step_eraseOff τ i).trans (taint_step _ _).symm))) (funext ih)
 
 theorem checkChunks_eraseOff {chunkSize : Nat} (τ : taint.T) (is : List isa.Instr) (ms : List taint.T) :
     taint.checkChunks chunkSize τ (is.map Instr.eraseOff) ms = taint.checkChunks chunkSize τ is ms := by
@@ -95,8 +96,9 @@ theorem checkBlock_eraseOff (τ : taint.T) (is : List isa.Instr) :
   induction is generalizing τ with
   | nil => rfl
   | cons i is ih =>
-    show (step τ i.eraseOff).bind _ = (step τ i).bind _
-    exact congr (congrArg Option.bind (step_eraseOff τ i)) (funext ih)
+    show (taint.step τ i.eraseOff).bind _ = (taint.step τ i).bind _
+    exact congr (congrArg Option.bind
+      ((taint_step _ _).trans ((step_eraseOff τ i).trans (taint_step _ _).symm))) (funext ih)
 
 theorem checkChunks_eraseOff {chunkSize : Nat} (τ : taint.T) (is : List isa.Instr) (ms : List taint.T) :
     taint.checkChunks chunkSize τ (is.map Instr.eraseOff) ms = taint.checkChunks chunkSize τ is ms := by

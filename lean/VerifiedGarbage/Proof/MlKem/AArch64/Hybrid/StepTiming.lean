@@ -13,6 +13,8 @@ meta import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 meta import VerifiedGarbage.Proof.Framework.AArch64.VectorCaller
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.RegSet
 meta import VerifiedGarbage.Proof.Framework.RegSet
@@ -248,6 +250,8 @@ theorem plainStep_relCT {σ₁ σ₂ : State} (sp : σ₁.sp = σ₂.sp)
     · exact h19
     · exact h20
     · exact h21
+  -- Unfolded to the call, whose code has a literal (`X2Lit`) that the checks then read.
+  unfold Impl.MlKem.AArch64.Hybrid.plainStep VG.Impl.Sha3.AArch64.Neon.X2.call
   cases sha3
   · exact rel_vtaint [.x19, .x20, .x21] sp hr ⟨_, by taint_decide⟩
   · exact rel_taint [.x19, .x20, .x21] sp hr ⟨_, by taint_decide⟩

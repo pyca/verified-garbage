@@ -102,6 +102,12 @@ theorem enter_gpr {inl : Bool} {st : State} (rd wr : List Region) {r : Reg} (hr 
   · rw [enter_false]; exact entry_gpr rd wr hr
   · rw [State.withRegions_gpr, enter_true]; exact pushed_gpr _ _ hr
 
+@[simp] theorem enter_mxcsr {inl : Bool} {st : State} (rd wr : List Region) :
+    ((enter inl st).withRegions rd wr).mxcsr = st.mxcsr := by
+  cases inl
+  · rw [enter_false]; rfl
+  · rw [State.withRegions_mxcsr, enter_true, pushed_mxcsr]
+
 theorem enter_rsp {inl : Bool} {st : State} (hsp : st.gpr .rsp = SP s) (rd wr : List Region) :
     ((enter inl st).withRegions rd wr).gpr .rsp = SP s - BitVec.ofNat 64 8 := by
   cases inl
@@ -127,6 +133,13 @@ theorem enter_frame {inl : Bool} {st : State} (hsp : st.gpr .rsp = SP s) (h8 : 8
   hf.trans ((enter_keep hsp h8 rd wr).sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨tR s, by simp, fun _ h => h⟩)
+
+/-- A function called or inlined loads no MXCSR if its code loads none. -/
+theorem callOr_mx (inl : Bool) {k : Contract isa} {d : Nat} (F : CallFn k d) :
+    (Impl.AesGcm.X86_64.SealGather.callOr inl F.fn).allInstrs (fun i => !loadsMxcsr i) = true := by
+  have h := F.mx
+  cases inl <;> simp only [Impl.AesGcm.X86_64.SealGather.callOr, Code.allInstrs, h, Bool.and_true, Bool.true_and,
+    Bool.false_eq_true, ↓reduceIte] <;> rfl
 
 /-- `call0_ok`, for a function called or (`inl`) inlined (`callOr`). -/
 theorem callOr0_ok (inl : Bool) {k : Contract isa} {d : Nat} (F : CallFn k d) (hd : d + 8 ≤ 4888) {st : State}
@@ -190,10 +203,11 @@ include hp
 and apart from the slots kept. -/
 theorem Base.after {ap : BitVec 64} {i : Nat} {st st' : State} (h : Base s ap i st)
     (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr)
+    (hmx : st'.mxcsr = st.mxcsr)
     {wr : List Region} (hf : Frame (wr ++ [tR s]) st.mem st'.mem) (hsub : ∀ r ∈ wr, ∃ t ∈ wR s, r.Sub t)
     (hk : ∀ r ∈ wr, (kpR s).Disjoint r) : Base s ap i st' := by
   refine ⟨by rw [hcs _ (by decide), h.rsp], fun r hr => by rw [hcs r hr, h.saved r hr], hrd.trans h.rd,
-    hwr.trans h.wr, h.kept.frame hf fun r hr => ?_, h.frame.trans (hf.sub fun r hr => ?_)⟩
+    hwr.trans h.wr, h.kept.frame hf fun r hr => ?_, h.frame.trans (hf.sub fun r hr => ?_), hmx.trans h.mx⟩
   · rcases List.mem_append.mp hr with hr | hr
     · exact hk r hr
     · simp only [List.mem_singleton] at hr; subst hr; exact hp.b_w.symm.sub_left kpR_sub
@@ -247,7 +261,7 @@ theorem initCall_ok (inl : Bool) (F : InitFn) {st : State} (h : Base s (AL s) 0 
     (h_si : st.gpr .rsi = Nn s) (h_dx : st.gpr .rdx = s.gpr .rcx) (h_cx : st.gpr .rcx = St s) :
     WP isa (Impl.AesGcm.X86_64.SealGather.callOr inl F.fn) st (Mid s (AL s) 0 []) := by
   obtain ⟨hpre, hc, hw'⟩ := initEntry (inl := inl) hp h h_di h_si h_dx h_cx
-  refine WP.mono (callOr0_ok inl F (by decide) h.rsp (by have := hp.w_sp; omega_arith) hpre hc hw') fun st' ⟨hcs, hrd, hwr, hf, s₂, hm, hpost⟩ => ?_
+  refine WP.mono_mx (callOr_mx inl F) (callOr0_ok inl F (by decide) h.rsp (by have := hp.w_sp; omega_arith) hpre hc hw') fun st' ⟨hcs, hrd, hwr, hf, s₂, hm, hpost⟩ hmx' => ?_
   have fU := enter_frame (inl := inl) h.rsp (by have := hp.w_sp; omega_arith) h.frame [⟨K s, 256⟩, nR s] [stR s]
   rw [State.withRegions_mem] at fU
   simp only [initK, Proof.AesGcm.streamInitX86_64, State.withRegions_mem,
@@ -255,7 +269,7 @@ theorem initCall_ok (inl : Bool) (F : InitFn) {st : State} (h : Base s (AL s) 0 
     enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp), enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp), h_di, h_si, h_dx, h_cx,
     hk_eq hp fU, hm] at hpost
   rw [show (s.gpr .rcx).toNat = NL s from rfl, iv_eq hp fU] at hpost
-  have hB := h.after hp hcs hrd hwr hf st_sub fun r hr => by
+  have hB := h.after hp hcs hrd hwr hmx' hf st_sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact kpR_stR
   refine ⟨hB, Nat.zero_le _, ?_, ?_⟩
   · rw [ct_zero]; exact hpost _
@@ -316,7 +330,7 @@ theorem aadCall_ok (inl : Bool) (F : AadFn) {ap : BitVec 64} {A : List Byte} {D 
   have hn : (BitVec.ofNat 64 n).toNat = n := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt hn64
   obtain ⟨hpre, hc, hw'⟩ := aadEntry (inl := inl) hp h.toBase hD hDt hDc hDw hn64 h_di h_si h_cx h_8
-  refine WP.mono (callOr0_ok inl F (by decide) h.rsp (by have := hp.w_sp; omega_arith) hpre hc hw') fun st' ⟨hcs, hrd, hwr, hf, s₂, hm, hpost⟩ => ?_
+  refine WP.mono_mx (callOr_mx inl F) (callOr0_ok inl F (by decide) h.rsp (by have := hp.w_sp; omega_arith) hpre hc hw') fun st' ⟨hcs, hrd, hwr, hf, s₂, hm, hpost⟩ hmx' => ?_
   have fU := enter_frame (inl := inl) h.rsp (by have := hp.w_sp; omega_arith) h.frame [⟨K s, 256⟩, ⟨D, n⟩] [stR s]
   have fK := enter_keep (inl := inl) h.rsp (by have := hp.w_sp; omega_arith) [⟨K s, 256⟩, ⟨D, n⟩] [stR s]
   rw [State.withRegions_mem] at fU fK
@@ -331,7 +345,7 @@ theorem aadCall_ok (inl : Bool) (F : AadFn) {ap : BitVec 64} {A : List Byte} {D 
   have sr₁ := hpost (ciph s) (iv s) A sr₀ rfl
   rw [bytesAt_frame fK (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hDt.symm) (by omega_arith)]
     at sr₁
-  have hB := h.after hp hcs hrd hwr hf st_sub fun r hr => by
+  have hB := h.after hp hcs hrd hwr hmx' hf st_sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact kpR_stR
   refine ⟨hB, Nat.zero_le _, by rw [ct_zero]; exact sr₁, by rw [gl_zero, ct_zero]; rfl⟩
 
@@ -386,7 +400,7 @@ theorem finCall_ok (inl : Bool) (F : FinFn) {ap : BitVec 64} {i : Nat} {C : List
       Frame [stR s, tgR s, tR s] st.mem st'.mem ∧
       bytesAt st'.mem (Tg s) 16 = fullTag (ciph s) (hk s) (iv s) (ad s) C := by
   obtain ⟨hpre, hc, hw'⟩ := finEntry (inl := inl) hp h h_di h_si h_dx h_9
-  refine WP.mono (callOr0_ok inl F (by decide) h.rsp (by have := hp.w_sp; omega_arith) hpre hc hw') fun st' ⟨hcs, hrd, hwr, hf, s₂, hm, hpost⟩ => ?_
+  refine WP.mono_mx (callOr_mx inl F) (callOr0_ok inl F (by decide) h.rsp (by have := hp.w_sp; omega_arith) hpre hc hw') fun st' ⟨hcs, hrd, hwr, hf, s₂, hm, hpost⟩ hmx' => ?_
   have fU := enter_frame (inl := inl) h.rsp (by have := hp.w_sp; omega_arith) h.frame [⟨K s, 256⟩] [stR s, tgR s]
   have fK := enter_keep (inl := inl) h.rsp (by have := hp.w_sp; omega_arith) [⟨K s, 256⟩] [stR s, tgR s]
   rw [State.withRegions_mem] at fU fK
@@ -398,7 +412,7 @@ theorem finCall_ok (inl : Bool) (F : FinFn) {ap : BitVec 64} {i : Nat} {C : List
   have sr₀ : StreamRepr (enter inl st).mem (St s) (ciph s) (hk s) (iv s) (ad s) C :=
     streamRepr_frame fK (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact hp.b_w.symm.sub_left stR_sub) hsr
-  have hB := h.after hp hcs hrd hwr hf (fun r hr => by
+  have hB := h.after hp hcs hrd hwr hmx' hf (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨wkR s, by simp, stR_sub⟩

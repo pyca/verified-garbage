@@ -190,7 +190,7 @@ open VG.Impl.MlDsa.AArch64.Optimized.Inverse (inverseConsts expandedWords)
 
 theorem dot_callee (S : Nat) {count : Nat} (hc : count=4 ∨ count=5 ∨ count=7) :
     CalleeOk S (staticCode count) (dotInverseContract count (abi.withConsts inverseConsts)) := by
-  refine ⟨(dot_verified hc).1,(dot_verified hc).2.1,?_⟩
+  refine CalleeOk.of_ct (dot_verified hc).1 (dot_verified hc).2.1 (by rcases hc with rfl|rfl|rfl <;> lit_decide) (fun _ _ h => h) ?_
   change 0≤S
   exact Nat.zero_le _
 

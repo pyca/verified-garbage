@@ -183,16 +183,16 @@ theorem cfbA4_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 
       · exact ⟨⟨S s₀, 2064⟩, by simp, fun _ h => h⟩
       · exact ⟨gR s₀, by simp, fun _ h => h⟩
     all_goals subst hr; exact ⟨_, by simp, fun _ h => h⟩
-  · rw [mem₉, m₈, copyMem_bytes, m₇, copyMem_other, m₆, copyMem_other, m₅, copyMem_other, ivS] <;> cbc_gd
+  · rw [mem₉, m₈, copyMem_bytes, m₇, copyMem_other, m₆, copyMem_other, m₅, copyMem_other, ivS] <;> cbc_gd hp hk
   · rw [mem₉, m₈, copyMem_other, m₇, copyMem_other, m₆, copyMem_other, m₅, copyMem_bytes,
-      sv.slot 0 (by decide)] <;> cbc_gd
+      sv.slot 0 (by decide)] <;> cbc_gd hp hk
   · rw [mem₉, m₈, copyMem_other, m₇, copyMem_other, m₆, copyMem_bytes, m₅, copyMem_other,
-      sv.slot 1 (by decide)] <;> cbc_gd
+      sv.slot 1 (by decide)] <;> cbc_gd hp hk
   · rw [mem₉, m₈, copyMem_other, m₇, copyMem_bytes, m₆, copyMem_other, m₅, copyMem_other,
-      sv.slot 2 (by decide)] <;> cbc_gd
+      sv.slot 2 (by decide)] <;> cbc_gd hp hk
   · rw [mem₉, m₈, copyMem_other, m₇, copyMem_other, m₆, copyMem_other, m₅, copyMem_other, sv.slot j hj]
-      <;> cbc_gd
-  · rw [mem₉, m₈, copyMem_other, m₇, copyMem_other, m₆, copyMem_other, m₅, copyMem_other, sv.last] <;> cbc_gd
+      <;> cbc_gd hp hk
+  · rw [mem₉, m₈, copyMem_other, m₇, copyMem_other, m₆, copyMem_other, m₅, copyMem_other, sv.last] <;> cbc_gd hp hk
 
 /-! ## The group -/
 
@@ -276,22 +276,22 @@ theorem decGroup_ok (v : BlocksImpl) : GroupOk (cfbMode false) (decGroup v.enc) 
   have o0 : bytesAt t₁₆.mem (blk s₀ (k + 0)) 16 = Spec.Cbc.xor ((blks s₀)[k + 0]'(by rw [len]; omega_using [hk]))
       (Spec.Cbc.aesWith (R s₀) (wK s₀) (Spec.Cbc.next (iv0 s₀) ((blks s₀).take k))) := by
     rw [xor_comm, m₁₆, m₁₅, copyMem_other, m₁₄, xorMem_other, m₁₃, xorMem_other, m₁₂, xorMem_other, m₁₁,
-      xorMem_bytes, e 0 (by decide), a.in0, chain, sv 0 (by decide)] <;> cbc_gd
+      xorMem_bytes, e 0 (by decide), a.in0, chain, sv 0 (by decide)] <;> cbc_gd hp hk
   have o1 : bytesAt t₁₆.mem (blk s₀ (k + 1)) 16 = Spec.Cbc.xor ((blks s₀)[k + 1]'(by rw [len]; omega_using [hk]))
       (Spec.Cbc.aesWith (R s₀) (wK s₀) ((blks s₀)[k + 0]'(by rw [len]; omega_using [hk]))) := by
     rw [xor_comm, m₁₆, m₁₅, copyMem_other, m₁₄, xorMem_other, m₁₃, xorMem_other, m₁₂, xorMem_bytes, m₁₁,
-      xorMem_other, xorMem_other, e 1 (by decide), a.in1, hb 0 (by decide), sv 1 (by decide)] <;> cbc_gd
+      xorMem_other, xorMem_other, e 1 (by decide), a.in1, hb 0 (by decide), sv 1 (by decide)] <;> cbc_gd hp hk
   have o2 : bytesAt t₁₆.mem (blk s₀ (k + 2)) 16 = Spec.Cbc.xor ((blks s₀)[k + 2]'(by rw [len]; omega_using [hk]))
       (Spec.Cbc.aesWith (R s₀) (wK s₀) ((blks s₀)[k + 1]'(by rw [len]; omega_using [hk]))) := by
     rw [xor_comm, m₁₆, m₁₅, copyMem_other, m₁₄, xorMem_other, m₁₃, xorMem_bytes, m₁₂, xorMem_other, xorMem_other,
-      m₁₁, xorMem_other, xorMem_other, e 2 (by decide), a.in2, hb 1 (by decide), sv 2 (by decide)] <;> cbc_gd
+      m₁₁, xorMem_other, xorMem_other, e 2 (by decide), a.in2, hb 1 (by decide), sv 2 (by decide)] <;> cbc_gd hp hk
   have o3 : bytesAt t₁₆.mem (blk s₀ (k + 3)) 16 = Spec.Cbc.xor ((blks s₀)[k + 3]'(by rw [len]; omega_using [hk]))
       (Spec.Cbc.aesWith (R s₀) (wK s₀) ((blks s₀)[k + 2]'(by rw [len]; omega_using [hk]))) := by
     rw [xor_comm, m₁₆, m₁₅, copyMem_other, m₁₄, xorMem_bytes, m₁₃, xorMem_other, xorMem_other, m₁₂, xorMem_other,
-      xorMem_other, m₁₁, xorMem_other, xorMem_other, e 3 (by decide), a.in3, hb 2 (by decide), svL] <;> cbc_gd
+      xorMem_other, m₁₁, xorMem_other, xorMem_other, e 3 (by decide), a.in3, hb 2 (by decide), svL] <;> cbc_gd hp hk
   have ivF : bytesAt t₁₆.mem (Iv s₀) 16 = (blks s₀)[k + 3]'(by rw [len]; omega_using [hk]) := by
     rw [m₁₆, m₁₅, copyMem_bytes, m₁₄, xorMem_other, m₁₃, xorMem_other, m₁₂, xorMem_other, m₁₁, xorMem_other,
-      svL] <;> cbc_gd
+      svL] <;> cbc_gd hp hk
   -- The mode.
   have take4 : (blks s₀).take (k + 4) = (blks s₀).take k ++ [(blks s₀)[k + 0]'(by rw [len]; omega_using [hk])] ++
       [(blks s₀)[k + 1]'(by rw [len]; omega_using [hk])] ++ [(blks s₀)[k + 2]'(by rw [len]; omega_using [hk])] ++

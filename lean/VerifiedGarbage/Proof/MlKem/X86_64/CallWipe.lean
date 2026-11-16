@@ -597,7 +597,7 @@ theorem keyGenW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl
     Verified X86_64.target (keyGenW v.callee v.suffix z.name z.code) (Scrubbed.keyGenContract X86_64.abi 56) :=
   Verified.callWipe' (ps₁ := Spec.MlKem.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) (keyGen_verified v) z.verified
     (by decide) (by decide) rfl rfl (by decide) (by decide) (by decide) (keyGen_spSafe v) (keyGen_xd v)
-    z.spSafe (by rw [z.xd]) (by decide)
+    z.spSafe z.noMx (by rw [z.xd]) (by decide)
     (by
       intro vs m₁ m₂ _ _ h
       rw [Curry.apply_const] at h ⊢; exact h)
@@ -648,7 +648,7 @@ theorem encapsHW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImp
     Verified X86_64.target (encapsHW v.callee v.suffix z.name z.code) (Scrubbed.encapsHContract X86_64.abi 56) :=
   Verified.callWipe' (ps₁ := Spec.MlKem.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) (encapsH_verified v) z.verified
     (by decide) (by decide) rfl rfl (by decide) (by decide) (by decide) (encapsH_spSafe v) (encapsH_xd v)
-    z.spSafe (by rw [z.xd]) (by decide)
+    z.spSafe z.noMx (by rw [z.xd]) (by decide)
     (by
       intro vs m₁ m₂ hlen hb h
       obtain ⟨a, b, c, d, e, f, rfl⟩ := vs6 hlen
@@ -706,7 +706,7 @@ theorem encapsW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl
     Verified X86_64.target (encapsW v.callee v.suffix z.name z.code) (Scrubbed.encapsContract X86_64.abi 56) :=
   Verified.callWipe' (ps₁ := Spec.MlKem.encapsSig.params.dropLast) (ps₂ := []) (i := 4) (encaps_verified v) z.verified
     (by decide) (by decide) rfl rfl (by decide) (by decide) (by decide) (encaps_spSafe v) (encaps_xd v)
-    z.spSafe (by rw [z.xd]) (by decide)
+    z.spSafe z.noMx (by rw [z.xd]) (by decide)
     (by
       intro vs m₁ m₂ _ _ h
       rw [Curry.apply_const] at h ⊢; exact h)
@@ -756,7 +756,7 @@ theorem decapsW_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.ZeroizeImpl
     Verified X86_64.target (decapsW v.callee v.suffix z.name z.code) (Scrubbed.decapsContract X86_64.abi 56) :=
   Verified.callWipe' (ps₁ := Spec.MlKem.decapsSig.params.dropLast) (ps₂ := []) (i := 3) (decaps_verified v) z.verified
     (by decide) (by decide) rfl rfl (by decide) (by decide) (by decide) (decaps_spSafe v) (decaps_xd v)
-    z.spSafe (by rw [z.xd]) (by decide)
+    z.spSafe z.noMx (by rw [z.xd]) (by decide)
     (by
       intro vs m₁ m₂ _ _ h
       rw [Curry.apply_const] at h ⊢; exact h)
@@ -805,7 +805,7 @@ theorem keyGen1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroize
     Verified X86_64.target (keyGen1024W v.callee v.suffix z.name z.code) (Scrubbed.keyGen1024Contract X86_64.abi 56) :=
   Verified.callWipeTail' (ps₁ := Spec.MlKem1024.keyGenSig.params.dropLast) (ps₂ := []) (i := 3) (keyGen1024_tail v) z.verified
     (by decide) (by decide) rfl rfl (by unfold wiped1024; split <;> decide) (by unfold wiped1024; split <;> decide) (by decide) (keyGen1024_spSafe v) (keyGen1024_xd v)
-    z.spSafe (by rw [z.xd]) (by decide)
+    z.spSafe z.noMx (by rw [z.xd]) (by decide)
     (by
       intro vs m₁ m₂ _ _ h
       rw [Curry.apply_const] at h ⊢; exact h)
@@ -858,7 +858,7 @@ theorem encapsH1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroiz
     Verified X86_64.target (encapsH1024W v.callee v.suffix z.name z.code) (Scrubbed.encapsH1024Contract X86_64.abi 56) :=
   Verified.callWipeTail' (ps₁ := Spec.MlKem1024.encapsHSig.params.dropLast) (ps₂ := []) (i := 5) (encapsH1024_tail v) z.verified
     (by decide) (by decide) rfl rfl (by unfold wiped1024; split <;> decide) (by unfold wiped1024; split <;> decide) (by decide) (encapsH1024_spSafe v) (encapsH1024_xd v)
-    z.spSafe (by rw [z.xd]) (by decide)
+    z.spSafe z.noMx (by rw [z.xd]) (by decide)
     (by
       intro vs m₁ m₂ hlen hb h
       obtain ⟨a, b, c, d, e, f, rfl⟩ := vs6 hlen
@@ -918,7 +918,7 @@ theorem encaps1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroize
     Verified X86_64.target (encaps1024W v.callee v.suffix z.name z.code) (Scrubbed.encaps1024Contract X86_64.abi 56) :=
   Verified.callWipeTail' (ps₁ := Spec.MlKem1024.encapsSig.params.dropLast) (ps₂ := []) (i := 4) (encaps1024_tail v) z.verified
     (by decide) (by decide) rfl rfl (by unfold wipedEnc1024; split <;> decide) (by unfold wipedEnc1024; split <;> decide) (by decide) (encaps1024_spSafe v) (encaps1024_xd v)
-    z.spSafe (by rw [z.xd]) (by decide)
+    z.spSafe z.noMx (by rw [z.xd]) (by decide)
     (by
       intro vs m₁ m₂ _ _ h
       rw [Curry.apply_const] at h ⊢; exact h)
@@ -970,7 +970,7 @@ theorem decaps1024W_scrubbed (v : Sample4Impl) (z : Proof.Zeroize.X86_64.Zeroize
     Verified X86_64.target (decaps1024W v.callee v.suffix z.name z.code) (Scrubbed.decaps1024Contract X86_64.abi 56) :=
   Verified.callWipeTail' (ps₁ := Spec.MlKem1024.decapsSig.params.dropLast) (ps₂ := []) (i := 3) (decaps1024_tail v) z.verified
     (by decide) (by decide) rfl rfl (by unfold wipedEnc1024; split <;> decide) (by unfold wipedEnc1024; split <;> decide) (by decide) (decaps1024_spSafe v) (decaps1024_xd v)
-    z.spSafe (by rw [z.xd]) (by decide)
+    z.spSafe z.noMx (by rw [z.xd]) (by decide)
     (by
       intro vs m₁ m₂ _ _ h
       rw [Curry.apply_const] at h ⊢; exact h)

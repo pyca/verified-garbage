@@ -72,7 +72,8 @@ theorem wiped_verified {P : Spec.Cbc.aesSig.Post 64} {name : String} {body : Pro
   Verified.callWipe' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := [])
     (nm := "scratch") (e := .u64) (k := 272) (n := 2176) (i := 5) h Proof.Zeroize.AArch64.wideVerified
-    (by decide) rfl rfl rfl (by decide) (by decide) (by rw [hd]) AesEcb.AArch64.zeroize_depth
+    (by decide) rfl rfl rfl (by decide) (by decide) (by rw [hd]) Proof.Zeroize.AArch64.wide_noDit
+    AesEcb.AArch64.zeroize_depth
     (Nat.zero_le _) (pre_local 64) hpost hout (Wipe.wiped 64 P) (sat _)
 
 theorem encrypt_depth (v : BlocksImpl) : (Caller.encrypt v).aarch64Depth = 0 := by

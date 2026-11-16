@@ -84,10 +84,14 @@ def ArithImpl.avx2 : ArithImpl where
         (by lit_decide)
       useHint := FnOk.of Round.useHintY_verified (by lit_decide) (by lit_decide) (by lit_decide)
         (by lit_decide)
-      rej4 := ⟨Rej4.Segment.rejNTT4Avx2_verified, Proof.MlKem.X86_64.nosp_of (by lit_decide), by lit_decide,
-        by lit_decide, Code.all_of_spTest (by lit_decide), fun _ _ _ => Rej4.Segment.rejNTT4Avx2_ret⟩
-      expandMask4 := ⟨Mask4.expandMask4Avx2_verified, Proof.MlKem.X86_64.nosp_of (by lit_decide),
-        by lit_decide, by lit_decide, Code.all_of_spTest (by lit_decide)⟩
+      rej4 :=
+        have h := Proof.MlKem.X86_64.nospMx_of (c := Backend.avx2Combined.rej4) (by lit_decide)
+        ⟨Rej4.Segment.rejNTT4Avx2_verified, h.1, h.2, by lit_decide,
+          by lit_decide, Code.all_of_spTest (by lit_decide), fun _ _ _ => Rej4.Segment.rejNTT4Avx2_ret⟩
+      expandMask4 :=
+        have h := Proof.MlKem.X86_64.nospMx_of (c := Backend.avx2Combined.expandMask4) (by lit_decide)
+        ⟨Mask4.expandMask4Avx2_verified, h.1, h.2,
+          by lit_decide, by lit_decide, Code.all_of_spTest (by lit_decide)⟩
       dotInv := fun c hc => by
         rcases hc with rfl | rfl | rfl
         · exact FnOk.of Arith.YDot.verified4 (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)
@@ -105,10 +109,14 @@ def ArithImpl.avx512 : ArithImpl where
     expandMask4 := Impl.MlDsa.X86_64.Sample.Mask4.expandMask4Avx2 true
     sfx := "_avx512" }
   ok := { ArithImpl.avx2.ok with
-    rej4 := ⟨Rej4.Segment.rejNTT4Avx2_verified, Proof.MlKem.X86_64.nosp_of (by lit_decide), by lit_decide,
-      by lit_decide, Code.all_of_spTest (by lit_decide), fun _ _ _ => Rej4.Segment.rejNTT4Avx2_ret⟩
-    expandMask4 := ⟨Mask4.expandMask4Avx2_verified, Proof.MlKem.X86_64.nosp_of (by lit_decide),
-      by lit_decide, by lit_decide, Code.all_of_spTest (by lit_decide)⟩ }
+    rej4 :=
+      have h := Proof.MlKem.X86_64.nospMx_of (c := Impl.MlDsa.X86_64.Sample.Rej5.rejNTT4Avx2 true) (by lit_decide)
+      ⟨Rej4.Segment.rejNTT4Avx2_verified, h.1, h.2, by lit_decide,
+        by lit_decide, Code.all_of_spTest (by lit_decide), fun _ _ _ => Rej4.Segment.rejNTT4Avx2_ret⟩
+    expandMask4 :=
+      have h := Proof.MlKem.X86_64.nospMx_of (c := Impl.MlDsa.X86_64.Sample.Mask4.expandMask4Avx2 true) (by lit_decide)
+      ⟨Mask4.expandMask4Avx2_verified, h.1, h.2,
+        by lit_decide, by lit_decide, Code.all_of_spTest (by lit_decide)⟩ }
   features := ["avx", "avx2", "avx512f", "avx512vl"]
 
 end VG.Proof.MlDsa.X86_64

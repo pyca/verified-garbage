@@ -70,7 +70,8 @@ theorem rel_frame {rs : List Reg} {r : Reg} {k : Nat} {body : Prog isa} {σ₁ �
 theorem call_rel (F : SealFn) {σ₁ σ₂ c₁ c₂ : State} (h₁ : Lay σ₁) (h₂ : Lay σ₂) (hc₁ : Ready σ₁ c₁)
     (hc₂ : Ready σ₂ c₂) (hrd : rdC σ₂ = rdC σ₁) (hwr : wrC σ₂ = wrC σ₁) (hB : Bs σ₁ = Bs σ₂)
     (hk : K σ₁ = K σ₂) (hn : Nn σ₁ = Nn σ₂) (ha : Ad σ₁ = Ad σ₂) (hal : σ₁.gpr .rcx = σ₂.gpr .rcx)
-    (hd : Dst σ₁ = Dst σ₂) (hl : stackArg σ₁ 1 = stackArg σ₂ 1) (ht : Tg σ₁ = Tg σ₂) :
+    (hd : Dst σ₁ = Dst σ₂) (hl : stackArg σ₁ 1 = stackArg σ₂ 1) (ht : Tg σ₁ = Tg σ₂)
+    (hm : c₁.mxcsr = c₂.mxcsr) :
     RelCT isa (Eq2 c₁ c₂) (.frame (.push [.rax]) (.call F.name F.code) (.pop .rax 1)) TT := by
   refine rel_frame (by rw [hc₁.rsp, hc₂.rsp, hB]) ?_
   obtain ⟨cp₁, cv₁, cw₁⟩ := hc₁.call h₁
@@ -87,7 +88,7 @@ theorem call_rel (F : SealFn) {σ₁ σ₂ c₁ c₂ : State} (h₁ : Lay σ₁)
   refine (RelCT.call F.verified.1 F.verified.2.1 (rdC σ₁) (wrC σ₁) fun x y ⟨e₁, e₂⟩ => ?_).mono
     (fun a b h => h) fun _ _ h => h
   subst e₁ e₂
-  refine ⟨sealSpec_pre cp₁, sealSpec_pre cp₂, sealSpec_pub ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, cv₁, cw₁, cv₂, cw₂,
+  refine ⟨sealSpec_pre cp₁, sealSpec_pre cp₂, sealSpec_pub ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, cv₁, cw₁, cv₂, cw₂,
     by rw [hc₁.qsp, hc₂.qsp, hB]⟩
   · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rdi, hc₂.rdi, hk]
   · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rsi, hc₂.rsi, hn]
@@ -98,13 +99,14 @@ theorem call_rel (F : SealFn) {σ₁ σ₂ c₁ c₂ : State} (h₁ : Lay σ₁)
   · rw [State.withRegions_gpr, State.withRegions_gpr, State.callEntry_rsp, State.callEntry_rsp, hc₁.qsp,
       hc₂.qsp, hB]
   · rw [hc₁.xtag h₁, t₂, ht]
+  · simp only [State.withRegions_mxcsr, State.callEntry_mxcsr, pushed_mxcsr, hm]
 
 theorem sealGather_ct (w : Width) (F : SealFn) :
     ConstantTime isa gatherPre gatherPub (sealGatherWhole w F.name F.code) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
   have h₁ := lay p₁
   have h₂ := lay p₂
-  obtain ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, a0, a1, a2, hdesc⟩ := hq
+  obtain ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qmx, a0, a1, a2, hdesc⟩ := hq
   have hB : Bs σ₁ = Bs σ₂ := by simp only [Bs, qsp]
   refine rel_frame qsp ?_
   -- The entry.
@@ -140,6 +142,6 @@ theorem sealGather_ct (w : Width) (F : SealFn) :
     simp only [rdC, kR, nR, aR, K, Nn, Ad, AL, Bs, qdi, qsi, qdx, qcx, qsp]
   have hwr : wrC σ₂ = wrC σ₁ := by
     simp only [wrC, dR, tgR, Dst, L, Tg, a0, a1, a2]
-  exact call_rel F h₁ h₂ hc₁ hc₂ hrd hwr hB qdi qsi qdx qcx a0 a1 a2
+  exact call_rel F h₁ h₂ hc₁ hc₂ hrd hwr hB qdi qsi qdx qcx a0 a1 a2 (hc₁.mx.trans (qmx.trans hc₂.mx.symm))
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Gather.Whole

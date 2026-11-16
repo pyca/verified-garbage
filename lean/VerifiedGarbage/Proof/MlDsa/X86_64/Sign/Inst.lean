@@ -142,7 +142,7 @@ theorem one_ne_zero32 : (1 : BitVec 32) ≠ 0 := by decide
 
 /-- A function of the polynomial arithmetic satisfies what the proofs of signing need of it. -/
 def calleeOf {k : Nat → Contract isa} {c : Prog isa} (h : FnOk k c) : Callee k signStack c :=
-  ⟨0, by decide, h.ver, h.nosp, by have := h.depth; unfold signStack; omega_using [this]⟩
+  ⟨0, by decide, h.ver, h.nosp, h.mx, by have := h.depth; unfold signStack; omega_using [this]⟩
 
 /-- The primitives, with the polynomial arithmetic of `v`, satisfy what the
 proofs of signing need of them. -/
@@ -152,30 +152,24 @@ def prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) signStack where
   mul := calleeOf v.ok.mul
   add := calleeOf v.ok.add
   sub := calleeOf v.ok.sub
-  rejNTT := (⟨16, by decide, Proof.MlDsa.X86_64.Sample.RejNttShort.verified, nosp_of (by decide +kernel),
-    by decide +kernel⟩ :
-    Callee _ signStack prims.rejNTT)
-  expandMask := (⟨16, by decide, Proof.MlDsa.X86_64.Sample.expandMask_verified, nosp_of (by decide +kernel),
-    by decide +kernel⟩ :
-    Callee _ signStack prims.expandMask)
-  ball := (⟨16, by decide, Proof.MlDsa.X86_64.Sample.sampleInBall_verified, nosp_of (by decide +kernel),
-    by decide +kernel⟩ :
-    Callee _ signStack prims.ball)
+  rejNTT := (have h := Proof.MlKem.X86_64.nospMx_of (c := prims.rejNTT) (by decide +kernel)
+    ⟨16, by decide, Proof.MlDsa.X86_64.Sample.RejNttShort.verified, h.1, h.2, by decide +kernel⟩ : Callee _ signStack prims.rejNTT)
+  expandMask := (have h := Proof.MlKem.X86_64.nospMx_of (c := prims.expandMask) (by decide +kernel)
+    ⟨16, by decide, Proof.MlDsa.X86_64.Sample.expandMask_verified, h.1, h.2, by decide +kernel⟩ : Callee _ signStack prims.expandMask)
+  ball := (have h := Proof.MlKem.X86_64.nospMx_of (c := prims.ball) (by decide +kernel)
+    ⟨16, by decide, Proof.MlDsa.X86_64.Sample.sampleInBall_verified, h.1, h.2, by decide +kernel⟩ : Callee _ signStack prims.ball)
   highBits := calleeOf v.ok.highBits
   lowBits := calleeOf v.ok.lowBits
   normLt := calleeOf v.ok.normLt
   makeHint := calleeOf v.ok.makeHint
-  simpleBitPack := (⟨0, by decide, Proof.MlDsa.X86_64.Pack.simpleBitPack_verified, nosp_of (by decide +kernel),
-    by decide +kernel⟩ :
-    Callee _ signStack prims.simpleBitPack)
-  bitPack := (⟨0, by decide, Proof.MlDsa.X86_64.Pack.bitPack_verified, nosp_of (by decide +kernel), by decide +kernel⟩ :
-    Callee _ signStack prims.bitPack)
-  bitUnpack := (⟨0, by decide, Proof.MlDsa.X86_64.Pack.bitUnpack_verified, nosp_of (by decide +kernel),
-    by decide +kernel⟩ :
-    Callee _ signStack prims.bitUnpack)
-  hintBitPack := (⟨0, by decide, Proof.MlDsa.X86_64.Pack.hintBitPack_verified, nosp_of (by decide +kernel),
-    by decide +kernel⟩ :
-    Callee _ signStack prims.hintBitPack)
+  simpleBitPack := (have h := Proof.MlKem.X86_64.nospMx_of (c := prims.simpleBitPack) (by decide +kernel)
+    ⟨0, by decide, Proof.MlDsa.X86_64.Pack.simpleBitPack_verified, h.1, h.2, by decide +kernel⟩ : Callee _ signStack prims.simpleBitPack)
+  bitPack := (have h := Proof.MlKem.X86_64.nospMx_of (c := prims.bitPack) (by decide +kernel)
+    ⟨0, by decide, Proof.MlDsa.X86_64.Pack.bitPack_verified, h.1, h.2, by decide +kernel⟩ : Callee _ signStack prims.bitPack)
+  bitUnpack := (have h := Proof.MlKem.X86_64.nospMx_of (c := prims.bitUnpack) (by decide +kernel)
+    ⟨0, by decide, Proof.MlDsa.X86_64.Pack.bitUnpack_verified, h.1, h.2, by decide +kernel⟩ : Callee _ signStack prims.bitUnpack)
+  hintBitPack := (have h := Proof.MlKem.X86_64.nospMx_of (c := prims.hintBitPack) (by decide +kernel)
+    ⟨0, by decide, Proof.MlDsa.X86_64.Pack.hintBitPack_verified, h.1, h.2, by decide +kernel⟩ : Callee _ signStack prims.hintBitPack)
   rejRet := by exact (fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨h₁, h₂, hp⟩ e₁ e₂ =>
     ⟨Proof.MlDsa.X86_64.Sample.RejNttShort.verified.2.1 s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂,
       show _ = _ by rw [rn_ret h₁ e₁, rn_ret h₂ e₂, rn_pub s₁ s₂ hp]⟩)
@@ -184,11 +178,11 @@ def prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) signStack where
     by_cases hf : (VG.Proof.MlDsa.Sample.rnFold [] (G (bytesAt s.mem (s.gpr .rdi) 34) 1008)).length = 256
     · rw [rejNTTPoly_mono (show 1008 ≤ maxBounds.rejNTT by decide) (VG.Proof.MlDsa.Sample.rejNTT_some hf)]; rfl
     · rw [ifn hf] at h1; exact absurd h1.symm one_ne_zero32
-  rej4 := ⟨24, by decide, v.ok.rej4.ver, v.ok.rej4.nosp, by
+  rej4 := ⟨24, by decide, v.ok.rej4.ver, v.ok.rej4.nosp, v.ok.rej4.mx, by
     have := v.ok.rej4.depth
     show 8 * (v.code.rej4.depth + 1) ≤ signStack
     unfold signStack; omega_using [this]⟩
-  expandMask4 := ⟨24, by decide, v.ok.expandMask4.ver, v.ok.expandMask4.nosp, by
+  expandMask4 := ⟨24, by decide, v.ok.expandMask4.ver, v.ok.expandMask4.nosp, v.ok.expandMask4.mx, by
     have := v.ok.expandMask4.depth
     show 8 * (v.code.expandMask4.depth + 1) ≤ signStack
     unfold signStack; omega_using [this]⟩

@@ -32,8 +32,12 @@ theorem verifySatWith_roots (p : Params) (hp : Ok3 p) (m : Mem)
     (hi : ∀j<488,m.readW (1052480+BitVec.ofNat 64 (8*j)) 64=
       Impl.MlDsa.AArch64.Optimized.Inverse.expandedWords.getD j 0) :
     StaticRoots 16 (verifySatWith p m) := by
-  refine ⟨⟨hf,by dsimp [verifySatWith]; decide,?_,?_,?_,by dsimp [verifySatWith]; try decide⟩,
-    ⟨hi,by dsimp [verifySatWith]; decide,?_,?_,?_,by dsimp [verifySatWith]; try decide⟩⟩
+  -- The tables' addresses as numerals first: in a term that holds `p` and `m` the kernel adds
+  -- 3904 to an address, and takes its remainder by 64, in unary.
+  have ef : (verifySatWith p m).syms "VG_MLDSA_NTT_EXPANDED" = 1048576 := rfl
+  have ei : (verifySatWith p m).syms "VG_MLDSA_INV_FOLDED" = 1052480 := rfl
+  refine ⟨⟨hf,by rw [ef]; decide,?_,?_,?_,by rw [ef]; decide⟩,
+    ⟨hi,by rw [ei]; decide,?_,?_,?_,by rw [ei]; decide⟩⟩
   · apply Covers.one
     exact ⟨⟨1048576,3904⟩,by simp [verifySatWith],Region.contains_self _ _⟩
   · rcases hp with rfl|rfl|rfl

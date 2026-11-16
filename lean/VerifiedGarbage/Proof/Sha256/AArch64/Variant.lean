@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 public import VerifiedGarbage.Impl.Sha256.AArch64.Stream
 public import VerifiedGarbage.Proof.Sha256.AArch64.Contract
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 import VerifiedGarbage.Proof.Sha256.AArch64.Stream.Init
 import VerifiedGarbage.Proof.Framework.PlainSimp
 import VerifiedGarbage.Proof.Framework.Offset
@@ -92,6 +93,9 @@ structure Compress where
   noFrames : code.noFrames = true
   /-- Current streaming wrappers require untouched callee-saved SIMD registers. -/
   keepsV : code.allInstrs keepsV = true
+  /-- It never reads or writes PSTATE.DIT, so its callers' runs agree from any mode
+  (`ConstantTime.withDit`). -/
+  noDit : code.all (fun i => !i.touchesDit) = true
   suffix : String
   features : List String
   updateCT : ConstantTime isa (updK (P := Stream.params) md).pre

@@ -122,7 +122,7 @@ theorem pub_regs {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)
     {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
     (hk : (sig.words abi.ptrBits).length ≤ 8) :
     (sig.contract abi pre post wa stack leak).pub s₁ s₂ ↔
-      (s₁.sp = s₂.sp ∧ leakAgree leak (regArgs sig s₁) s₁.mem (regArgs sig s₂) s₂.mem) ∧
+      ((s₁.sp = s₂.sp ∧ s₁.dit = s₂.dit) ∧ leakAgree leak (regArgs sig s₁) s₁.mem (regArgs sig s₂) s₂.mem) ∧
       (∀ i, (sig.params.flatMap (·.2.pubs)).getD i false = true →
         ((regArgs sig s₁).getD i 0).setWidth
             (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD i 64) =
@@ -300,7 +300,7 @@ theorem narrow_pub (hk : (sig.words abi.ptrBits).length < 8) {s₁ s₂ : State}
     (Sig.scratchContract abi sig nm e n pre post wa stack leak).pub (narrow sig e n bytes s₁)
       (narrow sig e n bytes s₂) := by
   rw [pub_regs (by omega_using [hk])] at hp
-  obtain ⟨⟨hsp, hlk⟩, hpa, hd⟩ := hp
+  obtain ⟨⟨⟨hsp, hdit⟩, hlk⟩, hpa, hd⟩ := hp
   refine (pub_regs (sig := sig.withScratch nm e n)
     (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
     (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
@@ -310,7 +310,7 @@ theorem narrow_pub (hk : (sig.words abi.ptrBits).length < 8) {s₁ s₂ : State}
   rw [narrow_regArgs hk, narrow_regArgs hk, narrow_sp, narrow_sp, hsp, narrow_mem, narrow_mem,
     show (sig.withScratch nm e n).params = sig.params ++ [((nm, .array true e n) : String × Param)]
       from rfl, Sig.descs_append_array 64 nm e n _ sig.params _ l₁]
-  refine ⟨⟨rfl, leakAgree_withScratch_same _ _ l₁ l₂ hlk⟩, fun i hi => ?_, hd⟩
+  refine ⟨⟨⟨rfl, hdit⟩, leakAgree_withScratch_same _ _ l₁ l₂ hlk⟩, fun i hi => ?_, hd⟩
   have lp := Sig.pubs_length sig.params abi.ptrBits
   have hps : ((sig.params ++ [((nm, .array true e n) : String × Param)]).flatMap (·.2.pubs)) =
       sig.params.flatMap (·.2.pubs) ++ [true] := by

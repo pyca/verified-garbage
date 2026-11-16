@@ -15,7 +15,7 @@ open VG.Impl.MlDsa.AArch64.Optimized.Inverse
 /-- Internal call contract for the same verified kernel. Its execution never
 accesses the unused scratch argument of the separately emitted public helper. -/
 theorem inverseSingle_callee (S : Nat) : CalleeOk S staticCode inverseK :=
-  ⟨inverse_correct,inverse_ct,Nat.zero_le _⟩
+  CalleeOk.of_ct inverse_correct inverse_ct (by lit_decide) (fun _ _ h => h) (Nat.zero_le _)
 
 abbrev inverseSingleArgs (f : Ptr) : List (Reg × Arg) := [(.x0,.ptr f)]
 

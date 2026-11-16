@@ -108,11 +108,17 @@ theorem inputs_nodup (full : Bool) : ((inputs full).map Prod.snd).Nodup := by ca
 theorem loaded_values (g : CallGeometry) (m : Mem) :
     loadValues g m (fun _ => 0) (inputs g.full) = vals (numbers g m) := by
   funext j
+  -- which array `j` is, once: `split` on both sides' nested `if`s visited every combination
+  have hj : j = 2 ∨ j = 3 ∨ j = 4 ∨ j = 5 ∨ j = 6 ∨ j = 7 ∨ j = 8 ∨ j = 9 ∨
+      (j ≠ 2 ∧ j ≠ 3 ∧ j ≠ 4 ∧ j ≠ 5 ∧ j ≠ 6 ∧ j ≠ 7 ∧ j ≠ 8 ∧ j ≠ 9) := by omega
   cases e : g.full <;>
     simp only [inputs, e, Bool.false_eq_true, ite_false, ite_true,
       List.cons_append, List.nil_append, loadValues, numbers, vals, upd,
-      aN, aE, aD, aP, aQ, aDP, aDQ, aQI]
-  all_goals repeat' first | split | rfl | omega
+      aN, aE, aD, aP, aQ, aDP, aDQ, aQI] <;>
+    rcases hj with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | ⟨h2, h3, h4, h5, h6, h7, h8, h9⟩ <;>
+    first
+      | (simp only [↓reduceIte, Nat.reduceEqDiff]; done)
+      | simp only [h2, h3, h4, h5, h6, h7, h8, h9, ↓reduceIte]
 
 /-- An input's length argument bounds it. -/
 theorem argLen_ok {g : CallGeometry} {t : State} (h : Inputs g t) (m : Mem) {i a : Nat}

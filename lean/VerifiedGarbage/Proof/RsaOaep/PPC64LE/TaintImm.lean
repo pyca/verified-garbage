@@ -48,8 +48,9 @@ theorem checkBlock_zImm (τ : taint.T) (is : List isa.Instr) :
   induction is generalizing τ with
   | nil => rfl
   | cons i is ih =>
-    show (VG.PPC64LE.Taint.step τ (Instr.zImm i)).bind _ = (VG.PPC64LE.Taint.step τ i).bind _
-    exact congr (congrArg Option.bind (step_zImm τ i)) (funext ih)
+    show (taint.step τ (Instr.zImm i)).bind (taint.checkBlock · _) = (taint.step τ i).bind (taint.checkBlock · _)
+    rw [taint_step τ (Instr.zImm i), taint_step τ i, step_zImm τ i]
+    exact congrArg (Option.bind _) (funext ih)
 
 theorem checkChunks_zImm {chunkSize : Nat} (τ : taint.T) (is : List isa.Instr) (ms : List taint.T) :
     taint.checkChunks chunkSize τ (is.map Instr.zImm) ms = taint.checkChunks chunkSize τ is ms := by

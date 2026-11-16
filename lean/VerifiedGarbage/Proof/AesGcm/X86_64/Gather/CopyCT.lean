@@ -107,7 +107,7 @@ theorem sealCall_rel (S : SealFn M) {σ₁ σ₂ : State} (h₁ : SBase s₀ σ�
     g _ _ (by decide : Reg.r8 ≠ .rsp), g _ _ (by decide : Reg.r9 ≠ .rsp), g₁.rdi, g₂.rdi, g₁.rsi, g₂.rsi,
     g₁.rdx, g₂.rdx, g₁.rcx, g₂.rcx, g₁.r8, g₂.r8, g₁.r9, g₂.r9, State.withRegions_gpr, State.callEntry_rsp,
     pushed_rsp, h₁.rsp, h₂.rsp, K, Nn, Ad, AL, pb.rdi, pb.rsi, pb.rdx, pb.rcx, pb.r8, pb.r9, pb.rsp, SP, pb.dst,
-    pb.len, pb.tg, and_self]
+    pb.len, pb.tg, State.withRegions_mxcsr, State.callEntry_mxcsr, pushed_mxcsr, h₁.mx, h₂.mx, pb.mx, and_self]
 
 /-- The path of a short text, in two runs. -/
 theorem copySeal_rel (S : SealFn M) (hL : L s₀ < 2 ^ 63) {σ₁ σ₂ : State}
@@ -133,16 +133,16 @@ theorem copySeal_rel (S : SealFn M) (hL : L s₀ < 2 ^ 63) {σ₁ σ₂ : State}
     have hc' : (Sig.descRegion 64 (Src s₀') (Cnt s₀')).Contains (Src s₀ + BitVec.ofNat 64 j) 1 := by
       rw [pb.src, pb.cnt]; exact hc
     rw [desc_byte hp C₁.frame _ hc, desc_byte hp' C₂.frame _ hc', pb.desc j hj]
-  refine ChaCha20Poly1305.X86_64.Gather.rel_seq (gatherCopy_rel hd G₁ G₂) (gatherCopy_wp τ₁ G₁)
-    (gatherCopy_wp τ₂ G₂o) fun υ₁ υ₂ ⟨m₁, k₁⟩ ⟨m₂, k₂⟩ => ?_
-  have B₁ := gathered_after hp C₁ m₁ k₁
-  have B₂ := gathered_after hp' C₂ m₂ k₂
-  refine ChaCha20Poly1305.X86_64.Gather.rel_seq (sealArgs_rel hp hp' pb B₁ B₂) (sealArgs_ok hp B₁)
-    (sealArgs_ok hp' B₂) fun ω₁ ω₂ a₁ a₂ => ?_
+  refine ChaCha20Poly1305.X86_64.Gather.rel_seq (gatherCopy_rel hd G₁ G₂) (WP.mxcsr (by decide) (gatherCopy_wp τ₁ G₁))
+    (WP.mxcsr (by decide) (gatherCopy_wp τ₂ G₂o)) fun υ₁ υ₂ ⟨⟨m₁, k₁⟩, x₁⟩ ⟨⟨m₂, k₂⟩, x₂⟩ => ?_
+  have B₁ := gathered_after hp C₁ m₁ k₁ x₁
+  have B₂ := gathered_after hp' C₂ m₂ k₂ x₂
+  refine ChaCha20Poly1305.X86_64.Gather.rel_seq (sealArgs_rel hp hp' pb B₁ B₂) (WP.mxcsr (by decide) (sealArgs_ok hp B₁))
+    (WP.mxcsr (by decide) (sealArgs_ok hp' B₂)) fun ω₁ ω₂ ⟨a₁, y₁⟩ ⟨a₂, y₂⟩ => ?_
   obtain ⟨di₁, si₁', dx₁', cx₁, r8₁, r9₁', ax₁, r10₁, r11₁'', cs₁, m₁', rd₁, wr₁⟩ := a₁
   obtain ⟨di₂, si₂', dx₂', cx₂, r8₂, r9₂', ax₂, r10₂, r11₂'', cs₂, m₂', rd₂, wr₂⟩ := a₂
-  exact sealCall_rel hp hp' pb S (B₁.regs m₁' cs₁ rd₁ wr₁) ⟨di₁, si₁', dx₁', cx₁, r8₁, r9₁', ax₁, r10₁, r11₁''⟩
-    (B₂.regs m₂' cs₂ rd₂ wr₂) ⟨di₂, si₂', dx₂', cx₂, r8₂, r9₂', ax₂, r10₂, r11₂''⟩
+  exact sealCall_rel hp hp' pb S (B₁.regs m₁' cs₁ rd₁ wr₁ y₁) ⟨di₁, si₁', dx₁', cx₁, r8₁, r9₁', ax₁, r10₁, r11₁''⟩
+    (B₂.regs m₂' cs₂ rd₂ wr₂ y₂) ⟨di₂, si₂', dx₂', cx₂, r8₂, r9₂', ax₂, r10₂, r11₂''⟩
 
 end
 

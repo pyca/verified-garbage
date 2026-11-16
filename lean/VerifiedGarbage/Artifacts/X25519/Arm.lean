@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.X25519.Arm.Base
 public import VerifiedGarbage.Proof.X25519.Arm.Exchange
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.Arm.Print
+import VerifiedGarbage.Proof.X25519.Arm.Lit
 
 /-! # X25519 (RFC 7748) on ARMv7 -/
 
@@ -18,7 +19,7 @@ def artifacts : List Artifact := [
     verified := Proof.X25519.Arm.Exchange.exchange_baseline },
   Spec.X25519.exchangeApi.artifact Arm.target {
     suffix := "_umaal"
-    code := Impl.Xdh.Arm.exchange "vg_x25519_umaal" Impl.X25519.Arm.x25519Umaal 32
+    code := Impl.Xdh.Arm.exchange "vg_x25519_umaal" Impl.X25519.Arm.Words.x25519Umaal 32
     verified := Proof.X25519.Arm.Exchange.exchange_umaal },
   Spec.X25519.x25519BaseApi.artifact Arm.target {
     code := Impl.X25519.Arm.Base.x25519Base

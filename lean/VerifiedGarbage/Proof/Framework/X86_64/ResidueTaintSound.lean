@@ -2239,13 +2239,20 @@ theorem step_same {τ τ' : FT} {i : Instr} (h : step τ i = some τ') :
     cases h
     rfl
 
+theorem keepNats_eq (a b : List Nat) : keepNats a b = b := by
+  unfold keepNats
+  cases h : natsEq b a
+  · rfl
+  · rw [natsEq_eq] at h
+    exact (eq_of_beq h).symm
+
 theorem slowFn_run (i : Instr) (τ : FT) : (slowFn i).run τ = step τ i := by
   obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ := τ
   simp only [slowFn]
   cases h : step ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ i with
   | none => rfl
   | some τ' =>
-    simp only [forceTAll_eq, forceList_eq, forceOpt_eq]
+    simp only [forceTAll_eq, forceList_eq, forceOpt_eq, keepNats_eq]
     exact congrArg some (step_same h).symm
 
 theorem slowFn_eq (i : Instr) : slowFn i = ⟨(step · i)⟩ :=
@@ -2267,12 +2274,23 @@ theorem fastFn_eq {i : Instr} (h : isPlain i = true) (hsp : isa.writesSp i = fal
     | none => rfl
     | some t' => simp only [Option.toList, List.nil_append, ubDrop_eq hc, Taint.forceT_eq, forceList_eq]
 
+theorem pbMod_self (f : Nat → Nat) : ∀ (l : List Nat) (i : Nat), f (pbGet l i) = pbGet l i → pbMod f l i = l
+  | [], _, _ => rfl
+  | _ :: l, 0, h => congrArg (· :: l) h
+  | a :: l, i + 1, h => congrArg (a :: ·) (pbMod_self f l i h)
+
+theorem pbModKeep_eq (f : Nat → Nat) (l : List Nat) (i : Nat) : pbModKeep f l i = pbMod f l i := by
+  unfold pbModKeep
+  cases h : Nat.beq (f (pbGet l i)) (pbGet l i)
+  · rfl
+  · exact (pbMod_self f l i (Nat.eq_of_beq_eq_true h)).symm
+
 /-- `pbAfter` of a store of a register without an index register. -/
 theorem pbStore_eq {i : Instr} {m : MemOp} {w : Nat} {p : Taint.T → Bool} (hsw : storeW i = some (m, w))
     (hx : m.index = none) (hst : ∀ τ, stPub τ i = p τ.t) (τ : FT) :
     pbAfter τ i = pbStore τ.t τ.pb m w (p τ.t) := by
   unfold pbAfter pbStore
-  simp only [hsw, hst, addrOfK_eq, storeRange, idxRange, hx]
+  simp only [hsw, hst, addrOfK_eq, storeRange, idxRange, hx, pbModKeep_eq, keepNats_eq]
   cases p τ.t
   · cases addrOf τ.t m with
     | none => rfl
@@ -2372,6 +2390,56 @@ theorem fastStore_eq {i : Instr} {m : MemOp} {w : Nat} {p : Taint.T → Bool} {s
   · rfl
   · obtain ⟨rg, f, l, b, sl, lo, x⟩ := t
     simp only [fastStore, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, forceList_eq]
+    simp only at hb
+    cases hbs : baseStep ⟨true, ⟨rg, f, l, b, sl, lo, x⟩, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ i with
+    | none =>
+      rw [hbs] at hb
+      cases hmp : memPub ⟨rg, f, l, b, sl, lo, x⟩ m
+      · rfl
+      · rw [hmp] at hb; cases hb
+    | some t' =>
+      rw [hbs] at hb
+      cases hmp : memPub ⟨rg, f, l, b, sl, lo, x⟩ m
+      · rw [hmp] at hb; cases hb
+      · rw [hmp] at hb
+        simp only [Option.map_some, ↓reduceIte, Option.some.injEq] at hb
+        simp only [Bool.cond_true, Option.toList, List.nil_append, hb]
+
+theorem mbStoreI_eq {i : Instr} {m : MemOp} {w : Nat} (hsw : storeW i = some (m, w))
+    (hi : ∀ m' r, i ≠ .store m' r) (τ : FT) : mbAfter τ i = mbStoreI τ m w := by
+  unfold mbAfter mbStoreI
+  simp only [hsw]
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ := τ
+  cases hr : storeRange ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ m w with
+  | none => cases mb <;> rfl
+  | some q =>
+    obtain ⟨ri, lo, hi'⟩ := q
+    cases i <;> first | exact absurd rfl (hi _ _) | (cases mb <;> rfl)
+
+theorem pbStoreI_eq {i : Instr} {m : MemOp} {w : Nat} (hsw : storeW i = some (m, w))
+    (hst : ∀ τ, stPub τ i = false) (τ : FT) : pbAfter τ i = pbStoreI τ m w := by
+  unfold pbAfter pbStoreI
+  simp only [hsw, hst, Bool.false_eq_true, ↓reduceIte, pbModKeep_eq, keepNats_eq]
+  rfl
+
+theorem fastStoreI_eq {i : Instr} {m : MemOp} {w : Nat}
+    (hsp : isa.writesSp i = false)
+    (hbase : ∀ τ, (baseStep τ i).map (fun t' => ({ t' with slots := [] } : Taint.T)) =
+      if memPub τ.t m = true then some { τ.t with slots := [] } else none)
+    (hu : ∀ τ, ubNew τ i = none) (hf : flOf i = none) (hc : ∀ r, Taint.clobbers i r = false)
+    (hm : ∀ τ, mbAfter τ i = mbStoreI τ m w) (hwm : writesMem i = true)
+    (hpb : ∀ τ, pbAfter τ i = pbStoreI τ m w) (τ : FT) :
+    (fastStoreI m w).run τ = step τ i := by
+  have hk : ubKill τ.ub i = τ.ub := by
+    simp only [ubKill, hc, Bool.not_false]; exact List.filter_eq_self.mpr fun _ _ => rfl
+  have hb := hbase τ
+  unfold step
+  rw [hu, hf, hm, hsp, hk, hpb, hwm]
+  obtain ⟨ok, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ := τ
+  cases ok
+  · rfl
+  · obtain ⟨rg, f, l, b, sl, lo, x⟩ := t
+    simp only [fastStoreI, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, forceList_eq]
     simp only at hb
     cases hbs : baseStep ⟨true, ⟨rg, f, l, b, sl, lo, x⟩, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp, pb⟩ i with
     | none =>
@@ -2522,7 +2590,10 @@ theorem stepFn_eq (i : Instr) (τ : FT) : (stepFn i).run τ = step τ i := by
       case vmovdquStore l m x =>
         cases l <;> cases hx : m.index
         all_goals first
-          | (simp only [hx, Option.isNone_some, Bool.cond_false]; done)
+          | (simp only [hx, Option.isNone_some, Bool.cond_false]
+             refine fastStoreI_eq hsp (fun τ => baseStep_store (p := false) ?_ (fun _ => rfl) rfl) (fun _ => rfl) rfl
+               (fun _ => rfl) (mbStoreI_eq rfl (fun _ _ h => nomatch h)) rfl (pbStoreI_eq rfl fun _ => rfl) τ
+             simp only [special])
           | (simp only [hx, Option.isNone_none, Bool.cond_true]
              refine fastStore_eq hsp (fun τ => baseStep_store (p := false) ?_ (fun _ => rfl) rfl) (fun _ => rfl) rfl
                (fun _ => rfl) (fun τ => ?_) rfl (pbStore_eq rfl hx fun _ => rfl) τ
@@ -2536,6 +2607,9 @@ theorem stepFn_eq (i : Instr) (τ : FT) : (stepFn i).run τ = step τ i := by
           · simp only [special]
           · rw [← mbStore_eq hx]; unfold mbAfter mbStoreM; simp only [storeW]; rfl
         · simp only [hx, Option.isNone_some, Bool.cond_false]
+          refine fastStoreI_eq hsp (fun τ => baseStep_store (p := false) ?_ (fun _ => rfl) rfl) (fun _ => rfl) rfl
+            (fun _ => rfl) (mbStoreI_eq rfl (fun _ _ h => nomatch h)) rfl (pbStoreI_eq rfl fun _ => rfl) τ
+          simp only [special]
       case mov d src =>
         cases src with
         | reg => rfl

@@ -98,7 +98,7 @@ private theorem ordinary_sound {q q' : T} {i : Instr} {s t s' t' : State}
  (h : Agree q s t) (hs : (AArch64.Taint.step q.1 i).map (fun g=>(g,afterV q.2 i))=some q')
  (es : exec i s=some s') (et : exec i t=some t') : addrs i s=addrs i t ∧ Agree q' s' t' := by
  obtain ⟨g,hg,rfl⟩ := Option.map_eq_some_iff.mp hs
- obtain ⟨a,hg'⟩ := AArch64.taint.step_sound h.1 hg es et
+ obtain ⟨a,hg'⟩ := AArch64.Taint.step_sound h.1 hg es et
  refine ⟨a,hg',?_⟩
  intro b v hv
  have facts : v∈get q.2 b ∧ vdstOf i≠some v := by
@@ -155,11 +155,55 @@ theorem step_sound {q q' : T} {i : Instr} {s t s' t' : State}
    exact ⟨rfl,⟨h.1.1,h.1.2⟩,both_set h.2 d (fun _=>rfl)⟩
  | _ => exact ordinary_sound h hs es et
 
+/-! The step the kernel evaluates. `step` gives a taint whose sets are terms in
+the sets before, so no two taints of a check are the same term, and the kernel
+analyses again a field function called again from the same taint. `stepK` is
+`step` (`stepK_eq`), matching on the instruction once with its cases closed
+(`inline_match%`) and giving a taint whose three sets are evaluated
+(`RegSet.force`), as `AArch64.Taint.stepK` (`Proof/Framework/AArch64/Taint.lean`). -/
+
+/-- `step`, as a function of the instruction first. -/
+def stepFn : Instr → T → Option T
+ | .vop (.dup _ d n) => fun q => some (q.1,both q.2 d (AArch64.Taint.pub q.1 n))
+ | .vop (.ins .d2 d k n) => fun q =>
+   if k<2 then some (q.1,put q.2 (k==1) d (AArch64.Taint.pub q.1 n)) else none
+ | .umov .x d n k => fun q =>
+   if k<2 then some (AArch64.Taint.set q.1 d ((get q.2 (k==1)).mem n),q.2) else none
+ | .ldrqTbl t .. => fun q => some (q.1,both q.2 t true)
+ | i => fun q => ((AArch64.Taint.stepFn i).run q.1).map (fun g=>(g,afterV q.2 i))
+
+/-- `stepFn`, with its cases closed (`inline_match%`). -/
+def stepFnK : Instr → T → Option T := inline_match% stepFn AArch64.Taint.stepFn afterV vdstOf VOp.dst
+
+theorem stepFnK_eq (q : T) (i : Instr) : stepFnK i q = step q i := by
+  cases i with
+  | vop op =>
+    cases op with
+    | ins a d k n => cases a <;> rfl
+    | _ => rfl
+  | umov sz d n k => cases sz <;> rfl
+  | _ => rfl
+
+/-- A result of `step` with its three sets evaluated. -/
+def forceT : Option T → Option T
+ | some (g,a,b) => g.force fun g => a.force fun a => b.force fun b => some (g,a,b)
+ | none => none
+
+theorem forceT_eq (r : Option T) : forceT r = r := by
+  rcases r with _ | ⟨g,a,b⟩ <;> rfl
+
+/-- `step`, for the kernel. -/
+def stepK (q : T) (i : Instr) : Option T := forceT (stepFnK i q)
+
+theorem stepK_eq : stepK = step := by
+  funext q i
+  rw [stepK,forceT_eq,stepFnK_eq]
+
 def taint : VG.Taint isa where
   T := T
   Agree := Agree
-  step := step
-  step_sound := step_sound
+  step := stepK
+  step_sound h hs := step_sound h ((congrFun (congrFun stepK_eq _) _).symm.trans hs)
   condPub τ := Taint.condPub τ.1
   cond_sound h hc := Taint.cond_sound h.1 hc
   meet τ σ := (τ.1.inter σ.1, τ.2.1.inter σ.2.1, τ.2.2.inter σ.2.2)

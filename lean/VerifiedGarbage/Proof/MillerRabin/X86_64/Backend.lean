@@ -14,6 +14,7 @@ import VerifiedGarbage.Proof.MillerRabin.X86_64.CallTemplate
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtExp
 import VerifiedGarbage.Proof.Framework.X86_64.CallInlineRel
 public import VerifiedGarbage.Proof.Framework.X86_64.Mxcsr
+public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
 
 /-! # Shared round implementations for generic RSA and FFDH callers -/
 
@@ -34,13 +35,16 @@ structure RoundArith where
   inlineDepth : ∀ o a b, (inlineMont.mm o a b).x86_64Depth = 0
   inlineSafe : ∀ o a b, (inlineMont.mm o a b).allInstrs
     (fun i => !loadsMxcsr i && !isa.writesSp i) = true
+  /-- The callers' inlined multiplication never touches MXCSR. -/
+  inlineNoMx : ∀ o a b, (inlineMont.mm o a b).allInstrs (fun i => !touchesMxcsr i) = true
   /-- Montgomery multiplication as the round and its callers emit it: calls
   of a function, which inline to `mont.mm` (`Verified.of_inline`), or
   `mont.mm`. -/
   mm : Nat → Nat → Nat → Prog isa
   mmOk : ∀ o a b, (mm o a b).InlineOk = true
   mmInline : ∀ o a b, (mm o a b).inline = mont.mm o a b
-  mxSafe : (round mm).allInstrs (fun i => !loadsMxcsr i) = true
+  /-- The round never touches MXCSR (so never loads it). -/
+  mxSafe : (round mm).allInstrs (fun i => !touchesMxcsr i) = true
   arithDepth : ∀ o a b, (mont.mm o a b).x86_64Depth = 0
   arithSafe : ∀ o a b, (mont.mm o a b).allInstrs (fun i => !loadsMxcsr i && !isa.writesSp i) = true
 
@@ -51,8 +55,21 @@ theorem RoundArith.body_inline (v : RoundArith) : (body v.mm).inline = body v.mo
   rw [VG.Proof.MillerRabin.X86_64.body_inline]
   simp only [v.mmInline]
 
+/-- An instruction that does not touch MXCSR does not load it. -/
+theorem noLoad_of_noTouch_instr (i : Instr) (h : (!touchesMxcsr i) = true) : (!loadsMxcsr i) = true := by
+  unfold loadsMxcsr
+  split
+  · exact h
+  · rfl
+
+/-- Code that never touches MXCSR never loads it. -/
+theorem noLoad_of_noTouch {c : Prog isa} (h : c.allInstrs (fun i => !touchesMxcsr i) = true) :
+    c.allInstrs (fun i => !loadsMxcsr i) = true := by
+  rw [Code.allInstrs_eq, List.all_eq_true] at h ⊢
+  exact fun i hi => noLoad_of_noTouch_instr i (h i hi)
+
 theorem RoundArith.no_mx_load (v : RoundArith) : ∀ i ∈ instrs (round v.mm), loadsMxcsr i = false := by
-  have h := v.mxSafe
+  have h := noLoad_of_noTouch v.mxSafe
   rw [Code.allInstrs_eq] at h
   intro i hi
   have := List.all_eq_true.mp h i hi
@@ -111,6 +128,9 @@ structure RoundImpl extends RoundArith where
   spSafe : code.all (fun i => !isa.writesSp i) = true
   depth : code.x86_64Depth ≤ 120
   ctl : ctlOk code = true
+  /-- It never touches MXCSR, so its callers' runs need not agree on it
+  (`Contract.mxFree`). -/
+  noMx : code.allInstrs (fun i => !touchesMxcsr i) = true
   correct : ∀ s, roundPre s → ∃ tr t, Exec isa code s tr t ∧ abiPreserved s t ∧ roundPost s t
   ct : ConstantTime isa roundPre roundPub code
   suffix : String
@@ -123,7 +143,8 @@ def RoundImpl.ofArith (a : RoundArith) (spSafe : (round a.mm).all (fun i => !isa
     code := round a.mm
     spSafe := spSafe
     depth := depth
-    ctl := ctlOk_of_noLoad a.mxSafe
+    ctl := ctlOk_of_noLoad (noLoad_of_noTouch a.mxSafe)
+    noMx := a.mxSafe
     correct := a.round_correct
     ct := a.round_ct
     suffix := suffix

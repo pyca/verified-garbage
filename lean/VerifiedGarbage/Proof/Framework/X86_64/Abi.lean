@@ -161,6 +161,35 @@ theorem Exec.mxcsr {c : Prog isa} (hc : ∀ i ∈ instrs c, loadsMxcsr i = false
     exact ih fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_left _ hi))
   | icallNext _ _ _ ih => exact ih fun i hi => hc i (List.mem_cons_of_mem _ (List.mem_append_right _ hi))
 
+/-- Two runs of `c` along the same trace from the same MXCSR leave the same
+MXCSR: what a caller needs of a callee to relate the MXCSR of its two runs
+after the call, now that MXCSR is public (`abi.pub`). -/
+def MxDet (c : Prog isa) : Prop :=
+  ∀ s₁ s₂ t s₁' s₂', Exec isa c s₁ t s₁' → Exec isa c s₂ t s₂' → s₁.mxcsr = s₂.mxcsr →
+    s₁'.mxcsr = s₂'.mxcsr
+
+/-- Code that never loads MXCSR keeps it, so leaves the same in two runs from
+the same (the kernel checks `hc` by evaluating the code). -/
+theorem MxDet.of_noLoad {c : Prog isa} (hc : c.allInstrs (fun i => !loadsMxcsr i) = true) : MxDet c := by
+  rw [Code.allInstrs_eq, List.all_eq_true] at hc
+  intro _ _ _ _ _ e₁ e₂ hm
+  rw [Exec.mxcsr (fun i hi => by simpa using hc i hi) e₁, Exec.mxcsr (fun i hi => by simpa using hc i hi) e₂,
+    hm]
+
+/-- `Q`, from `Q` given the entry's MXCSR, for code that never loads MXCSR. -/
+theorem WP.of_mx {c : Prog isa} (hc : c.allInstrs (fun i => !loadsMxcsr i) = true) {s : State}
+    {Q : State → Prop} (h : WP isa c s fun t => t.mxcsr = s.mxcsr → Q t) : WP isa c s Q := by
+  rw [Code.allInstrs_eq, List.all_eq_true] at hc
+  obtain ⟨t, s', e, q⟩ := h
+  exact ⟨t, s', e, q (Exec.mxcsr (fun i hi => by simpa using hc i hi) e)⟩
+
+/-- Code that never loads MXCSR ends with its entry's. -/
+theorem WP.mxcsr {c : Prog isa} (hc : c.allInstrs (fun i => !loadsMxcsr i) = true) {s : State}
+    {Q : State → Prop} (h : WP isa c s Q) : WP isa c s fun t => Q t ∧ t.mxcsr = s.mxcsr := by
+  rw [Code.allInstrs_eq, List.all_eq_true] at hc
+  obtain ⟨t, s', e, q⟩ := h
+  exact ⟨t, s', e, q, Exec.mxcsr (fun i hi => by simpa using hc i hi) e⟩
+
 /-- The calling-convention obligations other than MXCSR's: the callee-saved
 registers and the return address. -/
 def gprPreserved (s s' : State) : Prop :=

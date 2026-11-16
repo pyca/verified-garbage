@@ -146,7 +146,7 @@ theorem pubL_args {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop
     {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))} {s₁ s₂ : State}
     (hk : 6 ≤ (sig.words abi.ptrBits).length) :
     (sig.contract abi pre post wa stack leak).pub s₁ s₂ ↔
-      (s₁.gpr .rsp = s₂.gpr .rsp ∧ leakAgree leak (allArgs sig s₁) s₁.mem (allArgs sig s₂) s₂.mem) ∧
+      ((s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr) ∧ leakAgree leak (allArgs sig s₁) s₁.mem (allArgs sig s₂) s₂.mem) ∧
       (∀ i, (sig.params.flatMap (·.2.pubs)).getD i false = true →
         ((allArgs sig s₁).getD i 0).setWidth (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD i 64) =
           ((allArgs sig s₂).getD i 0).setWidth (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD i 64)) ∧
@@ -709,9 +709,9 @@ theorem narrowS_pub (hk : 6 ≤ (sig.words abi.ptrBits).length)
   have hk' : 6 ≤ ((sig.withScratch nm e n).words abi.ptrBits).length := by
     rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_using [hk]
   rw [pubL_args hk] at hp
-  obtain ⟨⟨hsp, hlk⟩, hpa, hdesc⟩ := hp
-  obtain ⟨e₁, -, -, a₁, -⟩ := narrowS_facts (nm := nm) (e := e) (n := n) hk hb hb1 h₁
-  obtain ⟨e₂, -, -, a₂, f₂⟩ := narrowS_facts (nm := nm) (e := e) (n := n) hk hb hb1 h₂
+  obtain ⟨⟨⟨hsp, hmx⟩, hlk⟩, hpa, hdesc⟩ := hp
+  obtain ⟨e₁, -, m₁, a₁, -⟩ := narrowS_facts (nm := nm) (e := e) (n := n) hk hb hb1 h₁
+  obtain ⟨e₂, -, m₂, a₂, f₂⟩ := narrowS_facts (nm := nm) (e := e) (n := n) hk hb hb1 h₂
   have l₁ := allArgs_length sig s₁ hk
   have l₂ := allArgs_length sig s₂ hk
   have hL₁ : ∀ r ∈ Sig.lists abi.ptrBits (narrowS sig e n bytes s₁).mem sig.params (allArgs sig s₁),
@@ -726,7 +726,7 @@ theorem narrowS_pub (hk : 6 ≤ (sig.words abi.ptrBits).length)
   rw [e₁, e₂, a₁, a₂, hsp,
     show (sig.withScratch nm e n).params = sig.params ++ [((nm, .array true e n) : String × Param)]
       from rfl, Sig.descs_append_array 64 nm e n _ sig.params _ l₁]
-  refine ⟨⟨rfl, leakAgree_withScratchL hleak _ _ l₁ l₂ (narrowS_agree hk hb hb1 h₁) hL₁
+  refine ⟨⟨⟨rfl, by rw [m₁, m₂, hmx]⟩, leakAgree_withScratchL hleak _ _ l₁ l₂ (narrowS_agree hk hb hb1 h₁) hL₁
     (narrowS_agree hk hb hb1 h₂) hL₂ hlk⟩, fun i hi => ?_, fun r hr i hi => ?_⟩
   rotate_left
   · have hx : r.Contains (r.base + BitVec.ofNat 64 i) 1 := Region.contains_ofNat r.base hi
@@ -946,7 +946,7 @@ theorem Verified.stackArgScratchL {c : Prog isa}
       (fun r hr x hx => narrowS_agreeLists hk hb.1 hb.2.1 hs r ((narrowS_lists hk hb.1 hb.2.1 hs) ▸ hr) x hx) hq''
   · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
     obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
-    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pubL_args hk).mp hp).1.1,
+    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pubL_args hk).mp hp).1.1.1,
       hct _ _ _ _ _ _ (narrowS_pre hk hb.1 hb.2.1 hpre h₁) (narrowS_pre hk hb.1 hb.2.1 hpre h₂)
         (narrowS_pub hk hb.1 hb.2.1 h₁ h₂ hp hleak) f₁ f₂]
 

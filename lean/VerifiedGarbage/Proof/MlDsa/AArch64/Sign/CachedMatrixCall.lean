@@ -37,7 +37,7 @@ theorem two_max {s t : State} {tr : List Leak}
  theorem callee {S : Nat} (hS : S<2^64) : CalleeOk S Two.code (rejNTT2Contract abi S) :=
   CalleeOk.of_verified hS two_verified (Nat.zero_le _) (by
     have hd : Two.code.aarch64Depth=0 := by decide +kernel
-    simp only [hd,Nat.mul_zero]; exact Nat.zero_le _)
+    simp only [hd,Nat.mul_zero]; exact Nat.zero_le _) (by lit_decide)
 
 open VG.Proof.MlDsa.AArch64.KeyGen.Optimized
 

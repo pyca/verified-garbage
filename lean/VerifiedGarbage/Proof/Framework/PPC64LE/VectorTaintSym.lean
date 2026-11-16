@@ -53,6 +53,36 @@ theorem stepS_sound {L : List String} {τ τ' : T} {i : Instr} {s₁ s₂ s₁' 
     rw [e] at hs
     exact ⟨(step_sound ha.1 hs e₁ e₂).1, (step_sound ha.1 hs e₁ e₂).2, hsy⟩
 
+/-- `stepS`, as a function of the instruction first: `step` on every instruction but
+`adrSym`, which is public for a static of `L` and secret otherwise. -/
+def stepSFn : Instr → List String → T → Option T
+  | .adrSym d n => fun L τ => some (Taint.set τ d (decide (n ∈ L)))
+  | i => fun _ τ => step τ i
+
+theorem stepSFn_eq (L : List String) (τ : T) (i : Instr) : stepSFn i L τ = stepS L τ i := by
+  cases i <;> try rfl
+  simp only [stepSFn, stepS, Instr.symLi]
+  split <;> rename_i h
+  · rw [decide_eq_true h]; rfl
+  · rw [decide_eq_false h]; rfl
+
+/-- `stepSFn`, with its cases closed (`inline_match%`). -/
+def stepSFnK : Instr → List String → T → Option T := inline_match% stepSFn step Taint.step
+
+theorem stepSFnK_eq (i : Instr) : stepSFnK i = stepSFn i := by cases i <;> rfl
+
+/-- `stepS`, giving a set that is evaluated (see `Taint.stepK`,
+`Proof/Framework/PPC64LE/Taint.lean`). -/
+def stepSK (L : List String) (τ : T) (i : Instr) : Option T :=
+  match stepSFnK i L τ with
+  | some τ' => τ'.force some
+  | none => none
+
+theorem stepSK_eq (L : List String) : stepSK L = stepS L := by
+  funext τ i
+  rw [stepSK, stepSFnK_eq, stepSFn_eq]
+  cases stepS L τ i <;> rfl
+
 end VectorTaint
 
 /-- Vector taint tracking for PPC64LE code that addresses the statics `L`, whose addresses
@@ -60,8 +90,8 @@ are public. -/
 def vectorTaintSym (L : List String) : VG.Taint isa where
   T := Taint.T
   Agree := Taint.AgreeS L
-  step := VectorTaint.stepS L
-  step_sound := VectorTaint.stepS_sound
+  step := VectorTaint.stepSK L
+  step_sound h hs := VectorTaint.stepS_sound h (VectorTaint.stepSK_eq L ▸ hs)
   condPub := taint.condPub
   cond_sound h := taint.cond_sound h.1
   meet := taint.meet
@@ -91,5 +121,10 @@ def vectorTaintSym (L : List String) : VG.Taint isa where
   pop_sound h hs e₁ e₂ := by
     obtain ⟨a, b⟩ := taint.pop_sound h.1 hs e₁ e₂
     exact ⟨a, b, fun n hn => by rw [pop_syms e₁, pop_syms e₂]; exact h.2 n hn⟩
+
+/-- `vectorTaintSym L`'s step is `VectorTaint.stepS L`'s (`stepSK_eq`). -/
+theorem vectorTaintSym_step (L : List String) (τ : Taint.T) (i : Instr) :
+    (vectorTaintSym L).step τ i = VectorTaint.stepS L τ i :=
+  congrFun (congrFun (VectorTaint.stepSK_eq L) τ) i
 
 end VG.PPC64LE

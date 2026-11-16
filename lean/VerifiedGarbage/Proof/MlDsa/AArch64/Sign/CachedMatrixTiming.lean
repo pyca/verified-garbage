@@ -43,7 +43,8 @@ open VG.Proof.MlDsa.AArch64.Optimized.ResidentRej
 open VG.Impl.MlDsa.AArch64.Optimized.ResidentRej
 open VG.Spec.Sha3 (bytesAt)
 
-theorem two_ret {S : Nat} (hS : S<2^64) : RetPub (rejNTT2Contract abi S) Two.code := by
+theorem two_ret {S : Nat} (hS : S<2^64) : RetPub (rejNTT2Contract abi S) Two.code :=
+  RetPub.of_noDit (by lit_decide) (fun _ d h => pre_withDit d h) <| by
   intro x y tx ty x' y' ⟨hx,hy,hpub⟩ ex ey
   have px := pre_two (pre_stack (Nat.zero_le S) hS hx)
   have py := pre_two (pre_stack (Nat.zero_le S) hS hy)

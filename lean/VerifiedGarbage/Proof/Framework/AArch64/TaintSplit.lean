@@ -85,14 +85,16 @@ section
 variable {L : List String}
 
 theorem checkBlockS_cons (τ : (taintS L).T) (i : Instr) (is : List Instr) :
-    (taintS L).checkBlock τ (i :: is) = (Taint.stepS L τ i).bind fun τ' => (taintS L).checkBlock τ' is := rfl
+    (taintS L).checkBlock τ (i :: is) = (Taint.stepS L τ i).bind fun τ' => (taintS L).checkBlock τ' is :=
+  congrArg (fun o => o.bind fun τ' => (taintS L).checkBlock τ' is) (taintS_step L τ i)
 
 theorem checkBlock_eraseT (τ : (taintS L).T) (is : List isa.Instr) :
     (taintS L).checkBlock τ (is.map Instr.eraseT) = (taintS L).checkBlock τ is := by
   induction is generalizing τ with
   | nil => rfl
   | cons i is ih =>
-    show (Taint.stepS L τ i.eraseT).bind _ = (Taint.stepS L τ i).bind _
+    show (taintS L).checkBlock τ (i.eraseT :: is.map Instr.eraseT) = _
+    rw [checkBlockS_cons, checkBlockS_cons]
     exact congr (congrArg Option.bind (Taint.stepS_eraseT L τ i)) (funext ih)
 
 theorem checkChunks_eraseT {chunkSize : Nat} (τ : (taintS L).T) (is : List isa.Instr)

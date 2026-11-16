@@ -39,8 +39,8 @@ include hp
 
 /-- `Mid` through a write of the slot of the head. -/
 theorem Mid.slot {o : Nat} {st st' : State} (h : Mid s o st) (hf : Frame [hR s] st.mem st'.mem)
-    (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr) :
-    Mid s o st' := by
+    (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr)
+    (hmx : st'.mxcsr = st.mxcsr) : Mid s o st' := by
   have one : ∀ {r : Region}, r.Disjoint (hR s) → ∀ r' ∈ [hR s], r.Disjoint r' := fun hd r' hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact hd
   have hL : L s < 2 ^ 64 := (stackArg s 0).isLt
@@ -48,7 +48,7 @@ theorem Mid.slot {o : Nat} {st st' : State} (h : Mid s o st) (hf : Frame [hR s] 
     hrd.trans h.rd, hwr.trans h.wr, h.kept.frame hf (one kR'_hR),
     h.frame.trans (hf.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact ⟨wkR s, by simp, hR_sub⟩),
-    fun iv a p hr hal hpl => ?_⟩
+    fun iv a p hr hal hpl => ?_, hmx.trans h.mx⟩
   obtain ⟨sr, dd⟩ := h.sem iv a p hr hal hpl
   refine ⟨streamRepr_frame hf (one (hp.st_w.sub_right hR_sub)) sr, ?_⟩
   rw [← dd]
@@ -86,7 +86,8 @@ def HE (st : State) : Prop :=
 /-- After the call of the head. -/
 def HD (st : State) : Prop :=
   (∀ r ∈ calleeSaved, st.gpr r = s.gpr r) ∧ st.gpr .rsp = SP s ∧ st.rd = s.rd ∧ st.wr = s.wr ∧
-    Frame (wR s ++ [tR s]) s.mem st.mem ∧ Kept s 0 st.mem ∧ HSlot s st.mem ∧ Sem s (Hd s) st.mem
+    Frame (wR s ++ [tR s]) s.mem st.mem ∧ Kept s 0 st.mem ∧ HSlot s st.mem ∧ Sem s (Hd s) st.mem ∧
+    st.mxcsr = s.mxcsr
 
 end
 
@@ -103,8 +104,8 @@ theorem notCs' {r : Reg} (hr : r ∈ calleeSaved) :
 theorem hl_wp {st : State} (h : HB s st) :
     WP isa (.block headLen) st fun st' =>
       HB s st' ∧ st'.gpr .rax = BitVec.ofNat 64 (Hd s) ∧ st'.zf = some (decide (Hd s = 0)) :=
-  WP.mono (headLen_ok hp h.2.1 h.2.2 h.1.kept h.1.rd h.1.wr) fun _ ⟨ax, z, g, m, rd, wr⟩ =>
-    ⟨⟨h.1.regs m (fun r hr => g r (notCs' hr).1 (notCs' hr).2.1) rd wr, by rw [g _ (by decide) (by decide), h.2.1],
+  WP.mono_mx (by decide) (headLen_ok hp h.2.1 h.2.2 h.1.kept h.1.rd h.1.wr) fun _ ⟨ax, z, g, m, rd, wr⟩ mx =>
+    ⟨⟨h.1.regs m (fun r hr => g r (notCs' hr).1 (notCs' hr).2.1) rd wr mx, by rw [g _ (by decide) (by decide), h.2.1],
       by rw [g _ (by decide) (by decide), h.2.2]⟩, ax, z⟩
 
 omit hp in
@@ -113,14 +114,16 @@ theorem ho_wp {st : State} (h : HB s st ∧ st.gpr .rax = BitVec.ofNat 64 (Hd s)
       (HB s st' ∧ st'.gpr .rax = BitVec.ofNat 64 (Hd s)) ∧
         st'.cf = some (decide (2 ^ 64 ≤ (TL s).toNat + Hd s)) := by
   have hL : L s < 2 ^ 64 := (stackArg s 0).isLt
-  exact WP.mono (headOver_ok h.2 h.1.2.2 (Nat.lt_of_le_of_lt (Nat.min_le_right _ _) hL)) fun _ ⟨cf, g, m, rd, wr⟩ =>
-    ⟨⟨⟨h.1.1.regs m (fun r hr => g r (notCs' hr).2.1) rd wr, by rw [g _ (by decide), h.1.2.1],
+  exact WP.mono_mx (by decide) (headOver_ok h.2 h.1.2.2 (Nat.lt_of_le_of_lt (Nat.min_le_right _ _) hL))
+    fun _ ⟨cf, g, m, rd, wr⟩ mx =>
+    ⟨⟨⟨h.1.1.regs m (fun r hr => g r (notCs' hr).2.1) rd wr mx, by rw [g _ (by decide), h.1.2.1],
       by rw [g _ (by decide), h.1.2.2]⟩, by rw [g _ (by decide), h.2]⟩, cf⟩
 
 theorem hp_wp {st : State} (h : HB s st ∧ st.gpr .rax = BitVec.ofNat 64 (Hd s)) :
     WP isa (.block headPtrs) st (HC s) :=
-  WP.mono (headPtrs_ok hp h.1.2.1 h.2 h.1.1.kept h.1.1.rd h.1.1.wr) fun _ ⟨cx, si, di, k, g, f, rd, wr⟩ =>
-    ⟨h.1.1.slot hp f (fun r hr => g r (notCs' hr).2.1 (notCs' hr).2.2.2.1 (notCs' hr).2.2.2.2.1) rd wr,
+  WP.mono_mx (by decide) (headPtrs_ok hp h.1.2.1 h.2 h.1.1.kept h.1.1.rd h.1.1.wr)
+    fun _ ⟨cx, si, di, k, g, f, rd, wr⟩ mx =>
+    ⟨h.1.1.slot hp f (fun r hr => g r (notCs' hr).2.1 (notCs' hr).2.2.2.1 (notCs' hr).2.2.2.2.1) rd wr mx,
       by rw [si, BitVec.add_zero], by rw [di, BitVec.add_zero], cx, k⟩
 
 theorem hc_wp (hk0 : Hd s ≠ 0) {st : State} (h : HC s st) : WP isa copyLoop st (HA s) := by
@@ -134,10 +137,11 @@ theorem hc_wp (hk0 : Hd s ≠ 0) {st : State} (h : HC s st) : WP isa copyLoop st
       covers_off (k := L s) (d := 0) (m := Hd s) (by rw [M₃.rd, M₃.wr, hp.rd]; simp) (by omega_using [hHL]) (by omega_using []),
       covers_off (k := L s) (d := 0) (m := Hd s) (by rw [M₃.wr, hp.wr]; simp) (by omega_using [hHL]) (by omega_using []),
       (hp.r_d.sub_left ss).sub_right ds⟩
-  refine WP.mono (copyLoopL_ok st cp) fun s₄ ⟨m₄, g₄, rd₄, wr₄⟩ => ?_
+  refine WP.mono_mx (by decide) (copyLoopL_ok st cp) fun s₄ ⟨m₄, g₄, rd₄, wr₄⟩ mx₄ => ?_
   have f₄ : Frame [dqR s 0 (Hd s)] st.mem s₄.mem := by
     rw [m₄]; exact writeBytes_frame' _ (length_bytesAt _ _ _)
-  refine ⟨M₃.copy hp (by omega_using [hHL]) f₄ (fun r hr => g₄ r (notCs' hr).1 (notCs' hr).2.2.2.2.2.2.2.1) rd₄ wr₄, ?_, ?_⟩
+  refine ⟨M₃.copy hp (by omega_using [hHL]) f₄ (fun r hr => g₄ r (notCs' hr).1 (notCs' hr).2.2.2.2.2.2.2.1) rd₄ wr₄ mx₄,
+    ?_, ?_⟩
   · show s₄.mem.readW _ 64 = _
     rw [← k₃]
     exact f₄.readW (Region.contains_self _ _) (fun r hr => by
@@ -150,8 +154,8 @@ theorem hc_wp (hk0 : Hd s ≠ 0) {st : State} (h : HC s st) : WP isa copyLoop st
     exact bytesAt_frame M₃.frame (fun r hr => (r_disj hp r hr).sub_left (Region.sub_prefix hHL)) (by omega_using [hL, hHL])
 
 theorem ha_wp {st : State} (h : HA s st) : WP isa (.block headArgs) st (HE s) :=
-  WP.mono (headArgs_ok hp h.1 h.2.1) fun _ ⟨di, si, dx, cx, r8, r9, r10, cs, m, rd, wr⟩ =>
-    ⟨⟨h.1.regs m cs rd wr, by rw [m]; exact h.2.1, by rw [m]; exact h.2.2⟩, di, si, dx, cx, r8, r9, r10⟩
+  WP.mono_mx (by decide) (headArgs_ok hp h.1 h.2.1) fun _ ⟨di, si, dx, cx, r8, r9, r10, cs, m, rd, wr⟩ mx =>
+    ⟨⟨h.1.regs m cs rd wr mx, by rw [m]; exact h.2.1, by rw [m]; exact h.2.2⟩, di, si, dx, cx, r8, r9, r10⟩
 
 theorem hcall_wp (E : EncFn M) {st : State} (h : HE s st) :
     WP isa (.frame (.push [.r10]) (.call E.fn.name E.fn.code) (.pop .rax 1)) st (HD s) := by
@@ -159,8 +163,8 @@ theorem hcall_wp (E : EncFn M) {st : State} (h : HE s st) :
   have hHL : Hd s ≤ L s := Nat.min_le_right _ _
   obtain ⟨⟨M₅, k₅, hX₅⟩, di, si, dx, cx, r8, r9, r10⟩ := h
   have ds := dq_sub (s := s) (o := 0) (n := Hd s) (by omega_using [hHL])
-  refine WP.mono (encCall_ok hp E (o := 0) (n := Hd s) (by omega_using [hHL]) M₅.rsp M₅.rd M₅.wr M₅.frame
-    di si dx cx r8 r9 r10) fun s₆ ⟨cs₆, rd₆, wr₆, f₆, post⟩ => ?_
+  refine WP.mono_mx (call_frame_mx E.mx) (encCall_ok hp E (o := 0) (n := Hd s) (by omega_using [hHL]) M₅.rsp M₅.rd
+    M₅.wr M₅.frame di si dx cx r8 r9 r10) fun s₆ ⟨cs₆, rd₆, wr₆, f₆, post⟩ mx₆ => ?_
   have f₆' : Frame (wR s ++ [tR s]) s.mem s₆.mem := M₅.frame.trans (f₆.sub fun r hr => by
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with (rfl | rfl) | rfl
@@ -177,7 +181,7 @@ theorem hcall_wp (E : EncFn M) {st : State} (h : HE s st) :
   refine ⟨fun r hr => by rw [cs₆ r hr, M₅.saved r hr], by rw [cs₆ _ (by decide), M₅.rsp], rd₆.trans M₅.rd,
     wr₆.trans M₅.wr, f₆', M₅.kept.frame f₆ (out kR'_sub),
     by show s₆.mem.readW _ 64 = _; rw [← k₅]; exact f₆.readW (Region.contains_self _ _) (out hR_sub) (by decide),
-    fun iv a p hr hal hpl => ?_⟩
+    fun iv a p hr hal hpl => ?_, mx₆.trans M₅.mx⟩
   obtain ⟨sr₅, -⟩ := M₅.sem iv a p hr hal hpl
   have z : pt s 0 = [] := rfl
   rw [z, List.append_nil] at sr₅
@@ -189,11 +193,11 @@ theorem hcall_wp (E : EncFn M) {st : State} (h : HE s st) :
 
 theorem hd_wp (htl : (TL s).toNat + Hd s < 2 ^ 64) {st : State} (h : HD s st) :
     WP isa (.block headDone) st (Mid s (Hd s)) := by
-  obtain ⟨cs₆, sp₆, rd₆, wr₆, f₆, k₆, h72₆, sem₆⟩ := h
+  obtain ⟨cs₆, sp₆, rd₆, wr₆, f₆, k₆, h72₆, sem₆, mx₆⟩ := h
   have hHL : Hd s ≤ L s := Nat.min_le_right _ _
-  exact WP.mono (headDone_ok hp sp₆ rd₆ wr₆ f₆ k₆ h72₆) fun _ ⟨cs₇, k₇, f₇, rd₇, wr₇⟩ =>
+  exact WP.mono_mx (by decide) (headDone_ok hp sp₆ rd₆ wr₆ f₆ k₆ h72₆) fun _ ⟨cs₇, k₇, f₇, rd₇, wr₇⟩ mx₇ =>
     ⟨hHL, htl, by rw [cs₇ _ (by decide), sp₆], fun r hr => by rw [cs₇ r hr, cs₆ r hr], rd₇.trans rd₆,
-      wr₇.trans wr₆, k₇, f₆.trans (frame_kR' f₇), sem₆.kR' hp f₇ hHL⟩
+      wr₇.trans wr₆, k₇, f₆.trans (frame_kR' f₇), sem₆.kR' hp f₇ hHL, mx₇.trans mx₆⟩
 
 /-- `head`, from `Mid s 0` with `work` in `r11` and the text so far in
 `r8`: some bytes done. -/

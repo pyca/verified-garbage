@@ -148,7 +148,8 @@ theorem privP_args_eq {L : DLay} {g : Reg → BitVec 64} {vv : VReg → BitVec 1
 theorem privP_pub' {L : DLay} {S : Nat} {g₁ g₂ : Reg → BitVec 64} {v₁ v₂ : VReg → BitVec 128} {m₁ m₂ : Mem}
     (hL : L.Ok) (hk : LeakEq L m₁ m₂) {a b : State} (ha : PrivReadyP L g₁ v₁ m₁ a) (hb : PrivReadyP L g₂ v₂ m₂ b) :
     (Proof.Rsa.privateCheckedPrecomputedContract AArch64.abi (S + 1)).pub
-      (a.callEntry.withRegions (privRdP L) (privWr L)) (b.callEntry.withRegions (privRdP L) (privWr L)) := by
+      (a.callEntry.withRegions (privRdP L) (privWr L))
+      ((b.callEntry.withRegions (privRdP L) (privWr L)).withDit (a.callEntry.withRegions (privRdP L) (privWr L)).dit) := by
   have aa := privP_args_eq ha (privRdP L) (privWr L)
   have ab := privP_args_eq hb (privRdP L) (privWr L)
   have hx := ha.2.2.1
@@ -157,6 +158,7 @@ theorem privP_pub' {L : DLay} {S : Nat} {g₁ g₂ : Reg → BitVec 64} {v₁ v�
   sig_pub [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
     Proof.Rsa.privateCheckedSig, AArch64.abi, AArch64.argRegs, stackArgs_fourteen, List.append_eq,
     _root_.List.range, _root_.List.range.loop]
+  simp only [stackArg_withDit]
   have e : ∀ i < 14, stackArg (a.callEntry.withRegions (privRdP L) (privWr L)) i =
       stackArg (b.callEntry.withRegions (privRdP L) (privWr L)) i := fun i hi => (aa i hi).trans (ab i hi).symm
   refine ⟨by rw [ha.1.sp, hb.1.sp], ?_, by rw [ha.2.1.x0, hb.2.1.x0], by rw [ha.2.1.x1, hb.2.1.x1],
@@ -182,7 +184,7 @@ theorem privP_ct (c : PrivPChecked) {S : Nat} (hS : c.stack = S + 1) (ts : List 
     RelCT isa (Two S ts PrivReadyP) (.call c.name c.code) (Two S ts CalledP) := by
   have hv : Verified AArch64.target c.code (Proof.Rsa.privateCheckedPrecomputedContract AArch64.abi (S + 1)) :=
     hS ▸ c.verified
-  exact two_wp (fun e => RelCT.call (n := c.name) hv.1 hv.2.1 (privRdP e.L) (privWr e.L)
+  exact two_wp (fun e => RelCT.callDit (n := c.name) hv.1 hv.2.1 c.noDit (fun _ _ h => h) (privRdP e.L) (privWr e.L)
     fun _ _ ⟨hL, hP, hk, f₁, f₂⟩ => by
       obtain ⟨c₁, r₁, x₁, V₁, W₁, R₁, s₁, A₁⟩ := f₁
       obtain ⟨c₂, r₂, x₂, V₂, W₂, R₂, s₂, A₂⟩ := f₂

@@ -439,7 +439,7 @@ open VG.Impl.MlDsa.AArch64.Optimized.Response (canonicalize)
 abbrev canonicalizeArgs (f : Ptr) : List (Reg × Arg) := [(.x0,.ptr f)]
 
 theorem canonicalize_callee (S : Nat) : CalleeOk S canonicalize (canonicalizeContract abi) := by
-  refine ⟨canonicalize_verified.1,canonicalize_verified.2.1,?_⟩
+  refine CalleeOk.of_ct canonicalize_verified.1 canonicalize_verified.2.1 (by lit_decide) (fun _ _ h => h) ?_
   change 0≤S
   exact Nat.zero_le _
 

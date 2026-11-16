@@ -16,7 +16,7 @@ open VG.Impl.MlDsa.AArch64.Call (Ptr Arg callAt)
 open VG.Proof.MlDsa.Arith (polyRegion)
 
 theorem subLowNorm_callee (S : Nat) : CalleeOk S VG.Impl.MlDsa.AArch64.Optimized.Response.subLowNorm
-    (subLowNormContract abi) := ⟨subLowNorm_verified.1,subLowNorm_verified.2.1,Nat.zero_le _⟩
+    (subLowNormContract abi) := CalleeOk.of_ct subLowNorm_verified.1 subLowNorm_verified.2.1 (by lit_decide) (fun _ _ h => h) (Nat.zero_le _)
 
 abbrev subLowNormArgs (w cs low : Ptr) (g B : Nat) : List (Reg × Arg) :=
   [(.x0,.ptr w),(.x1,.ptr cs),(.x2,.ptr low),(.x3,.imm g),(.x4,.imm B)]

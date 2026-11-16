@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Rsa.AArch64.PdChecked
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 
 /-! # A precomputed public operation for verified RSA callers on AArch64 -/
 
@@ -23,6 +24,7 @@ structure PublicImpl where
   spSafe : code.all (fun i => !isa.writesSp i) = true
   /-- It has no frame and makes no calls: its callers reserve no stack for it. -/
   depth : code.aarch64Depth = 0
+  noDit : code.all (fun i => !i.touchesDit) = true
   suffix : String
   features : List String
 

@@ -124,7 +124,7 @@ def abi : Abi isa where
       (match n with
       | 0 => True
       | n => n ≤ s.sp.toNat) ∧ s.sp.toNat + 8 * (ws.length - argRegs.length) ≤ 2 ^ 64
-  pub s₁ s₂ := s₁.sp = s₂.sp
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.dit = s₂.dit
   mem s := s.mem
   rd s := s.rd
   wr s := s.wr

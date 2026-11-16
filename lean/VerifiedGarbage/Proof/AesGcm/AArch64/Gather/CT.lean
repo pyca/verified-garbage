@@ -46,7 +46,7 @@ theorem sealGather_ct {C : CtxSpec} (F : SealFn C) :
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
   have h₁ := lay p₁.1
   have h₂ := lay p₂.1
-  obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, a0, a1, a2, hdesc⟩ := hq
+  obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qdit, a0, a1, a2, hdesc⟩ := hq
   have hB : Bs σ₁ = Bs σ₂ := by simp only [Bs, qsp]
   refine (RelCT.alloc (P := Eq2 σ₁ σ₂) (R := TT)
     ((?_ : RelCT isa (Eq2 (allocated 16 σ₁) (allocated 16 σ₂)) _ TT).mono
@@ -54,7 +54,8 @@ theorem sealGather_ct {C : CtxSpec} (F : SealFn C) :
     (fun _ _ h => h) fun _ _ _ => trivial
   -- The entry.
   refine rel_seq (rel_taint [] (by rw [allocated_sp h₁, allocated_sp h₂, hB]) (by agree_tac [])
-    ⟨_, by taint_decide⟩) (entered_wp h₁) (entered_wp h₂) fun e₁ e₂ he₁ he₂ => ?_
+    ⟨_, by taint_decide⟩) (WP.dit (by decide) (entered_wp h₁)) (WP.dit (by decide) (entered_wp h₂))
+    fun e₁ e₂ ⟨he₁, ed₁⟩ ⟨he₂, ed₂⟩ => ?_
   -- The gathering.
   have g₁ := gatherPre_of h₁ he₁
   have g₂ := gatherPre_of h₂ he₂
@@ -67,11 +68,12 @@ theorem sealGather_ct {C : CtxSpec} (F : SealFn C) :
       simp only [dsR, Src, Cnt, ← q6, ← q7]; exact hx
     rw [he₁.mem, he₂.mem, Lay.keepE h₁.bds.symm hx, Lay.keepE h₂.bds.symm hx₂]
     exact hdesc j hj
-  refine rel_seq (gather_rel hd g₁ g₂ (by rw [he₁.sp, he₂.sp, hB])) (gathered_wp h₁ he₁) (gathered_wp h₂ he₂)
-    fun u₁ u₂ hg₁ hg₂ => ?_
+  refine rel_seq (gather_rel hd g₁ g₂ (by rw [he₁.sp, he₂.sp, hB])) (WP.dit (by lit_decide) (gathered_wp h₁ he₁))
+    (WP.dit (by lit_decide) (gathered_wp h₂ he₂)) fun u₁ u₂ ⟨hg₁, gd₁⟩ ⟨hg₂, gd₂⟩ => ?_
   -- The call's arguments.
   refine rel_seq (rel_taint [] (by rw [hg₁.sp, hg₂.sp, hB]) (by agree_tac []) ⟨_, by taint_decide⟩)
-    (ready_wp h₁ hg₁) (ready_wp h₂ hg₂) fun c₁ c₂ hc₁ hc₂ => ?_
+    (WP.dit (by decide) (ready_wp h₁ hg₁)) (WP.dit (by decide) (ready_wp h₂ hg₂))
+    fun c₁ c₂ ⟨hc₁, cd₁⟩ ⟨hc₂, cd₂⟩ => ?_
   -- The call, by its callee's contract.
   have hrd : rdC C σ₂ = rdC C σ₁ := by simp only [rdC, kR, nR, aR, K, Nn, NL, Ad, AL, q0, q2, q3, q4, q5, hB]
   have hwr : wrC σ₂ = wrC σ₁ := by simp only [wrC, dR, tgR, Dst, L, Tg, a0, a1, a2]
@@ -94,7 +96,8 @@ theorem sealGather_ct {C : CtxSpec} (F : SealFn C) :
       refine ⟨F.pre _ cp₁ i₁, F.pre _ cp₂ i₂, F.pub _ _ ?_, cv₁, cw₁, cv₂, cw₂⟩
       simp only [State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp, r0₁, r1₁, r2₁, r3₁, r4₁, r5₁,
         r6₁, r7₁, r0₂, r1₂, r2₂, r3₂, r4₂, r5₂, r6₂, r7₂, hc₁.sp, hc₂.sp, hB, hc₁.stackArg0 h₁,
-        hc₂.stackArg0 h₂, q0, q1, q2, q3, q4, q5, Dst, Tg, a0, a1, a2, and_self])
+        hc₂.stackArg0 h₂, q0, q1, q2, q3, q4, q5, Dst, Tg, a0, a1, a2, State.withRegions_dit, State.callEntry_dit,
+        cd₁, cd₂, gd₁, gd₂, ed₁, ed₂, allocated_dit, qdit, and_self])
     (called_wp F h₁ p₁.2 hc₁) (called_wp F h₂ p₂.2 hc₂) fun z₁ z₂ hz₁ hz₂ => ?_
   -- The return address.
   exact rel_taint [] (by rw [hz₁.sp, hz₂.sp, hB]) (by agree_tac []) ⟨_, by taint_decide⟩

@@ -25,13 +25,14 @@ multiplications (`mul`, `sqr`, and `mulSmallAdd` by `a24`) are the
 (`x25519With`), so that `vg_x25519_adx` (`X86_64/Adx.lean`) is this code with
 other multiplications:
 
-* `mul`: the 512-bit product, row by row (`r8–r15`, with the carry of a row
-  in `rbp`), then `lo + 38 hi` (as `2²⁵⁶ ≡ 38`), whose carry word `c` is
-  folded in as `38 c`, and a last carry of that as 38 more;
+* `mul`: the 512-bit product, column by column (`r8–r15`, each product
+  added to the three words of its column), with `b` in registers; then
+  `lo + 38 hi` (as `2²⁵⁶ ≡ 38`), whose carry word and bit 255 are folded in
+  as 19 each (`2²⁵⁵ ≡ 19`);
 * `add`, `sub`: with carries (borrows), each carry folded in (subtracted) as
   38, twice; `addCmov` and `subCmov`, the ladder's, once, which is enough when an
   operand is at most `2p`, as products are;
-* `sqr`: the products `a_i a_j` for `i < j` once, as rows of `mul`, then
+* `sqr`: the products `a_i a_j` for `i < j` once, as columns of `mul`, then
   doubled, and the squares `a_i²` added; reduced as `mul`;
 * `mulSmallAdd`: an element plus another by a one-word constant (`a24`),
   folded as for `mul`;
@@ -109,18 +110,6 @@ def carry38 : List Instr :=
     .alu .adc .r11 (.imm 0), .alu .sbb .rax (.reg .rax), .alu .and .rax (.imm 38),
     .alu .add .r8 (.reg .rax)]
 
-/-- `r8–r11 += rax`, for `rax < 2⁶³`, with bit 255 of `r8–r11` taken out and
-added back as 19 (`2²⁵⁵ ≡ 19`), using `m` for the mask: the sum, below
-`2²⁵⁵ + 2⁶⁴`, cannot carry out, so a product reduced this way is at most `2p`,
-as `addL` and `subL` need. -/
-def carry19 (m : Reg) : List Instr :=
-  [.shift .shl .r11 1, .alu .sbb m (.reg m), .shift .shr .r11 1, .alu .and m (.imm 19),
-    .alu .add .rax (.reg m), .alu .add .r8 (.reg .rax), .alu .adc .r9 (.imm 0),
-    .alu .adc .r10 (.imm 0), .alu .adc .r11 (.imm 0)]
-
-/-- `r8–r11 += 38 rbp`, with `rcx = 38`, at most `2p`. -/
-def fold : List Instr := [.mov .rax (.reg .rbp), .mul .rcx] ++ carry19 .rbp
-
 /-- `[rdi + o] = a, b, c, d`. -/
 def stores (o : Nat) (a b c d : Reg) : List Instr :=
   [.store (sc o) a, .store (sc (o + 8)) b, .store (sc (o + 16)) c, .store (sc (o + 24)) d]
@@ -133,60 +122,137 @@ def loads (o : Nat) (a b c d : Reg) : List Instr :=
   [.mov a (.mem (sc o)), .mov b (.mem (sc (o + 8))), .mov c (.mem (sc (o + 16))),
     .mov d (.mem (sc (o + 24)))]
 
-/-- `r8–r11 = r8–r11 + 38 r12–r15` with the carry word in `rbp`, folded. -/
-def reduce : List Instr :=
-  [.mov32 .rcx (.imm 38), .mov32 .rbp (.imm 0)] ++
-    ((List.range 4).flatMap fun j => mulStep (t j) .rbp .rcx (.reg (t (4 + j)))) ++ fold
+/-- `xor r, r` on the low halves: `r = 0`. -/
+def zero (r : Reg) : Instr := .alu32 .xor r (.reg r)
+
+/-- `t1:t0 = [rdi + a] · b`. -/
+def prod2 (t0 t1 b : Reg) (a : Nat) : List Instr :=
+  [.mov .rax (.mem (sc a)), .mul b, .mov t0 (.reg .rax), .mov t1 (.reg .rdx)]
+
+/-- `t1:t0 += [rdi + a] · b`, where the sum cannot carry out. -/
+def acc2 (t0 t1 b : Reg) (a : Nat) : List Instr :=
+  [.mov .rax (.mem (sc a)), .mul b, .alu .add t0 (.reg .rax), .alu .adc t1 (.reg .rdx)]
+
+/-- `t2:t1:t0 += [rdi + a] · b`: a product added to the three words of a
+column of products. -/
+def acc3 (t0 t1 t2 b : Reg) (a : Nat) : List Instr :=
+  acc2 t0 t1 b a ++ [.alu .adc t2 (.imm 0)]
+
+/-- `t1:t0 += 38 h + 2⁶⁴ c` (with `rcx = 38`), for the carry `c` that the mask
+`rbp` holds (`sub`, into the product's high half, which is at most 37), the
+carry out of it then the mask (`sbb`). -/
+def redStep (t0 t1 h : Reg) : List Instr :=
+  [.mov .rax (.reg h), .mul .rcx, .alu .sub .rdx (.reg .rbp), .alu .add t0 (.reg .rax),
+    .alu .adc t1 (.reg .rdx), .alu .sbb .rbp (.reg .rbp)]
+
+/-- `r8–r11 + 2²⁵⁶ r12 = r8–r11 + 38 · r12–r15`: each `38 h_i` (`rdx:rax`)
+added at its two words, with the carry out of them kept as a mask in `rbp`
+for the next (`redStep`). -/
+def reduceLoC : List Instr :=
+  [.mov32 .rcx (.imm 38),
+    .mov .rax (.reg .r12), .mul .rcx, .alu .add .r8 (.reg .rax), .alu .adc .r9 (.reg .rdx),
+    .alu .sbb .rbp (.reg .rbp)] ++
+    redStep .r9 .r10 .r13 ++ redStep .r10 .r11 .r14 ++
+    [.mov .rax (.reg .r15), .mul .rcx, .alu .sub .rdx (.reg .rbp), .alu .add .r11 (.reg .rax),
+      .alu .adc .rdx (.imm 0), .mov .r12 (.reg .rdx)]
+
+/-- `r8–r11 + 2²⁵⁶ r12` (`r12` small) folded at bit 255: bit 255 shifted out
+into CF (`shl`) and in as `q = 2 r12 + bit 255` (`adc`), `r11` shifted back
+with it cleared (`shr`), and `19 q` (`imul`) added, which cannot carry out
+(at most `2p`). s2n-bignum's `mul_p25519` takes `q` with `shld` and clears
+the bit with `btr`, one instruction fewer, but `shld` is several µops on AMD's
+cores, on the chain of every multiplication. -/
+def fold19X : List Instr :=
+  [.shift .shl .r11 1, .alu .adc .r12 (.reg .r12), .shift .shr .r11 1, .imul3 .rax .r12 19,
+    .alu .add .r8 (.reg .rax), .alu .adc .r9 (.imm 0), .alu .adc .r10 (.imm 0),
+    .alu .adc .r11 (.imm 0)]
+
+/-- `r8–r11 = r8–r11 + 38 · r12–r15`, at most `2p`. -/
+def reduceC : List Instr := reduceLoC ++ fold19X
+
+/-- `r8–r12` doubled. -/
+def dbl5 : List Instr :=
+  [.alu .add .r8 (.reg .r8), .alu .adc .r9 (.reg .r9), .alu .adc .r10 (.reg .r10),
+    .alu .adc .r11 (.reg .r11), .alu .adc .r12 (.reg .r12)]
+
+/-- `r8–r11 = 2 · (r8–r11 + 38 · r12–r15)`: doubled before the fold at bit 255, five
+instructions rather than an addition. -/
+def reduceC2 : List Instr := reduceLoC ++ dbl5 ++ fold19X
+
+/-- A column of products: each `[rdi + a] · b` of `ps` added to `t2:t1:t0`. -/
+def accCol (t0 t1 t2 : Reg) (ps : List (Reg × Nat)) : List Instr :=
+  ps.flatMap fun p => acc3 t0 t1 t2 p.1 p.2
+
+/-- `r8–r15 = [a] · [b]`: `b` in `r14, r15, rcx, rbp`, and the products
+`a_i b_j` column by column (`i + j`), each added to the three words of its
+column (`accCol`), the two highest in the registers of `b₀` and `b₁`, which
+the columns before them used last. -/
+def mulProd (a b : Nat) : List Instr :=
+  loads b .r14 .r15 .rcx .rbp ++
+    prod2 .r8 .r9 .r14 a ++ [zero .r10] ++ [zero .r11] ++ acc2 .r9 .r10 .r15 a ++
+    accCol .r9 .r10 .r11 [(.r14, a + 8)] ++
+    [zero .r12] ++ accCol .r10 .r11 .r12 [(.rcx, a), (.r15, a + 8), (.r14, a + 16)] ++
+    [zero .r13] ++ accCol .r11 .r12 .r13 [(.rbp, a), (.rcx, a + 8), (.r15, a + 16), (.r14, a + 24)] ++
+    [zero .r14] ++ accCol .r12 .r13 .r14 [(.rbp, a + 8), (.rcx, a + 16), (.r15, a + 24)] ++
+    [zero .r15] ++ accCol .r13 .r14 .r15 [(.rbp, a + 16), (.rcx, a + 24)] ++
+    acc2 .r14 .r15 .rbp (a + 24)
 
 /-- `[o] = [a] · [b]` (`o` may be `a` or `b`). -/
-def mul (o a b : Nat) : List Instr :=
-  zero4 ++ row a b 0 ++ row a b 1 ++ row a b 2 ++ row a b 3 ++ reduce ++ store4 o
+def mul (o a b : Nat) : List Instr := mulProd a b ++ reduceC ++ store4 o
 
-/-- `r9–r12 = a₀ · (a₁, a₂, a₃)`, a row of `mul`. -/
-def sq1 (a : Nat) : List Instr :=
-  [.mov .rcx (.mem (sc a)), .mov32 .rbp (.imm 0), .mov32 .r9 (.imm 0), .mov32 .r10 (.imm 0),
-    .mov32 .r11 (.imm 0)] ++
-    mulStep .r9 .rbp .rcx (.mem (sc (a + 8))) ++ mulStep .r10 .rbp .rcx (.mem (sc (a + 16))) ++
-    mulStep .r11 .rbp .rcx (.mem (sc (a + 24))) ++ [.mov .r12 (.reg .rbp)]
+/-- `[o] = 2 · [a] · [b]`. -/
+def mul2 (o a b : Nat) : List Instr := mulProd a b ++ reduceC2 ++ store4 o
 
-/-- `r11–r13 = r11–r12 + a₁ · (a₂, a₃)`. -/
-def sq2 (a : Nat) : List Instr :=
-  [.mov .rcx (.mem (sc (a + 8))), .mov32 .rbp (.imm 0)] ++
-    mulStep .r11 .rbp .rcx (.mem (sc (a + 16))) ++ mulStep .r12 .rbp .rcx (.mem (sc (a + 24))) ++
-    [.mov .r13 (.reg .rbp)]
+/-- `r9–r14 = Σ a_i a_j` (`i < j`), column by column, with `a₁, a₂, a₃` in
+`rcx, rbp, r15`. -/
+def sqrCross (a : Nat) : List Instr :=
+  [.mov .rcx (.mem (sc (a + 8))), .mov .rbp (.mem (sc (a + 16))), .mov .r15 (.mem (sc (a + 24)))] ++
+    prod2 .r9 .r10 .rcx a ++ [zero .r11] ++ [zero .r12] ++ [zero .r13] ++
+    acc2 .r10 .r11 .rbp a ++
+    accCol .r11 .r12 .r13 [(.r15, a), (.rbp, a + 8)] ++
+    [zero .r14] ++ accCol .r12 .r13 .r14 [(.r15, a + 8)] ++
+    acc2 .r13 .r14 .r15 (a + 16)
 
-/-- `r13–r14 = r13 + a₂ a₃`. -/
-def sq3 (a : Nat) : List Instr :=
-  [.mov .rcx (.mem (sc (a + 16))), .mov32 .rbp (.imm 0)] ++
-    mulStep .r13 .rbp .rcx (.mem (sc (a + 24))) ++ [.mov .r14 (.reg .rbp)]
+/-- `r9–r15 = 2 · r9–r14`. -/
+def sqrDbl : List Instr :=
+  [zero .r15, .alu .add .r9 (.reg .r9), .alu .adc .r10 (.reg .r10), .alu .adc .r11 (.reg .r11),
+    .alu .adc .r12 (.reg .r12), .alu .adc .r13 (.reg .r13), .alu .adc .r14 (.reg .r14),
+    .alu .adc .r15 (.reg .r15)]
 
-/-- `r9–r15 = 2 · r9–r14`, and `r8 = rbp = 0`. -/
-def sqDbl : List Instr :=
-  [.mov32 .r15 (.imm 0), .mov32 .r8 (.imm 0), .alu .add .r9 (.reg .r9),
-    .alu .adc .r10 (.reg .r10), .alu .adc .r11 (.reg .r11), .alu .adc .r12 (.reg .r12),
-    .alu .adc .r13 (.reg .r13), .alu .adc .r14 (.reg .r14), .alu .adc .r15 (.reg .r15),
-    .mov32 .rbp (.imm 0)]
+/-- `t1:t0 += [rdi + d]² + c`, for the carry `c` that the mask `rcx` holds, set
+again by doubling the mask (`add`). -/
+def diagAdd (t0 t1 : Reg) (d : Nat) : List Instr :=
+  [.mov .rax (.mem (sc d)), .mul .rax, .alu .add .rcx (.reg .rcx), .alu .adc t0 (.reg .rax),
+    .alu .adc t1 (.reg .rdx)]
 
-/-- `t + 2⁶⁴ u + 2¹²⁸ rbp = t + 2⁶⁴ u + rbp + [d]²`: a square added at the
-words `t`, `u`, the carry word `rbp` in and out. -/
-def diag (t u : Reg) (d : Nat) : List Instr :=
-  [.mov .rax (.mem (sc d)), .mul .rax, .alu .add .rax (.reg .rbp), .alu .adc .rdx (.imm 0),
-    .alu .add t (.reg .rax), .alu .adc u (.reg .rdx), .mov32 .rbp (.imm 0),
-    .alu .adc .rbp (.imm 0)]
+/-- `r8–r15 = r9–r15 · 2⁶⁴ + Σ a_i² 2¹²⁸ⁱ`: the squares added two words at a
+time, the carry between them kept as a mask in `rcx` (`sbb`) across the next
+`mul` (`diagAdd`). -/
+def sqrDiag (a : Nat) : List Instr :=
+  prod2 .r8 .rbp .rax a ++
+    [.mov .rax (.mem (sc (a + 8))), .mul .rax, .alu .add .r9 (.reg .rbp), .alu .adc .r10 (.reg .rax),
+      .alu .adc .r11 (.reg .rdx)] ++ [.alu .sbb .rcx (.reg .rcx)] ++
+    diagAdd .r12 .r13 (a + 16) ++ [.alu .sbb .rcx (.reg .rcx)] ++ diagAdd .r14 .r15 (a + 24)
 
-/-- `[o] = [a]²`: the products `a_i a_j` (`i < j`) into `r9–r14` (by `a₀`,
-then `a₁`, then `a₂`, as rows of `mul`), doubled into `r9–r15`, then the
-squares `a_i²` added at `r8 + 2i` (`diag`), and reduced as in `mul`. -/
-def sqr (o a : Nat) : List Instr :=
-  sq1 a ++ sq2 a ++ sq3 a ++ sqDbl ++ diag .r8 .r9 a ++ diag .r10 .r11 (a + 8) ++
-    diag .r12 .r13 (a + 16) ++ diag .r14 .r15 (a + 24) ++ reduce ++ store4 o
+/-- `r8–r15 = [a]²`. -/
+def sqrProd (a : Nat) : List Instr := sqrCross a ++ sqrDbl ++ sqrDiag a
 
-/-- `[o] = [b] + k · [a]`, for a constant `k < 2³¹`: `[b]` into `r8–r11`, then
-`k · [a]` added word by word, and the carry word folded. -/
+/-- `[o] = [a]²`: the products `a_i a_j` (`i < j`) into `r9–r14`
+(`sqrCross`), doubled into `r9–r15`, then the squares `a_i²` added
+(`sqrDiag`), and reduced as in `mul`. -/
+def sqr (o a : Nat) : List Instr := sqrProd a ++ reduceC ++ store4 o
+
+/-- `[o] = 2 · [a]²`. -/
+def sqr2 (o a : Nat) : List Instr := sqrProd a ++ reduceC2 ++ store4 o
+
+/-- `[o] = [b] + k · [a]`, for a constant `k < 2³¹`: `k · [a]` into
+`r8–r12`, a word of it at a time, `[b]` added, and `r12` folded at bit 255. -/
 def mulSmallAdd (o b a : Nat) (k : BitVec 32) : List Instr :=
-  loads b .r8 .r9 .r10 .r11 ++ [.mov32 .rcx (.imm k), .mov32 .rbp (.imm 0)] ++
-    ((List.range 4).flatMap fun j => mulStep (t j) .rbp .rcx (.mem (sc (a + 8 * j)))) ++
-    [.mov32 .rcx (.imm 38)] ++ fold ++ store4 o
+  [.mov32 .rcx (.imm k)] ++ prod2 .r8 .r9 .rcx a ++ [zero .r10] ++ [zero .r11] ++ [zero .r12] ++
+    acc2 .r9 .r10 .rcx (a + 8) ++ acc2 .r10 .r11 .rcx (a + 16) ++ acc2 .r11 .r12 .rcx (a + 24) ++
+    [.alu .add .r8 (.mem (sc b)), .alu .adc .r9 (.mem (sc (b + 8))),
+      .alu .adc .r10 (.mem (sc (b + 16))), .alu .adc .r11 (.mem (sc (b + 24))),
+      .alu .adc .r12 (.imm 0)] ++ fold19X ++ store4 o
 
 /-- `[o] = [a] + [b]`. -/
 def add (o a b : Nat) : List Instr :=
@@ -290,13 +356,14 @@ structure Field where
   `_adx` for BMI2 and ADX's). -/
   suffix : String := ""
 
-/-- The baseline's: `mul`, `sqr` and `mulSmallAdd`, and a product doubled by `add`. -/
+/-- The baseline's: `mul`, `sqr` and `mulSmallAdd`, and `mul2` and `sqr2`, which double in the
+reduction. -/
 def baseline : Field where
   mul := mul
   sqr := sqr
   a24add o b a := mulSmallAdd o b a a24
-  mul2 o a b := mul o a b ++ add o o o
-  sqr2 o a := sqr o a ++ add o o o
+  mul2 := mul2
+  sqr2 := sqr2
 
 /-! ## The ladder -/
 

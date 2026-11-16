@@ -38,11 +38,12 @@ structure Ran (s u : State) : Prop where
   rd : u.rd = s.rd
   wr : u.wr = s.wr
   v : u.v = s.v
+  dit : u.dit = s.dit
 
 theorem entry_run {B : Nat} (hB : B < 2 ^ 16) (s : State) :
     ∃ u, execBlock isa (Impl.Pbkdf2.Md.AArch64.entryCmp B) s = some (u, []) ∧ Ran s u ∧
       eval (.nonzero .x .x9) u = some (decide (B + 1 ≤ (s.gpr .x3).toNat)) := by
-  refine ⟨_, rfl, ⟨fun r h9 h10 h11 h12 => ?_, rfl, rfl, rfl, rfl, rfl⟩, ?_⟩
+  refine ⟨_, rfl, ⟨fun r h9 h10 h11 h12 => ?_, rfl, rfl, rfl, rfl, rfl, rfl⟩, ?_⟩
   · simp [State.write, State.addWithCarry, h9, h10, h11, h12]
   · have hx := (s.gpr .x3).isLt
     simp only [eval, State.write, State.addWithCarry, State.read, Size.bits, reduceCtorEq, ↓reduceIte,
@@ -107,9 +108,9 @@ theorem initEntry_verified {I : Spec.Hmac.Instance} {short long : Prog isa} {n�
     obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e)
     obtain ⟨rfl, -⟩ := Prod.mk.inj (Option.some.inj e')
     have hq' := hq
-    sig_pub [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
+    sig_pub_keep [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
       Spec.Hmac.initPost, AArch64.abi, AArch64.argRegs] at hq'
-    obtain ⟨q0, q1, q2, q3, q4⟩ := hq'
+    obtain ⟨q0, qd, q1, q2, q3, q4⟩ := hq'
     have pu : (I.initAnyKeyContract AArch64.abi n₂).pub u₀ u₀' := by
       sig_pub [Spec.Hmac.Instance.initAnyKeyContract, Spec.Hmac.initAnyKeyContract, Spec.Hmac.initSig,
         Spec.Hmac.initPost, AArch64.abi, AArch64.argRegs]
@@ -117,8 +118,8 @@ theorem initEntry_verified {I : Spec.Hmac.Instance} {short long : Prog isa} {n�
         r'.g .x0 (by decide) (by decide) (by decide) (by decide), r.g .x1 (by decide) (by decide) (by decide) (by decide),
         r'.g .x1 (by decide) (by decide) (by decide) (by decide), r.g .x2 (by decide) (by decide) (by decide) (by decide),
         r'.g .x2 (by decide) (by decide) (by decide) (by decide), r.g .x3 (by decide) (by decide) (by decide) (by decide),
-        r'.g .x3 (by decide) (by decide) (by decide) (by decide)]
-      exact ⟨q0, q1, q2, q3, q4⟩
+        r'.g .x3 (by decide) (by decide) (by decide) (by decide), r.dit, r'.dit]
+      exact ⟨q0, qd, q1, q2, q3, q4⟩
     refine ⟨rfl, by rw [q4], fun _ => pu, fun _ => pu⟩
 
 end VG.Proof.Pbkdf2.Md.AArch64

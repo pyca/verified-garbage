@@ -99,7 +99,8 @@ def openPreK (M : CtxMode) (s : State) : Prop :=
 
 /-- The public data of a call of `vg_aes_gcm_open`: its arguments, and
 whether it succeeds. -/
-def openPubK (s₁ s₂ : State) : Prop := onePub 4 s₁ s₂ ∧ openLeak s₁ = openLeak s₂
+def openPubK (s₁ s₂ : State) : Prop :=
+  onePub 4 s₁ s₂ ∧ openLeak s₁ = openLeak s₂ ∧ s₁.mxcsr = s₂.mxcsr
 
 /-- A call of `vg_aes_gcm_open` for a key context of kind `M`. -/
 def openK (M : CtxMode) : Contract isa where
@@ -190,7 +191,7 @@ theorem openSpecR16_post {s s' : State} (hR : rounds s)
 
 theorem openSpec_pub {s₁ s₂ : State} (h : openPubK s₁ s₂) :
     (Proof.AesGcm.openRoundsContract X86_64.abi 2632).pub s₁ s₂ := by
-  obtain ⟨⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩, a₉⟩ := h
+  obtain ⟨⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩, a₉, aMd⟩ := h
   have b₀ := a₈ 0 (by decide)
   have b₁ := a₈ 1 (by decide)
   have b₂ := a₈ 2 (by decide)
@@ -205,7 +206,7 @@ theorem openSpec_pub {s₁ s₂ : State} (h : openPubK s₁ s₂) :
 
 theorem openSpecR_pub {s₁ s₂ : State} (h : openPubK s₁ s₂) :
     (Proof.AesGcm.openPreparedRoundsContract X86_64.abi 2632).pub s₁ s₂ := by
-  obtain ⟨⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩, a₉⟩ := h
+  obtain ⟨⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩, a₉, aMd⟩ := h
   have b₀ := a₈ 0 (by decide)
   have b₁ := a₈ 1 (by decide)
   have b₂ := a₈ 2 (by decide)
@@ -222,7 +223,7 @@ theorem openSpecR_pub {s₁ s₂ : State} (h : openPubK s₁ s₂) :
 
 theorem openSpecR16_pub {s₁ s₂ : State} (h : openPubK s₁ s₂) :
     (Proof.AesGcm.openPrepared16RoundsContract X86_64.abi 2632).pub s₁ s₂ := by
-  obtain ⟨⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩, a₉⟩ := h
+  obtain ⟨⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩, a₉, aMd⟩ := h
   have b₀ := a₈ 0 (by decide)
   have b₁ := a₈ 1 (by decide)
   have b₂ := a₈ 2 (by decide)
@@ -299,7 +300,7 @@ theorem openSpecF_pub {t : Nat} {s₁ s₂ : State} (h : openPubK s₁ s₂)
     (Proof.AesGcm.Flag.openRoundsContractB t X86_64.abi 2632).pub s₁ s₂ := by
   have f₁ : Proof.AesGcm.Flag.flagBit t s₁.mem (s₁.gpr .rdi) = 1 := Proof.AesGcm.Flag.flagBit_of_le o₁.1
   have f₂ : Proof.AesGcm.Flag.flagBit t s₂.mem (s₂.gpr .rdi) = 1 := Proof.AesGcm.Flag.flagBit_of_le o₂.1
-  obtain ⟨⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩, a₉⟩ := h
+  obtain ⟨⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩, a₉, aMd⟩ := h
   have b₀ := a₈ 0 (by decide)
   have b₁ := a₈ 1 (by decide)
   have b₂ := a₈ 2 (by decide)
@@ -427,7 +428,7 @@ def toLeak (s : State) : List Nat := if ¬rounds s then [] else [if (res s).isSo
 def toPub (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧
-    s₁.gpr .rsp = s₂.gpr .rsp ∧ (∀ i < 6, arg s₁ i = arg s₂ i) ∧ toLeak s₁ = toLeak s₂
+    s₁.gpr .rsp = s₂.gpr .rsp ∧ (∀ i < 6, arg s₁ i = arg s₂ i) ∧ toLeak s₁ = toLeak s₂ ∧ s₁.mxcsr = s₂.mxcsr
 
 /-- `vg_aes_gcm_open_to`, for a key context of kind `M`. -/
 def toK (M : CtxMode) : Contract isa where

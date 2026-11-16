@@ -242,11 +242,11 @@ theorem w_splitT1 {st : State} (h : E2 s st) :
     WP isa (.block [.mov .r11 (.mem (at_ .rsp 48)), .mov32 .r10 (imm 0), .mov .rax (.mem (at_ .r11 gLeft)),
       .alu .test .rax (.reg .rax)]) st (G1 s) := by
   obtain ⟨B, di, si, dx, cx⟩ := h
-  refine WP.mono (splitT1_ok hp B) fun s₁ ⟨r11₁, r10₁, zf₁, g₁, m₁, rd₁, wr₁⟩ => ?_
+  refine WP.mono_mx (by decide) (splitT1_ok hp B) fun s₁ ⟨r11₁, r10₁, zf₁, g₁, m₁, rd₁, wr₁⟩ mxw => ?_
   have cs₁ : ∀ r ∈ calleeSaved, s₁.gpr r = st.gpr r := fun r hr => g₁ r
     (by intro e; subst e; simp [calleeSaved] at hr) (by intro e; subst e; simp [calleeSaved] at hr)
     (by intro e; subst e; simp [calleeSaved] at hr)
-  exact ⟨⟨B.regs m₁ cs₁ rd₁ wr₁, by rw [g₁ _ (by decide) (by decide) (by decide), di],
+  exact ⟨⟨B.regs m₁ cs₁ rd₁ wr₁ mxw, by rw [g₁ _ (by decide) (by decide) (by decide), di],
     by rw [g₁ _ (by decide) (by decide) (by decide), si], by rw [g₁ _ (by decide) (by decide) (by decide), dx],
     by rw [g₁ _ (by decide) (by decide) (by decide), cx]⟩, r11₁, r10₁, zf₁⟩
 
@@ -257,10 +257,10 @@ theorem w_splitT2z (hc : Cnt s = 0) {st : State} (h : G1 s st) : G2 s st :=
 theorem w_splitT2 (hc : Cnt s ≠ 0) {st : State} (h : G1 s st) :
     WP isa (.block [.mov .r10 (.mem (at_ .r11 gDesc)), .mov .r10 (.mem (at_ .r10 8))]) st (G2 s) := by
   obtain ⟨⟨B, di, si, dx, cx⟩, r11, -, -⟩ := h
-  refine WP.mono (splitT2_ok hp hc B r11) fun s₂ ⟨r10₂, g₂, m₂, rd₂, wr₂⟩ => ?_
+  refine WP.mono_mx (by decide) (splitT2_ok hp hc B r11) fun s₂ ⟨r10₂, g₂, m₂, rd₂, wr₂⟩ mxw => ?_
   have cs₂ : ∀ r ∈ calleeSaved, s₂.gpr r = st.gpr r := fun r hr => g₂ r
     (by intro e; subst e; simp [calleeSaved] at hr)
-  exact ⟨⟨B.regs m₂ cs₂ rd₂ wr₂, by rw [g₂ _ (by decide), di], by rw [g₂ _ (by decide), si],
+  exact ⟨⟨B.regs m₂ cs₂ rd₂ wr₂ mxw, by rw [g₂ _ (by decide), di], by rw [g₂ _ (by decide), si],
     by rw [g₂ _ (by decide), dx], by rw [g₂ _ (by decide), cx]⟩, by rw [g₂ _ (by decide), r11], r10₂⟩
 
 theorem w_splitT3 {t : Nat} (ht : t < 2 ^ 31) {st : State} (h : G2 s st) :
@@ -269,10 +269,10 @@ theorem w_splitT3 {t : Nat} (ht : t < 2 ^ 31) {st : State} (h : G2 s st) :
         .alu .cmp .rax (imm t)]) st
       fun st' => E2 s st' ∧ st'.gpr .r11 = W s ∧ st'.cf = some (decide (shortLen s < t)) := by
   obtain ⟨⟨B, di, si, dx, cx⟩, r11, r10⟩ := h
-  refine WP.mono (splitT3_ok hp ht B r11 r10) fun s₃ ⟨cf₃, g₃, m₃, rd₃, wr₃⟩ => ?_
+  refine WP.mono_mx (by rfl) (splitT3_ok hp ht B r11 r10) fun s₃ ⟨cf₃, g₃, m₃, rd₃, wr₃⟩ mxw => ?_
   have cs₃ : ∀ r ∈ calleeSaved, s₃.gpr r = st.gpr r := fun r hr => g₃ r
     (by intro e; subst e; simp [calleeSaved] at hr) (by intro e; subst e; simp [calleeSaved] at hr)
-  exact ⟨⟨B.regs m₃ cs₃ rd₃ wr₃, by rw [g₃ _ (by decide) (by decide), di], by rw [g₃ _ (by decide) (by decide), si],
+  exact ⟨⟨B.regs m₃ cs₃ rd₃ wr₃ mxw, by rw [g₃ _ (by decide) (by decide), di], by rw [g₃ _ (by decide) (by decide), si],
     by rw [g₃ _ (by decide) (by decide), dx], by rw [g₃ _ (by decide) (by decide), cx]⟩,
     by rw [g₃ _ (by decide) (by decide), r11], cf₃⟩
 
@@ -317,10 +317,10 @@ theorem w_quick {q : Nat} (hq : q < 2 ^ 31) {st : State} (h : E2 s st) :
     WP isa (.block (quickTest q)) st fun st' =>
       E2 s st' ∧ st'.gpr .r11 = W s ∧ st'.cf = some (decide (L s < q)) := by
   obtain ⟨B, di, si, dx, cx⟩ := h
-  refine WP.mono (quickT_ok hp hq B) fun s₁ ⟨r11₁, cf₁, g₁, m₁, rd₁, wr₁⟩ => ?_
+  refine WP.mono_mx (by rfl) (quickT_ok hp hq B) fun s₁ ⟨r11₁, cf₁, g₁, m₁, rd₁, wr₁⟩ mxw => ?_
   have cs₁ : ∀ r ∈ calleeSaved, s₁.gpr r = st.gpr r := fun r hr => g₁ r
     (by intro e; subst e; simp [calleeSaved] at hr) (by intro e; subst e; simp [calleeSaved] at hr)
-  exact ⟨⟨B.regs m₁ cs₁ rd₁ wr₁, by rw [g₁ _ (by decide) (by decide), di], by rw [g₁ _ (by decide) (by decide), si],
+  exact ⟨⟨B.regs m₁ cs₁ rd₁ wr₁ mxw, by rw [g₁ _ (by decide) (by decide), di], by rw [g₁ _ (by decide) (by decide), si],
     by rw [g₁ _ (by decide) (by decide), dx], by rw [g₁ _ (by decide) (by decide), cx]⟩, r11₁, cf₁⟩
 
 /-- The length alone if the text is shorter than `q`, which decides `b`;
@@ -382,7 +382,7 @@ theorem w_selT3 {ts : Nat} (hts : ts < 2 ^ 31) {st : State} (h : G2 s st) :
     WP isa (.block (selLast ts)) st
       fun st' => E2 s st' ∧ st'.gpr .r11 = W s ∧ st'.cf = some (decide (selLen s < ts)) := by
   obtain ⟨⟨B, di, si, dx, cx⟩, r11, r10⟩ := h
-  refine WP.mono (selT3_ok hp hts B r11 r10) fun s₃ ⟨cf₃, g₃, m₃, rd₃, wr₃⟩ => ?_
+  refine WP.mono_mx (by rfl) (selT3_ok hp hts B r11 r10) fun s₃ ⟨cf₃, g₃, m₃, rd₃, wr₃⟩ mxw => ?_
   have cs₃ : ∀ r ∈ calleeSaved, s₃.gpr r = st.gpr r := fun r hr => g₃ r
     (by intro e; subst e; simp [calleeSaved] at hr) (by intro e; subst e; simp [calleeSaved] at hr)
     (by intro e; subst e; simp [calleeSaved] at hr)
@@ -390,7 +390,7 @@ theorem w_selT3 {ts : Nat} (hts : ts < 2 ^ 31) {st : State} (h : G2 s st) :
     (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
     (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
     (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
-  exact ⟨⟨B.regs m₃ cs₃ rd₃ wr₃, by rw [g _ (by simp), di], by rw [g _ (by simp), si], by rw [g _ (by simp), dx],
+  exact ⟨⟨B.regs m₃ cs₃ rd₃ wr₃ mxw, by rw [g _ (by simp), di], by rw [g _ (by simp), si], by rw [g _ (by simp), dx],
     by rw [g _ (by simp), cx]⟩, by rw [g _ (by simp), r11], cf₃⟩
 
 /-- The choice, on the short path, between copying the text whole and
@@ -464,7 +464,8 @@ theorem splitEntry_ok {st : State} (h : Base s (AL s) 0 st) (h11 : st.gpr .r11 =
     by simp [gpr_setReg, gpr_arithFlags], by simp [gpr_setReg, gpr_arithFlags, imm],
     by simp [gpr_setReg, gpr_arithFlags, imm], by simp only [zf_arithFlags, gpr_setReg, ite_true, hz, reduceCtorEq,
       ↓reduceIte], by simp [gpr_setReg, gpr_arithFlags, h11], fun r hr => ?_,
-    ⟨⟨?_, fun r hr => ?_, by simp [rd_arithFlags, rd_setReg, h.rd], by simp [wr_arithFlags, wr_setReg, h.wr], ?_, ?_⟩,
+    ⟨⟨?_, fun r hr => ?_, by simp [rd_arithFlags, rd_setReg, h.rd], by simp [wr_arithFlags, wr_setReg, h.wr], ?_, ?_,
+      h.mx⟩,
       ?_, ?_⟩⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg, gpr_arithFlags]
@@ -537,8 +538,8 @@ theorem splitHead_wp {st : State} (h : Base s (AL s) 0 st) (h11 : st.gpr .r11 = 
     · rw [r10]; simp [k0, hc]
     · rw [di, fl_eq]; simp [hc]
   · have hc : Cnt s ≠ 0 := by simpa using e
-    refine WP.mono (splitFirst_ok hp hc C.toBase r9 di r10 r11) fun s₂ ⟨F, cs₂, m₂, rd₂, wr₂⟩ => ⟨F, ?_⟩
-    exact ⟨C.toBase.regs m₂ cs₂ rd₂ wr₂, by rw [m₂]; exact C.nonce, by rw [m₂]; exact C.nonceLen⟩
+    refine WP.mono_mx (by decide) (splitFirst_ok hp hc C.toBase r9 di r10 r11) fun s₂ ⟨F, cs₂, m₂, rd₂, wr₂⟩ mxw => ⟨F, ?_⟩
+    exact ⟨C.toBase.regs m₂ cs₂ rd₂ wr₂ mxw, by rw [m₂]; exact C.nonce, by rw [m₂]; exact C.nonceLen⟩
 
 /-- The first slice kept, and the next descriptor in `r11`. -/
 theorem splitKeep_ok {st : State} (F : FirstRegs s st) (C : CBase s st) :
@@ -562,7 +563,7 @@ theorem splitKeep_ok {st : State} (F : FirstRegs s st) (C : CBase s st) :
       (List.mem_singleton_self _) _ (cs 128 (by decide) (by decide))
   have eS : ∀ d, St s + BitVec.ofNat 64 d = W s + BitVec.ofNat 64 (104 + d) := fun d => by
     rw [St, BitVec.add_assoc, ofNat_add_ofNat]
-  refine ⟨⟨⟨⟨?_, fun r hr => ?_, by simp [rd_setReg, C.rd], by simp [wr_setReg, C.wr], ?_, ?_⟩, ?_, ?_⟩, ?_, ?_⟩,
+  refine ⟨⟨⟨⟨?_, fun r hr => ?_, by simp [rd_setReg, C.rd], by simp [wr_setReg, C.wr], ?_, ?_, C.mx⟩, ?_, ?_⟩, ?_, ?_⟩,
     by simp [gpr_setReg, r9], by simp [gpr_setReg, di], by simp [gpr_setReg, r10], fun r hr => ?_⟩
   · simp [gpr_setReg, C.rsp]
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -663,8 +664,8 @@ structure SPBase (s : State) (st : State) : Prop extends PBase s st where
 and the rest as it was. -/
 theorem split_after {st st' : State} (h : PBase s st)
     (hm : st'.mem = WriteBytes.writeBytes st.mem (Dst s + BitVec.ofNat 64 (fl s))
-      (gathered 64 st.mem (Src s + BitVec.ofNat 64 (16 * k0 s)) (Cnt s - k0 s))) (hk : GKeeps st st') :
-    SPBase s st' := by
+      (gathered 64 st.mem (Src s + BitVec.ofNat 64 (16 * k0 s)) (Cnt s - k0 s))) (hk : GKeeps st st')
+    (hmx : st'.mxcsr = st.mxcsr) : SPBase s st' := by
   have hL : L s < 2 ^ 64 := (stackArg s 3).isLt
   have hg := gatheredK_eq hp h.frame
   have hlen : (gathered 64 s.mem (Src s + BitVec.ofNat 64 (16 * k0 s)) (Cnt s - k0 s)).length = L s - fl s := by
@@ -687,7 +688,7 @@ theorem split_after {st st' : State} (h : PBase s st)
     fun d hd => fD.readW (dS d hd) dS1 (by decide)
   have e0 : St s + BitVec.ofNat 64 0 = St s := BitVec.add_zero _
   refine ⟨⟨⟨⟨by rw [ns .rsp (by decide), h.rsp], fun r hr => by rw [ns r (hcs r hr), h.saved r hr],
-    hk.rd.trans h.rd, hk.wr.trans h.wr, ?_, ?_⟩, ?_, ?_⟩, ?_, ?_⟩, ?_⟩
+    hk.rd.trans h.rd, hk.wr.trans h.wr, ?_, ?_, hmx.trans h.mx⟩, ?_, ?_⟩, ?_, ?_⟩, ?_⟩
   · exact h.kept.frame fD fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact (hp.d_w.symm.sub_left kpR_sub).sub_right (dK_sub hp)
   · exact h.frame.trans (fD.sub fun r hr => by

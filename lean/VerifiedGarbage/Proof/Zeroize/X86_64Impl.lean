@@ -2,13 +2,14 @@ module
 
 public import VerifiedGarbage.Proof.Zeroize.X86_64Avx
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
 
 /-!
 # `vg_zeroize` on x86-64, for the functions that call it
 
 `ZeroizeImpl`: an implementation of `vg_zeroize` that verified code calls
 (`Code.call name code`), verified against `Spec.Zeroize.zeroizeContract`,
-which never writes the stack pointer and uses no stack: `scalar`
+which never writes the stack pointer, never touches MXCSR and uses no stack: `scalar`
 (`vg_zeroize`) or `avx` (`vg_zeroize_avx`). Its callers are generic over
 them (`Variants/Zeroize/X86_64/`).
 -/
@@ -30,6 +31,9 @@ structure ZeroizeImpl where
   code : Prog isa
   verified : Verified target code (Spec.Zeroize.zeroizeContract abi)
   spSafe : code.all (fun i => !isa.writesSp i) = true
+  /-- It never touches MXCSR, so its callers' runs need not agree on it
+  (`Contract.mxFree`). -/
+  noMx : code.allInstrs (fun i => !touchesMxcsr i) = true
   /-- It uses no stack. -/
   xd : code.x86_64Depth = 0
   /-- What the names of its callers' instances end with (`_avx`; nothing
@@ -44,6 +48,7 @@ def ZeroizeImpl.scalar : ZeroizeImpl where
   code := zeroize
   verified := Proof.Zeroize.X86_64.verified
   spSafe := Code.all_of_allInstrs (by decide)
+  noMx := by decide
   xd := rfl
   suffix := ""
   features := []
@@ -54,6 +59,7 @@ def ZeroizeImpl.avx : ZeroizeImpl where
   code := zeroizeAvx
   verified := Proof.Zeroize.X86_64.verifiedAvx
   spSafe := Code.all_of_allInstrs (by decide)
+  noMx := by decide
   xd := rfl
   suffix := "_avx"
   features := ["avx"]

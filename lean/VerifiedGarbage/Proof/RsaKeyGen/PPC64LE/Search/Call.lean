@@ -355,24 +355,30 @@ theorem call_cin {p : SearchPublic} {used : Nat} {T : Addr} {u : State} {m : Mem
     simp only [stackArgAddr, State.withRegions_sp, State.callEntry_sp, hu]
   have hcs : (callState p used T u).sp = callSp p := by
     simp only [State.withRegions_sp, State.callEntry_sp, hu]
+  have g3 : (callState p used T u).gpr .r3 = u.gpr .r3 := call_gpr (by decide)
+  have g4 : (callState p used T u).gpr .r4 = u.gpr .r4 := call_gpr (by decide)
+  have g5 : (callState p used T u).gpr .r5 = u.gpr .r5 := call_gpr (by decide)
+  have g6 : (callState p used T u).gpr .r6 = u.gpr .r6 := call_gpr (by decide)
+  have g7 : (callState p used T u).gpr .r7 = u.gpr .r7 := call_gpr (by decide)
+  have g8 : (callState p used T u).gpr .r8 = u.gpr .r8 := call_gpr (by decide)
+  have g9 : (callState p used T u).gpr .r9 = u.gpr .r9 := call_gpr (by decide)
+  have g10 : (callState p used T u).gpr .r10 = u.gpr .r10 := call_gpr (by decide)
   constructor
   all_goals simp only [Cand.cO, Cand.cU, Cand.cE, Cand.cP, Cand.cR, Cand.cS, Cand.cA, Cand.cF,
-    call_gpr (by decide : Reg.r3 ∉ linkRegs), call_gpr (by decide : Reg.r4 ∉ linkRegs),
-    call_gpr (by decide : Reg.r5 ∉ linkRegs), call_gpr (by decide : Reg.r6 ∉ linkRegs),
-    call_gpr (by decide : Reg.r7 ∉ linkRegs), call_gpr (by decide : Reg.r8 ∉ linkRegs),
-    call_gpr (by decide : Reg.r9 ∉ linkRegs), call_gpr (by decide : Reg.r10 ∉ linkRegs),
+    g3, g4, g5, g6, g7, g8, g9, g10,
     call_stackArg, a0, a1, a2, r3, r4, r5, r6, r7, r8, r9, r10, tl, te, tp, tr, tz, hf.z8, hsa, hcs,
     State.withRegions_rd, State.withRegions_wr, callReads, callWrites]
   all_goals first
     | (simp only [List.mem_cons, true_or, or_true]; done)
     | rfl
     | omega
-    | exact hf.oU | exact hf.oE | exact hf.oP | exact hf.oR | exact hf.oS | exact hf.oA
-    | exact hf.uE | exact hf.uP | exact hf.uR | exact hf.uS | exact hf.uA | exact hf.eS
-    | exact hf.pS | exact hf.rS' | exact hf.sA | exact hf.Fo | exact hf.Fu | exact hf.Fe
-    | exact hf.Fp | exact hf.Fr | exact hf.FS | exact rF_rA p | exact hf.nO | exact hf.nU
-    | exact hf.nE | exact hf.nP | exact hf.nR | exact hf.nS | exact hf.len | exact hf.e1
-    | exact hf.e8 | exact hf.plen | exact hf.scratch
+    | with_reducible first
+      | exact hf.oU | exact hf.oE | exact hf.oP | exact hf.oR | exact hf.oS | exact hf.oA
+      | exact hf.uE | exact hf.uP | exact hf.uR | exact hf.uS | exact hf.uA | exact hf.eS
+      | exact hf.pS | exact hf.rS' | exact hf.sA | exact hf.Fo | exact hf.Fu | exact hf.Fe
+      | exact hf.Fp | exact hf.Fr | exact hf.FS | exact rF_rA p | exact hf.nO | exact hf.nU
+      | exact hf.nE | exact hf.nP | exact hf.nR | exact hf.nS | exact hf.len | exact hf.e1
+      | exact hf.e8 | exact hf.plen | exact hf.scratch
     | (rw [hsp]; have h768 : stackUse = 768 := rfl; omega_using [hroom, h768])
 
 /-- The table's address. -/

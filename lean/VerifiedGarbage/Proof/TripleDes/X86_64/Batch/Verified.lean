@@ -194,6 +194,7 @@ structure Inv (cfb : Bool) (s₀ : State) (K P D B : Addr) (n j : Nat) (s : Stat
   saved : ∀ i < 6, s.mem.readW (B + BitVec.ofNat 64 (8 * (G + 1 + i))) 64 = s₀.gpr (savedReg i)
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
+  mx : s.mxcsr = s₀.mxcsr
 
 /-! ## Facts about the layout -/
 
@@ -294,6 +295,14 @@ theorem Mid4.mid {cfb : Bool} {s₀ : State} {K P D B : Addr} {n j c : Nat} {s s
     (by simp at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)
     (by simp at hr; rcases hr with rfl | rfl | rfl | rfl | rfl <;> decide)]
   exact h.keep r hr
+
+theorem before_mx (cfb : Bool) : (before cfb).allInstrs (fun i => !loadsMxcsr i) = true := by
+  cases cfb <;> decide
+
+theorem after_mx (cfb : Bool) : (after cfb).allInstrs (fun i => !loadsMxcsr i) = true := by
+  cases cfb <;> decide
+
+theorem prologue_mx : prologue.allInstrs (fun i => !loadsMxcsr i) = true := by decide
 
 theorem before_wp (cfb : Bool) {s₀ : State} {K P D B : Addr} {n j : Nat} (L : Lay s₀ K P D B n)
     {s : State} (hi : Inv cfb s₀ K P D B n j s) (hj : j < n) :
@@ -630,9 +639,10 @@ theorem notB {s₀ : State} {K P D B : Addr} {n : Nat} (L : Lay s₀ K P D B n) 
 
 theorem after_wp (cfb : Bool) {s₀ : State} {K P D B : Addr} {n j : Nat} (L : Lay s₀ K P D B n)
     {s s₆ : State} (hi : Inv cfb s₀ K P D B n j s) (hj : j < n)
-    (hc : Called cfb s₀ K P D B n j (min (n - j) G) s s₆) :
+    (hc : Called cfb s₀ K P D B n j (min (n - j) G) s s₆) (hmx : s₆.mxcsr = s₀.mxcsr) :
     WP isa (after cfb) s₆ fun s' => s'.zf = some (decide (n - (j + min (n - j) G) = 0)) ∧
       Inv cfb s₀ K P D B n (j + min (n - j) G) s' := by
+  refine WP.of_mx (after_mx cfb) ?_
   have hfD := L.fitD
   have hfB := L.fitB
   have hW := W_eq
@@ -724,8 +734,9 @@ theorem after_wp (cfb : Bool) {s₀ : State} {K P D B : Addr} {n j : Nat} (L : L
     · exact L.pb.sub_right subB
     · exact L.pd.sub_right subA
     · exact L.stkP.symm
-  refine WP.of_runBlock ⟨s₁₃, e₁₃, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, hjc, fun u hu => ?_, fun i hi' => ?_, ?_, ?_,
-    fun i hi6 => ?_, by rw [rd₁₃, h₁₂.rd, rd₁₁, x₁₀.rd, rd₉'], by rw [wr₁₃, h₁₂.wr, wr₁₁, x₁₀.wr, wr₉']⟩⟩
+  refine WP.of_runBlock ⟨s₁₃, e₁₃, fun hm => ⟨?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, hjc, fun u hu => ?_, fun i hi' => ?_, ?_,
+    ?_, fun i hi6 => ?_, by rw [rd₁₃, h₁₂.rd, rd₁₁, x₁₀.rd, rd₉'], by rw [wr₁₃, h₁₂.wr, wr₁₁, x₁₀.wr, wr₉'],
+    hm.trans hmx⟩⟩⟩
   · rw [z₁₃]
     show some (s₁₂.gpr .r14 - s₁₂.gpr .r10 == 0) = _
     rw [r14₁₂, r10₁₂, Offset.ofNat_sub_ofNat_beq (by omega_using [hfD]) (by omega_using [hfD, hcc])]
@@ -789,9 +800,10 @@ theorem group_wp (v : EcbImpl) (cfb : Bool) {s₀ : State} {K P D B : Addr} {n j
     WP isa (group cfb (v.name (dir cfb)) (v.code (dir cfb))) s fun s' =>
       s'.zf = some (decide (n - (j + min (n - j) G) = 0)) ∧ Inv cfb s₀ K P D B n (j + min (n - j) G) s' := by
   have hGe := G_eq
-  exact WP.seq (WP.mono (before_wp cfb L hi hj) fun s₅ hm =>
+  exact WP.seq (WP.mono (WP.mxcsr (before_mx cfb) (before_wp cfb L hi hj)) fun s₅ ⟨hm, x₅⟩ =>
     WP.seq (WP.mono (ecb_call v (dir cfb) (hm.callPre L hi (by omega_using [hj]) (by omega_using [hj, hGe]))) fun s₆ hc =>
-      after_wp cfb L hi hj (Called.of L hi (by omega_using [hj]) (by omega_using []) hm hc)))
+      after_wp cfb L hi hj (Called.of L hi (by omega_using [hj]) (by omega_using []) hm hc)
+        (hc.mx.trans (x₅.trans hi.mx))))
 
 theorem loop_wp (v : EcbImpl) (cfb : Bool) {s₀ : State} {K P D B : Addr} {n j : Nat} (L : Lay s₀ K P D B n)
     {s : State} (hi : Inv cfb s₀ K P D B n j s) (hj : j < n) :
@@ -848,7 +860,7 @@ def contract (cfb : Bool) : Contract isa where
          else Spec.Cbc.decrypt (Spec.TripleDes.invCipher k) iv cs) ∧
       bytesAt s'.mem (s.gpr .rsi) 8 = Spec.Cbc.next iv cs
   pub s₁ s₂ := s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
-    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .rsp = s₂.gpr .rsp
+    s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr
 
 /-! ## The entry -/
 
@@ -861,6 +873,7 @@ theorem entry_wp (cfb : Bool) {s₀ : State} {K P D B : Addr} {n : Nat} (L : Lay
     (hK : s₀.gpr .rdi = K) (hP : s₀.gpr .rsi = P) (hD : s₀.gpr .rdx = D) (hB : s₀.gpr .r8 = B)
     (hn : (s₀.gpr .rcx).toNat = n) :
     WP isa prologue s₀ fun s => s.zf = some (decide (n = 0)) ∧ Inv cfb s₀ K P D B n 0 s := by
+  refine WP.of_mx prologue_mx ?_
   have hfD := L.fitD
   have hfB := L.fitB
   have hW := W_eq
@@ -923,8 +936,9 @@ theorem entry_wp (cfb : Bool) {s₀ : State} {K P D B : Addr} {n : Nat} (L : Lay
   have dLB : ∀ (R : Region), R.Disjoint ⟨P, 8⟩ → R.len ≤ 2 ^ 64 → ∀ i < R.len,
       s₃.mem (R.base + BitVec.ofNat 64 i) = sC.mem (R.base + BitVec.ofNat 64 i) := fun R hR hl i hi => by
     rw [mem₃]; exact bytes1 fL' hR hl hi
+  intro hmx
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, Nat.zero_le _, fun u hu => ?_, fun i hi => ?_, ?_, ?_, fun i hi => ?_,
-    by rw [rd₃, rd₂, rd₁, rdL, hC.rd, rdE], by rw [wr₃, wr₂, wr₁, wrL, hC.wr, wrE]⟩
+    by rw [rd₃, rd₂, rd₁, rdL, hC.rd, rdE], by rw [wr₃, wr₂, wr₁, wrL, hC.wr, wrE], hmx⟩
   · rw [z₃, show s₂.gpr .r14 = s₀.gpr .rcx by rw [← r14₃, g₃]]
     congr 1
     rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_iff, ← hn]
@@ -1097,7 +1111,8 @@ theorem Inv.agree (hsp : s₀.gpr .rsp = s₀'.gpr .rsp) {s₁ s₂ : State} (h�
 end
 
 theorem group_rel (v : EcbImpl) (cfb : Bool) {s₀ s₀' : State} {K P D B : Addr} {n : Nat}
-    (L₁ : Lay s₀ K P D B n) (L₂ : Lay s₀' K P D B n) (hsp : s₀.gpr .rsp = s₀'.gpr .rsp) {j : Nat} (hj : j < n) :
+    (L₁ : Lay s₀ K P D B n) (L₂ : Lay s₀' K P D B n) (hsp : s₀.gpr .rsp = s₀'.gpr .rsp)
+    (hmx : s₀.mxcsr = s₀'.mxcsr) {j : Nat} (hj : j < n) :
     RelCT isa (fun s₁ s₂ => Inv cfb s₀ K P D B n j s₁ ∧ Inv cfb s₀' K P D B n j s₂)
       (group cfb (v.name (dir cfb)) (v.code (dir cfb))) fun s₁ s₂ =>
         (s₁.zf = some (decide (n - (j + min (n - j) G) = 0)) ∧ Inv cfb s₀ K P D B n (j + min (n - j) G) s₁) ∧
@@ -1108,27 +1123,32 @@ theorem group_rel (v : EcbImpl) (cfb : Bool) {s₀ s₀' : State} {K P D B : Add
   have hcG : min (n - j) G ≤ G := Nat.min_le_right _ _
   have a := (rel_taintR loopRegs
     (P := fun s₁ s₂ => Inv cfb s₀ K P D B n j s₁ ∧ Inv cfb s₀' K P D B n j s₂) (fun s₁ s₂ h => Inv.agree hsp h.1 h.2) (before_taint cfb)).wpDep2
-    (F₁ := Mid cfb s₀ K P D B n j (min (n - j) G)) (F₂ := Mid cfb s₀' K P D B n j (min (n - j) G))
-    fun s₁ s₂ h => ⟨before_wp cfb L₁ h.1 hj, before_wp cfb L₂ h.2 hj⟩
+    (F₁ := fun σ a => Mid cfb s₀ K P D B n j (min (n - j) G) σ a ∧ a.mxcsr = σ.mxcsr)
+    (F₂ := fun σ a => Mid cfb s₀' K P D B n j (min (n - j) G) σ a ∧ a.mxcsr = σ.mxcsr)
+    fun s₁ s₂ h => ⟨WP.mxcsr (before_mx cfb) (before_wp cfb L₁ h.1 hj),
+      WP.mxcsr (before_mx cfb) (before_wp cfb L₂ h.2 hj)⟩
   have b := (ecb_rel v (dir cfb) (P := fun a b => True ∧ ∃ σ₁ σ₂,
       (Inv cfb s₀ K P D B n j σ₁ ∧ Inv cfb s₀' K P D B n j σ₂) ∧
-      Mid cfb s₀ K P D B n j (min (n - j) G) σ₁ a ∧ Mid cfb s₀' K P D B n j (min (n - j) G) σ₂ b)
+      (Mid cfb s₀ K P D B n j (min (n - j) G) σ₁ a ∧ a.mxcsr = σ₁.mxcsr) ∧
+        (Mid cfb s₀' K P D B n j (min (n - j) G) σ₂ b ∧ b.mxcsr = σ₂.mxcsr))
     fun a b h => by
-      obtain ⟨_, σ₁, σ₂, ⟨i₁, i₂⟩, m₁, m₂⟩ := h
+      obtain ⟨_, σ₁, σ₂, ⟨i₁, i₂⟩, ⟨m₁, x₁⟩, ⟨m₂, x₂⟩⟩ := h
       exact ⟨K, _, _, m₁.callPre L₁ i₁ hjc hc0, m₂.callPre L₂ i₂ hjc hc0,
-        by rw [m₁.keep .rsp (by simp), m₂.keep .rsp (by simp), i₁.rsp, i₂.rsp, hsp]⟩).wpDep2
+        by rw [m₁.keep .rsp (by simp), m₂.keep .rsp (by simp), i₁.rsp, i₂.rsp, hsp],
+        by rw [x₁, x₂, i₁.mx, i₂.mx, hmx]⟩).wpDep2
     (F₁ := fun a => EcbCallPost (dir cfb) a K (D + BitVec.ofNat 64 (8 * j)) (min (n - j) G))
     (F₂ := fun a => EcbCallPost (dir cfb) a K (D + BitVec.ofNat 64 (8 * j)) (min (n - j) G))
     fun a b h => by
-      obtain ⟨_, σ₁, σ₂, ⟨i₁, i₂⟩, m₁, m₂⟩ := h
+      obtain ⟨_, σ₁, σ₂, ⟨i₁, i₂⟩, ⟨m₁, x₁⟩, ⟨m₂, x₂⟩⟩ := h
       exact ⟨ecb_call v _ (m₁.callPre L₁ i₁ hjc hc0), ecb_call v _ (m₂.callPre L₂ i₂ hjc hc0)⟩
   have c := (rel_taintR [.r12, .r13, .r14, .r15, .rsp] (P := fun a' b' => True ∧ ∃ a b, (True ∧ ∃ σ₁ σ₂,
       (Inv cfb s₀ K P D B n j σ₁ ∧ Inv cfb s₀' K P D B n j σ₂) ∧
-      Mid cfb s₀ K P D B n j (min (n - j) G) σ₁ a ∧ Mid cfb s₀' K P D B n j (min (n - j) G) σ₂ b) ∧
+      (Mid cfb s₀ K P D B n j (min (n - j) G) σ₁ a ∧ a.mxcsr = σ₁.mxcsr) ∧
+        (Mid cfb s₀' K P D B n j (min (n - j) G) σ₂ b ∧ b.mxcsr = σ₂.mxcsr)) ∧
       EcbCallPost (dir cfb) a K (D + BitVec.ofNat 64 (8 * j)) (min (n - j) G) a' ∧
       EcbCallPost (dir cfb) b K (D + BitVec.ofNat 64 (8 * j)) (min (n - j) G) b')
     (fun a' b' h r hr => by
-      obtain ⟨_, a, b, ⟨_, σ₁, σ₂, ⟨i₁, i₂⟩, m₁, m₂⟩, p₁, p₂⟩ := h
+      obtain ⟨_, a, b, ⟨_, σ₁, σ₂, ⟨i₁, i₂⟩, ⟨m₁, x₁⟩, ⟨m₂, x₂⟩⟩, p₁, p₂⟩ := h
       have hr' : r ∈ loopRegs := by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
         rcases hr with rfl | rfl | rfl | rfl | rfl <;> simp
@@ -1141,9 +1161,9 @@ theorem group_rel (v : EcbImpl) (cfb : Bool) {s₀ s₀' : State} {K P D B : Add
     (F₂ := fun _ s' => s'.zf = some (decide (n - (j + min (n - j) G) = 0)) ∧
       Inv cfb s₀' K P D B n (j + min (n - j) G) s')
     fun a' b' h => by
-      obtain ⟨_, a, b, ⟨_, σ₁, σ₂, ⟨i₁, i₂⟩, m₁, m₂⟩, p₁, p₂⟩ := h
-      exact ⟨after_wp cfb L₁ i₁ hj (Called.of L₁ i₁ hjc hcG m₁ p₁),
-        after_wp cfb L₂ i₂ hj (Called.of L₂ i₂ hjc hcG m₂ p₂)⟩
+      obtain ⟨_, a, b, ⟨_, σ₁, σ₂, ⟨i₁, i₂⟩, ⟨m₁, x₁⟩, ⟨m₂, x₂⟩⟩, p₁, p₂⟩ := h
+      exact ⟨after_wp cfb L₁ i₁ hj (Called.of L₁ i₁ hjc hcG m₁ p₁) (p₁.mx.trans (x₁.trans i₁.mx)),
+        after_wp cfb L₂ i₂ hj (Called.of L₂ i₂ hjc hcG m₂ p₂) (p₂.mx.trans (x₂.trans i₂.mx))⟩
   exact (a.mono (fun _ _ h => h) fun _ _ h => h).seq
     ((b.mono (fun _ _ h => h) fun _ _ h => h).seq
       (c.mono (fun _ _ h => h) fun _ _ h => by
@@ -1157,7 +1177,8 @@ def LRel (cfb : Bool) (s₀ s₀' : State) (K P D B : Addr) (n m : Nat) (s₁ s�
   ∃ j, m = n - j ∧ j < n ∧ Inv cfb s₀ K P D B n j s₁ ∧ Inv cfb s₀' K P D B n j s₂
 
 theorem loop_rel (v : EcbImpl) (cfb : Bool) {s₀ s₀' : State} {K P D B : Addr} {n : Nat}
-    (L₁ : Lay s₀ K P D B n) (L₂ : Lay s₀' K P D B n) (hsp : s₀.gpr .rsp = s₀'.gpr .rsp) (m : Nat) :
+    (L₁ : Lay s₀ K P D B n) (L₂ : Lay s₀' K P D B n) (hsp : s₀.gpr .rsp = s₀'.gpr .rsp)
+    (hmx : s₀.mxcsr = s₀'.mxcsr) (m : Nat) :
     RelCT isa (LRel cfb s₀ s₀' K P D B n m) (.loop (group cfb (v.name (dir cfb)) (v.code (dir cfb))) .ne)
       fun s₁ s₂ => Inv cfb s₀ K P D B n n s₁ ∧ Inv cfb s₀' K P D B n n s₂ := by
   refine RelCT.loop (M := isa) (LRel cfb s₀ s₀' K P D B n) (fun m => ?_) m
@@ -1169,7 +1190,7 @@ theorem loop_rel (v : EcbImpl) (cfb : Bool) {s₀ s₀' : State} {K P D B : Addr
   by_cases hj : j < n
   swap
   · exact RelCT.of_false fun _ _ h => hj h.2.1
-  refine (group_rel v cfb L₁ L₂ hsp hj).mono (fun _ _ h => h.2.2) fun s₁ s₂ ⟨⟨z₁, i₁⟩, ⟨z₂, i₂⟩⟩ => ?_
+  refine (group_rel v cfb L₁ L₂ hsp hmx hj).mono (fun _ _ h => h.2.2) fun s₁ s₂ ⟨⟨z₁, i₁⟩, ⟨z₂, i₂⟩⟩ => ?_
   have e₁ : isa.eval .ne s₁ = some (!decide (n - (j + min (n - j) G) = 0)) := by
     show s₁.zf.map _ = _; rw [z₁]; rfl
   have e₂ : isa.eval .ne s₂ = some (!decide (n - (j + min (n - j) G) = 0)) := by
@@ -1201,7 +1222,7 @@ theorem nil_taint : ∃ h, (taint.check (Taint.ofRegs []) (.block []) h).isSome 
 theorem whole_rel (v : EcbImpl) (cfb : Bool) {s₀ s₀' : State} (h₁ : (contract cfb).pre s₀)
     (h₂ : (contract cfb).pre s₀') (hq : (contract cfb).pub s₀ s₀') :
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (decrypt cfb (v.name (dir cfb)) (v.code (dir cfb))) fun _ _ => True := by
-  obtain ⟨q1, q2, q3, q4, q5, q6⟩ := hq
+  obtain ⟨q1, q2, q3, q4, q5, q6, q7⟩ := hq
   have L₁ := Lay.of_preC h₁
   have L₂ : Lay s₀' (s₀.gpr .rdi) (s₀.gpr .rsi) (s₀.gpr .rdx) (s₀.gpr .r8) (s₀.gpr .rcx).toNat := by
     have := Lay.of_preC h₂; rwa [← q1, ← q2, ← q3, ← q4, ← q5] at this
@@ -1236,7 +1257,7 @@ theorem whole_rel (v : EcbImpl) (cfb : Bool) {s₀ s₀' : State} (h₁ : (contr
         change a.zf = _ at hz; rw [z₁] at hz; simpa using hz
       rw [show (0 : Nat) = n from h0.symm] at i₁ i₂
       exact ⟨WP.block_nil i₁, WP.block_nil i₂⟩
-    · refine (loop_rel v cfb L₁ L₂ q6 (n - 0)).mono (fun a b h => ?_) fun _ _ h => h
+    · refine (loop_rel v cfb L₁ L₂ q6 q7 (n - 0)).mono (fun a b h => ?_) fun _ _ h => h
       obtain ⟨⟨_, ⟨z₁, i₁⟩, ⟨_, i₂⟩⟩, hz⟩ := h
       change a.zf = _ at hz; rw [z₁] at hz
       have : n ≠ 0 := by simpa using hz

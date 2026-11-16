@@ -91,7 +91,7 @@ theorem useHintAt_tr {P : Prims} (C : CalleeOk P.useHint (useHintContract X86_64
     (hc : uhChk (rbs ++ wbs) wbs h r out = true) {Q : State → State → Prop}
     (hQ : ∀ x y, Q x y → Lay rbs wbs x ∧ Lay rbs wbs y ∧ Reduced x.mem (pa x r) ∧ Reduced y.mem (pa y r) ∧ SameB x y) :
     RelCT isa Q (useHintAt P h r g2 out) fun _ _ => True := by
-  refine callAt_tr C.correct C.ct (uh_args hS hg hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
+  refine callAt_tr C.okMx (C.ctMx fun _ _ h => h) (uh_args hS hg hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
   intro x y x1 y1 hp h1 h2
   obtain ⟨Lx, Ly, rx, ry, e⟩ := hQ x y hp
   refine ⟨_, _, _, _, uh_pre Lx hc hg rx h1, uh_pre Ly hc hg ry h2, ?_, (uh_cov Lx hc).1, (uh_cov Lx hc).2,
@@ -99,7 +99,7 @@ theorem useHintAt_tr {P : Prims} (C : CalleeOk P.useHint (useHintContract X86_64
   have hc' := hc
   simp only [uhChk, Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨⟨_, c3⟩, c4⟩, c5⟩, _⟩ := hc'
-  sig_pub [useHintContract, useHintSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, useHintContract, useHintSig, X86_64.abi, VG.X86_64.argRegs]
   rw [h1.r0, h1.r1, h1.r2, h1.r3, h2.r0, h2.r1, h2.r2, h2.r3, h1.rsp, h2.rsp]
   simp only [Arg.val]
   exact ⟨by rw [e.2], e.pa (ptr_bs hS c3), e.pa (ptr_bs hS c4), by first | rfl | trivial, e.pa (ptr_bs hS c5)⟩
@@ -179,7 +179,7 @@ theorem sbpAt_tr {P : Prims} (C : CalleeOk P.simpleBitPack (simpleBitPackContrac
     (hQ : ∀ x y, Q x y → Lay rbs wbs x ∧ Lay rbs wbs y ∧ (∀ i < n, (coeffAt x.mem (pa x f) i).toNat ≤ b) ∧
       (∀ i < n, (coeffAt y.mem (pa y f) i).toNat ≤ b) ∧ SameB x y) :
     RelCT isa Q (sbpAt P f b out len) fun _ _ => True := by
-  refine callAt_tr C.correct C.ct (sbp_args hS hb hl hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
+  refine callAt_tr C.okMx (C.ctMx fun _ _ h => h) (sbp_args hS hb hl hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
   intro x y x1 y1 hp h1 h2
   obtain ⟨Lx, Ly, rx, ry, e⟩ := hQ x y hp
   refine ⟨_, _, _, _, sbp_pre Lx hc hb hl rx h1, sbp_pre Ly hc hb hl ry h2, ?_, (sbp_cov Lx hc).1, (sbp_cov Lx hc).2,
@@ -187,7 +187,7 @@ theorem sbpAt_tr {P : Prims} (C : CalleeOk P.simpleBitPack (simpleBitPackContrac
   have hc' := hc
   simp only [sbpChk, Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨_, c2⟩, c3⟩, _⟩ := hc'
-  sig_pub [simpleBitPackContract, simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, simpleBitPackContract, simpleBitPackSig, X86_64.abi, VG.X86_64.argRegs]
   rw [h1.r0, h1.r1, h1.r2, h1.r3, h2.r0, h2.r1, h2.r2, h2.r3, h1.rsp, h2.rsp]
   simp only [Arg.val]
   exact ⟨by rw [e.2], e.pa (ptr_bs hS c2), by first | rfl | trivial, e.pa (ptr_bs hS c3), by first | rfl | trivial⟩
@@ -266,7 +266,7 @@ theorem bitUnpackAt_tr {P : Prims} (C : CalleeOk P.bitUnpack (bitUnpackContract 
     (hab : (a, b) ∈ bitPackParams) (hl : len = 32 * bitlen (a + b)) (hc : buChk (rbs ++ wbs) wbs v len f = true)
     {Q : State → State → Prop} (hQ : ∀ x y, Q x y → Lay rbs wbs x ∧ Lay rbs wbs y ∧ SameB x y) :
     RelCT isa Q (bitUnpackAt P v len a b f) fun _ _ => True := by
-  refine callAt_tr C.correct C.ct (bu_args hS hab hl hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
+  refine callAt_tr C.okMx (C.ctMx fun _ _ h => h) (bu_args hS hab hl hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
   intro x y x1 y1 hp h1 h2
   obtain ⟨Lx, Ly, e⟩ := hQ x y hp
   refine ⟨_, _, _, _, bu_pre Lx hc hab hl h1, bu_pre Ly hc hab hl h2, ?_, (bu_cov Lx hc).1, (bu_cov Lx hc).2,
@@ -274,7 +274,7 @@ theorem bitUnpackAt_tr {P : Prims} (C : CalleeOk P.bitUnpack (bitUnpackContract 
   have hc' := hc
   simp only [buChk, Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨_, c2⟩, c3⟩, _⟩ := hc'
-  sig_pub [bitUnpackContract, bitUnpackSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, bitUnpackContract, bitUnpackSig, X86_64.abi, VG.X86_64.argRegs]
   rw [h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, h2.r0, h2.r1, h2.r2, h2.r3, h2.r4, h1.rsp, h2.rsp]
   simp only [Arg.val]
   exact ⟨by rw [e.2], e.pa (ptr_bs hS c2), by first | rfl | trivial, by first | rfl | trivial,
@@ -336,7 +336,7 @@ theorem unpackT1At_tr {P : Prims} (C : CalleeOk P.unpackT1 (unpackT1Contract X86
     {rbs wbs : List (Reg × Nat)} (hS : LayOk (rbs ++ wbs)) {v f : Ptr} (hc : t1Chk (rbs ++ wbs) wbs v f = true)
     {Q : State → State → Prop} (hQ : ∀ x y, Q x y → Lay rbs wbs x ∧ Lay rbs wbs y ∧ SameB x y) :
     RelCT isa Q (unpackT1At P v f) fun _ _ => True := by
-  refine callAt_tr C.correct C.ct (t1_args hS hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
+  refine callAt_tr C.okMx (C.ctMx fun _ _ h => h) (t1_args hS hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
   intro x y x1 y1 hp h1 h2
   obtain ⟨Lx, Ly, e⟩ := hQ x y hp
   refine ⟨_, _, _, _, t1_pre Lx hc h1, t1_pre Ly hc h2, ?_, (t1_cov Lx hc).1, (t1_cov Lx hc).2,
@@ -344,7 +344,7 @@ theorem unpackT1At_tr {P : Prims} (C : CalleeOk P.unpackT1 (unpackT1Contract X86
   have hc' := hc
   simp only [t1Chk, Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨_, c2⟩, c3⟩, _⟩ := hc'
-  sig_pub [unpackT1Contract, unpackT1Sig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, unpackT1Contract, unpackT1Sig, X86_64.abi, VG.X86_64.argRegs]
   rw [h1.r0, h1.r1, h2.r0, h2.r1, h1.rsp, h2.rsp]
   simp only [Arg.val]
   exact ⟨by rw [e.2], e.pa (ptr_bs hS c2), e.pa (ptr_bs hS c3)⟩
@@ -433,7 +433,7 @@ theorem hintUnpackAt_tr {P : Prims} (C : CalleeOk P.hintUnpack (hintBitUnpackCon
       bytesAt x.mem (pa x y) len = bytesAt x'.mem (pa x' y) len) :
     RelCT isa Q (hintUnpackAt P y len omega h hlen) fun _ _ => True := by
   have hs := hu_small hp
-  refine callAt_tr C.correct C.ct (hu_args hS hp hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
+  refine callAt_tr C.okMx (C.ctMx fun _ _ h => h) (hu_args hS hp hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
   intro x x' x1 y1 hq h1 h2
   obtain ⟨Lx, Ly, e, eb⟩ := hQ x x' hq
   refine ⟨_, _, _, _, hu_pre Lx hc hp h1, hu_pre Ly hc hp h2, ?_, (hu_cov Lx hc).1, (hu_cov Lx hc).2,
@@ -441,7 +441,7 @@ theorem hintUnpackAt_tr {P : Prims} (C : CalleeOk P.hintUnpack (hintBitUnpackCon
   have hc' := hc
   simp only [huChk, Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨_, c2⟩, c3⟩, _⟩ := hc'
-  sig_pub [hintBitUnpackContract, hintBitUnpackSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, hintBitUnpackContract, hintBitUnpackSig, X86_64.abi, VG.X86_64.argRegs]
   rw [h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, h2.r0, h2.r1, h2.r2, h2.r3, h2.r4, h1.1.2, h2.1.2, h1.rsp, h2.rsp]
   simp only [Arg.val]
   rw [imm64 (show len < 2 ^ 64 by omega_using [hs]), Lx.wbytesAt c2, Ly.wbytesAt c2, eb]
@@ -485,12 +485,12 @@ theorem normLtAt_tr {P : Prims} (C : CalleeOk P.normLt (normLtContract X86_64.ab
     (hc : nlChk (rbs ++ wbs) f = true) {Q : State → State → Prop}
     (hQ : ∀ x y, Q x y → Lay rbs wbs x ∧ Lay rbs wbs y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f) ∧ SameB x y) :
     RelCT isa Q (normLtAt P f bound) fun _ _ => True := by
-  refine callAt_tr C.correct C.ct (nl_args hS hb hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
+  refine callAt_tr C.okMx (C.ctMx fun _ _ h => h) (nl_args hS hb hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
   intro x y x1 y1 hp h1 h2
   obtain ⟨Lx, Ly, rx, ry, e⟩ := hQ x y hp
   refine ⟨_, _, _, _, nl_pre Lx hc rx h1, nl_pre Ly hc ry h2, ?_, Covers.append_left (Lx.cR hc) Covers.nil, Covers.nil,
     Covers.append_left (Ly.cR hc) Covers.nil, Covers.nil, e.2⟩
-  sig_pub [normLtContract, normLtSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, normLtContract, normLtSig, X86_64.abi, VG.X86_64.argRegs]
   rw [h1.r0, h1.r1, h2.r0, h2.r1, h1.rsp, h2.rsp]
   simp only [Arg.val]
   exact ⟨by rw [e.2], e.pa (ptr_bs hS hc), by first | rfl | trivial⟩

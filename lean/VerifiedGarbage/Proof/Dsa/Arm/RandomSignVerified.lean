@@ -272,12 +272,15 @@ theorem randomPrev_satisfiable : ∃ s, (Spec.Dsa.randomSignPrevalidatedContract
   sig_pre [Spec.Dsa.randomSignPrevalidatedContract, Spec.Dsa.randomSignSig, Arm.abi, Arm.argRegs,
     Arm.reduceClassify, Arm.Loc.val, Arm.State.addr, Arm.stackArgAddr, BitVec.add_zero]
   sig_and_intros
+  -- The key's validity, the last goal, by the witness's own proof: `decide +kernel` would have
+  -- the kernel validate the key again, read byte by byte from the state's memory.
+  on_goal -1 =>
+    change Spec.Dsa.validatePrivateKeyBytes 128 20 (Spec.Rsa.bytesAt randomPrevSat.mem 0x2000 424) = true
+    rw [randomPrevSat_key]
+    exact VG.Proof.Dsa.validPrivateKeyWitness_valid
   all_goals first
     | decide +kernel
     | exact Region.disjoint_of_sep (by decide +kernel)
-    | (change Spec.Dsa.validatePrivateKeyBytes 128 20 (Spec.Rsa.bytesAt randomPrevSat.mem 0x2000 424) = true
-       rw [randomPrevSat_key]
-       exact VG.Proof.Dsa.validPrivateKeyWitness_valid)
 
 theorem randomSignPrevalidated_verified (name : String) :
     Verified Arm.target (code name PrevalidatedSign.sign)

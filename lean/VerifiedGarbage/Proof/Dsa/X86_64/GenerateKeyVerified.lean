@@ -55,7 +55,7 @@ def KeygenCheckRelated (v : Backend) (a b : State) : Prop :=
 
 theorem keygen_check_ct (v : Backend) : RelCT isa (KeygenCheckRelated v)
     (.call (keygenCheckName v) (Generate.checkParameters v.sq v.mul)) (fun _ _ => True) := by
-  apply VG.X86_64.RelCT.callEx v.parametersVerified.1 v.parametersVerified.2.1
+  apply VG.X86_64.RelCT.callExMx v.parametersVerified.1 v.parametersVerified.2.1 v.parametersMx (fun _ _ h => h)
   intro a b ⟨s, t, hs, ht, ha, hb, ⟨a1, a2, a3, a4, a5, a6⟩, ⟨b1, b2, b3, b4, b5, b6⟩, hp⟩
   obtain ⟨hca, hwa⟩ := keygen_check_covers hs ha.rd ha.wr
   obtain ⟨hcb, hwb⟩ := keygen_check_covers ht hb.rd hb.wr
@@ -91,7 +91,7 @@ def KeygenDeriveRelated (v : Backend) (a b : State) : Prop :=
 
 theorem keygen_derive_ct (v : Backend) : RelCT isa (KeygenDeriveRelated v)
     (.call (keygenDeriveName v) (Generate.deriveChecked v.sq v.mul)) (fun _ _ => True) := by
-  apply VG.X86_64.RelCT.callEx v.deriveCheckedVerified.1 v.deriveCheckedVerified.2.1
+  apply VG.X86_64.RelCT.callExMx v.deriveCheckedVerified.1 v.deriveCheckedVerified.2.1 v.deriveCheckedMx (fun _ _ h => h)
   intro a b ⟨s, t, hs, ht, _, _, ha, hb, ⟨a1, a2, a3, a4, a5, a6, aw⟩, ⟨b1, b2, b3, b4, b5, b6, bw⟩, hp, hst,
     hcs, hct⟩
   obtain ⟨hca, hwa⟩ := keygen_derive_covers hs ha.rd ha.wr
@@ -107,7 +107,7 @@ theorem keygen_derive_ct (v : Backend) : RelCT isa (KeygenDeriveRelated v)
       stackArg (b.callEntry.withRegions (keygenDeriveRd t) (keygenDeriveWr t)) i = keygenDeriveArg t i :=
     (random_call_stackArg hb.sp _ _ (by omega_using [hi])).trans (bw i hi)
   sig_pub [Spec.Dsa.deriveKeyDomainCheckedContract, Spec.Dsa.deriveKeySig, abi, argRegs, stackArgs_three]
-  simp only [hA 0 (by decide), hA 1 (by decide), hA 2 (by decide), hB 0 (by decide), hB 1 (by decide),
+  simp only [stackArg_withMx, hA 0 (by decide), hA 1 (by decide), hA 2 (by decide), hB 0 (by decide), hB 1 (by decide),
     hB 2 (by decide), keygenDeriveArg, List.getD_cons_succ, List.getD_cons_zero]
   rw [show a.mem.writeW (a.gpr .rsp - 8) (a.unknowns 0) = a.callEntry.mem from rfl,
     show b.mem.writeW (b.gpr .rsp - 8) (b.unknowns 0) = b.callEntry.mem from rfl, a3, a4, a5, a6, b3, b4, b5, b6,

@@ -748,9 +748,12 @@ theorem bstep_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
       Rk powClob s t ∧ Unch base (loopWrites K) s.mem t.mem ∧ CurveInputs K C tbl base T k t ∧
       JAcc K C base k (j + 1) t ∧ t.gpr .r31 = BitVec.ofNat 64 (j + 1) ∧
       isa.eval TCombCfg.isLast t = some (decide (j + 1 = K.J - 1)) := by
+  -- Facts are stated with `obtain`, not `have`: `have` keeps its proof in the context (a `let` nothing
+  -- unfolds), and every `(by …)` in a term first instantiates and shares the whole context (`Term.runTactic`):
+  -- 10 ms each at the end of this proof with the proofs in it, 2 ms without.
   apply WP.of_syms
   unfold TCombCfg.bstep
-  have hp : 0 < C.p := Nat.pos_of_ne_zero (NeZero.ne C.p)
+  obtain hp : 0 < C.p := Nat.pos_of_ne_zero (NeZero.ne C.p)
   have hk3 := h.layout.point.k3
   have hk6 := h.layout.point.k6
   obtain ⟨h1, h2, he, hb3', ha', hq', hp', ho', -, -⟩ := lay_nums hk3 hk6
@@ -763,28 +766,28 @@ theorem bstep_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
   -- `r31 = j + 1`
   refine WP.seq (wp_step (exec_addi' (by decide)) (WP.block_nil ?_))
   generalize hu : s.write .r31 (s.gpr .r31 + BitVec.ofNat 64 1) = u
-  have ku : Kp [.r31] s u := by rw [← hu]; exact Kp.write _ _ (by decide)
-  have gu : u.gpr .r31 = BitVec.ofNat 64 (j + 1) := by
+  obtain ku : Kp [.r31] s u := by rw [← hu]; exact Kp.write _ _ (by decide)
+  obtain gu : u.gpr .r31 = BitVec.ofNat 64 (j + 1) := by
     rw [← hu]; simp only [write_gpr, ite_true, gj]; rw [BitVec.ofNat_add]
-  have mu : u.mem = s.mem := by rw [← hu]; rfl
-  have syu : u.syms = s.syms := by rw [← hu]; rfl
-  have iu : CurveInputs K C tbl base T k u :=
+  obtain mu : u.mem = s.mem := by rw [← hu]; rfl
+  obtain syu : u.syms = s.syms := by rw [← hu]; rfl
+  obtain iu : CurveInputs K C tbl base T k u :=
     i.keep h.layout hd (ku.rk (rs' := [.r31])) (by decide) (by rw [mu]; exact Unch.refl _ _ _) syu
   -- the entry `E` of window `j + 1` into `Q`
   refine WP.seq (WP.mono_syms (bentry_ok K true h hC iu hj hk gu short hb1 (by simp) hd)
     fun v ⟨kv, ov, rv, lv, pv, zv⟩ syv => ?_)
-  have iv : CurveInputs K C tbl base T k v := iu.keep h.layout hd kv (by decide) ov syv
+  obtain iv : CurveInputs K C tbl base T k v := iu.keep h.layout hd kv (by decide) ov syv
   -- `P = R`
-  have cp := copyPt_conds (a := K.L.R) hk3 hk6 (.inl rfl) (by omega_using [ho', rx]) (by omega_using [ho', ry]) (by omega_using [ho', rz]) ⟨rxl, ryl, rzl⟩
+  obtain cp := copyPt_conds (a := K.L.R) hk3 hk6 (.inl rfl) (by omega_using [ho', rx]) (by omega_using [ho', ry]) (by omega_using [ho', rz]) ⟨rxl, ryl, rzl⟩
   refine WP.seq (WP.mono_syms (copyPt_ok iv.wsr.ws iv.wsr.at3 (n := K.L.M.n) (o := K.P) (a := K.L.R)
     cp.1 cp.2.1 cp.2.2.1 cp.2.2.2) fun v₁ ⟨px, py, pz, k₁, o₁⟩ sy₁ => ?_)
   simp only [P_eq] at px py pz o₁
-  have U₁ : Unch base (loopWrites K) v.mem v₁.mem := Unch.cover o₁ fun w hw => by
+  obtain U₁ : Unch base (loopWrites K) v.mem v₁.mem := Unch.cover o₁ fun w hw => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     refine ⟨(oAt K.L.M.n, 72 * K.L.M.n), by simp [loopWrites], ?_, ?_⟩ <;>
       rcases hw with rfl | rfl | rfl <;> (dsimp only; omega_arith)
-  have i₁ : CurveInputs K C tbl base T k v₁ := iv.keep h.layout hd (k₁.rk (rs' := fnClob)) (by decide) U₁ sy₁
-  have q₁ : ∀ x ∈ [K.Q.x, K.Q.y, K.Q.z, K.L.R.x, K.L.R.y, K.L.R.z],
+  obtain i₁ : CurveInputs K C tbl base T k v₁ := iv.keep h.layout hd (k₁.rk (rs' := fnClob)) (by decide) U₁ sy₁
+  obtain q₁ : ∀ x ∈ [K.Q.x, K.Q.y, K.Q.z, K.L.R.x, K.L.R.y, K.L.R.z],
       wordsVal v₁.mem base x K.L.M.n = wordsVal v.mem base x K.L.M.n := by
     intro x hx
     apply Unch.wordsVal o₁
@@ -794,11 +797,11 @@ theorem bstep_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> omega_arith
   -- `O = P + E`
-  have hlt₁ : ∀ x ∈ rIds, wordsVal v₁.mem base (enc K.L.M.n false x) K.L.M.n < C.p := by
+  obtain hlt₁ : ∀ x ∈ rIds, wordsVal v₁.mem base (enc K.L.M.n false x) K.L.M.n < C.p := by
     apply rIds_lt_of false
     simp only [Bool.false_eq_true, ↓reduceIte, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
       forall_eq]
-    have hqa : qAt K.L.M.n = K.Q.x := by omega_using [hk3, hk6, h1, h2, he, hb3', ha', hq', hp', ho', hqx, hqa, rx, ry, rz]
+    obtain hqa : qAt K.L.M.n = K.Q.x := by omega_using [hk3, hk6, h1, h2, he, hb3', ha', hq', hp', ho', hqx, hqa, rx, ry, rz]
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [px, rv _ (by simp), mu]; exact acc.lt _ (by simp)
     · rw [py, rv _ (by simp), mu]; exact acc.lt _ (by simp)
@@ -810,13 +813,13 @@ theorem bstep_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
     · rw [i₁.coeffB]; exact Nat.mod_lt _ hp
   refine WP.seq (WP.mono_syms (maddCall_ok K h.fieldK h.fieldM h.modulus h.odd hk3 hk6 i₁.wsr hlt₁)
     fun v₂ ⟨k₂, o₂, l₂, e₂⟩ sy₂ => ?_)
-  have U₂ : Unch base (loopWrites K) v₁.mem v₂.mem := Unch.cover o₂ fun w hw => by
+  obtain U₂ : Unch base (loopWrites K) v₁.mem v₂.mem := Unch.cover o₂ fun w hw => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl
     · exact ⟨(oAt K.L.M.n, 72 * K.L.M.n), by simp [loopWrites], by dsimp only; omega_using [], by dsimp only; omega_using [hk3, hk6, h1, h2, he, hb3', ha', hq', hp', ho', hqx, hqa, rx, ry, rz]⟩
     · exact ⟨_, by simp [loopWrites], Nat.le_refl _, Nat.le_refl _⟩
-  have i₂ : CurveInputs K C tbl base T k v₂ := i₁.keep h.layout hd k₂ (by decide) U₂ sy₂
-  have q₂ : ∀ x ∈ [K.Q.x, K.Q.y, K.Q.z, K.L.R.x, K.L.R.y, K.L.R.z],
+  obtain i₂ : CurveInputs K C tbl base T k v₂ := i₁.keep h.layout hd k₂ (by decide) U₂ sy₂
+  obtain q₂ : ∀ x ∈ [K.Q.x, K.Q.y, K.Q.z, K.L.R.x, K.L.R.y, K.L.R.z],
       wordsVal v₂.mem base x K.L.M.n = wordsVal v₁.mem base x K.L.M.n := by
     intro x hx
     apply Unch.wordsVal o₂
@@ -827,12 +830,12 @@ theorem bstep_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
       rcases hx with rfl | rfl | rfl | rfl | rfl | rfl <;> omega_arith
   -- `O = E` if `R = O`
   refine WP.seq (WP.mono_syms (zsel_ok K h.layout i₂.wsr) fun v₃ ⟨ox₃, oy₃, oz₃, k₃, o₃⟩ sy₃ => ?_)
-  have U₃ : Unch base (loopWrites K) v₂.mem v₃.mem := Unch.cover o₃ fun w hw => by
+  obtain U₃ : Unch base (loopWrites K) v₂.mem v₃.mem := Unch.cover o₃ fun w hw => by
     simp only [O_eq, List.mem_cons, List.not_mem_nil, or_false] at hw
     refine ⟨(oAt K.L.M.n, 72 * K.L.M.n), by simp [loopWrites], ?_, ?_⟩ <;>
       rcases hw with rfl | rfl | rfl <;> (dsimp only; omega_arith)
-  have i₃ : CurveInputs K C tbl base T k v₃ := i₂.keep h.layout hd (k₃.rk (rs' := fnClob)) (by decide) U₃ sy₃
-  have q₃ : ∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z],
+  obtain i₃ : CurveInputs K C tbl base T k v₃ := i₂.keep h.layout hd (k₃.rk (rs' := fnClob)) (by decide) U₃ sy₃
+  obtain q₃ : ∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z],
       wordsVal v₃.mem base x K.L.M.n = wordsVal v₂.mem base x K.L.M.n := by
     intro x hx
     apply Unch.wordsVal o₃
@@ -841,44 +844,44 @@ theorem bstep_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
       rcases hx with rfl | rfl | rfl <;> omega_arith
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
       rcases hx with rfl | rfl | rfl <;> omega_using [hk3, hk6, h1, h2, he, hb3', ha', hq', hp', ho', hqx, hqa, hb3, hoA, rx, ry, rz, rxl, ryl, rzl]
-  have g₃ : v₃.gpr .r31 = BitVec.ofNat 64 (j + 1) := by rw [k₃.g, k₂.g, k₁.g, kv.g]; exact gu
+  obtain g₃ : v₃.gpr .r31 = BitVec.ofNat 64 (j + 1) := by rw [k₃.g, k₂.g, k₁.g, kv.g]; exact gu
   -- the digit again
   refine WP.seq (WP.mono_syms (bdigit_ok K true i₃.wsr.ws i₃.wsr.at3 ⟨h.w1, h.w9⟩ hj (Nat.le_of_lt h.J15)
     h.startBits h.coverBits short h.bitsOff hb1 h.layout.point.bitsE hk (by simp) g₃ i₃.bits)
     fun v₄ ⟨g9, k₄, m₄⟩ sy₄ => ?_)
-  have i₄ : CurveInputs K C tbl base T k v₄ :=
+  obtain i₄ : CurveInputs K C tbl base T k v₄ :=
     i₃.keep h.layout hd (k₄.rk (rs' := fnClob)) (by decide) (by rw [m₄]; exact Unch.refl _ _ _) sy₄
   -- `R = O` unless the digit is zero
   refine WP.mono_syms (rsel_ok K h.layout i₄.wsr (j := j + 1) (by have := h.J15; omega_using [hj, this]) (by have := h.J15; omega_using [this])
     (by rw [k₄.g]; exact g₃)) fun t ⟨xt, yt, zt, lt, kt, ot⟩ syt => fun syt' => ?_
-  have U₅ : Unch base (loopWrites K) v₄.mem t.mem := Unch.cover ot fun w hw => by
+  obtain U₅ : Unch base (loopWrites K) v₄.mem t.mem := Unch.cover ot fun w hw => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hw
     rcases hw with rfl | rfl | rfl <;> exact ⟨_, by simp [loopWrites], Nat.le_refl _, Nat.le_refl _⟩
-  have keep : Rk powClob s t :=
+  obtain keep : Rk powClob s t :=
     (ku.rk (by decide)).trans ((kv.mono (by decide)).trans ((k₁.rk (by decide)).trans ((k₂.mono (by decide)).trans
       ((k₃.rk (by decide)).trans ((k₄.rk (by decide)).trans (kt.rk (by decide)))))))
-  have unch : Unch base (loopWrites K) s.mem t.mem := by
-    have ou : Unch base (loopWrites K) s.mem u.mem := by rw [mu]; exact Unch.refl _ _ _
-    have o₄ : Unch base (loopWrites K) v₃.mem v₄.mem := by rw [m₄]; exact Unch.refl _ _ _
+  obtain unch : Unch base (loopWrites K) s.mem t.mem := by
+    obtain ou : Unch base (loopWrites K) s.mem u.mem := by rw [mu]; exact Unch.refl _ _ _
+    obtain o₄ : Unch base (loopWrites K) v₃.mem v₄.mem := by rw [m₄]; exact Unch.refl _ _ _
     exact (ou.trans (ov.trans (U₁.trans (U₂.trans (U₃.trans (o₄.trans U₅)))))).cover fun w hw' => ⟨w, by
       simpa only [List.mem_append, or_self] using hw', Nat.le_refl _, Nat.le_refl _⟩
   refine ⟨keep, unch, i.keep h.layout hd keep (by decide) unch syt', ?_, by rw [kt.g, k₄.g]; exact g₃, lt⟩
   -- the values
-  have b64 : bmag K.w k (j + 1) < 2 ^ 64 :=
+  obtain b64 : bmag K.w k (j + 1) < 2 ^ 64 :=
     Nat.lt_of_le_of_lt (bmag_le h.w1 k (j + 1)) (Nat.pow_lt_pow_right (by decide) (by have := h.w9; omega_using [this]))
   simp only [g9, m₄, ofNat_eq_zero b64] at xt yt zt
-  have rR : ∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z],
+  obtain rR : ∀ x ∈ [K.L.R.x, K.L.R.y, K.L.R.z],
       wordsVal v₃.mem base x K.L.M.n = wordsVal s.mem base x K.L.M.n := fun x hx => by
     rw [q₃ x hx, q₂ x (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; rcases hx with e | e | e <;> simp [e]),
       q₁ x (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; rcases hx with e | e | e <;> simp [e]), rv x hx, mu]
-  have rQ : ∀ x ∈ [K.Q.x, K.Q.y, K.Q.z],
+  obtain rQ : ∀ x ∈ [K.Q.x, K.Q.y, K.Q.z],
       wordsVal v₂.mem base x K.L.M.n = wordsVal v.mem base x K.L.M.n := fun x hx => by
     rw [q₂ x (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; rcases hx with e | e | e <;> simp [e]),
       q₁ x (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hx ⊢; rcases hx with e | e | e <;> simp [e])]
-  have rz₂ : wordsVal v₂.mem base K.L.R.z K.L.M.n = wordsVal s.mem base K.L.R.z K.L.M.n := by
+  obtain rz₂ : wordsVal v₂.mem base K.L.R.z K.L.M.n = wordsVal s.mem base K.L.R.z K.L.M.n := by
     rw [← q₃ _ (by simp)]; exact rR _ (by simp)
   rw [rz₂] at ox₃ oy₃ oz₃
-  have mE : (tmv C K.L.M.n base v₂ K.O.x, tmv C K.L.M.n base v₂ K.O.y, tmv C K.L.M.n base v₂ K.O.z) =
+  obtain mE : (tmv C K.L.M.n base v₂ K.O.x, tmv C K.L.M.n base v₂ K.O.y, tmv C K.L.M.n base v₂ K.O.z) =
       maddJF (tmv C K.L.M.n base s K.L.R.x) (tmv C K.L.M.n base s K.L.R.y) (tmv C K.L.M.n base s K.L.R.z)
         (tmv C K.L.M.n base v K.Q.x) (tmv C K.L.M.n base v K.Q.y) := by
     have em := e₂
@@ -888,24 +891,24 @@ theorem bstep_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
       q₁ _ (by simp), q₁ _ (by simp)] at em
     simp only [O_eq]
     exact em
-  have lO : ∀ x ∈ [K.O.x, K.O.y, K.O.z], wordsVal v₂.mem base x K.L.M.n < C.p := by
+  obtain lO : ∀ x ∈ [K.O.x, K.O.y, K.O.z], wordsVal v₂.mem base x K.L.M.n < C.p := by
     simp only [O_eq, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-    have l0 := l₂ 0 (by decide)
-    have l1 := l₂ 1 (by decide)
-    have l2 := l₂ 2 (by decide)
+    obtain l0 := l₂ 0 (by decide)
+    obtain l1 := l₂ 1 (by decide)
+    obtain l2 := l₂ 2 (by decide)
     rw [enc_0] at l0
     rw [enc_1] at l1
     rw [enc_2] at l2
     exact ⟨l0, l1, l2⟩
-  have hz0 : (tmv C K.L.M.n base s K.L.R.z = 0) = (wordsVal s.mem base K.L.R.z K.L.M.n = 0) :=
+  obtain hz0 : (tmv C K.L.M.n base s K.L.R.z = 0) = (wordsVal s.mem base K.L.R.z K.L.M.n = 0) :=
     propext (toM_eq_zero_iff h.unit (acc.lt _ (by simp)))
-  have hez : tmv C K.L.M.n base v K.Q.z = if bmag K.w k (j + 1) = 0 then 0 else 1 := by
+  obtain hez : tmv C K.L.M.n base v K.Q.z = if bmag K.w k (j + 1) = 0 then 0 else 1 := by
     show toM _ _ _ = _
     rw [zv]
     split
     · exact toM_zero _ _
     · exact h.one
-  have math := bstep_math hC hG hM3 hB h.w1 hkm (j := j + 1) (by omega_using []) hj acc.inv pv hez
+  obtain math := bstep_math hC hG hM3 hB h.w1 hkm (j := j + 1) (by omega_using []) hj acc.inv pv hez
   simp only [hz0] at math
   refine ⟨?_, ?_⟩
   · simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
@@ -914,10 +917,10 @@ theorem bstep_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
     refine ⟨?_, ?_, ?_⟩ <;> split <;> (try split) <;>
       first | (apply acc.lt; simp; done) | (apply lv; simp; done) | (apply lO; simp; done)
   · have ex := congrArg Prod.fst mE
-    have ey := congrArg (fun p => p.2.1) mE
-    have ez := congrArg (fun p => p.2.2) mE
+    obtain ey := congrArg (fun p => p.2.1) mE
+    obtain ez := congrArg (fun p => p.2.2) mE
     dsimp only at ex ey ez
-    have tx : tmv C K.L.M.n base t K.L.R.x = if bmag K.w k (j + 1) = 0 then tmv C K.L.M.n base s K.L.R.x
+    obtain tx : tmv C K.L.M.n base t K.L.R.x = if bmag K.w k (j + 1) = 0 then tmv C K.L.M.n base s K.L.R.x
         else if wordsVal s.mem base K.L.R.z K.L.M.n = 0 then tmv C K.L.M.n base v K.Q.x
         else (maddJF (tmv C K.L.M.n base s K.L.R.x) (tmv C K.L.M.n base s K.L.R.y) (tmv C K.L.M.n base s K.L.R.z)
           (tmv C K.L.M.n base v K.Q.x) (tmv C K.L.M.n base v K.Q.y)).1 := by
@@ -929,7 +932,7 @@ theorem bstep_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
       · split
         · rw [rQ K.Q.x (by simp)]
         · rfl
-    have ty : tmv C K.L.M.n base t K.L.R.y = if bmag K.w k (j + 1) = 0 then tmv C K.L.M.n base s K.L.R.y
+    obtain ty : tmv C K.L.M.n base t K.L.R.y = if bmag K.w k (j + 1) = 0 then tmv C K.L.M.n base s K.L.R.y
         else if wordsVal s.mem base K.L.R.z K.L.M.n = 0 then tmv C K.L.M.n base v K.Q.y
         else (maddJF (tmv C K.L.M.n base s K.L.R.x) (tmv C K.L.M.n base s K.L.R.y) (tmv C K.L.M.n base s K.L.R.z)
           (tmv C K.L.M.n base v K.Q.x) (tmv C K.L.M.n base v K.Q.y)).2.1 := by
@@ -941,7 +944,7 @@ theorem bstep_ok (K : TCombCfg) {C : Curve} {tbl : List (List (Nat × Nat))} {st
       · split
         · rw [rQ K.Q.y (by simp)]
         · rfl
-    have tz : tmv C K.L.M.n base t K.L.R.z = if bmag K.w k (j + 1) = 0 then tmv C K.L.M.n base s K.L.R.z
+    obtain tz : tmv C K.L.M.n base t K.L.R.z = if bmag K.w k (j + 1) = 0 then tmv C K.L.M.n base s K.L.R.z
         else if wordsVal s.mem base K.L.R.z K.L.M.n = 0 then tmv C K.L.M.n base v K.Q.z
         else (maddJF (tmv C K.L.M.n base s K.L.R.x) (tmv C K.L.M.n base s K.L.R.y) (tmv C K.L.M.n base s K.L.R.z)
           (tmv C K.L.M.n base v K.Q.x) (tmv C K.L.M.n base v K.Q.y)).2.2 := by

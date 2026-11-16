@@ -214,7 +214,7 @@ theorem flags_pub_sig {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → 
     (hp : (sig.contract abi pre post wa stack leak).pub s₁ s₂) :
     (sig.contract abi pre post wa stack leak).pub t₁ t₂ := by
   rw [pubL_args hk] at hp ⊢
-  simpa only [flags_args h₁, flags_args h₂, h₁.rsp, h₂.rsp, h₁.mem, h₂.mem] using hp
+  simpa only [flags_args h₁, flags_args h₂, h₁.rsp, h₂.rsp, h₁.mem, h₂.mem, h₁.mx, h₂.mx] using hp
 
 theorem flags_post (enc : Bool) {stack : Nat} {s t z : State} (h : FlagsOnly s t)
     (hp : (contract enc stack).post t z) : (contract enc stack).post s z := by

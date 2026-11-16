@@ -6,6 +6,8 @@ public import VerifiedGarbage.Proof.Framework.RISCV64.Taint
 meta import VerifiedGarbage.Proof.Bignum.RISCV64.CrtPinsB
 meta import VerifiedGarbage.Proof.Framework.RelCT
 meta import VerifiedGarbage.Proof.Framework.RISCV64.Taint
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 
 /-!
 # The RSA private-key operation on RISC-V: constant time
@@ -28,54 +30,98 @@ theorem fn_rel : RelCT isa (Two (C0 false)) crt fun _ _ => True := by
   · refine RelCT.mono (P := Two (C0 false))
       (VG.Proof.Bignum.RISCV64.RelCT.seqL_single (front_rel.mono (fun _ _ h => h) fun _ _ _ => trivial))
       (fun _ _ ⟨a, h₁, h₂, hsp⟩ => ⟨a, at_zero_inv h₁, at_zero_inv h₂, hsp⟩) fun _ _ h => h
-  refine chain_cons (crt_run false) (m := 5) (by decide) (two_taint _ pins1 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 13) (by decide) (two_taint _ pins5 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 21) (by decide) (two_taint _ pins13 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 29) (by decide) (two_taint _ pins21 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 37) (by decide) (two_taint _ pins29 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 45) (by decide) (two_taint _ pins37 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 46) (by decide) (two_taint _ pins45 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 98) (by decide) (two_taint _ pins46 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 106) (by decide) (two_taint _ pins98 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 134) (by decide) (two_taint _ pins106 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 136) (by decide) (two_taint _ pins134 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 177) (by decide) (two_taint _ pins136 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 205) (by decide) (two_taint _ pins177 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 207) (by decide) (two_taint _ pins205 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 248) (by decide) (two_taint _ pins207 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 254) (by decide) (two_taint _ pins248 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 275) (by decide) (two_taint _ pins254 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 305) (by decide) (two_taint _ pins275 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 311) (by decide) (two_taint _ pins305 (by taint_decide)) ?_
-  refine chain_cons (crt_run false) (m := 330) (by decide) (two_taint _ pins311 (by taint_decide)) ?_
-  exact two_taint _ pins330 (by taint_decide)
+  refine chain_cons (crt_run false) (m := 5) (by decide) (two_taint (hc := ?_) _ pins1 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 13) (by decide) (two_taint (hc := ?_) _ pins5 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 21) (by decide) (two_taint (hc := ?_) _ pins13 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 29) (by decide) (two_taint (hc := ?_) _ pins21 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 37) (by decide) (two_taint (hc := ?_) _ pins29 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 45) (by decide) (two_taint (hc := ?_) _ pins37 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 46) (by decide) (two_taint (hc := ?_) _ pins45 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 98) (by decide) (two_taint (hc := ?_) _ pins46 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 106) (by decide) (two_taint (hc := ?_) _ pins98 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 134) (by decide) (two_taint (hc := ?_) _ pins106 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 136) (by decide) (two_taint (hc := ?_) _ pins134 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 177) (by decide) (two_taint (hc := ?_) _ pins136 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 205) (by decide) (two_taint (hc := ?_) _ pins177 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 207) (by decide) (two_taint (hc := ?_) _ pins205 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 248) (by decide) (two_taint (hc := ?_) _ pins207 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 254) (by decide) (two_taint (hc := ?_) _ pins248 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 275) (by decide) (two_taint (hc := ?_) _ pins254 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 305) (by decide) (two_taint (hc := ?_) _ pins275 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 311) (by decide) (two_taint (hc := ?_) _ pins305 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run false) (m := 330) (by decide) (two_taint (hc := ?_) _ pins311 ?_) ?_
+  rotate_left 2
+  refine two_taint (hc := ?_) _ pins330 ?_
+  -- Every cut's check in one kernel evaluation, which flattens the code once.
+  taint_decide_all
 
 theorem fn_relP : RelCT isa (Two (C0 true)) crtP fun _ _ => True := by
   refine chain_start (chain_cons (crt_run true) (m := 1) (by decide) ?_ ?_)
   · refine RelCT.mono (P := Two (C0 true))
       (VG.Proof.Bignum.RISCV64.RelCT.seqL_single (front_rel.mono (fun _ _ h => h) fun _ _ _ => trivial))
       (fun _ _ ⟨a, h₁, h₂, hsp⟩ => ⟨a, at_zero_inv h₁, at_zero_inv h₂, hsp⟩) fun _ _ h => h
-  refine chain_cons (crt_run true) (m := 5) (by decide) (two_taint _ pins1 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 13) (by decide) (two_taint _ pins5 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 21) (by decide) (two_taint _ pins13 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 29) (by decide) (two_taint _ pins21 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 37) (by decide) (two_taint _ pins29 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 45) (by decide) (two_taint _ pins37 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 46) (by decide) (two_taint _ pins45 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 75) (by decide) (two_taint _ pins46 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 83) (by decide) (two_taint _ pins98 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 106) (by decide) (two_taint _ pins106 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 108) (by decide) (two_taint _ pins134 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 149) (by decide) (two_taint _ pins136 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 172) (by decide) (two_taint _ pins177 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 174) (by decide) (two_taint _ pins205 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 215) (by decide) (two_taint _ pins207 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 221) (by decide) (two_taint _ pins248 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 242) (by decide) (two_taint _ pins254 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 272) (by decide) (two_taint _ pins275 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 278) (by decide) (two_taint _ pins305 (by taint_decide)) ?_
-  refine chain_cons (crt_run true) (m := 297) (by decide) (two_taint _ pins311 (by taint_decide)) ?_
-  exact two_taint _ pins330 (by taint_decide)
+  refine chain_cons (crt_run true) (m := 5) (by decide) (two_taint (hc := ?_) _ pins1 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 13) (by decide) (two_taint (hc := ?_) _ pins5 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 21) (by decide) (two_taint (hc := ?_) _ pins13 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 29) (by decide) (two_taint (hc := ?_) _ pins21 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 37) (by decide) (two_taint (hc := ?_) _ pins29 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 45) (by decide) (two_taint (hc := ?_) _ pins37 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 46) (by decide) (two_taint (hc := ?_) _ pins45 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 75) (by decide) (two_taint (hc := ?_) _ pins46 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 83) (by decide) (two_taint (hc := ?_) _ pins98 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 106) (by decide) (two_taint (hc := ?_) _ pins106 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 108) (by decide) (two_taint (hc := ?_) _ pins134 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 149) (by decide) (two_taint (hc := ?_) _ pins136 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 172) (by decide) (two_taint (hc := ?_) _ pins177 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 174) (by decide) (two_taint (hc := ?_) _ pins205 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 215) (by decide) (two_taint (hc := ?_) _ pins207 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 221) (by decide) (two_taint (hc := ?_) _ pins248 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 242) (by decide) (two_taint (hc := ?_) _ pins254 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 272) (by decide) (two_taint (hc := ?_) _ pins275 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 278) (by decide) (two_taint (hc := ?_) _ pins305 ?_) ?_
+  rotate_left 2
+  refine chain_cons (crt_run true) (m := 297) (by decide) (two_taint (hc := ?_) _ pins311 ?_) ?_
+  rotate_left 2
+  refine two_taint (hc := ?_) _ pins330 ?_
+  -- Every cut's check in one kernel evaluation, which flattens the code once.
+  taint_decide_all
 
 theorem fn_ct : ConstantTime isa fnContract.pre fnContract.pub crt :=
   RelCT.constantTime (fn_rel.mono (fun s t ⟨hs, ht, ⟨hr, hsp, ha, hn⟩⟩ =>

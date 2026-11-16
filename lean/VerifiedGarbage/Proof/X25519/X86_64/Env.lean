@@ -98,22 +98,12 @@ theorem Op.trans {base : Addr} {o : Nat} {s t u : State} (h : Op base o s t) (k 
     Op base o s u :=
   ⟨fun r hr => (k.gpr r hr).trans (h.gpr r hr), k.rd.trans h.rd, k.wr.trans h.wr, h.mem.trans k.mem⟩
 
-/-- A field operation into `[o]`, then `[o] = [o] + [o]`. -/
-theorem dbl_after {code : List Instr} {s : State} {base : Addr} (hs : Scr s base) {o : Nat}
-    (ho : Slot o) {v : Spec.X25519.Fe}
-    (h : WP isa (.block code) s fun s' => Op base o s s' ∧ F s'.mem base o = v) :
-    WP isa (.block (code ++ add o o o)) s fun s' => Op base o s s' ∧ F s'.mem base o = v + v := by
-  rw [WP.block_append_iff]
-  refine WP.mono h fun t ⟨ht, et⟩ => ?_
-  refine WP.mono (add_ok (ht.scr hs) ho ho ho) fun u ⟨hu, eu⟩ => ⟨ht.trans hu, ?_⟩
-  rw [eu, et]
-
 theorem baseline_ok : FieldOk baseline where
   mul hs _ _ _ ho ha hb := mul_ok hs ho ha hb
   sqr hs _ _ ho ha := sqr_ok hs ho ha
   a24add hs _ _ _ ho hb ha := mulA24Add_ok hs ho hb ha
-  mul2 hs _ _ _ ho ha hb := dbl_after hs ho (mul_ok hs ho ha hb)
-  sqr2 hs _ _ ho ha := dbl_after hs ho (sqr_ok hs ho ha)
+  mul2 hs _ _ _ ho ha hb := mul2_ok hs ho ha hb
+  sqr2 hs _ _ ho ha := sqr2_ok hs ho ha
   mulB hs _ _ _ ho ha hb := mulBnd_ok hs ho ha hb
   sqrB hs _ _ ho ha := sqrBnd_ok hs ho ha
 

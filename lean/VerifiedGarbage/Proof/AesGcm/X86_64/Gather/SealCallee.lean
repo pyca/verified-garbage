@@ -59,7 +59,7 @@ def sealPreK (M : CtxMode) (s : State) : Prop :=
 def sealPubK (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧
-    s₁.gpr .rsp = s₂.gpr .rsp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧ arg s₁ 2 = arg s₂ 2
+    s₁.gpr .rsp = s₂.gpr .rsp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧ arg s₁ 2 = arg s₂ 2 ∧ s₁.mxcsr = s₂.mxcsr
 
 def sealK (M : CtxMode) : Contract isa where
   pre := sealPreK M
@@ -121,7 +121,7 @@ theorem sealSpecP_post {s s' : State} (hR : rounds s)
 
 theorem sealSpec_pub {s₁ s₂ : State} (h : sealPubK s₁ s₂) :
     (Proof.AesGcm.sealRoundsContract X86_64.abi 2624).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
   sig_pub [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg]
@@ -131,7 +131,7 @@ theorem sealSpec_pub {s₁ s₂ : State} (h : sealPubK s₁ s₂) :
 
 theorem sealSpecP_pub {s₁ s₂ : State} (h : sealPubK s₁ s₂) :
     (Proof.AesGcm.sealPrecomputedRoundsContract X86_64.abi 2624).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
   sig_pub [Proof.AesGcm.sealPrecomputedRoundsContract, Proof.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.AesGcm.sealPrecomputedRoundsContract, Proof.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg]

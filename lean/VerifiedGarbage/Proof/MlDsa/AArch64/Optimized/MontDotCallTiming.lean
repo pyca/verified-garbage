@@ -22,7 +22,7 @@ open VG.Impl.MlDsa.AArch64.Optimized.MontDot (dot)
 open VG.Proof.MlDsa.Arith (polyRegion)
 
 theorem callee (S : Nat) {count : Nat} (hc : count=4∨count=5∨count=7) : CalleeOk S (dot count) (montDotContract abi count) :=
-  ⟨(verified hc).1,(verified hc).2.1,Nat.zero_le _⟩
+  CalleeOk.of_ct (verified hc).1 (verified hc).2.1 (by rcases hc with rfl|rfl|rfl <;> lit_decide) (fun _ _ h => h) (Nat.zero_le _)
 
 abbrev args (out a b : Ptr) : List (Reg × Arg) :=
   [(.x0,.ptr out),(.x1,.ptr a),(.x2,.ptr b)]

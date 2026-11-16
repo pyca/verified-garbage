@@ -84,7 +84,7 @@ theorem wiped_scrubbed {P : Spec.Cbc.aesSig.Post 64} {w : Nat} {name : String} {
   Verified.callWipeTail' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("iv", .array true .u8 16), ("data", .slice true (.array .u8 16) "n")]) (ps₂ := [])
     (nm := "scratch") (e := .u64) (k := 272) (i := 5) h z.verified (by decide) rfl rfl rfl
-    (by simp only [Elem.size]; omega_using [hw]) (by omega_using [hw]) (by decide) hsp hd z.spSafe (by rw [z.xd])
+    (by simp only [Elem.size]; omega_using [hw]) (by omega_using [hw]) (by decide) hsp hd z.spSafe z.noMx (by rw [z.xd])
     (Nat.zero_le _) (pre_local 64) (tailPost_local 64 w P hpost) (tailPost_out 64 w P hout hw)
     (wipedTail 64 w P) (sat _)
 

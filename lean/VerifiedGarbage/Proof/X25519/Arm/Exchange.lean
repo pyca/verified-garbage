@@ -3,6 +3,8 @@ module
 public import VerifiedGarbage.Proof.X25519.Contract
 public import VerifiedGarbage.Proof.Xdh.Arm
 public import VerifiedGarbage.Proof.X25519.Arm.Verified
+public import VerifiedGarbage.Proof.X25519.Arm.Words.Verified
+import VerifiedGarbage.Proof.X25519.Arm.Lit
 public import VerifiedGarbage.Spec.X25519.Contract
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -10,6 +12,8 @@ import VerifiedGarbage.Proof.Framework.Sig
 import VerifiedGarbage.Proof.Framework.PowLit
 meta import VerifiedGarbage.Proof.Xdh.Arm
 meta import VerifiedGarbage.Proof.X25519.Arm.Verified
+meta import VerifiedGarbage.Proof.X25519.Arm.Words.Verified
+meta import VerifiedGarbage.Proof.X25519.Arm.Lit
 meta import VerifiedGarbage.Spec.X25519.Contract
 meta import VerifiedGarbage.Proof.Framework.Contract
 meta import VerifiedGarbage.Proof.Framework.Arm.Contract
@@ -86,8 +90,8 @@ theorem exchange_baseline :
   exchange_verified _ Proof.X25519.Arm.x25519_verified (by lit_decide) check_taint
 
 theorem exchange_umaal :
-    Verified Arm.target (Impl.Xdh.Arm.exchange "vg_x25519_umaal" Impl.X25519.Arm.x25519Umaal 32)
+    Verified Arm.target (Impl.Xdh.Arm.exchange "vg_x25519_umaal" Impl.X25519.Arm.Words.x25519Umaal 32)
       (Spec.X25519.exchangeContract Arm.abi 8) :=
-  exchange_verified _ Proof.X25519.Arm.x25519Umaal_verified (by lit_decide) check_taint
+  exchange_verified _ Proof.X25519.Arm.Words.x25519Umaal_verified (by lit_decide) check_taint
 
 end VG.Proof.X25519.Arm.Exchange

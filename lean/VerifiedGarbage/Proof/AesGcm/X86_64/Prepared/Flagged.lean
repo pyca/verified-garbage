@@ -307,7 +307,7 @@ theorem encSpecF_pub {t : Nat} {s₁ s₂ : State} (h : encCallPub s₁ s₂)
     (Proof.AesGcm.Flag.streamEncryptRoundsContractB t X86_64.abi 2608).pub s₁ s₂ := by
   have f₁ : Proof.AesGcm.Flag.flagBit t s₁.mem (s₁.gpr .rdi) = 1 := Proof.AesGcm.Flag.flagBit_of_le o₁.1
   have f₂ : Proof.AesGcm.Flag.flagBit t s₂.mem (s₂.gpr .rdi) = 1 := Proof.AesGcm.Flag.flagBit_of_le o₂.1
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, aMd⟩ := h
   sig_pub [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPreparedSig, Proof.AesGcm.Flag.streamCryptLeakB, X86_64.abi,
     X86_64.argRegs]
   sig_reduce [Proof.AesGcm.Flag.streamEncryptRoundsContractB, Spec.Gcm.streamCryptPreparedSig, Spec.Gcm.streamCryptPreparedSig, X86_64.abi,
@@ -376,7 +376,7 @@ theorem sealSpecF_pub {t : Nat} {s₁ s₂ : State} (h : sealPubK s₁ s₂)
     (Proof.AesGcm.Flag.sealRoundsContractB t X86_64.abi 2624).pub s₁ s₂ := by
   have f₁ : Proof.AesGcm.Flag.flagBit t s₁.mem (s₁.gpr .rdi) = 1 := Proof.AesGcm.Flag.flagBit_of_le o₁.1
   have f₂ : Proof.AesGcm.Flag.flagBit t s₂.mem (s₂.gpr .rdi) = 1 := Proof.AesGcm.Flag.flagBit_of_le o₂.1
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
   sig_pub [Proof.AesGcm.Flag.sealRoundsContractB, Spec.Gcm.sealPreparedSig, Proof.AesGcm.Flag.sealLeakB, X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.AesGcm.Flag.sealRoundsContractB, Spec.Gcm.sealPreparedSig, Spec.Gcm.sealPreparedSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg, Proof.AesGcm.Flag.sealLeakB]
@@ -434,7 +434,7 @@ theorem splitSpecF_post {t : Nat} {M : CtxMode} {s s' : State}
 
 theorem splitSpecF_pub {t : Nat} {s₁ s₂ : State} (h : splitPubK s₁ s₂) :
     (Proof.AesGcm.Flag.sealSplitFlaggedContract t X86_64.abi 2672).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, aMd⟩ := h
   sig_pub [Proof.AesGcm.Flag.sealSplitFlaggedContract, Proof.AesGcm.Flag.sealSplitFlaggedSig,
     X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.AesGcm.Flag.sealSplitFlaggedContract, Proof.AesGcm.Flag.sealSplitFlaggedSig,
@@ -486,7 +486,7 @@ theorem toSpecF_post {t : Nat} {s s' : State} (hR : rounds s)
 
 theorem toSpecF_pub {t : Nat} {s₁ s₂ : State} (h : toPub s₁ s₂) :
     (Proof.AesGcm.Flag.streamEncryptToFlaggedContract t X86_64.abi 4856).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
   sig_pub [Proof.AesGcm.Flag.streamEncryptToFlaggedContract, Proof.AesGcm.Flag.streamEncryptToFlaggedSig, X86_64.abi,
     X86_64.argRegs]
   sig_reduce [Proof.AesGcm.Flag.streamEncryptToFlaggedContract, Proof.AesGcm.Flag.streamEncryptToFlaggedSig, X86_64.abi,
@@ -645,11 +645,11 @@ theorem gatherPostFlagged_of {t : Nat} {s s' : State} (h : Proof.AesGcm.sealGath
 theorem gatherPubFlagged_of {t : Nat} {s₁ s₂ : State}
     (hp : (Proof.AesGcm.Flag.sealGatherFlaggedScratchContract t X86_64.abi 4888).pub s₁ s₂) :
     Proof.AesGcm.sealGatherPub s₁ s₂ := by
-  sig_pub [Proof.AesGcm.Flag.sealGatherFlaggedScratchContract, Proof.AesGcm.Flag.sealGatherFlaggedScratchSig,
+  sig_pub_keep [Proof.AesGcm.Flag.sealGatherFlaggedScratchContract, Proof.AesGcm.Flag.sealGatherFlaggedScratchSig,
     Proof.AesGcm.Flag.sealGatherFlaggedPre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
-  obtain ⟨q₇, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅, hd⟩ := hp
-  exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, fun i hi => hd i (by simpa using hi)⟩
+  obtain ⟨q₇, qMd, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅, hd⟩ := hp
+  exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, fun i hi => hd i (by simpa using hi), qMd⟩
 
 theorem gatherSatFlagged_pre {t : Nat} (ht : t ≤ 48) : ∃ s, (Proof.AesGcm.Flag.sealGatherFlaggedScratchContract t X86_64.abi 4888).pre s := by
   refine ⟨gatherSatF, ?_⟩

@@ -220,6 +220,19 @@ theorem spSafe {o : List Instr} {D : Nat} (c : Member o D) (iv : Spec.Sha512.Has
     (digest o iv f).all (fun i => !isa.writesSp i) = true :=
   X86_64.withStackScratch_spSafe (by decide) (by rw [OneShot.body_all, c.spSafe f hs, init_sp]; rfl)
 
+/-- The one-shot digest loads no MXCSR, if the compression doesn't. -/
+theorem mxcsr {o : List Instr} {D : Nat} (c : Member o D) (iv : Spec.Sha512.HashValue) {f : Callee}
+    (hm : f.code.allInstrs (fun i => !loadsMxcsr i) = true) :
+    (digest o iv f).allInstrs (fun i => !loadsMxcsr i) = true := by
+  have hb : (body o iv f).allInstrs (fun i => !loadsMxcsr i) = true := by
+    rw [OneShot.body_allInstrs, c.mxcsr f hm, init_mxcsr]; rfl
+  show (Impl.StackScratch.X86_64.withStackScratch _ .rcx (body o iv f)).allInstrs _ = true
+  generalize body o iv f = b at hb
+  rw [Code.allInstrs_eq] at hb ⊢
+  simp only [Impl.StackScratch.X86_64.withStackScratch, instrs, List.all_append, List.all_cons, List.all_nil, hb,
+    Bool.and_true]
+  rfl
+
 section
 open Impl.MdStream.X86_64 (out64 compressN compressAt compressWith)
 

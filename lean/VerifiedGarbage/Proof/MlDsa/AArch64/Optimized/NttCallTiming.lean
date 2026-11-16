@@ -24,7 +24,7 @@ theorem callAtSyms_tr {S : Nat} {n : String} {c : Prog isa} {k : Contract isa} (
     {P : State → State → Prop}
     (hP : ∀ x y x1 y1, P x y → Args as x x1 → Args as y y1 → x1.syms=x.syms → y1.syms=y.syms → ∃ rd wr : List Region,
       k.pre (x1.callEntry.withRegions rd wr) ∧ k.pre (y1.callEntry.withRegions rd wr) ∧
-      k.pub (x1.callEntry.withRegions rd wr) (y1.callEntry.withRegions rd wr) ∧
+      k.ditFree.pub (x1.callEntry.withRegions rd wr) (y1.callEntry.withRegions rd wr) ∧
       Covers (rd ++ wr) (x.rd ++ x.wr) ∧ Covers wr x.wr ∧
       Covers (rd ++ wr) (y.rd ++ y.wr) ∧ Covers wr y.wr) :
     RelCT isa P (callAt n c as) fun _ _ => True :=
@@ -34,10 +34,10 @@ theorem callAtSyms_tr {S : Nat} {n : String} {c : Prog isa} {k : Contract isa} (
       fun x y _ _ hp h1 h2 => ⟨x, y, hp, h1.1, h2.1, h1.2, h2.2⟩)
     (RelCT.mono (RelCT.exists_ (P := fun (a : List Region × List Region) (x1 y1 : State) =>
         k.pre (x1.callEntry.withRegions a.1 a.2) ∧ k.pre (y1.callEntry.withRegions a.1 a.2) ∧
-        k.pub (x1.callEntry.withRegions a.1 a.2) (y1.callEntry.withRegions a.1 a.2) ∧
+        k.ditFree.pub (x1.callEntry.withRegions a.1 a.2) (y1.callEntry.withRegions a.1 a.2) ∧
         Covers (a.1 ++ a.2) (x1.rd ++ x1.wr) ∧ Covers a.2 x1.wr ∧
         Covers (a.1 ++ a.2) (y1.rd ++ y1.wr) ∧ Covers a.2 y1.wr)
-      fun a => RelCT.call C.correct C.ct a.1 a.2 fun _ _ h => h)
+      fun a => RelCT.call (k := k.ditFree) C.correct C.ct a.1 a.2 fun _ _ h => h)
       (fun x1 y1 ⟨x, y, hp, h1, h2, hy1, hy2⟩ => by
         obtain ⟨rd, wr, p₁, p₂, pub, c₁, w₁, c₂, w₂⟩ := hP x y x1 y1 hp h1 h2 hy1 hy2
         exact ⟨(rd, wr), p₁, p₂, pub, by rw [h1.2.rd, h1.2.wr]; exact c₁, by rw [h1.2.wr]; exact w₁,

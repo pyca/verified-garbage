@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Zeroize.AArch64Wide
 public import VerifiedGarbage.Proof.Zeroize.AArch64
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 import VerifiedGarbage.Proof.Ct.AArch64
 import VerifiedGarbage.Proof.Framework.RegionsSub
 meta import VerifiedGarbage.Impl.Zeroize.AArch64Wide
@@ -159,6 +160,10 @@ theorem wideCorrect (s₀ : State) (hp : contract.pre s₀) :
     simp; omega_arith
   rw [hn] at hw
   exact ⟨prefix_spec hw.2.2.2.1, hw.2.2.2.2⟩
+
+/-- It never touches PSTATE.DIT, so its callers' runs need not agree on it
+(`Contract.ditFree`). -/
+theorem wide_noDit : zeroizeWide.all (fun i => !i.touchesDit) = true := by decide
 
 theorem wideVerified : Verified target zeroizeWide (Spec.Zeroize.zeroizeContract abi) := by
   apply Verified.of_correct (k := contract)

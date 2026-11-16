@@ -60,7 +60,7 @@ theorem callee {c : Prog isa} (hv : Verified X86_64.target c (Proof.X25519.x2551
     sig_post [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, X86_64.abi, X86_64.argRegs] at h
     exact h
   pub s₁ s₂ h := by
-    obtain ⟨qsp, q0, q1, q2, q3⟩ := h
+    obtain ⟨qsp, q0, q1, q2, q3, q4⟩ := h
     sig_pub [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, X86_64.abi, X86_64.argRegs]
     sig_reduce [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, X86_64.abi, X86_64.argRegs]
     sig_and_intros

@@ -57,6 +57,29 @@ theorem stepS_sound {L : List String} {τ τ' : T} {i : Instr} {s₁ s₂ s₁' 
     · exact ⟨(step_sound ha.1 hs e₁ e₂).1, (step_sound ha.1 hs e₁ e₂).2, hsy⟩
   · exact ⟨(step_sound ha.1 hs e₁ e₂).1, (step_sound ha.1 hs e₁ e₂).2, hsy⟩
 
+/-! The step the kernel evaluates (see `stepK`, `Proof/Framework/AArch64/Taint.lean`). -/
+
+/-- `stepS`, as a function of the instruction first. -/
+def stepSFn : Instr → List String → Step
+  | .adrSym d n => fun L => ⟨fun τ => if n ∈ L then some (set τ d true) else some (set τ d false)⟩
+  | i => fun _ => stepFn i
+
+/-- `stepSFn`, with its cases closed (`inline_match%`). -/
+def stepSFnK : Instr → List String → Step := inline_match% stepSFn stepFn
+
+theorem stepSFnK_eq (i : Instr) : stepSFnK i = stepSFn i := by cases i <;> rfl
+
+theorem stepSFn_run (L : List String) (τ : T) (i : Instr) : (stepSFn i L).run τ = stepS L τ i := by
+  cases i <;> rfl
+
+/-- `stepS`, giving a set that is evaluated. -/
+def stepSK (L : List String) (τ : T) (i : Instr) : Option T := forceO ((stepSFnK i L).run τ) some
+
+theorem stepSK_eq (L : List String) : stepSK L = stepS L := by
+  funext τ i
+  rw [stepSK, stepSFnK_eq, forceO_eq, stepSFn_run]
+  cases stepS L τ i <;> rfl
+
 end Taint
 
 /-- Taint tracking for AArch64 code that addresses the statics `L`, whose
@@ -64,8 +87,8 @@ addresses are public. -/
 def taintS (L : List String) : VG.Taint isa where
   T := Taint.T
   Agree := Taint.AgreeS L
-  step := Taint.stepS L
-  step_sound := Taint.stepS_sound
+  step := Taint.stepSK L
+  step_sound h hs := Taint.stepS_sound h ((congrFun (congrFun (Taint.stepSK_eq L) _) _).symm.trans hs)
   condPub := Taint.condPub
   cond_sound h := Taint.cond_sound h.1
   meet τ₁ τ₂ := τ₁.inter τ₂
@@ -95,5 +118,11 @@ def taintS (L : List String) : VG.Taint isa where
   pop_sound h hs e₁ e₂ := by
     obtain ⟨a, b⟩ := taint.pop_sound h.1 hs e₁ e₂
     exact ⟨a, b, fun n hn => by rw [pop_syms e₁, pop_syms e₂]; exact h.2 n hn⟩
+
+/-- The step of `taintS L` is `Taint.stepS L`, for the proofs about it: the
+kernel evaluates `Taint.stepSK L`. -/
+theorem taintS_step (L : List String) (τ : Taint.T) (i : Instr) :
+    (taintS L).step τ i = Taint.stepS L τ i :=
+  congrFun (congrFun (Taint.stepSK_eq L) τ) i
 
 end VG.AArch64

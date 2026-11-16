@@ -44,6 +44,7 @@ theorem call_callEntry (s : State) : isa.call s = some s.callEntry := rfl
 
 @[simp] theorem State.callEntry_rd (s : State) : s.callEntry.rd = s.rd := rfl
 @[simp] theorem State.callEntry_wr (s : State) : s.callEntry.wr = s.wr := rfl
+@[simp] theorem State.callEntry_mxcsr (s : State) : s.callEntry.mxcsr = s.mxcsr := rfl
 @[simp] theorem State.callEntry_rsp (s : State) : s.callEntry.gpr .rsp = s.gpr .rsp - 8 := by
   simp [State.callEntry, State.setReg]
 theorem State.callEntry_gpr (s : State) {r : Reg} (h : r ≠ .rsp) : s.callEntry.gpr r = s.gpr r := by

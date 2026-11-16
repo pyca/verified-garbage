@@ -180,6 +180,7 @@ def variant : Backend where
   features := ["bmi2", "adx"]
   signVerified := signing_call_verified Mont.fnAdx MontS.fnLazyAdx checks.sign.inl rfl checks.sign.mx
   signSp := checks.sign.sp
+  signMx := checks.sign.mxFree
   validateVerified := validating_call_verified Mont.fnAdx MontS.fnLazyAdx checks.validate.inl rfl checks.validate.mx
   prevalidatedVerified := prevalidated_call_verified Mont.fnAdx MontS.fnLazyAdx checks.verify.inl rfl checks.verify.mx
   validateSp := checks.validate.sp
@@ -188,16 +189,19 @@ def variant : Backend where
   parametersVerified := parameters_call_verified Mont.fnAdx MontS.fnLazyAdx checks.parameters.inl rfl checks.parameters.mx
   deriveVerified := derive_call_verified Mont.fnAdx MontS.fnLazyAdx checks.derive.inl rfl checks.derive.mx
   parametersSp := checks.parameters.sp
+  parametersMx := checks.parameters.mxFree
   deriveSp := checks.derive.sp
   parametersDepth := checks.parameters.depth
   deriveDepth := checks.derive.depth
   prevalidatedSignVerified := prevalidated_sign_call_verified Mont.fnAdx MontS.fnLazyAdx checks.prevalidatedSign.inl rfl checks.prevalidatedSign.mx
   prevalidatedSignSp := checks.prevalidatedSign.sp
+  prevalidatedSignMx := checks.prevalidatedSign.mxFree
   prevalidatedSignDepth := checks.prevalidatedSign.depth
   validatePrivateVerified := validating_private_call_verified Mont.fnAdx MontS.fnLazyAdx checks.validatePrivate.inl rfl checks.validatePrivate.mx
   validatePrivateSp := checks.validatePrivate.sp
   deriveCheckedVerified := derive_checked_call_verified Mont.fnAdx MontS.fnLazyAdx checks.deriveChecked.inl rfl checks.deriveChecked.mx
   deriveCheckedSp := checks.deriveChecked.sp
+  deriveCheckedMx := checks.deriveChecked.mxFree
   deriveCheckedDepth := checks.deriveChecked.depth
   stackBound := by decide
 

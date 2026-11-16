@@ -5,6 +5,9 @@ public meta import VerifiedGarbage.Proof.Sha256.RISCV64.Rounds
 public import VerifiedGarbage.Proof.Sha256.RISCV64.Contract
 public meta import VerifiedGarbage.Proof.Sha256.RISCV64.Contract
 import VerifiedGarbage.Proof.Framework.Range
+import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.Lit
+meta import VerifiedGarbage.Proof.Framework.RISCV64.Lit
 meta import VerifiedGarbage.Proof.Framework.Range
 import all Init.Data.Nat.Bitwise.Basic
 public import VerifiedGarbage.Proof.Framework.Contract
@@ -751,6 +754,11 @@ def satState : State where
   mem _ := 0
   rd := [⟨0x2000, 0⟩]
   wr := [⟨0x1000, 32⟩, ⟨0x3000, 80⟩]
+
+/-! The compression function as a literal: its sixty-four unrolled rounds are built by
+functions, which the kernel would run again in each check that evaluates the code (the summary
+of its taint and the frame of that summary, below). -/
+materialize_flat_code Impl.Sha256.RISCV64.compress
 
 /-! The constant-time analysis of the compression function from its arguments, done once for
 every check of code that calls it (`taint_decide_sum [compressSum]`), which keeps what is public

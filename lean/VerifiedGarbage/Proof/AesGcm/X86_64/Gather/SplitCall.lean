@@ -162,10 +162,11 @@ structure SCBase (s st : State) : Prop where
   rounds : st.mem.readW (W s + BitVec.ofNat 64 8) 64 = s.gpr .rsi
   out : bytesAt st.mem (Dst s + BitVec.ofNat 64 (fl s)) (L s - fl s) =
     gathered 64 s.mem (Src s + BitVec.ofNat 64 (16 * k0 s)) (Cnt s - k0 s)
+  mx : st.mxcsr = s.mxcsr
 
 omit hp in
 theorem SPBase.toSC {st : State} (h : SPBase s st) : SCBase s st :=
-  ⟨h.rsp, h.saved, h.rd, h.wr, h.frame, h.kept.ctx, h.kept.rounds, h.out⟩
+  ⟨h.rsp, h.saved, h.rd, h.wr, h.frame, h.kept.ctx, h.kept.rounds, h.out, h.mx⟩
 
 /-- `work`, above the five arguments pushed. -/
 theorem pushedW {st : State} (h : SCBase s st) {p : State}
@@ -227,6 +228,7 @@ structure SplitQ (s st q : State) : Prop where
   m : q.mem = (pushed [.rax, .r10, .r11, .rdi, .rsi] st).mem
   rd : q.rd = (pushed [.rax, .r10, .r11, .rdi, .rsi] st).rd
   wr : q.wr = (pushed [.rax, .r10, .r11, .rdi, .rsi] st).wr
+  mx : q.mxcsr = st.mxcsr
 
 /-- What the call of `vg_aes_gcm_seal_split` needs, after the push and
 `splitCtx`, and its stack arguments. -/
@@ -346,9 +348,10 @@ theorem splitCall_ok (S : SplitFn M) {st : State} (h : SCBase s st) (g : SplitRe
     rw [hsp] at hpf; exact hpf
   have hPw : (pushed [.rax, .r10, .r11, .rdi, .rsi] st).wr = ⟨SP s - BitVec.ofNat 64 40, 40⟩ :: st.wr := by
     rw [pushed_wr, hsp]; rfl
-  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.seq (WP.mono
-    (splitCtx_ok hp h hP (pushed_rd _ _) hPw hpf') fun q ⟨q_di, q_si, q_g, q_m, q_rd, q_wr⟩ => ?_))
-  obtain ⟨hpre, cr, cw, a0, a1, a2, a3, a4⟩ := splitCallEntry hp h g ⟨q_di, q_si, q_g, q_m, q_rd, q_wr⟩
+  refine WP.frame (by simp) (by decide) (by decide) hn8 (WP.seq (WP.mono_mx (by decide)
+    (splitCtx_ok hp h hP (pushed_rd _ _) hPw hpf') fun q ⟨q_di, q_si, q_g, q_m, q_rd, q_wr⟩ q_mx => ?_))
+  obtain ⟨hpre, cr, cw, a0, a1, a2, a3, a4⟩ := splitCallEntry hp h g
+    ⟨q_di, q_si, q_g, q_m, q_rd, q_wr, q_mx.trans (pushed_mxcsr _ _)⟩
   have qsp : q.gpr .rsp = SP s - BitVec.ofNat 64 40 := by
     rw [q_g _ (by decide) (by decide) (by decide), hP]
   have hE : Frame [⟨SP s - BitVec.ofNat 64 48, 8⟩] q.mem q.callEntry.mem := by
@@ -431,8 +434,9 @@ end
 
 /-- `SPBase` through code that changes no memory, `rsp` or callee-saved register. -/
 theorem SPBase.regs {s st st' : State} (h : SPBase s st) (hm : st'.mem = st.mem)
-    (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr) : SPBase s st' :=
-  ⟨⟨⟨h.toBase.regs hm hcs hrd hwr, hm ▸ h.nonce, hm ▸ h.nonceLen⟩, hm ▸ h.first, hm ▸ h.firstLen⟩, hm ▸ h.out⟩
+    (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr)
+    (hmx : st'.mxcsr = st.mxcsr) : SPBase s st' :=
+  ⟨⟨⟨h.toBase.regs hm hcs hrd hwr hmx, hm ▸ h.nonce, hm ▸ h.nonceLen⟩, hm ▸ h.first, hm ▸ h.firstLen⟩, hm ▸ h.out⟩
 
 section
 variable {M : CtxMode} {s : State} (hp : SG M s)
@@ -448,10 +452,12 @@ theorem copySplit_wp (S : SplitFn M) (hL : L s - fl s < 2 ^ 63) {st : State} (h 
   unfold copySplit
   refine WP.seq (WP.mono (splitHead_wp hp h h11 hsi hdx) fun s₁ ⟨F₁, C₁⟩ => ?_)
   refine WP.seq (WP.mono (splitKeep_ok hp F₁ C₁) fun s₂ ⟨P₂, r9₂, rdi₂, r11₂, _⟩ => ?_)
-  refine WP.seq (WP.mono (gatherCopy_wp s₂ (splitGatherPre hp hL P₂.toBase r9₂ rdi₂ r11₂)) fun s₃ ⟨m₃, k₃⟩ => ?_)
-  have B₃ := split_after hp P₂ m₃ k₃
-  refine WP.seq (WP.mono (splitArgs_ok hp B₃) fun s₄ ⟨dx, cx, r8, r9, ax, r10, di, si, r11, cs, m, rd, wr⟩ => ?_)
-  exact splitCall_ok hp S (B₃.regs m cs rd wr).toSC ⟨dx, cx, r8, r9, ax, r10, di, si, r11⟩
+  refine WP.seq (WP.mono_mx (by decide) (gatherCopy_wp s₂ (splitGatherPre hp hL P₂.toBase r9₂ rdi₂ r11₂))
+    fun s₃ ⟨m₃, k₃⟩ x₃ => ?_)
+  have B₃ := split_after hp P₂ m₃ k₃ x₃
+  refine WP.seq (WP.mono_mx (by decide) (splitArgs_ok hp B₃)
+    fun s₄ ⟨dx, cx, r8, r9, ax, r10, di, si, r11, cs, m, rd, wr⟩ x₄ => ?_)
+  exact splitCall_ok hp S (B₃.regs m cs rd wr x₄).toSC ⟨dx, cx, r8, r9, ax, r10, di, si, r11⟩
 
 end
 

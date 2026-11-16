@@ -61,7 +61,8 @@ theorem wiped_verified {g : List Byte → Spec.Aes.State → Spec.Aes.State} {na
   Verified.callWipe' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (nm := "scratch") (e := .u64)
     (k := 256) (n := 2048) (i := 4) h Proof.Zeroize.AArch64.wideVerified (by decide) rfl rfl rfl
-    (by decide) (by decide) (by rw [depth_of_noFrames hd]) zeroize_depth (Nat.zero_le _)
+    (by decide) (by decide) (by rw [depth_of_noFrames hd]) Proof.Zeroize.AArch64.wide_noDit zeroize_depth
+    (Nat.zero_le _)
     (pre_local 64) (post_local 64 g) (post_out 64 g) (AesEcb.wiped 64 g) (sat g)
 
 theorem encrypt_verified (v : BlocksImpl) :

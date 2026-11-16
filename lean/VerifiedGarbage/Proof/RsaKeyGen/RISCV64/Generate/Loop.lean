@@ -325,30 +325,35 @@ theorem callK_pre {p : GenPublic} {original s u : State} {used : Nat} {st : KeyP
   have nT := hf.nT
   have nS := hf.nS
   have hsc := hf.scratch
+  have g0 := callK_gpr (p := p) (u := u) (show Reg.a0 ∉ linkRegs by decide)
+  have g1 := callK_gpr (p := p) (u := u) (show Reg.a1 ∉ linkRegs by decide)
+  have g2 := callK_gpr (p := p) (u := u) (show Reg.a2 ∉ linkRegs by decide)
+  have g3 := callK_gpr (p := p) (u := u) (show Reg.a3 ∉ linkRegs by decide)
+  have g4 := callK_gpr (p := p) (u := u) (show Reg.a4 ∉ linkRegs by decide)
+  have g5 := callK_gpr (p := p) (u := u) (show Reg.a5 ∉ linkRegs by decide)
+  have g6 := callK_gpr (p := p) (u := u) (show Reg.a6 ∉ linkRegs by decide)
+  have g7 := callK_gpr (p := p) (u := u) (show Reg.a7 ∉ linkRegs by decide)
   apply key_pre_of
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_,
     ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
   simp only [Key.nR, Key.dR, Key.pR, Key.qR, Key.dpR, Key.dqR, Key.qiR, Key.eR, Key.sR, Key.aR,
-    callK_gpr (show Reg.a0 ∉ linkRegs by decide), callK_gpr (show Reg.a1 ∉ linkRegs by decide),
-    callK_gpr (show Reg.a2 ∉ linkRegs by decide), callK_gpr (show Reg.a3 ∉ linkRegs by decide),
-    callK_gpr (show Reg.a4 ∉ linkRegs by decide), callK_gpr (show Reg.a5 ∉ linkRegs by decide),
-    callK_gpr (show Reg.a6 ∉ linkRegs by decide), callK_gpr (show Reg.a7 ∉ linkRegs by decide),
+    g0, g1, g2, g3, g4, g5, g6, g7,
     r3, r4, r5, r6, r7, r8, r9, r10, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, tl, t2, t8, tz, tz8, hargs,
     callK_sp, hu, State.withRegions_rd, State.withRegions_wr, kReads, kWrites] <;>
   with_reducible first
     | rfl
-    | omega
     | with_reducible assumption
     | exact kN_slot hf (by decide) (by omega_using [])
-    | exact kk hf (by omega) (by omega_using []) (by omega_using [])
+    | exact kk hf (by omega_using []) (by omega_using []) (by omega_using [])
     | exact kE sN
     | exact kS sN
     | exact kAr sN
-    | exact kE (kSlot_sub (by omega))
-    | exact kS (kSlot_sub (by omega))
-    | exact kAr (kSlot_sub (by omega))
-    | exact slot_nowrap hf (by omega)
+    | exact kE (kSlot_sub (by omega_using []))
+    | exact kS (kSlot_sub (by omega_using []))
+    | exact kAr (kSlot_sub (by omega_using []))
+    | exact slot_nowrap hf (by omega_using [])
+    | omega
     | (rw [BitVec.toNat_add, toNat_ofNat_lt (by decide)]; omega_using [nT])
 
 /-! ## The key, run

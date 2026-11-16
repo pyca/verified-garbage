@@ -341,97 +341,100 @@ theorem start_ok {s : State} {B : Addr} {Z w n iU iM : Nat} (h : Ws s B Z w) (hZ
       t.gpr .rsi = BitVec.ofNat 64 (3 * n + 2) ∧
       Frm B [(slot w 16, 80 * (w + 2))] s.mem t.mem ∧
       Keep [.rax, .rbx, .rcx, .rdx, .rbp, .rsi, .rdi, .r8, .r9, .r10, .r12, .r14, .r15] s t := by
-  have hu := wv_lt s.mem B (slot w iU) n
-  have hm := wv_lt s.mem B (slot w iM) n
+  -- Facts are stated with `obtain`, not `have`: `have` keeps its proof in the context (a `let` nothing
+  -- unfolds), and every `(by …)` in a term first instantiates and shares the whole context
+  -- (`Term.runTactic`), four hundred and sixty times here.
+  obtain hu := wv_lt s.mem B (slot w iU) n
+  obtain hm := wv_lt s.mem B (slot w iM) n
   have hN := h.scr.nowrap
-  have hw1 := h.w1; have hw24 := h.w2
-  have sl : ∀ j, j < 26 → slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_lt hj) hZ
-  have hS := sl 25 (by decide)
-  have eF : slot w aF = 256 + 19 * (8 * (w + 2)) := slot_eq w 19
-  have eG : slot w aG = 256 + 20 * (8 * (w + 2)) := slot_eq w 20
-  have eA : slot w aA = 256 + 21 * (8 * (w + 2)) := slot_eq w 21
-  have eB : slot w aB = 256 + 22 * (8 * (w + 2)) := slot_eq w 22
-  have eT : slot w aT = 256 + 23 * (8 * (w + 2)) := slot_eq w 23
-  have eP : slot w aP = 256 + 25 * (8 * (w + 2)) := slot_eq w 25
-  have eW : slot w 16 = 256 + 16 * (8 * (w + 2)) := slot_eq w 16
+  obtain hw1 := h.w1; have hw24 := h.w2
+  obtain sl : ∀ j, j < 26 → slot w j + 8 * (w + 2) ≤ Z := fun j hj => Nat.le_trans (slot_lt hj) hZ
+  obtain hS := sl 25 (by decide)
+  obtain eF : slot w aF = 256 + 19 * (8 * (w + 2)) := slot_eq w 19
+  obtain eG : slot w aG = 256 + 20 * (8 * (w + 2)) := slot_eq w 20
+  obtain eA : slot w aA = 256 + 21 * (8 * (w + 2)) := slot_eq w 21
+  obtain eB : slot w aB = 256 + 22 * (8 * (w + 2)) := slot_eq w 22
+  obtain eT : slot w aT = 256 + 23 * (8 * (w + 2)) := slot_eq w 23
+  obtain eP : slot w aP = 256 + 25 * (8 * (w + 2)) := slot_eq w 25
+  obtain eW : slot w 16 = 256 + 16 * (8 * (w + 2)) := slot_eq w 16
   rw [show start iU iM = ([zeroI aF, zeroI aG, zeroI aA, zeroI aB, zeroI aT, zeroI aS, zeroI aP, copyN aP iM,
     .block setOdd, copyI aF aP, copyN aT iU] ++ gInit) ++ [.block (setOneI aB), .block setup] from rfl,
     seqs_append_iff _ _ (by simp) (by simp), seqs_append_iff _ _ (by simp) (by simp [gInit])]
   simp only [seqs]
   refine WP.seq (WP.mono (zeroAI_ok h hZ h9 (j := aF) (by decide)) fun s₁ ⟨zF₁, o₁, r9₁, k₁⟩ => ?_)
-  have h₁ := wsOut h o₁ k₁ (by decide)
+  obtain h₁ := wsOut h o₁ k₁ (by decide)
   refine WP.seq (WP.mono (zeroAI_ok h₁ hZ r9₁ (j := aG) (by decide)) fun s₂ ⟨zG₂, o₂, r9₂, k₂⟩ => ?_)
-  have h₂ := wsOut h₁ o₂ k₂ (by decide)
+  obtain h₂ := wsOut h₁ o₂ k₂ (by decide)
   refine WP.seq (WP.mono (zeroAI_ok h₂ hZ r9₂ (j := aA) (by decide)) fun s₃ ⟨zA₃, o₃, r9₃, k₃⟩ => ?_)
-  have h₃ := wsOut h₂ o₃ k₃ (by decide)
+  obtain h₃ := wsOut h₂ o₃ k₃ (by decide)
   refine WP.seq (WP.mono (zeroAI_ok h₃ hZ r9₃ (j := aB) (by decide)) fun s₄ ⟨zB₄, o₄, r9₄, k₄⟩ => ?_)
-  have h₄ := wsOut h₃ o₄ k₄ (by decide)
+  obtain h₄ := wsOut h₃ o₄ k₄ (by decide)
   refine WP.seq (WP.mono (zeroAI_ok h₄ hZ r9₄ (j := aT) (by decide)) fun s₅ ⟨zT₅, o₅, r9₅, k₅⟩ => ?_)
-  have h₅ := wsOut h₄ o₅ k₅ (by decide)
+  obtain h₅ := wsOut h₄ o₅ k₅ (by decide)
   refine WP.seq (WP.mono (zeroAI_ok h₅ hZ r9₅ (j := aS) (by decide)) fun s₆ ⟨_, o₆, r9₆, k₆⟩ => ?_)
-  have h₆ := wsOut h₅ o₆ k₆ (by decide)
+  obtain h₆ := wsOut h₅ o₆ k₆ (by decide)
   refine WP.seq (WP.mono (zeroAI_ok h₆ hZ r9₆ (j := aP) (by decide)) fun s₇ ⟨zP₇, o₇, r9₇, k₇⟩ => ?_)
-  have h₇ := wsOut h₆ o₇ k₇ (by decide)
-  have hU' : slot w iU + 8 * (w + 2) ≤ 2 ^ 64 := by have := sl iU (by omega_arith); omega_arith
-  have hM' : slot w iM + 8 * (w + 2) ≤ 2 ^ 64 := by have := sl iM (by omega_arith); omega_arith
-  have ar : ∀ j, j < 26 → slot w j + 8 * (w + 2) ≤ 2 ^ 64 := fun j hj => by have := sl j hj; omega_arith
+  obtain h₇ := wsOut h₆ o₇ k₇ (by decide)
+  obtain hU' : slot w iU + 8 * (w + 2) ≤ 2 ^ 64 := by have := sl iU (by omega_arith); omega_arith
+  obtain hM' : slot w iM + 8 * (w + 2) ≤ 2 ^ 64 := by have := sl iM (by omega_arith); omega_arith
+  obtain ar : ∀ j, j < 26 → slot w j + 8 * (w + 2) ≤ 2 ^ 64 := fun j hj => by have := sl j hj; omega_arith
   -- The values after the clearing.
-  have tr := fun {m m' : Mem} {j k K L : Nat} (o : Outside B (slot w j) L m m') (hjk : j ≠ k)
+  obtain tr := fun {m m' : Mem} {j k K L : Nat} (o : Outside B (slot w j) L m m') (hjk : j ≠ k)
     (hL : L ≤ 8 * (w + 2)) (hK : K ≤ w + 2) (hk : k < 26) =>
     out_arr (K := K) o hjk hL hK (ar k hk)
-  have zF₇ : wv s₇.mem B (slot w aF) (w + 2) = 0 := by
+  obtain zF₇ : wv s₇.mem B (slot w aF) (w + 2) = 0 := by
     rw [tr o₇ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₆ (by decide) (by omega_arith) (by omega_arith) (by decide),
       tr o₅ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₄ (by decide) (by omega_arith) (by omega_arith) (by decide),
       tr o₃ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₂ (by decide) (by omega_arith) (by omega_arith) (by decide), zF₁]
-  have zG₇ : wv s₇.mem B (slot w aG) (w + 2) = 0 := by
+  obtain zG₇ : wv s₇.mem B (slot w aG) (w + 2) = 0 := by
     rw [tr o₇ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₆ (by decide) (by omega_arith) (by omega_arith) (by decide),
       tr o₅ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₄ (by decide) (by omega_arith) (by omega_arith) (by decide),
       tr o₃ (by decide) (by omega_arith) (by omega_arith) (by decide), zG₂]
-  have zA₇ : wv s₇.mem B (slot w aA) (w + 2) = 0 := by
+  obtain zA₇ : wv s₇.mem B (slot w aA) (w + 2) = 0 := by
     rw [tr o₇ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₆ (by decide) (by omega_arith) (by omega_arith) (by decide),
       tr o₅ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₄ (by decide) (by omega_arith) (by omega_arith) (by decide), zA₃]
-  have zB₇ : wv s₇.mem B (slot w aB) (w + 2) = 0 := by
+  obtain zB₇ : wv s₇.mem B (slot w aB) (w + 2) = 0 := by
     rw [tr o₇ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₆ (by decide) (by omega_arith) (by omega_arith) (by decide),
       tr o₅ (by decide) (by omega_arith) (by omega_arith) (by decide), zB₄]
-  have zT₇ : wv s₇.mem B (slot w aT) (w + 2) = 0 := by
+  obtain zT₇ : wv s₇.mem B (slot w aT) (w + 2) = 0 := by
     rw [tr o₇ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₆ (by decide) (by omega_arith) (by omega_arith) (by decide), zT₅]
-  have iU₇ : wv s₇.mem B (slot w iU) n = wv s.mem B (slot w iU) n := by
+  obtain iU₇ : wv s₇.mem B (slot w iU) n = wv s.mem B (slot w iU) n := by
     rw [tr o₇ (by simp only [aP]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), tr o₆ (by simp only [aS]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
       tr o₅ (by simp only [aT]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), tr o₄ (by simp only [aB]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
       tr o₃ (by simp only [aA]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), tr o₂ (by simp only [aG]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
       tr o₁ (by simp only [aF]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]
-  have iM₇ : wv s₇.mem B (slot w iM) n = wv s.mem B (slot w iM) n := by
+  obtain iM₇ : wv s₇.mem B (slot w iM) n = wv s.mem B (slot w iM) n := by
     rw [tr o₇ (by simp only [aP]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), tr o₆ (by simp only [aS]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
       tr o₅ (by simp only [aT]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), tr o₄ (by simp only [aB]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
       tr o₃ (by simp only [aA]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), tr o₂ (by simp only [aG]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
       tr o₁ (by simp only [aF]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith)]
   -- `m` into `aP`, made odd.
-  have r13₇ : s₇.gpr .r13 = BitVec.ofNat 64 n := by
+  obtain r13₇ : s₇.gpr .r13 = BitVec.ofNat 64 n := by
     rw [k₇.gpr (by decide), k₆.gpr (by decide), k₅.gpr (by decide), k₄.gpr (by decide), k₃.gpr (by decide),
       k₂.gpr (by decide), k₁.gpr (by decide)]
     exact h13
   refine WP.seq (WP.mono (copyNI_ok h₇ hZ r9₇ r13₇ hn1 hnw (o := aP) (a := iM) (by decide) (by omega_arith)
     (by simp only [aP]; omega_arith))
     fun s₈ ⟨vP₈, o₈, k₈⟩ => ?_)
-  have h₈ := wsOut h₇ o₈ k₈ (by decide)
-  have r9₈ : s₈.gpr .r9 = _ := (k₈.gpr (by decide)).trans r9₇
-  have P₈ := copy_fullN vP₈ zP₇ o₈ (by omega_arith) (ar aP (by decide))
+  obtain h₈ := wsOut h₇ o₈ k₈ (by decide)
+  obtain r9₈ : s₈.gpr .r9 = _ := (k₈.gpr (by decide)).trans r9₇
+  obtain P₈ := copy_fullN vP₈ zP₇ o₈ (by omega_arith) (ar aP (by decide))
   rw [iM₇] at P₈
   refine WP.seq (WP.mono (setOdd_ok h₈ hZ r9₈) fun s₉ ⟨m₉, k₉⟩ => ?_)
-  have o₉ : Outside B (slot w aP) 8 s₈.mem s₉.mem := by rw [m₉]; exact writeW_outside _ _ _ (by have := ar aP (by decide); omega_arith)
-  have h₉ := wsOut h₈ o₉ k₉ (by decide)
-  have r9₉ : s₉.gpr .r9 = _ := (k₉.gpr (by decide)).trans r9₈
-  have pw := odd_word (word s₈.mem B (slot w aP))
+  obtain o₉ : Outside B (slot w aP) 8 s₈.mem s₉.mem := by rw [m₉]; exact writeW_outside _ _ _ (by have := ar aP (by decide); omega_arith)
+  obtain h₉ := wsOut h₈ o₉ k₉ (by decide)
+  obtain r9₉ : s₉.gpr .r9 = _ := (k₉.gpr (by decide)).trans r9₈
+  obtain pw := odd_word (word s₈.mem B (slot w aP))
   have eP₈ := P₈
   rw [show w + 2 = (w + 1) + 1 from rfl, wv_succ_low] at eP₈
-  have hpar : (word s₈.mem B (slot w aP)).toNat % 2 = wv s.mem B (slot w iM) n % 2 := by omega_arith
-  have hp_lt : pOf (wv s.mem B (slot w iM) n) < 2 ^ (64 * n) := by
+  obtain hpar : (word s₈.mem B (slot w aP)).toNat % 2 = wv s.mem B (slot w iM) n % 2 := by omega_arith
+  obtain hp_lt : pOf (wv s.mem B (slot w iM) n) < 2 ^ (64 * n) := by
     unfold pOf; split
     · exact hm
     · have : 2 ^ (64 * n) = 2 * 2 ^ (64 * n - 1) := by
         rw [← Nat.pow_succ']; congr 1; omega_arith
       omega_arith
-  have P₉ : wv s₉.mem B (slot w aP) (w + 2) = pOf (wv s.mem B (slot w iM) n) := by
+  obtain P₉ : wv s₉.mem B (slot w aP) (w + 2) = pOf (wv s.mem B (slot w iM) n) := by
     rw [show w + 2 = (w + 1) + 1 from rfl, wv_succ_low, m₉, word_writeW_self,
       (writeW_outside s₈.mem B _ (d := slot w aP) (by have := ar aP (by decide); omega_arith)).wv (Or.inr (by omega_arith))
         (by have := ar aP (by decide); omega_arith), pw]
@@ -439,146 +442,146 @@ theorem start_ok {s : State} {B : Addr} {Z w n iU iM : Nat} (h : Ws s B Z w) (hZ
     by_cases hm2 : wv s.mem B (slot w iM) n % 2 = 1
     · simp only [show ¬ ((word s₈.mem B (slot w aP)).toNat % 2 = 0) by omega_arith, hm2, ↓reduceIte]; omega_arith
     · simp only [show (word s₈.mem B (slot w aP)).toNat % 2 = 0 by omega_arith, hm2, ↓reduceIte]; omega_arith
-  have hpw : pOf (wv s.mem B (slot w iM) n) < 2 ^ (64 * w) :=
+  obtain hpw : pOf (wv s.mem B (slot w iM) n) < 2 ^ (64 * w) :=
     Nat.lt_of_lt_of_le hp_lt (Nat.pow_le_pow_right (by decide) (by omega_arith))
-  have Pw₉ : wv s₉.mem B (slot w aP) w = pOf (wv s.mem B (slot w iM) n) :=
+  obtain Pw₉ : wv s₉.mem B (slot w aP) w = pOf (wv s.mem B (slot w iM) n) :=
     (wv_low_of_lt (show w ≤ w + 2 by omega_arith) (by rw [P₉]; exact hpw)).trans P₉
   -- `f := m`, `t := a`.
   refine WP.seq (WP.mono (copyAI_ok h₉ hZ r9₉ (o := aF) (a := aP) (by decide) (by decide) (by decide))
     fun s₁₀ ⟨vF₁₀, o₁₀, k₁₀⟩ => ?_)
-  have h₁₀ := wsOut h₉ o₁₀ k₁₀ (by decide)
-  have r9₁₀ : s₁₀.gpr .r9 = _ := (k₁₀.gpr (by decide)).trans r9₉
-  have F₁₀ := copy_full vF₁₀ (by rw [tr o₉ (by decide) (by omega_arith) (by omega_arith) (by decide),
+  obtain h₁₀ := wsOut h₉ o₁₀ k₁₀ (by decide)
+  obtain r9₁₀ : s₁₀.gpr .r9 = _ := (k₁₀.gpr (by decide)).trans r9₉
+  obtain F₁₀ := copy_full vF₁₀ (by rw [tr o₉ (by decide) (by omega_arith) (by omega_arith) (by decide),
     tr o₈ (by decide) (by omega_arith) (by omega_arith) (by decide), zF₇]) o₁₀ (ar aF (by decide))
   rw [Pw₉] at F₁₀
-  have r13₁₀ : s₁₀.gpr .r13 = BitVec.ofNat 64 n := by
+  obtain r13₁₀ : s₁₀.gpr .r13 = BitVec.ofNat 64 n := by
     rw [k₁₀.gpr (by decide), k₉.gpr (by decide), k₈.gpr (by decide)]
     exact r13₇
   refine WP.mono (copyNI_ok h₁₀ hZ r9₁₀ r13₁₀ hn1 hnw (o := aT) (a := iU) (by decide) (by omega_arith)
     (by simp only [aT]; omega_arith))
     fun s₁₁ ⟨vT₁₁, o₁₁, k₁₁⟩ => ?_
-  have h₁₁ := wsOut h₁₀ o₁₁ k₁₁ (by decide)
-  have r9₁₁ : s₁₁.gpr .r9 = _ := (k₁₁.gpr (by decide)).trans r9₁₀
-  have T₁₁ := copy_fullN vT₁₁ (by rw [tr o₁₀ (by decide) (by omega_arith) (by omega_arith) (by decide),
+  obtain h₁₁ := wsOut h₁₀ o₁₁ k₁₁ (by decide)
+  obtain r9₁₁ : s₁₁.gpr .r9 = _ := (k₁₁.gpr (by decide)).trans r9₁₀
+  obtain T₁₁ := copy_fullN vT₁₁ (by rw [tr o₁₀ (by decide) (by omega_arith) (by omega_arith) (by decide),
     tr o₉ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₈ (by decide) (by omega_arith) (by omega_arith) (by decide), zT₇])
     o₁₁ (by omega_arith) (ar aT (by decide))
   rw [tr o₁₀ (by simp only [aF]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
     tr o₉ (by simp only [aP]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith),
     tr o₈ (by simp only [aP]; omega_arith) (by omega_arith) (by omega_arith) (by omega_arith), iU₇] at T₁₁
-  have P₁₁ : wv s₁₁.mem B (slot w aP) (w + 2) = pOf (wv s.mem B (slot w iM) n) := by
+  obtain P₁₁ : wv s₁₁.mem B (slot w aP) (w + 2) = pOf (wv s.mem B (slot w iM) n) := by
     rw [tr o₁₁ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₁₀ (by decide) (by omega_arith) (by omega_arith) (by decide), P₉]
-  have hpw1 : pOf (wv s.mem B (slot w iM) n) < 2 ^ (64 * (w + 1)) :=
+  obtain hpw1 : pOf (wv s.mem B (slot w iM) n) < 2 ^ (64 * (w + 1)) :=
     Nat.lt_of_lt_of_le hp_lt (Nat.pow_le_pow_right (by decide) (by omega_arith))
-  have hu1 : wv s.mem B (slot w iU) n < 2 ^ (64 * (w + 1)) :=
+  obtain hu1 : wv s.mem B (slot w iU) n < 2 ^ (64 * (w + 1)) :=
     Nat.lt_of_lt_of_le hu (Nat.pow_le_pow_right (by decide) (by omega_arith))
-  have P1₁₁ : wv s₁₁.mem B (slot w aP) (w + 1) = pOf (wv s.mem B (slot w iM) n) :=
+  obtain P1₁₁ : wv s₁₁.mem B (slot w aP) (w + 1) = pOf (wv s.mem B (slot w iM) n) :=
     (wv_low_of_lt (show w + 1 ≤ w + 2 by omega_arith) (by rw [P₁₁]; exact hpw1)).trans P₁₁
-  have T1₁₁ : wv s₁₁.mem B (slot w aT) (w + 1) = wv s.mem B (slot w iU) n :=
+  obtain T1₁₁ : wv s₁₁.mem B (slot w aT) (w + 1) = wv s.mem B (slot w iU) n :=
     (wv_low_of_lt (show w + 1 ≤ w + 2 by omega_arith) (by rw [T₁₁]; exact hu1)).trans T₁₁
   have eT₁ := T₁₁
   rw [show w + 2 = (w + 1) + 1 from rfl, wv_succ_low] at eT₁
-  have tpar : (word s₁₁.mem B (slot w aT)).toNat % 2 = wv s.mem B (slot w iU) n % 2 := by omega_arith
+  obtain tpar : (word s₁₁.mem B (slot w aT)).toNat % 2 = wv s.mem B (slot w iU) n % 2 := by omega_arith
   -- `g := a + (m if a is even)`.
   refine WP.mono (gInit_ok h₁₁ hZ r9₁₁) fun s₁₂ ⟨c, vG₁₂, o₁₂, k₁₂⟩ => ?_
-  have h₁₂ := wsOut h₁₁ o₁₂ k₁₂ (by decide)
-  have r9₁₂ : s₁₂.gpr .r9 = _ := (k₁₂.gpr (by decide)).trans r9₁₁
+  obtain h₁₂ := wsOut h₁₁ o₁₂ k₁₂ (by decide)
+  obtain r9₁₂ : s₁₂.gpr .r9 = _ := (k₁₂.gpr (by decide)).trans r9₁₁
   rw [P1₁₁, T1₁₁, tpar] at vG₁₂
-  have hx : (if wv s.mem B (slot w iU) n % 2 = 0 then pOf (wv s.mem B (slot w iM) n) else 0) +
+  obtain hx : (if wv s.mem B (slot w iU) n % 2 = 0 then pOf (wv s.mem B (slot w iM) n) else 0) +
       wv s.mem B (slot w iU) n < 2 ^ (64 * n) * 2 := by split <;> omega_arith
-  have hx1 : 2 ^ (64 * n) * 2 ≤ 2 ^ (64 * (n + 1)) := by rw [pow64_succ]; exact Nat.mul_le_mul_left _ (by decide)
-  have hxw : 2 ^ (64 * (n + 1)) ≤ 2 ^ (64 * (w + 1)) := Nat.pow_le_pow_right (by decide) (by omega_arith)
-  have hc : c = false := by
+  obtain hx1 : 2 ^ (64 * n) * 2 ≤ 2 ^ (64 * (n + 1)) := by rw [pow64_succ]; exact Nat.mul_le_mul_left _ (by decide)
+  obtain hxw : 2 ^ (64 * (n + 1)) ≤ 2 ^ (64 * (w + 1)) := Nat.pow_le_pow_right (by decide) (by omega_arith)
+  obtain hc : c = false := by
     cases c
     · rfl
     · have := wv_lt s₁₂.mem B (slot w aG) (w + 1)
       simp at vG₁₂; omega_arith
   subst hc
   simp only [Bool.toNat_false, Nat.mul_zero, Nat.add_zero] at vG₁₂
-  have zG₁₁ : wv s₁₁.mem B (slot w aG) (w + 2) = 0 := by
+  obtain zG₁₁ : wv s₁₁.mem B (slot w aG) (w + 2) = 0 := by
     rw [tr o₁₁ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₁₀ (by decide) (by omega_arith) (by omega_arith) (by decide),
       tr o₉ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₈ (by decide) (by omega_arith) (by omega_arith) (by decide), zG₇]
-  have z1 : word s₁₂.mem B (slot w aG + 8 * (w + 1)) = 0 := by
+  obtain z1 : word s₁₂.mem B (slot w aG + 8 * (w + 1)) = 0 := by
     rw [o₁₂.word (by omega_arith) (by have := ar aG (by decide); omega_arith)]
     exact wv_zero_word zG₁₁ (w + 1) (by omega_arith)
-  have G₁₂ : wv s₁₂.mem B (slot w aG) (w + 2) = (if wv s.mem B (slot w iU) n % 2 = 0 then
+  obtain G₁₂ : wv s₁₂.mem B (slot w aG) (w + 2) = (if wv s.mem B (slot w iU) n % 2 = 0 then
       pOf (wv s.mem B (slot w iM) n) else 0) + wv s.mem B (slot w iU) n := by
     rw [show w + 2 = (w + 1) + 1 from rfl, wv, z1, vG₁₂]; rfl
   -- `b := 1`.
   show WP isa (.seq (.block (setOneI aB)) (.block setup)) s₁₂ _
-  have zB₁₂ : wv s₁₂.mem B (slot w aB) (w + 2) = 0 := by
+  obtain zB₁₂ : wv s₁₂.mem B (slot w aB) (w + 2) = 0 := by
     rw [tr o₁₂ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₁₁ (by decide) (by omega_arith) (by omega_arith) (by decide),
       tr o₁₀ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₉ (by decide) (by omega_arith) (by omega_arith) (by decide),
       tr o₈ (by decide) (by omega_arith) (by omega_arith) (by decide), zB₇]
   refine WP.seq (WP.mono (setOneAI_ok h₁₂ hZ r9₁₂ (j := aB) (by decide)) fun s₁₃ ⟨m₁₃, k₁₃⟩ => ?_)
-  have o₁₃ : Outside B (slot w aB) 8 s₁₂.mem s₁₃.mem := by
+  obtain o₁₃ : Outside B (slot w aB) 8 s₁₂.mem s₁₃.mem := by
     rw [m₁₃]; exact writeW_outside _ _ _ (by have := ar aB (by decide); omega_arith)
-  have h₁₃ := wsOut h₁₂ o₁₃ k₁₃ (by decide)
-  have r9₁₃ : s₁₃.gpr .r9 = _ := (k₁₃.gpr (by decide)).trans r9₁₂
-  have B₁₃ : wv s₁₃.mem B (slot w aB) (w + 2) = 1 := by
+  obtain h₁₃ := wsOut h₁₂ o₁₃ k₁₃ (by decide)
+  obtain r9₁₃ : s₁₃.gpr .r9 = _ := (k₁₃.gpr (by decide)).trans r9₁₂
+  obtain B₁₃ : wv s₁₃.mem B (slot w aB) (w + 2) = 1 := by
     rw [show w + 2 = (w + 1) + 1 from rfl, wv_succ_low, m₁₃, word_writeW_self,
       (writeW_outside s₁₂.mem B _ (d := slot w aB) (by have := ar aB (by decide); omega_arith)).wv (Or.inr (by omega_arith))
         (by have := ar aB (by decide); omega_arith)]
     have := zB₁₂
     rw [show w + 2 = (w + 1) + 1 from rfl, wv_succ_low] at this
-    have h0 := Nat.eq_zero_of_add_eq_zero this
-    have h2 := (Nat.mul_eq_zero.mp h0.2).resolve_left (by decide)
+    obtain h0 := Nat.eq_zero_of_add_eq_zero this
+    obtain h2 := (Nat.mul_eq_zero.mp h0.2).resolve_left (by decide)
     rw [h2]; rfl
   -- The odd modulus' low word.
-  have wP₁₃ : word s₁₃.mem B (slot w aP) = word s₉.mem B (slot w aP) := by
+  obtain wP₁₃ : word s₁₃.mem B (slot w aP) = word s₉.mem B (slot w aP) := by
     rw [o₁₃.word (by omega_arith) (by have := ar aP (by decide); omega_arith),
       o₁₂.word (by omega_arith) (by have := ar aP (by decide); omega_arith),
       o₁₁.word (by omega_arith) (by have := ar aP (by decide); omega_arith),
       o₁₀.word (by omega_arith) (by have := ar aP (by decide); omega_arith)]
-  have wP₉ : (word s₉.mem B (slot w aP)).toNat = (word s₈.mem B (slot w aP)).toNat +
+  obtain wP₉ : (word s₉.mem B (slot w aP)).toNat = (word s₈.mem B (slot w aP)).toNat +
       (if (word s₈.mem B (slot w aP)).toNat % 2 = 0 then 1 else 0) := by
     rw [m₉, word_writeW_self, pw]
-  have hodd : (word s₁₃.mem B (slot w aP)).toNat % 2 = 1 := by rw [wP₁₃, wP₉]; split <;> omega_arith
-  have r13₁₃ : s₁₃.gpr .r13 = BitVec.ofNat 64 n := by
+  obtain hodd : (word s₁₃.mem B (slot w aP)).toNat % 2 = 1 := by rw [wP₁₃, wP₉]; split <;> omega_arith
+  obtain r13₁₃ : s₁₃.gpr .r13 = BitVec.ofNat 64 n := by
     rw [k₁₃.gpr (by decide), k₁₂.gpr (by decide), k₁₁.gpr (by decide), k₁₀.gpr (by decide), k₉.gpr (by decide),
       k₈.gpr (by decide), k₇.gpr (by decide), k₆.gpr (by decide), k₅.gpr (by decide), k₄.gpr (by decide),
       k₃.gpr (by decide), k₂.gpr (by decide), k₁.gpr (by decide)]
     exact h13
   refine WP.mono (setup_ok h₁₃ hZ r9₁₃ r13₁₃ hodd) fun t ⟨mi, hmi, mt, dit, r9t, r15t, rsit, kt⟩ => ?_
-  have oD' : slot w 16 + oD + 8 ≤ 2 ^ 64 := by unfold oD; omega_arith
-  have oMi' : slot w 16 + oMi + 8 ≤ 2 ^ 64 := by unfold oMi; omega_arith
-  have oW₁ : Outside B (slot w 16 + oMi) 8 s₁₃.mem (s₁₃.mem.writeW (off B (slot w 16 + oMi)) mi) :=
+  obtain oD' : slot w 16 + oD + 8 ≤ 2 ^ 64 := by unfold oD; omega_arith
+  obtain oMi' : slot w 16 + oMi + 8 ≤ 2 ^ 64 := by unfold oMi; omega_arith
+  obtain oW₁ : Outside B (slot w 16 + oMi) 8 s₁₃.mem (s₁₃.mem.writeW (off B (slot w 16 + oMi)) mi) :=
     writeW_outside _ _ _ oMi'
-  have oW₂ : Outside B (slot w 16 + oD) 8 (s₁₃.mem.writeW (off B (slot w 16 + oMi)) mi) t.mem := by
+  obtain oW₂ : Outside B (slot w 16 + oD) 8 (s₁₃.mem.writeW (off B (slot w 16 + oMi)) mi) t.mem := by
     rw [mt]; exact writeW_outside _ _ _ oD'
-  have wa : ∀ k, 19 ≤ k → k < 26 → ∀ K, K ≤ w + 2 → wv t.mem B (slot w k) K = wv s₁₃.mem B (slot w k) K := by
+  obtain wa : ∀ k, 19 ≤ k → k < 26 → ∀ K, K ≤ w + 2 → wv t.mem B (slot w k) K = wv s₁₃.mem B (slot w k) K := by
     intro k hk hk' K hK
-    have ek := slot_eq w k
-    have hk₁ := ar k hk'
-    have hk₂ : 19 * (8 * (w + 2)) ≤ k * (8 * (w + 2)) := Nat.mul_le_mul_right _ hk
+    obtain ek := slot_eq w k
+    obtain hk₁ := ar k hk'
+    obtain hk₂ : 19 * (8 * (w + 2)) ≤ k * (8 * (w + 2)) := Nat.mul_le_mul_right _ hk
     rw [oW₂.wv (Or.inr (by unfold oD; omega_arith)) (by omega_arith), oW₁.wv (Or.inr (by unfold oMi; omega_arith)) (by omega_arith)]
-  have hx2 : ((if wv s.mem B (slot w iU) n % 2 = 0 then pOf (wv s.mem B (slot w iM) n) else 0) +
+  obtain hx2 : ((if wv s.mem B (slot w iU) n % 2 = 0 then pOf (wv s.mem B (slot w iM) n) else 0) +
       wv s.mem B (slot w iU) n) < 2 ^ (64 * (n + 1)) := by omega_arith
-  have hp1 : pOf (wv s.mem B (slot w iM) n) < 2 ^ (64 * (n + 1)) :=
+  obtain hp1 : pOf (wv s.mem B (slot w iM) n) < 2 ^ (64 * (n + 1)) :=
     Nat.lt_of_lt_of_le hp_lt (Nat.pow_le_pow_right (by decide) (by omega_arith))
-  have hone : 1 < 2 ^ (64 * (n + 1)) := Nat.one_lt_two_pow (by omega_arith)
-  have Pt : ∀ K, K ≤ w + 2 → wv t.mem B (slot w aP) K = wv s₉.mem B (slot w aP) K := fun K hK => by
+  obtain hone : 1 < 2 ^ (64 * (n + 1)) := Nat.one_lt_two_pow (by omega_arith)
+  obtain Pt : ∀ K, K ≤ w + 2 → wv t.mem B (slot w aP) K = wv s₉.mem B (slot w aP) K := fun K hK => by
     rw [wa aP (by decide) (by decide) K hK, tr o₁₃ (by decide) (by omega_arith) hK (by decide),
       tr o₁₂ (by decide) (by omega_arith) hK (by decide), tr o₁₁ (by decide) (by omega_arith) hK (by decide),
       tr o₁₀ (by decide) (by omega_arith) hK (by decide)]
-  have hr : (word s₁₃.mem B (slot w aP)).toNat = pOf (wv s.mem B (slot w iM) n) % 2 ^ 64 := by
+  obtain hr : (word s₁₃.mem B (slot w aP)).toNat = pOf (wv s.mem B (slot w iM) n) % 2 ^ 64 := by
     rw [wP₁₃, ← wv_mod64 _ _ _ (n := w + 2) (by omega_arith), P₉]
-  have fr : ∀ {m m' : Mem} {o L : Nat}, Outside B o L m m' → slot w 16 ≤ o → o + L ≤ slot w 16 + 80 * (w + 2) →
+  obtain fr : ∀ {m m' : Mem} {o L : Nat}, Outside B o L m m' → slot w 16 ≤ o → o + L ≤ slot w 16 + 80 * (w + 2) →
       Frm B [(slot w 16, 80 * (w + 2))] m m' := fun ho h1 h2 =>
     fun x hx => ho x (by have := hx _ (List.mem_singleton.mpr rfl); dsimp only at this; omega_arith)
-  have eS : slot w aS = 256 + 24 * (8 * (w + 2)) := slot_eq w 24
+  obtain eS : slot w aS = 256 + 24 * (8 * (w + 2)) := slot_eq w 24
   refine ⟨mi.toNat, BS.mk (h₁₃.scr.congr kt.2.2) dit r9t r15t ?cD ?cMi ?cP ?cPz ?cF ?cG ?cA ?cB, ?hm, ?P1, rsit, ?frm, ?keep⟩
   case cD => rw [mt, word_writeW_self]; rfl
   case cMi => rw [oW₂.word (Or.inr (by unfold oMi oD; omega_arith)) oMi', word_writeW_self]
   case cP => show wv t.mem B (slot w aP) n = _; rw [Pt n (by omega_arith)]; exact wv_lowK P₉ hp_lt (by omega_arith)
   case P1 => rw [Pt (n + 1) (by omega_arith)]; exact wv_lowK P₉ hp1 (by omega_arith)
   case cPz =>
-    have e1 : wv t.mem B (slot w aP) (n + 1) = pOf (wv s.mem B (slot w iM) n) := by
+    obtain e1 : wv t.mem B (slot w aP) (n + 1) = pOf (wv s.mem B (slot w iM) n) := by
       rw [Pt (n + 1) (by omega_arith)]; exact wv_lowK P₉ hp1 (by omega_arith)
-    have e0 : wv t.mem B (slot w aP) n = pOf (wv s.mem B (slot w iM) n) := by
+    obtain e0 : wv t.mem B (slot w aP) n = pOf (wv s.mem B (slot w iM) n) := by
       rw [Pt n (by omega_arith)]; exact wv_lowK P₉ hp_lt (by omega_arith)
     rw [wv, e0] at e1
-    have h0 : 2 ^ (64 * n) * (word t.mem B (slot w aP + 8 * n)).toNat = 0 := by omega_using [e1]
-    have h2 := (Nat.mul_eq_zero.mp h0).resolve_left (Nat.two_pow_pos _).ne'
+    obtain h0 : 2 ^ (64 * n) * (word t.mem B (slot w aP + 8 * n)).toNat = 0 := by omega_using [e1]
+    obtain h2 := (Nat.mul_eq_zero.mp h0).resolve_left (Nat.two_pow_pos _).ne'
     exact BitVec.eq_of_toNat_eq h2
   case cF =>
     show (wv t.mem B (slot w aF) (n + 1) : Int) % _ = _
@@ -591,7 +594,7 @@ theorem start_ok {s : State} {B : Addr} {Z w n iU iM : Nat} (h : Ws s B Z w) (hZ
       wv_lowK G₁₂ hx2 (by omega_arith)]
   case cA =>
     show (wv t.mem B (slot w aA) (n + 1) : Int) % _ = _
-    have zA : wv s₁₃.mem B (slot w aA) (w + 2) = 0 := by
+    obtain zA : wv s₁₃.mem B (slot w aA) (w + 2) = 0 := by
       rw [tr o₁₃ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₁₂ (by decide) (by omega_arith) (by omega_arith) (by decide),
         tr o₁₁ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₁₀ (by decide) (by omega_arith) (by omega_arith) (by decide),
         tr o₉ (by decide) (by omega_arith) (by omega_arith) (by decide), tr o₈ (by decide) (by omega_arith) (by omega_arith) (by decide), zA₇]

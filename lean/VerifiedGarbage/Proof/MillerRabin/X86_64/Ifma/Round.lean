@@ -478,7 +478,8 @@ theorem code_wp (v : RoundArith) (s : State) (h : roundPre s) : WP isa (code v.m
 /-- What the backend needs of a layout's code, checked together (the kernel
 builds the code once for both). -/
 theorem ifma_checks (hl : MrOk l) :
-    ctlOk (ifma l) = true ∧ (ifma l).all (fun i => !isa.writesSp i) = true := by
+    ctlOk (ifma l) = true ∧ (ifma l).all (fun i => !isa.writesSp i) = true ∧
+      (ifma l).allInstrs (fun i => !touchesMxcsr i) = true := by
   rcases hl with rfl | rfl | rfl | rfl | rfl <;> lit_decide
 
 theorem ifma_ctl (hl : MrOk l) : ctlOk (ifma l) = true := (ifma_checks hl).1
@@ -488,7 +489,7 @@ theorem code_ctl (v : RoundArith) : ctlOk (code v.mm) = true :=
     (ctlOk_ite_of (ifma_ctl (.inr (.inl rfl))) (ctlOk_seq_of (by decide)
       (ctlOk_ite_of (ifma_ctl (.inr (.inr (.inl rfl)))) (ctlOk_seq_of (by decide)
         (ctlOk_ite_of (ifma_ctl (.inr (.inr (.inr (.inl rfl))))) (ctlOk_seq_of (by decide)
-          (ctlOk_ite_of (ifma_ctl (.inr (.inr (.inr (.inr rfl))))) (ctlOk_of_noLoad v.mxSafe))))))))))
+          (ctlOk_ite_of (ifma_ctl (.inr (.inr (.inr (.inr rfl))))) (ctlOk_of_noLoad (noLoad_of_noTouch v.mxSafe)))))))))))
 
 /-- The round with the IFMA layouts, `round mul` otherwise. -/
 theorem code_correct (v : RoundArith) (s : State) (h : roundPre s) :
@@ -496,7 +497,16 @@ theorem code_correct (v : RoundArith) (s : State) (h : roundPre s) :
   obtain ⟨tr, t, he, hr, hra, hp⟩ := code_wp v s h
   exact ⟨tr, t, he, ⟨hr, hra, Exec.ctl (code_ctl v) he⟩, hp⟩
 
-theorem ifma_sp (hl : MrOk l) : (ifma l).all (fun i => !isa.writesSp i) = true := (ifma_checks hl).2
+theorem ifma_sp (hl : MrOk l) : (ifma l).all (fun i => !isa.writesSp i) = true := (ifma_checks hl).2.1
+
+theorem ifma_noMx (hl : MrOk l) : (ifma l).allInstrs (fun i => !touchesMxcsr i) = true := (ifma_checks hl).2.2
+
+/-- The round with the IFMA layouts never touches MXCSR, where `round mul` does not. -/
+theorem code_noMx (v : RoundArith) : (code v.mm).allInstrs (fun i => !touchesMxcsr i) = true := by
+  simp only [code, Code.allInstrs, ifma_noMx (.inl rfl), ifma_noMx (.inr (.inl rfl)),
+    ifma_noMx (.inr (.inr (.inl rfl))), ifma_noMx (.inr (.inr (.inr (.inl rfl)))),
+    ifma_noMx (.inr (.inr (.inr (.inr rfl)))), v.mxSafe, Bool.and_true, Bool.true_and]
+  decide
 
 theorem all_seq {p : Instr → Bool} {a b : Prog isa} (ha : a.all p = true) (hb : b.all p = true) :
     (Code.seq a b).all p = true := by

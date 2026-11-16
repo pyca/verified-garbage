@@ -122,10 +122,12 @@ theorem enc_pre (h : EncArgs s out n e msg ps scr pre K el ml pl sl rl)
     rw [← Taint.sub_setWidth (by omega_using [hsp, e4])]
     exact below_inner (by decide) h.sp
   repeat' apply And.intro
+  -- `trivial` and `omega` after the facts: on a goal they do not close, `trivial` tries `contradiction` and
+  -- `assumption` among every hypothesis and `omega` reads them all, at each of the hundred goals
   all_goals first
-    | omega | rfl | trivial | exact h.kv | exact h.el1 | exact h.elK | exact h.slK | exact h.rlK
+    | rfl | exact True.intro | exact h.kv | exact h.el1 | exact h.elK | exact h.slK | exact h.rlK
     | exact h.mlK | exact h.plK
-    | exact oS | exact oA | exact sA
+    | exact oS | exact oA | exact sA | omega
     | (refine wr ?_ ?_ <;> simp <;> fail) | (refine (wr ?_ ?_).symm <;> simp <;> fail)
     | (refine (lo ?_).sub_left ret; simp <;> fail) | (refine (lo ?_).sub_left low; simp <;> fail)
     | (refine fi' _ _ ?_; simp <;> fail)

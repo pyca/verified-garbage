@@ -17,6 +17,7 @@ structure Start (a s : State) : Prop where
   regs : ∀ r ∈ publicRegs, s.gpr r = a.gpr r
   domain : CheckDomain.cdDom s = CheckDomain.cdDom a
   symbol : s.syms tableSym = a.syms tableSym
+  mx : s.mxcsr = a.mxcsr
 
 private theorem singleton_sym {name : String} {words : List (BitVec 64)} {s t : State}
     (h : ∀ c ∈ [(name, words)], s.syms c.1 = t.syms c.1) :
@@ -28,9 +29,9 @@ theorem start_of_pub {a s : State} (hs : contract.pre s)
       ∀ c ∈ tableConsts, a.syms c.1 = s.syms c.1 := pub_consts.mp hp
   have symbols := singleton_sym (name := tableSym) (words := VG.Impl.Ffdh.VettedGroups.tableWords) relation.2
   have pubBase := relation.1
-  sig_pub [Spec.Ffdh.checkDomainContract, Spec.Ffdh.checkDomainSig, abi, argRegs, List.append_eq] at pubBase
-  obtain ⟨rsp, bytes, rdi, rsi, rdx, rcx, r8⟩ := pubBase
-  refine ⟨hs, ?_, ?_, symbols.symm⟩
+  sig_pub_keep [Spec.Ffdh.checkDomainContract, Spec.Ffdh.checkDomainSig, abi, argRegs, List.append_eq] at pubBase
+  obtain ⟨rsp, mx, bytes, rdi, rsi, rdx, rcx, r8⟩ := pubBase
+  refine ⟨hs, ?_, ?_, symbols.symm, mx.symm⟩
   · intro r hr
     simp only [publicRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -63,7 +64,8 @@ theorem Ready.public {a s t : State} (hs : Ready a s) (ht : Ready a t) :
   have spS := (restoredS.keep.gpr (r := .rsp) (by decide)).trans (startS.regs .rsp (by decide))
   have spT := (restoredT.keep.gpr (r := .rsp) (by decide)).trans (startT.regs .rsp (by decide))
   sig_pub [Spec.Ffdh.checkDomainContract, Spec.Ffdh.checkDomainSig, abi, argRegs, List.append_eq]
-  refine ⟨spS.trans spT.symm, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨spS.trans spT.symm, (restoredS.mxcsr.trans startS.mx).trans (restoredT.mxcsr.trans startT.mx).symm,
+    ?_, ?_, ?_, ?_, ?_, ?_⟩
   · change (CheckDomain.cdDom s).map (·.toNat) = (CheckDomain.cdDom t).map (·.toNat)
     rw [domainS, domainT]
   · exact (restoredS.args.1.trans (startS.regs .rdi (by decide))).trans

@@ -42,6 +42,7 @@ stack its calls use) and the code `c`. -/
 structure FnOk (k : Nat → Contract isa) (c : Prog isa) : Prop where
   ver : Verified X86_64.target c (k 0)
   nosp : NoSp c
+  mx : c.allInstrs (fun i => !touchesMxcsr i) = true
   depth : c.depth ≤ 2
   ctl : ctlOk c = true
   sp : c.all (fun i => !isa.writesSp i) = true
@@ -51,6 +52,7 @@ and takes 24 bytes of stack. -/
 structure Rej4Ok (c : Prog isa) : Prop where
   ver : Verified X86_64.target c (Proof.MlDsa.rejNTT4Contract X86_64.abi 24)
   nosp : NoSp c
+  mx : c.allInstrs (fun i => !touchesMxcsr i) = true
   depth : c.depth ≤ 3
   ctl : ctlOk c = true
   sp : c.all (fun i => !isa.writesSp i) = true
@@ -64,6 +66,7 @@ deep and takes 24 bytes of stack. -/
 structure Mask4Ok (c : Prog isa) : Prop where
   ver : Verified X86_64.target c (Proof.MlDsa.expandMask4Contract X86_64.abi 24)
   nosp : NoSp c
+  mx : c.allInstrs (fun i => !touchesMxcsr i) = true
   depth : c.depth ≤ 3
   ctl : ctlOk c = true
   sp : c.all (fun i => !isa.writesSp i) = true
@@ -94,26 +97,29 @@ structure ArithImpl where
 
 /-- `FnOk` of code verified without stack, from evaluating it. -/
 theorem FnOk.of {k : Nat → Contract isa} {c : Prog isa} (h : Verified X86_64.target c (k 0))
-    (hn : c.allInstrs (fun i => !Taint.clobbers i .rsp) = true) (hd : c.depth ≤ 2) (hc : ctlOk c = true)
-    (hs : c.allInstrs (fun i => !isa.writesSp i) = true) : FnOk k c :=
-  ⟨h, Proof.MlKem.X86_64.nosp_of hn, hd, hc, Code.all_of_allInstrs hs⟩
+    (hn : c.allInstrs (fun i => !Taint.clobbers i .rsp && !touchesMxcsr i) = true) (hd : c.depth ≤ 2)
+    (hc : ctlOk c = true) (hs : c.allInstrs (fun i => !isa.writesSp i) = true) : FnOk k c :=
+  ⟨h, (Proof.MlKem.X86_64.nospMx_of hn).1, (Proof.MlKem.X86_64.nospMx_of hn).2, hd, hc, Code.all_of_allInstrs hs⟩
 
 /-- The tests of code that calls no deeper than `d`, for the kernel: one walk
-of the code for the two tests of `rsp`, with one match for each instruction
+of the code for the two tests of `rsp` and that of MXCSR, with one match for each instruction
 (`Proof/Framework/X86_64/InstrBits.lean`). -/
 noncomputable def fnOkB (d : Nat) (c : Prog isa) : Bool :=
-  c.allInstrs (hasBits (bSp + bNs)) && Nat.ble c.depth d && ctlOk c
+  c.allInstrs (hasBits (bMx + bSp + bNs)) && Nat.ble c.depth d && ctlOk c
 
 theorem fnOkB_spec {d : Nat} {c : Prog isa} (h : fnOkB d c = true) :
-    NoSp c ∧ c.depth ≤ d ∧ ctlOk c = true ∧ c.all (fun i => !isa.writesSp i) = true := by
+    NoSp c ∧ c.allInstrs (fun i => !touchesMxcsr i) = true ∧ c.depth ≤ d ∧ ctlOk c = true ∧
+      c.all (fun i => !isa.writesSp i) = true := by
   simp only [fnOkB, Bool.and_eq_true, Nat.ble_eq] at h
-  exact ⟨Proof.MlKem.X86_64.nosp_of (Code.noRsp_of_bits (m := bSp + bNs) rfl h.1.1), h.1.2, h.2,
-    Code.spSafe_of_bits (m := bSp + bNs) rfl h.1.1⟩
+  exact ⟨Proof.MlKem.X86_64.nosp_of (Code.noRsp_of_bits (m := bMx + bSp + bNs) rfl h.1.1),
+    Code.noTouchMx_of_bits (m := bMx + bSp + bNs) rfl h.1.1, h.1.2, h.2,
+    Code.spSafe_of_bits (m := bMx + bSp + bNs) rfl h.1.1⟩
 
 /-- `FnOk` of code verified without stack, from `fnOkB`. -/
 theorem FnOk.of_bits {k : Nat → Contract isa} {c : Prog isa} (h : Verified X86_64.target c (k 0))
     (hb : fnOkB 2 c = true) : FnOk k c :=
-  ⟨h, (fnOkB_spec hb).1, (fnOkB_spec hb).2.1, (fnOkB_spec hb).2.2.1, (fnOkB_spec hb).2.2.2⟩
+  have h' := fnOkB_spec hb
+  ⟨h, h'.1, h'.2.1, h'.2.2.1, h'.2.2.2.1, h'.2.2.2.2⟩
 
 /-- The tests of the SSE2 code's functions, in one declaration: sixteen
 functions, of four tests each. -/
@@ -144,10 +150,10 @@ def ArithImpl.sse2 : ArithImpl where
       useHint := FnOk.of_bits Round.useHint_verified sse2_checks.2.2.2.2.2.2.2.2.2.2.1
       rej4 :=
         have h := fnOkB_spec sse2_checks.2.2.2.2.2.2.2.2.2.2.2.1
-        ⟨Rej4.rejNTT4_verified, h.1, h.2.1, h.2.2.1, h.2.2.2, fun _ _ _ => Rej4.rejNTT4_ret⟩
+        ⟨Rej4.rejNTT4_verified, h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2, fun _ _ _ => Rej4.rejNTT4_ret⟩
       expandMask4 :=
         have h := fnOkB_spec sse2_checks.2.2.2.2.2.2.2.2.2.2.2.2.1
-        ⟨Mask4.expandMask4_verified, h.1, h.2.1, h.2.2.1, h.2.2.2⟩
+        ⟨Mask4.expandMask4_verified, h.1, h.2.1, h.2.2.1, h.2.2.2.1, h.2.2.2.2⟩
       dotInv := fun c hc => by
         rcases hc with rfl | rfl | rfl
         · exact FnOk.of_bits Arith.DotS.verified4 sse2_checks.2.2.2.2.2.2.2.2.2.2.2.2.2.1

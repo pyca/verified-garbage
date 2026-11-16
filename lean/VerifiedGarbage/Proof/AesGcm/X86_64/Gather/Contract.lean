@@ -112,7 +112,8 @@ def sealGatherPub (s₁ s₂ : State) : Prop :=
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧
     s₁.gpr .rsp = s₂.gpr .rsp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧ arg s₁ 2 = arg s₂ 2 ∧
     arg s₁ 3 = arg s₂ 3 ∧ arg s₁ 4 = arg s₂ 4 ∧ arg s₁ 5 = arg s₂ 5 ∧
-    ∀ i < (arg s₁ 1).toNat * 16, s₁.mem (arg s₁ 0 + BitVec.ofNat 64 i) = s₂.mem (arg s₁ 0 + BitVec.ofNat 64 i)
+    (∀ i < (arg s₁ 1).toNat * 16, s₁.mem (arg s₁ 0 + BitVec.ofNat 64 i) = s₂.mem (arg s₁ 0 + BitVec.ofNat 64 i)) ∧
+    s₁.mxcsr = s₂.mxcsr
 
 /-- What `vg_aes_gcm_seal_gather` leaves: `sealGatherPost`. -/
 def sealGatherPostG (s s' : State) : Prop :=

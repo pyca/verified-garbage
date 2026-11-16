@@ -127,11 +127,12 @@ structure Pub (s₀ s₀' : State) : Prop where
   rsp : s₀'.gpr .rsp = s₀.gpr .rsp
   a : ∀ i, i < 6 → stackArg s₀' i = stackArg s₀ i
   desc : ∀ j < Cnt s₀ * 16, s₀'.mem (Src s₀ + BitVec.ofNat 64 j) = s₀.mem (Src s₀ + BitVec.ofNat 64 j)
+  mx : s₀'.mxcsr = s₀.mxcsr
 
 theorem Pub.of {s₀ s₀' : State} (h : Proof.AesGcm.sealGatherPub s₀ s₀') : Pub s₀ s₀' := by
-  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, hd⟩ := h
+  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, hd, hm⟩ := h
   refine ⟨q₁.symm, q₂.symm, q₃.symm, q₄.symm, q₅.symm, q₆.symm, q₇.symm, fun i hi => ?_,
-    fun j hj => (hd j hj).symm⟩
+    fun j hj => (hd j hj).symm, hm.symm⟩
   rcases (by omega_using [hi] : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4 ∨ i = 5) with rfl | rfl | rfl | rfl | rfl | rfl
   exacts [a₀.symm, a₁.symm, a₂.symm, a₃.symm, a₄.symm, a₅.symm]
 
@@ -322,7 +323,8 @@ theorem rel_base {F₁ F₂ : State → Prop} {l : List Instr}
 
 theorem entry1_rel : RelCT isa (fun s₁ s₂ => Same s₀ s₁ ∧ Same s₀' s₂) (.block entry1) fun s₁ s₂ =>
     E1 s₀ s₁ ∧ E1 s₀' s₂ := by
-  refine pstep (F₁ := Same s₀) (F₂ := Same s₀') ?_ (fun _ h => entry1_ok hp h) (fun _ h => entry1_ok hp' h)
+  refine pstep (F₁ := Same s₀) (F₂ := Same s₀') ?_ (fun _ h => WP.mono_mx (by decide) (entry1_ok hp h) fun _ h₁ hm => ⟨h₁, hm.trans h.mx⟩)
+    (fun _ h => WP.mono_mx (by decide) (entry1_ok hp' h) fun _ h₁ hm => ⟨h₁, hm.trans h.mx⟩)
   rw [show entry1 = .mov .r11 (.mem (at_ .rsp 48)) :: entry1.tail from rfl]
   refine rel_wt [.rsp] (by simp) (fun _ _ h r hr => by
       simp only [List.mem_singleton] at hr; subst hr
@@ -339,8 +341,8 @@ theorem entry2_rel : RelCT isa (fun s₁ s₂ => E1 s₀ s₁ ∧ E1 s₀' s₂)
   pstep (rel_taint [.r11, .rsp] (fun _ _ h r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
-      · rw [h.1.1, h.2.1, pb.w]
-      · rw [h.1.2.1 _ (by decide) (by decide) (by decide), h.2.2.1 _ (by decide) (by decide) (by decide), pb.rsp])
+      · rw [h.1.1.1, h.2.1.1, pb.w]
+      · rw [h.1.1.2.1 _ (by decide) (by decide) (by decide), h.2.1.2.1 _ (by decide) (by decide) (by decide), pb.rsp])
     entry2_check) (fun _ => w_entry2 hp) (fun _ => w_entry2 hp')
 
 theorem init_rel (inl : Bool) (I : InitFn) : RelCT isa (fun s₁ s₂ => E2 s₀ s₁ ∧ E2 s₀' s₂) (callOr inl I.fn)
@@ -353,7 +355,7 @@ theorem init_rel (inl : Bool) (I : InitFn) : RelCT isa (fun s₁ s₂ => E2 s₀
   simp only [initK, initPub, enter_gpr _ _ (by decide : Reg.rdi ≠ .rsp), enter_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
     enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp), enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp), enter_rsp B₁.rsp,
     enter_rsp B₂.rsp, di₁, di₂, si₁, si₂, dx₁, dx₂, cx₁, cx₂, K, Nn, pb.rdi, pb.rdx, pb.rcx, pb.st, pb.rsp, SP,
-    and_self]
+    enter_mxcsr, B₁.mx, B₂.mx, pb.mx, and_self]
 
 theorem aadArgs_rel : RelCT isa (fun s₁ s₂ => Mid s₀ (AL s₀) 0 [] s₁ ∧ Mid s₀' (AL s₀') 0 [] s₂) (.block aadArgs)
     fun s₁ s₂ => P4 s₀ s₁ ∧ P4 s₀' s₂ := by
@@ -373,7 +375,8 @@ theorem aad_rel (inl : Bool) (A : AadFn) : RelCT isa (fun s₁ s₂ => P4 s₀ s
   simp only [aadK, aadPub, enter_gpr _ _ (by decide : Reg.rdi ≠ .rsp), enter_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
     enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp), enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
     enter_gpr _ _ (by decide : Reg.r8 ≠ .rsp), enter_rsp M₁.rsp, enter_rsp M₂.rsp, di₁, di₂, si₁, si₂, dx₁, dx₂,
-    cx₁, cx₂, r8₁, r8₂, K, Ad, AL, pb.rdi, pb.r8, pb.r9, pb.st, pb.rsp, SP, and_self]
+    cx₁, cx₂, r8₁, r8₂, K, Ad, AL, pb.rdi, pb.r8, pb.r9, pb.st, pb.rsp, SP, enter_mxcsr, M₁.mx, M₂.mx, pb.mx,
+    and_self]
 
 theorem finArgs_rel : RelCT isa (fun s₁ s₂ => Fin s₀ s₁ ∧ Fin s₀' s₂) (.block finArgs)
     fun s₁ s₂ => P7 s₀ s₁ ∧ P7 s₀' s₂ := by
@@ -393,7 +396,7 @@ theorem fin_rel (inl : Bool) (F : FinFn) : RelCT isa (fun s₁ s₂ => P7 s₀ s
     enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp), enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
     enter_gpr _ _ (by decide : Reg.r8 ≠ .rsp), enter_gpr _ _ (by decide : Reg.r9 ≠ .rsp), enter_rsp B₁.rsp,
     enter_rsp B₂.rsp, di₁, di₂, si₁, si₂, dx₁, dx₂, cx₁, cx₂, r8₁, r8₂, r9₁, r9₂, K, AL, pb.rdi, pb.rsi, pb.r9,
-    pb.st, pb.len, pb.tg, pb.rsp, SP, and_self]
+    pb.st, pb.len, pb.tg, pb.rsp, SP, enter_mxcsr, B₁.mx, B₂.mx, pb.mx, and_self]
 
 end
 
@@ -456,7 +459,8 @@ theorem sliceCall_ct (T : ToFn M) {ap ap' : BitVec 64} {A A' : List Byte} (hap :
     g _ _ (by decide : Reg.rsi ≠ .rsp), g _ _ (by decide : Reg.rdx ≠ .rsp), g _ _ (by decide : Reg.rcx ≠ .rsp),
     g _ _ (by decide : Reg.r8 ≠ .rsp), g _ _ (by decide : Reg.r9 ≠ .rsp), di₁, di₂, si₁, si₂, dx₁, dx₂, cx₁, cx₂,
     r8₁, r8₂, r9₁, r9₂, State.withRegions_gpr, State.callEntry_rsp, pushed_rsp, M₁.rsp, M₂.rsp, K, pb.rdi, pb.rsi,
-    pb.st, pb.rsp, SP, pb.dst, pb.gl (Nat.le_of_lt hi), pb.sb hi, pb.sl hi, hap, and_self]
+    pb.st, pb.rsp, SP, pb.dst, pb.gl (Nat.le_of_lt hi), pb.sb hi, pb.sl hi, hap, State.withRegions_mxcsr,
+    State.callEntry_mxcsr, pushed_mxcsr, M₁.mx, M₂.mx, pb.mx, and_self]
 
 /-- Slice `i`, in two runs. -/
 theorem slice_rel (T : ToFn M) {ap ap' : BitVec 64} {A A' : List Byte} (hap : ap = BitVec.ofNat 64 A.length)
@@ -546,7 +550,8 @@ theorem text_rel (inl : Bool) (A : AadFn) (T : ToFn M) :
   simp only [aadK, aadPub, enter_gpr _ _ (by decide : Reg.rdi ≠ .rsp), enter_gpr _ _ (by decide : Reg.rsi ≠ .rsp),
     enter_gpr _ _ (by decide : Reg.rdx ≠ .rsp), enter_gpr _ _ (by decide : Reg.rcx ≠ .rsp),
     enter_gpr _ _ (by decide : Reg.r8 ≠ .rsp), enter_rsp M₁.rsp, enter_rsp M₂.rsp, di₁, di₂, si₁, si₂, dx₁, dx₂,
-    cx₁, cx₂, r8₁, r8₂, K, AL, pl, pb.rdi, pb.r9, pb.st, pb.w, pb.rsp, SP, and_self]
+    cx₁, cx₂, r8₁, r8₂, K, AL, pl, pb.rdi, pb.r9, pb.st, pb.w, pb.rsp, SP, enter_mxcsr, M₁.mx, M₂.mx, pb.mx,
+    and_self]
 
 end
 

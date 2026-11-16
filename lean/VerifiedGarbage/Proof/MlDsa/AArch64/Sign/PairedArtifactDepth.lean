@@ -16,20 +16,20 @@ open VG VG.AArch64
 theorem earlyPairedSeq_dle {one two : Nat → Prog isa}
     (h1 : ∀ k, DLe 1 (one k)) (h2 : ∀ k, DLe 1 (two k)) :
     ∀ n a, DLe 1 (Impl.MlDsa.AArch64.Sign.Optimized.seqPairedOk one two a n)
-  | 0,_ => DLe.block []
+  | 0,_ => DLe.block [] rfl
   | 1,a => h1 a
   | n+2,a => DLe.seq (h2 a)
-      (DLe.ite (earlyPairedSeq_dle h1 h2 n (a+2)) (DLe.block []))
+      (DLe.ite (earlyPairedSeq_dle h1 h2 n (a+2)) (DLe.block [] rfl))
 
 theorem pairedChecks_dle (p : Spec.MlDsa.Params) :
     DLe 1 (Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks p) := by
-  have hn : DLe 1 Impl.MlDsa.AArch64.Optimized.Ntt.staticNtt := ⟨by decide +kernel⟩
-  have hm : DLe 1 (Impl.MlDsa.AArch64.Optimized.MultiplyInverse.staticCode true) := ⟨by decide +kernel⟩
-  have hz : DLe 1 Impl.MlDsa.AArch64.Optimized.Response.addNorm := ⟨by decide +kernel⟩
-  have hl : DLe 1 Impl.MlDsa.AArch64.Optimized.Response.subLowNorm := ⟨by decide +kernel⟩
-  have pz : DLe 1 (Impl.MlDsa.AArch64.Optimized.Paired.selected .z) := ⟨by decide +kernel⟩
-  have pr : DLe 1 (Impl.MlDsa.AArch64.Optimized.Paired.selected .r0) := ⟨by decide +kernel⟩
-  have ph : DLe 1 (Impl.MlDsa.AArch64.Optimized.Paired.selected .h) := ⟨by decide +kernel⟩
+  have hn : DLe 1 Impl.MlDsa.AArch64.Optimized.Ntt.staticNtt := ⟨by decide +kernel, by lit_decide⟩
+  have hm : DLe 1 (Impl.MlDsa.AArch64.Optimized.MultiplyInverse.staticCode true) := ⟨by decide +kernel, by lit_decide⟩
+  have hz : DLe 1 Impl.MlDsa.AArch64.Optimized.Response.addNorm := ⟨by decide +kernel, by lit_decide⟩
+  have hl : DLe 1 Impl.MlDsa.AArch64.Optimized.Response.subLowNorm := ⟨by decide +kernel, by lit_decide⟩
+  have pz : DLe 1 (Impl.MlDsa.AArch64.Optimized.Paired.selected .z) := ⟨by decide +kernel, by lit_decide⟩
+  have pr : DLe 1 (Impl.MlDsa.AArch64.Optimized.Paired.selected .r0) := ⟨by decide +kernel, by lit_decide⟩
+  have ph : DLe 1 (Impl.MlDsa.AArch64.Optimized.Paired.selected .h) := ⟨by decide +kernel, by lit_decide⟩
   unfold Impl.MlDsa.AArch64.Sign.Optimized.pairedChecks
   dle_tac
   · apply earlyPairedSeq_dle
@@ -56,11 +56,11 @@ theorem pairedSignWith_dle (v : Proof.Sha3.AArch64.Permutation)
   have hcommit := pairedCommit_dle v hp3
   have hb := pairedBall_dle v p
   have hc := pairedChecks_dle p
-  have hr := DLe.of_fd C.rejNTT.fd
-  have hr4 := DLe.of_fd C.rej4.fd
-  have hbp := DLe.of_fd C.bitPack.fd
-  have hhp := DLe.of_fd C.hintBitPack.fd
-  have hn : DLe 1 Impl.MlDsa.AArch64.Optimized.Response.canonicalize := ⟨by decide +kernel⟩
+  have hr := DLe.of_fd C.rejNTT.fd C.rejNTT.nd
+  have hr4 := DLe.of_fd C.rej4.fd C.rej4.nd
+  have hbp := DLe.of_fd C.bitPack.fd C.bitPack.nd
+  have hhp := DLe.of_fd C.hintBitPack.fd C.hintBitPack.nd
+  have hn : DLe 1 Impl.MlDsa.AArch64.Optimized.Response.canonicalize := ⟨by decide +kernel, by lit_decide⟩
   unfold Impl.MlDsa.AArch64.Sign.Optimized.signWith
   dle_tac
 

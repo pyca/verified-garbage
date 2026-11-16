@@ -63,7 +63,7 @@ def splitPubK (s₁ s₂ : State) : Prop :=
   s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧
     s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧ s₁.gpr .r9 = s₂.gpr .r9 ∧
     s₁.gpr .rsp = s₂.gpr .rsp ∧ arg s₁ 0 = arg s₂ 0 ∧ arg s₁ 1 = arg s₂ 1 ∧ arg s₁ 2 = arg s₂ 2 ∧
-    arg s₁ 3 = arg s₂ 3 ∧ arg s₁ 4 = arg s₂ 4
+    arg s₁ 3 = arg s₂ 3 ∧ arg s₁ 4 = arg s₂ 4 ∧ s₁.mxcsr = s₂.mxcsr
 
 def splitK (M : CtxMode) : Contract isa where
   pre := splitPreK M
@@ -122,7 +122,7 @@ theorem splitSpecP_post {M : CtxMode} {s s' : State} (h : (Proof.Gcm.sealSplitPr
 
 theorem splitSpec_pub {s₁ s₂ : State} (h : splitPubK s₁ s₂) :
     (Proof.Gcm.sealSplitContract X86_64.abi 2672).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, aMd⟩ := h
   sig_pub [Proof.Gcm.sealSplitContract, Proof.Gcm.sealSplitSig, X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.Gcm.sealSplitContract, Proof.Gcm.sealSplitSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg]
@@ -132,7 +132,7 @@ theorem splitSpec_pub {s₁ s₂ : State} (h : splitPubK s₁ s₂) :
 
 theorem splitSpecP_pub {s₁ s₂ : State} (h : splitPubK s₁ s₂) :
     (Proof.Gcm.sealSplitPrecomputedContract X86_64.abi 2672).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, aMd⟩ := h
   sig_pub [Proof.Gcm.sealSplitPrecomputedContract, Proof.Gcm.sealSplitPrecomputedSig, X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.Gcm.sealSplitPrecomputedContract, Proof.Gcm.sealSplitPrecomputedSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg]

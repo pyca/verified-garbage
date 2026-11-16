@@ -413,7 +413,8 @@ theorem zeroize_depth : 16 * Impl.Zeroize.AArch64.zeroizeWide.aarch64Depth ≤ 0
 theorem callWipeOk_consts {c₀ : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))} :
     CallWipeOk (abi.withConsts (c₀ :: cs)) :=
   fun h hk hl hps hi hn hn16 hd hpre hpost hpostOut hwiped hsat hleak =>
-    Verified.callWipeC' h Proof.Zeroize.AArch64.wideVerified hk hl hps hi hn hn16 hd zeroize_depth
+    Verified.callWipeC' h Proof.Zeroize.AArch64.wideVerified hk hl hps hi hn hn16 hd Proof.Zeroize.AArch64.wide_noDit
+      zeroize_depth
       (Nat.zero_le _) hpre hpost hpostOut hwiped hsat hleak
 
 /-! ## What the contracts read of the memory -/

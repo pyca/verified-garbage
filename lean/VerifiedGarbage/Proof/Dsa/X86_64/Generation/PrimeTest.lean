@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Dsa.X86_64.ProbablePrime.Params
 public import VerifiedGarbage.Proof.Dsa.X86_64.Generation.CodeSafety
 public import VerifiedGarbage.Proof.Framework.X86_64.Depth
+public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
 
 /-! # The probable-prime test parameter generation calls
 
@@ -19,6 +20,9 @@ structure PrimeTest where
   verified : Verified target code ProbablePrime.contract
   safe : generationSafe code
   depth : code.x86_64Depth ≤ ProbablePrime.stack
+  /-- It never touches MXCSR, so its callers' runs need not agree on it
+  (`Contract.mxFree`). -/
+  noMx : code.allInstrs (fun i => !touchesMxcsr i) = true
 
 /-- The call of the test. -/
 def PrimeTest.run (T : PrimeTest) : Prog isa := .call T.name T.code

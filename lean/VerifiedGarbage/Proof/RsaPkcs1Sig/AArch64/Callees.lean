@@ -57,6 +57,7 @@ def pdOf (v : PublicImpl) : PdChecked where
   depth := by rw [v.depth]; decide
   pos := by decide
   le := by decide
+  noDit := v.noDit
   suffix := v.suffix
   features := v.features
 
@@ -70,6 +71,7 @@ def privOf (v : CrtImpl) : PrivChecked where
   depth := by rw [privCode_depth]; decide
   pos := by decide
   le := by decide
+  noDit := privCode_noDit v
   suffix := v.suffix
   features := v.features
 
@@ -83,6 +85,7 @@ def privPOf (v : CrtImpl) : PrivPChecked where
   depth := by rw [privPCode_depth]; decide
   pos := by decide
   le := by decide
+  noDit := privPCode_noDit v
   suffix := v.suffix
   features := v.features
 

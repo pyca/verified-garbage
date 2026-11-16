@@ -38,22 +38,22 @@ open VG.Impl.MlDsa.X86_64.Arith (Backend)
 
 /-- A function of the polynomial arithmetic satisfies what the proofs of key generation need of it. -/
 theorem calleeOf {k : Nat → Contract isa} {c : Prog isa} (h : FnOk k c) : Callee c k :=
-  ⟨⟨0, by decide, h.ver⟩, h.nosp, h.depth⟩
+  ⟨⟨0, by decide, h.ver⟩, h.nosp, h.mx, h.depth⟩
 
 theorem prims_okWith (v : ArithImpl) : PrimsOk (primsWith v.code) where
   ntt := calleeOf v.ok.ntt
   add := calleeOf v.ok.add
-  rejNtt := (⟨⟨16, by decide, Sample.RejNttShort.verified⟩, nosp_of (by decide +kernel), by decide +kernel⟩ :
-    Callee prims.rejNtt _)
-  rejBounded := (⟨⟨16, by decide, Sample.RejBoundedShort.verified⟩, nosp_of (by decide +kernel), by decide +kernel⟩ :
-    Callee prims.rejBounded _)
-  power2Round := (⟨⟨0, by decide, Round.power2Round_verified⟩, nosp_of (by decide +kernel), by decide +kernel⟩ :
-    Callee prims.power2Round _)
-  simpleBitPack := (⟨⟨0, by decide, Pack.simpleBitPack_verified⟩, nosp_of (by decide +kernel),
-    by decide +kernel⟩ : Callee prims.simpleBitPack _)
-  bitPack := (⟨⟨0, by decide, Pack.bitPack_verified⟩, nosp_of (by decide +kernel), by decide +kernel⟩ :
-    Callee prims.bitPack _)
-  rej4 := ⟨v.ok.rej4.ver, v.ok.rej4.nosp, v.ok.rej4.depth⟩
+  rejNtt := (have h := nospMx_of (c := prims.rejNtt) (by decide +kernel)
+    ⟨⟨16, by decide, Sample.RejNttShort.verified⟩, h.1, h.2, by decide +kernel⟩ : Callee prims.rejNtt _)
+  rejBounded := (have h := nospMx_of (c := prims.rejBounded) (by decide +kernel)
+    ⟨⟨16, by decide, Sample.RejBoundedShort.verified⟩, h.1, h.2, by decide +kernel⟩ : Callee prims.rejBounded _)
+  power2Round := (have h := nospMx_of (c := prims.power2Round) (by decide +kernel)
+    ⟨⟨0, by decide, Round.power2Round_verified⟩, h.1, h.2, by decide +kernel⟩ : Callee prims.power2Round _)
+  simpleBitPack := (have h := nospMx_of (c := prims.simpleBitPack) (by decide +kernel)
+    ⟨⟨0, by decide, Pack.simpleBitPack_verified⟩, h.1, h.2, by decide +kernel⟩ : Callee prims.simpleBitPack _)
+  bitPack := (have h := nospMx_of (c := prims.bitPack) (by decide +kernel)
+    ⟨⟨0, by decide, Pack.bitPack_verified⟩, h.1, h.2, by decide +kernel⟩ : Callee prims.bitPack _)
+  rej4 := ⟨v.ok.rej4.ver, v.ok.rej4.nosp, v.ok.rej4.mx, v.ok.rej4.depth⟩
   dotInv := fun c hc => calleeOf (v.ok.dotInv c hc)
 
 /-! For any implementation of the polynomial arithmetic, that key

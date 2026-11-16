@@ -102,7 +102,7 @@ variable {M : CtxMode} {σ₁ σ₂ : State} (h₁ : Lay M σ₁) (h₂ : Lay M 
 include h₁ h₂ hq
 
 theorem resSome : (res σ₁).isSome = (res σ₂).isSome := by
-  obtain ⟨-, -, -, -, -, -, -, -, ql⟩ := hq
+  obtain ⟨-, -, -, -, -, -, -, -, ql, -⟩ := hq
   have r₁ := h₁.pre.rounds
   have r₂ := h₂.pre.rounds
   simp only [toLeak, r₁, r₂, not_true_eq_false, ↓reduceIte, List.cons.injEq, and_true] at ql
@@ -112,12 +112,12 @@ theorem resSome : (res σ₁).isSome = (res σ₂).isSome := by
 /-- The call, in two runs ready for it with the same public arguments. -/
 theorem call_rel (F : OpenFn M) {c₁ c₂ : State} (hc₁ : Ready σ₁ c₁) (hc₂ : Ready σ₂ c₂) :
     RelCT isa (Eq2 c₁ c₂) (.call F.fn.name F.fn.code) TT := by
-  obtain ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qa, ql⟩ := hq
+  obtain ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qa, ql, qm⟩ := hq
   have a1 := qa 1 (by decide)
   have a2 := qa 2 (by decide)
   have a4 := qa 4 (by decide)
   have a5 := qa 5 (by decide)
-  have hP := hPe ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qa, ql⟩
+  have hP := hPe ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qa, ql, qm⟩
   have hrd : rdC M σ₂ = rdC M σ₁ := by
     simp only [rdC, kR, nR, aR, tR, K, Nn, NL, Ad, AL, Tg, TL, qdi, qdx, qcx, q8, q9, a4, a5, hP]
   have hwr : wrC σ₂ = wrC σ₁ := by simp only [wrC, dR, Dst, L, a1, a2]
@@ -136,7 +136,8 @@ theorem call_rel (F : OpenFn M) {c₁ c₂ : State} (hc₁ : Ready σ₁ c₁) (
     rw [State.withRegions_gpr, State.callEntry_gpr _ hr]
   refine (RelCT.call F.ok F.ct (rdC M σ₁) (wrC σ₁) fun x y ⟨e₁, e₂⟩ => ?_).mono (fun a b h => h) fun _ _ h => h
   subst e₁ e₂
-  refine ⟨cp₁, cp₂, ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, fun i hi => ?_⟩, by rw [lk₁, lk₂, ql]⟩, cv₁, cw₁, cv₂, cw₂,
+  refine ⟨cp₁, cp₂, ⟨⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, fun i hi => ?_⟩, by rw [lk₁, lk₂, ql],
+    by simp only [State.withRegions_mxcsr, State.callEntry_mxcsr, hc₁.mx, hc₂.mx, qm]⟩, cv₁, cw₁, cv₂, cw₂,
     by rw [hc₁.rsp, hc₂.rsp, hP]⟩
   · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rdi, hc₂.rdi, K, K, qdi]
   · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rsi, hc₂.rsi, qsi]
@@ -158,9 +159,9 @@ theorem call_rel (F : OpenFn M) {c₁ c₂ : State} (hc₁ : Ready σ₁ c₁) (
 /-- After the call, in two runs that it left as they should. -/
 theorem after_rel {z₁ z₂ : State} (hz₁ : Called σ₁ z₁) (hz₂ : Called σ₂ z₂) :
     RelCT isa (Eq2 z₁ z₂) after TT := by
-  obtain ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qa, ql⟩ := hq
-  have hP := hPe ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qa, ql⟩
-  have hres := resSome h₁ h₂ ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qa, ql⟩
+  obtain ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qa, ql, qm⟩ := hq
+  have hP := hPe ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qa, ql, qm⟩
+  have hres := resSome h₁ h₂ ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qa, ql, qm⟩
   have a1 := qa 1 (by decide)
   have a2 := qa 2 (by decide)
   have tw (z : State) : ∃ t, runBlock isa [.alu32 .test .rax (.reg .rax)] z = some t ∧
@@ -203,7 +204,7 @@ theorem openTo_rel (w : Width) {M : CtxMode} (F : OpenFn M) {σ₁ σ₂ : State
   have h₁ := lay p₁
   have h₂ := lay p₂
   have hP := hPe hq
-  obtain ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qa, ql⟩ := hq
+  obtain ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qa, ql, qm⟩ := hq
   have a0 := qa 0 (by decide)
   have a1 := qa 1 (by decide)
   have a2 := qa 2 (by decide)
@@ -221,7 +222,7 @@ theorem openTo_rel (w : Width) {M : CtxMode} (F : OpenFn M) {σ₁ σ₂ : State
   refine rel_seq (rel_regs [.rsp] (by simp [hc₁.rsp, hc₂.rsp, hP]) callArgs_taint) (ready_wp h₁ hc₁)
     (ready_wp h₂ hc₂) fun r₁ r₂ hr₁ hr₂ => ?_
   -- The call, by its callee's contract, then what follows it.
-  have hq : toPub σ₁ σ₂ := ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qa, ql⟩
+  have hq : toPub σ₁ σ₂ := ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qa, ql, qm⟩
   exact rel_seq (call_rel h₁ h₂ hq F hr₁ hr₂) (called_wp F h₁ hr₁) (called_wp F h₂ hr₂)
     fun z₁ z₂ hz₁ hz₂ => after_rel h₁ h₂ hq hz₁ hz₂
 

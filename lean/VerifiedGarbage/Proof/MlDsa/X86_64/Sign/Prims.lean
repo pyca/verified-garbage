@@ -221,9 +221,9 @@ theorem ipAt_tr {t : Poly → Poly} {n : String} {c : Prog isa} (C : Callee (fun
     RelCT isa (fun x y => LRel D rbs wbs x y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f))
       (callP n c [.ptr f, .ptr (sc oPS)]) fun _ _ => True := by
   obtain ⟨w1, w2, i1, i2, _, b1, o1⟩ := ipChk_spec hc
-  refine callP_tr C.ver.1 C.ver.2.1 (by simp [Arg.ok, b1, o1]; decide)
+  refine callP_tr C.okMx (C.ctMx fun _ _ h => h) (by simp [Arg.ok, b1, o1]; decide)
     fun x y x1 y1 ⟨R, rx, ry⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
-      ⟨_, _, _, _, ipPre C.hS (At.of R.lx hmx kx) hc hAx rx, ipPre C.hS (At.of R.ly hmy ky) hc hAy ry, ?_,
+      ⟨_, _, _, _, ipPre (t := t) C.hS (At.of R.lx hmx kx) hc hAx rx, ipPre (t := t) C.hS (At.of R.ly hmy ky) hc hAy ry, ?_,
         by rw [kx.2.1, kx.2.2]; exact Covers.right (Covers.cons (R.lx.cW w1) (R.lx.cW w2)),
         by rw [kx.2.2]; exact Covers.cons (R.lx.cW w1) (R.lx.cW w2),
         by rw [ky.2.1, ky.2.2]; exact Covers.right (Covers.cons (R.ly.cW w1) (R.ly.cW w2)),
@@ -231,7 +231,7 @@ theorem ipAt_tr {t : Poly → Poly} {n : String} {c : Prog isa} (C : Callee (fun
         by rw [(At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp]⟩
   obtain ⟨hx1, hx2⟩ := argsIn2 hAx
   obtain ⟨hy1, hy2⟩ := argsIn2 hAy
-  sig_pub [inPlaceContract, inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, inPlaceContract, inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hx1, hx2, hy1, hy2, Arg.val, R.pa i1, R.pa i2,
     (At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp, and_self]
 
@@ -291,9 +291,9 @@ theorem mulAt_tr {P : Prims} (C : Callee (fun S => productContract P.montgomery 
     RelCT isa (fun x y => LRel D rbs wbs x y ∧ (Reduced x.mem (pa x f) ∧ Reduced x.mem (pa x g)) ∧
       (Reduced y.mem (pa y f) ∧ Reduced y.mem (pa y g))) (mulAt P h f g) fun _ _ => True := by
   obtain ⟨w1, i1, i2, i3, _, _, ok⟩ := mulChk_spec hc
-  refine callP_tr C.ver.1 C.ver.2.1 ok
+  refine callP_tr C.okMx (C.ctMx fun _ _ h => h) ok
     fun x y x1 y1 ⟨R, ⟨rfx, rgx⟩, ⟨rfy, rgy⟩⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
-      ⟨_, _, _, _, mulPre C.hS (At.of R.lx hmx kx) hc hAx rfx rgx, mulPre C.hS (At.of R.ly hmy ky) hc hAy rfy rgy, ?_,
+      ⟨_, _, _, _, mulPre (P := P) C.hS (At.of R.lx hmx kx) hc hAx rfx rgx, mulPre (P := P) C.hS (At.of R.ly hmy ky) hc hAy rfy rgy, ?_,
         by rw [kx.2.1, kx.2.2]; exact Covers.append_left (Covers.cons (R.lx.cR i2) (R.lx.cR i3)) (Covers.right (R.lx.cW w1)),
         by rw [kx.2.2]; exact R.lx.cW w1,
         by rw [ky.2.1, ky.2.2]; exact Covers.append_left (Covers.cons (R.ly.cR i2) (R.ly.cR i3)) (Covers.right (R.ly.cW w1)),
@@ -301,7 +301,7 @@ theorem mulAt_tr {P : Prims} (C : Callee (fun S => productContract P.montgomery 
         by rw [(At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp]⟩
   obtain ⟨hx1, hx2, hx3⟩ := argsIn3 hAx
   obtain ⟨hy1, hy2, hy3⟩ := argsIn3 hAy
-  sig_pub [productContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, productContract, mulSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hx1, hx2, hx3, hy1, hy2, hy3, Arg.val, R.pa i1, R.pa i2, R.pa i3,
     (At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp, and_self]
 
@@ -391,7 +391,7 @@ theorem dotAt_tr {P : Prims} {c : Nat} (C : Callee (fun S => dotInverseContract 
       ((∀ j < c, Reduced y.mem (pa y (famP f j))) ∧ ∀ j < c, Reduced y.mem (pa y (famP g j))))
       (dotInvAt P c h f g) fun _ _ => True := by
   obtain ⟨w1, w2, i1, i2, i3, i4, _, _, _, _, _, _, ok⟩ := dotChk_spec hc
-  refine callP_tr C.ver.1 C.ver.2.1 ok
+  refine callP_tr C.okMx (C.ctMx fun _ _ h => h) ok
     fun x y x1 y1 ⟨R, ⟨rfx, rgx⟩, ⟨rfy, rgy⟩⟩ ⟨⟨hAx, hmx⟩, kx⟩ ⟨⟨hAy, hmy⟩, ky⟩ =>
       ⟨_, _, _, _, dotPre C.hS (At.of R.lx hmx kx) hc hAx rfx rgx, dotPre C.hS (At.of R.ly hmy ky) hc hAy rfy rgy, ?_,
         by rw [kx.2.1, kx.2.2]; exact (Covers.append_left (Covers.cons (R.lx.cR i3) (R.lx.cR i4))
@@ -403,7 +403,7 @@ theorem dotAt_tr {P : Prims} {c : Nat} (C : Callee (fun S => dotInverseContract 
         by rw [(At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp]⟩
   obtain ⟨hx1, hx2, hx3, hx4⟩ := argsIn4 hAx
   obtain ⟨hy1, hy2, hy3, hy4⟩ := argsIn4 hAy
-  sig_pub [dotInverseContract, dotInverseSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, dotInverseContract, dotInverseSig, X86_64.abi, VG.X86_64.argRegs]
   simp only [hx1, hx2, hx3, hx4, hy1, hy2, hy3, hy4, Arg.val, R.pa i1, R.pa i2, R.pa i3, R.pa i4,
     (At.of R.lx hmx kx).rsp, (At.of R.ly hmy ky).rsp, R.rsp, and_self]
 

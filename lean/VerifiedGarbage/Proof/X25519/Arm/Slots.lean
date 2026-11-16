@@ -84,8 +84,7 @@ theorem frame_FA (_hA : acc + 128 ≤ 4096) {o : Nat} (ho : 64 ≤ o ∧ o + 64 
   rcases hr with rfl | rfl <;> exact Offset.sub _ (by omega_using [ho]) (by omega_arith)
 
 /-- `mul o x y` is a multiplication with its product at `acc`: `mul_ok`'s
-statement, which `mulAt acc` (`mulAt_mulOk`) and `vg_x25519_umaal`'s `mulUAt acc`
-meet. -/
+statement, which `mulAt acc` meets (`mulAt_mulOk`). -/
 def MulOk (acc : Nat) (mul : Nat → Nat → Nat → Prog isa) : Prop :=
   ∀ {e : Nat} {b : BitVec 32} {o x y : Nat}, o + 64 ≤ acc → x + 64 ≤ acc → y + 64 ≤ acc →
     ∀ {s : State}, CtxN e b s → Lim s.mem (State.addr b) x → Lim s.mem (State.addr b) y →

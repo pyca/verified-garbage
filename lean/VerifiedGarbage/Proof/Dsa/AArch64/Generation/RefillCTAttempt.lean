@@ -226,7 +226,8 @@ theorem stageArgs_ct (pLen : Nat) {hc : VG.Taint.Hint VG.AArch64.Taint.T}
 theorem stageCall_ct (G : GeneratorStage) (pLen : Nat) (hb : Generator.Supported pLen) :
     RelCT isa (Two (StageArgs pLen)) (G.run pLen) (Two StageCalled) := by
   refine two_post ?_ fun a u h => ?_
-  · refine RelCT.callEx (G.verified pLen hb).1 (G.verified pLen hb).2.1 fun u₁ u₂ ⟨a, h₁, h₂, _⟩ => ?_
+  · refine RelCT.callExDit (G.verified pLen hb).1 (G.verified pLen hb).2.1 (G.noDit pLen hb) (fun _ _ h => h)
+      fun u₁ u₂ ⟨a, h₁, h₂, _⟩ => ?_
     obtain ⟨hp, s₁, ⟨W₁, m₁, _, bp₁, be₁, bq₁⟩, h0₁, h1₁, h2₁, h3₁, hm₁, hsp₁, hr₁, hw₁⟩ := h₁
     obtain ⟨_, s₂, ⟨W₂, m₂, _, bp₂, be₂, bq₂⟩, h0₂, h1₂, h2₂, h3₂, hm₂, hsp₂, hr₂, hw₂⟩ := h₂
     have E₁ := generatorCall_entry m₁ a.value a.qval a.domain a.qfit a.qpos bp₁ be₁ bq₁ h0₁ h1₁ h2₁ h3₁ hm₁ hsp₁

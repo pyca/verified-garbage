@@ -45,10 +45,10 @@ open VG.Proof.Gcm.X86_64.Stitch (CtxMode)
 theorem encrypt_wp {M : CtxMode} (T : BlkToFn M) (E : EncFn M) {s : State}
     (hpre : Proof.AesGcm.streamToPreM M s) : WP isa (encrypt T.fn E.fn) s (Done s) := by
   have hp := SP'.ofM hpre
-  refine WP.seq (WP.mono (entry_ok hp) fun s₁ ⟨h11, hg, hk, hf, hrd, hwr⟩ => ?_)
+  refine WP.seq (WP.mono_mx (by decide) (entry_ok hp) fun s₁ ⟨h11, hg, hk, hf, hrd, hwr⟩ hmx => ?_)
   have M₁ := mid_entry hp (hg _ (by decide) (by decide) (by decide))
     (fun r hr => hg r (by rintro rfl; simp [calleeSaved] at hr) (by rintro rfl; simp [calleeSaved] at hr)
-      (by rintro rfl; simp [calleeSaved] at hr)) hk hf hrd hwr
+      (by rintro rfl; simp [calleeSaved] at hr)) hk hf hrd hwr hmx
   exact WP.seq (WP.mono (head_ok hp E ⟨M₁, h11, hg _ (by decide) (by decide) (by decide)⟩)
     fun _ ⟨_, M₂⟩ => WP.seq (WP.mono (blocks_ok hp T M₂) fun _ ⟨_, M⟩ => rest_ok hp E M))
 

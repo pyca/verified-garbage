@@ -96,7 +96,7 @@ theorem encrypt_verified (v : BlocksImpl) (z : ZeroizeImpl) :
     (i := 4)
     (Verified.tail_of_written (Proof.Aes.encryptBlocks_keyed (enc_verified v)) v.encWrittenOk args_length)
     z.verified (by decide) rfl rfl rfl (by have := v.encWrittenLe; simp only [Elem.size]; omega_using [this])
-    (by have := v.encWrittenLe; omega_using [this]) (by decide) v.encSpSafe (by rw [v.encNoStack]) z.spSafe
+    (by have := v.encWrittenLe; omega_using [this]) (by decide) v.encSpSafe (by rw [v.encNoStack]) z.spSafe z.noMx
     (by rw [z.xd]) (Nat.le_refl _) (pre_local 64) (postTail_local 64 _ _) (postTail_out 64 _ v.encWrittenLe)
     (wipedTail 64 _ _) (sat _)
 
@@ -108,7 +108,7 @@ theorem decrypt_verified (v : BlocksImpl) (z : ZeroizeImpl) :
     (i := 4)
     (Verified.tail_of_written (Proof.Aes.decryptBlocks_keyed (dec_verified v)) v.decWrittenOk args_length)
     z.verified (by decide) rfl rfl rfl (by have := v.decWrittenLe; simp only [Elem.size]; omega_using [this])
-    (by have := v.decWrittenLe; omega_using [this]) (by decide) v.decSpSafe (by rw [v.decNoStack]) z.spSafe
+    (by have := v.decWrittenLe; omega_using [this]) (by decide) v.decSpSafe (by rw [v.decNoStack]) z.spSafe z.noMx
     (by rw [z.xd]) (Nat.le_refl _) (pre_local 64) (postTail_local 64 _ _) (postTail_out 64 _ v.decWrittenLe)
     (wipedTail 64 _ _) (sat _)
 

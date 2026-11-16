@@ -292,15 +292,15 @@ theorem ipwAt_tr {t : Poly → Poly} {n : String} {c : Prog isa} (C : CalleeOk c
     {P : State → State → Prop}
     (hP : ∀ x y, P x y → Lay rbs wbs x ∧ Lay rbs wbs y ∧ Reduced x.mem (pa x f) ∧ Reduced y.mem (pa y f) ∧ SameB x y) :
     RelCT isa P (callAt n c (ipwArgs f w)) fun _ _ => True := by
-  refine callAt_tr C.correct C.ct (ipw_args hS hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
+  refine callAt_tr C.okMx (C.ctMx fun _ _ h => h) (ipw_args hS hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
   · intro x y x1 y1 hp h1 h2
     obtain ⟨Lx, Ly, rx, ry, e⟩ := hP x y hp
-    refine ⟨_, _, _, _, ipw_pre Lx hc rx h1, ipw_pre Ly hc ry h2, ?_, (ipw_cov Lx hc).1, (ipw_cov Lx hc).2,
+    refine ⟨_, _, _, _, ipw_pre (t := t) Lx hc rx h1, ipw_pre (t := t) Ly hc ry h2, ?_, (ipw_cov Lx hc).1, (ipw_cov Lx hc).2,
       (ipw_cov Ly hc).1, (ipw_cov Ly hc).2, e.2⟩
     simp only [ipwChk, Bool.and_eq_true] at hc
     have hb : f.1 ∈ bases := ptr_bs hS hc.1.1.1.2
     have hw : w.1 ∈ bases := ptr_bs hS hc.1.1.2
-    sig_pub [inPlaceContract, inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
+    sig_pub [Contract.mxFree, inPlaceContract, inPlaceSig, X86_64.abi, VG.X86_64.argRegs]
     rw [h1.r0, h2.r0, h1.r1, h2.r1, h1.rsp, h2.rsp]
     exact ⟨by rw [e.2], by simp only [Arg.val]; rw [e.pa hb], by simp only [Arg.val]; rw [e.pa hw]⟩
 

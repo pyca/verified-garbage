@@ -85,11 +85,11 @@ theorem gatherPost_of {s s' : State} (h : gatherPost s s') :
 
 theorem gatherPub_of {s₁ s₂ : State} (hp : (Proof.AesGcm.sealGatherRoundsContract AArch64.abi 2592).pub s₁ s₂) :
     gatherPub s₁ s₂ := by
-  sig_pub [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre,
+  sig_pub_keep [Proof.AesGcm.sealGatherRoundsContract, Spec.Gcm.sealGatherSig, Spec.Gcm.sealGatherPre,
     AArch64.abi, AArch64.argRegs, stackArgs_three, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
-  obtain ⟨qsp, q0, q1, q2, q3, q4, q5, q6, q7, a0, a1, a2, hd⟩ := hp
-  exact ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, a0, a1, a2, hd⟩
+  obtain ⟨qsp, qd, q0, q1, q2, q3, q4, q5, q6, q7, a0, a1, a2, hd⟩ := hp
+  exact ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qd, a0, a1, a2, hd⟩
 
 /-- A state satisfying the precondition of `vg_aes_gcm_seal_gather`: no
 slices, no nonce, additional data or text; the tag at `0x5000`. -/

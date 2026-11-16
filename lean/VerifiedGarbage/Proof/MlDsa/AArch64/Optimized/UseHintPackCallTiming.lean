@@ -84,7 +84,7 @@ open VG.Impl.MlDsa.AArch64.Optimized.UseHintPack (prog)
 open VG.Proof.MlDsa.Arith (polyRegion)
 
 theorem callee (S : Nat) {g : Nat} (hg : VG.Proof.MlDsa.AArch64.Round.IsG g) : CalleeOk S prog (useHintPackContract g abi) :=
-  ⟨(pack_verified hg).1,(pack_verified hg).2.1,Nat.zero_le _⟩
+  CalleeOk.of_ct (pack_verified hg).1 (pack_verified hg).2.1 (by lit_decide) (fun _ _ h => h) (Nat.zero_le _)
 
 abbrev args (out a b : Ptr) (g : Nat) : List (Reg × Arg) :=
   [(.x0,.ptr out),(.x1,.ptr a),(.x2,.ptr b),(.x3,.imm g)]

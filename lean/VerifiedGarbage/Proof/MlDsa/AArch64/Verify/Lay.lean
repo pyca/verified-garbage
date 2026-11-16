@@ -98,6 +98,11 @@ theorem vPub_eq {p : Params} {S : Nat} {σ₁ σ₂ : State} (h : vPub p S σ₁
   obtain ⟨h1, h2⟩ := List.append_inj h12 (by simp only [Proof.MlKem.bytesAt_length])
   exact ⟨hsp, h1, h2, h3, e0, e1, e2, e3⟩
 
+theorem vPub_dit {p : Params} {S : Nat} {σ₁ σ₂ : State} (h : vPub p S σ₁ σ₂) : σ₁.dit = σ₂.dit := by
+  unfold vPub at h
+  sig_pub_keep [Spec.MlDsa.verifyContract, Spec.MlDsa.verifySig, AArch64.abi, VG.AArch64.argRegs] at h
+  exact h.2.1
+
 /-! ## The layout -/
 
 /-- `pk`, `mu` and `sig`. -/

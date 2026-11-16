@@ -54,7 +54,7 @@ def KeygenCheckRelated (v : Backend) (a b : State) : Prop :=
 
 theorem keygen_check_ct (v : Backend) : RelCT isa (KeygenCheckRelated v)
     (.call (keygenCheckName v) (Generate.checkParameters v.mul)) (fun _ _ => True) := by
-  apply VG.AArch64.RelCT.callEx v.parametersVerified.1 v.parametersVerified.2.1
+  apply VG.AArch64.RelCT.callExDit v.parametersVerified.1 v.parametersVerified.2.1 v.parametersNoDit (fun _ _ h => h)
   intro a b ⟨s, t, hs, ht, ha, hb, ⟨a1, a2, a3, a4, a5, a6⟩, ⟨b1, b2, b3, b4, b5, b6⟩, hp⟩
   obtain ⟨hca, hwa⟩ := keygen_check_covers hs ha.rd ha.wr
   obtain ⟨hcb, hwb⟩ := keygen_check_covers ht hb.rd hb.wr
@@ -88,7 +88,7 @@ def KeygenDeriveRelated (v : Backend) (a b : State) : Prop :=
 
 theorem keygen_derive_ct (v : Backend) : RelCT isa (KeygenDeriveRelated v)
     (.call (keygenDeriveName v) (Generate.deriveChecked v.mul)) (fun _ _ => True) := by
-  apply VG.AArch64.RelCT.callEx v.deriveCheckedVerified.1 v.deriveCheckedVerified.2.1
+  apply VG.AArch64.RelCT.callExDit v.deriveCheckedVerified.1 v.deriveCheckedVerified.2.1 v.deriveCheckedNoDit (fun _ _ h => h)
   intro a b ⟨s, t, hs, ht, _, _, ha, hb, ⟨a1, a2, a3, a4, a5, a6, a7, a8, aw⟩, ⟨b1, b2, b3, b4, b5, b6, b7, b8, bw⟩, hp, hst,
     hcs, hct⟩
   obtain ⟨hca, hwa⟩ := keygen_derive_covers hs ha.rd ha.wr
@@ -102,7 +102,7 @@ theorem keygen_derive_ct (v : Backend) : RelCT isa (KeygenDeriveRelated v)
   have hB : stackArg (b.callEntry.withRegions (keygenDeriveRd t) (keygenDeriveWr t)) 0 = stackArg t 2 :=
     (random_call_stackArg hb.sp _ _ 0).trans bw
   sig_pub [Spec.Dsa.deriveKeyDomainCheckedContract, Spec.Dsa.deriveKeySig, abi, argRegs, deriveStackArgs]
-  simp only [hA, hB, List.getD_cons_succ, List.getD_cons_zero]
+  simp only [stackArg_withDit, hA, hB, List.getD_cons_succ, List.getD_cons_zero]
   rw [a3, a4, a5, a6, a7, a8, b3, b4, b5, b6, b7, b8,
     keygen_bytes_params ha, keygen_bytes_params hb, a1, a2, b1, b2, ha.sp, hb.sp]
   refine ⟨by rw [hp.base], ?_, hp.regs .x0 (by decide), hp.regs .x1 (by decide), hp.regs .x3 (by decide),

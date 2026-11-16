@@ -108,7 +108,7 @@ theorem rej4At_tr {P : Prims} (C : CalleeOk P.rej4 (rejNTT4Contract X86_64.abi 2
     (hQ : ∀ x y, Q x y → Lay rbs wbs x ∧ Lay rbs wbs y ∧ SameB x y ∧
       bytesAt x.mem (pa x (sc oSB4)) 136 = bytesAt y.mem (pa y (sc oSB4)) 136) :
     RelCT isa Q (rej4At P a w) fun _ _ => True := by
-  refine callAt_tr C.correct C.ct (rej4_args hS hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
+  refine callAt_tr C.okMx (C.ctMx fun _ _ h => h) (rej4_args hS hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
   intro x y x1 y1 hp h1 h2
   obtain ⟨Lx, Ly, e, eb⟩ := hQ x y hp
   refine ⟨_, _, _, _, rej4_pre Lx hc h1, rej4_pre Ly hc h2, ?_, (rej4_cov Lx hc).1, (rej4_cov Lx hc).2,
@@ -116,7 +116,7 @@ theorem rej4At_tr {P : Prims} (C : CalleeOk P.rej4 (rejNTT4Contract X86_64.abi 2
   have hc' := hc
   simp only [rej4Chk, Bool.and_eq_true] at hc'
   obtain ⟨⟨⟨⟨⟨_, c4⟩, c5⟩, c6⟩, _⟩, _⟩ := hc'
-  sig_pub [rejNTT4Contract, rejNTT4Sig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, rejNTT4Contract, rejNTT4Sig, X86_64.abi, VG.X86_64.argRegs]
   rw [h1.r0, h1.r1, h1.r2, h2.r0, h2.r1, h2.r2, h1.1.2, h2.1.2, h1.rsp, h2.rsp]
   simp only [Arg.val]
   rw [Lx.wbytesAt c4, Ly.wbytesAt c4, eb]
@@ -198,7 +198,7 @@ theorem ballAt_tr {P : Prims} (C : CalleeOk P.ball (sampleInBallContract X86_64.
     (hQ : ∀ x y, Q x y → Lay rbs wbs x ∧ Lay rbs wbs y ∧ SameB x y ∧
       bytesAt x.mem (pa x ct) len = bytesAt y.mem (pa y ct) len) :
     RelCT isa Q (ballAt P ct len tau c) fun _ _ => True := by
-  refine callAt_tr C.correct C.ct (ball_args hS hp hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
+  refine callAt_tr C.okMx (C.ctMx fun _ _ h => h) (ball_args hS hp hc) (by simp only [List.map_cons, List.map_nil]; decide) ?_
   intro x y x1 y1 hq h1 h2
   obtain ⟨Lx, Ly, e, eb⟩ := hQ x y hq
   refine ⟨_, _, _, _, ball_pre Lx hp hc h1, ball_pre Ly hp hc h2, ?_, (ball_cov Lx hc).1, (ball_cov Lx hc).2,
@@ -208,7 +208,7 @@ theorem ballAt_tr {P : Prims} (C : CalleeOk P.ball (sampleInBallContract X86_64.
   obtain ⟨⟨⟨⟨⟨_, c4⟩, c5⟩, c6⟩, _⟩, _⟩ := hc'
   have hl : len < 2 ^ 31 := by
     simp only [ballParams, List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hp; omega_using [hp]
-  sig_pub [sampleInBallContract, sampleInBallSig, X86_64.abi, VG.X86_64.argRegs]
+  sig_pub [Contract.mxFree, sampleInBallContract, sampleInBallSig, X86_64.abi, VG.X86_64.argRegs]
   rw [h1.r0, h1.r1, h1.r2, h1.r3, h1.r4, h2.r0, h2.r1, h2.r2, h2.r3, h2.r4, h1.1.2, h2.1.2, h1.rsp, h2.rsp]
   simp only [Arg.val]
   rw [imm64 (show len < 2 ^ 64 by omega_using [hl]), Lx.wbytesAt c4, Ly.wbytesAt c4, eb]

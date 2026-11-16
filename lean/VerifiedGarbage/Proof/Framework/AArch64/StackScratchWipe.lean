@@ -293,7 +293,7 @@ theorem Verified.stackScratchWiped {c : Prog isa}
   · obtain ⟨u₁, _, _, f₁, _, _, p₁, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, p₂, x₂, _⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, p₁, p₂]
-    have hsp₁₂ : s₁.sp = s₂.sp := ((pub_regs (by omega_using [hk])).mp hp).1.1
+    have hsp₁₂ : s₁.sp = s₂.sp := ((pub_regs (by omega_using [hk])).mp hp).1.1.1
     rw [hct _ _ _ _ _ _ (narrow_pre hk hb h₁) (narrow_pre hk hb h₂) (narrow_pub hk hp) f₁ f₂,
       hsp₁₂]
 

@@ -573,6 +573,13 @@ theorem codeP_verified (v : CrtImpl) :
   Verified.of_correct (fun s h => codeP_correct v s h) (codeP_constantTime v)
     private_checked_precomputed_implies
 
+/-- `vg_rsa_private_checked_precomputed` never touches PSTATE.DIT, its callees not either. -/
+theorem privPCode_noDit (v : CrtImpl) : (privPCode v).all (fun i => !i.touchesDit) = true := by
+  simp only [privPCode, codeP, bodyP, checkWith, pcCopy, tail, seqs, List.cons_append, List.nil_append,
+    Code.all, v.crtPNoDit, v.pdNoDit, VG.Impl.Bignum.AArch64.copyWords, VG.Impl.Bignum.AArch64.countLoop, cmpLoop,
+    releaseLoop, Bool.true_and]
+  decide
+
 /-- Its frames, as `vg_rsa_private_checked`'s. -/
 theorem privPCode_depth (v : CrtImpl) : (privPCode v).aarch64Depth = stackBytes / 16 := by
   simp only [privPCode, codeP, bodyP, checkWith, pcCopy, tail, seqs, List.cons_append, List.nil_append,

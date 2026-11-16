@@ -17,14 +17,14 @@ open VG.Impl.MlDsa.AArch64.Optimized.Ntt
 its callee contract rather than being silently added to the caller's memory. -/
 theorem positiveNtt_callee (S : Nat) :
     CalleeOk S staticNtt (positiveNttContract (abi.withConsts nttConsts)) := by
-  refine ⟨positiveNtt_verified.1,positiveNtt_verified.2.1,?_⟩
+  refine CalleeOk.of_ct positiveNtt_verified.1 positiveNtt_verified.2.1 (by lit_decide) (fun _ _ h => h) ?_
   change 0≤S
   exact Nat.zero_le _
 
 /-- The separate-source entry has the same zero-stack, table-aware boundary. -/
 theorem positiveNttOut_callee (S : Nat) :
     CalleeOk S outNtt (positiveNttOutContract (abi.withConsts nttConsts)) := by
-  refine ⟨positiveNttOut_verified.1,positiveNttOut_verified.2.1,?_⟩
+  refine CalleeOk.of_ct positiveNttOut_verified.1 positiveNttOut_verified.2.1 (by lit_decide) (fun _ _ h => h) ?_
   change 0≤S
   exact Nat.zero_le _
 

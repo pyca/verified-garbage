@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.MillerRabin.AArch64.Kernel
 import VerifiedGarbage.Proof.MillerRabin.AArch64.Verified
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 
 /-! # Shared round implementations for generic callers -/
 
@@ -22,6 +23,9 @@ structure RoundImpl where
   /-- Its Montgomery multiplication has no frames, so a caller of it that is
   called itself uses no stack (e.g. `vg_ffdh_parameter_candidate`). -/
   mmNoFrames : ∀ o a b, (mont.mm o a b).noFrames = true
+  /-- Neither touches PSTATE.DIT. -/
+  noDit : (round roundMont.mm).all (fun i => !i.touchesDit) = true
+  mmNoDit : ∀ o a b, (mont.mm o a b).all (fun i => !i.touchesDit) = true
   suffix : String
   features : List String
 

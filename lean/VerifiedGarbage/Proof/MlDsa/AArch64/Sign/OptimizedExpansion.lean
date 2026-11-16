@@ -25,13 +25,22 @@ open VG.Proof.MlDsa.AArch64.Message
 
 theorem expandA_depth {P : Prims} {S : Nat} (hp : PrimsOk P S) (p : Params) :
     16*(Impl.MlDsa.AArch64.Sign.expandA P p).aarch64Depth≤S := by
-  have hr : DLe (S/16) P.rejNTT := ⟨by have := hp.rejNTT.fd; omega_using [this]⟩
-  have h4 : DLe (S/16) P.rej4 := ⟨by have := hp.rej4.fd; omega_using [this]⟩
+  have hr : DLe (S/16) P.rejNTT := ⟨by have := hp.rejNTT.fd; omega_using [this], hp.rejNTT.nd⟩
+  have h4 : DLe (S/16) P.rej4 := ⟨by have := hp.rej4.fd; omega_using [this], hp.rej4.nd⟩
   have hd : DLe (S/16) (Impl.MlDsa.AArch64.Sign.expandA P p) := by
     unfold Impl.MlDsa.AArch64.Sign.expandA
     dle_tac
   have := hd.le
   omega_using [this]
+
+theorem expandA_noDit {P : Prims} {S : Nat} (hp : PrimsOk P S) (p : Params)  :
+    (Impl.MlDsa.AArch64.Sign.expandA P p).all (fun i => !i.touchesDit) = true := by
+  have hr : DLe (S/16) P.rejNTT := ⟨by have := hp.rejNTT.fd; omega_using [this], hp.rejNTT.nd⟩
+  have h4 : DLe (S/16) P.rej4 := ⟨by have := hp.rej4.fd; omega_using [this], hp.rej4.nd⟩
+  have hd : DLe (S/16) (Impl.MlDsa.AArch64.Sign.expandA P p) := by
+    unfold Impl.MlDsa.AArch64.Sign.expandA
+    dle_tac
+  exact hd.nd
 
 /-- Matrix expansion retains the immutable root tables without changing
 its sampled values, public failure behavior, or instruction sequence. -/

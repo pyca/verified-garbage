@@ -343,33 +343,36 @@ theorem call_cin {p : SearchPublic} {used : Nat} {T : Addr} {u : State} {m : Mem
     toNat_ofNat_lt (by have := hf.rand64; omega_using [this])
   have tz : (BitVec.ofNat 64 (p.Z / 8)).toNat = p.Z / 8 := toNat_ofNat_lt (by have := hf.nS; omega_using [this])
   have hsp := callSp_toNat hf.room
-  have hlt := hf.top
-  have hroom := hf.room
+  have z8 := hf.z8
   have hsa : stackArgAddr (callState p used T u) 0 = callSp p := by
     simp only [stackArgAddr, State.withRegions_sp, State.callEntry_sp, hu, Nat.mul_zero, BitVec.add_zero]
   have hcs : (callState p used T u).sp = callSp p := by
     simp only [State.withRegions_sp, State.callEntry_sp, hu]
+  -- stated once: as arguments of the `simp only` below they were elaborated again for each of its goals
+  have g0 := call_gpr (p := p) (used := used) (T := T) (u := u) (by decide : Reg.a0 ∉ linkRegs)
+  have g1 := call_gpr (p := p) (used := used) (T := T) (u := u) (by decide : Reg.a1 ∉ linkRegs)
+  have g2 := call_gpr (p := p) (used := used) (T := T) (u := u) (by decide : Reg.a2 ∉ linkRegs)
+  have g3 := call_gpr (p := p) (used := used) (T := T) (u := u) (by decide : Reg.a3 ∉ linkRegs)
+  have g4 := call_gpr (p := p) (used := used) (T := T) (u := u) (by decide : Reg.a4 ∉ linkRegs)
+  have g5 := call_gpr (p := p) (used := used) (T := T) (u := u) (by decide : Reg.a5 ∉ linkRegs)
+  have g6 := call_gpr (p := p) (used := used) (T := T) (u := u) (by decide : Reg.a6 ∉ linkRegs)
+  have g7 := call_gpr (p := p) (used := used) (T := T) (u := u) (by decide : Reg.a7 ∉ linkRegs)
+  have hFA := rF_rA p
+  have hsp16 := hf.sp16
+  -- `hf`'s facts as hypotheses, for one `assumption`: an `exact hf.x` for each was tried in turn on every goal
+  cases hf
   constructor
   all_goals simp only [Cand.cO, Cand.cU, Cand.cE, Cand.cP, Cand.cR, Cand.cS, Cand.cA, Cand.cF,
-    call_gpr (by decide : Reg.a0 ∉ linkRegs), call_gpr (by decide : Reg.a1 ∉ linkRegs),
-    call_gpr (by decide : Reg.a2 ∉ linkRegs), call_gpr (by decide : Reg.a3 ∉ linkRegs),
-    call_gpr (by decide : Reg.a4 ∉ linkRegs), call_gpr (by decide : Reg.a5 ∉ linkRegs),
-    call_gpr (by decide : Reg.a6 ∉ linkRegs), call_gpr (by decide : Reg.a7 ∉ linkRegs),
-    call_stackArg, a0, a1, a2, r3, r4, r5, r6, r7, r8, r9, r10, tl, te, tp, tr, tz, hf.z8, hsa, hcs,
+    g0, g1, g2, g3, g4, g5, g6, g7,
+    call_stackArg, a0, a1, a2, r3, r4, r5, r6, r7, r8, r9, r10, tl, te, tp, tr, tz, z8, hsa, hcs,
     State.withRegions_rd, State.withRegions_wr, callReads, callWrites]
   all_goals first
     | (simp only [List.mem_cons, true_or, or_true]; done)
     | rfl
+    | with_reducible assumption
     | omega
-    | exact hf.oU | exact hf.oE | exact hf.oP | exact hf.oR | exact hf.oS | exact hf.oA
-    | exact hf.uE | exact hf.uP | exact hf.uR | exact hf.uS | exact hf.uA | exact hf.eS
-    | exact hf.pS | exact hf.rS' | exact hf.sA | exact hf.Fo | exact hf.Fu | exact hf.Fe
-    | exact hf.Fp | exact hf.Fr | exact hf.FS | exact rF_rA p | exact hf.nO | exact hf.nU
-    | exact hf.nE | exact hf.nP | exact hf.nR | exact hf.nS | exact hf.len | exact hf.e1
-    | exact hf.e8 | exact hf.plen | exact hf.scratch
     | (rw [hsp]; have h496 : stackUse = 496 := rfl; omega)
-    | (rw [hsp]; have h496 : stackUse = 496 := rfl; have := hf.sp16; omega_using [this])
-    | exact hf.alU | exact hf.alS
+    | (rw [hsp]; have h496 : stackUse = 496 := rfl; omega_using [hsp16])
 
 /-- The table's address. -/
 abbrev tabAddr (s : State) : Addr := s.syms Impl.RsaKeyGen.TrialTable32.symbol

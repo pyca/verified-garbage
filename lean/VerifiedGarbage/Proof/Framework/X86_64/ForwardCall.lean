@@ -419,13 +419,13 @@ theorem narrowF_pub (hk : 6 ≤ (sig.words abi.ptrBits).length) (hb : 8 * nStack
     (hleak : Sig.LeakLocalL abi.ptrBits sig leak := by trivial) :
     (sig.contract abi pre post wa stack leak).pub (narrowF sig bytes s₁) (narrowF sig bytes s₂) := by
   rw [pubL_args hk] at hp
-  obtain ⟨⟨hsp, hlk⟩, hpa, hdesc⟩ := hp
-  obtain ⟨e₁, -, -, a₁, -⟩ := narrowF_facts hk hb hb1 h₁
-  obtain ⟨e₂, -, -, a₂, f₂⟩ := narrowF_facts hk hb hb1 h₂
+  obtain ⟨⟨⟨hsp, hmx⟩, hlk⟩, hpa, hdesc⟩ := hp
+  obtain ⟨e₁, -, m₁, a₁, -⟩ := narrowF_facts hk hb hb1 h₁
+  obtain ⟨e₂, -, m₂, a₂, f₂⟩ := narrowF_facts hk hb hb1 h₂
   have l₁ := allArgs_length sig s₁ hk
   refine (pubL_args hk).mpr ?_
   rw [e₁, e₂, a₁, a₂, hsp]
-  refine ⟨⟨rfl, ?_⟩, hpa, fun r hr i hi => ?_⟩
+  refine ⟨⟨⟨rfl, by rw [m₁, m₂, hmx]⟩, ?_⟩, hpa, fun r hr i hi => ?_⟩
   · cases leak with
     | none => trivial
     | some f =>
@@ -654,7 +654,7 @@ theorem Verified.forward {name : String} {body : Prog isa}
       (fun r hr x hx => narrowF_agreeLists hk hb0 hb1 hs r ((narrowF_lists hk hb0 hb1 hs) ▸ hr) x hx) hq
   · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
     obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
-    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pubL_args hk).mp hp).1.1,
+    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pubL_args hk).mp hp).1.1.1,
       hct _ _ _ _ _ _ (narrowF_pre hk hm hb0 hb1 hpre h₁) (narrowF_pre hk hm hb0 hb1 hpre h₂)
         (narrowF_pub hk hb0 hb1 h₁ h₂ hp hleak) f₁ f₂]
 

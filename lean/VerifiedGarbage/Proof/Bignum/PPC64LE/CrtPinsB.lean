@@ -220,7 +220,7 @@ theorem pins124 : Pins (At (C0 pc) (crtF pc) (ix pc 124 118)) [.r10, .r11, .r23,
   refine pins_at_list (fun s₀ => [off (off (cS s₀) (oPa s₀)) (slot (cwP s₀) 0), BitVec.ofNat 64 (2 * cwP s₀), cS s₀,
       BitVec.ofNat 64 (8 * (cwP s₀ + 2)), off (stackArg s₀ 2) 0, BitVec.ofNat 64 (cpL s₀)])
     (fun _ s₀ h => WP.of_flat (c := NL pc (.seq (.block (setupP oBP oPLen))
-      (PH pc false 4 (.block [.load .d .r30 .r23 oDP, .load .d .r31 .r23 oPLen])))) (by cases pc <;> decide +kernel)
+      (PH pc false 4 (.block [.load .d .r30 .r23 oDP, .load .d .r31 .r23 oPLen])))) (by cases pc <;> kernel_rfl)
       (WP.seq (WP.mono (front_okG pc s₀ (preG_core h.1)) fun s ⟨F, hhd⟩ => ?_))) fun _ _ _ h h' => ?_
   · have hP := pre_factsG (preG_core h.1)
     have hn := hP.nw; have room := hP.room; have pq := hP.pq

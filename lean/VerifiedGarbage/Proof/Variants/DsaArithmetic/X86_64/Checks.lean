@@ -12,7 +12,7 @@ public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
 # What the kernel evaluates of a DSA backend's entry points
 
 A backend (`Backend`, `Proof/Dsa/X86_64/Backend.lean`) asks of each of its
-eight entry points that its calls can be inlined, that it never loads MXCSR,
+eight entry points that its calls can be inlined, that it never touches MXCSR,
 that it writes `rsp` only by its calls, and how much stack it uses: tests the
 kernel evaluates on the code, each a `match` on every instruction it has not
 met before. It remembers what it has evaluated only within one declaration,
@@ -32,19 +32,21 @@ open VG VG.X86_64 VG.Impl.Dsa.X86_64
 /-- The tests of an entry point `c`, which is `ci` with its calls inlined,
 in `stack` bytes of stack: for the kernel. -/
 noncomputable def entryOk (stack : Nat) (c ci : Prog isa) : Bool :=
-  c.InlineOkB bSp && (ci.allInstrs (hasBits bMx) && Nat.ble c.x86_64Depth stack)
+  c.InlineOkB (bMx + bSp) && (ci.allInstrs (hasBits bMx) && Nat.ble c.x86_64Depth stack)
 
 /-- What `entryOk` shows of an entry point. -/
 structure EntryOk (stack : Nat) (c ci : Prog isa) : Prop where
   inl : c.InlineOk = true
   mx : ci.allInstrs (fun i => !loadsMxcsr i) = true
+  mxFree : c.allInstrs (fun i => !touchesMxcsr i) = true
   sp : c.all (fun i => !isa.writesSp i) = true
   depth : c.x86_64Depth ≤ stack
 
 theorem EntryOk.of_eval {stack : Nat} {c ci : Prog isa} (h : entryOk stack c ci = true) : EntryOk stack c ci := by
   simp only [entryOk, Bool.and_eq_true, Nat.ble_eq] at h
-  exact ⟨Code.inlineOk_of_B h.1, Code.noMx_of_bits rfl h.2.1, Code.spSafe_of_bits rfl (Code.allInstrs_of_inlineOkB h.1),
-    h.2.2⟩
+  exact ⟨Code.inlineOk_of_B h.1, Code.noMx_of_bits rfl h.2.1,
+    Code.noTouchMx_of_bits rfl (Code.allInstrs_of_inlineOkB h.1),
+    Code.spSafe_of_bits rfl (Code.allInstrs_of_inlineOkB h.1), h.2.2⟩
 
 /-- The entry points, as functions of the arithmetic they call. -/
 def entries : List (Prog isa → (Nat → Nat → Nat → Prog isa) → Prog isa) :=

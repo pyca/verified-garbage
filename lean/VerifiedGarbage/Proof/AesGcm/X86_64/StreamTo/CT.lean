@@ -133,7 +133,7 @@ def C5 (s : State) (o q : Nat) (st : State) : Prop :=
     st.gpr .rdi = K s ∧ st.gpr .rsi = s.gpr .rsi ∧ st.gpr .rdx = St s + BitVec.ofNat 64 48 ∧
     st.gpr .rcx = St s + BitVec.ofNat 64 16 ∧ st.gpr .r8 = Src s + BitVec.ofNat 64 o ∧
     st.gpr .r9 = BitVec.ofNat 64 q ∧ st.gpr .r10 = Dst s + BitVec.ofNat 64 o ∧
-    st.gpr .rax = W s + BitVec.ofNat 64 80
+    st.gpr .rax = W s + BitVec.ofNat 64 80 ∧ st.mxcsr = s.mxcsr
 
 /-- Before the copy of the bytes left. -/
 def R2 (s : State) (o : Nat) (st : State) : Prop :=
@@ -157,24 +157,24 @@ theorem notCs {r : Reg} (hr : r ∈ calleeSaved) :
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide
 
 theorem b0_wp {o : Nat} {st : State} (h : Mid s o st) : WP isa (.block blocksLoad) st (B0c s o) :=
-  WP.mono (blocksLoad_ok hp h) fun _ ⟨r11, cx, r8, g, m, rd, wr⟩ =>
+  WP.mono_mx (by decide) (blocksLoad_ok hp h) fun _ ⟨r11, cx, r8, g, m, rd, wr⟩ mxw =>
     ⟨⟨h.regs m (fun r hr => g r (notCs hr).2.2.2.2.2.2.2.2 (notCs hr).2.1 (notCs hr).2.2.2.2.2.1 (notCs hr).1)
-      rd wr, r11, r8⟩, cx⟩
+      rd wr mxw, r11, r8⟩, cx⟩
 
 omit hp in
 theorem b1_wp {o : Nat} {st : State} (h : B0c s o st) :
     WP isa (.block [.mov .rax (.reg .r8), .alu .test .rax (.reg .rax)]) st fun st' =>
       B0c s o st' ∧ st'.gpr .rax = TL s + BitVec.ofNat 64 o ∧ st'.zf = some (TL s + BitVec.ofNat 64 o == 0) :=
-  WP.mono hd1_ok fun _ ⟨ax, z, g, m, rd, wr⟩ =>
-    ⟨⟨⟨h.1.1.regs m (fun r hr => g r (notCs hr).1) rd wr, by rw [g _ (by decide), h.1.2.1],
+  WP.mono_mx (by decide) hd1_ok fun _ ⟨ax, z, g, m, rd, wr⟩ mxw =>
+    ⟨⟨⟨h.1.1.regs m (fun r hr => g r (notCs hr).1) rd wr mxw, by rw [g _ (by decide), h.1.2.1],
       by rw [g _ (by decide), h.1.2.2]⟩, by rw [g _ (by decide), h.2]⟩, by rw [ax, h.1.2.2], by rw [z, h.1.2.2]⟩
 
 omit hp in
 /-- After no text, `aad_len` into `rax`. -/
 theorem bsel_wp {o : Nat} {st : State} (h : B0c s o st) (hz : TL s + BitVec.ofNat 64 o = 0) :
     WP isa (.block [.mov .rax (.reg .rcx)]) st (B1 s o) :=
-  WP.mono mvc_ok fun _ ⟨ax, g, m, rd, wr⟩ =>
-    ⟨⟨h.1.1.regs m (fun r hr => g r (notCs hr).1) rd wr, by rw [g _ (by decide), h.1.2.1],
+  WP.mono_mx (by decide) mvc_ok fun _ ⟨ax, g, m, rd, wr⟩ mxw =>
+    ⟨⟨h.1.1.regs m (fun r hr => g r (notCs hr).1) rd wr mxw, by rw [g _ (by decide), h.1.2.1],
       by rw [g _ (by decide), h.1.2.2]⟩, by rw [ax, h.2]; simp only [Sel, hz, ite_true]⟩
 
 omit hp in
@@ -187,16 +187,16 @@ omit hp in
 theorem b2_wp {o : Nat} {st : State} (h : B1 s o st) :
     WP isa (.block [.alu .and .rax (imm 15)]) st fun st' =>
       B0 s o st' ∧ st'.zf = some (BitVec.ofNat 64 ((Sel s o).toNat % 16) == 0) :=
-  WP.mono (hd2_ok h.2) fun _ ⟨z, g, m, rd, wr⟩ =>
-    ⟨⟨h.1.1.regs m (fun r hr => g r (notCs hr).1) rd wr, by rw [g _ (by decide), h.1.2.1],
+  WP.mono_mx (by decide) (hd2_ok h.2) fun _ ⟨z, g, m, rd, wr⟩ mxw =>
+    ⟨⟨h.1.1.regs m (fun r hr => g r (notCs hr).1) rd wr mxw, by rw [g _ (by decide), h.1.2.1],
       by rw [g _ (by decide), h.1.2.2]⟩, z⟩
 
 theorem b3_wp {o : Nat} {st : State} (h : B0 s o st) :
     WP isa (.block blocksCount) st
       fun st' => B0 s o st' ∧ st'.gpr .rax = BitVec.ofNat 64 ((L s - o) / 16) ∧
         st'.zf = some (decide ((L s - o) / 16 = 0)) :=
-  WP.mono (blocksCount_ok hp h.2.1 h.1.kept h.1.o_le h.1.rd h.1.wr) fun _ ⟨ax, z, g, m, rd, wr⟩ =>
-    ⟨⟨h.1.regs m (fun r hr => g r (notCs hr).1 (notCs hr).2.1) rd wr, by rw [g _ (by decide) (by decide), h.2.1],
+  WP.mono_mx (by decide) (blocksCount_ok hp h.2.1 h.1.kept h.1.o_le h.1.rd h.1.wr) fun _ ⟨ax, z, g, m, rd, wr⟩ mxw =>
+    ⟨⟨h.1.regs m (fun r hr => g r (notCs hr).1 (notCs hr).2.1) rd wr mxw, by rw [g _ (by decide) (by decide), h.2.1],
       by rw [g _ (by decide) (by decide), h.2.2]⟩, ax, z⟩
 
 omit hp in
@@ -207,16 +207,16 @@ theorem b4_wp {o : Nat} {st : State} (h : B0 s o st ∧ st.gpr .rax = BitVec.ofN
   have hL : L s < 2 ^ 64 := (stackArg s 0).isLt
   have h16 : (BitVec.ofNat 64 (16 * ((L s - o) / 16))).toNat = 16 * ((L s - o) / 16) := by
     rw [BitVec.toNat_ofNat]; exact Nat.mod_eq_of_lt (by omega_using [hL])
-  exact WP.mono (len_ok h.2 h.1.2.2) fun _ ⟨r9, ax, cf, g, m, rd, wr⟩ =>
-    ⟨⟨h.1.1.regs m (fun r hr => g r (notCs hr).1 (notCs hr).2.2.2.2.2.2.1 (notCs hr).2.1) rd wr,
+  exact WP.mono_mx (by decide) (len_ok h.2 h.1.2.2) fun _ ⟨r9, ax, cf, g, m, rd, wr⟩ mxw =>
+    ⟨⟨h.1.1.regs m (fun r hr => g r (notCs hr).1 (notCs hr).2.2.2.2.2.2.1 (notCs hr).2.1) rd wr mxw,
       by rw [g _ (by decide) (by decide) (by decide), h.1.2.1], by rw [g _ (by decide) (by decide) (by decide), h.1.2.2]⟩,
       r9, ax, by rw [cf, h16, tl_add h.1.1.tl]⟩
 
 theorem b5_wp {o q : Nat} {st : State}
     (h : B0 s o st ∧ st.gpr .r9 = BitVec.ofNat 64 q ∧ st.gpr .rax = BitVec.ofNat 64 (16 * q)) :
     WP isa (.block blocksArgs) st (C5 s o q) :=
-  WP.mono (blocksArgs_ok hp h.1.2.1 h.2.2 h.1.1.kept h.1.1.rd h.1.1.wr)
-    fun _ ⟨di, si, dx, cx, r8, r10, ax, g, k, f, rd, wr⟩ =>
+  WP.mono_mx (by decide) (blocksArgs_ok hp h.1.2.1 h.2.2 h.1.1.kept h.1.1.rd h.1.1.wr)
+    fun _ ⟨di, si, dx, cx, r8, r10, ax, g, k, f, rd, wr⟩ mxw =>
       ⟨h.1.1.frame.trans (frame_kR' f), h.1.1.sem.kR' hp f h.1.1.o_le, k,
         by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.1.1.rsp],
         fun r hr => by
@@ -224,30 +224,31 @@ theorem b5_wp {o q : Nat} {st : State}
           rw [g r n.2.2.2.2.1 n.2.2.2.1 n.2.2.1 n.2.1 n.2.2.2.2.2.1 n.2.2.2.2.2.2.2.1 n.1, h.1.1.saved r hr],
         rd.trans h.1.1.rd, wr.trans h.1.1.wr, di, si, dx, cx, r8,
         by rw [g _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide), h.2.1],
-        r10, ax⟩
+        r10, ax, mxw.trans h.1.1.mx⟩
 
 theorem b6_wp (T : BlkToFn M) {o q : Nat} (hq0 : q ≠ 0) (hq : o + 16 * q ≤ L s)
     (htl : (TL s).toNat + (o + 16 * q) < 2 ^ 64) (ht0 : TL s + BitVec.ofNat 64 o ≠ 0 ∨ (AL s).toNat % 16 = 0)
     (ht16 : ((TL s).toNat + o) % 16 = 0) {st : State} (h : C5 s o q st) :
     WP isa (.frame (.push [.rax, .r9, .r10]) (.call T.fn.name T.fn.code) (.pop .rax 3)) st (Mid s (o + 16 * q)) := by
-  obtain ⟨f, sem, k, sp, cs, rd, wr, di, si, dx, cx, r8, r9, r10, ax⟩ := h
-  exact WP.mono (blkCall_ok hp T hq sp rd wr f di si dx cx r8 r9 r10 ax) fun _ ⟨cs₆, rd₆, wr₆, f₆, o₁, o₂, o₃⟩ =>
-    call_mid hp hq0 hq htl ht0 ht16 f sem k sp cs rd wr cs₆ rd₆ wr₆ f₆ o₁ o₂ o₃
+  obtain ⟨f, sem, k, sp, cs, rd, wr, di, si, dx, cx, r8, r9, r10, ax, mx⟩ := h
+  exact WP.mono_mx (call_frame_mx T.mx) (blkCall_ok hp T hq sp rd wr f di si dx cx r8 r9 r10 ax)
+    fun _ ⟨cs₆, rd₆, wr₆, f₆, o₁, o₂, o₃⟩ mx₆ =>
+    call_mid hp hq0 hq htl ht0 ht16 f sem k sp cs rd wr (mx₆.trans mx) cs₆ rd₆ wr₆ f₆ o₁ o₂ o₃
 
 theorem r1_wp {o : Nat} {st : State} (h : Mid s o st) :
     WP isa (.block [.mov .r11 (.mem (at_ .rsp 32)), .mov .rcx (.mem (at_ .r11 wLen)),
       .mov .rax (.mem (at_ .r11 wDone)), .alu .sub .rcx (.reg .rax), .alu .test .rcx (.reg .rcx)]) st fun st' =>
       Mid s o st' ∧ st'.gpr .r11 = W s ∧ st'.gpr .rcx = BitVec.ofNat 64 (L s - o) ∧
       st'.gpr .rax = BitVec.ofNat 64 o ∧ st'.zf = some (decide (L s - o = 0)) :=
-  WP.mono (restHead_ok hp h) fun _ ⟨r11, cx, ax, z, g, m, rd, wr⟩ =>
-    ⟨h.regs m (fun r hr => g r (notCs hr).2.2.2.2.2.2.2.2 (notCs hr).2.1 (notCs hr).1) rd wr, r11, cx, ax, z⟩
+  WP.mono_mx (by decide) (restHead_ok hp h) fun _ ⟨r11, cx, ax, z, g, m, rd, wr⟩ mxw =>
+    ⟨h.regs m (fun r hr => g r (notCs hr).2.2.2.2.2.2.2.2 (notCs hr).2.1 (notCs hr).1) rd wr mxw, r11, cx, ax, z⟩
 
 theorem r2_wp {o : Nat} {st : State}
     (h : Mid s o st ∧ st.gpr .r11 = W s ∧ st.gpr .rcx = BitVec.ofNat 64 (L s - o) ∧ st.gpr .rax = BitVec.ofNat 64 o) :
     WP isa (.block [.mov .rsi (.mem (at_ .r11 wSrc)), .alu .add .rsi (.reg .rax), .mov .rdi (.mem (at_ .r11 wDst)),
       .alu .add .rdi (.reg .rax)]) st (R2 s o) :=
-  WP.mono (restPtrs_ok hp h.1 h.2.1 h.2.2.2) fun _ ⟨si, di, g, m, rd, wr⟩ =>
-    ⟨h.1.regs m (fun r hr => g r (notCs hr).2.2.2.1 (notCs hr).2.2.2.2.1) rd wr, si, di,
+  WP.mono_mx (by decide) (restPtrs_ok hp h.1 h.2.1 h.2.2.2) fun _ ⟨si, di, g, m, rd, wr⟩ mxw =>
+    ⟨h.1.regs m (fun r hr => g r (notCs hr).2.2.2.1 (notCs hr).2.2.2.2.1) rd wr mxw, si, di,
       by rw [g _ (by decide) (by decide), h.2.2.1]⟩
 
 theorem r3_wp {o : Nat} (ho : o < L s) {st : State} (h : R2 s o st) : WP isa copyLoop st (Mid s o) := by
@@ -260,13 +261,13 @@ theorem r3_wp {o : Nat} (ho : o < L s) {st : State} (h : R2 s o st) : WP isa cop
       covers_off (k := L s) (d := o) (m := L s - o) (by rw [M₂.rd, M₂.wr, hp.rd]; simp) (by omega_using [ho]) (by omega_using [ho, hL]),
       covers_off (k := L s) (d := o) (m := L s - o) (by rw [M₂.wr, hp.wr]; simp) (by omega_using [ho]) (by omega_using [ho, hL]),
       (hp.r_d.sub_left ss).sub_right ds⟩
-  exact WP.mono (copyLoopL_ok st cp) fun _ ⟨m₃, g₃, rd₃, wr₃⟩ =>
+  exact WP.mono_mx (by decide) (copyLoopL_ok st cp) fun _ ⟨m₃, g₃, rd₃, wr₃⟩ mxw =>
     M₂.copy hp (n := L s - o) (by omega_using [ho]) (by rw [m₃]; exact writeBytes_frame' _ (length_bytesAt _ _ _))
-      (fun r hr => g₃ r (notCs hr).1 (notCs hr).2.2.2.2.2.2.2.1) rd₃ wr₃
+      (fun r hr => g₃ r (notCs hr).1 (notCs hr).2.2.2.2.2.2.2.1) rd₃ wr₃ mxw
 
 theorem r4_wp {o : Nat} {st : State} (h : Mid s o st) : WP isa (.block restArgs) st (R4 s o (L s - o)) :=
-  WP.mono (restArgs_ok hp h) fun _ ⟨di, si, dx, cx, r8, r9, r10, cs, m, rd, wr⟩ =>
-    ⟨h.regs m cs rd wr, di, si, dx, cx, r8, r9, r10⟩
+  WP.mono_mx (by decide) (restArgs_ok hp h) fun _ ⟨di, si, dx, cx, r8, r9, r10, cs, m, rd, wr⟩ mxw =>
+    ⟨h.regs m cs rd wr mxw, di, si, dx, cx, r8, r9, r10⟩
 
 end
 
@@ -284,10 +285,12 @@ structure Pub (s₀ s₀' : State) : Prop where
   len : stackArg s₀' 0 = stackArg s₀ 0
   dst : Dst s₀' = Dst s₀
   w : W s₀' = W s₀
+  mx : s₀'.mxcsr = s₀.mxcsr
 
 theorem Pub.of {s₀ s₀' : State} (h : Proof.AesGcm.streamToPub s₀ s₀') : Pub s₀ s₀' :=
   ⟨h.1.symm, h.2.1.symm, h.2.2.1.symm, h.2.2.2.1.symm, h.2.2.2.2.1.symm, h.2.2.2.2.2.1.symm,
-    h.2.2.2.2.2.2.1.symm, h.2.2.2.2.2.2.2.1.symm, h.2.2.2.2.2.2.2.2.1.symm, h.2.2.2.2.2.2.2.2.2.2.symm⟩
+    h.2.2.2.2.2.2.1.symm, h.2.2.2.2.2.2.2.1.symm, h.2.2.2.2.2.2.2.2.1.symm, h.2.2.2.2.2.2.2.2.2.2.1.symm,
+    h.2.2.2.2.2.2.2.2.2.2.2.symm⟩
 
 theorem Pub.eL {s₀ s₀' : State} (pb : Pub s₀ s₀') : L s₀' = L s₀ := by simp only [L, pb.len]
 
@@ -365,16 +368,16 @@ theorem entry_rel : RelCT isa (fun s₁ s₂ => s₁ = s₀ ∧ s₂ = s₀') (.
     exacts [pb.k.symm, pb.rsi.symm, pb.st.symm, pb.al.symm, pb.tl.symm, pb.src.symm, pb.sp.symm]
   have toB0 : ∀ {s s₁ : State}, SP' M s → (s₁.gpr .r11 = W s ∧
       (∀ r, r ≠ .r11 → r ≠ .rax → r ≠ .r10 → s₁.gpr r = s.gpr r) ∧ Kept s 0 s₁.mem ∧ Frame [kR' s] s.mem s₁.mem ∧
-      s₁.rd = s.rd ∧ s₁.wr = s.wr) → HB s s₁ := fun hp ⟨h11, hg, hk, hf, hrd, hwr⟩ =>
+      s₁.rd = s.rd ∧ s₁.wr = s.wr) → s₁.mxcsr = s.mxcsr → HB s s₁ := fun hp ⟨h11, hg, hk, hf, hrd, hwr⟩ hmx =>
     ⟨mid_entry hp (hg _ (by decide) (by decide) (by decide)) (fun r hr => hg r (notCs hr).2.2.2.2.2.2.2.2
-      (notCs hr).1 (notCs hr).2.2.2.2.2.2.2.1) hk hf hrd hwr, h11, hg _ (by decide) (by decide) (by decide)⟩
+      (notCs hr).1 (notCs hr).2.2.2.2.2.2.2.1) hk hf hrd hwr hmx, h11, hg _ (by decide) (by decide) (by decide)⟩
   refine (rel_wp (rel_w (l₀ := entry) (l := entry.tail) rfl args (by simp [args])
     (fun _ _ h => by obtain ⟨rfl, rfl⟩ := h; exact ea) (fun _ _ h => by
       obtain ⟨rfl, rfl⟩ := h
       exact ⟨pb.w.symm, a_in hp (i := 3) (by decide), a_in hp' (i := 3) (by decide)⟩) entry_check)
     (fun _ _ h => h) (G₁ := HB s₀) (G₂ := HB s₀')
-    (fun s h => by subst h; exact WP.mono (entry_ok hp) fun _ h => toB0 hp h)
-    (fun s h => by subst h; exact WP.mono (entry_ok hp') fun _ h => toB0 hp' h)).mono (fun _ _ h => h)
+    (fun s h => by subst h; exact WP.mono_mx (by decide) (entry_ok hp) fun _ h hm => toB0 hp h hm)
+    (fun s h => by subst h; exact WP.mono_mx (by decide) (entry_ok hp') fun _ h hm => toB0 hp' h hm)).mono (fun _ _ h => h)
     fun _ _ h => h.2
 
 /-- The call of `n` bytes after `o`, in two runs. -/
@@ -397,7 +400,8 @@ theorem encCall_rel (E : EncFn M) {o n : Nat} (hn : o + n ≤ L s₀) :
     g _ _ (by decide : Reg.rsi ≠ .rsp), g _ _ (by decide : Reg.rdx ≠ .rsp), g _ _ (by decide : Reg.rcx ≠ .rsp),
     g _ _ (by decide : Reg.r8 ≠ .rsp), g _ _ (by decide : Reg.r9 ≠ .rsp), di₁, di₂, si₁, si₂, dx₁, dx₂, cx₁, cx₂,
     r8₁, r8₂, r9₁, r9₂, State.withRegions_gpr, State.callEntry_rsp, pushed_rsp, M₁.rsp, M₂.rsp, pb.k, pb.rsi,
-    pb.st, pb.al, pb.tl, pb.sp, pb.dst, pb.eL, and_self]
+    pb.st, pb.al, pb.tl, pb.sp, pb.dst, pb.eL, State.withRegions_mxcsr, State.callEntry_mxcsr, pushed_mxcsr,
+    M₁.mx, M₂.mx, pb.mx, and_self]
 
 /-- `head`, in two runs: the same bytes done. -/
 theorem head_rel (E : EncFn M) :
@@ -463,8 +467,8 @@ theorem blkCall_rel (T : BlkToFn M) {o q : Nat} (hq : o + 16 * q ≤ L s₀) :
   refine RelCT.frame (fun _ _ h => by rw [h.1.2.2.2.1, h.2.2.2.2.1, pb.sp])
     (RelCT.callEx (k := Proof.AesGcm.encryptBlocksToX86_64M M) T.ok T.ct fun _ _ hab => ?_)
   obtain ⟨s₁, s₂, h, ha, hb⟩ := hab
-  obtain ⟨⟨f₁, -, -, sp₁, -, rd₁, wr₁, di₁, si₁, dx₁, cx₁, r8₁, r9₁, r10₁, ax₁⟩,
-    ⟨f₂, -, -, sp₂, -, rd₂, wr₂, di₂, si₂, dx₂, cx₂, r8₂, r9₂, r10₂, ax₂⟩⟩ := h
+  obtain ⟨⟨f₁, -, -, sp₁, -, rd₁, wr₁, di₁, si₁, dx₁, cx₁, r8₁, r9₁, r10₁, ax₁, -⟩,
+    ⟨f₂, -, -, sp₂, -, rd₂, wr₂, di₂, si₂, dx₂, cx₂, r8₂, r9₂, r10₂, ax₂, -⟩⟩ := h
   obtain ⟨p₁, c₁, w₁, a₀₁, a₁₁, a₂₁⟩ := blkEntry hp hq sp₁ rd₁ wr₁ f₁ di₁ si₁ dx₁ cx₁ r8₁ r9₁ r10₁ ax₁
   obtain ⟨p₂, c₂, w₂, a₀₂, a₁₂, a₂₂⟩ := blkEntry hp' hq' sp₂ rd₂ wr₂ f₂ di₂ si₂ dx₂ cx₂ r8₂ r9₂ r10₂ ax₂
   subst ha hb

@@ -285,7 +285,7 @@ theorem Verified.stackArgScratchWipedByPre (w : Wiper) {c : Prog isa}
   · obtain ⟨u₁, _, _, f₁, _, _, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, x₂, _⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1]
-    have hsp₁₂ : s₁.gpr .rsp = s₂.gpr .rsp := ((pubL_args hk).mp hp).1.1
+    have hsp₁₂ : s₁.gpr .rsp = s₂.gpr .rsp := ((pubL_args hk).mp hp).1.1.1
     rw [hct _ _ _ _ _ _ (narrowS_pre hk hb0 hb1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) h₁)
       (narrowS_pre hk hb0 hb1 (fun vs m₁ m₂ hl hb _ => hpre vs m₁ m₂ hl hb) h₂)
       (narrowS_pub hk hb0 hb1 h₁ h₂ hp hleak.toL) f₁ f₂, hsp₁₂]

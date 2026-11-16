@@ -45,7 +45,8 @@ theorem call_rel (F : SealSplitFn) {σ₁ σ₂ c₁ c₂ : State} (h₁ : Lay �
     (hc₂ : Ready σ₂ c₂) (hrd : rdC σ₂ = rdC σ₁) (hwr : wrC σ₂ = wrC σ₁) (hB : Bs σ₁ = Bs σ₂)
     (hk : K σ₁ = K σ₂) (hn : Nn σ₁ = Nn σ₂) (ha : Ad σ₁ = Ad σ₂) (hal : σ₁.gpr .rcx = σ₂.gpr .rcx)
     (hs : S0 σ₁ = S0 σ₂) (hsl : L0 σ₁ = L0 σ₂)
-    (hd : Dst σ₁ = Dst σ₂) (hl : stackArg σ₁ 1 = stackArg σ₂ 1) (ht : Tg σ₁ = Tg σ₂) :
+    (hd : Dst σ₁ = Dst σ₂) (hl : stackArg σ₁ 1 = stackArg σ₂ 1) (ht : Tg σ₁ = Tg σ₂)
+    (hm : c₁.mxcsr = c₂.mxcsr) :
     RelCT isa (Eq2 c₁ c₂) (.frame (.push [.rax, .r10, .r11]) (.call F.name F.code) (.pop .rax 3)) TT := by
   refine rel_frame (by rw [hc₁.rsp, hc₂.rsp, hB]) ?_
   obtain ⟨cp₁, cv₁, cw₁⟩ := hc₁.call h₁
@@ -67,7 +68,7 @@ theorem call_rel (F : SealSplitFn) {σ₁ σ₂ c₁ c₂ : State} (h₁ : Lay �
     (fun a b h => h) fun _ _ h => h
   subst e₁ e₂
   refine ⟨sealSplitSpec_pre cp₁, sealSplitSpec_pre cp₂,
-    sealSplitSpec_pub ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, cv₁, cw₁, cv₂, cw₂,
+    sealSplitSpec_pub ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, cv₁, cw₁, cv₂, cw₂,
     by rw [hc₁.qsp, hc₂.qsp, hB]⟩
   · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rdi, hc₂.rdi, hk]
   · rw [g₁ _ (by decide), g₂ _ (by decide), hc₁.rsi, hc₂.rsi, hn]
@@ -81,13 +82,14 @@ theorem call_rel (F : SealSplitFn) {σ₁ σ₂ c₁ c₂ : State} (h₁ : Lay �
   · rw [hc₁.xa0 h₁, t₀, hd]
   · rw [hc₁.xa1 h₁, t₁, hl]
   · rw [hc₁.xa2 h₁, t₂, ht]
+  · simp only [State.withRegions_mxcsr, State.callEntry_mxcsr, pushed_mxcsr, hm]
 
 theorem sealGather_ct (w : Width) (F : SealSplitFn) :
     ConstantTime isa gatherPre gatherPub (sealGather w F.name F.code) := by
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
   have h₁ := lay p₁
   have h₂ := lay p₂
-  obtain ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, a0, a1, a2, hdesc⟩ := hq
+  obtain ⟨qdi, qsi, qdx, qcx, q8, q9, qsp, qmx, a0, a1, a2, hdesc⟩ := hq
   have hB : Bs σ₁ = Bs σ₂ := by simp only [Bs, qsp]
   have hS : Src σ₂ = Src σ₁ := q8.symm
   have hC : Cnt σ₂ = Cnt σ₁ := congrArg BitVec.toNat q9.symm
@@ -161,5 +163,6 @@ theorem sealGather_ct (w : Width) (F : SealSplitFn) :
   have hwr : wrC σ₂ = wrC σ₁ := by
     simp only [wrC, dR, tgR, Dst, L, Tg, a0, a1, a2]
   exact call_rel F h₁ h₂ hc₁ hc₂ hrd hwr hB qdi qsi qdx qcx hS0.symm hL0.symm a0 a1 a2
+    (hc₁.mx.trans (qmx.trans hc₂.mx.symm))
 
 end VG.Proof.ChaCha20Poly1305.X86_64.Gather

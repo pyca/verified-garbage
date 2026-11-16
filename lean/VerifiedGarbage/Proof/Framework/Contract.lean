@@ -231,7 +231,7 @@ syntax "implies_pub " "[" Lean.Parser.Tactic.simpLemma,* "]" : tactic
 macro_rules
   | `(tactic| implies_pub [$ls,*]) => `(tactic| (
       intro s₁ s₂ _ _ h
-      sig_pub [$ls,*] at h
+      sig_pub_keep [$ls,*] at h
       sig_split h
       sig_reduce [$ls,*]
       sig_simp [$ls,*] [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const,
@@ -321,7 +321,7 @@ syntax "sig_implies_pub " "[" Lean.Parser.Tactic.simpLemma,* "]" : tactic
 macro_rules
   | `(tactic| sig_implies_pub [$ls,*]) => `(tactic| (
       intro s₁ s₂ _ _ h
-      sig_pub [$ls,*] at h
+      sig_pub_keep [$ls,*] at h
       sig_split h
       sig_reduce [$ls,*]
       sig_simp [$ls,*] [Nat.forall_lt_succ_right, Nat.not_lt_zero, false_imp_iff, forall_const,

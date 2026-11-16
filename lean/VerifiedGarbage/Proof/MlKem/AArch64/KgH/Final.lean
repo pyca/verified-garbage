@@ -10,6 +10,8 @@ import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.ShapesCorrect
 import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.KeyGenChecks
 import VerifiedGarbage.Proof.Framework.KernelRfl
 import VerifiedGarbage.TCB.Axioms
+import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
+meta import VerifiedGarbage.Proof.Sha3.AArch64.Neon.X2Lit
 meta import VerifiedGarbage.Proof.MlKem.AArch64.KgH.Top
 meta import VerifiedGarbage.Proof.MlKem.AArch64.FixedHash.Hole
 meta import VerifiedGarbage.Proof.MlKem.AArch64.Optimized.VectorSymbolsMono
@@ -65,6 +67,13 @@ theorem kgPre768_taint : ∃ h, ((VectorSymbols.analysis restSymbols).check
   cases sha3
   · exact ⟨_, by taint_decide⟩
   · exact ⟨_, by taint_decide⟩
+
+/-! `Kem16P.kgPre` of ML-KEM-1024, whose pair of noise polynomials calls the paired Keccak, as
+literals: the check of the code as its generator gives it reads no literal of the code it calls
+(`rw_lit` looks for constants with a literal, and the paired Keccak's is of `X2.code false`), so
+the kernel built the function's two permutations before analysing them. -/
+materialize_code kgPre1024Scalar := Kem16P.kgPre false Impl.MlKem1024.AArch64.lay1024
+materialize_code kgPre1024Sha3 := Kem16P.kgPre true Impl.MlKem1024.AArch64.lay1024
 
 theorem kgPre1024_taint : ∃ h, ((VectorSymbols.analysis restSymbols).check
     (VectorTaint.ofRegs [.x25,.x26,.x27,.x28]) (Kem16P.kgPre sha3 Impl.MlKem1024.AArch64.lay1024) h).isSome = true := by

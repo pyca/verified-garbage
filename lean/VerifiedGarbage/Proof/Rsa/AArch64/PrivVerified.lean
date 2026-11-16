@@ -58,4 +58,10 @@ theorem privCode_depth (v : CrtImpl) : (privCode v).aarch64Depth = stackBytes / 
     aarch64Depth_of_noFrames v.pdNoFrames, cmpLoop, releaseLoop, Instr.frameUnits, frameBytes, stackBytes]
   decide
 
+/-- `vg_rsa_private_checked` never touches PSTATE.DIT, its callees not either. -/
+theorem privCode_noDit (v : CrtImpl) : (privCode v).all (fun i => !i.touchesDit) = true := by
+  simp only [privCode, privCodeOf, code, body, check, checkWith, tail, seqs, List.cons_append, List.nil_append,
+    Code.all, v.noDit, v.pcNoDit, v.pdNoDit, cmpLoop, releaseLoop, Bool.true_and]
+  decide
+
 end VG.Proof.Rsa.AArch64

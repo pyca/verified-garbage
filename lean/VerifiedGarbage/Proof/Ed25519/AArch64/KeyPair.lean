@@ -322,6 +322,15 @@ abbrev dgCode : Prog isa :=
 abbrev dgK : Contract isa :=
   Spec.Sha512.digestContract AArch64.abi 64 Spec.Sha512.sha512 Proof.Sha512.AArch64.OneShot.stack
 
+/-- The digest never writes PSTATE.DIT: its own code does not, and `v`'s
+compression function does not (`Compress.noDit`). -/
+theorem dg_noDit : (dgCode v).all (fun i => !i.writesDit) = true := by
+  simp only [dgCode, Proof.Sha512.AArch64.oneShotWith, Impl.MdStream.AArch64.OneShot.digest,
+    Impl.MdStream.AArch64.OneShot.body, Impl.MdStream.AArch64.OneShot.tail, Impl.MdStream.AArch64.OneShot.whole,
+    Impl.MdStream.AArch64.OneShot.compressBuf, Impl.MdStream.AArch64.OneShot.compressWith, Code.all, v.noDit,
+    Bool.and_true]
+  decide
+
 theorem dg_verified : Verified AArch64.target (dgCode v) dgK :=
   (v.oneShot_verified (by decide) Proof.Sha512.AArch64.Stream.shape.toD v.oneShot512).of_implies
     (Proof.Sha512.AArch64.OneShot.implies (by decide) fun m =>
@@ -537,27 +546,30 @@ structure Pub (s₁ s₂ : State) : Prop where
   x2 : s₁.gpr .x2 = s₂.gpr .x2
   x3 : s₁.gpr .x3 = s₂.gpr .x3
   sy : s₁.syms combSym = s₂.syms combSym
+  dit : s₁.dit = s₂.dit
 
 theorem pub_of {s₁ s₂ : State} (h : spec.pub s₁ s₂) : Pub s₁ s₂ := by
-  sig_pub [Spec.Ed25519.keyPairContract, Spec.Ed25519.keyPairSig, Spec.Ed25519.scratchWords,
+  sig_pub_keep [Spec.Ed25519.keyPairContract, Spec.Ed25519.keyPairSig, Spec.Ed25519.scratchWords,
     AArch64.abi, AArch64.argRegs, combConsts_eq, Abi.withConsts] at h
-  obtain ⟨h0, hs, h1, h2, h3, h4⟩ := h
-  exact ⟨h0, h1, h2, h3, h4, hs⟩
+  obtain ⟨h0, hd, hs, h1, h2, h3, h4⟩ := h
+  exact ⟨h0, h1, h2, h3, h4, hs, hd⟩
 
 def Rel (Φ : State → State → Prop) (a b : State) : Prop :=
-  ∃ s₁ s₂, Pre s₁ ∧ Pre s₂ ∧ Pub s₁ s₂ ∧ Ctx s₁ a ∧ Ctx s₂ b ∧ Φ s₁ a ∧ Φ s₂ b
+  ∃ s₁ s₂, Pre s₁ ∧ Pre s₂ ∧ Pub s₁ s₂ ∧ Ctx s₁ a ∧ Ctx s₂ b ∧ Φ s₁ a ∧ Φ s₂ b ∧ a.dit = b.dit
 
-theorem rel_wp {c : Prog isa} {Φ Ψ : State → State → Prop} (hct : RelCT isa (Rel Φ) c fun _ _ => True)
+theorem rel_wp {c : Prog isa} {Φ Ψ : State → State → Prop} (hd : DitDet c)
+    (hct : RelCT isa (Rel Φ) c fun _ _ => True)
     (hw : ∀ s t, Pre s → Ctx s t → Φ s t → WP isa c t fun t' => Ctx s t' ∧ Ψ s t') :
     RelCT isa (Rel Φ) c (Rel Ψ) := by
   intro a b ta tb a' b' hp e₁ e₂
   obtain ⟨ht, -⟩ := hct _ _ _ _ _ _ hp e₁ e₂
-  obtain ⟨s₁, s₂, h₁, h₂, hp', c₁, c₂, f₁, f₂⟩ := hp
+  obtain ⟨s₁, s₂, h₁, h₂, hp', c₁, c₂, f₁, f₂, hm⟩ := hp
   obtain ⟨_, u₁, x₁, y₁⟩ := hw s₁ a h₁ c₁ f₁
   obtain ⟨_, u₂, x₂, y₂⟩ := hw s₂ b h₂ c₂ f₂
+  have hm' := hd _ _ _ _ _ e₁ (ht ▸ e₂) hm
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  exact ⟨ht, s₁, s₂, h₁, h₂, hp', y₁.1, y₂.1, y₁.2, y₂.2⟩
+  exact ⟨ht, s₁, s₂, h₁, h₂, hp', y₁.1, y₂.1, y₁.2, y₂.2, hm'⟩
 
 theorem rel_sp {Φ : State → State → Prop} {a b : State} (h : Rel Φ a b) : a.sp = b.sp := by
   obtain ⟨_, _, _, _, hp, c₁, c₂, _⟩ := h
@@ -586,26 +598,28 @@ theorem body_ct {dn pn : String} :
     obtain ⟨s₁, s₂, h₁, h₂, hp', rfl, rfl⟩ := hp
     obtain ⟨_, u₁, x₁, y₁⟩ := digestArgs_ok s₁
     obtain ⟨_, u₂, x₂, y₂⟩ := digestArgs_ok s₂
+    have hm' := DitDet.of_noWrite (c := .block digestArgs) (by decide) _ _ _ _ _ e₁ (ht ▸ e₂)
+      (show (entered s₁).dit = (entered s₂).dit from hp'.dit)
     obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
     obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-    exact ⟨ht, s₁, s₂, h₁, h₂, hp', y₁.1, y₂.1, y₁.2, y₂.2⟩
+    exact ⟨ht, s₁, s₂, h₁, h₂, hp', y₁.1, y₂.1, y₁.2, y₂.2, hm'⟩
   have b₂ : RelCT isa (Rel Φ₁) (.call dn (dgCode v)) (Rel Φ₂) := by
-    refine rel_wp (RelCT.callEx (dg_verified v).1 (dg_verified v).2.1 fun a b hr => ?_)
+    refine rel_wp (DitDet.of_noWrite (dg_noDit v)) (RelCT.callEx (dg_verified v).1 (dg_verified v).2.1 fun a b hr => ?_)
       fun s _ h hc ⟨hx0, hx1, hx2⟩ => digest_ok v h hc hx0 hx1 hx2
-    obtain ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, ⟨d₁, i₁, x₁⟩, ⟨d₂, i₂, x₂⟩⟩ := hr
+    obtain ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, ⟨d₁, i₁, x₁⟩, ⟨d₂, i₂, x₂⟩, hm⟩ := hr
     refine ⟨_, _, _, _, dg_pre h₁ c₁ d₁ i₁ x₁, dg_pre h₂ c₂ d₂ i₂ x₂, ?_, (dg_cov h₁ c₁).1, (dg_cov h₁ c₁).2,
       (dg_cov h₂ c₂).1, (dg_cov h₂ c₂).2⟩
     sig_pub [Spec.Sha512.digestContract, Spec.Sha512.digestSig, Spec.Sha512.digestPost, AArch64.abi,
       AArch64.argRegs]
     rw [c₁.sp, c₂.sp, d₁, d₂, i₁, i₂, x₁, x₂, K, K, hp.sp, hp.x2, hp.x1]
-    exact ⟨rfl, rfl, rfl, rfl⟩
+    exact ⟨rfl, hm, rfl, rfl, rfl⟩
   have b₃ : RelCT isa (Rel Φ₂) (.block pkArgs) (Rel Φ₃) :=
-    rel_wp (Whole.block_rel (fun _ _ hr => rel_sp hr) (by taint_decide)) fun _ _ _ hc hE =>
+    rel_wp (DitDet.of_noWrite (by decide)) (Whole.block_rel (fun _ _ hr => rel_sp hr) (by taint_decide)) fun _ _ _ hc hE =>
       WP.mono (pkArgs_ok hc) fun _ ⟨hc', hm, a, b, d⟩ => ⟨hc', by rw [Φ₂, hm]; exact hE, a, b, d⟩
   have b₄ : RelCT isa (Rel Φ₃) (.call pn PublicKey.codeExpanded) fun _ _ => True := by
     refine RelCT.callEx (k := PublicKey.pkLocalE) (fun _ h => PublicKey.pkE_ok h) PublicKey.pkE_ct
       fun a b hr => ?_
-    obtain ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, ⟨-, d₁, i₁, x₁⟩, ⟨-, d₂, i₂, x₂⟩⟩ := hr
+    obtain ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, ⟨-, d₁, i₁, x₁⟩, ⟨-, d₂, i₂, x₂⟩, -⟩ := hr
     refine ⟨_, _, _, _, pk_pre h₁ c₁ d₁ i₁ x₁, pk_pre h₂ c₂ d₂ i₂ x₂, ?_, (pk_cov h₁ c₁).1,
       (pk_cov h₁ c₁).2, (pk_cov h₂ c₂).1, (pk_cov h₂ c₂).2⟩
     simp only [PublicKey.pkLocalE, Proof.Ed25519.AArch64.PublicKey.pkLocalWith, State.withRegions_sp,

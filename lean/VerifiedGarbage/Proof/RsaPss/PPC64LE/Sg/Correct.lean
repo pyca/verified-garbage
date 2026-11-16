@@ -116,20 +116,31 @@ theorem emT_of {k D sl lo db : Nat} (salt h mk : List Byte) (c : Byte) (hh : h.l
     (hV : ∀ o < k, V o = emPre k D sl salt h o) {o : Nat} (ho : o < k) :
     (if o = lo then mixV V mk lo db o &&& c else mixV V mk lo db o) = RsaPss.emT lo db sl salt h mk c o := by
   simp only [RsaPss.emT, mixV, hV o ho, emPre, hh]
-  rcases (by omega_using [ho] : o < lo ∨ (lo ≤ o ∧ o < k - sl - D - 2) ∨ o = k - sl - D - 2 ∨
-      (k - sl - D - 1 ≤ o ∧ o < k - D - 1) ∨ (k - D - 1 ≤ o ∧ o < k - 1) ∨ o = k - 1) with h | h | h | h | h | h
-  · simp (disch := first | decide | omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
-  · by_cases h5 : o = lo
-    · subst h5; simp (disch := first | decide | omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
-    · simp (disch := first | decide | omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
-  · by_cases h5 : o = lo
-    · subst h5; simp (disch := first | decide | omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
-    · simp (disch := first | decide | omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
-  · rw [show o - (k - sl - D - 1) = o - lo - (db - sl) by omega_using [hdb, hfit]]
-    simp (disch := first | decide | omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
-  · rw [show o - (k - D - 1) = o - lo - db by omega_using [hdb, hfit]]
-    simp (disch := first | decide | omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
-  · simp (disch := first | decide | omega_arith) only [↓ite_eq_left, ↓ite_eq_right]
+  by_cases hol : o < lo
+  · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
+  -- `k` and `o` by what they exceed, and the bounds as sums: `omega` then splits on no
+  -- truncated subtraction.
+  obtain ⟨e, rfl⟩ : ∃ e, k = lo + (sl + D + 2 + e) := ⟨k - lo - (sl + D + 2), by omega_using [hfit]⟩
+  obtain ⟨t, rfl⟩ : ∃ t, o = lo + t := ⟨o - lo, by omega_using [hol]⟩
+  subst hdb
+  have e1 : lo + (sl + D + 2 + e) - 1 = lo + (sl + D + 1 + e) := by omega_using []
+  have e2 : lo + (sl + D + 2 + e) - D - 1 = lo + (sl + 1 + e) := by omega_using []
+  have e3 : lo + (sl + D + 2 + e) - sl - D - 1 = lo + (1 + e) := by omega_using []
+  have e4 : lo + (sl + D + 2 + e) - sl - D - 2 = lo + e := by omega_using []
+  have e5 : sl + D + 2 + e - D - 1 = sl + 1 + e := by omega_using []
+  have e7 : sl + 1 + e - sl = 1 + e := by omega_using []
+  have ht : t < sl + D + 2 + e := by omega_using [ho]
+  simp only [e1, e2, e3, e4, e5, e7, Nat.add_sub_cancel_left, Nat.add_sub_add_left, Nat.add_left_cancel_iff,
+    Nat.add_le_add_iff_left, Nat.add_lt_add_iff_left, Nat.le_add_right, true_and, Nat.add_eq_left, hol,
+    ↓reduceIte]
+  clear hfit hV ho hol e1 e2 e3 e4 e5 e7
+  rcases (by omega_using [ht] : t < e ∨ t = e ∨ (e < t ∧ t < sl + 1 + e) ∨
+      (sl + 1 + e ≤ t ∧ t < sl + 1 + e + D) ∨ t = sl + D + 1 + e) with h | h | h | h | h
+  · by_cases h0 : t = 0 <;> simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
+  · by_cases h0 : t = 0 <;> simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
+  · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
+  · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
+  · simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
 
 end VG.Proof.RsaPss.PPC64LE.Sg
 

@@ -21,6 +21,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.MdStream.AArch64.Common
 import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Copy
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
@@ -409,18 +410,52 @@ theorem WP.rdwr {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s 
   obtain ⟨t, s', he, hq⟩ := h
   exact ⟨t, s', he, hq, Exec.rdwr he⟩
 
+/-! A property of every instruction of `convert`, from its pieces: those that do not depend on `len`
+but in an immediate are evaluated, by the kernel alone, and the bytes' copies once for any index. -/
+
+private theorem ai_block {p : Instr → Bool} {l : List Instr} (h : l.all p = true) :
+    (Code.block l : Prog isa).allInstrs p = true := by rw [Code.allInstrs_eq]; exact h
+
+private theorem ai_seq {p : Instr → Bool} {a b : Prog isa} (ha : a.allInstrs p = true)
+    (hb : b.allInstrs p = true) : (Code.seq a b).allInstrs p = true := by
+  show (a.allInstrs p && b.allInstrs p) = true; rw [ha, hb]; rfl
+
+private theorem ai_ite {p : Instr → Bool} {c : Cond} {a b : Prog isa} (ha : a.allInstrs p = true)
+    (hb : b.allInstrs p = true) : (Code.ite c a b).allInstrs p = true := by
+  show (a.allInstrs p && b.allInstrs p) = true; rw [ha, hb]; rfl
+
+private theorem all_flat {p : Instr → Bool} {f : Nat → List Instr} (n : Nat) (h : ∀ i, (f i).all p = true) :
+    ((List.range n).flatMap f).all p = true := by
+  rw [List.all_flatMap]; exact List.all_eq_true.mpr fun i _ => h i
+
+private theorem convert_all {p : Instr → Bool} (wide : Bool)
+    (ht : (test len).all p = true)
+    (hl : ∀ i, ([.ldrb .x9 .x1 i, .strb .x9 .x5 i] : List Instr).all p = true)
+    (hz : (Instr.movz .x .x12 0 0 :: zeroBytes ++
+      ([.addImm .x .x13 .x5 len, .sub .x .x13 .x13 .x2] : List Instr)).all p = true)
+    (hc : (Impl.Rc2.AArch64.Stream.copy .x1 0 .x13 0 .x2).allInstrs p = true)
+    (hs : ∀ i, ([.ldrb .x9 .x5 i, .ldrb .x10 .x5 (i + 1), .lsl .x .x9 .x9 7, .lsr .x .x10 .x10 1,
+      .add .x .x9 .x9 .x10, .strb .x9 .x5 i] : List Instr).all p = true) :
+    (convert len wide).allInstrs p = true := by
+  refine ai_seq (ai_block ht) (ai_ite (ai_block (all_flat len hl)) (ai_seq (ai_block hz) (ai_seq hc (ai_block ?_))))
+  cases wide
+  · rfl
+  · exact all_flat len hs
+
 /-- No instruction of `convert` writes a register of `kept`. -/
 theorem convert_kept (wide : Bool) :
-    (convert len wide).allInstrs (fun i => kept.all fun r => !clobbers i r) = true := by
-  cases wide <;>
-  simp [Code.allInstrs_eq, instrs, convert, test, long, short, shiftBytes, zeroBytes,
-    Impl.Rc2.AArch64.Stream.copy, Impl.Rc2.AArch64.Stream.copyBody, List.all_flatMap, clobbers, dstOf]
+    (convert len wide).allInstrs (fun i => kept.all fun r => !clobbers i r) = true :=
+  convert_all wide (by kernel_rfl) (fun _ => by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (fun _ => by kernel_rfl)
 
 /-- Nor a preserved vector register. -/
-theorem convert_keepsV (wide : Bool) : (convert len wide).allInstrs keepsV = true := by
+theorem convert_keepsV (wide : Bool) : (convert len wide).allInstrs keepsV = true :=
+  convert_all wide (by kernel_rfl) (fun _ => by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (fun _ => by kernel_rfl)
+
+/-- Nor PSTATE.DIT. -/
+theorem convert_noDit (wide : Bool) : (convert len wide).all (fun i => !i.writesDit) = true := by
   cases wide <;>
-  simp [Code.allInstrs_eq, instrs, convert, test, long, short, shiftBytes, zeroBytes,
-    Impl.Rc2.AArch64.Stream.copy, Impl.Rc2.AArch64.Stream.copyBody, List.all_flatMap, keepsV, vdstOf]
+  simp [Code.all, convert, test, long, short, shiftBytes, zeroBytes, Impl.Rc2.AArch64.Stream.copy,
+    Impl.Rc2.AArch64.Stream.copyBody, List.all_flatMap, Instr.writesDit]
 
 /-- `convert`: the buffer's first `len` bytes are `fixedDigest` of the hash,
 and only the buffer and `x9`–`x13`, `x1`, `x2` change. -/
@@ -499,7 +534,7 @@ def hashR (K : List (String × List (BitVec 64))) (st : Nat) : Contract isa wher
   pre s := IPre I st (stripConsts K s) ∧ ConstsOk K st s
   post s s' := (s'.gpr .x0).setWidth 32 =
     vres I s.mem (s.gpr .x0) (Spec.Ecdsa.hashToInt I.curve (hashOf s)) (s.gpr .x3)
-  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.dit = s₂.dit ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧
     s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧
     s₁.gpr .x5 = s₂.gpr .x5 ∧
     (pkB I s₁ ++ hashOf s₁ ++ Spec.Ecdsa.bytesAt s₁.mem (s₁.gpr .x3) (2 * I.curve.len)).map (·.toNat) =
@@ -512,7 +547,7 @@ def coreR (K : List (String × List (BitVec 64))) (st : Nat) : Contract isa wher
   post s s' := (s'.gpr .x0).setWidth 32 =
     vres I s.mem (s.gpr .x0)
       (Spec.Ecdsa.hashToInt I.curve (Spec.Ecdsa.bytesAt s.mem (s.gpr .x1) I.curve.len)) (s.gpr .x2)
-  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧
+  pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.dit = s₂.dit ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧
     s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.gpr .x3 = s₂.gpr .x3 ∧
     (pkB I s₁ ++ Spec.Ecdsa.bytesAt s₁.mem (s₁.gpr .x1) I.curve.len ++
         Spec.Ecdsa.bytesAt s₁.mem (s₁.gpr .x2) (2 * I.curve.len)).map (·.toNat) =
@@ -785,27 +820,34 @@ theorem hashed_ct {core : Prog isa}
     ConstantTime isa (hashR I K st).pre (hashR I K st).pub (hashed I.curve.len wide core) := by
   refine RelCT.constantTime (Q := fun _ _ => True) ?_
   unfold hashed
-  refine RelCT.seq (R := fun u₁ u₂ => ∃ σ₁ σ₂ x₁ x₂ : State, u₁ = x₁ ∧ u₂ = x₂ ∧ HP (I := I) (K := K) (st := st) σ₁ σ₂ ∧
-      (CPost I.curve.len wide σ₁ x₁ ∧ x₁.syms = σ₁.syms) ∧ (CPost I.curve.len wide σ₂ x₂ ∧ x₂.syms = σ₂.syms))
-    ?_ (RelCT.seq (R := fun v₁ v₂ => ∃ σ₁ σ₂ x₁ x₂ : State, HP (I := I) (K := K) (st := st) σ₁ σ₂ ∧
-      CPost I.curve.len wide σ₁ x₁ ∧ VFacts σ₁ x₁ v₁ ∧ CPost I.curve.len wide σ₂ x₂ ∧ VFacts σ₂ x₂ v₂) ?_ ?_)
-  · refine ((RelCT.taint (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5]) (fun s₁ s₂ h => ?_) htc).wpDep
+  refine RelCT.seq (R := fun (u₁ u₂ : State) => (∃ σ₁ σ₂ x₁ x₂ : State, u₁ = x₁ ∧ u₂ = x₂ ∧ HP (I := I) (K := K) (st := st) σ₁ σ₂ ∧
+      (CPost I.curve.len wide σ₁ x₁ ∧ x₁.syms = σ₁.syms) ∧ (CPost I.curve.len wide σ₂ x₂ ∧ x₂.syms = σ₂.syms)) ∧
+      u₁.dit = u₂.dit)
+    ?_ (RelCT.seq (R := fun (v₁ v₂ : State) => (∃ σ₁ σ₂ x₁ x₂ : State, HP (I := I) (K := K) (st := st) σ₁ σ₂ ∧
+      CPost I.curve.len wide σ₁ x₁ ∧ VFacts σ₁ x₁ v₁ ∧ CPost I.curve.len wide σ₂ x₂ ∧ VFacts σ₂ x₂ v₂) ∧
+      v₁.dit = v₂.dit) ?_ ?_)
+  · refine RelCT.and_dit (DitDet.of_noWrite (convert_noDit wide)) (fun _ _ h => h.2.2.2.1) ?_
+    refine ((RelCT.taint (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5]) (fun s₁ s₂ h => ?_) htc).wpDep
       (F := fun (s t : State) => CPost I.curve.len wide s t ∧ t.syms = s.syms) fun s₁ s₂ h =>
         ⟨WP.mono_syms (convert_ok wide (cpre_of hL h66 h.1)) fun _ a sy => ⟨a, sy⟩,
           WP.mono_syms (convert_ok wide (cpre_of hL h66 h.2.1)) fun _ a sy => ⟨a, sy⟩⟩).mono (fun _ _ h => h)
       fun t₁ t₂ ⟨_, σ₁, σ₂, hp, a₁, a₂⟩ => ⟨σ₁, σ₂, t₁, t₂, rfl, rfl, hp, a₁, a₂⟩
-    obtain ⟨-, -, psp, p0, p1, p2, p3, p4, p5, -⟩ := h
+    obtain ⟨-, -, psp, -, p0, p1, p2, p3, p4, p5, -⟩ := h
     refine ⟨psp, fun r hr => ?_⟩
     simp only [Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
-  · refine RelCT.exists_ fun σ₁ => RelCT.exists_ fun σ₂ => RelCT.exists_ fun x₁ => RelCT.exists_ fun x₂ => ?_
+  · refine RelCT.and_dit (DitDet.of_noWrite (by decide)) (fun _ _ h => h.2) ?_
+    refine RelCT.mono (P := fun u₁ u₂ => ∃ σ₁ σ₂ x₁ x₂ : State, u₁ = x₁ ∧ u₂ = x₂ ∧
+        HP (I := I) (K := K) (st := st) σ₁ σ₂ ∧ (CPost I.curve.len wide σ₁ x₁ ∧ x₁.syms = σ₁.syms) ∧
+        (CPost I.curve.len wide σ₂ x₂ ∧ x₂.syms = σ₂.syms)) ?_ (fun _ _ h => h.1) fun _ _ h => h
+    refine RelCT.exists_ fun σ₁ => RelCT.exists_ fun σ₂ => RelCT.exists_ fun x₁ => RelCT.exists_ fun x₂ => ?_
     refine ((RelCT.taint (A := taint) (Taint.ofRegs [.x0, .x3, .x4, .x5]) (fun s₁ s₂ h => ?_) args_taint).wp
       (F₁ := fun v => (HP (I := I) (K := K) (st := st) σ₁ σ₂ ∧ CPost I.curve.len wide σ₁ x₁ ∧
         CPost I.curve.len wide σ₂ x₂) ∧ VFacts σ₁ x₁ v) (F₂ := VFacts σ₂ x₂)
       fun u₁ u₂ ⟨e₁, e₂, hp, ⟨c₁, y₁⟩, ⟨c₂, y₂⟩⟩ => by
         subst e₁ e₂; exact ⟨WP.mono (args_ok c₁ y₁) fun _ h => ⟨⟨hp, c₁, c₂⟩, h⟩, args_ok c₂ y₂⟩).mono
       (fun _ _ h => h) fun v₁ v₂ ⟨_, ⟨⟨hp, c₁, c₂⟩, f₁⟩, f₂⟩ => ⟨σ₁, σ₂, x₁, x₂, hp, c₁, f₁, c₂, f₂⟩
-    obtain ⟨e₁, e₂, ⟨-, -, psp, p0, -, -, p3, p4, p5, -⟩, ⟨c₁, -⟩, ⟨c₂, -⟩⟩ := h
+    obtain ⟨e₁, e₂, ⟨-, -, psp, -, p0, -, -, p3, p4, p5, -⟩, ⟨c₁, -⟩, ⟨c₂, -⟩⟩ := h
     subst e₁ e₂
     have k₁ := c₁.keep
     have k₂ := c₂.keep
@@ -816,16 +858,17 @@ theorem hashed_ct {core : Prog isa}
     · rw [k₁.gpr _ (by decide), k₂.gpr _ (by decide), p3]
     · rw [k₁.gpr _ (by decide), k₂.gpr _ (by decide), p4]
     · rw [k₁.gpr _ (by decide), k₂.gpr _ (by decide), p5]
-  · refine RelCT.inlineV hcv hct fun v₁ v₂ ⟨σ₁, σ₂, x₁, x₂, hp, c₁, f₁, c₂, f₂⟩ => ?_
+  · refine RelCT.inlineV hcv hct fun v₁ v₂ ⟨⟨σ₁, σ₂, x₁, x₂, hp, c₁, f₁, c₂, f₂⟩, hd⟩ => ?_
     obtain ⟨q₁, cv₁, cw₁⟩ := vpre h66 hp.1 c₁ f₁
     obtain ⟨q₂, cv₂, cw₂⟩ := vpre h66 hp.2.1 c₂ f₂
     refine ⟨_, _, _, _, q₁, q₂, ?_, cv₁, cw₁, cv₂, cw₂⟩
-    obtain ⟨psp, p0, p1, p2, p3, p4, p5, pl, psy⟩ := hp.2.2
+    obtain ⟨psp, -, p0, p1, p2, p3, p4, p5, pl, psy⟩ := hp.2.2
     obtain ⟨b₁, k₁, g₁⟩ := vpost hp.1 c₁ f₁
     obtain ⟨b₂, k₂, g₂⟩ := vpost hp.2.1 c₂ f₂
     obtain ⟨ek, eh, eg⟩ := bytes_of_leak (by simp only [pkB, length_bytesAt])
       (by simp only [hashOf, length_bytesAt, p2]) pl
-    refine ⟨by simp only [State.withRegions_sp, f₁.sp, f₂.sp, psp], by simp only [State.withRegions_gpr, f₁.x0, f₂.x0, p0],
+    refine ⟨by simp only [State.withRegions_sp, f₁.sp, f₂.sp, psp], by simp only [State.withRegions_dit, hd],
+      by simp only [State.withRegions_gpr, f₁.x0, f₂.x0, p0],
       by simp only [State.withRegions_gpr, f₁.x1, f₂.x1, p5], by simp only [State.withRegions_gpr, f₁.x2, f₂.x2, p3],
       by simp only [State.withRegions_gpr, f₁.x3, f₂.x3, p4], ?_, fun c hc => ?_⟩
     · simp only [pkB, State.withRegions_mem, State.withRegions_gpr, f₁.x0, f₁.x1, f₁.x2, f₂.x0, f₂.x1, f₂.x2]
@@ -864,7 +907,7 @@ theorem core_post {s s' : State} (h : (Proof.Ecdsa.verifyContract I abi 0).post 
     AArch64.abi, AArch64.argRegs] at h
   exact h
 
-theorem core_pub {s₁ s₂ : State} (h : s₁.sp = s₂.sp ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧
+theorem core_pub {s₁ s₂ : State} (h : s₁.sp = s₂.sp ∧ s₁.dit = s₂.dit ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧
     s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.gpr .x3 = s₂.gpr .x3 ∧
     (pkB I s₁ ++ Spec.Ecdsa.bytesAt s₁.mem (s₁.gpr .x1) I.curve.len ++
         Spec.Ecdsa.bytesAt s₁.mem (s₁.gpr .x2) (2 * I.curve.len)).map (·.toNat) =
@@ -873,8 +916,8 @@ theorem core_pub {s₁ s₂ : State} (h : s₁.sp = s₂.sp ∧ s₁.gpr .x0 = s
     (Proof.Ecdsa.verifyContract I abi 0).pub s₁ s₂ := by
   sig_pub [Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.Ecdsa.scratchWords,
     AArch64.abi, AArch64.argRegs]
-  obtain ⟨psp, p0, p1, p2, p3, pl⟩ := h
-  exact ⟨psp, pl, p0, p1, p2, p3⟩
+  obtain ⟨psp, pd, p0, p1, p2, p3, pl⟩ := h
+  exact ⟨psp, pd, pl, p0, p1, p2, p3⟩
 
 /-- The verification, run as `coreR` describes it, from its proof under `abi`. -/
 theorem coreR_nil {core : Prog isa} (h : Verified target core (Proof.Ecdsa.verifyContract I abi 0)) :
@@ -886,8 +929,8 @@ theorem coreR_nil {core : Prog isa} (h : Verified target core (Proof.Ecdsa.verif
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_⟩
   · obtain ⟨t, s', he, ha, hq⟩ := hc s (hp s hs)
     exact ⟨t, s', he, ha, core_post hq⟩
-  · obtain ⟨psp, p0, p1, p2, p3, pl, -⟩ := hpub
-    exact hct _ _ _ _ _ _ (hp _ h₁) (hp _ h₂) (core_pub ⟨psp, p0, p1, p2, p3, pl⟩) e₁ e₂
+  · obtain ⟨psp, pd, p0, p1, p2, p3, pl, -⟩ := hpub
+    exact hct _ _ _ _ _ _ (hp _ h₁) (hp _ h₂) (core_pub ⟨psp, pd, p0, p1, p2, p3, pl⟩) e₁ e₂
 
 /-- The same, from its proof under `abi.withConsts` of its tables. -/
 theorem coreR_cons {c₀ : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))}
@@ -901,9 +944,9 @@ theorem coreR_cons {c₀ : String × List (BitVec 64)} {cs : List (String × Lis
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_⟩
   · obtain ⟨t, s', he, ha, hq⟩ := hc s (hp s hs)
     exact ⟨t, s', he, ha, core_post (post_consts.mp hq)⟩
-  · obtain ⟨psp, p0, p1, p2, p3, pl, psy⟩ := hpub
+  · obtain ⟨psp, pd, p0, p1, p2, p3, pl, psy⟩ := hpub
     exact hct _ _ _ _ _ _ (hp _ h₁) (hp _ h₂)
-      (pub_consts.mpr ⟨core_pub ⟨psp, p0, p1, p2, p3, pl⟩, psy⟩)
+      (pub_consts.mpr ⟨core_pub ⟨psp, pd, p0, p1, p2, p3, pl⟩, psy⟩)
       e₁ e₂
 
 end
@@ -936,10 +979,10 @@ theorem inner_post {s s' : State} (h : (hashR I [] 0).post s s') : (innerA (I :=
 
 theorem inner_pub {K : List (String × List (BitVec 64))} {s₁ s₂ : State} (h : (innerA (I := I)).pub s₁ s₂)
     (hsy : ∀ c ∈ K, s₁.syms c.1 = s₂.syms c.1) : (hashR I K 0).pub s₁ s₂ := by
-  sig_pub [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, hPost, hLeak, Option.map,
+  sig_pub_keep [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, hPost, hLeak, Option.map,
     Spec.Ecdsa.Instance.verifyHashSig, Spec.Ecdsa.scratchWords, AArch64.abi, AArch64.argRegs] at h
-  obtain ⟨psp, pl, p0, p1, p2, p3, p4, p5⟩ := h
-  exact ⟨psp, p0, p1, p2, p3, p4, p5, pl, hsy⟩
+  obtain ⟨psp, pd, pl, p0, p1, p2, p3, p4, p5⟩ := h
+  exact ⟨psp, pd, p0, p1, p2, p3, p4, p5, pl, hsy⟩
 
 /-- `hashed` under `abi`. -/
 theorem hashed_verified_nil {wide : Bool} {core : Prog isa}

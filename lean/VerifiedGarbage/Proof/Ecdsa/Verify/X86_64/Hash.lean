@@ -607,7 +607,8 @@ def hashR (K : List (String × List (BitVec 64))) (st : Nat) : Contract isa wher
   pre s := IPre I st (stripConsts K s) ∧ ConstsOk K st s
   post s s' := (s'.gpr .rax).setWidth 32 =
     vres I s.mem (s.gpr .rdi) (Spec.Ecdsa.hashToInt I.curve (hashOf s)) (s.gpr .rcx)
-  pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
+  pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧
+    s₁.gpr .rsi = s₂.gpr .rsi ∧
     s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.gpr .r8 = s₂.gpr .r8 ∧
     s₁.gpr .r9 = s₂.gpr .r9 ∧
     (pkB I s₁ ++ hashOf s₁ ++ Spec.Ecdsa.bytesAt s₁.mem (s₁.gpr .rcx) (2 * I.curve.len)).map (·.toNat) =
@@ -620,7 +621,8 @@ def coreR (K : List (String × List (BitVec 64))) (st : Nat) : Contract isa wher
   post s s' := (s'.gpr .rax).setWidth 32 =
     vres I s.mem (s.gpr .rdi)
       (Spec.Ecdsa.hashToInt I.curve (Spec.Ecdsa.bytesAt s.mem (s.gpr .rsi) I.curve.len)) (s.gpr .rdx)
-  pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
+  pub s₁ s₂ := s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧
+    s₁.gpr .rsi = s₂.gpr .rsi ∧
     s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧
     (pkB I s₁ ++ Spec.Ecdsa.bytesAt s₁.mem (s₁.gpr .rsi) I.curve.len ++
         Spec.Ecdsa.bytesAt s₁.mem (s₁.gpr .rdx) (2 * I.curve.len)).map (·.toNat) =
@@ -902,7 +904,7 @@ theorem hashed_ct {core : Prog isa}
       (F := fun (s t : State) => CPost I.curve.len wide s t) fun s₁ s₂ h =>
         ⟨convert_ok wide (cpre_of hL h66 h.1), convert_ok wide (cpre_of hL h66 h.2.1)⟩).mono (fun _ _ h => h)
       fun t₁ t₂ ⟨_, σ₁, σ₂, hp, a₁, a₂⟩ => ⟨σ₁, σ₂, t₁, t₂, rfl, rfl, hp, a₁, a₂⟩
-    obtain ⟨-, -, -, p0, p1, p2, p3, p4, p5, -⟩ := h
+    obtain ⟨-, -, -, -, p0, p1, p2, p3, p4, p5, -⟩ := h
     refine Taint.agree_ofRegs fun r hr => ?_
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
@@ -913,7 +915,7 @@ theorem hashed_ct {core : Prog isa}
       fun u₁ u₂ ⟨e₁, e₂, hp, c₁, c₂⟩ => by
         subst e₁ e₂; exact ⟨WP.mono (args_ok c₁) fun _ h => ⟨⟨hp, c₁, c₂⟩, h⟩, args_ok c₂⟩).mono
       (fun _ _ h => h) fun v₁ v₂ ⟨_, ⟨⟨hp, c₁, c₂⟩, f₁⟩, f₂⟩ => ⟨σ₁, σ₂, x₁, x₂, hp, c₁, f₁, c₂, f₂⟩
-    obtain ⟨e₁, e₂, ⟨-, -, -, p0, -, -, p3, p4, p5, -⟩, c₁, c₂⟩ := h
+    obtain ⟨e₁, e₂, ⟨-, -, -, -, p0, -, -, p3, p4, p5, -⟩, c₁, c₂⟩ := h
     subst e₁ e₂
     have k₁ := c₁.keep
     have k₂ := c₂.keep
@@ -928,12 +930,13 @@ theorem hashed_ct {core : Prog isa}
     obtain ⟨q₁, cv₁, cw₁⟩ := vpre h66 hp.1 c₁ f₁
     obtain ⟨q₂, cv₂, cw₂⟩ := vpre h66 hp.2.1 c₂ f₂
     refine ⟨_, _, _, _, q₁, q₂, ?_, cv₁, cw₁, cv₂, cw₂⟩
-    obtain ⟨psp, p0, p1, p2, p3, p4, p5, pl, psy⟩ := hp.2.2
+    obtain ⟨psp, pm, p0, p1, p2, p3, p4, p5, pl, psy⟩ := hp.2.2
     obtain ⟨b₁, k₁, g₁⟩ := vpost hp.1 c₁ f₁
     obtain ⟨b₂, k₂, g₂⟩ := vpost hp.2.1 c₂ f₂
     obtain ⟨ek, eh, eg⟩ := bytes_of_leak (by simp only [pkB, length_bytesAt])
       (by simp only [hashOf, length_bytesAt, p2]) pl
     refine ⟨by simp only [State.withRegions_gpr, f₁.rsp, f₂.rsp, psp],
+      by rw [State.withRegions_mxcsr, State.withRegions_mxcsr, f₁.mx, f₂.mx, pm],
       by simp only [State.withRegions_gpr, f₁.rdi, f₂.rdi, p0],
       by simp only [State.withRegions_gpr, f₁.rsi, f₂.rsi, p5], by simp only [State.withRegions_gpr, f₁.rdx, f₂.rdx, p3],
       by simp only [State.withRegions_gpr, f₁.rcx, f₂.rcx, p4], ?_, fun c hc => ?_⟩
@@ -979,7 +982,7 @@ theorem core_post {s s' : State} (h : (Proof.Ecdsa.verifyContract I abi 8).post 
     X86_64.abi, X86_64.argRegs] at h
   exact h
 
-theorem core_pub {s₁ s₂ : State} (h : s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧
+theorem core_pub {s₁ s₂ : State} (h : s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧
     s₁.gpr .rsi = s₂.gpr .rsi ∧ s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧
     (pkB I s₁ ++ Spec.Ecdsa.bytesAt s₁.mem (s₁.gpr .rsi) I.curve.len ++
         Spec.Ecdsa.bytesAt s₁.mem (s₁.gpr .rdx) (2 * I.curve.len)).map (·.toNat) =
@@ -988,8 +991,8 @@ theorem core_pub {s₁ s₂ : State} (h : s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁
     (Proof.Ecdsa.verifyContract I abi 8).pub s₁ s₂ := by
   sig_pub [Proof.Ecdsa.verifyContract, Proof.Ecdsa.verifySig, Spec.Ecdsa.scratchWords,
     X86_64.abi, X86_64.argRegs]
-  obtain ⟨psp, p0, p1, p2, p3, pl⟩ := h
-  exact ⟨psp, pl, p0, p1, p2, p3⟩
+  obtain ⟨psp, pm, p0, p1, p2, p3, pl⟩ := h
+  exact ⟨psp, pm, pl, p0, p1, p2, p3⟩
 
 /-- The verification, run as `coreR` describes it, from its proof under `abi`. -/
 theorem coreR_nil {core : Prog isa} (h : Verified target core (Proof.Ecdsa.verifyContract I abi 8)) :
@@ -1001,8 +1004,8 @@ theorem coreR_nil {core : Prog isa} (h : Verified target core (Proof.Ecdsa.verif
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_⟩
   · obtain ⟨t, s', he, ha, hq⟩ := hc s (hp s hs)
     exact ⟨t, s', he, ha, core_post hq⟩
-  · obtain ⟨psp, p0, p1, p2, p3, pl, -⟩ := hpub
-    exact hct _ _ _ _ _ _ (hp _ h₁) (hp _ h₂) (core_pub ⟨psp, p0, p1, p2, p3, pl⟩) e₁ e₂
+  · obtain ⟨psp, pm, p0, p1, p2, p3, pl, -⟩ := hpub
+    exact hct _ _ _ _ _ _ (hp _ h₁) (hp _ h₂) (core_pub ⟨psp, pm, p0, p1, p2, p3, pl⟩) e₁ e₂
 
 /-- The same, from its proof under `abi.withConsts` of its tables. -/
 theorem coreR_cons {c₀ : String × List (BitVec 64)} {cs : List (String × List (BitVec 64))}
@@ -1016,9 +1019,9 @@ theorem coreR_cons {c₀ : String × List (BitVec 64)} {cs : List (String × Lis
   refine ⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hpub e₁ e₂ => ?_⟩
   · obtain ⟨t, s', he, ha, hq⟩ := hc s (hp s hs)
     exact ⟨t, s', he, ha, core_post (post_consts.mp hq)⟩
-  · obtain ⟨psp, p0, p1, p2, p3, pl, psy⟩ := hpub
+  · obtain ⟨psp, pm, p0, p1, p2, p3, pl, psy⟩ := hpub
     exact hct _ _ _ _ _ _ (hp _ h₁) (hp _ h₂)
-      (pub_consts.mpr ⟨core_pub ⟨psp, p0, p1, p2, p3, pl⟩, psy⟩) e₁ e₂
+      (pub_consts.mpr ⟨core_pub ⟨psp, pm, p0, p1, p2, p3, pl⟩, psy⟩) e₁ e₂
 
 end
 
@@ -1061,10 +1064,10 @@ theorem inner_post {s s' : State} (h : (hashR I [] 8).post s s') : (innerA (I :=
 
 theorem inner_pub {K : List (String × List (BitVec 64))} {s₁ s₂ : State} (h : (innerA (I := I)).pub s₁ s₂)
     (hsy : ∀ c ∈ K, s₁.syms c.1 = s₂.syms c.1) : (hashR I K 8).pub s₁ s₂ := by
-  sig_pub [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, hPost, hLeak, Option.map,
+  sig_pub_keep [Sig.scratchContract, Sig.withScratch, Curry.withScratch, Curry.app, hPost, hLeak, Option.map,
     Spec.Ecdsa.Instance.verifyHashSig, Spec.Ecdsa.scratchWords, X86_64.abi, X86_64.argRegs] at h
-  obtain ⟨psp, pl, p0, p1, p2, p3, p4, p5⟩ := h
-  exact ⟨psp, p0, p1, p2, p3, p4, p5, pl, hsy⟩
+  obtain ⟨psp, pm, pl, p0, p1, p2, p3, p4, p5⟩ := h
+  exact ⟨psp, pm, p0, p1, p2, p3, p4, p5, pl, hsy⟩
 
 /-- `hashed` under `abi`. -/
 theorem hashed_verified_nil {wide : Bool} {core : Prog isa}
@@ -1126,7 +1129,7 @@ its leak. -/
 theorem pub_regsL {stack : Nat} {s₁ s₂ : State} {leak : Option (Curry (sig.words abi.ptrBits) (Mem → List Nat))}
     (hk : (sig.words abi.ptrBits).length ≤ 6) (hl : Sig.noLists sig.params = true) :
     (sig.contract abi pre post wa stack leak).pub s₁ s₂ ↔
-      (s₁.gpr .rsp = s₂.gpr .rsp ∧ leakAgree leak (regArgs sig s₁) s₁.mem (regArgs sig s₂) s₂.mem) ∧
+      ((s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr) ∧ leakAgree leak (regArgs sig s₁) s₁.mem (regArgs sig s₂) s₂.mem) ∧
       ∀ i, (sig.params.flatMap (·.2.pubs)).getD i false = true →
         ((regArgs sig s₁).getD i 0).setWidth (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD i 64) =
           ((regArgs sig s₂).getD i 0).setWidth (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD i 64) := by

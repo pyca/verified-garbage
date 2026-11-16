@@ -211,6 +211,38 @@ theorem mem_callErase {τ : T} {r : Reg} :
       r ≠ .ra ∧ r ∈ τ := by
   simp only [callErase, RegSet.mem_erase]
 
+/-! ## The step the kernel finds again
+
+The kernel evaluates a set of registers when it is read, and remembers the
+value of every term it has evaluated, by the term. `step` gives a set that is
+a term in the set before (`if p then τ.insert r else τ.erase r`): no two are
+the same term, and the kernel evaluates every instruction of the code it
+checks. `stepK` gives a set that is evaluated (`RegSet.force`), so that an
+instruction the kernel has evaluated from a set is found again wherever the
+code repeats it from the same set, as inlined arithmetic does. It matches on
+the instruction once, with its cases closed (`inline_match%`). See "An
+analysis the kernel finds again" in the `proof-performance` skill. -/
+
+/-- `step`, as a function of the instruction first. -/
+def stepFn (i : Instr) : T → Option T := fun τ => step τ i
+
+/-- `stepFn`, with its cases closed (`inline_match%`). -/
+def stepFnK : Instr → T → Option T := inline_match% stepFn step
+
+theorem stepFnK_eq (i : Instr) : stepFnK i = stepFn i := by cases i <;> rfl
+
+/-- `step`, giving a set that is evaluated. -/
+def stepK (τ : T) (i : Instr) : Option T :=
+  match stepFnK i τ with
+  | some τ' => τ'.force some
+  | none => none
+
+theorem stepK_eq : stepK = step := by
+  funext τ i
+  have h : stepFnK i τ = step τ i := congrFun (stepFnK_eq i) τ
+  rw [stepK, h]
+  cases step τ i <;> rfl
+
 end VG.RISCV64.Taint
 
 namespace VG.RISCV64
@@ -219,8 +251,8 @@ namespace VG.RISCV64
 def taint : VG.Taint isa where
   T := Taint.T
   Agree := Taint.Agree
-  step := Taint.step
-  step_sound := Taint.step_sound
+  step := Taint.stepK
+  step_sound ha hs := Taint.step_sound ha (Taint.stepK_eq ▸ hs)
   condPub := Taint.condPub
   cond_sound := Taint.cond_sound
   meet τ₁ τ₂ := τ₁.inter τ₂
@@ -251,5 +283,9 @@ def taint : VG.Taint isa where
   push_sound := Taint.push_sound
   pop := Taint.pop
   pop_sound := Taint.pop_sound
+
+/-- `taint`'s step is `Taint.step`'s (`stepK_eq`). -/
+theorem taint_step (τ : Taint.T) (i : Instr) : taint.step τ i = Taint.step τ i :=
+  congrFun (congrFun Taint.stepK_eq τ) i
 
 end VG.RISCV64

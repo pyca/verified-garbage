@@ -1193,7 +1193,7 @@ open VG.Impl.MlDsa.AArch64.Optimized.Paired
 
 theorem pairedHint_callee (S : Nat) :
     CalleeOk S (selected .h) (pairedHintContract (abi.withConsts pairedConsts)) := by
-  refine ⟨pairedHint_verified.1,pairedHint_verified.2.1,?_⟩
+  refine CalleeOk.of_ct pairedHint_verified.1 pairedHint_verified.2.1 (by lit_decide) (fun _ _ h => h) ?_
   change 0≤S
   exact Nat.zero_le _
 

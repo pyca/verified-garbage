@@ -27,6 +27,7 @@ def backend : Compress where
   verified := Proof.Sha512.AArch64.Sha3.compress_verified
   noFrames := by lit_decide
   keepsV := by lit_decide
+  noDit := by lit_decide
   suffix := "_sha512"
   features := ["sha3"]
   updateCT := by exact (VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4])

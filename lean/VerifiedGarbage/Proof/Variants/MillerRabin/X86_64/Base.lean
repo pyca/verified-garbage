@@ -24,6 +24,7 @@ def arith : RoundArith where
   inlineMont := Mont.fnBase
   inlineDepth := by intro o a b; rfl
   inlineSafe := by intro o a b; rfl
+  inlineNoMx := by intro o a b; rfl
   mm := Mont.fnBase.mm
   mmOk := inline_call_inlineOk (by decide +kernel)
   mmInline := inline_call_inline (by decide +kernel)

@@ -150,7 +150,9 @@ open VG.Taint in
 instance : LeFrame taint where
   le_right {_ b} _ := RegSet.subset_refl b
   le_trans h₁ h₂ := RegSet.subset_trans h₁ h₂
-  step i h hs := Taint.step_mono i h hs
+  step {τ σ _} i h hs := by
+    obtain ⟨σ', h₁, h₂⟩ := Taint.step_mono i h ((taint_step τ i).symm.trans hs)
+    exact ⟨σ', (taint_step σ i).trans h₁, h₂⟩
   condPub c h hc := Taint.condPub_mono c h hc
   meet h₁ h₂ := RegSet.inter_mono h₁ h₂
   call h hs := by cases hs; exact ⟨_, rfl, Taint.call_mono h⟩
@@ -173,7 +175,7 @@ instance : LeFrame taint where
   keepsCall := Taint.keepsCall
   keeps_bot := Taint.keepsI_empty
   keepsCall_bot := rfl
-  step_keeps i hk hΦF hΦ hs := Taint.step_keeps i hk hΦF hΦ hs
+  step_keeps {_ _ σ _} i hk hΦF hΦ hs := Taint.step_keeps i hk hΦF hΦ ((taint_step σ i).symm.trans hs)
   call_keeps hk hΦF hΦ hs := by cases hs; exact Taint.call_keeps hk hΦF hΦ
   ret_keeps _ _ hΦ hs := by cases hs; exact hΦ
   push_keeps i _ _ hΦ hs := Taint.push_keeps i hΦ hs
@@ -185,7 +187,9 @@ statics of `L`, which it makes public: monotone, with the meet as frames. -/
 instance (L : List String) : LeFrame (taintSym L) where
   le_right {_ b} _ := RegSet.subset_refl b
   le_trans h₁ h₂ := RegSet.subset_trans h₁ h₂
-  step i h hs := Taint.step_mono (i.symLi L) h hs
+  step {τ σ _} i h hs := by
+    obtain ⟨σ', h₁, h₂⟩ := Taint.step_mono (i.symLi L) h ((taintSym_step L τ i).symm.trans hs)
+    exact ⟨σ', (taintSym_step L σ i).trans h₁, h₂⟩
   condPub c h hc := Taint.condPub_mono c h hc
   meet h₁ h₂ := RegSet.inter_mono h₁ h₂
   call h hs := by cases hs; exact ⟨_, rfl, Taint.call_mono h⟩
@@ -208,8 +212,9 @@ instance (L : List String) : LeFrame (taintSym L) where
   keepsCall := Taint.keepsCall
   keeps_bot := Taint.keepsI_empty
   keepsCall_bot := rfl
-  step_keeps i hk hΦF hΦ hs :=
-    Taint.step_keeps (i.symLi L) ((Taint.keepsI_symLi L _ i).trans hk) hΦF hΦ hs
+  step_keeps {_ _ σ _} i hk hΦF hΦ hs :=
+    Taint.step_keeps (i.symLi L) ((Taint.keepsI_symLi L _ i).trans hk) hΦF hΦ
+      ((taintSym_step L σ i).symm.trans hs)
   call_keeps hk hΦF hΦ hs := by cases hs; exact Taint.call_keeps hk hΦF hΦ
   ret_keeps _ _ hΦ hs := by cases hs; exact hΦ
   push_keeps i _ _ hΦ hs := Taint.push_keeps i hΦ hs

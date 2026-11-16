@@ -109,7 +109,7 @@ theorem copyEntry_ok {st : State} (h : Base s (AL s) 0 st) (h11 : st.gpr .r11 = 
     ((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (cs 104 (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (cs 112 (by decide) (by decide))
   refine ⟨by simp [gpr_setReg], by simp [gpr_setReg], by simp [gpr_setReg], fun r hr => ?_,
-    ⟨⟨?_, fun r hr => ?_, by simp [rd_setReg, h.rd], by simp [wr_setReg, h.wr], ?_, ?_⟩, ?_, ?_⟩⟩
+    ⟨⟨?_, fun r hr => ?_, by simp [rd_setReg, h.rd], by simp [wr_setReg, h.wr], ?_, ?_, h.mx⟩, ?_, ?_⟩⟩
   · simp only [calleeSaved, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> simp [gpr_setReg]
   · simp [gpr_setReg, h.rsp]
@@ -162,8 +162,8 @@ theorem copyGatherPre {st : State} (hL : L s < 2 ^ 63) (h : Base s (AL s) 0 st)
 
 /-- After the gathering: the text in the output, and the rest as it was. -/
 theorem gathered_after {st st' : State} (h : CBase s st)
-    (hm : st'.mem = WriteBytes.writeBytes st.mem (Dst s) (gathered 64 st.mem (Src s) (Cnt s))) (hk : GKeeps st st') :
-    SBase s st' := by
+    (hm : st'.mem = WriteBytes.writeBytes st.mem (Dst s) (gathered 64 st.mem (Src s) (Cnt s))) (hk : GKeeps st st')
+    (hmx : st'.mxcsr = st.mxcsr) : SBase s st' := by
   have hL : L s < 2 ^ 64 := (stackArg s 3).isLt
   have hpt : gathered 64 st.mem (Src s) (Cnt s) = pt s (Cnt s) := pt_eq hp h.frame (Nat.le_refl _)
   have hlen : (pt s (Cnt s)).length = L s := by rw [length_pt, hp.glen]
@@ -190,7 +190,7 @@ theorem gathered_after {st st' : State} (h : CBase s st)
     rw [fD.readW cS8 dS (by decide)]; exact h.nonceLen
   have e9 : bytesAt st'.mem (Dst s) (L s) = pt s (Cnt s) := by
     rw [hm, ← hlen]; exact bytesAt_writeBytes_self _ _ _ (by omega_using [hL, hlen])
-  exact ⟨⟨⟨e1, e2, hk.rd.trans h.rd, hk.wr.trans h.wr, e5, e6⟩, e7, e8⟩, e9⟩
+  exact ⟨⟨⟨e1, e2, hk.rd.trans h.rd, hk.wr.trans h.wr, e5, e6, hmx.trans h.mx⟩, e7, e8⟩, e9⟩
 
 /-- The arguments of `vg_aes_gcm_seal(ctx, rounds, nonce, nonce_len, aad,
 aad_len, dst, len, tag)`, with `tag`, `len` and `dst` to push. -/
@@ -469,8 +469,9 @@ end
 
 /-- `SBase` through code that changes no memory, `rsp` or callee-saved register. -/
 theorem SBase.regs {s st st' : State} (h : SBase s st) (hm : st'.mem = st.mem)
-    (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr) : SBase s st' :=
-  ⟨⟨h.toBase.regs hm hcs hrd hwr, hm ▸ h.nonce, hm ▸ h.nonceLen⟩, hm ▸ h.out⟩
+    (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr)
+    (hmx : st'.mxcsr = st.mxcsr) : SBase s st' :=
+  ⟨⟨h.toBase.regs hm hcs hrd hwr hmx, hm ▸ h.nonce, hm ▸ h.nonceLen⟩, hm ▸ h.out⟩
 
 section
 variable {M : CtxMode} {s : State} (hp : SG M s)
@@ -483,10 +484,11 @@ theorem copySeal_wp (S : SealFn M) (hL : L s < 2 ^ 63) {st : State} (h : Base s 
     WP isa (Impl.AesGcm.X86_64.SealGather.copySeal S.fn) st (Done s) := by
   unfold Impl.AesGcm.X86_64.SealGather.copySeal
   refine WP.seq (WP.mono (copyEntry_ok hp h h11 hsi hdx) fun s₁ ⟨r9₁, rdi₁, r11₁, _, C₁⟩ => ?_)
-  refine WP.seq (WP.mono (gatherCopy_wp s₁ (copyGatherPre hp hL C₁.toBase r9₁ rdi₁ r11₁)) fun s₂ ⟨m₂, k₂⟩ => ?_)
-  have B₂ := gathered_after hp C₁ m₂ k₂
-  refine WP.seq (WP.mono (sealArgs_ok hp B₂) fun s₃ ⟨di, si, dx, cx, r8, r9, ax, r10, r11, cs, m, rd, wr⟩ => ?_)
-  exact sealCall_ok hp S (B₂.regs m cs rd wr) ⟨di, si, dx, cx, r8, r9, ax, r10, r11⟩
+  refine WP.seq (WP.mono_mx (by decide) (gatherCopy_wp s₁ (copyGatherPre hp hL C₁.toBase r9₁ rdi₁ r11₁))
+    fun s₂ ⟨m₂, k₂⟩ mx₂ => ?_)
+  have B₂ := gathered_after hp C₁ m₂ k₂ mx₂
+  refine WP.seq (WP.mono_mx (by decide) (sealArgs_ok hp B₂) fun s₃ ⟨di, si, dx, cx, r8, r9, ax, r10, r11, cs, m, rd, wr⟩ mxw => ?_)
+  exact sealCall_ok hp S (B₂.regs m cs rd wr mxw) ⟨di, si, dx, cx, r8, r9, ax, r10, r11⟩
 
 end
 
@@ -524,7 +526,7 @@ open VG.Proof.Gcm (padA)
 
 /-- After the first entry block. -/
 def E1 (s : State) (s₁ : State) : Prop :=
-  s₁.gpr .r11 = W s ∧ (∀ r, r ≠ .r11 → r ≠ .rax → r ≠ .r10 → s₁.gpr r = s.gpr r) ∧
+  (s₁.gpr .r11 = W s ∧ (∀ r, r ≠ .r11 → r ≠ .rax → r ≠ .r10 → s₁.gpr r = s.gpr r) ∧
     s₁.mem.readW (W s + BitVec.ofNat 64 0) 64 = K s ∧
     s₁.mem.readW (W s + BitVec.ofNat 64 8) 64 = s.gpr .rsi ∧
     s₁.mem.readW (W s + BitVec.ofNat 64 16) 64 = Ad s ∧
@@ -532,7 +534,7 @@ def E1 (s : State) (s₁ : State) : Prop :=
     s₁.mem.readW (W s + BitVec.ofNat 64 56) 64 = Src s ∧
     s₁.mem.readW (W s + BitVec.ofNat 64 64) 64 = stackArg s 1 ∧
     s₁.mem.readW (W s + BitVec.ofNat 64 80) 64 = AL s ∧
-    Frame [kpR s] s.mem s₁.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr
+    Frame [kpR s] s.mem s₁.mem ∧ s₁.rd = s.rd ∧ s₁.wr = s.wr) ∧ s₁.mxcsr = s.mxcsr
 
 /-- Before the call of `vg_aes_gcm_stream_init`. -/
 def E2 (s : State) (st : State) : Prop :=
@@ -605,17 +607,18 @@ include hp
 /-! ## The pieces -/
 
 theorem w_entry2 {st : State} (h : E1 s st) : WP isa (.block entry2) st (E2 s) := by
-  obtain ⟨h11, hg, c₀, c₁, c₂, c₃, c₇, c₈, c₁₀, f₁, rd₁, wr₁⟩ := h
-  exact WP.mono (entry2_ok hp h11 hg c₀ c₁ c₂ c₃ c₇ c₈ c₁₀ f₁ rd₁ wr₁)
-    fun _ ⟨k, f₂, di, si, dx, cx, _, sp, cs, rd₂, wr₂⟩ => ⟨⟨sp, cs, rd₂, wr₂, k, frame_kpR f₂⟩, di, si, dx, cx⟩
+  obtain ⟨⟨h11, hg, c₀, c₁, c₂, c₃, c₇, c₈, c₁₀, f₁, rd₁, wr₁⟩, mx₁⟩ := h
+  exact WP.mono_mx (by decide) (entry2_ok hp h11 hg c₀ c₁ c₂ c₃ c₇ c₈ c₁₀ f₁ rd₁ wr₁)
+    fun _ ⟨k, f₂, di, si, dx, cx, _, sp, cs, rd₂, wr₂⟩ mx₂ =>
+      ⟨⟨sp, cs, rd₂, wr₂, k, frame_kpR f₂, mx₂.trans mx₁⟩, di, si, dx, cx⟩
 
 theorem w_init (inl : Bool) (I : InitFn) {st : State} (h : E2 s st) :
     WP isa (callOr inl I.fn) st (Mid s (AL s) 0 []) :=
   initCall_ok hp inl I h.1 h.2.1 h.2.2.1 h.2.2.2.1 h.2.2.2.2
 
 theorem w_aadArgs {st : State} (h : Mid s (AL s) 0 [] st) : WP isa (.block aadArgs) st (P4 s) :=
-  WP.mono (aadArgs_ok hp h.toBase) fun _ ⟨di, si, dx, cx, r8, cs, m, rd, wr⟩ =>
-    ⟨h.regs m cs rd wr, di, si, dx, cx, r8⟩
+  WP.mono_mx (by decide) (aadArgs_ok hp h.toBase) fun _ ⟨di, si, dx, cx, r8, cs, m, rd, wr⟩ mxw =>
+    ⟨h.regs m cs rd wr mxw, di, si, dx, cx, r8⟩
 
 theorem w_aad (inl : Bool) (A : AadFn) {st : State} (h : P4 s st) :
     WP isa (callOr inl A.fn) st (Mid s (AL s) 0 (ad s)) := by
@@ -626,11 +629,11 @@ theorem w_aad (inl : Bool) (A : AadFn) {st : State} (h : P4 s st) :
   rwa [List.nil_append, ad_eq hp M₄.frame] at M₅
 
 theorem w_textLen {st : State} (h : Mid s (AL s) 0 (ad s) st) : WP isa (.block textLen) st (T1 s) :=
-  WP.mono (textLen_ok hp h.toBase) fun _ ⟨r11, z, cs, m, rd, wr⟩ => ⟨h.regs m cs rd wr, r11, z⟩
+  WP.mono_mx (by decide) (textLen_ok hp h.toBase) fun _ ⟨r11, z, cs, m, rd, wr⟩ mxw => ⟨h.regs m cs rd wr mxw, r11, z⟩
 
 theorem w_padLen {st : State} (h : T1 s st) : WP isa (.block padLen) st (T2 s) :=
-  WP.mono (padLen_ok hp h.1.toBase h.2.1) fun _ ⟨r11, cx, r8, z, cs, m, rd, wr⟩ =>
-    ⟨h.1.regs m cs rd wr, r11, cx, r8, z⟩
+  WP.mono_mx (by decide) (padLen_ok hp h.1.toBase h.2.1) fun _ ⟨r11, cx, r8, z, cs, m, rd, wr⟩ mxw =>
+    ⟨h.1.regs m cs rd wr mxw, r11, cx, r8, z⟩
 
 omit hp in
 /-- The additional data, already a whole number of blocks. -/
@@ -643,9 +646,10 @@ theorem pad_none {st : State} (h : T2 s st) (hr : (AL s).toNat % 16 = 0) : Mid s
 
 theorem w_padArgs {st : State} (h : T2 s st) : WP isa (.block padArgs) st (T3 s) := by
   obtain ⟨M₂, r11, cx, r8, -⟩ := h
-  exact WP.mono (padArgs_ok hp M₂.toBase r11 cx r8) fun s₃ ⟨di, si, dx, cx, r8, k, f, cs₃, rd₃, wr₃⟩ =>
+  exact WP.mono_mx (by decide) (padArgs_ok hp M₂.toBase r11 cx r8)
+    fun s₃ ⟨di, si, dx, cx, r8, k, f, cs₃, rd₃, wr₃⟩ mx₃ =>
     ⟨⟨⟨by rw [cs₃ _ (by decide), M₂.rsp], fun r hr => by rw [cs₃ r hr, M₂.saved r hr], rd₃.trans M₂.rd,
-      wr₃.trans M₂.wr, k, M₂.frame.trans (frame_kpR f)⟩, Nat.zero_le _,
+      wr₃.trans M₂.wr, k, M₂.frame.trans (frame_kpR f), mx₃.trans M₂.mx⟩, Nat.zero_le _,
       StreamTo.streamRepr_frame f (one_kpR kpR_stR) M₂.sr, by rw [gl_zero, ct_zero]; rfl⟩, di, si, dx, cx, r8⟩
 
 theorem w_padCall (inl : Bool) (A : AadFn) {st : State} (h : T3 s st) (hr : (AL s).toNat % 16 ≠ 0) :
@@ -671,12 +675,12 @@ theorem w_padCall (inl : Bool) (A : AadFn) {st : State} (h : T3 s st) (hr : (AL 
 
 theorem w_leftTest {ap : BitVec 64} {A : List Byte} {st : State} (h : Mid s ap 0 A st) :
     WP isa (.block leftTest) st fun st' => Mid s ap 0 A st' ∧ st'.zf = some (decide (Cnt s - 0 = 0)) :=
-  WP.mono (leftTest_ok hp h.toBase) fun _ ⟨_, z, cs, m, rd, wr⟩ => ⟨h.regs m cs rd wr, z⟩
+  WP.mono_mx (by decide) (leftTest_ok hp h.toBase) fun _ ⟨_, z, cs, m, rd, wr⟩ mxw => ⟨h.regs m cs rd wr mxw, z⟩
 
 theorem w_sliceArgs {ap : BitVec 64} {A : List Byte} {i : Nat} (hi : i < Cnt s) {st : State}
     (h : Mid s ap i A st) : WP isa (.block sliceArgs) st (S1 s ap i A) :=
-  WP.mono (sliceArgs_ok hp hi h.toBase) fun _ ⟨di, si, dx, cx, r8, r9, r10, ax, cs, m, rd, wr⟩ =>
-    ⟨h.regs m cs rd wr, di, si, dx, cx, r8, r9, r10, ax⟩
+  WP.mono_mx (by decide) (sliceArgs_ok hp hi h.toBase) fun _ ⟨di, si, dx, cx, r8, r9, r10, ax, cs, m, rd, wr⟩ mxw =>
+    ⟨h.regs m cs rd wr mxw, di, si, dx, cx, r8, r9, r10, ax⟩
 
 theorem w_sliceCall (T : ToFn M) {ap : BitVec 64} {A : List Byte} (hap : ap = BitVec.ofNat 64 A.length)
     {i : Nat} (hi : i < Cnt s) {st : State} (h : S1 s ap i A st) :
@@ -684,8 +688,9 @@ theorem w_sliceCall (T : ToFn M) {ap : BitVec 64} {A : List Byte} (hap : ap = Bi
   have hL : L s < 2 ^ 64 := (stackArg s 3).isLt
   have gsl := gl_succ_le hp hi
   obtain ⟨M₁, di, si, dx, cx, r8, r9, r10, ax⟩ := h
-  refine WP.mono (toCall_ok hp T hi M₁.toBase di si dx cx r8 r9 r10 ax) fun s₂ ⟨cs₂, rd₂, wr₂, f₂, post⟩ => ?_
-  have B₂ := M₁.toBase.after hp cs₂ rd₂ wr₂ f₂ (fun r hr => by
+  refine WP.mono_mx (by simp only [Code.allInstrs, T.mx, Bool.and_true]; rfl)
+    (toCall_ok hp T hi M₁.toBase di si dx cx r8 r9 r10 ax) fun s₂ ⟨cs₂, rd₂, wr₂, f₂, post⟩ mx₂ => ?_
+  have B₂ := M₁.toBase.after hp cs₂ rd₂ wr₂ mx₂ f₂ (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨wkR s, by simp, stR_sub⟩
@@ -717,9 +722,9 @@ theorem w_sliceNext {ap : BitVec 64} {A : List Byte} {i : Nat} (hi : i < Cnt s) 
   have hL : L s < 2 ^ 64 := (stackArg s 3).isLt
   have gsl := gl_succ_le hp hi
   obtain ⟨B₂, sr₂, out₂⟩ := h
-  refine WP.mono (sliceNext_ok hp hi B₂) fun s₃ ⟨_, z, k, f₃, cs₃, rd₃, wr₃⟩ =>
+  refine WP.mono_mx (by decide) (sliceNext_ok hp hi B₂) fun s₃ ⟨_, z, k, f₃, cs₃, rd₃, wr₃⟩ mx₃ =>
     ⟨⟨⟨by rw [cs₃ _ (by decide), B₂.rsp], fun r hr => by rw [cs₃ r hr, B₂.saved r hr], rd₃.trans B₂.rd,
-      wr₃.trans B₂.wr, k, B₂.frame.trans (frame_kpR f₃)⟩, by omega_using [hi],
+      wr₃.trans B₂.wr, k, B₂.frame.trans (frame_kpR f₃), mx₃.trans B₂.mx⟩, by omega_using [hi],
       StreamTo.streamRepr_frame f₃ (one_kpR kpR_stR) sr₂, ?_⟩, z⟩
   rw [← out₂]
   exact bytesAt_frame f₃ (one_kpR ((hp.d_w.symm.sub_left kpR_sub).sub_right
@@ -784,8 +789,8 @@ theorem text_ok (inl : Bool) (A : AadFn) (T : ToFn M) {st : State} (h : Mid s (A
 
 theorem w_finArgs {st : State} (h : Fin s st) : WP isa (.block finArgs) st (P7 s) := by
   obtain ⟨ap, i, B, sr, out⟩ := h
-  exact WP.mono (finArgs_ok hp B) fun _ ⟨di, si, dx, cx, r8, r9, cs, m, rd, wr⟩ =>
-    ⟨⟨ap, i, B.regs m cs rd wr, m ▸ sr, m ▸ out⟩, di, si, dx, cx, r8, r9⟩
+  exact WP.mono_mx (by decide) (finArgs_ok hp B) fun _ ⟨di, si, dx, cx, r8, r9, cs, m, rd, wr⟩ mxw =>
+    ⟨⟨ap, i, B.regs m cs rd wr mxw, m ▸ sr, m ▸ out⟩, di, si, dx, cx, r8, r9⟩
 
 theorem w_fin (inl : Bool) (F : FinFn) {st : State} (h : P7 s st) : WP isa (callOr inl F.fn) st (Done s) := by
   obtain ⟨⟨ap, i, B₇, sr₆, out₆⟩, di, si, dx, cx, r8, r9⟩ := h
@@ -825,7 +830,8 @@ theorem sealGatherG_wp {q : Nat} {quick fast test short : Prog isa} {go : Bool}
     (inl : Bool) (I : InitFn) (A : AadFn) (T : ToFn M) (F : FinFn) {st : State} (hs : Same s st) :
     WP isa (sealGather quick fast test short I.fn A.fn T.fn F.fn inl) st (Done s) := by
   unfold sealGather gatherRest
-  refine WP.seq (WP.mono (entry1_ok hp hs) fun _ h₁ => WP.seq (WP.mono (w_entry2 hp h₁) fun _ h₂ =>
+  refine WP.seq (WP.mono_mx (by decide) (entry1_ok hp hs) fun _ h₁ hm =>
+    WP.seq (WP.mono (w_entry2 hp ⟨h₁, hm.trans hs.mx⟩) fun _ h₂ =>
     WP.seq (WP.mono (hquick _ h₂) fun σ ⟨E₀, r₀, c₀⟩ => ?_)))
   refine WP.ite (decide (L s < q)) (by simp only [eval, c₀]) (fun e => hfast (by simpa using e) σ E₀ r₀)
     (fun _ => WP.seq (WP.mono (htest _ E₀) fun st ⟨E, r11, cf⟩ => ?_))

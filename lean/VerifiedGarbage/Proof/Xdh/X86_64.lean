@@ -162,7 +162,7 @@ def ExPost (n : Nat) (f : List Byte → List Byte → List Byte) (s s' : State) 
 /-- What two runs agree on: the pointers. -/
 def Pub (s₁ s₂ : State) : Prop :=
   s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.gpr .rdi = s₂.gpr .rdi ∧ s₁.gpr .rsi = s₂.gpr .rsi ∧
-    s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx
+    s₁.gpr .rdx = s₂.gpr .rdx ∧ s₁.gpr .rcx = s₂.gpr .rcx ∧ s₁.mxcsr = s₂.mxcsr
 
 /-- The exchange function's contract on x86-64. -/
 def exContract (n w : Nat) (f : List Byte → List Byte → List Byte) : Contract isa where
@@ -524,7 +524,7 @@ theorem exchange_ct {n w : Nat} {f : List Byte → List Byte → List Byte} {c :
     ConstantTime isa (Pre n w 24) Pub (exchange name c n) := by
   obtain ⟨_, ht⟩ := ht
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
-  obtain ⟨qsp, q0, q1, q2, q3⟩ := hq
+  obtain ⟨qsp, q0, q1, q2, q3, q4⟩ := hq
   have hrd : σ₂.rd = σ₁.rd := by rw [p₁.1, p₂.1]; simp only [scR, ptR, q1, q2]
   have hwr : σ₂.wr = σ₁.wr := by rw [p₁.2.1, p₂.2.1]; simp only [outR, wsR, q0, q3]
   refine rel_seq ?_ (frame_wp hk p₁) (frame_wp hk p₂) fun u₁ u₂ hu₁ hu₂ => ?_
@@ -550,12 +550,13 @@ theorem exchange_ct {n w : Nat} {f : List Byte → List Byte → List Byte} {c :
     have g {s : State} (r : Reg) (hr : r ≠ .rsp) :
         ((pushed [.rdi] s).callEntry.withRegions σ₁.rd σ₁.wr).gpr r = s.gpr r := by
       rw [State.withRegions_gpr, State.callEntry_gpr _ hr, pushed_gpr _ _ hr]
-    refine ⟨?_, ?_, ?_, ?_, ?_⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
     · simp only [State.withRegions_gpr, State.callEntry_rsp, pushed_rsp', qsp]
     · rw [g _ (by decide), g _ (by decide), q0]
     · rw [g _ (by decide), g _ (by decide), q1]
     · rw [g _ (by decide), g _ (by decide), q2]
     · rw [g _ (by decide), g _ (by decide), q3]
+    · exact q4
   · exact rel_taint [.rdx] (by simp [hu₁.rdx, hu₂.rdx, q0]) ht
 
 /-! ## `Verified` -/

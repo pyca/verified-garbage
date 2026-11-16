@@ -185,6 +185,15 @@ theorem stage_noFrames (v : RoundImpl) (pLen : Nat) :
   and_intros
   all_goals decide +kernel
 
+/-- The stage never touches PSTATE.DIT: neither its own code (decided for each
+size, `Generator.Supported`) nor its arithmetic. -/
+theorem stage_noDit (v : RoundImpl) {pLen : Nat} (hp : pLen = 128 ∨ pLen = 256 ∨ pLen = 384) :
+    (Impl.Dsa.AArch64.Generator.stage v.mont.mm pLen).all (fun i => !i.touchesDit) = true := by
+  rcases hp with rfl | rfl | rfl <;>
+  simp only [Impl.Dsa.AArch64.Generator.stage, generatorSearch, tapeLoop, tapeIteration, generatorStep, generatorRangeFromFrame, generatorEvaluate, onSuccess, finishDomain, pack, packPart, validate, Code.all, Impl.Bignum.AArch64.seqs, workspace, generatorRange, generatorResult, generatorPowerFresh, generatorModulus, generatorPower, generatorLoadPair, Impl.Dsa.AArch64.Random.copyRest, Impl.Dsa.AArch64.Generate.checkParameters, Impl.Dsa.AArch64.Core.publicPow, Impl.Dsa.AArch64.Checks.signingKey, Impl.Dsa.AArch64.Checks.publicPrefix, Impl.Dsa.AArch64.PublicPower.power, Impl.Dsa.AArch64.Core.reduce, Impl.Dsa.AArch64.Arithmetic.constants, Impl.Dsa.AArch64.PublicPower.powerCore, Impl.Dsa.AArch64.Arithmetic.load, Impl.Dsa.AArch64.Core.finish, Impl.Rsa.AArch64.r2Steps, Impl.Dsa.AArch64.Arithmetic.encodePower, Impl.Dsa.AArch64.PublicPower.encodedPower, Impl.Dsa.AArch64.Arithmetic.reduce, Impl.Bignum.AArch64.R2Div.choice, Impl.Rsa.AArch64.r2StepsOld, Impl.Rsa.AArch64.sqs, Impl.Dsa.AArch64.PublicPower.expLoop, Impl.Dsa.AArch64.Arithmetic.reduceSetup, Impl.Dsa.AArch64.Arithmetic.reduceByte, Impl.Rsa.AArch64.Crt.tabBuild, Impl.Rsa.AArch64.Crt.toEnt, Impl.Rsa.AArch64.Crt.copyArr, Impl.Rsa.AArch64.Crt.nextEnt, Impl.Dsa.AArch64.PublicPower.window, Impl.Dsa.AArch64.PublicPower.applyWindow, Impl.Dsa.AArch64.Arithmetic.reduceStep, List.append_assoc, v.mmNoDit, Bool.and_eq_true, List.cons_append, List.nil_append] <;>
+  and_intros <;>
+  lit_decide
+
 /-- The stage's frames: its own 272 bytes. -/
 theorem code_depth (v : RoundImpl) (pLen : Nat) :
     16 * (Impl.Dsa.AArch64.Generator.code v.mont.mm pLen).aarch64Depth ≤ 272 := by
@@ -224,5 +233,9 @@ def generatorStage (v : RoundImpl) : VG.Proof.Dsa.AArch64.Generation.GeneratorSt
   code := stageCode v
   verified _ hb := verified v hb
   depth := code_depth v
+  noDit _ hb := by
+    have h := stage_noDit v hb
+    simp only [stageCode, Impl.Dsa.AArch64.Generator.code, Impl.Bignum.AArch64.seqs, Code.all, h]
+    rfl
 
 end VG.Proof.Dsa.AArch64.Generator

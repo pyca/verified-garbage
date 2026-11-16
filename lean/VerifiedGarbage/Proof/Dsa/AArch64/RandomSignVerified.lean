@@ -172,6 +172,7 @@ def Backend.signer (v : Backend) : Signer where
   sp := v.signSp
   depth := v.signDepth
   stackBound := v.stackBound
+  noDit := v.signNoDit
 
 theorem random_sign_verified (v : Backend) :
     Verified target (RandomSign.code (randomSignerName v) (SignVerify.sign v.mul))
@@ -192,6 +193,7 @@ def Backend.prevalidatedSigner (v : Backend) : Signer where
   sp := v.prevalidatedSignSp
   depth := v.prevalidatedSignDepth
   stackBound := v.stackBound
+  noDit := v.prevalidatedSignNoDit
 
 theorem randomPrevalidated_pre {extra : Nat} {s : State}
     (h : (Spec.Dsa.randomSignPrevalidatedContract abi (extra + 256)).pre s) :

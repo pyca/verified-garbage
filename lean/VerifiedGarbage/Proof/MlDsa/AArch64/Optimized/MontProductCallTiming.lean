@@ -21,7 +21,7 @@ open VG.Impl.MlDsa.AArch64.Optimized.MontProduct (code)
 open VG.Proof.MlDsa.Arith (polyRegion)
 
 theorem callee (S : Nat) : CalleeOk S code (montProductContract abi) :=
-  ⟨verified.1,verified.2.1,Nat.zero_le _⟩
+  CalleeOk.of_ct verified.1 verified.2.1 (by lit_decide) (fun _ _ h => h) (Nat.zero_le _)
 
 abbrev args (out a b : Ptr) : List (Reg × Arg) :=
   [(.x0,.ptr out),(.x1,.ptr a),(.x2,.ptr b)]

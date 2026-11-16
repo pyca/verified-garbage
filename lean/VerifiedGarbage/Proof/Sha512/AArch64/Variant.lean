@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Sha512.AArch64.Compress
 public import VerifiedGarbage.Proof.MdStream.AArch64.OneShot
 public import VerifiedGarbage.Proof.Framework.AArch64.Inline
 public import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
+public import VerifiedGarbage.Proof.Framework.AArch64.Syms
 public import VerifiedGarbage.Impl.Sha512.AArch64.Stream
 import VerifiedGarbage.Proof.Sha512.Stream
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -160,6 +161,8 @@ structure Compress where
   noFrames : code.noFrames = true
   /-- Current streaming wrappers require untouched callee-saved SIMD registers. -/
   keepsV : code.allInstrs keepsV = true
+  /-- It never writes PSTATE.DIT, so its callers' runs keep it (`DitDet.of_noWrite`). -/
+  noDit : code.all (fun i => !i.writesDit) = true
   suffix : String
   features : List String
   updateCT : ConstantTime isa (updK (P := Stream.params) md).pre

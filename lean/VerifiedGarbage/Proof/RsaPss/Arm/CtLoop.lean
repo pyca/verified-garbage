@@ -54,6 +54,20 @@ theorem ofNat_shl {x : Nat} (hx : x * h.B < 2 ^ 32) : BitVec.ofNat 32 x <<< lgB 
     Nat.mod_eq_of_lt (a := x) (by have := Nat.le_mul_of_pos_right x (show 0 < h.B by have := h.B_ge; omega_using [this]); omega_using [hx, this])]
 
 
+/-- `pomega`'s offsets, as one fact. -/
+private theorem offs : oCW = 4096 ∧ oSt = 4608 ∧ oSel = 4864 ∧ oDig = 4928 ∧ oLen = 4992 ∧ oEm = 0 ∧ oY = 1024 ∧
+    oRsa = 8192 ∧ frameBytes = 128 := ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+/-- `pomega` for `compLoop_vp`, which calls it thirty times among eighty hypotheses: the offsets by one
+`have`, not nine, and `omega_arith`, which reads only the arithmetic facts of the context. -/
+local macro "pomega'" : tactic =>
+  `(tactic| (have _ := offs
+             (try simp only [VG.Impl.RsaPss.Arm.blk, VG.Impl.RsaPss.Arm.dig, VG.Impl.RsaPss.Arm.hvN,
+               VG.Impl.RsaPss.Arm.lenL, VG.Proof.RsaPss.Arm.PssHash.sh, VG.Impl.RsaPss.Arm.Hash.sh,
+               VG.Impl.Pbkdf2.Md.Arm.Hash.B, VG.Impl.Pbkdf2.Md.Arm.Hash.D, VG.Proof.RsaPss.Arm.PssHash.B,
+               VG.Proof.RsaPss.Arm.PssHash.D, VG.Proof.RsaPss.Arm.PssHash.N, VG.Proof.RsaPss.Arm.PssHash.L] at *)
+             omega_arith))
+
 /-- The compression loop. -/
 theorem compLoop_vp (hg : Geo L scr) {f : MdFns} {dn : String} {p ai ac ad : BitVec 32}
     (hR : ∃ R ∈ L.ro, ∀ o, o + 4 ≤ 44 → R.Contains (tA p o) 4) (hne : f.comp ≠ []) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0 : 0 < nbm)
@@ -67,6 +81,8 @@ theorem compLoop_vp (hg : Geo L scr) {f : MdFns} {dn : String} {p ai ac ad : Bit
       (compLoop f h.sh)
       (fun σ s => (Ctx L scr σ s ∧ Inv σ s.mem ∧ h.md.stateAt s.mem (sa scr oSel) =
         h.md.compressList h.ok.iv (ylist (yv σ) (nbm * h.B)) ((ℓ σ + h.L) / h.B + 1)) ∧ s.syms = σ.syms) := by
+  -- Facts are stated with `obtain`, not `have`: `have` keeps its proof in the context (a `let` nothing
+  -- unfolds), and every `(by …)` in a term first instantiates and shares the whole context (`Term.runTactic`).
   have hN := h.N_le
   have hBl := h.B_le
   have hB64 := h.B_ge
@@ -74,27 +90,27 @@ theorem compLoop_vp (hg : Geo L scr) {f : MdFns} {dn : String} {p ai ac ad : Bit
   have hso := h.so_le
   have fit := hg.fit
   obtain ⟨σ', ok⟩ := hg.ok
-  have nbB : nbm ≤ nbm * h.B := Nat.le_mul_of_pos_right nbm (by omega_arith)
+  obtain nbB : nbm ≤ nbm * h.B := Nat.le_mul_of_pos_right nbm (by omega_arith)
   generalize hT : nbm * h.B = T at hnb nbB ⊢
   -- Disjointness of what the loop writes from what it keeps.
-  have dY : ∀ r ∈ loopW h L scr, Region.Disjoint (sR scr oY T) r := by
+  obtain dY : ∀ r ∈ loopW h L scr, Region.Disjoint (sR scr oY T) r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
-    · exact Geo.sep (by pomega) (by pomega) (by pomega)
-    · exact Geo.sep (by pomega) (by pomega) (by pomega)
-    · exact Geo.sep (by pomega) (by pomega) (by pomega)
-    · exact (hg.slot ok (by pomega) (by rw [hg.F]; decide)).symm
-  have dB : ∀ r ∈ [sR scr oSt h.N, sR scr oCW h.H.md.so, sR scr oSel h.N], (slotR L sBi).Disjoint r := by
+    · exact Geo.sep (by pomega') (by pomega') (by pomega')
+    · exact Geo.sep (by pomega') (by pomega') (by pomega')
+    · exact Geo.sep (by pomega') (by pomega') (by pomega')
+    · exact (hg.slot ok (by pomega') (by rw [hg.F]; decide)).symm
+  obtain dB : ∀ r ∈ [sR scr oSt h.N, sR scr oCW h.H.md.so, sR scr oSel h.N], (slotR L sBi).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-    rcases hr with rfl | rfl | rfl <;> exact hg.slot ok (by pomega) (by rw [hg.F]; decide)
-  have dBN : ∀ r ∈ [slotR L sBi], (slotR L sNb).Disjoint r ∧ (slotR L sL).Disjoint r ∧ (slotR L sS).Disjoint r := by
+    rcases hr with rfl | rfl | rfl <;> exact hg.slot ok (by pomega') (by rw [hg.F]; decide)
+  obtain dBN : ∀ r ∈ [slotR L sBi], (slotR L sNb).Disjoint r ∧ (slotR L sL).Disjoint r ∧ (slotR L sS).Disjoint r := by
     intro r hr
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨Lay.fr_sep (by decide) (by decide) (by decide), Lay.fr_sep (by decide) (by decide) (by decide),
       Lay.fr_sep (by decide) (by decide) (by decide)⟩
-  have sp_eq : ∀ {F : State → State → Prop}, (∀ σ s, F σ s → Ctx L scr σ s) →
+  obtain sp_eq : ∀ {F : State → State → Prop}, (∀ σ s, F σ s → Ctx L scr σ s) →
       ∀ σ₁ σ₂ s₁ s₂, F σ₁ s₁ → F σ₂ s₂ → s₁.sp = s₂.sp :=
     fun hF _ _ _ _ h₁ h₂ => (hF _ _ h₁).st.sp.trans (hF _ _ h₂).st.sp.symm
   let CS : Nat → State → State → Prop := fun b σ s =>
@@ -105,31 +121,31 @@ theorem compLoop_vp (hg : Geo L scr) {f : MdFns} {dn : String} {p ai ac ad : Bit
         t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp := by
       prun [compInit, sp0, mw, st, hc.st.sp, hc.aFr hg, hc.wFr hg]
     refine WP.mono hw fun t ⟨m, rd, wr, sp⟩ => ?_
-    have fr : Frame [slotR L sBi] s.mem t.mem := by rw [m]; exact slot_frame L _ _ _
+    obtain fr : Frame [slotR L sBi] s.mem t.mem := by rw [m]; exact slot_frame L _ _ _
     refine ⟨hc.write fr (fun r hr => ?_) (fun r hr => ((dBN r hr).2.2)) rd wr sp, hI σ _ _ hi (fr.mono ?_),
       ⟨sbytes_keep fr (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact dY _ (by simp [loopW])) (by pomega) hy, ?_, ?_, fun h0 => absurd h0 (Nat.not_lt_zero _)⟩⟩
+        simp only [List.mem_singleton] at hr; subst hr; exact dY _ (by simp [loopW])) (by pomega') hy, ?_, ?_, fun h0 => absurd h0 (Nat.not_lt_zero _)⟩⟩
     · simp only [List.mem_singleton] at hr; subst hr
       exact ⟨L.FR, List.mem_cons_self, Offset.sub_base _ (by rw [hg.F]; decide)⟩
     · intro r hr; simp only [List.mem_singleton] at hr; subst hr; simp
     · rw [m, Mem.readW_writeW_self32]; rfl
     · rw [stateAt_keep h fr (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact (hg.slot ok (by pomega) (by rw [hg.F]; decide)).symm),
+        simp only [List.mem_singleton] at hr; subst hr; exact (hg.slot ok (by pomega') (by rw [hg.F]; decide)).symm),
         hst, Md.compressList_zero]
   -- The loop.
   have hlbT : ∀ σ, (ℓ σ + h.L) / h.B < nbm := hℓ
   refine (VP.loop (I := fun n σ s => n ≤ nbm ∧ CS (nbm - n) σ s) (fun n => ?_) (nbm - 1)).mono
     (fun σ s hs => ⟨by omega_arith, by rw [show nbm - (nbm - 1 + 1) = 0 by omega_arith]; exact hs⟩) fun _ _ h => h
-  have keepI : ∀ σ m m' (rs : List Region), Inv σ m → (∀ r ∈ rs, r ∈ loopW h L scr) → Frame rs m m' → Inv σ m' :=
+  obtain keepI : ∀ σ m m' (rs : List Region), Inv σ m → (∀ r ∈ rs, r ∈ loopW h L scr) → Frame rs m m' → Inv σ m' :=
     fun σ m m' rs hi hs fr => hI σ m m' hi (fr.mono hs)
   -- Block `b`.
   by_cases hn : n + 1 ≤ nbm
   swap
   · exact VP.empty fun σ s ⟨h, _⟩ => hn h
   generalize hb : nbm - (n + 1) = b
-  have hbn : b < nbm := by omega_arith
-  have hbB : b * h.B + h.B ≤ T := by rw [← hT, ← Nat.succ_mul]; exact Nat.mul_le_mul_right _ (by omega_arith)
-  have hbB32 : b * h.B < 2 ^ 32 := by omega_arith
+  obtain hbn : b < nbm := by omega_arith
+  obtain hbB : b * h.B + h.B ≤ T := by rw [← hT, ← Nat.succ_mul]; exact Nat.mul_le_mul_right _ (by omega_arith)
+  obtain hbB32 : b * h.B < 2 ^ 32 := by omega_arith
   -- What each stage keeps of memory.
   let X2 : State → Mem → Prop := fun σ m => Inv σ m ∧ (∀ i < T, m (sa scr (oY + i)) = yv σ i) ∧
     m.readW (L.fr sBi) 32 = BitVec.ofNat 32 b ∧ h.md.stateAt m (sa scr oSt) = h.md.compressList h.ok.iv (ylist (yv σ) T) (b + 1) ∧
@@ -137,7 +153,7 @@ theorem compLoop_vp (hg : Geo L scr) {f : MdFns} {dn : String} {p ai ac ad : Bit
   let X4 : State → Mem → Prop := fun σ m => Inv σ m ∧ (∀ i < T, m (sa scr (oY + i)) = yv σ i) ∧
     m.readW (L.fr sBi) 32 = BitVec.ofNat 32 b ∧ h.md.stateAt m (sa scr oSt) = h.md.compressList h.ok.iv (ylist (yv σ) T) (b + 1) ∧
     (((ℓ σ + h.L) / h.B) < b + 1 → h.md.stateAt m (sa scr oSel) = h.md.compressList h.ok.iv (ylist (yv σ) T) (((ℓ σ + h.L) / h.B) + 1))
-  have hsub : ∀ rs : List Region, (∀ r ∈ rs, r ∈ loopW h L scr) → ∀ r ∈ rs, Region.Disjoint (sR scr oY T) r :=
+  obtain hsub : ∀ rs : List Region, (∀ r ∈ rs, r ∈ loopW h L scr) → ∀ r ∈ rs, Region.Disjoint (sR scr oY T) r :=
     fun rs hs r hr => dY r (hs r hr)
   show VP _ (.seq (.block (compSet h.sh)) (.seq (compCall f) (.seq (.block (selSet h.sh))
     (.seq (countLoop selBody) (.block compNext))))) _
@@ -152,7 +168,7 @@ theorem compLoop_vp (hg : Geo L scr) {f : MdFns} {dn : String} {p ai ac ad : Bit
   · -- The compression's registers.
     refine (VP.syms (VP.blk (blkOk rfl) (sp_eq fun _ _ h => h.2.1.1) fun σ s ⟨_, ⟨hc, hi, hm⟩, _⟩ => ?_)).mono
       (fun σ s hs => ⟨hs, hs.2.2⟩) fun _ _ h => h
-    have hw : WP isa (.block (compSet h.sh)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+    obtain hw : WP isa (.block (compSet h.sh)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
         t.sp = s.sp ∧ t.gpr .r0 = scr + BitVec.ofNat 32 oSt ∧ t.gpr .r3 = scr + BitVec.ofNat 32 oCW ∧
         t.gpr .r6 = scr + BitVec.ofNat 32 (oY + b * h.B) := by
       prun [compSet, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, hm.bi,
@@ -161,37 +177,37 @@ theorem compLoop_vp (hg : Geo L scr) {f : MdFns} {dn : String} {p ai ac ad : Bit
         BitVec.add_assoc, BitVec.ofNat_add_ofNat]
     exact WP.mono hw fun t ⟨m, rd, wr, sp, r0, r3, r6⟩ => ⟨⟨hc.regs rd wr sp m, m ▸ hi, m ▸ hm⟩, r0, r3, r6⟩
   · -- The compression.
-    refine (comp_vp h hg hR hne (dn := dn) (ai := ai) (ad := ad) (o := oY + b * h.B) (by pomega) (X := fun σ m => Inv σ m ∧
+    refine (comp_vp h hg hR hne (dn := dn) (ai := ai) (ad := ad) (o := oY + b * h.B) (by pomega') (X := fun σ m => Inv σ m ∧
         CM h L scr T (yv σ) (((ℓ σ + h.L) / h.B)) b m) fun σ m hm => hX σ m hm.1).mono
       (fun σ s ⟨⟨⟨hc, hi, hm⟩, r0, r3, r6⟩, sy⟩ => ⟨⟨hc, ⟨hi, hm⟩, r0, r3, r6⟩, sy⟩)
       fun σ s ⟨⟨hc, m₀, ⟨hi, hm⟩, fr, e⟩, sy⟩ => ⟨⟨hc, keepI σ _ _ _ hi (by simp) fr, ?_, ?_, ?_, ?_⟩, sy⟩
-    · exact sbytes_keep fr (hsub _ (by simp)) (by pomega) hm.y
+    · exact sbytes_keep fr (hsub _ (by simp)) (by pomega') hm.y
     · exact slot_keep fr (fun r hr => dB r (by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with h' | h' <;> simp [h'])) hm.bi
     · rw [e, hm.st, Md.compressList_succ]
       refine congrArg _ (h.md.parse_congr fun k hk => ?_)
       rw [sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat, ← sa, show oY + b * h.B + k = oY + (b * h.B + k) by omega_arith,
-        hm.y _ (by pomega), ylist_getD (by have := Nat.mul_comm b h.B; pomega), Nat.mul_comm]
+        hm.y _ (by pomega'), ylist_getD (by have := Nat.mul_comm b h.B; pomega'), Nat.mul_comm]
     · intro hl
-      have dsel : ∀ r ∈ compW h scr, Region.Disjoint (sR scr oSel h.N) r := by
+      obtain dsel : ∀ r ∈ compW h scr, Region.Disjoint (sR scr oSel h.N) r := by
         intro r hr
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
-        · exact Geo.sep (by pomega) (by pomega) (by pomega)
-        · exact Geo.sep (by pomega) (by pomega) (by pomega)
+        · exact Geo.sep (by pomega') (by pomega') (by pomega')
+        · exact Geo.sep (by pomega') (by pomega') (by pomega')
       rw [stateAt_keep h fr dsel, hm.sel hl]
   · -- The selection's registers.
     refine (VP.syms (VP.blk (blkOk rfl) (sp_eq fun _ _ h => h.1) fun σ s ⟨hc, hx⟩ => ?_)).mono (fun _ _ h => h)
       fun _ _ h => h
-    have l2 : ℓ σ + h.L < 2 ^ 32 := by have := hℓ2 σ; omega_arith
-    have e1 : BitVec.ofNat 32 (ℓ σ) + BitVec.ofNat 32 h.L = BitVec.ofNat 32 (ℓ σ + h.L) := BitVec.ofNat_add_ofNat ..
-    have e2 : BitVec.ofNat 32 (ℓ σ + h.L) >>> lgB h.sh = BitVec.ofNat 32 (((ℓ σ + h.L) / h.B)) := by
+    obtain l2 : ℓ σ + h.L < 2 ^ 32 := by have := hℓ2 σ; omega_arith
+    obtain e1 : BitVec.ofNat 32 (ℓ σ) + BitVec.ofNat 32 h.L = BitVec.ofNat 32 (ℓ σ + h.L) := BitVec.ofNat_add_ofNat ..
+    obtain e2 : BitVec.ofNat 32 (ℓ σ + h.L) >>> lgB h.sh = BitVec.ofNat 32 (((ℓ σ + h.L) / h.B)) := by
       rw [VG.Proof.MdStream.Arm.ofNat_shr l2, h.pow_lg]
-    have e3 : BitVec.ofNat 32 (((ℓ σ + h.L) / h.B)) <<< lgB h.sh = BitVec.ofNat 32 (((ℓ σ + h.L) / h.B) * h.B) :=
+    obtain e3 : BitVec.ofNat 32 (((ℓ σ + h.L) / h.B)) <<< lgB h.sh = BitVec.ofNat 32 (((ℓ σ + h.L) / h.B) * h.B) :=
       ofNat_shl h (by have := Nat.div_mul_le_self (ℓ σ + h.L) h.B; omega_arith)
-    have e4 := eqBit (a := b * h.B) (b := ((ℓ σ + h.L) / h.B) * h.B) (by omega_arith)
+    obtain e4 := eqBit (a := b * h.B) (b := ((ℓ σ + h.L) / h.B) * h.B) (by omega_arith)
       (by have := Nat.div_mul_le_self (ℓ σ + h.L) h.B; have := hℓ2 σ; omega_arith)
-    have hw : WP isa (.block (selSet h.sh)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
+    obtain hw : WP isa (.block (selSet h.sh)) s fun t => t.mem = s.mem ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
         t.sp = s.sp ∧ t.gpr .r0 = scr + BitVec.ofNat 32 oSt ∧ t.gpr .r1 = scr + BitVec.ofNat 32 oSel ∧
         t.gpr .lr = BitVec.ofNat 32 h.N ∧ t.gpr .r2 = maskOf (b * h.B = ((ℓ σ + h.L) / h.B) * h.B) := by
       prun [selSet, atS, sp0, ld, mw, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.slotS, hx.2.2.1, hsl σ _ hx.1,
@@ -203,10 +219,10 @@ theorem compLoop_vp (hg : Geo L scr) {f : MdFns} {dn : String} {p ai ac ad : Bit
     refine (VP.syms (sel_vp h hg (c := fun σ => b * h.B = ((ℓ σ + h.L) / h.B) * h.B) (X := X2))).mono
       (fun σ s ⟨⟨⟨hc, hx⟩, r0, r1, lr, r2⟩, sy⟩ => ⟨⟨hc, hx, r0, r1, lr, r2⟩, sy⟩)
       fun σ s ⟨⟨hc, m₀, ⟨hi, hy, hbi, hst, hsel⟩, fr, hb'⟩, sy⟩ => ⟨⟨hc, keepI σ _ _ _ hi (by simp) fr, ?_, ?_, ?_, ?_⟩, sy⟩
-    · exact sbytes_keep fr (hsub _ (by simp)) (by pomega) hy
+    · exact sbytes_keep fr (hsub _ (by simp)) (by pomega') hy
     · exact slot_keep fr (fun r hr => dB r (by simp only [List.mem_singleton] at hr; simp [hr])) hbi
     · rw [stateAt_keep h fr (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by pomega) (by pomega) (by pomega)), hst]
+        simp only [List.mem_singleton] at hr; subst hr; exact Geo.sep (by pomega') (by pomega') (by pomega')), hst]
     · intro hl
       by_cases e : b * h.B = ((ℓ σ + h.L) / h.B) * h.B
       · have eb : b = ((ℓ σ + h.L) / h.B) := Nat.eq_of_mul_eq_mul_right (by omega_arith) e
@@ -223,7 +239,7 @@ theorem compLoop_vp (hg : Geo L scr) {f : MdFns} {dn : String} {p ai ac ad : Bit
         rw [sa, BitVec.add_assoc, BitVec.ofNat_add_ofNat, ← sa, hb' i hi', ite_eq_right e]
   · -- The next block.
     refine VP.blk (blkOk rfl) (sp_eq fun _ _ h => h.1.1) fun σ s ⟨⟨hc, hi, hy, hbi, hst, hsel⟩, sy⟩ => ?_
-    have hw : WP isa (.block compNext) s fun t => t.mem = s.mem.writeW (L.fr sBi) (BitVec.ofNat 32 (b + 1)) ∧
+    obtain hw : WP isa (.block compNext) s fun t => t.mem = s.mem.writeW (L.fr sBi) (BitVec.ofNat 32 (b + 1)) ∧
         t.rd = s.rd ∧ t.wr = s.wr ∧ t.sp = s.sp ∧ t.z = decide (b + 1 = nbm) := by
       prun [compNext, sp0, ld, st, hc.st.sp, hc.aFr hg, hc.rFr hg, hc.wFr hg, hbi, hsn σ _ hi, dpVal,
         VG.Proof.Pbkdf2.Stream.Arm.ofNat_succ32, VG.Proof.MdStream.Arm.sub_beq (show b + 1 < 2 ^ 32 by omega_arith)
@@ -231,23 +247,23 @@ theorem compLoop_vp (hg : Geo L scr) {f : MdFns} {dn : String} {p ai ac ad : Bit
       rw [Mem.readW_writeW_sep (Offset.sep _ (by left; decide) (by decide) (by decide)) (by decide), hsn σ _ hi]
       exact VG.Proof.MdStream.Arm.sub_beq (by omega_arith) (by omega_arith)
     refine WP.mono_syms hw fun t ⟨m, rd, wr, sp, z⟩ ty => ?_
-    have fr : Frame [slotR L sBi] s.mem t.mem := by rw [m]; exact slot_frame L _ _ _
-    have hc' : Ctx L scr σ t := hc.write fr (fun r hr => by
+    obtain fr : Frame [slotR L sBi] s.mem t.mem := by rw [m]; exact slot_frame L _ _ _
+    obtain hc' : Ctx L scr σ t := hc.write fr (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr
         exact ⟨L.FR, List.mem_cons_self, Offset.sub_base _ (by rw [hg.F]; decide)⟩)
       (fun r hr => (dBN r hr).2.2) rd wr sp
-    have hi' : Inv σ t.mem := keepI σ _ _ _ hi (by simp) fr
-    have hsel' : ((ℓ σ + h.L) / h.B) < b + 1 → h.md.stateAt t.mem (sa scr oSel) = h.md.compressList h.ok.iv (ylist (yv σ) T) (((ℓ σ + h.L) / h.B) + 1) := fun hl => by
+    obtain hi' : Inv σ t.mem := keepI σ _ _ _ hi (by simp) fr
+    obtain hsel' : ((ℓ σ + h.L) / h.B) < b + 1 → h.md.stateAt t.mem (sa scr oSel) = h.md.compressList h.ok.iv (ylist (yv σ) T) (((ℓ σ + h.L) / h.B) + 1) := fun hl => by
       rw [stateAt_keep h fr (fun r hr => by
-        simp only [List.mem_singleton] at hr; subst hr; exact (hg.slot ok (by pomega) (by rw [hg.F]; decide)).symm),
+        simp only [List.mem_singleton] at hr; subst hr; exact (hg.slot ok (by pomega') (by rw [hg.F]; decide)).symm),
         hsel hl]
-    have dz : decide (b + 1 = nbm) = decide (n = 0) := by simp only [decide_eq_decide]; omega_arith
-    have sy' : t.syms = σ.syms := ty.trans sy
+    obtain dz : decide (b + 1 = nbm) = decide (n = 0) := by simp only [decide_eq_decide]; omega_arith
+    obtain sy' : t.syms = σ.syms := ty.trans sy
     refine ⟨by rw [VG.Proof.X25519.Arm.eval_ne, z, dz]; cases n <;> simp,
       fun h0 => ⟨⟨hc', hi', hsel' (by have := hlbT σ; omega_arith)⟩, sy'⟩, fun hp => ⟨by omega_arith, ?_⟩⟩
     rw [show nbm - n = b + 1 by omega_arith]
-    refine ⟨⟨hc', hi', sbytes_keep fr (hsub _ (by simp)) (by pomega) hy, by rw [m, Mem.readW_writeW_self32], ?_, hsel'⟩, sy'⟩
+    refine ⟨⟨hc', hi', sbytes_keep fr (hsub _ (by simp)) (by pomega') hy, by rw [m, Mem.readW_writeW_self32], ?_, hsel'⟩, sy'⟩
     rw [stateAt_keep h fr (fun r hr => by
-      simp only [List.mem_singleton] at hr; subst hr; exact (hg.slot ok (by pomega) (by rw [hg.F]; decide)).symm), hst]
+      simp only [List.mem_singleton] at hr; subst hr; exact (hg.slot ok (by pomega') (by rw [hg.F]; decide)).symm), hst]
 
 end VG.Proof.RsaPss.Arm

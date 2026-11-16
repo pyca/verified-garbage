@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.MlDsa.AArch64.Optimized.ResidentRejSelected
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Lit
 public import VerifiedGarbage.Proof.MlDsa.AArch64.Sample.Rej4.Top
 import VerifiedGarbage.Proof.MlDsa.AArch64.Optimized.ResidentRejVerified
@@ -42,5 +43,8 @@ theorem selected_depth (sha3 : Bool) : (selected sha3).aarch64Depth=0 := by
   cases sha3
   · exact VG.Proof.MlDsa.AArch64.Sample.Rej4.depth false
   · decide +kernel
+
+theorem selected_noDit (sha3 : Bool) : (selected sha3).all (fun i => !i.touchesDit) = true := by
+  cases sha3 <;> lit_decide
 
 end VG.Proof.MlDsa.AArch64.Optimized.ResidentRej

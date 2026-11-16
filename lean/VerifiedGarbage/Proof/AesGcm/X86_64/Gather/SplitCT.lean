@@ -269,7 +269,8 @@ theorem splitCallX_rel (S : SplitFn M) {σ₁ σ₂ : State} (h₁ : SCBase s₀
     x₁ .r8 (by decide) (by decide) (by decide) (by decide), x₂ .r8 (by decide) (by decide) (by decide) (by decide),
     x₁ .r9 (by decide) (by decide) (by decide) (by decide), x₂ .r9 (by decide) (by decide) (by decide) (by decide),
     g₁.rdx, g₂.rdx, g₁.rcx, g₂.rcx, g₁.r8, g₂.r8, g₁.r9, g₂.r9, State.withRegions_gpr, State.callEntry_rsp, q₁sp,
-    q₂sp, K, Nn, Ad, AL, pb.rdi, pb.rsi, pb.rdx, pb.rcx, pb.r8, pb.r9, pb.eFb, pb.eFl, pb.dst, pb.len, pb.tg, and_self]
+    q₂sp, K, Nn, Ad, AL, pb.rdi, pb.rsi, pb.rdx, pb.rcx, pb.r8, pb.r9, pb.eFb, pb.eFl, pb.dst, pb.len, pb.tg,
+    State.withRegions_mxcsr, State.callEntry_mxcsr, Q₁.mx, Q₂.mx, h₁.mx, h₂.mx, pb.mx, and_self]
 
 /-- The call of `vg_aes_gcm_seal_split`, in two runs. -/
 theorem splitCall_rel (S : SplitFn M) {σ₁ σ₂ : State} (h₁ : SCBase s₀ σ₁) (g₁ : SplitRegs s₀ σ₁)
@@ -297,9 +298,11 @@ theorem splitCall_rel (S : SplitFn M) {σ₁ σ₂ : State} (h₁ : SCBase s₀ 
   refine RelCT.frame (fun _ _ h => by obtain ⟨rfl, rfl⟩ := h; rw [h₁.rsp, h₂.rsp]; exact pb.rsp.symm)
     ((ChaCha20Poly1305.X86_64.Gather.rel_seq
       (splitCtx_rel hp hp' pb h₁ h₂ hP₁ (pushed_rd _ _) hw₁ hf₁ hP₂ (pushed_rd _ _) hw₂ hf₂)
-      (splitCtx_ok hp h₁ hP₁ (pushed_rd _ _) hw₁ hf₁) (splitCtx_ok hp' h₂ hP₂ (pushed_rd _ _) hw₂ hf₂)
-      fun q₁ q₂ ⟨a₁, b₁, c₁, d₁, e₁, f₁⟩ ⟨a₂, b₂, c₂, d₂, e₂, f₂⟩ =>
-        splitCallX_rel hp hp' pb S h₁ g₁ h₂ g₂ ⟨a₁, b₁, c₁, d₁, e₁, f₁⟩ ⟨a₂, b₂, c₂, d₂, e₂, f₂⟩).mono (fun _ _ h => by
+      (WP.mxcsr (by decide) (splitCtx_ok hp h₁ hP₁ (pushed_rd _ _) hw₁ hf₁))
+      (WP.mxcsr (by decide) (splitCtx_ok hp' h₂ hP₂ (pushed_rd _ _) hw₂ hf₂))
+      fun q₁ q₂ ⟨⟨a₁, b₁, c₁, d₁, e₁, f₁⟩, m₁⟩ ⟨⟨a₂, b₂, c₂, d₂, e₂, f₂⟩, m₂⟩ =>
+        splitCallX_rel hp hp' pb S h₁ g₁ h₂ g₂ ⟨a₁, b₁, c₁, d₁, e₁, f₁, m₁.trans (pushed_mxcsr _ _)⟩
+          ⟨a₂, b₂, c₂, d₂, e₂, f₂, m₂.trans (pushed_mxcsr _ _)⟩).mono (fun _ _ h => by
         obtain ⟨_, _, ⟨rfl, rfl⟩, rfl, rfl⟩ := h; exact ⟨rfl, rfl⟩) fun _ _ h => h)
 
 /-- The arguments of `vg_aes_gcm_seal_split`, in two runs. -/
@@ -351,16 +354,16 @@ theorem copySplit_rel (S : SplitFn M) (hL : L s₀ - fl s₀ < 2 ^ 63) {σ₁ σ
     have hc' : (Sig.descRegion 64 (Src s₀') (Cnt s₀')).Contains (Src s₀ + BitVec.ofNat 64 (16 * k0 s₀ + j)) 1 := by
       rw [pb.src, pb.cnt]; exact hc
     rw [desc_byte hp P₁.frame _ hc, desc_byte hp' P₂.frame _ hc', pb.desc _ hj']
-  refine ChaCha20Poly1305.X86_64.Gather.rel_seq (gatherCopy_rel hd G₁ G₂) (gatherCopy_wp υ₁ G₁)
-    (gatherCopy_wp υ₂ G₂o) fun ω₁ ω₂ ⟨m₁, k₁⟩ ⟨m₂, k₂⟩ => ?_
-  have B₁ := split_after hp P₁ m₁ k₁
-  have B₂ := split_after hp' P₂ m₂ k₂
-  refine ChaCha20Poly1305.X86_64.Gather.rel_seq (splitArgs_rel hp hp' pb B₁ B₂) (splitArgs_ok hp B₁)
-    (splitArgs_ok hp' B₂) fun ξ₁ ξ₂ a₁ a₂ => ?_
+  refine ChaCha20Poly1305.X86_64.Gather.rel_seq (gatherCopy_rel hd G₁ G₂) (WP.mxcsr (by decide) (gatherCopy_wp υ₁ G₁))
+    (WP.mxcsr (by decide) (gatherCopy_wp υ₂ G₂o)) fun ω₁ ω₂ ⟨⟨m₁, k₁⟩, x₁⟩ ⟨⟨m₂, k₂⟩, x₂⟩ => ?_
+  have B₁ := split_after hp P₁ m₁ k₁ x₁
+  have B₂ := split_after hp' P₂ m₂ k₂ x₂
+  refine ChaCha20Poly1305.X86_64.Gather.rel_seq (splitArgs_rel hp hp' pb B₁ B₂) (WP.mxcsr (by decide) (splitArgs_ok hp B₁))
+    (WP.mxcsr (by decide) (splitArgs_ok hp' B₂)) fun ξ₁ ξ₂ ⟨a₁, y₁⟩ ⟨a₂, y₂⟩ => ?_
   obtain ⟨dx₁', cx₁, r8₁, r9₁', ax₁, r10₁, di₁', si₁', r11₁'', cs₁, m₁', rd₁, wr₁⟩ := a₁
   obtain ⟨dx₂', cx₂, r8₂, r9₂', ax₂, r10₂, di₂', si₂', r11₂'', cs₂, m₂', rd₂, wr₂⟩ := a₂
-  exact splitCall_rel hp hp' pb S (B₁.regs m₁' cs₁ rd₁ wr₁).toSC ⟨dx₁', cx₁, r8₁, r9₁', ax₁, r10₁, di₁', si₁', r11₁''⟩
-    (B₂.regs m₂' cs₂ rd₂ wr₂).toSC ⟨dx₂', cx₂, r8₂, r9₂', ax₂, r10₂, di₂', si₂', r11₂''⟩
+  exact splitCall_rel hp hp' pb S (B₁.regs m₁' cs₁ rd₁ wr₁ y₁).toSC ⟨dx₁', cx₁, r8₁, r9₁', ax₁, r10₁, di₁', si₁', r11₁''⟩
+    (B₂.regs m₂' cs₂ rd₂ wr₂ y₂).toSC ⟨dx₂', cx₂, r8₂, r9₂', ax₂, r10₂, di₂', si₂', r11₂''⟩
 
 end
 

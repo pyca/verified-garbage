@@ -49,8 +49,9 @@ theorem checkBlock_zImm (τ : taint.T) (is : List isa.Instr) :
   induction is generalizing τ with
   | nil => rfl
   | cons i is ih =>
-    show (VG.AArch64.Taint.step τ (Instr.zImm i)).bind _ = (VG.AArch64.Taint.step τ i).bind _
-    exact congr (congrArg Option.bind (step_zImm τ i)) (funext ih)
+    show (taint.step τ (Instr.zImm i)).bind _ = (taint.step τ i).bind _
+    exact congr (congrArg Option.bind
+      ((taint_step _ _).trans ((step_zImm τ i).trans (taint_step _ _).symm))) (funext ih)
 
 theorem checkChunks_zImm {chunkSize : Nat} (τ : taint.T) (is : List isa.Instr) (ms : List taint.T) :
     taint.checkChunks chunkSize τ (is.map Instr.zImm) ms = taint.checkChunks chunkSize τ is ms := by
