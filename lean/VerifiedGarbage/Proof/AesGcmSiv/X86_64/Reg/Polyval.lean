@@ -348,4 +348,115 @@ theorem body4_ok {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {n
   · exact ⟨by rw [x₇, O₆.xmm _ (by decide)]; exact pw.p2, by rw [x₇, O₆.xmm _ (by decide)]; exact pw.p3,
       by rw [x₇, O₆.xmm _ (by decide)]; exact pw.p4⟩
 
+
+/-! ## The whole blocks -/
+
+theorem AInv.flags {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {nb j : Nat} {t : State}
+    (I : AInv K W SP H σ P nb j t) (x : BitVec 64) (c o : Bool) : AInv K W SP H σ P nb j (arithFlags t x c o) :=
+  ⟨I.env.keep (fun _ _ => rfl) rfl rfl, I.rd, I.wr, I.mem, ⟨I.g.c, I.g.h⟩, I.r12, I.rbx, I.rbp, I.y⟩
+
+theorem AInv.only {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {nb j : Nat} {rs : List XReg}
+    {t t' : State} (I : AInv K W SP H σ P nb j t) (o : Only rs t t') (h1 : .xmm1 ∉ rs) (h2 : .xmm2 ∉ rs)
+    (h3 : .xmm3 ∉ rs) : AInv K W SP H σ P nb j t' :=
+  ⟨I.env.keep (fun r hr => o.gpr r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> decide))
+      o.rd o.wr, o.rd.trans I.rd, o.wr.trans I.wr, o.mem.trans I.mem, I.g.keep o h1 h3,
+    (o.gpr _ (by decide)).trans I.r12, (o.gpr _ (by decide)).trans I.rbx, (o.gpr _ (by decide)).trans I.rbp,
+    (o.xmm _ h2).trans I.y⟩
+
+/-- `cmp rbx, 4` with `k` in `rbx`: CF says whether `k < 4`. -/
+theorem cmpbx_run (u : State) {k : Nat} (hk : k < 2 ^ 64) (h : u.gpr .rbx = BitVec.ofNat 64 k) :
+    ∃ (x : BitVec 64) (o : Bool), runBlock isa [.alu .cmp .rbx (imm 4)] u =
+      some (arithFlags u x (decide (k < 4)) o) := by
+  have e4 : BitVec.signExtend 64 (BitVec.ofNat 32 4) = BitVec.ofNat 64 4 := by decide
+  refine ⟨BitVec.ofNat 64 k - BitVec.ofNat 64 4,
+    subOverflow (BitVec.ofNat 64 k) (BitVec.ofNat 64 4) (BitVec.ofNat 64 k - BitVec.ofNat 64 4), ?_⟩
+  simp only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, execAlu, readSrc, imm, h, Option.bind_some]
+  rw [e4]
+  simp only [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk]
+
+/-- `test r, r` with `k` in `r`: ZF says whether `k = 0`. -/
+theorem test_run (r : Reg) (u : State) {k : Nat} (hk : k < 2 ^ 64) (h : u.gpr r = BitVec.ofNat 64 k) :
+    runBlock isa [.alu .test r (.reg r)] u = some (arithFlags u (BitVec.ofNat 64 k) false false) ∧
+      (BitVec.ofNat 64 k == 0) = decide (k = 0) := by
+  refine ⟨?_, ?_⟩
+  · simp only [runBlock_cons, runStep_some, runBlock_nil, isa, exec, execAlu, readSrc, Option.bind_some, h,
+      BitVec.and_self]
+  · by_cases hk0 : k = 0
+    · subst hk0; rfl
+    · have : BitVec.ofNat 64 k ≠ 0 := fun e => by
+        have := congrArg BitVec.toNat e
+        rw [BitVec.toNat_ofNat, Nat.mod_eq_of_lt hk] at this
+        exact hk0 this
+      rw [beq_eq_false_iff_ne.mpr this, decide_eq_false hk0]
+
+/-- The loop of single blocks, from any block before the last. -/
+theorem ones_ok {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {nb j₀ : Nat}
+    (hP : Buf K W SP σ P (16 * nb)) (hj₀ : j₀ < nb) {t : State} (I₀ : AInv K W SP H σ P nb j₀ t) :
+    WP isa (.loop (.block body1) .ne) t (AInv K W SP H σ P nb nb) := by
+  refine WP.loop (M := isa) (body := .block body1) (c := .ne)
+    (fun (m : Nat) (t : State) => ∃ j, m = nb - j ∧ j < nb ∧ AInv K W SP H σ P nb j t) ?_ (nb - j₀) t
+    ⟨j₀, rfl, hj₀, I₀⟩
+  rintro m t ⟨j, rfl, hj, I⟩
+  refine WP.mono (body1_ok hP hj I) fun t' ⟨I', hz⟩ => ?_
+  have ev : isa.eval .ne t' = some !(decide (nb - j = 1)) := by
+    show t'.zf.map (!·) = _; rw [hz]; rfl
+  by_cases h1 : nb - j = 1
+  · left
+    refine ⟨by rw [ev, decide_eq_true h1]; rfl, ?_⟩
+    rw [show nb = j + 1 by omega_arith]; rw [show nb = j + 1 by omega_arith] at I'; exact I'
+  · right
+    exact ⟨by rw [ev, decide_eq_false h1]; rfl, nb - (j + 1), by omega_arith, j + 1, rfl, by omega_arith, I'⟩
+
+/-- The whole blocks absorbed. -/
+theorem absorbBlocks_ok (four : Bool) {K W SP : Addr} {H : Spec.Gcm.Block} {σ : State} {P : Addr} {nb : Nat}
+    (hP : Buf K W SP σ P (16 * nb)) {t : State} (I : AInv K W SP H σ P nb 0 t)
+    (hz : t.zf = some (decide (nb = 0))) :
+    WP isa (absorbBlocks four) t (AInv K W SP H σ P nb nb) := by
+  have hlt := hP.lt
+  have ones : ∀ k, k ≤ nb → ∀ u, AInv K W SP H σ P nb k u →
+      WP isa (.seq (.block [.alu .test .rbx (.reg .rbx)]) (.ite .e (.block []) (.loop (.block body1) .ne))) u
+        (AInv K W SP H σ P nb nb) := by
+    intro k hk u Iu
+    obtain ⟨run₂, hy⟩ := test_run .rbx u (k := nb - k) (by omega_arith) Iu.rbx
+    refine WP.seq (WP.of_runBlock ⟨_, run₂, ?_⟩)
+    have I₃ := Iu.flags (BitVec.ofNat 64 (nb - k)) false false
+    refine WP.ite (decide (nb - k = 0)) (by rw [← hy]; rfl) (fun h0 => WP.block_nil ?_) (fun h0 => ?_)
+    · have : k = nb := by simp at h0; omega_arith
+      subst this; exact I₃
+    · exact ones_ok hP (by simp at h0; omega_arith) I₃
+  cases four
+  · simp only [absorbBlocks, Bool.false_eq_true, ite_false]
+    refine WP.ite (decide (nb = 0)) hz (fun h0 => WP.block_nil ?_) (fun h0 => ?_)
+    · have : nb = 0 := by simpa using h0
+      subst this; exact I
+    · exact ones_ok hP (by simp at h0; omega_arith) I
+  · simp only [absorbBlocks, ite_true]
+    refine WP.ite (decide (nb = 0)) hz (fun h0 => WP.block_nil ?_) (fun h0 => ?_)
+    · have : nb = 0 := by simpa using h0
+      subst this; exact I
+    obtain ⟨x, o, run₁⟩ := cmpbx_run t (k := nb) (by omega_arith) (by rw [I.rbx, Nat.sub_zero])
+    refine WP.seq (WP.of_runBlock ⟨_, run₁, ?_⟩)
+    have I₁ := I.flags x (decide (nb < 4)) o
+    have mid : WP isa (.ite .b (.block []) (.seq (.block Impl.Gcm.X86_64.Pclmul.pows) (.loop (.block body4) .ae)))
+        (arithFlags t x (decide (nb < 4)) o) fun v => ∃ k, k ≤ nb ∧ AInv K W SP H σ P nb k v := by
+      refine WP.ite (decide (nb < 4)) rfl (fun _ => WP.block_nil ⟨0, Nat.zero_le _, I₁⟩) (fun h4 => ?_)
+      have h4' : ¬ nb < 4 := by simpa using h4
+      refine WP.seq (WP.mono (Proof.Gcm.X86_64.Pclmul.pows_ok _ I₁.g.c I₁.g.h) fun u₁ ⟨p2, p3, p4, o₁⟩ => ?_)
+      have Iu := I₁.only o₁ (by decide) (by decide) (by decide)
+      refine WP.loop (M := isa) (body := .block body4) (c := .ae)
+        (fun (m : Nat) (v : State) => ∃ k, m = nb - k ∧ k + 4 ≤ nb ∧ AInv K W SP H σ P nb k v ∧ PW H v) ?_
+        (nb - 0) u₁ ⟨0, rfl, by omega_arith, Iu, ⟨p2, p3, p4⟩⟩
+      rintro m v ⟨k, rfl, hk, Iv, pv⟩
+      refine WP.mono (body4_ok hP hk Iv pv) fun v' ⟨Iv', pv', hcf'⟩ => ?_
+      have ev : isa.eval .ae v' = some !(decide (nb - (k + 4) < 4)) := by
+        show v'.cf.map (!·) = _; rw [hcf']; rfl
+      by_cases hlt4 : nb - (k + 4) < 4
+      · left
+        exact ⟨by rw [ev, decide_eq_true hlt4]; rfl, k + 4, hk, Iv'⟩
+      · right
+        exact ⟨by rw [ev, decide_eq_false hlt4]; rfl, nb - (k + 4), by omega_arith, k + 4, rfl, by omega_arith,
+          Iv', pv'⟩
+    exact WP.seq (WP.mono mid fun v ⟨k, hk, Iv⟩ => ones k hk v Iv)
+
 end VG.Proof.AesGcmSivReg.X86_64
