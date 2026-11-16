@@ -41,6 +41,7 @@ macro_rules! vg_sym_pageoff {
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]
 #[rustfmt::skip]
+pub mod proto_avx2;
 pub mod aes;
 
 #[cfg(all(target_arch = "x86_64", target_pointer_width = "64", target_feature = "sse2"))]

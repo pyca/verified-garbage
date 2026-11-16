@@ -36,6 +36,11 @@ pub unsafe fn vg_x25519_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: 
         {
             return crate::x25519::vg_x25519_exchange_ifma;
         }
+        if cpu.contains(crate::x25519::VG_X25519_EXCHANGE_ADX_FEATURES)
+            && cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2))
+        {
+            return crate::proto_avx2::vg_x25519_exchange_avx2p;
+        }
         if const { verified_garbage_cpu::target_contains(crate::x25519::VG_X25519_EXCHANGE_ADX_FEATURES) }
             || cpu.contains(crate::x25519::VG_X25519_EXCHANGE_ADX_FEATURES)
         {
