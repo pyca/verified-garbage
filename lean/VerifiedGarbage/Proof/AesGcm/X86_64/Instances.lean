@@ -3052,8 +3052,14 @@ theorem streamEncryptCodeF16S_mx (v : GcmVariant) :
     rfl
   · exact streamEncryptCodeF16_mx v
 
+/-- The instance of `vg_aes_gcm_stream_encrypt_prepared` of a variant whose
+loops read 16 powers; where that function is followed by the clearing of the
+scratch registers (`GcmVariant.streamF16Clr`), as an internal function of its
+own, `vg_aes_gcm_stream_encrypt_prepared<suffix>_core`, with the code as it
+was. -/
 def encFnF16 (v : GcmVariant) : StreamTo.EncFn (Proof.Gcm.X86_64.Stitch.CtxMode.flaggedT 16) :=
-  .ofFlagged ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix, streamEncryptCodeF16S v⟩
+  .ofFlagged ⟨Spec.Gcm.streamEncryptPreparedApi.name ++ v.impl.suffix ++ (if v.streamF16Clr then "_core" else ""),
+      streamEncryptCodeF16S v⟩
     (streamEncryptCodeF16S_verified v) (streamEncryptCodeF16S_spAll v) (streamEncryptCodeF16S_xdepth v)
     (streamEncryptCodeF16S_mx v)
 

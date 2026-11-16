@@ -145,12 +145,7 @@ def artifactsR16W (v : GcmVariant) (r : R16 v) : List Artifact := [
     code := Impl.Gcm.X86_64.Flag.onFlag 16 (openToCodeF16 v r) (openToCode v)
     verified := VG.Proof.AesGcm.Flag.openTo_keyed (openToCodeR16_onFlag v r)
     spSafe := openToCodeR16_onFlag_spAll v r },
-  Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target {
-    suffix := v.impl.suffix
-    code := streamEncryptCodeF16S v
-    verified := VG.Proof.AesGcm.Flag.streamEncrypt_keyed
-      (Flag.streamEncrypt_ofB (Or.inl rfl) (streamEncryptCodeF16S_verified v))
-    spSafe := streamEncryptCodeF16S_spAll v },
+  Spec.Gcm.streamEncryptPreparedApi.artifact X86_64.target (streamEncryptF16Reg v),
   Spec.Gcm.streamDecryptPreparedApi.artifact X86_64.target (streamDecryptR16Reg v),
   Spec.Gcm.sealGatherPreparedApi.artifact X86_64.target {
     suffix := v.impl.suffix
