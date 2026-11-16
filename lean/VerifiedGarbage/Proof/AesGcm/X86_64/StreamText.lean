@@ -33,9 +33,14 @@ open VG.Spec.Aes (bytesAt)
 open VG.Spec.Gcm (Block blockAt blocksAt ghashInput zeros padLen)
 open VG.Proof.Gcm (Absorbed Ctr xorKs)
 
-/-- What `streamText` writes. -/
-abbrev stFrame (St W SP D : Addr) (n : Nat) : List Region :=
-  [⟨St + BitVec.ofNat 64 16, 64⟩, ⟨D, n⟩, ⟨W + BitVec.ofNat 64 96, 16⟩, ⟨W + BitVec.ofNat 64 192, 32⟩,
+/-- The 16 bytes of `T` in `W`, the padded additional data, if `t` (as
+`streamText` writes them; `streamTextS` pads in the state, and writes
+none of them). -/
+abbrev tReg (W : Addr) (t : Bool) : Region := ⟨W + BitVec.ofNat 64 96, if t then 16 else 0⟩
+
+/-- What `streamText` writes (`T` in `W` if `t`). -/
+abbrev stFrame (St W SP D : Addr) (n : Nat) (t : Bool := true) : List Region :=
+  [⟨St + BitVec.ofNat 64 16, 64⟩, ⟨D, n⟩, tReg W t, ⟨W + BitVec.ofNat 64 192, 32⟩,
     ⟨W + BitVec.ofNat 64 448, 2112⟩, below SP 24]
 
 /-- The ciphertext of the text `x` from byte `P` on: `x` encrypted, if `enc`,
@@ -91,11 +96,11 @@ structure SCtx (M : Gcm.X86_64.Stitch.CtxMode) (Ctx St W SP : Addr) (R : Nat) (H
 `x₀` absorbed and `P₀` bytes of text so far), GHASH has absorbed their
 ciphertext and the counter is past them. -/
 structure SInv (M : Gcm.X86_64.Stitch.CtxMode) (Hyp : Prop) (Ctx St W SP : Addr) (R : Nat) (H icb : Block) (x₀ : List Byte) (P₀ : Nat)
-    (enc : Bool) (D : Addr) (n : Nat) (m₀ : Mem) (j : Nat) (s : State) : Prop where
+    (enc : Bool) (D : Addr) (n : Nat) (m₀ : Mem) (j : Nat) (s : State) (t : Bool := true) : Prop where
   env : Env Ctx St W SP s
   data : DataW Ctx St W SP s D n
   le : j ≤ n
-  frame : Frame (stFrame St W SP D n) m₀ s.mem
+  frame : Frame (stFrame St W SP D n t) m₀ s.mem
   rest : bytesAt s.mem (D + BitVec.ofNat 64 j) (n - j) = bytesAt m₀ (D + BitVec.ofNat 64 j) (n - j)
   abs : Hyp → Absorbed s.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H
     (x₀ ++ ctext enc (ciphOf m₀ Ctx R) icb P₀ (bytesAt m₀ D j))
@@ -107,35 +112,36 @@ section
 variable {Ctx St W SP : Addr} (L : Lay Ctx St W SP)
 include L
 
-theorem ctx_stFrame {D : Addr} {n : Nat} (hC : (⟨Ctx, 256⟩ : Region).Disjoint ⟨D, n⟩)
-    (t_c : (below SP 24).Disjoint ⟨Ctx, 256⟩) : ∀ r ∈ stFrame St W SP D n, (⟨Ctx, 256⟩ : Region).Disjoint r := by
+theorem ctx_stFrame {D : Addr} {n : Nat} {t : Bool} (hC : (⟨Ctx, 256⟩ : Region).Disjoint ⟨D, n⟩)
+    (t_c : (below SP 24).Disjoint ⟨Ctx, 256⟩) : ∀ r ∈ stFrame St W SP D n t, (⟨Ctx, 256⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · exact L.cs.sub_right (Lay.stSub (by decide))
   · exact hC
-  · exact L.cw'.sub_right (Lay.wSub (by decide))
+  · cases t <;> exact L.cw'.sub_right (Lay.wSub (by decide))
   · exact L.cw'.sub_right (Lay.wSub (by decide))
   · exact L.cw'.sub_right (Lay.wSub (by decide))
   · exact t_c.symm
 
 /-- The slots of `W` below `192` are outside `stFrame`. -/
-theorem w_stFrame {D : Addr} {n d k : Nat} (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩)
+theorem w_stFrame {D : Addr} {n d k : Nat} {t : Bool} (hD : (⟨D, n⟩ : Region).Disjoint ⟨W, 2560⟩)
     (t_w : (below SP 24).Disjoint ⟨W, 2560⟩) (h₁ : 128 ≤ d) (h₂ : d + k ≤ 192) :
-    ∀ r ∈ stFrame St W SP D n, (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
+    ∀ r ∈ stFrame St W SP D n t, (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · exact (L.st_w (by decide) (.inr ⟨by omega_arith, by omega_arith⟩)).symm
   · exact (hD.sub_right (Lay.wSub (by omega_arith))).symm
-  · exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
+  · cases t <;> simp only [tReg, Bool.false_eq_true, ↓reduceIte] <;>
+      exact L.w_w (.inr (by omega_arith)) (by omega_arith) (by decide)
   · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
   · exact L.w_w (.inl (by omega_arith)) (by omega_arith) (by decide)
   · exact (t_w.sub_right (Lay.wSub (by omega_arith))).symm
 
 /-- `J₀` is outside `stFrame`. -/
-theorem j0_stFrame {D : Addr} {n : Nat} (hD : (⟨D, n⟩ : Region).Disjoint ⟨St, 80⟩)
-    (t_s : (below SP 24).Disjoint ⟨St, 80⟩) : ∀ r ∈ stFrame St W SP D n, (⟨St, 16⟩ : Region).Disjoint r := by
+theorem j0_stFrame {D : Addr} {n : Nat} {t : Bool} (hD : (⟨D, n⟩ : Region).Disjoint ⟨St, 80⟩)
+    (t_s : (below SP 24).Disjoint ⟨St, 80⟩) : ∀ r ∈ stFrame St W SP D n t, (⟨St, 16⟩ : Region).Disjoint r := by
   intro r hr
   obtain e : (⟨St, 16⟩ : Region) = ⟨St + BitVec.ofNat 64 0, 16⟩ := by rw [BitVec.add_zero]
   rw [e]
@@ -143,30 +149,30 @@ theorem j0_stFrame {D : Addr} {n : Nat} (hD : (⟨D, n⟩ : Region).Disjoint ⟨
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · exact L.st_st (.inl (by decide)) (by decide) (by decide)
   · exact (hD.sub_right (Lay.stSub (by decide))).symm
-  · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
+  · cases t <;> exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
   · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
   · exact L.st_w (by decide) (.inr ⟨by decide, by decide⟩)
   · exact (t_s.sub_right (Lay.stSub (by decide))).symm
 
 omit L in
 /-- The return address is outside `stFrame`. -/
-theorem ret_stFrame {D : Addr} {n : Nat} (rS : (⟨SP, 8⟩ : Region).Disjoint ⟨St, 80⟩)
+theorem ret_stFrame {D : Addr} {n : Nat} {t : Bool} (rS : (⟨SP, 8⟩ : Region).Disjoint ⟨St, 80⟩)
     (rD : (⟨SP, 8⟩ : Region).Disjoint ⟨D, n⟩) (rW : (⟨SP, 8⟩ : Region).Disjoint ⟨W, 2560⟩) :
-    ∀ r ∈ stFrame St W SP D n, (⟨SP, 8⟩ : Region).Disjoint r := by
+    ∀ r ∈ stFrame St W SP D n t, (⟨SP, 8⟩ : Region).Disjoint r := by
   intro r hr
   simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · exact rS.sub_right (Lay.stSub (by decide))
   · exact rD
-  · exact rW.sub_right (Lay.wSub (by decide))
+  · cases t <;> exact rW.sub_right (Lay.wSub (by decide))
   · exact rW.sub_right (Lay.wSub (by decide))
   · exact rW.sub_right (Lay.wSub (by decide))
   · exact Offset.base_disjoint_below SP (n := 24) (k := 8) (by decide)
 
 omit L in
 /-- `crypt` over part of the data writes within `stFrame`. -/
-theorem crFrame_st {D : Addr} {n j k : Nat} (hk : j + k ≤ n) {m m' : Mem}
-    (hf : Frame (crFrame St W SP (D + BitVec.ofNat 64 j) k) m m') : Frame (stFrame St W SP D n) m m' :=
+theorem crFrame_st {D : Addr} {t : Bool} {n j k : Nat} (hk : j + k ≤ n) {m m' : Mem}
+    (hf : Frame (crFrame St W SP (D + BitVec.ofNat 64 j) k) m m') : Frame (stFrame St W SP D n t) m m' :=
   hf.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -176,8 +182,8 @@ theorem crFrame_st {D : Addr} {n j k : Nat} (hk : j + k ≤ n) {m m' : Mem}
     · exact ⟨below SP 24, by simp, below_sub (by decide) (by decide)⟩
 
 omit L in
-theorem absFrame_st {D : Addr} {n : Nat} {m m' : Mem} (hf : Frame (absFrame St W SP 16) m m') :
-    Frame (stFrame St W SP D n) m m' :=
+theorem absFrame_st {D : Addr} {t : Bool} {n : Nat} {m m' : Mem} (hf : Frame (absFrame St W SP 16) m m') :
+    Frame (stFrame St W SP D n t) m m' :=
   hf.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -193,13 +199,13 @@ theorem tFrame_st {D : Addr} {n : Nat} {m m' : Mem} (hf : Frame (tFrame St W SP 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self .., Offset.sub _ (by decide) (by decide)⟩
-    · exact ⟨⟨W + BitVec.ofNat 64 96, 16⟩, by simp, fun _ h => h⟩
+    · exact ⟨tReg W true, by simp, fun _ h => h⟩
     · exact ⟨⟨W + BitVec.ofNat 64 448, 2112⟩, by simp, Offset.sub _ (by decide) (by decide)⟩
     · exact ⟨below SP 24, by simp, below_sub (by decide) (by decide)⟩
 
 omit L in
-theorem obFrame_st {D : Addr} {n j q : Nat} (hk : j + q * 16 ≤ n) {m m' : Mem}
-    (hf : Frame (obFrame St W SP (D + BitVec.ofNat 64 j) q) m m') : Frame (stFrame St W SP D n) m m' :=
+theorem obFrame_st {D : Addr} {t : Bool} {n j q : Nat} (hk : j + q * 16 ≤ n) {m m' : Mem}
+    (hf : Frame (obFrame St W SP (D + BitVec.ofNat 64 j) q) m m') : Frame (stFrame St W SP D n t) m m' :=
   hf.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -210,8 +216,8 @@ theorem obFrame_st {D : Addr} {n j q : Nat} (hk : j + q * 16 ≤ n) {m m' : Mem}
     · exact ⟨below SP 24, by simp, fun _ h => h⟩
 
 omit L in
-theorem slots_st {D : Addr} {n d k : Nat} (h₁ : 192 ≤ d) (h₂ : d + k ≤ 224) {m m' : Mem}
-    (hf : Frame [⟨W + BitVec.ofNat 64 d, k⟩] m m') : Frame (stFrame St W SP D n) m m' :=
+theorem slots_st {D : Addr} {t : Bool} {n d k : Nat} (h₁ : 192 ≤ d) (h₂ : d + k ≤ 224) {m m' : Mem}
+    (hf : Frame [⟨W + BitVec.ofNat 64 d, k⟩] m m') : Frame (stFrame St W SP D n t) m m' :=
   hf.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     exact ⟨⟨W + BitVec.ofNat 64 192, 32⟩, by simp, Offset.sub _ h₁ (by omega_arith)⟩
@@ -257,25 +263,25 @@ theorem rest_head {D : Addr} {n j k : Nat} (hk : j + k ≤ n) {m₀ m : Mem}
 end
 
 section
-variable {M : Gcm.X86_64.Stitch.CtxMode} {Hyp : Prop} {Ctx St W SP : Addr} {R : Nat} {H icb : Block} {x₀ : List Byte} {P₀ : Nat} {enc : Bool}
+variable {M : Gcm.X86_64.Stitch.CtxMode} {Hyp : Prop} {Ctx St W SP : Addr} {R : Nat} {H icb : Block} {x₀ : List Byte} {P₀ : Nat} {enc : Bool} {t : Bool}
   {D : Addr} {n : Nat} {m₀ : Mem}
 
 theorem SInv.rounds {j : Nat} {s : State} (K : SCtx M Ctx St W SP R H D n m₀)
-    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s) : RoundsAt s.mem W R :=
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s t) : RoundsAt s.mem W R :=
   rounds_frame h.frame (fun r hr => w_stFrame K.lay h.data.ok.w K.t_w (by decide) (by decide) r hr) K.rounds
 
 theorem SInv.hH {j : Nat} {s : State} (K : SCtx M Ctx St W SP R H D n m₀)
-    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s) : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H := by
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s t) : blockAt s.mem (Ctx + BitVec.ofNat 64 240) = H := by
   rw [blockAt_frame h.frame fun r hr => (ctx_stFrame K.lay h.data.ctx K.t_c r hr).sub_left (Lay.ctxSub (by decide)),
     K.hH]
 
 theorem SInv.ciph {j : Nat} {s : State} (K : SCtx M Ctx St W SP R H D n m₀)
-    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s) : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R :=
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s t) : ciphOf s.mem Ctx R = ciphOf m₀ Ctx R :=
   ciph_frame h.frame (ctx_stFrame K.lay h.data.ctx K.t_c) K.rounds.2
 
 /-- The key context, for the data left from byte `j`. -/
 theorem SInv.ext {j : Nat} {s : State} (K : SCtx M Ctx St W SP R H D n m₀)
-    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s) :
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s t) :
     CtxExt M Ctx St W SP (D + BitVec.ofNat 64 j) (n - j) s := by
   have hlt := h.data.ok.lt
   have hj := h.le
@@ -285,24 +291,45 @@ theorem SInv.ext {j : Nat} {s : State} (K : SCtx M Ctx St W SP R H D n m₀)
   rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
   · exact K.xs.sub_right (Lay.stSub (by decide))
   · exact K.xd
-  · exact K.xw'.sub_right (Lay.wSub (by decide))
+  · cases t <;> exact K.xw'.sub_right (Lay.wSub (by decide))
   · exact K.xw'.sub_right (Lay.wSub (by decide))
   · exact K.xw'.sub_right (Lay.wSub (by decide))
   · exact K.xt.symm
 
+/-- What writes within `stFrame` without `T` (`t = false`) writes within it. -/
+theorem stFrame_toT {D : Addr} {n : Nat} {m m' : Mem} (h : Frame (stFrame St W SP D n t) m m') :
+    Frame (stFrame St W SP D n) m m' :=
+  h.sub fun r hr => by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
+    · exact ⟨_, List.mem_cons_self .., fun _ h => h⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · refine ⟨tReg W true, by simp, ?_⟩
+      cases t
+      · intro x hx; simp only [tReg, Region.Contains, Bool.false_eq_true, ↓reduceIte] at hx; omega_arith
+      · exact fun _ h => h
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+    · exact ⟨_, by simp, fun _ h => h⟩
+
+/-- `SInv` without `T`, as `SInv`. -/
+theorem SInv.toT {j : Nat} {s : State} (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s t) :
+    SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s :=
+  ⟨h.env, h.data, h.le, stFrame_toT h.frame, h.rest, h.abs, h.ctr, h.out, h.cov⟩
+
 /-- After code changing registers other than those `Env` holds. -/
-theorem SInv.regs {j : Nat} {s s' : State} (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s)
+theorem SInv.regs {j : Nat} {s s' : State} (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s t)
     (hg : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s'.gpr r = s.gpr r) (hm : s'.mem = s.mem) (hrd : s'.rd = s.rd)
-    (hwr : s'.wr = s.wr) : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s' :=
+    (hwr : s'.wr = s.wr) : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s' t :=
   ⟨h.env.keep hg hrd hwr, h.data.of_eq hrd hwr, h.le, hm ▸ h.frame, hm ▸ h.rest, fun hy => hm ▸ h.abs hy,
     fun hy => hm ▸ h.ctr hy, fun hy => hm ▸ h.out hy, by rw [hrd, hwr]; exact h.cov⟩
 
 /-- After code writing only the slots of `W` from `192`. -/
 theorem SInv.slots {j : Nat} {s s' : State} (K : SCtx M Ctx St W SP R H D n m₀)
-    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s)
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s t)
     (hg : ∀ r ∈ [Reg.r13, .r14, .r15, .rsp], s'.gpr r = s.gpr r) (hrd : s'.rd = s.rd) (hwr : s'.wr = s.wr)
     {d k : Nat} (h₁ : 192 ≤ d) (h₂ : d + k ≤ 224) (hf : Frame [⟨W + BitVec.ofNat 64 d, k⟩] s.mem s'.mem) :
-    SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s' := by
+    SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s' t := by
   have L := K.lay
   have hD := h.data.ok
   obtain one : ∀ {r : Region}, r.Disjoint ⟨W, 2560⟩ → ∀ r' ∈ [(⟨W + BitVec.ofNat 64 d, k⟩ : Region)], r.Disjoint r' :=
@@ -559,7 +586,7 @@ theorem dprefix (D : Addr) (j : Nat) : (⟨D, j⟩ : Region) = ⟨D + BitVec.ofN
 /-! ## A part of the data: `crypt` and `absorb` -/
 
 section
-variable (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} {Hyp : Prop} {Ctx St W SP : Addr} {R : Nat} {H icb : Block} {x₀ : List Byte} {P₀ : Nat}
+variable (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} {Hyp : Prop} {Ctx St W SP : Addr} {R : Nat} {H icb : Block} {x₀ : List Byte} {P₀ : Nat} {t : Bool}
   {D : Addr} {n : Nat} {m₀ : Mem}
 
 /-- `k` more bytes, from byte `j`: encrypted and absorbed, or absorbed and
@@ -570,7 +597,7 @@ theorem partWith_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {cr ab : 
     (hab : ∀ {x : List Byte} {t : State}, x.length % 16 = (P₀ + j) % 16 →
       AbsIn Ctx St W SP 16 H x (D + BitVec.ofNat 64 j) k t →
       WP isa ab t (AbsOut Ctx St W SP 16 H x (x ++ bytesAt t.mem (D + BitVec.ofNat 64 j) k) t.mem))
-    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s)
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s t)
     (hx : x₀.length % 16 = P₀ % 16) (hk : j + k ≤ n)
     (h12 : s.gpr .r12 = D + BitVec.ofNat 64 j) (hbp : s.gpr .rbp = BitVec.ofNat 64 k)
     (hbx : s.gpr .rbx = BitVec.ofNat 64 ((P₀ + j) % 16))
@@ -578,7 +605,7 @@ theorem partWith_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {cr ab : 
     (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 k)
     (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (P₀ + j)) :
     WP isa (partWith enc cr ab) s fun s' =>
-      SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ (j + k) s' ∧
+      SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ (j + k) s' t ∧
       ∀ d, 176 ≤ d → d + 8 ≤ 240 → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := by
   have L := K.lay
   have hD := h.data
@@ -691,7 +718,7 @@ theorem partWith_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {cr ab : 
 
 /-- `k` more bytes, from byte `j`, by `crypt` and `absorb`. -/
 theorem part_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {j k : Nat} {s : State}
-    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s)
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s t)
     (hx : x₀.length % 16 = P₀ % 16) (hk : j + k ≤ n)
     (h12 : s.gpr .r12 = D + BitVec.ofNat 64 j) (hbp : s.gpr .rbp = BitVec.ofNat 64 k)
     (hbx : s.gpr .rbx = BitVec.ofNat 64 ((P₀ + j) % 16))
@@ -699,14 +726,14 @@ theorem part_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {j k : Nat} {
     (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 k)
     (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (P₀ + j)) :
     WP isa (partWith enc (crypt v.callees) (absorb v.callees 16)) s fun s' =>
-      SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ (j + k) s' ∧
+      SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ (j + k) s' t ∧
       ∀ d, 176 ≤ d → d + 8 ≤ 240 → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
   partWith_ok K enc (crypt_ok v K.lay) (fun _ => absorb_ok v K.lay (.inr rfl)) h hx hk h12 hbp hbx hdat hlen htl
 
 /-- The head, `headLen P₀ n` bytes from the start, of `n ≠ 0`: by
 `cryptHead` and `absorbHead`, if the text so far left a block partial. -/
 theorem headPart_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {s : State}
-    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ 0 s)
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ 0 s t)
     (hx : x₀.length % 16 = P₀ % 16) (hn : n ≠ 0)
     (h12 : s.gpr .r12 = D + BitVec.ofNat 64 0) (hbp : s.gpr .rbp = BitVec.ofNat 64 (headLen P₀ n))
     (hbx : s.gpr .rbx = BitVec.ofNat 64 ((P₀ + 0) % 16))
@@ -714,7 +741,7 @@ theorem headPart_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {s : Stat
     (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 (headLen P₀ n))
     (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (P₀ + 0)) :
     WP isa (headPart v.callees enc) s fun s' =>
-      SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ (0 + headLen P₀ n) s' ∧
+      SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ (0 + headLen P₀ n) s' t ∧
       ∀ d, 176 ≤ d → d + 8 ≤ 240 → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := by
   obtain hlt := Nat.mod_lt (P₀ + 0) (show 16 > 0 by decide)
   obtain ⟨s₁, run₁, hz₁, hg₁, hm₁, hrd₁, hwr₁⟩ := test_ok s .rbx hbx (by omega_arith)
@@ -870,19 +897,19 @@ theorem dsub_obFrame {s : State} {D : Addr} {n j q e l : Nat} (hd : DataOk St W 
 end
 
 section
-variable (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} {Hyp : Prop} {Ctx St W SP : Addr} {R : Nat} {H icb : Block} {x₀ : List Byte} {P₀ : Nat}
+variable (v : GcmImpl) {M : Gcm.X86_64.Stitch.CtxMode} {Hyp : Prop} {Ctx St W SP : Addr} {R : Nat} {H icb : Block} {x₀ : List Byte} {P₀ : Nat} {t : Bool}
   {D : Addr} {n : Nat} {m₀ : Mem}
 
 /-- `streamBlocks`: the whole blocks of the data left, from byte `j`, in one
 call, when the text so far is a whole number of blocks. -/
 theorem blocks_ok (B : BlkFn M) (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {j : Nat} {s : State}
-    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s) (hx : x₀.length % 16 = P₀ % 16)
+    (h : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s t) (hx : x₀.length % 16 = P₀ % 16)
     (hdat : s.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 j)
     (hlen : s.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 (n - j))
     (htl : s.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (P₀ + j))
     (hal : (n - j) / 16 ≠ 0 → (P₀ + j) % 16 = 0) :
     WP isa (streamBlocks (if enc then B.enc else B.dec)) s fun s' =>
-      SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ (j + 16 * ((n - j) / 16)) s' ∧
+      SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ (j + 16 * ((n - j) / 16)) s' t ∧
       s'.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 (j + 16 * ((n - j) / 16)) ∧
       s'.mem.readW (W + BitVec.ofNat 64 208) 64 = BitVec.ofNat 64 ((n - j) % 16) ∧
       s'.mem.readW (W + BitVec.ofNat 64 192) 64 = BitVec.ofNat 64 (P₀ + (j + 16 * ((n - j) / 16))) := by
@@ -898,7 +925,7 @@ theorem blocks_ok (B : BlkFn M) (K : SCtx M Ctx St W SP R H D n m₀) (enc : Boo
   obtain he₁ : Env Ctx St W SP s₁ := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide)) rd₁ wr₁
-  obtain h₁ : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s₁ := h.regs (fun r hr => by
+  obtain h₁ : SInv M Hyp Ctx St W SP R H icb x₀ P₀ enc D n m₀ j s₁ t := h.regs (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide)) m₁ rd₁ wr₁
   refine WP.ite (decide (q = 0)) (by simp only [eval, z₁]) (fun hz => ?_) (fun hz => ?_)

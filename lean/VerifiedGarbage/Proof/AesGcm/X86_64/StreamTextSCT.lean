@@ -148,7 +148,7 @@ theorem streamTextS_rel (enc : Bool) (hP : P₀ < 2 ^ 64) :
       (c₀ := List.replicate P₀ 0) (by simpa using t.hP) (by simpa using t.alen) (by simpa using t.tlen)
       False.elim False.elim) fun s' ⟨I, sl⟩ => ?_
     simp only [List.length_replicate] at I
-    refine ⟨⟨_, _, _, _, t.K, ?_, I⟩, by rw [sl 200 (by decide) (by decide)]; exact t.dat,
+    refine ⟨⟨_, _, _, _, t.K, ?_, I.toT⟩, by rw [sl 200 (by decide) (by decide)]; exact t.dat,
       by rw [sl 208 (by decide) (by decide)]; exact t.len, by rw [sl 192 (by decide) (by decide)]; exact t.tlen⟩
     have := Proof.Gcm.length_pad_mod aL
     simp only [List.length_append, List.length_replicate, Proof.Gcm.length_zeros]; omega_arith

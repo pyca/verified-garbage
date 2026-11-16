@@ -51,8 +51,8 @@ theorem gh_sFrame {St W SP : Addr} {yo gs : Nat} {m m' : Mem}
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp
 
-theorem sFrame_st {St W SP D : Addr} {n : Nat} {m m' : Mem} (hf : Frame (sFrame St W SP 16) m m') :
-    Frame (stFrame St W SP D n) m m' :=
+theorem sFrame_st {St W SP D : Addr} {n : Nat} {t : Bool} {m m' : Mem} (hf : Frame (sFrame St W SP 16) m m') :
+    Frame (stFrame St W SP D n t) m m' :=
   hf.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
@@ -185,7 +185,7 @@ theorem startS_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {s : State}
     (hyC : Hyp → Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb c₀.length) :
     WP isa (.seq (.block [.mov .rax (.mem (at_ .r15 tlenO)), .alu .test .rax (.reg .rax)])
       (.ite .e (firstFlushS v.callees) (.block []))) s fun s' =>
-      SInv M Hyp Ctx St W SP R H icb (a ++ zeros (padLen a.length) ++ c₀) c₀.length enc D n m₀ 0 s' ∧
+      SInv M Hyp Ctx St W SP R H icb (a ++ zeros (padLen a.length) ++ c₀) c₀.length enc D n m₀ 0 s' false ∧
       ∀ d, 176 ≤ d → d + 8 ≤ 240 → s'.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := by
   have L := K.lay
   have hlt := hd.ok.lt
@@ -231,7 +231,7 @@ theorem startS_ok (K : SCtx M Ctx St W SP R H D n m₀) (enc : Bool) {s : State}
   obtain fin : ∀ s₄ : State, Env Ctx St W SP s₄ → s₄.rd = s.rd → s₄.wr = s.wr → Frame (sFrame St W SP 16) m₀ s₄.mem →
       (Hyp → Absorbed s₄.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (a ++ zeros (padLen a.length) ++ c₀)) →
       (Hyp → Ctr s₄.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb c₀.length) →
-      SInv M Hyp Ctx St W SP R H icb (a ++ zeros (padLen a.length) ++ c₀) c₀.length enc D n m₀ 0 s₄ ∧
+      SInv M Hyp Ctx St W SP R H icb (a ++ zeros (padLen a.length) ++ c₀) c₀.length enc D n m₀ 0 s₄ false ∧
       ∀ d, 176 ≤ d → d + 8 ≤ 240 → s₄.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun s₄ he₄ rd₄ wr₄ f₄ ha hc => ⟨⟨he₄, hd.of_eq rd₄ wr₄, Nat.zero_le _, sFrame_st f₄,
       by simpa using bytesAt_frame f₄ dD (by omega_arith),
@@ -292,12 +292,12 @@ theorem streamTextS_ok (B : BlkFn M) (K : SCtx M Ctx St W SP R H D n m₀) (enc 
     (hyA : Hyp → Absorbed m₀ (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H (ghashInput a c₀))
     (hyC : Hyp → Ctr m₀ (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb c₀.length) :
     WP isa (streamTextS (v.withBlk B) enc) s fun s' => Env Ctx St W SP s' ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
-      Frame (stFrame St W SP D n) m₀ s'.mem ∧
+      Frame (stFrame St W SP D n false) m₀ s'.mem ∧
       (Hyp → Absorbed s'.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H
           (ghashInput a (c₀ ++ ctext enc (ciphOf m₀ Ctx R) icb c₀.length (bytesAt m₀ D n))) ∧
         Ctr s'.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb (c₀.length + n) ∧
         bytesAt s'.mem D n = xorKs (ciphOf m₀ Ctx R) icb c₀.length (bytesAt m₀ D n)) := by
-  suffices WP isa (streamTextS (v.withBlk B) enc) s fun s' => Env Ctx St W SP s' ∧ Frame (stFrame St W SP D n) m₀ s'.mem ∧
+  suffices WP isa (streamTextS (v.withBlk B) enc) s fun s' => Env Ctx St W SP s' ∧ Frame (stFrame St W SP D n false) m₀ s'.mem ∧
       (Hyp → Absorbed s'.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H
           (ghashInput a (c₀ ++ ctext enc (ciphOf m₀ Ctx R) icb c₀.length (bytesAt m₀ D n))) ∧
         Ctr s'.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb (c₀.length + n) ∧
@@ -334,8 +334,8 @@ theorem streamTextS_ok (B : BlkFn M) (K : SCtx M Ctx St W SP R H D n m₀) (enc 
       s₃.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 := fun d h₁ h₂ => by
     rw [hm₃, sl₂ d h₁ h₂, sl₁]
   -- The end, from `SInv` over all the data.
-  obtain fin : ∀ s', SInv M Hyp Ctx St W SP R H icb (a ++ zeros (padLen a.length) ++ c₀) c₀.length enc D n m₀ n s' →
-      Env Ctx St W SP s' ∧ Frame (stFrame St W SP D n) m₀ s'.mem ∧
+  obtain fin : ∀ s', SInv M Hyp Ctx St W SP R H icb (a ++ zeros (padLen a.length) ++ c₀) c₀.length enc D n m₀ n s' false →
+      Env Ctx St W SP s' ∧ Frame (stFrame St W SP D n false) m₀ s'.mem ∧
       (Hyp → Absorbed s'.mem (St + BitVec.ofNat 64 16) (St + BitVec.ofNat 64 32) H
           (ghashInput a (c₀ ++ ctext enc (ciphOf m₀ Ctx R) icb c₀.length (bytesAt m₀ D n))) ∧
         Ctr s'.mem (St + BitVec.ofNat 64 48) (St + BitVec.ofNat 64 64) (ciphOf m₀ Ctx R) icb (c₀.length + n) ∧
@@ -361,7 +361,7 @@ theorem streamTextS_ok (B : BlkFn M) (K : SCtx M Ctx St W SP R H D n m₀) (enc 
     rw [hm']; exact sl₃ d h₁ h₂
   -- Where the rest starts: all of it if short, after the head and the whole blocks otherwise.
   refine WP.seq (WP.mono (Q := fun (s' : State) => ∃ j k', j + k' = n ∧
-      SInv M Hyp Ctx St W SP R H icb (a ++ zeros (padLen a.length) ++ c₀) c₀.length enc D n m₀ j s' ∧
+      SInv M Hyp Ctx St W SP R H icb (a ++ zeros (padLen a.length) ++ c₀) c₀.length enc D n m₀ j s' false ∧
       s'.gpr .r12 = D + BitVec.ofNat 64 j ∧ s'.gpr .rbp = BitVec.ofNat 64 k' ∧
       s'.gpr .rbx = BitVec.ofNat 64 ((c₀.length + j) % 16) ∧
       s'.mem.readW (W + BitVec.ofNat 64 200) 64 = D + BitVec.ofNat 64 j ∧
