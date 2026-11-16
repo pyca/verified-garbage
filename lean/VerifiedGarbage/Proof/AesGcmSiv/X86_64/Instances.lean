@@ -720,6 +720,26 @@ theorem bySize_verified {k : Contract isa} {wide narrow : Prog isa}
       fun _ => hpub s u₀ s' u₀' hS hS' hq, fun _ => hpub s u₀ s' u₀' hS hS' hq⟩
 
 
+/-- The comparison, in two runs that agree outside the buffers and on the
+lengths: they still do after it. -/
+theorem cmpLens_out {s₁ s₂ u₁ u₂ : State} {l₁ l₂ : List Leak}
+    (hin₁ : InRegions (s₁.rd ++ s₁.wr) (stackArgAddr s₁ 0) 8)
+    (hin₂ : InRegions (s₂.rd ++ s₂.wr) (stackArgAddr s₂ 0) 8) (ho : Outside 0 s₁ s₂)
+    (ha : stackArg s₁ 0 = stackArg s₂ 0) (h8 : s₁.gpr .r8 = s₂.gpr .r8)
+    (e₁ : execBlock isa cmpLens s₁ = some (u₁, l₁)) (e₂ : execBlock isa cmpLens s₂ = some (u₂, l₂)) :
+    Outside 0 u₁ u₂ ∧ u₁.unknowns = s₁.unknowns ∧ u₂.unknowns = s₂.unknowns := by
+  have ea₁ : s₁.ea (at_ .rsp 8) = stackArgAddr s₁ 0 := rfl
+  have ea₂ : s₂.ea (at_ .rsp 8) = stackArgAddr s₂ 0 := rfl
+  simp [execBlock, cmpLens, exec, readSrc, ea₁, hin₁, addrs, srcAddrs, State.load64, execAlu] at e₁
+  simp [execBlock, cmpLens, exec, readSrc, ea₂, hin₂, addrs, srcAddrs, State.load64, execAlu] at e₂
+  obtain ⟨rfl, -⟩ := e₁
+  obtain ⟨rfl, -⟩ := e₂
+  obtain ⟨hrd, hwr, hg, hax, hcf, hzf, hsf, hof, hx, hy, hz, hyh, hzh, hmx, hm⟩ := ho
+  have hv : s₁.mem.readW (stackArgAddr s₁ 0) 64 = s₂.mem.readW (stackArgAddr s₂ 0) 64 := ha
+  simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hv, h8]
+  exact ⟨⟨hrd, hwr, fun r hr => by simp only [gpr_arithFlags, gpr_setReg, hr, ite_false, hg r hr],
+    by simp only [gpr_arithFlags, gpr_setReg, ite_true], rfl, rfl, rfl, rfl, hx, hy, hz, hyh, hzh, hmx, hm⟩, rfl, rfl⟩
+
 /-- `seal` by the lengths, from its code with and without the AVX2 copies. -/
 theorem seal_bySize {wide narrow : Prog isa}
     (hw : Verified X86_64.target wide (Proof.AesGcmSiv.sealRoundsContract X86_64.abi 3856))
