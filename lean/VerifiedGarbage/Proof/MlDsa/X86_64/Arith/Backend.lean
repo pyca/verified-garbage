@@ -17,6 +17,7 @@ public import VerifiedGarbage.Proof.MlDsa.X86_64.Round.UseHint
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.M4Verified
 public import VerifiedGarbage.Proof.MlDsa.X86_64.Sample.Rej4Verified
 public import VerifiedGarbage.Proof.MlKem.X86_64.ArithOk
+public import VerifiedGarbage.Proof.Framework.X86_64.InstrBits
 
 /-!
 # ML-DSA on x86-64: what the callers of the polynomial arithmetic need of it
@@ -97,44 +98,61 @@ theorem FnOk.of {k : Nat → Contract isa} {c : Prog isa} (h : Verified X86_64.t
     (hs : c.allInstrs (fun i => !isa.writesSp i) = true) : FnOk k c :=
   ⟨h, Proof.MlKem.X86_64.nosp_of hn, hd, hc, Code.all_of_allInstrs hs⟩
 
+/-- The tests of code that calls no deeper than `d`, for the kernel: one walk
+of the code for the two tests of `rsp`, with one match for each instruction
+(`Proof/Framework/X86_64/InstrBits.lean`). -/
+noncomputable def fnOkB (d : Nat) (c : Prog isa) : Bool :=
+  c.allInstrs (hasBits (bSp + bNs)) && Nat.ble c.depth d && ctlOk c
+
+theorem fnOkB_spec {d : Nat} {c : Prog isa} (h : fnOkB d c = true) :
+    NoSp c ∧ c.depth ≤ d ∧ ctlOk c = true ∧ c.all (fun i => !isa.writesSp i) = true := by
+  simp only [fnOkB, Bool.and_eq_true, Nat.ble_eq] at h
+  exact ⟨Proof.MlKem.X86_64.nosp_of (Code.noRsp_of_bits (m := bSp + bNs) rfl h.1.1), h.1.2, h.2,
+    Code.spSafe_of_bits (m := bSp + bNs) rfl h.1.1⟩
+
+/-- `FnOk` of code verified without stack, from `fnOkB`. -/
+theorem FnOk.of_bits {k : Nat → Contract isa} {c : Prog isa} (h : Verified X86_64.target c (k 0))
+    (hb : fnOkB 2 c = true) : FnOk k c :=
+  ⟨h, (fnOkB_spec hb).1, (fnOkB_spec hb).2.1, (fnOkB_spec hb).2.2.1, (fnOkB_spec hb).2.2.2⟩
+
+/-- The tests of the SSE2 code's functions, in one declaration: sixteen
+functions, of four tests each. -/
+theorem sse2_checks :
+    fnOkB 2 Backend.sse2.ntt = true ∧ fnOkB 2 Backend.sse2.invNtt = true ∧ fnOkB 2 Backend.sse2.mul = true ∧
+    fnOkB 2 Backend.sse2.mulAdd = true ∧ fnOkB 2 Backend.sse2.add = true ∧ fnOkB 2 Backend.sse2.sub = true ∧
+    fnOkB 2 Backend.sse2.highBits = true ∧ fnOkB 2 Backend.sse2.lowBits = true ∧
+    fnOkB 2 Backend.sse2.normLt = true ∧ fnOkB 2 Backend.sse2.makeHint = true ∧
+    fnOkB 2 Backend.sse2.useHint = true ∧ fnOkB 3 Backend.sse2.rej4 = true ∧
+    fnOkB 3 Backend.sse2.expandMask4 = true ∧ fnOkB 2 (Backend.sse2.dotInv 4) = true ∧
+    fnOkB 2 (Backend.sse2.dotInv 5) = true ∧ fnOkB 2 (Backend.sse2.dotInv 7) = true := by
+  decide +kernel
+
 /-- The SSE2 code. -/
 def ArithImpl.sse2 : ArithImpl where
   code := .sse2
   ok :=
-    { ntt := FnOk.of Arith.ntt_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      invNtt := FnOk.of Arith.nttInv_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      mul := FnOk.of Arith.mul_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      mulAdd := FnOk.of Arith.mulAdd_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      add := FnOk.of Arith.add_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      sub := FnOk.of Arith.sub_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      highBits := FnOk.of Round.highBits_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      lowBits := FnOk.of Round.lowBits_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      normLt := FnOk.of Round.normLt_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      makeHint := FnOk.of Round.makeHint_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      useHint := FnOk.of Round.useHint_verified (by decide +kernel) (by decide +kernel) (by decide +kernel)
-        (by decide +kernel)
-      rej4 := ⟨Rej4.rejNTT4_verified, Proof.MlKem.X86_64.nosp_of (by decide +kernel), by decide +kernel,
-        by decide +kernel, Code.all_of_spTest (by decide +kernel), fun _ _ _ => Rej4.rejNTT4_ret⟩
-      expandMask4 := ⟨Mask4.expandMask4_verified, Proof.MlKem.X86_64.nosp_of (by decide +kernel), by decide +kernel,
-        by decide +kernel, Code.all_of_spTest (by decide +kernel)⟩
+    { ntt := FnOk.of_bits Arith.ntt_verified sse2_checks.1
+      invNtt := FnOk.of_bits Arith.nttInv_verified sse2_checks.2.1
+      mul := FnOk.of_bits Arith.mul_verified sse2_checks.2.2.1
+      mulAdd := FnOk.of_bits Arith.mulAdd_verified sse2_checks.2.2.2.1
+      add := FnOk.of_bits Arith.add_verified sse2_checks.2.2.2.2.1
+      sub := FnOk.of_bits Arith.sub_verified sse2_checks.2.2.2.2.2.1
+      highBits := FnOk.of_bits Round.highBits_verified sse2_checks.2.2.2.2.2.2.1
+      lowBits := FnOk.of_bits Round.lowBits_verified sse2_checks.2.2.2.2.2.2.2.1
+      normLt := FnOk.of_bits Round.normLt_verified sse2_checks.2.2.2.2.2.2.2.2.1
+      makeHint := FnOk.of_bits Round.makeHint_verified sse2_checks.2.2.2.2.2.2.2.2.2.1
+      useHint := FnOk.of_bits Round.useHint_verified sse2_checks.2.2.2.2.2.2.2.2.2.2.1
+      rej4 :=
+        have h := fnOkB_spec sse2_checks.2.2.2.2.2.2.2.2.2.2.2.1
+        ⟨Rej4.rejNTT4_verified, h.1, h.2.1, h.2.2.1, h.2.2.2, fun _ _ _ => Rej4.rejNTT4_ret⟩
+      expandMask4 :=
+        have h := fnOkB_spec sse2_checks.2.2.2.2.2.2.2.2.2.2.2.2.1
+        ⟨Mask4.expandMask4_verified, h.1, h.2.1, h.2.2.1, h.2.2.2⟩
       dotInv := fun c hc => by
         rcases hc with rfl | rfl | rfl
-        · exact FnOk.of Arith.DotS.verified4 (by decide +kernel) (by decide +kernel) (by decide +kernel)
-            (by decide +kernel)
-        · exact FnOk.of Arith.DotS.verified5 (by decide +kernel) (by decide +kernel) (by decide +kernel)
-            (by decide +kernel)
-        · exact FnOk.of Arith.DotS.verified7 (by decide +kernel) (by decide +kernel) (by decide +kernel)
-            (by decide +kernel) }
+        · exact FnOk.of_bits Arith.DotS.verified4 sse2_checks.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+        · exact FnOk.of_bits Arith.DotS.verified5 sse2_checks.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1
+        · exact FnOk.of_bits Arith.DotS.verified7 sse2_checks.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2 }
   features := []
 
 end VG.Proof.MlDsa.X86_64

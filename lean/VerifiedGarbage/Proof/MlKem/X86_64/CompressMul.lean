@@ -69,20 +69,78 @@ def hiW (off sh mk x : BitVec 16) : BitVec 16 :=
 /-- The word `cmLo` makes of the word `x`, before `pmaddwd`. -/
 def loW (sh mk x : BitVec 16) : BitVec 16 := mulhrs ((mulWordsSigned x 0x4EBF).extractLsb' 16 16) sh &&& mk
 
+/-! The words' functions as functions of the words' numbers, written with `Nat`'s own operations, which the
+kernel computes: it evaluates a `BitVec`'s through `Fin` and `Int`, a millisecond and more for each word. -/
+
+/-- The number of a word's sign extension to a doubleword. -/
+def sxN (a : Nat) : Nat := Nat.add a (Nat.mul (Nat.div a 32768) 4294901760)
+
+/-- `mulWordsSigned`, of the words' numbers. -/
+def mwsN (a b : Nat) : Nat := Nat.mod (Nat.mul (sxN a) (sxN b)) 4294967296
+
+/-- `mulhrs`, of the number of the words' product. -/
+def mulhrsM (m : Nat) : Nat :=
+  Nat.mod (Nat.div (Nat.mod (Nat.add (Nat.add (Nat.div m 16384) (Nat.mul (Nat.div m 2147483648) 4294705152)) 1)
+    4294967296) 2) 65536
+
+/-- `hiW`, of the words' numbers and that of its `f1`. -/
+def hiWF (off sh mk x f1 : Nat) : Nat :=
+  Nat.land (mulhrsM (mwsN (Nat.mod (Nat.add
+    (Nat.sub 65536 (Nat.shiftRight (Nat.land (Nat.sub 65535 f1)
+      (Nat.mod (Nat.add (Nat.sub 65536 (Nat.mod (Nat.add x off) 65536)) f1) 65536)) 15))
+    (Nat.mod (Nat.shiftRight (mwsN (Nat.mod (Nat.shiftLeft x 3) 65536) 0x4EBF) 16) 65536)) 65536) sh)) mk
+
+/-- `hiW`, of the words' numbers. -/
+def hiWN (off sh mk x : Nat) : Nat := hiWF off sh mk x (Nat.mod (mwsN x 0x75F8) 65536)
+
+/-- `loW`, of the words' numbers. -/
+def loWN (sh mk x : Nat) : Nat :=
+  Nat.land (mulhrsM (mwsN (Nat.mod (Nat.shiftRight (mwsN x 0x4EBF) 16) 65536) sh)) mk
+
+theorem toNat_signExtend32 (a : BitVec 16) : (a.signExtend 32).toNat = sxN a.toNat := by
+  have := a.isLt
+  rw [BitVec.toNat_signExtend, BitVec.msb_eq_decide, BitVec.toNat_setWidth]
+  show _ = a.toNat + a.toNat / 32768 * 4294901760
+  simp only [decide_eq_true_eq]
+  split <;> omega
+
+theorem toNat_mulWordsSigned (a b : BitVec 16) : (mulWordsSigned a b).toNat = mwsN a.toNat b.toNat := by
+  rw [mulWordsSigned, BitVec.toNat_mul, toNat_signExtend32, toNat_signExtend32]; rfl
+
+theorem toNat_mulhrs (a b : BitVec 16) : (mulhrs a b).toNat = mulhrsM (mwsN a.toNat b.toNat) := by
+  have := (mulWordsSigned a b).isLt
+  rw [mulhrs, BitVec.extractLsb'_toNat, BitVec.toNat_add, BitVec.toNat_sshiftRight, BitVec.msb_eq_decide,
+    show (1 : BitVec 32).toNat = 1 from rfl, ← toNat_mulWordsSigned]
+  show _ = ((mulWordsSigned a b).toNat / 16384 + (mulWordsSigned a b).toNat / 2147483648 * 4294705152 + 1)
+    % 4294967296 / 2 % 65536
+  simp only [decide_eq_true_eq, Nat.shiftRight_eq_div_pow]
+  split <;> omega
+
+theorem toNat_hiW (off sh mk x : BitVec 16) : (hiW off sh mk x).toNat = hiWN off.toNat sh.toNat mk.toNat x.toNat := by
+  rw [hiW, BitVec.toNat_and, toNat_mulhrs, BitVec.toNat_sub, BitVec.toNat_ushiftRight, BitVec.toNat_and,
+    BitVec.toNat_not, BitVec.toNat_sub, BitVec.toNat_add, BitVec.extractLsb'_toNat, BitVec.extractLsb'_toNat,
+    toNat_mulWordsSigned, toNat_mulWordsSigned, BitVec.toNat_shiftLeft, Nat.shiftRight_zero]
+  rfl
+
+theorem toNat_loW (sh mk x : BitVec 16) : (loW sh mk x).toNat = loWN sh.toNat mk.toNat x.toNat := by
+  rw [loW, BitVec.toNat_and, toNat_mulhrs, BitVec.extractLsb'_toNat, toNat_mulWordsSigned]
+  rfl
+
 /-- A function of words that is `Compress_d` on every word less than `q`,
-from the kernel's check of each. -/
-theorem word_formula {f : BitVec 16 → BitVec 16} {d : Nat}
-    (h : allBelow 3329 (fun x => Nat.beq (f (BitVec.ofNat 16 x)).toNat (roundDiv (2 ^ d * x) 3329 % 2 ^ d)) = true)
+from the kernel's check of each, on the function of numbers it is. -/
+theorem word_formula {f : BitVec 16 → BitVec 16} {g : Nat → Nat} {d : Nat} (hf : ∀ x, (f x).toNat = g x.toNat)
+    (h : allBelow 3329 (fun x => Nat.beq (g x)
+      (Nat.mod (Nat.div (Nat.add (Nat.mul (2 ^ (d + 1)) x) 3329) 6658) (2 ^ d))) = true)
     {x : BitVec 16} {z : Zq} (hx : x.toNat = z.val) : (f x).toNat = compress d z := by
-  have := Nat.eq_of_beq_eq_true (allBelow_spec h z.val z.isLt)
-  rw [← hx, BitVec.ofNat_toNat, BitVec.setWidth_eq] at this
-  rw [this, hx]; rfl
+  rw [hf, hx, Nat.eq_of_beq_eq_true (allBelow_spec h z.val z.isLt)]
+  show (2 ^ (d + 1) * z.val + 3329) / 6658 % 2 ^ d = (2 * (2 ^ d * z.val) + 3329) / 6658 % 2 ^ d
+  rw [Nat.pow_succ, Nat.mul_assoc, Nat.mul_left_comm]
 
 theorem hiW10 {x : BitVec 16} {z : Zq} (hx : x.toNat = z.val) : (hiW 15 0x1000 0x3FF x).toNat = compress 10 z :=
-  word_formula (by decide +kernel) hx
+  word_formula (g := hiWN 15 0x1000 0x3FF) (toNat_hiW 15 0x1000 0x3FF) (by decide +kernel) hx
 
 theorem loW4 {x : BitVec 16} {z : Zq} (hx : x.toNat = z.val) : (loW 0x200 0xF x).toNat = compress 4 z :=
-  word_formula (by decide +kernel) hx
+  word_formula (g := loWN 0x200 0xF) (toNat_loW 0x200 0xF) (by decide +kernel) hx
 
 /-! ## A lane -/
 

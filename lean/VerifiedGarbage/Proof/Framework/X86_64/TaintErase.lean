@@ -320,17 +320,12 @@ theorem run_erase (r : Reg) (is : List Instr) :
   | nil => intro _ _; rfl
   | cons i is ih =>
     intro ok xs
-    show (bif ok then (bif Nat.beq xs 0 then run r (KList.map Instr.erase is) (step r ⟨true, ⟨0⟩⟩ i.erase).ok
-          (step r ⟨true, ⟨0⟩⟩ i.erase).xs.bits
-        else run r (KList.map Instr.erase is) (step r ⟨true, ⟨xs⟩⟩ i.erase).ok (step r ⟨true, ⟨xs⟩⟩ i.erase).xs.bits)
-      else (bif Nat.beq xs 0 then run r (KList.map Instr.erase is) (step r ⟨false, ⟨0⟩⟩ i.erase).ok
-          (step r ⟨false, ⟨0⟩⟩ i.erase).xs.bits
+    show (bif ok then run r (KList.map Instr.erase is) (step r ⟨true, ⟨xs⟩⟩ i.erase).ok
+          (step r ⟨true, ⟨xs⟩⟩ i.erase).xs.bits
         else run r (KList.map Instr.erase is) (step r ⟨false, ⟨xs⟩⟩ i.erase).ok
-          (step r ⟨false, ⟨xs⟩⟩ i.erase).xs.bits)) =
-      (bif ok then (bif Nat.beq xs 0 then run r is (step r ⟨true, ⟨0⟩⟩ i).ok (step r ⟨true, ⟨0⟩⟩ i).xs.bits
-        else run r is (step r ⟨true, ⟨xs⟩⟩ i).ok (step r ⟨true, ⟨xs⟩⟩ i).xs.bits)
-      else (bif Nat.beq xs 0 then run r is (step r ⟨false, ⟨0⟩⟩ i).ok (step r ⟨false, ⟨0⟩⟩ i).xs.bits
-        else run r is (step r ⟨false, ⟨xs⟩⟩ i).ok (step r ⟨false, ⟨xs⟩⟩ i).xs.bits))
+          (step r ⟨false, ⟨xs⟩⟩ i.erase).xs.bits) =
+      (bif ok then run r is (step r ⟨true, ⟨xs⟩⟩ i).ok (step r ⟨true, ⟨xs⟩⟩ i).xs.bits
+        else run r is (step r ⟨false, ⟨xs⟩⟩ i).ok (step r ⟨false, ⟨xs⟩⟩ i).xs.bits)
     simp only [step_erase, ih]
 
 theorem check_erase (r : Reg) (c : Prog isa) : ∀ a, check r (Code.erase c) a = check r c a := by
@@ -402,13 +397,12 @@ theorem runN_eq (r : Reg) (is : List Instr) : ∀ ok xs, runN r is ok xs = run r
         else (bif Nat.beq xs 0 then runN r is (step r ⟨false, ⟨0⟩⟩ i).ok (step r ⟨false, ⟨0⟩⟩ i).xs.bits
           else bif Nat.beq xs 1 then runN r is (step r ⟨false, ⟨1⟩⟩ i).ok (step r ⟨false, ⟨1⟩⟩ i).xs.bits
           else runN r is (step r ⟨false, ⟨xs⟩⟩ i).ok (step r ⟨false, ⟨xs⟩⟩ i).xs.bits)) =
-      (bif ok then (bif Nat.beq xs 0 then run r is (step r ⟨true, ⟨0⟩⟩ i).ok (step r ⟨true, ⟨0⟩⟩ i).xs.bits
-          else run r is (step r ⟨true, ⟨xs⟩⟩ i).ok (step r ⟨true, ⟨xs⟩⟩ i).xs.bits)
-        else (bif Nat.beq xs 0 then run r is (step r ⟨false, ⟨0⟩⟩ i).ok (step r ⟨false, ⟨0⟩⟩ i).xs.bits
-          else run r is (step r ⟨false, ⟨xs⟩⟩ i).ok (step r ⟨false, ⟨xs⟩⟩ i).xs.bits))
+      (bif ok then run r is (step r ⟨true, ⟨xs⟩⟩ i).ok (step r ⟨true, ⟨xs⟩⟩ i).xs.bits
+        else run r is (step r ⟨false, ⟨xs⟩⟩ i).ok (step r ⟨false, ⟨xs⟩⟩ i).xs.bits)
     simp only [ih]
     cases ok <;> cases h₀ : Nat.beq xs 0 <;> cases h₁ : Nat.beq xs 1 <;>
-      simp only [Bool.cond_true, Bool.cond_false] <;> rw [Nat.eq_of_beq_eq_true h₁]
+      simp only [Bool.cond_true, Bool.cond_false] <;>
+      first | rw [Nat.eq_of_beq_eq_true h₀] | rw [Nat.eq_of_beq_eq_true h₁]
 
 /-- `check`, with what is known written out after every block and branch (`Abs.norm`). -/
 def checkN (r : Reg) : Prog isa → Abs → Option Abs

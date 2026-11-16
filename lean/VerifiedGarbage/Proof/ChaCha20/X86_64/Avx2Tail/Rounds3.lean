@@ -189,10 +189,11 @@ theorem RelS.of_rel48 {w₀ : W} {f g : Nat → HE} {w : W} (h : Rel w₀ f w) (
   rw [← h, e _ (by omega_using [hk, hi])]
   exact hg i hi
 
-theorem cols3_check : eq48 (cols3H.foldl hstepE vars) (colsE (colsE (colsE vars 0) 1) 2) = true := by
-  decide +kernel
-theorem diags3_check : eq48 (diags3H.foldl hstepE vars) (diagsE (diagsE (diagsE vars 0) 1) 2) = true := by
-  decide +kernel
+-- The instructions are those of AVX-512's rounds on three sets, whose checks these are.
+theorem cols3_check : eq48 (cols3H.foldl hstepE vars) (colsE (colsE (colsE vars 0) 1) 2) = true :=
+  Avx512Tail.cols3_check
+theorem diags3_check : eq48 (diags3H.foldl hstepE vars) (diagsE (diagsE (diagsE vars 0) 1) 2) = true :=
+  Avx512Tail.diags3_check
 
 theorem dr3_words (w : W) {k : Nat} (hk : k < 3) :
     blk ((cols3H ++ diags3H).foldl hstep w) k = innerBlock (blk w k) := by
