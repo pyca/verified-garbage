@@ -53,13 +53,36 @@ theorem readW_getLsbD (m : Mem) (p : Addr) {j : Nat} (hj : j < 64) :
     decide_true, Bool.true_and]
   congr 1; omega_using []
 
+/-- Bit `8 (k + 1) + r` of `x ++ y`, for a byte `y`: bit `8 k + r` of `x`. -/
+private theorem getLsbD_append_byte_hi {n : Nat} (x : BitVec n) (y : BitVec 8) (k r : Nat) :
+    (x ++ y).getLsbD (8 * (k + 1) + r) = x.getLsbD (8 * k + r) := by
+  rw [BitVec.getLsbD_append, ite_eq_right (by omega)]
+  congr 1; omega
+
 /-- Bit `8 (7 - q) + r` of a block's big-endian word: bit `r` of byte `q`. -/
 theorem catBlock_bit (b : Block) {q r : Nat} (hq : q < 8) (hr : r < 8) :
     (VG.Proof.TripleDes.catBlock b).getLsbD (8 * (7 - q) + r) = b[q].getLsbD r := by
   have hcases : ∀ k < 8, k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3 ∨ k = 4 ∨ k = 5 ∨ k = 6 ∨ k = 7 := by decide
-  rcases hcases q hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [VG.Proof.TripleDes.catBlock, BitVec.getLsbD_append] <;>
-      (repeat' split) <;> first | omega | (congr 1; omega_using [])
+  have lo : ∀ {n : Nat} (x : BitVec n) (y : BitVec 8), (x ++ y).getLsbD (8 * 0 + r) = y.getLsbD r :=
+    fun x y => by rw [Nat.mul_zero, Nat.zero_add, BitVec.getLsbD_append, ite_eq_left hr]
+  unfold VG.Proof.TripleDes.catBlock
+  -- byte `q` is under `7 - q` appends: no `split` of the eight nested `if`s
+  rcases hcases q hq with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+  · iterate 7 refine (getLsbD_append_byte_hi _ _ _ r).trans ?_
+    rw [Nat.mul_zero, Nat.zero_add]
+  · iterate 6 refine (getLsbD_append_byte_hi _ _ _ r).trans ?_
+    exact lo _ _
+  · iterate 5 refine (getLsbD_append_byte_hi _ _ _ r).trans ?_
+    exact lo _ _
+  · iterate 4 refine (getLsbD_append_byte_hi _ _ _ r).trans ?_
+    exact lo _ _
+  · iterate 3 refine (getLsbD_append_byte_hi _ _ _ r).trans ?_
+    exact lo _ _
+  · iterate 2 refine (getLsbD_append_byte_hi _ _ _ r).trans ?_
+    exact lo _ _
+  · refine (getLsbD_append_byte_hi _ _ _ r).trans ?_
+    exact lo _ _
+  · exact lo _ _
 
 /-- The little-endian word of a block, bit by bit. -/
 theorem readW_bit (m : Mem) (p : Addr) {j : Nat} (hj : j < 64) :

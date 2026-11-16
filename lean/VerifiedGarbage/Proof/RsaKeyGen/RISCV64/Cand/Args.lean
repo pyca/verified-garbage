@@ -68,8 +68,10 @@ theorem checks_eq (w : Nat) :
     (if 59 ≤ w then 3 else if 22 ≤ w then 4 else if 8 ≤ w then 5 else if 7 ≤ w then 6 else
       if 6 ≤ w then 7 else if 5 ≤ w then 8 else 27) = VG.Proof.RsaKeyGen.checksW w := by
   unfold VG.Proof.RsaKeyGen.checksW
-  repeat' split
-  all_goals omega_arith
+  -- the range of `w`, once: `split` on the two sides' `if`s visited every combination of them
+  rcases (by omega : w < 5 ∨ w = 5 ∨ w = 6 ∨ w = 7 ∨ (8 ≤ w ∧ w < 22) ∨ (22 ≤ w ∧ w < 59) ∨ 59 ≤ w) with
+    h | rfl | rfl | rfl | h | h | h <;>
+  simp (disch := omega) only [↓ite_eq_left, ↓ite_eq_right]
 
 theorem nTrial_val {w : Nat} (hw : w < 2 ^ 63) :
     (BitVec.ofNat 64 (if 16 < w then 1 else 0) <<< 9) + BitVec.ofNat 64 512 = BitVec.ofNat 64 (nTrial w) := by

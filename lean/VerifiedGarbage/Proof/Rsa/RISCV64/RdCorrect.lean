@@ -49,8 +49,9 @@ open VG.Impl.Rsa.RISCV64.Keys (sOdd sB sC)
 open VG.Proof.Rsa.RISCV64.CrtValues (bit_ite bytes_in bytes_sep bytesAt_congr zeros_keep bytesAt_zero
   wordsVal_of_out)
 
-/-- Index side conditions. -/
-macro "rdc" : tactic => `(tactic| ((try simp only [nArr, nWide, aN, aOne, aZero, aU, aX2, aT,
+/-- Index side conditions. `decide` first: it closes most of them as they stand, and the `simp only`
+elaborates its sixty names at each of the proofs' two hundred uses. -/
+macro "rdc" : tactic => `(tactic| first | decide | ((try simp only [nArr, nWide, aN, aOne, aZero, aU, aX2, aT,
   Impl.Rsa.RISCV64.RecoverDet.sU1, aNeg1, aM1, aD, aSy, aTy, aDf, aP, aQ, aNy, wZ, wE, wD, wM, wX, wOne,
   wX3, wA, wR, wN, wDt, wT2, wG, wB, wSq, wDig, wTmp, wSD, wSN, divSlots, sB0, sB1, sLt, sExact, sC1, sC2, sBb, sOk5,
   sMask, sOdd, sB, sC, halves, hdr_eq, List.flatMap_cons, List.flatMap_nil, List.cons_append,

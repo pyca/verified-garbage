@@ -68,6 +68,11 @@ theorem arithAB_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (
     (by rw [r1.gpr _ (by decide), h22]) hpL hpw hqw hP hQ) fun t2 ⟨h2, k2, _, _, _, r2⟩ =>
       ⟨h2, k1.mono.trans k2.mono, (r1.trans r2).mono⟩
 
+/-- `(if c then 0 else 1) = 0` exactly when `c`: stated here, since `simp_all` in `arith_ok` simplifies
+every hypothesis of its context for each of the two cases. -/
+private theorem ite_zero_one_eq_zero {c : Prop} [Decidable c] : (if c then 0 else 1 : Nat) = 0 ↔ c := by
+  split <;> simp_all
+
 theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h : Ws s B Z w nArr)
     (hi : ArInit s.mem B w Nv P Q Dd) (hw : 10 ≤ w) (hwe : w % 2 = 0) (h20 : s.gpr .r20 = BitVec.ofNat 64 pL)
     (h22 : s.gpr .r22 = BitVec.ofNat 64 qL) (hpL : 1 ≤ pL) (hqL : 1 ≤ qL) (hpw : pL ≤ 4 * w) (hqw : qL ≤ 4 * w)
@@ -128,7 +133,7 @@ theorem arith_ok [InvLaw] {s : State} {B : Addr} {Z w Nv P Q Dd pL qL : Nat} (h 
     have hnW : Nv < 2 ^ (32 * w) := by rw [← hi.n]; exact val32_lt _ _ _ _
     have key := VG.Proof.Rsa.maskM_iff (P := P) (Q := Q) (N := Nv) (L := P * Q % 2 ^ (32 * w))
       (M := if slot t1.mem B sE2 = 1 then 0 else 1) (V := num t2.mem B w 1) (j := 32 * w) hQN hqW hnW rfl
-      (fun podd p2 hL => by rw [← hM podd p2 hL]; split <;> simp_all)
+      (fun podd p2 hL => by rw [← hM podd p2 hL]; exact ite_zero_one_eq_zero)
     have iff : (slot t1.mem B sPodd = 1 ∧ slot t1.mem B sE1 = 1 ∧ slot t1.mem B sE2 = 1 ∧
         num t2.mem B w 1 = 1) ↔ maskOf P Q (Nv / P) (Nv % P) (num t2.mem B w 1) = true := by
       simp only [maskOf, decide_eq_true_eq]
