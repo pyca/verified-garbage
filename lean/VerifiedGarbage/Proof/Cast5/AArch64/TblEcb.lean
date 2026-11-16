@@ -285,4 +285,375 @@ theorem wide_ok (up : Bool) {k : Schedule} {N : Nat} {s : State} (E : Env s k N)
       p.sp, p.syms, p.v, fun b hb => ?_, by rw [← h1]; exact p.frame⟩
     rw [← h1, p.done b hb]; rfl
 
+/-! ## The blocks left -/
+
+/-- What the blocks left need: the `c < 16` blocks at `x1` writable, the
+working space at `x3` writable, apart from each other and from the subkeys,
+and what the rounds read. -/
+structure TailEnv (s : State) (k : Schedule) (N : Nat) (c : Nat) : Prop where
+  lt : c < 16
+  x2 : s.gpr .x2 = BitVec.ofNat 64 c
+  dataW : ∀ i < c, InRegions s.wr (wAt (s.gpr .x1) i) 8
+  scratch : (⟨s.gpr .x3, 256⟩ : Region) ∈ s.wr
+  cpre : CPre s k
+  keyBuf : (⟨s.gpr .x0, 128⟩ : Region).Disjoint ⟨s.gpr .x3, 256⟩
+  dataBuf : (⟨s.gpr .x1, 8 * c⟩ : Region).Disjoint ⟨s.gpr .x3, 256⟩
+  rounds : N = 12 ∨ N = 16
+  x16 : s.gpr .x16 = BitVec.ofNat 64 N
+
+/-- The registers the blocks left keep. -/
+def TailRegs (r : Reg) : Prop := r ∉ batchG ∧ r ≠ .x10 ∧ r ≠ .x11 ∧ r ≠ .x12 ∧ r ≠ .x13
+
+theorem tailRegs_x0 : TailRegs .x0 := ⟨by decide, by decide, by decide, by decide, by decide⟩
+theorem tailRegs_x1 : TailRegs .x1 := ⟨by decide, by decide, by decide, by decide, by decide⟩
+theorem tailRegs_x2 : TailRegs .x2 := ⟨by decide, by decide, by decide, by decide, by decide⟩
+theorem tailRegs_x3 : TailRegs .x3 := ⟨by decide, by decide, by decide, by decide, by decide⟩
+
+structure TailPost (up : Bool) (k : Schedule) (N : Nat) (c : Nat) (s s' : State) : Prop where
+  out : ∀ b < c, blockAt s'.mem (wAt (s.gpr .x1) b) = blockOut k N up (blockAt s.mem (wAt (s.gpr .x1) b))
+  gpr : ∀ r, TailRegs r → s'.gpr r = s.gpr r
+  rd : s'.rd = s.rd
+  wr : s'.wr = s.wr
+  sp : s'.sp = s.sp
+  v : ∀ r, r ∉ roundV → s'.v r = s.v r
+  frame : Frame [⟨s.gpr .x1, 8 * c⟩, ⟨s.gpr .x3, 128⟩] s.mem s'.mem
+
+theorem tail_ok (up : Bool) {k : Schedule} {N c : Nat} {s : State} (E : TailEnv s k N c) :
+    WP isa (tail up) s (TailPost up k N c s) := by
+  let D := s.gpr .x1
+  let B := s.gpr .x3
+  have hk := E.lt
+  have scrIn : ∀ i < 16, InRegions s.wr (wAt B i) 8 := fun i hi => ⟨_, E.scratch, scratch_word hi⟩
+  rw [tail]
+  apply WP.ite _ (eval_zero s .x2 E.x2 (by omega_using [hk]))
+  · intro hz
+    have hk0 : c = 0 := by simpa using hz
+    subst hk0
+    apply WP.block_nil
+    exact ⟨fun b hb => by omega, fun _ _ => rfl, rfl, rfl, rfl, fun _ _ => rfl, Frame.refl _ _⟩
+  · intro hnz
+    have hk0 : c ≠ 0 := by simpa using hnz
+    apply WP.seq
+    -- x11 := x1, x12 := x3, x13 := x2
+    let s₁ := ((s.write .x .x11 (s.read .x .x1 + BitVec.ofNat _ 0)).write .x .x12
+      ((s.write .x .x11 (s.read .x .x1 + BitVec.ofNat _ 0)).read .x .x3 + BitVec.ofNat _ 0))
+    let s₁' := s₁.write .x .x13 (s₁.read .x .x2 + BitVec.ofNat _ 0)
+    refine WP.of_runBlock ⟨s₁', ?_, ?_⟩
+    · rw [runBlock_cons, exec_addImm_x (by decide), runStep_some, runBlock_cons,
+        exec_addImm_x (by decide), runStep_some, runBlock_cons, exec_addImm_x (by decide),
+        runStep_some, runBlock_nil]; rfl
+    have g₁ : ∀ r, r ≠ .x11 → r ≠ .x12 → r ≠ .x13 → s₁'.gpr r = s.gpr r := by
+      intro r a b c; simp [s₁', s₁, State.write, a, b, c]
+    have pre₁ : CopyPre D B c s₁' := by
+      refine ⟨fun i hi => ?_, fun i hi => ?_, ?_, by omega_using [hk]⟩
+      · obtain ⟨r, hr, hc⟩ := E.dataW i hi
+        exact ⟨r, List.mem_append_right _ hr, hc⟩
+      · exact scrIn i (by omega_using [hk, hi])
+      · exact E.dataBuf.sub_right (Region.sub_prefix (by omega_using [hk]))
+    have inv₁ : CopyInv D B c s₁' 0 s₁' := by
+      refine ⟨by omega_using [hk0], ?_, ?_, ?_, fun j hj => by omega, Frame.refl _ _, fun _ _ => rfl, rfl, rfl,
+        rfl, rfl⟩
+      · rw [wAt_zero]; simp [s₁', s₁, State.write, State.read, D]
+      · rw [wAt_zero]; simp [s₁', s₁, State.write, State.read, B]
+      · simp [s₁', s₁, State.write, State.read, E.x2]
+    apply WP.seq
+    apply WP.mono_syms (copy_ok pre₁ s₁' 0 inv₁)
+    intro s₂ c₂ sy₂
+    have g₂ : ∀ r, r ≠ .x10 → r ≠ .x11 → r ≠ .x12 → r ≠ .x13 → s₂.gpr r = s.gpr r :=
+      fun r a b c e => (c₂.regs r ⟨a, b, c, e⟩).trans (g₁ r b c e)
+    apply WP.seq
+    -- x4 := x3
+    let s₃ := s₂.write .x .x4 (s₂.read .x .x3 + BitVec.ofNat _ 0)
+    refine WP.of_runBlock ⟨s₃, ?_, ?_⟩
+    · rw [runBlock_cons, exec_addImm_x (by decide), runStep_some, runBlock_nil]; rfl
+    have g₃ : ∀ r, r ≠ .x4 → r ≠ .x10 → r ≠ .x11 → r ≠ .x12 → r ≠ .x13 → s₃.gpr r = s.gpr r := by
+      intro r a b c e f; simp only [s₃, State.write, a, ite_false]; exact g₂ r b c e f
+    have x4₃ : s₃.gpr .x4 = B := by
+      simp [s₃, State.write, State.read]; exact g₂ _ (by decide) (by decide) (by decide) (by decide)
+    have wr₃ : s₃.wr = s.wr := c₂.wr
+    have hW₃ : ∀ j < 8, InRegions s₃.wr (s₃.gpr .x4 + BitVec.ofNat 64 (16 * j)) 16 := fun j hj =>
+      ⟨_, by rw [wr₃]; exact E.scratch, by rw [x4₃]; exact Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj])⟩
+    have hc₃ : Consts s₃ := by
+      have : s₃.v = s.v := by rw [show s₃.v = s₂.v from rfl, c₂.v]; rfl
+      rw [Consts, this]; exact E.cpre.consts
+    have P₃ : CPre s₃ k := cpre_of E.cpre.x9 E.cpre.sched E.cpre.key hc₃
+      (g₃ _ (by decide) (by decide) (by decide) (by decide) (by decide))
+      (g₃ _ (by decide) (by decide) (by decide) (by decide) (by decide)) sy₂ c₂.rd c₂.wr
+      (show Frame [⟨B, 8 * c⟩] s.mem s₃.mem from c₂.frame) fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact E.keyBuf.sub_right (Region.sub_prefix (by omega_using [hk]))
+    have h16₃ : s₃.gpr .x16 = BitVec.ofNat 64 N := by
+      rw [g₃ _ (by decide) (by decide) (by decide) (by decide) (by decide)]; exact E.x16
+    apply WP.seq
+    apply WP.mono (batch_ok up P₃ E.rounds h16₃ hW₃)
+    intro s₄ q₄
+    have g₄ : ∀ r, TailRegs r → s₄.gpr r = s.gpr r := by
+      intro r ⟨a, f', i, j, l⟩
+      rw [q₄.gpr r a, g₃ r (fun e => a (by rw [e]; decide)) f' i j l]
+    apply WP.seq
+    -- x11 := x3, x12 := x1, x13 := x2
+    let s₅ := ((s₄.write .x .x11 (s₄.read .x .x3 + BitVec.ofNat _ 0)).write .x .x12
+      ((s₄.write .x .x11 (s₄.read .x .x3 + BitVec.ofNat _ 0)).read .x .x1 + BitVec.ofNat _ 0))
+    let s₅' := s₅.write .x .x13 (s₅.read .x .x2 + BitVec.ofNat _ 0)
+    refine WP.of_runBlock ⟨s₅', ?_, ?_⟩
+    · rw [runBlock_cons, exec_addImm_x (by decide), runStep_some, runBlock_cons,
+        exec_addImm_x (by decide), runStep_some, runBlock_cons, exec_addImm_x (by decide),
+        runStep_some, runBlock_nil]; rfl
+    have g₅ : ∀ r, TailRegs r → s₅'.gpr r = s.gpr r := by
+      intro r hr
+      have ⟨_, _, i, j, l⟩ := hr
+      simp only [s₅', s₅, State.write, i, j, l, ite_false]; exact g₄ r hr
+    have wr₅ : s₅'.wr = s.wr := q₄.wr.trans wr₃
+    have rd₅ : s₅'.rd = s.rd := q₄.rd.trans c₂.rd
+    have pre₂ : CopyPre B D c s₅' := by
+      refine ⟨fun i hi => ?_, fun i hi => ?_, ?_, by omega_using [hk]⟩
+      · obtain ⟨r, hr, hc⟩ := scrIn i (by omega_using [hk, hi])
+        rw [wr₅]; exact ⟨r, List.mem_append_right _ hr, hc⟩
+      · rw [wr₅]; exact E.dataW i hi
+      · exact (E.dataBuf.sub_right (Region.sub_prefix (by omega_using [hk]))).symm
+    have inv₂ : CopyInv B D c s₅' 0 s₅' := by
+      refine ⟨by omega_using [hk0], ?_, ?_, ?_, fun j hj => by omega, Frame.refl _ _, fun _ _ => rfl, rfl, rfl,
+        rfl, rfl⟩
+      · rw [wAt_zero]; simp [s₅', s₅, State.write, State.read]
+        exact g₄ _ tailRegs_x3
+      · rw [wAt_zero]; simp [s₅', s₅, State.write, State.read]
+        exact g₄ _ tailRegs_x1
+      · simp [s₅', s₅, State.write, State.read]
+        rw [g₄ _ tailRegs_x2, E.x2]
+    apply WP.mono (copy_ok pre₂ s₅' 0 inv₂)
+    intro s₆ c₆
+    -- memory
+    have m₃ : s₃.mem = s₂.mem := rfl
+    have m₅ : s₅'.mem = s₄.mem := rfl
+    refine ⟨fun b hb => ?_, fun r hr => (c₆.regs r ⟨hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2⟩).trans (g₅ r hr),
+      c₆.rd.trans rd₅, c₆.wr.trans wr₅, c₆.sp.trans (q₄.sp.trans c₂.sp), fun r hr => ?_, ?_⟩
+    · -- the block in the data, from the scratch buffer after the batch
+      have e₆ : blockAt s₆.mem (wAt D b) = blockAt s₄.mem (wAt B b) := by
+        rw [← m₅]; exact blockAt_eq_of_readW (c₆.copied b hb)
+      -- the block in the scratch buffer before the batch, from the data
+      have e₂ : blockAt s₂.mem (wAt B b) = blockAt s.mem (wAt D b) := by
+        refine blockAt_eq_of_readW ((c₂.copied b hb).trans ?_)
+        rfl
+      rw [e₆]
+      have o := q₄.out b (by omega_using [hk, hb])
+      rw [x4₃, m₃, e₂] at o
+      exact o
+    · rw [c₆.v, show s₅'.v = s₄.v from rfl, q₄.v r hr, show s₃.v = s₂.v from rfl, c₂.v]; rfl
+    · have a : Frame [⟨D, 8 * c⟩, ⟨B, 128⟩] s.mem s₂.mem := c₂.frame.sub fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, Region.sub_prefix (by omega_using [hk])⟩
+      have b : Frame [⟨D, 8 * c⟩, ⟨B, 128⟩] s₂.mem s₄.mem := q₄.frame.sub fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_cons_of_mem _ List.mem_cons_self, by rw [x4₃]; exact fun _ h => h⟩
+      have c' : Frame [⟨D, 8 * c⟩, ⟨B, 128⟩] s₅'.mem s₆.mem := c₆.frame.sub fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨_, List.mem_cons_self, fun _ h => h⟩
+      rw [m₅] at c'
+      exact (a.trans b).trans c'
+
+/-! ## The function -/
+
+/-- What the function's code after its entry may assume: the subkeys
+readable at `x0`, 12 or 16 rounds in `x16`, the `n` blocks at `x1` and the
+working space at `x3` writable, apart from each other. -/
+structure MPre (s : State) : Prop where
+  rd : s.rd = [⟨s.gpr .x0, 128⟩]
+  wr : s.wr = [⟨s.gpr .x1, 8 * (s.gpr .x2).toNat⟩, ⟨s.gpr .x3, 256⟩]
+  keyData : (⟨s.gpr .x0, 128⟩ : Region).Disjoint ⟨s.gpr .x1, 8 * (s.gpr .x2).toNat⟩
+  keyBuf : (⟨s.gpr .x0, 128⟩ : Region).Disjoint ⟨s.gpr .x3, 256⟩
+  dataBuf : (⟨s.gpr .x1, 8 * (s.gpr .x2).toNat⟩ : Region).Disjoint ⟨s.gpr .x3, 256⟩
+  fit : (s.gpr .x1).toNat + 8 * (s.gpr .x2).toNat ≤ 2 ^ 64
+  rounds : (s.gpr .x16).toNat = 12 ∨ (s.gpr .x16).toNat = 16
+
+/-- The code after the entry. -/
+def main (up : Bool) : Prog isa :=
+  .seq (.block (saveRegs ++ setup)) (.seq (wide up) (.seq (tail up) (.block restoreRegs)))
+
+theorem setup_eq : saveRegs ++ setup = saveRegs ++ (constants ++ ([.adrSym .x9 planesSym] : List Instr)) := rfl
+
+/-- Every block becomes its encryption or decryption, and `q8`–`q15` are
+restored. -/
+theorem main_ok (up : Bool) {s : State} (P : MPre s) :
+    WP isa (main up) s (fun s' => (∀ b < (s.gpr .x2).toNat, blockAt s'.mem (wAt (s.gpr .x1) b) =
+      blockOut (Spec.Cast5.scheduleAt s.mem (s.gpr .x0)) (s.gpr .x16).toNat up (blockAt s.mem (wAt (s.gpr .x1) b))) ∧
+      ∀ r ∈ savedRegs, s'.v r = s.v r) := by
+  let n := (s.gpr .x2).toNat
+  let D := s.gpr .x1
+  let S := s.gpr .x0
+  let c := n % 16
+  let k := Spec.Cast5.scheduleAt s.mem S
+  let N := (s.gpr .x16).toNat
+  have bufW : (⟨s.gpr .x3, 256⟩ : Region) ∈ s.wr := by rw [P.wr]; exact List.mem_cons_of_mem _ List.mem_cons_self
+  -- the prologue
+  obtain ⟨s₁, r₁, v₁, f₁, e₁⟩ := strqs_run saveOff (by decide) 8 (by decide) s fun j hj => ⟨_, bufW, save_off s hj⟩
+  obtain ⟨s₂, r₂, c₂, g₂, m₂, rd₂, wr₂, sp₂, o₂⟩ := constants_run s₁
+  let s₂' := s₂.write .x .x9 (s₂.syms planesSym)
+  have r₂' : runBlock isa ([.adrSym .x9 planesSym] : List Instr) s₂ = some s₂' := by
+    rw [runBlock_cons, exec_adrSym, runStep_some, runBlock_nil]
+  have g₁ : s₁.gpr = s.gpr := by rw [e₁]
+  have sy₂ : s₂.syms = s.syms := by rw [o₂.1, e₁]
+  have hg₂ : ∀ r, r ≠ .x6 → r ≠ .x9 → s₂'.gpr r = s.gpr r := fun r hr h9 => by
+    show (s₂.write .x .x9 _).gpr r = _
+    rw [gpr_write_of_ne _ _ _ h9, g₂ r hr, g₁]
+  have hrd₂ : s₂'.rd = s.rd := by show s₂.rd = _; rw [rd₂, e₁]
+  have hwr₂ : s₂'.wr = s.wr := by show s₂.wr = _; rw [wr₂, e₁]
+  have m₂' : s₂'.mem = s₁.mem := m₂
+  have pro : Frame [saveR s] s.mem s₂'.mem := by rw [m₂']; exact f₁
+  have E : Env s₂' k N := by
+    have h0 := hg₂ .x0 (by decide) (by decide); have h1 := hg₂ .x1 (by decide) (by decide)
+    have h2 := hg₂ .x2 (by decide) (by decide); have h3 := hg₂ .x3 (by decide) (by decide)
+    refine ⟨by rw [hrd₂, h0]; exact P.rd, by rw [hwr₂, h1, h2, h3]; exact P.wr,
+      by rw [h0, h1, h2]; exact P.keyData, by rw [h0, h3]; exact P.keyBuf,
+      by rw [h1, h2, h3]; exact P.dataBuf, by rw [h1, h2]; exact P.fit, c₂, ?_, fun j hj => ?_, P.rounds, ?_⟩
+    · show (s₂.write .x .x9 _).gpr .x9 = s₂.syms planesSym
+      rw [gpr_write_self]; exact BitVec.setWidth_eq _
+    · rw [h0, pro.readW (r := ⟨S, 128⟩) (Offset.contains_base _ (by omega_using [hj]) (by omega_using [hj]))
+        (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr
+          exact P.keyBuf.sub_right (Offset.sub_base _ (by omega_using []))) (by decide)]
+      exact (Proof.Cast5.scheduleAt_getD _ _ hj).symm
+    · rw [hg₂ .x16 (by decide) (by decide)]
+      show s.gpr .x16 = BitVec.ofNat 64 (s.gpr .x16).toNat
+      rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]
+  have saveSep : (saveR s).Disjoint ⟨s.gpr .x1, 8 * n⟩ :=
+    (P.dataBuf.sub_right (Offset.sub_base _ (by omega_using []))).symm
+  have hn₂ : (s₂'.gpr .x2).toNat = n := by rw [hg₂ _ (by decide) (by decide)]
+  rw [main, setup_eq]
+  apply WP.seq
+  refine WP.of_runBlock ⟨s₂', by rw [saveRegs_eq]; exact cat_run r₁ (cat_run r₂ r₂'), ?_⟩
+  apply WP.seq
+  apply WP.mono (wide_ok up E)
+  intro s₃ w
+  rw [hn₂] at w
+  have g := w.gpr
+  have h0 : s₃.gpr .x0 = S := (g _ wideRegs_x0).trans (hg₂ _ (by decide) (by decide))
+  have h3 : s₃.gpr .x3 = s.gpr .x3 := (g _ wideRegs_x3).trans (hg₂ _ (by decide) (by decide))
+  have h1' : s₂'.gpr .x1 = D := hg₂ _ (by decide) (by decide)
+  have h1 : s₃.gpr .x1 = wAt D (n - c) := by rw [w.x1, h1']
+  have hl : 8 * n < 2 ^ 64 := by have := E.len; rw [hn₂] at this; exact this
+  have hfit : D.toNat + 8 * n ≤ 2 ^ 64 := P.fit
+  have sub₁ : Region.Sub ⟨s₃.gpr .x1, 8 * c⟩ ⟨D, 8 * n⟩ := by
+    rw [h1]; exact Offset.sub_base _ (by omega_using [])
+  have T : TailEnv s₃ k N c := by
+    refine ⟨Nat.mod_lt _ (by decide), w.x2, fun i hi => ?_, ?_, ?_, ?_, ?_, P.rounds, ?_⟩
+    · rw [w.wr, hwr₂, P.wr, h1, wAt_wAt]
+      exact ⟨_, List.mem_cons_self, Offset.contains_base _ (by omega_using [hi]) (by omega_using [hl, hi])⟩
+    · rw [w.wr, hwr₂, P.wr, h3]; exact List.mem_cons_of_mem _ List.mem_cons_self
+    · refine cpre_of E.x9 E.sched E.key (consts_of E.consts w.v) (g _ wideRegs_x0) (g _ wideRegs_x9) w.syms
+        w.rd w.wr w.frame fun r hr => ?_
+      simp only [List.mem_singleton] at hr; subst hr
+      rw [h1', hg₂ .x0 (by decide) (by decide)]
+      exact P.keyData.sub_right (Region.sub_prefix (by omega_using []))
+    · rw [h0, h3]; exact P.keyBuf
+    · rw [h3]; exact P.dataBuf.sub_left sub₁
+    · rw [g _ wideRegs_x16]; exact E.x16
+  apply WP.seq
+  apply WP.mono (tail_ok up T)
+  intro s₄ t
+  -- the epilogue
+  have hR₄ : ∀ j < 8, InRegions (s₄.rd ++ s₄.wr) (s₄.gpr .x3 + BitVec.ofNat 64 (saveOff + 16 * j)) 16 := by
+    intro j hj
+    rw [t.rd, t.wr, t.gpr _ tailRegs_x3, w.rd, w.wr, h3, hrd₂, hwr₂]
+    exact ⟨_, List.mem_append_right _ bufW, save_off s hj⟩
+  obtain ⟨s₅, r₅, v₅, o₅⟩ := ldrqs_run saveOff (by decide) 8 (by decide) s₄ hR₄
+  have hm₅ : s₅.mem = s₄.mem := o₅.mem
+  have dataB : (⟨D, 8 * n⟩ : Region).Disjoint ⟨s.gpr .x3, 256⟩ := P.dataBuf
+  have hB₂ : ∀ b < n, blockAt s₂'.mem (wAt D b) = blockAt s.mem (wAt D b) := fun b hb =>
+    blockAt_frame pro fun r hr => by
+      simp only [List.mem_singleton] at hr; subst hr
+      exact (saveSep.sub_right (Offset.sub_base _ (by omega_using [hb]))).symm
+  refine WP.of_runBlock ⟨s₅, by rw [restoreRegs_eq]; exact r₅, ?_, ?_⟩
+  · intro b hb
+    rw [hm₅]
+    by_cases hbk : b < n - c
+    · have e := w.done b hbk
+      rw [h1', hB₂ b hb] at e
+      rw [← e]
+      refine blockAt_frame t.frame fun r hr => ?_
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl
+      · rw [h1]; exact Offset.disjoint D (Or.inl (by omega_using [hbk])) (by omega_using [hl, hb]) (by omega_using [hl])
+      · rw [h3]; exact dataB.sub_left (Offset.sub_base _ (by omega_using [hb])) |>.sub_right (Region.sub_prefix (by omega_using []))
+    · obtain ⟨j, rfl⟩ : ∃ j, b = n - c + j := ⟨b - (n - c), by omega_using [hbk]⟩
+      have e := t.out j (by omega_using [hb])
+      rw [h1, wAt_wAt] at e
+      rw [e]
+      have hB : blockAt s₃.mem (wAt D (n - c + j)) = blockAt s₂'.mem (wAt D (n - c + j)) :=
+        blockAt_frame w.frame fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr
+          rw [h1']; exact Offset.disjoint_base D (by omega_using []) (by omega_using [hl, hb])
+      rw [hB, hB₂ _ hb]
+  · -- the saved registers, from the save area, which nothing else wrote
+    have ss : ∀ j < 8, s₅.v (savedReg j) = s.v (savedReg j) := by
+      intro j hj
+      have hc : (saveR s).Contains (s.gpr .x3 + BitVec.ofNat 64 (saveOff + 16 * j)) 16 :=
+        Offset.contains _ (by simp only [saveOff]; omega_using []) (by simp only [saveOff]; omega_using [hj]) (by omega_using [])
+      rw [v₅ j hj, t.gpr _ tailRegs_x3, h3,
+        t.frame.read hc (fun r hr => by
+          simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+          rcases hr with rfl | rfl
+          · exact saveSep.sub_right sub₁
+          · rw [h3]; exact Offset.disjoint_base _ (by omega_using []) (by omega_using [])) (by decide),
+        w.frame.read hc (fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr
+          rw [h1']; exact saveSep.sub_right (Region.sub_prefix (by omega_using []))) (by decide),
+        m₂', v₁ j hj]
+    intro r hr
+    simp only [savedRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+    · exact ss 0 (by decide)
+    · exact ss 1 (by decide)
+    · exact ss 2 (by decide)
+    · exact ss 3 (by decide)
+    · exact ss 4 (by decide)
+    · exact ss 5 (by decide)
+    · exact ss 6 (by decide)
+    · exact ss 7 (by decide)
+
+/-- What the function may assume: the subkeys readable at `x0`, 12 or 16
+rounds in `x1`, the `n` (in `x3`) blocks at `x2` and the working space at
+`x4` writable, apart from each other. -/
+structure EcbPre (s : State) : Prop where
+  rd : s.rd = [⟨s.gpr .x0, 128⟩]
+  wr : s.wr = [⟨s.gpr .x2, 8 * (s.gpr .x3).toNat⟩, ⟨s.gpr .x4, 256⟩]
+  keyData : (⟨s.gpr .x0, 128⟩ : Region).Disjoint ⟨s.gpr .x2, 8 * (s.gpr .x3).toNat⟩
+  keyBuf : (⟨s.gpr .x0, 128⟩ : Region).Disjoint ⟨s.gpr .x4, 256⟩
+  dataBuf : (⟨s.gpr .x2, 8 * (s.gpr .x3).toNat⟩ : Region).Disjoint ⟨s.gpr .x4, 256⟩
+  fit : (s.gpr .x2).toNat + 8 * (s.gpr .x3).toNat ≤ 2 ^ 64
+  rounds : (s.gpr .x1).toNat = 12 ∨ (s.gpr .x1).toNat = 16
+
+theorem ecb_eq (up : Bool) : ecb up = .seq (.block (entry ++ (saveRegs ++ setup)))
+    (.seq (wide up) (.seq (tail up) (.block restoreRegs))) := by
+  simp only [ecb, List.append_assoc]
+
+/-- Every block becomes its encryption or decryption, and `q8`–`q15` are
+restored. -/
+theorem ecb_correct (up : Bool) {s : State} (P : EcbPre s) :
+    WP isa (ecb up) s (fun s' => (∀ b < (s.gpr .x3).toNat, blockAt s'.mem (wAt (s.gpr .x2) b) =
+      blockOut (Spec.Cast5.scheduleAt s.mem (s.gpr .x0)) (s.gpr .x1).toNat up (blockAt s.mem (wAt (s.gpr .x2) b))) ∧
+      ∀ r ∈ savedRegs, s'.v r = s.v r) := by
+  let s₁ := s.write .x .x16 (s.read .x .x1 + BitVec.ofNat _ 0)
+  let s₂ := s₁.write .x .x1 (s₁.read .x .x2 + BitVec.ofNat _ 0)
+  let s₃ := s₂.write .x .x2 (s₂.read .x .x3 + BitVec.ofNat _ 0)
+  let s₄ := s₃.write .x .x3 (s₃.read .x .x4 + BitVec.ofNat _ 0)
+  have rE : runBlock isa entry s = some s₄ := by
+    rw [entry, runBlock_cons, exec_addImm_x (by decide), runStep_some, runBlock_cons,
+      exec_addImm_x (by decide), runStep_some, runBlock_cons, exec_addImm_x (by decide), runStep_some,
+      runBlock_cons, exec_addImm_x (by decide), runStep_some, runBlock_nil]
+  have x0 : s₄.gpr .x0 = s.gpr .x0 := by simp [s₄, s₃, s₂, s₁, State.write]
+  have x1 : s₄.gpr .x1 = s.gpr .x2 := by simp [s₄, s₃, s₂, s₁, State.write, State.read]
+  have x2 : s₄.gpr .x2 = s.gpr .x3 := by simp [s₄, s₃, s₂, s₁, State.write, State.read]
+  have x3 : s₄.gpr .x3 = s.gpr .x4 := by simp [s₄, s₃, s₂, s₁, State.write, State.read]
+  have x16 : s₄.gpr .x16 = s.gpr .x1 := by simp [s₄, s₃, s₂, s₁, State.write, State.read]
+  have M : MPre s₄ :=
+    ⟨by rw [x0]; exact P.rd, by rw [x1, x2, x3]; exact P.wr, by rw [x0, x1, x2]; exact P.keyData,
+      by rw [x0, x3]; exact P.keyBuf, by rw [x1, x2, x3]; exact P.dataBuf, by rw [x1, x2]; exact P.fit,
+      by rw [x16]; exact P.rounds⟩
+  rw [ecb_eq, WP.seq_iff, WP.block_append_iff]
+  refine WP.of_runBlock ⟨s₄, rE, ?_⟩
+  rw [← WP.seq_iff]
+  refine WP.mono (main_ok up M) fun s' ⟨hb, hv⟩ => ?_
+  rw [x0, x1, x2, x16] at hb
+  exact ⟨hb, hv⟩
+
 end VG.Proof.Cast5.AArch64.Tbl
