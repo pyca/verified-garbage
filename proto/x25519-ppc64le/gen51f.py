@@ -108,8 +108,7 @@ def sqrSel(o,sub_,a,b,c,d):  # (swap ? c ± d : a ± b)^2, swap in r0
         xor(10,10,7); and_(10,10,4); xor(RA[k],7,10)
 def a24op(o,a,b):  # a + a24 (a - b)
     subconsts()
-    for k in range(5): ld(RB[k],6,a+8*k); ld(8,6,b+8*k); add(RA[k],RB[k],9 if k==0 else 5); sub(RA[k],RA[k],8)
-    for i in range(5): lsl(RA[i],RA[i],11)
+    for k in range(5): ld(RB[k],6,a+8*k); ld(8,6,b+8*k); add(RA[k],RB[k],9 if k==0 else 5); sub(RA[k],RA[k],8); lsl(RA[k],RA[k],11)
     e("lis %r24, 1"); e("ori %r24, %r24, 0xdb41"); lsl(24,24,2)
     Acc()([(RA[k],24,k) for k in range(5)])
     for k in range(5): add(LO[k],LO[k],RB[k])
@@ -120,12 +119,20 @@ def cswap(x,y):
 def mask(): li(11,0); sub(11,11,0)
 def step():
     subi(12,12,1); add(4,6,12); e(f"lbz %r4, {BITS}(%r4)"); xor(0,0,4)
-    sqrSel(AA,False,X2,Z2,X3,Z3); sqrcore(AA)
-    sqrSel(BB,True,X2,Z2,X3,Z3); sqrcore(BB)
-    add(4,6,12); e(f"lbz %r0, {BITS}(%r4)")
-    mulDS(DA,X3,Z3,X2,Z2); mulDS(CB,X2,Z2,X3,Z3)
-    a24op(G,AA,BB); sqrSub(T,DA,CB); sqrAdd(X3,DA,CB)
-    mulSub(Z2,AA,BB,G); fmul(Z3,X1,T); fmul(X2,AA,BB)
+    S1=lambda: (sqrSel(AA,False,X2,Z2,X3,Z3), sqrcore(AA))
+    S2=lambda: (sqrSel(BB,True,X2,Z2,X3,Z3), sqrcore(BB), add(4,6,12), e(f"lbz %r0, {BITS}(%r4)"))
+    M1=lambda: mulDS(DA,X3,Z3,X2,Z2)
+    M2=lambda: mulDS(CB,X2,Z2,X3,Z3)
+    Gg=lambda: a24op(G,AA,BB)
+    S4=lambda: sqrSub(T,DA,CB)
+    S3=lambda: sqrAdd(X3,DA,CB)
+    M5=lambda: mulSub(Z2,AA,BB,G)
+    M4=lambda: fmul(Z3,X1,T)
+    M3=lambda: fmul(X2,AA,BB)
+    if "ordB" in OPTS: order=[S1,M1,S2,M2,Gg,S4,S3,M5,M4,M3]
+    elif "ordC" in OPTS: order=[M1,M2,S1,S2,S4,S3,Gg,M3,M4,M5]
+    else: order=[S1,S2,M1,M2,Gg,S4,S3,M5,M4,M3]
+    for f in order: f()
 def sqn(o,a,n):
     fsqr(o,a); li(12,n-1)
     def body():
