@@ -95,25 +95,85 @@ theorem regsOk_of_leaves {c : Prog isa} {k : Contract isa} {xs : List XReg} {ps 
     rw [eY, hy, hz, ← (x₂ x hx).2] at a
     exact ⟨by rw [(x₁ x hx).1, (x₂ x hx).1, eX, hxm], congrArg Prod.fst a, congrArg Prod.snd a⟩
 
-/-- The clearing of `xs`, `ps` and `gs`, and that of `xs'`, `ps` and `gs'`,
-run along the same trace, to states that differ only in the registers. -/
+/-- `RegsOk` from its two halves: the general-purpose registers (as the
+residue analysis may give them, `gprsOk_of_check`) and the vector ones (as
+`RegLeaves` may, with `G` empty). -/
+theorem regsOk_of_parts {c : Prog isa} {k : Contract isa} {xs : List XReg} {ps gs : List Reg}
+    (hg : RegsOk c k xregs ps gs) (hx : RegsOk c k xs scratchRegs scratchRegs) : RegsOk c k xs ps gs :=
+  fun s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ =>
+    ⟨(hg s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂).1, (hx s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂).2⟩
+
+/-- Whether the residue analysis's last taint knows public every
+caller-saved register outside `ps` and `gs`. -/
+def gprsPubB (τ : RTaint.FT) (ps gs : List Reg) : Bool :=
+  τ.ok && scratchRegs.all fun r => ps.contains r || gs.contains r || τ.t.regs.mem r
+
+/-- The residue analysis of the code, from `RScrub.init`, ending with every
+caller-saved register outside `ps` and `gs` public, proves those the same
+at the end of two runs (the general-purpose half of `RegsOk`). -/
+theorem gprsOk_of_check {A : Abi isa} (hA : ScrubAbi A) {sig : Sig}
+    {pre : Curry (sig.words A.ptrBits) (Mem → Prop)}
+    {post : sig.Post A.ptrBits} {wa : Bool} {stack : Nat}
+    {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))} {c : Prog isa} {ps gs : List Reg}
+    {pubs : List (Nat × Nat × Nat)} {h : VG.Taint.Hint RTaint.FT}
+    (hfit : RScrub.pubsFit sig pubs = true) (hpub : RScrub.PubOk (sig.contract A pre post wa stack leak) pubs)
+    (hc : (VG.Taint.check RTaint.rtaint (RScrub.init sig stack pubs) c h).any (gprsPubB · ps gs) = true) :
+    RegsOk c (sig.contract A pre post wa stack leak) xregs ps gs := by
+  obtain ⟨τf, hτ, hb⟩ : ∃ τf, VG.Taint.check RTaint.rtaint (RScrub.init sig stack pubs) c h = some τf ∧
+      gprsPubB τf ps gs = true := by
+    cases h' : VG.Taint.check RTaint.rtaint (RScrub.init sig stack pubs) c h with
+    | none => rw [h'] at hc; cases hc
+    | some τf => rw [h'] at hc; exact ⟨τf, rfl, hc⟩
+  simp only [gprsPubB, Bool.and_eq_true, List.all_eq_true, Bool.or_eq_true, List.contains_iff_mem] at hb
+  obtain ⟨hok, hall⟩ := hb
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂
+  obtain ⟨-, ha⟩ := VG.Taint.check_sound (A := RTaint.rtaint) hτ (RScrub.init_agree hA hfit hpub h₁ h₂ ho hp hu) e₁ e₂
+  refine ⟨fun r hr hp' hg' => ?_, fun x hx => absurd (mem_xregs x) hx⟩
+  rcases hall r hr with (h | h) | h
+  · exact absurd h hp'
+  · exact absurd h hg'
+  · exact (ha hok).base.rf.1 r h
+
+theorem cov_nil : ∀ (cs : List Nat) (i : Nat), cov [] cs i = false
+  | [], _ => rfl
+  | b :: bs, i => by
+    simp only [cov]
+    split
+    · exact cov_nil bs i
+    · simp [covC]
+
+/-- The wipes of the chunks `cs` and `cs'` zero the same bytes if they are
+the same chunks or wipe no granule. -/
+def SameWipe (ks cs cs' : List Nat) : Prop := cs = cs' ∨ ks = []
+
+theorem wcov_same {ks cs cs' : List Nat} (h : SameWipe ks cs cs') (p x : Addr) :
+    WCov ks cs p x ↔ WCov ks cs' p x := by
+  rcases h with rfl | rfl
+  · exact Iff.rfl
+  · simp [WCov, cov_nil]
+
+/-- The clearing of `xs`, `ps` and `gs` with the stack wiped in the chunks
+`cs`, and that of `xs'`, `ps` and `gs'` in the chunks `cs'`, which wipe the
+same bytes (`SameWipe`): states that differ only in the registers. -/
 theorem tail_part (v : VecLevel) (rb : Nat) {xs xs' : List XReg} {ps gs gs' : List Reg} {ks : List Nat}
-    (cs : List Nat) {f : VecLevel} (ht : TailOk rb xs ps gs ks) (ht' : TailOk rb xs' ps gs' ks) (u : State)
+    {cs cs' : List Nat} {f : VecLevel} (ht : TailOk rb xs ps gs ks) (ht' : TailOk rb xs' ps gs' ks)
+    (hcc : SameWipe ks cs cs') (u : State)
     (hv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0) (hs : cs.sum ≤ (u.gpr .rsp).toNat)
-    (hev : EvexOk f ks cs (u.gpr .rsp)) :
-    ∃ m, Exec isa (scrubTail v rb xs ps gs ks cs f) u (tailTr v ks cs (u.gpr .rsp) f)
+    (hev : EvexOk f ks cs (u.gpr .rsp))
+    (hv' : ∀ b ∈ cs', 0 < b ∧ b < 4096 ∧ b % 8 = 0) (hs' : cs'.sum ≤ (u.gpr .rsp).toNat)
+    (hev' : EvexOk f ks cs' (u.gpr .rsp)) :
+    ∃ m T', Exec isa (scrubTail v rb xs ps gs ks cs f) u (tailTr v ks cs (u.gpr .rsp) f)
         (finState v rb xs ps gs m u f) ∧
-      Exec isa (scrubTail v rb xs' ps gs' ks cs f) u (tailTr v ks cs (u.gpr .rsp) f)
-        (finState v rb xs' ps gs' m u f) := by
+      Exec isa (scrubTail v rb xs' ps gs' ks cs' f) u T' (finState v rb xs' ps gs' m u f) := by
   obtain ⟨m, e, hz, hu⟩ := tail_run v rb cs ht u hv hs hev
-  obtain ⟨m', e', hz', hu'⟩ := tail_run v rb cs ht' u hv hs hev
+  obtain ⟨m', e', hz', hu'⟩ := tail_run v rb cs' ht' u hv' hs' hev'
   have hm : m' = m := by
     funext x
     by_cases hw : WCov ks cs (u.gpr .rsp) x
-    · rw [hz x hw, hz' x hw]
-    · rw [hu x hw, hu' x hw]
+    · rw [hz x hw, hz' x ((wcov_same hcc _ _).mp hw)]
+    · rw [hu x hw, hu' x (fun h => hw ((wcov_same hcc _ _).mpr h))]
   rw [hm] at e'
-  exact ⟨m, e, e'⟩
+  exact ⟨m, _, e, e'⟩
 
 /-- Outside the caller-saved registers but `rax`, the two clearings leave the
 same general-purpose registers. -/
@@ -148,37 +208,44 @@ variable {A : Abi isa} {sig : Sig} {pre : Curry (sig.words A.ptrBits) (Mem → P
   {leak : Option (Curry (sig.words A.ptrBits) (Mem → List Nat))}
 
 /-- Code verified against a contract that `Sig.contract` derives, followed
-by the clearing of the registers `xs`, `ps` and `gs`: verified against the
-same contract and without secret residue, if it is with the registers `xs'`
-and `gs'` cleared instead (`hall`, as `Verified.scrubM` gives it with those
-the code's instructions may write, `xsOf` and `gsOf`), and two runs end
-agreeing on the registers the clearing keeps (`hregs`). -/
+by the clearing of the registers `xs`, `ps` and `gs` and the stack wiped in
+the chunks `cs`: verified against the same contract and without secret
+residue, if it is with the registers `xs'` and `gs'` cleared instead and the
+chunks `cs'`, which wipe the same bytes (`hall`, as `Verified.scrubM` gives
+it with the registers the code's instructions may write, `xsOf` and `gsOf`),
+and two runs end agreeing on the registers the clearing keeps (`hregs`).
+With no granule wiped, `cs` may be `[]`: no frame at all. -/
 theorem Verified.scrubPart {c : Prog isa} {v f : VecLevel} {rb : Nat} {xs xs' : List XReg}
-    {ps gs gs' : List Reg} {ks cs : List Nat} (hA : ScrubAbi A)
+    {ps gs gs' : List Reg} {ks cs cs' : List Nat} (hA : ScrubAbi A)
     (h : Verified target c (sig.contract A pre post wa stack leak))
-    (hcs : cs.sum = stack) (hv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
+    (hcs : cs.sum ≤ stack) (hv : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0)
     (hev : ∀ p : Addr, cs.sum ≤ p.toNat → EvexOk f ks cs p)
+    (hcs' : cs'.sum ≤ stack) (hv' : ∀ b ∈ cs', 0 < b ∧ b < 4096 ∧ b % 8 = 0)
+    (hev' : ∀ p : Addr, cs'.sum ≤ p.toNat → EvexOk f ks cs' p) (hcc : SameWipe ks cs cs')
     (ht : TailOk rb xs ps gs ks) (ht' : TailOk rb xs' ps gs' ks)
     (hregs : RegsOk c (sig.contract A pre post wa stack leak) xs ps gs)
-    (hall : Verified target (Impl.Scrub.X86_64.scrub v rb xs' ps gs' ks cs c f) (sig.contract A pre post wa stack leak) ∧
-      NoResidue (Impl.Scrub.X86_64.scrub v rb xs' ps gs' ks cs c f) (sig.contract A pre post wa stack leak) rb) :
+    (hall : Verified target (Impl.Scrub.X86_64.scrub v rb xs' ps gs' ks cs' c f) (sig.contract A pre post wa stack leak) ∧
+      NoResidue (Impl.Scrub.X86_64.scrub v rb xs' ps gs' ks cs' c f) (sig.contract A pre post wa stack leak) rb) :
     Verified target (Impl.Scrub.X86_64.scrub v rb xs ps gs ks cs c f) (sig.contract A pre post wa stack leak) ∧
       NoResidue (Impl.Scrub.X86_64.scrub v rb xs ps gs ks cs c f) (sig.contract A pre post wa stack leak) rb := by
-  obtain ⟨⟨acor, act, asat⟩, ares⟩ := hall
+  obtain ⟨⟨acor, -, asat⟩, ares⟩ := hall
   -- Both clearings, after a run of `c`.
   have tails : ∀ s t u, (sig.contract A pre post wa stack leak).pre s → Exec isa c s t u →
-      ∃ m T, Exec isa (scrubTail v rb xs ps gs ks cs f) u T (finState v rb xs ps gs m u f) ∧
-        Exec isa (scrubTail v rb xs' ps gs' ks cs f) u T (finState v rb xs' ps gs' m u f) := by
+      ∃ m T', Exec isa (scrubTail v rb xs ps gs ks cs f) u (tailTr v ks cs (s.gpr .rsp) f)
+          (finState v rb xs ps gs m u f) ∧
+        Exec isa (scrubTail v rb xs' ps gs' ks cs' f) u T' (finState v rb xs' ps gs' m u f) := by
     intro s t u hs he
     obtain ⟨t', u', he', ha, -⟩ := h.1 s hs
     obtain ⟨-, rfl⟩ := Exec.det he he'
     have hr : u.gpr .rsp = s.gpr .rsp := ha.1 .rsp (by decide)
-    have hl : cs.sum ≤ (u.gpr .rsp).toNat := by
+    have hl : ∀ {n : Nat}, n ≤ stack → n ≤ (u.gpr .rsp).toNat := fun {n} hn => by
       rcases (contract_pre_scrub hA hs).1 with h0 | h0
-      · rw [hcs, h0]; exact Nat.zero_le _
-      · rw [hcs, hr]; exact h0
-    obtain ⟨m, e, e'⟩ := tail_part v rb cs ht ht' u hv hl (hev _ hl)
-    exact ⟨m, _, e, e'⟩
+      · rw [h0] at hn; omega_using [hn]
+      · rw [hr]; omega_using [hn, h0]
+    obtain ⟨m, T', e, e'⟩ := tail_part v rb ht ht' hcc u hv (hl hcs) (hev _ (hl hcs)) hv' (hl hcs')
+      (hev' _ (hl hcs'))
+    rw [hr] at e
+    exact ⟨m, T', e, e'⟩
   have hax : Reg.rax ∉ scratchRegs := by decide
   refine ⟨⟨fun s hs => ?_, fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp e₁ e₂ => ?_, asat⟩,
     fun s₁ s₂ t₁ t₂ s₁' s₂' h₁ h₂ hp ho hun e₁ e₂ => ?_⟩
@@ -194,14 +261,14 @@ theorem Verified.scrubPart {c : Prog isa} {v f : VecLevel} {rb : Nat} {xs xs' : 
     · simpa only [finState_other] using hrs
     · simpa only [finState_other] using hmx
     · simp only [finState_other]
-  · -- Constant time: the same trace as the other clearing's.
+  · -- Constant time: the code's, then a trace of the stack pointer.
     cases e₁ with | seq a₁ b₁ =>
     cases e₂ with | seq a₂ b₂ =>
-    obtain ⟨m₁, T₁, f₁, f₁'⟩ := tails s₁ _ _ h₁ a₁
-    obtain ⟨m₂, T₂, f₂, f₂'⟩ := tails s₂ _ _ h₂ a₂
+    obtain ⟨m₁, T₁, f₁, -⟩ := tails s₁ _ _ h₁ a₁
+    obtain ⟨m₂, T₂, f₂, -⟩ := tails s₂ _ _ h₂ a₂
     obtain ⟨rfl, -⟩ := Exec.det b₁ f₁
     obtain ⟨rfl, -⟩ := Exec.det b₂ f₂
-    exact act _ _ _ _ _ _ h₁ h₂ hp (.seq a₁ f₁') (.seq a₂ f₂')
+    rw [h.2.1 _ _ _ _ _ _ h₁ h₂ hp a₁ a₂, contract_pub_rsp hA hp]
   · -- No residue: the other clearing's, but for the registers this one keeps.
     cases e₁ with | seq a₁ b₁ =>
     cases e₂ with | seq a₂ b₂ =>
@@ -277,6 +344,26 @@ theorem tailOk_ofB (rb : Nat) {xs : List XReg} {gs : List Reg} {ks : List Nat} (
     · exact h
   · unfold psOf at hr; split at hr <;> simp_all [scratchRegs]
 
+/-- The chunks the clearing wipes the stack in: none if it wipes no granule
+(no frame, no instruction), else `cs`. -/
+def wipeCs (ks cs : List Nat) : List Nat := if ks = [] then [] else cs
+
+theorem wipeCs_same (ks cs : List Nat) : SameWipe ks (wipeCs ks cs) cs := by
+  unfold wipeCs SameWipe; split
+  · exact .inr ‹_›
+  · exact .inl rfl
+
+theorem wipeCs_sum (ks cs : List Nat) : (wipeCs ks cs).sum ≤ cs.sum := by
+  unfold wipeCs; split
+  · exact Nat.zero_le _
+  · exact Nat.le_refl _
+
+theorem wipeCs_valid {ks cs : List Nat} (h : ∀ b ∈ cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0) :
+    ∀ b ∈ wipeCs ks cs, 0 < b ∧ b < 4096 ∧ b % 8 = 0 := by
+  unfold wipeCs; split
+  · exact fun _ h => nomatch h
+  · exact h
+
 /-- `scrubCodeMC_noResidue`, with the registers `xs` and `gs` cleared,
 those two runs may not agree on (`RegsOk`): verified, and without secret
 residue. -/
@@ -292,9 +379,9 @@ theorem scrubCodeMCR_ok {api : Api} (r : Registration api target) (v : VecLevel)
     (ht : TailOk (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) xs (psOf ks) gs ks)
     (hregs : RegsOk r.code r.contract xs (psOf ks) gs) :
     Verified target (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-        xs (psOf ks) gs ks cs r.code) r.contract ∧
+        xs (psOf ks) gs ks (wipeCs ks cs) r.code) r.contract ∧
       NoResidue (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-        xs (psOf ks) gs ks cs r.code) r.contract
+        xs (psOf ks) gs ks (wipeCs ks cs) r.code) r.contract
         (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits) := by
   have hall : Verified target (scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
         (xsOf r.code ks) (psOf ks) (gsOf Taint.clobbers r.code) ks cs r.code) r.contract ∧
@@ -306,8 +393,9 @@ theorem scrubCodeMCR_ok {api : Api} (r : Registration api target) (v : VecLevel)
   obtain ⟨pre, post, leak, e⟩ := r.ofSig
   have hv := r.verified
   rw [e] at hv hall hregs ⊢
-  exact Verified.scrubPart (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv hcs hcv
-    (fun _ _ h => absurd h hne) ht (tailOk_of _ _ _) hregs hall
+  exact Verified.scrubPart (ScrubAbi.of r.consts api.sig r.tables api.pubMode) hv
+    (by rw [← hcs]; exact wipeCs_sum ks cs) (wipeCs_valid hcv) (fun _ _ h => absurd h hne)
+    (Nat.le_of_eq hcs) hcv (fun _ _ h => absurd h hne) (wipeCs_same ks cs) ht (tailOk_of _ _ _) hregs hall
 
 /-- `scrubRegMC`, with the registers `xs` and `gs` cleared (`scrubCodeMCR_ok`). -/
 def scrubRegMCR {api : Api} (r : Registration api target) (v : VecLevel) (ks cs : List Nat)
@@ -326,7 +414,7 @@ def scrubRegMCR {api : Api} (r : Registration api target) (v : VecLevel) (ks cs 
   tables := r.tables
   stack := r.stack
   code := scrub v (api.sig.retBits ((abi.withConsts r.consts).withTables api.sig r.tables).ptrBits)
-    xs (psOf ks) gs ks cs r.code
+    xs (psOf ks) gs ks (wipeCs ks cs) r.code
   contract := r.contract
   verified := (scrubCodeMCR_ok r v ks cs xs gs hcs hcv hd hst hlv hmx hrb hpost hres hw hne ht hregs).1
   ofApi := r.ofApi

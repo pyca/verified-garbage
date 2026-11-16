@@ -178,8 +178,8 @@ def leakAddScrubbed : Prog isa := Impl.Scrub.X86_64.scrub .sse 64 [] [] [.r11] [
 
 theorem leakAddScrubbed_ok :
     Verified X86_64.target leakAddScrubbed addRetContract ∧ NoResidue leakAddScrubbed addRetContract 64 :=
-  Scrub.Verified.scrubPart (A := X86_64.abi) Scrub.ScrubAbi.plain leakAdd_verified rfl (by simp)
-    (fun _ _ e => nomatch e) ⟨fun h => absurd rfl h, fun h => absurd rfl h, by simp, by decide, by simp⟩
+  Scrub.Verified.scrubPart (A := X86_64.abi) Scrub.ScrubAbi.plain leakAdd_verified (Nat.le_refl _) (by simp)
+    (fun _ _ e => nomatch e) (Nat.le_refl _) (by simp) (fun _ _ e => nomatch e) (.inl rfl) ⟨fun h => absurd rfl h, fun h => absurd rfl h, by simp, by decide, by simp⟩
     ⟨fun h => absurd rfl h, fun h => absurd rfl h, by simp, by decide, by simp⟩
     (Scrub.regsOk_of_leaves leakAdd_verified.2.1 (G := fun _ _ r => if r = .rcx then some 0 else none)
       (X := fun _ _ x => if x = .xmm1 then some 0 else none) (Y := fun _ _ _ => none)
