@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.AesSiv.X86_64.Verified
 public import VerifiedGarbage.Impl.StackScratch.X86_64
 public import VerifiedGarbage.Proof.Framework.X86_64.StackArgScratch
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 public import VerifiedGarbage.Proof.Framework.X86_64.Registration
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -305,7 +306,7 @@ def encryptRegF (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.callee)
     stack := 328
     verified := Proof.AesSiv.encrypt_keyed (encryptF_framed v f fc)
     spSafe := X86_64.withStackArgScratch_spSafe (encrypt_spSafe (.inr rfl) v) }
-  r
+  VG.X86_64.RScrub.withScrubAllC r (encryptOut _) [8, 320]
 
 /-- `vg_aes_siv_encrypt` over `v`. Over implementations that need no working
 space (`v.free` and `v.ctr.free`), in the frame of 312 bytes of `encryptRegF`.
@@ -335,7 +336,7 @@ def decryptRegF (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.callee)
     stack := 328
     verified := Proof.AesSiv.decrypt_keyed (decryptF_framed v f fc)
     spSafe := X86_64.withStackArgScratch_spSafe (decrypt_spSafe (.inr rfl) v) }
-  r
+  VG.X86_64.RScrub.withScrubAllC r (decryptOut _) [8, 320]
 
 /-- `vg_aes_siv_decrypt` over `v`, as `encryptReg`. -/
 def decryptReg (v : UpdateImpl) : Registration Spec.Siv.decryptApi X86_64.target :=
