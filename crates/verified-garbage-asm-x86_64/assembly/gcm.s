@@ -14193,6 +14193,15 @@ vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul:
 	mov r15, QWORD PTR [r15+168]
 	lea rsp, [rsp+2584]
 21:
+	xor eax, eax
+	xor ecx, ecx
+	xor edx, edx
+	xor esi, esi
+	xor edi, edi
+	xor r8d, r8d
+	xor r9d, r9d
+	xor r10d, r10d
+	xor r11d, r11d
 	ret
 20:
 	lea rsp, [rsp-2584]

@@ -1097,6 +1097,40 @@ theorem streamEncB_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (gf : G
       streamFV_congr Lb (s₁ := narrow32 s₁) (s₂ := narrow32 s₂) hg (streamLen_pub (s₁ := s₁) (s₂ := s₂) hp)]
     exact congrArg (Option.getD _) (hbm x hx)
 
+open StackLock in
+/-- `streamEncB_agree` for `vg_aes_gcm_stream_decrypt_prepared`. -/
+theorem streamDecB_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (gf : GhashFree v.gh.fn.code)
+    (cf : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) (hB : BlkLeavesD v.blkB) (hct : Plain v.callees.ctr.code)
+    (hgh : Plain v.callees.gh.code) (hn : UpperLock.inames v.blkB.dec.code = []) {s₁ s₂ : State}
+    (h₁ : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pre s₁)
+    (h₂ : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pre s₂)
+    (hp : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pub s₁ s₂)
+    (hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r)
+    (hbm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → s₁.mem x = s₂.mem x)
+    (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
+    (e₁ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk v.blkB) lv)) s₁ t₁ u₁)
+    (e₂ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk v.blkB) lv)) s₂ t₂ u₂) :
+    ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → u₁.mem x = u₂.mem x := by
+  obtain ⟨Lb, hL⟩ := hB
+  intro x hx
+  have hn₁ := streamDec_narrowPre h₁
+  have hn₂ := streamDec_narrowPre h₂
+  have hv := streamDecryptClrB_framed lv v v.blkB
+  obtain ⟨t₁', u₁', e₁', hm₁⟩ := exec_narrow hv hn₁
+    (fun _ _ => InRegions.of_prefix (narrowHead_append_prefix _ _ _)) (Covers.refl _) e₁
+  obtain ⟨t₂', u₂', e₂', hm₂⟩ := exec_narrow hv hn₂
+    (fun _ _ => InRegions.of_prefix (narrowHead_append_prefix _ _ _)) (Covers.refl _) e₂
+  have hrsp : s₁.gpr .rsp = s₂.gpr .rsp := hg .rsp (by decide)
+  unfold Spec.Gcm.streamDecryptPreparedContract at hp
+  rw [hm₁, hm₂]
+  by_cases hb : (below (s₁.gpr .rsp - BitVec.ofNat 64 2584) 24).Contains x 1
+  · exact streamDecryptClrB_below lv v v.blkB hct hgh hn hn₁ hn₂ (streamDec_narrowPub hp) hrsp hbm hu e₁' e₂' x hb
+  · have hx' := frame_or_below hx hb
+    rw [streamDecryptClrB_leaves lv v gf cf v.blkB hL hn₁ e₁' x hx',
+      streamDecryptClrB_leaves lv v gf cf v.blkB hL hn₂ e₂' x (by have h := hx'; rw [hrsp] at h; exact h),
+      streamFV_congr Lb (s₁ := narrow32 s₁) (s₂ := narrow32 s₂) hg (streamLen_pub (s₁ := s₁) (s₂ := s₂) hp)]
+    exact congrArg (Option.getD _) (hbm x hx)
+
 /-- The state `pre_narrowFirstArray` gives on 16 prepared powers: the key
 context narrowed to its first 128 words. -/
 abbrev narrow128 (s : State) : State := s.withRegions (narrowHead (128 * 8) s.rd) s.wr
@@ -1160,6 +1194,65 @@ theorem streamEnc16_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : B
       streamFV_congr Lb (s₁ := narrow128 s₁) (s₂ := narrow128 s₂) hg (streamLen_pub (s₁ := s₁) (s₂ := s₂) hp)]
     exact congrArg (Option.getD _) (hbm x hx)
 
+theorem streamDec16_narrowPre {s : State} (hs : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pre s)
+    (hf : 16 ≤ flagCount s) :
+    (Proof.AesGcm.streamDecryptPrepared16RoundsContract X86_64.abi 2608).pre (narrow128 s) := by
+  unfold Spec.Gcm.streamDecryptPreparedContract at hs
+  have h₁ := pre_of_rel (N := 129) (C := fun m ctx => 16 ≤ (m.readW (ctx + 1024) 64).toNat) (leakB := none)
+    (pre := Spec.Gcm.streamCryptPreparedPre 64) (pre' := Proof.Gcm.streamCryptPrepared16Pre 64)
+    (fun _ _ _ _ _ _ _ _ h hf => ⟨h.1, h.2.1 hf⟩) hs hf
+  exact pre_narrowFirstArray (n := 128) (n' := 129) (by decide) (pre := Proof.Gcm.streamCryptPrepared16Pre 64)
+    (fun _ _ _ _ _ _ _ _ h => h) h₁
+
+theorem streamDec16_narrowPub {s₁ s₂ : State}
+    (hp : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pub s₁ s₂) :
+    (Proof.AesGcm.streamDecryptPrepared16RoundsContract X86_64.abi 2608).pub (narrow128 s₁) (narrow128 s₂) := by
+  unfold Spec.Gcm.streamDecryptPreparedContract at hp
+  obtain ⟨⟨hs, -⟩, hpubs, hdescs⟩ := (pubL_args (sig := Spec.Gcm.streamCryptPreparedSig) (by decide)).mp hp
+  unfold Proof.AesGcm.streamDecryptPrepared16RoundsContract
+  exact (pubL_args (sig := Proof.Gcm.streamCryptPrecomputedSig) (by decide)).mpr ⟨⟨hs, trivial⟩, hpubs,
+    fun r hr i hi => hdescs r (by
+      rw [show Spec.Gcm.streamCryptPreparedSig.params = ("ctx", .array false .u64 129) ::
+        Proof.Gcm.streamCryptPrecomputedSig.params.tail from rfl, descs_array .u64 128 129]
+      exact hr) i hi⟩
+
+open StackLock in
+/-- `streamDecB_agree`, on 16 prepared powers (whose count both runs read). -/
+theorem streamDec16_agree (lv : Impl.Scrub.X86_64.VecLevel) (v : GcmImpl) (B : BlkFn CtxMode.prepared16)
+    (gf : GhashFree v.gh.fn.code) (cf : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) (hB : BlkLeavesD B)
+    (hct : Plain v.callees.ctr.code) (hgh : Plain v.callees.gh.code) (hn : UpperLock.inames B.dec.code = [])
+    {s₁ s₂ : State}
+    (h₁ : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pre s₁)
+    (h₂ : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pre s₂)
+    (hf₁ : 16 ≤ flagCount s₁) (hf₂ : 16 ≤ flagCount s₂)
+    (hp : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pub s₁ s₂)
+    (hg : ∀ r, r ≠ .rax → s₁.gpr r = s₂.gpr r)
+    (hbm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → s₁.mem x = s₂.mem x)
+    (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
+    (e₁ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
+    (e₂ : Exec isa (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
+    ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 → u₁.mem x = u₂.mem x := by
+  obtain ⟨Lb, hL⟩ := hB
+  intro x hx
+  have hn₁ := streamDec16_narrowPre h₁ hf₁
+  have hn₂ := streamDec16_narrowPre h₂ hf₂
+  have hv := streamDecryptClr16_framed lv v B
+  obtain ⟨t₁', u₁', e₁', hm₁⟩ := exec_narrow hv hn₁
+    (fun _ _ => InRegions.of_prefix (narrowHead_append_prefix _ _ _)) (Covers.refl _) e₁
+  obtain ⟨t₂', u₂', e₂', hm₂⟩ := exec_narrow hv hn₂
+    (fun _ _ => InRegions.of_prefix (narrowHead_append_prefix _ _ _)) (Covers.refl _) e₂
+  have hrsp : s₁.gpr .rsp = s₂.gpr .rsp := hg .rsp (by decide)
+  have hpn := streamDec16_narrowPub hp
+  unfold Spec.Gcm.streamDecryptPreparedContract at hp
+  rw [hm₁, hm₂]
+  by_cases hb : (below (s₁.gpr .rsp - BitVec.ofNat 64 2584) 24).Contains x 1
+  · exact streamDecryptClr16_below lv v B hct hgh hn hn₁ hn₂ hpn hrsp hbm hu e₁' e₂' x hb
+  · have hx' := frame_or_below hx hb
+    rw [streamDecryptClr16_leaves lv v gf cf B hL hn₁ e₁' x hx',
+      streamDecryptClr16_leaves lv v gf cf B hL hn₂ e₂' x (by have h := hx'; rw [hrsp] at h; exact h),
+      streamFV_congr Lb (s₁ := narrow128 s₁) (s₂ := narrow128 s₂) hg (streamLen_pub (s₁ := s₁) (s₂ := s₂) hp)]
+    exact congrArg (Option.getD _) (hbm x hx)
+
 open StackLock in
 /-- `streamEncB_agree` at the level of SSE, as `ResOk`. -/
 theorem streamEncryptW_resOk (v : GcmImpl) (gf : GhashFree v.gh.fn.code)
@@ -1180,27 +1273,11 @@ theorem streamDecryptW_resOk (v : GcmImpl) (gf : GhashFree v.gh.fn.code)
     (hgh : Plain v.callees.gh.code) (hn : UpperLock.inames v.blkB.dec.code = []) :
     ResOk (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.withBlk v.blkB) .sse))
       (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608) 2608 [] [2608] := by
-  obtain ⟨Lb, hL⟩ := hB
   intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx _
-  have hn₁ := streamDec_narrowPre h₁
-  have hn₂ := streamDec_narrowPre h₂
-  have hv := streamDecryptClrB_framed .sse v v.blkB
-  obtain ⟨t₁', u₁', e₁', hm₁⟩ := exec_narrow hv hn₁
-    (fun _ _ => InRegions.of_prefix (narrowHead_append_prefix _ _ _)) (Covers.refl _) e₁
-  obtain ⟨t₂', u₂', e₂', hm₂⟩ := exec_narrow hv hn₂
-    (fun _ _ => InRegions.of_prefix (narrowHead_append_prefix _ _ _)) (Covers.refl _) e₂
-  have hrsp : s₁.gpr .rsp = s₂.gpr .rsp := ho.2.2.1 .rsp (by decide)
-  unfold Spec.Gcm.streamDecryptPreparedContract at h₁ hp
-  have hbm := below_same h₁ ho (by decide)
-  rw [hm₁, hm₂]
-  by_cases hb : (below (s₁.gpr .rsp - BitVec.ofNat 64 2584) 24).Contains x 1
-  · exact streamDecryptClrB_below .sse v v.blkB hct hgh hn hn₁ hn₂ (streamDec_narrowPub hp) hrsp hbm hu e₁' e₂' x hb
-  · have hx' := frame_or_below hx hb
-    rw [streamDecryptClrB_leaves .sse v gf cf v.blkB hL hn₁ e₁' x hx',
-      streamDecryptClrB_leaves .sse v gf cf v.blkB hL hn₂ e₂' x (by have h := hx'; rw [hrsp] at h; exact h),
-      streamFV_congr Lb (s₁ := narrow32 s₁) (s₂ := narrow32 s₂) (fun r h => ho.2.2.1 r h)
-        (streamLen_pub (s₁ := s₁) (s₂ := s₂) hp)]
-    exact congrArg (Option.getD _) (hbm x hx)
+  have h₁' := h₁
+  unfold Spec.Gcm.streamDecryptPreparedContract at h₁'
+  exact streamDecB_agree .sse v gf cf hB hct hgh hn h₁ h₂ hp (fun r h => ho.2.2.1 r h)
+    (below_same h₁' ho (by decide)) hu e₁ e₂ x hx
 
 /-- `vg_aes_gcm_stream_encrypt_prepared`'s postcondition reads the memory on
 return only within the buffers: the state and the data. -/
@@ -1346,6 +1423,55 @@ theorem streamEncryptF16_resOk (v : GcmVariant) (gf : GhashFree v.impl.gh.fn.cod
   · exact absurd (hflag.mpr c₂) c₁
   · exact streamEncB_agree .avx v.impl gf cf hB hct hgh hn q₁ q₂ qp qg qbm qu x₁ x₂ x hx'
 
+
+/-- `vg_aes_gcm_stream_decrypt_prepared` of a variant whose loops read 16
+powers, clearing the registers after each call (`streamDecryptClr`, at the
+level of 256-bit registers): by the count, its code on them or its code on
+the key context. -/
+def streamDecryptCodeF16C (v : GcmVariant) : Prog isa :=
+  Impl.Gcm.X86_64.Flag.onFlag 16
+    (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr (v.impl.withBlk (blkR16 v)) .avx))
+    (withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr v.impl.callees .avx))
+
+/-- `streamEncryptF16_resOk` for `vg_aes_gcm_stream_decrypt_prepared`. -/
+theorem streamDecryptF16_resOk (v : GcmVariant) (gf : GhashFree v.impl.gh.fn.code)
+    (cf : Proof.Aes.X86_64.Ctr32Free v.impl.ctr.callee) (hB : BlkLeavesD v.impl.blkB) (hB16 : BlkLeavesD (blkR16 v))
+    (hct : Plain v.impl.callees.ctr.code) (hgh : Plain v.impl.callees.gh.code)
+    (hn : UpperLock.inames v.impl.blkB.dec.code = []) (hn16 : UpperLock.inames (blkR16 v).dec.code = []) :
+    ResOk (streamDecryptCodeF16C v) (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608) 2608 [] [2608] := by
+  intro s₁ s₂ t₁ t₂ u₁ u₂ h₁ h₂ hp ho hu e₁ e₂ x hx _
+  have h₁' := h₁
+  have h₂' := h₂
+  have hp' := hp
+  unfold Spec.Gcm.streamDecryptPreparedContract at h₁' h₂' hp'
+  obtain ⟨s₀₁, t₀₁, hS₁, hk₁, hb₁⟩ := onFlag_inv (Or.inl rfl) (flag_inRegions (N := 129) (by decide) h₁') e₁
+  obtain ⟨s₀₂, t₀₂, hS₂, hk₂, hb₂⟩ := onFlag_inv (Or.inl rfl) (flag_inRegions (N := 129) (by decide) h₂') e₂
+  obtain ⟨⟨-, hl⟩, -, -⟩ := (pubL_args (sig := Spec.Gcm.streamCryptPreparedSig) (by decide)).mp hp'
+  have hflag : 16 ≤ flagCount s₁ ↔ 16 ≤ flagCount s₂ :=
+    flagLeak_iff (Or.inl rfl) (List.head_eq_of_cons_eq hl)
+  have q₁ : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pre s₀₁ := by
+    unfold Spec.Gcm.streamDecryptPreparedContract; exact (pre_same hS₁).mpr h₁'
+  have q₂ : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pre s₀₂ := by
+    unfold Spec.Gcm.streamDecryptPreparedContract; exact (pre_same hS₂).mpr h₂'
+  have qp : (Spec.Gcm.streamDecryptPreparedContract X86_64.abi 2608).pub s₀₁ s₀₂ := by
+    unfold Spec.Gcm.streamDecryptPreparedContract; exact (pub_same hS₁ hS₂).mpr hp'
+  have qg : ∀ r, r ≠ .rax → s₀₁.gpr r = s₀₂.gpr r := fun r h =>
+    (hS₁.gpr r h).trans ((ho.2.2.1 r h).trans (hS₂.gpr r h).symm)
+  have hsp : s₀₁.gpr .rsp = s₁.gpr .rsp := hS₁.gpr .rsp (by decide)
+  have qbm : ∀ x, (⟨s₀₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 →
+      s₀₁.mem x = s₀₂.mem x := fun x hx => by
+    rw [hS₁.mem, hS₂.mem]; rw [hsp] at hx; exact below_same h₁' ho (by decide) x hx
+  have qu : s₀₁.unknowns = s₀₂.unknowns := hk₁.trans (hu.trans hk₂.symm)
+  have hf₁ : flagCount s₀₁ = flagCount s₁ := by simp only [flagCount, hS₁.mem, hS₁.gpr .rdi (by decide)]
+  have hf₂ : flagCount s₀₂ = flagCount s₂ := by simp only [flagCount, hS₂.mem, hS₂.gpr .rdi (by decide)]
+  have hx' : (⟨s₀₁.gpr .rsp - BitVec.ofNat 64 2608, 2608⟩ : Region).Contains x 1 := by rw [hsp]; exact hx
+  rcases hb₁ with ⟨c₁, x₁⟩ | ⟨c₁, x₁⟩ <;> rcases hb₂ with ⟨c₂, x₂⟩ | ⟨c₂, x₂⟩
+  · exact streamDec16_agree .avx v.impl (blkR16 v) gf cf hB16 hct hgh hn16 q₁ q₂ (hf₁ ▸ c₁) (hf₂ ▸ c₂) qp qg qbm qu
+      x₁ x₂ x hx'
+  · exact absurd (hflag.mp c₁) c₂
+  · exact absurd (hflag.mpr c₂) c₁
+  · exact streamDecB_agree .avx v.impl gf cf hB hct hgh hn q₁ q₂ qp qg qbm qu x₁ x₂ x hx'
+
 end
 
 /-- `vg_aes_gcm_stream_encrypt_prepared` of a variant whose loops read 16
@@ -1420,21 +1546,55 @@ def streamDecryptWReg (v : GcmVariant) : Registration Spec.Gcm.streamDecryptPrep
     spSafe := X86_64.withStackArgScratch_spSafe (streamDecrypt_spSafe v.impl) }
 
 /-- `vg_aes_gcm_stream_decrypt_prepared` of a variant whose loops read 16
+powers, clearing the registers after each call (`streamDecryptCodeF16C`),
+before any clearing on return. -/
+def streamDecryptF16Plain (v : GcmVariant) : Registration Spec.Gcm.streamDecryptPreparedApi X86_64.target where
+  suffix := v.impl.suffix
+  code := streamDecryptCodeF16C v
+  stack := 2608
+  verified := VG.Proof.AesGcm.Flag.streamDecrypt_keyed (Flag.streamDecrypt_onFlag16
+    (streamDecryptClr16_framed .avx v.impl (blkR16 v))
+    (streamDecryptClrB_framed .avx v.impl v.impl.blkB))
+  spSafe := VG.X86_64.onFlag_spSafe (streamDecryptClr_spSafe .avx v.impl (blkR16 v))
+    (streamDecryptClr_spSafe .avx v.impl v.impl.blkB)
+
+open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
+/-- What the clearing of only the general-purpose registers needs of
+`vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul`, checked by the emitter
+(as `StreamChkF16`). -/
+def StreamChkF16D : Prop :=
+  UpperLock.inames variant.impl.callees.ctr.code = [] ∧ UpperLock.inames variant.impl.callees.gh.code = [] ∧
+    UpperLock.inames variant.impl.blkB.dec.code = [] ∧ UpperLock.inames (blkR16 variant).dec.code = [] ∧
+    UpperLock.inames (streamDecryptCodeF16C variant) = [] ∧
+    VecLock.step .avx (streamDecryptCodeF16C variant) (true, true) = (true, true)
+
+instance : Decidable StreamChkF16D := by unfold StreamChkF16D; infer_instance
+
+open VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul (variant) in
+open VG.X86_64.Scrub StackLock in
+/-- `vg_aes_gcm_stream_decrypt_prepared_vaes_vpclmul`, followed by the
+clearing of the scratch registers only (`withScrubResCR`): it leaves the
+same stack in two runs (`streamDecryptF16_resOk`), and the vector registers
+it leaves agree (`VecLock.regsOk_of_vec`). `streamDecryptF16Plain` if the
+emitter's check fails. -/
+def streamDecryptF16Vaes : Registration Spec.Gcm.streamDecryptPreparedApi X86_64.target :=
+  if h : StreamChkF16D then
+    RScrub.withScrubResCR (streamDecryptF16Plain variant) (streamDecryptPreparedOut _) [] [2608]
+      (streamDecryptF16_resOk variant (variant.impl.gh.free.get rfl) (variant.impl.ctr.free.get rfl)
+        blkBD_vaes_leaves blkR16D_vaes_leaves ⟨variant.impl.ctr.nosp, h.1⟩ ⟨variant.impl.gh.nosp, h.2.1⟩
+        h.2.2.1 h.2.2.2.1)
+      [] scratchRegs (VecLock.regsOk_of_vec (streamDecryptF16Plain variant).verified.2.1 h.2.2.2.2.1 h.2.2.2.2.2)
+  else streamDecryptF16Plain variant
+
+/-- `vg_aes_gcm_stream_decrypt_prepared` of a variant whose loops read 16
 powers: by the count, its code on them or its code on the key context; where
 `GcmVariant.streamF16Clr` says so, both clearing the registers after each
-call (`streamDecryptClr`, at the level of 256-bit registers). -/
+call (`streamDecryptCodeF16C`), and for the function of the VAES variant's
+name, returning without secret residue (`streamDecryptF16Vaes`). -/
 def streamDecryptR16Reg (v : GcmVariant) : Registration Spec.Gcm.streamDecryptPreparedApi X86_64.target :=
-  if v.streamF16Clr then {
-    suffix := v.impl.suffix
-    code := Impl.Gcm.X86_64.Flag.onFlag 16
-      (Impl.StackScratch.X86_64.withStackArgScratch 2584 1
-        (Impl.AesGcm.X86_64.streamDecryptClr (v.impl.withBlk (blkR16 v)) .avx))
-      (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (Impl.AesGcm.X86_64.streamDecryptClr v.impl.callees .avx))
-    verified := VG.Proof.AesGcm.Flag.streamDecrypt_keyed (Flag.streamDecrypt_onFlag16
-      (streamDecryptClr16_framed .avx v.impl (blkR16 v))
-      (streamDecryptClrB_framed .avx v.impl v.impl.blkB))
-    spSafe := VG.X86_64.onFlag_spSafe (streamDecryptClr_spSafe .avx v.impl (blkR16 v))
-      (streamDecryptClr_spSafe .avx v.impl v.impl.blkB) }
+  if v.streamF16Clr then
+    if v.impl.suffix = VG.Proof.Variants.AesGcm.X86_64.VaesVpclmul.variant.impl.suffix then streamDecryptF16Vaes
+    else streamDecryptF16Plain v
   else {
     suffix := v.impl.suffix
     code := Impl.Gcm.X86_64.Flag.onFlag 16
