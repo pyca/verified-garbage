@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.TripleDes.AArch64.VerifiedBlock
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Verified
 public import VerifiedGarbage.Proof.TripleDes.AArch64.Frame
+public import VerifiedGarbage.Proof.TripleDes.AArch64.ShortEcb
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Impl.TripleDes.AArch64.BitsliceAlloc
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
@@ -39,11 +40,11 @@ def artifacts : List Artifact := [
     verified := Proof.TripleDes.AArch64.Key.verified },
   Spec.TripleDes.ecbEncryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1024 .x3 128
-      Impl.TripleDes.AArch64.BitsliceNeon.encrypt
-    verified := Proof.TripleDes.AArch64.ecb_framed Proof.TripleDes.AArch64.BitslicedNeon.encrypt_verified },
+      Impl.TripleDes.AArch64.Short.ecbEncrypt
+    verified := Proof.TripleDes.AArch64.ecb_framed Proof.TripleDes.AArch64.Short.ecbEncrypt_verified },
   Spec.TripleDes.ecbDecryptApi.artifact AArch64.target {
     code := Impl.StackScratch.AArch64.withStackScratchWiped 1024 .x3 128
-      Impl.TripleDes.AArch64.BitsliceNeon.decrypt
-    verified := Proof.TripleDes.AArch64.ecb_framed Proof.TripleDes.AArch64.BitslicedNeon.decrypt_verified }]
+      Impl.TripleDes.AArch64.Short.ecbDecrypt
+    verified := Proof.TripleDes.AArch64.ecb_framed Proof.TripleDes.AArch64.Short.ecbDecrypt_verified }]
 
 end VG.Artifacts.TripleDes.AArch64
