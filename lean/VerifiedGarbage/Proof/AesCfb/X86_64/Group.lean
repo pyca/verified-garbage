@@ -49,22 +49,24 @@ open VG.Proof.AesCbc.X86_64
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.Aes.X86_64 (BlocksImpl)
 
-/-- Closes the disjointness goals between the regions of a group. -/
-macro "cfb_gd" : tactic => `(tactic| first
-  | with_reducible exact UPre.dBB ‹_› ‹_› (by omega) (by omega) (by omega)
-  | with_reducible exact UPre.dBT ‹_› ‹_› (by omega) (by omega)
-  | with_reducible exact (UPre.dBT ‹_› ‹_› (by omega) (by omega)).symm
-  | with_reducible exact UPre.dTT (by omega) (by omega) (by omega)
-  | with_reducible exact UPre.dBI ‹_› ‹_› (by omega)
-  | with_reducible exact (UPre.dBI ‹_› ‹_› (by omega)).symm
-  | with_reducible exact UPre.dTI ‹_› (by omega)
-  | with_reducible exact (UPre.dTI ‹_› (by omega)).symm
-  | with_reducible exact UPre.dBG ‹_› ‹_› (by omega)
-  | with_reducible exact UPre.dBS ‹_› ‹_› (by omega)
-  | with_reducible exact UPre.dBK ‹_› ‹_› (by omega)
-  | with_reducible exact UPre.dIG ‹_›
-  | with_reducible exact UPre.dIS ‹_›
-  | with_reducible exact UPre.dIK ‹_›)
+/-- Closes the disjointness goals between the regions of a group, of the loop with the precondition `hp`
+at the blocks from `k` (`hk`). An alternative that does not fit fails where its statement is compared
+with the goal, before its side conditions are tried. -/
+macro "cfb_gd " hp:ident hk:ident : tactic => `(tactic| first
+  | (with_reducible refine UPre.dBB $hp $hk ?_ ?_ ?_) <;> omega
+  | (with_reducible refine UPre.dBT $hp $hk ?_ ?_) <;> omega
+  | (with_reducible refine (UPre.dBT $hp $hk ?_ ?_).symm) <;> omega
+  | (with_reducible refine UPre.dTT ?_ ?_ ?_) <;> omega
+  | (with_reducible refine UPre.dBI $hp $hk ?_) <;> omega
+  | (with_reducible refine (UPre.dBI $hp $hk ?_).symm) <;> omega
+  | (with_reducible refine UPre.dTI $hp ?_) <;> omega
+  | (with_reducible refine (UPre.dTI $hp ?_).symm) <;> omega
+  | (with_reducible refine UPre.dBG $hp $hk ?_) <;> omega
+  | (with_reducible refine UPre.dBS $hp $hk ?_) <;> omega
+  | (with_reducible refine UPre.dBK $hp $hk ?_) <;> omega
+  | with_reducible exact UPre.dIG $hp
+  | with_reducible exact UPre.dIS $hp
+  | with_reducible exact UPre.dIK $hp)
 
 /-- The slots as the call addresses them. -/
 theorem slot_add (s₀ : State) (j : Nat) :
@@ -206,12 +208,12 @@ theorem decA4_wp {M : Mode} {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 
   · rw [mem₅, m₄, m₃, m₂, m₁]
     exact (copyMem_frameG _ (j := 0) (by decide) _).trans ((copyMem_frameG _ (j := 1) (by decide) _).trans
       ((copyMem_frameG _ (j := 2) (by decide) _).trans (copyMem_frameG _ (j := 3) (by decide) _)))
-  · rw [mem₅, m₄, copyMem_other, m₃, copyMem_other, m₂, copyMem_other, m₁, copyMem_bytes] <;> cfb_gd
+  · rw [mem₅, m₄, copyMem_other, m₃, copyMem_other, m₂, copyMem_other, m₁, copyMem_bytes] <;> cfb_gd hp hk
   · rw [mem₅]
     rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl
-    · rw [m₄, copyMem_other, m₃, copyMem_other, m₂, copyMem_bytes, m₁, copyMem_other] <;> cfb_gd
-    · rw [m₄, copyMem_other, m₃, copyMem_bytes, m₂, copyMem_other, m₁, copyMem_other] <;> cfb_gd
-    · rw [m₄, copyMem_bytes, m₃, copyMem_other, m₂, copyMem_other, m₁, copyMem_other] <;> cfb_gd
+    · rw [m₄, copyMem_other, m₃, copyMem_other, m₂, copyMem_bytes, m₁, copyMem_other] <;> cfb_gd hp hk
+    · rw [m₄, copyMem_other, m₃, copyMem_bytes, m₂, copyMem_other, m₁, copyMem_other] <;> cfb_gd hp hk
+    · rw [m₄, copyMem_bytes, m₃, copyMem_other, m₂, copyMem_other, m₁, copyMem_other] <;> cfb_gd hp hk
 
 /-! ## The group -/
 
@@ -287,23 +289,23 @@ theorem decGroup_ok (v : BlocksImpl) : GroupOk (cfbMode false) (decGroup v.enc) 
   have o0 : bytesAt t₁₂.mem (blk s₀ (k + 0)) 16 = Spec.Cbc.xor ((blks s₀)[k + 0]'(by rw [len]; omega_using [hk]))
       (Spec.Cbc.aesWith (R s₀) (wK s₀) (Spec.Cbc.next (iv0 s₀) ((blks s₀).take k))) := by
     rw [m₁₂, m₁₁, xorMem_other, m₁₀, xorMem_other, m₉, xorMem_other, m₈, xorMem_bytes, m₇, copyMem_other,
-      copyMem_other, dB 0 (by decide), e 0 (by decide), a.slot0, chain] <;> cfb_gd
+      copyMem_other, dB 0 (by decide), e 0 (by decide), a.slot0, chain] <;> cfb_gd hp hk
   have o (j : Nat) (hj : j < 3) : bytesAt t₁₂.mem (blk s₀ (k + (j + 1))) 16 =
       Spec.Cbc.xor ((blks s₀)[k + (j + 1)]'(by rw [len]; omega_using [hk, hj]))
         (Spec.Cbc.aesWith (R s₀) (wK s₀) ((blks s₀)[k + j]'(by rw [len]; omega_using [hk, hj]))) := by
     rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl
     · rw [m₁₂, m₁₁, xorMem_other, m₁₀, xorMem_other, m₉, xorMem_bytes, m₈, xorMem_other, xorMem_other, m₇,
         copyMem_other, copyMem_other, dB 1 (by decide), e 1 (by decide), a.slot 0 (by decide), hb 0 (by decide)]
-        <;> cfb_gd
+        <;> cfb_gd hp hk
     · rw [m₁₂, m₁₁, xorMem_other, m₁₀, xorMem_bytes, m₉, xorMem_other, xorMem_other, m₈, xorMem_other,
         xorMem_other, m₇, copyMem_other, copyMem_other, dB 2 (by decide), e 2 (by decide), a.slot 1 (by decide),
-        hb 1 (by decide)] <;> cfb_gd
+        hb 1 (by decide)] <;> cfb_gd hp hk
     · rw [m₁₂, m₁₁, xorMem_bytes, m₁₀, xorMem_other, xorMem_other, m₉, xorMem_other, xorMem_other, m₈,
         xorMem_other, xorMem_other, m₇, copyMem_other, copyMem_other, dB 3 (by decide), e 3 (by decide),
-        a.slot 2 (by decide), hb 2 (by decide)] <;> cfb_gd
+        a.slot 2 (by decide), hb 2 (by decide)] <;> cfb_gd hp hk
   have ivF : bytesAt t₁₂.mem (Iv s₀) 16 = (blks s₀)[k + 3]'(by rw [len]; omega_using [hk]) := by
     rw [m₁₂, m₁₁, xorMem_other, m₁₀, xorMem_other, m₉, xorMem_other, m₈, xorMem_other, m₇, copyMem_bytes,
-      dB 3 (by decide)] <;> cfb_gd
+      dB 3 (by decide)] <;> cfb_gd hp hk
   -- The mode.
   have take4 : (blks s₀).take (k + 4) = (blks s₀).take k ++ [(blks s₀)[k + 0]'(by rw [len]; omega_using [hk])] ++
       [(blks s₀)[k + 1]'(by rw [len]; omega_using [hk])] ++ [(blks s₀)[k + 2]'(by rw [len]; omega_using [hk])] ++

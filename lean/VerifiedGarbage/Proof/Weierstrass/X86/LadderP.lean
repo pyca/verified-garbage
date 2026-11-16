@@ -282,9 +282,9 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Wei
   have hs₁ := hI.scr.of_keeps k₁ (by decide)
   -- `P = R`.
   refine WP.seq (WP.mono (copyPt_ok hs₁ (n := L.M.n) (o := ptAt L.M.n (Impl.Weierstrass.Point.pAt L.M.n))
-    (a := L.R) (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith)
-    (by simp only [ptAt]; omega_arith)
-    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith))
+    (a := L.R) (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_using [rx, ry, rz, hl, hsz, hk3, hk6])
+    (by simp only [ptAt]; omega_using [rx, ry, rz, hl, hsz, hk3, hk6])
+    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_using [rx, ry, rz, hl, hsz, hk3, hk6]))
     fun s₂ ⟨px₂, py₂, pz₂, k₂, O₂⟩ => ?_)
   simp only [ptAt] at px₂ py₂ pz₂ O₂
   rw [hm₁] at px₂ py₂ pz₂ O₂
@@ -330,9 +330,9 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Wei
   -- `P = O`.
   refine WP.seq (WP.mono (copyPt_ok hs₃ (n := L.M.n) (o := ptAt L.M.n (Impl.Weierstrass.Point.pAt L.M.n))
     (a := ptAt L.M.n (Impl.Weierstrass.Point.oAt L.M.n))
-    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith)
-    (by simp only [ptAt]; omega_arith)
-    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith))
+    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_using [rx, ry, rz, hl, hsz, hk3, hk6])
+    (by simp only [ptAt]; omega_using [rx, ry, rz, hl, hsz, hk3, hk6])
+    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_using [rx, ry, rz, hl, hsz, hk3, hk6]))
     fun s₄ ⟨px₄, py₄, pz₄, k₄, O₄⟩ => ?_)
   simp only [ptAt] at px₄ py₄ pz₄ O₄
   have hs₄ := hs₃.of_keeps k₄ (by decide)
@@ -408,17 +408,24 @@ theorem ladderPBody_ok {k : Nat} {Q : Nat → Spec.Weierstrass.Fe C → Spec.Wei
   rw [List.append_assoc]
   refine WP.block_append (WP.mono (bitMask_bool_ok hs₅ esi₅ (by omega_arith) hbyte) fun s₆ ⟨c₆, k₆, hm₆⟩ => ?_)
   have hs₆ := hs₅.of_keeps k₆ (by decide)
-  obtain ⟨rxy, rxz, ryz⟩ := hL.rne
   have hap : ∀ x ∈ [L.R.x, L.R.y, L.R.z], ∀ y ∈ [L.R.x, L.R.y, L.R.z], x ≠ y →
       x + 8 * L.M.n ≤ y ∨ y + 8 * L.M.n ≤ x := fun x hx y hy hxy =>
     hL.lay.apart x y (ladPts_slots L x (by simp only [List.mem_cons] at hx ⊢; rcases hx with h | h | h | h <;> simp [h]))
       (ladPts_slots L y (by simp only [List.mem_cons] at hy ⊢; rcases hy with h | h | h | h <;> simp [h])) hxy
+  -- `R`'s slots end where `O` begins, and `P` is above it: one fact for each slot, not one for each pair.
+  have hRo : ∀ d ∈ [L.R.x, L.R.y, L.R.z], d + 8 * L.M.n ≤ Impl.Weierstrass.Point.oAt L.M.n := by
+    simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; exact ⟨rx, ry, rz⟩
+  have hoE : ∀ e ∈ [(ptAt L.M.n (Impl.Weierstrass.Point.pAt L.M.n)).x,
+      (ptAt L.M.n (Impl.Weierstrass.Point.pAt L.M.n)).y, (ptAt L.M.n (Impl.Weierstrass.Point.pAt L.M.n)).z,
+      (ptAt L.M.n (Impl.Weierstrass.Point.oAt L.M.n)).x, (ptAt L.M.n (Impl.Weierstrass.Point.oAt L.M.n)).y,
+      (ptAt L.M.n (Impl.Weierstrass.Point.oAt L.M.n)).z], Impl.Weierstrass.Point.oAt L.M.n ≤ e := by
+    simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_using [hl]
   refine WP.block_append (WP.mono (selPt_ok hs₆ _ c₆ (n := L.M.n) (o := L.R)
     (a := ptAt L.M.n (Impl.Weierstrass.Point.pAt L.M.n)) (b := ptAt L.M.n (Impl.Weierstrass.Point.oAt L.M.n))
-    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith)
-    ⟨hap L.R.x (by simp) L.R.y (by simp) rxy, hap L.R.x (by simp) L.R.z (by simp) rxz,
-      hap L.R.y (by simp) L.R.z (by simp) ryz⟩
-    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_arith))
+    (by simp only [ptAt, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]; omega_using [rx, ry, rz, hl, hsz, hk3, hk6])
+    ⟨hap L.R.x (by simp) L.R.y (by simp) hL.rne.1, hap L.R.x (by simp) L.R.z (by simp) hL.rne.2.1,
+      hap L.R.y (by simp) L.R.z (by simp) hL.rne.2.2⟩
+    (fun d hd e he => .inl (Nat.le_trans (hRo d hd) (hoE e he))))
     fun s₇ ⟨ex, ey, ez, k₇, O₇⟩ => ?_)
   simp only [ptAt] at ex ey ez
   rw [hm₆] at ex ey ez

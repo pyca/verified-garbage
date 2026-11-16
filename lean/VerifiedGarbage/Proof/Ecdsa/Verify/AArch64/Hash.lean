@@ -21,6 +21,7 @@ import VerifiedGarbage.Proof.Framework.Range
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.WriteBytes
+import VerifiedGarbage.Proof.Framework.KernelRfl
 public import VerifiedGarbage.Proof.MdStream.AArch64.Common
 import VerifiedGarbage.Proof.Rc2.AArch64.Stream.Copy
 meta import VerifiedGarbage.Proof.Framework.AArch64.Taint
@@ -409,18 +410,46 @@ theorem WP.rdwr {c : Prog isa} {s : State} {Q : State → Prop} (h : WP isa c s 
   obtain ⟨t, s', he, hq⟩ := h
   exact ⟨t, s', he, hq, Exec.rdwr he⟩
 
+/-! A property of every instruction of `convert`, from its pieces: those that do not depend on `len`
+but in an immediate are evaluated, by the kernel alone, and the bytes' copies once for any index. -/
+
+private theorem ai_block {p : Instr → Bool} {l : List Instr} (h : l.all p = true) :
+    (Code.block l : Prog isa).allInstrs p = true := by rw [Code.allInstrs_eq]; exact h
+
+private theorem ai_seq {p : Instr → Bool} {a b : Prog isa} (ha : a.allInstrs p = true)
+    (hb : b.allInstrs p = true) : (Code.seq a b).allInstrs p = true := by
+  show (a.allInstrs p && b.allInstrs p) = true; rw [ha, hb]; rfl
+
+private theorem ai_ite {p : Instr → Bool} {c : Cond} {a b : Prog isa} (ha : a.allInstrs p = true)
+    (hb : b.allInstrs p = true) : (Code.ite c a b).allInstrs p = true := by
+  show (a.allInstrs p && b.allInstrs p) = true; rw [ha, hb]; rfl
+
+private theorem all_flat {p : Instr → Bool} {f : Nat → List Instr} (n : Nat) (h : ∀ i, (f i).all p = true) :
+    ((List.range n).flatMap f).all p = true := by
+  rw [List.all_flatMap]; exact List.all_eq_true.mpr fun i _ => h i
+
+private theorem convert_all {p : Instr → Bool} (wide : Bool)
+    (ht : (test len).all p = true)
+    (hl : ∀ i, ([.ldrb .x9 .x1 i, .strb .x9 .x5 i] : List Instr).all p = true)
+    (hz : (Instr.movz .x .x12 0 0 :: zeroBytes ++
+      ([.addImm .x .x13 .x5 len, .sub .x .x13 .x13 .x2] : List Instr)).all p = true)
+    (hc : (Impl.Rc2.AArch64.Stream.copy .x1 0 .x13 0 .x2).allInstrs p = true)
+    (hs : ∀ i, ([.ldrb .x9 .x5 i, .ldrb .x10 .x5 (i + 1), .lsl .x .x9 .x9 7, .lsr .x .x10 .x10 1,
+      .add .x .x9 .x9 .x10, .strb .x9 .x5 i] : List Instr).all p = true) :
+    (convert len wide).allInstrs p = true := by
+  refine ai_seq (ai_block ht) (ai_ite (ai_block (all_flat len hl)) (ai_seq (ai_block hz) (ai_seq hc (ai_block ?_))))
+  cases wide
+  · rfl
+  · exact all_flat len hs
+
 /-- No instruction of `convert` writes a register of `kept`. -/
 theorem convert_kept (wide : Bool) :
-    (convert len wide).allInstrs (fun i => kept.all fun r => !clobbers i r) = true := by
-  cases wide <;>
-  simp [Code.allInstrs_eq, instrs, convert, test, long, short, shiftBytes, zeroBytes,
-    Impl.Rc2.AArch64.Stream.copy, Impl.Rc2.AArch64.Stream.copyBody, List.all_flatMap, clobbers, dstOf]
+    (convert len wide).allInstrs (fun i => kept.all fun r => !clobbers i r) = true :=
+  convert_all wide (by kernel_rfl) (fun _ => by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (fun _ => by kernel_rfl)
 
 /-- Nor a preserved vector register. -/
-theorem convert_keepsV (wide : Bool) : (convert len wide).allInstrs keepsV = true := by
-  cases wide <;>
-  simp [Code.allInstrs_eq, instrs, convert, test, long, short, shiftBytes, zeroBytes,
-    Impl.Rc2.AArch64.Stream.copy, Impl.Rc2.AArch64.Stream.copyBody, List.all_flatMap, keepsV, vdstOf]
+theorem convert_keepsV (wide : Bool) : (convert len wide).allInstrs keepsV = true :=
+  convert_all wide (by kernel_rfl) (fun _ => by kernel_rfl) (by kernel_rfl) (by kernel_rfl) (fun _ => by kernel_rfl)
 
 /-- `convert`: the buffer's first `len` bytes are `fixedDigest` of the hash,
 and only the buffer and `x9`–`x13`, `x1`, `x2` change. -/

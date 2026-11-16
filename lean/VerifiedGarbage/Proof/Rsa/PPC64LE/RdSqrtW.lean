@@ -344,12 +344,33 @@ theorem digit0Step_ok {s : State} (h20 : s.gpr .r20 = BitVec.ofNat 64 0) (hY : (
         BitVec.and_allOnes, ← BitVec.xor_assoc, BitVec.xor_comm x d, BitVec.xor_assoc, BitVec.xor_self,
         BitVec.xor_zero]
   rw [sel, sel]
-  refine ⟨by omega_using [], ?_, ?_⟩
-  · cases c1 <;> cases c2 <;> simp only [decide_eq_true_eq, decide_eq_false_iff_not, Bool.toNat_true,
-      Bool.toNat_false, ↓reduceIte, Bool.false_eq_true, BitVec.toNat_ofNat] at hc1 hc2 ⊢ <;> split <;> omega_arith
-  · rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ofNat, show (0#64).toNat = 0 from rfl]
+  -- The second carry says which case of the step this is, whatever the first is.
+  have key : c2 = true ↔ 4 * y.toNat + 1 ≤
+      4 * (rh.toNat * 18446744073709551616 + rl.toNat) + a.toNat / 4611686018427387904 := by
     cases c1 <;> cases c2 <;> simp only [decide_eq_true_eq, decide_eq_false_iff_not, Bool.toNat_true,
-      Bool.toNat_false] at hc1 hc2 ⊢ <;> split <;> omega_arith
+      Bool.toNat_false, Bool.false_eq_true, false_iff, true_iff] at hc1 hc2 ⊢ <;> omega_arith
+  refine ⟨by omega_using [], ?_, ?_⟩
+  · by_cases hlt : 4 * (rh.toNat * 18446744073709551616 + rl.toNat) + a.toNat / 4611686018427387904 <
+        4 * y.toNat + 1
+    · obtain rfl : c2 = false := Bool.eq_false_iff.mpr fun h => absurd (key.mp h) (Nat.not_le.mpr hlt)
+      rw [ite_eq_left hlt]
+      simp only [Bool.false_eq_true, ↓reduceIte]
+      omega_using [hlt, yh, rh1, hY, hR, ha, hrl, hrh, fr, fl]
+    · obtain rfl : c2 = true := key.mpr (Nat.not_lt.mp hlt)
+      rw [ite_eq_right hlt]
+      cases c1 <;> simp only [decide_eq_true_eq, decide_eq_false_iff_not, Bool.toNat_true,
+        Bool.toNat_false, ↓reduceIte, BitVec.toNat_ofNat] at hc1 hc2 ⊢ <;> omega_arith
+  · rw [BitVec.toNat_add, BitVec.toNat_add, BitVec.toNat_ofNat, show (0#64).toNat = 0 from rfl]
+    by_cases hlt : 4 * (rh.toNat * 18446744073709551616 + rl.toNat) + a.toNat / 4611686018427387904 <
+        4 * y.toNat + 1
+    · obtain rfl : c2 = false := Bool.eq_false_iff.mpr fun h => absurd (key.mp h) (Nat.not_le.mpr hlt)
+      rw [ite_eq_left hlt]
+      simp only [Bool.toNat_false]
+      omega_using [hY]
+    · obtain rfl : c2 = true := key.mpr (Nat.not_lt.mp hlt)
+      rw [ite_eq_right hlt]
+      simp only [Bool.toNat_true]
+      omega_using [hY]
 
 /-- Two more bits of `T < 2^128` brought down: the window `x = (T mod 4^k') 4^i` (`k' = 64 - i`) shifted
 up by two, its top two bits, and the top `2 (i + 1)` bits. -/

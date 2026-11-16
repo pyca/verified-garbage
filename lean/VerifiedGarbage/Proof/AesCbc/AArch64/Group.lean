@@ -747,22 +747,24 @@ theorem batched_ct {M : Mode} {group one : Prog isa} (hg : GroupOk M group) (hgc
 
 /-! ## CBC decryption: the pieces of the group -/
 
-/-- Closes the disjointness goals between the regions of a group. -/
-macro "cbc_gd" : tactic => `(tactic| first
-  | with_reducible exact UPre.dBB ‹_› ‹_› (by omega) (by omega) (by omega)
-  | with_reducible exact UPre.dBT ‹_› ‹_› (by omega) (by omega)
-  | with_reducible exact (UPre.dBT ‹_› ‹_› (by omega) (by omega)).symm
-  | with_reducible exact UPre.dBV ‹_› ‹_› (by omega)
-  | with_reducible exact (UPre.dBV ‹_› ‹_› (by omega)).symm
-  | with_reducible exact UPre.dTT (by omega) (by omega) (by omega)
-  | with_reducible exact UPre.dTV (by omega)
-  | with_reducible exact (UPre.dTV (by omega)).symm
-  | with_reducible exact UPre.dBI ‹_› ‹_› (by omega)
-  | with_reducible exact (UPre.dBI ‹_› ‹_› (by omega)).symm
-  | with_reducible exact UPre.dTI ‹_› (by omega)
-  | with_reducible exact (UPre.dTI ‹_› (by omega)).symm
-  | with_reducible exact UPre.iv_sv ‹_›
-  | with_reducible exact (UPre.iv_sv ‹_›).symm)
+/-- Closes the disjointness goals between the regions of a group, of the loop with the precondition `hp`
+at the blocks from `k` (`hk`). An alternative that does not fit fails where its statement is compared
+with the goal, before its side conditions are tried. -/
+macro "cbc_gd " hp:ident hk:ident : tactic => `(tactic| first
+  | (with_reducible refine UPre.dBB $hp $hk ?_ ?_ ?_) <;> omega
+  | (with_reducible refine UPre.dBT $hp $hk ?_ ?_) <;> omega
+  | (with_reducible refine (UPre.dBT $hp $hk ?_ ?_).symm) <;> omega
+  | (with_reducible refine UPre.dBV $hp $hk ?_) <;> omega
+  | (with_reducible refine (UPre.dBV $hp $hk ?_).symm) <;> omega
+  | (with_reducible refine UPre.dTT ?_ ?_ ?_) <;> omega
+  | (with_reducible refine UPre.dTV ?_) <;> omega
+  | (with_reducible refine (UPre.dTV ?_).symm) <;> omega
+  | (with_reducible refine UPre.dBI $hp $hk ?_) <;> omega
+  | (with_reducible refine (UPre.dBI $hp $hk ?_).symm) <;> omega
+  | (with_reducible refine UPre.dTI $hp ?_) <;> omega
+  | (with_reducible refine (UPre.dTI $hp ?_).symm) <;> omega
+  | with_reducible exact UPre.iv_sv $hp
+  | with_reducible exact (UPre.iv_sv $hp).symm)
 
 section
 variable {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 4 ≤ N s₀)
@@ -882,10 +884,10 @@ theorem decSave_wp {s₀ : State} (hp : UPre s₀) {k : Nat} (hk : k + 4 ≤ N s
     exact (copyMem_frameG _ (j := 0) (by decide) _).trans ((copyMem_frameG _ (j := 1) (by decide) _).trans
       ((copyMem_frameG _ (j := 2) (by decide) _).trans (copyMem_frameV _ _)))
   · rcases (by omega_using [hj] : j = 0 ∨ j = 1 ∨ j = 2) with rfl | rfl | rfl
-    · rw [m₄, copyMem_other, m₃, copyMem_other, m₂, copyMem_other, m₁, copyMem_bytes] <;> cbc_gd
-    · rw [m₄, copyMem_other, m₃, copyMem_other, m₂, copyMem_bytes, m₁, copyMem_other] <;> cbc_gd
-    · rw [m₄, copyMem_other, m₃, copyMem_bytes, m₂, copyMem_other, m₁, copyMem_other] <;> cbc_gd
-  · rw [m₄, copyMem_bytes, m₃, copyMem_other, m₂, copyMem_other, m₁, copyMem_other] <;> cbc_gd
+    · rw [m₄, copyMem_other, m₃, copyMem_other, m₂, copyMem_other, m₁, copyMem_bytes] <;> cbc_gd hp hk
+    · rw [m₄, copyMem_other, m₃, copyMem_other, m₂, copyMem_bytes, m₁, copyMem_other] <;> cbc_gd hp hk
+    · rw [m₄, copyMem_other, m₃, copyMem_bytes, m₂, copyMem_other, m₁, copyMem_other] <;> cbc_gd hp hk
+  · rw [m₄, copyMem_bytes, m₃, copyMem_other, m₂, copyMem_other, m₁, copyMem_other] <;> cbc_gd hp hk
 
 /-! ## CBC decryption: before the call -/
 
@@ -1001,22 +1003,22 @@ theorem decGroup_ok (v : BlocksImpl) : GroupOk (cbcMode false) (decGroup v.dec) 
   have o0 : bytesAt t₁₂.mem (blk s₀ (k + 0)) 16 = Spec.Cbc.xor (Spec.Cbc.aesInvWith (R s₀) (wK s₀)
       ((blks s₀)[k + 0]'(by rw [len]; omega_using [hk]))) (Spec.Cbc.next (iv0 s₀) ((blks s₀).take k)) := by
     rw [m₁₂, m₁₁, copyMem_other, m₁₀, xorMem_other, m₉, xorMem_other, m₈, xorMem_other, m₇, xorMem_bytes,
-      d 0 (by decide), iv₆] <;> cbc_gd
+      d 0 (by decide), iv₆] <;> cbc_gd hp hk
   have o1 : bytesAt t₁₂.mem (blk s₀ (k + 1)) 16 = Spec.Cbc.xor (Spec.Cbc.aesInvWith (R s₀) (wK s₀)
       ((blks s₀)[k + 1]'(by rw [len]; omega_using [hk]))) ((blks s₀)[k + 0]'(by rw [len]; omega_using [hk])) := by
     rw [m₁₂, m₁₁, copyMem_other, m₁₀, xorMem_other, m₉, xorMem_other, m₈, xorMem_bytes, m₇, xorMem_other,
-      xorMem_other, d 1 (by decide), sv 0 (by decide)] <;> cbc_gd
+      xorMem_other, d 1 (by decide), sv 0 (by decide)] <;> cbc_gd hp hk
   have o2 : bytesAt t₁₂.mem (blk s₀ (k + 2)) 16 = Spec.Cbc.xor (Spec.Cbc.aesInvWith (R s₀) (wK s₀)
       ((blks s₀)[k + 2]'(by rw [len]; omega_using [hk]))) ((blks s₀)[k + 1]'(by rw [len]; omega_using [hk])) := by
     rw [m₁₂, m₁₁, copyMem_other, m₁₀, xorMem_other, m₉, xorMem_bytes, m₈, xorMem_other, xorMem_other, m₇,
-      xorMem_other, xorMem_other, d 2 (by decide), sv 1 (by decide)] <;> cbc_gd
+      xorMem_other, xorMem_other, d 2 (by decide), sv 1 (by decide)] <;> cbc_gd hp hk
   have o3 : bytesAt t₁₂.mem (blk s₀ (k + 3)) 16 = Spec.Cbc.xor (Spec.Cbc.aesInvWith (R s₀) (wK s₀)
       ((blks s₀)[k + 3]'(by rw [len]; omega_using [hk]))) ((blks s₀)[k + 2]'(by rw [len]; omega_using [hk])) := by
     rw [m₁₂, m₁₁, copyMem_other, m₁₀, xorMem_bytes, m₉, xorMem_other, xorMem_other, m₈, xorMem_other,
-      xorMem_other, m₇, xorMem_other, xorMem_other, d 3 (by decide), sv 2 (by decide)] <;> cbc_gd
+      xorMem_other, m₇, xorMem_other, xorMem_other, d 3 (by decide), sv 2 (by decide)] <;> cbc_gd hp hk
   have ivF : bytesAt t₁₂.mem (Iv s₀) 16 = (blks s₀)[k + 3]'(by rw [len]; omega_using [hk]) := by
     rw [m₁₂, m₁₁, copyMem_bytes, m₁₀, xorMem_other, m₉, xorMem_other, m₈, xorMem_other, m₇, xorMem_other,
-      svL] <;> cbc_gd
+      svL] <;> cbc_gd hp hk
   -- The mode.
   have take4 : (blks s₀).take (k + 4) = (blks s₀).take k ++ [(blks s₀)[k + 0]'(by rw [len]; omega_using [hk])] ++
       [(blks s₀)[k + 1]'(by rw [len]; omega_using [hk])] ++ [(blks s₀)[k + 2]'(by rw [len]; omega_using [hk])] ++

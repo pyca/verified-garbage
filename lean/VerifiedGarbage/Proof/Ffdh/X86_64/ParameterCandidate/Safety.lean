@@ -17,22 +17,23 @@ open VG.Impl.Ffdh.X86_64.ParameterCandidate
 private def codeWith (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa) : Prog isa :=
   VG.Impl.Ffdh.X86_64.ParameterCandidate.code mul (R2Words.choice mul) round
 
+/-! The lemmas about `ctlC` and `Code.all` with the code's types written as `simp` finds them: it reduces
+`isa.Instr` in the code before it looks a lemma up, and a lemma stated with `Prog isa` never matches. -/
+
+private theorem ctlC_seqs' (l : List (Code Instr Cond)) : ctlC (seqs l) = l.all ctlC := ctlC_seqs l
+private theorem ctlC_seq' (a b : Code Instr Cond) : ctlC (@Code.seq Instr Cond a b) = (ctlC a && ctlC b) := rfl
+private theorem ctlC_ite' (c : Cond) (a b : Code Instr Cond) :
+    ctlC (@Code.ite Instr Cond c a b) = (ctlC a && ctlC b) := rfl
+private theorem ctlC_loop' (a : Code Instr Cond) (c : Cond) : ctlC (@Code.loop Instr Cond a c) = ctlC a := rfl
+private theorem ctlC_empty' : ctlC (@Code.block Instr Cond []) = true := rfl
+
 private theorem template_ctlC (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
     (hp : ctlC (codeWith (fun _ _ _ => .block []) (.block [])) = true)
     (hm : ∀ o a b, ctlC (mul o a b) = true) (hr : ctlC round = true) :
     ctlC (codeWith mul round) = true := by
   unfold codeWith VG.Impl.Ffdh.X86_64.ParameterCandidate.code VG.Impl.Ffdh.X86_64.ParameterCandidate.body VG.Impl.Ffdh.X86_64.ParameterCandidate.testCandidate VG.Impl.Ffdh.X86_64.ParameterCandidate.candidateFilter VG.Impl.Ffdh.X86_64.ParameterCandidate.sieveQ VG.Impl.Ffdh.X86_64.ParameterCandidate.sieveP VG.Impl.Ffdh.X86_64.ParameterCandidate.testFirst VG.Impl.Ffdh.X86_64.ParameterCandidate.testQ VG.Impl.Ffdh.X86_64.ParameterCandidate.testP VG.Impl.Ffdh.X86_64.ParameterCandidate.phaseTest VG.Impl.Ffdh.X86_64.ParameterCandidate.modulusPolicy VG.Impl.Ffdh.X86_64.ParameterCandidate.rounds VG.Impl.Ffdh.X86_64.ParameterCandidate.roundBody VG.Impl.Ffdh.X86_64.ParameterCandidate.roundRun VG.Impl.Ffdh.X86_64.ParameterCandidate.witnessRound VG.Impl.Ffdh.X86_64.ParameterCandidate.prepareModulus VG.Impl.Ffdh.X86_64.ParameterCandidate.prepareR2 VG.Impl.Ffdh.X86_64.ParameterCandidate.prepareConstants R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
     VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next at hp ⊢
-  repeat' first
-    | rw [ctlC_seqs] at *
-    | rw [ctlC_seq] at *
-    | rw [ctlC_ite] at *
-    | rw [ctlC_loop] at *
-    | rw [List.all_append] at *
-    | rw [List.all_cons] at *
-  repeat' rw [hm]
-  rw [hr]
-  repeat' rw [ctlC_empty] at hp
+  simp only [ctlC_seqs', ctlC_seq', ctlC_ite', ctlC_loop', List.all_cons, hm, hr, ctlC_empty'] at hp ⊢
   exact hp
 
 private theorem all_seqs (p : Instr → Bool) (l : List (Prog isa)) :
@@ -44,14 +45,18 @@ private theorem all_seqs (p : Instr → Bool) (l : List (Prog isa)) :
     | nil => simp only [seqs, List.all_cons, List.all_nil, Bool.and_true]
     | cons b l => simp only [seqs, Code.all, List.all_cons] at ih ⊢; rw [ih]
 
+private theorem all_seqs' (p : Instr → Bool) (l : List (Code Instr Cond)) :
+    @Code.all Instr Cond p (seqs l) = l.all (fun c => @Code.all Instr Cond p c) := all_seqs p l
+private theorem all_seq' (p : Instr → Bool) (a b : Code Instr Cond) :
+    @Code.all Instr Cond p (@Code.seq Instr Cond a b) = (a.all p && b.all p) := rfl
+private theorem all_ite' (p : Instr → Bool) (c : Cond) (a b : Code Instr Cond) :
+    @Code.all Instr Cond p (@Code.ite Instr Cond c a b) = (a.all p && b.all p) := rfl
+private theorem all_loop' (p : Instr → Bool) (a : Code Instr Cond) (c : Cond) :
+    @Code.all Instr Cond p (@Code.loop Instr Cond a c) = a.all p := rfl
+private theorem all_empty' (p : Instr → Bool) :
+    @Code.all Instr Cond p (@Code.block Instr Cond []) = true := rfl
 private theorem all_seq (p : Instr → Bool) (a b : Prog isa) :
     (Code.seq a b).all p = (a.all p && b.all p) := rfl
-private theorem all_ite (p : Instr → Bool) (c : Cond) (a b : Prog isa) :
-    (Code.ite c a b).all p = (a.all p && b.all p) := rfl
-private theorem all_loop (p : Instr → Bool) (a : Prog isa) (c : Cond) :
-    (Code.loop a c).all p = a.all p := rfl
-private theorem all_empty (p : Instr → Bool) :
-    (Code.block ([] : List Instr) : Prog isa).all p = true := rfl
 
 private theorem template_all (p : Instr → Bool) (mul : Nat → Nat → Nat → Prog isa) (round : Prog isa)
     (hp : (codeWith (fun _ _ _ => .block []) (.block [])).all p = true)
@@ -59,16 +64,7 @@ private theorem template_all (p : Instr → Bool) (mul : Nat → Nat → Nat →
     (codeWith mul round).all p = true := by
   unfold codeWith VG.Impl.Ffdh.X86_64.ParameterCandidate.code VG.Impl.Ffdh.X86_64.ParameterCandidate.body VG.Impl.Ffdh.X86_64.ParameterCandidate.testCandidate VG.Impl.Ffdh.X86_64.ParameterCandidate.candidateFilter VG.Impl.Ffdh.X86_64.ParameterCandidate.sieveQ VG.Impl.Ffdh.X86_64.ParameterCandidate.sieveP VG.Impl.Ffdh.X86_64.ParameterCandidate.testFirst VG.Impl.Ffdh.X86_64.ParameterCandidate.testQ VG.Impl.Ffdh.X86_64.ParameterCandidate.testP VG.Impl.Ffdh.X86_64.ParameterCandidate.phaseTest VG.Impl.Ffdh.X86_64.ParameterCandidate.modulusPolicy VG.Impl.Ffdh.X86_64.ParameterCandidate.rounds VG.Impl.Ffdh.X86_64.ParameterCandidate.roundBody VG.Impl.Ffdh.X86_64.ParameterCandidate.roundRun VG.Impl.Ffdh.X86_64.ParameterCandidate.witnessRound VG.Impl.Ffdh.X86_64.ParameterCandidate.prepareModulus VG.Impl.Ffdh.X86_64.ParameterCandidate.prepareR2 VG.Impl.Ffdh.X86_64.ParameterCandidate.prepareConstants R2Words.choice R2Words.fast R2Words.old VG.Impl.Bignum.X86_64.Public.R2Squares.run
     VG.Impl.Bignum.X86_64.Public.R2Squares.init VG.Impl.Bignum.X86_64.Public.R2Squares.next at hp ⊢
-  repeat' first
-    | rw [all_seqs] at *
-    | rw [all_seq] at *
-    | rw [all_ite] at *
-    | rw [all_loop] at *
-    | rw [List.all_append] at *
-    | rw [List.all_cons] at *
-  repeat' rw [hm]
-  rw [hr]
-  repeat' rw [all_empty] at hp
+  simp only [all_seqs', all_seq', all_ite', all_loop', List.all_cons, hm, hr, all_empty'] at hp ⊢
   exact hp
 
 def candidateCode (v : RoundImpl) : Prog isa :=

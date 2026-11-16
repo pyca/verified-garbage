@@ -431,6 +431,54 @@ theorem step5 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 5) {i : Nat} (hi : 
       (coeff_one (by omega_arith) (coeff_one (by omega_arith) (coeff_one (by omega_arith) (coeff_one (by omega_arith)
       h.coeff rfl) rfl) rfl) rfl) rfl) rfl) rfl) rfl
 
+/-! Eleven bytes' groups of eleven bits, from the six bytes a load reads: stated for any bytes, and
+proven by the division's lemmas (`omega` takes a third of a second for each group and offset). -/
+
+private theorem div_mod_add (x c z : Nat) {d : Nat} (hd : 0 < d) :
+    (x + d * (2048 * c) * z) / d % 2048 = x / d % 2048 := by
+  rw [Nat.mul_assoc, Nat.add_mul_div_left _ _ hd, Nat.mul_assoc, Nat.add_mul_mod_self_left]
+
+/-- Bits `11 k` to `11 k + 10` of the first six of eleven bytes are those of the eleven, for `k < 4`. -/
+private theorem grp11_lo (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 : Nat) {k : Nat} (hk : k < 4) :
+    (b0 + 2 ^ 8 * b1 + 2 ^ 16 * b2 + 2 ^ 24 * b3 + 2 ^ 32 * b4 + 2 ^ 40 * b5) / 2 ^ (11 * k) % 2 ^ 11 =
+      (b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4 + 1099511627776 * b5 +
+        281474976710656 * b6 + 72057594037927936 * b7 + 18446744073709551616 * b8 +
+        4722366482869645213696 * b9 + 1208925819614629174706176 * b10) / 2 ^ (11 * k) % 2048 := by
+  have hx : 11 * k + (11 + (37 - 11 * k)) = 48 := by omega
+  have e : (281474976710656 : Nat) = 2 ^ (11 * k) * (2048 * 2 ^ (37 - 11 * k)) :=
+    (show (281474976710656 : Nat) = 2 ^ 48 from rfl).trans (by
+      rw [show (2048 : Nat) = 2 ^ 11 from rfl, ← Nat.pow_add, ← Nat.pow_add, hx])
+  have s : b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4 + 1099511627776 * b5 +
+        281474976710656 * b6 + 72057594037927936 * b7 + 18446744073709551616 * b8 +
+        4722366482869645213696 * b9 + 1208925819614629174706176 * b10 =
+      (b0 + 2 ^ 8 * b1 + 2 ^ 16 * b2 + 2 ^ 24 * b3 + 2 ^ 32 * b4 + 2 ^ 40 * b5) +
+        281474976710656 * (b6 + 256 * b7 + 65536 * b8 + 16777216 * b9 + 4294967296 * b10) := by omega
+  rw [s, e]
+  exact (div_mod_add _ _ _ (Nat.two_pow_pos _)).symm
+
+/-- Bits `11 k + 4` to `11 k + 14` of the last six of eleven bytes are bits `11 (4 + k)` on of the
+eleven. -/
+private theorem grp11_hi (b0 b1 b2 b3 b4 b5 b6 b7 b8 b9 b10 : Nat) (h0 : b0 < 256) (h1 : b1 < 256)
+    (h2 : b2 < 256) (h3 : b3 < 256) (h4 : b4 < 256) (k : Nat) :
+    (b5 + 2 ^ 8 * b6 + 2 ^ 16 * b7 + 2 ^ 24 * b8 + 2 ^ 32 * b9 + 2 ^ 40 * b10) / 2 ^ (11 * k + 4) % 2 ^ 11 =
+      (b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4 + 1099511627776 * b5 +
+        281474976710656 * b6 + 72057594037927936 * b7 + 18446744073709551616 * b8 +
+        4722366482869645213696 * b9 + 1208925819614629174706176 * b10) / 2 ^ (11 * (4 + k)) % 2048 := by
+  have s : b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4 + 1099511627776 * b5 +
+        281474976710656 * b6 + 72057594037927936 * b7 + 18446744073709551616 * b8 +
+        4722366482869645213696 * b9 + 1208925819614629174706176 * b10 =
+      (b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4) +
+        2 ^ 40 * (b5 + 2 ^ 8 * b6 + 2 ^ 16 * b7 + 2 ^ 24 * b8 + 2 ^ 32 * b9 + 2 ^ 40 * b10) := by omega
+  have l : b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4 < 2 ^ 40 := by omega
+  have hx : 11 * (4 + k) = 40 + (11 * k + 4) := by omega
+  have key : (b0 + 256 * b1 + 65536 * b2 + 16777216 * b3 + 4294967296 * b4 + 1099511627776 * b5 +
+        281474976710656 * b6 + 72057594037927936 * b7 + 18446744073709551616 * b8 +
+        4722366482869645213696 * b9 + 1208925819614629174706176 * b10) / 2 ^ (11 * (4 + k)) =
+      (b5 + 2 ^ 8 * b6 + 2 ^ 16 * b7 + 2 ^ 24 * b8 + 2 ^ 32 * b9 + 2 ^ 40 * b10) / 2 ^ (11 * k + 4) := by
+    rw [s, hx, Nat.pow_add 2 40 (11 * k + 4), ← Nat.div_div_eq_div_mul,
+      Nat.add_mul_div_left _ _ (Nat.two_pow_pos 40), Nat.div_eq_of_lt l, Nat.zero_add]
+  rw [key]
+
 theorem step11 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 11) {i : Nat} (hi : i < 32) {s : State}
     (h : Inv s₀ 11 32 i s) :
     WP isa (.block dd11Body) s fun s' =>
@@ -486,18 +534,15 @@ theorem step11 {s₀ : State} (hp : Pre s₀) (hd : dN s₀ = 11) {i : Nat} (hi 
   have va : ∀ k < 4, (dec 11 (G11a s (B s₀ + BitVec.ofNat 64 (11 * i)) <<< (64 - 11 - 11 * k) >>>
       (64 - 11))).setWidth 32 = out s₀ (8 * i + k) := fun k hk => by
     rw [f11_val _ (by omega_arith), out, D, hd, decodeDecompress11_group _ hB hi (by omega_arith), ea]
-    refine congrArg (fun y => BitVec.ofNat 32 (decompress 11 y).val) ?_
-    rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
-      simp only [Nat.reducePow, Nat.reduceMul, Nat.mul_zero, Nat.pow_zero, Nat.div_one] <;> omega_arith
+    exact congrArg (fun y => BitVec.ofNat 32 (decompress 11 y).val) (grp11_lo _ _ _ _ _ _ _ _ _ _ _ hk)
   have vb : ∀ k < 4, (dec 11 (G11b s (B s₀ + BitVec.ofNat 64 (11 * i)) <<<
       (64 - 11 - (11 * k + 4)) >>> (64 - 11))).setWidth 32 = out s₀ (8 * i + 4 + k) :=
     fun k hk => by
     rw [f11_val _ (by omega_arith), out, D, hd,
       show 8 * i + 4 + k = 8 * i + (4 + k) by omega_arith,
       decodeDecompress11_group _ hB hi (by omega_arith), ebb]
-    refine congrArg (fun y => BitVec.ofNat 32 (decompress 11 y).val) ?_
-    rcases (by omega_arith : k = 0 ∨ k = 1 ∨ k = 2 ∨ k = 3) with rfl | rfl | rfl | rfl <;>
-      simp only [Nat.reducePow, Nat.reduceMul, Nat.reduceAdd] <;> omega_arith
+    exact congrArg (fun y => BitVec.ofNat 32 (decompress 11 y).val)
+      (grp11_hi _ _ _ _ _ _ _ _ _ _ _ l0 l1 l2 l3 l4 k)
   have v0 := va 0 (by decide)
   have v1 := va 1 (by decide)
   have v2 := va 2 (by decide)

@@ -269,7 +269,7 @@ theorem loopG_ok (q : Bool) {s : State} {B : Addr} {Z w N r m t D A dA z R₀ : 
   have t16 := out (d := arr w t + 16) uo (by omega_arith) (fun hq => by have := dat hq; omega_arith) (by omega_arith)
   have t24 := out (d := arr w t + 24) uo (by omega_arith) (fun hq => by have := dat hq; omega_arith) (by omega_arith)
   have ua := ulo (A - 1 - i) (by omega_arith)
-  have e8 : dA + 8 * A - 8 - 8 * i = dA + 8 * (A - 1 - i) := by omega_arith
+  have e8 : dA + 8 * A - 8 - 8 * i = dA + 8 * (A - 1 - i) := by omega_using [hi]
   rw [e8] at u8
   unfold stepG
   refine WP.seq (WP.mono (wordStepQ_ok (z := z) (dU := dA + 8 * (A - 1 - i)) hu.scr
@@ -279,24 +279,25 @@ theorem loopG_ok (q : Bool) {s : State} {B : Addr} {Z w N r m t D A dA z R₀ : 
     (by rw [t16, t8]; exact hv) (by rw [t8, t24, wm]; exact hdl)
     (by rw [wm, ur]; exact Nat.mod_lt _ hM0)) fun u₁ ⟨⟨⟨r1, top1⟩, o1, k1⟩, q1⟩ => ?_)
   rw [wm, ur, ua] at r1 q1
+  clear hd hd63 hv hdl drm drt dam dat fm ft t0 t8 t16 t24 hP
   -- The word brought down, and the dividend's top part.
   have hw' : (word s.mem B (dA + 8 * (A - 1 - i))).toNat = Y / 2 ^ (64 * (A - 1 - i)) % 2 ^ 64 := by
     have eY : Y = X + R₀ * 2 ^ (64 * (i + 1)) * 2 ^ (64 * (A - 1 - i)) := by
-      rw [hY, Nat.mul_assoc, ← Nat.pow_add, show 64 * (i + 1) + 64 * (A - 1 - i) = 64 * A by omega_arith,
+      rw [hY, Nat.mul_assoc, ← Nat.pow_add, show 64 * (i + 1) + 64 * (A - 1 - i) = 64 * A by omega_using [hi],
         Nat.add_comm]
     obtain ⟨c, hc⟩ : 2 ^ 64 ∣ R₀ * 2 ^ (64 * (i + 1)) :=
-      ⟨R₀ * 2 ^ (64 * i), by rw [show 64 * (i + 1) = 64 + 64 * i by omega_arith, Nat.pow_add, Nat.mul_left_comm]⟩
+      ⟨R₀ * 2 ^ (64 * i), by rw [show 64 * (i + 1) = 64 + 64 * i by omega_using [], Nat.pow_add, Nat.mul_left_comm]⟩
     rw [eY, Nat.add_mul_div_right _ _ (Nat.two_pow_pos _), hc, Nat.add_mul_mod_self_left, ← hX,
-      wordsVal_word (by omega_arith)]
+      wordsVal_word (by omega_using [hi])]
   have hsplit : Y / 2 ^ (64 * (A - 1 - i)) = Y / 2 ^ (64 * (A - i)) * 2 ^ 64 + Y / 2 ^ (64 * (A - 1 - i)) % 2 ^ 64 := by
-    rw [show 64 * (A - i) = 64 * (A - 1 - i) + 64 by omega_arith, Nat.pow_add, ← Nat.div_div_eq_div_mul]
+    rw [show 64 * (A - i) = 64 * (A - 1 - i) + 64 by omega_using [hi], Nat.pow_add, ← Nat.div_div_eq_div_mul]
     exact (Nat.div_add_mod' _ _).symm
   have o1' : ∀ d, (d + 8 ≤ arr w r ∨ arr w r + 8 * (D + 1) ≤ d) → d + 8 ≤ 2 ^ 64 →
       word u₁.mem B d = word u.mem B d := fun d h1 h2 => o1.word h1 h2
   have k01 := uk.trans k1
   have hi8 : u₁.gpr .r8 = off B (dA + 8 * (A - 1 - i)) := by rw [k1.gpr .r8 (by decide), u8]
   have hrem : wordsVal u₁.mem B (arr w r) D = Y / 2 ^ (64 * (A - (i + 1))) % M := by
-    rw [r1, hw', show A - (i + 1) = A - 1 - i by omega_arith]
+    rw [r1, hw', show A - (i + 1) = A - 1 - i by omega_using []]
     conv => rhs; rw [hsplit, VG.Proof.Bignum.LongDivision.mod_step]
   have hdig : (u₁.gpr .r18 + u₁.gpr .r12).toNat + Y / 2 ^ (64 * (A - i)) / M * 2 ^ 64 =
       Y / 2 ^ (64 * (A - 1 - i)) / M := by
@@ -304,7 +305,7 @@ theorem loopG_ok (q : Bool) {s : State} {B : Addr} {Z w N r m t D A dA z R₀ : 
     conv => rhs; rw [hsplit, VG.Proof.Bignum.LongDivision.div_step]
     omega_arith
   have e88 : off B (dA + 8 * (A - 1 - i)) - BitVec.ofNat 64 8 = off B (dA + 8 * A - 8 - 8 * (i + 1)) :=
-    BitVec.sub_eq_iff_eq_add.mpr (by rw [off_add, show dA + 8 * A - 8 - 8 * (i + 1) + 8 = dA + 8 * (A - 1 - i) by omega_arith])
+    BitVec.sub_eq_iff_eq_add.mpr (by rw [off_add, show dA + 8 * A - 8 - 8 * (i + 1) + 8 = dA + 8 * (A - 1 - i) by omega_using [hi, hA8]])
   cases q with
   | false =>
     refine WP.mono (tail_ok u₁) fun u₂ e2 => ?_
@@ -334,9 +335,9 @@ theorem loopG_ok (q : Bool) {s : State} {B : Addr} {Z w N r m t D A dA z R₀ : 
       have w1 : word u₂.mem B (dA + 8 * (A - 1 - i)) = u₁.gpr .r18 + u₁.gpr .r12 := by rw [m2, word_writeW_self]
       have w2 : wordsVal u₂.mem B (dA + 8 * (A - 1 - i) + 8) i = wordsVal u.mem B (dA + 8 * (A - i)) i := by
         rw [wo.wordsVal (by omega_arith) (by omega_arith), o1.wordsVal (by omega_arith) (by omega_arith),
-          show dA + 8 * (A - 1 - i) + 8 = dA + 8 * (A - i) by omega_arith]
-      rw [show dA + 8 * (A - (i + 1)) = dA + 8 * (A - 1 - i) by omega_arith, wordsVal_succ_low, w1, w2, uq rfl,
-        show A - (i + 1) = A - 1 - i by omega_arith, ← hdig]
+          show dA + 8 * (A - 1 - i) + 8 = dA + 8 * (A - i) by omega_using [hi]]
+      rw [show dA + 8 * (A - (i + 1)) = dA + 8 * (A - 1 - i) by omega_using [], wordsVal_succ_low, w1, w2, uq rfl,
+        show A - (i + 1) = A - 1 - i by omega_using [], ← hdig]
       omega_arith
     · exact (k01.trans k2).mono (by decide)
     · rw [r42, k1.gpr .r4 (by decide)]
