@@ -208,3 +208,10 @@ mod tests {
         assert_eq!(a.exchange(&zero).unwrap_err(), XdhError::ZeroSharedSecret);
     }
 }
+
+/// PROTOTYPE marker (bench branch only): whether the AVX2 prototype was chosen.
+#[doc(hidden)]
+#[cfg(target_arch = "x86_64")]
+pub fn proto_chosen() -> bool {
+    crate::arch::proto_avx2::CHOSEN.load(core::sync::atomic::Ordering::Relaxed)
+}

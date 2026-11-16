@@ -39,6 +39,7 @@ pub unsafe fn vg_x25519_exchange_auto(_dit: verified_garbage_cpu::Dit<'_>, out: 
         if cpu.contains(crate::x25519::VG_X25519_EXCHANGE_ADX_FEATURES)
             && cpu.contains(verified_garbage_cpu::Features(verified_garbage_cpu::feature::AVX | verified_garbage_cpu::feature::AVX2))
         {
+            crate::proto_avx2::CHOSEN.store(true, core::sync::atomic::Ordering::Relaxed);
             return crate::proto_avx2::vg_x25519_exchange_avx2p;
         }
         if const { verified_garbage_cpu::target_contains(crate::x25519::VG_X25519_EXCHANGE_ADX_FEATURES) }

@@ -54,6 +54,8 @@ pub fn bench(c: &mut Criterion) {
         aws_lc_private.compute_public_key().unwrap().as_ref(),
         vg_private.public_key().as_bytes()
     );
+    #[cfg(target_arch = "x86_64")]
+    eprintln!("PROTO avx2 ladder chosen: {}", verified_garbage::x25519::proto_chosen());
     let mut g = c.benchmark_group("x25519");
     // One Diffie-Hellman: a shared secret from a private key and the peer's
     // public key. The ids' size is the bytes of the shared secret.
