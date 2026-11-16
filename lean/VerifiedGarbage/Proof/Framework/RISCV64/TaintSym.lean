@@ -55,6 +55,43 @@ theorem stepS_sound {L : List String} {τ τ' : T} {i : Instr} {s₁ s₂ s₁' 
     rw [e] at hs
     exact ⟨(step_sound ha.1 hs e₁ e₂).1, (step_sound ha.1 hs e₁ e₂).2, hsy⟩
 
+/-! ## The step the kernel finds again
+
+As `stepK` for `step` (`Taint.lean`): `stepSK L` is `stepS L` (`stepSK_eq`),
+giving a set that is evaluated, and matching on the instruction once, with
+its cases closed, where `stepS` matches twice (`Instr.symLi`, then `step`). -/
+
+/-- `stepS`, as a function of the instruction first, and of an `lla` without
+the instruction it is analysed as. -/
+def stepSFn : Instr → List String → T → Option T
+  | .lla d n => fun L τ => some (set τ d (decide (n ∈ L)))
+  | i => fun _ τ => step τ i
+
+theorem stepSFn_eq (i : Instr) (L : List String) (τ : T) : stepSFn i L τ = stepS L τ i := by
+  cases i <;> try rfl
+  rename_i d n
+  simp only [stepSFn, stepS, Instr.symLi]
+  by_cases hn : n ∈ L
+  · rw [ite_eq_left hn, decide_eq_true hn]; rfl
+  · rw [ite_eq_right hn, decide_eq_false hn]; rfl
+
+/-- `stepSFn`, with its cases closed (`inline_match%`). -/
+def stepSFnK : Instr → List String → T → Option T := inline_match% stepSFn step
+
+theorem stepSFnK_eq (i : Instr) : stepSFnK i = stepSFn i := by cases i <;> rfl
+
+/-- `stepS`, giving a set that is evaluated (see `stepK`). -/
+def stepSK (L : List String) (τ : T) (i : Instr) : Option T :=
+  match stepSFnK i L τ with
+  | some τ' => τ'.force some
+  | none => none
+
+theorem stepSK_eq (L : List String) : stepSK L = stepS L := by
+  funext τ i
+  have h : stepSFnK i L τ = stepS L τ i := by rw [stepSFnK_eq, stepSFn_eq]
+  rw [stepSK, h]
+  cases stepS L τ i <;> rfl
+
 end Taint
 
 /-- Taint tracking for RISC-V code that addresses the statics `L`, whose
@@ -62,8 +99,8 @@ addresses are public. -/
 def taintSym (L : List String) : VG.Taint isa where
   T := Taint.T
   Agree := Taint.AgreeS L
-  step := Taint.stepS L
-  step_sound := Taint.stepS_sound
+  step := Taint.stepSK L
+  step_sound ha hs := Taint.stepS_sound ha (Taint.stepSK_eq L ▸ hs)
   condPub := taint.condPub
   cond_sound h := taint.cond_sound h.1
   meet := taint.meet
@@ -93,5 +130,10 @@ def taintSym (L : List String) : VG.Taint isa where
   pop_sound h hs e₁ e₂ := by
     obtain ⟨a, b⟩ := taint.pop_sound h.1 hs e₁ e₂
     exact ⟨a, b, fun n hn => by rw [pop_syms e₁, pop_syms e₂]; exact h.2 n hn⟩
+
+/-- `taintSym L`'s step is `Taint.stepS L`'s (`stepSK_eq`). -/
+theorem taintSym_step (L : List String) (τ : Taint.T) (i : Instr) :
+    (taintSym L).step τ i = Taint.stepS L τ i :=
+  congrFun (congrFun (Taint.stepSK_eq L) τ) i
 
 end VG.RISCV64
