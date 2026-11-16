@@ -114,7 +114,7 @@ theorem start_rel (v : Ctr32Impl) (K : CCalls v g) (h : EPre g s₀ C A P W D R 
       (.block [.mov .rax (.mem (at_ .rsp 16))]) hc).isSome = true := ⟨_, by taint_decide⟩
   obtain ⟨_, hB⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rax, .rdi, .rsi, .rdx, .rcx, .r8, .r9, .rsp])
       (.block ((encPre g.n).drop 1 ++ startPre g.x)) hc).isSome = true := by
-    rcases h.env.lay with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+    rcases h.env.lay with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   have a := (RelCT.taint (A := taint) (P := fun a b => a = s₀ ∧ b = s₀') _ (fun a b hab => by
     obtain ⟨rfl, rfl⟩ := hab
     refine Taint.agree_ofRegs fun r hr => ?_

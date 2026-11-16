@@ -403,7 +403,7 @@ structure CHead (g : Lay) (s₀ : State) (C D P W : Addr) (R L : Nat) (m₀ : Me
 theorem ctr_head (v : Ctr32Impl) (K : CCalls v g) (h : Env g s₀ C D P W R L) (hcp : (⟨C, 512⟩ : Region).Disjoint ⟨P, L⟩) {m₀ : Mem}
     {q x : List Byte} {i : Nat} {s : State} (hi : CInv g s₀ C D P W R L m₀ q x i s) {k : Prog isa} {Q : State → Prop}
     (hk : ∀ s', CHead g s₀ C D P W R L m₀ q i s s' → WP isa k s' Q) :
-    WP isa (.seq (.block (ctrPre g.x)) (.seq (.call v.callee.name v.callee.code) (.seq ctrMin k))) s Q := by
+    WP isa (.seq (.block (ctrPre g.x)) (.seq (Impl.CmacAes.X86_64.ctrCall v.callee) (.seq ctrMin k))) s Q := by
   have hwW := h.wW
   have hlt := h.lt
   have hRb : 16 * (R + 1) ≤ 240 := by rcases h.rounds with h | h | h <;> omega_arith

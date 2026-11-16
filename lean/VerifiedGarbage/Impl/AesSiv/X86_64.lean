@@ -33,11 +33,16 @@ key context, `[256, 2432)` the working space of the functions called, and
 `vg_cmac_aes_update` that need no working space, the functions called write
 only `vg_cmac_aes_finalize`'s counter block, which is then `[256, 272)`
 (`csImmF`), and `D` is `[272, 288)` (`dOffF`): a working space of 288 bytes.
+Over the bitsliced `vg_aes_ctr32`, which they give its working space 512
+bytes into their scratch buffers, the functions called write only
+`[256, 1920)` (`csImmS`), and `D` is `[1920, 1936)` (`dOffS`): a working
+space of 1936 bytes.
 
 * `init` expands `K1` into the context, derives its subkeys after it and
   expands `K2` after them. Over implementations of AES that need no working
   space (`initF`), its scratch buffer is only the 72 bytes of the registers it
   saves and of `vg_cmac_aes_subkeys`'s counter block and saved registers.
+  Over the bitsliced AES (`initS`), its scratch buffer is 1920 bytes.
 * `encrypt` and `decrypt` start S2V with `D = AES-CMAC(K1, <zero>)`
   (`vg_cmac_aes_finalize` of the zero block from a zero state), then, for
   each component `S` of associated data, compute `AES-CMAC(K1, S)` into the
@@ -101,6 +106,12 @@ no working space: `2048` before `csOff`, so that the counter block of
 `vg_cmac_aes_finalize`, at `2048` from its scratch pointer and all it then
 writes of it, is the 16 bytes at `csOff` (compare `initFOff`). -/
 def csImmF : BitVec 32 := BitVec.ofInt 32 ((csOff : Int) - 2048)
+
+/-- … over the bitsliced `vg_aes_ctr32`, which the functions called give its
+working space 512 bytes into their scratch buffer (`Ctr32.scrOff`), and so
+never touch its first 512 bytes: `512` before `csOff`, so that what they
+write starts at `csOff` (compare `csImmF`). -/
+def csImmS : BitVec 32 := BitVec.ofInt 32 ((csOff : Int) - 512)
 def zOff : Nat := 16
 def tailOff : Nat := 32
 def cntOff : Nat := 64
@@ -192,6 +203,13 @@ def initAt (x : BitVec 32) (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa
           (.seq (.block initMid₂) (.seq (.call e.name e.code) (.block initPost))))))
 
 def init (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa := initAt (BitVec.ofNat 32 csOff) e c sfx
+
+/-- `init` over the bitsliced `vg_aes_ctr32`, which `vg_cmac_aes_subkeys`
+gives its working space 512 bytes into its scratch buffer, never touching
+the first 512: that scratch buffer at `csImmS`, so that what it writes
+starts at `csOff`, as `vg_aes_expand_key_scratch`'s working space does, and
+the working space is 1920 bytes. -/
+def initS (e : ExpandKey) (c : Ctr32) (sfx : String) : Prog isa := initAt csImmS e c sfx
 
 /-- Where `initF` puts `vg_cmac_aes_subkeys`'s scratch buffer, from the working
 space less `saveOff`: its counter block and the registers it saves, at
@@ -365,7 +383,7 @@ def ctrPost : List Instr :=
 
 /-- One block of CTR. -/
 def ctrBody (x : BitVec 32) (c : Ctr32) : Prog isa :=
-  .seq (.block (ctrPre x)) (.seq (.call c.name c.code) (.seq ctrMin (.seq xorBytes (.block ctrPost))))
+  .seq (.block (ctrPre x)) (.seq (Impl.CmacAes.X86_64.ctrCall c) (.seq ctrMin (.seq xorBytes (.block ctrPost))))
 
 /-- `k = ⌊left / 16⌋ mod 2³¹` in `rcx`: the whole blocks `ctrWhole` does. -/
 def wholeCount : List Instr :=
@@ -395,7 +413,7 @@ def wholePost : List Instr :=
 from `Q` (none if `k` is 0). `Q`'s last 32 bits are below `2³¹` and
 `k < 2³¹`, so its counter blocks do not wrap around. -/
 def ctrWhole (x : BitVec 32) (c : Ctr32) : Prog isa :=
-  .seq (.block (wholePre x)) (.seq (.call c.name c.code) (.block wholePost))
+  .seq (.block (wholePre x)) (.seq (Impl.CmacAes.X86_64.ctrCall c) (.block wholePost))
 
 /-- The data at `r13` (`r14` bytes) XORed with the keystream of CTR under
 `K2` from the counter at `r15 + 64`: its first `k` whole blocks by
@@ -450,6 +468,9 @@ def dOff : Nat := 2560
 
 /-- Where `D` is when the functions called need no working space. -/
 def dOffF : Nat := 272
+
+/-- … and when they write only the 1664 bytes from `csOff` (`csImmS`). -/
+def dOffS : Nat := 1920
 
 /-- Saves the registers in the working space (whose address, the eighth
 argument, is on the stack above the return address and `siv`) and keeps the

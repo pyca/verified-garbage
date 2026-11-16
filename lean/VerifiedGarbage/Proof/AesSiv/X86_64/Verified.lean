@@ -38,17 +38,18 @@ theorem init_mx (v : Ctr32Impl) :
 
 theorem encrypt_mx {g : Lay} (hg : g.Ok) (v : UpdateImpl) :
     (encrypt g.x g.n v.callee v.ctr.callee v.ctr.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
-  rcases hg with rfl | rfl <;>
+  rcases hg with rfl | rfl | rfl <;>
   simp only [encrypt, encryptCore, sivOut, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac, copy, ctr,
-    ctrWhole, ctrBody, ctrMin, xorBytes, callUpdate, callFinalize, Code.allInstrs, v.mxcsr, finalize_mx v.ctr, v.ctr.mxcsr]
+    ctrWhole, ctrBody, ctrMin, xorBytes, callUpdate, callFinalize, Code.allInstrs, v.mxcsr, finalize_mx v.ctr,
+    Proof.CmacAes.X86_64.ctrCall_allInstrs (p := fun i => !loadsMxcsr i) (fun _ => rfl) v.ctr.mxcsr]
   <;> decide +kernel
 
 theorem decrypt_mx {g : Lay} (hg : g.Ok) (v : UpdateImpl) :
     (decrypt g.x g.n v.callee v.ctr.callee v.ctr.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
-  rcases hg with rfl | rfl <;>
+  rcases hg with rfl | rfl | rfl <;>
   simp only [decrypt, openTail, sivIn, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac, copy, ctr,
     ctrWhole, ctrBody, ctrMin, xorBytes, maskData, callUpdate, callFinalize, Code.allInstrs, v.mxcsr, finalize_mx v.ctr,
-    v.ctr.mxcsr]
+    Proof.CmacAes.X86_64.ctrCall_allInstrs (p := fun i => !loadsMxcsr i) (fun _ => rfl) v.ctr.mxcsr]
   <;> decide +kernel
 
 theorem init_spSafe (v : Ctr32Impl) :
@@ -57,18 +58,19 @@ theorem init_spSafe (v : Ctr32Impl) :
 
 theorem encrypt_spSafe {g : Lay} (hg : g.Ok) (v : UpdateImpl) :
     (encrypt g.x g.n v.callee v.ctr.callee v.ctr.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
-  rcases hg with rfl | rfl <;>
+  rcases hg with rfl | rfl | rfl <;>
   simp only [encrypt, encryptCore, sivOut, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac, copy, ctr,
     ctrWhole, ctrBody, ctrMin, xorBytes, callUpdate, callFinalize, Code.all, v.spSafe, finalize_spSafe v.ctr,
-    v.ctr.spSafe]
+    Proof.CmacAes.X86_64.ctrCall_all (p := fun i => !X86_64.isa.writesSp i) (fun _ => rfl) v.ctr.spSafe]
   <;> decide +kernel
 
 theorem decrypt_spSafe {g : Lay} (hg : g.Ok) (v : UpdateImpl) :
     (decrypt g.x g.n v.callee v.ctr.callee v.ctr.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
-  rcases hg with rfl | rfl <;>
+  rcases hg with rfl | rfl | rfl <;>
   simp only [decrypt, openTail, sivIn, encS2v, s2vAds, cmacOf, cmacPre, finish, shortTail, longTail, shortMac, longMac, copy, ctr,
     ctrWhole, ctrBody, ctrMin, xorBytes, maskData, callUpdate, callFinalize, Code.all, v.spSafe,
-    finalize_spSafe v.ctr, v.ctr.spSafe]
+    finalize_spSafe v.ctr,
+    Proof.CmacAes.X86_64.ctrCall_all (p := fun i => !X86_64.isa.writesSp i) (fun _ => rfl) v.ctr.spSafe]
   <;> decide +kernel
 
 theorem init_correct (v : Ctr32Impl) (s : State) (hs : initX86_64.pre s) :
@@ -133,6 +135,42 @@ theorem initF_verified (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee)
     sig_implies [initScratchContractF, initScratchSigF, Spec.Siv.initPre, Spec.Siv.initPost,
       initX86_64F, initX86_64, X86_64.abi, X86_64.argRegs] [initSatF, initSat] using initSatF)
 
+theorem initS_mx (v : Ctr32Impl) :
+    (initS v.expand v.callee v.suffix).allInstrs (fun i => !loadsMxcsr i) = true := by
+  simp only [initS, initAt, Code.allInstrs, v.expandMxcsr, subkeys_mx v]; decide +kernel
+
+theorem initS_spSafe (v : Ctr32Impl) :
+    (initS v.expand v.callee v.suffix).all (fun i => !X86_64.isa.writesSp i) = true := by
+  simp only [initS, initAt, Code.all, v.expandSpSafe, subkeys_spSafe v]; decide +kernel
+
+theorem initS_correct (v : Ctr32Impl) (g : Proof.Aes.X86_64.Ctr32Small v.callee) (s : State)
+    (hs : initX86_64S.pre s) :
+    ∃ t s', Exec isa (initS v.expand v.callee v.suffix) s t s' ∧ abiPreserved s s' ∧ initX86_64S.post s s' := by
+  obtain ⟨t, s', he, hg, hp⟩ := initS_wp v g hs
+  exact ⟨t, s', he, abiPreserved_of_exec (initS_mx v) he hg, hp⟩
+
+/-- `vg_aes_siv_init` with `scratch: *mut [u64; 240]`, for `initS`. -/
+def initScratchSigS : Sig where
+  params := [("key", .slice false .u8 "key_len"), ("ctx", .array true .u64 64),
+    ("scratch", .array true .u64 240)]
+
+/-- `Spec.Siv.initContract`, whatever `scratch` is (of 240 words). -/
+def initScratchContractS {M : ISA} (A : Abi M) (stack : Nat := 0) : Contract M :=
+  initScratchSigS.contract A
+    (pre := fun key keyLen ctx _scratch => Spec.Siv.initPre A.ptrBits key keyLen ctx)
+    (post := fun key keyLen ctx _scratch => Spec.Siv.initPost A.ptrBits key keyLen ctx)
+    (writeArgs := true) (stack := stack)
+
+/-- A state satisfying `vg_aes_siv_init`'s precondition, with 1920 bytes of
+working space. -/
+def initSatS : State := { initSat with wr := [⟨0x2000, 512⟩, ⟨0x4000, 1920⟩] }
+
+theorem initS_verified (v : Ctr32Impl) (g : Proof.Aes.X86_64.Ctr32Small v.callee) :
+    Verified X86_64.target (initS v.expand v.callee v.suffix) (initScratchContractS X86_64.abi 16) :=
+  Verified.of_correct (initS_correct v g) (initS_ct v g) (by
+    sig_implies [initScratchContractS, initScratchSigS, Spec.Siv.initPre, Spec.Siv.initPost,
+      initX86_64S, initX86_64, X86_64.abi, X86_64.argRegs] [initSatS, initSat] using initSatS)
+
 /-! ## `vg_aes_siv_encrypt` and `vg_aes_siv_decrypt`
 
 The proofs are against the shared contracts with the working space `W` as a
@@ -179,12 +217,15 @@ def decryptScratchContractW {M : ISA} (w : Nat) (A : Abi M) (stack : Nat := 0) :
 
 /-- The words of the working space of a layout: its `g.n` bytes and S2V's
 state. -/
-def Lay.Fits (g : Lay) (w : Nat) : Prop := (g = .soft ∧ w = 322) ∨ (g = .free ∧ w = 36)
+def Lay.Fits (g : Lay) (w : Nat) : Prop :=
+  (g = .soft ∧ w = 322) ∨ (g = .free ∧ w = 36) ∨ (g = .small ∧ w = 242)
 
-theorem Lay.Fits.ok {g : Lay} {w : Nat} (h : g.Fits w) : g.Ok := h.elim (fun h => .inl h.1) fun h => .inr h.1
+theorem Lay.Fits.ok {g : Lay} {w : Nat} (h : g.Fits w) : g.Ok := by
+  rcases h with h | h | h
+  exacts [.inl h.1, .inr (.inl h.1), .inr (.inr h.1)]
 
 theorem Lay.Fits.bytes {g : Lay} {w : Nat} (h : g.Fits w) : 8 * w = g.n + 16 := by
-  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rfl
+  rcases h with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> rfl
 
 /-- The writable regions of `encrypt`'s proof. -/
 def encWrE (g : Lay) (s : State) : List Region :=
@@ -371,7 +412,7 @@ theorem encPre_of {g : Lay} {w : Nat} (hf : g.Fits w) {s : State}
       s.wr = [⟨s.gpr .r8, (s.gpr .r9).toNat⟩, ⟨stackArg s 0, 16⟩, ⟨stackArg s 1, g.n + 16⟩] := by
   have hok := hf.ok
   have hb := hf.bytes
-  rcases hf with ⟨hg, rfl⟩ | ⟨hg, rfl⟩
+  rcases hf with ⟨hg, rfl⟩ | ⟨hg, rfl⟩ | ⟨hg, rfl⟩
   all_goals
   sig_pre [encryptScratchContractW, encryptScratchSigW, Spec.Siv.encryptPre, X86_64.abi,
     X86_64.argRegs, stackArgs_two, List.append_eq] at h
@@ -418,7 +459,7 @@ theorem decPre_of {g : Lay} {w : Nat} (hf : g.Fits w) {s : State}
       s.wr = [⟨s.gpr .r8, (s.gpr .r9).toNat⟩, ⟨stackArg s 1, g.n + 16⟩] := by
   have hok := hf.ok
   have hb := hf.bytes
-  rcases hf with ⟨hg, rfl⟩ | ⟨hg, rfl⟩
+  rcases hf with ⟨hg, rfl⟩ | ⟨hg, rfl⟩ | ⟨hg, rfl⟩
   all_goals
   sig_pre [decryptScratchContractW, decryptScratchSigW, Spec.Siv.decryptPre, X86_64.abi,
     X86_64.argRegs, stackArgs_two, List.append_eq] at h
@@ -506,25 +547,36 @@ def encSatF : State := { encSat with wr := [⟨0x3000, 0⟩, ⟨0x5000, 16⟩, �
 
 def decSatF : State := { decSat with wr := [⟨0x3000, 0⟩, ⟨0x4000, 288⟩] }
 
+/-- … and with one of 1936 bytes (`Lay.small`). -/
+def encSatS : State := { encSat with wr := [⟨0x3000, 0⟩, ⟨0x5000, 16⟩, ⟨0x4000, 1936⟩] }
+
+def decSatS : State := { decSat with wr := [⟨0x3000, 0⟩, ⟨0x4000, 1936⟩] }
+
 theorem encSat_pre {g : Lay} {w : Nat} (hf : g.Fits w) :
     ∃ s, (encryptScratchContractW w X86_64.abi 16).pre s := by
-  rcases hf with ⟨-, rfl⟩ | ⟨-, rfl⟩
+  rcases hf with ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩
   · sig_implies_sat [encryptScratchContractW, encryptScratchSigW, Spec.Siv.encryptPre,
       X86_64.abi, X86_64.argRegs, stackArgs_two, List.append_eq] [encSat, stackArg, stackArgAddr, Mem.readW, Mem.read]
       using encSat
   · sig_implies_sat [encryptScratchContractW, encryptScratchSigW, Spec.Siv.encryptPre,
       X86_64.abi, X86_64.argRegs, stackArgs_two, List.append_eq]
       [encSatF, encSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatF
+  · sig_implies_sat [encryptScratchContractW, encryptScratchSigW, Spec.Siv.encryptPre,
+      X86_64.abi, X86_64.argRegs, stackArgs_two, List.append_eq]
+      [encSatS, encSat, stackArg, stackArgAddr, Mem.readW, Mem.read] using encSatS
 
 theorem decSat_pre {g : Lay} {w : Nat} (hf : g.Fits w) :
     ∃ s, (decryptScratchContractW w X86_64.abi 16).pre s := by
-  rcases hf with ⟨-, rfl⟩ | ⟨-, rfl⟩
+  rcases hf with ⟨-, rfl⟩ | ⟨-, rfl⟩ | ⟨-, rfl⟩
   · sig_implies_sat [decryptScratchContractW, decryptScratchSigW, Spec.Siv.decryptPre,
       X86_64.abi, X86_64.argRegs, stackArgs_two, List.append_eq] [decSat, encSat, stackArg, stackArgAddr, Mem.readW,
       Mem.read] using decSat
   · sig_implies_sat [decryptScratchContractW, decryptScratchSigW, Spec.Siv.decryptPre,
       X86_64.abi, X86_64.argRegs, stackArgs_two, List.append_eq] [decSatF, decSat, encSat, stackArg, stackArgAddr,
       Mem.readW, Mem.read] using decSatF
+  · sig_implies_sat [decryptScratchContractW, decryptScratchSigW, Spec.Siv.decryptPre,
+      X86_64.abi, X86_64.argRegs, stackArgs_two, List.append_eq] [decSatS, decSat, encSat, stackArg, stackArgAddr,
+      Mem.readW, Mem.read] using decSatS
 
 theorem encPub_of {g : Lay} {w : Nat} {s₁ s₂ : State} (hp : (encryptScratchContractW w X86_64.abi 16).pub s₁ s₂) :
     encPub (s₁.withRegions s₁.rd (encWrE g s₁)) (s₂.withRegions s₂.rd (encWrE g s₂)) := by
@@ -591,12 +643,27 @@ theorem encryptF_verified (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree 
     (fc : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
     Verified X86_64.target (encrypt csImmF dOffF v.callee v.ctr.callee v.ctr.suffix)
       (encryptScratchContractW 36 X86_64.abi 16) :=
-  encrypt_verifiedW (Or.inr ⟨rfl, rfl⟩) v (Calls.free v f fc)
+  encrypt_verifiedW (Or.inr (Or.inl ⟨rfl, rfl⟩)) v (Calls.free v f fc)
 
 theorem decryptF_verified (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateFree v.callee)
     (fc : Proof.Aes.X86_64.Ctr32Free v.ctr.callee) :
     Verified X86_64.target (decrypt csImmF dOffF v.callee v.ctr.callee v.ctr.suffix)
       (decryptScratchContractW 36 X86_64.abi 16) :=
-  decrypt_verifiedW (Or.inr ⟨rfl, rfl⟩) v (Calls.free v f fc)
+  decrypt_verifiedW (Or.inr (Or.inl ⟨rfl, rfl⟩)) v (Calls.free v f fc)
+
+/-- Over implementations of `vg_cmac_aes_update` and `vg_aes_ctr32` that give
+the bitsliced AES its working space 512 bytes into their scratch buffers,
+with a working space of 1936 bytes (`Lay.small`). -/
+theorem encryptS_verified (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateSmall v.callee)
+    (fc : Proof.Aes.X86_64.Ctr32Small v.ctr.callee) :
+    Verified X86_64.target (encrypt csImmS dOffS v.callee v.ctr.callee v.ctr.suffix)
+      (encryptScratchContractW 242 X86_64.abi 16) :=
+  encrypt_verifiedW (Or.inr (Or.inr ⟨rfl, rfl⟩)) v (Calls.small v f fc)
+
+theorem decryptS_verified (v : UpdateImpl) (f : Proof.CmacAes.X86_64.UpdateSmall v.callee)
+    (fc : Proof.Aes.X86_64.Ctr32Small v.ctr.callee) :
+    Verified X86_64.target (decrypt csImmS dOffS v.callee v.ctr.callee v.ctr.suffix)
+      (decryptScratchContractW 242 X86_64.abi 16) :=
+  decrypt_verifiedW (Or.inr (Or.inr ⟨rfl, rfl⟩)) v (Calls.small v f fc)
 
 end VG.Proof.AesSiv.X86_64

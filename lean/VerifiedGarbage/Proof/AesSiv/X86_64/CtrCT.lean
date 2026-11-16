@@ -95,7 +95,7 @@ theorem body_rel (v : Ctr32Impl) (K : CCalls v g) {s₀' : State} (h : Env g s�
     (hq : s₀.gpr .rsp = s₀'.gpr .rsp) (i : Nat) :
     RelCT isa (fun a b => CR s₀ C D P W R L i a ∧ CR s₀' C D P W R L i b) (ctrBody g.x v.callee) fun _ _ => True := by
   obtain ⟨_, hA⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp]) (.block (ctrPre g.x))
-      hc).isSome = true := by rcases h.lay with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+      hc).isSome = true := by rcases h.lay with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   obtain ⟨_, hB⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp])
       (.seq ctrMin (.seq xorBytes (.block ctrPost))) hc).isSome = true := ⟨_, by taint_decide⟩
   have r₁ := (RelCT.taint (A := taint) (P := fun a b => CR s₀ C D P W R L i a ∧ CR s₀' C D P W R L i b) _
@@ -215,7 +215,7 @@ theorem whole_rel (v : Ctr32Impl) (K : CCalls v g) {s₀' : State} (h : Env g s�
     RelCT isa (fun a b => Regs s₀ C D P W R L a ∧ Regs s₀' C D P W R L b) (ctrWhole g.x v.callee)
       fun _ _ => True := by
   obtain ⟨_, hA⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp]) (.block (wholePre g.x))
-      hc).isSome = true := by rcases h.lay with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+      hc).isSome = true := by rcases h.lay with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   obtain ⟨_, hB⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp]) (.block wholePost)
       hc).isSome = true := ⟨_, by taint_decide⟩
   have r₁ := (RelCT.taint (A := taint) (P := fun a b => Regs s₀ C D P W R L a ∧ Regs s₀' C D P W R L b) _

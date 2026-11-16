@@ -160,7 +160,7 @@ vg_aes_siv_init_aesni:
 	.p2align 6
 
 vg_aes_siv_init:
-	lea rsp, [rsp-2568]
+	lea rsp, [rsp-1928]
 	mov rcx, rsp
 	add rcx, 8
 	mov QWORD PTR [rcx+160], rbx
@@ -184,7 +184,7 @@ vg_aes_siv_init:
 	mov rdx, r12
 	add rdx, 240
 	mov rcx, r13
-	add rcx, 256
+	add rcx, -256
 	call {vg_cmac_aes_subkeys}
 	mov rdi, rbx
 	add rdi, rbp
@@ -199,7 +199,7 @@ vg_aes_siv_init:
 	mov r12, QWORD PTR [r13+176]
 	mov r14, QWORD PTR [r13+192]
 	mov r13, QWORD PTR [r13+184]
-	lea rsp, [rsp+2568]
+	lea rsp, [rsp+1928]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -217,47 +217,7 @@ vg_aes_siv_init:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-2584]
-	movdqu XMMWORD PTR [rsp+2568], xmm0
-	movdqu XMMWORD PTR [rsp+2552], xmm0
-	movdqu XMMWORD PTR [rsp+2536], xmm0
-	movdqu XMMWORD PTR [rsp+2520], xmm0
-	movdqu XMMWORD PTR [rsp+2504], xmm0
-	movdqu XMMWORD PTR [rsp+2488], xmm0
-	movdqu XMMWORD PTR [rsp+2472], xmm0
-	movdqu XMMWORD PTR [rsp+2456], xmm0
-	movdqu XMMWORD PTR [rsp+2440], xmm0
-	movdqu XMMWORD PTR [rsp+2424], xmm0
-	movdqu XMMWORD PTR [rsp+2408], xmm0
-	movdqu XMMWORD PTR [rsp+2392], xmm0
-	movdqu XMMWORD PTR [rsp+2376], xmm0
-	movdqu XMMWORD PTR [rsp+2360], xmm0
-	movdqu XMMWORD PTR [rsp+2344], xmm0
-	movdqu XMMWORD PTR [rsp+2328], xmm0
-	movdqu XMMWORD PTR [rsp+2312], xmm0
-	movdqu XMMWORD PTR [rsp+2296], xmm0
-	movdqu XMMWORD PTR [rsp+2280], xmm0
-	movdqu XMMWORD PTR [rsp+2264], xmm0
-	movdqu XMMWORD PTR [rsp+2248], xmm0
-	movdqu XMMWORD PTR [rsp+2232], xmm0
-	movdqu XMMWORD PTR [rsp+2216], xmm0
-	movdqu XMMWORD PTR [rsp+2200], xmm0
-	movdqu XMMWORD PTR [rsp+2184], xmm0
-	movdqu XMMWORD PTR [rsp+2168], xmm0
-	movdqu XMMWORD PTR [rsp+2152], xmm0
-	movdqu XMMWORD PTR [rsp+2136], xmm0
-	movdqu XMMWORD PTR [rsp+2120], xmm0
-	movdqu XMMWORD PTR [rsp+2104], xmm0
-	movdqu XMMWORD PTR [rsp+2088], xmm0
-	movdqu XMMWORD PTR [rsp+2072], xmm0
-	movdqu XMMWORD PTR [rsp+2056], xmm0
-	movdqu XMMWORD PTR [rsp+2040], xmm0
-	movdqu XMMWORD PTR [rsp+2024], xmm0
-	movdqu XMMWORD PTR [rsp+2008], xmm0
-	movdqu XMMWORD PTR [rsp+1992], xmm0
-	movdqu XMMWORD PTR [rsp+1976], xmm0
-	movdqu XMMWORD PTR [rsp+1960], xmm0
-	movdqu XMMWORD PTR [rsp+1944], xmm0
+	lea rsp, [rsp-1944]
 	movdqu XMMWORD PTR [rsp+1928], xmm0
 	movdqu XMMWORD PTR [rsp+1912], xmm0
 	movdqu XMMWORD PTR [rsp+1896], xmm0
@@ -380,7 +340,7 @@ vg_aes_siv_init:
 	movdqu XMMWORD PTR [rsp+24], xmm0
 	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+2584]
+	lea rsp, [rsp+1944]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1328,8 +1288,8 @@ vg_aes_siv_decrypt_aesni:
 	.p2align 6
 
 vg_aes_siv_encrypt:
-	lea rsp, [rsp-2600]
-	mov rax, QWORD PTR [rsp+2608]
+	lea rsp, [rsp-1960]
+	mov rax, QWORD PTR [rsp+1968]
 	mov QWORD PTR [rsp+8], rax
 	mov rax, rsp
 	add rax, 24
@@ -1345,7 +1305,7 @@ vg_aes_siv_encrypt:
 	mov rbp, rsi
 	mov r15, rax
 	mov r12, rax
-	add r12, 2560
+	add r12, 1920
 	mov r13, r8
 	mov r14, r9
 	mov QWORD PTR [r15+208], r13
@@ -1360,7 +1320,7 @@ vg_aes_siv_encrypt:
 	mov QWORD PTR [rdx], rax
 	mov QWORD PTR [rdx+8], rax
 	mov r9, rcx
-	add r9, 256
+	add r9, -256
 	add rcx, 16
 	mov r8d, 16
 	call {vg_cmac_aes_finalize}
@@ -1394,7 +1354,7 @@ vg_aes_siv_encrypt:
 	add rdx, 128
 	mov rcx, r13
 	mov r9, r15
-	add r9, 256
+	add r9, -256
 	call {vg_cmac_aes_update}
 	mov rax, QWORD PTR [r15+144]
 	mov rcx, r13
@@ -1406,7 +1366,7 @@ vg_aes_siv_encrypt:
 	mov rdx, r15
 	add rdx, 128
 	mov r9, r15
-	add r9, 256
+	add r9, -256
 	call {vg_cmac_aes_finalize}
 	mov QWORD PTR [r15+224], rbx
 	mov rbx, r12
@@ -1505,7 +1465,7 @@ vg_aes_siv_encrypt:
 	add rdx, 0
 	mov rcx, r13
 	mov r9, r15
-	add r9, 256
+	add r9, -256
 	call {vg_cmac_aes_update}
 	mov r8d, 0
 	cmp r14, 17
@@ -1521,7 +1481,7 @@ vg_aes_siv_encrypt:
 	mov rcx, r15
 	add rcx, 32
 	mov r9, r15
-	add r9, 256
+	add r9, -256
 	mov QWORD PTR [r15+152], r8
 	call {vg_cmac_aes_update}
 	mov rax, QWORD PTR [r15+152]
@@ -1540,7 +1500,7 @@ vg_aes_siv_encrypt:
 	mov rdx, r15
 	add rdx, 0
 	mov r9, r15
-	add r9, 256
+	add r9, -256
 	call {vg_cmac_aes_finalize}
 	jmp 26f
 25:
@@ -1607,7 +1567,7 @@ vg_aes_siv_encrypt:
 	add rcx, 32
 	mov r8d, 16
 	mov r9, r15
-	add r9, 256
+	add r9, -256
 	call {vg_cmac_aes_finalize}
 26:
 	mov rax, QWORD PTR [r15]
@@ -1631,7 +1591,8 @@ vg_aes_siv_encrypt:
 	add rdx, 96
 	mov rcx, r13
 	mov r9, r15
-	add r9, 256
+	add r9, -256
+	add r9, 512
 	call {vg_aes_ctr32}
 	mov rcx, r14
 	shr rcx, 4
@@ -1670,7 +1631,8 @@ vg_aes_siv_encrypt:
 	add rcx, 80
 	mov r8d, 1
 	mov r9, r15
-	add r9, 256
+	add r9, -256
+	add r9, 512
 	call {vg_aes_ctr32}
 	mov ecx, 16
 	cmp r14, rcx
@@ -1718,7 +1680,7 @@ vg_aes_siv_encrypt:
 	mov QWORD PTR [rax], r11
 	mov r11, QWORD PTR [r10+8]
 	mov QWORD PTR [rax+8], r11
-	lea rsp, [rsp+2600]
+	lea rsp, [rsp+1960]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -1736,47 +1698,7 @@ vg_aes_siv_encrypt:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-2616]
-	movdqu XMMWORD PTR [rsp+2600], xmm0
-	movdqu XMMWORD PTR [rsp+2584], xmm0
-	movdqu XMMWORD PTR [rsp+2568], xmm0
-	movdqu XMMWORD PTR [rsp+2552], xmm0
-	movdqu XMMWORD PTR [rsp+2536], xmm0
-	movdqu XMMWORD PTR [rsp+2520], xmm0
-	movdqu XMMWORD PTR [rsp+2504], xmm0
-	movdqu XMMWORD PTR [rsp+2488], xmm0
-	movdqu XMMWORD PTR [rsp+2472], xmm0
-	movdqu XMMWORD PTR [rsp+2456], xmm0
-	movdqu XMMWORD PTR [rsp+2440], xmm0
-	movdqu XMMWORD PTR [rsp+2424], xmm0
-	movdqu XMMWORD PTR [rsp+2408], xmm0
-	movdqu XMMWORD PTR [rsp+2392], xmm0
-	movdqu XMMWORD PTR [rsp+2376], xmm0
-	movdqu XMMWORD PTR [rsp+2360], xmm0
-	movdqu XMMWORD PTR [rsp+2344], xmm0
-	movdqu XMMWORD PTR [rsp+2328], xmm0
-	movdqu XMMWORD PTR [rsp+2312], xmm0
-	movdqu XMMWORD PTR [rsp+2296], xmm0
-	movdqu XMMWORD PTR [rsp+2280], xmm0
-	movdqu XMMWORD PTR [rsp+2264], xmm0
-	movdqu XMMWORD PTR [rsp+2248], xmm0
-	movdqu XMMWORD PTR [rsp+2232], xmm0
-	movdqu XMMWORD PTR [rsp+2216], xmm0
-	movdqu XMMWORD PTR [rsp+2200], xmm0
-	movdqu XMMWORD PTR [rsp+2184], xmm0
-	movdqu XMMWORD PTR [rsp+2168], xmm0
-	movdqu XMMWORD PTR [rsp+2152], xmm0
-	movdqu XMMWORD PTR [rsp+2136], xmm0
-	movdqu XMMWORD PTR [rsp+2120], xmm0
-	movdqu XMMWORD PTR [rsp+2104], xmm0
-	movdqu XMMWORD PTR [rsp+2088], xmm0
-	movdqu XMMWORD PTR [rsp+2072], xmm0
-	movdqu XMMWORD PTR [rsp+2056], xmm0
-	movdqu XMMWORD PTR [rsp+2040], xmm0
-	movdqu XMMWORD PTR [rsp+2024], xmm0
-	movdqu XMMWORD PTR [rsp+2008], xmm0
-	movdqu XMMWORD PTR [rsp+1992], xmm0
-	movdqu XMMWORD PTR [rsp+1976], xmm0
+	lea rsp, [rsp-1976]
 	movdqu XMMWORD PTR [rsp+1960], xmm0
 	movdqu XMMWORD PTR [rsp+1944], xmm0
 	movdqu XMMWORD PTR [rsp+1928], xmm0
@@ -1901,7 +1823,7 @@ vg_aes_siv_encrypt:
 	movdqu XMMWORD PTR [rsp+24], xmm0
 	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+2616]
+	lea rsp, [rsp+1976]
 	xor eax, eax
 	xor ecx, ecx
 	xor edx, edx
@@ -1915,8 +1837,8 @@ vg_aes_siv_encrypt:
 	.p2align 6
 
 vg_aes_siv_decrypt:
-	lea rsp, [rsp-2600]
-	mov rax, QWORD PTR [rsp+2608]
+	lea rsp, [rsp-1960]
+	mov rax, QWORD PTR [rsp+1968]
 	mov QWORD PTR [rsp+8], rax
 	mov rax, rsp
 	add rax, 24
@@ -1932,7 +1854,7 @@ vg_aes_siv_decrypt:
 	mov rbp, rsi
 	mov r15, rax
 	mov r12, rax
-	add r12, 2560
+	add r12, 1920
 	mov r13, r8
 	mov r14, r9
 	mov QWORD PTR [r15+208], r13
@@ -1947,7 +1869,7 @@ vg_aes_siv_decrypt:
 	mov QWORD PTR [rdx], rax
 	mov QWORD PTR [rdx+8], rax
 	mov r9, rcx
-	add r9, 256
+	add r9, -256
 	add rcx, 16
 	mov r8d, 16
 	call {vg_cmac_aes_finalize}
@@ -1981,7 +1903,7 @@ vg_aes_siv_decrypt:
 	add rdx, 128
 	mov rcx, r13
 	mov r9, r15
-	add r9, 256
+	add r9, -256
 	call {vg_cmac_aes_update}
 	mov rax, QWORD PTR [r15+144]
 	mov rcx, r13
@@ -1993,7 +1915,7 @@ vg_aes_siv_decrypt:
 	mov rdx, r15
 	add rdx, 128
 	mov r9, r15
-	add r9, 256
+	add r9, -256
 	call {vg_cmac_aes_finalize}
 	mov QWORD PTR [r15+224], rbx
 	mov rbx, r12
@@ -2061,7 +1983,8 @@ vg_aes_siv_decrypt:
 	add rdx, 96
 	mov rcx, r13
 	mov r9, r15
-	add r9, 256
+	add r9, -256
+	add r9, 512
 	call {vg_aes_ctr32}
 	mov rcx, r14
 	shr rcx, 4
@@ -2100,7 +2023,8 @@ vg_aes_siv_decrypt:
 	add rcx, 80
 	mov r8d, 1
 	mov r9, r15
-	add r9, 256
+	add r9, -256
+	add r9, 512
 	call {vg_aes_ctr32}
 	mov ecx, 16
 	cmp r14, rcx
@@ -2193,7 +2117,7 @@ vg_aes_siv_decrypt:
 	add rdx, 112
 	mov rcx, r13
 	mov r9, r15
-	add r9, 256
+	add r9, -256
 	call {vg_cmac_aes_update}
 	mov r8d, 0
 	cmp r14, 17
@@ -2209,7 +2133,7 @@ vg_aes_siv_decrypt:
 	mov rcx, r15
 	add rcx, 32
 	mov r9, r15
-	add r9, 256
+	add r9, -256
 	mov QWORD PTR [r15+152], r8
 	call {vg_cmac_aes_update}
 	mov rax, QWORD PTR [r15+152]
@@ -2228,7 +2152,7 @@ vg_aes_siv_decrypt:
 	mov rdx, r15
 	add rdx, 112
 	mov r9, r15
-	add r9, 256
+	add r9, -256
 	call {vg_cmac_aes_finalize}
 	jmp 212f
 211:
@@ -2295,7 +2219,7 @@ vg_aes_siv_decrypt:
 	add rcx, 32
 	mov r8d, 16
 	mov r9, r15
-	add r9, 256
+	add r9, -256
 	call {vg_cmac_aes_finalize}
 212:
 	mov rax, QWORD PTR [r15]
@@ -2347,7 +2271,7 @@ vg_aes_siv_decrypt:
 	mov r13, QWORD PTR [r15+184]
 	mov r14, QWORD PTR [r15+192]
 	mov r15, QWORD PTR [r15+200]
-	lea rsp, [rsp+2600]
+	lea rsp, [rsp+1960]
 	pxor xmm0, xmm0
 	pxor xmm1, xmm1
 	pxor xmm2, xmm2
@@ -2365,47 +2289,7 @@ vg_aes_siv_decrypt:
 	pxor xmm14, xmm14
 	pxor xmm15, xmm15
 	xor r11d, r11d
-	lea rsp, [rsp-2616]
-	movdqu XMMWORD PTR [rsp+2600], xmm0
-	movdqu XMMWORD PTR [rsp+2584], xmm0
-	movdqu XMMWORD PTR [rsp+2568], xmm0
-	movdqu XMMWORD PTR [rsp+2552], xmm0
-	movdqu XMMWORD PTR [rsp+2536], xmm0
-	movdqu XMMWORD PTR [rsp+2520], xmm0
-	movdqu XMMWORD PTR [rsp+2504], xmm0
-	movdqu XMMWORD PTR [rsp+2488], xmm0
-	movdqu XMMWORD PTR [rsp+2472], xmm0
-	movdqu XMMWORD PTR [rsp+2456], xmm0
-	movdqu XMMWORD PTR [rsp+2440], xmm0
-	movdqu XMMWORD PTR [rsp+2424], xmm0
-	movdqu XMMWORD PTR [rsp+2408], xmm0
-	movdqu XMMWORD PTR [rsp+2392], xmm0
-	movdqu XMMWORD PTR [rsp+2376], xmm0
-	movdqu XMMWORD PTR [rsp+2360], xmm0
-	movdqu XMMWORD PTR [rsp+2344], xmm0
-	movdqu XMMWORD PTR [rsp+2328], xmm0
-	movdqu XMMWORD PTR [rsp+2312], xmm0
-	movdqu XMMWORD PTR [rsp+2296], xmm0
-	movdqu XMMWORD PTR [rsp+2280], xmm0
-	movdqu XMMWORD PTR [rsp+2264], xmm0
-	movdqu XMMWORD PTR [rsp+2248], xmm0
-	movdqu XMMWORD PTR [rsp+2232], xmm0
-	movdqu XMMWORD PTR [rsp+2216], xmm0
-	movdqu XMMWORD PTR [rsp+2200], xmm0
-	movdqu XMMWORD PTR [rsp+2184], xmm0
-	movdqu XMMWORD PTR [rsp+2168], xmm0
-	movdqu XMMWORD PTR [rsp+2152], xmm0
-	movdqu XMMWORD PTR [rsp+2136], xmm0
-	movdqu XMMWORD PTR [rsp+2120], xmm0
-	movdqu XMMWORD PTR [rsp+2104], xmm0
-	movdqu XMMWORD PTR [rsp+2088], xmm0
-	movdqu XMMWORD PTR [rsp+2072], xmm0
-	movdqu XMMWORD PTR [rsp+2056], xmm0
-	movdqu XMMWORD PTR [rsp+2040], xmm0
-	movdqu XMMWORD PTR [rsp+2024], xmm0
-	movdqu XMMWORD PTR [rsp+2008], xmm0
-	movdqu XMMWORD PTR [rsp+1992], xmm0
-	movdqu XMMWORD PTR [rsp+1976], xmm0
+	lea rsp, [rsp-1976]
 	movdqu XMMWORD PTR [rsp+1960], xmm0
 	movdqu XMMWORD PTR [rsp+1944], xmm0
 	movdqu XMMWORD PTR [rsp+1928], xmm0
@@ -2530,7 +2414,7 @@ vg_aes_siv_decrypt:
 	movdqu XMMWORD PTR [rsp+24], xmm0
 	movdqu XMMWORD PTR [rsp+8], xmm0
 	mov QWORD PTR [rsp], r11
-	lea rsp, [rsp+2616]
+	lea rsp, [rsp+1976]
 	mov eax, eax
 	xor ecx, ecx
 	xor edx, edx

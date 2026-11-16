@@ -44,7 +44,9 @@ buffer is (`x`, `ICall`): all of it, with any implementation of AES
 (`ICall.base`), or, over one that needs no working space, only the 72 bytes
 of our saved registers and `vg_cmac_aes_subkeys`'s counter block and saved
 registers after them (`ICall.free`), which `initF`, given
-`scratch - saveOff`, writes (`initF_wp`).
+`scratch - saveOff`, writes (`initF_wp`); or, over one that gives its
+working space 512 bytes into `vg_cmac_aes_subkeys`'s scratch buffer, its
+first 1920 bytes (`ICall.small`, `initS_wp`).
 -/
 
 @[expose] public section
@@ -843,5 +845,111 @@ theorem initF_ct (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) :
     exact init_relG (ICall.free v f) ⟨_, by taint_decide⟩ hp hp'
       (by rw [hx.2.1 _ (by decide), hy.2.1 _ (by decide), q1]) _ _ _ _ _ _ ⟨rfl, rfl⟩ ex ey
   exact ((a.mono (fun _ _ h => h) fun _ _ h => h.2).seq r _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
+
+/-! ## Over the bitsliced AES, its working space 512 bytes in
+
+Over an implementation of `vg_aes_ctr32` that `vg_cmac_aes_subkeys` gives
+its working space 512 bytes into its scratch buffer (`Ctr32Small`), that
+scratch buffer is at `csImmS`, 256 bytes before ours, and what it writes
+starts at `csOff`, as `vg_aes_expand_key_scratch`'s working space does:
+`initS` writes only 1920 bytes. -/
+
+/-- `initX86_64` with a working space of 1920 bytes, for `initS`. -/
+def initX86_64S : Contract isa where
+  pre s :=
+    let key : Region := ⟨s.gpr .rdi, (s.gpr .rsi).toNat⟩
+    let ctx : Region := ⟨s.gpr .rdx, 512⟩
+    let scr : Region := ⟨s.gpr .rcx, 1920⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stack := below (s.gpr .rsp) 16
+    16 ≤ (s.gpr .rsp).toNat ∧ s.rd = [key] ∧ s.wr = [ctx, scr] ∧
+      key.Disjoint ctx ∧ key.Disjoint scr ∧ ctx.Disjoint scr ∧
+      ret.Disjoint key ∧ ret.Disjoint ctx ∧ ret.Disjoint scr ∧
+      stack.Disjoint key ∧ stack.Disjoint ctx ∧ stack.Disjoint scr ∧
+      (s.gpr .rdi).toNat + (s.gpr .rsi).toNat ≤ 2 ^ 64 ∧ (s.gpr .rdx).toNat + 512 ≤ 2 ^ 64 ∧
+      (s.gpr .rcx).toNat + 1920 ≤ 2 ^ 64 ∧
+      ((s.gpr .rsi).toNat = 32 ∨ (s.gpr .rsi).toNat = 48 ∨ (s.gpr .rsi).toNat = 64)
+  post := initX86_64.post
+  pub := initX86_64.pub
+
+/-- `csImmS` from `S`, plus `d`, is `S + (d - 256)`. -/
+theorem csImmS_add (S : Addr) {d : Nat} (h : 256 ≤ d) :
+    S + BitVec.signExtend 64 csImmS + BitVec.ofNat 64 d = S + BitVec.ofNat 64 (d - 256) := by
+  rw [show BitVec.signExtend 64 csImmS = -BitVec.ofNat 64 256 by decide, ← BitVec.sub_eq_add_neg,
+    sub_add_ofNat _ h]
+
+theorem csImmS_512 (S : Addr) :
+    S + BitVec.signExtend 64 csImmS + BitVec.ofNat 64 512 = S + BitVec.ofNat 64 256 :=
+  csImmS_add S (d := 512) (by decide)
+
+theorem IPre.ofS {s₀ : State} (h : initX86_64S.pre s₀) :
+    IPre s₀ (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsi).toNat csImmS ⟨s₀.gpr .rcx, 1920⟩ :=
+  let ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p⟩ := h
+  ⟨rfl, rfl, rfl, rfl, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
+    fun _ h₂ => Offset.contains_base _ (by omega_using [h₂]) (by omega_using [h₂]),
+    fun h₁ h₂ => by
+      rw [csImmS_add _ (by omega_using [h₁])]
+      exact Offset.contains_base _ (by omega_using [h₁, h₂]) (by omega_using [h₂]),
+    by rw [csImmS_add _ (by decide), toNat_add_lt _ o (by decide)]; omega_using [o]⟩
+
+/-- Over an implementation of `vg_aes_ctr32` given its working space 512
+bytes in (`Ctr32Small`): the 1920 bytes at `S`, of which the calls write
+the 1664 from `S + csOff`. -/
+theorem ICall.small (v : Ctr32Impl) (g : Proof.Aes.X86_64.Ctr32Small v.callee) :
+    ICall csImmS v.expand v.callee v.suffix (fun S => ⟨S, 1920⟩)
+      (fun S => ⟨S + BitVec.ofNat 64 256, 1664⟩) := by
+  have sS : ∀ S : Addr, Region.Sub ⟨S + BitVec.ofNat 64 256, 1664⟩ ⟨S, 1920⟩ :=
+    fun S => Offset.sub_base S (by decide)
+  have eargs {s₀ s : State} {Kp Ct S : Addr} {KL a c : Nat}
+      (hp : IPre s₀ Kp Ct S KL csImmS ⟨S, 1920⟩) (h : EArgsS s₀ Kp Ct S KL a c s) :
+      EArgs s (Kp + BitVec.ofNat 64 a) (Ct + BitVec.ofNat 64 c) (S + BitVec.ofNat 64 256) (KL / 2) :=
+    have s5 : Region.Sub ⟨S + BitVec.ofNat 64 256, 512⟩ ⟨S, 1920⟩ := Offset.sub_base S (by decide)
+    h.args.full h.rcx ((hp.k_s.sub_left (hp.sK h.ha)).sub_right s5)
+      ((hp.c_s.sub_left (hp.sC h.hc)).sub_right s5)
+      (by rw [h.rsp]; exact hp.stk_s.sub_right s5)
+      (by
+        rw [h.wr, hp.wr]
+        exact Covers.of_sub fun r hr => by
+          simp only [List.mem_singleton] at hr; subst hr; exact ⟨⟨S, 1920⟩, by simp, 256, rfl, by simp⟩)
+  have sargs {s₀ s : State} {Kp Ct S : Addr} {KL : Nat}
+      (hp : IPre s₀ Kp Ct S KL csImmS ⟨S, 1920⟩) (h : SArgsS s₀ Ct S KL csImmS s) :
+      Proof.CmacAes.Stream.X86_64.SArgsS s Ct (Ct + BitVec.ofNat 64 240) (S + BitVec.signExtend 64 csImmS)
+        (KL / 8 + 6) := by
+    refine ⟨h.args, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [csImmS_512]
+    · exact (hp.c_s.sub_left (Region.sub_prefix (by decide))).sub_right (sS S)
+    · exact (hp.c_s.sub_left (hp.sC (by decide))).sub_right (sS S)
+    · rw [h.rsp]; exact hp.stk_s.sub_right (sS S)
+    · have := hp.wZ; simp only at this; rw [toNat_add_lt S this (by decide)]; omega_using [this]
+    · rw [h.wr, hp.wr]
+      exact Covers.of_sub fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact ⟨⟨S, 1920⟩, by simp, 256, rfl, by simp⟩
+  exact
+  { sub := sS
+    slots := fun S => Offset.disjoint S (by decide) (by decide) (by decide)
+    ek := fun {_ _ _ _ S _ _ _} hp h => WP.mono (ek_call v (eargs hp h)) fun _ h' =>
+      h'.x (Offset.sub S (by decide) (by decide))
+    ekRel := fun hp hp' q h => ek_rel v fun a b hab =>
+      ⟨_, _, _, _, eargs hp (h a b hab).1, eargs hp' (h a b hab).2, by
+        rw [(h a b hab).1.rsp, (h a b hab).2.rsp, q]⟩
+    sk := fun {_ _ _ _ S _} hp h => by
+      have := Proof.CmacAes.Stream.X86_64.sub_callS v g ("vg_cmac_aes_subkeys" ++ v.suffix) (sargs hp h)
+      rwa [csImmS_512] at this
+    skRel := fun hp hp' q h => Proof.CmacAes.Stream.X86_64.sub_relS v g _ fun a b hab =>
+      ⟨_, _, _, _, sargs hp (h a b hab).1, sargs hp' (h a b hab).2, by
+        rw [(h a b hab).1.rsp, (h a b hab).2.rsp, q]⟩ }
+
+theorem initS_wp (v : Ctr32Impl) (g : Proof.Aes.X86_64.Ctr32Small v.callee) {s₀ : State}
+    (h0 : initX86_64S.pre s₀) :
+    WP isa (initS v.expand v.callee v.suffix) s₀ fun s' => gprPreserved s₀ s' ∧ initX86_64S.post s₀ s' :=
+  init_wpG (ICall.small v g) (IPre.ofS h0)
+
+theorem initS_ct (v : Ctr32Impl) (g : Proof.Aes.X86_64.Ctr32Small v.callee) :
+    ConstantTime isa initX86_64S.pre initX86_64S.pub (initS v.expand v.callee v.suffix) := by
+  intro s₀ s₀' _ _ _ _ h₁ h₂ hq e₁ e₂
+  obtain ⟨q1, q2, q3, q4, q5⟩ := hq
+  obtain hp' : IPre s₀' (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsi).toNat csImmS
+      ⟨s₀.gpr .rcx, 1920⟩ := by
+    rw [q2, q3, q4, q5]; exact IPre.ofS h₂
+  exact (init_relG (ICall.small v g) ⟨_, by taint_decide⟩ (IPre.ofS h₁) hp' q1 _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1
 
 end VG.Proof.AesSiv.X86_64

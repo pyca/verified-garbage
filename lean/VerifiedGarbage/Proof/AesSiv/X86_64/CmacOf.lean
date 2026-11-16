@@ -345,9 +345,9 @@ theorem cmacOf_rel (v : UpdateImpl) (K : Calls v g) {s₀' : State} (h : Env g s
     RelCT isa (fun a b => Regs s₀ C D P W R L a ∧ Regs s₀' C D P W R L b) (cmacOf g.x v.callee v.ctr.callee v.ctr.suffix stOff)
       fun a b => Regs s₀ C D P W R L a ∧ Regs s₀' C D P W R L b := by
   obtain ⟨_, hA⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp]) (cmacPre g.x stOff)
-      hc).isSome = true := by rcases h.lay with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+      hc).isSome = true := by rcases h.lay with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   obtain ⟨_, hB⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp])
-      (.block (cmacMid g.x stOff)) hc).isSome = true := by rcases h.lay with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+      (.block (cmacMid g.x stOff)) hc).isSome = true := by rcases h.lay with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   have pre_wp {σ s : State} (hσ : Env g σ C D P W R L) (hr : Regs σ C D P W R L s) :
       WP isa (cmacPre g.x stOff) s fun s' => Regs σ C D P W R L s' ∧
         UA g s' C (W + BitVec.ofNat 64 128) P W R (Spec.Cmac.chainedLen 16 L / 16) ∧

@@ -102,7 +102,7 @@ theorem short_rel (v : Ctr32Impl) (K : CCalls v g) {s₀' : State} (h : Env g s�
         [.mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp), .mov .rdx (.reg .r15), .alu .add .rdx (imm o),
          .mov .rcx (.reg .r15), .alu .add .rcx (imm tailOff), .mov32 .r8 (imm 16), .mov .r9 (.reg .r15),
          .alu .add .r9 (.imm g.x)])) hc).isSome = true := by
-    rintro o (rfl | rfl) <;> rcases h.lay with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+    rintro o (rfl | rfl) <;> rcases h.lay with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   obtain ⟨_, hB⟩ := hB' out hout
   have t₁ := (RelCT.taint (A := taint) (P := RR s₀ s₀' C D P W R L) _ (fun a b hab => regs_agree hq hab.1 hab.2)
     hA).wp (F₁ := Regs s₀ C D P W R L) (F₂ := Regs s₀' C D P W R L)
@@ -147,13 +147,13 @@ theorem long_rel (v : UpdateImpl) (K : Calls v g) {s₀' : State} (h : Env g s�
         [.mov .r8 (.mem (at_ .r15 dbOff)), .shift .shr .r8 4, .mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp),
          .mov .rdx (.reg .r15), .alu .add .rdx (imm o), .mov .rcx (.reg .r13), .mov .r9 (.reg .r15),
          .alu .add .r9 (.imm g.x)])) hc).isSome = true := by
-    rintro o (rfl | rfl) <;> rcases h.lay with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+    rintro o (rfl | rfl) <;> rcases h.lay with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   obtain ⟨_, hM1⟩ := hM1' out hout
   have hM3' : ∀ o : Nat, o = 0 ∨ o = 112 → ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14,
       .r15, .rsp]) (.block [.mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp), .mov .rdx (.reg .r15),
         .alu .add .rdx (imm o), .mov .rcx (.reg .r15), .alu .add .rcx (imm tailOff),
         .mov .r9 (.reg .r15), .alu .add .r9 (.imm g.x), .store (at_ .r15 (dbOff + 8)) .r8]) hc).isSome = true := by
-    rintro o (rfl | rfl) <;> rcases h.lay with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+    rintro o (rfl | rfl) <;> rcases h.lay with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   obtain ⟨_, hM3⟩ := hM3' out hout
   have hM4' : ∀ o : Nat, o = 0 ∨ o = 112 → ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14,
       .r15, .rsp]) (.block [.mov .rax (.mem (at_ .r15 (dbOff + 8))), .alu .add .rax (.reg .rax),
@@ -162,7 +162,7 @@ theorem long_rel (v : UpdateImpl) (K : Calls v g) {s₀' : State} (h : Env g s�
         .mov .rcx (.reg .r15), .alu .add .rcx (imm tailOff), .alu .add .rcx (.reg .rax),
         .mov .rdi (.reg .rbx), .mov .rsi (.reg .rbp), .mov .rdx (.reg .r15),
         .alu .add .rdx (imm o), .mov .r9 (.reg .r15), .alu .add .r9 (.imm g.x)]) hc).isSome = true := by
-    rintro o (rfl | rfl) <;> rcases h.lay with rfl | rfl <;> exact ⟨_, by taint_decide⟩
+    rintro o (rfl | rfl) <;> rcases h.lay with rfl | rfl | rfl <;> exact ⟨_, by taint_decide⟩
   obtain ⟨_, hM4⟩ := hM4' out hout
   obtain ⟨_, hM2⟩ : ∃ hc, (taint.check (Taint.ofRegs [.rbx, .rbp, .r12, .r13, .r14, .r15, .rsp])
       (.block [.mov32 .r8 (.imm 0), .alu .cmp .r14 (imm 17)]) hc).isSome = true := ⟨_, by taint_decide⟩
