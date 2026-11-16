@@ -8,6 +8,7 @@ public import VerifiedGarbage.Proof.Zeroize.X86_64Impl
 import VerifiedGarbage.Proof.Framework.X86_64.StackScratch
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.X86_64.Scrub
+public import VerifiedGarbage.Proof.Framework.X86_64.ScrubRegs
 
 /-!
 # AES-CBC on x86-64, zeroing the scratch it writes
@@ -30,7 +31,8 @@ unchanged or zero (`*_scrubbed`, the contract of `Spec/Cbc/`,
 Which are emitted, for each implementation `v` of the blocks functions and
 `z` of `vg_zeroize` (`encryptRegs`, `decryptRegs`). Encryption: none for
 VAES (`Caller.vaes`), whose encryption is AES-NI's loop; that loop, which
-writes no `scratch`, unwrapped, once (with the `z` of no suffix); and
+writes no `scratch` and uses no stack, unwrapped, once (with the `z` of no
+suffix), with the SSE registers it writes cleared (`RScrub.withScrubXs`); and
 otherwise the call wiped with each `z`, named by both suffixes.
 Decryption: for VAES, the call wiped with the `z` that has a suffix (the
 one that needs AVX, as VAES's code does), named by `v`'s suffix alone;
@@ -176,15 +178,13 @@ theorem encrypt_spSafe (v : BlocksImpl) (z : ZeroizeImpl) :
     (encrypt v z).all (fun i => !isa.writesSp i) = true :=
   wiped_spSafe (Caller.spSafe v)
 
-/-- The loop in AES-NI registers that encrypts writes nothing in `scratch`. -/
+/-- The loop in AES-NI registers that encrypts writes nothing in `scratch`,
+and uses no stack. -/
 theorem encrypt_free_scrubbed (v : BlocksImpl) (h : Caller.hardware v = true) :
     Verified target (Caller.encrypt v)
-      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (encPost 64)) false 8 none) :=
-  Verified.cbc_of_unwritten (Proof.AesCbc.encrypt_keyed (Caller.verified v))
-    (fun s t s' hs he => by
-      have hw := Caller.written_ok v s t s' hs he
-      rwa [Caller.written, ite_eq_left h] at hw)
-    args_length
+      (Spec.Cbc.aesSig.contract abi (pre 64) (scrubbedPost 64 (encPost 64)) false 0 none) :=
+  Verified.cbc_of_unwritten (Proof.AesCbc.encrypt_keyed (Caller.verifiedFree v h))
+    (Caller.writtenFree v h) args_length
 
 /-- `vg_aes_cbc_decrypt_vaes_avx512`, wrapped. -/
 def decryptVaes512 : Prog isa :=
@@ -251,14 +251,14 @@ with `z` (see the module's documentation). -/
 def encryptRegs (v : BlocksImpl) (z : ZeroizeImpl) : List (Registration Spec.Cbc.aesEncryptApi target) :=
   if Caller.vaes v then []
   else if h : Caller.hardware v then
-    if z.suffix = "" then [{
+    if z.suffix = "" then [RScrub.withScrubXs {
       suffix := v.suffix
       code := Caller.encrypt v
-      stack := 8
+      stack := 0
       verified := encrypt_free_scrubbed v h
       spSafe := Caller.spSafe v
-      written := Caller.written v
-      writtenOk := Caller.written_ok v }]
+      written := [("scratch", 0)]
+      writtenOk := Caller.writtenFree v h } (encryptOut _)]
     else []
   else [Scrub.withScrubAll {
     suffix := v.suffix ++ z.suffix
