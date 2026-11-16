@@ -22,11 +22,7 @@ time, as signed 16-bit words of SSE2 registers, with `q` in the words of
 unless MXCSR is `0x1FBF` (see `TCB/X86_64/Isa.lean`): ML-KEM's code sets no
 MXCSR of its own, as the dispatcher of every x86-64 ML-KEM function runs
 `vg_mcdt_enter` first, which leaves MXCSR `0x1FBF` for the whole call
-("Dispatchers" in `TCB/Rust.lean`). `withMxcsr` saves the caller's MXCSR in
-`r11` (its reserved bits 31:16, which are 0, cleared), loads `0x1FBF` from
-`scratch + off + 4`, runs its code, which never writes `r11`, and loads the
-saved value back through `scratch + off`, between `lfence`s, with `scratch`
-in `r`: ML-DSA's arithmetic still runs inside it.
+("Dispatchers" in `TCB/Rust.lean`).
 
 A polynomial is stored as 256 `u32`s, and in the working space as 256
 words (`vpack`, `vunpack`): 32 bytes of the former at `[a]` are the 16 bytes
@@ -76,16 +72,6 @@ def vbfly : List Instr :=
 def vibfly : List Instr :=
   (xmov .xmm3 .xmm1 :: xb .psubw .xmm3 .xmm0 :: xb .paddw .xmm0 .xmm1 :: vcsub .xmm0 .xmm2) ++
     vmont .xmm3 .xmm13 .xmm2 ++ vcadd .xmm3 .xmm2
-
-/-! ## MXCSR -/
-
-/-- `c` with MXCSR `0x1FBF`, through `scratch + off` in `r`: MXCSR saved in
-`r11`, and loaded back after `c`, which must not write `r11`. -/
-def withMxcsr (r : Reg) (off : Nat) (c : Prog isa) : Prog isa :=
-  .seq (.block [.stmxcsr (at_ r off), .mov32 .r11 (.mem (at_ r off)), .alu32 .and .r11 (.imm 0xFFFF)])
-    (.seq (.seq (.block [.mov32 .rax (.imm 0x1FBF), .store32 (at_ r (off + 4)) .rax,
-        .ldmxcsr (at_ r (off + 4)), .lfence]) (.seq c (.block [.lfence])))
-      (.block [.store32 (at_ r off) .r11, .ldmxcsr (at_ r off)]))
 
 /-! ## Tables and polynomials -/
 
