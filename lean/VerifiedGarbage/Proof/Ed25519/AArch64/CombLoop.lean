@@ -111,24 +111,24 @@ theorem combAdd_ok {s : State} {base : Addr} (hs : Scr s base large) (hb : AccBe
   simp only [combAdd, List.append_assoc]
   rw [WP.block_append_iff]
   refine WP.mono (x17_ok s) fun a ⟨za, ka⟩ => ?_
-  have k0 : Keep base s a := Keep.of_keeps ka (by decide)
-  have ha := k0.scr hs
-  have ea : env a.mem base = env s.mem base := by rw [ka.mem]
-  have fa : ∀ i, fe a.mem base (offset i) = fe s.mem base (offset i) := fun i => by rw [ka.mem]
+  obtain k0 : Keep base s a := Keep.of_keeps ka (by decide)
+  obtain ha := k0.scr hs
+  obtain ea : env a.mem base = env s.mem base := by rw [ka.mem]
+  obtain fa : ∀ i, fe a.mem base (offset i) = fe s.mem base (offset i) := fun i => by rw [ka.mem]
   -- t0 = 2z₁, t1 = y₁ - x₁, t2 = y₁ + x₁
   rw [WP.block_append_iff]
   refine WP.mono (addE ha 7 2 2 (by decide) (by decide) (by decide) za
     (by rw [fa]; exact hb 2 (by decide)) (by rw [fa]; exact hb 2 (by decide))) fun b1 ⟨h1, e1⟩ => ?_
   rw [ea] at e1
-  have s1 := (h1.keep (by decide)).scr ha
-  have z1 := h1.x17 za
+  obtain s1 := (h1.keep (by decide)).scr ha
+  obtain z1 := h1.x17 za
   rw [WP.block_append_iff]
   refine WP.mono (subE s1 8 1 0 (by decide) (by decide) (by decide) z1
     (by rw [fr h1 0 (by decide), fa]; exact hb 0 (by decide))) fun b2 ⟨h2, e2⟩ => ?_
   rw [e1] at e2
   simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e2
-  have s2 := (h2.keep (by decide)).scr s1
-  have z2 := h2.x17 z1
+  obtain s2 := (h2.keep (by decide)).scr s1
+  obtain z2 := h2.x17 z1
   rw [WP.block_append_iff]
   refine WP.mono (addE s2 9 1 0 (by decide) (by decide) (by decide) z2
     (by rw [fr h2 1 (by decide), fr h1 1 (by decide), fa]; exact hb 1 (by decide))
@@ -136,84 +136,84 @@ theorem combAdd_ok {s : State} {base : Addr} (hs : Scr s base large) (hb : AccBe
     fun b3 ⟨h3, e3⟩ => ?_
   rw [e2] at e3
   simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e3
-  have s3 := (h3.keep (by decide)).scr s2
-  have z3 := h3.x17 z2
+  obtain s3 := (h3.keep (by decide)).scr s2
+  obtain z3 := h3.x17 z2
   -- t3 = w₁ · kxy, t1 = t1 · ymx, t2 = t2 · xpy
   rw [WP.block_append_iff]
   refine WP.mono (mulE s3 10 3 6 (by decide) (by decide) (by decide) z3) fun b4 ⟨h4, l4, e4⟩ => ?_
   rw [e3] at e4
   simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e4
-  have s4 := (h4.keep (by decide)).scr s3
-  have z4 := h4.x17 z3
+  obtain s4 := (h4.keep (by decide)).scr s3
+  obtain z4 := h4.x17 z3
   rw [WP.block_append_iff]
   refine WP.mono (mulE s4 8 8 4 (by decide) (by decide) (by decide) z4) fun b5 ⟨h5, l5, e5⟩ => ?_
   rw [e4] at e5
   simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e5
-  have s5 := (h5.keep (by decide)).scr s4
-  have z5 := h5.x17 z4
+  obtain s5 := (h5.keep (by decide)).scr s4
+  obtain z5 := h5.x17 z4
   rw [WP.block_append_iff]
   refine WP.mono (mulE s5 9 9 5 (by decide) (by decide) (by decide) z5) fun b6 ⟨h6, l6, e6⟩ => ?_
   rw [e5] at e6
   simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e6
-  have s6 := (h6.keep (by decide)).scr s5
-  have z6 := h6.x17 z5
+  obtain s6 := (h6.keep (by decide)).scr s5
+  obtain z6 := h6.x17 z5
   -- t4 = t0 - t3, t0 = t0 + t3, t5 = t2 - t1, t1 = t2 + t1
-  have l10 : fe b6.mem base (offset 10) < P2 := by
+  obtain l10 : fe b6.mem base (offset 10) < P2 := by
     rw [fr h6 10 (by decide), fr h5 10 (by decide)]; exact l4
   rw [WP.block_append_iff]
   refine WP.mono (subE s6 11 7 10 (by decide) (by decide) (by decide) z6 l10) fun b7 ⟨h7, e7⟩ => ?_
   rw [e6] at e7
   simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e7
-  have s7 := (h7.keep (by decide)).scr s6
-  have z7 := h7.x17 z6
+  obtain s7 := (h7.keep (by decide)).scr s6
+  obtain z7 := h7.x17 z6
   rw [WP.block_append_iff]
   refine WP.mono (addE1 s7 7 7 10 (by decide) (by decide) (by decide) z7
     (by rw [fr h7 10 (by decide)]; exact l10)) fun b8 ⟨h8, e8⟩ => ?_
   rw [e7] at e8
   simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e8
-  have s8 := (h8.keep (by decide)).scr s7
-  have z8 := h8.x17 z7
-  have l8 : fe b8.mem base (offset 8) < P2 := by
+  obtain s8 := (h8.keep (by decide)).scr s7
+  obtain z8 := h8.x17 z7
+  obtain l8 : fe b8.mem base (offset 8) < P2 := by
     rw [fr h8 8 (by decide), fr h7 8 (by decide), fr h6 8 (by decide)]; exact l5
-  have l9 : fe b8.mem base (offset 9) < P2 := by
+  obtain l9 : fe b8.mem base (offset 9) < P2 := by
     rw [fr h8 9 (by decide), fr h7 9 (by decide)]; exact l6
   rw [WP.block_append_iff]
   refine WP.mono (subE s8 12 9 8 (by decide) (by decide) (by decide) z8 l8) fun b9 ⟨h9, e9⟩ => ?_
   rw [e8] at e9
   simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e9
-  have s9 := (h9.keep (by decide)).scr s8
-  have z9 := h9.x17 z8
+  obtain s9 := (h9.keep (by decide)).scr s8
+  obtain z9 := h9.x17 z8
   rw [WP.block_append_iff]
   refine WP.mono (addE s9 8 9 8 (by decide) (by decide) (by decide) z9
     (by rw [fr h9 9 (by decide)]; exact l9) (by rw [fr h9 8 (by decide)]; exact l8))
     fun b10 ⟨h10, e10⟩ => ?_
   rw [e9] at e10
   simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e10
-  have s10 := (h10.keep (by decide)).scr s9
-  have z10 := h10.x17 z9
+  obtain s10 := (h10.keep (by decide)).scr s9
+  obtain z10 := h10.x17 z9
   -- z₃ = t4 · t0, x₃ = t5 · t4, y₃ = t0 · t1, w₃ = t5 · t1
   rw [WP.block_append_iff]
   refine WP.mono (mulE s10 2 11 7 (by decide) (by decide) (by decide) z10) fun b11 ⟨h11, l11, e11⟩ => ?_
   rw [e10] at e11
   simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e11
-  have s11 := (h11.keep (by decide)).scr s10
-  have z11 := h11.x17 z10
+  obtain s11 := (h11.keep (by decide)).scr s10
+  obtain z11 := h11.x17 z10
   rw [WP.block_append_iff]
   refine WP.mono (mulE s11 0 12 11 (by decide) (by decide) (by decide) z11) fun b12 ⟨h12, l12, e12⟩ => ?_
   rw [e11] at e12
   simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e12
-  have s12 := (h12.keep (by decide)).scr s11
-  have z12 := h12.x17 z11
+  obtain s12 := (h12.keep (by decide)).scr s11
+  obtain z12 := h12.x17 z11
   rw [WP.block_append_iff]
   refine WP.mono (mulE s12 1 7 8 (by decide) (by decide) (by decide) z12) fun b13 ⟨h13, l13, e13⟩ => ?_
   rw [e12] at e13
   simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e13
-  have s13 := (h13.keep (by decide)).scr s12
-  have z13 := h13.x17 z12
+  obtain s13 := (h13.keep (by decide)).scr s12
+  obtain z13 := h13.x17 z12
   refine WP.mono (mulE s13 3 12 8 (by decide) (by decide) (by decide) z13) fun t ⟨h14, l14, e14⟩ => ?_
   rw [e13] at e14
   simp only [Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte] at e14
-  have kt : Keep base s t := k0.trans (h1.keep (by decide))
+  obtain kt : Keep base s t := k0.trans (h1.keep (by decide))
     |>.trans (h2.keep (by decide))
     |>.trans (h3.keep (by decide))
     |>.trans (h4.keep (by decide))
@@ -229,7 +229,7 @@ theorem combAdd_ok {s : State} {base : Addr} (hs : Scr s base large) (hb : AccBe
     |>.trans (h14.keep (by decide))
   refine ⟨kt, ?_, ?_, ?_⟩
   · intro i hi
-    have hc : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 :=
+    obtain hc : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 :=
       (by decide : ∀ i : Slot, i.val < 4 → i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3) i hi
     rcases hc with rfl | rfl | rfl | rfl
     · rw [fr h14 0 (by decide), fr h13 0 (by decide)]; exact l12
@@ -240,7 +240,7 @@ theorem combAdd_ok {s : State} {base : Addr} (hs : Scr s base large) (hb : AccBe
     simp only [point, Function.update_apply, Fin.isValue, Fin.reduceEq, ↓reduceIte]
     rfl
   · intro i hi
-    have n : ∀ o : Slot, (o.val < 4 ∨ (7 ≤ o.val ∧ o.val ≤ 12)) → i ≠ o :=
+    obtain n : ∀ o : Slot, (o.val < 4 ∨ (7 ≤ o.val ∧ o.val ≤ 12)) → i ≠ o :=
       fun o ho e => by have := congrArg Fin.val e; omega_using [za, z1, z2, z3, l4, z4, l5, z5, l6, z6, l10, z7, z8, l8, l9, z9, z10, l11, z11, l12, z12, l13, z13, l14, hi, ho, this]
     rw [fr h14 i (n 3 (by decide)), fr h13 i (n 1 (by decide)), fr h12 i (n 0 (by decide)),
       fr h11 i (n 2 (by decide)), fr h10 i (n 8 (by decide)), fr h9 i (n 12 (by decide)),
@@ -363,55 +363,55 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S : Nat} {v : ℤ} {j : Na
     WP isa combStep s fun t => (t.gpr .x8 != 0) = decide (j + 1 ≠ 64) ∧
       CombInv s₀ base S v (j + 1) t := by
   rw [combStep]
-  have hn := nib_lt S j
+  obtain hn := nib_lt S j
   -- The digit's magnitude and sign.
   refine WP.seq (WP.mono_syms (combDigitS_ok h.scratch (i := j) hj h.counter h.bits)
     fun a ⟨a2, a1, ka⟩ sya => ?_)
-  have hsa : Scr a base := h.scratch.of_keeps ka (by decide)
-  have a19 : a.gpr .x19 = BitVec.ofNat 64 j := (ka.gpr _ (by decide)).trans h.counter
-  have ksa : CombKeep base s a := CombKeep.of_keeps ka (by
+  obtain hsa : Scr a base := h.scratch.of_keeps ka (by decide)
+  obtain a19 : a.gpr .x19 = BitVec.ofNat 64 j := (ka.gpr _ (by decide)).trans h.counter
+  obtain ksa : CombKeep base s a := CombKeep.of_keeps ka (by
     intro r hr
     simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with hr | hr
     · exact Or.inr (Or.inr hr)
     · exact Or.inr (Or.inl hr))
   -- The entry, negated for a negative digit.
-  have hta : TblAt a base T := htb.of_far (by rw [ka.rd, ka.wr, h.keep.rd, h.keep.wr])
+  obtain hta : TblAt a base T := htb.of_far (by rw [ka.rd, ka.wr, h.keep.rd, h.keep.wr])
     (fun x hx => by rw [ka.mem]; exact h.keep.mem x (Or.inr (by omega_using [hx])))
   refine WP.seq (WP.mono (combEntry_ok hsa hta (by rw [sya]; exact hT) hj a19 (mag_lt hn) a2 a1)
     fun c ⟨c4, c5, c6, cf, kc⟩ => ?_)
-  have fc : ∀ i : Slot, (i.val < 4 ∨ 7 ≤ i.val) → fe c.mem base (offset i) = fe s.mem base (offset i) :=
+  obtain fc : ∀ i : Slot, (i.val < 4 ∨ 7 ≤ i.val) → fe c.mem base (offset i) = fe s.mem base (offset i) :=
     fun i hi => by
       rw [cf.fe (by simp only [offset]; omega_using [hi]) (by simp only [offset]; omega_using []), ka.mem]
-  have ec : ∀ i : Slot, (i.val < 4 ∨ 7 ≤ i.val) → env c.mem base i = env s.mem base i := fun i hi => by
+  obtain ec : ∀ i : Slot, (i.val < 4 ∨ 7 ≤ i.val) → env c.mem base i = env s.mem base i := fun i hi => by
     simp only [env, F]
     rw [fc i hi]
   obtain ⟨q, hq, hqz, hrq⟩ := combEntry64_ok j (nib S j) hj hn
-  have c21 : env c.mem base 21 = 0 := (ec 21 (by decide)).trans h.zero
-  have cq : cachedAt (env c.mem base) 4 5 6 = cache q := by
+  obtain c21 : env c.mem base 21 = 0 := (ec 21 (by decide)).trans h.zero
+  obtain cq : cachedAt (env c.mem base) 4 5 6 = cache q := by
     rw [← hq]
-    have hT := combCached64_T j (mag (nib S j))
+    obtain hT := combCached64_T j (mag (nib S j))
     by_cases hlt : nib S j < 8
     · simp only [hlt, decide_true, ↓reduceIte] at c4 c5 c6 ⊢
       simp only [cachedAt, negCached, c4, c5, c6, hT]
     · simp only [hlt, decide_false, Bool.false_eq_true, ↓reduceIte] at c4 c5 c6 ⊢
       rw [cachedAt_eq hT c4 c5 c6]
-  have hsc := kc.scr hsa
-  have c19 : c.gpr .x19 = BitVec.ofNat 64 j := (kc.gpr _ (by decide)).trans a19
-  have belc : AccBel c.mem base := fun i hi => by
+  obtain hsc := kc.scr hsa
+  obtain c19 : c.gpr .x19 = BitVec.ofNat 64 j := (kc.gpr _ (by decide)).trans a19
+  obtain belc : AccBel c.mem base := fun i hi => by
     rw [fc i (.inl hi)]
     exact h.bel i hi
   -- Added.
   rw [WP.seq_iff]
   refine WP.mono (combAdd_ok hsc belc) fun d ⟨kd, beld, vd, md⟩ => ?_
-  have d19 : d.gpr .x19 = BitVec.ofNat 64 j := (kd.gpr _ (by decide)).trans c19
+  obtain d19 : d.gpr .x19 = BitVec.ofNat 64 j := (kd.gpr _ (by decide)).trans c19
   refine WP.mono (combNext_ok d hj d19) fun t ⟨t19, t8, kt⟩ => ⟨t8, ?_⟩
-  have kbt : CombKeep base a t :=
+  obtain kbt : CombKeep base a t :=
     (((CombKeep.of_keep kc).trans (CombKeep.of_keep kd))).trans (CombKeep.of_keeps kt (by decide))
-  have kst := ksa.trans kbt
-  have pc : point (env c.mem base) 0 1 2 3 = point (env s.mem base) 0 1 2 3 := by
+  obtain kst := ksa.trans kbt
+  obtain pc : point (env c.mem base) 0 1 2 3 = point (env s.mem base) 0 1 2 3 := by
     simp only [point, ec 0 (by decide), ec 1 (by decide), ec 2 (by decide), ec 3 (by decide)]
-  have d21 : env d.mem base 21 = env c.mem base 21 := by
+  obtain d21 : env d.mem base 21 = env c.mem base 21 := by
     simp only [env, F]; rw [md 21 (.inr (by decide))]
   refine ⟨by omega_using [hj], kbt.scr hsa, t19, ?_, fun q hq => ?_, ?_, fun i hi => by rw [kt.mem]; exact beld i hi,
     h.keep.trans kst⟩
@@ -419,10 +419,10 @@ theorem combStep_ok {s₀ s : State} {base T : Addr} {S : Nat} {v : ℤ} {j : Na
     exact c21
   · rw [kst.bit hq]; exact h.bits q hq
   · have h4 : env c.mem base 4 = q.Y - q.X := congrArg Spec.Ed25519.Point.X cq
-    have h5 : env c.mem base 5 = q.Y + q.X := congrArg Spec.Ed25519.Point.Y cq
-    have h6 : env c.mem base 6 = q.T * 2 * Spec.Ed25519.d := congrArg Spec.Ed25519.Point.Z cq
+    obtain h5 : env c.mem base 5 = q.Y + q.X := congrArg Spec.Ed25519.Point.Y cq
+    obtain h6 : env c.mem base 6 = q.T * 2 * Spec.Ed25519.d := congrArg Spec.Ed25519.Point.Z cq
     rw [kt.mem, vd, h4, h5, h6]
-    have e := Point64.mixedResult_eq (point (env c.mem base) 0 1 2 3) q hqz
+    obtain e := Point64.mixedResult_eq (point (env c.mem base) 0 1 2 3) q hqz
     simp only [point] at e
     rw [e]
     simp only [point] at pc
@@ -472,7 +472,7 @@ theorem combLoopFrom_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : Tbl
     WP isa (combLoopFrom j₀) s fun t => CombInv s base S v 64 t := by
   rw [combLoopFrom]
   refine WP.seq (WP.mono_syms (counterInit_ok s j₀ (by omega_using [hj₀])) fun b ⟨b19, kb⟩ syb => ?_)
-  have ksb : CombKeep base s b := CombKeep.of_keeps kb (by decide)
+  obtain ksb : CombKeep base s b := CombKeep.of_keeps kb (by decide)
   exact combSteps_ok htb hj₀
     ⟨by omega_using [hj₀], hs.of_keeps kb (by decide), b19, by rw [kb.mem]; exact hz,
       fun q hq => by rw [kb.mem]; exact hb q hq, by rw [kb.mem]; exact hv,
@@ -508,10 +508,10 @@ theorem combMultiply_ok {s : State} {base T : Addr} (hs : Scr s base) (htb : Tbl
       Rep (point (env t.mem base) 0 1 2 3) (S • baseAff) ∧ CombKeep base s t := by
   rw [combMultiply]
   refine WP.seq (WP.mono_syms (combInit_ok hs) fun a ⟨ka, az, ap, ab⟩ sya => ?_)
-  have hsa := ka.scr hs
-  have hta : TblAt a base T := htb.of_far (by rw [ka.rd, ka.wr])
+  obtain hsa := ka.scr hs
+  obtain hta : TblAt a base T := htb.of_far (by rw [ka.rd, ka.wr])
     (fun x hx => ka.mem x (Or.inr (by omega_using [hx])))
-  have hv : Rep (point (env a.mem base) 0 1 2 3) (((17 * combGVal : Nat) : ℤ) • baseAff) := by
+  obtain hv : Rep (point (env a.mem base) 0 1 2 3) (((17 * combGVal : Nat) : ℤ) • baseAff) := by
     rw [ap, natCast_zsmul]; exact combStart_ok
   refine WP.mono (combLoop_ok hsa hta (by rw [sya]; exact hT) az
     (fun q hq => by rw [ka.bit hq]; exact hb q hq) hv ab) fun t ht => ⟨?_, ka.trans ht.keep⟩

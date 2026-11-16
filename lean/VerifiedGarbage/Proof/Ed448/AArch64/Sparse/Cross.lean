@@ -42,21 +42,21 @@ theorem cross_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base)
   -- `Q`, doubled twice.
   rw [WP.seq_iff]
   refine WP.mono (Point56.doubleCall_ok hs hb hz5) fun t3 ⟨k3, b3, s3, _, _, m3, e3, _⟩ => ?_
-  have hs3 := k3.scr hs
-  have one3 : EV t3.mem base 20 = 1 := by rw [Same.env s3 (i := 20) (by decide)]; exact h20
+  obtain hs3 := k3.scr hs
+  obtain one3 : EV t3.mem base 20 = 1 := by rw [Same.env s3 (i := 20) (by decide)]; exact h20
   rw [WP.seq_iff]
   refine WP.mono (Point56.doubleCall_ok hs3 b3 m3) fun t4 ⟨k4, b4, s4, _, _, _, e4, _⟩ => ?_
-  have hs4 := k4.scr hs3
-  have one4 : EV t4.mem base 20 = 1 := by rw [Same.env s4 (i := 20) (by decide)]; exact one3
-  have q4 : pt (EV t4.mem base) 3 4 5 = dbl2 (pt (EV s.mem base) 3 4 5) := by
+  obtain hs4 := k4.scr hs3
+  obtain one4 : EV t4.mem base 20 = 1 := by rw [Same.env s4 (i := 20) (by decide)]; exact one3
+  obtain q4 : pt (EV t4.mem base) 3 4 5 = dbl2 (pt (EV s.mem base) 3 4 5) := by
     rw [e4, dblEnv_345, one3, dblPt_eq, e3, dblEnv_345, h20, dblPt_eq]; rfl
   -- `Q` to slots 0–2, and `R` into slots 3–5.
   rw [WP.seq_iff, WP.block_append_iff, WP.block_append_iff, WP.block_append_iff]
   refine WP.mono (copy3_ok hs4 0 3 (by decide) (by decide) (by decide)) fun t5 ⟨v5, o5, f5, k5⟩ => ?_
-  have hs5 := hs4.of_keeps k5 (by decide)
+  obtain hs5 := hs4.of_keeps k5 (by decide)
   -- `RX` and `RY`, kept by every step so far.
-  have mR : ∀ o, o = RX ∨ o = RY → ∀ i < 8, limbs t5.mem base o i = limbs s.mem base o i := fun o ho i hi => by
-    have hn : o + 8 * i + 8 ≤ 8192 := by rcases ho with rfl | rfl <;> simp only [RX, RY, CAN] <;> omega_arith
+  obtain mR : ∀ o, o = RX ∨ o = RY → ∀ i < 8, limbs t5.mem base o i = limbs s.mem base o i := fun o ho i hi => by
+    obtain hn : o + 8 * i + 8 ≤ 8192 := by rcases ho with rfl | rfl <;> simp only [RX, RY, CAN] <;> omega_arith
     refine congrArg BitVec.toNat ?_
     rw [f5.word (Or.inr (by rcases ho with rfl | rfl <;> simp only [slot, RX, RY, CAN] <;> omega_arith)) hn,
       k4.mem.word (Or.inr (by rcases ho with rfl | rfl <;> simp only [RX, RY, CAN] <;> omega_arith))
@@ -66,34 +66,34 @@ theorem cross_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base)
 
   refine WP.mono (copyS_ok hs5 (o := slot 3) (a := RX) (by decide) (by decide) (by decide) (by decide) (by decide))
     fun t6 ⟨v6, o6, k6⟩ => ?_
-  have hs6 := hs5.of_keeps k6 (by decide)
+  obtain hs6 := hs5.of_keeps k6 (by decide)
   refine WP.mono (copyS_ok hs6 (o := slot 4) (a := RY) (by decide) (by decide) (by decide) (by decide) (by decide))
     fun t7 ⟨v7, o7, k7⟩ => ?_
-  have hs7 := hs6.of_keeps k7 (by decide)
+  obtain hs7 := hs6.of_keeps k7 (by decide)
   refine WP.mono (constSlot_ok hs7 (o := slot 5) (by decide) (by decide) 1) fun t8 ⟨v8, o8, k8⟩ => ?_
-  have hs8 := hs7.of_keeps k8 (by decide)
-  have keep8 : ∀ i : Index, i ≠ 3 → i ≠ 4 → i ≠ 5 → ∀ j < 8,
+  obtain hs8 := hs7.of_keeps k8 (by decide)
+  obtain keep8 : ∀ i : Index, i ≠ 3 → i ≠ 4 → i ≠ 5 → ∀ j < 8,
       limbs t8.mem base (slot i.val) j = limbs t5.mem base (slot i.val) j := fun i h3 h4 h5 j hj => by
     have := i.isLt
-    have n3 : i.val ≠ 3 := fun e => h3 (Fin.ext e)
-    have n4 : i.val ≠ 4 := fun e => h4 (Fin.ext e)
-    have n5 : i.val ≠ 5 := fun e => h5 (Fin.ext e)
+    obtain n3 : i.val ≠ 3 := fun e => h3 (Fin.ext e)
+    obtain n4 : i.val ≠ 4 := fun e => h4 (Fin.ext e)
+    obtain n5 : i.val ≠ 5 := fun e => h5 (Fin.ext e)
     rw [o8.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith),
       o7.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith),
       o6.limbs (by simp only [slot]; omega_arith) (by simp only [slot]; omega_arith) (by omega_arith)]
-  have l3 : ∀ j < 8, limbs t8.mem base (slot 3) j = limbs s.mem base RX j := fun j hj => by
+  obtain l3 : ∀ j < 8, limbs t8.mem base (slot 3) j = limbs s.mem base RX j := fun j hj => by
     rw [o8.limbs (by decide) (by decide) (by omega_arith), o7.limbs (by decide) (by decide) (by omega_arith), v6 j hj,
       mR _ (.inl rfl) j hj]
-  have l4 : ∀ j < 8, limbs t8.mem base (slot 4) j = limbs s.mem base RY j := fun j hj => by
+  obtain l4 : ∀ j < 8, limbs t8.mem base (slot 4) j = limbs s.mem base RY j := fun j hj => by
     rw [o8.limbs (by decide) (by decide) (by omega_arith), v7 j hj,
       o6.limbs (by simp only [RY, CAN]; decide) (by simp only [RY, CAN]; decide) (by omega_arith), mR _ (.inr rfl) j hj]
-  have l0 : ∀ c < 3, ∀ j < 8, limbs t8.mem base (slot (0 + c)) j = limbs t4.mem base (slot (3 + c)) j :=
+  obtain l0 : ∀ c < 3, ∀ j < 8, limbs t8.mem base (slot (0 + c)) j = limbs t4.mem base (slot (3 + c)) j :=
     fun c hc j hj => by
       rw [show limbs t8.mem base (slot (0 + c)) j = limbs t8.mem base (slot (⟨0 + c, by omega_arith⟩ : Index).val) j
         from rfl, keep8 _ (by intro h; simp [Fin.ext_iff] at h; omega_arith) (by intro h; simp [Fin.ext_iff] at h; omega_arith)
         (by intro h; simp [Fin.ext_iff] at h; omega_arith) j hj]
       exact v5 c hc j hj
-  have b8 : BEnv t8.mem base := by
+  obtain b8 : BEnv t8.mem base := by
     intro i
     by_cases h3 : i = 3
     · subst h3; exact fun j hj => by show limbs t8.mem base (slot 3) j < Ib; rw [l3 j hj]; exact hrx j hj
@@ -108,53 +108,53 @@ theorem cross_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base)
       · have : i.val = 0 + i.val := by omega_arith
         show limbs t5.mem base (slot i.val) j < Ib
         rw [this, v5 _ (by omega_arith) j hj]; exact b4 ⟨3 + i.val, by omega_arith⟩ j hj
-  have e8 : ∀ i : Index, i ≠ 3 → i ≠ 4 → i ≠ 5 → EV t8.mem base i = EV t5.mem base i := fun i h3 h4 h5 =>
+  obtain e8 : ∀ i : Index, i ≠ 3 → i ≠ 4 → i ≠ 5 → EV t8.mem base i = EV t5.mem base i := fun i h3 h4 h5 =>
     congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr (keep8 i h3 h4 h5))
-  have r8 : pt (EV t8.mem base) 3 4 5 = ⟨FV s.mem base RX, FV s.mem base RY, 1⟩ := by
+  obtain r8 : pt (EV t8.mem base) 3 4 5 = ⟨FV s.mem base RX, FV s.mem base RY, 1⟩ := by
     show (⟨FV t8.mem base (slot 3), FV t8.mem base (slot 4), FV t8.mem base (slot 5)⟩ : Point) = _
     rw [FV_of_limbs l3, FV_of_limbs l4, F_of_words v8]
-  have q8 : pt (EV t8.mem base) 0 1 2 = dbl2 (pt (EV s.mem base) 3 4 5) := by
+  obtain q8 : pt (EV t8.mem base) 0 1 2 = dbl2 (pt (EV s.mem base) 3 4 5) := by
     rw [pt_of_limbs (x := 0) (y := 1) (z := 2) (x' := 3) (y' := 4) (z' := 5) l0 rfl rfl rfl rfl rfl rfl, q4]
-  have one8 : EV t8.mem base 20 = 1 := by
+  obtain one8 : EV t8.mem base 20 = 1 := by
     rw [e8 20 (by decide) (by decide) (by decide)]
     rw [show EV t5.mem base 20 = EV t4.mem base 20 from
       congrArg VG.Proof.X448.toFe (VG.Proof.X448.Wide.valN_congr (o5 20 (by decide)))]
     exact one4
-  have z8 : Bnd Mb t8.mem base (slot (5 : Index).val) := fun j hj => by
+  obtain z8 : Bnd Mb t8.mem base (slot (5 : Index).val) := fun j hj => by
     show (word t8.mem base (slot 5 + 8 * j)).toNat < Mb
     rw [v8 j hj]; exact Nat.lt_of_lt_of_le (VG.Proof.X448.AArch64.Base.limb_lt _ _) (by decide)
   -- `R`, doubled twice.
   rw [WP.seq_iff]
   refine WP.mono (Point56.doubleCall_ok hs8 b8 z8) fun t9 ⟨k9, b9, s9, _, _, m9, e9, _⟩ => ?_
-  have hs9 := k9.scr hs8
-  have one9 : EV t9.mem base 20 = 1 := by rw [Same.env s9 (i := 20) (by decide)]; exact one8
+  obtain hs9 := k9.scr hs8
+  obtain one9 : EV t9.mem base 20 = 1 := by rw [Same.env s9 (i := 20) (by decide)]; exact one8
   rw [WP.seq_iff]
   refine WP.mono (Point56.doubleCall_ok hs9 b9 m9) fun t10 ⟨k10, b10, s10, _, _, _, e10, _⟩ => ?_
-  have hs10 := k10.scr hs9
-  have r10 : pt (EV t10.mem base) 3 4 5 = dbl2 ⟨FV s.mem base RX, FV s.mem base RY, 1⟩ := by
+  obtain hs10 := k10.scr hs9
+  obtain r10 : pt (EV t10.mem base) 3 4 5 = dbl2 ⟨FV s.mem base RX, FV s.mem base RY, 1⟩ := by
     rw [e10, dblEnv_345, one9, dblPt_eq, e9, dblEnv_345, one8, dblPt_eq, r8]; rfl
-  have q10 : pt (EV t10.mem base) 0 1 2 = dbl2 (pt (EV s.mem base) 3 4 5) := by
+  obtain q10 : pt (EV t10.mem base) 0 1 2 = dbl2 (pt (EV s.mem base) 3 4 5) := by
     rw [← q8]; simp only [pt]
     rw [Same.env s10 (i := 0) (by decide), Same.env s10 (i := 1) (by decide), Same.env s10 (i := 2) (by decide),
       Same.env s9 (i := 0) (by decide), Same.env s9 (i := 1) (by decide), Same.env s9 (i := 2) (by decide)]
   -- The products.
   refine mulOpK hs10 b10 12 0 5 (Or.inr (by decide)) fun t11 k11 b11 m12 s11 e11 => ?_
-  have hs11 := k11.scr hs10
+  obtain hs11 := k11.scr hs10
   refine mulOpK hs11 b11 13 3 2 (Or.inr (by decide)) fun t12 k12 b12 m13 s12 e12 => ?_
-  have hs12 := k12.scr hs11
+  obtain hs12 := k12.scr hs11
   refine mulOpK hs12 b12 14 1 5 (Or.inr (by decide)) fun t13 k13 b13 m14 s13 e13 => ?_
-  have hs13 := k13.scr hs12
+  obtain hs13 := k13.scr hs12
   refine mulOpK hs13 b13 15 4 2 (Or.inr (by decide)) fun t k14 b14 m15 s14 e14 => WP.block_nil ?_
-  have qx : EV t10.mem base 0 = (dbl2 (pt (EV s.mem base) 3 4 5)).X :=
+  obtain qx : EV t10.mem base 0 = (dbl2 (pt (EV s.mem base) 3 4 5)).X :=
     congrArg Point.X q10
-  have qy : EV t10.mem base 1 = (dbl2 (pt (EV s.mem base) 3 4 5)).Y :=
+  obtain qy : EV t10.mem base 1 = (dbl2 (pt (EV s.mem base) 3 4 5)).Y :=
     congrArg Point.Y q10
-  have qz : EV t10.mem base 2 = (dbl2 (pt (EV s.mem base) 3 4 5)).Z :=
+  obtain qz : EV t10.mem base 2 = (dbl2 (pt (EV s.mem base) 3 4 5)).Z :=
     congrArg Point.Z q10
-  have rx : EV t10.mem base 3 = (dbl2 ⟨FV s.mem base RX, FV s.mem base RY, 1⟩).X := congrArg Point.X r10
-  have ry : EV t10.mem base 4 = (dbl2 ⟨FV s.mem base RX, FV s.mem base RY, 1⟩).Y := congrArg Point.Y r10
-  have rz : EV t10.mem base 5 = (dbl2 ⟨FV s.mem base RX, FV s.mem base RY, 1⟩).Z := congrArg Point.Z r10
-  have kf : FKeep base t10 t := k11.trans (k12.trans (k13.trans k14))
+  obtain rx : EV t10.mem base 3 = (dbl2 ⟨FV s.mem base RX, FV s.mem base RY, 1⟩).X := congrArg Point.X r10
+  obtain ry : EV t10.mem base 4 = (dbl2 ⟨FV s.mem base RX, FV s.mem base RY, 1⟩).Y := congrArg Point.Y r10
+  obtain rz : EV t10.mem base 5 = (dbl2 ⟨FV s.mem base RX, FV s.mem base RY, 1⟩).Z := congrArg Point.Z r10
+  obtain kf : FKeep base t10 t := k11.trans (k12.trans (k13.trans k14))
   refine ⟨kf.scr hs10, ?_, ?_, ⟨?_, ?_, ?_, ?_⟩, ?_⟩
   · have ka:Keeps crossClob s t5:=((crossClob_ckeep k3).trans (crossClob_ckeep k4)).trans
       (crossClob_clob k5)
@@ -176,7 +176,7 @@ theorem cross_ok {s:State} {base:Addr} (hs:Scr s base) (hb:BEnv s.mem base)
       Same.env s11 (i := 4) (by decide), Same.env s13 (i := 2) (by decide), Same.env s12 (i := 2) (by decide),
       Same.env s11 (i := 2) (by decide), ry, qz]
   · intro i h1 h2
-    have hi : i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 := by
+    obtain hi : i = 12 ∨ i = 13 ∨ i = 14 ∨ i = 15 := by
       rcases i with ⟨i, hlt⟩; simp only [Fin.ext_iff] at h1 h2 ⊢; omega_arith
     rcases hi with rfl | rfl | rfl | rfl
     · exact s14.bnd (by decide) (s13.bnd (by decide) (s12.bnd (by decide) m12))

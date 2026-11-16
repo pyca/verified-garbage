@@ -114,7 +114,7 @@ structure BT (M : CtxMode) (s : State) : Prop where
 theorem BT.ofM {M : CtxMode} {s : State} (h : Proof.AesGcm.blocksToPreM M s) : BT M s := by
   simp only [Proof.AesGcm.blocksToPreM, Proof.AesGcm.args, Proof.AesGcm.arg, Proof.AesGcm.ret,
     Proof.AesGcm.stk24, Proof.AesGcm.rounds] at h
-  have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
+  obtain hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
   sig_split h
   rename_i a₁ a₂ a₃ a₄ a₅ a₆ a₇ a₈ a₉ a₁₀ a₁₁ a₁₂ a₁₃ a₁₄ a₁₅ a₁₆ a₁₇ a₁₈ a₁₉ a₂₀ a₂₁ a₂₂ a₂₃ a₂₄ a₂₅ a₂₆ a₂₇
     a₂₈ a₂₉ a₃₀ a₃₁ a₃₂ a₃₃ a₃₄ a₃₅ a₃₆ a₃₇ a₃₈ a₃₉ a₄₀
@@ -163,8 +163,8 @@ theorem kR'_sub : (kR' s).Sub (sR s) := Region.sub_prefix (by decide)
 theorem keep_a {m m' : Mem} (hf : Frame (wR s) m m') {i : Nat} (hi : i < 3) :
     m'.readW (SP s + BitVec.ofNat 64 (8 * (i + 1))) 64 = m.readW (SP s + BitVec.ofNat 64 (8 * (i + 1))) 64 :=
   hf.readW (r := ⟨SP s + BitVec.ofNat 64 (8 * (i + 1)), 8⟩) (Region.contains_self _ _) (fun r hr => by
-    have hs : Region.Sub ⟨SP s + BitVec.ofNat 64 (8 * (i + 1)), 8⟩ (aR s) := by
-      have e : SP s + BitVec.ofNat 64 (8 * (i + 1)) = SP s + BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * i) := by
+    obtain hs : Region.Sub ⟨SP s + BitVec.ofNat 64 (8 * (i + 1)), 8⟩ (aR s) := by
+      obtain e : SP s + BitVec.ofNat 64 (8 * (i + 1)) = SP s + BitVec.ofNat 64 8 + BitVec.ofNat 64 (8 * i) := by
         rw [BitVec.add_assoc, ← BitVec.ofNat_add]; congr 2; omega_using []
       rw [e]; exact Offset.sub_base _ (by omega_using [hi])
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -330,9 +330,9 @@ theorem src_wR : ∀ r ∈ wR s, (srcR s).Disjoint r := by
 /-- The key schedule, through a frame of the regions written. -/
 theorem keep_sch {m m' : Mem} (hf : Frame (wR s) m m') :
     Spec.Aes.bytesAt m' (K s) (16 * (R s + 1)) = Spec.Aes.bytesAt m (K s) (16 * (R s + 1)) := by
-  have hRb : 16 * (R s + 1) ≤ 256 := by rcases hp.rounds with h | h | h <;> simp only [R, h] <;> decide
+  obtain hRb : 16 * (R s + 1) ≤ 256 := by rcases hp.rounds with h | h | h <;> simp only [R, h] <;> decide
   exact bytesAt_frame hf (fun r hr => by
-    have hs : Region.Sub ⟨K s, 16 * (R s + 1)⟩ (kR M s) := Region.sub_prefix (Nat.le_trans hRb M.ge)
+    obtain hs : Region.Sub ⟨K s, 16 * (R s + 1)⟩ (kR M s) := Region.sub_prefix (Nat.le_trans hRb M.ge)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact hp.k_c.sub_left hs
@@ -344,7 +344,7 @@ theorem keep_sch {m m' : Mem} (hf : Frame (wR s) m m') :
 theorem keep_h {m m' : Mem} (hf : Frame (wR s) m m') :
     blockAt m' (K s + BitVec.ofNat 64 240) = blockAt m (K s + BitVec.ofNat 64 240) :=
   blockAt_frame hf (fun r hr => by
-    have hs : Region.Sub ⟨K s + BitVec.ofNat 64 240, 16⟩ (kR M s) := Offset.sub_base _ (by have := M.ge; omega_arith)
+    obtain hs : Region.Sub ⟨K s + BitVec.ofNat 64 240, 16⟩ (kR M s) := Offset.sub_base _ (by have := M.ge; omega_arith)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl
     · exact hp.k_c.sub_left hs
@@ -355,9 +355,9 @@ theorem keep_h {m m' : Mem} (hf : Frame (wR s) m m') :
 omit hp in
 theorem Kept.frame {k : Nat} {m m' : Mem} (h : Kept s k m) {rs : List Region} (hf : Frame rs m m')
     (hd : ∀ r ∈ rs, (kR' s).Disjoint r) : Kept s k m' := by
-  have e : ∀ d, d + 8 ≤ 56 → m'.readW (S s + BitVec.ofNat 64 d) 64 = m.readW (S s + BitVec.ofNat 64 d) 64 :=
+  obtain e : ∀ d, d + 8 ≤ 56 → m'.readW (S s + BitVec.ofNat 64 d) 64 = m.readW (S s + BitVec.ofNat 64 d) 64 :=
     fun d h₁ => hf.readW (Offset.contains_base _ h₁ (by omega_arith)) hd (by decide)
-  have e0 : m'.readW (S s) 64 = m.readW (S s) 64 := by simpa using e 0 (by decide)
+  obtain e0 : m'.readW (S s) 64 = m.readW (S s) 64 := by simpa using e 0 (by decide)
   exact ⟨by rw [e0]; exact h.ctx, by rw [e 8 (by decide)]; exact h.rounds,
     by rw [e 16 (by decide)]; exact h.ctr, by rw [e 24 (by decide)]; exact h.y,
     by rw [e 32 (by decide)]; exact h.src, by rw [e 40 (by decide)]; exact h.n,

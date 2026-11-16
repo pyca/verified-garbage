@@ -158,15 +158,15 @@ theorem init3_ok {s : State} {Kp C S : Addr} {KL : Nat} (Ar : IArgs s Kp C S KL)
       s₃.mem = (s₂.mem.writeW (C + BitVec.ofNat 64 240) 0#64).writeW (C + BitVec.ofNat 64 248) 0#64 ∧
       s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr ∧
       BCall s₃ C (C + BitVec.ofNat 64 240) (S + BitVec.ofNat 64 512) (KL / 4 + 6) 1 ∧ s₃.gpr .rsp = s.gpr .rsp := by
-  have hR := rounds_of Ar.klen
-  have sub_S : ∀ {d k : Nat}, d + k ≤ 2560 → Region.Sub ⟨S + BitVec.ofNat 64 d, k⟩ ⟨S, 2560⟩ :=
+  obtain hR := rounds_of Ar.klen
+  obtain sub_S : ∀ {d k : Nat}, d + k ≤ 2560 → Region.Sub ⟨S + BitVec.ofNat 64 d, k⟩ ⟨S, 2560⟩ :=
     fun h => Offset.sub_base S h
-  have sub_C : ∀ {d k : Nat}, d + k ≤ 256 → Region.Sub ⟨C + BitVec.ofNat 64 d, k⟩ ⟨C, 256⟩ :=
+  obtain sub_C : ∀ {d k : Nat}, d + k ≤ 256 → Region.Sub ⟨C + BitVec.ofNat 64 d, k⟩ ⟨C, 256⟩ :=
     fun h => Offset.sub_base C h
   -- `L_*`: a zero block at byte 240, enciphered.
-  have w₁ : InRegions s₂.wr (C + BitVec.ofNat 64 240) 8 := by
+  obtain w₁ : InRegions s₂.wr (C + BitVec.ofNat 64 240) 8 := by
     rw [hwr, Ar.wr]; exact ⟨⟨C, 256⟩, by simp, Offset.contains_base _ (by decide) (by have := Ar.wC; omega_arith)⟩
-  have w₂ : InRegions s₂.wr (C + BitVec.ofNat 64 248) 8 := by
+  obtain w₂ : InRegions s₂.wr (C + BitVec.ofNat 64 248) 8 := by
     rw [hwr, Ar.wr]; exact ⟨⟨C, 256⟩, by simp, Offset.contains_base _ (by decide) (by have := Ar.wC; omega_arith)⟩
   obtain ⟨s₃, run₃, rdi₃, rsi₃, rdx₃, rcx₃, r8₃, g₃, m₃, rd₃, wr₃⟩ : ∃ s₃, runBlock isa
       [.alu .xor .rax (.reg .rax), st .rbx 240 .rax, st .rbx 248 .rax, mvr .rdi .rbx, mvr .rsi .rbp,
@@ -187,10 +187,10 @@ theorem init3_ok {s : State} {Kp C S : Addr} {KL : Nat} (Ar : IArgs s Kp C S KL)
         simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
     · simp only [mem_setReg, mem_arithFlags, BitVec.xor_self]
     all_goals rfl
-  have hsp₃ : s₃.gpr .rsp = s.gpr .rsp := by rw [g₃ _ (by decide), hsp]
-  have dC : (⟨C, 240⟩ : Region).Disjoint ⟨C + BitVec.ofNat 64 240, 16 * 1⟩ :=
+  obtain hsp₃ : s₃.gpr .rsp = s.gpr .rsp := by rw [g₃ _ (by decide), hsp]
+  obtain dC : (⟨C, 240⟩ : Region).Disjoint ⟨C + BitVec.ofNat 64 240, 16 * 1⟩ :=
     Offset.base_disjoint C (Nat.le_refl _) (by decide)
-  have B₃ : BCall s₃ C (C + BitVec.ofNat 64 240) (S + BitVec.ofNat 64 512) (KL / 4 + 6) 1 :=
+  obtain B₃ : BCall s₃ C (C + BitVec.ofNat 64 240) (S + BitVec.ofNat 64 512) (KL / 4 + 6) 1 :=
     { rdi := rdi₃, rsi := rsi₃, rdx := rdx₃, rcx := rcx₃, r8 := r8₃, rounds := hR
       wrap := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Ar.wC; omega_arith
       kd := dC
@@ -473,13 +473,13 @@ theorem init3F_ok {s : State} {Kp C S : Addr} {KL : Nat} (Ar : IArgsF s Kp C S K
       s₃.mem = (s₂.mem.writeW (C + BitVec.ofNat 64 240) 0#64).writeW (C + BitVec.ofNat 64 248) 0#64 ∧
       s₃.rd = s₂.rd ∧ s₃.wr = s₂.wr ∧
       BCallF s₃ C (C + BitVec.ofNat 64 240) (S + BitVec.ofNat 64 512) (KL / 4 + 6) 1 ∧ s₃.gpr .rsp = s.gpr .rsp := by
-  have hR := rounds_of Ar.klen
-  have sub_C : ∀ {d k : Nat}, d + k ≤ 256 → Region.Sub ⟨C + BitVec.ofNat 64 d, k⟩ ⟨C, 256⟩ :=
+  obtain hR := rounds_of Ar.klen
+  obtain sub_C : ∀ {d k : Nat}, d + k ≤ 256 → Region.Sub ⟨C + BitVec.ofNat 64 d, k⟩ ⟨C, 256⟩ :=
     fun h => Offset.sub_base C h
   -- `L_*`: a zero block at byte 240, enciphered.
-  have w₁ : InRegions s₂.wr (C + BitVec.ofNat 64 240) 8 := by
+  obtain w₁ : InRegions s₂.wr (C + BitVec.ofNat 64 240) 8 := by
     rw [hwr, Ar.wr]; exact ⟨⟨C, 256⟩, by simp, Offset.contains_base _ (by decide) (by have := Ar.wC; omega_arith)⟩
-  have w₂ : InRegions s₂.wr (C + BitVec.ofNat 64 248) 8 := by
+  obtain w₂ : InRegions s₂.wr (C + BitVec.ofNat 64 248) 8 := by
     rw [hwr, Ar.wr]; exact ⟨⟨C, 256⟩, by simp, Offset.contains_base _ (by decide) (by have := Ar.wC; omega_arith)⟩
   obtain ⟨s₃, run₃, rdi₃, rsi₃, rdx₃, rcx₃, r8₃, g₃, m₃, rd₃, wr₃⟩ : ∃ s₃, runBlock isa
       [.alu .xor .rax (.reg .rax), st .rbx 240 .rax, st .rbx 248 .rax, mvr .rdi .rbx, mvr .rsi .rbp,
@@ -500,10 +500,10 @@ theorem init3F_ok {s : State} {Kp C S : Addr} {KL : Nat} (Ar : IArgsF s Kp C S K
         simp only [gpr_setReg, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
     · simp only [mem_setReg, mem_arithFlags, BitVec.xor_self]
     all_goals rfl
-  have hsp₃ : s₃.gpr .rsp = s.gpr .rsp := by rw [g₃ _ (by decide), hsp]
-  have dC : (⟨C, 240⟩ : Region).Disjoint ⟨C + BitVec.ofNat 64 240, 16 * 1⟩ :=
+  obtain hsp₃ : s₃.gpr .rsp = s.gpr .rsp := by rw [g₃ _ (by decide), hsp]
+  obtain dC : (⟨C, 240⟩ : Region).Disjoint ⟨C + BitVec.ofNat 64 240, 16 * 1⟩ :=
     Offset.base_disjoint C (Nat.le_refl _) (by decide)
-  have B₃ : BCallF s₃ C (C + BitVec.ofNat 64 240) (S + BitVec.ofNat 64 512) (KL / 4 + 6) 1 :=
+  obtain B₃ : BCallF s₃ C (C + BitVec.ofNat 64 240) (S + BitVec.ofNat 64 512) (KL / 4 + 6) 1 :=
     { rdi := rdi₃, rsi := rsi₃, rdx := rdx₃, rcx := rcx₃, r8 := r8₃, rounds := hR
       wrap := by rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Ar.wC; omega_arith
       kd := dC

@@ -132,11 +132,11 @@ theorem correctionNumerator_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z 
       val32 t.mem B (arr 4 0) 4 = val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 + 1 ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have hn := h.old.workspace.nowrap
-  have fr := h.arr_fit (j := aV) (by decide)
-  have ft := h.arr_fit (j := aDen) (by decide)
-  have bank := VG.Proof.RsaKeyGen.X86.Key.correction_workspace h.old
+  obtain fr := h.arr_fit (j := aV) (by decide)
+  obtain ft := h.arr_fit (j := aDen) (by decide)
+  obtain bank := VG.Proof.RsaKeyGen.X86.Key.correction_workspace h.old
   have hz : 256 ≤ Z := bank.fits
-  have L : ProductGeometry Z 2 2 (arr 4 1) (arr n aV) (arr n aDen) := by
+  obtain L : ProductGeometry Z 2 2 (arr 4 1) (arr n aV) (arr n aDen) := by
     refine ⟨⟨by decide, by decide, by decide, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
     all_goals simp only [arr, S, aV, aDen, hdr] at *
     all_goals omega_arith
@@ -146,16 +146,16 @@ theorem correctionNumerator_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z 
     (b := VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aDen) h L) fun u ⟨hu, Ou, V, Ku⟩ => ?_)
   change Outs B [(kProduct, 28), (arr 4 1, 24)] s.mem u.mem at Ou
   change val32 u.mem B (arr 4 1) 6 = val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 at V
-  have low : num u.mem B 4 1 = val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 :=
+  obtain low : num u.mem B 4 1 = val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 :=
     (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by decide : 4 ≤ 6) (by rw [V]; omega_arith)).trans V
   refine WP.seq (WP.mono (small_ok (j := 2) hu .correction 1 (by change 232 ≤ Z; omega_arith))
     fun v ⟨hv, Ov, wideOne, Kv⟩ => ?_)
   change Outside B (arr 4 2) 24 u.mem v.mem at Ov
   change val32 v.mem B (arr 4 2) 6 = 1 at wideOne
-  have one : val32 v.mem B (arr 4 2) 4 = 1 :=
+  obtain one : val32 v.mem B (arr 4 2) 4 = 1 :=
     (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by decide : 4 ≤ 6)
       (by rw [wideOne]; decide)).trans wideOne
-  have productV : val32 v.mem B (arr 4 1) 4 =
+  obtain productV : val32 v.mem B (arr 4 1) 4 =
       val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 :=
     (Ov.val32 (by decide) (by decide)).trans low
   refine WP.mono (chainAddW_ok hv.old.workspace (by decide : 0 < 4)
@@ -167,12 +167,12 @@ theorem correctionNumerator_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z 
   rw [productV] at sum
   change val32 v.mem B (arr 4 2) 4 = 1 at one
   rw [one] at sum
-  have result : val32 t.mem B (arr 4 0) 4 =
+  obtain result : val32 t.mem B (arr 4 0) 4 =
       val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 + 1 := by
     cases carry <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at sum <;> omega_arith
-  have rest := Ku.trans ((Kv.mono (by decide)).trans (Kt.mono (by decide)))
-  have frame : Outs B correctionScratch s.mem t.mem := by
-    have first : Outs B correctionScratch s.mem u.mem := VG.Proof.Rsa.outs_cover Ou (by
+  obtain rest := Ku.trans ((Kv.mono (by decide)).trans (Kt.mono (by decide)))
+  obtain frame : Outs B correctionScratch s.mem t.mem := by
+    obtain first : Outs B correctionScratch s.mem u.mem := VG.Proof.Rsa.outs_cover Ou (by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
@@ -213,13 +213,13 @@ theorem dProduct_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (widt
       num t.mem B n aD = num s.mem B n aU * val32 s.mem B (arr n aDen) 2 + num s.mem B n aV ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s t := by
   have hn := h.old.workspace.nowrap
-  have f0 := h.arr_fit (j := 0) (by decide)
-  have f1 := h.arr_fit (j := 1) (by decide)
-  have fu := h.arr_fit (j := aU) (by decide)
-  have ft := h.arr_fit (j := aDen) (by decide)
-  have fc := h.arr_fit (j := aV) (by decide)
-  have fd := h.arr_fit (j := aD) (by decide)
-  have L : ProductGeometry Z n 2 (arr n 0) (arr n aU) (arr n aDen) := by
+  obtain f0 := h.arr_fit (j := 0) (by decide)
+  obtain f1 := h.arr_fit (j := 1) (by decide)
+  obtain fu := h.arr_fit (j := aU) (by decide)
+  obtain ft := h.arr_fit (j := aDen) (by decide)
+  obtain fc := h.arr_fit (j := aV) (by decide)
+  obtain fd := h.arr_fit (j := aD) (by decide)
+  obtain L : ProductGeometry Z n 2 (arr n 0) (arr n aU) (arr n aDen) := by
     refine ⟨⟨h.wpos, by decide, by decide, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩, ?_, ?_, ?_⟩
     all_goals simp only [arr, S, aU, aDen, VG.Impl.Rsa.X86.Keys.hdr] at *
     all_goals omega_arith
@@ -232,29 +232,29 @@ theorem dProduct_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (widt
   change val32 u.mem B (arr n 0) (n + 4) =
     val32 s.mem B (arr n aU) n * val32 s.mem B (arr n aDen) 2 at V
   change val32 s.mem B (arr n aU) n * val32 s.mem B (arr n aDen) 2 + val32 s.mem B (arr n aV) n < 2 ^ (32 * n) at fits
-  have low : val32 u.mem B (arr n 0) n = val32 s.mem B (arr n aU) n * val32 s.mem B (arr n aDen) 2 :=
+  obtain low : val32 u.mem B (arr n 0) n = val32 s.mem B (arr n aU) n * val32 s.mem B (arr n aDen) 2 :=
     (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by omega_arith : n ≤ n + 4) (by rw [V]; omega_arith)).trans V
-  have C : val32 u.mem B (arr n aV) n = val32 s.mem B (arr n aV) n := by
+  obtain C : val32 u.mem B (arr n aV) n = val32 s.mem B (arr n aV) n := by
     apply Ou.val32 _ (by unfold S at fc; omega_arith)
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     all_goals simp only [arr, S, aV, VG.Impl.Rsa.X86.Keys.hdr]
     all_goals omega_arith
-  have addition := VG.Proof.Rsa.X86.KeyRt.chainAdd_ok (o := aD) (a := 0) (b := aV)
+  obtain addition := VG.Proof.Rsa.X86.KeyRt.chainAdd_ok (o := aD) (a := 0) (b := aV)
     hu.full (by decide) (by decide) (by decide) false
   simp only [kw_full h.width, VG.Proof.Rsa.X86.KeyRt.kk, Bool.toNat_false, Nat.add_zero] at addition
   refine WP.mono addition fun t ⟨_, Ot, ⟨carry, _, sum⟩, Kt⟩ => ?_
   change val32 t.mem B (arr n aD) n + 2 ^ (32 * n) * carry.toNat =
     val32 u.mem B (arr n 0) n + val32 u.mem B (arr n aV) n at sum
   rw [low, C] at sum
-  have result : num t.mem B n aD = num s.mem B n aU * val32 s.mem B (arr n aDen) 2 + num s.mem B n aV := by
+  obtain result : num t.mem B n aD = num s.mem B n aU * val32 s.mem B (arr n aDen) 2 + num s.mem B n aV := by
     change val32 t.mem B (arr n aD) n = _
     cases carry <;> simp only [Bool.toNat_false, Bool.toNat_true, Nat.mul_zero, Nat.mul_one, Nat.add_zero] at sum <;> omega_arith
-  have keep := Ku.trans (Kt.mono (by decide))
-  have ht := hu.afterKeep Kt Ot (by decide) (by simp)
+  obtain keep := Ku.trans (Kt.mono (by decide))
+  obtain ht := hu.afterKeep Kt Ot (by decide) (by simp)
   refine ⟨ht, ?_, result, keep.mono (by decide)⟩
-  have first : Outs B (dProductRanges n) s.mem u.mem := Ou.mono (by
+  obtain first : Outs B (dProductRanges n) s.mem u.mem := Ou.mono (by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl <;> simp [dProductRanges])
@@ -295,54 +295,54 @@ theorem subtractPair_ok {s : State} {B : Addr} {Z out a b : Nat} (h : Scr s B Z)
   have hn := h.nowrap
   unfold subtractPair
   refine wp_movS (readSrc_sc h (by omega_using [fa])) fun u U _ => ?_
-  have hu := h.of_keeps U.keeps (by decide)
+  obtain hu := h.of_keeps U.keeps (by decide)
   refine wp_movS (readSrc_sc hu (by omega_using [fa])) fun v V _ => ?_
-  have Kv : Keeps [.eax, .edx] s v := (U.keeps.mono (by decide)).widen V.keeps
-  have hv := h.of_keeps Kv (by decide)
-  have loRead := readSrc_sc hv (d := b) (by omega_using [fb])
+  obtain Kv : Keeps [.eax, .edx] s v := (U.keeps.mono (by decide)).widen V.keeps
+  obtain hv := h.of_keeps Kv (by decide)
+  obtain loRead := readSrc_sc hv (d := b) (by omega_using [fb])
   rw [V.mem, U.mem] at loRead
   refine wp_subS loRead fun w W cfW => ?_
-  have Kw : Keeps [.eax, .edx] s w := Kv.widen W.keeps
-  have hw := h.of_keeps Kw (by decide)
-  have hiRead := readSrc_sc hw (d := b + 4) (by omega_using [fb])
+  obtain Kw : Keeps [.eax, .edx] s w := Kv.widen W.keeps
+  obtain hw := h.of_keeps Kw (by decide)
+  obtain hiRead := readSrc_sc hw (d := b + 4) (by omega_using [fb])
   rw [W.mem, V.mem, U.mem] at hiRead
   refine wp_sbbS hiRead cfW fun x X _ => ?_
-  have Kx : Keeps [.eax, .edx] s x := Kw.widen X.keeps
-  have hx := h.of_keeps Kx (by decide)
-  have Px : PtrAt x B .ebp out := by rw [PtrAt, Kx.1 _ (by decide)]; exact P
-  have Rx : VG.Proof.Mont.X86.Rt.Ws x B Z := ⟨hx.wr, hx.nowrap⟩
+  obtain Kx : Keeps [.eax, .edx] s x := Kw.widen X.keeps
+  obtain hx := h.of_keeps Kx (by decide)
+  obtain Px : PtrAt x B .ebp out := by rw [PtrAt, Kx.1 _ (by decide)]; exact P
+  obtain Rx : VG.Proof.Mont.X86.Rt.Ws x B Z := ⟨hx.wr, hx.nowrap⟩
   refine wp_storeS (VG.Proof.Mont.X86.Rt.ea_ptr Rx Px (d := 0) (by omega_using [fo]))
     (VG.Proof.Mont.X86.Rt.ws_write Rx (by omega_using [fo])) fun y Y => ?_
-  have hy := hx.of_keeps (Y.keeps []) (by decide)
-  have Py : PtrAt y B .ebp out := by rw [PtrAt, Y.gpr]; exact Px
-  have Ry : VG.Proof.Mont.X86.Rt.Ws y B Z := ⟨hy.wr, hy.nowrap⟩
+  obtain hy := hx.of_keeps (Y.keeps []) (by decide)
+  obtain Py : PtrAt y B .ebp out := by rw [PtrAt, Y.gpr]; exact Px
+  obtain Ry : VG.Proof.Mont.X86.Rt.Ws y B Z := ⟨hy.wr, hy.nowrap⟩
   refine wp_storeS (VG.Proof.Mont.X86.Rt.ea_ptr Ry Py (d := 4) (by omega_using [fo]))
     (VG.Proof.Mont.X86.Rt.ws_write Ry (by omega_using [fo])) fun t T => WP.block_nil ?_
   simp only [Nat.add_zero] at Y
   let lowBorrow := decide ((v.gpr .eax).toNat < (s.mem.readW (off B b) 32).toNat)
   let highBorrow := decide ((w.gpr .edx).toNat < (s.mem.readW (off B (b + 4)) 32).toNat + lowBorrow.toNat)
-  have low : (w.gpr .eax).toNat + w32 s.mem B b = (v.gpr .eax).toNat + 2 ^ 32 * lowBorrow.toNat := by
+  obtain low : (w.gpr .eax).toNat + w32 s.mem B b = (v.gpr .eax).toNat + 2 ^ 32 * lowBorrow.toNat := by
     rw [W.gpr]
-    have H := sbb_rel (v.gpr .eax) (s.mem.readW (off B b) 32) false
+    obtain H := sbb_rel (v.gpr .eax) (s.mem.readW (off B b) 32) false
     simpa only [show (BitVec.ofBool false).setWidth 32 = 0#32 from rfl, BitVec.sub_zero,
       Bool.toNat_false, Nat.add_zero] using H
-  have high : (x.gpr .edx).toNat + w32 s.mem B (b + 4) + lowBorrow.toNat =
+  obtain high : (x.gpr .edx).toNat + w32 s.mem B (b + 4) + lowBorrow.toNat =
       (w.gpr .edx).toNat + 2 ^ 32 * highBorrow.toNat := by rw [X.gpr]; exact sbb_rel ..
   rw [V.other _ (by decide), U.gpr] at low
   rw [W.other _ (by decide), V.gpr, U.mem] at high
   change (w.gpr .eax).toNat + w32 s.mem B b = w32 s.mem B a + 2 ^ 32 * lowBorrow.toNat at low
   change (x.gpr .edx).toNat + w32 s.mem B (b + 4) + lowBorrow.toNat =
     w32 s.mem B (a + 4) + 2 ^ 32 * highBorrow.toNat at high
-  have oldMem : x.mem = s.mem := X.mem.trans (W.mem.trans (V.mem.trans U.mem))
-  have Oy : Outside B out 4 s.mem y.mem := by
+  obtain oldMem : x.mem = s.mem := X.mem.trans (W.mem.trans (V.mem.trans U.mem))
+  obtain Oy : Outside B out 4 s.mem y.mem := by
     rw [Y.mem, oldMem]
     exact writeW32_outside _ _ _ (by omega_using [fo, hn])
-  have Ot : Outside B (out + 4) 4 y.mem t.mem := by
+  obtain Ot : Outside B (out + 4) 4 y.mem t.mem := by
     rw [T.mem]
     exact writeW32_outside _ _ _ (by omega_using [fo, hn])
-  have lowT : w32 t.mem B out = (x.gpr .eax).toNat := by
+  obtain lowT : w32 t.mem B out = (x.gpr .eax).toNat := by
     rw [Ot.w32 (Or.inl (Nat.le_refl _)) (by omega_using [fo, hn]), Y.mem, w32_write_self]
-  have highT : w32 t.mem B (out + 4) = (x.gpr .edx).toNat := by
+  obtain highT : w32 t.mem B (out + 4) = (x.gpr .edx).toNat := by
     rw [T.mem, w32_write_self, Y.gpr]
   refine ⟨(Oy.mono (Nat.le_refl _) (by omega_using [])).trans (Ot.mono (by omega_using []) (by omega_using [])),
     ⟨highBorrow, ?_⟩, Kx.trans ((Y.keeps _).trans (T.keeps _))⟩
@@ -372,24 +372,24 @@ theorem complement_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (wi
       val32 t.mem B (arr n aDen) (n + 2) = val32 s.mem B kEv 2 - val32 s.mem B (arr 2 3) 2 ∧
       num t.mem B n aDen = val32 s.mem B kEv 2 - val32 s.mem B (arr 2 3) 2 ∧
       Keeps [.eax, .ecx, .edx, .ebp] s t := by
-  have fit := h.arr_fit (j := aDen) (by decide)
+  obtain fit := h.arr_fit (j := aDen) (by decide)
   have fits := h.old.fits
   have hn := h.old.workspace.nowrap
-  have eBound : kEv + 8 ≤ Z := by have := h.hdr_le; unfold kEv VG.Impl.Rsa.X86.Keys.hdr at *; omega_using [this]
-  have xBound : arr 2 3 + 8 ≤ Z := by unfold arr S VG.Impl.Rsa.X86.Keys.hdr at fits ⊢; omega_using [fits]
-  have beforeE : kEv + 8 ≤ arr n aDen := by unfold arr S kEv aDen VG.Impl.Rsa.X86.Keys.hdr; omega_using []
-  have beforeX : arr 2 3 + 8 ≤ arr n aDen := by unfold arr S aDen VG.Impl.Rsa.X86.Keys.hdr; omega_using []
+  obtain eBound : kEv + 8 ≤ Z := by have := h.hdr_le; unfold kEv VG.Impl.Rsa.X86.Keys.hdr at *; omega_using [this]
+  obtain xBound : arr 2 3 + 8 ≤ Z := by unfold arr S VG.Impl.Rsa.X86.Keys.hdr at fits ⊢; omega_using [fits]
+  obtain beforeE : kEv + 8 ≤ arr n aDen := by unfold arr S kEv aDen VG.Impl.Rsa.X86.Keys.hdr; omega_using []
+  obtain beforeX : arr 2 3 + 8 ≤ arr n aDen := by unfold arr S aDen VG.Impl.Rsa.X86.Keys.hdr; omega_using []
   unfold complement
   refine WP.seq (WP.mono (zero_ok h .modulus (VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aDen) fit)
     fun u ⟨hu, Ou, zero, Ku⟩ => ?_)
   change Outside B (arr n aDen) (4 * (n + 2)) s.mem u.mem at Ou
   change val32 u.mem B (arr n aDen) (n + 2) = 0 at zero
-  have E : val32 u.mem B kEv 2 = val32 s.mem B kEv 2 := Ou.val32 (Or.inl beforeE) (by omega_using [hn, eBound])
-  have X : val32 u.mem B (arr 2 3) 2 = val32 s.mem B (arr 2 3) 2 := Ou.val32 (Or.inl beforeX) (by omega_using [hn, xBound])
+  obtain E : val32 u.mem B kEv 2 = val32 s.mem B kEv 2 := Ou.val32 (Or.inl beforeE) (by omega_using [hn, eBound])
+  obtain X : val32 u.mem B (arr 2 3) 2 = val32 s.mem B (arr 2 3) 2 := Ou.val32 (Or.inl beforeX) (by omega_using [hn, xBound])
   refine hu.ptr_ok (VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aDen) (by decide) (by decide)
     (by simp only [VG.Impl.RsaKeyGen.X86.KeyRuntime.arr, offset_array, Width.words]; unfold S at fit; omega_using [fit, hn])
     fun v Kv mv P => ?_
-  have hv := hu.keep Kv (by rw [mv]; exact Outside.refl _ _ _ _)
+  obtain hv := hu.keep Kv (by rw [mv]; exact Outside.refl _ _ _ _)
   refine WP.mono (subtractPair_ok hv.old.workspace P eBound xBound
     (by change arr n aDen + 8 ≤ Z; unfold S at fit; omega_using [fit])) fun t ⟨Ot, ⟨borrow, value⟩, Kt⟩ => ?_
   rw [mv] at Ot value
@@ -397,21 +397,21 @@ theorem complement_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (wi
   change val32 t.mem B (arr n aDen) 2 + val32 u.mem B (arr 2 3) 2 =
     val32 u.mem B kEv 2 + 2 ^ 64 * borrow.toNat at value
   rw [E, X] at value
-  have noBorrow := (VG.Proof.Rsa.borrow_iff value (val32_lt t.mem B (arr n aDen) 2) (Bool.toNat_le borrow)).mpr
+  obtain noBorrow := (VG.Proof.Rsa.borrow_iff value (val32_lt t.mem B (arr n aDen) 2) (Bool.toNat_le borrow)).mpr
     (Nat.le_of_lt less)
   rw [noBorrow, Nat.mul_zero, Nat.add_zero] at value
-  have result : val32 t.mem B (arr n aDen) 2 = val32 s.mem B kEv 2 - val32 s.mem B (arr 2 3) 2 := by omega_using [value]
-  have high : val32 u.mem B (arr n aDen + 8) n = 0 :=
+  obtain result : val32 t.mem B (arr n aDen) 2 = val32 s.mem B kEv 2 - val32 s.mem B (arr 2 3) 2 := by omega_using [value]
+  obtain high : val32 u.mem B (arr n aDen + 8) n = 0 :=
     VG.Proof.Rsa.KeyWorkspace.val32_zero_part zero (a := 2) (c := n) (by omega_using [])
-  have highT : val32 t.mem B (arr n aDen + 8) n = 0 := by
+  obtain highT : val32 t.mem B (arr n aDen + 8) n = 0 := by
     rw [Ot.val32 (Or.inr (Nat.le_refl _)) (by unfold S at fit; omega_using [fit, hn]), high]
-  have full : val32 t.mem B (arr n aDen) (n + 2) = val32 s.mem B kEv 2 - val32 s.mem B (arr 2 3) 2 := by
+  obtain full : val32 t.mem B (arr n aDen) (n + 2) = val32 s.mem B kEv 2 - val32 s.mem B (arr 2 3) 2 := by
     rw [show n + 2 = 2 + n by omega_using [], val32_append, highT, Nat.mul_zero, Nat.add_zero, result]
-  have bound : val32 t.mem B (arr n aDen) (n + 2) < 2 ^ (32 * n) := by
+  obtain bound : val32 t.mem B (arr n aDen) (n + 2) < 2 ^ (32 * n) := by
     rw [full]
     exact Nat.lt_of_lt_of_le (Nat.lt_of_le_of_lt (Nat.sub_le _ _) (val32_lt s.mem B kEv 2))
       (Nat.pow_le_pow_right (by decide) (by omega_using [width]))
-  have frame := Ou.trans (Ot.mono (Nat.le_refl _) (by omega_using []))
+  obtain frame := Ou.trans (Ot.mono (Nat.le_refl _) (by omega_using []))
   have K : Keeps [.eax, .ecx, .edx, .ebp] s t := Ku.trans
     ((Kv.mono (by decide)).trans (Kt.mono (by decide)))
   exact ⟨h.keep K (frame.mono (Nat.zero_le _) (by unfold S at fit; omega_using [fit])), frame, full,
@@ -452,38 +452,38 @@ theorem dEven_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
   let valid := L % 2 = 1 ∧ 3 ≤ L
   let M := if valid then L else 3
   have eo : e % 2 = 0 := even
-  have mo : M % 2 = 1 := by
+  obtain mo : M % 2 = 1 := by
     unfold M
     split
     · next H => exact H.1
     · decide
-  have ml : 1 < M := by unfold M; split <;> omega
+  obtain ml : 1 < M := by unfold M; split <;> omega
   unfold dEven seqs
   refine WP.seq (WP.mono (oddModulus_ok h (by decide) (by decide) (by decide))
     fun u ⟨hu, Ou, flag, modulus, Ku⟩ => ?_)
   change num u.mem B n aDen = M at modulus
   change slot u.mem B kFlag = (if valid then 1 else 0) at flag
-  have Eu : num u.mem B n aE = e :=
+  obtain Eu : num u.mem B n aE = e :=
     (Ou.num (by decide) (by decide) (h.fit64 (by decide))).trans loaded
-  have frameU := exponent_keep_frame (by decide) (by decide) Ou
+  obtain frameU := exponent_keep_frame (by decide) (by decide) Ou
   refine WP.seq (WP.mono (saveSlot_ok hu (by decide) (by decide))
     fun v ⟨hv, Ov, saved, Kv⟩ => ?_)
-  have maskV : slot v.mem B kOk = (if valid then 1 else 0) := saved.trans flag
-  have Mv : num v.mem B n aDen = M :=
+  obtain maskV : slot v.mem B kOk = (if valid then 1 else 0) := saved.trans flag
+  obtain Mv : num v.mem B n aDen = M :=
     (Ov.num (by simp) (by decide) (h.fit64 (by decide))).trans modulus
-  have Ev : num v.mem B n aE = e :=
+  obtain Ev : num v.mem B n aE = e :=
     (Ov.num (by simp) (by decide) (h.fit64 (by decide))).trans Eu
-  have frameV := exponent_keep_frame (by decide) (by decide) Ov
+  obtain frameV := exponent_keep_frame (by decide) (by decide) Ov
   refine WP.seq (WP.mono (arrayDivision_ok hv (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide) (by rw [Mv]; omega_using [mo]))
     fun w ⟨hw, Ow, _, R, Kw⟩ => ?_)
   rw [Ev, Mv] at R
-  have Mw : num w.mem B n aDen = M :=
+  obtain Mw : num w.mem B n aDen = M :=
     (arrayDivision_preserves_num (by decide) (by decide) (by decide) (h.fit64 (by decide)) Ow).trans Mv
-  have maskW : slot w.mem B kOk = (if valid then 1 else 0) :=
+  obtain maskW : slot w.mem B kOk = (if valid then 1 else 0) :=
     (arrayDivision_preserves_slot (by decide) Ow).trans maskV
-  have frameW := exponent_division_frame Ow
-  have layout := inverse_array_layout hw.old (Nat.le_refl n) (by decide : aV < 32)
+  obtain frameW := exponent_division_frame Ow
+  obtain layout := inverse_array_layout hw.old (Nat.le_refl n) (by decide : aV < 32)
     (by decide : aDen < 32) (by decide) (by decide)
   refine WP.seq (WP.mono (inverseFrom_ok (w := .modulus)
     (src := VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aV)
@@ -496,11 +496,11 @@ theorem dEven_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
   rw [R, Mw] at gcd congruence
   rw [Mw] at boundX
   rw [gcd] at congruence
-  have maskA : slot a.mem B kOk = (if valid then 1 else 0) :=
+  obtain maskA : slot a.mem B kOk = (if valid then 1 else 0) :=
     (hw.inverse_slot (by decide) Oa).trans maskW
-  have spW : w.gpr .esp = s.gpr .esp := by
+  obtain spW : w.gpr .esp = s.gpr .esp := by
     rw [Kw.1 .esp (by decide), Kv.1 .esp (by decide), Ku.1 .esp (by decide)]
-  have frameA : OutsS B (s.gpr .esp) (exponentRanges n) w.mem a.mem := by
+  obtain frameA : OutsS B (s.gpr .esp) (exponentRanges n) w.mem a.mem := by
     rw [← spW]
     exact OutsS.lift (fun _ _ O => (exponent_temps_inverse (Nat.le_refl n) O).mono
       (fun r hr => List.mem_append_left _ hr)) Oa
@@ -508,24 +508,24 @@ theorem dEven_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
   simp only [Width.words] at Ob
   change slot b.mem B kFlag = (if num a.mem B n 1 = 1 then 1 else 0) at flagB
   rw [gcd] at flagB
-  have maskB : slot b.mem B kOk = (if valid then 1 else 0) :=
+  obtain maskB : slot b.mem B kOk = (if valid then 1 else 0) :=
     (Ob.slot (by decide) (by decide)).trans maskA
-  have Xb : num b.mem B n 3 = num a.mem B n 3 :=
+  obtain Xb : num b.mem B n 3 = num a.mem B n 3 :=
     Ob.num (by decide) (by decide) (h.fit64 (by decide))
-  have frameB := exponent_keep_frame (by decide) (by decide) Ob
+  obtain frameB := exponent_keep_frame (by decide) (by decide) Ob
   refine WP.seq (WP.mono (andS_ok hb (by decide) (by decide) (by decide)
     (by rw [maskB]; split <;> omega_using []) (by rw [flagB]; split <;> omega_using []))
     fun c ⟨hc, Oc, maskC, Kc⟩ => ?_)
   rw [maskB, flagB] at maskC
-  have Xc : num c.mem B n 3 = num a.mem B n 3 :=
+  obtain Xc : num c.mem B n 3 = num a.mem B n 3 :=
     (Oc.num (by simp) (by decide) (h.fit64 (by decide))).trans Xb
-  have frameC := exponent_keep_frame (by decide) (by decide) Oc
+  obtain frameC := exponent_keep_frame (by decide) (by decide) Oc
   refine WP.mono (copy_ok hc (by decide) (by decide) (by decide)) fun t ⟨ht, Ot, copied, Kt, _⟩ => ?_
   rw [Xc] at copied
-  have maskT : slot t.mem B kOk =
+  obtain maskT : slot t.mem B kOk =
       (if (if valid then 1 else 0) = 1 ∧ (if Nat.gcd (e % M) M = 1 then 1 else 0) = 1 then 1 else 0) :=
     (Ot.slot (by decide) (by simp)).trans maskC
-  have frameT := exponent_keep_frame (by decide) (by simp) Ot
+  obtain frameT := exponent_keep_frame (by decide) (by simp) Ot
   refine ⟨ht, (((((OutsS.of_outs ((frameU.trans frameV).trans frameW)).trans frameA).trans
       (OutsS.of_outs frameB)).trans (OutsS.of_outs frameC)).trans (OutsS.of_outs frameT)),
     ?_, ?_, (Ku.mono (by decide)).trans ((Kv.mono (by decide)).trans
@@ -540,7 +540,7 @@ theorem dEven_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
       · have C : (L : Int) ∣ (num a.mem B n 3 : Int) * (e % L) - 1 := by
           rw [G, ME] at congruence
           exact congruence
-        have I := VG.Proof.RsaKeyGen.inverse_even V'.2 C (by simpa only [ME] using boundX)
+        obtain I := VG.Proof.RsaKeyGen.inverse_even V'.2 C (by simpa only [ME] using boundX)
         simpa only [maskT, V, G, ite_true, true_and, Nat.one_ne_zero, ite_false, copied] using I
       · have I := VG.Proof.RsaKeyGen.inverse_even_none eo (by
           intro H; exact G (by simpa only [ME] using H.2.2))
@@ -575,16 +575,16 @@ theorem dOne_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
       Keep B n [aD, aT1] [sT, kFlag, kOk] s.mem t.mem ∧ num t.mem B n aD = 1 ∧
       slot t.mem B kOk = (if num s.mem B n aL = 1 then 0 else 1) ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx] s t := by
-  have hf : kFlag + 4 ≤ hdr := by decide
+  obtain hf : kFlag + 4 ≤ hdr := by decide
   unfold dOne seqs
   refine WP.seq (WP.mono (copy_ok h (by decide) (by decide) (by decide)) fun u ⟨hu, Ou, D, Ku, _⟩ => ?_)
   rw [one] at D
-  have L : num u.mem B n aL = num s.mem B n aL := Ou.num (by decide) (by simp) (h.fit64 (by decide))
-  have O : num u.mem B n aOne = 1 := by rw [Ou.num (by decide) (by simp) (h.fit64 (by decide)), one]
+  obtain L : num u.mem B n aL = num s.mem B n aL := Ou.num (by decide) (by simp) (h.fit64 (by decide))
+  obtain O : num u.mem B n aOne = 1 := by rw [Ou.num (by decide) (by simp) (h.fit64 (by decide)), one]
   refine WP.seq (WP.mono (eq_ok hu (by decide) (by decide) (by decide) (by decide) (by decide) hf)
     fun v ⟨hv, Ov, flag, Kv⟩ => ?_)
   rw [L, O] at flag
-  have bit : slot v.mem B kFlag ≤ 1 := by rw [flag]; split <;> omega
+  obtain bit : slot v.mem B kFlag ≤ 1 := by rw [flag]; split <;> omega
   refine WP.mono (notSlot_ok hv (by decide) hf bit) fun t ⟨ht, Ot, mask, Kt⟩ => ?_
   refine ⟨ht, (Ou.join Ov (js := [aD, aT1]) (ds := [sT, kFlag, kOk])).join Ot
     (js := [aD, aT1]) (ds := [sT, kFlag, kOk]), ?_, ?_,
@@ -617,19 +617,19 @@ theorem lAtLeastTwo_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32)
       Ws t B Z n 32 ∧ Keep B n [aT1, aT2] [kOk] s.mem t.mem ∧
       slot t.mem B kOk = (if 2 ≤ num s.mem B n aL ∧ slot s.mem B kFlag = 1 then 1 else 0) ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx] s t := by
-  have hf : kFlag + 4 ≤ hdr := by decide
+  obtain hf : kFlag + 4 ≤ hdr := by decide
   unfold lAtLeastTwo seqs
   refine WP.seq (WP.mono (constant_ok h (by decide) (2 : BitVec 32)) fun u ⟨hu, Ou, constant, Ku⟩ => ?_)
   change num u.mem B n aT1 = 2 at constant
-  have L : num u.mem B n aL = num s.mem B n aL := Ou.num (by decide) (by simp) (h.fit64 (by decide))
+  obtain L : num u.mem B n aL = num s.mem B n aL := Ou.num (by decide) (by simp) (h.fit64 (by decide))
   refine WP.seq (WP.mono (sub_ok hu (by decide) (by decide) (by decide))
     fun v ⟨hv, Ov, subtract, borrow, Kv⟩ => ?_)
   rw [L, constant] at subtract
-  have iffBorrow := VG.Proof.Rsa.borrow_iff subtract (val32_lt _ _ _ _) borrow
-  have flag : slot v.mem B kFlag = slot s.mem B kFlag := by
+  obtain iffBorrow := VG.Proof.Rsa.borrow_iff subtract (val32_lt _ _ _ _) borrow
+  obtain flag : slot v.mem B kFlag = slot s.mem B kFlag := by
     rw [Ov.slot hf (by simp), Ou.slot hf (by simp)]
   refine WP.mono (borrowMask_ok hv borrow (by rw [flag]; exact bit)) fun t ⟨ht, Ot, value, Kt⟩ => ?_
-  have validMask : slot t.mem B kOk = (if 2 ≤ num s.mem B n aL ∧ slot s.mem B kFlag = 1 then 1 else 0) := by
+  obtain validMask : slot t.mem B kOk = (if 2 ≤ num s.mem B n aL ∧ slot s.mem B kFlag = 1 then 1 else 0) := by
     simpa only [iffBorrow, flag] using value
   exact ⟨ht, (Ou.join Ov (js := [aT1, aT2]) (ds := [])).join Ot
     (js := [aT1, aT2]) (ds := [kOk]), validMask,
@@ -666,8 +666,8 @@ theorem dOddPrepare_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (w
   let L := num s.mem B n aL
   have e3 : 3 ≤ e := large
   have eo : e % 2 = 1 := odd
-  have e64 : e < 2 ^ 64 := val32_lt s.mem B kEv 2
-  have re : L % e < e := Nat.mod_lt _ (by omega)
+  obtain e64 : e < 2 ^ 64 := val32_lt s.mem B kEv 2
+  obtain re : L % e < e := Nat.mod_lt _ (by omega)
   unfold dOddPrepare seqs
   refine WP.seq (WP.mono (arrayDivision_ok h (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -675,16 +675,16 @@ theorem dOddPrepare_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (w
   rw [loaded] at Q R
   change num u.mem B n aU = L / e at Q
   change num u.mem B n aV = L % e at R
-  have divisionFrame := exponent_division_frame Ou
-  have Eu : val32 u.mem B kEv 2 = e := exponent_preserves_e divisionFrame
-  have remainderBound : val32 u.mem B (arr n aV) n < 2 ^ 64 := by
+  obtain divisionFrame := exponent_division_frame Ou
+  obtain Eu : val32 u.mem B kEv 2 = e := exponent_preserves_e divisionFrame
+  obtain remainderBound : val32 u.mem B (arr n aV) n < 2 ^ 64 := by
     change num u.mem B n aV < 2 ^ 64
     rw [R]
     exact Nat.lt_trans re e64
-  have remainderLow : val32 u.mem B (arr n aV) 2 = L % e :=
+  obtain remainderLow : val32 u.mem B (arr n aV) 2 = L % e :=
     (VG.Proof.RsaKeyGen.WordBounds32.low_eq width remainderBound).trans R
-  have layout : InverseLayout Z 2 (arr n aV) kEv := by
-    have fit := hu.arr_fit (j := aV) (by decide)
+  obtain layout : InverseLayout Z 2 (arr n aV) kEv := by
+    obtain fit := hu.arr_fit (j := aV) (by decide)
     have head := hu.hdr_le
     refine ⟨?_, ?_, Or.inr (inverse_end_le width (by decide)), Or.inl (by decide)⟩
     · unfold S at fit
@@ -701,34 +701,34 @@ theorem dOddPrepare_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (w
   rw [gcd] at congruence
   change num v.mem B 2 3 < val32 u.mem B kEv 2 at boundX
   rw [Eu] at boundX
-  have spU : u.gpr .esp = s.gpr .esp := Ku.1 .esp (by decide)
-  have inverseFrame : OutsS B (s.gpr .esp) (exponentTemps n) u.mem v.mem := by
+  obtain spU : u.gpr .esp = s.gpr .esp := Ku.1 .esp (by decide)
+  obtain inverseFrame : OutsS B (s.gpr .esp) (exponentTemps n) u.mem v.mem := by
     rw [← spU]
     exact OutsS.lift (fun _ _ => exponent_temps_inverse width) Ov
   refine WP.seq (WP.mono (gcdIsOne_ok (w := .exponent) hv (by decide) (by decide)) fun w ⟨hw, Ow, flag, Kw⟩ => ?_)
   simp only [Width.words] at Ow
   change slot w.mem B kFlag = (if num v.mem B 2 1 = 1 then 1 else 0) at flag
   rw [gcd] at flag
-  have coefficientW : num w.mem B 2 3 = num v.mem B 2 3 :=
+  obtain coefficientW : num w.mem B 2 3 = num v.mem B 2 3 :=
     Ow.num (by decide) (by decide) (by simpa only [kw_words hv.width, Width.words] using
       (hv.runtime (w := .exponent) (by decide)).ws.fit64 (j := 3) (by decide))
-  have compareFrame : Outs B (exponentTemps n) v.mem w.mem :=
+  obtain compareFrame : Outs B (exponentTemps n) v.mem w.mem :=
     exponent_temps_keep width (by decide) (by decide) Ow
-  have prefixFrame : OutsS B (s.gpr .esp) (exponentRanges n) s.mem w.mem :=
+  obtain prefixFrame : OutsS B (s.gpr .esp) (exponentRanges n) s.mem w.mem :=
     (OutsS.of_outs divisionFrame).trans ((inverseFrame.trans (OutsS.of_outs compareFrame)).mono
       (fun r hr => List.mem_append_left _ hr))
-  have Lw : num w.mem B n aL = L :=
+  obtain Lw : num w.mem B n aL = L :=
     h.read_num (by decide) prefixFrame (exponent_preserves_num (by decide) (by decide) (h.fit64 (by decide)))
-  have bit : slot w.mem B kFlag ≤ 1 := by rw [flag]; split <;> omega
+  obtain bit : slot w.mem B kFlag ≤ 1 := by rw [flag]; split <;> omega
   refine WP.mono (lAtLeastTwo_ok hw bit) fun t ⟨ht, Ot, mask, Kt⟩ => ?_
-  have maskFrame : Outs B (exponentTemps n) w.mem t.mem :=
+  obtain maskFrame : Outs B (exponentTemps n) w.mem t.mem :=
     exponent_temps_keep (Nat.le_refl n) (by decide) (by decide) Ot
-  have tailFrame := (inverseFrame.trans (OutsS.of_outs compareFrame)).trans (OutsS.of_outs maskFrame)
-  have frame : OutsS B (s.gpr .esp) (exponentRanges n) s.mem t.mem :=
+  obtain tailFrame := (inverseFrame.trans (OutsS.of_outs compareFrame)).trans (OutsS.of_outs maskFrame)
+  obtain frame : OutsS B (s.gpr .esp) (exponentRanges n) s.mem t.mem :=
     (OutsS.of_outs divisionFrame).trans (tailFrame.mono (fun r hr => List.mem_append_left _ hr))
-  have coefficientT : num t.mem B 2 3 = num v.mem B 2 3 :=
+  obtain coefficientT : num t.mem B 2 3 = num v.mem B 2 3 :=
     (exponent_mask_coefficient Ot).trans coefficientW
-  have finalMask : slot t.mem B kOk = (if 2 ≤ L ∧ Nat.gcd (L % e) e = 1 then 1 else 0) := by
+  obtain finalMask : slot t.mem B kOk = (if 2 ≤ L ∧ Nat.gcd (L % e) e = 1 then 1 else 0) := by
     by_cases G : Nat.gcd (L % e) e = 1 <;> simpa [Lw, flag, G] using mask
   have tailOld : OutsS B (s.gpr .esp) (exponentTemps n) u.mem t.mem := tailFrame
   refine ⟨ht, frame, ⟨h.read_val32 (by decide) frame exponent_preserves_e, ?_, ?_, ?_, ?_, ?_, ?_, finalMask⟩,
@@ -774,26 +774,26 @@ theorem correction_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (wi
   have hn := h.old.workspace.nowrap
   unfold correction seqs
   refine WP.seq (WP.mono (correctionNumerator_ok h width fits) fun u ⟨hu, Ou, numerator, Ku⟩ => ?_)
-  have h4 := correction_workspace hu.old
+  obtain h4 := correction_workspace hu.old
   have hz : 256 ≤ Z := h4.fits
-  have E := correction_preserves_exponent Ou
+  obtain E := correction_preserves_exponent Ou
   refine WP.seq (WP.mono (widenTo_ok hu .correction .exponent (.array .correction 2) (.fixed kEv)
     (by change 2 ≤ 4; decide) (by change 232 ≤ Z; omega) (by change 88 ≤ Z; omega) (Or.inl (by change 88 ≤ 208; decide))) fun v ⟨hv, Ov, fullDivisor, _, Kv⟩ => ?_)
   change Outside B (arr 4 2) (S 4) u.mem v.mem at Ov
   change val32 v.mem B (arr 4 2) 6 = val32 u.mem B kEv 2 at fullDivisor
   rw [E] at fullDivisor
-  have numeratorV : (divisionGeometry B Z 4).value v.mem 0 =
+  obtain numeratorV : (divisionGeometry B Z 4).value v.mem 0 =
       val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 + 1 := by
     change val32 v.mem B (arr 4 0) 4 = _
     exact (Ov.val32 (by decide) (by decide)).trans numerator
-  have divisorV : (divisionGeometry B Z 4).value v.mem 2 = val32 s.mem B kEv 2 := by
-    have bound : val32 v.mem B (arr 4 2) 6 < 2 ^ (32 * 5) := by
+  obtain divisorV : (divisionGeometry B Z 4).value v.mem 2 = val32 s.mem B kEv 2 := by
+    obtain bound : val32 v.mem B (arr 4 2) 6 < 2 ^ (32 * 5) := by
       rw [fullDivisor]
       exact Nat.lt_of_lt_of_le (val32_lt s.mem B kEv 2) (Nat.pow_le_pow_right (by decide) (by decide))
     exact (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by decide : 5 ≤ 6) bound).trans fullDivisor
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.Div.code_ok (division_context (correction_workspace hv.old)))
     fun w ⟨_, Ow, Kw, computed⟩ => ?_)
-  have result := computed (by rw [divisorV]; exact positive)
+  obtain result := computed (by rw [divisorV]; exact positive)
     (by
       rw [divisorV]
       exact Nat.lt_of_lt_of_le (val32_lt s.mem B kEv 2)
@@ -801,16 +801,16 @@ theorem correction_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (wi
   rw [numeratorV, divisorV] at result
   have quotient := result.2
   change val32 w.mem B (arr 4 0) 4 = _ at quotient
-  have quotientLow : val32 w.mem B (arr 4 0) 2 =
+  obtain quotientLow : val32 w.mem B (arr 4 0) 2 =
       (val32 s.mem B (arr n aV) 2 * val32 s.mem B (arr n aDen) 2 + 1) / val32 s.mem B kEv 2 :=
     (VG.Proof.RsaKeyGen.WordBounds32.low_eq (by decide : 2 ≤ 4) (by rw [quotient]; exact quotientFits)).trans quotient
-  have changed : Outside B hdr 96 v.mem w.mem := division_frame Ow
-  have hw := hv.keep Kw (changed.mono (Nat.zero_le _) (by unfold hdr; omega))
-  have endSmall : arr 4 0 + 8 ≤ arr n aV := by unfold arr S aV hdr; omega
+  obtain changed : Outside B hdr 96 v.mem w.mem := division_frame Ow
+  obtain hw := hv.keep Kw (changed.mono (Nat.zero_le _) (by unfold hdr; omega))
+  obtain endSmall : arr 4 0 + 8 ≤ arr n aV := by unfold arr S aV hdr; omega
   refine WP.mono (widen_ok hw .exponent (VG.Impl.RsaKeyGen.X86.KeyRuntime.arr aV)
     (.array .correction 0) width (h.arr_fit (by decide))
     (by change 168 ≤ Z; omega) (Or.inl endSmall)) fun t ⟨ht, Ot, _, value, Kt⟩ => ?_
-  have scratch : Outs B correctionScratch s.mem w.mem :=
+  obtain scratch : Outs B correctionScratch s.mem w.mem :=
     (Ou.trans (correction_scratch_arr (by decide) Ov)).trans
       (correction_scratch_outside (Nat.le_refl _) (Nat.le_refl _) changed)
   refine ⟨ht, ?_, value.trans quotientLow,
@@ -859,13 +859,13 @@ theorem exponent_result_header {m m' : Mem} {B : Addr} {n d count : Nat}
   · exact Or.inl (Nat.le_trans bound (by decide : kProduct ≤ hdr))
   · simp only [ranges, List.map_nil, List.append_nil, List.mem_map] at array
     obtain ⟨a, _, rfl⟩ := array
-    have lower : hdr ≤ arr n a := Nat.le_add_right ..
+    obtain lower : hdr ≤ arr n a := Nat.le_add_right ..
     exact Or.inl (Nat.le_trans bound (Nat.le_trans (by decide : kProduct ≤ hdr) lower))
 
 theorem exponent_result_slot {m m' : Mem} {B : Addr} {n d : Nat}
     (bound : d + 4 ≤ kProduct) (O : Outs B (exponentResultRanges n) m m') :
     slot m' B d = slot m B d := by
-  have H := exponent_result_header (count := 1) bound O
+  obtain H := exponent_result_header (count := 1) bound O
   simpa only [val32, Nat.mul_zero, Nat.add_zero] using H
 
 theorem exponent_result_complement {m m' : Mem} {B : Addr} {n : Nat}
@@ -944,49 +944,49 @@ theorem dOddFinish_ok {s : State} {B : Addr} {Z n e L : Nat}
       Spec.Rsa.inverse e L = (if slot t.mem B kOk = 0 then none else some (num t.mem B n aD)) ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
   let x := num s.mem B 2 3
-  have e64 : e < 2 ^ 64 := by rw [← P.exponent]; exact val32_lt _ _ _ _
-  have Lbound : L < 2 ^ (32 * n) := by rw [← P.lcm]; exact val32_lt _ _ _ _
-  have re : L % e < e := Nat.mod_lt _ (by omega)
-  have QR : L = e * (L / e) + L % e := by
-    have H := Nat.mod_add_div L e
+  obtain e64 : e < 2 ^ 64 := by rw [← P.exponent]; exact val32_lt _ _ _ _
+  obtain Lbound : L < 2 ^ (32 * n) := by rw [← P.lcm]; exact val32_lt _ _ _ _
+  obtain re : L % e < e := Nat.mod_lt _ (by omega)
+  obtain QR : L = e * (L / e) + L % e := by
+    obtain H := Nat.mod_add_div L e
     omega
-  have Tbound : e - x < 2 ^ 64 := Nat.lt_of_le_of_lt (Nat.sub_le _ _) e64
+  obtain Tbound : e - x < 2 ^ 64 := Nat.lt_of_le_of_lt (Nat.sub_le _ _) e64
   unfold dOddFinish seqs
   refine WP.seq (WP.mono (complement_ok h width
     (by rw [P.exponent]; exact P.coefficient)) fun u ⟨hu, Ou, _, complement, Ku⟩ => ?_)
   rw [P.exponent] at complement
   change num u.mem B n aDen = e - x at complement
-  have compFrame := exponent_result_complement Ou
-  have Eu : val32 u.mem B kEv 2 = e := (exponent_result_header (by decide) compFrame).trans P.exponent
-  have compKeep : Keep B n [aDen] [] s.mem u.mem :=
+  obtain compFrame := exponent_result_complement Ou
+  obtain Eu : val32 u.mem B kEv 2 = e := (exponent_result_header (by decide) compFrame).trans P.exponent
+  obtain compKeep : Keep B n [aDen] [] s.mem u.mem :=
     Keep.of_arr (d := 0) (by simpa only [Nat.add_zero] using Ou) (by omega) (by simp)
-  have Qu : num u.mem B n aU = L / e :=
+  obtain Qu : num u.mem B n aU = L / e :=
     (compKeep.num (by decide) (by simp) (h.fit64 (by decide))).trans P.quotient
-  have Ru : num u.mem B n aV = L % e :=
+  obtain Ru : num u.mem B n aV = L % e :=
     (compKeep.num (by decide) (by simp) (h.fit64 (by decide))).trans P.remainder
-  have Rpair : val32 u.mem B (arr n aV) 2 = L % e :=
+  obtain Rpair : val32 u.mem B (arr n aV) 2 = L % e :=
     (VG.Proof.RsaKeyGen.WordBounds32.low_eq width (by change num u.mem B n aV < 2 ^ 64; rw [Ru]; exact Nat.lt_trans re e64)).trans Ru
-  have Tpair : val32 u.mem B (arr n aDen) 2 = e - x :=
+  obtain Tpair : val32 u.mem B (arr n aDen) 2 = e - x :=
     (VG.Proof.RsaKeyGen.WordBounds32.low_eq width (by change num u.mem B n aDen < 2 ^ 64; rw [complement]; exact Tbound)).trans complement
   refine WP.seq (WP.mono (correction_ok hu width (by rw [Eu]; omega)
     (by rw [Rpair, Tpair]; exact VG.Proof.RsaKeyGen.odd_numerator_fits e64 re)
     (by rw [Rpair, Tpair, Eu]; exact VG.Proof.RsaKeyGen.odd_correction_fits (by omega) e64 re))
     fun v ⟨hv, Ov, correction, Kv⟩ => ?_)
   rw [Rpair, Tpair, Eu] at correction
-  have Qv : num v.mem B n aU = L / e :=
+  obtain Qv : num v.mem B n aU = L / e :=
     (correction_preserves_num (by decide) (by decide) (h.fit64 (by decide)) Ov).trans Qu
-  have Tv : num v.mem B n aDen = e - x :=
+  obtain Tv : num v.mem B n aDen = e - x :=
     (correction_preserves_num (by decide) (by decide) (h.fit64 (by decide)) Ov).trans complement
-  have TpairV : val32 v.mem B (arr n aDen) 2 = e - x :=
+  obtain TpairV : val32 v.mem B (arr n aDen) 2 = e - x :=
     (VG.Proof.RsaKeyGen.WordBounds32.low_eq width (by change num v.mem B n aDen < 2 ^ 64; rw [Tv]; exact Tbound)).trans Tv
-  have fits : num v.mem B n aU * val32 v.mem B (arr n aDen) 2 + num v.mem B n aV < 2 ^ (32 * n) := by
+  obtain fits : num v.mem B n aU * val32 v.mem B (arr n aDen) 2 + num v.mem B n aV < 2 ^ (32 * n) := by
     rw [Qv, TpairV, correction]
     exact Nat.lt_of_le_of_lt (VG.Proof.RsaKeyGen.oddQuotient_le (by omega) QR) Lbound
   refine WP.mono (dProduct_ok hv width fits) fun t ⟨ht, Ot, product, Kt⟩ => ?_
   rw [Qv, TpairV, correction] at product
   have value : num t.mem B n aD = VG.Proof.RsaKeyGen.oddQuotient e (L / e) (L % e) x := product
-  have frame := (compFrame.trans (exponent_result_correction Ov)).trans (exponent_result_product Ot)
-  have mask : slot t.mem B kOk = (if 2 ≤ L ∧ Nat.gcd (L % e) e = 1 then 1 else 0) := by
+  obtain frame := (compFrame.trans (exponent_result_correction Ov)).trans (exponent_result_product Ot)
+  obtain mask : slot t.mem B kOk = (if 2 ≤ L ∧ Nat.gcd (L % e) e = 1 then 1 else 0) := by
     rw [exponent_result_slot (by decide) frame, P.mask]
   refine ⟨ht, frame, ?_, ?_, (Ku.mono (by decide)).trans (Kv.trans (Kt.mono (by decide)))⟩
   · rw [mask]
@@ -994,7 +994,7 @@ theorem dOddFinish_ok {s : State} {B : Addr} {Z n e L : Nat}
   · by_cases valid : 2 ≤ L ∧ Nat.gcd (L % e) e = 1
     · have congruence := P.congruence
       rw [valid.2] at congruence
-      have inverse := VG.Proof.RsaKeyGen.oddQuotient_inverse large valid.1 QR congruence P.coefficient
+      obtain inverse := VG.Proof.RsaKeyGen.oddQuotient_inverse large valid.1 QR congruence P.coefficient
       rw [mask, value]
       simpa only [valid, true_and, ite_true, Nat.one_ne_zero, ite_false] using inverse
     · have inverse := VG.Proof.RsaKeyGen.inverse_odd_none large QR valid
@@ -1068,7 +1068,7 @@ theorem dSelect_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (width
       rfl
   · have E0 : val32 s.mem B kEv 2 ≠ 0 := of_decide_eq_false nonzero
     refine WP.seq (WP.mono (equalExponent_ok hu 1) fun v ⟨hv, Mv, flag1, Kv⟩ => ?_)
-    have memoryV : v.mem = s.mem := Mv.trans Mu
+    obtain memoryV : v.mem = s.mem := Mv.trans Mu
     rw [Mu] at flag1
     change isa.eval .e v = some (decide (val32 s.mem B kEv 2 = 1)) at flag1
     refine WP.ite _ flag1 (fun unit => ?_) (fun nonunit => ?_)
@@ -1084,24 +1084,24 @@ theorem dSelect_ok {s : State} {B : Addr} {Z n : Nat} (h : Ws s B Z n 32) (width
         by_cases L : num s.mem B n aL = 1 <;> simp [L]
     · have E1 : val32 s.mem B kEv 2 ≠ 1 := of_decide_eq_false nonunit
       refine WP.seq (WP.mono (parityExponent_ok hv) fun w ⟨hw, Mw, parity, Kw⟩ => ?_)
-      have memoryW : w.mem = s.mem := Mw.trans memoryV
+      obtain memoryW : w.mem = s.mem := Mw.trans memoryV
       rw [memoryV] at parity
       refine WP.ite _ parity (fun even => ?_) (fun odd => ?_)
       · refine WP.mono (dEven_ok hw (by rw [memoryW]; exact of_decide_eq_true even)
           (by rw [memoryW]; exact loaded)) fun t ⟨ht, Ot, bit, inverse, Kt⟩ => ?_
-        have spW : w.gpr .esp = s.gpr .esp := by
+        obtain spW : w.gpr .esp = s.gpr .esp := by
           rw [Kw.1 .esp (by decide), Kv.1 .esp (by decide), Ku.1 .esp (by decide)]
         rw [memoryW, spW] at Ot
         rw [memoryW] at inverse
         exact ⟨ht, Ot, bit, inverse, (Ku.mono (by decide)).trans
           ((Kv.mono (by decide)).trans ((Kw.mono (by decide)).trans Kt))⟩
       · have O : val32 s.mem B kEv 2 % 2 = 1 := by
-          have H := of_decide_eq_false odd
+          obtain H := of_decide_eq_false odd
           omega
         refine WP.mono (dOdd_ok hw width (by rw [memoryW]; omega)
           (by rw [memoryW]; exact O) (by rw [memoryW]; exact loaded)
           (by rw [memoryW]; exact one)) fun t ⟨ht, Ot, bit, inverse, Kt⟩ => ?_
-        have spW : w.gpr .esp = s.gpr .esp := by
+        obtain spW : w.gpr .esp = s.gpr .esp := by
           rw [Kw.1 .esp (by decide), Kv.1 .esp (by decide), Ku.1 .esp (by decide)]
         rw [memoryW, spW] at Ot
         rw [memoryW] at inverse
@@ -1131,49 +1131,49 @@ theorem prepareLoaded_ok {s : State} {B : Addr} {Z n k : Nat}
       Ws t B Z n 32 ∧ OutsS B (s.gpr .esp) (stageRanges n prepareArrays) s.mem t.mem ∧
       KeyReady B n (val32 s.mem B kEv 2) (num s.mem B n aPa) (num s.mem B n aQa) t.mem ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
-  have small : k ≤ n := by omega_using [width]
-  have wide : 2 ≤ n := by omega_using [width, positive]
-  have pBound : max (num s.mem B n aPa) (num s.mem B n aQa) < 2 ^ (32 * k) := Nat.max_lt.mpr ⟨boundP, boundQ⟩
-  have qBound : min (num s.mem B n aPa) (num s.mem B n aQa) < 2 ^ (32 * k) :=
+  obtain small : k ≤ n := by omega_using [width]
+  obtain wide : 2 ≤ n := by omega_using [width, positive]
+  obtain pBound : max (num s.mem B n aPa) (num s.mem B n aQa) < 2 ^ (32 * k) := Nat.max_lt.mpr ⟨boundP, boundQ⟩
+  obtain qBound : min (num s.mem B n aPa) (num s.mem B n aQa) < 2 ^ (32 * k) :=
     Nat.lt_of_le_of_lt (Nat.min_le_left ..) boundP
   unfold prepareLoaded seqs
   refine WP.seq (WP.mono (primes_ok h width positive even boundP boundQ zero one)
     fun u ⟨hu, Ou, P, Q, Pm, Qm, product, Ku⟩ => ?_)
-  have oneU : num u.mem B n aOne = 1 :=
+  obtain oneU : num u.mem B n aOne = 1 :=
     (Ou.num (by decide) (by decide) (h.fit64 (by decide))).trans one
-  have frameU : Outs B (stageRanges n prepareArrays) s.mem u.mem :=
+  obtain frameU : Outs B (stageRanges n prepareArrays) s.mem u.mem :=
     stage_keep (Nat.le_refl n) (by simp only [eq_self, true_and]; decide) (by decide) Ou
   refine WP.seq (WP.mono (lcmPart_ok hu width positive
     (by rw [Pm]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) pBound)
     (by rw [Qm]; exact Nat.lt_of_le_of_lt (Nat.sub_le _ _) qBound) product oneU)
     fun v ⟨hv, Ov, L, Kv⟩ => ?_)
   rw [Pm, Qm] at L
-  have spU : u.gpr .esp = s.gpr .esp := Ku.1 .esp (by decide)
-  have spV : v.gpr .esp = s.gpr .esp := by rw [Kv.1 .esp (by decide), spU]
-  have narrowFrame := OutsS.lift (fun _ _ => lcm_stage_frame small) Ov
-  have Pv : num v.mem B n aPa = max (num s.mem B n aPa) (num s.mem B n aQa) :=
+  obtain spU : u.gpr .esp = s.gpr .esp := Ku.1 .esp (by decide)
+  obtain spV : v.gpr .esp = s.gpr .esp := by rw [Kv.1 .esp (by decide), spU]
+  obtain narrowFrame := OutsS.lift (fun _ _ => lcm_stage_frame small) Ov
+  obtain Pv : num v.mem B n aPa = max (num s.mem B n aPa) (num s.mem B n aQa) :=
     (hu.read_num (by decide) narrowFrame (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))).trans P
-  have Qv : num v.mem B n aQa = min (num s.mem B n aPa) (num s.mem B n aQa) :=
+  obtain Qv : num v.mem B n aQa = min (num s.mem B n aPa) (num s.mem B n aQa) :=
     (hu.read_num (by decide) narrowFrame (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))).trans Q
-  have Pmv : num v.mem B n aPm = max (num s.mem B n aPa) (num s.mem B n aQa) - 1 :=
+  obtain Pmv : num v.mem B n aPm = max (num s.mem B n aPa) (num s.mem B n aQa) - 1 :=
     (hu.read_num (by decide) narrowFrame (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))).trans Pm
-  have Qmv : num v.mem B n aQm = min (num s.mem B n aPa) (num s.mem B n aQa) - 1 :=
+  obtain Qmv : num v.mem B n aQm = min (num s.mem B n aPa) (num s.mem B n aQa) - 1 :=
     (hu.read_num (by decide) narrowFrame (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))).trans Qm
-  have frameV : OutsS B (s.gpr .esp) (stageRanges n prepareArrays) u.mem v.mem := by
+  obtain frameV : OutsS B (s.gpr .esp) (stageRanges n prepareArrays) u.mem v.mem := by
     rw [← spU]
     exact OutsS.lift (fun _ _ => stage_mono (by decide)) narrowFrame
-  have prefixFrame := (OutsS.of_outs frameU).trans frameV
-  have E : val32 v.mem B kEv 2 = val32 s.mem B kEv 2 := h.read_val32 (by decide) prefixFrame stage_preserves_e
-  have loadedV : num v.mem B n aE = val32 v.mem B kEv 2 :=
+  obtain prefixFrame := (OutsS.of_outs frameU).trans frameV
+  obtain E : val32 v.mem B kEv 2 = val32 s.mem B kEv 2 := h.read_val32 (by decide) prefixFrame stage_preserves_e
+  obtain loadedV : num v.mem B n aE = val32 v.mem B kEv 2 :=
     (h.read_num (by decide) prefixFrame (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))).trans (loaded.trans E.symm)
-  have oneV : num v.mem B n aOne = 1 :=
+  obtain oneV : num v.mem B n aOne = 1 :=
     (h.read_num (by decide) prefixFrame (stage_preserves_num (by decide) (by decide) (h.fit64 (by decide)))).trans one
   refine WP.mono (dSelect_ok hv wide loadedV oneV) fun t ⟨ht, Ot, bit, inverse, Kt⟩ => ?_
   rw [E, L] at inverse
-  have frameT : OutsS B (s.gpr .esp) (stageRanges n prepareArrays) v.mem t.mem := by
+  obtain frameT : OutsS B (s.gpr .esp) (stageRanges n prepareArrays) v.mem t.mem := by
     rw [← spV]
     exact OutsS.lift (fun _ _ => stage_mono (js := exponentArrays) (by decide)) Ot
-  have frame := prefixFrame.trans frameT
+  obtain frame := prefixFrame.trans frameT
   refine ⟨ht, frame, ⟨?_, ?_, ?_, ?_, ?_, h.read_val32 (by decide) frame stage_preserves_e, ?_, ?_, inverse, bit⟩,
     (Ku.mono (by decide)).trans (Kv.trans Kt)⟩
   · exact (hv.read_num (by decide) Ot (exponent_preserves_num (by decide) (by decide) (h.fit64 (by decide)))).trans Pv

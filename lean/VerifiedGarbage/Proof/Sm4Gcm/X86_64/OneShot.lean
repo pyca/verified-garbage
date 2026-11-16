@@ -71,11 +71,11 @@ theorem OneCtx.of {w k : Nat} {s : State} (hp : Proof.Sm4Gcm.oneLay w k s)
     Proof.Sm4Gcm.arg, Proof.Sm4Gcm.spOk] at hp
   obtain ⟨d_cd, d_cw, -, d_nw, -, d_aw, d_dw, d_da, d_wa, r_d, r_w, t_c, t_n, t_a, t_d, t_w, wc, wn, wa, wd, ww,
     sp, wsp⟩ := hp
-  have b8 := below8_stk (s.gpr .rsp)
-  have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
+  obtain b8 := below8_stk (s.gpr .rsp)
+  obtain hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
   rw [hA] at d_da d_wa
-  have hSt : (⟨stackArg s w + BitVec.ofNat 64 16, 80⟩ : Region).Sub ⟨stackArg s w, 2560⟩ := Lay.wSub (by decide)
-  have L : Lay (s.gpr .rdi) (stackArg s w + BitVec.ofNat 64 16) (stackArg s w) (s.gpr .rsp) := by
+  obtain hSt : (⟨stackArg s w + BitVec.ofNat 64 16, 80⟩ : Region).Sub ⟨stackArg s w, 2560⟩ := Lay.wSub (by decide)
+  obtain L : Lay (s.gpr .rdi) (stackArg s w + BitVec.ofNat 64 16) (stackArg s w) (s.gpr .rsp) := by
     refine ⟨wc, ?_, ww, d_cw.sub_right hSt, d_cw, ?_, ?_, t_c.sub_left b8, (t_w.sub_left b8).sub_right hSt,
       t_w.sub_left b8, by decide, by decide⟩
     · rw [BitVec.toNat_add, BitVec.toNat_ofNat]; have := Nat.mod_le ((stackArg s w).toNat + 16 % 2 ^ 64) (2 ^ 64)
@@ -106,7 +106,7 @@ theorem OneCtx.ofSeal {s : State} (hp : Proof.Sm4Gcm.sealPre s) :
   have hp' := hp
   simp only [Proof.Sm4Gcm.sealPre, Proof.Sm4Gcm.ret, Proof.Sm4Gcm.stk, Proof.Sm4Gcm.args, Proof.Sm4Gcm.arg] at hp'
   obtain ⟨hrd, hwr, hl, d_td, d_tw, -, r_t, t_t, -⟩ := hp'
-  have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
+  obtain hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
   rw [hA] at hrd
   refine ⟨OneCtx.of (w := 2) hl ?_ ?_ ?_ ?_ ?_ ?_, ?_, d_td, d_tw, r_t, t_t⟩
   · rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..))
@@ -131,7 +131,7 @@ theorem OneCtx.ofOpen {s : State} (hp : Proof.Sm4Gcm.openPre s) :
   have hp' := hp
   simp only [Proof.Sm4Gcm.openPre, Proof.Sm4Gcm.stk, Proof.Sm4Gcm.args, Proof.Sm4Gcm.arg] at hp'
   obtain ⟨hrd, hwr, hl, d_td, d_tw, t_t, -⟩ := hp'
-  have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
+  obtain hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
   rw [hA] at hrd
   refine ⟨OneCtx.of (w := 3) hl ?_ ?_ ?_ ?_ ?_ ?_, ?_, d_td, d_tw, t_t⟩
   · rw [hrd]; exact covers_of_mem (List.mem_append_left _ (List.mem_cons_self ..))
@@ -433,26 +433,26 @@ theorem oneMid_ok (v : GcmImpl) {k : Nat} {s s₁ : State} {Ctx W SP Np A D : Ad
     WP isa (oneAad v.callees) s₁
       (OneMid s Ctx W SP D n (ctxH s.mem Ctx) (bytesAt s.mem Np nl) (bytesAt s.mem A al) s₁.mem) := by
   have L := C.lay
-  have dW : ∀ (p : Addr) (k : Nat), (⟨p, k⟩ : Region).Disjoint ⟨W, 2560⟩ → ∀ r ∈ [oneR W], (⟨p, k⟩ : Region).Disjoint r :=
+  obtain dW : ∀ (p : Addr) (k : Nat), (⟨p, k⟩ : Region).Disjoint ⟨W, 2560⟩ → ∀ r ∈ [oneR W], (⟨p, k⟩ : Region).Disjoint r :=
     fun p k h r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h.sub_right (Lay.wSub (by decide))
-  have hH₁ : blockAt s₁.mem (Ctx + BitVec.ofNat 64 240) = ctxH s.mem Ctx := by
+  obtain hH₁ : blockAt s₁.mem (Ctx + BitVec.ofNat 64 240) = ctxH s.mem Ctx := by
     rw [ctxH_eq, blockAt_frame E.frame (dW _ _ (L.lay.cw'.sub_left (Lay.ctxSub (by decide))))]
-  have hiv : bytesAt s₁.mem Np nl = bytesAt s.mem Np nl :=
+  obtain hiv : bytesAt s₁.mem Np nl = bytesAt s.mem Np nl :=
     bytesAt_frame E.frame (dW _ _ C.nonce.w) (by have := C.nonce.lt; omega_arith)
-  have haa : bytesAt s₁.mem A al = bytesAt s.mem A al :=
+  obtain haa : bytesAt s₁.mem A al = bytesAt s.mem A al :=
     bytesAt_frame E.frame (dW _ _ C.aad.w) (by have := C.aad.lt; omega_arith)
-  have hal' : s₁.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al := by
+  obtain hal' : s₁.mem.readW (W + BitVec.ofNat 64 184) 64 = BitVec.ofNat 64 al := by
     rw [E.alen, ← hal, BitVec.ofNat_toNat, BitVec.setWidth_eq]
   refine WP.mono (AesGcm.X86_64.WP.with_rdwr (AesGcm.X86_64.oneAad_ok v L.lay E.env hH₁ (by rw [E.r12, hNp])
     (by rw [E.rbp, ← hnl, BitVec.ofNat_toNat, BitVec.setWidth_eq]) (C.nonce.of_eq E.rd E.wr) (C.aad.of_eq E.rd E.wr)
     C.dE E.aad hal')) fun s₂ ⟨ao, hrd₂, hwr₂⟩ => ?_
   rw [hiv, haa] at ao
-  have f₂ := AesGcm.X86_64.wFrame_one (D := D) (n := n) (o := 0) (.inl rfl) (AesGcm.X86_64.wFrame_cons ao.frame)
-  have kp : ∀ d, (128 ≤ d ∧ d + 8 ≤ 216) ∨ (224 ≤ d ∧ d + 8 ≤ 240) →
+  obtain f₂ := AesGcm.X86_64.wFrame_one (D := D) (n := n) (o := 0) (.inl rfl) (AesGcm.X86_64.wFrame_cons ao.frame)
+  obtain kp : ∀ d, (128 ≤ d ∧ d + 8 ≤ 216) ∨ (224 ≤ d ∧ d + 8 ≤ 240) →
       s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s₁.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun d hd => f₂.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _)
       (AesGcm.X86_64.kept_oneFrame L.lay C.dE hd) (by decide)
-  have fr := wFrame_of_aes ao.frame
+  obtain fr := wFrame_of_aes ao.frame
   refine ⟨ao.env, ao.hH, by rw [kp 200 (.inl ⟨by decide, by decide⟩)]; exact E.dat,
     by rw [kp 208 (.inl ⟨by decide, by decide⟩)]; exact E.len, by rw [kp 192 (.inl ⟨by decide, by decide⟩)]; exact E.tlen,
     by rw [kp 184 (.inl ⟨by decide, by decide⟩)]; exact E.alen, ao.j0, ao.abs, ao.cb,
@@ -470,8 +470,8 @@ theorem oneCrypt_ok {icb : Block} {P : Nat} (hP : P % 16 = 0) {D : Addr} {n : Na
     (hd : DataW4 Ctx (W + BitVec.ofNat 64 16) W SP s D n) :
     WP isa oneCrypt s fun s' => CrOut Ctx (W + BitVec.ofNat 64 16) W SP icb P D n s.mem s' ∧
       s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have q₁ := he.perm.wR (show 200 + 8 ≤ 2560 by decide)
-  have q₂ := he.perm.wR (show 208 + 8 ≤ 2560 by decide)
+  obtain q₁ := he.perm.wR (show 200 + 8 ≤ 2560 by decide)
+  obtain q₂ := he.perm.wR (show 208 + 8 ≤ 2560 by decide)
   obtain ⟨s₁, run₁, h12, hbp, hbx, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa [.mov .r12 (.mem (at_ .r15 dataO)),
       .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)] s = some s₁ ∧
       s₁.gpr .r12 = D ∧ s₁.gpr .rbp = BitVec.ofNat 64 n ∧ s₁.gpr .rbx = BitVec.ofNat 64 (P % 16) ∧
@@ -484,7 +484,7 @@ theorem oneCrypt_ok {icb : Block} {P : Nat} (hP : P % 16 = 0) {D : Addr} {n : Na
     · intro r a b c; simp [gpr_setReg, a, b, c]
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun r hr => by
+  obtain he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide)) hrd₁ hwr₁
   have := AesGcm.X86_64.WP.with_rdwr (cryptAl_ok L (icb := icb) (P := P) ⟨he₁, h12, hbp, hbx, hd.of_eq hrd₁ hwr₁⟩ hP)
@@ -517,13 +517,13 @@ theorem oneTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat} {
               zeros (padLen (x ++ bytesAt s.mem D n).length))))
             [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx (blockAt s.mem (W + BitVec.ofNat 64 16)))) := by
   have La := L.lay
-  have kp : ∀ {m m' : Mem}, Frame (AesGcm.X86_64.oneFrame W D SP n) m m' → ∀ d,
+  obtain kp : ∀ {m m' : Mem}, Frame (AesGcm.X86_64.oneFrame W D SP n) m m' → ∀ d,
       (128 ≤ d ∧ d + 8 ≤ 216) ∨ (224 ≤ d ∧ d + 8 ≤ 240) →
       m'.readW (W + BitVec.ofNat 64 d) 64 = m.readW (W + BitVec.ofNat 64 d) 64 :=
     fun hf d hd => hf.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _)
       (AesGcm.X86_64.kept_oneFrame La hDW hd) (by decide)
-  have q₁ := he.perm.wR (show 200 + 8 ≤ 2560 by decide)
-  have q₂ := he.perm.wR (show 208 + 8 ≤ 2560 by decide)
+  obtain q₁ := he.perm.wR (show 200 + 8 ≤ 2560 by decide)
+  obtain q₂ := he.perm.wR (show 208 + 8 ≤ 2560 by decide)
   obtain ⟨s₁, run₁, h12, hbp, hbx, hg₁, hm₁, hrd₁, hwr₁⟩ : ∃ s₁, runBlock isa [.mov .r12 (.mem (at_ .r15 dataO)),
       .mov .rbp (.mem (at_ .r15 lenO)), .mov32 .rbx (imm 0)] s = some s₁ ∧
       s₁.gpr .r12 = D ∧ s₁.gpr .rbp = BitVec.ofNat 64 n ∧ s₁.gpr .rbx = BitVec.ofNat 64 (x.length % 16) ∧
@@ -536,22 +536,22 @@ theorem oneTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat} {
     · intro r a b c; simp [gpr_setReg, a, b, c]
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun r hr => by
+  obtain he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₁ _ (by decide) (by decide) (by decide)) hrd₁ hwr₁
-  have hai : AbsIn Ctx (W + BitVec.ofNat 64 16) W SP 16 H x D n s₁ :=
+  obtain hai : AbsIn Ctx (W + BitVec.ofNat 64 16) W SP 16 H x D n s₁ :=
     ⟨he₁, h12, hbp, hbx, hd.of_eq hrd₁ hwr₁, by rw [hm₁, hH]⟩
   refine WP.seq (WP.mono (AesGcm.X86_64.WP.with_rdwr (absorbPad_ok v La (yo := 16) (.inr rfl) hai hx16))
     fun s₄ ⟨hf, hrd₄, hwr₄⟩ => ?_)
   rw [hm₁] at hf
   obtain ⟨m₂, fa, ft⟩ := hf.frame
   have he₄ := hf.env
-  have g₂ := AesGcm.X86_64.absFrame_one fa
-  have f₂ := AesGcm.X86_64.wFrame_one (D := D) (n := n) (o := 0) (.inl rfl) (AesGcm.X86_64.wFrame_cons g₂)
-  have g₄ := AesGcm.X86_64.tFrame_one ft
-  have f₄ := AesGcm.X86_64.wFrame_one (D := D) (n := n) (o := 0) (.inl rfl) (AesGcm.X86_64.wFrame_cons g₄)
-  have q₄ := he₄.perm.wR (show 184 + 8 ≤ 2560 by decide)
-  have q₅ := he₄.perm.wR (show 192 + 8 ≤ 2560 by decide)
+  obtain g₂ := AesGcm.X86_64.absFrame_one fa
+  obtain f₂ := AesGcm.X86_64.wFrame_one (D := D) (n := n) (o := 0) (.inl rfl) (AesGcm.X86_64.wFrame_cons g₂)
+  obtain g₄ := AesGcm.X86_64.tFrame_one ft
+  obtain f₄ := AesGcm.X86_64.wFrame_one (D := D) (n := n) (o := 0) (.inl rfl) (AesGcm.X86_64.wFrame_cons g₄)
+  obtain q₄ := he₄.perm.wR (show 184 + 8 ≤ 2560 by decide)
+  obtain q₅ := he₄.perm.wR (show 192 + 8 ≤ 2560 by decide)
   obtain ⟨s₅, run₅, hbx₅, hbp₅, hg₅, hm₅, hrd₅, hwr₅⟩ : ∃ s₅, runBlock isa [.mov .rbx (.mem (at_ .r15 alenO)),
       .mov .rbp (.mem (at_ .r15 tlenO))] s₄ = some s₅ ∧ s₅.gpr .rbx = BitVec.ofNat 64 al ∧
       s₅.gpr .rbp = BitVec.ofNat 64 N ∧ (∀ r, r ≠ .rbx → r ≠ .rbp → s₅.gpr r = s₄.gpr r) ∧ s₅.mem = s₄.mem ∧
@@ -562,13 +562,13 @@ theorem oneTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat} {
     · intro r a b; simp [gpr_setReg, a, b]
     all_goals rfl
   refine WP.seq (WP.of_runBlock ⟨s₅, run₅, ?_⟩)
-  have he₅ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₅ := he₄.keep (fun r hr => by
+  obtain he₅ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₅ := he₄.keep (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl <;> exact hg₅ _ (by decide) (by decide)) hrd₅ hwr₅
-  have g₅ : Frame (AesGcm.X86_64.wFrame W SP) s.mem s₅.mem := by rw [hm₅]; exact g₂.trans g₄
-  have f₅ : Frame (AesGcm.X86_64.oneFrame W D SP n) s.mem s₅.mem :=
+  obtain g₅ : Frame (AesGcm.X86_64.wFrame W SP) s.mem s₅.mem := by rw [hm₅]; exact g₂.trans g₄
+  obtain f₅ : Frame (AesGcm.X86_64.oneFrame W D SP n) s.mem s₅.mem :=
     AesGcm.X86_64.wFrame_one (o := 0) (.inl rfl) (AesGcm.X86_64.wFrame_cons g₅)
-  have dC : ∀ r ∈ AesGcm.X86_64.oneFrame W D SP n, (⟨Ctx, 256⟩ : Region).Disjoint r := by
+  obtain dC : ∀ r ∈ AesGcm.X86_64.oneFrame W D SP n, (⟨Ctx, 256⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl
@@ -577,7 +577,7 @@ theorem oneTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat} {
     · exact La.cw'.sub_right (Lay.wSub (by decide))
     · exact hCD
     · exact La.kc.symm
-  have dS0 : ∀ r ∈ AesGcm.X86_64.absFrame (W + BitVec.ofNat 64 16) W SP 16,
+  obtain dS0 : ∀ r ∈ AesGcm.X86_64.absFrame (W + BitVec.ofNat 64 16) W SP 16,
       (⟨W + BitVec.ofNat 64 16, 16⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -586,7 +586,7 @@ theorem oneTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat} {
     · simpa using La.st_st (a := 0) (n := 16) (d := 32) (k := 16) (.inl (by decide)) (by decide) (by decide)
     · simpa using La.st_w (a := 0) (n := 16) (d := 512) (k := 256) (by decide) (.inr ⟨by decide, by decide⟩)
     · simpa using (La.stk_st (a := 0) (n := 16) (by decide)).symm
-  have dT0 : ∀ r ∈ AesGcm.X86_64.tFrame (W + BitVec.ofNat 64 16) W SP 16,
+  obtain dT0 : ∀ r ∈ AesGcm.X86_64.tFrame (W + BitVec.ofNat 64 16) W SP 16,
       (⟨W + BitVec.ofNat 64 16, 16⟩ : Region).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -595,9 +595,9 @@ theorem oneTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat} {
     · simpa using La.st_w (a := 0) (n := 16) (d := 96) (k := 16) (by decide) (.inr ⟨by decide, by decide⟩)
     · simpa using La.st_w (a := 0) (n := 16) (d := 512) (k := 256) (by decide) (.inr ⟨by decide, by decide⟩)
     · simpa using (La.stk_st (a := 0) (n := 16) (by decide)).symm
-  have hJ₅ : blockAt s₅.mem (W + BitVec.ofNat 64 16) = blockAt s.mem (W + BitVec.ofNat 64 16) := by
+  obtain hJ₅ : blockAt s₅.mem (W + BitVec.ofNat 64 16) = blockAt s.mem (W + BitVec.ofNat 64 16) := by
     rw [hm₅, blockAt_frame ft dT0, blockAt_frame fa dS0]
-  have hH₅ : blockAt s₅.mem (Ctx + BitVec.ofNat 64 240) = H := by rw [hm₅, hf.hH]
+  obtain hH₅ : blockAt s₅.mem (Ctx + BitVec.ofNat 64 240) = H := by rw [hm₅, hf.hH]
   refine WP.mono (AesGcm.X86_64.WP.with_rdwr (tag_ok v L ho he₅ hH₅ hJ₅)) fun s₆ ⟨ht, hrd₆, hwr₆⟩ =>
     ⟨ht.env, (wFrame_cons (wFrame_of_aes g₅)).trans (tagFrame_one ht.frame), by rw [hrd₆, hrd₅, hrd₄, hrd₁],
       by rw [hwr₆, hwr₅, hwr₄, hwr₁], ?_, ht.j, fun hab => ?_⟩
@@ -611,7 +611,7 @@ theorem oneTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat} {
       · exact La.st_w (by decide) (by omega_arith)
       · exact La.st_w (by decide) (.inr ⟨by decide, by decide⟩)
       · exact (L.ks.sub_right (Lay.stSub (by decide))).symm
-    have d48a : ∀ r ∈ AesGcm.X86_64.absFrame (W + BitVec.ofNat 64 16) W SP 16,
+    obtain d48a : ∀ r ∈ AesGcm.X86_64.absFrame (W + BitVec.ofNat 64 16) W SP 16,
         (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint r := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -620,7 +620,7 @@ theorem oneTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat} {
       · exact La.st_st (.inr (by decide)) (by decide) (by decide)
       · exact La.st_w (by decide) (.inr ⟨by decide, by decide⟩)
       · exact (La.stk_st (by decide)).symm
-    have d48t : ∀ r ∈ AesGcm.X86_64.tFrame (W + BitVec.ofNat 64 16) W SP 16,
+    obtain d48t : ∀ r ∈ AesGcm.X86_64.tFrame (W + BitVec.ofNat 64 16) W SP 16,
         (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48, 16⟩ : Region).Disjoint r := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -630,7 +630,7 @@ theorem oneTag_ok {o : Nat} (ho : o = 0 ∨ o = 112) {D : Addr} {n N al : Nat} {
       · exact La.st_w (by decide) (.inr ⟨by decide, by decide⟩)
       · exact (La.stk_st (by decide)).symm
     rw [blockAt_frame ht.frame d48, hm₅, blockAt_frame ft d48t, blockAt_frame fa d48a]
-  have hw := (hf.abs hab).whole_eq (by
+  obtain hw := (hf.abs hab).whole_eq (by
     simp only [List.length_append, Proof.Gcm.length_zeros]; exact Proof.Gcm.length_pad_mod _)
   rw [ht.out, ciph_frame f₅ dC, hbx₅, hbp₅, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt hN,
     lensBlock_mod_left, hm₅, hw]

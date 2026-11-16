@@ -82,29 +82,29 @@ theorem combPts_ok (hC : Law Spec.BrainpoolP512r1.curve) {s₀ : State} {T : Add
   have hc := brainpoolp512r1_ok
   have hn := hM.ws.nowrap
   have hsz : size = 8192 := rfl
-  have hpR := unitMod_pow_two hc.p_odd (64 * brainpoolp512r1.n)
-  have hmont : ∀ x, brainpoolp512r1.mont x < brainpoolp512r1.C.p := fun x => Nat.mod_lt _ (by decide)
+  obtain hpR := unitMod_pow_two hc.p_odd (64 * brainpoolp512r1.n)
+  obtain hmont : ∀ x, brainpoolp512r1.mont x < brainpoolp512r1.C.p := fun x => Nat.mod_lt _ (by decide)
   rw [pointsBrainpoolP512r1_eq]
   refine WP.seq ?_
   -- `u`'s bits.
   refine WP.seq (VG.PPC64LE.WP.mono_syms (WP.mono (tbl_bits_ok hc hM.ws (i := U) (j := 0) (by decide)
     (by decide)) fun s₁ h => h) fun s₁ ⟨b₁, k₁, O₁⟩ sy₁ => ?_)
-  have K₁ := hM.toKeep.step (by decide) (k₁.rk (rs' := bitsClob)) (hU := O₁.unch)
+  obtain K₁ := hM.toKeep.step (by decide) (k₁.rk (rs' := bitsClob)) (hU := O₁.unch)
     (hW := fixedOk_tbl (by decide) 0) (hWs := by decide)
   -- `b R mod p` at `EM`.
   refine WP.seq (VG.PPC64LE.WP.mono_syms (WP.mono (setSl_ok hc K₁.ws (o := EM) (x := brainpoolp512r1.mont brainpoolp512r1.C.b)
     (by decide) (Nat.lt_trans (hmont _) hc.p_lt)) fun s₂ h => h) fun s₂ ⟨_, k₂, O₂⟩ sy₂ => ?_)
-  have K₂ := K₁.step (by decide) (k₂.rk (rs' := [.r11])) (hU := O₂.unch)
+  obtain K₂ := K₁.step (by decide) (k₂.rk (rs' := [.r11])) (hU := O₂.unch)
     (hW := fixedOk_slW (l := [EM]) (by decide)) (hWs := by decide)
   -- `[u]G` by the comb.
-  have ht₂ : TableMem s₂ T brainpoolp512r1CombWords :=
+  obtain ht₂ : TableMem s₂ T brainpoolp512r1CombWords :=
     ht.unch (by rw [K₂.rk.rd, K₂.rk.wr]) K₂.whole (by decide) hd
-  have ht' : TableMem s₂ T (TComb.tableWords brainpoolp512r1Comb Spec.BrainpoolP512r1.curve VG.Impl.BrainpoolP512r1.comb7) := by
+  obtain ht' : TableMem s₂ T (TComb.tableWords brainpoolp512r1Comb Spec.BrainpoolP512r1.curve VG.Impl.BrainpoolP512r1.comb7) := by
     rw [Proof.BrainpoolP512r1.PPC64LE.comb_words_eq]; exact ht₂
-  have hd' : Region.Disjoint ⟨T, 8 * (TComb.tableWords brainpoolp512r1Comb Spec.BrainpoolP512r1.curve VG.Impl.BrainpoolP512r1.comb7).length⟩
+  obtain hd' : Region.Disjoint ⟨T, 8 * (TComb.tableWords brainpoolp512r1Comb Spec.BrainpoolP512r1.curve VG.Impl.BrainpoolP512r1.comb7).length⟩
       ⟨s₀.gpr .r6, 8192⟩ := by
     rw [Proof.BrainpoolP512r1.PPC64LE.comb_words_eq]; exact hd
-  have bu : ∀ i < 64 * brainpoolp512r1.n, s₂.mem (off (s₀.gpr .r6) (bitsAt brainpoolp512r1.n 0 + i)) =
+  obtain bu : ∀ i < 64 * brainpoolp512r1.n, s₂.mem (off (s₀.gpr .r6) (bitsAt brainpoolp512r1.n 0 + i)) =
       if (sv brainpoolp512r1 (s₀.gpr .r6) s U).testBit i then 1 else 0 := fun i hi => by
     rw [tbl_unch O₂.unch (by decide) (j := 0) (by decide) hi (tbl_apart_slW (c := brainpoolp512r1) (l := [EM]) (by decide) (by decide) 0 i)]
     exact b₁ i hi
@@ -112,56 +112,56 @@ theorem combPts_ok (hC : Law Spec.BrainpoolP512r1.curve) {s₀ : State} {T : Add
     hc.onG K₂.ws ht' (by rw [sy₂, sy₁, syms, sym]) hd' (k := sv brainpoolp512r1 (s₀.gpr .r6) s U)
     (Nat.lt_of_lt_of_le (Nat.lt_trans hM.u_lt hc.n_enc) (Nat.pow_le_pow_right (by decide) (by decide))) K₂.fixed.zero (fun i hi => bu i hi) K₂.fixed.ap K₂.fixed.b3p) fun s₃ h => h)
     fun s₃ ⟨k₃, U₃, L₃, R₃⟩ sy₃ => ?_)
-  have K₃ := K₂.step (by decide) k₃ (hU := U₃.cover Proof.BrainpoolP512r1.PPC64LE.comb_writes_cover)
+  obtain K₃ := K₂.step (by decide) k₃ (hU := U₃.cover Proof.BrainpoolP512r1.PPC64LE.comb_writes_cover)
     (hW := (fixedOk_ladWp (by decide) (by decide) GX GY).append (fixedOk_genX (by decide)))
     (hWs := VG.Proof.Ecdh.PPC64LE.le_append (ladWp_le (by decide) (by decide) GX GY) (genX_le (by decide)))
   -- A slot apart from what a step writes keeps its number.
-  have sl : ∀ {W : List (Nat × Nat)} {m m' : Mem}, Unch (s₀.gpr .r6) W m m' → ∀ {i : Nat}, i < 45 →
+  obtain sl : ∀ {W : List (Nat × Nat)} {m m' : Mem}, Unch (s₀.gpr .r6) W m m' → ∀ {i : Nat}, i < 45 →
       (∀ w ∈ W, brainpoolp512r1.sl i + 8 * brainpoolp512r1.n ≤ w.1 ∨ w.1 + w.2 ≤ brainpoolp512r1.sl i) →
       wordsVal m' (s₀.gpr .r6) (brainpoolp512r1.sl i) brainpoolp512r1.n = wordsVal m (s₀.gpr .r6) (brainpoolp512r1.sl i) brainpoolp512r1.n :=
     fun {_ _ _} U {_} hi hW => sv_unch (c := brainpoolp512r1) U (by decide) hn hi hW
   -- `U = [u]G`, `R = O`.
   refine WP.seq (VG.PPC64LE.WP.mono_syms (WP.mono (save_ok hc K₃.ws) fun s₄ h => h)
     fun s₄ ⟨k₄, U₄, ux₄, uy₄, uz₄, rx₄, ry₄, rz₄⟩ sy₄ => ?_)
-  have K₄ := K₃.step (by decide) (k₄.rk (rs' := [.r4, .r11])) (hU := U₄) (hW := fixedOk_slW (by decide))
+  obtain K₄ := K₃.step (by decide) (k₄.rk (rs' := [.r4, .r11])) (hU := U₄) (hW := fixedOk_slW (by decide))
     (hWs := by decide)
   -- `v`'s bits.
   refine WP.seq (VG.PPC64LE.WP.mono_syms (WP.mono (tbl_bits_ok hc K₄.ws (i := V) (j := 0) (by decide)
     (by decide)) fun s₅ h => h) fun s₅ ⟨b₅, k₅, O₅⟩ sy₅ => ?_)
-  have K₅ := K₄.step (by decide) (k₅.rk (rs' := bitsClob)) (hU := O₅.unch)
+  obtain K₅ := K₄.step (by decide) (k₅.rk (rs' := bitsClob)) (hU := O₅.unch)
     (hW := fixedOk_tbl (by decide) 0) (hWs := by decide)
   -- What the windows read.
-  have v₄ : sv brainpoolp512r1 (s₀.gpr .r6) s₄ V = sv brainpoolp512r1 (s₀.gpr .r6) s V :=
+  obtain v₄ : sv brainpoolp512r1 (s₀.gpr .r6) s₄ V = sv brainpoolp512r1 (s₀.gpr .r6) s V :=
     (sl U₄ (by decide) (by decide)).trans ((sl U₃ (by decide) (by decide)).trans
       ((sl O₂.unch (by decide) (by decide)).trans (sl O₁.unch (by decide) (by decide))))
-  have keep5 : ∀ {i : Nat}, i < 45 → i ∈ [PX, PY] →
+  obtain keep5 : ∀ {i : Nat}, i < 45 → i ∈ [PX, PY] →
       sv brainpoolp512r1 (s₀.gpr .r6) s₅ i = sv brainpoolp512r1 (s₀.gpr .r6) s i := fun {i} hi hl => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hl
     rcases hl with rfl | rfl <;>
       exact (sl O₅.unch hi (by decide)).trans ((sl U₄ hi (by decide)).trans ((sl U₃ hi (by decide)).trans
         ((sl O₂.unch hi (by decide)).trans (sl O₁.unch hi (by decide)))))
   have F₅ := K₅.fixed
-  have gQ : Window.BrainpoolP512r1.PtOk (s₀.gpr .r6) s₅ Window.BrainpoolP512r1.gPt P :=
+  obtain gQ : Window.BrainpoolP512r1.PtOk (s₀.gpr .r6) s₅ Window.BrainpoolP512r1.gPt P :=
     Window.BrainpoolP512r1.PtOk.of_eq ⟨hQ, hM.px_lt, hM.py_lt, lt_of_eq_of_lt hM.fixed.onep (Nat.mod_lt _ (by decide))⟩
       (keep5 (by decide) (by simp)) (keep5 (by decide) (by simp))
       (F₅.onep.trans hM.fixed.onep.symm)
-  have bv : Window.BrainpoolP512r1.Bits (s₀.gpr .r6) s₅ (sv brainpoolp512r1 (s₀.gpr .r6) s V) := fun t ht => by
+  obtain bv : Window.BrainpoolP512r1.Bits (s₀.gpr .r6) s₅ (sv brainpoolp512r1 (s₀.gpr .r6) s V) := fun t ht => by
     rw [← v₄]; exact b₅ t ht
   -- `[v]Q` by the windows.
   refine WP.seq (WP.mono (Window.BrainpoolP512r1.mul_ok hC ⟨K₅.ws, ⟨F₅.ap, F₅.b3p, F₅.zero, F₅.onep⟩, gQ, hP, bv,
     Nat.lt_trans hM.v_lt (by decide)⟩) fun s₆ ⟨k₆, U₆, R₆⟩ => ?_)
-  have K₆ := K₅.step (by decide) k₆ (hU := U₆) (hW := fun w hw => by
+  obtain K₆ := K₅.step (by decide) k₆ (hU := U₆) (hW := fun w hw => by
       simp only [Window.BrainpoolP512r1.mulW, List.mem_cons, List.not_mem_nil, or_false] at hw
       rcases hw with rfl | rfl | rfl <;> exact Or.inr (by decide)) (hWs := by decide)
   -- `U`, `[u]G`, through the save and the windows.
-  have uS : ∀ {i j : Nat}, i ∈ [UX, UY, UZ] → sv brainpoolp512r1 (s₀.gpr .r6) s₄ i = sv brainpoolp512r1 (s₀.gpr .r6) s₃ j →
+  obtain uS : ∀ {i j : Nat}, i ∈ [UX, UY, UZ] → sv brainpoolp512r1 (s₀.gpr .r6) s₄ i = sv brainpoolp512r1 (s₀.gpr .r6) s₃ j →
       sv brainpoolp512r1 (s₀.gpr .r6) s₆ i = sv brainpoolp512r1 (s₀.gpr .r6) s₃ j := fun {i _} hi e => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hi
     rcases hi with rfl | rfl | rfl <;>
       exact (sl U₆ (by decide) (by decide)).trans ((sl O₅.unch (by decide) (by decide)).trans e)
-  have ux := uS (by simp) ux₄
-  have uy := uS (by simp) uy₄
-  have uz := uS (by simp) uz₄
+  obtain ux := uS (by simp) ux₄
+  obtain uy := uS (by simp) uy₄
+  obtain uz := uS (by simp) uz₄
   have F₆ := K₆.fixed
   -- The sum.
   refine WP.mono (sum_ok hc K₆ (fun i hi => ?_)) fun s₇ ⟨K₇, U₇, _, _, rz₇, t₇⟩ => h s₇ ?_
@@ -176,27 +176,27 @@ theorem combPts_ok (hC : Law Spec.BrainpoolP512r1.curve) {s₀ : State} {T : Add
     · exact R₆.y
     · exact R₆.z
   -- What `Pts` keeps from `s`.
-  have tb : ∀ {W : List (Nat × Nat)} {m m' : Mem}, Unch (s₀.gpr .r6) W m m' →
+  obtain tb : ∀ {W : List (Nat × Nat)} {m m' : Mem}, Unch (s₀.gpr .r6) W m m' →
       (∀ w ∈ W, w.1 + w.2 ≤ 4608 ∨ 5120 ≤ w.1) → ∀ t < 64 * brainpoolp512r1.n,
       m' (off (s₀.gpr .r6) (bitsAt brainpoolp512r1.n 1 + t)) = m (off (s₀.gpr .r6) (bitsAt brainpoolp512r1.n 1 + t)) :=
     fun {_ _ _} U hW t ht => tbl_unch U (by decide) (j := 1) (by decide) ht (fun w hw => by
       have := hW w hw; have : t < 512 := ht; show 4608 + t + 1 ≤ w.1 ∨ w.1 + w.2 ≤ 4608 + t; omega_arith)
-  have fl : ∀ {W : List (Nat × Nat)} {m m' : Mem}, Unch (s₀.gpr .r6) W m m' →
+  obtain fl : ∀ {W : List (Nat × Nat)} {m m' : Mem}, Unch (s₀.gpr .r6) W m m' →
       (∀ w ∈ W, brainpoolp512r1.sl FLAG + 8 ≤ w.1 ∨ w.1 + w.2 ≤ brainpoolp512r1.sl FLAG) →
       word m' (s₀.gpr .r6) (brainpoolp512r1.sl FLAG) = word m (s₀.gpr .r6) (brainpoolp512r1.sl FLAG) :=
     fun {_ _ _} U hW => U.word hW (by decide)
-  have ha : tmv brainpoolp512r1.C brainpoolp512r1.n (s₀.gpr .r6) s₆ (brainpoolp512r1.sl AP) = Fin.ofNat brainpoolp512r1.C.p brainpoolp512r1.C.a := by
+  obtain ha : tmv brainpoolp512r1.C brainpoolp512r1.n (s₀.gpr .r6) s₆ (brainpoolp512r1.sl AP) = Fin.ofNat brainpoolp512r1.C.p brainpoolp512r1.C.a := by
     show toM _ _ (wordsVal _ _ (brainpoolp512r1.sl AP) brainpoolp512r1.n) = _; rw [F₆.ap]; exact toM_cmont hc _
-  have hb : tmv brainpoolp512r1.C brainpoolp512r1.n (s₀.gpr .r6) s₆ (brainpoolp512r1.sl B3P) = Fin.ofNat brainpoolp512r1.C.p (3 * brainpoolp512r1.C.b) := by
+  obtain hb : tmv brainpoolp512r1.C brainpoolp512r1.n (s₀.gpr .r6) s₆ (brainpoolp512r1.sl B3P) = Fin.ofNat brainpoolp512r1.C.p (3 * brainpoolp512r1.C.b) := by
     show toM _ _ (wordsVal _ _ (brainpoolp512r1.sl B3P) brainpoolp512r1.n) = _; rw [F₆.b3p]; exact toM_cmont hc _
-  have tU : ∀ {i j : Nat}, sv brainpoolp512r1 (s₀.gpr .r6) s₆ i = sv brainpoolp512r1 (s₀.gpr .r6) s₃ j →
+  obtain tU : ∀ {i j : Nat}, sv brainpoolp512r1 (s₀.gpr .r6) s₆ i = sv brainpoolp512r1 (s₀.gpr .r6) s₃ j →
       tmv brainpoolp512r1.C brainpoolp512r1.n (s₀.gpr .r6) s₆ (brainpoolp512r1.sl i) = tmv brainpoolp512r1.C brainpoolp512r1.n (s₀.gpr .r6) s₃ (brainpoolp512r1.sl j) :=
     fun e => by show toM _ _ (sv brainpoolp512r1 _ _ _) = toM _ _ (sv brainpoolp512r1 _ _ _); rw [e]
-  have hU1 : Rep brainpoolp512r1.C (tmv brainpoolp512r1.C brainpoolp512r1.n (s₀.gpr .r6) s₆ (brainpoolp512r1.sl UX))
+  obtain hU1 : Rep brainpoolp512r1.C (tmv brainpoolp512r1.C brainpoolp512r1.n (s₀.gpr .r6) s₆ (brainpoolp512r1.sl UX))
       (tmv brainpoolp512r1.C brainpoolp512r1.n (s₀.gpr .r6) s₆ (brainpoolp512r1.sl UY)) (tmv brainpoolp512r1.C brainpoolp512r1.n (s₀.gpr .r6) s₆ (brainpoolp512r1.sl UZ))
       (mul (sv brainpoolp512r1 (s₀.gpr .r6) s U) (G brainpoolp512r1.C)) := by
     rw [tU ux, tU uy, tU uz]; exact R₃
-  have rm₇ : sv brainpoolp512r1 (s₀.gpr .r6) s₇ RM' = sv brainpoolp512r1 (s₀.gpr .r6) s RM' :=
+  obtain rm₇ : sv brainpoolp512r1 (s₀.gpr .r6) s₇ RM' = sv brainpoolp512r1 (s₀.gpr .r6) s RM' :=
     (sl U₇ (by decide) (by decide)).trans ((sl U₆ (by decide) (by decide)).trans
       ((sl O₅.unch (by decide) (by decide)).trans ((sl U₄ (by decide) (by decide)).trans
       ((sl U₃ (by decide) (by decide)).trans ((sl O₂.unch (by decide) (by decide)).trans
@@ -260,18 +260,18 @@ def vPC : Contract isa where
 theorem verify_ppc (hL : Weierstrass.Law Spec.BrainpoolP512r1.curve) (s : State) (hs : vPC.pre s) :
     ∃ t s', Exec isa verifyBrainpoolP512r1 s t s' ∧ abiPreserved s s' ∧ vPC.post s s' := by
   obtain ⟨hp, hk⟩ := hs
-  have p := pre_of hp
-  have hpre : VPre brainpoolp512r1 s (constRegs brainpoolp512r1CombConsts s) := by
+  obtain p := pre_of hp
+  obtain hpre : VPre brainpoolp512r1 s (constRegs brainpoolp512r1CombConsts s) := by
     refine ⟨?_, p.wr, p.pk_sc, p.dg_sc, p.sig_sc, p.pk_fit, p.dg_fit, p.sig_fit, p.sc_fit⟩
     rw [← List.take_append_drop (s.rd.length - brainpoolp512r1CombConsts.length) s.rd, hk.1]
     have e := p.rd
     simp only [List.append_nil] at e
     exact congrArg (fun rs => rs ++ constRegs brainpoolp512r1CombConsts s) e
-  have member : (brainpoolp512r1Comb.tsym, brainpoolp512r1CombWords) ∈ brainpoolp512r1CombConsts := List.mem_singleton_self _
-  have ht : VG.Proof.Weierstrass.PPC64LE.TComb.TableMem s (s.syms brainpoolp512r1Comb.tsym) brainpoolp512r1CombWords :=
+  obtain member : (brainpoolp512r1Comb.tsym, brainpoolp512r1CombWords) ∈ brainpoolp512r1CombConsts := List.mem_singleton_self _
+  obtain ht : VG.Proof.Weierstrass.PPC64LE.TComb.TableMem s (s.syms brainpoolp512r1Comb.tsym) brainpoolp512r1CombWords :=
     ⟨hk.fit member, ⟨_, List.mem_append_left _ (hk.mem_rd member), Region.contains_self _ _⟩,
       fun i hi => hk.readW member hi⟩
-  have hd : Region.Disjoint ⟨s.syms brainpoolp512r1Comb.tsym, 8 * brainpoolp512r1CombWords.length⟩ ⟨s.gpr .r6, 8192⟩ :=
+  obtain hd : Region.Disjoint ⟨s.syms brainpoolp512r1Comb.tsym, 8 * brainpoolp512r1CombWords.length⟩ ⟨s.gpr .r6, 8192⟩ :=
     hk.disjoint_wr member (by rw [hpre.wr]; simp)
   obtain ⟨t, s', he, K, hpost⟩ := verifyWith_ok brainpoolp512r1_ok hL hpre (combPts_ok hL ht rfl hd)
   exact ⟨t, s', he, ⟨K.saved, K.sp, K.lr⟩, hpost⟩

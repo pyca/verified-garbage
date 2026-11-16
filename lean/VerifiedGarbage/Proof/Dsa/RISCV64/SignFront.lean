@@ -99,7 +99,7 @@ theorem stack_kept {S B : Addr} {Z : Nat} (hd : (⟨S, Z⟩ : Region).Disjoint �
     {m m' : Mem} (ho : Outside S 0 256 m m') : m'.readW B 64 = m.readW B 64 := by
   refine Mem.readW_congr fun i hi => ho _ (Or.inr ?_)
   by_contra hc
-  have hlt := (B + BitVec.ofNat 64 i - S).isLt
+  obtain hlt := (B + BitVec.ofNat 64 i - S).isLt
   exact hd (B + BitVec.ofNat 64 i) (by simp only [Region.Contains, ofs] at hc ⊢; omega_arith)
     (by simp only [Region.Contains]; rw [Mem.sub_ofNat_toNat B (by omega_arith)]; omega_arith)
 
@@ -122,56 +122,56 @@ the digest's address, `out` and the lengths into the header. Memory changes
 only in the header. -/
 theorem sfront_ok {s : State} (h : sContract.pre s) :
     WP isa (.block Sign.entry) s fun t => SFront s t ∧ Keep sentryRegs s t := by
-  have hL := slayOf_ok h
+  obtain hL := slayOf_ok h
   have hZ := hL.z256
-  have hpl : (s.gpr .a4).toNat < 2 ^ 16 := by have := hL.pl; simp only [slayOf] at this; omega_arith
-  have hql : (s.gpr .a6).toNat < 2 ^ 16 := by have := hL.ql; simp only [slayOf] at this; omega_arith
+  obtain hpl : (s.gpr .a4).toNat < 2 ^ 16 := by have := hL.pl; simp only [slayOf] at this; omega_arith
+  obtain hql : (s.gpr .a6).toNat < 2 ^ 16 := by have := hL.ql; simp only [slayOf] at this; omega_arith
   obtain ⟨hrd, hwr, -, -, -, -, -, -, -, -, dSS, -, -, -, -, nw, -, -, -, -, alS, sp16⟩ := h
-  have hscr : ∀ t : State, t.wr = s.wr → ScrL t (slayOf s) := fun t ht =>
+  obtain hscr : ∀ t : State, t.wr = s.wr → ScrL t (slayOf s) := fun t ht =>
     Scr.of_mem (by rw [ht, hwr]; simp [slayOf]) nw alS
-  have hZ' : (stackArg s 2).toNat * 8 ≤ 2 ^ 64 := by omega_using [nw]
-  have hZS : 256 ≤ (stackArg s 2).toNat * 8 := by simp only [slayOf] at hZ; exact hZ
+  obtain hZ' : (stackArg s 2).toNat * 8 ≤ 2 ^ 64 := by omega_using [nw]
+  obtain hZS : 256 ≤ (stackArg s 2).toNat * 8 := by simp only [slayOf] at hZ; exact hZ
   unfold Sign.entry
   simp only [List.append_assoc]
   -- `scratch` into `t2`.
-  have hld8 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 8) 8 :=
+  obtain hld8 : InRegions (s.rd ++ s.wr) (s.sp + BitVec.ofNat 64 8) 8 :=
     ⟨sStackArgs s, List.mem_append_left _ (by rw [hrd]; simp), by
       simp only [Region.Contains, stackArgAddr, Nat.mul_zero, add_ofNat_zero]
       rw [show s.sp + BitVec.ofNat 64 8 - s.sp = BitVec.ofNat 64 8 by rw [BitVec.add_comm, BitVec.add_sub_cancel]]; decide⟩
-  have hal8 : (s.sp + BitVec.ofNat 64 8).toNat % 8 = 0 := by
+  obtain hal8 : (s.sp + BitVec.ofNat 64 8).toNat % 8 = 0 := by
     rw [BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [sp16]
   have hv8 : s.mem.readW (s.sp + BitVec.ofNat 64 8) 64 = stackArg s 1 := rfl
   refine WP.block_append (WP.mono (WP.keep [.t2] (Q := fun u => u.gpr .t2 = stackArg s 1 ∧ u.mem = s.mem ∧
       u.sp = s.sp) (by brun [exec_addSp (show 8 < 2048 by decide), hld8, hal8, hv8]) (by rfl) (by rfl))
     fun s₁ ⟨⟨a2, m1, sp1⟩, k1⟩ => ?_)
-  have hs₁ := hscr s₁ k1.2.2
-  have hin : ∀ i < 13, InRegions s₁.wr (off (savW (stackArg s 1)) (8 * i)) 8 := fun i hi => by
+  obtain hs₁ := hscr s₁ k1.2.2
+  obtain hin : ∀ i < 13, InRegions s₁.wr (off (savW (stackArg s 1)) (8 * i)) 8 := fun i hi => by
     rw [← saveOff_eq]; exact hs₁.st (d := saveOff i) (by simp only [saveOff, slayOf] at hZ ⊢; omega_arith)
-  have hal : ∀ i < 13, (off (savW (stackArg s 1)) (8 * i)).toNat % 8 = 0 := fun i hi => by
+  obtain hal : ∀ i < 13, (off (savW (stackArg s 1)) (8 * i)).toNat % 8 = 0 := fun i hi => by
     rw [← saveOff_eq]; exact hs₁.al8 (d := saveOff i) (by simp only [saveOff, slayOf] at hZ ⊢; omega_arith)
       (by simp only [saveOff]; omega_using [])
   refine WP.block_append (WP.mono (saveT2_ok s₁ a2 hin hal) fun s₂ hS₂ => ?_)
-  have k12 := k1.trans hS₂.keep
-  have e : ∀ r, r ≠ .t2 → r ≠ .s6 → s₂.gpr r = s.gpr r := fun r h1 h2 =>
+  obtain k12 := k1.trans hS₂.keep
+  obtain e : ∀ r, r ≠ .t2 → r ≠ .s6 → s₂.gpr r = s.gpr r := fun r h1 h2 =>
     k12.gpr fun hm => by
       simp only [List.mem_append, List.mem_cons, List.not_mem_nil, or_false] at hm
       rcases hm with hm | hm | hm
       · exact h1 hm
       · exact h1 hm
       · exact h2 hm
-  have hs₂ := hscr s₂ k12.2.2
-  have sp₂ : s₂.sp = s.sp := hS₂.sp.trans sp1
-  have hst8 : InRegions s₂.wr (off (stackArg s 1) 8) 8 := hs₂.st (d := 8) (by simp only [slayOf] at hZ ⊢; omega_using [hZ])
-  have hst16 : InRegions s₂.wr (off (stackArg s 1) 16) 8 := hs₂.st (d := 16) (by simp only [slayOf] at hZ ⊢; omega_using [hZ])
-  have hst24 : InRegions s₂.wr (off (stackArg s 1) 24) 8 := hs₂.st (d := 24) (by simp only [slayOf] at hZ ⊢; omega_using [hZ])
-  have hal8' : (off (stackArg s 1) 8).toNat % 8 = 0 := (ScrL.hdr hs₂ hL (d := 8) (by decide) (by decide)).2
-  have hal16' : (off (stackArg s 1) 16).toNat % 8 = 0 := (ScrL.hdr hs₂ hL (d := 16) (by decide) (by decide)).2
-  have hal24' : (off (stackArg s 1) 24).toNat % 8 = 0 := (ScrL.hdr hs₂ hL (d := 24) (by decide) (by decide)).2
+  obtain hs₂ := hscr s₂ k12.2.2
+  obtain sp₂ : s₂.sp = s.sp := hS₂.sp.trans sp1
+  obtain hst8 : InRegions s₂.wr (off (stackArg s 1) 8) 8 := hs₂.st (d := 8) (by simp only [slayOf] at hZ ⊢; omega_using [hZ])
+  obtain hst16 : InRegions s₂.wr (off (stackArg s 1) 16) 8 := hs₂.st (d := 16) (by simp only [slayOf] at hZ ⊢; omega_using [hZ])
+  obtain hst24 : InRegions s₂.wr (off (stackArg s 1) 24) 8 := hs₂.st (d := 24) (by simp only [slayOf] at hZ ⊢; omega_using [hZ])
+  obtain hal8' : (off (stackArg s 1) 8).toNat % 8 = 0 := (ScrL.hdr hs₂ hL (d := 8) (by decide) (by decide)).2
+  obtain hal16' : (off (stackArg s 1) 16).toNat % 8 = 0 := (ScrL.hdr hs₂ hL (d := 16) (by decide) (by decide)).2
+  obtain hal24' : (off (stackArg s 1) 24).toNat % 8 = 0 := (ScrL.hdr hs₂ hL (d := 24) (by decide) (by decide)).2
   -- `digest_len`, from the stack.
-  have f1 : Outside (stackArg s 1) 128 104 s₁.mem s₂.mem :=
+  obtain f1 : Outside (stackArg s 1) 128 104 s₁.mem s₂.mem :=
     VG.Proof.Bignum.frame_outside (base := stackArg s 1) (d := 128) (len := 104) hS₂.frame (by omega_using [])
   have dSS' : (⟨stackArg s 1, (stackArg s 2).toNat * 8⟩ : Region).Disjoint ⟨stackArgAddr s 0, 24⟩ := dSS
-  have hv0 : ((s₂.mem.writeW (off (stackArg s 1) 8) (s.gpr .a7)).writeW (off (stackArg s 1) 24) (s.gpr .a0)).readW
+  obtain hv0 : ((s₂.mem.writeW (off (stackArg s 1) 8) (s.gpr .a7)).writeW (off (stackArg s 1) 24) (s.gpr .a0)).readW
       (s.sp + BitVec.ofNat 64 0) 64 = stackArg s 0 := by
     rw [Mem.readW_writeW_sep (w := 64) (w' := 64)
         (show Mem.Sep (s.sp + BitVec.ofNat 64 0) 8 (off (stackArg s 1) 24) 8 from
@@ -182,16 +182,16 @@ theorem sfront_ok {s : State} (h : sContract.pre s) :
       show s.sp + BitVec.ofNat 64 0 = stackArgAddr s 0 from rfl,
       stack_kept dSS' hZS (f1.mono (Nat.zero_le _) (by omega_using [])), m1]
     rfl
-  have hld0 : InRegions (s₂.rd ++ s₂.wr) (s.sp + BitVec.ofNat 64 0) 8 := by
+  obtain hld0 : InRegions (s₂.rd ++ s₂.wr) (s.sp + BitVec.ofNat 64 0) 8 := by
     rw [k12.2.1, k12.2.2]
     exact ⟨sStackArgs s, List.mem_append_left _ (by rw [hrd]; simp), by
       simp only [Region.Contains, stackArgAddr, Nat.mul_zero]; rw [BitVec.sub_self]; decide⟩
-  have hal0 : (s.sp + BitVec.ofNat 64 0).toNat % 8 = 0 := by rw [add_ofNat_zero]; omega_using [sp16]
-  have hv0' : ((s₂.mem.writeW (stackArg s 1 + BitVec.ofNat 64 8) (s.gpr .a7)).writeW
+  obtain hal0 : (s.sp + BitVec.ofNat 64 0).toNat % 8 = 0 := by rw [add_ofNat_zero]; omega_using [sp16]
+  obtain hv0' : ((s₂.mem.writeW (stackArg s 1 + BitVec.ofNat 64 8) (s.gpr .a7)).writeW
       (stackArg s 1 + BitVec.ofNat 64 24) (s.gpr .a0)).readW s.sp 64 = stackArg s 0 := by
     rw [← add_ofNat_zero s.sp]; exact hv0
-  have hld0' : InRegions (s₂.rd ++ s₂.wr) s.sp 8 := by rw [← add_ofNat_zero s.sp]; exact hld0
-  have hal0' : s.sp.toNat % 8 = 0 := by omega_using [sp16]
+  obtain hld0' : InRegions (s₂.rd ++ s₂.wr) s.sp 8 := by rw [← add_ofNat_zero s.sp]; exact hld0
+  obtain hal0' : s.sp.toNat % 8 = 0 := by omega_using [sp16]
   -- The key, the nonce, the digest's address, `out` and `digest_len`.
   refine WP.block_append (WP.mono (WP.keep [.s11, .ra, .t3, .a7] (Q := fun t =>
       t.mem = (s₂.mem.writeW (off (stackArg s 1) 8) (s.gpr .a7)).writeW (off (stackArg s 1) 24) (s.gpr .a0) ∧
@@ -200,11 +200,11 @@ theorem sfront_ok {s : State} (h : sContract.pre s) :
           e .a0 (by decide) (by decide), hDigest, Sign.hOut, hst8, hal8', hst24, hal24', BitVec.add_zero, sp₂,
           exec_addSp (show 0 < 2048 by decide), hld0', hal0', hv0'])
       (by decide) (by rfl)) fun s₃ ⟨⟨m3, t11, tra, ta7⟩, k3⟩ => ?_)
-  have k13 := k12.trans k3
-  have e3 : ∀ r, r ≠ .t2 → r ≠ .s6 → r ≠ .s11 → r ≠ .ra → r ≠ .t3 → r ≠ .a7 → s₃.gpr r = s.gpr r :=
+  obtain k13 := k12.trans k3
+  obtain e3 : ∀ r, r ≠ .t2 → r ≠ .s6 → r ≠ .s11 → r ≠ .ra → r ≠ .t3 → r ≠ .a7 → s₃.gpr r = s.gpr r :=
     fun r h1 h2 h3 h4 h5 h6 => (k3.gpr (by simp [h3, h4, h5, h6])).trans (e r h1 h2)
-  have hcap := cap_eq (stackArg s 0)
-  have hpk := pack_entry (s.gpr .a4) (s.gpr .a6) hpl hql (show min (stackArg s 0).toNat 64 < 2 ^ 16 by omega_using [])
+  obtain hcap := cap_eq (stackArg s 0)
+  obtain hpk := pack_entry (s.gpr .a4) (s.gpr .a6) hpl hql (show min (stackArg s 0).toNat 64 < 2 ^ 16 by omega_using [])
   refine WP.mono (WP.keep [.t3, .a1] (Q := fun t =>
       t.mem = s₃.mem.writeW (off (stackArg s 1) 16)
         (pack (s.gpr .a4).toNat (s.gpr .a6).toNat 0 (min (stackArg s 0).toNat 64))) ?_ (by decide) (by rfl))
@@ -219,14 +219,14 @@ theorem sfront_ok {s : State} (h : sContract.pre s) :
   · have k := k13.trans kt
     have hp16 : (slayOf s).pl < 2 ^ 16 := hpl
     have hq16 : (slayOf s).ql < 2 ^ 16 := hql
-    have hd16 : min (stackArg s 0).toNat 64 < 2 ^ 16 := by omega_using []
-    have hnw : (stackArg s 1).toNat + 256 ≤ 2 ^ 64 := by simp only [slayOf] at hZ; omega_using [hZ, nw]
-    have w16 := writeW_outside s₃.mem (stackArg s 1) (d := 16)
+    obtain hd16 : min (stackArg s 0).toNat 64 < 2 ^ 16 := by omega_using []
+    obtain hnw : (stackArg s 1).toNat + 256 ≤ 2 ^ 64 := by simp only [slayOf] at hZ; omega_using [hZ, nw]
+    obtain w16 := writeW_outside s₃.mem (stackArg s 1) (d := 16)
       (pack (s.gpr .a4).toNat (s.gpr .a6).toNat 0 (min (stackArg s 0).toNat 64)) (by omega_using [])
-    have w24 := writeW_outside (s₂.mem.writeW (off (stackArg s 1) 8) (s.gpr .a7)) (stackArg s 1) (d := 24)
+    obtain w24 := writeW_outside (s₂.mem.writeW (off (stackArg s 1) 8) (s.gpr .a7)) (stackArg s 1) (d := 24)
       (s.gpr .a0) (by omega_using [])
-    have w8 := writeW_outside s₂.mem (stackArg s 1) (d := 8) (s.gpr .a7) (by omega_using [])
-    have hlen : word t.mem (stackArg s 1) hLens =
+    obtain w8 := writeW_outside s₂.mem (stackArg s 1) (d := 8) (s.gpr .a7) (by omega_using [])
+    obtain hlen : word t.mem (stackArg s 1) hLens =
         pack (slayOf s).pl (slayOf s).ql 0 (min (stackArg s 0).toNat 64) := by
       rw [mt]; exact word_writeW_self _ _ _ _
     have hlen' : word t.mem (slayOf s).S hLens =

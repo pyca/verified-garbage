@@ -50,6 +50,22 @@ theorem written_ok (v : BlocksImpl) (s : State) (tr : List Leak) (t : State)
     rw [ite_eq_right h]
     trivial
 
+/-- The loop in AES-NI registers, with no stack below the return address:
+it has no frame and no call. -/
+theorem verifiedFree (v : BlocksImpl) (h : hardware v = true) :
+    Verified X86_64.target (encrypt v) (Proof.AesCbc.encryptRoundsContract X86_64.abi 0) := by
+  unfold encrypt
+  rw [ite_eq_left h]
+  exact Encrypt.verified0
+
+/-- It writes none of `scratch`. -/
+theorem writtenFree (v : BlocksImpl) (h : hardware v = true) (s : State) (tr : List Leak) (t : State)
+    (hp : (Proof.AesCbc.encryptRoundsContract X86_64.abi 0).pre s) (he : Exec isa (encrypt v) s tr t) :
+    Sig.writtenWithin (X86_64.abi.withConsts []) Spec.Cbc.aesSig [("scratch", 0)] s t := by
+  unfold encrypt at he
+  rw [ite_eq_left h] at he
+  exact Encrypt.written_of Encrypt.implies0 s tr t hp he
+
 def vaes (v : BlocksImpl) : Bool := v.dec.name == "vg_aes_decrypt_blocks_vaes"
 
 def decrypt (v : BlocksImpl) : Prog isa :=

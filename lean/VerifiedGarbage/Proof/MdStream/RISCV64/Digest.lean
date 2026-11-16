@@ -150,7 +150,7 @@ theorem Vars.of_pres {s s' : State} (h : Vars s₀ s) (hc : ∀ r ∈ preserved,
 /-- `Vars` after code writing only `a0`–`a3`. -/
 theorem Vars.of_keep {s s' : State} (h : Vars s₀ s)
     (hc : ∀ r, r ≠ .a0 → r ≠ .a1 → r ≠ .a2 → r ≠ .a3 → s'.gpr r = s.gpr r) : Vars s₀ s' := by
-  have k : ∀ r ∈ [Reg.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s8, .s9, .s10, .s11], s'.gpr r = s.gpr r := by
+  obtain k : ∀ r ∈ [Reg.s0, .s1, .s2, .s3, .s4, .s5, .s6, .s8, .s9, .s10, .s11], s'.gpr r = s.gpr r := by
     intro r hr
     exact hc r (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
   exact ⟨(k _ (by simp)).trans h.s8, (k _ (by simp)).trans h.s9, (k _ (by simp)).trans h.s10,
@@ -178,20 +178,20 @@ theorem sv_keep (hp : Pre H s₀) (hl : DLay H) {m m' : Mem}
 /-- `digest`, in its frame. -/
 theorem digestMain_ok (hp : Pre H s₀) : WP isa (digestMain H) s₀ (Post hH s₀) := by
   have hl₀ := hH.lay
-  have hl := dlay hl₀
+  obtain hl := dlay hl₀
   have hD := hl₀.D
   have hdso := hl.so
   have hdb := hl.fb
-  have hS : H.S < 2048 := by omega_arith
-  have hal8 : (fr s₀).toNat % 8 = 0 := by show s₀.sp.toNat % 8 = 0; have := hp.al; omega_arith
-  have hwf : frR H s₀ ∈ s₀.wr := by rw [hp.wr]; exact List.mem_cons_self ..
-  have hwo : oR H s₀ ∈ s₀.wr := by rw [hp.wr]; simp
-  have hrd : dR s₀ ∈ s₀.rd := by rw [hp.rd]; exact List.mem_singleton_self _
-  have dS : (dR s₀).Disjoint (stR H s₀) := hp.f_d.symm.sub_right (st_sub hl)
-  have sS : (stk H s₀).Disjoint (stR H s₀) := hp.f_s.symm.sub_right (st_sub hl)
-  have oS : Region.Disjoint (stR H s₀) (oR H s₀) := hp.f_o.sub_left (st_sub hl)
-  have dl_lt : dl s₀ < 2 ^ 64 := (s₀.gpr .a1).isLt
-  have msg_keep : ∀ {m : Mem} {rs : List Region}, Frame rs s₀.mem m →
+  obtain hS : H.S < 2048 := by omega_arith
+  obtain hal8 : (fr s₀).toNat % 8 = 0 := by show s₀.sp.toNat % 8 = 0; have := hp.al; omega_arith
+  obtain hwf : frR H s₀ ∈ s₀.wr := by rw [hp.wr]; exact List.mem_cons_self ..
+  obtain hwo : oR H s₀ ∈ s₀.wr := by rw [hp.wr]; simp
+  obtain hrd : dR s₀ ∈ s₀.rd := by rw [hp.rd]; exact List.mem_singleton_self _
+  obtain dS : (dR s₀).Disjoint (stR H s₀) := hp.f_d.symm.sub_right (st_sub hl)
+  obtain sS : (stk H s₀).Disjoint (stR H s₀) := hp.f_s.symm.sub_right (st_sub hl)
+  obtain oS : Region.Disjoint (stR H s₀) (oR H s₀) := hp.f_o.sub_left (st_sub hl)
+  obtain dl_lt : dl s₀ < 2 ^ 64 := (s₀.gpr .a1).isLt
+  obtain msg_keep : ∀ {m : Mem} {rs : List Region}, Frame rs s₀.mem m →
       (∀ r ∈ rs, r = stR H s₀ ∨ r = oR H s₀ ∨ r = stk H s₀ ∨ r = svR H s₀) →
       bytesAt m (dp s₀) (dl s₀) = M s₀ := by
     intro m rs hf hrs
@@ -203,7 +203,7 @@ theorem digestMain_ok (hp : Pre H s₀) : WP isa (digestMain H) s₀ (Post hH s�
   rw [saveAt_eq, List.cons_append]
   -- Save our caller's registers, and set up ours.
   refine WP.seq (wp_addSp (imm := 0) (by decide) fun s₁ u₁ => ?_)
-  have t0₁ : s₁.gpr .t0 = fr s₀ := by rw [u₁.gpr, BitVec.add_zero]
+  obtain t0₁ : s₁.gpr .t0 = fr s₀ := by rw [u₁.gpr, BitVec.add_zero]
   refine Spill.save_ok (by rw [t0₁]; exact hal8) (savedAt_off ⟨hdso.2, by omega_arith⟩)
     (fun p hp' => ⟨frR H s₀, by rw [u₁.wr, hp.wr]; exact List.mem_cons_self,
       (by
@@ -212,10 +212,10 @@ theorem digestMain_ok (hp : Pre H s₀) : WP isa (digestMain H) s₀ (Post hH s�
         exact Offset.contains_base (k := dbytes H) _ (by omega_arith) (by omega_arith))⟩) ?_
   refine wp_mv fun s₃ u₃ => wp_mv fun s₄ u₄ => wp_mv fun s₅ u₅ => wp_mv fun s₆ u₆ =>
     wp_mv fun s₇ u₇ => WP.block_nil ?_
-  have r₇ : Regs s₀ s₇ := ⟨by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd]; exact u₁.rd,
+  obtain r₇ : Regs s₀ s₇ := ⟨by rw [u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd]; exact u₁.rd,
     by rw [u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr]; exact u₁.wr,
     by rw [u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp]; exact u₁.sp⟩
-  have v₇ : Vars s₀ s₇ :=
+  obtain v₇ : Vars s₀ s₇ :=
     ⟨by rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide),
         u₃.gpr]; exact t0₁,
       by rw [u₇.other _ (by decide), u₆.other _ (by decide), u₅.other _ (by decide), u₄.gpr,
@@ -228,14 +228,14 @@ theorem digestMain_ok (hp : Pre H s₀) : WP isa (digestMain H) s₀ (Post hH s�
         rw [u₇.other r (by revert r; decide), u₆.other r (by revert r; decide), u₅.other r (by revert r; decide),
           u₄.other r (by revert r; decide), u₃.other r (by revert r; decide)]
         exact u₁.other r (by revert r; decide)⟩
-  have a0₇ : s₇.gpr .a0 = fr s₀ := by
+  obtain a0₇ : s₇.gpr .a0 = fr s₀ := by
     rw [u₇.gpr, u₆.other _ (by decide), u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr]
     exact t0₁
-  have hm₇ : s₇.mem = Spill.saveMem s₀.mem (fr s₀) s₁.gpr (Hash.savedAt (dso H)) := by
+  obtain hm₇ : s₇.mem = Spill.saveMem s₀.mem (fr s₀) s₁.gpr (Hash.savedAt (dso H)) := by
     rw [u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, t0₁, u₁.mem]
-  have hf₇ : Frame [svR H s₀] s₀.mem s₇.mem := by
+  obtain hf₇ : Frame [svR H s₀] s₀.mem s₇.mem := by
     rw [hm₇]; exact Spill.saveMem_frame savedAt_in (by have := hp.top; omega_arith) _ _ _
-  have sv₇ : Spill.Saved (fr s₀) s₀.gpr (Hash.savedAt (dso H)) s₇.mem := by
+  obtain sv₇ : Spill.Saved (fr s₀) s₀.gpr (Hash.savedAt (dso H)) s₇.mem := by
     rw [hm₇]
     intro p hp'
     rw [Spill.saveMem_saved (savedAt_fits ⟨hdso.2, by omega_arith⟩) _ _ _ p hp']
@@ -248,14 +248,14 @@ theorem digestMain_ok (hp : Pre H s₀) : WP isa (digestMain H) s₀ (Post hH s�
     (by rw [r₇.wr]; exact cover_pre hwf (show H.S ≤ dbytes H by omega_arith))
     fun s₈ rd₈ wr₈ sp₈ f₈ cs₈ hrS₈ => ?_)
   rw [r₇.sp] at f₈
-  have r₈ : Regs s₀ s₈ := ⟨rd₈.trans r₇.rd, wr₈.trans r₇.wr, sp₈.trans r₇.sp⟩
-  have v₈ := v₇.of_pres cs₈
-  have hrs₈ : ∀ r ∈ [stR H s₀] ++ [stk H s₀], r = stR H s₀ ∨ r = oR H s₀ ∨ r = stk H s₀ := by
+  obtain r₈ : Regs s₀ s₈ := ⟨rd₈.trans r₇.rd, wr₈.trans r₇.wr, sp₈.trans r₇.sp⟩
+  obtain v₈ := v₇.of_pres cs₈
+  obtain hrs₈ : ∀ r ∈ [stR H s₀] ++ [stk H s₀], r = stR H s₀ ∨ r = oR H s₀ ∨ r = stk H s₀ := by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
     exacts [.inl rfl, .inr (.inr rfl)]
-  have sv₈ := sv_keep hp hl sv₇ f₈ hrs₈
-  have k₈ : bytesAt s₈.mem (dp s₀) (dl s₀) = M s₀ :=
+  obtain sv₈ := sv_keep hp hl sv₇ f₈ hrs₈
+  obtain k₈ : bytesAt s₈.mem (dp s₀) (dl s₀) = M s₀ :=
     msg_keep (rs := [svR H s₀, stR H s₀, stk H s₀]) ((hf₇.mono (by simp)).trans (f₈.mono (by simp))) (by
       simp only [List.mem_cons, List.not_mem_nil, or_false]
       rintro r (rfl | rfl | rfl)
@@ -263,12 +263,12 @@ theorem digestMain_ok (hp : Pre H s₀) : WP isa (digestMain H) s₀ (Post hH s�
   -- Absorb the message.
   refine WP.seq (wp_mv fun s₉ u₉ => wp_li (by decide) fun s₁₀ u₁₀ => wp_mv fun s₁₁ u₁₁ =>
     wp_mv fun s₁₂ u₁₂ => WP.block_nil ?_)
-  have r₁₂ : Regs s₀ s₁₂ := ⟨by rw [u₁₂.rd, u₁₁.rd, u₁₀.rd, u₉.rd, r₈.rd],
+  obtain r₁₂ : Regs s₀ s₁₂ := ⟨by rw [u₁₂.rd, u₁₁.rd, u₁₀.rd, u₉.rd, r₈.rd],
     by rw [u₁₂.wr, u₁₁.wr, u₁₀.wr, u₉.wr, r₈.wr], by rw [u₁₂.sp, u₁₁.sp, u₁₀.sp, u₉.sp, r₈.sp]⟩
-  have m₁₂ : s₁₂.mem = s₈.mem := by rw [u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem]
-  have v₁₂ : Vars s₀ s₁₂ := v₈.of_keep fun r a b c d => by
+  obtain m₁₂ : s₁₂.mem = s₈.mem := by rw [u₁₂.mem, u₁₁.mem, u₁₀.mem, u₉.mem]
+  obtain v₁₂ : Vars s₀ s₁₂ := v₈.of_keep fun r a b c d => by
     rw [u₁₂.other r d, u₁₁.other r c, u₁₀.other r b, u₉.other r a]
-  have a1₁₂ : s₁₂.gpr .a1 = BitVec.ofNat 64 ([] : List Byte).length := by
+  obtain a1₁₂ : s₁₂.gpr .a1 = BitVec.ofNat 64 ([] : List Byte).length := by
     rw [u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.gpr]; rfl
   refine WP.seq (hH.callUpd_ok (st := fr s₀) (dat := dp s₀) (len := dl s₀)
     (by rw [u₁₂.other _ (by decide), u₁₁.other _ (by decide), u₁₀.other _ (by decide), u₉.gpr, v₈.s8])
@@ -283,20 +283,20 @@ theorem digestMain_ok (hp : Pre H s₀) : WP isa (digestMain H) s₀ (Post hH s�
     (by rw [r₁₂.wr]; exact cover_pre hwf (show H.S ≤ dbytes H by omega_arith))
     fun s₁₃ rd₁₃ wr₁₃ sp₁₃ f₁₃ cs₁₃ hup => ?_)
   rw [r₁₂.sp, m₁₂] at f₁₃
-  have r₁₃ : Regs s₀ s₁₃ := ⟨rd₁₃.trans r₁₂.rd, wr₁₃.trans r₁₂.wr, sp₁₃.trans r₁₂.sp⟩
-  have v₁₃ := v₁₂.of_pres cs₁₃
-  have sv₁₃ := sv_keep hp hl sv₈ f₁₃ hrs₈
-  have hrS₁₃ : hH.SH.Repr s₁₃.mem (fr s₀) (M s₀) := by
+  obtain r₁₃ : Regs s₀ s₁₃ := ⟨rd₁₃.trans r₁₂.rd, wr₁₃.trans r₁₂.wr, sp₁₃.trans r₁₂.sp⟩
+  obtain v₁₃ := v₁₂.of_pres cs₁₃
+  obtain sv₁₃ := sv_keep hp hl sv₈ f₁₃ hrs₈
+  obtain hrS₁₃ : hH.SH.Repr s₁₃.mem (fr s₀) (M s₀) := by
     have := hup [] (by rw [m₁₂]; exact hrS₈) a1₁₂
     rwa [List.nil_append, m₁₂, k₈] at this
   -- The digest, into `out`.
   refine WP.seq (wp_mv fun s₁₄ u₁₄ => wp_mv fun s₁₅ u₁₅ => wp_mv fun s₁₆ u₁₆ => WP.block_nil ?_)
-  have r₁₆ : Regs s₀ s₁₆ := ⟨by rw [u₁₆.rd, u₁₅.rd, u₁₄.rd, r₁₃.rd], by rw [u₁₆.wr, u₁₅.wr, u₁₄.wr, r₁₃.wr],
+  obtain r₁₆ : Regs s₀ s₁₆ := ⟨by rw [u₁₆.rd, u₁₅.rd, u₁₄.rd, r₁₃.rd], by rw [u₁₆.wr, u₁₅.wr, u₁₄.wr, r₁₃.wr],
     by rw [u₁₆.sp, u₁₅.sp, u₁₄.sp, r₁₃.sp]⟩
-  have m₁₆ : s₁₆.mem = s₁₃.mem := by rw [u₁₆.mem, u₁₅.mem, u₁₄.mem]
-  have v₁₆ : Vars s₀ s₁₆ := v₁₃.of_keep fun r a b c _ => by
+  obtain m₁₆ : s₁₆.mem = s₁₃.mem := by rw [u₁₆.mem, u₁₅.mem, u₁₄.mem]
+  obtain v₁₆ : Vars s₀ s₁₆ := v₁₃.of_keep fun r a b c _ => by
     rw [u₁₆.other r c, u₁₅.other r b, u₁₄.other r a]
-  have hcov : VG.Covers [stR H s₀, oR H s₀] s₀.wr :=
+  obtain hcov : VG.Covers [stR H s₀, oR H s₀] s₀.wr :=
     VG.Covers.pair (cover_pre hwf (show H.S ≤ dbytes H by omega_arith)) (cover_self hwo)
   refine WP.seq (hH.callFin_ok (st := fr s₀) (o := out s₀)
     (by rw [u₁₆.other _ (by decide), u₁₅.other _ (by decide), u₁₄.gpr, v₁₃.s8])
@@ -305,13 +305,13 @@ theorem digestMain_ok (hp : Pre H s₀) : WP isa (digestMain H) s₀ (Post hH s�
     (by rw [r₁₆.sp]; exact hp.s_o) (by rw [r₁₆.rd, r₁₆.wr]; exact hcov.right) (by rw [r₁₆.wr]; exact hcov)
     fun s₁₇ rd₁₇ wr₁₇ sp₁₇ f₁₇ cs₁₇ hfin => ?_)
   rw [r₁₆.sp, m₁₆] at f₁₇
-  have r₁₇ : Regs s₀ s₁₇ := ⟨rd₁₇.trans r₁₆.rd, wr₁₇.trans r₁₆.wr, sp₁₇.trans r₁₆.sp⟩
-  have v₁₇ := v₁₆.of_pres cs₁₇
-  have sv₁₇ := sv_keep hp hl sv₁₃ f₁₇ (by
+  obtain r₁₇ : Regs s₀ s₁₇ := ⟨rd₁₇.trans r₁₆.rd, wr₁₇.trans r₁₆.wr, sp₁₇.trans r₁₆.sp⟩
+  obtain v₁₇ := v₁₆.of_pres cs₁₇
+  obtain sv₁₇ := sv_keep hp hl sv₁₃ f₁₇ (by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
     exacts [.inl rfl, .inr (.inl rfl), .inr (.inr rfl)])
-  have hdg : bytesAt s₁₇.mem (out s₀) H.D = hH.SH.H.hash (M s₀) :=
+  obtain hdg : bytesAt s₁₇.mem (out s₀) H.D = hH.SH.H.hash (M s₀) :=
     hfin (M s₀) (by rw [m₁₆]; exact hrS₁₃) (by simp only [bytesAt, List.length_map, List.length_range]; exact dl_lt)
       (by
         rw [u₁₆.other _ (by decide), u₁₅.gpr, u₁₄.other _ (by decide), v₁₃.s11]
@@ -325,7 +325,7 @@ theorem digestMain_ok (hp : Pre H s₀) : WP isa (digestMain H) s₀ (Post hH s�
       Offset.contains_base _ (by omega_arith) (by have := hp.top; omega_arith)⟩)
     fun s₁₉ g₁₉ rd₁₉ wr₁₉ sp₁₉ f₁₉ => ?_
   rw [restoreAt_eq, ← List.append_nil (Spill.restoreCode _ _)]
-  have sv₁₉ : Spill.Saved (fr s₀) s₀.gpr (Hash.savedAt (dso H)) s₁₉.mem := by
+  obtain sv₁₉ : Spill.Saved (fr s₀) s₀.gpr (Hash.savedAt (dso H)) s₁₉.mem := by
     refine sv₁₇.frame_in savedAt_in (by rw [u₁₈.mem] at f₁₉; exact f₁₉) fun r hr => ?_
     simp only [List.mem_singleton] at hr; subst hr; exact (wp_sv hl).symm
   refine Spill.restore_ok (B := fr s₀) hal8 (by rw [g₁₉, u₁₈.other _ (by decide)]; exact v₁₇.s8)
@@ -334,7 +334,7 @@ theorem digestMain_ok (hp : Pre H s₀) : WP isa (digestMain H) s₀ (Post hH s�
       Offset.contains_base _ (by have := savedAt_in p (restList_mem.mp hp'); omega_arith)
         (by have := savedAt_in p (restList_mem.mp hp'); have := hp.top; omega_arith)⟩)
     (sv₁₉.sub fun p hp' => restList_mem.mp hp') fun s' hs' => WP.block_nil ?_
-  have m' : Frame [wpR H s₀] s₁₇.mem s'.mem := by rw [hs'.mem, ← u₁₈.mem]; exact f₁₉
+  obtain m' : Frame [wpR H s₀] s₁₇.mem s'.mem := by rw [hs'.mem, ← u₁₈.mem]; exact f₁₉
   refine ⟨preserved_of (so := dso H) (fun p hp' => hs'.gpr p (restList_mem.mpr hp')) fun r hr => ?_,
     hs'.gpr (.ra, dso H) (by simp [restList]), by rw [hs'.sp, sp₁₉, u₁₈.sp, r₁₇.sp],
     by rw [hs'.wr, wr₁₉, u₁₈.wr, r₁₇.wr], ?_⟩
@@ -347,15 +347,15 @@ theorem digestMain_ok (hp : Pre H s₀) : WP isa (digestMain H) s₀ (Post hH s�
 
 /-- The state the frame's body starts in, from `digest`'s precondition. -/
 theorem pre_alloc {s : State} (hp : (digestG hH.SH (dbytes H + H.F)).pre s) : Pre H (allocd (dbytes H) s) := by
-  have hl := dlay hH.lay
+  obtain hl := dlay hH.lay
   have hdb := hl.fb
   have hF := hH.lay.F
   obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := hp
   rw [hH.hD] at h2 h3 h7
-  have hsp := toNat_sub (sp := s.sp) (n := dbytes H) (by omega_arith) (by omega_arith)
-  have subF : Region.Sub ⟨s.sp - BitVec.ofNat 64 (dbytes H), dbytes H⟩ (below s.sp (dbytes H + H.F)) :=
+  obtain hsp := toNat_sub (sp := s.sp) (n := dbytes H) (by omega_arith) (by omega_arith)
+  obtain subF : Region.Sub ⟨s.sp - BitVec.ofNat 64 (dbytes H), dbytes H⟩ (below s.sp (dbytes H + H.F)) :=
     Offset.sub_below s.sp (by omega_arith) (by omega_arith)
-  have subS : Region.Sub (below (s.sp - BitVec.ofNat 64 (dbytes H)) H.F) (below s.sp (dbytes H + H.F)) := by
+  obtain subS : Region.Sub (below (s.sp - BitVec.ofNat 64 (dbytes H)) H.F) (below s.sp (dbytes H + H.F)) := by
     have := below_body' s.sp (dbytes H) H.F
     rwa [Nat.add_comm H.F] at this
   have hsp' : (allocd (dbytes H) s).sp = s.sp - BitVec.ofNat 64 (dbytes H) := rfl
@@ -368,9 +368,9 @@ theorem pre_alloc {s : State} (hp : (digestG hH.SH (dbytes H + H.F)).pre s) : Pr
 /-- `digest`. -/
 theorem correct {s : State} (hp : (digestG hH.SH (dbytes H + H.F)).pre s) :
     WP isa (digest H) s fun s' => abiPreserved s s' ∧ (digestG hH.SH (dbytes H + H.F)).post s s' := by
-  have hl := dlay hH.lay
+  obtain hl := dlay hH.lay
   have hdb := hl.fb
-  have hsp : dbytes H ≤ s.sp.toNat := by have := hp.2.2.2.2.1; omega_arith
+  obtain hsp : dbytes H ≤ s.sp.toNat := by have := hp.2.2.2.2.1; omega_arith
   refine WP.alloc ⟨by omega_arith, hdb.2.1, hdb.2.2⟩ hsp
     (WP.mono (digestMain_ok hH (pre_alloc hH hp)) fun s' ⟨hk, hra, hsp', hwr, hO⟩ => ?_)
   rw [freed_eq hwr hsp']
@@ -408,7 +408,7 @@ theorem verified
   obtain ⟨n, hn⟩ : ∃ n, dbytes H + H.F = n + 1 :=
     ⟨_, (Nat.succ_pred_eq_of_pos (by have := (dlay hH.lay).fb; omega_arith)).symm⟩
   rw [hn] at ct hs ⊢
-  have imp := digestImp hs
+  obtain imp := digestImp hs
   exact Verified.of_implies (⟨fun s hs => by
       obtain ⟨t, s', he, h₁, h₂⟩ := correct hH (by rw [hn]; exact hs); rw [hn] at h₂; exact ⟨t, s', he, h₁, h₂⟩,
     ct, imp.sat_left⟩ : Verified RISCV64.target (digest H) (digestG hH.SH (n + 1))) imp

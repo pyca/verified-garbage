@@ -117,19 +117,19 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (A : Args 
   have fw := L.ww
   have h1 := L.nl1
   have h15 := L.nl15
-  have nl32 : p.nl < 2 ^ 32 := by omega_arith
+  obtain nl32 : p.nl < 2 ^ 32 := by omega_arith
   unfold nonceBlock
   refine WP.seq (WP.block_append (WP.mono (zero16_wp (o := tmpO) (by decide) (by rw [E.r11]; simp only [tmpO]; omega_arith)
     (by rw [E.r11]; exact E.perm.wC (by decide))) fun s₁ R₁ => ?_))
   rw [E.r11] at R₁
-  have r11₁ : s₁.gpr .r11 = p.W := by rw [R₁.gpr _ (by decide), E.r11]
-  have r4₁ : s₁.gpr .r4 = p.N := by rw [R₁.gpr _ (by decide), h4]
-  have r5₁ : s₁.gpr .r5 = BitVec.ofNat 32 p.nl := by rw [R₁.gpr _ (by decide), h5]
-  have ea : State.addr (p.W + BitVec.ofNat 32 (127 - p.nl)) = State.addr p.W + BitVec.ofNat 64 (127 - p.nl) :=
+  obtain r11₁ : s₁.gpr .r11 = p.W := by rw [R₁.gpr _ (by decide), E.r11]
+  obtain r4₁ : s₁.gpr .r4 = p.N := by rw [R₁.gpr _ (by decide), h4]
+  obtain r5₁ : s₁.gpr .r5 = BitVec.ofNat 32 p.nl := by rw [R₁.gpr _ (by decide), h5]
+  obtain ea : State.addr (p.W + BitVec.ofNat 32 (127 - p.nl)) = State.addr p.W + BitVec.ofNat 64 (127 - p.nl) :=
     addr_add (by omega_arith)
-  have w₁ : InRegions s₁.wr (State.addr p.W + BitVec.ofNat 64 (127 - p.nl)) 1 := by
+  obtain w₁ : InRegions s₁.wr (State.addr p.W + BitVec.ofNat 64 (127 - p.nl)) 1 := by
     rw [R₁.wr]; exact E.perm.wW (d := 127 - p.nl) (n := 1) (by omega_arith)
-  have eD : State.addr (p.W + BitVec.ofNat 32 (128 - p.nl)) = State.addr p.W + BitVec.ofNat 64 (128 - p.nl) :=
+  obtain eD : State.addr (p.W + BitVec.ofNat 32 (128 - p.nl)) = State.addr p.W + BitVec.ofNat 64 (128 - p.nl) :=
     addr_add (by omega_arith)
   refine WP.of_runBlock ⟨_, by orun [r11₁, r4₁, r5₁, w127 _ h15, add_ofNat_zero, ea, w₁, w128 _ h15], ?_⟩
   refine WP.seq (WP.mono (copyLoop_ok _ (S := p.N) (D := p.W + BitVec.ofNat 32 (128 - p.nl)) (n := p.nl)
@@ -139,66 +139,66 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (A : Args 
       by rw [eD]; exact L.n_w' (by omega_arith)⟩) fun s₃ ⟨m₃, O₃⟩ => ?_)
   simp only [mem_store, mem_setReg, eD] at m₃
   -- what the first two pieces wrote
-  have e127 : State.addr p.W + BitVec.ofNat 64 (127 - p.nl) =
+  obtain e127 : State.addr p.W + BitVec.ofNat 64 (127 - p.nl) =
       State.addr p.W + BitVec.ofNat 64 112 + BitVec.ofNat 64 (15 - p.nl) := by
     rw [Offset.add_add, show 112 + (15 - p.nl) = 127 - p.nl by omega_arith]
-  have e128 : State.addr p.W + BitVec.ofNat 64 (128 - p.nl) =
+  obtain e128 : State.addr p.W + BitVec.ofNat 64 (128 - p.nl) =
       State.addr p.W + BitVec.ofNat 64 112 + BitVec.ofNat 64 (16 - p.nl) := by
     rw [Offset.add_add, show 112 + (16 - p.nl) = 128 - p.nl by omega_arith]
-  have f₂ : Frame [⟨State.addr p.W + BitVec.ofNat 64 112, 16⟩] s.mem
+  obtain f₂ : Frame [⟨State.addr p.W + BitVec.ofNat 64 112, 16⟩] s.mem
       (s₁.mem.writeW (State.addr p.W + BitVec.ofNat 64 (127 - p.nl)) (BitVec.setWidth 8 (BitVec.ofNat 32 1))) := by
     rw [R₁.mem]
     refine (Proof.Cmac.frame_store4 _ _ _ _ _).writeW (List.mem_singleton_self _) _ ?_
     rw [e127]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
-  have f₃ : Frame [⟨State.addr p.W + BitVec.ofNat 64 112, 16⟩] s.mem s₃.mem := by
+  obtain f₃ : Frame [⟨State.addr p.W + BitVec.ofNat 64 112, 16⟩] s.mem s₃.mem := by
     rw [m₃]
     refine fun x hx => (writeBytes_frame _ _ _ ?_ x hx).trans (f₂ x hx)
     rw [length_bytesAt, e128]; exact Offset.contains_base _ (by omega_arith) (by omega_arith)
-  have A₃ : Args p s₃.mem := A.frame L f₃ (fun r hr => by
+  obtain A₃ : Args p s₃.mem := A.frame L f₃ (fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact L.args_w' (by decide))
-  have sp₃ : s₃.sp = p.SP := by rw [O₃.sp]; simp [sp_setReg, sp_store, R₁.sp, E.sp]
-  have rd₃ : s₃.rd = s.rd := by rw [O₃.rd]; simp [rd_setReg, rd_store, R₁.rd]
-  have wr₃ : s₃.wr = s.wr := by rw [O₃.wr]; simp [wr_setReg, wr_store, R₁.wr]
-  have r11₃ : s₃.gpr .r11 = p.W := by
+  obtain sp₃ : s₃.sp = p.SP := by rw [O₃.sp]; simp [sp_setReg, sp_store, R₁.sp, E.sp]
+  obtain rd₃ : s₃.rd = s.rd := by rw [O₃.rd]; simp [rd_setReg, rd_store, R₁.rd]
+  obtain wr₃ : s₃.wr = s.wr := by rw [O₃.wr]; simp [wr_setReg, wr_store, R₁.wr]
+  obtain r11₃ : s₃.gpr .r11 = p.W := by
     rw [O₃.other _ (by decide) (by decide) (by decide) (by decide) (by decide)]; simp [gpr_setReg, gpr_store, r11₁]
-  have P₃ : Perm p s₃ := E.perm.of_eq rd₃ wr₃
-  have a₂₀ := P₃.argR' L (k := 20) (by decide)
-  have rb₀ : InRegions (s₃.rd ++ s₃.wr) (State.addr p.W + BitVec.ofNat 64 112) 1 := P₃.wR (by decide)
-  have wb₀ : InRegions s₃.wr (State.addr p.W + BitVec.ofNat 64 112) 1 := P₃.wW (by decide)
-  have rb₁ : InRegions (s₃.rd ++ s₃.wr) (State.addr p.W + BitVec.ofNat 64 127) 1 := P₃.wR (by decide)
-  have wb₁ : InRegions s₃.wr (State.addr p.W + BitVec.ofNat 64 127) 1 := P₃.wW (by decide)
-  have wb₂ : InRegions s₃.wr (State.addr p.W + BitVec.ofNat 64 208) 4 := P₃.wW (by decide)
-  have ne : (State.addr p.W + BitVec.ofNat 64 127 = State.addr p.W + BitVec.ofNat 64 112) = False := by
+  obtain P₃ : Perm p s₃ := E.perm.of_eq rd₃ wr₃
+  obtain a₂₀ := P₃.argR' L (k := 20) (by decide)
+  obtain rb₀ : InRegions (s₃.rd ++ s₃.wr) (State.addr p.W + BitVec.ofNat 64 112) 1 := P₃.wR (by decide)
+  obtain wb₀ : InRegions s₃.wr (State.addr p.W + BitVec.ofNat 64 112) 1 := P₃.wW (by decide)
+  obtain rb₁ : InRegions (s₃.rd ++ s₃.wr) (State.addr p.W + BitVec.ofNat 64 127) 1 := P₃.wR (by decide)
+  obtain wb₁ : InRegions s₃.wr (State.addr p.W + BitVec.ofNat 64 127) 1 := P₃.wW (by decide)
+  obtain wb₂ : InRegions s₃.wr (State.addr p.W + BitVec.ofNat 64 208) 4 := P₃.wW (by decide)
+  obtain ne : (State.addr p.W + BitVec.ofNat 64 127 = State.addr p.W + BitVec.ofNat 64 112) = False := by
     simp only [eq_iff_iff, iff_false]
     intro h
     have := congrArg (· - State.addr p.W) h
     simp only [Offset.add_sub_cancel_left] at this
     exact absurd this (by decide)
-  have ew : ∀ k, k < 2560 → State.addr (p.W + BitVec.ofNat 32 k) = State.addr p.W + BitVec.ofNat 64 k :=
+  obtain ew : ∀ k, k < 2560 → State.addr (p.W + BitVec.ofNat 32 k) = State.addr p.W + BitVec.ofNat 64 k :=
     fun k hk => L.wA hk
-  have e112 := ew 112 (by decide)
-  have e127' := ew 127 (by decide)
-  have e208 := ew 208 (by decide)
+  obtain e112 := ew 112 (by decide)
+  obtain e127' := ew 127 (by decide)
+  obtain e208 := ew 208 (by decide)
   refine WP.of_runBlock ⟨_, by orun [r11₃, sp₃, A₃.a20, a₂₀, e112, e127', e208, rb₀, wb₀, rb₁, wb₁, wb₂,
     WriteBytes.writeW8_apply, ne], ?_⟩
-  have htl : p.tl < 2 ^ 32 := by have := L.tl16; omega_arith
+  obtain htl : p.tl < 2 ^ 32 := by have := L.tl16; omega_arith
   simp only [and15, toNat_ofNat32 htl, ofNat_shl4, or_byte32, and_byte32, and63_32]
   -- the bytes at `W + tmpO`, step by step
-  have hlen : (bytesAt s.mem (State.addr p.N) p.nl).length = p.nl := length_bytesAt _ _ _
-  have eN : bytesAt (s₁.mem.writeW (State.addr p.W + BitVec.ofNat 64 (127 - p.nl)) (BitVec.setWidth 8 (BitVec.ofNat 32 1)))
+  obtain hlen : (bytesAt s.mem (State.addr p.N) p.nl).length = p.nl := length_bytesAt _ _ _
+  obtain eN : bytesAt (s₁.mem.writeW (State.addr p.W + BitVec.ofNat 64 (127 - p.nl)) (BitVec.setWidth 8 (BitVec.ofNat 32 1)))
       (State.addr p.N) p.nl = bytesAt s.mem (State.addr p.N) p.nl :=
     Proof.Cmac.bytesAt_frame f₂ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.n_w' (by decide)) (by omega_arith)
   rw [eN] at m₃
-  have L₁ : bytesAt s₁.mem (State.addr p.W + BitVec.ofNat 64 112) 16 = Spec.Ocb.zeros 16 := by
+  obtain L₁ : bytesAt s₁.mem (State.addr p.W + BitVec.ofNat 64 112) 16 = Spec.Ocb.zeros 16 := by
     rw [R₁.mem]; exact Proof.Cmac.zero4_bytes _ _
-  have L₂ : bytesAt (s₁.mem.writeW (State.addr p.W + BitVec.ofNat 64 (127 - p.nl)) (BitVec.setWidth 8 (BitVec.ofNat 32 1)))
+  obtain L₂ : bytesAt (s₁.mem.writeW (State.addr p.W + BitVec.ofNat 64 (127 - p.nl)) (BitVec.setWidth 8 (BitVec.ofNat 32 1)))
       (State.addr p.W + BitVec.ofNat 64 112) 16 = Spec.Ocb.zeros (15 - p.nl) ++ [1] ++ Spec.Ocb.zeros p.nl := by
     rw [e127, bytesAt_writeW8_at _ _ _ (by omega_arith) (by decide), L₁]
     simp only [Spec.Ocb.zeros, List.take_replicate, List.drop_replicate, show min (15 - p.nl) 16 = 15 - p.nl by omega_arith,
       show 16 - (15 - p.nl + 1) = p.nl by omega_arith]
     rfl
-  have L₃ : bytesAt s₃.mem (State.addr p.W + BitVec.ofNat 64 112) 16 =
+  obtain L₃ : bytesAt s₃.mem (State.addr p.W + BitVec.ofNat 64 112) 16 =
       Spec.Ocb.zeros (15 - p.nl) ++ [1] ++ bytesAt s.mem (State.addr p.N) p.nl := by
     rw [m₃, e128, bytesAt_writeBytes_at _ _ _ (by omega_arith) (by decide), L₂, hlen]
     rw [show 16 - p.nl + p.nl = 16 by omega_arith]
@@ -210,24 +210,24 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (A : Args 
       show 15 - p.nl - 16 = 0 by omega_arith, List.take_one, List.head?_cons, Option.toList_some,
       List.drop_eq_nil_of_le (show [(1 : Byte)].length ≤ p.nl + 1 by simp), show p.nl - (p.nl + 1 - 1) = 0 by omega_arith,
       List.append_nil]
-  have L₃d : ∀ k < 16, (bytesAt s₃.mem (State.addr p.W + BitVec.ofNat 64 112) 16).getD k 0 =
+  obtain L₃d : ∀ k < 16, (bytesAt s₃.mem (State.addr p.W + BitVec.ofNat 64 112) 16).getD k 0 =
       nbase (bytesAt s.mem (State.addr p.N) p.nl) k := fun k hk => by
     have := Proof.Ocb.nbase_list (bytesAt s.mem (State.addr p.N) p.nl) (by rw [hlen]; omega_arith) (by rw [hlen]; omega_arith) hk
     rw [hlen] at this; rw [L₃]; exact this
-  have b0 : s₃.mem (State.addr p.W + BitVec.ofNat 64 112) = nbase (bytesAt s.mem (State.addr p.N) p.nl) 0 := by
+  obtain b0 : s₃.mem (State.addr p.W + BitVec.ofNat 64 112) = nbase (bytesAt s.mem (State.addr p.N) p.nl) 0 := by
     have := getD_bytesAt_eq s₃.mem (State.addr p.W + BitVec.ofNat 64 112) (k := 0) (n := 16) (by decide)
     rw [BitVec.add_zero] at this
     rw [this, L₃d 0 (by decide)]
-  have e127' : State.addr p.W + BitVec.ofNat 64 127 = State.addr p.W + BitVec.ofNat 64 112 + BitVec.ofNat 64 15 :=
+  obtain e127' : State.addr p.W + BitVec.ofNat 64 127 = State.addr p.W + BitVec.ofNat 64 112 + BitVec.ofNat 64 15 :=
     (Offset.add_add _ 112 15).symm
-  have b15 : s₃.mem (State.addr p.W + BitVec.ofNat 64 127) = nb p.tl (bytesAt s.mem (State.addr p.N) p.nl) 15 := by
+  obtain b15 : s₃.mem (State.addr p.W + BitVec.ofNat 64 127) = nb p.tl (bytesAt s.mem (State.addr p.N) p.nl) 15 := by
     rw [e127', getD_bytesAt_eq s₃.mem (State.addr p.W + BitVec.ofNat 64 112) (k := 15) (n := 16) (by decide),
       L₃d 15 (by decide)]
     rfl
-  have fr208 : ∀ (M : Mem) (v : BitVec 32), Frame [⟨State.addr p.W + BitVec.ofNat 64 208, 4⟩] M
+  obtain fr208 : ∀ (M : Mem) (v : BitVec 32), Frame [⟨State.addr p.W + BitVec.ofNat 64 208, 4⟩] M
       (M.writeW (State.addr p.W + BitVec.ofNat 64 208) v) :=
     fun M v => (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have L₄d : ∀ k < 16, (bytesAt (((s₃.mem.writeW (State.addr p.W + BitVec.ofNat 64 112)
+  obtain L₄d : ∀ k < 16, (bytesAt (((s₃.mem.writeW (State.addr p.W + BitVec.ofNat 64 112)
         (s₃.mem (State.addr p.W + BitVec.ofNat 64 112) ||| BitVec.ofNat 8 (16 * (p.tl % 16)))).writeW
         (State.addr p.W + BitVec.ofNat 64 208)
         (BitVec.ofNat 32 ((s₃.mem (State.addr p.W + BitVec.ofNat 64 127)).toNat % 64))).writeW
@@ -253,7 +253,7 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) (A : Args 
         rw [List.getD_eq_getElem?_getD, List.getElem?_drop, ← List.getD_eq_getElem?_getD,
           show 1 + k = k + 1 by omega_arith]
         exact L₃d (k + 1) hk
-  have fs₃ : Frame [⟨State.addr p.W + BitVec.ofNat 64 tmpO, 16⟩, ⟨State.addr p.W + BitVec.ofNat 64 botO, 4⟩]
+  obtain fs₃ : Frame [⟨State.addr p.W + BitVec.ofNat 64 tmpO, 16⟩, ⟨State.addr p.W + BitVec.ofNat 64 botO, 4⟩]
       s.mem s₃.mem := f₃.mono (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; simp [tmpO])
   refine ⟨?_, ?_, ?_, fun r hr => ?_, ?_, ?_, ?_⟩
   · simp only [mem_store, tmpO, botO]

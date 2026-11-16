@@ -76,12 +76,12 @@ theorem copyStep_ok {s t : State} {src dst : BitVec 32} {bs : List Byte} {mask :
       u.z = decide (bs.length - (k + 1) = 0) := by
   have hfit := hin.fit
   have dfit := D.fit
-  have hlt : bs.length < 2 ^ 32 := by omega_using [hn]
+  obtain hlt : bs.length < 2 ^ 32 := by omega_using [hn]
   -- The source byte, apart from what the copy wrote.
-  have src_ofs : ofs (State.addr src) (State.addr src + BitVec.ofNat 64 k) = k := by
+  obtain src_ofs : ofs (State.addr src) (State.addr src + BitVec.ofNat 64 k) = k := by
     have := ofs_off (State.addr src) (d := 0) (i := k) (by omega_using [hn, hk])
     rwa [off, BitVec.add_zero, Nat.zero_add] at this
-  have keep : t.mem (State.addr src + BitVec.ofNat 64 k) = bs[k] := by
+  obtain keep : t.mem (State.addr src + BitVec.ofNat 64 k) = bs[k] := by
     rw [I.out _ (.inr (by rw [Nat.zero_add]; exact ofs_apart D.apart.symm (by omega_using [hk, src_ofs]))), hin.val k hk]
   unfold Generate.copyStep
   refine wp_ldrb (a := State.addr src + BitVec.ofNat 64 k) (by decide)
@@ -93,21 +93,21 @@ theorem copyStep_ok {s t : State} {src dst : BitVec 32} {bs : List Byte} {mask :
     (by rw [BitVec.add_zero, u₂.other _ (by decide), u₁.other _ (by decide), I.r10, VG.Arm.addr_add (by omega_using [hk, dfit])])
     (by rw [u₂.wr, u₁.wr, I.rest.wr]; exact D.wr k hk) fun t₃ u₃ => ?_
   refine wp_inc fun t₄ u₄ => wp_inc fun t₅ u₅ => wp_dec fun t₆ u₆ z₆ => WP.block_nil ?_
-  have r3 : t₂.gpr .r3 = mask := by rw [u₂.other _ (by decide), u₁.other _ (by decide), I.r3]
-  have v₂ : t₂.gpr .r0 = (bs[k]).setWidth 32 &&& mask := by
+  obtain r3 : t₂.gpr .r3 = mask := by rw [u₂.other _ (by decide), u₁.other _ (by decide), I.r3]
+  obtain v₂ : t₂.gpr .r0 = (bs[k]).setWidth 32 &&& mask := by
     rw [u₂.gpr, dpVal, u₁.gpr, u₁.other _ (by decide), I.r3]
-  have m₆ : t₆.mem = t.mem.writeW (State.addr dst + BitVec.ofNat 64 k) (masked mask bs[k]) := by
+  obtain m₆ : t₆.mem = t.mem.writeW (State.addr dst + BitVec.ofNat 64 k) (masked mask bs[k]) := by
     rw [u₆.mem, u₅.mem, u₄.mem, u₃.mem, v₂, u₂.mem, u₁.mem]
-  have R : Rest [.r0, .r1, .r2, .r10] t t₆ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans
+  obtain R : Rest [.r0, .r1, .r2, .r10] t t₆ := (u₁.rest (by decide)).trans ((u₂.rest (by decide)).trans
     ((u₃.rest _).trans ((u₄.rest (by decide)).trans ((u₅.rest (by decide)).trans (u₆.rest (by decide))))))
-  have r2 : t₆.gpr .r2 = BitVec.ofNat 32 (bs.length - (k + 1)) := by
+  obtain r2 : t₆.gpr .r2 = BitVec.ofNat 32 (bs.length - (k + 1)) := by
     rw [u₆.gpr, u₅.other _ (by decide), u₄.other _ (by decide), u₃.gpr, u₂.other _ (by decide),
       u₁.other _ (by decide), I.r2, ofNat_sub_one (by omega_using [hk]), show bs.length - k - 1 = bs.length - (k + 1) by omega_using []]
-  have dst_ofs : ∀ i, i < bs.length →
+  obtain dst_ofs : ∀ i, i < bs.length →
       ofs (State.addr dst) (State.addr dst + BitVec.ofNat 64 i) = i := fun i hi => by
     have := ofs_off (State.addr dst) (d := 0) (i := i) (by omega_using [hn, hi])
     rwa [off, BitVec.add_zero, Nat.zero_add] at this
-  have O : Outside (State.addr dst) 0 bs.length t.mem t₆.mem := by
+  obtain O : Outside (State.addr dst) 0 bs.length t.mem t₆.mem := by
     rw [m₆]
     have := writeW8_outside t.mem (State.addr dst) (d := k) (masked mask bs[k]) (by omega_using [hn, hk])
     simp only [off] at this
@@ -197,7 +197,7 @@ theorem copyDst_of {s : State} {src O : BitVec 32} {L a n : Nat} (fit : O.toNat 
     (wr : ∀ i < L, InRegions s.wr (State.addr O + BitVec.ofNat 64 i) 1)
     (hd : Region.Disjoint ⟨State.addr src, n⟩ ⟨State.addr O, L⟩) (h : a + n ≤ L) (hn : 0 < n) :
     CopyDst s src (O + BitVec.ofNat 32 a) n := by
-  have e : State.addr (O + BitVec.ofNat 32 a) = State.addr O + BitVec.ofNat 64 a := VG.Arm.addr_add (by omega_using [fit, h, hn])
+  obtain e : State.addr (O + BitVec.ofNat 32 a) = State.addr O + BitVec.ofNat 64 a := VG.Arm.addr_add (by omega_using [fit, h, hn])
   refine ⟨?_, fun i hi => ?_, ?_⟩
   · rw [BitVec.toNat_add, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (a := a) (by omega_using [fit, h, hn]), Nat.mod_eq_of_lt (by omega_using [fit, h, hn])]
     omega_using [fit, h]
@@ -209,7 +209,7 @@ theorem bytesIn_local {s : State} {base : Addr} {size o len : Nat} (hs : Ws s ba
     (ho : o < size) :
     BytesIn s (pointerValue base s (.local o)) (Spec.Rsa.bytesAt s.mem (off base o) len) := by
   have nw := hs.nowrap
-  have A := local_addr hs ho
+  obtain A := local_addr hs ho
   refine ⟨?_, fun i hi => ?_, fun i hi => ?_⟩
   · rw [pointerValue, BitVec.toNat_add, BitVec.toNat_ofNat, hs.wb_toNat, Nat.mod_eq_of_lt (a := o) (by omega_using [ho, nw]),
       Nat.mod_eq_of_lt (by omega_using [ho, nw])]
@@ -234,7 +234,7 @@ theorem BytesIn.outside {s t : State} {p O : BitVec 32} {bs : List Byte} {L : Na
 /-- A part of a range that alone changed. -/
 theorem Outside.widen {P : Addr} {e l L : Nat} {m m' : Mem} (O : Outside (P + BitVec.ofNat 64 e) 0 l m m')
     (he : e + l ≤ L) (hL : L ≤ 2 ^ 64) : Outside P 0 L m m' := fun x hx => O x (.inr (by
-  have H := Offset.lt_iff x P (d := e) (n := l) (by omega_using [he, hL])
+  obtain H := Offset.lt_iff x P (d := e) (n := l) (by omega_using [he, hL])
   have : ¬ (x - (P + BitVec.ofNat 64 e)).toNat < l := fun h => by have := H.mp h; simp only [ofs] at hx; omega_using [he, hx, H, h]
   simp only [ofs]
   omega_using [this]))
@@ -250,8 +250,8 @@ theorem copyFrom_ok {s : State} {src dst mask : BitVec 32} {bs : List Byte} {len
   subst hlen
   unfold Generate.copyFrom
   refine WP.seq (wp_movw fun t u => WP.block_nil ?_)
-  have hin' : BytesIn t src bs := hin.congr u.mem u.rd u.wr
-  have D' : CopyDst t src dst bs.length := ⟨D.fit, fun i hi => by rw [u.wr]; exact D.wr i hi, D.apart⟩
+  obtain hin' : BytesIn t src bs := hin.congr u.mem u.rd u.wr
+  obtain D' : CopyDst t src dst bs.length := ⟨D.fit, fun i hi => by rw [u.wr]; exact D.wr i hi, D.apart⟩
   refine WP.mono (copyMasked_ok hin' D' hn h0 ⟨by rw [u.other _ (by decide), r1, BitVec.add_zero],
     by rw [u.other _ (by decide), r10, BitVec.add_zero], by rw [u.gpr, movw_ofNat hn, Nat.sub_zero],
     by rw [u.other _ (by decide), r3], fun i hi => absurd hi (Nat.not_lt_zero _), Outside.refl _ _ _ _,
@@ -310,7 +310,7 @@ theorem writeKey_ok {s : State} {base : Addr} {size pLen qLen : Nat} {pb xb : Li
   rw [hL] at ofit kwr kdp kdx kds hb16 ⊢
   simp only [Generate.writeKey, Core.sequence, List.foldr]
   -- The mask and the output's pointer.
-  have H : WP isa (.block [.ldr .r3 .r12 (Layout.field .mask), .ldr .r10 .r12 (Layout.field .out),
+  obtain H : WP isa (.block [.ldr .r3 .r12 (Layout.field .mask), .ldr .r10 .r12 (Layout.field .out),
       .ldr .r1 .r12 (Layout.field .p), .ldr .r4 .r12 (Layout.field .nonce)]) s
       fun t => t.gpr .r3 = mask32 acc ∧ t.gpr .r10 = O ∧ t.mem = s.mem ∧ Rest [.r1, .r3, .r4, .r10] s t ∧
         t.gpr .r1 = pointerValue base s (.input .p) ∧ t.gpr .r4 = pointerValue base s (.input .nonce) :=
@@ -331,32 +331,32 @@ theorem writeKey_ok {s : State} {base : Addr} {size pLen qLen : Nat} {pb xb : Li
             by rw [u₄.other _ (by decide), u₃.gpr, u₂.mem, u₁.mem]; rfl,
             by rw [u₄.gpr, u₃.mem, u₂.mem, u₁.mem]; rfl⟩
   refine WP.seq (WP.mono H fun t₂ ⟨m₂, o₂, M₂, R₂, p₂, x₂⟩ => ?_)
-  have w₂ := hs.of_rest R₂ (by decide)
-  have eA : ∀ a, a < L → State.addr (O + BitVec.ofNat 32 a) = State.addr O + BitVec.ofNat 64 a :=
+  obtain w₂ := hs.of_rest R₂ (by decide)
+  obtain eA : ∀ a, a < L → State.addr (O + BitVec.ofNat 32 a) = State.addr O + BitVec.ofNat 64 a :=
     fun a ha => VG.Arm.addr_add (by omega_arith)
-  have Owr : ∀ (t : State), t.wr = s.wr → ∀ i < L, InRegions t.wr (State.addr O + BitVec.ofNat 64 i) 1 :=
+  obtain Owr : ∀ (t : State), t.wr = s.wr → ∀ i < L, InRegions t.wr (State.addr O + BitVec.ofNat 64 i) 1 :=
     fun t ht i hi => by rw [ht]; exact kwr i hi
   -- What the copies keep: the working space, and the caller's other buffers.
-  have keepW : ∀ {m : Mem}, Outside (State.addr O) 0 L s.mem m → ∀ d, d + 4 ≤ size →
+  obtain keepW : ∀ {m : Mem}, Outside (State.addr O) 0 L s.mem m → ∀ d, d + 4 ≤ size →
       m.readW (off base d) 32 = s.mem.readW (off base d) 32 := fun Om d hd =>
     readW_apart Om (kds.sub_left (Offset.sub_base base (by omega_arith))) (by omega_arith) (by omega_arith)
   -- p||q||g
-  have Bp : BytesIn t₂ (pointerValue base s (.input .p)) pb := K.bp.congr M₂ R₂.rd R₂.wr
-  have D₁ := copyDst_of (s := t₂) (src := pointerValue base s (.input .p)) (a := 0) ofit
+  obtain Bp : BytesIn t₂ (pointerValue base s (.input .p)) pb := K.bp.congr M₂ R₂.rd R₂.wr
+  obtain D₁ := copyDst_of (s := t₂) (src := pointerValue base s (.input .p)) (a := 0) ofit
     (Owr t₂ R₂.wr) kdp (by omega_arith) (by omega_arith)
   rw [BitVec.add_zero] at D₁
   refine WP.seq (WP.mono (copyFrom_ok p₂ Bp K.pl (by omega_arith) (by omega_arith) D₁ o₂ m₂)
     fun t₃ ⟨r10₃, r3₃, B₃, O₃, R₃⟩ => ?_)
-  have w₃ := w₂.of_rest R₃ (by decide)
+  obtain w₃ := w₂.of_rest R₃ (by decide)
   rw [M₂] at O₃
-  have O₃' : Outside (State.addr O) 0 L s.mem t₃.mem := O₃.mono (by omega_arith) (by omega_arith)
+  obtain O₃' : Outside (State.addr O) 0 L s.mem t₃.mem := O₃.mono (by omega_arith) (by omega_arith)
   -- y
-  have hy : Spec.Rsa.bytesAt t₃.mem (off base Impl.Dsa.Layout.t2) pLen =
+  obtain hy : Spec.Rsa.bytesAt t₃.mem (off base Impl.Dsa.Layout.t2) pLen =
       Spec.Rsa.bytesAt s.mem (off base Impl.Dsa.Layout.t2) pLen :=
     bytes_keep O₃' (kds.sub_left (Offset.sub_base base ht2)) (by omega_arith) (by omega_arith)
-  have By := bytesIn_local w₃ (o := Impl.Dsa.Layout.t2) (len := pLen) ht2 (by omega_arith)
-  have LA := local_addr w₃ (o := Impl.Dsa.Layout.t2) (by omega_arith)
-  have D₂ := copyDst_of (s := t₃) (src := pointerValue base t₃ (.local Impl.Dsa.Layout.t2)) (a := 2 * pLen + qLen)
+  obtain By := bytesIn_local w₃ (o := Impl.Dsa.Layout.t2) (len := pLen) ht2 (by omega_arith)
+  obtain LA := local_addr w₃ (o := Impl.Dsa.Layout.t2) (by omega_arith)
+  obtain D₂ := copyDst_of (s := t₃) (src := pointerValue base t₃ (.local Impl.Dsa.Layout.t2)) (a := 2 * pLen + qLen)
     (n := pLen) ofit (Owr t₃ (R₃.wr.trans R₂.wr))
     (by rw [LA]; exact kds.sub_left (Offset.sub_base base ht2)) (by omega_arith) p0
   refine WP.seq (wp_ptr (is := []) (by decide) (show Impl.Dsa.Layout.t2 < 2 ^ 16 by decide) fun t₃' u₃' =>
@@ -366,16 +366,16 @@ theorem writeKey_ok {s : State} {base : Addr} {size pLen qLen : Nat} {pb xb : Li
     (by rw [u₃'.other _ (by decide), r10₃]) (by rw [u₃'.other _ (by decide), r3₃]))
     fun t₄ ⟨r10₄, r3₄, B₄, O₄, R₄⟩ => ?_)
   rw [u₃'.mem] at O₄
-  have w₄ := (w₃.of_upd u₃' (by decide)).of_rest R₄ (by decide)
+  obtain w₄ := (w₃.of_upd u₃' (by decide)).of_rest R₄ (by decide)
   rw [eA _ (by omega_arith)] at O₄ B₄
-  have O₄' : Outside (State.addr O) 0 L s.mem t₄.mem := O₃'.trans (Outside.widen O₄ (by omega_arith) (by omega_arith))
+  obtain O₄' : Outside (State.addr O) 0 L s.mem t₄.mem := O₃'.trans (Outside.widen O₄ (by omega_arith) (by omega_arith))
   -- x
-  have Bx : BytesIn t₄ (pointerValue base s (.input .nonce)) xb :=
+  obtain Bx : BytesIn t₄ (pointerValue base s (.input .nonce)) xb :=
     K.bx.outside O₄' (by rw [K.xl]; exact kdx) (by rw [R₄.rd, u₃'.rd, R₃.rd, R₂.rd]) (by rw [R₄.wr, u₃'.wr, R₃.wr, R₂.wr])
-  have D₃ := copyDst_of (s := t₄) (src := pointerValue base s (.input .nonce)) (a := 2 * pLen + qLen + pLen)
+  obtain D₃ := copyDst_of (s := t₄) (src := pointerValue base s (.input .nonce)) (a := 2 * pLen + qLen + pLen)
     (n := qLen) ofit (Owr t₄ (R₄.wr.trans (u₃'.wr.trans (R₃.wr.trans R₂.wr)))) kdx (by omega_arith) q0
   rw [BitVec.add_assoc, BitVec.ofNat_add_ofNat] at r10₄
-  have r4₄ : t₄.gpr .r4 = pointerValue base s (.input .nonce) := by
+  obtain r4₄ : t₄.gpr .r4 = pointerValue base s (.input .nonce) := by
     rw [R₄.gpr _ (by decide), u₃'.other _ (by decide), R₃.gpr _ (by decide), x₂]
   refine WP.seq (wp_mov (op2_reg _ _) fun t₄' u₄' => WP.block_nil ?_)
   refine WP.seq (WP.mono (copyFrom_ok (mask := mask32 acc) (src := pointerValue base s (.input .nonce))
@@ -383,30 +383,30 @@ theorem writeKey_ok {s : State} {base : Addr} {size pLen qLen : Nat} {pb xb : Li
     ⟨D₃.fit, fun i hi => by rw [u₄'.wr]; exact D₃.wr i hi, D₃.apart⟩ (by rw [u₄'.other _ (by decide), r10₄])
     (by rw [u₄'.other _ (by decide), r3₄])) fun t₅ ⟨_, r3₅, B₅, O₅, R₅⟩ => ?_)
   rw [u₄'.mem] at O₅
-  have w₅ := (w₄.of_upd u₄' (by decide)).of_rest R₅ (by decide)
+  obtain w₅ := (w₄.of_upd u₄' (by decide)).of_rest R₅ (by decide)
   rw [eA _ (by omega_arith)] at O₅ B₅
-  have O₅' : Outside (State.addr O) 0 L s.mem t₅.mem := O₄'.trans (Outside.widen O₅ (by omega_arith) (by omega_arith))
+  obtain O₅' : Outside (State.addr O) 0 L s.mem t₅.mem := O₄'.trans (Outside.widen O₅ (by omega_arith) (by omega_arith))
   -- The result.
-  have hm₅ : maskW base t₅ = mask32 acc := by
+  obtain hm₅ : maskW base t₅ = mask32 acc := by
     rw [← hm]; exact keepW O₅' 116 (by omega_arith)
   refine WP.seq (WP.mono (result_ok w₅ (by omega_arith) acc hm₅) fun u ⟨r0, Ru, Mu⟩ => WP.block_nil ?_)
   refine ⟨r0, ?_, by rw [Mu]; exact O₅', ?_⟩
   · -- The three parts.
-    have k₅ : ∀ {a n : Nat}, a + n ≤ 2 * pLen + qLen + pLen →
+    obtain k₅ : ∀ {a n : Nat}, a + n ≤ 2 * pLen + qLen + pLen →
         Spec.Rsa.bytesAt u.mem (State.addr O + BitVec.ofNat 64 a) n =
           Spec.Rsa.bytesAt t₄.mem (State.addr O + BitVec.ofNat 64 a) n := fun h => by
       rw [Mu]; exact bytes_keep O₅ (Offset.disjoint _ (.inl h) (by omega_arith) (by omega_arith)) (by omega_arith) (by omega_arith)
-    have k₄ : ∀ {n : Nat}, n ≤ 2 * pLen + qLen →
+    obtain k₄ : ∀ {n : Nat}, n ≤ 2 * pLen + qLen →
         Spec.Rsa.bytesAt t₄.mem (State.addr O) n = Spec.Rsa.bytesAt t₃.mem (State.addr O) n := fun h => by
       exact bytes_keep O₄ (Offset.base_disjoint _ h (by omega_arith)) (by omega_arith) (by omega_arith)
-    have P1 : Spec.Rsa.bytesAt u.mem (State.addr O) (2 * pLen + qLen) = pb.map (masked (mask32 acc)) := by
+    obtain P1 : Spec.Rsa.bytesAt u.mem (State.addr O) (2 * pLen + qLen) = pb.map (masked (mask32 acc)) := by
       have := k₅ (a := 0) (n := 2 * pLen + qLen) (by omega_arith)
       rw [BitVec.add_zero] at this
       rw [this, k₄ (Nat.le_refl _), B₃]
-    have P2 : Spec.Rsa.bytesAt u.mem (State.addr O + BitVec.ofNat 64 (2 * pLen + qLen)) pLen =
+    obtain P2 : Spec.Rsa.bytesAt u.mem (State.addr O + BitVec.ofNat 64 (2 * pLen + qLen)) pLen =
         (Spec.Rsa.bytesAt s.mem (off base Impl.Dsa.Layout.t2) pLen).map (masked (mask32 acc)) := by
       rw [k₅ (by omega_arith), B₄, hy]
-    have P3 : Spec.Rsa.bytesAt u.mem (State.addr O + BitVec.ofNat 64 (2 * pLen + qLen + pLen)) qLen =
+    obtain P3 : Spec.Rsa.bytesAt u.mem (State.addr O + BitVec.ofNat 64 (2 * pLen + qLen + pLen)) qLen =
         xb.map (masked (mask32 acc)) := by
       rw [Mu, B₅]
     rw [← hL, show 3 * pLen + 2 * qLen = (2 * pLen + qLen) + pLen + qLen by omega_arith, VG.Proof.Dsa.bytesAt_split,
@@ -471,14 +471,14 @@ theorem deriveFailure_ok {s : State} {base : Addr} {size pLen qLen : Nat} (hs : 
   simp only [Generate.deriveFailure, Core.sequence, List.foldr]
   refine WP.seq (wp_ldr12 hs (d := 96) (by decide) (by omega_arith) fun u₁ v₁ => ?_)
   refine wp_movw fun u₂ v₂ => wp_dp (op2_reg _ _) fun u₃ v₃ => wp_mov (op2_imm (by decide)) fun u₄ v₄ => WP.block_nil ?_
-  have out : u₄.gpr .r11 = pointerValue base s (.input .out) := by
+  obtain out : u₄.gpr .r11 = pointerValue base s (.input .out) := by
     rw [v₄.other .r11 (by decide), v₃.other .r11 (by decide), v₂.other .r11 (by decide), v₁.gpr]; rfl
-  have lr : u₄.gpr .lr = pointerValue base s (.input .out) + BitVec.ofNat 32 (3 * pLen + 2 * qLen) := by
+  obtain lr : u₄.gpr .lr = pointerValue base s (.input .out) + BitVec.ofNat 32 (3 * pLen + 2 * qLen) := by
     rw [v₄.other .lr (by decide), v₃.gpr, dpVal, v₂.gpr, v₂.other .r11 (by decide), v₁.gpr, movw_ofNat hL]
     rfl
-  have R₄ : Rest [.r4, .r11, .lr] s u₄ :=
+  obtain R₄ : Rest [.r4, .r11, .lr] s u₄ :=
     (((v₁.rest (by decide)).trans (v₂.rest (by decide))).trans (v₃.rest (by decide))).trans (v₄.rest (by decide))
-  have M₄ : u₄.mem = s.mem := by rw [v₄.mem, v₃.mem, v₂.mem, v₁.mem]
+  obtain M₄ : u₄.mem = s.mem := by rw [v₄.mem, v₃.mem, v₂.mem, v₁.mem]
   refine WP.seq (WP.mono (failureLoop_ok h0 fit (by omega_arith) out lr v₄.gpr
     (fun i hi => by rw [R₄.wr]; exact wr i hi)) fun t ⟨B, Ot, Rt⟩ => ?_)
   refine WP.seq (wp_mov (op2_imm (by decide)) fun t' v => WP.block_nil (WP.block_nil ⟨v.gpr, ?_, ?_, ?_⟩))
@@ -503,18 +503,18 @@ theorem deriveIn {s t : State} {base : Addr} {size : Nat} (h : derivePre s) (hb 
   obtain ⟨_, hrd, _, _, _, _, _, dPS, dXS, _, _, fP, fX, _, hv, _, hr3, hsw⟩ := h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hz : 4960 ≤ (arg s 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
-  have pr : (⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
-  have xr : (⟨State.addr (arg s 1), (arg s 2).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
-  have ip := input_of E (p := .input .p) (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) (o := 0)
+  obtain hz : 4960 ≤ (arg s 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  obtain pr : (⟨State.addr (s.gpr .r2), (s.gpr .r3).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
+  obtain xr : (⟨State.addr (arg s 1), (arg s 2).toNat⟩ : Region) ∈ s.rd ++ s.wr := by rw [hrd]; simp
+  obtain ip := input_of E (p := .input .p) (by decide : Impl.Dsa.Layout.Field.p ≠ .mask) (o := 0)
     (len := (arg s 0).toNat) (by rw [BitVec.add_zero]; exact E.field (d := 64) (v := s.gpr .r2) (by simp))
     pr fP (by omega_arith) (.inr rfl) dPS hz
   rw [BitVec.add_zero] at ip
-  have ix := input_of E (p := .input .nonce) (by decide : Impl.Dsa.Layout.Field.nonce ≠ .mask) (o := 0)
+  obtain ix := input_of E (p := .input .nonce) (by decide : Impl.Dsa.Layout.Field.nonce ≠ .mask) (o := 0)
     (len := (arg s 2).toNat) (by rw [BitVec.add_zero]; exact E.field (d := 88) (v := arg s 1) (by simp))
     xr fX (by omega_arith) (.inr rfl) dXS hz
   rw [BitVec.add_zero] at ix
-  have cg := fun {a : Nat} {xs : List (BitVec 32)} (h : (xs.map BitVec.toNat).sum = a) =>
+  obtain cg := fun {a : Nat} {xs : List (BitVec 32)} (h : (xs.map BitVec.toNat).sum = a) =>
     (sum_ofNat (s.gpr .r2) xs).trans (congrArg (fun n => s.gpr .r2 + BitVec.ofNat 32 n) h)
   refine ⟨ip, input_of E (p := .input .q) (by decide : Impl.Dsa.Layout.Field.q ≠ .mask) ?_ pr fP (by omega_arith)
       (.inl (by omega_arith)) dPS hz,
@@ -563,26 +563,26 @@ theorem deriveWith_correct {compute : Nat → Nat → Prog isa} {C : Nat → Nat
   obtain ⟨hsp, hrd, hwr, dOP, dOX, dOS, dOA, dPS, dXS, dSA, fO, fP, fX, fS, hv, hr1, hr3, hsw⟩ := id h
   have v := hv
   unfold Spec.Dsa.lengthsValid at v
-  have hs16 : 128 * (arg s 0).toNat ≤ (arg s 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
+  obtain hs16 : 128 * (arg s 0).toNat ≤ (arg s 4).toNat * 8 := by unfold Spec.Dsa.scratchWords at hsw; omega_arith
   obtain ⟨wp, wq, qp, q32, q0, p128⟩ := width_of hv
   simp only [Generate.deriveWith, Core.sequence, List.foldr]
   refine WP.seq (WP.mono (deriveEntry_ok h) fun u I => ?_)
-  have E₀ := Env.of_installed I (by omega_arith)
-  have fok := deriveFields_ok s
+  obtain E₀ := Env.of_installed I (by omega_arith)
+  obtain fok := deriveFields_ok s
   refine WP.seq (genDispatch_ok (Generate.deriveSized compute) _ E₀.ws (by omega_arith) (genWidths_mem hv) (by decide)
     (by rw [E₀.field (d := 100) (v := arg s 0) (by simp)]) (by rw [E₀.field (d := 104) (v := arg s 2) (by simp)])
     fun t₁ R₁ M₁ => ?_)
-  have E₁ := E₀.of_mem R₁ (by decide) M₁
-  have hz : 4960 ≤ (arg s 4).toNat * 8 := by omega_arith
+  obtain E₁ := E₀.of_mem R₁ (by decide) M₁
+  obtain hz : 4960 ≤ (arg s 4).toNat * 8 := by omega_arith
   obtain ⟨Ip₁, Iq₁, -, -⟩ := deriveIn h rfl rfl E₁
   -- The specification's components.
-  have hpl : (deriveParams s).length = 2 * (arg s 0).toNat + (arg s 2).toNat := by
+  obtain hpl : (deriveParams s).length = 2 * (arg s 0).toNat + (arg s 2).toNat := by
     simp only [deriveParams, Spec.Rsa.bytesAt, List.length_map, List.length_range]; exact hr3
-  have hxl : (deriveX s).length = (arg s 2).toNat := by
+  obtain hxl : (deriveX s).length = (arg s 2).toNat := by
     simp only [deriveX, Spec.Rsa.bytesAt, List.length_map, List.length_range]
-  have PB := paramsBytes_at s.mem (State.addr (s.gpr .r2)) (pLen := (arg s 0).toNat) (qLen := (arg s 2).toNat)
+  obtain PB := paramsBytes_at s.mem (State.addr (s.gpr .r2)) (pLen := (arg s 0).toNat) (qLen := (arg s 2).toNat)
     (total := (s.gpr .r3).toNat) (by omega_arith)
-  have spec := deriveKeyBytes_iff hv hpl hxl
+  obtain spec := deriveKeyBytes_iff hv hpl hxl
   simp only [deriveParams, deriveX] at spec
   rw [PB] at spec
   dsimp only at spec
@@ -590,27 +590,27 @@ theorem deriveWith_correct {compute : Nat → Nat → Prog isa} {C : Nat → Nat
   unfold Generate.deriveSized
   refine WP.seq (WP.mono (check_ok E₁.ws hz wp wq Ip₁.toReady Iq₁.toReady Ip₁.value Iq₁.value)
     fun t₂ ⟨Z, M, _, R₂, O₂⟩ => ?_)
-  have E₂ := E₁.keep fok R₂ (by decide) O₂ (fun r hr => by
+  obtain E₂ := E₁.keep fok R₂ (by decide) O₂ (fun r hr => by
     simp only [shapeRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl <;> simp only <;> omega_arith)
-  have po : pointerValue (State.addr (arg s 3)) t₂ (.input .out) = s.gpr .r0 :=
+  obtain po : pointerValue (State.addr (arg s 3)) t₂ (.input .out) = s.gpr .r0 :=
     E₂.field (d := 96) (v := s.gpr .r0) (by simp)
-  have ofit : (pointerValue (State.addr (arg s 3)) t₂ (.input .out)).toNat +
+  obtain ofit : (pointerValue (State.addr (arg s 3)) t₂ (.input .out)).toNat +
       (3 * (arg s 0).toNat + 2 * (arg s 2).toNat) ≤ 2 ^ 32 := by rw [po]; omega_arith
-  have owr : ∀ i < 3 * (arg s 0).toNat + 2 * (arg s 2).toNat,
+  obtain owr : ∀ i < 3 * (arg s 0).toNat + 2 * (arg s 2).toNat,
       InRegions t₂.wr (State.addr (pointerValue (State.addr (arg s 3)) t₂ (.input .out)) + BitVec.ofNat 64 i) 1 :=
     fun i hi => by
       rw [po, E₂.wr, hwr]
       exact ⟨⟨State.addr (s.gpr .r0), (s.gpr .r1).toNat⟩, by simp, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩
-  have dOS' : Region.Disjoint ⟨State.addr (s.gpr .r0), 3 * (arg s 0).toNat + 2 * (arg s 2).toNat⟩
+  obtain dOS' : Region.Disjoint ⟨State.addr (s.gpr .r0), 3 * (arg s 0).toNat + 2 * (arg s 2).toNat⟩
       ⟨State.addr (arg s 3), (arg s 4).toNat * 8⟩ := hr1 ▸ dOS
   refine WP.ite t₂.z (eval_eq _) (fun ht => ?_) (fun hf => ?_)
   · -- A rejected shape.
-    have nv := of_decide_eq_true (Z ▸ ht)
+    obtain nv := of_decide_eq_true (Z ▸ ht)
     refine WP.mono (deriveFailure_ok E₂.ws (by omega_arith) (by omega_arith) (by omega_arith) ofit owr)
       fun t₃ ⟨Z₃, B₃, R₃, O₃⟩ => ?_
     rw [po] at B₃ O₃
-    have none : deriveRes s = none := by rw [SR]; exact ite_eq_right fun h => nv h.1
+    obtain none : deriveRes s = none := by rw [SR]; exact ite_eq_right fun h => nv h.1
     refine finish_ok (E₂.ws.of_rest R₃ (by decide)) (by omega_arith) (E₂.saved_outside O₃ dOS' (by omega_arith))
       (R₃.sp.trans E₂.sp) fun u A r0 Mu => ⟨A, ?_, ?_⟩
     · rw [BitVec.setWidth_append_eq_right, r0, Z₃, none]; rfl
@@ -618,23 +618,23 @@ theorem deriveWith_correct {compute : Nat → Nat → Prog isa} {C : Nat → Nat
   · have valid : shapeValid _ _ := Classical.not_not.mp (of_decide_eq_false (Z ▸ hf))
     obtain ⟨Ip, Iq, Ig, Ix⟩ := deriveIn h rfl rfl E₂
     obtain ⟨hP, hPo, hQ, hQo⟩ := shape_bounds valid
-    have hm : maskW (State.addr (arg s 3)) t₂ = BitVec.allOnes 32 := by
+    obtain hm : maskW (State.addr (arg s 3)) t₂ = BitVec.allOnes 32 := by
       rw [M]; unfold mask32; split
       · rfl
       · next hn => exact absurd valid hn
     refine WP.seq (WP.mono (hc ⟨E₂.ws, by omega_arith, wp, wq, qp, q32⟩ Ip Iq Ig Ix hP hPo hQ hQo)
       fun t₃ ⟨F₃, Y₃, Rn₃⟩ => ?_)
-    have E₃ := E₂.keep fok Rn₃.rest (by decide) Rn₃.mem (fun r hr => by
+    obtain E₃ := E₂.keep fok Rn₃.rest (by decide) Rn₃.mem (fun r hr => by
       simp only [runRanges, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl <;> simp only <;> omega_arith)
     rw [hm, BitVec.allOnes_and, mask32_iff (hC valid)] at F₃
-    have po₃ : pointerValue (State.addr (arg s 3)) t₃ (.input .out) = s.gpr .r0 :=
+    obtain po₃ : pointerValue (State.addr (arg s 3)) t₃ (.input .out) = s.gpr .r0 :=
       E₃.field (d := 96) (v := s.gpr .r0) (by simp)
-    have pp₃ : pointerValue (State.addr (arg s 3)) t₃ (.input .p) = s.gpr .r2 :=
+    obtain pp₃ : pointerValue (State.addr (arg s 3)) t₃ (.input .p) = s.gpr .r2 :=
       E₃.field (d := 64) (v := s.gpr .r2) (by simp)
-    have px₃ : pointerValue (State.addr (arg s 3)) t₃ (.input .nonce) = arg s 1 :=
+    obtain px₃ : pointerValue (State.addr (arg s 3)) t₃ (.input .nonce) = arg s 1 :=
       E₃.field (d := 88) (v := arg s 1) (by simp)
-    have K : KeySources t₃ (State.addr (arg s 3)) ((arg s 4).toNat * 8) (arg s 0).toNat (arg s 2).toNat
+    obtain K : KeySources t₃ (State.addr (arg s 3)) ((arg s 4).toNat * 8) (arg s 0).toNat (arg s 2).toNat
         (Spec.Rsa.bytesAt s.mem (State.addr (s.gpr .r2)) (2 * (arg s 0).toNat + (arg s 2).toNat))
         (Spec.Rsa.bytesAt s.mem (State.addr (arg s 1)) (arg s 2).toNat) := by
       refine ⟨E₃.ws, by omega_arith, by omega_arith, q0, by omega_arith, by simp [Spec.Rsa.bytesAt], by simp [Spec.Rsa.bytesAt], ?_, ?_,
@@ -677,9 +677,9 @@ theorem derive_correct {s : State} (h : derivePre s) :
 theorem deriveDomain_checked {s : State} (h : deriveCheckedArm.pre s) :
     domainChecks (deriveP s) (deriveQ s) (deriveG s) := by
   obtain ⟨⟨-, -, -, -, -, -, -, -, -, -, -, -, -, -, hv, -, hr3, -⟩, hc⟩ := h
-  have hpl : (deriveParams s).length = 2 * (arg s 0).toNat + (arg s 2).toNat := by
+  obtain hpl : (deriveParams s).length = 2 * (arg s 0).toNat + (arg s 2).toNat := by
     simp only [deriveParams, Spec.Rsa.bytesAt, List.length_map, List.length_range]; exact hr3
-  have e := (checkParametersBytes_iff hv hpl).mp hc
+  obtain e := (checkParametersBytes_iff hv hpl).mp hc
   simp only [deriveParams] at e
   rw [paramsBytes_at s.mem (State.addr (s.gpr .r2)) (pLen := (arg s 0).toNat) (qLen := (arg s 2).toNat)
     (total := (s.gpr .r3).toNat) (by omega_arith)] at e

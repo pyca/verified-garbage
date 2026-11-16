@@ -53,7 +53,7 @@ theorem hashRestHead_ok {p : Prm} (L : Lay p) {t : State} (E : Env p t) :
       t₁.gpr .ebx = p.K ∧ (∀ r, r ≠ .ebx → t₁.gpr r = t.gpr r) ∧ t₁.mem = t.mem ∧ t₁.rd = t.rd ∧ t₁.wr = t.wr :=
     ⟨_, by grun [E.ebp, L.aW, E.perm.wR, hc], by gregs [hc], fun r h => by gregs [h], by gmems [], by gmems [],
       by gmems []⟩
-  have E₁ : Env p t₁ := E.keep (by rw [g₁ _ (by decide)]) (by rw [g₁ _ (by decide)]) rd₁ wr₁ m₁
+  obtain E₁ : Env p t₁ := E.keep (by rw [g₁ _ (by decide)]) (by rw [g₁ _ (by decide)]) rd₁ wr₁ m₁
   obtain ⟨t₂, run₂, m₂, g₂, rd₂, wr₂⟩ := xor16R_ok L E₁ (b := .ebx) (by decide) bx₁ L.kw L.k_w
     E₁.perm.k (s := 240) (d := ohO) (by decide) (by decide)
   refine ⟨t₂, runBlock_app_of run₁ run₂, E₁.mut L (by rw [g₂ _ (by decide), E₁.ebp])
@@ -74,29 +74,29 @@ theorem hashRest_ok (v : BlocksImpl) {p : Prm} {ciph : Cipher} {l : Block} {a : 
   generalize hm : p.al / 16 = m at H
   -- `Offset_m ⊕ L_*`
   obtain ⟨t₂, run₂, E₂, m₂, g₂, rd₂, wr₂⟩ := hashRestHead_ok L E
-  have fr₂ : Frame [⟨w64 p.W + BitVec.ofNat 64 ohO, 16⟩] t.mem t₂.mem := by
+  obtain fr₂ : Frame [⟨w64 p.W + BitVec.ofNat 64 ohO, 16⟩] t.mem t₂.mem := by
     rw [m₂]; exact xorMem16_frame _ _ _ _ _
-  have fH₂ : Frame (hashR p) s₀.mem t₂.mem := H.frame.trans (fr₂.sub fun r hr => by
+  obtain fH₂ : Frame (hashR p) s₀.mem t₂.mem := H.frame.trans (fr₂.sub fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr; exact inHashR p (.inr (.inr (.inl ⟨by decide, by decide⟩))))
-  have oh₂ : blockAtMem t₂.mem (w64 p.W + BitVec.ofNat 64 ohO) = offAt 0 l m ^^^ l := by
+  obtain oh₂ : blockAtMem t₂.mem (w64 p.W + BitVec.ofNat 64 ohO) = offAt 0 l m ^^^ l := by
     rw [m₂, xorMem16_block, H.oh, ← C.lstar, ← lstar_mut L (wR_mut (hashR_wR H.frame))]; rfl
   -- `pad(A_*)`
-  have si₂ : t₂.gpr .esi = p.A + BitVec.ofNat 32 (16 * m) := by rw [g₂ _ (by decide) (by decide), H.esi]
-  have rest₂ : slotv t₂.mem p.W restO = BitVec.ofNat 32 (p.al % 16) := by
+  obtain si₂ : t₂.gpr .esi = p.A + BitVec.ofNat 32 (16 * m) := by rw [g₂ _ (by decide) (by decide), H.esi]
+  obtain rest₂ : slotv t₂.mem p.W restO = BitVec.ofNat 32 (p.al % 16) := by
     rw [← H.rest]
     exact fr₂.readW (r := ⟨w64 p.W + BitVec.ofNat 64 restO, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inr (by decide)) (by decide) (by decide))
       (by decide)
-  have a16 : w64 (p.A + BitVec.ofNat 32 (16 * m)) = w64 p.A + BitVec.ofNat 64 (16 * m) := w64_add (by omega_using [hr, hal, hm])
-  have sub : Region.Sub ⟨w64 (p.A + BitVec.ofNat 32 (16 * m)), p.al % 16⟩ ⟨w64 p.A, p.al⟩ := by
+  obtain a16 : w64 (p.A + BitVec.ofNat 32 (16 * m)) = w64 p.A + BitVec.ofNat 64 (16 * m) := w64_add (by omega_using [hr, hal, hm])
+  obtain sub : Region.Sub ⟨w64 (p.A + BitVec.ofNat 32 (16 * m)), p.al % 16⟩ ⟨w64 p.A, p.al⟩ := by
     rw [a16]; exact Offset.sub_base _ (by omega_using [hm])
-  have hS : SBuf p t₂ (p.A + BitVec.ofNat 32 (16 * m)) (p.al % 16) := by
+  obtain hS : SBuf p t₂ (p.A + BitVec.ofNat 32 (16 * m)) (p.al % 16) := by
     refine ⟨?_, L.a_w.sub_left sub, ?_⟩
     · rw [toNat_add32 (by omega_using [hr, hal, hm])]; omega_using [hal, hm]
     · rw [a16]; exact covers_off E₂.perm.aad (by omega_using [hm]) (by omega_using [hal])
-  have hrestb : bytesAt t₂.mem (w64 (p.A + BitVec.ofNat 32 (16 * m))) (p.al % 16) = a.drop (16 * (a.length / 16)) := by
+  obtain hrestb : bytesAt t₂.mem (w64 (p.A + BitVec.ofNat 32 (16 * m))) (p.al % 16) = a.drop (16 * (a.length / 16)) := by
     rw [C.len, hm, ← C.aad, Proof.Ocb.bytesAt_drop _ _ (by omega_using [hm]), show p.al - 16 * m = p.al % 16 by omega_using [hm], a16]
-    have ad : ∀ r ∈ mutR p, (⟨w64 p.A, p.al⟩ : Region).Disjoint r := by
+    obtain ad : ∀ r ∈ mutR p, (⟨w64 p.A, p.al⟩ : Region).Disjoint r := by
       intro r hr
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl | rfl | rfl | rfl
@@ -113,22 +113,22 @@ theorem hashRest_ok (v : BlocksImpl) {p : Prm} {ciph : Cipher} {l : Block} {a : 
   refine WP.seq (WP.mono (padTo_ok L E₂ (d := bufO) (cO := restO) hr (by omega_using []) (by decide) (by decide)
     (.inl (by decide)) si₂ rest₂ hS) fun t₃ ⟨fr₃, pad₃, g₃, rd₃, wr₃⟩ => ?_)
   rw [hrestb] at pad₃
-  have E₃ : Env p t₃ := E₂.mut L (by rw [g₃ _ (by decide) (by decide) (by decide) (by decide), E₂.ebp])
+  obtain E₃ : Env p t₃ := E₂.mut L (by rw [g₃ _ (by decide) (by decide) (by decide) (by decide), E₂.ebp])
     (by rw [g₃ _ (by decide) (by decide) (by decide) (by decide), E₂.esp]) rd₃ wr₃
     (frame_toMut fr₃ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact inMut_w p (.inr (.inr (.inr ⟨by decide, by decide⟩))))
-  have oh₃ : blockAtMem t₃.mem (w64 p.W + BitVec.ofNat 64 ohO) = offAt 0 l m ^^^ l := by
+  obtain oh₃ : blockAtMem t₃.mem (w64 p.W + BitVec.ofNat 64 ohO) = offAt 0 l m ^^^ l := by
     rw [Proof.Ocb.blockAtMem_frame fr₃ fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact Lay.w_w (.inl (by decide)) (by decide) (by decide), oh₂]
   -- XORed with the offset
   obtain ⟨t₄, run₄, m₄, g₄, rd₄, wr₄⟩ := xor16W_ok L E₃ (s := ohO) (d := bufO) (by decide) (by decide)
     (.inl (by decide))
-  have E₄ : Env p t₄ := E₃.mut L (by rw [g₄ _ (by decide), E₃.ebp]) (by rw [g₄ _ (by decide), E₃.esp]) rd₄ wr₄
+  obtain E₄ : Env p t₄ := E₃.mut L (by rw [g₄ _ (by decide), E₃.ebp]) (by rw [g₄ _ (by decide), E₃.esp]) rd₄ wr₄
     (frame_toMut (by rw [m₄]; exact xorMem16_frame _ _ _ _ _) fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact inMut_w p (.inr (.inr (.inr ⟨by decide, by decide⟩))))
-  have buf₄ : blockAtMem t₄.mem (w64 p.W + BitVec.ofNat 64 bufO) =
+  obtain buf₄ : blockAtMem t₄.mem (w64 p.W + BitVec.ofNat 64 bufO) =
       pad (a.drop (16 * (a.length / 16))) ^^^ (offAt 0 l m ^^^ l) := by rw [m₄, xorMem16_block, pad₃, oh₃]
-  have fH₄ : Frame (hashR p) s₀.mem t₄.mem := fH₂.trans ((fr₃.trans (by rw [m₄]; exact xorMem16_frame _ _ _ _ _)).sub
+  obtain fH₄ : Frame (hashR p) s₀.mem t₄.mem := fH₂.trans ((fr₃.trans (by rw [m₄]; exact xorMem16_frame _ _ _ _ _)).sub
     fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact inHashR p (.inr (.inr (.inr (.inr (.inr ⟨by decide, by decide⟩))))))
@@ -137,24 +137,24 @@ theorem hashRest_ok (v : BlocksImpl) {p : Prm} {ciph : Cipher} {l : Block} {a : 
   refine WP.seq (WP.mono (callBlocks_ok (f := Spec.Aes.cipher) v.encOk v.encNosp v.encStack L E₄
     (oneBlock_ok E₄ bufO) (DReg.w L E₄ (d := bufO) (n := 1) (by decide) (.inr (.inr (.inr (by decide))))))
     fun t₅ P₅ => ?_)
-  have aB : w64 (p.W + BitVec.ofNat 32 bufO) = w64 p.W + BitVec.ofNat 64 bufO := L.aW (by decide)
-  have buf₅ : blockAtMem t₅.mem (w64 p.W + BitVec.ofNat 64 bufO) =
+  obtain aB : w64 (p.W + BitVec.ofNat 32 bufO) = w64 p.W + BitVec.ofNat 64 bufO := L.aW (by decide)
+  obtain buf₅ : blockAtMem t₅.mem (w64 p.W + BitVec.ofNat 64 bufO) =
       ciph (pad (a.drop (16 * (a.length / 16))) ^^^ (offAt 0 l m ^^^ l)) := by
     have := P₅.enc (i := 0) (by decide)
     rw [aB, show w64 p.W + BitVec.ofNat 64 bufO + BitVec.ofNat 64 (16 * 0) = w64 p.W + BitVec.ofNat 64 bufO from
       BitVec.add_zero _] at this
     rw [this, buf₄, C.ciph' (wR_mut (hashR_wR fH₄))]
-  have fH₅ : Frame (hashR p) s₀.mem t₅.mem := fH₄.trans (P₅.frame.sub fun r hr => by
+  obtain fH₅ : Frame (hashR p) s₀.mem t₅.mem := fH₄.trans (P₅.frame.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · rw [aB]; exact inHashR p (.inr (.inr (.inr (.inr (.inr ⟨by decide, by decide⟩)))))
     · exact inHashR p (.inr (.inr (.inr (.inr (.inr ⟨by decide, by decide⟩)))))
     · exact ⟨_, by simp, fun _ h => h⟩)
-  have kS : ∀ {rs : List Region} {u u' : State}, Frame rs u.mem u'.mem →
+  obtain kS : ∀ {rs : List Region} {u u' : State}, Frame rs u.mem u'.mem →
       (∀ r ∈ rs, (⟨w64 p.W + BitVec.ofNat 64 sumO, 16⟩ : Region).Disjoint r) →
       blockAtMem u'.mem (w64 p.W + BitVec.ofNat 64 sumO) = blockAtMem u.mem (w64 p.W + BitVec.ofNat 64 sumO) :=
     fun h hd => Proof.Ocb.blockAtMem_frame h hd
-  have sum₅ : blockAtMem t₅.mem (w64 p.W + BitVec.ofNat 64 sumO) = hsum ciph l a m := by
+  obtain sum₅ : blockAtMem t₅.mem (w64 p.W + BitVec.ofNat 64 sumO) = hsum ciph l a m := by
     rw [kS P₅.frame (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl | rfl
@@ -182,7 +182,7 @@ theorem hashRest_ok (v : BlocksImpl) {p : Prm} {ciph : Cipher} {l : Block} {a : 
     by rw [rd₆, P₅.rd, rd₄, rd₃, rd₂, H.rd], by rw [wr₆, P₅.wr, wr₄, wr₃, wr₂, H.wr]⟩
   rw [m₆, xorMem16_block, sum₅, buf₅, Proof.Ocb.hash_eq]
   simp only [C.len, hm]
-  have hlen : (a.drop (16 * m)).length = p.al % 16 := by simp [C.len]; omega_using [hm]
+  obtain hlen : (a.drop (16 * m)).length = p.al % 16 := by simp [C.len]; omega_using [hm]
   simp only [hlen, show p.al % 16 > 0 from hr, ↓reduceIte]
 
 /-- After the whole blocks: the rest, if any. -/
@@ -201,13 +201,13 @@ theorem hashTail_ok (v : BlocksImpl) {p : Prm} {ciph : Cipher} {l : Block} {a : 
     refine ⟨_, by grun [H.env.ebp, L.aW, H.env.perm.wR, rest], ?_, fun r h => by gregs [h], by gmems [], by gmems [],
       by gmems []⟩
     gmems [rest, BitVec.and_self, beq_zero32 (show p.al % 16 < 2 ^ 32 by omega_using [])]
-  have H₁ := H.of_keep (fun r h₁ _ _ _ => g₁ r h₁) m₁ rd₁ wr₁
+  obtain H₁ := H.of_keep (fun r h₁ _ _ _ => g₁ r h₁) m₁ rd₁ wr₁
   refine WP.seq (WP.of_runBlock ⟨t₁, run₁, ?_⟩)
   refine WP.ite (decide (p.al % 16 = 0)) (eval_e zf₁) (fun hb => WP.block_nil ?_) (fun hb => ?_)
   · have h0 : p.al % 16 = 0 := of_decide_eq_true hb
     refine ⟨H₁.env, H₁.frame, ?_, H₁.rd, H₁.wr⟩
     rw [H₁.sum, Proof.Ocb.hash_eq, C.len]
-    have hlen : (a.drop (16 * (p.al / 16))).length = 0 := by simp [C.len]; omega_using [h0]
+    obtain hlen : (a.drop (16 * (p.al / 16))).length = 0 := by simp [C.len]; omega_using [h0]
     simp [hlen]
   · exact hashRest_ok v C H₁ (by have := of_decide_eq_false hb; omega_using [this])
 
@@ -228,20 +228,20 @@ theorem hashHead_ok {p : Prm} {ciph : Cipher} {l : Block} {a : List Byte} {s₀ 
   have hA := E.slots.aad
   have hn := E.slots.alen
   simp only [slotv_eq] at hA hn
-  have z₁ := zero4_fold s₀.mem p.W sumO
-  have z₂ := zero4_fold (Proof.Cmac.zero4 s₀.mem (w64 p.W + BitVec.ofNat 64 sumO)) p.W ohO
-  have fz : Frame [⟨w64 p.W + BitVec.ofNat 64 sumO, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 ohO, 16⟩] s₀.mem
+  obtain z₁ := zero4_fold s₀.mem p.W sumO
+  obtain z₂ := zero4_fold (Proof.Cmac.zero4 s₀.mem (w64 p.W + BitVec.ofNat 64 sumO)) p.W ohO
+  obtain fz : Frame [⟨w64 p.W + BitVec.ofNat 64 sumO, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 ohO, 16⟩] s₀.mem
       (Proof.Cmac.zero4 (Proof.Cmac.zero4 s₀.mem (w64 p.W + BitVec.ofNat 64 sumO)) (w64 p.W + BitVec.ofNat 64 ohO)) :=
     ((Proof.Cmac.frame_store4 _ _ _ _ _).mono (by simp)).trans ((Proof.Cmac.frame_store4 _ _ _ _ _).mono (by simp))
-  have rz : ∀ {d : Nat}, 176 ≤ d → d + 4 ≤ 2560 →
+  obtain rz : ∀ {d : Nat}, 176 ≤ d → d + 4 ≤ 2560 →
       (Proof.Cmac.zero4 (Proof.Cmac.zero4 s₀.mem (w64 p.W + BitVec.ofNat 64 sumO))
         (w64 p.W + BitVec.ofNat 64 ohO)).readW (w64 p.W + BitVec.ofNat 64 d) 32 =
       s₀.mem.readW (w64 p.W + BitVec.ofNat 64 d) 32 := fun h h' =>
     fz.readW (r := ⟨w64 p.W + BitVec.ofNat 64 _, 4⟩) (Region.contains_self _ _) (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> exact Lay.w_w (.inr (by simp only [sumO, ohO]; omega_using [h])) h' (by decide)) (by decide)
-  have hA' := (rz (d := aadO) (by decide) (by decide)).trans hA
-  have hn' := (rz (d := alenO) (by decide) (by decide)).trans hn
+  obtain hA' := (rz (d := aadO) (by decide) (by decide)).trans hA
+  obtain hn' := (rz (d := alenO) (by decide) (by decide)).trans hn
   simp only [sumO, ohO, aadO, alenO, Nat.reduceAdd] at hA' hn'
   obtain ⟨s₁, run₁, m₁, si₁, di₁, zf₁, g₁, rd₁, wr₁⟩ : ∃ s₁, runBlock isa (zero4 sumO ++ zero4 ohO ++
       [.mov .esi (slot aadO), .mov .eax (slot alenO), .mov .ecx (.reg .eax), .alu .and .ecx (imm 15),
@@ -256,25 +256,25 @@ theorem hashHead_ok {p : Prm} {ciph : Cipher} {l : Block} {a : List Byte} {s₀ 
       ?_, fun r h₁ h₂ h₃ h₄ => by gregs [h₁, h₂, h₃, h₄], by gmems [], by gmems []⟩
     · gmems [hA', hn', z₁, z₂, and15_32 hal, shr4_32 hal]
     · gmems [hA', hn', z₁, z₂, shr4_32 hal, BitVec.and_self, beq_zero32 (show p.al / 16 < 2 ^ 32 by omega_using [hal])]
-  have F : Frame [⟨w64 p.W + BitVec.ofNat 64 sumO, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 ohO, 16⟩,
+  obtain F : Frame [⟨w64 p.W + BitVec.ofNat 64 sumO, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 ohO, 16⟩,
       ⟨w64 p.W + BitVec.ofNat 64 hlO, 16⟩] s₀.mem s₁.mem := by
     rw [m₁]
-    have hm : (⟨w64 p.W + BitVec.ofNat 64 hlO, 16⟩ : Region) ∈ [⟨w64 p.W + BitVec.ofNat 64 sumO, 16⟩,
+    obtain hm : (⟨w64 p.W + BitVec.ofNat 64 hlO, 16⟩ : Region) ∈ [⟨w64 p.W + BitVec.ofNat 64 sumO, 16⟩,
         ⟨w64 p.W + BitVec.ofNat 64 ohO, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 hlO, 16⟩] := by simp
     exact (((fz.mono (by simp)).writeW hm _ (Offset.contains _ (e := 264) (k := 16) (d := 276) (n := 4) (by decide)
       (by decide) (by decide))).writeW hm _ (Offset.contains _ (e := 264) (k := 16) (d := 264) (n := 4) (by decide)
       (by decide) (by decide)))
-  have fH : Frame (hashR p) s₀.mem s₁.mem := F.sub fun r hr => by
+  obtain fH : Frame (hashR p) s₀.mem s₁.mem := F.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact inHashR p (.inl ⟨by decide, by decide⟩)
     · exact inHashR p (.inr (.inr (.inl ⟨by decide, by decide⟩)))
     · exact inHashR p (.inr (.inr (.inr (.inr (.inl ⟨by decide, by decide⟩)))))
-  have kz : ∀ {d : Nat}, d + 16 ≤ 264 → blockAtMem s₁.mem (w64 p.W + BitVec.ofNat 64 d) =
+  obtain kz : ∀ {d : Nat}, d + 16 ≤ 264 → blockAtMem s₁.mem (w64 p.W + BitVec.ofNat 64 d) =
       blockAtMem (Proof.Cmac.zero4 (Proof.Cmac.zero4 s₀.mem (w64 p.W + BitVec.ofNat 64 sumO))
         (w64 p.W + BitVec.ofNat 64 ohO)) (w64 p.W + BitVec.ofNat 64 d) := fun h => by
     rw [m₁]
-    have hm := List.mem_singleton_self (⟨w64 p.W + BitVec.ofNat 64 hlO, 16⟩ : Region)
+    obtain hm := List.mem_singleton_self (⟨w64 p.W + BitVec.ofNat 64 hlO, 16⟩ : Region)
     exact Proof.Ocb.blockAtMem_frame (((Frame.refl _ _).writeW hm _ (Offset.contains _ (e := 264) (k := 16) (d := 276)
       (n := 4) (by decide) (by decide) (by decide))).writeW hm _ (Offset.contains _ (e := 264) (k := 16) (d := 264)
       (n := 4) (by decide) (by decide) (by decide))) fun r hr => by
@@ -306,7 +306,7 @@ theorem hashLoop_ok (v : BlocksImpl) {p : Prm} {ciph : Cipher} {l : Block} {a : 
   refine WP.mono (hashChunk_ok v C H hj) fun u' ⟨H', hz⟩ => ?_
   by_cases he : p.al / 16 - (j + min 8 (p.al / 16 - j)) = 0
   · left
-    have hje : j + min 8 (p.al / 16 - j) = p.al / 16 := by omega_using [hj, he]
+    obtain hje : j + min 8 (p.al / 16 - j) = p.al / 16 := by omega_using [hj, he]
     exact ⟨(eval_ne hz).trans (by simp [he]), hje ▸ H'⟩
   · right
     exact ⟨(eval_ne hz).trans (by simp [he]), p.al / 16 - (j + min 8 (p.al / 16 - j)), by omega_using [hj],

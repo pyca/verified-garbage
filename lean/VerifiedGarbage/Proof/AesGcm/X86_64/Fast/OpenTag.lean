@@ -66,8 +66,8 @@ theorem incJ_ok {Ctx St W SP : Addr} (s : State) (he : Env Ctx St W SP s) :
     ∃ t, runBlock isa incJ s = some t ∧ blockAt t.mem St = inc32 (blockAt s.mem St) ∧
       Frame [⟨St + BitVec.ofNat 64 12, 4⟩] s.mem t.mem ∧ (∀ g, g ≠ .rsi → t.gpr g = s.gpr g) ∧ t.rd = s.rd ∧
       t.wr = s.wr ∧ t.xmm = s.xmm := by
-  have r₃ := he.perm.stR (show 12 + 4 ≤ 80 by decide)
-  have w₃ := he.perm.stW (show 12 + 4 ≤ 80 by decide)
+  obtain r₃ := he.perm.stR (show 12 + 4 ≤ 80 by decide)
+  obtain w₃ := he.perm.stW (show 12 + 4 ≤ 80 by decide)
   refine ⟨_, by xrun [incJ, he.r14, r₃, w₃], ?_, ?_, ?_, ?_, ?_, ?_⟩
   · simp only [mem_setReg, mem_arithFlags, ww32]
     exact inc_block _ _
@@ -126,71 +126,71 @@ theorem prepTail_ok {Ctx W SP D : Addr} {H : Block} {al n r : Nat} {s : State} (
     WP isa (.seq (.block finTextArgs) (.seq copyLoop (.block finLens))) s (TagMid Ctx W SP al n r D s) := by
   have he := P.env
   have hr := P.r16
-  have dW : ∀ {d k : Nat}, d + k ≤ 2560 → (⟨D, r⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
+  obtain dW : ∀ {d k : Nat}, d + k ≤ 2560 → (⟨D, r⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 d, k⟩ :=
     fun h => P.dW.sub_right (Lay.wSub h)
-  have dWW : ∀ {d k e j : Nat}, d + k ≤ e ∨ e + j ≤ d → d + k ≤ 2560 → e + j ≤ 2560 →
+  obtain dWW : ∀ {d k e j : Nat}, d + k ≤ e ∨ e + j ≤ d → d + k ≤ 2560 → e + j ≤ 2560 →
       (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint ⟨W + BitVec.ofNat 64 e, j⟩ :=
     fun h _ _ => Offset.disjoint W h (by have := he.perm.w; omega_arith) (by omega_arith)
   -- `G[0]` zeroed, and the arguments.
   obtain ⟨s₁, run₁, m₁, di₁, si₁, -, cx₁, g₁, rd₁, wr₁, x₁⟩ := finTextArgs_ok s he P.dat P.len
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
-  have lp : LoopPre s₁ D (W + BitVec.ofNat 64 512) r :=
+  obtain lp : LoopPre s₁ D (W + BitVec.ofNat 64 512) r :=
     ⟨si₁, di₁, cx₁, by omega_arith, by omega_arith, by rw [rd₁, wr₁]; exact P.rd, by rw [wr₁]; exact he.perm.wC (by omega_arith),
       dW (by omega_arith)⟩
   -- The copy.
   refine WP.seq (WP.mono (copyLoopX_ok s₁ lp) fun s₂ ⟨m₂, g₂, rd₂, wr₂, x₂⟩ => ?_)
-  have he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun g hg => by
+  obtain he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun g hg => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> exact g₁ _ (by decide) (by decide) (by decide) (by decide)) rd₁ wr₁
-  have he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁.keep (fun g hg => by
+  obtain he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁.keep (fun g hg => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> exact g₂ _ (by decide) (by decide)) rd₂ wr₂
-  have x₂' : ∀ q, q ≠ .xmm7 → s₂.xmm q = s.xmm q := fun q hq => by rw [x₂, x₁ q hq]
+  obtain x₂' : ∀ q, q ≠ .xmm7 → s₂.xmm q = s.xmm q := fun q hq => by rw [x₂, x₁ q hq]
   generalize hc : bytesAt s₁.mem D r = c at m₂
-  have hcl : c.length = r := by rw [← hc, length_bytesAt]
-  have f₁ : Frame [⟨W + BitVec.ofNat 64 512, 16⟩] s.mem s₁.mem := by
+  obtain hcl : c.length = r := by rw [← hc, length_bytesAt]
+  obtain f₁ : Frame [⟨W + BitVec.ofNat 64 512, 16⟩] s.mem s₁.mem := by
     rw [m₁]; exact writeBytes_frame' _ (List.length_replicate ..)
-  have f₂ : Frame [⟨W + BitVec.ofNat 64 512, r⟩] s₁.mem s₂.mem := by
+  obtain f₂ : Frame [⟨W + BitVec.ofNat 64 512, r⟩] s₁.mem s₂.mem := by
     rw [m₂]; exact writeBytes_frame' _ hcl
-  have F₂ : Frame [⟨W + BitVec.ofNat 64 512, 32⟩] s.mem s₂.mem := by
+  obtain F₂ : Frame [⟨W + BitVec.ofNat 64 512, 32⟩] s.mem s₂.mem := by
     refine (f₁.sub fun q hq => ?_).trans (f₂.sub fun q hq => ?_) <;>
       simp only [List.mem_singleton] at hq <;> subst hq <;>
       exact ⟨_, List.mem_singleton_self _, Region.sub_prefix (by omega_arith)⟩
-  have kW : ∀ {d k : Nat}, d + k ≤ 512 ∨ (544 ≤ d ∧ d + k ≤ 2560) →
+  obtain kW : ∀ {d k : Nat}, d + k ≤ 512 ∨ (544 ≤ d ∧ d + k ≤ 2560) →
       ∀ q ∈ [(⟨W + BitVec.ofNat 64 512, 32⟩ : Region)], (⟨W + BitVec.ofNat 64 d, k⟩ : Region).Disjoint q :=
     fun h q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact dWW (by omega_arith) (by omega_arith) (by decide)
-  have rW₂ : ∀ d, d + 8 ≤ 512 → s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
+  obtain rW₂ : ∀ d, d + 8 ≤ 512 → s₂.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun d h => F₂.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (kW (.inl h)) (by decide)
   -- The lengths block.
   obtain ⟨s₃, run₃, f₃, hL₃, g₃, rd₃, wr₃, x₃⟩ := finLens_ok s₂ he₂ (by rw [rW₂ 184 (by decide)]; exact P.alen)
     (by rw [rW₂ 192 (by decide)]; exact P.tlen)
   refine WP.of_runBlock ⟨s₃, run₃, ?_⟩
-  have he₃ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₃ := he₂.keep (fun g hg => by
+  obtain he₃ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₃ := he₂.keep (fun g hg => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> exact g₃ _ (by decide)) rd₃ wr₃
-  have F₃ : Frame [⟨W + BitVec.ofNat 64 512, 32⟩] s.mem s₃.mem :=
+  obtain F₃ : Frame [⟨W + BitVec.ofNat 64 512, 32⟩] s.mem s₃.mem :=
     F₂.trans (f₃.sub fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq
       exact ⟨_, List.mem_singleton_self _, Offset.sub _ (by decide) (by decide)⟩)
-  have hc' : c = bytesAt s.mem D r := by
+  obtain hc' : c = bytesAt s.mem D r := by
     rw [← hc, bytesAt_frame f₁ (fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact dW (by decide)) (by omega_arith)]
   -- `G[0]`: the ciphertext and zeros.
-  have z₁ : bytesAt s₁.mem (W + BitVec.ofNat 64 512 + BitVec.ofNat 64 r) (16 - r) = zeros (16 - r) := by
-    have e := bytesAt_add s₁.mem (W + BitVec.ofNat 64 512) r (16 - r)
-    have e16 : bytesAt s₁.mem (W + BitVec.ofNat 64 512) 16 = List.replicate 16 0 := by
+  obtain z₁ : bytesAt s₁.mem (W + BitVec.ofNat 64 512 + BitVec.ofNat 64 r) (16 - r) = zeros (16 - r) := by
+    obtain e := bytesAt_add s₁.mem (W + BitVec.ofNat 64 512) r (16 - r)
+    obtain e16 : bytesAt s₁.mem (W + BitVec.ofNat 64 512) 16 = List.replicate 16 0 := by
       rw [m₁]; exact bytesAt_writeBytes_self _ _ _ (by decide)
     rw [Nat.add_sub_cancel' (by omega_arith), e16, show List.replicate 16 (0 : Byte) = List.replicate r 0 ++
       List.replicate (16 - r) 0 by rw [List.replicate_append_replicate, Nat.add_sub_cancel' (by omega_arith)]] at e
     exact ((List.append_inj e (by rw [List.length_replicate, length_bytesAt])).2).symm
-  have hG0 : bytesAt s₃.mem (W + BitVec.ofNat 64 512) 16 = c ++ zeros (16 - r) := by
+  obtain hG0 : bytesAt s₃.mem (W + BitVec.ofNat 64 512) 16 = c ++ zeros (16 - r) := by
     rw [bytesAt_frame f₃ (fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq; exact dWW (.inl (by decide)) (by decide) (by decide))
       (by decide), ← Nat.add_sub_cancel' (show r ≤ 16 by omega_arith), bytesAt_add, Nat.add_sub_cancel' (by omega_arith), m₂]
-    have a₁ : bytesAt (writeBytes s₁.mem (W + BitVec.ofNat 64 512) c) (W + BitVec.ofNat 64 512) r = c := by
+    obtain a₁ : bytesAt (writeBytes s₁.mem (W + BitVec.ofNat 64 512) c) (W + BitVec.ofNat 64 512) r = c := by
       rw [← hcl]; exact bytesAt_writeBytes_self _ _ _ (by omega_arith)
-    have a₂ : bytesAt (writeBytes s₁.mem (W + BitVec.ofNat 64 512) c) (W + BitVec.ofNat 64 512 + BitVec.ofNat 64 r)
+    obtain a₂ : bytesAt (writeBytes s₁.mem (W + BitVec.ofNat 64 512) c) (W + BitVec.ofNat 64 512 + BitVec.ofNat 64 r)
         (16 - r) = bytesAt s₁.mem (W + BitVec.ofNat 64 512 + BitVec.ofNat 64 r) (16 - r) :=
       bytesAt_frame (writeBytes_frame' _ hcl) (fun q hq => by
           simp only [List.mem_singleton] at hq; subst hq
@@ -250,24 +250,24 @@ theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (Ctx
   intro Ctx W SP L R D n N al H x s hx he hH hR hdat hlen hn16 htl hN hal hd hDW X
   -- `H'` and `H'²`.
   have hX : VG.Proof.Gcm.X86_64.Stitch.PowersN np s.mem Ctx := X.1
-  have p0 := hX 0 (by have := hpn.1; omega_arith)
+  obtain p0 := hX 0 (by have := hpn.1; omega_arith)
   simp only [Nat.mul_zero, Nat.add_zero, Nat.zero_add] at p0
   rw [show ctxH s.mem Ctx = H by rw [ctxH_eq, hH]] at p0
   unfold tagP Impl.AesGcm.X86_64.FastOpen.lenTest
   refine WP.seq (WP.mono (Fast.finPowP_ok hF s he.r13 (in_off X.2 (show 272 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64)))
     (in_off X.2 (show 256 + 16 ≤ 1024 by decide) (by exact (by decide : (1024 : Nat) < 2 ^ 64))) p0.2 p0.1) fun s₁ ⟨x0, x1, h1, h2, o₁⟩ => ?_)
-  have he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun g hg => o₁.gpr _ (by
+  obtain he₁ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₁ := he.keep (fun g hg => o₁.gpr _ (by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> decide)) o₁.rd o₁.wr
   have m₁ := o₁.mem
   -- The test.
   refine WP.seq (WP.mono (finTest_ok (r := n) (by omega_arith) s₁ he₁ (by rw [m₁]; exact hlen))
     fun s₂ ⟨z₂, g₂, m₂, rd₂, wr₂, x₂⟩ => ?_)
-  have he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁.keep (fun g hg => by
+  obtain he₂ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₂ := he₁.keep (fun g hg => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> exact g₂ _ (by decide)) rd₂ wr₂
-  have M₂ : s₂.mem = s.mem := by rw [m₂, m₁]
-  have TP : TagPre Ctx W SP H al N n D s₂ :=
+  obtain M₂ : s₂.mem = s.mem := by rw [m₂, m₁]
+  obtain TP : TagPre Ctx W SP H al N n D s₂ :=
     { env := he₂
       x0 := by rw [x₂]; exact x0
       x1 := by rw [x₂]; exact x1
@@ -283,28 +283,28 @@ theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (Ctx
   -- The blocks `GHASH` reads, stored before the keystream.
   refine WP.seq (WP.mono (Q := TagMid Ctx W SP al N n D s₂) (WP.ite (decide (n = 0)) (eval_e z₂)
     (fun h0 => prepNo_ok TP (of_decide_eq_true h0)) (fun h0 => prepTail_ok TP (of_decide_eq_false h0))) fun u U => ?_)
-  have FU : Frame [⟨W + BitVec.ofNat 64 512, 32⟩] s.mem u.mem := by rw [← M₂]; exact U.frame
-  have rU : ∀ d, d + 8 ≤ 512 → u.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
+  obtain FU : Frame [⟨W + BitVec.ofNat 64 512, 32⟩] s.mem u.mem := by rw [← M₂]; exact U.frame
+  obtain rU : ∀ d, d + 8 ≤ 512 → u.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun d h => FU.readW (r := ⟨W + BitVec.ofNat 64 d, 8⟩) (Region.contains_self _ _) (fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact Offset.disjoint W (.inl h) (by omega_arith) (by decide))
       (by decide)
   -- The keystream of `J₀` and of the counter block.
   refine WP.seq (WP.mono (hks u U.env (by rw [rU 176 (by decide)]; exact hR.1) hR.2)
     fun s₃ ⟨k₀, k₁, fK, g₃, rd₃, wr₃, x₃⟩ => ?_)
-  have he₃ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₃ := U.env.keep (fun g hg => by
+  obtain he₃ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₃ := U.env.keep (fun g hg => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> exact g₃ _ (by decide) (by decide) (by decide)) rd₃ wr₃
   -- `J₀` incremented.
   obtain ⟨s₄, run₄, j₄, fJ, gJ, rdJ, wrJ, xJ⟩ := incJ_ok s₃ he₃
   refine WP.seq (WP.of_runBlock ⟨s₄, run₄, ?_⟩)
-  have he₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₄ := he₃.keep (fun g hg => by
+  obtain he₄ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₄ := he₃.keep (fun g hg => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> exact gJ _ (by decide)) rdJ wrJ
-  have e28 : W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12 = W + BitVec.ofNat 64 28 := add_ofNat_ofNat W 16 12
-  have FK : Frame [⟨W + BitVec.ofNat 64 1024, 64⟩, ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] u.mem s₄.mem :=
+  obtain e28 : W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12 = W + BitVec.ofNat 64 28 := add_ofNat_ofNat W 16 12
+  obtain FK : Frame [⟨W + BitVec.ofNat 64 1024, 64⟩, ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] u.mem s₄.mem :=
     (fK.sub fun q hq => ⟨q, by simp only [List.mem_singleton] at hq; simp [hq], fun _ h => h⟩).trans
       (fJ.sub fun q hq => ⟨q, by simp only [List.mem_singleton] at hq; simp [hq], fun _ h => h⟩)
-  have rK : ∀ d, 32 ≤ d → d + 8 ≤ 512 →
+  obtain rK : ∀ d, 32 ≤ d → d + 8 ≤ 512 →
       s₄.mem.readW (W + BitVec.ofNat 64 d) 64 = s.mem.readW (W + BitVec.ofNat 64 d) 64 :=
     fun d h₁ h₂ => by
       rw [← rU d h₂]
@@ -317,13 +317,13 @@ theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (Ctx
   -- The test again.
   refine WP.seq (WP.mono (finTest_ok (r := n) (by omega_arith) s₄ he₄ (by rw [rK 208 (by decide) (by decide)]; exact hlen))
     fun s₅ ⟨z₅, g₅, m₅, rd₅, wr₅, x₅⟩ => ?_)
-  have he₅ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₅ := he₄.keep (fun g hg => by
+  obtain he₅ : Env Ctx (W + BitVec.ofNat 64 16) W SP s₅ := he₄.keep (fun g hg => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hg
     rcases hg with rfl | rfl | rfl | rfl <;> exact g₅ _ (by decide)) rd₅ wr₅
-  have xx : ∀ q, q ≠ .xmm5 → q ≠ .xmm7 → q ≠ .xmm8 → q ≠ .xmm13 → s₅.xmm q = s₁.xmm q := fun q a b c d => by
+  obtain xx : ∀ q, q ≠ .xmm5 → q ≠ .xmm7 → q ≠ .xmm8 → q ≠ .xmm13 → s₅.xmm q = s₁.xmm q := fun q a b c d => by
     rw [x₅, xJ, x₃ q a b c d, U.xmm q b, x₂]
   -- The regions of the state and of `W` that the code writes.
-  have dS : ∀ {a k : Nat}, a + k ≤ 80 → a + k ≤ 12 ∨ 16 ≤ a →
+  obtain dS : ∀ {a k : Nat}, a + k ≤ 80 → a + k ≤ 12 ∨ 16 ≤ a →
       ∀ q ∈ [(⟨W + BitVec.ofNat 64 1024, 64⟩ : Region), ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] ++
         [⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 512, 32⟩],
       (⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 a, k⟩ : Region).Disjoint q := fun ha h q hq => by
@@ -333,14 +333,14 @@ theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (Ctx
     · exact L.st_st (by omega_arith) ha (by decide)
     · exact L.st_w ha (.inr ⟨by decide, by decide⟩)
     · exact L.st_w ha (.inr ⟨by decide, by decide⟩)
-  have F₅ : Frame ([⟨W + BitVec.ofNat 64 1024, 64⟩, ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] ++
+  obtain F₅ : Frame ([⟨W + BitVec.ofNat 64 1024, 64⟩, ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] ++
       [⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 512, 32⟩]) s.mem s₅.mem := by
     rw [m₅]
     refine (FU.sub fun q hq => ?_).trans (FK.sub fun q hq => ?_)
     · simp only [List.mem_singleton] at hq; subst hq; exact ⟨_, by simp, fun _ h => h⟩
     · exact ⟨q, List.mem_append_left _ hq, fun _ h => h⟩
   -- The blocks `GHASH` reads, and the keystream of `J₀`, after the keystream.
-  have bK : ∀ {d : Nat}, d = 512 ∨ d = 528 →
+  obtain bK : ∀ {d : Nat}, d = 512 ∨ d = 528 →
       blockAt s₅.mem (W + BitVec.ofNat 64 d) = blockAt u.mem (W + BitVec.ofNat 64 d) := fun h => by
     rw [m₅]
     refine blockAt_frame FK fun q hq => ?_
@@ -348,20 +348,20 @@ theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (Ctx
     rcases hq with rfl | rfl
     · exact Offset.disjoint W (.inl (by omega_arith)) (by omega_arith) (by decide)
     · rw [e28]; exact Offset.disjoint W (.inr (by omega_arith)) (by omega_arith) (by omega_arith)
-  have hCtx : ciphOf u.mem Ctx R = ciphOf s.mem Ctx R := by
+  obtain hCtx : ciphOf u.mem Ctx R = ciphOf s.mem Ctx R := by
     simp only [ciphOf]
     rw [bytesAt_frame FU (fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq
       exact L.cw'.sub_left (Region.sub_prefix (by rcases hR.2 with h | h | h <;> subst h <;> decide))
         |>.sub_right (Lay.wSub (by decide))) (by rcases hR.2 with h | h | h <;> subst h <;> decide)]
-  have hK₀ : blockAt s₅.mem (W + BitVec.ofNat 64 1024) = ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16)) := by
+  obtain hK₀ : blockAt s₅.mem (W + BitVec.ofNat 64 1024) = ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16)) := by
     rw [m₅, blockAt_frame fJ (fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq
       exact (L.st_w (a := 12) (n := 4) (d := 1024) (k := 16) (by decide) (.inr ⟨by decide, by decide⟩)).symm), k₀,
       hCtx, blockAt_frame FU (fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq
         simpa using L.st_w (a := 0) (n := 16) (d := 512) (k := 32) (by decide) (.inr ⟨by decide, by decide⟩))]
-  have hY : Absorbed s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H x →
+  obtain hY : Absorbed s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 16) (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 32) H x →
       blockAt s₅.mem (yA W) = ghash H (blocks x) := fun hab => by
     rw [blockAt_frame F₅ (fun q hq => dS (a := 16) (k := 16) (by decide) (.inr (by decide)) q hq),
       hab.1, Proof.Gcm.whole_of_mod hx, List.take_length]
@@ -385,24 +385,24 @@ theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (Ctx
               [ofBytes (lensBlock al N)] ^^^ ciphOf s.mem Ctx R (blockAt s.mem (W + BitVec.ofNat 64 16))))) ∧
         KOk Ctx W R t := by
     intro t et rdt wrt ft tt
-    have rd' : t.rd = s.rd := by rw [rdt, rd₅, rdJ, rd₃, U.rd, rd₂, o₁.rd]
-    have wr' : t.wr = s.wr := by rw [wrt, wr₅, wrJ, wr₃, U.wr, wr₂, o₁.wr]
-    have FT : Frame ([⟨W + BitVec.ofNat 64 1024, 64⟩, ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] ++
+    obtain rd' : t.rd = s.rd := by rw [rdt, rd₅, rdJ, rd₃, U.rd, rd₂, o₁.rd]
+    obtain wr' : t.wr = s.wr := by rw [wrt, wr₅, wrJ, wr₃, U.wr, wr₂, o₁.wr]
+    obtain FT : Frame ([⟨W + BitVec.ofNat 64 1024, 64⟩, ⟨W + BitVec.ofNat 64 16 + BitVec.ofNat 64 12, 4⟩] ++
         [⟨W + BitVec.ofNat 64 112, 16⟩, ⟨W + BitVec.ofNat 64 512, 32⟩]) s.mem t.mem :=
       F₅.trans (ft.sub fun q hq => by
         simp only [List.mem_singleton] at hq; subst hq; exact ⟨_, by simp, fun _ h => h⟩)
-    have cbT : blockAt t.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
+    obtain cbT : blockAt t.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
         blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) :=
       blockAt_frame FT fun q hq => dS (by decide) (.inr (by decide)) q hq
-    have e40 : W + BitVec.ofNat 64 1024 + BitVec.ofNat 64 16 = W + BitVec.ofNat 64 1040 := add_ofNat_ofNat W 1024 16
-    have kT : KOk Ctx W R t := by
+    obtain e40 : W + BitVec.ofNat 64 1024 + BitVec.ofNat 64 16 = W + BitVec.ofNat 64 1040 := add_ofNat_ofNat W 1024 16
+    obtain kT : KOk Ctx W R t := by
       unfold KOk
-      have cU : blockAt u.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
+      obtain cU : blockAt u.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) =
           blockAt s.mem (W + BitVec.ofNat 64 16 + BitVec.ofNat 64 48) :=
         blockAt_frame FU (fun q hq => by
           simp only [List.mem_singleton] at hq; subst hq
           exact L.st_w (a := 48) (n := 16) (d := 512) (k := 32) (by decide) (.inr ⟨by decide, by decide⟩))
-      have kt : blockAt t.mem (W + BitVec.ofNat 64 1024 + BitVec.ofNat 64 16) =
+      obtain kt : blockAt t.mem (W + BitVec.ofNat 64 1024 + BitVec.ofNat 64 16) =
           blockAt s₃.mem (W + BitVec.ofNat 64 1024 + BitVec.ofNat 64 16) := by
         rw [e40, blockAt_frame ft (fun q hq => by
             simp only [List.mem_singleton] at hq; subst hq
@@ -410,7 +410,7 @@ theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (Ctx
           blockAt_frame fJ (fun q hq => by
             simp only [List.mem_singleton] at hq; subst hq; rw [e28]
             exact Offset.disjoint W (.inr (by decide)) (by decide) (by decide))]
-      have cT : ciphOf t.mem Ctx R = ciphOf s.mem Ctx R :=
+      obtain cT : ciphOf t.mem Ctx R = ciphOf s.mem Ctx R :=
         ciph_frame FT (fun q hq => by
           simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hq
           rcases hq with rfl | rfl | rfl | rfl
@@ -439,25 +439,25 @@ theorem tagP_okP (hF : ShortFacts) {ks : Prog isa} (hks : KsOk ks) : TagOkP (Ctx
         blockAt_frame FU (fun q hq => by
           simp only [List.mem_singleton] at hq; subst hq
           simpa using L.st_w (a := 0) (n := 16) (d := 512) (k := 32) (by decide) (.inr ⟨by decide, by decide⟩))]
-  have x0₅ : s₅.xmm .xmm0 = revMask := by rw [xx _ (by decide) (by decide) (by decide) (by decide)]; exact x0
-  have x1₅ : s₅.xmm .xmm1 = poly := by rw [xx _ (by decide) (by decide) (by decide) (by decide)]; exact x1
+  obtain x0₅ : s₅.xmm .xmm0 = revMask := by rw [xx _ (by decide) (by decide) (by decide) (by decide)]; exact x0
+  obtain x1₅ : s₅.xmm .xmm1 = poly := by rw [xx _ (by decide) (by decide) (by decide) (by decide)]; exact x1
   refine WP.ite (decide (n = 0)) (eval_e z₅) (fun h0 => ?_) (fun h0 => ?_)
   · -- No bytes left.
-    have h0' : n = 0 := of_decide_eq_true h0
+    obtain h0' : n = 0 := of_decide_eq_true h0
     subst h0'
     refine WP.mono (endNo_ok (H := H) he₅ x0₅ x1₅ (by rw [xx _ (by decide) (by decide) (by decide) (by decide)]; exact h1))
       fun t ⟨het, rdt, wrt, ft, tagt⟩ => fin t het rdt wrt ft fun hab => ?_
     rw [bytesAt_toBytes', tagt, hY hab, hK₀, bK (.inr rfl), U.lens, show bytesAt s.mem D 0 = [] from rfl,
       List.append_nil, Proof.Gcm.padLen_of_mod hx, show zeros 0 = [] from rfl, List.append_nil]
   · -- Bytes left.
-    have h0' : n ≠ 0 := of_decide_eq_false h0
+    obtain h0' : n ≠ 0 := of_decide_eq_false h0
     refine WP.mono (endTail_ok (H := H) he₅ x0₅ x1₅ (by
         rw [xx .xmm3 (by decide) (by decide) (by decide) (by decide),
           xx .xmm6 (by decide) (by decide) (by decide) (by decide)]; exact h2))
       fun t ⟨het, rdt, wrt, ft, tagt⟩ => fin t het rdt wrt ft fun hab => ?_
-    have hpl : padLen (x ++ bytesAt s.mem D n).length = 16 - n := by
+    obtain hpl : padLen (x ++ bytesAt s.mem D n).length = 16 - n := by
       simp only [padLen, List.length_append, length_bytesAt]; omega_arith
-    have bs := Proof.Gcm.blocks_single (bs := bytesAt s.mem D n ++ zeros (16 - n))
+    obtain bs := Proof.Gcm.blocks_single (bs := bytesAt s.mem D n ++ zeros (16 - n))
       (by rw [List.length_append, length_bytesAt, Proof.Gcm.length_zeros]; omega_arith)
     rw [bytesAt_toBytes', tagt, hY hab, hK₀, bK (.inl rfl), bK (.inr rfl), U.tail h0', U.lens, M₂, hpl,
       List.append_assoc, Proof.Gcm.blocks_append hx, bs, ghash_snoc, ← Proof.Gcm.ghashFrom_append]

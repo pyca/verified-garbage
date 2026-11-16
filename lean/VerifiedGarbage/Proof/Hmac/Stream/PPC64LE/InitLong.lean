@@ -86,7 +86,7 @@ variable {H : Hash} (hH : HashOK H) {s₀ : State}
 /-- A key longer than a block and its digest make the same block key. -/
 theorem blockKey_digest {k : List Byte} (hk : H.B < k.length) :
     blockKey hH.SH.H (hH.SH.H.hash k) = blockKey hH.SH.H k := by
-  have hl := hH.hashLen k
+  obtain hl := hH.hashLen k
   have := hH.hDB
   simp only [blockKey, hH.hB, hl, show ¬ (H.B < H.D) by omega_arith, ite_false, hk, ite_true]
 
@@ -124,7 +124,7 @@ theorem Vars.of_pres {s s' : State} (h : Vars (H := H) s₀ s) (hc : ∀ r ∈ p
 theorem Vars.of_keep {s s' : State} (h : Vars (H := H) s₀ s)
     (hc : ∀ r, r ≠ .r3 → r ≠ .r4 → r ≠ .r5 → r ≠ .r6 → r ≠ .r7 → s'.gpr r = s.gpr r) :
     Vars (H := H) s₀ s' := by
-  have k : ∀ r ∈ [Reg.r2, .r14, .r15, .r16, .r17, .r18, .r19, .r26, .r27, .r28, .r29, .r30, .r31, .r20,
+  obtain k : ∀ r ∈ [Reg.r2, .r14, .r15, .r16, .r17, .r18, .r19, .r26, .r27, .r28, .r29, .r30, .r31, .r20,
       .r21, .r22, .r23, .r24, .r25], s'.gpr r = s.gpr r := by
     intro r hr
     exact hc r (by revert r; decide) (by revert r; decide) (by revert r; decide) (by revert r; decide)
@@ -185,24 +185,24 @@ theorem correctMain (hp : Pre H s₀) :
   have hN : 0 < H.N ∧ H.N ≤ 64 := hH.dims.N
   have hW : H.W % 8 = 0 ∧ H.W ≤ 1024 := hH.dims.so
   have hB : H.B = 64 ∨ H.B = 128 := hH.dims.B
-  have hB' : H.B ≤ 128 := by omega_arith
+  obtain hB' : H.B ≤ 128 := by omega_arith
   have hS : H.S = H.N + H.B := rfl
   have hD := hH.hD64
-  have hl := lay hH
-  have hkB : kl s₀ < 2 ^ 64 := (s₀.gpr .r6).isLt
+  obtain hl := lay hH
+  obtain hkB : kl s₀ < 2 ^ 64 := (s₀.gpr .r6).isLt
   have := hp.sp96
-  have hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 96) := below_sub (by omega_arith) (by omega_arith)
-  have hlst : H.lst + H.S ≤ H.lbytes := by
+  obtain hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 96) := below_sub (by omega_arith) (by omega_arith)
+  obtain hlst : H.lst + H.S ≤ H.lbytes := by
     have := hl.dgsv; rw [hl.lbytes, hl.lst]; rw [hl.ldg] at this; simp only [Hash.S] at *; omega_arith
-  have hW' : H.W ≤ H.lbytes := by have := hl.dgsv; rw [hl.lbytes]; rw [hl.ldg] at this; omega_arith
+  obtain hW' : H.W ≤ H.lbytes := by have := hl.dgsv; rw [hl.lbytes]; rw [hl.ldg] at this; omega_arith
   let all : List Region := [inR H s₀, outR H s₀, scR H s₀, below s₀.sp 96]
-  have key_keep : ∀ m, Frame all s₀.mem m → bytesAt m (kp s₀) (kl s₀) = K s₀ := by
+  obtain key_keep : ∀ m, Frame all s₀.mem m → bytesAt m (kp s₀) (kl s₀) = K s₀ := by
     intro m hf
     refine Proof.Sha256.Stream.bytesAt_congr fun i hi => hf.bytes (R := kR s₀) ?_ (by simp; omega_arith) hi
     simp only [all, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl)
     exacts [hp.k_i, hp.k_o, hp.k_s, hp.sk.symm]
-  have dsv : ∀ R : Region, R ∈ all → R ≠ scR H s₀ → R.Disjoint (svR H s₀) := by
+  obtain dsv : ∀ R : Region, R ∈ all → R ≠ scR H s₀ → R.Disjoint (svR H s₀) := by
     simp only [all, List.mem_cons, List.not_mem_nil, or_false]
     rintro R (rfl | rfl | rfl | rfl) hne
     · exact hp.i_s.sub_right (svR_sub hl _)
@@ -218,13 +218,13 @@ theorem correctMain (hp : Pre H s₀) :
     fun s₁ g₁ rd₁ wr₁ sp₁ m₁ => ?_)
   refine wp_mov fun s₂ u₂ => wp_mov fun s₃ u₃ => wp_mov fun s₄ u₄ => wp_mov fun s₅ u₅ =>
     wp_mov fun s₆ u₆ => wp_addi (by rw [hl.lst]; omega_arith) fun s₇ u₇ => wp_mov fun s₈ u₈ => WP.block_nil ?_
-  have hr₈ : Regs s₀ s₈ :=
+  obtain hr₈ : Regs s₀ s₈ :=
     ⟨by rw [u₈.rd, u₇.rd, u₆.rd, u₅.rd, u₄.rd, u₃.rd, u₂.rd, rd₁],
       by rw [u₈.wr, u₇.wr, u₆.wr, u₅.wr, u₄.wr, u₃.wr, u₂.wr, wr₁],
       by rw [u₈.sp, u₇.sp, u₆.sp, u₅.sp, u₄.sp, u₃.sp, u₂.sp, sp₁]⟩
-  have m₈ : s₈.mem = saveMem H.lsv s₀.mem (scr s₀) s₀.gpr := by
+  obtain m₈ : s₈.mem = saveMem H.lsv s₀.mem (scr s₀) s₀.gpr := by
     rw [u₈.mem, u₇.mem, u₆.mem, u₅.mem, u₄.mem, u₃.mem, u₂.mem, m₁]
-  have v₈ : Vars (H := H) s₀ s₈ := by
+  obtain v₈ : Vars (H := H) s₀ s₈ := by
     refine ⟨?_, ?_, ?_, ?_, ?_, ?_, fun r hr => ?_⟩
     · simp only [u₈.other, u₇.gpr, u₆.other, u₅.other, u₄.other, u₃.other, u₂.other, g₁, ne_eq,
         reduceCtorEq, not_false_eq_true]
@@ -241,22 +241,22 @@ theorem correctMain (hp : Pre H s₀) :
     · rw [u₈.other r (by revert r; decide), u₇.other r (by revert r; decide), u₆.other r (by revert r; decide),
         u₅.other r (by revert r; decide), u₄.other r (by revert r; decide), u₃.other r (by revert r; decide),
         u₂.other r (by revert r; decide), g₁]
-  have h3₈ : s₈.gpr .r3 = scr s₀ + BitVec.ofNat 64 H.lst := by
+  obtain h3₈ : s₈.gpr .r3 = scr s₀ + BitVec.ofNat 64 H.lst := by
     rw [u₈.gpr]; exact (u₈.other _ (by decide)).symm.trans v₈.r20
-  have fS : Frame [⟨scr s₀, H.lsv + 48⟩] s₀.mem s₈.mem := by rw [m₈]; exact saveMem_frame hH.dims.lso _ _ _
-  have f₈ : Frame all s₀.mem s₈.mem :=
+  obtain fS : Frame [⟨scr s₀, H.lsv + 48⟩] s₀.mem s₈.mem := by rw [m₈]; exact saveMem_frame hH.dims.lso _ _ _
+  obtain f₈ : Frame all s₀.mem s₈.mem :=
     fS.sub fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr
       exact ⟨scR H s₀, by simp [all], Region.sub_prefix (by rw [hl.lbytes])⟩
-  have sv₈ : Saved H.lsv (scr s₀) s₀.gpr s₈.mem := by rw [m₈]; exact saveMem_saved hH.dims.lso _ _ _
-  have sfS : ∀ R : Region, Region.Sub R (scR H s₀) → R.Disjoint (inR H s₀) ∧ R.Disjoint (outR H s₀) ∧
+  obtain sv₈ : Saved H.lsv (scr s₀) s₀.gpr s₈.mem := by rw [m₈]; exact saveMem_saved hH.dims.lso _ _ _
+  obtain sfS : ∀ R : Region, Region.Sub R (scR H s₀) → R.Disjoint (inR H s₀) ∧ R.Disjoint (outR H s₀) ∧
       R.Disjoint (kR s₀) ∧ (below s₀.sp 96).Disjoint R := fun R h =>
     ⟨hp.i_s.symm.sub_left h, hp.o_s.symm.sub_left h, hp.k_s.symm.sub_left h, hp.ss.sub_right h⟩
-  have saved_st : ∀ {m m' : Mem}, Saved H.lsv (scr s₀) s₀.gpr m → ∀ {rs : List Region}, Frame rs m m' →
+  obtain saved_st : ∀ {m m' : Mem}, Saved H.lsv (scr s₀) s₀.gpr m → ∀ {rs : List Region}, Frame rs m m' →
       (∀ r ∈ rs, Region.Disjoint (svR H s₀) r) → Saved H.lsv (scr s₀) s₀.gpr m' := by
     intro m m' h rs hf hd p hp'
     rw [← h p hp']
-    have ho := saved_offset hp'
+    obtain ho := saved_offset hp'
     refine hf.readW (r := ⟨scr s₀ + BitVec.ofNat 64 p.2, 8⟩) (Region.contains_self _ _) (fun r hr => ?_) (by decide)
     exact (hd r hr).sub_left (Offset.sub (scr s₀) (show H.lsv ≤ p.2 from ho.1) (show p.2 + 8 ≤ H.lsv + 48 from ho.2))
   -- The streaming state the key is hashed in.
@@ -270,14 +270,14 @@ theorem correctMain (hp : Pre H s₀) :
           exact cover_off (R := scR H s₀) (by simp) (by exact hlst))
     fun s₉ rd₉ wr₉ sp₉ f₉ cs₉ hr₉ => ?_)
   rw [hr₈.sp] at f₉
-  have g₉ : Regs s₀ s₉ := ⟨rd₉.trans hr₈.rd, wr₉.trans hr₈.wr, sp₉.trans hr₈.sp⟩
-  have v₉ : Vars (H := H) s₀ s₉ := v₈.of_pres cs₉
-  have f₉' : Frame all s₀.mem s₉.mem := f₈.trans (f₉.sub fun r hr => by
+  obtain g₉ : Regs s₀ s₉ := ⟨rd₉.trans hr₈.rd, wr₉.trans hr₈.wr, sp₉.trans hr₈.sp⟩
+  obtain v₉ : Vars (H := H) s₀ s₉ := v₈.of_pres cs₉
+  obtain f₉' : Frame all s₀.mem s₉.mem := f₈.trans (f₉.sub fun r hr => by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact ⟨scR H s₀, by simp [all], stR_sub hl _⟩
     · exact ⟨below s₀.sp 96, by simp [all], hsub⟩)
-  have sv₉ : Saved H.lsv (scr s₀) s₀.gpr s₉.mem := saved_st sv₈ f₉ (by
+  obtain sv₉ : Saved H.lsv (scr s₀) s₀.gpr s₉.mem := saved_st sv₈ f₉ (by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl)
     · exact (st_sv hl _).symm
@@ -285,16 +285,16 @@ theorem correctMain (hp : Pre H s₀) :
   -- Absorb the key into it.
   refine WP.seq (wp_mov fun s₁₀ u₁₀ => wp_li (by decide) fun s₁₁ u₁₁ => wp_mov fun s₁₂ u₁₂ =>
     wp_mov fun s₁₃ u₁₃ => wp_mov fun s₁₄ u₁₄ => WP.block_nil ?_)
-  have g₁₄ : Regs s₀ s₁₄ :=
+  obtain g₁₄ : Regs s₀ s₁₄ :=
     ⟨by rw [u₁₄.rd, u₁₃.rd, u₁₂.rd, u₁₁.rd, u₁₀.rd, g₉.rd], by rw [u₁₄.wr, u₁₃.wr, u₁₂.wr, u₁₁.wr, u₁₀.wr, g₉.wr],
       by rw [u₁₄.sp, u₁₃.sp, u₁₂.sp, u₁₁.sp, u₁₀.sp, g₉.sp]⟩
-  have m₁₄ : s₁₄.mem = s₉.mem := by rw [u₁₄.mem, u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem]
-  have v₁₄ : Vars (H := H) s₀ s₁₄ := v₉.of_keep fun r a b c d e => by
+  obtain m₁₄ : s₁₄.mem = s₉.mem := by rw [u₁₄.mem, u₁₃.mem, u₁₂.mem, u₁₁.mem, u₁₀.mem]
+  obtain v₁₄ : Vars (H := H) s₀ s₁₄ := v₉.of_keep fun r a b c d e => by
     rw [u₁₄.other r e, u₁₃.other r d, u₁₂.other r c, u₁₁.other r b, u₁₀.other r a]
-  have dSW : Region.Disjoint (stR H s₀) ⟨scr s₀, H.W⟩ :=
+  obtain dSW : Region.Disjoint (stR H s₀) ⟨scr s₀, H.W⟩ :=
     (wI_st hl _).symm.sub_right (Region.sub_prefix (by omega_arith))
-  have dKS := (sfS _ (stR_sub hl _)).2.2.1.symm
-  have dKW := (sfS _ (wR_sub hl _)).2.2.1.symm
+  obtain dKS := (sfS _ (stR_sub hl _)).2.2.1.symm
+  obtain dKW := (sfS _ (wR_sub hl _)).2.2.1.symm
   refine WP.seq (hH.callUpd_ok (st := scr s₀ + BitVec.ofNat 64 H.lst) (dat := kp s₀) (scr := scr s₀)
     (len := kl s₀)
     (by rw [u₁₄.other _ (by decide), u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.other _ (by decide),
@@ -326,13 +326,13 @@ theorem correctMain (hp : Pre H s₀) :
       · exact cover_pre (R := scR H s₀) (by simp) (by exact hW'))
     fun s₁₅ rd₁₅ wr₁₅ sp₁₅ f₁₅ cs₁₅ hup₁₅ => ?_)
   rw [g₁₄.sp] at f₁₅
-  have g₁₅ : Regs s₀ s₁₅ := ⟨rd₁₅.trans g₁₄.rd, wr₁₅.trans g₁₄.wr, sp₁₅.trans g₁₄.sp⟩
-  have v₁₅ : Vars (H := H) s₀ s₁₅ := v₁₄.of_pres cs₁₅
-  have hrK : hH.SH.Repr s₁₅.mem (scr s₀ + BitVec.ofNat 64 H.lst) (K s₀) := by
+  obtain g₁₅ : Regs s₀ s₁₅ := ⟨rd₁₅.trans g₁₄.rd, wr₁₅.trans g₁₄.wr, sp₁₅.trans g₁₄.sp⟩
+  obtain v₁₅ : Vars (H := H) s₀ s₁₅ := v₁₄.of_pres cs₁₅
+  obtain hrK : hH.SH.Repr s₁₅.mem (scr s₀ + BitVec.ofNat 64 H.lst) (K s₀) := by
     have := hup₁₅ [] (by rw [m₁₄]; exact hr₉) (by
       rw [u₁₄.other _ (by decide), u₁₃.other _ (by decide), u₁₂.other _ (by decide), u₁₁.gpr]; rfl)
     rwa [List.nil_append, m₁₄, key_keep _ f₉'] at this
-  have f₁₅' : Frame all s₀.mem s₁₅.mem := f₉'.trans (by
+  obtain f₁₅' : Frame all s₀.mem s₁₅.mem := f₉'.trans (by
     rw [← m₁₄]
     exact f₁₅.sub fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -340,7 +340,7 @@ theorem correctMain (hp : Pre H s₀) :
       · exact ⟨scR H s₀, by simp [all], stR_sub hl _⟩
       · exact ⟨scR H s₀, by simp [all], wR_sub hl _⟩
       · exact ⟨below s₀.sp 96, by simp [all], hsub⟩)
-  have sv₁₅ : Saved H.lsv (scr s₀) s₀.gpr s₁₅.mem := saved_st (by rw [m₁₄]; exact sv₉) f₁₅ (by
+  obtain sv₁₅ : Saved H.lsv (scr s₀) s₀.gpr s₁₅.mem := saved_st (by rw [m₁₄]; exact sv₉) f₁₅ (by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl)
     · exact (st_sv hl _).symm
@@ -349,14 +349,14 @@ theorem correctMain (hp : Pre H s₀) :
   -- The key's digest.
   refine WP.seq (wp_mov fun s₁₆ u₁₆ => wp_mov fun s₁₇ u₁₇ => wp_addi (by rw [hl.ldg]; omega_arith) fun s₁₈ u₁₈ =>
     wp_mov fun s₁₉ u₁₉ => WP.block_nil ?_)
-  have g₁₉ : Regs s₀ s₁₉ :=
+  obtain g₁₉ : Regs s₀ s₁₉ :=
     ⟨by rw [u₁₉.rd, u₁₈.rd, u₁₇.rd, u₁₆.rd, g₁₅.rd], by rw [u₁₉.wr, u₁₈.wr, u₁₇.wr, u₁₆.wr, g₁₅.wr],
       by rw [u₁₉.sp, u₁₈.sp, u₁₇.sp, u₁₆.sp, g₁₅.sp]⟩
-  have m₁₉ : s₁₉.mem = s₁₅.mem := by rw [u₁₉.mem, u₁₈.mem, u₁₇.mem, u₁₆.mem]
-  have v₁₉ : Vars (H := H) s₀ s₁₉ := v₁₅.of_keep fun r a b c d _ => by
+  obtain m₁₉ : s₁₉.mem = s₁₅.mem := by rw [u₁₉.mem, u₁₈.mem, u₁₇.mem, u₁₆.mem]
+  obtain v₁₉ : Vars (H := H) s₀ s₁₉ := v₁₅.of_keep fun r a b c d _ => by
     rw [u₁₉.other r d, u₁₈.other r c, u₁₇.other r b, u₁₆.other r a]
-  have dSD : Region.Disjoint (stR H s₀) (dgR H s₀) := st_dg hl _
-  have dDW : Region.Disjoint (dgR H s₀) ⟨scr s₀, H.W⟩ :=
+  obtain dSD : Region.Disjoint (stR H s₀) (dgR H s₀) := st_dg hl _
+  obtain dDW : Region.Disjoint (dgR H s₀) ⟨scr s₀, H.W⟩ :=
     (wI_dg hl _).symm.sub_right (Region.sub_prefix (by omega_arith))
   refine WP.seq (hH.callFin_ok (st := scr s₀ + BitVec.ofNat 64 H.lst) (o := scr s₀ + BitVec.ofNat 64 H.ldg)
     (scr := scr s₀)
@@ -385,13 +385,13 @@ theorem correctMain (hp : Pre H s₀) :
       · exact cover_pre (R := scR H s₀) (by simp) (by exact hW'))
     fun s₂₀ rd₂₀ wr₂₀ sp₂₀ f₂₀ cs₂₀ hfin₂₀ => ?_)
   rw [g₁₉.sp] at f₂₀
-  have g₂₀ : Regs s₀ s₂₀ := ⟨rd₂₀.trans g₁₉.rd, wr₂₀.trans g₁₉.wr, sp₂₀.trans g₁₉.sp⟩
-  have v₂₀ : Vars (H := H) s₀ s₂₀ := v₁₉.of_pres cs₂₀
-  have hdig : bytesAt s₂₀.mem (scr s₀ + BitVec.ofNat 64 H.ldg) H.D = hH.SH.H.hash (K s₀) := by
+  obtain g₂₀ : Regs s₀ s₂₀ := ⟨rd₂₀.trans g₁₉.rd, wr₂₀.trans g₁₉.wr, sp₂₀.trans g₁₉.sp⟩
+  obtain v₂₀ : Vars (H := H) s₀ s₂₀ := v₁₉.of_pres cs₂₀
+  obtain hdig : bytesAt s₂₀.mem (scr s₀ + BitVec.ofNat 64 H.ldg) H.D = hH.SH.H.hash (K s₀) := by
     rw [bytesAt_take _ _ hH.hDF, hfin₂₀ _ (by rw [m₁₉]; exact hrK) (by simp [bytesAt]; omega_arith) (by
       rw [u₁₉.other _ (by decide), u₁₈.other _ (by decide), u₁₇.gpr, u₁₆.other _ (by decide), v₁₅.r24]
       simp [bytesAt]), hH.hashTake]
-  have f₂₀' : Frame all s₀.mem s₂₀.mem := f₁₅'.trans (by
+  obtain f₂₀' : Frame all s₀.mem s₂₀.mem := f₁₅'.trans (by
     rw [← m₁₉]
     exact f₂₀.sub fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -400,7 +400,7 @@ theorem correctMain (hp : Pre H s₀) :
       · exact ⟨scR H s₀, by simp [all], dgR_sub hl _⟩
       · exact ⟨scR H s₀, by simp [all], wR_sub hl _⟩
       · exact ⟨below s₀.sp 96, by simp [all], hsub⟩)
-  have sv₂₀ : Saved H.lsv (scr s₀) s₀.gpr s₂₀.mem := saved_st (by rw [m₁₉]; exact sv₁₅) f₂₀ (by
+  obtain sv₂₀ : Saved H.lsv (scr s₀) s₀.gpr s₂₀.mem := saved_st (by rw [m₁₉]; exact sv₁₅) f₂₀ (by
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false]
     rintro r (rfl | rfl | rfl | rfl)
     · exact (st_sv hl _).symm
@@ -410,25 +410,25 @@ theorem correctMain (hp : Pre H s₀) :
   -- HMAC's `init`'s arguments, and our caller's registers restored.
   refine WP.seq (wp_mov fun s₂₁ u₂₁ => wp_mov fun s₂₂ u₂₂ => wp_addi (by rw [hl.ldg]; omega_arith) fun s₂₃ u₂₃ =>
     wp_li (by omega_arith) fun s₂₄ u₂₄ => wp_mov fun s₂₅ u₂₅ => ?_)
-  have g₂₅ : Regs s₀ s₂₅ :=
+  obtain g₂₅ : Regs s₀ s₂₅ :=
     ⟨by rw [u₂₅.rd, u₂₄.rd, u₂₃.rd, u₂₂.rd, u₂₁.rd, g₂₀.rd], by rw [u₂₅.wr, u₂₄.wr, u₂₃.wr, u₂₂.wr, u₂₁.wr, g₂₀.wr],
       by rw [u₂₅.sp, u₂₄.sp, u₂₃.sp, u₂₂.sp, u₂₁.sp, g₂₀.sp]⟩
-  have m₂₅ : s₂₅.mem = s₂₀.mem := by rw [u₂₅.mem, u₂₄.mem, u₂₃.mem, u₂₂.mem, u₂₁.mem]
-  have v₂₅ : Vars (H := H) s₀ s₂₅ := v₂₀.of_keep fun r a b c d e => by
+  obtain m₂₅ : s₂₅.mem = s₂₀.mem := by rw [u₂₅.mem, u₂₄.mem, u₂₃.mem, u₂₂.mem, u₂₁.mem]
+  obtain v₂₅ : Vars (H := H) s₀ s₂₅ := v₂₀.of_keep fun r a b c d e => by
     rw [u₂₅.other r e, u₂₄.other r d, u₂₃.other r c, u₂₂.other r b, u₂₁.other r a]
-  have a3 : s₂₅.gpr .r3 = inn s₀ := by
+  obtain a3 : s₂₅.gpr .r3 = inn s₀ := by
     rw [u₂₅.other _ (by decide), u₂₄.other _ (by decide), u₂₃.other _ (by decide), u₂₂.other _ (by decide),
       u₂₁.gpr, v₂₀.r22]
-  have a4 : s₂₅.gpr .r4 = out s₀ := by
+  obtain a4 : s₂₅.gpr .r4 = out s₀ := by
     rw [u₂₅.other _ (by decide), u₂₄.other _ (by decide), u₂₃.other _ (by decide), u₂₂.gpr,
       u₂₁.other _ (by decide), v₂₀.r23]
-  have a5 : s₂₅.gpr .r5 = scr s₀ + BitVec.ofNat 64 H.ldg := by
+  obtain a5 : s₂₅.gpr .r5 = scr s₀ + BitVec.ofNat 64 H.ldg := by
     rw [u₂₅.other _ (by decide), u₂₄.other _ (by decide), u₂₃.gpr, u₂₂.other _ (by decide),
       u₂₁.other _ (by decide), v₂₀.r21]
-  have a6 : (s₂₅.gpr .r6).toNat = H.D := by
+  obtain a6 : (s₂₅.gpr .r6).toNat = H.D := by
     rw [u₂₅.other _ (by decide), u₂₄.gpr]
     exact Proof.MdStream.PPC64LE.toNat_ofNat_lt (by omega_arith)
-  have a7 : s₂₅.gpr .r7 = scr s₀ := by
+  obtain a7 : s₂₅.gpr .r7 = scr s₀ := by
     rw [u₂₅.gpr, u₂₄.other _ (by decide), u₂₃.other _ (by decide), u₂₂.other _ (by decide),
       u₂₁.other _ (by decide), v₂₀.r21]
   refine restore_ok hH.dims.lso (scr := scr s₀) v₂₅.r21
@@ -436,23 +436,23 @@ theorem correctMain (hp : Pre H s₀) :
       (show d + 8 ≤ H.lbytes by have : d + 8 ≤ H.lsv + 48 := hd₂; rw [hl.lbytes]; omega_arith)
       (by have : d + 8 ≤ H.lsv + 48 := hd₂; have := hl.lsv; omega_arith)⟩)
     s₀.gpr (by rw [m₂₅]; exact sv₂₀) fun s₂₆ hsv ho hmem hrd hwr hsp => ?_
-  have hk : ∀ r ∈ preserved, s₂₆.gpr r = s₀.gpr r := preserved_of hsv fun r hr => by
+  obtain hk : ∀ r ∈ preserved, s₂₆.gpr r = s₀.gpr r := preserved_of hsv fun r hr => by
     rw [ho r (by simp only [Hash.savedAt, List.map_cons, List.map_nil]; revert r; decide)]
     exact v₂₅.un r hr
-  have g₂₆ : Regs s₀ s₂₆ := ⟨hrd.trans g₂₅.rd, hwr.trans g₂₅.wr, hsp.trans g₂₅.sp⟩
-  have arg : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], s₂₆.callEntry.gpr r = s₂₅.gpr r := by
+  obtain g₂₆ : Regs s₀ s₂₆ := ⟨hrd.trans g₂₅.rd, hwr.trans g₂₅.wr, hsp.trans g₂₅.sp⟩
+  obtain arg : ∀ r ∈ [Reg.r3, .r4, .r5, .r6, .r7], s₂₆.callEntry.gpr r = s₂₅.gpr r := by
     intro r hr
     rw [State.callEntry_gpr _ (by revert r; decide)]
     exact ho r (by simp only [Hash.savedAt, List.map_cons, List.map_nil]; revert r; decide)
-  have c3 : s₂₆.callEntry.gpr .r3 = inn s₀ := by rw [arg _ (by simp), a3]
-  have c4 : s₂₆.callEntry.gpr .r4 = out s₀ := by rw [arg _ (by simp), a4]
-  have c5 : s₂₆.callEntry.gpr .r5 = scr s₀ + BitVec.ofNat 64 H.ldg := by rw [arg _ (by simp), a5]
-  have c6 : (s₂₆.callEntry.gpr .r6).toNat = H.D := by rw [arg _ (by simp), a6]
-  have c7 : s₂₆.callEntry.gpr .r7 = scr s₀ := by rw [arg _ (by simp), a7]
-  have wIs := wI_sub hl (scr s₀)
-  have dkS : Region.Sub (dkR H s₀) ⟨scr s₀, H.lbytes⟩ := fun a h => dgR_sub hl _ a (Region.sub_prefix hH.hDF a h)
-  have dD := sfS _ dkS
-  have dW := sfS _ wIs
+  obtain c3 : s₂₆.callEntry.gpr .r3 = inn s₀ := by rw [arg _ (by simp), a3]
+  obtain c4 : s₂₆.callEntry.gpr .r4 = out s₀ := by rw [arg _ (by simp), a4]
+  obtain c5 : s₂₆.callEntry.gpr .r5 = scr s₀ + BitVec.ofNat 64 H.ldg := by rw [arg _ (by simp), a5]
+  obtain c6 : (s₂₆.callEntry.gpr .r6).toNat = H.D := by rw [arg _ (by simp), a6]
+  obtain c7 : s₂₆.callEntry.gpr .r7 = scr s₀ := by rw [arg _ (by simp), a7]
+  obtain wIs := wI_sub hl (scr s₀)
+  obtain dkS : Region.Sub (dkR H s₀) ⟨scr s₀, H.lbytes⟩ := fun a h => dgR_sub hl _ a (Region.sub_prefix hH.hDF a h)
+  obtain dD := sfS _ dkS
+  obtain dW := sfS _ wIs
   -- HMAC's `init` with the digest.
   refine WP.callF (k := initG hH.SH (H.W + 48) 96) (fun s hs => by
       obtain ⟨t, s', he, h₁, h₂⟩ := Init.correct hH hs
@@ -505,7 +505,7 @@ open VG.Proof.Hmac.Stream.PPC64LE.Init (inner inner_bytes) in
 theorem pre_inner {s₀ : State} (hp : (longG hH.SH H.lbytes 144).pre s₀) : Pre H (inner s₀) := by
   obtain ⟨h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11, h12, h13⟩ := hp
   rw [hH.hS] at h2 h3 h4 h5 h6 h7 h10 h11
-  have sub : Region.Sub (below (s₀.sp - 48) 96) (below s₀.sp 144) := below_body s₀.sp 96
+  obtain sub : Region.Sub (below (s₀.sp - 48) 96) (below s₀.sp 144) := below_body s₀.sp 96
   exact ⟨by rw [hH.hB] at h0; exact h0, h1, h2, h3, h4, h5, h6, h7, h8,
     by show 96 ≤ (s₀.sp - 48).toNat; bv_omega, h10.sub_left sub, h11.sub_left sub, h12.sub_left sub,
     h13.sub_left sub⟩
@@ -514,14 +514,14 @@ open VG.Proof.Hmac.Stream.PPC64LE.Init (inner inner_bytes) in
 /-- `initLong`, with its frame. -/
 theorem correct {s₀ : State} (hp : (longG hH.SH H.lbytes 144).pre s₀) :
     WP isa H.initLong s₀ fun s' => abiPreserved s₀ s' ∧ (longG hH.SH H.lbytes 144).post s₀ s' := by
-  have hpi := pre_inner hH hp
+  obtain hpi := pre_inner hH hp
   obtain ⟨_, _, h2, _, _, _, _, _, _, h9, h10, h11, h12, h13⟩ := hp
-  have hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 144) := below_sub (by omega_arith) (by omega_arith)
+  obtain hsub : Region.Sub (below s₀.sp 48) (below s₀.sp 144) := below_sub (by omega_arith) (by omega_arith)
   refine WP.seq (Proof.MdStream.PPC64LE.WP.cons exec_mflr (WP.block_nil (WP.seq ?_)))
   refine WP.frameReg (by show 48 ≤ s₀.sp.toNat; omega_arith) (fun R hR => ?_) (WP.mono (correctMain hH hpi)
     fun s' ⟨hk, hsp, hI, hO⟩ => ?_) (by have := initLongMain_fdepth hH; omega_arith) (initLongMain_pf hH)
   · rw [show (s₀.write .r0 s₀.lr).wr = s₀.wr from rfl, h2] at hR
-    have hf : Region.Sub ⟨s₀.sp - 48 + 32, 16⟩ (below s₀.sp 144) :=
+    obtain hf : Region.Sub ⟨s₀.sp - 48 + 32, 16⟩ (below s₀.sp 144) :=
       fun a h => hsub a (Proof.MdStream.PPC64LE.frame_sub s₀.sp a h)
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hR
     rcases hR with rfl | rfl | rfl

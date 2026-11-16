@@ -393,6 +393,18 @@ Avoid these patterns (each has cost tens of seconds in one proof):
     stands come first, and the lemmas are applied (`s16_xd`), or each is
     tried only where the code's head is its function (`code_head`,
     `MlKem/AArch64/CallWipe`).
+  * *`have`s kept in the context of every nested `by`.* A tactic
+    `have x : T := proof` keeps the proof term in the local context (a
+    non-dependent `let`), and every `by` nested in a term (`foo (by decide)
+    (by omega)`) instantiates and shares the whole context, values
+    included, before it runs (`Term.runTactic`): a third of the compile of
+    a proof with a hundred `have`s and two hundred nested `by`s
+    (`OpenKey/Main`: 62 values, 29.5k expressions against 10k for all the
+    hypotheses' types, shared 210 times). `obtain x : T := proof` adds only
+    the hypothesis. In a long proof write `obtain` for a fact with a proof
+    of its own; `have` is right for a renamed hypothesis or projection
+    (`have h := hp.1`, on which `obtain` would act as `rcases`), and for
+    the few facts whose value a later step reads.
   * *Every hypothesis simplified once per goal.* `sig_and_intros` and then
     `all_goals simp only […] at *`: simplify once, before the goals are
     split. `split <;> split <;> omega_arith` among a hundred hypotheses,

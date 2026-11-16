@@ -28,17 +28,17 @@ theorem prepR_sv (h : In Ex base bytes len args s) (c : Ctx) {sp : BitVec 32} {m
     (F : Frame (frameR base sp (prepR len c)) m m') (R : CallRoom sp base bytes) {j : Nat}
     (hj5 : 5 ≤ j) (hj : j ≤ 8) (h7 : j ≠ 7) : sv m' base len c j = sv m base len c j := by
   have nw := h.scratch.nowrap
-  have f8 := h.slot_fit c (j := 8) (by decide)
-  have bw := bc_eq_cwc len c
+  obtain f8 := h.slot_fit c (j := 8) (by decide)
+  obtain bw := bc_eq_cwc len c
   have est : st len c = 2 * bc len c + 32 := rfl
-  have j8 : lo len (.slot c j) ≤ lo len (.slot c 8) := by
+  obtain j8 : lo len (.slot c j) ≤ lo len (.slot c 8) := by
     have := Nat.mul_le_mul_right (st len c) hj; simp only [lo]; omega_arith
-  have a3 := slot_apart len c (o := 3) (j := j) (by omega_arith)
-  have a4 := slot_apart len c (o := 4) (j := j) (by omega_arith)
-  have a7 := slot_apart len c (o := 7) (j := j) h7
-  have p1 := slot_past1 len c (j := j) (by omega_arith)
-  have z0 : lo len (.slot c 0) = numBase := sl_zero len c
-  have e1 : lo len (.slot c 1) = numBase + st len c := by simp [lo]
+  obtain a3 := slot_apart len c (o := 3) (j := j) (by omega_arith)
+  obtain a4 := slot_apart len c (o := 4) (j := j) (by omega_arith)
+  obtain a7 := slot_apart len c (o := 7) (j := j) h7
+  obtain p1 := slot_past1 len c (j := j) (by omega_arith)
+  obtain z0 : lo len (.slot c 0) = numBase := sl_zero len c
+  obtain e1 : lo len (.slot c 1) = numBase + st len c := by simp [lo]
   have nb : numBase = 3336 := rfl
   refine frameR_val32 F R nw (by omega_arith) ?_ (prepR_fit h c)
   intro p hp
@@ -71,10 +71,10 @@ structure WideLay (len bytes f o : Nat) : Prop where
 
 theorem WideLay.mk' (h : In Ex base bytes len args s) {f o : Nat} (hf9 : 9 ≤ f) (hf : f ≤ 15) (ho16 : 16 ≤ o)
     (ho : o ≤ 17) : WideLay len bytes f o := by
-  have a := Nat.mul_le_mul_right (st len .wide) hf9
-  have b := Nat.mul_le_mul_right (st len .wide) (show f + 1 ≤ 16 by omega_arith)
-  have c := Nat.mul_le_mul_right (st len .wide) ho16
-  have d := Nat.mul_le_mul_right (st len .wide) (show o + 1 ≤ 18 by omega_arith)
+  obtain a := Nat.mul_le_mul_right (st len .wide) hf9
+  obtain b := Nat.mul_le_mul_right (st len .wide) (show f + 1 ≤ 16 by omega_arith)
+  obtain c := Nat.mul_le_mul_right (st len .wide) ho16
+  obtain d := Nat.mul_le_mul_right (st len .wide) (show o + 1 ≤ 18 by omega_arith)
   rw [Nat.succ_mul] at b d
   have ef : lo len (.slot .wide f) = numBase + f * st len .wide := rfl
   have eo : lo len (.slot .wide o) = numBase + o * st len .wide := rfl
@@ -101,9 +101,9 @@ structure HalfLay (len : Nat) : Prop where
 
 theorem HalfLay.mk' (h : In Ex base bytes len args s) : HalfLay len := by
   have := bc_le_wide len .half
-  have a := bc_eq_cwc len .half
-  have b := bc_eq_cwc len .wide
-  have g := bc_ge h.lower' .half
+  obtain a := bc_eq_cwc len .half
+  obtain b := bc_eq_cwc len .wide
+  obtain g := bc_ge h.lower' .half
   exact ⟨by omega_arith, by omega_arith, a, sl_zero len .half, rfl, rfl, rfl, half_in_wide h (by decide)⟩
 
 /-- The number of `2 Bh` bytes in the wide slot `j` modulo the half context's modulus `M` into the
@@ -122,22 +122,22 @@ theorem reduceHalf_ok {M : Nat} (C : CtxOk Ex base bytes len args .half M s) (h3
   have nw := h.scratch.nowrap
   have bl := h.bytes_lt
   obtain ⟨cwle, cw8, bh, h0, h5, h8, sth, top⟩ := HalfLay.mk' h
-  have bw := bc_eq_cwc len .wide
-  have bhw := bc_le_wide len .half
-  have Wj := h.wide_fit (j := j) (by omega_using [hj])
+  obtain bw := bc_eq_cwc len .wide
+  obtain bhw := bc_le_wide len .half
+  obtain Wj := h.wide_fit (j := j) (by omega_using [hj])
   have e9 : lo len (.slot .wide 9) = numBase + 9 * st len .wide := rfl
   have ej : lo len (.slot .wide j) = numBase + j * st len .wide := rfl
-  have j9 : lo len (.slot .wide 9) ≤ lo len (.slot .wide j) := by
+  obtain j9 : lo len (.slot .wide 9) ≤ lo len (.slot .wide j) := by
     have := Nat.mul_le_mul_right (st len .wide) hj9; omega_using [hj9, hj, nw, bl, h8, sth, top, bw, bhw, Wj, e9, ej, this]
   have h6 : lo len (.slot .half 6) = numBase + 6 * st len .half := rfl
   have nb : numBase = 3336 := rfl
-  have cb1 : cb len (one .half) = bc len .half := by simp [cb, one]
-  have cw1 : cw len (one .half) = cwc len .half := by simp [cw, cwc, cb, one]
+  obtain cb1 : cb len (one .half) = bc len .half := by simp [cb, one]
+  obtain cw1 : cw len (one .half) = cwc len .half := by simp [cw, cwc, cb, one]
   have hM := C.gt
-  have RR : 2 ^ (16 * bc len .half) = 2 ^ (8 * bc len .half) * 2 ^ (8 * bc len .half) := by
+  obtain RR : 2 ^ (16 * bc len .half) = 2 ^ (8 * bc len .half) * 2 ^ (8 * bc len .half) := by
     rw [← Nat.pow_add]; congr 1; omega_using []
   -- The halves.
-  have split := val32_append s.mem base (lo len (.slot .wide j)) (cwc len .half) (cwc len .half)
+  obtain split := val32_append s.mem base (lo len (.slot .wide j)) (cwc len .half) (cwc len .half)
   rw [show cwc len .half + cwc len .half = 2 * cwc len .half by omega_using [], hX,
     show lo len (.slot .wide j) + 4 * cwc len .half = lo len (.slot .wide j) + bc len .half by omega_using [bh]] at split
   -- The low half into slot 5.
@@ -145,29 +145,29 @@ theorem reduceHalf_ok {M : Nat} (C : CtxOk Ex base bytes len args .half M s) (h3
     (by rw [cb1]; omega_using [bhw, Wj]) (by rw [cb1, h5]; omega_using [nw, bl, cwle, cw8, bh, h8, sth, top, bw, bhw, Wj, e9, ej, j9, nb]) (by rw [cb1, h5]; exact .inl (by omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h8, sth, top, bw, bhw, Wj, e9, ej, j9, nb]))) fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
   rw [cb1] at O₁
   rw [cw1] at V₁
-  have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
-  have F₁ : Frame (frameR base (s.gpr .esp) [(lo len (.slot .half 5), bc len .half)]) s.mem u₁.mem :=
+  obtain sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
+  obtain F₁ : Frame (frameR base (s.gpr .esp) [(lo len (.slot .half 5), bc len .half)]) s.mem u₁.mem :=
     frameR_of_outside O₁ (by omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h5, h8, sth, top, bw, bhw, Wj, e9, ej, j9, nb]) (by simp)
-  have C₁ := C.keepF K₁ (by decide) (by decide) F₁ (by simp; omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h5, h8, sth, top, bw, bhw, Wj, e9, ej, j9, nb]) (by simp; omega_using [h5, sth])
+  obtain C₁ := C.keepF K₁ (by decide) (by decide) F₁ (by simp; omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h5, h8, sth, top, bw, bhw, Wj, e9, ej, j9, nb]) (by simp; omega_using [h5, sth])
   -- The high half into slot 6.
   refine WP.seq (WP.mono (copyHigh_ok C₁.inp (j := j) (d := 6) (by omega_using [bhw, Wj]) (by omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h8, sth, top, bw, bhw, Wj, e9, ej, j9, h6, nb]) (by omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h8, sth, top, bw, bhw, Wj, e9, ej, j9, h6, nb]))
     fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
   rw [cw1, O₁.val32 (.inr (by omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h5, h8, sth, top, bw, bhw, Wj, e9, ej, j9, nb])) (by omega_using [hj9, hj, nw, bl, cwle, cw8, bh, top, bw, bhw, Wj, e9, ej, j9, nb])] at V₂
-  have sp₂ : u₂.gpr .esp = s.gpr .esp := (K₂.1 _ (by decide)).trans sp₁
-  have F₂ : Frame (frameR base (u₁.gpr .esp) [(lo len (.slot .half 6), bc len .half)]) u₁.mem u₂.mem :=
+  obtain sp₂ : u₂.gpr .esp = s.gpr .esp := (K₂.1 _ (by decide)).trans sp₁
+  obtain F₂ : Frame (frameR base (u₁.gpr .esp) [(lo len (.slot .half 6), bc len .half)]) u₁.mem u₂.mem :=
     frameR_of_outside O₂ (by omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h8, sth, top, bw, bhw, Wj, e9, ej, j9, h6, nb]) (by simp)
-  have C₂ := C₁.keepF K₂ (by decide) (by decide) F₂ (by simp; omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h8, sth, top, bw, bhw, Wj, e9, ej, j9, h6, nb]) (by simp; omega_using [sth, h6])
-  have keep₂ : ∀ k, k ≠ 5 → k ≠ 6 → k ≤ 8 → sv u₂.mem base len .half k = sv s.mem base len .half k := by
+  obtain C₂ := C₁.keepF K₂ (by decide) (by decide) F₂ (by simp; omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h8, sth, top, bw, bhw, Wj, e9, ej, j9, h6, nb]) (by simp; omega_using [sth, h6])
+  obtain keep₂ : ∀ k, k ≠ 5 → k ≠ 6 → k ≤ 8 → sv u₂.mem base len .half k = sv s.mem base len .half k := by
     intro k k5 k6 k8
     have ek : lo len (.slot .half k) = numBase + k * st len .half := rfl
-    have k8' := Nat.mul_le_mul_right (st len .half) k8
-    have d6 : lo len (.slot .half k) + 4 * cwc len .half ≤ lo len (.slot .half 6) ∨
+    obtain k8' := Nat.mul_le_mul_right (st len .half) k8
+    obtain d6 : lo len (.slot .half k) + 4 * cwc len .half ≤ lo len (.slot .half 6) ∨
         lo len (.slot .half 6) + bc len .half ≤ lo len (.slot .half k) := by
       rcases Nat.lt_or_gt_of_ne k6 with l | l
       · have := Nat.mul_le_mul_right (st len .half) (show k + 1 ≤ 6 by omega_using [l]); rw [Nat.succ_mul] at this
         exact .inl (by omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h8, sth, top, bw, bhw, Wj, e9, ej, j9, h6, nb, k5, k6, k8, ek, k8', l, this])
       · have := Nat.mul_le_mul_right (st len .half) (show 7 ≤ k by omega_using [l]); exact .inr (by omega_using [cwle, cw8, bh, sth, top, bw, bhw, Wj, h6, nb, k5, k6, k8, ek, k8', l, this])
-    have d5 : lo len (.slot .half k) + 4 * cwc len .half ≤ lo len (.slot .half 5) ∨
+    obtain d5 : lo len (.slot .half k) + 4 * cwc len .half ≤ lo len (.slot .half 5) ∨
         lo len (.slot .half 5) + bc len .half ≤ lo len (.slot .half k) := by
       rcases Nat.lt_or_gt_of_ne k5 with l | l
       · have := Nat.mul_le_mul_right (st len .half) (show k + 1 ≤ 5 by omega_using [l]); rw [Nat.succ_mul] at this
@@ -175,57 +175,57 @@ theorem reduceHalf_ok {M : Nat} (C : CtxOk Ex base bytes len args .half M s) (h3
       · have := Nat.mul_le_mul_right (st len .half) (show 6 ≤ k by omega_using [l]); exact .inr (by omega_using [cwle, cw8, bh, h5, sth, top, bw, bhw, Wj, h6, nb, k5, k6, k8, ek, k8', d6, l, this])
     simp only [sv]
     rw [O₂.val32 d6 (by omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h5, h8, sth, top, bw, bhw, Wj, e9, ej, j9, h6, nb, k5, k6, k8, ek, k8', d6, d5]), O₁.val32 d5 (by omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h5, h8, sth, top, bw, bhw, Wj, e9, ej, j9, h6, nb, k5, k6, k8, ek, k8', d6, d5])]
-  have L₂ : sv u₂.mem base len .half 5 = val32 s.mem base (lo len (.slot .wide j)) (cwc len .half) := by
+  obtain L₂ : sv u₂.mem base len .half 5 = val32 s.mem base (lo len (.slot .wide j)) (cwc len .half) := by
     simp only [sv]; rw [O₂.val32 (.inl (by omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h5, h8, sth, top, bw, bhw, Wj, e9, ej, j9, h6, nb])) (by omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h5, h8, sth, top, bw, bhw, Wj, e9, ej, j9, nb]), V₁]
-  have H₂ : sv u₂.mem base len .half 6 = val32 s.mem base (lo len (.slot .wide j) + bc len .half) (cwc len .half) := by
+  obtain H₂ : sv u₂.mem base len .half 6 = val32 s.mem base (lo len (.slot .wide j) + bc len .half) (cwc len .half) := by
     simp only [sv]; rw [V₂]
-  have R₂ : sv u₂.mem base len .half 4 = 2 ^ (16 * bc len .half) % M := by
+  obtain R₂ : sv u₂.mem base len .half 4 = 2 ^ (16 * bc len .half) % M := by
     rw [keep₂ 4 (by decide) (by decide) (by decide), h4]
-  have one₂ : sv u₂.mem base len .half 3 = 1 := by rw [keep₂ 3 (by decide) (by decide) (by decide), h3]
-  have E₂ : sv u₂.mem base len .half 8 = sv s.mem base len .half 8 := keep₂ 8 (by decide) (by decide) (by decide)
+  obtain one₂ : sv u₂.mem base len .half 3 = 1 := by rw [keep₂ 3 (by decide) (by decide) (by decide), h3]
+  obtain E₂ : sv u₂.mem base len .half 8 = sv s.mem base len .half 8 := keep₂ 8 (by decide) (by decide) (by decide)
   -- `l R mod M`, then `l mod M`.
   refine WP.seq (WP.mono (cmul_ok C₂ (o := 5) (a := 5) (b := 4) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [R₂]; exact Nat.mod_lt _ (by omega_using [hM]))) fun u₃ ⟨C₃, K₃, F₃, L₃, V₃⟩ => ?_)
-  have B₃ : sv u₃.mem base len .half 5 % M =
+  obtain B₃ : sv u₃.mem base len .half 5 % M =
       val32 s.mem base (lo len (.slot .wide j)) (cwc len .half) * 2 ^ (8 * bc len .half) % M :=
     VG.Proof.Dsa.mont_scale C₂.coprime (by rw [V₃, L₂, R₂, RR])
-  have mk3 : ∀ k, 3 ≤ k → k ≤ 8 → k ≠ 5 → sv u₃.mem base len .half k = sv u₂.mem base len .half k :=
+  obtain mk3 : ∀ k, 3 ≤ k → k ≤ 8 → k ≠ 5 → sv u₃.mem base len .half k = sv u₂.mem base len .half k :=
     fun k a b c => mulR_sv C₂.inp F₃ C₂.inp.room (by decide) (by decide) a b c
   refine WP.seq (WP.mono (cmul_ok C₃ (o := 5) (a := 5) (b := 3) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [mk3 3 (by decide) (by decide) (by decide), one₂]; exact hM))
     fun u₄ ⟨C₄, K₄, F₄, L₄, V₄⟩ => ?_)
-  have D₄ : sv u₄.mem base len .half 5 = val32 s.mem base (lo len (.slot .wide j)) (cwc len .half) % M := by
-    have v := VG.Proof.Dsa.mont_decode (A := sv u₃.mem base len .half 5) (out := sv u₄.mem base len .half 5)
+  obtain D₄ : sv u₄.mem base len .half 5 = val32 s.mem base (lo len (.slot .wide j)) (cwc len .half) % M := by
+    obtain v := VG.Proof.Dsa.mont_decode (A := sv u₃.mem base len .half 5) (out := sv u₄.mem base len .half 5)
       C₃.coprime B₃ (by rw [V₄, mk3 3 (by decide) (by decide) (by decide), one₂])
     rwa [Nat.mod_eq_of_lt L₄] at v
-  have mk4 : ∀ k, 3 ≤ k → k ≤ 8 → k ≠ 5 → sv u₄.mem base len .half k = sv u₂.mem base len .half k :=
+  obtain mk4 : ∀ k, 3 ≤ k → k ≤ 8 → k ≠ 5 → sv u₄.mem base len .half k = sv u₂.mem base len .half k :=
     fun k a b c => (mulR_sv C₃.inp F₄ C₃.inp.room (by decide) (by decide) a b c).trans (mk3 k a b c)
   -- `h R mod M`.
   refine WP.seq (WP.mono (cmul_ok C₄ (o := 6) (a := 6) (b := 4) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [mk4 4 (by decide) (by decide) (by decide), R₂]; exact Nat.mod_lt _ (by omega_using [hM])))
     fun u₅ ⟨C₅, K₅, F₅, L₅, V₅⟩ => ?_)
-  have B₅ : sv u₅.mem base len .half 6 =
+  obtain B₅ : sv u₅.mem base len .half 6 =
       val32 s.mem base (lo len (.slot .wide j) + bc len .half) (cwc len .half) * 2 ^ (8 * bc len .half) % M := by
-    have v : sv u₅.mem base len .half 6 % M =
+    obtain v : sv u₅.mem base len .half 6 % M =
         val32 s.mem base (lo len (.slot .wide j) + bc len .half) (cwc len .half) * 2 ^ (8 * bc len .half) % M :=
       VG.Proof.Dsa.mont_scale C₄.coprime
       (by rw [V₅, mk4 6 (by decide) (by decide) (by decide), mk4 4 (by decide) (by decide) (by decide), H₂, R₂, RR])
     rwa [Nat.mod_eq_of_lt L₅] at v
-  have mk5 : ∀ k, 3 ≤ k → k ≤ 8 → k ≠ 6 → sv u₅.mem base len .half k = sv u₄.mem base len .half k :=
+  obtain mk5 : ∀ k, 3 ≤ k → k ≤ 8 → k ≠ 6 → sv u₅.mem base len .half k = sv u₄.mem base len .half k :=
     fun k a b c => mulR_sv C₄.inp F₅ C₄.inp.room (by decide) (by decide) a b c
   have M₅ : sv u₅.mem base len .half 0 = M := C₅.mod
   -- Their sum modulo `M`.
   refine WP.mono (addMod_ok C₅.inp .half (o := 5) (a := 5) (b := 6) (by decide) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by rw [M₅, mk5 5 (by decide) (by decide) (by decide)]; exact L₄) (by rw [M₅]; exact L₅))
     fun u ⟨F₆, V₆, K₆⟩ => ?_
-  have e1 : lo len (.slot .half 1) = numBase + st len .half := by simp [lo]
-  have fit6 : ∀ p ∈ [(lo len (.slot .half 1), bc len .half + 4), (lo len (.slot .half 5), bc len .half)],
+  obtain e1 : lo len (.slot .half 1) = numBase + st len .half := by simp [lo]
+  obtain fit6 : ∀ p ∈ [(lo len (.slot .half 1), bc len .half + 4), (lo len (.slot .half 5), bc len .half)],
       p.1 + p.2 ≤ bytes := by simp; omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h5, h8, sth, top, bw, bhw, Wj, e9, ej, j9, nb, e1]
-  have C₆ := C₅.keepF K₆ (by decide) (by decide) F₆ fit6 (by simp; omega_using [h5, sth, e1])
-  have keep₆ : ∀ k, 3 ≤ k → k ≤ 8 → k ≠ 5 → sv u.mem base len .half k = sv u₅.mem base len .half k := by
+  obtain C₆ := C₅.keepF K₆ (by decide) (by decide) F₆ fit6 (by simp; omega_using [h5, sth, e1])
+  obtain keep₆ : ∀ k, 3 ≤ k → k ≤ 8 → k ≠ 5 → sv u.mem base len .half k = sv u₅.mem base len .half k := by
     intro k a b c
     have ek : lo len (.slot .half k) = numBase + k * st len .half := rfl
-    have k8' := Nat.mul_le_mul_right (st len .half) b
+    obtain k8' := Nat.mul_le_mul_right (st len .half) b
     simp only [sv]
     refine frameR_val32 F₆ C₅.inp.room nw (by omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h8, sth, top, bw, bhw, Wj, e9, ej, j9, nb, a, b, c, ek, k8']) ?_ fit6
     intro p hp
@@ -236,9 +236,9 @@ theorem reduceHalf_ok {M : Nat} (C : CtxOk Ex base bytes len args .half M s) (h3
       · have := Nat.mul_le_mul_right (st len .half) (show k + 1 ≤ 5 by omega_using [l]); rw [Nat.succ_mul] at this
         exact .inl (by dsimp only; omega_using [hj9, hj, nw, bl, cwle, cw8, bh, h5, h8, sth, top, bw, bhw, Wj, e9, ej, j9, nb, a, b, c, ek, k8', l, this])
       · have := Nat.mul_le_mul_right (st len .half) (show 6 ≤ k by omega_using [l]); exact .inr (by dsimp only; omega_using [cwle, cw8, bh, h5, sth, top, bw, bhw, Wj, nb, a, b, c, ek, k8', l, this])
-  have sp₃ : u₃.gpr .esp = s.gpr .esp := (K₃.1 _ (by decide)).trans sp₂
-  have sp₄ : u₄.gpr .esp = s.gpr .esp := (K₄.1 _ (by decide)).trans sp₃
-  have sp₅ : u₅.gpr .esp = s.gpr .esp := (K₅.1 _ (by decide)).trans sp₄
+  obtain sp₃ : u₃.gpr .esp = s.gpr .esp := (K₃.1 _ (by decide)).trans sp₂
+  obtain sp₄ : u₄.gpr .esp = s.gpr .esp := (K₄.1 _ (by decide)).trans sp₃
+  obtain sp₅ : u₅.gpr .esp = s.gpr .esp := (K₅.1 _ (by decide)).trans sp₄
   refine ⟨C₆, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [keep₆ 3 (by decide) (by decide) (by decide), mk5 3 (by decide) (by decide) (by decide),
       mk4 3 (by decide) (by decide) (by decide), one₂]
@@ -250,14 +250,14 @@ theorem reduceHalf_ok {M : Nat} (C : CtxOk Ex base bytes len args .half M s) (h3
   · rw [keep₆ 8 (by decide) (by decide) (by decide), mk5 8 (by decide) (by decide) (by decide),
       mk4 8 (by decide) (by decide) (by decide), E₂]
   · have i5 := slot_in h .half (j := 5) (by decide)
-    have i6 := slot_in h .half (j := 6) (by decide)
-    have i1 := slot1_in h .half
+    obtain i6 := slot_in h .half (j := 6) (by decide)
+    obtain i1 := slot1_in h .half
     rw [sp₁] at F₂
     rw [sp₂] at F₃
     rw [sp₃] at F₄
     rw [sp₄] at F₅
     rw [sp₅] at F₆
-    have mw : ∀ {k : Nat}, k ≤ 8 → ∀ p ∈ mulR len .half k, ∃ q ∈ [(numBase, 9 * st len .wide)],
+    obtain mw : ∀ {k : Nat}, k ≤ 8 → ∀ p ∈ mulR len .half k, ∃ q ∈ [(numBase, 9 * st len .wide)],
         q.1 ≤ p.1 ∧ p.1 + p.2 ≤ q.1 + q.2 := fun hk p hp => by
       simp only [mulR, List.mem_cons, List.not_mem_nil, or_false] at hp
       rcases hp with rfl | rfl
@@ -286,12 +286,12 @@ theorem powerTail_ok (h : In Ex base bytes len args s) (c : Ctx) {o : Nat} (ho16
       Frame (frameR base (s.gpr .esp) (stR len o)) s.mem u.mem ∧
       val32 u.mem base (lo len (.slot .wide o)) (2 * cwc len .wide) = y ^ d % safeM p ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
-  have ho' : o ≤ 19 := by omega_arith
+  obtain ho' : o ≤ 19 := by omega_arith
   refine WP.seq (WP.mono (prepareG_ok h c (by rw [hp]; exact P) pfit) fun u₅ ⟨C₅, one₅, R₅, F₅, K₅⟩ => ?_)
   rw [hp] at C₅ R₅
-  have B₅ : sv u₅.mem base len c 5 = y := by
+  obtain B₅ : sv u₅.mem base len c 5 = y := by
     rw [prepR_sv h c F₅ h.room (j := 5) (by decide) (by decide) (by decide), hy]
-  have E₅ : sv u₅.mem base len c 8 = d := by
+  obtain E₅ : sv u₅.mem base len c 8 = d := by
     rw [prepR_sv h c F₅ h.room (j := 8) (by decide) (by decide) (by decide), hd]
   refine WP.seq (WP.mono (windowPower_ok C₅ one₅ R₅) fun u₆ ⟨C₆, F₆, K₆, Y₆⟩ => ?_)
   rw [B₅, E₅] at Y₆
@@ -315,8 +315,8 @@ theorem narrowPower_ok (h : In Ex base bytes len args s) {f e o : Nat} (hf9 : 9 
       Frame (frameR base (s.gpr .esp) (stR len o)) s.mem u.mem ∧
       val32 u.mem base (lo len (.slot .wide o)) (2 * cwc len .wide) = x ^ d % safeM p ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
-  have Lf := WideLay.mk' h hf9 hf ho16 ho
-  have Le := WideLay.mk' h he9 he ho16 ho
+  obtain Lf := WideLay.mk' h hf9 hf ho16 ho
+  obtain Le := WideLay.mk' h he9 he ho16 ho
   have l9 := Lf.l9
   have f1 := Lf.f1
   have f2 := Lf.f2
@@ -330,20 +330,20 @@ theorem narrowPower_ok (h : In Ex base bytes len args s) {f e o : Nat} (hf9 : 9 
   have fit := Lf.fit
   have o2 := Lf.o2
   obtain ⟨cwle, cw8, bh, h0, h5, h8, sth, top⟩ := HalfLay.mk' h
-  have bw := bc_eq_cwc len .wide
-  have hb2 := bc_half_le' len
-  have ho' : o ≤ 19 := by omega_arith
+  obtain bw := bc_eq_cwc len .wide
+  obtain hb2 := bc_half_le' len
+  obtain ho' : o ≤ 19 := by omega_arith
   have bl := h.bytes_lt
-  have hM := safeM_gt p
-  have cb1 : cb len (one .half) = bc len .half := by simp [cb, one]
-  have cw1 : cw len (one .half) = cwc len .half := by simp [cw, cwc, cb, one]
-  have split : cwc len .half + (cwc len .wide - cwc len .half) = cwc len .wide := by omega_arith
-  have P₀ : val32 s.mem base (lo len (.slot .wide f)) (cwc len .half) = p :=
+  obtain hM := safeM_gt p
+  obtain cb1 : cb len (one .half) = bc len .half := by simp [cb, one]
+  obtain cw1 : cw len (one .half) = cwc len .half := by simp [cw, cwc, cb, one]
+  obtain split : cwc len .half + (cwc len .wide - cwc len .half) = cwc len .wide := by omega_arith
+  obtain P₀ : val32 s.mem base (lo len (.slot .wide f)) (cwc len .half) = p :=
     val32_low (b := cwc len .wide - cwc len .half) (by rw [split, hp]) hpn
-  have D₀ : val32 s.mem base (lo len (.slot .wide e)) (cwc len .half) = d :=
+  obtain D₀ : val32 s.mem base (lo len (.slot .wide e)) (cwc len .half) = d :=
     val32_low (b := cwc len .wide - cwc len .half) (by rw [split, hd]) hdn
   -- What the steps before the reduction keep of the input.
-  have kx : ∀ {m m' : Mem}, Frame (frameR base (s.gpr .esp) (stR len o)) m m' →
+  obtain kx : ∀ {m m' : Mem}, Frame (frameR base (s.gpr .esp) (stR len o)) m m' →
       val32 m' base (lo len (.slot .wide 15)) (2 * cwc len .half) = val32 m base (lo len (.slot .wide 15)) (2 * cwc len .half) :=
     fun F => stR_keep h ho16 ho F h.room (by omega_arith) (by omega_arith) (.inl (by omega_arith))
   unfold narrowPower
@@ -353,39 +353,39 @@ theorem narrowPower_ok (h : In Ex base bytes len args s) {f e o : Nat} (hf9 : 9 
     fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
   rw [cb1, h0] at O₁
   rw [cw1, h0, P₀] at V₁
-  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
+  obtain h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
   refine WP.seq (WP.mono (copy_ok h₁ (x := .slot .wide e) (d := .slot .half 8) (one_ok .half)
     (by rw [cb1]; omega_arith) (by rw [cb1, h8]; omega_arith) (by rw [cb1, h8]; exact .inl (by omega_arith)))
     fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
   rw [cb1, h8] at O₂
   rw [cw1, h8, O₁.val32 (d := lo len (.slot .wide e)) (k := cwc len .half) (.inr (by omega_arith)) (by omega_arith),
     D₀] at V₂
-  have h₂ := h₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega_arith))
-  have i0 := slot_in h .half (j := 0) (by decide)
-  have i8 := slot_in h .half (j := 8) (by decide)
+  obtain h₂ := h₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega_arith))
+  obtain i0 := slot_in h .half (j := 0) (by decide)
+  obtain i8 := slot_in h .half (j := 8) (by decide)
   rw [h0] at i0
   rw [h8] at i8
-  have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
-  have sp₂ : u₂.gpr .esp = s.gpr .esp := (K₂.1 _ (by decide)).trans sp₁
-  have F₂ : Frame (frameR base (s.gpr .esp) (stR len o)) s.mem u₂.mem :=
+  obtain sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
+  obtain sp₂ : u₂.gpr .esp = s.gpr .esp := (K₂.1 _ (by decide)).trans sp₁
+  obtain F₂ : Frame (frameR base (s.gpr .esp) (stR len o)) s.mem u₂.mem :=
     (stR_of_outside h ho' O₁ ⟨_, by simp, i0⟩).trans (stR_of_outside h ho' O₂ ⟨_, by simp, i8⟩)
-  have M₂ : sv u₂.mem base len .half 0 = p := by
+  obtain M₂ : sv u₂.mem base len .half 0 = p := by
     simp only [sv]; rw [h0, O₂.val32 (d := numBase) (k := cwc len .half) (.inl (by omega_arith)) (by omega_arith), V₁]
-  have E₂ : sv u₂.mem base len .half 8 = d := by simp only [sv]; rw [h8, V₂]
+  obtain E₂ : sv u₂.mem base len .half 8 = d := by simp only [sv]; rw [h8, V₂]
   -- The half context of the factor.
-  have P₂ := P.keepF h.room (K₁.trans K₂) (by decide) F₂ (stR_fit h ho')
+  obtain P₂ := P.keepF h.room (K₁.trans K₂) (by decide) F₂ (stR_fit h ho')
   refine WP.seq (WP.mono (prepareG_ok h₂ .half (by rw [M₂]; exact P₂) pfit) fun u₃ ⟨C₃, one₃, R₃, F₃, K₃⟩ => ?_)
   rw [M₂] at C₃ R₃
-  have E₃ : sv u₃.mem base len .half 8 = d := by
+  obtain E₃ : sv u₃.mem base len .half 8 = d := by
     rw [prepR_sv h₂ .half F₃ h₂.room (j := 8) (by decide) (by decide) (by decide), E₂]
   rw [sp₂] at F₃
-  have F₃' := F₂.trans (stR_widen F₃ (prepR_in h₂ .half o))
-  have X₃ : val32 u₃.mem base (lo len (.slot .wide 15)) (2 * cwc len .half) = x := by rw [kx F₃', hx]
+  obtain F₃' := F₂.trans (stR_widen F₃ (prepR_in h₂ .half o))
+  obtain X₃ : val32 u₃.mem base (lo len (.slot .wide 15)) (2 * cwc len .half) = x := by rw [kx F₃', hx]
   -- The input modulo the factor.
   refine WP.seq (WP.mono (reduceHalf_ok C₃ one₃ R₃ (j := 15) (by decide) (by decide) X₃)
     fun u₄ ⟨C₄, one₄, R₄, B₄, E₄, F₄, K₄⟩ => ?_)
   rw [E₃] at E₄
-  have sp₃ : u₃.gpr .esp = s.gpr .esp := (K₃.1 _ (by decide)).trans sp₂
+  obtain sp₃ : u₃.gpr .esp = s.gpr .esp := (K₃.1 _ (by decide)).trans sp₂
   rw [sp₃] at F₄
   -- The power, and its result into the wide slot `o`.
   refine WP.seq (WP.mono (windowPower_ok C₄ one₄ R₄) fun u₅ ⟨C₅, F₅, K₅, Y₅⟩ => ?_)
@@ -412,8 +412,8 @@ theorem widePower_ok (h : In Ex base bytes len args s) {f e o : Nat} (hf9 : 9 �
       Frame (frameR base (s.gpr .esp) (stR len o)) s.mem u.mem ∧
       val32 u.mem base (lo len (.slot .wide o)) (2 * cwc len .wide) = x ^ d % safeM p ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
-  have Lf := WideLay.mk' h hf9 hf ho16 ho
-  have Le := WideLay.mk' h he9 he ho16 ho
+  obtain Lf := WideLay.mk' h hf9 hf ho16 ho
+  obtain Le := WideLay.mk' h he9 he ho16 ho
   have l0 := Lf.l0
   have l5 := Lf.l5
   have l8 := Lf.l8
@@ -429,51 +429,51 @@ theorem widePower_ok (h : In Ex base bytes len args s) {f e o : Nat} (hf9 : 9 �
   have l16 := Lf.l16
   have l18 := Lf.l18
   have est := Lf.est
-  have bw := bc_eq_cwc len .wide
+  obtain bw := bc_eq_cwc len .wide
   have bl := h.bytes_lt
-  have ho' : o ≤ 19 := by omega_arith
-  have cb1 : cb len (one .wide) = bc len .wide := by simp [cb, one]
-  have cw1 : cw len (one .wide) = cwc len .wide := by simp [cw, cwc, cb, one]
+  obtain ho' : o ≤ 19 := by omega_arith
+  obtain cb1 : cb len (one .wide) = bc len .wide := by simp [cb, one]
+  obtain cw1 : cw len (one .wide) = cwc len .wide := by simp [cw, cwc, cb, one]
   unfold widePower
   refine WP.seq (WP.mono (copy_ok h (x := .slot .wide f) (d := .slot .wide 0) (one_ok .wide)
     (by rw [cb1]; omega_arith) (by rw [cb1, l0]; omega_arith) (by rw [cb1, l0]; exact .inl (by omega_arith)))
     fun u₁ ⟨O₁, V₁, K₁⟩ => ?_)
   rw [cb1, l0] at O₁
   rw [cw1, l0, hp] at V₁
-  have h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
+  obtain h₁ := h.keep K₁ (by decide) (by decide) (O₁.mono (Nat.zero_le _) (by omega_arith))
   refine WP.seq (WP.mono (copy_ok h₁ (x := .slot .wide 15) (d := .slot .wide 5) (one_ok .wide)
     (by rw [cb1, l15]; omega_arith) (by rw [cb1, l5]; omega_arith) (by rw [cb1, l5, l15]; exact .inl (by omega_arith)))
     fun u₂ ⟨O₂, V₂, K₂⟩ => ?_)
   rw [cb1, l5] at O₂
   rw [cw1, l5, O₁.val32 (d := lo len (.slot .wide 15)) (k := cwc len .wide) (.inr (by omega_arith)) (by omega_arith), hx] at V₂
-  have h₂ := h₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega_arith))
+  obtain h₂ := h₁.keep K₂ (by decide) (by decide) (O₂.mono (Nat.zero_le _) (by omega_arith))
   refine WP.seq (WP.mono (copy_ok h₂ (x := .slot .wide e) (d := .slot .wide 8) (one_ok .wide)
     (by rw [cb1]; omega_arith) (by rw [cb1, l8]; omega_arith) (by rw [cb1, l8]; exact .inl (by omega_arith)))
     fun u₃ ⟨O₃, V₃, K₃⟩ => ?_)
   rw [cb1, l8] at O₃
   rw [cw1, l8, O₂.val32 (d := lo len (.slot .wide e)) (k := cwc len .wide) (.inr (by omega_arith)) (by omega_arith),
     O₁.val32 (d := lo len (.slot .wide e)) (k := cwc len .wide) (.inr (by omega_arith)) (by omega_arith), hd] at V₃
-  have h₃ := h₂.keep K₃ (by decide) (by decide) (O₃.mono (Nat.zero_le _) (by omega_arith))
-  have M₃ : sv u₃.mem base len .wide 0 = p := by
+  obtain h₃ := h₂.keep K₃ (by decide) (by decide) (O₃.mono (Nat.zero_le _) (by omega_arith))
+  obtain M₃ : sv u₃.mem base len .wide 0 = p := by
     simp only [sv]; rw [l0, O₃.val32 (d := numBase) (k := cwc len .wide) (.inl (by omega_arith)) (by omega_arith),
       O₂.val32 (d := numBase) (k := cwc len .wide) (.inl (by omega_arith)) (by omega_arith), V₁]
-  have B₃ : sv u₃.mem base len .wide 5 = x := by
+  obtain B₃ : sv u₃.mem base len .wide 5 = x := by
     simp only [sv]; rw [l5, O₃.val32 (d := numBase + 5 * st len .wide) (k := cwc len .wide) (.inl (by omega_arith))
       (by omega_arith), V₂]
-  have E₃ : sv u₃.mem base len .wide 8 = d := by simp only [sv]; rw [l8, V₃]
-  have i0 := slot_in h .wide (j := 0) (by decide)
-  have i5 := slot_in h .wide (j := 5) (by decide)
-  have i8 := slot_in h .wide (j := 8) (by decide)
+  obtain E₃ : sv u₃.mem base len .wide 8 = d := by simp only [sv]; rw [l8, V₃]
+  obtain i0 := slot_in h .wide (j := 0) (by decide)
+  obtain i5 := slot_in h .wide (j := 5) (by decide)
+  obtain i8 := slot_in h .wide (j := 8) (by decide)
   rw [l0] at i0
   rw [l5] at i5
   rw [l8] at i8
-  have F₃ : Frame (frameR base (s.gpr .esp) (stR len o)) s.mem u₃.mem :=
+  obtain F₃ : Frame (frameR base (s.gpr .esp) (stR len o)) s.mem u₃.mem :=
     ((stR_of_outside h ho' O₁ ⟨_, by simp, i0⟩).trans (stR_of_outside h ho' O₂ ⟨_, by simp, i5⟩)).trans
       (stR_of_outside h ho' O₃ ⟨_, by simp, i8⟩)
-  have P₃ := P.keepF h.room ((K₁.trans K₂).trans K₃) (by decide) F₃ (stR_fit h ho')
+  obtain P₃ := P.keepF h.room ((K₁.trans K₂).trans K₃) (by decide) F₃ (stR_fit h ho')
   refine WP.mono (powerTail_ok h₃ .wide ho16 ho M₃ B₃ E₃ P₃ pfit) fun u ⟨F, V, K⟩ => ⟨?_, V, ?_⟩
   · have sp₁ : u₁.gpr .esp = s.gpr .esp := K₁.1 _ (by decide)
-    have sp₃ : u₃.gpr .esp = s.gpr .esp := (K₃.1 _ (by decide)).trans ((K₂.1 _ (by decide)).trans sp₁)
+    obtain sp₃ : u₃.gpr .esp = s.gpr .esp := (K₃.1 _ (by decide)).trans ((K₂.1 _ (by decide)).trans sp₁)
     rw [sp₃] at F
     exact F₃.trans F
   · exact (((K₁.trans K₂).trans K₃).mono (by decide)).trans K
@@ -499,44 +499,44 @@ theorem power_ok (h : In Ex base bytes len args s) {f e o : Nat} (hf9 : 9 ≤ f)
       Frame (frameR base (s.gpr .esp) (stR len o)) s.mem u.mem ∧
       val32 u.mem base (lo len (.slot .wide o)) (2 * cwc len .wide) = x ^ d % safeM p ∧
       Keeps [.eax, .ebx, .ecx, .edx, .ebp, .esi] s u := by
-  have hb := bc_le h.upper' .half
-  have f0 := h.slot_fit .half (j := 0) (by decide)
-  have lo0 : numBase ≤ lo len (.slot .half 0) := by simp [lo]
+  obtain hb := bc_le h.upper' .half
+  obtain f0 := h.slot_fit .half (j := 0) (by decide)
+  obtain lo0 : numBase ≤ lo len (.slot .half 0) := by simp [lo]
   unfold power
   simp only [List.cons_append]
   refine WP.seq (wp_movS (readSrc_sc h.scratch (d := lenOff) (by simp only [lenOff, numBase] at *; omega_arith))
     fun u₁ a₁ _ => ?_)
-  have h₁ := h.regs a₁.keeps a₁.mem
+  obtain h₁ := h.regs a₁.keeps a₁.mem
   refine widthC_ok (k := 0) (c := .half) (r := .edx) h₁.width h.upper' fun u₂ K₂ m₂ e₂ => ?_
   refine wp_addS rfl fun u₃ a₃ _ => wp_cmpC rfl fun u₄ f₄ c₄ => WP.block_nil ?_
-  have K₄ : Keeps [.eax, .edx] s u₄ :=
+  obtain K₄ : Keeps [.eax, .edx] s u₄ :=
     (((a₁.keeps.mono (by decide)).trans (K₂.mono (by decide))).trans (a₃.keeps.mono (by decide))).trans
       (f₄.keeps _)
-  have m₄ : u₄.mem = s.mem := by rw [f₄.mem, a₃.mem, m₂, a₁.mem]
-  have h₄ := h.regs K₄ m₄
-  have eax : (u₃.gpr .eax).toNat = w32 s.mem base lenOff := by
+  obtain m₄ : u₄.mem = s.mem := by rw [f₄.mem, a₃.mem, m₂, a₁.mem]
+  obtain h₄ := h.regs K₄ m₄
+  obtain eax : (u₃.gpr .eax).toNat = w32 s.mem base lenOff := by
     rw [a₃.other _ (by decide), K₂.1 _ (by decide), a₁.gpr]
-  have edx : (u₃.gpr .edx).toNat = bc len .half + 1 := by
+  obtain edx : (u₃.gpr .edx).toNat = bc len .half + 1 := by
     rw [a₃.gpr, e₂, BitVec.toNat_add, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
     omega_arith
   rw [eax, edx] at c₄
-  have sp : u₄.gpr .esp = s.gpr .esp := K₄.1 _ (by decide)
-  have hp' : val32 u₄.mem base (lo len (.slot .wide f)) (cwc len .wide) = p := by rw [m₄, hp]
-  have hd' : val32 u₄.mem base (lo len (.slot .wide e)) (cwc len .wide) = d := by rw [m₄, hd]
-  have bw2 : bc len .wide ≤ 2 * bc len .half := by simp only [bc]; omega_arith
-  have bhw := bc_le_wide len .half
-  have cwh := bc_eq_cwc len .half
-  have cww := bc_eq_cwc len .wide
-  have hx' : val32 u₄.mem base (lo len (.slot .wide 15)) (cwc len .wide) = x :=
+  obtain sp : u₄.gpr .esp = s.gpr .esp := K₄.1 _ (by decide)
+  obtain hp' : val32 u₄.mem base (lo len (.slot .wide f)) (cwc len .wide) = p := by rw [m₄, hp]
+  obtain hd' : val32 u₄.mem base (lo len (.slot .wide e)) (cwc len .wide) = d := by rw [m₄, hd]
+  obtain bw2 : bc len .wide ≤ 2 * bc len .half := by simp only [bc]; omega_arith
+  obtain bhw := bc_le_wide len .half
+  obtain cwh := bc_eq_cwc len .half
+  obtain cww := bc_eq_cwc len .wide
+  obtain hx' : val32 u₄.mem base (lo len (.slot .wide 15)) (cwc len .wide) = x :=
     val32_low (b := cwc len .wide) (by rw [m₄, ← Nat.two_mul, hx]) hxn
-  have hxh : val32 u₄.mem base (lo len (.slot .wide 15)) (2 * cwc len .half) = x :=
+  obtain hxh : val32 u₄.mem base (lo len (.slot .wide 15)) (2 * cwc len .half) = x :=
     val32_low (b := 2 * cwc len .wide - 2 * cwc len .half)
       (by rw [m₄, show 2 * cwc len .half + (2 * cwc len .wide - 2 * cwc len .half) = 2 * cwc len .wide by omega_arith, hx])
       (Nat.lt_of_lt_of_le hxn (Nat.pow_le_pow_right (by decide) (by omega_arith)))
-  have P₄ := P.keepF h.room K₄ (by decide) (ws := []) (by rw [m₄]; exact Frame.refl _ _) (by simp)
+  obtain P₄ := P.keepF h.room K₄ (by decide) (ws := []) (by rw [m₄]; exact Frame.refl _ _) (by simp)
   refine WP.ite _ c₄ (fun nar => ?_) (fun _ => ?_)
   · have nar' : w32 s.mem base lenOff ≤ bc len .half := by have := of_decide_eq_true nar; omega_arith
-    have F := fits nar'
+    obtain F := fits nar'
     refine WP.mono (narrowPower_ok h₄ hf9 hf he9 he ho16 ho hp' F.1 hd' F.2 hxh P₄ (pfit.2 nar')) fun u ⟨Fu, Vu, Ku⟩ =>
       ⟨by rw [sp, m₄] at Fu; exact Fu, Vu, (K₄.mono (by decide)).trans Ku⟩
   · refine WP.mono (widePower_ok h₄ hf9 hf he9 he ho16 ho hp' hd' hx' P₄ pfit.1) fun u ⟨Fu, Vu, Ku⟩ =>

@@ -53,10 +53,10 @@ theorem windowF_ok {s : State} {n : Nat} (h : Bx L s B Z len N n) {i : Nat} (hi 
   have e16 : win = 16 := rfl
   have e96 : halfSlot = 96 := rfl
   refine WP.seq (WP.mono (startF_ok h hi) fun s₁ ⟨H₁, V₁, K₁, O₁⟩ => ?_)
-  have rel : (wordState s₁.mem B win).rel (Divstep.MSt.init d f g) 32 := by
+  obtain rel : (wordState s₁.mem B win).rel (Divstep.MSt.init d f g) 32 := by
     rw [V₁]
     exact ⟨hd, rfl, rfl, rfl, rfl, hf, hg⟩
-  have matrix := Divstep.W32.wsteps_rel (by decide) rel hdb hfo 30 (by decide)
+  obtain matrix := Divstep.W32.wsteps_rel (by decide) rel hdb hfo 30 (by decide)
   refine WP.mono (VG.Proof.Weierstrass.X86.Inv.wordSteps_ok H₁.ws.ws.workspace (t := win) (by omega_using [hZ, e16, e96])
     (by decide) (by decide)) fun z ⟨V₂, K₂, O₂⟩ => ⟨H₁.keepLow K₂ (by decide) (by decide) O₂ (by decide), ?_,
       (K₁.mono (by decide)).trans K₂, ?_⟩
@@ -101,24 +101,24 @@ theorem mdWord_spec {U V SD SE D0 E0 NP : BitVec 32} {d e np : Int}
     (hnp : (NP.toNat : Int) ≡ np [ZMOD 2 ^ 32]) :
     (mdWord U V SD SE D0 E0 NP).toInt = Divstep.mdOf 30 np U.toInt V.toInt d e := by
   set u := U.toInt; set v := V.toInt
-  have cu := toNat_cong U; have cv := toNat_cong V
+  obtain cu := toNat_cong U; have cv := toNat_cong V
   set md0 := (if d < 0 then u else 0) + (if e < 0 then v else 0)
-  have c0 : (((U &&& SD) + (V &&& SE)).toNat : Int) ≡ md0 [ZMOD 2 ^ 32] := by
+  obtain c0 : (((U &&& SD) + (V &&& SE)).toNat : Int) ≡ md0 [ZMOD 2 ^ 32] := by
     rw [hsd, hse]
     exact (toNat_add_cong _ _).trans ((and_sel_cong U _).add (and_sel_cong V _))
-  have cX : ((NP * (U * D0 + V * E0)).toNat : Int) ≡ np * (u * d + v * e) [ZMOD 2 ^ 32] :=
+  obtain cX : ((NP * (U * D0 + V * E0)).toNat : Int) ≡ np * (u * d + v * e) [ZMOD 2 ^ 32] :=
     (toNat_mul_cong _ _).trans (hnp.mul ((toNat_add_cong _ _).trans
       (((toNat_mul_cong _ _).trans (cu.mul hd)).add ((toNat_mul_cong _ _).trans (cv.mul he)))))
-  have cY := (toNat_sub_cong ((U &&& SD) + (V &&& SE)) (NP * (U * D0 + V * E0))).trans (c0.sub cX)
+  obtain cY := (toNat_sub_cong ((U &&& SD) + (V &&& SE)) (NP * (U * D0 + V * E0))).trans (c0.sub cX)
   -- The low 30 bits.
   set Y := (U &&& SD) + (V &&& SE) - NP * (U * D0 + V * E0)
-  have hz : ((Y &&& 0x3FFFFFFF#32).toNat : Int) = (md0 - np * (u * d + v * e)) % 2 ^ 30 := by
-    have h1 : (Y &&& 0x3FFFFFFF#32).toNat = Y.toNat % 2 ^ 30 := by
+  obtain hz : ((Y &&& 0x3FFFFFFF#32).toNat : Int) = (md0 - np * (u * d + v * e)) % 2 ^ 30 := by
+    obtain h1 : (Y &&& 0x3FFFFFFF#32).toNat = Y.toNat % 2 ^ 30 := by
       rw [BitVec.toNat_and, show (0x3FFFFFFF#32).toNat = 2 ^ 30 - 1 from rfl, Nat.and_two_pow_sub_one_eq_mod]
     rw [h1]; push_cast
     have := Int.ModEq.of_dvd (show (2 : Int) ^ 30 ∣ 2 ^ 32 by decide) cY
     exact this
-  have cR : ((mdWord U V SD SE D0 E0 NP).toNat : Int) ≡ Divstep.mdOf 30 np u v d e [ZMOD 2 ^ 32] := by
+  obtain cR : ((mdWord U V SD SE D0 E0 NP).toNat : Int) ≡ Divstep.mdOf 30 np u v d e [ZMOD 2 ^ 32] := by
     unfold mdWord Divstep.mdOf
     refine (toNat_sub_cong _ _).trans (c0.sub ?_)
     rw [hz]
@@ -153,56 +153,56 @@ theorem batchGen_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he 
       FAt len B p iv (bT dl f g).d (fNext dl f g) (gNext dl f g) (dNext p iv dl f g d e) (eNext p iv dl f g d e) o t := by
   have hn := h.nowrap
   have hf16 := h.fits16
-  have ke := kw_eq len
-  have e16 : win = 16 := rfl; have eMu : sMu = 160 := rfl; have eP : sP = 176 := rfl
-  have eMd : sMd = 184 := rfl; have eMm : sMm = 200 := rfl
-  have efs : fgSz = 16 := rfl; have eds : deSz = 20 := rfl
-  have hAF : rv (kw len) { arr := fgArr } = 160 + 4 * (4 * kw len + 8) := by
+  obtain ke := kw_eq len
+  obtain e16 : win = 16 := rfl; have eMu : sMu = 160 := rfl; have eP : sP = 176 := rfl
+  obtain eMd : sMd = 184 := rfl; have eMm : sMm = 200 := rfl
+  obtain efs : fgSz = 16 := rfl; have eds : deSz = 20 := rfl
+  obtain hAF : rv (kw len) { arr := fgArr } = 160 + 4 * (4 * kw len + 8) := by
     simp only [rv, VG.Impl.Rsa.X86.InvBatchRt.offset, fgArr]; omega_using []
-  have hAD : rv (kw len) { arr := deArr } = 160 + 11 * (4 * kw len + 8) := by
+  obtain hAD : rv (kw len) { arr := deArr } = 160 + 11 * (4 * kw len + 8) := by
     simp only [rv, VG.Impl.Rsa.X86.InvBatchRt.offset, deArr]; omega_using []
-  have hfg0 : fg0 len = rv (kw len) { arr := fgArr } + fgSz := by simp only [fg0, rv]; omega_using []
-  have hde0 : de0 len = rv (kw len) { arr := deArr } + deSz := by simp only [de0, rv]; omega_using []
-  have Fdl := F.dl; have Fiv := F.inverse; have Ff := F.f; have Fg := F.g; have Fd := F.d; have Fe := F.e
+  obtain hfg0 : fg0 len = rv (kw len) { arr := fgArr } + fgSz := by simp only [fg0, rv]; omega_using []
+  obtain hde0 : de0 len = rv (kw len) { arr := deArr } + deSz := by simp only [de0, rv]; omega_using []
+  obtain Fdl := F.dl; have Fiv := F.inverse; have Ff := F.f; have Fg := F.g; have Fd := F.d; have Fe := F.e
   have Fp := F.p
-  have hi8 : i ≤ 8 := by omega_using [hio]
-  have hoi : (i + 4 ≤ o ∨ o + 4 ≤ i) ∧ (i + 4 + 4 ≤ o ∨ o + 4 ≤ i + 4) ∧ (i + 4 ≤ o + 4 ∨ o + 4 + 4 ≤ i) ∧
+  obtain hi8 : i ≤ 8 := by omega_using [hio]
+  obtain hoi : (i + 4 ≤ o ∨ o + 4 ≤ i) ∧ (i + 4 + 4 ≤ o ∨ o + 4 ≤ i + 4) ∧ (i + 4 ≤ o + 4 ∨ o + 4 + 4 ≤ i) ∧
       (i + 4 + 4 ≤ o + 4 ∨ o + 4 + 4 ≤ i + 4) := by omega_using [hio]
   generalize hA : rv (kw len) { arr := fgArr } = AF at hAF hfg0 Ff Fg
   generalize hD : rv (kw len) { arr := deArr } = AD at hAD hde0 Fd Fe Fp
   set T := bT dl f g with hT
-  have bnd := Divstep.msteps_bnd dl f g 30
+  obtain bnd := Divstep.msteps_bnd dl f g 30
   simp only [Divstep.MSt.bnd] at bnd
   unfold batchCodeF
   simp only [seqs]
   -- The window.
-  have hfw : ((s.mem.readW (off B (fg0 len + i)) 32).toNat : Int) % 2 ^ 32 = f % 2 ^ 32 := by
+  obtain hfw : ((s.mem.readW (off B (fg0 len + i)) 32).toNat : Int) % 2 ^ 32 = f % 2 ^ 32 := by
     have := sval_low s.mem B (AF + fgSz + i) fgSz (nw len)
     rw [Ff] at this; rw [hfg0]; exact this
-  have hgw : ((s.mem.readW (off B (fg0 len + (i + 4))) 32).toNat : Int) % 2 ^ 32 = g % 2 ^ 32 := by
+  obtain hgw : ((s.mem.readW (off B (fg0 len + (i + 4))) 32).toNat : Int) % 2 ^ 32 = g % 2 ^ 32 := by
     have := sval_low s.mem B (AF + fgSz + (i + 4)) fgSz (nw len)
     rw [Fg] at this; rw [hfg0]; exact this
   refine VG.Proof.Rsa.X86.InvBatchRt.seq_assoc (WP.seq (WP.mono (windowF_ok h (by omega_using [hio, efs]) F.dl hfw hgw hdl hfo)
     fun s₁ ⟨H₁, M₁, K₁, O₁⟩ => ?_))
-  have hn20 : AF + fgSz * (nw len + 2) < Z := by rw [efs]; omega_using [hf16, ke, hAF]
-  have hd20 : AD + deSz * (nw len + 2) < Z := by rw [eds]; omega_using [hn2, hf16, ke, hAD]
-  have far : AF + fgSz * (nw len + 2) ≤ AD := by rw [efs]; omega_using [ke, hAF, hAD]
+  obtain hn20 : AF + fgSz * (nw len + 2) < Z := by rw [efs]; omega_using [hf16, ke, hAF]
+  obtain hd20 : AD + deSz * (nw len + 2) < Z := by rw [eds]; omega_using [hn2, hf16, ke, hAD]
+  obtain far : AF + fgSz * (nw len + 2) ≤ AD := by rw [efs]; omega_using [ke, hAF, hAD]
   -- The masks.
   refine WP.seq (WP.mono (coefMasks_ok H₁) fun s₂ ⟨H₂, V₂, O₂, K₂⟩ => ?_)
-  have c₂ : ∀ d, d + 4 ≤ win + 28 → win + 12 ≤ d →
+  obtain c₂ : ∀ d, d + 4 ≤ win + 28 → win + 12 ≤ d →
       s₂.mem.readW (off B d) 32 = s₁.mem.readW (off B d) 32 := fun d h1 h2 => hdr_out O₂ (.inl (by omega_using [e16, eMu, h1])) (by omega_using [e16, h1])
-  have Sf₂ : Same B (AF + fgSz + i) fgSz (nw len + 1) s.mem s₂.mem :=
+  obtain Sf₂ : Same B (AF + fgSz + i) fgSz (nw len + 1) s.mem s₂.mem :=
     (Same.below O₁ (by omega_using [hio, efs]) (by omega_using [e16, hAF]) (by omega_using [hn, hn20])).trans (Same.below O₂ (by omega_using [hio, efs]) (by omega_using [eMu, hAF]) (by omega_using [hn, hn20]))
-  have Sg₂ : Same B (AF + fgSz + (i + 4)) fgSz (nw len + 1) s.mem s₂.mem :=
+  obtain Sg₂ : Same B (AF + fgSz + (i + 4)) fgSz (nw len + 1) s.mem s₂.mem :=
     (Same.below O₁ (by omega_using [hio, efs]) (by omega_using [e16, hAF]) (by omega_using [hn, hn20])).trans (Same.below O₂ (by omega_using [hio, efs]) (by omega_using [eMu, hAF]) (by omega_using [hn, hn20]))
-  have mk₂ : ∀ j < 4, s₂.mem.readW (off B (sMu + 4 * j)) 32 = maskW (s₂.mem.readW (off B (win + 12 + 4 * j)) 32) :=
+  obtain mk₂ : ∀ j < 4, s₂.mem.readW (off B (sMu + 4 * j)) 32 = maskW (s₂.mem.readW (off B (win + 12 + 4 * j)) 32) :=
     fun j hj => by rw [V₂ j hj, c₂ _ (by omega_using [hj]) (by omega_using [])]
-  have hu₂ : s₂.mem.readW (off B (win + 12)) 32 = BitVec.ofInt 32 T.u := by rw [c₂ _ (by omega_using []) (by omega_using [])]; exact M₁.u
-  have hv₂ : s₂.mem.readW (off B (win + 16)) 32 = BitVec.ofInt 32 T.v := by rw [c₂ _ (by omega_using []) (by omega_using [])]; exact M₁.v
-  have hq₂ : s₂.mem.readW (off B (win + 20)) 32 = BitVec.ofInt 32 T.q := by rw [c₂ _ (by omega_using []) (by omega_using [])]; exact M₁.q
-  have hr₂ : s₂.mem.readW (off B (win + 24)) 32 = BitVec.ofInt 32 T.r := by rw [c₂ _ (by omega_using []) (by omega_using [])]; exact M₁.r
+  obtain hu₂ : s₂.mem.readW (off B (win + 12)) 32 = BitVec.ofInt 32 T.u := by rw [c₂ _ (by omega_using []) (by omega_using [])]; exact M₁.u
+  obtain hv₂ : s₂.mem.readW (off B (win + 16)) 32 = BitVec.ofInt 32 T.v := by rw [c₂ _ (by omega_using []) (by omega_using [])]; exact M₁.v
+  obtain hq₂ : s₂.mem.readW (off B (win + 20)) 32 = BitVec.ofInt 32 T.q := by rw [c₂ _ (by omega_using []) (by omega_using [])]; exact M₁.q
+  obtain hr₂ : s₂.mem.readW (off B (win + 24)) 32 = BitVec.ofInt 32 T.r := by rw [c₂ _ (by omega_using []) (by omega_using [])]; exact M₁.r
   -- The row of `f`.
-  have tsF : ∀ {m : Mem} {c₁ c₂ m₁ m₂ : Nat} (o' : Nat), o' + 4 ≤ fgSz → (i + 4 ≤ o' ∨ o' + 4 ≤ i) →
+  obtain tsF : ∀ {m : Mem} {c₁ c₂ m₁ m₂ : Nat} (o' : Nat), o' + 4 ≤ fgSz → (i + 4 ≤ o' ∨ o' + 4 ≤ i) →
       (i + 4 + 4 ≤ o' ∨ o' + 4 ≤ i + 4) → c₁ + 4 ≤ sP → c₂ + 4 ≤ sP → m₁ + 4 ≤ sP → m₂ + 4 ≤ sP →
       m.readW (off B m₁) 32 = maskW (m.readW (off B c₁) 32) → m.readW (off B m₂) 32 = maskW (m.readW (off B c₂) 32) →
       TermsOk m B AF fgSz o' [⟨i, c₁, m₁⟩, ⟨i + 4, c₂, m₂⟩] := by
@@ -215,11 +215,11 @@ theorem batchGen_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he 
         h3, .inl h5, .inl h7, h9⟩
   have huv : |T.u| + |T.v| ≤ 2 ^ 30 := bnd.1
   have hqr : |T.q| + |T.r| ≤ 2 ^ 30 := bnd.2
-  have ts₂ : TermsOk s₂.mem B AF fgSz o [⟨i, win + 12, sMu⟩, ⟨i + 4, win + 16, sMu + 4⟩] := by
+  obtain ts₂ : TermsOk s₂.mem B AF fgSz o [⟨i, win + 12, sMu⟩, ⟨i + 4, win + 16, sMu + 4⟩] := by
     refine tsF o (by rw [efs]; omega_using [hio]) hoi.1 hoi.2.1 (by omega_using [e16, eP]) (by omega_using [e16, eP]) (by omega_using [eMu, eP]) (by omega_using [eMu, eP]) ?_ ?_
     · simpa using mk₂ 0 (by omega_using [])
     · simpa using mk₂ 1 (by omega_using [])
-  have rf := rowTwo_ok H₂ hn2 he (arr := fgArr) (sz := fgSz) (o := o) (t₁ := ⟨i, win + 12, sMu⟩)
+  obtain rf := rowTwo_ok H₂ hn2 he (arr := fgArr) (sz := fgSz) (o := o) (t₁ := ⟨i, win + 12, sMu⟩)
     (t₂ := ⟨i + 4, win + 16, sMu + 4⟩) (Or.inl rfl) (by rw [efs]; omega_using [hio]) (by rw [hA]; omega) (by rw [hA]; omega_using [eP, hAF])
     (by rw [hA]; exact ts₂) hu₂ hv₂ huv
     (by dsimp only; rw [hA, Sf₂.sval_eq, Sg₂.sval_eq, Ff, Fg]; exact hf')
@@ -227,21 +227,21 @@ theorem batchGen_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he 
   rw [hA] at F₃ V₃
   dsimp only at V₃
   rw [Sf₂.sval_eq, Sg₂.sval_eq, Ff, Fg] at V₃
-  have hAF32 : AF ≤ 2 ^ 32 := by omega_using [hn, hf16, ke, hAF]
-  have hfit32 : AF + fgSz * (nw len + 2) ≤ 2 ^ 32 := by rw [efs] at *; omega_using [hn, hf16, ke, hAF]
-  have hdit32 : AD + deSz * (nw len + 2) ≤ 2 ^ 32 := by rw [eds] at *; omega_using [hn2, he, hn, hf16, ke, efs, hAF, hAD, hn20, hd20, far, hAF32, hfit32]
+  obtain hAF32 : AF ≤ 2 ^ 32 := by omega_using [hn, hf16, ke, hAF]
+  obtain hfit32 : AF + fgSz * (nw len + 2) ≤ 2 ^ 32 := by rw [efs] at *; omega_using [hn, hf16, ke, hAF]
+  obtain hdit32 : AD + deSz * (nw len + 2) ≤ 2 ^ 32 := by rw [eds] at *; omega_using [hn2, he, hn, hf16, ke, efs, hAF, hAD, hn20, hd20, far, hAF32, hfit32]
   -- The row of `g`.
-  have Sf₃ : Same B (AF + fgSz + i) fgSz (nw len + 1) s.mem s₃.mem :=
+  obtain Sf₃ : Same B (AF + fgSz + i) fgSz (nw len + 1) s.mem s₃.mem :=
     Sf₂.trans (Same.row_slot F₃ (by rw [efs]; omega_using [hio]) (by rw [efs]; omega_using [hio]) hoi.1 (by omega_using [eP, hAF]) hfit32)
-  have Sg₃ : Same B (AF + fgSz + (i + 4)) fgSz (nw len + 1) s.mem s₃.mem :=
+  obtain Sg₃ : Same B (AF + fgSz + (i + 4)) fgSz (nw len + 1) s.mem s₃.mem :=
     Sg₂.trans (Same.row_slot F₃ (by rw [efs]; omega_using [hio]) (by rw [efs]; omega_using [hio]) hoi.2.1 (by omega_using [eP, hAF]) hfit32)
-  have h₃ : ∀ d, d + 4 ≤ sP → s₃.mem.readW (off B d) 32 = s₂.mem.readW (off B d) 32 := fun d hd =>
+  obtain h₃ : ∀ d, d + 4 ≤ sP → s₃.mem.readW (off B d) 32 = s₂.mem.readW (off B d) 32 := fun d hd =>
     hdr_row F₃ (by omega_using [hn2, he, hn, hf16, ke, eP, efs, hAF, hAD, hn20, hd20, far, hAF32, hfit32, hdit32, hd]) (.inl hd) hAF32
-  have ts₃ : TermsOk s₃.mem B AF fgSz (o + 4) [⟨i, win + 20, sMu + 8⟩, ⟨i + 4, win + 24, sMu + 12⟩] := by
+  obtain ts₃ : TermsOk s₃.mem B AF fgSz (o + 4) [⟨i, win + 20, sMu + 8⟩, ⟨i + 4, win + 24, sMu + 12⟩] := by
     refine tsF (o + 4) (by rw [efs]; omega_using [hio]) hoi.2.2.1 hoi.2.2.2 (by omega_using [e16, eP]) (by omega_using [e16, eP]) (by omega_using [eMu, eP]) (by omega_using [eMu, eP]) ?_ ?_
     · rw [h₃ (sMu + 8) (by omega_using [eMu, eP]), h₃ (win + 20) (by omega_using [e16, eP])]; simpa using mk₂ 2 (by omega_using [])
     · rw [h₃ (sMu + 12) (by omega_using [eMu, eP]), h₃ (win + 24) (by omega_using [e16, eP])]; simpa using mk₂ 3 (by omega_using [])
-  have rg := rowTwo_ok H₃ hn2 he (arr := fgArr) (sz := fgSz) (o := o + 4) (t₁ := ⟨i, win + 20, sMu + 8⟩)
+  obtain rg := rowTwo_ok H₃ hn2 he (arr := fgArr) (sz := fgSz) (o := o + 4) (t₁ := ⟨i, win + 20, sMu + 8⟩)
     (t₂ := ⟨i + 4, win + 24, sMu + 12⟩) (Or.inl rfl) (by rw [efs]; omega_using [hio]) (by rw [hA]; omega) (by rw [hA]; omega_using [eP, hAF])
     (by rw [hA]; exact ts₃) (by rw [h₃ (win + 20) (by omega_using [e16, eP])]; exact hq₂) (by rw [h₃ (win + 24) (by omega_using [e16, eP])]; exact hr₂) hqr
     (by dsimp only; rw [hA, Sf₃.sval_eq, Sg₃.sval_eq, Ff, Fg]; exact hg')
@@ -249,57 +249,57 @@ theorem batchGen_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he 
   rw [hA] at F₄ V₄
   dsimp only at V₄
   rw [Sf₃.sval_eq, Sg₃.sval_eq, Ff, Fg] at V₄
-  have h₄ : ∀ d, d + 4 ≤ sP → s₄.mem.readW (off B d) 32 = s₂.mem.readW (off B d) 32 := fun d hd => by
+  obtain h₄ : ∀ d, d + 4 ≤ sP → s₄.mem.readW (off B d) 32 = s₂.mem.readW (off B d) 32 := fun d hd => by
     rw [hdr_row F₄ (by omega_using [hn2, he, hn, hf16, ke, eP, efs, hAF, hAD, hn20, hd20, far, hAF32, hfit32, hdit32, hd]) (.inl hd) hAF32, h₃ d hd]
   -- `d`, `e`, `p` so far.
-  have farDE : ∀ x, x + 4 ≤ deSz → Same B (AD + deSz + x) deSz (nw len + 1) s.mem s₄.mem := fun x hx =>
+  obtain farDE : ∀ x, x + 4 ≤ deSz → Same B (AD + deSz + x) deSz (nw len + 1) s.mem s₄.mem := fun x hx =>
     (((Same.below O₁ hx (by omega_using [e16, hAD]) hdit32).trans (Same.below O₂ hx (by omega_using [eMu, hAD]) hdit32)).trans
       (Same.row_far F₃ (by rw [efs]; omega_using [hio]) hx (.inr far) (by omega_using [eP, hAD]) hdit32)).trans
       (Same.row_far F₄ (by rw [efs]; omega_using [hio]) hx (.inr far) (by omega_using [eP, hAD]) hdit32)
-  have Sd₄ := farDE i (by rw [eds]; omega_using [hio])
-  have Se₄ := farDE (i + 4) (by rw [eds]; omega_using [hio])
-  have Sp₄ := farDE 16 (by rw [eds])
+  obtain Sd₄ := farDE i (by rw [eds]; omega_using [hio])
+  obtain Se₄ := farDE (i + 4) (by rw [eds]; omega_using [hio])
+  obtain Sp₄ := farDE 16 (by rw [eds])
   -- `md`, `me`.
   refine WP.seq (WP.mono (mdme_ok H₄ (dx := i) (by rw [eds]; omega_using [hio])) fun s₅ ⟨H₅, O₅, K₅, M₅⟩ => ?_)
-  have iv₄ : (s₄.mem.readW (off B (win + 28)) 32).toNat = iv := by
+  obtain iv₄ : (s₄.mem.readW (off B (win + 28)) 32).toNat = iv := by
     rw [h₄ (win + 28) (by omega_using [e16, eP]), hdr_out O₂ (.inl (by omega_using [e16, eMu])) (by omega_using [e16]), ← Fiv]
     exact O₁.w32 (.inr (by omega_using [])) (by omega_using [e16])
-  have sd : maskW (s₄.mem.readW (off B (de0 len + 20 * nw len + i)) 32) = if d < 0 then -1 else 0 := by
+  obtain sd : maskW (s₄.mem.readW (off B (de0 len + 20 * nw len + i)) 32) = if d < 0 then -1 else 0 := by
     rw [show de0 len + 20 * nw len + i = AD + deSz + i + deSz * nw len by rw [hde0, eds]; omega_using [], maskW_top,
       Sd₄.sval_eq, Fd]
-  have se : maskW (s₄.mem.readW (off B (de0 len + 20 * nw len + (i + 4))) 32) = if e < 0 then -1 else 0 := by
+  obtain se : maskW (s₄.mem.readW (off B (de0 len + 20 * nw len + (i + 4))) 32) = if e < 0 then -1 else 0 := by
     rw [show de0 len + 20 * nw len + (i + 4) = AD + deSz + (i + 4) + deSz * nw len by rw [hde0, eds]; omega_using [],
       maskW_top, Se₄.sval_eq, Fe]
-  have d0 : ((s₄.mem.readW (off B (de0 len + i)) 32).toNat : Int) ≡ d [ZMOD 2 ^ 32] := by
+  obtain d0 : ((s₄.mem.readW (off B (de0 len + i)) 32).toNat : Int) ≡ d [ZMOD 2 ^ 32] := by
     have := sval_low s₄.mem B (AD + deSz + i) deSz (nw len)
     rw [Sd₄.sval_eq, Fd] at this; rw [hde0]; exact this
-  have e0 : ((s₄.mem.readW (off B (de0 len + (i + 4))) 32).toNat : Int) ≡ e [ZMOD 2 ^ 32] := by
+  obtain e0 : ((s₄.mem.readW (off B (de0 len + (i + 4))) 32).toNat : Int) ≡ e [ZMOD 2 ^ 32] := by
     have := sval_low s₄.mem B (AD + deSz + (i + 4)) deSz (nw len)
     rw [Se₄.sval_eq, Fe] at this; rw [hde0]; exact this
-  have np : ((s₄.mem.readW (off B (win + 28)) 32).toNat : Int) ≡ (iv : Int) [ZMOD 2 ^ 32] := by rw [iv₄]
-  have hu₄ : s₄.mem.readW (off B (win + 12)) 32 = BitVec.ofInt 32 T.u := by rw [h₄ (win + 12) (by omega_using [e16, eP])]; exact hu₂
-  have hv₄ : s₄.mem.readW (off B (win + 16)) 32 = BitVec.ofInt 32 T.v := by rw [h₄ (win + 16) (by omega_using [e16, eP])]; exact hv₂
-  have hq₄ : s₄.mem.readW (off B (win + 20)) 32 = BitVec.ofInt 32 T.q := by rw [h₄ (win + 20) (by omega_using [e16, eP])]; exact hq₂
-  have hr₄ : s₄.mem.readW (off B (win + 24)) 32 = BitVec.ofInt 32 T.r := by rw [h₄ (win + 24) (by omega_using [e16, eP])]; exact hr₂
-  have tu : (BitVec.ofInt 32 T.u).toInt = T.u := ofInt_toInt (by have := abs_nonneg T.v; omega_using [huv, this])
-  have tv : (BitVec.ofInt 32 T.v).toInt = T.v := ofInt_toInt (by have := abs_nonneg T.u; omega_using [huv, this])
-  have tq : (BitVec.ofInt 32 T.q).toInt = T.q := ofInt_toInt (by have := abs_nonneg T.r; omega_using [hqr, this])
-  have tr : (BitVec.ofInt 32 T.r).toInt = T.r := ofInt_toInt (by have := abs_nonneg T.q; omega_using [hqr, this])
-  have md : (s₅.mem.readW (off B (sMd + 8)) 32).toInt = Divstep.mdOf 30 iv T.u T.v d e := by
+  obtain np : ((s₄.mem.readW (off B (win + 28)) 32).toNat : Int) ≡ (iv : Int) [ZMOD 2 ^ 32] := by rw [iv₄]
+  obtain hu₄ : s₄.mem.readW (off B (win + 12)) 32 = BitVec.ofInt 32 T.u := by rw [h₄ (win + 12) (by omega_using [e16, eP])]; exact hu₂
+  obtain hv₄ : s₄.mem.readW (off B (win + 16)) 32 = BitVec.ofInt 32 T.v := by rw [h₄ (win + 16) (by omega_using [e16, eP])]; exact hv₂
+  obtain hq₄ : s₄.mem.readW (off B (win + 20)) 32 = BitVec.ofInt 32 T.q := by rw [h₄ (win + 20) (by omega_using [e16, eP])]; exact hq₂
+  obtain hr₄ : s₄.mem.readW (off B (win + 24)) 32 = BitVec.ofInt 32 T.r := by rw [h₄ (win + 24) (by omega_using [e16, eP])]; exact hr₂
+  obtain tu : (BitVec.ofInt 32 T.u).toInt = T.u := ofInt_toInt (by have := abs_nonneg T.v; omega_using [huv, this])
+  obtain tv : (BitVec.ofInt 32 T.v).toInt = T.v := ofInt_toInt (by have := abs_nonneg T.u; omega_using [huv, this])
+  obtain tq : (BitVec.ofInt 32 T.q).toInt = T.q := ofInt_toInt (by have := abs_nonneg T.r; omega_using [hqr, this])
+  obtain tr : (BitVec.ofInt 32 T.r).toInt = T.r := ofInt_toInt (by have := abs_nonneg T.q; omega_using [hqr, this])
+  obtain md : (s₅.mem.readW (off B (sMd + 8)) 32).toInt = Divstep.mdOf 30 iv T.u T.v d e := by
     rw [M₅.md, hu₄, hv₄, mdWord_spec (by rw [tu, tv]; exact huv) sd se d0 e0 np, tu, tv]
-  have me : (s₅.mem.readW (off B (sMd + 12)) 32).toInt = Divstep.mdOf 30 iv T.q T.r d e := by
+  obtain me : (s₅.mem.readW (off B (sMd + 12)) 32).toInt = Divstep.mdOf 30 iv T.q T.r d e := by
     rw [M₅.me, hq₄, hr₄, mdWord_spec (by rw [tq, tr]; exact hqr) sd se d0 e0 np, tq, tr]
-  have mdb := Divstep.mdOf_abs (N := 30) (np := (iv : Int)) (d := d) (e := e) huv
-  have meb := Divstep.mdOf_abs (N := 30) (np := (iv : Int)) (d := d) (e := e) hqr
+  obtain mdb := Divstep.mdOf_abs (N := 30) (np := (iv : Int)) (d := d) (e := e) huv
+  obtain meb := Divstep.mdOf_abs (N := 30) (np := (iv : Int)) (d := d) (e := e) hqr
   simp only [Nat.reduceAdd] at mdb meb
-  have hAD32 : AD ≤ 2 ^ 32 := by omega_using [hdit32]
+  obtain hAD32 : AD ≤ 2 ^ 32 := by omega_using [hdit32]
   -- The row of `d`.
-  have h₅ : ∀ d, d + 4 ≤ sP → s₅.mem.readW (off B d) 32 = s₂.mem.readW (off B d) 32 := fun d hd => by
+  obtain h₅ : ∀ d, d + 4 ≤ sP → s₅.mem.readW (off B d) 32 = s₂.mem.readW (off B d) 32 := fun d hd => by
     rw [hdr_out O₅ (.inl (by omega_using [eP, eMd, hd])) (by omega_using [eP, hd]), h₄ d hd]
-  have Sd₅ := Sd₄.trans (Same.below O₅ (by rw [eds]; omega_using [hio]) (by omega_using [eMd, hAD]) hdit32)
-  have Se₅ := Se₄.trans (Same.below O₅ (by rw [eds]; omega_using [hio]) (by omega_using [eMd, hAD]) hdit32)
-  have Sp₅ := Sp₄.trans (Same.below O₅ (by rw [eds]) (by omega_using [eMd, hAD]) hdit32)
-  have tsD : ∀ {m : Mem} {c₁ c₂ c₃ m₁ m₂ m₃ : Nat} (o' : Nat), o' + 4 ≤ deSz → (i + 4 ≤ o' ∨ o' + 4 ≤ i) →
+  obtain Sd₅ := Sd₄.trans (Same.below O₅ (by rw [eds]; omega_using [hio]) (by omega_using [eMd, hAD]) hdit32)
+  obtain Se₅ := Se₄.trans (Same.below O₅ (by rw [eds]; omega_using [hio]) (by omega_using [eMd, hAD]) hdit32)
+  obtain Sp₅ := Sp₄.trans (Same.below O₅ (by rw [eds]) (by omega_using [eMd, hAD]) hdit32)
+  obtain tsD : ∀ {m : Mem} {c₁ c₂ c₃ m₁ m₂ m₃ : Nat} (o' : Nat), o' + 4 ≤ deSz → (i + 4 ≤ o' ∨ o' + 4 ≤ i) →
       (i + 4 + 4 ≤ o' ∨ o' + 4 ≤ i + 4) → o' + 4 ≤ 16 → c₁ + 4 ≤ sP → c₂ + 4 ≤ sP → m₁ + 4 ≤ sP → m₂ + 4 ≤ sP →
       sP + 8 ≤ c₃ → sP + 8 ≤ m₃ → c₃ + 4 ≤ AD → m₃ + 4 ≤ AD →
       m.readW (off B m₁) 32 = maskW (m.readW (off B c₁) 32) → m.readW (off B m₂) 32 = maskW (m.readW (off B c₂) 32) →
@@ -314,14 +314,14 @@ theorem batchGen_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he 
         h3, .inl h5, .inl h7, k2⟩
     · exact ⟨show c₃ + 4 ≤ AD by omega_using [h10], show m₃ + 4 ≤ AD by omega_using [h11], show 16 + 4 ≤ deSz by rw [eds],
         .inr h3', .inr h8, .inr h9, k3⟩
-  have mk₅ : ∀ j < 4, s₅.mem.readW (off B (sMu + 4 * j)) 32 = maskW (s₅.mem.readW (off B (win + 12 + 4 * j)) 32) :=
+  obtain mk₅ : ∀ j < 4, s₅.mem.readW (off B (sMu + 4 * j)) 32 = maskW (s₅.mem.readW (off B (win + 12 + 4 * j)) 32) :=
     fun j hj => by rw [h₅ (sMu + 4 * j) (by omega_using [eMu, eP, hj]), h₅ (win + 12 + 4 * j) (by omega_using [e16, eP, hj])]; exact mk₂ j hj
-  have ts₅ : TermsOk s₅.mem B AD deSz o [⟨i, win + 12, sMu⟩, ⟨i + 4, win + 16, sMu + 4⟩, ⟨16, sMd + 8, sMm⟩] := by
+  obtain ts₅ : TermsOk s₅.mem B AD deSz o [⟨i, win + 12, sMu⟩, ⟨i + 4, win + 16, sMu + 4⟩, ⟨16, sMd + 8, sMm⟩] := by
     refine tsD o (by rw [eds]; omega_using [hio]) hoi.1 hoi.2.1 (by omega_using [hio]) (by omega_using [e16, eP]) (by omega_using [e16, eP]) (by omega_using [eMu, eP]) (by omega_using [eMu, eP])
       (by omega_using [eP, eMd]) (by omega_using [eP, eMm]) (by omega_using [eMd, hAD]) (by omega_using [eMm, hAD]) ?_ ?_ M₅.mmd
     · simpa using mk₅ 0 (by omega_using [])
     · simpa using mk₅ 1 (by omega_using [])
-  have rd := rowThree_ok H₅ hn2 he (arr := deArr) (sz := deSz) (o := o) (t₁ := ⟨i, win + 12, sMu⟩)
+  obtain rd := rowThree_ok H₅ hn2 he (arr := deArr) (sz := deSz) (o := o) (t₁ := ⟨i, win + 12, sMu⟩)
     (t₂ := ⟨i + 4, win + 16, sMu + 4⟩) (t₃ := ⟨16, sMd + 8, sMm⟩) (Or.inr rfl) (by rw [eds]; omega_using [hio])
     (by rw [hD]; omega) (by rw [hD]; omega_using [eP, hAD]) (by rw [hD]; exact ts₅) (by rw [h₅ (win + 12) (by omega_using [e16, eP])]; exact hu₂)
     (by rw [h₅ (win + 16) (by omega_using [e16, eP])]; exact hv₂) md huv (by rw [abs_le]; omega_using [mdb])
@@ -331,23 +331,23 @@ theorem batchGen_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he 
   dsimp only at V₆
   rw [Sd₅.sval_eq, Se₅.sval_eq, Sp₅.sv, Fd, Fe, Fp] at V₆
   -- The row of `e`.
-  have h₆ : ∀ d, d + 4 ≤ sP → s₆.mem.readW (off B d) 32 = s₂.mem.readW (off B d) 32 := fun d hd => by
+  obtain h₆ : ∀ d, d + 4 ≤ sP → s₆.mem.readW (off B d) 32 = s₂.mem.readW (off B d) 32 := fun d hd => by
     rw [hdr_row F₆ (by omega_using [hn2, he, hn, hf16, ke, eP, efs, eds, hAF, hAD, hn20, hd20, far, hAF32, hfit32, hdit32, hAD32, hd]) (.inl hd) hAD32, h₅ d hd]
-  have h₆' : ∀ d, sP + 8 ≤ d → d + 4 ≤ AD → s₆.mem.readW (off B d) 32 = s₅.mem.readW (off B d) 32 := fun d h1 h2 =>
+  obtain h₆' : ∀ d, sP + 8 ≤ d → d + 4 ≤ AD → s₆.mem.readW (off B d) 32 = s₅.mem.readW (off B d) 32 := fun d h1 h2 =>
     hdr_row F₆ h2 (.inr h1) hAD32
-  have Sd₆ := Sd₅.trans (Same.row_slot F₆ (by rw [eds]; omega_using [hio]) (by rw [eds]; omega_using [hio]) hoi.1 (by omega_using [eP, hAD]) hdit32)
-  have Se₆ := Se₅.trans (Same.row_slot F₆ (by rw [eds]; omega_using [hio]) (by rw [eds]; omega_using [hio]) hoi.2.1 (by omega_using [eP, hAD]) hdit32)
-  have Sp₆ := Sp₅.trans (Same.row_slot F₆ (by rw [eds]; omega_using [hio]) (by rw [eds]) (.inr (by omega_using [hio])) (by omega_using [eP, hAD]) hdit32)
-  have ts₆ : TermsOk s₆.mem B AD deSz (o + 4)
+  obtain Sd₆ := Sd₅.trans (Same.row_slot F₆ (by rw [eds]; omega_using [hio]) (by rw [eds]; omega_using [hio]) hoi.1 (by omega_using [eP, hAD]) hdit32)
+  obtain Se₆ := Se₅.trans (Same.row_slot F₆ (by rw [eds]; omega_using [hio]) (by rw [eds]; omega_using [hio]) hoi.2.1 (by omega_using [eP, hAD]) hdit32)
+  obtain Sp₆ := Sp₅.trans (Same.row_slot F₆ (by rw [eds]; omega_using [hio]) (by rw [eds]) (.inr (by omega_using [hio])) (by omega_using [eP, hAD]) hdit32)
+  obtain ts₆ : TermsOk s₆.mem B AD deSz (o + 4)
       [⟨i, win + 20, sMu + 8⟩, ⟨i + 4, win + 24, sMu + 12⟩, ⟨16, sMd + 12, sMm + 4⟩] := by
     refine tsD (o + 4) (by rw [eds]; omega_using [hio]) hoi.2.2.1 hoi.2.2.2 (by omega_using [hio]) (by omega_using [e16, eP]) (by omega_using [e16, eP]) (by omega_using [eMu, eP])
       (by omega_using [eMu, eP]) (by omega_using [eP, eMd]) (by omega_using [eP, eMm]) (by omega_using [eMd, hAD]) (by omega_using [eMm, hAD]) ?_ ?_ ?_
     · rw [h₆ (sMu + 8) (by omega_using [eMu, eP]), h₆ (win + 20) (by omega_using [e16, eP])]; simpa using mk₂ 2 (by omega_using [])
     · rw [h₆ (sMu + 12) (by omega_using [eMu, eP]), h₆ (win + 24) (by omega_using [e16, eP])]; simpa using mk₂ 3 (by omega_using [])
     · rw [h₆' (sMm + 4) (by omega_using [eP, eMm]) (by omega_using [eMm, hAD]), h₆' (sMd + 12) (by omega_using [eP, eMd]) (by omega_using [eMd, hAD])]; exact M₅.mme
-  have me₆ : (s₆.mem.readW (off B (sMd + 12)) 32).toInt = Divstep.mdOf 30 iv T.q T.r d e := by
+  obtain me₆ : (s₆.mem.readW (off B (sMd + 12)) 32).toInt = Divstep.mdOf 30 iv T.q T.r d e := by
     rw [h₆' (sMd + 12) (by omega_using [eP, eMd]) (by omega_using [eMd, hAD])]; exact me
-  have re := rowThree_ok H₆ hn2 he (arr := deArr) (sz := deSz) (o := o + 4) (t₁ := ⟨i, win + 20, sMu + 8⟩)
+  obtain re := rowThree_ok H₆ hn2 he (arr := deArr) (sz := deSz) (o := o + 4) (t₁ := ⟨i, win + 20, sMu + 8⟩)
     (t₂ := ⟨i + 4, win + 24, sMu + 12⟩) (t₃ := ⟨16, sMd + 12, sMm + 4⟩) (Or.inr rfl) (by rw [eds]; omega_using [hio])
     (by rw [hD]; omega) (by rw [hD]; omega_using [eP, hAD]) (by rw [hD]; exact ts₆) (by rw [h₆ (win + 20) (by omega_using [e16, eP])]; exact hq₂)
     (by rw [h₆ (win + 24) (by omega_using [e16, eP])]; exact hr₂) me₆ hqr
@@ -358,29 +358,29 @@ theorem batchGen_ok {s : State} (h : Bx L s B Z len N) (hn2 : 2 ≤ nw len) (he 
   dsimp only at V₇
   rw [Sd₆.sval_eq, Se₆.sval_eq, Sp₆.sv, Fd, Fe, Fp] at V₇
   -- The header below the scratch words, from the window on.
-  have hT : ∀ d, d + 4 ≤ sMu → t.mem.readW (off B d) 32 = s₁.mem.readW (off B d) 32 := fun d hd => by
+  obtain hT : ∀ d, d + 4 ≤ sMu → t.mem.readW (off B d) 32 = s₁.mem.readW (off B d) 32 := fun d hd => by
     rw [hdr_row F₇ (by omega_using [hn2, he, hn, hf16, ke, eMu, efs, eds, hAF, hAD, hn20, hd20, far, hAF32, hfit32, hdit32, hAD32, hd]) (.inl (by omega_using [eMu, eP, hd])) hAD32, h₆ d (by omega_using [eMu, eP, hd]), hdr_out O₂ (.inl hd) (by omega_using [eMu, hd])]
-  have ST : ∀ {b sz K : Nat}, Same B b sz K s₃.mem s₄.mem → Same B b sz K s₄.mem s₅.mem →
+  obtain ST : ∀ {b sz K : Nat}, Same B b sz K s₃.mem s₄.mem → Same B b sz K s₄.mem s₅.mem →
       Same B b sz K s₅.mem s₆.mem → Same B b sz K s₆.mem t.mem → Same B b sz K s₃.mem t.mem :=
     fun a b c d => ((a.trans b).trans c).trans d
-  have Sf₇ : Same B (AF + fgSz + o) fgSz (nw len + 1) s₃.mem t.mem :=
+  obtain Sf₇ : Same B (AF + fgSz + o) fgSz (nw len + 1) s₃.mem t.mem :=
     ST (Same.row_slot F₄ (by rw [efs]; omega_using [hio]) (by rw [efs]; omega_using [hio]) (.inl (by omega_using [])) (by omega_using [eP, hAF]) hfit32)
       (Same.below O₅ (by rw [efs]; omega_using [hio]) (by omega_using [hn2, he, hn, hf16, ke, eMd, efs, hAF, hAD, hn20, hd20, far, hAF32, hfit32, hdit32, hAD32]) hfit32)
       (Same.row_far F₆ (by rw [eds]; omega_using [hio]) (by rw [efs]; omega_using [hio]) (.inl far) (by omega_using [eP, hAF]) hfit32)
       (Same.row_far F₇ (by rw [eds]; omega_using [hio]) (by rw [efs]; omega_using [hio]) (.inl far) (by omega_using [eP, hAF]) hfit32)
-  have Sg₇ : Same B (AF + fgSz + (o + 4)) fgSz (nw len + 1) s₄.mem t.mem :=
+  obtain Sg₇ : Same B (AF + fgSz + (o + 4)) fgSz (nw len + 1) s₄.mem t.mem :=
     ((Same.below O₅ (by rw [efs]; omega_using [hio]) (by omega_using [hn2, he, hn, hf16, ke, eMd, efs, hAF, hAD, hn20, hd20, far, hAF32, hfit32, hdit32, hAD32]) hfit32).trans
       (Same.row_far F₆ (by rw [eds]; omega_using [hio]) (by rw [efs]; omega_using [hio]) (.inl far) (by omega_using [eP, hAF]) hfit32)).trans
       (Same.row_far F₇ (by rw [eds]; omega_using [hio]) (by rw [efs]; omega_using [hio]) (.inl far) (by omega_using [eP, hAF]) hfit32)
-  have Sd₇ : Same B (AD + deSz + o) deSz (nw len + 1) s₆.mem t.mem :=
+  obtain Sd₇ : Same B (AD + deSz + o) deSz (nw len + 1) s₆.mem t.mem :=
     Same.row_slot F₇ (by rw [eds]; omega_using [hio]) (by rw [eds]; omega_using [hio]) (.inl (by omega_using [])) (by omega_using [eP, hAD]) hdit32
-  have Sp₇ : Same B (AD + deSz + 16) deSz (nw len + 1) s.mem t.mem :=
+  obtain Sp₇ : Same B (AD + deSz + 16) deSz (nw len + 1) s.mem t.mem :=
     Sp₆.trans (Same.row_slot F₇ (by rw [eds]; omega_using [hio]) (by rw [eds]) (.inr (by omega_using [hio])) (by omega_using [eP, hAD]) hdit32)
   refine ⟨H₇, ?_, ?_, ?_, ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩⟩
   · exact (K₁.trans (K₂.mono (by decide))).trans ((((K₃.mono (by decide)).trans (K₄.mono (by decide))).trans
       ((K₅.mono (by decide)).trans (K₆.mono (by decide)))).trans (K₇.mono (by decide)))
   · have hb4 : rv (kw len) (VG.Impl.Rsa.X86.InvBatchRt.a 4) = AF := by rw [← hA]; rfl
-    have hb11 : rv (kw len) (VG.Impl.Rsa.X86.InvBatchRt.a 11) = AD := by rw [← hD]; rfl
+    obtain hb11 : rv (kw len) (VG.Impl.Rsa.X86.InvBatchRt.a 11) = AD := by rw [← hD]; rfl
     refine ((((((O₁.unch.trans O₂.unch).trans (F₃.unch (by rw [efs]; omega_using [hio]))).trans
       (F₄.unch (by rw [efs]; omega_using [hio]))).trans O₅.unch).trans (F₆.unch (by rw [eds]; omega_using [hio]))).trans
       (F₇.unch (by rw [eds]; omega_using [hio]))).cover ?_

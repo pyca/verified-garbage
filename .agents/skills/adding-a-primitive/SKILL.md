@@ -117,6 +117,12 @@ instructions in an ISA model) go in their own PR before either.
    calls use and needs only that its postcondition reads the memory on
    return in its buffers alone (`PostOut`); its level `evex` also clears
    `zmm16`–`zmm31` and MXCSR's status flags, for code that writes those.
+   Code with no VEX or EVEX instruction, no frame and no call is scrubbed
+   with `X86_64.RScrub.withScrubXs`, which clears only the SSE registers
+   its instructions may write and wipes no stack, and keeps what the
+   registration states of `written`: keep such code's secrets in few
+   registers (AES-CBC's AES-NI encryption loads each round key from the
+   schedule as its round uses it).
    It leaves a function as it is when the clearing would need a CPU
    feature the function does not: one that needs no AVX and may run an AVX2
    hash function through a table it takes (`vg_rsa_pss_sign`,

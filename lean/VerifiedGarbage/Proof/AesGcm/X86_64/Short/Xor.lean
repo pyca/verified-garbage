@@ -91,9 +91,9 @@ theorem xor16Step_ok (g : Bool) (s : State) {S K D : Addr} {i k : Nat} (hs : s.g
       s'.gpr .r10 = BitVec.ofNat 64 i + 16 ∧
       s'.zf = some (BitVec.ofNat 64 i + 16 - BitVec.ofNat 64 k == 0) ∧
       (∀ r, r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ ZKeep [.xmm4] s s' := by
-  have e₁ := ea_idx s .rsi hs hi
-  have e₂ := ea_idx s .rdx hk hi
-  have e₃ := ea_idx s .rdi hd hi
+  obtain e₁ := ea_idx s .rsi hs hi
+  obtain e₂ := ea_idx s .rdx hk hi
+  obtain e₃ := ea_idx s .rdi hd hi
   cases g
   · refine ⟨_, by
       simp only [xor16Body, srcB, dstB, kB, imm, List.cons_append, List.nil_append, Bool.false_eq_true,
@@ -170,10 +170,10 @@ theorem xorWord_ok (g w : Bool) (s : State) {S K D : Addr} {i : Nat} (hs : s.gpr
         (xb s.mem (S + BitVec.ofNat 64 i) (K + BitVec.ofNat 64 i) (if w then 8 else 4)) ∧
       s'.gpr .r10 = BitVec.ofNat 64 (i + if w then 8 else 4) ∧
       (∀ r, r ≠ .rax → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧ ZKeep [] s s' := by
-  have e₁ := ea_idx s .rsi hs hi
-  have e₂ := ea_idx s .rdx hk hi
-  have e₃ := ea_idx s .rdi hd hi
-  have w₁' : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 i) (if w then 8 else 4) := by
+  obtain e₁ := ea_idx s .rsi hs hi
+  obtain e₂ := ea_idx s .rdx hk hi
+  obtain e₃ := ea_idx s .rdi hd hi
+  obtain w₁' : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 i) (if w then 8 else 4) := by
     obtain ⟨x, hx, hc⟩ := w₁; exact ⟨x, List.mem_append_right _ hx, hc⟩
   cases w <;> cases g <;> simp only [Bool.false_eq_true, ite_true, ite_false] at r₁ r₂ w₁ w₁' w₂ ⊢
   · refine ⟨_, by xrun [xorWord, srcB, kB, e₁, e₂, r₁, r₂, w₁], ?_⟩
@@ -227,10 +227,10 @@ theorem xor1Step_ok (g : Bool) (s : State) {S K D : Addr} {i n : Nat} (hs : s.gp
       s'.zf = some (BitVec.ofNat 64 i + 1 - BitVec.ofNat 64 n == 0) ∧
       (∀ r, r ≠ .rax → r ≠ .r9 → r ≠ .r10 → s'.gpr r = s.gpr r) ∧ s'.rd = s.rd ∧ s'.wr = s.wr ∧
       ZKeep [] s s' := by
-  have e₁ := ea_idx s .rsi hs hi
-  have e₂ := ea_idx s .rdx hk hi
-  have e₃ := ea_idx s .rdi hd hi
-  have w₁' : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 i) 1 := by
+  obtain e₁ := ea_idx s .rsi hs hi
+  obtain e₂ := ea_idx s .rdx hk hi
+  obtain e₃ := ea_idx s .rdi hd hi
+  obtain w₁' : InRegions (s.rd ++ s.wr) (S + BitVec.ofNat 64 i) 1 := by
     obtain ⟨x, hx, hc⟩ := w₁; exact ⟨x, List.mem_append_right _ hx, hc⟩
   cases g
   · refine ⟨_, by
@@ -323,18 +323,18 @@ theorem xorText_ok (g : Bool) (s : State) {S K D : Addr} {n : Nat} (h : XorPre g
   have hn63 := h.lt
   refine WP.seq (WP.mono (copySetup_ok s h.rcx h.lt) fun s₁ ⟨r10₁, r8₁, zf₁, g₁, m₁, rd₁, wr₁, z₁⟩ => ?_)
   -- The bytes from `i` on, at `S` and at `K`, after the first `i` written.
-  have rdS : ∀ {xs : List Byte} {i k : Nat}, xs.length = i → i + k ≤ n →
+  obtain rdS : ∀ {xs : List Byte} {i k : Nat}, xs.length = i → i + k ≤ n →
       bytesAt (xw g s.mem S D xs) (S + BitVec.ofNat 64 i) k = bytesAt s.mem (S + BitVec.ofNat 64 i) k :=
     fun hl hik => xw_bytesAt hl hik hn63 (Offset.disjoint_base S (Nat.le_refl _) (by omega_arith))
       fun hg => ((h.dSD hg).sub_left (Offset.sub_base S hik)).sub_right (Region.sub_prefix (by omega_arith))
-  have rdK : ∀ {xs : List Byte} {i k : Nat}, xs.length = i → i + k ≤ n →
+  obtain rdK : ∀ {xs : List Byte} {i k : Nat}, xs.length = i → i + k ≤ n →
       bytesAt (xw g s.mem S D xs) (K + BitVec.ofNat 64 i) k = bytesAt s.mem (K + BitVec.ofNat 64 i) k :=
     fun hl hik => xw_bytesAt hl hik hn63
       ((h.dSK.symm.sub_left (Offset.sub_base K hik)).sub_right (Region.sub_prefix (by omega_arith)))
       fun hg => ((h.dKD hg).sub_left (Offset.sub_base K hik)).sub_right (Region.sub_prefix (by omega_arith))
   -- After the 16-byte loop: the first `16 ⌊n / 16⌋` bytes.
   let q := n / 16
-  have mid : WP isa (.ite .e (.block []) (.loop (.block (xor16Body g)) .ne)) s₁ fun t =>
+  obtain mid : WP isa (.ite .e (.block []) (.loop (.block (xor16Body g)) .ne)) s₁ fun t =>
       t.gpr .r10 = BitVec.ofNat 64 (16 * q) ∧ t.mem = xw g s.mem S D (xb s.mem S K (16 * q)) ∧
       (∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
       ZKeep [.xmm4] s t := by
@@ -351,8 +351,8 @@ theorem xorText_ok (g : Bool) (s : State) {S K D : Addr} {n : Nat} (h : XorPre g
         ⟨0, rfl, hq, by rw [r10₁], by rw [m₁]; simp [xb, bytesAt, xw_nil], fun r a b c d => g₁ r b d,
           r8₁, rd₁, wr₁, z₁.mono (by simp)⟩
       rintro k t ⟨j, rfl, hj, r10, mem, g', r8, rd, wr, z⟩
-      have hj16 : 16 * j + 16 ≤ n := by omega_arith
-      have gg := fun r (hr : r ∈ [Reg.rsi, .rdx, .rdi]) => g' r (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)
+      obtain hj16 : 16 * j + 16 ≤ n := by omega_arith
+      obtain gg := fun r (hr : r ∈ [Reg.rsi, .rdx, .rdi]) => g' r (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)
         (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide) (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)
         (by simp at hr; rcases hr with rfl | rfl | rfl <;> decide)
       obtain ⟨t', run', mem', r10', zf', g'', rd', wr', z'⟩ := xor16Step_ok g t
@@ -363,23 +363,23 @@ theorem xorText_ok (g : Bool) (s : State) {S K D : Addr} {n : Nat} (h : XorPre g
         (by rw [wr]; exact in_of_covers16 h.wS hj16 (by omega_arith))
         (fun hg => by rw [wr]; exact in_of_covers16 (h.wD hg) hj16 (by omega_arith))
       refine WP.of_runBlock ⟨t', run', ?_⟩
-      have hlen : (xb s.mem S K (16 * j)).length = 16 * j := length_xb _ _ _ _
-      have hsrc : xb t.mem (S + BitVec.ofNat 64 (16 * j)) (K + BitVec.ofNat 64 (16 * j)) 16 =
+      obtain hlen : (xb s.mem S K (16 * j)).length = 16 * j := length_xb _ _ _ _
+      obtain hsrc : xb t.mem (S + BitVec.ofNat 64 (16 * j)) (K + BitVec.ofNat 64 (16 * j)) 16 =
           xb s.mem (S + BitVec.ofNat 64 (16 * j)) (K + BitVec.ofNat 64 (16 * j)) 16 := by
         simp only [xb]; rw [mem, rdS hlen hj16, rdK hlen hj16]
-      have hmem : t'.mem = xw g s.mem S D (xb s.mem S K (16 * (j + 1))) := by
+      obtain hmem : t'.mem = xw g s.mem S D (xb s.mem S K (16 * (j + 1))) := by
         rw [mem', hsrc, mem, show 16 * (j + 1) = 16 * j + 16 by omega_arith, xb_add]
         have := xw_append g s.mem (xb s.mem S K (16 * j))
           (xb s.mem (S + BitVec.ofNat 64 (16 * j)) (K + BitVec.ofNat 64 (16 * j)) 16) hn63
           (by rw [length_xb, length_xb]; omega_arith) h.dSD
         rw [hlen] at this
         exact this
-      have hz : t'.zf = some (decide (j + 1 = q)) := by
+      obtain hz : t'.zf = some (decide (j + 1 = q)) := by
         rw [zf', show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, ofNat_add_ofNat, sub_beq (by omega_arith) (by omega_arith)]
         congr 1; simp only [decide_eq_decide]; omega_arith
-      have gg' : ∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → t'.gpr r = s.gpr r := fun r a b c d => by
+      obtain gg' : ∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → t'.gpr r = s.gpr r := fun r a b c d => by
         rw [g'' r d, g' r a b c d]
-      have r10'' : t'.gpr .r10 = BitVec.ofNat 64 (16 * (j + 1)) := by
+      obtain r10'' : t'.gpr .r10 = BitVec.ofNat 64 (16 * (j + 1)) := by
         rw [r10', show (16 : BitVec 64) = BitVec.ofNat 64 16 from rfl, ofNat_add_ofNat]; congr 1
       by_cases he : j + 1 = q
       · left
@@ -394,29 +394,29 @@ theorem xorText_ok (g : Bool) (s : State) {S K D : Addr} {n : Nat} (h : XorPre g
     t.mem = xw g s.mem S D (xb s.mem S K i) ∧
     (∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → t.gpr r = s.gpr r) ∧ t.rd = s.rd ∧ t.wr = s.wr ∧
     ZKeep [.xmm4] s t
-  have regs : ∀ {t : State}, (∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → t.gpr r = s.gpr r) →
+  obtain regs : ∀ {t : State}, (∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → t.gpr r = s.gpr r) →
       t.gpr .rsi = S ∧ t.gpr .rdx = K ∧ t.gpr .rdi = D ∧ t.gpr .rcx = BitVec.ofNat 64 n := fun g' =>
     ⟨by rw [g' _ (by decide) (by decide) (by decide) (by decide), h.rsi],
       by rw [g' _ (by decide) (by decide) (by decide) (by decide), h.rdx],
       by rw [g' _ (by decide) (by decide) (by decide) (by decide), h.rdi],
       by rw [g' _ (by decide) (by decide) (by decide) (by decide), h.rcx]⟩
   -- Eight or four bytes, through `rax`.
-  have word : ∀ (w : Bool) {i : Nat} {t : State} {R : BitVec 64}, i + (if w then 8 else 4) ≤ n → Mid i t →
+  obtain word : ∀ (w : Bool) {i : Nat} {t : State} {R : BitVec 64}, i + (if w then 8 else 4) ≤ n → Mid i t →
       t.gpr .r8 = R → WP isa (.block (xorWord g w)) t fun u => Mid (i + if w then 8 else 4) u ∧ u.gpr .r8 = R := by
     intro w i t R hik ⟨r10, mem, g', rd, wr, z⟩ hr8
     obtain ⟨hsi, hdx, hdi, -⟩ := regs g'
-    have cov : ∀ {p : Addr} {rs : List Region}, Covers [⟨p, n⟩] rs →
+    obtain cov : ∀ {p : Addr} {rs : List Region}, Covers [⟨p, n⟩] rs →
         InRegions rs (p + BitVec.ofNat 64 i) (if w then 8 else 4) := fun hc =>
       hc _ _ ⟨_, List.mem_singleton_self _, Offset.contains_base _ hik (by omega_arith)⟩
     obtain ⟨t', run', mem', r10', g'', rd', wr', z'⟩ := xorWord_ok g w t hsi hdx hdi r10
       (by rw [rd, wr]; exact cov h.rS) (by rw [rd, wr]; exact cov h.rK) (by rw [wr]; exact cov h.wS)
       (fun hg => by rw [wr]; exact cov (h.wD hg))
     refine WP.of_runBlock ⟨t', run', ?_⟩
-    have hlen : (xb s.mem S K i).length = i := length_xb _ _ _ _
-    have hsrc : xb t.mem (S + BitVec.ofNat 64 i) (K + BitVec.ofNat 64 i) (if w then 8 else 4) =
+    obtain hlen : (xb s.mem S K i).length = i := length_xb _ _ _ _
+    obtain hsrc : xb t.mem (S + BitVec.ofNat 64 i) (K + BitVec.ofNat 64 i) (if w then 8 else 4) =
         xb s.mem (S + BitVec.ofNat 64 i) (K + BitVec.ofNat 64 i) (if w then 8 else 4) := by
       simp only [xb]; rw [mem, rdS hlen hik, rdK hlen hik]
-    have hmem : t'.mem = xw g s.mem S D (xb s.mem S K (i + if w then 8 else 4)) := by
+    obtain hmem : t'.mem = xw g s.mem S D (xb s.mem S K (i + if w then 8 else 4)) := by
       rw [mem', hsrc, mem, xb_add]
       have := xw_append g s.mem (xb s.mem S K i)
         (xb s.mem (S + BitVec.ofNat 64 i) (K + BitVec.ofNat 64 i) (if w then 8 else 4)) hn63
@@ -426,7 +426,7 @@ theorem xorText_ok (g : Bool) (s : State) {S K D : Addr} {n : Nat} (h : XorPre g
     exact ⟨⟨r10', hmem, fun r a b c d => by rw [g'' r a d, g' r a b c d], by rw [rd', rd], by rw [wr', wr],
       z.trans (z'.mono (by simp))⟩, by rw [g'' _ (by decide) (by decide), hr8]⟩
   -- The bytes from `i < n` on, one at a time.
-  have bytes : ∀ {i : Nat} {t : State}, i < n → Mid i t → WP isa (Impl.AesGcm.X86_64.Short.xorBytes g) t (XorPost g s S K D n) := by
+  obtain bytes : ∀ {i : Nat} {t : State}, i < n → Mid i t → WP isa (Impl.AesGcm.X86_64.Short.xorBytes g) t (XorPost g s S K D n) := by
     intro i₀ t₀ hi₀ ⟨r10₀, m₀, g₀, rd₀, wr₀, z₀⟩
     refine WP.loop (M := isa) (body := .block (xor1Body g)) (c := .ne)
       (fun (k : Nat) (t : State) => ∃ i, k = n - i ∧ i < n ∧ t.gpr .r10 = BitVec.ofNat 64 i ∧
@@ -441,21 +441,21 @@ theorem xorText_ok (g : Bool) (s : State) {S K D : Addr} {n : Nat} (h : XorPre g
       (by rw [wr]; exact in_of_covers h.wS hi (by omega_arith))
       (fun hg => by rw [wr]; exact in_of_covers (h.wD hg) hi (by omega_arith))
     refine WP.of_runBlock ⟨t', run', ?_⟩
-    have hlen : (xb s.mem S K i).length = i := length_xb _ _ _ _
-    have hS1 := rdS hlen (show i + 1 ≤ n by omega_arith)
-    have hK1 := rdK hlen (show i + 1 ≤ n by omega_arith)
+    obtain hlen : (xb s.mem S K i).length = i := length_xb _ _ _ _
+    obtain hS1 := rdS hlen (show i + 1 ≤ n by omega_arith)
+    obtain hK1 := rdK hlen (show i + 1 ≤ n by omega_arith)
     rw [bytesAt_one, bytesAt_one] at hS1 hK1
-    have hmem : t'.mem = xw g s.mem S D (xb s.mem S K (i + 1)) := by
+    obtain hmem : t'.mem = xw g s.mem S D (xb s.mem S K (i + 1)) := by
       rw [mem', mem, List.cons.inj hS1 |>.1, List.cons.inj hK1 |>.1, xb_succ]
       have := xw_append g s.mem (xb s.mem S K i)
         [s.mem (S + BitVec.ofNat 64 i) ^^^ s.mem (K + BitVec.ofNat 64 i)] hn63 (by rw [hlen]; simp; omega_arith) h.dSD
       rw [hlen] at this
       exact this
-    have hz : t'.zf = some (decide (i + 1 = n)) := by
+    obtain hz : t'.zf = some (decide (i + 1 = n)) := by
       rw [zf', succ_ofNat, Offset.ofNat_sub_ofNat_beq (by omega_arith) (by omega_arith)]
-    have gg' : ∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → t'.gpr r = s.gpr r := fun r a b c d => by
+    obtain gg' : ∀ r, r ≠ .rax → r ≠ .r8 → r ≠ .r9 → r ≠ .r10 → t'.gpr r = s.gpr r := fun r a b c d => by
       rw [g'' r a c d, g' r a b c d]
-    have zk : ZKeep [.xmm4] s t' := z.trans (z'.mono (by simp))
+    obtain zk : ZKeep [.xmm4] s t' := z.trans (z'.mono (by simp))
     by_cases he : i + 1 = n
     · left
       exact ⟨by simp [eval, hz, he], by rw [hmem, he], gg', by rw [rd', rd], by rw [wr', wr], zk⟩
@@ -463,25 +463,25 @@ theorem xorText_ok (g : Bool) (s : State) {S K D : Addr} {n : Nat} (h : XorPre g
       exact ⟨by simp [eval, hz, he], n - (i + 1), by omega_arith, i + 1, rfl, by omega_arith, by rw [r10', succ_ofNat],
         hmem, gg', by rw [rd', rd], by rw [wr', wr], zk⟩
   -- `t`, the bytes left after the 16-byte loop, and the bits of `n` tested.
-  have M₂ : Mid (16 * q) s₂ := ⟨r10₂, m₂, g₂, rd₂, wr₂, z₂⟩
+  obtain M₂ : Mid (16 * q) s₂ := ⟨r10₂, m₂, g₂, rd₂, wr₂, z₂⟩
   generalize ht : n % 16 = t
-  have ht16 : t < 16 := by omega_arith
-  have hn : n = 16 * q + t := by omega_arith
-  have tst : ∀ (k : Nat), k < 16 → ∀ {i : Nat} {u : State}, Mid i u →
+  obtain ht16 : t < 16 := by omega_arith
+  obtain hn : n = 16 * q + t := by omega_arith
+  obtain tst : ∀ (k : Nat), k < 16 → ∀ {i : Nat} {u : State}, Mid i u →
       WP isa (.block [.alu .test .rcx (imm k)]) u fun v => Mid i v ∧ v.zf = some (decide (t &&& k = 0)) := by
     intro k hk i u ⟨r10, m, g', rd, wr, z⟩
-    have hcx : u.gpr .rcx = BitVec.ofNat 64 n := (regs g').2.2.2
-    have hand : BitVec.ofNat 64 n &&& BitVec.ofNat 64 k = BitVec.ofNat 64 (t &&& k) := by
+    obtain hcx : u.gpr .rcx = BitVec.ofNat 64 n := (regs g').2.2.2
+    obtain hand : BitVec.ofNat 64 n &&& BitVec.ofNat 64 k = BitVec.ofNat 64 (t &&& k) := by
       apply BitVec.eq_of_toNat_eq
-      have h1 : n &&& k = t &&& k := by
-        have e := Nat.and_mod_two_pow (a := n) (b := k) (n := 4)
+      obtain h1 : n &&& k = t &&& k := by
+        obtain e := Nat.and_mod_two_pow (a := n) (b := k) (n := 4)
         rw [Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt Nat.and_le_right (show k < 2 ^ 4 by omega_arith)),
           Nat.mod_eq_of_lt (show k < 2 ^ 4 by omega_arith), show 2 ^ 4 = 16 from rfl, ht] at e
         exact e
       rw [BitVec.toNat_and, BitVec.toNat_ofNat, BitVec.toNat_ofNat, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_arith),
         Nat.mod_eq_of_lt (by omega_arith), ← h1, Nat.mod_eq_of_lt (Nat.lt_of_le_of_lt Nat.and_le_left (by omega_arith))]
-    have hz : (BitVec.ofNat 64 (t &&& k) == 0) = decide (t &&& k = 0) := by
-      have hlt : t &&& k < 2 ^ 64 := Nat.lt_of_le_of_lt Nat.and_le_left (by omega_arith)
+    obtain hz : (BitVec.ofNat 64 (t &&& k) == 0) = decide (t &&& k = 0) := by
+      obtain hlt : t &&& k < 2 ^ 64 := Nat.lt_of_le_of_lt Nat.and_le_left (by omega_arith)
       rw [Bool.eq_iff_iff, beq_iff_eq, decide_eq_true_eq]
       constructor
       · intro e
@@ -502,7 +502,7 @@ theorem xorText_ok (g : Bool) (s : State) {S K D : Addr} {n : Nat} (h : XorPre g
       have := of_decide_eq_true hz; revert this; revert ht16; generalize t = x; revert x; decide
     obtain ⟨-, m, g', rd, wr, z⟩ := M₃
     exact WP.block_nil ⟨by rw [m, show 16 * q = n by omega_arith], g', rd, wr, z⟩
-  have hpos : 0 < t := by
+  obtain hpos : 0 < t := by
     have := of_decide_eq_false hz; revert this; revert ht16; generalize t = x; revert x; decide
   -- Fewer than 4: one at a time.
   refine WP.seq (WP.mono (tst 12 (by decide) M₃) fun s₄ ⟨M₄, zf₄⟩ => ?_)
@@ -516,7 +516,7 @@ theorem xorText_ok (g : Bool) (s : State) {S K D : Addr} {n : Nat} (h : XorPre g
   · have h8 : t &&& 8 = 8 := by
       have := of_decide_eq_false hb
       revert this; revert ht16; generalize t = x; intro hx; revert x; decide
-    have h8le : 8 ≤ t := by
+    obtain h8le : 8 ≤ t := by
       have := of_decide_eq_false hb
       revert this; revert ht16; generalize t = x; intro hx; revert x; decide
     rw [h8]
@@ -530,14 +530,14 @@ theorem xorText_ok (g : Bool) (s : State) {S K D : Addr} {n : Nat} (h : XorPre g
   · have h4 : t &&& 4 = 4 := by
       have := of_decide_eq_false hb
       revert this; revert ht16; generalize t = x; intro hx; revert x; decide
-    have hle : (t &&& 8) + 4 ≤ t := by
+    obtain hle : (t &&& 8) + 4 ≤ t := by
       have := of_decide_eq_false hb
       revert this; revert ht16; generalize t = x; intro hx; revert x; decide
     rw [h4]
     exact WP.mono (word false (R := s₇.gpr .r8) (by simp only [Bool.false_eq_true, ite_false]; omega_arith) M₇ rfl)
       fun u hu => hu.1
   -- The last ones, if any, one at a time.
-  have hsum : (t &&& 8) + (t &&& 4) + (t &&& 3) = t := by revert ht16; generalize t = x; revert x; decide
+  obtain hsum : (t &&& 8) + (t &&& 4) + (t &&& 3) = t := by revert ht16; generalize t = x; revert x; decide
   refine WP.seq (WP.mono (tst 3 (by decide) M₈) fun s₉ ⟨M₉, zf₉⟩ => ?_)
   refine WP.ite (decide (t &&& 3 = 0)) (by simp only [eval, zf₉]) (fun hz => ?_) (fun hz => ?_)
   · have h0 : t &&& 3 = 0 := of_decide_eq_true hz

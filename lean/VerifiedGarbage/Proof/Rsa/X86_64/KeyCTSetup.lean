@@ -71,18 +71,18 @@ theorem setup_nested {a : MPub} {s : State} (h : M0 a s) : WP isa (.block VG.Imp
   have := hp.dl2
   have := hp.pl2
   have := hp.ql2
-  have hZ : slot ((k + 7) / 8) 8 ≤ Z := by have := hp.zk; unfold slot hdrBytes; omega_arith
-  have h8 := hdr_lt_slot ((k + 7) / 8) 0 (show 31 < 32 by decide)
-  have h0 := slot_le (w := (k + 7) / 8) (show 0 < 8 by decide)
+  obtain hZ : slot ((k + 7) / 8) 8 ≤ Z := by have := hp.zk; unfold slot hdrBytes; omega_arith
+  obtain h8 := hdr_lt_slot ((k + 7) / 8) 0 (show 31 < 32 by decide)
+  obtain h0 := slot_le (w := (k + 7) / 8) (show 0 < 8 by decide)
   have eW : sW = 6 := rfl
   have eA : sArr 0 = 8 := rfl
   have eM : sMask = 22 := rfl
   have eI : sMinv = 7 := rfl
   have e1 : sArr aOne = 15 := rfl
-  have hsl : ∀ r ∈ [(8 * sW, 8), (8 * sArr 0, 64)], r.1 + r.2 ≤ Z := by
+  obtain hsl : ∀ r ∈ [(8 * sW, 8), (8 * sArr 0, 64)], r.1 + r.2 ≤ Z := by
     simp only [List.mem_cons, List.not_mem_nil, or_false]
     rintro _ (rfl | rfl) <;> simp only [eW, eA] <;> omega_arith
-  have hfw : ∀ i, i ≠ 6 → (i < 8 ∨ 16 ≤ i) → ∀ r ∈ [(8 * sW, 8), (8 * sArr 0, 64)],
+  obtain hfw : ∀ i, i ≠ 6 → (i < 8 ∨ 16 ≤ i) → ∀ r ∈ [(8 * sW, 8), (8 * sArr 0, 64)],
       8 * i + 8 ≤ r.1 ∨ r.1 + r.2 ≤ 8 * i := by
     intro i h6 hr
     simp only [List.mem_cons, List.not_mem_nil, or_false]
@@ -90,34 +90,34 @@ theorem setup_nested {a : MPub} {s : State} (h : M0 a s) : WP isa (.block VG.Imp
   refine WP.mono (setupHead_ok hs hp.rdi hZ (by omega_arith) hp.hK hp.hN)
     fun t₁ ⟨h12, hcx, hsi, hbx, hW₁, hb₁, hf₁, k₁⟩ => ⟨regsAre_cons hsi (regsAre_cons hcx (regsAre_cons hbx
       regsAre_nil)), ?_⟩
-  have hs₁ := hs.congr k₁.2.2
-  have in₁ : InScr B Z s.mem t₁.mem := InScr.of_frm hf₁ hsl
+  obtain hs₁ := hs.congr k₁.2.2
+  obtain in₁ : InScr B Z s.mem t₁.mem := InScr.of_frm hf₁ hsl
   refine WP.mono (loadArr_ok hs₁ (j := aN) (by decide) hZ (hp.srN.congrK in₁ k₁) hp.nl (by omega_arith)
     (by omega_arith) hsi hcx hbx) fun t₂ ⟨hv₂, ha₂, k₂⟩ => ?_
-  have hs₂ := hs₁.congr k₂.2.2
-  have hdi₂ : t₂.gpr .rdi = B := (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hp.rdi)
+  obtain hs₂ := hs₁.congr k₂.2.2
+  obtain hdi₂ : t₂.gpr .rdi = B := (k₂.gpr (by decide)).trans ((k₁.gpr (by decide)).trans hp.rdi)
   refine WP.mono (WP.keep [.rdx, .rcx] (Q := fun t => t.gpr .rdx = 1 ∧
       t.gpr .rcx = BitVec.ofNat 64 0 ∧ t.mem = t₂.mem) (by xrun []) rfl)
     fun t₃ ⟨⟨hdx₃, hcx₃, hm₃⟩, k₃⟩ => ?_
-  have hH : Hdr t₃.mem B ((k + 7) / 8) (word s.mem B (8 * sMinv)) :=
+  obtain hH : Hdr t₃.mem B ((k + 7) / 8) (word s.mem B (8 * sMinv)) :=
     ⟨by rw [hm₃, ha₂.hslot (by decide)]; exact hW₁,
       by rw [hm₃, ha₂.hslot (by decide), hf₁.word_eq (hfw sMinv (by decide) (by decide)) (by omega_arith)],
       fun j hj => by rw [hm₃, ha₂.hslot (by unfold sArr; omega_arith)]; exact hb₁ j hj⟩
-  have hs₃ := hs₂.congr k₃.2.2
-  have h12₃ : t₃.gpr .r12 = BitVec.ofNat 64 ((k + 7) / 8) :=
+  obtain hs₃ := hs₂.congr k₃.2.2
+  obtain h12₃ : t₃.gpr .r12 = BitVec.ofNat 64 ((k + 7) / 8) :=
     (k₃.gpr (by decide)).trans ((k₂.gpr (by decide)).trans h12)
-  have hdi₃ : t₃.gpr .rdi = B := (k₃.gpr (by decide)).trans hdi₂
+  obtain hdi₃ : t₃.gpr .rdi = B := (k₃.gpr (by decide)).trans hdi₂
   refine ⟨regsAre_cons hdi₃ (regsAre_cons h12₃ (regsAre_cons hcx₃ regsAre_nil)),
     WP.mono (WP.keep [.r8] (Q := fun t => t.gpr .r8 = off B (slot ((k + 7) / 8) aOne)) (by
       xrun [State.ea, hdr, hdi₃, hdrOff, hs₃.ld (d := 8 * sArr aOne) (by rw [e1]; omega_arith),
         hH.harr aOne (by decide)]) rfl) fun t ⟨h8', _⟩ => regsAre_cons h8' regsAre_nil, ?_⟩
   refine WP.mono (setWord_ok hs₃ hdi₃ hH hZ h12₃ (by omega_arith) (by omega_arith) (o := aOne) (by decide)
     (ri := .rcx) (by decide) (i := 0) (by omega_arith) hcx₃) fun t₄ ⟨hone, ho₄, k₄⟩ => ?_
-  have hs₄ := hs₃.congr k₄.2.2
-  have hdi₄ : t₄.gpr .rdi = B := (k₄.gpr (by decide)).trans hdi₃
-  have ha₄ : Arrays B ((k + 7) / 8) [aOne] t₃.mem t₄.mem :=
+  obtain hs₄ := hs₃.congr k₄.2.2
+  obtain hdi₄ : t₄.gpr .rdi = B := (k₄.gpr (by decide)).trans hdi₃
+  obtain ha₄ : Arrays B ((k + 7) / 8) [aOne] t₃.mem t₄.mem :=
     Arrays.of_outside (List.mem_singleton_self _) ho₄ (Nat.le_refl _) (Nat.le_refl _)
-  have hW₄ : word t₄.mem B (8 * sW) = BitVec.ofNat 64 ((k + 7) / 8) := (ha₄.hdr hH).hw
+  obtain hW₄ : word t₄.mem B (8 * sW) = BitVec.ofNat 64 ((k + 7) / 8) := (ha₄.hdr hH).hw
   have eS : Impl.Rsa.X86_64.Keys.sStride = 28 := rfl
   refine ⟨hdi₄, ?_⟩
   rw [show maskInit = strideInit ++ maskSet from rfl]
@@ -126,33 +126,33 @@ theorem setup_nested {a : MPub} {s : State} (h : M0 a s) : WP isa (.block VG.Imp
     xrun [strideInit, State.ea, hdr, hdi₄, hdrOff, hs₄.ld (d := 8 * sW) (by omega_arith), hW₄,
       hs₄.st (d := 8 * Impl.Rsa.X86_64.Keys.sStride) (by rw [eS]; omega_arith)]
     exact congrArg _ (stride_bv _)) rfl) fun t₅ ⟨hm₅, k₅'⟩ => ?_)
-  have hs₅ := hs₄.congr k₅'.2.2
-  have hdi₅ : t₅.gpr .rdi = B := (k₅'.gpr (by decide)).trans hdi₄
+  obtain hs₅ := hs₄.congr k₅'.2.2
+  obtain hdi₅ : t₅.gpr .rdi = B := (k₅'.gpr (by decide)).trans hdi₄
   refine WP.mono (WP.keep [.rax] (Q := fun t => t.mem = t₅.mem.writeW (off B (8 * sMask)) (mask true)) (by
     xrun [maskSet, State.ea, hdr, hdi₅, hdrOff, hs₅.st (d := 8 * sMask) (by omega_arith)]
     exact congrArg _ (by decide)) rfl) fun t ⟨hm, k₅⟩ => ?_
-  have hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_arith
-  have hoS : Outside B (8 * Impl.Rsa.X86_64.Keys.sStride) 8 t₄.mem t₅.mem := by
+  obtain hn' : B.toNat + slot ((k + 7) / 8) 8 ≤ 2 ^ 64 := by omega_arith
+  obtain hoS : Outside B (8 * Impl.Rsa.X86_64.Keys.sStride) 8 t₄.mem t₅.mem := by
     rw [hm₅]; exact writeW_outside _ B _ (by rw [eS]; omega_arith)
-  have ho₅ : Outside B (8 * sMask) 8 t₅.mem t.mem := by rw [hm]; exact writeW_outside _ B _ (by omega_arith)
-  have kk : Keep mmRegs s t := (((((k₁.trans k₂).trans k₃).trans k₄).trans k₅').trans k₅).mono (by decide)
-  have hin : InScr B Z s.mem t.mem :=
+  obtain ho₅ : Outside B (8 * sMask) 8 t₅.mem t.mem := by rw [hm]; exact writeW_outside _ B _ (by omega_arith)
+  obtain kk : Keep mmRegs s t := (((((k₁.trans k₂).trans k₃).trans k₄).trans k₅').trans k₅).mono (by decide)
+  obtain hin : InScr B Z s.mem t.mem :=
     ((((in₁.trans (InScr.of_arrays ha₂ hZ (by decide))).trans (by rw [hm₃]; exact InScr.refl _ _ _)).trans
       (InScr.of_arrays ha₄ hZ (by decide))).trans (InScr.of_outside hoS (by rw [eS]; omega_arith))).trans
       (InScr.of_outside ho₅ (by omega_arith))
-  have hSl : ∀ j < 8, ∀ k' ≤ (k + 7) / 8 + 2, wv t₅.mem B (slot ((k + 7) / 8) j) k' = wv t₄.mem B (slot ((k + 7) / 8) j) k' :=
+  obtain hSl : ∀ j < 8, ∀ k' ≤ (k + 7) / 8 + 2, wv t₅.mem B (slot ((k + 7) / 8) j) k' = wv t₄.mem B (slot ((k + 7) / 8) j) k' :=
     fun j hj k' hk' => hoS.wv (Or.inr (by have := hdr_lt_slot ((k + 7) / 8) j (show 28 < 32 by decide); rw [eS]; omega_arith))
       (by have := slot_le (w := (k + 7) / 8) hj; omega_arith)
-  have hh : ∀ i < 32, setupSlot i = false → word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi hsi => by
+  obtain hh : ∀ i < 32, setupSlot i = false → word t.mem B (8 * i) = word s.mem B (8 * i) := fun i hi hsi => by
     obtain ⟨h6, hr, h22, h28⟩ := setupSlot_false i hi hsi
     rw [hm, hdrStore_hdr _ _ _ (by decide) hi (by rw [eM]; omega_arith), hm₅,
       hdrStore_hdr _ _ _ (by decide) hi (by rw [eS]; omega_arith), ha₄.hslot hi, hm₃, ha₂.hslot hi,
       hf₁.word_eq (hfw i h6 hr) (by omega_arith)]
-  have hH₅ : Hdr t.mem B ((k + 7) / 8) (word s.mem B (8 * sMinv)) := by
+  obtain hH₅ : Hdr t.mem B ((k + 7) / 8) (word s.mem B (8 * sMinv)) := by
     rw [hm, hm₅]
     exact Hdr.store (Hdr.store (ha₄.hdr hH) (i := Impl.Rsa.X86_64.Keys.sStride) (by decide) (by decide) _)
       (i := sMask) (by decide) (by decide) _
-  have sr : ∀ {p : Addr} {bs : List Byte}, Src s B Z p bs → Src t B Z p bs := fun h => h.congr hin kk.2.1 kk.2.2
+  obtain sr : ∀ {p : Addr} {bs : List Byte}, Src s B Z p bs → Src t B Z p bs := fun h => h.congr hin kk.2.1 kk.2.2
   refine ⟨t, word s.mem B (8 * sMinv), Spec.Rsa.os2ip nb, ⟨⟨hs₅.congr k₅.2.2, (k₅.gpr (by decide)).trans hdi₅, hH₅⟩,
     hZ, by dsimp only; omega_arith, by dsimp only; omega_arith, fun _ _ _ => rfl, InScr.refl _ _ _, rfl, rfl, ?_, ?_,
     Keep.refl _ _⟩,

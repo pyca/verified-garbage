@@ -95,11 +95,11 @@ theorem initT_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
     (VP.syms (VP.taint [.esp, .ebp] initArgs_taint (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, hi⟩ => ?_)) ?_
   · refine wp_mov fun t1 u1 => wp_addi fun t2 u2 => WP.block_nil ⟨(hc.upd u1 (by decide) (by decide)).upd u2
       (by decide) (by decide), by rw [u2.mem, u1.mem]; exact hi, by rw [u2.gpr, u1.gpr, hc.ebp]⟩
-  have fitS : (scr + BitVec.ofNat 32 oSt).toNat + h.H.S ≤ 2 ^ 32 := by
+  obtain fitS : (scr + BitVec.ofNat 32 oSt).toNat + h.H.S ≤ 2 ^ 32 := by
     rw [hg.scr_lt (by decide), hS]; unfold oSt oRsa at *; omega_using [hN, hBl, fit]
-  have hsub : Region.Sub ⟨(scr + BitVec.ofNat 32 oSt).setWidth 64, h.H.S⟩ (sR scr oSt (h.N + h.B)) := by
+  obtain hsub : Region.Sub ⟨(scr + BitVec.ofNat 32 oSt).setWidth 64, h.H.S⟩ (sR scr oSt (h.N + h.B)) := by
     rw [hg.scrA (by decide), hS]; exact fun _ h => h
-  have args : ∀ σ s, Ctx L scr σ s → s.gpr .ebx = scr + BitVec.ofNat 32 oSt →
+  obtain args : ∀ σ s, Ctx L scr σ s → s.gpr .ebx = scr + BitVec.ofNat 32 oSt →
       InitArgs (H := h.H.st) s .ebx (scr + BitVec.ofNat 32 oSt) := fun σ s hc bx => by
     refine ⟨bx, by decide, ?_, ?_, ?_, fitS⟩
     · rw [hc.st.sp]; have := hc.st.ok.BC; have := hg.C48; omega_arith
@@ -116,7 +116,7 @@ theorem initT_vp (hg : Geo L scr) {Inv : State → Mem → Prop}
     ⟨args _ _ hab.1.1 hab.1.2.2, args _ _ hab.2.1 hab.2.2.2, hab.1.1.st.sp, hab.2.1.st.sp⟩) ?_
   rintro σ s ⟨hc, hi, bx⟩
   refine init_frame h.ok.hH (args σ s hc bx) fun s' af rp => ?_
-  have fr : Frame [sR scr oSt (h.N + h.B), L.LOW] s.mem s'.mem := by
+  obtain fr : Frame [sR scr oSt (h.N + h.B), L.LOW] s.mem s'.mem := by
     refine af.frame.sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -145,12 +145,12 @@ theorem cmpT_vp (hg : Geo L scr) {X : State → Mem → Prop} (hT : TabAt L h dn
   have hso := h.so_le
   have hBl := h.B_le
   have hB64 := h.B_ge
-  have hB0 : 0 < h.B := by omega_using [hB64]
+  obtain hB0 : 0 < h.B := by omega_using [hB64]
   have fit := hg.fit
   unfold oRsa at fit
-  have a0 : sa scr oCW = scr.setWidth 64 := by simp [sa, oCW]
-  have aSt : (scr + BitVec.ofNat 32 oSt).setWidth 64 = sa scr oSt := hg.scrA (by decide)
-  have args : ∀ σ s, Ctx L scr σ s → s.gpr .ebx = scr + BitVec.ofNat 32 oSt →
+  obtain a0 : sa scr oCW = scr.setWidth 64 := by simp [sa, oCW]
+  obtain aSt : (scr + BitVec.ofNat 32 oSt).setWidth 64 = sa scr oSt := hg.scrA (by decide)
+  obtain args : ∀ σ s, Ctx L scr σ s → s.gpr .ebx = scr + BitVec.ofNat 32 oSt →
       s.gpr .eax = scr + BitVec.ofNat 32 (oSt + h.N) →
       CmpArgs h.N h.B h.H.so s (scr + BitVec.ofNat 32 oSt) scr := fun σ s hc bx ax => by
     refine ⟨bx, by rw [ax, BitVec.add_assoc, BitVec.ofNat_add_ofNat], hc.ebp, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -179,7 +179,7 @@ theorem cmpT_vp (hg : Geo L scr) {X : State → Mem → Prop} (hT : TabAt L h dn
       hab.1.1.1.st.sp, hab.2.1.1.st.sp⟩) ?_
   rintro σ s ⟨⟨hc, hx, bx, ax⟩, cx⟩
   refine cmp_frame h.ok.comp hB0 (args σ s hc bx ax) cx fun s' af e => ?_
-  have fr : Frame (compW h L scr) s.mem s'.mem := by
+  obtain fr : Frame (compW h L scr) s.mem s'.mem := by
     refine af.frame.sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
@@ -204,9 +204,9 @@ theorem outT_vp (hg : Geo L scr) (hd : DigCerts h) {X : State → Mem → Prop} 
   have hN := h.N_le
   have fit := hg.fit
   unfold oRsa at fit
-  have aB : (scr + BitVec.ofNat 32 oSel).setWidth 64 = sa scr oSel := hg.scrA (by decide)
-  have aA : (scr + BitVec.ofNat 32 oDig).setWidth 64 = sa scr oDig := hg.scrA (by decide)
-  have args : ∀ σ s, Ctx L scr σ s → s.gpr .ebx = scr + BitVec.ofNat 32 oSel →
+  obtain aB : (scr + BitVec.ofNat 32 oSel).setWidth 64 = sa scr oSel := hg.scrA (by decide)
+  obtain aA : (scr + BitVec.ofNat 32 oDig).setWidth 64 = sa scr oDig := hg.scrA (by decide)
+  obtain args : ∀ σ s, Ctx L scr σ s → s.gpr .ebx = scr + BitVec.ofNat 32 oSel →
       s.gpr .eax = scr + BitVec.ofNat 32 oDig →
       DigArgs h.N s (scr + BitVec.ofNat 32 oSel) (scr + BitVec.ofNat 32 oDig) := fun σ s hc bx ax => by
     refine ⟨bx, ax, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -223,7 +223,7 @@ theorem outT_vp (hg : Geo L scr) (hd : DigCerts h) {X : State → Mem → Prop} 
     (VP.syms (VP.taint [.esp, .ebp] outSet_taint (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, hx⟩ => ?_)) ?_
   · simp only [outSet, atS, addi, List.cons_append, List.nil_append]
     refine wp_mov fun t1 u1 => wp_addi fun t2 u2 => wp_mov fun t3 u3 => wp_addi fun t4 u4 => WP.block_nil ?_
-    have m4 : t4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
+    obtain m4 : t4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
     refine ⟨(((hc.upd u1 (by decide) (by decide)).upd u2 (by decide) (by decide)).upd u3 (by decide)
       (by decide)).upd u4 (by decide) (by decide), by rw [m4]; exact hx, ?_, ?_⟩
     · simp (disch := decide) only [u4.other, u3.other, u2.gpr, u1.gpr, hc.ebp]
@@ -238,7 +238,7 @@ theorem outT_vp (hg : Geo L scr) (hd : DigCerts h) {X : State → Mem → Prop} 
       hab.2.1.st.sp⟩) ?_
   rintro σ s ⟨hc, hx, bx, ax⟩
   refine dig_frame (H := h.md) h.ok.out hd.sp (args σ s hc bx ax) fun s' af e => ?_
-  have fr : Frame [sR scr oDig h.N, L.LOW] s.mem s'.mem := by
+  obtain fr : Frame [sR scr oDig h.N, L.LOW] s.mem s'.mem := by
     refine af.frame.sub fun r hr => ?_
     simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
@@ -296,18 +296,18 @@ theorem compLoopT_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hn
   have fit := hg.fit
   unfold oRsa at fit
   obtain ⟨σ', ok⟩ := hg.ok
-  have hC : L.C ≤ 2 ^ 32 := by have := ok.BC; have := L.B.isLt; omega_arith
-  have nbB : nbm ≤ nbm * h.B := Nat.le_mul_of_pos_right nbm (by omega_arith)
+  obtain hC : L.C ≤ 2 ^ 32 := by have := ok.BC; have := L.B.isLt; omega_arith
+  obtain nbB : nbm ≤ nbm * h.B := Nat.le_mul_of_pos_right nbm (by omega_arith)
   generalize hT : nbm * h.B = T at hnb nbB ⊢
   -- What the pieces write, against what they keep.
-  have sl : ∀ d, d + 4 ≤ frameBytes → ∀ {o n : Nat}, o + n ≤ oRsa → (slotR L d).Disjoint (sR scr o n) :=
+  obtain sl : ∀ d, d + 4 ≤ frameBytes → ∀ {o n : Nat}, o + n ≤ oRsa → (slotR L d).Disjoint (sR scr o n) :=
     fun d hd o n h => hg.slot ok h (by rw [hg.F]; omega_arith)
-  have slow : ∀ d, d + 4 ≤ frameBytes → (slotR L d).Disjoint L.LOW := fun d hd => Lay.fr_low (by omega_arith) hC
-  have inL : ∀ r ∈ [sR scr oSel h.N], ∃ R ∈ loopW h L scr, Region.Sub r R := by
+  obtain slow : ∀ d, d + 4 ≤ frameBytes → (slotR L d).Disjoint L.LOW := fun d hd => Lay.fr_low (by omega_arith) hC
+  obtain inL : ∀ r ∈ [sR scr oSel h.N], ∃ R ∈ loopW h L scr, Region.Sub r R := by
     simp only [List.mem_singleton]; rintro r rfl; exact ⟨sR scr oSel h.N, by simp [loopW], fun _ h => h⟩
-  have inB : ∀ r ∈ [slotR L sBi], ∃ R ∈ loopW h L scr, Region.Sub r R := by
+  obtain inB : ∀ r ∈ [slotR L sBi], ∃ R ∈ loopW h L scr, Region.Sub r R := by
     simp only [List.mem_singleton]; rintro r rfl; exact ⟨slotR L sBi, by simp [loopW], fun _ h => h⟩
-  have wB : ∀ r ∈ [slotR L sBi], ∃ R ∈ L.W, Region.Sub r R := by
+  obtain wB : ∀ r ∈ [slotR L sBi], ∃ R ∈ L.W, Region.Sub r R := by
     simp only [List.mem_singleton]; rintro r rfl
     exact ⟨L.FR, List.mem_cons_self, Offset.sub_base _ (by rw [hg.F]; decide)⟩
   let CS : Nat → State → State → Prop := fun b σ s =>
@@ -318,7 +318,7 @@ theorem compLoopT_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hn
   · simp only [compInit, mi, st]
     refine wp_movi fun t1 u1 => (hc.upd u1 (by decide) (by decide)).wp_st hg (by decide) fun t2 c2 u2 =>
       WP.block_nil ?_
-    have fr : Frame [slotR L sBi] s.mem t2.mem := by rw [u2.mem, u1.mem]; exact slot_frame L _ _ _
+    obtain fr : Frame [slotR L sBi] s.mem t2.mem := by rw [u2.mem, u1.mem]; exact slot_frame L _ _ _
     refine ⟨c2, hI σ _ _ hi (fr.sub inB), sbytes_keep fr (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (sl sBi (by decide) (by omega_arith)).symm) (by omega_arith) hy,
       by rw [u2.mem, Mem.readW_writeW_self32, u1.gpr], ?_, fun h0 => absurd h0 (Nat.not_lt_zero _)⟩
@@ -333,8 +333,8 @@ theorem compLoopT_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hn
   swap
   · exact VP.empty fun σ s ⟨⟨h, _⟩, _⟩ => hn h
   generalize hb : nbm - (n + 1) = b
-  have hbn : b < nbm := by omega_arith
-  have hbB : b * h.B + h.B ≤ T := by rw [← hT, ← Nat.succ_mul]; exact Nat.mul_le_mul_right _ (by omega_arith)
+  obtain hbn : b < nbm := by omega_arith
+  obtain hbB : b * h.B + h.B ≤ T := by rw [← hT, ← Nat.succ_mul]; exact Nat.mul_le_mul_right _ (by omega_arith)
   -- What each stage keeps of memory.
   let X1 : State → Mem → Prop := fun σ m => Inv σ m ∧ CM h L scr T (yv σ) (lb σ) b m
   let X3 : State → Mem → Prop := fun σ m => Inv σ m ∧ (∀ i < T, m (sa scr (oY + i)) = yv σ i) ∧
@@ -345,8 +345,8 @@ theorem compLoopT_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hn
     m.readW (L.fr sBi) 32 = BitVec.ofNat 32 b ∧
     h.md.stateAt m (sa scr oSt) = h.md.compressList h.ok.iv (ylist (yv σ) T) (b + 1) ∧
     (lb σ < b + 1 → h.md.stateAt m (sa scr oSel) = h.md.compressList h.ok.iv (ylist (yv σ) T) (lb σ + 1))
-  have aD : (scr + BitVec.ofNat 32 (oSt + h.N)).setWidth 64 = sa scr (oSt + h.N) := hg.scrA (by omega_arith)
-  have aS : (scr + BitVec.ofNat 32 (oY + b * h.B)).setWidth 64 = sa scr (oY + b * h.B) := hg.scrA (by omega_arith)
+  obtain aD : (scr + BitVec.ofNat 32 (oSt + h.N)).setWidth 64 = sa scr (oSt + h.N) := hg.scrA (by omega_arith)
+  obtain aS : (scr + BitVec.ofNat 32 (oY + b * h.B)).setWidth 64 = sa scr (oY + b * h.B) := hg.scrA (by omega_arith)
   show VP _ (.seq (.block (blkSet h.H)) (.seq Impl.Bignum.X86.copyBytes (.seq (.block (cmpSet h.H))
     (.seq (cmpT f) (.seq (.block (selSet h.H)) (.seq (countLoop selBody) (.block compNext))))))) _
   refine VP.seq (G := fun σ s => (CS b σ s ∧ s.gpr .esi = scr + BitVec.ofNat 32 (oY + b * h.B) ∧
@@ -369,7 +369,7 @@ theorem compLoopT_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hn
     refine wp_shl (lgB h.H) (n := b) (by rw [h.pow_lg]; omega_arith) (by rw [u1.gpr, hm.bi]) fun t2 u2 => ?_
     refine wp_add fun t3 u3 _ => wp_addi fun t4 u4 => wp_mov fun t5 u5 => wp_addi fun t6 u6 =>
       wp_movi fun t7 u7 => WP.block_nil ?_
-    have m7 : t7.mem = s.mem := by rw [u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
+    obtain m7 : t7.mem = s.mem := by rw [u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
     refine ⟨⟨(((((c1.upd u2 (by decide) (by decide)).upd u3 (by decide) (by decide)).upd u4 (by decide)
       (by decide)).upd u5 (by decide) (by decide)).upd u6 (by decide) (by decide)).upd u7 (by decide) (by decide),
       by rw [m7]; exact hi, by rw [m7]; exact hm⟩, ?_, ?_, ?_⟩
@@ -387,7 +387,7 @@ theorem compLoopT_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hn
       fun σ s ⟨hc, hx, hb'⟩ => ⟨hc, hx, fun i hi' => ?_⟩
     · intro σ m m' ⟨hi, hm⟩ fr
       rw [aD] at fr
-      have one : ∀ {P : Region → Prop}, P (sR scr (oSt + h.N) h.B) → ∀ r ∈ [sR scr (oSt + h.N) h.B], P r := by
+      obtain one : ∀ {P : Region → Prop}, P (sR scr (oSt + h.N) h.B) → ∀ r ∈ [sR scr (oSt + h.N) h.B], P r := by
         intro P hP r hr; simp only [List.mem_singleton] at hr; subst hr; exact hP
       exact ⟨hI σ _ _ hi (fr.sub (one ⟨sR scr oSt (h.N + h.B), by simp [loopW], Offset.sub _ (by omega_arith) (by omega_arith)⟩)),
         hm.keep h fr (by omega_arith) (one (Geo.sep (by omega_arith) (by omega_arith) (by omega_arith)))
@@ -399,7 +399,7 @@ theorem compLoopT_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hn
     refine VP.taint [.esp, .ebp] h.certs.cmpSet (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, hx, hblk⟩ => ?_
     simp only [cmpSet, atS, addi, List.cons_append, List.nil_append]
     refine wp_mov fun t1 u1 => wp_addi fun t2 u2 => wp_mov fun t3 u3 => wp_addi fun t4 u4 => WP.block_nil ?_
-    have m4 : t4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
+    obtain m4 : t4.mem = s.mem := by rw [u4.mem, u3.mem, u2.mem, u1.mem]
     refine ⟨⟨(((hc.upd u1 (by decide) (by decide)).upd u2 (by decide) (by decide)).upd u3 (by decide)
       (by decide)).upd u4 (by decide) (by decide), by rw [m4]; exact hx, by rw [m4]; exact hblk⟩, ?_, ?_⟩
     · simp (disch := decide) only [u4.other, u3.other, u2.gpr, u1.gpr, hc.ebp]
@@ -442,13 +442,13 @@ theorem compLoopT_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hn
     refine VP.taint [.esp, .ebp] h.certs.selSet (sp_bp fun _ _ h => h.1) fun σ s ⟨hc, hx⟩ => ?_
     simp only [selSet, atS, ld, mi, addi, isZero, List.cons_append, List.nil_append]
     refine wp_mov fun t1 u1 => wp_addi fun t2 u2 => wp_mov fun t3 u3 => wp_addi fun t4 u4 => ?_
-    have c4 : Ctx L scr σ t4 := (((hc.upd u1 (by decide) (by decide)).upd u2 (by decide) (by decide)).upd u3
+    obtain c4 : Ctx L scr σ t4 := (((hc.upd u1 (by decide) (by decide)).upd u2 (by decide) (by decide)).upd u3
       (by decide) (by decide)).upd u4 (by decide) (by decide)
     refine c4.wp_slot hg (by decide) (by decide) (by decide) fun t5 c5 u5 => ?_
     refine wp_xorm (B := L.B) (by rw [c5.st.sp]) (by rw [hg.aFr ok sLb (by decide)]; exact c5.rFr hg sLb (by decide))
       fun t6 u6 => ?_
     refine wp_subi fun t7 u7 c7 _ => wp_sbb_self c7 fun t8 u8 => wp_movi fun t9 u9 => WP.block_nil ?_
-    have m9 : t9.mem = s.mem := by rw [u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
+    obtain m9 : t9.mem = s.mem := by rw [u9.mem, u8.mem, u7.mem, u6.mem, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem]
     refine ⟨⟨(((c5.upd u6 (by decide) (by decide)).upd u7 (by decide) (by decide)).upd u8 (by decide)
       (by decide)).upd u9 (by decide) (by decide), by rw [m9]; exact hx⟩, ?_, ?_, ?_, ?_⟩
     · simp (disch := decide) only [u9.other, u8.other, u7.other, u6.other, u5.other, u4.other, u3.other, u2.gpr,
@@ -457,7 +457,7 @@ theorem compLoopT_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hn
         u2.other, u1.other]
     · rw [u9.gpr]
     · have hb32 : b < 2 ^ 32 := by omega_arith
-      have hl32 : lb σ < 2 ^ 32 := by have := hlb σ; omega_arith
+      obtain hl32 : lb σ < 2 ^ 32 := by have := hlb σ; omega_arith
       rw [u9.other _ (by decide), u8.gpr, ifz, u6.gpr, u5.gpr, u5.mem, u4.mem, u3.mem, u2.mem, u1.mem, hx.2.2.1, hg.aFr ok sLb (by decide), hslb σ _ hx.1, zmask_xor hb32 hl32]
       rfl
   · -- The selection.
@@ -493,14 +493,14 @@ theorem compLoopT_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hn
     refine (c1.upd u2 (by decide) (by decide)).wp_st hg (by decide) fun t3 c3 u3 => ?_
     refine wp_cmpm (B := L.B) (by rw [c3.st.sp]) (by rw [hg.aFr ok sNb (by decide)]; exact c3.rFr hg sNb (by decide))
       fun t4 u4 _ z => WP.block_nil ?_
-    have e2 : t2.gpr .eax = BitVec.ofNat 32 (b + 1) := by
+    obtain e2 : t2.gpr .eax = BitVec.ofNat 32 (b + 1) := by
       rw [u2.gpr, u1.gpr, hbi, BitVec.ofNat_add_ofNat]
-    have m4 : t4.mem = s.mem.writeW (L.fr sBi) (BitVec.ofNat 32 (b + 1)) := by
+    obtain m4 : t4.mem = s.mem.writeW (L.fr sBi) (BitVec.ofNat 32 (b + 1)) := by
       rw [u4.mem, u3.mem, e2, u2.mem, u1.mem]
-    have fr : Frame [slotR L sBi] s.mem t4.mem := by rw [m4]; exact slot_frame L _ _ _
-    have hc' : Ctx L scr σ t4 := c3.fupd u4
-    have hi' : Inv σ t4.mem := hI σ _ _ hi (fr.sub inB)
-    have hsel' : lb σ < b + 1 → h.md.stateAt t4.mem (sa scr oSel) =
+    obtain fr : Frame [slotR L sBi] s.mem t4.mem := by rw [m4]; exact slot_frame L _ _ _
+    obtain hc' : Ctx L scr σ t4 := c3.fupd u4
+    obtain hi' : Inv σ t4.mem := hI σ _ _ hi (fr.sub inB)
+    obtain hsel' : lb σ < b + 1 → h.md.stateAt t4.mem (sa scr oSel) =
         h.md.compressList h.ok.iv (ylist (yv σ) T) (lb σ + 1) := fun hl => by
       rw [stateAt_keep h fr (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (sl sBi (by decide) (by omega_arith)).symm), hsel hl]
@@ -555,17 +555,17 @@ theorem ctHashR_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0
   have hso := h.so_le
   have fit := hg.fit
   unfold oRsa at fit
-  have hB0 : 0 < h.B := by omega_arith
-  have hLB : h.L < h.B := by have := h.D_pos; omega_arith
+  obtain hB0 : 0 < h.B := by omega_arith
+  obtain hLB : h.L < h.B := by have := h.D_pos; omega_arith
   obtain ⟨σ', ok⟩ := hg.ok
-  have hC : L.C ≤ 2 ^ 32 := by have := ok.BC; have := L.B.isLt; omega_arith
-  have hIs : ∀ rs : List Region, (∀ r ∈ rs, r ∈ ctW h L scr (nbm * h.B)) →
+  obtain hC : L.C ≤ 2 ^ 32 := by have := ok.BC; have := L.B.isLt; omega_arith
+  obtain hIs : ∀ rs : List Region, (∀ r ∈ rs, r ∈ ctW h L scr (nbm * h.B)) →
       ∀ σ m m', Inv σ m → Frame rs m m' → Inv σ m' :=
     fun rs hs σ m m' hi hf => hI σ m m' hi (hf.mono hs)
-  have hq : ∀ σ, ((msg σ).length + h.L) / h.B < nbm := fun σ =>
+  obtain hq : ∀ σ, ((msg σ).length + h.L) / h.B < nbm := fun σ =>
     (Nat.div_lt_iff_lt_mul hB0).2 (by have := hfit σ; omega_arith)
-  have hℓ : ∀ σ, (msg σ).length < 2048 := fun σ => by have := hfit σ; omega_arith
-  have sl : ∀ d, d + 4 ≤ frameBytes → ∀ {o n : Nat}, o + n ≤ oRsa → (slotR L d).Disjoint (sR scr o n) :=
+  obtain hℓ : ∀ σ, (msg σ).length < 2048 := fun σ => by have := hfit σ; omega_arith
+  obtain sl : ∀ d, d + 4 ≤ frameBytes → ∀ {o n : Nat}, o + n ≤ oRsa → (slotR L d).Disjoint (sR scr o n) :=
     fun d hd o n h => hg.slot ok h (by rw [hg.F]; omega_arith)
   show VP _ (.seq (initPartT f) (.seq (lenPart h.H) (.seq (padPart h.H) (.seq (compLoopT f h.H) (outPartT f))))) _
   -- The hash value initialized.
@@ -634,14 +634,14 @@ theorem ctHashR_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0
       intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl <;> simp) σ _ _ hi hf, fun i hi => ?_⟩, sy⟩
   rw [hm i (by omega_arith), he, h.ok.link.hash]
-  have hq1 : ((msg σ).length + h.L) / h.B + 1 ≤ nbm := hq σ
-  have key : h.md.compressList h.ok.iv
+  obtain hq1 : ((msg σ).length + h.L) / h.B + 1 ≤ nbm := hq σ
+  obtain key : h.md.compressList h.ok.iv
       (ylist (fun i => padY h.B h.L (msg σ) (h.md.lenBytes (msg σ).length) i) (nbm * h.B))
         (((msg σ).length + h.L) / h.B + 1) =
       h.md.compressList h.ok.iv (h.md.pad (msg σ)) ((h.md.pad (msg σ)).length / h.B) := by
     rw [RsaPss.pad_length h.md _ hB0 hLB, Nat.mul_div_cancel_left _ hB0]
     refine h.md.compressList_congr fun j hj => ?_
-    have hT : j < nbm * h.B := by
+    obtain hT : j < nbm * h.B := by
       have := Nat.mul_le_mul_left h.B hq1
       rw [Nat.mul_comm h.B nbm] at this
       omega_arith
@@ -675,10 +675,10 @@ theorem ctHashT_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0
   have hN := h.N_le
   have hB := h.B_le
   have hso := h.so_le
-  have hC : L.C ≤ 2 ^ 32 := by have := ok.BC; have := L.B.isLt; omega_arith
-  have sl : ∀ d, d + 4 ≤ frameBytes → ∀ {o n : Nat}, o + n ≤ oRsa → (slotR L d).Disjoint (sR scr o n) :=
+  obtain hC : L.C ≤ 2 ^ 32 := by have := ok.BC; have := L.B.isLt; omega_arith
+  obtain sl : ∀ d, d + 4 ≤ frameBytes → ∀ {o n : Nat}, o + n ≤ oRsa → (slotR L d).Disjoint (sR scr o n) :=
     fun d hd o n h => hg.slot ok h (by rw [hg.F]; omega_arith)
-  have dT : ∀ r ∈ ctW h L scr (nbm * h.B), (slotR L sTab).Disjoint r := by
+  obtain dT : ∀ r ∈ ctW h L scr (nbm * h.B), (slotR L sTab).Disjoint r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
@@ -698,7 +698,7 @@ theorem ctHashT_vp (hg : Geo L scr) {nbm : Nat} (hnb : nbm * h.B ≤ 2048) (hnb0
   · simp only [hTab, ld, st, Impl.RsaPkcs1Sig.X86.stk]
     refine hc.wp_arg hg hj (by decide) (by decide) fun t1 c1 u1 => c1.wp_st hg (by decide) fun t2 c2 u2 =>
       WP.block_nil ?_
-    have fr : Frame [slotR L sTab] s.mem t2.mem := by rw [u2.mem, u1.mem]; exact slot_frame L _ _ _
+    obtain fr : Frame [slotR L sTab] s.mem t2.mem := by rw [u2.mem, u1.mem]; exact slot_frame L _ _ _
     refine ⟨c2, ⟨hI σ _ _ hi (fr.sub fun r hr => ⟨r, by simp at hr; subst hr; simp [ctWT], fun _ h => h⟩),
       by rw [u2.mem, Mem.readW_writeW_self32, u1.gpr]⟩, sbytes_keep fr (fun r hr => by
         simp only [List.mem_singleton] at hr; subst hr; exact (sl sTab (by decide) (by pomega)).symm) (by pomega) hy⟩

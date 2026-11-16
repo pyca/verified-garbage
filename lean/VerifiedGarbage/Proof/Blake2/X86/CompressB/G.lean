@@ -83,12 +83,12 @@ theorem wp_rorPair {l h t : Reg} {k : Nat} (h0 : 0 < k) (hk : k < 32) (hlh : l �
   refine wp_ror ⟨h0, by omega_arith⟩ fun s₁ u₁ => wp_ror ⟨h0, by omega_arith⟩ fun s₂ u₂ =>
     wp_movS rfl fun s₃ u₃ => wp_xorS rfl fun s₄ u₄ => wp_andS rfl fun s₅ u₅ =>
     wp_xorS rfl fun s₆ u₆ => wp_xorS rfl fun s₇ u₇ => ?_
-  have O := (((((((Only.of_upd u₁).trans (Only.of_upd u₂)).trans (Only.of_upd u₃)).trans
+  obtain O := (((((((Only.of_upd u₁).trans (Only.of_upd u₂)).trans (Only.of_upd u₃)).trans
     (Only.of_upd u₄)).trans (Only.of_upd u₅)).trans (Only.of_upd u₆)).trans (Only.of_upd u₇))
   -- The rotated halves, and the mask of their bits to exchange.
-  have eL : s₂.gpr l = P.rotateRight k := by rw [u₂.other _ hlh, u₁.gpr, hl]
-  have eH : s₂.gpr h = R.rotateRight k := by rw [u₂.gpr, u₁.other _ (Ne.symm hlh), hh]
-  have eT : s₅.gpr t = (P.rotateRight k ^^^ R.rotateRight k) &&& mask k := by
+  obtain eL : s₂.gpr l = P.rotateRight k := by rw [u₂.other _ hlh, u₁.gpr, hl]
+  obtain eH : s₂.gpr h = R.rotateRight k := by rw [u₂.gpr, u₁.other _ (Ne.symm hlh), hh]
+  obtain eT : s₅.gpr t = (P.rotateRight k ^^^ R.rotateRight k) &&& mask k := by
     rw [u₅.gpr, u₄.gpr, u₃.gpr, u₃.other _ hht, eL, eH]
   refine K s₇ (O.mono (by simp)) ?_ ?_
   · rw [u₇.gpr, u₆.other _ (Ne.symm hlh), u₅.other _ hht, u₄.other _ hht, u₃.other _ hht, eH,
@@ -186,109 +186,109 @@ theorem g_ok {B : BitVec 32} (hfit : B.toNat + 512 ≤ 2 ^ 32) {a b c d x y : Na
   simp only [List.append_assoc]
   -- a := a + b + x
   refine wp_ld (by decide) (by decide) h0 hA (by omega_arith) fun s₁ o₁ p₁ => ?_
-  have k₁ := (Keep.refl s).only o₁ (by decide)
+  obtain k₁ := (Keep.refl s).only o₁ (by decide)
   refine wp_add64m (by decide) (by decide) (k₁.esi h0) (k₁.acc hA) (by omega_arith) p₁ fun s₂ o₂ p₂ => ?_
-  have k₂ := k₁.only o₂ (by decide)
+  obtain k₂ := k₁.only o₂ (by decide)
   refine wp_add64m (by decide) (by decide) (k₂.esi h0) (k₂.acc hA) (by omega_arith) p₂ fun s₃ o₃ p₃ => ?_
-  have k₃ := k₂.only o₃ (by decide)
-  have e₃ : s₂.mem = s.mem := o₂.mem.trans o₁.mem
+  obtain k₃ := k₂.only o₃ (by decide)
+  obtain e₃ : s₂.mem = s.mem := o₂.mem.trans o₁.mem
   rw [o₁.mem, e₃] at p₃
   -- d := (d ^ a) >>> 32
   refine wp_ld (by decide) (by decide) (k₃.esi h0) (k₃.acc hA) (by omega_arith) fun s₄ o₄ p₄ => ?_
-  have k₄ := k₃.only o₄ (by decide)
-  have e₄ : s₃.mem = s.mem := o₃.mem.trans e₃
+  obtain k₄ := k₃.only o₄ (by decide)
+  obtain e₄ : s₃.mem = s.mem := o₃.mem.trans e₃
   rw [e₄] at p₄
   refine wp_xor64 (by decide) (by decide) p₄ (p₃.of_only o₄ (by decide) (by decide))
     fun s₅ o₅ p₅ => ?_
-  have k₅ := k₄.only o₅ (by decide)
+  obtain k₅ := k₄.only o₅ (by decide)
   have p₅' := p₅.swap
   -- c := c + d
   refine wp_ld (by decide) (by decide) (k₅.esi h0) (k₅.acc hA) (by omega_arith) fun s₆ o₆ p₆ => ?_
-  have k₆ := k₅.only o₆ (by decide)
-  have e₆ : s₅.mem = s.mem := o₅.mem.trans (o₄.mem.trans e₄)
+  obtain k₆ := k₅.only o₆ (by decide)
+  obtain e₆ : s₅.mem = s.mem := o₅.mem.trans (o₄.mem.trans e₄)
   rw [e₆] at p₆
   refine wp_add64 (by decide) (by decide) p₆ (p₅'.of_only o₆ (by decide) (by decide))
     fun s₇ o₇ p₇ => ?_
-  have k₇ := k₆.only o₇ (by decide)
+  obtain k₇ := k₆.only o₇ (by decide)
   refine wp_st (k₇.esi h0) (k₇.acc hA) (by omega_arith) ((p₅'.of_only o₆ (by decide) (by decide)).of_only
     o₇ (by decide) (by decide)) fun s₈ u₈ => ?_
-  have k₈ := k₇.mupd u₈
+  obtain k₈ := k₇.mupd u₈
   have e₈ := u₈.mem
   rw [o₇.mem, o₆.mem, e₆] at e₈
   -- b := (b ^ c) >>> 24
   refine wp_ld (by decide) (by decide) (k₈.esi h0) (k₈.acc hA) (by omega_arith) fun s₉ o₉ p₉ => ?_
-  have k₉ := k₈.only o₉ (by decide)
+  obtain k₉ := k₈.only o₉ (by decide)
   rw [e₈, rd64_write64_ne _ _ (by omega_arith) (by omega_arith) sbd.symm] at p₉
   refine wp_xor64 (by decide) (by decide) p₉ ((p₇.mupd u₈).of_only o₉ (by decide) (by decide))
     fun s₁₀ o₁₀ p₁₀ => ?_
-  have k₁₀ := k₉.only o₁₀ (by decide)
+  obtain k₁₀ := k₉.only o₁₀ (by decide)
   refine wp_st (k₁₀.esi h0) (k₁₀.acc hA) (by omega_arith)
     (((p₇.mupd u₈).of_only o₉ (by decide) (by decide)).of_only o₁₀ (by decide) (by decide))
     fun s₁₁ u₁₁ => ?_
-  have k₁₁ := k₁₀.mupd u₁₁
+  obtain k₁₁ := k₁₀.mupd u₁₁
   have e₁₁ := u₁₁.mem
   rw [o₁₀.mem, o₉.mem, e₈] at e₁₁
   refine wp_rot (by decide) (by decide) (by decide) (by decide) (by decide) (p₁₀.mupd u₁₁)
     fun s₁₂ o₁₂ p₁₂ => ?_
-  have k₁₂ := k₁₁.only o₁₂ (by decide)
+  obtain k₁₂ := k₁₁.only o₁₂ (by decide)
   -- a := a + b + y
-  have pa : Pair s₁₂ .eax .ebx _ :=
+  obtain pa : Pair s₁₂ .eax .ebx _ :=
     ((((((((p₃.of_only o₄ (by decide) (by decide)).of_only o₅ (by decide) (by decide)).of_only o₆
       (by decide) (by decide)).of_only o₇ (by decide) (by decide)).mupd u₈).of_only o₉ (by decide)
       (by decide)).of_only o₁₀ (by decide) (by decide)).mupd u₁₁).of_only o₁₂ (by decide) (by decide)
   refine wp_add64 (by decide) (by decide) pa p₁₂ fun s₁₃ o₁₃ p₁₃ => ?_
-  have k₁₃ := k₁₂.only o₁₃ (by decide)
+  obtain k₁₃ := k₁₂.only o₁₃ (by decide)
   refine wp_add64m (by decide) (by decide) (k₁₃.esi h0) (k₁₃.acc hA) (by omega_arith) p₁₃
     fun s₁₄ o₁₄ p₁₄ => ?_
-  have k₁₄ := k₁₃.only o₁₄ (by decide)
-  have e₁₃ := o₁₃.mem.trans (o₁₂.mem.trans e₁₁)
+  obtain k₁₄ := k₁₃.only o₁₄ (by decide)
+  obtain e₁₃ := o₁₃.mem.trans (o₁₂.mem.trans e₁₁)
   rw [e₁₃, rd64_write64_ne _ _ (by omega_arith) (by omega_arith) syc.symm,
     rd64_write64_ne _ _ (by omega_arith) (by omega_arith) syd.symm] at p₁₄
   -- d := (d ^ a) >>> 16
   refine wp_ld (by decide) (by decide) (k₁₄.esi h0) (k₁₄.acc hA) (by omega_arith) fun s₁₅ o₁₅ p₁₅ => ?_
-  have k₁₅ := k₁₄.only o₁₅ (by decide)
+  obtain k₁₅ := k₁₄.only o₁₅ (by decide)
   rw [o₁₄.mem, e₁₃, rd64_write64_ne _ _ (by omega_arith) (by omega_arith) scd,
     rd64_write64_self _ _ (by omega_arith)] at p₁₅
   refine wp_xor64 (by decide) (by decide) p₁₅ (p₁₄.of_only o₁₅ (by decide) (by decide))
     fun s₁₆ o₁₆ p₁₆ => ?_
-  have k₁₆ := k₁₅.only o₁₆ (by decide)
+  obtain k₁₆ := k₁₅.only o₁₆ (by decide)
   refine wp_st (k₁₆.esi h0) (k₁₆.acc hA) (by omega_arith)
     ((p₁₄.of_only o₁₅ (by decide) (by decide)).of_only o₁₆ (by decide) (by decide))
     fun s₁₇ u₁₇ => ?_
-  have k₁₇ := k₁₆.mupd u₁₇
+  obtain k₁₇ := k₁₆.mupd u₁₇
   have e₁₇ := u₁₇.mem
   rw [o₁₆.mem, o₁₅.mem, o₁₄.mem, e₁₃] at e₁₇
   refine wp_rot (by decide) (by decide) (by decide) (by decide) (by decide) (p₁₆.mupd u₁₇)
     fun s₁₈ o₁₈ p₁₈ => ?_
-  have k₁₈ := k₁₇.only o₁₈ (by decide)
+  obtain k₁₈ := k₁₇.only o₁₈ (by decide)
   -- c := c + d
   refine wp_ld (by decide) (by decide) (k₁₈.esi h0) (k₁₈.acc hA) (by omega_arith) fun s₁₉ o₁₉ p₁₉ => ?_
-  have k₁₉ := k₁₈.only o₁₉ (by decide)
+  obtain k₁₉ := k₁₈.only o₁₉ (by decide)
   rw [o₁₈.mem, e₁₇, rd64_write64_ne _ _ (by omega_arith) (by omega_arith) sac,
     rd64_write64_self _ _ (by omega_arith)] at p₁₉
   refine wp_add64 (by decide) (by decide) p₁₉ (p₁₈.of_only o₁₉ (by decide) (by decide))
     fun s₂₀ o₂₀ p₂₀ => ?_
-  have k₂₀ := k₁₉.only o₂₀ (by decide)
+  obtain k₂₀ := k₁₉.only o₂₀ (by decide)
   refine wp_st (k₂₀.esi h0) (k₂₀.acc hA) (by omega_arith)
     ((p₁₈.of_only o₁₉ (by decide) (by decide)).of_only o₂₀ (by decide) (by decide))
     fun s₂₁ u₂₁ => ?_
-  have k₂₁ := k₂₀.mupd u₂₁
+  obtain k₂₁ := k₂₀.mupd u₂₁
   -- b := (b ^ c) >>> 63
-  have pb : Pair s₂₁ .edx .ecx _ :=
+  obtain pb : Pair s₂₁ .edx .ecx _ :=
     (((((((((p₁₂.of_only o₁₃ (by decide) (by decide)).of_only o₁₄ (by decide) (by decide)).of_only
       o₁₅ (by decide) (by decide)).of_only o₁₆ (by decide) (by decide)).mupd u₁₇).of_only o₁₈
       (by decide) (by decide)).of_only o₁₉ (by decide) (by decide)).of_only o₂₀ (by decide)
       (by decide)).mupd u₂₁)
   refine wp_xor64 (by decide) (by decide) pb (p₂₀.mupd u₂₁) fun s₂₂ o₂₂ p₂₂ => ?_
-  have k₂₂ := k₂₁.only o₂₂ (by decide)
+  obtain k₂₂ := k₂₁.only o₂₂ (by decide)
   refine wp_st (k₂₂.esi h0) (k₂₂.acc hA) (by omega_arith)
     ((p₂₀.mupd u₂₁).of_only o₂₂ (by decide) (by decide)) fun s₂₃ u₂₃ => ?_
-  have k₂₃ := k₂₂.mupd u₂₃
+  obtain k₂₃ := k₂₂.mupd u₂₃
   refine wp_rot' (by decide) (by decide) (by decide) (by decide) (by decide) (p₂₂.mupd u₂₃)
     fun s₂₄ o₂₄ p₂₄ => ?_
-  have k₂₄ := k₂₃.only o₂₄ (by decide)
+  obtain k₂₄ := k₂₃.only o₂₄ (by decide)
   refine wp_st (k₂₄.esi h0) (k₂₄.acc hA) (by omega_arith) p₂₄ fun s₂₅ u₂₅ => WP.block_nil ?_
-  have k₂₅ := k₂₄.mupd u₂₅
+  obtain k₂₅ := k₂₄.mupd u₂₅
   have e₂₅ := u₂₅.mem
   rw [o₂₄.mem, u₂₃.mem, o₂₂.mem, u₂₁.mem, o₂₀.mem, o₁₉.mem, o₁₈.mem, e₁₇] at e₂₅
   refine ⟨k₂₅, ?_, ?_, ?_, ?_, fun o ho h1 h2 h3 h4 => ?_, ?_⟩
@@ -308,9 +308,9 @@ theorem g_ok {B : BitVec 32} (hfit : B.toNat + 512 ≤ 2 ^ 32) {a b c d x y : Na
       rd64_write64_ne _ _ (by omega_arith) (by omega_arith) h1, rd64_write64_ne _ _ (by omega_arith) (by omega_arith) h3,
       rd64_write64_ne _ _ (by omega_arith) (by omega_arith) h4]
   · rw [e₂₅]
-    have hm : (⟨B.setWidth 64, 256⟩ : Region) ∈ [(⟨B.setWidth 64, 256⟩ : Region)] :=
+    obtain hm : (⟨B.setWidth 64, 256⟩ : Region) ∈ [(⟨B.setWidth 64, 256⟩ : Region)] :=
       List.mem_singleton_self _
-    have f : ∀ {m m' : Mem} {o : Nat} (v : BitVec 64), o + 8 ≤ 256 →
+    obtain f : ∀ {m m' : Mem} {o : Nat} (v : BitVec 64), o + 8 ≤ 256 →
         Frame [⟨B.setWidth 64, 256⟩] m m' → Frame [⟨B.setWidth 64, 256⟩] m (write64 m' B o v) :=
       fun v ho h => frame_write64 h hm (by omega_arith) ho v
     exact f _ hb (f _ hc (f _ hd (f _ ha (f _ hc (f _ hd (Frame.refl _ _))))))

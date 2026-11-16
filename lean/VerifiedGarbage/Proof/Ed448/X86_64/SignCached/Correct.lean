@@ -74,8 +74,8 @@ theorem out0 (L : Lay) : L.out + BitVec.ofNat 64 0 = L.out := x0 _
 /-- The header and the prefix after a hash into the frame. -/
 theorem bytes_drop (m : Mem) (p : Addr) :
     (bytesAt m p 114).drop 57 = bytesAt m (p + BitVec.ofNat 64 57) 57 := by
-  have a := Proof.X25519.bytesAt_add m p 57 57
-  have l := Proof.X25519.length_bytesAt m p 57
+  obtain a := Proof.X25519.bytesAt_add m p 57 57
+  obtain l := Proof.X25519.length_bytesAt m p 57
   change (Spec.X25519.bytesAt m p (57 + 57)).drop 57 = Spec.X25519.bytesAt m (p + BitVec.ofNat 64 57) 57
   rw [a, List.drop_left' l]
 
@@ -108,82 +108,82 @@ theorem body_ok (hb : BaseOk v) (hL : L.Ok) {t : State} (hc : Ctx L g mx m₀ t)
   refine WP.seq (WP.mono (mulAdd_ok hL hc8) fun t9 ⟨hc9, f9, hM⟩ => ?_)
   refine WP.mono (wipe_ok hL hc9) fun t10 ⟨hc10, f10⟩ => ⟨hc10, ?_⟩
   -- Facts about the regions.
-  have xS : ∀ {d n : Nat}, d + n ≤ 448 → Region.Disjoint ⟨L.SP + BitVec.ofNat 64 d, n⟩ L.SCR :=
+  obtain xS : ∀ {d n : Nat}, d + n ≤ 448 → Region.Disjoint ⟨L.SP + BitVec.ofNat 64 d, n⟩ L.SCR :=
     fun h => fr_x hL h
-  have rHW : ∀ {d n : Nat}, d + n ≤ 448 → (16 + 114 ≤ d) → ∀ r ∈ HW L,
+  obtain rHW : ∀ {d n : Nat}, d + n ≤ 448 → (16 + 114 ≤ d) → ∀ r ∈ HW L,
       Region.Disjoint ⟨L.SP + BitVec.ofNat 64 d, n⟩ r := fun h h' r hr => by
     simp only [HW, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     exacts [xS h, ff L (.inr h') h (by omega_arith), fb L h]
-  have oHW : ∀ {e k : Nat}, e + k ≤ 114 → ∀ r ∈ HW L, Region.Disjoint ⟨L.out + BitVec.ofNat 64 e, k⟩ r :=
+  obtain oHW : ∀ {e k : Nat}, e + k ≤ 114 → ∀ r ∈ HW L, Region.Disjoint ⟨L.out + BitVec.ofNat 64 e, k⟩ r :=
     fun h r hr => by
       simp only [HW, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       exacts [ox hL h, (fo hL (d := 16) (n := 114) (by omega_arith) h).symm, ob hL h]
-  have three : ∀ {p : Addr} {n : Nat} {q : Region}, Region.Disjoint ⟨p, n⟩ q → Region.Disjoint ⟨p, n⟩ L.SCR →
+  obtain three : ∀ {p : Addr} {n : Nat} {q : Region}, Region.Disjoint ⟨p, n⟩ q → Region.Disjoint ⟨p, n⟩ L.SCR →
       Region.Disjoint ⟨p, n⟩ ⟨L.B, 16⟩ → ∀ r ∈ [q, L.SCR, ⟨L.B, 16⟩], Region.Disjoint ⟨p, n⟩ r :=
     fun h₁ h₂ h₃ r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl | rfl
       exacts [h₁, h₂, h₃]
-  have one : ∀ {p : Addr} {n : Nat} {q : Region}, Region.Disjoint ⟨p, n⟩ q → ∀ r ∈ [q], Region.Disjoint ⟨p, n⟩ r :=
+  obtain one : ∀ {p : Addr} {n : Nat} {q : Region}, Region.Disjoint ⟨p, n⟩ q → ∀ r ∈ [q], Region.Disjoint ⟨p, n⟩ r :=
     fun h r hr => by simp only [List.mem_singleton] at hr; subst hr; exact h
   -- The header, through the hashes and the calls up to the challenge's hash.
-  have hdr0 : ∀ r ∈ HW L, Region.Disjoint ⟨L.SP + BitVec.ofNat 64 0, 10⟩ r := fun r hr => by
+  obtain hdr0 : ∀ r ∈ HW L, Region.Disjoint ⟨L.SP + BitVec.ofNat 64 0, 10⟩ r := fun r hr => by
     simp only [HW, List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     exacts [xS (by omega_arith), ff L (.inl (by omega_arith)) (by omega_arith) (by omega_arith), fb L (by omega_arith)]
   rw [sp0] at hdr0
-  have hx0 := xS (d := 0) (n := 10) (by omega_arith); rw [sp0] at hx0
-  have hb0 := fb L (d := 0) (n := 10) (by omega_arith); rw [sp0] at hb0
-  have e2 := keepB f2 hdr0 (by decide)
-  have e3 := keepB f3 (one (q := ⟨L.S, 64⟩) (by
+  obtain hx0 := xS (d := 0) (n := 10) (by omega_arith); rw [sp0] at hx0
+  obtain hb0 := fb L (d := 0) (n := 10) (by omega_arith); rw [sp0] at hb0
+  obtain e2 := keepB f2 hdr0 (by decide)
+  obtain e3 := keepB f3 (one (q := ⟨L.S, 64⟩) (by
     have := ff L (d := 0) (n := 10) (e := 320) (k := 64) (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
     rwa [sp0] at this)) (by decide)
-  have e4 := keepB f4 hdr0 (by decide)
-  have e5 := keepB f5 (three (by
+  obtain e4 := keepB f4 hdr0 (by decide)
+  obtain e5 := keepB f5 (three (by
     have := ff L (d := 0) (n := 10) (e := 384) (k := 57) (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
     rwa [sp0] at this) hx0 hb0) (by decide)
-  have e6 := keepB f6 (three (by
+  obtain e6 := keepB f6 (three (by
     have := fo hL (d := 0) (n := 10) (e := 0) (k := 57) (by omega_arith) (by omega_arith)
     rwa [sp0, out0] at this) hx0 hb0) (by decide)
   -- The prefix, through the pruning.
-  have p3 := keepB f3 (one (q := ⟨L.S, 64⟩) (ff L (d := 73) (n := 57) (e := 320) (k := 64) (.inl (by omega_arith))
+  obtain p3 := keepB f3 (one (q := ⟨L.S, 64⟩) (ff L (d := 73) (n := 57) (e := 320) (k := 64) (.inl (by omega_arith))
     (by omega_arith) (by omega_arith))) (by decide)
   -- `R`, through the challenge's hash and its reduction, and the scalar product.
-  have o1 : ∀ {e k : Nat}, e + k ≤ 114 → Region.Disjoint ⟨L.out + BitVec.ofNat 64 e, k⟩ L.SCR ∧
+  obtain o1 : ∀ {e k : Nat}, e + k ≤ 114 → Region.Disjoint ⟨L.out + BitVec.ofNat 64 e, k⟩ L.SCR ∧
       Region.Disjoint ⟨L.out + BitVec.ofNat 64 e, k⟩ ⟨L.B, 16⟩ := fun h => ⟨ox hL h, ob hL h⟩
-  have r7 := keepB f7 (p := L.out) (n := 57) (by have := oHW (e := 0) (k := 57) (by omega_arith); rwa [out0] at this)
+  obtain r7 := keepB f7 (p := L.out) (n := 57) (by have := oHW (e := 0) (k := 57) (by omega_arith); rwa [out0] at this)
     (by decide)
-  have r8 := keepB f8 (p := L.out) (n := 57) (three (by
+  obtain r8 := keepB f8 (p := L.out) (n := 57) (three (by
       have := (fo hL (d := 256) (n := 57) (e := 0) (k := 57) (by omega_arith) (by omega_arith)).symm
       rwa [out0] at this) (by have := (o1 (e := 0) (k := 57) (by omega_arith)).1; rwa [out0] at this)
       (by have := (o1 (e := 0) (k := 57) (by omega_arith)).2; rwa [out0] at this)) (by decide)
-  have r9 := keepB f9 (p := L.out) (n := 57) (three (by
+  obtain r9 := keepB f9 (p := L.out) (n := 57) (three (by
       have := Offset.disjoint L.out (d := 0) (n := 57) (e := 57) (k := 57) (.inl (by omega_arith)) (by omega_arith) (by omega_arith)
       rwa [out0] at this) (by have := (o1 (e := 0) (k := 57) (by omega_arith)).1; rwa [out0] at this)
       (by have := (o1 (e := 0) (k := 57) (by omega_arith)).2; rwa [out0] at this)) (by decide)
-  have r10 := keepB f10 (p := L.out) (n := 57) (one (by
+  obtain r10 := keepB f10 (p := L.out) (n := 57) (one (by
       have := (fo hL (d := 320) (n := 128) (e := 0) (k := 57) (by omega_arith) (by omega_arith)).symm
       rwa [out0] at this)) (by decide)
-  have s10 := keepB f10 (p := L.out + BitVec.ofNat 64 57) (n := 57)
+  obtain s10 := keepB f10 (p := L.out + BitVec.ofNat 64 57) (n := 57)
     (one (fo hL (d := 320) (n := 128) (e := 57) (k := 57) (by omega_arith) (by omega_arith)).symm) (by decide)
   -- `r` and `s`, through the code after them.
-  have rr6 := keepB f6 (p := L.R) (n := 57) (three (fo hL (d := 384) (n := 57) (e := 0) (k := 57) (by omega_arith)
+  obtain rr6 := keepB f6 (p := L.R) (n := 57) (three (fo hL (d := 384) (n := 57) (e := 0) (k := 57) (by omega_arith)
     (by omega_arith) |> fun h => by rwa [out0] at h) (xS (by omega_arith)) (fb L (by omega_arith))) (by decide)
-  have rr7 := keepB f7 (p := L.R) (n := 57) (rHW (by omega_arith) (by omega_arith)) (by decide)
-  have rr8 := keepB f8 (p := L.R) (n := 57) (three (ff L (.inr (by omega_arith)) (by omega_arith) (by omega_arith)) (xS (by omega_arith))
+  obtain rr7 := keepB f7 (p := L.R) (n := 57) (rHW (by omega_arith) (by omega_arith)) (by decide)
+  obtain rr8 := keepB f8 (p := L.R) (n := 57) (three (ff L (.inr (by omega_arith)) (by omega_arith) (by omega_arith)) (xS (by omega_arith))
     (fb L (by omega_arith))) (by decide)
-  have ss4 := keepB f4 (p := L.S) (n := 57) (rHW (by omega_arith) (by omega_arith)) (by decide)
-  have ss5 := keepB f5 (p := L.S) (n := 57) (three (ff L (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (xS (by omega_arith))
+  obtain ss4 := keepB f4 (p := L.S) (n := 57) (rHW (by omega_arith) (by omega_arith)) (by decide)
+  obtain ss5 := keepB f5 (p := L.S) (n := 57) (three (ff L (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (xS (by omega_arith))
     (fb L (by omega_arith))) (by decide)
-  have ss6 := keepB f6 (p := L.S) (n := 57) (three (fo hL (d := 320) (n := 57) (e := 0) (k := 57) (by omega_arith)
+  obtain ss6 := keepB f6 (p := L.S) (n := 57) (three (fo hL (d := 320) (n := 57) (e := 0) (k := 57) (by omega_arith)
     (by omega_arith) |> fun h => by rwa [out0] at h) (xS (by omega_arith)) (fb L (by omega_arith))) (by decide)
-  have ss7 := keepB f7 (p := L.S) (n := 57) (rHW (by omega_arith) (by omega_arith)) (by decide)
-  have ss8 := keepB f8 (p := L.S) (n := 57) (three (ff L (.inr (by omega_arith)) (by omega_arith) (by omega_arith)) (xS (by omega_arith))
+  obtain ss7 := keepB f7 (p := L.S) (n := 57) (rHW (by omega_arith) (by omega_arith)) (by decide)
+  obtain ss8 := keepB f8 (p := L.S) (n := 57) (three (ff L (.inr (by omega_arith)) (by omega_arith) (by omega_arith)) (xS (by omega_arith))
     (fb L (by omega_arith))) (by decide)
   -- The pieces.
-  have pre : bytesAt t2.mem (L.SP + BitVec.ofNat 64 73) 57 = (bytesAt t2.mem L.H 114).drop 57 := by
+  obtain pre : bytesAt t2.mem (L.SP + BitVec.ofNat 64 73) 57 = (bytesAt t2.mem L.H 114).drop 57 := by
     rw [bytes_drop, Lay.H, add_add L.SP 16 57]
   change Spec.Ed448.bytesAt t5.mem L.R 57 = _ at hR
   change Spec.Ed448.bytesAt t8.mem L.K 57 = _ at hK
@@ -215,15 +215,15 @@ theorem entry_ctx {L : Lay} (hL : L.Ok) {s : State} (hsp : s.gpr .rsp = L.B + Bi
     (h10 : s.gpr .r10 = L.len) (h9 : s.gpr .r9 = L.msg) (h8 : s.gpr .r8 = L.ctxLen) (hcx : s.gpr .rcx = L.ctx)
     (hdx : s.gpr .rdx = L.pk) (hsi : s.gpr .rsi = L.seed) :
     Ctx L s.gpr s.mxcsr s.mem (pushed regs s) := by
-  have hn : 8 * regs.length ≤ (s.gpr .rsp).toNat := by
+  obtain hn : 8 * regs.length ≤ (s.gpr .rsp).toNat := by
     rw [hsp, regs_length, BitVec.toNat_add, BitVec.toNat_ofNat]
     have := hL.nB
     rw [Nat.mod_eq_of_lt (a := 464) (by omega_arith), Nat.mod_eq_of_lt (by omega_arith)]; omega_arith
   obtain ⟨hf, hw⟩ := pushRegs_mem s regs (by decide) hn
-  have slot : ∀ j (hj : j < 56), (pushed regs s).mem.readW (L.SP + BitVec.ofNat 64 (440 - 8 * j)) 64 =
+  obtain slot : ∀ j (hj : j < 56), (pushed regs s).mem.readW (L.SP + BitVec.ofNat 64 (440 - 8 * j)) 64 =
       s.gpr (regs[j]'(by rw [regs_length]; omega_arith)) := fun j hj => by
     rw [← hw j (by rw [regs_length]; omega_arith), hsp, push_slot _ j hj]; rfl
-  have base : s.gpr .rsp - BitVec.ofNat 64 (8 * regs.length) = L.SP := by
+  obtain base : s.gpr .rsp - BitVec.ofNat 64 (8 * regs.length) = L.SP := by
     rw [hsp, regs_length]; exact push_base L.B
   refine ⟨by simp [hrd], by rw [pushed_wr, base, hwr]; rfl, by rw [pushed_rsp, base], fun r _ hr' => pushed_gpr _ _ hr',
     by simp, (slot 30 (by omega_arith)).trans hdx, (slot 29 (by omega_arith)).trans hcx, (slot 28 (by omega_arith)).trans h8,
@@ -245,14 +245,14 @@ theorem signMov_ok {s : State} (h : SPre s) :
     WP isa (.block [.mov .r10 (.mem (stk 8)), .mov .r11 (.mem (stk 16)), .mov32 .rax (.imm 0)]) s fun s2 =>
       (s2.gpr .r10 = stackArg s 0 ∧ s2.gpr .r11 = stackArg s 1 ∧ s2.mem = s.mem ∧ s2.mxcsr = s.mxcsr) ∧
         Keep [.r10, .r11, .rax] s s2 := by
-  have hin : ∀ d, d + 8 ≤ 16 → InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 (8 + d)) 8 := by
+  obtain hin : ∀ d, d + 8 ≤ 16 → InRegions (s.rd ++ s.wr) (s.gpr .rsp + BitVec.ofNat 64 (8 + d)) 8 := by
     intro d hd
     refine ⟨sArgs s, by simp [h.rd], ?_⟩
     rw [← add_add, ← stackArgAddr0]
     exact Offset.contains_base _ hd (by omega_arith)
   refine WP.keep _ ?_ (by decide)
-  have h8 := hin 0 (by omega_arith)
-  have h16 := hin 8 (by omega_arith)
+  obtain h8 := hin 0 (by omega_arith)
+  obtain h16 := hin 8 (by omega_arith)
   simp only [Nat.reduceAdd] at h8 h16
   xrun [ea_stk, h8, h16, RegUpd.mxcsr_setReg]
   exact ⟨rfl, rfl⟩
@@ -265,18 +265,18 @@ theorem cs_tmp : ∀ r ∈ calleeSaved, r ∉ [Reg.r10, .r11, .rax] := by decide
 theorem signCached_wp (hb : BaseOk v) {s : State} (hpre : (Spec.Ed448.signCachedContract X86_64.abi 464).pre s) :
     WP isa (signCachedFor v) s fun s' =>
       abiPreserved s s' ∧ (Spec.Ed448.signCachedContract X86_64.abi 464).post s s' := by
-  have h := sPre_of hpre
-  have hL := slay_ok h
+  obtain h := sPre_of hpre
+  obtain hL := slay_ok h
   unfold signCachedFor
   refine WP.seq (WP.mono (signMov_ok h) fun s2 ⟨⟨h10, h11, hm2, hx2⟩, k2⟩ => ?_)
-  have hg2 : ∀ r, r ∉ [Reg.r10, .r11, .rax] → s2.gpr r = s.gpr r := fun r hr => k2.gpr hr
-  have hsp2 : s2.gpr .rsp = (slay s).B + BitVec.ofNat 64 464 := by rw [hg2 _ (by decide), slay_B]
-  have hn : 8 * regs.length ≤ (s2.gpr .rsp).toNat := by
+  obtain hg2 : ∀ r, r ∉ [Reg.r10, .r11, .rax] → s2.gpr r = s.gpr r := fun r hr => k2.gpr hr
+  obtain hsp2 : s2.gpr .rsp = (slay s).B + BitVec.ofNat 64 464 := by rw [hg2 _ (by decide), slay_B]
+  obtain hn : 8 * regs.length ≤ (s2.gpr .rsp).toNat := by
     rw [hg2 _ (by decide), regs_length]; have := h.sp; omega_arith
   refine WP.frame (by decide) (by decide) (by decide) hn ?_
-  have hc := entry_ctx hL hsp2 k2.2.1 k2.2.2 h11 (hg2 _ (by decide)) h10 (hg2 _ (by decide)) (hg2 _ (by decide))
+  obtain hc := entry_ctx hL hsp2 k2.2.1 k2.2.2 h11 (hg2 _ (by decide)) h10 (hg2 _ (by decide)) (hg2 _ (by decide))
     (hg2 _ (by decide)) (hg2 _ (by decide)) (hg2 _ (by decide))
-  have hpk : Spec.Ed448.bytesAt s2.mem (slay s).pk 57 =
+  obtain hpk : Spec.Ed448.bytesAt s2.mem (slay s).pk 57 =
       Spec.Ed448.publicKey (Spec.Ed448.bytesAt s2.mem (slay s).seed 57) := by
     rw [hm2]; exact h.pk
   refine WP.mono (body_ok hb hL hc hpk) fun s' ⟨hc', hr⟩ => ⟨by rw [hc'.rsp, hc.rsp], by rw [hc'.wr, hc.wr], ?_, ?_⟩

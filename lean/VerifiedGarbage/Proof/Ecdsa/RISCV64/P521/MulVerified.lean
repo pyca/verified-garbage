@@ -90,7 +90,7 @@ theorem keeps_of_unch {ws : Addr} {m m' : Mem} (hu : Unch ws (saves ++ ((cinW ++
   have h8 : Impl.Weierstrass.Mont.wsBytes = 8192 := rfl
   refine hu _ fun w hw => ?_
   rw [show ws + BitVec.ofNat 64 i = off ws i from rfl, ofs_off0 ws (by omega_using [hi, h8])]
-  have hw' := (by decide : ∀ w ∈ saves ++ ((cinW ++ Window.bodyW) ++ coutW), (1072 ≤ w.1 ∧ w.1 + w.2 ≤ 2296) ∨ 3304 ≤ w.1) w hw
+  obtain hw' := (by decide : ∀ w ∈ saves ++ ((cinW ++ Window.bodyW) ++ coutW), (1072 ≤ w.1 ∧ w.1 + w.2 ≤ 2296) ∨ 3304 ≤ w.1) w hw
   simp only [Impl.Weierstrass.Mul.Curve.Own, Impl.Weierstrass.Mul.Curve.slot, Impl.Weierstrass.Mul.Curve.tmpAt,
     Impl.Weierstrass.Mul.Curve.bitsAt, Impl.Weierstrass.Mul.Curve.pAt, Impl.Weierstrass.Mul.Curve.ptBytes,
     MC, Impl.Weierstrass.Mul.p521, true_and] at hown hp
@@ -141,14 +141,14 @@ theorem ofNat_in (x : Nat) : (Fin.ofNat W.p (2 ^ 576 * x % W.p * 2 ^ 466) : Fe W
 /-- The limbs' element, times `2⁴⁶⁶`, of a number below `p`: its decoding. -/
 theorem ofNat_in_toM {w : Nat} (hw : w < W.p) :
     (Fin.ofNat W.p (w * 2 ^ 466) : Fe W) = toM W.p (2 ^ 576) w := by
-  have e : w * 2 ^ 466 * 2 ^ 576 % W.p = w := by
+  obtain e : w * 2 ^ 466 * 2 ^ 576 % W.p = w := by
     rw [Nat.mul_assoc, Nat.mul_mod, show 2 ^ 466 * 2 ^ 576 = 2 ^ 576 * 2 ^ 466 from Nat.mul_comm _ _, inv_R,
       Nat.mul_one, Nat.mod_mod, Nat.mod_eq_of_lt hw]
   rw [← toM_mont (R := 2 ^ 576) unit (x := w * 2 ^ 466), e]
 
 /-- The residue of limbs times `2⁵⁵`: their element in Montgomery's form. -/
 theorem toM_out (y : Nat) : toM W.p (2 ^ 576) (y * 2 ^ 55 % W.p) = Fin.ofNat W.p y := by
-  have e : y * 2 ^ 55 % W.p = y * 2 ^ 576 % W.p := by
+  obtain e : y * 2 ^ 55 % W.p = y * 2 ^ 576 % W.p := by
     rw [Nat.mul_mod, Nat.mul_mod y (2 ^ 576), show 2 ^ 55 % W.p = 2 ^ 576 % W.p by decide]
   rw [e, toM_mont unit]
 
@@ -161,16 +161,16 @@ theorem setIn_ok {s : State} {base : Addr} (hw : WsReg s base) (hz : wordsVal s.
   rw [setIn, setC, List.append_assoc]
   refine WP.block_append (WP.mono (copy_ok 9 hw (o := c.sl UC) (a := c.sl ZERO) (by decide) (by decide) (by decide)
     (by decide) (by decide)) fun s₁ ⟨e₁, r₁, O₁⟩ => ?_)
-  have hw₁ := hw.of_rest r₁
+  obtain hw₁ := hw.of_rest r₁
   refine wp_li (imm := 4) (by decide) fun s₂ u₂ => ?_
-  have hw₂ := hw₁.of_rest (u₂.rest (ws := [.t0]) (by decide))
+  obtain hw₂ := hw₁.of_rest (u₂.rest (ws := [.t0]) (by decide))
   rw [← List.append_nil (sdAt _ _ _)]
   refine sdAt_ws hw₂ (by decide) (d := c.sl UC + 8 * 8) (by decide) (by decide) fun s₃ u₃ => WP.block_nil ?_
-  have m₃ : s₃.mem = s₁.mem.writeW (off base (c.sl UC + 8 * 8)) (BitVec.ofNat 64 4) := by rw [u₃.mem, u₂.gpr, u₂.mem]
-  have low : wordsVal s₁.mem base (c.sl UC) 8 = 0 := by
+  obtain m₃ : s₃.mem = s₁.mem.writeW (off base (c.sl UC + 8 * 8)) (BitVec.ofNat 64 4) := by rw [u₃.mem, u₂.gpr, u₂.mem]
+  obtain low : wordsVal s₁.mem base (c.sl UC) 8 = 0 := by
     have := wordsVal_succ_top s₁.mem base (c.sl UC) 8
     rw [e₁, hz] at this; omega_using [this]
-  have v₃ : wordsVal s₃.mem base (c.sl UC) 9 = 2 ^ 512 * 4 := by
+  obtain v₃ : wordsVal s₃.mem base (c.sl UC) 9 = 2 ^ 512 * 4 := by
     rw [wordsVal_succ_top, m₃, word_writeW_self, (writeW_outside _ _ _ (by omega_using [hUC])).wordsVal (.inl (by omega_using []))
       (by omega_using [hUC]), low]
     rfl
@@ -188,19 +188,19 @@ theorem setOut_ok {s : State} {base : Addr} (hw : WsReg s base) (hz : wordsVal s
   rw [setOut, setC, List.append_assoc]
   refine WP.block_append (WP.mono (copy_ok 9 hw (o := c.sl UC) (a := c.sl ZERO) (by decide) (by decide) (by decide)
     (by decide) (by decide)) fun s₁ ⟨e₁, r₁, O₁⟩ => ?_)
-  have hw₁ := hw.of_rest r₁
+  obtain hw₁ := hw.of_rest r₁
   refine wp_li (imm := 1) (by decide) fun s₂ u₂ => wp_sll (by decide) fun s₃ u₃ => ?_
-  have hw₃ := hw₁.of_rest ((u₂.rest (ws := [.t0]) (by decide)).trans (u₃.rest (by decide)))
+  obtain hw₃ := hw₁.of_rest ((u₂.rest (ws := [.t0]) (by decide)).trans (u₃.rest (by decide)))
   rw [← List.append_nil (sdAt _ _ _)]
   refine sdAt_ws hw₃ (by decide) (d := c.sl UC + 8 * 0) (by decide) (by decide) fun s₄ u₄ => WP.block_nil ?_
-  have g₃ : s₃.gpr .t0 = BitVec.ofNat 64 (2 ^ 55) := by rw [u₃.gpr, u₂.gpr]; rfl
-  have m₄ : s₄.mem = s₁.mem.writeW (off base (c.sl UC)) (BitVec.ofNat 64 (2 ^ 55)) := by
+  obtain g₃ : s₃.gpr .t0 = BitVec.ofNat 64 (2 ^ 55) := by rw [u₃.gpr, u₂.gpr]; rfl
+  obtain m₄ : s₄.mem = s₁.mem.writeW (off base (c.sl UC)) (BitVec.ofNat 64 (2 ^ 55)) := by
     rw [u₄.mem, g₃, u₃.mem, u₂.mem]; rfl
-  have high : wordsVal s₁.mem base (c.sl UC + 8) 8 = 0 := by
+  obtain high : wordsVal s₁.mem base (c.sl UC + 8) 8 = 0 := by
     have : wordsVal s₁.mem base (c.sl UC) 9 =
         (word s₁.mem base (c.sl UC)).toNat + 2 ^ 64 * wordsVal s₁.mem base (c.sl UC + 8) 8 := rfl
     rw [e₁, hz] at this; omega_using [this]
-  have v₄ : wordsVal s₄.mem base (c.sl UC) 9 = 2 ^ 55 := by
+  obtain v₄ : wordsVal s₄.mem base (c.sl UC) 9 = 2 ^ 55 := by
     show (word s₄.mem base (c.sl UC)).toNat + 2 ^ 64 * wordsVal s₄.mem base (c.sl UC + 8) 8 = _
     rw [m₄, word_writeW_self, (writeW_outside _ _ _ (by omega_using [hUC])).wordsVal (.inr (by omega_using [])) (by omega_using [hUC]), high]
     rfl
@@ -218,8 +218,8 @@ theorem toU_ok {s : State} {base : Addr} (hw : WsReg s base) {o a : Nat}
   rw [toU]
   refine WP.seq (WP.mono (unpackCall_ok (f := F.S.fn "unpack") hw (o := o) (a := a) (b := 0) (by omega_using [ho]) (by omega_using [ha])
     (by decide) (by omega_using [ho]) (by omega_using [ha]) (by decide) hA) fun s₁ ⟨K₁, t₁, v₁⟩ => ?_)
-  have k₁ := KeepR.of_call K₁
-  have eC : wv base s₁ (c.sl UC) = wv base s (c.sl UC) :=
+  obtain k₁ := KeepR.of_call K₁
+  obtain eC : wv base s₁ (c.sl UC) = wv base s (c.sl UC) :=
     keepR_wv k₁ (by simp only [List.mem_singleton, forall_eq]; omega_using [hoC]) (by decide)
   refine WP.mono (umulCall_ok (hw.of_kp K₁.kp) (o := o) (a := o) (b := c.sl UC) (by omega_using [ho]) (by omega_using [ho]) (by decide)
     (by omega_using [ho]) (by omega_using [ho]) (by decide) t₁ (by rw [eC]; exact hCt)) fun s₂ ⟨K₂, t₂, v₂⟩ =>
@@ -265,29 +265,29 @@ theorem convIn_ok {s : State} {base : Addr} (hw : WsReg s base) (hz : wordsVal s
   rw [convIn]
   simp only [progs]
   refine WP.seq (WP.mono (setIn_ok hw hz) fun s₁ ⟨r₁, U₁, tc₁, vc₁⟩ => ?_)
-  have hw₁ := hw.of_rest r₁
-  have e₁ : ∀ d, d + 72 ≤ c.sl UC ∨ c.sl UC + 72 ≤ d ∧ d + 72 ≤ 4095 → wv base s₁ d = wv base s d :=
+  obtain hw₁ := hw.of_rest r₁
+  obtain e₁ : ∀ d, d + 72 ≤ c.sl UC ∨ c.sl UC + 72 ≤ d ∧ d + 72 ≤ 4095 → wv base s₁ d = wv base s d :=
     fun d hd => U₁.wordsVal (by simp only [List.mem_singleton, forall_eq]; omega_using [hd]) (by omega_using [hUC, hd])
   refine WP.seq (WP.mono (toU_ok hw₁ (o := c.sl RX) (a := c.sl RX) (by decide) (by decide) (by decide)
     (by rw [e₁ _ (by decide)]; exact hx) tc₁ vc₁) fun s₂ ⟨k₂, t₂, v₂⟩ => ?_)
-  have hw₂ := hw₁.of_kp k₂.kp
-  have c₂ : wv base s₂ (c.sl UC) = wv base s₁ (c.sl UC) := fr k₂ _ (by decide) (by decide)
+  obtain hw₂ := hw₁.of_kp k₂.kp
+  obtain c₂ : wv base s₂ (c.sl UC) = wv base s₁ (c.sl UC) := fr k₂ _ (by decide) (by decide)
   refine WP.seq (WP.mono (toU_ok hw₂ (o := c.sl RY) (a := c.sl RY) (by decide) (by decide) (by decide)
     (by rw [fr k₂ _ (by decide) (by decide), e₁ _ (by decide)]; exact hy) (by rw [c₂]; exact tc₁)
     (by rw [c₂]; exact vc₁)) fun s₃ ⟨k₃, t₃, v₃⟩ => ?_)
-  have hw₃ := hw₂.of_kp k₃.kp
-  have c₃ : wv base s₃ (c.sl UC) = wv base s₁ (c.sl UC) := (fr k₃ _ (by decide) (by decide)).trans c₂
+  obtain hw₃ := hw₂.of_kp k₃.kp
+  obtain c₃ : wv base s₃ (c.sl UC) = wv base s₁ (c.sl UC) := (fr k₃ _ (by decide) (by decide)).trans c₂
   refine WP.seq (WP.mono (toU_ok hw₃ (o := c.sl UONE) (a := c.sl ONEP) (by decide) (by decide) (by decide)
     (by rw [fr k₃ _ (by decide) (by decide), fr k₂ _ (by decide) (by decide), e₁ _ (by decide)]; exact ho)
     (by rw [c₃]; exact tc₁) (by rw [c₃]; exact vc₁)) fun s₄ ⟨k₄, t₄, v₄⟩ => ?_)
-  have hw₄ := hw₃.of_kp k₄.kp
-  have c₄ : wv base s₄ (c.sl UC) = wv base s₁ (c.sl UC) := (fr k₄ _ (by decide) (by decide)).trans c₃
+  obtain hw₄ := hw₃.of_kp k₄.kp
+  obtain c₄ : wv base s₄ (c.sl UC) = wv base s₁ (c.sl UC) := (fr k₄ _ (by decide) (by decide)).trans c₃
   refine WP.seq (WP.mono (toU_ok hw₄ (o := c.sl UA) (a := c.sl AP) (by decide) (by decide) (by decide)
     (by rw [fr k₄ _ (by decide) (by decide), fr k₃ _ (by decide) (by decide), fr k₂ _ (by decide) (by decide),
       e₁ _ (by decide)]; exact ha)
     (by rw [c₄]; exact tc₁) (by rw [c₄]; exact vc₁)) fun s₅ ⟨k₅, t₅, v₅⟩ => ?_)
-  have hw₅ := hw₄.of_kp k₅.kp
-  have c₅ : wv base s₅ (c.sl UC) = wv base s₁ (c.sl UC) := (fr k₅ _ (by decide) (by decide)).trans c₄
+  obtain hw₅ := hw₄.of_kp k₅.kp
+  obtain c₅ : wv base s₅ (c.sl UC) = wv base s₁ (c.sl UC) := (fr k₅ _ (by decide) (by decide)).trans c₄
   refine WP.mono (toU_ok hw₅ (o := c.sl UB) (a := c.sl B3P) (by decide) (by decide) (by decide)
     (by rw [fr k₅ _ (by decide) (by decide), fr k₄ _ (by decide) (by decide), fr k₃ _ (by decide) (by decide),
       fr k₂ _ (by decide) (by decide), e₁ _ (by decide)]; exact hb)
@@ -326,18 +326,18 @@ theorem convOut_ok {s : State} {base : Addr} (hw : WsReg s base) (hz : wordsVal 
   rw [convOut]
   simp only [progs]
   refine WP.seq (WP.mono (setOut_ok hw hz) fun s₁ ⟨r₁, U₁, tc₁, vc₁⟩ => ?_)
-  have hw₁ := hw.of_rest r₁
-  have e₁ : ∀ d, d + 72 ≤ c.sl UC ∨ c.sl UC + 72 ≤ d ∧ d + 72 ≤ 4095 → wv base s₁ d = wv base s d :=
+  obtain hw₁ := hw.of_rest r₁
+  obtain e₁ : ∀ d, d + 72 ≤ c.sl UC ∨ c.sl UC + 72 ≤ d ∧ d + 72 ≤ 4095 → wv base s₁ d = wv base s d :=
     fun d hd => U₁.wordsVal (by simp only [List.mem_singleton, forall_eq]; omega_using [hd]) (by omega_using [hUC, hd])
   refine WP.seq (WP.mono (fromU_ok hw₁ (o := c.sl RX) (by decide) (by rw [e₁ _ (by decide)]; exact hx)
     tc₁ vc₁) fun s₂ ⟨k₂, v₂⟩ => ?_)
-  have hw₂ := hw₁.of_kp k₂.kp
-  have c₂ : wv base s₂ (c.sl UC) = wv base s₁ (c.sl UC) := fr k₂ _ (by decide) (by decide)
+  obtain hw₂ := hw₁.of_kp k₂.kp
+  obtain c₂ : wv base s₂ (c.sl UC) = wv base s₁ (c.sl UC) := fr k₂ _ (by decide) (by decide)
   refine WP.seq (WP.mono (fromU_ok hw₂ (o := c.sl RY) (by decide)
     (by rw [fr k₂ _ (by decide) (by decide), e₁ _ (by decide)]; exact hy) (by rw [c₂]; exact tc₁)
     (by rw [c₂]; exact vc₁)) fun s₃ ⟨k₃, v₃⟩ => ?_)
-  have hw₃ := hw₂.of_kp k₃.kp
-  have c₃ : wv base s₃ (c.sl UC) = wv base s₁ (c.sl UC) := (fr k₃ _ (by decide) (by decide)).trans c₂
+  obtain hw₃ := hw₂.of_kp k₃.kp
+  obtain c₃ : wv base s₃ (c.sl UC) = wv base s₁ (c.sl UC) := (fr k₃ _ (by decide) (by decide)).trans c₂
   refine WP.mono (fromU_ok hw₃ (o := c.sl RZ) (by decide)
     (by rw [fr k₃ _ (by decide) (by decide), fr k₂ _ (by decide) (by decide), e₁ _ (by decide)]; exact hzz)
     (by rw [c₃]; exact tc₁) (by rw [c₃]; exact vc₁)) fun s₄ ⟨k₄, v₄⟩ => ⟨?_, ?_, ?_⟩
@@ -357,12 +357,12 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
     ∃ t s', Exec isa mulP521 s t s' ∧ abiPreserved s s' ∧ mulRVc.post s s' := by
   obtain ⟨-, hwr, hfit, hal, ⟨-, hz, hone, ha, hb3⟩, ⟨hx, hy, hon⟩⟩ := hs
   generalize hb : s.gpr .a0 = base at hwr hfit hal hz hone ha hb3 hx hy hon
-  have hwr' : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hwr]; exact List.mem_singleton_self _
+  obtain hwr' : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hwr]; exact List.mem_singleton_self _
   have hpR := unit
-  have hp0 : 0 < W.p := by decide
-  have ca : ∀ (m : Mem) {o : Nat}, o < 4096 → MC.toPoint.coordAt m base o = wordsVal m base o 9 :=
+  obtain hp0 : 0 < W.p := by decide
+  obtain ca : ∀ (m : Mem) {o : Nat}, o < 4096 → MC.toPoint.coordAt m base o = wordsVal m base o 9 :=
     fun m _ ho => coordAt_eq m base (by omega_using [ho])
-  have dq : ∀ x, MC.toPoint.dec x = toM W.p (2 ^ 576) x :=
+  obtain dq : ∀ x, MC.toPoint.dec x = toM W.p (2 ^ 576) x :=
     VG.Proof.Weierstrass.Point.dec_eq MC.toPoint hL.one_ne_zero (VG.Proof.Weierstrass.Point.fermat_of_law hL) hpR
   -- The saves and `s0 = a0`.
   suffices h : WP isa mulP521 s fun s' => abiPreserved s s' ∧ mulRVc.post s s' by
@@ -375,48 +375,48 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
     (by decide) fun s₂ u₂ => ?_
   refine sdAt_a0 (by rw [u₂.gpr, u₁.gpr]; exact hb) (by rw [u₂.wr, u₁.wr]; exact hwr') hal (by decide)
     (d := 3320) (by decide) (by decide) fun s₃ u₃ => wp_mv fun s₄ u₄ => WP.block_nil ?_
-  have g₄ : ∀ r, r ≠ .s0 → s₄.gpr r = s.gpr r := fun r hr => by
+  obtain g₄ : ∀ r, r ≠ .s0 → s₄.gpr r = s.gpr r := fun r hr => by
     rw [u₄.other r hr, u₃.gpr, u₂.gpr, u₁.gpr]
-  have hw₄ : WsReg s₄ base := ⟨by rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr, hb],
+  obtain hw₄ : WsReg s₄ base := ⟨by rw [u₄.gpr, u₃.gpr, u₂.gpr, u₁.gpr, hb],
     by rw [u₄.wr, u₃.wr, u₂.wr, u₁.wr]; exact hwr', hfit, hal⟩
-  have m₄ : s₄.mem = ((s.mem.writeW (off base 3304) (s.gpr .s0)).writeW (off base 3312) (s.gpr .s1)).writeW
+  obtain m₄ : s₄.mem = ((s.mem.writeW (off base 3304) (s.gpr .s0)).writeW (off base 3312) (s.gpr .s1)).writeW
       (off base 3320) (s.gpr .ra) := by
     simp only [u₄.mem, u₃.mem, u₂.mem, u₁.mem, u₂.gpr, u₁.gpr]
-  have O₄ : Unch base saves s.mem s₄.mem := by
+  obtain O₄ : Unch base saves s.mem s₄.mem := by
     rw [m₄]
     exact (((writeW_outside _ _ _ (by omega_using [])).unch.trans (writeW_outside _ _ _ (by omega_using [])).unch).trans
       (writeW_outside _ _ _ (by omega_using [])).unch)
-  have sv₄ : ∀ i, i < 45 → sv base s₄ i = sv base s i := fun i hi =>
+  obtain sv₄ : ∀ i, i < 45 → sv base s₄ i = sv base s i := fun i hi =>
     O₄.wordsVal (fun w hw => by
       simp only [saves, List.mem_cons, List.not_mem_nil, or_false] at hw
       have : p521.sl i + 72 ≤ 3304 := by simp only [Cfg.sl, slot, p521]; omega_using [hi]
       rcases hw with rfl | rfl | rfl <;> (simp only; omega_using [this])) (by simp only [Cfg.sl, slot, p521]; omega_using [hi])
-  have cs : ∀ i, i < 45 → MC.toPoint.coordAt s.mem base (p521.sl i) = sv base s i := fun i hi =>
+  obtain cs : ∀ i, i < 45 → MC.toPoint.coordAt s.mem base (p521.sl i) = sv base s i := fun i hi =>
     ca s.mem (by simp only [Cfg.sl, slot, p521]; omega_using [hi])
   -- The slots' values, from the contract's.
-  have hz' : sv base s₄ ZERO = 0 := by rw [sv₄ _ (by decide)]; exact (cs ZERO (by decide)).symm.trans hz
-  have hone' : sv base s₄ ONEP = 2 ^ 576 % W.p := by
+  obtain hz' : sv base s₄ ZERO = 0 := by rw [sv₄ _ (by decide)]; exact (cs ZERO (by decide)).symm.trans hz
+  obtain hone' : sv base s₄ ONEP = 2 ^ 576 % W.p := by
     rw [sv₄ _ (by decide)]; refine (cs ONEP (by decide)).symm.trans (hone.trans ?_)
     simp only [Impl.Weierstrass.Mul.Curve.mont, Nat.one_mul]; rfl
-  have ha' : sv base s₄ AP = 2 ^ 576 * W.a % W.p := by
+  obtain ha' : sv base s₄ AP = 2 ^ 576 * W.a % W.p := by
     rw [sv₄ _ (by decide)]; refine (cs AP (by decide)).symm.trans (ha.trans ?_)
     simp only [Impl.Weierstrass.Mul.Curve.mont]; rw [Nat.mul_comm]; rfl
-  have hb3' : sv base s₄ B3P = 2 ^ 576 * (3 * W.b) % W.p := by
+  obtain hb3' : sv base s₄ B3P = 2 ^ 576 * (3 * W.b) % W.p := by
     rw [sv₄ _ (by decide)]; refine (cs B3P (by decide)).symm.trans (hb3.trans ?_)
     simp only [Impl.Weierstrass.Mul.Curve.mont]; rw [Nat.mul_comm]; rfl
-  have tm : ∀ x, toM W.p (2 ^ 576) (2 ^ 576 * x % W.p) = Fin.ofNat W.p x := fun x => by
+  obtain tm : ∀ x, toM W.p (2 ^ 576) (2 ^ 576 * x % W.p) = Fin.ofNat W.p x := fun x => by
     rw [Nat.mul_comm]; exact toM_mont hpR
-  have qx : (MC.qCoords base s.mem).1 = sv base s₄ RX := by rw [sv₄ _ (by decide)]; exact cs RX (by decide)
-  have qy : (MC.qCoords base s.mem).2 = sv base s₄ RY := by
+  obtain qx : (MC.qCoords base s.mem).1 = sv base s₄ RX := by rw [sv₄ _ (by decide)]; exact cs RX (by decide)
+  obtain qy : (MC.qCoords base s.mem).2 = sv base s₄ RY := by
     rw [sv₄ _ (by decide), ← cs RY (by decide)]; rfl
-  have eP : MC.point base s.mem = .affine (toM W.p (2 ^ 576) (sv base s₄ RX)) (toM W.p (2 ^ 576) (sv base s₄ RY)) := by
+  obtain eP : MC.point base s.mem = .affine (toM W.p (2 ^ 576) (sv base s₄ RX)) (toM W.p (2 ^ 576) (sv base s₄ RY)) := by
     unfold Impl.Weierstrass.Mul.Curve.point
     rw [qx, qy, dq, dq]
   have hon' := hon
   rw [eP] at hon'
   -- To limbs.
-  have hp522 : W.p < 2 ^ 522 := by decide
-  have m522 : ∀ x, x % W.p < 2 ^ 522 := fun x => Nat.lt_trans (Nat.mod_lt _ hp0) hp522
+  obtain hp522 : W.p < 2 ^ 522 := by decide
+  obtain m522 : ∀ x, x % W.p < 2 ^ 522 := fun x => Nat.lt_trans (Nat.mod_lt _ hp0) hp522
   refine WP.seq (WP.mono (convIn_ok hw₄ hz' (by show sv base s₄ RX < _; exact Nat.lt_trans (qx ▸ hx) hp522)
     (by show sv base s₄ RY < _; exact Nat.lt_trans (qy ▸ hy) hp522)
     (by show sv base s₄ ONEP < _; rw [hone']; exact m522 _)
@@ -424,49 +424,49 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
     fun q₅ ⟨K₅, U₅, cv₅⟩ => ?_)
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at cv₅
   obtain ⟨⟨tx₅, vx₅⟩, ⟨ty₅, vy₅⟩, ⟨to₅, vo₅⟩, ⟨ta₅, va₅⟩, ⟨tb₅, vb₅⟩⟩ := cv₅
-  have hw₅ := hw₄.of_kp K₅
-  have z₅ : wordsVal q₅.mem base (WindowU.c.sl ZERO) 9 = 0 := by
+  obtain hw₅ := hw₄.of_kp K₅
+  obtain z₅ : wordsVal q₅.mem base (WindowU.c.sl ZERO) 9 = 0 := by
     rw [U₅.wordsVal (by decide) (by decide)]; exact hz'
-  have eQ : Window.qOf base q₅ = .affine (toM W.p (2 ^ 576) (sv base s₄ RX)) (toM W.p (2 ^ 576) (sv base s₄ RY)) := by
+  obtain eQ : Window.qOf base q₅ = .affine (toM W.p (2 ^ 576) (sv base s₄ RX)) (toM W.p (2 ^ 576) (sv base s₄ RY)) := by
     show Point.affine (P521Unsat.uf _) (P521Unsat.uf _) = _
     rw [vx₅, vy₅]
     exact congrArg₂ Point.affine (ofNat_in_toM (show sv base s₄ RX < W.p from qx ▸ hx))
       (ofNat_in_toM (show sv base s₄ RY < W.p from qy ▸ hy))
   -- The body.
-  have hpre : Window.WPre base q₅ := by
+  obtain hpre : Window.WPre base q₅ := by
     refine ⟨hw₅, ⟨ta₅, ?_, tb₅, ?_, z₅, to₅, ?_⟩, tx₅, ty₅, by rw [eQ]; exact hon'⟩
     · show P521Unsat.uf _ = _; rw [va₅]; show Fin.ofNat _ (sv base s₄ AP * _) = _; rw [ha', ofNat_in]
     · show P521Unsat.uf _ = _; rw [vb₅]; show Fin.ofNat _ (sv base s₄ B3P * _) = _; rw [hb3', ofNat_in]
     · show P521Unsat.uf _ = _; rw [vo₅]; show Fin.ofNat _ (sv base s₄ ONEP * _) = _
       rw [hone', ← Nat.mul_one (2 ^ 576), ofNat_in]; rfl
   refine WP.seq (WP.mono (Window.body_ok hL hpre) fun q₆ ⟨K₆, U₆, pR₆⟩ => ?_)
-  have hw₆ := hw₅.of_kc K₆
-  have z₆ : wordsVal q₆.mem base (WindowU.c.sl ZERO) 9 = 0 := by
+  obtain hw₆ := hw₅.of_kc K₆
+  obtain z₆ : wordsVal q₆.mem base (WindowU.c.sl ZERO) 9 = 0 := by
     rw [U₆.wordsVal (by decide) (by decide)]; exact z₅
   -- Back to Montgomery's form.
   refine WP.seq (WP.mono (convOut_ok hw₆ z₆ pR₆.x pR₆.y pR₆.z) fun q₇ ⟨K₇, U₇, cv₇⟩ => ?_)
   simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at cv₇
   obtain ⟨ox₇, oy₇, oz₇⟩ := cv₇
   have R₆ := pR₆.rep
-  have KK : Kc s₄ q₇ := (K₅.kc.trans K₆).trans K₇.kc
-  have UU : Unch base ((cinW ++ Window.bodyW) ++ coutW) s₄.mem q₇.mem := (U₅.trans U₆).trans U₇
+  obtain KK : Kc s₄ q₇ := (K₅.kc.trans K₆).trans K₇.kc
+  obtain UU : Unch base ((cinW ++ Window.bodyW) ++ coutW) s₄.mem q₇.mem := (U₅.trans U₆).trans U₇
   -- The loads.
-  have hw₇' := hw₄.of_kc KK
-  have far : ∀ d ∈ [3304, 3312, 3320], word q₇.mem base d = word s₄.mem base d := fun d hd =>
+  obtain hw₇' := hw₄.of_kc KK
+  obtain far : ∀ d ∈ [3304, 3312, 3320], word q₇.mem base d = word s₄.mem base d := fun d hd =>
     UU.word (fun w hw => by
       have := (by decide : ∀ w ∈ (cinW ++ Window.bodyW) ++ coutW, w.1 + w.2 ≤ 3304 ∨ 3376 ≤ w.1) w hw
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hd
       omega_using [this, hd]) (by simp only [List.mem_cons, List.not_mem_nil, or_false] at hd; omega_using [hd])
-  have w20 : word q₇.mem base 3320 = s.gpr .ra := by
+  obtain w20 : word q₇.mem base 3320 = s.gpr .ra := by
     rw [far 3320 (by simp), m₄, word_writeW_self]
-  have w12 : word q₇.mem base 3312 = s.gpr .s1 := by
+  obtain w12 : word q₇.mem base 3312 = s.gpr .s1 := by
     rw [far 3312 (by simp), m₄, (writeW_outside (d := 3320) _ base _ (by omega_using [])).word (by omega_using []) (by omega_using []), word_writeW_self]
-  have w04 : word q₇.mem base 3304 = s.gpr .s0 := by
+  obtain w04 : word q₇.mem base 3304 = s.gpr .s0 := by
     rw [far 3304 (by simp), m₄, (writeW_outside (d := 3320) _ base _ (by omega_using [])).word (by omega_using []) (by omega_using []),
       (writeW_outside (d := 3312) _ base _ (by omega_using [])).word (by omega_using []) (by omega_using []), word_writeW_self]
   refine ldAt_ws hw₇' (d := 3320) (by decide) (by decide) fun s₆ u₆ => ?_
   refine ldAt_ws (hw₇'.of_kp (Kp.of_upd u₆)) (d := 3312) (by decide) (by decide) fun s₇ u₇ => ?_
-  have hw₇ : WsReg s₇ base := ⟨by rw [u₇.other .s0 (by decide), u₆.other .s0 (by decide)]; exact hw₇'.s0,
+  obtain hw₇ : WsReg s₇ base := ⟨by rw [u₇.other .s0 (by decide), u₆.other .s0 (by decide)]; exact hw₇'.s0,
     by rw [u₇.wr, u₆.wr]; exact hw₇'.wr, hfit, hal⟩
   refine ldAt_ws hw₇ (d := 3304) (by decide) (by decide) fun s₈ u₈ => WP.block_nil ⟨⟨fun r hr => ?_, ?_, ?_⟩, ?_⟩
   · have m₇ : s₇.mem = q₇.mem := by rw [u₇.mem, u₆.mem]
@@ -482,14 +482,14 @@ theorem mul_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : mulRVc.pre s)
     show MC.ResultInRange _ _ (s.gpr .a0) s.mem s₈.mem
     rw [hb, eP, m₈]
     refine ⟨fun _ _ => ?_, keeps_of_unch (O₄.trans UU)⟩
-    have e : MC.scalar base s.mem = sv base s₄ K := by rw [sv₄ _ (by decide)]; exact cs K (by decide)
-    have k₅ : wordsVal q₅.mem base (WindowU.c.sl K) 9 = sv base s₄ K := U₅.wordsVal (by decide) (by decide)
-    have c7 : ∀ i, i < 45 → MC.toPoint.coordAt q₇.mem base (p521.sl i) = sv base q₇ i := fun i hi =>
+    obtain e : MC.scalar base s.mem = sv base s₄ K := by rw [sv₄ _ (by decide)]; exact cs K (by decide)
+    obtain k₅ : wordsVal q₅.mem base (WindowU.c.sl K) 9 = sv base s₄ K := U₅.wordsVal (by decide) (by decide)
+    obtain c7 : ∀ i, i < 45 → MC.toPoint.coordAt q₇.mem base (p521.sl i) = sv base q₇ i := fun i hi =>
       ca q₇.mem (by simp only [Cfg.sl, slot, p521]; omega_using [hi])
-    have x0 : MC.toPoint.coordAt q₇.mem base MC.pAt = sv base q₇ RX := c7 RX (by decide)
-    have x1 : MC.toPoint.coordAt q₇.mem base (MC.pAt + Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
+    obtain x0 : MC.toPoint.coordAt q₇.mem base MC.pAt = sv base q₇ RX := c7 RX (by decide)
+    obtain x1 : MC.toPoint.coordAt q₇.mem base (MC.pAt + Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
         sv base q₇ RY := c7 RY (by decide)
-    have x2 : MC.toPoint.coordAt q₇.mem base (MC.pAt + 2 * Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
+    obtain x2 : MC.toPoint.coordAt q₇.mem base (MC.pAt + 2 * Impl.Weierstrass.Point.elemBytes MC.toPoint.k) =
         sv base q₇ RZ := c7 RZ (by decide)
     have ex : sv base q₇ RX = P521Unsat.uv (P521Unsat.wv base q₆ (WindowU.c.sl RX)) * 2 ^ 55 % W.p := ox₇
     have ey : sv base q₇ RY = P521Unsat.uv (P521Unsat.wv base q₆ (WindowU.c.sl RY)) * 2 ^ 55 % W.p := oy₇

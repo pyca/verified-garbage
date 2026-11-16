@@ -198,21 +198,21 @@ theorem CryptCtx.of {cl : Nat} {s : State} (hp : Proof.AesGcm.streamCryptPre cl 
     Proof.AesGcm.arg, Proof.AesGcm.rounds] at hp
   obtain ⟨hrd, hwr, d_cs, d_cd, d_cw, d_sd, d_sw, d_sa, d_dw, d_da, d_wa, r_s, r_d, r_w, t_c, t_s, t_d, t_w,
     wc, ws, wd, ww, sp24, wsp, hR⟩ := hp
-  have c256 : Region.Sub ⟨s.gpr .rdi, 256⟩ ⟨s.gpr .rdi, cl⟩ := Region.sub_prefix hcl
+  obtain c256 : Region.Sub ⟨s.gpr .rdi, 256⟩ ⟨s.gpr .rdi, cl⟩ := Region.sub_prefix hcl
   replace d_cs := d_cs.sub_left c256
   replace d_cd := d_cd.sub_left c256
   replace d_cw := d_cw.sub_left c256
   replace t_c := t_c.sub_right c256
   replace wc : (s.gpr .rdi).toNat + 256 ≤ 2 ^ 64 := by omega_using [hcl, wc]
-  have b8 : Region.Sub (below (s.gpr .rsp) 8) (below (s.gpr .rsp) 24) := below_sub (by decide) (by decide)
-  have k_c := t_c.sub_left b8
-  have k_s := t_s.sub_left b8
-  have k_d := t_d.sub_left b8
-  have k_w := t_w.sub_left b8
-  have hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
+  obtain b8 : Region.Sub (below (s.gpr .rsp) 8) (below (s.gpr .rsp) 24) := below_sub (by decide) (by decide)
+  obtain k_c := t_c.sub_left b8
+  obtain k_s := t_s.sub_left b8
+  obtain k_d := t_d.sub_left b8
+  obtain k_w := t_w.sub_left b8
+  obtain hA : stackArgAddr s 0 = s.gpr .rsp + BitVec.ofNat 64 8 := by simp [stackArgAddr]
   rw [hA] at hrd d_sa d_da d_wa
-  have L : Lay (s.gpr .rdi) (s.gpr .rdx) (stackArg s 1) (s.gpr .rsp) := Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w
-  have pm : Covers [⟨s.gpr .rsp + BitVec.ofNat 64 8, 16⟩] (s.rd ++ s.wr) := by
+  obtain L : Lay (s.gpr .rdi) (s.gpr .rdx) (stackArg s 1) (s.gpr .rsp) := Lay.of wc ws ww d_cs d_cw d_sw k_c k_s k_w
+  obtain pm : Covers [⟨s.gpr .rsp + BitVec.ofNat 64 8, 16⟩] (s.rd ++ s.wr) := by
     rw [hrd]
     exact covers_of_mem (List.mem_append_left _ (List.mem_cons_of_mem _ (List.mem_singleton_self _)))
   refine ⟨L, ⟨?_, ?_, ?_⟩, ww, ⟨?_, ?_⟩, d_wa.symm, ⟨⟨?_, by have := (stackArg s 0).isLt; omega_using [], wd, d_sd.symm, d_dw,

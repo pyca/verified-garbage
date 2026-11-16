@@ -94,10 +94,10 @@ theorem checksA_ok {g : Geometry} {len : Nat} {s : State} (h : StC g len s) :
   have h1 := h.ws
   unfold checksA invSetup
   simp only [List.cons_append, List.nil_append]
-  have fit := fun j (hj : j < nArr) => h1.ws.fit64 (j := j) hj
+  obtain fit := fun j (hj : j < nArr) => h1.ws.fit64 (j := j) hj
   have h2 := h1
-  have k2 : Keep g.base (kw len) [] [] s.mem s.mem := Keep.refl _ _ _ _ _
-  have r2 : Keeps [] s s := Keeps.refl _ _
+  obtain k2 : Keep g.base (kw len) [] [] s.mem s.mem := Keep.refl _ _ _ _ _
+  obtain r2 : Keeps [] s s := Keeps.refl _ _
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (VG.Proof.Rsa.X86.WordRt.eqWide_ok h2 (sl := sE1) (o := aDR2) (n := aDQ) (by decide) (by decide)
     (by decide)) fun t3 ⟨h3, k3, e3, r3⟩ => ?_
@@ -116,26 +116,26 @@ theorem checksA_ok {g : Geometry} {len : Nat} {s : State} (h : StC g len s) :
   refine WP.block_append (WP.mono (setOne_ok h7 (j := 2) (by decide)) fun t8' ⟨h8', k8', e8', r8'⟩ => ?_)
   refine WP.mono (setOne_ok h8' (j := aOne) (by decide)) fun t8 ⟨h8, k8, e8, r8⟩ => ?_
   refine WP.mono (sub3_ok h8 (o := aNM) (a := aZero) (b := aM) (by decide) (by decide) (by decide)) fun t ⟨ht, k9, e9, b9, r9⟩ => ?_
-  have K : Keep g.base (kw len) [aT1, 0, aM, 1, 2, aOne, aNM] [sT, sE1, sE2] s.mem t.mem :=
+  obtain K : Keep g.base (kw len) [aT1, 0, aM, 1, 2, aOne, aNM] [sT, sE1, sE2] s.mem t.mem :=
     k2.mono.trans (k3.mono.trans (k4.mono.trans (k5.mono.trans (k6.mono.trans (k7.mono.trans
       (k8'.mono.trans (k8.mono.trans k9.mono)))))))
-  have R : Keeps [.eax, .ecx, .edx, .ebp, .ebx] s t :=
+  obtain R : Keeps [.eax, .ecx, .edx, .ebp, .ebx] s t :=
     (r2.mono (by decide)).trans ((r3.mono (by decide)).trans ((r4.mono (by decide)).trans ((r5.mono (by decide)).trans
       ((r6.mono (by decide)).trans ((r7.mono (by decide)).trans ((r8'.mono (by decide)).trans
         ((r8.mono (by decide)).trans (r9.mono (by decide)))))))))
-  have z0 : ∀ j ∈ zeroCk, num s.mem g.base (kw len) j = 0 := fun j hj => h.zeros j hj
-  have K1 : ∀ j, j < nArr → j ∉ [aT1, 0, aM, 1, 2, aOne, aNM] →
+  obtain z0 : ∀ j ∈ zeroCk, num s.mem g.base (kw len) j = 0 := fun j hj => h.zeros j hj
+  obtain K1 : ∀ j, j < nArr → j ∉ [aT1, 0, aM, 1, 2, aOne, aNM] →
       num t.mem g.base (kw len) j = num s.mem g.base (kw len) j := fun j hj hn => by
     rw [K.num (fun k hk e => hn (by subst e; exact hk)) (by decide) (fit j hj)]
   -- `M`.
-  have M5 : num t5.mem g.base (kw len) aM = g.P := by
+  obtain M5 : num t5.mem g.base (kw len) aM = g.P := by
     rw [e5, k4.num (by decide) (by simp) (fit _ (by decide)), k3.num (by decide) (by decide) (fit _ (by decide)),
       k2.num (by decide) (by decide) (fit _ (by decide)), h.p]
-  have M6 : num t6.mem g.base (kw len) aM = g.M := by rw [e6, M5]; rfl
-  have M8 : num t8.mem g.base (kw len) aM = g.M := by
+  obtain M6 : num t6.mem g.base (kw len) aM = g.M := by rw [e6, M5]; rfl
+  obtain M8 : num t8.mem g.base (kw len) aM = g.M := by
     rw [k8.num (by decide) (by simp) (fit _ (by decide)), k8'.num (by decide) (by simp) (fit _ (by decide)),
       k7.num (by decide) (by simp) (fit _ (by decide)), M6]
-  have Z8 : num t8.mem g.base (kw len) aZero = 0 := by
+  obtain Z8 : num t8.mem g.base (kw len) aZero = 0 := by
     rw [k8.num (by decide) (by simp) (fit _ (by decide)), k8'.num (by decide) (by simp) (fit _ (by decide)),
       k7.num (by decide) (by simp) (fit _ (by decide)), k6.num (by decide) (by simp) (fit _ (by decide)),
       k5.num (by decide) (by simp) (fit _ (by decide)), k4.num (by decide) (by simp) (fit _ (by decide)),
@@ -167,7 +167,7 @@ theorem checksA_ok {g : Geometry} {len : Nat} {s : State} (h : StC g len s) :
   · rw [k9.num (by decide) (by simp) (fit _ (by decide)), M8]
   · rw [Z8, M8] at e9
     have : 0 < g.M := by unfold Geometry.M; omega_arith
-    have l := val32_lt t.mem g.base (arr (kw len) aNM) (kw len)
+    obtain l := val32_lt t.mem g.base (arr (kw len) aNM) (kw len)
     rcases (by omega_arith : (t.gpr .ebx).toNat = 0 ∨ (t.gpr .ebx).toNat = 1) with e | e <;> rw [e] at e9 <;> omega_arith
   · rw [K1 _ (by decide) (by decide)]; exact z0 _ (by decide)
   · rw [k9.num (by decide) (by simp) (fit _ (by decide)), e8, k8'.num (by decide) (by simp) (fit _ (by decide)),
@@ -206,14 +206,14 @@ theorem checksB_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : S
         (VG.Proof.Rsa.X86.Keys.ranges (kw len) (invOut ++ [aDQ, aDD]) (invSlots ++ rtSlots ++ [sT, sE3, sMask])) s.mem t.mem ∧
       Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t := by
   have hw := h.ws
-  have fit := fun j (hj : j < nArr) => hw.ws.fit64 (j := j) hj
-  have inside := fun j (hj : j < nArr) => Nat.le_trans (VG.Proof.Rsa.X86.Keys.arr_end hj) hw.ws.fits
+  obtain fit := fun j (hj : j < nArr) => hw.ws.fit64 (j := j) hj
+  obtain inside := fun j (hj : j < nArr) => Nat.le_trans (VG.Proof.Rsa.X86.Keys.arr_end hj) hw.ws.fits
   have room := gate.room
-  have nowrap : g.size ≤ 2 ^ 64 := by have := hw.ws.workspace.nowrap; omega_using [this]
+  obtain nowrap : g.size ≤ 2 ^ 64 := by have := hw.ws.workspace.nowrap; omega_using [this]
   have hdrLe : hdr ≤ g.size := hw.ws.hdr_le
   unfold checksB
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
-  have input : InvInput args g.base g.size len g.P g.Q s :=
+  obtain input : InvInput args g.base g.size len g.P g.Q s :=
     ⟨h.ws,gate,h.u,h.m,h.nm,h.zero,by simp only [bank]; rw [h.u,h.v,h.x₁,h.x₂]; rfl⟩
   refine WP.mono (inverseDispatch_ok input) fun t1 ⟨h1,k1,r1,inv⟩ => ?_
   have I : 1<g.M → num t1.mem g.base (kw len) 1=Nat.gcd g.Q g.M ∧
@@ -222,10 +222,10 @@ theorem checksB_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : S
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (eqS_ok h1 (d := sE3) (a := 1) (b := aOne) (t := aT1) (by decide) (by decide) (by decide)
     (by decide) (by decide) (by decide)) fun t2 ⟨h2, k2, e2, r2⟩ => ?_
-  have one1 : num t1.mem g.base (kw len) aOne = 1 := by
+  obtain one1 : num t1.mem g.base (kw len) aOne = 1 := by
     rw [outsS_num k1 room (by decide) (by decide) (inside _ (by decide)) nowrap, h.one]
   rw [one1] at e2
-  have sl : ∀ d, d + 4 ≤ hdr → d % 4 = 0 → 100 ≤ d → d ∉ [sT, sE3, sOdd, sB, sC] →
+  obtain sl : ∀ d, d + 4 ≤ hdr → d % 4 = 0 → 100 ≤ d → d ∉ [sT, sE3, sOdd, sB, sC] →
       slot t2.mem g.base d = slot s.mem g.base d := fun d hd h4 h100 hn => by
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hn
     simp only [sT, sE3, sOdd, sB, sC, hdr] at hn hd
@@ -238,14 +238,14 @@ theorem checksB_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : S
     (by rw [sl _ (by decide) (by decide) (by decide) (by decide), h.podd]; omega_arith) (by rw [sl _ (by decide) (by decide) (by decide) (by decide), h.e1]; split <;> omega_arith)
     ) fun t3a ⟨h3a, k3a, m3a, r3a⟩ => ?_
   have h3b := h3a
-  have k3b : Keep g.base (kw len) [] [sMask] t3a.mem t3a.mem := Keep.refl _ _ _ _ _
-  have r3b : Keeps [] t3a t3a := Keeps.refl _ _
+  obtain k3b : Keep g.base (kw len) [] [sMask] t3a.mem t3a.mem := Keep.refl _ _ _ _ _
+  obtain r3b : Keeps [] t3a t3a := Keeps.refl _ _
   have m3b := m3a
   refine WP.mono (andS_ok h3b (d := sMask) (a := sMask) (b := sE3) (by decide) (by decide) (by decide)
     (by rw [m3b]; split <;> omega_arith)
     (by rw [k3b.slot (by decide) (by decide), k3a.slot (by decide) (by decide), e2]; split <;> omega_arith)
     ) fun t3 ⟨h3, k3, m3, r3⟩ => ?_
-  have K3 : Keep g.base (kw len) [] [sMask] t2.mem t3.mem := k3a.trans (k3b.trans k3)
+  obtain K3 : Keep g.base (kw len) [] [sMask] t2.mem t3.mem := k3a.trans (k3b.trans k3)
   rw [wp_seqs_cons (List.cons_ne_nil _ _)]
   refine WP.mono (copy_ok h3 (o := aDQ) (a := aD) (by decide) (by decide) (by decide))
     fun t4 ⟨h4, k4, e4, r4, _⟩ => ?_
@@ -254,18 +254,18 @@ theorem checksB_ok [VG.Proof.Rsa.X86.BatchLaw] {g : Geometry} {len : Nat} {s : S
     fun t5 ⟨h5, k5, e5, r5, top5⟩ => ?_
   refine WP.mono (clrLow_ok h5 (by decide)) fun t ⟨h6, k6, e6, r6, top6⟩ => ?_
   -- The count, through every step.
-  have K₂ : Keep g.base (kw len) (invOut ++ [aDQ, aDD]) (invSlots ++ rtSlots ++ [sT, sE3, sMask]) t1.mem t.mem :=
+  obtain K₂ : Keep g.base (kw len) (invOut ++ [aDQ, aDD]) (invSlots ++ rtSlots ++ [sT, sE3, sMask]) t1.mem t.mem :=
     k2.mono.trans (K3.mono.trans (k4.mono.trans (k5.mono.trans k6.mono)))
-  have K : VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS g.base (s.gpr .esp)
+  obtain K : VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS g.base (s.gpr .esp)
       (VG.Proof.Rsa.X86.Keys.ranges (kw len) (invOut ++ [aDQ, aDD]) (invSlots ++ rtSlots ++ [sT, sE3, sMask])) s.mem t.mem :=
     (k1.mono (ranges_sub (by decide) (by decide))).trans (VG.Proof.RsaKeyGen.X86.KeyRuntime.OutsS.of_outs K₂)
-  have R : Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t :=
+  obtain R : Keeps [.eax, .ecx, .edx, .ebp, .ebx, .esi] s t :=
     (r1.mono (by decide)).trans ((r2.mono (by decide)).trans ((r3a.mono (by decide)).trans ((r3b.mono (by decide)).trans
       ((r3.mono (by decide)).trans ((r4.mono (by decide)).trans ((r5.mono (by decide)).trans (r6.mono (by decide))))))))
-  have tr : ∀ j, j < nArr → j ∉ invOut ++ [aDQ, aDD] →
+  obtain tr : ∀ j, j < nArr → j ∉ invOut ++ [aDQ, aDD] →
       num t.mem g.base (kw len) j = num s.mem g.base (kw len) j := fun j hj hn =>
     outsS_num K room (fun k hk e => hn (by subst e; exact hk)) (by decide) (inside j hj) nowrap
-  have fDD := fit aDD (by decide)
+  obtain fDD := fit aDD (by decide)
   have hS : S (kw len) = 4 * ((kw len) + 2) := rfl
   refine ⟨?_, K, R⟩
   refine ⟨h6, ?_, ?_, ?_, ?_, ?_, ?_⟩

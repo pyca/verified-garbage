@@ -81,7 +81,7 @@ theorem statesAt_of_ecbInv {m₀ m : Mem} {D : Addr} {n : Nat} {F : Nat → Spec
     (h : EcbInv m₀ m D n n F) : Spec.Aes.statesAt m D n = (List.range n).map F := by
   simp only [Spec.Aes.statesAt]
   refine List.map_congr_left fun j hj => ?_
-  have hj := List.mem_range.mp hj
+  obtain hj := List.mem_range.mp hj
   apply Vector.ext
   intro t ht
   simp only [Spec.Aes.stateAt, Vector.getElem_ofFn]
@@ -99,16 +99,16 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
       (∀ r ∈ RISCV64.preserved, s'.gpr r = s₀.gpr r) ∧ s'.gpr .ra = s₀.gpr .ra ∧
         (Proof.Aes.blocksRISCV64 f).post s₀ s' := by
   obtain ⟨hrd, hwr, dSD, dSS, dDS, hwrap, hR⟩ := hp
-  have hwD : (⟨s₀.gpr .a2, 16 * (s₀.gpr .a3).toNat⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  have hwS : (⟨s₀.gpr .a4, 2048⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  have hrS : (⟨s₀.gpr .a0, 240⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
+  obtain hwD : (⟨s₀.gpr .a2, 16 * (s₀.gpr .a3).toNat⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  obtain hwS : (⟨s₀.gpr .a4, 2048⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  obtain hrS : (⟨s₀.gpr .a0, 240⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
   let n := (s₀.gpr .a3).toNat
-  have n16 : 16 * n < 2 ^ 64 := by
+  obtain n16 : 16 * n < 2 ^ 64 := by
     refine Nat.lt_of_not_le fun hc => dDS (s₀.gpr .a4) ?_ (by simp [Region.Contains])
     simp only [Region.Contains]
     have := (s₀.gpr .a4 - s₀.gpr .a2).isLt
     omega_arith
-  have hR14 : (s₀.gpr .a1).toNat ≤ 14 := by omega_arith
+  obtain hR14 : (s₀.gpr .a1).toNat ≤ 14 := by omega_arith
   let X := s₀.gpr .a4
   let b := X + BitVec.ofNat 64 (pad X)
   let D := s₀.gpr .a2
@@ -121,39 +121,39 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
     WP.block_append_iff (M := isa)]
   refine blocksSetup_wp fun s₁ a5₁ a4₁ a3₁ o₁ m₁ rd₁ wr₁ sp₁ => ?_
   refine roundSb_wp fun s₂ b₂ o₂ m₂ rd₂ wr₂ sp₂ => ?_
-  have hb₂ : s₂.gpr sb = b := by rw [b₂, a5₁]
-  have hscr₂ : Scr s₂ X 2048 := ⟨by rw [wr₂, wr₁]; exact hwS, hb₂⟩
+  obtain hb₂ : s₂.gpr sb = b := by rw [b₂, a5₁]
+  obtain hscr₂ : Scr s₂ X 2048 := ⟨by rw [wr₂, wr₁]; exact hwS, hb₂⟩
   rw [saveRegs_eq]
   refine Spill.save_ok (rest := []) hscr₂.al savedOffs_ho (fun p hp => ⟨_, hscr₂.wr,
     hscr₂.contains (by have := savedOffs_range p hp; omega_using [this]) (by decide)⟩) (WP.block_nil ?_)
   -- The registers' slots, which later code keeps.
   generalize hS : ({ s₂ with mem := Spill.saveMem s₂.mem (s₂.gpr sb) s₂.gpr savedOffs } : State) = s₂'
-  have g₂' : s₂'.gpr = s₂.gpr := by rw [← hS]
-  have mm₂ : s₂'.mem = Spill.saveMem s₂.mem (s₂.gpr sb) s₂.gpr savedOffs := by rw [← hS]
-  have rd₂' : s₂'.rd = s₂.rd := by rw [← hS]
-  have wr₂' : s₂'.wr = s₂.wr := by rw [← hS]
-  have sp₂' : s₂'.sp = s₂.sp := by rw [← hS]
-  have sv₂ : Spill.Saved b s₂.gpr savedOffs s₂'.mem := by
+  obtain g₂' : s₂'.gpr = s₂.gpr := by rw [← hS]
+  obtain mm₂ : s₂'.mem = Spill.saveMem s₂.mem (s₂.gpr sb) s₂.gpr savedOffs := by rw [← hS]
+  obtain rd₂' : s₂'.rd = s₂.rd := by rw [← hS]
+  obtain wr₂' : s₂'.wr = s₂.wr := by rw [← hS]
+  obtain sp₂' : s₂'.sp = s₂.sp := by rw [← hS]
+  obtain sv₂ : Spill.Saved b s₂.gpr savedOffs s₂'.mem := by
     rw [mm₂, ← hb₂]; exact Spill.saveMem_saved savedOffs_fits _ _ _
-  have f₂ : Frame [⟨b + BitVec.ofNat 64 320, 96⟩] s₂.mem s₂'.mem := by
+  obtain f₂ : Frame [⟨b + BitVec.ofNat 64 320, 96⟩] s₂.mem s₂'.mem := by
     rw [mm₂, ← hb₂]; exact Spill.saveMem_frame savedOffs_range (by decide) _ _ _
-  have hscr₂' : Scr s₂' X 2048 := ⟨by rw [wr₂']; exact hscr₂.wr, by rw [g₂']; exact hscr₂.base⟩
+  obtain hscr₂' : Scr s₂' X 2048 := ⟨by rw [wr₂']; exact hscr₂.wr, by rw [g₂']; exact hscr₂.base⟩
   refine WP.mono (maskInit_ok hscr₂') fun s₃' ⟨mk₃, fm₃, g₃', rd₃', wr₃', sp₃'⟩ => ?_
-  have b₃' : s₃'.gpr sb = b := by rw [g₃' _ (by decide) (by decide), g₂']; exact hb₂
+  obtain b₃' : s₃'.gpr sb = b := by rw [g₃' _ (by decide) (by decide), g₂']; exact hb₂
   rw [show s₂'.gpr sb = b by rw [g₂']; exact hb₂] at mk₃ fm₃
   refine keySetup_wp (s := s₃') (R := R) (by
       rw [g₃' _ (by decide) (by decide), show s₂'.gpr .a1 = s₂.gpr .a1 by rw [g₂'],
         o₂ _ (by decide), o₁ _ (by decide) (by decide) (by decide)]; simp [R])
     hR14 fun s₃ a0₃ a2₃ a1₃ o₃ m₃ rd₃ wr₃ sp₃ => ?_
-  have hb₃ : s₃.gpr sb = b := by
+  obtain hb₃ : s₃.gpr sb = b := by
     rw [o₃ sb (by decide) (by decide) (by decide) (by decide)]; exact b₃'
-  have hscr₃ : Scr s₃ X 2048 := ⟨by rw [wr₃, wr₃', wr₂']; exact hscr₂.wr, hb₃⟩
+  obtain hscr₃ : Scr s₃ X 2048 := ⟨by rw [wr₃, wr₃', wr₂']; exact hscr₂.wr, hb₃⟩
   -- The memory so far changed only in the scratch buffer.
-  have f₀₃ : Frame [⟨X, 2048⟩] s₀.mem s₃.mem := by
+  obtain f₀₃ : Frame [⟨X, 2048⟩] s₀.mem s₃.mem := by
     rw [m₃]
-    have f12 : Frame [⟨X, 2048⟩] s₂.mem s₂'.mem := f₂.sub fun r hr => ⟨_, List.mem_singleton_self _, by
+    obtain f12 : Frame [⟨X, 2048⟩] s₂.mem s₂'.mem := f₂.sub fun r hr => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr; subst hr; exact scr_part X (by omega_using [])⟩
-    have f02 : Frame [⟨X, 2048⟩] s₀.mem s₂'.mem := fun x hx =>
+    obtain f02 : Frame [⟨X, 2048⟩] s₀.mem s₂'.mem := fun x hx =>
       (f12 x hx).trans (congrFun (m₂.trans m₁) x)
     refine Frame.trans f02 ?_
     refine fm₃.sub fun r hr => ⟨_, List.mem_singleton_self _, ?_⟩
@@ -162,7 +162,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
     · exact scr_part X (by omega_using [])
     · exact scr_part X (by omega_using [])
   let w := Spec.Aes.bytesAt s₀.mem sc (16 * (R + 1))
-  have hk : KSetup s₃ X b sc R w :=
+  obtain hk : KSetup s₃ X b sc R w :=
     { scr := hscr₃
       base := hb₃
       masks := by rw [m₃]; exact mk₃
@@ -175,7 +175,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
         refine (f₀₃.bytes (R := ⟨sc, 240⟩) (fun r hr => ?_) (by simp) (by simp only; omega_arith)).symm
         simp only [List.mem_singleton] at hr; subst hr
         exact dSS }
-  have hi₃ : KInv s₃ b sc R w R s₃ :=
+  obtain hi₃ : KInv s₃ b sc R w R s₃ :=
     { hj := Nat.le_refl _
       a1 := a1₃
       a0 := by
@@ -193,29 +193,29 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
   refine WP.seq ?_
   unfold keyDone
   refine wp_addi (imm := 64) (by decide) fun s₅ u₅ => WP.block_nil ?_
-  have g₅ : ∀ r ∈ [Reg.ra, .a3, .a4, .a5], s₅.gpr r = s₃.gpr r := fun r hr => by
+  obtain g₅ : ∀ r ∈ [Reg.ra, .a3, .a4, .a5], s₅.gpr r = s₃.gpr r := fun r hr => by
     rw [u₅.other r (by simp at hr; rcases hr with rfl | rfl | rfl | rfl <;> decide),
       d₄.keep r (notKeyWrites r hr)]
-  have k₃ : ∀ r, r ∉ [t0, t1, .a0, .a1, .a2, .a3, .a4, sb] → s₃.gpr r = s₀.gpr r := by
+  obtain k₃ : ∀ r, r ∉ [t0, t1, .a0, .a1, .a2, .a3, .a4, sb] → s₃.gpr r = s₀.gpr r := by
     intro r hr
     simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     rw [o₃ r hr.1 hr.2.2.1 hr.2.2.2.2.1 hr.2.2.2.1, g₃' r hr.1 hr.2.1,
       show s₂'.gpr r = s₂.gpr r by rw [g₂'], o₂ r hr.2.2.2.2.2.2.2,
       o₁ r hr.2.2.2.2.2.2.2 hr.2.2.2.2.2.2.1 hr.2.2.2.2.2.1]
-  have a4₅ : s₅.gpr .a4 = s₀.gpr .a3 := by
+  obtain a4₅ : s₅.gpr .a4 = s₀.gpr .a3 := by
     rw [g₅ _ (by simp), o₃ _ (by decide) (by decide) (by decide) (by decide),
       g₃' _ (by decide) (by decide), show s₂'.gpr .a4 = s₂.gpr .a4 by rw [g₂'], o₂ _ (by decide)]
     exact a4₁
-  have a3₅ : s₅.gpr .a3 = D := by
+  obtain a3₅ : s₅.gpr .a3 = D := by
     rw [g₅ _ (by simp), o₃ _ (by decide) (by decide) (by decide) (by decide),
       g₃' _ (by decide) (by decide), show s₂'.gpr .a3 = s₂.gpr .a3 by rw [g₂'], o₂ _ (by decide)]
     exact a3₁
-  have ra₅ : s₅.gpr .ra = s₀.gpr .ra := by rw [g₅ _ (by simp), k₃ _ (by decide)]
-  have hb₅ : s₅.gpr sb = b := by rw [show sb = .a5 from rfl, g₅ _ (by simp)]; exact hb₃
-  have hK0 : s₅.gpr .a0 = b + BitVec.ofNat 64 (1920 - 64 * R) := by
+  obtain ra₅ : s₅.gpr .ra = s₀.gpr .ra := by rw [g₅ _ (by simp), k₃ _ (by decide)]
+  obtain hb₅ : s₅.gpr sb = b := by rw [show sb = .a5 from rfl, g₅ _ (by simp)]; exact hb₃
+  obtain hK0 : s₅.gpr .a0 = b + BitVec.ofNat 64 (1920 - 64 * R) := by
     rw [u₅.gpr, d₄.a2]; exact BitVec.sub_add_cancel _ _
-  have fK : Frame (kRegions b) s₃.mem s₅.mem := u₅.mem ▸ d₄.frame
-  have hs : ESetup s₅ X b D n R w :=
+  obtain fK : Frame (kRegions b) s₃.mem s₅.mem := u₅.mem ▸ d₄.frame
+  obtain hs : ESetup s₅ X b D n R w :=
     { scr := ⟨by rw [u₅.wr, d₄.wr]; exact hscr₃.wr, hb₅⟩
       base := hb₅
       masks := by rw [u₅.mem]; exact masks_kept d₄.frame hk.masks
@@ -226,12 +226,12 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
       keys := fun j hj => keyRel_congr (d₄.keys j hj) fun k hk => by
         rw [u₅.mem, keyAddr, BitVec.add_assoc, ← BitVec.ofNat_add, show 1920 - 64 * R + 64 * j =
           1920 - 64 * (R - j) by omega_arith] }
-  have dK : ∀ r ∈ kRegions b, Region.Disjoint ⟨D, 16 * n⟩ r := fun r hr => by
+  obtain dK : ∀ r ∈ kRegions b, Region.Disjoint ⟨D, 16 * n⟩ r := fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl
     · exact dDS.sub_right (scr_base X (by omega_using []))
     · exact dDS.sub_right (scr_part X (by omega_using []))
-  have data₅ : EcbInv s₀.mem s₅.mem D n 0 (ecbOut f s₀.mem D R w) :=
+  obtain data₅ : EcbInv s₀.mem s₅.mem D n 0 (ecbOut f s₀.mem D R w) :=
     ecbInv_frame fK dK n16
       (ecbInv_frame f₀₃ (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dDS)
         n16 fun i hi => by simp)
@@ -241,47 +241,47 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
     · have hn0 : n = 0 := by simpa using h0
       exact WP.block_nil ⟨hb₅, rfl, rfl, rfl, rfl, Frame.refl _ _, fun i hi => by omega_arith⟩
     · have hn0 : n ≠ 0 := by simpa using h0
-      have hi₅ : EInv f s₀.mem s₅ b D n R w 0 s₅ :=
+      obtain hi₅ : EInv f s₀.mem s₅ b D n R w 0 s₅ :=
         ⟨by omega_arith, by rw [a3₅]; simp, by rw [a4₅]; simp [n], hb₅, hK0, rfl, rfl, rfl, rfl,
           Frame.refl _ _, data₅⟩
       -- By doublewords if the data is aligned.
       unfold groups
       refine WP.seq (wp_andi (imm := 7) (by decide) fun s₆ u₆ => WP.block_nil ?_)
-      have hi₆ := hi₅.of_t0 u₆
-      have ev : isa.eval (.zero t0) s₆ = some (decide (D.toNat % 8 = 0)) := by
+      obtain hi₆ := hi₅.of_t0 u₆
+      obtain ev : isa.eval (.zero t0) s₆ = some (decide (D.toNat % 8 = 0)) := by
         rw [Steps.eval_zero, u₆.gpr, a3₅, and7, Steps.ofNat_beq_zero (by omega_using [])]
       exact WP.ite (decide (D.toNat % 8 = 0)) ev
         (fun h => ecbGroups_ok hcr hs (fun _ => by simpa using h) hi₆)
         (fun _ => ecbGroups_ok hcr hs (fun h => Bool.noConfusion h) hi₆)
   -- The epilogue.
-  have sv : Spill.Saved b s₂.gpr savedOffs s₆.mem := by
-    have dS : ∀ r ∈ [(⟨b + BitVec.ofNat 64 416, 48⟩ : Region), ⟨b + BitVec.ofNat 64 512, 96⟩],
+  obtain sv : Spill.Saved b s₂.gpr savedOffs s₆.mem := by
+    obtain dS : ∀ r ∈ [(⟨b + BitVec.ofNat 64 416, 48⟩ : Region), ⟨b + BitVec.ofNat 64 512, 96⟩],
         Region.Disjoint ⟨b + BitVec.ofNat 64 320, 96⟩ r := fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact Offset.disjoint b (by omega_using []) (by omega_using []) (by omega_using [])
       · exact Offset.disjoint b (by omega_using []) (by omega_using []) (by omega_using [])
-    have dK' : ∀ r ∈ kRegions b, Region.Disjoint ⟨b + BitVec.ofNat 64 320, 96⟩ r := fun r hr => by
+    obtain dK' : ∀ r ∈ kRegions b, Region.Disjoint ⟨b + BitVec.ofNat 64 320, 96⟩ r := fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact Offset.disjoint_base b (by omega_using []) (by omega_using [])
       · exact Offset.disjoint b (by omega_using []) (by omega_using []) (by omega_using [])
-    have dE : ∀ r ∈ eRegions b D n, Region.Disjoint ⟨b + BitVec.ofNat 64 320, 96⟩ r := fun r hr => by
+    obtain dE : ∀ r ∈ eRegions b D n, Region.Disjoint ⟨b + BitVec.ofNat 64 320, 96⟩ r := fun r hr => by
       simp only [eRegions, List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact Offset.disjoint_base b (by omega_using []) (by omega_using [])
       · exact (dDS.sub_right (scr_part X (by omega_using []))).symm
-    have fK' : Frame (kRegions b) s₃'.mem s₅.mem := fun x hx => (fK x hx).trans (congrFun m₃ x)
+    obtain fK' : Frame (kRegions b) s₃'.mem s₅.mem := fun x hx => (fK x hx).trans (congrFun m₃ x)
     exact ((sv₂.frame_in savedOffs_range fm₃ dS).frame_in savedOffs_range fK' dK').frame_in
       savedOffs_range gd.frame dE
-  have hscr₆ : Scr s₆ X 2048 := ⟨by rw [gd.wr, u₅.wr, d₄.wr]; exact hscr₃.wr, by rw [gd.base]⟩
+  obtain hscr₆ : Scr s₆ X 2048 := ⟨by rw [gd.wr, u₅.wr, d₄.wr]; exact hscr₃.wr, by rw [gd.base]⟩
   rw [restoreRegs_eq]
   refine WP.mono (Spill.restore_wp (B := b) (by rw [← hb₂]; exact hscr₂.al) gd.base savedOffs_ho
     savedOffs_restorable (fun p hp => ⟨_, List.mem_append_right _ hscr₆.wr, by
       rw [← gd.base]
       exact hscr₆.contains (by have := savedOffs_range p hp; omega_using [this]) (by decide)⟩) sv)
     fun s₇ rs₇ => ?_
-  have dR : ∀ r ∈ [(⟨b, 0⟩ : Region)], Region.Disjoint ⟨D, 16 * n⟩ r := fun r hr => by
+  obtain dR : ∀ r ∈ [(⟨b, 0⟩ : Region)], Region.Disjoint ⟨D, 16 * n⟩ r := fun r hr => by
     simp only [List.mem_singleton] at hr; subst hr
     intro a _ h; simp [Region.Contains] at h
   refine ⟨fun r hr => ?_, ?_, ?_⟩

@@ -69,7 +69,7 @@ theorem st_ok {s : State} {k : Nat} (r : Reg) (hal : (s.gpr sb).toNat % 8 = 0)
     ∃ s', runBlock isa [stS k r] s = some s' ∧ slotW s' k = s.gpr r ∧
       (∀ j < slots, j ≠ k → slotW s' j = slotW s j) ∧ s'.gpr = s.gpr ∧
       Frame [⟨s.gpr sb, 8 * slots⟩] s.mem s'.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hk' : k < slots := by rw [keySlot_eq] at hk; rw [slots_eq]; omega_arith
+  obtain hk' : k < slots := by rw [keySlot_eq] at hk; rw [slots_eq]; omega_arith
   obtain ⟨s', e, m, g, rd, wr⟩ := stS_slot (k := k) r rfl hal hscr hk
   refine ⟨s', e, ?_, fun j hj hjk => ?_, g, by rw [m]; exact frame_slot _ hk', rd, wr⟩
   · rw [slotW_store m g hk' hk', ite_eq_left rfl]
@@ -101,10 +101,10 @@ theorem sigmaStores_ok (x : BitVec 64) (s : State) (hal : (s.gpr kp).toNat % 8 =
   rw [sigmaStore, WP.block_append_iff (M := isa)]
   refine WP.mono (Words64.movImm64_ok (s := s₁) (d := t0) (tmp := t1) (by decide) (keyPlane x k))
     fun s₂ ⟨v₂, g₂, m₂, rd₂, wr₂, _⟩ => ?_
-  have hkp : s₂.gpr kp = s.gpr kp := by rw [g₂ _ (by decide) (by decide), h.regs _ (by decide) (by decide)]
+  obtain hkp : s₂.gpr kp = s.gpr kp := by rw [g₂ _ (by decide) (by decide), h.regs _ (by decide) (by decide)]
   refine Steps.wp_sd (a := wordAddr (s.gpr kp) k) (by omega_using [hk]) (by rw [hkp])
     (Spill.al8 hal (by omega_using [])) (by rw [wr₂, h.wr]; exact hw k hk) fun s₃ u₃ => WP.block_nil ?_
-  have hm₃ : s₃.mem = s₁.mem.writeW (wordAddr (s.gpr kp) k) (keyPlane x k) := by rw [u₃.mem, m₂, v₂]
+  obtain hm₃ : s₃.mem = s₁.mem.writeW (wordAddr (s.gpr kp) k) (keyPlane x k) := by rw [u₃.mem, m₂, v₂]
   refine ⟨fun j hj => ?_, ?_, fun r h0 h1 => by rw [u₃.gpr, g₂ r h0 h1, h.regs r h0 h1],
     by rw [u₃.rd, rd₂, h.rd], by rw [u₃.wr, wr₂, h.wr]⟩
   · rw [hm₃]
@@ -230,7 +230,7 @@ theorem copyKey_ok {s : State} {len soff k n nb : Nat} (hnb : nb = 8 * n)
     (fun i hi => ⟨_, hscr, VG.Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
     (fun i hi hc => hks _ (VG.Offset.contains_base _ (by omega_arith) (by omega_arith))
       ((VG.Offset.sub_base _ (by omega_arith)) _ hc)))
-  have hb : s'.gpr sb = s.gpr sb := c'.gpr _ (by decide)
+  obtain hb : s'.gpr sb = s.gpr sb := c'.gpr _ (by decide)
   refine ⟨s', e', fun w hw => ?_, fun j hj hjk => ?_, c'.gpr, ?_, c'.rd, c'.wr⟩
   · simp only [slotW, hb, wordAddr]
     refine wordOf_copy fun i hi => ?_
@@ -293,8 +293,8 @@ theorem kr16_ok {s u : State} {len : Nat} (hp : LkPre u len) (h16 : len = 16) :
   obtain ⟨hl₁, hr₁, -, -, -, -, hK, hS⟩ := kaKb_slots
   obtain ⟨-, -, hK2, hK3⟩ := Proof.Camellia.klkr_halves s.mem (s.gpr .a0) (Or.inl h16)
   obtain ⟨s₃, e₃, a₃, o₃, m₃, rd₃, wr₃⟩ := liN_ok u t0 0 (by decide)
-  have lk₃ : LkKeep u s₃ := LkKeep.of_pure ⟨m₃, fun r h0 _ => o₃ r h0, rd₃, wr₃⟩
-  have hp₃ := hp.of_keep lk₃ (o₃ _ (by decide))
+  obtain lk₃ : LkKeep u s₃ := LkKeep.of_pure ⟨m₃, fun r h0 _ => o₃ r h0, rd₃, wr₃⟩
+  obtain hp₃ := hp.of_keep lk₃ (o₃ _ (by decide))
   obtain ⟨s₄, e₄, v₄, k₄, g₄, f₄, rd₄, wr₄⟩ := st_ok (k := krSlot) t0 hp₃.al hp₃.scr (by omega_arith)
   obtain ⟨s₅, e₅, v₅, k₅, g₅, f₅, rd₅, wr₅⟩ := st_ok (k := krSlot + 1) t0
     (by rw [g₄]; exact hp₃.al) (by rw [g₄, wr₄]; exact hp₃.scr) (by omega_arith)
@@ -319,18 +319,18 @@ theorem kr24_ok {s u : State} {len : Nat} (hs : LkPre s len) (hp : LkPre u len)
   obtain ⟨-, -, hK2, hK3⟩ := Proof.Camellia.klkr_halves s.mem (s.gpr .a0) hs.hl
   obtain ⟨s₅, e₅, a₅, o₅, m₅, rd₅, wr₅⟩ := ldS_ok (k := krSlot) t0 rfl hp.al hp.scr (by omega_arith)
   let s₆ := s₅.write t0 (s₅.gpr t0 ^^^ BitVec.ofInt 64 (-1))
-  have e₆ : runBlock isa [notR t0] s₅ = some s₆ := by
+  obtain e₆ : runBlock isa [notR t0] s₅ = some s₆ := by
     simp only [notR, runBlock_cons, exec_logicImm (show imm12 (-1 : Int) by decide), runStep_some,
       runBlock_nil]
     rfl
-  have a₆ : s₆.gpr t0 = ~~~ slotW u krSlot := by
+  obtain a₆ : s₆.gpr t0 = ~~~ slotW u krSlot := by
     rw [RegUpd.gpr_write_self, a₅, ofInt_neg_one, BitVec.xor_allOnes]
-  have o₆ : ∀ r, r ≠ t0 → s₆.gpr r = u.gpr r := fun r hr => by
+  obtain o₆ : ∀ r, r ≠ t0 → s₆.gpr r = u.gpr r := fun r hr => by
     rw [RegUpd.gpr_write_of_ne _ _ hr, o₅ r hr]
-  have lk₆ : LkKeep u s₆ := LkKeep.of_pure ⟨m₅, fun r h0 _ => o₆ r h0, rd₅, wr₅⟩
-  have hp₆ := hp.of_keep lk₆ (o₆ _ (by decide))
+  obtain lk₆ : LkKeep u s₆ := LkKeep.of_pure ⟨m₅, fun r h0 _ => o₆ r h0, rd₅, wr₅⟩
+  obtain hp₆ := hp.of_keep lk₆ (o₆ _ (by decide))
   obtain ⟨s₇, e₇, v₇, k₇, g₇, f₇, rd₇, wr₇⟩ := st_ok (k := krSlot + 1) t0 hp₆.al hp₆.scr (by omega_arith)
-  have hs₆ : ∀ k, slotW s₆ k = slotW u k := slotW_eq_of m₅ (o₆ _ (by decide))
+  obtain hs₆ : ∀ k, slotW s₆ k = slotW u k := slotW_eq_of m₅ (o₆ _ (by decide))
   refine ⟨s₇, by
     rw [show ([ldS t0 krSlot, notR t0, stS (krSlot + 1) t0] : List Instr) =
         [ldS t0 krSlot] ++ ([notR t0] ++ [stS (krSlot + 1) t0]) from rfl,
@@ -348,10 +348,10 @@ theorem kr32_ok {s u : State} {len : Nat} (hs : LkPre s len) (hk : LkKeep s u) (
     ∃ u', runBlock isa (copyBytes t0 .a0 sb 24 (8 * (krSlot + 1)) 8) u = some u' ∧ KrDone s u u' len := by
   obtain ⟨hl₁, hr₁, -, -, -, -, hK, hS⟩ := kaKb_slots
   obtain ⟨-, -, hK2, hK3⟩ := Proof.Camellia.klkr_halves s.mem (s.gpr .a0) hs.hl
-  have h32 : len = 32 := by rcases hs.hl with h | h | h <;> omega_arith
+  obtain h32 : len = 32 := by rcases hs.hl with h | h | h <;> omega_arith
   obtain ⟨s₅, e₅, w₅, k₅, g₅, f₅, rd₅, wr₅⟩ := copyKey_ok (s := u) (soff := 24) (k := krSlot + 1) (n := 1)
     (nb := 8) rfl hp.scr hp.key hp.sep (by omega_arith) (by omega_arith) (by omega_arith)
-  have lk₅ : LkKeep u s₅ := ⟨fun k hk h => k₅ k hk (by omega_arith), fun r h0 _ => g₅ r h0, f₅, rd₅, wr₅⟩
+  obtain lk₅ : LkKeep u s₅ := ⟨fun k hk h => k₅ k hk (by omega_arith), fun r h0 _ => g₅ r h0, f₅, rd₅, wr₅⟩
   refine ⟨s₅, e₅, ⟨?_, ?_⟩, lk₅, fun k hk h => k₅ k hk (by omega_arith)⟩
   · rw [k₅ _ (by omega_arith) (by omega_arith), hK2, ite_eq_right h16]; exact hw
   · have := w₅ 0 (by decide)
@@ -366,12 +366,12 @@ theorem klBlock_ok {s : State} {len : Nat} (hs : LkPre s len) :
       (s'.gpr t1 == 0) = decide (len = 16) := by
   obtain ⟨hl₁, hr₁, -, -, -, -, hK, hS⟩ := kaKb_slots
   obtain ⟨hK0, hK1, -, -⟩ := Proof.Camellia.klkr_halves s.mem (s.gpr .a0) hs.hl
-  have hl32 : len ≤ 32 := by rcases hs.hl with h | h | h <;> omega_arith
-  have hz : s.gpr .a0 + BitVec.ofNat 64 (0 + 8 * 0) = s.gpr .a0 := by simp
+  obtain hl32 : len ≤ 32 := by rcases hs.hl with h | h | h <;> omega_arith
+  obtain hz : s.gpr .a0 + BitVec.ofNat 64 (0 + 8 * 0) = s.gpr .a0 := by simp
   obtain ⟨s₁, e₁, w₁, k₁, g₁, f₁, rd₁, wr₁⟩ := copyKey_ok (soff := 0) (k := klSlot) (n := 2) (nb := 16) rfl
     hs.scr hs.key hs.sep hl32 (by rcases hs.hl with h | h | h <;> omega_arith) (by omega_arith)
   obtain ⟨s₂, e₂, z₂, o₂, m₂, rd₂, wr₂⟩ := subI_ok s₁ t1 .a3 16 (by decide)
-  have hs₂ : ∀ k, slotW s₂ k = slotW s₁ k := slotW_eq_of m₂ (o₂ _ (by decide))
+  obtain hs₂ : ∀ k, slotW s₂ k = slotW s₁ k := slotW_eq_of m₂ (o₂ _ (by decide))
   refine ⟨s₂, by rw [runBlock_append', e₁, Option.bind_some]; exact e₂,
     ⟨fun k hk h => by rw [hs₂, k₁ k hk (by omega_arith)], fun r h0 h1 => by rw [o₂ r h1, g₁ r h0],
       by rw [m₂]; exact f₁, by rw [rd₂, rd₁], by rw [wr₂, wr₁]⟩,
@@ -388,12 +388,12 @@ theorem krBlock_ok {s u : State} {len : Nat} (hs : LkPre s len) (hk : LkKeep s u
       WordOf (slotW u' krSlot) (Spec.Camellia.wordAt s.mem (s.gpr .a0 + BitVec.ofNat 64 16)) ∧
       (u'.gpr t1 == 0) = decide (len = 24) := by
   obtain ⟨hl₁, hr₁, -, -, -, -, hK, hS⟩ := kaKb_slots
-  have hl32 : len ≤ 32 := by rcases hs.hl with h | h | h <;> omega_arith
-  have hl24 : 24 ≤ len := by rcases hs.hl with h | h | h <;> omega_arith
+  obtain hl32 : len ≤ 32 := by rcases hs.hl with h | h | h <;> omega_arith
+  obtain hl24 : 24 ≤ len := by rcases hs.hl with h | h | h <;> omega_arith
   obtain ⟨s₃, e₃, w₃, k₃, g₃, f₃, rd₃, wr₃⟩ := copyKey_ok (s := u) (soff := 16) (k := krSlot) (n := 1) (nb := 8)
     rfl hp.scr hp.key hp.sep hl32 (by omega_arith) (by omega_arith)
   obtain ⟨s₄, e₄, z₄, o₄, m₄, rd₄, wr₄⟩ := subI_ok s₃ t1 .a3 24 (by decide)
-  have hs₄ : ∀ k, slotW s₄ k = slotW s₃ k := slotW_eq_of m₄ (o₄ _ (by decide))
+  obtain hs₄ : ∀ k, slotW s₄ k = slotW s₃ k := slotW_eq_of m₄ (o₄ _ (by decide))
   refine ⟨s₄, by rw [runBlock_append', e₃, Option.bind_some]; exact e₄,
     ⟨fun k hk h => by rw [hs₄, k₃ k hk (by omega_arith)], fun r h0 h1 => by rw [o₄ r h1, g₃ r h0],
       by rw [m₄]; exact f₃, by rw [rd₄, rd₃], by rw [wr₄, wr₃]⟩,
@@ -427,7 +427,7 @@ theorem loadKey_wp {s : State} {len : Nat} (hs : LkPre s len) :
       LkKeep s s' := by
   obtain ⟨hl₁, hr₁, -, -, -, -, hK, hS⟩ := kaKb_slots
   obtain ⟨s₂, e₂, lk₂, a3₂, hkl, hz₂⟩ := klBlock_ok hs
-  have hp₂ := hs.of_keep lk₂ a3₂
+  obtain hp₂ := hs.of_keep lk₂ a3₂
   unfold loadKey
   refine WP.seq (WP.of_runBlock ⟨s₂, e₂, ?_⟩)
   refine WP.mono (Q := fun s' => KrDone s s₂ s' len)
@@ -437,8 +437,8 @@ theorem loadKey_wp {s : State} {len : Nat} (hs : LkPre s len) :
     exact WP.of_runBlock ⟨u', e', h'⟩
   · have h16 : len ≠ 16 := by simpa using h16
     obtain ⟨s₄, e₄, lk₄, a3₄, lo₄, w₄, hz₄⟩ := krBlock_ok hs lk₂ hp₂ h16
-    have lk₂₄ := lk₂.trans lk₄
-    have hp₄ := hs.of_keep lk₂₄ (a3₄.trans a3₂)
+    obtain lk₂₄ := lk₂.trans lk₄
+    obtain hp₄ := hs.of_keep lk₂₄ (a3₄.trans a3₂)
     refine WP.seq (WP.of_runBlock ⟨s₄, e₄, ?_⟩)
     refine WP.mono (Q := fun s' => KrDone s s₄ s' len)
       (WP.ite (decide (len = 24)) ((eval_zero s₄ t1).trans (by rw [hz₄])) (fun h24 => ?_) (fun h24 => ?_))
@@ -468,7 +468,7 @@ theorem ldBE_ok {s : State} {k : Nat} (t : Reg) (ht : t ≠ sb) (ht0 : t ≠ t0)
     (hw : WordOf (slotW s k) H) :
     ∃ s', runBlock isa (loadBE64 t t0 sb (8 * k)) s = some s' ∧ s'.gpr t = H ∧
       (∀ r, r ≠ t → r ≠ t0 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
-  have hk' : k < slots := by rw [keySlot_eq] at hk; rw [slots_eq]; omega_arith
+  obtain hk' : k < slots := by rw [keySlot_eq] at hk; rw [slots_eq]; omega_arith
   obtain ⟨r, hr, hc⟩ := scr_in hscr hk'
   obtain ⟨s', e', h'⟩ := WP.runBlock_of (ByteLoad.loadBE64_ok (s := s) (d := t) (tmp := t0) (n := sb)
     (off := 8 * k) ht (by decide) ht0 (by rw [keySlot_eq] at hk; omega_arith) ⟨r, List.mem_append_right _ hr, hc⟩)
@@ -484,7 +484,7 @@ theorem lvChunk_ok {s : State} {v k : Nat} (hv : v < 4) (hscr : (⟨s.gpr sb, 8 
       s'.wr = s.wr := by
   obtain ⟨n1, n2, n3, n4, n5⟩ := regs_lt4 hv
   obtain ⟨s₂, e₂, a₂, o₂, m₂, rd₂, wr₂⟩ := ldBE_ok (k := k) (hiReg v) n1 n4 hscr (by omega_arith) hw.1
-  have hb₂ : s₂.gpr sb = s.gpr sb := o₂ _ n1.symm (by decide)
+  obtain hb₂ : s₂.gpr sb = s.gpr sb := o₂ _ n1.symm (by decide)
   obtain ⟨s₄, e₄, a₄, o₄, m₄, rd₄, wr₄⟩ := ldBE_ok (s := s₂) (k := k + 1) (loReg v) n2 n5
     (by rw [hb₂, wr₂]; exact hscr) hk (by rw [slotW_eq_of m₂ hb₂]; exact hw.2)
   refine ⟨s₄, by rw [lvChunk, runBlock_append', e₂, Option.bind_some, e₄], ?_, a₄,
@@ -501,16 +501,16 @@ theorem loadValues_ok {s : State} (hscr : (⟨s.gpr sb, 8 * slots⟩ : Region) �
   obtain ⟨hl, hr, hW, hA, hB, -, hK, hS⟩ := kaKb_slots
   obtain ⟨s₁, e₁, h₁, l₁, o₁, m₁, rd₁, wr₁⟩ := lvChunk_ok (v := 0) (k := klSlot) (by decide) hscr (by omega_arith)
     (hw 0 (by decide))
-  have hb₁ : s₁.gpr sb = s.gpr sb := o₁ _ (by decide) (by decide) (by decide)
-  have hs₁ : ∀ k, slotW s₁ k = slotW s k := slotW_eq_of m₁ hb₁
+  obtain hb₁ : s₁.gpr sb = s.gpr sb := o₁ _ (by decide) (by decide) (by decide)
+  obtain hs₁ : ∀ k, slotW s₁ k = slotW s k := slotW_eq_of m₁ hb₁
   obtain ⟨s₂, e₂, h₂, l₂, o₂, m₂, rd₂, wr₂⟩ := lvChunk_ok (v := 1) (k := krSlot) (by decide)
     (by rw [hb₁, wr₁]; exact hscr) (by omega_arith) ((hw 1 (by decide)).congr (hs₁ _) (hs₁ _))
-  have hb₂ : s₂.gpr sb = s.gpr sb := by rw [o₂ _ (by decide) (by decide) (by decide), hb₁]
-  have hs₂ : ∀ k, slotW s₂ k = slotW s k := fun k => by rw [slotW_eq_of m₂ (by rw [hb₂, hb₁]), hs₁]
+  obtain hb₂ : s₂.gpr sb = s.gpr sb := by rw [o₂ _ (by decide) (by decide) (by decide), hb₁]
+  obtain hs₂ : ∀ k, slotW s₂ k = slotW s k := fun k => by rw [slotW_eq_of m₂ (by rw [hb₂, hb₁]), hs₁]
   obtain ⟨s₃, e₃, h₃, l₃, o₃, m₃, rd₃, wr₃⟩ := lvChunk_ok (v := 2) (k := kaSlot) (by decide)
     (by rw [hb₂, wr₂, wr₁]; exact hscr) (by omega_arith) ((hw 2 (by decide)).congr (hs₂ _) (hs₂ _))
-  have hb₃ : s₃.gpr sb = s.gpr sb := by rw [o₃ _ (by decide) (by decide) (by decide), hb₂]
-  have hs₃ : ∀ k, slotW s₃ k = slotW s k := fun k => by rw [slotW_eq_of m₃ (by rw [hb₃, hb₂]), hs₂]
+  obtain hb₃ : s₃.gpr sb = s.gpr sb := by rw [o₃ _ (by decide) (by decide) (by decide), hb₂]
+  obtain hs₃ : ∀ k, slotW s₃ k = slotW s k := fun k => by rw [slotW_eq_of m₃ (by rw [hb₃, hb₂]), hs₂]
   obtain ⟨s₄, e₄, h₄, l₄, o₄, m₄, rd₄, wr₄⟩ := lvChunk_ok (v := 3) (k := kbSlot) (by decide)
     (by rw [hb₃, wr₃, wr₂, wr₁]; exact hscr) (by omega_arith) ((hw 3 (by decide)).congr (hs₃ _) (hs₃ _))
   refine ⟨s₄, by rw [loadValues_eq, runBlock_append', e₁, Option.bind_some, runBlock_append', e₂,
@@ -550,20 +550,20 @@ theorem ekPrologue_ok {s₀ : State} {b : Addr} (hb : s₀.gpr .a3 = b) (hw : (�
   have hS := slots_eq
   obtain ⟨s₁a, e₁a, r₁a, o₁a, m₁a, rd₁a, wr₁a⟩ := movR_ok s₀ sb .a3
   obtain ⟨s₁, e₁, r₁, o₁, m₁, rd₁, wr₁⟩ := movR_ok s₁a .a3 .a1
-  have hb₁ : s₁.gpr sb = b := by rw [o₁ _ (by decide), r₁a, hb]
-  have g₁ : ∀ r, r ≠ sb → r ≠ .a3 → s₁.gpr r = s₀.gpr r := fun r h1 h2 => by rw [o₁ r h2, o₁a r h1]
+  obtain hb₁ : s₁.gpr sb = b := by rw [o₁ _ (by decide), r₁a, hb]
+  obtain g₁ : ∀ r, r ≠ sb → r ≠ .a3 → s₁.gpr r = s₀.gpr r := fun r h1 h2 => by rw [o₁ r h2, o₁a r h1]
   obtain ⟨s₂, e₂, sv₂, g₂, rd₂, wr₂, f₂, -⟩ := save_ok (b := b) (by rw [wr₁, wr₁a]; exact hw) hb₁ hal
   obtain ⟨s₃, e₃, v₃, g₃, rd₃, wr₃, f₃⟩ := setSlots_ok (b := b) (by rw [wr₂, wr₁, wr₁a]; exact hw)
     (by rw [g₂, hb₁]) hal
-  have hb₃ : s₃.gpr sb = b := by rw [g₃ _ (by decide) (by decide), g₂, hb₁]
+  obtain hb₃ : s₃.gpr sb = b := by rw [g₃ _ (by decide) (by decide), g₂, hb₁]
   obtain ⟨s₄, e₄, k₄, o₄, m₄, rd₄, wr₄⟩ := setKp_ok s₃
-  have hb₄ : s₄.gpr sb = b := by rw [o₄ _ (by decide), hb₃]
+  obtain hb₄ : s₄.gpr sb = b := by rw [o₄ _ (by decide), hb₃]
   obtain ⟨s₅, e₅, v₅, f₅, r₅, g₅, rd₅, wr₅⟩ := sigmaList_ok hfit hal sigmas 0 s₄
     (by rw [wr₄, wr₃, wr₂, wr₁, wr₁a]; exact hw)
     (by rw [k₄, hb₃]; simp) (by decide)
-  have hb₅ : s₅.gpr sb = b := by rw [g₅ _ (by decide) (by decide) (by decide), hb₄]
+  obtain hb₅ : s₅.gpr sb = b := by rw [g₅ _ (by decide) (by decide) (by decide), hb₄]
   -- The slots outside the table keep their values.
-  have hs₅ : ∀ k, k < keySlot ∨ keySlot + 48 ≤ k → k < slots → slotW s₅ k = slotW s₃ k := fun k h1 h2 => by
+  obtain hs₅ : ∀ k, k < keySlot ∨ keySlot + 48 ≤ k → k < slots → slotW s₅ k = slotW s₃ k := fun k h1 h2 => by
     simp only [slotW, hb₅, hb₃]
     rw [← m₄]
     refine f₅.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
@@ -584,7 +584,7 @@ theorem ekPrologue_ok {s₀ : State} {b : Addr} (hb : s₀.gpr .a3 = b) (hw : (�
     have := sv₂ i hi
     rw [show s₁.gpr (sreg i) = s₀.gpr (sreg i) from g₁ _ n.1 n.2] at this
     rw [← this]
-    have h' := hs₅ (savedSlot + i) (Or.inl (by omega_arith)) (by omega_arith)
+    obtain h' := hs₅ (savedSlot + i) (Or.inl (by omega_arith)) (by omega_arith)
     simp only [slotW, hb₅, hb₃] at h'
     rw [h']
     refine f₃.readW (Region.contains_self _ _) (fun r hr => ?_) (by decide)
@@ -599,10 +599,10 @@ theorem ekPrologue_ok {s₀ : State} {b : Addr} (hb : s₀.gpr .a3 = b) (hw : (�
   · have sub : ∀ {r : Region}, Region.Sub r ⟨b, 8 * slots⟩ → ∀ r' ∈ [r], ∃ r'' ∈ [(⟨b, 8 * slots⟩ : Region)],
         Region.Sub r' r'' := fun hs r' hr' => ⟨_, List.mem_singleton_self _, by
       simp only [List.mem_singleton] at hr'; subst hr'; exact hs⟩
-    have f₂' : Frame [⟨b, 8 * slots⟩] s₁.mem s₂.mem :=
+    obtain f₂' : Frame [⟨b, 8 * slots⟩] s₁.mem s₂.mem :=
       f₂.sub (sub (VG.Offset.sub_base b (by omega_arith)))
-    have f₃' : Frame [⟨b, 8 * slots⟩] s₂.mem s₃.mem := f₃.sub (sub (Region.sub_prefix (by omega_arith)))
-    have f₅' : Frame [⟨b, 8 * slots⟩] s₄.mem s₅.mem := f₅.sub (sub (by
+    obtain f₃' : Frame [⟨b, 8 * slots⟩] s₂.mem s₃.mem := f₃.sub (sub (Region.sub_prefix (by omega_arith)))
+    obtain f₅' : Frame [⟨b, 8 * slots⟩] s₄.mem s₅.mem := f₅.sub (sub (by
       simp only [Nat.mul_zero, Nat.add_zero, sigmas, List.length_cons, List.length_nil]
       exact VG.Offset.sub_base b (by omega_arith)))
     rw [m₁, m₁a] at f₂'
@@ -679,17 +679,17 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
   obtain ⟨hl', hr', hW, hA, hB, hE, hK, hS⟩ := kaKb_slots
   have ht := tailSlot_eq
   have hsv := savedSlot_eq
-  have hwB : (⟨s₀.gpr .a3, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  have hwS : (⟨s₀.gpr .a2, 272⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  have hrK : (⟨s₀.gpr .a0, (s₀.gpr .a1).toNat⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
+  obtain hwB : (⟨s₀.gpr .a3, 8 * slots⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  obtain hwS : (⟨s₀.gpr .a2, 272⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  obtain hrK : (⟨s₀.gpr .a0, (s₀.gpr .a1).toNat⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
   unfold expandKey
   -- The prologue.
   obtain ⟨s₁, e₁, b₁, r6₁, g₁, sv₁, mk₁, ent₁, f₁, rd₁, wr₁⟩ := ekPrologue_ok (b := s₀.gpr .a3) rfl hwB fitB hal
   refine WP.seq (WP.of_runBlock ⟨s₁, e₁, ?_⟩)
-  have r3₁ : s₁.gpr .a0 = s₀.gpr .a0 := g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide)
-  have r5₁ : s₁.gpr .a2 = s₀.gpr .a2 := g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain r3₁ : s₁.gpr .a0 = s₀.gpr .a0 := g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide)
+  obtain r5₁ : s₁.gpr .a2 = s₀.gpr .a2 := g₁ _ (by decide) (by decide) (by decide) (by decide) (by decide)
   -- The key, unchanged so far.
-  have hkey₁ : Spec.Camellia.bytesAt s₁.mem (s₁.gpr .a0) (s₀.gpr .a1).toNat =
+  obtain hkey₁ : Spec.Camellia.bytesAt s₁.mem (s₁.gpr .a0) (s₀.gpr .a1).toNat =
       Spec.Camellia.bytesAt s₀.mem (s₀.gpr .a0) (s₀.gpr .a1).toNat := by
     rw [r3₁]
     refine Proof.Camellia.bytesAt_congr fun i hi => f₁.bytes (R := ⟨s₀.gpr .a0, (s₀.gpr .a1).toNat⟩)
@@ -705,23 +705,23 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
   rw [hkey₁] at kl₂ kr₂
   -- Abbreviations.
   generalize hkey : Spec.Camellia.bytesAt s₀.mem (s₀.gpr .a0) (s₀.gpr .a1).toNat = key at kl₂ kr₂
-  have hb₂ : s₂.gpr sb = s₀.gpr .a3 := by rw [g₂ _ (by decide) (by decide), b₁]
+  obtain hb₂ : s₂.gpr sb = s₀.gpr .a3 := by rw [g₂ _ (by decide) (by decide), b₁]
   -- `kp` at the table.
   obtain ⟨s₄, e₄, a₄, o₄, m₄, rd₄, wr₄⟩ := setKp_ok s₂
   refine WP.seq (WP.of_runBlock ⟨s₄, e₄, ?_⟩)
   have hg₄ : ∀ r, r ≠ kp → s₄.gpr r = s₂.gpr r := o₄
-  have hb₄ : s₄.gpr sb = s₀.gpr .a3 := by rw [hg₄ _ (by decide), hb₂]
-  have hs₄ : ∀ k, slotW s₄ k = slotW s₂ k := slotW_eq_of m₄ (hg₄ _ (by decide))
-  have r5₄ : s₄.gpr .a2 = s₀.gpr .a2 := by
+  obtain hb₄ : s₄.gpr sb = s₀.gpr .a3 := by rw [hg₄ _ (by decide), hb₂]
+  obtain hs₄ : ∀ k, slotW s₄ k = slotW s₂ k := slotW_eq_of m₄ (hg₄ _ (by decide))
+  obtain r5₄ : s₄.gpr .a2 = s₀.gpr .a2 := by
     rw [hg₄ _ (by decide), g₂ _ (by decide) (by decide), r5₁]
-  have r6₄ : s₄.gpr .a3 = s₀.gpr .a1 := by
+  obtain r6₄ : s₄.gpr .a3 = s₀.gpr .a1 := by
     rw [hg₄ _ (by decide), g₂ _ (by decide) (by decide), r6₁]
-  have wr₄' : s₄.wr = s₀.wr := by rw [wr₄, wr₂, wr₁]
-  have hlow : ∀ k < slots, (k < klSlot ∨ krSlot + 2 ≤ k) → slotW s₄ k = slotW s₁ k := fun k hk h => by
+  obtain wr₄' : s₄.wr = s₀.wr := by rw [wr₄, wr₂, wr₁]
+  obtain hlow : ∀ k < slots, (k < klSlot ∨ krSlot + 2 ≤ k) → slotW s₄ k = slotW s₁ k := fun k hk h => by
     rw [hs₄, sl₂ k hk h]
   let KL : BitVec 64 × BitVec 64 := (hiW (Spec.Camellia.klkr key).1, loW (Spec.Camellia.klkr key).1)
   let KR : BitVec 64 × BitVec 64 := (hiW (Spec.Camellia.klkr key).2, loW (Spec.Camellia.klkr key).2)
-  have hpre : KaPre s₄ KL KR := by
+  obtain hpre : KaPre s₄ KL KR := by
     refine ⟨⟨?_, by rw [hb₄]; exact hal, ?_, by decide, fun kv hkv => ?_, fun i hi => ?_⟩, ?_,
       kl₂.congr (hs₄ _) (hs₄ _), kr₂.congr (hs₄ _) (hs₄ _)⟩
     · rw [hb₄, wr₄']; exact hwB
@@ -734,9 +734,9 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
     · rw [AtEntry, a₄, hb₄, hb₂]; simp
   -- `KA` and `KB`.
   refine WP.seq (WP.mono (kaKb_wp hpre) fun s₅ h₅ => ?_)
-  have hb₅ : s₅.gpr sb = s₀.gpr .a3 := h₅.base.trans hb₄
-  have wr₅ : s₅.wr = s₀.wr := h₅.wr.trans wr₄'
-  have hscr₅ : (⟨s₀.gpr .a3, 8 * slots⟩ : Region) ∈ s₅.wr := by rw [wr₅]; exact hwB
+  obtain hb₅ : s₅.gpr sb = s₀.gpr .a3 := h₅.base.trans hb₄
+  obtain wr₅ : s₅.wr = s₀.wr := h₅.wr.trans wr₄'
+  obtain hscr₅ : (⟨s₀.gpr .a3, 8 * slots⟩ : Region) ∈ s₅.wr := by rw [wr₅]; exact hwB
   -- The values, byte-swapped into registers.
   obtain ⟨hKA, hKB⟩ := kaD_eq (Spec.Camellia.klkr key).1 (Spec.Camellia.klkr key).2
   have hKA' : kaD2 KL KR = _ := hKA
@@ -750,23 +750,23 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
       · exact h₅.kr hpre
       · have := h₅.ka (by decide); rw [hKA'] at this; exact this
       · have := h₅.kb (by decide); rw [hKB'] at this; exact this)
-  have hnv : ∀ r : Reg, r ∈ [sb, Reg.a2, Reg.a3] → ∀ v < 4, r ≠ hiReg v ∧ r ≠ loReg v := by decide
-  have hb₆ : s₆.gpr sb = s₀.gpr .a3 := by rw [o₆ _ (hnv _ (by simp)) (by decide), hb₅]
-  have r6₅ : s₅.gpr .a3 = s₀.gpr .a1 := by
+  obtain hnv : ∀ r : Reg, r ∈ [sb, Reg.a2, Reg.a3] → ∀ v < 4, r ≠ hiReg v ∧ r ≠ loReg v := by decide
+  obtain hb₆ : s₆.gpr sb = s₀.gpr .a3 := by rw [o₆ _ (hnv _ (by simp)) (by decide), hb₅]
+  obtain r6₅ : s₅.gpr .a3 = s₀.gpr .a1 := by
     rw [h₅.regs _ (by decide) (by decide) (by decide) (by decide), r6₄]
   -- The key's length.
   obtain ⟨s₈, e₈, z₈, g₈, m₈, rd₈, wr₈⟩ := subI_ok s₆ t0 .a3 16 (by decide)
-  have hz₈ : (s₈.gpr t0 == 0) = decide ((s₀.gpr .a1).toNat = 16) := by
+  obtain hz₈ : (s₈.gpr t0 == 0) = decide ((s₀.gpr .a1).toNat = 16) := by
     rw [z₈, o₆ _ (hnv _ (by simp)) (by decide), r6₅]
     conv => lhs; rw [show s₀.gpr .a1 = BitVec.ofNat 64 (s₀.gpr .a1).toNat by
       rw [BitVec.ofNat_toNat, BitVec.setWidth_eq]]
     rw [VG.Offset.ofNat_sub_ofNat_beq (by omega_using []) (by decide)]
   refine WP.seq (WP.of_runBlock ⟨s₈, by rw [runBlock_append', e₆, Option.bind_some, e₈], ?_⟩)
   -- The subkeys.
-  have hx2₈ : s₈.gpr .a2 = s₀.gpr .a2 := by
+  obtain hx2₈ : s₈.gpr .a2 = s₀.gpr .a2 := by
     rw [g₈ _ (by decide), o₆ _ (hnv _ (by simp)) (by decide), h₅.regs _ (by decide) (by decide) (by decide) (by decide), r5₄]
-  have hwS₈ : (⟨s₀.gpr .a2, 272⟩ : Region) ∈ s₈.wr := by rw [wr₈, wr₆, wr₅]; exact hwS
-  have hg₈ : ∀ v < 4, s₈.gpr (hiReg v) = hiW ([(Spec.Camellia.klkr key).1, (Spec.Camellia.klkr key).2,
+  obtain hwS₈ : (⟨s₀.gpr .a2, 272⟩ : Region) ∈ s₈.wr := by rw [wr₈, wr₆, wr₅]; exact hwS
+  obtain hg₈ : ∀ v < 4, s₈.gpr (hiReg v) = hiW ([(Spec.Camellia.klkr key).1, (Spec.Camellia.klkr key).2,
         (Spec.Camellia.kakb (Spec.Camellia.klkr key).1 (Spec.Camellia.klkr key).2).1,
         (Spec.Camellia.kakb (Spec.Camellia.klkr key).1 (Spec.Camellia.klkr key).2).2].getD v 0) ∧
       s₈.gpr (loReg v) = loW ([(Spec.Camellia.klkr key).1, (Spec.Camellia.klkr key).2,
@@ -775,7 +775,7 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
     fun v hv => by
       obtain ⟨n1, -, n3, -⟩ := hiReg_ne v hv
       rw [g₈ _ n1, g₈ _ n3]; exact v₆ v hv
-  have hklen : key.length = (s₀.gpr .a1).toNat := by rw [← hkey]; simp [Spec.Camellia.bytesAt]
+  obtain hklen : key.length = (s₀.gpr .a1).toNat := by rw [← hkey]; simp [Spec.Camellia.bytesAt]
   refine WP.seq (WP.mono (Q := StoresPost s₈ (s₀.gpr .a2) (s₀.gpr .a1).toNat key)
     (WP.ite (decide ((s₀.gpr .a1).toNat = 16)) ((eval_zero s₈ t0).trans (by rw [hz₈])) (fun h16 => ?_)
       (fun h16 => ?_))
@@ -788,8 +788,8 @@ theorem expandKey_wp {s₀ : State} (hp : expandKeyRISCV64.pre s₀) :
       (by rw [subkeys_length.2]; simp only [Spec.Camellia.rounds, h16, ↓reduceIte]; rfl)
       (by rw [hklen, ite_eq_right h16])
   -- The epilogue.
-  have hb₉ : s₉.gpr sb = s₀.gpr .a3 := by rw [h₉.regs _ (by decide) (by decide), g₈ _ (by decide), hb₆]
-  have hSB : ∀ k, savedSlot ≤ k → k < savedSlot + 12 →
+  obtain hb₉ : s₉.gpr sb = s₀.gpr .a3 := by rw [h₉.regs _ (by decide) (by decide), g₈ _ (by decide), hb₆]
+  obtain hSB : ∀ k, savedSlot ≤ k → k < savedSlot + 12 →
       s₉.mem.readW (wordAddr (s₀.gpr .a3) k) 64 = s₁.mem.readW (wordAddr (s₀.gpr .a3) k) 64 := by
     intro k h1 h2
     rw [h₉.frame.readW (Region.contains_self _ _) (fun r hr => by

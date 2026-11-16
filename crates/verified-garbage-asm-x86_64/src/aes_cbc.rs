@@ -115,6 +115,8 @@ pub const VG_AES_CBC_ENCRYPT_AESNI_SCRATCH_WRITTEN: usize = 0;
 ///
 /// Contract: `VG.Spec.Cbc.aesEncryptContract`. Constant time: only the pointers, `rounds` and `n` may affect timing, not the key schedule, the chaining value or the data.
 ///
+/// It returns without secret residue: what it leaves in the registers, the flags and the stack below the caller's stack pointer is determined by what its caller left there and by public data (`Target.noResidue`).
+///
 /// It writes at most the first 0 bytes of `scratch` (`VG_AES_CBC_ENCRYPT_AESNI_SCRATCH_WRITTEN`): no byte of `scratch` beyond them changes.
 ///
 /// # Safety
@@ -126,40 +128,37 @@ pub const VG_AES_CBC_ENCRYPT_AESNI_SCRATCH_WRITTEN: usize = 0;
 /// * `rounds` must be 10, 12 or 14.
 /// * On return each byte of `scratch` is unchanged or zero.
 /// * `iv`, `data` and `scratch` must not overlap each other or `schedule` (distinct Rust objects never do).
-/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack or the 8 bytes of stack below it, or wrap around the end of the address space (no Rust object does).
+/// * None of `schedule`, `iv`, `data` and `scratch` may overlap the return address on the stack, or wrap around the end of the address space (no Rust object does).
 /// * The CPU must support the `aes` target feature.
 #[unsafe(naked)]
 pub(crate) unsafe extern "sysv64" fn vg_aes_cbc_encrypt_aesni(schedule: *const [u8; 240], rounds: usize, iv: *mut [u8; 16], data: *mut [u8; 16], n: usize, scratch: *mut [u64; 272]) {
     core::arch::naked_asm!(
         r#".base64 "TYXA"
 je 20f
-.base64 "8w9vD/MPbwJmD+/B8w9vVxDzD29fIPMPb2cw8w9vb0DzD293UPMPb39g80QPb0dw80QPb4+AAAAA80QPb5eQAAAA80QPb5+gAAAA80QPb6ewAAAA80QPb6/AAAAA80QPb7fQAAAASIP+Cg=="
+.base64 "8w9vAkiD/go="
 je 22f
 .base64 "SIP+DA=="
 je 24f
-.base64 "80QPb7/gAAAAZkQP7/k="
 26:
-.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843MNmQQ843MRmQQ843MVmQQ843MZmQQ843cdIg8EQSYPoAfMPbw9mD+/I8w9/SfA="
+.base64 "8w9vCfMPbxdmD+/KZg/vwfMPb08QZg843MHzD29PIGYPONzB8w9vTzBmDzjcwfMPb09AZg843MHzD29PUGYPONzB8w9vT2BmDzjcwfMPb09wZg843MHzD2+PgAAAAGYPONzB8w9vj5AAAABmDzjcwfMPb4+gAAAAZg843MHzD2+PsAAAAGYPONzB8w9vj8AAAABmDzjcwfMPb4/QAAAAZg843MHzD2+P4AAAAGYPON3B8w9/AUiDwRBJg+gB"
 jne 26b
 jmp 25f
 24:
-.base64 "80QPb7/AAAAAZkQP7/k="
 27:
-.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843MNmQQ843MRmQQ843cdIg8EQSYPoAfMPbw9mD+/I8w9/SfA="
+.base64 "8w9vCfMPbxdmD+/KZg/vwfMPb08QZg843MHzD29PIGYPONzB8w9vTzBmDzjcwfMPb09AZg843MHzD29PUGYPONzB8w9vT2BmDzjcwfMPb09wZg843MHzD2+PgAAAAGYPONzB8w9vj5AAAABmDzjcwfMPb4+gAAAAZg843MHzD2+PsAAAAGYPONzB8w9vj8AAAABmDzjdwfMPfwFIg8EQSYPoAQ=="
 jne 27b
 25:
 jmp 23f
 22:
-.base64 "80QPb7+gAAAAZkQP7/k="
 28:
-.base64 "8w9vCWYP78FmDzjcwmYPONzDZg843MRmDzjcxWYPONzGZg843MdmQQ843MBmQQ843MFmQQ843MJmQQ843cdIg8EQSYPoAfMPbw9mD+/I8w9/SfA="
+.base64 "8w9vCfMPbxdmD+/KZg/vwfMPb08QZg843MHzD29PIGYPONzB8w9vTzBmDzjcwfMPb09AZg843MHzD29PUGYPONzB8w9vT2BmDzjcwfMPb09wZg843MHzD2+PgAAAAGYPONzB8w9vj5AAAABmDzjcwfMPb4+gAAAAZg843cHzD38BSIPBEEmD6AE="
 jne 28b
 23:
-.base64 "8w9vD2YP78HzD38C"
+.base64 "8w9/Ag=="
 jmp 21f
 20:
 21:
-.base64 "ww=="
+.base64 "Zg/vwGYP78lmD+/SMcAxyTH2RTHAww=="
 .p2align 6"#,
     )
 }

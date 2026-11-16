@@ -48,24 +48,24 @@ theorem hb_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (highB
     SP p A B (callP nm c [.buf ⟨ra, ro, 1024⟩, .imm g, .buf ⟨oa, oo, 1024⟩]) := by
   set R : Buf := ⟨ra, ro, 1024⟩
   set O : Buf := ⟨oa, oo, 1024⟩
-  have gl := gamma2_lt hγ
+  obtain gl := gamma2_lt hγ
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨hR, hO⟩, dRO⟩ := hc
-  have hO' := (Lay.okW_iff.mp hO).1
+  obtain hO' := (Lay.okW_iff.mp hO).1
   refine callP_piece _ 3 rfl hv ok (by decide) (by decide) (by simp [argOk, hR, hO']) (fun s₀ => [R.rgn s₀])
     (fun s₀ => [O.rgn s₀, below (E1 s₀) 12]) (fun s₀ s hp ha => (hA s₀ s hp ha).1)
     (fun s₀ s₁ hp ⟨s, ha, h, m, hg⟩ => ?_) (fun s₀ s₀' s₁ s₁' hp hp' hq ⟨s, ha, h, m, hg⟩ ⟨s', ha', h', m', hg'⟩ => ?_)
     (fun s₀ hp r hr => ?_) (fun s₀ s₁ s' hp ⟨s, ha, h, m, hg⟩ h' fr post => ?_)
   · have a0 : arg (pushed (argPush 3) s₁).callEntry 0 = R.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 3) s₁).callEntry 1 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 3) s₁).callEntry 2 = O.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 2) (by simp)
-    have eA : argAddr (pushed (argPush 3) s₁).callEntry 0 = _ := ent_arg0 h (n := 3) (by decide)
-    have eSp : (pushed (argPush 3) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 3) (by decide)
+    obtain a1 : arg (pushed (argPush 3) s₁).callEntry 1 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 3) s₁).callEntry 2 = O.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 2) (by simp)
+    obtain eA : argAddr (pushed (argPush 3) s₁).callEntry 0 = _ := ent_arg0 h (n := 3) (by decide)
+    obtain eSp : (pushed (argPush 3) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 3) (by decide)
     obtain ⟨rR₁, rR₂, rR₃⟩ := ent_rgn hp hR (n := 3) (K := 16) (by decide)
     obtain ⟨rO₁, rO₂, rO₃⟩ := ent_rgn hp hO' (n := 3) (K := 16) (by decide)
     obtain ⟨rA₂, rA₃⟩ := ent_self hp (n := 3) (K := 16) (by decide)
-    have hE := E1_big hp
-    have cv := covers_of (s := s₁) (n := 3) (rd := [R.rgn s₀]) (wr := [O.rgn s₀, below (E1 s₀) 12])
+    obtain hE := E1_big hp
+    obtain cv := covers_of (s := s₁) (n := 3) (rd := [R.rgn s₀]) (wr := [O.rgn s₀, below (E1 s₀) 12])
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         subst hr; exact Buf.within hp hR h.rd h.wr) fun r hr => by
@@ -83,16 +83,16 @@ theorem hb_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (highB
       Buf.fit hp hR, Buf.fit hp hO', hγ, ?_⟩
     exact reduced_congr (ent_bytes hp h (n := 3) (by decide) hR) (m ▸ (hA s₀ s hp ha).2)
   · have e₁ : R.ptr s₀ = R.ptr s₀' := hq.t.ptr hR
-    have e₂ : O.ptr s₀ = O.ptr s₀' := hq.t.ptr hO'
+    obtain e₂ : O.ptr s₀ = O.ptr s₀' := hq.t.ptr hO'
     refine ⟨by simp only [Buf.rgn, e₁], by simp only [Buf.rgn, e₂, hq.t.E1], ?_⟩
-    have a0 : arg (pushed (argPush 3) s₁).callEntry 0 = R.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 3) s₁).callEntry 1 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 3) s₁).callEntry 2 = O.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 2) (by simp)
-    have a0' : arg (pushed (argPush 3) s₁').callEntry 0 = R.ptr s₀' := ent_arg hp' h' (as := [.buf R, .imm g, .buf O]) (by simp) hg' (i := 0) (by simp)
-    have a1' : arg (pushed (argPush 3) s₁').callEntry 1 = BitVec.ofNat 32 g := ent_arg hp' h' (as := [.buf R, .imm g, .buf O]) (by simp) hg' (i := 1) (by simp)
-    have a2' : arg (pushed (argPush 3) s₁').callEntry 2 = O.ptr s₀' := ent_arg hp' h' (as := [.buf R, .imm g, .buf O]) (by simp) hg' (i := 2) (by simp)
-    have eSp : (pushed (argPush 3) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 3) (by decide)
-    have eSp' : (pushed (argPush 3) s₁').callEntry.gpr .esp = _ := ent_esp h' (n := 3) (by decide)
+    obtain a0 : arg (pushed (argPush 3) s₁).callEntry 0 = R.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 0) (by simp)
+    obtain a1 : arg (pushed (argPush 3) s₁).callEntry 1 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 3) s₁).callEntry 2 = O.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 2) (by simp)
+    obtain a0' : arg (pushed (argPush 3) s₁').callEntry 0 = R.ptr s₀' := ent_arg hp' h' (as := [.buf R, .imm g, .buf O]) (by simp) hg' (i := 0) (by simp)
+    obtain a1' : arg (pushed (argPush 3) s₁').callEntry 1 = BitVec.ofNat 32 g := ent_arg hp' h' (as := [.buf R, .imm g, .buf O]) (by simp) hg' (i := 1) (by simp)
+    obtain a2' : arg (pushed (argPush 3) s₁').callEntry 2 = O.ptr s₀' := ent_arg hp' h' (as := [.buf R, .imm g, .buf O]) (by simp) hg' (i := 2) (by simp)
+    obtain eSp : (pushed (argPush 3) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 3) (by decide)
+    obtain eSp' : (pushed (argPush 3) s₁').callEntry.gpr .esp = _ := ent_esp h' (n := 3) (by decide)
     generalize he : (pushed (argPush 3) s₁).callEntry = e at a0 a1 a2 eSp ⊢
     generalize he' : (pushed (argPush 3) s₁').callEntry = e' at a0' a1' a2' eSp' ⊢
     sig_pub [highBitsContract, bitsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
@@ -102,9 +102,9 @@ theorem hb_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (highB
     · exact Buf.inW hp hO' (Lay.okW_iff.mp hO).2
     · exact stk_W hp (by decide)
   · obtain ⟨s₂, m₂, post⟩ := post
-    have a0 : arg (pushed (argPush 3) s₁).callEntry 0 = R.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 3) s₁).callEntry 1 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 3) s₁).callEntry 2 = O.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 2) (by simp)
+    obtain a0 : arg (pushed (argPush 3) s₁).callEntry 0 = R.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 0) (by simp)
+    obtain a1 : arg (pushed (argPush 3) s₁).callEntry 1 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 3) s₁).callEntry 2 = O.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 2) (by simp)
     generalize he : (pushed (argPush 3) s₁).callEntry = e at a0 a1 a2 post
     sig_post [highBitsContract, bitsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
@@ -123,24 +123,24 @@ theorem lb_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (lowBi
     SP p A B (callP nm c [.buf ⟨ra, ro, 1024⟩, .imm g, .buf ⟨oa, oo, 1024⟩]) := by
   set R : Buf := ⟨ra, ro, 1024⟩
   set O : Buf := ⟨oa, oo, 1024⟩
-  have gl := gamma2_lt hγ
+  obtain gl := gamma2_lt hγ
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨hR, hO⟩, dRO⟩ := hc
-  have hO' := (Lay.okW_iff.mp hO).1
+  obtain hO' := (Lay.okW_iff.mp hO).1
   refine callP_piece _ 3 rfl hv ok (by decide) (by decide) (by simp [argOk, hR, hO']) (fun s₀ => [R.rgn s₀])
     (fun s₀ => [O.rgn s₀, below (E1 s₀) 12]) (fun s₀ s hp ha => (hA s₀ s hp ha).1)
     (fun s₀ s₁ hp ⟨s, ha, h, m, hg⟩ => ?_) (fun s₀ s₀' s₁ s₁' hp hp' hq ⟨s, ha, h, m, hg⟩ ⟨s', ha', h', m', hg'⟩ => ?_)
     (fun s₀ hp r hr => ?_) (fun s₀ s₁ s' hp ⟨s, ha, h, m, hg⟩ h' fr post => ?_)
   · have a0 : arg (pushed (argPush 3) s₁).callEntry 0 = R.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 3) s₁).callEntry 1 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 3) s₁).callEntry 2 = O.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 2) (by simp)
-    have eA : argAddr (pushed (argPush 3) s₁).callEntry 0 = _ := ent_arg0 h (n := 3) (by decide)
-    have eSp : (pushed (argPush 3) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 3) (by decide)
+    obtain a1 : arg (pushed (argPush 3) s₁).callEntry 1 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 3) s₁).callEntry 2 = O.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 2) (by simp)
+    obtain eA : argAddr (pushed (argPush 3) s₁).callEntry 0 = _ := ent_arg0 h (n := 3) (by decide)
+    obtain eSp : (pushed (argPush 3) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 3) (by decide)
     obtain ⟨rR₁, rR₂, rR₃⟩ := ent_rgn hp hR (n := 3) (K := 16) (by decide)
     obtain ⟨rO₁, rO₂, rO₃⟩ := ent_rgn hp hO' (n := 3) (K := 16) (by decide)
     obtain ⟨rA₂, rA₃⟩ := ent_self hp (n := 3) (K := 16) (by decide)
-    have hE := E1_big hp
-    have cv := covers_of (s := s₁) (n := 3) (rd := [R.rgn s₀]) (wr := [O.rgn s₀, below (E1 s₀) 12])
+    obtain hE := E1_big hp
+    obtain cv := covers_of (s := s₁) (n := 3) (rd := [R.rgn s₀]) (wr := [O.rgn s₀, below (E1 s₀) 12])
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         subst hr; exact Buf.within hp hR h.rd h.wr) fun r hr => by
@@ -158,16 +158,16 @@ theorem lb_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (lowBi
       Buf.fit hp hR, Buf.fit hp hO', hγ, ?_⟩
     exact reduced_congr (ent_bytes hp h (n := 3) (by decide) hR) (m ▸ (hA s₀ s hp ha).2)
   · have e₁ : R.ptr s₀ = R.ptr s₀' := hq.t.ptr hR
-    have e₂ : O.ptr s₀ = O.ptr s₀' := hq.t.ptr hO'
+    obtain e₂ : O.ptr s₀ = O.ptr s₀' := hq.t.ptr hO'
     refine ⟨by simp only [Buf.rgn, e₁], by simp only [Buf.rgn, e₂, hq.t.E1], ?_⟩
-    have a0 : arg (pushed (argPush 3) s₁).callEntry 0 = R.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 3) s₁).callEntry 1 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 3) s₁).callEntry 2 = O.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 2) (by simp)
-    have a0' : arg (pushed (argPush 3) s₁').callEntry 0 = R.ptr s₀' := ent_arg hp' h' (as := [.buf R, .imm g, .buf O]) (by simp) hg' (i := 0) (by simp)
-    have a1' : arg (pushed (argPush 3) s₁').callEntry 1 = BitVec.ofNat 32 g := ent_arg hp' h' (as := [.buf R, .imm g, .buf O]) (by simp) hg' (i := 1) (by simp)
-    have a2' : arg (pushed (argPush 3) s₁').callEntry 2 = O.ptr s₀' := ent_arg hp' h' (as := [.buf R, .imm g, .buf O]) (by simp) hg' (i := 2) (by simp)
-    have eSp : (pushed (argPush 3) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 3) (by decide)
-    have eSp' : (pushed (argPush 3) s₁').callEntry.gpr .esp = _ := ent_esp h' (n := 3) (by decide)
+    obtain a0 : arg (pushed (argPush 3) s₁).callEntry 0 = R.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 0) (by simp)
+    obtain a1 : arg (pushed (argPush 3) s₁).callEntry 1 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 3) s₁).callEntry 2 = O.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 2) (by simp)
+    obtain a0' : arg (pushed (argPush 3) s₁').callEntry 0 = R.ptr s₀' := ent_arg hp' h' (as := [.buf R, .imm g, .buf O]) (by simp) hg' (i := 0) (by simp)
+    obtain a1' : arg (pushed (argPush 3) s₁').callEntry 1 = BitVec.ofNat 32 g := ent_arg hp' h' (as := [.buf R, .imm g, .buf O]) (by simp) hg' (i := 1) (by simp)
+    obtain a2' : arg (pushed (argPush 3) s₁').callEntry 2 = O.ptr s₀' := ent_arg hp' h' (as := [.buf R, .imm g, .buf O]) (by simp) hg' (i := 2) (by simp)
+    obtain eSp : (pushed (argPush 3) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 3) (by decide)
+    obtain eSp' : (pushed (argPush 3) s₁').callEntry.gpr .esp = _ := ent_esp h' (n := 3) (by decide)
     generalize he : (pushed (argPush 3) s₁).callEntry = e at a0 a1 a2 eSp ⊢
     generalize he' : (pushed (argPush 3) s₁').callEntry = e' at a0' a1' a2' eSp' ⊢
     sig_pub [lowBitsContract, bitsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
@@ -177,9 +177,9 @@ theorem lb_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (lowBi
     · exact Buf.inW hp hO' (Lay.okW_iff.mp hO).2
     · exact stk_W hp (by decide)
   · obtain ⟨s₂, m₂, post⟩ := post
-    have a0 : arg (pushed (argPush 3) s₁).callEntry 0 = R.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 3) s₁).callEntry 1 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 3) s₁).callEntry 2 = O.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 2) (by simp)
+    obtain a0 : arg (pushed (argPush 3) s₁).callEntry 0 = R.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 0) (by simp)
+    obtain a1 : arg (pushed (argPush 3) s₁).callEntry 1 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 3) s₁).callEntry 2 = O.ptr s₀ := ent_arg hp h (as := [.buf R, .imm g, .buf O]) (by simp) hg (i := 2) (by simp)
     generalize he : (pushed (argPush 3) s₁).callEntry = e at a0 a1 a2 post
     sig_post [lowBitsContract, bitsSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
@@ -195,19 +195,19 @@ theorem norm_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (nor
       s'.gpr .eax = (if normRq [polyAt s.mem (Buf.addr s₀ ⟨fa, fo, 1024⟩)] < bnd then 1 else 0) → B s₀ s') :
     SP p A B (callPR nm c [.buf ⟨fa, fo, 1024⟩, .imm bnd]) := by
   set F : Buf := ⟨fa, fo, 1024⟩
-  have bl : (BitVec.ofNat 32 bnd).toNat = bnd := by rw [BitVec.toNat_ofNat]; omega_arith
+  obtain bl : (BitVec.ofNat 32 bnd).toNat = bnd := by rw [BitVec.toNat_ofNat]; omega_arith
   refine callPR_piece _ 2 rfl hv ok (by decide) (by decide) (by simp [argOk, hc]) (fun s₀ => [F.rgn s₀, below (E1 s₀) 8])
     (fun _ => []) (fun s₀ s hp ha => (hA s₀ s hp ha).1)
     (fun s₀ s₁ hp ⟨s, ha, h, m, hg⟩ => ?_) (fun s₀ s₀' s₁ s₁' hp hp' hq ⟨s, ha, h, m, hg⟩ ⟨s', ha', h', m', hg'⟩ => ?_)
     (fun s₀ hp r hr => absurd hr List.not_mem_nil) (fun s₀ s₁ s' hp ⟨s, ha, h, m, hg⟩ h' fr post => ?_)
   · have a0 : arg (pushed (argPush 2) s₁).callEntry 0 = F.ptr s₀ := ent_arg hp h (as := [.buf F, .imm bnd]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 2) s₁).callEntry 1 = BitVec.ofNat 32 bnd := ent_arg hp h (as := [.buf F, .imm bnd]) (by simp) hg (i := 1) (by simp)
-    have eA : argAddr (pushed (argPush 2) s₁).callEntry 0 = _ := ent_arg0 h (n := 2) (by decide)
-    have eSp : (pushed (argPush 2) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 2) (by decide)
+    obtain a1 : arg (pushed (argPush 2) s₁).callEntry 1 = BitVec.ofNat 32 bnd := ent_arg hp h (as := [.buf F, .imm bnd]) (by simp) hg (i := 1) (by simp)
+    obtain eA : argAddr (pushed (argPush 2) s₁).callEntry 0 = _ := ent_arg0 h (n := 2) (by decide)
+    obtain eSp : (pushed (argPush 2) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 2) (by decide)
     obtain ⟨rF₁, rF₂, rF₃⟩ := ent_rgn hp hc (n := 2) (K := 16) (by decide)
     obtain ⟨rA₂, rA₃⟩ := ent_self hp (n := 2) (K := 16) (by decide)
-    have hE := E1_big hp
-    have cv := covers_ro (s := s₁) (n := 2) (rd := [F.rgn s₀, below (E1 s₀) 8]) fun r hr => by
+    obtain hE := E1_big hp
+    obtain cv := covers_ro (s := s₁) (n := 2) (rd := [F.rgn s₀, below (E1 s₀) 8]) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact .inr (Buf.within hp hc h.rd h.wr)
@@ -222,19 +222,19 @@ theorem norm_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (nor
     exact reduced_congr (ent_bytes hp h (n := 2) (by decide) hc) (m ▸ (hA s₀ s hp ha).2)
   · have e₁ : F.ptr s₀ = F.ptr s₀' := hq.t.ptr hc
     refine ⟨by simp only [Buf.rgn, e₁, hq.t.E1], rfl, ?_⟩
-    have a0 : arg (pushed (argPush 2) s₁).callEntry 0 = F.ptr s₀ := ent_arg hp h (as := [.buf F, .imm bnd]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 2) s₁).callEntry 1 = BitVec.ofNat 32 bnd := ent_arg hp h (as := [.buf F, .imm bnd]) (by simp) hg (i := 1) (by simp)
-    have a0' : arg (pushed (argPush 2) s₁').callEntry 0 = F.ptr s₀' := ent_arg hp' h' (as := [.buf F, .imm bnd]) (by simp) hg' (i := 0) (by simp)
-    have a1' : arg (pushed (argPush 2) s₁').callEntry 1 = BitVec.ofNat 32 bnd := ent_arg hp' h' (as := [.buf F, .imm bnd]) (by simp) hg' (i := 1) (by simp)
-    have eSp : (pushed (argPush 2) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 2) (by decide)
-    have eSp' : (pushed (argPush 2) s₁').callEntry.gpr .esp = _ := ent_esp h' (n := 2) (by decide)
+    obtain a0 : arg (pushed (argPush 2) s₁).callEntry 0 = F.ptr s₀ := ent_arg hp h (as := [.buf F, .imm bnd]) (by simp) hg (i := 0) (by simp)
+    obtain a1 : arg (pushed (argPush 2) s₁).callEntry 1 = BitVec.ofNat 32 bnd := ent_arg hp h (as := [.buf F, .imm bnd]) (by simp) hg (i := 1) (by simp)
+    obtain a0' : arg (pushed (argPush 2) s₁').callEntry 0 = F.ptr s₀' := ent_arg hp' h' (as := [.buf F, .imm bnd]) (by simp) hg' (i := 0) (by simp)
+    obtain a1' : arg (pushed (argPush 2) s₁').callEntry 1 = BitVec.ofNat 32 bnd := ent_arg hp' h' (as := [.buf F, .imm bnd]) (by simp) hg' (i := 1) (by simp)
+    obtain eSp : (pushed (argPush 2) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 2) (by decide)
+    obtain eSp' : (pushed (argPush 2) s₁').callEntry.gpr .esp = _ := ent_esp h' (n := 2) (by decide)
     generalize he : (pushed (argPush 2) s₁).callEntry = e at a0 a1 eSp ⊢
     generalize he' : (pushed (argPush 2) s₁').callEntry = e' at a0' a1' eSp' ⊢
     sig_pub [normLtContract, normLtSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
     simp only [arg_withRegions, a0, a1, a0', a1', eSp, eSp', e₁, hq.t.E1, and_self]
   · obtain ⟨s₂, m₂, g₂, post⟩ := post
-    have a0 : arg (pushed (argPush 2) s₁).callEntry 0 = F.ptr s₀ := ent_arg hp h (as := [.buf F, .imm bnd]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 2) s₁).callEntry 1 = BitVec.ofNat 32 bnd := ent_arg hp h (as := [.buf F, .imm bnd]) (by simp) hg (i := 1) (by simp)
+    obtain a0 : arg (pushed (argPush 2) s₁).callEntry 0 = F.ptr s₀ := ent_arg hp h (as := [.buf F, .imm bnd]) (by simp) hg (i := 0) (by simp)
+    obtain a1 : arg (pushed (argPush 2) s₁).callEntry 1 = BitVec.ofNat 32 bnd := ent_arg hp h (as := [.buf F, .imm bnd]) (by simp) hg (i := 1) (by simp)
     generalize he : (pushed (argPush 2) s₁).callEntry = e at a0 a1 post
     sig_post [normLtContract, normLtSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he
@@ -260,26 +260,26 @@ theorem hint_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (mak
   set Z : Buf := ⟨za, zo, 1024⟩
   set R : Buf := ⟨ra, ro, 1024⟩
   set H : Buf := ⟨ha, ho, 1024⟩
-  have gl := gamma2_lt hγ
+  obtain gl := gamma2_lt hγ
   simp only [Bool.and_eq_true] at hc
   obtain ⟨⟨⟨⟨hZ, hR⟩, hH⟩, dZH⟩, dRH⟩ := hc
-  have hH' := (Lay.okW_iff.mp hH).1
+  obtain hH' := (Lay.okW_iff.mp hH).1
   refine callPR_piece _ 4 rfl hv ok (by decide) (by decide) (by simp [argOk, hZ, hR, hH']) (fun s₀ => [Z.rgn s₀, R.rgn s₀])
     (fun s₀ => [H.rgn s₀, below (E1 s₀) 16]) (fun s₀ s hp ha => (hA s₀ s hp ha).1)
     (fun s₀ s₁ hp ⟨s, ha, h, m, hg⟩ => ?_) (fun s₀ s₀' s₁ s₁' hp hp' hq ⟨s, ha, h, m, hg⟩ ⟨s', ha', h', m', hg'⟩ => ?_)
     (fun s₀ hp r hr => ?_) (fun s₀ s₁ s' hp ⟨s, ha, h, m, hg⟩ h' fr post => ?_)
   · have a0 : arg (pushed (argPush 4) s₁).callEntry 0 = Z.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 4) s₁).callEntry 1 = R.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 4) s₁).callEntry 2 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 2) (by simp)
-    have a3 : arg (pushed (argPush 4) s₁).callEntry 3 = H.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 3) (by simp)
-    have eA : argAddr (pushed (argPush 4) s₁).callEntry 0 = _ := ent_arg0 h (n := 4) (by decide)
-    have eSp : (pushed (argPush 4) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 4) (by decide)
+    obtain a1 : arg (pushed (argPush 4) s₁).callEntry 1 = R.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 4) s₁).callEntry 2 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 2) (by simp)
+    obtain a3 : arg (pushed (argPush 4) s₁).callEntry 3 = H.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 3) (by simp)
+    obtain eA : argAddr (pushed (argPush 4) s₁).callEntry 0 = _ := ent_arg0 h (n := 4) (by decide)
+    obtain eSp : (pushed (argPush 4) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 4) (by decide)
     obtain ⟨rZ₁, rZ₂, rZ₃⟩ := ent_rgn hp hZ (n := 4) (K := 16) (by decide)
     obtain ⟨rR₁, rR₂, rR₃⟩ := ent_rgn hp hR (n := 4) (K := 16) (by decide)
     obtain ⟨rH₁, rH₂, rH₃⟩ := ent_rgn hp hH' (n := 4) (K := 16) (by decide)
     obtain ⟨rA₂, rA₃⟩ := ent_self hp (n := 4) (K := 16) (by decide)
-    have hE := E1_big hp
-    have cv := covers_of (s := s₁) (n := 4) (rd := [Z.rgn s₀, R.rgn s₀]) (wr := [H.rgn s₀, below (E1 s₀) 16])
+    obtain hE := E1_big hp
+    obtain cv := covers_of (s := s₁) (n := 4) (rd := [Z.rgn s₀, R.rgn s₀]) (wr := [H.rgn s₀, below (E1 s₀) 16])
       (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
         rcases hr with rfl | rfl
@@ -300,19 +300,19 @@ theorem hint_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (mak
     · exact reduced_congr (ent_bytes hp h (n := 4) (by decide) hZ) (m ▸ (hA s₀ s hp ha).2.1)
     · exact reduced_congr (ent_bytes hp h (n := 4) (by decide) hR) (m ▸ (hA s₀ s hp ha).2.2)
   · have e₁ : Z.ptr s₀ = Z.ptr s₀' := hq.t.ptr hZ
-    have e₂ : R.ptr s₀ = R.ptr s₀' := hq.t.ptr hR
-    have e₃ : H.ptr s₀ = H.ptr s₀' := hq.t.ptr hH'
+    obtain e₂ : R.ptr s₀ = R.ptr s₀' := hq.t.ptr hR
+    obtain e₃ : H.ptr s₀ = H.ptr s₀' := hq.t.ptr hH'
     refine ⟨by simp only [Buf.rgn, e₁, e₂], by simp only [Buf.rgn, e₃, hq.t.E1], ?_⟩
-    have a0 : arg (pushed (argPush 4) s₁).callEntry 0 = Z.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 4) s₁).callEntry 1 = R.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 4) s₁).callEntry 2 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 2) (by simp)
-    have a3 : arg (pushed (argPush 4) s₁).callEntry 3 = H.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 3) (by simp)
-    have a0' : arg (pushed (argPush 4) s₁').callEntry 0 = Z.ptr s₀' := ent_arg hp' h' (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg' (i := 0) (by simp)
-    have a1' : arg (pushed (argPush 4) s₁').callEntry 1 = R.ptr s₀' := ent_arg hp' h' (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg' (i := 1) (by simp)
-    have a2' : arg (pushed (argPush 4) s₁').callEntry 2 = BitVec.ofNat 32 g := ent_arg hp' h' (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg' (i := 2) (by simp)
-    have a3' : arg (pushed (argPush 4) s₁').callEntry 3 = H.ptr s₀' := ent_arg hp' h' (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg' (i := 3) (by simp)
-    have eSp : (pushed (argPush 4) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 4) (by decide)
-    have eSp' : (pushed (argPush 4) s₁').callEntry.gpr .esp = _ := ent_esp h' (n := 4) (by decide)
+    obtain a0 : arg (pushed (argPush 4) s₁).callEntry 0 = Z.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 0) (by simp)
+    obtain a1 : arg (pushed (argPush 4) s₁).callEntry 1 = R.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 4) s₁).callEntry 2 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 2) (by simp)
+    obtain a3 : arg (pushed (argPush 4) s₁).callEntry 3 = H.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 3) (by simp)
+    obtain a0' : arg (pushed (argPush 4) s₁').callEntry 0 = Z.ptr s₀' := ent_arg hp' h' (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg' (i := 0) (by simp)
+    obtain a1' : arg (pushed (argPush 4) s₁').callEntry 1 = R.ptr s₀' := ent_arg hp' h' (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg' (i := 1) (by simp)
+    obtain a2' : arg (pushed (argPush 4) s₁').callEntry 2 = BitVec.ofNat 32 g := ent_arg hp' h' (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg' (i := 2) (by simp)
+    obtain a3' : arg (pushed (argPush 4) s₁').callEntry 3 = H.ptr s₀' := ent_arg hp' h' (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg' (i := 3) (by simp)
+    obtain eSp : (pushed (argPush 4) s₁).callEntry.gpr .esp = _ := ent_esp h (n := 4) (by decide)
+    obtain eSp' : (pushed (argPush 4) s₁').callEntry.gpr .esp = _ := ent_esp h' (n := 4) (by decide)
     generalize he : (pushed (argPush 4) s₁).callEntry = e at a0 a1 a2 a3 eSp ⊢
     generalize he' : (pushed (argPush 4) s₁').callEntry = e' at a0' a1' a2' a3' eSp' ⊢
     sig_pub [makeHintContract, makeHintSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes]
@@ -322,10 +322,10 @@ theorem hint_piece {nm : String} {c : Prog isa} (hv : Verified X86.target c (mak
     · exact Buf.inW hp hH' (Lay.okW_iff.mp hH).2
     · exact stk_W hp (by decide)
   · obtain ⟨s₂, m₂, g₂, post⟩ := post
-    have a0 : arg (pushed (argPush 4) s₁).callEntry 0 = Z.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 0) (by simp)
-    have a1 : arg (pushed (argPush 4) s₁).callEntry 1 = R.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 1) (by simp)
-    have a2 : arg (pushed (argPush 4) s₁).callEntry 2 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 2) (by simp)
-    have a3 : arg (pushed (argPush 4) s₁).callEntry 3 = H.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 3) (by simp)
+    obtain a0 : arg (pushed (argPush 4) s₁).callEntry 0 = Z.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 0) (by simp)
+    obtain a1 : arg (pushed (argPush 4) s₁).callEntry 1 = R.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 1) (by simp)
+    obtain a2 : arg (pushed (argPush 4) s₁).callEntry 2 = BitVec.ofNat 32 g := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 2) (by simp)
+    obtain a3 : arg (pushed (argPush 4) s₁).callEntry 3 = H.ptr s₀ := ent_arg hp h (as := [.buf Z, .buf R, .imm g, .buf H]) (by simp) hg (i := 3) (by simp)
     generalize he : (pushed (argPush 4) s₁).callEntry = e at a0 a1 a2 a3 post
     sig_post [makeHintContract, makeHintSig, X86.abi, X86.argSlots, X86.argVal, X86.argBytes] at post
     subst he

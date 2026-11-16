@@ -117,7 +117,7 @@ theorem nonceHead_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
   have hN := E.slots.nonce
   have hnl := E.slots.nlen
   simp only [slotv_eq] at hN hnl
-  have hz := zero4_fold s.mem p.W tmpO
+  obtain hz := zero4_fold s.mem p.W tmpO
   obtain ⟨s₂, run₂, m₂, di₂, dx₂, cx₂, g₂, rd₂, wr₂⟩ : ∃ s₂, runBlock isa (zero4 tmpO ++
       ([.mov .edi (slot nO), .mov .ecx (slot nlO), .mov .edx (.reg .ebp), .alu .add .edx (imm (tmpO + 16)),
         .alu .sub .edx (.reg .ecx)] : List Instr)) s = some s₂ ∧
@@ -128,8 +128,8 @@ theorem nonceHead_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
       ?_, by gregs [hnl], fun r h₁ h₂ h₃ h₄ => by gregs [h₁, h₂, h₃, h₄], by gmems [], by gmems []⟩
     gregs [hnl, E.ebp]
     exact sub32 _ (by omega_arith) (by decide)
-  have a128 : w64 (p.W + BitVec.ofNat 32 (128 - p.nl)) = w64 p.W + BitVec.ofNat 64 (128 - p.nl) := L.aW (by omega_arith)
-  have fr₂ : Frame [⟨w64 p.W + BitVec.ofNat 64 tmpO, 16⟩] s.mem s₂.mem := by
+  obtain a128 : w64 (p.W + BitVec.ofNat 32 (128 - p.nl)) = w64 p.W + BitVec.ofNat 64 (128 - p.nl) := L.aW (by omega_arith)
+  obtain fr₂ : Frame [⟨w64 p.W + BitVec.ofNat 64 tmpO, 16⟩] s.mem s₂.mem := by
     rw [m₂]; exact Proof.Cmac.frame_store4 _ _ _ _ _
   refine ⟨s₂, run₂, E.mut L (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), E.ebp])
     (by rw [g₂ _ (by decide) (by decide) (by decide) (by decide), E.esp]) rd₂ wr₂
@@ -143,10 +143,10 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
   have h1 := L.nl1
   have h15 := L.nl15
   obtain ⟨s₂, run₂, -, lp, m₂, g₂, rd₂, wr₂⟩ := nonceHead_ok L E
-  have a128 : w64 (p.W + BitVec.ofNat 32 (128 - p.nl)) = w64 p.W + BitVec.ofNat 64 (128 - p.nl) := L.aW (by omega_arith)
-  have fr₂ : Frame [⟨w64 p.W + BitVec.ofNat 64 tmpO, 16⟩] s.mem s₂.mem := by
+  obtain a128 : w64 (p.W + BitVec.ofNat 32 (128 - p.nl)) = w64 p.W + BitVec.ofNat 64 (128 - p.nl) := L.aW (by omega_arith)
+  obtain fr₂ : Frame [⟨w64 p.W + BitVec.ofNat 64 tmpO, 16⟩] s.mem s₂.mem := by
     rw [m₂]; exact Proof.Cmac.frame_store4 _ _ _ _ _
-  have eN : bytesAt s₂.mem (w64 p.N) p.nl = bytesAt s.mem (w64 p.N) p.nl :=
+  obtain eN : bytesAt s₂.mem (w64 p.N) p.nl = bytesAt s.mem (w64 p.N) p.nl :=
     Proof.AesGcm.X86.bytesAt_frame fr₂ (fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact L.n_w' (by decide)) (by omega_arith)
   unfold nonceBlock
@@ -154,7 +154,7 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
   refine WP.seq (WP.mono (copyLoop_ok s₂ lp) fun s₃ P₃ => ?_)
   have m₃ := P₃.mem
   rw [eN, a128] at m₃
-  have E₃ : Env p s₃ := E.mut L (by rw [P₃.other _ (by decide) (by decide) (by decide) (by decide),
+  obtain E₃ : Env p s₃ := E.mut L (by rw [P₃.other _ (by decide) (by decide) (by decide) (by decide),
       g₂ _ (by decide) (by decide) (by decide) (by decide), E.ebp])
     (by rw [P₃.other _ (by decide) (by decide) (by decide) (by decide),
       g₂ _ (by decide) (by decide) (by decide) (by decide), E.esp]) (by rw [P₃.rd, rd₂]) (by rw [P₃.wr, wr₂])
@@ -169,13 +169,13 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
   have hnl₃ := E₃.slots.nlen
   have htl₃ := E₃.slots.tlen
   simp only [slotv_eq] at hnl₃ htl₃
-  have hsub : p.W + BitVec.ofNat 32 127 - BitVec.ofNat 32 p.nl = p.W + BitVec.ofNat 32 (127 - p.nl) :=
+  obtain hsub : p.W + BitVec.ofNat 32 127 - BitVec.ofNat 32 p.nl = p.W + BitVec.ofNat 32 (127 - p.nl) :=
     sub32 _ (by omega_arith) (by decide)
-  have a127 : w64 (p.W + BitVec.ofNat 32 (127 - p.nl) + BitVec.ofNat 32 0) = w64 p.W + BitVec.ofNat 64 (127 - p.nl) := by
+  obtain a127 : w64 (p.W + BitVec.ofNat 32 (127 - p.nl) + BitVec.ofNat 32 0) = w64 p.W + BitVec.ofNat 64 (127 - p.nl) := by
     rw [show p.W + BitVec.ofNat 32 (127 - p.nl) + BitVec.ofNat 32 0 = p.W + BitVec.ofNat 32 (127 - p.nl) from
       BitVec.add_zero _]
     exact L.aW (by omega_arith)
-  have w127 : InRegions s₃.wr (w64 p.W + BitVec.ofNat 64 (127 - p.nl)) 1 := E₃.perm.wW (by omega_arith)
+  obtain w127 : InRegions s₃.wr (w64 p.W + BitVec.ofNat 64 (127 - p.nl)) 1 := E₃.perm.wW (by omega_arith)
   obtain ⟨s₄, run₄, m₄, g₄, rd₄, wr₄⟩ : ∃ s₄, runBlock isa [.mov .ecx (slot nlO), .mov .edx (.reg .ebp),
       .alu .add .edx (imm (tmpO + 15)), .alu .sub .edx (.reg .ecx), .mov .eax (imm 1), .store8 (at_ .edx 0) .al] s₃ =
         some s₄ ∧
@@ -184,7 +184,7 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
     refine ⟨_, by grun [E₃.ebp, L.aW, E₃.perm.wR, hnl₃, hsub, a127, w127], ?_,
       fun r h₁ h₂ h₃ => by gregs [h₁, h₂, h₃], by gmems [], by gmems []⟩
     gmems [E₃.ebp, hnl₃, hsub, a127]; rfl
-  have E₄ : Env p s₄ := E₃.mut L (by rw [g₄ _ (by decide) (by decide) (by decide), E₃.ebp])
+  obtain E₄ : Env p s₄ := E₃.mut L (by rw [g₄ _ (by decide) (by decide) (by decide), E₃.ebp])
     (by rw [g₄ _ (by decide) (by decide) (by decide), E₃.esp]) rd₄ wr₄
     (frame_toMut (rs := [⟨w64 p.W + BitVec.ofNat 64 112, 16⟩]) (by
       rw [m₄]
@@ -194,8 +194,8 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
       fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact inMut_w p (.inl (by decide)))
   have htl₄ := E₄.slots.tlen
   simp only [slotv_eq] at htl₄
-  have ht : p.tl < 2 ^ 32 := by have := L.tl16; omega_arith
-  have d2 : ∀ a : Nat, BitVec.ofNat 32 a + BitVec.ofNat 32 a = BitVec.ofNat 32 (2 * a) := fun a => by
+  obtain ht : p.tl < 2 ^ 32 := by have := L.tl16; omega_arith
+  obtain d2 : ∀ a : Nat, BitVec.ofNat 32 a + BitVec.ofNat 32 a = BitVec.ofNat 32 (2 * a) := fun a => by
     rw [← BitVec.ofNat_add, Nat.two_mul]
   obtain ⟨s₅, run₅, ax₅, g₅, m₅, rd₅, wr₅⟩ : ∃ s₅, runBlock isa [.mov .eax (slot tlO), .alu .and .eax (imm 15),
       .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax), .alu .add .eax (.reg .eax),
@@ -205,7 +205,7 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
       by gmems []⟩
     gregs [htl₄, and15_32 ht, d2]
     congr 1; omega_arith
-  have E₅ : Env p s₅ := E₄.keep (by rw [g₅ _ (by decide)]) (by rw [g₅ _ (by decide)]) rd₅ wr₅ m₅
+  obtain E₅ : Env p s₅ := E₄.keep (by rw [g₅ _ (by decide)]) (by rw [g₅ _ (by decide)]) rd₅ wr₅ m₅
   obtain ⟨s₆, run₆, m₆, g₆, rd₆, wr₆⟩ : ∃ s₆, runBlock isa [.movzx8 .ecx (at_ .ebp tmpO), .alu .or .ecx (.reg .eax),
       .store8 (at_ .ebp tmpO) .cl] s₅ = some s₆ ∧
       s₆.mem = s₅.mem.writeW (w64 p.W + BitVec.ofNat 64 112)
@@ -214,7 +214,7 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
     refine ⟨_, by grun [E₅.ebp, L.aW, E₅.perm.wR, E₅.perm.wW], ?_, fun r h => by gregs [h], by gmems [],
       by gmems []⟩
     gmems [ax₅, or_byte32 _ (show 16 * (p.tl % 16) < 256 by omega_arith)]
-  have E₆ : Env p s₆ := E₅.mut L (by rw [g₆ _ (by decide), E₅.ebp]) (by rw [g₆ _ (by decide), E₅.esp]) rd₆ wr₆
+  obtain E₆ : Env p s₆ := E₅.mut L (by rw [g₆ _ (by decide), E₅.ebp]) (by rw [g₆ _ (by decide), E₅.esp]) rd₆ wr₆
     (frame_toMut (rs := [⟨w64 p.W + BitVec.ofNat 64 112, 16⟩]) (by
       rw [m₆]; exact (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (contains_pre _ (by decide)))
       fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact inMut_w p (.inl (by decide)))
@@ -229,22 +229,22 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
       by gmems []⟩
     gmems [and63_32, and_byte32 _ (show 192 < 256 by decide)]
   -- the bytes at `W + tmpO`, step by step
-  have hlen : (bytesAt s.mem (w64 p.N) p.nl).length = p.nl := length_bytesAt _ _ _
-  have L₂ : bytesAt s₂.mem (w64 p.W + BitVec.ofNat 64 112) 16 = Spec.Ocb.zeros 16 := by
+  obtain hlen : (bytesAt s.mem (w64 p.N) p.nl).length = p.nl := length_bytesAt _ _ _
+  obtain L₂ : bytesAt s₂.mem (w64 p.W + BitVec.ofNat 64 112) 16 = Spec.Ocb.zeros 16 := by
     rw [m₂, Proof.Cmac.zero4_bytes]; rfl
-  have e128 : w64 p.W + BitVec.ofNat 64 (128 - p.nl) =
+  obtain e128 : w64 p.W + BitVec.ofNat 64 (128 - p.nl) =
       w64 p.W + BitVec.ofNat 64 112 + BitVec.ofNat 64 (16 - p.nl) := by
     rw [Offset.add_add, show 112 + (16 - p.nl) = 128 - p.nl by omega_arith]
-  have e127 : w64 p.W + BitVec.ofNat 64 (127 - p.nl) =
+  obtain e127 : w64 p.W + BitVec.ofNat 64 (127 - p.nl) =
       w64 p.W + BitVec.ofNat 64 112 + BitVec.ofNat 64 (15 - p.nl) := by
     rw [Offset.add_add, show 112 + (15 - p.nl) = 127 - p.nl by omega_arith]
-  have L₃ : bytesAt s₃.mem (w64 p.W + BitVec.ofNat 64 112) 16 =
+  obtain L₃ : bytesAt s₃.mem (w64 p.W + BitVec.ofNat 64 112) 16 =
       Spec.Ocb.zeros (16 - p.nl) ++ bytesAt s.mem (w64 p.N) p.nl := by
     rw [m₃, e128, bytesAt_writeBytes_at _ _ _ (by rw [hlen]; omega_arith) (by decide), L₂, hlen]
     rw [show 16 - p.nl + p.nl = 16 by omega_arith]
     simp only [Spec.Ocb.zeros, List.take_replicate, List.drop_replicate,
       show min (16 - p.nl) 16 = 16 - p.nl by omega_arith, Nat.sub_self, List.replicate_zero, List.append_nil]
-  have L₄ : bytesAt s₄.mem (w64 p.W + BitVec.ofNat 64 112) 16 =
+  obtain L₄ : bytesAt s₄.mem (w64 p.W + BitVec.ofNat 64 112) 16 =
       Spec.Ocb.zeros (15 - p.nl) ++ [1] ++ bytesAt s.mem (w64 p.N) p.nl := by
     rw [m₄, e127, bytesAt_writeW8_at _ _ _ (by omega_arith) (by decide), L₃]
     simp only [Spec.Ocb.zeros, List.take_append, List.take_replicate, List.drop_append, List.drop_replicate,
@@ -252,18 +252,18 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
       show 15 - p.nl - (16 - p.nl) = 0 by omega_arith, show 16 - p.nl - (15 - p.nl + 1) = 0 by omega_arith,
       show 15 - p.nl + 1 - (16 - p.nl) = 0 by omega_arith, List.take_zero, List.drop_zero, List.replicate_zero,
       List.nil_append, List.append_nil, List.append_assoc]
-  have L₄d : ∀ k < 16, (bytesAt s₄.mem (w64 p.W + BitVec.ofNat 64 112) 16).getD k 0 =
+  obtain L₄d : ∀ k < 16, (bytesAt s₄.mem (w64 p.W + BitVec.ofNat 64 112) 16).getD k 0 =
       nbase (bytesAt s.mem (w64 p.N) p.nl) k := fun k hk => by
     have := Proof.Ocb.nbase_list (bytesAt s.mem (w64 p.N) p.nl) (by rw [hlen]; omega_arith) (by rw [hlen]; omega_arith) hk
     rw [hlen] at this; rw [L₄]; exact this
-  have e127' : w64 p.W + BitVec.ofNat 64 127 = w64 p.W + BitVec.ofNat 64 112 + BitVec.ofNat 64 15 :=
+  obtain e127' : w64 p.W + BitVec.ofNat 64 127 = w64 p.W + BitVec.ofNat 64 112 + BitVec.ofNat 64 15 :=
     (Offset.add_add _ 112 15).symm
-  have h0 : w64 p.W + BitVec.ofNat 64 112 + BitVec.ofNat 64 0 = w64 p.W + BitVec.ofNat 64 112 := BitVec.add_zero _
-  have b0e : s₅.mem (w64 p.W + BitVec.ofNat 64 112) = nbase (bytesAt s.mem (w64 p.N) p.nl) 0 := by
+  obtain h0 : w64 p.W + BitVec.ofNat 64 112 + BitVec.ofNat 64 0 = w64 p.W + BitVec.ofNat 64 112 := BitVec.add_zero _
+  obtain b0e : s₅.mem (w64 p.W + BitVec.ofNat 64 112) = nbase (bytesAt s.mem (w64 p.N) p.nl) 0 := by
     have := Proof.Ocb.getD_bytesAt_eq s₄.mem (w64 p.W + BitVec.ofNat 64 112) (k := 0) (n := 16) (by decide)
     rw [h0] at this
     rw [m₅, this, L₄d 0 (by decide)]
-  have L₆d : ∀ k < 16, (bytesAt s₆.mem (w64 p.W + BitVec.ofNat 64 112) 16).getD k 0 =
+  obtain L₆d : ∀ k < 16, (bytesAt s₆.mem (w64 p.W + BitVec.ofNat 64 112) 16).getD k 0 =
       nb p.tl (bytesAt s.mem (w64 p.N) p.nl) k := by
     intro k hk
     rw [m₆, bytesAt_writeW8_base _ _ _ (by decide) (by decide), b0e, m₅]
@@ -274,13 +274,13 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
       rw [List.getD_eq_getElem?_getD, List.getElem?_drop, ← List.getD_eq_getElem?_getD,
         show 1 + k = k + 1 by omega_arith]
       exact L₄d (k + 1) hk
-  have b15e : s₆.mem (w64 p.W + BitVec.ofNat 64 127) = nb p.tl (bytesAt s.mem (w64 p.N) p.nl) 15 := by
+  obtain b15e : s₆.mem (w64 p.W + BitVec.ofNat 64 127) = nb p.tl (bytesAt s.mem (w64 p.N) p.nl) 15 := by
     rw [e127', Proof.Ocb.getD_bytesAt_eq s₆.mem (w64 p.W + BitVec.ofNat 64 112) (k := 15) (n := 16) (by decide),
       L₆d 15 (by decide)]
-  have frb : ∀ v : BitVec 32,
+  obtain frb : ∀ v : BitVec 32,
       Frame [⟨w64 p.W + BitVec.ofNat 64 botO, 4⟩] s₆.mem (s₆.mem.writeW (w64 p.W + BitVec.ofNat 64 botO) v) :=
     fun v => (Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Region.contains_self _ _)
-  have L₇d : ∀ k < 16, (bytesAt s₇.mem (w64 p.W + BitVec.ofNat 64 112) 16).getD k 0 =
+  obtain L₇d : ∀ k < 16, (bytesAt s₇.mem (w64 p.W + BitVec.ofNat 64 112) 16).getD k 0 =
       if k = 15 then nb p.tl (bytesAt s.mem (w64 p.N) p.nl) 15 &&& 0xc0
       else nb p.tl (bytesAt s.mem (w64 p.N) p.nl) k := by
     intro k hk
@@ -294,11 +294,11 @@ theorem nonceBlock_ok {p : Prm} (L : Lay p) {s : State} (E : Env p s) :
     split
     · rfl
     · exact L₆d k hk
-  have hlen16 := length_bytesAt s₇.mem (w64 p.W + BitVec.ofNat 64 112) 16
+  obtain hlen16 := length_bytesAt s₇.mem (w64 p.W + BitVec.ofNat 64 112) 16
   refine WP.of_runBlock ⟨s₇, runBlock_app_of run₄ (runBlock_app_of run₅ (runBlock_app_of run₆ run₇)), ?_, ?_, ?_, ?_,
     ?_, ?_⟩
   · -- the frame
-    have F₃ : Frame [⟨w64 p.W + BitVec.ofNat 64 tmpO, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 botO, 4⟩] s.mem s₃.mem :=
+    obtain F₃ : Frame [⟨w64 p.W + BitVec.ofNat 64 tmpO, 16⟩, ⟨w64 p.W + BitVec.ofNat 64 botO, 4⟩] s.mem s₃.mem :=
       (fr₂.mono (fun r hr => by simp at hr; simp [hr])).trans (by
         rw [m₃]
         refine (writeBytes_frame _ _ _ (R := ⟨w64 p.W + BitVec.ofNat 64 112, 16⟩) ?_).mono

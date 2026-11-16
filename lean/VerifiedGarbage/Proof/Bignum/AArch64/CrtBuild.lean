@@ -98,7 +98,7 @@ theorem buildStepN_ok (M : Mont) {t₀ t : State} {P : Addr} {wx : Nat} {minv : 
       fun t' => BuildInvN t₀ P wx minv X Xc Q x n c (i + 1) t' ∧ ((t'.gpr .x3).toNat ≠ 0 ↔ i + 1 ≠ c) := by
   have hc := hI.ctx
   have hn := hc.scrT.nowrap
-  have hT0 := slot_le (w := wx) (show Crt.aT < 8 by decide)
+  obtain hT0 := slot_le (w := wx) (show Crt.aT < 8 by decide)
   unfold tabBody
   refine wp_seqs_append (by simp) (by simp [toEnt]) ?_
   simp only [seqs]
@@ -108,9 +108,9 @@ theorem buildStepN_ok (M : Mont) {t₀ t : State} {P : Addr} {wx : Nat} {minv : 
     (by rw [hc.x, hc.n]; exact hXN)) fun t₁ ⟨_, hlt₁, hm₁, ha₁, k₁⟩ => ?_)
   rw [hc.n] at hlt₁
   rw [hc.n, hc.x] at hm₁
-  have f₁ : Frm P (buildRanges wx n) t.mem t₁.mem := Frm.of_arrays ha₁ (by simp [buildRanges])
-  have hc₁ := hc.of_frm (f₁.mono (buildRanges_sub wx)) k₁.wr (k₁.gpr .x0 (by decide))
-  have he₁ : ∀ j < n, wv t₁.mem P (slot wx (8 + j)) wx = wv t.mem P (slot wx (8 + j)) wx := fun j hj =>
+  obtain f₁ : Frm P (buildRanges wx n) t.mem t₁.mem := Frm.of_arrays ha₁ (by simp [buildRanges])
+  obtain hc₁ := hc.of_frm (f₁.mono (buildRanges_sub wx)) k₁.wr (k₁.gpr .x0 (by decide))
+  obtain he₁ : ∀ j < n, wv t₁.mem P (slot wx (8 + j)) wx = wv t.mem P (slot wx (8 + j)) wx := fun j hj =>
     ha₁.wv_eq (fun k hk => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hk
       have := slot_mono wx (show 8 ≤ 8 + j by omega_arith)
@@ -121,51 +121,51 @@ theorem buildStepN_ok (M : Mont) {t₀ t : State} {P : Addr} {wx : Nat} {minv : 
   -- `sEnt` up.
   refine WP.mono (nextEnt_ok (e := slot wx (8 + (i + 1))) hc₁ hw' (by rw [ha₁.hslot (by decide)]; exact hI.ent))
     fun t₂ ⟨hm₂, k₂⟩ => ?_
-  have o₂ := writeW_outside t₁.mem P (d := 8 * Crt.sEnt) (off P (slot wx (8 + (i + 1)) + 8 * (wx + 2))) (by decide)
+  obtain o₂ := writeW_outside t₁.mem P (d := 8 * Crt.sEnt) (off P (slot wx (8 + (i + 1)) + 8 * (wx + 2))) (by decide)
   rw [← hm₂] at o₂
-  have f₂ : Frm P (buildRanges wx n) t₁.mem t₂.mem := Frm.of_outside o₂ (by simp [buildRanges])
-  have hc₂ := hc₁.of_frm (f₂.mono (buildRanges_sub wx)) k₂.wr (k₂.gpr .x0 (by decide))
-  have hT₂ : wv t₂.mem P (slot wx Crt.aT) wx = wv t₁.mem P (slot wx Crt.aT) wx :=
+  obtain f₂ : Frm P (buildRanges wx n) t₁.mem t₂.mem := Frm.of_outside o₂ (by simp [buildRanges])
+  obtain hc₂ := hc₁.of_frm (f₂.mono (buildRanges_sub wx)) k₂.wr (k₂.gpr .x0 (by decide))
+  obtain hT₂ : wv t₂.mem P (slot wx Crt.aT) wx = wv t₁.mem P (slot wx Crt.aT) wx :=
     o₂.wv (by have := hdr_lt_slot wx Crt.aT (show Crt.sEnt < 32 by decide); omega_arith) (by omega_arith)
-  have he₂ : ∀ j < n, wv t₂.mem P (slot wx (8 + j)) wx = wv t₁.mem P (slot wx (8 + j)) wx := fun j hj =>
+  obtain he₂ : ∀ j < n, wv t₂.mem P (slot wx (8 + j)) wx = wv t₁.mem P (slot wx (8 + j)) wx := fun j hj =>
     o₂.wv (by have := hdr_lt_slot wx (8 + j) (show Crt.sEnt < 32 by decide); omega_arith)
       (by have := ent_le wx hj; omega_arith)
   -- Entry `i + 2 := T`.
   refine wp_seqs_append (by simp [toEnt]) (by simp) ?_
   refine WP.mono (toEnt_ok hc₂ hw hw' (a := Crt.aT) (j := i + 2) (by decide) (by omega_arith) (by
     rw [hm₂, word_writeW_self, ← slot_succ]; rfl)) fun t₃ ⟨hv₃, o₃, k₃⟩ => ?_
-  have hE := ent_le wx (show i + 2 < n by omega_arith)
-  have hE8 := slot_mono wx (show 8 ≤ 8 + (i + 2) by omega_arith)
-  have f₃ : Frm P (buildRanges wx n) t₂.mem t₃.mem :=
+  obtain hE := ent_le wx (show i + 2 < n by omega_arith)
+  obtain hE8 := slot_mono wx (show 8 ≤ 8 + (i + 2) by omega_arith)
+  obtain f₃ : Frm P (buildRanges wx n) t₂.mem t₃.mem :=
     Frm.of_outside (o₃.mono (o' := slot wx 8) (n' := tabBytes wx n) hE8 (by omega_arith)) (by simp [buildRanges])
-  have hc₃ := hc₂.of_frm (f₃.mono (buildRanges_sub wx)) k₃.wr (k₃.gpr .x0 (by decide))
-  have hh₃ : ∀ k < 32, word t₃.mem P (8 * k) = word t₂.mem P (8 * k) := fun k hk =>
+  obtain hc₃ := hc₂.of_frm (f₃.mono (buildRanges_sub wx)) k₃.wr (k₃.gpr .x0 (by decide))
+  obtain hh₃ : ∀ k < 32, word t₃.mem P (8 * k) = word t₂.mem P (8 * k) := fun k hk =>
     o₃.word (by have := hdr_lt_slot wx (8 + (i + 2)) hk; omega_arith) (by omega_arith)
-  have hT8 : slot wx Crt.aT + 8 * (wx + 2) ≤ slot wx (8 + (i + 2)) := by
+  obtain hT8 : slot wx Crt.aT + 8 * (wx + 2) ≤ slot wx (8 + (i + 2)) := by
     have := slot_mono wx (show Crt.aT + 1 ≤ 8 + (i + 2) by unfold Crt.aT; omega_arith)
     rw [slot_succ] at this; omega_arith
-  have hT₃ : wv t₃.mem P (slot wx Crt.aT) wx = wv t₂.mem P (slot wx Crt.aT) wx :=
+  obtain hT₃ : wv t₃.mem P (slot wx Crt.aT) wx = wv t₂.mem P (slot wx Crt.aT) wx :=
     o₃.wv (by omega_arith) (by omega_arith)
   simp only [seqs]
   -- The count.
   refine WP.mono (crtBitEnd_ok hc₃ (b := c - i) (by rw [hh₃ _ (by decide), hm₂,
     hdrStore_hdr _ _ _ (by decide) (by decide) (by decide), ha₁.hslot (by decide)]; exact hI.cnt) (by omega_arith))
     fun t' ⟨⟨hm', h3'⟩, k'⟩ => ⟨?_, by rw [h3', cnt_ne (by omega_arith)]; omega_arith⟩
-  have o₄ := writeW_outside t₃.mem P (d := 8 * Crt.sBit) (BitVec.ofNat 64 (c - i - 1)) (by decide)
+  obtain o₄ := writeW_outside t₃.mem P (d := 8 * Crt.sBit) (BitVec.ofNat 64 (c - i - 1)) (by decide)
   rw [← hm'] at o₄
-  have f₄ : Frm P (buildRanges wx n) t₃.mem t'.mem := Frm.of_outside o₄ (by simp [buildRanges])
-  have hT' : wv t'.mem P (slot wx Crt.aT) wx = wv t₁.mem P (slot wx Crt.aT) wx := by
+  obtain f₄ : Frm P (buildRanges wx n) t₃.mem t'.mem := Frm.of_outside o₄ (by simp [buildRanges])
+  obtain hT' : wv t'.mem P (slot wx Crt.aT) wx = wv t₁.mem P (slot wx Crt.aT) wx := by
     rw [o₄.wv (by have := hdr_lt_slot wx Crt.aT (show Crt.sBit < 32 by decide); omega_arith) (by omega_arith), hT₃,
       hT₂]
-  have hE' : ∀ j < n, wv t'.mem P (slot wx (8 + j)) wx = wv t₃.mem P (slot wx (8 + j)) wx := fun j hj =>
+  obtain hE' : ∀ j < n, wv t'.mem P (slot wx (8 + j)) wx = wv t₃.mem P (slot wx (8 + j)) wx := fun j hj =>
     o₄.wv (by have := hdr_lt_slot wx (8 + j) (show Crt.sBit < 32 by decide); omega_arith)
       (by have := ent_le wx hj; omega_arith)
   -- Entries other than `i + 2` are kept by `toEnt`.
-  have hEo : ∀ j < n, j ≠ i + 2 → wv t₃.mem P (slot wx (8 + j)) wx = wv t.mem P (slot wx (8 + j)) wx :=
+  obtain hEo : ∀ j < n, j ≠ i + 2 → wv t₃.mem P (slot wx (8 + j)) wx = wv t.mem P (slot wx (8 + j)) wx :=
     fun j hj hne => by
       have := slot_sep (w := wx) (show 8 + j ≠ 8 + (i + 2) by omega_arith)
       rw [o₃.wv (by omega_arith) (by have := ent_le wx hj; omega_arith), he₂ j hj, he₁ j hj]
-  have hTv : Q → wv t₁.mem P (slot wx Crt.aT) wx % X = x ^ (i + 1 + 1) * 2 ^ (64 * wx) % X := fun hq =>
+  obtain hTv : Q → wv t₁.mem P (slot wx Crt.aT) wx % X = x ^ (i + 1 + 1) * 2 ^ (64 * wx) % X := fun hq =>
     mont_mulT (E := i + 1) (v := 1) hR (hI.tval hq) (by rw [Nat.pow_one]; exact hXc hq) hm₁
   refine ⟨hc₃.of_frm (f₄.mono (buildRanges_sub wx)) k'.wr (k'.gpr .x0 (by decide)), ?_, ?_, ?_, by rw [hT']; exact hlt₁,
     fun hq => by rw [hT']; exact hTv hq, fun j hj => ?_, fun hq j hj => ?_,
@@ -222,88 +222,88 @@ theorem tabPreN_ok {t : State} {P : Addr} {wx : Nat} {minv : BitVec 64} {X Xc n 
     (hYv : Q → wv t.mem P (slot wx aY) wx % X = 2 ^ (64 * wx) % X) :
     WP isa (seqs (tabPreN c)) t (BuildInvN t P wx minv X Xc Q x n c 0) := by
   have hn := hc.scrT.nowrap
-  have hY0 := slot_le (w := wx) (show aY < 8 by decide)
-  have hT0 := slot_le (w := wx) (show Crt.aT < 8 by decide)
-  have hX0 := slot_le (w := wx) (show Crt.aXc < 8 by decide)
-  have hE0 := ent_le wx (show 0 < n by omega_arith)
-  have hE1 := ent_le wx (show 1 < n by omega_arith)
-  have h8 := hdr_lt_slot wx 8 (show 31 < 32 by decide)
+  obtain hY0 := slot_le (w := wx) (show aY < 8 by decide)
+  obtain hT0 := slot_le (w := wx) (show Crt.aT < 8 by decide)
+  obtain hX0 := slot_le (w := wx) (show Crt.aXc < 8 by decide)
+  obtain hE0 := ent_le wx (show 0 < n by omega_arith)
+  obtain hE1 := ent_le wx (show 1 < n by omega_arith)
+  obtain h8 := hdr_lt_slot wx 8 (show 31 < 32 by decide)
   unfold tabPreN
   refine wp_seqs_append (by simp) (by simp [toEnt]) ?_
   simp only [seqs]
   -- The base.
   refine WP.mono (tabInit_ok hc hw') fun t₁ ⟨hm₁, k₁⟩ => ?_
-  have o1 := writeW_outside t.mem P (d := 8 * Crt.sTab) (off P (slot wx 8)) (by decide)
-  have o2 := writeW_outside (t.mem.writeW (off P (8 * Crt.sTab)) (off P (slot wx 8))) P (d := 8 * Crt.sEnt)
+  obtain o1 := writeW_outside t.mem P (d := 8 * Crt.sTab) (off P (slot wx 8)) (by decide)
+  obtain o2 := writeW_outside (t.mem.writeW (off P (8 * Crt.sTab)) (off P (slot wx 8))) P (d := 8 * Crt.sEnt)
     (off P (slot wx 8)) (by decide)
   rw [← hm₁] at o2
-  have f₁ : Frm P (buildRanges wx n) t.mem t₁.mem :=
+  obtain f₁ : Frm P (buildRanges wx n) t.mem t₁.mem :=
     (Frm.of_outside o1 (by simp [buildRanges])).trans (Frm.of_outside o2 (by simp [buildRanges]))
-  have hc₁ := hc.of_frm (f₁.mono (buildRanges_sub wx)) k₁.wr (k₁.gpr .x0 (by decide))
+  obtain hc₁ := hc.of_frm (f₁.mono (buildRanges_sub wx)) k₁.wr (k₁.gpr .x0 (by decide))
   -- `T_0 := Y`.
   refine wp_seqs_append (by simp [toEnt]) (by simp) ?_
   refine WP.mono (toEnt_ok hc₁ hw hw' (a := aY) (j := 0) (by decide) (by omega_arith) (by
     rw [hm₁, word_writeW_self])) fun t₂ ⟨hv₂, o₃, k₂⟩ => ?_
-  have f₂ : Frm P (buildRanges wx n) t₁.mem t₂.mem :=
+  obtain f₂ : Frm P (buildRanges wx n) t₁.mem t₂.mem :=
     Frm.of_outside (o₃.mono (o' := slot wx 8) (n' := tabBytes wx n) (Nat.le_refl _) (by omega_arith))
       (by simp [buildRanges])
-  have hc₂ := hc₁.of_frm (f₂.mono (buildRanges_sub wx)) k₂.wr (k₂.gpr .x0 (by decide))
-  have hh₂ : ∀ k < 32, word t₂.mem P (8 * k) = word t₁.mem P (8 * k) := fun k hk =>
+  obtain hc₂ := hc₁.of_frm (f₂.mono (buildRanges_sub wx)) k₂.wr (k₂.gpr .x0 (by decide))
+  obtain hh₂ : ∀ k < 32, word t₂.mem P (8 * k) = word t₁.mem P (8 * k) := fun k hk =>
     o₃.word (by have := hdr_lt_slot wx (8 + 0) hk; omega_arith) (by omega_arith)
   -- `sEnt` up.
   refine wp_seqs_append (by simp) (by simp [toEnt]) ?_
   simp only [seqs]
   refine WP.mono (nextEnt_ok (e := slot wx 8) hc₂ hw' (by rw [hh₂ _ (by decide), hm₁, word_writeW_self]))
     fun t₃ ⟨hm₃, k₃⟩ => ?_
-  have o₄ := writeW_outside t₂.mem P (d := 8 * Crt.sEnt) (off P (slot wx 8 + 8 * (wx + 2))) (by decide)
+  obtain o₄ := writeW_outside t₂.mem P (d := 8 * Crt.sEnt) (off P (slot wx 8 + 8 * (wx + 2))) (by decide)
   rw [← hm₃] at o₄
-  have f₃ : Frm P (buildRanges wx n) t₂.mem t₃.mem := Frm.of_outside o₄ (by simp [buildRanges])
-  have hc₃ := hc₂.of_frm (f₃.mono (buildRanges_sub wx)) k₃.wr (k₃.gpr .x0 (by decide))
+  obtain f₃ : Frm P (buildRanges wx n) t₂.mem t₃.mem := Frm.of_outside o₄ (by simp [buildRanges])
+  obtain hc₃ := hc₂.of_frm (f₃.mono (buildRanges_sub wx)) k₃.wr (k₃.gpr .x0 (by decide))
   -- `T_1 := Xc`.
   refine wp_seqs_append (by simp [toEnt]) (by simp [copyArr]) ?_
   refine WP.mono (toEnt_ok hc₃ hw hw' (a := Crt.aXc) (j := 1) (by decide) (by omega_arith) (by
     rw [hm₃, word_writeW_self, ← slot_succ])) fun t₄ ⟨hv₄, o₅, k₄⟩ => ?_
-  have hE01 := slot_sep (w := wx) (show 8 + 0 ≠ 8 + 1 by decide)
-  have f₄ : Frm P (buildRanges wx n) t₃.mem t₄.mem :=
+  obtain hE01 := slot_sep (w := wx) (show 8 + 0 ≠ 8 + 1 by decide)
+  obtain f₄ : Frm P (buildRanges wx n) t₃.mem t₄.mem :=
     Frm.of_outside (o₅.mono (o' := slot wx 8) (n' := tabBytes wx n) (slot_mono wx (by decide)) (by omega_arith))
       (by simp [buildRanges])
-  have hc₄ := hc₃.of_frm (f₄.mono (buildRanges_sub wx)) k₄.wr (k₄.gpr .x0 (by decide))
-  have hh₄ : ∀ k < 32, word t₄.mem P (8 * k) = word t₃.mem P (8 * k) := fun k hk =>
+  obtain hc₄ := hc₃.of_frm (f₄.mono (buildRanges_sub wx)) k₄.wr (k₄.gpr .x0 (by decide))
+  obtain hh₄ : ∀ k < 32, word t₄.mem P (8 * k) = word t₃.mem P (8 * k) := fun k hk =>
     o₅.word (by have := hdr_lt_slot wx (8 + 1) hk; omega_arith) (by omega_arith)
   -- `T := Xc`.
   refine wp_seqs_append (by simp [copyArr]) (by simp) ?_
   refine WP.mono (copyArr_ok hc₄.good (Nat.le_refl _) (by omega_arith) (by omega_arith) (o := Crt.aT)
     (a := Crt.aXc) (by decide) (by decide) (by decide)) fun t₅ ⟨hv₅, o₆, k₅⟩ => ?_
-  have f₅ : Frm P (buildRanges wx n) t₄.mem t₅.mem :=
+  obtain f₅ : Frm P (buildRanges wx n) t₄.mem t₅.mem :=
     Frm.of_outside (o₆.mono (o' := slot wx Crt.aT) (n' := 8 * (wx + 2)) (Nat.le_refl _) (by omega_arith))
       (by simp [buildRanges])
-  have hc₅ := hc₄.of_frm (f₅.mono (buildRanges_sub wx)) k₅.wr (k₅.gpr .x0 (by decide))
-  have hh₅ : ∀ k < 32, word t₅.mem P (8 * k) = word t₄.mem P (8 * k) := fun k hk =>
+  obtain hc₅ := hc₄.of_frm (f₅.mono (buildRanges_sub wx)) k₅.wr (k₅.gpr .x0 (by decide))
+  obtain hh₅ : ∀ k < 32, word t₅.mem P (8 * k) = word t₄.mem P (8 * k) := fun k hk =>
     o₆.word (by have := hdr_lt_slot wx Crt.aT hk; omega_arith) (by omega_arith)
-  have hT8 : ∀ j, slot wx Crt.aT + 8 * (wx + 2) ≤ slot wx (8 + j) := fun j => by
+  obtain hT8 : ∀ j, slot wx Crt.aT + 8 * (wx + 2) ≤ slot wx (8 + j) := fun j => by
     have := slot_mono wx (show 8 ≤ 8 + j by omega_arith); omega_arith
   simp only [seqs]
   -- The count.
   refine WP.mono (hcnt hc₅) fun t₆ ⟨hm₆, k₆⟩ => ?_
-  have o₇ := writeW_outside t₅.mem P (d := 8 * Crt.sBit) (BitVec.ofNat 64 c) (by decide)
+  obtain o₇ := writeW_outside t₅.mem P (d := 8 * Crt.sBit) (BitVec.ofNat 64 c) (by decide)
   rw [← hm₆] at o₇
-  have f₆ : Frm P (buildRanges wx n) t₅.mem t₆.mem := Frm.of_outside o₇ (by simp [buildRanges])
-  have hc₆ := hc₅.of_frm (f₆.mono (buildRanges_sub wx)) k₆.wr (k₆.gpr .x0 (by decide))
-  have f06 : Frm P (buildRanges wx n) t.mem t₆.mem := ((((f₁.trans f₂).trans f₃).trans f₄).trans f₅).trans f₆
-  have k06 : Keep mmRegs t t₆ := (((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).mono (by decide)
+  obtain f₆ : Frm P (buildRanges wx n) t₅.mem t₆.mem := Frm.of_outside o₇ (by simp [buildRanges])
+  obtain hc₆ := hc₅.of_frm (f₆.mono (buildRanges_sub wx)) k₆.wr (k₆.gpr .x0 (by decide))
+  obtain f06 : Frm P (buildRanges wx n) t.mem t₆.mem := ((((f₁.trans f₂).trans f₃).trans f₄).trans f₅).trans f₆
+  obtain k06 : Keep mmRegs t t₆ := (((((k₁.trans k₂).trans k₃).trans k₄).trans k₅).trans k₆).mono (by decide)
   -- Entries 0 and 1, and `T`, at `t₆`.
   have hX₄ : wv t₄.mem P (slot wx Crt.aXc) wx = Xc := hc₄.x
-  have e0 : wv t₆.mem P (slot wx (8 + 0)) wx = wv t.mem P (slot wx aY) wx := by
+  obtain e0 : wv t₆.mem P (slot wx (8 + 0)) wx = wv t.mem P (slot wx aY) wx := by
     rw [o₇.wv (by have := hdr_lt_slot wx (8 + 0) (show Crt.sBit < 32 by decide); omega_arith) (by omega_arith),
       o₆.wv (by have := hT8 0; omega_arith) (by omega_arith),
       o₅.wv (by omega_arith) (by omega_arith),
       o₄.wv (by have := hdr_lt_slot wx (8 + 0) (show Crt.sEnt < 32 by decide); omega_arith) (by omega_arith), hv₂]
     exact f₁.wv_eq (buildRanges_y wx) (by omega_arith)
-  have e1 : wv t₆.mem P (slot wx (8 + 1)) wx = Xc := by
+  obtain e1 : wv t₆.mem P (slot wx (8 + 1)) wx = Xc := by
     rw [o₇.wv (by have := hdr_lt_slot wx (8 + 1) (show Crt.sBit < 32 by decide); omega_arith) (by omega_arith),
       o₆.wv (by have := hT8 1; omega_arith) (by omega_arith), hv₄]
     exact hc₃.x
-  have eT : wv t₆.mem P (slot wx Crt.aT) wx = Xc := by
+  obtain eT : wv t₆.mem P (slot wx Crt.aT) wx = Xc := by
     rw [o₇.wv (by have := hdr_lt_slot wx Crt.aT (show Crt.sBit < 32 by decide); omega_arith) (by omega_arith), hv₅,
       hX₄]
   refine ⟨hc₆, ?_, ?_, ?_, by rw [eT]; exact hXN, fun hq => by rw [eT, Nat.zero_add, Nat.pow_one]; exact hXc hq,
@@ -343,7 +343,7 @@ theorem tabBuildN_ok (M : Mont) {t : State} {P : Addr} {wx : Nat} {minv : BitVec
       (∀ k < 32, k ≠ Crt.sTab → k ≠ Crt.sEnt → k ≠ Crt.sBit → word t'.mem P (8 * k) = word t.mem P (8 * k)) ∧
       Frm P (crtExpRanges wx n) t.mem t'.mem ∧ Keep mmRegs t t' := by
   have hn := hc.scrT.nowrap
-  have hY0 := slot_le (w := wx) (show aY < 8 by decide)
+  obtain hY0 := slot_le (w := wx) (show aY < 8 by decide)
   refine wp_seqs_append (by simp [tabPreN]) (by simp) (WP.mono (tabPreN_ok hc hw hw' hnc hcnt hXN hXc hY hYv) fun t₆ h₀ => ?_)
   simp only [seqs, tabLoop]
   refine WP.mono (count_loop (cr := .x3) (n := c) (by omega_arith) (BuildInvN t P wx minv X Xc Q x n c)

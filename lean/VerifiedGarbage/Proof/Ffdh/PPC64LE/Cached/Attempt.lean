@@ -39,11 +39,11 @@ open VG.Proof.Bignum (slot)
 def tbOf (bits : Nat) : Byte := BitVec.ofNat 8 (255 / 2 ^ (8 * ((bits + 7) / 8) - bits))
 
 theorem tbOf_toNat (bits : Nat) : (tbOf bits).toNat = 2 ^ (8 - (8 * ((bits + 7) / 8) - bits)) - 1 := by
-  have hd : 8 * ((bits + 7) / 8) - bits < 8 := by omega_using []
+  obtain hd : 8 * ((bits + 7) / 8) - bits < 8 := by omega_using []
   obtain ⟨d, hd'⟩ : ∃ d, d = 8 * ((bits + 7) / 8) - bits := ⟨_, rfl⟩
   rw [← hd'] at hd ⊢
   unfold tbOf; rw [← hd']
-  have key : ∀ d < 8, (BitVec.ofNat 8 (255 / 2 ^ d)).toNat = 2 ^ (8 - d) - 1 := by decide
+  obtain key : ∀ d < 8, (BitVec.ofNat 8 (255 / 2 ^ d)).toNat = 2 ^ (8 - d) - 1 := by decide
   exact key d hd
 
 /-- The shift loop: `r14 := r14 >> c` for the count `c` in `r17`, from 1. -/
@@ -76,11 +76,11 @@ theorem mb_ok {s : State} {B : Addr} {Z bits : Nat} (hs : Scr s B Z) (hZ : 24 �
     (hyw : s.mem.readW (off B hBytes) 64 = BitVec.ofNat 64 ((bits + 7) / 8)) (hb : bits < 2 ^ 32) :
     WP isa (.block mbBlock) s fun t => (t.gpr .r17 = BitVec.ofNat 64 (8 * ((bits + 7) / 8) - bits) ∧
       t.gpr .r14 = BitVec.ofNat 64 255 ∧ t.mem = s.mem) ∧ Keep [.r14, .r17, .r18] s t := by
-  have l8 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 8) 8 := by rw [h23]; exact hs.ld (d := 8) (n := 8) (by omega_using [hZ])
-  have l16 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 16) 8 := by
+  obtain l8 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 8) 8 := by rw [h23]; exact hs.ld (d := 8) (n := 8) (by omega_using [hZ])
+  obtain l16 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 16) 8 := by
     rw [h23]; exact hs.ld (d := 16) (n := 8) (by omega_using [hZ])
-  have v8 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 bits := by rw [h23]; exact hbw
-  have v16 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 ((bits + 7) / 8) := by
+  obtain v8 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 8) 64 = BitVec.ofNat 64 bits := by rw [h23]; exact hbw
+  obtain v16 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 ((bits + 7) / 8) := by
     rw [h23]; exact hyw
   refine WP.keep [.r14, .r17, .r18] ?_ (by decide)
   unfold mbBlock ldh
@@ -94,8 +94,8 @@ theorem maskByte_ok {s : State} {B : Addr} {Z bits : Nat} (hs : Scr s B Z) (hZ :
     (hyw : s.mem.readW (off B hBytes) 64 = BitVec.ofNat 64 ((bits + 7) / 8)) (hb : bits < 2 ^ 32) :
     WP isa maskByte s fun t => (t.gpr .r14 = (tbOf bits).setWidth 64 ∧ t.mem = s.mem) ∧ Keep [.r14, .r17, .r18] s t := by
   obtain ⟨d, hd⟩ : ∃ d, d = 8 * ((bits + 7) / 8) - bits := ⟨_, rfl⟩
-  have hd8 : d < 8 := by omega_using [hd]
-  have htb : (tbOf bits).setWidth 64 = BitVec.ofNat 64 (255 / 2 ^ d) := by
+  obtain hd8 : d < 8 := by omega_using [hd]
+  obtain htb : (tbOf bits).setWidth 64 = BitVec.ofNat 64 (255 / 2 ^ d) := by
     apply BitVec.eq_of_toNat_eq
     rw [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
     unfold tbOf; rw [← hd, BitVec.toNat_ofNat]
@@ -128,16 +128,16 @@ theorem sb_ok {s : State} {B X R : Addr} {Z k bits : Nat} (hs : Scr s B Z) (hZ :
       (t.gpr .r22 = BitVec.ofNat 64 (k - (bits + 7) / 8) ∧ t.gpr .r24 = off R 0 ∧ t.gpr .r25 = off X 0 ∧
         t.gpr .r6 = BitVec.ofNat 64 k ∧ t.gpr .r4 = BitVec.ofNat 64 0 ∧ t.gpr .r14 = s.gpr .r14 ∧ t.mem = s.mem) ∧
       Keep [.r4, .r6, .r22, .r24, .r25] s t := by
-  have l16 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 16) 8 := by
+  obtain l16 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 16) 8 := by
     rw [h23]; exact hs.ld (d := 16) (n := 8) (by omega_using [hZ])
-  have v16 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 ((bits + 7) / 8) := by
+  obtain v16 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 16) 64 = BitVec.ofNat 64 ((bits + 7) / 8) := by
     rw [h23]; exact hyw
-  have l88 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 88) 8 := by
+  obtain l88 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 88) 8 := by
     rw [h23]; exact hs.ld (d := 88) (n := 8) (by omega_using [hZ])
-  have l64 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 64) 8 := by
+  obtain l64 : InRegions (s.rd ++ s.wr) (s.gpr .r23 + BitVec.ofNat 64 64) 8 := by
     rw [h23]; exact hs.ld (d := 64) (n := 8) (by omega_using [hZ])
-  have v88 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 88) 64 = off R 0 := by rw [h23]; exact hR
-  have v64 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 64) 64 = off X 0 := by rw [h23]; exact hX
+  obtain v88 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 88) 64 = off R 0 := by rw [h23]; exact hR
+  obtain v64 : s.mem.readW (s.gpr .r23 + BitVec.ofNat 64 64) 64 = off X 0 := by rw [h23]; exact hX
   refine WP.keep [.r4, .r6, .r22, .r24, .r25] ?_ (by decide)
   unfold sbBlock ldh ptrs cutSetup
   prun [hBytes, l16, v16, l88, l64, v88, v64, h28, ofNat_sub' hk hk', BitVec.add_zero]
@@ -158,11 +158,11 @@ theorem scalarC_ok {s : State} {B X R : Addr} {Z w k bits : Nat} (h : Env s B Z 
       (Spec.Rsa.bytesAt t.mem X k = cut (Spec.Rsa.bytesAt s.mem R k) (k - (bits + 7) / 8) (tbOf bits) ∧
         Outside X 0 k s.mem t.mem) ∧ Keep scalarCRegs s t := by
   have hZ := h.hZ
-  have hZ' : 256 ≤ Z := Nat.le_trans (by simp only [slot]; omega_using []) hZ
+  obtain hZ' : 256 ≤ Z := Nat.le_trans (by simp only [slot]; omega_using []) hZ
   unfold scalar
   refine WP.seq (WP.mono (maskByte_ok h.hs (by omega_using [hZ']) h23 hbw hyw (by omega_using [hk', hbk])) fun s₁ ⟨⟨a14, m1⟩, k1⟩ => ?_)
-  have g23 : s₁.gpr .r23 = B := (k1.gpr .r23 (by decide)).trans h23
-  have h28' : s₁.gpr .r28 = BitVec.ofNat 64 k := (k1.gpr .r28 (by decide)).trans h28
+  obtain g23 : s₁.gpr .r23 = B := (k1.gpr .r23 (by decide)).trans h23
+  obtain h28' : s₁.gpr .r28 = BitVec.ofNat 64 k := (k1.gpr .r28 (by decide)).trans h28
   refine WP.seq (WP.mono (sb_ok (bits := bits) (X := X) (R := R) (h.hs.congr k1.wr) (Nat.le_trans (by decide) hZ') g23 h28' (by omega_using [hbk]) (by omega_using [hk'])
       (by rw [m1]; exact hyw) (by rw [m1]; exact hX) (by rw [m1]; exact hR))
     fun s₂ ⟨⟨a22, a24, a25, a6, a4, a14', m2⟩, k2⟩ => ?_)
@@ -228,12 +228,12 @@ theorem goodC_ok {s : State} {B C X O : Addr} {Z w k : Nat} {xb : List Byte} {P 
             Spec.Rsa.powMod G (Rsa.FixedBaseComb.high bits (Spec.Rsa.os2ip xb) 0) P < P - 1 then 1 else 3) ∧
         ∃ m, Outs B (attOut w) s.mem m ∧ Outside O 0 k m t.mem) ∧ Keep goodRegs s t := by
   have hZ := h.env.hZ
-  have hw := h.env.hw; have hw' := h.env.hw'
-  have hP : 0 < P := by have := h.row.one; omega_using [this]
+  obtain hw := h.env.hw; have hw' := h.env.hw'
+  obtain hP : 0 < P := by have := h.row.one; omega_using [this]
   unfold good
   refine WP.seq (WP.mono (comb_ok h) fun s₁ ⟨⟨z1, p1, o1, r10⟩, k1⟩ => ?_)
   generalize hz : Spec.Rsa.powMod G (Rsa.FixedBaseComb.high bits (Spec.Rsa.os2ip xb) 0) P = z at z1 ⊢
-  have hzP : z < P := by rw [← hz, VG.Proof.Bignum.powMod_eq]; exact Nat.mod_lt _ hP
+  obtain hzP : z < P := by rw [← hz, VG.Proof.Bignum.powMod_eq]; exact Nat.mod_lt _ hP
   refine WP.seq (WP.mono (VG.Proof.Ffdh.PPC64LE.Domain.exOut_ok (O := O) (k := k) (h.env.hs.congr k1.wr)
     (ho.congr k1.wr) r10 ((k1.gpr .r29 (by decide)).trans h.env.h29) ((k1.gpr .r11 (by decide)).trans h.env.h11)
     ((k1.gpr .r23 (by decide)).trans h.h23) (by rw [k1.gpr .r28 (by decide), h.h28, hk28]) hw hw' hZ hk hkw
@@ -300,42 +300,42 @@ theorem bodyC_ok {s : State} {B D X O R C : Addr} {Z w k L p bits : Nat} (h : En
         ∀ d, (d + 8 ≤ 32 ∨ 56 ≤ d) → d + 8 ≤ 256 → word t.mem B d = word s.mem B d) ∧ Keep bodyRegs s t := by
   have hs := h.hs
   have hZ := h.hZ
-  have hw := h.hw; have hw' := h.hw'
+  obtain hw := h.hw; have hw' := h.hw'
   have hnw := hs.nowrap
-  have e0 := VG.Proof.Ffdh.PPC64LE.Domain.slot_eq w 0; have e28 := VG.Proof.Ffdh.PPC64LE.Domain.slot_eq w 28
+  obtain e0 := VG.Proof.Ffdh.PPC64LE.Domain.slot_eq w 0; have e28 := VG.Proof.Ffdh.PPC64LE.Domain.slot_eq w 28
   unfold body
   -- x.
   refine WP.seq (WP.mono (scalarC_ok h h23 h28 (by omega_using [hk]) hk' hb1 hbk hbw hyw hX hR hrdR hx hsepRX)
     fun s₃ ⟨⟨xb, xout⟩, k3⟩ => ?_)
   generalize hxo : cut (Spec.Rsa.bytesAt s.mem R k) (k - (bits + 7) / 8) (tbOf bits) = xo at xb ⊢
-  have hxv : Spec.Rsa.os2ip xo < 2 ^ bits := by
+  obtain hxv : Spec.Rsa.os2ip xo < 2 ^ bits := by
     rw [← hxo, scalarC_value (by simp [Spec.Rsa.bytesAt]) hb1 hbk]; exact Nat.mod_lt _ (Nat.two_pow_pos _)
-  have osc := GenerateKey.out_scr xout hsepBX
-  have hw3 : ∀ d, d + 8 ≤ 256 → word s₃.mem B d = word s.mem B d := fun d hd =>
+  obtain osc := GenerateKey.out_scr xout hsepBX
+  obtain hw3 : ∀ d, d + 8 ≤ 256 → word s₃.mem B d = word s.mem B d := fun d hd =>
     Outside.word osc (Or.inl (by omega_using [hZ, e28, hd])) (by omega_using [hd])
-  have hp3 : VG.Proof.MillerRabin.PPC64LE.arr s₃.mem B w 0 = p := by
+  obtain hp3 : VG.Proof.MillerRabin.PPC64LE.arr s₃.mem B w 0 = p := by
     rw [VG.Proof.MillerRabin.PPC64LE.arr, Outside.val32 osc (Or.inl (by omega_using [hZ, e0, e28])) (by omega_using [hw', e0])]; exact hP
-  have hbD : ∀ (Q : Addr) n, (∀ i < n, ∀ y, ofs X y < k → off Q i ≠ y) →
+  obtain hbD : ∀ (Q : Addr) n, (∀ i < n, ∀ y, ofs X y < k → off Q i ≠ y) →
       Spec.Rsa.bytesAt s₃.mem Q n = Spec.Rsa.bytesAt s.mem Q n := fun Q n hq =>
     VG.Proof.Ffdh.PPC64LE.Domain.outside_bytesAt xout (by omega_using []) hq
-  have sepG : ∀ i < k, ∀ y, ofs X y < k → off (off D k) i ≠ y := fun i hi => by
+  obtain sepG : ∀ i < k, ∀ y, ofs X y < k → off (off D k) i ≠ y := fun i hi => by
     rw [VG.Proof.Ffdh.PPC64LE.Domain.off_off']; exact hsepDX _ (by omega_using [hL, hi])
-  have eb : Derive.bnd s₃.mem D k L p = Derive.bnd s.mem D k L p := by
+  obtain eb : Derive.bnd s₃.mem D k L p = Derive.bnd s.mem D k L p := by
     unfold Derive.bnd
     by_cases hq : L = 3 * k
     · rw [ite_eq_left hq, ite_eq_left hq, hbD _ _ fun i hi => by
         rw [VG.Proof.Ffdh.PPC64LE.Domain.off_off']; exact hsepDX _ (by omega_using [hq, hi])]
     · rw [ite_eq_right hq, ite_eq_right hq]
-  have eg : Spec.Rsa.bytesAt s₃.mem (off D k) k = Spec.Rsa.bytesAt s.mem (off D k) k := hbD _ _ sepG
-  have cx3 := ctx_of_x (n := 8 * ctxWords w) xout hsepCX
-  have e3 := h.keep k3 (by decide)
-  have g23 : s₃.gpr .r23 = B := (k3.gpr .r23 (by decide)).trans h23
-  have g21 : s₃.gpr .r21 = D := (k3.gpr .r21 (by decide)).trans h21
-  have g27 : s₃.gpr .r27 = BitVec.ofNat 64 L := (k3.gpr .r27 (by decide)).trans h27
-  have g28 : s₃.gpr .r28 = BitVec.ofNat 64 k := (k3.gpr .r28 (by decide)).trans h28
-  have rdQ : L = 3 * k → ∀ i < k, InRegions (s₃.rd ++ s₃.wr) (off (off D (2 * k)) i) 1 := fun hq i hi => by
+  obtain eg : Spec.Rsa.bytesAt s₃.mem (off D k) k = Spec.Rsa.bytesAt s.mem (off D k) k := hbD _ _ sepG
+  obtain cx3 := ctx_of_x (n := 8 * ctxWords w) xout hsepCX
+  obtain e3 := h.keep k3 (by decide)
+  obtain g23 : s₃.gpr .r23 = B := (k3.gpr .r23 (by decide)).trans h23
+  obtain g21 : s₃.gpr .r21 = D := (k3.gpr .r21 (by decide)).trans h21
+  obtain g27 : s₃.gpr .r27 = BitVec.ofNat 64 L := (k3.gpr .r27 (by decide)).trans h27
+  obtain g28 : s₃.gpr .r28 = BitVec.ofNat 64 k := (k3.gpr .r28 (by decide)).trans h28
+  obtain rdQ : L = 3 * k → ∀ i < k, InRegions (s₃.rd ++ s₃.wr) (off (off D (2 * k)) i) 1 := fun hq i hi => by
     rw [VG.Proof.Ffdh.PPC64LE.Domain.off_off', k3.rd, k3.wr]; exact hrdD _ (by omega_using [hq, hi])
-  have sepQ : L = 3 * k → ∀ i < k, ∀ x, ofs B x < Z → off (off D (2 * k)) i ≠ x := fun hq i hi => by
+  obtain sepQ : L = 3 * k → ∀ i < k, ∀ x, ofs B x < Z → off (off D (2 * k)) i ≠ x := fun hq i hi => by
     rw [VG.Proof.Ffdh.PPC64LE.Domain.off_off']; exact hsepD _ (by omega_using [hq, hi])
   -- x's range.
   refine WP.seq (WP.seq (WP.mono (Derive.xRange_ok (xl := k) e3 g23 g21 g27 g28 (by omega_using [hk]) (by omega_using [hwk]) (by omega_using [hk', hL])
@@ -346,15 +346,15 @@ theorem bodyC_ok {s : State} {B D X O R C : Addr} {Z w k L p bits : Nat} (h : En
     fun s₄ ⟨⟨a26, p4, b4, a10⟩, k4⟩ => ?_))
   rw [xb, hp3, eb] at a26
   rw [hp3] at p4
-  have k34 := k3.trans k4
-  have e4 : Env s₄ B Z w := ⟨hs.congr k34.wr, a10, (k34.gpr .r29 (by decide)).trans h.h29,
+  obtain k34 := k3.trans k4
+  obtain e4 : Env s₄ B Z w := ⟨hs.congr k34.wr, a10, (k34.gpr .r29 (by decide)).trans h.h29,
     (k34.gpr .r11 (by decide)).trans h.h11, (k34.gpr .r31 (by decide)).trans h.h31, hw, hw', hZ⟩
-  have hw4 : ∀ d, d + 8 ≤ 256 → word s₄.mem B d = word s.mem B d := fun d hd => by
+  obtain hw4 : ∀ d, d + 8 ≤ 256 → word s₄.mem B d = word s.mem B d := fun d hd => by
     rw [Outside.word b4 (by omega_using [e0, hd]) (by omega_using [hd]), hw3 d hd]
-  have xb4 : Spec.Rsa.bytesAt s₄.mem X k = xo := by
+  obtain xb4 : Spec.Rsa.bytesAt s₄.mem X k = xo := by
     rw [VG.Proof.Ffdh.PPC64LE.Domain.Body.bytesAt b4 hZ hsepX, xb]
-  have g23₄ : s₄.gpr .r23 = B := (k4.gpr .r23 (by decide)).trans g23
-  have g28₄ : s₄.gpr .r28 = BitVec.ofNat 64 k := (k4.gpr .r28 (by decide)).trans g28
+  obtain g23₄ : s₄.gpr .r23 = B := (k4.gpr .r23 (by decide)).trans g23
+  obtain g28₄ : s₄.gpr .r28 = BitVec.ofNat 64 k := (k4.gpr .r28 (by decide)).trans g28
   -- The end: x masked by the status.
   have fin : ∀ u : State, ∀ st : Nat, Keep bodyRegs s u →
       u.gpr .r3 = BitVec.ofNat 64 st → 1 ≤ st → st < 4 →
@@ -376,7 +376,7 @@ theorem bodyC_ok {s : State} {B D X O R C : Addr} {Z w k L p bits : Nat} (h : En
             xo else List.replicate k 0) ∧
           ∀ d, (d + 8 ≤ 32 ∨ 56 ≤ d) → d + 8 ≤ 256 → word t.mem B d = word s.mem B d) ∧ Keep bodyRegs s t := by
     intro u st ku u3 hs1 hs4 hst uO uX uw
-    have hX4 : u.mem.readW (off B 64) 64 = off X 0 := by
+    obtain hX4 : u.mem.readW (off B 64) 64 = off X 0 := by
       show word u.mem B 64 = _; rw [uw 64 (by omega_using []) (by omega_using [])]; exact hX
     refine WP.mono (GenerateKey.maskX_ok (hs.congr ku.wr) (by omega_using [hZ, e28]) ((ku.gpr .r23 (by decide)).trans h23)
       ((ku.gpr .r28 (by decide)).trans h28) hX4 (by omega_using [hk]) (by omega_using [hk']) (hx.congr ku.wr) u3 hs1 hs4)
@@ -395,7 +395,7 @@ theorem bodyC_ok {s : State} {B D X O R C : Addr} {Z w k L p bits : Nat} (h : En
         prun [g23₄, (hs.congr k34.wr).ld (d := 80) (n := 8) (by omega_using [hZ, e28]),
           show s₄.mem.readW (off B 80) 64 = off O 0 from (hw4 80 (by omega_using [])).trans hO])
       (by decide)) fun s₅ ⟨⟨a27, m5⟩, k5⟩ => ?_)
-    have k45 := k34.trans k5
+    obtain k45 := k34.trans k5
     refine WP.seq (WP.mono (Pub.output_ok (b := false) (hs.congr k45.wr) (ho.congr k45.wr)
       ((k5.gpr .r10 (by decide)).trans a10) ((k45.gpr .r29 (by decide)).trans h.h29)
       ((k5.gpr .r28 (by decide)).trans g28₄) a27 (by rw [k5.gpr .r26 (by decide), a26, decide_eq_false hv])
@@ -413,10 +413,10 @@ theorem bodyC_ok {s : State} {B D X O R C : Addr} {Z w k L p bits : Nat} (h : En
       rw [m5, hw4 _ hd']
   · -- In range.
     rw [a26, VG.Proof.Ffdh.PPC64LE.Domain.mask_beq_zero, Bool.not_eq_false', decide_eq_true_eq] at hv
-    have cx4 : Outside C (8 * ctxWords w) (2 ^ 64) s.mem s₄.mem :=
+    obtain cx4 : Outside C (8 * ctxWords w) (2 ^ 64) s.mem s₄.mem :=
       cx3.trans (outs_ctx (body_att b4) (attOut_fit e3) hc.sep)
-    have hl4 : (Spec.Rsa.bytesAt s₄.mem X k).length = k := VG.Proof.Bignum.bytesAt_length _ _ _
-    have ci : CombIn s₄ B C X Z w (Spec.Rsa.bytesAt s₄.mem X k) p
+    obtain hl4 : (Spec.Rsa.bytesAt s₄.mem X k).length = k := VG.Proof.Bignum.bytesAt_length _ _ _
+    obtain ci : CombIn s₄ B C X Z w (Spec.Rsa.bytesAt s₄.mem X k) p
         (Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D k) k)) bits := by
       refine ⟨e4, g23₄, by rw [g28₄, hl4], by rw [show hCtx = 0 from rfl]; exact (hw4 0 (by omega_using [])).trans hCw,
         hc.congr k34.rd k34.wr, fun a ha => ?_, ?_, p4, by rw [show hRows = 24 from rfl]; exact (hw4 24 (by omega_using [])).trans hRw,
@@ -436,7 +436,7 @@ theorem bodyC_ok {s : State} {B D X O R C : Addr} {Z w k L p bits : Nat} (h : En
     rw [xb4, Rsa.FixedBaseComb.high_zero bits _ hxv, VG.Proof.Bignum.powMod_eq] at uO u3
     refine fin u _ ((k34.trans ku).mono (by decide)) u3 (by split <;> decide) (by split <;> decide) ?_ ?_ ?_ ?_
     · unfold VG.Proof.Ffdh.PPC64LE.GenerateKey.gkSt
-      have hn : ¬¬(0 < Spec.Rsa.os2ip xo ∧ Spec.Rsa.os2ip xo < Derive.bnd s.mem D k L p) := fun h' => h' hv
+      obtain hn : ¬¬(0 < Spec.Rsa.os2ip xo ∧ Spec.Rsa.os2ip xo < Derive.bnd s.mem D k L p) := fun h' => h' hv
       simp only [hn, ↓reduceIte]
     · rw [uO]
       by_cases hc' : 1 < Spec.Rsa.os2ip (Spec.Rsa.bytesAt s.mem (off D k) k) ^ Spec.Rsa.os2ip xo % p ∧

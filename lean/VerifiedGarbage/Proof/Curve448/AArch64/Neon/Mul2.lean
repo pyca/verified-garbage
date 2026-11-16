@@ -164,7 +164,7 @@ theorem prep_ok {s : State} {base : Addr} (hs : Scr s base) {a₁ b₁ a₂ b₂
   have hNBS : NBS = 4416 := rfl
   have hNBP : NBP = 4480 := rfl
   have nn : ∀ a < 32, ∀ b < 32, a ≠ b → V a ≠ V b := V_ne
-  have lt60 : ∀ x ∈ [a₁, b₁, a₂, b₂], ∀ i < 8, limbs s.mem base x i < Ib → limbs s.mem base x i < 2 ^ 60 :=
+  obtain lt60 : ∀ x ∈ [a₁, b₁, a₂, b₂], ∀ i < 8, limbs s.mem base x i < Ib → limbs s.mem base x i < 2 ^ 60 :=
     fun _ _ _ _ h => by simp only [Ib] at h; omega_arith
   simp only [prep, List.append_assoc]
   rw [WP.block_append_iff]
@@ -178,8 +178,8 @@ theorem prep_ok {s : State} {base : Addr} (hs : Scr s base) {a₁ b₁ a₂ b₂
     (fun i hi => by rw [m1]; exact lt60 a₁ (by simp) i hi (la₁ i hi))
     (fun i hi => by rw [m1]; exact lt60 a₂ (by simp) i hi (la₂ i hi)))
     fun t2 ⟨A2, o2, g2, r2, w2, v2⟩ => ?_
-  have s2 : Scr t2 base := scr_of s1 g2 w2
-  have M2 : ∀ e < 2, (vdword (t2.v (V 30)) e).toNat = 2 ^ 28 - 1 := fun e he => by
+  obtain s2 : Scr t2 base := scr_of s1 g2 w2
+  obtain M2 : ∀ e < 2, (vdword (t2.v (V 30)) e).toNat = 2 ^ 28 - 1 := fun e he => by
     rw [v2 _ (by decide)]; exact hM e he
   rw [WP.block_append_iff]
   refine WP.mono (convert_ok s2 hb₁.1 (by omega_arith) hb₂.1 (by omega_arith) (by decide) (by decide) (Or.inl (by omega_arith))
@@ -192,44 +192,44 @@ theorem prep_ok {s : State} {base : Addr} (hs : Scr s base) {a₁ b₁ a₂ b₂
     (fun i hi => by rw [VG.Proof.Curve448.AArch64.Neon.limbs_outside o2 (Or.inl (by omega_arith)) (by omega_arith) hi, m1]
                     exact lt60 b₂ (by simp) i hi (lb₂ i hi)))
     fun t3 ⟨B3, o3, g3, r3, w3, v3⟩ => ?_
-  have s3 : Scr t3 base := scr_of s2 g3 w3
+  obtain s3 : Scr t3 base := scr_of s2 g3 w3
   rw [WP.block_append_iff]
   refine WP.mono (sums_ok s3) fun t4 ⟨AS4, BS4, o4, g4, r4, w4, v4⟩ => ?_
-  have s4 : Scr t4 base := scr_of s3 g4 w4
-  have h31' : t4.v (V 31) = 0 := by rw [v4 _ (by decide), v3 _ (by decide), v2 _ (by decide)]; exact h31
+  obtain s4 : Scr t4 base := scr_of s3 g4 w4
+  obtain h31' : t4.v (V 31) = 0 := by rw [v4 _ (by decide), v3 _ (by decide), v2 _ (by decide)]; exact h31
   refine WP.mono (shifted_ok s4 h31') fun t5 ⟨Sh5, o5, g5, r5, w5, v5⟩ => ?_
   -- the words of the vectors
-  have LAe : ∀ e < 2, ∀ k < 16, L28 s.mem base a₁ a₂ e k ≤ lmax k := L28_le la₁ la₂
-  have LBe : ∀ e < 2, ∀ k < 16, L28 s.mem base b₁ b₂ e k ≤ lmax k := L28_le lb₁ lb₂
-  have A2' : ∀ i < 8, ∀ c < 4, nw t2.mem base (NA + 16 * i + 4 * c) = L28 s.mem base a₁ a₂ (c % 2) (2 * i + c / 2) :=
+  obtain LAe : ∀ e < 2, ∀ k < 16, L28 s.mem base a₁ a₂ e k ≤ lmax k := L28_le la₁ la₂
+  obtain LBe : ∀ e < 2, ∀ k < 16, L28 s.mem base b₁ b₂ e k ≤ lmax k := L28_le lb₁ lb₂
+  obtain A2' : ∀ i < 8, ∀ c < 4, nw t2.mem base (NA + 16 * i + 4 * c) = L28 s.mem base a₁ a₂ (c % 2) (2 * i + c / 2) :=
     fun i hi c hc => by rw [A2 i hi c hc, split_l28 _ _ _ _ hc, m1]
-  have B3' : ∀ i < 8, ∀ c < 4, nw t3.mem base (NB + 16 * i + 4 * c) = L28 s.mem base b₁ b₂ (c % 2) (2 * i + c / 2) :=
+  obtain B3' : ∀ i < 8, ∀ c < 4, nw t3.mem base (NB + 16 * i + 4 * c) = L28 s.mem base b₁ b₂ (c % 2) (2 * i + c / 2) :=
     fun i hi c hc => by
       rw [B3 i hi c hc, split_l28 _ _ _ _ hc]
       refine (L28_congr (m := s.mem) (fun i' hi' => ?_) (fun i' hi' => ?_) (by omega_arith))
       · rw [VG.Proof.Curve448.AArch64.Neon.limbs_outside o2 (Or.inl (by omega_arith)) (by omega_arith) hi', m1]
       · rw [VG.Proof.Curve448.AArch64.Neon.limbs_outside o2 (Or.inl (by omega_arith)) (by omega_arith) hi', m1]
-  have A3 : ∀ i < 8, ∀ c < 4, nw t3.mem base (NA + 16 * i + 4 * c) = L28 s.mem base a₁ a₂ (c % 2) (2 * i + c / 2) :=
+  obtain A3 : ∀ i < 8, ∀ c < 4, nw t3.mem base (NA + 16 * i + 4 * c) = L28 s.mem base a₁ a₂ (c % 2) (2 * i + c / 2) :=
     fun i hi c hc => by rw [Outside.nw o3 (by omega_arith) (by omega_arith)]; exact A2' i hi c hc
-  have hA : ∀ i < 8, ∀ c < 4, nw t5.mem base (NA + 16 * i + 4 * c) = L28 s.mem base a₁ a₂ (c % 2) (2 * i + c / 2) :=
+  obtain hA : ∀ i < 8, ∀ c < 4, nw t5.mem base (NA + 16 * i + 4 * c) = L28 s.mem base a₁ a₂ (c % 2) (2 * i + c / 2) :=
     fun i hi c hc => by
       rw [Outside.nw o5 (by omega_arith) (by omega_arith), Outside.nw o4 (by omega_arith) (by omega_arith)]; exact A3 i hi c hc
-  have B4 : ∀ i < 8, ∀ c < 4, nw t4.mem base (NB + 16 * i + 4 * c) = L28 s.mem base b₁ b₂ (c % 2) (2 * i + c / 2) :=
+  obtain B4 : ∀ i < 8, ∀ c < 4, nw t4.mem base (NB + 16 * i + 4 * c) = L28 s.mem base b₁ b₂ (c % 2) (2 * i + c / 2) :=
     fun i hi c hc => by rw [Outside.nw o4 (by omega_arith) (by omega_arith)]; exact B3' i hi c hc
-  have hB : ∀ i < 8, ∀ c < 4, nw t5.mem base (NB + 16 * i + 4 * c) = L28 s.mem base b₁ b₂ (c % 2) (2 * i + c / 2) :=
+  obtain hB : ∀ i < 8, ∀ c < 4, nw t5.mem base (NB + 16 * i + 4 * c) = L28 s.mem base b₁ b₂ (c % 2) (2 * i + c / 2) :=
     fun i hi c hc => by rw [Outside.nw o5 (by omega_arith) (by omega_arith)]; exact B4 i hi c hc
-  have AS : ∀ i < 4, ∀ c < 4, nw t4.mem base (NAS + 16 * i + 4 * c) =
+  obtain AS : ∀ i < 4, ∀ c < 4, nw t4.mem base (NAS + 16 * i + 4 * c) =
       (L28 s.mem base a₁ a₂ (c % 2) (2 * i + c / 2) + L28 s.mem base a₁ a₂ (c % 2) (8 + (2 * i + c / 2))) % 2 ^ 32 :=
     fun i hi c hc => by
       rw [AS4 i hi c hc, A3 i (by omega_arith) c hc, A3 (i + 4) (by omega_arith) c hc, show 2 * (i + 4) + c / 2 = 8 + (2 * i + c / 2)
         by omega_arith]
-  have BS : ∀ i < 4, ∀ c < 4, nw t4.mem base (NBS + 16 * i + 4 * c) =
+  obtain BS : ∀ i < 4, ∀ c < 4, nw t4.mem base (NBS + 16 * i + 4 * c) =
       (L28 s.mem base b₁ b₂ (c % 2) (2 * i + c / 2) + L28 s.mem base b₁ b₂ (c % 2) (8 + (2 * i + c / 2))) % 2 ^ 32 :=
     fun i hi c hc => by
       rw [BS4 i hi c hc, B3' i (by omega_arith) c hc, B3' (i + 4) (by omega_arith) c hc, show 2 * (i + 4) + c / 2 = 8 + (2 * i + c / 2)
         by omega_arith]
-  have hb4 := halfB_of LBe B4 BS
-  have hSh : ∀ h < 3, ∀ j < 5, ∀ c < 4, nw t5.mem base (NBP + 80 * h + 16 * j + 4 * c) =
+  obtain hb4 := halfB_of LBe B4 BS
+  obtain hSh : ∀ h < 3, ∀ j < 5, ∀ c < 4, nw t5.mem base (NBP + 80 * h + 16 * j + 4 * c) =
       if c < 2 then (if j = 0 then 0 else hl (L28 s.mem base b₁ b₂ (c % 2)) h (2 * j - 1))
       else (if j = 4 then 0 else hl (L28 s.mem base b₁ b₂ (c % 2)) h (2 * j)) :=
     fun h hh j hj c hc => by rw [Sh5 h hh j hj c hc, sh_of hb4 h hh j hj c hc]
@@ -266,7 +266,7 @@ theorem half_lanes {s : State} {base : Addr} (hs : Scr s base) {h : Nat} (hh : h
   obtain ⟨ha, hoff⟩ := half_offsets h hh
   refine WP.mono (half_ok hs tgt fresh ht ha hoff) fun u ⟨um, ug, ur, uw, ua, uv⟩ =>
     ⟨um, ug, ur, uw, fun q hq e he => ?_, fun r h1 h2 => uv r h1 fun p hp => h2 p.pos (prods_pos_lt p hp)⟩
-  have hp := prods_hit q hq
+  obtain hp := prods_hit q hq
   rw [ua (tgt q) (by obtain ⟨p, pm, rfl⟩ := hp; exact ht p pm) (Or.inr (by
       obtain ⟨p, pm, e'⟩ := hp; exact ⟨p, pm, by rw [e']⟩)) e he,
     prodSum_cv hm hq (fun p pm => ⟨fun e' => hinj _ (prods_pos_lt p pm) _ hq e', fun e' => by rw [e']⟩) he]
@@ -314,26 +314,26 @@ theorem prods_ok {s : State} {base : Addr} (hs : Scr s base) {X Y : Nat → Nat 
   rw [WP.block_append_iff]
   refine WP.mono (half_lanes hs (by decide) (hm 0 (by decide)) (fun p => p) (List.range 15)
     (fun p hp => by have := prods_pos_lt p hp; omega_arith) (fun _ _ _ _ h => h)) fun t1 ⟨m1, g1, r1, w1, l1, v1⟩ => ?_
-  have hx1 : ∀ q < 15, LaneEq t1 q (fun e => (S (X e) (Y e) q : Int)) := fun q hq e he => by
+  obtain hx1 : ∀ q < 15, LaneEq t1 q (fun e => (S (X e) (Y e) q : Int)) := fun q hq e he => by
     rw [l1 q hq e he, ite_eq_left (List.mem_range.2 hq), Int.zero_add]
-  have h31' : t1.v (V 31) = 0 := by
+  obtain h31' : t1.v (V 31) = 0 := by
     rw [v1 _ (fun n hn => V_ne 31 (by decide) n (by simp at hn; omega_arith) (by simp at hn; omega_arith))
       (fun q hq => V_ne 31 (by decide) q (by omega_arith) (by omega_arith)), h31]
   rw [WP.block_append_iff]
   refine WP.mono (foldS_ok _ hx1 h31') fun t2 ⟨f1, f2, m2, g2, r2, w2, v2⟩ => ?_
-  have hx2 : ∀ k < 16, LaneEq t2 k (fun e => if k < 8 then (S (X e) (Y e) k : Int) -
+  obtain hx2 : ∀ k < 16, LaneEq t2 k (fun e => if k < 8 then (S (X e) (Y e) k : Int) -
       (if k < 7 then (S (X e) (Y e) (k + 8) : Int) else 0) else -(S (X e) (Y e) (k - 8) : Int)) := fun k hk e he => by
     dsimp only
     by_cases h8 : k < 8
     · rw [ite_eq_left h8]; exact f1 k h8 e he
     · rw [ite_eq_right h8]; have := f2 (k - 8) (by omega_arith) e he; rwa [Nat.sub_add_cancel (by omega_arith)] at this
-  have s2 : Scr t2 base := scr_of hs (g2.trans g1) (w2.trans w1)
-  have hm2 : ∀ h < 3, HalfMem t2.mem base h (fun e => hl (X e) h) (fun e => hl (Y e) h) := by
+  obtain s2 : Scr t2 base := scr_of hs (g2.trans g1) (w2.trans w1)
+  obtain hm2 : ∀ h < 3, HalfMem t2.mem base h (fun e => hl (X e) h) (fun e => hl (Y e) h) := by
     rw [m2, m1]; exact hm
   rw [WP.block_append_iff]
   refine WP.mono (half_lanes s2 (by decide) (hm2 1 (by decide)) (fun p => p) []
     (fun p hp => by have := prods_pos_lt p hp; omega_arith) (fun _ _ _ _ h => h)) fun t3 ⟨m3, g3, r3, w3, l3, v3⟩ => ?_
-  have hx3 : ∀ k < 16, LaneEq t3 k (fun e => (if k < 8 then (S (X e) (Y e) k : Int) -
+  obtain hx3 : ∀ k < 16, LaneEq t3 k (fun e => (if k < 8 then (S (X e) (Y e) k : Int) -
       (if k < 7 then (S (X e) (Y e) (k + 8) : Int) else 0) else -(S (X e) (Y e) (k - 8) : Int)) +
       (if k < 15 then (T (X e) (Y e) k : Int) else 0)) := fun k hk => by
     by_cases h15 : k < 15
@@ -345,13 +345,13 @@ theorem prods_ok {s : State} {base : Addr} (hs : Scr s base) {X Y : Nat → Nat 
       rw [v3 _ (not_tmp (by decide)) (fun q hq => V_ne 15 (by decide) q (by omega_arith) (by omega_arith)), ite_eq_right h15,
         Int.add_zero]
       exact hx2 15 hk e he
-  have s3 : Scr t3 base := scr_of s2 g3 w3
-  have hm3 : ∀ h < 3, HalfMem t3.mem base h (fun e => hl (X e) h) (fun e => hl (Y e) h) := by
+  obtain s3 : Scr t3 base := scr_of s2 g3 w3
+  obtain hm3 : ∀ h < 3, HalfMem t3.mem base h (fun e => hl (X e) h) (fun e => hl (Y e) h) := by
     rw [m3]; exact hm2
   rw [WP.block_append_iff]
   refine WP.mono (half_lanes s3 (by decide) (hm3 2 (by decide)) tgtU _
     (fun p hp => tgtU_lt _ (prods_pos_lt p hp)) tgtU_inj) fun t4 ⟨m4, g4, r4, w4, l4, v4⟩ => ?_
-  have hx4 : ∀ k < 16, LaneEq t4 k (fun e => ((if k < 8 then (S (X e) (Y e) k : Int) -
+  obtain hx4 : ∀ k < 16, LaneEq t4 k (fun e => ((if k < 8 then (S (X e) (Y e) k : Int) -
       (if k < 7 then (S (X e) (Y e) (k + 8) : Int) else 0) else -(S (X e) (Y e) (k - 8) : Int)) +
       (if k < 15 then (T (X e) (Y e) k : Int) else 0)) + (if 8 ≤ k then (U (X e) (Y e) (k - 8) : Int) else 0)) :=
       fun k hk => by
@@ -365,7 +365,7 @@ theorem prods_ok {s : State} {base : Addr} (hs : Scr s base) {X Y : Nat → Nat 
       rw [v4 _ (not_tmp (by omega_arith)) (fun q hq => V_ne k (by omega_arith) _ (by have := tgtU_lt q hq; omega_arith)
           (by unfold tgtU; split <;> omega_arith)), ite_eq_right h8, Int.add_zero]
       exact hx3 k hk e he
-  have hy4 : ∀ d < 7, LaneEq t4 (16 + d) (fun e => (U (X e) (Y e) (d + 8) : Int)) := fun d hd e he => by
+  obtain hy4 : ∀ d < 7, LaneEq t4 (16 + d) (fun e => (U (X e) (Y e) (d + 8) : Int)) := fun d hd e he => by
     have := l4 (d + 8) (by omega_arith) e he
     rw [tgtU_hi (by omega_arith), Nat.add_sub_cancel, ite_eq_left (fresh_mem d hd), Int.zero_add] at this
     exact this
@@ -373,7 +373,7 @@ theorem prods_ok {s : State} {base : Addr} (hs : Scr s base) {X Y : Nat → Nat 
     ⟨fun k hk e he => (l5 k hk e he).trans (by dsimp only; rw [kara_fold _ _ hk]), m5.trans (m4.trans (m3.trans (m2.trans m1))),
       g5.trans (g4.trans (g3.trans (g2.trans g1))), r5.trans (r4.trans (r3.trans (r2.trans r1))),
       w5.trans (w4.trans (w3.trans (w2.trans w1))), fun r hr => ?_⟩
-  have tmp : ∀ n ∈ [23, 24, 25, 26, 27], r ≠ V n := fun n hn => hr n (by simp at hn; omega_arith)
+  obtain tmp : ∀ n ∈ [23, 24, 25, 26, 27], r ≠ V n := fun n hn => hr n (by simp at hn; omega_arith)
   rw [v5 r (fun n hn => hr n (by omega_arith)), v4 r tmp (fun q hq => hr _ (by have := tgtU_lt q hq; omega_arith)),
     v3 r tmp (fun q hq => hr _ (by omega_arith)), v2 r (fun n hn => hr n (by omega_arith)) (hr 28 (by decide)),
     v1 r tmp (fun q hq => hr _ (by omega_arith))]
@@ -386,7 +386,7 @@ theorem toNat_lt {x : Int} (h : x < 2 ^ 64 - 2 ^ 40) : x.toNat < 2 ^ 64 - 2 ^ 40
 
 theorem lane_exact {t : State} {k : Nat} {x : Int} (h0 : 0 ≤ x) (h1 : x < 2 ^ 64 - 2 ^ 40) {e : Nat}
     (h : lane (t.v (V k)) e % M64 = x % M64) : (vdword (t.v (V k)) e).toNat = x.toNat := by
-  have hl := lane_lt (t.v (V k)) e
+  obtain hl := lane_lt (t.v (V k)) e
   rw [Int.emod_eq_of_lt (by simp [lane]) hl, Int.emod_eq_of_lt h0 (by simp only [M64]; omega_arith)] at h
   simp only [lane] at h; omega_arith
 
@@ -418,26 +418,26 @@ theorem mul2_ok {s : State} {base : Addr} (hs : Scr s base) {o₁ a₁ b₁ o₂
   have hNA : NA = 4096 := rfl
   rw [mul2_eq, WP.block_append_iff]
   refine WP.mono (prep_ok hs ha₁ hb₁ ha₂ hb₂ la₁ lb₁ la₂ lb₂) fun t1 ⟨hm, hM, h31, o1, g1, r1, w1⟩ => ?_
-  have s1 : Scr t1 base := scr_of hs g1 w1
+  obtain s1 : Scr t1 base := scr_of hs g1 w1
   rw [WP.block_append_iff]
   refine WP.mono (prods_ok s1 (X := fun e => L28 s.mem base a₁ a₂ e) (Y := fun e => L28 s.mem base b₁ b₂ e) hm h31)
     fun t2 ⟨l2, m2, g2, r2, w2, v2⟩ => ?_
-  have kb : ∀ e < 2, ∀ k < 16, kara (L28 s.mem base a₁ a₂ e) (L28 s.mem base b₁ b₂ e) k < 2 ^ 64 - 2 ^ 40 :=
+  obtain kb : ∀ e < 2, ∀ k < 16, kara (L28 s.mem base a₁ a₂ e) (L28 s.mem base b₁ b₂ e) k < 2 ^ 64 - 2 ^ 40 :=
     fun e he k hk => kara_le (L28_le la₁ la₂ e he) (L28_le lb₁ lb₂ e he) hk
-  have hb : ∀ e < 2, ∀ k < 16, (kara (L28 s.mem base a₁ a₂ e) (L28 s.mem base b₁ b₂ e) k).toNat < 2 ^ 64 - 2 ^ 40 :=
+  obtain hb : ∀ e < 2, ∀ k < 16, (kara (L28 s.mem base a₁ a₂ e) (L28 s.mem base b₁ b₂ e) k).toNat < 2 ^ 64 - 2 ^ 40 :=
     fun e he k hk => toNat_lt (kb e he k hk)
-  have hr : ∀ k < 16, LaneIs t2 k (fun e => (kara (L28 s.mem base a₁ a₂ e) (L28 s.mem base b₁ b₂ e) k).toNat) :=
+  obtain hr : ∀ k < 16, LaneIs t2 k (fun e => (kara (L28 s.mem base a₁ a₂ e) (L28 s.mem base b₁ b₂ e) k).toNat) :=
     fun k hk e he => lane_exact (kara_nonneg _ _ _) (kb e he k hk) (l2 k hk e he)
-  have hM2 : ∀ e < 2, (vdword (t2.v (V 30)) e).toNat = 2 ^ 28 - 1 := by
+  obtain hM2 : ∀ e < 2, (vdword (t2.v (V 30)) e).toNat = 2 ^ 28 - 1 := by
     rw [v2 _ (fun n hn => V_ne 30 (by decide) n (by omega_arith) (by omega_arith))]; exact hM
   rw [WP.block_append_iff]
   refine WP.mono (carries_ok _ hr hb hM2) fun t3 ⟨l3, m3, g3, r3, w3, v3⟩ => ?_
-  have s3 : Scr t3 base := scr_of (scr_of s1 g2 w2) g3 w3
+  obtain s3 : Scr t3 base := scr_of (scr_of s1 g2 w2) g3 w3
   refine WP.mono (finishN_ok s3 _ l3 (fun e he i hi => limbs28_even (hb e he) hi)
     (fun e he i hi => limbs28_odd (hb e he) hi) ho₁.1 (by omega_arith) ho₂.1 (by omega_arith) h12 (by
       rw [v3 _ (fun n _ => V_ne 30 (by decide) n (by omega_arith) (by omega_arith)) (by decide) (by decide)]; exact hM2))
     fun t4 ⟨f1, f2, o4, r4, w4, g4⟩ => ?_
-  have val : ∀ e < 2, ∀ {fa fb : Nat → Nat}, L28 s.mem base a₁ a₂ e = l28 fa → L28 s.mem base b₁ b₂ e = l28 fb →
+  obtain val : ∀ e < 2, ∀ {fa fb : Nat → Nat}, L28 s.mem base a₁ a₂ e = l28 fa → L28 s.mem base b₁ b₂ e = l28 fb →
       toFe (valN (out56 (limbs28 fun k => (kara (L28 s.mem base a₁ a₂ e) (L28 s.mem base b₁ b₂ e) k).toNat)) 8) =
         toFe (valN fa 8) * toFe (valN fb 8) := fun e he fa fb ea eb =>
     mul2_val fa fb _ fun k _ => by rw [Int.toNat_of_nonneg (kara_nonneg _ _ _), ea, eb]

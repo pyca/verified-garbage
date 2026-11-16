@@ -70,7 +70,7 @@ structure SchedOk (z : Spec.Idea.Schedule) (s : State) : Prop where
 
 theorem SchedOk.word {z : Spec.Idea.Schedule} {s : State} (h : SchedOk z s) {d : Nat} (hd : d + 4 ≤ 104) :
     readSrc s (.mem (at_ .esi d)) = some (s.mem.readW ((s.gpr .esi).setWidth 64 + BitVec.ofNat 64 d) 32) := by
-  have ha := addr_eq (x := s.gpr .esi) (k := d) (by have := h.fit; omega_arith)
+  obtain ha := addr_eq (x := s.gpr .esi) (k := d) (by have := h.fit; omega_arith)
   rw [load_src (by rw [ha]; exact ⟨_, h.read, Offset.contains_base _ hd (by omega_arith)⟩), ha]
 
 /-- `loadKey r k`: subkey `k` in the low 16 bits of `r`. -/
@@ -112,8 +112,8 @@ theorem invStep_run (t : State) :
     (fun u _ _ _ hg => by simp only [readSrc, hg .ebx (by decide)])
   obtain ⟨t₅, h₅, v₅, e₅⟩ := mov_run .ecx (.reg .edx) _ t₄ rfl
   obtain ⟨t₆, h₆, v₆, z₆, e₆⟩ := sub1_run .ebp t₅
-  have e₀₄ : Keep [.eax, .edx] t t₄ := (((e₁.weaken (by decide)).trans e₂).trans (e₃.weaken (by decide))).trans e₄
-  have ebp₅ : t₅.gpr .ebp = t.gpr .ebp := (e₅.reg .ebp (by decide)).trans (e₀₄.reg .ebp (by decide))
+  obtain e₀₄ : Keep [.eax, .edx] t t₄ := (((e₁.weaken (by decide)).trans e₂).trans (e₃.weaken (by decide))).trans e₄
+  obtain ebp₅ : t₅.gpr .ebp = t.gpr .ebp := (e₅.reg .ebp (by decide)).trans (e₀₄.reg .ebp (by decide))
   refine ⟨t₆, ?_, ?_, by rw [v₆, ebp₅], by rw [z₆, ebp₅], ?_⟩
   · unfold invStep
     exact run_append (run_append (run_append (run_append h₁ h₂) h₃) h₄) (run_append (a := [_]) h₅ h₆)
@@ -136,15 +136,15 @@ theorem invLoop_ok (a : Spec.Idea.Word) (t₀ : State) (c : Nat) (t : State) (hi
   refine WP.loop (M := isa) (InvLoop a t₀) (fun c t hi => ?_) c t hi
   obtain ⟨t', h', ecx', ebp', z', e'⟩ := invStep_run t
   refine WP.of_runBlock ⟨t', h', ?_⟩
-  have hv : t'.gpr .ecx = (chain a (15 - c + 1)).setWidth 32 := by
+  obtain hv : t'.gpr .ecx = (chain a (15 - c + 1)).setWidth 32 := by
     rw [ecx', hi.ecx, hi.ebx]; rfl
-  have hc : t'.gpr .ebp = BitVec.ofNat 32 (c - 1) := by
+  obtain hc : t'.gpr .ebp = BitVec.ofNat 32 (c - 1) := by
     rw [ebp', hi.ebp]
     apply BitVec.eq_of_toNat_eq
     have := hi.pos; have := hi.le
     simp only [BitVec.toNat_sub, BitVec.toNat_ofNat, show (1 : BitVec 32).toNat = 1 from rfl]
     omega_arith
-  have hev : isa.eval .ne t' = some (decide (c - 1 ≠ 0)) := by
+  obtain hev : isa.eval .ne t' = some (decide (c - 1 ≠ 0)) := by
     show t'.zf.map (!·) = _
     rw [z', ← ebp', hc, Option.map_some]
     congr 1
@@ -157,7 +157,7 @@ theorem invLoop_ok (a : Spec.Idea.Word) (t₀ : State) (c : Nat) (t : State) (hi
         exact this)
       rw [show (BitVec.ofNat 32 (c - 1) == 0) = false from by simpa using hne]
       simp [h0]
-  have keep' : Keep [.eax, .ecx, .edx, .ebp] t₀ t' := hi.keep.trans e'
+  obtain keep' : Keep [.eax, .ecx, .edx, .ebp] t₀ t' := hi.keep.trans e'
   by_cases hlast : c = 1
   · subst hlast
     left
@@ -177,7 +177,7 @@ theorem invWord_ok (z : Spec.Idea.Schedule) {n : Nat} (hn : n < 52) (t : State) 
     WP isa (invWord n) t (fun t' =>
       t'.gpr .ecx = ((Spec.Idea.invertKey z).getD n 0).setWidth 32 ∧ Keep invWrites t t') := by
   rw [invertKey_getD z hn]
-  have hk := invOp_lt hn
+  obtain hk := invOp_lt hn
   unfold invWord
   rcases hop : invOp n with ⟨op, k⟩
   rw [hop] at hk
@@ -204,7 +204,7 @@ theorem invWord_ok (z : Spec.Idea.Schedule) {n : Nat} (hn : n < 52) (t : State) 
     obtain ⟨t₂, h₂, v₂, e₂⟩ := mov_run .ecx (.reg .ebx) _ t₁ rfl
     obtain ⟨t₃, h₃, v₃, e₃⟩ := mov_run .ebp (.imm 15) 15 t₂ rfl
     refine WP.of_runBlock ⟨t₃, run_append h₁ (run_append h₂ h₃), ?_⟩
-    have ebx₃ : t₃.gpr .ebx = t₁.gpr .ebx := by rw [e₃.reg .ebx (by decide), e₂.reg .ebx (by decide)]
+    obtain ebx₃ : t₃.gpr .ebx = t₁.gpr .ebx := by rw [e₃.reg .ebx (by decide), e₂.reg .ebx (by decide)]
     refine WP.mono (invLoop_ok (z.getD k 0) t₃ 15 t₃ ⟨by decide, by decide, v₃, by rw [ebx₃, v₁],
       by rw [e₃.reg .ecx (by decide), v₂, v₁]; rfl, Keep.refl _ _⟩) fun t₄ h₄ => ?_
     obtain ⟨ecx₄, e₄⟩ := h₄
@@ -259,12 +259,12 @@ theorem invStore_run {O : Addr} (n : Nat) (hn : n < 52) (v : Spec.Idea.Word) (s 
     ∃ s', runBlock isa (invStore n) s = some s' ∧
       s'.mem = (s.mem.writeW (O + BitVec.ofNat 64 (2 * n)) (v.setWidth 8)).writeW
         (O + BitVec.ofNat 64 (2 * n + 1)) ((v >>> 8).setWidth 8) ∧ Keep [.ecx] { s with mem := s'.mem } s' := by
-  have ha : ∀ d, d < 104 → addr (s.gpr .edi) d = O + BitVec.ofNat 64 d := fun d hd => by
+  obtain ha : ∀ d, d < 104 → addr (s.gpr .edi) d = O + BitVec.ofNat 64 d := fun d hd => by
     rw [addr_eq (by have := ho.fit; omega_arith), ho.addr]
   obtain ⟨s₁, h₁, m₁, g₁, rd₁, wr₁⟩ := store8_run .edi (2 * n) .cl s
     (by rw [ha _ (by omega_arith)]; exact ⟨_, ho.wr, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
   obtain ⟨s₂, h₂, v₂, e₂⟩ := shift_run .shr .ecx 8 (by decide) s₁
-  have edi₂ : s₂.gpr .edi = s.gpr .edi := by rw [e₂.reg .edi (by decide), g₁]
+  obtain edi₂ : s₂.gpr .edi = s.gpr .edi := by rw [e₂.reg .edi (by decide), g₁]
   obtain ⟨s₃, h₃, m₃, g₃, rd₃, wr₃⟩ := store8_run .edi (2 * n + 1) .cl s₂
     (by rw [edi₂, ha _ (by omega_arith), e₂.wr, wr₁]; exact ⟨_, ho.wr, Offset.contains_base _ (by omega_arith) (by omega_arith)⟩)
   refine ⟨s₃, run_append h₁ (run_append h₂ h₃), ?_, ⟨fun q hq => ?_, rfl, ?_, ?_⟩⟩
@@ -288,8 +288,8 @@ structure SInv (z : Spec.Idea.Schedule) (O : Addr) (s₀ : State) (n : Nat) (t :
 theorem SInv.ok {z : Spec.Idea.Schedule} {O : Addr} {s₀ t : State} {n : Nat} (hi : SInv z O s₀ n t)
     (hz : SchedOk z s₀) (ho : OutOk O s₀) (hsep : Region.Disjoint ⟨(s₀.gpr .esi).setWidth 64, 104⟩ ⟨O, 104⟩)
     (hn : n ≤ 52) : SchedOk z t ∧ OutOk O t := by
-  have esi : t.gpr .esi = s₀.gpr .esi := hi.keep.reg .esi (by decide)
-  have edi : t.gpr .edi = s₀.gpr .edi := hi.keep.reg .edi (by decide)
+  obtain esi : t.gpr .esi = s₀.gpr .esi := hi.keep.reg .esi (by decide)
+  obtain edi : t.gpr .edi = s₀.gpr .edi := hi.keep.reg .edi (by decide)
   refine ⟨⟨by rw [esi, hi.keep.rd, hi.keep.wr]; exact hz.read, by rw [esi]; exact hz.fit, ?_⟩,
     ⟨by rw [hi.keep.wr]; exact ho.wr, by rw [edi]; exact ho.addr, by rw [edi]; exact ho.fit⟩⟩
   rw [esi, ← hz.sched]
@@ -307,7 +307,7 @@ theorem subkey_ok (z : Spec.Idea.Schedule) {O : Addr} (s₀ : State) (hz : Sched
   refine WP.mono (invWord_ok z hn t hz') fun t₁ h₁ => ?_
   obtain ⟨v₁, e₁⟩ := h₁
   apply WP.seq
-  have ho₁ : OutOk O t₁ := ⟨by rw [e₁.wr]; exact ho'.wr, by rw [e₁.reg .edi (by decide)]; exact ho'.addr,
+  obtain ho₁ : OutOk O t₁ := ⟨by rw [e₁.wr]; exact ho'.wr, by rw [e₁.reg .edi (by decide)]; exact ho'.addr,
     by rw [e₁.reg .edi (by decide)]; exact ho'.fit⟩
   obtain ⟨t₂, h₂, m₂, e₂⟩ := invStore_run n hn _ t₁ ho₁ v₁
   refine WP.of_runBlock ⟨t₂, h₂, hrest t₂ ⟨?_, ?_, fun i hin => ?_⟩⟩
@@ -375,7 +375,7 @@ def invertContract : Contract isa where
 theorem arg_frame {s t : State} {rs : List Region} {n : Nat} (hf : Frame rs s.mem t.mem)
     (hd : ∀ r ∈ rs, Region.Disjoint ⟨argAddr s 0, n⟩ r) (hesp : t.gpr .esp = s.gpr .esp)
     (hfit : (s.gpr .esp).toNat + 4 + n ≤ 2 ^ 32) {i : Nat} (hi : 4 * i + 4 ≤ n) : arg t i = arg s i := by
-  have ha : argAddr s i = argAddr s 0 + BitVec.ofNat 64 (4 * i) := by
+  obtain ha : argAddr s i = argAddr s 0 + BitVec.ofNat 64 (4 * i) := by
     simp only [argAddr]
     rw [show (s.gpr .esp + BitVec.ofNat 32 (4 + 4 * i)).setWidth 64 = addr (s.gpr .esp) (4 + 4 * i) from rfl,
       show (s.gpr .esp + BitVec.ofNat 32 (4 + 4 * 0)).setWidth 64 = addr (s.gpr .esp) 4 from rfl,
@@ -387,13 +387,13 @@ theorem arg_frame {s t : State} {rs : List Region} {n : Nat} (hf : Frame rs s.me
 theorem invert_wp (s : State) (hs : invertContract.pre s) :
     WP isa invertKey s (fun s' => abiPreserved s s' ∧ invertContract.post s s') := by
   obtain ⟨hrd, hwr, dSO, dSB, dOB, dAO, dAB, dRO, dRB, fitS, fitO, fitB, fitSp⟩ := hs
-  have hargs : ⟨argAddr s 0, 12⟩ ∈ s.rd := by rw [hrd]; simp
+  obtain hargs : ⟨argAddr s 0, 12⟩ ∈ s.rd := by rw [hrd]; simp
   rw [invertKey_eq]
   -- The prologue.
   obtain ⟨s₁, h₁, v₁, e₁⟩ := mov_run .eax _ _ s (arg_src (i := 2) (by decide) hargs (by omega_arith))
-  have hB : ∀ d, d + 4 ≤ 16 → addr (s₁.gpr .eax) d = (arg s 2).setWidth 64 + BitVec.ofNat 64 d :=
+  obtain hB : ∀ d, d + 4 ≤ 16 → addr (s₁.gpr .eax) d = (arg s 2).setWidth 64 + BitVec.ofNat 64 d :=
     fun d hd => by rw [v₁, addr_eq (by omega_arith)]
-  have inB : ∀ d, d + 4 ≤ 16 → ∀ t : State, t.wr = s.wr → InRegions t.wr (addr (s₁.gpr .eax) d) 4 :=
+  obtain inB : ∀ d, d + 4 ≤ 16 → ∀ t : State, t.wr = s.wr → InRegions t.wr (addr (s₁.gpr .eax) d) 4 :=
     fun d hd t ht => by
       rw [hB d hd, ht, hwr]
       exact ⟨_, by simp, Offset.contains_base _ hd (by omega_arith)⟩
@@ -404,26 +404,26 @@ theorem invert_wp (s : State) (hs : invertContract.pre s) :
     (by rw [g₃, g₂]; exact inB 8 (by decide) _ (by rw [wr₃, wr₂, e₁.wr]))
   obtain ⟨s₅, h₅, m₅, g₅, rd₅, wr₅⟩ := store_run .eax .ebp 12 s₄
     (by rw [g₄, g₃, g₂]; exact inB 12 (by decide) _ (by rw [wr₄, wr₃, wr₂, e₁.wr]))
-  have g₁₅ : s₅.gpr = s₁.gpr := by rw [g₅, g₄, g₃, g₂]
-  have rd₁₅ : s₅.rd = s.rd := by rw [rd₅, rd₄, rd₃, rd₂, e₁.rd]
-  have wr₁₅ : s₅.wr = s.wr := by rw [wr₅, wr₄, wr₃, wr₂, e₁.wr]
-  have esp₅ : s₅.gpr .esp = s.gpr .esp := by rw [g₁₅, e₁.reg .esp (by decide)]
+  obtain g₁₅ : s₅.gpr = s₁.gpr := by rw [g₅, g₄, g₃, g₂]
+  obtain rd₁₅ : s₅.rd = s.rd := by rw [rd₅, rd₄, rd₃, rd₂, e₁.rd]
+  obtain wr₁₅ : s₅.wr = s.wr := by rw [wr₅, wr₄, wr₃, wr₂, e₁.wr]
+  obtain esp₅ : s₅.gpr .esp = s.gpr .esp := by rw [g₁₅, e₁.reg .esp (by decide)]
   -- The saved registers, in the scratch buffer.
-  have fB : Frame [⟨(arg s 2).setWidth 64, 16⟩] s.mem s₅.mem := by
+  obtain fB : Frame [⟨(arg s 2).setWidth 64, 16⟩] s.mem s₅.mem := by
     rw [m₅, m₄, m₃, m₂, e₁.mem, g₄, g₃, g₂, hB 0 (by decide), hB 4 (by decide), hB 8 (by decide),
       hB 12 (by decide)]
     exact ((((Frame.refl _ _).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide)
       (by decide))).writeW (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))).writeW
       (List.mem_singleton_self _) _ (Offset.contains_base _ (by decide) (by decide))
-  have saved : ∀ r d, (r, d) ∈ [(Reg.ebx, 0), (.esi, 4), (.edi, 8), (.ebp, 12)] →
+  obtain saved : ∀ r d, (r, d) ∈ [(Reg.ebx, 0), (.esi, 4), (.edi, 8), (.ebp, 12)] →
       s₅.mem.readW ((arg s 2).setWidth 64 + BitVec.ofNat 64 d) 32 = s.gpr r := by
     intro r d hrd'
-    have g1 : ∀ q, q ≠ .eax → s₁.gpr q = s.gpr q := fun q hq => e₁.reg q (by simpa using hq)
+    obtain g1 : ∀ q, q ≠ .eax → s₁.gpr q = s.gpr q := fun q hq => e₁.reg q (by simpa using hq)
     rw [m₅, m₄, m₃, m₂, e₁.mem, g₄, g₃, g₂, hB 0 (by decide), hB 4 (by decide), hB 8 (by decide),
       hB 12 (by decide)]
     simp only [List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hrd'
-    have sep : ∀ a b, a + 4 ≤ b ∨ b + 4 ≤ a → b + 4 ≤ 16 → a + 4 ≤ 16 →
+    obtain sep : ∀ a b, a + 4 ≤ b ∨ b + 4 ≤ a → b + 4 ≤ 16 → a + 4 ≤ 16 →
         Mem.Sep ((arg s 2).setWidth 64 + BitVec.ofNat 64 a) (32 / 8) ((arg s 2).setWidth 64 + BitVec.ofNat 64 b) (32 / 8) :=
       fun a b h hb ha => Offset.sep _ h (by omega_arith) (by omega_arith)
     rcases hrd' with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
@@ -438,28 +438,28 @@ theorem invert_wp (s : State) (hs : invertContract.pre s) :
         Mem.readW_writeW_self32, g1 _ (by decide)]
     · rw [Mem.readW_writeW_self32, g1 _ (by decide)]
   -- The pointers.
-  have hargs₅ : ⟨argAddr s₅ 0, 12⟩ ∈ s₅.rd := by
+  obtain hargs₅ : ⟨argAddr s₅ 0, 12⟩ ∈ s₅.rd := by
     rw [rd₁₅]; simp only [argAddr, esp₅]; exact hargs
-  have argE : ∀ i, i < 3 → arg s₅ i = arg s i := fun i hi =>
+  obtain argE : ∀ i, i < 3 → arg s₅ i = arg s i := fun i hi =>
     arg_frame fB (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dAB) esp₅ (by omega_arith)
       (by omega_arith)
   obtain ⟨s₆, h₆, v₆, e₆⟩ := mov_run .esi _ _ s₅ (arg_src (i := 0) (by decide) hargs₅ (by rw [esp₅]; omega_arith))
-  have hargs₆ : ⟨argAddr s₆ 0, 12⟩ ∈ s₆.rd := by
+  obtain hargs₆ : ⟨argAddr s₆ 0, 12⟩ ∈ s₆.rd := by
     rw [e₆.rd]; simp only [argAddr, e₆.reg .esp (by decide)]; exact hargs₅
   obtain ⟨s₇, h₇, v₇, e₇⟩ := mov_run .edi _ _ s₆ (arg_src (i := 1) (by decide) hargs₆
     (by rw [e₆.reg .esp (by decide), esp₅]; omega_arith))
-  have a₆ : arg s₆ 1 = arg s 1 := by
+  obtain a₆ : arg s₆ 1 = arg s 1 := by
     simp only [arg, argAddr, e₆.mem, e₆.reg .esp (by decide)]; exact argE 1 (by decide)
-  have e₅₇ : Keep [.esi, .edi] s₅ s₇ := (e₆.weaken (by decide)).trans (e₇.weaken (by decide))
-  have esi₇ : s₇.gpr .esi = arg s 0 := by rw [e₇.reg .esi (by decide), v₆, argE 0 (by decide)]
-  have edi₇ : s₇.gpr .edi = arg s 1 := by rw [v₇, a₆]
+  obtain e₅₇ : Keep [.esi, .edi] s₅ s₇ := (e₆.weaken (by decide)).trans (e₇.weaken (by decide))
+  obtain esi₇ : s₇.gpr .esi = arg s 0 := by rw [e₇.reg .esi (by decide), v₆, argE 0 (by decide)]
+  obtain edi₇ : s₇.gpr .edi = arg s 1 := by rw [v₇, a₆]
   let z := Spec.Idea.scheduleAt s.mem ((arg s 0).setWidth 64)
-  have hz : SchedOk z s₇ := by
+  obtain hz : SchedOk z s₇ := by
     refine ⟨by rw [esi₇, e₅₇.rd, e₅₇.wr, rd₁₅, wr₁₅, hrd]; simp, by rw [esi₇]; exact fitS, ?_⟩
     rw [esi₇, e₅₇.mem]
     exact scheduleAt_congr (frame_bytes fB (by
       intro r hr; simp only [List.mem_singleton] at hr; subst hr; exact dSB) (by decide))
-  have ho : OutOk ((arg s 1).setWidth 64) s₇ :=
+  obtain ho : OutOk ((arg s 1).setWidth 64) s₇ :=
     ⟨by rw [e₅₇.wr, wr₁₅, hwr]; simp, by rw [edi₇], by rw [edi₇]; exact fitO⟩
   refine WP.seq (WP.of_runBlock ⟨s₇, ?_, ?_⟩)
   · exact run_append (a := [_] ++ _) (run_append h₁ (run_append h₂ (run_append h₃ (run_append h₄ h₅))))
@@ -467,35 +467,35 @@ theorem invert_wp (s : State) (hs : invertContract.pre s) :
   refine WP.seq (WP.mono (subkeys_ok z s₇ hz ho (by rw [esi₇]; exact dSO) 52 0 rfl s₇
     ⟨Keep.refl _ _, Frame.refl _ _, fun i hi => absurd hi (by omega_arith)⟩) fun t ht => ?_)
   -- The epilogue.
-  have esp_t : t.gpr .esp = s.gpr .esp := by
+  obtain esp_t : t.gpr .esp = s.gpr .esp := by
     rw [ht.keep.reg .esp (by decide), e₅₇.reg .esp (by decide), esp₅]
-  have ft : Frame [⟨(arg s 2).setWidth 64, 16⟩, ⟨(arg s 1).setWidth 64, 104⟩] s.mem t.mem :=
+  obtain ft : Frame [⟨(arg s 2).setWidth 64, 16⟩, ⟨(arg s 1).setWidth 64, 104⟩] s.mem t.mem :=
     (fB.sub fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩).trans
       ((by rw [← e₅₇.mem]; exact ht.frame : Frame [⟨(arg s 1).setWidth 64, 2 * 52⟩] s₅.mem t.mem).sub
         fun r hr => ⟨r, by simp at hr; simp [hr], fun _ h => h⟩)
-  have hargsT : ⟨argAddr t 0, 12⟩ ∈ t.rd := by
+  obtain hargsT : ⟨argAddr t 0, 12⟩ ∈ t.rd := by
     rw [ht.keep.rd, e₅₇.rd, rd₁₅]; simp only [argAddr, esp_t]; exact hargs
   obtain ⟨u₁, k₁, w₁, f₁⟩ := mov_run .eax _ _ t (arg_src (i := 2) (by decide) hargsT (by rw [esp_t]; omega_arith))
-  have eaxU : u₁.gpr .eax = arg s 2 := by
+  obtain eaxU : u₁.gpr .eax = arg s 2 := by
     rw [w₁]
     exact arg_frame ft (fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact dAB
       · exact dAO) esp_t (by omega_arith) (by omega_arith)
-  have savedT : ∀ r d, (r, d) ∈ [(Reg.ebx, 0), (.esi, 4), (.edi, 8), (.ebp, 12)] →
+  obtain savedT : ∀ r d, (r, d) ∈ [(Reg.ebx, 0), (.esi, 4), (.edi, 8), (.ebp, 12)] →
       u₁.mem.readW ((arg s 2).setWidth 64 + BitVec.ofNat 64 d) 32 = s.gpr r := by
     intro r d hm
-    have hd : d + 4 ≤ 16 := by
+    obtain hd : d + 4 ≤ 16 := by
       simp only [List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hm
       omega
     rw [f₁.mem, ← saved r d hm, ← e₅₇.mem]
     exact ht.frame.readW (Offset.contains_base _ hd (by omega_arith)) (fun q hq => by
       simp only [List.mem_singleton] at hq; subst hq; exact dOB.symm) (by decide)
-  have rdAny : ∀ u : State, u.gpr .eax = arg s 2 → u.mem = u₁.mem → u.rd = u₁.rd → u.wr = u₁.wr →
+  obtain rdAny : ∀ u : State, u.gpr .eax = arg s 2 → u.mem = u₁.mem → u.rd = u₁.rd → u.wr = u₁.wr →
       ∀ r d, (r, d) ∈ [(Reg.ebx, 0), (.esi, 4), (.edi, 8), (.ebp, 12)] →
         readSrc u (.mem (at_ .eax d)) = some (s.gpr r) := fun u he hm hr hw r d hm' => by
-    have hd : d + 4 ≤ 16 := by
+    obtain hd : d + 4 ≤ 16 := by
       simp only [List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at hm'
       omega
     rw [load_src, he, addr_eq (by omega_arith), hm, savedT r d hm']
@@ -504,14 +504,14 @@ theorem invert_wp (s : State) (hs : invertContract.pre s) :
   obtain ⟨u₂, k₂, w₂, f₂⟩ := mov_run .ebx _ _ u₁ (rdAny u₁ eaxU rfl rfl rfl .ebx 0 (by simp))
   obtain ⟨u₃, k₃, w₃, f₃⟩ := mov_run .edi _ _ u₂ (rdAny u₂ (by rw [f₂.reg .eax (by decide), eaxU])
     f₂.mem f₂.rd f₂.wr .edi 8 (by simp))
-  have e₁₃ : Keep [.ebx, .edi] u₁ u₃ := (f₂.weaken (by decide)).trans (f₃.weaken (by decide))
+  obtain e₁₃ : Keep [.ebx, .edi] u₁ u₃ := (f₂.weaken (by decide)).trans (f₃.weaken (by decide))
   obtain ⟨u₄, k₄, w₄, f₄⟩ := mov_run .ebp _ _ u₃ (rdAny u₃ (by rw [e₁₃.reg .eax (by decide), eaxU])
     e₁₃.mem e₁₃.rd e₁₃.wr .ebp 12 (by simp))
-  have e₁₄ : Keep [.ebx, .edi, .ebp] u₁ u₄ := (e₁₃.weaken (by decide)).trans (f₄.weaken (by decide))
+  obtain e₁₄ : Keep [.ebx, .edi, .ebp] u₁ u₄ := (e₁₃.weaken (by decide)).trans (f₄.weaken (by decide))
   obtain ⟨u₅, k₅, w₅, f₅⟩ := mov_run .esi _ _ u₄ (rdAny u₄ (by rw [e₁₄.reg .eax (by decide), eaxU])
     e₁₄.mem e₁₄.rd e₁₄.wr .esi 4 (by simp))
-  have e₁₅ : Keep [.ebx, .edi, .ebp, .esi] u₁ u₅ := (e₁₄.weaken (by decide)).trans (f₅.weaken (by decide))
-  have memU : u₅.mem = t.mem := by rw [e₁₅.mem, f₁.mem]
+  obtain e₁₅ : Keep [.ebx, .edi, .ebp, .esi] u₁ u₅ := (e₁₄.weaken (by decide)).trans (f₅.weaken (by decide))
+  obtain memU : u₅.mem = t.mem := by rw [e₁₅.mem, f₁.mem]
   refine WP.of_runBlock ⟨u₅, ?_, ⟨fun r hr => ?_, ?_⟩, ?_⟩
   · exact run_append (a := [_]) k₁ (run_append (a := [_]) k₂ (run_append (a := [_]) k₃
       (run_append (a := [_]) k₄ k₅)))
@@ -556,7 +556,7 @@ theorem invTaint_wf {s : State} (h : invertContract.pre s) : VG.X86.Taint.Wf inv
 theorem invTaint_agree {s₁ s₂ : State} (h₁ : invertContract.pre s₁) (h₂ : invertContract.pre s₂)
     (hp : invertContract.pub s₁ s₂) : VG.X86.Taint.Agree invTaint s₁ s₂ := by
   obtain ⟨sp, args⟩ := hp
-  have fit : ∀ s, invertContract.pre s → (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 := by
+  obtain fit : ∀ s, invertContract.pre s → (s.gpr .esp).toNat + 16 ≤ 2 ^ 32 := by
     intro s hs; exact hs.2.2.2.2.2.2.2.2.2.2.2.2
   refine ⟨⟨fun r hr => ?_, fun h => nomatch h⟩, fun h => absurd rfl h,
     invTaint_wf h₁, invTaint_wf h₂, VG.X86.Taint.slotsOk_empty,

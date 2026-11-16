@@ -39,31 +39,31 @@ theorem signChallenge_ok (C : ShaOK) {sn : Nat} {s t : State} (hp : SignPre sn s
     WP isa signChallenge t fun t' => SignInv s t' ∧ bytesAt t'.mem (s.gpr .r3) 32 = Rb ∧
       bytesAt t'.mem (s.gpr .r3 + BitVec.ofNat 64 32) 32 =
         Spec.Ed25519.scalarMulAdd Nb (Spec.Ed25519.scalarReduce (Spec.Sha512.sha512 (Rb ++ Kb ++ msgB s))) Sb := by
-  have hRl : Rb.length = 32 := by rw [← hR]; simp [bytesAt]
-  have hKl : Kb.length = 32 := by rw [← hK]; simp [bytesAt]
-  have hlen := sign_len hp
-  have toL : ∀ {m m' : Mem} {sp : Addr}, sp = s.sp → Frame [⟨s.gpr .r8, 8192⟩, below sp 48] m m' →
+  obtain hRl : Rb.length = 32 := by rw [← hR]; simp [bytesAt]
+  obtain hKl : Kb.length = 32 := by rw [← hK]; simp [bytesAt]
+  obtain hlen := sign_len hp
+  obtain toL : ∀ {m m' : Mem} {sp : Addr}, sp = s.sp → Frame [⟨s.gpr .r8, 8192⟩, below sp 48] m m' →
       Frame (chW s) m m' := fun e hf => by subst e; exact hf.mono (by simp)
-  have scW : ∀ {t : State}, SignInv s t → ∀ r ∈ [(⟨s.gpr .r8, 8192⟩ : Region), below t.sp 48], SignWr s r :=
+  obtain scW : ∀ {t : State}, SignInv s t → ∀ r ∈ [(⟨s.gpr .r8, 8192⟩ : Region), below t.sp 48], SignWr s r :=
     fun h r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact .inl rfl
       · exact .inr (.inl (by rw [h.sp]))
-  have F0 : Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 0, 32⟩ ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
-  have F64 : Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 64, 32⟩ ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
-  have F96 : Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 96, 32⟩ ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
-  have F128 : Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 128, 64⟩ ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
-  have F192 : Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 192, 32⟩ ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
-  have O32 : Region.Sub ⟨s.gpr .r3, 32⟩ ⟨s.gpr .r3, 64⟩ := Region.sub_prefix (by decide)
-  have O32' : Region.Sub ⟨s.gpr .r3 + BitVec.ofNat 64 32, 32⟩ ⟨s.gpr .r3, 64⟩ := Offset.sub_base _ (by decide)
+  obtain F0 : Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 0, 32⟩ ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
+  obtain F64 : Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 64, 32⟩ ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
+  obtain F96 : Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 96, 32⟩ ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
+  obtain F128 : Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 128, 64⟩ ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
+  obtain F192 : Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 192, 32⟩ ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
+  obtain O32 : Region.Sub ⟨s.gpr .r3, 32⟩ ⟨s.gpr .r3, 64⟩ := Region.sub_prefix (by decide)
+  obtain O32' : Region.Sub ⟨s.gpr .r3 + BitVec.ofNat 64 32, 32⟩ ⟨s.gpr .r3, 64⟩ := Offset.sub_base _ (by decide)
   -- What the steps keep.
-  have keep : ∀ {m m' : Mem} {p : Addr}, Frame (chW s) m m' → Region.Sub ⟨p, 32⟩ ⟨s.gpr .r3, 32⟩ ∨
+  obtain keep : ∀ {m m' : Mem} {p : Addr}, Frame (chW s) m m' → Region.Sub ⟨p, 32⟩ ⟨s.gpr .r3, 32⟩ ∨
       (∃ d, d + 32 ≤ 96 ∧ p = s.gpr .r9 + BitVec.ofNat 64 d) ∨ p = s.gpr .r9 + BitVec.ofNat 64 192 →
       bytesAt m' p 32 = bytesAt m p 32 := by
     intro m m' p hf hpr
     refine bytes_keep hf (by decide) fun r hr => ?_
-    have hF : Region.Sub ⟨p, 32⟩ ⟨s.gpr .r9, 288⟩ ∨ Region.Sub ⟨p, 32⟩ ⟨s.gpr .r3, 32⟩ := by
+    obtain hF : Region.Sub ⟨p, 32⟩ ⟨s.gpr .r9, 288⟩ ∨ Region.Sub ⟨p, 32⟩ ⟨s.gpr .r3, 32⟩ := by
       rcases hpr with h | ⟨d, hd, rfl⟩ | rfl
       · exact .inr h
       · exact .inl (Offset.sub_base _ (by omega_using [hd]))
@@ -84,16 +84,16 @@ theorem signChallenge_ok (C : ShaOK) {sn : Nat} {s t : State} (hp : SignPre sn s
       · exact hp.oF.symm.sub_left hF |>.sub_right O32'
       · exact ((Offset.base_disjoint _ (by decide) (by decide) : Region.Disjoint ⟨s.gpr .r3, 32⟩
           ⟨s.gpr .r3 + BitVec.ofNat 64 32, 32⟩)).sub_left hF
-  have kR : ∀ {m m' : Mem}, Frame (chW s) m m' → bytesAt m' (s.gpr .r3) 32 = bytesAt m (s.gpr .r3) 32 :=
+  obtain kR : ∀ {m m' : Mem}, Frame (chW s) m m' → bytesAt m' (s.gpr .r3) 32 = bytesAt m (s.gpr .r3) 32 :=
     fun hf => keep hf (.inl fun _ h => h)
-  have kF : ∀ {m m' : Mem} {d : Nat}, Frame (chW s) m m' → d + 32 ≤ 96 →
+  obtain kF : ∀ {m m' : Mem} {d : Nat}, Frame (chW s) m m' → d + 32 ≤ 96 →
       bytesAt m' (s.gpr .r9 + BitVec.ofNat 64 d) 32 = bytesAt m (s.gpr .r9 + BitVec.ofNat 64 d) 32 :=
     fun hf hd => keep hf (.inr (.inl ⟨_, hd, rfl⟩))
   unfold signChallenge
   refine WP.seq (hashInit_ok C (sr := .r24) (by decide) (h.regs _ (by decide)) (sign_env hp h)
     fun t₂ a b c f₂ g hr₂ => ?_)
-  have h₂ := signStep hp h a b c g f₂ (scW h)
-  have hOw : (⟨s.gpr .r3, 64⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
+  obtain h₂ := signStep hp h a b c g f₂ (scW h)
+  obtain hOw : (⟨s.gpr .r3, 64⟩ : Region) ∈ s.wr := by rw [hp.wr]; simp
   refine WP.seq (hashUpdate_ok C (sr := .r24) (src := .r20) (off := 0) (len := 32) (by decide) (by decide)
     (by decide) (by decide) (by decide) (h₂.regs _ (by decide)) (by rw [h₂.regs _ (by decide), BitVec.add_zero]; rfl)
     (Sets.li (d := .r4) (k := 0) (by decide)) (Sets.li (d := .r6) (k := 32) (by decide))
@@ -102,14 +102,14 @@ theorem signChallenge_ok (C : ShaOK) {sn : Nat} {s t : State} (hp : SignPre sn s
       rw [List.mem_singleton.mp hr, h₂.rd, h₂.wr]
       exact ⟨_, List.mem_append_right _ hOw, 0, by simp, by simp⟩)
     (hp.oC.sub_left O32) (by rw [h₂.sp]; exact hp.bO.sub_right O32) fun t₃ a b c f₃ g hr₃ => ?_)
-  have h₃ := signStep hp h₂ a b c g f₃ (scW h₂)
-  have e₂ : ∀ {p : Addr}, Region.Sub ⟨p, 32⟩ ⟨s.gpr .r3, 32⟩ ∨
+  obtain h₃ := signStep hp h₂ a b c g f₃ (scW h₂)
+  obtain e₂ : ∀ {p : Addr}, Region.Sub ⟨p, 32⟩ ⟨s.gpr .r3, 32⟩ ∨
       (∃ d, d + 32 ≤ 96 ∧ p = s.gpr .r9 + BitVec.ofNat 64 d) ∨ p = s.gpr .r9 + BitVec.ofNat 64 192 →
       bytesAt t₂.mem p 32 = bytesAt t.mem p 32 := fun hpr => keep (toL h.sp f₂) hpr
-  have r₃ : Repr t₃.mem (s.gpr .r8) Rb := by
+  obtain r₃ : Repr t₃.mem (s.gpr .r8) Rb := by
     have := hr₃ [] hr₂ rfl
     rwa [List.nil_append, e₂ (.inl fun _ h => h), hR] at this
-  have e₃ : ∀ {p : Addr}, Region.Sub ⟨p, 32⟩ ⟨s.gpr .r3, 32⟩ ∨
+  obtain e₃ : ∀ {p : Addr}, Region.Sub ⟨p, 32⟩ ⟨s.gpr .r3, 32⟩ ∨
       (∃ d, d + 32 ≤ 96 ∧ p = s.gpr .r9 + BitVec.ofNat 64 d) ∨ p = s.gpr .r9 + BitVec.ofNat 64 192 →
       bytesAt t₃.mem p 32 = bytesAt t.mem p 32 := fun hpr => (keep (toL h₂.sp f₃) hpr).trans (e₂ hpr)
   refine WP.seq (hashUpdate_ok C (sr := .r24) (src := .r25) (off := 192) (len := 32) (by decide) (by decide)
@@ -120,11 +120,11 @@ theorem signChallenge_ok (C : ShaOK) {sn : Nat} {s t : State} (hp : SignPre sn s
       rw [List.mem_singleton.mp hr]
       exact ⟨_, List.mem_append_right _ (sign_Fw hp h₃), 192, rfl, show 192 + 32 ≤ 288 by decide⟩)
     (hp.cF.symm.sub_left F192) (by rw [h₃.sp]; exact hp.bF.sub_right F192) fun t₄ a b c f₄ g hr₄ => ?_)
-  have h₄ := signStep hp h₃ a b c g f₄ (scW h₃)
-  have r₄ : Repr t₄.mem (s.gpr .r8) (Rb ++ Kb) := by
+  obtain h₄ := signStep hp h₃ a b c g f₄ (scW h₃)
+  obtain r₄ : Repr t₄.mem (s.gpr .r8) (Rb ++ Kb) := by
     have := hr₄ Rb r₃ (by rw [hRl])
     rwa [e₃ (.inr (.inr rfl)), hK] at this
-  have e₄ : ∀ {p : Addr}, Region.Sub ⟨p, 32⟩ ⟨s.gpr .r3, 32⟩ ∨
+  obtain e₄ : ∀ {p : Addr}, Region.Sub ⟨p, 32⟩ ⟨s.gpr .r3, 32⟩ ∨
       (∃ d, d + 32 ≤ 96 ∧ p = s.gpr .r9 + BitVec.ofNat 64 d) ∨ p = s.gpr .r9 + BitVec.ofNat 64 192 →
       bytesAt t₄.mem p 32 = bytesAt t.mem p 32 := fun hpr => (keep (toL h₃.sp f₄) hpr).trans (e₃ hpr)
   refine WP.seq (hashUpdate_ok C (sr := .r24) (src := .r22) (off := 0) (len := (s.gpr .r7).toNat) (by decide)
@@ -134,11 +134,11 @@ theorem signChallenge_ok (C : ShaOK) {sn : Nat} {s t : State} (hp : SignPre sn s
     (fun _ _ _ => rfl) (fun g g' hg => by rw [hg .r23 (by decide) (by decide) (by decide)])
     (by rw [BitVec.add_zero, h₄.regs _ (by decide)]; rfl) (sign_env hp h₄) (sign_msg_cov hp h₄)
     hp.mC (by rw [h₄.sp]; exact hp.bM) fun t₅ a b c f₅ g hr₅ => ?_)
-  have h₅ := signStep hp h₄ a b c g f₅ (scW h₄)
-  have r₅ : Repr t₅.mem (s.gpr .r8) (Rb ++ Kb ++ msgB s) := by
+  obtain h₅ := signStep hp h₄ a b c g f₅ (scW h₄)
+  obtain r₅ : Repr t₅.mem (s.gpr .r8) (Rb ++ Kb ++ msgB s) := by
     have := hr₅ (Rb ++ Kb) r₄ (by rw [List.length_append, hRl, hKl])
     rwa [sign_msg hp h₄] at this
-  have e₅ : ∀ {p : Addr}, Region.Sub ⟨p, 32⟩ ⟨s.gpr .r3, 32⟩ ∨
+  obtain e₅ : ∀ {p : Addr}, Region.Sub ⟨p, 32⟩ ⟨s.gpr .r3, 32⟩ ∨
       (∃ d, d + 32 ≤ 96 ∧ p = s.gpr .r9 + BitVec.ofNat 64 d) ∨ p = s.gpr .r9 + BitVec.ofNat 64 192 →
       bytesAt t₅.mem p 32 = bytesAt t.mem p 32 := fun hpr => (keep (toL h₄.sp f₅) hpr).trans (e₄ hpr)
   refine WP.seq (hashFinalize_ok C (sr := .r24) (f := .r25) (o := 128) (out := s.gpr .r9 + BitVec.ofNat 64 128)
@@ -150,29 +150,29 @@ theorem signChallenge_ok (C : ShaOK) {sn : Nat} {s t : State} (hp : SignPre sn s
     (Covers.of_sub fun r hr => by
       rw [List.mem_singleton.mp hr]; exact ⟨_, sign_Fw hp h₅, 128, rfl, show 128 + 64 ≤ 288 by decide⟩)
     (hp.cF.symm.sub_left F128) (by rw [h₅.sp]; exact hp.bF.sub_right F128) fun t₆ a b c f₆ g hd₆ => ?_)
-  have h₆ := signStep hp h₅ a b c g f₆ (fun r hr => by
+  obtain h₆ := signStep hp h₅ a b c g f₆ (fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact .inl rfl
     · exact .inr (.inr (.inr (.inr (.inr ⟨128, 64, by decide, rfl⟩))))
     · exact .inr (.inl (by rw [h₅.sp])))
-  have dg : bytesAt t₆.mem (s.gpr .r9 + BitVec.ofNat 64 128) 64 = Spec.Sha512.sha512 (Rb ++ Kb ++ msgB s) :=
+  obtain dg : bytesAt t₆.mem (s.gpr .r9 + BitVec.ofNat 64 128) 64 = Spec.Sha512.sha512 (Rb ++ Kb ++ msgB s) :=
     hd₆ _ r₅ (by rw [List.length_append, List.length_append, hRl, hKl, msgB_length]; omega_using [hlen])
       (by rw [h₅.regs _ (by decide), List.length_append, List.length_append, hRl, hKl, msgB_length, cnt_eq]; rfl)
-  have f₆' : Frame (chW s) t₅.mem t₆.mem := f₆.sub fun r hr => by
+  obtain f₆' : Frame (chW s) t₅.mem t₆.mem := f₆.sub fun r hr => by
     simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
     rcases hr with rfl | rfl | rfl
     · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
     · exact ⟨⟨s.gpr .r9 + BitVec.ofNat 64 96, 96⟩, by simp,
         Offset.sub (s.gpr .r9) (d := 128) (n := 64) (e := 96) (k := 96) (by decide) (by decide)⟩
     · exact ⟨below s.sp 48, by simp, by rw [h₅.sp]; exact fun _ h => h⟩
-  have e₆ : ∀ {p : Addr}, Region.Sub ⟨p, 32⟩ ⟨s.gpr .r3, 32⟩ ∨
+  obtain e₆ : ∀ {p : Addr}, Region.Sub ⟨p, 32⟩ ⟨s.gpr .r3, 32⟩ ∨
       (∃ d, d + 32 ≤ 96 ∧ p = s.gpr .r9 + BitVec.ofNat 64 d) ∨ p = s.gpr .r9 + BitVec.ofNat 64 192 →
       bytesAt t₆.mem p 32 = bytesAt t.mem p 32 := fun hpr => (keep f₆' hpr).trans (e₅ hpr)
-  have ce : ∀ (u : State) q, q ∉ linkRegs → ∀ rd wr, (u.callEntry.withRegions rd wr).gpr q = u.gpr q :=
+  obtain ce : ∀ (u : State) q, q ∉ linkRegs → ∀ rd wr, (u.callEntry.withRegions rd wr).gpr q = u.gpr q :=
     fun _ q hq _ _ => by rw [State.withRegions_gpr, State.callEntry_gpr _ hq]
-  have hFw := sign_Fw hp h₆
-  have hCw : (⟨s.gpr .r8, 8192⟩ : Region) ∈ t₆.wr := (sign_env hp h₆).w
+  obtain hFw := sign_Fw hp h₆
+  obtain hCw : (⟨s.gpr .r8, 8192⟩ : Region) ∈ t₆.wr := (sign_env hp h₆).w
   -- The challenge: `scalar_reduce`.
   unfold mov
   refine WP.seq (args3_ok (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
@@ -202,20 +202,20 @@ theorem signChallenge_ok (C : ShaOK) {sn : Nat} {s t : State} (hp : SignPre sn s
   simp only [reducePPC, State.withRegions_mem, State.withRegions_gpr, State.callEntry_mem,
     State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide),
     c3, c4, k₇.mem, dg] at hpost
-  have h₈ := signStep hp h₆ (a.trans k₇.rd) (b.trans k₇.wr) (c.trans k₇.sp)
+  obtain h₈ := signStep hp h₆ (a.trans k₇.rd) (b.trans k₇.wr) (c.trans k₇.sp)
     (fun r hr => (g r hr).trans (k₇.pres r hr)) (k₇.mem ▸ f₈) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact .inr (.inr (.inr (.inr (.inr ⟨96, 32, by decide, rfl⟩))))
       · exact .inl rfl
-  have f₈' : Frame (chW s) t₆.mem t₈.mem := by
+  obtain f₈' : Frame (chW s) t₆.mem t₈.mem := by
     rw [← k₇.mem]
     exact f₈.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact ⟨⟨s.gpr .r9 + BitVec.ofNat 64 96, 96⟩, by simp, Region.sub_prefix (by decide)⟩
       · exact ⟨_, List.mem_cons_self, fun _ h => h⟩
-  have e₈ : ∀ {p : Addr}, Region.Sub ⟨p, 32⟩ ⟨s.gpr .r3, 32⟩ ∨
+  obtain e₈ : ∀ {p : Addr}, Region.Sub ⟨p, 32⟩ ⟨s.gpr .r3, 32⟩ ∨
       (∃ d, d + 32 ≤ 96 ∧ p = s.gpr .r9 + BitVec.ofNat 64 d) ∨ p = s.gpr .r9 + BitVec.ofNat 64 192 →
       bytesAt t₈.mem p 32 = bytesAt t.mem p 32 := fun hpr => (keep f₈' hpr).trans (e₆ hpr)
   -- `S`: `scalar_mul_add`.
@@ -225,9 +225,9 @@ theorem signChallenge_ok (C : ShaOK) {sn : Nat} {s t : State} (hp : SignPre sn s
   rw [h₈.regs _ (by decide), signV_r25] at d4 d5
   rw [h₈.regs _ (by decide), signV_r25, BitVec.add_zero] at d6
   rw [h₈.regs _ (by decide), signV_r24, BitVec.add_zero] at d7
-  have hOw' : (⟨s.gpr .r3, 64⟩ : Region) ∈ t₉.wr := by rw [k₉.wr, h₈.wr, hp.wr]; simp
-  have hFw' : (⟨s.gpr .r9, 288⟩ : Region) ∈ t₉.wr := by rw [k₉.wr]; exact sign_Fw hp h₈
-  have hCw' : (⟨s.gpr .r8, 8192⟩ : Region) ∈ t₉.wr := by rw [k₉.wr]; exact (sign_env hp h₈).w
+  obtain hOw' : (⟨s.gpr .r3, 64⟩ : Region) ∈ t₉.wr := by rw [k₉.wr, h₈.wr, hp.wr]; simp
+  obtain hFw' : (⟨s.gpr .r9, 288⟩ : Region) ∈ t₉.wr := by rw [k₉.wr]; exact sign_Fw hp h₈
+  obtain hCw' : (⟨s.gpr .r8, 8192⟩ : Region) ∈ t₉.wr := by rw [k₉.wr]; exact (sign_env hp h₈).w
   refine WP.call (k := mulAddPPC) mulAdd_ok'
     (rd := [⟨s.gpr .r9 + BitVec.ofNat 64 64, 32⟩, ⟨s.gpr .r9 + BitVec.ofNat 64 96, 32⟩, ⟨s.gpr .r9, 32⟩])
     (wr := [⟨s.gpr .r3 + BitVec.ofNat 64 32, 32⟩, ⟨s.gpr .r8, 8192⟩])
@@ -255,13 +255,13 @@ theorem signChallenge_ok (C : ShaOK) {sn : Nat} {s t : State} (hp : SignPre sn s
     State.callEntry_gpr _ (show Reg.r3 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r4 ∉ linkRegs by decide),
     State.callEntry_gpr _ (show Reg.r5 ∉ linkRegs by decide), State.callEntry_gpr _ (show Reg.r6 ∉ linkRegs by decide),
     d3, d4, d5, d6, k₉.mem] at hpost'
-  have h₁₀ := signStep hp h₈ (a.trans k₉.rd) (b.trans k₉.wr) (c.trans k₉.sp)
+  obtain h₁₀ := signStep hp h₈ (a.trans k₉.rd) (b.trans k₉.wr) (c.trans k₉.sp)
     (fun r hr => (g r hr).trans (k₉.pres r hr)) (k₉.mem ▸ f₁₀) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
       rcases hr with rfl | rfl
       · exact .inr (.inr (.inr (.inl rfl)))
       · exact .inl rfl
-  have f₁₀' : Frame (chW s) t₈.mem t₁₀.mem := by
+  obtain f₁₀' : Frame (chW s) t₈.mem t₁₀.mem := by
     rw [← k₉.mem]
     exact f₁₀.sub fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -304,12 +304,12 @@ theorem signWith_wp (C : ShaOK) (B : BaseOk) {sn : Nat} {s : State} (hp : SignPr
     (hpk : bytesAt s.mem (s.gpr .r5) 32 = Spec.Ed25519.publicKey seed) :
     WP isa (signWith digest) s fun t => (∀ r ∈ preserved, t.gpr r = s.gpr r) ∧ t.sp = s.sp ∧ t.lr = s.lr ∧
       bytesAt t.mem (s.gpr .r3) 64 = Spec.Ed25519.sign seed (msgB s) := by
-  have F192 : Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 192, 32⟩ ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
-  have F0 : Region.Sub ⟨s.gpr .r9, 32⟩ ⟨s.gpr .r9, 288⟩ := Region.sub_prefix (by decide)
+  obtain F192 : Region.Sub ⟨s.gpr .r9 + BitVec.ofNat 64 192, 32⟩ ⟨s.gpr .r9, 288⟩ := Offset.sub_base _ (by decide)
+  obtain F0 : Region.Sub ⟨s.gpr .r9, 32⟩ ⟨s.gpr .r9, 288⟩ := Region.sub_prefix (by decide)
   unfold signWith
   refine WP.seq (WP.mono_syms (signSetup_ok hp) fun t₁ ⟨h₁, hk₁⟩ sy₁ => ?_)
   refine WP.seq (WP.mono_syms (signExpandWith_ok hp (hd t₁ h₁)) fun t₂ ⟨h₂, f₂, hs₂, hp₂⟩ sy₂ => ?_)
-  have hk₂ : bytesAt t₂.mem (s.gpr .r9 + BitVec.ofNat 64 192) 32 = bytesAt s.mem (s.gpr .r5) 32 := by
+  obtain hk₂ : bytesAt t₂.mem (s.gpr .r9 + BitVec.ofNat 64 192) 32 = bytesAt s.mem (s.gpr .r5) 32 := by
     rw [← hk₁]
     exact bytes_keep f₂ (by decide) fun r hr => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -318,7 +318,7 @@ theorem signWith_wp (C : ShaOK) (B : BaseOk) {sn : Nat} {s : State} (hp : SignPr
       · exact Offset.disjoint_base _ (by decide) (by decide)
       · exact hp.bF.symm.sub_left F192
   refine WP.seq (WP.mono (signNonce_ok C B hp h₂ hp₂ (by rw [sy₂, sy₁])) fun t₃ ⟨h₃, f₃, hn₃, hr₃⟩ => ?_)
-  have keep₃ : ∀ {p : Addr}, Region.Sub ⟨p, 32⟩ ⟨s.gpr .r9, 288⟩ →
+  obtain keep₃ : ∀ {p : Addr}, Region.Sub ⟨p, 32⟩ ⟨s.gpr .r9, 288⟩ →
       (Region.Disjoint ⟨p, 32⟩ ⟨s.gpr .r9 + BitVec.ofNat 64 64, 128⟩) →
       bytesAt t₃.mem p 32 = bytesAt t₂.mem p 32 := fun hs hd =>
     bytes_keep f₃ (by decide) fun r hr => by
@@ -328,11 +328,11 @@ theorem signWith_wp (C : ShaOK) (B : BaseOk) {sn : Nat} {s : State} (hp : SignPr
       · exact hd
       · exact hp.bF.symm.sub_left hs
       · exact (hp.oF.symm.sub_left hs).sub_right (Region.sub_prefix (by decide))
-  have hk₃ := (keep₃ F192 (Offset.disjoint _ (.inr (by decide)) (by decide) (by decide))).trans hk₂
-  have hs₃ := (keep₃ F0 (Offset.base_disjoint _ (by decide) (by decide))).trans hs₂
+  obtain hk₃ := (keep₃ F192 (Offset.disjoint _ (.inr (by decide)) (by decide) (by decide))).trans hk₂
+  obtain hs₃ := (keep₃ F0 (Offset.base_disjoint _ (by decide) (by decide))).trans hs₂
   refine WP.seq (WP.mono (signChallenge_ok C hp h₃ hr₃ hn₃ hs₃ hk₃) fun t₄ ⟨h₄, hR, hS⟩ => ?_)
-  have hFw : (⟨s.gpr .r9, 288⟩ : Region) ∈ t₄.rd ++ t₄.wr := List.mem_append_right _ (sign_Fw hp h₄)
-  have hrl : ∀ p ∈ restoreList 224 signRegs, p.2 + 8 ≤ 288 := by decide
+  obtain hFw : (⟨s.gpr .r9, 288⟩ : Region) ∈ t₄.rd ++ t₄.wr := List.mem_append_right _ (sign_Fw hp h₄)
+  obtain hrl : ∀ p ∈ restoreList 224 signRegs, p.2 + 8 ≤ 288 := by decide
   refine restore_ok h₄ (by decide) (h₄.regs _ (by decide)) (by decide) (by decide) (by decide) (by decide)
     (fun p hp' => in_base hFw (hrl p hp') (by have := hrl p hp'; omega_using [this]))
     fun t₅ g₅ sp₅ lr₅ m₅ _ => ⟨g₅, sp₅, lr₅, ?_⟩

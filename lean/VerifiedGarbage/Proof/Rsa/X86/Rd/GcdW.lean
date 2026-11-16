@@ -71,20 +71,20 @@ theorem batchG_ok {s : State} (h : Bx wid s B Z len N n) (hn2 : 2 ≤ n) (he : n
       GAt len n B (bT dl f g).d (fNext dl f g) (gNext dl f g) o t := by
   have hn := h.nowrap
   have hf16 := h.fits16
-  have e16 : win = 16 := rfl; have eMu : sMu = 160 := rfl; have eP : sP = 176 := rfl
+  obtain e16 : win = 16 := rfl; have eMu : sMu = 160 := rfl; have eP : sP = 176 := rfl
   have efs : fgSz = 16 := rfl
-  have hAF : rv (kw len) { arr := fgArr } n = 160 + 4 * (4 * kw len + 8) := by
+  obtain hAF : rv (kw len) { arr := fgArr } n = 160 + 4 * (4 * kw len + 8) := by
     simp only [rv, VG.Impl.Rsa.X86.InvBatchRt.offset, fgArr]; omega_using []
-  have hfg0 : fg0 len = rv (kw len) { arr := fgArr } n + fgSz := by simp only [fg0, rv]; omega_using []
-  have Fdl := G.dl; have Ff := G.f; have Fg := G.g
-  have hi8 : i ≤ 8 := by omega_using [hio]
-  have hoi : (i + 4 ≤ o ∨ o + 4 ≤ i) ∧ (i + 4 + 4 ≤ o ∨ o + 4 ≤ i + 4) ∧ (i + 4 ≤ o + 4 ∨ o + 4 + 4 ≤ i) ∧
+  obtain hfg0 : fg0 len = rv (kw len) { arr := fgArr } n + fgSz := by simp only [fg0, rv]; omega_using []
+  obtain Fdl := G.dl; have Ff := G.f; have Fg := G.g
+  obtain hi8 : i ≤ 8 := by omega_using [hio]
+  obtain hoi : (i + 4 ≤ o ∨ o + 4 ≤ i) ∧ (i + 4 + 4 ≤ o ∨ o + 4 ≤ i + 4) ∧ (i + 4 ≤ o + 4 ∨ o + 4 + 4 ≤ i) ∧
       (i + 4 + 4 ≤ o + 4 ∨ o + 4 + 4 ≤ i + 4) := by omega_using [hio]
   generalize hA : rv (kw len) { arr := fgArr } n = AF at hAF hfg0 Ff Fg hfit
   set T := bT dl f g with hT
-  have bnd := Divstep.msteps_bnd dl f g 30
+  obtain bnd := Divstep.msteps_bnd dl f g 30
   simp only [Divstep.MSt.bnd] at bnd
-  have code : VG.Impl.Rsa.X86.RecoverDetRt.batchG (i = 0) = seqs [.block (startF wid i),
+  obtain code : VG.Impl.Rsa.X86.RecoverDetRt.batchG (i = 0) = seqs [.block (startF wid i),
       VG.Impl.Weierstrass.X86.Inv.wordSteps win 30, .block coefMasks,
       row wid false fgArr fgSz o [⟨i, win + 12, sMu⟩, ⟨i + 4, win + 16, sMu + 4⟩]
         [⟨i, win + 12, sMu⟩, ⟨i + 4, win + 16, sMu + 4⟩],
@@ -94,30 +94,30 @@ theorem batchG_ok {s : State} (h : Bx wid s B Z len N n) (hn2 : 2 ≤ n) (he : n
   rw [code]
   simp only [seqs]
   -- The window.
-  have hfw : ((s.mem.readW (off B (fg0 len + i)) 32).toNat : Int) % 2 ^ 32 = f % 2 ^ 32 := by
+  obtain hfw : ((s.mem.readW (off B (fg0 len + i)) 32).toNat : Int) % 2 ^ 32 = f % 2 ^ 32 := by
     have := sval_low s.mem B (AF + fgSz + i) fgSz n
     rw [Ff] at this; rw [hfg0]; exact this
-  have hgw : ((s.mem.readW (off B (fg0 len + (i + 4))) 32).toNat : Int) % 2 ^ 32 = g % 2 ^ 32 := by
+  obtain hgw : ((s.mem.readW (off B (fg0 len + (i + 4))) 32).toNat : Int) % 2 ^ 32 = g % 2 ^ 32 := by
     have := sval_low s.mem B (AF + fgSz + (i + 4)) fgSz n
     rw [Fg] at this; rw [hfg0]; exact this
   refine VG.Proof.Rsa.X86.InvBatchRt.seq_assoc (WP.seq (WP.mono (windowF_ok h (by omega_using [hio, efs]) G.dl hfw hgw hdl hfo)
     fun s₁ ⟨H₁, M₁, K₁, O₁⟩ => ?_))
   -- The masks.
   refine WP.seq (WP.mono (coefMasks_ok H₁) fun s₂ ⟨H₂, V₂, O₂, K₂⟩ => ?_)
-  have c₂ : ∀ d, d + 4 ≤ win + 28 → win + 12 ≤ d →
+  obtain c₂ : ∀ d, d + 4 ≤ win + 28 → win + 12 ≤ d →
       s₂.mem.readW (off B d) 32 = s₁.mem.readW (off B d) 32 := fun d h1 h2 => hdr_out O₂ (.inl (by omega_using [e16, eMu, h1])) (by omega_using [e16, h1])
-  have Sf₂ : Same B (AF + fgSz + i) fgSz (n + 1) s.mem s₂.mem :=
+  obtain Sf₂ : Same B (AF + fgSz + i) fgSz (n + 1) s.mem s₂.mem :=
     (Same.below O₁ (by omega_using [hio, efs]) (by omega_using [e16, hAF]) (by omega_using [hn, hfit])).trans (Same.below O₂ (by omega_using [hio, efs]) (by omega_using [eMu, hAF]) (by omega_using [hn, hfit]))
-  have Sg₂ : Same B (AF + fgSz + (i + 4)) fgSz (n + 1) s.mem s₂.mem :=
+  obtain Sg₂ : Same B (AF + fgSz + (i + 4)) fgSz (n + 1) s.mem s₂.mem :=
     (Same.below O₁ (by omega_using [hio, efs]) (by omega_using [e16, hAF]) (by omega_using [hn, hfit])).trans (Same.below O₂ (by omega_using [hio, efs]) (by omega_using [eMu, hAF]) (by omega_using [hn, hfit]))
-  have mk₂ : ∀ j < 4, s₂.mem.readW (off B (sMu + 4 * j)) 32 = maskW (s₂.mem.readW (off B (win + 12 + 4 * j)) 32) :=
+  obtain mk₂ : ∀ j < 4, s₂.mem.readW (off B (sMu + 4 * j)) 32 = maskW (s₂.mem.readW (off B (win + 12 + 4 * j)) 32) :=
     fun j hj => by rw [V₂ j hj, c₂ _ (by omega_using [hj]) (by omega_using [])]
-  have hu₂ : s₂.mem.readW (off B (win + 12)) 32 = BitVec.ofInt 32 T.u := by rw [c₂ _ (by omega_using []) (by omega_using [])]; exact M₁.u
-  have hv₂ : s₂.mem.readW (off B (win + 16)) 32 = BitVec.ofInt 32 T.v := by rw [c₂ _ (by omega_using []) (by omega_using [])]; exact M₁.v
-  have hq₂ : s₂.mem.readW (off B (win + 20)) 32 = BitVec.ofInt 32 T.q := by rw [c₂ _ (by omega_using []) (by omega_using [])]; exact M₁.q
-  have hr₂ : s₂.mem.readW (off B (win + 24)) 32 = BitVec.ofInt 32 T.r := by rw [c₂ _ (by omega_using []) (by omega_using [])]; exact M₁.r
+  obtain hu₂ : s₂.mem.readW (off B (win + 12)) 32 = BitVec.ofInt 32 T.u := by rw [c₂ _ (by omega_using []) (by omega_using [])]; exact M₁.u
+  obtain hv₂ : s₂.mem.readW (off B (win + 16)) 32 = BitVec.ofInt 32 T.v := by rw [c₂ _ (by omega_using []) (by omega_using [])]; exact M₁.v
+  obtain hq₂ : s₂.mem.readW (off B (win + 20)) 32 = BitVec.ofInt 32 T.q := by rw [c₂ _ (by omega_using []) (by omega_using [])]; exact M₁.q
+  obtain hr₂ : s₂.mem.readW (off B (win + 24)) 32 = BitVec.ofInt 32 T.r := by rw [c₂ _ (by omega_using []) (by omega_using [])]; exact M₁.r
   -- The row of `f`.
-  have tsF : ∀ {m : Mem} {c₁ c₂ m₁ m₂ : Nat} (o' : Nat), o' + 4 ≤ fgSz → (i + 4 ≤ o' ∨ o' + 4 ≤ i) →
+  obtain tsF : ∀ {m : Mem} {c₁ c₂ m₁ m₂ : Nat} (o' : Nat), o' + 4 ≤ fgSz → (i + 4 ≤ o' ∨ o' + 4 ≤ i) →
       (i + 4 + 4 ≤ o' ∨ o' + 4 ≤ i + 4) → c₁ + 4 ≤ sP → c₂ + 4 ≤ sP → m₁ + 4 ≤ sP → m₂ + 4 ≤ sP →
       m.readW (off B m₁) 32 = maskW (m.readW (off B c₁) 32) → m.readW (off B m₂) 32 = maskW (m.readW (off B c₂) 32) →
       TermsOk m B AF fgSz o' [⟨i, c₁, m₁⟩, ⟨i + 4, c₂, m₂⟩] := by
@@ -130,11 +130,11 @@ theorem batchG_ok {s : State} (h : Bx wid s B Z len N n) (hn2 : 2 ≤ n) (he : n
         h3, .inl h5, .inl h7, h9⟩
   have huv : |T.u| + |T.v| ≤ 2 ^ 30 := bnd.1
   have hqr : |T.q| + |T.r| ≤ 2 ^ 30 := bnd.2
-  have ts₂ : TermsOk s₂.mem B AF fgSz o [⟨i, win + 12, sMu⟩, ⟨i + 4, win + 16, sMu + 4⟩] := by
+  obtain ts₂ : TermsOk s₂.mem B AF fgSz o [⟨i, win + 12, sMu⟩, ⟨i + 4, win + 16, sMu + 4⟩] := by
     refine tsF o (by rw [efs]; omega_using [hio]) hoi.1 hoi.2.1 (by omega_using [e16, eP]) (by omega_using [e16, eP]) (by omega_using [eMu, eP]) (by omega_using [eMu, eP]) ?_ ?_
     · simpa using mk₂ 0 (by omega_using [])
     · simpa using mk₂ 1 (by omega_using [])
-  have rf := rowTwo_ok H₂ hn2 he (arr := fgArr) (sz := fgSz) (o := o) (t₁ := ⟨i, win + 12, sMu⟩)
+  obtain rf := rowTwo_ok H₂ hn2 he (arr := fgArr) (sz := fgSz) (o := o) (t₁ := ⟨i, win + 12, sMu⟩)
     (t₂ := ⟨i + 4, win + 16, sMu + 4⟩) (Or.inl rfl) (by rw [efs]; omega_using [hio]) (by rw [hA]; omega_using [hfit]) (by rw [hA]; omega_using [eP, hAF])
     (by rw [hA]; exact ts₂) hu₂ hv₂ huv
     (by dsimp only; rw [hA, Sf₂.sval_eq, Sg₂.sval_eq, Ff, Fg]; exact hf')
@@ -142,20 +142,20 @@ theorem batchG_ok {s : State} (h : Bx wid s B Z len N n) (hn2 : 2 ≤ n) (he : n
   rw [hA] at F₃ V₃
   dsimp only at V₃
   rw [Sf₂.sval_eq, Sg₂.sval_eq, Ff, Fg] at V₃
-  have hAF32 : AF ≤ 2 ^ 32 := by omega_using [hn, hfit]
-  have hfit32 : AF + fgSz * (n + 2) ≤ 2 ^ 32 := by omega_using [hn, hfit]
+  obtain hAF32 : AF ≤ 2 ^ 32 := by omega_using [hn, hfit]
+  obtain hfit32 : AF + fgSz * (n + 2) ≤ 2 ^ 32 := by omega_using [hn, hfit]
   -- The row of `g`.
-  have Sf₃ : Same B (AF + fgSz + i) fgSz (n + 1) s.mem s₃.mem :=
+  obtain Sf₃ : Same B (AF + fgSz + i) fgSz (n + 1) s.mem s₃.mem :=
     Sf₂.trans (Same.row_slot F₃ (by rw [efs]; omega_using [hio]) (by rw [efs]; omega_using [hio]) hoi.1 (by omega_using [eP, hAF]) hfit32)
-  have Sg₃ : Same B (AF + fgSz + (i + 4)) fgSz (n + 1) s.mem s₃.mem :=
+  obtain Sg₃ : Same B (AF + fgSz + (i + 4)) fgSz (n + 1) s.mem s₃.mem :=
     Sg₂.trans (Same.row_slot F₃ (by rw [efs]; omega_using [hio]) (by rw [efs]; omega_using [hio]) hoi.2.1 (by omega_using [eP, hAF]) hfit32)
-  have h₃ : ∀ d, d + 4 ≤ sP → s₃.mem.readW (off B d) 32 = s₂.mem.readW (off B d) 32 := fun d hd =>
+  obtain h₃ : ∀ d, d + 4 ≤ sP → s₃.mem.readW (off B d) 32 = s₂.mem.readW (off B d) 32 := fun d hd =>
     hdr_row F₃ (by omega_using [eP, hAF, hd]) (.inl hd) hAF32
-  have ts₃ : TermsOk s₃.mem B AF fgSz (o + 4) [⟨i, win + 20, sMu + 8⟩, ⟨i + 4, win + 24, sMu + 12⟩] := by
+  obtain ts₃ : TermsOk s₃.mem B AF fgSz (o + 4) [⟨i, win + 20, sMu + 8⟩, ⟨i + 4, win + 24, sMu + 12⟩] := by
     refine tsF (o + 4) (by rw [efs]; omega_using [hio]) hoi.2.2.1 hoi.2.2.2 (by omega_using [e16, eP]) (by omega_using [e16, eP]) (by omega_using [eMu, eP]) (by omega_using [eMu, eP]) ?_ ?_
     · rw [h₃ (sMu + 8) (by omega_using [eMu, eP]), h₃ (win + 20) (by omega_using [e16, eP])]; simpa using mk₂ 2 (by omega_using [])
     · rw [h₃ (sMu + 12) (by omega_using [eMu, eP]), h₃ (win + 24) (by omega_using [e16, eP])]; simpa using mk₂ 3 (by omega_using [])
-  have rg := rowTwo_ok H₃ hn2 he (arr := fgArr) (sz := fgSz) (o := o + 4) (t₁ := ⟨i, win + 20, sMu + 8⟩)
+  obtain rg := rowTwo_ok H₃ hn2 he (arr := fgArr) (sz := fgSz) (o := o + 4) (t₁ := ⟨i, win + 20, sMu + 8⟩)
     (t₂ := ⟨i + 4, win + 24, sMu + 12⟩) (Or.inl rfl) (by rw [efs]; omega_using [hio]) (by rw [hA]; omega_using [hfit]) (by rw [hA]; omega_using [eP, hAF])
     (by rw [hA]; exact ts₃) (by rw [h₃ (win + 20) (by omega_using [e16, eP])]; exact hq₂) (by rw [h₃ (win + 24) (by omega_using [e16, eP])]; exact hr₂) hqr
     (by dsimp only; rw [hA, Sf₃.sval_eq, Sg₃.sval_eq, Ff, Fg]; exact hg')
@@ -163,11 +163,11 @@ theorem batchG_ok {s : State} (h : Bx wid s B Z len N n) (hn2 : 2 ≤ n) (he : n
   rw [hA] at F₄ V₄
   dsimp only at V₄
   rw [Sf₃.sval_eq, Sg₃.sval_eq, Ff, Fg] at V₄
-  have hT₄ : ∀ d, d + 4 ≤ sP → t.mem.readW (off B d) 32 = s₂.mem.readW (off B d) 32 := fun d hd => by
+  obtain hT₄ : ∀ d, d + 4 ≤ sP → t.mem.readW (off B d) 32 = s₂.mem.readW (off B d) 32 := fun d hd => by
     rw [hdr_row F₄ (by omega_using [eP, hAF, hd]) (.inl hd) hAF32, h₃ d hd]
-  have hT : ∀ d, d + 4 ≤ sMu → t.mem.readW (off B d) 32 = s₁.mem.readW (off B d) 32 := fun d hd => by
+  obtain hT : ∀ d, d + 4 ≤ sMu → t.mem.readW (off B d) 32 = s₁.mem.readW (off B d) 32 := fun d hd => by
     rw [hT₄ d (by omega_using [eMu, eP, hd]), hdr_out O₂ (.inl hd) (by omega_using [eMu, hd])]
-  have Sf₄ : Same B (AF + fgSz + o) fgSz (n + 1) s₃.mem t.mem :=
+  obtain Sf₄ : Same B (AF + fgSz + o) fgSz (n + 1) s₃.mem t.mem :=
     Same.row_slot F₄ (by rw [efs]; omega_using [hio]) (by rw [efs]; omega_using [hio]) (by omega_using []) (by omega_using [eP, hAF]) hfit32
   refine ⟨H₄, ?_, ?_, ?_, ⟨?_, ?_, ?_⟩⟩
   · exact (K₁.trans (K₂.mono (by decide))).trans ((K₃.mono (by decide)).trans (K₄.mono (by decide)))
@@ -189,17 +189,17 @@ theorem batchG_ok {s : State} (h : Bx wid s B Z len N n) (hn2 : 2 ≤ n) (he : n
 theorem dfg_bounds {p iv x cap : Nat} (odd : p % 2 = 1) (pc : p ≤ cap) (xc : oddInput p x ≤ cap) (j : Nat) :
     |(rs p iv x j).d| ≤ 1 + 2 * (30 * j : Nat) ∧ (rs p iv x j).f % 2 = 1 ∧ |(rs p iv x j).f| ≤ cap ∧
       |(rs p iv x j).g| ≤ cap := by
-  have oddI : (p : Int) % 2 = 1 := by exact_mod_cast odd
-  have dfg := (Divstep.W32.invRun_dfg (N := 30) (m := (iv : Int)) (x := (oddInput p x : Int)) oddI j)
-  have pair := Divstep.W32.divsteps_le (M := (cap : Int)) (d := 1) (f := (p : Int)) (g := (oddInput p x : Int))
+  obtain oddI : (p : Int) % 2 = 1 := by exact_mod_cast odd
+  obtain dfg := (Divstep.W32.invRun_dfg (N := 30) (m := (iv : Int)) (x := (oddInput p x : Int)) oddI j)
+  obtain pair := Divstep.W32.divsteps_le (M := (cap : Int)) (d := 1) (f := (p : Int)) (g := (oddInput p x : Int))
     (by decide) oddI (by rw [abs_of_nonneg (Int.natCast_nonneg _)]; exact_mod_cast pc)
     (by rw [abs_of_nonneg (Int.natCast_nonneg _)]; exact_mod_cast xc) (30 * j)
-  have delta := Divstep.W32.divsteps_d (1, (p : Int), (oddInput p x : Int)) (30 * j)
-  have dd : (rs p iv x j).d = (Divstep.divsteps (30 * j) (1, (p : Int), (oddInput p x : Int))).1 := by
+  obtain delta := Divstep.W32.divsteps_d (1, (p : Int), (oddInput p x : Int)) (30 * j)
+  obtain dd : (rs p iv x j).d = (Divstep.divsteps (30 * j) (1, (p : Int), (oddInput p x : Int))).1 := by
     simp only [rs]; rw [← dfg.1]
-  have df : (rs p iv x j).f = (Divstep.divsteps (30 * j) (1, (p : Int), (oddInput p x : Int))).2.1 := by
+  obtain df : (rs p iv x j).f = (Divstep.divsteps (30 * j) (1, (p : Int), (oddInput p x : Int))).2.1 := by
     simp only [rs]; rw [← dfg.1]
-  have dg : (rs p iv x j).g = (Divstep.divsteps (30 * j) (1, (p : Int), (oddInput p x : Int))).2.2 := by
+  obtain dg : (rs p iv x j).g = (Divstep.divsteps (30 * j) (1, (p : Int), (oddInput p x : Int))).2.2 := by
     simp only [rs]; rw [← dfg.1]
   refine ⟨?_, dfg.2, by rw [df]; exact pair.1, by rw [dg]; exact pair.2⟩
   rw [dd]; simpa using delta
@@ -217,24 +217,24 @@ theorem stepG_ok {s : State} (h : Bx wid s B Z len N n) (hn2 : 2 ≤ n) (he : n 
     WP isa (VG.Impl.Rsa.X86.RecoverDetRt.batchG (i = 0)) s fun t =>
       Bx wid t B Z len N n ∧ Keeps wordClob s t ∧ Unch B (gWrites len n) s.mem t.mem ∧
       VG.Proof.Mont.w32 t.mem B 100 = VG.Proof.Mont.w32 s.mem B 100 ∧ GRun len n B p iv x (j + 1) o t := by
-  have ox : oddInput p x ≤ p + x := by unfold oddInput; split <;> omega_using []
-  have b₀ := dfg_bounds (iv := iv) (cap := p + x) odd (by omega_using []) ox j
-  have b₁ := dfg_bounds (iv := iv) (cap := p + x) odd (by omega_using []) ox (j + 1)
+  obtain ox : oddInput p x ≤ p + x := by unfold oddInput; split <;> omega_using []
+  obtain b₀ := dfg_bounds (iv := iv) (cap := p + x) odd (by omega_using []) ox j
+  obtain b₁ := dfg_bounds (iv := iv) (cap := p + x) odd (by omega_using []) ox (j + 1)
   obtain ⟨bd, fo, -, -⟩ := b₀
   obtain ⟨-, -, f1, g1⟩ := b₁
-  have pcI : (p : Int) + x < 2 ^ (32 * n) * 2 := by
+  obtain pcI : (p : Int) + x < 2 ^ (32 * n) * 2 := by
     have : (2 : Int) ^ (32 * n) = ((2 ^ (32 * n) : Nat) : Int) := by push_cast; rfl
     rw [this]; omega_using [pc, xc]
-  have big : (2 : Int) ^ (32 * n) * 2 ≤ 2 ^ (32 * n) * 2 ^ 31 :=
+  obtain big : (2 : Int) ^ (32 * n) * 2 ≤ 2 ^ (32 * n) * 2 ^ 31 :=
     Int.mul_le_mul_of_nonneg_left (by decide) (Int.le_of_lt (two_pow_pos' _))
   have hfn : (rs p iv x (j + 1)).f = fNext (rs p iv x j).d (rs p iv x j).f (rs p iv x j).g := rfl
   have hgn : (rs p iv x (j + 1)).g = gNext (rs p iv x j).d (rs p iv x j).f (rs p iv x j).g := rfl
-  have hdn : (rs p iv x (j + 1)).d = (bT (rs p iv x j).d (rs p iv x j).f (rs p iv x j).g).d := by
+  obtain hdn : (rs p iv x (j + 1)).d = (bT (rs p iv x j).d (rs p iv x j).f (rs p iv x j).g).d := by
     show (Divstep.W32.batch 30 p iv (rs p iv x j)).d = _
     rw [Divstep.W32.batch_d]; rfl
-  have range : ∀ y : Int, |y| ≤ p + x → InRange n y := fun y hy => by
+  obtain range : ∀ y : Int, |y| ≤ p + x → InRange n y := fun y hy => by
     rw [abs_le] at hy; push_cast at hy; exact ⟨by omega_using [pcI, hy], by omega_using [pcI, hy]⟩
-  have hd : |(rs p iv x j).d| + 64 < 2 ^ 30 := by
+  obtain hd : |(rs p iv x j).d| + 64 < 2 ^ 30 := by
     have : (1 + 2 * (30 * j : Nat) : Int) ≤ 1 + 60 * 1500 := by push_cast; omega_using [hj]
     omega_using [hj, bd]
   refine WP.mono (batchG_ok h hn2 he hfit hio F hd fo (by rw [← hfn]; exact range _ f1)
@@ -277,7 +277,7 @@ theorem loopG_ok {s : State} (h : Bx wid s B Z len N n) (hn2 : 2 ≤ n) (he : n 
       Bx wid t B Z len N n ∧ Keeps wordClob s t ∧ Unch B (gWrites len n) s.mem t.mem ∧
       GRun len n B p iv x (2 * K) 0 t := by
   have hn := h.nowrap
-  have hAF : rv (kw len) { arr := fgArr } n = 160 + 4 * (4 * kw len + 8) := by
+  obtain hAF : rv (kw len) { arr := fgArr } n = 160 + 4 * (4 * kw len + 8) := by
     simp only [rv, VG.Impl.Rsa.X86.InvBatchRt.offset, fgArr]; omega_using []
   have efs : fgSz = 16 := rfl
   have e96 : halfSlot = 96 := rfl
@@ -292,10 +292,10 @@ theorem loopG_ok {s : State} (h : Bx wid s B Z len N n) (hn2 : 2 ≤ n) (he : n 
     fun u₂ ⟨H₂, K₂, U₂, C₂, F₂⟩ => ?_)
   refine WP.mono (VG.Proof.Rsa.X86.GcdBatch.countDown_ok H₂.ws.ws.workspace (d := 100) (by omega_using [hfit, hAF])
     (j := K - k) (by omega_using [hk, hr]) (by omega_using [hK]) (by rw [C₂, C₁, Cu])) fun z ⟨c, zf, K₃, O₃⟩ => ?_
-  have Hz : Bx wid z B Z len N n := Bx.keepHighN H₂ K₃ (by decide) (by decide) O₃ (by omega_using [e96]) (by omega_using [hfit, hAF])
-  have Fz := F₂.keep100 (by omega_using []) O₃ (by omega_using [hfit, hn]) (by rw [hAF]; omega_using [])
-  have Kz : Keeps wordClob s z := ((Ku.trans K₁).trans K₂).trans (K₃.mono (by decide))
-  have Uz : Unch B (gWrites len n) s.mem z.mem :=
+  obtain Hz : Bx wid z B Z len N n := Bx.keepHighN H₂ K₃ (by decide) (by decide) O₃ (by omega_using [e96]) (by omega_using [hfit, hAF])
+  obtain Fz := F₂.keep100 (by omega_using []) O₃ (by omega_using [hfit, hn]) (by rw [hAF]; omega_using [])
+  obtain Kz : Keeps wordClob s z := ((Ku.trans K₁).trans K₂).trans (K₃.mono (by decide))
+  obtain Uz : Unch B (gWrites len n) s.mem z.mem :=
     ((((Uu.trans U₁).trans U₂).trans O₃.unch).cover fun w hw => by
       simp only [List.mem_append, List.mem_singleton] at hw
       rcases hw with ((h1 | h1) | h1) | h1
@@ -355,32 +355,32 @@ theorem finishG_ok {s : State} (h : Bx wid s B Z len N n) (hn2 : 2 ≤ n) (hnk :
         s.mem z.mem := by
   have hn := h.nowrap
   have hf16 := h.fits16
-  have ke := VG.Proof.Rsa.X86.InvBatchRt.kw_eq len
-  have r4 := rv_j len n 4; have r12 := rv_j len n 12; have r14 := rv_j len n 14
+  obtain ke := VG.Proof.Rsa.X86.InvBatchRt.kw_eq len
+  obtain r4 := rv_j len n 4; have r12 := rv_j len n 12; have r14 := rv_j len n 14
   have efs : fgSz = 16 := rfl
-  have hfg : rv (kw len) { arr := fgArr } n = rv (kw len) { arr := 4 } n := rfl
-  have h41 : rv (kw len) { arr := 14, half := 1 } n = rv (kw len) { arr := 14 } n + 4 * n := by
+  obtain hfg : rv (kw len) { arr := fgArr } n = rv (kw len) { arr := 4 } n := rfl
+  obtain h41 : rv (kw len) { arr := 14, half := 1 } n = rv (kw len) { arr := 14 } n + 4 * n := by
     simp only [rv]; omega
   simp only [seqs]
   -- `[14] = f`, `n + 1` words.
   refine WP.seq (WP.mono (gather_ok h (arr := fgArr) (sz := fgSz) (x := 8) (dst := { arr := 14 }) (by decide)
     (by rw [hfg, r4, efs]; omega) (by omega) (.inr (by rw [hfg, r4, efs]; omega)))
     fun s₁ ⟨H₁, O₁, V₁, K₁⟩ => ?_)
-  have hR : -((2 ^ (32 * n) * 2 ^ 31 : Nat) : Int) ≤ f ∧ f < ((2 ^ (32 * n) * 2 ^ 31 : Nat) : Int) := by
+  obtain hR : -((2 ^ (32 * n) * 2 ^ 31 : Nat) : Int) ≤ f ∧ f < ((2 ^ (32 * n) * 2 ^ 31 : Nat) : Int) := by
     rw [abs_lt] at hb; push_cast
     have : (2 : Int) ^ (32 * n) ≤ 2 ^ (32 * n) * 2 ^ 31 :=
       le_mul_of_one_le_right (Int.le_of_lt (two_pow_pos' _)) (by decide)
     omega
-  have rep : Rep (2 ^ (32 * n) * 2 ^ 31) (val32 s₁.mem B (rv (kw len) { arr := 14 } n) (n + 1)) f := by
+  obtain rep : Rep (2 ^ (32 * n) * 2 ^ 31) (val32 s₁.mem B (rv (kw len) { arr := 14 } n) (n + 1)) f := by
     rw [V₁, ← F]; exact rep_sval (by rw [F]; exact hR.1) (by rw [F]; exact hR.2)
   -- `[12] = 0`.
   refine WP.seq (WP.mono (VG.Proof.Rsa.X86.KeyRt.zeroWide_ok H₁.ws (j := 12) (by have := H₁.room; omega))
     fun s₂ ⟨W₂, k₂, Z₂, K₂⟩ => ?_)
-  have O₂ := keep_outside k₂
+  obtain O₂ := keep_outside k₂
   rw [arr_rv len n] at O₂ Z₂
   simp only [VG.Proof.Rsa.X86.Keys.S] at O₂
-  have H₂ : Bx wid s₂ B Z len N n := H₁.keep K₂ (by decide) (by decide) O₂ (by omega) (by omega)
-  have Z₂' : val32 s₂.mem B (rv (kw len) { arr := 12 } n) n = 0 := by
+  obtain H₂ : Bx wid s₂ B Z len N n := H₁.keep K₂ (by decide) (by decide) O₂ (by omega) (by omega)
+  obtain Z₂' : val32 s₂.mem B (rv (kw len) { arr := 12 } n) n = 0 := by
     have := val32_append s₂.mem B (rv (kw len) { arr := 12 } n) n (kw len + 1 - n)
     rw [show n + (kw len + 1 - n) = kw len + 1 by omega, Z₂] at this; omega
   -- `[12] = -[14]`, `n` words.
@@ -393,12 +393,12 @@ theorem finishG_ok {s : State} (h : Bx wid s B Z len N n) (hn2 : 2 ≤ n) (hnk :
   refine WP.seq (VG.Proof.Rsa.X86.InvBatchRt.maskAt_ok H₃ (x := { arr := 14, half := 1 }) (by omega) fun s₄ K₄ m₄ c₄ => ?_)
   rw [h41, O₃.w32 (by omega) (by omega), O₂.w32 (by omega) (by omega)] at c₄
   refine wp_logicS (.inr rfl) rfl fun s₅ U₅ => WP.block_nil ?_
-  have K₅ : Keeps [.eax, .ebx, .ecx, .edx] s₃ s₅ := K₄.trans (U₅.keeps.mono (by decide))
-  have m₅ : s₅.mem = s₃.mem := by rw [U₅.mem, m₄]
-  have H₅ : Bx wid s₅ B Z len N n := H₃.keep K₅ (by decide) (by decide) (o := 160) (c := 0)
+  obtain K₅ : Keeps [.eax, .ebx, .ecx, .edx] s₃ s₅ := K₄.trans (U₅.keeps.mono (by decide))
+  obtain m₅ : s₅.mem = s₃.mem := by rw [U₅.mem, m₄]
+  obtain H₅ : Bx wid s₅ B Z len N n := H₃.keep K₅ (by decide) (by decide) (o := 160) (c := 0)
     (by rw [m₅]; exact Outside.refl _ _ _ _) (Nat.le_refl _) (by omega)
-  have sign := top_sign rep
-  have mask : s₅.gpr .ecx = cmask (!decide (f < 0)) := by
+  obtain sign := top_sign rep
+  obtain mask : s₅.gpr .ecx = cmask (!decide (f < 0)) := by
     rw [U₅.gpr, ite_eq_right (by decide), c₄]
     simp only [cmask]
     by_cases hf : f < 0
@@ -416,8 +416,8 @@ theorem finishG_ok {s : State} (h : Bx wid s B Z len N n) (hn2 : 2 ≤ n) (hnk :
   · exact ((((K₁.mono (by decide)).trans (K₂.mono (by decide))).trans (K₃.mono (by decide))).trans
       (K₅.mono (by decide))).trans (Kz.mono (by decide))
   · intro x hx
-    have h1 := hx _ (List.mem_cons_self ..)
-    have h2 := hx _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
+    obtain h1 := hx _ (List.mem_cons_self ..)
+    obtain h2 := hx _ (List.mem_cons_of_mem _ (List.mem_singleton_self _))
     simp only at h1 h2
     simp only [Nat.add_zero] at Oz
     rw [Oz x (by omega), m₅, O₃ x (by omega), O₂ x (by omega), O₁ x (by omega)]
@@ -447,12 +447,12 @@ theorem gN_ok {s : State} (h : Bx wid s B Z len N) {ln : Nat} (hl : VG.Proof.Rsa
     ([.alu .add .eax (.imm 8), .store (sc halfSlot) .eax] : List Instr) from rfl]
   refine VG.Proof.Rsa.X86.KeyRt.bytesB_ok hl hln fun u K m c => ?_
   have scr := h.ws.ws.workspace
-  have ws : Ws u B Z := ⟨K.2.2 ▸ scr.wr, scr.nowrap⟩
-  have di : PtrAt u B .edi 0 := by
+  obtain ws : Ws u B Z := ⟨K.2.2 ▸ scr.wr, scr.nowrap⟩
+  obtain di : PtrAt u B .edi 0 := by
     rw [PtrAt, K.1 _ (by decide), RtWs.edi_eq h.ws, BitVec.toNat_ofNat]; omega_using []
   obtain ⟨hdi, aC, -⟩ := ptrRead ws di (d := halfSlot) (by omega_using [hZ])
   simp only [Nat.zero_add] at aC
-  have wC := ws_write ws (y := halfSlot) (n := 4) (by omega_using [hZ])
+  obtain wC := ws_write ws (y := halfSlot) (n := 4) (by omega_using [hZ])
   refine WP.mono (WP.keeps [.eax] (Q := fun v =>
     v.mem = u.mem.writeW (off B halfSlot) (BitVec.ofNat 32 (4 * (kw ln + 2)))) ?_ rfl) fun v ⟨mv, kv⟩ => ?_
   · xrun [sc, hdi, aC, wC]
@@ -462,8 +462,8 @@ theorem gN_ok {s : State} (h : Bx wid s B Z len N) {ln : Nat} (hl : VG.Proof.Rsa
     rw [show (8 : BitVec 32).toNat = 8 from rfl]
     congr 1
   · rw [m] at mv
-    have KK : Keeps [.eax, .ecx, .edx] s v := (K.mono (by decide)).trans (kv.mono (by decide))
-    have Om : Outside B halfSlot 4 s.mem v.mem := by rw [mv]; exact writeW32_outside _ _ _ (by omega_using [e96])
+    obtain KK : Keeps [.eax, .ecx, .edx] s v := (K.mono (by decide)).trans (kv.mono (by decide))
+    obtain Om : Outside B halfSlot 4 s.mem v.mem := by rw [mv]; exact writeW32_outside _ _ _ (by omega_using [e96])
     refine ⟨⟨h.ws.keep KK (by decide) (by decide) (Om.mono (Nat.zero_le _) (by omega_using [hZ])),
       ⟨fun j d hd => ?_, ?_, by omega_using [hfit], by omega_using []⟩, h.room⟩, KK, Om⟩
     · have := VG.Proof.Rsa.X86.InvBatchRt.slot_le hd
@@ -484,16 +484,16 @@ theorem countG_ok {s : State} (h : Bx wid s B Z len N n) {ln : Nat} (hl : VG.Pro
       Keeps [.eax, .ecx, .edx] s t := by
   have hn := h.nowrap
   have hZ := h.halfZ
-  have hw := kw_bound hln
+  obtain hw := kw_bound hln
   have hf16 := h.fits16
   refine VG.Proof.Rsa.X86.KeyRt.bytesB_ok hl hln fun u K m c => ?_
   have scr := h.ws.ws.workspace
-  have ws : Ws u B Z := ⟨K.2.2 ▸ scr.wr, scr.nowrap⟩
-  have di : PtrAt u B .edi 0 := by
+  obtain ws : Ws u B Z := ⟨K.2.2 ▸ scr.wr, scr.nowrap⟩
+  obtain di : PtrAt u B .edi 0 := by
     rw [PtrAt, K.1 _ (by decide), RtWs.edi_eq h.ws, BitVec.toNat_ofNat]; omega_using []
   obtain ⟨hdi, aC, -⟩ := ptrRead ws di (d := 100) (by omega_using [hf16])
   simp only [Nat.zero_add] at aC
-  have wC := ws_write ws (y := 100) (n := 4) (by omega_using [hf16])
+  obtain wC := ws_write ws (y := 100) (n := 4) (by omega_using [hf16])
   refine WP.mono (WP.keeps [.eax, .ecx] (Q := fun v =>
     v.mem = u.mem.writeW (off B 100) (BitVec.ofNat 32 ((3 * kw ln + 6) / 2))) ?_ rfl) fun v ⟨mv, kv⟩ => ?_
   · xrun [sc, hdi, aC, wC]
@@ -503,27 +503,27 @@ theorem countG_ok {s : State} (h : Bx wid s B Z len N n) {ln : Nat} (hl : VG.Pro
     simp only [BitVec.toNat_ushiftRight, Nat.shiftRight_eq_div_pow, BitVec.toNat_add, BitVec.toNat_ofNat, c, l6]
     generalize kw ln = q at *
     simp only [Nat.reducePow]
-    have e1 : 4 * q / 4 = q := by omega_using []
+    obtain e1 : 4 * q / 4 = q := by omega_using []
     rw [e1, Nat.mod_eq_of_lt (a := q + q) (by omega_using [hw]), Nat.mod_eq_of_lt (a := q + q + q) (by omega_using [hw]),
       Nat.mod_eq_of_lt (a := q + q + q + 6) (by omega_using [hw]), Nat.mod_eq_of_lt (a := (3 * q + 6) / 2) (by omega_using [hw])]
     omega_using []
   · rw [m] at mv
-    have KK : Keeps [.eax, .ecx, .edx] s v := (K.mono (by decide)).trans (kv.mono (by decide))
-    have Om : Outside B 100 4 s.mem v.mem := by rw [mv]; exact writeW32_outside _ _ _ (by omega_using [])
+    obtain KK : Keeps [.eax, .ecx, .edx] s v := (K.mono (by decide)).trans (kv.mono (by decide))
+    obtain Om : Outside B 100 4 s.mem v.mem := by rw [mv]; exact writeW32_outside _ _ _ (by omega_using [])
     exact ⟨Bx.keepHighN h KK (by decide) (by decide) Om (by decide) (by omega_using [hf16]), mv, KK⟩
 
 theorem winOneN_ok {L : Lay} {s : State} (h : Bx L s B Z len N n) :
     WP isa (.block [.mov .eax (.imm 1), .store (sc win) .eax]) s fun t =>
       Bx L t B Z len N n ∧ t.mem = s.mem.writeW (off B win) (1 : BitVec 32) ∧ Keeps [.eax] s t := by
   have hZ := h.halfZ
-  have e16 : win = 16 := rfl; have e96 : halfSlot = 96 := rfl
+  obtain e16 : win = 16 := rfl; have e96 : halfSlot = 96 := rfl
   refine wp_movS rfl fun u₁ V₁ _ => ?_
-  have hs₁ := h.ws.ws.workspace.of_keeps V₁.keeps (by decide)
+  obtain hs₁ := h.ws.ws.workspace.of_keeps V₁.keeps (by decide)
   refine wp_storeS (hs₁.ea (by omega_using [hZ, e16, e96])) (hs₁.write (d := win) (n := 4) (by omega_using [hZ, e16, e96]))
     fun u₂ V₂ => WP.block_nil ?_
-  have m₂ : u₂.mem = s.mem.writeW (off B win) (1 : BitVec 32) := by rw [V₂.mem, V₁.mem, V₁.gpr]
-  have K₂ : Keeps [.eax] s u₂ := V₁.keeps.trans (V₂.keeps _)
-  have Om : Outside B win 4 s.mem u₂.mem := by rw [m₂]; exact writeW32_outside _ _ _ (by omega_using [e16])
+  obtain m₂ : u₂.mem = s.mem.writeW (off B win) (1 : BitVec 32) := by rw [V₂.mem, V₁.mem, V₁.gpr]
+  obtain K₂ : Keeps [.eax] s u₂ := V₁.keeps.trans (V₂.keeps _)
+  obtain Om : Outside B win 4 s.mem u₂.mem := by rw [m₂]; exact writeW32_outside _ _ _ (by omega_using [e16])
   exact ⟨h.keepLow K₂ (by decide) (by decide) Om (by decide), m₂, K₂⟩
 
 
@@ -531,12 +531,12 @@ theorem winOneN_ok {L : Lay} {s : State} (h : Bx L s B Z len N n) :
 
 theorem zero_sub {m : Mem} {d k i j : Nat} (h : val32 m B d k = 0) (hij : i + j ≤ k) :
     val32 m B (d + 4 * i) j = 0 := by
-  have e := val32_append m B d i (k - i)
+  obtain e := val32_append m B d i (k - i)
   rw [show i + (k - i) = k by omega_using [hij], h] at e
-  have e2 := val32_append m B (d + 4 * i) j (k - i - j)
+  obtain e2 := val32_append m B (d + 4 * i) j (k - i - j)
   rw [show j + (k - i - j) = k - i by omega_using [hij]] at e2
-  have p := Nat.two_pow_pos (32 * i)
-  have p2 := Nat.two_pow_pos (32 * j)
+  obtain p := Nat.two_pow_pos (32 * i)
+  obtain p2 := Nat.two_pow_pos (32 * j)
   have : val32 m B (d + 4 * i) (k - i) = 0 := by
     rcases Nat.eq_zero_or_pos (val32 m B (d + 4 * i) (k - i)) with z | z
     · exact z
@@ -564,13 +564,13 @@ theorem rtNar {g : Geo} {s : State} (h : RtWs wid s g.B g.Z (16 * g.n + 24) 22) 
 theorem val32_low {m : Mem} {d k v : Nat} (h : val32 m B d (k + 1) = v) (hv : v < 2 ^ (32 * k)) :
     val32 m B d k = v := by
   rw [val32_succ] at h
-  have p := Nat.two_pow_pos (32 * k)
+  obtain p := Nat.two_pow_pos (32 * k)
   rcases Nat.eq_zero_or_pos (w32 m B (d + 4 * k)) with e | e
   · rw [e, Nat.mul_zero, Nat.add_zero] at h; exact h
   · have := Nat.mul_le_mul_left (2 ^ (32 * k)) e; omega_using [h, hv, this]
 
 theorem parity_low {m : Mem} {d k x : Nat} (hk : 1 ≤ k) (h : val32 m B d k = x) : w32 m B d % 2 = x % 2 := by
-  have e := val32_append m B d 1 (k - 1)
+  obtain e := val32_append m B d 1 (k - 1)
   rw [show 1 + (k - 1) = k by omega_using [hk], h] at e
   simp only [val32, Nat.mul_zero, Nat.add_zero, Nat.mul_one, Nat.reducePow] at e
   omega_using [e]
@@ -775,23 +775,23 @@ theorem gcdW_keep {g : Geo} {m m' : Mem} (hW : 10 ≤ g.W)
       (160 + 12 * (4 * g.W + 8), 4 * g.W + 8), (160 + 14 * (4 * g.W + 8), 4 * g.W + 8)] m m') :
     VG.Proof.Rsa.X86.Keys.Keep g.B g.W [0, 4, 5, 6, 7, 8, 9, 12, 14] gcdWSlots m m' := by
   intro x hx
-  have each : ∀ j ∈ [0, 4, 5, 6, 7, 8, 9, 12, 14],
+  obtain each : ∀ j ∈ [0, 4, 5, 6, 7, 8, 9, 12, 14],
       ofs g.B x < VG.Proof.Rsa.X86.Keys.arr g.W j ∨
         VG.Proof.Rsa.X86.Keys.arr g.W j + VG.Proof.Rsa.X86.Keys.S g.W ≤ ofs g.B x :=
     fun j hj => hx (VG.Proof.Rsa.X86.Keys.arr g.W j, VG.Proof.Rsa.X86.Keys.S g.W) (by
       simp only [VG.Proof.Rsa.X86.Keys.ranges, List.mem_append, List.mem_map]
       exact .inl ⟨j, hj, rfl⟩)
-  have slots : ofs g.B x < 16 ∨ 104 ≤ ofs g.B x := by
+  obtain slots : ofs g.B x < 16 ∨ 104 ≤ ofs g.B x := by
     by_contra c
-    have mem : ∀ q < 22, 16 + 4 * q ∈ gcdWSlots := by decide
+    obtain mem : ∀ q < 22, 16 + 4 * q ∈ gcdWSlots := by decide
     have := hx (16 + 4 * ((ofs g.B x - 16) / 4), 4) (by
       simp only [VG.Proof.Rsa.X86.Keys.ranges, List.mem_append, List.mem_map]
       exact .inr ⟨_, mem _ (by omega_using [c]), rfl⟩)
     simp only at this
     omega_using [c, this]
-  have h0 := each 0 (by decide); have h4 := each 4 (by decide); have h5 := each 5 (by decide)
-  have h6 := each 6 (by decide); have h7 := each 7 (by decide); have h8 := each 8 (by decide)
-  have h9 := each 9 (by decide); have h12 := each 12 (by decide); have h14 := each 14 (by decide)
+  obtain h0 := each 0 (by decide); have h4 := each 4 (by decide); have h5 := each 5 (by decide)
+  obtain h6 := each 6 (by decide); have h7 := each 7 (by decide); have h8 := each 8 (by decide)
+  obtain h9 := each 9 (by decide); have h12 := each 12 (by decide); have h14 := each 14 (by decide)
   simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S, VG.Impl.Rsa.X86.Keys.hdr] at h0 h4 h5 h6 h7 h8 h9 h12 h14
   have eP : sP = 176 := rfl
   apply U x
@@ -805,7 +805,7 @@ theorem KS.zeroWide_w {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {live live
     WP isa (VG.Impl.Rsa.X86.KeyRt.zeroWide nar j) s fun t => KS g s0 (VG.Proof.Rsa.X86.Keys.upd A j 0) (j :: live) AW liveW V ls t := by
   refine WP.mono (VG.Proof.Rsa.X86.KeyRt.zeroWide_ok h.rt hj) fun t ⟨_, k, e, r⟩ => ?_
   rw [kw_nar] at k e
-  have z : VG.Proof.Rsa.X86.Keys.num t.mem g.B g.w j = 0 := by
+  obtain z : VG.Proof.Rsa.X86.Keys.num t.mem g.B g.w j = 0 := by
     have e' := e
     rw [val32_succ] at e'
     exact (Nat.eq_zero_of_add_eq_zero e').1
@@ -823,21 +823,21 @@ theorem gcdFusedCore_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m x : N
       KS g s0 A' [aG, VG.Impl.Rsa.X86.Keys.aZero, VG.Impl.Rsa.X86.RecoverDetRt.aN] AW [wX3] V [sOkDE] t ∧
       ((rs m 0 x (2 * ((3 * g.w + 6) / 2) + 1)).f.natAbs < 2 ^ (32 * g.w) → A' aG = (rs m 0 x (2 * ((3 * g.w + 6) / 2) + 1)).f.natAbs) ∧ A' VG.Impl.Rsa.X86.Keys.aZero = 0 ∧
       A' VG.Impl.Rsa.X86.RecoverDetRt.aN = A VG.Impl.Rsa.X86.RecoverDetRt.aN := by
-  have lo := h.lower; have up := h.upper
+  obtain lo := h.lower; have up := h.upper
   have hr := h.rtW
   have hw : g.w = 2 * g.n + 2 := rfl
   have hW : g.W = 2 * g.w + 2 := rfl
-  have eW : kw (16 * g.n + 24) = g.W := kw_wid g.n
-  have ew : kw (8 * g.n + 8) = g.w := kw_nar g.n
+  obtain eW : kw (16 * g.n + 24) = g.W := kw_wid g.n
+  obtain ew : kw (8 * g.n + 8) = g.w := kw_nar g.n
   have hn := hr.ws.workspace.nowrap
-  have mlt : m < 2 ^ (32 * g.w) := by rw [← hm, ← h.arrs aGm (by simp)]; exact val32_lt _ _ _ _
-  have xlt : x < 2 ^ (32 * g.w) := by rw [← hx, ← h.arrs aGx (by simp)]; exact val32_lt _ _ _ _
-  have pw2 : 2 ^ (32 * g.w) ≤ 2 ^ (32 * (g.w + 2)) := Nat.pow_le_pow_right (by decide) (by omega_using [])
-  have lenE : ∀ a, kw (wid.toLen a) = kw (16 * g.n + 24) → kw (nar.toLen a) = kw (8 * g.n + 8) := fun a ea => by
+  obtain mlt : m < 2 ^ (32 * g.w) := by rw [← hm, ← h.arrs aGm (by simp)]; exact val32_lt _ _ _ _
+  obtain xlt : x < 2 ^ (32 * g.w) := by rw [← hx, ← h.arrs aGx (by simp)]; exact val32_lt _ _ _ _
+  obtain pw2 : 2 ^ (32 * g.w) ≤ 2 ^ (32 * (g.w + 2)) := Nat.pow_le_pow_right (by decide) (by omega_using [])
+  obtain lenE : ∀ a, kw (wid.toLen a) = kw (16 * g.n + 24) → kw (nar.toLen a) = kw (8 * g.n + 8) := fun a ea => by
     simp only [VG.Impl.Rsa.X86.KeyRt.Lay.toLen, VG.Impl.Rsa.X86.RecoverRt.lay, VG.Proof.Rsa.X86.KeyRt.kw,
       VG.Proof.Bignum.X86.PublicRt.wb, Spec.Rsa.modulusWords] at ea ⊢
     omega_using [ea]
-  have code : VG.Impl.Rsa.X86.RecoverDetRt.gcdFused = seqs ([.block (slots wid ++ VG.Impl.Rsa.X86.RecoverDetRt.gN)] ++
+  obtain code : VG.Impl.Rsa.X86.RecoverDetRt.gcdFused = seqs ([.block (slots wid ++ VG.Impl.Rsa.X86.RecoverDetRt.gN)] ++
       ([VG.Impl.Rsa.X86.KeyRt.zeroWide wid 7, VG.Impl.Rsa.X86.KeyRt.copy nar 14 aGm,
         VG.Impl.Rsa.X86.KeyRt.zeroWide wid 8, VG.Impl.Rsa.X86.KeyRt.copy nar 16 aGx,
         VG.Impl.Rsa.X86.KeyRt.zeroWide wid 9,
@@ -863,16 +863,16 @@ theorem gcdFusedCore_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m x : N
   refine VG.Proof.Rsa.X86.InvBatchRt.slots_ok hr (by decide) fun u Hu Ku Ou => ?_
   refine WP.mono (gN_ok Hu (lenNar Hu.ws lenE) (by omega_using [up]) (by rw [ew]; omega_using [up, hw])) fun u₁ ⟨H₁, K₁, O₁⟩ => ?_
   rw [ew] at H₁
-  have keepArr : ∀ j, j = aGm ∨ j = aGx → val32 u₁.mem g.B (VG.Proof.Rsa.X86.Keys.arr g.w j) g.w = A j := by
+  obtain keepArr : ∀ j, j = aGm ∨ j = aGx → val32 u₁.mem g.B (VG.Proof.Rsa.X86.Keys.arr g.w j) g.w = A j := by
     rintro j hj
-    have fit := h.ws.arr_fit (j := j) (by rcases hj with rfl | rfl <;> decide)
+    obtain fit := h.ws.arr_fit (j := j) (by rcases hj with rfl | rfl <;> decide)
     simp only [VG.Proof.Rsa.X86.Keys.S] at fit
     rcases hj with rfl | rfl <;>
     · rw [O₁.val32 (by simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Impl.Rsa.X86.Keys.hdr, halfSlot]; omega_using []) (by omega_using [hn, fit]),
         Ou.val32 (by simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Impl.Rsa.X86.Keys.hdr, slotBase]; omega_using []) (by omega_using [hn, fit])]
       exact h.arrs _ (by simp)
-  have hm₁ := (keepArr aGm (.inl rfl)).trans hm
-  have hx₁ := (keepArr aGx (.inr rfl)).trans hx
+  obtain hm₁ := (keepArr aGm (.inl rfl)).trans hm
+  obtain hx₁ := (keepArr aGx (.inr rfl)).trans hx
   -- The operands.
   rw [seqs_append_iff]
   refine WP.mono (operandsG_ok H₁ up hm₁ hx₁) fun u₂ ⟨H₂, F₂, G₂, K₂, U₂⟩ => ?_
@@ -882,49 +882,49 @@ theorem gcdFusedCore_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m x : N
   refine (seqs_cons_iff _ _ _ _).2 (WP.mono (countG_ok H₃ (lenNar H₃.ws lenE) (by omega_using [up])) fun u₄ ⟨H₄, m₄, K₄⟩ => ?_)
   rw [ew] at m₄
   have hf16 := H₄.fits16
-  have ke := VG.Proof.Rsa.X86.InvBatchRt.kw_eq (16 * g.n + 24)
-  have rF : rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) = 160 + 4 * (4 * kw (16 * g.n + 24) + 8) :=
+  obtain ke := VG.Proof.Rsa.X86.InvBatchRt.kw_eq (16 * g.n + 24)
+  obtain rF : rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) = 160 + 4 * (4 * kw (16 * g.n + 24) + 8) :=
     rv_j (16 * g.n + 24) (g.w + 2) fgArr
   have efs : fgSz = 16 := rfl
   have e16 : win = 16 := rfl
-  have O₃ : Outside g.B win 4 u₂.mem u₃.mem := by rw [m₃]; exact writeW32_outside _ _ _ (by omega_using [e16])
-  have O₄ : Outside g.B 100 4 u₃.mem u₄.mem := by rw [m₄]; exact writeW32_outside _ _ _ (by omega_using [])
-  have fitF : rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) + fgSz * (g.w + 2 + 2) ≤ 2 ^ 32 := by
+  obtain O₃ : Outside g.B win 4 u₂.mem u₃.mem := by rw [m₃]; exact writeW32_outside _ _ _ (by omega_using [e16])
+  obtain O₄ : Outside g.B 100 4 u₃.mem u₄.mem := by rw [m₄]; exact writeW32_outside _ _ _ (by omega_using [])
+  obtain fitF : rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) + fgSz * (g.w + 2 + 2) ≤ 2 ^ 32 := by
     rw [rF, efs, eW]; omega_using [up, hw, hW]
-  have far : ∀ {xo : Nat}, xo + 4 ≤ fgSz → Same g.B (rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) + fgSz + xo)
+  obtain far : ∀ {xo : Nat}, xo + 4 ≤ fgSz → Same g.B (rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) + fgSz + xo)
       fgSz (g.w + 2 + 1) u₂.mem u₄.mem := fun hxo =>
     (Same.apart O₃ hxo (.inr (by rw [rF, eW]; omega_using [e16])) fitF).trans (Same.apart O₄ hxo (.inr (by rw [rF, eW]; omega_using [])) fitF)
-  have big : ∀ v, v < 2 ^ (32 * (g.w + 2)) → v < 2 ^ (32 * (g.w + 2)) * 2 ^ 31 := fun v hv =>
+  obtain big : ∀ v, v < 2 ^ (32 * (g.w + 2)) → v < 2 ^ (32 * (g.w + 2)) * 2 ^ 31 := fun v hv =>
     lt_of_lt_of_le hv (Nat.le_mul_of_pos_right _ (by decide))
-  have oxl : oddInput m x < 2 ^ (32 * (g.w + 2)) := by
+  obtain oxl : oddInput m x < 2 ^ (32 * (g.w + 2)) := by
     have := oddInput_le_two mlt xlt
     have : 2 * 2 ^ (32 * g.w) ≤ 2 ^ (32 * (g.w + 2)) := by
       rw [show 32 * (g.w + 2) = 32 * g.w + 64 by omega_using [], pow_add]
       exact (Nat.mul_comm 2 _).trans_le (Nat.mul_le_mul_left _ (by decide))
     omega_arith
-  have R₀ : GRun (16 * g.n + 24) (g.w + 2) g.B m 0 x 0 0 u₄ := by
+  obtain R₀ : GRun (16 * g.n + 24) (g.w + 2) g.B m 0 x 0 0 u₄ := by
     refine ⟨?_, ?_, ?_⟩
     · rw [hdr_out O₄ (.inl (by omega_using [e16])) (by omega_using [e16]), m₃, Mem.readW_writeW_self32]; rfl
     · show sval _ _ _ _ _ = ((m : Nat) : Int)
       exact sval_nat (by rw [(far (by decide)).sv]; exact F₂) (big _ (by omega_using [mlt, pw2]))
     · show sval _ _ _ _ _ = ((oddInput m x : Nat) : Int)
       exact sval_nat (by rw [(far (by decide)).sv]; exact G₂) (big _ oxl)
-  have cnt : VG.Proof.Mont.w32 u₄.mem g.B 100 = (3 * g.w + 6) / 2 := by
+  obtain cnt : VG.Proof.Mont.w32 u₄.mem g.B 100 = (3 * g.w + 6) / 2 := by
     rw [m₄, w32_write_self, BitVec.toNat_ofNat, Nat.mod_eq_of_lt (by omega_using [up, hw])]
-  have hfit : rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) + fgSz * (g.w + 2 + 2) < g.Z := by
+  obtain hfit : rv (kw (16 * g.n + 24)) { arr := fgArr } (g.w + 2) + fgSz * (g.w + 2 + 2) < g.Z := by
     rw [rF, efs, eW]; omega_using [hW, eW, hf16, ke]
-  have pc : m < 2 ^ (32 * (g.w + 2)) := by omega_using [mlt, pw2]
-  have xc : x < 2 ^ (32 * (g.w + 2)) := by omega_using [xlt, pw2]
+  obtain pc : m < 2 ^ (32 * (g.w + 2)) := by omega_using [mlt, pw2]
+  obtain xc : x < 2 ^ (32 * (g.w + 2)) := by omega_using [xlt, pw2]
   -- The batches.
   refine (seqs_cons_iff _ _ _ _).2 (WP.mono (loopG_ok H₄ (by omega_using []) (by omega_using [hw]) hfit odd pc xc R₀
     (by omega_using []) (by omega_using [up, hw]) cnt) fun u₅ ⟨H₅, K₅, U₅, R₅⟩ => ?_)
   refine WP.mono (stepG_ok H₅ (by omega_using []) (by omega_using [hw]) hfit (i := 0) (o := 8) (.inl ⟨rfl, rfl⟩) odd pc xc
     (by omega_using [up, hw]) R₅) fun u₆ ⟨H₆, K₆, U₆, _, R₆⟩ => ?_
   -- `|f| = gcd(m, x)` into `[12]`.
-  have ox : oddInput m x ≤ m + x := by unfold oddInput; split <;> omega_using []
-  have hb : |(rs m 0 x (2 * ((3 * g.w + 6) / 2) + 1)).f| < 2 ^ (32 * (g.w + 2)) := by
+  obtain ox : oddInput m x ≤ m + x := by unfold oddInput; split <;> omega_using []
+  obtain hb : |(rs m 0 x (2 * ((3 * g.w + 6) / 2) + 1)).f| < 2 ^ (32 * (g.w + 2)) := by
     have := (dfg_bounds (iv := 0) (cap := m + x) odd (by omega_using []) ox (2 * ((3 * g.w + 6) / 2) + 1)).2.2.1
-    have p2 : 2 * 2 ^ (32 * g.w) ≤ 2 ^ (32 * (g.w + 2)) := by
+    obtain p2 : 2 * 2 ^ (32 * g.w) ≤ 2 ^ (32 * (g.w + 2)) := by
       rw [show 32 * (g.w + 2) = 32 * g.w + 64 by omega_using [], pow_add]
       exact (Nat.mul_comm 2 _).trans_le (Nat.mul_le_mul_left _ (by decide))
     have : ((m + x : Nat) : Int) < 2 ^ (32 * (g.w + 2)) := by
@@ -934,13 +934,13 @@ theorem gcdFusedCore_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m x : N
   rw [seqs_append_iff]
   refine WP.mono (finishG_ok H₆ (by omega_using []) (by rw [eW]; omega_using [hW]) R₆.f hb) fun u₇ ⟨H₇, V₇, K₇, U₇⟩ => ?_
   -- Back to the frame.
-  have r12 := rv_j (16 * g.n + 24) (g.w + 2) 12
-  have r14 := rv_j (16 * g.n + 24) (g.w + 2) 14
-  have r4 := rv_j (16 * g.n + 24) (g.w + 2) 4
+  obtain r12 := rv_j (16 * g.n + 24) (g.w + 2) 12
+  obtain r14 := rv_j (16 * g.n + 24) (g.w + 2) 14
+  obtain r4 := rv_j (16 * g.n + 24) (g.w + 2) 4
   rw [eW] at r12 r14 r4 rF
   have eP : sP = 176 := rfl
-  have e52 : slotBase = 52 := rfl; have e96 : halfSlot = 96 := rfl
-  have U : Unch g.B [(16, 88), (160, 48), (sP, 8), (160 + 4 * (4 * g.W + 8), 6 * (4 * g.W + 8)),
+  obtain e52 : slotBase = 52 := rfl; have e96 : halfSlot = 96 := rfl
+  obtain U : Unch g.B [(16, 88), (160, 48), (sP, 8), (160 + 4 * (4 * g.W + 8), 6 * (4 * g.W + 8)),
       (160 + 12 * (4 * g.W + 8), 4 * g.W + 8), (160 + 14 * (4 * g.W + 8), 4 * g.W + 8)] s.mem u₇.mem := by
     refine (((((((Ou.unch.trans O₁.unch).trans U₂).trans O₃.unch).trans O₄.unch).trans U₅).trans U₆).trans
       U₇).cover ?_
@@ -951,17 +951,17 @@ theorem gcdFusedCore_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m x : N
     rw [r4, r12, r14, rF, efs] at hw
     rcases hw with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
       dsimp only <;> omega_arith
-  have k := gcdW_keep (by omega_using [lo, hw, hW]) U
-  have rr₁ : Keeps opRegs s u₂ :=
+  obtain k := gcdW_keep (by omega_using [lo, hw, hW]) U
+  obtain rr₁ : Keeps opRegs s u₂ :=
     ((Ku.mono (by decide)).trans (K₁.mono (by decide))).trans (K₂.mono (by decide))
-  have rr₂ : Keeps opRegs u₂ u₄ := (K₃.mono (by decide)).trans (K₄.mono (by decide))
-  have rr₃ : Keeps opRegs u₄ u₇ :=
+  obtain rr₂ : Keeps opRegs u₂ u₄ := (K₃.mono (by decide)).trans (K₄.mono (by decide))
+  obtain rr₃ : Keeps opRegs u₄ u₇ :=
     ((K₅.mono (by decide)).trans (K₆.mono (by decide))).trans (K₇.mono (by decide))
-  have rr : Keeps opRegs s u₇ := (rr₁.trans rr₂).trans rr₃
-  have h' : KS g s0 A [VG.Impl.Rsa.X86.RecoverDetRt.aN] AW [wX3] V [sOkDE] s :=
+  obtain rr : Keeps opRegs s u₇ := (rr₁.trans rr₂).trans rr₃
+  obtain h' : KS g s0 A [VG.Impl.Rsa.X86.RecoverDetRt.aN] AW [wX3] V [sOkDE] s :=
     h.mono (fun j hj => ⟨by simp at hj ⊢; simp [hj], rfl⟩) (fun j hj => ⟨hj, rfl⟩) (fun d hd => ⟨hd, rfl⟩)
-  have aN7 := h'.arrs_W k (by decide) (by decide)
-  have S₇ : KS g s0 (VG.Proof.Rsa.X86.Keys.upd A 24 (VG.Proof.Rsa.X86.Keys.num u₇.mem g.B g.w 24)) [24, VG.Impl.Rsa.X86.RecoverDetRt.aN] AW [wX3]
+  obtain aN7 := h'.arrs_W k (by decide) (by decide)
+  obtain S₇ : KS g s0 (VG.Proof.Rsa.X86.Keys.upd A 24 (VG.Proof.Rsa.X86.Keys.num u₇.mem g.B g.w 24)) [24, VG.Impl.Rsa.X86.RecoverDetRt.aN] AW [wX3]
       V [sOkDE] u₇ :=
     h'.core k (fun j hj => h'.wsW.arr_fit (by simp at hj; omega_using [hj])) (by decide) rr
       (fun j hj => by
@@ -981,7 +981,7 @@ theorem gcdFusedCore_ok {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m x : N
       show val32 u₇.mem g.B (VG.Proof.Rsa.X86.Keys.arr g.w 24) g.w = _
       rw [show VG.Proof.Rsa.X86.Keys.arr g.w 24 = rv (kw (16 * g.n + 24)) { arr := 12 } (g.w + 2) by
         rw [eW, r12]; simp only [VG.Proof.Rsa.X86.Keys.arr, VG.Proof.Rsa.X86.Keys.S, VG.Impl.Rsa.X86.Keys.hdr]; omega_using [hW]]
-      have p1 : 2 ^ (32 * g.w) ≤ 2 ^ (32 * (g.w + 1)) := Nat.pow_le_pow_right (by decide) (by omega_using [])
+      obtain p1 : 2 ^ (32 * g.w) ≤ 2 ^ (32 * (g.w + 1)) := Nat.pow_le_pow_right (by decide) (by omega_using [])
       exact val32_low (val32_low (k := g.w + 1) V₇ (by omega_using [hlt, p1])) hlt
     simp [VG.Proof.Rsa.X86.Keys.upd, aG, VG.Impl.Rsa.X86.Keys.aZero, g24]
   all_goals simp [VG.Proof.Rsa.X86.Keys.upd, aG, VG.Impl.Rsa.X86.Keys.aZero, VG.Impl.Rsa.X86.RecoverDetRt.aN,
@@ -997,10 +997,10 @@ theorem gcdFused_ok [GcdDone] {g : Geo} {s0 s : State} {A AW V : Nat → Nat} {m
       KS g s0 A' [aG, VG.Impl.Rsa.X86.Keys.aZero, VG.Impl.Rsa.X86.RecoverDetRt.aN] AW [wX3] V [sOkDE] t ∧
       A' aG = Nat.gcd m x ∧ A' VG.Impl.Rsa.X86.Keys.aZero = 0 ∧
       A' VG.Impl.Rsa.X86.RecoverDetRt.aN = A VG.Impl.Rsa.X86.RecoverDetRt.aN := by
-  have mlt : m < 2 ^ (32 * g.w) := by rw [← hm, ← h.arrs aGm (by simp)]; exact val32_lt _ _ _ _
-  have xlt : x < 2 ^ (32 * g.w) := by rw [← hx, ← h.arrs aGx (by simp)]; exact val32_lt _ _ _ _
-  have done := GcdDone.done (iv := 0) (n := g.w) (j := 2 * ((3 * g.w + 6) / 2) + 1) odd mlt xlt (by omega_using [])
-  have gle : Nat.gcd m x ≤ m := Nat.gcd_le_left x (by omega_using [odd])
+  obtain mlt : m < 2 ^ (32 * g.w) := by rw [← hm, ← h.arrs aGm (by simp)]; exact val32_lt _ _ _ _
+  obtain xlt : x < 2 ^ (32 * g.w) := by rw [← hx, ← h.arrs aGx (by simp)]; exact val32_lt _ _ _ _
+  obtain done := GcdDone.done (iv := 0) (n := g.w) (j := 2 * ((3 * g.w + 6) / 2) + 1) odd mlt xlt (by omega_using [])
+  obtain gle : Nat.gcd m x ≤ m := Nat.gcd_le_left x (by omega_using [odd])
   exact WP.mono (gcdFusedCore_ok h hm hx odd) fun t ⟨A', h', v, z, n'⟩ =>
     ⟨A', h', by rw [v (by rw [done.2]; omega_using [mlt, gle]), done.2], z, n'⟩
 

@@ -97,32 +97,32 @@ theorem productZero_ok (h : Ws s B Z n N) (left right : Width) (out : Loc)
   have nBound := h.old.wle
   have wBound (w : Width) : w.words n ≤ 1024 := by
     cases w <;> simp only [Width.words] <;> omega_arith
-  have lb := wBound left
-  have rb := wBound right
+  obtain lb := wBound left
+  obtain rb := wBound right
   unfold productZero
   simp only [List.append_assoc]
   refine WP.seq (h.ptr_ok out (by decide) (by decide) (by omega_using [fit, nowrap]) fun u K1 m1 P1 => ?_)
-  have hu := h.keep K1 (by rw [m1]; exact Outside.refl _ _ _ _)
+  obtain hu := h.keep K1 (by rw [m1]; exact Outside.refl _ _ _ _)
   refine hu.bytes_ok left .ecx fun v K2 m2 cl => ?_
-  have hv := hu.keep K2 (by rw [m2]; exact Outside.refl _ _ _ _)
+  obtain hv := hu.keep K2 (by rw [m2]; exact Outside.refl _ _ _ _)
   refine hv.bytes_ok right .eax fun w K3 m3 cr => ?_
   refine wp_addS rfl fun a A _ => wp_addS rfl fun b Bb _ => wp_movS rfl fun c U _ => WP.block_nil ?_
-  have K : Keeps [.eax, .ecx, .edx, .ebp] s c :=
+  obtain K : Keeps [.eax, .ecx, .edx, .ebp] s c :=
     (((K1.mono (by decide)).trans (K2.mono (by decide))).trans (K3.mono (by decide))).trans
       (((A.keeps.mono (by decide)).trans (Bb.keeps.mono (by decide))).trans (U.keeps.mono (by decide)))
-  have m : c.mem = s.mem := by rw [U.mem, Bb.mem, A.mem, m3, m2, m1]
-  have pointer : PtrAt c B .ebp (out.offset n) := by
+  obtain m : c.mem = s.mem := by rw [U.mem, Bb.mem, A.mem, m3, m2, m1]
+  obtain pointer : PtrAt c B .ebp (out.offset n) := by
     rw [PtrAt, U.other _ (by decide), Bb.other _ (by decide), A.other _ (by decide), K3.1 _ (by decide),
       K2.1 _ (by decide)]
     exact P1
-  have ecx : (c.gpr .ecx).toNat = 4 * (left.words n + right.words n + 2) := by
+  obtain ecx : (c.gpr .ecx).toNat = 4 * (left.words n + right.words n + 2) := by
     rw [U.other _ (by decide), Bb.gpr, A.gpr, BitVec.toNat_add, BitVec.toNat_add, cr, K3.1 _ (by decide), cl]
     change ((4 * left.words n + 4 * right.words n) % 2 ^ 32 + 8) % 2 ^ 32 = _
     omega_using [lb, rb]
   refine WP.mono (VG.Proof.Bignum.X86.PublicRt.zeroLoop_ok (h.full.rt.of_keeps K)
     (by omega_using [] : 0 < left.words n + right.words n + 2) fit pointer ecx U.gpr) fun t ⟨O, V, Kt⟩ => ?_
   rw [m] at O
-  have allK := K.trans (Kt.mono (by decide))
+  obtain allK := K.trans (Kt.mono (by decide))
   exact ⟨h.keep allK (O.mono (Nat.zero_le _) (by omega_using [fit])), O, V, allK⟩
 
 /-- Row `i`'s multiplier, word `i` of `a`, in the header, `ecx` at `b`, `esi` its bytes and no carry. -/
@@ -139,44 +139,44 @@ theorem productRow_ok (h : Ws s B Z n N) (right : Width) (out a b : Loc) {i : Na
   unfold productRow
   simp only [List.append_assoc]
   refine h.ptr_ok out (r := .eax) (t := .edx) (by decide) (by decide) (by omega_using [row, nowrap]) fun u1 K1 m1 P1 => ?_
-  have h1 := h.keep K1 (by rw [m1]; exact Outside.refl _ _ _ _)
+  obtain h1 := h.keep K1 (by rw [m1]; exact Outside.refl _ _ _ _)
   refine wp_movS rfl fun u2 U2 _ => wp_subS rfl fun u3 U3 _ => ?_
-  have K3 : Keeps [.eax, .edx, .ecx] s u3 := ((K1.mono (by decide)).trans (U2.keeps.mono (by decide))).trans
+  obtain K3 : Keeps [.eax, .edx, .ecx] s u3 := ((K1.mono (by decide)).trans (U2.keeps.mono (by decide))).trans
     (U3.keeps.mono (by decide))
-  have m3 : u3.mem = s.mem := by rw [U3.mem, U2.mem, m1]
-  have ebp3 : PtrAt u3 B .ebp (out.offset n + 4 * i) := by rw [PtrAt, K3.1 _ (by decide)]; exact P
-  have ecx3 : (u3.gpr .ecx).toNat = 4 * i := by
+  obtain m3 : u3.mem = s.mem := by rw [U3.mem, U2.mem, m1]
+  obtain ebp3 : PtrAt u3 B .ebp (out.offset n + 4 * i) := by rw [PtrAt, K3.1 _ (by decide)]; exact P
+  obtain ecx3 : (u3.gpr .ecx).toNat = 4 * i := by
     have e2 : u2.gpr .ecx = u1.gpr .ebp := U2.gpr
-    have pe : PtrAt u1 B .ebp (out.offset n + 4 * i) := by rw [PtrAt, K1.1 _ (by decide)]; exact P
-    have pa : (u2.gpr .eax).toNat = (B.toNat + out.offset n) % 2 ^ 32 := by rw [U2.other _ (by decide)]; exact P1
+    obtain pe : PtrAt u1 B .ebp (out.offset n + 4 * i) := by rw [PtrAt, K1.1 _ (by decide)]; exact P
+    obtain pa : (u2.gpr .eax).toNat = (B.toNat + out.offset n) % 2 ^ 32 := by rw [U2.other _ (by decide)]; exact P1
     rw [U3.gpr, BitVec.toNat_sub, e2, pa, pe]
     omega_using [fitA, nowrap]
-  have h3 := h.keep K3 (by rw [m3]; exact Outside.refl _ _ _ _)
+  obtain h3 := h.keep K3 (by rw [m3]; exact Outside.refl _ _ _ _)
   refine h3.ptr_ok a (r := .eax) (t := .edx) (by decide) (by decide) (by omega_using [fitA, nowrap]) fun u4 K4 m4 P4 => ?_
   refine wp_addS rfl fun u5 U5 _ => ?_
-  have K5 : Keeps [.eax, .edx, .ecx] s u5 := (K3.trans (K4.mono (by decide))).trans (U5.keeps.mono (by decide))
-  have m5 : u5.mem = s.mem := by rw [U5.mem, m4, m3]
-  have h5 := h.keep K5 (by rw [m5]; exact Outside.refl _ _ _ _)
-  have eax5 : PtrAt u5 B .eax (a.offset n + 4 * i) := by
+  obtain K5 : Keeps [.eax, .edx, .ecx] s u5 := (K3.trans (K4.mono (by decide))).trans (U5.keeps.mono (by decide))
+  obtain m5 : u5.mem = s.mem := by rw [U5.mem, m4, m3]
+  obtain h5 := h.keep K5 (by rw [m5]; exact Outside.refl _ _ _ _)
+  obtain eax5 : PtrAt u5 B .eax (a.offset n + 4 * i) := by
     rw [PtrAt, U5.gpr, ptr_add P4, K4.1 _ (by decide), ecx3]
   refine wp_movS (readSrc_ptr h5.full.rt eax5 (d := 0) (by omega_using [fitA])) fun u6 U6 _ => ?_
-  have K6 : Keeps [.eax, .edx, .ecx] s u6 := K5.trans (U6.keeps.mono (by decide))
-  have h6 := h.keep K6 (by rw [U6.mem, m5]; exact Outside.refl _ _ _ _)
+  obtain K6 : Keeps [.eax, .edx, .ecx] s u6 := K5.trans (U6.keeps.mono (by decide))
+  obtain h6 := h.keep K6 (by rw [U6.mem, m5]; exact Outside.refl _ _ _ _)
   refine wp_storeS (ea_ptr h6.full.rt h6.edi_at (d := multSlot) (by unfold multSlot; omega_using [hb]))
     (ws_write h6.full.rt (y := 0 + multSlot) (n := 4) (by unfold multSlot; omega_using [hb])) fun u7 U7 => ?_
-  have m7 : u7.mem = s.mem.writeW (off B multSlot) (u6.gpr .edx) := by
+  obtain m7 : u7.mem = s.mem.writeW (off B multSlot) (u6.gpr .edx) := by
     rw [U7.mem, U6.mem, m5, Nat.zero_add]
-  have O7 : Outside B multSlot 4 s.mem u7.mem := by
+  obtain O7 : Outside B multSlot 4 s.mem u7.mem := by
     rw [m7]; exact writeW32_outside _ _ _ (by unfold multSlot; omega_using [])
-  have K7 : Keeps [.eax, .edx, .ecx] s u7 := K6.widen (U7.keeps [])
-  have h7 := h.keep K7 (O7.mono (Nat.zero_le _) (by unfold multSlot; omega_using [hb]))
+  obtain K7 : Keeps [.eax, .edx, .ecx] s u7 := K6.widen (U7.keeps [])
+  obtain h7 := h.keep K7 (O7.mono (Nat.zero_le _) (by unfold multSlot; omega_using [hb]))
   refine h7.ptr_ok b (r := .ecx) (t := .edx) (by decide) (by decide) (by omega_using [fitB, rpos, nowrap]) fun u8 K8 m8 P8 => ?_
-  have h8 := h7.keep K8 (by rw [m8]; exact Outside.refl _ _ _ _)
+  obtain h8 := h7.keep K8 (by rw [m8]; exact Outside.refl _ _ _ _)
   refine h8.bytes_ok right .esi fun u9 K9 m9 e9 => ?_
   refine wp_movS rfl fun u U _ => WP.block_nil ?_
-  have K : Keeps [.eax, .ebx, .ecx, .edx, .esi] s u :=
+  obtain K : Keeps [.eax, .ebx, .ecx, .edx, .esi] s u :=
     (((K7.mono (by decide)).trans (K8.mono (by decide))).trans (K9.mono (by decide))).trans (U.keeps.mono (by decide))
-  have m : u.mem = u7.mem := by rw [U.mem, m9, m8]
+  obtain m : u.mem = u7.mem := by rw [U.mem, m9, m8]
   refine ⟨h.keep K (by rw [m]; exact O7.mono (Nat.zero_le _) (by unfold multSlot; omega_using [hb])), by rw [m]; exact O7,
     ?_, ?_, ?_, U.gpr, ?_, K⟩
   · rw [m, m7, w32_write_self, U6.gpr, m5, Nat.add_zero]
@@ -197,39 +197,39 @@ theorem productNext_ok (h : Ws s B Z n N) (left right : Width) (out : Loc) {i : 
   have nBound := h.old.wle
   have wBound (w : Width) : w.words n ≤ 1024 := by
     cases w <;> simp only [Width.words] <;> omega_arith
-  have rb := wBound right
-  have lb := wBound left
+  obtain rb := wBound right
+  obtain lb := wBound left
   unfold productNext
   simp only [List.append_assoc, List.cons_append, List.nil_append]
   refine wp_storeS (ea_ptr h.full.rt P (d := 0) (by omega_using [hi, fit]))
     (ws_write h.full.rt (y := out.offset n + 4 * i + 4 * right.words n + 0) (n := 4) (by omega_using [hi, fit])) fun u1 U1 => ?_
-  have O1 : Outside B (out.offset n + 4 * (i + right.words n)) 4 s.mem u1.mem := by
+  obtain O1 : Outside B (out.offset n + 4 * (i + right.words n)) 4 s.mem u1.mem := by
     rw [U1.mem, show out.offset n + 4 * (i + right.words n) = out.offset n + 4 * i + 4 * right.words n + 0 by omega_using []]
     exact writeW32_outside _ _ _ (by omega_using [hi, fit, nowrap])
-  have h1 := h.keep (U1.keeps []) (O1.mono (Nat.zero_le _) (by omega_using [hi, fit]))
+  obtain h1 := h.keep (U1.keeps []) (O1.mono (Nat.zero_le _) (by omega_using [hi, fit]))
   refine h1.bytes_ok right .eax fun u2 K2 m2 e2 => ?_
   refine wp_subS rfl fun u3 U3 _ => wp_addS rfl fun u4 U4 _ => ?_
-  have K4 : Keeps [.eax, .ebp] s u4 :=
+  obtain K4 : Keeps [.eax, .ebp] s u4 :=
     (((U1.keeps []).mono (by decide)).trans (K2.mono (by decide))).trans ((U3.keeps.trans U4.keeps).mono (by decide))
-  have m4 : u4.mem = u1.mem := by rw [U4.mem, U3.mem, m2]
-  have h4 := h.keep K4 (by rw [m4]; exact O1.mono (Nat.zero_le _) (by omega_using [hi, fit]))
-  have ebp2 : PtrAt u2 B .ebp (out.offset n + 4 * i + 4 * right.words n) := by
+  obtain m4 : u4.mem = u1.mem := by rw [U4.mem, U3.mem, m2]
+  obtain h4 := h.keep K4 (by rw [m4]; exact O1.mono (Nat.zero_le _) (by omega_using [hi, fit]))
+  obtain ebp2 : PtrAt u2 B .ebp (out.offset n + 4 * i + 4 * right.words n) := by
     rw [PtrAt, K2.1 _ (by decide), U1.gpr]; exact P
-  have ebp3 : PtrAt u3 B .ebp (out.offset n + 4 * i) := by
+  obtain ebp3 : PtrAt u3 B .ebp (out.offset n + 4 * i) := by
     rw [PtrAt, U3.gpr, ptr_sub ebp2 _ (by rw [e2]; omega_using []), e2]; congr 2; omega_using []
-  have ebp4 : PtrAt u4 B .ebp (out.offset n + 4 * (i + 1)) := by
+  obtain ebp4 : PtrAt u4 B .ebp (out.offset n + 4 * (i + 1)) := by
     rw [PtrAt, U4.gpr, ptr_add ebp3, show (4 : BitVec 32).toNat = 4 from rfl]; congr 2
   refine h4.ptr_ok out (r := .eax) (t := .edx) (by decide) (by decide) (by omega_using [fit, nowrap]) fun u5 K5 m5 P5 => ?_
-  have h5 := h4.keep K5 (by rw [m5]; exact Outside.refl _ _ _ _)
+  obtain h5 := h4.keep K5 (by rw [m5]; exact Outside.refl _ _ _ _)
   refine h5.bytes_ok left .edx fun u6 K6 m6 e6 => ?_
   refine wp_addS rfl fun u7 U7 _ => wp_cmpS rfl fun u F z => WP.block_nil ?_
-  have K : Keeps [.eax, .edx, .ebp] s u :=
+  obtain K : Keeps [.eax, .edx, .ebp] s u :=
     (((K4.mono (by decide)).trans (K5.mono (by decide))).trans (K6.mono (by decide))).trans
       ((U7.keeps.mono (by decide)).trans (F.keeps _))
-  have m : u.mem = u1.mem := by rw [F.mem, U7.mem, m6, m5, m4]
-  have ebp7 : PtrAt u7 B .ebp (out.offset n + 4 * (i + 1)) := by
+  obtain m : u.mem = u1.mem := by rw [F.mem, U7.mem, m6, m5, m4]
+  obtain ebp7 : PtrAt u7 B .ebp (out.offset n + 4 * (i + 1)) := by
     rw [PtrAt, U7.other _ (by decide), K6.1 _ (by decide), K5.1 _ (by decide)]; exact ebp4
-  have eax7 : PtrAt u7 B .eax (out.offset n + 4 * left.words n) := by
+  obtain eax7 : PtrAt u7 B .eax (out.offset n + 4 * left.words n) := by
     rw [PtrAt, U7.gpr, ptr_add (x := out.offset n) (by rw [PtrAt, K6.1 _ (by decide)]; exact P5), e6]
   refine ⟨h.keep K (by rw [m]; exact O1.mono (Nat.zero_le _) (by omega_using [hi, fit])), by rw [m]; exact O1, ?_,
     by rw [PtrAt, F.gpr]; exact ebp7, ?_, K⟩
@@ -259,7 +259,7 @@ theorem product_ok {left right : Width} {out a b : Loc} (h : Ws s B Z n N)
   have oh := L.out_header
   have head := h.hdr_le
   unfold VG.Impl.Rsa.X86.Keys.hdr at head
-  have ranges : ∀ r ∈ productRanges (left.words n) (right.words n) (out.offset n), r.1 + r.2 ≤ Z := by
+  obtain ranges : ∀ r ∈ productRanges (left.words n) (right.words n) (out.offset n), r.1 + r.2 ≤ Z := by
     intro r mem
     simp only [productRanges, List.mem_cons, List.not_mem_nil, or_false] at mem
     rcases mem with rfl | rfl <;> dsimp only <;> omega_arith
@@ -279,13 +279,13 @@ theorem product_ok {left right : Width} {out a b : Loc} (h : Ws s B Z n N)
   rw [← List.append_nil (ptr out .ebp .edx)]
   refine WP.seq (h1.ptr_ok out (r := .ebp) (t := .edx) (by decide) (by decide) (by omega_using [nowrap, ob])
     fun u2 K2 m2 P2 => WP.block_nil ?_)
-  have h2 := h1.keep K2 (by rw [m2]; exact Outside.refl _ _ _ _)
-  have O2 : Outs B (productRanges (left.words n) (right.words n) (out.offset n)) s.mem u2.mem := by
+  obtain h2 := h1.keep K2 (by rw [m2]; exact Outside.refl _ _ _ _)
+  obtain O2 : Outs B (productRanges (left.words n) (right.words n) (out.offset n)) s.mem u2.mem := by
     rw [m2]; exact Outs.of_outside O1 (by simp [productRanges])
   have Z2 := Z1
   rw [← m2, show left.words n + right.words n + 2 = right.words n + (left.words n + 2) by omega_using [], val32_append] at Z2
-  have Zlo : val32 u2.mem B (out.offset n) (right.words n) = 0 := by omega_using [Z2]
-  have Zhi : val32 u2.mem B (out.offset n + 4 * right.words n) (left.words n + 2) = 0 := by
+  obtain Zlo : val32 u2.mem B (out.offset n) (right.words n) = 0 := by omega_using [Z2]
+  obtain Zhi : val32 u2.mem B (out.offset n + 4 * right.words n) (left.words n + 2) = 0 := by
     have : 0 < 2 ^ (32 * right.words n) := Nat.two_pow_pos _
     rcases Nat.eq_zero_of_add_eq_zero Z2 with ⟨_, z⟩
     exact (Nat.mul_eq_zero.mp z).resolve_left (by omega_using [this])
@@ -310,7 +310,7 @@ theorem product_ok {left right : Width} {out a b : Loc} (h : Ws s B Z n N)
     (bx := b.offset n) (w := out.offset n + 4 * i) (N := right.words n) rp edi3 c3 p3 e3 b3
     (by unfold multSlot; omega_using [head]) bb (by omega_using [ob, hi]) (by omega_using [bo, hi]) (.inl (by unfold multSlot; omega_using [oh])))
     fun u4 ⟨O4, V4, p4, K4⟩ => ?_)
-  have I4 := I3.keep K4 (O4.mono (Nat.zero_le _) (by omega_using [ob, hi]))
+  obtain I4 := I3.keep K4 (O4.mono (Nat.zero_le _) (by omega_using [ob, hi]))
   refine WP.mono (productNext_ok I4 left right out hi ob p4) fun u5 ⟨I5, O5, W5, p5, z5, K5⟩ =>
     ⟨⟨?_, I5, p5, ?_, ?_, ?_⟩, z5⟩
   · exact ((Kt.trans (K3.mono (by decide))).trans (K4.mono (by decide))).trans (K5.mono (by decide))
@@ -321,25 +321,25 @@ theorem product_ok {left right : Width} {out a b : Loc} (h : Ws s B Z n N)
       (O5.mono (o' := out.offset n) (n' := 4 * (left.words n + right.words n + 2)) (by omega_using []) (by omega_using [hi]))
       (by simp [productRanges]))))
   · -- The new row's value.
-    have a3 : w32 u3.mem B (0 + multSlot) = w32 s.mem B (a.offset n + 4 * i) := by
+    obtain a3 : w32 u3.mem B (0 + multSlot) = w32 s.mem B (a.offset n + 4 * i) := by
       rw [Nat.zero_add, M3]
-      have e := keepA Ot (i + 1) (by omega_using [hi])
+      obtain e := keepA Ot (i + 1) (by omega_using [hi])
       rw [val32_succ, val32_succ, keepA Ot i (by omega_using [hi])] at e
       exact Nat.eq_of_mul_eq_mul_left (Nat.two_pow_pos _) (Nat.add_left_cancel e)
-    have b3' : val32 u3.mem B (b.offset n) (right.words n) = Bv := by
+    obtain b3' : val32 u3.mem B (b.offset n) (right.words n) = Bv := by
       rw [O3.val32 (.inr (by unfold multSlot; omega_using [bh])) (by omega_using [nowrap, lp, rp, ob, ab, bb, ao, bo, ah, bh, oh, head, hi, e3])]; exact keepB Ot
-    have lo5 : val32 u5.mem B (out.offset n) i = val32 t.mem B (out.offset n) i := by
+    obtain lo5 : val32 u5.mem B (out.offset n) i = val32 t.mem B (out.offset n) i := by
       rw [O5.val32 (.inl (by omega_using [])) (by omega_using [nowrap, lp, rp, ob, ab, bb, ao, bo, ah, bh, oh, head, hi, e3]), O4.val32 (.inl (by omega_using [])) (by omega_using [nowrap, lp, rp, ob, ab, bb, ao, bo, ah, bh, oh, head, hi, e3]),
         O3.val32 (.inr (by unfold multSlot; omega_using [oh])) (by omega_using [nowrap, lp, rp, ob, ab, bb, ao, bo, ah, bh, oh, head, hi, e3])]
-    have w5 : val32 u5.mem B (out.offset n + 4 * i) (right.words n) =
+    obtain w5 : val32 u5.mem B (out.offset n + 4 * i) (right.words n) =
         val32 u4.mem B (out.offset n + 4 * i) (right.words n) :=
       O5.val32 (.inl (by omega_using [])) (by omega_using [nowrap, lp, rp, ob, ab, bb, ao, bo, ah, bh, oh, head, hi, e3])
-    have w3 : val32 u3.mem B (out.offset n + 4 * i) (right.words n) =
+    obtain w3 : val32 u3.mem B (out.offset n + 4 * i) (right.words n) =
         val32 t.mem B (out.offset n + 4 * i) (right.words n) :=
       O3.val32 (.inr (by unfold multSlot; omega_using [oh])) (by omega_using [nowrap, lp, rp, ob, ab, bb, ao, bo, ah, bh, oh, head, hi, e3])
-    have top5 : w32 u5.mem B (out.offset n + 4 * i + 4 * right.words n) = (u4.gpr .ebx).toNat := by
+    obtain top5 : w32 u5.mem B (out.offset n + 4 * i + 4 * right.words n) = (u4.gpr .ebx).toNat := by
       rw [show out.offset n + 4 * i + 4 * right.words n = out.offset n + 4 * (i + right.words n) by omega_using []]; exact W5
-    have split := val32_append t.mem B (out.offset n) i (right.words n)
+    obtain split := val32_append t.mem B (out.offset n) i (right.words n)
     rw [V1] at split
     rw [show i + 1 + right.words n = i + (right.words n + 1) by omega_using [], val32_append, val32_succ, lo5, w5, top5, V4,
       a3, b3', w3, val32_succ s.mem B (a.offset n) i]
@@ -350,9 +350,9 @@ theorem product_ok {left right : Width} {out a b : Loc} (h : Ws s B Z n N)
     generalize 2 ^ (32 * i) = P at *
     grind
   · -- The words above it.
-    have e : left.words n + 2 - i = 1 + (left.words n + 2 - (i + 1)) := by omega_using [hi]
+    obtain e : left.words n + 2 - i = 1 + (left.words n + 2 - (i + 1)) := by omega_using [hi]
     rw [e, val32_append] at V2
-    have z : val32 t.mem B (out.offset n + 4 * (i + right.words n) + 4 * 1) (left.words n + 2 - (i + 1)) = 0 := by
+    obtain z : val32 t.mem B (out.offset n + 4 * (i + right.words n) + 4 * 1) (left.words n + 2 - (i + 1)) = 0 := by
       have : 0 < 2 ^ (32 * 1) := Nat.two_pow_pos _
       rcases Nat.eq_zero_of_add_eq_zero V2 with ⟨_, z⟩
       exact (Nat.mul_eq_zero.mp z).resolve_left (by omega_using [])

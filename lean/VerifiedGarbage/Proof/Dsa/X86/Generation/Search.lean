@@ -104,7 +104,7 @@ theorem SKeep.store {E : Env} {g : Geo} {s t t' : State} (K : SKeep E g s t) (G 
     (hp : E.pLen = g.pLen) {d : Nat} (hd : (d, 4) ∈ sRanges g) (x : BitVec 32)
     (hm : t'.mem = t.mem.writeW (off E.base d) x) (edi : t'.gpr .edi = t.gpr .edi) (sp : t'.gpr .esp = t.gpr .esp)
     (rd : t'.rd = t.rd) (wr : t'.wr = t.wr) (sy : t'.syms = t.syms) : SKeep E g s t' := by
-  have C : E.Chg [(d, 4)] t.mem t'.mem := by
+  obtain C : E.Chg [(d, 4)] t.mem t'.mem := by
     rw [hm]; exact (Env.Chg.refl _ _).store (List.mem_singleton_self _) (by decide) x
   exact ⟨K.base.keep v C (fun o ho => sRanges_apart G v hp o
       (by simp only [List.mem_singleton] at ho; rw [ho]; exact hd)) edi sp rd wr sy,
@@ -150,7 +150,7 @@ theorem availCmp_ok {E : Env} (v : E.Valid) {s : State} (B : Base E s) {c : Nat}
   refine ld_ok B.scr (d := fWitLen) (by simp only [fWitLen, hdr]; omega_using [sz]) fun s₁ u₁ =>
     ld_ok (Scr.of_eq B.scr (u₁.other _ (by decide)) (u₁.other _ (by decide)) u₁.wr) (d := fC)
       (by simp only [fC, hdr]; omega_using [sz]) fun s₂ u₂ => wp_sub fun s₃ u₃ _ => wp_cmpi fun s₄ f₄ c₄ _ => ?_
-  have eax : s₄.gpr .eax = BitVec.ofNat 32 (E.witLen - c) := by
+  obtain eax : s₄.gpr .eax = BitVec.ofNat 32 (E.witLen - c) := by
     rw [f₄.gpr, u₃.gpr, u₂.other _ (by decide), u₁.gpr, u₂.gpr, u₁.mem, B.witLenW, hC, sub_ofNat hc]
   refine k s₄ (fun r h₁ h₂ => by rw [f₄.gpr, u₃.other _ h₁, u₂.other _ h₂, u₁.other _ h₁])
     (by rw [f₄.mem, u₃.mem, u₂.mem, u₁.mem]) (by rw [f₄.rd, u₃.rd, u₂.rd, u₁.rd])
@@ -170,13 +170,13 @@ theorem seedStart_ok {g : Geo} {E : Env} (v : E.Valid) (hq : E.qLen = g.qLen) {s
   refine ld_ok B.scr (d := fC) (by simp only [fC, hdr]; omega_using [sz]) fun s₁ u₁ =>
     ld_ok (Scr.of_eq B.scr (u₁.other _ (by decide)) (u₁.other _ (by decide)) u₁.wr) (d := fWit)
       (by simp only [fWit, hdr]; omega_using [sz]) fun s₂ u₂ => wp_add fun s₃ u₃ _ => ?_
-  have hs₃ : Scr s₃ E.base E.size := Scr.of_eq B.scr (by rw [u₃.other _ (by decide), u₂.other _ (by decide),
+  obtain hs₃ : Scr s₃ E.base E.size := Scr.of_eq B.scr (by rw [u₃.other _ (by decide), u₂.other _ (by decide),
     u₁.other _ (by decide)]) (by rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.other _ (by decide)])
     (by rw [u₃.wr, u₂.wr, u₁.wr])
   refine st_ok hs₃ (d := fSeed) (by simp only [fSeed, hdr]; omega_using [sz]) fun s₄ M₄ => wp_addi fun s₅ u₅ =>
     st_ok (Scr.of_eq hs₃ (by rw [u₅.other _ (by decide), M₄.gpr]) (by rw [u₅.other _ (by decide), M₄.gpr])
       (by rw [u₅.wr, M₄.wr])) (d := fUsed) (by simp only [fUsed, hdr]; omega_using [sz]) fun s₆ M₆ => WP.block_nil ?_
-  have ecx₃ : s₃.gpr .ecx = BitVec.ofNat 32 c := by
+  obtain ecx₃ : s₃.gpr .ecx = BitVec.ofNat 32 c := by
     rw [u₃.other _ (by decide), u₂.other _ (by decide), u₁.gpr, hC]
   refine ⟨?_, fun r h₁ h₂ => by
       rw [M₆.gpr, u₅.other _ h₂, M₄.gpr, u₃.other _ h₁, u₂.other _ h₁, u₁.other _ h₂],
@@ -197,7 +197,7 @@ theorem rejected_ok {E : Env} (v : E.Valid) {s : State} (B : Base E s) {u j : Na
   refine ld_ok B.scr (d := fUsed) (by simp only [fUsed, hdr]; omega) fun s₁ u₁ =>
     st_ok (Scr.of_eq B.scr (u₁.other _ (by decide)) (u₁.other _ (by decide)) u₁.wr) (d := fC)
       (by simp only [fC, hdr]; omega) fun s₂ M₂ => ?_
-  have hs₂ : Scr s₂ E.base E.size := Scr.of_eq B.scr (by rw [M₂.gpr, u₁.other _ (by decide)])
+  obtain hs₂ : Scr s₂ E.base E.size := Scr.of_eq B.scr (by rw [M₂.gpr, u₁.other _ (by decide)])
     (by rw [M₂.gpr, u₁.other _ (by decide)]) (by rw [M₂.wr, u₁.wr])
   refine ld_ok hs₂ (d := fSeedLeft) (by simp only [fSeedLeft, hdr]; omega) fun s₃ u₃ => wp_subi fun s₄ u₄ _ _ =>
     st_ok (Scr.of_eq hs₂ (by rw [u₄.other _ (by decide), u₃.other _ (by decide)])
@@ -235,10 +235,10 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
   have sz := v.size_ge
   have bd := G.bounds
   have wl := v.witLen32
-  have hl : E.witT.length = E.witLen := by rw [← L.keep.base.wit, VG.Proof.Bignum.bytesAt_length]
+  obtain hl : E.witT.length = E.witLen := by rw [← L.keep.base.wit, VG.Proof.Bignum.bytesAt_length]
   have qE := v.qLen_eq
-  have pp : 0 < E.pLen := by omega_using [hp, bd]
-  have ws : ∀ (m : Mem) {d e : Nat}, d + 4 ≤ sState → e + 4 ≤ sState → (d + 4 ≤ e ∨ e + 4 ≤ d) → ∀ y,
+  obtain pp : 0 < E.pLen := by omega_using [hp, bd]
+  obtain ws : ∀ (m : Mem) {d e : Nat}, d + 4 ≤ sState → e + 4 ≤ sState → (d + 4 ≤ e ∨ e + 4 ≤ d) → ∀ y,
       (m.writeW (off E.base e) y).readW (off E.base d) 32 = m.readW (off E.base d) 32 :=
     fun m d e h₁ h₂ h y => word_store_other v m (by simp only [sState] at h₁; omega_using [sz, h₁]) (by simp only [sState] at h₂; omega_using [sz, h₂])
       h y
@@ -246,12 +246,12 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
   refine WP.seq (cmpF_end L.keep.base.scr (o := fSeedLeft) (v := 0) (by simp only [fSeedLeft, hdr]; omega_using [sz]) L.left
     (by have := L.hj; simp only [Spec.Dsa.parameterSeeds] at this; omega_using [this]) (by decide)
     fun t₁ g₁ m₁ rd₁ wr₁ sy₁ z₁ => ?_)
-  have K₁ := L.keep.mem m₁ (g₁ _ (by decide)) (g₁ _ (by decide)) rd₁ wr₁ sy₁
+  obtain K₁ := L.keep.mem m₁ (g₁ _ (by decide)) (g₁ _ (by decide)) rd₁ wr₁ sy₁
   rcases j with _ | j
   · -- No seeds left: `fStatus` := 3.
     refine WP.seq (WP.ite _ z₁ (fun _ => stImm_end K₁.base.scr (o := fStatus) (v := 3)
       (by simp only [fStatus, hdr]; omega_using [sz]) fun t₂ g₂ m₂ rd₂ wr₂ sy₂ => ?_) (fun h => by simp at h))
-    have K₂ := K₁.store G v hp (d := fStatus) (by simp [sRanges, atRanges]) _ m₂ (g₂ _ (by decide))
+    obtain K₂ := K₁.store G v hp (d := fStatus) (by simp [sRanges, atRanges]) _ m₂ (g₂ _ (by decide))
       (g₂ _ (by decide)) rd₂ wr₂ sy₂
     refine cmpF_end K₂.base.scr (o := fStatus) (v := 0) (w := 3) (by simp only [fStatus, hdr]; omega_using [sz])
       (by rw [m₂, Mem.readW_writeW_self32]) (by decide) (by decide) fun t₃ g₃ m₃ rd₃ wr₃ sy₃ z₃ => ?_
@@ -261,20 +261,20 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
       rw [m₃, m₂, ws _ (by simp only [fC, sState, hdr]; omega_using []) (by simp only [fStatus, sState, hdr]; omega_using [])
         (by simp only [fC, fStatus, hdr]; omega_using []), m₁, L.cur]
     · rw [← L.spec]; exact (search_zero _ _ _).symm
-  have j1 : j + 1 < 2 ^ 32 := by have := L.hj; simp only [Spec.Dsa.parameterSeeds] at this; omega_using [this]
+  obtain j1 : j + 1 < 2 ^ 32 := by have := L.hj; simp only [Spec.Dsa.parameterSeeds] at this; omega_using [this]
   refine WP.seq (WP.ite _ z₁ (fun h => by simp only [decide_eq_true_eq] at h; omega) (fun _ => ?_))
   refine WP.seq (availCmp_ok v K₁.base (c := c) (by rw [m₁]; exact L.cur) L.hc (w := g.qLen) (by omega_using [bd])
     fun t₂ g₂ m₂ rd₂ wr₂ sy₂ _ c₂ => WP.block_nil ?_)
-  have K₂ := K₁.mem m₂ (g₂ _ (by decide) (by decide)) (g₂ _ (by decide) (by decide)) rd₂ wr₂ sy₂
-  have mem₂ : t₂.mem = t.mem := by rw [m₂, m₁]
+  obtain K₂ := K₁.mem m₂ (g₂ _ (by decide) (by decide)) (g₂ _ (by decide) (by decide)) rd₂ wr₂ sy₂
+  obtain mem₂ : t₂.mem = t.mem := by rw [m₂, m₁]
   have hpL : 0 < E.pLen := pp
   by_cases short : E.witLen - c < E.qLen
   · -- Too few octets for a seed: `fStatus` := 2.
     refine WP.ite _ c₂ (fun _ => stImm_end K₂.base.scr (o := fStatus) (v := 2)
       (by simp only [fStatus, hdr]; omega_using [sz]) fun t₃ g₃ m₃ rd₃ wr₃ sy₃ => ?_) (fun h => by simp [hq ▸ short] at h)
-    have K₃ := K₂.store G v hp (d := fStatus) (by simp [sRanges, atRanges]) _ m₃ (g₃ _ (by decide))
+    obtain K₃ := K₂.store G v hp (d := fStatus) (by simp [sRanges, atRanges]) _ m₃ (g₃ _ (by decide))
       (g₃ _ (by decide)) rd₃ wr₃ sy₃
-    have hS : sStep E (j + 1) c = none := by simp [sStep, short]
+    obtain hS : sStep E (j + 1) c = none := by simp [sStep, short]
     refine cmpF_end K₃.base.scr (o := fStatus) (v := 0) (w := 2) (by simp only [fStatus, hdr]; omega_using [sz])
       (by rw [m₃, Mem.readW_writeW_self32]) (by decide) (by decide) fun t₄ g₄ m₄ rd₄ wr₄ sy₄ z₄ => ?_
     refine ⟨by rw [show t₄.zf = _ from z₄, hS]; rfl, fun _ => ⟨K₃.mem m₄ (g₄ _ (by decide)) (g₄ _ (by decide)) rd₄
@@ -288,65 +288,65 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
     · simp only [sOut, short, ↓reduceIte, cRes]
       rw [← L.spec, search_short (by rw [hl, ← qE]; exact short), hl]
   -- A seed.
-  have hcq : c + E.qLen ≤ E.witLen := by omega_using [hq, bd, short]
+  obtain hcq : c + E.qLen ≤ E.witLen := by omega_using [hq, bd, short]
   refine WP.ite _ c₂ (fun h => by simp only [decide_eq_true_eq] at h; omega) (fun _ => ?_)
   refine WP.seq (WP.mono (seedStart_ok v hq K₂.base (c := c) (by rw [mem₂]; exact L.cur))
     fun t₃ ⟨m₃, g₃, rd₃, wr₃, sy₃⟩ => ?_)
-  have edi₃ : t₃.gpr .edi = t₂.gpr .edi := g₃ _ (by decide) (by decide)
-  have esp₃ : t₃.gpr .esp = t₂.gpr .esp := g₃ _ (by decide) (by decide)
-  have C₃ : E.Chg [(fSeed, 4), (fUsed, 4)] t₂.mem t₃.mem := by
+  obtain edi₃ : t₃.gpr .edi = t₂.gpr .edi := g₃ _ (by decide) (by decide)
+  obtain esp₃ : t₃.gpr .esp = t₂.gpr .esp := g₃ _ (by decide) (by decide)
+  obtain C₃ : E.Chg [(fSeed, 4), (fUsed, 4)] t₂.mem t₃.mem := by
     rw [m₃]
     exact ((Env.Chg.refl _ _).store (d := fSeed) (n := 4) (by simp) (by decide) _).store (d := fUsed)
       (n := 4) (by simp) (by decide) _
-  have K₃ : SKeep E g s t₃ := K₂.chgs G v hp (fun o ho => by
+  obtain K₃ : SKeep E g s t₃ := K₂.chgs G v hp (fun o ho => by
       simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
       rcases ho with rfl | rfl <;> simp [sRanges, atRanges, qRanges]) C₃ edi₃ esp₃ rd₃ wr₃ sy₃
-  have w₃ : ∀ d, d + 4 ≤ sState → (d + 4 ≤ fSeed ∨ fSeed + 4 ≤ d) → (d + 4 ≤ fUsed ∨ fUsed + 4 ≤ d) →
+  obtain w₃ : ∀ d, d + 4 ≤ sState → (d + 4 ≤ fSeed ∨ fSeed + 4 ≤ d) → (d + 4 ≤ fUsed ∨ fUsed + 4 ≤ d) →
       t₃.mem.readW (off E.base d) 32 = t.mem.readW (off E.base d) 32 := fun d h₀ h₁ h₂ => by
     rw [m₃, ws _ h₀ (by simp only [fUsed, sState, hdr]; omega_using []) h₂, ws _ h₀ (by simp only [fSeed, sState, hdr]; omega_using []) h₁,
       mem₂]
-  have v' := v.atSeed hcq
-  have hS : t₃.mem.readW (off E.base fSeed) 32 =
+  obtain v' := v.atSeed hcq
+  obtain hS : t₃.mem.readW (off E.base fSeed) 32 =
       ((E.atSeed c).seeds + BitVec.ofNat 64 (0 * (E.atSeed c).qLen)).setWidth 32 := by
     rw [m₃, ws _ (by simp only [fSeed, sState, hdr]; omega_using []) (by simp only [fUsed, sState, hdr]; omega_using [])
       (by simp only [fSeed, fUsed, hdr]; omega_using []), Mem.readW_writeW_self32, Nat.zero_mul, BitVec.add_zero]
     rfl
-  have hU : t₃.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 (c + E.qLen) := by
+  obtain hU : t₃.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 (c + E.qLen) := by
     rw [m₃, Mem.readW_writeW_self32]
-  have st₃ : t₃.mem.readW (off E.base fStatus) 32 = BitVec.ofNat 32 0 := by
+  obtain st₃ : t₃.mem.readW (off E.base fStatus) 32 = BitVec.ofNat 32 0 := by
     rw [w₃ fStatus (by simp only [fStatus, sState, hdr]; omega_using []) (.inr (by simp only [fSeed, fStatus, hdr]; omega_using []))
       (.inr (by simp only [fUsed, fStatus, hdr]; omega_using [])), L.status]
   refine WP.seq (WP.mono (attempt_ok G v' hp hq (K₃.base.toSeed c) (k := 0)
     (by simp only [Env.atSeed]; omega_using []) hS hU hcq st₃) fun t₄ ⟨AK, AR⟩ => ?_)
-  have eR : refillAttempt g.pLen g.qLen (chunk (E.atSeed c) 0) ((E.atSeed c).witT.drop (c + E.qLen)) = sR E c := by
+  obtain eR : refillAttempt g.pLen g.qLen (chunk (E.atSeed c) 0) ((E.atSeed c).witT.drop (c + E.qLen)) = sR E c := by
     simp only [chunk, Env.seedT, Env.atSeed, sR, hp, hq, Nat.zero_mul, List.drop_zero, List.take_take, Nat.min_self]
   rw [eR] at AR
-  have K₄ : SKeep E g s t₄ := ⟨AK.base.ofSeed, K₃.chg.trans ((AK.chg : E.Chg _ _ _).widen fun o ho =>
+  obtain K₄ : SKeep E g s t₄ := ⟨AK.base.ofSeed, K₃.chg.trans ((AK.chg : E.Chg _ _ _).widen fun o ho =>
     ⟨o, List.mem_append_left _ ho, Nat.le_refl _, Nat.le_refl _⟩), by rw [AK.rd, K₃.rd], by rw [AK.wr, K₃.wr],
     by rw [AK.syms, K₃.syms]⟩
-  have left₄ : t₄.mem.readW (off E.base fSeedLeft) 32 = BitVec.ofNat 32 (j + 1) := by
+  obtain left₄ : t₄.mem.readW (off E.base fSeedLeft) 32 = BitVec.ofNat 32 (j + 1) := by
     rw [show t₄.mem.readW (off E.base fSeedLeft) 32 = t₃.mem.readW (off E.base fSeedLeft) 32 from
       AK.word G v' hp (by simp only [fSeedLeft]; omega_using []) (by simp only [fSeedLeft, fUsed, hdr]; omega_using []),
       w₃ fSeedLeft (by simp only [fSeedLeft, sState, hdr]; omega_using []) (.inr (by simp only [fSeed, fSeedLeft, hdr]; omega_using []))
         (.inl (by simp only [fUsed, fSeedLeft, hdr]; omega_using [])), L.left]
-  have cur₄ : t₄.mem.readW (off E.base fC) 32 = BitVec.ofNat 32 c := by
+  obtain cur₄ : t₄.mem.readW (off E.base fC) 32 = BitVec.ofNat 32 c := by
     rw [show t₄.mem.readW (off E.base fC) 32 = t₃.mem.readW (off E.base fC) 32 from AK.cur G v' hp,
       w₃ fC (by simp only [fC, sState, hdr]; omega_using []) (.inr (by simp only [fSeed, fC, hdr]; omega_using []))
         (.inr (by simp only [fUsed, fC, hdr]; omega_using [])), L.cur]
-  have hRc : (E.witT.drop c).take (Spec.Dsa.generationQLen E.pLen) = (E.witT.drop c).take E.qLen := by rw [qE]
-  have hcq' : c + Spec.Dsa.generationQLen E.pLen ≤ E.witT.length := by rw [hl, ← qE]; exact hcq
-  have sOutE : ∀ x, sR E c = x → sOut E (j + 1) c = match x with
+  obtain hRc : (E.witT.drop c).take (Spec.Dsa.generationQLen E.pLen) = (E.witT.drop c).take E.qLen := by rw [qE]
+  obtain hcq' : c + Spec.Dsa.generationQLen E.pLen ≤ E.witT.length := by rw [hl, ← qE]; exact hcq
+  obtain sOutE : ∀ x, sR E c = x → sOut E (j + 1) c = match x with
       | some (none, rest) => sOut E j (E.witLen - rest.length)
       | some (some a, rest) => .found a (E.witLen - rest.length)
       | none => .ranOut (j + 1) c := fun x hx => by
     simp only [sOut, short, ↓reduceIte, hx]
   rcases hR : sR E c with _ | ⟨_ | a, rest⟩ <;> rw [hR] at AR
   · -- `rand` ran out inside the seed.
-    have hS' : sStep E (j + 1) c = none := by simp [sStep, short, hR]
+    obtain hS' : sStep E (j + 1) c = none := by simp [sStep, short, hR]
     have st₄ : t₄.mem.readW (off E.base fStatus) 32 = BitVec.ofNat 32 2 := AR
     refine WP.seq (cmpF_end K₄.base.scr (o := fStatus) (v := 0) (w := 2) (by simp only [fStatus, hdr]; omega_using [sz]) st₄
       (by decide) (by decide) fun t₅ g₅ m₅ rd₅ wr₅ sy₅ z₅ => ?_)
-    have K₅ := K₄.mem m₅ (g₅ _ (by decide)) (g₅ _ (by decide)) rd₅ wr₅ sy₅
+    obtain K₅ := K₄.mem m₅ (g₅ _ (by decide)) (g₅ _ (by decide)) rd₅ wr₅ sy₅
     refine WP.ite _ z₅ (fun h => by simp at h) (fun _ => WP.block_nil ?_)
     refine cmpF_end K₅.base.scr (o := fStatus) (v := 0) (w := 2) (by simp only [fStatus, hdr]; omega_using [sz])
       (by rw [m₅]; exact st₄) (by decide) (by decide) fun t₆ g₆ m₆ rd₆ wr₆ sy₆ z₆ => ?_
@@ -359,21 +359,21 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
     obtain ⟨st₄, u, hu, fu₄, du⟩ := AR
     replace st₄ : t₄.mem.readW (off E.base fStatus) 32 = BitVec.ofNat 32 0 := st₄
     replace fu₄ : t₄.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 u := fu₄
-    have uc : E.witLen - rest.length = u := by rw [← du]; exact cursor_of hl hu
-    have hS' : sStep E (j + 1) c = some (j, u) := by simp [sStep, short, hR, uc]
+    obtain uc : E.witLen - rest.length = u := by rw [← du]; exact cursor_of hl hu
+    obtain hS' : sStep E (j + 1) c = some (j, u) := by simp [sStep, short, hR, uc]
     refine WP.seq (cmpF_end K₄.base.scr (o := fStatus) (v := 0) (w := 0) (by simp only [fStatus, hdr]; omega_using [sz]) st₄
       (by decide) (by decide) fun t₅ g₅ m₅ rd₅ wr₅ sy₅ z₅ => ?_)
-    have K₅ := K₄.mem m₅ (g₅ _ (by decide)) (g₅ _ (by decide)) rd₅ wr₅ sy₅
+    obtain K₅ := K₄.mem m₅ (g₅ _ (by decide)) (g₅ _ (by decide)) rd₅ wr₅ sy₅
     refine WP.ite _ z₅ (fun _ => WP.mono (rejected_ok v K₅.base (u := u) (j := j) (by rw [m₅]; exact fu₄)
       (by rw [m₅]; exact left₄) j1) fun t₆ ⟨m₆, g₆, rd₆, wr₆, sy₆⟩ => ?_) (fun h => by simp at h)
-    have C₆ : E.Chg [(fC, 4), (fSeedLeft, 4)] t₅.mem t₆.mem := by
+    obtain C₆ : E.Chg [(fC, 4), (fSeedLeft, 4)] t₅.mem t₆.mem := by
       rw [m₆]
       exact ((Env.Chg.refl _ _).store (d := fC) (n := 4) (by simp) (by decide) _).store (d := fSeedLeft)
         (n := 4) (by simp) (by decide) _
-    have K₆ : SKeep E g s t₆ := K₅.chgs G v hp (fun o ho => by
+    obtain K₆ : SKeep E g s t₆ := K₅.chgs G v hp (fun o ho => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at ho
         rcases ho with rfl | rfl <;> simp [sRanges]) C₆ (g₆ _ (by decide)) (g₆ _ (by decide)) rd₆ wr₆ sy₆
-    have st₆ : t₆.mem.readW (off E.base fStatus) 32 = BitVec.ofNat 32 0 := by
+    obtain st₆ : t₆.mem.readW (off E.base fStatus) 32 = BitVec.ofNat 32 0 := by
       rw [m₆, ws _ (by simp only [fStatus, sState, hdr]; omega_using []) (by simp only [fSeedLeft, sState, hdr]; omega_using [])
         (by simp only [fSeedLeft, fStatus, hdr]; omega_using []), ws _ (by simp only [fStatus, sState, hdr]; omega_using [])
         (by simp only [fC, sState, hdr]; omega_using []) (by simp only [fC, fStatus, hdr]; omega_using []), m₅, st₄]
@@ -398,11 +398,11 @@ theorem sBody_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen = 
     replace fu₄ : t₄.mem.readW (off E.base fUsed) 32 = BitVec.ofNat 32 u := fu₄
     replace pk₄ : Spec.Rsa.bytesAt t₄.mem (off E.base sPk) (2 * g.pLen + g.qLen) =
       Spec.Dsa.encodeParams g.pLen g.qLen a := pk₄
-    have uc : E.witLen - rest.length = u := by rw [← du]; exact cursor_of hl hu
-    have hS' : sStep E (j + 1) c = none := by simp [sStep, short, hR]
+    obtain uc : E.witLen - rest.length = u := by rw [← du]; exact cursor_of hl hu
+    obtain hS' : sStep E (j + 1) c = none := by simp [sStep, short, hR]
     refine WP.seq (cmpF_end K₄.base.scr (o := fStatus) (v := 0) (w := 1) (by simp only [fStatus, hdr]; omega_using [sz]) st₄
       (by decide) (by decide) fun t₅ g₅ m₅ rd₅ wr₅ sy₅ z₅ => ?_)
-    have K₅ := K₄.mem m₅ (g₅ _ (by decide)) (g₅ _ (by decide)) rd₅ wr₅ sy₅
+    obtain K₅ := K₄.mem m₅ (g₅ _ (by decide)) (g₅ _ (by decide)) rd₅ wr₅ sy₅
     refine WP.ite _ z₅ (fun h => by simp at h) (fun _ => WP.block_nil ?_)
     refine cmpF_end K₅.base.scr (o := fStatus) (v := 0) (w := 1) (by simp only [fStatus, hdr]; omega_using [sz])
       (by rw [m₅]; exact st₄) (by decide) (by decide) fun t₆ g₆ m₆ rd₆ wr₆ sy₆ z₆ => ?_
@@ -425,7 +425,7 @@ theorem search_ok {g : Geo} (G : GeoOk g) {E : Env} (v : E.Valid) (hp : E.pLen =
     (hst : s.mem.readW (off E.base fStatus) 32 = BitVec.ofNat 32 0) :
     WP isa g.search s fun t => SKeep E g s t ∧ SRes E g t.mem (sOut E E.k0 0) ∧
       cRes E (sOut E E.k0 0) = Spec.Dsa.parameterSearch E.pLen E.k0 E.witT := by
-  have L₀ : SLoop E g s E.k0 0 s := ⟨⟨B, Env.Chg.refl _ _, rfl, rfl, rfl⟩, hL, hC, hst, Nat.zero_le _, v.k0le,
+  obtain L₀ : SLoop E g s E.k0 0 s := ⟨⟨B, Env.Chg.refl _ _, rfl, rfl, rfl⟩, hL, hC, hst, Nat.zero_le _, v.k0le,
     by simp [Spec.Entropy.Result.consume], rfl⟩
   unfold Geo.search
   refine WP.loop (M := isa) (fun m t => ∃ j c, j < m ∧ SLoop E g s j c t)
