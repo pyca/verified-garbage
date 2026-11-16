@@ -31,8 +31,11 @@ all, with the modes'.
 `ctr` and `ctr32` (schedule = a0, iv = a1, data = a2, n = a3) are the modes over it.
 CBC encryption, OFB and CFB encryption, whose blocks each need the one before,
 use the first block of the buffer; CBC and CFB decryption and the counter
-modes take sixteen blocks a step while sixteen are left (`Core.seq2`,
-`Impl/Modes/RISCV64/Wide.lean`), then one.
+modes take sixteen blocks a step while sixteen are left, then eight, four,
+two and one a step on the same core (`levels`, `Core.seqLevels`,
+`Impl/Modes/RISCV64/Wide.lean`): the batch costs the same for any number of
+its blocks, so the fewer than sixteen blocks a message ends with take at
+most four batches, not one each.
 
 `dirCore` wraps this body with named internal calls (`Core.shared`), so the
 key preparation and batch code are emitted once across modes, alignment
@@ -91,12 +94,16 @@ def dirCore (d : Dir) : Modes.RISCV64.Core :=
   (inlineCore d).shared ("vg_sm4_modes_prepare_" ++ (if d = .encrypt then "encrypt" else "decrypt"))
     ("vg_sm4_modes_crypt")
 
+/-- The groups of CBC and CFB decryption and the counter modes, `2 ^ lg`
+blocks for each `lg` in turn. -/
+def levels : List Nat := [4, 3, 2, 1]
+
 /-- `vg_sm4_cbc_encrypt_chained`. -/
 def cbcEncryptChained : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cbcEncChained 4)
 
 /-- `vg_sm4_cbc_decrypt_chained`. -/
 def cbcDecryptChained : Prog isa :=
-  (dirCore .decrypt).seq2 (Modes.Mode.cbcDecWide 4 16) (Modes.Mode.cbcDecChained 4) 4
+  (dirCore .decrypt).seqLevels (Modes.Mode.cbcDecWide 4) levels (Modes.Mode.cbcDecChained 4)
 
 /-- `vg_sm4_ofb`. -/
 def ofb : Prog isa := (dirCore .encrypt).seq (Modes.Mode.ofb 4)
@@ -106,12 +113,12 @@ def cfbEncrypt : Prog isa := (dirCore .encrypt).seq (Modes.Mode.cfbEnc 4)
 
 /-- `vg_sm4_cfb128_decrypt`. -/
 def cfbDecrypt : Prog isa :=
-  (dirCore .encrypt).seq2 (Modes.Mode.cfbDecWide 4 16) (Modes.Mode.cfbDecEarly 4) 4
+  (dirCore .encrypt).seqLevels (Modes.Mode.cfbDecWide 4) levels (Modes.Mode.cfbDecEarly 4)
 
 /-- `vg_sm4_ctr`. -/
-def ctr : Prog isa := (dirCore .encrypt).seq2 (Modes.Mode.ctrWide 16) Modes.Mode.ctrEarly 4
+def ctr : Prog isa := (dirCore .encrypt).seqLevels Modes.Mode.ctrWide levels Modes.Mode.ctrEarly
 
 /-- `vg_sm4_ctr32`: counter mode with GCM's `inc₃₂`. -/
-def ctr32 : Prog isa := (dirCore .encrypt).seq2 (Modes.Mode.ctr32Wide 16) Modes.Mode.ctr32Early 4
+def ctr32 : Prog isa := (dirCore .encrypt).seqLevels Modes.Mode.ctr32Wide levels Modes.Mode.ctr32Early
 
 end VG.Impl.Sm4.RISCV64
