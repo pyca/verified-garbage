@@ -157,7 +157,7 @@ def tdesDec (S : Schedule) (x : BitVec 64) : BitVec 64 :=
 theorem rounds_congr {ks ks' : Nat → BitVec 48} {n : Nat} (h : ∀ j < n, ks j = ks' j)
     (lr : BitVec 32 × BitVec 32) : rounds ks n lr = rounds ks' n lr := by
   induction n with
-  | zero => rfl
+  | zero => rw [rounds, rounds, List.range_zero, List.foldl_nil, List.foldl_nil]
   | succ n ih =>
     rw [rounds_succ, rounds_succ, ih fun j hj => h j (by omega_arith), h n (by omega_arith)]
 

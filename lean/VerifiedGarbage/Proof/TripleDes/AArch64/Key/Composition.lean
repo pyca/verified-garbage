@@ -102,9 +102,29 @@ def src (r j : Nat) : Nat :=
   let t := 56 - pc2.getD (47 - j) 1
   if t < 28 then (t + 448 - tot (r + 1)) % 28 else 28 + (t - 28 + 448 - tot (r + 1)) % 28
 
+/-- `pc1.getD i 1`, with the index evaluated first. The kernel remembers the value of a term by
+the term, so it then reads `pc1` once for each of its 56 entries, rather than once for every
+bit of every round key, whose index is another term each time. -/
+private def pc1At (i : Nat) : Nat :=
+  Nat.casesOn (motive := fun _ => Nat) (Nat.succ i) (pc1.getD i 1) (fun m => pc1.getD m 1)
+
+private theorem pc1At_eq (i : Nat) : pc1At i = pc1.getD i 1 := rfl
+
+/-- `sel`, reading `pc1` with `pc1At`. -/
+private def selAt (r i : Nat) : Nat :=
+  let q := pc2.getD i 1
+  let u := if q ≤ 28 then (q - 1 + shiftOf r) % 28 + 1 else (q - 29 + shiftOf r) % 28 + 29
+  pc1At (u - 1)
+
+private theorem selAt_eq (r i : Nat) : selAt r i = sel r i := rfl
+
 theorem src_sel : ∀ r < 16, ∀ j < 48, src r j < 56 ∧
     64 - pc1.getD (55 - src r j) 1 = 64 - sel r (47 - j) ∧ 1 ≤ sel r (47 - j) ∧
-    sel r (47 - j) ≤ 64 ∧ 1 ≤ pc2.getD (47 - j) 1 := by decide +kernel
+    sel r (47 - j) ≤ 64 ∧ 1 ≤ pc2.getD (47 - j) 1 := by
+  have h : ∀ r < 16, ∀ j < 48, src r j < 56 ∧
+      64 - pc1At (55 - src r j) = 64 - selAt r (47 - j) ∧ 1 ≤ selAt r (47 - j) ∧
+      selAt r (47 - j) ≤ 64 ∧ 1 ≤ pc2.getD (47 - j) 1 := by decide +kernel
+  simpa only [pc1At_eq, selAt_eq] using h
 
 theorem roundKey_bit (key : BitVec 64) (r : Nat) (hr : r < 16) (j : Nat) (hj : j < 48) :
     ((expandDesKey key).getD r 0).getLsbD j = key.getLsbD (64 - sel r (47 - j)) := by

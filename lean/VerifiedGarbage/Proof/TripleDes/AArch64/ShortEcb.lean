@@ -21,6 +21,8 @@ import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.TripleDes.AArch64.Bitsliced.Lit
+import VerifiedGarbage.Proof.Framework.TaintBatch
+meta import VerifiedGarbage.Proof.Framework.TaintBatch
 meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Impl.TripleDes.AArch64.Short
@@ -410,15 +412,32 @@ theorem few_ecb_correct (d : Direction) {c : Prog isa} (hc : c = few .x2 (ecb d)
   · exact sv r hs
   · exact other r (List.mem_filter.mpr ⟨hr, by simpa using hs⟩)
 
+/-- What `few_ecb_correct` asks of the code `c` of direction `d`. -/
+def EcbChecks (d : Direction) (c : Prog isa) : Prop :=
+  ((BitsliceNeon.ecb d).allInstrs (fun i =>
+      VG.Proof.CmacTripleDes.AArch64.savedRegs.all fun r => !clobbers i r) = true ∧
+    (BitsliceNeon.ecb d).noCalls = true) ∧
+  c.allInstrs (fun i => (preserved.filter
+    (· ∉ VG.Proof.CmacTripleDes.AArch64.savedRegs)).all (fun r => !clobbers i r)) = true ∧
+  c.noCalls = true ∧ c.allInstrs keepsV = true
+
+/-- The checks of both directions' code, in one kernel evaluation (`taint_decide_all`): what an
+instruction writes is evaluated once, for the checks of the registers the table block saves and
+of the others, and for both directions, whose code is mostly the same instructions. -/
+theorem ecb_checks : EcbChecks .encrypt ecbEncrypt ∧ EcbChecks .decrypt ecbDecrypt := by
+  unfold EcbChecks
+  refine ⟨⟨⟨?_, ?_⟩, ?_, ?_, ?_⟩, ⟨?_, ?_⟩, ?_, ?_, ?_⟩
+  taint_decide_all
+
 theorem ecbEncrypt_correct (s : State) (hp : (contract .encrypt).pre s) :
     ∃ t s', Exec isa ecbEncrypt s t s' ∧ abiPreserved s s' ∧ (contract .encrypt).post s s' :=
-  few_ecb_correct .encrypt rfl (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)
-    (by lit_decide) s hp
+  few_ecb_correct .encrypt rfl ecb_checks.1.1.1 ecb_checks.1.1.2 ecb_checks.1.2.1 ecb_checks.1.2.2.1
+    ecb_checks.1.2.2.2 s hp
 
 theorem ecbDecrypt_correct (s : State) (hp : (contract .decrypt).pre s) :
     ∃ t s', Exec isa ecbDecrypt s t s' ∧ abiPreserved s s' ∧ (contract .decrypt).post s s' :=
-  few_ecb_correct .decrypt rfl (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)
-    (by lit_decide) s hp
+  few_ecb_correct .decrypt rfl ecb_checks.2.1.1 ecb_checks.2.1.2 ecb_checks.2.2.1 ecb_checks.2.2.2.1
+    ecb_checks.2.2.2.2 s hp
 
 theorem ecbEncrypt_constantTime (pre : State → Prop) :
     ConstantTime isa pre (PublicRegs [.x0, .x1, .x2, .x3]) ecbEncrypt := by

@@ -147,15 +147,17 @@ theorem mm_tight (a : BitVec 16) {z M : Nat} (ha : -(M : Int) < a.toInt) (ha' : 
     simp only [BitVec.toNat_ofNat] at this; omega_arith
   have et : t = _ := Option.some.inj (ht.symm.trans (by simp only [sqdmulhHLane, hne, ite_false]; rfl))
   subst et
+  have hmb : mmB M z ≤ 32768 := by
+    unfold mmB
+    have : dz z ≤ 3329 := by
+      -- (`omega` on `↑z * 65536` as it stands has the kernel multiply `z` by 65536 in unary.)
+      unfold dz; rw [tw_def]
+      generalize (z : Int) * 65536 = X
+      omega_arith
+    have : (M - 1) * dz z ≤ 32767 * 3329 := Nat.mul_le_mul (by omega_arith) this
+    omega_arith
   refine ⟨?_, ?_, h3⟩ <;>
   · have h := core_tight (A := a.toInt) (z := z) ha ha'
-    have hmb : mmB M z ≤ 32768 := by
-      unfold mmB
-      have : dz z ≤ 3329 := by
-        have := tw_def z
-        unfold dz; omega_arith
-      have : (M - 1) * dz z ≤ 32767 * 3329 := Nat.mul_le_mul (by omega_arith) this
-      omega_arith
     simp only [BitVec.toInt_sub, BitVec.toInt_mul, BitVec.toInt_ofInt, hc, hzt, hq, tw_def]
     rw [Int.shiftRight_eq_div_pow]
     simp only [ite_true, show (2 : Int) ^ 15 = 32768 from rfl]

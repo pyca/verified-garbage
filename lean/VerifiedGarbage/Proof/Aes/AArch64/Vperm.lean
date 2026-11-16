@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Aes.Vector
 public import VerifiedGarbage.Proof.Framework.AArch64.Tbl
 public import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Aes.AArch64.Aese.Blocks
+import VerifiedGarbage.Proof.Aes.InvSboxSpec
 import VerifiedGarbage.Proof.Framework.AArch64.Simd
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
@@ -53,9 +54,39 @@ def ioB (y : BitVec 8) : BitVec 8 :=
 def joB (y : BitVec 8) : BitVec 8 :=
   nib inv (nib inv ((y &&& 0x0f) ^^^ y >>> 4) ^^^ nib inva (y &&& 0x0f)) ^^^ y >>> 4
 
+/-! ### The specification's S-boxes, on the 256 bytes at once
+
+`aesSbox` and `aesInvSbox` take an inverse in GF(2⁸), thirteen products, for every byte. The
+checks of the tables against them (`sbo_eq`, `Dec.isb_eq`) read them from the specification's
+computation on truth tables instead (`Proof/Aes/SboxSpec.lean`, `InvSboxSpec.lean`), which the
+kernel evaluates once for the 256 bytes. -/
+
+/-- The truth tables of the bits of a byte, on the 256 bytes. -/
+private def inTabs : List Nat :=
+  (List.range 8).map fun k => VG.Bitslice.tableOf (fun c => c.testBit k) 256
+
+private theorem row_inTabs {c : Nat} (hc : c < 256) : row inTabs c = BitVec.ofNat 8 c := by
+  refine row_ext fun j hj => ?_
+  simp only [inTabs, List.getD_eq_getElem?_getD, List.getElem?_map, List.getElem?_range hj,
+    Option.map_some, Option.getD_some, VG.Bitslice.testBit_tableOf, hc, decide_true, Bool.true_and,
+    BitVec.getLsbD_ofNat, hj]
+
+/-- The S-box of a byte, read from the truth tables. -/
+private theorem aesSbox_row (b : BitVec 8) : aesSbox b = row (sboxT inTabs) b.toNat := by
+  rw [row_sboxT (by simp [inTabs]) b.isLt, row_inTabs b.isLt, BitVec.ofNat_toNat,
+    BitVec.setWidth_eq, Vector.sbox_eq]
+
+/-- The inverse S-box of a byte, read from the truth tables. -/
+private theorem aesInvSbox_row (b : BitVec 8) : aesInvSbox b = row (invSboxT inTabs) b.toNat := by
+  rw [row_invSboxT _ b.isLt, row_inTabs b.isLt, BitVec.ofNat_toNat, BitVec.setWidth_eq,
+    Vector.invSbox_eq]
+
 /-- The S-box, from the tables. -/
 theorem sbo_eq : ∀ x : BitVec 8,
-    aesSbox x = nib sbou (ioB (L x)) ^^^ nib sbot (joB (L x)) ^^^ 0x63 := by decide +kernel
+    aesSbox x = nib sbou (ioB (L x)) ^^^ nib sbot (joB (L x)) ^^^ 0x63 := by
+  have h : ∀ x : BitVec 8, row (sboxT inTabs) x.toNat =
+      nib sbou (ioB (L x)) ^^^ nib sbot (joB (L x)) ^^^ 0x63 := by decide +kernel
+  exact fun x => (aesSbox_row x).trans (h x)
 
 theorem sb1_tab : ∀ x : BitVec 8, nib sb1u (ioB (L x)) ^^^ nib sb1t (joB (L x)) =
     L (nib sbou (ioB (L x)) ^^^ nib sbot (joB (L x)) ^^^ 0x63 ^^^ 0x63) := by decide +kernel
@@ -773,7 +804,10 @@ def Dl (x : BitVec 8) : BitVec 8 := D x ^^^ 0xd1
 
 /-- The inverse S-box, from the tables. -/
 theorem isb_eq : ∀ z : BitVec 8,
-    aesInvSbox z = nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)) := by decide +kernel
+    aesInvSbox z = nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)) := by
+  have h : ∀ z : BitVec 8, row (invSboxT inTabs) z.toNat =
+      nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)) := by decide +kernel
+  exact fun z => (aesInvSbox_row z).trans (h z)
 
 theorem x0_tab : ∀ z : BitVec 8, nib x0u (ioB (D z)) ^^^ nib x0t (joB (D z)) =
     Dl (aesMul 0x0e (nib dbou (ioB (D z)) ^^^ nib dbot (joB (D z)))) := by decide +kernel

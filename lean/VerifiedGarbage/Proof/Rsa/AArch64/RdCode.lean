@@ -20,7 +20,7 @@ import VerifiedGarbage.Proof.Bignum.AArch64.PcCode
 import VerifiedGarbage.Proof.Bignum.AArch64.PubValid
 import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
 import VerifiedGarbage.Proof.Framework.Offset
-import VerifiedGarbage.Proof.Bignum.AArch64.KeepLanes
+import VerifiedGarbage.Proof.Bignum.AArch64.KeepLanesSame
 import VerifiedGarbage.Proof.Rsa.AArch64.CodeLit
 import VerifiedGarbage.Proof.Framework.Lit
 
@@ -424,7 +424,7 @@ theorem rdCode_correct [GcdLaw gcdB] (s : State) (h : rdA.pre s) :
   · have hv : Spec.Rsa.modulusValid (rpIn s).N (s.gpr .x5).toNat = true := by simpa using hb
     have dpre : DPre (rpIn s) t₂ := ⟨hpre.scr, hpre.x0, hpre.args, hpre.n, hpre.e, hpre.d, hpre.L, hel8, hpre.oP,
       hpre.oQ, hpre.a, hpre.wr⟩
-    refine WP.mono (WP.keepLanes (.x0 :: mmRegs) [.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28, .x30]
+    refine WP.mono (WP.keepLanesS (.x0 :: mmRegs) [.x19, .x20, .x21, .x22, .x23, .x24, .x25, .x26, .x27, .x28, .x30]
       (rdMain_ok dpre hv) (by lit_decide) (by lit_decide) (by lit_decide) (by lit_decide)) fun t ⟨⟨res, hres, b1, b2, hax, _⟩, kt⟩ =>
       ⟨abiPreserved_of_keep ((kk.trans kt).mono (by decide)), ?_⟩
     have := rdWritten_of (m := t.mem) (pp := s.gpr .x0) (pq := s.gpr .x2) (by rw [hnl]; exact hv) hres
