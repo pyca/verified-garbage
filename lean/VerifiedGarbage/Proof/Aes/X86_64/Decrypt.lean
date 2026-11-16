@@ -232,7 +232,7 @@ theorem decrypt4_ok {s₀ : State} {R : Nat} {w : List Byte} {S : Nat → Spec.A
     have hk₂' : s₂.gpr kp = s₀.gpr .rdi + BitVec.ofNat 64 (64 * R) := by
       rw [hk₂, hc₁.base, hp.k0, BitVec.add_assoc, ← BitVec.ofNat_add,
         show (BitVec.ofNat 32 lastKey).signExtend 64 = BitVec.ofNat 64 lastKey by decide]
-      congr 2; omega_using [hR]
+      congr 2; simp only [lastKey]; omega_using [hR]
     exact ark_step hp hc₂ hk₂' (Nat.le_refl R) hbs₂ fun s₃ hc₃ hk₃ hbs₃ =>
       ⟨0, by omega_using [], by omega_using [hR1], hc₃, by rw [hk₃, hk₂']; simp, hbs₃⟩
   · -- The middle rounds.

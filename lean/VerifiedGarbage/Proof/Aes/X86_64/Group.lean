@@ -309,7 +309,7 @@ theorem keyBody_ok {s₀ : State} {b sc : Addr} {R : Nat} {w : List Byte} (hk : 
       exact base_sub b (by decide) (by decide)
     · simp only [List.mem_singleton] at hr; subst hr
       rw [hrsi₂]
-      exact Offset.sub b (by (simp only [lastKey]; omega_arith)) (by (simp only [lastKey]; omega_arith))
+      exact Offset.sub b (by simp only [lastKey]; omega_arith) (by simp only [lastKey]; omega_arith)
   -- The keys stored before.
   have hold : ∀ i, j < i → i ≤ R →
       KeyRel (fun k => s₄.mem.readW (wordAddr (keyAddr b R i) k) 64) (roundKey w i) := by
@@ -319,10 +319,10 @@ theorem keyBody_ok {s₀ : State} {b sc : Addr} {R : Nat} {w : List Byte} (hk : 
     rw [hm₄, readW_off_frame hfr₃ fun r hr => ?_, readW_off_frame hfr₂ fun r hr => ?_, hm₁]
     · simp only [List.mem_singleton] at hr; subst hr
       simp only [slotRegion, linCfg, hsb₁]
-      exact Offset.disjoint_base b (by (simp only [lastKey]; omega_arith)) (by (simp only [lastKey]; omega_arith))
+      exact Offset.disjoint_base b (by simp only [lastKey]; omega_arith) (by simp only [lastKey]; omega_arith)
     · simp only [List.mem_singleton] at hr; subst hr
       rw [hrsi₂]
-      exact Offset.disjoint b (by (simp only [lastKey]; omega_arith)) (by (simp only [lastKey]; omega_arith)) (by (simp only [lastKey]; omega_arith))
+      exact Offset.disjoint b (by simp only [lastKey]; omega_arith) (by simp only [lastKey]; omega_arith) (by simp only [lastKey]; omega_arith)
   -- The key stored now.
   have hnew : KeyRel (fun k => s₄.mem.readW (wordAddr (keyAddr b R j) k) 64) (roundKey w j) :=
     keyRel_congr (keyRel_of_bs hbs₂) fun k hk => by rw [hm₄, ← hrsi₂, hst₃ k hk]

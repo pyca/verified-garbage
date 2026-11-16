@@ -289,15 +289,18 @@ open VG.Spec.Aes (roundKey subBytes shiftRows mixColumns addRoundKey cipher)
 def KeysAt (m : Mem) (K0 : Addr) (R : Nat) (w : List Byte) : Prop :=
   ∀ j ≤ R, KeyRel (fun k => m.readW (wordAddr (K0 + BitVec.ofNat 64 (64 * j)) k) 64) (roundKey w j)
 
-/-- The scratch buffer at `b` is one of the regions `rs`: of the 1472 bytes the
-code uses (the temporaries, then the round keys, the last at byte `lastKey`),
-or more. The contracts say how many (`Proof.Aes.ctr32X86_64`, of 2048 bytes,
-and `Proof.Aes.ctr32X86_64S`, of 1472); the proofs below hold for any. -/
+/-- The scratch buffer at `b` is one of the regions `rs`: of the 1480 bytes the
+code uses, or more. It writes the first 1472 (the temporaries, then the round
+keys, the last at byte `lastKey`), and reads eight more: `vg_aes_ctr32`'s
+groups of eight blocks load 16 bytes for each 8-byte word of a round key
+(`Sse.addRoundKey`), and keep the first eight. The contracts say how many
+bytes there are (`Proof.Aes.ctr32X86_64`, 2048, and `Proof.Aes.ctr32X86_64S`,
+1480); the proofs below hold for any. -/
 def ScrIn (b : Addr) (rs : List Region) : Prop :=
-  ∃ n, 1472 ≤ n ∧ n < 2 ^ 64 ∧ (⟨b, n⟩ : Region) ∈ rs
+  ∃ n, 1480 ≤ n ∧ n < 2 ^ 64 ∧ (⟨b, n⟩ : Region) ∈ rs
 
 theorem ScrIn.of_mem {b : Addr} {rs : List Region} {n : Nat} (h : (⟨b, n⟩ : Region) ∈ rs)
-    (hn : 1472 ≤ n) (hl : n < 2 ^ 64) : ScrIn b rs := ⟨n, hn, hl, h⟩
+    (hn : 1480 ≤ n) (hl : n < 2 ^ 64) : ScrIn b rs := ⟨n, hn, hl, h⟩
 
 theorem ScrIn.append_right {b : Addr} {rs : List Region} (h : ScrIn b rs) (rd : List Region) :
     ScrIn b (rd ++ rs) :=
@@ -305,7 +308,7 @@ theorem ScrIn.append_right {b : Addr} {rs : List Region} (h : ScrIn b rs) (rd : 
   ⟨n, hn, hl, List.mem_append_right _ h⟩
 
 /-- Bytes of the scratch buffer are within the regions. -/
-theorem ScrIn.off {b : Addr} {rs : List Region} (h : ScrIn b rs) {off n : Nat} (ho : off + n ≤ 1472) :
+theorem ScrIn.off {b : Addr} {rs : List Region} (h : ScrIn b rs) {off n : Nat} (ho : off + n ≤ 1480) :
     InRegions rs (b + BitVec.ofNat 64 off) n :=
   let ⟨_, hn, _, h⟩ := h
   ⟨_, h, Offset.contains_base b (by omega_arith) (by omega_arith)⟩

@@ -20,7 +20,7 @@ vg_aes_decrypt_blocks:
 	add rsi, rsi
 	add rdi, rsi
 	mov rsi, r9
-	add rsi, 1920
+	add rsi, 1408
 20:
 	mov rax, QWORD PTR [rdi]
 	mov r10, QWORD PTR [rdi+8]
@@ -549,7 +549,7 @@ vg_aes_decrypt_blocks:
 	ror r14, 60
 	xor rbp, r14
 	mov rsi, r9
-	add rsi, 1920
+	add rsi, 1408
 	xor rax, QWORD PTR [rsi]
 	xor rbx, QWORD PTR [rsi+8]
 	xor rcx, QWORD PTR [rsi+16]

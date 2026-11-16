@@ -37,8 +37,8 @@ the group loop, `GInv`, from group `g` of four to `g + 2`.
 namespace VG.Proof.Aes.X86_64.Sse
 
 open VG VG.X86_64 VG.X86_64.StraightX VG.Bitslice VG.Impl.Aes.X86_64.Sse VG.Proof.Aes
-open VG.Proof.Aes.X86_64 (EncPre KeysAt)
-open VG.Impl.Aes.X86_64 (at_)
+open VG.Proof.Aes.X86_64 (EncPre KeysAt ScrIn)
+open VG.Impl.Aes.X86_64 (at_ lastKey)
 open VG.X86_64.RegUpd (xmm_setXmm_self xmm_setXmm_of_ne)
 open VG.X86_64.StraightY (qword_xor qword_app)
 
@@ -160,10 +160,8 @@ theorem addRoundKey_wp {s : State}
 section
 variable {s₀ : State} {R : Nat} {w : List Byte}
 
-/-- The scratch buffer. -/
-abbrev scr (s₀ : State) : Region := ⟨s₀.gpr .r9, 1472⟩
-
-theorem Ctx.scr {s : State} (hp : EncPre s₀ R w) (hc : Ctx s₀ s) : scr s₀ ∈ s.wr := by
+/-- The scratch buffer is writable. -/
+theorem Ctx.scr {s : State} (hp : EncPre s₀ R w) (hc : Ctx s₀ s) : ScrIn (s₀.gpr .r9) s.wr := by
   rw [hc.wr]; exact hp.scr
 
 theorem sbox_wp {s : State} (hp : EncPre s₀ R w) (hq : SsePre s₀) (hc : Ctx s₀ s) {Q : State → Prop}
@@ -173,7 +171,9 @@ theorem sbox_wp {s : State} (hp : EncPre s₀ R w) (hq : SsePre s₀) (hc : Ctx 
     WP isa (.block sboxCode) s Q := by
   have hrcx : s.gpr .rcx = s₀.gpr .r9 + BitVec.ofNat 64 0 := by
     rw [hc.keep _ (by decide) (by decide), hq.rcx]; simp
-  have hok : Ok sboxCfg s := Ok.of_off (hc.scr hp) hrcx (by simp [sboxCfg, spills]) (by simp)
+  obtain ⟨sz, hsz, hsz', hscr⟩ := hc.scr hp
+  have hok : Ok sboxCfg s := Ok.of_off (r := ⟨s₀.gpr .r9, sz⟩) hscr hrcx
+    (by simp only [sboxCfg, spills]; omega_arith) hsz'
   obtain ⟨s', hs', hbits, hrd, hwr, -, -, hgpr, -, hfr⟩ := sbox_ok hok
   refine WP.of_runBlock ⟨s', hs', h s' ⟨hrd.trans hc.rd, hwr.trans hc.wr,
     fun r h1 h2 => (hgpr r h1).trans (hc.keep r h1 h2), hc.frame.trans (hfr.sub fun r hr => ?_)⟩ hbits
@@ -199,9 +199,8 @@ theorem shiftRows_wp {s : State} (hp : EncPre s₀ R w) (hq : SsePre s₀) (hc :
     WP isa (.block shiftRows) s Q := by
   have hin : ∀ k < 2, InRegions (s.rd ++ s.wr) (s.gpr .r11 + BitVec.ofNat 64 (16 * k)) 16 := by
     intro k hk
-    refine ⟨scr s₀, List.mem_append_right _ (hc.scr hp), ?_⟩
     rw [hc.keep _ (by decide) (by decide), hq.r11, Offset.add_add]
-    exact Offset.contains_base _ (by simp [srOff]; omega_using [hk]) (by simp [srOff]; omega_using [hk])
+    exact ((hc.scr hp).append_right _).off (by simp [srOff]; omega_using [hk])
   have hin₁ : InRegions ((s.setXmm (m 1) (s.mem.readW (s.gpr .r11 + BitVec.ofNat 64 (16 * 0)) 128)).rd ++
       (s.setXmm (m 1) (s.mem.readW (s.gpr .r11 + BitVec.ofNat 64 (16 * 0)) 128)).wr)
       ((s.setXmm (m 1) (s.mem.readW (s.gpr .r11 + BitVec.ofNat 64 (16 * 0)) 128)).gpr .r11 +
@@ -291,9 +290,8 @@ theorem ark_step {s : State} {j : Nat} {T : Nat → Nat → Spec.Aes.State}
   have hR : R ≤ 14 := by rcases hp.rounds with h | h | h <;> omega_arith
   have hin : ∀ i < 8, InRegions (s.rd ++ s.wr) (s.gpr kp + BitVec.ofNat 64 (8 * i)) 16 := by
     intro i hi
-    refine ⟨scr s₀, List.mem_append_right _ (hc.scr hp), ?_⟩
     rw [hk, kp_off _ _ hp.k0, Offset.add_add]
-    exact Offset.contains_base _ (by (simp only [lastKey]; omega_arith)) (by (simp only [lastKey]; omega_arith))
+    exact ((hc.scr hp).append_right _).off (by simp only [lastKey]; omega_arith)
   have hkey : VG.Proof.Aes.KeyRel (keyWord s) (Spec.Aes.roundKey w j) := by
     have := keysAt hp hc j hj
     unfold keyWord; rw [hk]; exact this

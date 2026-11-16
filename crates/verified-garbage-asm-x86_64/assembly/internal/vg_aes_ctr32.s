@@ -29,7 +29,7 @@ vg_aes_ctr32:
 	add rsi, rsi
 	add rdi, rsi
 	mov rsi, r9
-	add rsi, 1920
+	add rsi, 1408
 20:
 	mov rax, QWORD PTR [rdi]
 	mov r10, QWORD PTR [rdi+8]
@@ -1091,7 +1091,7 @@ vg_aes_ctr32:
 	punpcklqdq xmm8, xmm8
 	pxor xmm7, xmm8
 	mov rax, r9
-	add rax, 1856
+	add rax, 1344
 	cmp rsi, rax
 	jne 26b
 	add rsi, 64
@@ -2526,7 +2526,7 @@ vg_aes_ctr32:
 	xor r12, QWORD PTR [rsi+48]
 	xor r13, QWORD PTR [rsi+56]
 	mov r14, r9
-	add r14, 1856
+	add r14, 1344
 	cmp rsi, r14
 	jne 213b
 	add rsi, 64

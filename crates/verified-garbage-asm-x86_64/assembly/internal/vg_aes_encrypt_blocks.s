@@ -20,7 +20,7 @@ vg_aes_encrypt_blocks:
 	add rsi, rsi
 	add rdi, rsi
 	mov rsi, r9
-	add rsi, 1920
+	add rsi, 1408
 20:
 	mov rax, QWORD PTR [rdi]
 	mov r10, QWORD PTR [rdi+8]
@@ -1009,7 +1009,7 @@ vg_aes_encrypt_blocks:
 	xor r12, QWORD PTR [rsi+48]
 	xor r13, QWORD PTR [rsi+56]
 	mov r14, r9
-	add r14, 1856
+	add r14, 1344
 	cmp rsi, r14
 	jne 210b
 	add rsi, 64

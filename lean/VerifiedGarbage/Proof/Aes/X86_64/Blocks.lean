@@ -117,7 +117,12 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
     WP isa (blocks crypt4) s₀ fun s' => gprPreserved s₀ s' ∧ (Proof.Aes.blocksX86_64 f).post s₀ s' := by
   obtain ⟨hrd, hwr, dSD, dSS, dDS, dRD, dRS, hwrap, hR⟩ := hp
   have hwD : (⟨s₀.gpr .rdx, 16 * (s₀.gpr .rcx).toNat⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
-  have hwS : ScrIn (s₀.gpr .r8) s₀.wr := by rw [hwr]; simp
+  have hwSm : (⟨s₀.gpr .r8, 2048⟩ : Region) ∈ s₀.wr := by rw [hwr]; simp
+  have hwS : ScrIn (s₀.gpr .r8) s₀.wr := .of_mem hwSm (by decide) (by decide)
+  -- The code writes only the first 1472 bytes of the scratch buffer.
+  replace dSS := scr_pre dSS (by decide)
+  replace dDS := scr_pre dDS (by decide)
+  replace dRS := scr_pre dRS (by decide)
   have hrS : (⟨s₀.gpr .rdi, 240⟩ : Region) ∈ s₀.rd := by rw [hrd]; simp
   let n := (s₀.gpr .rcx).toNat
   have n16 : 16 * n < 2 ^ 64 := by
@@ -134,7 +139,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
   rw [WP.block_append_iff (M := isa), WP.block_append_iff (M := isa)]
   obtain ⟨s₁, h₁, r9₁, r8₁, o₁, m₁, rd₁, wr₁⟩ := blocksSetup_ok s₀
   refine WP.of_runBlock ⟨s₁, h₁, ?_⟩
-  obtain ⟨s₂, h₂, sv₂, g₂, rd₂, wr₂, f₂⟩ := save_ok (b := b) (wr₁ ▸ hwS) r9₁ (by decide)
+  obtain ⟨s₂, h₂, sv₂, g₂, rd₂, wr₂, f₂⟩ := save_ok (b := b) (wr₁ ▸ hwSm) r9₁ (by decide)
   refine WP.of_runBlock ⟨s₂, h₂, ?_⟩
   obtain ⟨s₃, h₃, r15₃, rdi₃, rsi₃, o₃, m₃, rd₃, wr₃⟩ := keySetup_ok s₂
   refine WP.of_runBlock ⟨s₃, h₃, ?_⟩
@@ -197,7 +202,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
       rounds := hR
       keys := fun j hj => keyRel_congr (d₄.keys j hj) fun k hk => by
         rw [m₅, keyAddr, BitVec.add_assoc, ← BitVec.ofNat_add, show lastKey - 64 * R + 64 * j =
-          lastKey - 64 * (R - j) by omega_arith] }
+          lastKey - 64 * (R - j) by simp only [lastKey]; omega_arith] }
   have data₅ : EcbInv s₀.mem s₅.mem D n 0 (ecbOut f s₀.mem D R w) := by
     refine ecbInv_frame fK (fun r hr => by
         simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
@@ -235,7 +240,7 @@ theorem correct_blocks {crypt4 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
       · exact (scr_disj _ (by omega_arith) (by omega_arith)).symm
       · exact (dDS.sub_right (scr_sub _ (by omega_arith))).symm
   obtain ⟨s₇, h₇, rg₇, o₇, fR⟩ :=
-    restore_ok (by rw [gd.wr, wr₅, d₄.wr, wr₃, wr₂, wr₁]; exact hwS) gd.base (by decide) sv
+    restore_ok (by rw [gd.wr, wr₅, d₄.wr, wr₃, wr₂, wr₁]; exact hwSm) gd.base (by decide) sv
   refine WP.of_runBlock ⟨s₇, h₇, ?_⟩
   have rsp₇ : s₇.gpr .rsp = s₀.gpr .rsp := by
     rw [o₇ _ (fun i hi => by
