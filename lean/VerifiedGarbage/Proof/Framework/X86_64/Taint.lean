@@ -2086,10 +2086,284 @@ def addrOfK (τ : T) (m : MemOp) : Option (Nat × Nat) :=
   | none, .ofNat k => (find? (fun p => regEq p.1 m.base) τ.bases).map fun p => (p.2.1, p.2.2 + k)
   | _, _ => none
 
+/-- `l.contains a`, for a slot. -/
+def mem3 (a : Nat × Nat × Nat) (l : List (Nat × Nat × Nat)) : Bool :=
+  any l fun b => Nat.beq a.1 b.1 && Nat.beq a.2.1 b.2.1 && Nat.beq a.2.2 b.2.2
+
+/-! ### The slots as numbers
+
+Every access to memory asks the list of slots a question: is there a slot
+over these bytes (a load), is this very slot there (a store of a public
+value), does any slot overlap these bytes (a store of a secret). Each is a
+walk of the list, about thirty microseconds a slot for the kernel, and a
+frame has from sixty to several hundred slots: more than half of the checks
+of functions that keep their working state on the stack.
+
+The kernel remembers the value of a term it has evaluated, by the term. So
+the questions are put to two numbers that are functions of the list:
+`slotMask i l`, a bit for each byte of region `i` a slot covers, and
+`slotKeys i l`, a bit for each slot of region `i` by its offset and length
+(`widthCode`). The kernel computes each once for a list, and for a list with
+one more slot from the number of the list without it (`List.rec`'s
+recursive result is that term); a question is then a shift and a comparison.
+They answer the common cases, and the walk remains for the others
+(`coveredQ`, `slotThere`, `allKeptQ`, `filterKeepQ`, each equal to the walk
+it stands for).
+
+The numbers are not part of a taint: a taint that held them would be found
+again less often (the kernel hashes a numeral by its low 64 bits). -/
+
+/-- The bytes of the slot `s`, a bit each (bit `s.2.1` for a slot of no bytes,
+which a store over its offset removes all the same). -/
+def slotBits (s : Nat × Nat × Nat) : Nat :=
+  Nat.shiftLeft (Nat.lor (Nat.sub (Nat.pow 2 s.2.2) 1) 1) s.2.1
+
+/-- A number below 8 for a length: 0 to 6 for the lengths stores have, each
+its own, and 7 for any other. -/
+def widthCode (w : Nat) : Nat :=
+  bif Nat.beq w 8 then 3 else bif Nat.beq w 16 then 4 else bif Nat.beq w 4 then 2 else
+  bif Nat.beq w 32 then 5 else bif Nat.beq w 1 then 0 else bif Nat.beq w 2 then 1 else
+  bif Nat.beq w 64 then 6 else 7
+
+/-- The bit of the slot `s` among the keys: its offset and its length's code. -/
+def slotKeyBit (s : Nat × Nat × Nat) : Nat :=
+  Nat.shiftLeft 1 (Nat.add (Nat.mul 8 s.2.1) (widthCode s.2.2))
+
+/-- What compiled code runs for `slotMask` and `slotKeys` (`KernelList.lean`). -/
+def slotMaskC (i : Nat) (l : List (Nat × Nat × Nat)) : Nat :=
+  l.foldr (fun s m => bif Nat.beq s.1 i then Nat.lor m (slotBits s) else m) 0
+def slotKeysC (i : Nat) (l : List (Nat × Nat × Nat)) : Nat :=
+  l.foldr (fun s m => bif Nat.beq s.1 i then Nat.lor m (slotKeyBit s) else m) 0
+
+/-- The bytes of region `i` that the slots of `l` cover, a bit each. -/
+@[implemented_by slotMaskC] def slotMask (i : Nat) (l : List (Nat × Nat × Nat)) : Nat :=
+  List.rec (motive := fun _ => Nat) 0
+    (fun s _ ih => Bool.rec (motive := fun _ => Nat) ih (Nat.lor ih (slotBits s)) (Nat.beq s.1 i)) l
+
+/-- The slots of region `i` in `l`, a bit each (`slotKeyBit`). -/
+@[implemented_by slotKeysC] def slotKeys (i : Nat) (l : List (Nat × Nat × Nat)) : Nat :=
+  List.rec (motive := fun _ => Nat) 0
+    (fun s _ ih => Bool.rec (motive := fun _ => Nat) ih (Nat.lor ih (slotKeyBit s)) (Nat.beq s.1 i)) l
+
+/-- The `w` bits of `m` from bit `d`. -/
+def bitsAt (m d w : Nat) : Nat := Nat.mod (Nat.shiftRight m d) (Nat.pow 2 w)
+
+/-- No slot of region `i` in `l` has a byte in `[d, d + w)` (`slotsFree_kept`). -/
+def slotsFree (i d w : Nat) (l : List (Nat × Nat × Nat)) : Bool :=
+  Nat.ble 1 w && Nat.beq (bitsAt (slotMask i l) d w) 0
+
+/-- Every byte of `[d, d + w)` is in a slot of region `i` in `l`: so it is if
+one slot covers them (`slotsFull_of_cover`). -/
+def slotsFull (i d w : Nat) (l : List (Nat × Nat × Nat)) : Bool :=
+  Nat.beq (bitsAt (slotMask i l) d w) (Nat.sub (Nat.pow 2 w) 1)
+
+/-- `mem3 (i, d, w) l` (`slotThere_eq`): by the keys, for a length with a code
+of its own. -/
+def slotThere (i d w : Nat) (l : List (Nat × Nat × Nat)) : Bool :=
+  bif Nat.beq (widthCode w) 7 then mem3 (i, d, w) l
+  else Nat.beq (bitsAt (slotKeys i l) (Nat.add (Nat.mul 8 d) (widthCode w)) 1) 1
+
+/-- Whether a slot of region `i` in `l` covers `[d, d + w)` (`coveredQ_eq`):
+not if a byte is in no slot. -/
+def coveredQ (i d w : Nat) (l : List (Nat × Nat × Nat)) : Bool :=
+  bif slotsFull i d w l then
+    any l fun sl => Nat.beq sl.1 i && Nat.ble sl.2.1 d && Nat.ble (d + w) (sl.2.1 + sl.2.2)
+  else false
+
+/-- Whether a store of `[d, d + w)` of region `i` keeps every slot of `l`
+(`allKeptQ_eq`): it does if no slot has a byte there. -/
+def allKeptQ (i d w : Nat) (l : List (Nat × Nat × Nat)) : Bool :=
+  slotsFree i d w l ||
+    all l fun sl => !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 || Nat.ble (sl.2.1 + sl.2.2) d
+
+/-- The slots of `l` a store of a secret over `[d, d + w)` of region `i` keeps
+(`filterKeepQ_eq`): `l` itself if no slot has a byte there. -/
+def filterKeepQ (i d w : Nat) (l : List (Nat × Nat × Nat)) : List (Nat × Nat × Nat) :=
+  bif slotsFree i d w l then l
+  else VG.Taint.filterKeep (fun sl => !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
+    Nat.ble (sl.2.1 + sl.2.2) d) l
+
+theorem slotMask_cons (i : Nat) (s : Nat × Nat × Nat) (l : List (Nat × Nat × Nat)) :
+    slotMask i (s :: l) = bif Nat.beq s.1 i then slotMask i l ||| slotBits s else slotMask i l := by
+  show Bool.rec (motive := fun _ => Nat) (slotMask i l) (Nat.lor (slotMask i l) (slotBits s)) (Nat.beq s.1 i) = _
+  cases Nat.beq s.1 i <;> rfl
+
+theorem slotKeys_cons (i : Nat) (s : Nat × Nat × Nat) (l : List (Nat × Nat × Nat)) :
+    slotKeys i (s :: l) = bif Nat.beq s.1 i then slotKeys i l ||| slotKeyBit s else slotKeys i l := by
+  show Bool.rec (motive := fun _ => Nat) (slotKeys i l) (Nat.lor (slotKeys i l) (slotKeyBit s)) (Nat.beq s.1 i) = _
+  cases Nat.beq s.1 i <;> rfl
+
+theorem testBit_slotBits (s : Nat × Nat × Nat) (b : Nat) :
+    (slotBits s).testBit b = (decide (s.2.1 ≤ b) && (decide (b < s.2.1 + s.2.2) || decide (b = s.2.1))) := by
+  show (((2 ^ s.2.2 - 1) ||| 1) <<< s.2.1).testBit b = _
+  rw [Nat.testBit_shiftLeft, Nat.testBit_or, Nat.testBit_two_pow_sub_one]
+  by_cases h : s.2.1 ≤ b
+  · simp only [ge_iff_le, h, decide_true, Bool.true_and]
+    congr 1
+    · exact decide_eq_decide.mpr (by omega)
+    · exact Bool.eq_iff_iff.mpr (by
+        rw [Nat.testBit_one_eq_true_iff_self_eq_zero, decide_eq_true_eq]; omega)
+  · simp only [ge_iff_le, h, decide_false, Bool.false_and]
+
+theorem testBit_slotMask (i : Nat) (l : List (Nat × Nat × Nat)) (b : Nat) :
+    (slotMask i l).testBit b = l.any fun s =>
+      s.1 == i && (decide (s.2.1 ≤ b) && (decide (b < s.2.1 + s.2.2) || decide (b = s.2.1))) := by
+  induction l with
+  | nil => exact Nat.zero_testBit b
+  | cons s l ih =>
+    rw [slotMask_cons, List.any_cons, ← ih, KList.beq_eq]
+    cases s.1 == i
+    · rfl
+    · rw [Bool.cond_true, Nat.testBit_or, testBit_slotBits, Bool.true_and, Bool.or_comm]
+
+theorem testBit_slotKeys (i : Nat) (l : List (Nat × Nat × Nat)) (k : Nat) :
+    (slotKeys i l).testBit k = l.any fun s => s.1 == i && decide (8 * s.2.1 + widthCode s.2.2 = k) := by
+  induction l with
+  | nil => exact Nat.zero_testBit k
+  | cons s l ih =>
+    rw [slotKeys_cons, List.any_cons, ← ih, KList.beq_eq]
+    cases s.1 == i
+    · rfl
+    · rw [Bool.cond_true, Nat.testBit_or, Bool.true_and, Bool.or_comm]
+      congr 1
+      show ((1 : Nat) <<< (8 * s.2.1 + widthCode s.2.2)).testBit k = _
+      rw [Nat.one_shiftLeft, Nat.testBit_two_pow]
+
+theorem testBit_bitsAt (m d w j : Nat) :
+    (bitsAt m d w).testBit j = (decide (j < w) && m.testBit (d + j)) := by
+  show ((m >>> d) % 2 ^ w).testBit j = _
+  rw [Nat.testBit_mod_two_pow, Nat.testBit_shiftRight]
+
+theorem widthCode_lt (w : Nat) : widthCode w < 8 := by
+  unfold widthCode
+  repeat' (cases Nat.beq w _ <;> simp only [Bool.cond_true, Bool.cond_false] <;> try decide)
+
+/-- A length with a code of its own is two to the power of its code. -/
+theorem widthCode_pow (x : Nat) : widthCode x = 7 ∨ x = 2 ^ widthCode x := by
+  by_cases h8 : x = 8
+  · subst h8; exact .inr rfl
+  by_cases h16 : x = 16
+  · subst h16; exact .inr rfl
+  by_cases h4 : x = 4
+  · subst h4; exact .inr rfl
+  by_cases h32 : x = 32
+  · subst h32; exact .inr rfl
+  by_cases h1 : x = 1
+  · subst h1; exact .inr rfl
+  by_cases h2 : x = 2
+  · subst h2; exact .inr rfl
+  by_cases h64 : x = 64
+  · subst h64; exact .inr rfl
+  left
+  simp only [widthCode, KList.beq_eq, Bool.cond_eq_ite, beq_iff_eq, h8, h16, h4, h32, h1, h2, h64, ↓reduceIte]
+
+theorem widthCode_inj {a w : Nat} (h : widthCode a = widthCode w) (hw : widthCode w ≠ 7) : a = w := by
+  rcases widthCode_pow a with ha | ha
+  · exact absurd (h ▸ ha) hw
+  · rcases widthCode_pow w with hw' | hw'
+    · exact absurd hw' hw
+    · rw [ha, hw', h]
+
+/-- A store over bytes no slot has leaves every slot. -/
+theorem slotsFree_kept {i d w : Nat} {l : List (Nat × Nat × Nat)} (h : slotsFree i d w l = true) :
+    ∀ sl ∈ l, (!Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 || Nat.ble (sl.2.1 + sl.2.2) d) = true := by
+  intro sl hsl
+  rw [slotsFree, Bool.and_eq_true, KList.ble_eq, decide_eq_true_eq, KList.beq_eq, beq_iff_eq] at h
+  obtain ⟨hw, h0⟩ := h
+  rw [KList.beq_eq, KList.ble_eq, KList.ble_eq]
+  by_contra hc
+  simp only [Bool.or_eq_true, Bool.not_eq_true', beq_eq_false_iff_ne, ne_eq, decide_eq_true_eq, not_or,
+    Decidable.not_not, Nat.not_le] at hc
+  obtain ⟨⟨hi, h1⟩, h2⟩ := hc
+  -- A byte of the slot in `[d, d + w)`: its bit is set, and is not.
+  have hb : (slotMask i l).testBit (max d sl.2.1) = true := by
+    rw [testBit_slotMask, List.any_eq_true]
+    refine ⟨sl, hsl, ?_⟩
+    simp only [hi, beq_self_eq_true, Bool.true_and, Bool.and_eq_true, decide_eq_true_eq, Bool.or_eq_true]
+    omega
+  have hz := testBit_bitsAt (slotMask i l) d w (max d sl.2.1 - d)
+  rw [h0, Nat.zero_testBit, show d + (max d sl.2.1 - d) = max d sl.2.1 by omega, hb, Bool.and_true] at hz
+  exact absurd (of_decide_eq_false hz.symm) (by omega)
+
+/-- If one slot covers `[d, d + w)`, each of its bytes is in a slot. -/
+theorem slotsFull_of_cover {i d w : Nat} {l : List (Nat × Nat × Nat)}
+    (h : (KList.any l fun sl => Nat.beq sl.1 i && Nat.ble sl.2.1 d && Nat.ble (d + w) (sl.2.1 + sl.2.2)) = true) :
+    slotsFull i d w l = true := by
+  rw [KList.any_eq, List.any_eq_true] at h
+  obtain ⟨sl, hsl, hc⟩ := h
+  rw [Bool.and_eq_true, Bool.and_eq_true, KList.beq_eq, beq_iff_eq, KList.ble_eq, KList.ble_eq, decide_eq_true_eq,
+    decide_eq_true_eq] at hc
+  obtain ⟨⟨hi, h1⟩, h2⟩ := hc
+  rw [slotsFull, KList.beq_eq, beq_iff_eq]
+  refine Nat.eq_of_testBit_eq fun j => ?_
+  show _ = (2 ^ w - 1).testBit j
+  rw [testBit_bitsAt, Nat.testBit_two_pow_sub_one]
+  by_cases hj : j < w
+  · rw [decide_eq_true hj, Bool.true_and, testBit_slotMask, List.any_eq_true]
+    refine ⟨sl, hsl, ?_⟩
+    simp only [hi, beq_self_eq_true, Bool.true_and, Bool.and_eq_true, decide_eq_true_eq, Bool.or_eq_true]
+    omega
+  · rw [decide_eq_false hj, Bool.false_and]
+
+theorem coveredQ_eq (i d w : Nat) (l : List (Nat × Nat × Nat)) :
+    coveredQ i d w l =
+      KList.any l fun sl => Nat.beq sl.1 i && Nat.ble sl.2.1 d && Nat.ble (d + w) (sl.2.1 + sl.2.2) := by
+  unfold coveredQ
+  cases hf : slotsFull i d w l
+  · cases ha : KList.any l fun sl => Nat.beq sl.1 i && Nat.ble sl.2.1 d && Nat.ble (d + w) (sl.2.1 + sl.2.2)
+    · rfl
+    · rw [slotsFull_of_cover ha] at hf; cases hf
+  · rfl
+
+theorem allKeptQ_eq (i d w : Nat) (l : List (Nat × Nat × Nat)) :
+    allKeptQ i d w l =
+      KList.all l fun sl => !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 || Nat.ble (sl.2.1 + sl.2.2) d := by
+  unfold allKeptQ
+  cases hf : slotsFree i d w l
+  · rfl
+  · rw [Bool.true_or, KList.all_eq]
+    exact (List.all_eq_true.mpr (slotsFree_kept hf)).symm
+
+theorem filterKeepQ_eq (i d w : Nat) (l : List (Nat × Nat × Nat)) :
+    filterKeepQ i d w l = VG.Taint.filterKeep (fun sl => !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
+      Nat.ble (sl.2.1 + sl.2.2) d) l := by
+  unfold filterKeepQ
+  cases hf : slotsFree i d w l
+  · rfl
+  · rw [Bool.cond_true, VG.Taint.filterKeep_eq]
+    exact (List.filter_eq_self.mpr (slotsFree_kept hf)).symm
+
+theorem slotThere_eq (i d w : Nat) (l : List (Nat × Nat × Nat)) :
+    slotThere i d w l = mem3 (i, d, w) l := by
+  unfold slotThere
+  cases hc : Nat.beq (widthCode w) 7
+  · rw [Bool.cond_false]
+    show _ = KList.any l fun b => Nat.beq i b.1 && Nat.beq d b.2.1 && Nat.beq w b.2.2
+    rw [KList.any_eq]
+    have hw : widthCode w ≠ 7 := fun e => by rw [e] at hc; cases hc
+    have hbit : Nat.beq (bitsAt (slotKeys i l) (Nat.add (Nat.mul 8 d) (widthCode w)) 1) 1 =
+        (slotKeys i l).testBit (8 * d + widthCode w) := by
+      rw [Nat.testBit_eq_decide_div_mod_eq, KList.beq_eq]
+      show ((slotKeys i l >>> (8 * d + widthCode w)) % 2 ^ 1 == 1) = _
+      rw [Nat.shiftRight_eq_div_pow, Nat.pow_one]
+      exact Bool.eq_iff_iff.mpr (by rw [beq_iff_eq, decide_eq_true_eq])
+    rw [hbit, testBit_slotKeys]
+    congr 1; funext s
+    rw [KList.beq_eq, KList.beq_eq, KList.beq_eq, Bool.eq_iff_iff]
+    simp only [Bool.and_eq_true, beq_iff_eq, decide_eq_true_eq]
+    constructor
+    · rintro ⟨h1, h2⟩
+      have := widthCode_lt s.2.2
+      have := widthCode_lt w
+      have hd : s.2.1 = d := by omega
+      exact ⟨⟨h1.symm, hd.symm⟩, (widthCode_inj (by omega) hw).symm⟩
+    · rintro ⟨⟨h1, h2⟩, h3⟩
+      exact ⟨h1.symm, by rw [h2, h3]⟩
+  · rfl
+
 def slotPubK (τ : T) (m : MemOp) (w : Nat) : Bool :=
   match addrOfK τ m with
-  | some (i, d) =>
-    any τ.slots fun sl => Nat.beq sl.1 i && Nat.ble sl.2.1 d && Nat.ble (d + w) (sl.2.1 + sl.2.2)
+  | some (i, d) => coveredQ i d w τ.slots
   | none => false
 
 def srcOkK (τ : T) : Src → Bool
@@ -2242,10 +2516,6 @@ def stepK (τ : T) : Instr → Option T
 def memB (a : Reg × Nat × Nat) (l : List (Reg × Nat × Nat)) : Bool :=
   any l fun b => regEq a.1 b.1 && Nat.beq a.2.1 b.2.1 && Nat.beq a.2.2 b.2.2
 
-/-- `l.contains a`, for a slot. -/
-def mem3 (a : Nat × Nat × Nat) (l : List (Nat × Nat × Nat)) : Bool :=
-  any l fun b => Nat.beq a.1 b.1 && Nat.beq a.2.1 b.2.1 && Nat.beq a.2.2 b.2.2
-
 def leK (τ σ : T) : Bool :=
   τ.regs.subset σ.regs && (!τ.flags || σ.flags) && τ.lens == σ.lens &&
     all τ.bases (memB · σ.bases) && all τ.slots (mem3 · σ.slots) && τ.lo.subset σ.lo &&
@@ -2270,7 +2540,7 @@ theorem addrOfK_eq : addrOfK = addrOf := by
       and_false, reduceCtorEq, and_true]
 
 theorem slotPubK_eq : slotPubK = slotPub := by
-  funext τ m w; simp only [slotPubK, slotPub, addrOfK_eq]
+  funext τ m w; simp only [slotPubK, coveredQ_eq, slotPub, addrOfK_eq]
   rcases addrOf τ m with _ | ⟨i, d⟩ <;> simp only [any_eq, beq_eq, ble_eq]
 
 theorem srcOkK_eq : srcOkK = srcOk := by
@@ -2399,9 +2669,8 @@ def storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) : List (Nat × Nat ×
   match addrOfK τ m with
   | some (i, d) =>
     bif Nat.ble (d + w) (τ.lens.getD i 0) then
-      bif p then (bif mem3 (i, d, w) τ.slots then τ.slots else (i, d, w) :: τ.slots)
-      else VG.Taint.filterKeep (fun sl => !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 ||
-        Nat.ble (sl.2.1 + sl.2.2) d) τ.slots
+      bif p then (bif slotThere i d w τ.slots then τ.slots else (i, d, w) :: τ.slots)
+      else filterKeepQ i d w τ.slots
     else bif p then τ.slots else []
   | none => bif p then τ.slots else []
 
@@ -2567,6 +2836,7 @@ theorem mem_storeSlotsKD (τ : T) (m : MemOp) (w : Nat) (p : Bool) (x : Nat × N
     x ∈ storeSlotsKD τ m w p ↔ x ∈ storeSlots τ m w p := by
   rw [← storeSlotsK_eq]
   unfold storeSlotsKD storeSlotsK
+  simp only [filterKeepQ_eq, slotThere_eq]
   cases addrOfK τ m with
   | none => exact Iff.rfl
   | some id =>

@@ -1956,6 +1956,32 @@ theorem fastFn_eq {i : Instr} (h : isPlain i = true) (hsp : isa.writesSp i = fal
     | none => rfl
     | some t' => simp only [Bool.cond_eq_ite, Option.toList, List.nil_append, ubDrop_eq hc, Taint.forceT_eq, forceList_eq]
 
+/-- A store that `mbQuiet` says leaves the pointers in slots as they are does. -/
+theorem mbStore_quiet {τ : FT} {m : MemOp} {w : Nat} {src : Option Reg}
+    (h : mbQuiet τ.mb τ.t.bases src = true) : mbStore τ m w src = τ.mb := by
+  unfold mbQuiet at h
+  cases hmb : τ.mb with
+  | cons e es => rw [hmb] at h; cases h
+  | nil =>
+    rw [hmb] at h
+    have hk : ∀ ri lo hi, mbKill τ.mb ri lo hi = [] := fun ri lo hi => by rw [hmb]; rfl
+    unfold mbStore
+    cases storeRange τ m w with
+    | none => rfl
+    | some rg =>
+      obtain ⟨ri, lo, hi⟩ := rg
+      cases src with
+      | none => exact hk ri lo hi
+      | some r =>
+        have hf : τ.t.bases.find? (·.1 == r) = none := by
+          have h' : (KList.all τ.t.bases fun p => !Taint.regEq p.1 r) = true := h
+          rw [KList.all_eq, List.all_eq_true] at h'
+          exact List.find?_eq_none.mpr fun p hp => by
+            have := h' p hp
+            rw [Taint.regEq_eq] at this
+            simpa only [Bool.not_eq_true', Bool.not_eq_true] using this
+        simp only [hf, hk]
+
 /-- `fastStore`, of a base step `b` that is `baseStep`'s. -/
 theorem fastStore_run {i : Instr} {b : Taint.Step} {m : MemOp} {w : Nat} {src : Option Reg}
     (hsp : isa.writesSp i = false) (hb : ∀ τ : FT, baseStep τ i = b.run τ.t)
@@ -1972,7 +1998,12 @@ theorem fastStore_run {i : Instr} {b : Taint.Step} {m : MemOp} {w : Nat} {src : 
   · simp only [fastStore, Bool.cond_true, Bool.not_false, Bool.and_self, ↓reduceIte, natsEq_eq]
     cases b.run t with
     | none => rfl
-    | some t' => simp only [Bool.cond_eq_ite, Option.toList, List.nil_append, forceList_eq]
+    | some t' =>
+      cases hq : mbQuiet mb t.bases src
+      · simp only [Bool.cond_eq_ite, Option.toList, List.nil_append, forceList_eq, Bool.false_eq_true, ↓reduceIte]
+      · have hmb := mbStore_quiet (τ := ⟨true, t, nfr, depth, room, sec, ras, ub, fl, mb, fw, an, sa, sp⟩)
+          (m := m) (w := w) hq
+        simp only [Bool.cond_eq_ite, Option.toList, List.nil_append, ↓reduceIte, hmb]
 
 theorem fastStore_eq {i : Instr} {m : MemOp} {w : Nat} {src : Option Reg}
     (hsp : isa.writesSp i = false) (hs : ∀ τ, special τ i = none) (hp : ∀ τ t, argPost τ i (post τ i t) = t)
@@ -1983,20 +2014,13 @@ theorem fastStore_eq {i : Instr} {m : MemOp} {w : Nat} {src : Option Reg}
     rw [baseStep, hs, show (fun t => argPost τ i (post τ i t)) = id from funext (hp τ), Option.map_id]
     exact taint_step _ _) hu hf hc hm τ
 
-theorem mem3R_eq (i d w : Nat) : ∀ l : List (Nat × Nat × Nat), mem3R i d w l = Taint.mem3 (i, d, w) l
-  | [] => rfl
-  | ⟨b1, b2, b3⟩ :: l => by
-    show Bool.rec (mem3R i d w l) (Bool.rec (mem3R i d w l) (Bool.rec (mem3R i d w l) true (Nat.beq w b3))
-      (Nat.beq i b1)) (Nat.beq d b2) = (Nat.beq i b1 && Nat.beq d b2 && Nat.beq w b3 || Taint.mem3 (i, d, w) l)
-    rw [mem3R_eq i d w l]
-    cases Nat.beq d b2 <;> cases Nat.beq i b1 <;> cases Nat.beq w b3 <;> rfl
-
 theorem storeR_eq (m : MemOp) (w : Nat) (r : Reg) :
     storeR m w r = ⟨fun τ => Taint.storeStepKD τ m w (pub τ r)⟩ := by
   unfold storeR
   congr 1; funext τ
   obtain ⟨rg, f, l, b, sl, lo, x⟩ := τ
-  simp only [Taint.storeStepKD, Taint.storeSlotsKD, VG.Taint.filterKeep, mem3R_eq]
+  simp only [Taint.storeStepKD, Taint.storeSlotsKD, Taint.filterKeepQ_eq, Taint.slotThere_eq, Taint.allKeptQ_eq,
+    VG.Taint.filterKeep]
   cases memPub ⟨rg, f, l, b, sl, lo, x⟩ m
   · rfl
   · rcases Taint.addrOfK ⟨rg, f, l, b, sl, lo, x⟩ m with _ | ⟨i, d⟩
@@ -2014,7 +2038,7 @@ theorem storeSec_eq (m : MemOp) (w : Nat) :
   unfold storeSec
   congr 1; funext τ
   obtain ⟨rg, f, l, b, sl, lo, x⟩ := τ
-  simp only [Taint.storeStepKD, Taint.storeSlotsKD, VG.Taint.filterKeep]
+  simp only [Taint.storeStepKD, Taint.storeSlotsKD, Taint.filterKeepQ_eq, Taint.allKeptQ_eq, VG.Taint.filterKeep]
   cases memPub ⟨rg, f, l, b, sl, lo, x⟩ m
   · rfl
   · rcases Taint.addrOfK ⟨rg, f, l, b, sl, lo, x⟩ m with _ | ⟨i, d⟩

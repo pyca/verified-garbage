@@ -437,7 +437,9 @@ lemmas and tactics to use; read it before writing a proof:
   not change are the terms they were (`Taint.forceT`, `keepBases`), but a
   numeral wider than 64 bits it changed, left as a term (the kernel hashes
   a numeral's low 64 bits): the kernel then finds again a step it has made
-  from the same state.
+  from the same state. A list it would walk at every step is asked through
+  a number that is a function of the list, which the kernel computes once
+  for a list (`Taint.slotMask`).
 * **Arithmetic side conditions:** finite facts by one `decide` on the
   bounded statement, not `interval_cases`; nested `if`s with
   `↓ite_eq_left`/`↓ite_eq_right`; ranges at offsets with `VG.Offset`, not

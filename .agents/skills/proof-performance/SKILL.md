@@ -162,6 +162,26 @@ Avoid these patterns (each has cost tens of seconds in one proof):
     of its hash (with the masks evaluated, a check over an 8192-byte
     working space took 3.9 s for 3.4 s before and 1.2 s with them left as
     terms); only "unchanged" hands on the old term (`keepSlots`);
+  * asks a list it walks at every step through a number that is a function
+    of the list (`Taint.slotMask i l`, a bit for each byte a slot of the
+    frame covers, and `Taint.slotKeys i l`, a bit for each slot): the
+    kernel computes the number once for a list, and for a list with one
+    more element from the number of the list without it (write it with
+    `List.rec`, whose recursive result is that term), and a question is
+    then a shift and a comparison where a walk is about 30 µs an element.
+    The number answers the common cases and the walk remains for the
+    others, in a function proven equal to the walk (`coveredQ_eq`,
+    `slotThere_eq`, `allKeptQ_eq`), so nothing else changes; it is not a
+    field of the state, which would be found again less often. SM4's
+    residue checks walked 80,000 slots each for 4,500 instructions: 56 s
+    to 36 s for the module;
+  * keeps the model's helpers off the path of every step: one written for
+    the proofs (`Int`, `Decidable` instances, the library's list
+    functions) costs the kernel hundreds of unfoldings where the answer is
+    usually known from a test it evaluates directly. A store computed the
+    bytes it might write (`storeRange`) to remove from an empty list the
+    pointers they overlap, half of its 1.7 ms: `mbQuiet` asks first whether
+    there is anything to do (`mbStore_quiet`);
   * has the literal states of its hints written as its steps leave them
     (`Taint.T`'s `ToExpr` writes the sets' bits as raw numerals), so that
     the kernel finds again after a hint what it evaluated before it;

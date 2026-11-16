@@ -457,7 +457,8 @@ analysis and its results are the same) written for the kernel:
   base analysis: their step is the base step (`fastFn`), with the bounds of
   the register they write dropped. Stores without an index register only
   need the pointers in slots (`fastStore`), look for the slot of a
-  public value with `mem3R`, and give the taint they were given when they
+  public value by the slots' keys (`Taint.slotThere`), and give the taint
+  they were given when they
   leave the slots as they are (`storeR`; `storeSec` and `storeX` for the
   vector stores); loads (`mov r, [m]`) need `post` only when a slot holds a
   pointer (`fastLoad`), and `argPost` only when the argument area has public
@@ -576,22 +577,14 @@ def mbStore (τ : FT) (m : MemOp) (w : Nat) (src : Option Reg) : List (Nat × Na
     | none => mbKill τ.mb ri lo hi
   | none => []
 
-def mem3RC (i d w : Nat) (l : List (Nat × Nat × Nat)) : Bool := Taint.mem3 (i, d, w) l
-
-/-- `Taint.mem3 (i, d, w) l`, with `List.rec` and `Bool.rec`, comparing the
-offset first: the kernel evaluates it about twice as fast (a store of a
-public value scans every slot for it, and a frame has hundreds). -/
-@[implemented_by mem3RC] def mem3R (i d w : Nat) (l : List (Nat × Nat × Nat)) : Bool :=
-  List.rec (motive := fun _ => Bool) false (fun b _ ih =>
-    Bool.rec ih (Bool.rec ih (Bool.rec ih true (Nat.beq w b.2.2)) (Nat.beq i b.1)) (Nat.beq d b.2.1)) l
-
 /-- The slots a secret store of `[d, d + w)` of region `i` leaves public. -/
 def slotKept (i d w : Nat) (sl : Nat × Nat × Nat) : Bool :=
   !Nat.beq sl.1 i || Nat.ble (d + w) sl.2.1 || Nat.ble (sl.2.1 + sl.2.2) d
 
 /-- The base step of a store of `w` bytes of `r` at `m` (`Taint.stepKDFn`'s,
-`storeR_eq`), with `mem3R`, and deciding what becomes of the slots before it
-builds the taint. A store that leaves the slots as they are (of a secret over
+`storeR_eq`), deciding what becomes of the slots before it builds the taint
+(by the slots' numbers where they answer, `Taint.slotThere` and
+`Taint.allKeptQ`). A store that leaves the slots as they are (of a secret over
 bytes that already are, of a public value into a slot that is there) gives
 the taint it was given. `Taint.storeStepKD` gives a new taint whose slots are
 a term that evaluates to the old ones' term, and the kernel, which evaluates
@@ -607,9 +600,9 @@ def storeR (m : MemOp) (w : Nat) (r : Reg) : Taint.Step := ⟨fun τ =>
       match Taint.addrOfK τ m with
       | some (i, d) =>
         bif Nat.ble (d + w) (l.getD i 0) then
-          bif pub τ r then (bif mem3R i d w sl then some τ else some ⟨rg, f, l, b, (i, d, w) :: sl, lo, x⟩)
+          bif pub τ r then (bif Taint.slotThere i d w sl then some τ else some ⟨rg, f, l, b, (i, d, w) :: sl, lo, x⟩)
           else
-            bif KList.all sl (slotKept i d w) then some τ
+            bif Taint.allKeptQ i d w sl then some τ
             else some ⟨rg, f, l, b, KList.filter (slotKept i d w) sl, lo, x⟩
         else bif pub τ r then some τ else some ⟨rg, f, l, b, [], lo, x⟩
       | none => bif pub τ r then some τ else some ⟨rg, f, l, b, [], lo, x⟩
@@ -624,7 +617,7 @@ def storeSec (m : MemOp) (w : Nat) : Taint.Step := ⟨fun τ =>
       match Taint.addrOfK τ m with
       | some (i, d) =>
         bif Nat.ble (d + w) (l.getD i 0) then
-          bif KList.all sl (slotKept i d w) then some τ
+          bif Taint.allKeptQ i d w sl then some τ
           else some ⟨rg, f, l, b, KList.filter (slotKept i d w) sl, lo, x⟩
         else some ⟨rg, f, l, b, [], lo, x⟩
       | none => some ⟨rg, f, l, b, [], lo, x⟩
@@ -650,16 +643,33 @@ def insX (x : XReg) (t : Taint.T) : Taint.T :=
   match t with
   | ⟨rg, f, l, b, sl, lo, xr⟩ => ⟨rg, f, l, b, sl, lo, xr.insert x⟩
 
+/-- Whether a store of the register `src` (if it is a 64-bit store of one)
+leaves the pointers in slots as they are, because there are none and it
+stores none (`mbStore_quiet`). `mbStore` finds the bytes the store may write
+first (`storeRange`: the model's address, with `Int` and `Decidable`
+instances), about half of what the kernel evaluates for a store, to remove
+from an empty list the pointers they overlap. -/
+def mbQuiet (mb : List (Nat × Nat × Nat × Nat)) (bases : List (Reg × Nat × Nat)) (src : Option Reg) : Bool :=
+  match mb with
+  | [] =>
+    match src with
+    | none => true
+    | some r => Taint.noBase bases r
+  | _ :: _ => false
+
 /-- `step` of a store without an index register, whose base step is `b`. -/
 def fastStore (b : Taint.Step) (m : MemOp) (w : Nat) (src : Option Reg) : RStep := ⟨fun τ =>
   match τ with
-  | ⟨ok, t, nfr, depth, room, sec, ras, ub, _, _, fw, an, sa, sp⟩ =>
+  | ⟨ok, t, nfr, depth, room, sec, ras, ub, _, mb, fw, an, sa, sp⟩ =>
     bif ok then
       match b.run t with
       | some t' =>
         bif natsEq t'.lens t.lens then
-          forceList (mbStore τ m w src) fun mb' =>
-            some ⟨true, t', nfr, depth, room, sec, ras, ub, none, mb', fw, an, sa, sp⟩
+          bif mbQuiet mb t.bases src then
+            some ⟨true, t', nfr, depth, room, sec, ras, ub, none, mb, fw, an, sa, sp⟩
+          else
+            forceList (mbStore τ m w src) fun mb' =>
+              some ⟨true, t', nfr, depth, room, sec, ras, ub, none, mb', fw, an, sa, sp⟩
         else none
       | none => none
     else none⟩
