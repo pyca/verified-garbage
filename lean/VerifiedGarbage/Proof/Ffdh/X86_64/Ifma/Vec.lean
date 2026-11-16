@@ -99,7 +99,7 @@ theorem vec_ok (hl : AmmOk l) (hz0 : l.z = false) {s : State} {F : Addr} {M K1 X
       exact Nat.le_trans h4 (pow2_le (by omega_arith))
   have e2 := dbls_eq hl hz0
   have ge : ∀ p, M p ≤ gb l (M p) := fun p => Nat.le_of_eq (gb_eq hz0 _).symm
-  unfold Impl.Ffdh.X86_64.Ifma.vec withVzu
+  unfold Impl.Ffdh.X86_64.Ifma.vec Impl.Ffdh.X86_64.Ifma.withVzu
   have gx := fun p hp => (good_of hl (hX p hp) (by have := hXlt p hp; omega_arith) (hMlt p hp)).good (ge p)
   have gy := fun p hp => (good_of hl (hY p hp) (by have := hYlt p hp; omega_arith) (hMlt p hp)).good (ge p)
   have gk := fun p hp => (good_of hl (hK p hp) (by have := hKlt p hp; omega_arith) (hMlt p hp)).good (ge p)
