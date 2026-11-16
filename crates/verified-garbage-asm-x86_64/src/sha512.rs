@@ -393,7 +393,76 @@ call {vg_sha512_compress_avx2}
 215:
 .base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPb4OwAAAAZg/rx/MPf4OwAAAASIneSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress_avx2}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShmD+/A8w9/A/MPf0MQ8w9/QyDzD39DMPMPf0NA8w9/Q1DzD39DYPMPf0Nw8w9/g4AAAADzD3+DkAAAAPMPf4OgAAAA8w9/g7AAAABJi58wBQAASYuvOAUAAE2Lp0AFAABNi69IBQAATYu3UAUAAE2Lv1gFAABIjaQkOAYAAMM="
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShmD+/A8w9/A/MPf0MQ8w9/QyDzD39DMPMPf0NA8w9/Q1DzD39DYPMPf0Nw8w9/g4AAAADzD3+DkAAAAPMPf4OgAAAA8w9/g7AAAABJi58wBQAASYuvOAUAAE2Lp0AFAABNi69IBQAATYu3UAUAAE2Lv1gFAABIjaQkOAYAAA=="
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+xor r11d, r11d
+lea rsp, [rsp-1600]
+vmovdqu [rsp+1248], ymm0
+vmovdqu [rsp+1216], ymm0
+vmovdqu [rsp+1184], ymm0
+vmovdqu [rsp+1152], ymm0
+vmovdqu [rsp+1120], ymm0
+vmovdqu [rsp+1088], ymm0
+vmovdqu [rsp+1056], ymm0
+vmovdqu [rsp+1024], ymm0
+vmovdqu [rsp+992], ymm0
+vmovdqu [rsp+960], ymm0
+vmovdqu [rsp+928], ymm0
+vmovdqu [rsp+896], ymm0
+vmovdqu [rsp+864], ymm0
+vmovdqu [rsp+832], ymm0
+vmovdqu [rsp+800], ymm0
+vmovdqu [rsp+768], ymm0
+vmovdqu [rsp+736], ymm0
+vmovdqu [rsp+704], ymm0
+vmovdqu [rsp+672], ymm0
+vmovdqu [rsp+640], ymm0
+vmovdqu [rsp+608], ymm0
+vmovdqu [rsp+576], ymm0
+vmovdqu [rsp+544], ymm0
+vmovdqu [rsp+512], ymm0
+vmovdqu [rsp+480], ymm0
+vmovdqu [rsp+448], ymm0
+vmovdqu [rsp+416], ymm0
+vmovdqu [rsp+384], ymm0
+vmovdqu [rsp+352], ymm0
+vmovdqu [rsp+320], ymm0
+vmovdqu [rsp+288], ymm0
+vmovdqu [rsp+256], ymm0
+vmovdqu [rsp+224], ymm0
+vmovdqu [rsp+192], ymm0
+vmovdqu [rsp+160], ymm0
+vmovdqu [rsp+128], ymm0
+vmovdqu [rsp+96], ymm0
+vmovdqu [rsp+64], ymm0
+vmovdqu [rsp+32], ymm0
+vmovdqu [rsp+0], ymm0
+lea rsp, [rsp+1600]
+xor eax, eax
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
@@ -1079,7 +1148,44 @@ call {vg_sha512_compress_avx2}
 215:
 .base64 "TIngSMHoPUgPyGZID274TIngSAHASAHASAHASA/IZkwPbsBmQQ9s+PMPb4OwAAAAZg/rx/MPf4OwAAAASIneSIPGQEiJ37oBAAAATIn5"
 call {vg_sha512_compress_avx2}
-.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4Zg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQ8w9/Q2DzD39DcPMPf4OAAAAA8w9/g5AAAADzD3+DoAAAAPMPf4OwAAAASYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJDgGAADD"
+.base64 "SIn7SYnPSIsDSA/ISIlFAEiLQwhID8hIiUUISItDEEgPyEiJRRBIi0MYSA/ISIlFGEiLQyBID8hIiUUgSItDKEgPyEiJRShIi0MwSA/ISIlFMEiLQzhID8hIiUU4Zg/vwPMPfwPzD39DEPMPf0Mg8w9/QzDzD39DQPMPf0NQ8w9/Q2DzD39DcPMPf4OAAAAA8w9/g5AAAADzD3+DoAAAAPMPf4OwAAAASYufMAUAAEmLrzgFAABNi6dABQAATYuvSAUAAE2Lt1AFAABNi79YBQAASI2kJDgGAAA="
+vpxor xmm0, xmm0, xmm0
+vpxor xmm1, xmm1, xmm1
+vpxor xmm2, xmm2, xmm2
+vpxor xmm3, xmm3, xmm3
+vpxor xmm4, xmm4, xmm4
+vpxor xmm5, xmm5, xmm5
+vpxor xmm6, xmm6, xmm6
+vpxor xmm7, xmm7, xmm7
+vpxor xmm8, xmm8, xmm8
+vpxor xmm9, xmm9, xmm9
+vpxor xmm10, xmm10, xmm10
+vpxor xmm11, xmm11, xmm11
+vpxor xmm12, xmm12, xmm12
+vpxor xmm13, xmm13, xmm13
+vpxor xmm14, xmm14, xmm14
+vpxor xmm15, xmm15, xmm15
+xor r11d, r11d
+lea rsp, [rsp-1600]
+vmovdqu [rsp+224], ymm0
+vmovdqu [rsp+192], ymm0
+vmovdqu [rsp+160], ymm0
+vmovdqu [rsp+128], ymm0
+vmovdqu [rsp+96], ymm0
+vmovdqu [rsp+64], ymm0
+vmovdqu [rsp+32], ymm0
+vmovdqu [rsp+0], ymm0
+lea rsp, [rsp+1600]
+xor eax, eax
+xor ecx, ecx
+xor edx, edx
+xor esi, esi
+xor edi, edi
+xor r8d, r8d
+xor r9d, r9d
+xor r10d, r10d
+xor r11d, r11d
+ret
 .p2align 6"#,
         vg_sha512_compress_avx2 = sym super::sha512::vg_sha512_compress_avx2::vg_sha512_compress_avx2,
     )
