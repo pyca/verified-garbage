@@ -2049,7 +2049,7 @@ vg_ecdsa_p521_sign_k:
 	sd t0, 1185(s0)
 	addi s0, s0, -2047
 	addi a0, s0, 0
-	call {vg_p521_mul}
+	call {vg_p521_mul_g}
 	addi s0, s3, 0
 	addi a0, s0, 0
 	addi a1, zero, 2047

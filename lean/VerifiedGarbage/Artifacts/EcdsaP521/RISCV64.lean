@@ -26,7 +26,7 @@ open VG.Proof.Ecdsa.Rfc6979.RISCV64.P521 (curveT verifiedT)
 open VG.Proof.HmacTable.RISCV64 (tables names)
 
 def artifactsFor (vs : List Proof.HmacTable.RISCV64.HVar) : List Artifact :=
-  if hv : OK vs then [
+  if hv : OK vs ∧ Impl.Ecdsa.RISCV64.CombU.p521Sym ∉ names vs then [
     Spec.Ecdsa.Rfc6979.Curves.p521SignApi.artifact RISCV64.target {
       tables := [("hmac", tables vs)]
       code := signCodeT (curveT hasLaw.law) Spec.Ecdsa.Rfc6979.Curves.p521.tries vs

@@ -251,15 +251,16 @@ theorem fr {base : Addr} {t t' : State} {o : Nat} (k : KeepR 9 base [o] t t') (d
     (h1 : d + 72 ≤ o ∨ o + 72 ≤ d) (h2 : d + 72 ≤ 7616) : wv base t' d = wv base t d :=
   keepR_wv k (by simpa using h1) h2
 
-/-- `Q`, one, `a` and `3 b` to limbs. -/
-theorem convIn_ok {s : State} {base : Addr} (hw : WsReg s base) (hz : wordsVal s.mem base (c.sl ZERO) 9 = 0)
+/-- `Q`, one, `a` and `3 b` to limbs, and the conversions' constant, `2⁴⁶⁶`, left at `UC`. -/
+theorem convInC_ok {s : State} {base : Addr} (hw : WsReg s base) (hz : wordsVal s.mem base (c.sl ZERO) 9 = 0)
     (hx : wv base s (c.sl RX) < 2 ^ 522) (hy : wv base s (c.sl RY) < 2 ^ 522)
     (ho : wv base s (c.sl ONEP) < 2 ^ 522) (ha : wv base s (c.sl AP) < 2 ^ 522)
     (hb : wv base s (c.sl B3P) < 2 ^ 522) :
     WP isa convIn s fun s' => Kp s s' ∧ Unch base cinW s.mem s'.mem ∧
-      ∀ q ∈ [(c.sl RX, c.sl RX), (c.sl RY, c.sl RY), (c.sl UONE, c.sl ONEP), (c.sl UA, c.sl AP),
+      (∀ q ∈ [(c.sl RX, c.sl RX), (c.sl RY, c.sl RY), (c.sl UONE, c.sl ONEP), (c.sl UA, c.sl AP),
           (c.sl UB, c.sl B3P)],
-        Tight (wv base s' q.1) ∧ uf (wv base s' q.1) = Fin.ofNat W.p (wv base s q.2 * 2 ^ 466) := by
+        Tight (wv base s' q.1) ∧ uf (wv base s' q.1) = Fin.ofNat W.p (wv base s q.2 * 2 ^ 466)) ∧
+      Tight (wv base s' (c.sl UC)) ∧ uv (wv base s' (c.sl UC)) = 2 ^ 466 := by
   have hn := hw.nowrap
   have hUC : c.sl UC = 3808 := rfl
   rw [convIn]
@@ -291,7 +292,9 @@ theorem convIn_ok {s : State} {base : Addr} (hw : WsReg s base) (hz : wordsVal s
   refine WP.mono (toU_ok hw₅ (o := c.sl UB) (a := c.sl B3P) (by decide) (by decide) (by decide)
     (by rw [fr k₅ _ (by decide) (by decide), fr k₄ _ (by decide) (by decide), fr k₃ _ (by decide) (by decide),
       fr k₂ _ (by decide) (by decide), e₁ _ (by decide)]; exact hb)
-    (by rw [c₅]; exact tc₁) (by rw [c₅]; exact vc₁)) fun s₆ ⟨k₆, t₆, v₆⟩ => ⟨?_, ?_, ?_⟩
+    (by rw [c₅]; exact tc₁) (by rw [c₅]; exact vc₁)) fun s₆ ⟨k₆, t₆, v₆⟩ =>
+    ⟨?_, ?_, ?_, by rw [fr k₆ _ (by decide) (by decide), c₅]; exact tc₁,
+      by rw [fr k₆ _ (by decide) (by decide), c₅]; exact vc₁⟩
   · exact (Kp.of_rest r₁).trans (k₂.kp.trans (k₃.kp.trans (k₄.kp.trans (k₅.kp.trans k₆.kp))))
   · exact (U₁.trans (Unch.trans k₂.mem (Unch.trans k₃.mem (Unch.trans k₄.mem (Unch.trans k₅.mem k₆.mem))))).cover
       (by decide)
@@ -315,6 +318,17 @@ theorem convIn_ok {s : State} {base : Addr} (hw : WsReg s base) (hz : wordsVal s
         ← fr k₃ (c.sl B3P) (by decide) (by decide), ← fr k₄ (c.sl B3P) (by decide) (by decide),
         ← fr k₅ (c.sl B3P) (by decide) (by decide)]
       exact ⟨t₆, v₆⟩
+
+/-- `Q`, one, `a` and `3 b` to limbs. -/
+theorem convIn_ok {s : State} {base : Addr} (hw : WsReg s base) (hz : wordsVal s.mem base (c.sl ZERO) 9 = 0)
+    (hx : wv base s (c.sl RX) < 2 ^ 522) (hy : wv base s (c.sl RY) < 2 ^ 522)
+    (ho : wv base s (c.sl ONEP) < 2 ^ 522) (ha : wv base s (c.sl AP) < 2 ^ 522)
+    (hb : wv base s (c.sl B3P) < 2 ^ 522) :
+    WP isa convIn s fun s' => Kp s s' ∧ Unch base cinW s.mem s'.mem ∧
+      ∀ q ∈ [(c.sl RX, c.sl RX), (c.sl RY, c.sl RY), (c.sl UONE, c.sl ONEP), (c.sl UA, c.sl AP),
+          (c.sl UB, c.sl B3P)],
+        Tight (wv base s' q.1) ∧ uf (wv base s' q.1) = Fin.ofNat W.p (wv base s q.2 * 2 ^ 466) :=
+  WP.mono (convInC_ok hw hz hx hy ho ha hb) fun _ ⟨h1, h2, h3, _⟩ => ⟨h1, h2, h3⟩
 
 /-- `R` to Montgomery's form. -/
 theorem convOut_ok {s : State} {base : Addr} (hw : WsReg s base) (hz : wordsVal s.mem base (c.sl ZERO) 9 = 0)

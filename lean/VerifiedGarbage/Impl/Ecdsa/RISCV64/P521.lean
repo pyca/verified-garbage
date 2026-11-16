@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Impl.Ecdsa.RISCV64.VerifyJ
 public import VerifiedGarbage.Impl.Ecdh.P521.RISCV64
+public import VerifiedGarbage.Impl.Ecdsa.RISCV64.CombU
 public import VerifiedGarbage.Impl.Ecdh.RISCV64.Shr
 
 /-!
@@ -10,7 +11,8 @@ public import VerifiedGarbage.Impl.Ecdh.RISCV64.Shr
 `vg_ecdsa_p521_sign(out, d, digest, k, scratch)`: P-256's and P-384's
 (`Impl/Ecdsa/RISCV64/Sign.lean`) on P-521's slots and functions, with its
 numbers of 66 bytes read and written by `loadLen` and `storeLen`
-(`Impl/Ecdh/RISCV64.lean`), and `[k]G` by the ladder, `vg_p521_mul`, for
+(`Impl/Ecdh/RISCV64.lean`), and `[k]G` by the comb, `vg_p521_mul_g`
+(`Impl/Ecdsa/RISCV64/CombU.lean`), for
 RFC 6979's signature with SHA-512 (`Impl/Ecdsa/Rfc6979/RISCV64.lean`), which
 calls it with SHA-512's 64-byte digest and a candidate's leftmost 66 bytes:
 `e` is the digest's number (its 512 bits are fewer than `n`'s 521), and `k`
@@ -54,10 +56,10 @@ def signFinish : List Instr :=
     storeLen len (p521.sl RR) .s2 0 ++ storeLen len (p521.sl SS) .s2 len ++ Cfg.retCode p521
 
 /-- `vg_ecdsa_p521_sign(out = a0, d = a1, digest = a2, k = a3, scratch = a4)`,
-with `[k]G` by four-bit windows, `vg_p521_mul`. -/
+with `[k]G` by the comb, `vg_p521_mul_g`. -/
 def signP521 : Prog isa :=
   .seq (.block signSetup) <|
-  .seq (Cfg.tail p521 "vg_p521_mul" mulP521) <|
+  .seq (Cfg.tail p521 CombU.mulGP521Name CombU.mulGP521) <|
   .seq (.seq (addCall p521Order (p521.sl RR) (p521.sl XO) (p521.sl ZERO)) (Sign.Cfg.scalars p521 p521Order))
     (.block signFinish)
 

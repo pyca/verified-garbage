@@ -1,8 +1,11 @@
 module
 
 public import VerifiedGarbage.Proof.Ecdh.RISCV64.P521.Tail
+public import VerifiedGarbage.Proof.Ecdsa.RISCV64.P521.CombVerified
+public import VerifiedGarbage.Proof.Framework.RISCV64.Consts
 public import VerifiedGarbage.Spec.EcKey
 import VerifiedGarbage.Proof.EcKey.PublicKey
+import VerifiedGarbage.Proof.Ecdsa.RISCV64.Comb.Tail
 import VerifiedGarbage.Proof.Framework.Omega
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -16,7 +19,7 @@ import VerifiedGarbage.Proof.P521.Point
 
 `vg_ec_p521_public_key` meets its contract by register (`pkRV`), given the
 group law (`pk_ok`): the saves, `d` and the constants, `G` to `R`'s first two
-slots and the flag set, `tail_ok`, `y`, and the point (`04`, `x` and `y`)
+slots and the flag set, `tailG_ok` (by the comb), `y`, and the point (`04`, `x` and `y`)
 under the flag; the specification's public key is `publicKey_eq`'s
 (`Proof/EcKey/PublicKey.lean`).
 -/
@@ -53,6 +56,14 @@ def pkRV : Contract isa where
     | some (.affine x y) => s'.gpr .a0 = 1 ∧ bytesAt s'.mem (s.gpr .a0) 133 = Spec.EcKey.encodePoint (.affine x y)
     | _ => s'.gpr .a0 = 0 ∧ bytesAt s'.mem (s.gpr .a0) 133 = List.replicate 133 0
   pub s₁ s₂ := s₁.sp = s₂.sp ∧ s₁.gpr .a0 = s₂.gpr .a0 ∧ s₁.gpr .a1 = s₂.gpr .a1 ∧ s₁.gpr .a2 = s₂.gpr .a2
+
+/-- `pkRV` with the comb's table (`abi.withConsts`): `pkRV` for the state
+without it, and what the table adds. -/
+def pkRVC : Contract isa where
+  pre s := pkRV.pre (stripConsts Impl.Ecdsa.RISCV64.CombU.p521CombConsts s) ∧
+    ConstsOk Impl.Ecdsa.RISCV64.CombU.p521CombConsts 0 s
+  post := pkRV.post
+  pub s₁ s₂ := pkRV.pub s₁ s₂ ∧ s₁.syms Impl.Ecdsa.RISCV64.CombU.p521Sym = s₂.syms Impl.Ecdsa.RISCV64.CombU.p521Sym
 
 /-- Bytes of a region apart from the working space, from an offset. -/
 theorem sep_at {p base : Addr} {n : Nat} (hd : (⟨p, n⟩ : Region).Disjoint ⟨base, 8192⟩) (hn : p.toNat + n ≤ 2 ^ 64)
@@ -264,18 +275,21 @@ theorem publicKey_none {C : Curve} {d : Nat} (h : ¬ (1 ≤ d ∧ d < C.n)) : Sp
   unfold Spec.EcKey.publicKey; simp only [h, ↓reduceIte]
 
 /-- `vg_ec_p521_public_key` by register. -/
-theorem pk_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : pkRV.pre s) :
+theorem pk_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : pkRVC.pre s) :
     WP isa publicKeyP521 s fun s' => abiPreserved s s' ∧ pkRV.post s s' := by
-  obtain ⟨hrd, hwr, hod, hdd, hfo, hfd, hfs, hal⟩ := hs
+  obtain ⟨⟨hrd, hwr, hod, hdd, hfo, hfd, hfs, hal⟩, hk⟩ := hs
+  simp only [stripConsts_gpr, stripConsts_wr] at hrd hwr hod hdd hfo hfd hfs hal
   obtain hp0 : 0 < W.p := by decide
   rw [publicKeyP521, Cfg.publicKeyFn, show p521.n = 9 from rfl]
   simp only [List.append_assoc]
   generalize hb : s.gpr .a2 = base at hwr hod hdd hfs hal
   obtain hwr' : (⟨base, 8192⟩ : Region) ∈ s.wr := by rw [hwr]; simp
-  refine WP.seq (WP.block_append (WP.mono (save_ok hb hwr' hfs hal)
-    fun s₁ ⟨hw₁, h3₁, o₁, g₁, rd₁, wr₁, sp₁, U₁, w0, w1, w2, w3, w4⟩ => ?_))
+  obtain hT₀ : VG.Proof.Ecdsa.RISCV64.P521.Comb.TabAt base s := VG.Proof.Ecdsa.RISCV64.P521.Comb.tabAt_of_consts hk hwr'
+  refine WP.seq (VG.Proof.Ecdsa.RISCV64.Comb.wp_syms_frame (WP.block_append (WP.mono (save_ok hb hwr' hfs hal)
+    fun s₁ ⟨hw₁, h3₁, o₁, g₁, rd₁, wr₁, sp₁, U₁, w0, w1, w2, w3, w4⟩ => ?_)))
   obtain a1 : s₁.gpr .a1 = s.gpr .a1 := g₁ _ (by decide) (by decide) (by decide)
-  obtain rd1 : (⟨s.gpr .a1, 66⟩ : Region) ∈ s₁.rd ++ s₁.wr := by rw [rd₁, hrd]; simp
+  obtain rd1 : (⟨s.gpr .a1, 66⟩ : Region) ∈ s₁.rd ++ s₁.wr := by
+    rw [rd₁]; exact List.mem_append_left _ (stripConsts_rd_mem (by rw [hrd]; simp))
   -- `d`.
   rw [show p521.C.len = 66 from rfl]
   refine WP.block_append (WP.mono (loadLen_ok 66 hw₁ (o := p521.sl K) (p := .a1) (off := 0) (L := 66) (by decide)
@@ -304,8 +318,11 @@ theorem pk_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : pkRV.pre s) :
     (by decide) (by decide) (by decide) (by decide)) fun s₅ ⟨v₅, r₅, O₅⟩ => ?_)
   obtain hw₅ := hw₄.of_rest r₅
   refine WP.mono (copy_ok 9 hw₅ (o := p521.sl RY) (a := p521.sl GY) (by decide) (by decide)
-    (by decide) (by decide) (by decide)) fun s₆ ⟨v₆, r₆, O₆⟩ => ?_
+    (by decide) (by decide) (by decide)) fun s₆ ⟨v₆, r₆, O₆⟩ sy₆ F₆ => ?_
   obtain hw₆ := hw₅.of_rest r₆
+  obtain rd₆ : s₆.rd = s.rd := by rw [r₆.rd, r₅.rd, r₄.rd, u₃.rd, u₂b.rd, u₂a.rd, r₂.rd, rd₁]
+  obtain hT₆ : VG.Proof.Ecdsa.RISCV64.P521.Comb.TabAt base s₆ :=
+    hT₀.of_frame sy₆ rd₆ F₆ (VG.Proof.Ecdsa.RISCV64.P521.Comb.tab_wr_of_consts hk)
   obtain U₄₆ := (U₄.trans O₅.unch).trans O₆.unch
   obtain tc₄ : TailConsts base s₄ := ⟨const_at cs₄ 0, const_at cs₄ 1, const_at cs₄ 2, const_at cs₄ 3,
     const_at cs₄ 4, const_at cs₄ 5, const_at cs₄ 6, const_at cs₄ 9⟩
@@ -323,8 +340,8 @@ theorem pk_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : pkRV.pre s) :
     rw [r₆.gpr _ (by decide), r₅.gpr _ (by decide), r₄.gpr _ (by decide), u₃.gpr, u₂b.other _ (by decide),
       u₂a.other _ (by decide), r₂.gpr _ (by decide), h3₁]
   -- `[d]G`, `Z^(p-2)` and `x`.
-  refine WP.seq (WP.mono (tail_ok hL hw₆ h3₆ tc₆ (by rw [rx₆]; exact Nat.mod_lt _ hp0)
-    (by rw [ry₆]; exact Nat.mod_lt _ hp0) hon) fun s₇ ⟨Kc₇, U₇, f₇, rep₇, xolt, xoeq, acclt, acceq⟩ => ?_)
+  refine WP.seq (WP.mono (VG.Proof.Ecdsa.RISCV64.P521.Comb.tailG_ok hL hw₆ h3₆ tc₆ rx₆ ry₆ hT₆)
+    fun s₇ ⟨Kc₇, U₇, f₇, rep₇, xolt, xoeq, acclt, acceq⟩ => ?_)
   obtain hw₇ := hw₆.of_kc Kc₇
   obtain one₇ : sv base s₇ ONE = 1 := by show wordsVal _ _ _ _ = _; rw [sv_unch U₇ ONE (by decide)]; exact tc₆.one
   -- `y`.
@@ -411,8 +428,8 @@ theorem pk_ok (hL : VG.Proof.Weierstrass.Law W) {s : State} (hs : pkRV.pre s) :
     rw [hb] at a0' bytes'
     exact ⟨a0', bytes'.trans z133⟩
 
-theorem pk_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : pkRV.pre s) :
-    ∃ t s', Exec isa publicKeyP521 s t s' ∧ abiPreserved s s' ∧ pkRV.post s s' := by
+theorem pk_rv (hL : VG.Proof.Weierstrass.Law W) (s : State) (hs : pkRVC.pre s) :
+    ∃ t s', Exec isa publicKeyP521 s t s' ∧ abiPreserved s s' ∧ pkRVC.post s s' := by
   obtain ⟨t, s', he, h⟩ := pk_ok hL hs
   exact ⟨t, s', he, h⟩
 
