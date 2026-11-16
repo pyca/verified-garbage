@@ -159,7 +159,27 @@ jne 28b
 jmp 21f
 20:
 21:
-.base64 "ww=="
+pxor xmm0, xmm0
+pxor xmm1, xmm1
+pxor xmm2, xmm2
+pxor xmm3, xmm3
+pxor xmm4, xmm4
+pxor xmm5, xmm5
+pxor xmm6, xmm6
+pxor xmm7, xmm7
+pxor xmm8, xmm8
+pxor xmm9, xmm9
+pxor xmm10, xmm10
+pxor xmm11, xmm11
+pxor xmm12, xmm12
+pxor xmm13, xmm13
+pxor xmm14, xmm14
+pxor xmm15, xmm15
+xor eax, eax
+xor ecx, ecx
+xor esi, esi
+xor r8d, r8d
+ret
 .p2align 6"#,
     )
 }
