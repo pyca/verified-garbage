@@ -19,10 +19,12 @@ import VerifiedGarbage.Proof.Framework.Contract
 # AES-CMAC on x86-64: `vg_cmac_aes_subkeys`
 
 The proof is over the part `Z` of the scratch buffer the code may write and
-the call of `vg_aes_ctr32` it makes (`SubCall`): all of it, with any
-implementation (`SubCall.base`, `subkeysX86_64`), or only the counter block
+the call of `vg_aes_ctr32` it makes (`AesCall`): all of it, with any
+implementation (`AesCall.base`, `subkeysX86_64`); only the counter block
 and the registers saved, at `scratch + 2048`, with one that needs no working
-space (`SubCall.free`, `subkeysX86_64F`).
+space (`AesCall.free`, `subkeysX86_64F`); or all but its first 512 bytes,
+with one that uses 1480 bytes of working space (`AesCall.small`,
+`subkeysX86_64S`).
 -/
 
 @[expose] public section
@@ -144,6 +146,26 @@ def subkeysX86_64F : Contract isa where
   post := subkeysX86_64.post
   pub := subkeysX86_64.pub
 
+/-- `subkeysX86_64` over an implementation of `vg_aes_ctr32` that uses 1480
+bytes of working space (`Aes.X86_64.Ctr32Small`), which it is given 512
+bytes into `scratch`: the first 512 bytes of `scratch` are never touched,
+so its caller need not give them. -/
+def subkeysX86_64S : Contract isa where
+  pre s :=
+    let sched : Region := ⟨s.gpr .rdi, 240⟩
+    let subk : Region := ⟨s.gpr .rdx, 32⟩
+    let scr : Region := ⟨s.gpr .rcx + BitVec.ofNat 64 512, 1664⟩
+    let ret : Region := ⟨s.gpr .rsp, 8⟩
+    let stack := below (s.gpr .rsp) 8
+    s.rd = [sched] ∧ s.wr = [subk, scr] ∧
+      sched.Disjoint subk ∧ sched.Disjoint scr ∧ subk.Disjoint scr ∧
+      ret.Disjoint subk ∧ ret.Disjoint scr ∧
+      stack.Disjoint sched ∧ stack.Disjoint subk ∧ stack.Disjoint scr ∧
+      (s.gpr .rdx).toNat + 32 ≤ 2 ^ 64 ∧ (s.gpr .rcx + BitVec.ofNat 64 512).toNat + 1664 ≤ 2 ^ 64 ∧
+      ((s.gpr .rsi).toNat = 10 ∨ (s.gpr .rsi).toNat = 12 ∨ (s.gpr .rsi).toNat = 14)
+  post := subkeysX86_64.post
+  pub := subkeysX86_64.pub
+
 /-- The precondition, by name: the schedule `W`, the subkeys `K`, the scratch
 buffer `S`, the rounds `R`, and the writable part `Z` of the scratch buffer:
 all of it (`subkeysX86_64`), or only the 32 bytes at `S + 2048`, the counter
@@ -182,13 +204,12 @@ theorem SPre.ofF {s₀ : State} (h : subkeysX86_64F.pre s₀) :
   ⟨rfl, rfl, rfl, rfl, a, b, c, d, e, f, g, h, i, j, k,
     fun h₁ h₂ => Offset.contains _ h₁ (by omega_using [h₂]) (by decide), m⟩
 
-/-- An access within a region, as a region, lies in it. -/
-theorem sub_of_contains {Z : Region} {p : Addr} {n : Nat} (h : Z.Contains p n) : Region.Sub ⟨p, n⟩ Z :=
-  fun a ha => by
-    simp only [Region.Contains] at ha h ⊢
-    rw [show a - Z.base = (a - p) + (p - Z.base) by rw [Offset.sub_add_sub_cancel], BitVec.toNat_add]
-    have := Nat.mod_le ((a - p).toNat + (p - Z.base).toNat) (2 ^ 64)
-    omega_using [h, ha]
+theorem SPre.ofS {s₀ : State} (h : subkeysX86_64S.pre s₀) :
+    SPre s₀ (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .rsi).toNat
+      ⟨s₀.gpr .rcx + BitVec.ofNat 64 512, 1664⟩ :=
+  let ⟨a, b, c, d, e, f, g, h, i, j, k, _, m⟩ := h
+  ⟨rfl, rfl, rfl, rfl, a, b, c, d, e, f, g, h, i, j, k,
+    fun h₁ h₂ => Offset.contains _ (by omega_using [h₁]) (by omega_using [h₂]) (by decide), m⟩
 
 section
 variable {s₀ : State} {W K S : Addr} {R : Nat} {Z : Region} (hp : SPre s₀ W K S R Z)
@@ -330,80 +351,13 @@ theorem smid_wp {s₀ : State} {W K S : Addr} {R : Nat} {Z : Region} (hp : SPre 
         exact ⟨⟨K, 32⟩, by simp, 0, by simp, by simp⟩
       zero := zK }
 
-/-- What a call of `vg_aes_ctr32` on one block leaves, writing no more than
-`X` of its working space. -/
-structure CallPostX (s : State) (W C D : Addr) (R : Nat) (X : Region) (s' : State) : Prop where
-  rd : s'.rd = s.rd
-  wr : s'.wr = s.wr
-  saved : ∀ r ∈ calleeSaved, s'.gpr r = s.gpr r
-  frame : Frame [⟨C, 16⟩, ⟨D, 16⟩, X, below (s.gpr .rsp) 8] s.mem s'.mem
-  out : Spec.Aes.bytesAt s'.mem D 16 =
-    Spec.Cmac.aesWith R (Spec.Aes.bytesAt s.mem W (16 * (R + 1))) (Spec.Aes.bytesAt s.mem C 16)
+/-- What the writable part of the scratch buffer is apart from, at the call. -/
+theorem SPre.scrPre {s₀ s : State} {W K S : Addr} {R : Nat} {Z : Region} (hp : SPre s₀ W K S R Z)
+    (h : SMid s₀ W K S R s) : ScrPre s W K Z :=
+  ⟨hp.sch_scr, hp.k_scr.sub_left (Region.sub_prefix (by decide)), by rw [h.rsp]; exact hp.stk_scr, by
+    rw [h.wr, hp.wr]; exact Covers.of_mem fun r hr => by simp only [List.mem_singleton] at hr; simp [hr]⟩
 
-theorem CallPost.x {s s' : State} {W C D S : Addr} {R : Nat} (h : CallPost s W C D S R s') :
-    CallPostX s W C D R ⟨S, 2048⟩ s' :=
-  ⟨h.rd, h.wr, h.saved, h.frame, h.out⟩
-
-theorem CallPostF.x {s s' : State} {W C D : Addr} {R : Nat} (h : CallPostF s W C D R s') :
-    CallPostX s W C D R ⟨C, 16⟩ s' :=
-  ⟨h.rd, h.wr, h.saved, h.frame.mono (by simp), h.out⟩
-
-/-- What `subkeys` needs of its call of `vg_aes_ctr32 c`, for the writable
-part `Z S` of each scratch buffer `S`: from its arguments as the code before
-it leaves them (`SMid`), it writes no more of the scratch buffer than `X S`,
-within `Z S` and apart from the registers saved there; and two calls with
-the same arguments leak the same. -/
-structure SubCall (c : Impl.Aes.X86_64.Ctr32) (Z X : Addr → Region) : Prop where
-  sub : ∀ S, Region.Sub (X S) (Z S)
-  disj : ∀ S, (⟨S + BitVec.ofNat 64 2064, 16⟩ : Region).Disjoint (X S)
-  ok : ∀ {s₀ s : State} {W K S : Addr} {R : Nat}, SPre s₀ W K S R (Z S) → SMid s₀ W K S R s →
-    WP isa (.call c.name c.code) s (CallPostX s W (S + BitVec.ofNat 64 2048) K R (X S))
-  rel : ∀ {s₀ s₀' : State} {W K S : Addr} {R : Nat} {P : State → State → Prop},
-    SPre s₀ W K S R (Z S) → SPre s₀' W K S R (Z S) → s₀.gpr .rsp = s₀'.gpr .rsp →
-    (∀ a b, P a b → SMid s₀ W K S R a ∧ SMid s₀' W K S R b) →
-    RelCT isa P (.call c.name c.code) fun _ _ => True
-
-/-- With all of the scratch buffer writable, the arguments of the call
-include its working space. -/
-theorem SMid.full {s₀ s : State} {W K S : Addr} {R : Nat} (hp : SPre s₀ W K S R ⟨S, 2176⟩)
-    (h : SMid s₀ W K S R s) : CallPre s W (S + BitVec.ofNat 64 2048) K S R := by
-  have p := h.pre
-  have sS : Region.Sub ⟨S, 2048⟩ ⟨S, 2176⟩ := Region.sub_prefix (by decide)
-  have cs : (⟨S + BitVec.ofNat 64 2048, 16⟩ : Region).Disjoint ⟨S, 2048⟩ :=
-    Offset.disjoint_base _ (by decide) (by decide)
-  exact
-    { rdi := p.rdi, rsi := p.rsi, rdx := p.rdx, rcx := p.rcx, r8 := p.r8, r9 := p.r9, rounds := p.rounds
-      wc := p.wc, wd := p.wd, ws := hp.sch_scr.sub_right sS, cd := p.cd, cs := cs
-      ds := (hp.k_scr.sub_left (Region.sub_prefix (by decide))).sub_right sS
-      stkW := p.stkW, stkC := p.stkC, stkD := p.stkD
-      stkS := by rw [h.rsp]; exact hp.stk_scr.sub_right sS
-      wrap := p.wrap
-      reads := by
-        have r := p.reads
-        intro a n ⟨x, hx, hc⟩
-        simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hx
-        rcases hx with rfl | rfl | rfl | rfl
-        · exact r a n ⟨_, by simp, hc⟩
-        · exact r a n ⟨_, by simp, hc⟩
-        · exact r a n ⟨_, by simp, hc⟩
-        · rw [h.rd, h.wr, hp.wr]
-          exact (Covers.of_sub fun r hr => by
-            simp only [List.mem_singleton] at hr; subst hr
-            exact ⟨⟨S, 2176⟩, by simp, 0, by simp, by simp⟩) a n ⟨_, List.mem_singleton_self _, hc⟩
-      writes := by
-        have w := p.writes
-        intro a n ⟨x, hx, hc⟩
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hx
-        rcases hx with rfl | rfl | rfl
-        · exact w a n ⟨_, by simp, hc⟩
-        · exact w a n ⟨_, by simp, hc⟩
-        · rw [h.wr, hp.wr]
-          exact (Covers.of_sub fun r hr => by
-            simp only [List.mem_singleton] at hr; subst hr
-            exact ⟨⟨S, 2176⟩, by simp, 0, by simp, by simp⟩) a n ⟨_, List.mem_singleton_self _, hc⟩
-      zero := p.zero }
-
-theorem subkeys_wpG {c : Impl.Aes.X86_64.Ctr32} {Z X : Addr → Region} (T : SubCall c Z X) {s₀ : State}
+theorem subkeys_wpG {c : Impl.Aes.X86_64.Ctr32} {Z X : Addr → Region} (T : AesCall c Z X) {s₀ : State}
     {W K S : Addr} {R : Nat} (hp : SPre s₀ W K S R (Z S)) :
     WP isa (subkeys c) s₀ fun s' => gprPreserved s₀ s' ∧ subkeysX86_64.post s₀ s' := by
   have hR := hp.rounds
@@ -432,7 +386,7 @@ theorem subkeys_wpG {c : Impl.Aes.X86_64.Ctr32} {Z X : Addr → Region} (T : Sub
       · exact (hp.sch_scr.sub_left (Region.sub_prefix hRb)).sub_right (hp.cSub (by decide) (by decide))
       · exact (hp.sch_k.sub_left (Region.sub_prefix hRb)).sub_right (Region.sub_prefix (by decide))) (by omega_arith)
   -- The call.
-  refine WP.seq (WP.mono (T.ok hp h₁) fun s₂ h₂ => ?_)
+  refine WP.seq (WP.mono (T.ok h₁.pre (hp.scrPre h₁)) fun s₂ h₂ => ?_)
   -- After the call.
   have rbx₂ : s₂.gpr .rbx = K := by rw [h₂.saved .rbx (by simp [calleeSaved]), h₁.rbx]
   have rbp₂ : s₂.gpr .rbp = S := by rw [h₂.saved .rbp (by simp [calleeSaved]), h₁.rbp]
@@ -470,7 +424,7 @@ theorem subkeys_wpG {c : Impl.Aes.X86_64.Ctr32} {Z X : Addr → Region} (T : Sub
     rcases hr with rfl | rfl | rfl | rfl
     · exact Offset.disjoint S (by decide) (by decide) (by decide)
     · exact (hp.k_scr.symm.sub_left slotZ).sub_right (Region.sub_prefix (by decide))
-    · exact T.disj S
+    · exact (T.disj S).sub_left (Offset.sub S (by decide) (by decide))
     · rw [rsp₁]; exact (hp.stk_scr.symm.sub_left slotZ)
   have slotK (e : Nat) (he : e ≤ 16) : (⟨S + BitVec.ofNat 64 2064, 16⟩ : Region).Disjoint ⟨K + BitVec.ofNat 64 e, 16⟩ :=
     (hp.k_scr.symm.sub_left slotZ).sub_right (Offset.sub_base _ (by omega_arith))
@@ -538,32 +492,18 @@ theorem subkeys_wpG {c : Impl.Aes.X86_64.Ctr32} {Z X : Addr → Region} (T : Sub
     rw [b4lo, b4hi, b3, L]
     rfl
 
-/-- Over any implementation of `vg_aes_ctr32`, with all of the scratch buffer. -/
-theorem SubCall.base (v : Ctr32Impl) : SubCall v.callee (fun S => ⟨S, 2176⟩) (fun S => ⟨S, 2048⟩) where
-  sub _ := Region.sub_prefix (by decide)
-  disj _ := Offset.disjoint_base _ (by decide) (by decide)
-  ok hp h := WP.mono (ctr_call v (h.full hp)) fun _ h => h.x
-  rel hp hp' q h := ctr_rel v fun a b hab =>
-    ⟨_, _, _, _, _, (h a b hab).1.full hp, (h a b hab).2.full hp', by
-      rw [(h a b hab).1.rsp, (h a b hab).2.rsp, q]⟩
-
-/-- Over an implementation of `vg_aes_ctr32` that needs no working space,
-with only the 32 bytes at `S + 2048`. -/
-theorem SubCall.free (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) :
-    SubCall v.callee (fun S => ⟨S + BitVec.ofNat 64 2048, 32⟩) (fun S => ⟨S + BitVec.ofNat 64 2048, 16⟩) where
-  sub S := Offset.sub S (by decide) (by decide)
-  disj S := Offset.disjoint S (by decide) (by decide) (by decide)
-  ok _ h := WP.mono (ctr_callF v f h.pre) fun _ h => h.x
-  rel _ _ q h := ctr_relF v f fun a b hab => ⟨_, _, _, _, _, (h a b hab).1.pre, (h a b hab).2.pre, by
-    rw [(h a b hab).1.rsp, (h a b hab).2.rsp, q]⟩
-
 theorem subkeys_wp (v : Ctr32Impl) {s₀ : State} (h0 : subkeysX86_64.pre s₀) :
     WP isa (subkeys v.callee) s₀ fun s' => gprPreserved s₀ s' ∧ subkeysX86_64.post s₀ s' :=
-  subkeys_wpG (SubCall.base v) (SPre.of h0)
+  subkeys_wpG (AesCall.base v) (SPre.of h0)
 
 theorem subkeysF_wp (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) {s₀ : State}
     (h0 : subkeysX86_64F.pre s₀) :
     WP isa (subkeys v.callee) s₀ fun s' => gprPreserved s₀ s' ∧ subkeysX86_64F.post s₀ s' :=
-  subkeys_wpG (SubCall.free v f) (SPre.ofF h0)
+  subkeys_wpG (AesCall.free v f fun S => ⟨S + BitVec.ofNat 64 2048, 32⟩) (SPre.ofF h0)
+
+theorem subkeysS_wp (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Small v.callee) {s₀ : State}
+    (h0 : subkeysX86_64S.pre s₀) :
+    WP isa (subkeys v.callee) s₀ fun s' => gprPreserved s₀ s' ∧ subkeysX86_64S.post s₀ s' :=
+  subkeys_wpG (AesCall.small v f) (SPre.ofS h0)
 
 end VG.Proof.CmacAes.X86_64

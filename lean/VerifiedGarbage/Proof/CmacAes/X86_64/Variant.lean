@@ -14,7 +14,11 @@ and each caller (in `Generic/CmacAesUpdate/X86_64/`) is emitted once for
 each of them (see `TCB/Emit.lean`). Every implementation is proven against
 the same contract, `updateX86_64`, makes at most one level of calls, and
 uses at most 8 bytes of stack (the return address of its call of
-`vg_aes_ctr32`).
+`vg_aes_ctr32`). One that never touches its scratch buffer also gives its
+contract without one (`free`), and one that never touches its first 512
+bytes, its contract without those (`small`: the chaining by calls of an
+implementation of `vg_aes_ctr32` that uses 1480 bytes of working space),
+so that a caller of it alone sets aside no more.
 
 There are two: the chaining by calls of the bitsliced `vg_aes_ctr32` on one
 block at a time (`UpdateImpl.ctr32 .scalar`, `vg_cmac_aes_update`), and the
@@ -59,6 +63,14 @@ structure UpdateFree (callee : Impl.CmacAes.X86_64.Update) : Type where
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ updateX86_64F.post s s'
   ct : ConstantTime isa updateX86_64F.pre updateX86_64F.pub callee.code
 
+/-- What an implementation of `vg_cmac_aes_update` that never touches the
+first 512 bytes of its scratch buffer gives: its contract without them
+(`updateX86_64S`). -/
+structure UpdateSmall (callee : Impl.CmacAes.X86_64.Update) : Type where
+  ok : ∀ s, updateX86_64S.pre s →
+    ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧ updateX86_64S.post s s'
+  ct : ConstantTime isa updateX86_64S.pre updateX86_64S.pub callee.code
+
 /-- An implementation of `vg_cmac_aes_update` on x86-64. -/
 structure UpdateImpl where
   /-- Its symbol and code. -/
@@ -85,22 +97,27 @@ structure UpdateImpl where
   ctr : Ctr32Impl
   /-- Its contract without a scratch buffer, if it never touches one. -/
   free : Option (UpdateFree callee) := none
+  /-- Its contract without the first 512 bytes of its scratch buffer, if it
+  never touches them. -/
+  small : Option (UpdateSmall callee) := none
 
 theorem update_nosp (v : Ctr32Impl) : NoSp (Impl.CmacAes.X86_64.update v.callee) := by
   have h : (Impl.CmacAes.X86_64.update v.callee).allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
     have hv : v.callee.code.allInstrs (fun i => !Taint.clobbers i .rsp) = true := by
       rw [Code.allInstrs_eq, List.all_eq_true]
       exact fun i hi => by simp [v.nosp i hi]
-    simp only [Impl.CmacAes.X86_64.update, Impl.CmacAes.X86_64.body, Code.allInstrs, hv]
+    simp only [Impl.CmacAes.X86_64.update, Impl.CmacAes.X86_64.body, Code.allInstrs,
+      ctrCall_allInstrs (p := fun i => !Taint.clobbers i .rsp) (fun _ => rfl) hv]
     decide +kernel
   rw [Code.allInstrs_eq] at h
   exact fun i hi => by simpa using List.all_eq_true.mp h i hi
 
 theorem update_depth (v : Ctr32Impl) : (Impl.CmacAes.X86_64.update v.callee).depth = 1 := by
-  simp [Impl.CmacAes.X86_64.update, Impl.CmacAes.X86_64.body, Code.depth, v.depth]
+  show max 0 (max (max 0 (max 0 (max (Impl.CmacAes.X86_64.ctrCall v.callee).depth 0))) 0) = 1
+  rw [ctrCall_depth, v.depth]; rfl
 
 theorem update_xdepth (v : Ctr32Impl) : (Impl.CmacAes.X86_64.update v.callee).x86_64Depth = 8 := by
-  simp [Impl.CmacAes.X86_64.update, Impl.CmacAes.X86_64.body, Code.x86_64Depth, v.noStack]
+  simp [Impl.CmacAes.X86_64.update, Impl.CmacAes.X86_64.body, Code.x86_64Depth, ctrCall_xdepth, v.noStack]
 
 /-- The chaining by calls of `v` on one block at a time,
 `vg_cmac_aes_update` with `v`'s suffix. -/
@@ -116,6 +133,7 @@ def UpdateImpl.ctr32 (v : Ctr32Impl) : UpdateImpl where
   suffix := v.suffix
   features := v.features
   ctr := v
+  small := v.small.map fun f => ⟨updateS_correct v f, updateS_ct v f⟩
 
 theorem aesniCbc_nosp : NoSp Impl.CmacAes.X86_64.AesNi.update := by
   have : ((instrs Impl.CmacAes.X86_64.AesNi.update).all fun i => !Taint.clobbers i .rsp) = true := by

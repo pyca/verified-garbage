@@ -30,8 +30,10 @@ open VG.Proof.Aes.X86_64 (Ctr32Impl)
 /-- The precondition, by name: the key (schedule and subkeys) `W`, the state
 `St`, the last bytes `P` (`L` of them), the scratch buffer `S`, the rounds
 `R`, and the writable part `Z` of the scratch buffer: all of it
-(`finalizeX86_64`), or the counter block at `S + 2048` alone when
-`vg_aes_ctr32` needs no working space (`finalizeX86_64F`). -/
+(`finalizeX86_64`), the counter block at `S + 2048` alone when
+`vg_aes_ctr32` needs no working space (`finalizeX86_64F`), or all but its
+first 512 bytes when `vg_aes_ctr32` uses 1480 bytes of working space
+(`finalizeX86_64S`). -/
 structure FPre (s₀ : State) (W St P S : Addr) (L R : Nat) (Z : Region) : Prop where
   rdi : s₀.gpr .rdi = W
   rdx : s₀.gpr .rdx = St
@@ -86,6 +88,20 @@ theorem FPre.ofF {s₀ : State} (h : finalizeX86_64F.pre s₀) :
   let ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s⟩ := h
   ⟨rfl, rfl, rfl, rfl, rfl, rfl, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
     fun _ h => h, fun hk => Offset.contains_base _ hk (by omega_using [hk]), q, r, s⟩
+
+theorem FPre.ofS {s₀ : State} (h : finalizeX86_64S.pre s₀) :
+    FPre s₀ (s₀.gpr .rdi) (s₀.gpr .rdx) (s₀.gpr .rcx) (s₀.gpr .r9) (s₀.gpr .r8).toNat (s₀.gpr .rsi).toNat
+      ⟨s₀.gpr .r9 + BitVec.ofNat 64 512, 1664⟩ :=
+  let ⟨a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s⟩ := h
+  ⟨rfl, rfl, rfl, rfl, rfl, rfl, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
+    Offset.sub _ (by decide) (by decide),
+    fun hk => by
+      rw [Offset.add_add]; exact Offset.contains _ (by omega_using [hk]) (by omega_using [hk]) (by decide),
+    by
+      have e : s₀.gpr .r9 + BitVec.ofNat 64 2048 = s₀.gpr .r9 + BitVec.ofNat 64 512 + BitVec.ofNat 64 1536 :=
+        (Offset.add_add_eq (s₀.gpr .r9) (a := 512) (b := 1536) (c := 2048) (by decide)).symm
+      have := Nat.mod_le ((s₀.gpr .r9 + BitVec.ofNat 64 512).toNat + 1536 % 2 ^ 64) (2 ^ 64)
+      rw [e, BitVec.toNat_add, BitVec.toNat_ofNat]; omega_using [q], r, s⟩
 
 /-- The last block `Mₙ` (§6.2 step 4), from the key and the last bytes in `m`. -/
 abbrev mn (m : Mem) (W P : Addr) (L : Nat) : List Byte :=
@@ -366,9 +382,10 @@ structure FMidF (s₀ : State) (W St P S : Addr) (L R : Nat) (s : State) : Prop 
     Spec.Cmac.xor (mn s₀.mem W P L) (Spec.Aes.bytesAt s₀.mem St 16)
   frame : Frame [⟨S + BitVec.ofNat 64 2048, 16⟩, ⟨St, 16⟩] s₀.mem s.mem
   saved : ∀ r ∈ calleeSaved, s.gpr r = s₀.gpr r
+  wr : s.wr = s₀.wr
 
-theorem finArgsF_wp {s₀ : State} {W St P S : Addr} {L R : Nat}
-    (hp : FPre s₀ W St P S L R ⟨S + BitVec.ofNat 64 2048, 16⟩) {s : State}
+theorem finArgsF_wp {s₀ : State} {W St P S : Addr} {L R : Nat} {Z : Region}
+    (hp : FPre s₀ W St P S L R Z) {s : State}
     (h : BPost s₀ W St P S L s) : WP isa (.block finArgs) s (FMidF s₀ W St P S L R) := by
   have tw := hp.st_wrap
   have e : finArgs = [.mov .rax (.mem (at_ .r9 2048)), .alu .xor .rax (.mem (at_ .rdx 0)), .store (at_ .r9 2048) .rax,
@@ -378,8 +395,9 @@ theorem finArgsF_wp {s₀ : State} {W St P S : Addr} {L R : Nat}
         .mov .rcx (.reg .rdx), .mov .rdx (.reg .r9), .alu .add .rdx (.imm (BitVec.ofNat 32 cOff)),
         .mov32 .r8 (.imm 1)] := rfl
   rw [e, WP.block_append_iff]
-  have hRegs : s.rd ++ s.wr = [⟨W, 272⟩, ⟨P, L⟩, ⟨St, 16⟩, ⟨S + BitVec.ofNat 64 2048, 16⟩] := by
+  have hRegs : s.rd ++ s.wr = [⟨W, 272⟩, ⟨P, L⟩, ⟨St, 16⟩, Z] := by
     rw [h.rd, h.wr, hp.rd, hp.wr]; rfl
+  have inC16 : InRegions s.wr (S + BitVec.ofNat 64 2048) 16 := by rw [h.wr]; exact hp.inScr0 (by decide)
   have inC0 : InRegions s.wr (S + BitVec.ofNat 64 2048) 8 := by rw [h.wr]; exact hp.inScr0 (by decide)
   have inC8 : InRegions s.wr (S + BitVec.ofNat 64 2048 + BitVec.ofNat 64 8) 8 := by
     rw [h.wr]; exact hp.inScr (by decide)
@@ -407,7 +425,7 @@ theorem finArgsF_wp {s₀ : State} {W St P S : Addr} {L R : Nat}
   have stS : Spec.Aes.bytesAt s.mem St 16 = Spec.Aes.bytesAt s₀.mem St 16 :=
     bytesAt_frame' h.frame fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dCSt.symm
   have hR := hp.rounds
-  refine ⟨?_, ?_, ?_, ?_⟩
+  refine ⟨?_, ?_, ?_, ?_, by rw [wr₂, wr₁, h.wr]⟩
   · exact
     { rdi := by rw [g _ (by decide) (by decide) (by decide) (by decide), h.rdi]
       rsi := by
@@ -426,20 +444,16 @@ theorem finArgsF_wp {s₀ : State} {W St P S : Addr} {L R : Nat}
       stkD := by rw [rsp₂]; exact hp.stk_st
       wrap := hp.st_wrap
       reads := by
-        rw [rd₂, wr₂, rd₁, wr₁, hRegs]
-        refine Covers.of_sub fun r hr => ?_
-        simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl | rfl
+        rw [rd₂, wr₂, rd₁, wr₁]
+        refine Covers.cons ?_ (Covers.cons (Covers.one (wr_in inC16)) (Covers.cons ?_ Covers.nil))
+        all_goals rw [hRegs]; refine Covers.of_sub fun r hr => ?_; simp only [List.mem_singleton] at hr; subst hr
         · exact ⟨⟨W, 272⟩, by simp, 0, by simp, by simp⟩
-        · exact ⟨⟨S + BitVec.ofNat 64 2048, 16⟩, by simp, 0, by simp, by simp⟩
         · exact ⟨⟨St, 16⟩, by simp, 0, by simp, by simp⟩
       writes := by
-        rw [wr₂, wr₁, h.wr, hp.wr]
-        refine Covers.of_sub fun r hr => ?_
-        simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-        rcases hr with rfl | rfl
-        · exact ⟨⟨S + BitVec.ofNat 64 2048, 16⟩, by simp, 0, by simp, by simp⟩
-        · exact ⟨⟨St, 16⟩, by simp, 0, by simp, by simp⟩
+        rw [wr₂, wr₁]
+        refine Covers.cons (Covers.one inC16) (Covers.cons ?_ Covers.nil)
+        rw [h.wr, hp.wr]; refine Covers.of_sub fun r hr => ?_; simp only [List.mem_singleton] at hr; subst hr
+        exact ⟨⟨St, 16⟩, by simp, 0, by simp, by simp⟩
       zero := by rw [m₂, k0, Proof.Cmac.bytesAt_store2, zero_le8, zeros_8_8] }
   · rw [bytesAt_frame' fA (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact dCSt), m₁,
       xor2Mem_bytes, h.blk, stS]
@@ -463,8 +477,8 @@ theorem finPre_wp {s₀ : State} {W St P S : Addr} {L R : Nat} (hp : FPre s₀ W
   · exact WP.ite false (by show s₁.zf = _; rw [zf₁]; simp [hL]) (fun h => by cases h)
       (fun _ => partial_wp hp (by have := hp.len; omega_arith) g₁ m₁ rd₁ wr₁)
 
-theorem finPreF_wp {s₀ : State} {W St P S : Addr} {L R : Nat}
-    (hp : FPre s₀ W St P S L R ⟨S + BitVec.ofNat 64 2048, 16⟩) : WP isa finPre s₀ (FMidF s₀ W St P S L R) := by
+theorem finPreF_wp {s₀ : State} {W St P S : Addr} {L R : Nat} {Z : Region}
+    (hp : FPre s₀ W St P S L R Z) : WP isa finPre s₀ (FMidF s₀ W St P S L R) := by
   have h8 : s₀.gpr .r8 = BitVec.ofNat 64 L := by rw [← hp.r8]; apply BitVec.eq_of_toNat_eq; simp
   obtain ⟨s₁, run₁, zf₁, g₁, m₁, rd₁, wr₁⟩ := cmp16_ok s₀ h8 hp.len
   refine WP.seq (WP.of_runBlock ⟨s₁, run₁, ?_⟩)
@@ -494,7 +508,7 @@ theorem finalize_wp (v : Ctr32Impl) {s₀ : State} (h0 : finalizeX86_64.pre s₀
   have hR := hp.rounds
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> omega_arith
   refine WP.seq (WP.mono (finPre_wp hp sw) fun s₁ h₁ => ?_)
-  refine WP.mono (ctr_call v h₁.pre) fun s₂ h₂ => ?_
+  refine WP.mono (ctrCall_ok v h₁.pre) fun s₂ h₂ => ?_
   have rsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := h₁.saved _ (by simp [calleeSaved])
   -- The key and the frame.
   have big : Frame [⟨St, 16⟩, ⟨S, 2176⟩, below (s₀.gpr .rsp) 8] s₀.mem s₂.mem := by
@@ -532,32 +546,31 @@ theorem finalize_wp (v : Ctr32Impl) {s₀ : State} (h0 : finalizeX86_64.pre s₀
       Proof.Cmac.macFull_split _ hm (by rw [Proof.Cmac.bytesAt_length]; exact hp.len)
         (by rw [Proof.Cmac.bytesAt_length]; exact hne), xor_comm]
 
-/-- `finalize_wp`, over an implementation of `vg_aes_ctr32` that needs no
-working space: of the scratch buffer, only the counter block is written. -/
-theorem finalizeF_wp (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) {s₀ : State}
-    (h0 : finalizeX86_64F.pre s₀) :
-    WP isa (finalize v.callee) s₀ fun s' => gprPreserved s₀ s' ∧ finalizeX86_64F.post s₀ s' := by
-  have hp := FPre.ofF h0
-  generalize s₀.gpr .rdi = W at hp
-  generalize s₀.gpr .rdx = St at hp
-  generalize s₀.gpr .rcx = P at hp
-  generalize s₀.gpr .r9 = S at hp
-  generalize (s₀.gpr .r8).toNat = L at hp
-  generalize (s₀.gpr .rsi).toNat = R at hp
+/-- `finalize` over the call `T` of `vg_aes_ctr32`, with the part `Z S` of
+the scratch buffer writable. -/
+theorem finalize_wpG {c : Impl.Aes.X86_64.Ctr32} {Z X : Addr → Region} (T : AesCall c Z X) {s₀ : State}
+    {W St P S : Addr} {L R : Nat} (hp : FPre s₀ W St P S L R (Z S)) :
+    WP isa (finalize c) s₀ fun s' => gprPreserved s₀ s' ∧ finalizeX86_64.post s₀ s' := by
   have hR := hp.rounds
   have hRb : 16 * (R + 1) ≤ 240 := by rcases hR with h | h | h <;> omega_arith
   refine WP.seq (WP.mono (finPreF_wp hp) fun s₁ h₁ => ?_)
-  refine WP.mono (ctr_callF v f h₁.pre) fun s₂ h₂ => ?_
   have rsp₁ : s₁.gpr .rsp = s₀.gpr .rsp := h₁.saved _ (by simp [calleeSaved])
+  have scr : ScrPre s₁ W St (Z S) :=
+    ⟨hp.key_scr.sub_left (Region.sub_prefix (by decide)), hp.st_scr, by rw [rsp₁]; exact hp.stk_scr, by
+      rw [h₁.wr, hp.wr]; exact Covers.of_mem fun r hr => by simp only [List.mem_singleton] at hr; simp [hr]⟩
+  refine WP.mono (T.ok h₁.pre scr) fun s₂ h₂ => ?_
   -- The key and the frame.
-  have big : Frame [⟨St, 16⟩, ⟨S + BitVec.ofNat 64 2048, 16⟩, below (s₀.gpr .rsp) 8] s₀.mem s₂.mem := by
-    refine (h₁.frame.mono fun r hr => ?_).trans (h₂.frame.sub fun r hr => ?_)
+  have big : Frame [⟨St, 16⟩, Z S, below (s₀.gpr .rsp) 8] s₀.mem s₂.mem := by
+    refine (h₁.frame.sub fun r hr => ?_).trans (h₂.frame.sub fun r hr => ?_)
     · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl <;> simp
-    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
-      rcases hr with rfl | rfl | rfl
-      · exact ⟨_, by simp, fun _ h => h⟩
+      rcases hr with rfl | rfl
+      · exact ⟨Z S, by simp, hp.cD (by decide)⟩
       · exact ⟨⟨St, 16⟩, by simp, fun _ h => h⟩
+    · simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+      rcases hr with rfl | rfl | rfl | rfl
+      · exact ⟨Z S, by simp, hp.cD (by decide)⟩
+      · exact ⟨⟨St, 16⟩, by simp, fun _ h => h⟩
+      · exact ⟨Z S, by simp, T.sub S⟩
       · exact ⟨below (s₀.gpr .rsp) 8, by simp, by rw [rsp₁]; exact fun _ h => h⟩
   have sch : Spec.Aes.bytesAt s₁.mem W (16 * (R + 1)) = Spec.Aes.bytesAt s₀.mem W (16 * (R + 1)) :=
     bytesAt_frame h₁.frame (fun r hr => by
@@ -581,5 +594,20 @@ theorem finalizeF_wp (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) {
     rw [h₂.out, sch, h₁.blk, mn, e1, e2, hst,
       Proof.Cmac.macFull_split _ hm (by rw [Proof.Cmac.bytesAt_length]; exact hp.len)
         (by rw [Proof.Cmac.bytesAt_length]; exact hne), xor_comm]
+
+/-- `finalize_wp`, over an implementation of `vg_aes_ctr32` that needs no
+working space: of the scratch buffer, only the counter block is written. -/
+theorem finalizeF_wp (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Free v.callee) {s₀ : State}
+    (h0 : finalizeX86_64F.pre s₀) :
+    WP isa (finalize v.callee) s₀ fun s' => gprPreserved s₀ s' ∧ finalizeX86_64F.post s₀ s' :=
+  finalize_wpG (AesCall.free v f fun S => ⟨S + BitVec.ofNat 64 2048, 16⟩) (FPre.ofF h0)
+
+/-- `finalize_wp`, over an implementation of `vg_aes_ctr32` that uses 1480
+bytes of working space: the first 512 bytes of the scratch buffer are not
+written. -/
+theorem finalizeS_wp (v : Ctr32Impl) (f : Proof.Aes.X86_64.Ctr32Small v.callee) {s₀ : State}
+    (h0 : finalizeX86_64S.pre s₀) :
+    WP isa (finalize v.callee) s₀ fun s' => gprPreserved s₀ s' ∧ finalizeX86_64S.post s₀ s' :=
+  finalize_wpG (AesCall.small v f) (FPre.ofS h0)
 
 end VG.Proof.CmacAes.X86_64

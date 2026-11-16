@@ -139,7 +139,7 @@ scratch buffer writable. -/
 theorem update_wpG {c : Impl.Aes.X86_64.Ctr32} {Z X : Addr → Region} (T : AesCall c Z X) {s₀ : State}
     (hp : UPre s₀ (Z (S s₀))) :
     WP isa (update c) s₀ fun s' => gprPreserved s₀ s' ∧ updateX86_64.post s₀ s' :=
-  WP.seq (WP.mono (prologue_wp hp) fun s₁ ⟨h₁, z₁⟩ =>
+  WP.seq (WP.mono (prologue_wp hp) fun _ ⟨h₁, z₁⟩ =>
     WP.seq (WP.mono (mid_wp T hp h₁ z₁) fun _ h₂ => epilogue_wp hp (T.sub _) (T.disj _) h₂))
 
 theorem update_wp (v : Ctr32Impl) {s₀ : State} (h0 : updateX86_64.pre s₀) :
