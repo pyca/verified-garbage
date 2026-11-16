@@ -2,12 +2,16 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChunks
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubPaths
+public import VerifiedGarbage.Proof.Framework.RelCT
+public import VerifiedGarbage.Proof.Framework.X86_64.Frame
 import VerifiedGarbage.Proof.Framework.Semantics
 import VerifiedGarbage.Proof.Framework.X86_64.UpperLock
 import VerifiedGarbage.Proof.Framework.X86_64.Syms
 import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.X86_64.ResidueKeep
+import VerifiedGarbage.Proof.Framework.RelCTAssoc
+import VerifiedGarbage.Proof.Framework.X86_64.Inline
 
 /-!
 # x86-64 residue: clearing only the registers that may hold secrets
@@ -626,6 +630,158 @@ theorem lock_eq {S : Addr → Prop} {c : Prog isa} (hc : NoSp c) {s₁ s₂ s₁
     (e₁ : Exec isa c s₁ t s₁') (e₂ : Exec isa c s₂ t s₂') (hf : ∀ n ∈ inames c, s₁.syms n = s₂.syms n)
     (h : Same S s₁ s₂) : Same S s₁' s₂' :=
   lock e₁ hc e₂ (r₁ := []) (r₂ := []) rfl hf h
+
+/-- Code that never writes `rsp` and calls no function indirectly: what
+`lock_eq` needs. -/
+def Plain (c : Prog isa) : Prop := NoSp c ∧ inames c = []
+
+namespace Plain
+
+theorem block {is : List Instr} (h : is.all (fun i => !Taint.clobbers i .rsp) = true) : Plain (.block is) :=
+  ⟨fun i hi => by simpa using List.all_eq_true.mp h i hi, rfl⟩
+
+theorem seq {a b : Prog isa} (ha : Plain a) (hb : Plain b) : Plain (.seq a b) :=
+  ⟨fun i hi => (List.mem_append.mp hi).elim (ha.1 i) (hb.1 i), by simp only [inames, ha.2, hb.2, List.append_nil]⟩
+
+theorem ite {c : Cond} {a b : Prog isa} (ha : Plain a) (hb : Plain b) : Plain (.ite c a b) :=
+  ⟨fun i hi => (List.mem_append.mp hi).elim (ha.1 i) (hb.1 i), by simp only [inames, ha.2, hb.2, List.append_nil]⟩
+
+theorem loop {c : Cond} {a : Prog isa} (ha : Plain a) : Plain (.loop a c) := ⟨ha.1, ha.2⟩
+
+theorem call {n : String} {a : Prog isa} (ha : Plain a) : Plain (.call n a) := ⟨ha.1, ha.2⟩
+
+end Plain
+
+/-- `Plain` of code made of blocks, branches, loops and calls of plain code
+(the hypotheses in context). -/
+macro "plain_tac" : tactic => `(tactic| repeat' first
+  | with_reducible assumption
+  | refine Plain.seq ?_ ?_
+  | refine Plain.ite ?_ ?_
+  | refine Plain.loop ?_
+  | refine Plain.call ?_
+  | exact Plain.block (by decide))
+
+/-- `RelCT`, keeping `Same S`: two runs that agree on the stack pointer,
+the unknowns and the bytes `S` end agreeing on them. Code that never writes
+`rsp` keeps it of itself (`RelS.lift`); a frame does with what its push
+stores and its body leaves in the frame (`RelS` of the frame, by hand). -/
+def RelS (S : Addr → Prop) (P : State → State → Prop) (c : Prog isa) (Q : State → State → Prop) : Prop :=
+  RelCT isa (fun s₁ s₂ => P s₁ s₂ ∧ Same S s₁ s₂) c fun s₁ s₂ => Q s₁ s₂ ∧ Same S s₁ s₂
+
+namespace RelS
+
+variable {S : Addr → Prop} {P Q R : State → State → Prop}
+
+/-- Code that never writes `rsp` and calls no function indirectly keeps
+`Same` along the trace both runs share (`lock_eq`). -/
+theorem lift {c : Prog isa} (h : RelCT isa P c Q) (hc : Plain c) : RelS S P c Q := by
+  intro s₁ s₂ t₁ t₂ u₁ u₂ hp e₁ e₂
+  obtain ⟨rfl, hq⟩ := h s₁ s₂ t₁ t₂ u₁ u₂ hp.1 e₁ e₂
+  exact ⟨rfl, hq, lock_eq hc.1 e₁ e₂ (by rw [hc.2]; nofun) hp.2⟩
+
+/-- `RelS` with nothing after, and `RelCT` with `Q` after: `RelS` with `Q`. -/
+theorem post {c : Prog isa} (h : RelS S P c fun _ _ => True) (h' : RelCT isa P c Q) : RelS S P c Q := by
+  intro s₁ s₂ t₁ t₂ u₁ u₂ hp e₁ e₂
+  exact ⟨(h' _ _ _ _ _ _ hp.1 e₁ e₂).1, (h' _ _ _ _ _ _ hp.1 e₁ e₂).2, (h _ _ _ _ _ _ hp e₁ e₂).2.2⟩
+
+theorem seq {c d : Prog isa} (a : RelS S P c R) (b : RelS S R d Q) : RelS S P (.seq c d) Q := RelCT.seq a b
+
+theorem mono {P' Q' : State → State → Prop} {c : Prog isa} (h : RelS S P c Q) (hp : ∀ s₁ s₂, P' s₁ s₂ → P s₁ s₂)
+    (hq : ∀ s₁ s₂, Q s₁ s₂ → Q' s₁ s₂) : RelS S P' c Q' :=
+  RelCT.mono h (fun _ _ h => ⟨hp _ _ h.1, h.2⟩) fun _ _ h => ⟨hq _ _ h.1, h.2⟩
+
+theorem ite {c : Cond} {t e : Prog isa} (hc : ∀ s₁ s₂, P s₁ s₂ → isa.eval c s₁ = isa.eval c s₂)
+    (ht : RelS S (fun s₁ s₂ => P s₁ s₂ ∧ isa.eval c s₁ = some true) t Q)
+    (he : RelS S (fun s₁ s₂ => P s₁ s₂ ∧ isa.eval c s₁ = some false) e Q) : RelS S P (.ite c t e) Q :=
+  RelCT.ite (fun _ _ h => hc _ _ h.1) (RelCT.mono ht (fun _ _ h => ⟨⟨h.1.1, h.2⟩, h.1.2⟩) fun _ _ h => h)
+    (RelCT.mono he (fun _ _ h => ⟨⟨h.1.1, h.2⟩, h.1.2⟩) fun _ _ h => h)
+
+theorem ite_e {t e : Prog isa} (hc : ∀ s₁ s₂, P s₁ s₂ → s₁.zf = s₂.zf)
+    (ht : RelS S (fun s₁ s₂ => P s₁ s₂ ∧ s₁.zf = some true) t Q)
+    (he : RelS S (fun s₁ s₂ => P s₁ s₂ ∧ s₁.zf = some false) e Q) : RelS S P (.ite .e t e) Q :=
+  ite (c := .e) hc ht he
+
+theorem of_false {c : Prog isa} (h : ∀ s₁ s₂, ¬ P s₁ s₂) : RelS S P c Q :=
+  RelCT.of_false fun _ _ hp => h _ _ hp.1
+
+theorem block_nil (h : ∀ s₁ s₂, P s₁ s₂ → Q s₁ s₂) : RelS S P (.block []) Q :=
+  RelCT.block_nil fun _ _ hp => ⟨h _ _ hp.1, hp.2⟩
+
+theorem assoc2 {a b c : Prog isa} (h : RelS S P (.seq (.seq a b) c) Q) : RelS S P (.seq a (.seq b c)) Q :=
+  RelCT.assoc h
+
+theorem popReg_unknowns (s : State) (r : Reg) : ∀ k, (popReg s r k).unknowns = s.unknowns
+  | 0 => rfl
+  | k + 1 => (popReg_unknowns _ r k).trans rfl
+
+/-- The frame of a push of one register: it keeps `Same S` if the register
+agrees in both runs (`hv`), and the body, code that never writes `rsp`,
+leaves the slot it pushed as it found it in each run (`hk`), as a function
+called with a stack argument does: inside the frame, the slot is writable,
+so no two-run argument can say so. -/
+theorem push1 {S : Addr → Prop} {P : State → State → Prop} {r : Reg} {b : Prog isa}
+    (hrel : RelCT isa P (.frame (.push [r]) b (.pop r 1)) fun _ _ => True) (hb : NoSp b) (hn : inames b = [])
+    (hv : ∀ s₁ s₂, P s₁ s₂ → s₁.gpr r = s₂.gpr r)
+    (hk : ∀ s₁ s₂, P s₁ s₂ → (∀ t u, Exec isa b (pushed [r] s₁) t u → ∀ x,
+        (⟨s₁.gpr .rsp - BitVec.ofNat 64 8, 8⟩ : Region).Contains x 1 → u.mem x = (pushed [r] s₁).mem x) ∧
+      (∀ t u, Exec isa b (pushed [r] s₂) t u → ∀ x,
+        (⟨s₂.gpr .rsp - BitVec.ofNat 64 8, 8⟩ : Region).Contains x 1 → u.mem x = (pushed [r] s₂).mem x)) :
+    RelS S P (.frame (.push [r]) b (.pop r 1)) fun _ _ => True := by
+  intro s₁ s₂ t₁ t₂ u₁ u₂ hp e₁ e₂
+  obtain ⟨ht, -⟩ := hrel _ _ _ _ _ _ hp.1 e₁ e₂
+  refine ⟨ht, trivial, ?_⟩
+  have hs := hp.2
+  have hr := hv _ _ hp.1
+  obtain ⟨hk₁, hk₂⟩ := hk _ _ hp.1
+  cases e₁ with
+  | frame p₁ b₁ q₁ =>
+    cases e₂ with
+    | frame p₂ b₂ q₂ =>
+      obtain rfl := push_some p₁
+      obtain rfl := push_some p₂
+      have ew₁ : (pushed [r] s₁).wr = ⟨s₁.gpr .rsp - BitVec.ofNat 64 8, 8⟩ :: s₁.wr := rfl
+      have ew₂ : (pushed [r] s₂).wr = ⟨s₂.gpr .rsp - BitVec.ofNat 64 8, 8⟩ :: s₂.wr := rfl
+      have em : ∀ x, S x → (pushed [r] s₁).mem x = (pushed [r] s₂).mem x := fun x hx => by
+        show s₁.mem.writeW (s₁.gpr .rsp - 8) (s₁.gpr r) x = s₂.mem.writeW (s₂.gpr .rsp - 8) (s₂.gpr r) x
+        rw [hs.rsp, hr]; exact writeW_congr (hs.mem x hx) _ _
+      let S' : Addr → Prop := fun x => S x ∧ ¬ (⟨s₁.gpr .rsp - BitVec.ofNat 64 8, 8⟩ : Region).Contains x 1
+      have hpu : Same S' (pushed [r] s₁) (pushed [r] s₂) := by
+        refine ⟨by rw [pushed_rsp, pushed_rsp, hs.rsp], hs.unk, fun x hx r' hr' => ?_, fun x hx r' hr' => ?_,
+          fun x hx => em x hx.1⟩
+        · rw [ew₁] at hr'
+          rcases List.mem_cons.mp hr' with rfl | hr'
+          · exact hx.2
+          · exact hs.out₁ x hx.1 r' hr'
+        · rw [ew₂, ← hs.rsp] at hr'
+          rcases List.mem_cons.mp hr' with rfl | hr'
+          · exact hx.2
+          · exact hs.out₂ x hx.1 r' hr'
+      have ea : isa.addrs (.push [r]) s₁ = isa.addrs (.push [r]) s₂ := by
+        simp only [addrs, hs.rsp]
+      rw [ea, List.append_assoc, List.append_assoc] at ht
+      have hb' := lock b₁ hb b₂ (List.append_cancel_left ht) (by rw [hn]; nofun) hpu
+      obtain ⟨w₁, -, -, -, sp₁, -⟩ := pop_eq q₁
+      obtain ⟨w₂, -, -, -, sp₂, -⟩ := pop_eq q₂
+      simp only [isa, pop] at q₁ q₂
+      split at q₁ <;> cases q₁
+      split at q₂ <;> cases q₂
+      refine ⟨?_, ?_, fun x hx r' hr' => ?_, fun x hx r' hr' => ?_, fun x hx => ?_⟩
+      · exact (popped_rsp r 1 _).trans ((congrArg (· + _) hb'.rsp).trans (popped_rsp r 1 _).symm)
+      · exact (popReg_unknowns _ r 1).trans (hb'.unk.trans (popReg_unknowns _ r 1).symm)
+      · change r' ∈ List.tail _ at hr'
+        rw [w₁, ew₁] at hr'
+        exact hs.out₁ x hx r' hr'
+      · change r' ∈ List.tail _ at hr'
+        rw [w₂, ew₂] at hr'
+        exact hs.out₂ x hx r' hr'
+      · change (popped r 1 _).mem x = (popped r 1 _).mem x
+        rw [popped_mem, popped_mem]
+        by_cases hsl : (⟨s₁.gpr .rsp - BitVec.ofNat 64 8, 8⟩ : Region).Contains x 1
+        · rw [hk₁ _ _ b₁ x hsl, hk₂ _ _ b₂ x (hs.rsp ▸ hsl)]; exact em x hx
+        · exact hb'.mem x ⟨hx, hsl⟩
+
+end RelS
 
 end VG.X86_64.StackLock
 
