@@ -25,6 +25,13 @@ def sub(d,n,m): op3("subf",d,m,n)
 def xor(d,n,m): op3("xor",d,n,m)
 def and_(d,n,m): op3("and",d,n,m)
 def lsl(d,n,s): e(f"sldi {r(d)}, {r(n)}, {s}")
+def m19(d,n,c,t=12):
+    if "sa19" in OPTS:
+        assert t==12
+        e("std %r12, 880(%r6)") if False else None
+        lsl(0 if False else TT[0],n,3); add(TT[0],TT[0],n); lsl(TT[0],TT[0],1); add(d,TT[0],n)
+    else: mul(d,n,c)
+TT=[3]
 def lsr(d,n,s): e(f"srdi {r(d)}, {r(n)}, {s}")
 def subi(d,n,i): e(f"addi {r(d)}, {r(n)}, -{i}")
 def loop(body,reg):
@@ -42,11 +49,11 @@ def terms(ts):
 def tail(o):
     for k in range(1,5): add(LO[k],LO[k],HI[k-1])
     li(4,1); lsl(4,4,51); subi(4,4,1); li(15,19)
-    and_(14,HI[4],4); lsr(HI[4],HI[4],51); mul(14,14,15); mul(HI[4],HI[4],15); add(LO[0],LO[0],14); add(LO[1],LO[1],HI[4])
+    and_(14,HI[4],4); lsr(HI[4],HI[4],51); m19(14,14,15); m19(HI[4],HI[4],15); add(LO[0],LO[0],14); add(LO[1],LO[1],HI[4])
     for k in range(5):
         lsr(14,LO[k],51); and_(LO[k],LO[k],4)
         if k<4: add(LO[k+1],LO[k+1],14)
-        else: mul(14,14,15); add(LO[0],LO[0],14)
+        else: m19(14,14,15); add(LO[0],LO[0],14)
     for k in range(5): std(LO[k],6,o+8*k)
 def fmul(o,a,b):
     for i in range(5): ld(RA[i],6,a+8*i)
@@ -54,7 +61,7 @@ def fmul(o,a,b):
     for i in range(5): lsl(RA[i],RA[i],8)
     for j in range(5): lsl(RB[j],RB[j],5)
     li(5,19)
-    for j in range(1,5): mul(RN[j],RB[j],5)
+    for j in range(1,5): m19(RN[j],RB[j],5)
     ts=[]
     for k in range(5):
         for i in range(5):
@@ -70,9 +77,9 @@ def fsqr(o,a):
     def tt(ts):
         for (x,y,k) in ts: term(k not in s,x,y,k); s.add(k)
     tt([(RA[0],Q,0)]+[(RA[0],P[j],j) for j in range(1,5)])
-    lsl(Q,RA[1],4); lsl(RA[1],RA[1],9); li(24,19); mul(P[4],P[4],24)
+    lsl(Q,RA[1],4); lsl(RA[1],RA[1],9); li(24,19); m19(P[4],P[4],24)
     tt([(RA[1],Q,2),(RA[1],P[2],3),(RA[1],P[3],4),(RA[1],P[4],0)])
-    lsl(Q,RA[2],4); lsl(RA[2],RA[2],9); mul(P[3],P[3],24)
+    lsl(Q,RA[2],4); lsl(RA[2],RA[2],9); m19(P[3],P[3],24)
     tt([(RA[2],Q,4),(RA[2],P[3],0),(RA[2],P[4],1)])
     lsl(RA[3],RA[3],8)
     tt([(RA[3],P[3],1)])
@@ -159,12 +166,12 @@ def freeze():
         lwz(5,6,X2o+4*k); lwz(7,6,Y+4*k); xor(7,7,5); and_(7,7,11); xor(5,5,7); stw(5,3,4*k)
 nv=list(range(14,32))
 L.append(".text\n.globl x_new\n.type x_new,@function\nx_new:" if "harness" in OPTS else "")
-setup(); bits(); unpack()
+setup(); bits(); unpack(); std(3,6,880)
 for k,g in enumerate(nv): std(g,6,SAVE+8*k)
 li(12,255); li(0,0); loop(step,12)
 mask(); cswap(X2,X3); cswap(Z2,Z3)
 invert(); fmul(X2,X2,R); pack()
 for k,g in enumerate(nv): ld(g,6,SAVE+8*k)
-freeze()
+ld(3,6,880); freeze()
 e("blr")
 print("\n".join(L))
