@@ -55,9 +55,9 @@ theorem cbcEncryptChained_wp {s₀ : State} (hp : cbcEncX.pre s₀) :
       s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧ cbcEncX.post s₀ s' := by
   have hp' : FPre blkLen s₀ := hp
   have hwS : (⟨s₀.gpr .x5, 8 * 13⟩ : Region) ∈ s₀.wr := by rw [hp'.wr]; simp
-  have e : 8 * (dirCore true).bw * (s₀.gpr .x4).toNat = (s₀.gpr .x4).toNat * 8 := by
+  have e : 8 * dirCore.bw * (s₀.gpr .x4).toNat = (s₀.gpr .x4).toNat * 8 := by
     rw [dirCore_bw, Nat.mul_one, Nat.mul_comm]
-  refine WP.mono (Proof.Modes.AArch64.cbcEncryptChained_wp (dirCoreSpec true) (r := modeRegs)
+  refine WP.mono (Proof.Modes.AArch64.cbcEncryptChained_wp dirCoreSpec (r := modeRegs)
     ⟨by decide, by decide, by decide⟩ (by decide) (ivR := .x25)
     ⟨by decide, by decide, by decide, by decide, by decide⟩
     (B := s₀.gpr .x5) (P := s₀.gpr .x2) (D := s₀.gpr .x3) (n := (s₀.gpr .x4).toNat)

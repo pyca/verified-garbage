@@ -17,7 +17,6 @@ namespace VG
 /-! The block code the functions share, evaluated once. -/
 
 materialize_value Impl.Cast5.AArch64.encryptBlock
-materialize_value Impl.Cast5.AArch64.decryptBlock
 
 /-! The functions. -/
 

@@ -32,7 +32,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 # CAST5-OFB and -CFB64 encryption on AArch64 meet their contracts
 
 `ofb_wp`, `cfbEncrypt_wp`: the modes' OFB and CFB encryption
-(`Proof.Modes.AArch64.fb_wp`) over CAST5's core (`Mode.dirCoreSpec true`),
+(`Proof.Modes.AArch64.fb_wp`) over CAST5's core (`Mode.dirCoreSpec`),
 with the IV's address in `x25`, which the core never writes
 (`Mode.crypt_keeps`), the specification's results (`Proof.Modes.ofb_of`, …),
 and the working space at `x5`. The table of S-boxes is readable where the
@@ -146,7 +146,7 @@ theorem FPre.schedAt {len : State → Nat} {s : State} (h : FPre len s) : SchedA
 /-- What the modes' OFB and CFB give, for a mode `mo`: the data and the IV
 as `fbOut` and `fbIn`, keeping the callee-saved registers. -/
 theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : FPre blkLen s₀) :
-    WP isa ((dirCore true).fb mo modeRegs .x25) s₀ fun s' =>
+    WP isa (dirCore.fb mo modeRegs .x25) s₀ fun s' =>
       (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
         s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧
       Modes.blocksOf 8 s'.mem (s₀.gpr .x3) (s₀.gpr .x4).toNat =
@@ -154,9 +154,9 @@ theorem fb_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : FPre blkLen s₀) :
       Spec.Aes.bytesAt s'.mem (s₀.gpr .x2) 8 =
         Modes.fbIn mo 8 (ciphOf s₀) s₀.mem (s₀.gpr .x3) (ivOf s₀) (s₀.gpr .x4).toNat := by
   have hwS : (⟨s₀.gpr .x5, 8 * 13⟩ : Region) ∈ s₀.wr := by rw [hp.wr]; simp
-  have e : 8 * (dirCore true).bw * (s₀.gpr .x4).toNat = (s₀.gpr .x4).toNat * 8 := by
+  have e : 8 * dirCore.bw * (s₀.gpr .x4).toNat = (s₀.gpr .x4).toNat * 8 := by
     rw [dirCore_bw, Nat.mul_one, Nat.mul_comm]
-  refine WP.mono (Proof.Modes.AArch64.fb_wp (dirCoreSpec true) mo (r := modeRegs)
+  refine WP.mono (Proof.Modes.AArch64.fb_wp dirCoreSpec mo (r := modeRegs)
     ⟨by decide, by decide, by decide⟩ (by decide) (ivR := .x25)
     ⟨by decide, by decide, by decide, by decide, by decide⟩
     (B := s₀.gpr .x5) (P := s₀.gpr .x2) (D := s₀.gpr .x3) (n := (s₀.gpr .x4).toNat)

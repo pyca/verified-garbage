@@ -42,7 +42,7 @@ meta import VerifiedGarbage.Proof.Framework.Contract
 
 `cfbEncryptFinal_wp`, `cfbDecryptFinal_wp`, `ofbFinal_wp`: the modes' CFB and
 OFB over a message's last piece (`Proof.Modes.AArch64.fbFinal_wp`) over
-CAST5's core (`Mode.dirCoreSpec true`), with the IV's address in `x25`, as
+CAST5's core (`Mode.dirCoreSpec`), with the IV's address in `x25`, as
 for the whole-block functions (`FbVerified.lean`), and the specification's
 results (`Proof.Modes.cfbEncFinal_of_bytes`, …,
 `Proof.Modes.ofbFinal_of_bytes`). `cfbEncryptFinal_verified`, …: each is
@@ -67,7 +67,7 @@ abbrev finalLen (s : State) : Nat := (s.gpr .x4).toNat
 `mo`: each byte of the data that of `fbOut` of its block, and the IV
 `fbNextF`, keeping the callee-saved registers. -/
 theorem fbFinal_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : FPre finalLen s₀) :
-    WP isa ((dirCore true).fbFinal mo modeRegs .x25) s₀ fun s' =>
+    WP isa (dirCore.fbFinal mo modeRegs .x25) s₀ fun s' =>
       (∀ i < 10, s'.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19) =
         s₀.gpr (Impl.Modes.AArch64.Core.savedRegs.getD i .x19)) ∧
       (∀ i < finalLen s₀, s'.mem (s₀.gpr .x3 + BitVec.ofNat 64 i) =
@@ -75,7 +75,7 @@ theorem fbFinal_wp' (mo : Impl.Modes.FbMode) {s₀ : State} (hp : FPre finalLen 
       Spec.Aes.bytesAt s'.mem (s₀.gpr .x2) 8 =
         Modes.fbNextF mo 8 (ciphOf s₀) s₀.mem (s₀.gpr .x3) (ivOf s₀) (finalLen s₀) := by
   have hwS : (⟨s₀.gpr .x5, 8 * 13⟩ : Region) ∈ s₀.wr := by rw [hp.wr]; simp
-  refine WP.mono (Proof.Modes.AArch64.fbFinal_wp (dirCoreSpec true) mo (r := modeRegs)
+  refine WP.mono (Proof.Modes.AArch64.fbFinal_wp dirCoreSpec mo (r := modeRegs)
     ⟨by decide, by decide, by decide⟩ (by decide) (ivR := .x25)
     ⟨by decide, by decide, by decide, by decide, by decide⟩
     (B := s₀.gpr .x5) (P := s₀.gpr .x2) (D := s₀.gpr .x3) (len := finalLen s₀)

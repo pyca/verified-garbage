@@ -143,12 +143,4 @@ def encryptBlock : Prog isa :=
     (.seq (.loop (group true) (.nonzero .x .x7))
       (.seq (.ite (.zero .x .x8) (round 1 true) (.block [])) (.block store)))
 
-/-- Decrypting a block: round 16 if there are 16, then the rest in groups of
-three, down from the last; `x12` starts at `Kmₙ`, `x0 + 4 (rounds - 1)`. -/
-def decryptBlock : Prog isa :=
-  .seq (.block (load ++ ([.lsl .x .x12 .x1 2, .add .x .x12 .x12 .x0, .subImm .x .x12 .x12 4] :
-      List Instr) ++ groups))
-    (.seq (.ite (.zero .x .x8) (round 1 false) (.block []))
-      (.seq (.loop (group false) (.nonzero .x .x7)) (.block store)))
-
 end VG.Impl.Cast5.AArch64

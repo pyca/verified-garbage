@@ -20,12 +20,12 @@ namespace VG.Impl.Cast5.AArch64
 open VG.AArch64
 
 /-- `vg_cast5_cfb64_encrypt_final`. -/
-def cfbEncryptFinal : Prog isa := (dirCore true).fbFinal .cfbEnc modeRegs .x25
+def cfbEncryptFinal : Prog isa := dirCore.fbFinal .cfbEnc modeRegs .x25
 
 /-- `vg_cast5_cfb64_decrypt_final`. -/
-def cfbDecryptFinal : Prog isa := (dirCore true).fbFinal .cfbDec modeRegs .x25
+def cfbDecryptFinal : Prog isa := dirCore.fbFinal .cfbDec modeRegs .x25
 
 /-- `vg_cast5_ofb_final`. -/
-def ofbFinal : Prog isa := (dirCore true).fbFinal .ofb modeRegs .x25
+def ofbFinal : Prog isa := dirCore.fbFinal .ofb modeRegs .x25
 
 end VG.Impl.Cast5.AArch64
