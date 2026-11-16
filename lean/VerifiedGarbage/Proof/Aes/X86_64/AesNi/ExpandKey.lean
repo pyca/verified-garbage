@@ -304,20 +304,6 @@ theorem aesenc_bcast (u k : BitVec 32) :
 theorem shuf_00 (x : BitVec 128) :
     shufDwords x 0 = ofDwords (dword x 0) (dword x 0) (dword x 0) (dword x 0) := rfl
 
-/-- `RotWord` of each of equal doublewords: the register shifted right by a
-byte, whose doubleword 0 is broadcast. -/
-theorem rot_bcast (w : BitVec 32) :
-    shufDwords (XShiftOp.eval .psrldq (ofDwords w w w w) 1) 0 =
-      ofDwords (w.rotateRight 8) (w.rotateRight 8) (w.rotateRight 8) (w.rotateRight 8) := by
-  have e : dword (XShiftOp.eval .psrldq (ofDwords w w w w) 1) 0 = w.rotateRight 8 := by
-    show dword (ofDwords w w w w >>> 8) 0 = _
-    apply BitVec.eq_of_getLsbD_eq; intro j hj
-    simp only [getLsbD_dword, BitVec.getLsbD_ushiftRight, ofDwords, BitVec.getLsbD_append,
-      BitVec.getLsbD_rotateRight, hj, decide_true, Bool.true_and]
-    repeat' split
-    all_goals first | (exact congrArg _ (by omega_arith)) | (exfalso; omega_arith)
-  rw [shuf_00, e]
-
 theorem rot_extract (w : BitVec 32) {m : Nat} (h : m < 4) :
     (w.rotateRight 8).extractLsb' (8 * m) 8 = w.extractLsb' (8 * ((m + 1) % 4)) 8 := by
   apply BitVec.eq_of_getLsbD_eq; intro j hj
@@ -325,6 +311,24 @@ theorem rot_extract (w : BitVec 32) {m : Nat} (h : m < 4) :
   simp only [BitVec.getLsbD_extractLsb', BitVec.getLsbD_rotateRight, hj, hlt, decide_true, Bool.true_and]
   repeat' split
   all_goals first | (exact congrArg _ (by omega_arith)) | (exfalso; omega_arith)
+
+/-- `pshufb` with `rotMask i`: `RotWord` of doubleword `i`, in every
+doubleword. -/
+theorem pshufb_rot (x : BitVec 128) {i : Nat} (hi : i = 1 ∨ i = 3) :
+    XBinOp.eval .pshufb x (Impl.Aes.X86_64.AesNi.rotMask i) =
+      ofDwords ((dword x i).rotateRight 8) ((dword x i).rotateRight 8) ((dword x i).rotateRight 8)
+        ((dword x i).rotateRight 8) := by
+  have e : ∀ k : Nat, k = 4 * i → XBinOp.eval .pshufb x (Impl.Aes.X86_64.AesNi.rotMask i) =
+      ofBytes fun j => byte x (k + (j + 1) % 4) := fun k hk => by
+    rcases hi with rfl | rfl <;> subst hk <;> simp only [XBinOp.eval, ofBytes] <;> rfl
+  rw [e _ rfl]
+  refine VG.Proof.Gcm.X86_64.ext_byte fun j hj => ?_
+  rw [VG.Proof.Gcm.X86_64.byte_ofBytes _ hj, byte_bcast _ hj, rot_extract _ (Nat.mod_lt _ (by decide))]
+  apply BitVec.eq_of_getLsbD_eq; intro b hb
+  have hm : (j % 4 + 1) % 4 = (j + 1) % 4 := by omega_arith
+  have hlt : 8 * ((j + 1) % 4) + b < 32 := by omega_arith
+  simp only [byte, BitVec.getLsbD_extractLsb', getLsbD_dword, hb, hm, hlt, decide_true, Bool.true_and]
+  exact congrArg _ (by omega_arith)
 
 /-- `SubWord` commutes with `RotWord`. -/
 theorem sub32_rot (w : BitVec 32) : sub32 (w.rotateRight 8) = (sub32 w).rotateRight 8 := by
@@ -336,20 +340,18 @@ theorem sub32_rot (w : BitVec 32) : sub32 (w.rotateRight 8) = (sub32 w).rotateRi
   simp (disch := omega_arith) only [sub32_extract, rot_extract]
 
 /-- What `kgen` leaves in `xmm3`, from the source `x` and the round key `K`. -/
-def genT (x : BitVec 128) (sel : BitVec 8) (rot : Bool) (K : BitVec 128) : BitVec 128 :=
-  XBinOp.eval .aesenclast (if rot then shufDwords (XShiftOp.eval .psrldq (shufDwords x sel) 1) 0
-    else shufDwords x sel) K
+def genT (x : BitVec 128) (sel : BitVec 8) (rot : Bool) (K M : BitVec 128) : BitVec 128 :=
+  XBinOp.eval .aesenclast (if rot then XBinOp.eval .pshufb x M else shufDwords x sel) K
 
-theorem genT_rot (x : BitVec 128) (sel : BitVec 8) (i : Nat) (r : BitVec 8)
-    (hs : shufDwords x sel = ofDwords (dword x i) (dword x i) (dword x i) (dword x i)) :
-    genT x sel true (bc r) =
+theorem genT_rot (x : BitVec 128) (sel : BitVec 8) (i : Nat) (r : BitVec 8) (hi : i = 1 ∨ i = 3) :
+    genT x sel true (bc r) (Impl.Aes.X86_64.AesNi.rotMask i) =
       ofDwords ((sub32 (dword x i)).rotateRight 8 ^^^ r.setWidth 32) ((sub32 (dword x i)).rotateRight 8 ^^^ r.setWidth 32)
         ((sub32 (dword x i)).rotateRight 8 ^^^ r.setWidth 32) ((sub32 (dword x i)).rotateRight 8 ^^^ r.setWidth 32) := by
-  show XBinOp.eval .aesenclast (shufDwords (XShiftOp.eval .psrldq (shufDwords x sel) 1) 0) (bc r) = _
-  rw [hs, rot_bcast, bc, aesenc_bcast, sub32_rot]
+  show XBinOp.eval .aesenclast (XBinOp.eval .pshufb x (Impl.Aes.X86_64.AesNi.rotMask i)) (bc r) = _
+  rw [pshufb_rot x hi, bc, aesenc_bcast, sub32_rot]
 
-theorem genT_sub (x : BitVec 128) :
-    genT x 0xff false 0 = ofDwords (sub32 (dword x 3)) (sub32 (dword x 3)) (sub32 (dword x 3)) (sub32 (dword x 3)) := by
+theorem genT_sub (x M : BitVec 128) :
+    genT x 0xff false 0 M = ofDwords (sub32 (dword x 3)) (sub32 (dword x 3)) (sub32 (dword x 3)) (sub32 (dword x 3)) := by
   have z : (0 : BitVec 128) = ofDwords 0#32 0#32 0#32 0#32 := rfl
   show XBinOp.eval .aesenclast (shufDwords x 0xff) 0 = _
   rw [shuf_ff, z, aesenc_bcast, BitVec.xor_zero]
@@ -370,9 +372,9 @@ theorem kstep_exec (d s : XReg) (sel : BitVec 8) (rot : Bool) (k : XReg) (off : 
     (hd3 : d ≠ .xmm3) (hd4 : d ≠ .xmm4) (hk3 : k ≠ .xmm3)
     (hw : InRegions st.wr (st.gpr .rdx + BitVec.ofInt 64 (off : Int)) 16) :
     WP isa (.block (kstep d s sel rot k off)) st fun st' =>
-      st'.xmm d = kv (st.xmm d) (genT (st.xmm s) sel rot (st.xmm k)) ∧
+      st'.xmm d = kv (st.xmm d) (genT (st.xmm s) sel rot (st.xmm k) (st.xmm .xmm0)) ∧
       st'.mem = st.mem.writeW (st.gpr .rdx + BitVec.ofInt 64 (off : Int))
-        (kv (st.xmm d) (genT (st.xmm s) sel rot (st.xmm k))) ∧
+        (kv (st.xmm d) (genT (st.xmm s) sel rot (st.xmm k) (st.xmm .xmm0))) ∧
       st'.gpr = st.gpr ∧ st'.rd = st.rd ∧ st'.wr = st.wr ∧
       ∀ x, x ≠ d → x ≠ .xmm3 → x ≠ .xmm4 → st'.xmm x = st.xmm x := by
   apply WP.of_runBlock
@@ -462,21 +464,28 @@ theorem pre_of (s₀ : State) (h : expandKeyX86_64.pre s₀) : Pre s₀ := by
 
 /-- Words `0 … K − 1` of the schedule of the `nk`-word key are stored. -/
 structure KS (s₀ : State) (nk K : Nat) (s : State) : Prop where
-  gpr : s.gpr = s₀.gpr
+  gpr : ∀ r, r ≠ .rax → s.gpr r = s₀.gpr r
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
   frame : Frame [schR s₀] s₀.mem s.mem
   good : Good s.mem (sp s₀) (W s₀.mem (kp s₀) nk) K
+  mask : s.xmm .xmm0 = Impl.Aes.X86_64.AesNi.rotMask (if nk = 6 then 1 else 3)
+
+theorem KS.mask1 {s₀ : State} {K : Nat} {s : State} (h : KS s₀ 6 K s) : s.xmm .xmm0 = Impl.Aes.X86_64.AesNi.rotMask 1 := h.mask
+
+theorem KS.mask3 {s₀ : State} {nk K : Nat} {s : State} (h : KS s₀ nk K s) (hn : nk ≠ 6) :
+    s.xmm .xmm0 = Impl.Aes.X86_64.AesNi.rotMask 3 := by
+  rw [h.mask]; simp only [hn, ite_false]
 
 theorem KS.of_eq {s₀ : State} {nk K K' : Nat} {s : State} (h : KS s₀ nk K s) (e : K = K') :
     KS s₀ nk K' s := e ▸ h
 
-theorem sched_in {s₀ : State} (hp : Pre s₀) {s : State} (hwr : s.wr = s₀.wr) (hg : s.gpr = s₀.gpr)
+theorem sched_in {s₀ : State} (hp : Pre s₀) {s : State} (hwr : s.wr = s₀.wr) (hg : s.gpr .rdx = s₀.gpr .rdx)
     {off : Nat} (h : off + 16 ≤ 240) :
     InRegions s.wr (s.gpr .rdx + BitVec.ofInt 64 (off : Int)) 16 :=
   ⟨schR s₀, by rw [hwr]; exact hp.wr, by rw [hg, ofInt_natCast]; exact contains_offset h (by omega_arith)⟩
 
-theorem key_in {s₀ : State} (hp : Pre s₀) {s : State} (hrd : s.rd = s₀.rd) (hg : s.gpr = s₀.gpr)
+theorem key_in {s₀ : State} (hp : Pre s₀) {s : State} (hrd : s.rd = s₀.rd) (hg : s.gpr .rdi = s₀.gpr .rdi)
     {off : Nat} (h : off + 16 ≤ len s₀) :
     InRegions (s.rd ++ s.wr) (s.gpr .rdi + BitVec.ofInt 64 (off : Int)) 16 :=
   ⟨⟨kp s₀, len s₀⟩, by simp [hrd, hp.rd], by
@@ -540,14 +549,14 @@ theorem kstepK {s₀ : State} (hp : Pre s₀) {nk : Nat} (h0 : 0 < nk) (d s : XR
     (rot : Bool) (k : XReg) (a b off : Nat) (hb : b = a + nk) (hoff : off = 4 * b) (hK : 4 * b + 16 ≤ 240)
     (hd3 : d ≠ .xmm3) (hd4 : d ≠ .xmm4) (hk3 : k ≠ .xmm3) {st : State} (hI : KS s₀ nk b st)
     (hA : ∀ j < 4, dword (st.xmm d) j = W s₀.mem (kp s₀) nk (a + j))
-    (hT : ∀ j < 4, dword (genT (st.xmm s) sel rot (st.xmm k)) j =
+    (hT : ∀ j < 4, dword (genT (st.xmm s) sel rot (st.xmm k) (st.xmm .xmm0)) j =
       temp32 nk b (W s₀.mem (kp s₀) nk (b - 1)))
-    (hres : ∀ j, 0 < j → j < 4 → ∀ y, temp32 nk (b + j) y = y) :
+    (hres : ∀ j, 0 < j → j < 4 → ∀ y, temp32 nk (b + j) y = y) (hd0 : d ≠ .xmm0 := by decide) :
     WP isa (.block (kstep d s sel rot k off)) st fun st' => KS s₀ nk (b + 4) st' ∧
       (∀ j < 4, dword (st'.xmm d) j = W s₀.mem (kp s₀) nk (b + j)) ∧
       ∀ x, x ≠ d → x ≠ .xmm3 → x ≠ .xmm4 → st'.xmm x = st.xmm x := by
   subst hoff hb
-  refine WP.mono (kstep_exec d s sel rot k _ st hd3 hd4 hk3 (sched_in hp hI.wr hI.gpr hK))
+  refine WP.mono (kstep_exec d s sel rot k _ st hd3 hd4 hk3 (sched_in hp hI.wr (hI.gpr _ (by decide)) hK))
     fun st' ⟨hx, hm, hg, hrd, hwr, hxo⟩ => ?_
   have v0 : W s₀.mem (kp s₀) nk (a + nk) =
       W s₀.mem (kp s₀) nk (a + 0) ^^^ temp32 nk (a + nk) (W s₀.mem (kp s₀) nk (a + nk - 1)) := by
@@ -560,8 +569,8 @@ theorem kstepK {s₀ : State} (hp : Pre s₀) {nk : Nat} (h0 : 0 < nk) (d s : XR
   have v2 := vj 2 (by omega_arith) (by omega_arith)
   have v3 := vj 3 (by omega_arith) (by omega_arith)
   simp only [Nat.reduceSub, Nat.add_zero] at v1 v2 v3
-  obtain ⟨e0, e1, e2, e3⟩ := dword_kv (st.xmm d) (genT (st.xmm s) sel rot (st.xmm k))
-  have hv : ∀ j < 4, dword (kv (st.xmm d) (genT (st.xmm s) sel rot (st.xmm k))) j =
+  obtain ⟨e0, e1, e2, e3⟩ := dword_kv (st.xmm d) (genT (st.xmm s) sel rot (st.xmm k) (st.xmm .xmm0))
+  have hv : ∀ j < 4, dword (kv (st.xmm d) (genT (st.xmm s) sel rot (st.xmm k) (st.xmm .xmm0))) j =
       W s₀.mem (kp s₀) nk (a + nk + j) := by
     intro j hj
     rcases (by omega_arith : j = 0 ∨ j = 1 ∨ j = 2 ∨ j = 3) with rfl | rfl | rfl | rfl
@@ -571,11 +580,12 @@ theorem kstepK {s₀ : State} (hp : Pre s₀) {nk : Nat} (h0 : 0 < nk) (d s : XR
     · rw [e2, hA 2 (by omega_arith), hA 1 (by omega_arith), hA 0 (by omega_arith), hT 2 (by omega_arith), v2, v1, v0]
     · rw [e3, hA 3 (by omega_arith), hA 2 (by omega_arith), hA 1 (by omega_arith), hA 0 (by omega_arith), hT 3 (by omega_arith),
         v3, v2, v1, v0]
-  refine ⟨⟨hg.trans hI.gpr, hrd.trans hI.rd, hwr.trans hI.wr, ?_, ?_⟩, fun j hj => by rw [hx]; exact hv j hj,
+  refine ⟨⟨fun r hr => by rw [hg]; exact hI.gpr r hr, hrd.trans hI.rd, hwr.trans hI.wr, ?_, ?_,
+    by rw [hxo .xmm0 (Ne.symm hd0) (by decide) (by decide)]; exact hI.mask⟩, fun j hj => by rw [hx]; exact hv j hj,
     hxo⟩
-  · rw [hm, hI.gpr, ofInt_natCast]
+  · rw [hm, hI.gpr _ (by decide), ofInt_natCast]
     exact hI.frame.writeW (List.mem_singleton_self _) _ (contains_offset hK (by omega_arith))
-  · rw [hm, hI.gpr, ofInt_natCast]
+  · rw [hm, hI.gpr _ (by decide), ofInt_natCast]
     exact good_store hI.good _ (Nat.le_refl 4) hv hK
 
 /-- `kstepB6`: from words `b − 6`, `b − 5` in `xmm2` and `b − 1` in `xmm1`'s
@@ -590,7 +600,7 @@ theorem kstepB6K {s₀ : State} (hp : Pre s₀) (c b off : Nat) (hc : c % 6 = 4)
       dword (st'.xmm .xmm2) 1 = W s₀.mem (kp s₀) 6 (b + 1) ∧
       ∀ x, x ≠ .xmm2 → x ≠ .xmm3 → x ≠ .xmm4 → st'.xmm x = st.xmm x := by
   subst hoff hb
-  refine WP.mono (kstepB6_exec _ st (sched_in hp hI.wr hI.gpr hK))
+  refine WP.mono (kstepB6_exec _ st (sched_in hp hI.wr (hI.gpr _ (by decide)) hK))
     fun st' ⟨hx, hm, hg, hrd, hwr, hxo⟩ => ?_
   have v0 : W s₀.mem (kp s₀) 6 (c + 6) = W s₀.mem (kp s₀) 6 c ^^^ W s₀.mem (kp s₀) 6 (c + 5) := by
     rw [W_plain (by decide) (by omega_arith) (temp_plain (by omega_arith) (by omega_arith)),
@@ -608,16 +618,20 @@ theorem kstepB6K {s₀ : State} (hp : Pre s₀) (c b off : Nat) (hc : c % 6 = 4)
     rcases (by omega_arith : j = 0 ∨ j = 1) with rfl | rfl
     · rw [e0, hB0, t 0 (by omega_arith), Nat.add_zero, v0]
     · rw [e1, hB1, hB0, t 1 (by omega_arith), v1, v0]
-  refine ⟨⟨hg.trans hI.gpr, hrd.trans hI.rd, hwr.trans hI.wr, ?_, ?_⟩,
+  refine ⟨⟨fun r hr => by rw [hg]; exact hI.gpr r hr, hrd.trans hI.rd, hwr.trans hI.wr, ?_, ?_,
+    by rw [hxo .xmm0 (by decide) (by decide) (by decide)]; exact hI.mask⟩,
     by rw [hx]; exact hv 0 (by omega_arith), by rw [hx]; exact hv 1 (by omega_arith), hxo⟩
-  · rw [hm, hI.gpr, ofInt_natCast]
+  · rw [hm, hI.gpr _ (by decide), ofInt_natCast]
     exact hI.frame.writeW (List.mem_singleton_self _) _ (contains_offset hK (by omega_arith))
-  · rw [hm, hI.gpr, ofInt_natCast]
+  · rw [hm, hI.gpr _ (by decide), ofInt_natCast]
     exact good_store hI.good _ (by decide) hv hK
 
 /-! ## The round constants -/
 
 open VG.Impl.Aes.X86_64.AesNi (rcReg rcons rcons128)
+
+theorem rcReg_ne0 (j : Nat) : rcReg j ≠ .xmm0 := by
+  unfold rcReg; split <;> decide
 
 theorem rcReg_ne (j : Nat) :
     rcReg j ≠ .xmm1 ∧ rcReg j ≠ .xmm2 ∧ rcReg j ≠ .xmm3 ∧ rcReg j ≠ .xmm4 ∧ rcReg j ≠ .xmm15 := by
@@ -681,6 +695,18 @@ theorem rcons128_ok {st : State} (h : RC 8 st) :
     · simp only [rcReg, reduceCtorEq, ↓reduceIte, h0, h1, h3, h4]
       decide
 
+/-- `rotMaskSet i`: the mask in `xmm0`; only `rax` and `xmm0` change. -/
+theorem rotMaskSet_ok {i : Nat} (hi : i = 1 ∨ i = 3) (st : State) :
+    WP isa (.block (Impl.Aes.X86_64.AesNi.rotMaskSet i)) st fun st' =>
+      st'.xmm .xmm0 = Impl.Aes.X86_64.AesNi.rotMask i ∧ (∀ r, r ≠ .rax → st'.gpr r = st.gpr r) ∧
+      st'.mem = st.mem ∧ st'.rd = st.rd ∧ st'.wr = st.wr ∧ ∀ x, x ≠ .xmm0 → st'.xmm x = st.xmm x := by
+  apply WP.of_runBlock
+  rcases hi with rfl | rfl <;>
+  simp only [Impl.Aes.X86_64.AesNi.rotMaskSet, runBlock_cons, runStep_some, runBlock_nil, exec, XOp.exec, isa,
+    State.setXmm, State.setReg, Option.some.injEq, exists_eq_left'] <;>
+  exact ⟨by simp only [ite_true]; decide, fun r hr => by simp only [hr, ite_false], trivial, trivial, trivial,
+    fun x hx => by simp only [hx, ite_false]⟩
+
 /-! ## AES-128 -/
 
 /-- After `k` steps: words `0 … 4k + 3` stored, `4k … 4k + 3` in `xmm1`. -/
@@ -694,25 +720,29 @@ theorem expand128_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 16) {rs : L
   refine WP.mono (rcons128_ok hrc) fun (st₀ : State) ⟨hf₀, hrc₀⟩ => ?_
   have hf' := hf.comp hf₀
   rw [WP.block_append_iff]
+  refine WP.mono (rotMaskSet_ok (.inr rfl) st₀) fun stm ⟨hm0, hgm, hmm, hrdm, hwrm, hxm⟩ => ?_
+  rw [WP.block_append_iff]
   have hin := key_in hp (s := s₀) rfl rfl (off := 0) (by omega_arith)
   have hw := sched_in hp (s := s₀) rfl rfl (off := 0) (by omega_arith)
   refine WP.mono (Q := Inv128 s₀ 0) ?_ fun st₁ h₁ => WP.mono
     (wp_range_flatMap (Inv128 s₀) (fun k st hk h => ?_) 10 (Nat.le_refl _) st₁ h₁) fun _ h => h.1
   · apply WP.of_runBlock
     simp only [↓reduceIte, runBlock_cons, runStep_some, runBlock_nil, exec, isa,
-      State.setXmm, State.load128, State.store128, ea_at, hf'.gpr, hf'.rd, hf'.wr, hf'.mem, hin, hw,
-      Option.map_some, Option.some.injEq, exists_eq_left']
+      State.setXmm, State.load128, State.store128, ea_at, hgm .rdi (by decide), hgm .rdx (by decide), hrdm, hwrm, hmm,
+      hf'.gpr, hf'.rd, hf'.wr, hf'.mem, hin, hw, Option.map_some, Option.some.injEq, exists_eq_left']
     have hv : ∀ j < 4, dword (s₀.mem.readW (s₀.gpr .rdi + BitVec.ofInt 64 ((0 : Nat) : Int)) 128) j =
         W s₀.mem (kp s₀) 4 (0 + j) := fun j hj => by
       rw [dword_key _ _ 0 j (0 + j) hj (by omega_arith), W_lt (by omega_arith)]
     obtain ⟨f₁, g₁⟩ := store_mem (Frame.refl _ _) (good_zero _ _ _) _ 0 rfl (Nat.le_refl 4) hv (by decide)
-    exact ⟨⟨rfl, rfl, rfl, f₁, g₁.mono (by omega_arith)⟩, fun j hj => (hv j hj).trans (congrArg _ (by omega_arith)),
-      fun j hj => by simp only [(rcReg_ne j).1, ite_false]; exact hrc₀ j hj⟩
+    exact ⟨⟨fun r hr => (hgm r hr).trans (congrFun hf'.gpr r), rfl, rfl, f₁, g₁.mono (by omega_arith),
+        by simp only [reduceCtorEq, ite_false]; exact hm0⟩,
+      fun j hj => (hv j hj).trans (congrArg _ (by omega_arith)),
+      fun j hj => by simp only [(rcReg_ne j).1, ite_false]; rw [hxm _ (rcReg_ne0 j)]; exact hrc₀ j hj⟩
   · refine WP.mono (kstepK hp (nk := 4) (by decide) .xmm1 .xmm1 0xff true (rcReg k) (4 * k) (4 * (k + 1)) _
       (by omega_arith) (by omega_arith) (by omega_arith) (by decide) (by decide) (rcReg_ne k).2.2.1 (h.1.of_eq (by omega_arith)) h.2.1
       (fun j hj => ?_) (fun j h1 h2 y => temp_plain (by omega_arith) (by omega_arith) y))
       fun st' ⟨hI', hA', hx'⟩ => ⟨hI'.of_eq (by omega_arith), hA', h.2.2.keep (Or.inl rfl) hx'⟩
-    rw [h.2.2 k (by omega_arith), genT_rot _ _ 3 _ (shuf_ff _), dword_bcast _ hj, h.2.1 3 (by omega_arith),
+    rw [h.2.2 k (by omega_arith), h.1.mask3 (by decide), genT_rot _ _ 3 _ (.inr rfl) , dword_bcast _ hj, h.2.1 3 (by omega_arith),
       temp_rc (by omega_arith), show 4 * (k + 1) / 4 = k + 1 by omega_arith, show 4 * (k + 1) - 1 = 4 * k + 3 by omega_arith]
 
 /-! ## AES-192 -/
@@ -726,13 +756,15 @@ def Inv192 (s₀ : State) (k : Nat) (st : State) : Prop :=
 
 theorem hT55 {s₀ : State} {st : State} {b k : Nat} (hb : b = 6 * k + 6)
     (h : dword (st.xmm .xmm2) 1 = W s₀.mem (kp s₀) 6 (b - 1)) (hr : st.xmm (rcReg k) = bc (rc (k + 1))) :
-    ∀ j < 4, dword (genT (st.xmm .xmm2) 0x55 true (st.xmm (rcReg k))) j =
+    ∀ j < 4, dword (genT (st.xmm .xmm2) 0x55 true (st.xmm (rcReg k)) (Impl.Aes.X86_64.AesNi.rotMask 1)) j =
       temp32 6 b (W s₀.mem (kp s₀) 6 (b - 1)) := fun j hj => by
-  rw [hr, genT_rot _ _ 1 _ (shuf_55 _), dword_bcast _ hj, h, temp_rc (by omega_arith), show b / 6 = k + 1 by omega_arith]
+  rw [hr, genT_rot _ _ 1 _ (.inl rfl), dword_bcast _ hj, h, temp_rc (by omega_arith), show b / 6 = k + 1 by omega_arith]
 
 theorem expand192_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 24) {rs : List XReg} {st : State}
     (hf : XFrame rs s₀ st) (hrc : RC 8 st) : WP isa (.block expand192) st (KS s₀ 6 52) := by
   simp only [expand192, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (rotMaskSet_ok (.inl rfl) st) fun stm ⟨hm0, hgm, hmm, hrdm, hwrm, hxm⟩ => ?_
   rw [WP.block_append_iff]
   have hin0 := key_in hp (s := s₀) rfl rfl (off := 0) (by omega_arith)
   have hin8 := key_in hp (s := s₀) rfl rfl (off := 8) (by omega_arith)
@@ -742,8 +774,8 @@ theorem expand192_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 24) {rs : L
     (wp_range_flatMap (Inv192 s₀) (fun k st hk h => ?_) 7 (Nat.le_refl _) st₁ h₁) fun st₂ h => ?_)
   · apply WP.of_runBlock
     simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, isa,
-      XOp.exec, State.setXmm, State.load128, State.store128, ea_at, hf.gpr, hf.rd, hf.wr, hf.mem,
-      hin0, hin8, hw0, hw16, ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left']
+      XOp.exec, State.setXmm, State.load128, State.store128, ea_at, hgm .rdi (by decide), hgm .rdx (by decide),
+      hrdm, hwrm, hmm, hf.gpr, hf.rd, hf.wr, hf.mem, hin0, hin8, hw0, hw16, ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left']
     have hv : ∀ j < 4, dword (s₀.mem.readW (s₀.gpr .rdi + BitVec.ofInt 64 ((0 : Nat) : Int)) 128) j =
         W s₀.mem (kp s₀) 6 (0 + j) := fun j hj => by
       rw [dword_key _ _ 0 j (0 + j) hj (by omega_arith), W_lt (by omega_arith)]
@@ -756,13 +788,16 @@ theorem expand192_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 24) {rs : L
       · rw [e1, dword_key _ _ 8 3 5 (by omega_arith) (by omega_arith), W_lt (by omega_arith)]
     obtain ⟨f₁, g₁⟩ := store_mem (Frame.refl _ _) (good_zero _ _ _) _ 0 rfl (Nat.le_refl 4) hv (by decide)
     obtain ⟨f₂, g₂⟩ := store_mem f₁ g₁ _ 16 rfl (by decide) hB (by decide)
-    exact ⟨⟨rfl, rfl, rfl, f₂, g₂.mono (by omega_arith)⟩, fun j hj => (hv j hj).trans (congrArg _ (by omega_arith)),
+    exact ⟨⟨fun r hr => (hgm r hr).trans (congrFun hf.gpr r), rfl, rfl, f₂, g₂.mono (by omega_arith),
+        by simp only [reduceCtorEq, ite_false]; exact hm0⟩,
+      fun j hj => (hv j hj).trans (congrArg _ (by omega_arith)),
       hB 0 (by omega_arith), hB 1 (by omega_arith),
-      fun j hj => by simp only [(rcReg_ne j).1, (rcReg_ne j).2.1, ite_false]; exact hrc j hj⟩
+      fun j hj => by
+        simp only [(rcReg_ne j).1, (rcReg_ne j).2.1, ite_false]; rw [hxm _ (rcReg_ne0 j)]; exact hrc j hj⟩
   · rw [WP.block_append_iff]
     refine WP.mono (kstepK hp (nk := 6) (by decide) .xmm1 .xmm2 0x55 true (rcReg k) (6 * k) (6 * k + 6) _
       (by omega_arith) (by omega_arith) (by omega_arith) (by decide) (by decide) (rcReg_ne k).2.2.1 h.1 h.2.1
-      (hT55 rfl (h.2.2.2.1.trans (congrArg _ (by omega_arith))) (h.2.2.2.2 k (by omega_arith)))
+      (by rw [h.1.mask1]; exact hT55 rfl (h.2.2.2.1.trans (congrArg _ (by omega_arith))) (h.2.2.2.2 k (by omega_arith)))
       (fun j h1 h2 y => temp_plain (by omega_arith) (by omega_arith) y)) fun st₁ ⟨hI₁, hA₁, hx₁⟩ => ?_
     have hx2 := hx₁ .xmm2 (by decide) (by decide) (by decide)
     have hrc₁ := h.2.2.2.2.keep (Or.inl rfl) hx₁
@@ -775,7 +810,7 @@ theorem expand192_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 24) {rs : L
     exact (hA₁ j hj).trans (congrArg _ (by omega_arith))
   · refine WP.mono (kstepK hp (nk := 6) (by decide) .xmm1 .xmm2 0x55 true (rcReg 7) (6 * 7) (6 * 7 + 6) 192
       (by omega_arith) (by omega_arith) (by omega_arith) (by decide) (by decide) (rcReg_ne 7).2.2.1 h.1 h.2.1
-      (hT55 (k := 7) rfl (h.2.2.2.1.trans (congrArg _ (by omega_arith))) (h.2.2.2.2 7 (by omega_arith)))
+      (by rw [h.1.mask1]; exact hT55 (k := 7) rfl (h.2.2.2.1.trans (congrArg _ (by omega_arith))) (h.2.2.2.2 7 (by omega_arith)))
       (fun j h1 h2 y => temp_plain (by omega_arith) (by omega_arith) y)) fun st' ⟨hI', _, _⟩ => hI'.of_eq (by omega_arith)
 
 /-! ## AES-256 -/
@@ -788,13 +823,15 @@ def Inv256 (s₀ : State) (k : Nat) (st : State) : Prop :=
 
 theorem hTff {s₀ : State} {st : State} {b k : Nat} (hb : b = 8 * k + 8)
     (h : dword (st.xmm .xmm2) 3 = W s₀.mem (kp s₀) 8 (b - 1)) (hr : st.xmm (rcReg k) = bc (rc (k + 1))) :
-    ∀ j < 4, dword (genT (st.xmm .xmm2) 0xff true (st.xmm (rcReg k))) j =
+    ∀ j < 4, dword (genT (st.xmm .xmm2) 0xff true (st.xmm (rcReg k)) (Impl.Aes.X86_64.AesNi.rotMask 3)) j =
       temp32 8 b (W s₀.mem (kp s₀) 8 (b - 1)) := fun j hj => by
-  rw [hr, genT_rot _ _ 3 _ (shuf_ff _), dword_bcast _ hj, h, temp_rc (by omega_arith), show b / 8 = k + 1 by omega_arith]
+  rw [hr, genT_rot _ _ 3 _ (.inr rfl), dword_bcast _ hj, h, temp_rc (by omega_arith), show b / 8 = k + 1 by omega_arith]
 
 theorem expand256_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 32) {rs : List XReg} {st : State}
     (hf : XFrame rs s₀ st) (hrc : RC 8 st) : WP isa (.block expand256) st (KS s₀ 8 60) := by
   simp only [expand256, List.append_assoc]
+  rw [WP.block_append_iff]
+  refine WP.mono (rotMaskSet_ok (.inr rfl) st) fun stm ⟨hm0, hgm, hmm, hrdm, hwrm, hxm⟩ => ?_
   rw [WP.block_append_iff]
   have hin0 := key_in hp (s := s₀) rfl rfl (off := 0) (by omega_arith)
   have hin16 := key_in hp (s := s₀) rfl rfl (off := 16) (by omega_arith)
@@ -804,7 +841,8 @@ theorem expand256_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 32) {rs : L
     (wp_range_flatMap (Inv256 s₀) (fun k st hk h => ?_) 6 (Nat.le_refl _) st₁ h₁) fun st₂ h => ?_)
   · apply WP.of_runBlock
     simp (config := {decide := true}) only [runBlock_cons, runStep_some, runBlock_nil, exec, isa,
-      XOp.exec, State.setXmm, State.load128, State.store128, ea_at, hf.gpr, hf.rd, hf.wr, hf.mem, hin0, hin16,
+      XOp.exec, State.setXmm, State.load128, State.store128, ea_at, hgm .rdi (by decide), hgm .rdx (by decide),
+      hrdm, hwrm, hmm, hf.gpr, hf.rd, hf.wr, hf.mem, hin0, hin16,
       hw0, hw16, ite_true, ite_false, Option.map_some, Option.some.injEq, exists_eq_left', eval_pxor',
       BitVec.xor_self]
     have hv : ∀ j < 4, dword (s₀.mem.readW (s₀.gpr .rdi + BitVec.ofInt 64 ((0 : Nat) : Int)) 128) j =
@@ -815,15 +853,18 @@ theorem expand256_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 32) {rs : L
       rw [dword_key _ _ 16 j (4 + j) hj (by omega_arith), W_lt (by omega_arith)]
     obtain ⟨f₁, g₁⟩ := store_mem (Frame.refl _ _) (good_zero _ _ _) _ 0 rfl (Nat.le_refl 4) hv (by decide)
     obtain ⟨f₂, g₂⟩ := store_mem f₁ g₁ _ 16 rfl (Nat.le_refl 4) hB (by decide)
-    exact ⟨⟨rfl, rfl, rfl, f₂, g₂.mono (by omega_arith)⟩, fun j hj => (hv j hj).trans (congrArg _ (by omega_arith)),
+    exact ⟨⟨fun r hr => (hgm r hr).trans (congrFun hf.gpr r), rfl, rfl, f₂, g₂.mono (by omega_arith),
+        by simp only [reduceCtorEq, ite_false]; exact hm0⟩,
+      fun j hj => (hv j hj).trans (congrArg _ (by omega_arith)),
       fun j hj => (hB j hj).trans (congrArg _ (by omega_arith)),
       fun j hj => by
-        simp only [(rcReg_ne j).1, (rcReg_ne j).2.1, (rcReg_ne j).2.2.2.2, ite_false]; exact hrc j (by omega_arith),
+        simp only [(rcReg_ne j).1, (rcReg_ne j).2.1, (rcReg_ne j).2.2.2.2, ite_false]; rw [hxm _ (rcReg_ne0 j)]
+        exact hrc j (by omega_arith),
       rfl⟩
   · rw [WP.block_append_iff]
     refine WP.mono (kstepK hp (nk := 8) (by decide) .xmm1 .xmm2 0xff true (rcReg k) (8 * k) (8 * k + 8) _
       (by omega_arith) (by omega_arith) (by omega_arith) (by decide) (by decide) (rcReg_ne k).2.2.1 h.1 h.2.1
-      (hTff rfl ((h.2.2.1 3 (by omega_arith)).trans (congrArg _ (by omega_arith))) (h.2.2.2.1 k (by omega_arith)))
+      (by rw [h.1.mask3 (by decide)]; exact hTff rfl ((h.2.2.1 3 (by omega_arith)).trans (congrArg _ (by omega_arith))) (h.2.2.2.1 k (by omega_arith)))
       (fun j h1 h2 y => temp_plain (by omega_arith) (by omega_arith) y)) fun st₁ ⟨hI₁, hA₁, hx₁⟩ => ?_
     have hx2 := hx₁ .xmm2 (by decide) (by decide) (by decide)
     have hz₁ : st₁.xmm .xmm15 = 0 := by rw [hx₁ .xmm15 (by decide) (by decide) (by decide)]; exact h.2.2.2.2
@@ -841,14 +882,14 @@ theorem expand256_ok {s₀ : State} (hp : Pre s₀) (hl : len s₀ = 32) {rs : L
     exact (hA₁ j hj).trans (congrArg _ (by omega_arith))
   · refine WP.mono (kstepK hp (nk := 8) (by decide) .xmm1 .xmm2 0xff true (rcReg 6) (8 * 6) (8 * 6 + 8) 224
       (by omega_arith) (by omega_arith) (by omega_arith) (by decide) (by decide) (rcReg_ne 6).2.2.1 h.1 h.2.1
-      (hTff (k := 6) rfl ((h.2.2.1 3 (by omega_arith)).trans (congrArg _ (by omega_arith))) (h.2.2.2.1 6 (by omega_arith)))
+      (by rw [h.1.mask3 (by decide)]; exact hTff (k := 6) rfl ((h.2.2.1 3 (by omega_arith)).trans (congrArg _ (by omega_arith))) (h.2.2.2.1 6 (by omega_arith)))
       (fun j h1 h2 y => temp_plain (by omega_arith) (by omega_arith) y)) fun st' ⟨hI', _, _⟩ => hI'.of_eq (by omega_arith)
 
 /-! ## The whole function -/
 
 theorem fin {s₀ : State} (hp : Pre s₀) {nk : Nat} (h0 : 0 < nk) (hl : len s₀ = 4 * nk) {st : State}
     (hI : KS s₀ nk (4 * (nk + 7)) st) : gprPreserved s₀ st ∧ expandKeyX86_64.post s₀ st := by
-  refine ⟨⟨fun r _ => by rw [hI.gpr], hI.frame.readW (Region.contains_self _ _)
+  refine ⟨⟨fun r hr => hI.gpr r (by rintro rfl; exact absurd hr (by decide)), hI.frame.readW (Region.contains_self _ _)
     (by simpa using hp.ret) (by decide)⟩, ?_⟩
   have hl' : (s₀.gpr .rsi).toNat = 4 * nk := hl
   show Spec.Aes.bytesAt st.mem (sp s₀) (16 * (Spec.Aes.rounds ((s₀.gpr .rsi).toNat / 4) + 1)) =
