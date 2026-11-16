@@ -1,26 +1,28 @@
 module
 
 public import VerifiedGarbage.Impl.Gcm.AArch64.Neon
-public import VerifiedGarbage.Proof.Gcm.AArch64.Neon.Mul
-public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+public import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
+public import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 import VerifiedGarbage.Proof.Framework.AArch64.Exec
 import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
 import VerifiedGarbage.Proof.Framework.Contract
+import VerifiedGarbage.Proof.Framework.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 import VerifiedGarbage.Proof.Framework.AArch64.Inline
 import VerifiedGarbage.Proof.Framework.Range
 meta import VerifiedGarbage.Impl.Gcm.AArch64.Neon
-meta import VerifiedGarbage.Proof.Gcm.AArch64.Neon.Mul
-meta import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Ghash
+meta import VerifiedGarbage.Proof.Gcm.AArch64.Pmull.Groups
+meta import VerifiedGarbage.Proof.Gcm.AArch64.Ghash
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Reduce
 meta import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Framework.AddrArith
 meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.Lit
 meta import VerifiedGarbage.Proof.Framework.AArch64.VecPreserved
 meta import VerifiedGarbage.Proof.Framework.AArch64.Inline
 meta import VerifiedGarbage.Proof.Framework.Range
@@ -30,9 +32,12 @@ meta import VerifiedGarbage.Proof.Framework.Range
 
 Untrusted: everything here is checked by Lean. What each group of
 instructions of `Impl.Gcm.AArch64.Neon` does to the state, each proved by one
-symbolic execution, and from them that a block's instructions compute `mulV`
-of `Proof/Gcm/Clmul/Ops.lean`, which `vg_ghash_aes` computes with the 64-bit
-`pmull` (`Mul.lean`): the rest is as its proof (`Pmull/Ghash.lean`).
+symbolic execution, as bits, and from them that a block's instructions
+compute `mulV` of `Proof/Gcm/Clmul/Ops.lean`, which `vg_ghash_aes` computes
+with the 64-bit `pmull`, so that the function is `vg_ghash`'s contract's. The
+arithmetic that takes is a hypothesis here (`Arith`), proven with the algebra
+of `Proof/Gcm/Poly.lean` in `Proof/AesGcm/AArch64/GhashImpls.lean`, as that
+of `vg_ghash_aes`'s key (`MulKey`): this module needs no algebra.
 -/
 
 @[expose] public section
@@ -42,14 +47,91 @@ local notation "ofVDwords" => VG.Proof.Gcm.Clmul.ofVDwords
 
 namespace VG.Proof.Gcm.AArch64.Neon
 
-open VG VG.AArch64 VG.Proof.Gcm VG.Proof.Gcm.Poly VG.Proof.Gcm.Clmul
-open VG.Proof.Gcm.AArch64 (hA yp dp nb H₀ Y₀ blkAddr yR dR Pre pre_of contains_offset toNat_ofNat_lt)
+open VG VG.AArch64 VG.Proof.Gcm VG.Proof.Gcm.Clmul
+open VG.Proof.Gcm.AArch64 (hA yp dp nb H₀ Y₀ blkAddr hR yR dR Pre pre_of contains_offset toNat_ofNat_lt)
 open VG.Proof.Gcm.AArch64.Pmull (VOnly v_setV gpr_setV mem_setV rd_setV wr_setV sp_setV exec_eor exec_ext8
   exec_movi0 exec_rev64b exec_movz_x exec_ins_d2 exec_addImm exec_subImm exec_strq gpr_write_x v_write mem_write
-  rd_write wr_write ldrev_ok eor_ok Pm Ys φ_Ys_succ in_blk16 add_ofNat_zero ofNat_beq ofNat_bne φ_store)
+  rd_write wr_write loadRev_ok eor_ok rev64b_read blockAt_store keyV MulKey)
 open VG.Spec.Gcm (Block blockAt blocksAt ghashFrom)
 open VG.Impl.Gcm.Clmul (poly)
 open VG.Impl.Gcm.AArch64.Neon
+
+/-! ## The values
+
+What the instructions compute, as bits. -/
+
+/-- Byte `i` of a doubleword. -/
+def by8 (q : BitVec 64) (i : Nat) : BitVec 8 := q.extractLsb' (8 * i) 8
+
+/-- What `pmull .8h` computes from the doublewords it reads. -/
+def pmB (a b : BitVec 64) : BitVec 128 := ofVHalves fun e => polyMul8 (by8 a e) (by8 b e)
+
+/-! ### The product of two doublewords
+
+Byte `i` of `a` and byte `j` of `b` meet in lane `l` of a `pmull` of `a`
+shifted down by `d` bytes and `b` shifted up by as many, where `i = l + d` and
+`j = l - d`: their product then lies at byte `2 l = i + j`, where it belongs
+(`cl0`: the pairs with `i + j` even). Those with `i + j` odd meet in the
+`pmull`s of `a` shifted down by `d` and `b` shifted up by `d - 1`, a byte
+below where they belong (`cl1`). -/
+
+def cl0 (a b : BitVec 64) : BitVec 128 :=
+  pmB a b ^^^ pmB (a >>> 8) (b <<< 8) ^^^ pmB (a >>> 16) (b <<< 16) ^^^ pmB (a >>> 24) (b <<< 24) ^^^
+    pmB (a <<< 8) (b >>> 8) ^^^ pmB (a <<< 16) (b >>> 16) ^^^ pmB (a <<< 24) (b >>> 24)
+
+def cl1 (a b : BitVec 64) : BitVec 128 :=
+  pmB a (b >>> 8) ^^^ pmB (a >>> 8) b ^^^ pmB (a >>> 16) (b <<< 8) ^^^ pmB (a >>> 24) (b <<< 16) ^^^
+    pmB (a >>> 32) (b <<< 24) ^^^ pmB (a <<< 8) (b >>> 16) ^^^ pmB (a <<< 16) (b >>> 24) ^^^
+    pmB (a <<< 24) (b >>> 32)
+
+/-- Each doubleword shifted up by `k` bits. -/
+def sl (k : Nat) (v : BitVec 128) : BitVec 128 := ofVDwords (vdword v 0 <<< k) (vdword v 1 <<< k)
+
+/-- Each doubleword shifted down by `k` bits. -/
+def sr (k : Nat) (v : BitVec 128) : BitVec 128 := ofVDwords (vdword v 0 >>> k) (vdword v 1 >>> k)
+
+/-- The fold of `lo` into `hi`, with its halves swapped. -/
+def fold (lo hi : BitVec 128) : BitVec 128 :=
+  let c := sl 63 lo ^^^ sl 62 lo ^^^ sl 57 lo
+  let lo := lo ^^^ ext8 0#128 c
+  let hi := hi ^^^ ext8 c 0#128
+  let hi := hi ^^^ lo ^^^ sr 1 lo ^^^ sr 2 lo ^^^ sr 7 lo
+  ext8 hi hi
+
+/-- The block, with its halves swapped, of a product. -/
+def reduceN (p : Prod) : BitVec 128 := fold (p.lo ^^^ ext8 0#128 p.mid) (p.hi ^^^ ext8 p.mid 0#128)
+
+/-- The product of the block `a` as loaded and the key whose halves swapped
+are `s`, reduced: its three products of doublewords are those of the halves
+and of their sums. -/
+def mulN (a s : BitVec 128) : BitVec 128 :=
+  reduceN ⟨polyMul (vdword a 1) (vdword s 1),
+    polyMul (vdword a 0 ^^^ vdword a 1) (vdword s 0 ^^^ vdword s 1) ^^^ polyMul (vdword a 0) (vdword s 0) ^^^
+      polyMul (vdword a 1) (vdword s 1),
+    polyMul (vdword a 0) (vdword s 0)⟩
+
+/-- What `twist` computes from the hash subkey as loaded. -/
+def twistV (a : BitVec 128) : BitVec 128 :=
+  (sl 1 a ^^^ ext8 (sr 63 a) (sr 63 a)) ^^^
+    (ofVDwords ((vdword a 0).sshiftRight 63) ((vdword a 1).sshiftRight 63) &&& ofVDwords poly 0#64)
+
+/-- The arithmetic the code rests on, stated without the algebra that proves
+it (`arith`, `Proof/AesGcm/AArch64/GhashImpls.lean`): fifteen `pmull`s of
+bytes make the product of two doublewords, and the sum of those below where
+they belong has a clear top byte; the three products and the reduction by
+shifts make `mulV`; `twist` computes the key of `vg_ghash_aes`, by which
+`mulV` multiplies by the hash subkey. -/
+structure Arith : Prop where
+  cl : ∀ a b : BitVec 64, cl0 a b ^^^ (cl1 a b <<< 8) = polyMul a b
+  msb : ∀ (a b : BitVec 64) (i : Nat), i < 8 → (cl1 a b).getMsbD i = false
+  mul : ∀ a t : BitVec 128, mulN a (ext8 t t) = mulV a t
+  key : ∀ H : Block, ext8 (twistV (ext8 H H)) (twistV (ext8 H H)) = keyV H
+  mulKey : MulKey
+
+theorem ext8_xor (a b : BitVec 128) : ext8 (a ^^^ b) (a ^^^ b) = ext8 a a ^^^ ext8 b b := by
+  have h := vdwords (ext8 a a ^^^ ext8 b b)
+  rw [vdword_xor, vdword_xor, vdword_ext8_0, vdword_ext8_1, vdword_ext8_0, vdword_ext8_1] at h
+  rw [h, ext8_eq, vdword_xor, vdword_xor]
 
 /-! ## The instructions -/
 
@@ -300,7 +382,7 @@ theorem firstLH_ok {s : State} {sv : BitVec 128} (hK : Keys kReg s sv) :
   simp only [v_setV, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2, ite_false]
 
 /-- `mulLH`: the products of the low and of the high doublewords. -/
-theorem mulLH_ok {s : State} {sv : BitVec 128} (hK : Keys kReg s sv) :
+theorem mulLH_ok (ar : Arith) {s : State} {sv : BitVec 128} (hK : Keys kReg s sv) :
     WP isa (.block mulLH) s fun s' =>
       s'.v P0 = polyMul (vdword (s.v A) 0) (vdword sv 0) ∧
       s'.v P1 = polyMul (vdword (s.v A) 1) (vdword sv 1) ∧ VOnly [F, U, P0, P1, Q0, Q1] s s' := by
@@ -325,9 +407,9 @@ theorem mulLH_ok {s : State} {sv : BitVec 128} (hK : Keys kReg s sv) :
   rw [WP.block_append_iff]
   refine WP.mono (fin_ok P0 Q0 s₈) fun s₉ ⟨f₉, o₉⟩ => ?_
   refine WP.mono (fin_ok P1 Q1 s₉) fun s' ⟨f', o'⟩ => ⟨?_, ?_, (o₈.trans (o₉.trans o')).weaken⟩
-  · rw [o'.v P0 (by decide), f₉, hP0, hQ0, ext15_self _ fun i hi => msb_cl1 _ _ hi, cl_polyMul]
-  · rw [f', o₉.v P1 (by decide), o₉.v Q1 (by decide), hP1, hQ1, ext15_self _ fun i hi => msb_cl1 _ _ hi,
-      cl_polyMul]
+  · rw [o'.v P0 (by decide), f₉, hP0, hQ0, ext15_self _ fun i hi => ar.msb _ _ i hi, ar.cl]
+  · rw [f', o₉.v P1 (by decide), o₉.v Q1 (by decide), hP1, hQ1, ext15_self _ fun i hi => ar.msb _ _ i hi,
+      ar.cl]
 
 /-- The products of the form `e` of the sum of the block's halves (in `A`
 at `s₀`) by the forms `c0` and `c1` of the sum of the key's, added to the sums. -/
@@ -388,7 +470,7 @@ theorem firstM_ok {s : State} {sm : BitVec 128} (hK : Keys mReg s sm) :
   simp only [v_setV, hr.1, hr.2.1, hr.2.2.2.1, hr.2.2.2.2, ite_false]
 
 /-- `mulM`: the product of the sums of the halves. -/
-theorem mulM_ok {s : State} {sm : BitVec 128} (hK : Keys mReg s sm) :
+theorem mulM_ok (ar : Arith) {s : State} {sm : BitVec 128} (hK : Keys mReg s sm) :
     WP isa (.block mulM) s fun s' =>
       s'.v Q0 = polyMul (vdword (s.v A) 0 ^^^ vdword (s.v A) 1) (vdword sm 0) ∧
       VOnly [A, F, U, Q0, Q1] s s' := by
@@ -411,7 +493,7 @@ theorem mulM_ok {s : State} {sm : BitVec 128} (hK : Keys mReg s sm) :
   have hQ1 : s₈.v Q1 = cl1 (vdword (s.v A) 0 ^^^ vdword (s.v A) 1) (vdword sm 0) := by
     rw [b₈, b₇, b₆, b₅, b₄, b₃, b₂, b₁, hm, ← m₁, hm]; rfl
   refine WP.mono (fin_ok Q0 Q1 s₈) fun s' ⟨f', o'⟩ => ⟨?_, (o₁.trans (o₈.trans o')).weaken⟩
-  rw [f', hQ0, hQ1, ext15_self _ fun i hi => msb_cl1 _ _ hi, cl_polyMul]
+  rw [f', hQ0, hQ1, ext15_self _ fun i hi => ar.msb _ _ i hi, ar.cl]
 
 theorem middle_ok (s : State) :
     WP isa (.block middle) s fun s' =>
@@ -465,18 +547,18 @@ theorem reduce_ok (s : State) :
   rfl
 
 /-- The block in `A` multiplied by the key: `mulV` of the 64-bit `pmull`. -/
-theorem mul_ok {s : State} {sv : BitVec 128} (hK : Keys kReg s sv)
+theorem mul_ok (ar : Arith) {s : State} {sv : BitVec 128} (hK : Keys kReg s sv)
     (hM : Keys mReg s (sv ^^^ ext8 sv sv)) :
     WP isa (.block Impl.Gcm.AArch64.Neon.mul) s fun s' =>
       s'.v Y = mulV (s.v A) (ext8 sv sv) ∧ VOnly [Y, A, F, U, P0, P1, Q0, Q1] s s' := by
   rw [Impl.Gcm.AArch64.Neon.mul, List.append_assoc, WP.block_append_iff]
-  refine WP.mono (mulLH_ok hK) fun s₁ ⟨p0, p1, o₁⟩ => ?_
+  refine WP.mono (mulLH_ok ar hK) fun s₁ ⟨p0, p1, o₁⟩ => ?_
   rw [WP.block_append_iff]
-  refine WP.mono (mulM_ok (s := s₁) (sm := sv ^^^ ext8 sv sv) fun c hc => by
+  refine WP.mono (mulM_ok ar (s := s₁) (sm := sv ^^^ ext8 sv sv) fun c hc => by
     rw [o₁.v _ (mReg_nmem' c), hM c hc]) fun s₂ ⟨q0, o₂⟩ => ?_
   refine WP.mono (reduce_ok s₂) fun s' ⟨y', o'⟩ => ⟨?_, (o₁.trans (o₂.trans o')).weaken⟩
   rw [y', q0, o₂.v P0 (by decide), o₂.v P1 (by decide), p0, p1, o₁.v A (by decide), vdword_xor,
-    vdword_ext8_0, ← mulN_eq, ext8_ext8]
+    vdword_ext8_0, ← ar.mul, ext8_ext8]
   rfl
 
 /-! ## The key -/
@@ -488,47 +570,10 @@ theorem exec_sshr63 (d n : VReg) (s : State) :
 theorem exec_and (d n m : VReg) (s : State) :
     exec (.vop (.logic .and d n m)) s = some (s.setV d (s.v n &&& s.v m)) := rfl
 
-/-- `sshr #63` is the mask of the top bit. -/
-theorem sshr63 (q : BitVec 64) : q.sshiftRight 63 = if q.getMsbD 0 then BitVec.allOnes 64 else 0#64 := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  have hm : (if 63 + i < 64 then q.getLsbD (63 + i) else q.msb) = q.msb := by
-    split_ifs with h
-    · obtain rfl : i = 0 := by omega_using [h]
-      rw [BitVec.msb_eq_getLsbD_last]
-    · rfl
-  rw [BitVec.getLsbD_sshiftRight, hm, decide_eq_false (by omega_using [hi]), Bool.not_false, Bool.true_and]
-  change q.getMsbD 0 = _
-  cases q.getMsbD 0
-  · simp
-  · simp only [ite_true, BitVec.getLsbD_allOnes, hi, decide_true]
-
-theorem and_ofVDwords (a b c d : BitVec 64) :
-    ofVDwords a b &&& ofVDwords c d = ofVDwords (a &&& c) (b &&& d) := by
-  apply BitVec.eq_of_getLsbD_eq; intro i hi
-  simp only [VG.Proof.Gcm.Clmul.ofVDwords, BitVec.getLsbD_and, BitVec.getLsbD_append]
-  by_cases h : i < 64 <;> simp only [h, ite_true, ite_false]
-
-/-- The reduction constant under the mask of the top bit of the low
-doubleword is its `pmull` by that bit. -/
-theorem mask_poly (a : BitVec 128) :
-    ofVDwords ((vdword a 0).sshiftRight 63) ((vdword a 1).sshiftRight 63) &&&
-        setLane 0 64 0 ((0xc200 : BitVec 16).setWidth 64 <<< (16 * 3)) =
-      polyMul (vdword a 0 >>> 63) poly := by
-  rw [show setLane (0 : BitVec 128) 64 0 ((0xc200 : BitVec 16).setWidth 64 <<< (16 * 3)) = ofVDwords poly 0#64 by
-    decide +kernel, and_ofVDwords, ushr63, sshr63, BitVec.and_zero]
-  cases (vdword a 0).getMsbD 0
-  · simp only [Bool.false_eq_true, ite_false, BitVec.zero_and]
-    exact (polyMul_zero_left poly).symm
-  · simp only [ite_true, BitVec.allOnes_and]
-    decide +kernel
-
 /-- `twist`: `H' = H · x⁻¹`, from `H` as loaded in `A`. -/
 theorem twist_ok (s : State) :
     WP isa (.block twist) s fun s' =>
-      s'.v (kReg 3) = (ofVDwords (vdword (s.v A) 0 <<< 1) (vdword (s.v A) 1 <<< 1) ^^^
-        ext8 (ofVDwords (vdword (s.v A) 0 >>> 63) (vdword (s.v A) 1 >>> 63))
-          (ofVDwords (vdword (s.v A) 0 >>> 63) (vdword (s.v A) 1 >>> 63))) ^^^
-        polyMul (vdword (s.v A) 0 >>> 63) poly ∧
+      s'.v (kReg 3) = twistV (s.v A) ∧
       (∀ r, r ∉ [F, U, P0, P1, Q0, kReg 3] → s'.v r = s.v r) ∧
       (∀ r, r ≠ .x5 → s'.gpr r = s.gpr r) ∧ s'.mem = s.mem ∧ s'.rd = s.rd ∧ s'.wr = s.wr := by
   apply WP.of_runBlock
@@ -539,7 +584,9 @@ theorem twist_ok (s : State) :
     gpr_write_x, mem_setV, rd_setV, wr_setV, mem_write, rd_write, wr_write, ite_true, ite_false, reduceCtorEq,
     and_true]
   refine ⟨?_, fun r hr => ?_, fun r h5 => ?_⟩
-  · rw [mask_poly]; rfl
+  · rw [show setLane (0 : BitVec 128) 64 0 ((0xc200 : BitVec 16).setWidth 64 <<< (16 * 3)) =
+      ofVDwords poly 0#64 by decide +kernel]
+    rfl
   · simp only [List.mem_cons, List.not_mem_nil, or_false, not_or] at hr
     simp only [hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2, ite_false]
   · simp only [h5, ite_false]
@@ -575,19 +622,43 @@ theorem forms_ok (k : Nat → VReg) (hk : k = kReg ∨ k = mReg) (s : State) :
       simp only [v_setV, hr.1, hr.2.1, hr.2.2.1, hr.2.2.2.1, hr.2.2.2.2.1, hr.2.2.2.2.2.1, hr.2.2.2.2.2.2,
         ite_false]
 
-theorem kReg_nmem_m (c : Nat) : kReg c ∉ [mReg 0, mReg 1, mReg 2, mReg 3, mReg 4, mReg 5, mReg 6, mReg 7] := by
+theorem kReg_nmem_m (c : Nat) : kReg c ∉ [mReg 0, mReg 1, mReg 2, mReg 4, mReg 5, mReg 6, mReg 7] := by
   unfold kReg; split <;> decide
 
-theorem mReg_nmem_k (c : Nat) : mReg c ∉ [kReg 0, kReg 1, kReg 2, kReg 3, kReg 4, kReg 5, kReg 6, kReg 7] := by
-  unfold mReg; split <;> decide
-
 /-! ## The invariant -/
+
+/-- `Y` after `i` blocks. -/
+abbrev Ys (s₀ : State) (i : Nat) : Block :=
+  ghashFrom (H₀ s₀) (Y₀ s₀) (blocksAt s₀.mem (dp s₀) i)
+
+/-- Block `i` is in the data. -/
+theorem in_blk16 {s₀ : State} (hp : Pre s₀) {i : Nat} (h : i < nb s₀) :
+    InRegions (s₀.rd ++ s₀.wr) (blkAddr s₀ i + BitVec.ofNat 64 (16 * 0)) 16 := by
+  have := hp.nb_lt
+  refine ⟨dR s₀, by simp [hp.rd], ?_⟩
+  rw [blkAddr, Offset.add_add, ← Nat.mul_add]
+  exact contains_offset (by omega_using [h]) (by omega_using [h, this])
+
+theorem add_ofNat_zero (p : Addr) : p + BitVec.ofNat 64 0 = p := BitVec.add_zero p
+
+theorem ofNat_beq {k : Nat} (hk : k < 2 ^ 64) : (BitVec.ofNat 64 k == 0) = decide (k = 0) := by
+  by_cases h : k = 0
+  · subst h; rfl
+  · have : BitVec.ofNat 64 k ≠ 0 := fun e => h (by
+      have := congrArg BitVec.toNat e; rwa [toNat_ofNat_lt hk] at this)
+    rw [beq_eq_false_iff_ne.mpr this]; simp only [h, decide_false]
+
+theorem ofNat_bne {k : Nat} (hk : k < 2 ^ 64) : (BitVec.ofNat 64 k != 0) = decide (k ≠ 0) := by
+  rw [bne, ofNat_beq hk]
+  by_cases h : k = 0
+  · rw [decide_eq_true h, decide_eq_false (by omega_using [h])]; rfl
+  · rw [decide_eq_false h, decide_eq_true h]; rfl
 
 /-- What holds after `i` blocks. -/
 structure Inv (s₀ : State) (i : Nat) (s : State) : Prop where
   le : i ≤ nb s₀
-  key : ∃ sv, x * ρ sv = φ (H₀ s₀) ∧ Keys kReg s sv ∧ Keys mReg s (sv ^^^ ext8 sv sv)
-  y : ρ (s.v Y) = φ (Ys s₀ i)
+  key : ∃ sv, ext8 sv sv = keyV (H₀ s₀) ∧ Keys kReg s sv ∧ Keys mReg s (sv ^^^ ext8 sv sv)
+  y : s.v Y = ext8 (Ys s₀ i) (Ys s₀ i)
   x1 : s.gpr .x1 = yp s₀
   x2 : s.gpr .x2 = blkAddr s₀ i
   x3 : s.gpr .x3 = BitVec.ofNat 64 (nb s₀ - i)
@@ -607,38 +678,39 @@ theorem advance_ok (s : State) :
     exists_eq_left']
   exact ⟨trivial, trivial, fun r h2 h3 => by simp only [h2, h3, ite_false], rfl, rfl, rfl, rfl⟩
 
-theorem body_ok {s₀ : State} (hp : Pm s₀) {i : Nat} (hi : i + 1 ≤ nb s₀) {s : State} (hI : Inv s₀ i s) :
-    WP isa (.block body) s (Inv s₀ (i + 1)) := by
+theorem body_ok (ar : Arith) {s₀ : State} (hp : Pre s₀) {i : Nat} (hi : i + 1 ≤ nb s₀) {s : State}
+    (hI : Inv s₀ i s) : WP isa (.block body) s (Inv s₀ (i + 1)) := by
   obtain ⟨sv, hx, hK, hM⟩ := hI.key
   simp only [body, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (ldrev_ok A .x2 (16 * 0) s rfl (by decide)
+  refine WP.mono (loadRev_ok A .x2 (16 * 0) s rfl (by decide)
     (by rw [hI.rd, hI.wr, hI.x2]; exact in_blk16 hp (by omega_using [hi]))) fun s₁ ⟨l₁, o₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (eor_ok A A Y s₁) fun s₂ ⟨e₂, o₂⟩ => ?_
   rw [WP.block_append_iff]
   have o₁₂ := o₁.trans o₂
-  refine WP.mono (mul_ok (s := s₂) (sv := sv) (fun c hc => by rw [o₁₂.v _ (kReg_nmem' c), hK c hc])
+  refine WP.mono (mul_ok ar (s := s₂) (sv := sv) (fun c hc => by rw [o₁₂.v _ (kReg_nmem' c), hK c hc])
     (fun c hc => by rw [o₁₂.v _ (mReg_nmem' c), hM c hc])) fun s₃ ⟨y₃, o₃⟩ => ?_
   refine WP.mono (advance_ok s₃) fun s' ⟨f2, f3, fg, fv, fm, frd, fwr⟩ => ?_
   have O := o₁₂.trans o₃
-  have ha : blockAt s.mem (s.gpr .x2 + BitVec.ofNat 64 (16 * 0)) = blockAt s₀.mem (blkAddr s₀ i) := by
-    rw [hI.mem, hI.x2, Nat.mul_zero, add_ofNat_zero]
   refine ⟨hi, ⟨sv, hx, fun c hc => by rw [fv, O.v _ (kReg_nmem' c), hK c hc],
     fun c hc => by rw [fv, O.v _ (mReg_nmem' c), hM c hc]⟩, ?_,
     by rw [fg .x1 (by decide) (by decide), O.gpr, hI.x1], ?_, ?_, by rw [fm, O.mem, hI.mem],
     by rw [frd, O.rd, hI.rd], by rw [fwr, O.wr, hI.wr]⟩
-  · rw [fv, y₃, ρ_mulV, φ_ext8_self, e₂, ρ_xor, l₁, o₁.v Y (by decide), hI.y, ha, φ_Ys_succ]
-    linear_combination (φ (blockAt s₀.mem (blkAddr s₀ i)) + φ (Ys s₀ i)) * hx
+  · rw [fv, y₃, e₂, l₁, rev64b_read, o₁.v Y (by decide), hI.y, hI.mem, hI.x2, Nat.mul_zero, add_ofNat_zero,
+      ← ext8_xor, hx, ar.mulKey,
+      show Ys s₀ (i + 1) = _ from ghashFrom_blocksAt_succ _ _ _ _ _, BitVec.xor_comm]
   · rw [f2, O.gpr, hI.x2, blkAddr, blkAddr, Offset.add_add, ← Nat.mul_add]
   · rw [f3, O.gpr, hI.x3, Offset.ofNat_sub_ofNat (by omega_using [hi]), Nat.sub_sub]
 
 /-! ## The prologue and the epilogue -/
 
-theorem prologue_ok {s₀ : State} (hp : Pm s₀) : WP isa (.block prologue) s₀ (Inv s₀ 0) := by
+theorem prologue_ok (ar : Arith) {s₀ : State} (hp : Pre s₀) : WP isa (.block prologue) s₀ (Inv s₀ 0) := by
+  have h_in : InRegions (s₀.rd ++ s₀.wr) (s₀.gpr .x0 + BitVec.ofNat 64 0) 16 :=
+    ⟨hR s₀, by simp [hp.rd], contains_offset (by decide) (by decide)⟩
   simp only [prologue, List.append_assoc]
   rw [WP.block_append_iff]
-  refine WP.mono (ldrev_ok A .x0 0 s₀ rfl (by decide) hp.h_in) fun s₁ ⟨l₁, o₁⟩ => ?_
+  refine WP.mono (loadRev_ok A .x0 0 s₀ rfl (by decide) h_in) fun s₁ ⟨l₁, o₁⟩ => ?_
   rw [WP.block_append_iff]
   refine WP.mono (twist_ok s₁) fun s₂ ⟨t₂, kv₂, kg₂, m₂, rd₂, wr₂⟩ => ?_
   rw [WP.block_append_iff]
@@ -652,40 +724,37 @@ theorem prologue_ok {s₀ : State} (hp : Pm s₀) : WP isa (.block prologue) s�
   have mem₅ : s₅.mem = s₀.mem := by rw [o₅.mem, o₄.mem, o₃.mem, m₂, o₁.mem]
   have rd₅ : s₅.rd = s₀.rd := by rw [o₅.rd, o₄.rd, o₃.rd, rd₂, o₁.rd]
   have wr₅ : s₅.wr = s₀.wr := by rw [o₅.wr, o₄.wr, o₃.wr, wr₂, o₁.wr]
-  refine WP.mono (ldrev_ok Y .x1 0 s₅ rfl (by decide) (by
+  refine WP.mono (loadRev_ok Y .x1 0 s₅ rfl (by decide) (by
     rw [rd₅, wr₅, g₅ .x1 (by decide)]
-    exact ⟨yR s₀, List.mem_append_right _ hp.y_in, contains_offset (by decide) (by decide)⟩))
+    exact ⟨yR s₀, by simp [hp.wr], contains_offset (by decide) (by decide)⟩))
     fun s' ⟨l', o'⟩ => ?_
-  have hx : x * ρ (s₂.v (kReg 3)) = φ (H₀ s₀) := by
-    rw [t₂, twistV_ρ, l₁, add_ofNat_zero]
+  have hx : ext8 (s₂.v (kReg 3)) (s₂.v (kReg 3)) = keyV (H₀ s₀) := by
+    rw [t₂, l₁, rev64b_read, add_ofNat_zero]; exact ar.key _
   have hK : Keys kReg s' (s₂.v (kReg 3)) := fun c hc => by
-    rw [o'.v _ (kReg_nmem' c), o₅.v _ (fun h => kReg_nmem_m c (by
-      simp only [List.mem_cons, List.not_mem_nil, or_false] at h ⊢; tauto)), k₄ c hc,
-      o₃.v _ (by decide)]
+    rw [o'.v _ (kReg_nmem' c), o₅.v _ (kReg_nmem_m c), k₄ c hc, o₃.v _ (by decide)]
   have hM : Keys mReg s' (s₂.v (kReg 3) ^^^ ext8 (s₂.v (kReg 3)) (s₂.v (kReg 3))) := fun c hc => by
     rw [o'.v _ (mReg_nmem' c), k₅ c hc, o₄.v _ (by decide), m₃]
   refine ⟨Nat.zero_le _, ⟨_, hx, hK, hM⟩, ?_, by rw [o'.gpr, g₅ .x1 (by decide)],
     by rw [o'.gpr, g₅ .x2 (by decide)]; simp [blkAddr], by rw [o'.gpr, g₅ .x3 (by decide)]; simp [nb],
     by rw [o'.mem, mem₅], by rw [o'.rd, rd₅], by rw [o'.wr, wr₅]⟩
-  rw [l', mem₅, g₅ .x1 (by decide), add_ofNat_zero]
-  exact congrArg φ (ghashFrom_blocksAt_zero _ _ _ _).symm
+  rw [l', rev64b_read, mem₅, g₅ .x1 (by decide), add_ofNat_zero]
+  rfl
 
-theorem epilogue_ok {s₀ : State} (hp : Pm s₀) {s : State} (hI : Inv s₀ (nb s₀) s) :
+theorem epilogue_ok {s₀ : State} (hp : Pre s₀) {s : State} (hI : Inv s₀ (nb s₀) s) :
     WP isa (.block epilogue) s fun s' => Proof.Gcm.ghashAArch64.post s₀ s' := by
   have hout : InRegions s.wr (s.gpr .x1 + BitVec.ofNat 64 0) 16 := by
     rw [hI.wr, hI.x1]
-    exact ⟨yR s₀, hp.y_in, contains_offset (by decide) (by decide)⟩
+    exact ⟨yR s₀, by simp [hp.wr], contains_offset (by decide) (by decide)⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_rev64b Y Y s, ?_⟩
   refine WP.block_cons_iff.mpr ⟨_, exec_strq (s := s.setV Y _) (by decide) (by decide) hout,
     WP.block_nil ?_⟩
   show blockAt ((s.setV Y _).mem.write ((s.setV Y _).gpr .x1 + BitVec.ofNat 64 0) 16
     ((s.setV Y _).v Y)) (yp s₀) = Ys s₀ (nb s₀)
-  apply φ_inj
-  simp only [mem_setV, gpr_setV, v_setV, ↓reduceIte, hI.x1, add_ofNat_zero, φ_store, hI.y]
+  simp only [mem_setV, gpr_setV, v_setV, ↓reduceIte, hI.x1, add_ofNat_zero, blockAt_store, hI.y, ext8_ext8]
 
 /-! ## The whole function -/
 
-theorem loops_ok {s₀ : State} (hp : Pm s₀) :
+theorem loops_ok (ar : Arith) {s₀ : State} (hp : Pre s₀) :
     WP isa ghash s₀ fun s' => Proof.Gcm.ghashAArch64.post s₀ s' := by
   have hn := hp.nb_lt
   have hev : eval (.zero .x .x3) s₀ = some (decide (nb s₀ = 0)) := by
@@ -698,20 +767,20 @@ theorem loops_ok {s₀ : State} (hp : Pm s₀) :
     show blockAt s₀.mem (yp s₀) = Ys s₀ (nb s₀)
     rw [h]; rfl
   · simp only [decide_eq_false_iff_not] at h
-    refine WP.seq (WP.mono (prologue_ok hp) fun s₁ hI₁ => ?_)
+    refine WP.seq (WP.mono (prologue_ok ar hp) fun s₁ hI₁ => ?_)
     refine WP.seq (WP.mono (Q := Inv s₀ (nb s₀)) ?_ fun s₂ hI₂ => epilogue_ok hp hI₂)
     let Inv1 : Nat → State → Prop := fun m s => ∃ i, m = nb s₀ - i ∧ i < nb s₀ ∧ Inv s₀ i s
     have hstep : ∀ m s, Inv1 m s → WP isa (.block body) s (fun s' =>
         (eval (.nonzero .x .x3) s' = some false ∧ Inv s₀ (nb s₀) s') ∨
         (eval (.nonzero .x .x3) s' = some true ∧ ∃ m' < m, Inv1 m' s')) := by
       rintro m s ⟨i, rfl, hi, hI⟩
-      refine WP.mono (body_ok hp (by omega_using [hi]) hI) fun s' hI' => ?_
+      refine WP.mono (body_ok ar hp (by omega_using [hi]) hI) fun s' hI' => ?_
       have hev : eval (.nonzero .x .x3) s' = some (decide (nb s₀ - (i + 1) ≠ 0)) := by
         simp only [eval, State.read, Size.bits, BitVec.setWidth_eq, hI'.x3,
           ofNat_bne (show nb s₀ - (i + 1) < 2 ^ 64 by omega_using [hn])]
       by_cases hlast : nb s₀ - (i + 1) = 0
       · have : i + 1 = nb s₀ := by omega_using [hi, hlast]
-        exact .inl ⟨by rw [hev, decide_eq_false (not_not.mpr hlast)], this ▸ hI'⟩
+        exact .inl ⟨by rw [hev, decide_eq_false (fun hne => hne hlast)], this ▸ hI'⟩
       · exact .inr ⟨by rw [hev, decide_eq_true hlast], nb s₀ - (i + 1), by omega_using [hi], i + 1, rfl,
           by omega_using [hlast], hI'⟩
     exact WP.loop (M := isa) Inv1 hstep (nb s₀) s₁ ⟨0, rfl, by omega_using [h], hI₁⟩
@@ -729,17 +798,17 @@ private theorem keeps_pres {c : Prog isa} (h : c.allInstrs (fun i => (dsts i).al
   have hn : notPres r = false := by revert r; decide
   simp only [clobbers_eq_false_of_all (List.all_eq_true.mp h i hi) hn, Bool.not_false]
 
-theorem correct {s₀ : State} (hp : Pre s₀) :
+theorem correct (ar : Arith) {s₀ : State} (hp : Pre s₀) :
     WP isa ghash s₀ fun s' =>
       (∀ r ∈ preserved, s'.gpr r = s₀.gpr r) ∧ Proof.Gcm.ghashAArch64.post s₀ s' :=
-  WP.mono (WP.gprs (rs := preserved) (loops_ok (Pmull.Pre.pm hp)) (keeps_pres (by decide +kernel))
+  WP.mono (WP.gprs (rs := preserved) (loops_ok ar hp) (keeps_pres (by decide +kernel))
     (by decide +kernel))
     fun _ ⟨h₁, h₂⟩ => ⟨h₂, h₁⟩
 
-theorem ghash_correct (s : State) (hs : Proof.Gcm.ghashAArch64.pre s) :
+theorem ghash_correct (ar : Arith) (s : State) (hs : Proof.Gcm.ghashAArch64.pre s) :
     ∃ t s', Exec isa ghash s t s' ∧ abiPreserved s s' ∧ Proof.Gcm.ghashAArch64.post s s' := by
-  obtain ⟨t, s', he, h₁, h₂⟩ := correct (pre_of s hs)
-  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by decide +kernel)⟩, h₂⟩
+  obtain ⟨t, s', he, h₁, h₂⟩ := correct ar (pre_of s hs)
+  exact ⟨t, s', he, ⟨h₁, Exec.sp he, Exec.preservedV he (by lit_decide)⟩, h₂⟩
 
 theorem ghash_ct : ConstantTime isa Proof.Gcm.ghashAArch64.pre Proof.Gcm.ghashAArch64.pub ghash := by
   refine VG.Taint.constantTime (A := taint) (Taint.ofRegs [.x0, .x1, .x2, .x3, .x4]) ?_
