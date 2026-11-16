@@ -16,15 +16,16 @@ meta import VerifiedGarbage.Proof.Framework.TaintSum
 /-!
 # SHA-512 with AVX2 on x86-64, rolled: constant time
 
-The taint analysis checks the prologue, the first and second halves of an iteration (`first`, `rest`) and
-the epilogue, each from the pointers and the block count being public. It
-cannot check an iteration in one go: `first` keeps `rdi` and `rdx` in the
-scratch space while the schedule stores secret words through the index, at
-offsets the analysis cannot bound, so it forgets that the slots hold public
-values. The proof composes the checks (`RelCT`): at the start of each part,
-the registers it needs public agree in both runs because each run's
-correctness (`Compress.lean`) says what they hold, which the public data
-determines.
+The taint analysis checks the prologue, the first and second halves of an
+iteration (`first`, `rest`) and the parts of the epilogue, each from the
+pointers and the block count being public. It cannot check an iteration in
+one go: `first` keeps `rdi` and `rdx` in the scratch space while the
+schedule stores secret words through the index, at offsets the analysis
+cannot bound, so it forgets that the slots hold public values; nor that the
+epilogue's branch is on the block count, read back from the scratch space.
+The proof composes the checks (`RelCT`): at the start of each part, the
+registers it needs public agree in both runs because each run's correctness
+(`Compress.lean`) says what they hold, which the public data determines.
 -/
 
 @[expose] public section
@@ -92,12 +93,22 @@ theorem rest_rel {P : State → State → Prop} (hp : ∀ s₁ s₂, P s₁ s₂
   RelCT.taint (A := A) τA hp (by taint_decide)
 
 theorem pro_rel {P : State → State → Prop} (hp : ∀ s₁ s₂, P s₁ s₂ → A.Agree τA s₁ s₂) :
-    RelCT isa P (.block (save ++ Impl.Sha512.X86_64.Avx2.const Impl.Sha512.X86_64.Avx2.mBswap
+    RelCT isa P (.block (([.store (Impl.Sha512.X86_64.Avx2.at_ .rcx cnt) .rdx] : List Instr) ++ save ++
+      Impl.Sha512.X86_64.Avx2.const Impl.Sha512.X86_64.Avx2.mBswap
       Impl.Sha512.X86_64.Avx2.bswapMask ++ ([.alu .test .rdx (.reg .rdx)] : List Instr))) fun _ _ => True :=
   RelCT.taint (A := A) τA hp (by taint_decide)
 
 theorem res_rel {P : State → State → Prop} (hp : ∀ s₁ s₂, P s₁ s₂ → A.Agree τR s₁ s₂) :
     RelCT isa P (.block restore) fun _ _ => True :=
+  RelCT.taint (A := A) τR hp (by taint_decide)
+
+theorem cnt_rel {P : State → State → Prop} (hp : ∀ s₁ s₂, P s₁ s₂ → A.Agree τR s₁ s₂) :
+    RelCT isa P (.block [.mov .rdx (.mem (Impl.Sha512.X86_64.Avx2.at_ .rcx cnt)), .alu .cmp .rdx (.imm 2)])
+      fun _ _ => True :=
+  RelCT.taint (A := A) τR hp (by taint_decide)
+
+theorem wipe_rel {P : State → State → Prop} (hp : ∀ s₁ s₂, P s₁ s₂ → A.Agree τR s₁ s₂) :
+    RelCT isa P (.block wipe) fun _ _ => True :=
   RelCT.taint (A := A) τR hp (by taint_decide)
 
 theorem rel_nil {P : State → State → Prop} : RelCT isa P (.block []) fun s₁ s₂ => P s₁ s₂ := by
@@ -112,8 +123,7 @@ theorem rel_nil {P : State → State → Prop} : RelCT isa P (.block []) fun s�
 /-- What the prologue leaves (`prologue_ok`). -/
 def ProPost (s₀ s₁ : State) : Prop :=
   (∀ r, r ≠ .rax → s₁.gpr r = s₀.gpr r) ∧ s₁.rd = s₀.rd ∧ s₁.wr = s₀.wr ∧ s₁.mem = saveMem s₀ ∧
-    s₁.syms = s₀.syms ∧ s₁.zf = some (s₀.gpr .rdx &&& s₀.gpr .rdx == 0) ∧ Masks s₁ ∧
-    (s₁.xmm .xmm14).extractLsb' 0 64 = s₀.gpr .r14 ∧ (s₁.xmm .xmm15).extractLsb' 0 64 = s₀.gpr .r15
+    s₁.syms = s₀.syms ∧ s₁.zf = some (s₀.gpr .rdx &&& s₀.gpr .rdx == 0) ∧ Masks s₁
 
 theorem wr_eq {s₀ s : State} (hp : Pre s₀) (hw : s.wr = s₀.wr) (hrdi : s.gpr .rdi = st s₀)
     (hrcx : s.gpr .rcx = scr s₀) : s.wr = [⟨s.gpr .rdi, 64⟩, ⟨s.gpr .rcx, 1328⟩] := by
@@ -141,14 +151,14 @@ theorem compress_rel {σ₁ σ₂ : State} (h₁ : Pre σ₁) (h₂ : Pre σ₂)
       show a.zf = b.zf
       rw [p₁.2.2.2.2.2.1, p₂.2.2.2.2.2.1, e_rdx]) ?_ ?_
     · refine (rel_nil).mono (fun _ _ h => h) fun a b ⟨⟨_, p₁, p₂⟩, he⟩ => ?_
-      obtain ⟨hg₁, hrd₁, hwr₁, hm₁, hsy₁, hz₁, hk₁, x₁, y₁⟩ := p₁
-      obtain ⟨hg₂, hrd₂, hwr₂, hm₂, hsy₂, hz₂, hk₂, x₂, y₂⟩ := p₂
+      obtain ⟨hg₁, hrd₁, hwr₁, hm₁, hsy₁, hz₁, hk₁⟩ := p₁
+      obtain ⟨hg₂, hrd₂, hwr₂, hm₂, hsy₂, hz₂, hk₂⟩ := p₂
       have he₂ : b.zf = some true := by rw [hz₂, ← e_rdx, ← hz₁]; exact he
       have z₁ : nb σ₁ = 0 := by
         have := he; simp only [eval, hz₁, Option.some.injEq] at this; simp at this; simp [nb, this]
       have z₂ : nb σ₂ = 0 := by rw [hnb]; exact z₁
-      exact ⟨z₁ ▸ common_zero h₁ hg₁ hrd₁ hwr₁ hm₁ hsy₁ hk₁ x₁ y₁,
-        z₂ ▸ common_zero h₂ hg₂ hrd₂ hwr₂ hm₂ hsy₂ hk₂ x₂ y₂⟩
+      exact ⟨z₁ ▸ common_zero h₁ hg₁ hrd₁ hwr₁ hm₁ hsy₁ hk₁,
+        z₂ ▸ common_zero h₂ hg₂ hrd₂ hwr₂ hm₂ hsy₂ hk₂⟩
     · let I : Nat → State → State → Prop := fun n a b =>
         ∃ i, n = nb σ₁ - i ∧ i < nb σ₁ ∧ LInv σ₁ i a ∧ LInv σ₂ i b
       have agL : ∀ {i a b}, LInv σ₁ i a → LInv σ₂ i b → A.Agree τA a b := fun {i a b} l₁ l₂ =>
@@ -201,18 +211,31 @@ theorem compress_rel {σ₁ σ₂ : State} (h₁ : Pre σ₁) (h₂ : Pre σ₂)
             have : i < nxtI σ₁ i := by simp only [nxtI]; split <;> omega_using []
             omega_using [hi, hn, this]
       refine (RelCT.loop I hstep (nb σ₁)).mono (fun a b ⟨⟨_, p₁, p₂⟩, he⟩ => ?_) fun _ _ h => h
-      obtain ⟨hg₁, hrd₁, hwr₁, hm₁, hsy₁, hz₁, hk₁, x₁, y₁⟩ := p₁
-      obtain ⟨hg₂, hrd₂, hwr₂, hm₂, hsy₂, hz₂, hk₂, x₂, y₂⟩ := p₂
+      obtain ⟨hg₁, hrd₁, hwr₁, hm₁, hsy₁, hz₁, hk₁⟩ := p₁
+      obtain ⟨hg₂, hrd₂, hwr₂, hm₂, hsy₂, hz₂, hk₂⟩ := p₂
       have hpos : 0 < nb σ₁ := by
         have := he; simp only [eval, hz₁, Option.some.injEq] at this
         simp only [BitVec.and_self, beq_eq_false_iff_ne, ne_eq] at this
         exact Nat.pos_of_ne_zero fun h' => this (BitVec.eq_of_toNat_eq (by simpa using h'))
-      have c₁ := common_zero h₁ hg₁ hrd₁ hwr₁ hm₁ hsy₁ hk₁ x₁ y₁
-      have c₂ := common_zero h₂ hg₂ hrd₂ hwr₂ hm₂ hsy₂ hk₂ x₂ y₂
+      have c₁ := common_zero h₁ hg₁ hrd₁ hwr₁ hm₁ hsy₁ hk₁
+      have c₂ := common_zero h₂ hg₂ hrd₂ hwr₂ hm₂ hsy₂ hk₂
       exact ⟨0, rfl, hpos,
         { c₁ with rsi := by rw [hg₁ _ (by decide)]; simp [blkAddr], rdx := by rw [hg₁ _ (by decide)]; simp [nb] },
         { c₂ with rsi := by rw [hg₂ _ (by decide)]; simp [blkAddr], rdx := by rw [hg₂ _ (by decide)]; simp [nb] }⟩
-  · exact res_rel fun a b ⟨c₁, c₂⟩ => agreeR (by rw [c₁.rcx, c₂.rcx]; exact e_rcx)
+  · refine RelCT.seq (R := fun a b => EpiMid σ₁ a ∧ EpiMid σ₂ b) ?_ (RelCT.seq (Q := fun _ _ => True)
+      (R := fun a b => Common σ₁ (nb σ₁) a ∧ Common σ₂ (nb σ₂) b) ?_ ?_)
+    · exact ((cnt_rel (P := fun a b => Common σ₁ (nb σ₁) a ∧ Common σ₂ (nb σ₂) b)
+        fun a b ⟨c₁, c₂⟩ => agreeR (by rw [c₁.rcx, c₂.rcx]; exact e_rcx)).wp (F₁ := EpiMid σ₁) (F₂ := EpiMid σ₂)
+        fun a b ⟨c₁, c₂⟩ => ⟨epi_cnt h₁ c₁, epi_cnt h₂ c₂⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+    · refine RelCT.ite (fun a b ⟨m₁, m₂⟩ => by
+        show eval .b a = eval .b b
+        rw [m₁.2, m₂.2, e_rdx]) ?_ ?_
+      · exact rel_nil.mono (fun _ _ h => h) fun a b ⟨⟨m₁, m₂⟩, _⟩ => ⟨m₁.1, m₂.1⟩
+      · exact ((wipe_rel (P := fun a b => (EpiMid σ₁ a ∧ EpiMid σ₂ b) ∧ isa.eval .b a = some false)
+          fun a b ⟨⟨m₁, m₂⟩, _⟩ => agreeR (by rw [m₁.1.rcx, m₂.1.rcx]; exact e_rcx)).wp
+          (F₁ := Common σ₁ (nb σ₁)) (F₂ := Common σ₂ (nb σ₂))
+          fun a b ⟨⟨m₁, m₂⟩, _⟩ => ⟨epi_wipe h₁ m₁.1, epi_wipe h₂ m₂.1⟩).mono (fun _ _ h => h) fun _ _ h => h.2
+    · exact res_rel fun a b ⟨c₁, c₂⟩ => agreeR (by rw [c₁.rcx, c₂.rcx]; exact e_rcx)
 
 theorem compress_ct : ConstantTime isa Pre PubK compress :=
   fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => (compress_rel h₁ h₂ hp _ _ _ _ _ _ ⟨rfl, rfl⟩ e₁ e₂).1

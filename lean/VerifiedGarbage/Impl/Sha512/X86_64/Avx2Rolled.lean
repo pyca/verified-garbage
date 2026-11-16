@@ -15,18 +15,29 @@ rather than loaded with `movabs`.
 * Sixteen rounds rename the working variables back to the registers they
   started in (`16 % 8 = 0`) and use the same `carry` registers
   (`16 % 2 = 0`), so iteration `j` of a loop is the same code for every `j`:
-  it addresses `Kₜ` and `Wₜ` through an index, `rdx = 128 j`, which steps
-  through the table eight bytes per round (`rsi + rdx + 8 t'`) and through
-  the scratch space sixteen (`rcx + 2 rdx + …`).
+  it addresses `Kₜ` through an index, `rdx = 128 j`, which steps through
+  the table eight bytes per round (`rsi + rdx + 8 t'`), and the second
+  block's `Wₜ` through the same index (`rcx + rdx + …`).
 * The first block's rounds 0–63 are a loop of four iterations, each also
   computing sixteen words of the schedule of both blocks (eight `schedule`
   steps); rounds 64–79 follow once, from `rdx = 512`. The second block's 80
   rounds are a loop of five iterations.
+* The first block's words are in the upper lane of the `ymm` registers and
+  the second block's in the lower one, so that the second block's are
+  stored as an `xmm` register. The scratch space keeps few of the words:
+  the first block's rounds read theirs from a ring of the sixteen current
+  words of both blocks (`ringSlot`, 256 bytes at `rcx`), which each schedule
+  step overwrites, a register at a time, once the two rounds it is woven
+  into have read them; the second block's 80 words are kept after it
+  (`hi`), as its rounds run once the first block's are done. When there is
+  one block left, the lower lane's block is zero, so those 80 words do not
+  depend on the data; when a second block was compressed, the epilogue
+  zeroes them (`wipe`). So the function leaves in the scratch space, of the
+  data, the ring.
 * `rsi` (the blocks' address) and `rdx` (the block count) are kept in
-  the scratch space while the rounds use them, at `1312` and `1320`; `r14`
-  and `r15`, whose slots those were, are saved in `xmm14` and `xmm15`
-  (`vmovq`) and restored after `vzeroupper` (`movq`), when no `ymm` register
-  has a dirty upper half, so that the legacy-SSE `movq` costs no transition.
+  the scratch space while the rounds use them, at `1312` and `1320`, the
+  block count for the epilogue at `cnt`, and the callee-saved registers
+  around them (`saved`).
 -/
 
 @[expose] public section
@@ -44,12 +55,26 @@ def kSym : String := "VG_SHA512_K"
 `rdx = 128 j` and the table at `rsi`. -/
 def kSlot (t' : Nat) : MemOp := { base := .rsi, index := some .rdx, scale := 1, disp := ((8 * t' : Nat) : Int) }
 
-/-- Where round `t'` of an iteration of block `j` reads `Wₜ`. -/
-def wSlotR (j t' : Nat) : MemOp :=
-  { base := .rcx, index := some .rdx, scale := 2, disp := ((32 * (t' / 2) + 16 * j + 8 * (t' % 2) : Nat) : Int) }
+/-- Where the second block's schedule starts in the scratch space, after
+the ring of the sixteen current words of both blocks. -/
+def hi : Nat := 256
 
-/-- Where the `schedule` step `i` (`8 ≤ i < 16`) of an iteration stores its words. -/
-def sSlot (i : Nat) : MemOp := { base := .rcx, index := some .rdx, scale := 2, disp := ((32 * i : Nat) : Int) }
+/-- Where the number of blocks is kept, for the epilogue. -/
+def cnt : Nat := 1272
+
+/-- Where round `t'` of an iteration of block `j` reads `Wₜ`: the first
+block's from the ring, the second's from its schedule, through the index. -/
+def wSlotR (j t' : Nat) : MemOp :=
+  if j = 0 then at_ .rcx (32 * (t' / 2) + 16 + 8 * (t' % 2))
+  else { base := .rcx, index := some .rdx, scale := 1, disp := ((hi + 8 * t' : Nat) : Int) }
+
+/-- Where the ring keeps words `2i` and `2i+1` of both blocks' current sixteen:
+the second block's, then the first's. -/
+def ringSlot (i : Nat) : MemOp := at_ .rcx (32 * i)
+
+/-- Where the `schedule` step `i + 8` of an iteration stores the second block's words. -/
+def hiSlot (i : Nat) : MemOp :=
+  { base := .rcx, index := some .rdx, scale := 1, disp := ((hi + 128 + 16 * i : Nat) : Int) }
 
 /-- Round `t'` of block `j`: `Impl.Sha512.X86_64.Avx2.round`, with `Kₜ` read
 from the table. -/
@@ -76,16 +101,21 @@ def roundR (j t' : Nat) : List Instr :=
     .mov y (.reg a), .alu .xor y (.reg b), .alu .and x (.reg y), .alu .xor x (.reg b),
     .alu .add h (.reg x)]
 
-/-- `Impl.Sha512.X86_64.Avx2.schedule i`, storing its words through the index. -/
-def scheduleR (i : Nat) : List Instr :=
-  (schedule i).dropLast ++ [.vmovdquStore .l256 (sSlot i) (msg i)]
+/-- `Impl.Sha512.X86_64.Avx2.schedule i`, without its store: its words stay in `msg i`. -/
+def scheduleR (i : Nat) : List Instr := (schedule i).dropLast
+
+/-- The words of `msg (i + 8)` stored: over those the ring held, and the
+second block's, the lower lane, in its schedule. -/
+def storeR (i : Nat) : List Instr :=
+  [.vmovdquStore .l256 (ringSlot i) (msg (i + 8)), .vmovdquStore .l128 (hiSlot i) (msg (i + 8))]
 
 /-- Group `i'` (`< 8`) of an iteration of the first block: words `2i'+16`
 and `2i'+17` of the iteration's schedule, woven into rounds `2i'` and
 `2i'+1` (`Impl.Weave.weave`, as OpenSSL spreads its schedule across its
-rounds), so that the vector and integer units both have work throughout. -/
+rounds), so that the vector and integer units both have work throughout,
+and stored once those rounds have read the words the ring held. -/
 def groupR (i' : Nat) : List Instr :=
-  VG.Impl.Weave.weave (scheduleR (i' + 8)) (roundR 0 (2 * i') ++ roundR 0 (2 * i' + 1))
+  VG.Impl.Weave.weave (scheduleR (i' + 8)) (roundR 0 (2 * i') ++ roundR 0 (2 * i' + 1)) ++ storeR i'
 
 /-- Groups `0 … n-1` of an iteration. -/
 def groupsR : Nat → Prog isa
@@ -103,6 +133,11 @@ def rounds16 (j : Nat) : Prog isa := roundsR j (.block []) 16
 /-- The next iteration: `rdx` steps by 128, up to `stop`. -/
 def step (stop : Nat) : List Instr := [.alu .add .rdx (.imm 128), .alu .cmp .rdx (.imm stop)]
 
+/-- The index of an iteration of the first block's loop, which is at most
+384, masked to that: it changes nothing, and tells the residue analysis
+(`X86_64.RTaint`) where the stores through the index may write. -/
+def bound : List Instr := [.alu .and .rdx (.imm 384)]
+
 /-- Keep `rsi` and `rdx` in the scratch space, and point `rsi` at the table
 and `rdx` at its start. -/
 def enter : List Instr :=
@@ -111,16 +146,28 @@ def enter : List Instr :=
 /-- Get back `rsi` and `rdx`. -/
 def leave : List Instr := [.mov .rsi (.mem (at_ .rcx 1312)), .mov .rdx (.mem (at_ .rcx 1320))]
 
+/-- `W₂ᵢ` and `W₂ᵢ₊₁` (`i < 8`) of the blocks at `r15`, under the mask in `t0`,
+and `rsi` into the lanes of `msg i`, and stored: in the ring, and the second
+block's at the start of its schedule. -/
+def loadR (i : Nat) : List Instr :=
+  [.vmovdquLoad .l128 (msg i) (at_ T (16 * i)), .vop (.vbin .vpand .l128 (msg i) (msg i) t0),
+   .vmovdquLoad .l128 tmp (at_ .rsi (16 * i)),
+   .vop (.vinserti128 (msg i) (msg i) tmp 1), vb .vpshufb (msg i) (msg i) mBswap,
+   .vmovdquStore .l256 (ringSlot i) (msg i), .vmovdquStore .l128 (at_ .rcx (hi + 16 * i)) (msg i)]
+
 /-- The first block of an iteration (as in `Avx2.body`), up to getting back
 `rsi` and `rdx`. The second block is at `rsi + 128` if there is one
-(`rdx ≥ 2`), and otherwise the first is loaded twice; `r15` points at it
-while the words are loaded. -/
+(`rdx ≥ 2`); otherwise the lower lane's block is zero (the mask in `t0`,
+all ones or zero), so that its schedule, which no round then reads, is
+that of the zero block whatever the data. `r15` points at the lower
+lane's block while the words are loaded. -/
 def first : Prog isa :=
   .seq (.block [.mov T (.reg .rsi), .alu .cmp .rdx (.imm 1)])
-  (.seq (.ite .e (.block []) (.block [.alu .add T (.imm 128)]))
-  (.seq (.block (load 0 ++ load 1 ++ load 2 ++ load 3 ++ load 4 ++ load 5 ++ load 6 ++ load 7 ++
+  (.seq (.ite .e (.block [.vop (.vbin .vpxor .l128 t0 t0 t0)])
+    (.block [.alu .add T (.imm 128), .vop (.vbin .vpcmpeqd .l128 t0 t0 t0)]))
+  (.seq (.block (loadR 0 ++ loadR 1 ++ loadR 2 ++ loadR 3 ++ loadR 4 ++ loadR 5 ++ loadR 6 ++ loadR 7 ++
     loadState ++ initCarry ++ enter))
-  (.seq (.loop (.seq (groupsR 8) (.block (step 512))) .ne)
+  (.seq (.loop (.seq (.block bound) (.seq (groupsR 8) (.block (step 512)))) .ne)
   (.seq (rounds16 0) (.block leave)))))
 
 /-- The rest of an iteration: the first block's hash value, and the second
@@ -136,19 +183,28 @@ def rest : Prog isa :=
 /-- One iteration: two blocks, or the last one. -/
 def body : Prog isa := .seq first rest
 
-/-- The callee-saved registers saved in the scratch space, and where; `r14`
-and `r15` are saved in `xmm14` and `xmm15`. -/
-def saved : List (Reg × Nat) := [(.rbx, 1280), (.rbp, 1288), (.r12, 1296), (.r13, 1304)]
+/-- The callee-saved registers saved in the scratch space, and where. -/
+def saved : List (Reg × Nat) :=
+  [(.rbx, 1280), (.rbp, 1288), (.r12, 1296), (.r13, 1304), (.r14, 1256), (.r15, 1264)]
 
-def save : List Instr :=
-  saved.map (fun (r, d) => .store (at_ .rcx d) r) ++ [.vop (.vmovq .xmm14 .r14), .vop (.vmovq .xmm15 .r15)]
+def save : List Instr := saved.map fun (r, d) => .store (at_ .rcx d) r
 
-def restore : List Instr :=
-  saved.map (fun (r, d) => .mov r (.mem (at_ .rcx d))) ++
-    [.vop .vzeroupper, .movqR .r14 .xmm14, .movqR .r15 .xmm15]
+def restore : List Instr := saved.map (fun (r, d) => .mov r (.mem (at_ .rcx d))) ++ [.vop .vzeroupper]
 
+/-- The second block's schedule zeroed, with `ymm0`. -/
+def wipe : List Instr :=
+  .vop (.vbin .vpxor .l128 (msg 0) (msg 0) (msg 0)) ::
+    (List.range 20).map fun k => .vmovdquStore .l256 (at_ .rcx (hi + 32 * k)) (msg 0)
+
+/-- The number of blocks is kept for the epilogue, which zeroes the second
+block's schedule if a second block was compressed (two blocks or more):
+what the first block's rounds leave in the scratch space is then the ring,
+and the schedule of the zero block or zero. -/
 def compress : Prog isa :=
-  .seq (.block (save ++ const mBswap bswapMask ++ ([.alu .test .rdx (.reg .rdx)] : List Instr)))
-    (.seq (.ite .e (.block []) (.loop body .ne)) (.block restore))
+  .seq (.block (([.store (at_ .rcx cnt) .rdx] : List Instr) ++ save ++ const mBswap bswapMask ++
+      ([.alu .test .rdx (.reg .rdx)] : List Instr)))
+    (.seq (.ite .e (.block []) (.loop body .ne))
+    (.seq (.block [.mov .rdx (.mem (at_ .rcx cnt)), .alu .cmp .rdx (.imm 2)])
+    (.seq (.ite .b (.block []) (.block wipe)) (.block restore))))
 
 end VG.Impl.Sha512.X86_64.Avx2Rolled
