@@ -197,21 +197,33 @@ meta partial def unfoldWhere (env : Environment) (p : Name → Bool) (e : Expr)
     | _ => none
 
 /-- The maximal closed subterms of `e` whose head is a definition that leads
-to constants with a literal (`reaches`), or one of them: the literal's own
-constant or another (`materialize_value N := c`, which `unfoldToLits`
-rewrites as an atom), given the names of the literals (`litNames`). -/
+to code with a literal (`reaches`), or one of them, given the names of the
+literals (`litNames`): to a constant with a literal, its own or another's
+(`materialize_value N := c`, which `unfoldToLits` rewrites as an atom), or
+to the head of an application with one (`materialize_code M := f a`, a
+template), as `unfoldToLits` unfolds to them. -/
 meta def reachingSubterms (names : Array Name) (e : Expr) : MetaM (Array Expr) := do
   let env ← getEnv
-  let targets := (litConsts env names ++ litAliases env names).foldl (fun s c => s.insert c) ({} : NameSet)
-  if targets.isEmpty then return #[]
   let mods := (← getEnv).header.moduleNames
-  let first := firstModuleOf env targets
+  let mut targets := (litConsts env names ++ litAliases env names).foldl (fun s c => s.insert c) ({} : NameSet)
+  -- The heads of the code with a literal that is an application
+  -- (`materialize_code M := f a`, a template): code that leads to one of
+  -- them alone (a generic function of a curve's configuration, whose pieces
+  -- have literals for that curve) is unfolded to them too.
+  for M in names do
+    let lhs ← lhsOf M
+    if let .const c _ := lhs.getAppFn then
+      if lhs.isApp && !lhs.hasLooseBVars && !targets.contains c && codeModule env mods c then
+        if let some (.defnInfo _) := env.find? c then targets := targets.insert c
+  if targets.isEmpty then return #[]
+  let targets' := targets
+  let first := firstModuleOf env targets'
   let mut memo : NameMap Bool := {}
   for u in e.getUsedConstants do
-    if !targets.contains u then
-      (_, memo) ← (reaches targets mods first u).run memo
+    if !targets'.contains u then
+      (_, memo) ← (reaches targets' mods first u).run memo
   let memo' := memo
-  let hit (c : Name) := targets.contains c || memo'.find? c == some true
+  let hit (c : Name) := targets'.contains c || memo'.find? c == some true
   unless e.getUsedConstants.any hit do return #[]
   let rec go (e : Expr) : StateM (Std.HashSet Expr × Array Expr) Unit := do
     if (← get).1.contains e then return
