@@ -98,7 +98,7 @@ private theorem ordinary_sound {q q' : T} {i : Instr} {s t s' t' : State}
  (h : Agree q s t) (hs : (AArch64.Taint.step q.1 i).map (fun g=>(g,afterV q.2 i))=some q')
  (es : exec i s=some s') (et : exec i t=some t') : addrs i s=addrs i t ∧ Agree q' s' t' := by
  obtain ⟨g,hg,rfl⟩ := Option.map_eq_some_iff.mp hs
- obtain ⟨a,hg'⟩ := AArch64.taint.step_sound h.1 hg es et
+ obtain ⟨a,hg'⟩ := AArch64.Taint.step_sound h.1 hg es et
  refine ⟨a,hg',?_⟩
  intro b v hv
  have facts : v∈get q.2 b ∧ vdstOf i≠some v := by

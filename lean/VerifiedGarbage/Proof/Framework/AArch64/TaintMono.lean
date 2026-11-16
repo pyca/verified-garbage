@@ -280,7 +280,9 @@ instance : VG.Taint.LeFrame taint where
   le_trans {_ _ _} h₁ h₂ :=
     le_iff.mpr ⟨RegSet.subset_trans (le_iff.mp h₁).1 (le_iff.mp h₂).1,
       RegSet.subset_trans (le_iff.mp h₁).2 (le_iff.mp h₂).2⟩
-  step i h hs := step_mono i h hs
+  step {τ σ _} i h hs := by
+    obtain ⟨σ', h₁, h₂⟩ := step_mono i h ((taint_step τ i).symm.trans hs)
+    exact ⟨σ', (taint_step σ i).trans h₁, h₂⟩
   condPub c h hc := Taint.condPub_mono c (le_iff.mp h).1 hc
   meet {_ _ _ _} h₁ h₂ :=
     le_iff.mpr ⟨RegSet.inter_mono (le_iff.mp h₁).1 (le_iff.mp h₂).1,
@@ -337,7 +339,7 @@ instance : VG.Taint.LeFrame taint where
       · rw [h]; rfl
       · rfl
   keepsCall_bot := rfl
-  step_keeps i hk hΦF hΦ hs := step_keeps i hk hΦF hΦ hs
+  step_keeps i hk hΦF hΦ hs := step_keeps i hk hΦF hΦ ((taint_step _ _).symm.trans hs)
   call_keeps {F Φ σ σ'} hk hΦF hΦ hs := by
     have hs : (AArch64.taint.call σ.1).map (fun g => (g, σ.2)) = some σ' := hs
     obtain ⟨g, hg, rfl⟩ := Option.map_eq_some_iff.mp hs

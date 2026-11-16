@@ -96,6 +96,47 @@ def stepFn : Instr → Step
 /-- Apply the preclassified instruction to the incoming taint. -/
 def step (τ : T) (i : Instr) : Option T := (stepFn i).run τ
 
+/-! ## The step the kernel evaluates
+
+`step` gives a set that is a term in the set before (`if p then τ.insert d
+else τ.erase d`), so no two sets of a check are the same term, and the kernel,
+which remembers the value of every term it has evaluated, by the term,
+evaluates every instruction of the code. `stepK` is `step` (`stepK_eq`) giving
+a set that is evaluated (`RegSet.force`): the kernel then finds again every
+step it has made of the same instruction from the same set, and code repeats
+itself (inlined field arithmetic). It matches on the instruction with the
+cases of the match closed (`inline_match%`). The analyses (`taint`, and
+`taintS`, `VectorTaint.taint` and `LaneTaint.taint` with steps of their own
+built the same way) take it for their step; `step` stays the function the
+soundness proofs are about. A hint's set is written with `OfNat.ofNat`
+(`RegSet`'s `ToExpr`), another term than the one a step leaves: only the first
+step from a hint is not found again, which was not worth an instance of its
+own (8 to 18 steps of 3,000 to 9,600 in the checks measured). See "An analysis
+the kernel finds again" in the `proof-performance` skill. -/
+
+/-- `stepFn`, with its cases closed (`inline_match%`). -/
+def stepFnK : Instr → Step := inline_match% stepFn
+
+theorem stepFnK_eq (i : Instr) : stepFnK i = stepFn i := by cases i <;> rfl
+
+/-- `k` of the result of a step, with the set evaluated. -/
+def forceO {α : Type} (o : Option T) (k : T → Option α) : Option α :=
+  match o with
+  | some τ => τ.force k
+  | none => none
+
+theorem forceO_eq {α : Type} (o : Option T) (k : T → Option α) : forceO o k = o.bind k := by
+  cases o <;> rfl
+
+/-- `step`, giving a set that is evaluated. -/
+def stepK (τ : T) (i : Instr) : Option T := forceO ((stepFnK i).run τ) some
+
+theorem stepK_eq : stepK = step := by
+  funext τ i
+  rw [stepK, stepFnK_eq, forceO_eq]
+  show ((stepFn i).run τ).bind some = (stepFn i).run τ
+  cases (stepFn i).run τ <;> rfl
+
 def condPub (τ : T) : Cond → Bool
   | .zero _ r | .nonzero _ r => pub τ r
 
@@ -468,8 +509,8 @@ namespace VG.AArch64
 def taint : VG.Taint isa where
   T := Taint.T
   Agree := Taint.Agree
-  step := Taint.step
-  step_sound := Taint.step_sound
+  step := Taint.stepK
+  step_sound h hs := Taint.step_sound h ((congrFun (congrFun Taint.stepK_eq _) _).symm.trans hs)
   condPub := Taint.condPub
   cond_sound := Taint.cond_sound
   meet τ₁ τ₂ := τ₁.inter τ₂
@@ -501,5 +542,10 @@ def taint : VG.Taint isa where
   push_sound := Taint.push_sound
   pop := Taint.pop
   pop_sound := Taint.pop_sound
+
+/-- The step of `taint` is `Taint.step`, for the proofs about it: the kernel
+evaluates `Taint.stepK`. -/
+theorem taint_step (τ : Taint.T) (i : Instr) : taint.step τ i = Taint.step τ i :=
+  congrFun (congrFun Taint.stepK_eq τ) i
 
 end VG.AArch64

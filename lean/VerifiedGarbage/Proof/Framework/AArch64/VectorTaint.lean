@@ -144,11 +144,87 @@ theorem step_sound {τ τ' : T} {i : Instr} {s₁ s₂ s₁' s₂' : State}
   | _ =>
     exact ordinary_sound ha hs e₁ e₂
 
+/-! ## The step the kernel evaluates
+
+`stepK` is `step` (`stepK_eq`), as `Taint.stepK` is `Taint.step`
+(`Proof/Framework/AArch64/Taint.lean`): a function of the instruction first,
+with its cases closed (`inline_match%`), which gives a taint whose set the
+instruction writes is evaluated (`RegSet.force`) and whose other set is the
+term it was, in a pair whose types are written the same in every case
+(`RegSet Reg`, not `Taint.T`), so that equal taints are the same term. The
+kernel then finds again every step it has made of the same instruction from
+the same taint. -/
+
+/-- What an instruction does to a taint, as a function of its two sets. -/
+structure Step where
+  run : RegSet Reg → RegSet VReg → Option T
+
+/-- An instruction `step` leaves to `Taint.step`, `s` being its `Taint.stepFn`:
+the general-purpose registers by `s`, evaluated, and the vector registers
+kept (`true`: the instruction is `scalar`) or none public. -/
+def ordinary (s : Taint.Step) : Bool → Step
+  | true => ⟨fun g v => Taint.forceO (s.run g) fun g' => some (@Prod.mk (RegSet Reg) (RegSet VReg) g' v)⟩
+  | false => ⟨fun g _ => Taint.forceO (s.run g) fun g' =>
+      some (@Prod.mk (RegSet Reg) (RegSet VReg) g' ⟨nat_lit 0⟩)⟩
+
+/-- `step` of a vector instruction. -/
+def vopFn : VOp → Step
+  | .dup _ d n => ⟨fun g v => (setV v d (Taint.pub g n)).force fun v' =>
+      some (@Prod.mk (RegSet Reg) (RegSet VReg) g v')⟩
+  | .add _ d n m | .sub _ d n m => ⟨fun g v => (setV v d (v.mem n && v.mem m)).force fun v' =>
+      some (@Prod.mk (RegSet Reg) (RegSet VReg) g v')⟩
+  | _ => ⟨fun g _ => some (@Prod.mk (RegSet Reg) (RegSet VReg) g ⟨nat_lit 0⟩)⟩
+
+/-- `vopFn`, with its cases closed (`inline_match%`). -/
+def vopFnK : VOp → Step := inline_match% vopFn
+
+theorem vopFnK_eq (op : VOp) : vopFnK op = vopFn op := by cases op <;> rfl
+
+/-- `step`, as a function of the instruction first. -/
+def stepFn : Instr → Step
+  | .vop op => vopFnK op
+  | .umov _ d n _ => ⟨fun g v => (Taint.set g d (v.mem n)).force fun g' =>
+      some (@Prod.mk (RegSet Reg) (RegSet VReg) g' v)⟩
+  | .ldrqTbl t .. => ⟨fun g v => (setV v t true).force fun v' =>
+      some (@Prod.mk (RegSet Reg) (RegSet VReg) g v')⟩
+  | i => ordinary (Taint.stepFn i) (scalar i)
+
+/-- `stepFn`, with its cases closed (`inline_match%`). -/
+def stepFnK : Instr → Step := inline_match% stepFn Taint.stepFn scalar ordinary
+
+theorem stepFnK_eq (i : Instr) : stepFnK i = stepFn i := by cases i <;> rfl
+
+theorem ordinary_run (s : Taint.Step) (b : Bool) (g : RegSet Reg) (v : RegSet VReg) :
+    (ordinary s b).run g v = (s.run g).map fun g' => (g', if b then v else RegSet.ofList []) := by
+  cases b <;> simp only [ordinary, Taint.forceO_eq] <;> cases s.run g <;> rfl
+
+theorem ordinary_step (i : Instr) (g : RegSet Reg) (v : RegSet VReg)
+    (h : stepFn i = ordinary (Taint.stepFn i) (scalar i))
+    (h' : step (g, v) i = (Taint.step g i).map fun g' => (g', afterV v i)) :
+    (stepFn i).run g v = step (g, v) i := by
+  rw [h, h', ordinary_run]; rfl
+
+/-- `step`, giving a taint that is evaluated. -/
+def stepK (τ : T) (i : Instr) : Option T :=
+  match τ with
+  | (g, v) => (stepFnK i).run g v
+
+theorem stepK_eq : stepK = step := by
+  funext ⟨g, v⟩ i
+  show (stepFnK i).run g v = step (g, v) i
+  rw [stepFnK_eq]
+  cases i with
+  | vop op =>
+    show (vopFnK op).run g v = _
+    rw [vopFnK_eq]; cases op <;> rfl
+  | umov | ldrqTbl => rfl
+  | _ => exact ordinary_step _ g v rfl rfl
+
 def taint : VG.Taint isa where
   T := T
   Agree := Agree
-  step := step
-  step_sound := step_sound
+  step := stepK
+  step_sound h hs := step_sound h ((congrFun (congrFun stepK_eq _) _).symm.trans hs)
   condPub τ := Taint.condPub τ.1
   cond_sound h hc := Taint.cond_sound h.1 hc
   meet τ σ := (τ.1.inter σ.1, τ.2.inter σ.2)
@@ -199,5 +275,10 @@ def taint : VG.Taint isa where
       split at e₂ <;> [skip; cases e₂]
       cases e₁; cases e₂
       exact ⟨ht.1, ht.2, h.2⟩
+
+/-- The step of `taint` is `step`, for the proofs about it: the kernel
+evaluates `stepK`. -/
+theorem taint_step (τ : T) (i : Instr) : taint.step τ i = step τ i :=
+  congrFun (congrFun stepK_eq τ) i
 
 end VG.AArch64.VectorTaint

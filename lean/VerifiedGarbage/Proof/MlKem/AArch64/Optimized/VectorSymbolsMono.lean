@@ -119,7 +119,7 @@ theorem checkBlock_dom (names : List String) {is : List Instr} {τ σ τ' : T}
   | cons i is ih =>
     change (VectorTaint.taint.step τ i).bind (VectorTaint.taint.checkBlock · is) = some τ' at h
     obtain ⟨τ₁, hs, hr⟩ := Option.bind_eq_some_iff.mp h
-    obtain ⟨σ₀, hs₀, hle₀⟩ := VectorTaint.step_mono i hle hs
+    obtain ⟨σ₀, hs₀, hle₀⟩ := VectorTaint.step_mono i hle ((VectorTaint.taint_step τ i).symm.trans hs)
     obtain ⟨σ₁, hs₁, hle₁⟩ := step_dom names i hs₀
     obtain ⟨σ', h', hle'⟩ := ih hr (LeFrame.le_trans (A := VectorTaint.taint) hle₀ hle₁)
     refine ⟨σ', ?_, hle'⟩
