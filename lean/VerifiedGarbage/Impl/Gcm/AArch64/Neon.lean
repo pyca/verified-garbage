@@ -161,10 +161,15 @@ def reduce : List Instr := middle ++ carry ++ stay
 /- A block into a register, as loaded (`ldr q`, `rev64 .16b`). -/
 export VG.Impl.Gcm.AArch64.Pmull (loadRev)
 
+/-- `Y` := the block in `A` times the key. -/
+def mul : List Instr := mulLH ++ mulM ++ reduce
+
+/-- Past a block: the pointer and the count. -/
+def advance : List Instr := [.addImm .x .x2 .x2 16, .subImm .x .x3 .x3 1]
+
 /-- One block: `Y := (Y ⊕ X) • H`, then the pointer and the count. -/
 def body : List Instr :=
-  loadRev A .x2 0 ++ ([.vop (.logic .eor A A Y)] : List Instr) ++ mulLH ++ mulM ++ reduce ++
-    ([.addImm .x .x2 .x2 16, .subImm .x .x3 .x3 1] : List Instr)
+  loadRev A .x2 0 ++ ([.vop (.logic .eor A A Y)] : List Instr) ++ mul ++ advance
 
 /-- `H' = H · x⁻¹` from `H` as loaded in `A`, into `kReg 3`: each doubleword
 shifted up by a bit, taking the other's top bit (`ushr`, `ext`); the
@@ -179,11 +184,13 @@ def twist : List Instr := [
   .movz .x .x5 0xc200 3, .vop (.movi0 Q0), .vop (.ins .d2 Q0 0 .x5),
   .vop (.logic .and P1 P1 Q0), .vop (.logic .eor (kReg 3) F P1)]
 
+/-- The sum of the key's halves, in both doublewords of `mReg 3`. -/
+def sumKey : List Instr :=
+  [.vop (.ext (mReg 3) (kReg 3) (kReg 3) 8), .vop (.logic .eor (mReg 3) (kReg 3) (mReg 3))]
+
 /-- `H'` and its forms, the sum of its halves and its forms, and `Y`. -/
 def prologue : List Instr :=
-  loadRev A .x0 0 ++ twist ++
-  ([.vop (.ext (mReg 3) (kReg 3) (kReg 3) 8), .vop (.logic .eor (mReg 3) (kReg 3) (mReg 3))] : List Instr) ++
-  forms kReg ++ forms mReg ++ loadRev Y .x1 0
+  loadRev A .x0 0 ++ twist ++ sumKey ++ forms kReg ++ forms mReg ++ loadRev Y .x1 0
 
 def epilogue : List Instr := [.vop (.rev .rev64b Y Y), .strq Y .x1 0]
 
