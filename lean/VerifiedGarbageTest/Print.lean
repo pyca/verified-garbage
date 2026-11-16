@@ -812,6 +812,43 @@ def callSample : Prog X86_64.isa :=
 #guard Rust.line PPC64LE.printer.call (.call "vg_f") == "        r\"bl {vg_f}\",\n"
 
 #guard Rust.line printer.call (.call "vg_f") == "        r\"call {vg_f}\",\n"
+
+/-! ## Instructions MCDT affects after `vg_mcdt_enter`
+
+An instruction MCDT affects (`vpmuludq`) needs its dispatcher's
+`vg_mcdt_enter` (`Rust.needsMcdt`) unless it is in the code its own code runs
+only once a call of `vg_mcdt_enter` returned 1 (`Rust.mcdtOpen`): the `else`
+of an `ite` on `e` right after `test eax, eax`, which the printer lays out
+right after the `je` to the `then`, the code run when it returned 0. -/
+
+/-- An instruction MCDT affects. -/
+def mulq : Instr := .vop (.vbin .vpmuludq .l256 .xmm0 .xmm1 .xmm2)
+
+/-- `vg_mcdt_enter`, then `fb` if it returned 0 and `rest` if not. -/
+def guardSample (t : Instr) (c : Cond) (fb rest : Prog X86_64.isa) : Prog X86_64.isa :=
+  .seq (.call "vg_mcdt_enter" (.block [])) (.seq (.block [t]) (.ite c fb rest))
+
+def testEax : Instr := .alu32 .test .rax (.reg .rax)
+
+#guard !Rust.mcdtOpen printer (guardSample testEax .e (.block []) (.block [mulq]))
+-- What follows the `ite`, or the code run when it returned 0, may run without it.
+#guard Rust.mcdtOpen printer (.seq (guardSample testEax .e (.block []) (.block [mulq])) (.block [mulq]))
+#guard Rust.mcdtOpen printer (guardSample testEax .e (.block [mulq]) (.block []))
+-- Only `test eax, eax` and `je` test its result; only a call of `vg_mcdt_enter` enters.
+#guard Rust.mcdtOpen printer (guardSample testEax .ne (.block []) (.block [mulq]))
+#guard Rust.mcdtOpen printer (guardSample (.alu .test .rax (.reg .rax)) .e (.block []) (.block [mulq]))
+#guard Rust.mcdtOpen printer (guardSample (.alu32 .test .rdx (.reg .rdx)) .e (.block []) (.block [mulq]))
+#guard Rust.mcdtOpen printer
+  (.seq (.call "vg_f" (.block [])) (.seq (.block [testEax]) (.ite .e (.block []) (.block [mulq]))))
+-- Elsewhere, and in the functions it calls, as `Code.all` finds it.
+#guard Rust.mcdtOpen printer (.call "vg_g" (.block [mulq]))
+#guard !Rust.mcdtOpen printer (guardSample testEax .e (.block []) (.call "vg_g" (.block [mulq])))
+#guard !Rust.mcdtOpen printer callSample
+-- The printer lays out the code run when it returned 1 right after the `je`.
+#guard text (printer.function (guardSample testEax .e (.block [.mov .rax (.reg .rdx)]) (.block [mulq]))) == [
+  "<call vg_mcdt_enter>", "// test eax, eax", ".byte 0x85,0xc0", "je 20f",
+  "// vpmuludq ymm0, ymm1, ymm2", ".byte 0xc5,0xf5,0xf4,0xc2", "jmp 21f", "20:",
+  "// mov rax, rdx", ".byte 0x48,0x89,0xd0", "21:", "// ret", ".byte 0xc3"]
 #guard Rust.line Arm.printer.call (.call "vg_f") == "        r\"bl {vg_f}\",\n"
 #guard Rust.line printer.call (.text "mov rax, QWORD PTR [rdi]") ==
   "        r\"mov rax, QWORD PTR [rdi]\",\n"

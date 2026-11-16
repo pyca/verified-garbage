@@ -208,6 +208,78 @@ class Entered(unittest.TestCase):
                          (1, [self.ERROR]))
 
 
+class Guarded(unittest.TestCase):
+    """Affected instructions after the function's own successful call of
+    `vg_mcdt_enter` (`Rust.mcdtOpen`), on x86-64."""
+
+    ERROR = ("f:{}: `pmuludq xmm0, xmm1` is outside Intel's MXCSR prologue and epilogue "
+             "(MCDT, see lean/VerifiedGarbage/TCB/X86_64/Isa.lean)")
+    GUARD = ["call {vg_mcdt_enter}", "test eax, eax", "je 20f"]
+
+    def errors(self, instrs, labels):
+        guard = check_mcdt.guarded(instrs, labels)
+        return check_mcdt.check_function("f", instrs, list(range(len(instrs))), labels, guard=guard)[0]
+
+    def code(self, fallback, rest, after=()):
+        """The guard, `rest` when it returned 1, `fallback` when it returned 0,
+        then `after`: `Code.ite .e fallback rest` as the printer lays it out."""
+        instrs = self.GUARD + rest + ["jmp 21f"] + fallback + list(after) + ["ret"]
+        return instrs, {"20": [len(self.GUARD) + len(rest) + 1],
+                        "21": [len(self.GUARD) + len(rest) + 1 + len(fallback)]}
+
+    MUL = ["pmuludq xmm0, xmm1"]
+
+    def test_after_the_guard(self):
+        self.assertEqual(self.errors(*self.code(["mov eax, 1"], self.MUL)), [])
+        # A loop, and a cold branch out of the code and back into it.
+        rest = ["mov ecx, 4", "pmuludq xmm0, xmm1", "sub ecx, 1", "jne 22b", "jb 23f", "pmuludq xmm0, xmm2"]
+        instrs, labels = self.code(["mov eax, 1"], rest)
+        instrs += ["pmuludq xmm0, xmm3", "jmp 24b"]
+        labels.update({"22": [4], "23": [len(instrs) - 2], "24": [8]})
+        self.assertEqual(self.errors(instrs, labels), [])
+
+    def test_fallback_or_after(self):
+        instrs, labels = self.code(self.MUL, [])
+        self.assertEqual(self.errors(instrs, labels), [self.ERROR.format(4)])
+        instrs, labels = self.code(["mov eax, 1"], self.MUL, self.MUL)
+        self.assertEqual(self.errors(instrs, labels), [self.ERROR.format(6)])
+
+    def test_not_the_guard(self):
+        for k, bad in ((0, "call {vg_f}"), (1, "test rax, rax"), (1, "test edx, edx"), (2, "jne 20f")):
+            instrs, labels = self.code(["mov eax, 1"], self.MUL)
+            instrs[k] = bad
+            self.assertEqual(self.errors(instrs, labels), [self.ERROR.format(3)], bad)
+
+    def test_entered_otherwise(self):
+        # A jump to the test or the `je`, past the call, or past the guard.
+        for k in (1, 2, 3):
+            instrs, labels = self.code(["mov eax, 1"], self.MUL)
+            instrs, labels = ["jb 25f"] + instrs, {l: [d + 1 for d in ds] for l, ds in labels.items()}
+            labels["25"] = [k + 1]
+            self.assertEqual(self.errors(instrs, labels), [self.ERROR.format(4)], k)
+        # A loop back to before the guard runs it again.
+        instrs, labels = self.code(["mov eax, 1"], self.MUL, ["jne 25b"])
+        labels["25"] = [0]
+        self.assertEqual(self.errors(instrs, labels), [])
+
+    def test_unknown_target(self):
+        instrs, labels = self.code(["mov eax, 1"], self.MUL + ["jmp rax"])
+        self.assertEqual(check_mcdt.guarded(instrs, labels), [False] * len(instrs))
+
+    def test_callee(self):
+        # A function called only after a guard needs no dispatcher's `vg_mcdt_enter`.
+        e = Entered()
+        src = e.fn("vg_f") + e.fn("vg_h")
+        h = "\nvg_h:\n\tcall {vg_mcdt_enter}\n\ttest eax, eax\n\tje 20f\n\tcall {vg_f}\n20:\n\tret\n"
+        self.assertEqual(e.check(src, e.F + h, e.dispatcher("vg_h", enter=False)), (0, []))
+        # Called otherwise too.
+        self.assertEqual(e.check(src, e.F + h.replace("\tret\n", "\tcall {vg_f}\n\tret\n"),
+                                 e.dispatcher("vg_h", enter=False)), (1, [e.ERROR]))
+        # In the function itself, through `main`.
+        f = "vg_f:\n\tcall {vg_mcdt_enter}\n\ttest eax, eax\n\tje 20f\n\tpmuludq xmm0, xmm1\n20:\n\tret\n"
+        self.assertEqual(e.check(e.fn("vg_f"), f, e.dispatcher("vg_f", enter=False)), (0, []))
+
+
 class ColdBranch(unittest.TestCase):
     PROLOGUE = [
         "stmxcsr DWORD PTR [rsp]",
