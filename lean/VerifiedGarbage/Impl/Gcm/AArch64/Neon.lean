@@ -1,6 +1,7 @@
 module
 
 public import VerifiedGarbage.TCB.AArch64.Isa
+public import VerifiedGarbage.Impl.Gcm.AArch64.Pmull
 
 /-!
 # GHASH with the 8-bit PMULL on AArch64
@@ -131,32 +132,38 @@ def mulM : List Instr :=
   form F A 0 ++ add2 false Q0 Q1 F (mReg 6) (mReg 7) ++
   fin Q0 Q1
 
-/-- `mid` (in `Q0`) from the third product, and the product `P0 : Q0 : P1`
-reduced into `Y`, as loaded. -/
-def reduce : List Instr := [
+/-- `mid` (in `Q0`) from the third product, added into `lo` (`P1`) and `hi`
+(`P0`); `F` is cleared. -/
+def middle : List Instr := [
   .vop (.logic .eor Q0 Q0 P0), .vop (.logic .eor Q0 Q0 P1),
-  -- `mid` into `lo` and `hi`
   .vop (.movi0 F),
   .vop (.ext U F Q0 8), .vop (.logic .eor P1 P1 U),
-  .vop (.ext U Q0 F 8), .vop (.logic .eor P0 P0 U),
-  -- what leaves each doubleword of `lo`
+  .vop (.ext U Q0 F 8), .vop (.logic .eor P0 P0 U)]
+
+/-- What leaves each doubleword of `lo`, added to the next one up (`F` is zero). -/
+def carry : List Instr := [
   .vop (.shift .shl .d2 A P1 63), .vop (.shift .shl .d2 U P1 62), .vop (.logic .eor A A U),
   .vop (.shift .shl .d2 U P1 57), .vop (.logic .eor A A U),
   .vop (.ext U F A 8), .vop (.logic .eor P1 P1 U),
-  .vop (.ext U A F 8), .vop (.logic .eor P0 P0 U),
-  -- what stays
+  .vop (.ext U A F 8), .vop (.logic .eor P0 P0 U)]
+
+/-- What stays, added to `hi`, into `Y` as loaded. -/
+def stay : List Instr := [
   .vop (.logic .eor P0 P0 P1),
   .vop (.shift .ushr .d2 U P1 1), .vop (.logic .eor P0 P0 U),
   .vop (.shift .ushr .d2 U P1 2), .vop (.logic .eor P0 P0 U),
   .vop (.shift .ushr .d2 U P1 7), .vop (.logic .eor P0 P0 U),
   .vop (.ext Y P0 P0 8)]
 
-/-- The block at `[n, #0]` into `d`, as loaded. -/
-def loadRev (d : VReg) (n : Reg) : List Instr := [.ldrq d n 0, .vop (.rev .rev64b d d)]
+/-- The product `P0 : Q0 : P1` reduced into `Y`. -/
+def reduce : List Instr := middle ++ carry ++ stay
+
+/- A block into a register, as loaded (`ldr q`, `rev64 .16b`). -/
+export VG.Impl.Gcm.AArch64.Pmull (loadRev)
 
 /-- One block: `Y := (Y ⊕ X) • H`, then the pointer and the count. -/
 def body : List Instr :=
-  loadRev A .x2 ++ ([.vop (.logic .eor A A Y)] : List Instr) ++ mulLH ++ mulM ++ reduce ++
+  loadRev A .x2 0 ++ ([.vop (.logic .eor A A Y)] : List Instr) ++ mulLH ++ mulM ++ reduce ++
     ([.addImm .x .x2 .x2 16, .subImm .x .x3 .x3 1] : List Instr)
 
 /-- `H' = H · x⁻¹` from `H` as loaded in `A`, into `kReg 3`: each doubleword
@@ -174,9 +181,9 @@ def twist : List Instr := [
 
 /-- `H'` and its forms, the sum of its halves and its forms, and `Y`. -/
 def prologue : List Instr :=
-  loadRev A .x0 ++ twist ++
-  ([.vop (.ext (mReg 3) (kReg 3) (kReg 3) 8), .vop (.logic .eor (mReg 3) (mReg 3) (kReg 3))] : List Instr) ++
-  forms kReg ++ forms mReg ++ loadRev Y .x1
+  loadRev A .x0 0 ++ twist ++
+  ([.vop (.ext (mReg 3) (kReg 3) (kReg 3) 8), .vop (.logic .eor (mReg 3) (kReg 3) (mReg 3))] : List Instr) ++
+  forms kReg ++ forms mReg ++ loadRev Y .x1 0
 
 def epilogue : List Instr := [.vop (.rev .rev64b Y Y), .strq Y .x1 0]
 
