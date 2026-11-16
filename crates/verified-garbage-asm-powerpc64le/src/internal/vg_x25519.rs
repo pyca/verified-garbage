@@ -380,22 +380,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1448(%r6)
 	std %r8, 1456(%r6)
 	std %r9, 1464(%r6)
@@ -530,22 +530,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1488(%r6)
 	std %r8, 1496(%r6)
 	std %r9, 1504(%r6)
@@ -783,22 +783,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1568(%r6)
 	std %r8, 1576(%r6)
 	std %r9, 1584(%r6)
@@ -958,22 +958,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1608(%r6)
 	std %r8, 1616(%r6)
 	std %r9, 1624(%r6)
@@ -1099,22 +1099,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1208(%r6)
 	std %r8, 1216(%r6)
 	std %r9, 1224(%r6)
@@ -1249,22 +1249,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1248(%r6)
 	std %r8, 1256(%r6)
 	std %r9, 1264(%r6)
@@ -1424,22 +1424,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1248(%r6)
 	std %r8, 1256(%r6)
 	std %r9, 1264(%r6)
@@ -1599,22 +1599,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1128(%r6)
 	std %r8, 1136(%r6)
 	std %r9, 1144(%r6)
@@ -1662,22 +1662,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1168(%r6)
 	std %r8, 1176(%r6)
 	std %r9, 1184(%r6)
@@ -1857,22 +1857,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1168(%r6)
 	std %r8, 1176(%r6)
 	std %r9, 1184(%r6)
@@ -2062,22 +2062,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1288(%r6)
 	std %r8, 1296(%r6)
 	std %r9, 1304(%r6)
@@ -2183,22 +2183,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1328(%r6)
 	std %r8, 1336(%r6)
 	std %r9, 1344(%r6)
@@ -2304,22 +2304,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1328(%r6)
 	std %r8, 1336(%r6)
 	std %r9, 1344(%r6)
@@ -2479,22 +2479,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1328(%r6)
 	std %r8, 1336(%r6)
 	std %r9, 1344(%r6)
@@ -2654,22 +2654,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1288(%r6)
 	std %r8, 1296(%r6)
 	std %r9, 1304(%r6)
@@ -2775,22 +2775,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1368(%r6)
 	std %r8, 1376(%r6)
 	std %r9, 1384(%r6)
@@ -2950,22 +2950,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1328(%r6)
 	std %r8, 1336(%r6)
 	std %r9, 1344(%r6)
@@ -3071,22 +3071,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1368(%r6)
 	std %r8, 1376(%r6)
 	std %r9, 1384(%r6)
@@ -3194,22 +3194,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1368(%r6)
 	std %r8, 1376(%r6)
 	std %r9, 1384(%r6)
@@ -3372,22 +3372,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1328(%r6)
 	std %r8, 1336(%r6)
 	std %r9, 1344(%r6)
@@ -3493,22 +3493,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1368(%r6)
 	std %r8, 1376(%r6)
 	std %r9, 1384(%r6)
@@ -3616,22 +3616,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1368(%r6)
 	std %r8, 1376(%r6)
 	std %r9, 1384(%r6)
@@ -3794,22 +3794,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1368(%r6)
 	std %r8, 1376(%r6)
 	std %r9, 1384(%r6)
@@ -3915,22 +3915,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1408(%r6)
 	std %r8, 1416(%r6)
 	std %r9, 1424(%r6)
@@ -4038,22 +4038,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1408(%r6)
 	std %r8, 1416(%r6)
 	std %r9, 1424(%r6)
@@ -4216,22 +4216,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1368(%r6)
 	std %r8, 1376(%r6)
 	std %r9, 1384(%r6)
@@ -4337,22 +4337,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1368(%r6)
 	std %r8, 1376(%r6)
 	std %r9, 1384(%r6)
@@ -4460,22 +4460,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1368(%r6)
 	std %r8, 1376(%r6)
 	std %r9, 1384(%r6)
@@ -4638,22 +4638,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1328(%r6)
 	std %r8, 1336(%r6)
 	std %r9, 1344(%r6)
@@ -4759,22 +4759,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1368(%r6)
 	std %r8, 1376(%r6)
 	std %r9, 1384(%r6)
@@ -4882,22 +4882,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1368(%r6)
 	std %r8, 1376(%r6)
 	std %r9, 1384(%r6)
@@ -5060,22 +5060,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1368(%r6)
 	std %r8, 1376(%r6)
 	std %r9, 1384(%r6)
@@ -5181,22 +5181,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1408(%r6)
 	std %r8, 1416(%r6)
 	std %r9, 1424(%r6)
@@ -5304,22 +5304,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1408(%r6)
 	std %r8, 1416(%r6)
 	std %r9, 1424(%r6)
@@ -5482,22 +5482,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1368(%r6)
 	std %r8, 1376(%r6)
 	std %r9, 1384(%r6)
@@ -5603,22 +5603,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1368(%r6)
 	std %r8, 1376(%r6)
 	std %r9, 1384(%r6)
@@ -5726,22 +5726,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1368(%r6)
 	std %r8, 1376(%r6)
 	std %r9, 1384(%r6)
@@ -5904,22 +5904,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1328(%r6)
 	std %r8, 1336(%r6)
 	std %r9, 1344(%r6)
@@ -6025,22 +6025,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1328(%r6)
 	std %r8, 1336(%r6)
 	std %r9, 1344(%r6)
@@ -6148,22 +6148,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1328(%r6)
 	std %r8, 1336(%r6)
 	std %r9, 1344(%r6)
@@ -6326,22 +6326,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1648(%r6)
 	std %r8, 1656(%r6)
 	std %r9, 1664(%r6)
@@ -6501,22 +6501,22 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	mulld %r5, %r5, %r15
 	add %r7, %r7, %r14
 	add %r8, %r8, %r5
-	srdi %r14, %r7, 51
+	srdi %r16, %r7, 51
+	srdi %r17, %r8, 51
+	srdi %r18, %r9, 51
+	srdi %r19, %r10, 51
+	srdi %r20, %r11, 51
 	and %r7, %r7, %r4
-	add %r8, %r8, %r14
-	srdi %r14, %r8, 51
 	and %r8, %r8, %r4
-	add %r9, %r9, %r14
-	srdi %r14, %r9, 51
 	and %r9, %r9, %r4
-	add %r10, %r10, %r14
-	srdi %r14, %r10, 51
 	and %r10, %r10, %r4
-	add %r11, %r11, %r14
-	srdi %r14, %r11, 51
 	and %r11, %r11, %r4
-	mulld %r14, %r14, %r15
-	add %r7, %r7, %r14
+	mulld %r20, %r20, %r15
+	add %r7, %r7, %r20
+	add %r8, %r8, %r16
+	add %r9, %r9, %r17
+	add %r10, %r10, %r18
+	add %r11, %r11, %r19
 	std %r7, 1128(%r6)
 	std %r8, 1136(%r6)
 	std %r9, 1144(%r6)
@@ -6527,6 +6527,26 @@ pub(crate) unsafe extern "C" fn vg_x25519() {
 	ld %r9, 1144(%r6)
 	ld %r10, 1152(%r6)
 	ld %r11, 1160(%r6)
+	li %r4, 1
+	sldi %r4, %r4, 51
+	addi %r4, %r4, -1
+	li %r12, 19
+	srdi %r5, %r7, 51
+	and %r7, %r7, %r4
+	add %r8, %r8, %r5
+	srdi %r5, %r8, 51
+	and %r8, %r8, %r4
+	add %r9, %r9, %r5
+	srdi %r5, %r9, 51
+	and %r9, %r9, %r4
+	add %r10, %r10, %r5
+	srdi %r5, %r10, 51
+	and %r10, %r10, %r4
+	add %r11, %r11, %r5
+	srdi %r5, %r11, 51
+	and %r11, %r11, %r4
+	mulld %r5, %r5, %r12
+	add %r7, %r7, %r5
 	sldi %r4, %r8, 51
 	srdi %r5, %r8, 13
 	sldi %r8, %r9, 38

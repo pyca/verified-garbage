@@ -43,10 +43,17 @@ def tail(o):
     for k in range(1,5): add(LO[k],LO[k],HI[k-1])
     li(4,1); lsl(4,4,51); subi(4,4,1); li(15,19)
     and_(14,HI[4],4); lsr(HI[4],HI[4],51); mul(14,14,15); mul(HI[4],HI[4],15); add(LO[0],LO[0],14); add(LO[1],LO[1],HI[4])
-    for k in range(5):
-        lsr(14,LO[k],51); and_(LO[k],LO[k],4)
-        if k<4: add(LO[k+1],LO[k+1],14)
-        else: mul(14,14,15); add(LO[0],LO[0],14)
+    if "ptail" in OPTS:
+        C=[16,17,18,19,20]
+        for k in range(5): lsr(C[k],LO[k],51)
+        for k in range(5): and_(LO[k],LO[k],4)
+        mul(C[4],C[4],15)
+        for k in range(5): add(LO[k],LO[k],C[(k-1)%5])
+    else:
+        for k in range(5):
+            lsr(14,LO[k],51); and_(LO[k],LO[k],4)
+            if k<4: add(LO[k+1],LO[k+1],14)
+            else: mul(14,14,15); add(LO[0],LO[0],14)
     for k in range(5): std(LO[k],6,o+8*k)
 def fmul(o,a,b):
     for i in range(5): ld(RA[i],6,a+8*i)
@@ -136,6 +143,11 @@ def pack():
     # the limbs at X2 into the four words at X2o
     for k in range(5): ld(7+k,6,X2+8*k)
     l=[7,8,9,10,11]
+    li(4,1); lsl(4,4,51); subi(4,4,1); li(12,19)
+    for k in range(5):
+        lsr(5,l[k],51); and_(l[k],l[k],4)
+        if k<4: add(l[k+1],l[k+1],5)
+        else: mul(5,5,12); add(l[0],l[0],5)
     lsl(4,l[1],51); lsr(5,l[1],13); lsl(l[1],l[2],38); add(l[1],l[1],5)
     lsr(5,l[2],26); lsl(l[2],l[3],25); add(l[2],l[2],5)
     lsr(5,l[3],39); lsl(l[3],l[4],12); add(l[3],l[3],5)
