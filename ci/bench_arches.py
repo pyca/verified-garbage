@@ -285,7 +285,7 @@ CPU_FEATURES = {
 # many (AES-GCM's held 183): bench_compare.py fails a job whose benchmarks
 # would take longer than its budget, before measuring, and `--groups`
 # narrows such a run.
-BENCHMARKS_PER_JOB = 18
+BENCHMARKS_PER_JOB = 60
 
 # Changes to this script choose benchmarks but are not measured by any:
 # `ci/test_check_bench_arches.py` tests it.
