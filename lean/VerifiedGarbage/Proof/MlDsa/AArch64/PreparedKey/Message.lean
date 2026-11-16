@@ -557,7 +557,10 @@ theorem message_sign_call_tr {p : Params} (hp : Ok3 p) {prepared : Bool}
     RelCT isa (Message.Two (Message.signI p) (fun L m t =>
       MessageSignOK p prepared L m t ∧ Message.MuOk L m t ∧ Message.Paired.rootsAt t = tab))
       (callA n code Message.signArgs) (fun _ _ => True) := by
-  refine Message.Optimized.call_tr (by decide) hS.ver.1 hS.ver.2.1
+  refine Message.Optimized.call_tr (by decide) hS.ver.1 hS.ver.2.1 hS.dle.nd
+    (fun _ d h => by
+      cases prepared <;> simp only [rawSignK, Bool.false_eq_true, ↓reduceIte, signContract,
+        preparedSignContract] at h ⊢ <;> exact pre_withDitC d h)
     (fun L => [⟨L.key,rawSignBytes p prepared⟩,⟨L.MU,64⟩,⟨L.rnd,32⟩] ++ Message.Paired.rootPairRegions tab)
     (fun L => [⟨L.sig,p.sigLen⟩,⟨L.scr,Message.sScr p⟩])
     (fun L g v m t u hL hc phi hm => ?_)
@@ -917,10 +920,13 @@ def signCode (v : Proof.Sha3.AArch64.Permutation) (p : Params) (name : String)
 
 theorem message_sign_fn (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p)
     (name : String) (prepared : Bool) : MessageSignFn p prepared (signCode v p name prepared) := by
-  refine ⟨sign_entry_verified v hp name prepared,⟨?_⟩⟩
-  have hd := (sign_withCache_dle v hp).le
-  simpa only [signCode,Impl.MlDsa.AArch64.PreparedKey.Sign.entry,
-    Code.aarch64Depth,Instr.frameUnits,Nat.zero_max] using Nat.add_le_add_right hd 1
+  refine ⟨sign_entry_verified v hp name prepared,⟨?_, ?_⟩⟩
+  · have hd := (sign_withCache_dle v hp).le
+    simpa only [signCode,Impl.MlDsa.AArch64.PreparedKey.Sign.entry,
+      Code.aarch64Depth,Instr.frameUnits,Nat.zero_max] using Nat.add_le_add_right hd 1
+  · simp only [signCode,Impl.MlDsa.AArch64.PreparedKey.Sign.entry,Code.all,(sign_withCache_dle v hp).nd,Bool.and_true]
+    split <;> simp only [List.all_append, VG.Proof.MlDsa.AArch64.lea_noDit, VG.Proof.MlDsa.AArch64.movV_noDit,
+      Bool.and_true] <;> rfl
 
 end VG.Proof.MlDsa.AArch64.PreparedKey
 
@@ -1407,7 +1413,10 @@ theorem message_verify_call_tr {p : Params} (hp : Ok3 p)
     RelCT isa (Two (verifyI p) (fun L m t => MessageVerifyOK p prepared L m t ∧
       CachedVerify.VMuOk p L m t ∧ Message.Optimized.rootsAt t = tab))
       (callA n code verifyArgs) (fun _ _ => True) := by
-  refine Message.Optimized.call_tr (by decide) hV.ver.1 hV.ver.2.1
+  refine Message.Optimized.call_tr (by decide) hV.ver.1 hV.ver.2.1 hV.dle.nd
+    (fun _ d h => by
+      cases prepared <;> simp only [rawVerifyK, Bool.false_eq_true, ↓reduceIte, verifyContract,
+        preparedVerifyContract, Verify.OptimizedSelected.selectedAbi] at h ⊢ <;> exact pre_withDitC d h)
     (fun L => [⟨L.key,rawVerifyBytes p prepared⟩,⟨L.MU,64⟩,⟨L.sig,p.sigLen⟩] ++ Message.Optimized.rootPairRegions tab)
     (fun L => [⟨L.scr,sScr p⟩])
     (fun L g vv m t u hL hc phi hm => ?_)
@@ -1808,9 +1817,12 @@ def verifyCode (v : Proof.Sha3.AArch64.Permutation) (p : Params) (name : String)
 
 theorem message_verify_fn (v : Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p)
     (name : String) (prepared : Bool) : MessageVerifyFn p prepared (verifyCode v p name prepared) := by
-  refine ⟨verify_entry_verified v hp name prepared,⟨?_⟩⟩
-  have hd := (verify_withCache_dle v p).le
-  simpa only [verifyCode,Impl.MlDsa.AArch64.PreparedKey.Verify.entry,
-    Code.aarch64Depth,Instr.frameUnits,Nat.zero_max] using Nat.add_le_add_right hd 1
+  refine ⟨verify_entry_verified v hp name prepared,⟨?_, ?_⟩⟩
+  · have hd := (verify_withCache_dle v p).le
+    simpa only [verifyCode,Impl.MlDsa.AArch64.PreparedKey.Verify.entry,
+      Code.aarch64Depth,Instr.frameUnits,Nat.zero_max] using Nat.add_le_add_right hd 1
+  · simp only [verifyCode,Impl.MlDsa.AArch64.PreparedKey.Verify.entry,Code.all,(verify_withCache_dle v p).nd,Bool.and_true]
+    split <;> simp only [List.all_append, VG.Proof.MlDsa.AArch64.lea_noDit, VG.Proof.MlDsa.AArch64.movV_noDit,
+      Bool.and_true] <;> rfl
 
 end VG.Proof.MlDsa.AArch64.PreparedKey

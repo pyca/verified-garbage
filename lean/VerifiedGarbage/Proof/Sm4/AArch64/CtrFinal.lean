@@ -135,7 +135,7 @@ def ctrF : Contract isa where
           (bytesAt s.mem (s.gpr .x1) 16) (Spec.Cbc.blocksAt s.mem (s.gpr .x2) (s.gpr .x3).toNat) ∧
       bytesAt s'.mem (s.gpr .x1) 16 = Spec.Ctr.next (bytesAt s.mem (s.gpr .x1) 16) (s.gpr .x3).toNat
   pub s₁ s₂ :=
-    s₁.sp = s₂.sp ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
+    s₁.sp = s₂.sp ∧ s₁.dit = s₂.dit ∧ s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
       s₁.gpr .x3 = s₂.gpr .x3
 
 theorem ctrF_implies : (Spec.Sm4.ctrContract AArch64.abi 3264).Implies ctrF where
@@ -149,12 +149,14 @@ theorem ctrF_implies : (Spec.Sm4.ctrContract AArch64.abi 3264).Implies ctrF wher
     exact h
   pub s₁ s₂ _ _ h := by
     sig_reduce [Spec.Sm4.ctrContract, Spec.Sm4.ctrSig, AArch64.abi, AArch64.argRegs]
-    obtain ⟨hsp, h0, h1, h2, h3⟩ := h
-    exact ⟨hsp, fun _ _ => by rw [h0, h1, h2, h3], fun _ hr => absurd hr List.not_mem_nil⟩
+    obtain ⟨hsp, hd, h0, h1, h2, h3⟩ := h
+    exact ⟨⟨hsp, hd⟩, fun _ _ => by rw [h0, h1, h2, h3], fun _ hr => absurd hr List.not_mem_nil⟩
   sat := ⟨Sm4.AArch64.ctrFrameSat, by
     refine ⟨by decide, rfl, rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
       Region.disjoint_of_sep (by decide), by decide, by decide, by decide⟩⟩
+
+theorem ctr_noDit : ctrFramed.all (fun i => !i.writesDit) = true := by lit_decide
 
 theorem ctr_depth : 16 * ctrFramed.aarch64Depth ≤ 3264 := by lit_decide
 
@@ -179,8 +181,8 @@ theorem ctrF_implies_sm4 : (Spec.Sm4.ctrContract AArch64.abi 224).Implies ctrF w
     exact h
   pub s₁ s₂ _ _ h := by
     sig_reduce [Spec.Sm4.ctrContract, Spec.Sm4.ctrSig, AArch64.abi, AArch64.argRegs]
-    obtain ⟨hsp, h0, h1, h2, h3⟩ := h
-    exact ⟨hsp, fun _ _ => by rw [h0, h1, h2, h3], fun _ hr => absurd hr List.not_mem_nil⟩
+    obtain ⟨hsp, hd, h0, h1, h2, h3⟩ := h
+    exact ⟨⟨hsp, hd⟩, fun _ _ => by rw [h0, h1, h2, h3], fun _ hr => absurd hr List.not_mem_nil⟩
   sat := ctrF_implies.sat
 
 theorem ctrSm4_ok : ∀ s, ctrF.pre s → ∃ t s', Exec isa ctrFramedSm4 s t s' ∧ abiPreserved s s' ∧ ctrF.post s s' :=
@@ -190,6 +192,8 @@ theorem ctrSm4_ct : ConstantTime isa ctrF.pre ctrF.pub ctrFramedSm4 :=
   (Sm4.AArch64.Sm4e.ctr_framed.of_implies ctrF_implies_sm4).2.1
 
 theorem ctrSm4_depth : 16 * ctrFramedSm4.aarch64Depth ≤ 3264 := by lit_decide
+
+theorem ctrSm4_noDit : ctrFramedSm4.all (fun i => !i.writesDit) = true := by lit_decide
 
 /-- The implementations keep the low halves of `v8`–`v15`. -/
 theorem ctrFramed_keepsV : ctrFramed.allInstrs keepsV = true := by lit_decide
@@ -204,6 +208,7 @@ structure CtrImpl where
   ok : ∀ s, ctrF.pre s → ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧ ctrF.post s s'
   ct : ConstantTime isa ctrF.pre ctrF.pub code
   depth : 16 * code.aarch64Depth ≤ 3264
+  noDit : code.all (fun i => !i.writesDit) = true
   keepsV : code.allInstrs keepsV = true
   suffix : String
 
@@ -216,6 +221,7 @@ def scalar : CtrImpl where
   ok := ctr_ok
   ct := ctr_ct
   depth := ctr_depth
+  noDit := ctr_noDit
   keepsV := ctrFramed_keepsV
   suffix := ""
 
@@ -226,6 +232,7 @@ def sm4 : CtrImpl where
   ok := ctrSm4_ok
   ct := ctrSm4_ct
   depth := ctrSm4_depth
+  noDit := ctrSm4_noDit
   keepsV := ctrFramedSm4_keepsV
   suffix := "_sm4"
 
@@ -255,7 +262,7 @@ def ctrFinalAArch64 : Contract isa where
       s.mem s'.mem (s.gpr .x1) (s.gpr .x2) (s.gpr .x3).toNat
   pub s₁ s₂ :=
     s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
-      s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp
+      s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.sp = s₂.sp ∧ s₁.dit = s₂.dit
 
 /-- The contract the frame needs: the shared one, with `save`, 80 bytes, as a
 fifth argument, and 3264 bytes of stack (`vg_sm4_ctr`'s frame). -/
@@ -469,8 +476,10 @@ structure KSetup (s₀ s : State) : Prop where
   mem : s.mem = kSvMem s₀
   rd : s.rd = s₀.rd
   wr : s.wr = s₀.wr
+  dit : s.dit = s₀.dit
 
 theorem setup_wp {s₀ : State} (hp : KPre s₀) : WP isa (.block ctrFinalSetup) s₀ (KSetup s₀) := by
+  refine WP.of_dit (by decide) ?_
   have hw : ∀ p ∈ finalSaved, InRegions s₀.wr (s₀.gpr .x4 + BitVec.ofNat 64 p.2) 8 := by
     intro p hp'
     rw [hp.wr]
@@ -483,7 +492,7 @@ theorem setup_wp {s₀ : State} (hp : KPre s₀) : WP isa (.block ctrFinalSetup)
   have k (r : Reg) (h₁ : r ≠ .x19) (h₂ : r ≠ .x21) (h₃ : r ≠ .x22) (h₄ : r ≠ .x23) (h₅ : r ≠ .x25)
       (h₆ : r ≠ .x3) (h₇ : r ≠ .x9) (h₈ : r ≠ .x10) :
       s'.gpr r = s₀.gpr r := keep r h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈
-  exact ⟨x19, x21, by rw [x22, shr4_shl4], by rw [x23, shr4_shl4, sub_shl4], x25,
+  exact fun hd => ⟨x19, x21, by rw [x22, shr4_shl4], by rw [x23, shr4_shl4, sub_shl4], x25,
     k .x0 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
     k .x1 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
     k .x2 (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide),
@@ -492,7 +501,7 @@ theorem setup_wp {s₀ : State} (hp : KPre s₀) : WP isa (.block ctrFinalSetup)
       rcases hr with rfl | rfl | rfl <;>
         exact k _ (by decide) (by decide) (by decide) (by decide) (by decide) (by decide) (by decide)
           (by decide),
-    sp, mem, rd, wr⟩
+    sp, mem, rd, wr, hd⟩
 
 /-! ## The whole blocks -/
 
@@ -546,6 +555,7 @@ structure KWhole (s₀ s : State) : Prop where
   frame : Frame (kW1 s₀) (kSvMem s₀) s.mem
   blocks : Spec.Cbc.blocksAt s.mem (fD s₀) (fN s₀) = Spec.Ctr.crypt (kCiph s₀) (fIv0 s₀) (fBlks s₀)
   ctr : bytesAt s.mem (fIv s₀) 16 = Spec.Ctr.next (fIv0 s₀) (fN s₀)
+  dit : s.dit = s₀.dit
 
 /-- A call's frame, within the regions it was given and the stack. -/
 theorem call_frame (c : CtrImpl) {s₀ s s' : State} (hsp : s.sp = s₀.sp) {wr : List Region}
@@ -559,6 +569,7 @@ theorem call_frame (c : CtrImpl) {s₀ s s' : State} (hsp : s.sp = s₀.sp) {wr 
 
 theorem whole_wp (c : CtrImpl) {s₀ : State} (hp : KPre s₀) {s : State} (h : KSetup s₀ s) :
     WP isa (.call c.name c.code) s (KWhole s₀) := by
+  refine WP.of_dit (c := .call _ c.code) c.noDit ?_
   obtain ⟨eK, eIv, eB⟩ := sv_bytes hp
   obtain ⟨hpre, hc, hw⟩ := whole_pre hp h
   refine WP.callF (k := ctrF) c.ok (rd := [kSch s₀]) (wr := [kIv s₀, fBlk s₀]) hpre hc hw ?_
@@ -570,14 +581,14 @@ theorem whole_wp (c : CtrImpl) {s₀ : State} (hp : KPre s₀) {s : State} (h : 
     AesCbc.AArch64.callEntry_x0, AesCbc.AArch64.callEntry_x1, AesCbc.AArch64.callEntry_x2,
     AesCbc.AArch64.callEntry_x3, h.x0, h.x1, h.x2, h.x3, toNat_n, h.mem] at post₂
   rw [eK, eIv, eB] at post₂
-  exact ⟨by rw [cs_of cs' .x19 (by simp), h.x19], by rw [cs_of cs' .x21 (by simp), h.x21], by rw [cs_of cs' .x22 (by simp), h.x22],
+  exact fun hd => ⟨by rw [cs_of cs' .x19 (by simp), h.x19], by rw [cs_of cs' .x21 (by simp), h.x21], by rw [cs_of cs' .x22 (by simp), h.x22],
     by rw [cs_of cs' .x23 (by simp), h.x23], by rw [cs_of cs' .x25 (by simp), h.x25],
     fun r hr => by rw [cs_of cs' r (by rcases hr with rfl | rfl | rfl <;> simp), h.kept r hr],
     by rw [sp', h.sp], by rw [rd', h.rd], by rw [wr', h.wr],
     fr.mono fun r hr => by
       simp only [List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at hr ⊢
       rcases hr with h | h | h <;> simp [h],
-    post₂.1, post₂.2⟩
+    post₂.1, post₂.2, hd.trans h.dit⟩
 
 /-! ## The partial last block -/
 
@@ -613,6 +624,7 @@ structure KArgs (s₀ s : State) : Prop where
   blocks : Spec.Cbc.blocksAt s.mem (fD s₀) (fN s₀) = Spec.Ctr.crypt (kCiph s₀) (fIv0 s₀) (fBlks s₀)
   ctr : bytesAt s.mem (fIv s₀) 16 = Spec.Ctr.next (fIv0 s₀) (fN s₀)
   zero : bytesAt s.mem (kBk s₀) 16 = List.replicate 16 0
+  dit : s.dit = s₀.dit
 
 theorem zero_frame (s₀ : State) (m : Mem) (g : Reg → BitVec 64) :
     Frame [kBlk s₀] m (Spill.saveMem m (kV s₀) g zeroSlots) :=
@@ -622,6 +634,7 @@ theorem zero_frame (s₀ : State) (m : Mem) (g : Reg → BitVec 64) :
 
 theorem tail_args_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KWhole s₀ s) :
     WP isa (.block ctrFinalTailArgs) s (KArgs s₀) := by
+  refine WP.of_dit (by decide) ?_
   obtain ⟨s₁, r₁, z₁, k₁, sp₁, m₁, rd₁, wr₁⟩ := zero_ok s
   show WP isa (.block ([.movz .x .x9 0 0] ++ (Spill.saveCode .x25 zeroSlots ++ ctrFinalTailMoves))) _ _
   refine WP.block_append_iff.mpr (WP.of_runBlock ⟨s₁, r₁, ?_⟩)
@@ -648,13 +661,14 @@ theorem tail_args_wp {s₀ : State} (hp : KPre s₀) {s : State} (h : KWhole s�
   have blkZ : ∀ r ∈ [kBlk s₀], (fBlk s₀).Disjoint r := by
     intro r hr; simp only [List.mem_singleton] at hr; subst hr
     exact (hp.data_sv.sub_left (blk_sub s₀)).sub_right (blk_sv_sub s₀)
+  intro hdt
   refine ⟨by rw [x0]; exact (k₁ _ (by decide)).trans h.x19, by rw [x1]; exact (k₁ _ (by decide)).trans h.x21,
     by rw [x2, h25], x3,
     by rw [c .x22 (by simp), h.x22], by rw [c .x23 (by simp), h.x23], by rw [c .x25 (by simp), h.x25],
     fun r hr => by rw [c r (by rcases hr with rfl | rfl | rfl <;> simp), h.kept r hr],
     by rw [sp, show ({ s₁ with mem := _ } : State).sp = s₁.sp from rfl, sp₁, h.sp],
     by rw [rd, show ({ s₁ with mem := _ } : State).rd = s₁.rd from rfl, rd₁, h.rd],
-    by rw [wr, show ({ s₁ with mem := _ } : State).wr = s₁.wr from rfl, wr₁, h.wr], ?_, ?_, ?_, ?_⟩
+    by rw [wr, show ({ s₁ with mem := _ } : State).wr = s₁.wr from rfl, wr₁, h.wr], ?_, ?_, ?_, ?_, hdt.trans h.dit⟩
   · exact h.frame.trans (fz.mono fun r hr => by simp only [List.mem_singleton] at hr; simp [hr])
   · rw [blocksAt_frame' fz blkZ]; exact h.blocks
   · rw [Proof.Cmac.bytesAt_frame fz ivZ (by decide), h.ctr]
@@ -915,7 +929,7 @@ theorem final_rel (c : CtrImpl) {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s
     RelCT isa (fun a b => a = s₀ ∧ b = s₀') (ctrFinal c.name c.code) fun _ _ => True := by
   have hp := KPre.of h0
   have hp' := KPre.of h0'
-  obtain ⟨qW, qIv, qD, qL, qV, qSp⟩ := hq
+  obtain ⟨qW, qIv, qD, qL, qV, qSp, qDt⟩ := hq
   have qU : fU s₀ = fU s₀' := by simp only [fU, fL, qL]
   have qN : fN s₀ = fN s₀' := by simp only [fN, fL, qL]
   have qT : fT s₀ = fT s₀' := by simp only [fT, fD, qD, qN]
@@ -936,7 +950,8 @@ theorem final_rel (c : CtrImpl) {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s
       refine ⟨_, _, _, _, pa, pb, ?_, ca, wa, cb, wb⟩
       simp only [ctrF, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
         AesCbc.AArch64.callEntry_x0, AesCbc.AArch64.callEntry_x1, AesCbc.AArch64.callEntry_x2,
-        AesCbc.AArch64.callEntry_x3, ha.x0, ha.x1, ha.x2, ha.x3, ha.sp, hb.x0, hb.x1, hb.x2, hb.x3, hb.sp]
+        AesCbc.AArch64.callEntry_x3, ha.x0, ha.x1, ha.x2, ha.x3, ha.sp, hb.x0, hb.x1, hb.x2, hb.x3, hb.sp,
+        State.withRegions_dit, State.callEntry_dit, ha.dit, hb.dit, qDt]
       rw [fW, fW, fIv, fIv, fD, fD, qW, qIv, qD, qSp, qN]
       refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> first | rfl | trivial).wp
     (F₁ := KWhole s₀) (F₂ := KWhole s₀') fun a b h => ⟨whole_wp c hp h.1, whole_wp c hp' h.2⟩
@@ -962,7 +977,8 @@ theorem final_rel (c : CtrImpl) {s₀ s₀' : State} (h0 : ctrFinalAArch64.pre s
         refine ⟨_, _, _, _, pa, pb, ?_, ca, wa, cb, wb⟩
         simp only [ctrF, State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp,
           AesCbc.AArch64.callEntry_x0, AesCbc.AArch64.callEntry_x1, AesCbc.AArch64.callEntry_x2,
-          AesCbc.AArch64.callEntry_x3, ha.x0, ha.x1, ha.x2, ha.x3, ha.sp, hb.x0, hb.x1, hb.x2, hb.x3, hb.sp]
+          AesCbc.AArch64.callEntry_x3, ha.x0, ha.x1, ha.x2, ha.x3, ha.sp, hb.x0, hb.x1, hb.x2, hb.x3, hb.sp,
+        State.withRegions_dit, State.callEntry_dit, ha.dit, hb.dit, qDt]
         rw [fW, fW, fIv, fIv, kBk, kBk, kV, kV, qW, qIv, qV, qSp]
         refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> first | rfl | trivial).wp
       (F₁ := KCall s₀) (F₂ := KCall s₀') fun a b h => ⟨tail_call_wp c hp h.1, tail_call_wp c hp' h.2⟩

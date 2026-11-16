@@ -73,7 +73,7 @@ theorem anchored_ct (v : RoundImpl) (e : ExpImpl) (a : State) :
 
 theorem constantTime (v : RoundImpl) (e : ExpImpl) : ConstantTime isa contract.pre contract.pub (emittedCode v e) := by
   intro s t ts tt u w hs ht hp es et
-  have left : Start s s := ⟨hs, fun _ _ => rfl, rfl, rfl⟩
+  have left : Start s s := ⟨hs, fun _ _ => rfl, rfl, rfl, rfl⟩
   exact (anchored_ct v e s s t ts tt u w ⟨left, start_of_pub ht hp⟩ es et).1
 
 end VG.Proof.Ffdh.X86_64.VettedValidation

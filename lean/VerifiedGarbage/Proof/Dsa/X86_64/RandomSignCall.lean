@@ -5,6 +5,7 @@ import VerifiedGarbage.Proof.Framework.X86_64.CallSp
 import VerifiedGarbage.Proof.Bignum.X86_64.CrtSel
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.X86_64.SigningABI
+public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
 
 /-! Call any registered supplied-nonce signer, retaining its contract and frame. -/
 @[expose] public section
@@ -26,6 +27,7 @@ structure Signer where
   sp : code.all (fun i => !isa.writesSp i) = true
   depth : code.x86_64Depth ≤ stack
   stackBound : stack < 2 ^ 32
+  noMx : code.allInstrs (fun i => !touchesMxcsr i) = true
 
 theorem signWith_pre {valid : Nat → Nat → List Byte → Bool} {s : State} {stack : Nat}
     (h : (signContractWith valid abi stack).pre s) :

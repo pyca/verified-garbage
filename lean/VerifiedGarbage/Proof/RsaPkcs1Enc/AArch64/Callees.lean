@@ -35,6 +35,7 @@ def privOf (c : Proof.Rsa.AArch64.CrtImpl) : PrivImpl where
   pos := by decide
   depth := by rw [Proof.Rsa.AArch64.privCode_depth]; decide
   spSafe := Code.all_of_forall (fun _ => rfl) _
+  noDit := Proof.Rsa.AArch64.privCode_noDit c
 
 theorem stackArgs_fifteen (s : State) :
     List.map (stackArg s) (List.range 15) = [stackArg s 0, stackArg s 1, stackArg s 2, stackArg s 3,
@@ -78,6 +79,7 @@ def privPOf (c : Proof.Rsa.AArch64.CrtImpl) : Dec.PrivPImpl where
   verified := Proof.Rsa.AArch64.codeP_verified c
   pos := by decide
   depth := by rw [Proof.Rsa.AArch64.privPCode_depth]; decide
+  noDit := Proof.Rsa.AArch64.privPCode_noDit c
 
 theorem decP_sat' (c : Proof.Rsa.AArch64.CrtImpl) :
     ∃ s, (Spec.RsaPkcs1Enc.decryptPrecomputedContract AArch64.abi (Dec.decStackP (privPOf c))).pre s :=

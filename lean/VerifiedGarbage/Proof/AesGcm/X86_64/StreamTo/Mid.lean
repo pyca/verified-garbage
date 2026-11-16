@@ -64,13 +64,14 @@ structure Mid (s : State) (o : Nat) (st : State) : Prop where
   kept : Kept s o st.mem
   frame : Frame (wR s ++ [tR s]) s.mem st.mem
   sem : Sem s o st.mem
+  mx : st.mxcsr = s.mxcsr
 
 /-- `Mid` through code that changes no memory, `rsp` or callee-saved register. -/
 theorem Mid.regs {s : State} {o : Nat} {st st' : State} (h : Mid s o st) (hm : st'.mem = st.mem)
-    (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr) :
-    Mid s o st' :=
+    (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr)
+    (hmx : st'.mxcsr = st.mxcsr) : Mid s o st' :=
   ⟨h.o_le, h.tl, by rw [hcs _ (by decide), h.rsp], fun r hr => by rw [hcs r hr, h.saved r hr],
-    hrd.trans h.rd, hwr.trans h.wr, hm ▸ h.kept, hm ▸ h.frame, hm ▸ h.sem⟩
+    hrd.trans h.rd, hwr.trans h.wr, hm ▸ h.kept, hm ▸ h.frame, hm ▸ h.sem, hmx.trans h.mx⟩
 
 /-- A streaming state is what it is outside a frame. -/
 theorem streamRepr_frame {rs : List Region} {m m' : Mem} (hf : Frame rs m m') {p : Addr}
@@ -138,10 +139,10 @@ theorem frame_kR' {m m' : Mem} (hf : Frame [kR' s] m m') : Frame (wR s ++ [tR s]
 /-- After the entry: nothing done. -/
 theorem mid_entry {s₁ : State} (hsp : s₁.gpr .rsp = s.gpr .rsp)
     (hcs : ∀ r ∈ calleeSaved, s₁.gpr r = s.gpr r)
-    (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr) :
-    Mid s 0 s₁ := by
+    (hk : Kept s 0 s₁.mem) (hf : Frame [kR' s] s.mem s₁.mem) (hrd : s₁.rd = s.rd) (hwr : s₁.wr = s.wr)
+    (hmx : s₁.mxcsr = s.mxcsr) : Mid s 0 s₁ := by
   refine ⟨Nat.zero_le _, by have := (TL s).isLt; omega_using [], hsp, hcs, hrd, hwr, hk, frame_kR' hf,
-    fun iv a p hr _ hl => ⟨?_, ?_⟩⟩
+    fun iv a p hr _ hl => ⟨?_, ?_⟩, hmx⟩
   all_goals have z : pt s 0 = [] := rfl
   · rw [z, List.append_nil]
     exact streamRepr_frame hf (fun r hr' => by

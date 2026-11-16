@@ -51,7 +51,8 @@ theorem random_call_public {valid : Nat → Nat → List Byte → Bool} {extra :
     (hr : Spec.Dsa.signStatus (randomCallResult s a) = Spec.Dsa.signStatus (randomCallResult t b)) :
     (signContractWith valid abi extra).pub
       (a.callEntry.withRegions (randomCallRd s) (randomCallWr s))
-      (b.callEntry.withRegions (randomCallRd t) (randomCallWr t)) := by
+      ((b.callEntry.withRegions (randomCallRd t) (randomCallWr t)).withDit
+        (a.callEntry.withRegions (randomCallRd s) (randomCallWr s)).dit) := by
   have hA (i : Nat) (hi : i < 3) :
       stackArg (a.callEntry.withRegions (randomCallRd s) (randomCallWr s)) i = randomCallArg s i :=
     (random_call_stackArg ha.sp _ _ i).trans (ha.args i hi)
@@ -59,7 +60,7 @@ theorem random_call_public {valid : Nat → Nat → List Byte → Bool} {extra :
       stackArg (b.callEntry.withRegions (randomCallRd t) (randomCallWr t)) i = randomCallArg t i :=
     (random_call_stackArg hb.sp _ _ i).trans (hb.args i hi)
   sig_pub [signContractWith, Spec.Dsa.signSig, abi, argRegs, dsaSignStackArgs]
-  simp only [ha.sp, hb.sp, ha.di, hb.di, ha.si, hb.si, ha.dx, hb.dx, ha.cx, hb.cx, ha.r8, hb.r8, ha.r9, hb.r9, ha.x6, hb.x6, ha.x7, hb.x7,
+  simp only [stackArg_withDit, ha.sp, hb.sp, ha.di, hb.di, ha.si, hb.si, ha.dx, hb.dx, ha.cx, hb.cx, ha.r8, hb.r8, ha.r9, hb.r9, ha.x6, hb.x6, ha.x7, hb.x7,
     hA 0 (by decide), hA 1 (by decide), hA 2 (by decide),
     hB 0 (by decide), hB 1 (by decide), hB 2 (by decide), randomCallArg]
   refine ⟨?_, ?_, hp.regs .x0 (by decide), hp.regs .x1 (by decide), hp.regs .x3 (by decide),
@@ -78,7 +79,7 @@ def RandomSignCallRelated (S : Signer) (a b : State) : Prop :=
 
 theorem random_signer_ct (S : Signer) : RelCT isa (RandomSignCallRelated S)
     (.call S.name S.code) (fun _ _ => True) := by
-  apply VG.AArch64.RelCT.callEx S.verified.1 S.verified.2.1
+  apply VG.AArch64.RelCT.callExDit S.verified.1 S.verified.2.1 S.noDit (fun _ _ h => h)
   intro a b ⟨s, t, hs, ht, hvs, hvt, ha, hb, hp, hk, hr⟩
   obtain ⟨hca, hwa⟩ := random_call_covers hs ha.rd ha.wr
   obtain ⟨hcb, hwb⟩ := random_call_covers ht hb.rd hb.wr

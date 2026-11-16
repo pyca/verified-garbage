@@ -244,7 +244,7 @@ variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Proof.Pbkdf2.Instan
   (hd : pbk.aarch64Depth ≤ 1) (name : String)
 include hv hd
 
-theorem rest_ct : RelCT isa (Two fun L _ t => Entry L t)
+theorem rest_ct (hnd : pbk.all (fun i => !i.touchesDit) = true) : RelCT isa (Two fun L _ t => Entry L t)
     (.seq (pbkCall name pbk pbk1Args) (.seq (.block cur0) (.seq romixLoop (pbkCall name pbk pbk2Args))))
     fun _ _ => True := by
   have p1a : RelCT isa (Two fun L _ t => Entry L t) (.block pbk1Args)
@@ -254,7 +254,7 @@ theorem rest_ct : RelCT isa (Two fun L _ t => Entry L t)
   have p1c : RelCT isa (Two fun L _ t => PbkArgs L L.salt L.sl L.b (BitVec.ofNat 64 (L.blen.toNat * 128)) t)
       (.call name pbk)
       (Two fun L m₀ t => ∀ k < L.pp, bytesAt t.mem (blkAt L k) (128 * L.r.toNat) = X L m₀ k) :=
-    two_call (pbk_correct hv) (pbk_ct hv) (fun L => pbkRd L L.salt L.sl)
+    two_call (pbk_correct hv) (pbk_ct hv hnd) (fun L => pbkRd L L.salt L.sl)
       (fun L => pbkWr L L.b (BitVec.ofNat 64 (L.blen.toNat * 128)))
       (fun _ _ _ _ _ hL hc ha => pbk_pre' hL hc ha (pbk1_regions hL))
       (fun _ _ _ _ _ _ _ _ _ _ _ c₁ c₂ a₁ a₂ => pbk_pub_two c₁ c₂ a₁ a₂)
@@ -270,7 +270,7 @@ theorem rest_ct : RelCT isa (Two fun L _ t => Entry L t)
       WP.mono (pbk2Args_ok hL hc) fun _ ⟨hc', _, ha⟩ => ⟨hc', ha⟩
   have p2c : RelCT isa (Two fun L _ t => PbkArgs L L.b (BitVec.ofNat 64 (L.blen.toNat * 128)) L.out L.ol t)
       (.call name pbk) (Two fun _ _ _ => True) :=
-    two_call (pbk_correct hv) (pbk_ct hv) (fun L => pbkRd L L.b (BitVec.ofNat 64 (L.blen.toNat * 128)))
+    two_call (pbk_correct hv) (pbk_ct hv hnd) (fun L => pbkRd L L.b (BitVec.ofNat 64 (L.blen.toNat * 128)))
       (fun L => pbkWr L L.out L.ol)
       (fun _ _ _ _ _ hL hc ha => pbk_pre' hL hc ha (pbk2_regions hL))
       (fun _ _ _ _ _ _ _ _ _ _ _ c₁ c₂ a₁ a₂ => pbk_pub_two c₁ c₂ a₁ a₂)
@@ -280,11 +280,11 @@ theorem rest_ct : RelCT isa (Two fun L _ t => Entry L t)
   exact ((p1a.seq p1c).seq (c0.seq (loop_ct.seq (p2a.seq p2c)))).mono (fun _ _ h => h)
     fun _ _ _ => trivial
 
-theorem scrypt_ct :
+theorem scrypt_ct (hnd : pbk.all (fun i => !i.touchesDit) = true) :
     ConstantTime isa Proof.Scrypt.scryptAArch64.pre Proof.Scrypt.scryptAArch64.pub (scrypt name pbk) := by
   refine RelCT.constantTime (RelCT.pushFrame (fun _ _ h => h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1)
     (RelCT.alloc (R := fun _ _ => True) ?_))
-  refine (save_ct.seq (rest_ct hv hd name)).mono ?_ fun _ _ _ => trivial
+  refine (save_ct.seq (rest_ct hv hd name hnd)).mono ?_ fun _ _ _ => trivial
   rintro _ _ ⟨_, _, ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, rfl, rfl⟩, rfl, rfl⟩
   exact ⟨s₁, s₂, h₁, h₂, hp, rfl, rfl⟩
 
@@ -360,11 +360,11 @@ variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Proof.Pbkdf2.Instan
 include hv hd
 
 /-- `vg_scrypt`, calling the implementation `pbk` of PBKDF2 named `name`. -/
-theorem scrypt_verified_of :
+theorem scrypt_verified_of (hnd : pbk.all (fun i => !i.touchesDit) = true) :
     Verified AArch64.target (scrypt name pbk) (Spec.Scrypt.scryptContract AArch64.abi 96) :=
   Verified.of_correct (fun _ h => by
     obtain ⟨t, s', he, hp⟩ := scrypt_ok hv hd name h
-    exact ⟨t, s', he, hp⟩) (scrypt_ct hv hd name) scrypt_implies
+    exact ⟨t, s', he, hp⟩) (scrypt_ct hv hd name hnd) scrypt_implies
 
 end
 
@@ -397,9 +397,30 @@ theorem pbk_depth : (pbkOf c).aarch64Depth ≤ 1 :=
     (Proof.Pbkdf2.Md.AArch64.Sha256.streamOK c).updDepth (Proof.Pbkdf2.Md.AArch64.Sha256.streamOK c).finDepth
     c.noFrames
 
+theorem update_noDit : c.update.all (fun i => !i.touchesDit) = true := by
+  simp only [Proof.Sha256.AArch64.Compress.update, Impl.MdStream.AArch64.update, Impl.MdStream.AArch64.updateMain,
+    Impl.MdStream.AArch64.updateBody, Impl.MdStream.AArch64.compressN, Impl.MdStream.AArch64.compressWith,
+    Code.all, c.noDit, Bool.and_true]
+  lit_decide
+
+theorem finalize_noDit : c.finalize.all (fun i => !i.touchesDit) = true := by
+  simp only [Proof.Sha256.AArch64.Compress.finalize, Impl.MdStream.AArch64.finalize,
+    Impl.MdStream.AArch64.finalizeMain, Impl.MdStream.AArch64.finalizeBody, Impl.MdStream.AArch64.compressAt,
+    Impl.MdStream.AArch64.compressWith, Code.all, c.noDit, Bool.and_true]
+  lit_decide
+
+/-- PBKDF2 made with `c` never touches the mode: its own code (`Hash.core`, the
+same for every `c`) and that of the functions it calls. -/
+theorem pbk_noDit : (pbkOf c).all (fun i => !i.touchesDit) = true :=
+  Impl.Pbkdf2.Md.AArch64.Hash.pbkdf2_all_of_core c.noDit
+    (show Impl.Sha256.AArch64.Stream.init.all _ = true by lit_decide) (update_noDit c) (finalize_noDit c)
+    (by
+      simp only [Impl.Pbkdf2.Md.AArch64.Hash.core, Proof.Pbkdf2.Md.AArch64.Sha256.hash]
+      lit_decide)
+
 /-- `vg_scrypt` made with `c`. -/
 theorem scrypt_verified :
     Verified AArch64.target (scrypt (pbkName c) (pbkOf c)) (Spec.Scrypt.scryptContract AArch64.abi 96) :=
-  scrypt_verified_of (pbk_verified c) (pbk_depth c) (pbkName c)
+  scrypt_verified_of (pbk_verified c) (pbk_depth c) (pbkName c) (pbk_noDit c)
 
 end VG.Proof.Scrypt.AArch64.Whole

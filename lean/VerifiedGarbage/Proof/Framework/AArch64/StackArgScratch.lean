@@ -161,7 +161,7 @@ theorem post_args {s s' : State} (hA : ArgsOk sig) :
 /-- The public data of a contract, and what it may leak. -/
 theorem pub_args {s₁ s₂ : State} (hA : ArgsOk sig) (hl : Sig.noLists sig.params = true) :
     (sig.contract abi pre post wa stack leak).pub s₁ s₂ ↔
-      (s₁.sp = s₂.sp ∧ leakAgree leak (allArgs sig s₁) s₁.mem (allArgs sig s₂) s₂.mem) ∧
+      ((s₁.sp = s₂.sp ∧ s₁.dit = s₂.dit) ∧ leakAgree leak (allArgs sig s₁) s₁.mem (allArgs sig s₂) s₂.mem) ∧
       ∀ i, (sig.params.flatMap (·.2.pubs)).getD i false = true →
         ((allArgs sig s₁).getD i 0).setWidth (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD i 64) =
           ((allArgs sig s₂).getD i 0).setWidth (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD i 64) := by
@@ -534,6 +534,14 @@ def narrowS (sig : Sig) (e : Elem) (n bytes : Nat) (s : State) : State :=
     (((oldRegions sig e n bytes s).filter (!·.2)).map (·.1))
     (((oldRegions sig e n bytes s).filter (·.2)).map (·.1))
 
+theorem copiedState_dit (bytes : Nat) (w : State) : ∀ m, (copiedState bytes w m).dit = w.dit
+  | 0 => rfl
+  | m + 1 => copiedState_dit bytes w m
+
+/-- `narrowS` keeps PSTATE.DIT. -/
+theorem narrowS_dit (sig : Sig) (e : Elem) (n bytes : Nat) (s : State) : (narrowS sig e n bytes s).dit = s.dit :=
+  copiedState_dit bytes _ (nStack sig)
+
 section
 variable {sig : Sig} {nm : String} {e : Elem} {n : Nat}
   {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)} {post : sig.Post abi.ptrBits} {wa : Bool}
@@ -743,7 +751,7 @@ theorem narrowS_pub (hA : ArgsOk sig) (hk : 8 ≤ (sig.words abi.ptrBits).length
     (Sig.scratchContract abi sig nm e n pre post wa stack leak).pub (narrowS sig e n bytes s₁)
       (narrowS sig e n bytes s₂) := by
   rw [pub_args hA hl] at hp
-  obtain ⟨⟨hsp, hlk⟩, hpa⟩ := hp
+  obtain ⟨⟨⟨hsp, hdit⟩, hlk⟩, hpa⟩ := hp
   obtain ⟨e₁, -, -, a₁, -⟩ := narrowS_facts (nm := nm) hA hk hb h₁ hl
   obtain ⟨e₂, -, -, a₂, -⟩ := narrowS_facts (nm := nm) hA hk hb h₂ hl
   have l₁ := allArgs_length sig s₁
@@ -754,7 +762,7 @@ theorem narrowS_pub (hA : ArgsOk sig) (hk : 8 ≤ (sig.words abi.ptrBits).length
     (leak := leak.map (Curry.withScratch abi.ptrBits nm e n sig.params))
     (argsOk_withScratch nm e n hk hA) (Sig.noLists_withScratch nm e n hl)).mpr ?_
   rw [e₁, e₂, a₁, a₂, hsp]
-  refine ⟨⟨rfl, leakAgree_withScratch hleak _ _ l₁ l₂ (narrowS_agree hA hk hb h₁ hl)
+  refine ⟨⟨⟨rfl, by rw [narrowS_dit, narrowS_dit, hdit]⟩, leakAgree_withScratch hleak _ _ l₁ l₂ (narrowS_agree hA hk hb h₁ hl)
     (narrowS_agree hA hk hb h₂ hl) hlk⟩, fun i hi => ?_⟩
   have lp := Sig.pubs_length sig.params abi.ptrBits
   have hps : ((sig.withScratch nm e n).params.flatMap (·.2.pubs)) =
@@ -911,7 +919,7 @@ theorem Verified.stackArgScratch {c : Prog isa}
     exact hpost _ _ _ _ _ (allArgs_length sig s) (narrowS_agree hA hk hb hs hl) hq''
   · obtain ⟨u₁, r₁, f₁, -, x₁, -⟩ := hrun s₁ h₁
     obtain ⟨u₂, r₂, f₂, -, x₂, -⟩ := hrun s₂ h₂
-    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pub_args hA hl).mp hp).1.1,
+    rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, ((pub_args hA hl).mp hp).1.1.1,
       hct _ _ _ _ _ _ (narrowS_pre hA hk hb hpre h₁ hl) (narrowS_pre hA hk hb hpre h₂ hl)
         (narrowS_pub hA hk hb h₁ h₂ hp hl hleak) f₁ f₂]
 
@@ -1019,7 +1027,7 @@ theorem Verified.stackArgScratchWipedPre {c : Prog isa} {words : Nat}
       exact hdisj b hb' a ha').symm
   · obtain ⟨u₁, _, _, f₁, _, _, p₁, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, p₂, x₂, _⟩ := hrun s₂ h₂
-    have hsp₁₂ : s₁.sp = s₂.sp := ((pub_args hA hl).mp hp).1.1
+    have hsp₁₂ : s₁.sp = s₂.sp := ((pub_args hA hl).mp hp).1.1.1
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1, p₁, p₂, hsp₁₂,
       hct _ _ _ _ _ _ (narrowS_pre hA hk hb hpre h₁ hl) (narrowS_pre hA hk hb hpre h₂ hl)
         (narrowS_pub hA hk hb h₁ h₂ hp hl hleak) f₁ f₂]

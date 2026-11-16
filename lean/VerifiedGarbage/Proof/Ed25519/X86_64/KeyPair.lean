@@ -559,39 +559,43 @@ structure Pub (s₁ s₂ : State) : Prop where
   dx : s₁.gpr .rdx = s₂.gpr .rdx
   cx : s₁.gpr .rcx = s₂.gpr .rcx
   sy : s₁.syms combSym = s₂.syms combSym
+  mx : s₁.mxcsr = s₂.mxcsr
 
 theorem pub_of {s₁ s₂ : State} (h : spec.pub s₁ s₂) : Pub s₁ s₂ := by
-  sig_pub [Spec.Ed25519.keyPairContract, Spec.Ed25519.keyPairSig, Spec.Ed25519.scratchWords,
+  sig_pub_keep [Spec.Ed25519.keyPairContract, Spec.Ed25519.keyPairSig, Spec.Ed25519.scratchWords,
     X86_64.abi, X86_64.argRegs, Proof.Ed25519.X86_64.combConsts_eq, Abi.withConsts] at h
-  obtain ⟨h0, hs, h1, h2, h3, h4⟩ := h
-  exact ⟨h0, h1, h2, h3, h4, hs⟩
+  obtain ⟨h0, hm, hs, h1, h2, h3, h4⟩ := h
+  exact ⟨h0, h1, h2, h3, h4, hs, hm⟩
 
 /-- Two runs between the push and the pop, from entry states that agree, each with `Φ`. -/
 def Rel (Φ : State → State → Prop) (a b : State) : Prop :=
-  ∃ s₁ s₂, Pre s₁ ∧ Pre s₂ ∧ Pub s₁ s₂ ∧ Ctx s₁ a ∧ Ctx s₂ b ∧ Φ s₁ a ∧ Φ s₂ b
+  ∃ s₁ s₂, Pre s₁ ∧ Pre s₂ ∧ Pub s₁ s₂ ∧ Ctx s₁ a ∧ Ctx s₂ b ∧ Φ s₁ a ∧ Φ s₂ b ∧ a.mxcsr = b.mxcsr
 
-theorem rel_wp {c : Prog isa} {Φ Ψ : State → State → Prop} (hct : RelCT isa (Rel Φ) c fun _ _ => True)
+theorem rel_wp {c : Prog isa} {Φ Ψ : State → State → Prop} (hmx : MxDet c)
+    (hct : RelCT isa (Rel Φ) c fun _ _ => True)
     (hw : ∀ s t, Pre s → Ctx s t → Φ s t → WP isa c t fun t' => Ctx s t' ∧ Ψ s t') :
     RelCT isa (Rel Φ) c (Rel Ψ) := by
   intro a b ta tb a' b' hp e₁ e₂
   obtain ⟨ht, -⟩ := hct _ _ _ _ _ _ hp e₁ e₂
-  obtain ⟨s₁, s₂, h₁, h₂, hp', c₁, c₂, f₁, f₂⟩ := hp
+  obtain ⟨s₁, s₂, h₁, h₂, hp', c₁, c₂, f₁, f₂, hm⟩ := hp
   obtain ⟨_, u₁, x₁, y₁⟩ := hw s₁ a h₁ c₁ f₁
   obtain ⟨_, u₂, x₂, y₂⟩ := hw s₂ b h₂ c₂ f₂
+  have hm' := hmx _ _ _ _ _ e₁ (ht ▸ e₂) hm
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  exact ⟨ht, s₁, s₂, h₁, h₂, hp', y₁.1, y₂.1, y₁.2, y₂.2⟩
+  exact ⟨ht, s₁, s₂, h₁, h₂, hp', y₁.1, y₂.1, y₁.2, y₂.2, hm'⟩
 
 theorem rel_rsp {Φ : State → State → Prop} {a b : State} (h : Rel Φ a b) : a.gpr .rsp = b.gpr .rsp := by
-  obtain ⟨_, _, _, _, hp, c₁, c₂, _⟩ := h
+  obtain ⟨_, _, _, _, hp, c₁, c₂, -⟩ := h
   rw [c₁.rsp, c₂.rsp, B, B, K, K, hp.sp]
 
 /-- A block that addresses memory only through `rsp`. -/
 theorem rel_block {is : List Instr} {Φ Ψ : State → State → Prop}
     {hc : VG.Taint.Hint VG.X86_64.Taint.T} (h : (taint.check (Taint.ofRegs [.rsp]) (.block is) hc).isSome = true)
+    (hmx : MxDet (.block is))
     (hw : ∀ s t, Pre s → Ctx s t → Φ s t → WP isa (.block is) t fun t' => Ctx s t' ∧ Ψ s t') :
     RelCT isa (Rel Φ) (.block is) (Rel Ψ) :=
-  rel_wp (RelCT.taint (A := taint) (Taint.ofRegs [.rsp]) (fun _ _ hr => Taint.agree_ofRegs fun r hr' => by
+  rel_wp hmx (RelCT.taint (A := taint) (Taint.ofRegs [.rsp]) (fun _ _ hr => Taint.agree_ofRegs fun r hr' => by
     simp only [List.mem_singleton] at hr'; subst hr'; exact rel_rsp hr) h) hw
 
 abbrev Φ₀ (s t : State) : Prop := t.gpr .rdx = s.gpr .rdx ∧ t.gpr .rsi = s.gpr .rsi
@@ -606,29 +610,30 @@ theorem body_ct {dn pn : String} :
     RelCT isa (Rel Φ₀) (.seq (.block digestArgs) (.seq (.call dn (dgCode c)) (.seq (.block pkArgs)
       (.call pn (publicKeyExpanded bs fs))))) fun _ _ => True := by
   have b₁ : RelCT isa (Rel Φ₀) (.block digestArgs) (Rel Φ₁) :=
-    rel_block (by taint_decide) fun _ _ _ hc ⟨hdx, hsi⟩ =>
+    rel_block (by taint_decide) (MxDet.of_noLoad (by decide)) fun _ _ _ hc ⟨hdx, hsi⟩ =>
       WP.mono (digestArgs_ok hc hdx hsi) fun _ ⟨hc', a, b, d⟩ => ⟨hc', a, b, d⟩
   have b₂ : RelCT isa (Rel Φ₁) (.call dn (dgCode c)) (Rel Φ₂) := by
-    refine rel_wp (RelCT.callEx (dg_verified c).1 (dg_verified c).2.1 fun a b hr => ?_)
+    refine rel_wp (MxDet.of_noLoad (Proof.Sha512.X86_64.OneShot.mxcsr Proof.Sha512.X86_64.OneShot.code512 _
+      c.mxcsr)) (RelCT.callEx (dg_verified c).1 (dg_verified c).2.1 fun a b hr => ?_)
       fun s _ h hc ⟨hdi, hsi, hdx⟩ => digest_ok c h hc hdi hsi hdx
-    obtain ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, ⟨d₁, i₁, x₁⟩, ⟨d₂, i₂, x₂⟩⟩ := hr
+    obtain ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, ⟨d₁, i₁, x₁⟩, ⟨d₂, i₂, x₂⟩, hm⟩ := hr
     refine ⟨_, _, _, _, dg_pre h₁ c₁ d₁ i₁ x₁, dg_pre h₂ c₂ d₂ i₂ x₂, ?_, (dg_cov h₁ c₁).1, (dg_cov h₁ c₁).2,
-      (dg_cov h₂ c₂).1, (dg_cov h₂ c₂).2, rel_rsp (Φ := fun _ _ => True) ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, trivial, trivial⟩⟩
+      (dg_cov h₂ c₂).1, (dg_cov h₂ c₂).2, rel_rsp (Φ := fun _ _ => True) ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, trivial, trivial, hm⟩⟩
     sig_pub [Spec.Sha512.digestContract, Spec.Sha512.digestSig, Spec.Sha512.digestPost, X86_64.abi,
       X86_64.argRegs]
     rw [rsp8 c₁, rsp8 c₂, d₁, d₂, i₁, i₂, x₁, x₂, K, K, hp.sp, hp.dx, hp.si]
-    exact ⟨rfl, rfl, rfl, rfl⟩
+    exact ⟨rfl, hm, rfl, rfl, rfl⟩
   have b₃ : RelCT isa (Rel Φ₂) (.block pkArgs) (Rel Φ₃) :=
-    rel_block (by taint_decide) fun _ _ _ hc hE =>
+    rel_block (by taint_decide) (MxDet.of_noLoad (by decide)) fun _ _ _ hc hE =>
       WP.mono (pkArgs_ok hc) fun _ ⟨hc', hm, a, b, d⟩ => ⟨hc', by rw [Φ₂, hm]; exact hE, a, b, d⟩
   have b₄ : RelCT isa (Rel Φ₃) (.call pn (publicKeyExpanded bs fs)) fun _ _ => True := by
     refine RelCT.callEx (k := PublicKey.pkLocalE)
       (fun _ h => PublicKey.publicKeyExpanded_ok (bs := bs) (fs := fs) h)
       (PublicKey.publicKeyExpanded_ct (bs := bs) (fs := fs)) fun a b hr => ?_
-    obtain ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, ⟨e₁, d₁, i₁, x₁⟩, ⟨e₂, d₂, i₂, x₂⟩⟩ := hr
+    obtain ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, ⟨e₁, d₁, i₁, x₁⟩, ⟨e₂, d₂, i₂, x₂⟩, hm⟩ := hr
     refine ⟨_, _, _, _, pk_pre h₁ c₁ d₁ i₁ x₁ e₁, pk_pre h₂ c₂ d₂ i₂ x₂ e₂, ?_, (pk_cov h₁ c₁).1,
       (pk_cov h₁ c₁).2, (pk_cov h₂ c₂).1, (pk_cov h₂ c₂).2,
-      rel_rsp (Φ := fun _ _ => True) ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, trivial, trivial⟩⟩
+      rel_rsp (Φ := fun _ _ => True) ⟨s₁, s₂, h₁, h₂, hp, c₁, c₂, trivial, trivial, hm⟩⟩
     simp only [PublicKey.pkLocalE, PublicKey.pkLocalWith, State.withRegions_gpr, ce_syms, ce_rsp c₁, ce_rsp c₂,
       State.callEntry_gpr _ (show Reg.rdi ≠ .rsp by decide), State.callEntry_gpr _ (show Reg.rsi ≠ .rsp by decide),
       State.callEntry_gpr _ (show Reg.rdx ≠ .rsp by decide), d₁, d₂, i₁, i₂, x₁, x₂, c₁.sym, c₂.sym, K, hp.sp,
@@ -643,7 +648,7 @@ theorem keyPair_ct {dn pn : String} :
   rintro _ _ ⟨s₁, s₂, ⟨h₁, h₂, hp⟩, rfl, rfl⟩
   exact ⟨s₁, s₂, pre_of h₁, pre_of h₂, pub_of hp, push_ctx (pre_of h₁), push_ctx (pre_of h₂),
     ⟨pushed_gpr _ _ (by decide), pushed_gpr _ _ (by decide)⟩,
-    ⟨pushed_gpr _ _ (by decide), pushed_gpr _ _ (by decide)⟩⟩
+    ⟨pushed_gpr _ _ (by decide), pushed_gpr _ _ (by decide)⟩, by rw [pushed_mxcsr, pushed_mxcsr, (pub_of hp).mx]⟩
 
 /-! ## A witness, and the artifact's obligations -/
 

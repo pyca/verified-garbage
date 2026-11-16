@@ -49,18 +49,18 @@ theorem prims_okWith : PrimsOk (primsWith keccak.callee) 16 where
   ntt := by
     have h := Arith.Neon.ntt_verified
     unfold Proof.MlDsa.nttContract Proof.MlDsa.inPlaceContract at h ⊢
-    exact CalleeOk.of_verified (by decide) h (by decide) (by dsimp only [primsWith]; decide)
-  add := CalleeOk.of_verified (by decide) Optimized.AddSub.add_verified (by decide) (by dsimp only [primsWith]; decide)
-  rejNtt := CalleeOk.of_verified (by decide) (Sample.rejNTT_verifiedWith keccak) (by decide) (by simp [primsWith, Sample.rejNTT_depth keccak])
+    exact CalleeOk.of_verified (by decide) h (by decide) (by dsimp only [primsWith]; decide) (by dsimp only [primsWith]; lit_decide)
+  add := CalleeOk.of_verified (by decide) Optimized.AddSub.add_verified (by decide) (by dsimp only [primsWith]; decide) (by dsimp only [primsWith]; lit_decide)
+  rejNtt := CalleeOk.of_verified (by decide) (Sample.rejNTT_verifiedWith keccak) (by decide) (by simp [primsWith, Sample.rejNTT_depth keccak]) (VG.Proof.MlDsa.AArch64.Sample.rejNTT_noDit keccak)
   rej4 := CalleeOk.of_verified (by decide) (Optimized.ResidentRej.selected_verified keccak.callee.pairedSha3) (by decide)
-    (by simp only [primsWith,Optimized.ResidentRej.selected_depth,Nat.mul_zero]; decide)
-  ball := CalleeOk.of_verified (by decide) (Optimized.Ball.selected_verified keccak) (by decide) (by simp [primsWith, Optimized.Ball.selected_depth keccak])
-  power2Round := CalleeOk.of_verified (by decide) Optimized.KeygenRound.power2Round_verified (by decide) (by dsimp only [primsWith]; decide)
-  normLt := CalleeOk.of_verified (by decide) Round.normLt_verified (by decide) (by dsimp only [primsWith]; decide)
-  simpleBitPack := CalleeOk.of_verified (by decide) Optimized.KeygenPack.simple_verified (by decide) (by dsimp only [primsWith]; decide)
-  bitPack := CalleeOk.of_verified (by decide) Optimized.KeygenPack.signed_verified (by decide) (by dsimp only [primsWith]; decide)
-  bitUnpack := CalleeOk.of_verified (by decide) Pack.bitUnpack_verified (by decide) (by dsimp only [primsWith]; decide)
-  unpackT1 := CalleeOk.of_verified (by decide) Pack.unpackT1_verified (by decide) (by dsimp only [primsWith]; decide)
-  hintUnpack := CalleeOk.of_verified (by decide) Pack.hintBitUnpack_verified (by decide) (by dsimp only [primsWith]; decide)
+    (by simp only [primsWith,Optimized.ResidentRej.selected_depth,Nat.mul_zero]; decide) (VG.Proof.MlDsa.AArch64.Optimized.ResidentRej.selected_noDit _)
+  ball := CalleeOk.of_verified (by decide) (Optimized.Ball.selected_verified keccak) (by decide) (by simp [primsWith, Optimized.Ball.selected_depth keccak]) (VG.Proof.MlDsa.AArch64.Optimized.Ball.selected_noDit keccak)
+  power2Round := CalleeOk.of_verified (by decide) Optimized.KeygenRound.power2Round_verified (by decide) (by dsimp only [primsWith]; decide) (by dsimp only [primsWith]; lit_decide)
+  normLt := CalleeOk.of_verified (by decide) Round.normLt_verified (by decide) (by dsimp only [primsWith]; decide) (by dsimp only [primsWith]; lit_decide)
+  simpleBitPack := CalleeOk.of_verified (by decide) Optimized.KeygenPack.simple_verified (by decide) (by dsimp only [primsWith]; decide) (by dsimp only [primsWith]; lit_decide)
+  bitPack := CalleeOk.of_verified (by decide) Optimized.KeygenPack.signed_verified (by decide) (by dsimp only [primsWith]; decide) (by dsimp only [primsWith]; lit_decide)
+  bitUnpack := CalleeOk.of_verified (by decide) Pack.bitUnpack_verified (by decide) (by dsimp only [primsWith]; decide) (by dsimp only [primsWith]; lit_decide)
+  unpackT1 := CalleeOk.of_verified (by decide) Pack.unpackT1_verified (by decide) (by dsimp only [primsWith]; decide) (by dsimp only [primsWith]; lit_decide)
+  hintUnpack := CalleeOk.of_verified (by decide) Pack.hintBitUnpack_verified (by decide) (by dsimp only [primsWith]; decide) (by dsimp only [primsWith]; lit_decide)
 
 end VG.Proof.MlDsa.AArch64.KeyGen

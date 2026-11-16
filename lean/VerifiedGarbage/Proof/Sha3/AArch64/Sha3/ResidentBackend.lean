@@ -107,11 +107,13 @@ def backend : Permutation where
   features := ["sha3"]
   ok := Vector.permute_correct
   noFrames := Vector.permute_noFrames
+  noDit := by lit_decide
   callerSums := callerSums
   absorbOverrideOk := by
     intro code h
     cases h
     exact Vector.Resident.hardware_absorb_correct
+  absorbOverrideNoDit := by intro code h; cases h; lit_decide
   absorbOverrideDepth := by
     intro code h
     cases h

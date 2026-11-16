@@ -17,12 +17,13 @@ variable {I : Lay → Mem → Mem → Prop}
 theorem call_tr {Φ : Lay → Mem → State → Prop} {as : List (Reg × Arg)} (hok : argsOk as = true) {n : String}
     {c : Prog isa} {k : Contract isa}
     (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
-    (hct : ConstantTime isa k.pre k.pub c) (rd wr : Lay → List Region)
+    (hct : ConstantTime isa k.pre k.pub c) (hnd : c.all (fun i => !i.touchesDit) = true)
+    (hpd : ∀ s d, k.pre s → k.pre (s.withDit d)) (rd wr : Lay → List Region)
     (hpre : ∀ (L : Lay) g v m₀ (t t1 : State), L.Ok → Ctx L g v m₀ t → Φ L m₀ t → MovedS as t t1 →
       k.pre (t1.callEntry.withRegions (rd L) (wr L)))
     (hpub : ∀ (L : Lay) g₁ g₂ v₁ v₂ m₁ m₂ (a b a1 b1 : State), L.Ok → I L m₁ m₂ → Ctx L g₁ v₁ m₁ a →
       Ctx L g₂ v₂ m₂ b → Φ L m₁ a → Φ L m₂ b → MovedS as a a1 → MovedS as b b1 →
-      k.pub (a1.callEntry.withRegions (rd L) (wr L)) (b1.callEntry.withRegions (rd L) (wr L)))
+      k.ditFree.pub (a1.callEntry.withRegions (rd L) (wr L)) (b1.callEntry.withRegions (rd L) (wr L)))
     (hcov : ∀ (L : Lay) g v m₀ (t : State), L.Ok → Ctx L g v m₀ t → Φ L m₀ t →
       Covers (rd L++wr L) (L.rd++L.wr) ∧ Covers (wr L) L.wr) :
     RelCT isa (Two I Φ) (callA n c as) fun _ _ => True := by
@@ -36,7 +37,7 @@ theorem call_tr {Φ : Lay → Mem → State → Prop} {as : List (Reg × Arg)} (
   refine RelCT.mono (P := fun a1 b1 => ∃ L : Lay, ∃ a b, (∃ (g₁ g₂ : Reg → BitVec 64) (v₁ v₂ : VReg → BitVec 128)
       (m₁ m₂ : Mem), L.Ok ∧ I L m₁ m₂ ∧ Ctx L g₁ v₁ m₁ a ∧ Ctx L g₂ v₂ m₂ b ∧ Φ L m₁ a ∧ Φ L m₂ b) ∧
       MovedS as a a1 ∧ MovedS as b b1)
-    (RelCT.exists_ fun L => RelCT.call hv hct (rd L) (wr L) fun a1 b1 ⟨a, b, hp, f₁, f₂⟩ => ?_)
+    (RelCT.exists_ fun L => RelCT.callDit hv hct hnd hpd (rd L) (wr L) fun a1 b1 ⟨a, b, hp, f₁, f₂⟩ => ?_)
     (fun a1 b1 ⟨a, b, ⟨L, hp⟩, f₁, f₂⟩ => ⟨L, a, b, hp, f₁, f₂⟩) fun _ _ h => h
   obtain ⟨g₁, g₂, v₁, v₂, m₁, m₂, hL, hi, c₁, c₂, φ₁, φ₂⟩ := hp
   obtain ⟨hr, hw⟩ := hcov L g₁ v₁ m₁ a hL c₁ φ₁

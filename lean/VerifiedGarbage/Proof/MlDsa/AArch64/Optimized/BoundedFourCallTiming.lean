@@ -22,7 +22,7 @@ theorem sampler_callee (S : Nat) (sha3 : Bool) {η : Nat} (hη : η=2∨η=4) :
     CalleeOk S (Impl.MlDsa.AArch64.Optimized.BoundedFour.sampler sha3 true η)
       (rejBoundedFourContract abi η) :=
 by
-  refine ⟨(sampler_verified sha3 hη).1,(sampler_verified sha3 hη).2.1,?_⟩
+  refine CalleeOk.of_ct (sampler_verified sha3 hη).1 (sampler_verified sha3 hη).2.1 (by rcases hη with rfl|rfl <;> cases sha3 <;> lit_decide) (fun _ _ h => h) ?_
   have hd : (Impl.MlDsa.AArch64.Optimized.BoundedFour.sampler sha3 true η).aarch64Depth=0 := by
     rcases hη with rfl|rfl <;> cases sha3 <;> decide
   rw [hd]

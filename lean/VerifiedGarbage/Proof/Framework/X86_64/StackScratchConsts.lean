@@ -357,7 +357,7 @@ theorem Verified.stackScratchWipedC {c : Prog isa}
     obtain ⟨u₂, _, _, f₂, _, _, x₂, _⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1]
     obtain ⟨hp', hsy⟩ := pub_consts.mp hp
-    have hsp₁₂ : s₁.gpr .rsp = s₂.gpr .rsp := ((pub_regs (by omega_arith) hl).mp hp').1
+    have hsp₁₂ : s₁.gpr .rsp = s₂.gpr .rsp := ((pub_regs (by omega_arith) hl).mp hp').1.1
     rw [hct _ _ _ _ _ _ (narrowK_pre hk hb hst h₁ hl) (narrowK_pre hk hb hst h₂ hl)
       (pub_consts.mpr ⟨narrow_pub hk hp' hl, fun c hc => hsy c hc⟩) f₁ f₂, hsp₁₂]
 

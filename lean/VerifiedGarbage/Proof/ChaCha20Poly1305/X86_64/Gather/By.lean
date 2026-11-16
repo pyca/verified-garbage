@@ -202,8 +202,8 @@ end
 /-- Public data, after the comparison in both runs. -/
 theorem pub_same {s₁ s₂ e₁ e₂ : State} (h₁ : CmpSame s₁ e₁) (h₂ : CmpSame s₂ e₂) (hp : gatherPub s₁ s₂) :
     gatherPub e₁ e₂ := by
-  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, hd⟩ := hp
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, by rw [h₁.arg, h₂.arg]; exact a₀, by rw [h₁.arg, h₂.arg]; exact a₁,
+  obtain ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, qm, a₀, a₁, a₂, hd⟩ := hp
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, by rw [h₁.mx, h₂.mx]; exact qm, by rw [h₁.arg, h₂.arg]; exact a₀, by rw [h₁.arg, h₂.arg]; exact a₁,
     by rw [h₁.arg, h₂.arg]; exact a₂, fun i hi => ?_⟩
   · rw [h₁.gpr _ (by decide), h₂.gpr _ (by decide)]; exact q₁
   · rw [h₁.gpr _ (by decide), h₂.gpr _ (by decide)]; exact q₂
@@ -262,7 +262,7 @@ theorem sealGatherBy_ct {lim : Nat} (hlim : lim = 961 ∨ lim = 1025) (w : Width
     rcases hlim with rfl | rfl <;> exact ⟨_, by taint_decide⟩
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
   have hsp : σ₁.gpr .rsp = σ₂.gpr .rsp := hq.2.2.2.2.2.2.1
-  have hL : L σ₂ = L σ₁ := congrArg BitVec.toNat hq.2.2.2.2.2.2.2.2.1.symm
+  have hL : L σ₂ = L σ₁ := congrArg BitVec.toNat hq.2.2.2.2.2.2.2.2.2.1.symm
   refine rel_seq (rel_regs [.rsp] (by simp [hsp]) ht)
     (lenCmp_ok hl σ₁ (len_in p₁)) (lenCmp_ok hl σ₂ (len_in p₂)) fun e₁ e₂ ⟨b₁, h₁⟩ ⟨b₂, h₂⟩ => ?_
   rw [hL] at b₂

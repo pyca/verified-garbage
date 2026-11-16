@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Sha3.AArch64.Permute
 public import VerifiedGarbage.Proof.Sha3.AArch64.Callers.MlDsa
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 public meta import VerifiedGarbage.TCB.Code
@@ -32,6 +33,9 @@ structure Permutation where
     ∃ t s', Exec isa callee.code s t s' ∧ abiPreserved s s' ∧
       Proof.Sha3.permuteAArch64.post s s'
   noFrames : callee.code.noFrames = true
+  /-- The permutation never reads or writes PSTATE.DIT, so its callers' runs agree from any
+  mode (`ConstantTime.withDit`). -/
+  noDit : callee.code.all (fun i => !i.touchesDit) = true
   /-- The summaries of the sponge's and the permutation's calls (`Callers.sums`), with
   which callers' constant-time checks are decided once for every backend. -/
   callerSums : Taint.AllOk VectorTaint.taint (Callers.sums callee)
@@ -42,6 +46,7 @@ structure Permutation where
       ∃ t s', Exec isa code s t s' ∧ abiPreserved s s' ∧
         Proof.Sha3.absorbAArch64.post s s'
   absorbOverrideDepth : ∀ code, callee.absorbOverride = some code → code.aarch64Depth = 1
+  absorbOverrideNoDit : ∀ code, callee.absorbOverride = some code → code.all (fun i => !i.touchesDit) = true
   absorbTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x3, .x4, .x5])
     (Impl.Sha3.AArch64.Stream.absorbWith callee) h).isSome = true
   padTaint : ∃ h, (VectorTaint.taint.check (VectorTaint.ofRegs [.x0, .x1, .x2, .x4])
@@ -110,6 +115,30 @@ theorem Permutation.squeeze_depth (v : Permutation) :
     (Impl.Sha3.AArch64.Stream.squeezeWith v.callee).aarch64Depth = 1 := by
   simp only [Impl.Sha3.AArch64.Stream.squeezeWith, Code.aarch64Depth, Instr.frameUnits, v.squeezeMain_depth]
 
+theorem Permutation.absorb_noDit (v : Permutation) :
+    (Impl.Sha3.AArch64.Stream.absorbWith v.callee).all (fun i => !i.touchesDit) = true := by
+  cases h : v.callee.absorbOverride with
+  | none =>
+    simp only [Impl.Sha3.AArch64.Stream.absorbWith, h, Impl.Sha3.AArch64.Stream.absorbGenericWith,
+      Impl.Sha3.AArch64.Stream.absorbMainWith, Impl.Sha3.AArch64.Stream.absorbBodyWith,
+      Impl.Sha3.AArch64.Stream.permuteAtWith, Code.all, v.noDit, Bool.and_true]
+    decide
+  | some code =>
+    simpa only [Impl.Sha3.AArch64.Stream.absorbWith, h] using v.absorbOverrideNoDit code h
+
+theorem Permutation.pad_noDit (v : Permutation) :
+    (Impl.Sha3.AArch64.Stream.padWith v.callee).all (fun i => !i.touchesDit) = true := by
+  simp only [Impl.Sha3.AArch64.Stream.padWith, Impl.Sha3.AArch64.Stream.padMainWith, Code.all, v.noDit,
+    Bool.and_true]
+  decide
+
+theorem Permutation.squeeze_noDit (v : Permutation) :
+    (Impl.Sha3.AArch64.Stream.squeezeWith v.callee).all (fun i => !i.touchesDit) = true := by
+  simp only [Impl.Sha3.AArch64.Stream.squeezeWith, Impl.Sha3.AArch64.Stream.squeezeMainWith,
+    Impl.Sha3.AArch64.Stream.squeezeBodyWith, Impl.Sha3.AArch64.Stream.permuteAtWith, Code.all, v.noDit,
+    Bool.and_true]
+  decide
+
 sponge_taint_summaries ScalarSums Impl.Sha3.AArch64.Callee.scalar
 
 /-- The summaries the sponge's callers' checks use (`Callers.sums`, from this backend's summaries
@@ -143,9 +172,11 @@ def Permutation.scalar : Permutation where
   features := []
   ok := permute_correct
   noFrames := permute_noFrames
+  noDit := by lit_decide
   callerSums := scalarSums
   absorbOverrideOk := by intro code h; cases h
   absorbOverrideDepth := by intro code h; cases h
+  absorbOverrideNoDit := by intro code h; cases h
   absorbTaint := Taint.exists_check_of_sumOk_call ScalarSums.absorb (VG.AArch64.VectorTaint.le_refl _) rfl
   padTaint := Taint.exists_check_of_sumOk_call ScalarSums.pad (VG.AArch64.VectorTaint.le_refl _) rfl
   squeezeTaint := Taint.exists_check_of_sumOk_call ScalarSums.squeeze (VG.AArch64.VectorTaint.le_refl _) rfl

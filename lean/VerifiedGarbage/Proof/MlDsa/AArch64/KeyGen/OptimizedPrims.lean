@@ -21,6 +21,6 @@ theorem primitives_ok : PrimsOk (primitives keccak.callee) 16 :=
 
 theorem two_callee : CalleeOk 16 Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code
     (Proof.MlDsa.rejNTT2Contract AArch64.abi 16) :=
-  CalleeOk.of_verified (by decide) ResidentRej.two_verified (by decide) (by decide)
+  CalleeOk.of_verified (by decide) ResidentRej.two_verified (by decide) (by decide) (by lit_decide)
 
 end VG.Proof.MlDsa.AArch64.KeyGen.Optimized

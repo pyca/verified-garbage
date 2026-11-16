@@ -253,9 +253,10 @@ structure Same (s st : State) : Prop where
   mem : st.mem = s.mem
   rd : st.rd = s.rd
   wr : st.wr = s.wr
+  mx : st.mxcsr = s.mxcsr
 
 omit hp in
-theorem Same.refl (s : State) : Same s s := ⟨fun _ _ _ _ => rfl, rfl, rfl, rfl⟩
+theorem Same.refl (s : State) : Same s s := ⟨fun _ _ _ _ => rfl, rfl, rfl, rfl, rfl⟩
 
 /-- The first entry block: `work` into `r11`, and the arguments in registers
 kept, with `src` and `src_count`. -/
@@ -549,6 +550,7 @@ structure Base (s : State) (ap : BitVec 64) (i : Nat) (st : State) : Prop where
   wr : st.wr = s.wr
   kept : Kept s ap i st.mem
   frame : Frame (wR s ++ [tR s]) s.mem st.mem
+  mx : st.mxcsr = s.mxcsr
 
 /-- `Base`, and the streaming state represents the message with the
 additional data `A` and the encryption of the first `i` slices, which the
@@ -562,14 +564,14 @@ structure Mid (s : State) (ap : BitVec 64) (i : Nat) (A : List Byte) (st : State
 /-- `Base` through code that changes no memory, `rsp` or callee-saved register. -/
 theorem Base.regs {s : State} {ap : BitVec 64} {i : Nat} {st st' : State} (h : Base s ap i st)
     (hm : st'.mem = st.mem) (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) (hrd : st'.rd = st.rd)
-    (hwr : st'.wr = st.wr) : Base s ap i st' :=
+    (hwr : st'.wr = st.wr) (hmx : st'.mxcsr = st.mxcsr) : Base s ap i st' :=
   ⟨by rw [hcs _ (by decide), h.rsp], fun r hr => by rw [hcs r hr, h.saved r hr], hrd.trans h.rd, hwr.trans h.wr,
-    hm ▸ h.kept, hm ▸ h.frame⟩
+    hm ▸ h.kept, hm ▸ h.frame, hmx.trans h.mx⟩
 
 theorem Mid.regs {s : State} {ap : BitVec 64} {i : Nat} {A : List Byte} {st st' : State} (h : Mid s ap i A st)
     (hm : st'.mem = st.mem) (hcs : ∀ r ∈ calleeSaved, st'.gpr r = st.gpr r) (hrd : st'.rd = st.rd)
-    (hwr : st'.wr = st.wr) : Mid s ap i A st' :=
-  ⟨h.toBase.regs hm hcs hrd hwr, h.i_le, hm ▸ h.sr, hm ▸ h.out⟩
+    (hwr : st'.wr = st.wr) (hmx : st'.mxcsr = st.mxcsr) : Mid s ap i A st' :=
+  ⟨h.toBase.regs hm hcs hrd hwr hmx, h.i_le, hm ▸ h.sr, hm ▸ h.out⟩
 
 /-- A frame of the slots kept is one of the regions written. -/
 theorem frame_kpR {s : State} {m m' : Mem} (hf : Frame [kpR s] m m') : Frame (wR s ++ [tR s]) m m' :=

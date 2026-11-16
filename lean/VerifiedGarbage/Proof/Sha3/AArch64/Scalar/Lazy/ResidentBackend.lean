@@ -205,11 +205,13 @@ def backend : Permutation where
   features := []
   ok := VG.Proof.Sha3.AArch64.Scalar.Lazy.permute_correct
   noFrames := VG.Proof.Sha3.AArch64.Scalar.Lazy.permute_noFrames
+  noDit := by lit_decide
   callerSums := callerSums
   absorbOverrideOk := by
     intro code h
     cases h
     exact absorb_correct
+  absorbOverrideNoDit := by intro code h; cases h; lit_decide
   absorbOverrideDepth := by
     intro code h
     cases h

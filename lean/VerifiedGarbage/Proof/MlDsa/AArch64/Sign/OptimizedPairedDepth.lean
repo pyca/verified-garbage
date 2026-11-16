@@ -28,14 +28,14 @@ theorem pairedCommit_dle (v : Proof.Sha3.AArch64.Permutation)
     DLe 1 (Impl.MlDsa.AArch64.Sign.Optimized.commitWith v.callee (Sign.primsWith v.callee) p) := by
   have C := Sign.prims_okWith (keccak := v)
   obtain ⟨ha,hp,hs⟩ := keccak_dle v
-  have hm := DLe.of_fd C.expandMask.fd
-  have hm2 := DLe.of_fd C.expandMaskPair.fd
-  have hn : DLe 1 Impl.MlDsa.AArch64.Optimized.Ntt.outNtt := ⟨by decide +kernel⟩
+  have hm := DLe.of_fd C.expandMask.fd C.expandMask.nd
+  have hm2 := DLe.of_fd C.expandMaskPair.fd C.expandMaskPair.nd
+  have hn : DLe 1 Impl.MlDsa.AArch64.Optimized.Ntt.outNtt := ⟨by decide +kernel, by lit_decide⟩
   have hd : DLe 1 (Impl.MlDsa.AArch64.Optimized.DotInverse.staticCode p.ℓ) := by
-    rcases hp3 with rfl|rfl|rfl <;> exact ⟨by decide +kernel⟩
+    rcases hp3 with rfl|rfl|rfl <;> exact ⟨by decide +kernel, by lit_decide⟩
   have hh : DLe 1 ((Sign.primsWith v.callee).highPack p.γ₂) := by
-    dsimp only [Sign.primsWith,Impl.MlDsa.AArch64.Optimized.HighPack.code]
-    dle_tac
+    rcases hp3 with rfl|rfl|rfl <;>
+    (dsimp only [Sign.primsWith,Impl.MlDsa.AArch64.Optimized.HighPack.code]; dle_tac)
   unfold Impl.MlDsa.AArch64.Sign.Optimized.commitWith
   dle_tac
   unfold Impl.MlDsa.AArch64.Sign.Optimized.masks
@@ -44,14 +44,14 @@ theorem pairedCommit_dle (v : Proof.Sha3.AArch64.Permutation)
 theorem pairedBall_dle (v : Proof.Sha3.AArch64.Permutation) (p : Spec.MlDsa.Params) :
     DLe 1 (Impl.MlDsa.AArch64.Sign.ballAt (Sign.primsWith v.callee)
       (Impl.MlDsa.AArch64.Sign.cLen p) p.τ Impl.MlDsa.AArch64.Sign.cP) := by
-  have hb := DLe.of_fd (Sign.prims_okWith (keccak := v)).ball.fd
+  have hb := DLe.of_fd (Sign.prims_okWith (keccak := v)).ball.fd (Sign.prims_okWith (keccak := v)).ball.nd
   dle_tac
 
 theorem pairedInitialization_dle (v : Proof.Sha3.AArch64.Permutation) (p : Spec.MlDsa.Params) :
     DLe 1 (Impl.MlDsa.AArch64.Sign.positiveDecodeWith v.callee (Sign.primsWith v.callee) p) := by
   have C := Sign.prims_okWith (keccak:=v)
-  have hu := DLe.of_fd C.bitUnpack.fd
-  have hn : DLe 1 Impl.MlDsa.AArch64.Optimized.Ntt.staticNtt := ⟨by decide +kernel⟩
+  have hu := DLe.of_fd C.bitUnpack.fd C.bitUnpack.nd
+  have hn : DLe 1 Impl.MlDsa.AArch64.Optimized.Ntt.staticNtt := ⟨by decide +kernel, by lit_decide⟩
   obtain ⟨ha,hp,hs⟩ := keccak_dle v
   unfold Impl.MlDsa.AArch64.Sign.positiveDecodeWith
   dle_tac

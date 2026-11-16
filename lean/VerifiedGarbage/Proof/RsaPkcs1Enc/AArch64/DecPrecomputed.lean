@@ -35,6 +35,7 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.RegUpd
 meta import VerifiedGarbage.Proof.Framework.AArch64.Exec
 meta import VerifiedGarbage.Proof.Framework.Offset
 public meta import VerifiedGarbage.Impl.RsaPkcs1Enc.AArch64.Decrypt
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 
 @[expose] public section
 
@@ -118,6 +119,7 @@ structure PrivPImpl where
   verified : Verified AArch64.target code (Proof.Rsa.privateCheckedPrecomputedContract AArch64.abi stack)
   pos : 16 ≤ stack
   depth : 16 * code.aarch64Depth ≤ stack
+  noDit : code.all (fun i => !i.touchesDit) = true
 
 namespace PrivPImpl
 
@@ -571,7 +573,8 @@ theorem privP_pub {L : Lay} {S : Nat} {g₁ g₂ : Reg → BitVec 64} {v₁ v₂
     (hL : L.Ok) (hk : LeakEq L m₁ m₂) {a b : State} (ha : CtxReadyP L g₁ v₁ m₁ a)
     (hb : CtxReadyP L g₂ v₂ m₂ b) :
     (Proof.Rsa.privateCheckedPrecomputedContract AArch64.abi S).pub
-      (a.callEntry.withRegions (privRdP L) (privWr L)) (b.callEntry.withRegions (privRdP L) (privWr L)) := by
+      (a.callEntry.withRegions (privRdP L) (privWr L))
+      ((b.callEntry.withRegions (privRdP L) (privWr L)).withDit a.dit) := by
   obtain ⟨c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11⟩ := priv_args ha.1 (privRdP L) (privWr L)
   obtain ⟨d0, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11⟩ := priv_args hb.1 (privRdP L) (privWr L)
   have c12 : stackArg (a.callEntry.withRegions (privRdP L) (privWr L)) 12 = L.pre := by
@@ -593,14 +596,15 @@ theorem privP_pub {L : Lay} {S : Nat} {g₁ g₂ : Reg → BitVec 64} {v₁ v₂
   sig_pub [Proof.Rsa.privateCheckedPrecomputedContract, Proof.Rsa.privateCheckedPrecomputedSig,
     Proof.Rsa.privateCheckedSig, AArch64.abi, AArch64.argRegs, Proof.Rsa.AArch64.stackArgs_fourteen,
     List.append_eq, _root_.List.range, _root_.List.range.loop]
-  simp only [ha.1.sp, hb.1.sp, ha.2.1.x0, ha.2.1.x1, ha.2.1.x2, ha.2.1.x3, ha.2.1.x4, ha.2.1.x5, ha.2.1.x6,
+  simp only [stackArg_withDit, ha.1.sp, hb.1.sp, ha.2.1.x0, ha.2.1.x1, ha.2.1.x2, ha.2.1.x3, ha.2.1.x4, ha.2.1.x5, ha.2.1.x6,
     ha.2.1.x7, hb.2.1.x0, hb.2.1.x1, hb.2.1.x2, hb.2.1.x3, hb.2.1.x4, hb.2.1.x5, hb.2.1.x6, hb.2.1.x7,
     c0, c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13, d0, d1, d2, d3, d4, d5, d6, d7, d8, d9, d10, d11,
     d12, d13, ha.1.bytes_ro hL (ro_N L), hb.1.bytes_ro hL (ro_N L), ha.1.bytes_ro hL (ro_E L),
     hb.1.bytes_ro hL (ro_E L), hk.1, hk.2, Spec.Rsa.privatePrecomputedLeak, hw, and_self]
 
 theorem privP_ct (pv : PrivPImpl) : RelCT isa (Two pv.S CtxReadyP) (.call pv.name pv.code) (Two pv.S Called) :=
-  two_wp (fun e => RelCT.call (n := pv.name) pv.verified'.1 pv.verified'.2.1 (privRdP e.L) (privWr e.L)
+  two_wp (fun e => RelCT.callDit (n := pv.name) pv.verified'.1 pv.verified'.2.1 pv.noDit (fun _ _ h => h)
+    (privRdP e.L) (privWr e.L)
     fun _ _ ⟨hL, hP, hk, f₁, f₂⟩ =>
       ⟨privP_pre hL hP f₁.2.2.2.2 f₁.1 f₁.2.1 f₁.2.2.1 f₁.2.2.2.1,
         privP_pre hL hP f₂.2.2.2.2 f₂.1 f₂.2.1 f₂.2.2.1 f₂.2.2.2.1, privP_pub hL hk f₁ f₂,

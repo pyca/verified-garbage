@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.Generator.ABI
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 
 /-! # The generator stages parameter generation calls
 
@@ -17,6 +18,8 @@ structure GeneratorStage where
   code : Nat → Prog isa
   verified : ∀ pLen, Generator.Supported pLen → Verified target (code pLen) (Generator.contract pLen)
   depth : ∀ pLen, 16 * (code pLen).aarch64Depth ≤ 272
+  /-- It never touches PSTATE.DIT (`ConstantTime.withDit`). -/
+  noDit : ∀ pLen, Generator.Supported pLen → (code pLen).all (fun i => !i.touchesDit) = true
 
 /-- The call of the stage for a p of `pLen` bytes. -/
 def GeneratorStage.run (G : GeneratorStage) (pLen : Nat) : Prog isa := .call (G.name pLen) (G.code pLen)

@@ -181,7 +181,7 @@ def ExPost (n : Nat) (f : List Byte → List Byte → List Byte) (s s' : State) 
 /-- What two runs agree on: the pointers. -/
 def Pub (s₁ s₂ : State) : Prop :=
   s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
-    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.sp = s₂.sp
+    s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.sp = s₂.sp ∧ s₁.dit = s₂.dit
 
 /-- The exchange function's contract on AArch64. -/
 def exContract (n w : Nat) (f : List Byte → List Byte → List Byte) : Contract isa where
@@ -486,7 +486,7 @@ theorem exchange_ct {n w : Nat} {f : List Byte → List Byte → List Byte} {c :
     ConstantTime isa (ExPre n w) Pub (exchange name c n) := by
   obtain ⟨_, ht⟩ := ht
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
-  obtain ⟨q0, q1, q2, q3, qsp⟩ := hq
+  obtain ⟨q0, q1, q2, q3, qsp, qd⟩ := hq
   have hrd : σ₂.rd = σ₁.rd := by rw [p₁.1.1, p₂.1.1]; simp only [scR, ptR, q1, q2]
   have hwr : σ₂.wr = σ₁.wr := by rw [p₁.1.2.1, p₂.1.2.1]; simp only [outR, wsR, q0, q3]
   refine (RelCT.pushFrame (P := Eq2 σ₁ σ₂) (R := TT (M := isa)) (fun a b ⟨ha, hb⟩ => by subst ha hb; exact qsp)
@@ -495,7 +495,8 @@ theorem exchange_ct {n w : Nat} {f : List Byte → List Byte → List Byte} {c :
     (fun _ _ h => h) fun _ _ _ => trivial
   -- `out` into the frame.
   refine rel_seq (rel_taint [] (show σ₁.sp - 16 = σ₂.sp - 16 by rw [qsp]) (by simp) (by taint_decide))
-    (saved_wp (n := n) (w := w)) (saved_wp (n := n) (w := w)) fun e₁ e₂ he₁ he₂ => ?_
+    (WP.dit (by decide) (saved_wp (n := n) (w := w))) (WP.dit (by decide) (saved_wp (n := n) (w := w)))
+    fun e₁ e₂ ⟨he₁, hd₁⟩ ⟨he₂, hd₂⟩ => ?_
   -- The call, by its callee's contract.
   have g {s e : State} (he : Saved n w s e) (r : Reg) (hr : r ∈ [Reg.x0, .x1, .x2, .x3]) :
       (e.callEntry.withRegions σ₁.rd σ₁.wr).gpr r = s.gpr r := by
@@ -508,12 +509,13 @@ theorem exchange_ct {n w : Nat} {f : List Byte → List Byte → List Byte} {c :
     have v₂ := he₂.covers
     rw [hrd, hwr] at v₂
     refine ⟨hk.pre _ (he₁.callPre p₁), hk.pre _ c₂, hk.pub _ _ ?_, he₁.covers.1, he₁.covers.2, v₂.1, v₂.2⟩
-    refine ⟨?_, ?_, ?_, ?_, ?_⟩
+    refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩
     · rw [g he₁ _ (by simp), g he₂ _ (by simp), q0]
     · rw [g he₁ _ (by simp), g he₂ _ (by simp), q1]
     · rw [g he₁ _ (by simp), g he₂ _ (by simp), q2]
     · rw [g he₁ _ (by simp), g he₂ _ (by simp), q3]
     · simp only [State.withRegions_sp, State.callEntry_sp, he₁.sp, he₂.sp, qsp]
+    · exact hd₁.trans (qd.trans hd₂.symm)
   -- `out` back, and the check.
   refine rel_seq (rel_taint [] (by rw [hz₁.sp, hz₂.sp, qsp]) (by simp) (by taint_decide))
     (restored_wp hz₁) (restored_wp hz₂) fun u₁ u₂ hu₁ hu₂ => ?_

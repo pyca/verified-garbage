@@ -184,7 +184,10 @@ theorem initialization_dle (v : VG.Proof.Sha3.AArch64.Permutation) (p : Params) 
   have hs : DLe 1 (Impl.MlDsa.AArch64.Sign.shakeAtWith v.callee
       [⟨.x25, 32, 32⟩, ⟨.x27, 0, 32⟩, ⟨.x26, 0, 64⟩]
       ⟨.x28, Impl.MlDsa.AArch64.Sign.oMS, 64⟩) :=
-    ⟨(Nat.max_le.mp hd.le).2⟩
+    ⟨(Nat.max_le.mp hd.le).2, by
+      have := hd.nd
+      simp only [Impl.MlDsa.AArch64.Sign.positiveDecodeWith, Code.all, Bool.and_eq_true] at this
+      exact this.2⟩
   unfold Sign.initialization
   exact DLe.ite (DLe.seq (restore_dle p) hs) hd
 

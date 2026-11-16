@@ -45,4 +45,20 @@ theorem test_noFrames (v : RoundImpl) (bits : Nat) :
   and_intros
   all_goals first | rfl | exact VG.Proof.Dsa.AArch64.Generation.publicRound_noFrames v.noFrames
 
+/-- The test never touches PSTATE.DIT: neither its own code (decided for each
+size, `Supported`, whose instruction lists are long) nor the round's. -/
+theorem test_noDit (v : RoundImpl) {bits : Nat}
+    (hb : bits = 160 ∨ bits = 256 ∨ bits = 1024 ∨ bits = 2048 ∨ bits = 3072) :
+    (Impl.Dsa.AArch64.ProbablePrime.test bits v.mont.mm v.kernel.run).all (fun i => !i.touchesDit) = true := by
+  rcases hb with rfl | rfl | rfl | rfl | rfl <;>
+  simp only [Impl.Dsa.AArch64.ProbablePrime.test, checkPrime, workspace, primeFromFrame, primeBytes,
+    probablePrime, primeSetup, primeR2, primeConstants, millerRabin, drawRound, primeIteration, sampleRound,
+    witnessRound, roundTail, sampleWitness, forceStoredWitness, testWitness, loadWitness, testRange, witnessRange,
+    drawCopy, Impl.Dsa.AArch64.Arithmetic.constants, Impl.Rsa.AArch64.r2Steps,
+    Impl.Rsa.AArch64.r2StepsOld, Impl.Rsa.AArch64.sqs, Impl.Bignum.AArch64.R2Div.choice, RoundImpl.kernel, MillerRabin.AArch64.Kernel.called, Impl.MillerRabin.AArch64.Caller.call,
+    List.cons_append, List.nil_append, Impl.Bignum.AArch64.seqs, Code.all, Bool.and_eq_true, v.mmNoDit,
+    true_and] <;>
+  and_intros <;>
+  first | with_reducible exact v.noDit | lit_decide
+
 end VG.Proof.Dsa.AArch64.ProbablePrime

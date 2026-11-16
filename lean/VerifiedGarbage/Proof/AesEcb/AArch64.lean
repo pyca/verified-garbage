@@ -56,21 +56,21 @@ theorem zeroize_depth : 16 * Impl.Zeroize.AArch64.zeroizeWide.aarch64Depth ≤ 0
 
 theorem wiped_verified {g : List Byte → Spec.Aes.State → Spec.Aes.State} {name : String} {body : Prog isa}
     (h : Verified target body (Spec.Aes.blocksSig.contract abi (pre 64) (post 64 g) false 0 none))
-    (hd : body.noFrames = true) :
+    (hd : body.noFrames = true) (hdit : body.all (fun i => !i.writesDit) = true) :
     Verified target (wiped name body) (Spec.Aes.blocksSig.contract abi (pre 64) (ecbPost 64 g) false 32 none) :=
   Verified.callWipe' (ps₁ := [("schedule", .array false .u8 240), ("rounds", .int .usize true),
       ("data", .slice true (.array .u8 16) "n")]) (ps₂ := []) (nm := "scratch") (e := .u64)
     (k := 256) (n := 2048) (i := 4) h Proof.Zeroize.AArch64.wideVerified (by decide) rfl rfl rfl
-    (by decide) (by decide) (by rw [depth_of_noFrames hd]) zeroize_depth (Nat.zero_le _)
+    (by decide) (by decide) (by rw [depth_of_noFrames hd]) (DitDet.of_noWrite hdit) zeroize_depth (Nat.zero_le _)
     (pre_local 64) (post_local 64 g) (post_out 64 g) (AesEcb.wiped 64 g) (sat g)
 
 theorem encrypt_verified (v : BlocksImpl) :
     Verified target (encrypt v) (Spec.AesEcb.encryptContract abi 32) :=
-  wiped_verified (encBlocks v) v.encNoFrames
+  wiped_verified (encBlocks v) v.encNoFrames v.encNoDit
 
 theorem decrypt_verified (v : BlocksImpl) :
     Verified target (decrypt v) (Spec.AesEcb.decryptContract abi 32) :=
-  wiped_verified (decBlocks v) v.decNoFrames
+  wiped_verified (decBlocks v) v.decNoFrames v.decNoDit
 
 theorem args_length : ∀ s vals,
     abi.args ((Spec.Aes.blocksSig.words abi.ptrBits).map (·.bits abi.ptrBits)) = some vals →

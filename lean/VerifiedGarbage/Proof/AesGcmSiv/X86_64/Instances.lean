@@ -742,7 +742,7 @@ theorem seal_bySize {wide narrow : Prog isa}
       h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.gpr .rsp (by decide), h.mem,
       h'.saF, h'.saaF, h'.gpr .rdi (by decide), h'.gpr .rsi (by decide), h'.gpr .rdx (by decide),
       h'.gpr .rcx (by decide), h'.gpr .r8 (by decide), h'.gpr .r9 (by decide), h'.gpr .rsp (by decide),
-      h'.mem]
+      h'.mem, h.mx, h'.mx]
     exact q
   · sig_pub [Proof.AesGcmSiv.sealRoundsContract, Spec.GcmSiv.sealSig, X86_64.abi, X86_64.argRegs] at q
     obtain ⟨hsp, -, -, -, -, h8, -, h6, -⟩ := q
@@ -779,7 +779,7 @@ theorem open_bySize {wide narrow : Prog isa}
       h.gpr .rcx (by decide), h.gpr .r8 (by decide), h.gpr .r9 (by decide), h.gpr .rsp (by decide), h.mem,
       h'.saF, h'.saaF, h'.gpr .rdi (by decide), h'.gpr .rsi (by decide), h'.gpr .rdx (by decide),
       h'.gpr .rcx (by decide), h'.gpr .r8 (by decide), h'.gpr .r9 (by decide), h'.gpr .rsp (by decide),
-      h'.mem]
+      h'.mem, h.mx, h'.mx]
     exact q
   · sig_pub [Proof.AesGcmSiv.openRoundsContract, Spec.GcmSiv.openSig, Spec.GcmSiv.openLeak, X86_64.abi, X86_64.argRegs] at q
     obtain ⟨hsp, -, -, -, -, -, h8, -, h6, -⟩ := q

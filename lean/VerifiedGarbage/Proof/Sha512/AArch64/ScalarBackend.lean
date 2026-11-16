@@ -73,6 +73,7 @@ def backend : Compress where
   verified := Proof.Sha512.AArch64.compress_verified
   noFrames := by lit_decide
   keepsV := by lit_decide
+  noDit := by lit_decide
   suffix := ""
   features := []
   updateCT := backend_checks.1.1

@@ -49,7 +49,7 @@ theorem sealGather_ct (F : SealFn) : ConstantTime isa gatherPre gatherPub (sealG
   refine ct_of fun σ₁ σ₂ p₁ p₂ hq => ?_
   have h₁ := lay p₁
   have h₂ := lay p₂
-  obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, a0, hdesc⟩ := hq
+  obtain ⟨q0, q1, q2, q3, q4, q5, q6, q7, qsp, qdit, a0, hdesc⟩ := hq
   have hB : Bs σ₁ = Bs σ₂ := by simp only [Bs, qsp]
   refine (RelCT.alloc (P := Eq2 σ₁ σ₂) (R := TT)
     ((?_ : RelCT isa (Eq2 (allocated 16 σ₁) (allocated 16 σ₂)) _ TT).mono
@@ -57,7 +57,8 @@ theorem sealGather_ct (F : SealFn) : ConstantTime isa gatherPre gatherPub (sealG
     (fun _ _ h => h) fun _ _ _ => trivial
   -- The entry.
   refine rel_seq (rel_taint [] (by rw [allocated_sp h₁, allocated_sp h₂, hB]) (by agree_tac [])
-    ⟨_, by taint_decide⟩) (entered_wp h₁) (entered_wp h₂) fun e₁ e₂ he₁ he₂ => ?_
+    ⟨_, by taint_decide⟩) (WP.dit (by decide) (entered_wp h₁)) (WP.dit (by decide) (entered_wp h₂))
+    fun e₁ e₂ ⟨he₁, ed₁⟩ ⟨he₂, ed₂⟩ => ?_
   -- The gathering.
   have g₁ := gatherPre_of h₁ he₁
   have g₂ := gatherPre_of h₂ he₂
@@ -70,11 +71,12 @@ theorem sealGather_ct (F : SealFn) : ConstantTime isa gatherPre gatherPub (sealG
       simp only [dsR, Src, Cnt, ← q4, ← q5]; exact hx
     rw [he₁.mem, he₂.mem, Lay.keepE h₁.bds.symm hx, Lay.keepE h₂.bds.symm hx₂]
     exact hdesc j hj
-  refine rel_seq (gather_rel hd g₁ g₂ (by rw [he₁.sp, he₂.sp, hB])) (gathered_wp h₁ he₁) (gathered_wp h₂ he₂)
-    fun u₁ u₂ hg₁ hg₂ => ?_
+  refine rel_seq (gather_rel hd g₁ g₂ (by rw [he₁.sp, he₂.sp, hB])) (WP.dit (by lit_decide) (gathered_wp h₁ he₁))
+    (WP.dit (by lit_decide) (gathered_wp h₂ he₂)) fun u₁ u₂ ⟨hg₁, gd₁⟩ ⟨hg₂, gd₂⟩ => ?_
   -- The call's arguments.
   refine rel_seq (rel_taint [] (by rw [hg₁.sp, hg₂.sp, hB]) (by agree_tac []) ⟨_, by taint_decide⟩)
-    (ready_wp hg₁) (ready_wp hg₂) fun c₁ c₂ hc₁ hc₂ => ?_
+    (WP.dit (by decide) (ready_wp hg₁)) (WP.dit (by decide) (ready_wp hg₂))
+    fun c₁ c₂ ⟨hc₁, cd₁⟩ ⟨hc₂, cd₂⟩ => ?_
   -- The call, by its callee's contract.
   have hrd : rdC σ₂ = rdC σ₁ := by simp only [rdC, kR, nR, aR, K, Nn, Ad, AL, q0, q1, q2, q3]
   have hwr : wrC σ₂ = wrC σ₁ := by simp only [wrC, dR, tgR, Dst, L, Tg, q6, q7, a0]
@@ -89,7 +91,7 @@ theorem sealGather_ct (F : SealFn) : ConstantTime isa gatherPre gatherPub (sealG
       refine ⟨sealSpec_pre cp₁, sealSpec_pre cp₂, sealSpec_pub ?_, cv₁, cw₁, cv₂, cw₂⟩
       simp only [State.withRegions_gpr, State.withRegions_sp, State.callEntry_sp, r0₁, r1₁, r2₁, r3₁, r4₁, r5₁,
         r6₁, r0₂, r1₂, r2₂, r3₂, r4₂, r5₂, r6₂, hc₁.sp, hc₂.sp, hB, q0, q1, q2, q3, Dst, Tg, q6, q7, a0,
-        and_self])
+        State.withRegions_dit, State.callEntry_dit, cd₁, cd₂, gd₁, gd₂, ed₁, ed₂, allocated_dit, qdit, and_self])
     (called_wp F h₁ hc₁) (called_wp F h₂ hc₂) fun z₁ z₂ hz₁ hz₂ => ?_
   -- The return address.
   exact rel_taint [] (by rw [hz₁.sp, hz₂.sp, hB]) (by agree_tac []) ⟨_, by taint_decide⟩

@@ -100,7 +100,8 @@ theorem primeCallTest_ct (T : PrimeTest) {bits : Nat} (hb : ProbablePrime.Suppor
     RelCT isa (Two (PrimeTestReady bits)) (T.run bits) (Two (PrimeTestDone bits)) := by
   refine two_post ?_ fun a u ⟨s, W, V, h, h0, h1, h2, h3, h4, hm, hsp, hrd, hwr⟩ =>
     WP.mono (primeCall_call_ok T hb h a.geometry h0 h1 h2 h3 h4 hm hsp hrd hwr) fun t C => ⟨C.sp, C.status⟩
-  refine RelCT.callEx (T.verified bits hb).1 (T.verified bits hb).2.1 fun s₁ s₂ ⟨a, h₁, h₂, _⟩ => ?_
+  refine RelCT.callExDit (T.verified bits hb).1 (T.verified bits hb).2.1 (T.noDit bits hb) (fun _ _ h => h)
+    fun s₁ s₂ ⟨a, h₁, h₂, _⟩ => ?_
   obtain ⟨_, _, _, i₁, h0₁, h1₁, h2₁, h3₁, h4₁, hm₁, hsp₁, hrd₁, hwr₁⟩ := h₁
   obtain ⟨_, _, _, i₂, h0₂, h1₂, h2₂, h3₂, h4₂, hm₂, hsp₂, hrd₂, hwr₂⟩ := h₂
   have E₁ := primeCall_entry i₁ a.geometry h0₁ h1₁ h2₁ h3₁ h4₁ hm₁ hsp₁ hrd₁ hwr₁

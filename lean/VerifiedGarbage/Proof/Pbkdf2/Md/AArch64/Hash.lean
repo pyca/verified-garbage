@@ -3,6 +3,7 @@ module
 public import VerifiedGarbage.Proof.Pbkdf2.Md.AArch64.Calls
 public import VerifiedGarbage.Spec.Mgf1
 public import VerifiedGarbage.Proof.Pbkdf2.AArch64.Iterate
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.OmegaLit
@@ -217,6 +218,26 @@ theorem pbkdf2_keepsV : H.pbkdf2.allInstrs keepsV = true := by
     Code.allInstrs, keepsV, vdstOf, hk, hs, hb]
 
 end HashOK
+
+/-- `H` without the functions it calls: its own code, which is the same for
+every implementation of the compression function (so its facts are decided
+once, for one of them). -/
+def _root_.VG.Impl.Pbkdf2.Md.AArch64.Hash.core (H : Hash) : Hash :=
+  ⟨H.P, H.D, H.W, "", .block [], "", .block [], "", .block [], "", .block [], "", "", ""⟩
+
+/-- A fact of every instruction of PBKDF2's code, from that of the functions it
+calls and of its own code (`Hash.core`). -/
+theorem _root_.VG.Impl.Pbkdf2.Md.AArch64.Hash.pbkdf2_all_of_core {H : Hash} {p : Instr → Bool} (hc : H.compC.all p = true)
+    (hi : H.initC.all p = true) (hu : H.updC.all p = true) (hf : H.finC.all p = true)
+    (h : H.core.pbkdf2.all p = true) : H.pbkdf2.all p = true := by
+  simp only [Hash.core, Hash.pbkdf2, Hash.key, Hash.hashKey, Hash.setup, Hash.block, Hash.outLen,
+    Hash.outLoop, Hash.hmacInit, Hash.initKeys, Hash.keyLoop, Hash.hmacFin, Hash.iterate, Hash.stream,
+    Impl.Pbkdf2.AArch64.iterate, Impl.Pbkdf2.AArch64.main, Impl.Pbkdf2.AArch64.body,
+    Impl.Pbkdf2.AArch64.compressBlock, Impl.Pbkdf2.Md.AArch64.Stream.callInit,
+    Impl.Pbkdf2.Md.AArch64.Stream.callFin, Impl.MdStream.AArch64.compressAt,
+    Impl.MdStream.AArch64.compressWith, Code.all, hc, hi, hu, hf, List.all_nil, Bool.and_true,
+    Bool.true_and] at h ⊢
+  exact h
 
 /-- The hash functions RSA's padding takes (`Spec.Mgf1.Hash`). -/
 def mdHashes : List Spec.Mgf1.Hash :=

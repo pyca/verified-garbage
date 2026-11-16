@@ -110,17 +110,17 @@ theorem cachedCommit_dle (v : Proof.Sha3.AArch64.Permutation)
     {p : Spec.MlDsa.Params} (hp3 : p=Spec.MlDsa.mlDsa65∨p=Spec.MlDsa.mlDsa87) :
     DLe 1 (Impl.MlDsa.AArch64.Sign.Cached.commit (Sign.primsWith v.callee) p) := by
   have C := Sign.prims_okWith (keccak := v)
-  have hm := DLe.of_fd C.expandMask.fd
-  have hm2 := DLe.of_fd C.expandMaskPair.fd
-  have hn : DLe 1 Impl.MlDsa.AArch64.Optimized.Ntt.outNtt := ⟨by decide +kernel⟩
+  have hm := DLe.of_fd C.expandMask.fd C.expandMask.nd
+  have hm2 := DLe.of_fd C.expandMaskPair.fd C.expandMaskPair.nd
+  have hn : DLe 1 Impl.MlDsa.AArch64.Optimized.Ntt.outNtt := ⟨by decide +kernel, by lit_decide⟩
   have hd : DLe 1 (Impl.MlDsa.AArch64.Optimized.DotInverse.staticCode p.ℓ) := by
-    rcases hp3 with rfl|rfl <;> exact ⟨by decide +kernel⟩
+    rcases hp3 with rfl|rfl <;> exact ⟨by decide +kernel, by lit_decide⟩
   have hh : DLe 1 ((Sign.primsWith v.callee).highPack p.γ₂) := by
-    dsimp only [Sign.primsWith,Impl.MlDsa.AArch64.Optimized.HighPack.code]
-    dle_tac
+    rcases hp3 with rfl|rfl <;>
+    (dsimp only [Sign.primsWith,Impl.MlDsa.AArch64.Optimized.HighPack.code]; dle_tac)
   have hc : DLe 1 (Impl.MlDsa.AArch64.Sign.CommitTail.code (p.k*Impl.MlDsa.AArch64.Sign.w1Len p)
       (Impl.MlDsa.AArch64.Sign.cLen p)) := by
-    rcases hp3 with rfl|rfl <;> exact ⟨by decide +kernel⟩
+    rcases hp3 with rfl|rfl <;> exact ⟨by decide +kernel, by lit_decide⟩
   unfold Impl.MlDsa.AArch64.Sign.Cached.commit
   dle_tac
 
@@ -132,12 +132,12 @@ theorem cachedSignWith_dle (v : Proof.Sha3.AArch64.Permutation)
   have hc := cachedCommit_dle v hp3
   have hi := pairedInitialization_dle v p
   have hb := pairedBall_dle v p
-  have hr := DLe.of_fd C.rejNTT.fd
-  have hr4 := DLe.of_fd C.rej4.fd
-  have hrtwo : DLe 1 Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code := ⟨by decide +kernel⟩
-  have hp := DLe.of_fd C.bitPack.fd
-  have hh := DLe.of_fd C.hintBitPack.fd
-  have hn : DLe 1 Impl.MlDsa.AArch64.Optimized.Response.canonicalize := ⟨by decide +kernel⟩
+  have hr := DLe.of_fd C.rejNTT.fd C.rejNTT.nd
+  have hr4 := DLe.of_fd C.rej4.fd C.rej4.nd
+  have hrtwo : DLe 1 Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code := ⟨by decide +kernel, by lit_decide⟩
+  have hp := DLe.of_fd C.bitPack.fd C.bitPack.nd
+  have hh := DLe.of_fd C.hintBitPack.fd C.hintBitPack.nd
+  have hn : DLe 1 Impl.MlDsa.AArch64.Optimized.Response.canonicalize := ⟨by decide +kernel, by lit_decide⟩
   unfold Impl.MlDsa.AArch64.Sign.Cached.signWith
   unfold Impl.MlDsa.AArch64.Sign.CachedMatrix.expandA
   split <;> dle_tac
@@ -168,7 +168,7 @@ theorem hashCall_tr {p : Params} {S : Nat} {n : String} {c : Prog isa} {k : Cont
     {P : State → State → Prop}
     (hP : ∀ x y x1 y1, P x y → Args (hashArgs p) x x1 → Args (hashArgs p) y y1 → ∃ rd wr : List Region,
       k.pre (x1.callEntry.withRegions rd wr) ∧ k.pre (y1.callEntry.withRegions rd wr) ∧
-      k.pub (x1.callEntry.withRegions rd wr) (y1.callEntry.withRegions rd wr) ∧
+      k.ditFree.pub (x1.callEntry.withRegions rd wr) (y1.callEntry.withRegions rd wr) ∧
       Covers (rd ++ wr) (x.rd ++ x.wr) ∧ Covers wr x.wr ∧
       Covers (rd ++ wr) (y.rd ++ y.wr) ∧ Covers wr y.wr) :
     RelCT isa P (callAt n c (hashArgs p)) fun _ _ => True :=
@@ -177,10 +177,10 @@ theorem hashCall_tr {p : Params} {S : Nat} {n : String} {c : Prog isa} {k : Cont
       fun x y _ _ hp h1 h2 => ⟨x, y, hp, h1, h2⟩)
     (RelCT.mono (RelCT.exists_ (P := fun (a : List Region × List Region) (x1 y1 : State) =>
         k.pre (x1.callEntry.withRegions a.1 a.2) ∧ k.pre (y1.callEntry.withRegions a.1 a.2) ∧
-        k.pub (x1.callEntry.withRegions a.1 a.2) (y1.callEntry.withRegions a.1 a.2) ∧
+        k.ditFree.pub (x1.callEntry.withRegions a.1 a.2) (y1.callEntry.withRegions a.1 a.2) ∧
         Covers (a.1 ++ a.2) (x1.rd ++ x1.wr) ∧ Covers a.2 x1.wr ∧
         Covers (a.1 ++ a.2) (y1.rd ++ y1.wr) ∧ Covers a.2 y1.wr)
-      fun a => RelCT.call C.correct C.ct a.1 a.2 fun _ _ h => h)
+      fun a => RelCT.call (k := k.ditFree) C.correct C.ct a.1 a.2 fun _ _ h => h)
       (fun x1 y1 ⟨x, y, hp, h1, h2⟩ => by
         obtain ⟨rd, wr, p₁, p₂, pub, c₁, w₁, c₂, w₂⟩ := hP x y x1 y1 hp h1 h2
         exact ⟨(rd, wr), p₁, p₂, pub, by rw [h1.2.rd, h1.2.wr]; exact c₁, by rw [h1.2.wr]; exact w₁,

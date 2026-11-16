@@ -137,7 +137,7 @@ theorem encSpecPrepared_post {s s' : State} (hR : Proof.AesGcm.rounds s)
 
 theorem encSpecPrepared_pub {s₁ s₂ : State} (h : encCallPub s₁ s₂) :
     (Proof.AesGcm.streamEncryptPreparedRoundsContract X86_64.abi 2608).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, aMd⟩ := h
   sig_pub [Proof.AesGcm.streamEncryptPreparedRoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig, X86_64.abi,
     X86_64.argRegs]
   sig_reduce [Proof.AesGcm.streamEncryptPreparedRoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig, X86_64.abi,
@@ -212,7 +212,7 @@ theorem toSpecPrepared_post {s s' : State} (hR : rounds s)
 
 theorem toSpecPrepared_pub {s₁ s₂ : State} (h : toPub s₁ s₂) :
     (Proof.Gcm.streamEncryptToPreparedContract X86_64.abi 4856).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
   sig_pub [Proof.Gcm.streamEncryptToPreparedContract, Proof.Gcm.streamEncryptToPreparedSig, Proof.Gcm.streamEncryptToPrecomputedSig, X86_64.abi,
     X86_64.argRegs]
   sig_reduce [Proof.Gcm.streamEncryptToPreparedContract, Proof.Gcm.streamEncryptToPreparedSig, Proof.Gcm.streamEncryptToPrecomputedSig, X86_64.abi,
@@ -290,7 +290,7 @@ theorem splitSpecR_post {M : CtxMode} {s s' : State}
 
 theorem splitSpecR_pub {s₁ s₂ : State} (h : splitPubK s₁ s₂) :
     (Proof.Gcm.sealSplitPreparedContract X86_64.abi 2672).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, aMd⟩ := h
   sig_pub [Proof.Gcm.sealSplitPreparedContract, Proof.Gcm.sealSplitPreparedSig, Proof.Gcm.sealSplitPrecomputedSig,
     X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.Gcm.sealSplitPreparedContract, Proof.Gcm.sealSplitPreparedSig, Proof.Gcm.sealSplitPrecomputedSig,
@@ -974,7 +974,7 @@ theorem sealSpecR_post {s s' : State} (hR : rounds s)
 
 theorem sealSpecR_pub {s₁ s₂ : State} (h : sealPubK s₁ s₂) :
     (Proof.AesGcm.sealPreparedRoundsContract X86_64.abi 2624).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
   sig_pub [Proof.AesGcm.sealPreparedRoundsContract, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.AesGcm.sealPreparedRoundsContract, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg]
@@ -1039,7 +1039,7 @@ theorem encSpecPrepared16_post {s s' : State} (hR : Proof.AesGcm.rounds s)
 
 theorem encSpecPrepared16_pub {s₁ s₂ : State} (h : encCallPub s₁ s₂) :
     (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, aMd⟩ := h
   sig_pub [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig, X86_64.abi,
     X86_64.argRegs]
   sig_reduce [Proof.AesGcm.streamEncryptPrepared16RoundsContract, Proof.Gcm.streamCryptPrecomputedSig, Proof.Gcm.streamCryptPrecomputedSig, X86_64.abi,
@@ -1114,7 +1114,7 @@ theorem toSpecPrepared16_post {s s' : State} (hR : rounds s)
 
 theorem toSpecPrepared16_pub {s₁ s₂ : State} (h : toPub s₁ s₂) :
     (Proof.Gcm.streamEncryptToPrepared16Contract X86_64.abi 4856).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
   sig_pub [Proof.Gcm.streamEncryptToPrepared16Contract, Proof.Gcm.streamEncryptToPreparedSig, Proof.Gcm.streamEncryptToPrecomputedSig, X86_64.abi,
     X86_64.argRegs]
   sig_reduce [Proof.Gcm.streamEncryptToPrepared16Contract, Proof.Gcm.streamEncryptToPreparedSig, Proof.Gcm.streamEncryptToPrecomputedSig, X86_64.abi,
@@ -1192,7 +1192,7 @@ theorem splitSpecR16_post {M : CtxMode} {s s' : State}
 
 theorem splitSpecR16_pub {s₁ s₂ : State} (h : splitPubK s₁ s₂) :
     (Proof.Gcm.sealSplitPrepared16Contract X86_64.abi 2672).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, a₁₁, a₁₂, aMd⟩ := h
   sig_pub [Proof.Gcm.sealSplitPrepared16Contract, Proof.Gcm.sealSplitPreparedSig, Proof.Gcm.sealSplitPrecomputedSig,
     X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.Gcm.sealSplitPrepared16Contract, Proof.Gcm.sealSplitPreparedSig, Proof.Gcm.sealSplitPrecomputedSig,
@@ -1268,7 +1268,7 @@ theorem sealSpecR16_post {s s' : State} (hR : rounds s)
 
 theorem sealSpecR16_pub {s₁ s₂ : State} (h : sealPubK s₁ s₂) :
     (Proof.AesGcm.sealPrepared16RoundsContract X86_64.abi 2624).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
   sig_pub [Proof.AesGcm.sealPrepared16RoundsContract, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs]
   sig_reduce [Proof.AesGcm.sealPrepared16RoundsContract, Proof.Gcm.sealPrecomputedSig, Proof.Gcm.sealPrecomputedSig, X86_64.abi, X86_64.argRegs,
     X86_64.stackArg, X86_64.stackArgAddr, List.range, List.range.loop, Proof.AesGcm.arg]
@@ -1625,11 +1625,11 @@ theorem gatherPostPrepared16_of {s s' : State} (h : Proof.AesGcm.sealGatherPostG
 theorem gatherPubPrepared16_of {s₁ s₂ : State}
     (hp : (Proof.AesGcm.sealGatherPrepared16ScratchContract X86_64.abi 4888).pub s₁ s₂) :
     Proof.AesGcm.sealGatherPub s₁ s₂ := by
-  sig_pub [Proof.AesGcm.sealGatherPrepared16ScratchContract, Proof.AesGcm.sealGatherPreparedScratchSig, Proof.AesGcm.sealGatherPrecomputedScratchSig,
+  sig_pub_keep [Proof.AesGcm.sealGatherPrepared16ScratchContract, Proof.AesGcm.sealGatherPreparedScratchSig, Proof.AesGcm.sealGatherPrecomputedScratchSig,
     Proof.Gcm.sealGatherPrepared16Pre, X86_64.abi, X86_64.argRegs, stackArgs_six, List.append_eq] at hp
   simp only [List.getD_cons_succ, List.getD_cons_zero, Sig.descRegion] at hp
-  obtain ⟨q₇, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅, hd⟩ := hp
-  exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, fun i hi => hd i (by simpa using hi)⟩
+  obtain ⟨q₇, qMd, q₁, q₂, q₃, q₄, q₅, q₆, a₀, a₁, a₂, a₃, a₄, a₅, hd⟩ := hp
+  exact ⟨q₁, q₂, q₃, q₄, q₅, q₆, q₇, a₀, a₁, a₂, a₃, a₄, a₅, fun i hi => hd i (by simpa using hi), qMd⟩
 
 theorem gatherSatPrepared16_pre : ∃ s, (Proof.AesGcm.sealGatherPrepared16ScratchContract X86_64.abi 4888).pre s := by
   refine ⟨gatherSatP, ?_⟩

@@ -830,14 +830,14 @@ theorem abi_argRo (ws : List Nat) (s : State) : ∀ p ∈ abi.argArea ws s, p.2 
 
 theorem ScrubAbi.plain : ScrubAbi abi :=
   ⟨rfl, rfl, fun _ => rfl, fun _ _ _ h => ⟨abi_wf_stack h, fun _ hr hn => absurd hr hn⟩,
-    fun _ _ h => h, fun _ => rfl, fun _ => rfl, fun _ _ h => h, abi_args_len, fun _ => rfl, abi_argRo,
+    fun _ _ h => h.1, fun _ => rfl, fun _ => rfl, fun _ _ h => h, abi_args_len, fun _ => rfl, abi_argRo,
     fun _ _ => rfl, fun _ _ _ h => h⟩
 
 theorem ScrubAbi.consts (cs : List (String × List (BitVec 64))) : ScrubAbi (abi.withConsts cs) := by
   cases cs with
   | nil => exact ScrubAbi.plain
   | cons c cs =>
-    refine ⟨rfl, rfl, fun _ => rfl, fun ws n s h => ?_, fun _ _ h => h.1, fun _ => rfl, fun _ => rfl,
+    refine ⟨rfl, rfl, fun _ => rfl, fun ws n s h => ?_, fun _ _ h => h.1.1, fun _ => rfl, fun _ => rfl,
       fun _ _ h => List.mem_of_mem_take h, abi_args_len, fun _ => rfl, abi_argRo, fun _ _ => rfl,
       fun _ _ _ h => h.1⟩
     obtain ⟨hw, hdrop, -, hdis, -⟩ := h

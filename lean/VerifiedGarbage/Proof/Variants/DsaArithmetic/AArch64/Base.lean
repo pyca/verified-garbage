@@ -537,18 +537,22 @@ def variant : Backend where
   parametersVerified := parameters_verified Mont.calledProductEight
   deriveVerified := derive_verified Mont.calledProductEight
   parametersSp := by decide +kernel
+  parametersNoDit := by lit_decide
   parametersDepth := by decide +kernel
   deriveSp := by decide +kernel
   deriveDepth := by decide +kernel
   signSp := by decide +kernel
+  signNoDit := by lit_decide
   signDepth := by decide +kernel
   prevalidatedSignVerified := prevalidated_sign_verified Mont.calledProductEight
   prevalidatedSignSp := by decide +kernel
+  prevalidatedSignNoDit := by lit_decide
   prevalidatedSignDepth := by decide +kernel
   validatePrivateVerified := validating_private_verified Mont.calledProductEight
   validatePrivateSp := by decide +kernel
   deriveCheckedVerified := derive_checked_verified Mont.calledProductEight
   deriveCheckedSp := by decide +kernel
+  deriveCheckedNoDit := by lit_decide
   deriveCheckedDepth := by decide +kernel
   stackBound := by decide
 

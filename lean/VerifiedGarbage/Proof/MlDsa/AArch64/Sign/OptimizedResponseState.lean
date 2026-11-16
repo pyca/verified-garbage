@@ -525,7 +525,7 @@ open VG.Impl.MlDsa.AArch64.Optimized.Inverse (inverseConsts expandedWords)
 
 theorem productRaw_callee (S : Nat) :
     CalleeOk S (staticCode true) (multiplyInverseRawContract (abi.withConsts inverseConsts)) := by
-  refine ⟨(productRaw_verified).1,(productRaw_verified).2.1,?_⟩
+  refine CalleeOk.of_ct (productRaw_verified).1 (productRaw_verified).2.1 (by lit_decide) (fun _ _ h => h) ?_
   change 0≤S
   exact Nat.zero_le _
 

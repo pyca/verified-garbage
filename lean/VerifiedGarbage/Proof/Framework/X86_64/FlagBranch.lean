@@ -122,7 +122,7 @@ theorem pub_same {s u s' u' : State} (h : Same s u) (h' : Same s' u') :
   have em : abi.mem u = abi.mem s := h.mem
   have em' : abi.mem u' = abi.mem s' := h'.mem
   have ep : abi.pub u u' = abi.pub s s' := by
-    simp only [abi, h.gpr .rsp (by decide), h'.gpr .rsp (by decide)]
+    simp only [abi, h.gpr .rsp (by decide), h'.gpr .rsp (by decide), h.mx, h'.mx]
   rw [args_same hv h, args_same hv h', em, em', ep]
 
 /-! ## The choice -/

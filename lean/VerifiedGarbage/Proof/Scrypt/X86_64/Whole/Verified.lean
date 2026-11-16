@@ -445,22 +445,23 @@ abbrev Env := Lay × (Reg → BitVec 64) × (Reg → BitVec 64) × Mem × Mem
 /-- Two runs with the same layout, each satisfying `Ctx` and `Φ`. -/
 def Two (Φ : Lay → Mem → State → Prop) (a b : State) : Prop :=
   ∃ e : Env, e.1.Ok ∧ LeakEq e.1 e.2.2.2.1 e.2.2.2.2 ∧ Ctx e.1 e.2.1 e.2.2.2.1 a ∧
-    Ctx e.1 e.2.2.1 e.2.2.2.2 b ∧ Φ e.1 e.2.2.2.1 a ∧ Φ e.1 e.2.2.2.2 b
+    Ctx e.1 e.2.2.1 e.2.2.2.2 b ∧ Φ e.1 e.2.2.2.1 a ∧ Φ e.1 e.2.2.2.2 b ∧ a.mxcsr = b.mxcsr
 
 /-- Code whose runs leak the same, and which keeps `Ctx` and establishes `Ψ`. -/
-theorem two_wp {c : Prog isa} {Φ Ψ : Lay → Mem → State → Prop}
+theorem two_wp {c : Prog isa} {Φ Ψ : Lay → Mem → State → Prop} (hmx : MxDet c)
     (hct : RelCT isa (Two Φ) c fun _ _ => True)
     (hw : ∀ (L : Lay) g m₀ (t : State), L.Ok → Ctx L g m₀ t → Φ L m₀ t →
       WP isa c t fun t' => Ctx L g m₀ t' ∧ Ψ L m₀ t') :
     RelCT isa (Two Φ) c (Two Ψ) := by
   intro s₁ s₂ t₁ t₂ s₁' s₂' hp e₁ e₂
   obtain ⟨ht, -⟩ := hct _ _ _ _ _ _ hp e₁ e₂
-  obtain ⟨⟨L, g₁, g₂, m₁, m₂⟩, hL, hk, c₁, c₂, f₁, f₂⟩ := hp
+  obtain ⟨⟨L, g₁, g₂, m₁, m₂⟩, hL, hk, c₁, c₂, f₁, f₂, hm⟩ := hp
   obtain ⟨_, u₁, x₁, y₁⟩ := hw L g₁ m₁ s₁ hL c₁ f₁
   obtain ⟨_, u₂, x₂, y₂⟩ := hw L g₂ m₂ s₂ hL c₂ f₂
+  have hm' := hmx _ _ _ _ _ e₁ (ht ▸ e₂) hm
   obtain ⟨-, rfl⟩ := Exec.det e₁ x₁
   obtain ⟨-, rfl⟩ := Exec.det e₂ x₂
-  exact ⟨ht, ⟨L, g₁, g₂, m₁, m₂⟩, hL, hk, y₁.1, y₂.1, y₁.2, y₂.2⟩
+  exact ⟨ht, ⟨L, g₁, g₂, m₁, m₂⟩, hL, hk, y₁.1, y₂.1, y₁.2, y₂.2, hm'⟩
 
 theorem rsp_two {L : Lay} {t₁ t₂ : State} {g₁ g₂ : Reg → BitVec 64} {m₁ m₂ : Mem}
     (c₁ : Ctx L g₁ m₁ t₁) (c₂ : Ctx L g₂ m₂ t₂) : t₁.gpr .rsp = t₂.gpr .rsp :=
@@ -470,10 +471,11 @@ theorem rsp_two {L : Lay} {t₁ t₂ : State} {g₁ g₂ : Reg → BitVec 64} {m
 theorem two_blk {is : List Instr} {Φ Ψ : Lay → Mem → State → Prop}
     {hc : VG.Taint.Hint VG.X86_64.Taint.T}
     (h : (taint.check (Taint.ofRegs [.rsp]) (.block is) hc).isSome = true)
+    (hm : (Code.block is : Prog isa).allInstrs (fun i => !loadsMxcsr i) = true)
     (hw : ∀ (L : Lay) g m₀ (t : State), L.Ok → Ctx L g m₀ t → Φ L m₀ t →
       WP isa (.block is) t fun t' => Ctx L g m₀ t' ∧ Ψ L m₀ t') :
     RelCT isa (Two Φ) (.block is) (Two Ψ) :=
-  two_wp (RelCT.taint (A := taint) (Taint.ofRegs [.rsp])
+  two_wp (MxDet.of_noLoad hm) (RelCT.taint (A := taint) (Taint.ofRegs [.rsp])
     (fun _ _ ⟨_, _, _, c₁, c₂, _, _⟩ => Taint.agree_ofRegs fun r hr => by
       simp only [List.mem_singleton] at hr; subst hr; exact rsp_two c₁ c₂) h) hw
 
@@ -481,20 +483,21 @@ theorem two_blk {is : List Instr} {Φ Ψ : Lay → Mem → State → Prop}
 `Ψ` holds. -/
 theorem two_call {n : String} {c : Prog isa} {k : Contract isa} {Φ Ψ : Lay → Mem → State → Prop}
     (hv : ∀ s, k.pre s → ∃ t s', Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
-    (hct : ConstantTime isa k.pre k.pub c) (rd wr : Lay → List Region)
+    (hct : ConstantTime isa k.pre k.pub c) (hcm : c.allInstrs (fun i => !loadsMxcsr i) = true)
+    (rd wr : Lay → List Region)
     (hpre : ∀ (L : Lay) g m₀ (t : State), L.Ok → Ctx L g m₀ t → Φ L m₀ t →
       k.pre (t.callEntry.withRegions (rd L) (wr L)))
     (hpub : ∀ (L : Lay) t₁ t₂ g₁ g₂ m₁ m₂, L.Ok → LeakEq L m₁ m₂ → Ctx L g₁ m₁ t₁ → Ctx L g₂ m₂ t₂ →
-      Φ L m₁ t₁ → Φ L m₂ t₂ →
+      Φ L m₁ t₁ → Φ L m₂ t₂ → t₁.mxcsr = t₂.mxcsr →
       k.pub (t₁.callEntry.withRegions (rd L) (wr L)) (t₂.callEntry.withRegions (rd L) (wr L)))
     (hsub : ∀ (L : Lay) m₀ (t : State), L.Ok → Φ L m₀ t → ∀ r ∈ rd L ++ wr L, ∃ R ∈ L.regions, Within r R)
     (hwsub : ∀ (L : Lay) m₀ (t : State), L.Ok → Φ L m₀ t → ∀ r ∈ wr L, InBuf L r)
     (hw : ∀ (L : Lay) g m₀ (t : State), L.Ok → Ctx L g m₀ t → Φ L m₀ t →
       WP isa (.call n c) t fun t' => Ctx L g m₀ t' ∧ Ψ L m₀ t') :
     RelCT isa (Two Φ) (.call n c) (Two Ψ) :=
-  two_wp (RelCT.callEx hv hct fun _ _ ⟨⟨L, _⟩, hL, hk, c₁, c₂, f₁, f₂⟩ =>
+  two_wp (MxDet.of_noLoad (c := .call n c) hcm) (RelCT.callEx hv hct fun _ _ ⟨⟨L, _⟩, hL, hk, c₁, c₂, f₁, f₂, hm⟩ =>
     ⟨rd L, wr L, rd L, wr L, hpre _ _ _ _ hL c₁ f₁, hpre _ _ _ _ hL c₂ f₂,
-      hpub _ _ _ _ _ _ _ hL hk c₁ c₂ f₁ f₂, (covers c₁ (hsub L _ _ hL f₁) (hwsub L _ _ hL f₁)).1,
+      hpub _ _ _ _ _ _ _ hL hk c₁ c₂ f₁ f₂ hm, (covers c₁ (hsub L _ _ hL f₁) (hwsub L _ _ hL f₁)).1,
       (covers c₁ (hsub L _ _ hL f₁) (hwsub L _ _ hL f₁)).2,
       (covers c₂ (hsub L _ _ hL f₂) (hwsub L _ _ hL f₂)).1,
       (covers c₂ (hsub L _ _ hL f₂) (hwsub L _ _ hL f₂)).2, rsp_two c₁ c₂⟩) hw
@@ -503,7 +506,8 @@ theorem two_call {n : String} {c : Prog isa} {k : Contract isa} {Φ Ψ : Lay →
 
 theorem pbk_pub_two {L : Lay} (hL : L.Ok) {g₁ g₂ : Reg → BitVec 64} {m₁ m₂ : Mem} {t₁ t₂ : State}
     (c₁ : Ctx L g₁ m₁ t₁) (c₂ : Ctx L g₂ m₂ t₂) {salt : Addr} {sl : BitVec 64} {out : Addr}
-    {ol : BitVec 64} (a₁ : PbkArgs L salt sl out ol t₁) (a₂ : PbkArgs L salt sl out ol t₂) :
+    {ol : BitVec 64} (a₁ : PbkArgs L salt sl out ol t₁) (a₂ : PbkArgs L salt sl out ol t₂)
+    (hm : t₁.mxcsr = t₂.mxcsr) :
     pbkK.pub (t₁.callEntry.withRegions (pbkRd L salt sl) (pbkWr L out ol))
       (t₂.callEntry.withRegions (pbkRd L salt sl) (pbkWr L out ol)) := by
   simp only [pbkK, Proof.Pbkdf2.Md.X86_64.pbkG, gpr_ce _ _ _ (by decide : Reg.rdi ≠ .rsp),
@@ -511,7 +515,7 @@ theorem pbk_pub_two {L : Lay} (hL : L.Ok) {g₁ g₂ : Reg → BitVec 64} {m₁ 
     gpr_ce _ _ _ (by decide : Reg.rcx ≠ .rsp), gpr_ce _ _ _ (by decide : Reg.r8 ≠ .rsp),
     gpr_ce _ _ _ (by decide : Reg.r9 ≠ .rsp), a₁.rdi, a₁.rsi, a₁.rdx, a₁.rcx, a₁.r8, a₁.r9, a₂.rdi,
     a₂.rsi, a₂.rdx, a₂.rcx, a₂.r8, a₂.r9, pbk_e0 hL c₁ a₁, pbk_e0 hL c₂ a₂, pbk_e1 hL c₁ a₁,
-    pbk_e1 hL c₂ a₂, c₁.ce_rsp, c₂.ce_rsp, and_self]
+    pbk_e1 hL c₂ a₂, c₁.ce_rsp, c₂.ce_rsp, State.withRegions_mxcsr, State.callEntry_mxcsr, hm, and_self]
 
 /-- The block ROMix works on in iteration `i`, on entry to it. -/
 theorem romix_bytes {L : Lay} (hL : L.Ok) {g : Reg → BitVec 64} {m₀ : Mem} {t : State}
@@ -548,15 +552,15 @@ theorem body_ct (n : Nat) :
         t.zf = some (decide (L.pp - n + 1 = L.pp))) := by
   have a : RelCT isa (Two (LoopAt n)) (.block romixArgs) (Two fun L m₀ t => 0 < n ∧ n ≤ L.pp ∧
       InvB L m₀ (L.pp - n) t ∧ RomixArgs L (blkAt L (L.pp - n)) t) :=
-    two_blk (by taint_decide) fun _ _ _ _ hL hc ⟨h0, hn, hb⟩ =>
+    two_blk (by taint_decide) (by decide) fun _ _ _ _ hL hc ⟨h0, hn, hb⟩ =>
       WP.mono (romixArgs_ok hL hc hb.cur) fun _ ⟨hc', hm, ha⟩ =>
         ⟨hc', h0, hn, ⟨by rw [hm]; exact hb.cur, by rw [hm]; exact hb.blks⟩, ha⟩
   have b : RelCT isa (Two fun L m₀ t => 0 < n ∧ n ≤ L.pp ∧ InvB L m₀ (L.pp - n) t ∧
       RomixArgs L (blkAt L (L.pp - n)) t) (.call R.name R.code)
       (Two fun L m₀ t => 0 < n ∧ n ≤ L.pp ∧ Mid L m₀ (L.pp - n) t) :=
-    two_call R.correct R.ct (fun _ => []) (fun L => romixWr L (L.pp - n))
+    two_call R.correct R.ct R.mx (fun _ => []) (fun L => romixWr L (L.pp - n))
       (fun _ _ _ _ hL hc ⟨h0, hn, _, ha⟩ => romix_pre hL hc (by omega_arith) ha)
-      (fun _ _ _ _ _ _ _ hL hk c₁ c₂ ⟨h0, hn, b₁, a₁⟩ ⟨_, _, b₂, a₂⟩ =>
+      (fun _ _ _ _ _ _ _ hL hk c₁ c₂ ⟨h0, hn, b₁, a₁⟩ ⟨_, _, b₂, a₂⟩ _ =>
         romix_pub_two hL hk c₁ c₂ (by omega_arith) b₁ b₂ a₁ a₂)
       (fun _ _ _ hL ⟨h0, hn, _⟩ => romix_sub hL (by omega_arith))
       (fun _ _ _ hL ⟨h0, hn, _⟩ => romix_wsub hL (by omega_arith))
@@ -565,7 +569,7 @@ theorem body_ct (n : Nat) :
   have c : RelCT isa (Two fun L m₀ t => 0 < n ∧ n ≤ L.pp ∧ Mid L m₀ (L.pp - n) t) (.block nextBlock)
       (Two fun L m₀ t => 0 < n ∧ n ≤ L.pp ∧ InvB L m₀ (L.pp - n + 1) t ∧
         t.zf = some (decide (L.pp - n + 1 = L.pp))) :=
-    two_blk (by taint_decide) fun _ _ _ _ hL hc ⟨h0, hn, hm⟩ =>
+    two_blk (by taint_decide) (by decide) fun _ _ _ _ hL hc ⟨h0, hn, hm⟩ =>
       WP.mono (next_step hL (by omega_arith) hc hm) fun _ ⟨hc', hb, hz⟩ => ⟨hc', h0, hn, hb, hz⟩
   exact a.seq (b.seq c)
 
@@ -574,19 +578,19 @@ theorem loop_ct :
   have ev : ∀ x : State, isa.eval .ne x = x.zf.map (!·) := fun _ => rfl
   have h := fun n => RelCT.loop (M := isa) (c := .ne) (Q := Two fun L m₀ t => InvB L m₀ L.pp t)
     (fun n => Two (LoopAt n)) (fun n => (body_ct (R := R) n).mono (fun _ _ h => h) fun a b hab => by
-      obtain ⟨e, hL, hk, c₁, c₂, ⟨h0, hn, b₁, z₁⟩, ⟨-, -, b₂, z₂⟩⟩ := hab
+      obtain ⟨e, hL, hk, c₁, c₂, ⟨h0, hn, b₁, z₁⟩, ⟨-, -, b₂, z₂⟩, hm⟩ := hab
       rw [ev, ev, z₁, z₂]
       refine ⟨rfl, fun hf => ?_, fun ht => ?_⟩
       · have hl : e.1.pp - n + 1 = e.1.pp := by simpa using hf
         exact ⟨e, hL, hk, c₁, c₂, show InvB e.1 _ e.1.pp a from hl ▸ b₁,
-          show InvB e.1 _ e.1.pp b from hl ▸ b₂⟩
+          show InvB e.1 _ e.1.pp b from hl ▸ b₂, hm⟩
       · have hl : e.1.pp - n + 1 ≠ e.1.pp := by simpa using ht
         have e₁ : e.1.pp - (n - 1) = e.1.pp - n + 1 := by omega_arith
         exact ⟨n - 1, by omega_arith, e, hL, hk, c₁, c₂, ⟨by omega_arith, by omega_arith, e₁ ▸ b₁⟩,
-          ⟨by omega_arith, by omega_arith, e₁ ▸ b₂⟩⟩) n
-  refine (RelCT.exists_ h).mono (fun a b ⟨e, hL, hk, c₁, c₂, b₁, b₂⟩ => ⟨e.1.pp, e, hL, hk, c₁, c₂,
+          ⟨by omega_arith, by omega_arith, e₁ ▸ b₂⟩, hm⟩) n
+  refine (RelCT.exists_ h).mono (fun a b ⟨e, hL, hk, c₁, c₂, b₁, b₂, hm⟩ => ⟨e.1.pp, e, hL, hk, c₁, c₂,
     ⟨hL.pp_pos, Nat.le_refl _, by rw [Nat.sub_self]; exact b₁⟩,
-    ⟨hL.pp_pos, Nat.le_refl _, by rw [Nat.sub_self]; exact b₂⟩⟩) fun _ _ h => h
+    ⟨hL.pp_pos, Nat.le_refl _, by rw [Nat.sub_self]; exact b₂⟩, hm⟩) fun _ _ h => h
 
 /-! ## The whole function -/
 
@@ -595,49 +599,49 @@ variable {pbk : Prog isa} (hv : Verified X86_64.target pbk (Proof.Pbkdf2.Instanc
   (hsp : NoSp pbk) (hd : pbk.depth ≤ 3) (name : String)
 include hv hsp hd
 
-theorem scryptBody_ct : RelCT isa (Two fun L _ t => Entry L t) (scryptBody R.name R.code name pbk) fun _ _ => True := by
+theorem scryptBody_ct (hpm : pbk.allInstrs (fun i => !loadsMxcsr i) = true) : RelCT isa (Two fun L _ t => Entry L t) (scryptBody R.name R.code name pbk) fun _ _ => True := by
   have p1a : RelCT isa (Two fun L _ t => Entry L t) (.block pbk1Args)
       (Two fun L _ t => PbkArgs L L.salt L.sl L.b (BitVec.ofNat 64 (L.blen.toNat * 128)) t) :=
-    two_blk (by taint_decide) fun _ _ _ _ hL hc he =>
+    two_blk (by taint_decide) (by decide) fun _ _ _ _ hL hc he =>
       WP.mono (pbk1Args_ok hL hc he) fun _ ⟨hc', ha, _⟩ => ⟨hc', ha⟩
   have p1c : RelCT isa (Two fun L _ t => PbkArgs L L.salt L.sl L.b (BitVec.ofNat 64 (L.blen.toNat * 128)) t)
       (.call name pbk)
       (Two fun L m₀ t => ∀ k < L.pp, bytesAt t.mem (blkAt L k) (128 * L.r.toNat) = X L m₀ k) :=
-    two_call (pbk_correct hv) (pbk_ct hv) (fun L => pbkRd L L.salt L.sl)
+    two_call (pbk_correct hv) (pbk_ct hv) hpm (fun L => pbkRd L L.salt L.sl)
       (fun L => pbkWr L L.b (BitVec.ofNat 64 (L.blen.toNat * 128)))
       (fun _ _ _ _ hL hc ha => pbk_pre' hL hc ha (pbk1_regions hL))
-      (fun _ _ _ _ _ _ _ hL _ c₁ c₂ a₁ a₂ => pbk_pub_two hL c₁ c₂ a₁ a₂)
+      (fun _ _ _ _ _ _ _ hL _ c₁ c₂ a₁ a₂ hm => pbk_pub_two hL c₁ c₂ a₁ a₂ hm)
       (fun _ _ _ hL _ => pbk_sub hL (pbk1_regions hL)) (fun _ _ _ hL _ => pbk_wsub hL (pbk1_regions hL))
       (fun _ _ _ _ hL hc ha =>
         WP.mono (pbk1_call_ok hv hsp hd name hL hc ha) fun _ ⟨hc', _, hx⟩ => ⟨hc', hx⟩)
   have c0 : RelCT isa (Two fun L m₀ t => ∀ k < L.pp, bytesAt t.mem (blkAt L k) (128 * L.r.toNat) = X L m₀ k)
       (.block cur0) (Two fun L m₀ t => InvB L m₀ 0 t) :=
-    two_blk (by taint_decide) fun _ _ _ _ hL hc hx => start_ok hL hc hx
+    two_blk (by taint_decide) (by decide) fun _ _ _ _ hL hc hx => start_ok hL hc hx
   have p2a : RelCT isa (Two fun L m₀ t => InvB L m₀ L.pp t) (.block pbk2Args)
       (Two fun L _ t => PbkArgs L L.b (BitVec.ofNat 64 (L.blen.toNat * 128)) L.out L.ol t) :=
-    two_blk (by taint_decide) fun _ _ _ _ hL hc _ =>
+    two_blk (by taint_decide) (by decide) fun _ _ _ _ hL hc _ =>
       WP.mono (pbk2Args_ok hL hc) fun _ ⟨hc', ha, _⟩ => ⟨hc', ha⟩
   have p2c : RelCT isa (Two fun L _ t => PbkArgs L L.b (BitVec.ofNat 64 (L.blen.toNat * 128)) L.out L.ol t)
       (.call name pbk) (Two fun _ _ _ => True) :=
-    two_call (pbk_correct hv) (pbk_ct hv) (fun L => pbkRd L L.b (BitVec.ofNat 64 (L.blen.toNat * 128)))
+    two_call (pbk_correct hv) (pbk_ct hv) hpm (fun L => pbkRd L L.b (BitVec.ofNat 64 (L.blen.toNat * 128)))
       (fun L => pbkWr L L.out L.ol)
       (fun _ _ _ _ hL hc ha => pbk_pre' hL hc ha (pbk2_regions hL))
-      (fun _ _ _ _ _ _ _ hL _ c₁ c₂ a₁ a₂ => pbk_pub_two hL c₁ c₂ a₁ a₂)
+      (fun _ _ _ _ _ _ _ hL _ c₁ c₂ a₁ a₂ hm => pbk_pub_two hL c₁ c₂ a₁ a₂ hm)
       (fun _ _ _ hL _ => pbk_sub hL (pbk2_regions hL)) (fun _ _ _ hL _ => pbk_wsub hL (pbk2_regions hL))
       (fun _ _ _ _ hL hc ha =>
         WP.mono (pbk_call hv hsp hd name hL hc ha (pbk2_regions hL)) fun _ h => ⟨h.1, trivial⟩)
   exact ((p1a.seq p1c).seq (c0.seq (loop_ct.seq (p2a.seq p2c)))).mono (fun _ _ h => h)
     fun _ _ _ => trivial
 
-theorem scrypt_ct :
+theorem scrypt_ct (hpm : pbk.allInstrs (fun i => !loadsMxcsr i) = true) :
     ConstantTime isa Proof.Scrypt.scryptX86_64.pre Proof.Scrypt.scryptX86_64.pub (scrypt R.name R.code name pbk) := by
   refine RelCT.constantTime (RelCT.frame (fun _ _ h => h.2.2.2.2.2.2.2.2.2.2.2.2.2.2.2.1)
-    (RelCT.mono (scryptBody_ct hv hsp hd name) ?_ fun _ _ _ => trivial))
-  rintro _ _ ⟨s₁, s₂, ⟨h₁, h₂, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, hsp', hlk⟩, rfl, rfl⟩
+    (RelCT.mono (scryptBody_ct hv hsp hd name hpm) ?_ fun _ _ _ => trivial))
+  rintro _ _ ⟨s₁, s₂, ⟨h₁, h₂, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, hsp', hlk, hmq⟩, rfl, rfl⟩
   have e : lay s₂ = lay s₁ := by
     simp only [lay, hdi, hsi, hdx, hcx, h8, h9, a0, a1, a2, a3, a4, a5, a6, hsp']
   refine ⟨⟨lay s₁, s₁.gpr, s₂.gpr, s₁.mem, s₂.mem⟩, lay_ok h₁, ?_, push_ctx h₁, e ▸ push_ctx h₂,
-    push_entry s₁, e ▸ push_entry s₂⟩
+    push_entry s₁, e ▸ push_entry s₂, by rw [pushed_mxcsr, pushed_mxcsr, hmq]⟩
   rw [← hdi, ← hsi, ← hdx, ← hcx, ← h8, ← a0, ← a2] at hlk
   exact hlk
 
@@ -702,11 +706,11 @@ theorem scrypt_implies :
         exact h
       pub := by
         rintro s₁ s₂ - - h
-        sig_pub [Spec.Scrypt.scryptContract, Spec.Scrypt.scryptSig, Proof.Scrypt.scryptX86_64,
+        sig_pub_keep [Spec.Scrypt.scryptContract, Spec.Scrypt.scryptSig, Proof.Scrypt.scryptX86_64,
           X86_64.abi, X86_64.argRegs, _root_.List.range, _root_.List.range.loop, List.append_eq] at h
         sig_split h
-        rename_i hrsp hlk h1 h2 h3 h4 h5 h6 a0 a1 a2 a3 a4 a5
-        exact ⟨h1, h2, h3, h4, h5, h6, a0, a1, a2, a3, a4, a5, h, hrsp, hlk⟩
+        rename_i hrsp hmx hlk h1 h2 h3 h4 h5 h6 a0 a1 a2 a3 a4 a5
+        exact ⟨h1, h2, h3, h4, h5, h6, a0, a1, a2, a3, a4, a5, h, hrsp, hlk, hmx⟩
       sat := by
         sig_implies_sat [Spec.Scrypt.scryptContract, Spec.Scrypt.scryptSig, X86_64.abi, X86_64.argRegs,
           _root_.List.range, _root_.List.range.loop, List.append_eq, satState] [satState] using satState }
@@ -718,9 +722,10 @@ include hv hsp hd
 
 /-- `vg_scrypt`, calling the implementation `R` of ROMix and `pbk` of PBKDF2 named `name`, if
 no instruction of it (or of the functions it calls) loads MXCSR. -/
-theorem scrypt_verified_of (hmx : (scrypt R.name R.code name pbk).allInstrs (fun i => !loadsMxcsr i) = true) :
+theorem scrypt_verified_of (hmx : (scrypt R.name R.code name pbk).allInstrs (fun i => !loadsMxcsr i) = true)
+    (hpm : pbk.allInstrs (fun i => !loadsMxcsr i) = true) :
     Verified X86_64.target (scrypt R.name R.code name pbk) (Spec.Scrypt.scryptContract X86_64.abi 88) :=
-  Verified.of_correct (scrypt_correct hv hsp hd name hmx) (scrypt_ct hv hsp hd name) scrypt_implies
+  Verified.of_correct (scrypt_correct hv hsp hd name hmx) (scrypt_ct hv hsp hd name hpm) scrypt_implies
 
 end
 
@@ -817,7 +822,7 @@ theorem scrypt_mx : (scrypt R.name R.code (pbkName c) (pbkOf c)).allInstrs (fun 
 /-- `vg_scrypt` made with `c`. -/
 theorem scrypt_verified :
     Verified X86_64.target (scrypt R.name R.code (pbkName c) (pbkOf c)) (Spec.Scrypt.scryptContract X86_64.abi 88) :=
-  scrypt_verified_of (pbk_verified c) (pbk_nosp c) (pbk_depth c) (pbkName c) (scrypt_mx c R)
+  scrypt_verified_of (pbk_verified c) (pbk_nosp c) (pbk_depth c) (pbkName c) (scrypt_mx c R) (pbk_mx c)
 
 /-- No instruction writes `rsp` but the frame's push and pop. -/
 theorem scrypt_spSafe : (scrypt R.name R.code (pbkName c) (pbkOf c)).all (fun i => !isa.writesSp i) = true := by

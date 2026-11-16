@@ -105,7 +105,7 @@ def gatherPre (C : CtxSpec) (s : State) : Prop :=
 def gatherPub (s₁ s₂ : State) : Prop :=
   s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧ s₁.gpr .x2 = s₂.gpr .x2 ∧
     s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧ s₁.gpr .x5 = s₂.gpr .x5 ∧
-    s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.gpr .x7 = s₂.gpr .x7 ∧ s₁.sp = s₂.sp ∧
+    s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.gpr .x7 = s₂.gpr .x7 ∧ s₁.sp = s₂.sp ∧ s₁.dit = s₂.dit ∧
     stackArg s₁ 0 = stackArg s₂ 0 ∧ stackArg s₁ 1 = stackArg s₂ 1 ∧ stackArg s₁ 2 = stackArg s₂ 2 ∧
     ∀ i < Cnt s₁ * 16, s₁.mem (Src s₁ + BitVec.ofNat 64 i) = s₂.mem (Src s₁ + BitVec.ofNat 64 i)
 
@@ -187,7 +187,7 @@ structure SealFn (C : CtxSpec) where
   pub : ∀ s₁ s₂, s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧
     s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧
     s₁.gpr .x5 = s₂.gpr .x5 ∧ s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.gpr .x7 = s₂.gpr .x7 ∧ s₁.sp = s₂.sp ∧
-    stackArg s₁ 0 = stackArg s₂ 0 → k.pub s₁ s₂
+    stackArg s₁ 0 = stackArg s₂ 0 ∧ s₁.dit = s₂.dit → k.pub s₁ s₂
 
 theorem stackArgs_one (s : State) : List.map (stackArg s) (List.range 1) = [stackArg s 0] := rfl
 
@@ -219,8 +219,9 @@ theorem sealSpec_post {s s' : State} (h : (Proof.AesGcm.sealRoundsContract AArch
 theorem sealSpec_pub {s₁ s₂ : State} (h : s₁.gpr .x0 = s₂.gpr .x0 ∧ s₁.gpr .x1 = s₂.gpr .x1 ∧
     s₁.gpr .x2 = s₂.gpr .x2 ∧ s₁.gpr .x3 = s₂.gpr .x3 ∧ s₁.gpr .x4 = s₂.gpr .x4 ∧
     s₁.gpr .x5 = s₂.gpr .x5 ∧ s₁.gpr .x6 = s₂.gpr .x6 ∧ s₁.gpr .x7 = s₂.gpr .x7 ∧ s₁.sp = s₂.sp ∧
-    stackArg s₁ 0 = stackArg s₂ 0) : (Proof.AesGcm.sealRoundsContract AArch64.abi 2576).pub s₁ s₂ := by
-  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀⟩ := h
+    stackArg s₁ 0 = stackArg s₂ 0 ∧ s₁.dit = s₂.dit) :
+    (Proof.AesGcm.sealRoundsContract AArch64.abi 2576).pub s₁ s₂ := by
+  obtain ⟨a₁, a₂, a₃, a₄, a₅, a₆, a₇, a₈, a₉, a₁₀, aMd⟩ := h
   sig_pub [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, stackArgs_one, List.append_eq, List.range, List.range.loop]
   sig_reduce [Proof.AesGcm.sealRoundsContract, Spec.Gcm.sealSig, AArch64.abi, AArch64.argRegs, List.range, List.range.loop]
   sig_and_intros

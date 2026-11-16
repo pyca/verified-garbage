@@ -16,6 +16,7 @@ import VerifiedGarbage.Proof.Sm4.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.AArch64.Depth
 import VerifiedGarbage.Proof.Framework.AArch64.RelCT
+import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 public import VerifiedGarbage.Proof.Framework.Contract
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.AddrArith
@@ -88,7 +89,10 @@ def ctrSat : State where
   rd := [⟨0x1000, 128⟩]
   wr := [⟨0x2000, 16⟩, ⟨0x3000, 16⟩]
 
-theorem ctrF_implies : (Proof.Sm4.ctr32Contract AArch64.abi 3264).Implies ctrF where
+/-- `ctrF`, its public data with PSTATE.DIT, which the shared contract's are. -/
+abbrev ctrFd : Contract isa := { ctrF with pub := fun a b => ctrF.pub a b ∧ a.dit = b.dit }
+
+theorem ctrF_implies : (Proof.Sm4.ctr32Contract AArch64.abi 3264).Implies ctrFd where
   pre s hs := by
     sig_pre [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, AArch64.abi, AArch64.argRegs]
     exact hs
@@ -98,8 +102,8 @@ theorem ctrF_implies : (Proof.Sm4.ctr32Contract AArch64.abi 3264).Implies ctrF w
     exact h
   pub s₁ s₂ _ _ h := by
     sig_reduce [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, AArch64.abi, AArch64.argRegs]
-    obtain ⟨hsp, h0, h1, h2, h3⟩ := h
-    exact ⟨hsp, fun _ _ => by rw [h0, h1, h2, h3], fun _ hr => absurd hr List.not_mem_nil⟩
+    obtain ⟨⟨hsp, h0, h1, h2, h3⟩, hd⟩ := h
+    exact ⟨⟨hsp, hd⟩, fun _ _ => by rw [h0, h1, h2, h3], fun _ hr => absurd hr List.not_mem_nil⟩
   sat := ⟨ctrSat, by
     refine ⟨by decide, rfl, rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
       Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
@@ -125,7 +129,10 @@ def keySat : State where
   rd := [⟨0x1000, 16⟩]
   wr := [⟨0x2000, 128⟩]
 
-theorem keyF_implies : (Spec.Sm4.expandKeyContract AArch64.abi).Implies keyF where
+/-- `keyF`, its public data with PSTATE.DIT, which the shared contract's are. -/
+abbrev keyFd : Contract isa := { keyF with pub := fun a b => keyF.pub a b ∧ a.dit = b.dit }
+
+theorem keyF_implies : (Spec.Sm4.expandKeyContract AArch64.abi).Implies keyFd where
   pre s hs := by
     obtain ⟨hsp, hrd, hwr, dKS, dSK, dSS, fK, fS⟩ := hs
     sig_pre [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, AArch64.abi, AArch64.argRegs]
@@ -135,15 +142,15 @@ theorem keyF_implies : (Spec.Sm4.expandKeyContract AArch64.abi).Implies keyF whe
     exact h
   pub s₁ s₂ _ _ h := by
     sig_reduce [Spec.Sm4.expandKeyContract, Spec.Sm4.expandKeySig, AArch64.abi, AArch64.argRegs]
-    obtain ⟨hsp, h0, h1⟩ := h
-    exact ⟨hsp, fun _ _ => by rw [h0, h1], fun _ hr => absurd hr List.not_mem_nil⟩
+    obtain ⟨⟨hsp, h0, h1⟩, hd⟩ := h
+    exact ⟨⟨hsp, hd⟩, fun _ _ => by rw [h0, h1], fun _ hr => absurd hr List.not_mem_nil⟩
   sat := ⟨keySat, by
     refine ⟨by decide, rfl, rfl, Region.disjoint_of_sep (by decide), Region.disjoint_of_sep (by decide),
       Region.disjoint_of_sep (by decide), by decide, by decide⟩⟩
 
 /-- `ctrF` from the contract with a frame of 224 bytes, which is within the
 3264 below the stack pointer. -/
-theorem ctrF_implies_sm4 : (Proof.Sm4.ctr32Contract AArch64.abi 224).Implies ctrF where
+theorem ctrF_implies_sm4 : (Proof.Sm4.ctr32Contract AArch64.abi 224).Implies ctrFd where
   pre s hs := by
     obtain ⟨hsp, hrd, hwr, d1, d2, d3, k1, k2, k3, f1, f2, f3⟩ := hs
     have sub : Region.Sub (below s.sp 224) (stk s.sp) := Offset.sub_below s.sp (by decide) (by decide)
@@ -155,21 +162,23 @@ theorem ctrF_implies_sm4 : (Proof.Sm4.ctr32Contract AArch64.abi 224).Implies ctr
     exact h
   pub s₁ s₂ _ _ h := by
     sig_reduce [Proof.Sm4.ctr32Contract, Proof.Sm4.ctr32Sig, AArch64.abi, AArch64.argRegs]
-    obtain ⟨hsp, h0, h1, h2, h3⟩ := h
-    exact ⟨hsp, fun _ _ => by rw [h0, h1, h2, h3], fun _ hr => absurd hr List.not_mem_nil⟩
+    obtain ⟨⟨hsp, h0, h1, h2, h3⟩, hd⟩ := h
+    exact ⟨⟨hsp, hd⟩, fun _ _ => by rw [h0, h1, h2, h3], fun _ hr => absurd hr List.not_mem_nil⟩
   sat := ctrF_implies.sat
 
 theorem ctr_ok : ∀ s, ctrF.pre s → ∃ t s', Exec isa ctrCode s t s' ∧ abiPreserved s s' ∧ ctrF.post s s' :=
   (Proof.Sm4.AArch64.ctr32_framed.of_implies ctrF_implies).1
 
 theorem ctr_ct : ConstantTime isa ctrF.pre ctrF.pub ctrCode :=
-  (Proof.Sm4.AArch64.ctr32_framed.of_implies ctrF_implies).2.1
+  ConstantTime.dropDit (by lit_decide) (Proof.Sm4.AArch64.ctr32_framed.of_implies ctrF_implies).2.1
+    (fun _ _ h => h) fun _ _ h => h
 
 theorem ctrSm4_ok : ∀ s, ctrF.pre s → ∃ t s', Exec isa ctrCodeSm4 s t s' ∧ abiPreserved s s' ∧ ctrF.post s s' :=
   (Proof.Sm4.AArch64.Sm4e.ctr32_framed.of_implies ctrF_implies_sm4).1
 
 theorem ctrSm4_ct : ConstantTime isa ctrF.pre ctrF.pub ctrCodeSm4 :=
-  (Proof.Sm4.AArch64.Sm4e.ctr32_framed.of_implies ctrF_implies_sm4).2.1
+  ConstantTime.dropDit (by lit_decide) (Proof.Sm4.AArch64.Sm4e.ctr32_framed.of_implies ctrF_implies_sm4).2.1
+    (fun _ _ h => h) fun _ _ h => h
 
 theorem ctr_depth : 16 * ctrCode.aarch64Depth ≤ 3264 := by lit_decide
 
@@ -184,13 +193,15 @@ theorem key_ok : ∀ s, keyF.pre s → ∃ t s', Exec isa keyCode s t s' ∧ abi
   (Proof.Sm4.AArch64.Serial.expandKey_verified.of_implies keyF_implies).1
 
 theorem key_ct : ConstantTime isa keyF.pre keyF.pub keyCode :=
-  (Proof.Sm4.AArch64.Serial.expandKey_verified.of_implies keyF_implies).2.1
+  ConstantTime.dropDit (by lit_decide) (Proof.Sm4.AArch64.Serial.expandKey_verified.of_implies keyF_implies).2.1
+    (fun _ _ h => h) fun _ _ h => h
 
 theorem keySm4_ok : ∀ s, keyF.pre s → ∃ t s', Exec isa keyCodeSm4 s t s' ∧ abiPreserved s s' ∧ keyF.post s s' :=
   (Proof.Sm4.AArch64.Sm4e.expandKey_verified.of_implies keyF_implies).1
 
 theorem keySm4_ct : ConstantTime isa keyF.pre keyF.pub keyCodeSm4 :=
-  (Proof.Sm4.AArch64.Sm4e.expandKey_verified.of_implies keyF_implies).2.1
+  ConstantTime.dropDit (by lit_decide) (Proof.Sm4.AArch64.Sm4e.expandKey_verified.of_implies keyF_implies).2.1
+    (fun _ _ h => h) fun _ _ h => h
 
 theorem key_depth : 16 * keyCode.aarch64Depth ≤ 3264 := by lit_decide
 

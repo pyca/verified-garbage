@@ -40,8 +40,8 @@ theorem Sig.rsp_of_pub {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem →
   split at h
   · exact h.elim
   · cases leak with
-    | none => exact h.1
-    | some f => exact h.1.1
+    | none => exact h.1.1
+    | some f => exact h.1.1.1
 
 /-! ## Contracts for callees that call -/
 

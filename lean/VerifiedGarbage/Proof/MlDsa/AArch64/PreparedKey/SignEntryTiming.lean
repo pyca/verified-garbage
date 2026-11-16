@@ -419,12 +419,12 @@ open VG.Proof.MlDsa.AArch64.Message
 /-- Replacing scalar rejection tails by the resident pair adds no stack depth. -/
 theorem samples_depth {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params) :
     16*(Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples P p).aarch64Depth≤S := by
-  have h1 : DLe (S/16) P.rejNtt := ⟨by have := hP.rejNtt.fd;omega_using [this]⟩
-  have h4 : DLe (S/16) P.rej4 := ⟨by have := hP.rej4.fd;omega_using [this]⟩
-  have hb : DLe (S/16) P.ball := ⟨by have := hP.ball.fd;omega_using [this]⟩
+  have h1 : DLe (S/16) P.rejNtt := ⟨by have := hP.rejNtt.fd; omega_using [this], hP.rejNtt.nd⟩
+  have h4 : DLe (S/16) P.rej4 := ⟨by have := hP.rej4.fd; omega_using [this], hP.rej4.nd⟩
+  have hb : DLe (S/16) P.ball := ⟨by have := hP.ball.fd; omega_using [this], hP.ball.nd⟩
   have h2 : DLe (S/16) Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code := by
     have hd : Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code.aarch64Depth=0 := by decide +kernel
-    exact ⟨by rw [hd];omega_using []⟩
+    exact ⟨by rw [hd];omega_using [], by lit_decide⟩
   have hd : DLe (S/16) (Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples P p) := by
     unfold Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples
       Impl.MlDsa.AArch64.Verify.OptimizedSamples.expAll
@@ -438,6 +438,27 @@ theorem samples_depth {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params) :
       dle_tac
   have := hd.le
   omega_using [this]
+
+theorem samples_noDit {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params)  :
+    (Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples P p).all (fun i => !i.touchesDit) = true := by
+  have h1 : DLe (S/16) P.rejNtt := ⟨by have := hP.rejNtt.fd; omega_using [this], hP.rejNtt.nd⟩
+  have h4 : DLe (S/16) P.rej4 := ⟨by have := hP.rej4.fd; omega_using [this], hP.rej4.nd⟩
+  have hb : DLe (S/16) P.ball := ⟨by have := hP.ball.fd; omega_using [this], hP.ball.nd⟩
+  have h2 : DLe (S/16) Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code := by
+    have hd : Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code.aarch64Depth=0 := by decide +kernel
+    exact ⟨by rw [hd];omega_using [], by lit_decide⟩
+  have hd : DLe (S/16) (Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples P p) := by
+    unfold Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples
+      Impl.MlDsa.AArch64.Verify.OptimizedSamples.expAll
+    split
+    · unfold Impl.MlDsa.AArch64.Verify.OptimizedSamples.expA4
+        Impl.MlDsa.AArch64.Verify.OptimizedSamples.tail2
+        Impl.MlDsa.AArch64.Optimized.MatrixMask.code
+      dle_tac
+    · unfold Impl.MlDsa.AArch64.Verify.OptimizedSamples.expA4
+        Impl.MlDsa.AArch64.Optimized.MatrixMask.code
+      dle_tac
+  exact hd.nd
 
 end VG.Proof.MlDsa.AArch64.Verify.OptimizedSamples
 
@@ -981,7 +1002,7 @@ private theorem twoCallee {S : Nat} (hS : S<2^64) :
   CalleeOk.of_verified hS VG.Proof.MlDsa.AArch64.Optimized.ResidentRej.two_verified
     (Nat.zero_le _) (by
       have hd : VG.Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code.aarch64Depth=0 := by decide +kernel
-      simp only [hd,Nat.mul_zero]; exact Nat.zero_le _)
+      simp only [hd,Nat.mul_zero]; exact Nat.zero_le _) (by lit_decide)
 
 theorem tail2_vpiece {S : Nat} (hS : S<2^64) {p : Params} (hF : VFacts p)
     (hmod : p.k*p.ℓ%4=2) :
@@ -1168,7 +1189,7 @@ theorem subtract_tr {p : Params} (hF : VFacts p) {S r : Nat} (hS : S<2^64) (hr :
   have hk:=hF.k;have hl:=hF.l;have hkl:=hF.kl;have hsc:=hF.scr
   have hc : accChk (vR p) (vW p) (wP p) (tm2P p)=true := by unfold accChk;vlay
   have C : CalleeOk S (Impl.MlDsa.AArch64.Optimized.AddSub.code true) (subContract abi S) :=
-    CalleeOk.of_verified hS AddSub.sub_verified (Nat.zero_le _) (by change 0≤S;omega)
+    CalleeOk.of_verified hS AddSub.sub_verified (Nat.zero_le _) (by change 0≤S;omega) (by lit_decide)
   apply accAt_tr (op:=sub) C (vOk p) hc
   intro x y hh
   obtain ⟨⟨σ,τ,hσ,hτ,pub,⟨h,A,c,q,hx,wx,tx⟩,⟨h',A',c',q',hy,wy,ty⟩⟩,_⟩:=hh
@@ -1353,16 +1374,29 @@ variable {keccak : Proof.Sha3.AArch64.Permutation}
 
 theorem hint_depth {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params) :
     16*(hint P p).aarch64Depth≤S := by
-  have hh : DLe (S/16) P.hintUnpack := ⟨by have:=hP.hintUnpack.fd;omega⟩
+  have hh : DLe (S/16) P.hintUnpack := ⟨by have := hP.hintUnpack.fd; omega, hP.hintUnpack.nd⟩
   have hd : DLe (S/16) (hint P p) := by unfold hint;dle_tac
   have := hd.le;omega
 
+theorem hint_noDit {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params)  :
+    (hint P p).all (fun i => !i.touchesDit) = true := by
+  have hh : DLe (S/16) P.hintUnpack := ⟨by have := hP.hintUnpack.fd; omega, hP.hintUnpack.nd⟩
+  have hd : DLe (S/16) (hint P p) := by unfold hint;dle_tac
+  exact hd.nd
+
 theorem zOne_depth {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params) (i : Nat) :
     16*(zOne P p i).aarch64Depth≤S := by
-  have hb : DLe (S/16) P.bitUnpack := ⟨by have:=hP.bitUnpack.fd;omega⟩
-  have hn : DLe (S/16) P.normLt := ⟨by have:=hP.normLt.fd;omega⟩
+  have hb : DLe (S/16) P.bitUnpack := ⟨by have := hP.bitUnpack.fd; omega, hP.bitUnpack.nd⟩
+  have hn : DLe (S/16) P.normLt := ⟨by have := hP.normLt.fd; omega, hP.normLt.nd⟩
   have hd : DLe (S/16) (zOne P p i) := by unfold zOne;dle_tac
   have := hd.le;omega
+
+theorem zOne_noDit {P : Prims} {S : Nat} (hP : PrimsOk P S) (p : Params) (i : Nat)  :
+    (zOne P p i).all (fun i => !i.touchesDit) = true := by
+  have hb : DLe (S/16) P.bitUnpack := ⟨by have := hP.bitUnpack.fd; omega, hP.bitUnpack.nd⟩
+  have hn : DLe (S/16) P.normLt := ⟨by have := hP.normLt.fd; omega, hP.normLt.nd⟩
+  have hd : DLe (S/16) (zOne P p i) := by unfold zOne;dle_tac
+  exact hd.nd
 
 end VG.Proof.MlDsa.AArch64.Verify.Optimized
 end
@@ -1500,6 +1534,7 @@ theorem row_optimized_tr
 theorem forward_dle (a : Impl.MlDsa.AArch64.Call.Ptr) :
     Message.DLe 1 (Impl.MlDsa.AArch64.Verify.Optimized.forward a) := by
   have hp := Message.DLe.of_fd (VG.Proof.MlDsa.AArch64.Optimized.positiveNtt_callee 16).fd
+    (VG.Proof.MlDsa.AArch64.Optimized.positiveNtt_callee 16).nd
   unfold Impl.MlDsa.AArch64.Verify.Optimized.forward
   dle_tac
 
@@ -1509,7 +1544,7 @@ theorem keyRow_dle {P : Prims}
   have hc : Message.DLe 1 (Impl.MlDsa.AArch64.PreparedKey.copy (tmP p) (.x21, 1024 * r) 1024) := by
     unfold Impl.MlDsa.AArch64.PreparedKey.copy
     split <;> dle_tac
-  have hu := Message.DLe.of_fd hP.unpackT1.fd
+  have hu := Message.DLe.of_fd hP.unpackT1.fd hP.unpackT1.nd
   have hf := forward_dle (tmP p)
   unfold Impl.MlDsa.AArch64.PreparedKey.Verify.keyRow
   dle_tac
@@ -1519,6 +1554,7 @@ theorem row_dle {P : Prims}
     Message.DLe 1 (Impl.MlDsa.AArch64.PreparedKey.Verify.row P p r) := by
   have hk := keyRow_dle hP p r
   have hinv := Message.DLe.of_fd (VG.Proof.MlDsa.AArch64.Optimized.Inverse.inverseSingle_callee 16).fd
+    (VG.Proof.MlDsa.AArch64.Optimized.Inverse.inverseSingle_callee 16).nd
   have hdot : Message.DLe 1 (Impl.MlDsa.AArch64.Optimized.MontDot.dot p.ℓ) := by
     unfold Impl.MlDsa.AArch64.Optimized.MontDot.dot
     dle_tac
@@ -1580,7 +1616,7 @@ theorem CachePiece.seqR {p : Params} {S : Nat} {f : Nat → Prog isa}
     exact (h a (Nat.le_refl _) (by omega)).seq tail
 
 theorem dle_first {a b : Prog isa} (h : Message.DLe 1 (.seq a b)) : Message.DLe 1 a :=
-  ⟨(Nat.max_le.mp h.le).1⟩
+  ⟨(Nat.max_le.mp h.le).1, by have := h.nd; simp only [Code.all, Bool.and_eq_true] at this; exact this.1⟩
 
 theorem depth16 {code : Prog isa} (h : Message.DLe 1 code) : 16 * code.aarch64Depth ≤ 16 := by
   simpa using Nat.mul_le_mul_left 16 h.le
@@ -1672,9 +1708,9 @@ theorem CachePiece.of_piece {p : Params} {I J : State → State → Prop} {code 
 
 theorem samples_scalar_dle {P : Prims} (hP : PrimsOk P 16) (p : Params) :
     Message.DLe 1 (Impl.MlDsa.AArch64.Verify.samples P p) := by
-  have hr := Message.DLe.of_fd hP.rejNtt.fd
-  have hr4 := Message.DLe.of_fd hP.rej4.fd
-  have hb := Message.DLe.of_fd hP.ball.fd
+  have hr := Message.DLe.of_fd hP.rejNtt.fd hP.rejNtt.nd
+  have hr4 := Message.DLe.of_fd hP.rej4.fd hP.rej4.nd
+  have hb := Message.DLe.of_fd hP.ball.fd hP.ball.nd
   unfold Impl.MlDsa.AArch64.Verify.samples
   dle_tac
 
@@ -1825,13 +1861,14 @@ public theorem verify_core_dle (v : Proof.Sha3.AArch64.Permutation) (p : Params)
   have hcomp : Message.DLe 1 (Impl.MlDsa.AArch64.PreparedKey.Verify.compute v.callee (primsWith v.callee) p) := by
     unfold Impl.MlDsa.AArch64.PreparedKey.Verify.compute
     exact Message.DLe.seq hvec (Message.DLe.seq hforward (Message.DLe.seq hrows hfinish))
-  have hhint := Message.DLe.of_fd (Verify.Optimized.hint_depth hP p)
-  have hz := Message.DLe.seqR (fun i => Message.DLe.of_fd (Verify.Optimized.zOne_depth hP p i)) 0 p.ℓ
+  have hhint := Message.DLe.of_fd (Verify.Optimized.hint_depth hP p) (Verify.Optimized.hint_noDit hP p)
+  have hz := Message.DLe.seqR (fun i => Message.DLe.of_fd (Verify.Optimized.zOne_depth hP p i)
+    (Verify.Optimized.zOne_noDit hP p i)) 0 p.ℓ
   have hsamples : Message.DLe 1 (if v.callee.pairedSha3 then
       Impl.MlDsa.AArch64.Verify.OptimizedSamples.samples (primsWith v.callee) p
       else Impl.MlDsa.AArch64.Verify.samples (primsWith v.callee) p) := by
     split
-    · exact Message.DLe.of_fd (OptimizedSamples.samples_depth hP p)
+    · exact Message.DLe.of_fd (OptimizedSamples.samples_depth hP p) (OptimizedSamples.samples_noDit hP p)
     · exact samples_scalar_dle hP p
   unfold Impl.MlDsa.AArch64.PreparedKey.Verify.core Impl.MlDsa.AArch64.PreparedKey.Verify.body
   dle_tac
@@ -2058,6 +2095,13 @@ theorem selectedExpansion_depth (v : VG.Proof.Sha3.AArch64.Permutation) (p : Par
   · exact CachedMatrix.expandA_depth (prims_okWith (keccak := v)) p
   · exact expandA_depth (prims_okWith (keccak := v)) p
 
+theorem selectedExpansion_noDit (v : VG.Proof.Sha3.AArch64.Permutation) (p : Params) :
+    (selectedExpansion v p).all (fun i => !i.touchesDit) = true := by
+  unfold selectedExpansion
+  split
+  · exact CachedMatrix.expandA_noDit (prims_okWith (keccak := v)) p
+  · exact expandA_noDit (prims_okWith (keccak := v)) p
+
 theorem selectedExpansion_ok (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params}
     (hp : Ok3 p) (hc : aChk p = true) {σ s : State} (h : RootedSt p 16 σ s)
     (h1 : s.gpr .x24 = 1) :
@@ -2127,13 +2171,13 @@ open VG.Proof.MlDsa.AArch64.Message
 open VG.Impl.MlDsa.AArch64.Sign
 
 theorem left_dle {d : Nat} {a b : Prog isa} (h : DLe d (.seq a b)) : DLe d a :=
-  ⟨(Nat.max_le.mp h.le).1⟩
+  ⟨(Nat.max_le.mp h.le).1, by have := h.nd; simp only [Code.all, Bool.and_eq_true] at this; exact this.1⟩
 
 theorem right_dle {d : Nat} {a b : Prog isa} (h : DLe d (.seq a b)) : DLe d b :=
-  ⟨(Nat.max_le.mp h.le).2⟩
+  ⟨(Nat.max_le.mp h.le).2, by have := h.nd; simp only [Code.all, Bool.and_eq_true] at this; exact this.2⟩
 
 theorem then_dle {d : Nat} {c : isa.Cond} {a b : Prog isa} (h : DLe d (.ite c a b)) : DLe d a :=
-  ⟨(Nat.max_le.mp h.le).1⟩
+  ⟨(Nat.max_le.mp h.le).1, by have := h.nd; simp only [Code.all, Bool.and_eq_true] at this; exact this.1⟩
 
 theorem selectedLoop_dle (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p) :
     DLe 1 (selectedLoop v p) := by
@@ -2154,7 +2198,7 @@ theorem selectedLoop_dle (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (h
 
 theorem core_dle (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 p) :
     DLe 1 (Impl.MlDsa.AArch64.PreparedKey.Sign.core v.callee (primsWith v.callee) p) := by
-  have he : DLe 1 (selectedExpansion v p) := .of_fd (selectedExpansion_depth v p)
+  have he : DLe 1 (selectedExpansion v p) := .of_fd (selectedExpansion_depth v p) (selectedExpansion_noDit v p)
   have hl := selectedLoop_dle v hp
   have hi := initialization_dle v p
   have old := pairedSignWith_dle v hp
@@ -2162,7 +2206,8 @@ theorem core_dle (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params} (hp : Ok3 
   change DLe 1 (.seq (.block pro) (.seq (selectedExpansion v p)
     (.seq (ifOk (.seq (Impl.MlDsa.AArch64.PreparedKey.Sign.initialization v.callee (primsWith v.callee) p)
       (.seq (selectedLoop v p) (ifOk (Optimized.output (primsWith v.callee) p))))) (.block epi))))
-  exact .seq (.block _) (.seq he (.seq (.ite (.seq hi (.seq hl hout)) (.block _)) (.block _)))
+  exact .seq (.block _ (by lit_decide)) (.seq he (.seq (.ite (.seq hi (.seq hl hout)) (.block _ rfl))
+    (.block _ (by lit_decide))))
 
 end VG.Proof.MlDsa.AArch64.PreparedKey
 
@@ -3179,12 +3224,12 @@ theorem shared_verify_pub {p : Params} {x y : State}
     vPub p 48 x y ∧ (x.gpr .x4 = y.gpr .x4 ∧ x.gpr .x5 = y.gpr .x5) ∧ Sign.RootSymbolsEq x y := by
   have hab : Verify.OptimizedSelected.selectedAbi = abi.withConsts Sign.signRootConsts := rfl
   rw [hab] at h
-  sig_pub [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs,
+  sig_pub_keep [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs,
     Abi.withConsts, Sign.signRootConsts_eq] at h
-  obtain ⟨hsp, hf, hi, hb, h0, h1, h2, h3, h4, h5⟩ := h
+  obtain ⟨hsp, hd, hf, hi, hb, h0, h1, h2, h3, h4, h5⟩ := h
   refine ⟨?_, ⟨h4, h5⟩, ⟨hf, hi⟩⟩
   sig_pub [vPub, verifyContract, verifySig, abi, VG.AArch64.argRegs]
-  exact ⟨hsp, hb, h0, h1, h2, h3⟩
+  exact ⟨hsp, hd, hb, h0, h1, h2, h3⟩
 
 def SharedVerifyRel (p : Params) (x y : State) : Prop :=
   (verifyWithCacheContract p (Verify.OptimizedSelected.selectedAbi) 48).pre x ∧
@@ -3197,7 +3242,7 @@ theorem setup_verify_pub {p : Params} (hp : Sign.Ok3 p)
     (hy : VG.Proof.MlKem.AArch64.Only [.x21, .x22] (signPushed τ) y)
     (x21 : x.gpr .x21 = σ.gpr .x4) (x22 : x.gpr .x22 = σ.gpr .x5)
     (y21 : y.gpr .x21 = τ.gpr .x4) (y22 : y.gpr .x22 = τ.gpr .x5)
-    (xs : x.syms = σ.syms) (ys : y.syms = τ.syms) :
+    (xs : x.syms = σ.syms) (ys : y.syms = τ.syms) (dx : x.dit = σ.dit) (dy : y.dit = τ.dit) :
     (verifyCoreK p).pub (x.withRegions σ.rd σ.wr) (y.withRegions τ.rd τ.wr) := by
   have nx := setup_verify_inputs hp h.1 (sign_setup_narrow hx) x21 x22 xs
   have ny := setup_verify_inputs hp h.2.1 (sign_setup_narrow hy) y21 y22 ys
@@ -3209,7 +3254,7 @@ theorem setup_verify_pub {p : Params} (hp : Sign.Ok3 p)
     rw [hsp]
   refine ⟨?_, ?_, ?_⟩
   · sig_pub [vPub, verifyContract, verifySig, abi, VG.AArch64.argRegs]
-    refine ⟨esp, ?_, ?_, ?_, ?_, ?_⟩
+    refine ⟨esp, dx.trans ((vPub_dit pub).trans dy.symm), ?_, ?_, ?_, ?_, ?_⟩
     · change leakBytes (vPk p _ ++ vMu _ ++ vSig p _) = leakBytes (vPk p _ ++ vMu _ ++ vSig p _)
       have xpk : vPk p x = vPk p σ := nx.2.1
       have xmu : vMu x = vMu σ := nx.2.2.1
@@ -3288,7 +3333,8 @@ theorem verify_withCache_ct (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params}
         obtain ⟨u, eu⟩ := trace_narrow (verify_core_correct v hp) px rx wx bx
         obtain ⟨w, ew⟩ := trace_narrow (verify_core_correct v hp) py ry wy by'
         have hp' := setup_verify_pub hp h hx hy x21 x22 y21 y22
-          xs ys
+          xs ys (by have := Exec.dit (c := .block [.addImm .x .x21 .x4 0, .addImm .x .x22 .x5 0]) (by decide) ax; exact this)
+          (by have := Exec.dit (c := .block [.addImm .x .x21 .x4 0, .addImm .x .x22 .x5 0]) (by decide) ay; exact this)
         have hc := verify_core_ct v hp _ _ _ _ _ _ px py hp' eu ew
         exact ⟨by rw [hmeta, hc], trivial⟩
   intro x y tx ty x' y' hx hy hpub ex ey
@@ -3368,6 +3414,33 @@ def operationSetup (p : Params) (sign prepared : Bool) : List Instr :=
     if prepared then lea .x4 .x0 p.pkLen ++ movV .x5 (1024 * p.k)
     else [.addImm .x .x4 .x0 0] ++ movV .x5 0
 
+theorem movV_noWriteDit (d : Reg) (v : Nat) : ∀ i ∈ movV d v, i.writesDit = false := by
+  intro i hi
+  unfold movV Impl.MlKem.AArch64.movImm at hi
+  split at hi <;> simp only [List.mem_cons, List.not_mem_nil, or_false] at hi <;>
+    rcases hi with rfl | rfl | rfl | rfl <;> rfl
+
+theorem lea_noWriteDit (d b : Reg) (off : Nat) : ∀ i ∈ lea d b off, i.writesDit = false := by
+  intro i hi
+  unfold lea at hi
+  split at hi
+  · simp only [List.mem_singleton] at hi; subst hi; rfl
+  · rcases List.mem_append.mp hi with hi | hi
+    · exact movV_noWriteDit d off i hi
+    · simp only [List.mem_singleton] at hi; subst hi; rfl
+
+/-- The setup never writes PSTATE.DIT (`Exec.dit`). -/
+theorem operationSetup_noWriteDit (p : Params) (sign prepared : Bool) :
+    (Code.block (operationSetup p sign prepared) : Prog isa).all (fun i => !i.writesDit) = true := by
+  simp only [Code.all, List.all_eq_true, Bool.not_eq_eq_eq_not, Bool.not_true]
+  intro i hi
+  unfold operationSetup at hi
+  split at hi <;> split at hi <;> rcases List.mem_append.mp hi with hi | hi
+  all_goals first
+    | exact lea_noWriteDit _ _ _ i hi
+    | exact movV_noWriteDit _ _ i hi
+    | (simp only [List.mem_singleton] at hi; subst hi; rfl)
+
 theorem operationSetup_ok (p : Params) (sign prepared : Bool) (s : State) :
     WP isa (.block (operationSetup p sign prepared)) s fun t =>
       Only (if sign then [.x5, .x6] else [.x4, .x5]) s t ∧
@@ -3395,14 +3468,19 @@ theorem sign_withCache_dle (v : VG.Proof.Sha3.AArch64.Permutation) {p : Params}
       (Impl.MlDsa.AArch64.PreparedKey.Sign.withCache v.callee (Sign.primsWith v.callee) p) := by
   have hd := (core_dle v hp).le
   exact ⟨by simpa only [Impl.MlDsa.AArch64.PreparedKey.Sign.withCache,
-    Code.aarch64Depth, Nat.zero_max, Instr.frameUnits] using Nat.add_le_add_right hd 2⟩
+    Code.aarch64Depth, Nat.zero_max, Instr.frameUnits] using Nat.add_le_add_right hd 2, by
+    simp only [Impl.MlDsa.AArch64.PreparedKey.Sign.withCache, Code.all, (core_dle v hp).nd, Bool.and_true]
+    rfl⟩
 
 theorem verify_withCache_dle (v : VG.Proof.Sha3.AArch64.Permutation) (p : Params) : Message.DLe 3
       (Impl.MlDsa.AArch64.PreparedKey.Verify.withCache v.callee
         (VG.Impl.MlDsa.AArch64.KeyGen.primsWith v.callee) p) := by
   have hd := (verify_core_dle v p).le
   exact ⟨by simpa only [Impl.MlDsa.AArch64.PreparedKey.Verify.withCache,
-    Code.aarch64Depth, Nat.zero_max, Instr.frameUnits] using Nat.add_le_add_right hd 2⟩
+    Code.aarch64Depth, Nat.zero_max, Instr.frameUnits] using Nat.add_le_add_right hd 2, by
+    simp only [Impl.MlDsa.AArch64.PreparedKey.Verify.withCache, Code.all, (verify_core_dle v p).nd,
+      Bool.and_true]
+    rfl⟩
 
 theorem prepared_public_cache_frame {p : Params} {m m' : Mem} {key : Addr} {W : List Region}
     (h : PreparedPublicKey p m key) (hf : Frame W m m')
@@ -3755,10 +3833,18 @@ theorem verify_entry_pub {p : Params} (hp : Sign.Ok3 p) {prepared : Bool} {σ τ
     (x4 : x.gpr .x4 = σ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.pkLen else 0))
     (x5 : x.gpr .x5 = BitVec.ofNat 64 (if prepared then 1024 * p.k else 0))
     (y4 : y.gpr .x4 = τ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.pkLen else 0))
-    (y5 : y.gpr .x5 = BitVec.ofNat 64 (if prepared then 1024 * p.k else 0)) :
+    (y5 : y.gpr .x5 = BitVec.ofNat 64 (if prepared then 1024 * p.k else 0))
+    (dx : x.dit = σ.dit) (dy : y.dit = τ.dit) :
     (verifyWithCacheContract p abi 48).pub
       (x.callEntry.withRegions (verifyEntryRd p x) σ.wr)
       (y.callEntry.withRegions (verifyEntryRd p y) τ.wr) := by
+  have hd : σ.dit = τ.dit := by
+    cases prepared
+    all_goals
+      simp only [rawVerifyK, Bool.false_eq_true, ↓reduceIte] at pub
+      sig_pub_keep [verifyContract, verifySig, preparedVerifyContract, preparedVerifySig,
+        abi, VG.AArch64.argRegs] at pub
+      exact pub.2.1
   have snapsX := verify_entry_snapshots hp px ox
   have snapsY := verify_entry_snapshots hp py oy
   have base : σ.sp = τ.sp ∧
@@ -3774,7 +3860,7 @@ theorem verify_entry_pub {p : Params} (hp : Sign.Ok3 p) {prepared : Bool} {σ τ
         abi, VG.AArch64.argRegs] at pub
       exact pub
   sig_pub [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs]
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, dx.trans (hd.trans dy.symm), ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [ox.sp, oy.sp]
     exact congrArg (· - 16) base.1
   · rw [snapsX.1, snapsX.2.1, snapsX.2.2, snapsY.1, snapsY.2.1, snapsY.2.2]
@@ -4132,13 +4218,13 @@ theorem raw_verify_constants_pub {p : Params} {prepared : Bool} {x y : State}
   cases prepared
   all_goals
     simp only [rawVerifyK, Bool.false_eq_true, ↓reduceIte] at h ⊢
-    sig_pub [verifyContract, verifySig, preparedVerifyContract, preparedVerifySig,
+    sig_pub_keep [verifyContract, verifySig, preparedVerifyContract, preparedVerifySig,
       abi, VG.AArch64.argRegs, Abi.withConsts, signRootConsts_eq] at h
-    obtain ⟨sp, hf, hi, leak, h0, h1, h2, h3⟩ := h
+    obtain ⟨sp, hd, hf, hi, leak, h0, h1, h2, h3⟩ := h
     refine ⟨?_, hf, hi⟩
     sig_pub [verifyContract, verifySig, preparedVerifyContract, preparedVerifySig,
       abi, VG.AArch64.argRegs]
-    exact ⟨sp, leak, h0, h1, h2, h3⟩
+    exact ⟨sp, hd, leak, h0, h1, h2, h3⟩
 
 theorem verify_entry_constants_pub {p : Params} (hp : Ok3 p) {prepared : Bool} {σ τ x y : State}
     (px : (rawVerifyK p prepared (abi.withConsts signRootConsts)).pre σ)
@@ -4150,18 +4236,19 @@ theorem verify_entry_constants_pub {p : Params} (hp : Ok3 p) {prepared : Bool} {
     (x4 : x.gpr .x4 = σ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.pkLen else 0))
     (x5 : x.gpr .x5 = BitVec.ofNat 64 (if prepared then 1024 * p.k else 0))
     (y4 : y.gpr .x4 = τ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.pkLen else 0))
-    (y5 : y.gpr .x5 = BitVec.ofNat 64 (if prepared then 1024 * p.k else 0)) :
+    (y5 : y.gpr .x5 = BitVec.ofNat 64 (if prepared then 1024 * p.k else 0))
+    (dx : x.dit = σ.dit) (dy : y.dit = τ.dit) :
     (verifyWithCacheContract p (abi.withConsts signRootConsts) 48).pub
       (x.callEntry.withRegions (verifyEntryRd p x ++ verifyRootRd x) σ.wr)
       (y.callEntry.withRegions (verifyEntryRd p y ++ verifyRootRd y) τ.wr) := by
   have pub0 := raw_verify_constants_pub pub
   have base := verify_entry_pub hp (raw_verify_constants px).1 (raw_verify_constants py).1
-    pub0.1 (operation_reset_rd ox _) (operation_reset_rd oy _) x4 x5 y4 y5
-  sig_pub [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs] at base
+    pub0.1 (operation_reset_rd ox _) (operation_reset_rd oy _) x4 x5 y4 y5 dx dy
+  sig_pub_keep [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs] at base
   sig_pub [verifyWithCacheContract, verifyWithCacheSig, verifySig, abi, VG.AArch64.argRegs,
     Abi.withConsts, signRootConsts_eq]
-  obtain ⟨sp, leak, h0, h1, h2, h3, h4, h5⟩ := base
-  exact ⟨sp, by simpa only [sx, sy] using pub0.2.1,
+  obtain ⟨sp, hd, leak, h0, h1, h2, h3, h4, h5⟩ := base
+  exact ⟨sp, hd, by simpa only [sx, sy] using pub0.2.1,
     by simpa only [sx, sy] using pub0.2.2, leak, h0, h1, h2, h3, h4, h5⟩
 
 end VG.Proof.MlDsa.AArch64.PreparedKey
@@ -4183,7 +4270,7 @@ def VerifyConstCallRel (p : Params) (prepared : Bool) (x y : State) : Prop :=
     x.gpr .x5 = BitVec.ofNat 64 (if prepared then 1024 * p.k else 0) ∧
     y.gpr .x4 = τ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.pkLen else 0) ∧
     y.gpr .x5 = BitVec.ofNat 64 (if prepared then 1024 * p.k else 0) ∧
-    x.syms = σ.syms ∧ y.syms = τ.syms
+    x.syms = σ.syms ∧ y.syms = τ.syms ∧ x.dit = σ.dit ∧ y.dit = τ.dit
 
 def VerifySetupOut (p : Params) (prepared : Bool) (s t : State) : Prop :=
   (Only [.x4, .x5] s t ∧
@@ -4216,16 +4303,17 @@ theorem verify_entry_constants_ct {p : Params} (hp : Ok3 p) {name : String} {cod
       (.seq (.block (operationSetup p false prepared)) (.call name code)) (fun _ _ => True)
     refine RelCT.seq (R := VerifyConstCallRel p prepared) (RelCT.postDep
       (RelCT.mono (operationSetup_tr hp false prepared) (fun x y h => ?_) (fun _ _ _ => trivial))
-      (fun x y _ => ⟨verify_setup_syms_ok p prepared x, verify_setup_syms_ok p prepared y⟩)
+      (fun x y _ => ⟨WP.dit (operationSetup_noWriteDit _ _ _) (verify_setup_syms_ok p prepared x),
+        WP.dit (operationSetup_noWriteDit _ _ _) (verify_setup_syms_ok p prepared y)⟩)
       (fun x y x' y' h hx hy => ?_)) ?_
     · rcases h with ⟨σ, τ, h, rfl, rfl⟩
       exact ⟨(verify_entry_bases (raw_verify_constants_pub h.2.2).1).1,
         congrArg (· - 16) (hs σ τ h)⟩
     · rcases h with ⟨σ, τ, h, rfl, rfl⟩
-      exact ⟨σ, τ, h, hx.1.1, hy.1.1, hx.1.2.1, hx.1.2.2,
-        hy.1.2.1, hy.1.2.2, hx.2, hy.2⟩
+      exact ⟨σ, τ, h, hx.1.1.1, hy.1.1.1, hx.1.1.2.1, hx.1.1.2.2,
+        hy.1.1.2.1, hy.1.1.2.2, hx.1.2, hy.1.2, hx.2, hy.2⟩
     · apply RelCT.callEx hv hct
-      rintro x y ⟨σ, τ, h, ox, oy, x4, x5, y4, y5, sx, sy⟩
+      rintro x y ⟨σ, τ, h, ox, oy, x4, x5, y4, y5, sx, sy, dx, dy⟩
       have nx := operation_narrow ox
       have ny := operation_narrow oy
       refine ⟨verifyEntryRd p x ++ verifyRootRd x, σ.wr,
@@ -4236,7 +4324,7 @@ theorem verify_entry_constants_ct {p : Params} (hp : Ok3 p) {name : String} {cod
       · have py := verify_entry_constants_pre hp h.2.1 ny sy y4 y5
         simpa only [State.callEntry_withRegions, State.withRegions_withRegions,
           verifyEntryRd, verifyRootRd, State.withRegions_gpr, operation_region_syms] using py
-      · have pub := verify_entry_constants_pub hp h.1 h.2.1 h.2.2 nx ny sx sy x4 x5 y4 y5
+      · have pub := verify_entry_constants_pub hp h.1 h.2.1 h.2.2 nx ny sx sy x4 x5 y4 y5 dx dy
         simpa only [State.callEntry_withRegions, State.withRegions_withRegions,
           verifyEntryRd, verifyRootRd, State.withRegions_gpr, operation_region_syms] using pub
       · have cover := verify_entry_constants_covers h.1 nx sx x4 x5
@@ -4693,10 +4781,18 @@ theorem sign_entry_base_pub {p : Params} (hp : Ok3 p) {prepared : Bool} {σ τ x
     (x5 : x.gpr .x5 = σ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.skLen else 0))
     (x6 : x.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0))
     (y5 : y.gpr .x5 = τ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.skLen else 0))
-    (y6 : y.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0)) :
+    (y6 : y.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0))
+    (dx : x.dit = σ.dit) (dy : y.dit = τ.dit) :
     (signWithCacheContract p abi 48).pub
       (x.callEntry.withRegions (signEntryRd p x) σ.wr)
       (y.callEntry.withRegions (signEntryRd p y) τ.wr) := by
+  have hd : σ.dit = τ.dit := by
+    cases prepared
+    all_goals
+      simp only [rawSignK, Bool.false_eq_true, ↓reduceIte] at pub
+      sig_pub_keep [signContract, signSig, preparedSignContract, preparedSignSig, abi,
+        VG.AArch64.argRegs] at pub
+      exact pub.2.1
   have snapsX := sign_entry_snapshots hp px ox
   have snapsY := sign_entry_snapshots hp py oy
   have base : σ.sp = τ.sp ∧
@@ -4712,7 +4808,7 @@ theorem sign_entry_base_pub {p : Params} (hp : Ok3 p) {prepared : Bool} {σ τ x
       sig_pub [signContract, signSig, preparedSignContract, preparedSignSig, abi, VG.AArch64.argRegs] at pub
       exact pub
   sig_pub [signWithCacheContract, signWithCacheSig, signSig, abi, VG.AArch64.argRegs]
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨?_, dx.trans (hd.trans dy.symm), ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · rw [ox.sp, oy.sp]
     exact congrArg (· - 16) base.1
   · rw [snapsX.1, snapsX.2.1, snapsX.2.2, snapsY.1, snapsY.2.1, snapsY.2.2]
@@ -4736,13 +4832,13 @@ theorem raw_sign_constants_pub {p : Params} {prepared : Bool} {x y : State}
   cases prepared
   all_goals
     simp only [rawSignK, Bool.false_eq_true, ↓reduceIte] at h ⊢
-    sig_pub [signContract, signSig, preparedSignContract, preparedSignSig,
+    sig_pub_keep [signContract, signSig, preparedSignContract, preparedSignSig,
       abi, VG.AArch64.argRegs, Abi.withConsts, pairedSignRootConsts_eq] at h
-    obtain ⟨sp, hf, hi, hp', leak, h0, h1, h2, h3, h4⟩ := h
+    obtain ⟨sp, hd, hf, hi, hp', leak, h0, h1, h2, h3, h4⟩ := h
     refine ⟨?_, hf, hi, hp'⟩
     sig_pub [signContract, signSig, preparedSignContract, preparedSignSig,
       abi, VG.AArch64.argRegs]
-    exact ⟨sp, leak, h0, h1, h2, h3, h4⟩
+    exact ⟨sp, hd, leak, h0, h1, h2, h3, h4⟩
 
 theorem sign_entry_pub {p : Params} (hp : Ok3 p) {prepared : Bool} {σ τ x y : State}
     (px : (rawSignK p prepared (abi.withConsts pairedSignRootConsts)).pre σ)
@@ -4754,18 +4850,19 @@ theorem sign_entry_pub {p : Params} (hp : Ok3 p) {prepared : Bool} {σ τ x y : 
     (x5 : x.gpr .x5 = σ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.skLen else 0))
     (x6 : x.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0))
     (y5 : y.gpr .x5 = τ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.skLen else 0))
-    (y6 : y.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0)) :
+    (y6 : y.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0))
+    (dx : x.dit = σ.dit) (dy : y.dit = τ.dit) :
     (signWithCacheContract p (abi.withConsts pairedSignRootConsts) 48).pub
       (x.callEntry.withRegions (signEntryRd p x ++ signRootRd x) σ.wr)
       (y.callEntry.withRegions (signEntryRd p y ++ signRootRd y) τ.wr) := by
   have pub0 := raw_sign_constants_pub pub
   have base := sign_entry_base_pub hp (raw_sign_constants px).1 (raw_sign_constants py).1
-    pub0.1 (operation_reset_rd ox _) (operation_reset_rd oy _) x5 x6 y5 y6
-  sig_pub [signWithCacheContract, signWithCacheSig, signSig, abi, VG.AArch64.argRegs] at base
+    pub0.1 (operation_reset_rd ox _) (operation_reset_rd oy _) x5 x6 y5 y6 dx dy
+  sig_pub_keep [signWithCacheContract, signWithCacheSig, signSig, abi, VG.AArch64.argRegs] at base
   sig_pub [signWithCacheContract, signWithCacheSig, signSig, abi, VG.AArch64.argRegs,
     Abi.withConsts, pairedSignRootConsts_eq]
-  obtain ⟨sp, leak, h0, h1, h2, h3, h4, h5, h6⟩ := base
-  exact ⟨sp, by simpa only [sx, sy] using pub0.2.1,
+  obtain ⟨sp, hd, leak, h0, h1, h2, h3, h4, h5, h6⟩ := base
+  exact ⟨sp, hd, by simpa only [sx, sy] using pub0.2.1,
     by simpa only [sx, sy] using pub0.2.2.1, by simpa only [sx, sy] using pub0.2.2.2,
     leak, h0, h1, h2, h3, h4, h5, h6⟩
 
@@ -4797,7 +4894,7 @@ def SignEntryCallRel (p : Params) (prepared : Bool) (x y : State) : Prop :=
     x.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0) ∧
     y.gpr .x5 = τ.gpr .x0 + BitVec.ofNat 64 (if prepared then p.skLen else 0) ∧
     y.gpr .x6 = BitVec.ofNat 64 (if prepared then 1024 * (p.ℓ + 2 * p.k) else 0) ∧
-    x.syms = σ.syms ∧ y.syms = τ.syms
+    x.syms = σ.syms ∧ y.syms = τ.syms ∧ x.dit = σ.dit ∧ y.dit = τ.dit
 
 def SignEntrySetupOut (p : Params) (prepared : Bool) (s t : State) : Prop :=
   (Only [.x5, .x6] s t ∧
@@ -4827,16 +4924,17 @@ theorem sign_entry_ct {p : Params} (hp : Ok3 p) {name : String} {code : Prog isa
       (.seq (.block (operationSetup p true prepared)) (.call name code)) (fun _ _ => True)
     refine RelCT.seq (R := SignEntryCallRel p prepared) (RelCT.postDep
       (RelCT.mono (operationSetup_tr hp true prepared) (fun x y h => ?_) (fun _ _ _ => trivial))
-      (fun x y _ => ⟨sign_entry_setup_syms_ok p prepared x, sign_entry_setup_syms_ok p prepared y⟩)
+      (fun x y _ => ⟨WP.dit (operationSetup_noWriteDit _ _ _) (sign_entry_setup_syms_ok p prepared x),
+        WP.dit (operationSetup_noWriteDit _ _ _) (sign_entry_setup_syms_ok p prepared y)⟩)
       (fun x y x' y' h hx hy => ?_)) ?_
     · rcases h with ⟨σ, τ, h, rfl, rfl⟩
       exact ⟨(sign_entry_bases (raw_sign_constants_pub h.2.2).1).1,
         congrArg (· - 16) (hs σ τ h)⟩
     · rcases h with ⟨σ, τ, h, rfl, rfl⟩
-      exact ⟨σ, τ, h, hx.1.1, hy.1.1, hx.1.2.1, hx.1.2.2,
-        hy.1.2.1, hy.1.2.2, hx.2, hy.2⟩
+      exact ⟨σ, τ, h, hx.1.1.1, hy.1.1.1, hx.1.1.2.1, hx.1.1.2.2,
+        hy.1.1.2.1, hy.1.1.2.2, hx.1.2, hy.1.2, hx.2, hy.2⟩
     · apply RelCT.callEx hv hct
-      rintro x y ⟨σ, τ, h, ox, oy, x5, x6, y5, y6, sx, sy⟩
+      rintro x y ⟨σ, τ, h, ox, oy, x5, x6, y5, y6, sx, sy, dx, dy⟩
       have nx := operation_narrow ox
       have ny := operation_narrow oy
       refine ⟨signEntryRd p x ++ signRootRd x, σ.wr,
@@ -4847,7 +4945,7 @@ theorem sign_entry_ct {p : Params} (hp : Ok3 p) {name : String} {code : Prog isa
       · have py := sign_entry_constants_pre hp h.2.1 ny sy y5 y6
         simpa only [State.callEntry_withRegions, State.withRegions_withRegions,
           signEntryRd, signRootRd, State.withRegions_gpr, operation_region_syms] using py
-      · have pub := sign_entry_pub hp h.1 h.2.1 h.2.2 nx ny sx sy x5 x6 y5 y6
+      · have pub := sign_entry_pub hp h.1 h.2.1 h.2.2 nx ny sx sy x5 x6 y5 y6 dx dy
         simpa only [State.callEntry_withRegions, State.withRegions_withRegions,
           signEntryRd, signRootRd, State.withRegions_gpr, operation_region_syms] using pub
       · have cover := sign_entry_constants_covers h.1 nx sx x5 x6

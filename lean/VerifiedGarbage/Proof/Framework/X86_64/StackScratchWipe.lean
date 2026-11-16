@@ -188,7 +188,7 @@ theorem Verified.stackScratchWiped {c : Prog isa}
   · obtain ⟨u₁, _, _, f₁, _, _, x₁, _⟩ := hrun s₁ h₁
     obtain ⟨u₂, _, _, f₂, _, _, x₂, _⟩ := hrun s₂ h₂
     rw [(Exec.det e₁ x₁).1, (Exec.det e₂ x₂).1]
-    have hsp₁₂ : s₁.gpr .rsp = s₂.gpr .rsp := ((pub_regs (by omega_using [hk]) hl).mp hp).1
+    have hsp₁₂ : s₁.gpr .rsp = s₂.gpr .rsp := ((pub_regs (by omega_using [hk]) hl).mp hp).1.1
     rw [hct _ _ _ _ _ _ (narrow_pre hk hb hst h₁ hl) (narrow_pre hk hb hst h₂ hl)
       (narrow_pub hk hp hl) f₁ f₂, hsp₁₂]
 

@@ -96,7 +96,7 @@ theorem pub_regs {sig : Sig} {pre : Curry (sig.words abi.ptrBits) (Mem → Prop)
     {wa : Bool} {stack : Nat} {s₁ s₂ : State} (hk : (sig.words abi.ptrBits).length ≤ 6)
     (hl : Sig.noLists sig.params = true) :
     (sig.contract abi pre post wa stack none).pub s₁ s₂ ↔
-      s₁.gpr .rsp = s₂.gpr .rsp ∧
+      (s₁.gpr .rsp = s₂.gpr .rsp ∧ s₁.mxcsr = s₂.mxcsr) ∧
       ∀ i, (sig.params.flatMap (·.2.pubs)).getD i false = true →
         ((regArgs sig s₁).getD i 0).setWidth (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD i 64) =
           ((regArgs sig s₂).getD i 0).setWidth (((sig.words abi.ptrBits).map (·.bits abi.ptrBits)).getD i 64) := by
@@ -301,13 +301,13 @@ theorem narrow_pub (hk : (sig.words abi.ptrBits).length < 6) {s₁ s₂ : State}
     (Sig.scratchContract abi sig nm e n pre post wa stack).pub (narrow sig e n bytes s₁)
       (narrow sig e n bytes s₂) := by
   rw [pub_regs (by omega_using [hk]) hl] at hp
-  obtain ⟨hsp, hpa⟩ := hp
+  obtain ⟨⟨hsp, hmx⟩, hpa⟩ := hp
   refine (pub_regs (sig := sig.withScratch nm e n) (pre := Curry.withScratch abi.ptrBits nm e n sig.params pre)
     (post := Curry.withScratch abi.ptrBits nm e n sig.params post)
     (by rw [Sig.words_withScratch, List.length_append, List.length_singleton]; omega_using [hk])
     (Sig.noLists_withScratch nm e n hl)).mpr ?_
-  rw [narrow_regArgs hk, narrow_regArgs hk, narrow_rsp hk, narrow_rsp hk, hsp]
-  refine ⟨rfl, fun i hi => ?_⟩
+  rw [narrow_regArgs hk, narrow_regArgs hk, narrow_rsp hk, narrow_rsp hk, hsp, narrow_mxcsr, narrow_mxcsr, hmx]
+  refine ⟨⟨rfl, rfl⟩, fun i hi => ?_⟩
   have l₁ := regArgs_length sig s₁ (by omega_using [hk])
   have l₂ := regArgs_length sig s₂ (by omega_using [hk])
   have lp := Sig.pubs_length sig.params abi.ptrBits

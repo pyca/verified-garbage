@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Dsa.AArch64.ProbablePrime.Params
 public import VerifiedGarbage.Proof.Framework.AArch64.Depth
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 
 /-! # The probable-prime tests parameter generation calls
 
@@ -18,6 +19,8 @@ structure PrimeTest where
   verified : ∀ bits, ProbablePrime.Supported bits →
     Verified target (code bits) (ProbablePrime.contract bits)
   depth : ∀ bits, 16 * (code bits).aarch64Depth ≤ ProbablePrime.stack
+  /-- It never touches PSTATE.DIT (`ConstantTime.withDit`). -/
+  noDit : ∀ bits, ProbablePrime.Supported bits → (code bits).all (fun i => !i.touchesDit) = true
 
 /-- The call of the test of `bits` bits. -/
 def PrimeTest.run (T : PrimeTest) (bits : Nat) : Prog isa := .call (T.name bits) (T.code bits)

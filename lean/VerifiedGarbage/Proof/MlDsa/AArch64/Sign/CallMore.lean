@@ -37,10 +37,19 @@ open VG.Spec.Sha3 (bytesAt)
 /-! ## Results that are public -/
 
 /-- The result `w0` of `c` is the same in two runs from states that satisfy
-`k.pre` and agree on `k.pub`. -/
+`k.pre` and agree on `k.pub` but for the mode (`Contract.ditFree`). -/
 def RetPub (k : Contract isa) (c : Prog isa) : Prop :=
-  RelCT isa (fun s₁ s₂ => k.pre s₁ ∧ k.pre s₂ ∧ k.pub s₁ s₂) c
+  RelCT isa (fun s₁ s₂ => k.pre s₁ ∧ k.pre s₂ ∧ k.ditFree.pub s₁ s₂) c
     fun s₁ s₂ => (s₁.gpr .x0).setWidth 32 = (s₂.gpr .x0).setWidth 32
+
+/-- Code that never touches the mode and whose result is public in its own runs
+under its public data with the mode has it public without (`Exec.withDit`). -/
+theorem RetPub.of_noDit {k : Contract isa} {c : Prog isa} (hc : c.all (fun i => !i.touchesDit) = true)
+    (hpre : ∀ s d, k.pre s → k.pre (s.withDit d))
+    (h : RelCT isa (fun s₁ s₂ => k.pre s₁ ∧ k.pre s₂ ∧ k.pub s₁ s₂) c
+      fun s₁ s₂ => (s₁.gpr .x0).setWidth 32 = (s₂.gpr .x0).setWidth 32) : RetPub k c :=
+  fun s₁ s₂ t₁ t₂ s₁' s₂' ⟨p₁, p₂, hp⟩ e₁ e₂ =>
+    h s₁ (s₂.withDit s₁.dit) t₁ t₂ s₁' (s₂'.withDit s₁.dit) ⟨p₁, hpre _ _ p₂, hp⟩ e₁ (Exec.withDit hc e₂ _)
 
 /-- The run of verified code from a state with more permissions than its
 contract gives it is the run its contract describes, but for the permissions. -/
@@ -62,7 +71,7 @@ theorem RelCT.callRet {n : String} {c : Prog isa} {k : Contract isa}
     (hr : RetPub k c) {P : State → State → Prop} (rd wr : List Region)
     (hP : ∀ s₁ s₂, P s₁ s₂ →
       k.pre (s₁.callEntry.withRegions rd wr) ∧ k.pre (s₂.callEntry.withRegions rd wr) ∧
-      k.pub (s₁.callEntry.withRegions rd wr) (s₂.callEntry.withRegions rd wr) ∧
+      k.ditFree.pub (s₁.callEntry.withRegions rd wr) (s₂.callEntry.withRegions rd wr) ∧
       Covers (rd ++ wr) (s₁.rd ++ s₁.wr) ∧ Covers wr s₁.wr ∧
       Covers (rd ++ wr) (s₂.rd ++ s₂.wr) ∧ Covers wr s₂.wr) :
     RelCT isa P (.call n c) fun s₁ s₂ => (s₁.gpr .x0).setWidth 32 = (s₂.gpr .x0).setWidth 32 := by
@@ -92,7 +101,7 @@ theorem callAt_trRet {S : Nat} {n : String} {c : Prog isa} {k : Contract isa} (C
     {P : State → State → Prop}
     (hP : ∀ x y x1 y1, P x y → Args as x x1 → Args as y y1 → ∃ rd wr : List Region,
       k.pre (x1.callEntry.withRegions rd wr) ∧ k.pre (y1.callEntry.withRegions rd wr) ∧
-      k.pub (x1.callEntry.withRegions rd wr) (y1.callEntry.withRegions rd wr) ∧
+      k.ditFree.pub (x1.callEntry.withRegions rd wr) (y1.callEntry.withRegions rd wr) ∧
       Covers (rd ++ wr) (x.rd ++ x.wr) ∧ Covers wr x.wr ∧
       Covers (rd ++ wr) (y.rd ++ y.wr) ∧ Covers wr y.wr) :
     RelCT isa P (callAt n c as) fun s₁ s₂ => (s₁.gpr .x0).setWidth 32 = (s₂.gpr .x0).setWidth 32 :=
@@ -101,7 +110,7 @@ theorem callAt_trRet {S : Nat} {n : String} {c : Prog isa} {k : Contract isa} (C
       fun x y _ _ hp h1 h2 => ⟨x, y, hp, h1, h2⟩)
     (RelCT.mono (RelCT.exists_ (P := fun (a : List Region × List Region) (x1 y1 : State) =>
         k.pre (x1.callEntry.withRegions a.1 a.2) ∧ k.pre (y1.callEntry.withRegions a.1 a.2) ∧
-        k.pub (x1.callEntry.withRegions a.1 a.2) (y1.callEntry.withRegions a.1 a.2) ∧
+        k.ditFree.pub (x1.callEntry.withRegions a.1 a.2) (y1.callEntry.withRegions a.1 a.2) ∧
         Covers (a.1 ++ a.2) (x1.rd ++ x1.wr) ∧ Covers a.2 x1.wr ∧
         Covers (a.1 ++ a.2) (y1.rd ++ y1.wr) ∧ Covers a.2 y1.wr)
       fun a => RelCT.callRet C.correct hr a.1 a.2 fun _ _ h => h)
@@ -116,7 +125,7 @@ theorem inlineBody_trRet {c : Prog isa} {k : Contract isa}
     (hv : ∀s,k.pre s → ∃t s',Exec isa c s t s' ∧ abiPreserved s s' ∧ k.post s s')
     (hr : RetPub k c) {P : State → State → Prop} (rd wr : List Region)
     (hP : ∀x y,P x y → k.pre (x.withRegions rd wr) ∧ k.pre (y.withRegions rd wr) ∧
-      k.pub (x.withRegions rd wr) (y.withRegions rd wr) ∧
+      k.ditFree.pub (x.withRegions rd wr) (y.withRegions rd wr) ∧
       Covers (rd++wr) (x.rd++x.wr) ∧ Covers wr x.wr ∧
       Covers (rd++wr) (y.rd++y.wr) ∧ Covers wr y.wr) :
     RelCT isa P c fun x y=>(x.gpr .x0).setWidth 32=(y.gpr .x0).setWidth 32 := by
@@ -132,7 +141,7 @@ theorem inlineAt_trRet {S : Nat} {c : Prog isa} {k : Contract isa} (C : CalleeOk
     {P : State → State → Prop}
     (hP : ∀ x y x1 y1, P x y → Args as x x1 → Args as y y1 → ∃ rd wr : List Region,
       k.pre (x1.withRegions rd wr) ∧ k.pre (y1.withRegions rd wr) ∧
-      k.pub (x1.withRegions rd wr) (y1.withRegions rd wr) ∧
+      k.ditFree.pub (x1.withRegions rd wr) (y1.withRegions rd wr) ∧
       Covers (rd ++ wr) (x.rd ++ x.wr) ∧ Covers wr x.wr ∧
       Covers (rd ++ wr) (y.rd ++ y.wr) ∧ Covers wr y.wr) :
     RelCT isa P (.seq (.block (glue as)) c) fun s₁ s₂ => (s₁.gpr .x0).setWidth 32 = (s₂.gpr .x0).setWidth 32 :=
@@ -141,7 +150,7 @@ theorem inlineAt_trRet {S : Nat} {c : Prog isa} {k : Contract isa} (C : CalleeOk
       fun x y _ _ hp h1 h2 => ⟨x, y, hp, h1, h2⟩)
     (RelCT.mono (RelCT.exists_ (P := fun (a : List Region × List Region) (x1 y1 : State) =>
         k.pre (x1.withRegions a.1 a.2) ∧ k.pre (y1.withRegions a.1 a.2) ∧
-        k.pub (x1.withRegions a.1 a.2) (y1.withRegions a.1 a.2) ∧
+        k.ditFree.pub (x1.withRegions a.1 a.2) (y1.withRegions a.1 a.2) ∧
         Covers (a.1 ++ a.2) (x1.rd ++ x1.wr) ∧ Covers a.2 x1.wr ∧
         Covers (a.1 ++ a.2) (y1.rd ++ y1.wr) ∧ Covers a.2 y1.wr)
       fun a => inlineBody_trRet C.correct hr a.1 a.2 fun _ _ h => h)

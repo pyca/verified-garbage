@@ -43,6 +43,7 @@ theorem call_callEntry (s : State) : isa.call s = some s.callEntry := rfl
 @[simp] theorem State.callEntry_sp (s : State) : s.callEntry.sp = s.sp := rfl
 @[simp] theorem State.callEntry_mem (s : State) : s.callEntry.mem = s.mem := rfl
 @[simp] theorem State.callEntry_v (s : State) : s.callEntry.v = s.v := rfl
+@[simp] theorem State.callEntry_dit (s : State) : s.callEntry.dit = s.dit := rfl
 
 theorem State.callEntry_gpr (s : State) {r : Reg} (h : r ∉ linkRegs) : s.callEntry.gpr r = s.gpr r := by
   simp only [linkRegs, List.mem_cons, List.not_mem_nil, or_false, not_or] at h
@@ -137,6 +138,8 @@ def allocated (bytes : Nat) (s : State) : State :=
   { s with
     sp := s.sp - BitVec.ofNat 64 bytes
     wr := ⟨s.sp - BitVec.ofNat 64 bytes, bytes⟩ :: s.wr }
+
+@[simp] theorem allocated_dit (bytes : Nat) (s : State) : (allocated bytes s).dit = s.dit := rfl
 
 /-- State after releasing that buffer. No register or memory is changed. -/
 def freed (bytes : Nat) (s : State) : State :=

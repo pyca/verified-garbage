@@ -26,6 +26,7 @@ def variant : PublicImpl where
   keepsV := by decide +kernel
   spSafe := Code.all_of_forall (fun _ => rfl) _
   depth := by decide +kernel
+  noDit := by lit_decide
   suffix := ""
   features := []
 

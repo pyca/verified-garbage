@@ -1281,7 +1281,7 @@ open VG.Impl.MlDsa.AArch64.Optimized.Paired
 
 theorem pairedLow_callee (S : Nat) : CalleeOk S (selected .r0)
     (pairedLowContract (abi.withConsts pairedConsts)) :=
-  ⟨pairedLow_verified.1,pairedLow_verified.2.1,Nat.zero_le _⟩
+  CalleeOk.of_ct pairedLow_verified.1 pairedLow_verified.2.1 (by lit_decide) (fun _ _ h => h) (Nat.zero_le _)
 
 abbrev pairedLowArgs (c secret out low work : Ptr) (g B : Nat) : List (Reg × Arg) :=
   [(.x0,.ptr c),(.x1,.ptr secret),(.x2,.ptr out),(.x3,.ptr low),(.x4,.ptr work),(.x5,.imm g),(.x6,.imm B)]

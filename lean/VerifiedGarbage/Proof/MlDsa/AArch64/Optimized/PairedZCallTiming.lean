@@ -517,7 +517,7 @@ open VG.Impl.MlDsa.AArch64.Optimized.Paired
 
 theorem pairedZ_callee (S : Nat) :
     CalleeOk S (selected .z) (pairedZContract (abi.withConsts pairedConsts)) := by
-  refine ⟨pairedZ_verified.1,pairedZ_verified.2.1,?_⟩
+  refine CalleeOk.of_ct pairedZ_verified.1 pairedZ_verified.2.1 (by lit_decide) (fun _ _ h => h) ?_
   change 0≤S
   exact Nat.zero_le _
 

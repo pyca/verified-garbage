@@ -39,4 +39,17 @@ theorem selected_depth (v : Proof.Sha3.AArch64.Permutation) : (selected v.callee
   split
   · exact codeWith_depth Proof.Sha3.AArch64.Sha3.ResidentBackend.backend
   · exact Sample.ball_depth v
+
+theorem codeWith_noDit (v : Proof.Sha3.AArch64.Permutation) :
+    (codeWith v.callee).all (fun i => !i.touchesDit) = true := by
+  simp only [codeWith,zeroWide,first,second,loop,earlyBody,Impl.MlDsa.AArch64.Sample.bTry,
+    Code.all,sponge_noDit v,v.squeeze_noDit,Bool.true_and]
+  decide
+
+theorem selected_noDit (v : Proof.Sha3.AArch64.Permutation) :
+    (selected v.callee).all (fun i => !i.touchesDit) = true := by
+  unfold selected
+  split
+  · exact codeWith_noDit Proof.Sha3.AArch64.Sha3.ResidentBackend.backend
+  · exact Sample.ball_noDit v
 end VG.Proof.MlDsa.AArch64.Optimized.Ball

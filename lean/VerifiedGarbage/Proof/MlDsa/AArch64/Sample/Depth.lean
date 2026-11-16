@@ -30,4 +30,28 @@ theorem expandMask_depth : (expandMaskWith v.callee).aarch64Depth = 1 := by
   simp only [expandMaskWith, expandMaskTailWith, emLoop, Code.aarch64Depth, sponge_depth v,
     Nat.max_self, Nat.max_zero, Nat.zero_max]
 
+/-! ## No access to the mode -/
+
+theorem sponge_noDit (rate len : Nat) : (spongeWith v.callee rate len).all (fun i => !i.touchesDit) = true := by
+  simp only [spongeWith, Code.all, v.absorb_noDit, v.pad_noDit, v.squeeze_noDit, Bool.and_true, List.all_append]
+  simp only [absArgs, padArgs, sqzArgs, List.all_cons, List.all_nil, Instr.touchesDit, Bool.not_false,
+    Bool.and_true]
+  decide
+
+theorem rejNTT_noDit : (rejNTTWith v.callee).all (fun i => !i.touchesDit) = true := by
+  simp only [rejNTTWith, zeroPoly, rnLoop, rnBody, Code.all, sponge_noDit v, Bool.true_and]
+  decide
+
+theorem rejBounded_noDit : (rejBoundedWith v.callee).all (fun i => !i.touchesDit) = true := by
+  simp only [rejBoundedWith, rbLoop, rbBody, Code.all, sponge_noDit v, Bool.true_and]
+  decide
+
+theorem ball_noDit : (sampleInBallWith v.callee).all (fun i => !i.touchesDit) = true := by
+  simp only [sampleInBallWith, zeroPoly, bLoop, bBody, bTry, Code.all, sponge_noDit v, Bool.true_and]
+  decide
+
+theorem expandMask_noDit : (expandMaskWith v.callee).all (fun i => !i.touchesDit) = true := by
+  simp only [expandMaskWith, expandMaskTailWith, emLoop, Code.all, sponge_noDit v, Bool.true_and]
+  decide
+
 end VG.Proof.MlDsa.AArch64.Sample

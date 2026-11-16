@@ -83,11 +83,11 @@ open VG.Proof.MlDsa.AArch64.Message
 
  theorem expandA_depth {P : Prims} {S : Nat} (hp : PrimsOk P S) (p : Params) :
     16*(Impl.MlDsa.AArch64.Sign.CachedMatrix.expandA P p).aarch64Depth≤S := by
-  have hr : DLe (S/16) P.rejNTT := ⟨by have := hp.rejNTT.fd; omega_using [this]⟩
-  have h4 : DLe (S/16) P.rej4 := ⟨by have := hp.rej4.fd; omega_using [this]⟩
+  have hr : DLe (S/16) P.rejNTT := ⟨by have := hp.rejNTT.fd; omega_using [this], hp.rejNTT.nd⟩
+  have h4 : DLe (S/16) P.rej4 := ⟨by have := hp.rej4.fd; omega_using [this], hp.rej4.nd⟩
   have h2 : DLe (S/16) Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code := by
     have hd : Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code.aarch64Depth=0 := by decide +kernel
-    exact ⟨by rw [hd]; omega_using []⟩
+    exact ⟨by rw [hd]; omega_using [], by lit_decide⟩
   have hd : DLe (S/16) (Impl.MlDsa.AArch64.Sign.CachedMatrix.expandA P p) := by
     unfold Impl.MlDsa.AArch64.Sign.CachedMatrix.expandA
     split
@@ -97,6 +97,22 @@ open VG.Proof.MlDsa.AArch64.Message
       dle_tac
   have := hd.le
   omega_using [this]
+
+theorem expandA_noDit {P : Prims} {S : Nat} (hp : PrimsOk P S) (p : Params)  :
+    (Impl.MlDsa.AArch64.Sign.CachedMatrix.expandA P p).all (fun i => !i.touchesDit) = true := by
+  have hr : DLe (S/16) P.rejNTT := ⟨by have := hp.rejNTT.fd; omega_using [this], hp.rejNTT.nd⟩
+  have h4 : DLe (S/16) P.rej4 := ⟨by have := hp.rej4.fd; omega_using [this], hp.rej4.nd⟩
+  have h2 : DLe (S/16) Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code := by
+    have hd : Impl.MlDsa.AArch64.Optimized.ResidentRej.Two.code.aarch64Depth=0 := by decide +kernel
+    exact ⟨by rw [hd]; omega_using [], by lit_decide⟩
+  have hd : DLe (S/16) (Impl.MlDsa.AArch64.Sign.CachedMatrix.expandA P p) := by
+    unfold Impl.MlDsa.AArch64.Sign.CachedMatrix.expandA
+    split
+    · unfold Impl.MlDsa.AArch64.Sign.CachedMatrix.tail
+      dle_tac
+    · unfold Impl.MlDsa.AArch64.Sign.expandA
+      dle_tac
+  exact hd.nd
 
  theorem rooted_expandA_ok {P : Prims} {S : Nat} (hp : PrimsOk P S) {p : Params}
     (h3 : Ok3 p) (hc : aChk p=true) {σ s : State} (hs : RootedSt p S σ s)

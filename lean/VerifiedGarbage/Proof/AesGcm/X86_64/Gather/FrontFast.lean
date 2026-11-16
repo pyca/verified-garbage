@@ -86,8 +86,9 @@ theorem Pub.eFront {s₀ s₀' : State} (pb : Pub s₀ s₀') (long : Bool) :
 /-- `Same` through code that writes only `rax`, `r10`, `r11` and the flags. -/
 theorem Same.step {s st st' : State} (hs : Same s st)
     (g : ∀ r, r ≠ .rax → r ≠ .r10 → r ≠ .r11 → st'.gpr r = st.gpr r) (hm : st'.mem = st.mem)
-    (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr) : Same s st' :=
-  ⟨fun r a b c => (g r a b c).trans (hs.gpr r a b c), hm.trans hs.mem, hrd.trans hs.rd, hwr.trans hs.wr⟩
+    (hrd : st'.rd = st.rd) (hwr : st'.wr = st.wr) (hmx : st'.mxcsr = st.mxcsr := by rfl) : Same s st' :=
+  ⟨fun r a b c => (g r a b c).trans (hs.gpr r a b c), hm.trans hs.mem, hrd.trans hs.rd, hwr.trans hs.wr,
+    hmx.trans hs.mx⟩
 
 section
 variable {M : CtxMode} {s : State} (hp : SG M s)
@@ -314,15 +315,16 @@ structure FBase (s st : State) : Prop where
   rdx : st.gpr .rdx = Nn s
   r8 : st.gpr .r8 = Ad s
   r9 : st.gpr .r9 = AL s
+  mx : st.mxcsr = s.mxcsr
 
 /-- `FBase` through code that changes no memory and writes none of its
 registers. -/
 theorem FBase.regs {s st st' : State} (h : FBase s st) (hm : st'.mem = st.mem)
     (g : ∀ r, r ∈ calleeSaved ∨ r = .rdx ∨ r = .r8 ∨ r = .r9 → st'.gpr r = st.gpr r) (hrd : st'.rd = st.rd)
-    (hwr : st'.wr = st.wr) : FBase s st' :=
+    (hwr : st'.wr = st.wr) (hmx : st'.mxcsr = st.mxcsr := by rfl) : FBase s st' :=
   ⟨by rw [g _ (Or.inl (by decide)), h.rsp], fun r hr => by rw [g r (Or.inl hr), h.saved r hr], hrd.trans h.rd,
     hwr.trans h.wr, hm ▸ h.frame, hm ▸ h.ctx, hm ▸ h.rounds, by rw [g _ (by simp), h.rdx],
-    by rw [g _ (by simp), h.r8], by rw [g _ (by simp), h.r9]⟩
+    by rw [g _ (by simp), h.r8], by rw [g _ (by simp), h.r9], hmx.trans h.mx⟩
 
 section
 variable {M : CtxMode} {s : State} (hp : SG M s)
@@ -350,7 +352,7 @@ theorem fastEntry_ok {st : State} (hs : Same s st) :
   refine ⟨_, by
     simp only [fastEntry, gCtx, gRounds]
     xrun [a₀, e₀, a₁, e₁, a₅, e₅, w 0 (by decide), w 8 (by decide), gdi, gsi, i1], ?_, ?_, ?_⟩
-  · refine ⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · refine ⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, hs.mx⟩
     · simp [gpr_setReg, gpr_arithFlags, sp]
     · have a : r ≠ .rax := by intro e; subst e; simp [calleeSaved] at hr
       have b : r ≠ .r10 := by intro e; subst e; simp [calleeSaved] at hr
@@ -479,10 +481,10 @@ theorem fastLoop_wp (hc : Cnt s = 2) (hn : sl s 1 ≠ 0) {st : State} (h : FBase
   have hsl : (⟨sb s 1, sl s 1⟩ : Region) ∈ lsR s := slice_mem s (i := 1) (by omega_arith)
   have c0 : CInv st (sb s 1) (Dst s + BitVec.ofNat 64 (fl s)) 0 st :=
     ⟨h10, by simp [bytesAt]; rfl, fun _ _ _ _ => rfl, rfl, rfl⟩
-  refine WP.mono (chunks_wp (P := fun j t => CInv st (sb s 1) (Dst s + BitVec.ofNat 64 (fl s)) j t ∧
+  refine WP.mono_mx (by decide) (chunks_wp (P := fun j t => CInv st (sb s 1) (Dst s + BitVec.ofNat 64 (fl s)) j t ∧
       t.gpr .r8 = st.gpr .r8)
     (fun j t ⟨c, r8⟩ hj => let ⟨t', e, c', z, r8'⟩ := copy1Step_ok8 hcp c hj; ⟨t', e, ⟨c', r8'.trans r8⟩, z⟩)
-    (by decide) (⟨c0, rfl⟩ : _ ∧ _) (by omega_arith) (Nat.mod_one _)) fun t ⟨c, r8⟩ => ?_
+    (by decide) (⟨c0, rfl⟩ : _ ∧ _) (by omega_arith) (Nat.mod_one _)) fun t ⟨c, r8⟩ tm => ?_
   have hsub : Region.Sub ⟨Dst s + BitVec.ofNat 64 (fl s), sl s 1⟩ (dR s) := by
     have := dK_sub hp (s := s); rw [← hgl, Nat.add_sub_cancel_left] at this; exact this
   have hlen : (bytesAt st.mem (sb s 1) (sl s 1)).length = sl s 1 := length_bytesAt _ _ _
@@ -502,7 +504,7 @@ theorem fastLoop_wp (hc : Cnt s = 2) (hn : sl s 1 ≠ 0) {st : State} (h : FBase
   refine ⟨⟨by rw [keep _ (Or.inl (by decide)), h.rsp], fun r hr => by rw [keep r (Or.inl hr), h.saved r hr],
     c.rd.trans h.rd, c.wr.trans h.wr, h.frame.trans (fD.sub fun r hr => ?_), by rw [k 0 (by decide)]; exact h.ctx,
     by rw [k 8 (by decide)]; exact h.rounds, by rw [keep _ (by simp), h.rdx], by rw [keep _ (by simp), h.r8],
-    by rw [keep _ (by simp), h.r9]⟩, ?_⟩
+    by rw [keep _ (by simp), h.r9], tm.trans h.mx⟩, ?_⟩
   · simp only [List.mem_singleton] at hr; subst hr; exact ⟨dR s, by simp, hsub⟩
   · unfold FOut
     have e := bytesAt_writeBytes_self st.mem (Dst s + BitVec.ofNat 64 (fl s)) (bytesAt st.mem (sb s 1) (sl s 1))
@@ -573,7 +575,7 @@ theorem fastArgs_ok (hn : s.gpr .rcx = 12#64) (hc : Cnt s ≠ 0) {st : State} (h
       have : r ≠ .rcx ∧ r ≠ .r10 ∧ r ≠ .rsi ∧ r ≠ .rdi ∧ r ≠ .rax ∧ r ≠ .r11 := by
         refine ⟨?_, ?_, ?_, ?_, ?_, ?_⟩ <;> (intro e; subst e; simp [calleeSaved] at hr)
       exact this
-    refine ⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+    refine ⟨?_, fun r hr => ?_, ?_, ?_, ?_, ?_, ?_, ?_, h.mx⟩
     · simp [gpr_setReg, h.rsp]
     · obtain ⟨a, b, c, d, e, f⟩ := g r hr
       simp [gpr_setReg, a, b, c, d, e, f, h.saved r hr]

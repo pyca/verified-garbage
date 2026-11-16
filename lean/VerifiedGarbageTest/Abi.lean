@@ -232,7 +232,7 @@ def x86_64Rdi (v : BitVec 64) : X86_64.State :=
 
 example : (pubU32.contract X86_64.abi (post := fun _ _ _ _ => True)).pub
     (x86_64Rdi 0x00000000_00000001) (x86_64Rdi 0xffffffff_00000001) :=
-  ⟨rfl, fun | 0, _ => rfl | _ + 1, _ => rfl, fun _ h => absurd h List.not_mem_nil⟩
+  ⟨⟨rfl, rfl⟩, fun | 0, _ => rfl | _ + 1, _ => rfl, fun _ h => absurd h List.not_mem_nil⟩
 
 example : ¬(pubU32.contract X86_64.abi (post := fun _ _ _ _ => True)).pub
     (x86_64Rdi 0x00000000_00000001) (x86_64Rdi 0x00000000_00000002) :=
@@ -244,7 +244,7 @@ def aarch64X0 (v : BitVec 64) : AArch64.State :=
 
 example : (pubU32.contract AArch64.abi (post := fun _ _ _ _ => True)).pub
     (aarch64X0 0x00000000_00000001) (aarch64X0 0xffffffff_00000001) :=
-  ⟨rfl, fun | 0, _ => rfl | _ + 1, _ => rfl, fun _ h => absurd h List.not_mem_nil⟩
+  ⟨⟨rfl, rfl⟩, fun | 0, _ => rfl | _ + 1, _ => rfl, fun _ h => absurd h List.not_mem_nil⟩
 
 example : ¬(pubU32.contract AArch64.abi (post := fun _ _ _ _ => True)).pub
     (aarch64X0 0x00000000_00000001) (aarch64X0 0x00000000_00000002) :=
@@ -374,7 +374,7 @@ def listState (m : Mem) : X86_64.State :=
 -- data; two that differ in a descriptor (a slice's length) do not.
 example : (listSig.contract X86_64.abi (post := fun _ _ _ _ _ _ => True)).pub
     (listState desc64) (listState (poke desc64 0x3000 5 0x1122334455)) := by
-  refine ⟨rfl, fun | 0, _ => rfl | 1, _ => rfl | 2, _ => rfl | _ + 3, _ => rfl, fun r hr => ?_⟩
+  refine ⟨⟨rfl, rfl⟩, fun | 0, _ => rfl | 1, _ => rfl | 2, _ => rfl | _ + 3, _ => rfl, fun r hr => ?_⟩
   have hr : r ∈ [(⟨0x2000, 32⟩ : Region)] := hr
   rw [List.mem_singleton] at hr
   subst hr

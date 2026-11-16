@@ -5,6 +5,7 @@ public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Framework.Contract
 public import VerifiedGarbage.Proof.Dsa.AArch64.SigningABI
 import VerifiedGarbage.Proof.Framework.Omega
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 
 /-! Call any registered supplied-nonce signer, retaining its contract and frame. -/
 @[expose] public section
@@ -26,6 +27,7 @@ structure Signer where
   sp : code.all (fun i => !isa.writesSp i) = true
   depth : 16 * code.aarch64Depth ≤ stack
   stackBound : stack < 2 ^ 32
+  noDit : code.all (fun i => !i.touchesDit) = true
 
 theorem signWith_pre {valid : Nat → Nat → List Byte → Bool} {s : State} {stack : Nat}
     (h : (signContractWith valid abi stack).pre s) :

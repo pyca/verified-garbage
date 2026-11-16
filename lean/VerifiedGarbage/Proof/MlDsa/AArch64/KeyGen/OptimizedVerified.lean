@@ -879,12 +879,12 @@ theorem keyGen_verified (v : Proof.Sha3.AArch64.Permutation) {p : Params}
     have preσ := staticRoots_entry (by decide) hσ
     have preτ := staticRoots_entry (by decide) hτ
     have pb : kgPub p 16 s t ∧ TableEq s t := by
-      sig_pub [keyGenContract,keyGenSig,abi,argRegs,Abi.withConsts,signRootConsts_eq] at pub
-      obtain ⟨hsp,hf,hi,hb,h0,h1,h2,h3⟩ := pub
+      sig_pub_keep [keyGenContract,keyGenSig,abi,argRegs,Abi.withConsts,signRootConsts_eq] at pub
+      obtain ⟨hsp,hd,hf,hi,hb,h0,h1,h2,h3⟩ := pub
       refine ⟨?_,hf,hi⟩
       dsimp only [kgPub]
       sig_pub [keyGenContract,keyGenSig,abi,argRegs]
-      exact ⟨hsp,hb,h0,h1,h2,h3⟩
+      exact ⟨hsp,hd,hb,h0,h1,h2,h3⟩
     exact codeWith_ct hP two_callee hF hs hdpre hdpack hdrow
       s t tr ur s' t' preσ preτ pb es et
 

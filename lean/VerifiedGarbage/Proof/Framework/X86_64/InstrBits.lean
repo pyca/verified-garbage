@@ -2,6 +2,7 @@ module
 
 public import VerifiedGarbage.Proof.Framework.X86_64.CallInline
 public import VerifiedGarbage.Proof.Framework.X86_64.ScrubChecks
+public import VerifiedGarbage.Proof.Framework.X86_64.ModeSim
 public import VerifiedGarbage.Proof.Framework.X86_64.Taint
 public import VerifiedGarbage.Proof.Framework.KernelList
 public import VerifiedGarbage.Proof.Framework.Semantics
@@ -11,7 +12,7 @@ public import VerifiedGarbage.Proof.Framework.SpTest
 # The tests of every instruction, in one match (x86-64)
 
 The proofs of a function's code have the kernel test every instruction of
-it: that it does not load MXCSR, that it leaves `rsp` as it is
+it: that it does not touch MXCSR (`touchesMxcsr`: nor load it), that it leaves `rsp` as it is
 (`Artifact.spSafe`), that it never writes `rsp`, not even as a frame does,
 that it does not touch `rsp` (`Code.InlineOk`). Each test is a `match` on
 the instruction, which costs the kernel from a tenth to a third of a
@@ -25,7 +26,7 @@ the tests of the mask `m` hold of `i`. The kernel remembers `instrBitsK i`,
 so the tests of an instruction cost one match however many of them, and
 pieces of code, are checked in a declaration, and `c.allInstrs (hasBits m)`
 is one walk of `c` for all the tests of `m`: `Code.noMx_of_bits`,
-`Code.sp_of_bits`, `Code.spSafe_of_bits`, `Code.noRsp_of_bits` and
+`Code.noTouchMx_of_bits`, `Code.sp_of_bits`, `Code.spSafe_of_bits`, `Code.noRsp_of_bits` and
 `Code.rspFree_of_bits` give each test's own statement from it.
 `Code.InlineOkB m` is `Code.InlineOk` and the tests of `m`, in one walk
 (`Code.inlineOk_of_B`, `Code.allInstrs_of_inlineOkB`).
@@ -35,7 +36,7 @@ is one walk of `c` for all the tests of `m`: `Code.noMx_of_bits`,
 
 namespace VG.X86_64
 
-/-- The mask of the test that an instruction does not load MXCSR. -/
+/-- The mask of the test that an instruction does not touch MXCSR, so does not load it. -/
 abbrev bMx : Nat := 1
 /-- The mask of the test that an instruction leaves `rsp` as it is (`Taint.keepsSp`). -/
 abbrev bSp : Nat := 2
@@ -46,10 +47,10 @@ abbrev bFree : Nat := 8
 
 /-- The tests of an instruction, as the bits of a number. -/
 def instrBits (i : Instr) : Nat :=
-  (!loadsMxcsr i).toNat + 2 * (Taint.keepsSp i).toNat + 4 * (!Taint.clobbers i .rsp).toNat + 8 * i.rspFree.toNat
+  (!touchesMxcsr i).toNat + 2 * (Taint.keepsSp i).toNat + 4 * (!Taint.clobbers i .rsp).toNat + 8 * i.rspFree.toNat
 
 /-- `instrBits`, in one match with its cases closed. -/
-def instrBitsK : Instr → Nat := inline_match% instrBits loadsMxcsr Taint.keepsSp Taint.clobbers Taint.dstOf Instr.rspFree
+def instrBitsK : Instr → Nat := inline_match% instrBits touchesMxcsr Taint.keepsSp Taint.clobbers Taint.dstOf Instr.rspFree
 
 theorem instrBitsK_eq (i : Instr) : instrBitsK i = instrBits i := by
   cases i with
@@ -68,14 +69,22 @@ theorem testBit_of_hasBits {m : Nat} {i : Instr} (k : Nat) (hm : m.testBit k = t
 
 /-- Each test is its bit of `instrBits`. -/
 theorem instrBits_bits (i : Instr) :
-    (instrBits i).testBit 0 = !loadsMxcsr i ∧ (instrBits i).testBit 1 = Taint.keepsSp i ∧
+    (instrBits i).testBit 0 = !touchesMxcsr i ∧ (instrBits i).testBit 1 = Taint.keepsSp i ∧
     (instrBits i).testBit 2 = !Taint.clobbers i .rsp ∧ (instrBits i).testBit 3 = i.rspFree := by
   unfold instrBits
-  cases loadsMxcsr i <;> cases Taint.keepsSp i <;> cases Taint.clobbers i .rsp <;> cases i.rspFree <;> decide
+  cases touchesMxcsr i <;> cases Taint.keepsSp i <;> cases Taint.clobbers i .rsp <;> cases i.rspFree <;> decide
+
+theorem noTouchMx_of_hasBits {m : Nat} {i : Instr} (hm : m.testBit 0 = true) (h : hasBits m i = true) :
+    (!touchesMxcsr i) = true :=
+  (instrBits_bits i).1.symm.trans (testBit_of_hasBits 0 hm h)
 
 theorem noMx_of_hasBits {m : Nat} {i : Instr} (hm : m.testBit 0 = true) (h : hasBits m i = true) :
-    (!loadsMxcsr i) = true :=
-  (instrBits_bits i).1.symm.trans (testBit_of_hasBits 0 hm h)
+    (!loadsMxcsr i) = true := by
+  have h := noTouchMx_of_hasBits hm h
+  unfold loadsMxcsr
+  split
+  · exact h
+  · rfl
 
 theorem keepsSp_of_hasBits {m : Nat} {i : Instr} (hm : m.testBit 1 = true) (h : hasBits m i = true) :
     Taint.keepsSp i = true :=
@@ -116,6 +125,11 @@ variable {m : Nat} {c : Prog isa}
 theorem Code.noMx_of_bits (hm : m.testBit 0 = true) (h : c.allInstrs (hasBits m) = true) :
     c.allInstrs (fun i => !loadsMxcsr i) = true :=
   Code.allInstrs_mono (fun _ => noMx_of_hasBits hm) h
+
+/-- No instruction touches MXCSR: of code whose instructions have the tests of `m`, `bMx` among them. -/
+theorem Code.noTouchMx_of_bits (hm : m.testBit 0 = true) (h : c.allInstrs (hasBits m) = true) :
+    c.allInstrs (fun i => !touchesMxcsr i) = true :=
+  Code.allInstrs_mono (fun _ => noTouchMx_of_hasBits hm) h
 
 /-- No instruction writes `rsp` but as a frame does, for `bSp`. -/
 theorem Code.sp_of_bits (hm : m.testBit 1 = true) (h : c.allInstrs (hasBits m) = true) :

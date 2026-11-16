@@ -51,7 +51,7 @@ theorem callee [VG.Proof.Ed25519.AArch64.Divstep.Sound] : Callee 32 4096 Spec.X2
     sig_post [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, AArch64.abi, AArch64.argRegs] at h
     exact h
   pub s₁ s₂ h := by
-    obtain ⟨q0, q1, q2, q3, qsp⟩ := h
+    obtain ⟨q0, q1, q2, q3, qsp, qd⟩ := h
     sig_pub [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, AArch64.abi, AArch64.argRegs]
     sig_reduce [Proof.X25519.x25519Contract, Proof.X25519.x25519Sig, AArch64.abi, AArch64.argRegs]
     sig_and_intros

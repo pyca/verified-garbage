@@ -1,5 +1,6 @@
 module
 
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 public import VerifiedGarbage.Proof.Scrypt.AArch64.Whole.Steps
 public import VerifiedGarbage.Proof.Pbkdf2.Contract
 import VerifiedGarbage.Proof.Scrypt.AArch64.RoMixCT
@@ -62,13 +63,13 @@ theorem pbk_post {s s' : State} (h : (Proof.Pbkdf2.Instance.pbkdf2ScratchContrac
     AArch64.abi, AArch64.argRegs] at h
   exact h
 
-theorem pbk_pub {s₁ s₂ : State} (h : pbkK.pub s₁ s₂) :
+theorem pbk_pub {s₁ s₂ : State} (h : pbkK.pub s₁ s₂) (hd : s₁.dit = s₂.dit) :
     (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I AArch64.abi 16).pub s₁ s₂ := by
   simp only [Proof.Pbkdf2.Instance.pbkdf2ScratchContract, Spec.Hmac.Instance.pbkdf2Scratch]
   sig_pub [Proof.Pbkdf2.pbkdf2ScratchContract, Proof.Pbkdf2.pbkdf2ScratchSig, Spec.Pbkdf2.pbkdf2Pre, Spec.Pbkdf2.pbkdf2Post, Spec.Hmac.sha256I, Spec.Hmac.sha256S,
     AArch64.abi, AArch64.argRegs]
   obtain ⟨h1, h2, h3, h4, h5, h6, h7, h8, h9⟩ := h
-  exact ⟨h9, h1, h2, h3, h4, h5, h6, h7, h8⟩
+  exact ⟨h9, hd, h1, h2, h3, h4, h5, h6, h7, h8⟩
 
 variable {pbk : Prog isa} (hv : Verified AArch64.target pbk (Proof.Pbkdf2.Instance.pbkdf2ScratchContract Spec.Hmac.sha256I AArch64.abi 16))
 include hv
@@ -78,8 +79,10 @@ theorem pbk_correct (s : State) (h : pbkK.pre s) :
   obtain ⟨t, s', he, ha, hp⟩ := hv.1 s (pbk_pre h)
   exact ⟨t, s', he, ha, pbk_post hp⟩
 
-theorem pbk_ct : ConstantTime isa pbkK.pre pbkK.pub pbk :=
-  fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ => hv.2.1 _ _ _ _ _ _ (pbk_pre h₁) (pbk_pre h₂) (pbk_pub hp) e₁ e₂
+/-- Its constant time, from its code never touching the mode (`ConstantTime.dropDit`). -/
+theorem pbk_ct (hnd : pbk.all (fun i => !i.touchesDit) = true) : ConstantTime isa pbkK.pre pbkK.pub pbk :=
+  ConstantTime.dropDit hnd (fun _ _ _ _ _ _ h₁ h₂ hp e₁ e₂ =>
+    hv.2.1 _ _ _ _ _ _ (pbk_pre h₁) (pbk_pre h₂) (pbk_pub hp.1 hp.2) e₁ e₂) (fun _ _ h => h) fun _ _ h => h
 
 end VG.Proof.Scrypt.AArch64.Whole
 

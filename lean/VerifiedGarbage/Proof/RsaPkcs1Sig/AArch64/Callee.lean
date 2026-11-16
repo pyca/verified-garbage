@@ -7,6 +7,7 @@ public import VerifiedGarbage.Proof.Framework.Sig
 public import VerifiedGarbage.Proof.Framework.AArch64.Call
 public import VerifiedGarbage.Proof.Framework.RelCT
 import VerifiedGarbage.Proof.Framework.Mem
+public import VerifiedGarbage.Proof.Framework.AArch64.ModeSim
 
 /-!
 # The RSA operations the signatures call, on AArch64
@@ -38,6 +39,7 @@ structure Callee (k : Nat → Contract isa) where
   depth : 16 * code.aarch64Depth ≤ stack
   pos : 0 < stack
   le : stack ≤ 2 ^ 20
+  noDit : code.all (fun i => !i.touchesDit) = true
   /-- What the names of the caller's instances end with, and the CPU
   features the code requires. -/
   suffix : String
@@ -160,7 +162,7 @@ theorem pdCallCT (c : PdChecked) {P : State → State → Prop}
       Spec.Rsa.bytesAt t₁.mem (t₁.gpr .x4) (t₁.gpr .x5).toNat =
         Spec.Rsa.bytesAt t₂.mem (t₂.gpr .x4) (t₂.gpr .x5).toNat) :
     RelCT isa P (.call c.name c.code) fun _ _ => True := by
-  refine RelCT.callEx c.verified.1 c.verified.2.1 fun t₁ t₂ hp => ?_
+  refine RelCT.callExDit c.verified.1 c.verified.2.1 c.noDit (fun _ _ h => h) fun t₁ t₂ hp => ?_
   obtain ⟨h₁, h₂, he, hn, hE⟩ := hP t₁ t₂ hp
   refine ⟨_, _, _, _, h₁.pre c.pos, h₂.pre c.pos, ?_,
     Covers.append_left (Covers.trans h₁.hrd (Covers.refl _)) (Covers.right h₁.hwr), h₁.hwr,
@@ -308,7 +310,7 @@ theorem privCallCT (c : PrivChecked) {P : State → State → Prop}
       Spec.Rsa.bytesAt t₁.mem (t₁.gpr .x4) (t₁.gpr .x5).toNat =
         Spec.Rsa.bytesAt t₂.mem (t₂.gpr .x4) (t₂.gpr .x5).toNat) :
     RelCT isa P (.call c.name c.code) fun _ _ => True := by
-  refine RelCT.callEx c.verified.1 c.verified.2.1 fun t₁ t₂ hp => ?_
+  refine RelCT.callExDit c.verified.1 c.verified.2.1 c.noDit (fun _ _ h => h) fun t₁ t₂ hp => ?_
   obtain ⟨h₁, h₂, he, hn, hE⟩ := hP t₁ t₂ hp
   refine ⟨_, _, _, _, h₁.pre c.pos, h₂.pre c.pos, ?_,
     Covers.append_left (Covers.trans h₁.hrd (Covers.refl _)) (Covers.right h₁.hwr), h₁.hwr,
@@ -415,7 +417,7 @@ theorem privPCallCT (c : PrivPChecked) {P : State → State → Prop}
       Spec.Rsa.wordsAt t₁.mem (stackArg t₁ 12) (Spec.Rsa.precomputedWords (t₁.gpr .x3).toNat) =
         Spec.Rsa.wordsAt t₂.mem (stackArg t₂ 12) (Spec.Rsa.precomputedWords (t₂.gpr .x3).toNat)) :
     RelCT isa P (.call c.name c.code) fun _ _ => True := by
-  refine RelCT.callEx c.verified.1 c.verified.2.1 fun t₁ t₂ hp => ?_
+  refine RelCT.callExDit c.verified.1 c.verified.2.1 c.noDit (fun _ _ h => h) fun t₁ t₂ hp => ?_
   obtain ⟨h₁, h₂, he, hn, hE, hw⟩ := hP t₁ t₂ hp
   refine ⟨_, _, _, _, h₁.pre c.pos, h₂.pre c.pos, ?_,
     Covers.append_left (Covers.trans h₁.covers (Covers.refl _)) (Covers.right h₁.ok.hwr), h₁.ok.hwr,
