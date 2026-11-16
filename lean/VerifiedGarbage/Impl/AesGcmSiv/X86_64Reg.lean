@@ -80,7 +80,7 @@ def derivePair : List Instr :=
   [.mov .rax (.mem (at_ .rdx 4)), .xop (.movq .xmm2 .rax),
    .mov32 .rax (.mem (at_ .rdx 0)), .shift .shl .rax 32, .alu .or .rax (.reg .rbx),
    .xop (.movq .xmm0 .rax), .xop (.bin .punpcklqdq .xmm0 .xmm2),
-   .alu .add .rax (imm 1), .xop (.movq .xmm1 .rax), .xop (.bin .punpcklqdq .xmm1 .xmm2)]
+   .alu .or .rax (imm 1), .xop (.movq .xmm1 .rax), .xop (.bin .punpcklqdq .xmm1 .xmm2)]
 
 /-- The first 8 bytes of `xmm0` and of `xmm1` at `W + akO + 8 · rbx`, with
 one 16-byte store; `rbx` two more, compared with `rounds / 2 − 1`. -/
