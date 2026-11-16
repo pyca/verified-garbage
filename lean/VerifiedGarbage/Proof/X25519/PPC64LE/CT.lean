@@ -1,8 +1,8 @@
 module
 
-public import VerifiedGarbage.Impl.X25519.PPC64LE
+public import VerifiedGarbage.Impl.X25519.PPC64LE.Fe51
 public import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
-meta import VerifiedGarbage.Impl.X25519.PPC64LE
+meta import VerifiedGarbage.Impl.X25519.PPC64LE.Fe51
 meta import VerifiedGarbage.Proof.Framework.PPC64LE.Taint
 
 /-!
@@ -22,7 +22,7 @@ open VG VG.PPC64LE
 theorem x25519_ct {Pre : State → Prop} {Pub : State → State → Prop}
     (hpub : ∀ s₁ s₂, Pre s₁ → Pre s₂ → Pub s₁ s₂ →
       s₁.sp = s₂.sp ∧ ∀ r ∈ [Reg.r3, .r4, .r5, .r6], s₁.gpr r = s₂.gpr r) :
-    ConstantTime isa Pre Pub Impl.X25519.PPC64LE.x25519 :=
+    ConstantTime isa Pre Pub Impl.X25519.PPC64LE.Fe51.x25519 :=
   VG.Taint.constantTime (A := taint) (Taint.ofRegs [.r3, .r4, .r5, .r6])
     (fun s₁ s₂ h₁ h₂ hp => by
       obtain ⟨hsp, hr⟩ := hpub s₁ s₂ h₁ h₂ hp
