@@ -155,7 +155,7 @@ jmp 23f
 jne 28b
 23:
 .base64 "8w9/Ag=="
-jmp 21f
+.byte 0x66, 0x90
 20:
 21:
 .base64 "Zg/vwGYP78lmD+/SMcAxyTH2RTHAww=="
