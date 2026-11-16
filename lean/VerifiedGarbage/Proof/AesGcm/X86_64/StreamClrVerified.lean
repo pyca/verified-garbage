@@ -33,8 +33,6 @@ of the rest of the body followed by it (`exec_swap`), with the same trace:
 contract (`Verified.hoist`) nor what it leaves.
 -/
 
--- separate module: its one importer, `Instances`, is rebuilt whenever a proof of AES-GCM on x86-64 changes; these proofs need no re-checking then
-
 @[expose] public section
 
 set_option linter.unusedSimpArgs false
@@ -674,14 +672,17 @@ theorem plain_wrap {c : Prog isa} (h : StackLock.Plain c) : StackLock.Plain (.se
 
 open StackLock in
 /-- Two runs of `vg_aes_gcm_stream_encrypt` clearing the registers after
-each call, from states `NoResidue` relates, end agreeing on the 24 bytes
+each call, from states with the same stack pointer that agree on the
+stack below it, end agreeing on the 24 bytes
 below its frame: the return addresses its calls leave there and the stack
 argument of the whole blocks (`streamS_same`, `framed_same`). -/
 theorem streamEncryptClrB_below (B : BlkFn CtxMode.base) (hct : Plain v.callees.ctr.code)
     (hgh : Plain v.callees.gh.code) (hn : UpperLock.inames B.enc.code = []) {s₁ s₂ : State}
     (h₁ : (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608).pre s₁)
     (h₂ : (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608).pre s₂)
-    (hp : (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608).pub s₁ s₂) (ho : Outside 0 s₁ s₂)
+    (hp : (Proof.AesGcm.streamEncryptRoundsContract X86_64.abi 2608).pub s₁ s₂) (hrsp : s₁.gpr .rsp = s₂.gpr .rsp)
+    (hm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 (24 + 2584), 24 + 2584⟩ : Region).Contains x 1 →
+      s₁.mem x = s₂.mem x)
     (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
     (e₁ : Exec isa (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamEncryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
     (e₂ : Exec isa (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamEncryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
@@ -702,7 +703,7 @@ theorem streamEncryptClrB_below (B : BlkFn CtxMode.base) (hct : Plain v.callees.
       (show UpperLock.inames (.seq B.enc.code (.block (clrAfter lv))) = [] by
         simp only [UpperLock.inames, hn, List.append_nil]) hs
       ((exec_hoist lv _ _ _ _).mp e₁) ((exec_hoist lv _ _ _ _).mp e₂))
-    (by decide) (by decide) (by decide) hsp hd (streamTextPre_local _) trivial h₁ h₂ hp ho hu e₁ e₂
+    (by decide) (by decide) (by decide) hsp hd (streamTextPre_local _) trivial h₁ h₂ hp hrsp hm hu e₁ e₂
 
 
 open StackLock in
@@ -711,7 +712,9 @@ theorem streamDecryptClrB_below (B : BlkFn CtxMode.base) (hct : Plain v.callees.
     (hgh : Plain v.callees.gh.code) (hn : UpperLock.inames B.dec.code = []) {s₁ s₂ : State}
     (h₁ : (Proof.AesGcm.streamDecryptRoundsContract X86_64.abi 2608).pre s₁)
     (h₂ : (Proof.AesGcm.streamDecryptRoundsContract X86_64.abi 2608).pre s₂)
-    (hp : (Proof.AesGcm.streamDecryptRoundsContract X86_64.abi 2608).pub s₁ s₂) (ho : Outside 0 s₁ s₂)
+    (hp : (Proof.AesGcm.streamDecryptRoundsContract X86_64.abi 2608).pub s₁ s₂) (hrsp : s₁.gpr .rsp = s₂.gpr .rsp)
+    (hm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 (24 + 2584), 24 + 2584⟩ : Region).Contains x 1 →
+      s₁.mem x = s₂.mem x)
     (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
     (e₁ : Exec isa (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamDecryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
     (e₂ : Exec isa (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamDecryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
@@ -732,7 +735,7 @@ theorem streamDecryptClrB_below (B : BlkFn CtxMode.base) (hct : Plain v.callees.
       (show UpperLock.inames (.seq B.dec.code (.block (clrAfter lv))) = [] by
         simp only [UpperLock.inames, hn, List.append_nil]) hs
       ((exec_hoist lv _ _ _ _).mp e₁) ((exec_hoist lv _ _ _ _).mp e₂))
-    (by decide) (by decide) (by decide) hsp hd (streamTextPre_local _) trivial h₁ h₂ hp ho hu e₁ e₂
+    (by decide) (by decide) (by decide) hsp hd (streamTextPre_local _) trivial h₁ h₂ hp hrsp hm hu e₁ e₂
 
 
 open StackLock in
@@ -741,7 +744,9 @@ theorem streamEncryptClr16_below (B : BlkFn CtxMode.prepared16) (hct : Plain v.c
     (hgh : Plain v.callees.gh.code) (hn : UpperLock.inames B.enc.code = []) {s₁ s₂ : State}
     (h₁ : (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pre s₁)
     (h₂ : (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pre s₂)
-    (hp : (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pub s₁ s₂) (ho : Outside 0 s₁ s₂)
+    (hp : (Proof.AesGcm.streamEncryptPrepared16RoundsContract X86_64.abi 2608).pub s₁ s₂) (hrsp : s₁.gpr .rsp = s₂.gpr .rsp)
+    (hm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 (24 + 2584), 24 + 2584⟩ : Region).Contains x 1 →
+      s₁.mem x = s₂.mem x)
     (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
     (e₁ : Exec isa (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamEncryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
     (e₂ : Exec isa (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamEncryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
@@ -762,7 +767,7 @@ theorem streamEncryptClr16_below (B : BlkFn CtxMode.prepared16) (hct : Plain v.c
       (show UpperLock.inames (.seq B.enc.code (.block (clrAfter lv))) = [] by
         simp only [UpperLock.inames, hn, List.append_nil]) hs
       ((exec_hoist lv _ _ _ _).mp e₁) ((exec_hoist lv _ _ _ _).mp e₂))
-    (by decide) (by decide) (by decide) hsp hd (Proof.AesGcm.streamCryptPrepared16Pre_local _) trivial h₁ h₂ hp ho hu e₁ e₂
+    (by decide) (by decide) (by decide) hsp hd (Proof.AesGcm.streamCryptPrepared16Pre_local _) trivial h₁ h₂ hp hrsp hm hu e₁ e₂
 
 
 open StackLock in
@@ -771,7 +776,9 @@ theorem streamDecryptClr16_below (B : BlkFn CtxMode.prepared16) (hct : Plain v.c
     (hgh : Plain v.callees.gh.code) (hn : UpperLock.inames B.dec.code = []) {s₁ s₂ : State}
     (h₁ : (Proof.AesGcm.streamDecryptPrepared16RoundsContract X86_64.abi 2608).pre s₁)
     (h₂ : (Proof.AesGcm.streamDecryptPrepared16RoundsContract X86_64.abi 2608).pre s₂)
-    (hp : (Proof.AesGcm.streamDecryptPrepared16RoundsContract X86_64.abi 2608).pub s₁ s₂) (ho : Outside 0 s₁ s₂)
+    (hp : (Proof.AesGcm.streamDecryptPrepared16RoundsContract X86_64.abi 2608).pub s₁ s₂) (hrsp : s₁.gpr .rsp = s₂.gpr .rsp)
+    (hm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 (24 + 2584), 24 + 2584⟩ : Region).Contains x 1 →
+      s₁.mem x = s₂.mem x)
     (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
     (e₁ : Exec isa (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamDecryptClr (v.withBlk B) lv)) s₁ t₁ u₁)
     (e₂ : Exec isa (Impl.StackScratch.X86_64.withStackArgScratch 2584 1 (streamDecryptClr (v.withBlk B) lv)) s₂ t₂ u₂) :
@@ -792,7 +799,7 @@ theorem streamDecryptClr16_below (B : BlkFn CtxMode.prepared16) (hct : Plain v.c
       (show UpperLock.inames (.seq B.dec.code (.block (clrAfter lv))) = [] by
         simp only [UpperLock.inames, hn, List.append_nil]) hs
       ((exec_hoist lv _ _ _ _).mp e₁) ((exec_hoist lv _ _ _ _).mp e₂))
-    (by decide) (by decide) (by decide) hsp hd (Proof.AesGcm.streamCryptPrepared16Pre_local _) trivial h₁ h₂ hp ho hu e₁ e₂
+    (by decide) (by decide) (by decide) hsp hd (Proof.AesGcm.streamCryptPrepared16Pre_local _) trivial h₁ h₂ hp hrsp hm hu e₁ e₂
 
 end
 

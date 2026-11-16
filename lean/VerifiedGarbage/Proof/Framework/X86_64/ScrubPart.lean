@@ -800,10 +800,10 @@ theorem narrowS_unknowns (hk : 6 ≤ (sig.words abi.ptrBits).length) (hb : 16 + 
   exact k
 
 /-- Two runs of `withStackArgScratch bytes` of code that keeps `Same` of the
-`stack` bytes below its stack pointer (`hsame`), from states `NoResidue`
-relates, end agreeing on the `stack` bytes below its frame: `narrowS`
-writes only in the frame, and the bytes below it are outside every buffer,
-so the same on entry. -/
+`stack` bytes below its stack pointer (`hsame`), from states with the same
+stack pointer that agree on the stack below it (as `NoResidue` relates
+them: those bytes are outside every buffer), end agreeing on the `stack`
+bytes below its frame: `narrowS` writes only in the frame. -/
 theorem framed_same
     (hv : Verified X86_64.target c (Sig.scratchContract abi sig nm e n pre post wa stack leak))
     (hsame : ∀ s₁ s₂ t₁ t₂ u₁ u₂, (Sig.scratchContract abi sig nm e n pre post wa stack leak).pre s₁ →
@@ -821,7 +821,9 @@ theorem framed_same
     (hleak : Sig.LeakLocalL abi.ptrBits sig leak)
     {s₁ s₂ : State} (h₁ : (sig.contract abi pre post wa (stack + bytes) leak).pre s₁)
     (h₂ : (sig.contract abi pre post wa (stack + bytes) leak).pre s₂)
-    (hp : (sig.contract abi pre post wa (stack + bytes) leak).pub s₁ s₂) (ho : Outside 0 s₁ s₂)
+    (hp : (sig.contract abi pre post wa (stack + bytes) leak).pub s₁ s₂) (hrsp : s₁.gpr .rsp = s₂.gpr .rsp)
+    (hm : ∀ x, (⟨s₁.gpr .rsp - BitVec.ofNat 64 (stack + bytes), stack + bytes⟩ : Region).Contains x 1 →
+      s₁.mem x = s₂.mem x)
     (hu : s₁.unknowns = s₂.unknowns) {t₁ t₂ : List Leak} {u₁ u₂ : State}
     (e₁ : Exec isa (withStackArgScratch bytes (nStack sig) c) s₁ t₁ u₁)
     (e₂ : Exec isa (withStackArgScratch bytes (nStack sig) c) s₂ t₂ u₂) :
@@ -841,8 +843,7 @@ theorem framed_same
   obtain ⟨-, rfl⟩ := Exec.det e₂ hex₂
   obtain ⟨sp₁, -, -, -, f₁⟩ := narrowS_facts (nm := nm) hk hb.1 hb.2.1 h₁
   obtain ⟨sp₂, -, -, -, f₂⟩ := narrowS_facts (nm := nm) hk hb.1 hb.2.1 h₂
-  have hrsp : s₁.gpr .rsp = s₂.gpr .rsp := ho.2.2.1 .rsp (by decide)
-  obtain ⟨hst₁, hout₁⟩ := Scrub.contract_pre_scrub Scrub.ScrubAbi.plain h₁
+  obtain ⟨hst₁, -⟩ := Scrub.contract_pre_scrub Scrub.ScrubAbi.plain h₁
   have hin₁ := (Scrub.contract_pre_scrub Scrub.ScrubAbi.plain hn₁).2
   have hin₂ := (Scrub.contract_pre_scrub Scrub.ScrubAbi.plain hn₂).2
   -- The bytes below the frame are below `rsp` on entry, apart from the arguments' copies.
@@ -874,8 +875,7 @@ theorem framed_same
         rw [← hrsp]; exact hx₂
       rw [f₁ x (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hx₂),
         f₂ x (fun r hr => by simp only [List.mem_singleton] at hr; subst hr; exact hx₂')]
-      refine ho.2.2.2.2.2.2.2.2.2.2.2.2.2.2 x fun r hr => ?_
-      exact (hout₁ r hr).2 (by omega_using [hb.1]) x hx₁
+      exact hm x hx₁
   have hz := hsame _ _ _ _ _ _ hn₁ hn₂ (narrowS_pub hk hb.1 hb.2.1 h₁ h₂ hp hleak) hS he₃ he₄
   intro x hx
   rw [hm₁, hm₂]
