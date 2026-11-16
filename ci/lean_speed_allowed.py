@@ -18,9 +18,7 @@ arguments (`(gpr_setV _ _ _).trans <| …`), not yet converted. Same rule.
 """
 
 DECIDE_SIMP_ALLOWED = {
-    "VerifiedGarbage/Proof/Aes/AArch64/Ctr32.lean": 1,
     "VerifiedGarbage/Proof/Aes/AArch64/ExpandKey.lean": 18,
-    "VerifiedGarbage/Proof/Aes/AArch64/Group.lean": 3,
     "VerifiedGarbage/Proof/Aes/X86/AesNi/Arith.lean": 1,
     "VerifiedGarbage/Proof/Aes/X86/AesNi/Prologue.lean": 9,
     "VerifiedGarbage/Proof/Aes/X86_64/AesNi/ExpandKey.lean": 2,

@@ -470,12 +470,6 @@ theorem encryptBlocksN_ct : ConstantTime isa (Proof.Aes.blocksAArch64 Spec.Aes.c
   simp only [VG.AArch64.Taint.mem_ofRegs, List.mem_cons, List.not_mem_nil, or_false] at hr
   rcases hr with rfl | rfl | rfl | rfl | rfl <;> with_reducible assumption
 
-theorem encryptBlocksN_verified :
-    Verified AArch64.target encryptBlocksN (Proof.Aes.encryptBlocksRoundsContract AArch64.abi) :=
-  Verified.of_correct encryptBlocksN_correct encryptBlocksN_ct (by
-    sig_implies [Proof.Aes.encryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
-      AArch64.abi, AArch64.argRegs] [blocksSat] using blocksSat)
-
 /-! ## `vg_aes_decrypt_blocks` -/
 
 /-- `decryptBlocksN`: every block one at a time. -/

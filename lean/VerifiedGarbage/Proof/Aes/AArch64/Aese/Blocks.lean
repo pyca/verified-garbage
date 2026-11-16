@@ -23,7 +23,7 @@ meta import VerifiedGarbage.Proof.Framework.RegionsSub
 /-!
 # AES on whole blocks with the Armv8 Cryptographic Extension
 
-`encryptBlocks_verified` and `decryptBlocks_verified` prove
+`encryptBlocks_correct`, `decryptBlocks_correct` and their `_ct` prove
 `Impl.Aes.AArch64.Aese.encryptBlocks` and `decryptBlocks` against
 `Proof.Aes.blocksAArch64` (the contract the bitsliced functions are proven
 against), and so against the shared contracts.
@@ -602,14 +602,6 @@ theorem decryptBlocks_implies :
     (Proof.Aes.blocksAArch64 Spec.Aes.invCipher).Implies (Proof.Aes.decryptBlocksRoundsContract AArch64.abi) := by
   sig_implies [Proof.Aes.decryptBlocksRoundsContract, Spec.Aes.blocksSig, Proof.Aes.blocksAArch64,
     AArch64.abi, AArch64.argRegs] [Proof.Aes.AArch64.blocksSat] using Proof.Aes.AArch64.blocksSat
-
-theorem encryptBlocks_verified :
-    Verified AArch64.target encryptBlocks (Proof.Aes.encryptBlocksRoundsContract AArch64.abi) :=
-  Verified.of_correct encryptBlocks_correct encryptBlocks_ct encryptBlocks_implies
-
-theorem decryptBlocks_verified :
-    Verified AArch64.target decryptBlocks (Proof.Aes.decryptBlocksRoundsContract AArch64.abi) :=
-  Verified.of_correct decryptBlocks_correct decryptBlocks_ct decryptBlocks_implies
 
 theorem encryptBlocks_written (s : State) (t : List Leak) (s' : State)
     (hs : (Proof.Aes.encryptBlocksRoundsContract AArch64.abi).pre s) (he : Exec isa encryptBlocks s t s') :

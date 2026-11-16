@@ -34,7 +34,7 @@ meta import VerifiedGarbage.Proof.Framework.Omega
 /-!
 # AES on whole blocks, bitsliced in AdvSIMD registers, on AArch64
 
-`blocks_correct`: `blocks crypt8` replaces each block of the data with
+`correct_blocks`: `blocks crypt8` replaces each block of the data with
 `f rounds w` of it, for a transformation of eight blocks that `CryptOk`
 describes (`encrypt8` and `decrypt8`, `Crypt8.lean`).
 
@@ -864,17 +864,6 @@ theorem correct_blocks {crypt8 : Prog isa} {f : Nat → List Byte → Spec.Aes.S
     rw [statesAt_of_ecbInv hd.data]
     simp only [Spec.Aes.statesAt, List.map_map]
     rfl
-
-theorem blocks_correct {crypt8 : Prog isa} {f : Nat → List Byte → Spec.Aes.State → Spec.Aes.State}
-    (hcr : CryptOk crypt8 f)
-    (hregs : (blocks crypt8).allInstrs (fun i => preserved.all fun r => !clobbers i r) = true)
-    (hnc : (blocks crypt8).noCalls = true)
-    (hv : (blocks crypt8).allInstrs keepsV = true)
-    (s : State) (hs : (Proof.Aes.blocksAArch64 f).pre s) :
-    ∃ t s', Exec isa (blocks crypt8) s t s' ∧ abiPreserved s s' ∧
-      (Proof.Aes.blocksAArch64 f).post s s' := by
-  obtain ⟨t, s', he, h₂, h₃⟩ := WP.gprs (rs := preserved) (correct_blocks hcr hs) hregs hnc
-  exact ⟨t, s', he, ⟨h₃, Exec.sp he, Exec.preservedV he hv⟩, h₂⟩
 
 /-- `encryptBlocks`: one to four blocks one at a time (`OneBlock.few_wp`), any
 other number of blocks bitsliced. -/

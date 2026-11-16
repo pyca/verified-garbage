@@ -308,8 +308,6 @@ def ScrIn (b : Addr) (wr : List Region) : Prop :=
 theorem ScrIn.of_mem {b : Addr} {wr : List Region} (h : (⟨b, 2048⟩ : Region) ∈ wr) : ScrIn b wr :=
   ⟨2048, Nat.le_refl _, by decide, h⟩
 
-theorem Keeps.refl (s : State) : Keeps s s := ⟨fun _ _ _ => rfl, rfl, rfl, rfl, Frame.refl _ _⟩
-
 theorem Keeps.trans {a b c : State} (h₁ : Keeps a b) (h₂ : Keeps b c) : Keeps a c where
   gpr g h6 h7 := (h₂.gpr g h6 h7).trans (h₁.gpr g h6 h7)
   rd := h₂.rd.trans h₁.rd

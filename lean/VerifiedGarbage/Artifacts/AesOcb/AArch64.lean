@@ -3,7 +3,6 @@ module
 public import VerifiedGarbage.Proof.AesOcb.AArch64.Frame
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.Proof.Framework.AArch64.StackArgScratch
-public import VerifiedGarbage.Proof.Aes.AArch64.Decrypt
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Contract
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Fn
 public import VerifiedGarbage.Proof.AesGcm.AArch64.Loops
@@ -28,6 +27,10 @@ public import VerifiedGarbage.Proof.Ocb.Spec
 public import VerifiedGarbage.Proof.Ocb.State
 public import VerifiedGarbage.TCB.AArch64.Print
 public import VerifiedGarbage.Proof.Variants.AesBlocks.AArch64
+public import VerifiedGarbage.Impl.Aes.AArch64.Blocks
+public import VerifiedGarbage.Proof.Aes.AArch64.Encrypt
+public import VerifiedGarbage.Proof.Aes.InvSboxSpec
+public import VerifiedGarbage.Proof.Aes.InvBitsliced
 
 /-! # AES-OCB (RFC 7253) on AArch64 -/
 

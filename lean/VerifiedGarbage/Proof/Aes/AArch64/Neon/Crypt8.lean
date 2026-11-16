@@ -153,9 +153,6 @@ theorem eval_cnt {s : State} {k : Nat} (h : s.gpr cnt = BitVec.ofNat 64 k) (hk :
 theorem qa_congr {s s' : State} (h : s'.v = s.v) : QA s' = QA s := by
   funext i; show s'.v (A i) = s.v (A i); rw [h]
 
-theorem qb_congr {s s' : State} (h : s'.v = s.v) : QB s' = QB s := by
-  funext i; show s'.v (B i) = s.v (B i); rw [h]
-
 /-! ## The rounds -/
 
 theorem kp_step (b : Addr) (m : Nat) :

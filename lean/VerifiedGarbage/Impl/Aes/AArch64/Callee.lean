@@ -30,7 +30,7 @@ structure Ctr32 where
 def Ctr32.scalar : Ctr32 := ⟨"vg_aes_ctr32", ctr32N⟩
 def Ctr32.aese : Ctr32 := ⟨"vg_aes_ctr32_aes", Aese.ctr32⟩
 
-/-- Their out-of-place forms, internal functions (`ctr32Gen true`), which
+/-- Their out-of-place forms, internal functions (`ctr32ToN`, `Aese.ctr32To`), which
 `vg_aes_gcm_open_to` calls to decrypt into `dst` as it reads `src`. -/
 def Ctr32.scalarTo : Ctr32 := ⟨"vg_aes_ctr32_to", ctr32ToN⟩
 def Ctr32.aeseTo : Ctr32 := ⟨"vg_aes_ctr32_to_aes", Aese.ctr32To⟩
