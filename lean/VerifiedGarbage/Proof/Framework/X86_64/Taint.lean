@@ -2907,7 +2907,17 @@ bases after them are the bases before them. `stepKDFn` filters them
 the one the instruction before built. `stepKeepFn` decides first whether the
 bases change (`noBase`, which the kernel evaluates once for the bases `b` and
 the register `d`), and gives the taint the bases it was given when they do
-not. -/
+not.
+
+A store's slots, in `stepKDFn`, are a term in the taint before it and its
+operand (`storeSlotsKD τ m w p`), also when the store changes none: the taint
+after it is then a new term at every store, the code after it is analysed
+again though it was analysed from the same taint before, and every later
+read of the slots unfolds the stores before it. `stepKeepFn` decides what a
+store does to the slots before it builds the taint (`storeStepF`): the taint
+it was given when they do not change (a public value stored where its slot
+is, a secret stored over no slot), and otherwise slots that are evaluated,
+a new slot written as `Lean.toExpr` writes it in a hint. -/
 
 section
 open VG.KList (all filter)
@@ -2940,6 +2950,63 @@ def keepBases (same : Bool) (b slow : List (Reg × Nat × Nat)) (k : List (Reg �
 def keepKill (τ : T) (b : List (Reg × Nat × Nat)) (d : Reg) (k : List (Reg × Nat × Nat) → T) : Option T :=
   keepBases (noBase b d) b (killK τ d) k
 
+/-- `k n`, with the number `n` evaluated (as `RegSet.force`). -/
+def forceNat {α : Type} (n : Nat) (k : Nat → α) : α :=
+  Nat.casesOn (motive := fun _ => α) (Nat.succ n) (k n) (fun m => k m)
+
+theorem forceNat_eq {α : Type} (n : Nat) (k : Nat → α) : forceNat n k = k n := rfl
+
+/-- `k sl`, with the list of slots `sl` evaluated to its end (its slots are
+the terms they were). -/
+def forceSlots {α : Type} : List (Nat × Nat × Nat) → (List (Nat × Nat × Nat) → α) → α
+  | [], k => k []
+  | s :: sl, k => forceSlots sl fun sl => k (s :: sl)
+
+theorem forceSlots_eq {α : Type} : ∀ (sl : List (Nat × Nat × Nat)) (k : List (Nat × Nat × Nat) → α),
+    forceSlots sl k = k sl
+  | [], _ => rfl
+  | s :: sl, k => by rw [forceSlots, forceSlots_eq sl]
+
+/-- `storeStepKD` (`storeStepF_eq`), deciding what becomes of the slots
+before it builds the taint: the taint it was given when the store does not
+change them, and slots that are evaluated when it does (a new slot's region
+and offset as the numerals `Lean.toExpr` writes, `OfNat.ofNat` of a literal:
+the taint is then the term a hint has for it). -/
+def storeStepF (τ : T) (m : MemOp) (w : Nat) (p : Bool) : Option T :=
+  bif memPub τ m then
+    match τ with
+    | ⟨rg, f, l, b, sl, lo, x⟩ =>
+      match addrOfK τ m with
+      | some (i, d) =>
+        bif Nat.ble (d + w) (l.getD i 0) then
+          bif p then
+            (bif slotThere i d w sl then some τ
+              else forceNat i fun i => forceNat d fun d =>
+                some ⟨rg, f, l, b, (OfNat.ofNat i, OfNat.ofNat d, w) :: sl, lo, x⟩)
+          else
+            (bif slotsFree i d w sl then some τ
+              else forceSlots (VG.Taint.filterKeep (fun s => !Nat.beq s.1 i || Nat.ble (d + w) s.2.1 ||
+                Nat.ble (s.2.1 + s.2.2) d) sl) fun sl' => some ⟨rg, f, l, b, sl', lo, x⟩)
+        else bif p then some τ else some ⟨rg, f, l, b, [], lo, x⟩
+      | none => bif p then some τ else some ⟨rg, f, l, b, [], lo, x⟩
+  else none
+
+theorem storeStepF_eq (τ : T) (m : MemOp) (w : Nat) (p : Bool) : storeStepF τ m w p = storeStepKD τ m w p := by
+  obtain ⟨rg, f, l, b, sl, lo, x⟩ := τ
+  simp only [storeStepF, storeStepKD, storeSlotsKD, filterKeepQ, forceSlots_eq, forceNat_eq]
+  cases memPub ⟨rg, f, l, b, sl, lo, x⟩ m
+  · rfl
+  · cases addrOfK ⟨rg, f, l, b, sl, lo, x⟩ m with
+    | none => cases p <;> rfl
+    | some q =>
+      obtain ⟨i, d⟩ := q
+      dsimp only
+      cases Nat.ble (d + w) (l.getD i 0) <;> cases p
+      · rfl
+      · rfl
+      · cases slotsFree i d w sl <;> rfl
+      · cases slotThere i d w sl <;> rfl
+
 def aluStepKeep (τ : T) (op : AluOp) (d : Reg) (src : Src) (wide : Bool) : Option T :=
   bif srcOkK τ src then
     match τ with
@@ -2950,7 +3017,8 @@ def aluStepKeep (τ : T) (op : AluOp) (d : Reg) (src : Src) (wide : Bool) : Opti
   else none
 
 /-- `stepKDFn`, giving the bases it was given when the instruction does not
-change them (`stepKeepFn_eq`). -/
+change them, and of a store the taint it was given when the slots do not
+change (`stepKeepFn_eq`). -/
 def stepKeepFn : Instr → Step
   | .mov d src => ⟨fun τ =>
     bif srcOkK τ src then
@@ -3049,6 +3117,17 @@ def stepKeepFn : Instr → Step
         let p := pub τ d && (srcPub τ src || loadPubK τ 8 src) && f
         keepKill τ b d fun b' => ⟨setK τ d p, f, l, b', sl, .empty, x⟩
     else none⟩
+  | .store m r => ⟨fun τ => storeStepF τ m 8 (pub τ r)⟩
+  | .store32 m r => ⟨fun τ => storeStepF τ m 4 (pub τ r)⟩
+  | .store8 m r => ⟨fun τ => storeStepF τ m 1 (pub τ r)⟩
+  | .store16 m r => ⟨fun τ => storeStepF τ m 2 (pub τ r)⟩
+  | .movdquStore m _ => ⟨fun τ => storeStepF τ m 16 false⟩
+  | .vmovdquStore .l128 m _ => ⟨fun τ => storeStepF τ m 16 false⟩
+  | .vmovdquStore .l256 m _ => ⟨fun τ => storeStepF τ m 32 false⟩
+  | .vmovdqu32Store m _ => ⟨fun τ => storeStepF τ m 64 false⟩
+  | .evStore m _ | .e5ExtractStore m _ _ => ⟨fun τ => storeStepF τ m 32 false⟩
+  | .kStore m k _ | .kStore8 m k _ => ⟨fun τ => bif pub τ k then storeStepF τ m 64 false else none⟩
+  | .stmxcsr m => ⟨fun τ => storeStepF τ m 4 false⟩
   | i => stepKDFn i
 
 theorem keepBases_eq {same : Bool} {b slow : List (Reg × Nat × Nat)} (k : List (Reg × Nat × Nat) → T)
@@ -3111,6 +3190,12 @@ theorem stepKeepFn_run (i : Instr) (τ : T) : (stepKeepFn i).run τ = (stepKDFn 
     rw [Bool.and_eq_true] at h
     rw [hk h.1]; exact filter_noBase h.2
   cases i <;> try rfl
+  case store m r | store32 m r | store8 m r | store16 m r | movdquStore m _ | vmovdqu32Store m _
+      | evStore m _ | e5ExtractStore m _ _ | stmxcsr m => exact storeStepF_eq ..
+  case vmovdquStore l m _ => cases l <;> exact storeStepF_eq ..
+  case kStore m k _ | kStore8 m k _ =>
+    show (bif pub _ k then storeStepF _ m 64 false else none) = _
+    rw [storeStepF_eq]; rfl
   case mov d src =>
     simp only [stepKeepFn, stepKDFn]
     cases srcOkK _ src <;> simp only [Bool.cond_true, Bool.cond_false]
