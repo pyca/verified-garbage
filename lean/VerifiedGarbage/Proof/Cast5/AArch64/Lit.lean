@@ -13,7 +13,5 @@ meta import VerifiedGarbage.Proof.Framework.AArch64.Lit
 @[expose] public section
 
 namespace VG.Impl.Cast5.AArch64
-materialize_code ecbEncrypt
-materialize_code ecbDecrypt
 materialize_code expandKey
 end VG.Impl.Cast5.AArch64

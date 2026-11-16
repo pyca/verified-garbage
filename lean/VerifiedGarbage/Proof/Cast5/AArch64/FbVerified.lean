@@ -3,7 +3,11 @@ module
 public import VerifiedGarbage.Proof.Cast5.Rounds
 public import VerifiedGarbage.Proof.Cast5.AArch64.ModeCore
 import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
-public import VerifiedGarbage.Proof.Cast5.AArch64.EcbVerified
+public import VerifiedGarbage.Proof.Cast5.AArch64.TableSat
+public import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+public import VerifiedGarbage.Proof.Framework.Contract
+public import VerifiedGarbage.Proof.Framework.ConstMem
+public import VerifiedGarbage.Spec.Cast5.Contract
 public import VerifiedGarbage.Proof.Cast5.ModeScratch
 public import VerifiedGarbage.Impl.StackScratch.AArch64
 import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts
@@ -12,7 +16,11 @@ import VerifiedGarbage.Proof.Cast5.AArch64.Lit
 import VerifiedGarbage.Proof.Framework.Offset
 meta import VerifiedGarbage.Proof.Cast5.AArch64.ModeCore
 meta import VerifiedGarbage.Proof.Cast5.AArch64.ModesLit
-meta import VerifiedGarbage.Proof.Cast5.AArch64.EcbVerified
+meta import VerifiedGarbage.Proof.Cast5.AArch64.TableSat
+meta import VerifiedGarbage.Proof.Framework.AArch64.TaintSym
+meta import VerifiedGarbage.Proof.Framework.Contract
+meta import VerifiedGarbage.Proof.Framework.ConstMem
+meta import VerifiedGarbage.Spec.Cast5.Contract
 meta import VerifiedGarbage.Proof.Cast5.ModeScratch
 meta import VerifiedGarbage.Impl.StackScratch.AArch64
 meta import VerifiedGarbage.Proof.Framework.AArch64.StackScratchConsts

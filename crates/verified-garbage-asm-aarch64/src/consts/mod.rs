@@ -35,6 +35,10 @@ mod vg_brainpoolp512r1_comb7;
 pub use vg_brainpoolp512r1_comb7::VG_BRAINPOOLP512R1_COMB7;
 
 #[rustfmt::skip]
+mod vg_cast5_planes;
+pub use vg_cast5_planes::VG_CAST5_PLANES;
+
+#[rustfmt::skip]
 mod vg_cast5_s1234;
 pub use vg_cast5_s1234::VG_CAST5_S1234;
 

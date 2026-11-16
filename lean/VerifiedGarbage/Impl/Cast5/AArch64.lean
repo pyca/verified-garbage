@@ -5,7 +5,11 @@ public import VerifiedGarbage.Impl.Cast5.Lines
 public import VerifiedGarbage.TCB.AArch64.Isa
 
 /-!
-# CAST5 on baseline AArch64
+# CAST5 on baseline AArch64: one block at a time, and key expansion
+
+The block code of the modes that encipher one block at a time
+(`Impl/Cast5/AArch64/Modes.lean`), and key expansion; the ECB functions work
+on sixteen blocks at once (`Impl/Cast5/AArch64/Tbl.lean`).
 
 As on x86-64 (`Impl/Cast5/X86_64.lean`), a lookup in an S-box never uses a
 secret as an address: the four lookups a round function makes, `S1[Ia]`,
@@ -23,7 +27,7 @@ The rotation by the secret amount `Kr` (§2.2) is five rotations by 1, 2, 4, 8
 and 16, each selected or not (`csel`) by a bit of `Kr` (`rotate`).
 
 Only the caller-saved registers `x0`–`x15`, `v0`–`v6` and `v16`–`v19` are used (the
-round function's `I` in `w4`, whose argument, `scratch`, ECB does not use). Registers
+round function's `I` in `w4`). Registers
 of the scan: the table in `x10`, the count of groups of four entries left in
 `x11`, `v0`–`v5` and `v16`–`v19`.
 -/
@@ -148,14 +152,6 @@ def decryptBlock : Prog isa :=
       List Instr) ++ groups))
     (.seq (.ite (.zero .x .x8) (round 1 false) (.block []))
       (.seq (.loop (group false) (.nonzero .x .x7)) (.block store)))
-
-/-- `vg_cast5_ecb_encrypt(schedule = x0, rounds = x1, data = x2, n = x3,
-scratch = x4)`, or decrypt: each block in turn. -/
-def ecb (block : Prog isa) : Prog isa :=
-  .ite (.zero .x .x3) (.block []) (.loop block (.nonzero .x .x3))
-
-def ecbEncrypt : Prog isa := ecb encryptBlock
-def ecbDecrypt : Prog isa := ecb decryptBlock
 
 /-! ## Key expansion
 

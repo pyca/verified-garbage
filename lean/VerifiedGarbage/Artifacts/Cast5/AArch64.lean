@@ -1,6 +1,6 @@
 module
 
-public import VerifiedGarbage.Proof.Cast5.AArch64.EcbVerified
+public import VerifiedGarbage.Proof.Cast5.AArch64.TblEcbVerified
 public import VerifiedGarbage.Proof.Cast5.AArch64.KeyVerified
 public import VerifiedGarbage.Proof.Framework.Registration
 public import VerifiedGarbage.TCB.AArch64.Print
@@ -16,10 +16,10 @@ def artifacts : List Artifact := [
     code := Impl.Cast5.AArch64.expandKey
     verified := Proof.Cast5.AArch64.expandKey_verified },
   Spec.Cast5.ecbEncryptApi.artifact AArch64.target {
-    code := Impl.Cast5.AArch64.ecbEncrypt
-    verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.AArch64.ecbEncrypt_verified },
+    code := Impl.Cast5.AArch64.Tbl.ecbEncrypt
+    verified := Proof.Cast5.ecbEncrypt_keyed Proof.Cast5.AArch64.Tbl.ecbEncrypt_verified },
   Spec.Cast5.ecbDecryptApi.artifact AArch64.target {
-    code := Impl.Cast5.AArch64.ecbDecrypt
-    verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.AArch64.ecbDecrypt_verified }]
+    code := Impl.Cast5.AArch64.Tbl.ecbDecrypt
+    verified := Proof.Cast5.ecbDecrypt_keyed Proof.Cast5.AArch64.Tbl.ecbDecrypt_verified }]
 
 end VG.Artifacts.Cast5.AArch64
