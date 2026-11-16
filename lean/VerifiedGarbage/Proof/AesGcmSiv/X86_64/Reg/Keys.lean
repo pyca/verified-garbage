@@ -7,6 +7,7 @@ import VerifiedGarbage.Proof.AesGcmSiv.X86_64.Derive
 import VerifiedGarbage.Proof.Aes.X86_64.AesNi.ExpandKey
 import VerifiedGarbage.Proof.AesGcm.X86_64.Env
 import VerifiedGarbage.Proof.AesGcm.X86_64.Arith
+import VerifiedGarbage.Proof.Cmac.Frame
 import VerifiedGarbage.Proof.Framework.X86_64.RegUpd
 import VerifiedGarbage.Proof.Framework.Offset
 import VerifiedGarbage.Proof.Framework.X86_64.Exec
@@ -32,7 +33,7 @@ open VG.Impl.AesGcm.X86_64 (at_ imm ptr)
 open VG.Impl.Aes.X86_64.AesNi (aes)
 open VG.Spec.Aes (bytesAt)
 open VG.Proof.AesGcmSiv.X86_64 (add_ofNat_assoc punpck_movq writeW128_app shr1)
-open VG.Proof.AesGcm.X86_64 (in_off ofNat_add_ofNat)
+open VG.Proof.AesGcm.X86_64 (in_off ofNat_add_ofNat bytesAt_frame)
 
 /-- What `derive` writes: the keys at `W + 16`. -/
 abbrev derR (W : Addr) : List Region := [⟨W + BitVec.ofNat 64 16, 48⟩]
@@ -150,5 +151,114 @@ theorem derivePair_run {K W SP : Addr} {σ : State} {R : Nat} {N : Addr} {i : Na
   · rfl
   · intro r hr
     simp only [gpr_setXmm, gpr_setReg, gpr_setFlags, gpr_arithFlags, hr, ite_true, ite_false, reduceCtorEq]
+
+/-- The halves of a pair stored: 16 bytes at `W + 16 + 8 i`. -/
+theorem deriveKeep_run {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {i : Nat}
+    (hi : i + 2 ≤ R / 2 - 1) {t : State} (E : Env K W SP t) (hbx : t.gpr .rbx = BitVec.ofNat 64 i)
+    (hsi : t.gpr .rsi = BitVec.ofNat 64 R) :
+    ∃ t' : State, runBlock isa deriveKeep t = some t' ∧
+      t'.mem = (t.mem.writeW (W + BitVec.ofNat 64 (16 + 8 * i)) (qword (t.xmm .xmm0) 0)).writeW
+        (W + BitVec.ofNat 64 (16 + 8 * i) + BitVec.ofNat 64 8) (qword (t.xmm .xmm1) 0) ∧
+      t'.gpr .rbx = BitVec.ofNat 64 (i + 2) ∧ t'.zf = some (decide (i + 2 = R / 2 - 1)) ∧
+      (∀ r ∈ [Reg.rdx, .rdi, .rsi, .r10, .r13, .r15, .rsp], t'.gpr r = t.gpr r) ∧ t'.rd = t.rd ∧ t'.wr = t.wr := by
+  have hw := L.ww
+  have h15 := E.r15
+  have ww := E.perm.wW (d := 16 + 8 * i) (n := 16) (by omega_arith)
+  have ea : BitVec.ofNat 64 i <<< 3 + W + BitVec.ofNat 64 16 = W + BitVec.ofNat 64 (16 + 8 * i) := by
+    have e8 : BitVec.ofNat 64 i <<< 3 = BitVec.ofNat 64 (8 * i) := by
+      rcases (by omega_arith : i = 0 ∨ i = 1 ∨ i = 2 ∨ i = 3 ∨ i = 4) with rfl | rfl | rfl | rfl | rfl <;> decide
+    rw [e8, BitVec.add_comm (BitVec.ofNat 64 (8 * i)) W, add_ofNat_assoc, Nat.add_comm]
+  refine ⟨_, by xrun [deriveKeep, h15, hbx, hsi, ww, ea, punpck_lo], ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simp (config := {decide := true}) only [mem_setReg, mem_setFlags, mem_arithFlags, mem_setXmm, gpr_setXmm,
+      gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, xmm_setXmm_self,
+      xmm_setXmm_of_ne, xmm_setReg, xmm_arithFlags, xmm_setFlags, punpck_lo, writeW128_app, h15, hbx, ea,
+      ne_eq, not_false_eq_true]
+    done
+  · simp only [gpr_setXmm, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq, hbx,
+      ofNat_add_ofNat]
+  · simp only [zf_arithFlags, zf_setXmm, zf_setReg, gpr_setXmm, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true,
+      ite_false, reduceCtorEq, hbx, hsi, ofNat_add_ofNat]
+    rw [shr1 R (by omega_arith), Proof.AesGcm.X86_64.ofNat_sub (by omega_arith) (by omega_arith),
+      Proof.AesGcm.X86_64.sub_beq (by omega_arith) (by omega_arith)]
+  · intro r hr; simp only [List.mem_cons, List.not_mem_nil, or_false] at hr
+    rcases hr with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp only [gpr_setXmm, gpr_setReg, gpr_setFlags, gpr_arithFlags, ite_true, ite_false, reduceCtorEq]
+  all_goals rfl
+
+open VG.Proof.Aes.X86_64.AesNi (aes_ok Keys XFrame)
+
+/-- `aes`'s keys for the key-generating key. -/
+theorem keysK {K W SP : Addr} {R : Nat} (hR : R = 10 ∨ R = 14) {t : State} (E : Env K W SP t)
+    (hdi : t.gpr .rdi = K) : Keys R (bytesAt t.mem K (16 * (R + 1))) t := by
+  refine ⟨by rw [hdi], by omega_arith, fun j hj => ?_⟩
+  rw [hdi, Proof.Aes.X86_64.AesNi.ofInt_natCast]
+  exact in_off E.perm.k (by omega_arith) (by decide)
+
+/-- The first 8 bytes of the cipher of `little_endian_uint32(i) ‖ nonce`:
+the low quadword of the register that encrypting the block left. -/
+theorem half_eq {m : Mem} {K N : Addr} {R i : Nat} (hi : i < 2 ^ 32) (v' : BitVec 128)
+    (h : st v' = Spec.Aes.cipher R (bytesAt m K (16 * (R + 1)))
+      (st (m.readW (N + BitVec.ofNat 64 4) 64 ++ ((m.readW N 32).setWidth 64 <<< 32 ||| BitVec.ofNat 64 i)))) :
+    le8 (qword v' 0) = (Spec.GcmSiv.ctxCiph m K R (Spec.GcmSiv.le32 i ++ bytesAt m N 12)).take 8 := by
+  have hi32 : BitVec.ofNat 64 i = ((BitVec.ofNat 64 i).setWidth 32).setWidth 64 := by
+    apply BitVec.eq_of_toNat_eq
+    simp only [BitVec.toNat_setWidth, BitVec.toNat_ofNat]
+    rw [Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_arith), Nat.mod_eq_of_lt hi,
+      Nat.mod_eq_of_lt (show i < 2 ^ 64 by omega_arith)]
+  have eb : le8 ((m.readW N 32).setWidth 64 <<< 32 ||| BitVec.ofNat 64 i) ++ le8 (m.readW (N + BitVec.ofNat 64 4) 64) =
+      Spec.GcmSiv.le32 i ++ bytesAt m N 12 := by
+    rw [hi32, Proof.AesGcmSiv.X86_64.le8_join, GcmSiv.le4_le32, Proof.Cmac.le4_readW, Proof.Cmac.le8_readW,
+      show (12 : Nat) = 4 + 8 from rfl, Proof.Cmac.bytesAt_add, List.append_assoc]
+  rw [← take8_st, h, st_app, eb]
+  rfl
+
+/-- A pair of `derive`: two more halves. -/
+theorem derStep_ok {K W SP : Addr} (L : Lay K W SP) {R : Nat} (hR : R = 10 ∨ R = 14) {σ : State} {N : Addr}
+    (hN : Buf K W SP σ N 12) {i : Nat} (hi : i + 2 ≤ R / 2 - 1) (hev : i % 2 = 0) {t : State}
+    (I : DInv K W SP σ R N i t) :
+    WP isa (.seq (.block derivePair) (.seq (aes [.xmm0, .xmm1]) (.block deriveKeep))) t fun t' =>
+      DInv K W SP σ R N (i + 2) t' ∧ t'.zf = some (decide (i + 2 = R / 2 - 1)) := by
+  obtain ⟨t₁, run₁, x0, x1, m₁, rd₁, wr₁, g₁⟩ := derivePair_run (by omega_arith) hev I hN
+  have E₁ : Env K W SP t₁ := I.env.keep (fun r hr => g₁ r (by
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at hr; rcases hr with rfl | rfl | rfl <;> decide)) rd₁ wr₁
+  refine WP.seq (WP.of_runBlock ⟨t₁, run₁, WP.seq ?_⟩)
+  have K₁ := keysK hR E₁ ((g₁ _ (by decide)).trans I.rdi)
+  refine WP.mono (aes_ok [.xmm0, .xmm1] (by decide) (by decide) (by omega_arith) t₁ K₁
+    ((g₁ _ (by decide)).trans I.rsi) (by rw [g₁ _ (by decide), g₁ _ (by decide), I.r10, I.rdi])) fun t₂ ⟨hc, hf⟩ => ?_
+  have E₂ : Env K W SP t₂ := E₁.keep (fun r _ => by rw [hf.gpr]) hf.rd hf.wr
+  obtain ⟨t₃, run₃, m₃, bx₃, zf₃, g₃, rd₃, wr₃⟩ := deriveKeep_run L hR hi E₂
+    (by rw [hf.gpr, g₁ _ (by decide), I.rbx]) (by rw [hf.gpr, g₁ _ (by decide), I.rsi])
+  refine WP.of_runBlock ⟨t₃, run₃, ⟨E₂.keep (fun r hr => g₃ r (by
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at hr ⊢; rcases hr with rfl | rfl | rfl <;> simp)) rd₃ wr₃,
+    by rw [rd₃, hf.rd, rd₁, I.rd], by rw [wr₃, hf.wr, wr₁, I.wr], bx₃,
+    by rw [g₃ _ (by simp), hf.gpr, g₁ _ (by decide), I.rdx],
+    by rw [g₃ _ (by simp), hf.gpr, g₁ _ (by decide), I.rdi],
+    by rw [g₃ _ (by simp), hf.gpr, g₁ _ (by decide), I.rsi],
+    by rw [g₃ _ (by simp), hf.gpr, g₁ _ (by decide), I.r10], ?_, ?_⟩, zf₃⟩
+  · rw [m₃, hf.mem, m₁]
+    exact I.frame.trans ((Proof.Cmac.frame_store2 _ _ _).sub fun r hr => ⟨_, List.mem_singleton_self _, by
+      simp only [List.mem_singleton] at hr; subst hr; exact Offset.sub W (by omega_arith) (by omega_arith)⟩)
+  · have hw := L.ww
+    have hRb : 16 * (R + 1) ≤ 240 := by omega_arith
+    have eK : Spec.GcmSiv.ctxCiph t.mem K R = Spec.GcmSiv.ctxCiph σ.mem K R :=
+      ctxCiph_frame I.frame (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact L.k_w' (by decide)) hRb
+    have eN : bytesAt t.mem N 12 = bytesAt σ.mem N 12 :=
+      bytesAt_frame I.frame (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr; exact hN.w.sub_right (Lay.wSub (by decide))) (by decide)
+    have h0 := hc .xmm0 (by simp)
+    have h1 := hc .xmm1 (by simp)
+    rw [x0, m₁] at h0
+    rw [x1, m₁] at h1
+    have a0 := half_eq (by omega_arith) _ h0
+    have a1 := half_eq (by omega_arith) _ h1
+    rw [eK, eN] at a0 a1
+    have fs := Proof.Cmac.frame_store2 (m := t₂.mem) (W + BitVec.ofNat 64 (16 + 8 * i)) (qword (t₂.xmm .xmm0) 0)
+      (qword (t₂.xmm .xmm1) 0)
+    rw [show 8 * (i + 2) = 8 * i + 16 by omega_arith, Proof.Cmac.bytesAt_add, add_ofNat_assoc, m₃,
+      Proof.Cmac.bytesAt_store2, bytesAt_frame fs (fun r hr => by
+        simp only [List.mem_singleton] at hr; subst hr
+        exact Offset.disjoint W (.inl (by omega_arith)) (by omega_arith) (by omega_arith)) (by omega_arith),
+      hf.mem, m₁, I.out, GcmSiv.halves_succ, GcmSiv.halves_succ, a0, a1, List.append_assoc]
 
 end VG.Proof.AesGcmSivReg.X86_64
