@@ -746,15 +746,19 @@ def forceTAll {α : Type} (t : Taint.T) (k : Taint.T → α) : α :=
     forceList l fun l => forceList b fun b => forceList sl fun sl => lo.force fun lo =>
       Taint.forceT ⟨rg, f, l, b, sl, lo, x⟩ k
 
+/-- `b` (`keepNats_eq`), but the term `a` when they are equal: masks that a
+step computes again as they were stay the terms they were (`pbModKeep`). -/
+def keepNats (a b : List Nat) : List Nat := bif natsEq b a then a else b
+
 /-- `step · i`, giving a taint that is evaluated, and whose fields `step`
 does not change are the terms they were (`slowFn_run`). -/
 def slowFn (i : Instr) : RStep := ⟨fun τ =>
   match τ with
-  | ⟨_, _, nfr, depth, room, sec, ras, _, _, _, fw, an, sa, sp, _⟩ =>
+  | ⟨_, _, nfr, depth, room, sec, ras, _, _, _, fw, an, sa, sp, pb⟩ =>
     match step τ i with
     | some τ' =>
       forceTAll τ'.t fun t' => forceList τ'.ub fun ub' => forceOpt τ'.fl fun fl' => forceList τ'.mb fun mb' =>
-        forceList τ'.pb fun pb' =>
+        forceList (keepNats pb τ'.pb) fun pb' =>
           some ⟨true, t', nfr, depth, room, sec, ras, ub', fl', mb', fw, an, sa, sp, pb'⟩
     | none => none⟩
 
@@ -804,15 +808,22 @@ def insX (x : XReg) (t : Taint.T) : Taint.T :=
   match t with
   | ⟨rg, f, l, b, sl, lo, xr⟩ => ⟨rg, f, l, b, sl, lo, xr.insert x⟩
 
+/-- `pbMod f l i` (`pbModKeep_eq`), but `l` itself when `f` leaves the mask
+of region `i` as it is: a store to bytes that are already secret, as most
+are, then gives the masks it had, and the kernel finds again the steps it
+has made from that taint (a callee's, at each of its calls). -/
+def pbModKeep (f : Nat → Nat) (l : List Nat) (i : Nat) : List Nat :=
+  bif Nat.beq (f (pbGet l i)) (pbGet l i) then l else pbMod f l i
+
 /-- `pbAfter` of a store of `w` bytes at `m`, without an index register, of
 a public value iff `p`. -/
 def pbStore (t : Taint.T) (pb : List Nat) (m : MemOp) (w : Nat) (p : Bool) : List Nat :=
   match Taint.addrOfK t m with
   | some (i, d) =>
     bif Nat.ble (d + w) (t.lens.getD i 0) then
-      bif p then pbMod (fun b => bset b d w) pb i else pbMod (fun b => bclr b d w) pb i
-    else bif p then pb else pbZero pb
-  | none => bif p then pb else pbZero pb
+      bif p then pbModKeep (fun b => bset b d w) pb i else pbModKeep (fun b => bclr b d w) pb i
+    else bif p then pb else keepNats pb (pbZero pb)
+  | none => bif p then pb else keepNats pb (pbZero pb)
 
 /-- `step` of a store of `w` bytes at `m`, without an index register, of a
 value that is public iff `p` (of a public register), from the register `src`
@@ -825,6 +836,36 @@ def fastStore (m : MemOp) (w : Nat) (p : Taint.T → Bool) (src : Option Reg) : 
         match t with
         | ⟨rg, f, l, b, _, lo, x⟩ =>
           forceList (mbStore t mb m w src) fun mb' => forceList (pbStore t pb m w (p t)) fun pb' =>
+            some ⟨true, ⟨rg, f, l, b, [], lo, x⟩, nfr, depth, room, sec, ras, ub, none, mb', fw, an, sa, sp, pb'⟩
+      else none
+    else none⟩
+
+/-- `mbAfter` of a store of `w` bytes at `m` that is not `mov [m], r`. -/
+def mbStoreI (τ : FT) (m : MemOp) (w : Nat) : List (Nat × Nat × Nat × Nat) :=
+  match τ.mb with
+  | [] => []
+  | mb =>
+    match storeRange τ m w with
+    | some (ri, lo, hi) => mbKill mb ri lo hi
+    | none => []
+
+/-- `pbAfter` of a store of `w` bytes at `m` of a secret value. -/
+def pbStoreI (τ : FT) (m : MemOp) (w : Nat) : List Nat :=
+  match storeRange τ m w with
+  | some (ri, lo, hi) => pbModKeep (fun b => bclr b lo (Nat.sub hi lo)) τ.pb ri
+  | none => keepNats τ.pb (pbZero τ.pb)
+
+/-- `step` of a store of `w` bytes at `m` of a secret value, with an index
+register: as `fastStore`, with the range of the bytes it may write
+(`storeRange`, the model's). -/
+def fastStoreI (m : MemOp) (w : Nat) : RStep := ⟨fun τ =>
+  match τ with
+  | ⟨ok, t, nfr, depth, room, sec, ras, ub, _, _, fw, an, sa, sp, _⟩ =>
+    bif ok then
+      bif memPub t m then
+        match t with
+        | ⟨rg, f, l, b, _, lo, x⟩ =>
+          forceList (mbStoreI τ m w) fun mb' => forceList (pbStoreI τ m w) fun pb' =>
             some ⟨true, ⟨rg, f, l, b, [], lo, x⟩, nfr, depth, room, sec, ras, ub, none, mb', fw, an, sa, sp, pb'⟩
       else none
     else none⟩
@@ -920,12 +961,12 @@ def stepFn (i : Instr) : RStep :=
     | .store8 m r => bif m.index.isNone then fastStore m 1 (pub · r) none else ⟨(step · i)⟩
     | .store16 m r => bif m.index.isNone then fastStore m 2 (pub · r) none else ⟨(step · i)⟩
     | .movdquStore m x => bif m.index.isNone then fastStore m 16 (xpub · x) none else ⟨(step · i)⟩
-    | .vmovdquStore .l128 m _ => bif m.index.isNone then fastStore m 16 (fun _ => false) none else ⟨(step · i)⟩
-    | .vmovdquStore .l256 m _ => bif m.index.isNone then fastStore m 32 (fun _ => false) none else ⟨(step · i)⟩
-    | .vmovdqu32Store m _ => bif m.index.isNone then fastStore m 64 (fun _ => false) none else ⟨(step · i)⟩
+    | .vmovdquStore .l128 m _ => bif m.index.isNone then fastStore m 16 (fun _ => false) none else fastStoreI m 16
+    | .vmovdquStore .l256 m _ => bif m.index.isNone then fastStore m 32 (fun _ => false) none else fastStoreI m 32
+    | .vmovdqu32Store m _ => bif m.index.isNone then fastStore m 64 (fun _ => false) none else fastStoreI m 64
     | .evStore m _ | .e5ExtractStore m _ _ =>
-      bif m.index.isNone then fastStore m 32 (fun _ => false) none else ⟨(step · i)⟩
-    | .stmxcsr m => bif m.index.isNone then fastStore m 4 (fun _ => false) none else ⟨(step · i)⟩
+      bif m.index.isNone then fastStore m 32 (fun _ => false) none else fastStoreI m 32
+    | .stmxcsr m => bif m.index.isNone then fastStore m 4 (fun _ => false) none else fastStoreI m 4
     | .mov d (.mem m) => fastLoad (Taint.stepKDFn i) d m 8 (fun _ => true) i
     | .mov32 d (.mem m) => fastLoad (Taint.stepKDFn i) d m 4 (fun _ => true) i
     | .cmov _ d (.mem m) => fastLoad (Taint.stepKDFn i) d m 8 (fun t => pub t d && t.flags) i
@@ -995,11 +1036,12 @@ def stepFn1 (i : Instr) : RStep :=
     bif x == x' then fastG (Taint.stepKeepFn i) (insX x) none fun _ ub => ub
     else fastG (Taint.stepKeepFn i) id none fun _ ub => ub
   | .movdquStore m x => bif m.index.isNone then fastStore m 16 (xpub · x) none else slowFn i
-  | .vmovdquStore .l128 m _ => bif m.index.isNone then fastStore m 16 (fun _ => false) none else slowFn i
-  | .vmovdquStore .l256 m _ => bif m.index.isNone then fastStore m 32 (fun _ => false) none else slowFn i
-  | .vmovdqu32Store m _ => bif m.index.isNone then fastStore m 64 (fun _ => false) none else slowFn i
-  | .evStore m _ | .e5ExtractStore m _ _ => bif m.index.isNone then fastStore m 32 (fun _ => false) none else slowFn i
-  | .stmxcsr m => bif m.index.isNone then fastStore m 4 (fun _ => false) none else slowFn i
+  | .vmovdquStore .l128 m _ => bif m.index.isNone then fastStore m 16 (fun _ => false) none else fastStoreI m 16
+  | .vmovdquStore .l256 m _ => bif m.index.isNone then fastStore m 32 (fun _ => false) none else fastStoreI m 32
+  | .vmovdqu32Store m _ => bif m.index.isNone then fastStore m 64 (fun _ => false) none else fastStoreI m 64
+  | .evStore m _ | .e5ExtractStore m _ _ =>
+    bif m.index.isNone then fastStore m 32 (fun _ => false) none else fastStoreI m 32
+  | .stmxcsr m => bif m.index.isNone then fastStore m 4 (fun _ => false) none else fastStoreI m 4
   -- Not plain, and without a step of their own.
   | .kStore .. | .kStore8 .. | .push _ | .pop .. | .alloc _ | .free _ | .callr _ =>
     bif isa.writesSp i then ⟨fun _ => none⟩ else slowFn i
